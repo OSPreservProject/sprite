@@ -409,6 +409,16 @@ DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
     MASTER_UNLOCK(&(diskPtr->diskStatsPtr->mutex));
 
     /*
+     * We need to copy the sense data out of the buffer given to us by
+     * the HBA into the buffer in ScsiCmd.  Someday we should get rid
+     * of all sense buffers except those in the ScsiCmd.  JHH
+     */
+
+     bcopy((char *) senseDataPtr, scsiCmdPtr->senseBuffer, senseLength);
+     scsiCmdPtr->senseLen = senseLength;
+     scsiCmdPtr->statusByte = statusByte;
+
+    /*
      * If request suffered an HBA error or got no error we notify the
      * caller that the request is done.
      */
