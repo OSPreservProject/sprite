@@ -386,8 +386,8 @@ MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
             Malloc((unsigned) raidPtr->bytesPerStripeUnit);
     stripeIOControlPtr->readBuf       =
 	    Malloc((unsigned) raidPtr->dataBytesPerStripe);
-    stripeIOControlPtr->rangeOff      = -1;
-    stripeIOControlPtr->rangeLen      = -1;
+    stripeIOControlPtr->rangeOff      = 0;
+    stripeIOControlPtr->rangeLen      = 0;
 
     return stripeIOControlPtr;
 }

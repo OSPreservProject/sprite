@@ -19,9 +19,6 @@
 #include "devBlockDevice.h"
 
 DevBlockDeviceHandle	*DevRaidAttach();
-
-#ifndef DevDebugAttach
 DevBlockDeviceHandle	*DevDebugAttach();
-#endif  DevDebugAttach
 
 #endif _RAIDEXT
