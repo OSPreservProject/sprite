@@ -36,8 +36,8 @@
 #define	XYLOGICS_CTRL_NUM_FROM_DEVUNIT(unit)    (((unit)>>5)&0x3)
 #define	XYLOGICS_PARTITION_NUM_FROM_DEVUNIT(unit)	((unit)&0x3)
 
-extern ClientData DevXylogics450Init();
-extern Boolean	DevXylogics450Intr();		
-extern DevBlockDeviceHandle	*DevXylogics450DiskAttach();
+extern ClientData DevXylogics450Init _ARGS_ ((DevConfigController *cntrlrPtr));
+extern Boolean	DevXylogics450Intr _ARGS_ ((ClientData	clientData));
+extern DevBlockDeviceHandle *DevXylogics450DiskAttach _ARGS_ ((Fs_Device *devicePtr));
 
 #endif /* _XYLOGICS450 */
