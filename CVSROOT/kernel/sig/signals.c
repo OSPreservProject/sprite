@@ -626,6 +626,10 @@ Sig_Send(sigNum, code, id, familyID)
 	status = Sig_SendProc(procPtr, sigNum, code);
 	Proc_Unlock(procPtr);
     } else {
+	Proc_PID *pidArray;
+	int i;
+	int numProcs;
+	
 	status = Proc_LockFamily((int)id, &familyList, &userID);
 	if (status != SUCCESS) {
 	    return(status);
@@ -636,19 +640,46 @@ Sig_Send(sigNum, code, id, familyID)
         }
 
 	/*
-	 * Send a signal to everyone in the given family.
+	 * Send a signal to everyone in the given family.  We do this
+	 * by grabbing a list of process IDs and then sending the signals
+	 * with the family not locked, to avoid deadlocks resulting from
+	 * signals being sent with the family locked.
 	 */
 
+	numProcs = 0;
+	LIST_FORALL(familyList, (List_Links *) procLinkPtr) {
+	    numProcs++;
+	}
+	pidArray = (Proc_PID *) malloc(numProcs * sizeof(Proc_PID));
+	i = 0;
 	LIST_FORALL(familyList, (List_Links *) procLinkPtr) {
 	    procPtr = procLinkPtr->procPtr;
-	    Proc_Lock(procPtr); 
+	    Proc_Lock(procPtr);
+	    pidArray[i] = procPtr->processID;
+	    Proc_Unlock(procPtr);
+	    i++;
+	    if (i > numProcs) {
+		panic("Sig_Send: process family changed size while locked.\n");
+		free((Address) pidArray);
+		return(FAILURE);
+	    }
+	}
+	Proc_UnlockFamily((int)id);
+	for (i = 0; i < numProcs; i++) {
+	    procPtr = Proc_LockPID(pidArray[i]);
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		/*
+		 * Race condition: process got removed.
+		 */
+		continue;
+	    }
 	    status = Sig_SendProc(procPtr, sigNum, code);
 	    Proc_Unlock(procPtr); 
 	    if (status != SUCCESS) {
 		break;
 	    }
 	}
-	Proc_UnlockFamily((int)id);
+	free((Address) pidArray);
     }
 
     return(status);
@@ -950,6 +981,7 @@ Sig_Pause(sigHoldMask)
 {
     register	Proc_ControlBlock	*procPtr;
     ReturnStatus status;
+    int migMask;
 
     LOCK_MONITOR;
 
@@ -976,11 +1008,16 @@ Sig_Pause(sigHoldMask)
      * order to release the monitor lock.
      *
      * Don't let a Sig_Pause be interrupted by a migrate trap signal.
+     * So, if none of the signal bits are set besides migration-related
+     * signals, and a migration-related signal bit is set, let the user-level
+     * code retry  the signal.
      */
     (void) Sync_Wait(&signalCondition, TRUE);
 
-    if (procPtr->sigPendingMask & ((SigGetBitMask(SIG_MIGRATE_TRAP)) |
-				   (SigGetBitMask(SIG_MIGRATE_HOME)))) {
+    migMask = (SigGetBitMask(SIG_MIGRATE_TRAP)) |
+	(SigGetBitMask(SIG_MIGRATE_HOME));
+    if ((! (procPtr->sigPendingMask & ~migMask)) &&
+	(procPtr->sigPendingMask & migMask)) {
 	status = GEN_ABORTED_BY_SIGNAL;
     } else {
 	status = SUCCESS;
