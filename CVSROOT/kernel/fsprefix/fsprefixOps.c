@@ -1364,8 +1364,13 @@ FsprefixHandleCloseInt(prefixPtr, flags)
 	Fsutil_HandleLock(hdrPtr);
 	dummy.ioHandlePtr = hdrPtr;
 	dummy.hdr.fileID.type = -1;
+#ifdef SOSP91
+	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
+		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL, (int *) NIL);
+#else
 	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
 		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL);
+#endif
 #ifdef lint
 	(void) Fsio_FileClose(&dummy, rpc_SpriteID, 0,
 		    0, 0, (ClientData)NIL);
