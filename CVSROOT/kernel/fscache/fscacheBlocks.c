@@ -93,7 +93,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Monitor lock.
  */
-static Sync_Lock	cacheLock = SYNC_LOCK_INIT_STATIC();
+static Sync_Lock	cacheLock = Sync_LockInitStatic("Fs:blockCacheLock");
 #define	LOCKPTR	&cacheLock
 
 /*
@@ -271,7 +271,30 @@ FsCacheInfoInit(cacheInfoPtr, hdrPtr, version, cacheable, attrPtr)
     cacheInfoPtr->numDirtyBlocks = 0;
     cacheInfoPtr->lastTimeTried = 0;
     cacheInfoPtr->attr = *attrPtr;
-    SYNC_LOCK_INIT_DYNAMIC(&cacheInfoPtr->lock);
+    Sync_LockInitDynamic(&cacheInfoPtr->lock, "Fs:perFileCacheLock");
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsCacheInfoSyncLockCleanup --
+ *
+ * 	Clean up Sync_Lock tracing for the cache lock.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set up the fields of the FsCacheFileInfo struct.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+FsCacheInfoSyncLockCleanup(cacheInfoPtr)
+    register FsCacheFileInfo *cacheInfoPtr;
+{
+    Sync_LockClear(&cacheInfoPtr->lock);
 }
 
 
@@ -1116,6 +1139,8 @@ FsCacheIODone(blockPtr)
     FsCacheBlock *blockPtr;	/* Pointer to block information for block.*/
 {
     LOCK_MONITOR;
+
+    Sync_LockRegister(&cacheLock);
 
     Sync_Broadcast(&blockPtr->ioDone);
     blockPtr->flags &= ~FS_IO_IN_PROGRESS;
@@ -3074,16 +3099,17 @@ Fs_DumpCacheStats()
 		block->maxCacheBlocks, block->maxNumBlocks,
 		block->numFreeBlocks, block->blocksPitched);
 
-    printf("OBJECTS stream %d (clt %d) file %d rmtFile %d pipe %d\n",
+    printf("OBJECTS stream %d (clt %d) file %d dir %d rmtFile %d pipe %d\n",
 	    fsStats.object.streams, fsStats.object.streamClients,
-	    fsStats.object.files, fsStats.object.rmtFiles,
-	    fsStats.object.pipes);
+	    fsStats.object.files, fsStats.object.directory,
+	    fsStats.object.rmtFiles, fsStats.object.pipes);
     printf("OBJECTS dev %d pdevControl %d pdev %d remote %d Total %d\n",
 	    fsStats.object.devices, fsStats.object.controls,
 	    fsStats.object.pseudoStreams, fsStats.object.remote,
 	    fsStats.object.streams + fsStats.object.files +
 	    fsStats.object.rmtFiles + fsStats.object.pipes +
 	    fsStats.object.devices + fsStats.object.controls +
+	    fsStats.object.directory +
 	    2 * fsStats.object.pseudoStreams + fsStats.object.remote);
     printf("HANDLES max %d exist %d scans %d scavenged %d (dirs %d)\n",
 	    fsStats.handle.maxNumber, fsStats.handle.exists,
