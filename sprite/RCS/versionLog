@@ -203,4 +203,9 @@ Changes on the server side of the new rpc negative acknowledgement stuff so that
 neg acks will be backwards-compatible on client machines running old kernels.
 I now OR in an RPC_ACK with the RPC_NACK.  I've also fixed some synchronization
 problems in the neg ack stuff.
+
+1.064	Wed Apr 18 19:57:19 PDT 1990
+I've added print statements to the rpc and recovery modules to trace the
+state of the recovery module.  There's a new hook in Sys_Stats to
+turn on the printing of these trace statements from the recovcmd.
     New files linked in from the net library.
