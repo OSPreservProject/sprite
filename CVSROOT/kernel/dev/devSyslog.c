@@ -367,6 +367,7 @@ Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
 	}
     }
     MASTER_UNLOCK(&syslogMutex);
+    return(SUCCESS);
 }
 
 
