@@ -567,10 +567,13 @@ FsPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
 	 * No clients remaining so we can close down the connection.
 	 * Notify the server that a client has gone away.  Then we get rid
 	 * of our reference to the server's handle and nuke our own.
+	 * Note we unlock the client handle before the request response
+	 * in case the server process is buggy and hangs us.
 	 */
+	FsHandleUnlock(cltHandlePtr);
 	FsPseudoStreamCloseInt(cltHandlePtr->pdevHandlePtr);
 	FsHandleRelease(cltHandlePtr->pdevHandlePtr, FALSE);
-	FsHandleRelease(cltHandlePtr, TRUE);
+	FsHandleRelease(cltHandlePtr, FALSE);
 	FsHandleRemove(cltHandlePtr);
     }
     return(SUCCESS);
