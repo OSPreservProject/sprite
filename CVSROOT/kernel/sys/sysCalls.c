@@ -559,6 +559,16 @@ Sys_StatsStub(command, option, argPtr)
 		    }
 		}
 		break;
+	        case SYS_PROC_MIG_GET_VERSION: {
+		    if (argPtr != (Address) NIL) {
+			status = Vm_CopyOut(sizeof(int),
+					    (Address)&proc_MigrationVersion,
+					    argPtr);
+		    } else {
+			status = GEN_INVALID_ARG;
+		    }
+		}
+		break;
 		case SYS_PROC_MIG_SET_DEBUG: {
 		    int arg;
 		    status = Vm_CopyIn(sizeof(int), argPtr, (Address)&arg);
