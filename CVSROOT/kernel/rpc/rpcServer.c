@@ -69,16 +69,12 @@ Boolean rpcServiceTiming = FALSE;
 int rpcServiceCount[RPC_LAST_COMMAND+1];
 
 /*
- * Data structures for nack for servers that can't be allocated.
+ * Buffers for sending negative acknowledgements.
  */
-typedef struct	NackData {
-    RpcHdr		rpcHdr;
-    RpcBufferSet	bufferSet;
-    Sync_Semaphore	mutex;
-} NackData;
-
 NackData	rpcNack;
-
+/*
+ * Whether or not to send negative acknowledgements.
+ */
 Boolean		rpcSendNegAcks = FALSE;
 
 
@@ -410,7 +406,10 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
     register int size;		/* The amount of the data in the message */
 
 
-#ifdef NEG_ACK
+    /*
+     * If the server pointer is NIL, this means no server could be allocated
+     * and a negative acknowledgement must be issued.
+     */
     if (srvPtr == (RpcServerState *) NIL) {
 	MASTER_LOCK(&(rpcNack.mutex));
 	rpcNack.rpcHdr.flags = RPC_NACK;
@@ -420,17 +419,15 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	 * This should be okay to do under a masterlock since RpcAck below
 	 * also calls it and it's under a masterlock.
 	 */
-#ifdef NOTDEF
-	/* This is identical to one printed elsewhere. */
+/* This is identical to one printed elsewhere? */
 	RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 19);
-#endif NOTDEF
+	rpcSrvStat.nacks++;
 	(void) RpcOutput(rpcHdrPtr->clientID, &(rpcNack.rpcHdr),
 		&(rpcNack.bufferSet),
 		(RpcBufferSet *) NIL, 0, (Sync_Semaphore *) NIL);
 	MASTER_UNLOCK(&(rpcNack.mutex));
 	return;
     }
-#endif NEG_ACK
     /*
      * Acquire the server's mutex for multiprocessor synchronization.  We
      * synchronize with each server process with a mutex that is part of

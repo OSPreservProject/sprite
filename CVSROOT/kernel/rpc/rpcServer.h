@@ -125,6 +125,19 @@ typedef struct RpcServerState {
 } RpcServerState;
 
 /*
+ * These are data structures for sending negative acknowledgements when
+ * there's no server available to allocate to a client channel.  Since there's
+ * no server available, this stuff isn't part of the server state.
+ */
+typedef struct  NackData {
+    RpcHdr              rpcHdr;
+    RpcBufferSet        bufferSet;
+    Sync_Semaphore      mutex;
+} NackData;
+extern	NackData	rpcNack;
+
+
+/*
  * Definitions of state bits for a remote procedure call.
  *  SRV_NOTREADY	The server has no buffer space yet.
  *  SRV_FREE		The server is free.
@@ -155,11 +168,20 @@ typedef struct RpcServerState {
  * The server's state table has a maximum number of entries, but not all
  * the entries are initialized and have an associated process.  The current
  * number of existing server processes is recorded in rpcNumServers.  Up to
- * rpcMaxServer processes may be created by Rpc_Deamon.
+ * rpcMaxServer processes may be created by Rpc_Deamon.  rpcMaxServers may
+ * not be set above rpcAbsoluteMaxServers.  (This is for allowing the
+ * maximum number of servers to be changed by a system call and thus set
+ * in boot scripts differently for different servers.)
  */
 extern RpcServerState **rpcServerPtrPtr;
 extern int		rpcMaxServers;
 extern int		rpcNumServers;
+extern int		rpcAbsoluteMaxServers;
+
+/*
+ * Whether or not the server should send negative acknowledgements.
+ */
+extern	Boolean		rpcSendNegAcks;
 
 /*
  * The service procedure switch. This is indexed by procedure number.

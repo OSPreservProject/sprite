@@ -70,17 +70,14 @@ static int 		dbgCtr;
 #define CHAN_TRACE(zchanPtr, serverID, string)
 #endif
 
-#ifdef NEG_ACK
-#define NACK_RETRY_POLICY	1
-#define	NACK_CHANNEL_POLICY	2
-int	nackPolicy = NACK_RETRY_POLICY;
-int	nackRetryWait;
-int	maxNackWait;
-#define RPC_NACK_ERROR	0x3000b		/* move to status.h after testing */
-
-/* Use policy of ramping down channels for neg acks? Default is use backoff */
+/* Variables to control nack back-off on client. */
+int	rpcNackRetryWait;
+int	rpcMaxNackWait;
+/*
+ * This variable determines whether we use client policy of ramping down
+ * channels for neg acks.  The default is to use backoff.
+ */
 Boolean	rpcChannelNegAcks = FALSE;
-#endif NEG_ACK
 
 
 /*
@@ -222,11 +219,9 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		 * Note old message.
 		 */
 		rpcCltStat.oldInputs++;
-#ifdef NEG_ACK
+
 	    } else if (rpcHdrPtr->flags & RPC_NACK) {
-#ifdef NOTDEF
 		rpcCltStat.nacks++;
-#endif NOTDEF
 		/*
 		 * Try out different nack-handling policies.  
 		 * We can either back off as in an ACK, or try to ramp
@@ -234,22 +229,26 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		 */
 		if (serverID != RPC_BROADCAST_SERVER_ID) {
 		    numTries = 0;
-		    if (nackPolicy == NACK_RETRY_POLICY) {
-			if (wait < nackRetryWait) {
-			    wait = nackRetryWait;
+		    if (!rpcChannelNegAcks) {
+			if (wait < rpcNackRetryWait) {
+			    wait = rpcNackRetryWait;
 			} else {
+			    Net_HostPrint(serverID,
+			    "Client backing off again from negative ack.\n");
 			    wait *= 2;
+			    rpcCltStat.reNacks++;
 			}
-			if (wait > maxNackWait) {
-			    wait = maxNackWait;
+			if (wait > rpcMaxNackWait) {
+			    Net_HostPrint(serverID,
+			    "Client setting max backoff from negative ack.\n");
+			    wait = rpcMaxNackWait;
+			    rpcCltStat.maxNacks++;
 			}
 		    } else {
-			/* Assume NACK_CHANNELS_POLICY */
+			/* Return error to cause ramping down of channels. */
 			error = RPC_NACK_ERROR; 
 		    }
 		}
-		printf("Client received negative acknowledgement.\n");
-#endif NEG_ACK
 	    } else if (rpcHdrPtr->flags & RPC_REPLY) {
 		/*
 		 * Our reply, check for an error code and break from the

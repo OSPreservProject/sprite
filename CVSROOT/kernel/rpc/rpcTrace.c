@@ -175,6 +175,9 @@ Rpc_PrintTrace(numRecords)
 	    case RPC_REPLY:
 		flagString[0] = 'R';
 		break;
+	    case RPC_NACK:
+		flagString[0] = 'N';
+		break;
 	    case RPC_ACK:
 		flagString[0] = 'A';
 		break;

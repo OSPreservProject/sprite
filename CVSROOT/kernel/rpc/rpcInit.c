@@ -20,17 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "net.h"
 
-#ifdef NEG_ACK
-typedef struct	NackData {
-    RpcHdr		rpcHdr;
-    RpcBufferSet	bufferSet;
-    Sync_Semaphore	mutex;
-} NackData;
-extern	NackData	rpcNack;
-extern	int	nackRetryWait;
-extern	int	maxNackWait;
-#endif NEG_ACK
-
 /*
  * These are the rpc version numbers, both in native format and in
  * byte-swapped format. 
@@ -189,12 +178,22 @@ Rpc_Init()
 	}
 
     }
-#ifdef NEG_ACK
+    /*
+     * Initiallize server nack buffers.
+     */
     RpcBufferInit(&(rpcNack.rpcHdr), &(rpcNack.bufferSet), -1, -1);
+
+    /*
+     * Initialize client's table on whether servers are sending negatvie
+     * acknowledgements or not (if channel ramping-down is used).
+     */
     RpcInitServerChannelState();
-    nackRetryWait = 2 * timer_IntOneSecond;
-    maxNackWait = 15 * timer_IntOneSecond;
-#endif NEG_ACK
+
+    /*
+     * Initialize neg-ack back-off constants on clients.
+     */
+    rpcNackRetryWait = 2 * timer_IntOneSecond;
+    rpcMaxNackWait = 15 * timer_IntOneSecond;
 
     /*
      * Initialize the servers' state table.  Most slots are left

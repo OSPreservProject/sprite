@@ -204,9 +204,9 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	srvPtr = RpcServerAlloc(rpcHdrPtr);
 	if (srvPtr == (RpcServerState *)NIL) {
 	    rpcSrvStat.noAlloc++;
-#ifdef NEG_ACK
-	    RpcServerDispatch(srvPtr, rpcHdrPtr);
-#endif NEG_ACK
+	    if (rpcSendNegAcks) {
+		RpcServerDispatch(srvPtr, rpcHdrPtr);
+	    }
 	} else {
 	    RpcServerDispatch(srvPtr, rpcHdrPtr);
 	}

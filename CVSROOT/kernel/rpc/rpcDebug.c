@@ -172,6 +172,84 @@ Rpc_GetStats(command, option, argPtr)
 	    }
 	    break;
 	}
+	case SYS_RPC_SET_MAX: {
+	    /*
+	     * Set the maximum number of server procs allowed.  This can't
+	     * go higher than the absolute maximum.
+	     */
+	    if (option <= 0) {
+		printf("Warning: asked to set max number of rpc server ");
+		printf("procs to %d.  I won't do this.\n", option);
+	    } if (option < rpcNumServers) {
+		printf("Warning: asked to set max number of rpc server ");
+		printf("procs to %d which is less than the current ", option);
+		printf("number of procs: %d.\n", rpcNumServers);
+		printf("I can't do this.\n");
+	    } else if (option > rpcAbsoluteMaxServers) {
+		printf("Warning: asked to set max number of rpc server ");
+		printf("procs to %d which is above the absolute ", option);
+		printf("maximum of %d.\n", rpcAbsoluteMaxServers);
+		printf("Setting this to maximum instead.\n");
+		rpcMaxServers = rpcAbsoluteMaxServers;
+	    } else {
+		printf("Setting max number of server procs to %d.\n", option);
+		rpcMaxServers = option;
+	    }
+	    break;
+	}
+	case SYS_RPC_SET_NUM: {
+	    /*
+	     * Set the number of rpc processes to the given number, if
+	     * there aren't already that many.
+	     */
+	    int	pid;
+
+	    if (option <= 0) {
+		printf("Warning: asked to set number of rpc server ");
+		printf("procs to %d.  I won't do this.\n", option);
+	    } else if (option < rpcNumServers) {
+		printf("There are already %d server procs, ", rpcNumServers);
+		printf("and I won't kill them.\n");
+	    } else if (option > rpcMaxServers) {
+		printf("Warning: asked to set number of rpc server ");
+		printf("procs to %d, which is above the maximum of %d\n",
+			option, rpcMaxServers);
+		printf("I'll create up to the maximum.\n");
+		while (rpcNumServers < rpcMaxServers) {
+		    if (Rpc_CreateServer(&pid) == SUCCESS) {
+			printf("RPC srvr %x\n", pid);
+			RpcResetNoServers(0);
+		    } else {
+			printf("Warning: no more RPC servers\n");
+			RpcResetNoServers(-1);
+		    }
+		}
+	    } else {
+		/* create the correct number */
+		while (rpcNumServers < option) {
+		    if (Rpc_CreateServer(&pid) == SUCCESS) {
+			printf("RPC srvr %x\n", pid);
+			RpcResetNoServers(0);
+		    } else {
+			printf("Warning: no more RPC servers\n");
+			RpcResetNoServers(-1);
+		    }
+		}
+	    }
+	    break;
+	}
+	case SYS_RPC_NEG_ACKS: {
+	    printf("Turning negative acknowledgements %s.\n",
+		    option ? "on" : "off");
+	    rpcSendNegAcks = option;
+	    break;
+	}
+	case SYS_RPC_CHANNEL_NEG_ACKS: {
+	    printf("Turning client policy of ramping down channels %s.\n",
+		    option ? "on" : "off");
+	    rpcChannelNegAcks = option;
+	    break;
+	}
 	case SYS_RPC_CLT_STATS: {
 	    register Rpc_CltStat *cltStatPtr;
 

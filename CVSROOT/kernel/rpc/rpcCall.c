@@ -22,10 +22,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpcTrace.h"
 #include "rpcHistogram.h"
 #include "sys.h"
-#ifdef NEG_ACK
 #include "timerTick.h"
 #include "timer.h"
-#endif NEG_ACK
 
 /*
  * So we can print out rpc names we include the rpcServer definitions.
@@ -72,7 +70,11 @@ unsigned int rpcBootID = 0;
  */
 int rpcClientCalls[RPC_LAST_COMMAND+1];
 
-#ifdef NEG_ACK
+/*
+ * For one of the client policies for handling negative acknowledgements,
+ * we ramp down the number of channels used with the ailing server.  These
+ * data structures keep track of which servers are unhappy.
+ */
 typedef struct	UnhappyServer {
     int		serverID;
     Timer_Ticks	time;
@@ -80,10 +82,12 @@ typedef struct	UnhappyServer {
 
 UnhappyServer	serverAllocState[8];
 
+/* Initial back-off interval for negative acknowledgements. */
 unsigned int	channelStateInterval;
-#define RPC_NACK_ERROR	0x3000b		/* move to status.h after testing */
-    
-#endif NEG_ACK
+
+/* forward declaration */
+extern	void	RpcSetChannelAllocStateInt();
+extern	void	RpcSetChannelAllocState();
 
 
 /*
@@ -150,9 +154,7 @@ Rpc_Call(serverID, command, storagePtr)
     RPC_NIL_TRACE(RPC_CLIENT_A, "Rpc_Call");
 #endif /* TIMESTAMP */
 
-#ifdef NEG_ACK
 allocAgain:
-#endif
     RPC_CALL_TIMING_START(command, &histTime);
     chanPtr = RpcChanAlloc(serverID);
 
@@ -197,16 +199,15 @@ allocAgain:
 #endif /* TIMESTAMP */
 
     RPC_CALL_TIMING_END(command, &histTime);
-#ifdef NEG_ACK
     if (error == RPC_NACK_ERROR) {
-	/* reroute to usable channel */
-	/* Check how many channels for this server */
-	/* reduce to one. */
-	/* do something to be able to unreduce! */
+	/*
+	 * This error is only returned if the client policy for handling
+	 * negative acknowledgements is to ramp down the number of channels
+	 * used, so that's what we do.
+	 */
 	RpcSetChannelAllocState(serverID, TRUE);
 	goto allocAgain;
     }
-#endif NEG_ACK
 #ifndef NO_RECOVERY
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
 	if (command != RPC_ECHO_2) {
@@ -345,7 +346,6 @@ static int 		debugCtr;
 #define CHAN_TRACE(channel, string)
 #endif
 
-#ifdef NEG_ACK
 
 /*
  *----------------------------------------------------------------------
@@ -382,12 +382,48 @@ RpcGetChannelAllocState(serverID, time)
     *time = serverAllocState[i].time;
     return TRUE;
 }
-    
+
+
 
 /*
  *----------------------------------------------------------------------
  *
- * RpcSetChannelAllocState --
+ * RpcSetChannelAllocState--
+ *
+ *	Set the state of channel allocation in regards to a certain server.
+ *	If we've been getting "noAllocs" back from a server, we want to
+ *	ramp down our use of it by using fewer client channels with it.
+ *	This routine includes a master lock around it for places where
+ *	it's called unprotected.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+RpcSetChannelAllocState(serverID, trouble)
+    int		serverID;
+    Boolean	trouble;
+{
+
+    MASTER_LOCK(&rpcMutex);
+
+    RpcSetChannelAllocStateInt(serverID, trouble);
+
+    MASTER_UNLOCK(&rpcMutex);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcSetChannelAllocStateInt --
  *
  *	Set the state of channel allocation in regards to a certain server.
  *	If we've been getting "noAllocs" back from a server, we want to
@@ -402,15 +438,17 @@ RpcGetChannelAllocState(serverID, time)
  *----------------------------------------------------------------------
  */
 void
-RpcSetChannelAllocState(serverID, trouble)
+RpcSetChannelAllocStateInt(serverID, trouble)
     int		serverID;
     Boolean	trouble;
 {
     int		i;
     Boolean	found = FALSE;
 
+
     for (i = 0; i < (sizeof (serverAllocState) / sizeof (UnhappyServer)); i++) {
 	if (serverAllocState[i].serverID == serverID) {
+	    /* already marked as unhappy */
 	    found = TRUE;
 	    break;
 	}
@@ -420,7 +458,7 @@ RpcSetChannelAllocState(serverID, trouble)
 	return;
     }
     if (!found) {
-	found = FALSE;
+	/* Server is in trouble, we need to record this. */
 	for (i = 0; i < (sizeof (serverAllocState) / sizeof (UnhappyServer));
 		i++) {
 	    if (serverAllocState[i].serverID == -1) {
@@ -430,21 +468,28 @@ RpcSetChannelAllocState(serverID, trouble)
 	}
 	if (!found) {
 	    /* No more spaces to mark unhappy server! */
-	    printf("RpcSetChannelAllocState: %s\n",
+	    rpcCltStat.noMark++;
+	    printf("RpcSetChannelAllocStateInt: %s\n",
 		    "No more room to keep track of congested servers.");
 	    return;
 	}
     }
     if (trouble) {
 	Timer_GetCurrentTicks(&(serverAllocState[i].time));
+	if (serverAllocState[i].serverID == -1) {
+	    rpcCltStat.newTrouble++;
+	} else {
+	    rpcCltStat.moreTrouble++;
+	}
 	serverAllocState[i].serverID = serverID;
     } else {
+	rpcCltStat.endTrouble++;
 	serverAllocState[i].serverID = -1;
     }
 
     return;
 }
-#endif NEG_ACK
+
 
 /*
  *----------------------------------------------------------------------
@@ -474,26 +519,26 @@ RpcChanAlloc(serverID)
 {
     register RpcClientChannel *chanPtr;	/* The channel we allocate */
     register int i;			/* Index into channel table */
-    register int firstUnused = -1;	/* The first unused channel */
-#ifdef NEG_ACK
+    int firstUnused = -1;		/* The first unused channel */
     int firstBusy = -1;			/* The first busy channel for server */
     int firstFreeMatch = -1;		/* The first chan free for server */
+    int firstFree = -1;			/* The first chan used but now free */
     Timer_Ticks	time;			/* When server channel state set. */
     Timer_Ticks	currentTime;		/* Current ticks. */
     Boolean	result;			/* Result of function call. */
-#endif NEG_ACK
-    register int firstFree = -1;	/* The first chan used but now free */
 
     MASTER_LOCK(&rpcMutex);
-#ifdef NEG_ACK
-waitForBusyChannel:
-#endif NEG_ACK
+
     while (numFreeChannels < 1) {
 	rpcCltStat.chanWaits++;
+waitForBusyChannel:
 	Sync_MasterWait(&freeChannels, &rpcMutex, FALSE);
     }
+    firstUnused = -1;
+    firstBusy = -1;
+    firstFreeMatch = -1;
+    firstFree = -1;
 
-#ifdef NEG_ACK
     result = RpcGetChannelAllocState(serverID, &time);
     if (result) {
 	Timer_AddIntervalToTicks(time, channelStateInterval, &time);
@@ -502,11 +547,9 @@ waitForBusyChannel:
     if (result && (Timer_TickGE(time, currentTime))) {
 	/*
 	 * Server is congested, so ramp down use of channels.
-	 * If there's a channel, free or busy, with the server we want,
-	 * wait for it.  Make sure it's not stuck busy or something,
-	 * or put a retry limit on this.  Set something up so we know
-	 * we've done this with this server so that we know to undo it.
-	 * If no channel for this server, take free one.
+	 * If there's a channel, free or busy, for our server, use the
+	 * lowest numbered one.  If it's busy, wait till it's not.  If there's
+	 * no channel for this server, take free one.
 	 */
 	for (i=0 ; i<rpcNumChannels ; i++) {
 	    chanPtr = rpcChannelPtrPtr[i];
@@ -532,33 +575,40 @@ waitForBusyChannel:
 		}
 	    }
 	}
-	if (firstFreeMatch < 0 && firstBusy < 0) {
-	    /* No channel for our serverID - so create one. */
-	    /* Fall through in case of Free or Unused */
-	} else if (firstFreeMatch >= 0) {
-	    if (firstBusy == -1 || firstBusy > firstFreeMatch) {
-		/* got it. */
-		goto found;
-	    } else {
-		/* We need to wait for busy one to free up. */
-		goto waitForBusyChannel;
-	    }
-	} else {
+	if (firstFreeMatch >= 0 &&
+		(firstBusy == -1 || firstBusy > firstFreeMatch)) {
 	    /*
-	     * Busy one, wait for it to free up.  What will we do if it
-	     * never frees up?
+	     * We've found a free channel matching our server ID and there
+	     * isn't a busy one for our server ID of lower number, so take
+	     * this one.
 	     */
+	    chanPtr = rpcChannelPtrPtr[firstFreeMatch];
+	    goto found;
+	}
+	if (firstBusy > 0) {
+	    /*
+	     * There's a busy channel matching our server ID and either it's
+	     * of lower number than a free channel matching our serverID or
+	     * else there's no free channel matching our server ID.  Wait for
+	     * this one to free up.
+	     */
+	    rpcCltStat.nackChanWait++;
 	    goto waitForBusyChannel;
 	}
-	/* Fall through in case of Free or Unused */
+	/*
+	 * Otherwise, there's no free our busy channel matching our server ID
+	 * so we'll create one in the code later down below.
+	 */
     } else {
+	/*
+	 * Server is not congested.  Make sure it's marked okay, and allocate
+	 * a channel in the regular fasion.
+	 */
 	if (result) {
 	    /* Mark server as okay now. */
-	    RpcSetChannelAllocState(serverID, FALSE);
+	    RpcSetChannelAllocStateInt(serverID, FALSE);
 	}
 	/* use regular alloc */
-	
-#endif NEG_ACK
 
 	for (i=0 ; i<rpcNumChannels ; i++) {
 	    chanPtr = rpcChannelPtrPtr[i];
@@ -589,9 +639,7 @@ waitForBusyChannel:
 		}
 	    }
 	}
-#ifdef NEG_ACK
     }
-#endif NEG_ACK
     /*
      * We didn't find an address match on a free channel, so we use
      * the first previously unused channel or the first used but free channel.
@@ -646,7 +694,7 @@ RpcChanFree(chanPtr)
     chanPtr->state = CHAN_FREE;
 
     numFreeChannels++;
-    if (numFreeChannels == 1) {
+    if (numFreeChannels == 1 || rpcChannelNegAcks) {
 	rpcCltStat.chanBroads++;
 	Sync_MasterBroadcast(&freeChannels);
     }
@@ -727,7 +775,6 @@ RpcChanClose(chanPtr,rpcHdrPtr)
     }
 }
 
-#ifdef NEG_ACK
 
 /*
  *----------------------------------------------------------------------
@@ -755,4 +802,3 @@ RpcInitServerChannelState()
     }
     channelStateInterval = timer_IntOneSecond * 10;
 }
-#endif NEG_ACK

@@ -181,6 +181,18 @@ extern RpcClientChannel **rpcChannelPtrPtr;
 extern int		  rpcNumChannels;
 
 /*
+ * These are variables to control handling of negative acknowledgement
+ * back-off on the clients.  Maybe they should be in the client channel
+ * state?  But there's no server state associated with the negative ack,
+ * so this wouldn't necessarily make sense.
+ */
+extern	int	rpcNackRetryWait;
+extern	int	rpcMaxNackWait;
+
+/* Whether or not client ramps down channels in response to a neg. ack. */
+extern	Boolean	rpcChannelNegAcks;
+
+/*
  * A histogram of the call times for the different RPCs.
  */
 extern Rpc_Histogram	*rpcCallTime[];
