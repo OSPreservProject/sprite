@@ -73,6 +73,10 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
  * The register state for a process.
  */
 typedef struct {
+    double	aligner;			/* Force the compiler to start
+						 * regs on a double word boundry
+						 * so that st_64's can be used.
+						 */
     int		regs[MACH_NUM_ACTIVE_REGS][2];	/* Registers at time of trap.*/
     int		kpsw;				/* Kernel psw. */
     int		upsw;				/* User psw. */
