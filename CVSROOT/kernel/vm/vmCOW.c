@@ -220,9 +220,11 @@ DoFork(srcSegPtr, destSegPtr)
 	    /*
 	     * Need to make the src copy-on-write and the dest copy-on-ref.
 	     */
-	    virtAddr.page = virtPage;
 	    *srcPTEPtr |= VM_COW_BIT;
-	    VmMach_SetPageProt(&virtAddr, *srcPTEPtr);
+	    if (*srcPTEPtr & VM_PHYS_RES_BIT) {
+		virtAddr.page = virtPage;
+		VmMach_SetPageProt(&virtAddr, *srcPTEPtr);
+	    }
 	    numCOWPages++;
 	    *destPTEPtr = corPTE;
 	    numCORPages++;
