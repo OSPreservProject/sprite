@@ -267,7 +267,7 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		while (*machType != '\0') {
 		    *compPtr++ = *machType++;
 		    if (compPtr - component >= FS_MAX_NAME_LENGTH) {
-			status = FS_FILE_NOT_FOUND;
+			status = FS_INVALID_ARG;
 			goto endScan;
 		    }
 		}
@@ -278,7 +278,7 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		*compPtr++ = *curCharPtr++;
 	    }
 	    if (compPtr - component >= FS_MAX_NAME_LENGTH) {
-		status = FS_FILE_NOT_FOUND;
+		status = FS_INVALID_ARG;
 		goto endScan;
 	    }
 	}
@@ -2314,7 +2314,7 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
 #ifdef lint
     (void) Fsdm_BlockAllocate((Fs_HandleHeader *)handlePtr, offset, length,
 			0, &blockAddr, &newBlock);
-    (void) FsrmtBlockAllocate((Fs_HandleHeader *)handlePtr, offset, length,
+    (void) FsrmtFileBlockAllocate((Fs_HandleHeader *)handlePtr, offset, length,
 			0, &blockAddr, &newBlock);
 #endif /* lint */
     if (blockAddr == FSDM_NIL_INDEX) {
