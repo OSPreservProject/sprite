@@ -1610,7 +1610,7 @@ FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr)
     register FsDeviceIOHandle *devHandlePtr =
 	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
     register Fs_Device	*devicePtr = &devHandlePtr->device;
-    register ReturnStatus status;
+    register ReturnStatus status = SUCCESS;
     static Boolean warned = FALSE;
 
     switch (ioctlPtr->command) {
@@ -1621,19 +1621,8 @@ FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr)
 			&streamPtr->hdr.fileID);
 	    FsHandleUnlock(devHandlePtr);
 	    break;
-	case IOC_PREFIX:{
-	    FsPrefix	*prefixPtr;
-	    prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
-	    if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
-		status = GEN_INVALID_ARG;
-		break;
-	    }
-	    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
-	    replyPtr->length = prefixPtr->prefixLength;
-	    status = SUCCESS;
+	case IOC_PREFIX:
 	    break;
-	}
-
 	default:
 	    if (!(devHandlePtr->flags & FS_DEV_DONT_LOCK)) { 
 		FsHandleLock(devHandlePtr);

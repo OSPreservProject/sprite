@@ -312,18 +312,9 @@ FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
 	case IOC_MAP:
 	    status = GEN_NOT_IMPLEMENTED;
 	    break;
-	case IOC_PREFIX:{
-	    FsPrefix	*prefixPtr;
-	    prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
-	    if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
-		status = GEN_INVALID_ARG;
-		break;
-	    }
-	    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
-	    replyPtr->length = prefixPtr->prefixLength;
+	case IOC_PREFIX:
 	    status = SUCCESS;
 	    break;
-	}
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
