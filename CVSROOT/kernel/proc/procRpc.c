@@ -371,7 +371,14 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     Byte_EmptyBuffer(dataPtr, int, code);
 
     Proc_Unlock(procPtr);
+
+    /*
+     * Remove the dependency on the other host.
+     */
+    Proc_RemoveMigDependency(procPtr->processID);
+
     ProcExitProcess(procPtr, reason, status, code, FALSE);
+
     if (proc_MigDebugLevel > 4) {
 	Sys_Printf("RpcProcExit returning SUCCESS.\n");
     }
@@ -471,6 +478,11 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
      * Have the new process inherit filesystem state.
      */
     Fs_InheritState(parentProcPtr, childProcPtr);
+
+    /*
+     * Note the dependency of the new process on the other host.
+     */
+    Proc_AddMigDependency(childProcPtr->processID, childProcPtr->peerHostID);
 
     /*
      * Send back the child's process ID in the replyData buffer.
