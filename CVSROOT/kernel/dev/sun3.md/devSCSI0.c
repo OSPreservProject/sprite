@@ -4,9 +4,11 @@
  *	Driver routines specific to the original Sun Host Adaptor.
  *	This lives either on the Multibus or the VME.  It does
  *	not support dis-connect/connect.
+ * 	This information is derived from Sun's "Manual for Sun SCSI
+ *	Programmers", which details the layout of the this implementation
+ *	of the Host Adaptor, the device that interfaces to the SCSI Bus.
  *
  * Copyright 1986 Regents of the University of California
- * All rights reserved.
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright
@@ -23,31 +25,205 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "mach.h"
+#include "scsi0.h"
 #include "dev.h"
 #include "devInt.h"
 #include "scsi.h"
-#include "devSCSI.h"
+#include "scsiHBA.h"
+#include "scsiDevice.h"
 #include "devMultibus.h"
-#include "devDiskLabel.h"
-#include "vm.h"
 #include "sync.h"
-#include "proc.h"	/* for Mach_SetJump */
-#include "sched.h"
+#include "stdlib.h"
 
-void		DevSCSI0Reset();
-ReturnStatus	DevSCSI0Command();
-Boolean		DevSCSI0Intr();
+/*
+ * The device registers for the original Sun SCSI Host Adaptor.
+ * Through these registers the SCSI bus is controlled.  There are the
+ * usual status and control bits, and there are also registers through
+ * which command blocks and status blocks are transmitted.  This format
+ * is defined on Page 10. of Sun's SCSI Programmers' Manual.
+ */
+typedef struct CtrlRegs {
+    unsigned char data;		/* Data register.  Contains the ID of the
+				 * SCSI "target", or controller, for the 
+				 * SELECT phase. Also, leftover odd bytes
+				 * are left here after a read. */
+    unsigned char pad1;		/* The other half of the data register which
+				 * is never used by us */
+    unsigned char commandStatus;/* Command and status blocks are passed
+				 * in and out through this */
+    unsigned char pad2;		/* The other half of the commandStatus register
+				 * which never contains useful information */
+    unsigned short control;	/* The SCSI interface control register.
+				 * Bits are defined below */
+    unsigned short pad3;
+    unsigned int dmaAddress;	/* Target address for DMA */
+    short 	dmaCount;	/* Number of bytes for DMA.  Initialize this
+				 * this to minus the byte count minus 1 more,
+				 * and the device increments to -1. If this
+				 * is 0 or 1 after a transfer then there was
+				 * a DMA overrun. */
+    unsigned char pad4;
+    unsigned char intrVector;	/* For VME, Index into autovector */
+} CtrlRegs;
+
+/*
+ * Control bits in the SCSI Host Interface control register.
+ *
+ *	SCSI_PARITY_ERROR There was a parity error on the SCSI bus.
+ *	SCSI_BUS_ERROR	There was a bus error on the SCSI bus.
+ *	SCSI_ODD_LENGTH An odd byte is left over in the data register after
+ *			a read or write.
+ *	SCSI_INTERRUPT_REQUEST bit checked by polling routine.  If a command
+ *			block is sent and the SCSI_INTERRUPT_ENABLE bit is
+ *			NOT set, then the appropriate thing to do is to
+ *			wait around (poll) until this bit is set.
+ *	SCSI_REQUEST	Set by controller to start byte passing handshake.
+ *	SCSI_MESSAGE	Set by a controller during message phase.
+ *	SCSI_COMMAND	Set during the command, status, and messages phase.
+ *	SCSI_INPUT	If set means data (or commandStatus) set by device.
+ *	SCSI_PARITY	Used to test the parity checking hardware.
+ *	SCSI_BUSY	Set by controller after it has been selected.
+ *  The following bits can be set by the CPU.
+ *	SCSI_SELECT	Set by the host when it want to select a controller.
+ *	SCSI_RESET	Set by the host when it want to reset the SCSI bus.
+ *	SCSI_PARITY_ENABLE	Enable parity checking on transfer
+ *	SCSI_WORD_MODE		Send 2 bytes at a time
+ *	SCSI_DMA_ENABLE		Do DMA, always used.
+ *	SCSI_INTERRUPT_ENABLE	Interrupt upon completion.
+ */
+#define SCSI_PARITY_ERROR		0x8000
+#define SCSI_BUS_ERROR			0x4000
+#define SCSI_ODD_LENGTH			0x2000
+#define SCSI_INTERRUPT_REQUEST		0x1000
+#define SCSI_REQUEST			0x0800
+#define SCSI_MESSAGE			0x0400
+#define SCSI_COMMAND			0x0200
+#define SCSI_INPUT			0x0100
+#define SCSI_PARITY			0x0080
+#define SCSI_BUSY			0x0040
+#define SCSI_SELECT			0x0020
+#define SCSI_RESET			0x0010
+#define SCSI_PARITY_ENABLE		0x0008
+#define SCSI_WORD_MODE			0x0004
+#define SCSI_DMA_ENABLE			0x0002
+#define SCSI_INTERRUPT_ENABLE		0x0001
+
+/* Forward declaration. */
+typedef struct Controller Controller;
+
+/*
+ * Device - The data structure containing information about a device. One of
+ * these structure is kept for each attached device. Note that is structure
+ * is casted into a ScsiDevice and returned to higher level software.
+ * This implies that the ScsiDevice must be the first field in this
+ * structure.
+ */
+
+typedef struct Device {
+    ScsiDevice handle;	/* Scsi Device handle. This is the only part
+			 * of this structure visible to higher 
+			 * level software. MUST BE FIRST FIELD IN STRUCTURE.
+			 */
+    int	targetID;	/* SCSI Target ID of this device. Note that
+			 * the LUN is store in the device handle.
+			 */
+    Controller *ctrlPtr;	/* Controller to which device is attached. */
+		   /*
+		    * The following part of this structure is 
+		    * used to handle SCSI commands that return 
+		    * CHECK status. To handle the REQUEST SENSE
+		    * command we must: 1) Save the state of the current
+		    * command into the "struct FrozenCommand". 2) Submit
+		    * a request sense command formatted in SenseCmd
+		    * to the device.
+		    */
+    struct FrozenCommand {		       
+	ScsiCmd	*scsiCmdPtr;	   /* The frozen command. */
+	unsigned char statusByte; /* It's SCSI status byte, Will always have
+				   * the check bit set.  */
+	int amountTransferred;    /* Number of bytes transferred by this 
+				   * command.  */
+    } frozen;	
+    char senseBuffer[DEV_MAX_SENSE_BYTES]; /* Data buffer for request sense */
+    ScsiCmd		SenseCmd;  	   /* Request sense command buffer. */
+} Device;
+
+/*
+ * Controller - The Data structure describing a sun SCSI0 controller. One
+ * of these structures exists for each active SCSI0 HBA on the system. Each
+ * controller may have from zero to 56 (7 targets each with 8 logical units)
+ * devices attached to it. 
+ */
+struct Controller {
+    CtrlRegs *regsPtr;	/* Pointer to the registers of this controller. */
+    int	    dmaState;	/* DMA state for this controller, defined below. */
+    char    *name;	/* String for error message for this controller.  */
+    DevCtrlQueues devQueues;    /* Device queues for devices attached to this
+				 * controller.	 */
+    Sync_Semaphore mutex; /* Lock protecting controller's data structures. */
+    Device     *devPtr;	   /* Current active command. */
+    ScsiCmd   *scsiCmdPtr; /* Current active command. */
+    Address   dmaBuffer;  /* dma buffer allocated for request. */
+    Device  *devicePtr[8][8]; /* Pointers to the device attached to the 
+			       * controller index by [targetID][LUN].
+			       * NIL if device not attached yet. Zero if
+			       * device conflicts with HBA address.  */
+
+};
+
+/* 
+ * SCSI_WAIT_LENGTH - the number of microseconds that the host waits for
+ *	various control lines to be set on the SCSI bus.  The largest wait
+ *	time is when a controller is being selected.  This delay is
+ *	called the Bus Abort delay and is about 250 milliseconds.
+ */
+#define SCSI_WAIT_LENGTH		250000
+
+/*
+ * Possible values for the dmaState state field of a controller.
+ *
+ * DMA_RECEIVE  - data is being received from the device, such as on
+ *	a read, inquiry, or request sense.
+ * DMA_SEND     - data is being send to the device, such as on a write.
+ * DMA_INACTIVE - no data needs to be transferred.
+ */
+
+#define DMA_RECEIVE 0
+#define	DMA_SEND 1
+#define	DMA_INACTIVE 2
+/*
+ * Test, mark, and unmark the controller as busy.
+ */
+#define	IS_CTRL_BUSY(ctrlPtr)	((ctrlPtr)->scsiCmdPtr != (ScsiCmd *) NIL)
+#define	SET_CTRL_BUSY(ctrlPtr,scsiCmdPtr) \
+		((ctrlPtr)->scsiCmdPtr = (scsiCmdPtr))
+#define	SET_CTRL_FREE(ctrlPtr)	((ctrlPtr)->scsiCmdPtr = (ScsiCmd *) NIL)
+
+/*
+ * MAX_SCSI0_CTRLS - Maximum number of SCSI0 controllers attached to the
+ *		     system. We set this to the maximum number of VME slots
+ *		     in any Sun2 system currently available.
+ */
+#define	MAX_SCSI0_CTRLS	4
+static Controller *Controllers[MAX_SCSI0_CTRLS];
+/*
+ * Highest number controller we have probed for.
+ */
+static int numSCSI0Controllers = 0;
+
+int devSCSI0Debug = 0;
+
+static void RequestDone();
+static ReturnStatus Wait();
 
 
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSI0Probe --
+ * Probe --
  *
  *	Probe memory for the old-style VME SCSI interface.  We rely
- *	on the fact that this occupies 4K of address space.  This should
- *	be called before ProbeNewAdaptor because the new adaptor looks
- *	very much like the old one.
+ *	on the fact that this occupies 4K of address space. 
  *
  * Results:
  *	TRUE if the host adaptor was found.
@@ -57,42 +233,33 @@ Boolean		DevSCSI0Intr();
  *
  *----------------------------------------------------------------------
  */
-Boolean
-DevSCSI0Probe(address, scsiPtr)
+static Boolean
+Probe(address)
     int address;			/* Alledged controller address */
-    register DevSCSIController *scsiPtr;	/* Controller state */
 {
-    volatile DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)address;
+    ReturnStatus	status;
+    register CtrlRegs *regsPtr = (CtrlRegs *)address;
+    short value;
 
-    if (Mach_SetJump(&scsiSetJumpState) == SUCCESS) {
-	/*
-	 * Touch the device. If it exists it occupies 4K.
-	 */
-	regsPtr->dmaCount = 0x4BCC;
-	regsPtr = (DevSCSI0Regs *)((int)address + 0x800);
-	regsPtr->dmaCount = 0x5BCC;
-    } else {
-	/*
-	 * Got a bus error trying to access the dma count register.
-	 */
-	Mach_UnsetJump();
-	return(FALSE);
+    /*
+     * Touch the device. If it exists it occupies 4K.
+     */
+    value = 0x4BCC;
+    status = Mach_Probe(sizeof(regsPtr->dmaCount), (char *) &value,
+			(char *) &(regsPtr->dmaCount));
+    if (status == SUCCESS) {
+	value = 0x5BCC;
+	status = Mach_Probe(sizeof(regsPtr->dmaCount),(char *) &value,
+			  ((char *) &(regsPtr->dmaCount)) + 0x800);
     }
-    Mach_UnsetJump();
-    scsiPtr->type = SCSI0;
-    scsiPtr->onBoard = FALSE;
-    scsiPtr->udcDmaTable = (DevUDCDMAtable *)NIL;
-    scsiPtr->resetProc = DevSCSI0Reset;
-    scsiPtr->commandProc = DevSCSI0Command;
-    scsiPtr->intrProc = DevSCSI0Intr;
-    return(TRUE);
+    return(status == SUCCESS);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSI0Reset --
+ * Reset --
  *
  *	Reset a SCSI bus controlled by the orignial Sun Host Adaptor.
  *
@@ -104,11 +271,11 @@ DevSCSI0Probe(address, scsiPtr)
  *
  *----------------------------------------------------------------------
  */
-void
-DevSCSI0Reset(scsiPtr)
-    DevSCSIController *scsiPtr;
+static void
+Reset(ctrlPtr)
+    Controller *ctrlPtr;
 {
-    volatile DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
+    volatile CtrlRegs *regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
 
     regsPtr->control = SCSI_RESET;
     MACH_DELAY(100);
@@ -118,14 +285,10 @@ DevSCSI0Reset(scsiPtr)
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSI0Command --
+ * SendCommand --
  *
  *      Send a command to a controller on the old-style SCSI Host Adaptor
- *      indicated by scsiPtr.  The control block needs to have
- *      been set up previously with DevSCSISetupCommand.  If the interrupt
- *      argument is WAIT (FALSE) then this waits around for the command to
- *      complete and checks the status results.  Otherwise Dev_SCSIIntr
- *      will be invoked later to check completion status.
+ *      indicated by devPtr.  
  *
  *	Note: the ID of the controller is never placed on the bus
  *	(contrary to standard protocol, but necessary for the early Sun
@@ -139,40 +302,40 @@ DevSCSI0Reset(scsiPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevSCSI0Command(targetID, scsiPtr, size, addr, interrupt)
-    int targetID;			/* Id of the SCSI device to select */
-    DevSCSIController *scsiPtr;		/* The SCSI controller that will be
-					 * doing the command. The control block
-					 * within this specifies the unit
-					 * number and device address of the
-					 * transfer */
-    int size;				/* Number of bytes to transfer */
-    Address addr;			/* Kernel address of transfer */
-    int interrupt;			/* WAIT or INTERRUPT.  If INTERRUPT
-					 * then this procedure returns
-					 * after initiating the command
-					 * and the device interrupts
-					 * later.  If WAIT this polls
-					 * the SCSI interface register
-					 * until the command completes. */
+static ReturnStatus
+SendCommand(devPtr, scsiCmdPtr)
+    Device	 *devPtr;		/* Device to sent to. */
+    ScsiCmd	*scsiCmdPtr;		/* Command to send. */
 {
     register ReturnStatus status;
-    register DevSCSI0Regs *regsPtr;	/* Host Adaptor registers */
+    register CtrlRegs *regsPtr;		/* Host Adaptor registers */
     char *charPtr;			/* Used to put the control block
 					 * into the commandStatus register */
-    int i;
     int bits = 0;			/* variable bits to OR into control */
-    Boolean checkMsg = FALSE;		/* have DevSCSI0Wait check for
-					   a premature message */
+    int targetID;			/* Id of the SCSI device to select */
+    int size;				/* Number of bytes to transfer */
+    Address addr;			/* Kernel address of transfer */
+    Controller	*ctrlPtr;		/* HBA of device. */
+    int	i;
 
     /*
-     * Save some state needed by the interrupt handler to check errors.
+     * Set current active device and command for this controller.
      */
-    scsiPtr->command = scsiPtr->controlBlock.command;
-
-    regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
-    /*
+    ctrlPtr = devPtr->ctrlPtr;
+    SET_CTRL_BUSY(ctrlPtr,scsiCmdPtr);
+    ctrlPtr->dmaBuffer = (Address) NIL;
+    ctrlPtr->devPtr = devPtr;
+    size = scsiCmdPtr->bufferLen;
+    addr = scsiCmdPtr->buffer;
+    targetID = devPtr->targetID;
+    regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    if (size == 0) {
+	ctrlPtr->dmaState = DMA_INACTIVE;
+    } else {
+	ctrlPtr->dmaState = (scsiCmdPtr->dataToDevice) ? DMA_SEND :
+							 DMA_RECEIVE;
+    }
+   /*
      * Check against a continuously busy bus.  This stupid condition would
      * fool the code below that tries to select a device.
      */
@@ -184,8 +347,8 @@ DevSCSI0Command(targetID, scsiPtr, size, addr, interrupt)
 	}
     }
     if (i == SCSI_WAIT_LENGTH) {
-	DevSCSI0Reset(scsiPtr);
-	printf("SCSI bus stuck busy\n");
+	Reset(ctrlPtr);
+	printf("Warning: %s SCSI bus stuck busy\n", ctrlPtr->name);
 	return(FAILURE);
     }
     /*
@@ -200,14 +363,12 @@ DevSCSI0Command(targetID, scsiPtr, size, addr, interrupt)
     regsPtr->control = 0;
     regsPtr->data = (1 << targetID);
     regsPtr->control = SCSI_SELECT;
-    status = DevSCSI0Wait(scsiPtr, SCSI_BUSY, NO_RESET, FALSE);
+    status = Wait(ctrlPtr, SCSI_BUSY, FALSE);
     if (status != SUCCESS) {
 	regsPtr->data = 0;
 	regsPtr->control = 0;
-	if (scsiPtr->controlBlock.command != SCSI_TEST_UNIT_READY) {
-	    printf("SCSI-%d: can't select slave %d\n", 
-				 scsiPtr->number, targetID);
-	}
+        printf("Warning: %s: can't select device at %s\n", 
+				 ctrlPtr->name, devPtr->handle.locationName);
 	return(status);
     }
     /*
@@ -217,12 +378,16 @@ DevSCSI0Command(targetID, scsiPtr, size, addr, interrupt)
      * increments the dmaCount register until it reaches -1, hence the
      * funny initialization. See page 4 of Sun's SCSI Prog. Manual.
      */
+    if (ctrlPtr->dmaState != DMA_INACTIVE) {
+	ctrlPtr->dmaBuffer = addr = VmMach_DMAAlloc(size,scsiCmdPtr->buffer);
+    }
+    if (addr == (Address) NIL) {
+	panic("%s can't allocate DMA buffer of %d bytes\n", 
+			devPtr->handle.locationName, size);
+    }
     regsPtr->dmaAddress = (int)(addr - DEV_MULTIBUS_BASE);
     regsPtr->dmaCount = -size - 1;
-    bits = SCSI_WORD_MODE | SCSI_DMA_ENABLE;
-    if (interrupt == INTERRUPT) {
-	bits |= SCSI_INTERRUPT_ENABLE;
-    } 
+    bits = SCSI_WORD_MODE | SCSI_DMA_ENABLE | SCSI_INTERRUPT_ENABLE;
     regsPtr->control = bits;
 
     /*
@@ -232,21 +397,12 @@ DevSCSI0Command(targetID, scsiPtr, size, addr, interrupt)
      * we can send the next command byte to the controller.  All commands
      * are of "group 0" which means they are 6 bytes long.
      */
-    charPtr = (char *)&scsiPtr->controlBlock;
-    if (scsiPtr->devPtr->type == SCSI_WORM) {
-	checkMsg = TRUE;
-    }
-    for (i=0 ; i<sizeof(DevSCSIControlBlock) ; i++) {
-	status = DevSCSI0Wait(scsiPtr, SCSI_REQUEST, RESET, checkMsg);
-/*
- * This is just a guess.
- */
-	if (status == DEV_EARLY_CMD_COMPLETION) {
-	    return(SUCCESS);
-	}
+    charPtr = scsiCmdPtr->commandBlock;
+    for (i=0 ; i < scsiCmdPtr->commandBlockLen ; i++) {
+	status = Wait(ctrlPtr, SCSI_REQUEST, TRUE);
 	if (status != SUCCESS) {
-	    printf("SCSI-%d: couldn't send command block (i=%d)\n",
-				 scsiPtr->number, i);
+	    printf("Warning: %s couldn't send command block byte %d\n",
+				 ctrlPtr->name, i);
 	    return(status);
 	}
 	/*
@@ -254,36 +410,21 @@ DevSCSI0Command(targetID, scsiPtr, size, addr, interrupt)
 	 * is accepting control block bytes.
 	 */
 	if ((regsPtr->control & SCSI_COMMAND) == 0) {
-	    DevSCSI0Reset(scsiPtr);
-	    printf("SCSI-%d: device dropped command line\n",
-				 scsiPtr->number);
+	    Reset(ctrlPtr);
+	    printf("Warning: %s: device %s dropped command line\n",
+				ctrlPtr->name, devPtr->handle.locationName);
 	    return(DEV_HANDSHAKE_ERROR);
 	}
-	regsPtr->commandStatus = *charPtr;
+        regsPtr->commandStatus = *charPtr;
 	charPtr++;
     }
-    if (interrupt == WAIT) {
-	/*
-	 * A synchronous command.  Wait here for the command to complete.
-	 */
-	status = DevSCSI0Wait(scsiPtr, SCSI_INTERRUPT_REQUEST, RESET, FALSE);
-	if (status == SUCCESS) {
-	    scsiPtr->residual = -regsPtr->dmaCount -1;
-	    status = DevSCSI0Status(scsiPtr);
-	} else {
-	    printf("SCSI-%d: couldn't wait for command to complete\n",
-				 scsiPtr->number);
-	}
-    } else {
-	status = SUCCESS;
-    }
-    return(status);
+    return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSI0Status --
+ * GetStatusByte --
  *
  *	Complete an SCSI command by getting the status bytes from
  *	the device and waiting for the ``command complete''
@@ -300,20 +441,19 @@ DevSCSI0Command(targetID, scsiPtr, size, addr, interrupt)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevSCSI0Status(scsiPtr)
-    DevSCSIController *scsiPtr;
+static ReturnStatus
+GetStatusByte(ctrlPtr, statusBytePtr)
+    Controller *ctrlPtr;
+    unsigned char *statusBytePtr;
 {
     register ReturnStatus status;
-    register DevSCSI0Regs *regsPtr;
+    register CtrlRegs *regsPtr;
     short message;
     char statusByte;
-    char *statusBytePtr;
     int numStatusBytes = 0;
 
-    regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
-    statusBytePtr = (char *)&scsiPtr->statusBlock;
-    bzero((Address)statusBytePtr, sizeof(DevSCSIStatusBlock));
+    regsPtr = ctrlPtr->regsPtr;
+    *statusBytePtr = 0;
     for ( ; ; ) {
 	/*
 	 * Could probably wait either on the INTERUPT_REQUEST bit or the
@@ -323,44 +463,29 @@ DevSCSI0Status(scsiPtr)
 	 * status bytes have been received and that the byte in the
 	 * commandStatus register is the message byte.
 	 */
-	status = DevSCSI0Wait(scsiPtr, SCSI_REQUEST, RESET, FALSE);
+	status = Wait(ctrlPtr, SCSI_REQUEST, TRUE);
 	if (status != SUCCESS) {
-	    printf("SCSI-%d: wait error after %d status bytes\n",
-				 scsiPtr->number, numStatusBytes);
+	    printf("Warning: %s: wait error after %d status bytes\n",
+				 ctrlPtr->name, numStatusBytes);
 	    break;
 	}
 	if (regsPtr->control & SCSI_MESSAGE) {
 	    message = regsPtr->commandStatus & 0xff;
 	    if (message != SCSI_COMMAND_COMPLETE) {
-		printf("SCSI-%d: Unexpected message 0x%x\n",
-				     scsiPtr->number, message);
+		printf("Warning %s: Unexpected message 0x%x\n",
+				     ctrlPtr->name, message);
 	    }
 	    break;
 	}  else {
 	    /*
-	     * This is another status byte.  Place the first few status
+	     * This is another status byte.  Place the first status
 	     * bytes into the status block.
 	     */
 	    statusByte = regsPtr->commandStatus;
-	    if (numStatusBytes < sizeof(DevSCSIStatusBlock)) {
+	    if (numStatusBytes < 1) {
 		*statusBytePtr = statusByte;
-		statusBytePtr++;
 	    }
 	    numStatusBytes++;
-	}
-    }
-    if (status == SUCCESS) {
-	/*
-	 * The status may indicate that further ``sense'' data is
-	 * available.  This is obtained by another SCSI command
-	 * that uses DMA to transfer the sense data.
-	 */
-	if (scsiPtr->statusBlock.check) {
-	    status = DevSCSIRequestSense(scsiPtr, scsiPtr->devPtr);
-	}
-	if (scsiPtr->statusBlock.error) {
-	    printf("SCSI-%d: host adaptor error bit set\n",
-				 scsiPtr->number);
 	}
     }
     return(status);
@@ -369,7 +494,7 @@ DevSCSI0Status(scsiPtr)
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSI0Wait --
+ * Wait --
  *
  *	Wait for a condition in the SCSI controller.
  *
@@ -383,66 +508,228 @@ DevSCSI0Status(scsiPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevSCSI0Wait(scsiPtr, condition, reset, checkMsg)
-    DevSCSIController *scsiPtr;
+static ReturnStatus
+Wait(ctrlPtr, condition, reset)
+    Controller *ctrlPtr;
     int condition;
     Boolean reset;
-    Boolean checkMsg;
 {
-    volatile DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
+    volatile CtrlRegs *regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
     register int i;
     ReturnStatus status = DEV_TIMEOUT;
     register int control;
 
-    if (devSCSIDebug && checkMsg) {
-	printf("DevSCSI0Wait: checking for message.\n");
-    }
     for (i=0 ; i<SCSI_WAIT_LENGTH ; i++) {
 	control = regsPtr->control;
-        /*
-	 * For debugging of WORM: 
-	 *  .. using printf because using kdbx causes different behavior.
-	 */
-	if (devSCSIDebug && i < 5) {
+	if (devSCSI0Debug && i < 5) {
 	    printf("%d/%x ", i, control);
-	}
-/* this is just a guess too. */
-	if (checkMsg) {
-	    register int mask = SCSI_REQUEST | SCSI_INPUT | SCSI_MESSAGE | SCSI_COMMAND;
-	    if ((control & mask) == mask) {
-		register int msg;
-	    
-		msg = regsPtr->commandStatus & 0xff;
-		printf("DevSCSI0Wait: Unexpected message 0x%x\n", msg);
-		if (msg == SCSI_COMMAND_COMPLETE) {
-		    return(DEV_EARLY_CMD_COMPLETION);
-		} else {
-		    return(DEV_HANDSHAKE_ERROR);
-		}
-	    }
 	}
 	if (control & condition) {
 	    return(SUCCESS);
 	}
 	if (control & SCSI_BUS_ERROR) {
-	    printf("SCSI: bus error\n");
+	    printf("Warning: %s : SCSI bus error\n",ctrlPtr->name);
 	    status = DEV_DMA_FAULT;
 	    break;
 	} else if (control & SCSI_PARITY_ERROR) {
-	    printf("SCSI: parity error\n");
+	    printf("Warning: %s: parity error\n",ctrlPtr->name);
 	    status = DEV_DMA_FAULT;
 	    break;
 	}
 	MACH_DELAY(10);
     }
-    if (devSCSIDebug) {
+    if (devSCSI0Debug) {
 	printf("DevSCSI0Wait: timed out, control = %x.\n", control);
     }
     if (reset) {
-	DevSCSI0Reset(scsiPtr);
+	Reset(ctrlPtr);
     }
     return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * entryAvailProc --
+ *
+ *	Act upon an entry becomming available in the queue for this
+ *	controller. This routine is the Dev_Queue callback function that
+ *	is called whenever work becomes available for this controller. 
+ *	If the controller is not already busy we dequeue and start the
+ *	request.
+ *	NOTE: This routine is also called from DevSCSI0Intr to start the
+ *	next request after the previously one finishes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Request may be dequeue and submitted to the device. Request callback
+ *	function may be called.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Boolean
+entryAvailProc(clientData, newRequestPtr) 
+   ClientData	clientData;	/* Really the Device this request ready. */
+   List_Links *newRequestPtr;	/* The new SCSI request. */
+{
+    register Device *devPtr; 
+    register Controller *ctrlPtr;
+    register ScsiCmd	*scsiCmdPtr;
+    ReturnStatus	status;
+
+    devPtr = (Device *) clientData;
+    ctrlPtr = devPtr->ctrlPtr;
+    /*
+     * If we are busy (have an active request) just return. Otherwise 
+     * start the request.
+     */
+
+    if (IS_CTRL_BUSY(ctrlPtr)) { 
+	return FALSE;
+    }
+again:
+    scsiCmdPtr = (ScsiCmd *) newRequestPtr;
+    devPtr = (Device *) clientData;
+    status = SendCommand( devPtr, scsiCmdPtr);
+    /*	
+     * If the command couldn't be started do the callback function.
+     */
+    if (status != SUCCESS) {
+	 RequestDone(devPtr,scsiCmdPtr,status,0,0);
+    }
+    if (!IS_CTRL_BUSY(ctrlPtr)) { 
+        newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+	if (newRequestPtr != (List_Links *) NIL) { 
+	    goto again;
+	}
+    }
+    return TRUE;
+
+}   
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  SpecialSenseProc --
+ *
+ *	Special function used for HBA generated REQUEST SENSE. A SCSI
+ *	command request with this function as a call back proc will
+ *	be processed by routine RequestDone as a result of a 
+ *	REQUEST SENSE. This routine is never called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SpecialSenseProc()
+{
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RequestDone --
+ *
+ *	Process a request that has finished. Unless a SCSI check condition
+ *	bit is present in the status returned, the request call back
+ *	function is called.  If check condition is set we fire off a
+ *	SCSI REQUEST SENSE to get the error sense bytes from the device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The call back function may be called.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
+    Device	*devPtr;	/* Device for request. */
+    ScsiCmd	*scsiCmdPtr;	/* Request that finished. */
+    ReturnStatus status;	/* Status returned. */
+    unsigned char scsiStatusByte;	/* SCSI Status Byte. */
+    int		amountTransferred; /* Amount transferred by command. */
+{
+    ReturnStatus	senseStatus;
+    Controller	        *ctrlPtr = devPtr->ctrlPtr;
+
+
+    if (devSCSI0Debug > 3) {
+	printf("RequestDone for %s status 0x%x scsistatus 0x%x count %d\n",
+	    devPtr->handle.locationName, status,scsiStatusByte,
+	    amountTransferred);
+    }
+    /*
+     * First check to see if this is the reponse of a HBA generated 
+     * REQUEST SENSE command.  If this is the case, we can process
+     * the callback of the frozen command for this device and
+     * allow the flow of command to the device to be resummed.
+     */
+    if (scsiCmdPtr->doneProc == SpecialSenseProc) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(devPtr->frozen.scsiCmdPtr->doneProc)(devPtr->frozen.scsiCmdPtr, 
+			SUCCESS,
+			devPtr->frozen.statusByte, 
+			devPtr->frozen.amountTransferred,
+			amountTransferred,
+			devPtr->senseBuffer);
+	 MASTER_LOCK(&(ctrlPtr->mutex));
+	 SET_CTRL_FREE(ctrlPtr);
+	 return;
+    }
+    /*
+     * This must be a outside request finishing. If the request 
+     * suffered an error or the HBA or the scsi status byte
+     * says there is no error sense present, we can do the
+     * callback and free the controller.
+     */
+    if ((status != SUCCESS) || !SCSI_CHECK_STATUS(scsiStatusByte)) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(scsiCmdPtr->doneProc)(scsiCmdPtr, status, scsiStatusByte,
+				   amountTransferred, 0, (char *) 0);
+	 MASTER_LOCK(&(ctrlPtr->mutex));
+	 SET_CTRL_FREE(ctrlPtr);
+	 return;
+   } 
+   /*
+    * If we got here than the SCSI command came back from the device
+    * with the CHECK bit set in the status byte.
+    * Need to perform a REQUEST SENSE. Move the current request 
+    * into the frozen state and issue a REQUEST SENSE. 
+    */
+   devPtr->frozen.scsiCmdPtr = scsiCmdPtr;
+   devPtr->frozen.statusByte = scsiStatusByte;
+   devPtr->frozen.amountTransferred = amountTransferred;
+   DevScsiSenseCmd((ScsiDevice *)devPtr, DEV_MAX_SENSE_BYTES, 
+		   devPtr->senseBuffer, &(devPtr->SenseCmd));
+   devPtr->SenseCmd.doneProc = SpecialSenseProc,
+   senseStatus = SendCommand(devPtr, &(devPtr->SenseCmd));
+   /*
+    * If we got an HBA error on the REQUEST SENSE we end the outside 
+    * command with the SUCCESS status but zero sense bytes returned.
+    */
+   if (senseStatus != SUCCESS) {
+        MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(scsiCmdPtr->doneProc)(scsiCmdPtr, status, scsiStatusByte,
+				   amountTransferred, 0, (char *) 0);
+	MASTER_LOCK(&(ctrlPtr->mutex));
+	SET_CTRL_FREE(ctrlPtr);
+   }
+
 }
 
 /*
@@ -466,11 +753,22 @@ DevSCSI0Wait(scsiPtr, condition, reset, checkMsg)
  *----------------------------------------------------------------------
  */
 Boolean
-DevSCSI0Intr(scsiPtr)
-    register DevSCSIController *scsiPtr;
+DevSCSI0Intr(clientDataArg)
+    ClientData	clientDataArg;
 {
-    volatile DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
+    register Controller *ctrlPtr;
+    Device	*devPtr;
+    volatile CtrlRegs *regsPtr;
+    int		residual;
+    ReturnStatus	status;
+    List_Links	*newRequestPtr;
+    unsigned char statusByte;
+    ClientData	clientData;
 
+    ctrlPtr = (Controller *) clientDataArg;
+    regsPtr = ctrlPtr->regsPtr;
+    devPtr = ctrlPtr->devPtr;
+    MASTER_LOCK(&(ctrlPtr->mutex));
     if (regsPtr->control & SCSI_INTERRUPT_REQUEST) {
 	if (regsPtr->control & SCSI_BUS_ERROR) {
 	    if (regsPtr->dmaCount >= 0) {
@@ -479,24 +777,31 @@ DevSCSI0Intr(scsiPtr)
 		 * happen while reading a large tape block.  Consider
 		 * the I/O complete with no residual bytes
 		 * un-transferred.
-		scsiPtr->residual = 0;
-		scsiPtr->flags |= SCSI_IO_COMPLETE;
+		residual = 0;
 	    } else {
 		/*
 		 * A real Bus Error.  Complete the I/O but flag an error.
 		 * The residual is computed because the Bus Error could
 		 * have occurred after a number of sectors.
 		 */
-		scsiPtr->residual = -regsPtr->dmaCount -1;
-		scsiPtr->flags |= SCSI_IO_COMPLETE;
+		residual = -regsPtr->dmaCount -1;
 	    }
 	    /*
 	     * The board needs to be reset to clear the Bus Error
 	     * condition so no status bytes are grabbed.
 	     */
-	    DevSCSI0Reset(scsiPtr);
-	    scsiPtr->status = DEV_DMA_FAULT;
-	    Sync_MasterBroadcast(&scsiPtr->IOComplete);
+	    Reset(ctrlPtr);
+	    status = DEV_DMA_FAULT;
+	    RequestDone(devPtr, ctrlPtr->scsiCmdPtr, status, 0,
+			ctrlPtr->scsiCmdPtr->bufferLen - residual);
+	    if (!IS_CTRL_BUSY(ctrlPtr)) {
+		newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+		if (newRequestPtr != (List_Links *) NIL) { 
+		    entryAvailProc(clientData,newRequestPtr);
+		}
+	    }
+	    MASTER_UNLOCK(&(ctrlPtr->mutex));
 	    return(TRUE);
 	} else {
 	    /*
@@ -505,7 +810,13 @@ DevSCSI0Intr(scsiPtr)
 	     * odd transfer sizes, and finally get the completion
 	     * status from the device.
 	     */
-	    scsiPtr->residual = -regsPtr->dmaCount -1;
+	    if (!IS_CTRL_BUSY(ctrlPtr)) {
+		printf("Warning: Spurious interrupt from SCSI0\n");
+		Reset(ctrlPtr);
+		MASTER_UNLOCK(&(ctrlPtr->mutex));
+		return(TRUE);
+	    }
+	    residual = -regsPtr->dmaCount -1;
 	    if (regsPtr->control & SCSI_ODD_LENGTH) {
 		/*
 		 * On a read the last odd byte is left in the data
@@ -514,20 +825,204 @@ DevSCSI0Intr(scsiPtr)
 		 * is off by one.  See Page 8 of Sun's SCSI
 		 * Programmers' Manual.
 		 */
-		if (scsiPtr->controlBlock.command == SCSI_READ) {
+		if (!ctrlPtr->scsiCmdPtr->dataToDevice) {
 		    *(char *)(DEV_MULTIBUS_BASE + regsPtr->dmaAddress) =
 			regsPtr->data;
-		    scsiPtr->residual--;
+		    residual--;
 		} else {
-		    scsiPtr->residual++;
+		    residual++;
 		}
 	    }
-	    scsiPtr->status = DevSCSI0Status(scsiPtr);
-	    scsiPtr->flags |= SCSI_IO_COMPLETE;
-	    Sync_MasterBroadcast(&scsiPtr->IOComplete);
+	    status = GetStatusByte(ctrlPtr,&statusByte);
+	    RequestDone(devPtr, ctrlPtr->scsiCmdPtr, status, 
+			statusByte,
+			ctrlPtr->scsiCmdPtr->bufferLen - residual);
+	    if (!IS_CTRL_BUSY(ctrlPtr)) {
+		newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+		if (newRequestPtr != (List_Links *) NIL) { 
+		    entryAvailProc(clientData,newRequestPtr);
+		}
+	    }
+	    MASTER_UNLOCK(&(ctrlPtr->mutex));
 	    return(TRUE);
 	}
-    } else {
-	return(FALSE);
     }
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+    return (FALSE);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseProc --
+ *
+ *	Device release proc for controller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static ReturnStatus
+ReleaseProc(scsiDevicePtr)
+    ScsiDevice	*scsiDevicePtr;
+{
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSI0Init --
+ *
+ *	Check for the existant of the Sun SCSI0 HBA controller. If it
+ *	exists allocate data stuctures for it.
+ *
+ * Results:
+ *	TRUE if the controller exists, FALSE otherwise.
+ *
+ * Side effects:
+ *	Memory may be allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+ClientData
+DevSCSI0Init(ctrlLocPtr)
+    DevConfigController	*ctrlLocPtr;	/* Controller location. */
+{
+    int	ctrlNum;
+    Boolean	found;
+    Controller *ctrlPtr;
+    int	i,j;
+
+    /*
+     * See if the controller is there. 
+     */
+    ctrlNum = ctrlLocPtr->controllerID;
+    found =  Probe(ctrlLocPtr->address);
+    if (!found) {
+	return DEV_NO_CONTROLLER;
+    }
+    /*
+     * It's there. Allocate and fill in the Controller structure.
+     */
+    if (ctrlNum+1 > numSCSI0Controllers) {
+	numSCSI0Controllers = ctrlNum+1;
+    }
+    Controllers[ctrlNum] = ctrlPtr = (Controller *) malloc(sizeof(Controller));
+    bzero((char *) ctrlPtr, sizeof(Controller));
+    ctrlPtr->regsPtr = (CtrlRegs *) (ctrlLocPtr->address);
+    ctrlPtr->regsPtr->intrVector = ctrlLocPtr->vectorNumber;
+    ctrlPtr->name = ctrlLocPtr->name;
+    Sync_SemInitDynamic(&(ctrlPtr->mutex),ctrlPtr->name);
+    /* 
+     * Initialized the name, device queue header, and the master lock.
+     * The controller comes up with no devices active and no devices
+     * attached.  Reserved the devices associated with the 
+     * targetID of the controller (7).
+     */
+    ctrlPtr->devQueues = Dev_CtrlQueuesCreate(&(ctrlPtr->mutex),entryAvailProc);
+    for (i = 0; i < 8; i++) {
+	for (j = 0; j < 8; j++) {
+	    ctrlPtr->devicePtr[i][j] = (i == 7) ? (Device *) 0 : (Device *) NIL;
+	}
+    }
+    ctrlPtr->scsiCmdPtr = (ScsiCmd *) NIL;
+    Controllers[ctrlNum] = ctrlPtr;
+    Reset(ctrlPtr);
+    return (ClientData) ctrlPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSI0ttachDevice --
+ *
+ *	Attach a SCSI device using the Sun SCSI0 HBA. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ScsiDevice   *
+DevSCSI0AttachDevice(devicePtr, insertProc)
+    Fs_Device	*devicePtr;	 /* Device to attach. */
+    void	(*insertProc)(); /* Queue insert procedure. */
+{
+    Device *devPtr;
+    Controller	*ctrlPtr;
+    char   tmpBuffer[512];
+    int	   length;
+    int	   ctrlNum;
+    int	   targetID, lun;
+
+    /*
+     * First find the SCSI0 controller this device is on.
+     */
+    ctrlNum = SCSI_HBA_NUMBER(devicePtr);
+    if ((ctrlNum > MAX_SCSI0_CTRLS) ||
+	(Controllers[ctrlNum] == (Controller *) 0)) { 
+	return (ScsiDevice  *) NIL;
+    } 
+    ctrlPtr = Controllers[ctrlNum];
+    targetID = SCSI_TARGET_ID(devicePtr);
+    lun = SCSI_LUN(devicePtr);
+    /*
+     * Allocate a device structure for the device and fill in the
+     * handle part. This must be created before we grap the MASTER_LOCK.
+     */
+    devPtr = (Device *) malloc(sizeof(Device)); 
+    bzero((char *) devPtr, sizeof(Device));
+    devPtr->handle.devQueue = Dev_QueueCreate(ctrlPtr->devQueues,
+				1, insertProc, (ClientData) devPtr);
+    devPtr->handle.locationName = "Unknown";
+    devPtr->handle.LUN = lun;
+    devPtr->handle.releaseProc = ReleaseProc;
+    devPtr->handle.maxTransferSize = 63*1024;
+    /*
+     * See if the device is already present.
+     */
+    MASTER_LOCK(&(ctrlPtr->mutex));
+    /*
+     * A device pointer of zero means that targetID/LUN 
+     * conflicts with that of the HBA. A NIL means the
+     * device hasn't been attached yet.
+     */
+    if (ctrlPtr->devicePtr[targetID][lun] == (Device *) 0) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(void) Dev_QueueDestroy(devPtr->handle.devQueue);
+	free((char *) devPtr);
+	return (ScsiDevice *) NIL;
+    }
+    if (ctrlPtr->devicePtr[targetID][lun] != (Device *) NIL) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(void) Dev_QueueDestroy(devPtr->handle.devQueue);
+	free((char *) devPtr);
+	return (ScsiDevice *) (ctrlPtr->devicePtr[targetID][lun]);
+    }
+
+    ctrlPtr->devicePtr[targetID][lun] = devPtr;
+    devPtr->targetID = targetID;
+    devPtr->ctrlPtr = ctrlPtr;
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+
+    (void) sprintf(tmpBuffer, "%s#%d Target %d LUN %d", ctrlPtr->name, ctrlNum,
+			devPtr->targetID, devPtr->handle.LUN);
+    length = strlen(tmpBuffer);
+    devPtr->handle.locationName = (char *) strcpy(malloc(length+1),tmpBuffer);
+
+    return (ScsiDevice *) devPtr;
+}
+
