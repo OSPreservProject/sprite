@@ -156,6 +156,9 @@ FsRmtFileHandleInit(fileIDPtr, fileStatePtr, openForWriting, name,
 	handlePtr->segPtr = (Vm_Segment *)NIL;
 	fs_Stats.object.rmtFiles++;
     }
+    if (fileStatePtr->newUseFlags & FS_DIR) {
+	handlePtr->cacheInfo.flags |= FSCACHE_IS_DIR;
+    }
     free((Address)fileStatePtr);
     return(SUCCESS);
 }

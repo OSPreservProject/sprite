@@ -261,6 +261,10 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	 */
 	streamPtr = (Fs_Stream *)NIL;
     }
+
+/* This code can be removed after SOSP.  -Mary 10/1/91 */
+    paramsPtr->io.reserved = clientID;
+/* End of code to remove. */
     if (hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM &&
 	paramsPtr->io.length == FS_BLOCK_SIZE &&
 	(paramsPtr->io.offset & FS_BLOCK_OFFSET_MASK) == 0) {
@@ -564,6 +568,9 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	    Fsutil_HandleUnlock(streamPtr);
 	}
     }
+/* This code can be removed after SOSP.  -Mary 10/1/91 */
+    paramsPtr->io.reserved = clientID;
+/* End of code to remove. */
     paramsPtr->io.buffer = storagePtr->requestDataPtr;
     status = (fsio_StreamOpTable[hdrPtr->fileID.type].write)(streamPtr,
 		&paramsPtr->io, &paramsPtr->waiter, replyPtr);

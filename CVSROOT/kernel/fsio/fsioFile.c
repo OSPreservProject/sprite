@@ -309,6 +309,10 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	    openResultsPtr->streamData = (ClientData)fileStatePtr;
 	    openResultsPtr->dataSize = sizeof(Fsio_FileState);
 
+	    if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
+		fileStatePtr->newUseFlags |= FS_DIR;
+	    }
+
 	    /*
 	     * Now set up a shadow stream on here on the server so we
 	     * can support shared offset even after migration.
