@@ -228,29 +228,21 @@ VmCoreMapInit()
  *
  * PutOnAllocListFront --
  *
- *     	Put this core map entry onto the front of the allocate list.  If
- *	the reserve list is short of pages then this page will end up on
- *	the reserve list.
+ *     	Put this core map entry onto the front of the allocate list.  
  *
  * Results:
  *     	None.
  *
  * Side effects:
- *	Alloc or reserve lists modified and core map entry modified.
+ *	Alloc lists modified and core map entry modified.
  * ----------------------------------------------------------------------------
  */
 INTERNAL static void
 PutOnAllocListFront(corePtr)
     register	VmCore	*corePtr;
 {
-    if (vmStat.numReservePages < NUM_RESERVE_PAGES) {
-	VmPageInvalidateInt(&(corePtr->virtPage),
-	    VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page));
-	PutOnReserveList(corePtr);
-    } else {
-	VmListInsert((List_Links *) corePtr, LIST_ATFRONT(allocPageList));
-	vmStat.numUserPages++;
-    }
+    VmListInsert((List_Links *) corePtr, LIST_ATFRONT(allocPageList));
+    vmStat.numUserPages++;
 }
 
 
@@ -2108,8 +2100,7 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 	switch (status) {
 	    case RPC_TIMEOUT:
 	    case RPC_SERVICE_DISABLED:
-	    case FS_STALE_HANDLE:
-		if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
+	    case FS_STALE_HANDLE: {
 		    if (!swapDown) {
 			/*
 			 * We have not realized that we have an error yet.
@@ -2172,8 +2163,15 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 	 */
 	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
 	*ptePtr |= VM_ON_SWAP_BIT;
-	*ptePtr &= ~VM_MODIFIED_BIT;
-	VmMach_ClearModBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr));
+	/*
+	 * If the page has become locked while it was on the dirty list, don't
+	 * clear the modify bit.  The set modify bit after the page write 
+	 * completes will cause this page to be put back on the alloc list.
+	 */
+	if (corePtr->lockCount == 0) {
+	    *ptePtr &= ~VM_MODIFIED_BIT;
+	    VmMach_ClearModBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr));
+	}
 	corePtr->flags |= VM_PAGE_BEING_CLEANED;
     } else {
 	/*
@@ -2224,7 +2222,26 @@ PutOnFront(corePtr)
     if (corePtr->flags & VM_FREE_PAGE) {
 	PutOnFreeList(corePtr);
     } else {
-	if (vmFreeWhenClean && corePtr->lockCount == 0) {
+	Boolean	referenced, modified;
+	/*
+	 * Update the software page table from the hardware.  This 
+	 * catches the case when a page that we are writting out is
+	 * modified.  
+	 */
+	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr,
+			     corePtr->virtPage.page);
+	referenced = *ptePtr & VM_REFERENCED_BIT;
+	modified = *ptePtr & VM_MODIFIED_BIT;
+	VmMach_GetRefModBits(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr),
+			  &referenced, &modified);
+	if (referenced) {
+	    *ptePtr |= (VM_REFERENCED_BIT);
+	}
+	if (modified) {
+	    *ptePtr |= (VM_REFERENCED_BIT|VM_MODIFIED_BIT);
+	}
+	if (vmFreeWhenClean && corePtr->lockCount == 0 && 
+					!(*ptePtr & VM_REFERENCED_BIT)) {
 	    /*
 	     * We are supposed to free pages after we clean them.  Before
 	     * we put this page onto the dirty list, we already invalidated
@@ -2235,18 +2252,12 @@ PutOnFront(corePtr)
 	     * possibly have been modified or referenced.  So we free this
 	     * page.
 	     */
-	    ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr,
-				 corePtr->virtPage.page);
-	    if (!(*ptePtr & VM_REFERENCED_BIT)) {
-		if (!(*ptePtr & VM_PHYS_RES_BIT)) {
-		    panic("PutOnFront: Resident bit not set\n");
-		}
-		corePtr->virtPage.segPtr->resPages--;
-		*ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
-		PutOnFreeList(corePtr);
-	    } else {
-		PutOnAllocListFront(corePtr);
-	    }
+	     if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	       panic("PutOnFront: Resident bit not set\n");
+	     }
+	     corePtr->virtPage.segPtr->resPages--;
+	     *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
+	    PutOnFreeList(corePtr);
 	} else {
 	    PutOnAllocListFront(corePtr);
 	}
