@@ -307,7 +307,7 @@ DevSCSIDiskError(devPtr, sensePtr)
 		    Sys_Printf("%s", scsiErrors[class][code]);
 		}
 		Sys_Printf("\n");
-		status = DEV_INVALID_ARG;
+		status = DEV_HARD_ERROR;
 	    }
 	    break;
 	}
