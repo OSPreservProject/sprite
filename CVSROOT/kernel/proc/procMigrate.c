@@ -67,8 +67,9 @@ Boolean proc_DoCallTrace = FALSE;
  * preferable to in-line the monitors (if this is permissible at some point)
  * or combine multiple operations in a single procedure.
  * Some of the statistics are kept even in CLEAN kernels because they affect
- * the kernel's notion of whether eviction is necessary.  Others are purely
- * for statistics gathering and are conditioned on CLEAN as well as
+ * the kernel's notion of whether eviction is necessary.  Also, the timing
+ * statistics are useful for benchmarking CLEAN kernels.   Things that are
+ * purely for statistics gathering are conditioned on CLEAN as well as
  * proc_MigDoStats.
  */  
 Boolean proc_MigDoStats = TRUE;
@@ -478,13 +479,11 @@ Proc_MigrateTrap(procPtr)
     ProcMigCmd cmd;
     Proc_MigBuffer inBuf;
     int failed;
-#ifndef CLEAN
     Time startTime;
     Time endTime;
     Time timeDiff;
     unsigned int *timePtr;
     unsigned int *squaredTimePtr;
-#endif /* CLEAN */
     int whenNeeded;
     Boolean exec;
     Proc_PID pid;
@@ -504,7 +503,6 @@ Proc_MigrateTrap(procPtr)
 	whenNeeded = MIG_ENCAP_MIGRATE;
 	exec = FALSE;
     }
-#ifndef CLEAN
     if (proc_MigDoStats) {
 	Timer_GetTimeOfDay(&startTime, (int *) NIL, (Boolean *) NIL);
     }
@@ -519,7 +517,6 @@ Proc_MigrateTrap(procPtr)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_MIGTRAP,
 		     (ClientData) &record);
     }
-#endif /* CLEAN */   
    
     procPtr->genFlags = (procPtr->genFlags &
 			 ~(PROC_MIG_PENDING | PROC_MIGRATION_DONE) |
@@ -632,11 +629,9 @@ Proc_MigrateTrap(procPtr)
 	cmd.remotePid = procPtr->peerProcessID;
 	inBuf.size = bufSize;
 	inBuf.ptr = buffer;
-#ifndef CLEAN
 	if (proc_MigDoStats) {
 	    Proc_MigAddToCounter((bufSize + 1023) / 1024, &proc_MigStats.varStats.rpcKbytes, &proc_MigStats.squared.rpcKbytes);
 	}
-#endif /* CLEAN */
 
 	if (proc_MigDebugLevel > 5) {
 	    printf("Sending encapsulated state.\n");
@@ -747,7 +742,6 @@ Proc_MigrateTrap(procPtr)
 		     (ClientData) &record);
     }
 
-#ifndef CLEAN
     if (proc_MigDoStats) {
 	Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
 	Time_Subtract(endTime, startTime, &timeDiff);
@@ -772,7 +766,6 @@ Proc_MigrateTrap(procPtr)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
 		     (ClientData) &record);
     }
-#endif /* CLEAN */   
 
     /*
      * Check for asynchronous errors coming in after we resumed on the other
@@ -1377,10 +1370,10 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
 		procPtr->migFlags |= PROC_WAS_EVICTED;
 		procPtr->preEvictionUsage.ticks = ticks;
 	    }
+#endif /* CLEAN */
 	} else if (!home) {
 	    procPtr->migFlags &= ~PROC_WAS_EVICTED;
 	}
-#endif /* CLEAN */
     }
 
 
