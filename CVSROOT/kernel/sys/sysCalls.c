@@ -233,8 +233,9 @@ Sys_Shutdown(flags, rebootString)
 	VmMach_ReinitContext(procPtr);
 
 	/*
-	 * Get rid of any migrated processes.
+	 * Disallow future migrations, and get rid of any migrated processes.
 	 */
+	proc_AllowMigrationState &= ~PROC_MIG_IMPORT_ALL;
 	(void) Proc_EvictForeignProcs();
 	
 	waitTime.seconds = 5;
