@@ -73,8 +73,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 extern	ReturnStatus	SysMigCall();
 extern	ReturnStatus	Sys_StatsStub();
 
-extern	ReturnStatus	Vm_Mmap(), Vm_Munmap();
-
 #define TMP_EXTERN
 #ifdef TMP_EXTERN
 extern	int Proc_RemoteExec();
@@ -289,6 +287,10 @@ static SysCallEntry sysCalls[] = {
     Sys_GetMachineInfoNew,	Sys_GetMachineInfoNew,   TRUE,	2,   NILPARM,
     Vm_Mmap,			Vm_Mmap,		TRUE,	7,   NILPARM,
     Vm_Munmap,			Vm_Munmap,		TRUE,	3,   NILPARM,
+    Vm_Msync,			Vm_Msync,		TRUE,	2,   NILPARM,
+    Vm_Mlock,			Vm_Mlock,		TRUE,	2,   NILPARM,
+    Vm_Munlock,			Vm_Munlock,		TRUE,	2,   NILPARM,
+    Vm_Mincore,			Vm_Mincore,		TRUE,	3,   NILPARM,
 };
 
 
@@ -460,6 +462,12 @@ static Sys_CallParam paramsArray[] = {
     /* local */                         /* SYS_PROF_PROFIL              93 */
     /* local */                         /* SYS_PROC_REMOTE_EXEC         94 */
     /* local */                         /* SYS_SYS_GETMACHINEINFO_NEW   95 */
+    /* local */                         /* SYS_VM_MMAP			96 */
+    /* local */                         /* SYS_VM_MUNMAP		97 */
+    /* local */                         /* SYS_VM_MSYNC			98 */
+    /* local */                         /* SYS_VM_MLOCK			99 */
+    /* local */                         /* SYS_VM_MUNLOCK		100 */
+    /* local */                         /* SYS_VM_MINCORE		101 */
     /*
      * Insert new system call information above this line.
      */
