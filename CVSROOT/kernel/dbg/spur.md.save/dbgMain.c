@@ -331,7 +331,7 @@ SendReply()
 
     bcopy(replyContents, tempContents, DBG_MAX_CONTENT);
     sprintf(dbgReplyPtr->header.contents, tempContents, 
-	DBG_MAX_REPLY_DATA_SIZE);
+	(replyBytesUsed > 0 ? replyBytesUsed : DBG_MAX_REPLY_DATA_SIZE));
     if (dbg_Rs232Debug) { 
 	WriteSerial(replySize, (char *) dbgReplyPtr);
     } else {
