@@ -670,10 +670,16 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
 			&closeSrcClient);
 
     /*
-     * Move the client at the I/O handle level.
+     * Move the client at the I/O handle level.  The flags are used
+     * by FsIOClient{Open,Close} and are different for pdevs than
+     * other files -- namely, the flags are set to 0 before calls to these
+     * routines.  The only flag we have to make sure to pass is
+     * whether it's a new stream, since this is used by FsIOClientMigrate
+     * itself.
      */
     FsIOClientMigrate(&cltHandlePtr->clientList, migInfoPtr->srcClientID,
-			dstClientID, migInfoPtr->flags, closeSrcClient);
+		      dstClientID, migInfoPtr->flags & FS_NEW_STREAM,
+		      closeSrcClient);
 
     *sizePtr = 0;
     *dataPtr = (Address)NIL;
