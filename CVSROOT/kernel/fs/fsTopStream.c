@@ -556,7 +556,7 @@ FsStreamClientVerify(streamIDPtr, clientID)
 	    streamPtr = (Fs_Stream *)NIL;
 	}
     } else {
-	panic("No stream <%d> for client %d\n", streamIDPtr->minor, clientID);
+	printf("No stream <%d> for client %d\n", streamIDPtr->minor, clientID);
     }
     return(streamPtr);
 }
