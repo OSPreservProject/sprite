@@ -1254,8 +1254,8 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 			   blockPtr->cacheInfoPtr->numDirtyBlocks);
 	    }
 	    blockPtr->flags |= FSCACHE_BLOCK_DIRTY;
+	    blockPtr->timeDirtied = timeDirtied;
 	}
-	blockPtr->timeDirtied = timeDirtied;
     }
 
     if (diskBlock != -1) {
@@ -2164,19 +2164,28 @@ Fscache_CleanBlocks(data, callInfoPtr)
     int				lastDirtyBlock;
     Fscache_FileInfo		*cacheInfoPtr;
     Boolean			useSameBlock;
+    int				numDirtyFiles = 0;
+    int				numDirtyBlocks = 0;
 
     backGround = (Boolean) data;
     GetDirtyFile(backGround, &cacheInfoPtr, &tBlockPtr, &lastDirtyBlock);
     blockPtr = tBlockPtr;
     while (cacheInfoPtr != (Fscache_FileInfo *)NIL) {
+	numDirtyFiles++;
 	while (blockPtr != (Fscache_Block *)NIL) {
 	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 		panic( "Fscache_CleanBlocks, bad block\n");
 		continue;
 	    }
+	    if (blockPtr->blockSize < 0) {
+		panic( "Fscache_CleanBlocks, uninitialized block size\n");
+		status = FAILURE;
+		break;
+	    }
 	    /*
 	     * Gather statistics.
 	     */
+	    numDirtyBlocks++;
 	    fs_Stats.blockCache.blocksWrittenThru++;
 	    switch (blockPtr->flags &
 		    (FSCACHE_DATA_BLOCK | FSCACHE_IND_BLOCK |
@@ -2200,11 +2209,6 @@ Fscache_CleanBlocks(data, callInfoPtr)
 	    /*
 	     * Write the block.
 	     */
-	    if (blockPtr->blockSize < 0) {
-		panic( "Fscache_CleanBlocks, uninitialized block size\n");
-		status = FAILURE;
-		break;
-	    }
 	    FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_BLOCK_WRITE, blockPtr);
 	    status = (cacheInfoPtr->ioProcsPtr->blockWrite)
 		    (cacheInfoPtr->hdrPtr, blockPtr->diskBlock,
@@ -2229,6 +2233,12 @@ Fscache_CleanBlocks(data, callInfoPtr)
 	}
 	GetDirtyFile(backGround, &cacheInfoPtr, &tBlockPtr, &lastDirtyBlock);
 	blockPtr = tBlockPtr;
+    }
+    fs_Stats.writeBack.passes++;
+    fs_Stats.writeBack.files += numDirtyFiles;
+    fs_Stats.writeBack.blocks += numDirtyBlocks;
+    if (numDirtyBlocks > fs_Stats.writeBack.maxBlocks) {
+	fs_Stats.writeBack.maxBlocks = numDirtyBlocks;
     }
 }
 
@@ -3061,18 +3071,18 @@ Fscache_DumpStats()
 		block->writeZeroFills1, block->writeZeroFills2,
 		block->appendWrites,
 		block->overWrites);
-    if (block->fragAccesses > 0) {
+    if (block->fragAccesses != 0) {
 	printf("FRAG upgrades %d hits %d zero fills\n",
 		    block->fragAccesses,
 		    block->fragHits,
 		    block->fragZeroFills);
     }
-    if (block->fileDescReads > 0) {
+    if (block->fileDescReads != 0) {
 	printf("FILE DESC reads %d hits %d writes %d hits %d\n", 
 		    block->fileDescReads, block->fileDescReadHits,
 		    block->fileDescWrites, block->fileDescWriteHits);
     }
-    if (block->indBlockAccesses > 0) {
+    if (block->indBlockAccesses != 0) {
 	printf("INDIRECT BLOCKS Accesses %d hits %d\n", 
 		    block->indBlockAccesses, block->indBlockHits);
     }
