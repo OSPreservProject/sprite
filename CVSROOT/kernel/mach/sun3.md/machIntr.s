@@ -75,9 +75,10 @@ MachLevel4Int:
 	.globl	MachLevel5Int
 MachLevel5Int:
 	addl	#1,_machLevel5Cnt
+	movl    sp@(2), _Prof_InterruptPC
 	CallInterruptHandler(_Timer_TimerServiceInterrupt)
 
 	.globl	MachLevel6Int
 MachLevel6Int:
 	addl	#1,_machLevel6Cnt
-    	CallInterruptHandler(_Dev_KbdServiceInterrupt)
+	CallInterruptHandler(_Dev_KbdServiceInterrupt)
