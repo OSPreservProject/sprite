@@ -120,7 +120,6 @@ extern ReturnStatus Proc_RemoteDummy();
 int sys_ParamSizesDecl[] = {
     sizeof(int),			/* SYS_PARAM_INT		*/
     sizeof(char),			/* SYS_PARAM_CHAR		*/
-    NIL,				/* SYS_PARAM_STRING		*/
     sizeof(Proc_PID),			/* SYS_PARAM_PROC_PID		*/
     sizeof(Proc_ResUsage),		/* SYS_PARAM_PROC_RES		*/
     sizeof(Sync_Lock),			/* SYS_PARAM_SYNC_LOCK		*/
@@ -130,8 +129,6 @@ int sys_ParamSizesDecl[] = {
     sizeof(Time) / 2,			/* SYS_PARAM_TIME1		*/
     sizeof(Time) / 2,			/* SYS_PARAM_TIME2		*/
     sizeof(int),			/* SYS_PARAM_VM_CMD		*/
-    PROC_MAX_ENVIRON_NAME_LENGTH,	/* SYS_PARAM_PROC_ENV_NAME  	*/
-    PROC_MAX_ENVIRON_VALUE_LENGTH, 	/* SYS_PARAM_PROC_ENV_VALUE 	*/
     0, 					/* SYS_PARAM_DUMMY	 	*/
     sizeof(int),			/* SYS_PARAM_RANGE1	 	*/
     sizeof(int),			/* SYS_PARAM_RANGE2		*/
@@ -227,12 +224,17 @@ static SysCallEntry sysCalls[] = {
     Fs_SetDefPermStub,	       Fs_SetDefPermStub,  TRUE,	2,   NILPARM,
     Fs_IOControlStub,	       Fs_IOControlStub,   TRUE,	6,   NILPARM,
     Dev_VidEnable,	       Proc_DoRemoteCall,  FALSE,	1,   NILPARM,
-    Proc_SetEnvironStub,       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    Proc_UnsetEnvironStub,     Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    Proc_GetEnvironVarStub,    Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    Proc_GetEnvironRangeStub,  Proc_RemoteDummy,   TRUE,	4,   NILPARM,
-    Proc_InstallEnvironStub,   Proc_RemoteDummy,   TRUE,	2,   NILPARM,
-    Proc_CopyEnvironStub,      Proc_DoRemoteCall,  FALSE,	0,   NILPARM,
+    /*
+     * The following ErrorProc listings correspond to obsolete
+     * environment-related procedures.
+     */
+    ErrorProc,       		ErrorProc,  TRUE,	2,   NILPARM,
+    ErrorProc,     		ErrorProc,  TRUE,	2,   NILPARM,
+    ErrorProc,    		ErrorProc,  TRUE,	2,   NILPARM,
+    ErrorProc,  		ErrorProc,   TRUE,	4,   NILPARM,
+    ErrorProc,   		ErrorProc,   TRUE,	2,   NILPARM,
+    ErrorProc,      		ErrorProc,  TRUE,	0,   NILPARM,
+
     Sync_SlowLockStub,	       Sync_SlowLockStub,  TRUE,	1,   NILPARM,
     Sync_SlowWaitStub,	       Sync_SlowWaitStub,  TRUE,	3,   NILPARM,
     Sync_SlowBroadcastStub,    Sync_SlowBroadcastStub,  TRUE,	2,   NILPARM,
@@ -245,7 +247,7 @@ static SysCallEntry sysCalls[] = {
     VmMach_MapKernelIntoUser,	Proc_RemoteDummy, FALSE,	4,   NILPARM,
     Fs_AttachDiskStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
     Fs_SelectStub,		Fs_SelectStub, 	   TRUE,	6,   NILPARM,
-    CAST Sys_Shutdown,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
+    CAST Sys_Shutdown,		Sys_Shutdown, 	   TRUE,	2,   NILPARM,
     Proc_Migrate,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
     Fs_MakeDeviceStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
     Fs_CommandStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
@@ -401,15 +403,12 @@ static Sys_CallParam paramsArray[] = {
     /* local */					/* SYS_FS_SET_DEF_PERM	52 */
     /* local */			     		/* SYS_FS_IO_CONTROL	53 */
     SYS_PARAM_INT,	      PARM_I,		/* SYS_SYS_ENABLEDISPLAY 54 */
-    SYS_PARAM_PROC_ENV_NAME,  PARM_IA,	     	/* SYS_PROC_SET_ENVIRON 55 */
-    SYS_PARAM_PROC_ENV_VALUE, PARM_IA,
-    SYS_PARAM_PROC_ENV_NAME,  PARM_IA,	     	/* SYS_PROC_UNSET_ENVIRON 56 */
-    SYS_PARAM_DUMMY,  	      PARM,
-    SYS_PARAM_PROC_ENV_NAME,  PARM_IA,	     	/* ..._GET_ENVIRON_VAR	57 */
-    SYS_PARAM_PROC_ENV_VALUE, PARM_OC,
-    /* special */				/* ..._GET_ENVIRON_RANGE 58 */
-    /* special */				/* ..._INSTALL_ENVIRON	59 */
-    /* no args */			     	/* SYS_PROC_COPY_ENVIRON 60 */
+    /* obsolete */				/* SYS_PROC_SET_ENVIRON 55 */
+    /* obsolete */				/* SYS_PROC_UNSET_ENVIRON 56 */
+    /* obsolete */				/* ..._GET_ENVIRON_VAR	57 */
+    /* obsolete */				/* ..._GET_ENVIRON_RANGE 58 */
+    /* obsolete */				/* ..._INSTALL_ENVIRON	59 */
+    /* obsolete */				/* SYS_PROC_COPY_ENVIRON 60 */
     /* local */					/* SYS_SYNC_SLOWLOCK	61 */
     /* local */					/* SYS_SYNC_SLOWWAIT	62 */
     /* local */					/* SYS_SYNC_SLOWBROADCAST 63 */
@@ -427,8 +426,7 @@ static Sys_CallParam paramsArray[] = {
     SYS_PARAM_FS_NAME,	      PARM_IA,
     SYS_PARAM_INT,	      PARM_I,
     /* local */			     		/* SYS_FS_SELECT	72 */
-    SYS_PARAM_INT,	      PARM_I,		/* SYS_SYS_SHUTDOWN	73 */
-    SYS_PARAM_STRING,	      PARM_IC,
+    /* local */					/* SYS_SYS_SHUTDOWN	73 */
     SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_MIGRATE	74 */
     SYS_PARAM_INT,	      PARM_I,
     SYS_PARAM_FS_NAME, 	      PARM_IA,		/* SYS_FS_MAKE_DEVICE	75 */
