@@ -543,8 +543,8 @@ NetLEXmitDone()
      * Mark the packet as done.
      */
     curScatGathPtr->done = TRUE;
-    if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
-	NetOutputWakeup(curScatGathPtr->conditionPtr);
+    if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(curScatGathPtr->mutexPtr);
     }
 
     /*
@@ -724,8 +724,8 @@ NetLEXmitRestart()
      */    
     if (curScatGathPtr != (Net_ScatterGather *) NIL) {
 	curScatGathPtr->done = TRUE;
-	if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
-	    NetOutputWakeup(curScatGathPtr->conditionPtr);
+	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->mutexPtr);
 	}
     }
 
