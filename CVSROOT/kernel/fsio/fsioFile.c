@@ -1039,14 +1039,6 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags,
 	    readPtr->buffer, readPtr->offset, &readPtr->length, remoteWaitPtr);
     replyPtr->length = readPtr->length;
-    if ((status == SUCCESS) && (readPtr->flags & FS_SWAP)) {
-	/*
-	 * While page-ins on the file server come from its cache, we
-	 * inform the cache that these pages are good canidicates
-	 * for replacement.
-	 */
-	Fscache_BlocksUnneeded(streamPtr, savedOffset, savedLength, FALSE);
-    }
     return(status);
 }
 
