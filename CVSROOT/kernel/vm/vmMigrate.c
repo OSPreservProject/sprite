@@ -262,7 +262,10 @@ Vm_DeencapState(procPtr, infoPtr, buffer)
 			   status);
 		    return(status);
 		}
-		assert(filePtr->ioHandlePtr != (Fs_HandleHeader *) NIL);
+		if (filePtr->ioHandlePtr == (Fs_HandleHeader *) NIL) {
+		    printf("Vm_DeencapState: stream has NIL ioHandlePtr\n");
+		    return FAILURE;
+		}
 		segPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
 		if (segPtr == (Vm_Segment *) NIL) {
 		    segPtr = Vm_SegmentNew(VM_CODE, filePtr, fileAddr,
