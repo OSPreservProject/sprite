@@ -36,6 +36,7 @@ fsio 		kernel/fsio
 fslcl		kernel/fslcl
 fspdev 		kernel/fspdev
 fsprefix 	kernel/fsprefix
+fsrecov		kernel/fsrecov
 fsrmt		kernel/fsrmt
 fsutil		kernel/fsutil
 libc		kernel/libc
