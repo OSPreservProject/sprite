@@ -199,10 +199,7 @@
 #define CallTrapHandler(type) \
         SaveRegs(); \
         movc    sfc, a0; \
-        movl    #VM_MMU_SPACE,d0; \
-        movc    d0, sfc; \
-        BUS_ERROR_MOVS VM_BUS_ERROR_REG,d0; \
-        movc    a0, sfc; \
+        BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
         movw    d0, sp@-; \
 	movl	#type, sp@-; \
         jsr 	_Exc_Trap; \
