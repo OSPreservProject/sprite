@@ -3,6 +3,9 @@
  *
  *     	This file contains machine-dependent routines for the graphics device.
  *
+ *	Most of this assumes that you have a standard color frame buffer.
+ *	Support for the fancier graphics displays does not exist yet.
+ *
  *	Copyright (C) 1989 Digital Equipment Corporation.
  *	Permission to use, copy, modify, and distribute this software and
  *	its documentation for any purpose and without fee is hereby granted,
@@ -16,23 +19,24 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
-#include "sprite.h"
-#include "machMon.h"
-#include "mach.h"
-#include "dev.h"
-#include "fs.h"
-#include "fsio.h"
-#include "sys.h"
-#include "sync.h"
-#include "timer.h"
-#include "dbg.h"
-#include "machAddrs.h"
-#include "console.h"
-#include "dc7085.h"
-#include "graphics.h"
-#include "vm.h"
-#include "vmMach.h"
-#include "dev/graphics.h"
+#include <sprite.h>
+#include <machMon.h>
+#include <mach.h>
+#include <dev.h>
+#include <fs.h>
+#include <fsio.h>
+#include <sys.h>
+#include <sync.h>
+#include <timer.h>
+#include <dbg.h>
+#include <machAddrs.h>
+#include <console.h>
+#include <dc7085.h>
+#include <graphics.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <dev/graphics.h>
+#include <devGraphicsInt.h>
 
 /*
  * Macro to translate from a time struct to milliseconds.
@@ -43,10 +47,34 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 Boolean	devGraphicsOpen = FALSE;		/* TRUE => the mouse is open.*/
 					/* Process waiting for select.*/
 
-#define FRAME_BUFFER_ADDR 	(MACH_IO_SLOT_ADDR(0))
-#define RAMDAC_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x200000)
-#define ROM_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x380000)
-#define ROM2_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x3c0000)
+typedef struct {
+    char	*vendor;
+    char	*module;
+    int		romOffset;
+    int		type;
+} DisplayInfo;
+
+DisplayInfo	configDisplays[] = {
+    {"DEC", "PMAG-BA", PMAGBA_ROM_OFFSET, PMAGBA},
+    {"DEC", "PMAG-DA", 0, PMAGBA},
+};
+int numConfigDisplays = sizeof(configDisplays) / sizeof(DisplayInfo);
+
+/*
+ * Redefine MASTER_LOCK to be DISABLE_INTR for two reasons.  First, it
+ * is more efficient and sufficient on a uni-processor.  Second, MASTER_LOCK
+ * can cause deadlock because this file contains the routine which blits
+ * a character to the screen.  As a result no routine in here can do a printf
+ * underneath the MASTER_LOCK because the Blitc routine grabs the master lock.
+ * Once things are debugged and the printfs are removed it should be OK to use
+ * a TRUE master lock.
+ */
+#ifdef MASTER_LOCK
+#undef MASTER_LOCK
+#undef MASTER_UNLOCK
+#endif
+#define MASTER_LOCK(mutexPtr)	DISABLE_INTR()
+#define MASTER_UNLOCK(mutexPtr)	ENABLE_INTR()
 
 /*
  * These need to mapped into user space.
@@ -54,7 +82,7 @@ Boolean	devGraphicsOpen = FALSE;		/* TRUE => the mouse is open.*/
 static DevScreenInfo	scrInfoCached;
 static DevEvent		eventsCached[DEV_MAXEVQ] = {0};	
 static DevTimeCoord	tcsCached[MOTION_BUFFER_SIZE] = {0};
-static char		*frameBuffer = (char *)FRAME_BUFFER_ADDR;
+static char		*frameBuffer = (char *) NIL;
 
 static DevScreenInfo	*scrInfoPtr;
 static DevEvent		*events;
@@ -63,6 +91,8 @@ static DevTimeCoord	*tcs;
 static unsigned short	cursorBits [32];
 
 Boolean			inKBDReset = FALSE;
+
+Address			mappedAddrs[5];
 
 /*
  * DEBUGGING STUFF.
@@ -187,22 +217,6 @@ Sync_Semaphore graphicsMutex;
 ClientData	notifyToken;
 
 /*
- * Redefine MASTER_LOCK to be DISABLE_INTR for two reasons.  First, it
- * is more efficient and sufficient on a uni-processor.  Second, MASTER_LOCK
- * can cause deadlock because this file contains the routine which blits
- * a character to the screen.  As a result no routine in here can do a printf
- * underneath the MASTER_LOCK because the Blitc routine grabs the master lock.
- * Once things are debugged and the printfs are removed it should be OK to use
- * a TRUE master lock.
- */
-#ifdef MASTER_LOCK
-#undef MASTER_LOCK
-#undef MASTER_UNLOCK
-#endif
-#define MASTER_LOCK(mutexPtr)	DISABLE_INTR()
-#define MASTER_UNLOCK(mutexPtr)	ENABLE_INTR()
-
-/*
  * Forward references.
  */
 static void		InitScreenDefaults();
@@ -223,10 +237,6 @@ static void		XmitIntr();
 static void		Scroll();
 static void		Blitc();
 
-#define FRAME_BUFFER_ADDR 	(MACH_IO_SLOT_ADDR(0))
-#define RAMDAC_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x200000)
-#define ROM_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x380000)
-#define ROM2_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x3c0000)
 
 typedef struct ramdac {
     unsigned char		*addrLowPtr;
@@ -235,8 +245,10 @@ typedef struct ramdac {
     volatile unsigned char	*colorMap;
 } Ramdac;
 
-static Ramdac ramdac;
-static int planeMask;
+static Ramdac 	ramdac;
+static int 	planeMask;
+static int	displayType = -1;
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -256,44 +268,77 @@ static int planeMask;
 void
 DevGraphicsInit()
 {
-    Time	time;
+    Time		time;
+    int			i;
+    int			slot;
+    Mach_SlotInfo	slotInfo;
+    ReturnStatus	status;
+    char		*slotAddr;
+    DisplayInfo		*displayInfoPtr = (DisplayInfo *) NIL;
 
     Sync_SemInitDynamic(&graphicsMutex, "graphicsMutex");
+    for (i = 0; i < numConfigDisplays; i++) {
+	displayInfoPtr = &configDisplays[i];
+	for (slot = 0; slot < 3; slot++) {
+	    slotAddr = (char *) MACH_IO_SLOT_ADDR(slot);
+	    status = Mach_GetSlotInfo(slotAddr + displayInfoPtr->romOffset, 
+			&slotInfo);
+	    if (status == SUCCESS) {
+		if ((!strcmp(slotInfo.vendor, displayInfoPtr->vendor)) && 
+		    (!strcmp(slotInfo.module, displayInfoPtr->module))) {
+		    displayType = displayInfoPtr->type;
+		    Mach_MonPrintf("%s display in slot %d, (%s %s %s %s)\n",
+			slotInfo.module, slot, slotInfo.module, slotInfo.vendor,
+			slotInfo.revision, slotInfo.type);
+		    break;
+		}
+	    }
+	}
+	if (displayType != -1) {
+	    break;
+	}
+    }
+    if (displayType == -1) {
+	Mach_MonPrintf(
+	    "Assuming you have one of those fancy graphics displays.\n");
+	displayType = PMAGDA;
+    }
 
-    Mach_MonPrintf("PMAG-BA color display\n");
+    if (displayType == PMAGBA) {
+	ramdac.addrLowPtr = (unsigned char *) (slotAddr + PMAGBA_RAMDAC_OFFSET);
+	ramdac.addrHighPtr = (unsigned char *) 
+				(slotAddr + PMAGBA_RAMDAC_OFFSET + 0x4);
+	ramdac.regPtr = (unsigned char *) 
+				(slotAddr + PMAGBA_RAMDAC_OFFSET + 0x8);
+	ramdac.colorMap = (unsigned char *) 
+				(slotAddr + PMAGBA_RAMDAC_OFFSET + 0xc);
 
-    ramdac.addrLowPtr = (unsigned char *) RAMDAC_ADDR;
-    ramdac.addrHighPtr = (unsigned char *) RAMDAC_ADDR + 0x4;
-    ramdac.regPtr = (unsigned char *) RAMDAC_ADDR + 0x8;
-    ramdac.colorMap = (unsigned char *) RAMDAC_ADDR + 0xc;
+	/*
+	 * Initialize screen info.
+	 */
+	scrInfoPtr = (DevScreenInfo *) MACH_UNCACHED_ADDR(&scrInfoCached);
+	events = (DevEvent *) MACH_UNCACHED_ADDR(eventsCached);
+	tcs = (DevTimeCoord *)  MACH_UNCACHED_ADDR(tcsCached);
 
-    /*
-     * Initialize screen info.
-     */
-    scrInfoPtr = (DevScreenInfo *) MACH_UNCACHED_ADDR(&scrInfoCached);
-    events = (DevEvent *) MACH_UNCACHED_ADDR(eventsCached);
-    tcs = (DevTimeCoord *)  MACH_UNCACHED_ADDR(tcsCached);
-    printf("scrInfoPtr = 0x%x\n", scrInfoPtr);
-    printf("events = 0x%x\n", events);
-    printf("tcs = 0x%x\n", tcs);
+	InitScreenDefaults(scrInfoPtr);
+	scrInfoPtr->eventQueue.events = events;
+	scrInfoPtr->eventQueue.tcs = tcs;
+	frameBuffer = (char *) (slotAddr + PMAGBA_BUFFER_OFFSET);
+	scrInfoPtr->bitmap = (char *) frameBuffer;
+	scrInfoPtr->cursorBits = (short *)(cursorBits);
+	Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
+	scrInfoPtr->eventQueue.timestampMS = TO_MS(time);
+	scrInfoPtr->eventQueue.eSize = DEV_MAXEVQ;
+	scrInfoPtr->eventQueue.eHead = scrInfoPtr->eventQueue.eTail = 0;
+	scrInfoPtr->eventQueue.tcSize = MOTION_BUFFER_SIZE;
+	scrInfoPtr->eventQueue.tcNext = 0;
 
-    InitScreenDefaults(scrInfoPtr);
-    scrInfoPtr->eventQueue.events = events;
-    scrInfoPtr->eventQueue.tcs = tcs;
-    scrInfoPtr->bitmap = (char *)FRAME_BUFFER_ADDR;
-    scrInfoPtr->cursorBits = (short *)(cursorBits);
-    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
-    scrInfoPtr->eventQueue.timestampMS = TO_MS(time);
-    scrInfoPtr->eventQueue.eSize = DEV_MAXEVQ;
-    scrInfoPtr->eventQueue.eHead = scrInfoPtr->eventQueue.eTail = 0;
-    scrInfoPtr->eventQueue.tcSize = MOTION_BUFFER_SIZE;
-    scrInfoPtr->eventQueue.tcNext = 0;
-
-    /*
-     * Initialize the color map, the screen, and the mouse.
-     */
-    InitColorMap();
-    ScreenInit();
+	/*
+	 * Initialize the color map, and the screen, and the mouse.
+	 */
+	InitColorMap();
+	ScreenInit();
+    }
     MouseInit();
     Scroll();
 
@@ -311,6 +356,14 @@ DevGraphicsInit()
      */
     if(!inKBDReset) {
 	KBDReset();
+    }
+
+    if (displayType == PMAGBA) {
+	/*
+	 * Clear any pending video interrupts.
+	 */
+
+	* ((int *) (slotAddr + PMAGBA_IREQ_OFFSET)) = 1;
     }
 
     initialized = TRUE;
@@ -1225,6 +1278,9 @@ Scroll()
     register int i, scanInc, lineCount;
 
 
+    if (displayType != PMAGBA) {
+	return;
+    }
     /*
      *  The following is an optimization to cause the scrolling 
      *  of text to be memory limited.  Basically the writebuffer is 
@@ -1285,7 +1341,7 @@ register char c;
 {
     MASTER_LOCK(&graphicsMutex);
 
-    if (initialized) {
+    if (initialized && (displayType == PMAGBA)) {
 	Blitc((unsigned char)(c & 0xff));
     } else {
 	if (isascii(c)) {
@@ -1449,14 +1505,19 @@ DevGraphicsOpen(devicePtr, useFlags, inNotifyToken, flagsPtr)
 				 * processes that the console device is ready.*/
     int		*flagsPtr;	/* Device open flags. */
 {
-    Time	time;
+    Time		time;
+    ReturnStatus	status = SUCCESS;
 
     MASTER_LOCK(&graphicsMutex);
 
+    if (displayType != PMAGBA) {
+	status = DEV_NO_DEVICE;
+	goto exit;
+    }
     if (devicePtr->unit == DEV_MOUSE_UNIT) {
 	if (devGraphicsOpen) {
-	    MASTER_UNLOCK(&graphicsMutex);
-	    return(FS_FILE_BUSY);
+	    status = FS_FILE_BUSY;
+	    goto exit;
 	}
 	devGraphicsOpen = TRUE;
 	devDivertXInput = FALSE;
@@ -1467,8 +1528,8 @@ DevGraphicsOpen(devicePtr, useFlags, inNotifyToken, flagsPtr)
 	 */
 	scrInfoPtr->eventQueue.events = events;
 	scrInfoPtr->eventQueue.tcs = tcs;
-	scrInfoPtr->bitmap = (char *)(FRAME_BUFFER_ADDR);
 	scrInfoPtr->cursorBits = (short *)(cursorBits);
+	scrInfoPtr->bitmap = (Address) (frameBuffer);
 	scrInfoPtr->eventQueue.eSize = DEV_MAXEVQ;
 	scrInfoPtr->eventQueue.eHead = scrInfoPtr->eventQueue.eTail = 0;
 	scrInfoPtr->eventQueue.tcSize = MOTION_BUFFER_SIZE;
@@ -1476,8 +1537,9 @@ DevGraphicsOpen(devicePtr, useFlags, inNotifyToken, flagsPtr)
 	Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
 	scrInfoPtr->eventQueue.timestampMS = TO_MS(time);
     }
+exit:
     MASTER_UNLOCK(&graphicsMutex);
-    return(SUCCESS);
+    return(status);
 }
 
 
@@ -1514,7 +1576,7 @@ DevGraphicsClose(devicePtr, useFlags, openCount, writerCount)
 	devGraphicsOpen = FALSE;
 	InitColorMap();
 	ScreenInit();
-	VmMach_UserUnmap();
+	VmMach_UserUnmap((Address) NIL);
     }
     MASTER_UNLOCK(&graphicsMutex);
     return(SUCCESS);
@@ -1600,54 +1662,61 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 
     switch (ioctlPtr->command) {
 	case IOC_GRAPHICS_GET_INFO: {
-	    Address		addr;
-
+	    char		*addr;
+	    Proc_ControlBlock	*procPtr;
 	    /*
 	     * Map the screen info struct into the user's address space.
 	     */
-	    addr = VmMach_UserMap(sizeof(DevScreenInfo), 
-			(Address)scrInfoPtr, TRUE, FALSE);
-	    if (addr == (Address)NIL) {
+	    status = VmMach_UserMap(sizeof(DevScreenInfo), (Address) NIL,
+		(Address)scrInfoPtr, FALSE, &addr);
+	    if (status != SUCCESS) {
 		goto mapError;
 	    }
+	    printf("DevScreenInfo = 0x%x\n", addr);
 	    bcopy((char *)&addr, ioctlPtr->outBuffer, sizeof(addr));
 	    /*
 	     * Map the events into the user's address space.
 	     */
-	    addr = VmMach_UserMap(sizeof(events), (Address)events, FALSE, 
-			FALSE);
-	    if (addr == (Address)NIL) {
+	    status = VmMach_UserMap(sizeof(events), (Address) NIL, 
+			(Address)events, FALSE, &addr); 
+	    if (status != SUCCESS) {
 		goto mapError;
 	    }
+	    printf("events = 0x%x\n", addr);
 	    scrInfoPtr->eventQueue.events = (DevEvent *)addr;
 	    /*
 	     * Map the tcs into the user's address space.
 	     */
-	    addr = VmMach_UserMap(sizeof(tcs), (Address)tcs, FALSE, FALSE);
-	    if (addr == (Address)NIL) {
+	    status = VmMach_UserMap(sizeof(tcs), (Address) NIL, (Address)tcs, 
+		FALSE, &addr);
+	    if (status != SUCCESS) {
 		goto mapError;
 	    }
+	    printf("tcs = 0x%x\n", addr);
 	    scrInfoPtr->eventQueue.tcs = (DevTimeCoord *)addr;
 	    /*
 	     * Map the plane mask into the user's address space.
 	     */
-	    addr = VmMach_UserMap(4, (Address)&planeMask, FALSE, FALSE);
-	    if (addr == (Address)NIL) {
+	    status = VmMach_UserMap(sizeof(planeMask), (Address) NIL, 
+		    (Address)&planeMask, FALSE, &addr);
+	    if (status != SUCCESS) {
 		goto mapError;
 	    }
 	    scrInfoPtr->planeMask = (char *)addr;
+	    printf("planeMask = 0x%x\n", addr);
 	    /*
 	     * Map the bitmap into the user's address space.
 	     */
-	    addr = VmMach_UserMap(1024*1024,
-			      (Address)FRAME_BUFFER_ADDR, FALSE, FALSE);
-	    if (addr == (Address)NIL) {
+	    status = VmMach_UserMap(1024*1024, (Address) NIL,
+			      (Address)scrInfoPtr->bitmap, FALSE, &addr);
+	    if (status != SUCCESS) {
 		goto mapError;
 	    }
 	    scrInfoPtr->bitmap = (char *)addr;
+	    printf("bitmap = 0x%x\n", addr);
 	    break;
 mapError:	
-	    VmMach_UserUnmap();
+	    VmMach_UserUnmap((Address) NIL);
 	    status = FS_BUFFER_TOO_BIG;
 	    printf("Cannot map shared data structures\n");
 	    break;
