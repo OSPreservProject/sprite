@@ -187,8 +187,8 @@ Fs_StreamCopy(oldStreamPtr, newStreamPtrPtr)
  *	the client is bad.
  *
  * Side effects:
- *	The handle is returned unlocked but with its refCount incremented.
- *	It should be released with FsHandleRelease(..., FALSE)
+ *	The handle is returned locked and with its refCount incremented.
+ *	It should be released with FsHandleRelease(..., TRUE)
  *
  *----------------------------------------------------------------------
  */
@@ -216,8 +216,7 @@ FsStreamClientVerify(streamIDPtr, clientID)
 		"FsClientVerify, client %d not known for stream <%d>\n",
 		clientID, tHdrPtr->fileID.minor);
 	    FsHandleRelease(streamPtr, TRUE);
-	} else {
-	    FsHandleUnlock(streamPtr);
+	    streamPtr = (Fs_Stream *)NIL;
 	}
     } else {
 	Sys_Panic(SYS_WARNING, "No stream <%d> for client %d\n",
