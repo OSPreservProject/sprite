@@ -109,6 +109,7 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	    /*
 	     * Update the attributes by contacting the I/O server.
 	     */
+	    fsStats.cltName.getIOAttrs++;
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].getIOAttr)
 			(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
 #ifdef lint
@@ -122,6 +123,7 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 			attrPtr);
 #endif lint
 	}
+	fsStats.cltName.getAttrIDs++;
     }
     return(status);
 }
@@ -320,6 +322,7 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
 	    /*
 	     * Set the attributes at the I/O server.
 	     */
+	    fsStats.cltName.setIOAttrs++;
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].setIOAttr)
 			(&hdrPtr->fileID, attrPtr, flags);
 #ifdef lint
@@ -331,9 +334,7 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
 	    status = FsControlSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
 #endif lint
 	}
-	if (status == SUCCESS) {
-	    fsStats.gen.numSetAttrs ++;
-	}
+    fsStats.cltName.setAttrIDs++;
     }
     return(status);
 }
@@ -653,6 +654,7 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
     getAttrResults.attrPtr = &(getAttrResultsParamPtr->attrResults.attrs);
     getAttrResults.fileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
 
+    fsStats.srvName.getAttrs++;
     status = (*fsDomainLookup[domainType][FS_DOMAIN_GET_ATTR])(prefixHandle,
 		(char *) storagePtr->requestDataPtr, (Address)openArgsPtr,
 		(Address)(&getAttrResults), &newNameInfoPtr);
@@ -809,6 +811,8 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
     }
     FsHandleRelease(prefixHandle, TRUE);
 
+
+    fsStats.srvName.setAttrs++;
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     getAttrResultsParamPtr = mnew(FsGetAttrResultsParam);
     ioFileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
@@ -967,6 +971,7 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
     }
     FsHandleUnlock(hdrPtr);
 
+    fsStats.srvName.getAttrs++;
     attrPtr = mnew(Fs_Attributes);
     status = (*fsAttrOpTable[domainType].getAttr)(fileIDPtr, clientID, attrPtr);
 #ifdef lint
@@ -1109,6 +1114,7 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
 	    return(status);
 	}
     }
+    fsStats.srvName.setAttrs++;
     FsHandleUnlock(hdrPtr);
     status = (*fsAttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
 						&paramPtr->ids,paramPtr->flags);
@@ -1244,6 +1250,7 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
 	 * If someone has the I/O device open we'll have a handle and
 	 * should go get the access and modify times.
 	 */
+	fsStats.srvName.getIOAttrs++;
 	FsHandleUnlock(hdrPtr);
 	status = (*fsStreamOpTable[hdrPtr->fileID.type].getIOAttr)
 		(&hdrPtr->fileID, clientID, attrPtr);
@@ -1382,7 +1389,8 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
     fileIDPtr = &(setAttrParamPtr->fileID);
     attrPtr = &(setAttrParamPtr->attrs);
 
-    hdrPtr = VerifyIOHandle(fileIDPtr);
+   fsStats.srvName.setIOAttrs++;
+   hdrPtr = VerifyIOHandle(fileIDPtr);
     if (hdrPtr == (FsHandleHeader *) NIL) {
 	/*
 	 * Noone has the I/O device open so we don't have a handle.
