@@ -34,7 +34,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdlib.h>
 #include <dbg.h>
 #include <mach.h>
-#include <string.h>
      
 static ReturnStatus InitExbRobot _ARGS_((Fs_Device *devicePtr,
      ScsiDevice *devPtr));
