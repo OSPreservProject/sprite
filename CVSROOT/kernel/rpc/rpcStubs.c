@@ -84,10 +84,6 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcReply, "reply", 			/* 52 - FS_RPC_REPLY */
 };
 
-Fs_RpcRecovery()
-{
-    return(RPC_INVALID_ARG);
-}
 Fs_RpcRequest()
 {
     return(RPC_INVALID_ARG);
