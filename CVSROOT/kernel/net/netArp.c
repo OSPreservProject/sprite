@@ -545,6 +545,7 @@ NetArpInput(interPtr, packetPtr, packetLength)
 		    Proc_CallFunc(NetArpHandler, (ClientData)arpInputPtr,0);
 		}
 	     }
+	    break;
 	}
 	case NET_RARP_REPLY: {
 	    ArpState *arpPtr;
