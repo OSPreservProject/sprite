@@ -525,11 +525,18 @@ Exc_Trap(trapStack)
 
 int
 ExcUserReturn(procPtr, trapStackPtr)
-    Proc_ControlBlock	*procPtr;
-    Exc_TrapStack	*trapStackPtr;
+    register	Proc_ControlBlock	*procPtr;
+    register	Exc_TrapStack		*trapStackPtr;
 {
-    Boolean	gotSig = FALSE;
-    int		newPC;
+    register	Boolean	gotSig = FALSE;
+    int			newPC;
+
+    /* 
+     * Take a context switch if one is pending for this process.
+     */
+    if (procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING) {
+	Sched_LockAndSwitch();
+    }
 
     /*
      * Check for signals.  Interrupts are disabled because we have to 
@@ -550,7 +557,14 @@ ExcUserReturn(procPtr, trapStackPtr)
 	gotSig = Sig_Handle(trapStackPtr, &newPC);
     }
     
-    if (procPtr->genFlags & PROC_SINGLE_STEP) {
+    if ((procPtr->genFlags & PROC_SINGLE_STEP) ||
+	(procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING)) {
+	/*
+	 * Set the trace trap bit if we are supposed to single-step this
+	 * process or a context switch is pending.  We check for a context
+	 * switch pending here even though we just checked above just in
+	 * case we got preempted while dealing with signals.
+	 */
 	trapStackPtr->excStack.statusReg |= SUN_SR_TRACEMODE;
     }
 
