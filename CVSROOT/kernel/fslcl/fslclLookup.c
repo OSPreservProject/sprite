@@ -2077,8 +2077,12 @@ CheckPermissions(handlePtr, useFlags, idPtr, type)
      */
     if ((useFlags & FS_WRITE) && (descPtr->fileType == FS_FILE) &&
 	(descPtr->permissions & (FS_SET_UID|FS_SET_GID))) {
+	Fs_Attributes attr;
+
 	descPtr->permissions &= ~(FS_SET_UID|FS_SET_GID);
 	descPtr->flags |= FSDM_FD_DIRTY;
+	attr.permissions = descPtr->permissions;
+	Fscache_UpdateCachedAttr(&handlePtr->cacheInfo, &attr, FS_SET_MODE);
     }
     /*
      * Check for ownership permission.  This probably redundant with
