@@ -12,8 +12,54 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* !lint */
 
-#include "machMon.h"
+#include "sprite.h"
 #include "dbg.h"
+#include "dev.h"
+#include "mem.h"
+#include "net.h"
+#include "proc.h"
+#include "prof.h"
+#include "rpc.h"
+#include "sched.h"
+#include "sig.h"
+#include "sync.h"
+#include "sys.h"
+#include "timer.h"
+#include "vm.h"
+#include "machMon.h"
+#include "devAddrs.h"
+#include "mach.h"
+
+void main();
+static void Init();
+extern char *SpriteVersion();
+extern void Main_HookRoutine();	/* routine to allow custom initialization */
+extern void Main_InitVars();
+extern void Dump_Init();
+extern void Timer_Init();
+extern void Fs_Bin();
+extern void Proc_RecovInit();
+
+/*
+ *  Pathname of the Init program.
+ */
+#define INIT	 	"/initsprite"
+
+/*
+ * Flags defined in individual's mainHook.c to modify the startup behavior. 
+ */
+extern Boolean main_Debug;	/* If TRUE then enter the debugger */
+extern Boolean main_DoProf;	/* If TRUE then start profiling */
+extern Boolean main_DoDumpInit;	/* If TRUE then initialize dump routines */
+extern char   *main_AltInit;	/* If non-null, then it gives name of
+				 * alternate init program. */
+extern Boolean main_AllowNMI;	/* If TRUE then allow non-maskable interrupts.*/
+
+extern int main_NumRpcServers;	/* # of rpc servers to spawn off */
+
+int main_PrintInitRoutines = TRUE;/* print out each routine as it's called. */
+
+extern	Address	vmMemEnd;	/* The end of allocated kernel memory. */
 
 
 /*
@@ -21,14 +67,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  * main --
  *
- *	First main routine for sun4.  All it does is print Hello World.
- *	It should loop, doing this forever.
+ *	All kernel modules are initialized by calling their *_Init()
+ *	routines. In addition, kernel processes are created to
+ *	handle virtual memory and rpc-specific stuff. The last process
+ *	created runs the `init' program.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	The whole system is initialized.
  *
  *----------------------------------------------------------------------
  */
@@ -36,57 +84,366 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void
 main()
 {
-    extern	void	Timer_TimerInit();
-    extern	void	Timer_TimerStart();
-   /*
-    * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
-    */
+    Proc_PID	pid;
+    int		i;
+
+    /*
+     * Initialize variables specific to a given kernel.  
+     * IMPORTANT: Only variable assignments and nothing else can be
+     *		  done in this routine.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Main_InitVars().\n");
+    }
+    Main_InitVars();
+
+    /*
+     * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Mach_Init().\n");
+    }
     Mach_Init();
-    Mach_MonPrintf("After Mach_Init\n");
+
+    /*
+     * Initialize the debugger.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Dbg_Init().\n");
+    }
     Dbg_Init();
-    Mach_MonPrintf("After Dbg_Init\n");
-    /* Sys Init here */
+
+    /*
+     * Initialize the system module, particularly the fact that there is an
+     * implicit DISABLE_INTR on every processor.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sys_Init().\n");
+    }
+    Sys_Init();
+
+    /*
+     * Now allow memory to be allocated by the "Vm_BootAlloc" call.  Memory
+     * can be allocated by this method until "Vm_Init" is called.  After this
+     * then the normal memory allocator must be used.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Vm_BootInit().\n");
+    }
     Vm_BootInit();
-    Mach_MonPrintf("After Vm_BootInit\n");
-    Timer_TimerInit();
-    Timer_TimerStart();
-    Mach_MonPrintf("After Timer Initialize routines\n");
+
+    /*
+     * Initialize all devices.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Dev_Init().\n");
+    }
+    Dev_Init();
+
+    /*
+     *  Initialize the mappings of keys to call dump routines.
+     *  Must be after Dev_Init. 
+     */
+    if (main_DoDumpInit) {
+	if (main_PrintInitRoutines) {
+	    Mach_MonPrintf("Calling Dump_Init().\n");
+	}
+	Dump_Init();
+    }
+
+    /*
+     * Initialize the timer, signal, process, scheduling and synchronization
+     * modules' data structures.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_Init().\n");
+    }
+    Proc_Init();
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sync_LockStatInit().\n");
+    }
+    Sync_LockStatInit();
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Timer_Init().\n");
+    }
+    Timer_Init();
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sig_Init().\n");
+    }
+    Sig_Init();
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sched_Init().\n");
+    }
+    Sched_Init();
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sync_Init().\n");
+    }
     Sync_Init();
-    Mach_MonPrintf("After Sync_Init\n");
+
+
+    /*
+     * Sys_Printfs are not allowed before this point.
+     */  
+    printf("Sprite kernel: %s\n", SpriteVersion());
+
+    /*
+     * Set up bins for the memory allocator.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Fs_Bin\n");
+    }
+    Fs_Bin();
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_Bin\n");
+    }
+    Net_Bin();
+
+    /*
+     * Initialize virtual memory.  After this point must use the normal
+     * memory allocator to allocate memory.  If you use Vm_BootAlloc then
+     * will get a panic into the debugger.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Vm_Init\n");
+    }
     Vm_Init();
-    Mach_MonPrintf("After Vm_Init\n");
+
+    /*
+     * malloc can be called from this point on.
+     */
+
+#ifdef NOTDEF
+    /*
+     * Initialize the main process. Must be called before any new 
+     * processes are created.
+     * Dependencies: Proc_InitTable, Sched_Init, Vm_Init, Mem_Init
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_InitMainProc\n");
+    }
+    Proc_InitMainProc();
+
+    /*
+     * Enable server process manager.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_ServerInit\n");
+    }
+    Proc_ServerInit();
+#endif NOTDEF
+
+    /*
+     * Initialize the ethernet drivers.
+     * Dependencies: Vm_Init
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_Init\n");
+    }
     Net_Init();
-    Mach_MonPrintf("After Net_Init\n");
-    Mach_MonPrintf("Enabling interrupts\n");
+
+    /*
+     * Initialize the recovery module.  Do before Rpc and after Vm_Init.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Recov_Init\n");
+    }
+    Recov_Init();
+
+    /*
+     * Initialize the data structures for the Rpc system.  This uses
+     * Vm_RawAlloc to so it must be called after Vm_Init.
+     * Dependencies: Timer_Init, Vm_Init, Net_Init, Recov_Init
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Rpc_Init\n");
+    }
+    Rpc_Init();
+
+#ifdef NOTDEF
+    /*
+     * Configure devices that may or may not exist.  This needs to be
+     * done after Proc_InitMainProc because the initialization routines
+     * use SetJump which uses the proc table entry for the main process.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Dev_Config\n");
+    }
+    Dev_Config();
+
+    /*
+     * Initialize profiling after the timer and vm stuff is set up.
+     * Dependencies: Timer_Init, Vm_Init
+     */
+    if (main_DoProf) {
+	Prof_Init();
+    }
+#endif NOTDEF
+    /*
+     *  Allow interrupts from now on.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Enabling interrupts\n");
+    }
     ENABLE_INTR();
-    DBG_CALL;
-    Mach_MonPrintf("Debugger returned\n");
-    Mach_MonPrintf("Trying it again\n");
-    DBG_CALL;
-    Mach_MonPrintf("Debugger returned again\n");
-    Mach_MonPrintf("Here we are.\n");
 
-    for ( ; ; ) {
-	;
+    if (main_Debug) {
+	DBG_CALL;
     }
-}
 
-int
-diddly(x)
-int	x;
-{
-    if (x == 0) {
-	return 0;
-    } else {
-	Mach_MonPrintf("Hello World!\n");
-	diddly(x - 1);
+    /*
+     * Sleep for a few seconds to calibrate the idle time ticks.
+     */
+    Sched_TimeTicks();
+
+    /*
+     * Start profiling, if desired.
+     */
+    if (main_DoProf) {
+        (void) Prof_Start();
     }
-    return 1;
+
+    /*
+     * Do an initial RPC to get a boot timestamp.  This allows
+     * servers to detect when we crash and reboot.  This will set the
+     * system clock too, although rdate is usually done from user level later.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Rpc_Start\n");
+    }
+    Rpc_Start();
+
+    /*
+     * Initialize the file system. 
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Fs_Init\n");
+    }
+    Fs_Init();
+
+    /*
+     * Before starting up any more processes get a current directory
+     * for the main process.  Subsequent new procs will inherit it.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Fs_ProcInit\n");
+    }
+    Fs_ProcInit();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Bunch of call funcs\n");
+    }
+    /*
+     * Start the clock daemon and the routine that opens up the swap directory.
+     */
+    Proc_CallFunc(Vm_Clock, (ClientData) NIL, 0);
+    Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, 0);
+
+    /*
+     * Start the process that synchronizes the filesystem caches
+     * with the data kept on disk.
+     */
+    Proc_CallFunc(Fs_SyncProc, (ClientData) NIL, 0);
+
+    /*
+     * Create a few RPC server processes and the Rpc_Daemon process which
+     * will create more server processes if needed.
+     */
+    if (main_NumRpcServers > 0) {
+	for (i=0 ; i<main_NumRpcServers ; i++) {
+	    (void) Rpc_CreateServer((int *) &pid);
+	}
+    }
+    (void) Proc_NewProc((Address) Rpc_Daemon, PROC_KERNEL, FALSE, &pid,
+	"Rpc_Daemon");
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Creating Proc server procs\n");
+    }
+
+    /*
+     * Create processes  to execute functions.
+     */
+    for (i = 0; i < proc_NumServers; i++) {
+	(void) Proc_NewProc((Address) Proc_ServerProc, PROC_KERNEL, FALSE, 
+			&pid, "Proc_ServerProc");
+    }
+
+    /*
+     * Set up process migration recovery management.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_RecovInit\n");
+    }
+    Proc_RecovInit();
+
+    /*
+     * Call the routine to start test kernel processes.
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Main_HookRoutine\n");
+    }
+    Main_HookRoutine();
+
+    /*
+     * Print out the amount of memory used.
+     */
+    printf("MEMORY %d bytes allocated for kernel\n", 
+		vmMemEnd - mach_KernStart);
+
+    /*
+     * Start up the first user process.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Creating Init\n");
+    }
+    (void) Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
+
+    (void) Sync_WaitTime(time_OneYear);
+    printf("Main exiting\n");
+    Proc_Exit(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Init --
+ *
+ *	This routine execs the init program.
+ *
+ * Results:
+ *	This routine only returns an error if the exec failed.
+ *
+ * Side effects:
+ *	The current process image is overlayed by the init process.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Init()
+{
+    static char		*initArgs[] = { INIT, (char *) NIL };
+    static char		*altInitArgs[] = { 0, (char *) NIL };
+    ReturnStatus	status;
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("In Init\n");
+    }
+    if (main_AltInit != 0) {
+	altInitArgs[0] = main_AltInit;
+	printf("Execing \"%s\"\n", altInitArgs[0]);
+	status = Proc_KernExec(altInitArgs[0], initArgs);
+	printf( "Init: Could not exec %s status %x.\n",
+			altInitArgs[0], status);
+    }
+    status = Proc_KernExec(initArgs[0], initArgs);
+    printf( "Init: Could not exec %s status %x.\n",
+			initArgs[0], status);
+    Proc_Exit(1);
 }
 
-printf(arg, a1, a2, a3, a4, a5, a6)
-char	*arg;
-{
-	Mach_MonPrintf(arg, a1, a2, a3, a4, a5, a6);
-	return;
-}
