@@ -111,6 +111,8 @@ static ReturnStatus UpdateState();
 static ReturnStatus ResumeExecution();
 static void 	    AbortMigration();
 
+static void 	    SuspendCallback();
+
 /*
  * Procedures for statistics gathering
  */
@@ -1037,6 +1039,15 @@ typedef struct {
 } SuspendInfo;
 
 /*
+ * Extra info used for suspend callback.
+ */
+
+typedef struct {
+    Proc_PID	processID;	/* Process being suspended/resumed. */
+    SuspendInfo info;		/* Info to pass to home machine. */
+} SuspendCallbackInfo;
+
+/*
  *----------------------------------------------------------------------
  *
  * GetProcEncapSize --
@@ -1448,12 +1459,13 @@ ProcMigGetUpdate(cmdPtr, procPtr, inBufPtr, outBufPtr)
  * ProcRemoteSuspend --
  *
  *	Tell the home node of a process that it has been suspended or resumed.
+ *	This routine is called from within the signal handling routines.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	A remote procedure call is performed.
+ *	Sets up a background process to make an RPC.
  *
  *----------------------------------------------------------------------
  */
@@ -1464,12 +1476,8 @@ ProcRemoteSuspend(procPtr, exitFlags)
     int exitFlags;			   /* Flags to set for child. */
 {
     ReturnStatus status;
-    int numTries;			/* number of times trying RPC */
-    SuspendInfo info;			/* information to be passed back */
-    register SuspendInfo *infoPtr = &info;
-    					/* information to be passed back */
-    ProcMigCmd cmd;
-    Proc_MigBuffer inBuf;
+    SuspendCallbackInfo *callPtr;		 /* Information for the callback. */
+    SuspendInfo *infoPtr;		 /* Info to pass back. */
 
     if (proc_MigDebugLevel > 4) {
 	printf("ProcRemoteSuspend(%x) called.\n", procPtr->processID);
@@ -1496,46 +1504,99 @@ ProcRemoteSuspend(procPtr, exitFlags)
 	return;
     }
 
+    callPtr = (SuspendCallbackInfo *) malloc(sizeof(SuspendCallbackInfo));
+    infoPtr = &callPtr->info;
+    callPtr->processID = procPtr->processID;
 
     COPY_STATE(procPtr, infoPtr, termReason);
     COPY_STATE(procPtr, infoPtr, termStatus);
     COPY_STATE(procPtr, infoPtr, termCode);
     infoPtr->flags = exitFlags;
+    Proc_CallFunc(SuspendCallback, (ClientData) callPtr, 0);
+    
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SuspendCallback --
+ *
+ *	Tell the home node of a process that it has been suspended or resumed.
+ *	This is called via a Proc_CallFunc so the signal monitor lock
+ *	is not held.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A remote procedure call is performed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static void
+SuspendCallback(data, callInfoPtr)
+    ClientData		data;
+    Proc_CallInfo	*callInfoPtr;		/* not used */
+{
+    SuspendCallbackInfo *callPtr;	/* Pointer to callback info. */
+    register Proc_ControlBlock 	*procPtr;  /* Process whose state is changing. */
+    ReturnStatus status;
+    int numTries;			/* number of times trying RPC */
+    ProcMigCmd cmd;
+    Proc_MigBuffer inBuf;
+    int host;
+    Proc_PID pid;
+
+    callPtr = (SuspendCallbackInfo *) data;
+    if (proc_MigDebugLevel > 4) {
+	printf("SuspendCallback(%x) called.\n", callPtr->processID);
+    }
+    procPtr = Proc_LockPID(callPtr->processID);
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	status = PROC_NO_PEER;
+	goto done;
+    }
+    host = procPtr->peerHostID;
+    cmd.remotePid = procPtr->peerProcessID;
 
     /*
-     * Unlock the process while we're doing the RPC.
+     * Now that we have the relevant info, unlock the process while we're
+     * doing the RPC.  We don't need it anymore anyway.
      */
+
     Proc_Unlock(procPtr);
 
     /*
      * Set up for the RPC.
      */
     cmd.command = PROC_MIGRATE_CMD_SUSPEND;
-    cmd.remotePid = procPtr->peerProcessID;
+
     inBuf.size = sizeof(SuspendInfo);
-    inBuf.ptr = (Address) infoPtr;
+    inBuf.ptr = (Address) &callPtr->info;
 
     for (numTries = 0; numTries < PROC_MAX_RPC_RETRIES; numTries++) {
-	status = ProcMigCommand(procPtr->peerHostID, &cmd, &inBuf,
+	status = ProcMigCommand(host, &cmd, &inBuf,
 				(Proc_MigBuffer *) NIL);
 	if (status != RPC_TIMEOUT) {
 	    break;
 	}
-	status = Proc_WaitForHost(procPtr->peerHostID);
+	status = Proc_WaitForHost(host);
 	if (status != SUCCESS) {
 	    break;
 	}
     }
-
+    done:
     if (status != SUCCESS && proc_MigDebugLevel > 2) {
-	printf("Warning: Proc_MigUpdateInfo: error returned passing suspend to host %d:\n\t%s.\n",
-		procPtr->peerHostID,Stat_GetMsg(status));
+	printf("Warning: SuspendCallback: error returned passing suspend to host %d:\n\t%s.\n",
+		host,Stat_GetMsg(status));
+    } else if (proc_MigDebugLevel > 4) {
+	printf("SuspendCallback(%x) completed successfully.\n",
+	       callPtr->processID);
     }
-    
-    /*
-     * Give the process back the way it was handed to us (locked).
-     */
-    Proc_Lock(procPtr);
+    free ((Address) callPtr);
 }
 
 
