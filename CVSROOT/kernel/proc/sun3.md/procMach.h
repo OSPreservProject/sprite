@@ -19,7 +19,7 @@
 #ifndef _PROCMACH
 #define _PROCMACH
 
-#include "sprite.h"
+#include <sprite.h>
 
 #define	NEW_PAGE_SIZE		0x2000
 #ifdef sun4

@@ -15,11 +15,11 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "procMach.h"
-#include "proc.h"
-#include "procInt.h"
-#include "status.h"
+#include <sprite.h>
+#include <procMach.h>
+#include <proc.h>
+#include <procInt.h>
+#include <status.h>
 
 
 /*
