@@ -698,9 +698,9 @@ FsGetNextHandle(hashSearchPtr)
 	 */
 	if ((hdrPtr->flags & FS_HANDLE_WANTED) &&
 	    (hdrPtr->flags & FS_HANDLE_LOCKED)){
-	    Sys_Panic(SYS_WARNING, "GetNextHandle skipping <%d,%d> type %d hash 0x%x\n",
-		hdrPtr->fileID.major, hdrPtr->fileID.minor,
-		hdrPtr->fileID.type, hashEntryPtr);
+	    Sys_Panic(SYS_WARNING, "GetNextHandle skipping %s handle <%d,%d>\n",
+		FsFileTypeToString(hdrPtr->fileID.type),
+		hdrPtr->fileID.major, hdrPtr->fileID.minor);
 	    continue;
 	}
 	/*
@@ -739,8 +739,9 @@ FsGetNextHandle(hashSearchPtr)
  *	None.
  *
  * Side effects:
- *	Sets the INVALID flag in the handle and negates the minor
- *	field of the fileID so that the handle won't get found.
+ *	Sets the INVALID flag in the handle, negates the minor
+ *	field of the fileID so that the handle won't get found,
+ *	removes the handle from the hash table.
  *
  *----------------------------------------------------------------------------
  *
@@ -753,23 +754,25 @@ FsHandleInvalidate(hdrPtr)
 
     LOCK_MONITOR;
 
-    hdrPtr->flags |= FS_HANDLE_INVALID;
-    /*
-     * Invalid handles are deleted from the hash table and the fileID is
-     * smashed so that all subsequent operations using this handle that
-     * go to the server will fail with a stale handle return code.
-     */
-    hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) &(hdrPtr->fileID));
-    if (hashEntryPtr == (Hash_Entry *) NIL) {
-	UNLOCK_MONITOR;
-	Sys_Panic(SYS_FATAL,
-		"FsHandleInvalidate: Can't find <%d,%d> type %d\n",
-		    hdrPtr->fileID.major, hdrPtr->fileID.minor,
-		    hdrPtr->fileID.type);
-	return;
+    if ((hdrPtr->flags & FS_HANDLE_INVALID) == 0) {
+	hdrPtr->flags |= FS_HANDLE_INVALID;
+	/*
+	 * Invalid handles are deleted from the hash table and the fileID is
+	 * smashed so that all subsequent operations using this handle that
+	 * go to the server will fail with a stale handle return code.
+	 */
+	hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) &hdrPtr->fileID);
+	if (hashEntryPtr == (Hash_Entry *) NIL) {
+	    UNLOCK_MONITOR;
+	    Sys_Panic(SYS_FATAL,
+		    "FsHandleInvalidate: Can't find <%d,%d> type %d\n",
+			hdrPtr->fileID.major, hdrPtr->fileID.minor,
+			hdrPtr->fileID.type);
+	    return;
+	}
+	Hash_Delete(fileHashTable, hashEntryPtr);
+	hdrPtr->fileID.minor = -hdrPtr->fileID.minor;
     }
-    Hash_Delete(fileHashTable, hashEntryPtr);
-    hdrPtr->fileID.minor = -hdrPtr->fileID.minor;
 
     UNLOCK_MONITOR;
 }
