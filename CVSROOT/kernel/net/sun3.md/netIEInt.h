@@ -560,6 +560,12 @@ extern	NetIEState	netIEState;
 extern	Address	netIERecvBuffers[];
 
 /*
+ * Buffers for output.
+ */
+extern	char	*netIEXmitFiller;
+extern	char	*netIEXmitTempBuffer;
+
+/*
  * General routines.
  */
 

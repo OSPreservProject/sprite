@@ -87,6 +87,14 @@ NetIEInit(name, number, ctrlAddr)
 {
     int 	i;
     List_Links	*itemPtr;
+    Address	(*allocFunc)();
+
+#ifdef sun2
+    allocFunc = Vm_RawAlloc;
+#endif
+#ifdef sun3
+    allocFunc = VmMach_NetMemAlloc;
+#endif
 
     DISABLE_INTR();
 
@@ -125,8 +133,11 @@ NetIEInit(name, number, ctrlAddr)
     netIEState.xmitFreeList = &xmitFreeListHdr;
     List_Init(netIEState.xmitFreeList);
 
+    netIEXmitFiller = (char *)allocFunc(NET_ETHER_MIN_BYTES);
+    netIEXmitTempBuffer = (char *)allocFunc(NET_ETHER_MAX_BYTES + 2);
+
     for (i = 0; i < NET_IE_NUM_XMIT_ELEMENTS; i++) {
-	itemPtr = (List_Links *) Vm_RawAlloc(sizeof(NetXmitElement)), 
+	itemPtr = (List_Links *) allocFunc(sizeof(NetXmitElement)), 
 	List_InitElement(itemPtr);
 	List_Insert(itemPtr, LIST_ATREAR(netIEState.xmitFreeList));
     }
@@ -158,7 +169,7 @@ NetIEInit(name, number, ctrlAddr)
      */
 
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
-	netIERecvBuffers[i] = Vm_RawAlloc(NET_IE_RECV_BUFFER_SIZE);
+	netIERecvBuffers[i] = allocFunc(NET_IE_RECV_BUFFER_SIZE);
     }
 
     /*

@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "vm.h"
+#include "vmMach.h"
 #include "netLEInt.h"
 #include "net.h"
 #include "netInt.h"
@@ -35,7 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Receive data buffers.
  */
-static	Address	recvDataBuffer[NET_LE_RECV_BUFFER_SIZE];
+static	Address	recvDataBuffer[NET_LE_NUM_RECV_BUFFERS];
 
 /*
  * Flag to note if recv memory has been initialized and/or allocated.
@@ -65,12 +66,20 @@ AllocateRecvMem()
 {
     unsigned int	memBase;
     int			i;
+    Address	(*allocFunc)();
+
+#ifdef sun2
+    allocFunc = Vm_RawAlloc;
+#endif
+#ifdef sun3
+    allocFunc = VmMach_NetMemAlloc;
+#endif
 
     /*
      * Allocate the ring of receive buffer descriptors.  The ring must start
      * on 8-byte boundary.  
      */
-    memBase = (unsigned int) Vm_RawAlloc(
+    memBase = (unsigned int) allocFunc(
 		(NET_LE_NUM_RECV_BUFFERS * sizeof(NetLERecvMsgDesc)) + 8);
     /*
      * Insure ring starts on 8-byte boundary.
@@ -84,7 +93,7 @@ AllocateRecvMem()
      * Allocate the receive buffers.
      */
      for (i = 0; i < NET_LE_NUM_RECV_BUFFERS; i++) {
-	recvDataBuffer[i] = (Address) Vm_RawAlloc(NET_LE_RECV_BUFFER_SIZE);
+	recvDataBuffer[i] = (Address) allocFunc(NET_LE_RECV_BUFFER_SIZE);
     }
     recvMemAllocated = TRUE;
 }

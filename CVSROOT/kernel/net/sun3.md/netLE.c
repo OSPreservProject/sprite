@@ -78,6 +78,15 @@ NetLEInit(name, number, ctrlAddr)
 {
     int 	i;
     List_Links	*itemPtr;
+    Address	(*allocFunc)();
+
+    printf("Probing LE\n");
+#ifdef sun2
+    allocFunc = Vm_RawAlloc;
+#endif
+#ifdef sun3
+    allocFunc = VmMach_NetMemAlloc;
+#endif
 
     DISABLE_INTR();
 
@@ -105,6 +114,7 @@ NetLEInit(name, number, ctrlAddr)
 	return(FALSE);
     }
     Mach_UnsetJump();
+    printf("Initializing LE\n");
 
     /*
      * Initialize the transmission list.  
@@ -117,7 +127,7 @@ NetLEInit(name, number, ctrlAddr)
     List_Init(netLEState.xmitFreeList);
 
     for (i = 0; i < NET_LE_NUM_XMIT_ELEMENTS; i++) {
-	itemPtr = (List_Links *) Vm_RawAlloc(sizeof(NetXmitElement)), 
+	itemPtr = (List_Links *) allocFunc(sizeof(NetXmitElement)), 
 	List_InitElement(itemPtr);
 	List_Insert(itemPtr, LIST_ATREAR(netLEState.xmitFreeList));
     }
@@ -148,8 +158,8 @@ NetLEInit(name, number, ctrlAddr)
     /*
      * Allocate the initialization block.
      */
-    netLEState.initBlockPtr = (NetLEInitBlock *) 
-			Vm_RawAlloc(sizeof(NetLEInitBlock));
+    netLEState.initBlockPtr = 
+		    (NetLEInitBlock *)allocFunc(sizeof(NetLEInitBlock));
     /*
      * Reset the world.
      */

@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netInt.h"
 #include "sys.h"
 #include "vm.h"
+#include "vmMach.h"
 #include "list.h"
 
 #include "sync.h"
@@ -54,7 +55,7 @@ static  char            loopBackBuffer[NET_ETHER_MAX_BYTES];
  * buffer chain is of a minumum size.
  */
 
-static char		firstDataBuffer[NET_LE_MIN_FIRST_BUFFER_SIZE];
+static char		*firstDataBuffer;
 
 
 /*
@@ -92,6 +93,9 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     int					totalLength;
     int					length;
     int					amountNeeded;
+#ifdef sun3
+    Net_ScatterGather			newScatGathArr[NET_LE_NUM_XMIT_BUFFERS];
+#endif
 
     netLEStatePtr = &netLEState;
 
@@ -109,6 +113,13 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     netLEState.transmitting = TRUE;
     curScatGathPtr = scatterGatherPtr;
+#ifdef sun3
+    /*
+     * Remap the packet into network addressible memory.
+     */
+    VmMach_NetMapPacket(scatterGatherPtr, scatterGatherLength, newScatGathArr);
+    scatterGatherPtr = newScatGathArr;
+#endif
 
     /*
      * Since the first part of a packet is always the ethernet header that
@@ -299,12 +310,20 @@ static void
 AllocateXmitMem()
 {
     unsigned int	memBase;		
+    Address		(*allocFunc)();
+
+#ifdef sun2
+    allocFunc = Vm_RawAlloc;
+#endif
+#ifdef sun3
+    allocFunc = VmMach_NetMemAlloc;
+#endif
 
     /*
      * Allocate the ring of transmission buffer descriptors.  
      * The ring must start on 8-byte boundary.  
      */
-    memBase = (unsigned int) Vm_RawAlloc(
+    memBase = (unsigned int) allocFunc(
 		(NET_LE_NUM_XMIT_BUFFERS * sizeof(NetLEXmitMsgDesc)) + 8);
     /*
      * Insure ring starts on 8-byte boundary.
@@ -313,6 +332,11 @@ AllocateXmitMem()
 	memBase = (memBase + 8) & ~0x7;
     }
     netLEState.xmitDescFirstPtr = (NetLEXmitMsgDesc *) memBase;
+
+    /*
+     * Allocate the first buffer for a packet.
+     */
+    firstDataBuffer = allocFunc(NET_LE_MIN_FIRST_BUFFER_SIZE);
 
     xmitMemAllocated = TRUE;
 }

@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netInt.h"
 #include "sys.h"
 #include "list.h"
+#include "vmMach.h"
 
 #include "sync.h"
 
@@ -40,7 +41,7 @@ static	NetIETransmitBufDesc *xmitBufAddr;
 /*
  * Extra bytes for short packets.
  */
-static	char	xmitFiller[NET_ETHER_MIN_BYTES];
+char	*netIEXmitFiller;
 
 /*
  * Buffer for pieces of a packet that are too small or that start
@@ -48,7 +49,7 @@ static	char	xmitFiller[NET_ETHER_MIN_BYTES];
  * be and start on an odd address.
  */
 #define XMIT_TEMP_BUFSIZE	(NET_ETHER_MAX_BYTES + 2)
-static char	xmitTempBuffer[XMIT_TEMP_BUFSIZE];
+char	*netIEXmitTempBuffer;
 
 /*
  * Define the minimum size allowed for a piece of a transmitted packet.
@@ -96,9 +97,19 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 #define VECTOR_LENGTH	20
     int					borrowedBytes[VECTOR_LENGTH];
     int					*borrowedBytesPtr;
+#ifdef sun3
+    Net_ScatterGather			newScatGathArr[NET_IE_NUM_XMIT_BUFFERS];
+#endif
 
     netIEState.transmitting = TRUE;
     curScatGathPtr = scatterGatherPtr;
+#ifdef sun3
+    /*
+     * Remap the packet into network addressible memory.
+     */
+    VmMach_NetMapPacket(scatterGatherPtr, scatterGatherLength, newScatGathArr);
+    scatterGatherPtr = newScatGathArr;
+#endif
 
     /*
      * There is already a prelinked command list.  A pointer to the list
@@ -149,11 +160,10 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		netIEState.transmitting = FALSE;
 		ENABLE_INTR();
 
-		panic(
-			  "IE OutputPacket: Odd addressed buffer too large.");
+		panic("IE OutputPacket: Odd addressed buffer too large.");
 		return;
 	    }
-	    bcopy(bufAddr, xmitTempBuffer, length);
+	    bcopy(bufAddr, netIEXmitTempBuffer, length);
 	    if (length < NET_IE_MIN_DMA_SIZE) {
 		/*
 		 * This element of the scatter/gather vector is too small;
@@ -172,7 +182,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		    }
 		    if (numBorrowedBytes > 0) {
 			bcopy(scatterGatherPtr[1].bufAddr,
-			     &xmitTempBuffer[length], numBorrowedBytes);
+			     &netIEXmitTempBuffer[length], numBorrowedBytes);
 			borrowedBytesPtr[1] = numBorrowedBytes;
 			length += numBorrowedBytes;
 		    }
@@ -189,7 +199,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	    }
 
 	    NET_IE_ADDR_FROM_68000_ADDR(
-		 (int) (xmitTempBuffer), (int) (xmitBufDescPtr->bufAddr));
+		 (int) (netIEXmitTempBuffer), (int) (xmitBufDescPtr->bufAddr));
 	} else {
 	    NET_IE_ADDR_FROM_68000_ADDR(
 		 (int) (bufAddr), (int) (xmitBufDescPtr->bufAddr));
@@ -210,7 +220,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      */
 
     if (totalLength < NET_ETHER_MIN_BYTES) {
-        NET_IE_ADDR_FROM_68000_ADDR((int) xmitFiller, 
+        NET_IE_ADDR_FROM_68000_ADDR((int) netIEXmitFiller, 
 			            (int) xmitBufDescPtr->bufAddr); 
 	length = NET_ETHER_MIN_BYTES - totalLength;
 	if (length < MIN_XMIT_BUFFER_SIZE) {

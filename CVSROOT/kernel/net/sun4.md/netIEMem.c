@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "list.h"
 #include "vm.h"
+#include "vmMach.h"
 
 static	Address	memAddr;
 
@@ -52,7 +53,12 @@ void
 NetIEMemInit()
 {
     if (!netIEState.running) {
+#ifdef sun2
 	netIEState.memBase = (int) Vm_RawAlloc(NET_IE_MEM_SIZE);
+#endif
+#ifdef sun3
+	netIEState.memBase = (int) VmMach_NetMemAlloc(NET_IE_MEM_SIZE);
+#endif
 	printf("Initializing Intel memory.\n");
     }
     memAddr = (Address) netIEState.memBase;
