@@ -310,13 +310,12 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     register ReturnStatus	status = SUCCESS; /* General return code */
     FsDomain			*domainPtr;
     FsUseCounts			useChange;
-    FsPrefix			*prefixPtr;
 
     *outDataPtr = (ClientData) NIL;
     *outSizePtr = 0;
     /*
-     * Do initial setup for the reopen.  We make sure that the disk and
-     * prefix for the file are still around first, mark the client
+     * Do initial setup for the reopen.  We make sure that the disk
+     * for the file is still around first, mark the client
      * as doing recovery, and fetch a local handle for the file.
      */
     reopenParamsPtr = (FsFileReopenParams *) inData;
@@ -324,21 +323,6 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     if (domainPtr == (FsDomain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-#ifdef reopenPrefixChecking
-    /*
-     * This seems like an extreme check, although it could be restored
-     * if FsRmtFileCltOpen was fixed to save the prefix ID (somehow)
-     */
-    prefixPtr = FsPrefixFromFileID(&reopenParamsPtr->prefixFileID);
-    if (prefixPtr == (FsPrefix *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsFileReopen: no prefix <%d,%d>, client %d\n",
-				reopenParamsPtr->prefixFileID.major,
-				reopenParamsPtr->prefixFileID.minor,
-				clientID);
-	status = FS_DOMAIN_UNAVAILABLE;
-	goto reopenReturn;
-    }
-#endif reopenPrefixChecking
     status = FsLocalFileHandleInit(&reopenParamsPtr->fileID, &handlePtr);
     if (status != SUCCESS) {
 	goto reopenReturn;
