@@ -48,6 +48,7 @@ void		Recov_HostTrace();
 void		Recov_SetClientState();
 int		Recov_GetClientState();
 
+void		Recov_PrintTrace();
 
 #endif _RECOV
 
