@@ -757,6 +757,7 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	    } else {
 		if (ioctlPtr->outBuffer != (Address)NIL) {
 		    *(int *)ioctlPtr->outBuffer = newOffset;
+		    replyPtr->length = sizeof(int);
 		}
 		streamPtr->offset = newOffset;
 	    }
@@ -783,6 +784,7 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 		status = GEN_INVALID_ARG;
 	    } else {
 		*(int *)ioctlPtr->outBuffer |= flags;
+		replyPtr->length = sizeof(int);
 	    }
 	    break;
 	}
