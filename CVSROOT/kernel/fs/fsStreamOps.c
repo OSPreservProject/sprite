@@ -746,9 +746,7 @@ Fs_Close(streamPtr)
 	 */
 	FsHandleLock(streamPtr->ioHandlePtr);
 	status = (fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
-		(streamPtr->ioHandlePtr, 
-		rpc_SpriteID,
-		 streamPtr->flags, 0, (ClientData)NIL);
+		(streamPtr, rpc_SpriteID, streamPtr->flags, 0, (ClientData)NIL);
 	FsStreamDispose(streamPtr);
     }
     return(status);
