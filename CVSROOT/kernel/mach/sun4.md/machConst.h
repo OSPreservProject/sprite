@@ -242,7 +242,7 @@
  *			doesn't get trashed.
  * MACH_UNIX_ERRNO_OFFSET	Errno offset in Proc_ControlBlock
  */
-#define	MACH_KERN_START		0xf6000000
+#define	MACH_KERN_START		0xf5800000
 #define	MACH_STACK_START	(MACH_KERN_START + 0x6000)
 #define	MACH_CODE_START		(MACH_STACK_START + 0x20)
 #define	MACH_STACK_BOTTOM	MACH_KERN_START
