@@ -46,6 +46,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsioDevice.h"
 #include "devFsOpTable.h"
 
+#include "devTypes.h"
+
 /*
  * INET is defined so a file server can be used to open the
  * special device file corresponding to a kernel-based ipServer
@@ -1315,4 +1317,64 @@ Fsio_DeviceRecovTestUseCount(handlePtr)
     Fsio_DeviceIOHandle *handlePtr;
 {
     return handlePtr->use.ref;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_BootTimeTtyOpen --
+ *
+ *	This is a stripped down version of Fsio_DeviceIoOpen
+ *	that is used to invoke the tty driver open routine
+ *	at boot time.  The important thing to get right is
+ *	that the tty driver has to be passed the real FS
+ *	I/O handle for the device so notifications work.
+ *
+ * Results:
+ *	SUCCESS or a device dependent open error code.
+ *
+ * Side effects:
+ *	Sets up and installs the console's ioHandle.  The tty open
+ *	routine is called so L1/break/F1 key processing for
+ *	Dev_InvokeConsole command is enabled.
+ *	The associated FS handle is unlocked
+ *	upon exit, but its reference count has been incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsio_BootTimeTtyOpen()
+{
+    ReturnStatus 	status;
+    Fs_FileID		ttyFileID;
+    Fsio_DeviceIOHandle	*devHandlePtr;
+
+    /*
+     * Set up the console's fileID.  This sets the console
+     * unit number to 0, although this is cleverly mapped by the
+     * ttyDriver to a serial line if the EEPROM is properly configured.
+     */
+    ttyFileID.type = FSIO_LCL_DEVICE_STREAM;
+    ttyFileID.serverID = FS_LOCALHOST_ID;
+    ttyFileID.major = DEV_TERM;
+    ttyFileID.minor = 0;
+    (void)FsioDeviceHandleInit(&ttyFileID, "/dev/console", &devHandlePtr);
+    /*
+     * The device driver open routine gets the device specification,
+     * the useFlags, and a token passed to Fs_NotifyReader
+     * or Fs_NotifyWriter when the device becomes ready for I/O.
+     */
+    if (DEV_TYPE_INDEX(devHandlePtr->device.type) >= devNumDevices) {
+	status = FS_DEVICE_OP_INVALID;
+    } else {
+	status = (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].open)
+		    (&devHandlePtr->device, FS_READ|FS_WRITE, 
+		     (Fs_NotifyToken)devHandlePtr);
+    }
+    /*
+     * Unlock the handle.  This leaves an extra reference just
+     * to make sure the file system handle doesn't get scavenged.
+     */
+    Fsutil_HandleUnlock(devHandlePtr);
+    return(status);
 }
