@@ -194,6 +194,9 @@ typedef struct Mach_State {
     Sig_Context		sigContext;		/* sig context holder for
 						 * setting up signal handling */
     int			lastSysCall;		/* Needed for migration. */
+    int			savedArgI0;		/* For syscall restart
+						 * Must follow lastSysCall.
+						 */
 } Mach_State;
 
 /*
