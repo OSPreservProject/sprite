@@ -20,11 +20,14 @@
 #include "netEther.h"
 #include "net.h"
 #include "netInt.h"
-#include "devAddrs.h"
 
 /*
  * Defined constants:
  *
+ * NET_IE_CONTROL_REG_ADDR	The address of the control register for the 
+ *				ethernet chip.
+ * NET_IE_SYS_CONF_PTR_ADDR 	Place where the system configuration pointer 
+ *				must start. 
  * NET_IE_CHUNK_SIZE		The number of bytes that memory is allocated
  *				in.
  * NET_IE_MEM_SIZE	      	Amount of memory to set aside for the control 
@@ -38,15 +41,20 @@
  *				If a piece of a message is smaller than this
  *				then it gets copied to other storage and
  *				made the minimum size.
- * NET_IE_SYS_CONF_PTR_ADDR 	Place where the system configuration pointer 
- *				must start. 
  * NET_IE_NULL_RECV_BUFF_DESC 	The value that is used by the controller to 
  *				indicate that a header points to no data.
  * NET_IE_NUM_XMIT_ELEMENTS 	The number of elements to preallocate for the 
  *			   	retransmission queue.
- * NET_IE_CONTROL_REG_ADDR	The address of the control register for the 
- *				ethernet chip.
  */
+
+#ifdef SUN3
+#define NET_IE_CONTROL_REG_ADDR		0xfe0c000
+#define NET_IE_SYS_CONF_PTR_ADDR	0xffffff6
+#endif
+#ifdef SUN2
+#define NET_IE_CONTROL_REG_ADDR		0xee3000
+#define NET_IE_SYS_CONF_PTR_ADDR	0xfffff6
+#endif
 
 #define	NET_IE_CHUNK_SIZE		32
 #define	NET_IE_MEM_SIZE			2048
@@ -54,10 +62,8 @@
 #define	NET_IE_NUM_XMIT_BUFFERS		20
 #define	NET_IE_RECV_BUFFER_SIZE		NET_ETHER_MAX_BYTES
 #define	NET_IE_MIN_DMA_SIZE		12
-#define	NET_IE_SYS_CONF_PTR_ADDR	DEV_IE_SYS_CONF_PTR_ADDR
 #define	NET_IE_NULL_RECV_BUFF_DESC	0xffff
 #define	NET_IE_NUM_XMIT_ELEMENTS	32
-#define	NET_IE_CONTROL_REG_ADDR		DEV_IE_CONTROL_REG_ADDR
 
 /*
  * Macros to manipulate the chip.
@@ -555,6 +561,11 @@ extern Net_ScatterGather *curScatGathPtr;
 /*
  * General routines.
  */
+
+extern	Boolean	NetIEInit();
+extern	void	NetIEOutput();
+extern	void	NetIEIntr();
+extern	void	NetIERestart();
 
 extern	void	NetIEReset();
 
