@@ -297,6 +297,15 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 
     exitProcPtr->genFlags |= PROC_DYING;
 
+    if (exitProcPtr->genFlags & PROC_MIG_PENDING) {
+	/*
+	 * Someone is waiting for this guy to migrate.  Let them know that
+	 * the process is dying.
+	 */
+	exitProcPtr->genFlags &= ~PROC_MIG_PENDING;
+	ProcMigWakeupWaiters();
+    }
+
     /*
      *  If the parent is still around, add the user and kernel cpu usage
      *  of this process to the parent's summary of children.

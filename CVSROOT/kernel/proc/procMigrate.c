@@ -326,7 +326,8 @@ Proc_Migrate(pid, hostID)
     /*
      * Do some sanity checking.  
      */
-    if (procPtr->state == PROC_DEAD || procPtr->state == PROC_EXITING) {
+    if ((procPtr->state == PROC_DEAD) || (procPtr->state == PROC_EXITING) ||
+	(procPtr->genFlags & PROC_DYING)) {
 	if (proc_MigDebugLevel > 3) {
 	    printf("Proc_Migrate: process %x has exited.\n",
 		       pid);
