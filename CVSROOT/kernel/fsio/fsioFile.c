@@ -1252,6 +1252,10 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 
 	    if (ioctlPtr->inBufSize < sizeof(int)) {
 		status = GEN_INVALID_ARG;
+	    } else if ((streamPtr->flags & FS_WRITE) == 0) {
+		status = FS_NO_ACCESS;
+	    } else if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
+		status = FS_IS_DIRECTORY;
 	    } else if (ioctlPtr->format != mach_Format) {
 		int outSize = sizeof(int);
 		int inSize = sizeof(int);
