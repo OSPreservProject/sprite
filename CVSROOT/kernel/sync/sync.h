@@ -143,7 +143,7 @@ extern 	void 		Sync_PrintStat();
 #define MASTER_LOCK(semaphore) \
     { \
         sync_Instrument.numLocks++; \
-	if (!mach_AtInterruptLevel) { \
+	if (!Mach_AtInterruptLevel()) { \
 	    Mach_DisableIntr(); \
 	    mach_NumDisableIntrsPtr[0]++; \
 	} \
@@ -156,7 +156,7 @@ extern 	void 		Sync_PrintStat();
 #define MASTER_LOCK(semaphore) \
     { \
         sync_Instrument.numLocks++; \
-	if (!mach_AtInterruptLevel) { \
+	if (!Mach_AtInterruptLevel()) { \
 	    Mach_DisableIntr(); \
 	    mach_NumDisableIntrsPtr[0]++; \
 	} \
@@ -193,7 +193,7 @@ extern 	void 		Sync_PrintStat();
     { \
         sync_Instrument.numUnlocks++; \
 	(semaphore) = 0; \
-	if (!mach_AtInterruptLevel) { \
+	if (!Mach_AtInterruptLevel()) { \
 	    if (--(mach_NumDisableIntrsPtr[0]) == 0) { \
 		Mach_EnableIntr(); \
 	    } \
@@ -204,7 +204,7 @@ extern 	void 		Sync_PrintStat();
     { \
         sync_Instrument.numUnlocks++; \
 	(semaphore) = 0; \
-	if (!mach_AtInterruptLevel) { \
+	if (!Mach_AtInterruptLevel()) { \
 	    mach_NumDisableIntrsPtr[0]--; \
 	    if (mach_NumDisableIntrsPtr[0] == 0) { \
 		Mach_EnableIntr(); \
