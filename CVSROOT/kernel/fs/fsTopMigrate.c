@@ -38,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsOpTable.h"
 #include "fsDebug.h"
 #include "fsNameOpsInt.h"
+#include "byte.h"
 #include "rpc.h"
 #include "procMigrate.h"
 
