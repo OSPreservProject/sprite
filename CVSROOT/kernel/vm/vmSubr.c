@@ -146,6 +146,7 @@ Vm_ProcInit(procPtr)
 
     if (procPtr->vmPtr == (Vm_ProcInfo *)NIL) {
 	vmPtr = (Vm_ProcInfo *)Mem_Alloc(sizeof(Vm_ProcInfo));
+	vmPtr->machPtr = (VmMach_ProcData *)NIL;
 	procPtr->vmPtr = vmPtr;
     } else {
 	vmPtr = procPtr->vmPtr;
