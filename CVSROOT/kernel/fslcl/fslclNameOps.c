@@ -171,7 +171,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 						 * to release stream */
 		FsStreamReopen,	NoProc,		/* reopen, blockAlloc */
 		NoProc, NoProc,	NoProc,		/* blkRead, blkWrite, blkCopy */
-		FsStreamScavenge, NullClientKill,/* scavenge, kill */
+		(Boolean (*)())NIL, NullClientKill,/* scavenge, kill */
 		NoProc},			/* close */
     /*
      * Local file stream.  The file is on a local disk and blocks are
@@ -268,7 +268,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc,				/* migStart, migEnd */
 		NoProc, NoProc,				/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
-		FsHandleUnlockHdr, NullClientKill, FsServerStreamClose },
+		(Boolean (*)())NIL, NullClientKill, FsServerStreamClose },
     /*
      * A pseudo stream with the server process running locally.  
      */
@@ -279,7 +279,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoHandle, FsPseudoStreamRelease, FsPseudoStreamMigEnd,
 		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
-		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
+		(Boolean (*)())NIL, NullClientKill, FsPseudoStreamClose },
     /*
      * A pseudo stream with a remote server.  
      */
@@ -339,7 +339,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoHandle, FsPseudoStreamRelease, FsPseudoStreamMigEnd,
 		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
-		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
+		(Boolean (*)())NIL, NullClientKill, FsPseudoStreamClose },
     /*
      * A pseudo stream to a remote pseudo-filesystem server.  This is
      * like the remote pseudo-device stream, except for setup because the
@@ -368,7 +368,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc,			/* release, migend */
 		NoProc, NoProc,			/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,	/* cache ops */
-		(Boolean (*)())NoProc,		/* scavenge */
+		(Boolean (*)())NIL,		/* scavenge */
 		(void (*)())NoProc, NoProc },	/* kill, close */
 #ifdef notdef
     /*
