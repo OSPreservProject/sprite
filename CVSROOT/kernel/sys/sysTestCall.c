@@ -18,6 +18,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "machMon.h"
 
+/*
+ * All the routines in this file have no comments.  What are they for?  I'll
+ * put in comments for them as soon as I figure out their true purpose, but
+ * passing structs this way sure won't work on the sun4.
+ */
+
+#ifndef sun4
 int 
 Test_PrintOut(args)
     struct {
@@ -84,6 +91,11 @@ Test_PrintOut(args)
     }
     return(0);
 }
+#else
+Test_PrintOut()
+{
+}
+#endif sun4
 
 int 
 Test_GetLine(string, length)
