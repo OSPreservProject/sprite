@@ -71,6 +71,9 @@ typedef struct {
     Sync_Semaphore	*mutexPtr;	/* Private to net module.
 					 * Used to wait for output. */
     Boolean		done;		/* Out - set when I/O completes */
+    void		((*callBackFunc)());	/* Call-back to say when
+						 * we're done sending packet. */
+    ClientData		clientData;	/* Client data to pass to call-back. */
 } Net_ScatterGather;
 
 /*
