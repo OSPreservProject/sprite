@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <timer.h>
 #include <vm.h>
 #include <prof.h>
+#include <procUnixStubs.h>
 
 /*
  * There is only one vfork sleep condition in the system.
@@ -390,7 +391,11 @@ p     */
     /*
      * Return PROC_CHILD_PROC to the newly created process.
      */
-    Mach_SetReturnVal(procPtr, (vforkFlag ? 0 : (int) PROC_CHILD_PROC), 1);
+    if (procPtr->unixProgress == PROC_PROGRESS_NOT_UNIX) {
+	Mach_SetReturnVal(procPtr, (vforkFlag ? 0 : (int) PROC_CHILD_PROC), 1);
+    } else {
+	Mach_SetReturnVal(procPtr, 0, 1);
+    }
 
     /*
      * Put the process on the ready queue.

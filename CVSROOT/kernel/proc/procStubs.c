@@ -122,6 +122,10 @@ Proc_ForkStub()
     if (debugProcStubs) {
 	printf("Proc_ForkStub\n");
     }
+    /*
+     * Make sure Proc_NewProc knows we're a compatibility process.
+     */
+    Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_UNIX;
 #if defined(ds3100) || defined(ds5000)
     /*
      * Put the right values in V1 and A3 for the child because the process
@@ -160,6 +164,10 @@ Proc_VforkStub()
     if (debugProcStubs) {
 	printf("Proc_VForkStub\n");
     }
+    /*
+     * Make sure Proc_NewProc knows we're a compatibility process.
+     */
+    Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_UNIX;
 #if defined(ds3100) || defined(ds5000)
     /*
      * Put the right values in V1 and A3 for the child because the process
