@@ -206,7 +206,9 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
 	 */
 	if (spriteSignal < SIG_MIN_SIGNAL || spriteSignal >= SIG_NUM_SIGNALS || 
 	spriteSignal == SIG_KILL || spriteSignal == SIG_SUSPEND) {
+	    /*
 	    printf("Sig_SigvecStub: bad signal %d\n", spriteSignal);
+	    */
 	    Mach_SetErrno(EINVAL);
 	    return -1;
 	}
