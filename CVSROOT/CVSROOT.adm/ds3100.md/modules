@@ -15,11 +15,42 @@
 
 # Convenient aliases
 world		-a .
-kernel		-a sys lang/adb sparcsim
 
 # CVSROOT.adm support
 CVSROOT		-i /usr/local/bin/mkmodules CVSROOT.adm
 CVSROOT.adm	-i /usr/local/bin/mkmodules CVSROOT.adm
 modules		-i /usr/local/bin/mkmodules CVSROOT.adm modules
 loginfo		-i /usr/local/bin/mkmodules CVSROOT.adm loginfo
+
+mach		kernel/mach
+dbg		kernel/dbg
+dev		kernel/dev
+fs		kernel/fs
+fscache		kernel/fscache
+fsconsist 	kernel/fsconsist
+fsdm 		kernel/fsdm
+fsio 		kernel/fsio
+fslcl		kernel/fslcl
+fspdev 		kernel/fspdev
+fsprefix 	kernel/fsprefix
+fsrmt		kernel/fsrmt
+fsutil		kernel/fsutil
+libc		kernel/libc
+lfs		kernel/lfs
+main		kernel/main
+mem		kernel/mem
+net		kernel/net
+ofs		kernel/ofs
+proc		kernel/proc
+prof		kernel/prof
+raid		kernel/raid
+recov		kernel/recov
+rpc		kernel/rpc
+sched		kernel/sched
+sig		kernel/sig
+sync		kernel/sync
+sys		kernel/sys
+timer		kernel/timer
+utils		kernel/utils
+vm		kernel/vm
 
