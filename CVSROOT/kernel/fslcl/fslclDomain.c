@@ -592,7 +592,7 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     if (status != SUCCESS) {
 	if (status == FS_LOOKUP_REDIRECT) {
 	    *name1redirectPtr = TRUE;
-	} else if (status = FS_STALE_HANDLE) {
+	} else if (status == FS_STALE_HANDLE) {
 	    *name1StalePtr = TRUE;
 	}
 	return(status);
