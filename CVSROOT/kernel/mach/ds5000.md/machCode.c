@@ -17,6 +17,9 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
 #include <sprite.h>
+#include <stddef.h>
+#include <assert.h>
+
 #include <machConst.h>
 #include <machMon.h>
 #include <machInt.h>
@@ -26,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <dbg.h>
 #include <proc.h>
 #include <procMigrate.h>
+#include <procUnixStubs.h>
 #include <sched.h>
 #include <vm.h>
 #include <vmMach.h>
@@ -36,6 +40,15 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <ultrixSignal.h>
 
 /*
+ * Flag to set for new Unix compatiblity code.  Once the new
+ * code is working well enough, this flag should  be eliminated
+ * and the old compatibility code in machAsm.s, machUNIXSyscall.c etc.
+ * can be deleted.
+ */
+
+int machNewUnixCompat;
+
+/*
  * Conversion of function to an unsigned value.
  */
 #define F_TO_A	(Address)(unsigned)(int (*)())
@@ -44,7 +57,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
  */
 #ifndef NUM_PROCESSORS
 #define NUM_PROCESSORS 1
-#endif NUM_PROCESSORS
+#endif
 
 int mach_NumProcessors = NUM_PROCESSORS;
 
@@ -66,6 +79,8 @@ Boolean mach_AtInterruptLevel = FALSE;
  */
 
 char *mach_MachineType = "ds5000";
+
+extern int debugProcStubs;
 
 /*
  * The byte ordering/alignment type used with Fmt_Convert and I/O control data
@@ -173,11 +188,11 @@ static void MemErrorInterrupt _ARGS_((void));
 ReturnStatus	(*machInterruptRoutines[MACH_NUM_HARD_INTERRUPTS]) _ARGS_((
 		    unsigned int statusReg, unsigned int causeReg, 
 		    Address pc, ClientData data));
-ClientData	machInterruptArgs[MACH_NUM_HARD_INTERRUPTS];
 void		(*machIOInterruptRoutines[MACH_NUM_IO_SLOTS]) _ARGS_((
 		    unsigned int statusReg, unsigned int causeReg, 
 		    Address pc, ClientData data));
 ClientData	machIOInterruptArgs[MACH_NUM_IO_SLOTS];
+ClientData	machInterruptArgs[MACH_NUM_HARD_INTERRUPTS];
 
 extern void Mach_KernGenException();
 extern void Mach_UserGenException();
@@ -345,7 +360,6 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     }
     Mach_ArgParse(buf,&machMonBootParam);
 
-    Mach_MonPrintf("Happy Birthday!!\n");
     /*
      * Get information on the memory bitmap.  This gets clobbered later.
      */
@@ -432,9 +446,14 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  *
  * Mach_SetHandler --
  *
+#ifndef ds5000
+ *	Put a interrupt handling routine into the table.
+#else
  *	Register an interrupt handler for R3000 interrupts.  Interrupt
  *	handlers are of the form:
+#endif
  *
+#ifdef ds5000
  *	void
  *	Handler(statusReg, causeReg, pc, data)
  *		unsigned int	statusReg;	Status register.
@@ -444,6 +463,7 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  *		ClientData	data		Callback data
  *	
  *
+#endif
  * Results:
  *     None.
  *
@@ -557,7 +577,6 @@ Mach_SetIOHandler(slot, handler, clientData)
     }
 }
 
-
 static Vm_ProcInfo	mainProcInfo;
 static Mach_State	mainMachState;
 static VmMach_ProcData	mainProcData;
@@ -581,6 +600,8 @@ void
 Mach_InitFirstProc(procPtr)
     Proc_ControlBlock	*procPtr;
 {
+
+    assert(offsetof(Proc_ControlBlock, unixErrno) == MACH_UNIX_ERRNO_OFFSET);
     procPtr->machStatePtr = &mainMachState;
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     procPtr->machStatePtr->kernStackEnd = 
@@ -720,13 +741,37 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
  *----------------------------------------------------------------------
  */ 
 void
-Mach_SetReturnVal(procPtr, retVal)
+Mach_SetReturnVal(procPtr, retVal, retVal2)
     Proc_ControlBlock	*procPtr;	/* Process to set return value for. */
     int			retVal;		/* Value for process to return. */
+    int			retVal2;	/* Second return value. */
 {
     procPtr->machStatePtr->userState.regState.regs[V0] = (unsigned)retVal;
+    procPtr->machStatePtr->userState.regState.regs[V1] = (unsigned)retVal2;
 }
-
+
+/*----------------------------------------------------------------------------
+ *
+ * Mach_Return2 --
+ *
+ *      Set the second return value for Unix compat. routines that
+ *      return two values.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      v1 <- val
+ *
+ *----------------------------------------------------------------------------
+ */
+void
+Mach_Return2(val)
+int val;
+{
+    Proc_GetActualProc()->machStatePtr->userState.regState.regs[V1] =
+	    (unsigned)val;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1387,12 +1432,19 @@ Boolean
 MachUserReturn(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
-    SignalStack			sigStack;
-    Address			pc;
+    SignalStack	sigStack;
+    Address	pc;
+    int		restarted = 0;
 
 
     if (procPtr->Prof_Scale >= 2 && procPtr->Prof_PC != 0) {
 	Prof_RecordPC(procPtr);
+    }
+
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
+	printf("UnixProgress = %d entering MachUserReturn\n",
+		procPtr->unixProgress);
     }
 
     /* 
@@ -1431,9 +1483,6 @@ MachUserReturn(procPtr)
 			     machCurStatePtr->userState.regState.fpStatusReg,
 						 TRUE);
 	    Vm_MakeUnaccessible(newAddr, sizeof(Address));
-#ifdef notdef
-	    printf("breakPC=%x\n", (unsigned)breakPC);
-#endif
 	    if (Vm_CopyIn(4, breakPC,
 			  (Address)&machCurStatePtr->sstepInst) != SUCCESS) {
 		printf("Bad single-step address\n");
@@ -1451,6 +1500,38 @@ MachUserReturn(procPtr)
 	    Mach_DisableIntr();
 	    break;
 	} else {
+	    if (procPtr->unixProgress == PROC_PROGRESS_RESTART ||
+		    procPtr->unixProgress > 0) {
+		/*
+		 * If we received a normal signal, we want to restart
+		 * the system call when we leave.
+		 * If we received a migrate signal, we will get here on
+		 * the new machine.
+		 */
+
+		/*
+		 * Mangle the PC so we restart the trap after we leave
+		 * the kernel.
+		 */
+		restarted = 1;
+		if (debugProcStubs) {
+		    printf("Restarting system call with progress %d\n",
+			    procPtr->unixProgress);
+		    printf("Our PC = %x\n",
+			    machCurStatePtr->userState.regState.pc);
+		}
+		machCurStatePtr->userState.regState.pc -= 4;
+		if (debugProcStubs) {
+		    printf("Now our PC = %x\n",
+			    machCurStatePtr->userState.regState.pc);
+		    printf("V0 was %d and our call was %d\n", 
+			    machCurStatePtr->userState.regState.regs[V0],
+			    machCurStatePtr->userState.unixRetVal);
+		}
+		machCurStatePtr->userState.regState.regs[V0] =
+		    machCurStatePtr->userState.unixRetVal;
+		procPtr->unixProgress = PROC_PROGRESS_UNIX;
+	    }
 	    /*
 	     * Disable interrupts.  Note that we don't use the DISABLE_INTR 
 	     * macro because it increments the nesting depth of interrupts
@@ -1467,6 +1548,8 @@ MachUserReturn(procPtr)
 		SetupSigHandler(procPtr, &sigStack, pc);
 		Mach_DisableIntr();
 		break;
+	    } else if (restarted && debugProcStubs) {
+		printf("No signal, yet we restarted system call!!?!\n");
 	    }
 	}
     }
@@ -1477,6 +1560,11 @@ MachUserReturn(procPtr)
      * As soon as we return to user mode, though, we will allow migration.
      */
     Sig_AllowMigration(procPtr);
+
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
+	printf("UnixProgress = %d leaving MachUserReturn\n", procPtr->unixProgress);
+    }
 
     return(machFPCurStatePtr == machCurStatePtr);
 }
@@ -1571,7 +1659,18 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
      * Now set up the registers correctly.
      */
     userStatePtr->regState.regs[SP] = usp;
-    userStatePtr->regState.regs[A0] = sigStackPtr->sigStack.sigNum;
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX) {
+	int unixSignal;
+	if (Compat_SpriteSignalToUnix(sigStackPtr->sigStack.sigNum,
+		&unixSignal) != SUCCESS) {
+	    printf("Signal %d invalid in SetupSigHandler\n",
+		    sigStackPtr->sigStack.sigNum);
+	} else {
+	    userStatePtr->regState.regs[A0] = unixSignal;
+	}
+    } else {
+	userStatePtr->regState.regs[A0] = sigStackPtr->sigStack.sigNum;
+    }
     userStatePtr->regState.regs[A1] = sigStackPtr->sigStack.sigCode;
     userStatePtr->regState.regs[A2] = usp + MACH_STAND_FRAME_SIZE;
     userStatePtr->regState.regs[A3] = sigStackPtr->sigStack.sigAddr;
@@ -1802,15 +1901,31 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 /*
  *----------------------------------------------------------------------
  *
+#ifndef ds5000
+ * Mach_GetEtherAddress --
+#else
  * MachMemInterrupt --
+#endif
  *
+#ifndef ds5000
+ *	Return the ethernet address out of the rom.
+#else
  *	Handle an interrupt from the memory controller.
+#endif
  *
  * Results:
+#ifndef ds5000
+ *	Number of elements returned in argv.
+#else
  *	None.
+#endif
  *
  * Side effects:
+#ifndef ds5000
+ *	*etherAddrPtr gets the ethernet address.
+#else
  *	None.
+#endif
  *
  *----------------------------------------------------------------------
  */
@@ -1948,9 +2063,17 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
 /*
  *----------------------------------------------------------------------
  *
+#ifndef ds5000
+ * MemErrorInterrupt --
+#else
  * MachIOInterrupt --
+#endif
  *
+#ifndef ds5000
+ *	Handler an interrupt for the DZ device.
+#else
  *	Handle an interrupt from one of the IO slots.
+#endif
  *
  * Results:
  *	None.
@@ -2293,9 +2416,6 @@ Mach_SigreturnStub(sigContextPtr)
     regsPtr->mfhi = sigContext.sc_mdhi;
     bcopy(sigContext.sc_fpregs, regsPtr->fpRegs, sizeof(sigContext.sc_fpregs));
     regsPtr->fpStatusReg = sigContext.sc_fpc_csr;
-#if 0
-    (void) sysUnixSigBlock(&dummy, sigContext.sc_mask);
-#endif
+    Proc_GetCurrentProc()->sigHoldMask = sigContext.sc_mask;
     return(SUCCESS);
 }
-
