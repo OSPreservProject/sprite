@@ -1030,11 +1030,13 @@ DevSCSITapeClose(devicePtr, useFlags, openCount, writerCount)
 	 */
 	status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_WEOF,1);
     }
-    /*
-     * If the "no rewind" flag is not set then rewind the device.
-     */
-    if (!(devicePtr->unit & DEV_SCSI_TAPE_NO_REWIND)) {
-	status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_REWIND,1);
+    if (status == SUCCESS) {
+	/*
+	 * If the "no rewind" flag is not set then rewind the device.
+	 */
+	if (!(devicePtr->unit & DEV_SCSI_TAPE_NO_REWIND)) {
+	    status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_REWIND,1);
+	}
     }
     (void) DevScsiReleaseDevice(tapePtr->devPtr);
     free((char *)tapePtr);
