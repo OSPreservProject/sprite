@@ -80,7 +80,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "signal.h"
 #include "fs.h"
 #include "fsdm.h"
-#include "../fslcl/fslclInt.h"	/* Directory format */
+#include "fslcl.h"	/* Directory format */
 
 /*
  * System call entry structure.  Note that this is different than the one
@@ -1597,7 +1597,7 @@ MachUNIXGetDirEntries(fd, buf, nbytes, basep)
     ReturnStatus status;	/* result returned by Fs_Read */
     Address	usp;
     int		bytesAcc;
-    FslclDirEntry	*dirPtr;
+    Fslcl_DirEntry	*dirPtr;
     Address	addr;
     int		i;
 
@@ -1623,7 +1623,7 @@ MachUNIXGetDirEntries(fd, buf, nbytes, basep)
      * The min record length is 8, which is > 512 when byteswapped.
      * All other values fall outside the range 8-512 when byteswapped.
      */
-    dirPtr = (FslclDirEntry *)addr;
+    dirPtr = (Fslcl_DirEntry *)addr;
     if (dirPtr->recordLength > FSLCL_DIR_BLOCK_SIZE ||
 	dirPtr->recordLength < 2 * sizeof(int)) {
 	i = bytesAcc;
@@ -1658,7 +1658,7 @@ MachUNIXGetDirEntries(fd, buf, nbytes, basep)
 	    dirPtr->nameLength = shortOut.s;
 
 	    i -= dirPtr->recordLength;
-	    dirPtr = (FslclDirEntry *) ((Address)dirPtr + dirPtr->recordLength);
+	    dirPtr = (Fslcl_DirEntry *) ((Address)dirPtr + dirPtr->recordLength);
 	}
     }
     Vm_MakeUnaccessible(addr, bytesAcc);
