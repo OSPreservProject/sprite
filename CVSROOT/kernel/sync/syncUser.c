@@ -52,36 +52,30 @@ ReturnStatus
 Sync_SlowLockStub(lockPtr)
     Sync_Lock *lockPtr;
 {
-    Mach_SetJumpState	setJumpState;
     ReturnStatus	status = SUCCESS;
     Proc_ControlBlock	*procPtr;
 
     procPtr = Proc_GetCurrentProc();
 
-    /*
-     * We have to use set-jump instead of MakeAccessible because we would have 
-     * to sleep for an indeterminate amount of time with something made
-     * accessible which is not a good idea.  Note that we assume that a user
-     * pointer is directly accessible from the kernel.
-     */
-    if (Mach_SetJump(&setJumpState) == SUCCESS) {
+    status = Vm_UserMap(VM_READWRITE_ACCESS, sizeof(*lockPtr),
+			(Address)lockPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    MASTER_LOCK(sched_Mutex);
+    while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
+	lockPtr->waiting = TRUE;
+	(void) SyncEventWaitInt((unsigned int)lockPtr, TRUE);
+	MASTER_UNLOCK(sched_Mutex);
 	MASTER_LOCK(sched_Mutex);
-
-	while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
-	    lockPtr->waiting = TRUE;
-	    (void) SyncEventWaitInt((unsigned int)lockPtr, TRUE);
-	    MASTER_UNLOCK(sched_Mutex);
-	    MASTER_LOCK(sched_Mutex);
-	    if (Sig_Pending(procPtr)) {
-		status = GEN_ABORTED_BY_SIGNAL;
-		break;
-	    }
+	if (Sig_Pending(procPtr)) {
+	    status = GEN_ABORTED_BY_SIGNAL;
+	    break;
 	}
-    } else {
-	status = SYS_ARG_NOACCESS;
     }
     MASTER_UNLOCK(sched_Mutex);
-    Mach_UnsetJump();
+
+    (void)Vm_UserUnmap(sizeof(*lockPtr), (Address)lockPtr);
     return(status);
 }
 
@@ -109,7 +103,6 @@ Sync_SlowLockStub(lockPtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 ReturnStatus
 Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     unsigned 	int 	event;
@@ -117,33 +110,28 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     Boolean		wakeIfSignal;
 {
     ReturnStatus	status;
-    Mach_SetJumpState	setJumpState;
 
+    status = Vm_UserMap(VM_READWRITE_ACCESS, sizeof(*lockPtr),
+			(Address)lockPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    MASTER_LOCK(sched_Mutex);
     /*
-     * We have to use set-jump instead of MakeAccessible because we would have 
-     * to sleep for an indeterminate amount of time with something made
-     * accessible which is not a good idea.  Note that we assume that a user
-     * pointer is directly accessible from the kernel.
+     * release the monitor lock and wait on the condition
      */
-    if (Mach_SetJump(&setJumpState) == SUCCESS) {
-	MASTER_LOCK(sched_Mutex);
-	/*
-	 * release the monitor lock and wait on the condition
-	 */
-	lockPtr->inUse = 0;
-	lockPtr->waiting = FALSE;
-	SyncEventWakeupInt((unsigned int)lockPtr);
+    lockPtr->inUse = 0;
+    lockPtr->waiting = FALSE;
+    SyncEventWakeupInt((unsigned int)lockPtr);
 
-	if (SyncEventWaitInt(event, wakeIfSignal)) {
-	    status = GEN_ABORTED_BY_SIGNAL;
-	} else {
-	    status = SUCCESS;
-	}
+    if (SyncEventWaitInt(event, wakeIfSignal)) {
+	status = GEN_ABORTED_BY_SIGNAL;
     } else {
-	status = SYS_ARG_NOACCESS;
+	status = SUCCESS;
     }
     MASTER_UNLOCK(sched_Mutex);
-    Mach_UnsetJump();
+
+    (void)Vm_UserUnmap(sizeof(*lockPtr), (Address)lockPtr);
     return(status);
 }
 
@@ -174,14 +162,14 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
     unsigned int event;
     int *waitFlagPtr;
 {
-    int *newWaitFlagPtr;
-    int len;
+    int			*newWaitFlagPtr;
+    int			len;
+    ReturnStatus	status;
 
-    Vm_MakeAccessible(VM_READWRITE_ACCESS, 
-			sizeof(int), (Address) waitFlagPtr, 
-			&len, (Address *) &newWaitFlagPtr);
-    if (len != sizeof(int)) {
-	return(SYS_ARG_NOACCESS);
+    status = Vm_UserMap(VM_READWRITE_ACCESS, sizeof(*waitFlagPtr), 
+			(Address)waitFlagPtr);
+    if (status != SUCCESS) {
+	return(status);
     }
 
     MASTER_LOCK(sched_Mutex);
@@ -191,6 +179,7 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
 
     MASTER_UNLOCK(sched_Mutex);
 
-    Vm_MakeUnaccessible((Address) newWaitFlagPtr, len);
+    (void)Vm_UserUnmap(sizeof(*waitFlagPtr), (Address)waitFlagPtr);
+
     return(SUCCESS);
 }
