@@ -37,6 +37,10 @@ extern void VmMachPMEGZero _ARGS_((int pmeg));
 extern void VmMachClearCacheTags _ARGS_((void));
 extern void VmMachInitAddrErrorControlReg _ARGS_((void));
 extern void VmMachInitSystemEnableReg _ARGS_((void));
+#ifdef sun4
+extern void VmMachFlushCurrentContext _ARGS_((void));
+extern ReturnStatus VmMachTouchPages _ARGS_((int firstPage, int numPages));
+#endif
 extern void VmMachFlushSegment _ARGS_((Address segVirtAddr));
 extern void VmMachReadAndZeroPMEG _ARGS_((int pmeg, VmMachPTE pteArray[]));
 extern void VmMachSetSegMap _ARGS_((Address virtualAddress, int value));

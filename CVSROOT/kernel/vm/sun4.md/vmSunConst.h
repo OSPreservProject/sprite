@@ -55,7 +55,7 @@
 #define	VMMACH_PAGE_PROT_SHIFT	29
 /*
  * Compare shifted pte (above) with this to see if user residence and protection
- * are okay for the kernel to read and write this address.
+ * are okay for the user to write to this address.
  */
 #define	VMMACH_PTE_OKAY_VALUE	6
 
@@ -76,11 +76,16 @@
  * Check to see if a virtual address falls inside the hole in the middle
  * of the sun4 address space.
  */
+#if 1
+#define	VMMACH_ADDR_CHECK(virtAddr)	\
+    (((unsigned int)(virtAddr) + 0x20000000) < 0x40000000)
+#else
 #define	VMMACH_ADDR_CHECK(virtAddr)	\
     (	((unsigned int) (virtAddr)) >=	\
 		    ((unsigned int) VMMACH_BOTTOM_OF_HOLE) &&	\
 	((unsigned int) (virtAddr)) <=	\
 		    ((unsigned int) VMMACH_TOP_OF_HOLE) ? FALSE : TRUE)
+#endif
 
 /*
  * Check, in assembly, whether a virtual address falls inside the hole in
@@ -145,7 +150,16 @@ DoneCheck:
 
 #define VMMACH_KERN_CONTEXT		0
 #ifdef sun4c
-#define VMMACH_NUM_CONTEXTS		8
+#define VMMACH_NUM_CONTEXTS_60		8
+#define VMMACH_NUM_CONTEXTS_110		8
+#define VMMACH_NUM_CONTEXTS_260		16
+#define VMMACH_NUM_CONTEXTS_330		16
+#define VMMACH_NUM_CONTEXTS_470		64
+#ifdef _ASM				/* force error */
+#define VMMACH_NUM_CONTEXTS		%%
+#else
+#define VMMACH_NUM_CONTEXTS		vmNumContexts
+#endif
 #else
 #define VMMACH_NUM_CONTEXTS		16
 #endif
@@ -175,16 +189,18 @@ DoneCheck:
  *	
  */
 #define VMMACH_NUM_SEGS_PER_CONTEXT	0x4000	/* 2**14 */
-
-#ifdef sun4c
-#define VMMACH_NUM_PAGES_PER_SEG_INT	64
-#define	VMMACH_NUM_PMEGS		128
+#define VMMACH_NUM_PAGES_PER_SEG_INT	(VMMACH_SEG_SIZE / VMMACH_PAGE_SIZE_INT)
+#define	VMMACH_NUM_PMEGS_60		128
+#define	VMMACH_NUM_PMEGS_110		256
+#define	VMMACH_NUM_PMEGS_260		512
+#define	VMMACH_NUM_PMEGS_330		256
+#define	VMMACH_NUM_PMEGS_470		1024
+#ifdef _ASM				/* force error */
+#define VMMACH_NUM_PMEGS		%%
+#else /* _ASM */
+#define VMMACH_NUM_PMEGS		vmNumPmegs
+#endif /* _ASM */
 #define VMMACH_NUM_PAGE_MAP_ENTRIES	(VMMACH_NUM_PMEGS * VMMACH_NUM_PAGES_PER_SEG_INT)
-#else
-#define VMMACH_NUM_PAGES_PER_SEG_INT	32
-#define VMMACH_NUM_PAGE_MAP_ENTRIES	16384
-#define	VMMACH_NUM_PMEGS		(VMMACH_NUM_PAGE_MAP_ENTRIES / VMMACH_NUM_PAGES_PER_SEG_INT)
-#endif
 
 /* The values of MONSTART and MONEND */
 #define VMMACH_DEV_START_ADDR       	0xFFD00000
@@ -201,9 +217,9 @@ DoneCheck:
 #define	VMMACH_VME_ADDR_BIT		0x80000000
 
 #define	VMMACH_NUM_NET_SEGS		6
-#define VMMACH_NET_MAP_START		(VMMACH_DEV_START_ADDR -	\
-				(VMMACH_NUM_NET_SEGS * VMMACH_SEG_SIZE))
 #define	VMMACH_NET_MAP_SIZE		(VMMACH_NUM_NET_SEGS * VMMACH_SEG_SIZE)
+#define VMMACH_NET_MAP_START		(VMMACH_DEV_START_ADDR - \
+						VMMACH_NET_MAP_SIZE)
 #define VMMACH_NET_MEM_START		(VMMACH_DMA_START_ADDR +	\
 						VMMACH_DMA_SIZE)
 #define	VMMACH_NET_MEM_SIZE		(0x20000-VMMACH_PAGE_SIZE)
@@ -231,11 +247,18 @@ DoneCheck:
  *						the context register, etc.
  * VMMACH_SEG_MAP_SPACE			Segment map (in control space).
  * VMMACH_PAGE_MAP_SPACE		Page map (in control space).
+ * VMMACH_HWFLUSH_SEG_SPACE	 	HW assisted flush cache segment.
+ * VMMACH_HWFLUSH_PAGE_SPACE	 	HW assisted flush cache page.
+ * VMMACH_HWFLUSH_CONTEXT_SPACE	 	HW assisted flush cache context.
+ * VMMACH_HWFLUSH_CACHE_SPACE		HW assisted flush cache.
  */
 
 #define	VMMACH_CONTROL_SPACE		0x2	/* also called system space */
 #define	VMMACH_SEG_MAP_SPACE		0x3
 #define	VMMACH_PAGE_MAP_SPACE		0x4
+#define	VMMACH_HWFLUSH_SEG_SPACE	0x5
+#define	VMMACH_HWFLUSH_PAGE_SPACE	0x6
+#define	VMMACH_HWFLUSH_CONTEXT_SPACE	0x7
 #define	VMMACH_USER_PROGRAM_SPACE	0x8
 #define	VMMACH_KERN_PROGRAM_SPACE	0x9
 #define	VMMACH_USER_DATA_SPACE		0xA
@@ -243,9 +266,11 @@ DoneCheck:
 #define	VMMACH_FLUSH_SEG_SPACE		0xC
 #define	VMMACH_FLUSH_PAGE_SPACE		0xD
 #define	VMMACH_FLUSH_CONTEXT_SPACE	0xE
-#ifndef sun4c
-#define	VMMACH_CACHE_DATA_SPACE		0xF	/* not on sun4c */
-#endif
+#ifdef sun4c
+#define	VMMACH_HWFLUSH_CACHE_SPACE	0xF
+#else /* sun4c */
+#define	VMMACH_CACHE_DATA_SPACE		0xF
+#endif /* sun4c */
 
 /*
  * Masks for access to different parts of control and device space.
@@ -279,16 +304,13 @@ DoneCheck:
 #define	VMMACH_SERIAL_PORT_ADDR		0xF0000000	/* control space */
 
 #ifdef sun4c
-#define VMMACH_IDPROM_INC		0x01
-#define VMMACH_MACH_TYPE_ADDR		0xffd047d9	/* device space */
-#define VMMACH_ETHER_ADDR		0xffd047da	/* device space */
 /* 4 bus error registers */
 #define	VMMACH_CACHE_DATA_ADDR		0x90000000	/* control space */
 #define VMMACH_SYNC_ERROR_REG		0x60000000	/* control space */
 #define VMMACH_SYNC_ERROR_ADDR_REG	0x60000004	/* control space */
 #define VMMACH_ASYNC_ERROR_REG		0x60000008	/* control space */
 #define VMMACH_ASYNC_ERROR_ADDR_REG	0x6000000C	/* control space */
-#else
+#else /* sun4c */
 #define VMMACH_IDPROM_INC		0x01
 #define VMMACH_MACH_TYPE_ADDR		0x01
 #define VMMACH_ETHER_ADDR		0x02
@@ -303,7 +325,7 @@ DoneCheck:
  * memory errors.
  */
 #define	VMMACH_ENABLE_MEM_ERROR_BIT	0x40
-#endif
+#endif /* sun4c */
 
 /*
  * Other cache constants:
@@ -322,13 +344,30 @@ DoneCheck:
  */
 #ifdef sun4c
 #define	VMMACH_NUM_CACHE_LINES		0x1000	/* 4K * 16 = 64K cache size */
-#else
+#else /* sun4c */
+#define	VMMACH_NUM_CACHE_LINES_110	0
+#define	VMMACH_NUM_CACHE_LINES_260	0x2000
+#define	VMMACH_NUM_CACHE_LINES_330	0x2000
+#define	VMMACH_NUM_CACHE_LINES_470	0x1000
 #define	VMMACH_NUM_CACHE_LINES		0x2000	/* 8K * 16 = 128K cache size */
-#endif
+#endif /* sun4c */
 #define	VMMACH_ENABLE_CACHE_BIT		0x10
 #define	VMMACH_CACHE_TAG_INCR		0x10
+#ifdef sun4c
+#define	VMMACH_CACHE_LINE_SIZE_60	0x10
+#define	VMMACH_CACHE_LINE_SIZE_110	0
+#define	VMMACH_CACHE_LINE_SIZE_260	0x10
+#define	VMMACH_CACHE_LINE_SIZE_330	0x10
+#define	VMMACH_CACHE_LINE_SIZE_470	0x20
+#ifdef _ASM				/* force error */
+#define VMMACH_CACHE_LINE_SIZE		%%
+#else /* _ASM */
+#define VMMACH_CACHE_LINE_SIZE		vmCacheLineSize
+#endif /* _ASM */
+#else /* sun4c */
 #define	VMMACH_CACHE_LINE_SIZE		0x10
 #define	VMMACH_CACHE_SHIFT		0x4
+#endif /* sun4c */
 #define	VMMACH_NUM_CACHE_TAGS		VMMACH_NUM_CACHE_LINES
 #define VMMACH_CACHE_SIZE  (VMMACH_CACHE_LINE_SIZE * VMMACH_NUM_CACHE_LINES)
 
@@ -381,26 +420,28 @@ DoneCheck:
  * VMMACH_NUM_PAGES_PER_SEG	The number of virtual pages per segment.
  */
 
-#define VMMACH_CLUSTER_SIZE     1
-#define VMMACH_CLUSTER_SHIFT    0
-#define VMMACH_PAGE_SIZE        (VMMACH_CLUSTER_SIZE * VMMACH_PAGE_SIZE_INT)
 #ifdef sun4c
-#define	VMMACH_PAGE_SIZE_INT	4096
-#define VMMACH_PAGE_SHIFT_INT	12
-#define VMMACH_OFFSET_MASK	0x0fff
-#define VMMACH_OFFSET_MASK_INT	0x0fff
-#define VMMACH_PAGE_MASK	0x3F000	
+#if 0
+#define VMMACH_CLUSTER_SHIFT    1		/* 1:2 virt page to phys page */
+#define VMMACH_PAGE_SHIFT_INT	12		/* 4k */
 #else
-#define	VMMACH_PAGE_SIZE_INT	8192
-#define VMMACH_PAGE_SHIFT_INT	13
-#define VMMACH_OFFSET_MASK	0x1fff
-#define VMMACH_OFFSET_MASK_INT	0x1fff
-#define VMMACH_PAGE_MASK	0x3E000	
+#define VMMACH_CLUSTER_SHIFT    0		/* 1:1 virt page to phys page */
+#define VMMACH_PAGE_SHIFT_INT	12		/* 4k */
 #endif
+#else /* sun4c */
+#define VMMACH_CLUSTER_SHIFT    0		/* 1:1 virt page to phys page */
+#define VMMACH_PAGE_SHIFT_INT	13		/* 8k */
+#endif /* sun4c */
 
+#define	VMMACH_CLUSTER_SIZE	(1 << VMMACH_CLUSTER_SHIFT)
+#define	VMMACH_PAGE_SIZE_INT	(1 << VMMACH_PAGE_SHIFT_INT)
+#define VMMACH_PAGE_SIZE        (VMMACH_CLUSTER_SIZE * VMMACH_PAGE_SIZE_INT)
+#define VMMACH_OFFSET_MASK	(VMMACH_PAGE_SIZE - 1)
+#define VMMACH_OFFSET_MASK_INT	(VMMACH_PAGE_SIZE_INT - 1)
 #define VMMACH_PAGE_SHIFT	(VMMACH_CLUSTER_SHIFT + VMMACH_PAGE_SHIFT_INT)
-#define	VMMACH_SEG_SIZE		0x40000		/* twice as large as sun3? */
 #define VMMACH_SEG_SHIFT	18		/* twice as large as sun3? */
+#define	VMMACH_SEG_SIZE		(1 << VMMACH_SEG_SHIFT)	/* 0x40000 */
+#define VMMACH_PAGE_MASK	(VMMACH_SEG_SIZE - VMMACH_PAGE_SIZE_INT)
 #define	VMMACH_NUM_PAGES_PER_SEG (VMMACH_NUM_PAGES_PER_SEG_INT / VMMACH_CLUSTER_SIZE)
 
 /*
@@ -470,7 +511,7 @@ DoneCheck:
  */
 #define VMMACH_USER_SHARED_PAGES	8192
 #define VMMACH_SHARED_BLOCK_SIZE	VMMACH_SEG_SIZE
-#define VMMACH_SHARED_START_ADDR	(0x20000000 - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
+#define VMMACH_SHARED_START_ADDR	(VMMACH_BOTTOM_OF_HOLE - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
 #define	VMMACH_SHARED_NUM_BLOCKS	(VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE/VMMACH_SHARED_BLOCK_SIZE)
 
 #endif /* _VMSUNCONST */

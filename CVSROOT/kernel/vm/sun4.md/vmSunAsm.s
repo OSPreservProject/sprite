@@ -43,8 +43,8 @@ _VmMachReadPTE:
     /* 
      * Set the segment map entry.
      */
-    set		_vmMachPTESegAddr, %OUT_TEMP1	/* Get access address */
-    ld		[%OUT_TEMP1], %OUT_TEMP1
+    sethi	%hi(_vmMachPTESegAddr), %OUT_TEMP1	/* Get access address */
+    ld		[%OUT_TEMP1 + %lo(_vmMachPTESegAddr)], %OUT_TEMP1
 #ifdef sun4c
     stba	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE /* Write seg map entry */
 #else
@@ -86,8 +86,8 @@ _VmMachWritePTE:
     /* 
      * Set the segment map entry.
      */
-    set		_vmMachPTESegAddr, %OUT_TEMP1	/* Get access address */
-    ld		[%OUT_TEMP1], %OUT_TEMP1
+    sethi	%hi(_vmMachPTESegAddr), %OUT_TEMP1	/* Get access address */
+    ld		[%OUT_TEMP1 + %lo(_vmMachPTESegAddr)], %OUT_TEMP1
 #ifdef sun4c
     stba	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE /* Write seg map entry */
 #else
@@ -315,13 +315,17 @@ _VmMachGetPageMap:
 _VmMachGetSegMap:
     set		VMMACH_SEG_MAP_MASK, %OUT_TEMP1
     and		%o0, %OUT_TEMP1, %o0	/* Get relevant bits. */
-/* Is this necessary? */
 #ifdef sun4c
     lduba	[%o0] VMMACH_SEG_MAP_SPACE, %RETURN_VAL_REG	/* read it */
 #else
     lduha	[%o0] VMMACH_SEG_MAP_SPACE, %RETURN_VAL_REG	/* read it */
+    /*
+     * bug fix for 4/110 -- mask out weird bits
+     */
+    sethi	%hi(_vmPmegMask), %OUT_TEMP1
+    ld		[%OUT_TEMP1 + %lo(_vmPmegMask)], %OUT_TEMP1
+    and		%RETURN_VAL_REG, %OUT_TEMP1, %RETURN_VAL_REG
 #endif
-
     retl		/* Return from leaf routine */
     nop
 
@@ -379,8 +383,8 @@ _VmMachSetPageMap:
 .globl	_VmMachPMEGZero
 _VmMachPMEGZero:
     /* Write segment map entry */
-    set		_vmMachPMEGSegAddr, %OUT_TEMP1
-    ld		[%OUT_TEMP1], %OUT_TEMP1
+    sethi	%hi(_vmMachPMEGSegAddr), %OUT_TEMP1
+    ld		[%OUT_TEMP1 + %lo(_vmMachPMEGSegAddr)], %OUT_TEMP1
 #ifdef sun4c
     stba	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE
 #else
@@ -400,11 +404,7 @@ KeepZeroing:
     set		VMMACH_PAGE_SIZE_INT, %g1
     add		%OUT_TEMP1, %g1, %OUT_TEMP1
     cmp		%OUT_TEMP1, %OUT_TEMP2
-#ifdef NOTDEF
-    bl		KeepZeroing
-#else
     bcs		KeepZeroing
-#endif NOTDEF
     nop
 
     retl	/* Return from leaf routine */
@@ -438,8 +438,8 @@ _VmMachReadAndZeroPMEG:
     /*
      * %OUT_TEMP1 is address.  %OUT_TEMP2 is a counter.
      */
-    set		_vmMachPMEGSegAddr, %OUT_TEMP1
-    ld		[%OUT_TEMP1], %OUT_TEMP1
+    sethi	%hi(_vmMachPMEGSegAddr), %OUT_TEMP1
+    ld		[%OUT_TEMP1 + %lo(_vmMachPMEGSegAddr)], %OUT_TEMP1
 #ifdef sun4c
     stba	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE	/* Write PMEG */
 #else
@@ -461,82 +461,6 @@ KeepZeroing2:
     retl	/* Return from leaf routine */			
     nop
 
-#ifdef NOTDEF
-/*
- * ----------------------------------------------------------------------------
- *
- * VmMachTracePMEG --
- *
- *	Read out all page table entries in the given pmeg, generate trace
- *	records for each with ref or mod bit set and then clear the ref
- *	and mod bits.
- *
- *	void VmMachTracePMEG(pmeg)
- *
- * Results:
- *      None.
- *
- * Side effects:
- *	The reference and modified bits are cleared for all pages in
- *	this PMEG.
- *
- * ----------------------------------------------------------------------------
- */
-
-#define	PTE_MASK (VMMACH_RESIDENT_BIT + VMMACH_REFERENCED_BIT + VMMACH_MODIFIED_BIT)
-
-.globl	_VmMachTracePMEG
-_VmMachTracePMEG:
-    /* Start prologue */
-    set		(-MACH_SAVED_WINDOW_SIZE), %g1
-    save	%sp, %g1, %sp
-    /* end prologue */
-
-    /* OUT_TEMP1 is addr */
-    set		_vmMachPMEGSegAddr, %OUT_TEMP1
-    ld		[%OUT_TEMP1], %OUT_TEMP1
-#ifdef sun4c
-    stba	%i0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE	/* Write pmeg */
-#else
-    stha	%i0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE	/* Write pmeg */
-#endif
-
-    /* o1 is counter = second param */
-    set		VMMACH_NUM_PAGES_PER_SEG_INT, %o1
-TryTrace:
-    /* VOL_TEMP1 is pte read out = d2 */
-    lda		[%OUT_TEMP1] VMMACH_PAGE_MAP_SPACE, %VOL_TEMP1	/* Read pte */
-
-    /*
-     * Trace this page if it is resident and the reference and modify bits
-     * are set.
-     */
-    /* OUT_TEMP2 is temp = d0 */
-    andcc	%VOL_TEMP1, PTE_MASK, %OUT_TEMP2
-    be		SkipPage
-    nop
-    cmp		%OUT_TEMP2, VMMACH_RESIDENT_BIT		/* BUG!!!!!! */
-    be		SkipPage
-    nop
-    mov		%VOL_TEMP1, %o0		/* pte in o0, pageNum in o1 */
-					/* Clear the ref and mod bits. */
-    and		%VOL_TEMP1, ~(VMMACH_REFERENCED_BIT + VMMACH_MODIFIED_BIT), %VOL_TEMP1
-    sta		%VOL_TEMP1, [%OUT_TEMP1] VMMACH_PAGE_MAP_SPACE
-    call	_VmMachTracePage, 2		/* VmMachTrace(pte, pageNum) */
-    nop
-
-SkipPage:
-    /* 
-     * Go to the next page.
-     */
-    add		%OUT_TEMP1, VMMACH_PAGE_SIZE_INT, %OUT_TEMP1	/* next addr */
-    subcc	%o1, 1, %o1
-    bg		TryTrace
-    nop
-
-    ret			
-    restore
-#endif NOTDEF
 
 /*
  * ----------------------------------------------------------------------------
@@ -928,11 +852,11 @@ ClearTags:
 /*
  * ----------------------------------------------------------------------------
  *
- * VmMach_FlushCurrentContext --
+ * VmMachFlushCurrentContext --
  *
  *     	Flush the current context from the cache.
  *
- *	void VmMach_FlushCurrentContext()
+ *	void VmMachFlushCurrentContext()
  *
  * Results:
  *     None.
@@ -942,21 +866,57 @@ ClearTags:
  *
  * ----------------------------------------------------------------------------
  */
-.globl	_VmMach_FlushCurrentContext
-_VmMach_FlushCurrentContext:
+.globl	_VmMachFlushCurrentContext
+_VmMachFlushCurrentContext:
     /* Start prologue */
     set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
     save	%sp, %OUT_TEMP1, %sp
     /* end prologue */
+    sethi	%hi(_vmMachHasHwFlush), %OUT_TEMP1
+    ld		[%OUT_TEMP1 + %lo(_vmMachHasHwFlush)], %OUT_TEMP1
+    tst		%OUT_TEMP1
+    be		SoftFlushCurrentContext
+    nop
+    /*
+     * 4/75 has a hardware page at a time flush that can clear a
+     * context a page at a time.
+     */
+#ifdef sun4c
+    sethi	%hi(_vmCacheSize), %l0
+    ld		[%l0 + %lo(_vmCacheSize)], %l0
+#else
+    set		VMMACH_CACHE_SIZE, %l0
+#endif
+    set		VMMACH_PAGE_SIZE_INT, %l1
+HwFlushingContext:
+    subcc  	%l0, %l1, %l0
+    bg		HwFlushingContext
+    sta		%g0, [%l0] VMMACH_HWFLUSH_CONTEXT_SPACE
 
+    ret
+    restore
+
+SoftFlushCurrentContext:
     /*
      * Spread the stores evenly through 16 chunks of the cache.  This helps
      * to avoid back-to-back writebacks.
      */
+#ifdef sun4c
+    sethi	%hi(_vmCacheSize), %l0
+    ld		[%l0 + %lo(_vmCacheSize)], %l0
+    srl		%l0, 4, %l0
+#else
     set		(VMMACH_CACHE_SIZE / 16), %l0
+#endif
 
     /* Start with last line in each of the 16 chunks.  We work backwards. */
-    sub		%l0, VMMACH_CACHE_LINE_SIZE, %i0
+#ifdef sun4c
+    sethi	%hi(_vmCacheLineSize), %i5
+    ld		[%i5 + %lo(_vmCacheLineSize)], %i5
+#else
+    set		VMMACH_CACHE_LINE_SIZE, %i5
+#endif
+    sub		%l0, %i5, %i0
 
     /* Preload a bunch of offsets so we can straight-line a lot of this. */
     add		%l0, %l0, %l1
@@ -993,14 +953,13 @@ FlushingContext:
     sta		%g0, [%i0 + %o5] VMMACH_FLUSH_CONTEXT_SPACE
     sta		%g0, [%i0 + %i4] VMMACH_FLUSH_CONTEXT_SPACE
 
-    subcc	%i0, VMMACH_CACHE_LINE_SIZE, %i0	/* decrement loop */
+    subcc	%i0, %i5, %i0				/* decrement loop */
     bge,a	FlushingContext
 							/* delay slot */
     sta		%g0, [%i0] VMMACH_FLUSH_CONTEXT_SPACE
 
     ret
     restore
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -1030,17 +989,55 @@ _VmMachFlushSegment:
     set		VMMACH_SEG_MAP_MASK, %o0
     and		%i0, %o0, %i0				/* beginning of seg */
     
+    sethi	%hi(_vmMachHasHwFlush), %OUT_TEMP1
+    ld		[%OUT_TEMP1 + %lo(_vmMachHasHwFlush)], %OUT_TEMP1
+    tst		%OUT_TEMP1
+    be		SoftFlushSegment
+    nop
+    /*
+     * 4/75 has a hardware page at a time flush that can clear a
+     * segment a page at a time.
+     */
+#ifdef sun4c
+    sethi	%hi(_vmCacheSize), %l0
+    ld		[%l0 + %lo(_vmCacheSize)], %l0
+#else
+    set		VMMACH_CACHE_SIZE, %l0
+#endif
+    set		VMMACH_PAGE_SIZE_INT, %l1
+HwFlushingSegment:
+    subcc  	%l0, %l1, %l0
+    bg		HwFlushingSegment
+    sta		%g0, [%i0 + %l0] VMMACH_HWFLUSH_SEG_SPACE
+
+    ret
+    restore
+
+SoftFlushSegment:
+
     set		VMMACH_NUM_CACHE_LINES / 16, %i1	/* num loops */
 
     /*
      * Spread the stores evenly through 16 chunks of the cache.  This helps
      * to avoid back-to-back writebacks.
      */
+#ifdef sun4c
+    sethi	%hi(_vmCacheSize), %l0
+    ld		[%l0 + %lo(_vmCacheSize)], %l0
+    srl		%l0, 4, %l0
+#else
     set		(VMMACH_CACHE_SIZE / 16), %l0
+#endif
 
     /* Start with last line in each of the 16 chunks.  We work backwards. */
     add		%i0, %l0, %i0
-    sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0
+#ifdef sun4c
+    sethi	%hi(_vmCacheLineSize), %i5
+    ld		[%i5 + %lo(_vmCacheLineSize)], %i5
+#else
+    set		VMMACH_CACHE_LINE_SIZE, %i5
+#endif
+    sub		%i0, %i5, %i0
 
     /* Preload a bunch of offsets so we can straight-line a lot of this. */
     add		%l0, %l0, %l1
@@ -1080,7 +1077,7 @@ FlushingSegment:
     subcc	%i1, 1, %i1				/* decrement loop */
     bne		FlushingSegment
 							/* delay slot */
-    sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0
+    sub		%i0, %i5, %i0
 
     ret
     restore
@@ -1115,7 +1112,13 @@ _VmMach_FlushByteRange:
     sub		%OUT_TEMP2, 1, %OUT_TEMP2
 
     /* Get first line to flush */
+#ifdef sun4c
+    sethi	%hi(_vmCacheLineSize), %l0
+    ld		[%l0 + %lo(_vmCacheLineSize)], %l0
+    sub		%g0, %l0, %OUT_TEMP1
+#else
     set		~(VMMACH_CACHE_LINE_SIZE - 1), %OUT_TEMP1
+#endif
     and		%i0, %OUT_TEMP1, %i0
 
     /* Get last line to flush */
@@ -1123,29 +1126,39 @@ _VmMach_FlushByteRange:
 
     /* Get number of lines to flush */
     sub		%VOL_TEMP1, %i0, %OUT_TEMP2
+#ifdef sun4c
+    sethi	%hi(_vmCacheShift), %VOL_TEMP2
+    ld		[%VOL_TEMP2 + %lo(_vmCacheShift)], %VOL_TEMP2
+    srl		%OUT_TEMP2, %VOL_TEMP2, %OUT_TEMP2
+#else
     srl		%OUT_TEMP2, VMMACH_CACHE_SHIFT, %OUT_TEMP2
+#endif
     add		%OUT_TEMP2, 1, %i3
+
+#ifndef sun4c
+    set		VMMACH_CACHE_LINE_SIZE, %l0
+#endif
+    sll		%l0, 4, %i5		/* VMMACH_CACHE_LINE_SIZE * 16 */
 
     /* Do we have at least 16 lines to flush? */
     subcc	%i3, 16, %g0
     bl		FinishFlushing
     nop
 
-    set		VMMACH_CACHE_LINE_SIZE, %l0
-    add		%l0, VMMACH_CACHE_LINE_SIZE, %l1
-    add		%l1, VMMACH_CACHE_LINE_SIZE, %l2
-    add		%l2, VMMACH_CACHE_LINE_SIZE, %l3
-    add		%l3, VMMACH_CACHE_LINE_SIZE, %l4
-    add		%l4, VMMACH_CACHE_LINE_SIZE, %l5
-    add		%l5, VMMACH_CACHE_LINE_SIZE, %l6
-    add		%l6, VMMACH_CACHE_LINE_SIZE, %l7
-    add		%l7, VMMACH_CACHE_LINE_SIZE, %o0
-    add		%o0, VMMACH_CACHE_LINE_SIZE, %o1
-    add		%o1, VMMACH_CACHE_LINE_SIZE, %o2
-    add		%o2, VMMACH_CACHE_LINE_SIZE, %o3
-    add		%o3, VMMACH_CACHE_LINE_SIZE, %o4
-    add		%o4, VMMACH_CACHE_LINE_SIZE, %o5
-    add		%o5, VMMACH_CACHE_LINE_SIZE, %i4
+    add		%l0, %l0, %l1
+    add		%l1, %l0, %l2
+    add		%l2, %l0, %l3
+    add		%l3, %l0, %l4
+    add		%l4, %l0, %l5
+    add		%l5, %l0, %l6
+    add		%l6, %l0, %l7
+    add		%l7, %l0, %o0
+    add		%o0, %l0, %o1
+    add		%o1, %l0, %o2
+    add		%o2, %l0, %o3
+    add		%o3, %l0, %o4
+    add		%o4, %l0, %o5
+    add		%o5, %l0, %i4
 
 FlushingHere:
     /* We have at least 16 lines to flush. */
@@ -1177,7 +1190,7 @@ FlushingHere:
     /* Are there another 16 lines? */
     subcc       %i3, 16, %g0
     bge		FlushingHere
-    add		%i0, (16 * VMMACH_CACHE_LINE_SIZE), %i0		/* delay slot */
+    add		%i0, %i5, %i0					/* delay slot */
     tst		%i3
     be		DoneFlushing	/* We finished with the last 16 lines... */
     nop
@@ -1186,7 +1199,7 @@ FinishFlushing:
     sta		%g0, [%i0] VMMACH_FLUSH_PAGE_SPACE
     subcc	%i3, 1, %i3
     bg		FinishFlushing
-    add		%i0, VMMACH_CACHE_LINE_SIZE, %i0		/* delay slot */
+    add		%i0, %l0, %i0					/* delay slot */
 
 DoneFlushing:
     ret
@@ -1217,11 +1230,35 @@ _VmMachFlushPage:
     save	%sp, %OUT_TEMP1, %sp
     /* end prologue */
     
-    set		~VMMACH_OFFSET_MASK, %o0
+    set		~VMMACH_OFFSET_MASK_INT, %o0
     and		%i0, %o0, %i0			/* beginning of page */
 
-						/* number of loops */
+    sethi	%hi(_vmMachHasHwFlush), %OUT_TEMP1
+    ld		[%OUT_TEMP1 + %lo(_vmMachHasHwFlush)], %OUT_TEMP1
+    tst		%OUT_TEMP1
+    be		SoftFlushPage
+    nop
+    /*
+     * 4/75 has a hardware page at a time flush that can clear a
+     * segment
+     */
+    sta		%g0, [%i0] VMMACH_HWFLUSH_PAGE_SPACE
+
+    ret
+    restore
+
+SoftFlushPage:
+
+							/* number of loops */
+#ifdef sun4c
+    sethi	%hi(_vmCacheShift), %OUT_TEMP1
+    ld		[%OUT_TEMP1 + %lo(_vmCacheShift)], %OUT_TEMP1
+    set		VMMACH_PAGE_SIZE_INT, %i1
+    srl		%i1, %OUT_TEMP1, %i1
+    srl		%i1, 4, %i1
+#else
     set		(VMMACH_PAGE_SIZE_INT / VMMACH_CACHE_LINE_SIZE / 16), %i1
+#endif
 
     /*
      * Spread the stores evenly through 16 chunks of the page flush area in the
@@ -1231,7 +1268,13 @@ _VmMachFlushPage:
 
     /* Start with last line in each of the 16 chunks.  We work backwards. */
     add		%i0, %l0, %i0
-    sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0
+#ifdef sun4c
+    sethi	%hi(_vmCacheLineSize), %i5
+    ld		[%i5 + %lo(_vmCacheLineSize)], %i5
+#else
+    set		VMMACH_CACHE_LINE_SIZE, %i5
+#endif
+    sub		%i0, %i5, %i0
 
     /* Preload a bunch of offsets so we can straight-line a lot of this. */
     add		%l0, (VMMACH_PAGE_SIZE_INT / 16), %l1
@@ -1270,7 +1313,7 @@ FlushingPage:
 
     subcc	%i1, 1, %i1				/* decrement loop */
     bne		FlushingPage
-    sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0	/* delay slot */
+    sub		%i0, %i5, %i0				/* delay slot */
     ret
     restore
 #ifndef sun4c
@@ -1719,8 +1762,9 @@ _Vm_CopyOut:
 					    /* numBytes in o0 */
 					    /* sourcePtr in o1 */
 					    /* destPtr in o2 */
-    set		_mach_FirstUserAddr, %OUT_TEMP1
-    ld		[%OUT_TEMP1], %OUT_TEMP1	/* get 1st user addr */
+    sethi	%hi(_mach_FirstUserAddr), %OUT_TEMP1
+					    /* get 1st user addr */
+    ld		[%OUT_TEMP1 + %lo(_mach_FirstUserAddr)], %OUT_TEMP1
     cmp		%o2, %OUT_TEMP1
     blu		BadAddress		/* branch carry set */
     nop
@@ -1729,8 +1773,8 @@ _Vm_CopyOut:
     blu		BadAddress
     nop
 
-    set		_mach_LastUserAddr, %OUT_TEMP1
-    ld		[%OUT_TEMP1], %OUT_TEMP1
+    sethi	%hi(_mach_LastUserAddr), %OUT_TEMP1
+    ld		[%OUT_TEMP1 + %lo(_mach_LastUserAddr)], %OUT_TEMP1
     cmp		%OUT_TEMP2, %OUT_TEMP1
     bleu	GotArgs
     nop
@@ -1816,12 +1860,12 @@ NullChar:
 /*
  * ----------------------------------------------------------------------
  *
- * Vm_TouchPages --
+ * VmMachTouchPages --
  *
  *	Touch the range of pages.
  *
  *	ReturnStatus
- *	Vm_TouchPages(firstPage, numPages)
+ *	VmMachTouchPages(firstPage, numPages)
  *	    int	firstPage;	First page to touch.
  *	    int	numPages;	Number of pages to touch.
  *
@@ -1842,12 +1886,12 @@ NullChar:
  *
  * ----------------------------------------------------------------------
  */
-.globl _Vm_TouchPages
-_Vm_TouchPages:
+.globl _VmMachTouchPages
+_VmMachTouchPages:
 				/* o0 = first page = starting addr */
 				/* o1 = numPages */
-    set		VMMACH_PAGE_SHIFT, %OUT_TEMP1
-    sll		%o0, %OUT_TEMP1, %o0	/* o0 = o0 << VMMACH_PAGE_SHIFT */
+    set		VMMACH_PAGE_SHIFT_INT, %OUT_TEMP1
+    sll		%o0, %OUT_TEMP1, %o0	/* o0 = o0 << VMMACH_PAGE_SHIFT_INT */
     /* Mike had arithmetic shift here, why??? */
 StartTouchingPages:
     tst		%o1		/* Quit when %o1 == 0 */
@@ -1855,7 +1899,7 @@ StartTouchingPages:
     nop
     ld		[%o0], %OUT_TEMP1	/* Touch page at addr in %o0 */
     sub		%o1, 1, %o1	/* Go back around to touch the next page. */
-    set		VMMACH_PAGE_SIZE, %OUT_TEMP2
+    set		VMMACH_PAGE_SIZE_INT, %OUT_TEMP2
     add		%o0, %OUT_TEMP2, %o0
     ba		StartTouchingPages
     nop
