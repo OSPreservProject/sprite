@@ -1457,15 +1457,13 @@ FsrmtCleanBlocks(data, callInfoPtr)
     while (cacheInfoPtr != (Fscache_FileInfo *)NIL) {
 	blockPtr = Fscache_GetDirtyBlock(cacheInfoPtr, BlockMatch,
 			(ClientData) 0,  &lastDirtyBlock);
-	if (lastDirtyBlock) {
-	    lastDirtyBlock = FS_LAST_DIRTY_BLOCK;
-	}
 	while (blockPtr != (Fscache_Block *) NIL) {
 	    /*
 	     * Write the block.
 	     */
 	    status = backendPtr->ioProcs.blockWrite
-		    (cacheInfoPtr->hdrPtr, blockPtr, lastDirtyBlock);
+		    (cacheInfoPtr->hdrPtr, blockPtr, 
+			lastDirtyBlock ? FS_LAST_DIRTY_BLOCK : 0);
 	    Fscache_ReturnDirtyBlock( blockPtr, status);
 	    blockPtr = Fscache_GetDirtyBlock(cacheInfoPtr, BlockMatch,
 			(ClientData) 0, &lastDirtyBlock);
