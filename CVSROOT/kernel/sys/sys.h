@@ -19,12 +19,12 @@
 #include <user/sys.h>
 #include <sprite.h>
 #include <status.h>
-#include <timer.h>
+#include <spriteTime.h>
 #else /* KERNEL */
 #include <sys.h>
 #include <sprite.h>
 #include <status.h>
-#include <kernel/timer.h>
+#include <spriteTime.h>
 #endif /* KERNEL */
 
 #endif /* _ASM */
