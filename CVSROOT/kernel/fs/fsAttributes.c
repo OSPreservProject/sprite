@@ -786,22 +786,19 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
 	storagePtr->replyDataPtr = (Address) NIL;
 	storagePtr->replyDataSize = 0;
-    } else {
-	if (status == FS_LOOKUP_REDIRECT) {
-	    /*
-	     * The file is not found on this server.
-	     */
-	    getAttrResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
-	    storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
-	    storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
-	    storagePtr->replyDataSize =
-		    String_Length(newNameInfoPtr->fileName) + 1;
-	    storagePtr->replyDataPtr =
-		    (Address) Mem_Alloc(storagePtr->replyDataSize);
-	    String_Copy(newNameInfoPtr->fileName,
-		    (char *) storagePtr->replyDataPtr);
-	    Mem_Free(newNameInfoPtr);
-	}
+    } else if (status == FS_LOOKUP_REDIRECT) {
+	/*
+	 * The file is not found on this server.
+	 */
+	getAttrResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
+	storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
+	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
+	storagePtr->replyDataSize = String_Length(newNameInfoPtr->fileName) + 1;
+	storagePtr->replyDataPtr =
+		(Address) Mem_Alloc(storagePtr->replyDataSize);
+	String_Copy(newNameInfoPtr->fileName,
+		(char *) storagePtr->replyDataPtr);
+	Mem_Free(newNameInfoPtr);
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
@@ -813,6 +810,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 		(ClientData)replyMemPtr);
         return(SUCCESS);
     } else {
+	Mem_Free(getAttrResultsParamPtr);
         return(status);
     }
 }

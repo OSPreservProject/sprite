@@ -224,6 +224,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 		    (ClientData)replyMemPtr);
 	    return(SUCCESS);
 	} else {
+	    Mem_Free(openReplyParamPtr);
 	    Sys_Panic(SYS_WARNING, "Fs_RpcPrefix, srvOpen \"%s\" failed %x\n",
 		    storagePtr->requestDataPtr, status);
 	}
