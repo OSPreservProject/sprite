@@ -38,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <assert.h>
 #include <machparam.h>
 #include <string.h>
+#include <fspdev.h>
 
 #ifdef SOSP91
 #include <sospRecord.h>
@@ -776,17 +777,27 @@ Fs_CheckSetID(streamPtr, uidPtr, gidPtr)
 	    cachedAttrPtr =
 	       &((Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr)->cacheInfo.attr;
 	    break;
+	case FSIO_LCL_PFS_STREAM:
+	case FSIO_RMT_PFS_STREAM:
+	    /* Could do get attributes request to the PFS here
+	     * but in general it could be a security hole so  
+	     * we won't allow setuid or setgid programs in a PFS. JMS.
+	     */
+	    cachedAttrPtr = (Fscache_Attributes *)NIL;
+	    break;
 	default:
 	    panic( "Fs_CheckSetID, wrong stream type\n",
 		streamPtr->ioHandlePtr->fileID.type);
 	    return;
     }
-    if (cachedAttrPtr->permissions & FS_SET_UID) {
+    if ((cachedAttrPtr != (Fscache_Attributes *)NIL) &&
+	(cachedAttrPtr->permissions & FS_SET_UID)) {
 	*uidPtr = cachedAttrPtr->uid;
     } else {
 	*uidPtr = -1;
     }
-    if (cachedAttrPtr->permissions & FS_SET_GID) {
+    if ((cachedAttrPtr != (Fscache_Attributes *)NIL) &&
+	(cachedAttrPtr->permissions & FS_SET_GID)) {
 	*gidPtr = cachedAttrPtr->gid;
     } else {
 	*gidPtr = -1;
@@ -963,6 +974,10 @@ Fs_GetSegPtr(fileHandle)
 	    break;
 	case FSIO_RMT_FILE_STREAM:
 	    segPtrPtr = &(((Fsrmt_FileIOHandle *)hdrPtr)->segPtr);
+	    break;
+	case FSIO_LCL_PFS_STREAM:
+	case FSIO_RMT_PFS_STREAM:
+	    segPtrPtr = &(((Fspdev_ClientIOHandle *)hdrPtr)->segPtr);
 	    break;
 	default:
 	    segPtrPtr = (Vm_Segment **) NIL;

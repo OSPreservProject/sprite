@@ -284,8 +284,8 @@ Fspdev_InitializeOps()
 void
 Fspdev_Bin()
 {
-    Mem_Bin(sizeof(FspdevServerIOHandle));
-    Mem_Bin(sizeof(FspdevControlIOHandle));
+    Mem_Bin(sizeof(Fspdev_ServerIOHandle));
+    Mem_Bin(sizeof(Fspdev_ControlIOHandle));
 }
 
 

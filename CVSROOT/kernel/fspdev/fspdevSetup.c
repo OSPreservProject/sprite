@@ -76,7 +76,7 @@ FspdevNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 {
     register	ReturnStatus status = SUCCESS;
     Fs_FileID	ioFileID;
-    register	FspdevControlIOHandle *ctrlHandlePtr;
+    register	Fspdev_ControlIOHandle *ctrlHandlePtr;
     register	Fs_Stream *streamPtr;
     register	Fspdev_State *pdevStatePtr;
 
@@ -242,8 +242,8 @@ FspdevPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 {
     ReturnStatus		status;
     Boolean			foundStream;
-    register FspdevClientIOHandle	*cltHandlePtr;
-    register FspdevControlIOHandle *ctrlHandlePtr;
+    register Fspdev_ClientIOHandle	*cltHandlePtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr;
     register Fspdev_State	*pdevStatePtr;
     Fs_Stream			*cltStreamPtr;
     Fs_Stream			*srvStreamPtr;
@@ -253,14 +253,14 @@ FspdevPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     int				uid;
 
     pdevStatePtr = (Fspdev_State *)streamData;
-    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle,
+    ctrlHandlePtr = Fsutil_HandleFetchType(Fspdev_ControlIOHandle,
 				    &pdevStatePtr->ctrlFileID);
     /*
      * If there is no server present the creation of the stream
      * can't succeed.  This case arises when the pseudo-device
      * master goes away between FspdevNameOpen and this call.
      */
-    if ((ctrlHandlePtr == (FspdevControlIOHandle *)NIL) ||
+    if ((ctrlHandlePtr == (Fspdev_ControlIOHandle *)NIL) ||
 	(ctrlHandlePtr->serverID == NIL)) {
 	status = DEV_OFFLINE;
 	goto exit;
@@ -276,7 +276,7 @@ FspdevPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     }
 
     cltHandlePtr = FspdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, 0);
-    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+    if (cltHandlePtr == (Fspdev_ClientIOHandle *)NIL) {
 	status = DEV_OFFLINE;
 	goto exit;
     }
@@ -304,7 +304,7 @@ FspdevPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 
     Fsutil_FastWaitListNotify(&ctrlHandlePtr->readWaitList);
     Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
-    ctrlHandlePtr = (FspdevControlIOHandle *)NIL;
+    ctrlHandlePtr = (Fspdev_ControlIOHandle *)NIL;
     /*
      * Now that the request response stream is set up we do
      * our first transaction with the server process to see if it
@@ -344,7 +344,7 @@ FspdevPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	}
     }
 exit:
-    if (ctrlHandlePtr != (FspdevControlIOHandle *)NIL) {
+    if (ctrlHandlePtr != (Fspdev_ControlIOHandle *)NIL) {
 	Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
     }
     free((Address)streamData);
@@ -366,7 +366,7 @@ exit:
  *	so proper clean up can be made later.
  * 
  * Results:
- *	A pointer to a FspdevClientIOHandle that references a FspdevServerIOHandle.
+ *	A pointer to a Fspdev_ClientIOHandle that references a Fspdev_ServerIOHandle.
  *	The client handle is returned locked, but the server handle it
  *	references is not locked.
  *
@@ -379,9 +379,9 @@ exit:
  *----------------------------------------------------------------------
  */
 
-FspdevClientIOHandle *
+Fspdev_ClientIOHandle *
 FspdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, naming)
-    FspdevControlIOHandle *ctrlHandlePtr;	/* Control stream handle */
+    Fspdev_ControlIOHandle *ctrlHandlePtr;	/* Control stream handle */
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			clientID;	/* Host ID of client-side */
     Boolean		naming;		/* TRUE if called from FspdevPfsIoOpen
@@ -389,13 +389,13 @@ FspdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, naming)
 {
     Boolean			found;
     Fs_HandleHeader		*hdrPtr;
-    register FspdevClientIOHandle	*cltHandlePtr;
+    register Fspdev_ClientIOHandle	*cltHandlePtr;
 
-    found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(FspdevClientIOHandle),
+    found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(Fspdev_ClientIOHandle),
 		ctrlHandlePtr->rmt.hdr.name, FALSE, &hdrPtr);
-    cltHandlePtr = (FspdevClientIOHandle *)hdrPtr;
+    cltHandlePtr = (Fspdev_ClientIOHandle *)hdrPtr;
     if (found) {
-	if ((cltHandlePtr->pdevHandlePtr != (FspdevServerIOHandle *)NIL) &&
+	if ((cltHandlePtr->pdevHandlePtr != (Fspdev_ServerIOHandle *)NIL) &&
 	    (cltHandlePtr->pdevHandlePtr->clientPID != (unsigned int)NIL)) {
 	    printf(
 		"FspdevConnect found client handle\n");
@@ -409,9 +409,9 @@ FspdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, naming)
 	Fsutil_HandleInvalidate((Fs_HandleHeader *)cltHandlePtr);
 	Fsutil_HandleRelease(cltHandlePtr, TRUE);
 
-	found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(FspdevClientIOHandle),
+	found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(Fspdev_ClientIOHandle),
 			ctrlHandlePtr->rmt.hdr.name, FALSE, &hdrPtr);
-	cltHandlePtr = (FspdevClientIOHandle *)hdrPtr;
+	cltHandlePtr = (Fspdev_ClientIOHandle *)hdrPtr;
 	if (found) {
 	    panic( "FspdevConnect handle still there\n");
 	}
@@ -421,11 +421,12 @@ FspdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, naming)
      */
     cltHandlePtr->pdevHandlePtr = FspdevServerStreamCreate(ioFileIDPtr,
 				    ctrlHandlePtr->rmt.hdr.name, naming);
-    if (cltHandlePtr->pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (cltHandlePtr->pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	Fsutil_HandleRemove(cltHandlePtr);
-	return((FspdevClientIOHandle *)NIL);
+	return((Fspdev_ClientIOHandle *)NIL);
     }
     cltHandlePtr->pdevHandlePtr->ctrlHandlePtr = ctrlHandlePtr;
+    cltHandlePtr->segPtr = (struct Vm_Segment *)NIL; /* JMS */
     /*
      * Set up the client list in case the client is remote.
      */
@@ -535,8 +536,8 @@ FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
     int			*rwFlagsPtr;
 #endif
 {
-    register FspdevClientIOHandle *cltHandlePtr =
-	    (FspdevClientIOHandle *)streamPtr->ioHandlePtr;
+    register Fspdev_ClientIOHandle *cltHandlePtr =
+	    (Fspdev_ClientIOHandle *)streamPtr->ioHandlePtr;
     Boolean cache = FALSE;
 
     DBG_PRINT( ("Client closing pdev %x,%x\n", 
@@ -637,7 +638,7 @@ FspdevPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
     int		*sizePtr;	/* Return - sizeof(Fspdev_State) */
     Address	*dataPtr;	/* Return - pointer to Fspdev_State */
 {
-    FspdevClientIOHandle			*cltHandlePtr;
+    Fspdev_ClientIOHandle			*cltHandlePtr;
     Boolean				closeSrcClient;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
@@ -650,8 +651,8 @@ FspdevPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
 					offsetPtr, sizePtr, dataPtr));
     }
     migInfoPtr->ioFileID.type = FSIO_LCL_PSEUDO_STREAM;
-    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, &migInfoPtr->ioFileID);
-    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+    cltHandlePtr = Fsutil_HandleFetchType(Fspdev_ClientIOHandle, &migInfoPtr->ioFileID);
+    if (cltHandlePtr == (Fspdev_ClientIOHandle *)NIL) {
 	panic( "FspdevPseudoStreamMigrate, no client handle <%d,%x,%x>\n",
 		migInfoPtr->ioFileID.serverID,
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
@@ -782,11 +783,11 @@ FspdevPseudoStreamMigOpen(migInfoPtr, size, data, hdrPtrPtr)
     ClientData	data;		/* NIL */
     Fs_HandleHeader **hdrPtrPtr;	/* Return - handle for the file */
 {
-    register FspdevClientIOHandle *cltHandlePtr;
+    register Fspdev_ClientIOHandle *cltHandlePtr;
 
-    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle,
+    cltHandlePtr = Fsutil_HandleFetchType(Fspdev_ClientIOHandle,
 				     &migInfoPtr->ioFileID);
-    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+    if (cltHandlePtr == (Fspdev_ClientIOHandle *)NIL) {
 	panic( "FspdevPseudoStreamMigOpen, no handle.\n");
 	return(FAILURE);
     } else {
@@ -826,7 +827,7 @@ FspdevRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
     int		clientID;	/* Host ID of the client */
     int		*domainTypePtr;	/* Return - FS_PSEUDO_DOMAIN */
 {
-    register FspdevClientIOHandle	*cltHandlePtr;
+    register Fspdev_ClientIOHandle	*cltHandlePtr;
     register Fsconsist_ClientInfo	*clientPtr;
     Boolean			found = FALSE;
 
@@ -839,8 +840,8 @@ FspdevRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
 	    fileIDPtr->type);
 	return((Fs_HandleHeader *)NIL);
     }
-    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, fileIDPtr);
-    if (cltHandlePtr != (FspdevClientIOHandle *)NIL) {
+    cltHandlePtr = Fsutil_HandleFetchType(Fspdev_ClientIOHandle, fileIDPtr);
+    if (cltHandlePtr != (Fspdev_ClientIOHandle *)NIL) {
 	LIST_FORALL(&cltHandlePtr->clientList, (List_Links *) clientPtr) {
 	    if (clientPtr->clientID == clientID) {
 		found = TRUE;
@@ -849,7 +850,7 @@ FspdevRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
 	}
 	if (!found) {
 	    Fsutil_HandleRelease(cltHandlePtr, TRUE);
-	    cltHandlePtr = (FspdevClientIOHandle *)NIL;
+	    cltHandlePtr = (Fspdev_ClientIOHandle *)NIL;
 	}
     }
     if (!found) {

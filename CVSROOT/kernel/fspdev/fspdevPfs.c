@@ -50,8 +50,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dev/pfs.h>
 #include <string.h>
 
-static FspdevServerIOHandle *PfsGetUserLevelIDs _ARGS_((
-	FspdevServerIOHandle *pdevHandlePtr, Fs_FileID *prefixIDPtr, 
+static Fspdev_ServerIOHandle *PfsGetUserLevelIDs _ARGS_((
+	Fspdev_ServerIOHandle *pdevHandlePtr, Fs_FileID *prefixIDPtr, 
 	Fs_FileID *rootIDPtr));
 
 /*
@@ -128,7 +128,7 @@ FspdevRmtLinkNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	 * control handle on the client.  Thus there is no shadow stream,
 	 * only a control handle here..
 	 */
-	register FspdevControlIOHandle *ctrlHandlePtr;
+	register Fspdev_ControlIOHandle *ctrlHandlePtr;
 
 	ioFileIDPtr->serverID = rpc_SpriteID;
 	ctrlHandlePtr = FspdevControlHandleInit(ioFileIDPtr, handlePtr->hdr.name);
@@ -189,9 +189,9 @@ FspdevPfsIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 					 * I/O to a pseudo device, or NIL */
 {
     register ReturnStatus	status = SUCCESS;
-    register FspdevControlIOHandle *ctrlHandlePtr;
-    register FspdevServerIOHandle *pdevHandlePtr;
-    register FspdevClientIOHandle *cltHandlePtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr;
+    register Fspdev_ServerIOHandle *pdevHandlePtr;
+    register Fspdev_ClientIOHandle *cltHandlePtr;
     Fs_HandleHeader		*prefixHdrPtr;
     Fs_FileID			rootID;
     int				domain;
@@ -239,7 +239,7 @@ FspdevPfsIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     ioFileIDPtr->type = FSIO_LCL_PSEUDO_STREAM;
     ioFileIDPtr->serverID = rpc_SpriteID;
     cltHandlePtr = FspdevConnect(ctrlHandlePtr, ioFileIDPtr, rpc_SpriteID, 1);
-    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+    if (cltHandlePtr == (Fspdev_ClientIOHandle *)NIL) {
 	status = FAILURE;
 	goto cleanup;
     }
@@ -312,7 +312,7 @@ FspdevPfsExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
      int		*dataSizePtr;	/* Return - 0 */
      ClientData		*clientDataPtr;	/* Return - NIL */
 {
-    register FspdevClientIOHandle *cltHandlePtr = (FspdevClientIOHandle *)hdrPtr;
+    register Fspdev_ClientIOHandle *cltHandlePtr = (Fspdev_ClientIOHandle *)hdrPtr;
     register ReturnStatus status;
 
     Fsutil_HandleLock(cltHandlePtr);
@@ -404,12 +404,12 @@ FspdevPfsDomainInfo(fileIDPtr, domainInfoPtr)
     ReturnStatus		status;
     Pfs_Request			request;
     Fs_RedirectInfo		*redirectPtr;
-    FspdevClientIOHandle		*cltHandlePtr;
+    Fspdev_ClientIOHandle		*cltHandlePtr;
     int				resultSize;
 
     status = FS_FILE_NOT_FOUND;
-    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, fileIDPtr);
-    if (cltHandlePtr != (FspdevClientIOHandle *)NIL) {
+    cltHandlePtr = Fsutil_HandleFetchType(Fspdev_ClientIOHandle, fileIDPtr);
+    if (cltHandlePtr != (Fspdev_ClientIOHandle *)NIL) {
 	Fsutil_HandleUnlock(cltHandlePtr);
 	/*
 	 * Go to the pseudo-device server to get the domain information.
@@ -464,14 +464,14 @@ FspdevPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
 {
-    register FspdevClientIOHandle	*cltHandlePtr;
-    register FspdevServerIOHandle *pdevHandlePtr;
+    register Fspdev_ClientIOHandle	*cltHandlePtr;
+    register Fspdev_ServerIOHandle *pdevHandlePtr;
     register Fs_OpenArgs		*openArgsPtr = (Fs_OpenArgs *)argsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    cltHandlePtr = (FspdevClientIOHandle *)prefixHandle;
+    cltHandlePtr = (Fspdev_ClientIOHandle *)prefixHandle;
 
     /*
      * Set up the open arguments, and get ahold of the naming stream.
@@ -479,7 +479,7 @@ FspdevPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     request.hdr.operation = PFS_OPEN;
     pdevHandlePtr = PfsGetUserLevelIDs(cltHandlePtr->pdevHandlePtr,
 			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
-    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.open = *openArgsPtr;
@@ -519,22 +519,22 @@ FspdevPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
  *----------------------------------------------------------------------
  */
 
-static FspdevServerIOHandle *
+static Fspdev_ServerIOHandle *
 PfsGetUserLevelIDs(pdevHandlePtr, prefixIDPtr, rootIDPtr)
-    FspdevServerIOHandle *pdevHandlePtr;	/* Handle of name prefix */
+    Fspdev_ServerIOHandle *pdevHandlePtr;	/* Handle of name prefix */
     Fs_FileID *prefixIDPtr;		/* Prefix fileID */
     Fs_FileID *rootIDPtr;		/* ID of naming request-response */
 {
-    register FspdevClientIOHandle *cltHandlePtr;
+    register Fspdev_ClientIOHandle *cltHandlePtr;
 
     *prefixIDPtr = pdevHandlePtr->userLevelID;
     rootIDPtr->type = fsio_RmtToLclType[rootIDPtr->type];
-    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, rootIDPtr);
-    if (cltHandlePtr != (FspdevClientIOHandle *)NIL) {
+    cltHandlePtr = Fsutil_HandleFetchType(Fspdev_ClientIOHandle, rootIDPtr);
+    if (cltHandlePtr != (Fspdev_ClientIOHandle *)NIL) {
 	Fsutil_HandleRelease(cltHandlePtr, TRUE);
 	return(cltHandlePtr->pdevHandlePtr);
     } else {
-	return((FspdevServerIOHandle *)NIL);
+	return((Fspdev_ServerIOHandle *)NIL);
     }
 }
 
@@ -560,12 +560,12 @@ PfsGetUserLevelIDs(pdevHandlePtr, prefixIDPtr, rootIDPtr)
  */
 int
 FspdevPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
-    FspdevServerIOHandle	*namingPdevHandlePtr;/* From naming request-response */
+    Fspdev_ServerIOHandle	*namingPdevHandlePtr;/* From naming request-response */
     Fs_FileID *srvrFileIDPtr;		/* FileID from user-level server */
     Fs_OpenResults *openResultsPtr;	/* Info returned to client's open */
 {
-    register FspdevControlIOHandle *ctrlHandlePtr;
-    register FspdevClientIOHandle *cltHandlePtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr;
+    register Fspdev_ClientIOHandle *cltHandlePtr;
     register Fs_Stream *srvStreamPtr;
     register Fs_Stream *cltStreamPtr;
     int newStreamID;
@@ -585,7 +585,7 @@ FspdevPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
 
     cltHandlePtr = FspdevConnect(ctrlHandlePtr, fileIDPtr,
 		    namingPdevHandlePtr->open.clientID, 0);
-    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+    if (cltHandlePtr == (Fspdev_ClientIOHandle *)NIL) {
 	printf( "FspdevPfsOpenConnection failing\n");
 	return(-1);
     }
@@ -669,10 +669,10 @@ FspdevPfsStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a pseudo device, or NIL */
 {
-    register FspdevClientIOHandle *cltHandlePtr;
+    register Fspdev_ClientIOHandle *cltHandlePtr;
 
-    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, ioFileIDPtr);
-    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+    cltHandlePtr = Fsutil_HandleFetchType(Fspdev_ClientIOHandle, ioFileIDPtr);
+    if (cltHandlePtr == (Fspdev_ClientIOHandle *)NIL) {
 	printf( "FspdevPfsStreamIoOpen, no handle\n");
 	*ioHandlePtrPtr = (Fs_HandleHeader *)NIL;
 	return(FS_FILE_NOT_FOUND);
@@ -683,8 +683,8 @@ FspdevPfsStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	cltHandlePtr->hdr.name = (char *)malloc(strlen(name) + 1);
 	(void)strcpy(cltHandlePtr->hdr.name, name);
 	*ioHandlePtrPtr = (Fs_HandleHeader *)cltHandlePtr;
-	if (*flagsPtr & FS_EXECUTE) {         /* Promote execute access to
-	    *flagsPtr |= FS_READ;	       * read access. JMS */
+	if (*flagsPtr & FS_EXECUTE) {         /* Promote execute access to */
+	    *flagsPtr |= FS_READ;	      /* read access. JMS */
 	}
 	Fsutil_HandleUnlock(cltHandlePtr);
 	return(SUCCESS);
@@ -722,8 +722,8 @@ FspdevRmtPfsStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     Fs_HandleHeader	**ioHandlePtrPtr;/* Return - FSIO_RMT_PFS_STREAM handle */
 {
     Fsrmt_IOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
-    if (*flagsPtr & FS_EXECUTE) {         /* Promote execute access to
-	*flagsPtr |= FS_READ;              * read access. JMS */
+    if (*flagsPtr & FS_EXECUTE) {         /* Promote execute access to */
+	*flagsPtr |= FS_READ;             /* read access. JMS */
     }
     return(SUCCESS);
 }
@@ -753,20 +753,20 @@ FspdevPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
 {
-    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fspdev_ServerIOHandle	*pdevHandlePtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     register Fs_OpenArgs		*openArgsPtr;
     register Fs_GetAttrResults	*getAttrResultsPtr;
     int				resultSize;
 
-    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    pdevHandlePtr = ((Fspdev_ClientIOHandle *)prefixHandle)->pdevHandlePtr;
     openArgsPtr = (Fs_OpenArgs *)argsPtr;
 
     request.hdr.operation = PFS_GET_ATTR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
-    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.open = *(Fs_OpenArgs *)argsPtr;
@@ -822,7 +822,7 @@ FspdevPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
 {
-    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fspdev_ServerIOHandle	*pdevHandlePtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     register Fs_SetAttrArgs	*setAttrArgsPtr;
@@ -831,7 +831,7 @@ FspdevPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     register int		dataLength;
     int				zero = 0;
 
-    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    pdevHandlePtr = ((Fspdev_ClientIOHandle *)prefixHandle)->pdevHandlePtr;
 
     setAttrArgsPtr = (Fs_SetAttrArgs *)argsPtr;
 
@@ -839,7 +839,7 @@ FspdevPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &setAttrArgsPtr->openArgs.prefixID,
 			    &setAttrArgsPtr->openArgs.rootID);
-    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.open = setAttrArgsPtr->openArgs;
@@ -895,19 +895,19 @@ FspdevPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     Fs_RedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
 					* its domain during the lookup. */
 {
-    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fspdev_ServerIOHandle	*pdevHandlePtr;
     register Fs_OpenArgs		*openArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    pdevHandlePtr = ((Fspdev_ClientIOHandle *)prefixHandle)->pdevHandlePtr;
     openArgsPtr = (Fs_OpenArgs *)argsPtr;
 
     request.hdr.operation = PFS_MAKE_DIR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
-    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.makeDir = *openArgsPtr;
@@ -946,19 +946,19 @@ FspdevPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     Fs_RedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
 					* its domain during the lookup. */
 {
-    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fspdev_ServerIOHandle	*pdevHandlePtr;
     register Fs_MakeDeviceArgs	*makeDevArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    pdevHandlePtr = ((Fspdev_ClientIOHandle *)prefixHandle)->pdevHandlePtr;
     makeDevArgsPtr = (Fs_MakeDeviceArgs *)argsPtr;
 
     request.hdr.operation = PFS_MAKE_DEVICE;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 	    &makeDevArgsPtr->open.prefixID, &makeDevArgsPtr->open.rootID);
-    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.makeDevice = *makeDevArgsPtr;
@@ -997,19 +997,19 @@ FspdevPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     Fs_RedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
 					   its domain during the lookup. */
 {
-    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fspdev_ServerIOHandle	*pdevHandlePtr;
     register Fs_LookupArgs	*lookupArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    pdevHandlePtr = ((Fspdev_ClientIOHandle *)prefixHandle)->pdevHandlePtr;
     lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
 
     request.hdr.operation = PFS_REMOVE;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
-    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.remove = *lookupArgsPtr;
@@ -1048,19 +1048,19 @@ FspdevPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     Fs_RedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
 					   its domain during the lookup. */
 {
-    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fspdev_ServerIOHandle	*pdevHandlePtr;
     register Fs_LookupArgs	*lookupArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    pdevHandlePtr = ((Fspdev_ClientIOHandle *)prefixHandle)->pdevHandlePtr;
     lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
 
     request.hdr.operation = PFS_REMOVE_DIR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
-    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.removeDir = *lookupArgsPtr;
@@ -1171,18 +1171,18 @@ FspdevPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeNa
 				 * condition if for the first pathname,
 				 * FALSE means error is on second pathname. */
 {
-    register FspdevServerIOHandle	*pdevHandlePtr;
-    register FspdevServerIOHandle	*pdevHandle2Ptr;
+    register Fspdev_ServerIOHandle	*pdevHandlePtr;
+    register Fspdev_ServerIOHandle	*pdevHandle2Ptr;
     Fs_2PathData			*dataPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
 
-    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle1)->pdevHandlePtr;
+    pdevHandlePtr = ((Fspdev_ClientIOHandle *)prefixHandle1)->pdevHandlePtr;
 
     request.hdr.operation = operation;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
-    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (Fspdev_ServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.rename.lookup = *lookupArgsPtr;
@@ -1196,7 +1196,7 @@ FspdevPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeNa
 	 */
 	request.param.rename.prefixID2.type = -1;
     } else {
-	pdevHandle2Ptr = ((FspdevClientIOHandle *)prefixHandle2)->pdevHandlePtr;
+	pdevHandle2Ptr = ((Fspdev_ClientIOHandle *)prefixHandle2)->pdevHandlePtr;
 	request.param.rename.prefixID2 = pdevHandle2Ptr->userLevelID;
     }
     dataPtr = (Fs_2PathData *)malloc(sizeof(Fs_2PathData));
