@@ -44,43 +44,55 @@
 #define	SCHED_STACK_IN_USE		0x4
 
 typedef struct Sched_Instrument {
-
-    /* 
-     * Total number of context switches. 
+    /*
+     * Per processor numbers.
      */
-    int	numContextSwitches[MACH_MAX_NUM_PROCESSORS];		
-
-    /* 
-     * Only those due to end of quantum. 
-     */
-    int	numInvoluntarySwitches[MACH_MAX_NUM_PROCESSORS];	
-
-    /* 
-     * Number of switches that cause a different process to run.
-     */
-    int numFullCS[MACH_MAX_NUM_PROCESSORS];			
-
-    /* 
-     * Amount of time w/o running process.  
-     */
-    Timer_Ticks noProcessRunning[MACH_MAX_NUM_PROCESSORS];	
-
-    /* 
-     * Converted value of noProcessRunning that is only computed when
-     * this struct is copied out to user space.
-     */
-    Time idleTime[MACH_MAX_NUM_PROCESSORS];			
-
-    /* 
-     * Free running counter that is ++'d inside the idle loop.  It is used
-     * to measure CPU utilization.
-     */
-    unsigned int idleTicksLow[MACH_MAX_NUM_PROCESSORS];		
-
-    /* 
-     * Make the counter into 64 bits 
-     */
-    unsigned int idleTicksOverflow[MACH_MAX_NUM_PROCESSORS];	
+    struct perProcessor {
+	/* 
+	 * Total number of context switches. 
+	 */
+	int	numContextSwitches;		
+    
+	/* 
+	 * Only those due to end of quantum. 
+	 */
+	int	numInvoluntarySwitches;	
+    
+	/* 
+	 * Number of switches that cause a different process to run.
+	 */
+	int numFullCS;			
+    
+	/* 
+	 * Amount of time w/o running process.  
+	 */
+	Timer_Ticks noProcessRunning;	
+    
+	/* 
+	 * Converted value of noProcessRunning that is only computed when
+	 * this struct is copied out to user space.
+	 */
+	Time idleTime;			
+    
+	/* 
+	 * Free running counter that is ++'d inside the idle loop.  It is used
+	 * to measure CPU utilization.
+	 */
+	unsigned int idleTicksLow;		
+	/* 
+	 * Make the counter into 64 bits 
+	 */
+	unsigned int idleTicksOverflow;
+#if 	(MACH_MAX_NUM_PROCESSORS != 1) 
+	/*
+	 * Pad the structure to insure that two structure occur in the
+	 * same cache block.  This is to prevent pinging of cache blocks
+	 * between processor in a multiprocessor such as SPUR while 
+	 * incrementing the IdleLoop counter.
+	 */
+	 Mach_CacheBlockSizeType	pad;
+#endif
+    } processor[MACH_MAX_NUM_PROCESSORS];
 
     unsigned int idleTicksPerSecond;	/* Calibrated value */
 

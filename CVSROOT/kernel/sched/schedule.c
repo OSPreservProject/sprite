@@ -267,8 +267,9 @@ Sched_GatherProcessInfo()
 	 * charge the usage to a particular process but keep track of it.
 	 */
 	if (curProcPtr == (Proc_ControlBlock *) NIL) {
-	    Timer_AddTicks(sched_Instrument.noProcessRunning[cpu], gatherTicks,
-		           &(sched_Instrument.noProcessRunning[cpu]));
+	    Timer_AddTicks(sched_Instrument.processor[cpu].noProcessRunning, 
+		      gatherTicks,
+		      &(sched_Instrument.processor[cpu].noProcessRunning));
 	    continue;
 	}
 
@@ -346,7 +347,7 @@ Sched_ContextSwitchInt(state)
     register int cpu;
 
     cpu = Mach_GetProcessorNumber();
-    sched_Instrument.numContextSwitches[cpu]++;
+    sched_Instrument.processor[cpu].numContextSwitches++;
 
     curProcPtr = Proc_GetCurrentProc();
     /*
@@ -421,7 +422,7 @@ Sched_ContextSwitchInt(state)
 	return;
     }
 
-    sched_Instrument.numFullCS[cpu]++;
+    sched_Instrument.processor[cpu].numFullCS++;
 
     /*
      * Perform the hardware context switch.  After switching, make
@@ -525,19 +526,12 @@ static Proc_ControlBlock *
 IdleLoop()
 {
     register Proc_ControlBlock	*procPtr;
-    register Proc_ControlBlock	*lastProcPtr;
     register int cpu;
     register List_Links		*queuePtr;
+    register Boolean		foundOne;
 
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
-    /*
-     * Mark in the process control block for the current process that it's 
-     * stack is still in use. This prevents the scheduler from scheduling
-     * this process (and stack) to another processor.  
-     */
-    lastProcPtr = Proc_GetCurrentProc();
-    lastProcPtr->schedFlags |= SCHED_STACK_IN_USE;
     MASTER_UNLOCK(sched_MutexPtr);
     while (1) {
 	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
@@ -551,31 +545,39 @@ IdleLoop()
 	     */
 	    MASTER_LOCK(sched_MutexPtr);
 	    /*
-	     * Make sure queue is not empty.
+	     * Make sure queue is not empty. If there is a ready process
+	     * take a peek at it to insure that we can execute it. The
+	     * only condition preventing a processor from executing a
+	     * process is that its stack is being used by another processor.
 	     */
-	    if (List_IsEmpty(queuePtr) == FALSE) {
-		/*
-		 * There is a ready process. Take a peek at it to insure that
-		 * we can execute it.  The only condition preventing a 
-		 * processor from executing a process is if its stack is
-		 * being used by another processor in the idle loop.
-		 */
-		procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+	    foundOne = FALSE;
+	    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+	    while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
 		if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
-		           (procPtr == lastProcPtr)) {
+		     (procPtr->processor == cpu)) {
+		    foundOne = TRUE;
 		    break; 
 		}
+	        procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
+	    }
+	    if (foundOne) {
+		/*
+ 		 * We found a READY processor for us, break out of the
+		 * idle loop.
+		 */
+		break;
 	    }
 	    MASTER_UNLOCK(sched_MutexPtr);
 	}
 	/*
 	 * Count Idle ticks.  
 	 */
-	if (sched_Instrument.idleTicksLow[cpu] == (unsigned) 0xffffffff) {
-	    sched_Instrument.idleTicksLow[cpu] = 0;
-	    sched_Instrument.idleTicksOverflow[cpu]++;
+	if (sched_Instrument.processor[cpu].idleTicksLow ==
+					(unsigned) 0xffffffff) {
+	    sched_Instrument.processor[cpu].idleTicksLow = 0;
+	    sched_Instrument.processor[cpu].idleTicksOverflow++;
 	} else {
-	    sched_Instrument.idleTicksLow[cpu]++;
+	    sched_Instrument.processor[cpu].idleTicksLow++;
 	}
     }
     if (procPtr->state != PROC_READY) {
@@ -628,9 +630,9 @@ Sched_TimeTicks()
     cpu = Mach_GetProcessorNumber(); 
     Time_Multiply(time_OneSecond, 5, &time);
     printf("Idling for 5 seconds...");
-    lowTicks = sched_Instrument.idleTicksLow[cpu];
+    lowTicks = sched_Instrument.processor[cpu].idleTicksLow;
     (void) Sync_WaitTime(time);
-    lowTicks = sched_Instrument.idleTicksLow[cpu] - lowTicks;
+    lowTicks = sched_Instrument.processor[cpu].idleTicksLow - lowTicks;
     printf(" %d ticks\n", lowTicks);
     sched_Instrument.idleTicksPerSecond = lowTicks / 5;
 }
@@ -702,12 +704,12 @@ Sched_PrintStat()
     for(i = 0; i < mach_NumProcessors;i++) {
 	printf("Processor: %d\n",i);
 	printf("numContextSwitches = %d\n",
-	       sched_Instrument.numContextSwitches[i]);
+	       sched_Instrument.processor[i].numContextSwitches);
 	printf("numFullSwitches    = %d\n",
-	       sched_Instrument.numFullCS[i]);
+	       sched_Instrument.processor[i].numFullCS);
 	printf("numInvoluntary     = %d\n",
-	       sched_Instrument.numInvoluntarySwitches[i]);
-	Timer_TicksToTime(sched_Instrument.noProcessRunning[i], &tmp);
+	       sched_Instrument.processor[i].numInvoluntarySwitches);
+	Timer_TicksToTime(sched_Instrument.processor[i].noProcessRunning, &tmp);
 	printf("Idle Time          = %d.%06d seconds\n", 
   	       tmp.seconds, tmp.microseconds);
     }
@@ -737,7 +739,8 @@ void
 Sched_LockAndSwitch()
 {
     MASTER_LOCK(sched_MutexPtr);
-    sched_Instrument.numInvoluntarySwitches[Mach_GetProcessorNumber()]++;
+    sched_Instrument.processor[Mach_GetProcessorNumber()].
+				numInvoluntarySwitches++;
     Sched_ContextSwitchInt(PROC_READY);
     MASTER_UNLOCK(sched_MutexPtr);
 }
