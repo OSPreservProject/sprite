@@ -219,6 +219,26 @@ typedef struct {
 #define Mach_MonPrintf (romVectorPtr->printf)
 #define Mach_MonGetChar (romVectorPtr->getChar)
 
+/* from SunOS /usr/include/mon/sunromvec.h 1.19 */
+/*
+ * The possible values for "*romp->v_insource" and "*romp->v_outsink" are
+ * listed below.  These may be extended in the future.  Your program should
+ * cope with this gracefully (e.g. by continuing to vector through the ROM
+ * I/O routines if these are set in a way you don't understand).
+ */
+#define INKEYB    0 /* Input from parallel keyboard. */
+#define INUARTA   1 /* Input or output to Uart A.    */
+#define INUARTB   2 /* Input or output to Uart B.    */
+#define INUARTC   3 /* Input or output to Uart C.    */
+#define INUARTD   4 /* Input or output to Uart D.    */
+#define OUTSCREEN 0 /* Output to frame buffer.       */
+#define OUTUARTA  1 /* Input or output to Uart A.    */
+#define OUTUARTB  2 /* Input or output to Uart B.    */
+#define OUTUARTC  3 /* Input or output to Uart C.    */
+#define OUTUARTD  4 /* Input or output to Uart D.    */
+/* end of /usr/include/mon/sunromvec.h */
+
+
 extern	void 	Mach_MonPutChar _ARGS_((int ch));
 extern	int  	Mach_MonMayPut _ARGS_((int ch));
 extern	void	Mach_MonAbort _ARGS_((void));
@@ -226,5 +246,9 @@ extern	void	Mach_MonReboot _ARGS_((char *rebootString));
 extern  void    Mach_MonTrap _ARGS_((Address address_to_trap_to));
 extern	void	Mach_MonStopNmi _ARGS_((void));
 extern	void	Mach_MonStartNmi _ARGS_((void));
+extern	void	Mach_MonTraverseDevTree _ARGS_((unsigned int node, int (*func)(), void *clientData));
+extern	int	Mach_MonSearchProm _ARGS_((char *name, char *attr, char *buf, int buflen));
+extern	void	Mach_MonTraverseAndPrintDevTree _ARGS_((void));
+
 
 #endif /* _MACHMON */
