@@ -62,7 +62,7 @@ NetIERecvUnitInit()
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
 	recvBufDescPtr = (NetIERecvBufDesc *) NetIEMemAlloc();
 	if (recvBufDescPtr == (NetIERecvBufDesc *) NIL) {
-	    "No memory for a receive buffer descriptor pointer\n");
+	    panic("No memory for a receive buffer descriptor pointer\n");
 	}
 
 	*(short *)recvBufDescPtr = 0;	/* Clear out the status word */
