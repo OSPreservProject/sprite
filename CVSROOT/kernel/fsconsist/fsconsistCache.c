@@ -71,6 +71,7 @@ typedef struct ConsistMsg {
     FsFileID	fileID;		/* Which file to invalidate. */
     int		flags;		/* One of the flags defined below. */
     int		openTimeStamp;	/* Open that this rpc pertains to. */
+    int		version;	/* Version number of the file */
 } ConsistMsg;
 
 /*
