@@ -154,8 +154,8 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 
 
     status = FsLocalLookup(prefixHandlePtr, relativeName, openArgsPtr->useFlags,
-			  openArgsPtr->type, &openArgsPtr->id,
-			  openArgsPtr->permissions,
+			  openArgsPtr->type, openArgsPtr->clientID,
+			  &openArgsPtr->id, openArgsPtr->permissions,
 			  0, &handlePtr, newNameInfoPtrPtr);
     if (status == SUCCESS) {
 	/*
@@ -217,6 +217,7 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 
     status = FsLocalLookup(prefixHandlePtr, relativeName,
 			openArgsPtr->useFlags, openArgsPtr->type,
+			openArgsPtr->clientID,
 			&openArgsPtr->id, openArgsPtr->permissions, 0,
 			&handlePtr, newNameInfoPtrPtr);
     if (status != SUCCESS) {
@@ -285,6 +286,7 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 
     status = FsLocalLookup(prefixHandlePtr, relativeName,
 			openArgsPtr->useFlags, openArgsPtr->type,
+			openArgsPtr->clientID,
 			&openArgsPtr->id, openArgsPtr->permissions, 0,
 			&handlePtr, newNameInfoPtrPtr);
     if (status != SUCCESS) {
@@ -355,6 +357,7 @@ FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     makeDevArgsPtr = (FsMakeDeviceArgs *)argsPtr;
     status = FsLocalLookup(prefixHandle, relativeName,
 		FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW, FS_DEVICE,
+		makeDevArgsPtr->clientID,
 		&makeDevArgsPtr->id, makeDevArgsPtr->permissions,
 		0, &handlePtr, newNameInfoPtrPtr);
     if (status == SUCCESS) {
@@ -410,8 +413,8 @@ FsLocalMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     openArgsPtr = (FsOpenArgs *)argsPtr;
 
     status = FsLocalLookup(prefixHandle, relativeName, openArgsPtr->useFlags,
-			  openArgsPtr->type, &openArgsPtr->id,
-			  openArgsPtr->permissions,
+			  openArgsPtr->type, openArgsPtr->clientID,
+			  &openArgsPtr->id, openArgsPtr->permissions,
 			  0, &handlePtr, newNameInfoPtrPtr);
     if (status == SUCCESS) {
 	FsHandleRelease(handlePtr, TRUE);
@@ -453,7 +456,7 @@ FsLocalRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     lookupArgsPtr = (FsLookupArgs *)argsPtr;
 
     status = FsLocalLookup(prefixHandle, relativeName, lookupArgsPtr->useFlags,
-			 FS_FILE, &lookupArgsPtr->id,
+			 FS_FILE, lookupArgsPtr->clientID, &lookupArgsPtr->id,
 			 0, 0, (FsLocalFileIOHandle **)NIL, newNameInfoPtrPtr);
     return(status);
 }
@@ -490,8 +493,8 @@ FsLocalRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     lookupArgsPtr = (FsLookupArgs *)argsPtr;
 
     status = FsLocalLookup(prefixHandle, relativeName, lookupArgsPtr->useFlags,
-			 FS_DIRECTORY, &lookupArgsPtr->id,
-			 0, 0, (FsLocalFileIOHandle **)NIL, newNameInfoPtrPtr);
+		     FS_DIRECTORY, lookupArgsPtr->clientID, &lookupArgsPtr->id,
+		     0, 0, (FsLocalFileIOHandle **)NIL, newNameInfoPtrPtr);
     return(status);
 }
 
@@ -573,7 +576,8 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     *name1redirectPtr = FALSE;
 
     status = FsLocalLookup(prefixHandle1, relativeName1,
-	   lookupArgsPtr->useFlags & FS_FOLLOW, FS_FILE, &lookupArgsPtr->id,
+	   lookupArgsPtr->useFlags & FS_FOLLOW, FS_FILE,
+	   lookupArgsPtr->clientID, &lookupArgsPtr->id,
 	   0, 0, (FsLocalFileIOHandle **)&handle1Ptr, newNameInfoPtrPtr);
     if (status != SUCCESS) {
 	if (status == FS_LOOKUP_REDIRECT) {
@@ -592,6 +596,7 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
      */
     status = FsLocalLookup(prefixHandle2, relativeName2,
 	    lookupArgsPtr->useFlags, handle1Ptr->descPtr->fileType,
+	    lookupArgsPtr->clientID,
 	    &lookupArgsPtr->id, 0, handle1Ptr->hdr.fileID.minor,
 	    (FsLocalFileIOHandle **)&handle2Ptr, newNameInfoPtrPtr);
     if (status == SUCCESS) {

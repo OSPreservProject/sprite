@@ -58,6 +58,7 @@ typedef struct FsLookupArgs {
     FsFileID rootID;	/* FileID of the root, MUST FOLLOW prefixID */
     int useFlags;	/* FS_EXECUTE or FS_RENAME */
     FsUserIDs id;	/* User and group IDs */
+    int clientID;	/* Needed to expand $MACHINE */
 } FsLookupArgs;
 
 /*

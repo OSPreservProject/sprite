@@ -7,6 +7,9 @@
  *	Files and directories are also created, deleted, and renamed
  *	directly (or indirectly) through FsLocalLookup.
  *
+ *	Support for heterogenous systems is done here by expanding "$MACHINE"
+ *	in pathnames to a string like "sun3" or "spur".
+ *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
  * Permission to use, copy, modify, and distribute this
@@ -96,8 +99,8 @@ Boolean		DirectoryEmpty();
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, idPtr, permissions,
-			       fileNumber, handlePtrPtr, newNameInfoPtrPtr)
+FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
+		permissions, fileNumber, handlePtrPtr, newNameInfoPtrPtr)
     FsHandleHeader *prefixHdrPtr;	/* Handle from the prefix table or
 					 * the current working directory */
     char *relativeName;			/* Name to lookup relative to the
@@ -108,6 +111,9 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, idPtr, permissions,
     int type;				/* File type which to succeed on.  If
 					 * this is FS_FILE, then any type will
 					 * work. */
+    int clientID;			/* Host ID of the client doing the open.
+					 * Require to properly expand $MACHINE
+					 * in pathnames */
     FsUserIDs *idPtr;			/* User and group IDs */
     int permissions;			/* Permission bits to use on a newly
 					 * created file. */
@@ -166,11 +172,54 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, idPtr, permissions,
 	    break;
 	}
 	/*
-	 * Get the next component.
+	 * Get the next component.  We make a special check here
+	 * for "$MACHINE" embedded in the pathname.  This gets expanded
+	 * to a machine type string, i.e. "sun3" or "spur", sort of like
+	 * a symbolic link.  The value is dependent on the ID of the client
+	 * doing the open.  For this host we use a compiled in string so
+	 * we can bootstrap ok, and for other clients we get the machine
+	 * type string from the net module.  (why net?  why not...
+	 * Net_InstallRoute installs a host's name and machine type.)
 	 */
+#define SPECIAL		"$MACHINE"
+#define SPECIAL_LEN	8
 	compPtr = component;
 	while (*curCharPtr != '/' && *curCharPtr != '\0') {
-	    *compPtr++ = *curCharPtr++;
+	    if (*curCharPtr == '$' &&
+		(String_NCompare(SPECIAL_LEN, curCharPtr, SPECIAL) == 0)) {
+		char *machType;
+
+		if (fsComponentTrace) {
+		    Sys_Printf(" $MACHINE -> ");
+		}
+		if (clientID == rpc_SpriteID) {
+		    /*
+		     * Can't count on the net stuff being setup for ourselves
+		     * as that is done via a user program way after bootting.
+		     * Instead, use a compiled in string.  This is important
+		     * when opening "/initSprite", which is a link to 
+		     * "/initSprite.$MACHINE", when running on the root server.
+		     */
+		    extern char *etc_MachineType;	/* XXX */
+		    machType = etc_MachineType;
+		} else {
+		    machType = Net_SpriteIDToMachType(clientID);
+		    if (machType == (char *)NIL) {
+			Sys_Panic(SYS_WARNING,
+			 "FsLocalLookup, no machine type for client %d\n",
+				clientID);
+			machType = "unknown";
+		    }
+		}
+		while (*machType != '\0') {
+		    *compPtr++ = *machType++;
+		}
+		curCharPtr += SPECIAL_LEN;
+#undef SPECIAL
+#undef SPECIAL_LEN
+	    } else {
+		*compPtr++ = *curCharPtr++;
+	    }
 	}
 	*compPtr = '\0';
 	compLen = compPtr - component;

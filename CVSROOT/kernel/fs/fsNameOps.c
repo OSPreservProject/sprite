@@ -88,11 +88,11 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	type = FS_NAMED_PIPE;
     }
     if (useFlags & FS_MASTER) {
-        useFlags |= FS_TRUNC;
+	Sys_Panic(SYS_WARNING, "Fs_Open: FS_MASTER flag not supported\n");
 	type = FS_PSEUDO_DEV;
     }
     if (useFlags & FS_NEW_MASTER) {
-	type = FS_XTRA_FILE;
+	type = FS_PSEUDO_DEV;
     }
     /*
      * Make sure we check for write permission before truncating.
@@ -231,6 +231,7 @@ Fs_Remove(name)
 
     lookupArgs.useFlags = FS_DELETE;
     FsSetIDs((Proc_ControlBlock *)NIL, &lookupArgs.id);
+    lookupArgs.clientID = rpc_SpriteID;
     status = FsLookupOperation(name, FS_DOMAIN_REMOVE,
 		     (Address)&lookupArgs, (Address)NIL, (FsNameInfo *)NIL);
     return(status);
@@ -261,6 +262,7 @@ Fs_RemoveDir(name)
 
     lookupArgs.useFlags = FS_DELETE;
     FsSetIDs((Proc_ControlBlock *)NIL, &lookupArgs.id);
+    lookupArgs.clientID = rpc_SpriteID;
     status = FsLookupOperation(name, FS_DOMAIN_REMOVE_DIR,
 			 (Address)&lookupArgs, (Address)NIL, (FsNameInfo *)NIL);
     return(status);
@@ -333,6 +335,7 @@ Fs_MakeDir(name, permissions)
     openArgs.permissions = permissions & procPtr->filePermissions;
     openArgs.type = FS_DIRECTORY;
     FsSetIDs(procPtr, &openArgs.id);
+    openArgs.clientID = rpc_SpriteID;
 
     status = FsLookupOperation(name, FS_DOMAIN_MAKE_DIR, (Address)&openArgs,
 				    (Address)NIL, (FsNameInfo *)NIL);
@@ -564,6 +567,7 @@ Fs_HardLink(pathName, linkName)
 
     lookupArgs.useFlags = FS_LINK;
     FsSetIDs((Proc_ControlBlock *)NIL, &lookupArgs.id);
+    lookupArgs.clientID = rpc_SpriteID;
     status = FsTwoNameOperation(FS_DOMAIN_HARD_LINK, pathName, linkName,
 						     &lookupArgs);
     return(status);
@@ -595,6 +599,7 @@ Fs_Rename(pathName, newName)
 
     lookupArgs.useFlags = FS_LINK | FS_RENAME;
     FsSetIDs((Proc_ControlBlock *)NIL, &lookupArgs.id);
+    lookupArgs.clientID = rpc_SpriteID;
     status = FsTwoNameOperation(FS_DOMAIN_RENAME, pathName, newName,
 						  &lookupArgs);
     return(status);
