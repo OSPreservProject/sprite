@@ -163,7 +163,7 @@ extern int vmShmDebug;
     if ((parentProcPtr)->genFlags & PROC_USER) { \
 	ReturnStatus	status; \
 	Proc_Lock(parentProcPtr); \
-	status = Sig_SendProc(parentProcPtr, SIG_CHILD, 0); \
+	status = Sig_SendProc(parentProcPtr, SIG_CHILD, 0, (Address)0); \
 	Proc_Unlock(parentProcPtr); \
 	if (status != SUCCESS) { \
 	    printf("Warning: %s: Could not signal parent, status<%x>", \
@@ -821,7 +821,7 @@ SendSigChild(data, callInfoPtr)
     ClientData		data;
     Proc_CallInfo	*callInfoPtr;	/* passed in by callback routine */
 {
-    (void)Sig_Send(SIG_CHILD, SIG_NO_CODE, (Proc_PID)data, FALSE);
+    (void)Sig_Send(SIG_CHILD, SIG_NO_CODE, (Proc_PID)data, FALSE, (Address)0);
 }
 
 
@@ -1251,7 +1251,7 @@ ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
 
     if (status == PROC_NO_PEER) {
 	(void) Sig_Send(SIG_KILL, (int) PROC_NO_PEER, procPtr->processID,
-			FALSE); 
+			FALSE, (Address)0); 
 	if (proc_MigDebugLevel > 1) {
 	    printf("ProcRemoteWait killing process %x: home node's copy died.\n",
 		   procPtr->processID);

@@ -47,8 +47,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sysSysCall.h"
 #include "timer.h"
 
-static	Sync_Condition	migrateCondition;
-static	Sync_Condition	evictCondition;
+Sync_Condition	migrateCondition;
+Sync_Condition	evictCondition;
 static	Sync_Lock	migrateLock = Sync_LockInitStatic("Proc:migrateLock");
 #define	LOCKPTR &migrateLock
 static  Time		timeEvictionStarted;
@@ -1782,9 +1782,9 @@ Proc_FlagMigration(procPtr, hostID, exec)
     }
     procPtr->peerHostID = hostID;
     if (procPtr->state == PROC_SUSPENDED) {
-	Sig_SendProc(procPtr, SIG_RESUME, 0);
+	Sig_SendProc(procPtr, SIG_RESUME, 0, (Address)0);
     }
-    Sig_SendProc(procPtr, SIG_MIGRATE_TRAP, 0);
+    Sig_SendProc(procPtr, SIG_MIGRATE_TRAP, 0, (Address)0);
     Sig_AllowMigration(procPtr);
 
 }
@@ -2453,7 +2453,7 @@ Proc_DestroyMigratedProc(pidData)
 	 * Let it get killed the normal way, and let the exit routines
 	 * handle cleaning up dependencies.
 	 */
-	Sig_SendProc(procPtr, SIG_KILL, (int) PROC_NO_PEER);
+	Sig_SendProc(procPtr, SIG_KILL, (int) PROC_NO_PEER, (Address)0);
 	Proc_Unlock(procPtr);
     }
 
@@ -2589,7 +2589,7 @@ Proc_EvictProc(pid)
 	  (PROC_DONT_MIGRATE | PROC_EVICTING | PROC_DYING))) {
 	procPtr->genFlags |= PROC_EVICTING;
 	PROC_MIG_INC_STAT(evictionsInProgress);
-	status = Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0);
+	status = Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0, (Address)0);
     }
     Proc_Unlock(procPtr);
     return(status); 
