@@ -1,0 +1,5 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+fpu_simulator.h          ../../fpu_simulator.h
+globals.h                ../../globals.h

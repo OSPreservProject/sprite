@@ -1,0 +1,18 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+compatMapCode.c          ../ds3100.md/compatMapCode.c
+compatSig.c              ../ds3100.md/compatSig.c
+compatSig.h              ../ds3100.md/compatSig.h
+cvtStat.c                ../ds3100.md/cvtStat.c
+fcntl.c                  ../ds3100.md/fcntl.c
+machAsmDefs.h            ../ds3100.md/machAsmDefs.h
+machDis.c                ../ds3100.md/machDis.c
+machMigrate.c            ../ds3100.md/machMigrate.c
+machUNIXSyscall.c        ../ds3100.md/machUNIXSyscall.c
+signals.c                ../ds3100.md/signals.c
+socket.c                 ../ds3100.md/socket.c
+softfp.o                 ../ds3100.md/softfp.o
+stat.h                   ../ds3100.md/stat.h
+sysinfo.h                ../ds3100.md/sysinfo.h
+ultrixSignal.h           ../ds3100.md/ultrixSignal.h

@@ -1,0 +1,4 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+machMon.c                ../sun3.md/machMon.c
