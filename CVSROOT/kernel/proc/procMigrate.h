@@ -25,6 +25,17 @@
 #include "net.h"
 
 /*
+ * Flags for the migFlags field in a PCB.
+ * 	PROC_EVICTING		- [defined in user/proc.h for now]
+ * 				  Process in the middle of eviction
+ *   	PROC_WAS_EVICTED	- Process was evicted at some time, so
+ * 				  the record of the time it used prior
+ * 				  to eviction is relevant.
+ * 			
+ */
+#define PROC_WAS_EVICTED	0x2
+
+/*
  * Define a macro to get a valid PCB for a migrated process.  This gets the
  * PCB corresponding to the process ID, and if it is a valid PCB the macro
  * then checks to make sure the process is migrated and from the specified
@@ -142,13 +153,22 @@ typedef struct {
 #define PROC_MIGTRACE_HOME	0x02
 
 /*
+ * Define the statistics "version".  This is used to make sure we're
+ * gathering consistent sets of statistics.  It's stored in the kernel as
+ * a static variable so it can be changed with adb or the debugger if
+ * need be.  It's copied into a structure at initialization time.
+ */
+#ifndef PROC_MIG_STATS_VERSION
+#define PROC_MIG_STATS_VERSION 1002
+#endif /* PROC_MIG_STATS_VERSION */
+
+/*
  * Define a structure to keep track of statistics.
- * The unsquared times are stored in milliseconds, while the squared times
- * are all right-shifted PROC_MIG_TIME_SHIFT places to reduce the
- * likelihood of overflow.
+ * Times are kept in terms of hundreds of milliseconds.
  */
 
-#define PROC_MIG_TIME_SHIFT 12
+#define PROC_MIG_TIME_FOR_STATS(time) \
+      ((time).seconds * 10 + ((time).microseconds + 50000) / 100000)
 
 typedef struct {
     int			evictions;	/* Number of processes evicted
@@ -157,17 +177,24 @@ typedef struct {
 					   result of migration */
     int			rpcKbytes; 	/* Total number of Kbytes sent during
 					   migration. */
-    int 		timeToMigrate;	/* Cumulative time to migrate
+    int 		timeToMigrate;	/* Cumulative time to export
 					   running processes */
     int 		timeToExec;	/* Cumulative time to do remote
 					   exec's */
     int 		timeToEvict;	/* Cumulative time to evict
-					   processes */
+					   processes, individually. */
+    int 		totalEvictTime;	/* Cumulative time to evict
+					   processes, from start of eviction
+					   request to completion of last
+					   eviction. */
     int 		totalCPUTime;   /* Cumulative time used by all
 					   processes belonging to this host. */
-    int 		remoteCPUTime;   /* Cumulative time used by all
+    int 		remoteCPUTime;  /* Cumulative time used by all
 					   processes belonging to this host,
 					   while executing remotely. */
+    int 		evictionCPUTime;/* Cumulative time used by all
+					   processes subsequent to first
+					   eviction. */
 } Proc_MigVarStats;
 
 typedef struct {
@@ -186,7 +213,10 @@ typedef struct {
     int			errors;		/* Number of times migration has
 					   failed */
     int			returns;	/* Number of times we have had our own
-					   process migrate back to us */
+					   process migrate back to us,
+					   including evictions */
+    int			evictionsToUs;	/* Number of times we have had our own
+					   process evicted. */
     int			hostCounts[NET_NUM_SPRITE_HOSTS];
     					/* Array of counts of
 					   migration to each host */
@@ -199,12 +229,16 @@ typedef struct {
     int			evictionsInProgress;
     					/* Number of processes currently
 					   being evicted. */
+    int			processes;	/* Number of exited processes
+					   belonging to this host (used
+					   for averaging CPU times). */
     Proc_MigVarStats	varStats; 	/* Other stats (see above) counted
 					   both normally and as
 					   sum-of-squares. */
     Proc_MigVarStats	squared; 	/* Sum-of-squares. */
 					   
 } Proc_MigStats;
+
 
 /*
  * Macros to manipulate this structure using a monitor.
