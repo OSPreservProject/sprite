@@ -19,6 +19,7 @@
 #define _MACHINT
 
 #include "machMon.h"
+#include "mach.h"
 
 /*
  * The bounds of the code that copies arguments from the user stack to
@@ -33,6 +34,12 @@ extern int MachFetchArgsEnd();
  */
 extern 	MachStringTable	machMonBootParam;
 #endif
+
+/*
+ * Internal variables.
+ */
+extern Mach_State *machCurStatePtr;
+extern Mach_State *machFPCurStatePtr;
 
 /*
  * Internal functions.
