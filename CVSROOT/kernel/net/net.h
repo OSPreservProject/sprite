@@ -22,6 +22,7 @@
 #include "sprite.h"
 #include "netEther.h"
 #include "netRoute.h"
+#include "user/net.h"
 #include "sync.h"
 
 /*
