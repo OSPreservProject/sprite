@@ -52,7 +52,7 @@ extern void LfsSetLogTail _ARGS_((struct Lfs *lfsPtr,
 extern void LfsMarkSegClean _ARGS_((struct Lfs *lfsPtr, int segNumber));
 extern void LfsSetDirtyLevel _ARGS_((struct Lfs *lfsPtr, int dirtyActiveBytes));
 
-extern int LfsGetSegsToClean _ARGS_((struct Lfs *lfsPtr, int maxBlocks, 
+extern int LfsGetSegsToClean _ARGS_((struct Lfs *lfsPtr, 
 			int maxSegArrayLen, LfsSegList *segArrayPtr));
 
 extern ReturnStatus LfsSegUsageFreeBlocks _ARGS_((struct Lfs *lfsPtr, 
