@@ -246,6 +246,15 @@ Fs_UserClose(streamID)
     procPtr = Proc_GetEffectiveProc();
     status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status != SUCCESS) {
+	/*
+	 * Fudge the return status.  A close() can only return EBADF or
+	 * EINTR, so return something that maps to EBADF even if it
+	 * doesn't make sense here.  Sprite system calls are going
+	 * away soon anyway.
+	 */
+	if (status != GEN_ENOENT) {
+	    return(FS_NEW_ID_TOO_BIG);
+	}
 	return(status);
     }
 
