@@ -119,4 +119,11 @@ suppressed (if it occurs before the reboot callbacks complete)
 
 
 1.060	Fri Mar  2 16:36:20 PST 1990
+Fixed "var val val" printf from Vm_Cmd
+Td_ControlCooked does byte-swapping - can print from DECstations
+Recov_HostAlive fixed so recovery is initiated after a network partition ends.
+L1-o reenables the display.
+Migration of floating point programs fixed
+Vm_PageIn fixed to have proper error handling when the disk fills up.
+(This version won't boot on Allspice, a sun4.)
     New files linked in from the net library.
