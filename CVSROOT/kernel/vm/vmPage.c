@@ -2957,7 +2957,7 @@ VmPageFlush(virtAddrPtr, length, toDisk, wantRes)
 	    } else {
 		firstBlock = virtAddrPtr->page - segPtr->offset;
 	    }
-	    printf("Invalidating block %d\n", firstBlock);
+	    dprintf("Invalidating block %d\n", firstBlock);
 	    Fscache_FileInvalidate(cacheInfoPtr, firstBlock,
 		firstBlock+ (length>>vmPageShift)-1);
 	}
