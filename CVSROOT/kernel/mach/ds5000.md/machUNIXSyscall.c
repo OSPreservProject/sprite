@@ -1762,7 +1762,7 @@ MachUNIXReadv(stream, iov, iovcnt)
 {
     ReturnStatus status;	/* result returned by Fs_Read */
     int amountRead;		/* place to hold number of bytes read */
-    int totalRead = 0;	/* place to hold total # of bytes written */
+    int totalRead = 0;		/* place to hold total # of bytes read */
     int i;
     Address	usp;
 
@@ -1778,6 +1778,14 @@ MachUNIXReadv(stream, iov, iovcnt)
 	}
     }
 
+    /* 
+     * If we get an error after reading in something, that still 
+     * counts as success.
+     */
+
+    if (totalRead > 0) {
+	status = SUCCESS;
+    }
     if (status == SUCCESS) {
 	machCurStatePtr->userState.unixRetVal = totalRead;
     }
@@ -1808,6 +1816,14 @@ MachUNIXWritev(stream, iov, iovcnt)
 	}
     }
 
+    /* 
+     * If we get an error after writing out something, that still 
+     * counts as success.
+     */
+
+    if (totalWritten > 0) {
+	status = SUCCESS;
+    }
     if (status == SUCCESS) {
 	machCurStatePtr->userState.unixRetVal = totalWritten;
     }
