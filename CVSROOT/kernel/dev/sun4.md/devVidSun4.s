@@ -72,7 +72,7 @@ LeaveVidEnable:
 	/*
 	 * Address of enable bit in video status register.
 	 */
-	set	0xffd1c001, %OUT_TEMP1
+	set	0xffd1c010, %OUT_TEMP1
 	ldub	[%OUT_TEMP1], %OUT_TEMP2
 	tst	%o0
 	be	VidOff
