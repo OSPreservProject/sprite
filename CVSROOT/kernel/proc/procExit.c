@@ -1162,7 +1162,7 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
 	     * change in state.)
 	     */
 	    if (Sync_Wait(&curProcPtr->waitCondition, TRUE)) {
-		if (Sig_Pending(curProcPtr) != (1 << (SIG_CHILD - 1))) {
+		if (Sig_Pending(curProcPtr) != Sig_NumberToMask(SIG_CHILD)) {
 		    status = GEN_ABORTED_BY_SIGNAL;
 		    break;
 		}

@@ -874,7 +874,7 @@ AbortMigration(procPtr)
 	procPtr->peerHostID = NIL;
     }
     procPtr->genFlags &= ~PROC_MIGRATING;
-    procPtr->sigPendingMask &= ~(1 << SIG_MIGRATE_TRAP);
+    procPtr->sigPendingMask &= ~Sig_NumberToMask(SIG_MIGRATE_TRAP);
     Proc_Unlock(procPtr);
     ProcMigWakeupWaiters();
 }
