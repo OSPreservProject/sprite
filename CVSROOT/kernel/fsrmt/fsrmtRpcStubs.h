@@ -13,17 +13,33 @@
 #ifndef _FS_RPC_STUBS
 #define _FS_RPC_STUBS
 
-extern	ReturnStatus	Fs_RpcPrefix();
-extern	ReturnStatus	Fs_RpcOpen();
-extern	ReturnStatus	Fs_RpcClose();
-extern	ReturnStatus	Fs_RpcRead();
-extern	ReturnStatus	Fs_RpcWrite();
-extern	ReturnStatus	Fs_RpcTransferHandle();
-extern	ReturnStatus	Fs_RpcGetAttr();
-extern	ReturnStatus	Fs_RpcSetAttr();
-extern	ReturnStatus	Fs_RpcRemove();
-extern	ReturnStatus	Fs_RpcMakeDir();
-
-extern	ReturnStatus	Fs_RpcDevOpen();
-extern	ReturnStatus	Fs_RpcDevClose();
+extern Fs_RpcPrefix();
+extern Fs_RpcOpen();
+extern Fs_RpcRead();
+extern Fs_RpcWrite();
+extern Fs_RpcClose();
+extern Fs_RpcRemove();
+extern Fs_Rpc2Path();
+extern Fs_RpcMakeDir();
+extern Fs_RpcRemove();
+extern Fs_RpcMakeDev();
+extern Fs_Rpc2Path();
+extern Fs_RpcSymLink();
+extern Fs_RpcGetAttr();
+extern Fs_RpcSetAttr();
+extern Fs_RpcGetAttrPath();
+extern Fs_RpcSetAttrPath();
+extern Fs_RpcGetIOAttr();
+extern Fs_RpcSetIOAttr();
+extern Fs_RpcDevOpen();
+extern Fs_RpcSelectStub();
+extern Fs_RpcIOControl();
+extern Fs_RpcConsist();
+extern Fs_RpcConsistReply();
+extern Fs_RpcBlockCopy();
+extern Fs_RpcMigrateStream();
+extern Fs_RpcReleaseStream();
+extern Fs_RpcReopen();
+extern Fs_RpcRecovery();
+extern Fs_RpcDomainInfo();
 #endif _FS_RPC_STUBS
