@@ -2460,6 +2460,9 @@ Proc_EvictForeignProcs()
     }
 #endif /* CLEAN */
     if (proc_MigStats.foreign == 0) {
+	if (proc_MigDebugLevel > 2) {
+	    printf("Proc_EvictForeignProcs: no foreign processes.\n");
+	}
 	return(SUCCESS);
     }
     if (EvictionStarted()) {
@@ -2484,7 +2487,8 @@ Proc_EvictForeignProcs()
  *
  * Proc_IsMigratedProc --
  *
- *	Return whether the specified process is foreign.  (This routine is
+ *	Return whether the specified process is foreign (and is okay
+ *      to migrate).  (This routine is
  * 	a callback procedure that may be passed as a parameter to routines
  *	requiring an arbitrary Boolean procedure operating on a PCB.)
  *
@@ -2501,7 +2505,8 @@ Boolean
 Proc_IsMigratedProc(procPtr)
     Proc_ControlBlock *procPtr;
 {
-    if (procPtr->genFlags & PROC_FOREIGN) {
+    if ((procPtr->genFlags & PROC_FOREIGN) &&
+	!(procPtr->genFlags & PROC_DONT_MIGRATE)) {
 	return(TRUE);
     } else {
 	return(FALSE);
@@ -2539,7 +2544,13 @@ Proc_EvictProc(pid)
 
     procPtr = Proc_LockPID(pid);
     if (procPtr == (Proc_ControlBlock *) NIL) {
+	if (proc_MigDebugLevel > 2) {
+	    printf("Proc_EvictProc: process %x no longer exists.\n", pid);
+	}
 	return (PROC_INVALID_PID);
+    }
+    if (proc_MigDebugLevel > 2) {
+	printf("Proc_EvictProc: evicting process %x.\n", pid);
     }
     if ((procPtr->genFlags & PROC_FOREIGN) &&
 	!(procPtr->genFlags &
@@ -2703,7 +2714,18 @@ Proc_NeverMigrate(procPtr)
 {
 
     Proc_Lock(procPtr);
+    if (proc_MigDebugLevel > 2) {
+	printf("Proc_NeverMigrate: don't migrate process %x.\n",
+	       procPtr->processID);
+    }
     procPtr->genFlags |= PROC_DONT_MIGRATE;
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	if (proc_MigDebugLevel > 3) {
+	    printf("Proc_NeverMigrate: process %x is foreign.\n",
+		   procPtr->processID);
+	}
+	PROC_MIG_DEC_STAT(foreign);
+    }
     Proc_Unlock(procPtr);
 }
 

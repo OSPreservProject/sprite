@@ -969,7 +969,9 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     /*
      * Update statistics.
      */
-    PROC_MIG_DEC_STAT(foreign);
+    if (!(procPtr->genFlags & PROC_DONT_MIGRATE)) {
+	PROC_MIG_DEC_STAT(foreign);
+    }
     if ((procPtr->genFlags & PROC_EVICTING) ||
 	(proc_MigStats.foreign == 0 &&
 	 proc_MigStats.evictionsInProgress > 0)) {
