@@ -168,9 +168,9 @@ Rpc_Call(serverID, command, storagePtr)
 
     RPC_CALL_TIMING_END(command, &histTime);
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
-	RpcHostDead(serverID);
+	Recov_HostDead(serverID);
     } else {
-	RpcHostAlive(serverID, srvBootID, TRUE);
+	Recov_HostAlive(serverID, srvBootID, TRUE);
     }
     return(error);
 }

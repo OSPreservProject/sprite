@@ -153,11 +153,11 @@ Rpc_Server()
 	/*
 	 * Allow a bootID of zero for stateless boottime RPCs like
 	 * get time of day.  Otherwise check this generation stamp
-	 * to detect reboots by clients.  RpcHostAlive will block
+	 * to detect reboots by clients.  Recov_HostAlive will block
 	 * us until the recovery actions triggered by a reboot are done.
 	 */
 	if (rpcHdrPtr->bootID != 0) {
-	    RpcHostAlive(srvPtr->clientID, rpcHdrPtr->bootID, FALSE);
+	    Recov_HostAlive(srvPtr->clientID, rpcHdrPtr->bootID, FALSE);
 	}
 	/*
 	 * Before branching to the service procedure we check that the
@@ -320,7 +320,7 @@ RpcReclaimServers()
 	if (deadClientID == rpc_SpriteID) {
 	    Sys_Panic(SYS_WARNING, "RpcDaemon thought this host was down");
 	} else if (deadClientID > 0) {
-	    RpcHostDead(deadClientID);
+	    Recov_HostDead(deadClientID);
 	}
     }
 }

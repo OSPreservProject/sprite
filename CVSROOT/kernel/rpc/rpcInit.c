@@ -50,8 +50,6 @@ Rpc_Init()
     register int frag;
     Net_EtherAddress etherAddress;
 
-    RpcInitRecovery();
-
     Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr), 0);
 
     rpcServiceTime[0] = (Rpc_Histogram *)NIL;
