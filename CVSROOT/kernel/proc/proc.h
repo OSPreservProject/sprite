@@ -25,7 +25,7 @@
 #include "list.h"
 #include "timer.h"
 #include "sig.h"
-#include "sys.h"
+#include "mach.h"
 
 /*
  * Constants for Proc_Exec().  
@@ -381,7 +381,7 @@ typedef struct Proc_ControlBlock {
      * Set-jump structure (NIL if no state saved).
      */
 
-    Sys_SetJumpState	*setJumpStatePtr;
+    struct	Mach_SetJumpState	*setJumpStatePtr;
 
 
     /*
@@ -556,13 +556,13 @@ extern int proc_MaxNumProcesses;
  * Macros to determine and set the "actual" currently running process.
  */
 
-#define	Proc_GetActualProc(processor) proc_RunningProcesses[processor]
-#define Proc_SetActualProc(processor, processPtr) \
-		proc_RunningProcesses[processor] = processPtr
+#define	Proc_GetActualProc() \
+	proc_RunningProcesses[Mach_GetProcessorNumber()]
+#define Proc_SetActualProc(processPtr) \
+	proc_RunningProcesses[Mach_GetProcessorNumber()] = processPtr
 
-#define Proc_GetCurrentProc(processor) Proc_GetActualProc(processor)
-#define Proc_SetCurrentProc(process, processPtr) \
-		Proc_SetActualProc (process, processPtr)
+#define Proc_GetCurrentProc() Proc_GetActualProc()
+#define Proc_SetCurrentProc(processPtr)	Proc_SetActualProc(processPtr)
 
 /*
  * Various routines use Proc_IsMigratedProcess to decide whether the
@@ -571,8 +571,8 @@ extern int proc_MaxNumProcesses;
  * proc_RunningProcesses[processor] must be non-NIL.
  */
 
-#define	Proc_IsMigratedProcess(processor) \
-		(proc_RunningProcesses[processor]->rpcClientProcess != \
+#define	Proc_IsMigratedProcess() \
+    (proc_RunningProcesses[Mach_GetProcessorNumber()]->rpcClientProcess != \
 		((Proc_ControlBlock *) NIL))
 
 /* 
