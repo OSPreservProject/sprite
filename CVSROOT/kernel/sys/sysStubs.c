@@ -52,7 +52,7 @@ int debugSysStubs;
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -87,7 +87,7 @@ int sysHostID;
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -128,7 +128,7 @@ Sys_GethostnameStub(name, namelen)
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -175,7 +175,7 @@ Sys_SethostnameStub(name, namelen)
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -203,7 +203,7 @@ Sys_GethostidStub()
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -232,7 +232,7 @@ Sys_SethostidStub(hostid)
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -273,7 +273,7 @@ Sys_GetdomainnameStub(name, namelen)
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -319,7 +319,7 @@ Sys_SetdomainnameStub(name, namelen)
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -345,7 +345,7 @@ Sys_ShutdownStub()
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -366,21 +366,56 @@ Sys_GetpeernameStub()
  * Sys_Getrlimit --
  *
  *      The stub for the "getrlimit" Unix system call.
+ *	We don't really implement this, so we return INFINITY for
+ *	everything except the stack size.  For the stack size, we
+ *	return the same as SunOS.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
  */
+#define RLIM_STACK_CUR	0x00200000
+#define RLIM_STACK_MAX	0x80000000
 int
-Sys_GetrlimitStub()
+Sys_GetrlimitStub(resource, rlp)
+int resource;
+struct rlimit *rlp;
 {
 
-    printf("Sys_Getrlimit not implemented\n");
+    struct rlimit rl;
+    ReturnStatus status;
+
+    if (debugSysStubs) {
+	printf("Sys_GethostnameStub(%d, %x)\n", resource, rlp);
+    }
+    switch (resource) {
+	case RLIMIT_CPU:
+	case RLIMIT_FSIZE:
+	case RLIMIT_DATA:
+	case RLIMIT_CORE:
+	case RLIMIT_RSS:
+	    rl.rlim_cur = RLIM_INFINITY;
+	    rl.rlim_max = RLIM_INFINITY;
+	case RLIMIT_STACK:
+	    rl.rlim_cur = RLIM_STACK_CUR;
+	    rl.rlim_max = RLIM_STACK_MAX;
+	    break;
+	default:
+	    Mach_SetErrno(EINVAL);
+	    return -1;
+	    break;
+    }
+    status = Vm_CopyOut(sizeof(struct rlimit), (Address)&rl, (Address)rlp);
+    if (status != SUCCESS) {
+	Mach_SetErrno(EFAULT);
+	return -1;
+    }
+
     return 0;
 }
 
@@ -396,7 +431,7 @@ Sys_GetrlimitStub()
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
@@ -422,7 +457,7 @@ Sys_SetrlimitStub()
  *      None.
  *
  * Side effects:
- *      Sets the domain name.
+ *      Any side effects associated with the call.
  *
  *
  *----------------------------------------------------------------------
