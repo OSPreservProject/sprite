@@ -51,6 +51,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Boolean	fsCacheDebug = FALSE;
 Boolean	fsClientCaching = TRUE;
+#ifdef REOPEN_DEBUG
+int	fsTraceReopenMinor = 4779;
+#endif /* REOPEN_DEBUG */
 
 /*
  * Flags for the FsConsistInfo struct that's defined in fsInt.h
@@ -291,7 +294,14 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
 	}
     }
 done:
-
+#ifdef REOPEN_DEBUG
+    if (fsTraceReopenMinor == consistPtr->hdrPtr->fileID.minor) {
+	Sys_Printf("File <%d,%d> start consist w/ use 0x%x, %s\n",
+		consistPtr->hdrPtr->fileID.major,
+		consistPtr->hdrPtr->fileID.minor, useFlags,
+		(cacheable ? "cacheable" : "not cacheable"));
+    }
+#endif /* REOPEN_DEBUG */
     /*
      * Now that we know the cacheable state of the file, check the use
      * by other clients, perhaps sending them cache consistency
@@ -306,7 +316,14 @@ done:
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
 	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
-
+#ifdef REOPEN_DEBUG
+	if (fsTraceReopenMinor == consistPtr->hdrPtr->fileID.minor) {
+	    Sys_Printf("Client %d, %s, use %d write %d\n",
+		    clientPtr->clientID,
+		    (clientPtr->cached ? "caching" : "not caching"),
+		    clientPtr->use.ref, clientPtr->use.write);
+	}
+#endif /* REOPEN_DEBUG */
 	statPtr->numClients++;
 	if (!clientPtr->cached) {
 	    /*
@@ -401,6 +418,13 @@ UpdateList(consistPtr, clientID, useFlags, cacheable,
     if (cacheable && (useFlags & FS_WRITE)) {
 	consistPtr->lastWriter = clientID;
     }
+#ifdef REOPEN_DEBUG
+    if (fsTraceReopenMinor == consistPtr->hdrPtr->fileID.minor) {
+	Sys_Printf("UpdateList: client %d %s, last writer %d\n",
+	    clientID, (clientPtr->cached ? "caching" : "not caching"),
+	    consistPtr->lastWriter);
+    }
+#endif /* REOPEN_DEBUG */
     /*
      * Return a time stamp for the open.  This timestamp is used by clients
      * to catch races between the reply message for an open, and a cache
@@ -531,6 +555,14 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 		clientPtr->clientID);
 	}
     }
+#ifdef REOPEN_DEBUG
+    if (fsTraceReopenMinor == handlePtr->hdr.fileID.minor) {
+	Sys_Printf("FsReopenClient %d, use %d write %d, %s, last writer %d\n",
+		clientID, use.ref, use.write, (found ? "found" : "not found"),
+		consistPtr->lastWriter);
+    }
+#endif /* REOPEN_DEBUG */
+
     if (!found) {
 	clientPtr = Mem_New(FsClientInfo);
 	clientPtr->clientID = clientID;
