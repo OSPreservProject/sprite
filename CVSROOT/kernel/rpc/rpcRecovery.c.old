@@ -2,12 +2,16 @@
  * rpcRecovery.c --
  *
  *	The routines here monitor other hosts on behalf interested parties.
- *	Another kernel module (eg. fs) can ask the rpc system to block
- *	the current process until a particular host reboots.  Regular message
- *	traffic plus explicit pings are used to determine the state
- *	of other hosts.
- *	There are also entry points for the rest of the RPC system for
- *	updating the current state of other hosts (RpcHostAlive, RpcHostDead).
+ *	Regular message	traffic plus explicit pings are used to determine
+ *	the state of other hosts.  RpcHostAlive is the main internal
+ *	entry point.  It is called when a message arrives from another host.
+ *	Rpc_RebootNotify is used to arrange a call-back when a host reboots.
+ *	Rpc_WaitForHost is used to block a process until a host comes back up.
+ *	Rpc_HostIdDown is a boolean function that's TRUE if the host is down.
+ *
+ *	The impact of these recovery hooks on the RPC system is that service
+ *	requests from a client that is just rebooting are blocked until
+ *	the recovery actions complete.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -25,48 +29,69 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "hash.h"
 
 /*
- * A list of waiters is kept hanging off a hash by host ID
- */
-Sync_Lock rpcRecoveryLock;
-#define LOCKPTR (&rpcRecoveryLock)
-
-/*
- * The hash table.  Each hash table entry references some "host state".
- * The host state records if the host is up or down, and includes a
- * list of conditionPtrs to notify when the state changes.
+ * The state of other hosts is kept in a hash table keyed on SpriteID.
+ * The host state records if the host is up or down, keeps a boot time stamp
+ * so you can watch for reboots, and includes a
+ * condition variable to notify when the host's state changes.
  */
 static Hash_Table	recoveryHashTableStruct;
 static Hash_Table	*recovHashTable = &recoveryHashTableStruct;
 
 typedef struct RecovHostState {
-    List_Links		waitList;
-    int			state;
+    int			state;		/* flags defined below */
+    int			spriteID;	/* Sprite Host ID */
+    int			bootID;		/* Timestamp from RPC header */
+    Time		time;		/* Time of last message */
+    Sync_Condition	alive;		/* Notified when host comes up */
+    Sync_Condition	recovery;	/* Notified when recovery is complete */
 } RecovHostState;
+
+/*
+ * Access to the hash table is monitored.
+ */
+Sync_Lock rpcRecoveryLock;
+#define LOCKPTR (&rpcRecoveryLock)
 
 /*
  * Host state:
  *	RECOV_STATE_UNKNOWN	Initial state.
  *	RECOV_HOST_ALIVE	Set when we receive a message from the host
  *	RECOV_HOST_DEAD		Set when an RPC times out.
- *	RECOV_STATE_CHECKED	Set by RpcHostCheck, cleared by RpcHostAlive
- *				and RpcHostDead.  Used to prevent excess pings.
+ *	RECOV_STATE_RECOVERING	Set when the boot time stamp of a peer host
+ *				changes, or the host appears down.  Reset
+ *				when the recovery actions have completed.
  */
 #define RECOV_STATE_UNKNOWN	0x0
 #define RECOV_HOST_ALIVE	0x1
 #define RECOV_HOST_DEAD		0x2
-#define RECOV_STATE_CHECKED	0x8
-
-typedef struct RecovWait {
-    List_Links		links;
-    Sync_Condition	*conditionPtr;
-} RecovWait;
+#define RECOV_STATE_RECOVERING	0x10
 
 /*
  * A host is "pinged" when it goes down, at an interval determined by
  * rpcPingSeconds.
  */
-int rpcPingSeconds = 15;
+int rpcPingSeconds = 30;
+
+/*
+ * Other kernel modules can arrange call-backs when a host reboots.
+ * The following list structure is used to keep these.
+ */
+
+typedef struct {
+    List_Links	links;
+    void	(*proc)();
+    ClientData	clientData;
+} NotifyElement;
+
+List_Links	rpcNotifyList;
+
+/*
+ * Forward declarations.
+ */
 void RpcHostCheck();
+void RpcRecovCallBacks();
+void MarkHostDead();
+void MarkRecoveryComplete();
 
 
 /*
@@ -89,6 +114,37 @@ void
 RpcInitRecovery()
 {
     Hash_Init(recovHashTable, 8, HASH_ONE_WORD_KEYS);
+    List_Init(&rpcNotifyList);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_RebootNotify --
+ *
+ *	Add the given function and client data to the list of call backs when
+ *	clients reboot.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Entry added to notify list.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_RebootNotify(proc, clientData)
+    void	(*proc)();
+    ClientData	clientData;
+{
+    register	NotifyElement	*notifyPtr;
+
+    notifyPtr = (NotifyElement *) Mem_Alloc(sizeof(NotifyElement));
+    notifyPtr->proc = proc;
+    notifyPtr->clientData = clientData;
+    List_InitElement((List_Links *) notifyPtr);
+    List_Insert((List_Links *) notifyPtr, LIST_ATREAR(&rpcNotifyList));
 }
 
 /*
@@ -104,55 +160,45 @@ RpcInitRecovery()
  *	None.
  *
  * Side effects:
- *	The current process is blocked on the given condition pointer
+ *	The current process is blocked
  *	until messages from the host indicate it is up.
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
-Rpc_WaitForHost(spriteID, conditionPtr)
+ENTRY Boolean
+Rpc_WaitForHost(spriteID)
     int spriteID;			/* Host to monitor */
-    Sync_Condition *conditionPtr;	/* Event on which to block */
 {
     Hash_Entry *hashPtr;
     RecovHostState *hostPtr;
-    RecovWait *waitPtr;
+    Boolean sigPending;
 
     if (spriteID <= 0 || spriteID == rpc_SpriteID) {
-	return;
+	Sys_Panic(SYS_FATAL, "Rpc_WaitForHost, bad hostID %d\n", spriteID);
+	return(FALSE);
     }
     LOCK_MONITOR;
 
     /*
-     * Add the waiter to the list associated with the host.
-     * If this is the first interest in the host then a call back
-     * is initiated to check up on the host's state.
+     * Make sure the host table entry exists, then mark the host down.
+     * That triggers a backgound pinging to detect when the host comes up.
      */
     hashPtr = Hash_Find(recovHashTable, spriteID);
     if (hashPtr->value == (Address)NIL) {
-	char *name;
-	
 	hashPtr->value = (Address)Mem_Alloc(sizeof(RecovHostState));
 	hostPtr = (RecovHostState *)hashPtr->value;
-	hostPtr->state = RECOV_HOST_DEAD;
-	List_Init(&hostPtr->waitList);
-	Proc_CallFunc(RpcHostCheck, spriteID, 0);
-
-	Net_SpriteIDToName(spriteID, &name);
-	if (name == (char *)NIL) {
-	    Sys_Printf("Sprite Host <%d> is down\n", spriteID);
-	} else {
-	    Sys_Printf("Sprite Host %s is down\n", name);
-	}
+	hostPtr->state = RECOV_STATE_UNKNOWN;
+	hostPtr->spriteID = spriteID;
+	hostPtr->bootID = 0;
     } else {
 	hostPtr = (RecovHostState *)hashPtr->value;
     }
-    waitPtr = (RecovWait *)Mem_Alloc(sizeof(RecovWait));
-    waitPtr->conditionPtr = conditionPtr;
-    List_InitElement((List_Links *) waitPtr);
-    List_Insert((List_Links *)waitPtr, LIST_ATREAR(&hostPtr->waitList));
+    MarkHostDead(hostPtr);
+
+    sigPending = Sync_Wait(&hostPtr->alive, TRUE);
 
     UNLOCK_MONITOR;
+    return(sigPending);
 }
 
 /*
@@ -161,26 +207,195 @@ Rpc_WaitForHost(spriteID, conditionPtr)
  * RpcHostAlive --
  *
  *	Mark the host as being alive.  This is called when we've received
- *	a message from the host.  If the host had been thought to be
- *	down, this change to "aliveness" causes the waiting processes
- *	blocked on the host to be notified.
+ *	a message from the host.  This uses the boot timestamp of the
+ *	other host to catch reboots.  If no processes are waiting on
+ *	the hosts recovery, and the bootID doesn't indicate a reboot,
+ *	this procedure does no work.  Upon reboot a set of call-backs
+ *	are made to clients of the RPC system.  These are done
+ *	synchronously by the process calling this procedure, or by a
+ *	background helper process.  Finally, there may be processes
+ *	blocked on the host's recovery, and they'll get notified.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Will notify the waiters in the waitList
- *	if the host's state changed from down to up.
+ *	Updates the boot timestamp of the other host.  Procedures installed
+ *	with Rpc_RebootNotify are called when the bootID changes.
  *
  *----------------------------------------------------------------------
  */
 
 ENTRY void
-RpcHostAlive(spriteID)
+RpcHostAlive(spriteID, bootID, asyncRecovery)
+    int spriteID;		/* Host ID of the message sender */
+    int bootID;			/* Boot time stamp from message header */
+    Boolean asyncRecovery;	/* TRUE means do recovery call-backs in
+				 * the background. FALSE causes the process
+				 * to wait until the recovery is complete. */
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
-    register RecovWait *waitPtr;
+
+    if (spriteID == NET_BROADCAST_HOSTID) {
+	return;
+    }
+    LOCK_MONITOR;
+
+    hashPtr = Hash_Find(recovHashTable, spriteID);
+    if (hashPtr->value == (Address)NIL) {
+	char *name;
+	/*
+	 * Initialize the host's state.
+	 * This is the first time we've talked to it since we've been up,
+	 * so take no action.
+	 */
+
+	hashPtr->value = (Address)Mem_Alloc(sizeof(RecovHostState));
+	hostPtr = (RecovHostState *)hashPtr->value;
+	hostPtr->state = RECOV_HOST_ALIVE;
+	hostPtr->spriteID = spriteID;
+	hostPtr->bootID = bootID;
+	Net_SpriteIDToName(spriteID, &name);
+	if (name == (char *)NIL) {
+	    Sys_Printf("Sprite Host <%d> is up\n", spriteID);
+	} else {
+	    Sys_Printf("Sprite Host %s is up\n", name);
+	}
+    } else {
+	hostPtr = (RecovHostState *)hashPtr->value;
+    }
+    if (hostPtr != (RecovHostState *)NIL) {
+	/*
+	 * Have to read the clock in order to suppress repeated pings,
+	 * see Rpc_HostIsDown.
+	 */
+	Timer_GetTimeOfDay(&hostPtr->time, (int *)NIL, (Boolean *)NIL);
+
+	/*
+	 * Check for a rebooted peer by comparing boot time stamps.
+	 * The first process to detect this initiates recovery actions.
+	 * Subsequent (server) processes are blocked during this time unless
+	 * they (clients) specify asynchronous recovery.
+	 */
+
+	if (hostPtr->bootID != bootID) {
+	    hostPtr->state |= RECOV_STATE_RECOVERING;
+	    hostPtr->bootID = bootID;
+	    Proc_CallFunc(RpcRecovCallBacks, spriteID, 0);
+	    /*
+	     * The RECOV_STATE_RECOVERING flag is reset by RpcRecovCallBacks.
+	     */
+	}
+	if (! asyncRecovery) {
+	    /*
+	     * Block servers until recovery actions complete.
+	     * Servers are synchronous with respect to reboot recovery.
+	     * This blocks requests from clients until after the
+	     * recovery actions complete.
+	     */
+	    while (hostPtr->state & RECOV_STATE_RECOVERING) {
+		Sync_Wait(&hostPtr->recovery, FALSE);
+		if (sys_ShuttingDown) {
+		    Sys_Printf("Warning, Server exiting from RpcHostAlive\n");
+		    Proc_Exit(1);
+		}
+	    }
+	}
+	/*
+	 * Now that we've taken care of reboot recovery,
+	 * we see if the host is newly up.  If so, we notify
+	 * waiting processes.  This means clientA (us) may start
+	 * re-opening files from serverB (the other guy) at the same time
+	 * as clientA is closing files that serverB had had open.
+	 */
+	switch(hostPtr->state & ~RECOV_STATE_RECOVERING) {
+	    case RECOV_HOST_ALIVE:
+		/*
+		 * Host already alive.
+		 */
+		break;
+	    case RECOV_HOST_DEAD: {
+		/*
+		 * Notify interested parties that the host is up.
+		 */
+		char *name;
+		Net_SpriteIDToName(spriteID, &name);
+		if (name == (char *)NIL) {
+		    Sys_Printf("Sprite Host <%d> is now up\n", spriteID);
+		} else {
+		    Sys_Printf("Sprite Host %s is now up\n", name);
+		}
+		hostPtr->state = RECOV_HOST_ALIVE;
+		Sync_Broadcast(&hostPtr->alive)
+		break;
+	    default:
+		Sys_Panic(SYS_WARNING, "Unexpected state <%x> for host %d\n",
+			hostPtr->state, spriteID);
+		break;
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcRecovCallBacks --
+ *
+ *	This calls the call-back procedures installed by other modules
+ *	via Rpc_RebootNotify.  It is invoked asynchronously from RpcHostAlive
+ *	when that procedure detects a reboot.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invoke the call-backs.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RpcRecovCallBacks(data, callInfoPtr)
+    ClientData data;
+    Proc_CallInfo *callInfoPtr;
+{
+    register NotifyElement *notifyPtr;
+    register int spriteID = (int)data;
+
+    LIST_FORALL(&rpcNotifyList, (List_Links *)notifyPtr) {
+	(*notifyPtr->proc)(spriteID, notifyPtr->clientData);
+    }
+    MarkRecoveryComplete(spriteID);
+    callInfoPtr->interval = 0;	/* Don't call again */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MarkRecoveryComplete --
+ *
+ *	The recovery call-backs have completed, and this procedure's
+ *	job is to mark that fact in the host hash table and to notify
+ *	any processes that are blocked in RpcHostAlive waiting for this.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the state, if any, in the host state table.
+ *	Notifies the hostPtr->recovery condition
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+MarkRecoveryComplete(spriteID)
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
 
     LOCK_MONITOR;
 
@@ -188,48 +403,8 @@ RpcHostAlive(spriteID)
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
-	    hostPtr->state &= ~RECOV_STATE_CHECKED;
-	    switch(hostPtr->state) {
-		case RECOV_STATE_UNKNOWN:
-		    /*
-		     * Just update state and take no action.  We can't
-		     * tell at this point if the host was up or down
-		     * previously.
-		     */
-		    hostPtr->state = RECOV_HOST_ALIVE;
-		    break;
-		case RECOV_HOST_ALIVE:
-		    /*
-		     * Host already alive.
-		     */
-		    break;
-		case RECOV_HOST_DEAD: {
-		    /*
-		     * Notify interested parties that the host is up.
-		     */
-		    char *name;
-		    Net_SpriteIDToName(spriteID, &name);
-		    if (name == (char *)NIL) {
-			Sys_Printf("Sprite Host <%d> is now up\n", spriteID);
-		    } else {
-			Sys_Printf("Sprite Host %s is now up\n", name);
-		    }
-		    hostPtr->state = RECOV_HOST_ALIVE;
-		    while (! List_IsEmpty(&hostPtr->waitList)) {
-			waitPtr = (RecovWait *)List_First(&hostPtr->waitList);
-			Sync_Broadcast(waitPtr->conditionPtr);
-			List_Remove((List_Links *)waitPtr);
-			Mem_Free(waitPtr);
-		    }
-		    /*
-		     * Wipe out the host state so we don't bother keeping
-		     * it up to date now that the host is up.
-		     */
-		    Mem_Free(hostPtr);
-		    hashPtr->value = (Address)NIL;
-		    break;
-		}
-	    }
+	    hostPtr->state &= ~RECOV_STATE_RECOVERING;
+	    Sync_Broadcast(&hostPtr->recovery);
 	}
     }
     UNLOCK_MONITOR;
@@ -241,7 +416,6 @@ RpcHostAlive(spriteID)
  * RpcHostDead --
  *
  *	Change the host's state to "dead".
- *	THIS MAY BE USELESS NOW, 6/87
  *
  * Results:
  *	None.
@@ -254,46 +428,66 @@ RpcHostAlive(spriteID)
 
 ENTRY void
 RpcHostDead(spriteID)
+    int spriteID;
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
 
+    if (spriteID == NET_BROADCAST_HOSTID) {
+	return;
+    }
     LOCK_MONITOR;
 
     hashPtr = Hash_LookOnly(recovHashTable, spriteID);
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
-	    hostPtr->state &= ~RECOV_STATE_CHECKED;
-	    switch(hostPtr->state) {
-		case RECOV_STATE_UNKNOWN:
-		    /*
-		     * Just update state, but don't invoke
-		     * the callBacks. We can't tell at this point if the
-		     * host was up or down previously.
-		     */
-		    hostPtr->state = RECOV_HOST_DEAD;
-		    break;
-		case RECOV_HOST_DEAD:
-		    /*
-		     * Host already dead.
-		     */
-		    break;
-		case RECOV_HOST_ALIVE: {
-		    char *name;
-		    Net_SpriteIDToName(spriteID, &name);
-		    if (name == (char *)NIL) {
-			Sys_Printf("Sprite Host <%d> is down\n", spriteID);
-		    } else {
-			Sys_Printf("Sprite Host %s is down\n", name);
-		    }
-		    hostPtr->state = RECOV_HOST_DEAD;
-		    break;
-		}
-	    }
+	    MarkHostDead(hostPtr);
 	}
     }
     UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MarkHostDead --
+ *
+ *	Mark the host as down and set up a background pinging process
+ *	to detect its reboot.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the state in the host state table, starts RpcHostCheck callback.
+ *
+ *----------------------------------------------------------------------
+ */
+
+INTERNAL static void
+MarkHostDead(hostPtr)
+    RecovHostState *hostPtr;
+{
+    char *name;
+    switch(hostPtr->state) {
+	case RECOV_HOST_DEAD:
+	    /*
+	     * Host already dead.
+	     */
+	    break;
+	case RECOV_STATE_UNKNOWN:
+	case RECOV_HOST_ALIVE:
+	    hostPtr->state = RECOV_HOST_DEAD;
+	    Net_SpriteIDToName(hostPtr->spriteID, &name);
+	    if (name == (char *)NIL) {
+		Sys_Printf("Sprite Host <%d> is down\n", hostPtr->spriteID);
+	    } else {
+		Sys_Printf("Sprite Host %s is down\n", name);
+	    }
+	    Proc_CallFunc(RpcHostCheck, hostPtr->spriteID, 0);
+	    break;
+    }
 }
 
 /*
@@ -352,14 +546,22 @@ Rpc_HostIsDown(spriteID)
     register Boolean down = FALSE;
     register ReturnStatus status;
 
-    if (RpcHostIsDownInt(spriteID)) {
-	down = TRUE;
-    } else {
-	status = Rpc_Ping(spriteID);
-	if (status != SUCCESS) {
-	    Sys_Printf("Rpc_Ping, host %d is down: %x\n", spriteID, status);
+    if (spriteID == NET_BROADCAST_HOSTID) {
+	Sys_Panic(SYS_WARNING, "Rpc_HostIsDown, got broadcast address\n");
+	return(FALSE);
+    }
+    switch (GetHostState(spriteID)) {
+	case RECOV_STATE_UNKNOWN:
+	    status = Rpc_Ping(spriteID);
+	    if (status != SUCCESS) {
+		down = TRUE;
+	    }
+	    break;
+	case RECOV_HOST_ALIVE:
+	    break;
+	case RECOV_HOST_DEAD:
 	    down = TRUE;
-	}
+	    break;
     }
     return(down);
 }
@@ -367,14 +569,20 @@ Rpc_HostIsDown(spriteID)
 /*
  *----------------------------------------------------------------------
  *
- * RpcHostIsDownInt --
+ * GetHostState --
  *
- *	This looks into
- *	the host table to see if there aren't already processes waiting
- *	for the host to reboot.
+ *	This looks into	the host table to see and provides a guess
+ *	as to the host's current state.  It uses a timestamp kept in
+ *	the host state to see if there's been recent message traffic.
+ *	If so, RECOV_HOST_ALIVE is returned.  If not, RECOV_STATE_UNKNOWN
+ *	is returned and the caller should ping to make sure.  Finally,
+ *	if it is known that the host is down already, then RECOV_HOST_DEAD
+ *	is returned.
  *
  * Results:
- *	TRUE if the host has already been marked down.
+ *	RECOV_STATE_UNKNOWN if the caller should ping to make sure.
+ *	RECOV_HOST_ALIVE if the host is up (recent message traffic).
+ *	RECOV_HOST_DEAD if the host is down (recent timeouts).
  *
  * Side effects:
  *	None.
@@ -382,13 +590,14 @@ Rpc_HostIsDown(spriteID)
  *----------------------------------------------------------------------
  */
 
-ENTRY Boolean
-RpcHostIsDownInt(spriteID)
+ENTRY int
+GetHostState(spriteID)
     int spriteID;
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
-    register Boolean down = FALSE;
+    register int state = RECOV_STATE_UNKNOWN;
+    Time time;
 
     LOCK_MONITOR;
 
@@ -396,11 +605,20 @@ RpcHostIsDownInt(spriteID)
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
-	    if (hostPtr->state & RECOV_HOST_DEAD) {
-		down = TRUE;
+	    state = hostPtr->state & ~RECOV_STATE_RECOVERING;
+	    if (state == RECOV_HOST_ALIVE) {
+		/*
+		 * Check for recent message traffic before admitting
+		 * that the other machine is up.
+		 */
+		Timer_GetTimeOfDay(&time, (int *)NIL, (Boolean *)NIL);
+		Time_Subtract(time, hostPtr->time, &time);
+		if (Time_GT(time, time_TenSeconds)) {
+		    state = RECOV_STATE_UNKNOWN;
+		}
 	    }
 	}
     }
     UNLOCK_MONITOR;
-    return(down);
+    return(state);
 }
