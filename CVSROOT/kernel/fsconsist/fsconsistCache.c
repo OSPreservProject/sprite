@@ -661,6 +661,8 @@ EndConsistency(consistPtr)
 	 * a client can't do a writeback because there isn't enough
 	 * disk space here.  Crashed clients don't matter.
 	 */
+	printf("EndConsistency: consistency failed for %s: no disk space\n",
+	       Fsutil_HandleName(consistPtr->hdrPtr)); /* DEBUG */
 	status = FS_NO_DISK_SPACE;
     } else {
 	status = SUCCESS;
