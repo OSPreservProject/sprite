@@ -924,6 +924,13 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 	       /*
 	        * No room in summary. Return block and exit loop.
 		*/
+		if (token == CLEANING_TOKEN) {
+		    /* 
+		     * Reset the flag marking this block as being cleaned
+		     * before returning it to the cache.
+		     */
+		    firstBlockPtr->flags |= FSCACHE_BLOCK_BEING_CLEANED;
+		}
 	       Fscache_ReturnDirtyBlock(firstBlockPtr, GEN_EINTR);
 	       full = TRUE;
 	       break;
@@ -1064,6 +1071,13 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 		nextBlockPtr = (Fscache_Block *) 
 				List_Next((List_Links *)blockPtr);
 		List_Remove((List_Links *) blockPtr);
+		if (token == CLEANING_TOKEN) {
+		    /* 
+		     * Reset the flag marking this block as being cleaned
+		     * before returning it to the cache.
+		     */
+		    blockPtr->flags |= FSCACHE_BLOCK_BEING_CLEANED;
+		}
 		Fscache_ReturnDirtyBlock(blockPtr, GEN_EINTR);
 		if (blockPtr == firstBlockPtr) {
 			break;
