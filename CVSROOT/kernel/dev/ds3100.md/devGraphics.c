@@ -747,6 +747,7 @@ DevGraphicsKbdIntr(ch)
     } else if (consoleCmdDown) {
 	char asciiChar;
 
+	consoleCmdDown = FALSE;
 	asciiChar = DevDC7085TranslateKey(ch, FALSE, FALSE);
 	if (asciiChar != -1) {
 	    Dev_InvokeConsoleCmd(asciiChar);
