@@ -52,15 +52,6 @@ extern	Address	vmBlockCacheBaseAddr;	/* Base of the file system cache. */
 extern	Address	vmBlockCacheEndAddr;	/* End of the file system cache. */
 
 /*
- * Values for flags field.  Lower 8 bits are for our use, next 8 bits are 
- * machine dependent.
- *
- *	VM_HEAP_NOT_EXPANDABLE	The heap segment for the current process has
- *				been made not expandable.
- */
-#define	VM_HEAP_NOT_EXPANDABLE	0x1
-
-/*
  * Structure that contains file information that needs to be freed.
  */
 typedef struct {

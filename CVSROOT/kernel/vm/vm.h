@@ -21,42 +21,24 @@
 #include "procAOUT.h"
 #include "sync.h"
 
-#ifdef SUN3
-#define	VM_DMA_START_ADDR		0xFF00000
-#define	VM_DMA_SIZE			0x0100000
-#else
-#define	VM_DMA_START_ADDR		0xF00000
-#define VM_DMA_SIZE			0x040000
-#endif
-
-/* BEGIN CRAP */
-/*
- * Temporary crap to let dev work for now.
- */
-typedef struct {
-    Address	baseAddr;	/* Base virtual address to start 
-				   allocating at. */
-    Address	endAddr;	/* Last possible virtual address plus one. */
-} Vm_DevBuffer;
-
-extern	Address		Vm_MapInDevice();
-extern	void		Vm_DevBufferInit();
-extern	Address		Vm_DevBufferAlloc();
-extern	Address		Vm_DevBufferMap();
-extern	void		Vm_GetDevicePage();
-extern	ReturnStatus	Vm_MapKernelIntoUser();
-/* END CRAP */
-
 /*
  * Structure to represent a translated virtual address
  */
 typedef struct {
-    struct	Vm_Segment	*segPtr;
-    int 			page;
-    int 			offset;
-    int				flags;	/* Flags used after parsing a virtual
-					 * address. */
+    struct Vm_Segment	*segPtr;	/* Segment that address falls into.*/
+    int 		page;		/* Virtual page. */
+    int 		offset;		/* Offset in the page. */
+    int			flags;		/* Flags defined below */
 } Vm_VirtAddr;
+
+/*
+ * Values for flags field.  Lower 8 bits are for our use, next 8 bits are 
+ * machine dependent.
+ *
+ *	VM_HEAP_NOT_EXPANDABLE	The heap segment for the current process has
+ *				been made not expandable.
+ */
+#define	VM_HEAP_NOT_EXPANDABLE	0x1
 
 /*
  * The type of segment.
@@ -106,23 +88,14 @@ typedef unsigned int	Vm_PTE;
 #define VM_PAGE_FRAME_FIELD	0x000fffff
 
 /*
- * Function to get a page frame out of a PTE and change its type to be
- * an unsigned int.
+ * Macro to get a page frame out of a PTE.
  */
-#define VmGetPageFrame(pte) ((unsigned int) ((pte) & VM_PAGE_FRAME_FIELD))
+#define Vm_GetPageFrame(pte) ((unsigned int) ((pte) & VM_PAGE_FRAME_FIELD))
 
 /*
  * The page size.
  */
 extern	int	vm_PageSize;
-
-/*
- * Values for the vm flags in the proc table.
- *
- * VM_COPY_IN_PROGRESS          Data is being copied from/to this process
- *                              to/from the kernel's VAS.
- */
-#define VM_COPY_IN_PROGRESS             0x01
 
 /*
  * The type of accessibility desired when making a piece of data user
@@ -158,51 +131,51 @@ typedef struct {
 #define	VM_OBJ_FILE_NAME_LENGTH	50
 
 /*
- * The segment table structure.  This shouldn't be external but lint
- * complains like crazy if we try to hide it.  So to make lint happy ...
+ * The segment table structure.  Details about the segment table and
+ * some of the fields in here are defined in vmInt.h.
  *
  * NOTE: Process migration requires that the five fields offset, fileAddr,
  *       type, numPages and ptSize be contiguous.
  */
 typedef struct Vm_Segment {
     List_Links		links;		/* Links used to put the segment
-					   table entry in list of free segments,
-					   list of inactive segments or list
-					   of copy-on-write segments. */
+					 * table entry in list of free segments,
+					 * list of inactive segments or list
+					 * of copy-on-write segments. */
     int			segNum;		/* The number of this segment. */
     int 		refCount;	/* Number of processes using this 
-					   segment */
+					 * segment */
     Sync_Condition	condition;	/* Condition to wait on for this
 					 * segment. */
     Fs_Stream		*filePtr;	/* Pointer to the file that pages are
-					   being demanded loaded from. */
+					 * being demanded loaded from. */
 				        /* Name of object file for code 
 					 * segments. */
     char		objFileName[VM_OBJ_FILE_NAME_LENGTH];
     Fs_Stream		*swapFilePtr;	/* Structure for an opened swap file.*/
     char		*swapFileName;  /* The filename associated with the
 					 * swap file. */
-    int			offset;		/* Explained above. */
+    int			offset;		/* Explained in vmInt.h. */
     int			fileAddr;	/* The address in the object file where
-					   data or code for this segment 
-					   begins. */
+					 * data or code for this segment 
+					 * begins. */
     int           	type;		/* CODE, STACK, HEAP, or SYSTEM */
-    int			numPages;	/* Explained above. */
+    int			numPages;	/* Explained in vmInt.h. */
     int			ptSize;		/* Number of pages in the page table */
     int			resPages;	/* Number of pages in physical memory
 					 * for this segment. */
     Vm_PTE		*ptPtr;		/* Pointer to the page table for this 
-					   segment */
+					 * segment */
     struct VmMach_SegData *machPtr;	/* Pointer to machine dependent data */
     int			flags;		/* Flags to give information about the
-					   segment table entry. */
+					 * segment table entry. */
     List_Links		procListHdr;	/* Header node for list of processes
-					   sharing this segment. */
+					 * sharing this segment. */
     List_Links		*procList;	/* Pointer to list of processes 
-					   sharing this segment. */
+					 * sharing this segment. */
     int			notExpandCount;	/* The number of times that this 
-					   segment has been prevented from
-					   expanding. */
+					 * segment has been prevented from
+					 * expanding. */
     ClientData		fileHandle;	/* Handle for object file. */
     Vm_ExecInfo		execInfo;	/* Information to allow reuse of 
 					 * sticky segments. */
@@ -224,9 +197,21 @@ extern 	Vm_Segment	*vm_SysSegPtr;
  */
 typedef struct Vm_ProcInfo {
     Vm_Segment			*segPtrArray[VM_NUM_SEGMENTS];
-    int				vmFlags;
-    struct VmMach_ProcData	*machPtr;
+    int				numMakeAcc;	/* Nesting level of make
+						 * make accessibles for this
+						 * process. */
+    struct VmMach_ProcData	*machPtr;	/* Pointer to machine dependent
+						 * data. */
+    int				vmFlags;	/* Flags defined below. */
 } Vm_ProcInfo;
+
+/*
+ * Values for the vmFlags field.
+ *
+ * VM_COPY_IN_PROGRESS          Data is being copied from/to this process
+ *                              to/from the kernel's VAS.
+ */
+#define VM_COPY_IN_PROGRESS             0x01
 
 /*
  * Copy-on-write level.
