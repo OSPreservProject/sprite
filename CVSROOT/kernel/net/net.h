@@ -85,6 +85,8 @@ extern	void	Net_Init();
 extern	void	Net_Reset();
 extern	void	Net_Input();
 extern	ReturnStatus	Net_Output();
+extern	void	Net_OutputRawEther();
+extern	void	Net_RecvPoll();
 extern	void	Net_EtherOutputSync();
 extern	void	Net_Intr();
 extern	void	Net_GatherCopy();
