@@ -18,7 +18,21 @@
 #ifndef _FSIO
 #define _FSIO
 
-#include "fs.h"
+#include <fs.h>
+
+/*
+ * Structure that is transfered when a stream is migrated with a process
+ */
+
+typedef struct Fsio_MigInfo {
+    Fs_FileID	streamID;	/* Stream identifier. */
+    Fs_FileID    ioFileID;     	/* I/O handle for the stream. */
+    Fs_FileID	nameID;		/* ID of name of the file.  Used for attrs. */
+    Fs_FileID	rootID;		/* ID of the root of the file's domain. */
+    int		srcClientID;	/* Client transfering from. */
+    int         offset;     	/* File access position. */
+    int         flags;      	/* Usage flags from the stream. */
+} Fsio_MigInfo;
 
 /*
  * Stream Types:
@@ -108,39 +122,6 @@ extern int fsio_RmtToLclType[];
     ( ((remoteType) < 0 || (remoteType) >= FSIO_NUM_STREAM_TYPES) ? -1 : \
 	fsio_RmtToLclType[remoteType] )
 
-
-
-/*
- * OPEN SWITCH
- * The nameOpen procedure is used on the file server when opening streams or
- * setting up an I/O fileID for a file or device.  It is keyed on
- * disk file descriptor types( i.e. FS_FILE, FS_DIRECTORY, FS_DEVICE,
- * FS_PSEUDO_DEVICE).  The nameOpen procedure returns an ioFileID
- * used for I/O on the file, plus other data needed for the client's
- * stream.  The streamIDPtr is NIL during set/get attributes, which
- * indicates that the extra stream information isn't needed.
- */
-
-typedef struct Fsio_OpenOps {
-    int		type;			/* One of the file descriptor types */
-    /*
-     * The calling sequence for the nameOpen routine is:
-     *	FooNameOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
-     *			sizePtr, dataPtr)
-     *		Fsio_FileIOHandle	*handlePtr;
-     *		int			clientID;
-     *		int			useFlags;	(From the stream)
-     *		Fs_FileID		ioFileIDPtr;	(Returned to client)
-     *	   (The following arguments are ignored during set/get attrs)
-     *	   (This case is indicated by a NIL streamIDPtr)
-     *		Fs_FileID		streamIDPtr;	(Returned to client,)
-     *		int			*sizePtr;	(Return size of data)
-     *		ClientData		*dataPtr;	(Extra return data)
-     */
-    ReturnStatus (*nameOpen)();
-} Fsio_OpenOps;
-
-extern Fsio_OpenOps fsio_OpenOpTable[];
 
 
 
@@ -167,7 +148,10 @@ typedef struct Fsio_StreamTypeOps {
      *		char 		*name;		(name for error messages)
      *		Fs_HandleHeader	**hdrPtrPtr;	(Returned I/O handle)
      */
-    ReturnStatus (*ioOpen)();
+    ReturnStatus (*ioOpen) _ARGS_((Fs_FileID *ioFileIDPtr, int *flagsPtr, 
+				int clientID, ClientData streamData, 
+				char *name, Fs_HandleHeader **ioHandlePtrPtr));
+
     /*
      **************** Regular I/O operations. ******************************
      *  These are the standard read/write routines.  Note:  they are passed
@@ -184,8 +168,12 @@ typedef struct Fsio_StreamTypeOps {
      *		Sync_RemoteWaiter *waitPtr;	(For remote waiting)
      *		Fs_IOReply	*reply;		(For return length and signal)
      */
-    ReturnStatus (*read)();
-    ReturnStatus (*write)();
+    ReturnStatus (*read) _ARGS_((Fs_Stream *streamPtr, Fs_IOParam *readPtr, 
+				Sync_RemoteWaiter *remoteWaitPtr, 
+				Fs_IOReply *replyPtr));
+    ReturnStatus (*write) _ARGS_((Fs_Stream *streamPtr, Fs_IOParam *writePtr, 
+                                  Sync_RemoteWaiter *remoteWaitPtr, 
+				  Fs_IOReply *replyPtr));
     /*
      **************** VM I/O operations. ******************************
      *  These are the read/write routines used by VM during paging.
@@ -193,30 +181,37 @@ typedef struct Fsio_StreamTypeOps {
      *	so those routines can be re-used, if appropriate.
      *
      *	FooPageRead(streamPtr, ioPtr, waitPtr, replyPtr)
-     *	FoPageoWrite(streamPtr, ioPtr, waitPtr, replyPtr)
+     *	FooPageWrite(streamPtr, ioPtr, waitPtr, replyPtr)
      *		Fs_Stream	*streamPtr;	(See above about valid fields)
      *		Fs_IOParam	*ioPtr;		(Standard parameter block)
      *		Sync_RemoteWaiter *waitPtr;	(For remote waiting)
      *		Fs_IOReply	*reply;		(For return length and signal)
+     * 
+     *	FooBlockCopy(srcHdrPtr, destHdrPtr, blockNum)
+     * 		Fs_HandleHeader *srcHdrPtr;  ( Handle for source file. )
+     * 		Fs_HandleHeader *destHdrPtr; ( Handle for dest file. )
+     * 		int		*blockNum;   ( Block number to copy. )
      */
-    ReturnStatus (*pageRead)();
-    ReturnStatus (*pageWrite)();
+    ReturnStatus (*pageRead) _ARGS_((Fs_Stream *streamPtr, Fs_IOParam *readPtr, 
+				Sync_RemoteWaiter *remoteWaitPtr, 
+				Fs_IOReply *replyPtr));
+    ReturnStatus (*pageWrite) _ARGS_((Fs_Stream *streamPtr,
+				      Fs_IOParam *writePtr, 
+                                      Sync_RemoteWaiter *remoteWaitPtr, 
+				      Fs_IOReply *replyPtr));
+    ReturnStatus (*blockCopy) _ARGS_((Fs_HandleHeader *srcHdrPtr, 
+					Fs_HandleHeader *dstHdrPtr, 
+					int blockNum));
     /*
      ***************** I/O Control. ****************************************
      *  Stream-specific I/O controls.  The main procedure Fs_IOControl
      *	handles some generic I/O controls, and then passes the I/O control
      *	down to the stream-specific handler.
      *
-     *	FooIOControl(hdrPtr, command, byteOrder, inBufSize, inBuf, outBufSize, outBuf)
-     *		Fs_HandleHeader *hdrPtr;			(File handle)
-     *		int		command;		(Special operation)
-     *		int		byteOrder;		(client's byte order)
-     *		int		inBufSize;		(Size of inBuf)
-     *		Address		inBuf;			(Input data)
-     *		int		outBufSize;		(Size of outBuf)
-     *		Address		outBuf;			(Return data)
      */
-    ReturnStatus (*ioControl)();
+    ReturnStatus (*ioControl) _ARGS_((Fs_Stream *streamPtr, 
+				      Fs_IOCParam *ioctlPtr, 
+				      Fs_IOReply *replyPtr));
     /*
      ***************** Select. *********************************************
      *  The select interface includes three In/Out bit words.  There is
@@ -231,7 +226,9 @@ typedef struct Fsio_StreamTypeOps {
      *		int			*writePtr;	(In/Out write bit)
      *		int			*exceptPtr;	(In/Out except bit)
      */
-    ReturnStatus (*select)();
+    ReturnStatus (*select)  _ARGS_((Fs_HandleHeader *hdrPtr, 
+				    Sync_RemoteWaiter *waitPtr, int *readPtr, 
+				    int *writePtr, int *exceptPtr));
     /*
      **************** Attribute operations on open streams. *****************
      *	These just operate on the few attributes cached at the I/O server.
@@ -248,8 +245,10 @@ typedef struct Fsio_StreamTypeOps {
      *		Fs_Attributes		*attrPtr;	(Attrs to set/update)
      *		int			flags;		(which attrs to set)
      */
-    ReturnStatus (*getIOAttr)();
-    ReturnStatus (*setIOAttr)();
+    ReturnStatus (*getIOAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
+				      Fs_Attributes *attrPtr));
+    ReturnStatus (*setIOAttr) _ARGS_((Fs_FileID *fileIDPtr, 
+				      Fs_Attributes *attrPtr, int flags));
     /*
      **************** Server verification of remote handle. *****************
      *	This returns the server's file handle given a client's fileID.
@@ -265,7 +264,8 @@ typedef struct Fsio_StreamTypeOps {
      *		int		clientID;		(The client hostID)
      *		int		*domainTypePtr;		(may be NIL)
      */
-    Fs_HandleHeader *(*clientVerify)();
+    Fs_HandleHeader *(*clientVerify) _ARGS_((Fs_FileID *fileIDPtr, 
+					     int clientID, int *domainTypePtr));
     /*
      *************** Migration calls. **************************************
      *
@@ -292,21 +292,25 @@ typedef struct Fsio_StreamTypeOps {
      *		Fs_HandleHeader	*hdrPtr;		(File handle)
      *		int		flags;			(From the stream)
      *	FooMigEnd(migInfoPtr, size, data, hdrPtrPtr)
-     *		FsMigInfo	migInfoPtr;		(Migration state)
+     *		Fsio_MigInfo	migInfoPtr;		(Migration state)
      *		int		size;			(size of data)
      *		ClientData	data;			(data from migrate)
      *		Fs_HandleHeader	**hdrPtrPtr;		(Returned handle)
      *	FooSrvMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr sizePtr, dataPtr)
-     *    	FsMigInfo	*migInfoPtr;		(Migration state)
+     *    	Fsio_MigInfo	*migInfoPtr;		(Migration state)
      *		int		dstClientID;		(ID of target client)
      *		int		*flagsPtr;		(In/Out Stream flags)
      *		int		*offsetPtr;		(Return - new offset)
      *		int		*sizePtr;		(Return - size of data)
      *		Address		*dataPtr;		(Return data)
      */
-    ReturnStatus (*release)();
-    ReturnStatus (*migEnd)();
-    ReturnStatus (*migrate)();
+    ReturnStatus (*release) _ARGS_((Fs_HandleHeader *hdrPtr, int flags));
+    ReturnStatus (*migEnd) _ARGS_((Fsio_MigInfo *migInfoPtr, int size, 
+				  ClientData data, 
+				  Fs_HandleHeader **hdrPtrPtr));
+    ReturnStatus (*migrate) _ARGS_((Fsio_MigInfo *migInfoPtr, int dstClientID, 
+				    int *flagsPtr, int *offsetPtr, 
+				    int *sizePtr, Address *dataPtr));
     /*
      *************** Recovery calls. ****************************************
      *  This (should be) two routines, one called on client host's top
@@ -322,7 +326,9 @@ typedef struct Fsio_StreamTypeOps {
      *		int		*outSizePtr;	(sizeof outData)
      *		ClientData	*outDataPtr;	(state returned to client)
      */
-    ReturnStatus (*reopen)();
+    ReturnStatus (*reopen)  _ARGS_((Fs_HandleHeader *hdrPtr, int clientID, 
+				    ClientData inData, int *outSizePtr,
+				    ClientData *outDataPtr));
     /*
      *************** Clean up operations. **********************************
      * 'scavenge' is called periodically to clean up unneeded handles.
@@ -349,9 +355,11 @@ typedef struct Fsio_StreamTypeOps {
      *		int		size;			(Size of data)
      *		ClientData	data;			(Extra close data)
      */
-    Boolean	 (*scavenge)();
-    void	 (*clientKill)();
-    ReturnStatus (*close)();
+    Boolean	 (*scavenge) _ARGS_((Fs_HandleHeader *hdrPtr));
+    void	 (*clientKill) _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+    ReturnStatus (*close) _ARGS_((Fs_Stream *streamPtr, int clientID, 
+				  Proc_PID procID, int flags, int dataSize, 
+				  ClientData closeData));
 } Fsio_StreamTypeOps;
 
 extern Fsio_StreamTypeOps fsio_StreamOpTable[];
@@ -361,37 +369,23 @@ typedef struct FsioStreamClient {
     int		clientID;	/* The sprite ID of the client */
 } FsioStreamClient;
 
-/*
- * Structure that is transfered when a process is migrated.
- * SHOULD CHANGE NAME TO Fsio_MigInfo
- */
-
-typedef struct FsMigInfo {
-    Fs_FileID	streamID;	/* Stream identifier. */
-    Fs_FileID    ioFileID;     	/* I/O handle for the stream. */
-    Fs_FileID	nameID;		/* ID of name of the file.  Used for attrs. */
-    Fs_FileID	rootID;		/* ID of the root of the file's domain. */
-    int		srcClientID;	/* Client transfering from. */
-    int         offset;     	/* File access position. */
-    int         flags;      	/* Usage flags from the stream. */
-} FsMigInfo;
 
 
 /*
  * The following structures are subfields of the various I/O handles.
  * First we define a use count structure to handle common book keeping needs.
- * SHOULD CHANGE NAME TO Fsio_UseCounts
  */
 
-typedef struct Fsutil_UseCounts {
+typedef struct Fsio_UseCounts {
     int		ref;		/* The number of referneces to handle */
     int		write;		/* The number of writers on handle */
     int		exec;		/* The number of executors of handle */
-} Fsutil_UseCounts;
+} Fsio_UseCounts;
 
 /*
  * Exported type for async I/O requests.
  */
+
 typedef struct Fsio_Request *Fsio_RequestToken;
 
 extern Fsio_RequestToken Fsio_DeviceBlockIOAsync();
@@ -421,75 +415,72 @@ extern	int	Fsio_PipeRecovTestUseCount();
 /*
  * Initialization
  */
-extern void Fsio_InstallStreamOps();
-extern void Fsio_InstallSrvOpenOp();
+extern void Fsio_InstallStreamOps _ARGS_((int streamType,
+			Fsio_StreamTypeOps *streamOpsPtr));
 
-extern ReturnStatus Fsio_CreatePipe();
+extern ReturnStatus Fsio_CreatePipe _ARGS_((Fs_Stream **inStreamPtrPtr, 
+			Fs_Stream **outStreamPtrPtr));
 
-extern void Fsio_Bin();
-extern void Fsio_InitializeOps();
+extern void Fsio_Bin _ARGS_((void));
+extern void Fsio_InitializeOps _ARGS_((void));
 
 /*
  * Stream client list functions.
  */
-extern Boolean		Fsio_StreamClientOpen();
-extern Boolean		Fsio_StreamClientClose();
-extern Boolean		Fsio_StreamClientFind();
+extern Boolean Fsio_StreamClientOpen _ARGS_((List_Links *clientList,
+			int clientID, int useFlags, Boolean *foundPtr));
+extern Boolean Fsio_StreamClientClose _ARGS_((List_Links *clientList, 
+			int clientID));
+extern Boolean Fsio_StreamClientFind _ARGS_((List_Links *clientList, 
+			int clientID));
 
 /*
  * Stream manipulation routines.
  */
-extern Fs_Stream	*Fsio_StreamCreate();
-extern Fs_Stream	*Fsio_StreamAddClient();
-extern void		Fsio_StreamMigClient();
-extern Fs_Stream	*Fsio_StreamClientVerify();
-extern void		Fsio_StreamCreateID();
-extern void		Fsio_StreamCopy();
-extern void		Fsio_StreamDestroy();
-extern Boolean		Fsio_StreamScavenge();
-extern ReturnStatus	Fsio_StreamReopen();
-
-/*
- * flock() support
- */
-extern void		Fsio_LockInit();
-extern ReturnStatus	Fsio_IocLock();
-extern ReturnStatus	Fsio_Lock();
-extern ReturnStatus	Fsio_Unlock();
-extern void		Fsio_LockClose();
-extern void		Fsio_LockClientKill();
-
-/*
- * ftrunc() support
- */
-extern ReturnStatus	Fsio_FileTrunc();
+extern Fs_Stream *Fsio_StreamCreate _ARGS_((int serverID, int clientID,
+		    Fs_HandleHeader *ioHandlePtr, int useFlags, char *name));
+extern Fs_Stream *Fsio_StreamAddClient _ARGS_((Fs_FileID *streamIDPtr,
+			int clientID, Fs_HandleHeader *ioHandlePtr, 
+			int useFlags, char *name, Boolean *foundClientPtr, 
+			Boolean *foundStreamPtr));
+extern void Fsio_StreamMigClient _ARGS_((Fsio_MigInfo *migInfoPtr, 
+			int dstClientID, Fs_HandleHeader *ioHandlePtr, 
+			Boolean *closeSrcClientPtr));
+extern Fs_Stream *Fsio_StreamClientVerify _ARGS_((Fs_FileID *streamIDPtr, 
+			Fs_HandleHeader *ioHandlePtr, int clientID));
+extern void Fsio_StreamCreateID _ARGS_((int serverID, Fs_FileID *streamIDPtr));
+extern void Fsio_StreamCopy _ARGS_((Fs_Stream *oldStreamPtr,
+			Fs_Stream **newStreamPtrPtr));
+extern void Fsio_StreamDestroy _ARGS_((Fs_Stream *streamPtr));
+extern ReturnStatus Fsio_StreamMigClose _ARGS_((Fs_Stream *streamPtr, 
+			Boolean *inUsePtr));
+extern ReturnStatus Fsio_StreamMigCloseNew _ARGS_((Fs_Stream *streamPtr, 
+			Boolean *inUsePtr, int *offsetPtr));
+extern ReturnStatus Fsio_StreamReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+			int clientID, ClientData inData, int *outSizePtr, 
+			ClientData *outDataPtr));
 
 
-/*
- * Device support
- */
-extern void Fsio_DevNotifyException();
-extern void Fsio_DevNotifyReader();
-extern void Fsio_DevNotifyWriter();
-
-extern ReturnStatus Fsio_VanillaDevReopen();
 
 /*
  * Migration support
  */
-extern ReturnStatus	Fsio_EncapStream();
-extern ReturnStatus	Fsio_DeencapStream();
-extern ReturnStatus	Fsio_MigrateUseCounts();
-extern void		Fsio_MigrateClient();
+extern ReturnStatus Fsio_EncapStream _ARGS_((Fs_Stream *streamPtr, 
+			Address bufPtr));
+extern ReturnStatus Fsio_DeencapStream _ARGS_((Address bufPtr,
+			Fs_Stream **streamPtrPtr));
+extern void Fsio_MigrateUseCounts _ARGS_((int flags, 
+			Boolean closeSrcClient, Fsio_UseCounts *usePtr));
+extern void Fsio_MigrateClient _ARGS_((List_Links *clientList, int srcClientID,
+			int dstClientID, int flags, Boolean closeSrcClient));
 
 /*
  * Null procs for switch tables.
  */
-extern void Fsio_NullClientKill();
-extern ReturnStatus Fsio_NoProc();
-extern ReturnStatus Fsio_NullProc();
-extern Fs_HandleHeader *Fsio_NoHandle();
+extern void Fsio_NullClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+extern ReturnStatus Fsio_NullProc ();
+extern ReturnStatus Fsio_NoProc ();
+extern Fs_HandleHeader *Fsio_NoHandle ();
 
-extern ReturnStatus Fsio_RpcStreamMigCloseNew();
 
 #endif
