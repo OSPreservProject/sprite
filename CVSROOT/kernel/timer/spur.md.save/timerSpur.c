@@ -91,7 +91,7 @@ static Timer_Ticks	currentTicks;
  * Semaphore protecting the currentTicks variable.
  */
 
-int	currentTicksMutex = 0;
+Sync_Semaphore	currentTicksMutex = SYNC_SEM_INIT_STATIC("currentTicksMutex");
 
 
 /*
@@ -560,7 +560,7 @@ void
 Timer_GetCurrentTicks(timePtr)
     Timer_Ticks	*timePtr;	/* Time from the counters. */
 {
-    MASTER_LOCK(currentTicksMutex);
+    MASTER_LOCK(&currentTicksMutex);
 	/*
 	 * Are we running on the CPU with the counter. If so then
 	 * update the currentTicks structure.
@@ -569,7 +569,7 @@ Timer_GetCurrentTicks(timePtr)
 	Timer_ReadT0(&currentTicks);
     }
     *timePtr = currentTicks;
-    MASTER_UNLOCK(currentTicksMutex);
+    MASTER_UNLOCK(&currentTicksMutex);
 
 
 }
