@@ -265,6 +265,18 @@ extern	int	vmBoundary;	/* The current number of pages that must be
 				 * penalty. */
 
 /*
+ * Variables to control use of modify and reference bits.
+ */
+extern	Boolean	vmWriteablePageout;	/* Page out all pages that are 
+					 * writeable before recycling them
+					 * whether they have been modified
+					 * or not. */
+extern	Boolean	vmWriteableRefPageout;	/* Page out all pages that have been
+					 * referenced and are writeable 
+					 * before recycling them whether they
+					 * have been modified or not. */
+
+/*
  * Flags for VmPageAllocate and VmPageAllocateInt:
  *
  *  VM_CAN_BLOCK	Can block if no clean memory is available.
