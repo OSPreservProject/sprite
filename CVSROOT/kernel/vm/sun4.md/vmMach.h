@@ -126,6 +126,7 @@ extern void VmMach_NetMapPacket _ARGS_((register Net_ScatterGather
  * Context routines.
  */
 extern int VmMach_GetContext _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_FlushCurrentContext _ARGS_((void));
 
 /*
  * File Cache routines.
