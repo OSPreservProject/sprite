@@ -481,17 +481,9 @@ FsDescTrunc(handlePtr, size)
 	goto exit;
     }
 
+    flags = FS_DELETE_INDIRECT_BLOCKS;
     if (newLastByte == -1) {
-#ifdef dont_do_cache_stuff_here
-	FsCacheFileInvalidate(&handlePtr->cacheInfo, firstBlock, lastBlock);
-#endif
-	flags = FS_DELETE_EVERYTHING | FS_DELETE_INDIRECT_BLOCKS;
-    } else {
-#ifdef dont_do_cache_stuff_here
-	FsCacheFileInvalidate(&handlePtr->cacheInfo, 
-		   (size + FS_BLOCK_SIZE - 1) / FS_BLOCK_SIZE, lastBlock);
-#endif
-	flags = FS_DELETE_INDIRECT_BLOCKS;
+	flags |= FS_DELETE_EVERYTHING;
     }
 
     /*
