@@ -272,6 +272,7 @@ printf(va_alist)
 int fprintf()
 {}
 #else
+/*
 int
 fprintf(va_alist)
     va_dcl
@@ -288,4 +289,5 @@ fprintf(va_alist)
     va_end(args);
     return result;
 }
+*/
 #endif
