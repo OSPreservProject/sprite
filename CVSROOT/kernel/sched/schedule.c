@@ -538,6 +538,10 @@ IdleLoop()
     register List_Links		*queuePtr;
     register Boolean		foundOne;
     Proc_ControlBlock		*lastProcPtr = Proc_GetCurrentProc();
+#ifdef spur 
+	/* Turn off perf counters. */
+     int	modeReg = Dev_CCIdleCounters(FALSE,0);
+#endif
 
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
@@ -591,6 +595,10 @@ IdleLoop()
 	    sched_Instrument.processor[cpu].idleTicksLow++;
 	}
     }
+#ifdef spur
+	modeReg = Dev_CCIdleCounters(TRUE,modeReg); /* Restore perf counters. */
+#endif
+
     if (procPtr->state != PROC_READY) {
 	/*
 	 * Unlock sched_Mutex because panic tries to grab it somewhere.
