@@ -46,15 +46,53 @@
 #define	VmMachSetPageType(pte, type) (pte |= (type << 26))
 
 /*
+ * Shift pte right by this much to isolate page protection and residence bits.
+ */
+#define	VMMACH_PAGE_PROT_SHIFT	29
+/*
+ * Compare shifted pte (above) with this to see if user residence and protection
+ * are okay for the user to write to this address.
+ */
+#define	VMMACH_PTE_OKAY_VALUE	6
+
+/*
  * In the sun4 200 series machines, the 2 high bits may be 00 or 11.  However,
  * 00 and 11 actually go to the same entry in the segment table.  So for
  * address comparisons, one may have to strip the high two bits.
  */
+#define	VMMACH_BOTTOM_OF_HOLE	0x20000000
+
+#define	VMMACH_TOP_OF_HOLE	(0xe0000000 - 1)
+
 #define	VMMACH_ADDR_MASK	0x3FFFFFFF
+
 #define	VMMACH_ADDR_CHECK(virtAddr)	\
+    (	((unsigned int) (virtAddr)) >= VMMACH_BOTTOM_OF_HOLE &&	\
+	((unsigned int) (virtAddr)) <= VMMACH_TOP_OF_HOLE ? FALSE : TRUE)
+
+#define	VMMACH_ADDR_OK_ASM(virtAddr, CheckMore, DoneCheck, answerReg, useReg) \
+	clr	answerReg;				\
+	set	VMMACH_BOTTOM_OF_HOLE, useReg;		\
+	cmp     useReg, virtAddr;			\
+	bleu	KeepCheckingLabel;			\
+	nop;						\
+	ba	DoneCheckingLabel;			\
+	nop;						\
+KeepCheckingLabel:					\
+	set	VMMACH_TOP_OF_HOLE, useReg;		\
+	cmp	virtAddr, useReg;			\
+	bgu	DoneCheckingLabel;			\
+	nop;						\
+	set	0x1, answerReg;				\
+DoneCheckingLabel:
+
+
+
+#ifdef NOTDEF
     if (((unsigned int) virtAddr) > ((unsigned int) mach_LastUserAddr) && ((unsigned int) virtAddr) < ((unsigned int) VMMACH_MAP_SEG_ADDR)) { \
 	panic("Virtual address falls into illegal range!\n");	\
     }
+#endif /* NOTDEF */
 
 /*
  * Sun memory management unit constants:
@@ -89,7 +127,17 @@
 
 #define VMMACH_KERN_CONTEXT		0
 #define VMMACH_NUM_CONTEXTS		16	/* impl. dependent */
+#ifdef NOTDEF
+/*
+ * There is a hole in the middle of the address space, so really there's only
+ * 2**12 segs per context, but having discontinuous maps is a pain, so we
+ * pretend it's all mappable, which means there's 2**14 segs per context.
+ */
 #define VMMACH_NUM_SEGS_PER_CONTEXT	4096	/* impl. dependent 2**12 */
+#else
+#define VMMACH_NUM_SEGS_PER_CONTEXT	0x4000	/* 2**14 */
+#endif NOTDEF
+
 #define VMMACH_NUM_PAGES_PER_SEG_INT	32	/* impl. dependent */
 #define VMMACH_NUM_PAGE_MAP_ENTRIES	16384	/* impl. dependent 2**14 */
 #define	VMMACH_NUM_PMEGS		(VMMACH_NUM_PAGE_MAP_ENTRIES / VMMACH_NUM_PAGES_PER_SEG_INT)
@@ -148,6 +196,8 @@
  * VMMACH_CONTEXT_OFF	 	Offset to context register in control space.
  * VMMACH_DIAGNOSTIC_REG	The address of the diagnostic register.
  * VMMACH_BUS_ERROR_REG		The address of the bus error register.
+ * VMMACH_ADDR_ERROR_REG	Addr of register storing addr of mem error.
+ * VMMACH_ADDR_CONTROL_REG	Addr of control register for memory errors.
  * VMMACH_SYSTEM_ENABLE_REG	The address of the system enable register.
  * VMMACH_ETHER_ADDR		Address of ethernet address in the id prom.
  * VMMACH_MACH_TYPE_ADDR	Address of machine type in the id prom.
@@ -155,10 +205,12 @@
  *				through the id prom.
  */
 
-#define	VMMACH_CONTEXT_OFF		0x30000000
+#define	VMMACH_CONTEXT_OFF		0x30000000	/* control space */
 #define VMMACH_SYSTEM_ENABLE_REG	0x40000000
 #define VMMACH_BUS_ERROR_REG		0x60000000
-#define VMMACH_DIAGNOSTIC_REG		0x70000000
+#define VMMACH_ADDR_ERROR_REG		0xffd08004	/* device space */
+#define VMMACH_ADDR_CONTROL_REG		0xffd08000	/* device space */
+#define VMMACH_DIAGNOSTIC_REG		0x70000000	/* control space */
 #define VMMACH_ETHER_ADDR		0x02
 #define VMMACH_MACH_TYPE_ADDR		0x01
 #define VMMACH_IDPROM_INC		0x01
@@ -214,7 +266,7 @@
 #define VMMACH_PAGE_SHIFT_INT	13
 #define VMMACH_OFFSET_MASK	0x1fff
 #define VMMACH_OFFSET_MASK_INT	0x1fff
-#define VMMACH_PAGE_MASK	0x1E000	
+#define VMMACH_PAGE_MASK	0x3E000	
 
 #define	VMMACH_SEG_SIZE		0x40000		/* twice as large as sun3? */
 
