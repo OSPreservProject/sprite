@@ -672,7 +672,7 @@ SendReply()
 	etherHdrPtr->type = dbgEtherHdr.type;
 	dbgGather.bufAddr = replyBuffer + sizeof(Net_EtherHdr);
 	dbgGather.length = replyOffset - sizeof(Net_EtherHdr);
-	dbgGather.mutexPtr = (Sync_Condition *) NIL;
+	dbgGather.mutexPtr = (Sync_Semaphore *) NIL;
 	*(int *)(replyBuffer + PACKET_HDR_SIZE - 4) = curMsgNum;
 	Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
 		     replyOffset - sizeof(Net_EtherHdr) - Dbg_PacketHdrSize(),
