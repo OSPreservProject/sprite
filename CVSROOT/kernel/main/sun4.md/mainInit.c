@@ -13,6 +13,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* !lint */
 
 #include "machMon.h"
+#include "dbg.h"
 
 
 /*
@@ -45,14 +46,14 @@ main()
     Dbg_Init();
     Sync_Init();
     Mach_MonPrintf("Before\n");
-    NetIEInit("howdy", 0, 0xffd0c000);
+    NetIEInit("IE", 0, 0xffd0c000);
     Mach_MonPrintf("After\n");
 #ifdef NOTDEF
     Net_Init();
 #endif /* NOTDEF */
 
-
-    Dbg_Main(1, main);
+    DBG_CALL;
+    Mach_MonPrintf("Debugger returned\n");
 #ifdef NOTDEF
     Timer_TimerInit();
     Timer_TimerStart();
