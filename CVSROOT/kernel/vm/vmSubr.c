@@ -230,7 +230,7 @@ Vm_RawAlloc(numBytes)
 	printf("\nvmMemEnd = 0x%x - ", vmMemEnd);
 	printf("Warning: VmRawAlloc asked for >100K\n");
 	if (vmDebugLargeAllocs) {
-	    Sig_SendProc(Proc_GetEffectiveProc(), SIG_DEBUG, 0);
+	    Sig_SendProc(Proc_GetEffectiveProc(), SIG_DEBUG, 0, (Address)0);
 	}
     }
     retAddr = vmMemEnd;
