@@ -19,6 +19,7 @@
 #include "sprite.h"
 #include "sys.h"
 #include "mach.h"
+#include "prof.h"
 
 static int RefreshCount = 0;
 
@@ -37,6 +38,22 @@ static int RefreshCount = 0;
  */
 
 #define	MACH_REFRESH_TIMER_TICKS	581395	
+
+/*
+ * Cycles between profile pc sample. Around 20ms at 5.814 Mhz.
+ */
+
+#define	MACH_PROFILE_TIMER_TICKS	116279
+
+extern Boolean profEnabled;
+extern unsigned int machInterruptAddr;
+
+/*
+ * Value to stick into counter.
+ */
+
+static	int	counterTicks = -MACH_REFRESH_TIMER_TICKS;
+
 /*
  *----------------------------------------------------------------------
  *
@@ -82,7 +99,7 @@ Mach_RefreshStart()
      * is loaded.
      */
     Mach_Write32bitCCReg((unsigned int)MACH_REFRESH_TIMER_ADDR,
-			(unsigned int) -MACH_REFRESH_TIMER_TICKS);
+			(unsigned int) counterTicks);
 
     /*
      * Setup the monMaskable interrupt for the refresh timer.
@@ -141,12 +158,17 @@ Mach_RefreshInterrupt()
     if (switches & 0x4) {
 	Sys_Panic(SYS_FATAL,"Aborted by DIP switch\n");
     }
+    if (profEnabled) {
+	counterTicks = -MACH_PROFILE_TIMER_TICKS;
+    } else {
+	counterTicks = -MACH_REFRESH_TIMER_TICKS;
+    }
     /*
      * Initialize the timer. Since the timers count up the a negative number
      * is loaded.
      */
     Mach_Write32bitCCReg((unsigned int)MACH_REFRESH_TIMER_ADDR,
-			(unsigned int) -MACH_REFRESH_TIMER_TICKS);
+			(unsigned int) counterTicks);
 
     /*
      * Start the timer ticking. We re-read the mode register to narrow the
@@ -156,6 +178,10 @@ Mach_RefreshInterrupt()
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     modeRegister |= MACH_REFRESH_TIMER_MODE_BIT;
     Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
+
+    if (profEnabled) {
+	 Prof_CollectInfo(machInterruptAddr); 
+    }
 
 }
 
