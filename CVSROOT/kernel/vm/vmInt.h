@@ -632,6 +632,8 @@ extern void VmPutOnDirtyList _ARGS_((unsigned int pfNum));
 extern Address VmMapPage _ARGS_((unsigned int pfNum));
 extern void VmUnmapPage _ARGS_((Address mappedAddr));
 extern void VmRemapPage _ARGS_((Address addr, unsigned int pfNum));
+extern ReturnStatus Vm_MmapInt _ARGS_((Address startAddr, int length, int prot,
+	int share, int streamID, int fileAddr, Address *mappedAddr));
 /*
  * Prefetch routine.
  */
