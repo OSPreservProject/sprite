@@ -459,7 +459,9 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
      * Update statistics.
      */
 #ifndef CLEAN
-    proc_MigStats.remote--;
+    if (proc_MigDoStats) {
+	PROC_MIG_DEC_STAT(remote);
+    }
 #endif /* CLEAN */   
 
     if (proc_MigDebugLevel > 4) {
@@ -647,7 +649,9 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
      * Update statistics.
      */
 #ifndef CLEAN
-    proc_MigStats.remote++;
+    if (proc_MigDoStats) {
+	PROC_MIG_INC_STAT(remote);
+    }
 #endif /* CLEAN */   
 
     /*
