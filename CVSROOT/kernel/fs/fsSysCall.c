@@ -83,7 +83,7 @@ Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
 	    if (localName != (char *)NIL) {
 		free(localName);
 	    }
-	    return(status);
+	    return(SYS_ARG_NOACCESS);
 	}
     } else {
 	deviceName = (char *)NIL;
