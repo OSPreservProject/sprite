@@ -148,6 +148,19 @@ extern	int	fsutil_NumRecovering;
 
 #define mnew(type)	(type *)malloc(sizeof(type))
 
+#ifdef SOSP91
+/*
+ * We are borrowing a couple of bits from the handle to record the read/write
+ * status of the stream.  Each stream has a handle so we can get away with
+ * this.
+ */
+
+#define FSUTIL_RW_FLAGS 	0x300
+#define FSUTIL_RW_READ		0x100
+#define FSUTIL_RW_WRITE		0x200
+
+#endif
+
 extern void Fsutil_RecoveryInit _ARGS_((Fsutil_RecoveryInfo *recovPtr));
 extern void Fsutil_RecoverySyncLockCleanup _ARGS_((
 		Fsutil_RecoveryInfo *recovPtr));
