@@ -42,6 +42,11 @@ typedef struct DevDiskMap {
  */
 #define DEV_TAPES_PER_CNTRLR	8
 
+/*
+ * There is just one worm per controller.
+ */
+#define DEV_WORMS_PER_CNTRLR	1
+
 
 /*
  * A configuration table that describes the controllers in the system.
