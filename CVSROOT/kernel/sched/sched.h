@@ -13,9 +13,15 @@
 #ifndef _SCHED
 #define _SCHED
 
+#ifdef KERNEL
 #include "timer.h"
 #include "proc.h"
 #include "mach.h"
+#else
+#include <kernel/timer.h>
+#include <kernel/proc.h>
+#include <kernel/mach.h>
+#endif
 
 /*
  * Flags for the schedFlags in the proc table.
