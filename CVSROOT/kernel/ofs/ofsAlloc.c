@@ -176,7 +176,6 @@ FsLocalBlockAllocInit(domainPtr)
     ReturnStatus		status;
 
     Sync_LockInitDynamic(&(domainPtr->dataBlockLock), "Fs:dataBlockLock");
-    Sync_LockRegister(&(domainPtr->dataBlockLock));
     /*
      * Ensure some free disk space for disk block allocation.
      */
@@ -908,7 +907,10 @@ FsWriteBackSummary(domainPtr)
 	printf(
 	    "FsWriteBackSummary: Could not write out summary info.\n");
     }
-
+    if (status == GEN_NO_PERMISSION) {
+	printf("FsWriteBackSummary: Disk is write-protected.\n");
+	status = SUCCESS;
+    }
     UNLOCK_MONITOR;
     return(status);
 }

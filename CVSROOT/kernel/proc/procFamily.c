@@ -105,7 +105,6 @@ ProcFamilyInsert(procPtr, familyID)
     register	FamilyHeader	*famHdrPtr;
 
     LOCK_MONITOR;
-    Sync_LockRegister(LOCKPTR);
 
     if (familyID == PROC_NO_FAMILY) {
 	UNLOCK_MONITOR;

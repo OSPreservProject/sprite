@@ -162,7 +162,6 @@ FsTraceInit()
     Time_Subtract(lastPtr->time, firstPtr->time, &fsTraceTime);
     Time_Divide(fsTraceTime, 9, &fsTraceTime);
 
-    Sync_LockRegister(&scavengeLock);
 }
 
 /*

@@ -316,7 +316,6 @@ RpcChanAlloc(serverID)
 
     LOCK_MONITOR;
 
-    Sync_LockRegister(&rpcLock);
 
     while (numFreeChannels < 1) {
 	rpcCltStat.chanWaits++;

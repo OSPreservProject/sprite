@@ -434,7 +434,6 @@ ProcGetThisDebug(pid, procPtrPtr)
 
 
     LOCK_MONITOR;
-    Sync_LockRegister(LOCKPTR);
     status = SUCCESS;
     while (TRUE) {
 	procPtr = Proc_LockPID(pid);

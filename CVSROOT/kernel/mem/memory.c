@@ -471,7 +471,6 @@ malloc(numBytes)
 
     LOCK_MONITOR;
 
-    Sync_LockRegister(LOCKPTR);
 
     mem_NumAllocs++;
 

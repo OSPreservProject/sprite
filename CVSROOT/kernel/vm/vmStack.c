@@ -89,7 +89,6 @@ VmStackInit()
 		     LIST_ATREAR(freeList));
     }
     numStackPages = mach_KernStackSize >> vmPageShift;
-    Sync_LockRegister(LOCKPTR);
 }
 
 

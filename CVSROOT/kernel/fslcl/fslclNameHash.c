@@ -72,7 +72,6 @@ FsNameHashInit(table, numBuckets)
     }
 
     fsStats.nameCache.size = table->size;
-    Sync_LockRegister(&nameHashLock);
 
     List_Init(&(table->lruList));
     table->table =

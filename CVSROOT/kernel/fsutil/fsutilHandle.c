@@ -216,7 +216,6 @@ FsHandleInit(fileHashSize)
     fsStats.handle.maxNumber = FS_HANDLE_TABLE_SIZE;
     List_Init(lruList);
     Hash_Init(fileHashTable, fileHashSize, Hash_Size(sizeof(Fs_FileID)));
-    Sync_LockRegister(&handleTableLock);
 }
 
 

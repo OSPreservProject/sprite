@@ -80,7 +80,6 @@ ProcInitMainEnviron(procPtr)
     int		i;
 
     LOCK_MONITOR;
-    Sync_LockRegister(LOCKPTR);
 
     procPtr->environPtr =
 		(Proc_EnvironInfo *) malloc(sizeof(Proc_EnvironInfo));

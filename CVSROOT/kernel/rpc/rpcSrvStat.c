@@ -78,7 +78,6 @@ Rpc_StartSrvTrace()
 {
     LOCK_MONITOR;
 
-    Sync_LockRegister(&rpcSrvTraceLock);
 
     numTracedRpcServers++;
     if (numTracedRpcServers == 1) {

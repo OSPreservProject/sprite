@@ -173,7 +173,6 @@ Proc_AddMigDependency(processID, hostID)
     
     LOCK_MONITOR;
 
-    Sync_LockRegister(LOCKPTR);
 
     dependPtr = (DependInfo *) malloc(sizeof (DependInfo));
 

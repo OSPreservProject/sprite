@@ -316,7 +316,6 @@ FsRecoveryInit(recovPtr)
 {
     bzero((Address) recovPtr, sizeof(FsRecoveryInfo));
     Sync_LockInitDynamic(&recovPtr->lock, "fs:recoveryLock");
-    Sync_LockRegister(&recovPtr->lock);
 }
 
 /*

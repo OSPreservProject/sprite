@@ -82,7 +82,6 @@ Rpc_EnterProcess()
 {
     LOCK_MONITOR;
 
-    Sync_LockRegister(&rpcTraceLock);
 
     numRpcProcesses++;
     if (numRpcProcesses == 1) {

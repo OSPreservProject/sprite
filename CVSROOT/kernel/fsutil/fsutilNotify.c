@@ -56,7 +56,6 @@ FsWaitListInsert(list, waitPtr)
     register Sync_RemoteWaiter *myWaitPtr;
 
     LOCK_MONITOR;
-    Sync_LockRegister(&notifyLock);
 
     LIST_FORALL(list, (List_Links *) myWaitPtr) {
 	/*

@@ -131,8 +131,6 @@ GetFileID(fileIDPtr)
 
     LOCK_MONITOR;
 
-    Sync_LockRegister(&pipeLock);
-
     fileIDPtr->type = FS_LCL_PIPE_STREAM;
     fileIDPtr->serverID = rpc_SpriteID;
     fileIDPtr->major = 0;

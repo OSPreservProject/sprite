@@ -76,7 +76,6 @@ void
 FsClientInit()
 {
     Sync_LockInitDynamic(&clientLock, "Fs:clientLock");
-    Sync_LockRegister(&clientLock);
     List_Init(&masterClientListHdr);
     masterClientList = &masterClientListHdr;
 }

@@ -282,7 +282,6 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 
     LOCK_MONITOR;
 
-    Sync_LockRegister(LOCKPTR);
 
     Proc_Lock(exitProcPtr);
 

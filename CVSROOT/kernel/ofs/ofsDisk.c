@@ -310,9 +310,11 @@ FsAttachDisk(devicePtr, localName, flags)
     domainPtr->summaryInfoPtr->flags |= FS_DOMAIN_NOT_SAFE |
 					FS_DOMAIN_TIMES_VALID;
     domainPtr->summaryInfoPtr->attachSeconds = fsTimeInSeconds;
-    status = FsWriteBackSummary(domainPtr);
-    if (status != SUCCESS) {
-	panic( "FsAttachDisk: Summary write failed, status %x\n", status);
+    if (flags & FS_ATTACH_READ_ONLY == 0) {
+	status = FsWriteBackSummary(domainPtr);
+	if (status != SUCCESS) {
+	    panic( "FsAttachDisk: Summary write failed, status %x\n", status);
+	}
     }
     domainPtr->flags = 0;
 
@@ -583,7 +585,6 @@ InstallLocalDomain(domainPtr)
 
     LOCK_MONITOR;
 
-    Sync_LockRegister(&domainTableLock);
 
     if (domainPtr->summaryInfoPtr->domainNumber == -1) {
 	while (fsDomainTable[domainTableIndex] != (FsDomain *)NIL) {

@@ -785,7 +785,6 @@ FsSetMinSize(minBlocks)
 {
     LOCK_MONITOR;
 
-    Sync_LockRegister(LOCKPTR);
 
     DEBUG_PRINT( ("Setting minimum size to %d with current size of %d\n",
 		       minBlocks, fsStats.blockCache.minCacheBlocks) );
@@ -1151,8 +1150,6 @@ FsCacheIODone(blockPtr)
     FsCacheBlock *blockPtr;	/* Pointer to block information for block.*/
 {
     LOCK_MONITOR;
-
-    Sync_LockRegister(&cacheLock);
 
     Sync_Broadcast(&blockPtr->ioDone);
     blockPtr->flags &= ~FS_IO_IN_PROGRESS;

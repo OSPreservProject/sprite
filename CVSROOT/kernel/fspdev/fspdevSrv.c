@@ -420,7 +420,6 @@ FsServerStreamCreate(ioFileIDPtr, name, naming)
      */
 
     Sync_LockInitDynamic(&pdevHandlePtr->lock, "Fs:pdevLock");
-    Sync_LockRegister(&pdevHandlePtr->lock);
     pdevHandlePtr->flags = PDEV_BUSY;
     if (naming) {
 	pdevHandlePtr->flags |= PDEV_NAMING;

@@ -93,7 +93,6 @@ FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
     Fs_FileID fileID;
 
     LOCK_MONITOR;
-    Sync_LockRegister(&streamLock);
 
     /*
      * The streamID is uniquified by using our own host ID for the major

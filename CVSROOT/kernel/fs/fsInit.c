@@ -41,10 +41,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "trace.h"
 /*
- * The prefix under which the local disk is attached.  The /initSprite
- * program looks for things under "/local".
+ * The prefix under which the local disk is attached.  
  */
-#define LOCAL_DISK_NAME		"/local"
+#define LOCAL_DISK_NAME		"/bootTmp"
 int fsDefaultDomainNumber = 0;
 
 /*
@@ -73,6 +72,13 @@ Timer_QueueElement	fsTimeOfDayElement;
  * after the file system has been initialized.
  */
 Boolean fsInitialized = FALSE;
+
+/*
+ * Flag to indicate whether we have attached a disk or not.  We can use
+ * this to determine if we are a client or a server.
+ */
+
+Boolean fsDiskAttached = FALSE;
 
 
 /*
@@ -161,6 +167,7 @@ Fs_Init()
 	if (status == SUCCESS) {
 	    printf("Attached disk type %d unit %d to \"%s\"\n",
 		     defaultDisk.type, defaultDisk.unit, LOCAL_DISK_NAME);
+	    fsDiskAttached = TRUE;
 	    break;
 	}
     }
@@ -224,6 +231,9 @@ Fs_ProcInit()
     ReturnStatus	status;		/* General status code return */
     Proc_ControlBlock	*procPtr;	/* Main process's proc table entry */
     register Fs_ProcessState	*fsPtr;	/* FS state ref'ed from proc table */
+    char		buffer[128];
+    Boolean		standalone;
+    Fs_Stream		*stream;
 
     procPtr = Proc_GetCurrentProc();
     procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
@@ -243,47 +253,80 @@ Fs_ProcInit()
     fsPtr->groupIDs[0]	= 0;
 
     /*
-     * Open the root as the current directory.
+     * If there is an attached disk and we are booting standalone (no -c
+     * option and there is a boot directory on the attached disk) then
+     * install a "/" prefix.
      */
-    fsPtr->cwdPtr = (Fs_Stream *)NIL;
-    do {
-	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
+    standalone = FALSE;
+    if (fsDiskAttached) {
+	int	dummy;
+	int	argc;
+	char	*argv[10];
+	char	argBuffer[100];
+	int	i;
+
+	standalone = TRUE;
+	sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
+	printf("Trying to open %s.\n", buffer);
+	status = Fs_Open(buffer, FS_READ, FS_DIRECTORY, 0, &dummy);
 	if (status != SUCCESS) {
-	    /*
-	     * No server for "/" around so try using the local disk as "/"
-	     */
-	    FsHandleHeader *hdrPtr;
-	    char *lookupName;
-	    int domainType;
-	    Fs_FileID rootID;
-	    FsPrefix *prefixPtr;
-	    ReturnStatus status2;
-    
-	    status2 = FsPrefixLookup(LOCAL_DISK_NAME,
-				FS_LOCAL_PREFIX | FS_EXACT_PREFIX, 
-				FS_LOCALHOST_ID, &hdrPtr, &rootID, &lookupName,
-				&domainType, &prefixPtr);
-	    if (status2 == SUCCESS) {
-		printf("Exporting \"%s\" as root\n", LOCAL_DISK_NAME);
-		(void)FsPrefixInstall("/", hdrPtr, domainType,
-				     FS_EXPORTED_PREFIX | FS_IMPORTED_PREFIX);
-		status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
-		if (status != SUCCESS) {
-		    panic(
-			      "Fs_ProcInit: Can't open local root <0x%x>\n",
-			      status);
-		    (void)Fs_PrefixClear("/", FALSE);
+	    printf("Can't open %s <0x%x>\n", buffer, status);
+	    standalone = FALSE;
+	} else {
+	    printf("Open succeeded.\n");
+	    argc = Mach_GetBootArgs(10, 100, argv, argBuffer);
+	    for (i = 0; i < argc; i++) {
+		if (!strcmp(argv[i], "-c")) {
+		    standalone = FALSE;
+		    break;
 		}
-	    } else {
-		/*
-		 * No local disk.  Wait a bit and retry the open of "/".
-		 */
-		printf(
-			"Can't find server for \"/\", waiting 1 min.\n");
-		(void)Sync_WaitTime(time_OneMinute);
 	    }
-	} 
+	}
+	if (standalone) {
+	    Fs_Stream		*streamPtr;
+	    static char		rootPrefix[] = "/";
+
+	    status = Fs_Open(LOCAL_DISK_NAME, FS_READ|FS_FOLLOW,
+			    FS_DIRECTORY, 0, &streamPtr);
+	    if (status != SUCCESS) {
+		panic("Fs_ProcInit: Unable to open local disk prefix!");
+	    } else {
+		printf("Installing %s prefix.\n", rootPrefix);
+		FsPrefixInstall(rootPrefix, streamPtr->ioHandlePtr, 
+			FS_LOCAL_DOMAIN, 
+			FS_LOCAL_PREFIX|FS_IMPORTED_PREFIX|FS_OVERRIDE_PREFIX);
+	    }
+	}
+    }
+    /*
+     * Try and open /.
+     */
+    status = FAILURE;
+    printf("Trying to open /.\n");
+    do {
+	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &stream);
+	if (status != SUCCESS) {
+	    if (standalone) {
+		panic(
+		"Fs_ProcInit: Booting standalone and can't open \"/\".\n");
+	    }
+	    /*
+	     *  Wait a bit and retry the open of "/".
+	     */
+	    printf(
+		    "Can't find server for \"/\", waiting 1 min.\n");
+	    (void)Sync_WaitTime(time_OneMinute);
+	}
     } while (status != SUCCESS);
+    printf("Open succeeded.\n");
+    Fs_Close(stream);
+    fsPtr->cwdPtr = (Fs_Stream *)NIL;
+    printf("Trying to open /boot.\n");
+    status = Fs_Open("/boot", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
+    if (status != SUCCESS) {
+	panic("Fs_ProcInit: can't open /boot.\n");
+    }
+    printf("Open succeeded.\n");
     /*
      * Set the default permissions mask; it indicates the maximal set of
      * permissions that a newly created file can have.

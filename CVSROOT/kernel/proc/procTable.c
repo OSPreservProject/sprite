@@ -434,7 +434,6 @@ ProcGetUnusedPCB()
 
     LOCK_MONITOR;
 
-    Sync_LockRegister(LOCKPTR);
 
 
     /* 

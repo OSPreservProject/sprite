@@ -75,7 +75,6 @@ Vm_Init()
 #endif
 
     Sync_LockInitDynamic(&vmMonitorLock, "Vm:vmMonitorLock");
-    Sync_LockRegister(&vmMonitorLock);
 
     /*
      * Set up the maximum number of pages that a stack can grow.

@@ -743,7 +743,6 @@ NameOp(lookupOperation)
 void
 FsPrefixInit()
 {
-    Sync_LockRegister(&prefixLock);
     List_Init(prefixList);
 }
 
