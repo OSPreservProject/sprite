@@ -221,7 +221,6 @@ LfsSegSlowGrowSummary(segPtr, dataBlocksNeeded, sumBytesNeeded, addNewBlock)
     int	sumBytesNeeded;			/* Number of summary bytes needed. */
     Boolean addNewBlock;		/* Added a new block if necessary. */
 {
-    Lfs	*lfsPtr;
     int	 sumBytesLeft, blocksLeft, sumBlocks;
 
     /*
@@ -241,7 +240,6 @@ LfsSegSlowGrowSummary(segPtr, dataBlocksNeeded, sumBytesNeeded, addNewBlock)
     if (!addNewBlock || (dataBlocksNeeded + sumBlocks > blocksLeft)) { 
 	return (char *) NIL;
     }
-    lfsPtr = segPtr->lfsPtr;
     /*
      * Malloc a new summary buffer and add it to the segment.
      */
@@ -1290,7 +1288,7 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
  *----------------------------------------------------------------------
  */
 
-
+/* ARGSUSED */
 static void
 SegmentCleanProc(clientData, callInfoPtr)
     ClientData	  clientData;	/* File system to clean blocks in */
@@ -1546,6 +1544,7 @@ CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
     ReturnStatus	status;
     LfsSegLogRange	logRange;
     LfsSegSummary	*segSumPtr;
+    LfsSegSummary	*prevSegSumPtr;
     LfsDiskAddr		diskAddress;
     int			blocksPerSeg;
 
@@ -1580,10 +1579,20 @@ CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
 
     segSumPtr = (LfsSegSummary *)
 		(cleaningMemPtr + segSize - LfsBlockSize(lfsPtr));
+    prevSegSumPtr = segSumPtr;
     while (1) { 
 	if (segSumPtr->magic != LFS_SEG_SUMMARY_MAGIC) {
 	    printf("Bad segment summary magic in segment %d\n", segNumber);
-	    LfsError(lfsPtr, FAILURE, "Corrupted segment summary block\n");
+	    if (segSumPtr == prevSegSumPtr) {
+		LfsError(lfsPtr, FAILURE,
+			 "Corrupted summary block at start of segment\n");
+		panic("Previous error not continuable.\n");
+	    } else {
+		LfsError(lfsPtr, FAILURE,
+			 "Corrupted segment summary block (continuable)\n");
+		prevSegSumPtr->nextSummaryBlock = -1;
+		break;
+	    }
 	}
 	segPtr->segElementPtr[segPtr->numElements].lengthInBlocks = 0;
 	segPtr->segElementPtr[segPtr->numElements].address = (char *) segSumPtr;
@@ -1601,9 +1610,14 @@ CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
 	}
 	if ((segSumPtr->nextSummaryBlock < 0) || 
 	    (segSumPtr->nextSummaryBlock > blocksPerSeg)) {
-	    printf("Bad segment summary magic in segment %d\n", segNumber);
-	    LfsError(lfsPtr, FAILURE, "Corrupted segment summary block\n");
+	    printf("Bogus next pointer in segment summary block %d\n",
+		   segNumber);
+	    LfsError(lfsPtr, FAILURE,
+		     "Corrupted segment summary block (continuable)\n");
+	    segSumPtr->nextSummaryBlock = -1;
+	    break;
 	}
+	prevSegSumPtr = segSumPtr;
 	segSumPtr = (LfsSegSummary *) 
 			LfsSegFetchBytes(segPtr, segSumPtr->nextSummaryBlock,
 				LfsBlockSize(lfsPtr));
