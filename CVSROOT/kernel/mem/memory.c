@@ -672,8 +672,9 @@ malloc(numBytes)
     DoTrace(TRUE, currentPtr, (Address)NULL, numBytes);
 #endif /* MEM_TRACE */
 
+    result = currentPtr;
     UNLOCK_MONITOR;
-    return(currentPtr+sizeof(AdminInfo));
+    return(result+sizeof(AdminInfo));
 }
 
 
