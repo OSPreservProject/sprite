@@ -279,7 +279,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	inExceptMask = 0;
     }
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
 
     /*
      * If a timeout period was specified, set up a callback from the Timer 

@@ -232,7 +232,7 @@ Fs_ProcInit()
     Proc_ControlBlock	*procPtr;	/* Main process's proc table entry */
     Fs_Stream		*cwdPtr;	/* File for the current directory */
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     /*
      * General filesystem initialization.
      * Find out how much we can transfer with the RPC system.

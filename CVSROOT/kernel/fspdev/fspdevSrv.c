@@ -584,7 +584,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 	procID = pdevStatePtr->procID;
 	uid = pdevStatePtr->uid;
     } else {
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	procID = procPtr->processID;
 	uid = procPtr->effectiveUserID;
     }
@@ -659,7 +659,7 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePt
      * of the PdevState so that FsPseudoStreamCltOpen can pass them
      * to ServerStreamCreate.
      */
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     pdevStatePtr->procID = procPtr->processID;
     pdevStatePtr->uid = procPtr->effectiveUserID;
     ioFileIDPtr->type = FS_LCL_PSEUDO_STREAM;
@@ -1526,7 +1526,7 @@ RequestResponse(pdevHandlePtr, requestPtr,
     /*
      * Put an entry in the scheduler trace so we can correlate...
      */
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     Sched_TraceInsert(procPtr, 10);
     /*
      * See if we have to switch to a new request buffer.  This is needed
@@ -1660,7 +1660,7 @@ RequestResponse(pdevHandlePtr, requestPtr,
 	 * to the client's when the server makes the IOC_PDEV_REPLY IOControl.
 	 */
     
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	pdevHandlePtr->replyBuf = replyBuf;
 	pdevHandlePtr->clientPID = procPtr->processID;
 	pdevHandlePtr->clientSpriteID = rpc_SpriteID;
@@ -1893,7 +1893,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	/*
 	 * No read ahead buffer. Set up and do the request-response exchange.
 	 */
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	request.operation		= PDEV_READ;
 	request.param.read.offset	= *offsetPtr;
 	request.param.read.familyID	= procPtr->familyID;
@@ -1992,7 +1992,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
      * The write request parameters are the offset and flags parameters.
      * The buffer contains the data to write.
      */
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     request.operation			= PDEV_WRITE;
     request.param.write.offset		= *offsetPtr;
     request.param.write.familyID	= procPtr->familyID;
@@ -2142,7 +2142,7 @@ FsPseudoStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
 	}
     }
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     request.operation			= PDEV_IOCTL;
     request.param.ioctl.command		= command;
     request.param.ioctl.familyID	= procPtr->familyID;
@@ -2444,7 +2444,7 @@ FsServerStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
 		pdevHandlePtr->readBuf.firstByte = -1;
 		pdevHandlePtr->readBuf.lastByte = -1;
 
-		procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+		procPtr = Proc_GetEffectiveProc();
 		pdevHandlePtr->serverPID = procPtr->processID;
 
 		Sync_Broadcast(&pdevHandlePtr->setup);

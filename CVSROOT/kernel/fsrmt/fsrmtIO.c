@@ -99,7 +99,7 @@ FsSpriteRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     } else {
 	readParams.waiter = *waitPtr;
     }
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     readParams.pid = procPtr->processID;
     readParams.familyID = procPtr->familyID;
 
@@ -275,7 +275,7 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
 	 * Set our familyID and pid to the ids in the parameters in case we are
 	 * reading from a device that requires us to have the proper family ID.
 	 */
-	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetCurrentProc();
 	origFamilyID = procPtr->familyID;
 	origPID = procPtr->processID;
 	procPtr->familyID = paramsPtr->familyID;

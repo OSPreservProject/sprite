@@ -447,7 +447,7 @@ FsGetStreamID(streamPtr, streamIDPtr)
     ReturnStatus		status;		/* Error from growing file 
 						 * list. */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     if (streamPtr == (Fs_Stream *)0) {
 	Sys_Panic(SYS_FATAL, "Zero valued streamPtr");
@@ -518,7 +518,7 @@ FsClearStreamID(streamID, procPtr)
     Proc_ControlBlock *procPtr;	/* (Optional) process pointer */
 {
     if (procPtr == (Proc_ControlBlock *)NIL) {
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
     }
     procPtr->streamList[streamID] = (Fs_Stream *)NIL;
 }
@@ -667,7 +667,7 @@ Fs_GetNewID(streamID, newStreamIDPtr)
     if (newStreamIDPtr == (int *)NIL) {
 	return(FS_INVALID_ARG);
     }
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);

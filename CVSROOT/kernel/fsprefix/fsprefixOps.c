@@ -752,7 +752,7 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
 	 * working directory.
 	 */
 	fsStats.prefix.relative++;
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	if (procPtr->cwdPtr != (Fs_Stream *)NIL) {
 	    *hdrPtrPtr = procPtr->cwdPtr->ioHandlePtr;
 	    nameInfoPtr = procPtr->cwdPtr->nameInfoPtr;
@@ -1028,7 +1028,7 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
     Proc_ControlBlock	*procPtr;	/* Used to get process IDs */
     int			domainType;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     FsSetIDs(procPtr, &ids);
     domainType = *domainTypePtr;
     if (domainType < 0) {

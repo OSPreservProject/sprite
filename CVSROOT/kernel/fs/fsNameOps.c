@@ -109,7 +109,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
      * The stream's nameInfo is also set up as a side effect of going
      * through the prefix table.
      */
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     openArgs.useFlags		= useFlags;
     openArgs.permissions	= permissions & procPtr->filePermissions;
     openArgs.type		= type;
@@ -182,7 +182,7 @@ FsSetIDs(procPtr, idPtr)
     register 	int 	i;
 
     if (procPtr == (Proc_ControlBlock *)NIL) {
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
     }
     idPtr->user = procPtr->effectiveUserID;
     idPtr->numGroupIDs = procPtr->numGroupIDs;
@@ -294,7 +294,7 @@ Fs_MakeDevice(name, devicePtr, permissions)
     FsMakeDeviceArgs makeDevArgs;/* Packaged up parameters */
     Proc_ControlBlock *procPtr;	/* Used to get process IDs */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     makeDevArgs.device 		= *devicePtr;
     makeDevArgs.permissions	= permissions & procPtr->filePermissions;
     FsSetIDs(procPtr, &makeDevArgs.id);
@@ -330,7 +330,7 @@ Fs_MakeDir(name, permissions)
     FsOpenArgs openArgs;	/* Packaged up parameters */
     Proc_ControlBlock *procPtr;	/* Used to get process IDs */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     openArgs.useFlags = FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW ;
     openArgs.permissions = permissions & procPtr->filePermissions;
     openArgs.type = FS_DIRECTORY;
@@ -369,7 +369,7 @@ Fs_ChangeDir(pathName)
 					 * closed with existing routines. */
     ReturnStatus	status;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     /*
      * FS_EXECUTE permission needed to change to a directory.

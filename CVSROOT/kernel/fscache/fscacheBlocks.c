@@ -1455,7 +1455,7 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
     int			blocksSkipped;
     int			flags;
 
-    status = FsGetStreamPtr(Proc_GetEffectiveProc(Sys_GetProcessorNumber()), 
+    status = FsGetStreamPtr(Proc_GetEffectiveProc(), 
 			    streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);

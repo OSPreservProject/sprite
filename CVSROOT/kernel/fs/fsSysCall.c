@@ -244,7 +244,7 @@ Fs_UserClose(streamID)
      * Map from the streamID to a streamPtr.
      */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
@@ -300,7 +300,7 @@ Fs_ReadStub(streamID, amountRead, buffer, amountReadPtr)
      * the read buffer accessible.
      */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	status = Fs_Read(streamPtr, buffer, streamPtr->offset, &amountRead);
@@ -356,7 +356,7 @@ Fs_UserRead(streamID, amountRead, buffer, amountReadPtr)
      * the read buffer accessible.
      */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	*amountReadPtr = amountRead;
@@ -469,7 +469,7 @@ Fs_UserReadVector(streamID, numVectors, vectorPtr, amountReadPtr)
      * the read buffer accessible.
      */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
 
     if (status == SUCCESS) {
@@ -530,7 +530,7 @@ Fs_WriteStub(streamID, writeLength, buffer, writeLengthPtr)
      * Map from stream ID to streamPtr.  If the process is not remote,
      * Fs_Write takes care of making the user's buffer accessible.
      */
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	status = Fs_Write(streamPtr, buffer, streamPtr->offset, &writeLength);
@@ -581,7 +581,7 @@ Fs_UserWrite(streamID, writeLength, buffer, writeLengthPtr)
      * Map from stream ID to streamPtr.  If the process is not remote,
      * Fs_Write takes care of making the user's buffer accessible.
      */
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	*writeLengthPtr = writeLength;
@@ -692,7 +692,7 @@ Fs_UserWriteVector(streamID, numVectors, vectorPtr, amountWrittenPtr)
      * the write buffer accessible.
      */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
 
     if (status == SUCCESS) {
@@ -1098,7 +1098,7 @@ Fs_CheckAccess(pathName, perm, useRealID)
 	return(FS_INVALID_ARG);
     }
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     status = Fs_GetAttributes(newName, FS_ATTRIB_FILE, &attributes);
     if (status != SUCCESS) {
@@ -1176,8 +1176,7 @@ Fs_GetAttributesIDStub(streamID, attrPtr)
     Fs_Stream			*streamPtr;
     Fs_Attributes 		attributes;
 
-    status = FsGetStreamPtr(Proc_GetEffectiveProc(Sys_GetProcessorNumber()),
-			    streamID, &streamPtr);
+    status = FsGetStreamPtr(Proc_GetEffectiveProc(), streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -1271,7 +1270,7 @@ Fs_SetAttributesIDStub(streamID, attrPtr)
     /*
      * Map from stream ID to file pointer and get the attributes.
      */
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	FsSetIDs(procPtr, &ids);
@@ -1311,7 +1310,7 @@ Fs_SetDefPermStub(permissions, oldPermPtr)
     register	Proc_ControlBlock	*procPtr;
     int 				oldPerm;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     oldPerm = procPtr->filePermissions;
     procPtr->filePermissions = (unsigned int)(permissions & 0777);
     if (Proc_ByteCopy(FALSE, sizeof(int), (Address)&oldPerm, 
@@ -1596,8 +1595,7 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     /*
      * Get a stream pointer.
      */
-    status = FsGetStreamPtr(Proc_GetEffectiveProc(Sys_GetProcessorNumber()), 
-			    streamID, &streamPtr);
+    status = FsGetStreamPtr(Proc_GetEffectiveProc(), streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
