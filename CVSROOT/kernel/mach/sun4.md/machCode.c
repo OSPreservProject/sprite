@@ -84,6 +84,11 @@ int	mach_LastUserStackPage;
 Address	machTBRAddr;			/* address of trap table.  The value
 					 * is set up and stored here in
 					 * bootSysAsm.s.*/
+#define	MACH_NUM_VECTORS	256	/* Number of interrupt vector slots */
+Address	machVectorTable[MACH_NUM_VECTORS];	/* Table of autovector and
+					 * vectored interrupt handlers. */
+ClientData	machInterruptArgs[MACH_NUM_VECTORS];	/* Table of clientData
+					 * args to pass interrupt handlers */
 int	machMaxSysCall;			/* Hightest defined system call. */
 int	machArgOffsets[SYS_NUM_SYSCALLS];/* For each system call, tells how
 					 * much to add to the fp at the time
@@ -205,6 +210,10 @@ extern	void	MachFlushWindowsToStack();
 void
 Mach_Init()
 {
+    int		i;
+    extern	void	MachVectoredInterrupt();
+    extern	void	MachHandleDebugTrap();
+
     /*
      * Set exported machine dependent variables.
      */
@@ -310,6 +319,22 @@ Mach_Init()
      */
     machDebugStackStart = (unsigned int) mach_DebugStack +
 						sizeof (mach_DebugStack);
+
+    /*
+     * Initialize the interrupt vector table.
+     */
+    for (i = 0; i < MACH_NUM_VECTORS; i++) {
+	if (i == 13 || i == 11 || i == 9 || i == 7 || i == 5 || i == 3 ||
+		i == 2) {
+	    machVectorTable[i] = (Address) MachVectoredInterrupt;
+	    /* set arg to vme vector address for this trap level */
+	    machInterruptArgs[i] = (ClientData)
+		    (MACH_VME_INTR_VECTOR || ((i + 1) || 1));
+	} else { 
+	    machVectorTable[i] = (Address) MachHandleDebugTrap;
+	    machInterruptArgs[i] = (ClientData) 0;
+	}
+    }
 
     /* Temporary: for debugging net module and debugger: */
     mach_NumDisableInterrupts[0] = 1;
@@ -832,25 +857,19 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
  *
  * ----------------------------------------------------------------------------
  */
-
 void
-Mach_SetHandler(vectorNumber, handler)
-    int vectorNumber;	/* Vector number that the device generates */
-    int (*handler)();	/* Interrupt handling procedure */
+Mach_SetHandler(vectorNumber, handler, clientData)
+    int vectorNumber;		/* Vector number that the device generates */
+    int (*handler)();		/* Interrupt handling procedure */
+    ClientData	clientData;	/* ClientData for interrupt callback routine. */
 {
-#ifdef NOTDEF
-    int	*vecTablePtr;
 
-    if (vectorNumber < 64 || vectorNumber > 255) {
-	printf("%d: ", vectorNumber);
-	printf("Warning: Bad vector number\n");
+    if (vectorNumber < 0 || vectorNumber > 255) {
+	panic("Warning: Bad vector number %d\n", vectorNumber);
     } else {
-	vecTablePtr = (int *) MachGetVBR();
-	vecTablePtr[vectorNumber] = (int)handler;
+	machVectorTable[vectorNumber] = (Address) handler;
+	machInterruptArgs[vectorNumber] = (ClientData) clientData;
     }
-#else
-    panic("Mach_SetHandler called\n");
-#endif NOTDEF
 }
 
 
@@ -1029,31 +1048,6 @@ Mach_GetNumProcessors()
 	return (mach_NumProcessors);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * MachNoLevel0Interrupt() -
- *
- *	Although there's a level 0 interrupt slot, there's supposedly no
- *	such thing as a level 0 interrupt, according to the sparc
- *	architecture manual, so complain.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	None
- *
- *----------------------------------------------------------------------
- */
-void
-MachNoLevel0Interrupt()
-{
-    printf("Received a level 0 interrupt.  There's no such thing!\n");
-    return;
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1106,8 +1100,21 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 
     procPtr = Proc_GetActualProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
-	panic("MachPageFault: Current process is NIL!!  Trap pc is 0x%x, addr 0x%x\n",
+	panic(
+	"MachPageFault: Current process is NIL!!  Trap pc is 0x%x, addr 0x%x\n",
 		(unsigned) pcValue, addrErrorReg);
+    }
+    /*
+     * Are we poking at or peeking into memory-mapped devices?
+     */
+    if ((pcValue >= (Address) &Mach_ProbeStart)  &&
+	    (pcValue < (Address) &Mach_ProbeEnd)) {
+	/*
+	 * This doesn't return to here.  It erases the fact that the
+	 * page fault happened and makes the probe routine that
+	 * got the page fault return FAILURE to its caller.
+	 */
+	MachHandleBadProbe();
     }
     /* process kernel page fault */
     if (trapPsr & MACH_PS_BIT) {		/* kernel mode before trap */
@@ -1135,7 +1142,8 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	    /*
 	     * ERROR: pc faulted in a bad place!
 	     */
-	    panic("MachPageFault: kernel page fault at illegal pc: 0x%x, addr 0x%x\n",
+	    panic(
+	    "MachPageFault: kernel page fault at illegal pc: 0x%x, addr 0x%x\n",
 		    pcValue, addrErrorReg);
 	}
 	protError = (busErrorReg & MACH_PROT_ERROR);

@@ -167,14 +167,6 @@ DoneWithUserStuff:
 	 * call number for system call traps!
 	 */
 	MACH_SAVE_GLOBAL_STATE()
-/* FOR DEBUGGING */
-#ifdef NOTDEF
-	set	0x11111111, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap1, %CUR_TBR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap2, %CUR_PC_REG)
-#endif NOTDEF
-/* END FOR DEBUGGING */
 	
 	/* traps on, maskable interrupts off */
 	MACH_SR_HIGHPRIO()
@@ -186,84 +178,21 @@ DoneWithUserStuff:
 	 */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap */
 
+	cmp	%VOL_TEMP1, MACH_LEVEL0_INT
+	bl	NotAnInterrupt
+	nop
+	cmp	%VOL_TEMP1, MACH_LEVEL15_INT
+	bgu	NotAnInterrupt
+	nop
+	/*
+	 * It's an interrupt.
+	 */
+	b	MachHandleInterrupt
+	nop
+
+NotAnInterrupt:
 	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
 	be	MachSyscallTrap
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
-	set	_Timer_TimerServiceInterrupt, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL14_INT		/* unused clock level */
-	set	_Timer_TimerServiceInterrupt, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL12_INT		/* keyboard interrupt */
-	set	_Dev_KbdServiceInterrupt, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
-	set	_Net_Intr, %o0
-	be	MachHandleInterrupt
-	nop
-
-	/* level 8 autovector is video - later */
-
-	/* levels 1, 4 and 6 are software, 6 is also ether */
-
-	/* levels 2, 3, 5, 7, 9, 11 and 13 are vme bus */
-
-	cmp	%VOL_TEMP1, 0x100			/* level 0 int - none */
-	set	_MachNoLevel0Interrupt, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL1_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL2_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL3_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL4_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL5_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL7_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL9_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL11_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
-	nop
-
-	cmp	%VOL_TEMP1, MACH_LEVEL13_INT		/* not yet */
-	set	_MachIntrNotHandledYet, %o0
-	be	MachHandleInterrupt
 	nop
 
 	cmp	%VOL_TEMP1, MACH_INSTR_ACCESS		/* instruction fault */
@@ -344,10 +273,10 @@ DoneWithUserStuff:
 	nop
 
 	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER		/* enter debugger */
-	be	MachHandleDebugTrap
+	be	_MachHandleDebugTrap
 	nop
 
-	b	MachHandleDebugTrap		/* all  others to debugger */
+	b	_MachHandleDebugTrap		/* all  others to debugger */
 	nop
 
 
@@ -454,19 +383,6 @@ NormalReturn:
 	 * the window we restore.
 	 */
 	QUICK_ENABLE_INTR()
-/* FOR_DEBUGGING */
-#ifdef NOTDEF
-	set	0x34343434, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage2, %OUT_TEMP1)
-	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-	set	_MachPIDOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
-	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GivePID0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow2, %fp)
-#endif NOTDEF
-/* END FOR_DEBUGGING */
 	mov	%fp, %o0
 	clr	%o1		/* also check for protection????? */
 	call	_Vm_PageIn, 2
@@ -482,14 +398,6 @@ CheckNextFault:
 	be	CallUnderflow
 	nop
 	QUICK_ENABLE_INTR()
-/* FOR_DEBUGGING */
-#ifdef NOTDEF
-	set	0x43434343, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage3, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow3, %o0)
-	/* addr still in %o0 */
-#endif NOTDEF
-/* END  FOR_DEBUGGING */
 	clr	%o1
 	call	_Vm_PageIn, 2
 	nop
@@ -513,24 +421,8 @@ CallUnderflow:
 	set	MachWindowUnderflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %RETURN_ADDR_REG
 	nop
-/* FOR DEBUGGING */
-#ifdef NOTDEF
-	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
-	bne	UnderflowOkay
-	nop
-	set	0x17171717, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, IsFpOkayStill0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, IsFpOkayStill1, %fp)
-	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-	set	_MachPIDOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
-	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PidForOkayness, %OUT_TEMP1)
-#endif NOTDEF
-/* END FOR DEBUGGING */
 UnderflowOkay:
-	MACH_DISABLE_TRAPS()
+	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2)
 	MACH_RESTORE_GLOBAL_STATE()
 	/* restore y reg */
 	mov	%CUR_Y_REG, %y
@@ -617,30 +509,6 @@ MachHandleWindowOverflowTrap:
 	call	_MachTrap
 	nop
 MachReturnToOverflowWithSavedState:
-/* FOR_DEBUGGING */
-#ifdef NOTDEF
-	set	0x44444444, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved0, %OUT_TEMP1)
-	mov	%psr, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved1, %OUT_TEMP1)
-	mov	%wim, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved2, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved3, %CUR_PSR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved4, %CUR_PC_REG)
-	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-	set	_MachPIDOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
-	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved5, %OUT_TEMP1)
-	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* machStatePtr %1 */
-	add	%VOL_TEMP1, MACH_SAVED_MASK_OFFSET, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved6, %OUT_TEMP1)
-	set	0x55555555, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved7, %OUT_TEMP1)
-#endif NOTDEF
-/*END  FOR_DEBUGGING */
 	/*
 	 * Now call trap postamble to restore state and push saved window to
 	 * the user stack.  MachReturnFromTrap will return to user mode, so
@@ -737,9 +605,6 @@ BadStack:
 	 * will die a terrible death later.  To take over the window, we just
 	 * return, since we've already advanced the %wim.
 	 */
-	set	0x99999999, %i0
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack0, %i0)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack1, %sp)
 	ba	ReturnFromOverflow
 	nop
 UserStack:
@@ -748,15 +613,6 @@ UserStack:
 	 * assume the user process will die a horrible death later on.
 	 */
 	andcc	%sp, 0x7, %g0
-/* FOR DEBUGGING */
-	be	blick
-	nop
-	set	0x97979797, %i0
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack2, %i0)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack3, %sp)
-blick:
-	andcc	%sp, 0x7, %g0
-/* END FOR DEBUGGING */
 	bne	ReturnFromOverflow
 	nop
 
@@ -794,22 +650,6 @@ SaveToInternalBuffer:
 	ld	[%g3], %g3
 	add	%g3, MACH_SAVED_MASK_OFFSET, %g3
 	st	%g4, [%g3]
-/* FOR DEBUGGING */
-#ifdef NOTDEF
-	/* This just uses g6 without even saving it! */
-	MACH_DEBUG_BUF(%g3, %g6, SavedMask0, %g4)
-	mov	%wim, %g4
-	MACH_DEBUG_BUF(%g3, %g6, SavedMask1, %g4)
-	MACH_GET_CUR_PROC_PTR(%g3)
-	set	_MachPIDOffset, %g4
-	ld	[%g4], %g4
-	add	%g3, %g4, %g3
-	ld	[%g3], %g4
-	MACH_DEBUG_BUF(%g3, %g6, SavedMask2, %g4)
-	set	0x90909090, %g4
-	MACH_DEBUG_BUF(%g3, %g6, SavedMask3, %g4)
-#endif NOTDEF
-/* END FOR DEBUGGING */
 
 	/*
 	 * Get and set the special handling flag in the current process state.
@@ -989,19 +829,6 @@ MachReturnToUnderflowWithSavedState:
 	mov	%fp, %o0			/* do the page in for first */
 	save					/* back to trap window */
 	QUICK_ENABLE_INTR()
-/* FOR_DEBUGGING */
-#ifdef NOTDEF
-	set	0x23232323, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage0, %OUT_TEMP1)
-	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-	set	_MachPIDOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
-	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GivePID1, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage0a, %i0)
-#endif NOTDEF
-/*END  FOR_DEBUGGING */
 		/* Address that would fault is in %i0 now. */
 	mov	%i0, %o0
 	clr	%o1			/* also check protection???? */
@@ -1028,14 +855,7 @@ CheckNextUnderflow:
 	be	NormalUnderflow			/* we were okay here */
 	nop
 	QUICK_ENABLE_INTR()
-/* FOR_DEBUGGING */
-#ifdef NOTDEF
-	set	0x32323232, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage1, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage1a, %i1)
-#endif NOTDEF
-/*END  FOR_DEBUGGING */
-		/* Address that would fault is in %i1 now. */
+	/* Address that would fault is in %i1 now. */
 	mov	%i1, %o0
 	clr	%o1			/* also check protection???? */
 	call	_Vm_PageIn, 2
@@ -1132,27 +952,6 @@ MachWindowUnderflow:
 	 * NOTE: The test below must agree with the amount we bump up the stack
 	 * by in MachTrap.
 	 */
-/* FOR_DEBUGGING */
-#ifdef NOTDEF
-	mov	%psr, %VOL_TEMP1
-	set	MACH_ENABLE_TRAP_BIT, %VOL_TEMP2
-	andcc	%VOL_TEMP1, %VOL_TEMP2, %g0
-	be	ThingsAreOkay
-	nop
-	set	MACH_DISABLE_INTR, %VOL_TEMP2
-	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	cmp	%VOL_TEMP1, %VOL_TEMP2		/* interrupts totally off? */
-	be	ThingsAreOkay
-	nop
-	mov	%psr, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr1, %CUR_PC_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr2, %RETURN_ADDR_REG)
-	ta	MACH_CALL_DBG_TRAP		/* interrupts should be off! */
-	nop
-ThingsAreOkay:
-#endif NOTDEF
-/* END FOR_DEBUGGING */
 	set	_machDebugStackStart, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* base of stack */
 	set	MACH_FULL_STACK_FRAME, %VOL_TEMP2
@@ -1214,8 +1013,8 @@ RegularStack:
  *
  * ----------------------------------------------------------------------
  */
-.global	MachHandleDebugTrap
-MachHandleDebugTrap:
+.global	_MachHandleDebugTrap
+_MachHandleDebugTrap:
 	/*
 	 * If we came from user mode, we do different stuff.
 	 */
@@ -1317,19 +1116,6 @@ MachSyscallTrap:
 	 * return from the system call trap via the return trap procedure,
 	 * we increment the return pc and npc here.
 	 */
-/* FOR_DEBUGGING */
-#ifdef NOTDEF
-	set	0x22222222, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall1, %g1)
-	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-	set	_MachPIDOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
-	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall2, %OUT_TEMP1)
-#endif NOTDEF
-/* END FOR_DEBUGGING */
 	mov	%NEXT_PC_REG, %CUR_PC_REG
 	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
 	/*

@@ -225,16 +225,15 @@ extern ReturnStatus		Mach_DeencapState();
 extern ReturnStatus		Mach_GetEncapSize();
 extern Boolean			Mach_CanMigrate();			
 
+extern void			Mach_SetHandler();
+extern void			Mach_InitSyscall();
+extern ReturnStatus		Mach_Probe();
+
 #ifdef NOTDEF
 /*
  * Other routines.
  */
-extern void			Mach_InitSyscall();
-extern void			Mach_SetHandler();
-extern int			Mach_GetExcStackSize();
 extern Mach_ProcessorStates	Mach_ProcessorState();
-extern ReturnStatus		Mach_SetJump();
-extern void			Mach_UnsetJump();
 extern int			Mach_GetNumProcessors();
 
 /*

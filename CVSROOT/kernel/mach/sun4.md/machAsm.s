@@ -399,18 +399,6 @@ ContextRestoreSomeMore:
  */
 .globl	_MachRunUserProc
 _MachRunUserProc:
-/* FOR DEBUGGING */
-	set	0xaaaaaaaa, %o0
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser0, %o0)
-	mov	%psr, %o0
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser1, %o0)
-	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-	set	_MachPIDOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
-	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %o0
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUserPid, %o0)
-/* END FOR DEBUGGING */
 	/*
 	 * Get values to restore registers to from the state structure.
 	 * We set up %VOL_TEMP2 to point to trapRegs structure and restore
@@ -483,16 +471,6 @@ UserStackOkay:
 
 	/*
 	 * Now go through regular return from trap code.
-	 */
-/* FOR DEBUGGING */
-	set	0xbbbbbbbb, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser2, %OUT_TEMP1)
-	mov	%psr, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser3, %OUT_TEMP1)
-	mov	%wim, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser4, %OUT_TEMP1)
-/* END FOR DEBUGGING */
-	/*
 	 * We must make sure that the window we will return to from the trap
 	 * is invalid when we get into MachReturnFromTrap so that it will
 	 * be restored from the user stack.  Otherwise the in registers (such
@@ -501,10 +479,6 @@ UserStackOkay:
 	 */
 	MACH_SET_WIM_TO_CWP();
 	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, SetWimForChild);
-/* FOR DEBUGGING */
-	mov	%wim, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser5, %OUT_TEMP1)
-/* END FOR DEBUGGING */
 
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
@@ -929,9 +903,133 @@ _Mach_ReadPsr:
  */
 .globl	_MachHandleBadArgs
 _MachHandleBadArgs:
-	restore
-	restore
+	restore			/* back to page fault trap window */
+	mov	%CUR_PSR_REG, %i1
+	restore			/* back to copy routine that got trap */
+	/* Copy routine was leaf routine and so return failure in %o0 */
 	set	SYS_ARG_NOACCESS, %o0
-	QUICK_ENABLE_INTR()
+	/* Set interrupts to what they were when trap occured. */
+	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
+	retl			/* return from leaf routine */
+	nop
+
+#define	SUCCESS	0
+#define	FAILURE	1
+/*
+ * Beginning of area where the kernel should be able to handle a bus error
+ * (which includes size errors) while in kernel mode.
+ */
+.globl	_Mach_ProbeStart
+_Mach_ProbeStart:
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_Probe --
+ *
+ *	Read or write a virtual address handling bus errors that may occur.
+ *	This routine is intended to be used to probe for memory-mapped devices.
+ *
+ * Results:
+ *	SUCCESS if the read or write worked and FAILURE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_Probe
+_Mach_Probe:
+				/* %o0 = size in bytes of the read to do.
+				 * Must be 1, 2, 4, or 8 bytes. */
+				/* %o1 = address to read. */
+				/* %o2 = Location to store the read value. */
+
+				/* %o0 = address to peek in. */
+				/* %o1 = size in bytes of the read to do.
+				 * Must be 1, 2, 4, or 8 bytes. */
+				/* %o2 = Location to store the correctly read
+				 * value. It should be a pointer to an
+				 * object of size size. */
+	cmp	%o0, 1
+	bne	Read2Bytes
+	nop
+	ldub	[%o1], %OUT_TEMP1
+	stb	%OUT_TEMP1, [%o2]
+	set	SUCCESS, %RETURN_VAL_REG
 	retl
+	nop
+Read2Bytes:
+	cmp	%o0, 2
+	bne	Read4Bytes
+	nop
+	andcc	%o1, 0x1, %g0
+	bne	BadRead
+	nop
+	andcc	%o2, 0x1, %g0
+	bne	BadRead
+	nop
+	lduh	[%o1], %OUT_TEMP1
+	sth	%OUT_TEMP1, [%o2]
+	set	SUCCESS, %RETURN_VAL_REG
+	retl
+	nop
+Read4Bytes:
+	cmp	%o0, 4
+	bne	Read8Bytes
+	nop
+	andcc	%o1, 0x3, %g0
+	bne	BadRead
+	nop
+	andcc	%o2, 0x3, %g0
+	bne	BadRead
+	nop
+	ld	[%o1], %OUT_TEMP1
+	st	%OUT_TEMP1, [%o2]
+	set	SUCCESS, %RETURN_VAL_REG
+	retl
+	nop
+Read8Bytes:
+	cmp	%o0, 8
+	bne	BadRead
+	nop
+	andcc	%o1, 0x7, %g0
+	bne	BadRead
+	nop
+	andcc	%o2, 0x7, %g0
+	bne	BadRead
+	nop
+	ldd	[%o1], %OUT_TEMP1
+	std	%OUT_TEMP1, [%o2]
+	set	SUCCESS, %RETURN_VAL_REG
+	retl
+	nop
+BadRead:
+	set	FAILURE, %RETURN_VAL_REG
+	retl
+	nop
+
+/*
+ * End of the area where the kernel should be able to handle a bus error
+ * while in kernel mode.
+ */
+.globl	_Mach_ProbeEnd
+_Mach_ProbeEnd:
+
+/*
+ * A page fault occured during a probe operation, which means
+ * the page couldn't be paged in or there was a size error.  So we want to
+ * return FAILURE to the caller of the probe operation.  This means we must
+ * return this value from the routine doing the probe.
+ */
+.globl	_MachHandleBadProbe
+_MachHandleBadProbe:
+	restore		/* back to page fault trap window */
+	mov	%CUR_PSR_REG, %i1	/* get trap psr */
+	restore		/* back to probe routine window */
+	/* Mach_Probe is a leaf routine - return stuff in %o0 */
+	set	FAILURE, %o0	/* return FAILURE */
+	/* Set interrupts to what they were when trap occured. */
+	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
+	retl		/* return from leaf routine */
 	nop

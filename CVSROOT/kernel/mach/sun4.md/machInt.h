@@ -25,5 +25,7 @@
  */
 extern int MachFetchArgs();
 extern int MachFetchArgsEnd();
+extern Address Mach_ProbeStart;
+extern Address Mach_ProbeEnd;
 
 #endif _MACHINT

@@ -62,6 +62,7 @@
 #define	MACH_TRAP_INSTR_5	0x850		/* 133 */
 #define	MACH_TRAP_INSTR_LAST	0xff0
 
+#define	MACH_LEVEL0_INT		0x100		/* 16 */
 #define	MACH_LEVEL1_INT		0x110		/* 17 */
 #define	MACH_LEVEL2_INT		0x120
 #define	MACH_LEVEL3_INT		0x130
@@ -248,6 +249,11 @@
 #else
 #define	MACH_MAX_USER_STACK_ADDR	0x20000000
 #endif /* NOTDEF */
+
+/*
+ * The control space offset of the VME interrupt vector.
+ */
+#define	MACH_VME_INTR_VECTOR		0xE0000000
 
 /*
  * Instruction executed from stack to cause a return trap to the kernel from
@@ -469,6 +475,5 @@
 #define	SYS_INVALID_SYSTEM_CALL	0x00020002
 #define	PROC_TERM_DESTROYED	4
 #define	PROC_BAD_STACK		1
-
 
 #endif /* _MACHCONST */

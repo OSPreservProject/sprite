@@ -217,20 +217,20 @@ moduloOkay:							\
 /*
  * Enabling and disabling traps.
  */
-#define	MACH_ENABLE_TRAPS()					\
-	mov	%psr, %VOL_TEMP1;				\
-	or	%VOL_TEMP1, MACH_ENABLE_TRAP_BIT, %VOL_TEMP1;	\
-	mov	%VOL_TEMP1, %psr;				\
+#define	MACH_ENABLE_TRAPS(useReg)			\
+	mov	%psr, useReg;				\
+	or	useReg, MACH_ENABLE_TRAP_BIT, useReg;	\
+	mov	useReg, %psr;				\
 	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
  * Should I use xor here and MACH_ENABLE_TRAP_BIT?
  */
-#define	MACH_DISABLE_TRAPS()					\
-	mov	%psr, %VOL_TEMP1;				\
-	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP2;		\
-	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
-	mov	%VOL_TEMP1, %psr;				\
+#define	MACH_DISABLE_TRAPS(useReg1, useReg2)		\
+	mov	%psr, useReg1;				\
+	set	MACH_DISABLE_TRAP_BIT, useReg2;		\
+	and	useReg1, useReg2, useReg1;		\
+	mov	useReg1, %psr;				\
 	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
@@ -290,13 +290,13 @@ NoEnableLabel:
  * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
  */
 #define	QUICK_ENABLE_INTR()				\
-	MACH_DISABLE_TRAPS();				\
+	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2);	\
 	mov	%psr, %VOL_TEMP1;			\
 	set	MACH_ENABLE_INTR, %VOL_TEMP2;		\
 	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
 	mov	%VOL_TEMP1, %psr;			\
 	MACH_WAIT_FOR_STATE_REGISTER();			\
-	MACH_ENABLE_TRAPS()
+	MACH_ENABLE_TRAPS(%VOL_TEMP1)
 
 /*
  * Disable interrupts and keep traps enabled.  To do this,
@@ -311,15 +311,26 @@ NoEnableLabel:
  * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
  */
 #define	QUICK_DISABLE_INTR()				\
-	MACH_DISABLE_TRAPS();				\
+	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2);	\
 	mov	%psr, %VOL_TEMP1;			\
 	set	MACH_DISABLE_INTR, %VOL_TEMP2;		\
 	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
 	mov	%VOL_TEMP1, %psr;			\
 	MACH_WAIT_FOR_STATE_REGISTER();			\
-	MACH_ENABLE_TRAPS()
+	MACH_ENABLE_TRAPS(%VOL_TEMP1)
 
 
+#define	SET_INTRS_TO(regValue, useReg1, useReg2)		\
+	MACH_DISABLE_TRAPS(useReg1, useReg2);			\
+	mov	%psr, useReg1;					\
+	set	MACH_ENABLE_INTR, useReg2;			\
+	and	useReg1, useReg2, useReg1;			\
+	set	MACH_DISABLE_INTR, useReg2;			\
+	and	regValue, useReg2, useReg2;			\
+	or	useReg1, useReg2, useReg1;			\
+	mov	useReg1, %psr;					\
+	MACH_WAIT_FOR_STATE_REGISTER();				\
+	MACH_ENABLE_TRAPS(useReg1)
 
 
 /*

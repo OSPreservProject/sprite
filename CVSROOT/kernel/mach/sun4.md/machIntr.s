@@ -50,7 +50,17 @@ MachHandleInterrupt:
 	ld	[%VOL_TEMP1], %SAFE_TEMP
 	set	1, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
-	call	%o0				/* call specific handler */
+	/* Call into vector table using tbr */
+	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
+	sub	%o0, MACH_LEVEL0_INT, %o0	/* get interrupt level */
+	srl	%o0, 2, %VOL_TEMP1		/* convert to index */
+	set	_machInterruptArgs, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %o0		/* arg, if any */
+	set	_machVectorTable, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	call	%VOL_TEMP1
 	nop
 
 	set	_mach_AtInterruptLevel, %VOL_TEMP1
@@ -70,6 +80,43 @@ LeaveInterruptLevel:
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop
+
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachVectoredInterrupt --
+ *
+ *	Handle an interrupt that requires getting an interrupt vector in
+ *	an interrupt acknowledge cycle.  The single argument to the routine is
+ *	the vme trap vector address to read.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Handle the interrupt.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_MachVectoredInterrupt
+_MachVectoredInterrupt:
+	/* We need to return to a leaf routine, so we need to save a frame */
+	save	%sp, -MACH_FULL_STACK_FRAME, %sp
+	lduba	[%i0] VMMACH_CONTROL_SPACE, %VOL_TEMP1	/* got vector */
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1		/* convert to index */
+	set	_machInterruptArgs, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %o0			/* clientData arg */
+	set	_machVectorTable, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	call	%VOL_TEMP2				/* %o0 is arg */
+	nop
+
+	ret
+	restore
 
 /*
  * ----------------------------------------------------------------------
