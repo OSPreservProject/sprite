@@ -127,4 +127,10 @@ extern void VmMach_NetMapPacket _ARGS_((register Net_ScatterGather
  */
 extern int VmMach_GetContext _ARGS_((Proc_ControlBlock *procPtr));
 
+/*
+ * File Cache routines.
+ */
+extern void VmMach_LockCachePage _ARGS_((Address kernelAddress));
+extern void VmMach_UnlockCachePage _ARGS_((Address kernelAddress));
+
 #endif /* _VMMACH */
