@@ -15,5 +15,5 @@ NAME = net
 NOOPTIMIZATION	= no -O please
 #endif
 
-#include	"kernel.mk"
+#include	<$(SYSMAKEFILE)>
 
