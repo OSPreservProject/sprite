@@ -45,7 +45,7 @@
  *				parameter area contains an FsOpenReturn
  *				structure.
  *	RPC_FS_READ	Read from a file.  The request parameter area contains
- *			an FsSpriteReadParams structure, and the request data
+ *			an FsrmtIOParam structure, and the request data
  *			area is empty.  The return data area contains the
  *			bytes read.
  *	RPC_FS_WRITE	Write to a file.  Same request parameter format as Read.
