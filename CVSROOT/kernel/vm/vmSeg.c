@@ -334,7 +334,7 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 	    if (length >= VM_OBJ_FILE_NAME_LENGTH) {
 		length = VM_OBJ_FILE_NAME_LENGTH - 1;
 	    }
-	    strncpy(segPtr->objFileName, fileNamePtr, length);
+	    (void)strncpy(segPtr->objFileName, fileNamePtr, length);
 	    segPtr->objFileName[length] = '\0';
 	} else {
 	    segPtr->objFileName[0] = '\0';
@@ -1735,6 +1735,8 @@ CopyInfo(srcSegPtr, destSegPtr, srcPTEPtrPtr, destPTEPtrPtr,
     destVirtAddrPtr->segPtr = destSegPtr;
     srcVirtAddrPtr->segPtr = srcSegPtr;
     srcVirtAddrPtr->page = destVirtAddrPtr->page;
+    srcVirtAddrPtr->sharedPtr = (Vm_SegProcList *)NIL;
+    destVirtAddrPtr->sharedPtr = (Vm_SegProcList *)NIL;
 
     UNLOCK_MONITOR;
 }
@@ -2001,7 +2003,7 @@ FillSegmentInfo(segPtr, infoPtr)
     infoPtr->refCount = segPtr->refCount;
     infoPtr->type = segPtr->type;
     if (infoPtr->type == VM_CODE) {
-	strncpy(infoPtr->objFileName, segPtr->objFileName,
+	(void)strncpy(infoPtr->objFileName, segPtr->objFileName,
 	        VM_OBJ_FILE_NAME_LENGTH);
 	infoPtr->objFileName[VM_OBJ_FILE_NAME_LENGTH -1] = '\0';
     } else {
