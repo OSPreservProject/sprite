@@ -104,6 +104,10 @@ int		machMachProcOffset = 0;		/* set to offset in pcb */
 int		debugCounter = 0;		/* for debugging */
 int		debugSpace[500];
 char		mach_DebugStack[0x2000];	/* debugger stack */
+Address		theAddrOfVmPtr = 0; 
+Address		theAddrOfMachPtr = 0;
+Address		oldAddrOfVmPtr = 0; 
+Address		oldAddrOfMachPtr = 0;
 
 /*
  * For debugging stuff, put values into a circular buffer.
@@ -279,8 +283,8 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * to the top of the stack, since the regs are saved there.
      */
     ((Address) statePtr->switchRegs) = (statePtr->kernStackStart) +
-	    MACH_KERN_STACK_SIZE -
-	    sizeof (Mach_RegState) - MACH_SAVED_WINDOW_SIZE;
+	    MACH_KERN_STACK_SIZE - MACH_SAVED_WINDOW_SIZE -
+	    MACH_SAVED_WINDOW_SIZE - sizeof (Mach_RegState);
     (unsigned int) (statePtr->switchRegs) &= ~0x7;/* should be okay already */
     DEBUG_ADD(statePtr->switchRegs);
     DEBUG_ADD(&(statePtr->switchRegs));
@@ -338,13 +342,14 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 	/*
 	 * The first argument to startFunc is supposed to be startPC.  But that
 	 * would be in an in register in startFunc's window which is one before
-	 * Mach_ContextSwitch's window.  So we have to put it in the in register
-	 * area of the saved window area beneath the Mach_RegState area on the
-	 * stack.
+	 * Mach_ContextSwitch's window.  But startFunc will do a save operation
+	 * at the beginning so it will actually be executing in Mach_ContextS's
+	 * window, so arg0 to startFunc must actually be arg0 that is restored
+	 * at the end of Mach_ContextSwitch, so we have to put it in the in
+	 * register area of Mach_RegState area on the stack.  Weird.
 	 */
-	*((Address *)(((Address)stackPtr) + sizeof (Mach_RegState) +
-		MACH_ARG0_OFFSET)) = startPC;
-	DEBUG_ADD(*((Address *)(((Address)stackPtr) + sizeof (Mach_RegState) + MACH_ARG0_OFFSET)));
+	*((Address *)(((Address)stackPtr) + MACH_ARG0_OFFSET)) = startPC;
+	DEBUG_ADD(*((Address *)(((Address)stackPtr) + MACH_ARG0_OFFSET)));
     }
     DEBUG_ADD(0x222);
     return(SUCCESS);

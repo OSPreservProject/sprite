@@ -124,7 +124,7 @@
  * psr value for interrupts disabled, traps enabled and window 0.
  * Both supervisor and previous supervisor mode bits are set.
  */
-#define	MACH_HIGH_PRIO_PSR		0x000000E0
+#define	MACH_HIGH_PRIO_PSR		0x00000FE0
 
 
 /*

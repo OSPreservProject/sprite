@@ -192,14 +192,38 @@ _Mach_ContextSwitch:
 	 * is okay here.  Save enough space for the context switch state on
 	 * the stack.
 	 */
+	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch1, %g0)
+	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch2, %o0)
 	set	MACH_SAVED_STATE_FRAME, %VOL_TEMP1
 	sub	%g0, %VOL_TEMP1, %VOL_TEMP1
 	save 	%sp, %VOL_TEMP1, %sp
 	andn	%sp, 0x7, %sp		/* should already be okay */
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch1, %g0)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch2, %i0)
+#ifndef THE_WAY_IT_WAS
+	mov	%psr, %CUR_PSR_REG
+	MACH_SR_HIGHPRIO()
+#endif
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch3, %i1)
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch4, %sp)
+
+	/* save old addresses for debugging */
+	set	_theAddrOfVmPtr, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	_oldAddrOfVmPtr, %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	tst	%VOL_TEMP1
+	be	FirstTimeDontPrint
+	nop
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* value of vmPtr */
+	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch5, %VOL_TEMP1)
+	set	_theAddrOfMachPtr, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	_oldAddrOfMachPtr, %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* value of vmPtr */
+	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch6, %VOL_TEMP1)
+FirstTimeDontPrint:
+
+
 	/*
 	 * Switch contexts to that of toProcPtr.  It's the second arg, so
 	 * move it to be first arg of routine we call.
@@ -214,12 +238,14 @@ _Mach_ContextSwitch:
 	 */
 	call	_VmMachSetContextReg, 1
 	nop
+#ifdef THE_WAY_IT_WAS
 	/*
 	 * Save psr by saving it into local register that will be saved
 	 * on window save and restore operations.  After this we can turn
 	 * off interrupts and stuff without worrying about saving the psr.
 	 */
 	mov	%psr, %CUR_PSR_REG
+#endif
 	/*
 	 * Save stack pointer into state struct.  This is also the pointer
 	 * in the mach state struct of the saved context switch state.  It
@@ -228,6 +254,8 @@ _Mach_ContextSwitch:
 	set	_machMachProcOffset, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	add	%i0, %VOL_TEMP1 , %VOL_TEMP1
+	/* AAAACCCK! */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* get machStatePtr */
 	add	%VOL_TEMP1, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
 	st	%sp, [%VOL_TEMP1]
 	
@@ -237,6 +265,7 @@ _Mach_ContextSwitch:
 	 * if this were user process, save user stack pointer?
 	 */
 #endif /* NOTDEF */
+#ifdef THE_WAY_IT_WAS
 	/*
 	 * Disable interrupts here, since we don't want to be caught between
 	 * states. I may be able to do this later, but this is easy and simple.
@@ -244,6 +273,7 @@ _Mach_ContextSwitch:
 	 * and underflow routines to save and restore our windows.
 	 */
 	MACH_SR_HIGHPRIO()
+#endif
 	/*
 	 * Save context switch state, globals only for the time being...
 	 * This gets saved in our stack frame.
@@ -271,7 +301,7 @@ ContextRestoreSomeMore:
 	nop
 
 	set	0x777, %g1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch5, %g1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch7, %g1)
 	/* restore stack pointer of new process - WE SWITCH STACKS HERE!!! */
 	set	_machMachProcOffset, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
@@ -281,9 +311,9 @@ ContextRestoreSomeMore:
 	ld	[%VOL_TEMP1], %sp
 
 	mov	%VOL_TEMP1, %g1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch6, %g1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch7, %i1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch8, %sp)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch8, %g1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch9, %i1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch10, %sp)
 
 	/* restore global registers of new process */
 	MACH_RESTORE_GLOBAL_STATE()
@@ -306,7 +336,31 @@ ContextRestoreSomeMore:
 	 * Restore status register in such a way that it doesn't make
 	 * us change windows.
 	 */
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch9, %CUR_PSR_REG)
+	set	_theAddrOfVmPtr, %OUT_TEMP1	/* get addr of vmPtr */
+	ld	[%OUT_TEMP1], %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1	/* get value of vmPtr */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch11, %OUT_TEMP1)
+
+	set	_theAddrOfMachPtr, %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1	/* value of machPtr */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch12, %OUT_TEMP1)
+
+	set	_oldAddrOfVmPtr, %OUT_TEMP1	/* get addr of old vmPtr */
+	ld	[%OUT_TEMP1], %OUT_TEMP1
+	tst	%OUT_TEMP1
+	be	AgainFirstTimeDontPrint
+	nop
+	ld	[%OUT_TEMP1], %OUT_TEMP1	/* get value of old vmPtr */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch13, %OUT_TEMP1)
+
+	set	_oldAddrOfMachPtr, %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1	/* value of old machPtr */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch14, %OUT_TEMP1)
+AgainFirstTimeDontPrint:
+
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch15, %CUR_PSR_REG)
 	MACH_RESTORE_PSR()
 
 	ret

@@ -53,8 +53,10 @@ MachHandleInterrupt:
 	nop
 
 	set	_mach_AtInterruptLevel, %VOL_TEMP1
+#ifdef NOTDEF
 	tst	%SAFE_TEMP
 	bne	LeaveInterruptLevel
+#endif NOTDEF
 	nop
 	st	%g0, [%VOL_TEMP1]
 LeaveInterruptLevel:

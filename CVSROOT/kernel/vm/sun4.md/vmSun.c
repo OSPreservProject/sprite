@@ -29,6 +29,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "net.h"
 
+/*
+ * Temporary macro for circular debugging buffer.
+ */
+extern	int	debugCounter;
+extern	int	debugSpace[];
+extern	Address	theAddrOfVmPtr;
+extern	Address	theAddrOfMachPtr;
+
+#define	DEBUG_ADD(thing)	\
+    if (debugCounter >= 500) {	\
+	debugCounter = 0;	\
+    }				\
+    debugSpace[debugCounter++] = (int)(thing);
+
 #ifndef multiprocessor
 
 #undef MASTER_LOCK
@@ -485,7 +499,6 @@ VmMach_Init(firstFreePage)
      */
     MMUInit(firstFreeSegment);
 
-    Mach_MonPrintf("Finished MMUInit\n");
     /*
      * Initialize the page map.
      */
@@ -1126,14 +1139,8 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     Address			virtAddr;
     Boolean			found = FALSE;
 
-#ifdef sun4
-    Mach_MonPrintf("PMEGGet with hardSeg = %x\n", hardSegNum);
-#endif /* sun4 */
     if (List_IsEmpty(pmegFreeList)) {
 	
-#ifdef sun4
-	Mach_MonPrintf("pmegFreeList was empty\n");
-#endif /* sun4 */
 	LIST_FORALL(pmegInuseList, (List_Links *)pmegPtr) {
 	    if (pmegPtr->lockCount == 0) {
 		found = TRUE;
@@ -1148,14 +1155,8 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	pmegPtr = (PMEG *)List_First(pmegFreeList);
     }
     pmegNum = pmegPtr - pmegArray;
-#ifdef sun4
-    Mach_MonPrintf("pmegPtr = %x, pmegNum = %x\n", pmegPtr, pmegNum);
-#endif /* sun4 */
 
     if (pmegPtr->segPtr != (Vm_Segment *) NIL) {
-#ifdef sun4
-	Mach_MonPrintf("Have to steal pmeg\n");
-#endif /* sun4 */
 	/*
 	 * Need to steal the pmeg from its current owner.
 	 */
@@ -1234,19 +1235,10 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     pmegPtr->segPtr = softSegPtr;
     pmegPtr->hardSegNum = hardSegNum;
     pmegPtr->pageCount = 0;
-#ifdef sun4
-    Mach_MonPrintf("Calling List_Remove of pmegPtr = %x\n", pmegPtr);
-#endif /* sun4 */
     List_Remove((List_Links *) pmegPtr);
     if (!(flags & PMEG_DONT_ALLOC)) {
-#ifdef sun4
-	Mach_MonPrintf("Calling List_Insert of pmeg to inuseList\n");
-#endif /* sun4 */
 	List_Insert((List_Links *) pmegPtr, LIST_ATREAR(pmegInuseList));
     }
-#ifdef sun4
-    Mach_MonPrintf("Setting flags to %x\n", flags);
-#endif /* sun4 */
     pmegPtr->flags = flags;
 
     return(pmegNum);
@@ -1275,10 +1267,6 @@ PMEGFree(pmegNum)
     register	PMEG	*pmegPtr;
 
     pmegPtr = &pmegArray[pmegNum];
-#ifdef sun4
-    Mach_MonPrintf("PMEGFree with pmegNum = %x\n", pmegNum);
-    Mach_MonPrintf("pmegPtr->flags = %x, pmegPtr->pageCount = %x\n", pmegPtr->flags, pmegPtr->pageCount);
-#endif /* sun4 */
     /*
      * If this pmeg can never be freed then don't free it.  This case can
      * occur when a device is mapped into a user's address space.
@@ -1368,10 +1356,21 @@ VmMach_SetupContext(procPtr)
 
     MASTER_LOCK(vmMachMutexPtr);
 
+    DEBUG_ADD(0x999);
+    DEBUG_ADD(procPtr);
     while (TRUE) {
 	contextPtr = procPtr->vmPtr->machPtr->contextPtr;
+	theAddrOfVmPtr = (Address)(&(procPtr->vmPtr));
+	DEBUG_ADD(theAddrOfVmPtr);
+	DEBUG_ADD(procPtr->vmPtr);
+	theAddrOfMachPtr = (Address)(&(procPtr->vmPtr->machPtr));
+	DEBUG_ADD(theAddrOfMachPtr);
+	DEBUG_ADD(procPtr->vmPtr->machPtr);
+	DEBUG_ADD(contextPtr);
 	if (contextPtr != (VmMach_Context *)NIL) {
+		DEBUG_ADD(0x10101);
 	    if (contextPtr != &contextArray[VMMACH_KERN_CONTEXT]) {
+		DEBUG_ADD(0x12121);
 		if (vm_Tracing) {
 		    Vm_ProcInfo	*vmPtr;
 
@@ -1420,20 +1419,25 @@ SetupContext(procPtr)
     register	VmMach_SegData	*segDataPtr;
     register	Vm_ProcInfo	*vmPtr;
 
+    DEBUG_ADD(0x4444);
     vmPtr = procPtr->vmPtr;
     contextPtr = vmPtr->machPtr->contextPtr;
+    DEBUG_ADD(contextPtr);
 
     if (procPtr->genFlags & (PROC_KERNEL | PROC_NO_VM)) {
+	DEBUG_ADD(0x1);
 	/*
 	 * This is a kernel process or a process that is exiting.
 	 * Set the context to kernel and return.
 	 */
 	VmMachSetContextReg(VMMACH_KERN_CONTEXT);
 	vmPtr->machPtr->contextPtr = &contextArray[VMMACH_KERN_CONTEXT];
+	DEBUG_ADD(vmPtr->machPtr->contextPtr);
 	return;
     }
 
     if (contextPtr == (VmMach_Context *)NIL) {
+	DEBUG_ADD(0x555);
 	/*
 	 * In this case there is no context setup for this process.  Therefore
 	 * we have to find a context, initialize the context table entry and 
@@ -1456,6 +1460,7 @@ SetupContext(procPtr)
 	 */
 	contextPtr->flags = CONTEXT_IN_USE;
 	contextPtr->procPtr = procPtr;
+	DEBUG_ADD(contextPtr);
 	vmPtr->machPtr->contextPtr = contextPtr;
 	VmMachSetContextReg(contextPtr->context);
 	/*
@@ -1545,8 +1550,10 @@ VmMach_FreeContext(procPtr)
 
     MASTER_LOCK(vmMachMutexPtr);
 
+    DEBUG_ADD(0x555555);
     machPtr = procPtr->vmPtr->machPtr;
     contextPtr = machPtr->contextPtr;
+    DEBUG_ADD(contextPtr);
     if (contextPtr == (VmMach_Context *)NIL ||
         contextPtr->context == VMMACH_KERN_CONTEXT) {
 	MASTER_UNLOCK(vmMachMutexPtr);
@@ -1581,6 +1588,7 @@ void
 VmMach_ReinitContext(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
+    DEBUG_ADD(0x666666);
     VmMach_FreeContext(procPtr);
     MASTER_LOCK(vmMachMutexPtr);
     procPtr->vmPtr->machPtr->contextPtr = (VmMach_Context *)NIL;
@@ -1633,25 +1641,16 @@ VmMach_MapIntelPage(virtAddr)
      */
 
     pmeg = VmMachGetSegMap(virtAddr);
-#ifdef sun4
-    Mach_MonPrintf("MapIntelPage, virtAddr = %x, pmeg = %x\n", virtAddr, pmeg);
-#endif /* sun4 */
     if (pmeg == VMMACH_INV_PMEG) {
 	MASTER_LOCK(vmMachMutexPtr);
 	allocatedPMEG = PMEGGet(vm_SysSegPtr, 
 				(unsigned)virtAddr >> VMMACH_SEG_SHIFT,
 				PMEG_DONT_ALLOC);
 	MASTER_UNLOCK(vmMachMutexPtr);
-#ifdef sun4
-	Mach_MonPrintf("allocatedPMEG = %x\n", allocatedPMEG);
-#endif /* sun4 */
 	VmMachSetSegMap(virtAddr, allocatedPMEG);
     } else {
 	allocatedPMEG = VMMACH_INV_PMEG;
 	intelSavedPTE = VmMachGetPageMap(virtAddr);
-#ifdef sun4
-	Mach_MonPrintf("intelSavedPTE = %x\n", intelSavedPTE);
-#endif /* sun4 */
     }
 
     /*
@@ -1661,7 +1660,6 @@ VmMach_MapIntelPage(virtAddr)
     pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | VirtToPhysPage(intelPage);
 #ifdef sun4	/* while porting */
 	    pte |= VMMACH_DONT_CACHE_BIT;
-    Mach_MonPrintf("intelPage = %x, pte = %x\n", intelPage, pte);
 #endif /* sun4 */
     VmMachSetPageMap(virtAddr, pte);
 #endif /* sun2 or sun4 */
@@ -1690,9 +1688,6 @@ void
 VmMach_UnmapIntelPage(virtAddr) 
     Address	virtAddr;
 {
-#ifdef sun4
-    Mach_MonPrintf("UnmapIntelPage: virtAddr = %x, allocatedPMEG = %x\n", virtAddr, allocatedPMEG);
-#endif /* sun4 */
 #if defined(sun2) || defined(sun4)
     if (allocatedPMEG != VMMACH_INV_PMEG) {
 	/*
@@ -1703,9 +1698,6 @@ VmMach_UnmapIntelPage(virtAddr)
 
 	MASTER_LOCK(vmMachMutexPtr);
 
-#ifdef sun4
-	Mach_MonPrintf("Freeing allocatedPMEG %x\n", allocatedPMEG);
-#endif /* sun4 */
 	PMEGFree(allocatedPMEG);
 
 	MASTER_UNLOCK(vmMachMutexPtr);
@@ -1713,14 +1705,8 @@ VmMach_UnmapIntelPage(virtAddr)
 	/*
 	 * Restore the saved pte and free the allocated page.
 	 */
-#ifdef sun4
-	Mach_MonPrintf("Setting pagemap virtAddr %x, intelSavedPTE = %x\n", virtAddr, intelSavedPTE);
-#endif /* sun4 */
 	VmMachSetPageMap(virtAddr, intelSavedPTE);
     }
-#ifdef sun4
-    Mach_MonPrintf("Page freeing intelSavedPTE = %x\n", intelSavedPTE);
-#endif /* sun4 */
     Vm_KernPageFree(intelPage);
 #endif
 }
