@@ -377,6 +377,7 @@
 #define	SWITCH_TO_DEBUGGER_STACKS() \
 	ld_32		SPILL_SP, r0, $debugSpillStackEnd; \
 	ld_32		VOL_TEMP1, r0, $debugSWStackBase; \
+	nop; \
 	rd_special	VOL_TEMP2, cwp; \
 	sub		VOL_TEMP2, VOL_TEMP2, $4; \
 	and		VOL_TEMP2, VOL_TEMP2, $0x1c; \
@@ -406,8 +407,14 @@
  *	regErrorVal -	Register that holds an error value.
  *	constErrorVal -	Constant error value.
  */
+#ifdef notdef
+	rd_kpsw		VOL_TEMP1; \
+	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_ALL_TRAPS_ENA; \
+	wr_kpsw		VOL_TEMP1, $0; \
+	st_32		r0, r0, $-1
+#endif
+
 #define	CALL_DEBUGGER(regErrorVal, constErrorVal) \
-	st_32		r0, r0, $-1; \
 	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
 	rd_special	VOL_TEMP2, pc; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
@@ -429,6 +436,8 @@
 	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE; \
 	cmp_br_delayed	lt, r1, r2, 1b; \
 	Nop; \
+	\
+	SAVE_CC_STATE_VIRT(); \
 	\
 	add_nt		OUTPUT_REG1, regErrorVal, $constErrorVal; \
 	ld_32		OUTPUT_REG2, r0, $debugStatePtr; \
@@ -473,11 +482,11 @@
 
 
 /*
- * Save the cache controller state.
+ * Save the cache controller state in virtual mode.
  */
 #define SAVE_CC_STATE_VIRT() \
 	add_nt		r1, r0, $0; \
-	LD_CONSTANT(r2, (MACH_STACK_BOTTOM + 4096)); \
+	ld_32		r2, r0, $ccStatePtr; \
 	nop; \
 1:	ld_external	r5, r1, $MACH_CO_RD_REG; \
 	nop; \

@@ -140,48 +140,48 @@
  * occurs.
  */
 	.org 0x1000
-	jump PowerUp		# Reset - Jump to powerup sequencer.
+	jump PowerUp		/* Reset - Jump to powerup sequencer. */
 	Nop
 
 	.org 0x1010
-	jump ErrorTrap		# Error
+	jump ErrorTrap		/* Error */
 	Nop
 
 	.org 0x1020
-	jump WinOvFlow		# Window overflow
+	jump WinOvFlow		/* Window overflow */
 	Nop
 
 	.org 0x1030
-	jump WinUnFlow		# Window underflow
+	jump WinUnFlow		/* Window underflow */
 	Nop
 
 	.org 0x1040
-	jump FaultIntr		# Fault or interrupt
+	jump FaultIntr		/* Fault or interrupt */
 	Nop
 
 	.org 0x1050
-	jump FPUExcept		# FPU Exception
+	jump FPUExcept		/* FPU Exception */
 	Nop
 
 	.org 0x1060
-	jump Illegal		# Illegal op, kernel mode access violation
+	jump Illegal		/* Illegal op, kernel mode access violation */
 	Nop
 
 	.org 0x1070
-	jump Fixnum		# Fixnum, fixnum_or_char, generation
+	jump Fixnum		/* Fixnum, fixnum_or_char, generation */
 	Nop
 
 	.org 0x1080
-	jump Overflow		# Integer overflow
+	jump Overflow		/* Integer overflow */
 	Nop
 
 	.org 0x1090
-	jump CmpTrap		# Compare trap instruction
+	jump CmpTrap		/* Compare trap instruction */
 	Nop
 
 #ifdef BARB
 	.org 0x10b0
-	jump CmpTrap		# Hack for BARB
+	jump CmpTrap		/* Hack for BARB */
 	Nop
 #endif
 
@@ -238,7 +238,8 @@ numArgsPtr:			.long _machNumArgs
 debugStatePtr:			.long _machDebugState
 debugSWStackBase:		.long MACH_DEBUG_STACK_BOTTOM
 debugSpillStackEnd:		.long (MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
-ccStatePtr:			.long 0xff03b000
+ccStatePtr:			.long _machCCState
+feStatusReg:			.long 0
 
 /*
  * The instruction to execute on return from a signal handler.  Is here
@@ -516,23 +517,24 @@ WinOvFlow:
 	and		SAFE_TEMP1, SAFE_TEMP1, $MACH_KPSW_CUR_MODE
 	cmp_br_delayed	eq, SAFE_TEMP1, r0, winOvFlow_SaveWindow
 	Nop
-	VERIFY_SWP(winOvFlow_SaveWindow)	# Verify that the SWP is OK.
+	VERIFY_SWP(winOvFlow_SaveWindow)	/* Verify that the SWP is OK. */
 	USER_ERROR(MACH_USER_BAD_SWP_TRAP)
 	/* DOESN'T RETURN */
 winOvFlow_SaveWindow:
 	/*
 	 * Actually save the window.
 	 */
-	add_nt		SAFE_TEMP2, r1, $0	# Save r1
+	add_nt		SAFE_TEMP2, r1, $0	/* Save r1 */
 #ifdef ovflow_tracing
 	add_nt		SAFE_TEMP3, r2, $0
 	add_nt		NON_INTR_TEMP1, r3, $0
 	LD_PC_RELATIVE(r2, winOvFlow_Const1)
 #endif
 	rd_special	VOL_TEMP1, cwp
-	wr_special	cwp, VOL_TEMP1, $4	# Move forward one window.
+	wr_special	cwp, VOL_TEMP1, $4	/* Move forward one window. */
 	Nop
 	rd_special	r1, swp
+	and		r1, r1, $~7		/* Eight byte align swp */
 	wr_special	swp, r1, $MACH_SAVED_WINDOW_SIZE
 	add_nt		r1, r1, $MACH_SAVED_WINDOW_SIZE
 
@@ -593,10 +595,10 @@ winOvFlow_SaveWindow:
 	st_32		r24, r1, $112
 	st_32		r25, r1, $120
 	rd_special	r1, cwp
-	wr_special	cwp, r1, $-4		# Move back one window.
+	wr_special	cwp, r1, $-4		/* Move back one window. */
 	Nop
 
-	add_nt		r1, SAFE_TEMP2, $0	# Restore r1
+	add_nt		r1, SAFE_TEMP2, $0	/* Restore r1 */
 #ifdef ovflow_tracing
 	add_nt		r2, SAFE_TEMP3, $0
 	add_nt		r3, NON_INTR_TEMP1, $0
@@ -608,9 +610,9 @@ winOvFlow_SaveWindow:
 	 *
 	 *	swp > max_swp - 2 * MACH_SAVED_REG_SET_SIZE
 	 */
-	cmp_br_delayed	eq, SAFE_TEMP1, r0, winOvFlow_Return	# No need to
-	Nop							#  check from
-								#  kernel mode
+	cmp_br_delayed	eq, SAFE_TEMP1, r0, winOvFlow_Return	/* No need to */
+	Nop							/*  check from */
+								/*  kernel mode */
 	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
 	Nop
 	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
@@ -656,13 +658,14 @@ WinUnFlow:
 	USER_ERROR(MACH_USER_BAD_SWP_TRAP)
 	/* DOESN'T RETURN */
 winUnFlow_RestoreWindow:
-	add_nt		SAFE_TEMP2, r1, $0	# Save r1
+	add_nt		SAFE_TEMP2, r1, $0	/* Save r1 */
 #ifdef ovflow_tracing
 	add_nt		SAFE_TEMP3, r2, $0
 #endif
 	rd_special	r1, swp
+	and		r1, r1, $~7		/* Eight byte align swp */
 	rd_special	VOL_TEMP1, cwp
-	wr_special	cwp, VOL_TEMP1,  $-8	# move back two windows
+	wr_special	cwp, VOL_TEMP1,  $-8	/* move back two windows */
 	Nop
 
 #ifdef ovflow_tracing
@@ -697,20 +700,20 @@ winUnFlow_RestoreWindow:
 	ld_32		r25, r1, $120
 	wr_special	swp, r1, $-MACH_SAVED_WINDOW_SIZE
 	rd_special	r1, cwp
-	wr_special	cwp,  r1, $8	# move back ahead two windows
+	wr_special	cwp,  r1, $8	/* move back ahead two windows */
 	Nop
-	add_nt		r1, SAFE_TEMP2, $0	# Restore r1
+	add_nt		r1, SAFE_TEMP2, $0	/* Restore r1 */
 #ifdef ovflow_tracing
-	add_nt		r2, SAFE_TEMP3, $0	# Restore r2
+	add_nt		r2, SAFE_TEMP3, $0	/* Restore r2 */
 #endif
 	/*
 	 * See if need more memory.  We need more if 
 	 *
 	 * 	swp <= min_swp + MACH_SAVED_WINDOW_SIZE
 	 */
-	cmp_br_delayed	eq, SAFE_TEMP1, $0, winUnFlow_Return	# No need to
-	Nop							#   check from
-								#   kernel mode
+	cmp_br_delayed	eq, SAFE_TEMP1, $0, winUnFlow_Return	/* No need to */
+	Nop							/*   check from */
+								/*   kernel mode */
 	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
 	rd_special	VOL_TEMP2, swp
 	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MIN_SWP_OFFSET
@@ -723,9 +726,9 @@ winUnFlow_RestoreWindow:
 	 */
 	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0
-	rd_special	VOL_TEMP1, pc	# Return from traps and then
-	return_trap	VOL_TEMP1, $12	#   take the compare trap to
-	Nop				#   get back in in kernel mode.
+	rd_special	VOL_TEMP1, pc	/* Return from traps and then */
+	return_trap	VOL_TEMP1, $12	/*   take the compare trap to */
+	Nop				/*   get back in in kernel mode. */
 	cmp_trap	always, r0, r0, $MACH_GET_WIN_MEM_TRAP
 	Nop
 
@@ -824,7 +827,7 @@ overflow_KernError:
  *
  *---------------------------------------------------------------------------
  */
-PowerUp: 			# Jump to power up sequencer
+PowerUp: 			/* Jump to power up sequencer */
 
 /*
  *---------------------------------------------------------------------------
@@ -852,6 +855,8 @@ faultIntr_Const1:
 	.long	MACH_KPSW_USE_CUR_PC
 faultIntr_Const2:
 	.long	MACH_KPSW_CC_REFRESH
+faultIntr_Const3:
+	.long	MACH_FAULT_TRY_AGAIN
 FaultIntr:
 	LD_PC_RELATIVE(SAFE_TEMP1, faultIntr_Const2)
 	rd_kpsw		VOL_TEMP1
@@ -872,9 +877,12 @@ faultIntr_NormFault:
 	LD_PC_RELATIVE(SAFE_TEMP1, faultIntr_Const1)
 	or		KPSW_REG, KPSW_REG, SAFE_TEMP1
 	/*
-	 * Read the fault/error status register.
+	 * Read and clear the fault/error status register.
 	 */
 	READ_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
+	st_32		SAFE_TEMP1, r0, $feStatusReg
+	st_32		r0, r0, $-1
+	WRITE_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
 #ifdef BARB
 	/*
 	 * Simulate a virtual memory fault.
@@ -891,10 +899,24 @@ faultIntr_NormFault:
 	 * four VM faults.  Store the fault type in a safe temporary and
 	 * call the VMFault handler.
 	 */
-	extract		SAFE_TEMP1, SAFE_TEMP1, $2
-	and		SAFE_TEMP1, SAFE_TEMP1, $0xf
-	cmp_br_delayed	ne, SAFE_TEMP1, r0, VMFault
+mark:
+	extract		VOL_TEMP1, SAFE_TEMP1, $2
+	and		VOL_TEMP1, VOL_TEMP1, $0xf
+	cmp_br_delayed	ne, VOL_TEMP1, r0, VMFault
 	Nop
+
+	/*
+	 * The only other type of fault that we can handle is a bus
+	 * retry error.
+	 */
+	LD_PC_RELATIVE(SAFE_TEMP2, faultIntr_Const3)
+	and		VOL_TEMP1, SAFE_TEMP1, SAFE_TEMP2
+	cmp_br_delayed	eq, VOL_TEMP1, r0, 1f
+	nop
+	jump_reg	CUR_PC_REG, $0
+	return_trap	NEXT_PC_REG, $0
+
+1:
 	/*
 	 * Can't handle any of these types of faults.
 	 */
@@ -916,6 +938,8 @@ Interrupt:
 	 * as an arg to the interrupt routine.
 	 */
 	READ_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
+	READ_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	and		OUTPUT_REG1, OUTPUT_REG1, SAFE_TEMP1
 	WRITE_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
 	/*
 	 * The second argument is the kpsw.
@@ -996,11 +1020,12 @@ interrupt_KernMode:
  * VMFault --
  *
  *	Handle virtual memory faults.  The current fault type was stored
- *	in SAFE_TEMP1 before we were called.
+ *	in VOL_TEMP1 before we were called.
  *
  *---------------------------------------------------------------------------
  */
 VMFault:
+	add_nt		SAFE_TEMP1, VOL_TEMP1, $0
 	/*
 	 * Check kernel or user mode.
 	 */
@@ -1031,11 +1056,11 @@ vmFault_GetDataAddr:
 	 * of these then we have to extract the data address.
 	 */
 	FETCH_CUR_INSTRUCTION(SAFE_TEMP2)
-	extract		VOL_TEMP1, SAFE_TEMP2, $3  	# Opcode <31:25> -> 
+	extract		VOL_TEMP1, SAFE_TEMP2, $3  	/* Opcode <31:25> ->  */
 							#	 <07:01>
-	srl		VOL_TEMP1, VOL_TEMP1, $1	# Opcode <07:01> ->
+	srl		VOL_TEMP1, VOL_TEMP1, $1	/* Opcode <07:01> -> */
 							#	 <06:00>
-	and		VOL_TEMP1, VOL_TEMP1, $0xf0	# Get upper 4 bits.
+	and		VOL_TEMP1, VOL_TEMP1, $0xf0	/* Get upper 4 bits. */
 	add_nt		VOL_TEMP2, r0, $0x30
 	cmp_br_delayed	ge, VOL_TEMP1, VOL_TEMP2, vmFault_NoData
 	Nop
@@ -1054,31 +1079,27 @@ vmFault_GetDataAddr:
 	/*
 	 * We now have the data address in VOL_TEMP2
 	 */
-	add_nt		OUTPUT_REG3, r0, $1	# 3rd arg is TRUE to indicate
-						#   that there is a data addr
-	add_nt		OUTPUT_REG4, VOL_TEMP2, $0	# 4th arg is the data
-							#    addr.
+	add_nt		OUTPUT_REG3, r0, $1	/* 3rd arg is TRUE to indicate */
+						/*   that there is a data addr */
+	add_nt		OUTPUT_REG4, VOL_TEMP2, $0	/* 4th arg is the data */
+							/*    addr. */
 	cmp_br_delayed	always, r0, r0, vmFault_CallHandler
 	Nop
 vmFault_NoData:
-	add_nt		OUTPUT_REG3, r0, $0		# 3rd arg is FALSE
-							#   (no data addr)
+	add_nt		OUTPUT_REG3, r0, $0		/* 3rd arg is FALSE */
+							/*   (no data addr) */
 vmFault_CallHandler:
-	add_nt		OUTPUT_REG1, SAFE_TEMP1, $0	# 1st arg is fault type.
-	add_nt		OUTPUT_REG2, CUR_PC_REG, $0	# 2nd arg is the 
-							#   faulting PC.
-	add_nt		OUTPUT_REG5, KPSW_REG, $0	# 5th arg to 
-							#   MachVMFault is the
-							#   kpsw
+	add_nt		OUTPUT_REG1, SAFE_TEMP1, $0	/* 1st arg is fault type. */
+	add_nt		OUTPUT_REG2, CUR_PC_REG, $0	/* 2nd arg is the  */
+							/*   faulting PC. */
+	add_nt		OUTPUT_REG5, KPSW_REG, $0	/* 5th arg to  */
+							/*   MachVMFault is the */
+							/*   kpsw */
 	rd_insert	VOL_TEMP1
 	call		_MachVMFault
 	Nop
 	wr_insert	VOL_TEMP1
 
-	/* 
-	 * Clear fault bits.
-	 */
-	st_external	SAFE_TEMP1, r0, $MACH_FE_STATUS_2|MACH_CO_WR_REG	
 	jump		ReturnTrap
 	Nop
 
@@ -1132,8 +1153,8 @@ cmpTrap_CheckType:
 	Nop
 
 cmpTrap_CallFunc:
-	sll		VOL_TEMP1, SAFE_TEMP1, $3	# Multiple by 8 to
-							#   get offset
+	sll		VOL_TEMP1, SAFE_TEMP1, $3	/* Multiple by 8 to */
+							/*   get offset */
 	rd_special	VOL_TEMP2, pc
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16
 	jump_reg	VOL_TEMP2, VOL_TEMP1
@@ -1197,6 +1218,19 @@ cmpTrap_TestFaultTrap:
 	Nop
 
 cmpTrap_RefreshTrap:
+	rd_special	VOL_TEMP1, upsw
+	nop
+	nop
+	wr_special	upsw, VOL_TEMP1, $0
+	rd_special	VOL_TEMP1, swp
+	nop
+	nop
+	wr_special	swp, VOL_TEMP1, $0
+	rd_insert	VOL_TEMP1 
+	nop
+	nop
+	wr_insert	VOL_TEMP1
+
 	wr_kpsw		KPSW_REG, $0
 	return_trap	NEXT_PC_REG, $0
 	Nop
@@ -1443,31 +1477,31 @@ sysCallTrap_FetchArgs:
 	Nop
 	.globl	_MachFetchArgStart
 _MachFetchArgStart:
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-56	# 7 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-56	/* 7 args */
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-56
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-48	# 6 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-48	/* 6 args */
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-48
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-40	# 5 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-40	/* 5 args */
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-40
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-32	# 4 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-32	/* 4 args */
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-32
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-24	# 3 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-24	/* 3 args */
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-24
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-16	# 2 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-16	/* 2 args */
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-16
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-8	# 1 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-8	/* 1 args */
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-8
 	Nop
@@ -1963,6 +1997,7 @@ SaveState:
 	 * disable interrupts so that we can take a window underflow
 	 * fault if necessary.
 	 */
+
 	rd_kpsw		r5
 	or		VOL_TEMP3, r5, $MACH_KPSW_ALL_TRAPS_ENA
 	and		VOL_TEMP3, VOL_TEMP3, $(~MACH_KPSW_INTR_TRAP_ENA)
@@ -2006,6 +2041,7 @@ SaveState:
 	 * swp shifted over to align with the cwp.
 	 */
 	rd_special	r1, swp
+	and		r1, r1, $~7
 	rd_special	r2, cwp
 	and		r2, r2, $0x1c
 	/*
@@ -2013,9 +2049,9 @@ SaveState:
 	 * comparisons.
 	 */
 	and		r3, r1, $0x380
-	srl		r3, r3, $1	# Read the swp and then shift it so
-	srl		r3, r3, $1	#    it aligns with the cwp.  That is
-	srl		r3, r3, $1	#    swp<9:7> -> swp<4:2>
+	srl		r3, r3, $1	/* Read the swp and then shift it so */
+	srl		r3, r3, $1	/*    it aligns with the cwp.  That is */
+	srl		r3, r3, $1	/*    swp<9:7> -> swp<4:2> */
 	srl		r3, r3, $1
 	srl 		r3, r3, $1
 
@@ -2024,9 +2060,9 @@ saveState_SaveRegs:
 	and		r3, r3, $0x1c
 	cmp_br_delayed	eq, r3, r2, saveState_Done
 	Nop
-	wr_special	cwp, r3, $0	# Set the cwp to the window to save.
+	wr_special	cwp, r3, $0	/* Set the cwp to the window to save. */
 	Nop
-					# Increment the swp by one window.
+					/* Increment the swp by one window. */
 	add_nt		r1, r1, $MACH_SAVED_WINDOW_SIZE
 	st_32		r10, r1, $0
 	st_32		r11, r1, $8
@@ -2048,8 +2084,8 @@ saveState_SaveRegs:
 	Nop
 
 saveState_Done:
-	wr_special	cwp, r2, $0x4	# Move back to the current window.
-	wr_special	swp, r1, $0	# Update the swp.
+	wr_special	cwp, r2, $0x4	/* Move back to the current window. */
+	wr_special	swp, r1, $0	/* Update the swp. */
 	/*
 	 * Save the cwp and swp.
 	 */
@@ -2180,7 +2216,25 @@ _MachRefreshCCWells:
 	nop
 	jump		ErrorTrap
 	nop
+	/*
+	 * Restore the special registers that aren't restored by the
+	 * trap that we just took.
+	 */
+	rd_special	VOL_TEMP1, upsw
+	nop
+	nop
+	wr_special	upsw, VOL_TEMP1, $0
+	rd_special	VOL_TEMP1, swp
+	nop
+	nop
+	wr_special	swp, VOL_TEMP1, $0
+	rd_insert	VOL_TEMP1 
+	nop
+	nop
+	wr_insert	VOL_TEMP1
+
 	wr_kpsw		SAFE_TEMP1, $0
+
 	return		RETURN_ADDR_REG, $8
 	nop
 
@@ -2211,7 +2265,7 @@ _MachRunUserProc:
 /*
  *----------------------------------------------------------------------------
  *
- * MachContextSwitch(fromProcPtr, toProcPtr) --
+ * Mach_ContextSwitch(fromProcPtr, toProcPtr) --
  *
  *	Switch the thread of execution to a new process.  fromProcPtr
  *	contains a pointer to the process to switch from and toProcPtr
@@ -2219,8 +2273,8 @@ _MachRunUserProc:
  *
  *----------------------------------------------------------------------------
  */
-	.globl	_MachContextSwitch
-_MachContextSwitch:
+	.globl	_Mach_ContextSwitch
+_Mach_ContextSwitch:
 	/*
 	 * Setup the virtual memory context for the process.
 	 */
@@ -2474,17 +2528,17 @@ _Mach_SaveCCAndHalt:
 #define	SAVED_R15		r29
 
 ParseInstruction:
-	add_nt		SAVED_R10, r10, $0	# Save "return" address
-	add_nt		SAVED_R14, r14, $0	# Save r14 and r15 because
-	add_nt		SAVED_R15, r15, $0	#  these will be used to 
-						#  recover operands.
-	extract		OPCODE, TRAP_INST, $3	# Opcode <31:25> -> <07:01>
-	srl		OPCODE, OPCODE, $1	# Opcode <07:01> -> <06:00>
-	sll		SRC1_REG, TRAP_INST, $1	# s1 <19:15> to <20:16>
-	extract		SRC1_REG, SRC1_REG, $2	# s1 <20:16> to <04:00>
+	add_nt		SAVED_R10, r10, $0	/* Save "return" address */
+	add_nt		SAVED_R14, r14, $0	/* Save r14 and r15 because */
+	add_nt		SAVED_R15, r15, $0	/*  these will be used to  */
+						/*  recover operands. */
+	extract		OPCODE, TRAP_INST, $3	/* Opcode <31:25> -> <07:01> */
+	srl		OPCODE, OPCODE, $1	/* Opcode <07:01> -> <06:00> */
+	sll		SRC1_REG, TRAP_INST, $1	/* s1 <19:15> to <20:16> */
+	extract		SRC1_REG, SRC1_REG, $2	/* s1 <20:16> to <04:00> */
 	and		SRC1_REG, SRC1_REG, $0x1f
-	srl		SRC2_REG, TRAP_INST, $1	# s2 <13:09> to <12:08>
-	extract		SRC2_REG, SRC2_REG, $1	# s2 <12:08> to <04:00>
+	srl		SRC2_REG, TRAP_INST, $1	/* s2 <13:09> to <12:08> */
+	extract		SRC2_REG, SRC2_REG, $1	/* s2 <12:08> to <04:00> */
 	and		SRC2_REG, SRC2_REG, $0x1f
 
 	/*
@@ -2502,7 +2556,7 @@ ParseInstruction:
 	 */
 	cmp_br_delayed	 lt, PREV_SRC1_REG, $30, parse4
 	Nop
-	call		parse1up		# Back to trap handler window.
+	call		parse1up		/* Back to trap handler window. */
 	Nop
 parse1up:
 	cmp_br_delayed	eq, SRC1_REG,  $30, parse1a
@@ -2521,13 +2575,13 @@ parse1b:
 	jump 		parse5
 	Nop
 	
-parse4:	sll		PREV_SRC1_REG, PREV_SRC1_REG, $2	# s1 = s1 * 4
-	jump_reg	PREV_SRC1_REG, $OpRecov  # Retrieve value of first op.
-	jump	        parse41		 	# Value is returned in r31
+parse4:	sll		PREV_SRC1_REG, PREV_SRC1_REG, $2	/* s1 = s1 * 4 */
+	jump_reg	PREV_SRC1_REG, $OpRecov  /* Retrieve value of first op. */
+	jump	        parse41		 	/* Value is returned in r31 */
 
 parse41:
-	add_nt		r30, r31, $0		# Move to src1's register.
-	call 	       	parse5			# Get back to trap window. 
+	add_nt		r30, r31, $0		/* Move to src1's register. */
+	call 	       	parse5			/* Get back to trap window.  */
 	Nop
 
 parse5:	
@@ -2556,13 +2610,13 @@ parse5a:
 	/*
 	 * 2nd operand is an immediate.
 	 */
-	and		SRC2_VAL, TRAP_INST, $0x1fff	# Extract immediate val.
-	add_nt		PARSE_TEMP1, TRAP_INST, $0	# Check for a 
-	srl		PARSE_TEMP1, PARSE_TEMP1, $1	#   negative number
+	and		SRC2_VAL, TRAP_INST, $0x1fff	/* Extract immediate val. */
+	add_nt		PARSE_TEMP1, TRAP_INST, $0	/* Check for a  */
+	srl		PARSE_TEMP1, PARSE_TEMP1, $1	/*   negative number */
 	and		PARSE_TEMP1, PARSE_TEMP1, $0x1000 
 	cmp_br_delayed	eq, PARSE_TEMP1, $0, parse_end
 	Nop
-	add_nt		SRC2_VAL, SRC2_VAL, $~0x1fff	# Sign extend SRC2_VAL
+	add_nt		SRC2_VAL, SRC2_VAL, $~0x1fff	/* Sign extend SRC2_VAL */
 	cmp_br_delayed	always, r0, r0, parse_end
 	Nop
 
@@ -2601,12 +2655,12 @@ parse2b:
 	jump		parse_end
 	Nop
 
-parse6:	sll		PREV_SRC2_REG, PREV_SRC2_REG, $2  # Multiply src2 reg
-							  #   by 4 to represent
-							  #   offset in jump 
-							  #   table.
-	jump_reg	PREV_SRC2_REG, $OpRecov  # Recover 2nd operand register
-	jump 		parse7			 #   and put value in r31
+parse6:	sll		PREV_SRC2_REG, PREV_SRC2_REG, $2  /* Multiply src2 reg */
+							  /*   by 4 to represent */
+							  /*   offset in jump  */
+							  /*   table. */
+	jump_reg	PREV_SRC2_REG, $OpRecov  /* Recover 2nd operand register */
+	jump 		parse7			 /*   and put value in r31 */
 parse7:	
 	call		parse_end
 	Nop
@@ -2618,20 +2672,20 @@ parse7:
  */
 
 parse_store:
-	sll		PARSE_TEMP1, TRAP_INST, $3	# Dest<24:20> move to <27:23>
-	sll		PARSE_TEMP1, PARSE_TEMP1, $2	# Move to <29:25>
-	extract		PARSE_TEMP1, PARSE_TEMP1, $3	# Move to <5:1>  
+	sll		PARSE_TEMP1, TRAP_INST, $3	/* Dest<24:20> move to <27:23> */
+	sll		PARSE_TEMP1, PARSE_TEMP1, $2	/* Move to <29:25> */
+	extract		PARSE_TEMP1, PARSE_TEMP1, $3	/* Move to <5:1>   */
 	wr_insert	$1
-	insert		PARSE_TEMP1, r0, PARSE_TEMP1	# Move to <13:09>
-	srl		PARSE_TEMP2, PARSE_TEMP1, $1	# Sign-bit <13> to <12>
-	and		PARSE_TEMP2, PARSE_TEMP2, $0x1000 # Check for negative
-	cmp_br_delayed	eq, PARSE_TEMP2, $0, parse_pos    #    number
-	and 		PARSE_TEMP1, PARSE_TEMP1,$0x1e00  # Mask out valid bits.
-	add_nt		PARSE_TEMP1, PARSE_TEMP1,$~0x1fff  # Sign extend 
-							  #    PARSE_TEMP2.
+	insert		PARSE_TEMP1, r0, PARSE_TEMP1	/* Move to <13:09> */
+	srl		PARSE_TEMP2, PARSE_TEMP1, $1	/* Sign-bit <13> to <12> */
+	and		PARSE_TEMP2, PARSE_TEMP2, $0x1000 /* Check for negative */
+	cmp_br_delayed	eq, PARSE_TEMP2, $0, parse_pos    /*    number */
+	and 		PARSE_TEMP1, PARSE_TEMP1,$0x1e00  /* Mask out valid bits. */
+	add_nt		PARSE_TEMP1, PARSE_TEMP1,$~0x1fff  /* Sign extend  */
+							  /*    PARSE_TEMP2. */
 parse_pos:
-	and		PARSE_TEMP2, TRAP_INST, $0x01ff	     # Put together into
-	or		SRC2_VAL, PARSE_TEMP1,  PARSE_TEMP2  #    14-bit value.
+	and		PARSE_TEMP2, TRAP_INST, $0x01ff	     /* Put together into */
+	or		SRC2_VAL, PARSE_TEMP1,  PARSE_TEMP2  /*    14-bit value. */
 
 /*
  *  In the trap window.  SRC1_VAL contains first part of address.
@@ -2639,10 +2693,10 @@ parse_pos:
  */
 parse_end:
 	add_nt		DATA_VAL_REG, SRC1_VAL, SRC2_VAL	
-	add_nt		r10, SAVED_R10, $0		# Restore pre-parse r10
-	add_nt		r14, SAVED_R14, $0		# Restore pre-parse r14
-	add_nt		r15, SAVED_R15, $0		# Restore pre-parse r15
-	jump_reg	RET_ADDR, r0			# Go back to caller
+	add_nt		r10, SAVED_R10, $0		/* Restore pre-parse r10 */
+	add_nt		r14, SAVED_R14, $0		/* Restore pre-parse r14 */
+	add_nt		r15, SAVED_R15, $0		/* Restore pre-parse r15 */
+	jump_reg	RET_ADDR, r0			/* Go back to caller */
 	Nop
 
 /*

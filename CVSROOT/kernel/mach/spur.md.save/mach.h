@@ -76,7 +76,6 @@ typedef struct {
     int		insert;				/* The insert register. */
     Address	swp;				/* The saved window pointer. */
     int		cwp;				/* Current window pointer. */
-    Address	usp;				/* User stack pointer. */
 } Mach_RegState;
 
 /*

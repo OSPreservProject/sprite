@@ -25,7 +25,7 @@
 /*
  * The compare trap types.  
  *
- * IMPORTANT: If the value of MACH_BREAKPOINT_TRAP is changed then
+ * IMPORTANT: If the value of MACH_CALL_DEBUGGER_TRAP is changed then
  * 	      the macro DBG_CALL in dbg.h must be changed accordingly.
  */
 #define	MACH_BREAKPOINT_TRAP		0
@@ -83,6 +83,8 @@
  *	MACH_BAD_SYS_CALL	A bad system call type was passed in.
  *	MACH_BREAKPOINT		A process called the debugger.
  *	MACH_SINGLE_STEP	A single step trap occured.
+ *	MACH_HALT		Doug Johnson's code.
+ *	MACH_POWERUP		Doug Johnson's code.
  *	MACH_CALL_DEBUGGER	The debugger was called.
  */
 #define	MACH_USER_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 1)
@@ -102,8 +104,9 @@
 #define	MACH_BAD_SYS_CALL		(MACH_MAX_RETURN_CODE + 15)
 #define	MACH_BREAKPOINT			(MACH_MAX_RETURN_CODE + 16)
 #define	MACH_SINGLE_STEP		(MACH_MAX_RETURN_CODE + 17)
-#define	MACH_POWERUP			(MACH_MAX_RETURN_CODE + 18)
-#define	MACH_CALL_DEBUGGER		(MACH_MAX_RETURN_CODE + 19)
+#define	MACH_HALT			(MACH_MAX_RETURN_CODE + 18)
+#define	MACH_POWERUP			(MACH_MAX_RETURN_CODE + 19)
+#define	MACH_CALL_DEBUGGER		(MACH_MAX_RETURN_CODE + 20)
 
 /*
  * The size of a single saved window and all of the saved windows.
@@ -421,7 +424,7 @@
  */
 #define	MACH_KERN_START		0
 #define	MACH_KERN_END		(16 * 1024 * 1024)
-#define	MACH_DEBUG_STACK_BOTTOM	0x4000
+#define	MACH_DEBUG_STACK_BOTTOM	0x6000
 #define	MACH_STACK_BOTTOM	(MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
 #define	MACH_CODE_START		(MACH_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
 #define	MACH_KERN_STACK_SIZE	0x4000
@@ -474,9 +477,14 @@
  *
  *	MACH_MEM_SLOT_MASK	The bits to put into the high order bits
  *				of any physical memory address.
+ *	MACH_PAGE_SLOT_MASK	The bits to put into the high order bits of
+ *				a physical page.
  *	MACH_FIRST_PHYS_PAGE	The first physical page that is usable.
+ *	MACH_NUM_PHYS_PAGES	The number of useable physical memory pages.
  */
 #define	MACH_MEM_SLOT_MASK	0xff000000
-#define	MACH_FIRST_PHYS_PAGE	2
+#define	MACH_PAGE_SLOT_MASK	0x000ff000
+#define	MACH_FIRST_PHYS_PAGE	32
+#define	MACH_NUM_PHYS_PAGES	(2048 - MACH_FIRST_PHYS_PAGE)
 
 #endif _MACHCONST

@@ -113,6 +113,11 @@ extern Mach_State	*machCurStatePtr;
 Mach_RegState	machDebugState;
 
 /*
+ * Cache controller state.
+ */
+int	machCCState[64];
+
+/*
  * Interrupt table struct.
  */
 void	(*(interruptHandlers[MACH_NUM_INTR_TYPES]))();
@@ -282,28 +287,30 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
      * it will restore its state from the regs.  The restore of state
      * restores up through the parents window.  Thus when we start running
      * we will have access to our parents r26 through r31 as r10 through
-     * r15.  MachContextSwitch will return to the value stored in r10 so
-     * we set the value of the function to start executing at in r26.  When
-     * it returns it will go back one window (which will be the exact window
-     * of switchRegState.regs) and start executing in the start function.
-     * The start function will expect as an argument the PC of where to start
-     * the process for real.  Thus in order to set up the first arg we
-     * have to put a value in MACH_INPUT_REG1.
+     * r15.  MachContextSwitch will return to the value stored in the curPC 
+     * field so we set the value of the function to start executing in this 
+     * field.  When it returns it will go back one window (which will be the
+     * exact window of switchRegState.regs) and start executing in the start
+     * function.  The start function will expect as an argument the PC of
+     * where to start the process for real.  Thus in order to set up the 
+     * first arg we have to put a value in MACH_INPUT_REG1.
      */
-    statePtr->switchRegState.regs[MACH_SPILL_SP][1] = (int)statePtr->kernStackEnd;
+    statePtr->switchRegState.regs[MACH_SPILL_SP][0] = (int)statePtr->kernStackEnd;
     statePtr->switchRegState.kpsw = (MACH_KPSW_PREFETCH_ENA |
 				     MACH_KPSW_IBUFFER_ENA |
 				     MACH_KPSW_VIRT_DFETCH_ENA |
 				     MACH_KPSW_VIRT_IFETCH_ENA |
 				     MACH_KPSW_ALL_TRAPS_ENA |
 				     MACH_KPSW_FAULT_TRAP_ENA |
-				     MACH_KPSW_ERROR_TRAP_ENA);
-    statePtr->switchRegState.regs[26][1] = (int)startFunc;
+				     MACH_KPSW_ERROR_TRAP_ENA |
+				     MACH_KPSW_INTR_TRAP_ENA);
+    statePtr->switchRegState.curPC = (Address)startFunc;
     /*
      * Start the cwp such that when MachContextSwitch returns it won't
-     * cause an overflow.
+     * cause an overflow.  Note that we want the second window so we set
+     * the cwp to 8 since the window number is shifted over by 2 bits.
      */
-    statePtr->switchRegState.cwp = 2;
+    statePtr->switchRegState.cwp = 8;
     statePtr->switchRegState.swp = statePtr->kernStackStart;
     if (startPC == (Address)NIL) {
 	/*
@@ -319,7 +326,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
 	/*
 	 * Kernel processes start executing at startPC.
 	 */
-	statePtr->switchRegState.regs[MACH_INPUT_REG1][1] = (int)startPC;
+	statePtr->switchRegState.regs[MACH_INPUT_REG1][0] = (int)startPC;
     }
     return(SUCCESS);
 }
@@ -506,6 +513,54 @@ Mach_CopyState(statePtr, destProcPtr)
     bcopy((Address)&statePtr->userState.trapRegState,
 	  (Address)&destProcPtr->machStatePtr->userState.trapRegState,
 	  sizeof(Mach_RegState));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetDebugState --
+ *
+ *	Extract the appropriate fields from the machine state struct
+ *	and store them into the debug struct.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Debug struct filled in from machine state struct.
+ *
+ *----------------------------------------------------------------------
+ */ 
+void
+Mach_GetDebugState(procPtr, debugStatePtr)
+    Proc_ControlBlock	*procPtr;
+    Proc_DebugState	*debugStatePtr;
+{
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SetDebugState --
+ *
+ *	Extract the appropriate fields from the debug struct
+ *	and store them into the machine state struct.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Machine state struct filled in from the debug state struct.
+ *
+ *----------------------------------------------------------------------
+ */ 
+void
+Mach_SetDebugState(procPtr, debugStatePtr)
+    Proc_ControlBlock	*procPtr;
+    Proc_DebugState	*debugStatePtr;
+{
 }
 
 
@@ -824,10 +879,11 @@ MachVMFault(faultType, PC, isDestAddr, destAddr, kpsw)
     Address	destAddr;	/* Value of dest/src of store/load instruction*/
     int		kpsw;		/* The KPSW at the time of the fault. */
 {
-    return(MACH_KERN_ACCESS_VIOL);
-#ifdef real_kernel
     Proc_ControlBlock	*procPtr;
 
+#ifdef spurboot
+    return(MACH_KERN_ACCESS_VIOL);
+#else
     procPtr = Proc_GetCurrentProc();
 
     if (faultType & MACH_VM_FAULT_REF_BIT) {
@@ -837,14 +893,18 @@ MachVMFault(faultType, PC, isDestAddr, destAddr, kpsw)
 	}
     }
     if (faultType & MACH_VM_FAULT_DIRTY_BIT) {
-	VmMach_SetDirtyBit(PC);
-	if (isDestAddr) {
-	    VmMach_SetDirtyBit(destAddr);
+	if (!isDestAddr) {
+	    Sys_Panic(SYS_PANIC, "MachVMFault: PC dirty??\n");
+	} else {
+	    VmMach_SetModBit(destAddr);
 	}
     }
 
     if (faultType & (MACH_VM_FAULT_PROTECTION | MACH_VM_FAULT_PAGE_FAULT)) {
 	Boolean		userFault;
+	extern unsigned	etext;
+
+	return(MACH_KERN_ACCESS_VIOL);
 
 	userFault = kpsw & MACH_KPSW_PREV_MODE;
 	/*
@@ -858,7 +918,7 @@ MachVMFault(faultType, PC, isDestAddr, destAddr, kpsw)
 	     * it caused a fault (i.e. there is no data address) then this
 	     * is an error.
 	     */
-	    if (PC >= (Address)&endText || !isDestAddr) {
+	    if (PC >= (Address)&etext || !isDestAddr) {
 		if (userFault) {
 		    (void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
                                    procPtr->processID, FALSE);
@@ -1111,9 +1171,9 @@ Mach_ProcessorState(processor)
 unsigned int
 Mach_GetSlotId()
 {
-
-	return (Mach_Read8bitCCReg(MACH_SLOT_ID_REG));
+    return (Mach_Read8bitCCReg(MACH_SLOT_ID_REG));
 }
+
 
 /*
  *----------------------------------------------------------------------
