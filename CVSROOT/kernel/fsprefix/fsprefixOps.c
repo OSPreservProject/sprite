@@ -1024,10 +1024,18 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
 		if (*hdrPtrPtr == (FsHandleHeader *)NIL) {
 		    /*
 		     * Return our caller the prefix instead of a relative name
-		     * so it can broadcast to get the prefix's handle.
+		     * so it can broadcast to get the prefix's handle.  If
+		     * the prefix has been installed under a specific serverID
+		     * then we return that so internet RPC (presumably) can
+		     * be used to contact the server.  Otherwise we'll
+		     * broadcast to locate the server.
 		     */
 		    *lookupNamePtr = longestPrefixPtr->prefix;
-		    *serverIDPtr = longestPrefixPtr->serverID;
+		    if (longestPrefixPtr->flags & FS_REMOTE_PREFIX) {
+			*serverIDPtr = longestPrefixPtr->serverID;
+		    } else {
+			*serverIDPtr = RPC_BROADCAST_SERVER_ID;
+		    }
 		    *prefixPtrPtr = (FsPrefix *)NIL;
 		    status = FS_NO_HANDLE;
 		} else {
