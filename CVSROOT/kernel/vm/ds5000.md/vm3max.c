@@ -76,9 +76,9 @@ extern char mach_BitmapAddr[];
  * Since the MIPS machines have a big hole in the address space
  * we have to add 1 Gig to cover the whole.
  *
- * Right now the amount is set to 1 Gig + 16 Meg
+ * Right now the amount is set to 1 Gig + 128 Meg
  */
-int	vmMachKernMemSize = 0x40000000 + 0x1000000;
+int	vmMachKernMemSize = 0x40000000 + 0x8000000;
 
 /*
  * Table of info about each physical page on the machine.
