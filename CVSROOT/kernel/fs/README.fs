@@ -6,9 +6,31 @@ of various source files.
 
 ******************************************************************************
 But before we get to that, here is a map of what happens on an Fs_Open call.
-This traces the path through the different switch tables.   --Mary Baker 9/91
+This traces the path through the different switch tables.  The Fs_Open call
+has three main components, as numbered below.  The two most important,
+the lookup (and name open) and io open sections, are traced separately, as
+numbered. 	 --Mary Baker 9/91
 
-				Fs_Open
+    Here is the format of this map:  if procedure A calls procedures
+    B and C, they as listed as
+	Procedure A
+	    Procedure B
+	    Procedure C
+    If a procedure D makes a function call through a switch table, switching on
+    something called "type" to call procedure E, it is listed
+    as
+	Procedure D
+	    ||
+	  type=x
+	    ||
+	Procedure E
+
+    RPC's are shown with arrows: ||
+				 \/
+    Enjoy
+    
+
+Fs_Open
 1) Fsprefix_LookupOperation(name, operation, ..., &openResults, ...)
 2) streamPtr = Fsio_StreamAddClient(&openResults.streamID, ...)
 3) fsio_StreamOpTable[type].ioOpen(openResults and streamData)
