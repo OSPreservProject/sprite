@@ -1150,8 +1150,8 @@ FsControlRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
  */
 
 ReturnStatus
-FsControlIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
-    FsHandleHeader *hdrPtr;		/* I/O handle */
+FsControlIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
+    Fs_Stream *streamPtr;		/* I/O handle */
     int command;			/* File specific I/O control */
     int byteOrder;			/* Client byte order, should be same */
     int inBufSize;			/* Size of inBuffer */
@@ -1160,7 +1160,8 @@ FsControlIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
     Address outBuffer;			/* Buffer for return parameters */
 
 {
-    register PdevControlIOHandle *ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
+    register PdevControlIOHandle *ctrlHandlePtr =
+	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
     if (byteOrder != mach_ByteOrder) {
@@ -1187,7 +1188,7 @@ FsControlIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
 	case IOC_LOCK:
 	case IOC_UNLOCK:
 	    status = FsIocLock(&ctrlHandlePtr->lock, command, byteOrder,
-				inBuffer, inBufSize, (FsFileID *)NIL);
+				inBuffer, inBufSize, &streamPtr->hdr.fileID);
 	    break;
 	case IOC_NUM_READABLE: {
 	    register int bytesAvailable;
@@ -2107,9 +2108,9 @@ exit:
  */
 
 ReturnStatus
-FsPseudoStreamIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer,
+FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer,
 		       outBufSize, outBuffer)
-    FsHandleHeader *hdrPtr;	/* Handle header for pseudo-stream. */
+    Fs_Stream	*streamPtr;	/* Stream to pseudo-device */
     int		command;	/* The control operation to be performed. */
     int		byteOrder;	/* Client's byte order */
     int		inBufSize;	/* Size of input buffer. */
@@ -2120,7 +2121,8 @@ FsPseudoStreamIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer,
     ReturnStatus 	status;
     Pdev_Request	request;
     register Proc_ControlBlock *procPtr;
-    register PdevClientIOHandle *cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
+    register PdevClientIOHandle *cltHandlePtr =
+	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
 
     LOCK_MONITOR;
@@ -2432,9 +2434,9 @@ FsServerStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
  */
 /*ARGSUSED*/
 ENTRY ReturnStatus
-FsServerStreamIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer,
+FsServerStreamIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer,
 		       outBufSize, outBuffer)
-    FsHandleHeader 	*hdrPtr;	/* Server IO Handle. */
+    Fs_Stream	*streamPtr;	/* Stream to server handle. */
     int		command;	/* The control operation to be performed. */
     int		byteOrder;	/* Client's byte order, should be same */
     int		inBufSize;	/* Size of input buffer. */
@@ -2443,7 +2445,8 @@ FsServerStreamIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer,
     Address	outBuffer;	/* Data to be obtained from the slave/master.*/
 {
     ReturnStatus	status = SUCCESS;
-    register PdevServerIOHandle	*pdevHandlePtr = (PdevServerIOHandle *) hdrPtr;
+    register PdevServerIOHandle	*pdevHandlePtr =
+	    (PdevServerIOHandle *)streamPtr->ioHandlePtr;
 
     LOCK_MONITOR;
 
