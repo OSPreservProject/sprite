@@ -19,6 +19,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <machConst.h>
 #include <sync.h>
 #include <stdio.h>
+#include <vm.h>
+#include <stdlib.h>
 
 #define	NUM_RESTART_TYPES	10
 
@@ -1387,13 +1389,13 @@ Recov_Cmd(option, argPtr)
     Recov_GetObjectSizeArgs	getObjectSizeArg;
     Recov_MapTypeArgs		mapTypeArg;
     Recov_MapObjectNumArgs	mapObjNumArg;
+    ReturnStatus		status = SUCCESS;
 
     if (option != RECOV_TOGGLE_CHECKSUM &&
 	    option != RECOV_PRINT_REBOOT_TIMES &&
 	    (argPtr == (Address) NIL || argPtr == (Address) 0 ||
 	    argPtr == (Address) USER_NIL)) {
-	status = GEN_INVALID_ARG;
-	break;
+	return GEN_INVALID_ARG;
     }
     /* option is the command */
     switch (option) {
@@ -1858,12 +1860,12 @@ Recov_Cmd(option, argPtr)
 	objSize = (int) argPtr;
 	Recov_PrintSpace(objSize);
 	status = SUCCESS;
-	    break;
-	}
+	break;
     }
     default:
 	status = GEN_INVALID_ARG;
 	break;
     }
-    break;
+
+    return status;
 }
