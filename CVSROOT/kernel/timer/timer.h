@@ -251,6 +251,7 @@ extern Sync_Semaphore 	timer_ClockMutex;
 #endif
 
 
+extern void Timer_Init _ARGS_((void));
 extern void Timer_ScheduleRoutine _ARGS_((register 
 			Timer_QueueElement *newElementPtr, Boolean interval));
 extern Boolean Timer_DescheduleRoutine _ARGS_((register 
