@@ -393,8 +393,9 @@ Proc_MigrateTrap(procPtr)
     }
 #endif /* CLEAN */   
    
-    procPtr->genFlags = (procPtr->genFlags & ~PROC_MIG_PENDING) |
-	PROC_MIGRATING;
+    procPtr->genFlags = (procPtr->genFlags &
+			 ~(PROC_MIG_PENDING | PROC_MIGRATION_DONE) |
+			 PROC_MIGRATING);
     
     hostID = procPtr->peerHostID;
     bufSize = 0;

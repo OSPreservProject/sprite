@@ -48,11 +48,11 @@ static Sync_Lock debugLock; 			/* Monitor lock. */
 List_Links	debugListHdr;
 List_Links	*debugList = &debugListHdr;
 
-extern	ENTRY 	void		ProcDebugWakeup();
-extern	ENTRY	void		AddToDebugList();
-extern	ENTRY	void		RemoveFromDebugList();
-extern	ENTRY	ReturnStatus	ProcGetThisDebug();
-extern	ENTRY	ReturnStatus	ProcGetNextDebug();
+ENTRY 	void		ProcDebugWakeup();
+static	ENTRY	void		AddToDebugList();
+static	ENTRY	void		RemoveFromDebugList();
+static	ENTRY	ReturnStatus	ProcGetThisDebug();
+static	ENTRY	ReturnStatus	ProcGetNextDebug();
 
 
 /*
@@ -424,7 +424,7 @@ ProcDebugWakeup()
  *----------------------------------------------------------------------
  */
 
-ENTRY static ReturnStatus
+static ENTRY ReturnStatus
 ProcGetThisDebug(pid, procPtrPtr)
     Proc_PID		pid;
     Proc_ControlBlock	**procPtrPtr;
@@ -497,7 +497,7 @@ exit:
  *----------------------------------------------------------------------
  */
 
-ENTRY static ReturnStatus
+static ENTRY ReturnStatus
 ProcGetNextDebug(destAddr, procPtrPtr)
     Address		destAddr;
     Proc_ControlBlock	**procPtrPtr;
@@ -550,7 +550,7 @@ ProcGetNextDebug(destAddr, procPtrPtr)
  *----------------------------------------------------------------------
  */
 
-ENTRY static void
+static ENTRY void
 AddToDebugList(procPtr)
     register Proc_ControlBlock 	*procPtr;
 {
@@ -579,7 +579,7 @@ AddToDebugList(procPtr)
  *----------------------------------------------------------------------
  */
 
-ENTRY void
+static ENTRY void
 RemoveFromDebugList(procPtr)
     register Proc_ControlBlock 	*procPtr;
 {
@@ -592,3 +592,4 @@ RemoveFromDebugList(procPtr)
 
     UNLOCK_MONITOR;
 }
+

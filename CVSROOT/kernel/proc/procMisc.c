@@ -1102,6 +1102,7 @@ Proc_GetHostIDs(virtualHostPtr, physicalHostPtr)
  *----------------------------------------------------------------------
  */
 
+/*ARGSUSED*/
 void
 Proc_PushLockStack(pcbPtr, type, lockPtr)
     Proc_ControlBlock		*pcbPtr;	/* ptr to pcb to modify */
@@ -1109,6 +1110,7 @@ Proc_PushLockStack(pcbPtr, type, lockPtr)
     Address			lockPtr;	/* ptr to lock */
 
 {
+#ifdef LOCKDEP
     static Boolean	firstOverflow = TRUE;
 
     /*
@@ -1138,6 +1140,7 @@ Proc_PushLockStack(pcbPtr, type, lockPtr)
     pcbPtr->lockStackSize++;
 exit:
     ENABLE_INTR();
+#endif
 }
 
 /*
@@ -1156,11 +1159,13 @@ exit:
  *----------------------------------------------------------------------
  */
 
+/*ARGSUSED*/
 void
 Proc_RemoveFromLockStack(pcbPtr, lockPtr)
     Proc_ControlBlock		*pcbPtr;	/* ptr to pcb to modify */
     Address			lockPtr;	/* ptr to lock */
 {
+#ifdef LOCKDEP
     int 	i;
     int		stackTop;
     Boolean 	found = FALSE;
@@ -1197,5 +1202,6 @@ Proc_RemoveFromLockStack(pcbPtr, lockPtr)
     }
 exit:
     ENABLE_INTR();
+#endif
 }
 
