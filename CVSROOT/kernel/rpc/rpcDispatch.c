@@ -106,8 +106,10 @@ Rpc_Dispatch(packetPtr, packetLength)
 		     rpcHdrPtr->dataSize;
     if (packetLength < expectedLength) {
 	rpcCltStat.shorts++;
-	Sys_Printf("Rpc_Dispatch: SHORT packet, (%d) not (%d)\n",
+	Sys_Printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
 				  packetLength, expectedLength);
+	Sys_Printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
+		    rpcHdrPtr->clientID, rpcHdrPtr->command);
 	return;
     } else if (packetLength > expectedLength &&
 	       packetLength > (NET_ETHER_MIN_BYTES)) {
@@ -166,8 +168,8 @@ Rpc_Dispatch(packetPtr, packetLength)
 	if (rpcHdrPtr->channel < 0 ||
 	    rpcHdrPtr->channel >= rpcNumChannels) {
 	    rpcCltStat.badChannel++;
-	    Sys_Printf("RpcClientDispatch: bad channel (%d)\n",
-					   rpcHdrPtr->channel);
+	    Sys_Printf("Rpc_Dispatch: bad channel %d from clt %d rpc %d",
+	       rpcHdrPtr->channel, rpcHdrPtr->clientID, rpcHdrPtr->command);
 	} else {
 	    /*
 	     * Save sender's requested interfragment delay,
