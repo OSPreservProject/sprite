@@ -580,11 +580,13 @@ Dev_SyslogDisable()
 {
     if (syslogEnable) {
 	MASTER_LOCK(&syslogMutex);
-	MASTER_UNLOCK(&syslogMutex);
 	firstIndex = -1;
 	lastIndex = - 1;
 	syslogEnable = FALSE;
+	MASTER_UNLOCK(&syslogMutex);
     } else {
+	MASTER_LOCK(&syslogMutex);
 	syslogEnable = TRUE;
+	MASTER_UNLOCK(&syslogMutex);
     }
 }
