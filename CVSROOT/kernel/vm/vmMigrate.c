@@ -24,7 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <byte.h>
 #include <stdio.h>
 #include <bstring.h>
-    
+#include <assert.h>    
 
 static ReturnStatus EncapSegment _ARGS_((Vm_Segment *segPtr,
 	Proc_ControlBlock *procPtr, Address *bufPtrPtr));
@@ -262,6 +262,7 @@ Vm_DeencapState(procPtr, infoPtr, buffer)
 			   status);
 		    return(status);
 		}
+		assert(filePtr->ioHandlePtr != (Fs_HandleHeader *) NIL);
 		segPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
 		if (segPtr == (Vm_Segment *) NIL) {
 		    segPtr = Vm_SegmentNew(VM_CODE, filePtr, fileAddr,
