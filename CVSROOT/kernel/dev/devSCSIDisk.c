@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev.h"
 #include "devInt.h"
 #include "devSCSI.h"
+#include "devSBC.h"		/* FIXME: need to merge this */
 #include "devSCSIDisk.h"
 
 #include "dbg.h"
@@ -317,12 +318,119 @@ DevSCSIDiskError(devPtr, sensePtr)
 	 * Unit attention, at least in one case, is potentially ignorable.
 	 * Also, the Emulex SCSIBOX drive doesn't set an extra error code,
 	 * it just sets the key to SCSI_UNIT_ATTN_KEY.
+	 *
+	 * FIXME: the relationship between SCSI and SBC is pretty confused.
 	 */
 	case SCSI_EMULEX_DISK: {
 	    register DevEmuluxSense *emuluxSensePtr;
 	    register DevSCSIExtendedSense *extSensePtr;
+	    extern Boolean devSBCDebug;
+	    DevSBCDevice *sbcDevPtr;
+	    DevSBCController *sbcPtr;
+
 	    emuluxSensePtr = (DevEmuluxSense *)sensePtr;
 	    extSensePtr = (DevSCSIExtendedSense *)sensePtr;
+	    sbcDevPtr = (DevSBCDevice *) devPtr;
+	    sbcPtr = sbcDevPtr->sbcPtr;
+	    
+	    switch (extSensePtr->key) {
+		case SCSI_NO_SENSE:
+		    if (devSBCDebug) {
+			Sys_Panic(SYS_WARNING,
+				  "SCSI-%d drive %d, no sense?\n",
+				  devPtr->scsiPtr->number, devPtr->slaveID);
+		    }
+		    break;
+		case SCSI_RECOVERABLE:
+		    /*
+		     * The drive recovered from an error.
+		     */
+		    if (devSBCDebug > 2) {
+			Sys_Panic(SYS_WARNING,
+				  "SCSI-%d drive %d, recoverable error\n",
+				  devPtr->scsiPtr->number, devPtr->slaveID);
+			Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
+				   extSensePtr->info1 & 0xff,
+				   extSensePtr->info2 & 0xff,
+				   extSensePtr->info3 & 0xff,
+				   extSensePtr->info4 & 0xff);
+		    }
+		    sbcPtr->stats.numRecoverableErrors++;
+		    break;
+		case SCSI_NOT_READY_KEY:
+		    status = DEV_OFFLINE;
+		    break;
+		case SCSI_ILLEGAL_REQUEST:
+		    /*
+		     * Probably a programming error.
+		     */
+		    Sys_Panic(SYS_WARNING,
+				"SCSI-%d drive %d, illegal request %d\n",
+				devPtr->scsiPtr->number, devPtr->slaveID,
+				command);
+		    status = DEV_INVALID_ARG;
+		    break;
+		case SCSI_MEDIA_ERROR:
+		case SCSI_HARDWARE_ERROR:
+		    Sys_Panic(SYS_WARNING,
+				"SCSI-%d drive %d, hard class7 error %d\n",
+				devPtr->scsiPtr->number, devPtr->slaveID,
+				extSensePtr->key);
+		    Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
+			extSensePtr->info1 & 0xff,
+			extSensePtr->info2 & 0xff,
+			extSensePtr->info3 & 0xff,
+			extSensePtr->info4 & 0xff);
+		    status = DEV_HARD_ERROR;
+		    sbcPtr->stats.numHardErrors++;
+		    break;
+		case SCSI_UNIT_ATTN_KEY:
+		    /*
+		     * This is an error that occurs after the drive is reset.
+		     * It can probably be ignored.
+		     */
+		    Sys_Panic(SYS_WARNING,
+			    "SCSI-%d drive %d, unit attention\n",
+			    devPtr->scsiPtr->number, devPtr->slaveID);
+		    sbcPtr->stats.numUnitAttns++;
+		    break;
+		case SCSI_WRITE_PROTECT_KEY:
+		    if (command == SCSI_WRITE ||
+			command == SCSI_WRITE_EOF ||
+			command == SCSI_ERASE_TAPE) {
+			status = FS_NO_ACCESS;
+		    }
+		    break;
+		case SCSI_BLANK_CHECK:
+		    Sys_Panic(SYS_WARNING,
+			"SCSI-%d drive %d, \"blank check\"\n",
+			devPtr->scsiPtr->number, devPtr->slaveID);
+		    Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
+			extSensePtr->info1 & 0xff,
+			extSensePtr->info2 & 0xff,
+			extSensePtr->info3 & 0xff,
+			extSensePtr->info4 & 0xff);
+		    break;
+		case SCSI_VENDOR:
+		case SCSI_POWER_UP_FAILURE:
+		case SCSI_ABORT:
+		case SCSI_EQUAL:
+		case SCSI_OVERFLOW:
+		    Sys_Panic(SYS_WARNING,
+			"SCSI-%d drive %d, unsupported class7 error %d\n",
+			devPtr->scsiPtr->number, devPtr->slaveID,
+			extSensePtr->key);
+		    status = DEV_HARD_ERROR;
+		    break;
+		default:
+		    Sys_Panic(SYS_WARNING,
+			"SCSI-%d drive %d, can't handle error %d\n",
+			devPtr->scsiPtr->number, devPtr->slaveID,
+			extSensePtr->key);
+		    status = DEV_HARD_ERROR;
+		    break;
+	    }
+#ifdef notdef
 	    if (emuluxSensePtr->extSense.key != SCSI_UNIT_ATTN_KEY) {
 		switch (emuluxSensePtr->error) {
 		    case SCSI_NOT_READY:
@@ -372,6 +480,7 @@ DevSCSIDiskError(devPtr, sensePtr)
 			"SCSI-%d drive %d, unit attention\n",
 			devPtr->scsiPtr->number, devPtr->slaveID);
 	    }
+#endif notdef
 	    break;
 	}
     }
