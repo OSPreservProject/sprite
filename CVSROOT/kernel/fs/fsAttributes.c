@@ -25,16 +25,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fslcl.h"
-#include "fsconsist.h"
-#include "fscache.h"
-#include "fsdm.h"
-#include "fsStat.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fslcl.h>
+#include <fsconsist.h>
+#include <fscache.h>
+#include <fsdm.h>
+#include <fsStat.h>
+#include <rpc.h>
+
+#include <stdio.h>
 
 
 /*
