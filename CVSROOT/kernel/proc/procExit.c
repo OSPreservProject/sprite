@@ -772,9 +772,7 @@ Proc_InformParent(procPtr, childStatus)
      *
      * For a migrated process, just send a signal no matter what, since it
      * can go to an arbitrary node.  Also, do RPC's using a callback so
-     * the monitor lock isn't held during the RPC.  (Perhaps all signals
-     * could be done with a callback and the backGroundSig flag could be
-     * removed??)
+     * the monitor lock isn't held during the RPC.  
      */
 
     if (procPtr->genFlags & PROC_FOREIGN) {
@@ -1584,7 +1582,7 @@ CheckPidArray(curProcPtr, returnSuspend, numPids,  pidArray, procPtrPtr)
  */
 
 /* ARGSUSED */
-ENTRY void
+void
 Proc_NotifyMigratedWaiters(pid, callInfoPtr)
     Proc_PID 		pid;
     Proc_CallInfo	*callInfoPtr;		/* not used */
