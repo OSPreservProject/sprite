@@ -26,6 +26,14 @@ typedef struct VmMach_SegData {
 } VmMach_SegData;
 
 /*
+ * Machine dependent shared memory data
+ */
+typedef struct VmMach_SharedData {
+    int        *allocVector;           /* Allocated block vector. */
+    int         allocFirstFree;         /* First free block. */
+} VmMach_SharedData;
+
+/*
  * Machine dependent data for each process.
  */
 typedef struct VmMach_ProcData {
@@ -40,6 +48,7 @@ typedef struct VmMach_ProcData {
 					 * virtual page - set the modify bit
 					 * in the TLB entry if we try to
 					 * validate this VA. */
+    VmMach_SharedData	sharedData;	/* Data for shared memory. */
 } VmMach_ProcData;
 
 /*
@@ -126,6 +135,9 @@ extern	void		VmMach_MakeNonCacheable();
 /*
  * Shared memory.
  */ 
-extern  Address         VmMach_SharedStart(); 
+extern  ReturnStatus	VmMach_SharedStartAddr(); 
+extern  void		VmMach_SharedSegFinish(); 
+extern	void		VmMach_SharedProcStart();
+extern	void		VmMach_SharedProcFinish();
 
 #endif /* _VMMACH */

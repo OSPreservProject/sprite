@@ -268,4 +268,17 @@
  */
 #define	VMMACH_MAP_SEG_ADDR		(0xE000000 - VMMACH_SEG_SIZE)
 
+/*
+ * Definitions for shared memory.
+ * VMMACH_USER_SHARED_PAGES is the number of pages allocated for shared
+ *	memory.
+ * VMMACH_SHARED_BLOCK_SIZE is the block size in which shared memory is
+ *	allocated.  This is a multiple of 128K to avoid cache aliasing.
+ * VMMACH_SHARED_START ADDR is the address at which shared memory starts.
+ */
+#define VMMACH_USER_SHARED_PAGES	8192
+#define VMMACH_SHARED_BLOCK_SIZE	0x20000
+#define VMMACH_SHARED_START_ADDR	(VMMACH_MAP_SEG_ADDR-VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
+#define	VMMACH_SHARED_NUM_BLOCKS	(VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE/VMMACH_SHARED_BLOCK_SIZE)
+
 #endif /* _VMSUN3CONST */

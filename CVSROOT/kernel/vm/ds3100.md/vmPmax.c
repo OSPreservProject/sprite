@@ -445,6 +445,7 @@ VmMach_ProcInit(vmPtr)
     }
     vmPtr->machPtr->mapSegPtr = (struct Vm_Segment *)NIL;
     vmPtr->machPtr->pid = VMMACH_INV_PID;
+    vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
 }
 
 
@@ -878,8 +879,8 @@ VmMach_FlushCode(procPtr, virtAddrPtr, virtPage, numBytes)
     unsigned		virtPage;
     int			numBytes;
 {
-    Mach_FlushCode((virtPage << VMMACH_PAGE_SHIFT) + segOffset(virtAddrPtr),
-		   numBytes);
+    Mach_FlushCode((Address)((virtPage << VMMACH_PAGE_SHIFT) +
+	    segOffset(virtAddrPtr)), (unsigned)numBytes);
 }
 
 
@@ -1266,7 +1267,8 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 	    /*
 	     * If a code page flush it from the instruction cache.
 	     */
-	    Mach_FlushCode(virtPage << VMMACH_PAGE_SHIFT, VMMACH_PAGE_SIZE);
+	    Mach_FlushCode((Address)(virtPage << VMMACH_PAGE_SHIFT),
+		    VMMACH_PAGE_SIZE);
 	}
     }
 }
@@ -1425,17 +1427,19 @@ VmMach_TLBFault(virtAddr)
 
     if (virtAddr >= (Address)VMMACH_VIRT_CACHED_START &&
         virtAddr < (Address)VMMACH_MAPPED_PAGE_ADDR) {
+	dprintf("fault 1\n");
 	return(FAILURE);
     } else if (virtAddr >= (Address)VMMACH_USER_MAPPING_BASE_ADDR &&
 	       virtAddr < (Address)VMMACH_PHYS_CACHED_START) {
 	/*
 	 * This address falls into the range of address that are used to
-	 * map kernel pages into a user's addres space.
+	 * map kernel pages into a user's address space.
 	 */
 	unsigned virtPage, lowEntry, highEntry;
 	int pid;
 
 	if (Proc_GetCurrentProc() != mappedProcPtr) {
+	    dprintf("fault 2\n");
 	    return(FAILURE);
 	}
 	pid = mappedProcPtr->vmPtr->machPtr->pid;
@@ -1444,6 +1448,7 @@ VmMach_TLBFault(virtAddr)
 
 	lowEntry = userMappingTable[virtPage - VMMACH_USER_MAPPING_BASE_PAGE];
 	if (lowEntry == 0) {
+	    dprintf("fault 3\n");
 	    return(FAILURE);
 	}
 	highEntry = (virtPage << VMMACH_TLB_VIRT_PAGE_SHIFT) |
@@ -1456,7 +1461,15 @@ VmMach_TLBFault(virtAddr)
 
 	return(SUCCESS);
     } else {
+	ReturnStatus status;
+	status = Vm_PageIn(virtAddr, FALSE);
+	if (status != SUCCESS) {
+	    dprintf("fault 4\n");
+	}
+	return status;
+	/*
 	return(Vm_PageIn(virtAddr, FALSE));
+	*/
     }
 }
 
@@ -1829,7 +1842,6 @@ VmMach_UserMap(numBytes, physAddr, firstTime)
     return(retAddr);
 }
 
-
 
 /*
  *----------------------------------------------------------------------
@@ -1869,11 +1881,125 @@ VmMach_UserUnmap()
     }
 }
 
+
+#define ALLOC(x,s)	(sharedData->allocVector[(x)]=s)
+#define FREE(x)		(sharedData->allocVector[(x)]=0)
+#define SIZE(x)		(sharedData->allocVector[(x)])
+#define ISFREE(x)	(sharedData->allocVector[(x)]==0)
+
+
 
 /*
  * ----------------------------------------------------------------------------
  *
- * VmMach_SharedStart --
+ * VmMach_Alloc --
+ *
+ *      Allocates a region of shared memory;
+ *
+ * Results:
+ *      SUCCESS if the region can be allocated.
+ *	The starting address is returned in addr.
+ *
+ * Side effects:
+ *      The allocation vector is updated.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static ReturnStatus
+VmMach_Alloc(sharedData, regionSize, addr)
+    VmMach_SharedData	*sharedData;	/* Pointer to shared memory info.  */
+    int			regionSize;	/* Size of region to allocate. */
+    Address		*addr;		/* Address of region. */
+{
+    int numBlocks = (regionSize+VMMACH_SHARED_BLOCK_SIZE-1) /
+	    VMMACH_SHARED_BLOCK_SIZE;
+    int i, blockCount, firstBlock;
+
+    if (sharedData->allocVector == (int *)NULL || sharedData->allocVector ==
+	    (int *)NIL) {
+	dprintf("VmMach_Alloc: allocVector uninitialized!\n");
+    }
+
+    /*
+     * Loop through the alloc vector until we find numBlocks free blocks
+     * consecutively.
+     */
+    blockCount = 0;
+    for (i=sharedData->allocFirstFree;
+	    i<=VMMACH_SHARED_NUM_BLOCKS-1 && blockCount<numBlocks;i++) {
+	if (ISFREE(i)) {
+	    blockCount++;
+	} else {
+	    blockCount = 0;
+	    if (i==sharedData->allocFirstFree) {
+		sharedData->allocFirstFree++;
+	    }
+	}
+    }
+    if (blockCount < numBlocks) {
+	dprintf("VmMach_Alloc: got %d blocks of %d of %d total\n",
+		blockCount,numBlocks,VMMACH_SHARED_NUM_BLOCKS);
+	return VM_NO_SEGMENTS;
+    }
+    firstBlock = i-blockCount;
+    if (firstBlock == sharedData->allocFirstFree) {
+	sharedData->allocFirstFree += blockCount;
+    }
+    *addr = (Address)(firstBlock*VMMACH_SHARED_BLOCK_SIZE +
+	    VMMACH_SHARED_START_ADDR);
+    for (i = firstBlock; i<firstBlock+numBlocks; i++) {
+	ALLOC(i,numBlocks);
+    }
+    dprintf("VmMach_Alloc: got %d blocks at %d (%x)\n",
+	    numBlocks,firstBlock,*addr);
+    return SUCCESS;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_Unalloc --
+ *
+ *      Frees a region of shared address space.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The allocation vector is updated.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+static void
+VmMach_Unalloc(sharedData, addr)
+    VmMach_SharedData	*sharedData;	/* Pointer to shared memory info. */
+    Address	addr;		/* Address of region. */
+{
+    int firstBlock = ((int)addr-VMMACH_SHARED_START_ADDR) /
+	    VMMACH_SHARED_BLOCK_SIZE;
+    int numBlocks = SIZE(firstBlock);
+    int i;
+
+    dprintf("VmMach_Unalloc: freeing %d blocks at %x\n",firstBlock,addr);
+    if (firstBlock < sharedData->allocFirstFree) {
+	sharedData->allocFirstFree = firstBlock;
+    }
+    for (i=0;i<numBlocks;i++) {
+	if (ISFREE(i+firstBlock)) {
+	    printf("Freeing free shared address %d %d %d\n",i,i+firstBlock,
+		    (int)addr);
+	    return;
+	}
+	FREE(i+firstBlock);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedStartAddr --
  *
  *      Determine the starting address for a shared segment.
  *
@@ -1881,14 +2007,97 @@ VmMach_UserUnmap()
  *      Returns the proper start address for the segment.
  *
  * Side effects:
- *      None.
+ *      Allocates part of the shared address space.
  *
  * ----------------------------------------------------------------------------
  */
-Address
-VmMach_SharedStart(reqAddr,size)
-Address         reqAddr;        /* Requested start address. */
-int             size;           /* Length of shared segment. */
+ReturnStatus
+VmMach_SharedStartAddr(procPtr,size,reqAddr)
+    Proc_ControlBlock	*procPtr;
+    int             size;           /* Length of shared segment. */
+    Address         *reqAddr;        /* Requested start address. */
 {
-    return reqAddr;
+    return VmMach_Alloc(&procPtr->vmPtr->machPtr->sharedData, size, reqAddr);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedProcStart --
+ *
+ *      Perform machine dependent initialization of shared memory
+ *	for this process.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The storage allocation structures are initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_SharedProcStart(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    VmMach_SharedData	*sharedData = &procPtr->vmPtr->machPtr->sharedData;
+    dprintf("VmMach_SharedProcStart: initializing proc's allocVector\n");
+    if (sharedData->allocVector != (int *)NIL) {
+	panic("VmMach_SharedProcStart: allocVector not NIL\n");
+    }
+    sharedData->allocVector =
+	    (int *)malloc(VMMACH_SHARED_NUM_BLOCKS*sizeof(int));
+    sharedData->allocFirstFree = 0;
+    bzero((Address) sharedData->allocVector, VMMACH_SHARED_NUM_BLOCKS*
+	    sizeof(int));
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedSegFinish --
+ *
+ *      Perform machine dependent cleanup of shared memory
+ *	for this segment.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The storage allocation structures are freed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_SharedSegFinish(procPtr,addr)
+    Proc_ControlBlock	*procPtr;
+    Address		addr;
+{
+    VmMach_Unalloc(&procPtr->vmPtr->machPtr->sharedData,addr);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedProcFinish --
+ *
+ *      Perform machine dependent cleanup of shared memory
+ *	for this process.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The storage allocation structures are freed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_SharedProcFinish(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    dprintf("VmMach_SharedProcFinish: freeing process's allocVector\n");
+    free((Address)procPtr->vmPtr->machPtr->sharedData.allocVector);
+    procPtr->vmPtr->machPtr->sharedData.allocVector;
+    procPtr->vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
 }
