@@ -90,6 +90,9 @@ typedef struct FsPrefixExport {
  *					prefix installed.
  *	FS_PREFIX_OPEN_LOCK		Used to lock out a domain as part
  *					of bringing it offline.
+ *	FS_PREFIX_LOCKED		The prefix cannot be deleted while
+ *					this flag is set.  The iteration
+ *					procedure uses this flag.
  */
 
 #define	FS_EXPORTED_PREFIX		0x1
@@ -98,6 +101,7 @@ typedef struct FsPrefixExport {
 #define	FS_EXACT_PREFIX			0x8
 #define	FS_OVERRIDE_PREFIX		0x10
 #define FS_LINK_NOT_PREFIX		0x20
+#define FS_PREFIX_LOCKED		0x40
 #define FS_PREFIX_OPEN_LOCK		0x100
 
 /*
