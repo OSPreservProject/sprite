@@ -20,6 +20,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "dbg.h"
 #include "stdlib.h"
+#ifdef sun4
+#include "machMon.h"
+#endif sun4
 
 /*
  * Declarations of external variables
@@ -200,7 +203,7 @@ ENTRY Address
 Vm_RawAlloc(numBytes)
 {
     Address 		retAddr;
-    int 		maxAddr;
+    Address 		maxAddr;
     int 		lastPage;
     Vm_PTE		*ptePtr;
     Vm_VirtAddr		virtAddr;
@@ -242,7 +245,7 @@ Vm_RawAlloc(numBytes)
     segPtr = vm_SysSegPtr;
     virtAddr.segPtr = segPtr;
     lastPage = segPtr->numPages + segPtr->offset - 1;
-    maxAddr = (lastPage + 1) * vm_PageSize - 1;
+    maxAddr = (Address) ((lastPage + 1) * vm_PageSize - 1);
     ptePtr = VmGetPTEPtr(segPtr, lastPage);
 
     /*
@@ -250,7 +253,7 @@ Vm_RawAlloc(numBytes)
      * enough to handle this memory request.  Note that we don't allow
      * VmPageAllocateInt to block if it encounters lots of dirty pages.
      */
-    while ((int) (vmMemEnd) - 1 > maxAddr) {
+    while (vmMemEnd - 1 > maxAddr) {
 	int	page;
 
 	maxAddr += vm_PageSize;

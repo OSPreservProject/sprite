@@ -49,7 +49,11 @@ Vm_BootInit()
     /*
      * Make sure that we start on a four byte boundary.
      */
+#ifdef sun4		/* temporary test - this will not last */
+    vmMemEnd = (Address) (((int) vmMemEnd + 7) & ~7);	/* double-word bound. */
+#else
     vmMemEnd = (Address) (((int) vmMemEnd + 3) & ~3);
+#endif /* sun4 */
 
     VmMach_BootInit(&vm_PageSize, &vmPageShift, &vmPageTableInc,
 		    &vmKernMemSize, &vmStat.numPhysPages, &vmMaxMachSegs,
@@ -84,6 +88,10 @@ Vm_BootAlloc(numBytes)
 	return(addr);
     }
     addr =  vmMemEnd;
+#ifdef sun4	/* temporary test - this will not last */
+    vmMemEnd += (numBytes + 7) & ~7;	/* double-word boundary */
+#else
     vmMemEnd += (numBytes + 3) & ~3;
+#endif /* sun4 */
     return(addr);
 }
