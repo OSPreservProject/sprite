@@ -268,9 +268,9 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
 	DEBUG( ("migrate status %x\n", status) );
     }
     if (streamPtr->offset != savedOffset) {
-	printf("Fsio_DeencapStream \"%s\" srcClientOffset %d ioSrvrOffset %d\n",
+	DEBUG( ("Fsio_DeencapStream \"%s\" srcClientOffset %d ioSrvrOffset %d\n",
 	    Fsutil_HandleName(streamPtr->ioHandlePtr),
-	    savedOffset, streamPtr->offset);
+	    savedOffset, streamPtr->offset) );
     }
 
     if (status == SUCCESS) {
