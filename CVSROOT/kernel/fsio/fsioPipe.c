@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "fsInt.h"
 #include "fsPipe.h"
+#include "fsOpTable.h"
 #include "fsStream.h"
 #include "fsMigrate.h"
 #include "fsRecovery.h"
@@ -283,7 +284,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 ReturnStatus
 FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Fs_Stream           *streamPtr;     /* Stream to read from */
-    int			flags;		/* IGNORED */
+    int			flags;		/* FS_USER | FS_CONSUME */
     register Address    buffer;         /* Buffer to fill with file data */
     int                 *offsetPtr;     /* In/Out byte offset */
     int                 *lenPtr;        /* In/Out byte count */
@@ -337,7 +338,7 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	/*
 	 * Can do a straight copy, no wrap around necessary.
 	 */
-	if (streamPtr->flags & FS_USER) {
+	if (flags & FS_USER) {
 	    if (Vm_CopyOut(toRead, handlePtr->buffer + startOffset, buffer)
 			  != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
@@ -351,7 +352,7 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	 * Have to wrap around in the block so do it in two copies.
 	 */
 	numBytes = FS_BLOCK_SIZE - startOffset;
-	if (streamPtr->flags & FS_USER) {
+	if (flags & FS_USER) {
 	    if (Vm_CopyOut(numBytes, handlePtr->buffer + startOffset, buffer)
 			  != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
@@ -411,7 +412,8 @@ ReturnStatus
 FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Fs_Stream           *streamPtr;     /* Stream to write to */
     int			flags;		/* FS_NON_BLOCKING checked so the
-					 * correct error code is returned. */
+					 * correct error code is returned, plus
+					 * FS_USER for copying data. */
     register Address    buffer;         /* Buffer to add to the pipe */
     int                 *offsetPtr;     /* In/Out byte offset */
     int                 *lenPtr;        /* In/Out byte count */
@@ -474,7 +476,7 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	/*
 	 * Can do a straight copy, no wrap around necessary.
 	 */
-	if (streamPtr->flags & FS_USER) {
+	if (flags & FS_USER) {
 	    if (Vm_CopyIn(toWrite, buffer, handlePtr->buffer + startOffset)
 			  != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
@@ -488,7 +490,7 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	 * Have to wrap around in the block so do it in two copies.
 	 */
 	numBytes = FS_BLOCK_SIZE - startOffset;
-	if (streamPtr->flags & FS_USER) {
+	if (flags & FS_USER) {
 	    if (Vm_CopyIn(numBytes, buffer, handlePtr->buffer + startOffset)
 			  != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
@@ -756,14 +758,30 @@ FsPipeSetIOAttr(fileIDPtr, attrPtr, flags)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeMigStart(hdrPtr, flags, clientID, data)
+FsPipeMigStart(hdrPtr, flags, clientID, migFlagsPtr)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
     int clientID;		/* Host doing the encapsulation */
-    ClientData data;		/* Buffer we fill in */
+    int *migFlagsPtr;		/* Migration flags we may modify */
 {
+    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
+    int writes;
+    
     if ((flags & FS_RMT_SHARED) == 0) {
-	FsHandleRelease(hdrPtr, FALSE);
+	if (flags & FS_WRITE) {
+	    /*
+	     * Figure out if this client is migrating away the last writer.
+	     */
+	    FsHandleLock(handlePtr);
+	    FsIOClientStatus(&handlePtr->clientList, clientID,
+			     (int *) NIL, &writes, (int *) NIL);
+	    if (writes == 1) {
+		*migFlagsPtr |= FS_LAST_WRITER;
+	    }
+	    FsHandleRelease(hdrPtr, TRUE);
+	} else {
+	    FsHandleRelease(hdrPtr, FALSE);
+	}
     }
     return(SUCCESS);
 }
@@ -804,6 +822,7 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     register Fs_Stream			*streamPtr;
     Boolean				found;
     Boolean				cache = FALSE;
+    Boolean				keepReference = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -827,13 +846,21 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
 	(void)FsStreamClientClose(&streamPtr->clientList,
 				migInfoPtr->srcClientID);
+    } else if (migInfoPtr->flags & FS_NEW_STREAM) {
+	keepReference = TRUE;
     }
     if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
 	    migInfoPtr->flags)) {
 	streamPtr->flags |= FS_RMT_SHARED;
+#ifdef notdef
 	migInfoPtr->flags |= FS_RMT_SHARED;
+#endif
     }
-    FsHandleRelease(streamPtr, TRUE);
+    if (keepReference) {
+	FsHandleUnlock(streamPtr);
+    } else {
+	FsHandleRelease(streamPtr, TRUE);
+    }
 
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
@@ -846,7 +873,8 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * to reflect the additional client stream.
 	 */
 	handlePtr->use.ref++;
-	if (migInfoPtr->flags & FS_WRITE) {
+	if ((migInfoPtr->flags & FS_WRITE) &&
+	    !(migInfoPtr->flags & FS_LAST_WRITER)) {
 	    handlePtr->use.write++;
 	}
     } else if ((migInfoPtr->flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
@@ -860,6 +888,12 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	if (migInfoPtr->flags & FS_WRITE) {
 	    handlePtr->use.write--;
 	}
+    } else if (migInfoPtr->flags & FS_LAST_WRITER) {
+	/*
+	 * The stream is still open for reading but no longer for writing
+	 * on the source client.
+	 */
+	handlePtr->use.write--;
     }
     /*
      * Move the client at the I/O handle level.  We are careful to only
@@ -870,6 +904,14 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
 	found = FsIOClientClose(&handlePtr->clientList,
 		    migInfoPtr->srcClientID, migInfoPtr->flags, &cache);
+	if (!found) {
+	    Sys_Panic(SYS_WARNING,
+		"FsPipeMigrate, IO Client %d not found\n",
+		migInfoPtr->srcClientID);
+	}
+    } else if (migInfoPtr->flags & FS_LAST_WRITER) {
+	found = FsIOClientRemoveWriter(&handlePtr->clientList,
+		    migInfoPtr->srcClientID);
 	if (!found) {
 	    Sys_Panic(SYS_WARNING,
 		"FsPipeMigrate, IO Client %d not found\n",
