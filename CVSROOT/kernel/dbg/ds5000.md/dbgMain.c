@@ -36,6 +36,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <user/signal.h>
 #endif
 
+extern Address vmStackBaseAddr;
+extern Address vmStackEndAddr;
+extern Address vmBlockCacheBaseAddr;
+extern Address vmBlockCacheEndAddr;
+extern Address vmBootEnd;
+
 static unsigned sstepInst;			/* The instruction that was
 						 * replaced when we tried to
 						 * single step. */
@@ -802,7 +808,6 @@ Dbg_Main()
 		PutReplyBytes(sizeof(regState), (Address) &regState);
 		SendReply();
 	    }
-#if 0
 	    case DBG_GET_DUMP_BOUNDS: {
 		Dbg_DumpBounds bounds;
 		extern unsigned int end;
@@ -810,10 +815,10 @@ Dbg_Main()
 		bounds.stackSize = mach_KernStackSize;
 		bounds.kernelCodeStart = (unsigned int) mach_KernStart;
 		bounds.kernelCodeSize  = 
-			(unsigned int) (((Address)(&end)) - mach_KernStart);
-		bounds.kernelDataStart	= ((unsigned int)(&end));
+			(unsigned int) (vmBootEnd - mach_KernStart);
+		bounds.kernelDataStart	= VMMACH_VIRT_CACHED_START;
 		bounds.kernelDataSize	= (unsigned int) 
-				(vmMemEnd - ((Address)(&end)));
+				(vmMemEnd - VMMACH_VIRT_CACHED_START);
 		bounds.kernelStacksStart = (unsigned int)vmStackBaseAddr;
 		bounds.kernelStacksSize = (unsigned int) 
 				(vmStackEndAddr - vmStackBaseAddr);
@@ -825,7 +830,6 @@ Dbg_Main()
 		SendReply();
 		break;
 	    }
-#endif
 	    case DBG_GET_VERSION_STRING: {
 		char	*version;
 
