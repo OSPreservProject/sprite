@@ -559,17 +559,12 @@ ReturnStatus
 SysMigCall(args)
     Sys_ArgArray args;			/* The arguments to the system call. */
 {
-    int sysCallType;
-    ReturnStatus status;
+    int sysCall;
     register SysCallEntry *entryPtr;
 
-    status = Vm_CopyIn(sizeof(sysCallType), Mach_GetStackPointer(),
-	    (Address) &sysCallType);
-    if (status != SUCCESS) {
-	return SYS_ARG_NOACCESS;
-    }
-    entryPtr = &sysCalls[sysCallType];
-    return (*entryPtr->remoteFunc)(sysCallType, entryPtr->numWords,
+    sysCall = Mach_GetLastSyscall();
+    entryPtr = &sysCalls[sysCall];
+    return (*entryPtr->remoteFunc)(sysCall, entryPtr->numWords,
 	    (ClientData *) &args, entryPtr->paramsPtr);
 }
 
