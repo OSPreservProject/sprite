@@ -42,8 +42,25 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "tty.h"
 #include "mouse.h"
 
-static ReturnStatus NoDevice();
-static ReturnStatus NullProc();
+
+static ReturnStatus nullOpenProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, Fs_NotifyToken notifyToken, int *flagsPtr));
+static ReturnStatus noOpenProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, Fs_NotifyToken notifyToken, int *flagsPtr));
+static ReturnStatus nullReadProc _ARGS_ ((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+static ReturnStatus nullWriteProc _ARGS_ ((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+static ReturnStatus nullCloseProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, int numUsers, int numWriters));
+static ReturnStatus nullSelectProc _ARGS_ ((Fs_Device *devicePtr,
+    int *readPtr, int *writePtr, int *exceptPtr));
+static ReturnStatus nullReopenProc _ARGS_ ((Fs_Device *devicePtr,
+    int numUsers, int numWriters, Fs_NotifyToken notifyToken, int *flagsPtr));
+static ReturnStatus noReopenProc _ARGS_ ((Fs_Device *devicePtr,
+    int numUsers, int numWriters, Fs_NotifyToken notifyToken, int *flagsPtr));
+static ReturnStatus noMmapProc _ARGS_ ((Fs_Device *devicePtr,
+    Address startAddr, int length, int offset, Address *newAddrPtr));
 
 
 /*
@@ -67,101 +84,153 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_TERM,       DevTtyOpen, DevTtyRead, DevTtyWrite,
 		     DevTtyIOControl, DevTtyClose, DevTtySelect,
-		     DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+		     DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*
      * The system error log.  If this is not open then error messages go
      * to the console.
      */
     {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
 		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect,
-		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen, NullProc},
+		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen, noMmapProc},
     /*
      * SCSI Worm interface:  this device doesn't exist anymore.
      */
-    {DEV_SCSI_WORM, NoDevice, NullProc, NullProc,
-		    Dev_NullIOControl, NullProc, NullProc,
-		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    {DEV_SCSI_WORM, noOpenProc, nullReadProc, nullWriteProc,
+		    Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*
      * The following device number is unused.
      */
-    {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
-		    Dev_NullIOControl, NullProc, NullProc,
-		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    {DEV_PLACEHOLDER_2, noOpenProc, nullReadProc, nullWriteProc,
+		    Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*
      * New SCSI Disk interface.
      */
     {DEV_SCSI_DISK, DevRawBlockDevOpen, DevRawBlockDevRead,
 		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
-		    DevRawBlockDevClose, NullProc, DevScsiDiskAttach,
-		    DevRawBlockDevReopen, NullProc},
+		    DevRawBlockDevClose, nullSelectProc, DevScsiDiskAttach,
+		    DevRawBlockDevReopen, noMmapProc},
     /*
      * SCSI Tape interface.
      */
     {DEV_SCSI_TAPE, DevSCSITapeOpen, DevSCSITapeRead, DevSCSITapeWrite,
-		    DevSCSITapeIOControl, DevSCSITapeClose, NullProc,
-		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+		    DevSCSITapeIOControl, DevSCSITapeClose, nullSelectProc,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*
      * /dev/null
      */
-    {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
-		    Dev_NullIOControl, NullProc, Dev_NullSelect,
-		    DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    {DEV_MEMORY,    nullOpenProc, Dev_NullRead, Dev_NullWrite,
+		    Dev_NullIOControl, nullCloseProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, nullReopenProc, noMmapProc},
     /*
      * Xylogics 450 disk controller.
      */
-    {DEV_XYLOGICS, NoDevice, NullProc, NullProc,
-		    Dev_NullIOControl, NullProc, NullProc,
-		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    {DEV_XYLOGICS, noOpenProc, nullReadProc, nullWriteProc,
+		    Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*
      * Network devices.  The unit number specifies the ethernet protocol number.
      */
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
 		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect, 
-		   DEV_NO_ATTACH_PROC, DevNet_FsReopen, NullProc},
+		   DEV_NO_ATTACH_PROC, DevNet_FsReopen, noMmapProc},
     /*
      * Raw SCSI HBA interface.
      */
     {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
 		    DevSCSIDeviceIOControl, DevSCSIDeviceClose,
-		    Dev_NullSelect, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+		    Dev_NullSelect, DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*  
      * RAID device.
      */ 
-    {DEV_RAID,  NoDevice, NullProc, NullProc,
-		    Dev_NullIOControl, NullProc, NullProc,
-		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    {DEV_RAID,  noOpenProc, nullReadProc, nullWriteProc,
+		    Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*  
      * Debug device. (useful for debugging RAID device)
      */ 
-    {DEV_DEBUG, NoDevice, NullProc, NullProc,
-		    Dev_NullIOControl, NullProc, NullProc,
-		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    {DEV_DEBUG, noOpenProc, nullReadProc, nullWriteProc,
+		    Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*
      * Event devices for window systems.
      */
     {DEV_MOUSE,    DevMouseOpen, DevMouseRead, DevMouseWrite,
 		   DevMouseIOControl, DevMouseClose, DevMouseSelect,
-		   DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
     /*
      * Frame buffer device.
      */
-    {DEV_GRAPHICS, DevFBOpen, NullProc, NullProc,
-		   DevFBIOControl, DevFBClose, NullProc,
-		   DEV_NO_ATTACH_PROC, NoDevice, DevFBMMap},
+    {DEV_GRAPHICS, DevFBOpen, nullReadProc, nullWriteProc,
+		   DevFBIOControl, DevFBClose, nullSelectProc,
+		   DEV_NO_ATTACH_PROC, noReopenProc, DevFBMMap},
 
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
 
 static ReturnStatus
-NullProc()
+nullOpenProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, Fs_NotifyToken notifyToken, int *flagsPtr))
 {
-    return(SUCCESS);
+    return SUCCESS;
 }
-
 
 static ReturnStatus
-NoDevice()
+noOpenProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, Fs_NotifyToken notifyToken, int *flagsPtr))
 {
-    return(FS_INVALID_ARG);
+    return FS_INVALID_ARG;
 }
+
+static ReturnStatus
+nullReadProc _ARGS_ ((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+nullWriteProc _ARGS_ ((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+nullCloseProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, int numUsers, int numWriters))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+nullSelectProc _ARGS_ ((Fs_Device *devicePtr,
+    int *readPtr, int *writePtr, int *exceptPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+nullReopenProc _ARGS_ ((Fs_Device *devicePtr,
+    int numUsers, int numWriters, Fs_NotifyToken notifyToken, int *flagsPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+noReopenProc _ARGS_ ((Fs_Device *devicePtr,
+    int numUsers, int numWriters, Fs_NotifyToken notifyToken, int *flagsPtr))
+{
+    return FS_INVALID_ARG;
+}
+
+static ReturnStatus
+noMmapProc _ARGS_ ((Fs_Device *devicePtr,
+    Address startAddr, int length, int offset, Address *newAddrPtr))
+{
+    return FS_INVALID_ARG;
+}
+
+
