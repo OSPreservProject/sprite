@@ -624,6 +624,7 @@ FspdevControlClientKill(hdrPtr, clientID)
 
     if (ctrlHandlePtr->serverID == clientID) {
 	ctrlHandlePtr->serverID = NIL;
+	Fsutil_RecoverySyncLockCleanup(&ctrlHandlePtr->rmt.recovery);
 	Fsutil_HandleRemove(ctrlHandlePtr);
 	fs_Stats.object.controls--;
     } else {
@@ -653,6 +654,7 @@ FspdevControlScavenge(hdrPtr)
     register FspdevControlIOHandle *ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
 
     if (ctrlHandlePtr->serverID == NIL) {
+	Fsutil_RecoverySyncLockCleanup(&ctrlHandlePtr->rmt.recovery);
 	Fsutil_HandleRemove(ctrlHandlePtr);
 	fs_Stats.object.controls--;
 	return(TRUE);
