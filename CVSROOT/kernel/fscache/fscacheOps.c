@@ -302,31 +302,44 @@ FsGetCachedAttr(cacheInfoPtr, versionPtr, attrPtr)
  *
  * FsUpdateCachedAttr --
  *
- * 	This is used on a client to update its cached attributes during a
- *	Fs_SetAttributes call.
+ * 	This is called during an Fs_SetAttributes call to update attributes
+ *	that are cached in a handle.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Blindly updates the times, permissions, file type, and ownership info.
+ *	Updates the times, permissions, file type, and ownership info,
+ *	depending on the flags argument.
  *
  * ----------------------------------------------------------------------------
  *
  */
 ENTRY void
-FsUpdateCachedAttr(cacheInfoPtr, attrPtr)
+FsUpdateCachedAttr(cacheInfoPtr, attrPtr, flags)
     register FsCacheFileInfo *cacheInfoPtr;	/* Cache state to update. */
     register Fs_Attributes   *attrPtr;		/* New attributes */
+    register int	     flags;		/* What attrs to update */
 {
     LOCK_MONITOR;
-    if ((cacheInfoPtr->flags & FS_FILE_NOT_CACHEABLE) == 0) {
+    if (flags & FS_SET_TIMES) {
 	cacheInfoPtr->attr.accessTime = attrPtr->accessTime.seconds;
 	cacheInfoPtr->attr.modifyTime = attrPtr->dataModifyTime.seconds;
 	cacheInfoPtr->attr.createTime = attrPtr->createTime.seconds;
+    }
+    if (flags & FS_SET_MODE) {
 	cacheInfoPtr->attr.permissions = attrPtr->permissions;
-	cacheInfoPtr->attr.uid = attrPtr->uid;
-	cacheInfoPtr->attr.gid = attrPtr->gid;
+    }
+    if (flags & FS_SET_OWNER) {
+	if (attrPtr->uid >= 0) {
+	    cacheInfoPtr->attr.uid = attrPtr->uid;
+	}
+	if (attrPtr->gid >= 0) {
+	    cacheInfoPtr->attr.gid = attrPtr->gid;
+	}
+    }
+    if ((flags & FS_SET_FILE_TYPE) &&
+	attrPtr->userType != FS_USER_TYPE_UNDEFINED) {
 	cacheInfoPtr->attr.userType = attrPtr->userType;
     }
     UNLOCK_MONITOR;
