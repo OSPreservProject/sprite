@@ -57,6 +57,7 @@ sys		kernel/sys
 timer		kernel/timer
 utils		kernel/utils
 vm		kernel/vm
+zss		kernel/zss
 
 # For testing and debugging scvs et al.
 
