@@ -18,17 +18,20 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "scsiDevice.h"
-#include "scsiHBA.h"
-#include "dev/scsi.h"
-#include "scsi.h"
-#include "devQueue.h"
-#include "fs.h"
-#include "sync.h"	
-#include "stdlib.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <scsiDevice.h>
+#include <scsiHBA.h>
+#include <dev/scsi.h>
+#include <sys/scsi.h>
+#include <devQueue.h>
+#include <fs.h>
+#include <sync.h>
+#include <stdlib.h>
+#include <bstring.h>
 
+static int scsiDoneProc _ARGS_((struct ScsiCmd *scsiCmdPtr, 
+		    ReturnStatus status, int statusByte, 
+		    int byteCount, int senseLength, Address senseDataPtr));
 
 
 /*
@@ -74,7 +77,6 @@ DevScsiAttachDevice(devicePtr, insertProc)
      * abort the INQUIRY with a UNIT_ATTENTION.
      */
     if ((handle != (ScsiDevice *) NIL) && (handle->inquiryLength == 0)) {
-	unsigned char statusByte;
 	int	tryNumber = 1;
 	ReturnStatus	status = SUCCESS;
 
@@ -88,8 +90,8 @@ DevScsiAttachDevice(devicePtr, insertProc)
 	    inquiryCmdBlock.buffer = handle->inquiryDataPtr;
 	    inquiryCmdBlock.bufferLen = DEV_MAX_INQUIRY_SIZE;
 	    inquiryCmdBlock.dataToDevice = FALSE;
-	    status =  DevScsiSendCmdSync(handle, &inquiryCmdBlock, &statusByte, 
-			&(handle->inquiryLength),  (int *) NIL, (char *) NIL);
+	    status =  DevScsiSendCmdSync(handle, &inquiryCmdBlock, 
+			    &(handle->inquiryLength));
 	    if (status != SUCCESS) {
 		handle->inquiryLength = 0;
 	    }
@@ -116,7 +118,7 @@ typedef struct SyncCmdBuf {
     Sync_Condition wait;	  /* Condition valued used to wait for
 				   * callback. */
     Boolean	  done;		  /* Is the operation finished or not? */
-    unsigned char *statusBytePtr; /* Area to store SCSI status byte. */
+    int		 *statusBytePtr; /* Area to store SCSI status byte. */
     int	      *senseBufferLenPtr; /* Sense buffer length pointer. */
     Address    senseBufferPtr;	  /* Sense buffer. */
     ReturnStatus status;   	  /* HBA error for command. */
@@ -159,7 +161,7 @@ scsiDoneProc(scsiCmdPtr, errorCode, statusByte, byteCount,
      */
     MASTER_LOCK(&syncCmdDataPtr->mutex);
 
-    *(syncCmdDataPtr->statusBytePtr) = statusByte;
+    *(syncCmdDataPtr->statusBytePtr) = (int) statusByte;
     syncCmdDataPtr->status = errorCode;
     *(syncCmdDataPtr->countPtr) = byteCount;
     if (syncCmdDataPtr->senseBufferLenPtr != (int *) NIL) {
@@ -196,26 +198,22 @@ scsiDoneProc(scsiCmdPtr, errorCode, statusByte, byteCount,
  *
  */
 ReturnStatus
-DevScsiSendCmdSync(scsiDevicePtr, scsiCmdPtr, statusBytePtr, 
-		    amountTransferredPtr,  senseBufferLenPtr, senseBufferPtr)
+DevScsiSendCmdSync(scsiDevicePtr, scsiCmdPtr, amountTransferredPtr)
     ScsiDevice *scsiDevicePtr;  /* Handle for target device. */
     ScsiCmd	*scsiCmdPtr;		    /* SCSI command to be sent. */
-    unsigned char *statusBytePtr; /* Area to store SCSI status byte. */
     int		*amountTransferredPtr; /* OUT - Nuber of bytes transferred. */
-    Address 	senseBufferPtr;	  /* Buffer to put sense data upon error. */
-    int		*senseBufferLenPtr; /*  IN - Length of senseBuffer available.
-				     * OUT - Length of senseData returned. */
 {
     ReturnStatus status;
     SyncCmdBuf	 syncCmdData;
 
     scsiCmdPtr->clientData = (ClientData) &syncCmdData;
     scsiCmdPtr->doneProc = scsiDoneProc;
+    scsiCmdPtr->senseLen = sizeof(scsiCmdPtr->senseBuffer);
     Sync_SemInitDynamic((&syncCmdData.mutex),"ScsiSyncCmdMutex");
     syncCmdData.done = FALSE;
-    syncCmdData.statusBytePtr = statusBytePtr;
-    syncCmdData.senseBufferPtr = senseBufferPtr;
-    syncCmdData.senseBufferLenPtr = senseBufferLenPtr;
+    syncCmdData.statusBytePtr = &scsiCmdPtr->statusByte;
+    syncCmdData.senseBufferPtr = (Address) scsiCmdPtr->senseBuffer;
+    syncCmdData.senseBufferLenPtr = &scsiCmdPtr->senseLen;
     syncCmdData.countPtr = amountTransferredPtr;
     DevScsiSendCmd(scsiDevicePtr, scsiCmdPtr);
     MASTER_LOCK((&syncCmdData.mutex));
@@ -225,6 +223,10 @@ DevScsiSendCmdSync(scsiDevicePtr, scsiCmdPtr, statusBytePtr,
     MASTER_UNLOCK((&syncCmdData.mutex));
     status = syncCmdData.status;
     Sync_SemClear(&syncCmdData.mutex);
+    if ((status == SUCCESS) && (scsiCmdPtr->statusByte != 0) &&
+	(scsiDevicePtr->errorProc != (ReturnStatus (*)()) NIL)) {
+	status = (scsiDevicePtr->errorProc)(scsiDevicePtr, scsiCmdPtr);
+    }
     return status;
 }
 
@@ -341,23 +343,12 @@ DevScsiTestReady(scsiDevicePtr)
 {
     ScsiCmd	unitReadyCmd;	/* Scsi command buffer to fill in. */
     ReturnStatus status;
-    unsigned char	statusByte;
     int		len;
-    char	senseData[SCSI_MAX_SENSE_LEN];
-    int		senseLen;
-    char	errorString[MAX_SCSI_ERROR_STRING];
-    Boolean	class7;
 
     DevScsiGroup0Cmd(scsiDevicePtr,SCSI_TEST_UNIT_READY, 0, 0, &unitReadyCmd);
     unitReadyCmd.bufferLen = 0;
     len = 0;
-    senseLen = SCSI_MAX_SENSE_LEN;
-    status = DevScsiSendCmdSync(scsiDevicePtr,&unitReadyCmd, &statusByte,
-				&len, &senseLen, senseData);
-    class7 = DevScsiMapClass7Sense(senseLen, senseData, &status, errorString);
-    if (class7) {
-	return status;
-    }
+    status = DevScsiSendCmdSync(scsiDevicePtr,&unitReadyCmd, &len);
     return status;
 }
 /*
@@ -383,7 +374,6 @@ DevScsiStartStopUnit(scsiDevicePtr, start)
     ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
     ScsiStartStopCmd 	*cmdPtr;
     ReturnStatus 	status;
-    unsigned char	statusByte;
     int			len;
 
     bzero((char *) &scsiCmd, sizeof(ScsiCmd));
@@ -396,10 +386,187 @@ DevScsiStartStopUnit(scsiDevicePtr, start)
     cmdPtr->loadEject = 0;
     cmdPtr->start = (start == TRUE) ? 1 : 0;
     len = 0;
-    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &statusByte,
-				&len, (int *) NIL, (Address) NIL);
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &len);
     return status;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiReadBlockLimits --
+ *
+ * 	Send a Read Block Limits command to the device.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A SCSI_READ_BLOCK_LIMITS command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiReadBlockLimits(scsiDevicePtr, minPtr, maxPtr)
+    ScsiDevice 	*scsiDevicePtr; /* Handle for device to be released. */
+    int		*minPtr;	/* Minimum block size. */
+    int		*maxPtr;	/* Max block size. */
+{
+    ScsiCmd		cmd;	/* Scsi command buffer to fill in. */
+    ReturnStatus 	status = SUCCESS;
+    int			len;
+    ScsiBlockLimits	limits;
+
+    DevScsiGroup0Cmd(scsiDevicePtr,SCSI_READ_BLOCK_LIMITS, 0, 0, &cmd);
+    cmd.dataToDevice = FALSE;
+    cmd.bufferLen = sizeof(ScsiBlockLimits);
+    cmd.buffer = (char *) &limits;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&cmd, &len);
+    *maxPtr = (limits.max2 << 16) | (limits.max1 << 8) | limits.max0;
+    *minPtr = (limits.min1 << 8) | limits.min0;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiModeSense --
+ *
+ * 	Send a Mode Sense command to the device.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A SCSI_READ_BLOCK_LIMITS command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiModeSense(scsiDevicePtr, disableBlockDesc, pageControl, pageCode, 
+	    vendor, sizePtr, bufferPtr)
+    ScsiDevice 	*scsiDevicePtr; 	/* Handle for device to be released. */
+    int		disableBlockDesc;	/* Disable block descriptor field */
+    int		pageControl;		/* Page control field. */
+    int		pageCode;		/* Page code field. */
+    int		vendor;			/* Vendor unique field. */
+    int		*sizePtr;		/* Size of buffer/data returned. */
+    char	*bufferPtr;		/* Buffer for mode sense data. */
+{
+    ReturnStatus 	status = SUCCESS;
+    int			len;
+    ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
+    ScsiModeSenseCmd 	*cmdPtr;
+
+    bzero((char *) &scsiCmd, sizeof(ScsiCmd));
+    scsiCmd.commandBlockLen = sizeof(ScsiModeSenseCmd);
+    scsiCmd.dataToDevice = FALSE;
+    scsiCmd.bufferLen = *sizePtr;
+    scsiCmd.buffer = bufferPtr;
+    cmdPtr = (ScsiModeSenseCmd *) scsiCmd.commandBlock;
+    cmdPtr->command = SCSI_MODE_SENSE;
+    cmdPtr->unitNumber = scsiDevicePtr->LUN;
+    cmdPtr->disableBlockDesc = disableBlockDesc;
+    cmdPtr->pageControl = pageControl;
+    cmdPtr->pageCode = pageCode;
+    cmdPtr->allocLen = *sizePtr;
+    cmdPtr->vendor = vendor;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &len);
+    *sizePtr = len;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiRequestSense --
+ *
+ * 	Send a Request Sense command to the device.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A SCSI_REQUEST_SENSE command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiRequestSense(scsiDevicePtr, clearCount, vendor, sizePtr, 
+	bufferPtr)
+    ScsiDevice 	*scsiDevicePtr; 	/* Handle for device to be released. */
+    int		clearCount;		/* Clear counters field. */
+    int		vendor;			/* Vendor unique field. */
+    int		*sizePtr;		/* Size of buffer/data returned. */
+    char	*bufferPtr;		/* Buffer for mode sense data. */
+{
+    ReturnStatus 	status = SUCCESS;
+    int			len;
+    ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
+    ScsiRequestSenseCmd 	*cmdPtr;
+
+    bzero((char *) &scsiCmd, sizeof(ScsiCmd));
+    scsiCmd.commandBlockLen = sizeof(ScsiRequestSenseCmd);
+    scsiCmd.dataToDevice = FALSE;
+    scsiCmd.bufferLen = *sizePtr;
+    scsiCmd.buffer = bufferPtr;
+    cmdPtr = (ScsiRequestSenseCmd *) scsiCmd.commandBlock;
+    cmdPtr->command = SCSI_REQUEST_SENSE;
+    cmdPtr->unitNumber = scsiDevicePtr->LUN;
+    cmdPtr->allocLen = *sizePtr;
+    cmdPtr->clearCount = clearCount;
+    cmdPtr->vendor = vendor;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &len);
+    *sizePtr = len;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiReadPosition --
+ *
+ * 	Send a Read Position command to the device.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A SCSI_READ_POSITION command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiReadPosition(scsiDevicePtr, blockType, positionPtr)
+    ScsiDevice 	*scsiDevicePtr; 	/* Handle for device to be released. */
+    int		blockType;		/* Block type field. */
+    ScsiReadPositionResult *positionPtr; /* Position information. */
+{
+    ReturnStatus 	status = SUCCESS;
+    int			len;
+    ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
+    ScsiReadPositionCmd 	*cmdPtr;
+
+    bzero((char *) &scsiCmd, sizeof(ScsiCmd));
+    scsiCmd.commandBlockLen = sizeof(ScsiReadPositionCmd);
+    scsiCmd.dataToDevice = FALSE;
+    scsiCmd.bufferLen = sizeof(ScsiReadPositionResult);
+    scsiCmd.buffer = (char *) positionPtr;
+    cmdPtr = (ScsiReadPositionCmd *) scsiCmd.commandBlock;
+    cmdPtr->command = SCSI_READ_POSITION;
+    cmdPtr->unitNumber = scsiDevicePtr->LUN;
+    cmdPtr->blockType = blockType;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &len);
+    return status;
+}
+
+
 
 
 /*
@@ -425,14 +592,11 @@ DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
     Fs_IOReply *replyPtr;	/* Size of outBuffer and returned signal */
 {
     ReturnStatus	status;
-    int			senseDataLen;
-    char		senseData[DEV_MAX_SENSE_BYTES];
 
     if (ioctlPtr->command == IOC_SCSI_COMMAND) {
 	Dev_ScsiCommand	 *cmdPtr;
 	Dev_ScsiStatus	 *statusPtr;
 	ScsiCmd		 scsiCmd;
-	unsigned char    statusByte;
 	Boolean		dataToDevice;
 	int		senseBufLen;
 	/*
@@ -482,20 +646,19 @@ DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
 	bcopy(ioctlPtr->inBuffer+sizeof(Dev_ScsiCommand), scsiCmd.commandBlock,
 	      scsiCmd.commandBlockLen);
 	statusPtr = (Dev_ScsiStatus *) ioctlPtr->outBuffer;
-	senseDataLen = DEV_MAX_SENSE_BYTES;
-	status = DevScsiSendCmdSync(devPtr, &scsiCmd, &statusByte,
-		&(statusPtr->amountTransferred), &senseDataLen, senseData);
-	statusPtr->statusByte = statusByte;
-        statusPtr->senseDataLen = senseDataLen;
+	status = DevScsiSendCmdSync(devPtr, &scsiCmd, 
+			&(statusPtr->amountTransferred));
+	statusPtr->statusByte = scsiCmd.statusByte;
+        statusPtr->senseDataLen = scsiCmd.senseLen;
 	senseBufLen = (ioctlPtr->outBufSize - sizeof(Dev_ScsiStatus) - 
 			statusPtr->amountTransferred);
-        if (senseBufLen > senseDataLen) {
-	    senseBufLen = senseDataLen;
+        if (senseBufLen > statusPtr->senseDataLen) {
+	    senseBufLen = statusPtr->senseDataLen;
 	}
 	if (senseBufLen >= 0) {
-	    bcopy(senseData, 
+	    bcopy(scsiCmd.senseBuffer, 
 			(char *)(ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus)
-					 + statusPtr->amountTransferred) ,
+					 + statusPtr->amountTransferred),
 	                 senseBufLen);
 	}
 	return status;
