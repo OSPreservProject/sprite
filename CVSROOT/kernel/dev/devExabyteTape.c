@@ -196,7 +196,7 @@ static ReturnStatus ExabyteError _ARGS_((ScsiTape *tapePtr,
 /*
  *----------------------------------------------------------------------
  *
- * ExabyteInit --
+ * DevExabyteAttach --
  *
  *	Initialize the DevSCSITape state for a Exabyte drive.
  *
@@ -232,9 +232,9 @@ DevExabyteAttach(devicePtr, devPtr, tapePtr)
      */
     tapePtr->blockSize = EXABYTE_BLOCK_SIZE;
     tapePtr->errorProc = ExabyteError;
-    if (!(strncmp(inquiryPtr->productID, "EXB-8200",8))) {
+    if (!(strncmp((char *)(inquiryPtr->productID), "EXB-8200",8))) {
 	tapePtr->name = "Exabyte 8200";
-    } else if (!(strncmp(inquiryPtr->productID, "EXB-8500",8))) {
+    } else if (!(strncmp((char *)(inquiryPtr->productID), "EXB-8500",8))) {
 	tapePtr->name = "Exabyte 8500";
     } else {
 	tapePtr->name = "Exabyte UNKNOWN";
