@@ -1344,7 +1344,7 @@ exit:
 #define L_L	List_Links
 #define HANDLENAME(x)	(Fsutil_HandleName((Fs_HandleHeader *)(x)))
 #define PRINTHANDLE(str,handle)	printf("%s: \"%s\" (handle locked by %x)",\
-		str, HANDLENAME(handle), handle->lockProcID)
+		str, HANDLENAME(handle), handle->lockProcPtr)
 char buf[21] = {0};
 
 static int ISLIST(x)
@@ -1354,19 +1354,22 @@ List_Links *x;
 	    ISADDR(x->nextPtr);
 }
 
-static int ISHANDLE(x)
-Fs_HandleHeader *x;
-{
-    return ISADDRR(x,sizeof(Fs_HandleHeader)) && ISLIST(&x->lruLinks) &&
-	    ISBOOL(x->unlocked.waiting) && ISSMALL(x->refCount) &&
-	    ISSTRZ(x->name) && (unsigned)x->lockProcID <= 0xfffff; 
-}
-
 static int ISPCB(x)
 Proc_ControlBlock *x;
 {
     return ISADDRR(x,sizeof(Proc_ControlBlock)) && ISLIST(&x->links) &&
-	    ISSMALL(x->processor) && ISLIST(&x->childListHdr);
+	   ISSMALL(x->processor) && ISLIST(&x->childListHdr) &&
+	   x->processID <= 0xfffff;
+}
+
+static int ISHANDLE(x)
+Fs_HandleHeader *x;
+{
+    return ISADDRR(x,sizeof(Fs_HandleHeader)) && ISLIST(&x->lruLinks) &&
+	   ISBOOL(x->unlocked.waiting) && ISSMALL(x->refCount) &&
+	   ISSTRZ(x->name) && 
+	   (x->lockProcPtr == (Proc_ControlBlock *)NIL
+	    	|| ISPCB(x->lockProcPtr));
 }
 
 static int ISRPCCLIENT(x)
