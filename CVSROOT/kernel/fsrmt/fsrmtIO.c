@@ -750,11 +750,12 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
 	(&paramsPtr->fileID, clientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
-    } 
+    }
+    FsHandleUnlock(hdrPtr);
     status = (*fsStreamOpTable[paramsPtr->fileID.type].select)
 	(hdrPtr, &paramsPtr->waiter, &paramsPtr->read,
 	 &paramsPtr->write, &paramsPtr->except);
-    FsHandleRelease(hdrPtr, TRUE);
+    FsHandleRelease(hdrPtr, FALSE);
     if (status == SUCCESS) {
 	resultsPtr = mnew(FsRemoteSelectResults);
 	resultsPtr->read = paramsPtr->read;
