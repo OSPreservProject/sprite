@@ -136,11 +136,11 @@ TraceLog_Init(tracePtr, numBuffers, size, flags, version)
 	tracePtr->buffers[i].lostRecords = 0;
 	tracePtr->buffers[i].data = (Address) malloc(size);
 #ifdef CHECKCONSIST
-	tracePtr->buffers[i].mode = UNUSED;
+	tracePtr->buffers[i].mode = TRACELOG_UNUSED;
 #endif
     }
 #ifdef CHECKCONSIST
-	    tracePtr->buffers[0].mode = INUSE;
+	    tracePtr->buffers[0].mode = TRACELOG_INUSE;
 #endif
     if (2*sizeof(int) < sizeof(Timer_Ticks)) {
 	printf("Warning: Timer_Ticks structure is too big for trace\n");
@@ -227,12 +227,12 @@ TraceLog_Insert(tracePtr, dataPtr, origSize, flags)
     }
 
 #ifdef CHECKCONSIST
-    if (tracePtr->buffers[tracePtr->currentBuffer].mode != INUSE) {
+    if (tracePtr->buffers[tracePtr->currentBuffer].mode != TRACELOG_INUSE) {
 	printf("Warning: buffer# %d has mode %d, not INUSE\n",
 		tracePtr->currentBuffer, tracePtr->buffers[tracePtr->
 		currentBuffer].mode);
     }
-    tracePtr->buffers[tracePtr->currentBuffer].mode = INUSE;
+    tracePtr->buffers[tracePtr->currentBuffer].mode = TRACELOG_INUSE;
 #endif
     traceDataAddr = tracePtr->buffers[tracePtr->currentBuffer].data +
 	    tracePtr->currentOffset;
@@ -277,12 +277,12 @@ TraceLog_FlushBuffer(tracePtr)
     tracePtr->buffers[tracePtr->currentBuffer].size =
 	    tracePtr->currentOffset;
 #ifdef CHECKCONSIST
-    if (tracePtr->buffers[tracePtr->currentBuffer].mode != INUSE) {
+    if (tracePtr->buffers[tracePtr->currentBuffer].mode != TRACELOG_INUSE) {
 	printf("Warning: buffer# %d has mode %d, not INUSE\n",
 		tracePtr->currentBuffer, tracePtr->buffers[tracePtr->
 		currentBuffer].mode);
     }
-    tracePtr->buffers[tracePtr->currentBuffer].mode = DONE;
+    tracePtr->buffers[tracePtr->currentBuffer].mode = TRACELOG_DONE;
 #endif
     INC_BUFNUM(tracePtr->currentBuffer);
     tracePtr->currentOffset = 0;
@@ -292,12 +292,13 @@ TraceLog_FlushBuffer(tracePtr)
     }
 #ifdef CHECKCONSIST
     else {
-	if (tracePtr->buffers[tracePtr->currentBuffer].mode != UNUSED) {
+	if (tracePtr->buffers[tracePtr->currentBuffer].mode !=
+		TRACELOG_UNUSED) {
 	    printf("Warning: buffer# %d has mode %d, not UNUSED\n",
 		    tracePtr->currentBuffer, tracePtr->buffers[tracePtr->
 		    currentBuffer].mode);
 	}
-	tracePtr->buffers[tracePtr->currentBuffer].mode = INUSE;
+	tracePtr->buffers[tracePtr->currentBuffer].mode = TRACELOG_INUSE;
     }
 #endif
 }
@@ -364,19 +365,19 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
 		tracePtr->currentOffset;
 	tracePtr->currentOffset = 0;
 #ifdef CHECKCONSIST
-	tracePtr->buffers[tracePtr->currentBuffer].mode = DONE;
+	tracePtr->buffers[tracePtr->currentBuffer].mode = TRACELOG_DONE;
 #endif
 	INC_BUFNUM(tracePtr->currentBuffer);
     }
     
 
 #ifdef CHECKCONSIST
-    if (tracePtr->buffers[tracePtr->firstNewBuffer].mode != DONE) {
+    if (tracePtr->buffers[tracePtr->firstNewBuffer].mode != TRACELOG_DONE) {
 	printf("Warning: buffer# %d has mode %d, not DONE\n",
 		tracePtr->firstNewBuffer, tracePtr->buffers[tracePtr->
 		firstNewBuffer].mode);
     }
-    tracePtr->buffers[tracePtr->firstNewBuffer].mode = UNUSED;
+    tracePtr->buffers[tracePtr->firstNewBuffer].mode = TRACELOG_UNUSED;
 #endif
 
     /*
@@ -404,7 +405,7 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
 	tracePtr->buffers[tracePtr->currentBuffer].lostRecords=
 		tracePtr->lostRecords;
 #ifdef CHECKCONSIST
-	tracePtr->buffers[tracePtr->currentBuffer].mode = INUSE;
+	tracePtr->buffers[tracePtr->currentBuffer].mode = TRACELOG_INUSE;
 #endif
     }
     tracePtr->lostRecords = 0;
@@ -467,11 +468,11 @@ TraceLog_Reset(tracePtr)
 	tracePtr->buffers[i].numRecords = 0;
 	tracePtr->buffers[i].lostRecords = 0;
 #ifdef CHECKCONSIST
-	tracePtr->buffers[i].mode = UNUSED;
+	tracePtr->buffers[i].mode = TRACELOG_UNUSED;
 #endif
     }
 #ifdef CHECKCONSIST
-	tracePtr->buffers[0].mode = INUSE;
+	tracePtr->buffers[0].mode = TRACELOG_INUSE;
 #endif
     UNLOCK_MONITOR;
 }
