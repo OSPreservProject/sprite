@@ -36,7 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "string.h"
 #include "proc.h"
-#include "time.h"
+#include "spriteTime.h"
 
 char *fsEmptyDirBlock;
 
@@ -81,35 +81,39 @@ FsLocalDomainInit()
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalPrefix --
+ * FsLocalExport --
  *
- *	This is a stub called from LocatePrefix.  Local domains are
- *	hooked to the prefix table via Fs_AttachDisk, so any valid
- *	local prefixes are already in the prefix table, so this
- *	returns a failure code.
+ *	This is called from the RPC_FS_PREFIX stub to export a domain
+ *	to a remote Sprite host.  The prefix table has already been
+ *	examined, and we are passed in the handle that's hooked to it.
+ *	This uses FsFileSrvOpen to setup FsFileState so the client
+ *	can set up a remote file handle for its own prefix table.
  *
  * Results:
- *	FS_FILE_NOT_FOUND
+ *	That of FsFileSrvOpen
  *
  * Side effects:
- *	None.
+ *	Adds the client to the set of clients using the directory that
+ *	is the top of the local domain.
  *	
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
 ReturnStatus
-FsLocalPrefix(token, relativeName, argsPtr, resultsPtr, newNameInfoPtrPtr)
-    ClientData token;	/* == NIL for prefix installation */
-    char *relativeName;	/* The name of the file to open (eventually this
-			 * will be relative to the domain root) */
-    Address argsPtr;	/* Bundled arguments for us */
-    Address resultsPtr;	/* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr; /* We return this if the server 
-					 * leaves its domain during the 
-					 * lookup. */
+FsLocalExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
+     FsHandleHeader	*hdrPtr;	/* A handle from the prefix table. */
+     int		clientID;	/* Host ID of client importing prefix */
+     register FsFileID	*ioFileIDPtr;	/* Return - I/O handle ID */
+     int		*dataSizePtr;	/* Return - sizeof(FsFileState) */
+     ClientData		*clientDataPtr;	/* Return - ref to FsFileState */
 {
-    return(FS_FILE_NOT_FOUND);
+    register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+    register ReturnStatus status;
+
+    FsHandleLock(handlePtr);
+    status = FsFileSrvOpen(handlePtr, clientID, FS_PREFIX,
+		    ioFileIDPtr, (FsFileID *)NIL, dataSizePtr, clientDataPtr);
+    return(status);
 }
 
 /*
@@ -149,6 +153,7 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     register FsOpenResults *openResultsPtr = (FsOpenResults *)resultsPtr;
     FsLocalFileIOHandle *handlePtr;	/* The handle returned for the file */
     ReturnStatus 	status;		/* Error return from RPC */
+
 
 
     status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
@@ -209,6 +214,7 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     FsOpenArgs 		*openArgsPtr;
     FsLocalFileIOHandle *handlePtr;
     FsGetAttrResults	*attrResultsPtr;
+
 
     openArgsPtr =  (FsOpenArgs *)argsPtr;
     attrResultsPtr = (FsGetAttrResults *)resultsPtr;
