@@ -62,16 +62,6 @@ typedef struct Mach_SetJumpState {
     }
 
 /*
- * Macro to get processor number
- */
-#define	Mach_GetProcessorNumber() 	0
-
-extern	Boolean	mach_KernelMode;
-extern	int	mach_NumProcessors;
-extern	Boolean	mach_AtInterruptLevel;
-extern	int	*mach_NumDisableIntrsPtr;
-
-/*
  * Delay for N microseconds.
  */
 #ifdef SUN3
@@ -326,6 +316,7 @@ extern	Boolean	mach_KernelMode;
 extern	int	mach_NumProcessors;
 extern	Boolean	mach_AtInterruptLevel;
 extern	int	*mach_NumDisableIntrsPtr;
+extern	char	*mach_MachineType;
 /*
  * Routine to initialize mach module.  Must be called first as part of boot 
  * sequence.
