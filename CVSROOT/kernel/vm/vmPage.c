@@ -1704,12 +1704,39 @@ FinishPage(transVirtAddrPtr, ptePtr)
 
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * KillCallback --
+ *
+ *	Send a process the SIG_KILL signal when an I/O error
+ *	occurs.  This routine is a callback procedure used by
+ *	VmKillSharers to perform signals without the vm monitor lock
+ *	held.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The specified process is killed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+KillCallback(data)
+    ClientData data;
+{
+    (void) Sig_Send(SIG_KILL, PROC_VM_READ_ERROR, (Proc_PID) data, FALSE);
+}
+
+/*
  * ----------------------------------------------------------------------------
  *
  * VmKillSharers --
  *
- *	Go down the list of processes sharing this segment and send a
- *	kill signal to each one.  This is called when a page from a segment
+ *	Go down the list of processes sharing this segment and set up
+ *	a callback to send a kill signal to each one without the
+ *	monitor lock held.  This is called when a page from a segment
  *	couldn't be written to or read from swap space.
  *
  * Results:
@@ -1730,8 +1757,9 @@ VmKillSharers(segPtr)
     LOCK_MONITOR;
 
     LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
-	(void) Sig_Send(SIG_KILL, PROC_VM_READ_ERROR,
-			procLinkPtr->procPtr->processID, FALSE); 
+	Proc_CallFunc(KillCallback,
+		      (ClientData) procLinkPtr->procPtr->processID,
+		      0);
     }
     segPtr->flags |= VM_SEG_IO_ERROR;
 
