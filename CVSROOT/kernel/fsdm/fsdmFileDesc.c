@@ -529,6 +529,14 @@ Fsdm_FileDescWriteBack(handlePtr, doWriteBack)
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     descPtr = handlePtr->descPtr;
+    if (descPtr == (Fsdm_FileDescriptor *)NIL) {
+	if ((handlePtr->cacheInfo.flags & FSCACHE_FILE_GONE) == 0) {
+	    panic("Fsdm_FileDescWriteBack: no descriptor for \"%s\" (continuable)\n",
+		Fsutil_HandleName(handlePtr));
+	}
+	status = FS_FILE_REMOVED;
+	goto exit;
+    }
     /*
      * If the handle times differ from the descriptor times then force
      * them out to the descriptor.
@@ -567,6 +575,7 @@ Fsdm_FileDescWriteBack(handlePtr, doWriteBack)
 		    handlePtr->hdr.fileID.minor);
 	}
     }
+exit:
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
