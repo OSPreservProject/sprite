@@ -273,12 +273,10 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    if (streamIDPtr != (FsFileID *)NIL) {
 		register Fs_Stream *streamPtr;
 
-		streamPtr = FsStreamNew(rpc_SpriteID,
+		streamPtr = FsStreamNewClient(rpc_SpriteID, clientID,
 		    (FsHandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
-		(void)FsStreamClientOpen(&streamPtr->clientList, clientID,
-					 useFlags);
 		*streamIDPtr = streamPtr->hdr.fileID;
-		FsHandleUnlock(streamPtr);
+		FsHandleRelease(streamPtr, TRUE);
 	    }
 	    return(SUCCESS);
 	} else {
@@ -859,9 +857,6 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     register FsLocalFileIOHandle	*handlePtr;
     register FsFileState		*fileStatePtr;
     register ReturnStatus		status;
-    register Fs_Stream			*streamPtr;
-    Boolean				found;
-    Boolean				keepReference = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -877,87 +872,21 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	Sys_Panic(SYS_FATAL, "FsFileMigrate, no I/O handle");
 	status = FS_STALE_HANDLE;
     } else {
+
 	/*
 	 * At the stream level, add the new client to the set of clients
 	 * for the stream, and check for any cross-network stream sharing.
 	 * We only close the orignial client if the stream is unshared,
 	 * i.e. there are no references left there.
 	 */
-	streamPtr = FsStreamFind(&migInfoPtr->streamID,
-		    (FsHandleHeader *)handlePtr, migInfoPtr->flags,
-		    (char *)NIL, &found);
-	if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
-	    /*
-	     * We don't think the stream is being shared so we
-	     * grab the offset from the client.
-	     */
-	    streamPtr->offset = migInfoPtr->offset;
-	}
-	if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
-	    /*
-	     * The client doesn't perceive sharing of the stream so
-	     * it must be its last reference so we do an I/O close.
-	     */
-	    (void)FsStreamClientClose(&streamPtr->clientList,
-				    migInfoPtr->srcClientID);
-	} else if (migInfoPtr->flags & FS_NEW_STREAM) {
-	    keepReference = TRUE;
-	}
-	if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
-		migInfoPtr->flags)) {
-	    /*
-	     * We detected network sharing so we mark the stream and
-	     * keep and extra reference so closing works ok.
-	     */
-	    streamPtr->flags |= FS_RMT_SHARED;
-#ifdef notdef
-	    migInfoPtr->flags |= FS_RMT_SHARED;
-#endif notdef
-	}
-	if (keepReference) {
-	    FsHandleUnlock(streamPtr);
-	} else {
-	    FsHandleRelease(streamPtr, TRUE);
-	}
+	FsStreamMigClient(&migInfoPtr->streamID, migInfoPtr->srcClientID,
+			dstClientID, (FsHandleHeader *)handlePtr,
+			&migInfoPtr->offset, &migInfoPtr->flags);
+
 	/*
 	 * Adjust use counts on the I/O handle to reflect any new sharing.
 	 */
-	 if ((migInfoPtr->flags & FS_NEW_STREAM) &&
-	     (migInfoPtr->flags & FS_RMT_SHARED)) {
-	    /*
-	     * The stream is becoming shared across the network so
-	     * we need to increment the use counts on the I/O handle
-	     * to reflect the additional client stream.
-	     */
-	    handlePtr->use.ref++;
-	    if ((migInfoPtr->flags & FS_WRITE) &&
-		!(migInfoPtr->flags & FS_LAST_WRITER)) {
-		handlePtr->use.write++;
-	    }
-	    if (migInfoPtr->flags & FS_EXECUTE) {
-		handlePtr->use.exec++;
-	    }
-	} else if ((migInfoPtr->flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
-	    /*
-	     * The stream is no longer shared, and it is not new on the
-	     * target client, so we have to decrement the use counts
-	     * to reflect the fact that the original client's stream is not
-	     * referencing the I/O handle.
-	     */
-	    handlePtr->use.ref--;
-	    if (migInfoPtr->flags & FS_WRITE) {
-		handlePtr->use.write--;
-	    }
-	    if (migInfoPtr->flags & FS_EXECUTE) {
-		handlePtr->use.exec--;
-	    }
-	} else if (migInfoPtr->flags & FS_LAST_WRITER) {
-	    /*
-	     * The stream is still open for reading but no longer for
-	     * writing on the source client.  [should this point be reached??]
-	     */
-	    handlePtr->use.write--;
-	}
+	FsMigrateUseCounts(migInfoPtr->flags, &handlePtr->use);
 
 	/*
 	 * Update the client list, and take any required cache consistency
@@ -973,8 +902,8 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 				&fileStatePtr->attr);
 	    *sizePtr = sizeof(FsFileState);
 	    *dataPtr = (Address)fileStatePtr;
-	    *flagsPtr = fileStatePtr->newUseFlags = streamPtr->flags;
-	    *offsetPtr = streamPtr->offset;
+	    *flagsPtr = fileStatePtr->newUseFlags = migInfoPtr->flags;
+	    *offsetPtr = migInfoPtr->offset;
 	} else {
 	    Mem_Free((Address)fileStatePtr);
 	}

@@ -82,9 +82,9 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
     /*
      * Allocate and initialize the read, or "in", end of the stream.
      */
-    streamPtr = FsStreamNew(rpc_SpriteID, (FsHandleHeader *)handlePtr,
+    streamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
+			    (FsHandleHeader *)handlePtr,
 			    FS_READ | FS_CONSUME | FS_USER, "read-pipe");
-    (void)FsStreamClientOpen(&streamPtr->clientList, rpc_SpriteID, FS_READ);
     FsHandleUnlock(streamPtr);
     *inStreamPtrPtr = streamPtr;
 
@@ -94,9 +94,9 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
      */
     FsHandleUnlock(handlePtr);
     (void)FsHandleDup((FsHandleHeader *)handlePtr);
-    streamPtr = FsStreamNew(rpc_SpriteID, (FsHandleHeader *)handlePtr,
+    streamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
+			(FsHandleHeader *)handlePtr,
 			FS_WRITE | FS_APPEND | FS_USER, "write-pipe");
-    (void)FsStreamClientOpen(&streamPtr->clientList, rpc_SpriteID, FS_WRITE);
     FsHandleUnlock(handlePtr);
     FsHandleUnlock(streamPtr);
     *outStreamPtrPtr = streamPtr;
@@ -819,10 +819,6 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     Address	*dataPtr;	/* Return - pointer to FsDeviceState */
 {
     FsPipeIOHandle			*handlePtr;
-    register Fs_Stream			*streamPtr;
-    Boolean				found;
-    Boolean				cache = FALSE;
-    Boolean				keepReference = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -834,99 +830,29 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     }
     migInfoPtr->ioFileID.type = FS_LCL_PIPE_STREAM;
     handlePtr = FsPipeHandleInit(&migInfoPtr->ioFileID, TRUE);
+
     /*
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    streamPtr = FsStreamFind(&migInfoPtr->streamID,
-	(FsHandleHeader *)handlePtr, migInfoPtr->flags, (char *)NIL, &found);
-    if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
-	streamPtr->offset = migInfoPtr->offset;
-    }
-    if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
-	(void)FsStreamClientClose(&streamPtr->clientList,
-				migInfoPtr->srcClientID);
-    } else if (migInfoPtr->flags & FS_NEW_STREAM) {
-	keepReference = TRUE;
-    }
-    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
-	    migInfoPtr->flags)) {
-	streamPtr->flags |= FS_RMT_SHARED;
-#ifdef notdef
-	migInfoPtr->flags |= FS_RMT_SHARED;
-#endif
-    }
-    if (keepReference) {
-	FsHandleUnlock(streamPtr);
-    } else {
-	FsHandleRelease(streamPtr, TRUE);
-    }
-
+    FsStreamMigClient(&migInfoPtr->streamID, migInfoPtr->srcClientID,
+		    dstClientID, (FsHandleHeader *)handlePtr,
+		    &migInfoPtr->offset, &migInfoPtr->flags);
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
-     if ((migInfoPtr->flags & FS_NEW_STREAM) &&
-	 (migInfoPtr->flags & FS_RMT_SHARED)) {
-	/*
-	 * The stream is becoming shared across the network so
-	 * we need to increment the use counts on the I/O handle
-	 * to reflect the additional client stream.
-	 */
-	handlePtr->use.ref++;
-	if ((migInfoPtr->flags & FS_WRITE) &&
-	    !(migInfoPtr->flags & FS_LAST_WRITER)) {
-	    handlePtr->use.write++;
-	}
-    } else if ((migInfoPtr->flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
-	/*
-	 * The stream is no longer shared, and it is not new on the
-	 * target client, so we have to decrement the use counts
-	 * to reflect the fact that the original client's stream is not
-	 * referencing the I/O handle.
-	 */
-	handlePtr->use.ref--;
-	if (migInfoPtr->flags & FS_WRITE) {
-	    handlePtr->use.write--;
-	}
-    } else if (migInfoPtr->flags & FS_LAST_WRITER) {
-	/*
-	 * The stream is still open for reading but no longer for writing
-	 * on the source client.
-	 */
-	handlePtr->use.write--;
-    }
+    FsMigrateUseCounts(migInfoPtr->flags, &handlePtr->use);
+
     /*
-     * Move the client at the I/O handle level.  We are careful to only
-     * close the srcClient if its migration state indicates it isn't
-     * shared.  We are careful to only open the dstClient if it getting
-     * the stream for the first time.
+     * Move the client at the I/O handle level.
      */
-    if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
-	found = FsIOClientClose(&handlePtr->clientList,
-		    migInfoPtr->srcClientID, migInfoPtr->flags, &cache);
-	if (!found) {
-	    Sys_Panic(SYS_WARNING,
-		"FsPipeMigrate, IO Client %d not found\n",
-		migInfoPtr->srcClientID);
-	}
-    } else if (migInfoPtr->flags & FS_LAST_WRITER) {
-	found = FsIOClientRemoveWriter(&handlePtr->clientList,
-		    migInfoPtr->srcClientID);
-	if (!found) {
-	    Sys_Panic(SYS_WARNING,
-		"FsPipeMigrate, IO Client %d not found\n",
-		migInfoPtr->srcClientID);
-	}
-    }
-    if (migInfoPtr->flags & FS_NEW_STREAM) {
-	(void)FsIOClientOpen(&handlePtr->clientList, dstClientID,
-		migInfoPtr->flags, FALSE);
-    }
+    FsIOClientMigrate(&handlePtr->clientList, migInfoPtr->srcClientID,
+			dstClientID, migInfoPtr->flags);
 
     *sizePtr = 0;
     *dataPtr = (Address)NIL;
-    *flagsPtr = streamPtr->flags;
-    *offsetPtr = streamPtr->offset;
+    *flagsPtr = migInfoPtr->flags;
+    *offsetPtr = migInfoPtr->offset;
     /*
      * We don't need this reference on the I/O handle; there is no change.
      */
