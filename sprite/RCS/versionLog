@@ -177,4 +177,19 @@ This is for the Mach change for the sun4 and sun4c, above.
 -------------------------------------------------------------------------
 Dev:
 You can now skip backwards over files on tape.
+-------------------------------------------------------------------------
+Vm:
+If a swap error occurs on a segment, the segment is made non-sticky so that
+the next program to exec it will get a fresh copy.  
+-------------------------------------------------------------------------
+Proc:
+Migration fixes for signals as a result of a failed migration; network
+partitions causing machines to miss "death notices"; signalling a process 
+after the other host thinks you're down and throws away the state associated
+with the process on the remote host.  
+-------------------------------------------------------------------------
+Fs: 
+Reading a symbolic link now does not include the null byte in the count
+of characters read (for unix compatibility).
+-------------------------------------------------------------------------
     New files linked in from the net library.
