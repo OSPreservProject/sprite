@@ -126,7 +126,7 @@ unixSyscallEntry sysUnixSysCallTable[258] = {
     { SYS_UNIX_ERROR,         1  },      /* new sbrk  */
     { SYS_UNIX_ERROR,         1  },      /* sstk #70 */
     { Vm_MmapStub,            6  },      /* mmap  */
-    { SYS_UNIX_ERROR,         1  },      /* old vadvise  */
+    { Sys_NopStub,            1  },      /* old vadvise  */
     { Vm_MunmapStub,          2  },      /* munmap  */
     { Vm_MprotectStub,        3  },      /* mprotect  */
     { SYS_UNIX_ERROR,         3  },      /* madvise  */
