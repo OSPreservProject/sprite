@@ -56,7 +56,7 @@ typedef	struct	FsOpenReplyParam {
  *
  * FsSpritePrefix --
  *
- *	Get a handle for a prefix.  This conducts an RPC_FS_SPRITE_PREFIX
+ *	Get a handle for a prefix.  This conducts an RPC_FS_PREFIX
  *	to see if there is a server for the prefix.  If there is one this
  *	routine installs a handle for it.  The pointer to the handle
  *	is returned.
@@ -104,7 +104,11 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
     storage.replyDataSize = 0;
     fileIDPtr = &(openReplyParam.fileID);
 
+#ifndef OLD_RPC_NUMBERS
+    status = Rpc_Call(RPC_BROADCAST_SERVER_ID, RPC_FS_PREFIX, &storage);
+#else OLD_RPC_NUMBERS
     status = Rpc_Call(RPC_BROADCAST_SERVER_ID, RPC_FS_SPRITE_PREFIX, &storage);
+#endif OLD_RPC_NUMBERS
     /*
      * It is necessary to allocate and copy over the stream data, since
      * the cltOpen proc frees this space.
@@ -136,7 +140,7 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
  *
  * Fs_RpcPrefix --
  *
- *	Server stub for RPC_FS_SPRITE_PREFIX.  This looks in the prefix
+ *	Server stub for RPC_FS_PREFIX.  This looks in the prefix
  *	table for the given prefix.  If found, the handle is opened
  *	for use by the client, and the resulting streamData is returned.
  *
@@ -232,7 +236,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
  *
  * FsSpriteOpen --
  *
- *	Open a remote file.  This sets up and conducts an RPC_FS_SPRITE_OPEN
+ *	Open a remote file.  This sets up and conducts an RPC_FS_OPEN
  *	remote procedure call to open the remote file.  This is called
  *	from FsLookupOperation based on the prefix table.  FsSpriteOpen
  *	makes an RPC to FsLocalOpen on the remote machine, and returns
@@ -296,8 +300,12 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     storage.replyDataPtr = (Address) replyName;
     storage.replyDataSize = FS_MAX_PATH_NAME_LENGTH;
 
+#ifndef OLD_RPC_NUMBERS
+    status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_OPEN, &storage);
+#else OLD_RPC_NUMBERS
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_SPRITE_OPEN,
 		      &storage);
+#endif OLD_RPC_NUMBERS
     if (status == SUCCESS) {
 	/*
 	 * Allocate space for the stream data returned by the server.
