@@ -191,8 +191,7 @@ extern 	void 		Sync_PrintStat();
 	    mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]++; \
 	} \
 	if ((semaphore)->value == 1) { \
-	    panic("Deadlock!!!(%s @ 0x%x)\nHolder PC: 0x%x Current PC: 0x%x\n" \
-		"Holder PCB @ 0x%x Current PCB @ 0x%x\n", \
+	    panic("Deadlock!!!(%s @ 0x%x)\nHolder PC: 0x%x Current PC: 0x%x\nHolder PCB @ 0x%x Current PCB @ 0x%x\n", \
 		(semaphore)->name,(int)(semaphore),(int)(semaphore)->holderPC,\
 		(int) Mach_GetPC(),(int) (semaphore)->holderPCBPtr, \
 		(int) Proc_GetCurrentProc()); \
