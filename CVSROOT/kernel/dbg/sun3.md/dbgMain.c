@@ -699,6 +699,7 @@ Dbg_Main(stackHole, dbgStack)
     if (dbgTraceLevel >= 1 || !dbg_BeingDebugged || 
         (dbgStack.trapStack.trapType != MACH_TRACE_TRAP && 
          dbgStack.trapStack.trapType != MACH_BRKPT_TRAP)) { 
+	Dev_VidEnable(TRUE);	/* unblank the screen */
 	printf("Entering debugger with a %s exception at PC 0x%x\r\n",
 		   TranslateException(dbgStack.trapStack.trapType),
 		   (unsigned) dbgStack.trapStack.excStack.pc);

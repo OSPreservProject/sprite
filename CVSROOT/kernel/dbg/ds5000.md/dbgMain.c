@@ -630,6 +630,7 @@ Dbg_Main()
 
     if (dbgTraceLevel >= 1 || !dbg_BeingDebugged || 
         cause != MACH_EXC_BREAK) {
+	Dev_VidEnable();	/* unblank the screen */
 	printf("Entering debugger with a %s exception at PC 0x%x\r\n",
 		   TranslateException(cause),
 		   mach_DebugState.excPC);

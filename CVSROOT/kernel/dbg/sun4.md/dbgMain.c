@@ -615,6 +615,7 @@ Dbg_Main(trapType, trapStatePtr)
      */
     if (dbgTraceLevel >= 1 || !dbg_BeingDebugged || 
         (DBG_CVT_MACH_TRAP(trapType) != DBG_BREAKPOINT_TRAP)) { 
+	Dev_VidEnable(TRUE);	/* unblank the screen */
 	printf("Entering debugger with a %s (%d) exception at PC 0x%x\r\n",
 		   TranslateException(DBG_CVT_MACH_TRAP(trapType)),trapType,
 		   (unsigned) trapStatePtr->pc);
@@ -928,7 +929,7 @@ Dbg_Main(trapType, trapStatePtr)
 		 */
 		Dev_SyslogReturnBuffer(&buffer, &firstIndexPtr,
 				       &lastIndexPtr, &bufSize);
-#ifdef GOOD_SYSLOG
+/* #ifdef GOOD_SYSLOG */
 		if (*firstIndexPtr == -1) {
 		    length = 0;
 		    PutReplyBytes(4, (Address) &length);
@@ -958,7 +959,7 @@ Dbg_Main(trapType, trapStatePtr)
 			*firstIndexPtr = 0;
 		    }
 		}
-#else
+#ifdef notdef
 		length = 0;
 		PutReplyBytes(4, (Address) &length);
 		dbg_UsingSyslog = FALSE;
