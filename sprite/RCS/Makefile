@@ -337,6 +337,7 @@ ds5000: ${OBJS} .PRECIOUS .NOEXPORT
 	#rcp /sprite/src/kernel/sprite/ds5000 ginger:/home/ginger/sprite/kernels/ds5000
 	#rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds5000)"
 	update -f $@ /lustA/${KERNELNAME}
+	strip /lustA/${KERNELNAME}
 	-Save $@
 
 # profile2: ${PROFOBJS} Makefile .PRECIOUS
