@@ -152,6 +152,7 @@ InitPCB(pcbPtr, i)
 
     pcbPtr->eventHashChain.procPtr = pcbPtr;
     List_InitElement((List_Links *)&pcbPtr->eventHashChain);
+    pcbPtr->event = NIL;
 
     pcbPtr->peerHostID = NIL;
     pcbPtr->peerProcessID = (Proc_PID) NIL;
