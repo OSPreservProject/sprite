@@ -16,6 +16,8 @@
 #ifndef _RECOV
 #define _RECOV
 
+#include "trace.h"
+
 /*
  * Host state used by the recov module and accessible via the
  * Recov_{G,S}etHostState calls:
@@ -82,6 +84,52 @@
 #define RECOV_TRACE_FS_STALE	0x1000
 
 /*
+ * A trace is kept for debugging/understanding the host state transisions.
+ */
+typedef struct RecovTraceRecord {
+    int		spriteID;		/* Host ID whose state changed */
+    int		state;			/* Their new state */
+} RecovTraceRecord;
+
+/*
+ * Tracing events, these describe the trace record.
+ *
+ *	RECOV_CUZ_WAIT		Wait in Rpc_WaitForHost
+ *	RECOV_CUZ_WAKEUP	Wakeup in Rpc_WaitForHost
+ *	RECOV_CUZ_INIT		First time we were interested in the host
+ *	RECOV_CUZ_REBOOT	We detected a reboot
+ *	RECOV_CUZ_CRASH		We detected a crash
+ *	RECOV_CUZ_DONE		Recovery actions completed
+ *	RECOV_CUZ_PING_CHK	We are pinging the host to check it out
+ *	RECOV_CUZ_PING_ASK	We are pinging the host because we were asked
+ */
+#define RECOV_CUZ_WAIT		0x1
+#define RECOV_CUZ_WAKEUP	0x2
+#define RECOV_CUZ_INIT		0x4
+#define RECOV_CUZ_REBOOT	0x8
+#define RECOV_CUZ_CRASH		0x10
+#define RECOV_CUZ_DONE		0x20
+#define RECOV_CUZ_PING_CHK	0x40
+#define RECOV_CUZ_PING_ASK	0x80
+
+#ifndef CLEAN
+
+#define RECOV_TRACE(zspriteID, zstate, event) \
+    if (recovTracing) {\
+	RecovTraceRecord rec;\
+	rec.spriteID = zspriteID;\
+	rec.state = zstate;\
+	Trace_Insert(recovTraceHdrPtr, event, (ClientData)&rec);\
+    }
+#else
+
+#define RECOV_TRACE(zspriteID, zstate, event)
+
+#endif /* not CLEAN */
+
+extern Trace_Header *recovTraceHdrPtr;
+extern Boolean recovTracing;
+/*
  * Statistics about the recovery module.
  */
 typedef struct Recov_Stats {
@@ -93,12 +141,12 @@ typedef struct Recov_Stats {
     int crashes;	/* The number of times crash call-backs were called */
     int nonCrashes;	/* The number of times crash call-backs were avoided */
     int reboots;	/* The number of times reboot call-backs were called */
+    int numHostsPinged;	/* The number of hosts being pinged */
 } Recov_Stats;
 
 extern Recov_Stats recov_Stats;
 
 extern void             Recov_Init();
-extern void		Recov_Proc();
 extern void		Recov_CrashRegister();
 extern void		Recov_RebootRegister();
 extern void		Recov_HostAlive();
@@ -113,6 +161,10 @@ extern ReturnStatus	Recov_GetStats();
 
 extern void		Recov_HostTrace();
 extern void		Recov_PrintTrace();
+
+extern void		Recov_Proc();
+extern void		RecovAddHostToPing();
+extern int		RecovCheckHost();
 
 #endif /* _RECOV */
 
