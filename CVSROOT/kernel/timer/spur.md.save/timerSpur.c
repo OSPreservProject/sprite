@@ -91,7 +91,8 @@ static Timer_Ticks	currentTicks;
  * Semaphore protecting the currentTicks variable.
  */
 
-Sync_Semaphore	currentTicksMutex = SYNC_SEM_INIT_STATIC("currentTicksMutex");
+Sync_Semaphore	currentTicksMutex = 
+    Sync_SemInitStatic("Timer:currentTicksMutex");
 
 
 /*

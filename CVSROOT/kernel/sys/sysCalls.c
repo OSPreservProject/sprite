@@ -646,6 +646,10 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    break;
 	}
+	case SYS_LOCK_STATS: {
+	    status = Sync_GetLockStats(option, argPtr);
+	    break;
+	}
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;

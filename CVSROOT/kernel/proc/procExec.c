@@ -25,7 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sched.h"
 #include "fs.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "sig.h"
 #include "spriteTime.h"
 #include "list.h"
@@ -363,6 +363,11 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     procPtr = Proc_GetActualProc();
     List_Init(&argList);
     List_Init(&envList);
+
+    /* Turn off profiling */
+    if (procPtr->Prof_Scale != 0) {
+	Prof_Disable(procPtr);
+    }
 
     /*
      * Open the file that is to be exec'd.

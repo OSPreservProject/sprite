@@ -38,7 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "proc.h"	/* for Mach_SetJump */
 #include "fs.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "sched.h"
 
 /*
@@ -203,7 +203,7 @@ Dev_SCSIInitController(cntrlrPtr)
      * state to alive and not busy.
      */
     scsiPtr->flags = SCSI_CNTRLR_ALIVE;
-    SYNC_SEM_INIT_DYNAMIC(&scsiPtr->mutex,"scsiPtr->mutex");   
+    Sync_SemInitDynamic(&scsiPtr->mutex,"Dev:scsiPtr mutex");   
     scsiPtr->IOComplete.waiting = 0;
     scsiPtr->readyForIO.waiting = 0;
     scsiPtr->configPtr = cntrlrPtr;
@@ -358,6 +358,7 @@ DevSCSITest(devPtr)
      */
     scsiPtr = devPtr->scsiPtr;
     MASTER_LOCK(&scsiPtr->mutex);
+    Sync_SemRegister(&scsiPtr->mutex);
     while (scsiPtr->flags & SCSI_CNTRLR_BUSY) {
 	Sync_MasterWait(&scsiPtr->readyForIO, &scsiPtr->mutex, FALSE);
     }

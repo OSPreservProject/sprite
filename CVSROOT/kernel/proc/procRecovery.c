@@ -26,12 +26,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "rpc.h"
 #include "hash.h"
-#include "mem.h"
+#include "stdlib.h"
 
 static void MigrateCrash();
 static void MigHostIsUp();
 
-static Sync_Lock recovLock = SYNC_LOCK_INIT_STATIC();
+static Sync_Lock recovLock;
 static Sync_Condition recovCondition = {0};
 #define LOCKPTR &recovLock
 
@@ -73,6 +73,7 @@ Proc_RecovInit()
 {
     Hash_Init(dependHashTable, 0, HASH_ONE_WORD_KEYS);
     Recov_CrashRegister(MigrateCrash, (ClientData) NIL);
+    Sync_LockInitDynamic(&recovLock, "Proc:recovLock");
 }
 
 
@@ -171,6 +172,8 @@ Proc_AddMigDependency(processID, hostID)
     Boolean new;
     
     LOCK_MONITOR;
+
+    Sync_LockRegister(LOCKPTR);
 
     dependPtr = (DependInfo *) malloc(sizeof (DependInfo));
 

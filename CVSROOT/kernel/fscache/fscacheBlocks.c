@@ -775,6 +775,8 @@ FsSetMinSize(minBlocks)
 {
     LOCK_MONITOR;
 
+    Sync_LockRegister(LOCKPTR);
+
     DEBUG_PRINT( ("Setting minimum size to %d with current size of %d\n",
 		       minBlocks, fsStats.blockCache.minCacheBlocks) );
 

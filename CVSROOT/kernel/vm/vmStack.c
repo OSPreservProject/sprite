@@ -28,7 +28,7 @@ Address	vmStackEndAddr;
 /*
  * Monitor declarations.
  */
-Sync_Lock	stackLock = SYNC_LOCK_INIT_STATIC();
+Sync_Lock	stackLock;
 #define	LOCKPTR	&stackLock
 
 /*
@@ -76,6 +76,7 @@ VmStackInit()
     Address	addr;
     int		i;
 
+    Sync_LockInitDynamic(&stackLock, "Vm:stackLock");
     stackListElements =
 	    (StackList *)Vm_BootAlloc(vmMaxProcesses * sizeof(StackList));
     List_Init(activeList);
@@ -88,6 +89,7 @@ VmStackInit()
 		     LIST_ATREAR(freeList));
     }
     numStackPages = mach_KernStackSize >> vmPageShift;
+    Sync_LockRegister(LOCKPTR);
 }
 
 

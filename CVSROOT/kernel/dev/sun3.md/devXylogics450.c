@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "vmMach.h"
 #include "sched.h"
+#include "stdlib.h"
 
 /*
  * State for each Xylogics controller.
@@ -178,7 +179,7 @@ Dev_XylogicsInitController(cntrlrPtr)
      * Initialize synchronization variables and set the controllers
      * state to alive and not busy.
      */
-    SYNC_SEM_INIT_DYNAMIC(&xyPtr->mutex,"xyPtr->mutex");
+    Sync_SemInitDynamic(&xyPtr->mutex,"Dev:xylogics mutex");
     xyPtr->IOComplete.waiting = 0;
     xyPtr->readyForIO.waiting = 0;
     xyPtr->flags = XYLOGICS_CNTRLR_ALIVE;
@@ -350,6 +351,7 @@ DevXylogicsTest(xyPtr, diskPtr)
      * processes that are trying to initiate I/O with this controller.
      */
     MASTER_LOCK(&xyPtr->mutex);
+    Sync_SemRegister(&xyPtr->mutex);
     while (xyPtr->flags & XYLOGICS_CNTRLR_BUSY) {
 	Sync_MasterWait(&xyPtr->readyForIO, &xyPtr->mutex, FALSE);
     }

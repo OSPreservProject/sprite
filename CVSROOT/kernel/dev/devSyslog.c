@@ -18,7 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "machMon.h"
 #include "sig.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "sync.h"
 #include "sched.h"
 #include "proc.h"
@@ -29,7 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Definition of mutual exclusion variable.
  */
-static Sync_Semaphore	syslogMutex = SYNC_SEM_INIT_STATIC("syslogMutex");
+static Sync_Semaphore	syslogMutex = Sync_SemInitStatic("Dev:syslogMutex");
 /*
  * Monitored circular buffer of data written out by the kernel.
  */
@@ -71,6 +71,7 @@ Dev_SyslogOpen(devicePtr, useFlags, token)
 				 * processes that the syslog device is ready.*/
 {
     MASTER_LOCK(&syslogMutex);
+    Sync_SemRegister(&syslogMutex);
     if (useFlags & FS_READ) {
 	if (openForReading) {
 	    MASTER_UNLOCK(&syslogMutex);

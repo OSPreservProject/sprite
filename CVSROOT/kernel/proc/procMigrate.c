@@ -40,7 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sysSysCall.h"
 
 static	Sync_Condition	migrateCondition;
-static	Sync_Lock	migrateLock;
+static	Sync_Lock	migrateLock = Sync_LockInitStatic("Proc:migrateLock");
 #define	LOCKPTR &migrateLock
 
 int proc_MigDebugLevel = 0;
@@ -87,28 +87,6 @@ static ENTRY void   WakeupCallers();
  * External procedures.
  */
 extern Address malloc();
-
-/*
- *----------------------------------------------------------------------
- *
- * ProcMigrateInit --
- *
- *	Initializes the migration lock.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-ProcMigrateInit()
-{
-    Sync_LockInitDynamic(&migrateLock, "Proc:migrateLock");
-}
 
 
 /*
@@ -1264,6 +1242,8 @@ Proc_WaitForMigration(procPtr)
     ReturnStatus status;
 
     LOCK_MONITOR;
+
+    Sync_LockRegister(LOCKPTR);
 
     while (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
 	if (Sync_Wait(&migrateCondition, TRUE)) {

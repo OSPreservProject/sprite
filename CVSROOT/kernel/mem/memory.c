@@ -17,6 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "memInt.h"
 #include "sprite.h"
 #include "sync.h"
+#undef free
 
 /*
  * If the MEM_TRACE flag is defined, extra code will be compiled to allow
@@ -86,7 +87,7 @@ typedef struct {
 
 typedef double AdminInfo;
 
-#define GET_ADMIN(blockPtr)	(*(int *)(AdminInfo *) (blockPtr)))
+#define GET_ADMIN(blockPtr)	(*(int *)(AdminInfo *) (blockPtr))
 #define SET_ADMIN(blockPtr, value) *((int *)(AdminInfo *) (blockPtr)) = (int) (value)
 
 #endif /* MEM_TRACE */
@@ -106,7 +107,7 @@ typedef double AdminInfo;
  * for its monitor lock.
  */
 
-static Sync_Lock memMonitorLock = SYNC_LOCK_INIT_STATIC();
+static Sync_Lock memMonitorLock = Sync_LockInitStatic("memMonitorLock");
 #define LOCKPTR (&memMonitorLock)
 
 /*
@@ -439,6 +440,7 @@ Mem_Bin(numBytes)
  * ----------------------------------------------------------------------------
  */
 
+
 ENTRY Address
 malloc(numBytes)
     register int numBytes;	/* How many bytes to allocate.  Must be > 0 */
@@ -453,6 +455,8 @@ malloc(numBytes)
     register int index;
 
     LOCK_MONITOR;
+
+    Sync_LockRegister(LOCKPTR);
 
     mem_NumAllocs++;
 
@@ -662,7 +666,7 @@ malloc(numBytes)
 /*
  * ----------------------------------------------------------------------------
  *
- * free --
+ * _free --
  *
  *      Return a previously-allocated block of storage to the free pool.
  *
@@ -681,7 +685,14 @@ malloc(numBytes)
  */
 
 ENTRY int
-free(blockPtr)
+free(blockPtr) 
+    Address blockPtr;
+{
+    return _free(blockPtr);
+}
+
+ENTRY int
+_free(blockPtr)
     register Address blockPtr;	/* Pointer to storage to be freed.  Must
 				 * have been the return value from Mem_Alloc
 				 * at some previous time.  */

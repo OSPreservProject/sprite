@@ -77,7 +77,7 @@ unsigned int 	sigBitMasks[SIG_NUM_SIGNALS];
 int		sigDefActions[SIG_NUM_SIGNALS];
 int		sigCanHoldMask;
 
-Sync_Lock	sigLock = SYNC_LOCK_INIT_STATIC();
+Sync_Lock	sigLock;
 Sync_Condition	signalCondition;
 
 
@@ -101,6 +101,8 @@ void
 Sig_Init()
 {
     int	i;
+
+    Sync_LockInitDynamic(&sigLock, "Sig:sigLock");
 
     for (i = SIG_MIN_SIGNAL; i < SIG_NUM_SIGNALS; i++) {
 	sigBitMasks[i] = SigGetBitMask(i);

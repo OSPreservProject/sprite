@@ -65,6 +65,7 @@ FsFileDescAllocInit(domainPtr)
     register ReturnStatus	status;
 
     Sync_LockInitDynamic(&(domainPtr->fileDescLock), "Fs:fileDescLock");
+    Sync_LockRegister(&(domainPtr->fileDescLock));
     /*
      * Allocate the bit map.
      */

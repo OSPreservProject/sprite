@@ -32,7 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 #include "devNet.h"
 #include "user/netInet.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "sync.h"
 #include "fs.h"
 #include "user/net.h"
@@ -99,7 +99,7 @@ static Boolean initList = FALSE;
 /*
  * A master lock is used to synchronize access to the list of protocols.
  */
-static Sync_Semaphore protoMutex = SYNC_SEM_INIT_STATIC("protoMutex");
+static Sync_Semaphore protoMutex = Sync_SemInitStatic("Dev:protoMutex");
 
 
 /*
@@ -137,6 +137,7 @@ DevNet_FsOpen(devicePtr, useFlags, data)
     MASTER_LOCK(&protoMutex);
     if (!initList) {
 	List_Init(&etherProtos);
+	Sync_SemRegister(&protoMutex);
 	initList = TRUE;
     }
     /*

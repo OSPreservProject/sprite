@@ -408,6 +408,24 @@ typedef struct Proc_ControlBlock {
 					 * (deliver signal, switch contexts,
 					 * ect.) on return from the next kernel
 					 * call. */
+
+    /*
+     *---------------------------------------------------------------------
+     *
+     *  User level profiling information
+     *
+     *---------------------------------------------------------------------
+     */
+
+     short *Prof_Buffer;    /* Pointer to an array of profiling information
+                             * in the process's address space. */
+     int Prof_BufferSize;   /* The size of Prof_Buffer. */
+     int Prof_Offset;       /* Value subtracted from the program counter */
+     int Prof_Scale;        /* 16 bit fixed point fraction.  Scales the PC
+                             * to fit in the Prof_Buffer */
+     int Prof_PC;           /* Program counter recorded during the last
+                             * timer tick. */
+
 } Proc_ControlBlock;
 
 
@@ -583,11 +601,11 @@ extern Boolean proc_RefuseMigrations;
     { \
 	if ((pcbPtr)->lockStackSize == 0) { \
 	    *(typePtr) = -1; \
-	    *(lockPtrPtr) = NULL; \
+	    *(lockPtrPtr) = (Address) NIL; \
 	} else { \
-	    *(typePtr) = (pcbPtr)->lockStack[(pcbPtr)->lockStackSize].type; \
+	    *(typePtr) = (pcbPtr)->lockStack[(pcbPtr)->lockStackSize-1].type; \
 	    *(lockPtrPtr) = \
-		(pcbPtr)->lockStack[(pcbPtr)->lockStackSize].lockPtr; \
+		(pcbPtr)->lockStack[(pcbPtr)->lockStackSize-1].lockPtr; \
 	} \
     }
 /* 

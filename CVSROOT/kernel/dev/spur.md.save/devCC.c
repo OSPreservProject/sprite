@@ -526,7 +526,7 @@ RemoteSetModeReg(newMode)
 
 #include "timer.h"
 
-Sync_Semaphore	devPCCMutex = SYNC_SEM_INIT_STATIC("devPCCMutex");
+Sync_Semaphore	devPCCMutex = Sync_SemInitStatic("devPCCMutex");
 
 /*
  * Timer queue element for updating PCC 64bit counters.
@@ -656,6 +656,7 @@ Dev_PCCOpen(devicePtr, useFlags, notifyToken)
      * to insure we don't miss any wraps.
      */
     MASTER_LOCK(&devPCCMutex);
+    Sync_SemRegister(&devPCCMutex);
     if (! UpdateTimerStarted) {
 	UpdateTimerElement.routine = Update64BitCounters;
 	UpdateTimerElement.clientData = 0;

@@ -17,7 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sys.h"
 
-Sync_Semaphore	traceMutex = SYNC_SEM_INIT_STATIC("traceMutex");
+Sync_Semaphore	traceMutex = Sync_SemInitStatic("Vm:traceMutex");
 
 Boolean		vm_Tracing = FALSE;
 int		vmTracesPerClock;
@@ -58,6 +58,7 @@ VmStoreTraceRec(recType, size, traceRecAddr, checkOverflow)
     short	*shortPtr;
 
     MASTER_LOCK(&traceMutex);
+    Sync_SemRegister(&traceMutex);
 
     if (vmTraceNextByte - vmTraceFirstByte > VM_TRACE_BUFFER_SIZE - size) {
 	vmTraceStats.traceDrops++;

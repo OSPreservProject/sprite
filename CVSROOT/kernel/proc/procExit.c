@@ -132,11 +132,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "sys.h"
 #include "dbg.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "rpc.h"
 #include "sig.h"
 
-static	Sync_Lock	exitLock = SYNC_LOCK_INIT_STATIC();
+static	Sync_Lock	exitLock = Sync_LockInitStatic("Proc:exitLock"); 
 #define	LOCKPTR &exitLock
 
 static INTERNAL void WakeupMigratedParent();
@@ -229,6 +229,9 @@ Proc_ExitInt(reason, status, code)
     if (curProcPtr->genFlags & PROC_FOREIGN) {
 	ProcRemoteExit(curProcPtr, reason, status, code);
     }
+    if (curProcPtr->Prof_Scale != 0) {
+	Prof_Disable(curProcPtr);
+    }
     if (curProcPtr->genFlags & PROC_DEBUGGED) {
 	/*
 	 * If a process is being debugged then force it onto the debug
@@ -278,6 +281,8 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
     register Proc_PCBLink 		*procLinkPtr;
 
     LOCK_MONITOR;
+
+    Sync_LockRegister(LOCKPTR);
 
     Proc_Lock(exitProcPtr);
 

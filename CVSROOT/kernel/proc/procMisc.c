@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "string.h"
 #include "procInt.h"
 #include "rpc.h"
+#include "dbg.h"
 
 /*
  * Procedures internal to this file
@@ -35,6 +36,29 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 static Boolean CheckIfUsed();
 static ReturnStatus GetRemotePCB();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Init --
+ *
+ *	Called during startup to initialize data structures.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process table initialized, debug list initialized, locks initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_Init()
+{
+    ProcInitTable();
+    ProcDebugInit();
+}
 
 
 /*
@@ -985,5 +1009,101 @@ Proc_GetHostIDs(virtualHostPtr, physicalHostPtr)
     }
 
     return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_PushLockStack --
+ *
+ *	Pushes the given lock type on the lock stack for the process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is printed if the stack overflows.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_PushLockStack(pcbPtr, type, lockPtr)
+    Proc_ControlBlock		*pcbPtr;	/* ptr to pcb to modify */
+    int				type;		/* type of lock */
+    Address			lockPtr;	/* ptr to lock */
+
+{
+    static Boolean	firstOverflow = TRUE;
+
+    if (pcbPtr->lockStackSize >= PROC_LOCKSTACK_SIZE && firstOverflow) {
+	printf("Proc_PushLockStack: stack overflow in pcb 0x%x.\n",pcbPtr);
+	firstOverflow = FALSE;
+	return;
+    }
+    if (pcbPtr->lockStackSize < 0 ) {
+	printf("Proc_PushLockStack: stack underflow (%d) in pcb 0x%x.\n",
+	       pcbPtr->lockStackSize, pcbPtr);
+        return;
+    }
+    pcbPtr->lockStack[pcbPtr->lockStackSize].type = type;
+    pcbPtr->lockStack[pcbPtr->lockStackSize].lockPtr = lockPtr;
+    pcbPtr->lockStackSize++;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RemoveFromLockStack --
+ *
+ *	Removes the given lock from the stack if it is there.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_RemoveFromLockStack(pcbPtr, lockPtr)
+    Proc_ControlBlock		*pcbPtr;	/* ptr to pcb to modify */
+    Address			lockPtr;	/* ptr to lock */
+{
+    int 	i;
+    int		stackTop;
+    Boolean 	found = FALSE;
+
+    if (pcbPtr->lockStackSize < 0) {
+	panic("Lock stack underflow (1).\n");
+	return;
+    }
+    if (pcbPtr->lockStackSize == 0) {
+	return;
+    }
+    stackTop = pcbPtr->lockStackSize - 1;
+    for (i = pcbPtr->lockStackSize - 1; i >= 0; i--) {
+	if (pcbPtr->lockStack[i].lockPtr == lockPtr) {
+	    pcbPtr->lockStack[i].lockPtr = (Address) NIL;
+	    pcbPtr->lockStack[i].type = -1;
+	    found = TRUE;
+	    break;
+	}
+    }
+    if (!found) {
+	return;
+    }
+    for (i = pcbPtr->lockStackSize - 1; i >= 0; i--) {
+	if (pcbPtr->lockStack[i].lockPtr != (Address) NIL) {
+	    break;
+	}
+    }
+    pcbPtr->lockStackSize = i + 1;
+    if (pcbPtr->lockStackSize < 0) {
+	printf("lockStackSize %d\n",pcbPtr->lockStackSize);
+	panic("Lock stack underflow (2).\n");
+    }
 }
 

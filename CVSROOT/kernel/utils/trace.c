@@ -23,12 +23,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "sys.h"
 #include "sync.h"
+#include "vm.h"
 
 /* 
  * Trace module mutex.
  */
 
-Sync_Semaphore trace_Mutex = SYNC_SEM_INIT_STATIC("trace_Mutex");
+Sync_Semaphore trace_Mutex = Sync_SemInitStatic("Utils:trace_Mutex");
 
 
 /*
@@ -60,7 +61,8 @@ Trace_Init(traceHdrPtr, numRecords, size, flags)
     register Address clientPtr;
     register Trace_Record *recordPtr;
     int i;
-    
+
+
     traceHdrPtr->numRecords = numRecords;
     traceHdrPtr->currentRecord = 0;
     traceHdrPtr->flags = flags & ~TRACE_INHIBIT;
@@ -113,6 +115,7 @@ Trace_Insert(traceHdrPtr, event, data)
     Timer_Ticks ticks;
     
     MASTER_LOCK(&trace_Mutex);
+    Sync_SemRegister(&trace_Mutex);
     if (traceHdrPtr == (Trace_Header *)NIL ||
 	(traceHdrPtr->flags & TRACE_INHIBIT)) {
 	MASTER_UNLOCK(&trace_Mutex);

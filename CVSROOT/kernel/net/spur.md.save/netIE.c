@@ -68,7 +68,7 @@ static 	List_Links	xmitFreeListHdr;
  * Semaphore protecting the chip and driver's data structures.
  */
 
-Sync_Semaphore netIEMutex	= SYNC_SEM_INIT_STATIC("netIEMutex"); 
+Sync_Semaphore netIEMutex	= Sync_SemInitStatic("netIEMutex"); 
 
 /*
  * Macro to fetch a byte from the board's ROM at a 
@@ -233,6 +233,7 @@ NetIEInit(name, number, slotId)
     }
 
     MASTER_LOCK(&netIEMutex);
+    Sync_SemRegister(&netIEMutex);
     /*
      * Initialize the transmission list.  
      */

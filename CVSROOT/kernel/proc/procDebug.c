@@ -36,13 +36,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 #include "sys.h"
 #include "list.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "vm.h"
 
 static Sync_Condition	debugListCondition;	/* Condition to sleep on when
 						 * waiting for a process to go
 						 * onto the debug list. */
-static Sync_Lock debugLock = SYNC_LOCK_INIT_STATIC(); /* Monitor lock. */
+static Sync_Lock debugLock; 			/* Monitor lock. */
 #define LOCKPTR &debugLock
 
 List_Links	debugListHdr;
@@ -69,6 +69,7 @@ void
 ProcDebugInit()
 {
     List_Init(debugList);
+    Sync_LockInitDynamic(&debugLock, "Proc:debugLock");
 }
 
 
@@ -111,6 +112,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
     ReturnStatus		status = SUCCESS;
 
     LOCK_MONITOR;
+    Sync_LockRegister(LOCKPTR);
 
     /*
      * If the caller is trying to manipulate a debugged process make sure that

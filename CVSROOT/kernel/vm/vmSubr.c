@@ -28,7 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Vm_Stat		vmStat;
 int             vmFirstFreePage;  
 Address		vmMemEnd;
-Sync_Lock 	vmMonitorLock = SYNC_LOCK_INIT_STATIC();
+Sync_Lock 	vmMonitorLock;
 int		vm_PageSize;
 int		vmPageShift;
 int		vmPageTableInc;
@@ -71,6 +71,10 @@ Vm_Init()
 #ifdef notdef
     unsigned int	virtPage;
 #endif
+
+    Sync_LockInitDynamic(&vmMonitorLock, "Vm:vmMonitorLock");
+    Sync_LockRegister(&vmMonitorLock);
+
     /*
      * Set up the maximum number of pages that a stack can grow.
      */
@@ -220,7 +224,7 @@ Vm_RawAlloc(numBytes)
      * Bump the end of memory by the number of bytes that we just
      * allocated making sure that it is four byte aligned.
      */
-#ifdef spur
+#if defined(spur) || defined(sun4)
     retAddr = (Address) (((unsigned)retAddr + 7) & ~7);
     vmMemEnd += (numBytes + 7) & ~7;	/* eight byte aligned for SPUR. */
 #else

@@ -38,7 +38,7 @@ static Boolean inMcount = FALSE;
  * of the storage for its arcs.
  */
 
-static Sync_Semaphore	mcountMutex = SYNC_SEM_INIT_STATIC("mcountMutex");
+static Sync_Semaphore	mcountMutex = Sync_SemInitStatic("mcountMutex");
 
 
 /*
@@ -157,6 +157,7 @@ mcount()
 	} else {
 
 	    MASTER_LOCK(&mcountMutex);
+	    Sync_SemRegister(&mcountMutex);
 
 	    arcPtr = profArcListFreePtr;
 	    profArcListFreePtr++;

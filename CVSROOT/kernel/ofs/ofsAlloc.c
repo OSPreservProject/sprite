@@ -176,6 +176,7 @@ FsLocalBlockAllocInit(domainPtr)
     ReturnStatus		status;
 
     Sync_LockInitDynamic(&(domainPtr->dataBlockLock), "Fs:dataBlockLock");
+    Sync_LockRegister(&(domainPtr->dataBlockLock));
     /*
      * Ensure some free disk space for disk block allocation.
      */

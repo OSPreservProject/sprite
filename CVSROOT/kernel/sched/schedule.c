@@ -70,7 +70,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The scheduler module mutex semaphore.  Used in sync module as well,
  * since synchronization involves mucking with the process queues.
  */
-Sync_Semaphore sched_Mutex = SYNC_SEM_INIT_STATIC("sched_Mutex");
+Sync_Semaphore sched_Mutex ; 
 Sync_Semaphore *sched_MutexPtr = &sched_Mutex;
 
 /*
@@ -165,6 +165,7 @@ Sched_Init()
     bzero((Address) &(sched_Instrument),sizeof(sched_Instrument));
 
     List_Init(schedReadyQueueHdrPtr);
+    Sync_SemInitDynamic(sched_MutexPtr, "sched_Mutex");
 
     forgetUsageElement.routine		= Sched_ForgetUsage; 
     forgetUsageElement.clientData	= 0;
@@ -543,6 +544,7 @@ IdleLoop()
      int	modeReg = Dev_CCIdleCounters(FALSE,0);
 #endif
 
+    Sync_SemRegister(sched_MutexPtr);
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
     MASTER_UNLOCK(sched_MutexPtr);

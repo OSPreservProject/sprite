@@ -112,7 +112,7 @@ static Boolean DSTAllowed		= TRUE;
  * Semaphore protecting the above time of day variables.
  */
 
-Sync_Semaphore	timerClockMutex = SYNC_SEM_INIT_STATIC("timerClockMutex");
+Sync_Semaphore	timerClockMutex;
 
 
 /*
@@ -144,6 +144,8 @@ static Timer_QueueElement      updateElement;
 void
 TimerClock_Init()
 {
+
+    Sync_SemInitDynamic(&timerClockMutex,"Timer:timerClockMutex");
 
     Timer_CounterInit();
 

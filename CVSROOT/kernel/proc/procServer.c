@@ -110,7 +110,7 @@ int	proc_NumServers = 5;
  * Mutex to synchronize accsess to the queue of pending requests and
  * to the process state.
  */
-Sync_Semaphore	serverMutex = SYNC_SEM_INIT_STATIC("serverMutex");
+Sync_Semaphore	serverMutex; 
 
 void	Proc_ServerProc();
 void	ScheduleFunc();
@@ -259,6 +259,7 @@ Proc_ServerInit()
 	serverInfoTable[i].flags = 0;
 	serverInfoTable[i].condition.waiting = 0;
     }
+    Sync_SemInitDynamic(&serverMutex, "Proc:serverMutex");
 }
 
 
@@ -286,6 +287,7 @@ Proc_ServerProc()
     int				i;
 
     MASTER_LOCK(&serverMutex);
+    Sync_SemRegister(&serverMutex);
     /*
      * Find which server table entry that we are to use.
      */

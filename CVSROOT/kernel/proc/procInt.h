@@ -46,6 +46,9 @@ extern void ProcExitProcess();
 
 extern	void			ProcFamilyHashInit();
 extern	void			ProcDebugInit();
+extern	void			ProcRecovInit();
+extern 	void			ProcExitInit();
+extern	void			ProcMigrateInit();
 extern	void			ProcEnvironInit();
 
 extern	void			ProcDebugWakeup();

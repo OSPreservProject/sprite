@@ -242,6 +242,8 @@ extern void Timer_GetTimeOfDay();
 extern void Timer_GetRealTimeOfDay();
 extern void Timer_SetTimeOfDay();
 
+extern void Timer_LockRegister();
+
 
 /*
  * Exported procedures. The arguments and function of this interface are be

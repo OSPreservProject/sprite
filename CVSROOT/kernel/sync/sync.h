@@ -55,32 +55,114 @@ typedef struct Sync_Instrument {
     int numUnlocks;		/* number of calls to MASTER_UNLOCK */
 } Sync_Instrument;
 
+/*
+ * This is used inside the Sync_Semaphore and Sync_Lock structures to allow
+ * them to be linked into lists. Usually the links field is first in a
+ * structure so that the list routines work correctly. The CLEAN_LOCK
+ * version of locks do not use the links field and expect the value of
+ * the lock to be the first field. The easiest solution is to put the
+ * links inside a structure which in turn is inside the locks. The linked
+ * list elements are these inner structures, which in turn have a pointer
+ * to the lock that contains them.
+ */
+typedef struct Sync_ListInfo {
+    List_Links	links;		/* used to link into lists */
+    Address	lock;		/* ptr at outer structure that contains this
+				 * structure */
+} Sync_ListInfo;
+
+/*
+ * Classes of locks. The "class" field of both locks and semaphores is 
+ * at the same offset within the structures. This allows routines to determine
+ * the class of a parameter.
+ */
+typedef enum Sync_LockClass {
+    SYNC_SEMAPHORE,			
+    SYNC_LOCK
+} Sync_LockClass;
+
+/*
+ *  Maximum types of locks. Types are assigned as locks are registered, 
+ *  starting at 1. No distiction is made between locks and semaphores when
+ *  assigning a type. The type is used as an index into the array of
+ *  statistics for that lock type. Unregistered locks have a type of 0,
+ *  and the type of the lock that protects the lock registration itself is
+ *  -1. We have to treat this lock specially because a lock is registered
+ *  after it is locked, and we need to lock the registration lock in order
+ *  to register a lock. Hence we can't register the registration lock.
+ */
+
+#define SYNC_MAX_LOCK_TYPES 50
+
+/*
+ * Semaphore structure
+ */
 typedef struct Sync_Semaphore {
+    /*
+     * The value field must be first.
+     */
     int value;				/* value of semaphore */
     int miss;				/* count of misses on lock */
+    int	hit;				/* count of lock hits */
+    /*
+     * The class field must be at the same offset in both locks and semaphores.
+     */
+    Sync_LockClass class;		/* class of lock (semaphore) */
     char *name;				/* name of semaphore */
     Address holderPC;			/* pc of lock holder */
     Proc_ControlBlock *holderPCBPtr;	/* process id of lock holder */
+    int priorCount;			/* count of locks that were grabbed
+					 * immediately before this one */
+    int type;				/* id of lock name */
+    Sync_ListInfo listInfo;		/* used to link these into lists */
+    int priorTypes[SYNC_MAX_PRIOR];     /* types of prior locks */
 } Sync_Semaphore;
 
-#ifdef CLEAN
-#define SYNC_SEM_INIT_STATIC(name) \
-    {0,0,(char *)NIL,(Address)NIL,(Proc_ControlBlock *) NIL}
-#define SYNC_SEM_INIT_DYNAMIC(sem,semName) { \
-    (sem)->value = (sem)->miss = 0; (sem)->name = (char *)NIL; \
-    (sem)->holderPC = (Address)NIL; \
-    (sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; }
+typedef struct Sync_KernelLock{
+    /*
+     * The inUse and waiting fields must be first and in this order.
+     */
+    Boolean inUse;			/* 1 while the lock is busy */
+    Boolean waiting;	        	/* 1 if someone wants the lock */
+    int hit;				/* number of times lock is grabbed */
+    /*
+     * The class field must be at the same offset in both locks and semaphores.
+     */
+    Sync_LockClass class;		/* class of lock (lock) */
+    int miss;				/* number of times lock is missed */
+    char *name;				/* name of lock type */
+    Address holderPC;			/* pc of lock holder */
+    Proc_ControlBlock *holderPCBPtr;	/* process id of lock holder */
+    int priorCount;			/* count of locks that were grabbed
+					 * immediately before this one */
+    int type;				/* type of lock */
+    Sync_ListInfo listInfo;		/* used to put locks into lists */
+    int priorTypes[SYNC_MAX_PRIOR];     /* types of prior locks */
+} Sync_KernelLock;
 
-#else
-#define SYNC_SEM_INIT_STATIC(name) \
-    {0,0,name,(Address) NIL,(Proc_ControlBlock *) NIL}
-#define SYNC_SEM_INIT_DYNAMIC(sem,semName) { \
-    (sem)->value = (sem)->miss = 0; (sem)->name = semName; \
-    (sem)->holderPC = (Address)NIL; \
-    (sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; }
-
+#ifdef KERNEL
+typedef Sync_KernelLock Sync_Lock;	/* define locks for kernel */
 #endif
 
+/*
+ * Structure used to keep track of lock statistics and registration. 
+ * One of these exists for each type of lock, and the active locks of the type
+ * is linked to the activeLocks field. 
+ */
+typedef struct Sync_RegElement {
+    List_Links 		links;			/* used to link into lists */
+    int			hit;			/* number of hits on type */
+    int			miss;			/* number of misses on type */
+    int			type;			/* type of lock */
+    char		*name;			/* name of type */
+    Sync_LockClass	class;			/* either semaphore or lock */
+    int			priorCount;		/* count of prior types */
+    int			priorTypes[SYNC_MAX_PRIOR]; /* prior types */
+    int			activeLockCount;	/* # active locks of type */
+    List_Links		activeLocks;		/* list of active locks */
+    int			deadLockCount;		/* # deactivated locks */
+} Sync_RegElement;
+
 /*
  * Define a structure to keep track of waiting processes on remote machines.
  */
@@ -132,6 +214,15 @@ extern 	ReturnStatus 	Sync_SlowBroadcastStub();
 
 extern 	void 		Sync_PrintStat();
 
+extern	void		Sync_LockStatInit();
+extern	void		SyncAddPriorLock();
+extern	void		SyncDeleteCurrentLock();
+extern 	void		SyncMergePriorLocks();
+extern	void		Sync_RegisterAnyLock();
+extern	void		Sync_CheckoutAnyLock();
+extern	void		Sync_PrintLockStats();
+
+extern Sync_RegElement  *regQueuePtr;
 
 
 /*
@@ -149,7 +240,6 @@ extern 	void 		Sync_PrintStat();
  *	a preemptive context switch.  The semaphore is checked
  *	with a Mach_TestAndSet atomic operation in a busy wait
  *	to prevent races with other processors.
- *	The semaphore is just an integer.
  *
  *
  * For uniprocessor debugging, panic when the lock is held (otherwise
@@ -164,24 +254,7 @@ extern 	void 		Sync_PrintStat();
  *
  *----------------------------------------------------------------------------
  */
-
-#ifdef lint
-#define MASTER_LOCK(semaphore) \
-    { \
-        sync_Instrument.numLocks++; \
-	if (!Mach_AtInterruptLevel()) { \
-	    Mach_DisableIntr(); \
-	    mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]++; \
-	} \
-	if ((semaphore)->value == 1) { \
-	    panic("Deadlock!!! (semaphore @ 0x%x)\n", (int)(semaphore)); \
-	} \
-	(semaphore)->value == 1; \
-    }
-
-#else /* lint */
-
-#ifndef CLEAN
+#ifndef CLEAN_LOCK  /* locking statistics version */
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
 #define MASTER_LOCK(semaphore) \
     { \
@@ -197,8 +270,12 @@ extern 	void 		Sync_PrintStat();
 		(int) Proc_GetCurrentProc()); \
 	} else { \
 	    (semaphore)->value++;\
+	    (semaphore)->hit++; \
 	    (semaphore)->holderPC = Mach_GetPC(); \
 	    (semaphore)->holderPCBPtr = Proc_GetCurrentProc(); \
+	    SyncAddPrior((semaphore)->type, &((semaphore)->priorCount), \
+			     (semaphore)->priorTypes, (Address) (semaphore), \
+			     (semaphore)->holderPCBPtr); \
 	}\
     }
 #else  			/* multiprocessor implementation */
@@ -226,8 +303,12 @@ extern 	void 		Sync_PrintStat();
 	if(missFlag == 1) { \
 	    (semaphore)->miss++; \
 	} \
+	(semaphore)->hit++; \
 	(semaphore)->holderPC = Mach_GetPC(); \
 	(semaphore)->holderPCBPtr = Proc_GetCurrentProc(); \
+	SyncAddPrior((semaphore)->type, &((semaphore)->priorCount), \
+			     (semaphore)->priorTypes, (Address) (semaphore), \
+			     (semaphore)->holderPCBPtr); \
     }
 #endif  /* multiprocessor implementation */
 #else   /* CLEAN */
@@ -242,7 +323,7 @@ extern 	void 		Sync_PrintStat();
 	if ((semaphore)->value == 1) { \
 	    panic("Deadlock!!! (semaphore @ 0x%x)\n", (int)(semaphore)); \
 	} \
-	(semaphore)->value == 1; \
+	(semaphore)->value = 1; \
     }
 
 #else  			/* multiprocessor implementation */
@@ -258,7 +339,7 @@ extern 	void 		Sync_PrintStat();
 	     * wait until semaphore looks free -- avoid bouncing between \
 	     * processor caches. \
 	     */ \
-	    while((semaphore)->value) != 0) { \
+	    while((semaphore)->value != 0) { \
 	    } \
 	    if(Mach_TestAndSet(&((semaphore)->value)) == 0) { \
 		break; \
@@ -268,9 +349,7 @@ extern 	void 		Sync_PrintStat();
 
 #endif /*multiprocessor implementation */
 #endif /* CLEAN */
-#endif /* lint */
-
-
+
 
 /*
  *----------------------------------------------------------------------------
@@ -292,6 +371,8 @@ extern 	void 		Sync_PrintStat();
  *----------------------------------------------------------------------------
  */
 
+#ifdef NOLOCKDEP
+
 #define MASTER_UNLOCK(semaphore) \
     { \
         sync_Instrument.numUnlocks++; \
@@ -303,6 +384,22 @@ extern 	void 		Sync_PrintStat();
 	    } \
 	} \
     }
+
+#else  /* NOLOCKDEP */
+
+#define MASTER_UNLOCK(semaphore) \
+    { \
+        sync_Instrument.numUnlocks++; \
+	(semaphore)->value = 0; \
+	SyncDeleteCurrentLock((Address)(semaphore),(semaphore)->holderPCBPtr);\
+	if (!Mach_AtInterruptLevel()) { \
+	    --mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]; \
+	    if (mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()] == 0) { \
+		Mach_EnableIntr(); \
+	    } \
+	} \
+    }
+#endif /* NOLOCKDEP */
 
 /* 
  * Condition variables can be used in critical sections guarded by
@@ -385,5 +482,332 @@ extern 	void 		Sync_PrintStat();
  */
 
 #define UNLOCK_MONITOR_AND_SWITCH(state) Sync_UnlockAndSwitch(LOCKPTR, state)
+
+/*
+ *	The initialization routines are used to initialize a semaphore.
+ *	The name parameter is the name of the semaphore and is used to
+ *	distinguish between types of locks. If you want the statistics
+ *	(hit, miss, etc) for two semaphores to be shared then give them the
+ *	same name. An example might be locks around file handles, where it
+ *	makes more sense to have the statistics for all the locks as a whole,
+ *	rather than just one lock. Also beware that no distinction is made
+ *	between locks and semaphores when determining types -- if they have
+ *	the same name they have the same type.
+ *	   Sync_SemClear should be called when a semaphore is being deallocated
+ *	and will be no longer used. Currently all this routine does is to
+ *	take the statistics associated with the semaphore and merge them in
+ *	with those for the type as a whole.
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_SemRegister --
+ *
+ * Obsolete.
+ *
+ *----------------------------------------------------------------------
+ */
+#define Sync_SemRegister Sync_LockRegister
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * Sync_SemClear
+ * 
+ * Obsolete.
+ *
+ *----------------------------------------------------------------------
+ */
+#define Sync_SemClear Sync_LockClear
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_SemInitStatic --
+ *
+ *	Initializes the fields of a semaphore in an initialization statement.
+ *	Ex:
+ *		static Sync_Semaphore foo = Sync_SemInitStatic("foo");
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef CLEAN_LOCK
+#define NOLOCKDEP
+
+#define Sync_SemInitStatic(name) \
+    {0,0,0, SYNC_SEMAPHORE,(char *)NIL,(Address)NIL,(Proc_ControlBlock *) NIL,0}
+
+#else /* CLEAN_LOCK */
+
+#define Sync_SemInitStatic(name) \
+    {0,0,0, SYNC_SEMAPHORE, (name),(Address) NIL,(Proc_ControlBlock *) NIL,0,0}
+
+#endif /* CLEAN_LOCK */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_SemInitDynamic --
+ *
+ *	Initializes the fields of a semaphore during program execution.
+ *	Ex:
+ *		Sync_SemInitDynamic(foo,"foo");
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef CLEAN_LOCK
+
+#define Sync_SemInitDynamic(sem,semName) \
+    { \
+	(sem)->value = (sem)->miss = 0; (sem)->name = (char *)NIL; \
+	(sem)->hit = 0; \
+	(sem)->holderPC = (Address)NIL; (sem)->class = SYNC_SEMAPHORE;\
+	(sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; \
+	(sem)->priorCount = 0; \
+    }
+
+#else /* CLEAN_LOCK */
+
+#define Sync_SemInitDynamic(sem,semName) \
+    { \
+	(sem)->value = (sem)->miss = 0; (sem)->name = (semName); \
+	(sem)->hit = 0; \
+	(sem)->holderPC = (Address)NIL; (sem)->class = SYNC_SEMAPHORE;\
+	(sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; \
+	(sem)->priorCount = 0; (sem)->type = 0; \
+    }
+
+#endif /* CLEAN_LOCK */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_LockInitStatic --
+ *
+ *	Initializes the fields of a lock in an initialization statement.
+ *	Ex:
+ *		static Sync_Lock foo = Sync_LockInitStatic("foo");
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef CLEAN_LOCK
+
+#define Sync_LockInitStatic(name) {0,0}
+
+#else /* CLEAN_LOCK */
+
+#define Sync_LockInitStatic(name) \
+    {0,0,0,SYNC_LOCK, 0, (name), (Address) NIL, (Proc_ControlBlock *) NIL,0}
+
+#endif /* CLEAN_LOCK */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_LockInitDynamic --
+ *
+ *	Initializes the fields of a lock during program execution.
+ *	Ex:
+ *		Sync_LockInitDynamic(foo,"foo");
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef CLEAN_LOCK
+
+#define Sync_LockInitDynamic(lock, name) {(lock)->inUse = (lock)->waiting = 0;}
+
+#else /* CLEAN_LOCK */
+
+#define Sync_LockInitDynamic(lock, lockName) { \
+    (lock)->inUse = (lock)->waiting = 0; (lock)->class = SYNC_LOCK;\
+    (lock)->hit = (lock)->miss = 0; (lock)->name = (lockName); \
+    (lock)->holderPC = (Address) NIL; \
+    (lock)->holderPCBPtr  = (Proc_ControlBlock *) NIL; \
+    (lock)->priorCount = 0; (lock)->type = 0; \
+}
+
+#endif /* CLEAN_LOCK */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_IsRegistered --
+ *
+ *	Returns true if a lock or semaphore has already been registered. If
+ *	CLEAN_LOCK is defined then this macro always returns FALSE.
+ *
+ * Results:
+ *	TRUE if lock or semaphore registered.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef CLEAN_LOCK
+
+#define Sync_IsRegistered(lock) FALSE
+
+#else /* CLEAN_LOCK */
+
+#define Sync_IsRegistered(lock) \
+    (((lock)->type > 0) ? TRUE : FALSE)
+
+#endif /* CLEAN_LOCK */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_LockRegister --
+ *
+ *	Used to add a lock to the registration database.
+ *	If CLEAN_LOCK is defined then this macro does nothing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The lock is registered.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef CLEAN_LOCK
+
+#define Sync_LockRegister(sem) {}
+
+#else /* CLEAN_LOCK */
+
+#define Sync_LockRegister(lock) \
+    { \
+	if (!Sync_IsRegistered(lock)) { \
+	    Sync_RegisterAnyLock((Address) (lock)); \
+	} \
+    }
+
+#endif /* CLEAN_LOCK */
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_LockClear --
+ *
+ *	Used to clear and deregister a lock before it is freed.
+ *	If CLEAN_LOCK is defined then this macro does nothing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The lock is deregistered.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef CLEAN_LOCK
+
+#define Sync_LockClear(sem) 
+
+#else /* CLEAN_LOCK */
+
+#define Sync_LockClear(lock) \
+    { \
+	if (Sync_IsRegistered(lock)) { \
+	    Sync_CheckoutAnyLock((Address) (lock)); \
+	} \
+    }
+
+#endif /* CLEAN_LOCK */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SyncAddPrior --
+ *
+ *	When a lock is grabbed the prior lock must be added to the prior
+ *	types for the lock.
+ *	This macro does nothing if NOLOCKDEP is defined.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef NOLOCKDEP
+
+#define SyncAddPrior(type, priorCount, priorTypes, lockPtr, pcbPtr)
+
+#else /* NOLOCKDEP */
+
+#define SyncAddPrior(type, priorCount, priorTypes, lockPtr, pcbPtr) \
+    { SyncAddPriorLock((type), (priorCount), (priorTypes), (lockPtr), \
+    (pcbPtr)); }
+
+#endif /* NOLOCKDEP */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SyncMergePrior --
+ *
+ *	When a lock is cleared its statistics must be added to those for
+ *	the type as a whole.
+ *	This macro does nothing if NOLOCKDEP is defined.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef NOLOCKDEP
+
+#define SyncMergePrior(priorCount, priorTypes, regPtr)
+
+#else /* NOLOCKDEP */
+
+#define SyncMergePrior(priorCount, priorTypes, regPtr) \
+    { SyncMergePriorLocks((priorCount), (priorTypes), (regPtr)); } 
+
+#endif /* NOLOCKDEP */
 
 #endif /* _SYNC */

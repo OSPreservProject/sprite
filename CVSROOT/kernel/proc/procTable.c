@@ -28,10 +28,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "sys.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "rpc.h"
 
-Sync_Lock	tableLock = SYNC_LOCK_INIT_STATIC();
+Sync_Lock	tableLock;
 #define	LOCKPTR &tableLock
 
 static Proc_ControlBlock  *RunningProcesses[MACH_MAX_NUM_PROCESSORS];
@@ -53,7 +53,7 @@ static void InitPCB();
 /*
  * ----------------------------------------------------------------------------
  *
- * Proc_InitTable --
+ * ProcInitTable --
  *
  *	Initializes the PCB table and running process table.  Must be called
  *	at initialization time with interrupts off.  Initializes an array
@@ -70,7 +70,7 @@ static void InitPCB();
  */
 
 void
-Proc_InitTable()
+ProcInitTable()
 {
     register	int 		  i;
     register	Proc_ControlBlock *pcbPtr;
@@ -101,8 +101,7 @@ Proc_InitTable()
     for (i = 0; i < maxRunningProcesses; i++) {
         proc_RunningProcesses[i] = (Proc_ControlBlock *) NIL;
     }
-
-    ProcDebugInit();
+    Sync_LockInitDynamic(&tableLock, "Proc:tableLock");
 }
 
 
@@ -157,6 +156,7 @@ InitPCB(pcbPtr, i)
     pcbPtr->peerHostID = NIL;
     pcbPtr->peerProcessID = (Proc_PID) NIL;
     pcbPtr->argString = (char *) NIL;
+    pcbPtr->lockStackSize = 0;
     pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
     pcbPtr->fsPtr = (Fs_ProcessState *)NIL;
     pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
@@ -427,6 +427,8 @@ ProcGetUnusedPCB()
     int					generation;
 
     LOCK_MONITOR;
+
+    Sync_LockRegister(LOCKPTR);
 
 
     /* 

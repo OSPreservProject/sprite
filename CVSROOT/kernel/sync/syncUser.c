@@ -50,7 +50,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 ReturnStatus
 Sync_SlowLockStub(lockPtr)
-    Sync_Lock_User *lockPtr;
+    Sync_UserLock *lockPtr;
 {
     ReturnStatus	status = SUCCESS;
     Proc_ControlBlock	*procPtr;
@@ -106,7 +106,7 @@ Sync_SlowLockStub(lockPtr)
 ReturnStatus
 Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     unsigned 	int 	event;
-    Sync_Lock_User	*lockPtr;
+    Sync_UserLock	*lockPtr;
     Boolean		wakeIfSignal;
 {
     ReturnStatus	status;

@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devSCSI.h"
 #include "devSCSIDisk.h"
 #include "devDiskLabel.h"
+#include "stdlib.h"
 
 #include "dbg.h"
 static int SCSIdebug = FALSE;

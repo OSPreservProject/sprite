@@ -24,7 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sched.h"
 #include "sys.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "status.h"
 #include "vm.h"
 
@@ -50,7 +50,8 @@ typedef struct ProcEnvironVar {
  * Monitor declarations.
  */
 
-static	Sync_Lock environMonitorLock = SYNC_LOCK_INIT_STATIC();
+static	Sync_Lock environMonitorLock = 
+    Sync_LockInitStatic("Proc:environMonitorLock");
 #define	LOCKPTR   &environMonitorLock
 
 
@@ -79,6 +80,7 @@ ProcInitMainEnviron(procPtr)
     int		i;
 
     LOCK_MONITOR;
+    Sync_LockRegister(LOCKPTR);
 
     procPtr->environPtr =
 		(Proc_EnvironInfo *) malloc(sizeof(Proc_EnvironInfo));

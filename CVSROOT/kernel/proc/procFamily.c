@@ -25,13 +25,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "proc.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "status.h"
 #include "sync.h"
 #include "sched.h"
 #include "hash.h"
 
-static	Sync_Lock	familyLock = SYNC_LOCK_INIT_STATIC();
+static	Sync_Lock	familyLock;
 #define	LOCKPTR &familyLock
 Sync_Condition	familyCondition;
 
@@ -59,7 +59,7 @@ typedef struct {
  *
  * ProcFamilyHashInit --
  *
- *	Initialize the family id hash table.
+ *	Initialize the family id hash table and the family lock.
  *
  * Results:
  *	None.
@@ -73,6 +73,7 @@ typedef struct {
 void
 ProcFamilyHashInit()
 {
+    Sync_LockInitDynamic(&familyLock, "Proc:familyLock");
     Hash_Init(famHashTable, FAMILY_HASH_SIZE, Hash_Size(sizeof(int)));
 }
 
@@ -104,6 +105,8 @@ ProcFamilyInsert(procPtr, familyID)
     register	FamilyHeader	*famHdrPtr;
 
     LOCK_MONITOR;
+    Sync_LockRegister(LOCKPTR);
+
     if (familyID == PROC_NO_FAMILY) {
 	UNLOCK_MONITOR;
 	return(SUCCESS);
