@@ -165,9 +165,9 @@
  *			doesn't get trashed.
  */
 #ifdef sun3
-#define	MACH_KERN_START		0xf000000
-#define	MACH_CODE_START		0xf004000
-#define	MACH_STACK_BOTTOM	0xf000000
+#define	MACH_KERN_START		0xe000000
+#define	MACH_CODE_START		0xe004000
+#define	MACH_STACK_BOTTOM	0xe000000
 #else
 #define	MACH_KERN_START		0x800000
 #define	MACH_CODE_START		0x804000

@@ -64,6 +64,10 @@
  * VMMACH_DMA_START_ADDR	The first virtual address that is used for 
  *				DMA buffers by devices.
  * VMMACH_DMA_SIZE		The amount of space devoted to DMA buffers
+ * VMMACH_NET_MAP_START		The beginning of space for mapping the Intel
+ *				and AMD drivers.
+ * VMMACH_NET_MEM_START		The beginning of space for memory for the Intel
+ *				and AMD drivers.
  * VMMACH_FIRST_SPECIAL_SEG	The first hardware segment that is used for 
  *				mapping devices.
  * VMMACH_INV_PMEG   		The page cluster number that is used to 
@@ -84,7 +88,9 @@
 #define VMMACH_DEV_START_ADDR       	0xFE00000
 #define	VMMACH_DEV_END_ADDR		0xFEFFFFF
 #define	VMMACH_DMA_START_ADDR		0xFF00000
-#define	VMMACH_DMA_SIZE			0x0100000
+#define	VMMACH_DMA_SIZE			0x80000
+#define VMMACH_NET_MAP_START		0xFFC0000
+#define VMMACH_NET_MEM_START		0xFFE0000
 #define	VMMACH_FIRST_SPECIAL_SEG	(VMMACH_DEV_START_ADDR >> VMMACH_SEG_SHIFT)
 #define	VMMACH_INV_PMEG			(VMMACH_NUM_PMEGS - 1)
 #define	VMMACH_INV_SEG			VMMACH_NUM_SEGS_PER_CONTEXT
@@ -186,7 +192,7 @@
 #define VMMACH_OFFSET_MASK_INT	0x1fff
 #define VMMACH_PAGE_MASK	0x1E000	
 #define	VMMACH_SEG_SIZE		0x20000
-#define VMMACH_SEG_SHIFT		17	
+#define VMMACH_SEG_SHIFT	17	
 #define	VMMACH_NUM_PAGES_PER_SEG (VMMACH_NUM_PAGES_PER_SEG_INT / VMMACH_CLUSTER_SIZE)
 
 /*
@@ -200,6 +206,12 @@
  */
 
 #define	VMMACH_PAGE_TABLE_INCREMENT	(((256 * 1024 - 1) / VMMACH_SEG_SIZE + 1) * VMMACH_NUM_PAGES_PER_SEG)
+
+/*
+ * The maximum number of kernel stacks.  There is a limit because these
+ * use part of the kernel's virtual address space.
+ */
+#define VMMACH_MAX_KERN_STACKS	128
 
 /*
  * The following sets of constants define the kernel's virtual address space. 
@@ -239,6 +251,6 @@
  * address spaces.  This area sits between the beginning of the kernel and
  * the top of the user stack.  It is one hardware segment wide.
  */
-#define	VMMACH_MAP_SEG_ADDR		(0xf000000 - VMMACH_SEG_SIZE)
+#define	VMMACH_MAP_SEG_ADDR		(0xE000000 - VMMACH_SEG_SIZE)
 
 #endif _VMSUN3CONST
