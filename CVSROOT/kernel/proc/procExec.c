@@ -204,9 +204,8 @@ Proc_RemoteExec(fileName, argPtrArray, envPtrArray, host)
  *
  * Proc_ExecEnv --
  *
- *	Process the Exec system call, including passing environment variables
- *	to the new program, and allowing the process to be thrown into
- *	the debugger on startup.
+ *	Here for backward compatibility.  It does an exec on the
+ *	local host.
  *
  * Results:
  *	This process will not return unless an error occurs in which case it
