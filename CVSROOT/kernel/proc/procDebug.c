@@ -5,8 +5,7 @@
  *	synchronizes access to the debug list.  Routines in this monitor
  *	are responsible for the following fields in the proc table:
  *
- *	    1) Process state can go to PROC_DEBUGABLE.
- *	    2) PROC_DEBUGGED, PROC_ON_DEBUG_LIST, PROC_SINGLE_STEP_FLAG,
+ *	    PROC_DEBUGGED, PROC_ON_DEBUG_LIST, PROC_SINGLE_STEP_FLAG,
  *	       and PROC_DEBUG_WAIT can be set in the genFlags field.
  *
  *	The PROC_DEBUGGED flag is set when a process is being actively debugged
@@ -122,8 +121,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	if (procPtr == (Proc_ControlBlock *) NIL || 
 	    !(procPtr->genFlags & PROC_DEBUGGED) ||
 	    (procPtr->genFlags & PROC_ON_DEBUG_LIST) ||
-	    (procPtr->state != PROC_SUSPENDED && 
-	     procPtr->state != PROC_DEBUGABLE)) {
+	    procPtr->state != PROC_SUSPENDED) {
 	    if (procPtr != (Proc_ControlBlock *) NIL) {
 		Proc_Unlock(procPtr);
 	    }
@@ -156,16 +154,6 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 		procPtr->genFlags |= PROC_DEBUG_WAIT;
 
 		if (procPtr->state == PROC_SUSPENDED) {
-		    /*
-		     * The process that we want to debug is suspended.
-		     * Send it another stop signal so that we can debug it.
-		     * The act of signaling it will wake it up so that it
-		     * can be suspended again.  This time when it gets 
-		     * suspended it will realize that we are waiting and
-		     * enter the debug state instead of the suspended state.j
-		     */
-		    Sig_SendProc(procPtr, procPtr->termStatus, SIG_NO_CODE);
-		} else if (procPtr->state == PROC_DEBUGABLE) {
 		    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
 		    procPtr->genFlags |= PROC_DEBUGGED;
 		    if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
@@ -303,8 +291,16 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    break;
 
 	case PROC_DETACH_DEBUGGER:
-	    procPtr->genFlags &= ~PROC_DEBUGGED;
+	    /*
+	     * Detach from this process.  This has the side effect of 
+	     * continuing the process as if a resume signal had been sent.
+	     */
+	    procPtr->genFlags &= ~(PROC_DEBUGGED | PROC_DEBUG_WAIT);
 	    Sched_MakeReady(procPtr);
+	    procPtr->termReason = PROC_TERM_RESUMED;
+	    procPtr->termStatus = SIG_RESUME;
+	    procPtr->termCode = SIG_NO_CODE;
+	    Proc_InformParent(procPtr, PROC_RESUME_STATUS, FALSE);
 	    break;
 
 	default:
@@ -324,26 +320,32 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 /*
  *----------------------------------------------------------------------
  *
- * Proc_PutOnDebugList --
+ * Proc_SuspendProcess --
  *
- *	This routine puts a process to the debug list.
+ *	Put the process into the suspended state.  If the process is
+ *	entering the suspended state because of a bug and no process is 
+ *	debugging it then put it onto the debug list.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The process state is changed and the process is put on
- *	the debug list. A context switch is performed to the debugable state.
+ *	The process state is changed and the process may be put onto
+ *	the debug list. A context switch is performed to the suspend state.
  *
  *----------------------------------------------------------------------
  */
- 
 void
-Proc_PutOnDebugList(procPtr, termReason, termStatus, termCode, statusReg)
+Proc_SuspendProcess(procPtr, debug, termReason, termStatus,
+		    termCode, statusReg)
     register	Proc_ControlBlock	*procPtr;	/* Process to put on the
 							 * debug list. */
+    Boolean				debug;		/* TRUE => this process
+							 * is being suspended
+							 * because of an 
+							 * error. */
     int					termReason;	/* Reason why process
-							 * went on list. */
+							 * went to this state.*/
     int					termStatus;	/* Termination status.*/
     int					termCode;	/* Termination code. */
     short				statusReg;	/* Status register of
@@ -359,57 +361,93 @@ Proc_PutOnDebugList(procPtr, termReason, termStatus, termCode, statusReg)
     if (procPtr->genFlags & PROC_FOREIGN) {
 	Sys_Panic(SYS_WARNING,
 		"Migrated process being placed on debug list.\n");
-    } else {
-	/*
-	 * Detach the debugable process from its parent.
-	 */
-	Proc_DetachInt(procPtr);
     }
 
-    List_Insert((List_Links *) procPtr, LIST_ATREAR(debugList));
-    Proc_Lock(procPtr);
-    procPtr->genFlags |= PROC_ON_DEBUG_LIST;
-    Proc_Unlock(procPtr);
-    Sync_Broadcast(&debugListCondition);
+    if (debug) {
+	if (!(procPtr->genFlags & PROC_DEBUGGED)) {
+	    /*
+	     * If the process isn't currently being debugged then it goes on 
+	     * the debug list and its parent is notified of a state change.
+	     */
+	    List_Insert((List_Links *) procPtr, LIST_ATREAR(debugList));
+	    Proc_Lock(procPtr);
+	    procPtr->genFlags |= PROC_ON_DEBUG_LIST;
+	    Proc_Unlock(procPtr);
+	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, FALSE);
+	    Sync_Broadcast(&debugListCondition);
+	} else if (procPtr->genFlags & PROC_DEBUG_WAIT) {
+	    /*
+	     * A process is waiting for this process so wake it up.
+	     */
+	    Sync_Broadcast(&debugListCondition);
+	}
+    } else {
+	/*
+	 * The process is being suspended.  Notify the parent and then wakeup
+	 * anyone waiting for this process to enter the debug state.
+	 */
+	Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, FALSE);
+	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
+	    Sync_Broadcast(&debugListCondition);
+	}
+    }
 
-    UNLOCK_MONITOR_AND_SWITCH(PROC_DEBUGABLE);
+    UNLOCK_MONITOR_AND_SWITCH(PROC_SUSPENDED);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Proc_TakeOffDebugList --
+ * Proc_ResumeProcess --
  *
- *	This routine removes the given process from the debug list and makes
- *	the process runnable.  It is assumed that the process table entry
- *	for the process that we are removing from the debug list is locked
- *	down.
+ *	Resume execution of the given process.  It is assumed that this 
+ *	procedure is called with the process table entry locked.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The process is removed from the debug list and made runnable.
+ *	The process may be made runnable and may be removed from the debug list.
  *
  *----------------------------------------------------------------------
  */
- 
 ENTRY void
-Proc_TakeOffDebugList(procPtr)
+Proc_ResumeProcess(procPtr, killingProc)
     register	Proc_ControlBlock	*procPtr;	/* Process to remove
 							 * from list. */
+    Boolean				killingProc;	/* This process is
+							 * being resumed for
+							 * the purpose of 
+							 * killing it. */
 {
     LOCK_MONITOR;
 
-    if (procPtr->state == PROC_DEBUGABLE) {
+    if (procPtr->state == PROC_SUSPENDED &&
+        (killingProc || !(procPtr->genFlags & PROC_DEBUGGED))) {
+	/*
+	 * Only processes that are currently suspended and are either being
+	 * killed or aren't being actively debugged can be resumed.
+	 */
 	if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
 	    List_Remove((List_Links *) procPtr);
-	    procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
 	}
-	procPtr->genFlags &= ~PROC_DEBUGGED;
+	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
+	    Sync_Broadcast(&debugListCondition);
+	}
+	procPtr->genFlags &= ~(PROC_ON_DEBUG_LIST | PROC_DEBUG_WAIT);
 	Sched_MakeReady(procPtr);
-	Sync_Broadcast(&debugListCondition);
+	if (!killingProc) {
+	    procPtr->termReason = PROC_TERM_RESUMED;
+	    procPtr->termStatus = SIG_RESUME;
+	    procPtr->termCode = SIG_NO_CODE;
+	    /*
+	     * The parent is notified in background because we are called
+	     * by the signal code as part of the act of sending a signal
+	     * and if a SIG_CHILD happens now we will have deadlock.
+	     */
+	    Proc_InformParent(procPtr, PROC_RESUME_STATUS, TRUE);
+	}
     }
 
     UNLOCK_MONITOR;
@@ -431,7 +469,6 @@ Proc_TakeOffDebugList(procPtr)
  *
  *----------------------------------------------------------------------
  */
- 
 ENTRY void
 ProcDebugWakeup()
 {
