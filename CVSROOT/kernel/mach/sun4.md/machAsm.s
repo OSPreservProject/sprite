@@ -202,6 +202,66 @@ _Mach_GetMachineType:
 	retl
 	nop
 
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_GetEtherAddress -
+ *
+ *	Returns the type of machine that is stored in the id prom.
+ *
+ *	int *	Mach_GetEtherAddress(ether)
+ *
+ * Results:
+ *	The argument struct gets the prom's ethernet address and is
+ *	returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_Mach_GetEtherAddress
+_Mach_GetEtherAddress:
+	set	VMMACH_ETHER_ADDR, %OUT_TEMP1
+	/* first byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* second byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* third byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* fourth byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* fifth byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* sixth byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	sub	%o0, 5, %o0		/* restore pointer parameter */
+
+	retl
+	nop
+
 /*
  *---------------------------------------------------------------------
  *
