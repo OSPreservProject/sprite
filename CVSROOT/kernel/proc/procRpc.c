@@ -618,7 +618,7 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
 	parentProcPtr->Prof_Scale);
 
     childProcPtr->state 		= PROC_MIGRATED;
-    childProcPtr->genFlags 		= PROC_USER | PROC_NO_VM;
+    childProcPtr->genFlags 	       |= PROC_USER | PROC_NO_VM;
     childProcPtr->syncFlags		= 0;
     childProcPtr->schedFlags		= 0;
     childProcPtr->exitFlags		= 0;
@@ -711,6 +711,8 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     if (proc_MigDebugLevel > 3) {
 	printf("RpcProcFork returning SUCCESS.\n");
     }
+
+    Proc_Unlock(childProcPtr);
     return(SUCCESS);
 }
 
