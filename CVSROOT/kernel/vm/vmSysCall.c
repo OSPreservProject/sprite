@@ -828,8 +828,21 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
      * Unmap any current mapping at the address range.
      */
     status=VmMunmapInt(startAddr,length,1);
+    if (status == SUCCESS) {
+	/*
+	 * Force the mach module to allocate the segment again.
+	 * (The allocation of shared segments in memory needs to be fixed up.
+	 * The problem is that we may have multiple segments mapped into
+	 * the same memory, and thus it is hard to keep track of what's
+	 * in use).  This should force the segment to be marked as in use.
+	 * There still may be a problem if part of a segment is unmapped.
+	 */
+	status = VmMach_SharedStartAddr(procPtr, length, &startAddr, 1);
+    }
     if (status != SUCCESS) {
 	printf("Vm_Mmap: Vm_Munmap failure\n");
+	UNLOCK_SHM_MONITOR;
+	(void)Fs_Close(filePtr);
 	return status;
     }
 
