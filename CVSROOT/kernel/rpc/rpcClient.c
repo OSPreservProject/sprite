@@ -78,7 +78,7 @@ int	rpcMaxAcks = 10;	/* Watchdog against lots of acks from a server.
  * For debugging servers.  We allow client's to retry forever instead
  * of timing out.  This is exported and settable via Fs_Command
  */
-Boolean rpc_NoTimeouts = TRUE;
+Boolean rpc_NoTimeouts = FALSE;
 
 /*
  * A histogram is kept of the elapsed time of each different kind of RPC.
