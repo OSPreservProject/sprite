@@ -305,27 +305,6 @@ Rpc_GetStats(command, option, argPtr)
 	    }
 	    break;
 	}
-	case SYS_RPC_EXTRA_SRV_STATS: {
-	    register int *srvStatPtr;
-	    extern	int	mostNackBuffers;
-	    extern	int	selfNacks;
-	    int		sillyArray[2];
-
-	    srvStatPtr = (int *)argPtr;
-	    if (srvStatPtr == (int *)NIL ||
-		srvStatPtr == (int *)0 ||
-		srvStatPtr == (int *)USER_NIL) {
-		
-		printf("most nack buffers used: %d\n", mostNackBuffers);
-		printf("self nacks dropped: %d\n", selfNacks);
-	    } else {
-		sillyArray[0] = mostNackBuffers;
-		sillyArray[1] = selfNacks;
-		status = Vm_CopyOut(2 * sizeof (int),
-			(Address)sillyArray, (Address) srvStatPtr);
-	    }
-	    break;
-	}
 	case SYS_RPC_TRACE_STATS: {
 	    switch(option) {
 		case SYS_RPC_TRACING_PRINT:

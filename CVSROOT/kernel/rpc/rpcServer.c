@@ -89,12 +89,6 @@ int	rpc_NumNackBuffers = 4;
  * nack buffers last initialized.
  */
 int	oldNumNackBuffers = 0;
-/*
- * For tracing nack behavior - the high-water mark of nack buffers used.
- * These are temporary stats until they can be put into rpcstats.
- */
-int	mostNackBuffers = 0;
-int	selfNacks = 0;
 
 
 /*
@@ -500,12 +494,13 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	     * reroutes the message and we get deadlock.  Drop the neg ack.
 	     */
 	    printf("Can't nack to myself!\n");
-	    selfNacks++;
+	    rpcSrvStat.selfNacks++;
 	    return;
 	}
 	MASTER_LOCK(&(rpcNack.mutex));
-	if (rpc_NumNackBuffers - rpcNack.numFree > mostNackBuffers) {
-	    mostNackBuffers = rpc_NumNackBuffers - rpcNack.numFree;
+	if (rpc_NumNackBuffers - rpcNack.numFree >
+	    rpcSrvStat.mostNackBuffers) {
+	    rpcSrvStat.mostNackBuffers = rpc_NumNackBuffers - rpcNack.numFree;
 	}
 	if (rpcNack.numFree <= 0) {
 	    /* Drop the negative ack. */
@@ -991,7 +986,7 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
     rpcHdrPtr->flags = RPC_REPLY;
     if (error) {
 	/*
-	 * Communicate the error code back in the command feild.
+	 * Communicate the error code back in the command field.
 	 */
 	rpcHdrPtr->command = error;
 	rpcHdrPtr->flags |= RPC_ERROR;

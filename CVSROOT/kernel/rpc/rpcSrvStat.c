@@ -114,6 +114,7 @@ RpcResetSrvStat()
     register int *totalIntPtr;
     register int *deltaIntPtr;
     register int index;
+
     /*
      * Add the current statistics to the totals and then
      * reset the counters.  The statistic structs are cast
@@ -181,37 +182,40 @@ void
 Rpc_PrintSrvStat()
 {
     printf("Rpc Server Statistics\n");
-    printf("toServer   = %5d ", rpcSrvStat.toServer);
-    printf("noAlloc     = %4d ", rpcSrvStat.noAlloc);
-    printf("nacks       = %4d ", rpcSrvStat.nacks);
-    printf("invClient   = %4d ", rpcSrvStat.invClient);
+    printf("toServer        = %5d ", rpcSrvStat.toServer);
+    printf("noAlloc          = %4d ", rpcSrvStat.noAlloc);
+    printf("invClient        = %4d ", rpcSrvStat.invClient);
     printf("\n");
-    printf("serverBusy  = %4d ", rpcSrvStat.serverBusy);
-    printf("requests   = %5d ", rpcSrvStat.requests);
-    printf("impAcks    = %5d ", rpcSrvStat.impAcks);
-    printf("handoffs   = %5d ", rpcSrvStat.handoffs);
+    printf("nacks            = %4d ", rpcSrvStat.nacks);
+    printf("mostNackBuffers  = %4d ", rpcSrvStat.mostNackBuffers);
+    printf("selfNacks        = %4d ", rpcSrvStat.selfNacks);
     printf("\n");
-    printf("fragMsgs   = %5d ", rpcSrvStat.fragMsgs);
-    printf("handoffAcks = %4d ", rpcSrvStat.handoffAcks);
-    printf("fragAcks    = %4d ", rpcSrvStat.fragAcks);
-    printf("sentPartial = %4d ", rpcSrvStat.recvPartial);
+    printf("serverBusy       = %4d ", rpcSrvStat.serverBusy);
+    printf("requests        = %5d ", rpcSrvStat.requests);
+    printf("impAcks         = %5d ", rpcSrvStat.impAcks);
+    printf("handoffs        = %5d ", rpcSrvStat.handoffs);
     printf("\n");
-    printf("busyAcks    = %4d ", rpcSrvStat.busyAcks);
-    printf("resends     = %4d ", rpcSrvStat.resends);
-    printf("badState    = %4d ", rpcSrvStat.badState);
-    printf("extra       = %4d ", rpcSrvStat.extra);
+    printf("fragMsgs        = %5d ", rpcSrvStat.fragMsgs);
+    printf("handoffAcks      = %4d ", rpcSrvStat.handoffAcks);
+    printf("fragAcks         = %4d ", rpcSrvStat.fragAcks);
+    printf("sentPartial      = %4d ", rpcSrvStat.recvPartial);
     printf("\n");
-    printf("reclaims    = %4d ", rpcSrvStat.reclaims);
-    printf("reassembly = %5d ", rpcSrvStat.reassembly);
-    printf("dupFrag     = %4d ", rpcSrvStat.dupFrag);
-    printf("nonFrag     = %4d ", rpcSrvStat.nonFrag);
+    printf("busyAcks         = %4d ", rpcSrvStat.busyAcks);
+    printf("resends          = %4d ", rpcSrvStat.resends);
+    printf("badState         = %4d ", rpcSrvStat.badState);
+    printf("extra            = %4d ", rpcSrvStat.extra);
     printf("\n");
-    printf("fragAborts  = %4d ", rpcSrvStat.fragAborts);
-    printf("recvPartial = %4d ", rpcSrvStat.recvPartial);
-    printf("closeAcks   = %4d ", rpcSrvStat.closeAcks);
-    printf("discards    = %4d ", rpcSrvStat.discards);
+    printf("reclaims         = %4d ", rpcSrvStat.reclaims);
+    printf("reassembly      = %5d ", rpcSrvStat.reassembly);
+    printf("dupFrag          = %4d ", rpcSrvStat.dupFrag);
+    printf("nonFrag          = %4d ", rpcSrvStat.nonFrag);
     printf("\n");
-    printf("unknownAcks = %4d ", rpcSrvStat.unknownAcks);
+    printf("fragAborts       = %4d ", rpcSrvStat.fragAborts);
+    printf("recvPartial      = %4d ", rpcSrvStat.recvPartial);
+    printf("closeAcks        = %4d ", rpcSrvStat.closeAcks);
+    printf("discards         = %4d ", rpcSrvStat.discards);
+    printf("\n");
+    printf("unknownAcks      = %4d ", rpcSrvStat.unknownAcks);
     printf("\n");
 }
 
