@@ -86,7 +86,7 @@ typedef struct ProtocolState {
     Boolean		kernel;		/* TRUE if kernel is using this proto */
     PacketQueue		queue;		/* Queue of received packets */
     ProtoStats		stats;		/* Event counters */
-    ClientData		fsReadyToken;	/* Used for filesystem callback that
+    Fs_NotifyToken	fsReadyToken;	/* Used for filesystem callback that
 					 * notifies waiting processes that
 					 * packets are here */
     int			(*inputProc)();	/* Used when the kernel is using the
@@ -130,7 +130,7 @@ ReturnStatus
 DevNet_FsOpen(devicePtr, useFlags, data)
     Fs_Device   *devicePtr;	/* Device info, unit number == protocol */
     int 	useFlags;	/* Flags from the stream being opened */
-    ClientData  data;		/* Call-back for input notification */
+    Fs_NotifyToken  data;	/* Call-back for input notification */
 {
     register ProtocolState *protoPtr;
     register int i;
@@ -234,6 +234,42 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
+ * DevNet_FsReopen --
+ *
+ *	Reopen an ethernet protocol device.  Call the regular
+ *	open routine to do all the work.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *	FS_FILE_BUSY	- the device was already opened.
+ *
+ * Side effects:
+ *	Storage for the protocol state is allocated and linked into
+ *	the list of active protocols.  If this has already been done,
+ *	then the protocol is simply marked as open.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+DevNet_FsReopen(devicePtr, refs, writers, data)
+    Fs_Device   *devicePtr;	/* Device info, unit number == protocol */
+    int 	refs;		/* Number of open network streams */
+    int		writers;	/* Number that are open for writing */
+    Fs_NotifyToken  data;	/* Call-back for input notification */
+{
+    int useFlags = FS_READ;
+
+    if (writers) {
+	useFlags |= FS_WRITE;
+    }
+    return( DevNet_FsOpen(devicePtr, useFlags, data) );
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DevNetEtherHandler --
  *
  *	Dispatcher for ethernet packets.  The list of active protocols
@@ -291,7 +327,7 @@ DevNetEtherHandler(packetPtr, size)
 		     */
 		    Proc_CallFunc(protoPtr->inputProc, (ClientData)protoPtr, 0);
 		} else {
-		    Fs_NotifyReader(protoPtr->fsReadyToken);
+		    Fs_DevNotifyReader(protoPtr->fsReadyToken);
 		}
 	    }
 	    break;
@@ -323,12 +359,10 @@ DevNetEtherHandler(packetPtr, size)
 
 /*ARGSUSED*/
 ReturnStatus
-DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
+DevNet_FsRead(devicePtr, readPtr, replyPtr)
     Fs_Device	*devicePtr;
-    int		offset;		/* ignored */
-    int		bufSize;	/* size of buffer */
-    Address	buffer;		/* place to store data */
-    int		*lenPtr;	/* max. # of chars to read before returning */
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
     ReturnStatus status;
     register ProtocolState *protoPtr;
@@ -351,10 +385,10 @@ DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
 
 	protoPtr->queue.head = NextHead(protoPtr->queue);
 
-	if (size > bufSize) {
-	    size = bufSize;
+	if (size > readPtr->length) {
+	    size = readPtr->length;
 	}
-	bcopy(packetPtr, buffer,size);
+	bcopy(packetPtr, readPtr->buffer, size);
 
 	status = SUCCESS;
 	if (devNetEtherDebug) {
@@ -363,7 +397,7 @@ DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
 	}
     }
 
-    *lenPtr = size;
+    replyPtr->length = size;
     MASTER_UNLOCK(&protoMutex);
     return(status);
 }
@@ -392,22 +426,21 @@ DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-DevNet_FsWrite(devicePtr, offset, bufSize, buffer, lenPtr)
+DevNet_FsWrite(devicePtr, writePtr, replyPtr)
     Fs_Device	*devicePtr;
-    int		offset;		/* Ignored */
-    int		bufSize;	/* Size of buffer */
-    Address	buffer;		/* Place to find data */
-    int		*lenPtr;	/* Number of chars written */
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
     register Net_EtherHdr *etherHdrPtr;
     register ProtocolState *protoPtr;
     Net_ScatterGather ioVector;
 
-    if (bufSize < sizeof(Net_EtherHdr)) {
+    if (writePtr->length < sizeof(Net_EtherHdr) ||
+	writePtr->length > NET_ETHER_MAX_BYTES) {
 	return(SYS_INVALID_ARG);
     }
     protoPtr = (ProtocolState *)devicePtr->data;
-    etherHdrPtr = (Net_EtherHdr *)buffer;
+    etherHdrPtr = (Net_EtherHdr *)writePtr->buffer;
 
     /*
      * Verify the protocol type in the header.  The low level driver
@@ -417,12 +450,12 @@ DevNet_FsWrite(devicePtr, offset, bufSize, buffer, lenPtr)
 	return(SYS_INVALID_ARG);
     }
 
-    ioVector.bufAddr	= (Address)((int)buffer + sizeof(Net_EtherHdr));
-    ioVector.length	= bufSize - sizeof(Net_EtherHdr);
+    ioVector.bufAddr = (Address)((int)writePtr->buffer + sizeof(Net_EtherHdr));
+    ioVector.length  = writePtr->length - sizeof(Net_EtherHdr);
 
     Net_EtherOutputSync(etherHdrPtr, &ioVector, 1);
 
-    *lenPtr = bufSize;
+    replyPtr->length = writePtr->length;
     return(SUCCESS);
 }
 
@@ -457,7 +490,7 @@ DevNet_FsClose(devicePtr, useFlags, openCount, writerCount)
 
     protoPtr = (ProtocolState *)devicePtr->data;
     protoPtr->open = FALSE;
-    protoPtr->fsReadyToken = (ClientData)NIL;
+    protoPtr->fsReadyToken = (Fs_NotifyToken)NIL;
     /*
      * Nuke the queue here?
      */
@@ -487,26 +520,23 @@ DevNet_FsClose(devicePtr, useFlags, openCount, writerCount)
 
 /*ARGSUSED*/
 ReturnStatus
-DevNet_FsSelect(devicePtr, inFlags, outFlagsPtr)
+DevNet_FsSelect(devicePtr, readPtr, writePtr, exceptPtr)
     Fs_Device	*devicePtr;
-    int		inFlags;		/* FS_READABLE and/or FS_WRITABLE. */
-    int		*outFlagsPtr;		/* The above flags if the device
-    					 * is ready now. */
+    int			*readPtr;
+    int			*writePtr;
+    int			*exceptPtr;
 {
     register ProtocolState *protoPtr;
 
     MASTER_LOCK(&protoMutex);
     protoPtr = (ProtocolState *)devicePtr->data;
 
-    *outFlagsPtr = 0;
-    if (inFlags & FS_WRITABLE) {
-	*outFlagsPtr |= FS_WRITABLE;
-    }
-    if (inFlags & FS_READABLE) {
-	if ( ! QueueEmpty(protoPtr->queue)) {
-	    *outFlagsPtr |= FS_READABLE;
+    if (*readPtr) {
+	if (QueueEmpty(protoPtr->queue)) {
+	    *readPtr = 0;
 	}
     }
+    *exceptPtr = 0;
     MASTER_UNLOCK(&protoMutex);
     return(SUCCESS);
 }
@@ -531,10 +561,11 @@ DevNet_FsSelect(devicePtr, inFlags, outFlagsPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-DevNet_FsIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
-		outBuffer)
+DevNet_FsIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer,
+		outBufSize, outBuffer)
     Fs_Device	*devicePtr;
     int		command;
+    int		byteOrder;
     int		inBufSize;
     Address	inBuffer;
     int		outBufSize;
