@@ -14,12 +14,19 @@
 #ifndef _OFS
 #define _OFS
 
+#ifdef KERNEL
 #include <dev.h>
 #include <fslcl.h>
 #include <fsioFile.h>
 #include <fsdm.h>
 #include <devBlockDevice.h>
-
+#else
+#include <kernel/dev.h>
+#include <kernel/fslcl.h>
+#include <kernel/fsioFile.h>
+#include <kernel/fsdm.h>
+#include <kernel/devBlockDevice.h>
+#endif
 
 /*
  * ONE sector of summary information is kept on disk.  This records things
