@@ -441,8 +441,8 @@ Sig_SigpauseStub(mask)
     Mach_SetErrno(EINTR);
     if (status == GEN_ABORTED_BY_SIGNAL) {
 	Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_RESTART;
-	printf("Sigpause: setting RESTART\n");
-	
+    } else {
+	Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_MIG_RESTART;
     }
     return -1;
 }
