@@ -223,7 +223,7 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
      register Fsio_FileIOHandle *handlePtr;	/* A handle from FslclLookup.
 					 * Should be LOCKED upon entry,
 					 * Returned UNLOCKED. */
-     Fs_OpenArgs		*openArgsPtr;	/* Standard open arguments */
+      Fs_OpenArgs		*openArgsPtr;	/* Standard open arguments */
      Fs_OpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
 					 * and Fsio_FileState */
 {
@@ -319,6 +319,28 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	    streamPtr = Fsio_StreamCreate(rpc_SpriteID, clientID,
 		(Fs_HandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
 	    openResultsPtr->streamID = streamPtr->hdr.fileID;
+
+#ifdef SOSP91
+	    {
+		int numWriters;
+		int numReaders;
+		(void) Fsconsist_NumClients(&handlePtr->consist, 
+		    &numReaders, &numWriters);
+		/*
+		 * BUG: Right now this records effective user id instead of
+		 * real user id. 
+		 * Get attributes out of open results!
+		 */
+
+		SOSP_ADD_OPEN_TRACE(openArgsPtr->clientID, 
+			openArgsPtr->migClientID, openResultsPtr->ioFileID,
+			openResultsPtr->streamID, openArgsPtr->id.user,
+			openArgsPtr->useFlags, numReaders, numWriters,
+			fileStatePtr->attr.createTime,
+			fileStatePtr->attr.lastByte);
+
+#endif
+
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    return(SUCCESS);
 	} else {
