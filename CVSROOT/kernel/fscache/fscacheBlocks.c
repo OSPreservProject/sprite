@@ -1654,7 +1654,7 @@ again:
 	blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
 
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    panic( "CacheWriteBack, hashing error\n");
+	    panic( "FsCacheFileWriteBack, hashing error\n");
 	    UNLOCK_MONITOR;
 	    return(FAILURE);
 	}
@@ -2052,6 +2052,11 @@ CacheWriteBack(writeBackTime, blocksSkippedPtr, shutdown, writeTmpFiles)
     listPtr = lruList;
     LIST_FORALL(listPtr, (List_Links *) blockPtr) {
 	cacheInfoPtr = blockPtr->cacheInfoPtr;
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    printf("CacheWriteBack, skipping bad block on LRU list, file %d not %d\n",
+		blockPtr->fileNum, cacheInfoPtr->hdrPtr->fileID.minor);
+	    continue;
+	}
 	if (fsDelayTmpFiles && !writeTmpFiles &&
 	    FsFindFileType(cacheInfoPtr) == FS_FILE_TYPE_TMP) {
 	    continue;
