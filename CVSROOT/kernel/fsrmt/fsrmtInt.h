@@ -20,9 +20,12 @@
 #ifndef _FSSPRITEDOMAIN
 #define _FSSPRITEDOMAIN
 
-#include "fsNameOps.h"
-#include "proc.h"
-#include "fsrmt.h"
+#include <fsNameOps.h>
+#include <proc.h>
+#include <fsrmt.h>
+
+#include <stdio.h>
+
 /*
  * Parameters for the read and write RPCs.
  */
@@ -109,59 +112,106 @@ typedef struct FsrmtBlockCopyParam {
  * Sprite Domain functions called via Fsprefix_LookupOperation.
  * These are called with a pathname.
  */
-extern	ReturnStatus	FsrmtImport();
-extern	ReturnStatus	FsrmtOpen();
-extern	ReturnStatus	FsrmtReopen();
-extern	ReturnStatus	FsrmtDevOpen();
-extern	ReturnStatus	FsrmtDevClose();
-extern	ReturnStatus	FsrmtGetAttrPath();
-extern	ReturnStatus	FsrmtSetAttrPath();
-extern	ReturnStatus	FsrmtMakeDevice();
-extern	ReturnStatus	FsrmtMakeDir();
-extern	ReturnStatus	FsrmtRemove();
-extern	ReturnStatus	FsrmtRemoveDir();
-extern	ReturnStatus	FsrmtRename();
-extern	ReturnStatus	FsrmtHardLink();
+extern ReturnStatus FsrmtImport _ARGS_((char *prefix, int serverID, 
+		Fs_UserIDs *idPtr, int *domainTypePtr,
+		Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus FsrmtOpen _ARGS_((Fs_HandleHeader *prefixHandle,
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtReopen _ARGS_((Fs_HandleHeader *hdrPtr, int inSize,
+		Address inData, int *outSizePtr, Address outData));
+extern ReturnStatus FsrmtGetAttrPath _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtSetAttrPath _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtMakeDevice _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtMakeDir _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtRemove _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtRemoveDir _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtRename _ARGS_((Fs_HandleHeader *prefixHandle1, 
+		char *relativeName1, Fs_HandleHeader *prefixHandle2, 
+		char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
+extern ReturnStatus FsrmtHardLink _ARGS_((Fs_HandleHeader *prefixHandle1,
+		char *relativeName1, Fs_HandleHeader *prefixHandle2, 
+		char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
 
 
 /*
  * Sprite Domain functions called via the fsAttrOpsTable switch.
  * These are called with a fileID.
  */
-extern	ReturnStatus	FsrmtGetAttr();
-extern	ReturnStatus	FsrmtSetAttr();
+extern ReturnStatus FsrmtGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
+		Fs_Attributes *attrPtr));
+extern ReturnStatus FsrmtSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
 
-extern ReturnStatus FsrmtDeviceIoOpen();
-extern Fs_HandleHeader *FsrmtDeviceVerify();
-extern ReturnStatus FsrmtDeviceMigrate();
-extern ReturnStatus FsrmtDeviceReopen();
+extern ReturnStatus FsrmtDeviceIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
+		int *flagsPtr, int clientID, ClientData streamData,
+		char *name, Fs_HandleHeader **ioHandlePtrPtr));
+extern Fs_HandleHeader *FsrmtDeviceVerify _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, int *domainTypePtr));
+extern ReturnStatus FsrmtDeviceMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+		Address *dataPtr));
+extern ReturnStatus FsrmtDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
 
-extern Fs_HandleHeader *FsrmtPipeVerify();
-extern ReturnStatus FsrmtPipeMigrate();
-extern ReturnStatus FsrmtPipeReopen();
-extern ReturnStatus FsrmtPipeClose();
+extern Fs_HandleHeader *FsrmtPipeVerify _ARGS_((Fs_FileID *fileIDPtr,
+		int clientID, int *domainTypePtr));
+extern ReturnStatus FsrmtPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
 
 
-extern ReturnStatus	FsrmtFileIoOpen();
-extern Fs_HandleHeader	*FsrmtFileVerify();
-extern ReturnStatus	FsrmtFileRead();
-extern ReturnStatus	FsrmtFileWrite();
-extern ReturnStatus	FsrmtFilePageRead();
-extern ReturnStatus	FsrmtFilePageWrite();
-extern ReturnStatus	FsrmtFileIOControl();
-extern ReturnStatus	FsrmtFileSelect();
-extern ReturnStatus	FsrmtFileGetIOAttr();
-extern ReturnStatus	FsrmtFileSetIOAttr();
-extern ReturnStatus	FsrmtFileMigClose();
-extern ReturnStatus	FsrmtFileMigOpen();
-extern ReturnStatus	FsrmtFileMigrate();
-extern ReturnStatus	FsrmtFileReopen();
-extern ReturnStatus     FsrmtFileBlockAllocate();
-extern ReturnStatus     FsrmtFileBlockRead();
-extern ReturnStatus     FsrmtFileBlockWrite();
-extern ReturnStatus     FsrmtFileBlockCopy();
-extern Boolean		FsrmtFileScavenge();
-extern ReturnStatus	FsrmtFileClose();
+extern ReturnStatus FsrmtFileIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
+extern ReturnStatus FsrmtFileReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
+extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID, 
+		Proc_PID procID, int flags, int dataSize, ClientData closeData));
+extern Boolean FsrmtFileScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
+extern Fs_HandleHeader *FsrmtFileVerify _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, int *domainTypePtr));
+extern ReturnStatus FsrmtFileMigClose _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int flags));
+extern ReturnStatus FsrmtFileMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int size, ClientData data, Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus FsrmtFileMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+		Address *dataPtr));
+extern ReturnStatus FsrmtFileRead _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFileWrite _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *writePtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFilePageRead _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFilePageWrite _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *writePtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFileIOControl _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFileGetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, Fs_Attributes *attrPtr));
+extern ReturnStatus FsrmtFileSetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, int flags));
 
 
 #endif _FSSPRITEDOMAIN

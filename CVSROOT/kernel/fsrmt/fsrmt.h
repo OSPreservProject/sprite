@@ -20,11 +20,11 @@
 #ifndef _FSRMT
 #define _FSRMT
 
-#include "fsNameOps.h"
-#include "proc.h"
+#include <fsNameOps.h>
+#include <proc.h>
 
-#include "fsutil.h"
-#include "fscache.h"
+#include <fsutil.h>
+#include <fscache.h>
 
 
 /* 
@@ -45,7 +45,6 @@ typedef struct Fsrmt_IOHandle {
     Fsutil_RecoveryInfo	recovery;	/* For I/O server recovery */
 } Fsrmt_IOHandle;
 
-extern void Fsrmt_IOHandleInit();
 
 /*
  * The I/O descriptor for a remote file.  Used with FSIO_RMT_FILE_STREAM.
@@ -70,30 +69,65 @@ typedef struct Fsrmt_FileIOHandle {
 extern	Boolean	fsrmt_RpcDebug;
 
 
+extern void Fsrmt_IOHandleInit _ARGS_((Fs_FileID *ioFileIDPtr, int useFlags,
+		char *name, Fs_HandleHeader **newHandlePtrPtr));
+
 /*
  * General purpose remote stubs shared by remote files, devices, pipes, etc.
  */
-extern	ReturnStatus	Fsrmt_Read();
-extern	ReturnStatus	Fsrmt_Write();
-extern	ReturnStatus	Fsrmt_Select();
-extern	ReturnStatus	Fsrmt_IOControl();
-extern	ReturnStatus	Fsrmt_Close();
-extern	ReturnStatus	Fsrmt_GetIOAttr();
-extern	ReturnStatus	Fsrmt_SetIOAttr();
-extern	ReturnStatus	Fsrmt_BlockCopy();
-extern	ReturnStatus	Fsrmt_DomainInfo();
-extern  ReturnStatus    Fsrmt_IOMigClose();
-extern  ReturnStatus    Fsrmt_IOMigOpen();
-extern  ReturnStatus    Fsrmt_IOClose();
+extern ReturnStatus Fsrmt_Read _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *waitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus Fsrmt_Write _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *writePtr, Sync_RemoteWaiter *waitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus Fsrmt_Select _ARGS_((Fs_HandleHeader *hdrPtr, 
+		Sync_RemoteWaiter *waitPtr, int *readPtr, int *writePtr, 
+		int *exceptPtr));
+extern ReturnStatus Fsrmt_IOControl _ARGS_((Fs_Stream *streamPtr,
+		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fsrmt_Close _ARGS_((Fs_Stream *streamPtr, int clientID, 
+		Proc_PID procID, int flags, int dataSize, 
+		ClientData closeData));
+extern ReturnStatus Fsrmt_GetIOAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID,
+		Fs_Attributes *attrPtr));
+extern ReturnStatus Fsrmt_SetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fsrmt_BlockCopy _ARGS_((Fs_HandleHeader *srcHdrPtr, 
+		Fs_HandleHeader *dstHdrPtr, int blockNum));
+extern ReturnStatus Fsrmt_DomainInfo _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_DomainInfo *domainInfoPtr));
+extern ReturnStatus Fsrmt_IOMigClose _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int flags));
+extern ReturnStatus Fsrmt_IOMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr, int size,
+		ClientData data, Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus Fsrmt_IOClose _ARGS_((Fs_Stream *streamPtr, int clientID,
+		Proc_PID procID, int flags, int dataSize, 
+		ClientData closeData));
 
+extern ReturnStatus Fsrmt_DeviceOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
+		int useFlags, int inSize, ClientData inBuffer));
+extern ReturnStatus Fsrmt_DeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
+extern ReturnStatus FsrmtDeviceMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+		Address *dataPtr));
 
-extern ReturnStatus	Fsrmt_DeviceOpen();
-extern ReturnStatus	Fsrmt_DeviceReopen();
+extern ReturnStatus Fsrmt_NotifyOfMigration _ARGS_((Fsio_MigInfo *migInfoPtr,
+		int *flagsPtr, int *offsetPtr, int outSize, Address outData));
 
-extern ReturnStatus	Fsrmt_NotifyOfMigration();
+extern ReturnStatus FsrmtReopen _ARGS_((Fs_HandleHeader *hdrPtr, int inSize,
+		Address inData, int *outSizePtr, Address outData));
+extern ReturnStatus FsrmtFileMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+		Address *dataPtr));
+extern ReturnStatus FsrmtPipeMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+		Address *dataPtr));
 
-extern void	Fsrmt_InitializeOps();
-extern void	Fsrmt_Bin();
+extern void Fsrmt_InitializeOps _ARGS_((void));
+extern void Fsrmt_Bin _ARGS_((void));
 
 /*
  * Recovery testing operations.
