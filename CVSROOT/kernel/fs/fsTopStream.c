@@ -242,7 +242,7 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
     streamPtr = newStreamPtr;
     if (!found) {
 	streamPtr->offset = migInfoPtr->offset;
-	streamPtr->flags = migInfoPtr->flags;
+	streamPtr->flags = migInfoPtr->flags & ~FS_NEW_STREAM;
 	streamPtr->ioHandlePtr = ioHandlePtr;
 	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
 	List_Init(&streamPtr->clientList);
@@ -464,13 +464,15 @@ FsStreamRelease(streamPtr, inUsePtr)
     Boolean *inUsePtr;		/* TRUE if still in use after release */
 {
     /*
+     * Release the refernece that has now migrated away.
+     */
+    FsHandleDecRefCount((FsHandleHeader *)streamPtr);
+    /*
      * If this is the last refernece then call down to the I/O handle
      * so it can decrement use counts that come from the stream.
-     * (The funky check against 2 is because there have been two fetches
-     * of the stream.  One by Fs_RpcReleaseStream, plus there is the
-     * original ref from the stream that has migrated.  Thus 2 is the minimum.)
+     * (Remember there is still one reference from Fs_RpcReleaseStream)
      */
-    if (streamPtr->hdr.refCount <= 2) {
+    if (streamPtr->hdr.refCount <= 1) {
 	(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
 		(streamPtr->ioHandlePtr, streamPtr->flags);
 	if (FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
