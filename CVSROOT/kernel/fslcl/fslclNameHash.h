@@ -1,18 +1,24 @@
-/* fsNameHash.h --
+/* fslclNameHash.h --
  *
  *	Definitions for the filesystem name hash table.
  *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  * $Header$ SPRITE (Berkeley)
  */
 
 
-#ifndef	_FSNAMEHASH
-#define	_FSNAMEHASH
+#ifndef	_FSLCLNAMEHASH
+#define	_FSLCLNAMEHASH
 
-#include "list.h"
+#include <list.h>
 
 /* 
  * The hash table includes an array of bucket list headers,
@@ -78,10 +84,14 @@ extern FslclHashTable	fslclNameTable;
 extern FslclHashTable	*fslclNameTablePtr;
 extern Boolean		fslclNameCaching;
 
-extern void		FslclNameHashStats();
-extern FslclHashEntry 	*FslclHashLookOnly();
-extern void 		FslclHashDelete();
-extern FslclHashEntry	*FslclHashInsert();
+extern void FslclNameHashStats _ARGS_((void));
+extern FslclHashEntry *FslclHashLookOnly _ARGS_((FslclHashTable *table,
+			char *string, Fs_HandleHeader *keyHdrPtr));
+extern void FslclHashDelete _ARGS_((FslclHashTable *table, char *string, 
+			Fs_HandleHeader *keyHdrPtr));
+extern FslclHashEntry *FslclHashInsert _ARGS_((FslclHashTable *table, 
+			char *string, Fs_HandleHeader *keyHdrPtr, 
+			Fs_HandleHeader *hdrPtr));
 
 #define FSLCL_HASH_LOOK_ONLY(table, string, keyHandle) \
     (fslclNameCaching ? \
@@ -99,4 +109,4 @@ extern FslclHashEntry	*FslclHashInsert();
 	FslclHashDelete(table, string, (Fs_HandleHeader *)keyHandle); \
     }
 
-#endif _FSNAMEHASH
+#endif /* _FSLCLNAMEHASH */
