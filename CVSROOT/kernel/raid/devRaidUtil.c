@@ -37,7 +37,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "devRaidUtil.h"
 #include "debugMem.h"
-#include "machparam.h"
 
 
 /*
@@ -149,75 +148,6 @@ FreeBlockDeviceRequest(requestPtr)
     DevBlockDeviceRequest	*requestPtr;
 {
     Free((char *) requestPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * MakeRaidDisk --
- *
- *	Allocate and initialize RaidDisk.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-RaidDisk *
-MakeRaidDisk(type, unit, numSector)
-    int 	 type, unit;
-    int		 numSector;
-{
-    RaidDisk	*diskPtr;
-
-    diskPtr = (RaidDisk *) malloc(sizeof(RaidDisk));
-    Sync_SemInitDynamic(&diskPtr->mutex, "RaidDisk Mutex");
-    diskPtr->version = 1;
-    diskPtr->useCount = 1;
-    diskPtr->device.type = type;
-    diskPtr->device.unit = unit;
-    diskPtr->handlePtr = Dev_BlockDeviceAttach(&diskPtr->device);
-    if (diskPtr->handlePtr == (DevBlockDeviceHandle *) NIL) {
-        diskPtr->numValidSector = 0;
-        diskPtr->state = RAID_DISK_INVALID;
-	ReportRaidDiskAttachError(type, unit);
-    } else {
-        diskPtr->numValidSector = numSector;
-        diskPtr->state = RAID_DISK_READY;
-    }
-    return diskPtr;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FreeRaidDisk --
- *
- *	Free RaidDisk.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void FreeRaidDisk(diskPtr)
-    RaidDisk	*diskPtr;
-{
-    Sync_LockClear(&diskPtr->mutex);
-    if (diskPtr->handlePtr != (DevBlockDeviceHandle *) NIL) {
-        (void) Dev_BlockDeviceRelease(diskPtr->handlePtr);
-    }
-    free((char *) diskPtr);
 }
 
 
@@ -384,9 +314,17 @@ MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
     stripeIOControlPtr->ctrlData      = ctrlData;
     stripeIOControlPtr->reqControlPtr = MakeRequestControl(raidPtr);
     stripeIOControlPtr->parityBuf     =
+#ifdef NODATA
+	    (char *) NIL;
+#else
             Malloc((unsigned) raidPtr->bytesPerStripeUnit);
+#endif
     stripeIOControlPtr->readBuf       =
+#ifdef NODATA
+	    (char *) NIL;
+#else
 	    Malloc((unsigned) raidPtr->dataBytesPerStripe);
+#endif
     stripeIOControlPtr->rangeOff      = 0;
     stripeIOControlPtr->rangeLen      = 0;
 
@@ -415,8 +353,10 @@ FreeStripeIOControl(stripeIOControlPtr)
     RaidStripeIOControl	*stripeIOControlPtr;
 {
     FreeRequestControl(stripeIOControlPtr->reqControlPtr);
+#ifndef NODATA
     Free((char *) stripeIOControlPtr->parityBuf);
     Free((char *) stripeIOControlPtr->readBuf);
+#endif
     Free((char *) stripeIOControlPtr);
 }
 
@@ -458,9 +398,17 @@ MakeReconstructionControl(raidPtr, col, row, diskPtr, ctrlData)
     reconstructionControlPtr->ctrlData      = ctrlData;
     reconstructionControlPtr->reqControlPtr = MakeRequestControl(raidPtr);
     reconstructionControlPtr->parityBuf     =
+#ifdef NODATA
+	    (char *) NIL;
+#else
             Malloc((unsigned) raidPtr->bytesPerStripeUnit);
+#endif
     reconstructionControlPtr->readBuf       =
+#ifdef NODATA
+	    (char *) NIL;
+#else
 	    Malloc((unsigned) raidPtr->dataBytesPerStripe);
+#endif
     return reconstructionControlPtr;
 }
 
@@ -486,191 +434,11 @@ FreeReconstructionControl(reconstructionControlPtr)
     RaidReconstructionControl *reconstructionControlPtr;
 {
     FreeRequestControl(reconstructionControlPtr->reqControlPtr);
+#ifndef NODATA
     Free((char *) reconstructionControlPtr->parityBuf);
     Free((char *) reconstructionControlPtr->readBuf);
+#endif
     Free((char *) reconstructionControlPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * MapPhysicalToStripeID --
- *
- *	Maps physical address (raid, col, row, sector) to stripeID.
- *
- * Results:
- *	stripeID
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-MapPhysicalToStripeID(raidPtr, col, row, sector, outStripeIDPtr)
-    Raid	*raidPtr;
-    int		 col;
-    int		 row;
-    unsigned	 sector;
-    int		*outStripeIDPtr;
-{
-    int group, groupRow, stripeUnit;
-    int stripeID;
-
-    group    = row / raidPtr->rowsPerGroup;
-    groupRow = row % raidPtr->rowsPerGroup;
-    stripeUnit = sector / raidPtr->sectorsPerStripeUnit;
-
-    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
-    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
-    *outStripeIDPtr = stripeID;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * MapParity --
- *
- *	Maps logical sector address to (col, row, sector) of corresponding
- *	parity sector.
- *
- * Results:
- *      (col, row, sector).
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
-    Raid	*raidPtr;
-    unsigned	 sectorNum;
-    int		*outColPtr, *outRowPtr;
-    unsigned	*sectorNumPtr;
-{
-    int sector, col, groupRow, stripeUnit, group;
-    int row, stripeID;
-
-    sector     = sectorNum%raidPtr->sectorsPerStripeUnit;
-    sectorNum /= raidPtr->sectorsPerStripeUnit;
-    col        = sectorNum%raidPtr->numDataCol;
-    sectorNum /= raidPtr->numDataCol;
-    groupRow   = sectorNum%raidPtr->rowsPerGroup;
-    sectorNum /= raidPtr->rowsPerGroup;
-    stripeUnit = sectorNum%raidPtr->stripeUnitsPerDisk;
-    sectorNum /= raidPtr->stripeUnitsPerDisk;
-    group      = sectorNum%raidPtr->groupsPerArray;
-    sectorNum /= raidPtr->groupsPerArray;
-
-    if (sectorNum != 0) {
-	(void)printf("Error: MapSector: sectorNum=%d\n", (int) sectorNum);
-    }
-
-    row = group * raidPtr->rowsPerGroup + groupRow;
-    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
-    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
-
-    /*
-     * Rotate sectors/parity.
-     */
-    switch (raidPtr->parityConfig) {
-    case 'R': /* Right Symetric */
-	col = (raidPtr->numCol-1 + stripeID) % raidPtr->numCol;
-	break;
-    case 'L': /* Left Symetric */
-	col = (raidPtr->numCol-1 - stripeID) % raidPtr->numCol;
-	if (col < 0) {
-	    col += raidPtr->numCol;
-	}
-	break;
-    default:  /* No Rotation */
-	col = raidPtr->numCol-1;
-	break;
-    }
-
-    /*
-     * Return values.
-     */
-    *outColPtr = col;
-    *outRowPtr = row;
-    *sectorNumPtr = stripeUnit*raidPtr->sectorsPerStripeUnit + sector;
-    return;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * MapSector --
- *
- *	Maps logical sector address to (col, row, sector).
- *
- * Results:
- *      (col, row, sector).
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-MapSector(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
-    Raid	*raidPtr;
-    unsigned	 sectorNum;
-    int		*outColPtr, *outRowPtr;
-    unsigned	*sectorNumPtr;
-{
-    int sector, col, groupRow, stripeUnit, group;
-    int row, stripeID;
-
-    sector     = sectorNum%raidPtr->sectorsPerStripeUnit;
-    sectorNum /= raidPtr->sectorsPerStripeUnit;
-    col        = sectorNum%raidPtr->numDataCol;
-    sectorNum /= raidPtr->numDataCol;
-    groupRow   = sectorNum%raidPtr->rowsPerGroup;
-    sectorNum /= raidPtr->rowsPerGroup;
-    stripeUnit = sectorNum%raidPtr->stripeUnitsPerDisk;
-    sectorNum /= raidPtr->stripeUnitsPerDisk;
-    group      = sectorNum%raidPtr->groupsPerArray;
-    sectorNum /= raidPtr->groupsPerArray;
-
-    if (sectorNum != 0) {
-	(void)printf("Error: MapSector: sectorNum=%d\n", (int) sectorNum);
-    }
-
-    row = group * raidPtr->rowsPerGroup + groupRow;
-    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
-    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
-
-    /*
-     * Rotate sectors/parity.
-     */
-    switch (raidPtr->parityConfig) {
-    case 'R': /* Right Symetric */
-	col = (col + stripeID) % raidPtr->numCol;
-	break;
-    case 'L': /* Left Symetric */
-	col = (col - stripeID) % raidPtr->numCol;
-	if (col < 0) {
-	    col += raidPtr->numCol;
-	}
-	break;
-    default:  /* No Rotation */
-	break;
-    }
-
-    /*
-     * Return values.
-     */
-    *outColPtr = col;
-    *outRowPtr = row;
-    *sectorNumPtr = stripeUnit*raidPtr->sectorsPerStripeUnit + sector;
 }
 
 
@@ -706,147 +474,6 @@ RangeRestrict(start, len, rangeOffset, rangeLen, fieldLen, newStart, newLen)
     newStartOffset = MAX(startOffset, rangeOffset);
     *newStart = startBase + newStartOffset;
     *newLen = MIN(startOffset + len, rangeOffset + rangeLen) - newStartOffset;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Xor2 --
- *
- *	*destBuf ^= *srcBuf;
- *	Modified from bcopy.
- *
- * Results:
- *      *destBuf.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#define WORDMASK WORD_ALIGN_MASK
-
-static void
-Xor2(numBytes, sourcePtr, destPtr)
-    char *sourcePtr;		/* Where to copy from */
-    char *destPtr;		/* Where to copy to */
-    register int numBytes;	/* The number of bytes to copy */
-{
-    register int *sPtr = (int *) sourcePtr;
-    register int *dPtr = (int *) destPtr;
-
-    /*
-     * If the destination is below the source then it is safe to copy
-     * in the forward direction.  Otherwise, we must start at the top
-     * and work down, again optimizing for large transfers.
-     */
-
-    if (dPtr < sPtr) {
-	/*
-	 * If both the source and the destination point to aligned
-	 * addresses then copy as much as we can in large transfers.  Once
-	 * we have less than a whole int to copy then it must be done by
-	 * byte transfers.  Furthermore, use an expanded loop to avoid
-	 * the overhead of continually testing loop variables.
-	 */
-	
-	if (!((((int) sPtr) | (int) dPtr) & WORDMASK)) {
-	    while (numBytes >= 16*sizeof(int)) {
-		dPtr[0] ^= sPtr[0];
-		dPtr[1] ^= sPtr[1];
-		dPtr[2] ^= sPtr[2];
-		dPtr[3] ^= sPtr[3];
-		dPtr[4] ^= sPtr[4];
-		dPtr[5] ^= sPtr[5];
-		dPtr[6] ^= sPtr[6];
-		dPtr[7] ^= sPtr[7];
-		dPtr[8] ^= sPtr[8];
-		dPtr[9] ^= sPtr[9];
-		dPtr[10] ^= sPtr[10];
-		dPtr[11] ^= sPtr[11];
-		dPtr[12] ^= sPtr[12];
-		dPtr[13] ^= sPtr[13];
-		dPtr[14] ^= sPtr[14];
-		dPtr[15] ^= sPtr[15];
-		sPtr += 16;
-		dPtr += 16;
-		numBytes -= 16*sizeof(int);
-	    }
-	    while (numBytes >= sizeof(int)) {
-		*dPtr++ ^= *sPtr++;
-		numBytes -= sizeof(int);
-	    }
-	    if (numBytes == 0) {
-		return;
-	    }
-	}
-	
-	/*
-	 * Copy the remaining bytes.
-	 */
-	
-	sourcePtr = (char *) sPtr;
-	destPtr = (char *) dPtr;
-	while (numBytes > 0) {
-	    *destPtr++ ^= *sourcePtr++;
-	    numBytes--;
-	}
-    } else {
-	/*
-	 * Handle extra bytes at the top that are due to the transfer
-	 * length rather than pointer misalignment.
-	 */
-	while (numBytes & WORDMASK) {
-	    numBytes --;
-	    destPtr[numBytes] ^= sourcePtr[numBytes];
-	}
-	sPtr = (int *) (sourcePtr + numBytes);
-	dPtr = (int *) (destPtr + numBytes);
-
-	if (!((((int) sPtr) | (int) dPtr) & WORDMASK)) {
-	    while (numBytes >= 16*sizeof(int)) {
-		sPtr -= 16;
-		dPtr -= 16;
-		dPtr[15] ^= sPtr[15];
-		dPtr[14] ^= sPtr[14];
-		dPtr[13] ^= sPtr[13];
-		dPtr[12] ^= sPtr[12];
-		dPtr[11] ^= sPtr[11];
-		dPtr[10] ^= sPtr[10];
-		dPtr[9] ^= sPtr[9];
-		dPtr[8] ^= sPtr[8];
-		dPtr[7] ^= sPtr[7];
-		dPtr[6] ^= sPtr[6];
-		dPtr[5] ^= sPtr[5];
-		dPtr[4] ^= sPtr[4];
-		dPtr[3] ^= sPtr[3];
-		dPtr[2] ^= sPtr[2];
-		dPtr[1] ^= sPtr[1];
-		dPtr[0] ^= sPtr[0];
-		numBytes -= 16*sizeof(int);
-	    }
-	    while (numBytes >= sizeof(int)) {
-		*--dPtr ^= *--sPtr;
-		numBytes -= sizeof(int);
-	    }
-	    if (numBytes == 0) {
-		return;
-	    }
-	}
-	
-	/*
-	 * Copy the remaining bytes.
-	 */
-	
-	destPtr = (char *) dPtr;
-	sourcePtr = (char *) sPtr;
-	while (numBytes > 0) {
-	    *--destPtr ^= *--sourcePtr;
-	    numBytes--;
-	}
-    }
 }
 
 
@@ -947,7 +574,7 @@ AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
     if (numSectorsToTransfer > 0) {
 	InitRaidBlockRequest(reqPtr, raidPtr, operation, col, row,
 		diskSector, numSectorsToTransfer, buffer, ctrlData);
-	if ( IsInRange(reqPtr->diskPtr, diskSector, numSectorsToTransfer) ) {
+	if ( IsValid(reqPtr->diskPtr, diskSector, numSectorsToTransfer) ) {
 	    reqPtr->state = REQ_READY;
 	} else {
 	    reqPtr->state = REQ_INVALID;
@@ -1022,7 +649,7 @@ AddRaidDataRangeRequests(reqControlPtr, raidPtr, operation,
 	if (rangeSectorsToTransfer > 0) {
 	    InitRaidBlockRequest(reqPtr, raidPtr, operation, col, row,
 		    diskSector, rangeSectorsToTransfer, buffer, ctrlData);
-	    if (IsInRange(reqPtr->diskPtr, diskSector,rangeSectorsToTransfer)) {
+	    if (IsValid(reqPtr->diskPtr, diskSector,rangeSectorsToTransfer)) {
 		reqPtr->state = REQ_READY;
 	    } else {
 		reqPtr->state = REQ_INVALID;
