@@ -574,4 +574,11 @@ Dean Long's merge of sun4c and sun4c2.
 
 1.103	Sat Oct 19 21:42:44 PDT 1991
 Fixed a problem with the 101 mapped files change.
+
+1.104   Aborted.
+
+1.105	Fri Oct 25 12:38:21 PDT 1991
+Elevated raid module to first-class status.
+Fixed disk label handling in devSCSIDisk.c.
+Fixed uninitialized Net_Address vars in netArp.c.
     New files linked in from the net library.
