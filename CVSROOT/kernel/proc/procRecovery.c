@@ -367,13 +367,6 @@ Proc_WaitForHost(hostID)
 
     LOCK_MONITOR;
     hostState = Recov_GetClientState(hostID);
-    while (hostState & RECOV_HOST_DYING) {
-	if (Sync_Wait(&recovCondition, TRUE)) {
-	    status = GEN_ABORTED_BY_SIGNAL;
-	    break;
-	}
-	hostState = Recov_GetClientState(hostID);
-    }
     if (status == SUCCESS) {
 	if (hostState & (RECOV_HOST_DEAD | RECOV_HOST_BOOTING)) {
 	    /*
