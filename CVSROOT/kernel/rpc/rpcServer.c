@@ -691,21 +691,17 @@ RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr)
     RpcHdr		*rpcHdrPtr;	/* header of outgoing message */
     RpcHdr		*requestHdrPtr;	/* header of client's request */
 {
-    rpcHdrPtr->delay = rpcMyDelay;
+    rpcHdrPtr->version = RPC_NATIVE_VERSION;
     rpcHdrPtr->clientID = requestHdrPtr->clientID;
     rpcHdrPtr->serverID = rpc_SpriteID;
     rpcHdrPtr->channel = requestHdrPtr->channel;
-    rpcHdrPtr->command = requestHdrPtr->command;
     rpcHdrPtr->serverHint = srvPtr->index;
-    rpcHdrPtr->ID = requestHdrPtr->ID;
     rpcHdrPtr->bootID = rpcBootID;
-    /*
-     * This field should go away, but the UNIX file server depends on it now.
-     */
-    rpcHdrPtr->transport = PROTO_ETHER;
-
+    rpcHdrPtr->ID = requestHdrPtr->ID;
+    rpcHdrPtr->delay = rpcMyDelay;
     rpcHdrPtr->numFrags = 0;
     rpcHdrPtr->fragMask = 0;
+    rpcHdrPtr->command = requestHdrPtr->command;
     rpcHdrPtr->paramSize = 0;
     rpcHdrPtr->dataSize = 0;
 }
