@@ -998,16 +998,35 @@ Fsdm_BlocksToSectors(fragNumber, data)
     geoPtr 		= (Fsdm_Geometry *)data;
     blockNumber		= fragNumber / FS_FRAGMENTS_PER_BLOCK;
     cylinder		= blockNumber / geoPtr->blocksPerCylinder;
-    blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
-    rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
-    blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
-
-    sectorNumber = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
-		  geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
-		  rotationalSet +
-		  geoPtr->blockOffset[blockNumber];
-    sectorNumber += (fragNumber % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
-
+    /*
+     * This is the old way of doing things.  We have to deal with rotational
+     * sets and the like.
+     */
+    if (geoPtr->rotSetsPerCyl > 0) {	
+    
+	blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+	rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+	blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+    
+	sectorNumber = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		      geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+		      rotationalSet +
+		      geoPtr->blockOffset[blockNumber];
+	sectorNumber += (fragNumber % FS_FRAGMENTS_PER_BLOCK) * 
+			SECTORS_PER_FRAG;
+    } else if (geoPtr->rotSetsPerCyl == FSDM_SCSI_MAPPING) {
+	/*
+	 * The new way is to map blocks from the start of the disk without
+	 * regard for rotational sets.  There is essentially one rotational
+	 * set per disk.
+	 */
+	sectorNumber = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		    fragNumber * SECTORS_PER_FRAG - cylinder * 
+		    geoPtr->blocksPerCylinder * FS_FRAGMENTS_PER_BLOCK *
+		    SECTORS_PER_FRAG;
+    } else {
+	panic("Unknown mapping in domain geometry information\n");
+    }
     return(sectorNumber);
 }
 

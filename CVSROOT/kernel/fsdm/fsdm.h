@@ -250,6 +250,12 @@ typedef struct Fsdm_FileDescriptor {
 #define FSDM_LOST_FOUND_FILE_NUMBER	3
 
 /*
+ * The lost and found directory is preallocated and is of a fixed size. Define
+ * its size in 4K blocks here.
+ */
+#define	FSDM_NUM_LOST_FOUND_BLOCKS	2
+
+/*
  * Structure to keep statistics about each cylinder.
  */
 
@@ -281,6 +287,17 @@ typedef struct Fsdm_Cylinder {
  */
 #define FSDM_MAX_ROT_POSITIONS	32
 #define FSDM_MAX_TRACKS_PER_SET	10
+
+/*
+ * There is a new mapping available for SCSI disks.  In this mapping we
+ * ignore rotational sets altogether and pack as many blocks as possible
+ * into a cylinder. The field rotSetsPerCyl is overloaded to allow us
+ * to be backwards compatible. If rotSetsPerCyl == FSDM_SCSI_MAPPING
+ * then we are using the new mapping.  The other fields relating to
+ * rotational sets and block offsets are ignored.
+ */
+
+#define FSDM_SCSI_MAPPING -1
 
 typedef struct Fsdm_Geometry {
     /*

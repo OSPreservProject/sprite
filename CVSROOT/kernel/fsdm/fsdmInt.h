@@ -20,12 +20,6 @@
 #define _FSDMINT
 
 /*
- * The lost and found directory is preallocated and is of a fixed size. Define
- * its size in 4K blocks here.
- */
-#define	FSDM_NUM_LOST_FOUND_BLOCKS	2
-
-/*
  * Structure to keep information about each fragment.
  */
 
