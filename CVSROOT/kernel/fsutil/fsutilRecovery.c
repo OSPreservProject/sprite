@@ -327,7 +327,7 @@ Fsutil_RecoveryInit(recovPtr)
  */
 void
 Fsutil_RecoverySyncLockCleanup(recovPtr)
-    register Fsutil_RecoveryInfo	*recovPtr;	/* Recovery state */
+    Fsutil_RecoveryInfo	*recovPtr;	/* Recovery state */
 {
     Sync_LockClear(&recovPtr->lock);
 }
@@ -482,6 +482,7 @@ Fsutil_AttemptRecovery(data, callInfoPtr)
     if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
 	Fsutil_Reopen(hdrPtr->fileID.serverID, (ClientData)NIL);
     }
+    callInfoPtr->interval = 0;	/* no more callbacks, please */
     return;
 }
 
