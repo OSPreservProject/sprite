@@ -1537,6 +1537,8 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
     register int		firstByte;	/* Offset into request buffer */
     register int		lastByte;	/* Offset into request buffer */
     int				room;		/* Room available in req. buf.*/
+    int				savedLastByte;	/* For error recovery */
+    int				savedFirstByte;	/*   ditto */
 
     if (replySizePtr != (int *) NIL) {
 	*replySizePtr = 0;
@@ -1594,6 +1596,8 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
      * completely if we can't fit this request in.)
      */
 
+    savedFirstByte = firstByte;
+    savedLastByte = lastByte;
     if (firstByte > lastByte || firstByte == -1) {
 	/*
 	 * Buffer has emptied.
@@ -1617,6 +1621,7 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
 		    goto failure;
 		}
 	    }
+	    savedFirstByte = -1;
 	    firstByte = 0;
 	    pdevHandlePtr->requestBuf.firstByte = firstByte;
 	    lastByte = requestPtr->messageSize - 1;
@@ -1655,6 +1660,12 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
     }
     Proc_Unlock(serverProcPtr);
     if (status != SUCCESS) {
+	/*
+	 * Either the message header or data couldn't get copied out.
+	 * Reset the buffer pointers so the bad request isn't seen.
+	 */
+	pdevHandlePtr->requestBuf.firstByte = savedFirstByte;
+	pdevHandlePtr->requestBuf.lastByte = savedLastByte;
 	goto failure;
     }
 
