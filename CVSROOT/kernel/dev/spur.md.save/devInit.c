@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "sys.h"
 #include "sysStats.h"
+#include "devCC.h"
 
 /*
  * ----------------------------------------------------------------------------
@@ -43,6 +44,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void
 Dev_Init()
 {
+    bzero(devCounterMode, sizeof(devCounterMode));
+    bzero(devCounterLastMode, sizeof(devCounterLastMode));
 
 }
 

@@ -19,15 +19,19 @@
 #ifndef _DEVCC
 #define _DEVCC
 
-/*
-** Current Counter Mode
-*/
-extern int dev_CurrentCounterMode;
+#define COUNTERS_OFF 0
+#define COUNTERS_RESTORE 1
+#define COUNTERS_RESTORE_LAST 2
 
+#include "mach.h"
 
 /*
  * Forward Declarations.
  */
+
+extern int devCounterMode[MACH_MAX_NUM_PROCESSORS];
+extern int devCounterLastMode[MACH_MAX_NUM_PROCESSORS];
+
 extern ReturnStatus Dev_CCOpen();
 extern ReturnStatus Dev_CCRead();
 extern ReturnStatus Dev_CCWrite();

@@ -30,12 +30,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machCCRegs.h"
 #include "timer.h"
 #include "varargs.h"
+#include "devCC.h"
 
 /*
 ** Current Counter Mode
 */
-int dev_CurrentCounterMode = MODE_PERF_COUNTER_OFF;
-
+int devCounterMode[MACH_MAX_NUM_PROCESSORS];
+int devCounterLastMode[MACH_MAX_NUM_PROCESSORS];
 
 /*
  * Forward routines. 
@@ -43,6 +44,7 @@ int dev_CurrentCounterMode = MODE_PERF_COUNTER_OFF;
 static ReturnStatus RemoteCCWriteBytesFromRegs();
 static ReturnStatus RemoteCCReadBytesFromRegs();
 static ClientData RemoteSetModeReg();
+ReturnStatus Dev_CCSetCounters();
 
 /*
  *----------------------------------------------------------------------
@@ -289,7 +291,7 @@ Dev_CCIOControl(devicePtr, ioctlPtr, replyPtr)
 		return (GEN_INVALID_ARG);
 	    } 
 	    newMode = *(unsigned char *) ioctlPtr->inBuffer;
-	    dev_CurrentCounterMode = newMode;
+	    devCounterMode[pnum] = newMode;
 	    if (pnum == Mach_GetProcessorNumber()) { 
 		    Mach_DisableNonmaskableIntr();
 		    oldMode = Mach_Read8bitCCReg(MACH_MODE_REG);
@@ -613,6 +615,7 @@ DoPCCMemUpdate()
      Fs_IOParam	read;
      Fs_IOReply	reply;	
      Fs_IOCParam ioctl;
+     int cpu = Mach_GetProcessorNumber();
 
      for (pnum = 0; pnum < mach_NumProcessors; pnum++) {
         devicePtr->unit = pnum;
@@ -632,9 +635,28 @@ DoPCCMemUpdate()
 	read.length = sizeof(newCCdev);
 	read.buffer = (Address) &newCCdev;
 	read.offset = 0;
-	modeReg = Dev_CCIdleCounters(FALSE, MODE_PERF_COUNTER_OFF);
-	status =  Dev_CCRead(devicePtr,&read, &reply);
-	(void) Dev_CCIdleCounters(TRUE, modeReg);
+	if (pnum == cpu) {
+	    Dev_CCSetCounters(COUNTERS_OFF);
+	    status =  Dev_CCRead(devicePtr,&read, &reply);
+	    Dev_CCSetCounters(COUNTERS_RESTORE_LAST);
+	} else {
+	    status = Mach_CallProcessor(pnum, Dev_CCSetCounters, 
+			(ClientData) COUNTERS_OFF, TRUE, (ClientData) NIL);
+	    if (status != SUCCESS) {
+		printf("CPC call to idle counters failed: 0x%x\n", status);
+	    }
+	    status =  Dev_CCRead(devicePtr,&read, &reply);
+	    if (status != SUCCESS) {
+		printf("Read of CC failed: 0x%x\n", status);
+		return;
+	    }
+	    status = Mach_CallProcessor(pnum, Dev_CCSetCounters, 
+			(ClientData) COUNTERS_RESTORE_LAST, TRUE, 
+			(ClientData) NIL);
+	    if (status != SUCCESS) {
+		printf("CPC call to activate counters failed: 0x%x\n", status);
+	    }
+	}
 	/*
 	 * Update any counter that wraps.
 	 */
@@ -987,9 +1009,9 @@ Dev_PCCSelect(devicePtr, inFlags, outFlagsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_CCIdleCounters --
+ * Dev_CCSetCounters --
  *
- *	Idle the performance counters of the current CPU. This routine is
+ *	Set the performance counters of the current CPU. This routine is
  * 	called from the IdleLoop in sched.c to remove the IdleLoop from
  *	the counters.
  *
@@ -1003,26 +1025,31 @@ Dev_PCCSelect(devicePtr, inFlags, outFlagsPtr)
  */
 
 /*ARGSUSED*/
-int
-Dev_CCIdleCounters(restore,modeReg)
-	register Boolean	restore;	/* TRUE -> restore old mode
-						 * register from modeReg.
-						 * FALSE -> Turn off counters.
-						 */
-        register int	       modeReg;		/* Mode register to restore. */
+ReturnStatus
+Dev_CCSetCounters(action)
+	register int	action;	/* TRUE -> restore old mode */
 {
     register int	oldMode,newMode;
+    int		cpu = Mach_GetProcessorNumber();
 
     Mach_DisableNonmaskableIntr();
     oldMode = Mach_Read8bitCCReg(MACH_MODE_REG);
-    if (!restore) {
-	newMode = ~MACH_MODE_PERF_COUNTER_MASK & oldMode;
-    } else {
-        newMode = (modeReg & MACH_MODE_PERF_COUNTER_MASK) |
-		  (oldMode & ~MACH_MODE_PERF_COUNTER_MASK);
+    switch(action) {
+	case COUNTERS_OFF: 
+	    newMode = ~MACH_MODE_PERF_COUNTER_MASK & oldMode;
+	    break;
+	case COUNTERS_RESTORE:
+	    newMode = devCounterMode[cpu];
+	    break;
+	case COUNTERS_RESTORE_LAST:
+	    newMode = devCounterLastMode[cpu];
+	    break;
+	default:
+	    panic("Illegal action to Dev_CCSetCounters\n");
     }
+    devCounterLastMode[cpu] = oldMode;
     Mach_Write8bitCCReg(MACH_MODE_REG,newMode);
     Mach_EnableNonmaskableIntr();
-    return(oldMode);
+    return SUCCESS;
 }
 

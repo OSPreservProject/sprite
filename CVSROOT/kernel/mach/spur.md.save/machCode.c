@@ -1018,7 +1018,7 @@ MachInterrupt(intrStatusReg, kpsw)
 
 #ifdef spur
     /* Re-enable the performance counters */
-    oldmode = Dev_CCIdleCounters(TRUE, dev_CurrentCounterMode);
+    Dev_CCSetCounters(COUNTERS_RESTORE);
 #endif
 
     globStatusReg = intrStatusReg;
@@ -1064,7 +1064,7 @@ MachInterrupt(intrStatusReg, kpsw)
 
 #ifdef spur
     /* Restore the performance counters */
-    oldmode = Dev_CCIdleCounters(TRUE, oldmode);
+    Dev_CCSetCounters(COUNTERS_RESTORE_LAST);
 #endif
 
 }
