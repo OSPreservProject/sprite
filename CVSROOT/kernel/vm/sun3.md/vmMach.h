@@ -41,6 +41,18 @@ typedef	unsigned short	VMMACH_SEG_NUM;
 #endif	/* sun4 */
 
 /*
+ * PMEG segment info list entry.
+ */
+#ifdef sun4
+struct VmMach_PMEGseg {
+    struct VmMach_PMEGseg      *nextLink;      /* Linked list ptr. */
+    struct Vm_Segment   *segPtr;        /* Software segment. */
+    int                 hardSegNum;     /* Hardware segment number. */
+    int                 inuse;
+};
+#endif
+
+/*
  * Machine dependent data for each software segment.  The data for each 
  * segment is a hardware segment table that contains one entry for each
  * hardware segment in the software segment's virtual address space.
@@ -56,6 +68,9 @@ typedef struct VmMach_SegData {
 #endif /* sun4 */
     int			offset;
     int			numSegs;
+#ifdef sun4
+    struct VmMach_PMEGseg	pmegInfo;
+#endif
 } VmMach_SegData;
 
 /*
