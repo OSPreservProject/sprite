@@ -54,7 +54,7 @@ void	DumpTimerStats();
 void 	PrintL1Menu();
 static void	PrintVersion();
 static void	PrintTOD();
-static void FslclNameHashStats();
+void FslclNameHashStats();
 /*
  * Table of routines and their arguments to be called on dump events.
  * Only machine independent dump events should be added to this table.
