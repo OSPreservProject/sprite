@@ -965,6 +965,29 @@ Dbg_Main(stackHole, dbgStack)
 		SendReply();
 		break;
 
+	    case DBG_GET_DUMP_BOUNDS: {
+		Dbg_DumpBounds bounds;
+		extern unsigned int end;
+		bounds.pageSize = vm_PageSize;
+		bounds.stackSize = mach_KernStackSize;
+		bounds.kernelCodeStart = (unsigned int) mach_KernStart;
+		bounds.kernelCodeSize  = 
+			(unsigned int) (((Address)(&end)) - mach_KernStart);
+		bounds.kernelDataStart	= ((unsigned int)(&end));
+		bounds.kernelDataSize	= (unsigned int) 
+				(vmMemEnd - ((Address)(&end)));
+		bounds.kernelStacksStart = (unsigned int)vmStackBaseAddr;
+		bounds.kernelStacksSize = (unsigned int) 
+				(vmStackEndAddr - vmStackBaseAddr);
+		bounds.fileCacheStart	= (unsigned int)vmBlockCacheBaseAddr;
+		bounds.fileCacheSize	= (unsigned int) (vmBlockCacheEndAddr - 
+						vmBlockCacheBaseAddr);
+
+		PutReplyBytes(sizeof(bounds), (char *)&bounds);
+		SendReply();
+		break;
+	    }
+	    
 	    case DBG_GET_VERSION_STRING: {
 		char	*SpriteVersion();
 		char	*version;
@@ -974,7 +997,6 @@ Dbg_Main(stackHole, dbgStack)
 		SendReply();
 		break;
 	    }
-	    
 	    case DBG_INST_READ:
 	    case DBG_DATA_READ: {
 		Dbg_ReadMem	readMem;
