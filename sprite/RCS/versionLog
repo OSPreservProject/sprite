@@ -403,4 +403,8 @@ Unix compatibility.
 1.089	Tue Apr  9 18:52:02 PDT 1991
 Fixed a bug in vmSysCall.c, VmMmapInt, that was causing X to die when
 accessing a kernel rather than user address for the frame buffer.
+
+1.090	Thu Apr 18 13:27:36 PDT 1991
+Changes to SCSI code to support bigger devices.
+lockProcID => lockProcPtr.
     New files linked in from the net library.
