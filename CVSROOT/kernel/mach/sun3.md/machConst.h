@@ -173,7 +173,7 @@
  * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
  *			main process that is initially run.
  * MACH_KERN_END	The address where the last kernel virtual address is
- *			at.
+ *			at.  Beyond this is used for device mappings.
  * MACH_KERN_STACK_SIZE Number of bytes in a kernel stack.
  * MACH_BARE_STACK_OFFSET	Offset of where a bare kernel stack starts.
  *				It doesn't start at the very top because
@@ -192,7 +192,7 @@
 #define	MACH_CODE_START		0x804000
 #define	MACH_STACK_BOTTOM	0x802000
 #endif
-#define MACH_KERN_END		VMMACH_DEV_START_ADDR
+#define MACH_KERN_END		VMMACH_KERN_END
 #define	MACH_KERN_STACK_SIZE	(MACH_CODE_START - MACH_STACK_BOTTOM)
 #define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
 #define	MAGIC			0xFeedBabe
