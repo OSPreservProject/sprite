@@ -31,6 +31,30 @@
 
 
 /*
+ * The following structure is referenced by the process table entry for
+ * a process.  It contains all the filesystem related state for the process.
+ */
+typedef struct Fs_ProcessState {
+    struct Fs_Stream	*cwdPtr;	/* The current working directory. */
+    unsigned int   	filePermissions;/* The bits in this mask correspond
+					 * to the permissions mask of a file.
+					 * If one of these bits is set it
+					 * TURNS OFF the corresponding
+					 * permission when a file is created. */
+    int		   	numStreams;	/* Size of streamList array. */
+    struct Fs_Stream   **streamList;	/* Array of pointers to open files.
+					 * This list is indexed by an integer
+					 * known as a streamID. */
+    char		*streamFlags;	/* Array of flags, one for element
+					 * for each open stream.  Used to
+					 * keep the close-on-exec property */
+    int			numGroupIDs;	/* The length of the groupIDs array */
+    int			*groupIDs;	/* An array of group IDs.  Group IDs
+					 * are used similarly to the User ID. */
+} Fs_ProcessState;
+
+
+/*
  * The following low-level file system types have to be exported because
  * the type of Fs_Stream is already exported.  This could be fixed by
  * only exporting an opaque Fs_StreamPtr type, or by changing the definition
