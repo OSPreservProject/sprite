@@ -81,6 +81,18 @@ static void FlushAllCaches();
 static unsigned createTime = 0;
 static unsigned flushTime = 0;
 
+/*
+ * Variable to tell whether have initialized VM or not.
+ */
+static Boolean initialized = FALSE;
+
+/*
+ * Variable to control whether we should use the simple or complex validation
+ * of virtual addresses.  The simple one will only allow us to look at the
+ * system segment.
+ */
+static Boolean useSimpleValidation = FALSE;
+
 #ifdef lint
 #ifndef volatile
 #define volatile
@@ -301,6 +313,10 @@ VmMach_Init(firstFreePage)
      * Don't allow copy-on-write on SPUR.
      */
     vm_CanCOW = FALSE;
+    /*
+     * We have now initialized ourselves.
+     */
+    initialized = TRUE;
 }
 
 /*
@@ -2095,6 +2111,70 @@ SetCreateTime(segDataPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * SimpleValidate --
+ *
+ *	Make sure that the range of bytes are valid in the kernel's address
+ *	space.  This works even before virtual memory has been initialized.
+ *
+ * Results:
+ *	TRUE if the range of addresses are valid and FALSE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+SimpleValidate(addr, numBytes)
+    Address	addr;
+    int		numBytes;
+{
+    register VmMachPTE	*ptePtr;
+    unsigned int	firstPage;
+    unsigned int	lastPage;
+    unsigned int	firstPTPage;
+    unsigned int	lastPTPage;
+
+    if (((unsigned int)addr & VMMACH_SEG_REG_MASK) != 0 ||
+	((unsigned int)(addr + numBytes - 1) & VMMACH_SEG_REG_MASK) != 0) {
+	return(FALSE);
+    }
+
+    firstPage = (unsigned int)addr >> VMMACH_PAGE_SHIFT;
+    lastPage = (unsigned int)(addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
+    firstPTPage = firstPage >> VMMACH_SEG_PT2_SHIFT;
+    lastPTPage = lastPage >> VMMACH_SEG_PT2_SHIFT;
+
+    /*
+     * Assume that the root page tables are mapped and check the second
+     * level page tables first.  If the root page tables aren't mapped then
+     * we won't get this far in the first place.
+     */
+    for (ptePtr = (VmMachPTE *)(VMMACH_KERN_PT2_BASE) + firstPTPage;
+	 firstPTPage <= lastPTPage;
+	 firstPTPage++, ptePtr++) {
+	if (!(*ptePtr & VMMACH_RESIDENT_BIT) ||
+	    (*ptePtr & VMMACH_PROTECTION_FIELD) == 0) {
+	    return(FALSE);
+	}
+    }
+    /*
+     * Now check the first level page table entries.
+     */
+    for (ptePtr = (VmMachPTE *)(VMMACH_KERN_PT_BASE) + firstPage;
+	 firstPage <= lastPage;
+	 firstPage++, ptePtr++) {
+	if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
+	    return(FALSE);
+	}
+    }
+    return(TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Vm_ValidateRange --
  *
  *	Make sure that the range of bytes are valid in the kernel's address
@@ -2123,6 +2203,10 @@ Vm_ValidateRange(addr, numBytes)
     Proc_ControlBlock	*procPtr;
     Vm_Segment		*segPtr;
     int			origSegNum;
+
+    if (!initialized || useSimpleValidation) {
+	return(SimpleValidate(addr, numBytes));
+    }
 
     hardSegNum = (unsigned int)addr >> VMMACH_SEG_REG_SHIFT;
     if (hardSegNum == 0) {
@@ -2196,7 +2280,6 @@ Vm_ValidateRange(addr, numBytes)
     }
     return(TRUE);
 }
-
 
 
 /*
