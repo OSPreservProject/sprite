@@ -169,7 +169,7 @@ RpcByteSwapInComing(rpcHdrPtr)
  *	None.
  *
  * Side effects:
- *	Sys_Printf is invoked.
+ *	printf is invoked.
  *
  *----------------------------------------------------------------------
  */
@@ -180,11 +180,11 @@ RpcPrintHdr(rpcHdrPtr)
 					 * the header directly. */
 {
 
-	Sys_Printf("\tversion(X): %x\n\tflags(X): %x\n\tclientID(D): %d\n",
+	printf("\tversion(X): %x\n\tflags(X): %x\n\tclientID(D): %d\n",
 	    rpcHdrPtr->version, rpcHdrPtr->flags, rpcHdrPtr->clientID);
-        Sys_Printf("\tcommand(D): %d\n\tparamSize(X): %x\n", rpcHdrPtr->command,
+        printf("\tcommand(D): %d\n\tparamSize(X): %x\n", rpcHdrPtr->command,
 	    rpcHdrPtr->paramSize);
-        Sys_Printf("\tparamOffset(X): %x\n", rpcHdrPtr->paramOffset);
+        printf("\tparamOffset(X): %x\n", rpcHdrPtr->paramOffset);
 	return;
 }
 

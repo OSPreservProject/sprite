@@ -147,19 +147,10 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     rpcCltStat.requests++;
     chanPtr->requestRpcHdr.serverHint =
 	chanPtr->replyRpcHdr.serverHint;
-#ifdef RPC_TEST_BYTE_SWAP
-    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
-		      &chanPtr->swapRequestRpcHdr,
-		      &chanPtr->request, &chanPtr->swapRequest,
-		      chanPtr->fragment,
-		      (unsigned int) (chanPtr->fragsDelivered),
-		      &chanPtr->mutex);
-#else /* RPC_TEST_BYTE_SWAP */
     error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 		      &chanPtr->request, chanPtr->fragment,
 		      (unsigned int) (chanPtr->fragsDelivered),
 		      &chanPtr->mutex);
-#endif /* RPC_TEST_BYTE_SWAP */
     /*
      * Set up the initial wait interval.  The wait could depend on
      * characteristics of the RPC, or of the other host.
@@ -288,23 +279,24 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    if (serverID == RPC_BROADCAST_SERVER_ID) {
 			Net_SpriteIDToName(rpcHdrPtr->serverID, &name);
 			if (name == (char *)NIL) {
-			    Sys_Panic(SYS_WARNING,
-				"RpcDoCall: <%d> hanging my broadcast\n",
+			    printf(
+			    "Warning: RpcDoCall: <%d> hanging my broadcast\n",
 				    rpcHdrPtr->serverID);
 			} else {
-			    Sys_Panic(SYS_WARNING,
-				"RpcDoCall: %s hanging my broadcast\n", name);
+			    printf(
+			    "Warning: RpcDoCall: %s hanging my broadcast\n",
+				name);
 			}
 			error = RPC_TIMEOUT;
 		    } else {
 			Net_SpriteIDToName(serverID, &name);
 			if (name == (char *)NIL) {
-			    Sys_Panic(SYS_WARNING,
-				"RpcDoCall: <%d> seems hung, RPC %d\n",
+			    printf(
+			    "Warning: RpcDoCall: <%d> seems hung, RPC %d\n",
 				serverID, command);
 			} else {
-			    Sys_Panic(SYS_WARNING,
-				"RpcDoCall: %s seems hung, RPC %d\n",
+			    printf(
+				"Warning: RpcDoCall: %s seems hung, RPC %d\n",
 				name, command);
 			}
 			seemsHung = TRUE;
@@ -316,7 +308,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		 * Unexpected kind of input
 		 */
 		rpcCltStat.badInput++;
-		Sys_Panic(SYS_WARNING, "Rpc_Call: Unexpected input.");
+		printf("Warning: Rpc_Call: Unexpected input.");
 		error = RPC_INTERNAL_ERROR;
 	    }
 	} else {
@@ -345,20 +337,10 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    (rpc_NoTimeouts && serverID != RPC_BROADCAST_SERVER_ID)) {
 		    rpcCltStat.resends++;
 		    chanPtr->requestRpcHdr.flags |= RPC_PLSACK;
-#ifdef RPC_TEST_BYTE_SWAP
-		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
-				      &chanPtr->swapRequestRpcHdr,
-				      &chanPtr->request,
-				      &chanPtr->swapRequest,
-				      chanPtr->fragment,
-				      (unsigned int) (chanPtr->fragsDelivered),
-				      &chanPtr->mutex);
-#else /* RPC_TEST_BYTE_SWAP */
 		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 				      &chanPtr->request, chanPtr->fragment,
 				      (unsigned int) (chanPtr->fragsDelivered),
 				      &chanPtr->mutex);
-#endif /* RPC_TEST_BYTE_SWAP */
 		} else {
 		    rpcCltStat.aborts++;
 		    error = RPC_TIMEOUT;
@@ -386,19 +368,10 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 						    RPC_LASTFRAG;
 		    chanPtr->requestRpcHdr.fragMask = chanPtr->fragsReceived;
 		    rpcCltStat.sentPartial++;
-#ifdef RPC_TEST_BYTE_SWAP
-		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
-				      &chanPtr->swapRequestRpcHdr,
-				      &chanPtr->request, &chanPtr->swapRequest,
-				      chanPtr->fragment,
-				      (unsigned int) (chanPtr->fragsDelivered),
-				      &chanPtr->mutex);
-#else /* RPC_TEST_BYTE_SWAP */
 		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 				      &chanPtr->request, chanPtr->fragment,
 				      (unsigned int) (chanPtr->fragsDelivered),
 				      &chanPtr->mutex);
-#endif /* RPC_TEST_BYTE_SWAP */
 		}
 	    }
 	}
@@ -406,9 +379,9 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     chanPtr->state &= ~CHAN_WAITING;
     if (seemsHung) {
 	if (error == SUCCESS) {
-	    Sys_Printf("RPC %d ok\n", command);
+	    printf("RPC %d ok\n", command);
 	} else {
-	    Sys_Printf("RPC %d exit 0x%x\n", command, error);
+	    printf("RPC %d exit 0x%x\n", command, error);
 	}
     }
     MASTER_UNLOCK(chanPtr->mutex);
@@ -456,7 +429,7 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
      * resends and then the server acknowledges.
      */
     if (chanPtr->mutex != 0) {
-	Sys_Panic(SYS_WARNING, "Rpc to myself?\n");
+	printf("Warning:  Rpc to myself?\n");
 	return;
     } else {
 	MASTER_LOCK(chanPtr->mutex);
@@ -467,9 +440,9 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
      */
     if (rpc_SpriteID == 0) {
 	rpc_SpriteID = rpcHdrPtr->clientID;
-	Sys_Printf("RPC setting SpriteID to %d.\n", rpc_SpriteID);
+	printf("RPC setting SpriteID to %d.\n", rpc_SpriteID);
     } else if (rpc_SpriteID != rpcHdrPtr->clientID) {
-	Sys_Printf("RpcClientDispatch: clientID changed from (%d) to (%d).\n",
+	printf("RpcClientDispatch: clientID changed from (%d) to (%d).\n",
 				       rpc_SpriteID, rpcHdrPtr->clientID);
     }
 
@@ -505,23 +478,10 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 	    chanPtr->request.paramBuffer.length = 0;
 	    chanPtr->request.dataBuffer.bufAddr = (Address)NIL;
 	    chanPtr->request.dataBuffer.length = 0;
-#ifdef RPC_TEST_BYTE_SWAP
-	    chanPtr->swapRequest.paramBuffer.bufAddr = (Address)NIL;
-	    chanPtr->swapRequest.paramBuffer.length = 0;
-	    chanPtr->swapRequest.dataBuffer.bufAddr = (Address)NIL;
-	    chanPtr->swapRequest.dataBuffer.length = 0;
-	    (void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->requestRpcHdr,
-						 &chanPtr->swapRequestRpcHdr,
-						 &chanPtr->request,
-						 &chanPtr->swapRequest,
-						 (RpcBufferSet *)NIL, 0,
-						 (int *)NIL);
-#else /* RPC_TEST_BYTE_SWAP */
 	    (void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->requestRpcHdr,
 						 &chanPtr->request,
 						 (RpcBufferSet *)NIL, 0,
 						 (int *)NIL);
-#endif /* RPC_TEST_BYTE_SWAP */
 
 	    chanPtr->state &= ~CHAN_BUSY;
 	}

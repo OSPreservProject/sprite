@@ -74,7 +74,7 @@ static Sync_Lock rpcSrvTraceLock;
  *----------------------------------------------------------------------
  */
 #ifdef notdef
-void
+ENTRY void
 Rpc_StartSrvTrace()
 {
     LOCK_MONITOR;
@@ -124,7 +124,7 @@ RpcResetSrvStat()
 	totalIntPtr++;
 	deltaIntPtr++;
     }
-    Byte_Zero(sizeof(Rpc_SrvStat), (Address)&rpcSrvStat);
+    bzero((Address)&rpcSrvStat, sizeof(Rpc_SrvStat));
 
     RpcSpecialSrvStatReset();
 }
@@ -147,7 +147,7 @@ RpcResetSrvStat()
  *----------------------------------------------------------------------
  */
 #ifdef notdef
-void
+ENTRY void
 Rpc_EndSrvTrace(pid)
     int pid;
 {
@@ -181,37 +181,37 @@ Rpc_EndSrvTrace(pid)
 void
 Rpc_PrintSrvStat()
 {
-    Sys_Printf("Rpc Server Statistics\n");
-    Sys_Printf("toServer   = %5d ", rpcSrvStat.toServer);
-    Sys_Printf("noAlloc     = %4d ", rpcSrvStat.noAlloc);
-    Sys_Printf("invClient   = %4d ", rpcSrvStat.invClient);
-    Sys_Printf("serverBusy  = %4d ", rpcSrvStat.serverBusy);
-    Sys_Printf("\n");
-    Sys_Printf("requests   = %5d ", rpcSrvStat.requests);
-    Sys_Printf("impAcks    = %5d ", rpcSrvStat.impAcks);
-    Sys_Printf("handoffs   = %5d ", rpcSrvStat.handoffs);
-    Sys_Printf("fragMsgs   = %5d ", rpcSrvStat.fragMsgs);
-    Sys_Printf("\n");
-    Sys_Printf("handoffAcks = %4d ", rpcSrvStat.handoffAcks);
-    Sys_Printf("fragAcks    = %4d ", rpcSrvStat.fragAcks);
-    Sys_Printf("sentPartial = %4d ", rpcSrvStat.recvPartial);
-    Sys_Printf("busyAcks    = %4d ", rpcSrvStat.busyAcks);
-    Sys_Printf("\n");
-    Sys_Printf("resends     = %4d ", rpcSrvStat.resends);
-    Sys_Printf("badState    = %4d ", rpcSrvStat.badState);
-    Sys_Printf("extra       = %4d ", rpcSrvStat.extra);
-    Sys_Printf("reclaims    = %4d ", rpcSrvStat.reclaims);
-    Sys_Printf("\n");
-    Sys_Printf("reassembly = %5d ", rpcSrvStat.reassembly);
-    Sys_Printf("dupFrag     = %4d ", rpcSrvStat.dupFrag);
-    Sys_Printf("nonFrag     = %4d ", rpcSrvStat.nonFrag);
-    Sys_Printf("fragAborts  = %4d ", rpcSrvStat.fragAborts);
-    Sys_Printf("\n");
-    Sys_Printf("recvPartial = %4d ", rpcSrvStat.recvPartial);
-    Sys_Printf("closeAcks   = %4d ", rpcSrvStat.closeAcks);
-    Sys_Printf("discards    = %4d ", rpcSrvStat.discards);
-    Sys_Printf("unknownAcks = %4d ", rpcSrvStat.unknownAcks);
-    Sys_Printf("\n");
+    printf("Rpc Server Statistics\n");
+    printf("toServer   = %5d ", rpcSrvStat.toServer);
+    printf("noAlloc     = %4d ", rpcSrvStat.noAlloc);
+    printf("invClient   = %4d ", rpcSrvStat.invClient);
+    printf("serverBusy  = %4d ", rpcSrvStat.serverBusy);
+    printf("\n");
+    printf("requests   = %5d ", rpcSrvStat.requests);
+    printf("impAcks    = %5d ", rpcSrvStat.impAcks);
+    printf("handoffs   = %5d ", rpcSrvStat.handoffs);
+    printf("fragMsgs   = %5d ", rpcSrvStat.fragMsgs);
+    printf("\n");
+    printf("handoffAcks = %4d ", rpcSrvStat.handoffAcks);
+    printf("fragAcks    = %4d ", rpcSrvStat.fragAcks);
+    printf("sentPartial = %4d ", rpcSrvStat.recvPartial);
+    printf("busyAcks    = %4d ", rpcSrvStat.busyAcks);
+    printf("\n");
+    printf("resends     = %4d ", rpcSrvStat.resends);
+    printf("badState    = %4d ", rpcSrvStat.badState);
+    printf("extra       = %4d ", rpcSrvStat.extra);
+    printf("reclaims    = %4d ", rpcSrvStat.reclaims);
+    printf("\n");
+    printf("reassembly = %5d ", rpcSrvStat.reassembly);
+    printf("dupFrag     = %4d ", rpcSrvStat.dupFrag);
+    printf("nonFrag     = %4d ", rpcSrvStat.nonFrag);
+    printf("fragAborts  = %4d ", rpcSrvStat.fragAborts);
+    printf("\n");
+    printf("recvPartial = %4d ", rpcSrvStat.recvPartial);
+    printf("closeAcks   = %4d ", rpcSrvStat.closeAcks);
+    printf("discards    = %4d ", rpcSrvStat.discards);
+    printf("unknownAcks = %4d ", rpcSrvStat.unknownAcks);
+    printf("\n");
 
     RpcSpecialSrvStatPrint();
 }
@@ -266,12 +266,12 @@ RpcSpecialSrvStatReset()
 RpcSpecialSrvStatPrint()
 {
     if (specialSrvStat.hits) {
-	Sys_SafePrintf("Number of Special Stats: %d\n", specialSrvStat.hits);
+	printf("Number of Special Stats: %d\n", specialSrvStat.hits);
 
-	Sys_SafePrintf("Last packet length (%d), last expected length (%d)\n",
+	printf("Last packet length (%d), last expected length (%d)\n",
 			     specialSrvStat.lastLength, specialSrvStat.lastExpLength);
 
-	Sys_SafePrintf("Ave packet length (%d), ave expected length (%d)\n",
+	printf("Ave packet length (%d), ave expected length (%d)\n",
 	    (specialSrvStat.sumLength / specialSrvStat.hits),
 	    (specialSrvStat.sumExpLength / specialSrvStat.hits));
     }

@@ -24,7 +24,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpcServer.h"
 #include "rpcTrace.h"
 #include "dev.h"
-#include "user/test.h"
 #include "user/sysStats.h"
 
 
@@ -165,10 +164,10 @@ Rpc_GetStats(command, option, argPtr)
 	     * to clients.
 	     */
 	    if (option) {
-		Sys_Printf("Starting RPC service\n");
+		printf("Starting RPC service\n");
 		rpcServiceEnabled = TRUE;
 	    } else {
-		Sys_Panic(SYS_WARNING, "Disabling RPC service\n");
+		printf("Warning: Disabling RPC service\n");
 		rpcServiceEnabled = FALSE;
 	    }
 	    break;

@@ -92,9 +92,9 @@ Rpc_PrintTrace(numRecords)
 		% RPC_TRACE_LEN;
     stopIndex = rpcTraceHdrPtr->currentRecord;
 
-    Sys_Printf("\n");
+    printf("\n");
 #define PRINT_HEADER() \
-    Sys_Printf("%6s %4s %6s %5s %4s %4s %10s %5s %5s %5s %8s\n", \
+    printf("%6s %4s %6s %5s %4s %4s %10s %5s %5s %5s %8s\n", \
 	"ID", "type", "time", "flags", "srvr", "clnt", "cmd   ", \
 	"psize", "dsize", "doff", "fragInfo")
     PRINT_HEADER();
@@ -106,20 +106,20 @@ Rpc_PrintTrace(numRecords)
 	Time_Subtract(recordPtr->time, baseTime, &deltaTime);
 
 	rpcHdrPtr = (RpcHdr *)recordPtr->traceData;
-	Sys_Printf("%6x ", rpcHdrPtr->ID);
+	printf("%6x ", rpcHdrPtr->ID);
 
 	switch(recordPtr->event) {
 	    default:
-		Sys_Printf("{%d}", recordPtr->event);
+		printf("{%d}", recordPtr->event);
 		break;
 	    case RPC_INPUT:
-		Sys_Printf("in ");
+		printf("in ");
 		break;
 	    case RPC_ETHER_OUT:
-		Sys_Printf("out");
+		printf("out");
 		break;
 	    case RPC_OUTPUT:
-		Sys_Printf("out");
+		printf("out");
 		break;
 	    case RPC_CLIENT_a:		/* Client interrupt time stamps */
 	    case RPC_CLIENT_b:
@@ -128,7 +128,7 @@ Rpc_PrintTrace(numRecords)
 	    case RPC_CLIENT_e:
 	    case RPC_CLIENT_f:
 		c = recordPtr->event - RPC_CLIENT_a + 'a';
-		Sys_Printf("Ci%c", c);
+		printf("Ci%c", c);
 		break;
 	    case RPC_CLIENT_A:		/* Client process level time stamps */
 	    case RPC_CLIENT_B:
@@ -137,7 +137,7 @@ Rpc_PrintTrace(numRecords)
 	    case RPC_CLIENT_E:
 	    case RPC_CLIENT_F:
 		c = recordPtr->event - RPC_CLIENT_A + 'A';
-		Sys_Printf("Cp%c", c);
+		printf("Cp%c", c);
 		break;
 	    case RPC_SERVER_a:		/* Server interrupt time stamps */
 	    case RPC_SERVER_b:
@@ -146,7 +146,7 @@ Rpc_PrintTrace(numRecords)
 	    case RPC_SERVER_e:
 	    case RPC_SERVER_f:
 		c = recordPtr->event - RPC_SERVER_a + 'a';
-		Sys_Printf("Si%c", c);
+		printf("Si%c", c);
 		break;
 	    case RPC_SERVER_A:		/* Server process level time stamps */
 	    case RPC_SERVER_B:
@@ -155,17 +155,17 @@ Rpc_PrintTrace(numRecords)
 	    case RPC_SERVER_E:
 	    case RPC_SERVER_F:
 		c = recordPtr->event - RPC_SERVER_A + 'A';
-		Sys_Printf("Sp%c", c);
+		printf("Sp%c", c);
 		break;
 	    case RPC_CLIENT_OUT:
-		Sys_Printf("Cx ");
+		printf("Cx ");
 		break;
 	    case RPC_SERVER_OUT:
-		Sys_Printf("Sx ");
+		printf("Sx ");
 		break;
 	}
 
-	Sys_Printf(" %3d.%04d",
+	printf(" %3d.%04d",
 			   deltaTime.seconds,
 			   deltaTime.microseconds / 100);
 	baseTime = recordPtr->time;
@@ -196,29 +196,29 @@ Rpc_PrintTrace(numRecords)
 	    flagString[stringIndex++] = 'e';
 	}
 	flagString[stringIndex] = '\0';
-	Sys_Printf(" %2s", flagString);
-	Sys_Printf(" %3d %d %3d %d ",
+	printf(" %2s", flagString);
+	printf(" %3d %d %3d %d ",
 			   rpcHdrPtr->serverID, rpcHdrPtr->serverHint,
 			   rpcHdrPtr->clientID, rpcHdrPtr->channel);
 	if (((rpcHdrPtr->flags & RPC_ERROR) == 0) &&
 	    rpcHdrPtr->command >= 0 && rpcHdrPtr->command <= RPC_LAST_COMMAND) {
-	    Sys_Printf("%-8s", rpcService[rpcHdrPtr->command].name);
+	    printf("%-8s", rpcService[rpcHdrPtr->command].name);
 	} else {
-	    Sys_Printf("%8x", rpcHdrPtr->command);
+	    printf("%8x", rpcHdrPtr->command);
 	}
-	Sys_Printf(" %5d %5d %5d %2d %2x %5d",
+	printf(" %5d %5d %5d %2d %2x %5d",
 			   rpcHdrPtr->paramSize,
 			   rpcHdrPtr->dataSize,
 			   rpcHdrPtr->dataOffset,
 			   rpcHdrPtr->numFrags,
 			   rpcHdrPtr->fragMask,
 			   rpcHdrPtr->delay);
-	Sys_Printf("\n");
+	printf("\n");
 
 	i = (i + 1) % RPC_TRACE_LEN;
     } while (i != stopIndex);
     PRINT_HEADER();
-    Sys_Printf("Delta time = %6d.%06d\n", rpcDeltaTime.seconds,
+    printf("Delta time = %6d.%06d\n", rpcDeltaTime.seconds,
 			  rpcDeltaTime.microseconds);
     rpcTraceHdrPtr->flags &= ~TRACE_INHIBIT;
 #endif /* not CLEAN */
@@ -295,8 +295,8 @@ Rpc_DumpTrace(firstRec, lastRec, fileName)
 	recordPtr = &rpcTraceHdrPtr->recordArray[i];
 	traceRecord.time = recordPtr->time;
 	traceRecord.type = recordPtr->event;
-	Byte_Copy(sizeof(RpcHdr), (Address)recordPtr->traceData,
-				  (Address)&traceRecord.rpcHdr);
+	bcopy((Address)recordPtr->traceData, (Address)&traceRecord.rpcHdr,
+		sizeof(RpcHdr));
 	status = Fs_Write(streamPtr, (Address)&traceRecord,
 				     streamPtr->offset, &writeLen);
 	if (status != SUCCESS) {
@@ -343,7 +343,7 @@ Rpc_StampTest()
 
 #define NUMTIMES	1000
 
-/*   Sys_Printf("RpcTrace timing:  "); */
+/*   printf("RpcTrace timing:  "); */
     junkRpcHdr.flags = 0;
 
     Timer_GetCurrentTicks(&startTime);
@@ -355,7 +355,7 @@ Rpc_StampTest()
     Timer_SubtractTicks(endTime, startTime, &endTime);
     Timer_TicksToTime(endTime, &diff);
     Time_Divide(diff, NUMTIMES, &diff);
-/*   Sys_Printf("empty = %d, ", diff.microseconds); */
+/*   printf("empty = %d, ", diff.microseconds); */
     rpcEmptyStampTime = diff;
 
 
@@ -368,7 +368,7 @@ Rpc_StampTest()
     Timer_SubtractTicks(endTime, startTime, &endTime);
     Timer_TicksToTime(endTime, &diff);
     Time_Divide(diff, NUMTIMES, &diff);
-/*    Sys_Printf("full = %d usecs\n", diff.microseconds); */
+/*    printf("full = %d usecs\n", diff.microseconds); */
     rpcFullStampTime = diff;
 
     for (i=0 ; i<4 ; i++) {

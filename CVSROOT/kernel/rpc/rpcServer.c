@@ -96,7 +96,7 @@ Rpc_Server()
 
     srvPtr = RpcServerInstall();
     if (srvPtr == (RpcServerState *)NIL) {
-	Sys_Printf("RPC server can't install itself.\n");
+	printf("RPC server can't install itself.\n");
 	Proc_Exit((int) RPC_INTERNAL_ERROR);
     }
     error = SUCCESS;
@@ -117,7 +117,7 @@ Rpc_Server()
 	    if (sys_ShuttingDown) {
 		srvPtr->state = SRV_NOTREADY;
 		MASTER_UNLOCK(srvPtr->mutex);
-		Sys_Printf("Rpc_Server exiting\n");
+		printf("Rpc_Server exiting\n");
 		Proc_Exit(0);
 	    }
 	}
@@ -282,7 +282,7 @@ RpcReclaimServers()
 		    rpcSrvStat.reclaims++;
 		    srvPtr->state = SRV_FREE;
 		} else if (srvPtr->clientID == rpc_SpriteID) {
-		    Sys_Panic(SYS_WARNING, "Reclaiming from myself.\n");
+		    printf("Warning: Reclaiming from myself.\n");
 		    srvPtr->state = SRV_FREE;
 		} else {
 		    /*
@@ -335,7 +335,7 @@ RpcReclaimServers()
  *
  *----------------------------------------------------------------------
  */
-void
+ENTRY void
 RpcServerDispatch(srvPtr, rpcHdrPtr)
     register RpcServerState *srvPtr;	/* The state of the server process */
     register RpcHdr *rpcHdrPtr;		/* The header of the packet as it sits
@@ -509,7 +509,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		     * Reset srvPtr->replyRpcHdr.ID so that we can accept
 		     * new requests from the client.
 		     */
-	    Sys_Printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x> clientID %d\n",
+	    printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x> clientID %d\n",
 			    srvPtr->index, srvPtr->state, rpcHdrPtr->ID,
 			    rpcHdrPtr->flags, rpcHdrPtr->clientID);
 		    rpcSrvStat.badState++;
@@ -531,7 +531,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		    if (rpcHdrPtr->fragMask == 0 ||
 			rpcHdrPtr->numFrags == 0) {
 			rpcSrvStat.nonFrag++;
-			Sys_Printf("ServerDispatch - got a non-fragment\n");
+			printf("ServerDispatch - got a non-fragment\n");
 			break;
 		    }
 		    if (srvPtr->fragsReceived & rpcHdrPtr->fragMask) {
@@ -666,13 +666,8 @@ Rpc_ErrorReply(srvToken, error)
 	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
 	MASTER_UNLOCK(mutex);
     }
-#ifdef RPC_TEST_BYTE_SWAP
-    (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, NIL, &srvPtr->reply,
-					 (RpcBufferSet *)NIL, NIL, 0, (int *)NIL);
-#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
-#endif /* RPC_TEST_BYTE_SWAP */
 }
 
 
@@ -786,13 +781,8 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
 	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
 	MASTER_UNLOCK(mutex);
     }
-#ifdef RPC_TEST_BYTE_SWAP
-    (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, NIL, &srvPtr->reply, NIL,
-					 srvPtr->fragment, 0, (int *)NIL);
-#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 srvPtr->fragment, 0, (int *)NIL);
-#endif /* RPC_TEST_BYTE_SWAP */
 }
 
 
@@ -834,13 +824,8 @@ RpcAck(srvPtr, flags)
      * Note, can't try ARP here because of it's synchronization with
      * a master lock and because we are called at interrupt time.
      */
-#ifdef RPC_TEST_BYTE_SWAP
-    (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, NIL, &srvPtr->ack, NIL,
-					 (RpcBufferSet *)NIL, 0, (int *)NIL);
-#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
-#endif /* RPC_TEST_BYTE_SWAP */
 }
 
 /*
@@ -866,15 +851,9 @@ RpcResend(srvPtr)
      * Note, can't try ARP here because of it's synchronization with
      * a master lock and because we are called at interrupt time.
      */
-#ifdef RPC_TEST_BYTE_SWAP
-    (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr, NIL,
-		       &srvPtr->reply, NIL, srvPtr->fragment,
-		       srvPtr->fragsDelivered, (int *)NIL);
-#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr,
 		       &srvPtr->reply, srvPtr->fragment,
 		       srvPtr->fragsDelivered, (int *)NIL);
-#endif /* RPC_TEST_BYTE_SWAP */
 }
 
 /*
@@ -906,13 +885,7 @@ RpcProbe(srvPtr)
     ackHdrPtr->flags = RPC_ACK | RPC_CLOSE;
     RpcSrvInitHdr(srvPtr, ackHdrPtr, requestHdrPtr);
 
-#ifdef RPC_TEST_BYTE_SWAP
-    (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, NIL, &srvPtr->ack, NIL,
-					 (RpcBufferSet *)NIL, 0,
-					 &srvPtr->mutex);
-#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0,
 					 &srvPtr->mutex);
-#endif /* RPC_TEST_BYTE_SWAP */
 }

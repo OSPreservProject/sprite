@@ -101,7 +101,7 @@ Rpc_Daemon()
     queueEntry.interval = 2 * timer_IntOneSecond;
     queueEntry.clientData = (ClientData)NIL;
 
-    Sys_Printf("Rpc_Daemon alive\n");
+    printf("Rpc_Daemon alive\n");
 
     while (TRUE) {
 	RpcDaemonWait(&queueEntry);
@@ -111,10 +111,10 @@ Rpc_Daemon()
 	     * because there were no available server processes.
 	     */
 	     if (Rpc_CreateServer(&pid) == SUCCESS) {
-		 Sys_Printf("RPC srvr %x\n", pid);
+		 printf("RPC srvr %x\n", pid);
 		 RpcResetNoServers(0);
 	     } else {
-		 Sys_Panic(SYS_WARNING, "Rpc_Daemon: no more RPC servers\n");
+		 printf("Warning: Rpc_Daemon: no more RPC servers\n");
 		 RpcResetNoServers(-1);
 	     }
 	}
@@ -198,7 +198,7 @@ Rpc_CreateServer(pidPtr)
  *
  *----------------------------------------------------------------------
  */
-RpcServerState *
+ENTRY RpcServerState *
 RpcServerAlloc(rpcHdrPtr)
     RpcHdr *rpcHdrPtr;
 {
@@ -366,7 +366,7 @@ RpcDaemonWait(queueEntryPtr)
     do {
 	Sync_MasterWait(&rpcDaemon, &serverMutex, FALSE);
 	if (sys_ShuttingDown) {
-	    Sys_Printf("Rpc_Daemon exiting.\n");
+	    printf("Rpc_Daemon exiting.\n");
 	    MASTER_UNLOCK(serverMutex);
 	    Proc_Exit(0);
 	}

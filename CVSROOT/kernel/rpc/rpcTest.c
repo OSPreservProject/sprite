@@ -82,7 +82,7 @@ Rpc_GetTime(serverId, timePtr, timeZoneMinutesPtr, timeZoneDSTPtr)
 	     * really a unix kernel's tz_minuteswest, and the timeZoneDST
 	     * is a code for what kind of time zone correction to use.
 	     */
-	    Sys_Panic(SYS_WARNING, "Rpc_Start, negative timezone offset.\n");
+	    printf("Warning: Rpc_Start, negative timezone offset.\n");
 	    *timeZoneMinutesPtr = -rpcTimeReturn.timeZoneMinutes;
 	    *timeZoneDSTPtr = TRUE;
 	} else {
@@ -127,9 +127,9 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
     Address		localInBuffer;
     Address		localOutBuffer;
 
-    localInBuffer = Mem_Alloc(size);
-    Byte_Copy(size, inputPtr, localInBuffer);
-    localOutBuffer = Mem_Alloc(size);
+    localInBuffer = malloc(size);
+    bcopy(inputPtr, localInBuffer, size);
+    localOutBuffer = malloc(size);
 
 #ifdef notdef
     /*
@@ -141,7 +141,7 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
 #endif /* notdef */
  
     if (deltaTimePtr == (Time *)NIL) {
-	Sys_Printf("Echoing %d %d-byte messages\n", numEchoes, size);
+	printf("Echoing %d %d-byte messages\n", numEchoes, size);
     }
                  
     Timer_GetCurrentTicks(&startTime);
@@ -154,7 +154,7 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
     Timer_GetCurrentTicks(&endTime);
  
     if ((deltaTimePtr == (Time *)NIL) && (status != SUCCESS)) {
-        Sys_SafePrintf("got error %x from Rpc_Echo\n", status);
+        printf("got error %x from Rpc_Echo\n", status);
     }
 
     /*
@@ -164,7 +164,7 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
     Timer_TicksToTime(endTime, &diff);
     Time_Divide(diff, numEchoes, &diff);
     if (deltaTimePtr == (Time *)NIL) {
-	Sys_SafePrintf("time per RPC %d.%06d\n",
+	printf("time per RPC %d.%06d\n",
                         diff.seconds, diff.microseconds);
     } else {
 	*deltaTimePtr = diff;
@@ -179,9 +179,9 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
     Rpc_EndSrvTrace();
 #endif /* notdef */
 
-    Byte_Copy(size, localOutBuffer, returnPtr);
-    Mem_Free(localOutBuffer);
-    Mem_Free(localInBuffer);
+    bcopy(localOutBuffer, returnPtr, size);
+    free(localOutBuffer);
+    free(localInBuffer);
     return(status);
 }
 
@@ -217,8 +217,8 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
     Time		diff;
     Address		localInBuffer;
 
-    localInBuffer = Mem_Alloc(size);
-    Byte_Copy(size, inputPtr, localInBuffer);
+    localInBuffer = malloc(size);
+    bcopy(inputPtr, localInBuffer, size);
 
 #ifdef notdef
     Rpc_StartSrvTrace();
@@ -226,7 +226,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
 #endif /* notdef */
  
     if (deltaTimePtr == (Time *)NIL) {
-	Sys_Printf("Sending %d %d-byte messages\n", numSends, size);
+	printf("Sending %d %d-byte messages\n", numSends, size);
     }
                  
     Timer_GetCurrentTicks(&startTime);
@@ -239,7 +239,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
     Timer_GetCurrentTicks(&endTime);
  
     if ((deltaTimePtr == (Time *)NIL) && (status != SUCCESS)) {
-        Sys_SafePrintf("got error %x from Rpc_Send\n", status);
+        printf("got error %x from Rpc_Send\n", status);
     }
 
     /*
@@ -249,7 +249,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
     Timer_TicksToTime(endTime, &diff);
     Time_Divide(diff, numSends, &diff);
     if (deltaTimePtr == (Time *)NIL) {
-	Sys_SafePrintf("time per RPC %d.%06d\n",
+	printf("time per RPC %d.%06d\n",
                         diff.seconds, diff.microseconds);
     } else {
 	*deltaTimePtr = diff;
@@ -263,7 +263,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
     Rpc_EndSrvTrace();
 #endif /* notdef */
 
-    Mem_Free(localInBuffer);
+    free(localInBuffer);
     return(status);
 }
 

@@ -52,14 +52,14 @@ Rpc_HistInit(numBuckets, usecPerBucket)
     register int bound;
     Timer_Ticks startTicks, endTicks;
 
-    histPtr = (Rpc_Histogram *)Mem_Alloc(sizeof(Rpc_Histogram));
+    histPtr = (Rpc_Histogram *)malloc(sizeof(Rpc_Histogram));
     histPtr->numBuckets = numBuckets;
-    histPtr->bucket = (int *)Mem_Alloc(numBuckets * sizeof(int));
+    histPtr->bucket = (int *)malloc(numBuckets * sizeof(int));
     histPtr->lock.inUse = FALSE;
     histPtr->lock.waiting = FALSE;
     histPtr->aveTimePerCall.seconds = 0;
     histPtr->aveTimePerCall.microseconds = 0;
-    Byte_Zero(sizeof(Time), (Address)&histPtr->totalTime);
+    bzero((Address)&histPtr->totalTime, sizeof(Time));
     histPtr->numCalls = 0;
     /*
      * Truncate the usecPerBucket to a power of two.  This lets the sampling
@@ -115,7 +115,7 @@ Rpc_HistReset(histPtr)
     LOCK_MONITOR;
 
     histPtr->numCalls = 0;
-    Byte_Zero(sizeof(Timer_Ticks), (Address)&histPtr->totalTime);
+    bzero((Address)&histPtr->totalTime, sizeof(Timer_Ticks));
     histPtr->aveTimePerCall.seconds = 0;
     histPtr->aveTimePerCall.microseconds = 0;
     histPtr->numHighValues = 0;
@@ -250,17 +250,17 @@ Rpc_HistPrint(histPtr)
     LOCK_MONITOR;
     Time_Divide(histPtr->totalTime, histPtr->numCalls,
 				    &histPtr->aveTimePerCall);
-    Sys_Printf("%d Calls,  ave %d.%06d secs each\n",
+    printf("%d Calls,  ave %d.%06d secs each\n",
 		   histPtr->numCalls, histPtr->aveTimePerCall.seconds,
 		   histPtr->aveTimePerCall.microseconds);
     for (i=0 ; i<histPtr->numBuckets ; i++) {
-	Sys_Printf("%8d ", i * histPtr->usecPerBucket);
+	printf("%8d ", i * histPtr->usecPerBucket);
     }
-    Sys_Printf("Overflow\n");
+    printf("Overflow\n");
     for (i=0 ; i<histPtr->numBuckets ; i++) {
-	Sys_Printf("%7d  ", histPtr->bucket[i]);
+	printf("%7d  ", histPtr->bucket[i]);
     }
-    Sys_Printf("%d\n", histPtr->numHighValues);
-    Sys_Printf("\n");
+    printf("%d\n", histPtr->numHighValues);
+    printf("\n");
     UNLOCK_MONITOR;
 }

@@ -111,16 +111,6 @@ Rpc_Init()
 	chanPtr->requestRpcHdr.channel = chanPtr->index;
 	chanPtr->request.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
 	chanPtr->request.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
-#ifdef RPC_TEST_BYTE_SWAP
-	bufferPtr = &chanPtr->swapRequest.rpcHdrBuffer;
-	bufferPtr->bufAddr = (Address)&chanPtr->swapRequestRpcHdr;
-	bufferPtr->length = sizeof(RpcHdr);
-	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
-	chanPtr->requestRpcHdr.version = RPC_NATIVE_VERSION;
-	chanPtr->requestRpcHdr.channel = chanPtr->index;
-	chanPtr->request.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
-	chanPtr->request.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
-#endif /* RPC_TEST_BYTE_SWAP */
 
 	for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
 
@@ -333,7 +323,7 @@ Rpc_Start()
     spriteID = Net_RevArp(&etherAddr);
     if (spriteID > 0) {
 	rpc_SpriteID = spriteID;
-	Sys_Printf("Reverse Arp, setting Sprite ID to %d\n", spriteID);
+	printf("Reverse Arp, setting Sprite ID to %d\n", spriteID);
     }
 
     Rpc_StampTest();
@@ -343,7 +333,7 @@ Rpc_Start()
     if (status != SUCCESS) {
 	Timer_Ticks ticks;
 
-	Sys_Printf("Rpc_Start: error (%x) from Get Time RPC\n", status);
+	printf("Rpc_Start: error (%x) from Get Time RPC\n", status);
 	Timer_GetCurrentTicks(&ticks);
 	Timer_TicksToTime(ticks, &bootTime);
     } else {
@@ -357,7 +347,7 @@ Rpc_Start()
      */
     seconds = bootTime.seconds + tzMinutes * 60;
     Time_ToAscii(seconds, FALSE, dateString);
-    Sys_Printf("%s\n", dateString);
+    printf("%s\n", dateString);
 }
 
 /*

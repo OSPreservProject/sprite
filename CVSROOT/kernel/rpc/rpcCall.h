@@ -101,12 +101,12 @@
  *	RPC_FS_RECOVERY		Recovery control message used by clients to
  *				tell server's they want to re-establish
  *				its open file handles, and when they are done.
+ *	RPC_PROC_GETPCB		Retrieve a process control block from another
+ *				host.
  *
  * These procedure numbers and the service switch should be generated
  * from another file...
  */
-
-#ifndef OLD_RPC_NUMBERS
 
 #define	RPC_BAD_COMMAND		0
 #define	RPC_ECHO_1		1
@@ -148,69 +148,9 @@
 #define	RPC_FS_DOMAIN_INFO	37
 #define RPC_FS_DEV_REOPEN	38
 #define RPC_FS_RECOVERY		39
-#define	RPC_LAST_COMMAND	RPC_FS_RECOVERY
+#define	RPC_PROC_GETPCB		40
+#define	RPC_LAST_COMMAND	RPC_PROC_GETPCB
 
-#else /* OLD_RPC_NUMBERS */
-
-#define	RPC_BAD_COMMAND		0
-#define	RPC_ECHO_1		1
-#define	RPC_ECHO_2		2
-#define	RPC_FS_SPRITE_OPEN	3
-#define	RPC_FS_NAME		4
-#define	RPC_FS_LOCATE		5
-#define	RPC_FS_READ		6
-#define	RPC_FS_WRITE		7
-#define	RPC_FS_CLOSE		8
-#define	RPC_FS_TRUNC		9
-#define	RPC_FS_APPEND		10
-#define	RPC_FS_STAT		11
-#define	RPC_FS_UNLINK		12
-#define	RPC_FS_RENAME		13
-#define	RPC_FS_MKDIR		14
-#define	RPC_FS_RMDIR		15
-#define	RPC_FS_CHMOD		16
-#define	RPC_FS_CHOWN		17
-#define	RPC_FS_LINK		18
-#define	RPC_FS_UNIX_PREFIX	19
-#define	RPC_FS_PULLIN		20
-#define	RPC_FS_UPDAT		21
-#define	RPC_GETTIME		22
-#define	RPC_FS_UNIX_OPEN	23
-#define	RPC_SEND		24
-#define	RPC_FS_SPRITE_PREFIX	25
-#define	RPC_FS_GET_ATTR		26
-#define	RPC_FS_SET_ATTR		27
-#define	RPC_PROC_MIG_INIT 	28
-#define	RPC_PROC_MIG_INFO 	29
-#define	RPC_PROC_REMOTE_CALL 	30
-#define	RPC_FS_START_MIGRATION 	31
-#define	RPC_FS_REMOTE_WAKEUP 	32
-#define	RPC_FS_CONSIST 		33
-#define	RPC_FS_DEV_OPEN 	34
-#define	RPC_SIG_MIG_SEND 	35
-#define	RPC_REMOTE_WAKEUP 	36
-#define	RPC_FS_LOCK	 	37
-#define	RPC_PROC_REMOTE_WAIT	38
-#define	RPC_FS_SELECT		39
-#define	RPC_FS_FINISH_MIGRATION 40
-#define	RPC_FS_IO_CONTROL	41
-#define	RPC_FS_CONSIST_REPLY	42
-#define	RPC_FS_COPY_BLOCK	43
-#define RPC_FS_MKDEV		44
-#define RPC_FS_GET_ATTR_PATH	45
-#define	RPC_SIG_SEND		46
-#define	RPC_FS_REOPEN		47
-#define	RPC_FS_DOMAIN_INFO	48
-#define RPC_FS_DEV_REOPEN	49
-#define RPC_FS_RECOVERY		50
-#define RPC_FS_REQUEST		51
-#define RPC_FS_REPLY		52
-#define RPC_FS_SET_ATTR_PATH	53
-#define RPC_FS_GET_IO_ATTR	54
-#define RPC_FS_SET_IO_ATTR	55
-#define	RPC_LAST_COMMAND	RPC_FS_SET_IO_ATTR
-
-#endif /* OLD_RPC_NUMBERS */
 /*
  * RPC_LAST_COMMAND is used to declare the rpc procedure switch
  * and arrays of counters for each rpc.
@@ -254,6 +194,7 @@ extern ReturnStatus Fs_RpcReopen();		/*  FS_REOPEN */
 extern ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
 extern ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
 extern ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
+extern ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
 
 #endif /*	_RPCCALL */
 

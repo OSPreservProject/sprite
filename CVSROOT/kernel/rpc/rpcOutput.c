@@ -72,23 +72,12 @@ Boolean rpcDumpPackets = FALSE;
  *----------------------------------------------------------------------
  */
 ReturnStatus
-#ifdef RPC_TEST_BYTE_SWAP
-RpcOutput(spriteID, rpcHdrPtr, swapRpcHdrPtr, message, swapMessage, fragment, dontSendMask, mutexPtr)
-#else /* RPC_TEST_BYTE_SWAP */
 RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
-#endif /* RPC_TEST_BYTE_SWAP */
     int			spriteID;	/* Destination host */
     register RpcHdr	*rpcHdrPtr;	/* The RPC header. */
-#ifdef RPC_TEST_BYTE_SWAP
-    register RpcHdr	*swapRpcHdrPtr;	/* The byte-swap RPC header. */
-#endif /* RPC_TEST_BYTE_SWAP */
-
     RpcBufferSet	*message;	/* A set of 3 scatter/gather vector
 					 * elements that specify where the
 					 * header, parameters, and data are. */
-#ifdef RPC_TEST_BYTE_SWAP
-    RpcBufferSet	*swapMessage;	/* The scatter/gather byte-swap vector */
-#endif /* RPC_TEST_BYTE_SWAP */
     RpcBufferSet	*fragment;	/* An array of buffer sets used if
 					 * the message needs to be
 					 * fragmented.  This needs to be
@@ -112,23 +101,23 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	register unsigned short *shortPtr;
 	register int i;
 
-	Sys_Printf("RpcOutput - Raw packet at %x:\n", rpcHdrPtr);
+	printf("RpcOutput - Raw packet at %x:\n", rpcHdrPtr);
 	shortPtr = (unsigned short *)rpcHdrPtr;
 	for (i=0 ; i<sizeof(RpcHdr)/2 ; i++) {
-	    Sys_Printf("%x ", *shortPtr);
+	    printf("%x ", *shortPtr);
 	    shortPtr++;
 	    if (((i+1)%8) == 0) {
-		Sys_Printf("\n");
+		printf("\n");
 	    }
 	}
-	Sys_Printf("\n");
+	printf("\n");
 
-	Sys_Printf("RpcOutput - buffer set:\n");
-	Sys_Printf("%x %x\n", message->rpcHdrBuffer.bufAddr,
+	printf("RpcOutput - buffer set:\n");
+	printf("%x %x\n", message->rpcHdrBuffer.bufAddr,
 		       message->rpcHdrBuffer.length);
-	Sys_Printf("%x %x\n", message->paramBuffer.bufAddr,
+	printf("%x %x\n", message->paramBuffer.bufAddr,
 		       message->paramBuffer.length);
-	Sys_Printf("%x %x\n", message->dataBuffer.bufAddr,
+	printf("%x %x\n", message->dataBuffer.bufAddr,
 		       message->dataBuffer.length);
     }
 #endif /* PRINT_PACKETS */
@@ -269,60 +258,14 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		    fragRpcHdrPtr->fragMask =	fragID;
 		    fragRpcHdrPtr->command =	rpcHdrPtr->command;
 
-#ifdef RPC_TEST_BYTE_SWAP
-		    /*
-		     * If we're testing byte-swapping, swap the bits here so
-		     * that the receiving machine must unswap them.
-		     */
-		    /*
-		     * For now, only test byte-swapping with client doing
-		     * out-going byte-swapping.  This means that the out-going
-		     * packet must be intended for a server.
-		     */
-		    if (rpcTestByteSwap && (fragRpcHdrPtr->flags & RPC_SERVER)) {
-			Address	addr;
-			int	length;
-
-			/* save these values before byte-swapping */
-			addr = fragment[nfrags].paramBuffer.bufAddr;
-			length = fragment[nfrags].paramBuffer.length;
-
-			if (swapRpcHdrPtr == (RpcHdr *)NIL) {
-			    Sys_Panic(SYS_FATAL, "RpcOutput: NIL rpc header.");
-			}
-			if (swapMessage->paramBuffer.bufAddr == (Address)NIL) {
-			    Sys_Panic(SYS_FATAL, "RpcOutput: NIL param buffer.");
-			}
-			Byte_Copy(sizeof (RpcHdr), fragRpcHdrPtr, swapRpcHdrPtr);
-			RpcByteSwapBuffer(swapRpcHdrPtr, sizeof (RpcHdr) /
-				sizeof (int));
-			swapMessage->paramBuffer.length = length;
-			Byte_Copy(length, addr,
-				swapMessage->paramBuffer.bufAddr);
-			RpcByteSwapBuffer(swapMessage->paramBuffer.bufAddr,
-				length / sizeof (int));
-		    }
-#endif /* RPC_TEST_BYTE_SWAP */
-
 		    /*
 		     * The network routines expect an array of scatter/gather
 		     * elements.  The RpcBufferSet is a struct of 3 of
 		     * these so we cast its address into a (Net_ScatterGather *)
 		     */
-#ifdef RPC_TEST_BYTE_SWAP
-		    if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
-			(void) Net_Output(spriteID,
-				(Net_ScatterGather *)swapMessage, 3, mutexPtr);
-		    } else {
-			(void) Net_Output(spriteID,
-				    (Net_ScatterGather *)&fragment[frag], 3,
-				    mutexPtr);
-		    }
-#else /* RPC_TEST_BYTE_SWAP */
 		    (void) Net_Output(spriteID,
 				(Net_ScatterGather *)&fragment[frag], 3,
 				mutexPtr);
-#endif /* RPC_TEST_BYTE_SWAP */
 
 		    /*
 		     * Insert a delay after all but the last fragment.
@@ -333,7 +276,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		    RPC_TRACE(fragRpcHdrPtr, RPC_OUTPUT, "Fragout");
 		    if (mutexPtr != (int *)NIL) {
 			if (Mach_AtInterruptLevel()) {
-			    Sys_Panic(SYS_FATAL,
+			    panic(
 			      "RpcOutput, unlocking mutex at interrupt level");
 			} else {
 			    MASTER_UNLOCK((*mutexPtr));
@@ -365,40 +308,10 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	} else {
 	    rpcHdrPtr->fragMask = 0;
 	}
-	/*
-	 * If we're testing byte-swapping, swap the bits here so
-	 * that the receiving machine must unswap them.
-	 */
-	/*
-	 * For now, only test byte-swapping with client doing
-	 * out-going byte-swapping.  This means that the out-going
-	 * packet must be intended for a server.
-	 */
-#ifdef RPC_TEST_BYTE_SWAP
-	if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
-	    Byte_Copy(sizeof (RpcHdr), rpcHdrPtr, swapRpcHdrPtr);
-	    RpcByteSwapBuffer(swapRpcHdrPtr, sizeof (RpcHdr) / sizeof (int));
-	    Byte_Copy(message->paramBuffer.length, message->paramBuffer.bufAddr,
-		    swapMessage->paramBuffer.bufAddr);
-	    RpcByteSwapBuffer(swapMessage->paramBuffer.bufAddr,
-		    message->paramBuffer.length / sizeof (int));
-	}
-#endif /* RPC_TEST_BYTE_SWAP */
-
 #ifdef TIMESTAMP
 	RPC_NIL_TRACE(RPC_ETHER_OUT, "Ether output");
 #endif /* TIMESTAMP */
-#ifdef RPC_TEST_BYTE_SWAP
-	if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
-	    (void) Net_Output(spriteID, (Net_ScatterGather *)swapMessage, 3,
-		    mutexPtr);
-	} else {
-	    (void) Net_Output(spriteID, (Net_ScatterGather *)message, 3,
-		    mutexPtr);
-	}
-#else /* RPC_TEST_BYTE_SWAP */
 	(void) Net_Output(spriteID, (Net_ScatterGather *)message, 3, mutexPtr);
-#endif /* RPC_TEST_BYTE_SWAP */
 
 	RPC_TRACE(rpcHdrPtr, RPC_OUTPUT, "Output");
     }

@@ -119,23 +119,23 @@ Rpc_Call(serverID, command, storagePtr)
     Boolean notActive = 0;		/* Not active flag from server */
 
     if (serverID < 0) {
-	Sys_Panic(SYS_FATAL, "Rpc_Call, bad serverID");
+	panic("Rpc_Call, bad serverID");
 	return(GEN_INVALID_ARG);
     } else if (serverID != RPC_BROADCAST_SERVER_ID &&
 	       serverID == rpc_SpriteID) {
-	Sys_Panic((command != RPC_ECHO) ? SYS_FATAL : SYS_WARNING,
-		    "Trying to RPC to myself");
+	if (command != RPC_ECHO) {
+	    panic("Trying to RPC to myself");
+	} else {
+	    printf("Warning: Trying to RPC to myself");
+	}
 	return(GEN_INVALID_ARG);
     } else if ((serverID == RPC_BROADCAST_SERVER_ID) &&
-#ifndef OLD_RPC_NUMBERS
 	       ! (command == RPC_FS_PREFIX ||
 		  command == RPC_GETTIME)) {
-#else /* OLD_RPC_NUMBERS */
-	       ! (command == RPC_FS_SPRITE_PREFIX ||
-		  command == RPC_GETTIME)) {
-#endif /* OLD_RPC_NUMBERS */
-	Sys_Panic(SYS_FATAL, "Trying to broadcast a non-prefix RPC");
+	panic("Trying to broadcast a non-prefix RPC");
 	return(GEN_INVALID_ARG);
+    } else if (serverID >= NET_NUM_SPRITE_HOSTS) {
+	panic("Rpc_Call, server ID too large");
     }
 #ifdef TIMESTAMP
     RPC_NIL_TRACE(RPC_CLIENT_A, "Rpc_Call");
@@ -165,7 +165,7 @@ Rpc_Call(serverID, command, storagePtr)
     } else {
 	/*
 	 */
-	Sys_Printf("Rpc_Call: unknown rpc command (%d)\n", command);
+	printf("Rpc_Call: unknown rpc command (%d)\n", command);
 	rpcClientCalls[0]++;	/* 0 == RPC_BAD_COMMAND */
     }
 #ifdef TIMESTAMP
@@ -188,7 +188,7 @@ Rpc_Call(serverID, command, storagePtr)
 #ifndef NO_RECOVERY
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
 	if (command != RPC_ECHO_2) {
-	    Sys_Printf("<%s> ", rpcService[command].name);
+	    printf("<%s> ", rpcService[command].name);
 	    Sys_HostPrint(serverID, "RPC timed-out\n");
 	}
 	Recov_HostDead(serverID);
@@ -261,28 +261,12 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
     bufferPtr->length	= storagePtr->requestParamSize;
 
     rpcHdrPtr->paramSize = storagePtr->requestParamSize;
-#ifdef RPC_TEST_BYTE_SWAP
-    /*
-     * These fields used for byte-swapping.  Params are copied and byte-swapped
-     * into special buffer area in the channel.
-     */
-    bufferPtr		= &chanPtr->swapRequest.paramBuffer;
-    /* swapParamBuffer is an array, so this gives its address */
-    bufferPtr->bufAddr	= (Address) chanPtr->swapParamBuffer;
-    bufferPtr->length	= storagePtr->requestParamSize;
-#endif /* RPC_TEST_BYTE_SWAP */
 
     bufferPtr		= &chanPtr->request.dataBuffer;
     bufferPtr->bufAddr	= storagePtr->requestDataPtr;
     bufferPtr->length	= storagePtr->requestDataSize;
 
     rpcHdrPtr->dataSize = storagePtr->requestDataSize;
-#ifdef RPC_TEST_BYTE_SWAP
-    bufferPtr		= &chanPtr->swapRequest.dataBuffer;
-    bufferPtr->bufAddr	= storagePtr->requestDataPtr;
-    bufferPtr->length	= storagePtr->requestDataSize;
-#endif /* RPC_TEST_BYTE_SWAP */
-    
 
     bufferPtr		= &chanPtr->reply.paramBuffer;
     bufferPtr->bufAddr	= storagePtr->replyParamPtr;
@@ -323,7 +307,7 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
  *
  *----------------------------------------------------------------------
  */
-RpcClientChannel *
+ENTRY RpcClientChannel *
 RpcChanAlloc(serverID)
     int serverID;	/* Server ID to base our allocation on. */
 {
@@ -378,7 +362,7 @@ RpcChanAlloc(serverID)
 	rpcCltStat.chanReuse++;
 	chanPtr = rpcChannelPtrPtr[firstFree];
     } else {
-	Sys_Panic(SYS_FATAL, "Rpc_ChanAlloc can't find the free channel.\n");
+	panic("Rpc_ChanAlloc can't find the free channel.\n");
     }
     chanPtr->serverID = serverID;
 found:
@@ -404,7 +388,7 @@ found:
  *
  *----------------------------------------------------------------------
  */
-void
+ENTRY void
 RpcChanFree(chanPtr)
     RpcClientChannel *chanPtr;		/* The channel to free */
 {
@@ -412,7 +396,7 @@ RpcChanFree(chanPtr)
     LOCK_MONITOR;
 
     if (chanPtr->state == CHAN_FREE) {
-	Sys_Panic(SYS_FATAL, "Rpc_ChanFree: freeing free channel\n");
+	panic("Rpc_ChanFree: freeing free channel\n");
     }
     chanPtr->state = CHAN_FREE;
 

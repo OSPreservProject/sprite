@@ -124,23 +124,23 @@ Rpc_Dispatch(packetPtr, packetLength)
 	 * Byte swap the packet header and the parameter block.
 	 */
 	if (!RpcByteSwapInComing(rpcHdrPtr)) {
-	    Sys_Panic(SYS_WARNING, "Rpc_Dispatch failed byte-swap.");
+	    printf("Warning: Rpc_Dispatch failed byte-swap.");
 	    return;
 	}
     } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION) {
 	if (rpc_PrintMismatch) {
-	    Sys_Panic(SYS_WARNING,
-		"Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
+	    printf(
+	    "Warning: Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
 		rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
 	} else {
 	    if (mismatchErrors < 5) {
-		Sys_Panic(SYS_WARNING, "%s %x not %x from client(?) %d\n",
+		printf("Warning: %s %x not %x from client(?) %d\n",
 		    "Rpc_Dispatch version mismatch:",
 		    rpcHdrPtr->version, RPC_NATIVE_VERSION,
 		    rpcHdrPtr->clientID);
 		mismatchErrors++;
 	    } else if (mismatchErrors == 5) {
-		Sys_Panic(SYS_WARNING, "%s %x not %x from client(?) %d\n%s\n",
+		printf("Warning: %s %x not %x from client(?) %d\n%s\n",
 		    "Rpc_Dispatch version mismatch:",
 		    rpcHdrPtr->version, RPC_NATIVE_VERSION,
 		    rpcHdrPtr->clientID,
@@ -161,13 +161,13 @@ Rpc_Dispatch(packetPtr, packetLength)
 		     rpcHdrPtr->dataSize;
     if (packetLength < expectedLength) {
 	rpcCltStat.shorts++;
-	Sys_Printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
+	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
 				  packetLength, expectedLength);
-	Sys_Printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
+	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
 		    rpcHdrPtr->clientID, rpcHdrPtr->command);
 	badErrors++;
 	if (badErrors > 4) {
-	    Sys_Printf("Resetting network interface\n");
+	    printf("Resetting network interface\n");
 	    badErrors = 0;
 	    Net_Reset();
 	}
@@ -202,8 +202,8 @@ Rpc_Dispatch(packetPtr, packetLength)
 		Net_EtherAddress	dest;
 		NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
 				    dest);
-		Sys_Panic(SYS_WARNING, "Rpc_Dispatch, wrong server ID %d\n");
-		Sys_Printf("\tClient %d rpc %d ether dest %x:%x:%x:%x:%x:%x\n",
+		printf("Warning: Rpc_Dispatch, wrong server ID %d\n");
+		printf("\tClient %d rpc %d ether dest %x:%x:%x:%x:%x:%x\n",
 		       rpcHdrPtr->clientID, rpcHdrPtr->command,
 		       NET_ETHER_ADDR_BYTE1(dest) & 0xff,
 		       NET_ETHER_ADDR_BYTE2(dest) & 0xff,
@@ -213,12 +213,12 @@ Rpc_Dispatch(packetPtr, packetLength)
 		       NET_ETHER_ADDR_BYTE6(dest) & 0xff);
 
 	    } else {
-		Sys_Printf("Rpc_Dispatch: junk serverID %d from client %d\n",
+		printf("Rpc_Dispatch: junk serverID %d from client %d\n",
 			    rpcHdrPtr->serverID,
 			    rpcHdrPtr->clientID);
 		badErrors++;
 		if (badErrors > 4) {
-		    Sys_Printf("Resetting network interface\n");
+		    printf("Resetting network interface\n");
 		    badErrors = 0;
 		    Net_Reset();
 		}
@@ -259,11 +259,11 @@ Rpc_Dispatch(packetPtr, packetLength)
 	if (rpcHdrPtr->channel < 0 ||
 	    rpcHdrPtr->channel >= rpcNumChannels) {
 	    rpcCltStat.badChannel++;
-	    Sys_Printf("Rpc_Dispatch: bad channel %d from clt %d rpc %d",
+	    printf("Rpc_Dispatch: bad channel %d from clt %d rpc %d",
 	       rpcHdrPtr->channel, rpcHdrPtr->clientID, rpcHdrPtr->command);
 	    badErrors++;
 	    if (badErrors > 4) {
-		Sys_Printf("Resetting network interface\n");
+		printf("Resetting network interface\n");
 		badErrors = 0;
 		Net_Reset();
 	    }
@@ -325,7 +325,7 @@ RpcScatter(rpcHdrPtr, bufferPtr)
      * Copy the RPC header.
      */
     length = bufferPtr->rpcHdrBuffer.length;
-    Byte_Copy(length, netBufPtr, bufferPtr->rpcHdrBuffer.bufAddr);
+    bcopy(netBufPtr, bufferPtr->rpcHdrBuffer.bufAddr, length);
     netBufPtr += length;
 
     /*
@@ -337,7 +337,7 @@ RpcScatter(rpcHdrPtr, bufferPtr)
 	destLength = bufferPtr->paramBuffer.length;
 	if (length + rpcHdrPtr->paramOffset > destLength) {
 	    rpcCltStat.paramOverrun++;
-	    Sys_Printf("RpcScatter: rpc %d param size + off (%d + %d) > (%d)\n",
+	    printf("RpcScatter: rpc %d param size + off (%d + %d) > (%d)\n",
 			   rpcHdrPtr->command, length, rpcHdrPtr->paramOffset,
 			   destLength);
 	    if (rpcHdrPtr->paramOffset < destLength) {
@@ -346,8 +346,8 @@ RpcScatter(rpcHdrPtr, bufferPtr)
 		length = 0;
 	    }
 	}
-	Byte_Copy(length, netBufPtr, bufferPtr->paramBuffer.bufAddr +
-				     rpcHdrPtr->paramOffset);
+	bcopy(netBufPtr, bufferPtr->paramBuffer.bufAddr +
+				     rpcHdrPtr->paramOffset, length);
 	netBufPtr += rpcHdrPtr->paramSize;
     }
 
@@ -368,8 +368,8 @@ RpcScatter(rpcHdrPtr, bufferPtr)
 		length = 0;
 	    }
 	}
-	Byte_Copy(length, netBufPtr, bufferPtr->dataBuffer.bufAddr +
-				     rpcHdrPtr->dataOffset);
+	bcopy(netBufPtr, bufferPtr->dataBuffer.bufAddr + rpcHdrPtr->dataOffset,
+		length);
     }
 }
 
@@ -421,13 +421,12 @@ RpcValidateClient(etherHdrPtr, rpcHdrPtr)
 	 */
 	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr), source);
 	clientID = Net_AddrToID(0, NET_ROUTE_ETHER, (ClientData) &source);
-        Sys_Panic(SYS_WARNING, "RpcValidateClient had to set clientID %d\n",
-				clientID);
+        printf("Warning: RpcValidateClient had to set clientID %d\n", clientID);
 	if (clientID < 0) {
 	    /*
 	     * Should invoke Reverse ARP to find out the Sprite ID.
 	     */
-	    Sys_Printf("Client at unknown ethernet address %x:%x:%x:%x:%x:%x\n",
+	    printf("Client at unknown ethernet address %x:%x:%x:%x:%x:%x\n",
 		       NET_ETHER_ADDR_BYTE1(source) & 0xff,
 		       NET_ETHER_ADDR_BYTE2(source) & 0xff,
 		       NET_ETHER_ADDR_BYTE3(source) & 0xff,
@@ -441,7 +440,7 @@ RpcValidateClient(etherHdrPtr, rpcHdrPtr)
 	}
     } else {
 	result = FALSE;
-	Sys_Printf("Invalid Client Sprite ID (%d)\n", clientID);
+	printf("Invalid Client Sprite ID (%d)\n", clientID);
     }
     return(result);
 }

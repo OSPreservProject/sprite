@@ -78,7 +78,7 @@ static Sync_Lock rpcTraceLock;
  *----------------------------------------------------------------------
  */
 #ifdef notdef
-void
+ENTRY void
 Rpc_EnterProcess()
 {
     LOCK_MONITOR;
@@ -130,7 +130,7 @@ RpcResetCltStat()
         totalIntPtr++;
         deltaIntPtr++;
     }
-    Byte_Zero(sizeof(Rpc_CltStat), (Address)&rpcCltStat);
+    bzero((Address)&rpcCltStat, sizeof(Rpc_CltStat));
 
     RpcSpecialStatReset();
 }
@@ -153,7 +153,7 @@ RpcResetCltStat()
  *----------------------------------------------------------------------
  */
 #ifdef notdef
-void
+ENTRY void
 Rpc_LeaveProcess(pid)
     int pid;
 {
@@ -189,43 +189,43 @@ Rpc_LeaveProcess(pid)
 void
 Rpc_PrintCltStat()
 {
-    Sys_Printf("Rpc Statistics\n");
-    Sys_Printf("toClient   = %5d ", rpcCltStat.toClient);
-    Sys_Printf("badChannel  = %4d ", rpcCltStat.badChannel);
-    Sys_Printf("chanBusy    = %4d ", rpcCltStat.chanBusy);
-    Sys_Printf("badId       = %4d ", rpcCltStat.badId);
-    Sys_Printf("\n");
-    Sys_Printf("requests   = %5d ", rpcCltStat.requests);
-    Sys_Printf("replies    = %5d ", rpcCltStat.replies);
-    Sys_Printf("acks        = %4d ", rpcCltStat.acks);
-    Sys_Printf("recvPartial = %4d ", rpcCltStat.recvPartial);
-    Sys_Printf("\n");
-    Sys_Printf("timeouts    = %4d ", rpcCltStat.timeouts);
-    Sys_Printf("aborts      = %4d ", rpcCltStat.aborts);
-    Sys_Printf("resends     = %4d ", rpcCltStat.resends);
-    Sys_Printf("sentPartial = %4d ", rpcCltStat.sentPartial);
-    Sys_Printf("\n");
-    Sys_Printf("errors      = %d(%d)", rpcCltStat.errors,
+    printf("Rpc Statistics\n");
+    printf("toClient   = %5d ", rpcCltStat.toClient);
+    printf("badChannel  = %4d ", rpcCltStat.badChannel);
+    printf("chanBusy    = %4d ", rpcCltStat.chanBusy);
+    printf("badId       = %4d ", rpcCltStat.badId);
+    printf("\n");
+    printf("requests   = %5d ", rpcCltStat.requests);
+    printf("replies    = %5d ", rpcCltStat.replies);
+    printf("acks        = %4d ", rpcCltStat.acks);
+    printf("recvPartial = %4d ", rpcCltStat.recvPartial);
+    printf("\n");
+    printf("timeouts    = %4d ", rpcCltStat.timeouts);
+    printf("aborts      = %4d ", rpcCltStat.aborts);
+    printf("resends     = %4d ", rpcCltStat.resends);
+    printf("sentPartial = %4d ", rpcCltStat.sentPartial);
+    printf("\n");
+    printf("errors      = %d(%d)", rpcCltStat.errors,
 				       rpcCltStat.nullErrors);
-    Sys_Printf("dupFrag     = %4d ", rpcCltStat.dupFrag);
-    Sys_Printf("close       = %4d ", rpcCltStat.close);
-    Sys_Printf("\n");
-    Sys_Printf("oldInputs   = %4d ", rpcCltStat.oldInputs);
-    Sys_Printf("badInputs   = %4d ", rpcCltStat.oldInputs);
-    Sys_Printf("tooManyAcks = %4d ", rpcCltStat.tooManyAcks);
-    Sys_Printf("\n");
-    Sys_Printf("chanHits   = %5d ", rpcCltStat.chanHits);
-    Sys_Printf("chanNew     = %4d ", rpcCltStat.chanNew);
-    Sys_Printf("chanReuse   = %4d ", rpcCltStat.chanReuse);
-    Sys_Printf("\n");
-    Sys_Printf("chanWaits   = %4d ", rpcCltStat.chanWaits);
-    Sys_Printf("chanBroads  = %4d ", rpcCltStat.chanBroads);
-    Sys_Printf("\n");
-    Sys_Printf("paramOverrun = %3d ", rpcCltStat.paramOverrun);
-    Sys_Printf("dataOverrun = %4d ", rpcCltStat.dataOverrun);
-    Sys_Printf("shorts      = %4d ", rpcCltStat.shorts);
-    Sys_Printf("longs       = %4d ", rpcCltStat.longs);
-    Sys_Printf("\n");
+    printf("dupFrag     = %4d ", rpcCltStat.dupFrag);
+    printf("close       = %4d ", rpcCltStat.close);
+    printf("\n");
+    printf("oldInputs   = %4d ", rpcCltStat.oldInputs);
+    printf("badInputs   = %4d ", rpcCltStat.oldInputs);
+    printf("tooManyAcks = %4d ", rpcCltStat.tooManyAcks);
+    printf("\n");
+    printf("chanHits   = %5d ", rpcCltStat.chanHits);
+    printf("chanNew     = %4d ", rpcCltStat.chanNew);
+    printf("chanReuse   = %4d ", rpcCltStat.chanReuse);
+    printf("\n");
+    printf("chanWaits   = %4d ", rpcCltStat.chanWaits);
+    printf("chanBroads  = %4d ", rpcCltStat.chanBroads);
+    printf("\n");
+    printf("paramOverrun = %3d ", rpcCltStat.paramOverrun);
+    printf("dataOverrun = %4d ", rpcCltStat.dataOverrun);
+    printf("shorts      = %4d ", rpcCltStat.shorts);
+    printf("longs       = %4d ", rpcCltStat.longs);
+    printf("\n");
 
     RpcSpecialStatPrint();
 }
@@ -280,12 +280,12 @@ RpcSpecialStatReset()
 RpcSpecialStatPrint()
 {
     if (specialStat.hits) {
-	Sys_SafePrintf("Number of Special Stats: %d\n", specialStat.hits);
+	printf("Number of Special Stats: %d\n", specialStat.hits);
 
-	Sys_SafePrintf("Last packet length (%d), last expected length (%d)\n",
+	printf("Last packet length (%d), last expected length (%d)\n",
 			     specialStat.lastLength, specialStat.lastExpLength);
 
-	Sys_SafePrintf("Ave packet length (%d), ave expected length (%d)\n",
+	printf("Ave packet length (%d), ave expected length (%d)\n",
 	    (specialStat.sumLength / specialStat.hits),
 	    (specialStat.sumExpLength / specialStat.hits));
     }
