@@ -21,10 +21,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "fs.h"
 #include "fsInt.h"
+#include "fsLock.h"
 #include "fsOpTable.h"
 #include "proc.h"
 #include "rpc.h"
 #include "net.h"
+#include "swapBuffer.h"
 
 /*
  * A  counter is incremented each time a process waits for a lock.

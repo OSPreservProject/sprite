@@ -40,6 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "rpc.h"
 #include "recov.h"
+#include "swapBuffer.h"
 
 void IncVersionNumber();
 

@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "proc.h"
 #include "rpc.h"
+#include "swapBuffer.h"
 
 /*
  * Monitor to synchronize access to the openInstance in GetFileID.
