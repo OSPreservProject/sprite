@@ -561,7 +561,6 @@ extern void			Proc_FlagMigration();
 extern void			Proc_MigrateTrap();
 extern void			Proc_OkayToMigrate();
 extern ReturnStatus		Proc_MigSendUserInfo();
-extern void			ProcResumeMigProc();
 extern ReturnStatus		Proc_DoRemoteCall();
 extern void			Proc_SetEffectiveProc();
 extern Proc_ControlBlock *	Proc_GetEffectiveProc();
