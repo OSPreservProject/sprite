@@ -603,6 +603,9 @@ Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
     register Fs_Stream *streamPtr;
     Boolean found = FALSE;
 
+    if (ioHandlePtr == (Fs_HandleHeader *)NIL) {
+	return((Fs_Stream *)NIL);
+    }
     streamPtr = Fsutil_HandleFetchType(Fs_Stream, streamIDPtr);
     if (streamPtr != (Fs_Stream *)NIL) {
 	LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
@@ -612,21 +615,26 @@ Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
 	    }
 	}
 	if (!found) {
-	    printf("Fsio_StreamClientVerify, unknown client %d for stream <%d> \"%s\"\n",
+	    printf("Fsio_StreamClientVerify: no client %d for stream <%d> \"%s\"\n",
 		clientID, streamPtr->hdr.fileID.minor,
 		Fsutil_HandleName((Fs_HandleHeader *)streamPtr));
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    streamPtr = (Fs_Stream *)NIL;
-	} else if (ioHandlePtr != (Fs_HandleHeader *)NIL &&
-		    streamPtr->ioHandlePtr != ioHandlePtr) {
+
+	} else if (streamPtr->ioHandlePtr != ioHandlePtr) {
 	    printf("Fsio_StreamClientVerify ioHandle mismatch client ID %d:\n",
 			clientID);
-	    printf("\tStream <%d> my handle %s \"%s\" <%d,%d>\n",
+	    if (streamPtr->ioHandlePtr == (Fs_HandleHeader *)NIL) {
+		printf("\tStream <%d> \"%s\" my I/O handle NIL\n",
+		    Fsutil_HandleName(streamPtr), streamIDPtr->minor);
+	    } else {
+		printf("\tStream <%d> my handle %s \"%s\" <%d,%d>\n",
 		    streamIDPtr->minor,
 		    Fsutil_FileTypeToString(streamPtr->ioHandlePtr->fileID.type),
 		    Fsutil_HandleName(streamPtr->ioHandlePtr),
 		    streamPtr->ioHandlePtr->fileID.major,
 		    streamPtr->ioHandlePtr->fileID.minor);
+	    }
 	    printf("\tClient %d handle %s \"%s\" <%d,%d>\n",
 		    clientID, Fsutil_HandleName(ioHandlePtr),
 		    Fsutil_FileTypeToString(ioHandlePtr->fileID.type),
