@@ -37,7 +37,7 @@ typedef struct FsdmFragment {
  * FSDM_MAX_LOCAL_DOMAINS defines how many local domains a server can keep
  *      track of.
  */
-#define FSDM_MAX_LOCAL_DOMAINS    10
+#define FSDM_MAX_LOCAL_DOMAINS    20
 extern Fsdm_Domain *fsdmDomainTable[];
 
 

@@ -377,6 +377,11 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
     fileID.type = FSIO_LCL_FILE_STREAM;
     fileID.serverID = rpc_SpriteID;
     fileID.major = InstallLocalDomain(domainPtr);
+    if (fileID.major == -1) {
+	printf("Fsdm_AttachDisk: can't attach disk -- too many domains.\n");
+	domainPtr->flags |= FSDM_DOMAIN_DOWN;
+	return(FAILURE);
+    }
     summaryInfoPtr->domainNumber = fileID.major;
     fileID.minor = FSDM_ROOT_FILE_NUMBER;
 
@@ -730,8 +735,14 @@ InstallLocalDomain(domainPtr)
 
 
     if (domainPtr->summaryInfoPtr->domainNumber == -1) {
-	while (fsdmDomainTable[domainTableIndex] != (Fsdm_Domain *)NIL) {
+	while ((domainTableIndex < FSDM_MAX_LOCAL_DOMAINS) && 
+		(fsdmDomainTable[domainTableIndex] != (Fsdm_Domain *)NIL)) {
 	    domainTableIndex++;
+	}
+	if (domainTableIndex == FSDM_MAX_LOCAL_DOMAINS) {
+	    printf("InstallLocalDomain: too many local domains.\n");
+	    domainNumber = -1;
+	    goto exit;
 	}
 	fsdmDomainTable[domainTableIndex] = domainPtr;
 	domainNumber = domainTableIndex;
@@ -741,6 +752,7 @@ InstallLocalDomain(domainPtr)
 	fsdmDomainTable[domainNumber] = domainPtr;
     }
 
+exit:
     UNLOCK_MONITOR;
     return(domainNumber);
 }
