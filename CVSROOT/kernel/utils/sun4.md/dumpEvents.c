@@ -13,8 +13,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
-#include "devKeyboard.h"
-#include "devConsole.h"
+#include "dev.h"
 #include "dumpInt.h"
 
 /*
@@ -56,14 +55,14 @@ Dump_Register_Events(eventTable)
 	if (entry->routine == RESERVED_EVENT) {
 		continue;
 	}
-	Dev_KbdQueueAttachProc(entry->key, entry->routine, entry->argument);
+	Dev_RegisterConsoleCmd(entry->key, entry->routine, entry->argument);
     }
 
     for (entry = sunEventTable; entry->routine != LAST_EVENT; entry++) {
 	if (entry->routine == RESERVED_EVENT) {
 		continue;
 	}
-	Dev_KbdQueueAttachProc(entry->key, entry->routine, entry->argument);
+	Dev_RegisterConsoleCmd(entry->key, entry->routine, entry->argument);
     }
 
 }
@@ -93,4 +92,3 @@ Dump_Show_Local_Menu()
 	printf("%c - %s\n",entry->key, entry->description);
     }
 }
-
