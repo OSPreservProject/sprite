@@ -323,4 +323,25 @@ Deactivate(pingPtr)
 
 }
 
+ENTRY void
+RecovPrintPingList()
+{
+    RecovPing *pingPtr;
 
+    LOCK_MONITOR;
+
+    if (List_IsEmpty(recovPingList)) {
+	return;
+    } 
+    printf("\nPING_LIST\n");
+    for (pingPtr = (RecovPing *)List_First(recovPingList);
+	    !List_IsAtEnd(recovPingList, (List_Links *)pingPtr);
+	    pingPtr = (RecovPing *)List_Next((List_Links *)pingPtr)) {
+	printf("host %d is %s\n", pingPtr->spriteID,
+		pingPtr->active ? "active" : "inactive");
+    }
+	 
+    UNLOCK_MONITOR;
+
+    return;
+}

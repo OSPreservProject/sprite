@@ -174,6 +174,7 @@ Boolean recovTracing = TRUE;
 
 extern void Recov_PrintState();
 extern void RecovPrintExtraState();
+extern void RecovPrintPingList();
 extern void RecovRebootCallBacks();
 extern void RecovCrashCallBacks();
 extern void RecovDelayedCrashCallBacks();
@@ -1820,6 +1821,7 @@ Recov_PrintTrace(numRecs)
     printf("RECOVERY TRACE\n");
     (void)Trace_Print(recovTraceHdrPtr, numRecs, Recov_PrintTraceRecord);
     Recov_PrintState();
+    RecovPrintPingList();
     return;
 }
 
@@ -1847,6 +1849,9 @@ Recov_PrintState()
     register RecovHostState	*hostPtr;
     char			*hostName;
     Time_Parts			timeParts;
+    Time			bootTime;
+    int				localOffset; /* minute offset for our tz */
+    Time			currentTime;
 
     printf("RECOVERY STATE\n");
     Hash_StartSearch(&hashSearch);
@@ -1860,12 +1865,24 @@ Recov_PrintState()
 	    printf("%-14s %-8s", hostName, RecovState(hostPtr->state));
 	    printf(" bootID 0x%8x", hostPtr->bootID);
 
-	    Time_ToParts(hostPtr->bootID, FALSE, &timeParts);
+	    /*
+	     * Print out boot time in our timezone.
+	     */
+	    Timer_GetTimeOfDay(&currentTime, &localOffset, NIL);
+	    bootTime.seconds = hostPtr->bootID;
+	    bootTime.microseconds = 0;
+	    bootTime.seconds += (localOffset * 60);
+	    Time_ToParts(bootTime.seconds, FALSE, &timeParts);
 	    timeParts.month++;	/* So Jan is 1, not 0 */
 	    printf(" %d/%d/%d %d:%02d:%02d ", timeParts.month,
 		    timeParts.dayOfMonth,
 		    timeParts.year, timeParts.hours, timeParts.minutes,
 		    timeParts.seconds);
+
+	    /*
+	     * Print seconds ago we last heard from host.
+	     */
+	    printf("    %d ", currentTime.seconds - hostPtr->time.seconds);
 	    RecovPrintExtraState(hostPtr);
 	    printf("\n");
 	}
