@@ -33,6 +33,10 @@ extern int MachFetchArgsEnd();
 extern	unsigned int	machNonmaskableIntrMask;
 extern	unsigned int	machIntrMask;
 extern  unsigned int	machDbgInterruptMask;
+/*
+ * Interrupt number for cross processor signal.
+ */
+extern 	unsigned int    mach_CpcInterruptNumber; 
 
 /*
  * Slotid <-> processor number mappings. 
@@ -59,5 +63,5 @@ extern	void	MachUserReturn();
 extern 	void	Mach_CPC_Init();
 extern	void	Mach_RefreshStart();
 extern	void	Mach_RefreshInterrupt();
-
+extern  void  	machExecuteCall();
 #endif _MACHINT
