@@ -63,6 +63,9 @@ Trace_Header *fsTraceHdrPtr = &fsTraceHdr;
 int fsTraceLength = 256;
 Boolean fsTracing = TRUE;
 Time fsTraceTime;		/* Cost of taking a trace record */
+int fsTracedFile = -1;		/* fileID.minor of traced file */
+
+char *FsFileTypeToString();
 
 typedef struct FsTracePrintTable {
     FsTraceRecType	type;		/* This determines the format of the
@@ -71,16 +74,16 @@ typedef struct FsTracePrintTable {
 } FsTracePrintTable;
 
 FsTracePrintTable fsTracePrintTable[] = {
-    /* TRACE_0 */		FST_NIL, 	"zero",
+    /* TRACE_0 */		FST_BLOCK, 	"delete block",
     /* TRACE_OPEN_START */	FST_NAME, 	"open start",
     /* TRACE_LOOKUP_START */	FST_NAME, 	"after prefix",
     /* TRACE_LOOKUP_DONE */	FST_NAME, 	"after lookup",
-    /* TRACE_4 */		FST_HANDLE, 	"delete last writer",
+    /* TRACE_DEL_LAST_WR */	FST_HANDLE, 	"delete last writer",
     /* TRACE_OPEN_DONE */	FST_NAME, 	"open done",
-    /* TRACE_BLOCK_SKIP */	FST_BLOCK,	"skip block",
+    /* TRACE_BLOCK_WAIT */	FST_BLOCK,	"skip block",
     /* TRACE_BLOCK_HIT */	FST_BLOCK, 	"hit block",
     /* TRACE_DELETE */		FST_HANDLE, 	"delete",
-    /* TRACE_NO_BLOCK */	FST_NIL, 	"no block",
+    /* TRACE_NO_BLOCK */	FST_BLOCK, 	"new block",
     /* TRACE_OPEN_DONE_2 */	FST_NAME, 	"after Fs_Open",
     /* TRACE_OPEN_DONE_3 */	FST_NIL, 	"open complete",
     /* INSTALL_NEW */		FST_HANDLE,	"inst. new",
@@ -90,16 +93,18 @@ FsTracePrintTable fsTracePrintTable[] = {
     /* REMOVE_FREE */		FST_HANDLE,	"remv. free",
     /* REMOVE_LEAVE */		FST_HANDLE,	"remv. leave",
     /* SRV_WRITE_1 */		FST_IO,		"invalidate",
-    /* SRV_WRITE_2 */		FST_HANDLE,	"srv write 2",
-    /* SRV_GET_ATTR_1 */	FST_NIL, "srv get attr 1",
-    /* SRV_GET_ATTR_2 */	FST_NIL, "srv get attr 2",
-    /* OPEN */			FST_NIL, "open",
-    /* READ */			FST_NIL, 	"read",
-    /* WRITE */			FST_HANDLE, 	"write",
+    /* SRV_WRITE_2 */		FST_IO,		"srv write",
+    /* SRV_GET_ATTR_1 */	FST_NIL,	"srv get attr 1",
+    /* SRV_GET_ATTR_2 */	FST_NIL,	"srv get attr 2",
+    /* OPEN */			FST_NIL,	"open",
+    /* READ */			FST_IO, 	"read",
+    /* WRITE */			FST_IO, 	"write",
     /* CLOSE */			FST_HANDLE, 	"close",
-    /* TRACE_RA_SCHED */	FST_RA, "Read ahead scheduled",
-    /* TRACE_RA_BEGIN */	FST_RA, "Read ahead started",
-    /* TRACE_RA_END */		FST_RA, "Read ahead completed",
+    /* TRACE_RA_SCHED */	FST_RA, 	"Read ahead scheduled",
+    /* TRACE_RA_BEGIN */	FST_RA,		"Read ahead started",
+    /* TRACE_RA_END */		FST_RA,	 	"Read ahead completed",
+    /* TRACE_DEL_BLOCK */	FST_BLOCK, 	"Delete block",
+    /* TRACE_BLOCK_WRITE */	FST_BLOCK,	"Block write",
 };
 static int numTraceTypes = sizeof(fsTracePrintTable)/sizeof(FsTracePrintTable);
 
@@ -528,27 +533,21 @@ Fs_GetSegPtr(fileHandle)
 /*
  *----------------------------------------------------------------------------
  *
- * Fs_HandleScavenge --
+ * Fs_HandleScavengeStub --
  *
- *	Go through all of the handles looking for clients that have crashed
- *	and for handles that are no longer needed.  This expects to be
- *	called by a helper kernel processes at regular intervals defined
- *	by fsScavengeInterval.
+ *	This is a thin layer on top of Fs_HandleScavenge.  It is called
+ *	when L1-x is pressed at the keyboard, and also from FsHandleInstall
+ *	when a threashold number of handles have been created.
  *
- *	Note: Fs_HandleScavengeStub is called via L1-x from the keyboard
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Invokes the handle scavenger.
  *
  *----------------------------------------------------------------------------
  *
  */
-int		fsScavengeInterval = 2;			/* 2 Minutes */
-int		fsLastScavengeTime = 0;
-static	int	numScavengers = 0;
-
 /*ARGSUSED*/
 void Fs_HandleScavengeStub(data)
     ClientData	data;	/* IGNORED */
@@ -558,6 +557,32 @@ void Fs_HandleScavengeStub(data)
      */
     Proc_CallFunc(Fs_HandleScavenge, (ClientData)FALSE, 0);
 }
+
+int		fsScavengeInterval = 2;			/* 2 Minutes */
+int		fsLastScavengeTime = 0;
+static	int	numScavengers = 0;
+static	Boolean	scavengerStuck = FALSE;
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fs_HandleScavenge --
+ *
+ *	Go through all of the handles looking for clients that have crashed
+ *	and for handles that are no longer needed.  This expects to be
+ *	called by a helper kernel processes at regular intervals defined
+ *	by fsScavengeInterval.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The handle-specific routines may remove handles.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
 /*ARGSUSED*/
 void
 Fs_HandleScavenge(data, callInfoPtr)
@@ -569,13 +594,22 @@ Fs_HandleScavenge(data, callInfoPtr)
     register	FsHandleHeader		*hdrPtr;
 
     if (numScavengers > 0) {
-       Sys_Panic(SYS_WARNING, "Multiple scavengers (%x)\n", callInfoPtr);
+	if (!scavengerStuck) {
+	   Sys_Panic(SYS_WARNING, "Scavenger stuck for %d seconds\n",
+	       fsTimeInSeconds - fsLastScavengeTime);
+	   scavengerStuck = TRUE;
+       }
        callInfoPtr->interval = 0;
        return;
     }
     numScavengers++;
 
-    fsLastScavengeTime = fsTimeInSeconds;	/* XXX unsynchronized access */
+    /*
+     * Note that this is unsynchronized access to a global variable, which
+     * works fine on a uniprocessor.  We don't want a monitor lock here
+     * because we don't want a locked handle to hang up all Proc_ServerProcs.
+     */
+    fsLastScavengeTime = fsTimeInSeconds;
 
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = FsGetNextHandle(&hashSearch);
@@ -588,6 +622,11 @@ Fs_HandleScavenge(data, callInfoPtr)
      */
     if ((Boolean)data && numScavengers == 1) {
 	callInfoPtr->interval = fsScavengeInterval * timer_IntOneMinute;
+    }
+    if (scavengerStuck) {
+	Sys_Panic(SYS_WARNING, "Scavenger unstuck after %d seconds\n",
+	    fsTimeInSeconds - fsLastScavengeTime);
+	scavengerStuck = FALSE;
     }
     numScavengers--;
 }
@@ -612,55 +651,10 @@ FsFileError(hdrPtr, string, status)
     FsHandleHeader *hdrPtr;
     char *string;
 {
-    switch (hdrPtr->fileID.type) {
-	case FS_STREAM:
-	    Sys_Printf("Stream ");
-	    break;
-	case FS_LCL_FILE_STREAM:
-	    Sys_Printf("File ");
-	    break;
-	case FS_RMT_FILE_STREAM:
-	    Sys_Printf("RmtFile ");
-	    break;
-	case FS_LCL_DEVICE_STREAM:
-	    Sys_Printf("Device ");
-	    break;
-	case FS_RMT_DEVICE_STREAM:
-	    Sys_Printf("RmtDevice ");
-	    break;
-	case FS_LCL_PIPE_STREAM:
-	    Sys_Printf("Pipe ");
-	    break;
-	case FS_RMT_PIPE_STREAM:
-	    Sys_Printf("RmtPipe ");
-	    break;
-	case FS_LCL_NAMED_PIPE_STREAM:
-	    Sys_Printf("NamedPipe ");
-	    break;
-	case FS_RMT_NAMED_PIPE_STREAM:
-	    Sys_Printf("RmtNamedPipe ");
-	    break;
-	case FS_CONTROL_STREAM:
-	    Sys_Printf("ControlStream ");
-	    break;
-	case FS_SERVER_STREAM:
-	    Sys_Printf("SrvStream ");
-	    break;
-	case FS_LCL_PSEUDO_STREAM:
-	    Sys_Printf("LclPdev ");
-	    break;
-	case FS_RMT_PSEUDO_STREAM:
-	    Sys_Printf("RmtPdev ");
-	    break;
-	case FS_RMT_UNIX_STREAM:
-	    Sys_Printf("UnixFile ");
-	    break;
-	case FS_RMT_NFS_STREAM:
-	    Sys_Printf("NFSFile ");
-	    break;
-    }
-    Sys_Printf("<%d,%d> server %d: %s: ", hdrPtr->fileID.major,
-	    hdrPtr->fileID.minor, hdrPtr->fileID.serverID, string);
+    Net_HostPrint(hdrPtr->fileID.serverID,
+		  FsFileTypeToString(hdrPtr->fileID.type));
+    Sys_Printf("<%d,%d> %s: ", hdrPtr->fileID.major,
+	    hdrPtr->fileID.minor, string);
     switch (status) {
 	case FS_DOMAIN_UNAVAILABLE:
 	    Sys_Printf("domain unavailable\n");
@@ -690,7 +684,80 @@ FsFileError(hdrPtr, string, status)
 	    Sys_Printf("<%x>\n", status);
 	    break;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsFileTypeToString --
+ *
+ *	Map a stream type to a string.  The string has a trailing blank.
+ *
+ * Results:
+ *	A string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+FsFileTypeToString(type)
+    int type;
+{
+    register char *fileType;
 
+    switch (type) {
+	case FS_STREAM:
+	    fileType = "Stream ";
+	    break;
+	case FS_LCL_FILE_STREAM:
+	    fileType = "File ";
+	    break;
+	case FS_RMT_FILE_STREAM:
+	    fileType = "RmtFile ";
+	    break;
+	case FS_LCL_DEVICE_STREAM:
+	    fileType = "Device ";
+	    break;
+	case FS_RMT_DEVICE_STREAM:
+	    fileType = "RmtDevice ";
+	    break;
+	case FS_LCL_PIPE_STREAM:
+	    fileType = "Pipe ";
+	    break;
+	case FS_RMT_PIPE_STREAM:
+	    fileType = "RmtPipe ";
+	    break;
+	case FS_LCL_NAMED_PIPE_STREAM:
+	    fileType = "NamedPipe ";
+	    break;
+	case FS_RMT_NAMED_PIPE_STREAM:
+	    fileType = "RmtNamedPipe ";
+	    break;
+	case FS_CONTROL_STREAM:
+	    fileType = "ControlStream ";
+	    break;
+	case FS_SERVER_STREAM:
+	    fileType = "SrvStream ";
+	    break;
+	case FS_LCL_PSEUDO_STREAM:
+	    fileType = "LclPdev ";
+	    break;
+	case FS_RMT_PSEUDO_STREAM:
+	    fileType = "RmtPdev ";
+	    break;
+	case FS_RMT_UNIX_STREAM:
+	    fileType = "UnixFile ";
+	    break;
+	case FS_RMT_NFS_STREAM:
+	    fileType = "NFSFile ";
+	    break;
+	default:
+	    fileType = "<unknown file type> ";
+	    break;
+    }
+    return(fileType);
 }
 
 /*
