@@ -322,6 +322,11 @@ Ofs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
 	domainPtr->flags |= FSDM_DOMAIN_DOWN;
 	return(status);
     }
+    /*
+     * Set the domainNumber in the summary info so next time we will be
+     * mounted under the same domain number.
+     */
+    summaryInfoPtr->domainNumber = domainPtr->domainNumber;
     *domainNumPtr = domainPtr->domainNumber;
     return status;
 
