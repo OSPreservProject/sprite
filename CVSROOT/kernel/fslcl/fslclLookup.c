@@ -276,8 +276,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		 * table.  Setting the prefixLength to zero indicates
 		 * there is no prefix information in this LOOKUP_REDIRECT
 		 */
-		*newNameInfoPtrPtr = 
-			(FsRedirectInfo *) Mem_Alloc(sizeof(FsRedirectInfo));
+		*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 		(*newNameInfoPtrPtr)->prefixLength = 0;
 		(void)String_Copy("../", (*newNameInfoPtrPtr)->fileName);
 		(void)String_Cat(curCharPtr, (*newNameInfoPtrPtr)->fileName);
@@ -366,8 +365,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		 * the parent directory before continuing.
 		 */
 		if (*curCharPtr == '/') {
-		    *newNameInfoPtrPtr = 
-			(FsRedirectInfo *) Mem_Alloc(sizeof(FsRedirectInfo));
+		    *newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 		    (void)String_Copy(curCharPtr, (*newNameInfoPtrPtr)->fileName);
 		    status = FS_LOOKUP_REDIRECT;
 		    /*
