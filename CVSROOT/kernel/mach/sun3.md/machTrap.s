@@ -164,7 +164,7 @@ MachSyscallTrap:
 	|*
 
 	tstl	d0
-	jne	1$
+	jne	1f
 	moveml	#0xffff, a0@(MACH_TRAP_REGS_OFFSET)
 	movl	sp, a0@(MACH_EXC_STACK_PTR_OFFSET)
 	SaveUserFpuState();
@@ -173,7 +173,7 @@ MachSyscallTrap:
 	|* Save registers used here:  two address registers and sp.
 	|*
 
-1$:	movl	a2, sp@-
+1:	movl	a2, sp@-
 	movl	a3, sp@-
 	movl	sp, a3
 
@@ -182,11 +182,11 @@ MachSyscallTrap:
 	|*
 
 	cmpl	_machMaxSysCall, d0
-	jls	2$
+	jls	2f
 	movl	#20002, d0
 	jra	return
 
-2$:
+2:
 	|*
 	|* Store this kernel call in the last kernel call variable.
 	|*
@@ -249,7 +249,6 @@ _MachFetchArgsEnd:			| Marks last place where PC could be
 	|* address of the kernel-call handling routine and invoke it.
 	|*
 
-1$:
 	movl	_proc_RunningProcesses, a0
 	movl	a0@, d1			| d1 now has PCB address.
 	addl	_machKcallTableOffset, d1
@@ -436,20 +435,20 @@ kernUserError:
 	lsrl	#8, d0			| DO >> 12 to get to stack format
 	lsrl	#4, d0
 	cmpl	#MACH_MC68010_BUS_FAULT, d0
-	bne	1$
+	bne	1f
 	addl	#MACH_MC68010_BUS_FAULT_SIZE, sp
-	bra	4$
-1$:	cmpl	#MACH_SHORT_BUS_FAULT, d0
-	bne	2$
+	bra	4f
+1:	cmpl	#MACH_SHORT_BUS_FAULT, d0
+	bne	2f
 	addl	#MACH_SHORT_BUS_FAULT_SIZE, sp
-	bra	4$
-2$:	cmpl	#MACH_LONG_BUS_FAULT, d0
-	bne	3$
+	bra	4f
+2:	cmpl	#MACH_LONG_BUS_FAULT, d0
+	bne	3f
 	addl	#MACH_LONG_BUS_FAULT_SIZE, sp
-	bra	4$
-3$:	trap	#15
+	bra	4f
+3:	trap	#15
 
-4$:	movl	#0x20000, d0
+4:	movl	#0x20000, d0
 	rts
 
 kernKernError:

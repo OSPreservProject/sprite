@@ -144,15 +144,15 @@ _MachVectoredInterrupt:
 	addql 	#4, sp 
 	clrl	_mach_AtInterruptLevel 
 	tstl	_mach_KernelMode
-	bne	1$
+	bne	1f
 	movl	_proc_RunningProcesses, a0
 	movl	a0@, a1
 	movl	_machSpecialHandlingOffset, d1
 	tstl	a1@(0,d1:l)
-	beq	1$
+	beq	1f
 	clrl	a1@(0,d1:l)
 	movw	sp@(INTR_SR_OFFSET), d0
 	orw	#MACH_SR_TRACEMODE, d0
 	movw	d0, sp@(INTR_SR_OFFSET)
-1$:	moveml	sp@+, #0x0303
+1:	moveml	sp@+, #0x0303
 	rte 
