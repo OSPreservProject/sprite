@@ -343,15 +343,18 @@ Dev_CCIOControl(devicePtr, ioctlPtr, replyPtr)
 		 * Zero  counters. 
 		 */
 	    static char Zero[DEV_CC_MAX_OFFSET];
-	    int		startOffset, bytesWritten;
+	    int		bytesWritten;
 	    ReturnStatus	status;
+	    Fs_IOParam	write;
+	    Fs_IOReply   reply;
 
 	    if (ioctlPtr->inBufSize != sizeof(int)) {
 		return (GEN_INVALID_ARG);
 	    }
-	    bcopy(ioctlPtr->inBuffer,(char *) &startOffset,sizeof(int));
-	    status = Dev_CCWrite(devicePtr, startOffset, DEV_CC_MAX_OFFSET, 
-					Zero, &bytesWritten);
+	    bcopy(ioctlPtr->inBuffer,(char *) &write.offset,sizeof(int));
+	    write.length = DEV_CC_MAX_OFFSET;
+	    write.buffer = Zero;
+	    status = Dev_CCWrite(devicePtr, &write, &reply);
 	    return(status);
 	}
 	case	IOC_LOCK:
@@ -601,21 +604,30 @@ DoPCCMemUpdate()
      int		len;
      ReturnStatus	status;
      register int       modeReg;		/* Mode register to restore. */
+     Fs_IOParam	read;
+     Fs_IOReply	reply;	
+     Fs_IOCParam ioctl;
 
      for (pnum = 0; pnum < mach_NumProcessors; pnum++) {
         devicePtr->unit = pnum;
 	/*
 	 * For each processor we read the t0 register.
 	 */
-	status =  Dev_CCIOControl(devicePtr,IOC_CCDEV_READ_T0,0,NULL,
-			sizeof(CCdev64bitCounter), &(PCCdevMem[pnum].t0));
+	ioctl.command = IOC_CCDEV_READ_T0;
+	ioctl.inBufSize = 0;
+	ioctl.inBuffer = NULL;
+	ioctl.outBufSize = sizeof(CCdev64bitCounter);
+	ioctl.outBuffer = (Address) &(PCCdevMem[pnum].t0);
+	status =  Dev_CCIOControl(devicePtr, &ioctl, &reply);
 	/*
 	 * And the cache controller registers.
 	 *  Turn them off first so we don't get a corrupt sample.
 	 */
-        len = sizeof(newCCdev);
+	read.length = sizeof(newCCdev);
+	read.buffer = (Address) &newCCdev;
+	read.offset = 0;
 	modeReg = Dev_CCIdleCounters(FALSE, MODE_PERF_COUNTER_OFF);
-	status =  Dev_CCRead(devicePtr,0,sizeof(newCCdev),&newCCdev,&len);
+	status =  Dev_CCRead(devicePtr,&read, &reply);
 	(void) Dev_CCIdleCounters(TRUE, modeReg);
 	/*
 	 * Update any counter that wraps.
@@ -942,9 +954,9 @@ Dev_PCCIOControl(devicePtr, ioctlPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_CCSelect --
+ * Dev_PCCSelect --
  *
- *	Perform device-specific select functions with the CC.
+ *	Perform device-specific select functions with the PCC.
  *
  * Results:
  *	SUCCESS		- always returned.
