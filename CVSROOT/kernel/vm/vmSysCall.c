@@ -1118,3 +1118,68 @@ Vm_Mincore(startAddr, length, retVec)
     free((char *)vec);
     return status;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_Mprotect --
+ *
+ *	Change protection of pages.
+ *
+ * Results:
+ *	SUCCESS or error condition.
+ *
+ * Side effects:
+ *	Changes protection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+Vm_Mprotect(startAddr, length, prot)
+    Address	startAddr;	/* Requested starting virt-addr. */
+    int		length;		/* Length of region. */
+    int		prot;		/* Protection for region. */
+{
+    Vm_VirtAddr virtAddr;
+    Vm_PTE          *ptePtr;
+    Proc_ControlBlock       *procPtr;
+    int i;
+    int firstPage, lastPage;
+
+    if (BADALIGN(startAddr) || BADALIGN(length)) {
+	printf("Vm_Mprotect: Invalid start or offset\n");
+	return VM_WRONG_SEG_TYPE;
+    }
+    if (prot & ~(PROT_READ|PROT_WRITE)) {
+	printf("Vm_Mprotect: Only read/write permissions allowed\n");
+	return SYS_INVALID_ARG;
+    }
+    if (!(prot & PROT_READ)) {
+	printf("Vm_Mprotect: can't remove read perms in this implementation\n");
+	return SYS_INVALID_ARG;
+    }
+    procPtr = Proc_GetCurrentProc();
+    VmVirtAddrParseUnlock(procPtr, startAddr, &virtAddr);
+    firstPage = (unsigned int) startAddr >> vmPageShift;
+    lastPage = ((unsigned int)(startAddr+length-1)) >> vmPageShift;
+    if (firstPage < segOffset(&virtAddr)) {
+	printf("First page is out of range\n");
+	return SYS_INVALID_ARG; /* ENOMEM */
+    }
+    for (i=lastPage-firstPage, ptePtr =
+	    VmGetAddrPTEPtr(&virtAddr, virtAddr.page);i>=0;
+	    i--, VmIncPTEPtr(ptePtr,1), virtAddr.page++) {
+	if (lastPage >= segOffset(&virtAddr) + virtAddr.segPtr->ptSize) {
+	    printf("Page out of range\n");
+	    return SYS_INVALID_ARG; /* ENOMEM */
+	}
+	if (prot & PROT_WRITE) {
+	    *ptePtr &= ~VM_READ_ONLY_PROT;
+	} else {
+	    *ptePtr |= VM_READ_ONLY_PROT;
+	}
+	VmMach_SetPageProt(&virtAddr, *ptePtr);
+    }
+    return SUCCESS;
+}

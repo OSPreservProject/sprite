@@ -376,6 +376,7 @@ extern	ReturnStatus	Vm_Msync();
 extern	ReturnStatus	Vm_Mlock();
 extern	ReturnStatus	Vm_Munlock();
 extern	ReturnStatus	Vm_Mincore();
+extern	ReturnStatus	Vm_Mprotect();
 extern	void		Vm_CleanupSharedFile();
 extern	void		Vm_CleanupSharedProc();
 extern	void		Vm_DeleteSharedSegment();
