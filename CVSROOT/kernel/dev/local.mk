@@ -11,6 +11,4 @@ NAME = dev
 NOOPTIMIZATION	= no -O please
 #endif
 
-CFLAGS	+= -DPROM_1_4
-
 #include	<$(SYSMAKEFILE)>
