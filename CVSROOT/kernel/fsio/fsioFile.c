@@ -1408,7 +1408,9 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 	case IOC_SET_BITS:
 	case IOC_CLEAR_BITS:
 	    break;
+#ifdef 0
 	case IOC_MAP:
+#endif
 	case IOC_TRUNCATE: {
 	    int arg;		/* The truncation length for IOC_TRUNCATE,
 				 * The mapping flag for IOC_MAP. */
