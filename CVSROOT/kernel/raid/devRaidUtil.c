@@ -509,9 +509,9 @@ XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
     int			 i;
 
     rangeOffset = StripeUnitOffset(raidPtr, rangeOffset);
-    for ( i = 0; i < reqControlPtr->numReq; i++ ) {
+    for (i = 0; i < reqControlPtr->numReq; i++) {
 	reqPtr = &reqControlPtr->reqPtr[i];
-	if ( reqPtr->state != REQ_FAILED ) {
+	if (reqPtr->state == REQ_READY || reqPtr->state == REQ_COMPLETED ) {
 	    RangeRestrict((int) reqPtr->devReq.startAddress,
 		    reqPtr->devReq.bufferLen,
 		    rangeOffset, rangeLen, raidPtr->bytesPerStripeUnit,
