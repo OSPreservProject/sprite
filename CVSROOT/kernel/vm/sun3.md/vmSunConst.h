@@ -57,6 +57,24 @@
  * VMMACH_NUM_PAGE_MAP_ENTRIES	The number of hardware page map entries.
  * VMMACH_NUM_PMEGS		The number of page clusters that there are 
  *				in the system.
+ * VMMACH_INV_PMEG   		The page cluster number that is used to 
+ *				represent an invalid Pmeg.
+ * VMMACH_INV_SEG   		The hardware segment number that is used to
+ *				represent an invalid hardware segment.
+ * VMMACH_INV_CONTEXT   	The context number that is used to represent
+ *				an invalid context.
+ */
+#define VMMACH_KERN_CONTEXT		0
+#define VMMACH_NUM_CONTEXTS		8
+#define VMMACH_NUM_SEGS_PER_CONTEXT	2048
+#define VMMACH_NUM_PAGES_PER_SEG_INT	16
+#define VMMACH_NUM_PAGE_MAP_ENTRIES	4096
+#define	VMMACH_NUM_PMEGS		(VMMACH_NUM_PAGE_MAP_ENTRIES / VMMACH_NUM_PAGES_PER_SEG_INT)
+
+/*
+ * The following sets of constants define the kernel's virtual address space. 
+ * Some of the constants are defined in machineConst.h.
+ *
  * VMMACH_DEV_START_ADDR        The first virtual address that is used for
  *                              mapping devices.
  * VMMACH_DEV_END_ADDR		The last virtual address that could be used for 
@@ -70,28 +88,88 @@
  *				and AMD drivers.
  * VMMACH_FIRST_SPECIAL_SEG	The first hardware segment that is used for 
  *				mapping devices.
- * VMMACH_INV_PMEG   		The page cluster number that is used to 
- *				represent an invalid Pmeg.
- * VMMACH_INV_SEG   		The hardware segment number that is used to
- *				represent an invalid hardware segment.
- * VMMACH_INV_CONTEXT   	The context number that is used to represent
- *				an invalid context.
+ *
+ * The Sun3 address space looks like the following:  The hex addresses are
+ *	valid on most sun3s.  Those with small memories may have their
+ *	vmStackBaseAddr shifted down a bit (== e3fc000 on a 3/50).
+ *	vmMapBaseAddr and vmBlockCacheBaseAddr are computed relative to
+ *	the stack base, which is determined by max kernel size.
+ *
+ *	|-------------------------------|	0x00000000
+ *	| Trap vectors & Invalid Page	|
+ *	|-------------------------------|	0x00004000
+ *	| User Virtual Address Space	|
+ *     	|				|
+ *	| Top of User stack		|
+ *	|-------------------------------|	0x0dfe0000 VMMACH_MAP_SEG_ADDR
+ *	| 1 Segment for user mappings	|	0x0e000000 MACH_KERN_START
+ *	|-------------------------------|	0x0e000000 MACH_STACK_BOTTOM
+ *	| 16K for (mapped) kernel stack	|
+ *	|-------------------------------|	0x0e004000 MACH_CODE_START
+ *     	|				|
+ *     	| Kernel Code and Data		|	(VMMACH_MAX_KERN_SIZE)
+ *     	|				|
+ *	---------------------------------	0x0e800000 vmStackBaseAddr
+ *	|				|	
+ *	| Page frames for kernel stacks |
+ *	|-------------------------------|	0x0ea00000 vmMapBaseAddr
+ *	| Mapping for Vm_MakeAccessible	|	
+ *	---------------------------------	0x0ea20000
+ *	| Mapping for PMEG and PTE	|
+ *	|_______________________________|	0x0ea60000 vmBlockCacheBaseAddr
+ *	| 				|
+ *	| FS Block cache		|
+ *	| 				|	mack_KernEnd vmBlockCacheEndAddr
+ *	|-------------------------------|	0x0fd00000 VMMACH_FRAME_BUFFER
+ *	| Frame buffer			|
+ *      |-------------------------------|	0x0fe00000 VMMACH_DEV_START_ADDR
+ *	|				|
+ *	| Mapped in devices		|
+ *	|				|	VMMACH_DEV_END_ADDR
+ *	|-------------------------------|	0x0ff00000 VMMACH_DMA_START_ADDR
+ *	|				|
+ *	| Space for mapping in DMA bufs |
+ *	|				|
+ *	|-------------------------------|	0x0ffc0000 VMMACH_NET_MAP_START
+ *	| For mapping ethernet packets	|
+ *	|-------------------------------|	0x0ffe0000 VMMACH_NET_MEM_START
+ *	| For mapping ethernet memory	|
+ *	|-------------------------------|	0x0fffffff end-o-virtual-sun3
  */
 
-#define VMMACH_KERN_CONTEXT		0
-#define VMMACH_NUM_CONTEXTS		8
-#define VMMACH_NUM_SEGS_PER_CONTEXT	2048
-#define VMMACH_NUM_PAGES_PER_SEG_INT	16
-#define VMMACH_NUM_PAGE_MAP_ENTRIES	4096
-#define	VMMACH_NUM_PMEGS		(VMMACH_NUM_PAGE_MAP_ENTRIES / VMMACH_NUM_PAGES_PER_SEG_INT)
+/*
+ * There is a special area of a users VAS to allow copies between two user
+ * address spaces.  This area sits between the beginning of the kernel and
+ * the top of the user stack.  It is one hardware segment wide.
+ */
+#define	VMMACH_MAP_SEG_ADDR		(MACH_KERN_START - VMMACH_SEG_SIZE)
 
+/*
+ * VMMACH_MAX_KERN_SIZE defines the maximum size of the kernel code+data.
+ *	A variable is initialized to this, and it may be further reduced
+ *	so that this amount is never greater than all of physical memory.
+ * VMMACH_BOOT_MAP_PAGES Defines number of pages that need to be mapped
+ *		in during bootstrap ("pre VM setup").
+ */
+#ifdef sun3
+#define VMMACH_MAX_KERN_SIZE		(8192 * 1024)
+#define VMMACH_BOOT_MAP_PAGES		(512)
+#endif
+#ifdef sun2
+#define VMMACH_MAX_KERN_SIZE		(2048 * 1024)
+#define VMMACH_BOOT_MAP_PAGES		(1024)
+#endif
+
+
+#define VMMACH_FRAME_BUFFER_ADDR	0xFD00000
+#define VMMACH_KERN_END			VMMACH_FRAME_BUFFER_ADDR
+#define	VMMACH_FIRST_SPECIAL_SEG	(VMMACH_KERN_END >> VMMACH_SEG_SHIFT)
 #define VMMACH_DEV_START_ADDR       	0xFE00000
 #define	VMMACH_DEV_END_ADDR		0xFEFFFFF
 #define	VMMACH_DMA_START_ADDR		0xFF00000
 #define	VMMACH_DMA_SIZE			0xC0000
 #define VMMACH_NET_MAP_START		0xFFC0000
 #define VMMACH_NET_MEM_START		0xFFE0000
-#define	VMMACH_FIRST_SPECIAL_SEG	(VMMACH_DEV_START_ADDR >> VMMACH_SEG_SHIFT)
 #define	VMMACH_INV_PMEG			(VMMACH_NUM_PMEGS - 1)
 #define	VMMACH_INV_SEG			VMMACH_NUM_SEGS_PER_CONTEXT
 #define	VMMACH_INV_CONTEXT		VMMACH_NUM_CONTEXTS
@@ -227,46 +305,6 @@
  * use part of the kernel's virtual address space.
  */
 #define VMMACH_MAX_KERN_STACKS	128
-
-/*
- * The following sets of constants define the kernel's virtual address space. 
- * Some of the constants are defined in machineConst.h.  The address space 
- * looks like the following:
- *
- *	|-------------------------------|	MACH_KERNEL_START
- *	| Trap vectors.			|
- *	|-------------------------------|	MACH_STACK_BOTTOM
- *	| Invalid page.			|
- *	|-------------------------------|	MACH_STACK_BOTTOM + VMMACH_PAGE_SIZE
- *     	|				|
- *     	| Stack for the initial kernel 	|
- *     	| process.			|
- *     	|				|
- *	---------------------------------	MACH_CODE_START
- *     	|				|
- *     	| Kernel code and data		|
- *     	| 				|
- *	---------------------------------	VMMACH_PMEG_SEG
- *	| 				|
- *	| Stacks, mapped pages, etc.	|
- *	| 				|
- *      ---------------------------------	VMMACH_DEV_START_ADDR
- *	|				|
- *	| Mapped in devices		|
- *	|				|	VMMACH_DEV_END_ADDR
- *	|-------------------------------|	VMMACH_DMA_START_ADDR
- *	|				|
- *	| Space for mapping in DMA bufs |
- *	|				|
- *	|-------------------------------|
- */
-
-/*
- * There is a special area of a users VAS to allow copies between two user
- * address spaces.  This area sits between the beginning of the kernel and
- * the top of the user stack.  It is one hardware segment wide.
- */
-#define	VMMACH_MAP_SEG_ADDR		(0xE000000 - VMMACH_SEG_SIZE)
 
 /*
  * Definitions for shared memory.
