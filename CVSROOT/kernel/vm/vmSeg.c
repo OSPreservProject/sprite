@@ -842,8 +842,8 @@ CleanSegment(segPtr)
     UNLOCK_MONITOR;
 }
 
-Boolean	StartDelete();
-void	EndDelete();
+Boolean		StartDelete();
+ReturnStatus	EndDelete();
 
 
 /*
@@ -863,7 +863,7 @@ void	EndDelete();
  *
  *----------------------------------------------------------------------
  */
-void
+ReturnStatus
 Vm_DeleteFromSeg(segPtr, firstPage, lastPage)
     Vm_Segment 	*segPtr;	/* The segment whose pages are being
 				   invalidated. */
@@ -886,14 +886,14 @@ Vm_DeleteFromSeg(segPtr, firstPage, lastPage)
      * (the routine that is called when a segment is duplicated for a fork).
      */
     if (!StartDelete(segPtr, firstPage, &lastPage)) {
-	return;
+	return(SUCCESS);
     }
     /*
      * Rid the segment of all copy-on-write dependencies.
      */
     VmCOWDeleteFromSeg(segPtr, firstPage, lastPage);
 
-    EndDelete(segPtr, firstPage, lastPage);
+    return(EndDelete(segPtr, firstPage, lastPage));
 }
 
 
@@ -971,7 +971,7 @@ StartDelete(segPtr, firstPage, lastPagePtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+ENTRY static ReturnStatus
 EndDelete(segPtr, firstPage, lastPage)
     register	Vm_Segment	*segPtr;
     int				firstPage;
@@ -995,6 +995,10 @@ EndDelete(segPtr, firstPage, lastPage)
 	 virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
 	if (*ptePtr & VM_PHYS_RES_BIT) {
+	    if (VmPagePinned(ptePtr)) {
+		UNLOCK_MONITOR;
+		return(FAILURE);
+	    }
 	    VmMach_PageInvalidate(&virtAddr, Vm_GetPageFrame(*ptePtr), FALSE);
 	    segPtr->resPages--;
 	    pfNum = Vm_GetPageFrame(*ptePtr);
@@ -1012,6 +1016,7 @@ EndDelete(segPtr, firstPage, lastPage)
     Sync_Broadcast(&segPtr->condition);
 
     UNLOCK_MONITOR;
+    return(SUCCESS);
 }
 
 

@@ -1736,7 +1736,7 @@ VmKillSharers(segPtr)
     UNLOCK_MONITOR;
 }
 
-Boolean	PageLocked();
+static void	PinPages();
 
 
 /*
@@ -1757,84 +1757,45 @@ Boolean	PageLocked();
  */
 ReturnStatus
 Vm_PinUserMem(mapType, numBytes, addr)
-    int		mapType;	/* VM_READONLY_ACCESS | VM_READWRITE_ACCESS */
-    int		numBytes;	/* Number of bytes to map. */
-    Address	addr;		/* Where to start mapping at. */
+    int		     mapType;	/* VM_READONLY_ACCESS | VM_READWRITE_ACCESS */
+    int		     numBytes;	/* Number of bytes to map. */
+    register Address addr;	/* Where to start mapping at. */
 {
     Vm_VirtAddr	 		virtAddr;
-    Proc_ControlBlock		*procPtr;
+    ReturnStatus		status = SUCCESS;
     int				firstPage;
     int				lastPage;
-    int				accBytes;
-    Address			accAddr;
-    ReturnStatus		status = SUCCESS;
+    Proc_ControlBlock		*procPtr;
 
-    if (numBytes == 0) {
-	return(SUCCESS);
-    } else if (numBytes < 0) {
-	return(SYS_INVALID_ARG);
-    }
-    firstPage = (unsigned int)addr >> vmPageShift;
-    lastPage = (unsigned int)(addr + numBytes - 1) >> vmPageShift;
-    if (lastPage - firstPage >= VM_MAX_USER_MAP_PAGES) {
-	return(SYS_INVALID_ARG);
-    }
-    /*
-     * Make sure that the range of addresses are accessible.
-     */
-    Vm_MakeAccessible(mapType, numBytes, addr, &accBytes, &accAddr);
-    if (accAddr == (Address)NIL) {
-	return(SYS_INVALID_ARG);
-    } else if (accBytes != numBytes) {
-	Vm_MakeUnaccessible(addr, numBytes);
-	return(SYS_INVALID_ARG);
-    }
-    /*
-     * Determine the segment that the addresses are in so that we can 
-     * lock the pages down.
-     */
     procPtr = Proc_GetCurrentProc();
     VmVirtAddrParse(procPtr, addr, &virtAddr);
-    if (virtAddr.flags & VM_HEAP_PT_IN_USE) {
+    if (virtAddr.segPtr == (Vm_Segment *)NIL ||
+	(virtAddr.segPtr->type == VM_CODE && mapType == VM_READWRITE_ACCESS)) {
+	return(SYS_ARG_NOACCESS);
+    }
+
+    firstPage = virtAddr.page;
+    lastPage = ((unsigned)addr + numBytes - 1) >> vmPageShift;
+    while (virtAddr.page <= lastPage) {
 	/*
-	 * The heap segment has been made not expandable by VmVirtAddrParse
-	 * so that the address parse would remain valid.  Decrement the
-	 * in use count now.  We don't have to leave the count up because
-	 * the page tables were locked when we did the make accessible above.
+	 * Loop until we got all of the pages locked down.  We have to
+	 * loop because a page could get freed after we touch it but before
+	 * we get a chance to wire it down.
 	 */
+	status = Vm_TouchPages(virtAddr.page, lastPage - virtAddr.page + 1);
+	if (status != SUCCESS) {
+	    goto done;
+	}
+	PinPages(&virtAddr, lastPage);
+    }
+
+    virtAddr.page = firstPage;
+    VmMach_PinUserPages(mapType,  &virtAddr, lastPage);
+
+done:
+    if (virtAddr.flags & VM_HEAP_PT_IN_USE) {
 	VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
     }
-    if (mapType != VM_READONLY_ACCESS && virtAddr.segPtr->type == VM_CODE) {
-	status = SYS_INVALID_ARG;
-    } else {
-	/*
-	 * If this segment can still be made copy-on-write then disallow it
-	 * because once we start hardwiring user pages in memory we can't
-	 * deal with copy-on-write.
-	 */
-	if (!(virtAddr.segPtr->flags & VM_SEG_CANT_COW)) {
-	    VmSegCantCOW(virtAddr.segPtr);
-	}
-	/*
-	 * Finally lock down all of the pages.
-	 */
-	for (; virtAddr.page <= lastPage; virtAddr.page++) {
-	    int	val;
-	    int	*valAddr;
-
-	    valAddr = (int *) (virtAddr.page << vmPageShift);
-	    while (TRUE) {
-		val = *valAddr;
-		if (PageLocked(&virtAddr)) {
-		    break;
-		}
-	    }
-	    VmMach_PinUserPage(&virtAddr);
-	}
-    }
-
-    Vm_MakeUnaccessible(addr, numBytes);
-
     return(status);
 }
 
@@ -1842,48 +1803,51 @@ Vm_PinUserMem(mapType, numBytes, addr)
 /*
  * ----------------------------------------------------------------------------
  *
- * PageLocked --
+ * PinPages --
  *
  *      Hardwire pages for all user addresses between firstAddr and
  *	lastAddr.
  *
  * Results:
- *     TRUE if the page was resident and FALSE otherwise.
+ *      None.
  *
  * Side effects:
- *     Core map entry lock count and flags may be modified.
+ *	virtAddrPtr->page is updated as we successfully wire down pages.  When
+ *	we return its value will be of the last page that we successfully
+ *	wired down + 1.
  *
  * ----------------------------------------------------------------------------
  */
-Boolean
-PageLocked(virtAddrPtr)
-    Vm_VirtAddr	*virtAddrPtr;
+static void
+PinPages(virtAddrPtr, lastPage)
+    register	Vm_VirtAddr	*virtAddrPtr;
+    register	int		lastPage;
 {
     register	VmCore	*corePtr;
     register	Vm_PTE	*ptePtr;
-    Boolean		retVal;
+    Boolean		retVal = FALSE;
 
     LOCK_MONITOR;
 
-    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
-    while (*ptePtr & VM_IN_PROGRESS_BIT) {
-	(void)Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
-    }
-    if (!(*ptePtr & VM_PHYS_RES_BIT)) {
-	retVal = FALSE;
-    } else {
-	corePtr = &coreMap[Vm_GetPageFrame(*ptePtr)];
-	corePtr->wireCount++;
-	corePtr->lockCount++;
-	retVal = TRUE;
+    for (ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+         virtAddrPtr->page <= lastPage;
+	 VmIncPTEPtr(ptePtr, 1), virtAddrPtr->page++) {
+	while (*ptePtr & VM_IN_PROGRESS_BIT) {
+	    (void)Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
+	}
+	if (*ptePtr & VM_PHYS_RES_BIT) {
+	    corePtr = &coreMap[Vm_GetPageFrame(*ptePtr)];
+	    corePtr->wireCount++;
+	    corePtr->lockCount++;
+	} else {
+	    break;
+	}
     }
 
     UNLOCK_MONITOR;
-
-    return(retVal);
 }
 
-void	PageUnlock();
+static void	UnpinPages();
 
 
 /*
@@ -1902,7 +1866,7 @@ void	PageUnlock();
  *
  * ----------------------------------------------------------------------------
  */
-ReturnStatus
+void
 Vm_UnpinUserMem(numBytes, addr)
     int		numBytes;	/* The number of bytes to map. */
     Address 	addr;		/* The address to start mapping at. */
@@ -1910,35 +1874,16 @@ Vm_UnpinUserMem(numBytes, addr)
     Vm_VirtAddr	 		virtAddr;
     Proc_ControlBlock		*procPtr;
     int				lastPage;
-    ReturnStatus		status;
 
-    if (numBytes == 0) {
-	return(SUCCESS);
-    } else if (numBytes < 0) {
-	return(SYS_INVALID_ARG);
-    }
-    lastPage = (unsigned int)(addr + numBytes - 1) >> vmPageShift;
-
-    /*
-     * Make sure that all pages between first and last addr fall into the
-     * same segment
-     */
     procPtr = Proc_GetCurrentProc();
     VmVirtAddrParse(procPtr, addr, &virtAddr);
-    if (lastPage - virtAddr.segPtr->offset >= virtAddr.segPtr->numPages) {
-	status = SYS_ARG_NOACCESS;
-	goto done;
-    }
-
+    lastPage = (unsigned int)(addr + numBytes - 1) >> vmPageShift;
     /*
      * Now unlock all of the pages.
      */
-    for (; virtAddr.page <= lastPage; virtAddr.page++) {
-	PageUnlock(&virtAddr);
-	VmMach_UnpinUserPage(&virtAddr);
-    }
+    VmMach_UnpinUserPages(&virtAddr, lastPage);
+    UnpinPages(&virtAddr, lastPage);
 
-done:
     if (virtAddr.flags & VM_HEAP_PT_IN_USE) {
 	/*
 	 * The heap segment has been made not expandable by VmVirtAddrParse
@@ -1947,15 +1892,13 @@ done:
 	 */
 	VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
     }
-
-    return(status);
 }
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * PageUnlock --
+ * UnpinPages --
  *
  *      Unlock pages for all user addresses between firstAddr and
  *	lastAddr.
@@ -1968,29 +1911,60 @@ done:
  *
  * ----------------------------------------------------------------------------
  */
-void
-PageUnlock(virtAddrPtr)
+static void
+UnpinPages(virtAddrPtr, lastPage)
     Vm_VirtAddr	*virtAddrPtr;
+    int		lastPage;
 {
     register	VmCore	*corePtr;
     register	Vm_PTE	*ptePtr;
+    register	int	i;
 
     LOCK_MONITOR;
 
-    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
-    while (*ptePtr & VM_IN_PROGRESS_BIT) {
-	(void)Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
-    }
+    for (i = virtAddrPtr->page,
+		ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+	 i <= lastPage;
+	 VmIncPTEPtr(ptePtr, 1), i++) {
 
-    if (*ptePtr & VM_PHYS_RES_BIT) {
-	corePtr = &coreMap[Vm_GetPageFrame(*ptePtr)];
-	if (corePtr->wireCount > 0) {
-	    corePtr->wireCount--;
-	    corePtr->lockCount--;
+	while (*ptePtr & VM_IN_PROGRESS_BIT) {
+	    (void)Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
+	}
+
+	if (*ptePtr & VM_PHYS_RES_BIT) {
+	    corePtr = &coreMap[Vm_GetPageFrame(*ptePtr)];
+	    if (corePtr->wireCount > 0) {
+		corePtr->wireCount--;
+		corePtr->lockCount--;
+	    }
 	}
     }
 
     UNLOCK_MONITOR;
+}
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmPagePinned --
+ *
+ *      Return TRUE if the page is wired down in memory and FALSE otherwise.
+ *
+ * Results:
+ *     TRUE if the page is wired down and FALSE otherwise.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL Boolean
+VmPagePinned(ptePtr)
+    Vm_PTE	*ptePtr;
+{
+    return(coreMap[Vm_GetPageFrame(*ptePtr)].wireCount > 0);
 }
 
 

@@ -171,9 +171,7 @@ Vm_DestroyVA(address, size)
      * Make pages between firstPage and lastPage not members of the segment's
      * virtual address spac.e
      */
-    Vm_DeleteFromSeg(segPtr, firstPage, lastPage);
-
-    return(SUCCESS);
+    return(Vm_DeleteFromSeg(segPtr, firstPage, lastPage));
 }
 
 static int	copySize = 4096;
