@@ -116,6 +116,12 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 		break;
 	    }
 	} else {
+	    if (status == FS_WOULD_BLOCK && *lenPtr > 0) {
+		/*
+		 * Cannot return FS_WOULD_BLOCK if some data was read.
+		 */
+		status = SUCCESS;
+	    }
 	    break;
 	}
 	/*
@@ -128,6 +134,7 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
      * Cache the file offset for sequential access.
      */
     streamPtr->offset = offset;
+
     if (status == FS_BROKEN_PIPE) {
 	Sig_Send(SIG_PIPE, 0, PROC_MY_PID, FALSE);
     }
@@ -211,7 +218,11 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	if (status == SUCCESS) {
 	    break;
 	} else if (status == FS_WOULD_BLOCK &&
-	    (streamPtr->flags & FS_NON_BLOCKING) == 0) {
+		(streamPtr->flags & FS_NON_BLOCKING) == 0) {
+	    /*
+	     * Regular streams wait and retry if the write would block.  The
+	     * stream write routine has put us on the handle's write wait list.
+	     */
 	    if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
 		status = GEN_ABORTED_BY_SIGNAL;
 		break;
@@ -223,6 +234,12 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 		break;
 	    }
 	} else {
+	    if (status == FS_WOULD_BLOCK && size < *lenPtr) {
+		/*
+		 * Cannot return FS_WOULD_BLOCK if some data was written.
+		 */
+		status = SUCCESS;
+	    }
 	    break;
 	}
     }
