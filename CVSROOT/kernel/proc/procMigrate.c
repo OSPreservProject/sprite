@@ -48,6 +48,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <timer.h>
 #include <stdio.h>
 #include <bstring.h>
+#include <recov.h>
 
 Sync_Condition	migrateCondition;
 Sync_Condition	evictCondition;
@@ -816,7 +817,8 @@ Proc_MigrateTrap(procPtr)
      */
     Proc_Lock(procPtr);
     if (!(procPtr->genFlags & PROC_MIG_ERROR)) {
-	ProcMigKillRemoteCopy(procPtr->peerProcessID);
+	ProcMigKillRemoteCopy((ClientData) procPtr->peerProcessID,
+		(Proc_CallInfo *) NIL);
     }
     procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING|
 			   PROC_MIG_ERROR);
@@ -866,7 +868,8 @@ AbortMigration(procPtr)
     Proc_ControlBlock *procPtr; /* ptr to process control block */
 {
     if (!(procPtr->genFlags & PROC_FOREIGN)) {
-	ProcMigKillRemoteCopy(procPtr->peerProcessID);
+	ProcMigKillRemoteCopy((ClientData) procPtr->peerProcessID,
+		(Proc_CallInfo *) NIL);
 	procPtr->peerProcessID = NIL;
 	procPtr->peerHostID = NIL;
     }
@@ -1713,9 +1716,11 @@ ProcMigEncapCallback(cmdPtr, procPtr, inBufPtr, outBufPtr)
  */
 
 void
-ProcMigKillRemoteCopy(processID)
-    Proc_PID processID; 		/* The ID of the remote process */
+ProcMigKillRemoteCopy(data, infoPtr)
+    ClientData		data;		/* The ID of the remote process */
+    Proc_CallInfo	*infoPtr;	/* unused. */
 {
+    Proc_PID processID = (Proc_PID) data;
     ReturnStatus status;
     ProcMigCmd cmd;
     int hostID;				     /* Host to notify. */

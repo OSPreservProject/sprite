@@ -50,6 +50,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dbg.h>
 #include <stdio.h>
 #include <bstring.h>
+#include <recov.h>
 
 
 /*
@@ -97,7 +98,7 @@ ProcMigAcceptMigration(cmdPtr, procPtr, inBufPtr, outBufPtr)
     Proc_MigBuffer *outBufPtr;	/* output buffer (default is empty) */
 {
     ProcMigInitiateCmd *initPtr;
-    char *machType;
+    char machType[32];
     int permMask;
     Proc_PID *pidPtr;
     int clientID;		/* Sprite ID of client host */
@@ -151,8 +152,8 @@ ProcMigAcceptMigration(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	    return(GEN_NO_PERMISSION);
 	}
     
-	machType = Net_SpriteIDToMachType(clientID);
-	if (machType == (char *) NIL) {
+	Net_SpriteIDToMachType(clientID, 32, machType);
+	if (*machType == '\0') {
 	    printf("Warning: Proc_RpcMigInit: couldn't get machine type for client %d.\n",
 		   clientID);
 	    return(PROC_MIGRATION_REFUSED);
@@ -220,7 +221,8 @@ ProcMigDestroyCmd(cmdPtr, procPtr, inBufPtr, outBufPtr)
     Proc_MigBuffer *inBufPtr;	/* input buffer */
     Proc_MigBuffer *outBufPtr;	/* output buffer (stays empty) */
 {
-    Proc_DestroyMigratedProc((ClientData) procPtr->processID);
+    Proc_DestroyMigratedProc((ClientData) procPtr->processID, 
+				(Proc_CallInfo *) NIL);
     return(SUCCESS);
 }
 

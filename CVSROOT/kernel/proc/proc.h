@@ -232,14 +232,13 @@ extern	void		Proc_NeverMigrate _ARGS_((Proc_ControlBlock *procPtr));
 extern ReturnStatus	Proc_NewProc _ARGS_((Address PC, int procType,
 				Boolean shareHeap, Proc_PID *pidPtr,
 				char *procName));
-extern	void		Proc_NotifyMigratedWaiters _ARGS_((Proc_PID pid,
+extern	void		Proc_NotifyMigratedWaiters _ARGS_((ClientData data,
 				Proc_CallInfo *callInfoPtr));
 extern	ReturnStatus	Proc_Profile _ARGS_((int shiftSize, int lowPC,
 				int highPC, Time interval, int counterArray[]));
 extern	void		Proc_PushLockStack _ARGS_((Proc_ControlBlock *pcbPtr,
 				int type, Address lockPtr));
-extern void 		Proc_Reaper _ARGS_((register 
-				Proc_ControlBlock *procPtr, 
+extern void 		Proc_Reaper _ARGS_((ClientData data,
 				Proc_CallInfo *callInfoPtr));
 extern void		Proc_ResumeProcess _ARGS_((Proc_ControlBlock *procPtr,
 				Boolean killingProc));

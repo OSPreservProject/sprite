@@ -44,6 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <ctype.h>
 #include <stdio.h>
 #include <bstring.h>
+#include <vmMach.h>
 /*
  * This will go away when libc is changed.
  */
@@ -1811,23 +1812,14 @@ ProcDoRemoteExec(procPtr)
  * is of a particular machine type.
  */
 int	hostFmt = HOST_FMT;
-#ifdef __STDC__
-procMachType *machType[] =  {
+char * (*machType[]) _ARGS_((int bufferSize, char *buffer, int *magic, 
+	int *syms)) =  {
     machType68k,
     machTypeSparc,
     machTypeSpur,
     machTypeMips,
     machTypeSymm,
 };
-#else
-procMachType (*machType[])() =  {
-    machType68k,
-    machTypeSparc,
-    machTypeSpur,
-    machTypeMips,
-    machTypeSymm,
-};
-#endif
 /*
  *----------------------------------------------------------------------
  *
@@ -1868,7 +1860,7 @@ ProcIsObj(streamPtr, doErr)
 	return FAILURE;
     }
     for (i=0; i < sizeof(machType)/sizeof(*machType); i++) {
-	name = machType[i](hdrSize, buffer, &magic, &syms);
+	name = machType[i](hdrSize, (const char *) buffer, &magic, &syms);
 	if (name != NULL) {
 	    if (doErr) {
 		printf("Proc_Exec: Can't run %s ", name);

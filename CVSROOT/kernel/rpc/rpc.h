@@ -18,9 +18,15 @@
 #ifndef _RPC
 #define _RPC
 
-#include "net.h"
-#include "sys.h"
-#include "status.h"
+#include <status.h>
+#ifdef KERNEL
+#include <net.h>
+#include <sys.h>
+#else
+#include <kernel/net.h>
+#include <kernel/sys.h>
+#endif /* KERNEL */
+
 
 /*
  * A client stub procedure has to set up 2 sets of 2 storage areas for an
@@ -57,7 +63,11 @@ typedef struct Rpc_Storage {
     int		replyDataSize;
 } Rpc_Storage;
 
-#include "rpcCall.h"
+#ifdef KERNEL
+#include <rpcCall.h>
+#else
+#include <kernel/rpcCall.h>
+#endif
 
 
 /*
@@ -108,7 +118,8 @@ extern void Rpc_Start _ARGS_((void));
 extern void Rpc_MaxSizes _ARGS_((int *maxDataSizePtr, int *maxParamSizePtr));
 extern void Rpc_Daemon _ARGS_((void));
 extern void Rpc_Server _ARGS_((void));
-extern int Rpc_Dispatch _ARGS_((int headerType, Address headerPtr, Address rpcHdrAddr, int packetLength));
+extern void Rpc_Dispatch _ARGS_((Net_Interface *interPtr, int protocol, 
+    Address headerPtr, Address rpcHdrAddr, int packetLength));
 extern void Rpc_Timeout _ARGS_((Timer_Ticks time, ClientData data));
 extern void Rpc_PrintTrace _ARGS_((int numRecords));
 extern ReturnStatus Rpc_DumpTrace _ARGS_((int firstRec, int lastRec, char *fileName));

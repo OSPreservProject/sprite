@@ -213,7 +213,7 @@ extern void 		RecovPingInit _ARGS_((void));
 extern void 		RecovPrintPingList _ARGS_((void));
 extern void 		Recov_PrintTrace _ARGS_((int numRecs));
 extern void 		Recov_PrintState _ARGS_((void));
-extern void 		Recov_PrintTraceRecord _ARGS_((ClientData clientData, int event, Boolean printHeaderFlag));
+extern int 		Recov_PrintTraceRecord _ARGS_((ClientData clientData, int event, Boolean printHeaderFlag));
 extern void 		Recov_Proc _ARGS_((void));
 extern void 		RecovAddHostToPing _ARGS_((int spriteID));
 extern int 		RecovCheckHost _ARGS_((int spriteID));

@@ -136,6 +136,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <sig.h>
 #include <stdio.h>
+#include <vmMach.h>
+#include <recov.h>
 
 static	Sync_Lock	exitLock = Sync_LockInitStatic("Proc:exitLock"); 
 #define	LOCKPTR &exitLock
@@ -648,10 +650,11 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
 
 /* ARGSUSED */
 ENTRY void
-Proc_Reaper(procPtr, callInfoPtr)
-    register	Proc_ControlBlock 	*procPtr;
+Proc_Reaper(data, callInfoPtr)
+    ClientData				data;		/* procPtr */
     Proc_CallInfo			*callInfoPtr;
 {
+    register	Proc_ControlBlock 	*procPtr = (Proc_ControlBlock *) data;
     LOCK_MONITOR;
     /*
      * On a multiprocess there are two cases where we can't reap the process
@@ -1628,10 +1631,11 @@ CheckPidArray(curProcPtr, returnSuspend, numPids,  pidArray, procPtrPtr)
 
 /* ARGSUSED */
 void
-Proc_NotifyMigratedWaiters(pid, callInfoPtr)
-    Proc_PID 		pid;
+Proc_NotifyMigratedWaiters(data, callInfoPtr)
+    ClientData		data;			/* pid */
     Proc_CallInfo	*callInfoPtr;		/* not used */
 {
+    Proc_PID 			pid = (Proc_PID) data;
     register Proc_ControlBlock 	*procPtr;
     Sync_RemoteWaiter 		waiter;
     ReturnStatus 		status;

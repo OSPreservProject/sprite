@@ -136,7 +136,8 @@ extern	ReturnStatus	ProcMigEncapCallback _ARGS_((ProcMigCmd *cmdPtr,
 				Proc_ControlBlock *procPtr,
 				Proc_MigBuffer *inBufPtr,
 				Proc_MigBuffer *outBufPtr));
-extern	void		ProcMigKillRemoteCopy _ARGS_((Proc_PID processID));
+extern	void		ProcMigKillRemoteCopy _ARGS_((ClientData data,
+				Proc_CallInfo *infoPtr));
 extern	ReturnStatus	ProcMigCommand _ARGS_((int host, ProcMigCmd *cmdPtr,
 				Proc_MigBuffer *inBufPtr, 
 				Proc_MigBuffer *outBufPtr));

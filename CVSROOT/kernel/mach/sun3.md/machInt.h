@@ -27,10 +27,10 @@
  * The bounds of the code that copies arguments from the user stack to
  * the kernel stack.
  */
-extern Address MachFetchArgs;
-extern Address MachFetchArgsEnd;
-extern Address MachProbeStart;
-extern Address MachProbeEnd;
+extern void MachFetchArgs _ARGS_((void));
+extern void MachFetchArgsEnd _ARGS_((void));
+extern void MachProbeStart _ARGS_((void));
+extern void MachProbeEnd _ARGS_((void));
 
 extern int MachTrap _ARGS_((Mach_TrapStack trapStack));
 
