@@ -611,5 +611,6 @@ extern ReturnStatus		Proc_GetEnvironVarStub();
 extern ReturnStatus		Proc_GetEnvironRangeStub();
 extern ReturnStatus		Proc_InstallEnvironStub();
 extern ReturnStatus		Proc_CopyEnvironStub();
+extern int                      Proc_KernExec();
 
 #endif /* _PROC */

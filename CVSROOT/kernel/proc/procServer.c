@@ -110,12 +110,12 @@ int	proc_NumServers = 5;
  * Mutex to synchronize accsess to the queue of pending requests and
  * to the process state.
  */
-Sync_Semaphore	serverMutex; 
+volatile Sync_Semaphore	serverMutex; 
 
-void	Proc_ServerProc();
-void	ScheduleFunc();
-void	CallFunc();
-void	CallFuncFromTimer();
+extern void	Proc_ServerProc();
+static void	ScheduleFunc();
+static void	CallFunc();
+static void	CallFuncFromTimer();
 
 
 /*
@@ -387,7 +387,7 @@ Proc_ServerProc()
  *----------------------------------------------------------------------
  */
 
-void
+static void
 ScheduleFunc(func, clientData, interval, funcInfoPtr)
     void		(*func)();	/* Function to call. */
     ClientData		clientData;	/* Data to pass function. */
@@ -437,7 +437,7 @@ ScheduleFunc(func, clientData, interval, funcInfoPtr)
  */
 
 /* ARGSUSED */
-void
+static void
 CallFuncFromTimer(time, funcInfoPtr)
     Timer_Ticks		time;
     FuncInfo		*funcInfoPtr;
@@ -465,7 +465,7 @@ CallFuncFromTimer(time, funcInfoPtr)
  *----------------------------------------------------------------------
  */
 
-void
+static void
 CallFunc(funcInfoPtr)
     FuncInfo		*funcInfoPtr;
 {
