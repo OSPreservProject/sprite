@@ -271,3 +271,94 @@ DevDiskUnregister(diskStatsPtr)
     MASTER_UNLOCK(&deviceListMutex);
     return;
 }
+
+
+/*
+ * Temporary call-back for printing io statistics for recovery.
+ */
+Timer_QueueElement	ioStatElement;
+Boolean			getIOStats = FALSE;
+
+/*ARGSUSED*/
+void
+DevPrintIOStats(time, clientData)
+    Timer_Ticks	time;
+    ClientData	clientData;
+{
+    Sys_DiskStats	diskStats[10];
+    int			numStats;
+    int			i;
+
+    /* print stuff */
+    numStats = Dev_GetDiskStats(diskStats, 10 * sizeof (Sys_DiskStats));
+    printf("IO STATS:\n");
+    for (i = 0; i < numStats; i++) {
+	printf("name: %s\n", diskStats[i].name);
+	printf("controllerID: %d\n", diskStats[i].controllerID);
+	printf("numSamples: %d\n", diskStats[i].numSamples);
+	printf("idleCount: %d\n", diskStats[i].idleCount);
+	printf("diskReads: %d\n", diskStats[i].diskReads);
+	printf("diskWrites: %d\n", diskStats[i].diskWrites);
+    }
+    printf("\n");
+
+    if (getIOStats) {
+	Timer_ScheduleRoutine(&ioStatElement, TRUE);
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_StartIOStats --
+ *
+ *	Start up the kernel's periodic printing of io stats.
+ *	Temporary routine for recovery statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Call-back routine scheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_StartIOStats()
+{
+    ioStatElement.routine = DevPrintIOStats;
+    ioStatElement.clientData = 0;
+    ioStatElement.interval = timer_IntOneSecond * 10;
+    getIOStats = TRUE;
+    Timer_ScheduleRoutine(&ioStatElement, TRUE);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_StopIOStats --
+ *
+ *	Stop the kernel's periodic printing of io stats.
+ *	Temporary routine for recovery statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Call-back routine descheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_StopIOStats()
+{
+    getIOStats = FALSE;
+    (void) Timer_DescheduleRoutine(&ioStatElement);
+
+    return;
+}
