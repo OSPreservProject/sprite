@@ -1126,11 +1126,11 @@ MachGetWinMem()
 	Vm_PinUserMem(VM_READWRITE_ACCESS,
 		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
 		   statePtr->userState.minSWP);
-    } else if (swp > statePtr->userState.maxSWP - 2 * MACH_SAVED_WINDOW_SIZE) {
+    } else if (swp >= statePtr->userState.maxSWP - 2 * MACH_SAVED_REG_SET_SIZE) {
 	/*
 	 * Need to allocate more at the high end.
 	 */
-	if (swp > statePtr->userState.maxSWP - 1 * MACH_SAVED_WINDOW_SIZE) {
+	if (swp > statePtr->userState.maxSWP - MACH_SAVED_REG_SET_SIZE) {
 	    Sys_Panic(SYS_FATAL, "MachGetWinMem: SWP too big.\n");
 	}
 	if (statePtr->userState.maxSWP - statePtr->userState.minSWP >

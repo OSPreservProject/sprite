@@ -550,7 +550,14 @@ WinOvFlow:
 	and		SAFE_TEMP1, SAFE_TEMP1, $MACH_KPSW_CUR_MODE
 	cmp_br_delayed	eq, SAFE_TEMP1, r0, winOvFlow_SaveWindow
 	Nop
-	VERIFY_SWP(winOvFlow_SaveWindow)	/* Verify that the SWP is OK. */
+	VERIFY_SWP(winOvFlow_SaveWindow)	/* Verify that the SWP is OK.*/
+	/*
+	 * The SWP is bogus.  Act as if we were able to do the overflow
+	 * so when we trap back in to kill the user process we won't take
+	 * another overflow.
+	 */
+	rd_special	r1, swp
+	wr_special	swp, r1, $MACH_SAVED_WINDOW_SIZE
 	USER_ERROR(MACH_USER_BAD_SWP_TRAP)
 	/* DOESN'T RETURN */
 winOvFlow_SaveWindow:
@@ -651,7 +658,7 @@ winOvFlow_SaveWindow:
 	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
 	rd_special	VOL_TEMP2, swp
 	sub		VOL_TEMP1, VOL_TEMP1, $(2 * MACH_SAVED_REG_SET_SIZE)
-	cmp_br_delayed	le, VOL_TEMP2, VOL_TEMP1, winOvFlow_Return
+	cmp_br_delayed	ule, VOL_TEMP2, VOL_TEMP1, winOvFlow_Return
 	Nop
 	/*
 	 * Allocate more memory.
@@ -688,6 +695,16 @@ WinUnFlow:
 	cmp_br_delayed	eq, SAFE_TEMP1, r0, winUnFlow_RestoreWindow
 	Nop
 	VERIFY_SWP(winUnFlow_RestoreWindow)
+	/*
+	 * We have a bogus SWP.  Act as if we took an underflow so when we
+	 * return to user mode to try to kill the process we won't try to
+	 * take an underflow.  As it turns out it shouldn't matter because
+	 * the return trap in the USER_ERROR macro will be done with all
+	 * traps disabled which means that the underflow will be ignored.
+	 * However, its better to be safe than sorry.
+	 */
+	rd_special	VOL_TEMP1, swp
+	wr_special	swp, VOL_TEMP1, $-MACH_SAVED_WINDOW_SIZE
 	USER_ERROR(MACH_USER_BAD_SWP_TRAP)
 	/* DOESN'T RETURN */
 winUnFlow_RestoreWindow:
@@ -752,7 +769,7 @@ winUnFlow_RestoreWindow:
 	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MIN_SWP_OFFSET
 	Nop
 	add_nt		VOL_TEMP1, VOL_TEMP1, $MACH_SAVED_WINDOW_SIZE
-	cmp_br_delayed	gt, VOL_TEMP2, VOL_TEMP1, winUnFlow_Return
+	cmp_br_delayed	ugt, VOL_TEMP2, VOL_TEMP1, winUnFlow_Return
 	Nop
 	/*
 	 * Need to get more memory for window underflow.
@@ -1791,12 +1808,9 @@ SigReturnTrap:
  *
  *----------------------------------------------------------------------------
  */
+getWinMemTrap_Const1:
+	.long	MACH_KPSW_USE_CUR_PC
 GetWinMemTrap:
-	VERIFY_SWP(getWinMemTrap_GoodSWP)
-	USER_SWP_ERROR()
-	/* DOESN'T RETURN */
-
-getWinMemTrap_GoodSWP:
 	/*
 	 * Enable all traps.
 	 */
@@ -1805,16 +1819,24 @@ getWinMemTrap_GoodSWP:
 	/*
 	 * Call _MachGetWinMem()
 	 */
-	rd_insert	VOL_TEMP1
 	call		_MachGetWinMem
 	Nop
-	wr_insert	VOL_TEMP1
 	/*
-	 * Restore the current and next PCs and then do a
-	 * normal return from trap.
+	 * Store the current and next PCs into the saved state for this
+	 * process because the ReturnTrap will restore the user state.
+	 * Also store the kpsw that indicates that we should
+	 * return to the current PC instead of the next one.
 	 */
-	add_nt		CUR_PC_REG, NON_INTR_TEMP1, $0
-	add_nt		NEXT_PC_REG, NON_INTR_TEMP2, $0
+	ld_32           SAFE_TEMP1, r0, $_machCurStatePtr
+        Nop
+	st_32		NON_INTR_TEMP1, SAFE_TEMP1, $MACH_TRAP_CUR_PC_OFFSET
+	st_32		NON_INTR_TEMP2, SAFE_TEMP1, $MACH_TRAP_NEXT_PC_OFFSET
+	LD_PC_RELATIVE(SAFE_TEMP2, getWinMemTrap_Const1)
+	or		KPSW_REG, KPSW_REG, SAFE_TEMP2
+	st_32		KPSW_REG, SAFE_TEMP1, $MACH_TRAP_KPSW_OFFSET
+	/*
+	 * Do a normal return from trap.
+	 */
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
 	jump		ReturnTrap
 	Nop
@@ -1877,7 +1899,29 @@ returnTrap_NormReturn:
 	Nop
 	cmp_br_delayed	ne, VOL_TEMP1, $0, returnTrap_SpecialAction
 	Nop
+	/*
+	 * See if we have to allocate more memory on the saved window
+	 * stack.
+	 */
+	ld_32           VOL_TEMP1, r0, $_machCurStatePtr
+        Nop
+        ld_32           VOL_TEMP2, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
+	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_TRAP_SWP_OFFSET
+        sub             VOL_TEMP2, VOL_TEMP2, $(2 * MACH_SAVED_REG_SET_SIZE)
+        cmp_br_delayed  ule, VOL_TEMP3, VOL_TEMP2, returnTrap_UserReturn
+        Nop
+        /*
+         * Allocate more memory.
+         */
+	or              VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw         VOL_TEMP1, $0
+	call		_MachGetWinMem
+	nop
+	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
+	jump		ReturnTrap
+	nop
 
+returnTrap_UserReturn:
 	/*
 	 * Restore the user's state and put us back into user mode.
 	 */
@@ -2037,13 +2081,29 @@ returnTrap_CallSigHandler:
 	Nop
 1:
 	/*
+	 * Put the pc to execute in VOL_TEMP1.  Note that INPUT_REG5 contains
+	 * the pointer to the machine struct that was in OUTPUT_REG5 before
+	 * we shifted the window.
+	 */
+	ld_32		VOL_TEMP1, INPUT_REG5, $MACH_NEW_CUR_PC_OFFSET
+	/*
+	 * See if we have enough window memory.
+	 */
+	ld_32		VOL_TEMP2, INPUT_REG5, $MACH_MAX_SWP_OFFSET
+	rd_special	VOL_TEMP3, swp
+	sub		VOL_TEMP2, VOL_TEMP2, $(2 * MACH_SAVED_REG_SET_SIZE)
+	cmp_br_delayed	ule, VOL_TEMP3, VOL_TEMP2, 1f
+	nop
+	call		_MachGetWinMem
+	nop
+1:
+	/*
 	 * Set the signal handler executing in user mode.
-	 * Assume that the user's signal handler will to a "return r10,r0,8".
+	 * Assume that the user's signal handler will do a "return r10,r0,8".
 	 */
 	add_nt		RETURN_ADDR_REG, r0, $(SigReturnAddr-8)
-	ld_32		VOL_TEMP1, INPUT_REG5, $MACH_NEW_CUR_PC_OFFSET
 	rd_kpsw		VOL_TEMP2
-	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_CUR_MODE|MACH_KPSW_ALL_TRAPS_ENA
+	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_CUR_MODE
 	jump_reg	VOL_TEMP1, $0
 	wr_kpsw		VOL_TEMP2, $0
 
