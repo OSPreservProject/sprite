@@ -297,10 +297,11 @@ static SysCallEntry sysCalls[] = {
     Net_GetRoutes,		Net_GetRoutes,		TRUE,	5,   NILPARM,
     Net_DeleteRouteStub,	Net_DeleteRouteStub,	TRUE,	1,   NILPARM,
     /*
-     * The following is a placeholder for a Zebra Storage Server system
-     * call which isn't in the standard kernel. 
+     * The following are placeholders for Zebra system calls which aren't 
+     * in the standard kernel. 
      */
-    ErrorProc,   		ErrorProc,   TRUE,	2,   NILPARM,
+    ErrorProc,   		ErrorProc,   TRUE,	3,   NILPARM,
+    ErrorProc,   		ErrorProc,   TRUE,	3,   NILPARM,
 };
 
 
