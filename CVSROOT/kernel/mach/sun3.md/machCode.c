@@ -1265,6 +1265,7 @@ MachUserReturn(procPtr)
 	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	}
 	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
+	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	    SetupSigHandler(procPtr, &sigStack, pc);
 	    Mach_DisableIntr();
 	    break;
@@ -1378,7 +1379,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
     statePtr = procPtr->machStatePtr;
     excStackSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
 
-    if (procPtr->unixProgress == PROC_PROGRESS_UNIX) {
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX) {
 	usp = (Address)statePtr->userState.userStackPtr -
 		sizeof(UnixSignalStack);
 	if (Compat_SpriteSignalToUnix(sigStackPtr->sigStack.sigNum, &unixSignal)
