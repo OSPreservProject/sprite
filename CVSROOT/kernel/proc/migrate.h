@@ -100,5 +100,6 @@ extern ReturnStatus ProcMigDestroyCmd();
 extern ReturnStatus ProcMigCommand();
 extern ReturnStatus ProcMigContinueProcess();
 extern ReturnStatus ProcMigGetSuspend();
+extern ENTRY void   ProcMigWakeupWaiters();
 
 #endif /* _MIGRATE */
