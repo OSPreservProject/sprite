@@ -66,10 +66,18 @@ int devScsiNumHBATypes = sizeof(devScsiAttachProcs) /
  * A list of disk devices that is used when probing for a root partition.
  * The choices are:
  * SCSI Disk target ID 0 LUN 0 partition 0 on SCSIC90 HBA 0. 
+ * SCSI Disk target ID 0 LUN 0 partition 2 on SCSIC90 HBA 0. 
+ * SCSI Disk target ID 0 LUN 0 partition 6 on SCSIC90 HBA 0. 
  */
 Fs_Device devFsDefaultDiskPartitions[] = { 
     { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 2),
           SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 2),
+	(ClientData) NIL },
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 0),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 0),
+	(ClientData) NIL },
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 6),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 6),
 	(ClientData) NIL },
   };
 int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
