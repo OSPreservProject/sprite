@@ -634,4 +634,9 @@ Fixed a few compat bugs:
     Got rid of some warning messages about partition mismatches and
 	short reads that weren't really necessary.
     RAID device is now enabled properly. 1.110 got it wrong.
+
+1.112	Mon Apr  6 22:04:05 PDT 1992
+    Fixed the sanity checks in the LFS module that check whether clean
+	segments are really clean.
+    New files linked in from the net library.
     New files linked in from the net library.
