@@ -449,21 +449,3 @@ void
 Dev_ZilogWriteReg()
 {
 }
-
-/*
- * Stuff below used in sys:  should go away.
- */
-
-typedef struct {
-    int numInterrupts;          /* Total number of interrupts */
-    int numMouseChars;          /* Number of characters due to mouse */
-    int numKbdChars;            /* Number of characters due to keyboard */
-    int numSerAChars;           /* Number of characters due to serial A port */
-    int numSerBChars;           /* Number of characters due to serial B port */
-    int mouseCharsLost;         /* Number of mouse characters lost */
-    int kbdCharsLost;           /* Number of keyboard characters lost */
-    int numBadSyncs;            /* Number of stray mouse chars (no sync) */
-    Time mostRecentInterrupt;   /* Last time an interrupt was received */
-} Dev_KbdInstrument;
-
-Dev_KbdInstrument dev_KbdInstrument;
