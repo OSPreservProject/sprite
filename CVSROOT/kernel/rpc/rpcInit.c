@@ -65,7 +65,6 @@ void
 Rpc_Init()
 {
     register int i;
-    register Net_ScatterGather *bufferPtr;
     register int frag;
     Net_EtherAddress etherAddress;
     int	     maxHdrSize;
@@ -146,7 +145,6 @@ Rpc_Init()
      * Query the net module of the maximum size protocol header buffer 
      * needed.
      */
-    maxHdrSize = Net_MaxProtoHdrSize();
     for (i=0 ; i<rpcNumChannels ; i++) {
 	register RpcClientChannel *chanPtr;
 
@@ -301,13 +299,8 @@ RpcInitServerState(index)
 			 * in the table and used as a hint to clients */
 {
     register RpcServerState *srvPtr;	/* Server state that is initialized */
-    register Net_ScatterGather *bufferPtr;	/* Tmp pointer to io vector
-					 * element.  Some of these are set
-					 * up here to reference headers also
-					 * kept in the server's state. */
     register int frag;			/* Index into array of headers used
 					 * for fragmenting */
-    int		maxHdrSize;
     static Sync_Semaphore mutexInit =
 	Sync_SemInitStatic("RpcServerState->mutex");
 
