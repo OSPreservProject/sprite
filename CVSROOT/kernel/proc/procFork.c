@@ -148,10 +148,28 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     procPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
     procPtr->familyID 		= parentProcPtr->familyID;
 
-    if (procName == (char *)NIL) {
-	String_Copy(parentProcPtr->codeFileName, procPtr->codeFileName);
-    } else {
-	String_Copy(procName, procPtr->codeFileName);
+    procPtr->billingRate 	= parentProcPtr->billingRate;
+    procPtr->recentUsage 	= 0;
+    procPtr->weightedUsage 	= 0;
+    procPtr->unweightedUsage 	= 0;
+     */
+    procPtr->kernelCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    procPtr->userCpuUsage.ticks 	= timer_TicksZeroSeconds;
+	Mem_Free((Address) procPtr->argString);
+    procPtr->childUserCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    procPtr->numQuantumEnds	= 0;
+    procPtr->numWaitEvents	= 0;
+    procPtr->event		= NIL;
+
+    procPtr->kcallTable		= mach_NormalHandlers;
+     * list containing that name.  Note that String_Copy(..,NULL) allocates
+     * space dynamically.
+
+    /* 
+	procPtr->argString = String_Copy(procName, (char *) NULL);
+     * reinitializations of control block fields.  
+	    procPtr->argString =
+		    String_Copy(parentProcPtr->argString, (char *) NULL);
 	free((Address) procPtr->argString);
 	procPtr->argString = (Address) NIL;
     }
