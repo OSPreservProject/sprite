@@ -14,12 +14,21 @@
 #ifndef _VM
 #define _VM
 
+#include "list.h"
+
+#ifdef KERNEL
 #include "vmMach.h"
 #include "vmStat.h"
-#include "list.h"
 #include "fs.h"
 #include "procAOUT.h"
 #include "sync.h"
+#else
+#include <kernel/vmMach.h>
+#include <kernel/vmStat.h>
+#include <kernel/fs.h>
+#include <kernel/procAOUT.h>
+#include <kernel/sync.h>
+#endif
 
 /*
  * Structure to represent a translated virtual address
