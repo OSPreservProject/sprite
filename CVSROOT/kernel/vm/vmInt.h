@@ -462,7 +462,14 @@ typedef struct VmCOWInfo {
  * Shared memory.
  */
 extern int vmShmDebug;
+/*
+ * Debugging printf.
+ */
+#ifdef lint
+#define dprintf printf
+#else
 #define dprintf if (vmShmDebug) printf
+#endif
 
 /*
  * Macros to get a pointer to a page table entry.
@@ -496,18 +503,15 @@ extern int vmShmDebug;
 /*
  * Macro to get a virtAddr's offset in the page table.
  */
-#define segOffset(virtAddrPtr) ( (virtAddrPtr)->segPtr->offset)
-/*
+#ifndef SEGOFFSETCODE
 #ifdef sun4
+#define segOffset(virtAddrPtr) ( (virtAddrPtr)->segPtr->offset)
 #else
-#define segOffset(virtAddrPtr) ( vmShmDebug ? (((virtAddrPtr)->sharedPtr== \
+#define segOffset(virtAddrPtr) (( !vmShmDebug || (virtAddrPtr)->sharedPtr== \
 	(Vm_SegProcList *)NIL) ? (virtAddrPtr)->segPtr->offset :\
-	( ((virtAddrPtr)->sharedPtr==(Vm_SegProcList *)NULL) ? \
-	   (printf("Warning: NULL segOffset\n"), \
-	       (virtAddrPtr)->sharedPtr->offset) : \
-	   (virtAddrPtr)->sharedPtr->offset)) : (virtAddrPtr)->segPtr->offset)
-#endif
-*/
+	   (virtAddrPtr)->sharedPtr->offset)
+#endif sun4
+#endif SEGOFFSETCODE
 
 
 /*----------------------------------------------------------------------------*/
@@ -625,4 +629,5 @@ extern	void		VmPrefetch();
  * Vm tracing.
  */
 extern	void		VmTraceSegStart();
+extern	void		VmCheckListIntegrity();
 #endif _VMINT
