@@ -6,8 +6,14 @@
  *	here.  See the sun architecture manuals for details on
  *	the mapping hardware.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -31,12 +37,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "net.h"
 
+#if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
+#undef MASTER_LOCK
+#undef MASTER_UNLOCK
+#define MASTER_LOCK(x) DISABLE_INTR()
+#define MASTER_UNLOCK(x) ENABLE_INTR()
+#else
 
 /*
  * The master lock to synchronize access to pmegs and context.
  */
 static Sync_Semaphore vmMachMutex;
 static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
+#endif
 
 #ifndef sun4c
 /*
@@ -263,6 +276,23 @@ static	VmMachPTE		*refModMap;
     ((machPtr)->segTablePtr + (segNum) - (machPtr)->offset) )
 #endif
 
+/*
+ * Macro to check to see if address is in a hardware segment (PMEG) that
+ * is used by file cache virtual addresses.
+ * These kernel segment pmegs may be stolen.
+ */
+
+#define	_ROUND2SEG(x) ((unsigned int)(x)  & ~(VMMACH_SEG_SIZE-1))
+#define	IN_FILE_CACHE_SEG(addr) 					     \
+          ( ((unsigned int)(addr) >=					     \
+		_ROUND2SEG(vmBlockCacheBaseAddr + (VMMACH_SEG_SIZE-1))) &&   \
+	    ((unsigned int)(addr) < _ROUND2SEG(vmBlockCacheEndAddr)) )
+
+/*
+ * TRUE if stealing of file cache pmegs are permitted. Initialized to FALSE
+ * for backward compat with old file cache code.
+ */
+Boolean vmMachCanStealFileCachePmegs = FALSE;
 
 /*
  * The maximum amount of kernel code + data available.  This is set to however
@@ -290,8 +320,9 @@ static int	PMEGGet();
 static void	PMEGFree();
 static Boolean	PMEGLock();
 static void	SetupContext();
-void		VmMachTracePage();
-void		PageInvalidate();
+static void	VmMachTracePage();
+static void	PageInvalidate();
+static void FlushWholeCache();
 
 static	VmMach_SegData	*sysMachPtr;
 Address			vmMachPTESegAddr;
@@ -363,7 +394,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     int			nextVframeNum, numFrames;
 #endif
 
-#ifdef multiprocessor
+#if (MACH_MAX_NUM_PROCESSORS != 1) /* multiprocessor implementation */
     Sync_SemInitDynamic(&vmMachMutex, "Vm:vmMachMutex");
 #endif
 
@@ -2427,7 +2458,7 @@ VmMachFlushCacheRange(startAddr, endAddr)
 
     if ((unsigned int )endAddr -
 	    (unsigned int )startAddr >= VMMACH_CACHE_SIZE) {
-	VmMachFlushWholeCache();
+	FlushWholeCache();
 
 	return;
     }
@@ -2458,7 +2489,7 @@ VmMachFlushCacheRange(startAddr, endAddr)
 /*
  *----------------------------------------------------------------------
  *
- * VmMachFlushWholeCache --
+ * FlushWholeCache --
  *
  *	Flush the whole cache.  It is important that the compiler not
  *	optimize out this loop!
@@ -2471,8 +2502,8 @@ VmMachFlushCacheRange(startAddr, endAddr)
  *
  *----------------------------------------------------------------------
  */
-void
-VmMachFlushWholeCache()
+static void
+FlushWholeCache()
 {
     int	i;
     char junk;
@@ -3356,18 +3387,19 @@ VmMach_PageValidate(virtAddrPtr, pte)
     register  VMMACH_SEG_NUM	*segTablePtr;
     register  PMEG		*pmegPtr;
     register  int		hardSeg;
-    register  int		newPMEG;
     register  VmMachPTE		hardPTE;
     register  VmMachPTE		tHardPTE;
-    Address			addr;
-    int				i;
+    Vm_PTE    *ptePtr;
+    Address	addr;
+    Boolean	reLoadPMEG;  	/* TRUE if we had to reload this PMEG. */
+    int		i;
 
     MASTER_LOCK(vmMachMutexPtr);
 
     segPtr = virtAddrPtr->segPtr;
     addr = (Address) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
 #ifdef sun4
-    if (!VMMACH_ADDR_CHECK(addr)) {
+	if (!VMMACH_ADDR_CHECK(addr)) {
 	panic("VmMach_PageValidate: virt addr 0x%x falls into illegal range!\n",
 		addr);
     }
@@ -3383,18 +3415,34 @@ VmMach_PageValidate(virtAddrPtr, pte)
     hardSeg = PageToOffSeg(virtAddrPtr->page, virtAddrPtr);
     segTablePtr = (VMMACH_SEG_NUM *) GetHardSegPtr(segPtr->machPtr, hardSeg);
 
+    reLoadPMEG = FALSE;
     if (*segTablePtr == VMMACH_INV_PMEG) {
+	int flags;
 	/*
 	 * If there is not already a pmeg for this hardware segment, then get
 	 * one and initialize it.  If this is for the kernel then make
 	 * sure that the pmeg cannot be taken away from the kernel.
+	 * We make an exception for PMEGs allocated only for the block cache.
+	 * If we fault on kernel pmeg we reload all the mappings for the
+	 * pmeg because we can't tolerate "quick" faults in some places in the
+	 * kernel.
 	 */
+	flags = 0;
 	if (segPtr == vm_SysSegPtr) {
-	    newPMEG = PMEGGet(segPtr, hardSeg, PMEG_DONT_ALLOC);
-	} else {
-	    newPMEG = PMEGGet(segPtr, hardSeg, 0);
+	   if (IN_FILE_CACHE_SEG(addr) && vmMachCanStealFileCachePmegs) {
+	      /*
+	       * In block cache virtual addresses.
+	       */
+	      reLoadPMEG = TRUE;
+	   } else {
+	      /*
+	       * Normal kernel PMEGs must still be wired.
+	       */
+	      flags = PMEG_DONT_ALLOC;
+	   }
 	}
-        *segTablePtr = newPMEG;
+        *segTablePtr = PMEGGet(segPtr, hardSeg, flags);
+	pmegPtr = &pmegArray[*segTablePtr];
     } else {
 	pmegPtr = &pmegArray[*segTablePtr];
 	if (pmegPtr->pageCount == 0) {
@@ -3404,12 +3452,16 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	     * of someone stealing this empty pmeg.  Now we have to move
 	     * it off of the free list.
 	     */
+#ifndef CLEAN
 	    VmCheckListIntegrity((List_Links *)pmegPtr);
+#endif
 	    if (pmegPtr->flags & PMEG_DONT_ALLOC) {
 		List_Remove((List_Links *)pmegPtr);
 	    } else {
 		List_Move((List_Links *)pmegPtr, LIST_ATREAR(pmegInuseList));
+#ifndef CLEAN
 		VmCheckListIntegrity((List_Links *)pmegPtr);
+#endif
 	    }
 	}
     }
@@ -3452,7 +3504,9 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	VmMachSetSegMap(addr, (int)*segTablePtr);
 
         if (segPtr != (Vm_Segment *) NIL) {
+#ifndef CLEAN
 	    VmCheckListIntegrity((List_Links *)segPtr->procList);
+#endif
             LIST_FORALL(segPtr->procList, (List_Links *)procLinkPtr) {
 		if (procLinkPtr->procPtr->vmPtr != (Vm_ProcInfo *) NIL &&
 			procLinkPtr->procPtr->vmPtr->machPtr !=
@@ -3502,6 +3556,24 @@ VmMach_PageValidate(virtAddrPtr, pte)
 
     /* Flush something? */
     SET_ALL_PAGE_MAP(addr, hardPTE);
+    if (reLoadPMEG) {
+	/*
+	 * Reload all pte's for this pmeg.
+	 */
+	unsigned int a = (hardSeg << VMMACH_SEG_SHIFT);
+	int	pageCount = 0;
+	for (i = 0; i < VMMACH_NUM_PAGES_PER_SEG_INT; i++ ) { 
+	    ptePtr = VmGetPTEPtr(vm_SysSegPtr, (a >> VMMACH_PAGE_SHIFT));
+	    if ((*ptePtr & VM_PHYS_RES_BIT)) {
+		hardPTE = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
+				VirtToPhysPage(Vm_GetPageFrame(*ptePtr));
+		SET_ALL_PAGE_MAP(a, hardPTE);
+		pageCount++;
+	     }
+	     a += VMMACH_PAGE_SIZE_INT;
+	}
+	pmegPtr->pageCount = pageCount;
+    }
 
     MASTER_UNLOCK(vmMachMutexPtr);
 }
@@ -3523,7 +3595,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL void
+static void
 PageInvalidate(virtAddrPtr, virtPage, segDeletion) 
     register	Vm_VirtAddr	*virtAddrPtr;
     unsigned 	int		virtPage;
@@ -3586,7 +3658,9 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 
         flushSegPtr = virtAddrPtr->segPtr;
         if (flushSegPtr != (Vm_Segment *) NIL) {
+#ifndef CLEAN
 	    VmCheckListIntegrity((List_Links *)flushSegPtr->procList);
+#endif
             LIST_FORALL(flushSegPtr->procList, (List_Links *)flushProcLinkPtr) {
                 flushVmPtr = flushProcLinkPtr->procPtr->vmPtr;
                 if (flushVmPtr != (Vm_ProcInfo *) NIL) {
@@ -3634,7 +3708,9 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 		List_Move((List_Links *)pmegPtr, 
 			  LIST_ATREAR(pmegFreeList));
 	    }
+#ifndef CLEAN
 	    VmCheckListIntegrity((List_Links *)pmegPtr);
+#endif
 	}
     }
 }
@@ -4317,7 +4393,7 @@ VmMach_Trace()
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL void
+static void
 VmMachTracePage(pte, pageNum)
     register	VmMachPTE	pte;	/* Page table entry to be traced. */
     unsigned	int		pageNum;/* Inverse of page within PMEG. */
@@ -5100,3 +5176,126 @@ VmMach_CopySharedMem(parentProcPtr, childProcPtr)
             VMMACH_SHARED_NUM_BLOCKS*sizeof(int));
     childSharedData->allocFirstFree = parentSharedData->allocFirstFree;
 }
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_LockCachePage --
+ *
+ *      Perform machine dependent locking of a kernel resident file cache
+ *	page.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_LockCachePage(kernelAddress)
+    Address	kernelAddress;	/* Address on page to lock. */
+{
+    register  Vm_VirtAddr	virtAddr;
+    register  VMMACH_SEG_NUM	*segTablePtr, pmeg;
+    register  int		hardSeg, i;
+    Vm_PTE    *ptePtr;
+    VmMachPTE		hardPTE;
+    /*
+     * Ignore pages not in cache pmeg range.
+     */
+    if (!IN_FILE_CACHE_SEG(kernelAddress)) {
+	return;
+    }
+
+    MASTER_LOCK(vmMachMutexPtr);
+
+    pmeg = VmMachGetSegMap(kernelAddress);
+    if (pmeg == VMMACH_INV_PMEG) {
+	int	oldContext, i;
+	unsigned int a;
+	/*
+	 *  If not a valid PMEG install a new pmeg and load its mapping. 
+	 */
+	virtAddr.segPtr = vm_SysSegPtr;
+	virtAddr.page = ((unsigned int) kernelAddress) >> VMMACH_PAGE_SHIFT;
+	virtAddr.offset = 0;
+	virtAddr.flags = 0;
+	virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
+    
+	hardSeg = PageToOffSeg(virtAddr.page, (&virtAddr));
+	segTablePtr = (VMMACH_SEG_NUM *) 
+			    GetHardSegPtr(vm_SysSegPtr->machPtr, hardSeg);
+	if (*segTablePtr != VMMACH_INV_PMEG) {
+	    panic("VmMach_LockCachePage: Bad segTable entry.\n");
+	}
+	*segTablePtr = pmeg = PMEGGet(vm_SysSegPtr, hardSeg, 0);
+	/*
+	 * Have to propagate the PMEG to all contexts.
+	 */
+	oldContext = VmMachGetContextReg();
+	for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+	    VmMachSetContextReg(i);
+	    VmMachSetSegMap(kernelAddress, pmeg);
+	}
+	VmMachSetContextReg(oldContext);
+	/*
+	 * Reload the entire PMEG.
+	 */
+	a = (hardSeg << VMMACH_SEG_SHIFT);
+	for (i = 0; i < VMMACH_NUM_PAGES_PER_SEG_INT; i++ ) { 
+	    ptePtr = VmGetPTEPtr(vm_SysSegPtr, (a >> VMMACH_PAGE_SHIFT));
+	    if ((*ptePtr & VM_PHYS_RES_BIT)) {
+		hardPTE = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
+				VirtToPhysPage(Vm_GetPageFrame(*ptePtr));
+		SET_ALL_PAGE_MAP(a, hardPTE);
+		pmegArray[pmeg].pageCount++;
+	     }
+	     a += VMMACH_PAGE_SIZE_INT;
+	}
+    }
+    pmegArray[pmeg].lockCount++;
+
+    MASTER_UNLOCK(vmMachMutexPtr);
+    return;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_UnlockCachePage --
+ *
+ *      Perform machine dependent unlocking of a kernel resident page.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_UnlockCachePage(kernelAddress)
+    Address	kernelAddress;	/* Address on page to unlock. */
+{
+    register  VMMACH_SEG_NUM	pmeg;
+
+    if (!IN_FILE_CACHE_SEG(kernelAddress)) {
+	return;
+    }
+
+    MASTER_LOCK(vmMachMutexPtr);
+
+    pmeg = VmMachGetSegMap(kernelAddress);
+
+    pmegArray[pmeg].lockCount--;
+    if (pmegArray[pmeg].lockCount < 0) {
+	panic("VmMach_UnlockCachePage lockCount < 0\n");
+    }
+
+    MASTER_UNLOCK(vmMachMutexPtr);
+    return;
+}
+
+
