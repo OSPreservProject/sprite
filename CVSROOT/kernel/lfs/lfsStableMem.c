@@ -487,7 +487,8 @@ LfsStableMemFetch(smemPtr, entryNumber, flags, entryPtr)
 	     }
 
 	     if (status != SUCCESS) {
-		Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+		Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
+				    FSCACHE_DELETE_BLOCK);
 	     }
 	}
 	entryPtr->modified = dirtied;
@@ -532,8 +533,9 @@ LfsStableMemRelease(smemPtr, entryPtr, modified)
     LfsStableMemEntry *entryPtr; /*  Stable memory entry to return. */
     Boolean	modified;	/* TRUE if block was modified. */
 {
-    Fscache_Block	    *blockPtr;
-    int			timeDirtied, blockNum;
+    Fscache_Block	*blockPtr;
+    time_t		timeDirtied;
+    int			blockNum;
 
     blockPtr = (Fscache_Block *) entryPtr->clientData;
     blockNum = blockPtr->blockNum;

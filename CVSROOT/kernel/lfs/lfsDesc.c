@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <lfsDescMap.h>
 #include <fs.h>
 #include <fsdm.h>
+#include <user/time.h>
 
 
 /*
@@ -104,7 +105,8 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
 #endif
 	if (status != SUCCESS) {
 	    printf( "Could not read in file descriptor\n");
-	    Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+	    Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
+				FSCACHE_DELETE_BLOCK);
 	    return status;
 	}
     }
@@ -131,12 +133,12 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
 	     if (status != SUCCESS) {
 		  LfsError(lfsPtr, status, "Can't get access time.\n");
 	     }
-	    Fscache_UnlockBlock(blockPtr, 0, -1, FS_BLOCK_SIZE, 0);
+	    Fscache_UnlockBlock(blockPtr, (time_t)0, -1, FS_BLOCK_SIZE, 0);
 	    return SUCCESS;
 	}
 	descPtr++;
     }
-    Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+    Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0, FSCACHE_DELETE_BLOCK);
     printf("Descriptor map foulup, can't find file %d at %d\n", fileNumber,
 			LfsDiskAddrToOffset(diskAddr));
     LfsError(lfsPtr, FS_FILE_NOT_FOUND, "Descriptor map foulup.");
@@ -514,7 +516,7 @@ LfsDescCacheBlockRelease(lfsPtr, clientData, deleteBlock)
     Boolean	deleteBlock; 	/* TRUE if block should be deleted. */
 {
     Fscache_Block	*blockPtr = (Fscache_Block *) clientData;
-    Fscache_UnlockBlock(blockPtr,(unsigned)0, -1, FS_BLOCK_SIZE, 
+    Fscache_UnlockBlock(blockPtr,(time_t)0, -1, FS_BLOCK_SIZE, 
 		deleteBlock ? FSCACHE_DELETE_BLOCK : 0);
 }
 

@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsdm.h>
 #include <fscache.h>
 #include <rpc.h>
+#include <user/time.h>
 
 #ifdef TRACING
 #include <trace.h>
@@ -758,7 +759,8 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 			    bcopy(dPtr, blockPtr->blockAddr, blockSize);
 			    bzero(blockPtr->blockAddr + blockSize,
 					FS_BLOCK_SIZE - blockSize);
-			    Fscache_UnlockBlock(blockPtr, Fsutil_TimeInSeconds(),
+			    Fscache_UnlockBlock(blockPtr,
+						(time_t)Fsutil_TimeInSeconds(),
 						-1, blockSize, 
 						FSCACHE_BLOCK_BEING_CLEANED);
 
@@ -777,7 +779,8 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 				panic("Block cleaned doesn't match block.\n");
 			    }
 #endif
-			    Fscache_UnlockBlock(blockPtr, Fsutil_TimeInSeconds(),
+			    Fscache_UnlockBlock(blockPtr,
+						(time_t)Fsutil_TimeInSeconds(),
 						-1, blockPtr->blockSize, 
 						FSCACHE_BLOCK_BEING_CLEANED);
 			   LFS_STATS_ADD(lfsPtr->stats.layout.blocksCopiedHit,
@@ -1880,7 +1883,7 @@ FreeDirLogBlocks(lfsPtr, segPtr, segLayoutDataPtr)
 	blockPtr = (Fscache_Block *) 
 			List_First(&segLayoutDataPtr->dirLogListHdr);
 	List_Remove((List_Links *)blockPtr);
-	Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+	Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0, FSCACHE_DELETE_BLOCK);
     }
     dirLogPtr->paused = FALSE;
     Sync_Broadcast(&dirLogPtr->logPausedWait);
