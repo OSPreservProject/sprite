@@ -56,6 +56,7 @@ void	DumpTimerStats();
 static void	PrintVersion();
 static void	PrintTOD();
 extern	void	Fs_DumpCacheStats();
+extern	void	Fs_PdevPrintTrace();
 extern	void	Fs_HandleScavengeStub();
 extern	void	Mem_DumpStats();
 
@@ -89,6 +90,7 @@ Dump_Init()
     Dev_KbdQueueAttachProc('m', Mem_DumpStats, (ClientData) FALSE);
     Dev_KbdQueueAttachProc('p', Dump_ProcessTable, (ClientData) 0);
     Dev_KbdQueueAttachProc('r', Dump_ReadyQueue,  (ClientData) 0);
+    Dev_KbdQueueAttachProc('q', Fs_PdevPrintTrace,  (ClientData) 200);
     Dev_KbdQueueAttachProc('s', DumpTimerStats,   (ClientData) 's');
     Dev_KbdQueueAttachProc('t', Dump_TimerQueue,  (ClientData) 0);
     Dev_KbdQueueAttachProc('v', PrintVersion, (ClientData) 0);
