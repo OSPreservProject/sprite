@@ -48,15 +48,11 @@ static Sync_Lock debugLock; 			/* Monitor lock. */
 List_Links	debugListHdr;
 List_Links	*debugList = &debugListHdr;
 
-#ifdef sun4
-/*
- * The sun4 compiler won't handle the kind of redeclaration of these routines
- * that's done in this file.
- */
-extern	void	ProcDebugWakeup();
-extern	void	AddToDebugList();
-extern	void	RemoveFromDebugList();
-#endif sun4
+extern	ENTRY 	void		ProcDebugWakeup();
+extern	ENTRY	void		AddToDebugList();
+extern	ENTRY	void		RemoveFromDebugList();
+extern	ENTRY	ReturnStatus	ProcGetThisDebug();
+extern	ENTRY	ReturnStatus	ProcGetNextDebug();
 
 
 /*
@@ -104,7 +100,7 @@ ProcDebugInit()
  *----------------------------------------------------------------------
  */
 
-ENTRY ReturnStatus
+ReturnStatus
 Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
     Proc_PID 		pid;		/* Process id of the process to be 
 					 * debugged. */
@@ -348,7 +344,7 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+void
 Proc_ResumeProcess(procPtr, killingProc)
     register	Proc_ControlBlock	*procPtr;	/* Process to remove
 							 * from list. */
@@ -428,7 +424,7 @@ ProcDebugWakeup()
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
+ENTRY static ReturnStatus
 ProcGetThisDebug(pid, procPtrPtr)
     Proc_PID		pid;
     Proc_ControlBlock	**procPtrPtr;
@@ -501,7 +497,7 @@ exit:
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
+ENTRY static ReturnStatus
 ProcGetNextDebug(destAddr, procPtrPtr)
     Address		destAddr;
     Proc_ControlBlock	**procPtrPtr;
@@ -554,7 +550,7 @@ ProcGetNextDebug(destAddr, procPtrPtr)
  *----------------------------------------------------------------------
  */
 
-static void
+ENTRY static void
 AddToDebugList(procPtr)
     register Proc_ControlBlock 	*procPtr;
 {
@@ -583,7 +579,7 @@ AddToDebugList(procPtr)
  *----------------------------------------------------------------------
  */
 
-void
+ENTRY void
 RemoveFromDebugList(procPtr)
     register Proc_ControlBlock 	*procPtr;
 {
@@ -596,6 +592,3 @@ RemoveFromDebugList(procPtr)
 
     UNLOCK_MONITOR;
 }
-
-
-
