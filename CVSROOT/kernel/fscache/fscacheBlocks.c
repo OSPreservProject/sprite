@@ -2560,6 +2560,25 @@ Fscache_GetDirtyFile(backendPtr, fsyncOnly, fileMatchProc, clientData)
 		    (cacheInfoPtr->oldestDirtyBlockTime < filewriteBackTime))) {
 	    break;
 	}
+	/*
+	 * Check to make sure that if dirty blocks exist then at least one 
+	 * of the blocks is available to write.
+	 */
+	if (!List_IsEmpty(&cacheInfoPtr->dirtyList)) { 
+	    register	List_Links	*dirtyPtr;
+	    register	Fscache_Block	*blockPtr;
+	    Boolean	found = FALSE;
+	    LIST_FORALL(&cacheInfoPtr->dirtyList, dirtyPtr) {
+		blockPtr = DIRTY_LINKS_TO_BLOCK(dirtyPtr);
+		if (blockPtr->refCount == 0) {
+		    found = TRUE;
+		    break;
+		}
+	    }
+	    if (!found) {
+		continue;
+	    }
+        }
 
 	cacheInfoPtr->flags |= FSCACHE_FILE_BEING_WRITTEN;
 	cacheInfoPtr->flags &= ~FSCACHE_FILE_ON_DIRTY_LIST;
