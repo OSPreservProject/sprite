@@ -9,8 +9,9 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
+#include "stddef.h"
 #include "sprite.h"
 #include "swapBuffer.h"
 #include "machConst.h"
@@ -168,12 +169,14 @@ char	MachHandleWindowUnderflowDeathString[] =
 /*
  * For testing correctness of defined offsets.
  */
+#if 0
 Mach_RegState		testMachRegState;
 Mach_State		testMachState;
 Proc_ControlBlock	testPCB;
 MachSignalStack		testSignalStack;
 Sig_Context		testContext;
 Sig_Stack		testStack;
+#endif
 int			debugCounter = 0;		/* for debugging */
 int			debugSpace[500];
 Address			theAddrOfVmPtr = 0; 
@@ -230,26 +233,24 @@ Mach_Init()
     }
 	
 #define	CHECK_OFFSETS(s, o)		\
-    if ((unsigned int)(&(testMachState.s)) - \
-	    (unsigned int)(&testMachState) != o) {\
+    if (offsetof(Mach_State, s) != o) { \
 	panic("Bad offset for registers.  Redo machConst.h!\n");\
     }
-#define	CHECK_TRAP_REG_OFFSETS(s, o)		\
-    if ((unsigned int)(&(testMachRegState.s)) -	\
-	(unsigned int)(&testMachRegState) != o) {\
+#define	CHECK_TRAP_REG_OFFSETS(s, o)	   \
+    if (offsetof(Mach_RegState, s) != o) { \
 	panic("Bad offset for trap registers.  Redo machConst.h!\n");\
     }
 
     CHECK_SIZE(Mach_RegState, MACH_SAVED_STATE_FRAME);
     CHECK_OFFSETS(trapRegs, MACH_TRAP_REGS_OFFSET);
     CHECK_OFFSETS(switchRegs, MACH_SWITCH_REGS_OFFSET);
-    CHECK_OFFSETS(savedRegs, MACH_SAVED_REGS_OFFSET);
+    CHECK_OFFSETS(savedRegs[0], MACH_SAVED_REGS_OFFSET);
     CHECK_OFFSETS(savedMask, MACH_SAVED_MASK_OFFSET);
-    CHECK_OFFSETS(savedSps, MACH_SAVED_SPS_OFFSET);
+    CHECK_OFFSETS(savedSps[0], MACH_SAVED_SPS_OFFSET);
     CHECK_OFFSETS(kernStackStart, MACH_KSP_OFFSET);
     CHECK_TRAP_REG_OFFSETS(curPsr, MACH_LOCALS_OFFSET);
-    CHECK_TRAP_REG_OFFSETS(ins, MACH_INS_OFFSET);
-    CHECK_TRAP_REG_OFFSETS(globals, MACH_GLOBALS_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(ins[0], MACH_INS_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(globals[0], MACH_GLOBALS_OFFSET);
 
 #ifdef sun4c
     if ((*(romVectorPtr->virtMemory))->address != VMMACH_DEV_START_ADDR ||
@@ -269,15 +270,11 @@ Mach_Init()
      * Get offset of machStatePtr in proc control blocks.  This one is
      * subject to a different module, so it's easier not to use a constant.
      */
-    machStatePtrOffset = (unsigned int)(&(testPCB.machStatePtr)) -
-	    (unsigned int)(&testPCB);
-    machKcallTableOffset = (unsigned int)(&(testPCB.kcallTable)) -
-	    (unsigned int)(&testPCB);
-    machSpecialHandlingOffset = (unsigned int)(&(testPCB.specialHandling)) -
-	    (unsigned int)(&testPCB);
+    machStatePtrOffset = offsetof(Proc_ControlBlock, machStatePtr);
+    machKcallTableOffset = offsetof(Proc_ControlBlock, kcallTable);
+    machSpecialHandlingOffset = offsetof(Proc_ControlBlock, specialHandling);
     machMaxSysCall = -1;
-    MachPIDOffset = (unsigned int)(&(testPCB.processID)) -
-	    (unsigned int)(&testPCB);
+    MachPIDOffset = offsetof(Proc_ControlBlock, processID);
 
     /*
      * Initialize all the horrid offsets for dealing with getting stuff from
@@ -290,33 +287,19 @@ Mach_Init()
     }
 
     machSigStackSize = sizeof (Sig_Stack);
-    machSigStackOffsetOnStack = (unsigned int)(&(testSignalStack.sigStack)) -
-	    (unsigned int)(&testSignalStack);
-    machSigStackOffsetInMach = (unsigned int)(&(testMachState.sigStack)) -
-	    (unsigned int)(&testMachState);
-  
+    machSigStackOffsetOnStack = offsetof(MachSignalStack, sigStack);
+    machSigStackOffsetInMach = offsetof(Mach_State, sigStack);  
     machSigContextSize = sizeof (Sig_Context);
-    machSigContextOffsetOnStack = (unsigned int)(&(testSignalStack.sigContext))-
-	    (unsigned int)(&testSignalStack);
-    machSigContextOffsetInMach = (unsigned int)(&(testMachState.sigContext)) -
-	    (unsigned int)(&testMachState);
-
-    machSigUserStateOffsetOnStack =
-	    (unsigned int) (&(testSignalStack.sigContext.machContext.userState))
-	    - (unsigned int)(&testSignalStack);
-    
-    machSigTrapInstOffsetOnStack =
-	    (unsigned int) (&(testSignalStack.sigContext.machContext.trapInst))
-	    - (unsigned int)(&testSignalStack);
-
-    machSigNumOffsetInSig = (unsigned int) (&(testStack.sigNum)) -
-	    (unsigned int)(&testStack);
-    machSigCodeOffsetInSig = (unsigned int) (&(testStack.sigCode)) -
-	    (unsigned int)(&testStack);
- 
-    machSigPCOffsetOnStack =
-	    (unsigned int)(&(testSignalStack.sigContext.machContext.pcValue)) -
-	    (unsigned int)(&testSignalStack);
+    machSigContextOffsetOnStack = offsetof(MachSignalStack, sigContext);
+    machSigContextOffsetInMach = offsetof(Mach_State, sigContext);
+    machSigUserStateOffsetOnStack = offsetof(MachSignalStack, 
+        sigContext.machContext.userState);
+    machSigTrapInstOffsetOnStack = offsetof(MachSignalStack,
+        sigContext.machContext.trapInst);
+    machSigNumOffsetInSig = offsetof(Sig_Stack, sigNum);
+    machSigCodeOffsetInSig = offsetof(Sig_Stack, sigCode);
+    machSigPCOffsetOnStack = offsetof(MachSignalStack, 
+        sigContext.machContext.pcValue);
 
     /*
      * base of the debugger stack
