@@ -38,7 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machMon.h"
 #endif
 
-int devConfigDebug = TRUE;
+int devConfigDebug = FALSE;
 
 /*
  * ----------------------------------------------------------------------------
