@@ -441,6 +441,24 @@ Sys_StatsStub(command, option, argPtr)
     ReturnStatus status = SUCCESS;
     
     switch(command) {
+	case SYS_GET_VERSION_STRING: {
+	    /*
+	     * option is the length of the storage referenced by argPtr.
+	     */
+	    register int length;
+	    register char *version;
+	    version = (char *)SpriteVersion();
+	    length = String_Length(version);
+	    if (option <= 0) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (option < length) {
+		length = option;
+	    }
+	    status = Vm_CopyOut(length, version, argPtr);
+	    break;
+	}
 	case SYS_SYNC_STATS: {
 	    register Sync_Instrument *syncStatPtr;
 
@@ -545,3 +563,4 @@ Sys_StatsStub(command, option, argPtr)
     }
     return(status);
 }
+
