@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "sig.h"
 #include "stdlib.h"
+#include "sync.h"
 
 /*
  * Information about the state of an interval timer for a process.
@@ -40,6 +41,14 @@ typedef struct ProcIntTimerInfo {
 				 * a timer has been cancelled. */
 } ProcIntTimerInfo;
 
+
+/*
+ * Monitor lock to serialize access to timer callback queue elements.
+ * This could be changed to a per-process monitor lock if contention
+ * is a problem.
+ */
+static Sync_Lock	procTimerLock = Sync_LockInitStatic("procTimerLock");
+#define	LOCKPTR &procTimerLock
 
 static ReturnStatus	GetCurrentTimer();
 static void		SendTimerSigFunc();
@@ -66,7 +75,7 @@ static void		SendTimerSigFunc();
  *----------------------------------------------------------------------
  */
 
-ReturnStatus
+ENTRY ReturnStatus
 Proc_GetIntervalTimer(timerType, userTimerPtr)
     int			timerType;	/* What type of timer: one of 
 					 * PROC_TIMER_REAL, PROC_TIMER_VIRTUAL,
@@ -77,23 +86,34 @@ Proc_GetIntervalTimer(timerType, userTimerPtr)
     ReturnStatus status;
     Proc_ControlBlock	*procPtr;
 
+    LOCK_MONITOR;
+    
     if (timerType < 0 || timerType > PROC_MAX_TIMER) {
-	return(GEN_INVALID_ARG);
+	status = GEN_INVALID_ARG;
+	goto done;
     }
 
     if (userTimerPtr == USER_NIL) {
-	return(SYS_ARG_NOACCESS);
+	status = SYS_ARG_NOACCESS;
+	goto done;
     }
 
     procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
-	panic("Proc_GetIntervalTime: procPtr == NIL\n");
+	panic("Proc_GetIntervalTime: current procPtr == NIL\n");
+	/*
+	 * Just in case someone tries to continue.
+	 */
+	status = FAILURE;
+	goto done;
     }
     Proc_Lock(procPtr);
 
     status = GetCurrentTimer(procPtr, timerType, userTimerPtr);
 
     Proc_Unlock(procPtr);
+done:
+    UNLOCK_MONITOR;
     return(status);
 }
 
@@ -117,7 +137,7 @@ Proc_GetIntervalTimer(timerType, userTimerPtr)
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
+static INTERNAL ReturnStatus
 GetCurrentTimer(procPtr, timerType, userTimerPtr)
     Proc_ControlBlock	*procPtr;	/* Process to get the timer value 
 					 * from. */
@@ -180,7 +200,7 @@ GetCurrentTimer(procPtr, timerType, userTimerPtr)
  *----------------------------------------------------------------------
  */
 
-ReturnStatus
+ENTRY ReturnStatus
 Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
     int			timerType;	/* What type of timer: one of 
 					 * PROC_TIMER_REAL, PROC_TIMER_VIRTUAL,
@@ -194,13 +214,18 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
     register Proc_ControlBlock	*procPtr;
     Proc_TimerInterval	newTimer;
 
+    LOCK_MONITOR;
+
     if (timerType < 0 || timerType > PROC_MAX_TIMER) {
+	UNLOCK_MONITOR;
 	return(GEN_INVALID_ARG);
     }
 
     procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
+	UNLOCK_MONITOR;
 	panic("Proc_SetIntervalTime: procPtr == NIL\n");
+	return(FAILURE);
     }
     Proc_Lock(procPtr);
 
@@ -228,6 +253,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
     if (oldTimerPtr != USER_NIL) {
 	if (GetCurrentTimer(procPtr, timerType, oldTimerPtr) != SUCCESS) {
 	    Proc_Unlock(procPtr);
+	    UNLOCK_MONITOR;
 	    return(SYS_ARG_NOACCESS);
 	}
     }
@@ -238,6 +264,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
     if (Proc_ByteCopy(TRUE, sizeof(newTimer), 
 	    (Address) newTimerPtr, (Address) &newTimer) != SUCCESS) {
 	Proc_Unlock(procPtr);
+	UNLOCK_MONITOR;
 	return(SYS_ARG_NOACCESS);
     }
 
@@ -266,6 +293,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 	    (newTimer.interval.microseconds > ONE_SECOND)) {
 
 	    Proc_Unlock(procPtr);
+	    UNLOCK_MONITOR;
 	    return(GEN_INVALID_ARG);
 	}
 	if ((newTimer.curValue.seconds == 0) && 
@@ -297,6 +325,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
     }
 
     Proc_Unlock(procPtr);
+    UNLOCK_MONITOR;
     return(SUCCESS);
 }
 
@@ -320,7 +349,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
  *----------------------------------------------------------------------
  */
 
-static void
+static ENTRY void
 SendTimerSigFunc(data, infoPtr)
     ClientData		data;		/* Really the ID of the process that
 					 * should get the signal. */
@@ -331,8 +360,9 @@ SendTimerSigFunc(data, infoPtr)
     Proc_ControlBlock	*procPtr;
     register ProcIntTimerInfo	*timerPtr;
 
+    LOCK_MONITOR;
     /*
-     * If the process has died, the procPtr will NIL. 
+     * If the process has died, the procPtr will be NIL. 
      */
 
     procPtr = Proc_LockPID((Proc_PID) data);
@@ -386,4 +416,5 @@ SendTimerSigFunc(data, infoPtr)
 	}
 	Proc_Unlock(procPtr);
     }
+    UNLOCK_MONITOR;
 }

@@ -112,6 +112,8 @@ int	proc_NumServers = 5;
  */
 volatile Sync_Semaphore	serverMutex; 
 
+
+
 extern void	Proc_ServerProc();
 static void	ScheduleFunc();
 static void	CallFunc();
@@ -237,8 +239,7 @@ Proc_CallFuncAbsTime(func, clientData, time)
  * Proc_CancelCallFunc --
  *
  *	This routine is used to deschedule a timer entry created by
- *	Proc_CallFuncAbsTime.   Proc_CallFuncAbsTime 
- *	can not be called with interrupts disabled.
+ *	Proc_CallFuncAbsTime.   
  *	      
  * Results:
  *	None.
@@ -250,16 +251,15 @@ Proc_CallFuncAbsTime(func, clientData, time)
  */
 void
 Proc_CancelCallFunc(token)
-    ClientData		token;	/* Data to pass to func. */
+    ClientData		token;	/* Opaque identifier for function info */
 {
     register FuncInfo	*funcInfoPtr = (FuncInfo *) token;
+    Boolean removed;
 
-    if (funcInfoPtr->allocated == FALSE) {
-	panic("Proc_CancelCallFunc: called with unallocated callback entry");
-	return;
+    removed = Timer_DescheduleRoutine(&funcInfoPtr->queueElement);
+    if (removed && funcInfoPtr->allocated) {
+	free((Address) funcInfoPtr);
     }
-    Timer_DescheduleRoutine(&funcInfoPtr->queueElement);
-    free((Address) funcInfoPtr);
 }
 
 /*
