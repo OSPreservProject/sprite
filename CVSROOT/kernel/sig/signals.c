@@ -408,7 +408,8 @@ LocalSend(procPtr, sigNum, code)
 	     * Resume the suspended process.
 	     */
 	    Proc_ResumeProcess(procPtr, FALSE);
-	} else if (procPtr->sigActions[sigNum] == SIG_SUSPEND_ACTION &&
+	}
+	if (procPtr->sigActions[sigNum] == SIG_SUSPEND_ACTION &&
 		   procPtr->state == PROC_SUSPENDED) {
 	    /*
 	     * Are sending a suspend signal to a process that is already
@@ -428,7 +429,8 @@ LocalSend(procPtr, sigNum, code)
 	     * notified anyway.
 	     */
 	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, TRUE);
-	} else {
+	} else if (sigNum != SIG_RESUME ||
+		procPtr->sigActions[sigNum] != SIG_KILL_ACTION) {
 	    sigBitMask = sigBitMasks[sigNum];
 	    procPtr->sigPendingMask |= sigBitMask;
 	    procPtr->sigCodes[sigNum] = code;
@@ -851,7 +853,7 @@ Sig_SetAction(sigNum, newActionPtr, oldActionPtr)
     if (oldActionPtr != (Sig_Action *) USER_NIL) {
 	if (procPtr->sigActions[sigNum] > SIG_NUM_ACTIONS) {
 	    action.action = SIG_HANDLE_ACTION;
-	    (int) action.handler = procPtr->sigActions[sigNum];
+	    action.handler = (int (*)())procPtr->sigActions[sigNum];
 	    action.sigHoldMask = procPtr->sigMasks[sigNum];
 	} else {
 	    if (procPtr->sigActions[sigNum] == sigDefActions[sigNum]) {
