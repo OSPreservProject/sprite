@@ -103,7 +103,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
     Address 	argsPtr;	/* Operation specific arguments.  NOTE: it
 				 * is assummed that the first thing in the
 				 * arguments is a prefix file ID, except on
-				 * the FS_DOMAIN_PREFIX operation.  We set the
+				 * the IMPORT/EXPORT operations.  We set the
 				 * prefix fileID here as a convenience to
 				 * the name lookup routines we branch to. */
     Address 	resultsPtr;	/* Operation specific results */
@@ -143,18 +143,26 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
 	status = GetPrefix(fileName, follow, &hdrPtr, &rootID, &lookupName,
 			    &domainType, &prefixPtr);
 	if (status == SUCCESS) {
-	    if (operation == FS_DOMAIN_OPEN) {
-		FS_TRACE_NAME(FS_TRACE_LOOKUP_START, lookupName);
-	    }
-	    /*
-	     * It is assumed that the first part of the bundled arguments
-	     * are the prefix fileID, which indicates the start of the lookup,
-	     * and the prefix rootID, which indicates the top of the domain.
-	     */
-	    if (operation != FS_DOMAIN_PREFIX) {
-		register FsLookupArgs *lookupArgsPtr = (FsLookupArgs *)argsPtr;
-		lookupArgsPtr->prefixID = hdrPtr->fileID;
-		lookupArgsPtr->rootID = rootID;
+	    switch(operation) {
+		case FS_DOMAIN_IMPORT:
+		case FS_DOMAIN_EXPORT:
+		    break;
+		case FS_DOMAIN_OPEN:
+		    FS_TRACE_NAME(FS_TRACE_LOOKUP_START, lookupName);
+		    /* Fall Through */
+		default: {
+		    /*
+		     * It is assumed that the first part of the bundled
+		     * arguments are the prefix fileID, which indicates the
+		     * start of the lookup, and the prefix rootID, which
+		     * indicates the top of the domain.
+		     */
+		    register FsLookupArgs *lookupArgsPtr =
+			    (FsLookupArgs *)argsPtr;
+		    lookupArgsPtr->prefixID = hdrPtr->fileID;
+		    lookupArgsPtr->rootID = rootID;
+		    break;
+		}
 	    }
 	    /*
 	     * Fork out to the domain lookup operation.
@@ -690,8 +698,10 @@ NameOp(lookupOperation)
     int lookupOperation;
 {
     switch(lookupOperation) {
-	case FS_DOMAIN_PREFIX:
-	    return("prefix");
+	case FS_DOMAIN_IMPORT:
+	    return("import");
+	case FS_DOMAIN_EXPORT:
+	    return("export");
 	case FS_DOMAIN_OPEN:
 	    return("open");
 	case FS_DOMAIN_GET_ATTR:
@@ -1245,41 +1255,19 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
     FsHandleHeader **hdrPtrPtr;	/* The handle that the domain prefix routine
 				 * returns for the prefix */
 {
-    ReturnStatus	status;
-    FsUserIDs		ids;
-    Proc_ControlBlock	*procPtr;	/* Used to get process IDs */
-    int			domainType;
+    register ReturnStatus	status;
+    register int		domainType;
+    FsUserIDs			ids;
 
-    procPtr = Proc_GetEffectiveProc();
-    FsSetIDs(procPtr, &ids);
-    domainType = *domainTypePtr;
-    if (domainType < 0) {
-	/*
-	 * Iterate through the domain prefix location routines because
-	 * we don't know what kind of domain it is.
-	 */
-	for (domainType = 0; domainType < FS_NUM_DOMAINS; domainType++) {
-	    status = (*fsDomainLookup[domainType][FS_DOMAIN_PREFIX])
-			((ClientData)NIL, fileName, (Address)&ids,
-			 (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
-	    if (status == SUCCESS) {
-		break;
-	    }
+    FsSetIDs(Proc_GetEffectiveProc(), &ids);
+    for (domainType = 0; domainType < FS_NUM_DOMAINS; domainType++) {
+	status = (*fsDomainLookup[domainType][FS_DOMAIN_IMPORT])
+		    (fileName, &ids, domainTypePtr, hdrPtrPtr);
+	if (status == SUCCESS) {
+	    return(FS_NEW_PREFIX);
 	}
-    } else {
-	/*
-	 * Have seen this prefix before so we try the same type of domain.
-	 */
-	status = (*fsDomainLookup[domainType][FS_DOMAIN_PREFIX])
-		    ((ClientData)NIL, fileName, (Address)&ids,
-		     (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
     }
-    if (status == SUCCESS) {
-	*domainTypePtr = domainType;
-	return(FS_NEW_PREFIX);
-    } else {
-	return(FS_FILE_NOT_FOUND);
-    }
+    return(FS_FILE_NOT_FOUND);
 }
 
 
