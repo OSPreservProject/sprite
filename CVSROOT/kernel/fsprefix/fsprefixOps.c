@@ -1209,7 +1209,9 @@ Fs_PrefixClear(prefix, deleteFlag)
  *	None.
  *
  * Side effects:
- *	Sets the prefix's hdrPtr to NIL
+ *	Sets the prefix's hdrPtr to NIL.  This notifies the okToRecover
+ *	condition if there were active opens on the prefix so that
+ *	recovery can proceed on this very handle.
  *
  *----------------------------------------------------------------------
  */
@@ -1229,6 +1231,10 @@ FsPrefixHandleClose(prefixPtr)
 	dummy.hdr.fileID.type = -1;
 	(void)(*fsStreamOpTable[hdrPtr->fileID.type].close)(&dummy,
 		    rpc_SpriteID, 0, 0, (ClientData)NIL);
+	if (prefixPtr->activeOpens > 0) {
+	    prefixPtr->activeOpens = 0;
+	    Sync_Broadcast(&prefixPtr->okToRecover);
+	}
     }
     UNLOCK_MONITOR;
 }
