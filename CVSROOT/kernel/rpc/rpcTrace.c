@@ -56,21 +56,23 @@ Time rpcFullStampTime;		/* The time to take a trace record that
  * Rpc_PrintTrace --
  *
  *	Print out the last few trace records.  Can be called from
- *	 the debugger or via the Test_Stat system call.
+ *	the debugger or via the Test_Stat system call or from an L1 
+ *	console command.
  *
  * Results:
- *	Print out the trace records on the console.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	Print out the trace records on the console.
  *
  *----------------------------------------------------------------------
  */
 void
-Rpc_PrintTrace(numRecords)
-    int numRecords;	/* The number (of most recent) records to print */
+Rpc_PrintTrace(clientData)
+    ClientData clientData; /* The number (of most recent) records to print */
 {
 #ifndef CLEAN
+    int numRecords = (int)clientData;
     register int i;	/* Index into trace table */
     int stopIndex;	/* copy of rpcTraceIndex */
     Time baseTime, deltaTime;	/* Times for print out */

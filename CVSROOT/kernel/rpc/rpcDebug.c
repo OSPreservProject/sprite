@@ -329,7 +329,7 @@ Rpc_GetStats(command, option, argPtr)
 	case SYS_RPC_TRACE_STATS: {
 	    switch(option) {
 		case SYS_RPC_TRACING_PRINT:
-		    Rpc_PrintTrace(32);
+		    Rpc_PrintTrace((ClientData)32);
 		    break;
 		case SYS_RPC_TRACING_ON:
 		    rpc_Tracing = TRUE;
