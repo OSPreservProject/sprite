@@ -1082,7 +1082,7 @@ NullChar:
  *	      "CallTrapHandler" in asmDefs.h appropriately.
  *
  * Results:
- *	Returns SUCCESS if were able to touch the page (which is almost
+ *	Returns SUCCESS if we're able to touch the page (which is almost
  *	always).  If a bus error (other than a page fault) occurred while 
  *	reading user memory, then SYS_ARG_NO_ACCESS is returned (this return
  *	occurs from the trap handler, rather than from this procedure).
@@ -1111,6 +1111,7 @@ StartTouchingPages:
     nop
 
 DoneTouchingPages:
+    clr		%RETURN_VAL_REG		/* return success */
     retl
     nop
 
