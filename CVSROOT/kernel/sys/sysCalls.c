@@ -600,6 +600,23 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    break;
 	}
+	case SYS_FS_EXTRA_STATS: {
+	    Fs_NewStats		*statsPtr;
+
+	    statsPtr = (Fs_NewStats *) argPtr;
+	    if (statsPtr == (Fs_NewStats *)NIL ||
+		    statsPtr == (Fs_NewStats *) 0 ||
+		    statsPtr == (Fs_NewStats *) USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Fs_NewStats)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		status = Vm_CopyOut(sizeof (Fs_NewStats),
+			(Address) &fs_MoreStats, argPtr);
+	    }
+	    break;
+	}
+
 	case SYS_FSCACHE_EXTRA_STATS: {
 	    Fscache_ExtraStats	*statsPtr;
 
