@@ -152,9 +152,7 @@ Rpc_Init()
 	 * scatter/gather elements that point to the RPC header can
 	 * be set up once here.  Similarly, the channel
 	 * of the request RPC header is set up once here as it
-	 * is always the same.  Finally, the mutexPtr that is part
-	 * of the scatter/gather element is cleared because we don't
-	 * use this feature of the network module.
+	 * is always the same.
 	 */
 	bufferPtr = &chanPtr->request.protoHdrBuffer;
 	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
@@ -200,6 +198,31 @@ Rpc_Init()
 	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 	chanPtr->reply.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
 	chanPtr->reply.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+
+	/*
+	 * Initialize the buffer pointers and some of the packet
+	 * header fields for the explicit acknowledgement messages.
+	 */
+	bufferPtr = &chanPtr->ack.protoHdrBuffer;
+	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	bufferPtr->length = maxHdrSize;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+	bufferPtr = &chanPtr->ack.rpcHdrBuffer;
+	bufferPtr->bufAddr = (Address)&chanPtr->ackHdr;
+	bufferPtr->length = sizeof(RpcHdr);
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->ack.paramBuffer.bufAddr = (Address)NIL;
+	chanPtr->ack.paramBuffer.length = 0;
+	chanPtr->ack.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->ack.dataBuffer.bufAddr = (Address)NIL;
+	chanPtr->ack.dataBuffer.length = 0;
+	chanPtr->ack.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->ackHdr.numFrags = 0;
+	chanPtr->ackHdr.fragMask = 0;
+	chanPtr->ackHdr.paramSize = 0;
+	chanPtr->ackHdr.dataSize = 0;
+
     }
 
     /*
