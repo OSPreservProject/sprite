@@ -76,7 +76,8 @@ PdevServerIOHandle *PfsGetUserLevelIDs();
  *
  * Side effects:
  *	A control I/O handle is created here on the file server to record
- *	who is the server for the pseudo device.
+ *	who is the server for the pseudo device.  The handle for the
+ *	remote link file is unlocked.
  *
  *----------------------------------------------------------------------------
  *
@@ -148,7 +149,7 @@ FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     }
     *clientDataPtr = (ClientData)NIL;
     *dataSizePtr = 0;
-    FsHandleRelease(handlePtr, TRUE);
+    FsHandleUnlock(handlePtr);
     return(status);
 }
 
@@ -429,8 +430,7 @@ FsPfsNamingCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
  *
  * FsPfsOpen --
  *
- *	Open a file served by a pseudo-filesystem server.  This is called
- *	from FsLookupOperation based on the prefix table.  The stream returned
+ *	Open a file served by a pseudo-filesystem server.  The stream returned
  *	to the client can either be a pseudo-device connection to the
  *	server of the pseudo-filesystem, or a regular stream that has
  *	been passed off from the server process.
@@ -544,39 +544,44 @@ PfsGetUserLevelIDs(pdevHandlePtr, prefixIDPtr, rootIDPtr)
  *----------------------------------------------------------------------
  */
 int
-FsPfsOpenConnection(pdevHandlePtr, srvrFileIDPtr, fileIDPtr)
-    PdevServerIOHandle	*pdevHandlePtr;	/* From naming request-response */
+FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
+    PdevServerIOHandle	*namingPdevHandlePtr;/* From naming request-response */
     Fs_FileID *srvrFileIDPtr;		/* FileID from user-level server */
-    register Fs_FileID	*fileIDPtr;	/* FileID for new connection */
+    FsOpenResults *openResultsPtr;	/* Info returned to client's open */
 {
     register PdevControlIOHandle *ctrlHandlePtr;
     register PdevClientIOHandle *cltHandlePtr;
     register Fs_Stream *srvStreamPtr;
+    register Fs_Stream *cltStreamPtr;
     int newStreamID;
-
-    /*
-     * Lock the control stream associated with the pfs naming stream
-     * in order to get a seed for the Fs_FileID's generated here.
-     */
-    ctrlHandlePtr = pdevHandlePtr->ctrlHandlePtr;
-    FsHandleLock(ctrlHandlePtr);
+    register Fs_FileID	*fileIDPtr;	/* FileID for new connection */
 
     /*
      * Pick an I/O fileID for the connection.
      */
+    ctrlHandlePtr = namingPdevHandlePtr->ctrlHandlePtr;
     ctrlHandlePtr->seed++;
+    fileIDPtr = &openResultsPtr->ioFileID;
     fileIDPtr->type = FS_LCL_PFS_STREAM;
     fileIDPtr->serverID = rpc_SpriteID;
     fileIDPtr->major = ctrlHandlePtr->rmt.hdr.fileID.major;
     fileIDPtr->minor = (ctrlHandlePtr->rmt.hdr.fileID.minor << 12)
 			^ ctrlHandlePtr->seed;
 
-    cltHandlePtr = FsPdevConnect(fileIDPtr, rpc_SpriteID,
-				ctrlHandlePtr->rmt.hdr.name);
-    FsHandleUnlock(ctrlHandlePtr);
+    cltHandlePtr = FsPdevConnect(fileIDPtr, namingPdevHandlePtr->open.clientID,
+				namingPdevHandlePtr->open.name);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
 	Sys_Panic(SYS_WARNING, "FsPfsOpenConnection failing\n");
 	return(-1);
+    }
+    /*
+     * Set the ioFileID type. (FsPdevConnect has set it to FS_SERVER_STREAM.)
+     * The clientID has been set curtesy of the PFS_OPEN RequestResponse.
+     */
+    if (namingPdevHandlePtr->open.clientID == rpc_SpriteID) {
+	fileIDPtr->type = FS_LCL_PFS_STREAM;
+    } else {
+	fileIDPtr->type = FS_RMT_PFS_STREAM;
     }
     /*
      * Save the server process's ID for the connection.
@@ -584,12 +589,12 @@ FsPfsOpenConnection(pdevHandlePtr, srvrFileIDPtr, fileIDPtr)
     cltHandlePtr->pdevHandlePtr->userLevelID = *srvrFileIDPtr;
 
     /*
-     * Pick a fileID for the server's stream, and map this to a
-     * user-level streamID.
+     * Set up a stream to the server's half of the connection and
+     * then choose a user level streamID.
      */
     srvStreamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
 		    (FsHandleHeader *)cltHandlePtr->pdevHandlePtr,
-		    FS_READ|FS_USER, ctrlHandlePtr->rmt.hdr.name);
+		    FS_READ|FS_USER, namingPdevHandlePtr->open.name);
     if (FsGetStreamID(srvStreamPtr, &newStreamID) != SUCCESS) {
 	(void)FsStreamClientClose(&srvStreamPtr->clientList, rpc_SpriteID);
 	FsStreamDispose(srvStreamPtr);
@@ -597,6 +602,19 @@ FsPfsOpenConnection(pdevHandlePtr, srvrFileIDPtr, fileIDPtr)
 	FsHandleRemove(cltHandlePtr);
 	newStreamID = -1;
     } else {
+	/*
+	 * Set up a stream to the client's half of the connection.
+	 */
+	cltStreamPtr = FsStreamNewClient(rpc_SpriteID,
+			    namingPdevHandlePtr->open.clientID,
+			    (FsHandleHeader *)cltHandlePtr,
+			    namingPdevHandlePtr->open.useFlags,
+			    namingPdevHandlePtr->open.name);
+	openResultsPtr->nameID = openResultsPtr->ioFileID;
+	openResultsPtr->streamID = cltStreamPtr->hdr.fileID;
+	openResultsPtr->dataSize = 0;
+	openResultsPtr->streamData = (ClientData)NIL;
+	FsHandleRelease(cltStreamPtr, TRUE);
 	FsHandleUnlock(cltHandlePtr);
 	FsHandleUnlock(srvStreamPtr);
     }
@@ -617,7 +635,8 @@ FsPfsOpenConnection(pdevHandlePtr, srvrFileIDPtr, fileIDPtr)
  *	SUCCESS, unless the server process has died recently.
  *
  * Side effects:
- *	None.
+ *	Fetches the handle, which increments its ref count.  The
+ *	handle is unlocked before returning.
  *
  *----------------------------------------------------------------------
  */
@@ -647,8 +666,43 @@ FsPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	cltHandlePtr->hdr.name = (char *)Mem_Alloc(String_Length(name) + 1);
 	(void)String_Copy(name, cltHandlePtr->hdr.name);
 	*ioHandlePtrPtr = (FsHandleHeader *)cltHandlePtr;
+	FsHandleUnlock(cltHandlePtr);
 	return(SUCCESS);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsRmtPfsStreamCltOpen --
+ *
+ *	This is called from Fs_Open to complete setup of a client's
+ *	stream to a remote pseudo-filesystem server.  The server is running
+ *	on this	host, and the pseudo-device connection has already been
+ *	established.  This routine just sets up a remote handle that
+ *	references the connection.
+ * 
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Installs a remote I/O handle.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FsRmtPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+	ioHandlePtrPtr)
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
+    int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
+    int			clientID;	/* Host doing the open */
+    ClientData		streamData;	/* NIL. */
+    char		*name;		/* File name for error msgs */
+    FsHandleHeader	**ioHandlePtrPtr;/* Return - FS_RMT_PFS_STREAM handle */
+{
+    FsRemoteIOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
+    return(SUCCESS);
 }
 
 /*
