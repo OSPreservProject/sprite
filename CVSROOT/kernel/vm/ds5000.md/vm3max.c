@@ -21,7 +21,6 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <vmInt.h>
 #include <vmMach.h>
 #include <vmMachInt.h>
-#include <machMon.h>
 #include <list.h>
 #include <mach.h>
 #include <proc.h>
@@ -46,6 +45,12 @@ static Sync_Semaphore vmMachMutex;
 static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
 
 #endif
+
+/*
+ * The environment variables on the memory bitmap:
+ */
+extern char mach_BitmapLen[];
+extern char mach_BitmapAddr[];
 
 /*----------------------------------------------------------------------
  * 
@@ -258,9 +263,10 @@ GetNumPages()
     unsigned		page;
     unsigned		maxPage;
     char		temp;
-    int *		bitmapAddr;
-    int			bitmapLen;
     int			i;
+    int			bitmapLen;
+    int			*bitmapAddr;
+    int			count = 0;
 
     /*
      * First we'll use the old probe method.
@@ -274,6 +280,7 @@ GetNumPages()
 			   VMMACH_PHYS_UNCACHED_START, &temp) != SUCCESS) {
 	    break;
 	}
+	count++;
     }
 
     printf("%d pages of memory\n", page);
@@ -282,13 +289,13 @@ GetNumPages()
      * Now we'll use the bitmap method.  We can probably do without
      * the probes and switch to this.
      */
-    sscanf(Mach_MonGetenv("bitmaplen")+2,"%x",&bitmapLen);
-    sscanf(Mach_MonGetenv("bitmap")+2,"%x",&bitmapAddr);
+    sscanf(mach_BitmapLen+2,"%x",&bitmapLen);
+    sscanf(mach_BitmapAddr+2,"%x",&bitmapAddr);
     for (i=0;i<bitmapLen;i++) {
 	if (bitmapAddr[i] != 0xffffffff) break;
     }
     if (i != page) {
-	printf("Warning: bitmap says %d pages of memory\n", i);
+	printf("Warning: bitmap says %d pages of memory\n", i*32);
     }
     for (;i<bitmapLen;i++) {
 	if (bitmapAddr[i] != 0x00000000) {
@@ -296,7 +303,7 @@ GetNumPages()
 	    break;
 	}
     }
-    return(page);
+    return(i*32);
 }
 
 
