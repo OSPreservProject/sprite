@@ -467,7 +467,7 @@ LfsSetDirtyLevel(lfsPtr, dirtyActiveBytes)
  *	Return info about the given domain lfsDomain.
  *
  * Results:
- *	Error  if can't get to the domain.
+ *	SUCCESS
  *
  * Side effects:
  *	The domain info struct is filled in.
@@ -483,11 +483,12 @@ Lfs_DomainInfo(domainPtr, domainInfoPtr)
 
     lfsPtr = LfsFromDomainPtr(domainPtr);
 
-    domainInfoPtr->maxKbytes = (LfsSegSize(lfsPtr)/1024) *
-				lfsPtr->usageArray.params.numberSegments;
+    domainInfoPtr->maxKbytes = (LfsSegSize(lfsPtr) * 
+			lfsPtr->usageArray.params.numberSegments)/1024;
 
     domainInfoPtr->freeKbytes = 
-	LfsBlocksToBytes(lfsPtr, lfsPtr->usageArray.checkPoint.freeBlocks)/1024;
+	(LfsBlocksToBytes(lfsPtr, lfsPtr->usageArray.checkPoint.freeBlocks) - 
+	  - lfsPtr->usageArray.params.minNumClean) / 1024;
     domainInfoPtr->maxFileDesc = lfsPtr->descMap.params.maxDesc;
     domainInfoPtr->freeFileDesc = lfsPtr->descMap.params.maxDesc -
 				  lfsPtr->descMap.checkPoint.numAllocDesc;
