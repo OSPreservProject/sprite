@@ -58,7 +58,9 @@ int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
  * Table of SCSI HBA types attached to this system.
  */
 
-ScsiDevice *((*devScsiAttachProcs[])()) = {
+ScsiDevice *((*devScsiAttachProcs[]) _ARGS_((Fs_Device *devicePtr,
+		void (*insertProc) (List_Links *elementPtr,
+                                    List_Links *elementListHdrPtr)))) = {
     DevSCSI3AttachDevice,		/* SCSI Controller type 0. */
     DevNoHBAAttachDevice,		/* SCSI Controller type 1. */
     DevJaguarAttachDevice,		/* SCSI Controller type 2. */
