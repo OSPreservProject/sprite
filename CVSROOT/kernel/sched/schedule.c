@@ -607,7 +607,7 @@ Sched_TimeTicks()
     Sync_WaitTime(time);
     lowTicks = sched_Instrument.idleTicksLow - lowTicks;
     Sys_Printf(" %d ticks\n", lowTicks);
-    sched_Instrument.idleTicksPerSecond = (int)((double)lowTicks / 5.);
+    sched_Instrument.idleTicksPerSecond = lowTicks / 5;
 }
 
 
