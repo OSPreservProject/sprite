@@ -47,14 +47,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "proc.h"
-#include "sync.h"
-#include "timer.h"
-#include "timerInt.h"
-#include "spriteTime.h"
-#include "timerTick.h"
-#include "machMon.h"
+#include <sprite.h>
+#include <proc.h>
+#include <sync.h>
+#include <timer.h>
+#include <timerInt.h>
+#include <spriteTime.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <timerTick.h>
+#include <machMon.h>
+
 
 /*
  *  Universal Time is the number of seconds since 1/1/1970, Greenwich Time.
@@ -130,6 +134,26 @@ int		timer_TickDelta;
 Sync_Semaphore	timer_ClockMutex;
 
 
+/* 
+ * List of "whining" messages that have been displayed recently.  These are 
+ * generally error messages that we want to keep from flooding the console.
+ */
+
+#define WHINE_INTERVAL	30	/* time to allow between messages */
+
+typedef struct {
+    List_Links links;
+    char *message;		/* the message */
+    time_t lastDisplayTime;	/* when it was last displayed */
+} WhineMsg;
+
+static List_Links whineListHdr;
+static List_Links *whineList = &whineListHdr;
+
+static Sync_Lock whineLock = Sync_LockInitStatic("timer:whineLock");
+				/* lock to protect whineList */
+
+
 /*
  * UpdateTimeOfDay() adjusts timerTimeOfDay to the real time of day.
  */
@@ -137,6 +161,11 @@ Sync_Semaphore	timer_ClockMutex;
 static void UpdateUniversalTimeApprox _ARGS_((Timer_Ticks timeTicks, 
 				  ClientData  clientData));
 static Timer_QueueElement      updateElement;
+
+/* (More) forward references */
+
+static WhineMsg *NewWhineMsg _ARGS_((char *message));
+static void FreeWhineMsg _ARGS_((WhineMsg *msgPtr));
 
 
 
@@ -187,6 +216,11 @@ TimerClock_Init()
     updateElement.routine = UpdateUniversalTimeApprox;
     updateElement.interval = 10 * timer_IntOneSecond;
     Timer_ScheduleRoutine(&updateElement, TRUE);
+
+    /* 
+     * Also initialize the "whine message" list.
+     */
+    List_Init(whineList);
 }
 
 
@@ -588,3 +622,133 @@ Timer_SetParams(tickadj)
     }
 }
 #endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_OkToWhine --
+ *
+ *	Keep track of when a given message was last displayed, and tell 
+ *	whether it's too soon to display it again.
+ *
+ * Results:
+ *	Returns TRUE if it's been more than WHINE_INTERVAL seconds since
+ *	the last time the given message had been displayed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Timer_OkToWhine(message)
+    char *message;		/* message to check */
+{
+    WhineMsg *msgPtr;		/* a message in the list */
+    WhineMsg *delPtr;		/* message to remove from the list */
+    Boolean okay = TRUE;	/* okay to display the message? */
+    Boolean inList = FALSE;	/* is the message already in the list? */
+    time_t now = Timer_GetUniversalTimeInSeconds();
+
+    Sync_GetLock(&whineLock);
+
+    /* 
+     * If the message was displayed within the last WHINE_INTERVAL seconds, 
+     * don't display it again.  Otherwise, note the new display time.
+     */
+    LIST_FORALL(whineList, (List_Links *)msgPtr) {
+	if (strcmp(msgPtr->message, message) == 0) {
+	    if (now >= msgPtr->lastDisplayTime + WHINE_INTERVAL) {
+		msgPtr->lastDisplayTime = now;
+	    } else {
+		okay = FALSE;
+	    }
+	    inList = TRUE;
+	    break;
+	} 
+    }
+
+    /* 
+     * If the message isn't in the list, add it.
+     */
+    if (!inList) {
+	msgPtr = NewWhineMsg(message);
+	List_Insert((List_Links *)msgPtr, LIST_ATREAR(whineList));
+    }
+
+    /* 
+     * Garbage collect any old messages.
+     */
+    msgPtr = (WhineMsg *)List_First(whineList);
+    while (!List_IsAtEnd(whineList, (List_Links *)msgPtr)) {
+	if (now < msgPtr->lastDisplayTime + WHINE_INTERVAL) {
+	    msgPtr = (WhineMsg *)List_Next((List_Links *)msgPtr);
+	} else {
+	    delPtr = msgPtr;
+	    msgPtr = (WhineMsg *)List_Next((List_Links *)msgPtr);
+	    List_Remove((List_Links *)delPtr);
+	    FreeWhineMsg(delPtr);
+	}
+    }
+
+    Sync_Unlock(&whineLock);
+    return okay;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NewWhineMsg --
+ *
+ *	Create and initialize a new WhineMsg.
+ *
+ * Results:
+ *	Returns an initialized WhineMsg.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static WhineMsg *
+NewWhineMsg(message)
+    char *message;		/* the text of the message to record */
+{
+    WhineMsg *msgPtr;
+
+    msgPtr = (WhineMsg *)malloc(sizeof(WhineMsg));
+    List_InitElement((List_Links *)msgPtr);
+    msgPtr->message = strdup(message);
+    msgPtr->lastDisplayTime = Timer_GetUniversalTimeInSeconds();
+
+    return msgPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeWhineMsg --
+ *
+ *	Destroy a WhineMsg.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeWhineMsg(msgPtr)
+    WhineMsg *msgPtr;		/* the message to free */
+{
+    free((Address)msgPtr->message);
+    free((Address)msgPtr);
+}
