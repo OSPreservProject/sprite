@@ -58,6 +58,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsClient.h"
 #include "fsMigrate.h"
 #include "fsLock.h"
+#include "fsDisk.h"
 #include "proc.h"
 #include "rpc.h"
 /*
@@ -110,10 +111,23 @@ typedef struct PdevState {
 } PdevState;
 
 /*
- * The following control messages are only passed internally and
- * contain a streamPtr for a new server stream.
- * The server stream is created in ServerStreamCreate and the streamPtr
- * is converted to a user level streamID by FsControlRead.
+ * Because there are corresponding control handles on the file server,
+ * which records which host has the pdev server, and on the pdev server
+ * itself, we need to be able to reopen the control handle on the
+ * file server after it reboots.
+ */
+typedef struct PdevControlReopenParams {
+    FsFileID	fileID;		/* FileID of the control handle */
+    int		serverID;	/* ServerID recorded in control handle.
+				 * This may be NIL if the server closes
+				 * while the file server is down. */
+} PdevControlReopenParams;
+
+/*
+ * The following control messages are passed internally from the
+ * ServerStreamCreate routine to the FsControlRead routine.
+ * They contain a streamPtr for a new server stream
+ * that gets converted to a user-level streamID in FsControlRead.
  */
 
 typedef struct PdevNotify {
@@ -357,8 +371,15 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     register	Fs_Stream *streamPtr;
     register	PdevState *pdevStatePtr;
 
+    /*
+     * The control I/O handle is identified by the fileID of the pseudo-device
+     * file with type CONTROL.  The minor field has the disk decriptor version
+     * number or'ed into it to avoid conflict when you delete the
+     * pdev file and recreate one with the same file number (minor field).
+     */
     ioFileID = handlePtr->hdr.fileID;
     ioFileID.type = FS_CONTROL_STREAM;
+    ioFileID.minor |= (handlePtr->descPtr->version << 16);
     ctrlHandlePtr = FsControlHandleInit(&ioFileID, &found);
 
     if (useFlags & (FS_MASTER|FS_NEW_MASTER)) {
@@ -739,7 +760,7 @@ ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID, slaveProcessID)
 
     pdevHandlePtr->nextRequestBuffer = (Address)NIL;
 
-    pdevHandlePtr->operation = (Pdev_Op)NIL;
+    pdevHandlePtr->operation = PDEV_INVALID;
     pdevHandlePtr->replyBuf = (Address)NIL;
     pdevHandlePtr->serverPID = (Proc_PID)NIL;
     pdevHandlePtr->clientPID = (Proc_PID)NIL;
@@ -1241,6 +1262,88 @@ FsControlVerify(fileIDPtr, pdevServerHostID)
 	    pdevServerHostID, serverID, fileIDPtr->major, fileIDPtr->minor);
     }
     return((FsHandleHeader *)ctrlHandlePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsControlReopen --
+ *
+ *	Reopen a control stream.  A control handle is kept on both the
+ *	file server as well as the pseudo-device server's host.  If the
+ *	file server reboots a reopen has to be done in order to set
+ *	the serverID field on the file server so subsequent client opens work.
+ *	Thus this is called on a remote client to contact the file server,
+ *	and then on the file server from the RPC stub.
+ *
+ * Results:
+ *	SUCCESS if there is no conflict with the server reopening.
+ *
+ * Side effects:
+ *	On the file server the serverID field is set.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
+    FsHandleHeader	*hdrPtr;
+    int			clientID;		/* ID of pdev server's host */
+    ClientData		inData;			/* PdevControlReopenParams */
+    int			*outSizePtr;		/* IGNORED */
+    ClientData		*outDataPtr;		/* IGNORED */
+
+{
+    register PdevControlIOHandle *ctrlHandlePtr;
+    register PdevControlReopenParams *reopenParamsPtr;
+    register ReturnStatus status = SUCCESS;
+
+    if (hdrPtr != (FsHandleHeader *)NIL) {
+	/*
+	 * Called on the pdev server's host to contact the remote
+	 * file server and re-establish state.
+	 */
+	PdevControlReopenParams params;
+	int outSize = 0;
+
+	reopenParamsPtr = &params;
+	reopenParamsPtr->fileID = hdrPtr->fileID;
+	reopenParamsPtr->serverID = ((PdevControlIOHandle *)hdrPtr)->serverID;
+	status = FsSpriteReopen(hdrPtr, sizeof(PdevControlReopenParams),
+		(Address)reopenParamsPtr, &outSize, (Address)NIL);
+    } else {
+	/*
+	 * Called on the file server to re-establish a control handle
+	 * that corresponds to a control handle on the pdev server's host.
+	 */
+	Boolean found;
+
+	reopenParamsPtr = (PdevControlReopenParams *)inData;
+	ctrlHandlePtr = FsControlHandleInit(&reopenParamsPtr->fileID, &found);
+	if (reopenParamsPtr->serverID != NIL) {
+	    /*
+	     * The remote host thinks it is running the pdev server.
+	     */
+	    if (!found || ctrlHandlePtr->serverID == NIL) {
+		ctrlHandlePtr->serverID = clientID;
+	    } else if (ctrlHandlePtr->serverID != clientID) {
+		Sys_Panic(SYS_WARNING,
+		    "PdevControlReopen conflict, %d lost to %d, pdev <%x,%x>\n",
+		    clientID, ctrlHandlePtr->serverID,
+		    ctrlHandlePtr->rmt.hdr.fileID.major,
+		    ctrlHandlePtr->rmt.hdr.fileID.minor);
+		status = FS_FILE_BUSY;
+	    }
+	} else if (ctrlHandlePtr->serverID == clientID) {
+	    /*
+	     * The pdev server closed while we were down or unable
+	     * to communicate.
+	     */
+	    ctrlHandlePtr->serverID = NIL;
+	}
+	FsHandleRelease(ctrlHandlePtr, TRUE);
+     }
+    return(status);
 }
 
 /*
