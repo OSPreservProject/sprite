@@ -1,12 +1,15 @@
 /* 
  * fsOpTable.c --
  *
- *	The operation tables for the file system.  They are encountered
- *	by the system in roughly the order they are presented here.  First
- *	the Domain Lookup routines are used for name operations.  They
- *	are used by Fsprefix_LookupOperation and Fsprefix_TwoNameOperation which use
- *	the prefix table to choose a server.  If a stream is to be made
- *	then the Open operations are used.
+ *	The operation tables for the file system.  Skeletons are defined
+ *	here, and they are initialized via calls by each module.  There
+ *	are 4 main operation tables.  The 'Domain Lookup' routines are
+ *	operations on pathnames.  The 'File Open' routines are invoked
+ *	on the file server depending on the type of file being opened -
+ *	these routines do preliminary open-time setup.  The 'Stream Op'
+ *	table are the object-specific routines on I/O streams.  Finally,
+ *	there is also an 'Attr Op' table used when getting attributes
+ *	of objects.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -35,7 +38,7 @@ static ReturnStatus NoProc();
 /*
  * Domain specific routine table for lookup operations.
  * The following operate on a single pathname.  They are called via
- *	Fsprefix_LookupOperation with arguments described in fsOpTable.h
+ * Fsprefix_LookupOperation with arguments described in fsOpTable.h
  *	DomainImport
  *	DomainExport
  *	DomainOpen
@@ -121,7 +124,7 @@ Fs_InstallDomainLookupOps(domainType, lookupTablePtr, attrOpTablePtr)
     int	i;
 
     if ((domainType < 0) || (domainType >= FS_NUM_DOMAINS)) {
-	panic("Bad domain type %d in Fs_InstallDomainLookupOps\n", domainType);
+	printf("Bad domain type %d in Fs_InstallDomainLookupOps\n", domainType);
 	return;
     }
 

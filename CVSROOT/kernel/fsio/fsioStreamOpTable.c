@@ -1,12 +1,8 @@
 /* 
- * fsOpTable.c --
+ * fsStreamOpTable.c --
  *
- *	The operation tables for the file system.  They are encountered
- *	by the system in roughly the order they are presented here.  First
- *	the Domain Lookup routines are used for name operations.  They
- *	are used by Fsprefix_LookupOperation and Fsprefix_TwoNameOperation which use
- *	the prefix table to choose a server.  If a stream is to be made
- *	then the Open operations are used.  Next comes the Stream operations.
+ *	The skeletons for the Stream Operation table, the Srv Open table,
+ *	and the routines for initializing entries in these tables.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -29,13 +25,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsio.h"
 #include "fsutil.h"
 
-#define	FS_NUM_FILE_TYPE	(FS_XTRA_FILE+1)
 
 /*
  * File type server open routine table:
+ *	The OpenOps consists of a single routine, 'nameOpen', which
+ *	is invoked on the file server after pathname resolution has
+ *	obtained the I/O handle for the local file that represents
+ *	the name of some object.  The nameOpen routine is invoked
+ *	depending on the type of the local file (file, directory, device, etc.)
+ *	The nameOpen routine does preliminary setup in anticipation
+ *	of opening an I/O stream to the object.
  *
  * THIS ARRAY INDEXED BY FILE TYPE. 
  */
+#define	FS_NUM_FILE_TYPE	(FS_XTRA_FILE+1)
 Fsio_OpenOps fsio_OpenOpTable[FS_NUM_FILE_TYPE];
 
 /*
@@ -161,6 +164,10 @@ Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[FSIO_NUM_STREAM_TYPES] = {
  * Fsio_InstallStreamOps --
  *
  *	Install the stream operation routines for a specified stream type.
+ *	
+ *	The stream operations are the main set of operations on objects.
+ *	These include operations for I/O, migration, recovery, and
+ *	garbage collection.
  *
  * Results:
  *	None.
@@ -184,6 +191,12 @@ Fsio_InstallStreamOps(streamType, streamOpsPtr)
  * Fsio_InstallSrvOpenOp --
  *
  *	Install file server open procedure for a specified file type.
+ *
+ *	The server open procedure is called after pathname resolution
+ *	has obtained the I/O handle for the local file that represents
+ *	the name of the object.  The server open procedure does preliminary
+ *	open-time setup for files of its particular type (file, directory,
+ *	device, pseudo-device, remote link, etc.).
  *
  * Results:
  *	None.
