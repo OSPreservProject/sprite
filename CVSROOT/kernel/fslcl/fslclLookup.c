@@ -1826,7 +1826,7 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	     * to the file.  If there are no users then do the delete, otherwise
 	     * mark the handle as deleted and Fsio_FileClose will take care of it.
 	     */
-	    curHandlePtr->flags |= FSIO_FILE_DELETED;
+	    curHandlePtr->flags |= FSIO_FILE_NAME_DELETED;
 	    if (curHandlePtr->use.ref == 0) {
 		/*
 		 * Handle the deletion and clean up the handle.
