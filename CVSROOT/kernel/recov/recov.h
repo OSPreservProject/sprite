@@ -16,15 +16,15 @@
 #ifndef _RECOV
 #define _RECOV
 /*
- * Flags for the Rpc_RebootNotify.
+ * Flags to call-backs indicating why they were called.
  */
 #define RECOV_WHEN_HOST_DOWN		0x1
 #define RECOV_WHEN_HOST_REBOOTS		0x2
 
 /*
- * Host state flags for use by RPC clients.  These flags are set
- * by users of the RPC module to define/get host states beyond
- * the simple up/down state maintained by the RPC system.
+ * Host state flags for use by Recov clients.  These flags are set
+ * by users of the Recov module to define/get host states beyond
+ * the simple up/down state maintained by the Recov system.
  *	RECOV_IN_PROGESS	The client has crashed and needs to go
  *				through full recovery.  This is set when
  *				we detect a crash, and reset after the
@@ -33,21 +33,22 @@
 #define RECOV_IN_PROGRESS	0x1
 
 /*
- * Trace types for use with Rpc_HostTrace.  These are defined to be compatible
- *		with the values defined in rpcRecovery.c
+ * Trace types for use with Recov_HostTrace.  Compatible with recov.h bits.
  *	RECOV_TRACE_FS_STALE	A stale handle was returned from a file server
  */
 #define RECOV_TRACE_FS_STALE	0x1000
 
-void		Recov_HostNotify();
+void		Recov_Register();
 void		Recov_HostAlive();
 void		Recov_HostDead();
-int		Recov_WaitForHost();
-ReturnStatus	Recov_HostIsDown();
+ReturnStatus	Recov_IsHostDown();
+void		Recov_RebootCallBack();
 void		Recov_HostTrace();
 void		Recov_SetClientState();
 int		Recov_GetClientState();
+void		Recov_ClearClientState();
 
+void		Recov_HostTrace();
 void		Recov_PrintTrace();
 
 #endif _RECOV
