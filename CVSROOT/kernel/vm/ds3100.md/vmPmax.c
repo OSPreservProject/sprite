@@ -15,21 +15,21 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
-#include "sprite.h"
-#include "vmPmaxConst.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "vmMach.h"
-#include "vmMachInt.h"
-#include "list.h"
-#include "mach.h"
-#include "proc.h"
-#include "sched.h"
-#include "stdlib.h"
-#include "sync.h"
-#include "sys.h"
-#include "dbg.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <vmPmaxConst.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmMach.h>
+#include <vmMachInt.h>
+#include <list.h>
+#include <mach.h>
+#include <proc.h>
+#include <sched.h>
+#include <stdlib.h>
+#include <sync.h>
+#include <sys.h>
+#include <dbg.h>
+#include <bstring.h>
 
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
 #undef MASTER_LOCK
@@ -256,14 +256,15 @@ GetNumPages()
 {
     unsigned		page;
     unsigned		maxPage;
+    char		temp;
 
     page = (((unsigned)vmMemEnd & ~VMMACH_PHYS_CACHED_START) + 
 					VMMACH_PAGE_SIZE) / VMMACH_PAGE_SIZE;
     maxPage = (VMMACH_PHYS_UNCACHED_START - VMMACH_PHYS_CACHED_START) /
 							   VMMACH_PAGE_SIZE;
     for (; page < maxPage; page++) {
-	if (Mach_ProbeAddr((page << VMMACH_PAGE_SHIFT) | 
-			   VMMACH_PHYS_UNCACHED_START) != SUCCESS) {
+	if (Mach_Probe(1, (page << VMMACH_PAGE_SHIFT) | 
+			   VMMACH_PHYS_UNCACHED_START, &temp) != SUCCESS) {
 	    break;
 	}
     }
