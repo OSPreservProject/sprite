@@ -480,7 +480,7 @@ SendCmdToDevice(diskPtr, requestPtr, firstSector, lengthInSectors)
 	}
 	bzero((char *) &(diskCmdPtr->scsiCmd), sizeof(ScsiCmd));
 	diskCmdPtr->scsiCmd.commandBlockLen = sizeof(ScsiReadExtCmd);
-	cmdPtr = (ScsiReadExtCmd *) &(diskCmdPtr->scsiCmd.commandBlock);
+	cmdPtr = (ScsiReadExtCmd *) (diskCmdPtr->scsiCmd.commandBlock);
 	cmdPtr->command = (requestPtr->operation == FS_READ) ? 
 	    SCSI_READ_EXT : SCSI_WRITE_EXT;
 	cmdPtr->unitNumber = diskPtr->devPtr->LUN;
