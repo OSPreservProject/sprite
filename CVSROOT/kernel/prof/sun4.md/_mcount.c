@@ -35,8 +35,10 @@ static Boolean inMcount = FALSE;
  * There is a critical section when mcount does a pseudo-alloc
  * of the storage for its arcs.
  */
+#ifdef MCOUNT 
 #ifndef lint
 static Sync_Semaphore	mcountMutex = Sync_SemInitStatic("mcountMutex");
+#endif
 #endif
 
 
@@ -138,7 +140,7 @@ mcount()
 	printf("mcount: 1 callerPC = %x(%d), calleePC = %x\n",
 			    callerPC, instructionNumber, calleePC);
 	/* DBG_CALL; */
-#endif DEBUG
+#endif
 
 	/*
 	 * First time call graph arc has been traversed.  Allocate arc
@@ -181,7 +183,7 @@ mcount()
 	    printf("mcount 2 callerPC = %x(%d), calleePC = %x\n",
 			callerPC, instructionNumber, calleePC);
 	/* DBG_CALL; */
-#endif DEBUG
+#endif
 
 	    if (profArcListFreePtr >= profArcListEndPtr) {
 		printf("_mcount: No more arcs\n");
