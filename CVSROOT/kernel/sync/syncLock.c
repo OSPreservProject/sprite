@@ -454,6 +454,46 @@ Sync_WakeWaitingProcess(procPtr)
 /*
  *----------------------------------------------------------------------------
  *
+ * Sync_RemoveWaiter --
+ *
+ *      Remove a process from any event chain it may be on.
+ *	This is distinguished from Sync_WakeWaitingProcess because
+ *	it does not place the process in the ready queue.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+void
+Sync_RemoveWaiter(procPtr)
+    register	Proc_ControlBlock 	*procPtr;
+{
+    MASTER_LOCK(sched_Mutex);
+    if (procPtr->event != NIL) {
+	List_Remove(&procPtr->eventHashChain.links);
+	procPtr->event = NIL;
+	procPtr->state = PROC_READY;
+	Sched_MoveInQueue(procPtr);
+    } else {
+	if (procPtr->state == PROC_WAITING) {
+	    if (!(procPtr->syncFlags & SYNC_WAIT_REMOTE)) {
+		Sys_Panic(SYS_FATAL, "Sync_RemoveWaiter: Proc waiting but event and remote wait NIL\n");
+	    }
+	    procPtr->syncFlags |= SYNC_WAIT_COMPLETE;
+	}
+    }
+    MASTER_UNLOCK(sched_Mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
  * SyncEventWaitInt --
  *
  *	Make a process sleep waiting for an event.  The blocked process is
