@@ -24,10 +24,12 @@
 #include "spriteTime.h"
 #include "timerTick.h"
 #include "timerMach.h"
+#include "syncLock.h"
 #else
 #include <spriteTime.h>
 #include <kernel/timerTick.h>
 #include <kernel/timerMach.h>
+#include <kernel/syncLock.h>
 #endif
 
 
@@ -226,6 +228,28 @@ typedef struct {
 } Timer_Statistics;
 
 extern Timer_Statistics	timer_Statistics;
+extern	Time		timer_UniversalApprox;
+extern Sync_Semaphore 	timer_ClockMutex;
+
+/*
+ * Used to get the current seconds value of the universal time. This is
+ * the quickest way to get a timestamp and is used in the filesystem.
+ * The universal time is only updated at interrupt level, so we don't
+ * need to syncronize reads on a uniprocessor.
+ */
+
+#if MACH_MAX_NUM_PROCESSORS == 1
+#define Timer_GetUniversalTimeInSeconds(a) { \
+    (a) = (timer_UniversalApprox.seconds); \
+}
+#else
+#define Timer_GetUniversalTimeInSeconds(a) { \
+    MASTER_LOCK(&timer_ClockMutex); \
+    (a) = (timer_UniversalApprox.seconds); \
+    MASTER_UNLOCK(&timer_ClockMutex); \
+}
+#endif
+
 
 extern void	Timer_ScheduleRoutine();
 extern Boolean  Timer_DescheduleRoutine();
