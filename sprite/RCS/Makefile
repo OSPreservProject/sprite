@@ -174,6 +174,7 @@ dist:
 
 .BEGIN: 
 	doversion ${RELEASE} ${NEWVERSION} version.h.template
+	SnapshotSources `awk '{print $5;}' version.h.template`
 
 #sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 #	rm -f $@ version.o
@@ -258,7 +259,7 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	strip /sprite/boot/$@.md/new
 	rm -f $@.nm
 	nm -n $@ > $@.nm
-	rsh thyme -n "rcp /sprite/src/kernel/sprite/$@ dill:/sprite/src/kernel/nelson/$@"
+	rcp /sprite/src/kernel/sprite/$@ dill:/sprite/src/kernel/nelson/$@
 	rsh dill -n "(cd /sprite/src/kernel/nelson ; Save $@)"
 	-Save $@
 
