@@ -535,13 +535,10 @@ MouseInputProc(dummy, value)
     /*
      * The check below keeps our state machine back in sync with the
      * mouse by discarding characters up to the beginning of the next
-     * sequence and by discarding a partial sequence if the start-sequence
-     * flag appears.
+     * sequence.
      */
 
-    if (c & SYNC_BIT) {
-	curState = WAIT_SYNC;
-    } else if (curState == WAIT_SYNC) {
+    if ((curState == WAIT_SYNC) && !(c & SYNC_BIT)) {
 	return;
     }
     switch (curState) {
