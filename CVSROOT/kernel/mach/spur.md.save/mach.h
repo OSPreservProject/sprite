@@ -238,6 +238,20 @@ extern Mach_ProcessorStatus mach_ProcessorStatus[];
 
 #define	Mach_KernelMode() (mach_KernelMode[Mach_GetProcessorNumber()])
 
+/*
+ * A macro to return the current PC. 
+ */
+#ifdef lint
+#define Mach_GetPC() 	(Address)0
+#else
+#define Mach_GetPC() \
+    ({\
+	register Address __pc; \
+	asm volatile ("rd_special %1,pc\n":"=r" (__pc):"r"(__pc));\
+	(__pc);\
+    })
+#endif
+
 extern	Boolean	mach_KernelMode[];
 extern	int	mach_NumProcessors;
 extern	Boolean	mach_AtInterruptLevel[];
