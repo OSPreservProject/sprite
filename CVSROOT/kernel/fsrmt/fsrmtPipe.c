@@ -1167,8 +1167,11 @@ FsPipeScavenge(hdrPtr)
 	FsWaitListDelete(&handlePtr->readWaitList);
 	FsWaitListDelete(&handlePtr->writeWaitList);
 	FsHandleRemove(hdrPtr);
+	fsStats.object.pipes--
+	return(TRUE);
     } else {
 	FsHandleUnlock(hdrPtr);
+	return(FALSE);
     }
 }
 
