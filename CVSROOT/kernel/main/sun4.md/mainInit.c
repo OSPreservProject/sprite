@@ -35,7 +35,41 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void
 main()
 {
+    extern	void	Timer_TimerInit();
+    extern	void	Timer_TimerStart();
+   /*
+    * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
+    */
+    Mach_Init();
+
+    diddly(20);
+#ifdef NOTDEF
+    Timer_TimerInit();
+    Timer_TimerStart();
+    Mach_EnableIntr();		/* Should be ENABLE_INTR when I'm ready. */
+#endif NOTDEF
     for ( ; ; ) {
-	Mach_MonPrintf("Hello World!\n");
+	;
     }
+}
+
+int
+diddly(x)
+int	x;
+{
+    if (x == 0) {
+	return 0;
+    } else {
+#ifdef NOTDEF
+	Mach_MonPrintf("Hello World!\n");
+#endif NOTDEF
+	diddly(x - 1);
+    }
+    return 1;
+}
+
+printf(args)
+char	*args;
+{
+	return;
 }
