@@ -1027,7 +1027,9 @@ Fsutil_FsRecovInfo(length, resultPtr, lengthNeededPtr)
     int				numAvail;
     Fs_HandleHeader		*testHandlePtr;
 
-    bzero(resultPtr, length);
+    if (resultPtr != (Fsutil_FsRecovNamedStats *) NIL) {
+	bzero(resultPtr, length);
+    }
     numNeeded = 0;
     numAvail = length / sizeof (Fsutil_FsRecovNamedStats);
 
