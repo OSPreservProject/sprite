@@ -80,7 +80,7 @@ typedef struct FsHandleHeader {
     int			refCount;	/* Used for garbage collection. */
     char		*name;		/* Used for error messages */
     List_Links		lruLinks;	/* For LRU list of handles */
-} FsHandleHeader;			/* 32 BYTES */
+} FsHandleHeader;			/* 40 BYTES */
 
 #define LRU_LINKS_TO_HANDLE(listPtr) \
 	( (FsHandleHeader *)((int)(listPtr) - sizeof(Fs_FileID) \
@@ -109,14 +109,23 @@ typedef struct FsNameInfo {
  * Fs_Stream - A clients handle on an open file is defined by the Fs_Stream
  *      structure.  A stream has a read-write offset index, state flags
  *	that determine how the stream is being used (ie, for reading
- *	or writing, etc.), a stream type, a name state used in name
- *	related actions, and an I/O handle used for I/O operations.
- *	There are many different types of streams; they correspond
+ *	or writing, etc.), name state used for get/set attributes,
+ *	and an I/O handle used for I/O operations.
+ *	There are many different types of I/O handles; they correspond
  *	to local files, remote files, local devices, remote devices,
  *	local pipes, remote pipes, locally cached named pipes,
  *	remotely cached named pipes, control streams for pseudo devices,
  *	psuedo streams, their corresponding server streams, etc. etc.
- *	The different stream types are defined in fsInt.h
+ *	The different I/O handles types are defined in fsInt.h
+ *
+ *	This top level Fs_Stream structure is also given a handle type
+ *	and kept in the handle table because of process migration and
+ *	the shadow streams that file servers have to keep - on both
+ *	the client and the server there will be a Fs_Stream that
+ *	references an I/O handle.  The I/O handles will be different
+ *	types on the client (i.e. remote file) and the server (local file).
+ *	The Fs_Stream object will be the same, however, with the same
+ *	usage flags and internal ID.
  *
  */
 
@@ -132,7 +141,7 @@ typedef struct Fs_Stream {
     FsNameInfo	 	*nameInfoPtr;	/* Used to contact the name server */
     List_Links		clientList;	/* Needed for recovery and sharing
 					 * detection */
-} Fs_Stream;				/* 56 BYTES */
+} Fs_Stream;				/* 64 BYTES */
 
 /*
  * Flags in Fs_Stream that are only set/used by the kernel.
