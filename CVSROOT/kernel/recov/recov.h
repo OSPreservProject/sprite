@@ -205,6 +205,11 @@ typedef struct Recov_Stats {
 
 extern Recov_Stats recov_Stats;
 
+/*
+ * TRUE if we're using transparent server recovery.
+ */
+extern	Boolean		recov_transparent;
+
 extern void 	Recov_Init _ARGS_((void));
 extern void 	Recov_CrashRegister _ARGS_((void (*crashCallBackProc)(), ClientData crashData));
 extern void 	Recov_RebootRegister _ARGS_((int spriteID, void (*rebootCallBackProc)(), ClientData rebootData));
