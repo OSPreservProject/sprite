@@ -3310,7 +3310,8 @@ DeleteBlock(blockPtr)
  * ----------------------------------------------------------------------------
  */
 void
-Fscache_DumpStats()
+Fscache_DumpStats(dummy)
+    ClientData dummy;		/* unused; see dump.c:eventTable */
 {
     register Fs_BlockCacheStats *block;
 

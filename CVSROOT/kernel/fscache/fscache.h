@@ -417,7 +417,7 @@ extern void Fscache_SetMinSize _ARGS_((int minBlocks));
 extern void Fscache_SetMaxSize _ARGS_((int maxBlocks));
 extern void Fscache_BlocksUnneeded _ARGS_((Fs_Stream *streamPtr,
 				int offset, int numBytes, Boolean objectFile));
-extern void Fscache_DumpStats _ARGS_((void));
+extern void Fscache_DumpStats _ARGS_((ClientData dummy));
 extern void Fscache_GetPageFromFS _ARGS_((int timeLastAccessed, 
 				int *pageNumPtr));
 
