@@ -163,10 +163,11 @@ FsWaitListNotify(list)
 	     * Contact the remote host and get it to notify the waiter.
 	     */
 	    if (waitPtr->hostID > NET_NUM_SPRITE_HOSTS) {
-		Sys_Panic(SYS_FATAL, "FsWaitListNotify bad hostID %d (continue-able)\n",
-		waitPtr->hostID);
+		Sys_Panic(SYS_WARNING, "FsWaitListNotify bad hostID %d.\n",
+			  waitPtr->hostID);
+	    } else {
+		(void)Sync_RemoteNotify(waitPtr);
 	    }
-	    (void)Sync_RemoteNotify(waitPtr);
 	} else {
 	    /*
 	     * Mark the local process as runable.
