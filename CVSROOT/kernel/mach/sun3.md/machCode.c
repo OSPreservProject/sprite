@@ -918,6 +918,11 @@ MachTrap(trapStack)
 				< (Address) VmMachCopyEnd)) {
 			copyInProgress = TRUE;
 		    } else if ((((Address) trapStack.excStack.pc)
+				>= (Address) MachFetchArgs2)
+			    && (((Address) trapStack.excStack.pc)
+				<= (Address) MachFetchArgsEnd2)) {
+			copyInProgress = TRUE;
+		    } else if ((((Address) trapStack.excStack.pc)
 				>= (Address) MachFetchArgs)
 			    && (((Address) trapStack.excStack.pc)
 				<= (Address) MachFetchArgsEnd)) {
@@ -1092,6 +1097,8 @@ MachTrap(trapStack)
 			 (Address)trapStack.excStack.tail.addrBusErr.faultAddr);
 	    break;
 	case MACH_ILLEGAL_INST:
+	    printf("Illegal instruction in %x at %x\n", procPtr->processID,
+		    trapStack.excStack.pc);
 	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
 			    procPtr->processID, FALSE,
 			   (Address)trapStack.excStack.pc);
@@ -1327,8 +1334,6 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
     excStackSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
 
     if (procPtr->unixProgress == 0x11beef22) {
-	printf("This is a Unix signal to %x.  Things should be different.\n",
-		procPtr->processID);
 	usp = (Address)statePtr->userState.userStackPtr -
 		sizeof(UnixSignalStack);
 	if (Compat_SpriteSignalToUnix(sigStackPtr->sigStack.sigNum, &unixSignal)
@@ -1337,6 +1342,8 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 		    sigStackPtr->sigStack.sigNum);
 	    return;
 	}
+	printf("Unix signal %d(%d) to %x\n", unixSignal,
+		sigStackPtr->sigStack.sigNum, procPtr->processID);
 	unixSigStack.sigNum = unixSignal;
 	unixSigStack.sigCode = sigStackPtr->sigStack.sigCode;
 	unixSigStack.sigContextPtr = (sigcontext *)(usp + 4*sizeof(int));
@@ -1344,13 +1351,14 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 	unixSigStack.sigContext.sc_onstack = 0;
 	unixSigStack.sigContext.sc_mask = 0;
 	unixSigStack.sigContext.sc_sp = (int) statePtr->userState.userStackPtr;
-	unixSigStack.sigContext.sc_pc = (int) pc;
+	unixSigStack.sigContext.sc_pc =
+		(int) statePtr->userState.excStackPtr->pc;
 	unixSigStack.sigContext.sc_ps =
 		(int) statePtr->userState.excStackPtr->statusReg;
-	printf("sp = %x, pc = %x, ps = %x, len = %d to %x\n",
+	printf("sp = %x, pc = %x, ps = %x, len = %d to %x, exPc = %x\n",
 		statePtr->userState.userStackPtr, pc,
 		unixSigStack.sigContext.sc_ps, sizeof(UnixSignalStack),
-		(Address)usp);
+		(Address)usp, statePtr->userState.excStackPtr->pc);
 	/*
 	 * Copy the stack out to user space.
 	 */
@@ -1704,13 +1712,13 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
  * Mach_SigreturnStub --
  *
  *	Procedure to map from Unix sigreturn system call to Sprite.
- *	On the suns, this is used for returning from a longjmp.
+ *	This is used for returning from longjmps and signals.
  *
  * Results:
  *	Error code is returned upon error.  Otherwise SUCCESS is returned.
  *
  * Side effects:
- *	Side effects associated with the system call.
+ *	Changes the stack, pc, etc. to the specified values.
  *
  *----------------------------------------------------------------------
  */
@@ -1734,12 +1742,15 @@ Mach_SigreturnStub()
     if (Sig_SigsetmaskStub(bufVals[1])<0) {
 	printf("Sig_SigsetmaskStub error in Sigreturn on %x\n", bufVals[1]);
     }
-    procPtr->machStatePtr->userState.userStackPtr = (Address)bufVals[2];
-    procPtr->specialHandling = 1;
+    printf("saved usp = %x, SP= %x, exSp = %x\n",
+	    procPtr->machStatePtr->userState.userStackPtr, 
+	    procPtr->machStatePtr->userState.trapRegs[SP],
+	    procPtr->machStatePtr->userState.excStackPtr);
     printf("Mach_SigreturnStub(%x from %x): %x, %x, %x, %x, %x\n", jmpBuf,
 	    procPtr->machStatePtr->userState.userStackPtr,
 	    bufVals[0], bufVals[1],
 	    bufVals[2], bufVals[3], bufVals[4]);
+    procPtr->machStatePtr->userState.userStackPtr = (Address)bufVals[2];
 
     /*
      * We need to make a short stack to allow the process to start executing.
@@ -1754,7 +1765,12 @@ Mach_SigreturnStub()
 	    ->userState.excStackPtr + excStackSize - MACH_SHORT_SIZE);
     procPtr->machStatePtr->userState.trapRegs[SP] = (int)excStackPtr;
     excStackPtr->statusReg = bufVals[4]&0xf;
+    printf("Sigreturn statusReg = %x, pc = %x\n", bufVals[4]&0xf, bufVals[3]);
     excStackPtr->vor.stackFormat = MACH_SHORT;
     excStackPtr->pc = (int)bufVals[3];
+    printf("New usp = %x, SP= %x, exSp = %x\n",
+	    procPtr->machStatePtr->userState.userStackPtr, 
+	    procPtr->machStatePtr->userState.trapRegs[SP],
+	    procPtr->machStatePtr->userState.excStackPtr);
     return procPtr->machStatePtr->userState.trapRegs[D0];
 }
