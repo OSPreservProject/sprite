@@ -131,7 +131,7 @@ mcount()
 
     /*
      * Check to see if arcPtr equals an unused value (which is 0 because
-     * profArcIndex is initialized with Byte_Zero in Prof_Start).
+     * profArcIndex is initialized with bzero in Prof_Start).
      */
 
     arcPtr = profArcIndex[instructionNumber];

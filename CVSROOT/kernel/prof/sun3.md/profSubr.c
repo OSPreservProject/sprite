@@ -163,13 +163,13 @@ Prof_Start()
      * Reset the PC sample counters.
      */
 
-    Byte_Zero(pcSampleSize * sizeof(short), (Address) pcSamples);
+    bzero((Address) pcSamples, pcSampleSize * sizeof(short));
 
     /*
      * Reset the arc pointer list indexed by caller PC.
      */
 
-    Byte_Zero(profArcIndexSize * sizeof(ProfRawArc *), (Address) profArcIndex);
+    bzero((Address) profArcIndex, profArcIndexSize * sizeof(ProfRawArc *));
 
     /*
      * Set the free pointers into the arc storage.  Don't have to
@@ -336,7 +336,7 @@ Prof_Dump(dumpName)
 
 	/* 
 	 * Check if rawArcPtr equals an unused value (which is 0 because 
-	 * profArcIndex is initialized with Byte_Zero in Prof_Start).
+	 * profArcIndex is initialized with bzero in Prof_Start).
 	 */
 	if (rawArcPtr == (ProfRawArc *) 0) {
 	    continue;
