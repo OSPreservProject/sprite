@@ -256,30 +256,6 @@ _MachReturnFromTrap:
 	call	MachDealWithWindowUnderflow
 	nop
 UnderflowOkay:
-	set	_saveCounter, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP2
-	mov	1000, %VOL_TEMP1
-	cmp	%VOL_TEMP1, %VOL_TEMP2
-	be	finished3
-	nop
-	sll	%VOL_TEMP2, 0x2, %VOL_TEMP2	/* get array offset */
-	set	_saveBuffer, %VOL_TEMP1
-	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* add to array */
-	mov	0x3, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	mov	%psr, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	st	%l0, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	mov	%wim, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	set	_saveCounter, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP2
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	st	%VOL_TEMP2, [%VOL_TEMP1]
-finished3:
 	/* restore psr */
 	mov	%CUR_PSR_REG, %VOL_TEMP2;	/* get old psr */
 	set	(~MACH_CWP_BITS), %VOL_TEMP1;	/* clear only its cwp bits */

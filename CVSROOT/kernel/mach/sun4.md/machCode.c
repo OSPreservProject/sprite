@@ -71,9 +71,6 @@ int	mach_LastUserStackPage;
 Mach_RegState	stateHolder;
 Mach_RegState	*temporaryTrapState = &stateHolder;
 
-int	saveBuffer[1000];
-int	saveCounter = 0;
-int	saveStart = 0;
 
 /*
  * ----------------------------------------------------------------------------

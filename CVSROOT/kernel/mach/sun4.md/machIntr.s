@@ -52,30 +52,6 @@
  */
 .globl	MachHandleInterrupt
 MachHandleInterrupt:
-	set	_saveCounter, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP2
-	mov	1000, %VOL_TEMP1
-	cmp	%VOL_TEMP1, %VOL_TEMP2
-	be	finishedHere
-	nop
-	sll	%VOL_TEMP2, 0x2, %VOL_TEMP2	/* get array offset */
-	set	_saveBuffer, %VOL_TEMP1
-	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* add to array */
-	mov	0x0, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	mov	%psr, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	st	%l0, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	mov	%wim, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	set	_saveCounter, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP2
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	st	%VOL_TEMP2, [%VOL_TEMP1]
-finishedHere:
 	MACH_INVALID_WINDOW_TEST()
 	be	WindowOkay
 	nop
@@ -112,30 +88,6 @@ WindowOkay:
 	 * to change the CWP bits.  This seems like extra work someplace.
 	 */
 	MACH_RESTORE_TRAP_STATE()
-	set	_saveCounter, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP2
-	mov	1000, %VOL_TEMP1
-	cmp	%VOL_TEMP1, %VOL_TEMP2
-	be	finished2
-	nop
-	sll	%VOL_TEMP2, 0x2, %VOL_TEMP2	/* get array offset */
-	set	_saveBuffer, %VOL_TEMP1
-	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* add to array */
-	mov	0x1, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	mov	%psr, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	st	%l0, [%VOL_TEMP2]
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	mov	%wim, %VOL_TEMP1
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	set	_saveCounter, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP2
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
-	st	%VOL_TEMP2, [%VOL_TEMP1]
-finished2:
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop
