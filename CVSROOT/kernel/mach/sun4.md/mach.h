@@ -214,6 +214,7 @@ typedef	struct {
 #define	Mach_GetProcessorNumber() 	0
 
 extern	Address	Mach_GetPC();
+extern	Address	Mach_GetCallerPC();
 
 extern	Boolean	mach_KernelMode;
 extern	int	mach_NumProcessors;
