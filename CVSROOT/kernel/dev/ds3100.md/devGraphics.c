@@ -773,7 +773,7 @@ DevGraphicsKbdIntr(ch)
     eventPtr->time = TO_MS(time);
     eventPtr->key = ch;
     scrInfo.eventQueue.eTail = i;
-
+    Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL, (Boolean *) NIL);
     Fs_DevNotifyReader(notifyToken);
 }
 
@@ -1095,6 +1095,7 @@ Scroll()
     register int temp0,temp1,temp2,temp3;
     register int i, scanInc, lineCount;
 
+#ifdef notdef
     /*
      * If the mouse is on we don't scroll so that the bit map remains sane.
      */
@@ -1102,6 +1103,8 @@ Scroll()
 	scrInfo.row = 0;
 	return;
     }
+#endif
+
     /*
      *  The following is an optimization to cause the scrolling 
      *  of text to be memory limited.  Basically the writebuffer is 
