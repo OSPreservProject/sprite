@@ -12,7 +12,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "machine.h"
 #include "dev.h"
 #include "devAddrs.h"
 #include "dbg.h"
@@ -20,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbgInt.h"
 #include "sys.h"
 #include "sunMon.h"
+#include "mach.h"
 
 /*
  * Channel A is setup to be the debuggers channel.  It gets configured
@@ -76,12 +76,12 @@ DbgRs232Init()
 
 #ifdef USE_CHAN_A
     Dev_ZilogWriteReg(zilogAddrA, 9, WRITE9_RESET_CHAN_A); 
-    DELAY(10);
+    MACH_DELAY(10);
 #endif USE_CHAN_A
 
 #ifdef USE_CHAN_B
     Dev_ZilogWriteReg(zilogAddrB, 9, WRITE9_RESET_WORLD); 
-    DELAY(10);
+    MACH_DELAY(10);
 #endif USE_CHAN_B
 
     /*

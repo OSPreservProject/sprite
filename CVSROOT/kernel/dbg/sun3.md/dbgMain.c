@@ -13,10 +13,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "exc.h"
 #include "dbg.h"
 #include "dbgInt.h"
-#include "machine.h"
+#include "mach.h"
 #include "proc.h"
 #include "vmMachInt.h"
 #include "vm.h"
@@ -140,13 +139,21 @@ int		machineType;
 Dbg_Rs232Channel		dbgChannel = DBG_RS232_CHANNELA;
 
 /*
+ * All of the stuff that is put onto the stack when the debugger is entered.
+ */
+typedef struct {
+    int			gprs[MACH_NUM_GPRS];
+    Mach_TrapStack	trapStack;
+} DbgStack;
+
+/*
  * Declare global variables.
  */
 int		dbgSfcReg;
 int		dbgDfcReg;
 int 		dbgUserContext;
 int 		dbgKernelContext;
-Exc_TrapStack	dbgTrapStack;
+DbgStack	dbgGlobalStack;
 int		dbgTermReason;
 int		dbgInDebugger;
 int		dbgIntPending;
@@ -161,9 +168,9 @@ static	   int	oldContext;
 /*
  * Saved exception stack stuff.
  */
-static	int		savedTrapStackLength;
+static	int		savedDbgStackLength;
 static	int		savedExcStackLength;
-static	Exc_TrapStack	savedTrapStack;
+static	DbgStack	savedDbgStack;
 static	Boolean		callInProgress = FALSE;
 
 
@@ -305,8 +312,8 @@ TranslateException(exception)
     int exception;		/* The exception which is to be translated. */
 {
 
-	if (exception < 0 || exception > EXC_UNKNOWN_EXC) {
-	    exception = EXC_UNKNOWN_EXC;
+	if (exception < 0 || exception > MACH_UNKNOWN_EXC) {
+	    exception = MACH_UNKNOWN_EXC;
 	}
 
 	return(exceptionNames[exception]);
@@ -420,11 +427,12 @@ WriteBytes(numBytes, bytePtr)
  */
 void
 DbgComplain(trapStack)
-    Exc_TrapStack	trapStack;
+    Mach_TrapStack	trapStack;
 {
     Sys_Printf("%s exception in the debugger at pc %x addr %x\n",
-			TranslateException(dbgExcType), trapStack.excStack.pc,
-			trapStack.excStack.tail.addrBusErr.faultAddr);
+			TranslateException(trapStack.trapType), 
+				trapStack.excStack.pc,
+				trapStack.excStack.tail.addrBusErr.faultAddr);
     Mon_Abort();
 }
 
@@ -705,19 +713,19 @@ typedef struct {
  *
  * ----------------------------------------------------------------------------
  */
-
 void
-Dbg_Main(stackHole, trapStack)
+Dbg_Main(stackHole, dbgStack)
     StackHole		stackHole;	/* The hole put in the stack so that
 					 * kdbx can play around with the stack*/
-    Exc_TrapStack	trapStack;	/* All of the stuff that is put onto the
-					 * stack by the trap handler */
+    DbgStack		dbgStack;	/* All of the stuff that is put onto the
+					 * stack because of the exception and
+					 * the trap handler. */
 {
     short		trapCode;	/* Reason that we trapped that is sent
 					 * to kdbx. */
     Boolean	  	done;		/* Boolean to tell us whether to leave
 					 * the main debugger loop */
-    int		  	trapStackLength;/* The length of the trap stack */
+    int		  	dbgStackLength;/* The length of the trap stack */
     int		  	excStackLength;	/* The length of the exception part 
 					 * of the trap stack */
     Dbg_Opcode	  	opcode;		/* The operation that was requested */
@@ -763,10 +771,10 @@ Dbg_Main(stackHole, trapStack)
      * exception.
      */
     if (dbgTraceLevel >= 1 || !dbg_BeingDebugged || 
-        (trapStack.trapType != EXC_TRACE_TRAP && 
-         trapStack.trapType != EXC_BRKPT_TRAP)) {
+        (dbgStack.trapStack.trapType != MACH_TRACE_TRAP && 
+         dbgStack.trapStack.trapType != MACH_BRKPT_TRAP)) {
 	Sys_Printf("Entering debugger with a %s exception\r\n",
-					TranslateException(trapStack.trapType));
+			    TranslateException(dbgStack.trapStack.trapType));
     }
 
     /*
@@ -776,7 +784,7 @@ Dbg_Main(stackHole, trapStack)
      * understand exception stacks).  Also we need to copy all of the 
      * trap stack to a global variable.  This allows access to this stack 
      * through the debugger (kdbx doesn't know we are in this routine so the
-     * parameter trapStack cannot be printed out in kdbx).
+     * parameter dbgStack cannot be printed out in kdbx).
      *
      * NOTE:
      *
@@ -786,18 +794,18 @@ Dbg_Main(stackHole, trapStack)
      * stack also serves the purpose of preventing kdbx from trashing the
      * original copy.
      */
-    trapStackLength = Exc_GetTrapStackSize(&trapStack);
-    excStackLength = trapStackLength - 
-			    (sizeof(Exc_TrapStack) - sizeof(Exc_ExcStack));
+    excStackLength = Mach_GetExcStackSize(&dbgStack.trapStack.excStack);
+    dbgStackLength = sizeof(DbgStack) - sizeof(Mach_ExcStack) + excStackLength;
 
-    Byte_Copy(trapStackLength, (Address) &trapStack, (Address) &dbgTrapStack);
+    Byte_Copy(dbgStackLength, (Address) &dbgStack, (Address) &dbgGlobalStack);
 
-    dbgTrapStack.genRegs[mach_SP] += excStackLength + STACK_INC;
+    dbgGlobalStack.gprs[SP] += excStackLength + STACK_INC + 
+			       MACH_TRAP_INFO_SIZE;
 
     /*
      * Clear the trace bit from the status register.
      */
-    dbgTrapStack.excStack.statusReg &= ~SUN_SR_TRACEMODE;
+    dbgGlobalStack.trapStack.excStack.statusReg &= ~MACH_SR_TRACEMODE;
 
     /*
      * We need to tell kdbx what type of exception this is.  If the
@@ -809,16 +817,16 @@ Dbg_Main(stackHole, trapStack)
      * tell kdbx that the reason was an DBG_INTERRUPT_SIG and we set the trap
      * code appropriately for the given exception.
      */
-    trapCode = trapStack.trapType + 1;	/* EXC trap codes are one less than
-					 * DBG trap codes. */
+    trapCode = dbgStack.trapStack.trapType + 1;	/* MACH trap codes are one less
+						 * than DBG trap codes. */
     if (dbgTermReason == DBG_INTERRUPT_SIG) {
 	trapCode = DBG_INTERRUPT;
     } else if (dbgPanic) {
 	dbgPanic = FALSE;
 	trapCode = DBG_INTERRUPT;
         dbgTermReason = DBG_INTERRUPT_SIG;
-    } else if (trapStack.trapType == EXC_TRACE_TRAP ||
-	       trapStack.trapType == EXC_BRKPT_TRAP) {
+    } else if (dbgStack.trapStack.trapType == MACH_TRACE_TRAP ||
+	       dbgStack.trapStack.trapType == MACH_BRKPT_TRAP) {
 	dbgTermReason = DBG_TRACE_TRAP_SIG;
     } else {
 	dbgTermReason = DBG_INTERRUPT_SIG;
@@ -906,37 +914,40 @@ Dbg_Main(stackHole, trapStack)
 
 	    case DBG_GET_STOP_INFO: {
 		StopInfo	stopInfo;
-		extern void	MachContextSwitch();
+		extern void	Mach_ContextSwitch();
 		stopInfo.codeStart = (int)mach_CodeStart;
-		if (procPtr != (Proc_ControlBlock *) NIL) {
-		    stopInfo.maxStackAddr = 
-		    		procPtr->stackStart + mach_KernStackSize;
-		    Byte_Copy(sizeof(procPtr->saveRegs),
-			    (Address) procPtr->saveRegs,
+		if (procPtr != (Proc_ControlBlock *) NIL &&
+		    procPtr->machStatePtr != (Mach_State *)NIL) {
+		    stopInfo.maxStackAddr =
+			(int)(procPtr->machStatePtr->kernStackStart + 
+			      mach_KernStackSize);
+		    Byte_Copy(sizeof(procPtr->machStatePtr->switchRegs),
+			    (Address) procPtr->machStatePtr->switchRegs,
 			    (Address) stopInfo.genRegs);
-		    stopInfo.pc = (int) ((Address) MachContextSwitch);
+		    stopInfo.pc = (int) ((Address) Mach_ContextSwitch);
 		} else {
 		    stopInfo.maxStackAddr = dbgMaxStackAddr;
-		    Byte_Copy(sizeof(dbgTrapStack.genRegs),
-			    (Address) dbgTrapStack.genRegs, 
+		    Byte_Copy(sizeof(dbgGlobalStack.gprs),
+			    (Address) dbgGlobalStack.gprs, 
 			    (Address) stopInfo.genRegs);
-		    stopInfo.pc = dbgTrapStack.excStack.pc;
+		    stopInfo.pc = dbgGlobalStack.trapStack.excStack.pc;
 		}
 		stopInfo.termReason = dbgTermReason;
 		stopInfo.trapCode = trapCode;
 		stopInfo.statusReg = 
-			(unsigned short) dbgTrapStack.excStack.statusReg;
+		(unsigned short) dbgGlobalStack.trapStack.excStack.statusReg;
 		PutReplyBytes(sizeof(stopInfo), (Address)&stopInfo);
 		SendReply();
 		break;
 	    }
 	    case DBG_READ_ALL_GPRS:
-		if (procPtr != (Proc_ControlBlock *) NIL) {
-		    PutReplyBytes(sizeof(procPtr->saveRegs),
-				 (Address) procPtr->saveRegs);
+		if (procPtr != (Proc_ControlBlock *) NIL &&
+		    procPtr->machStatePtr != (Mach_State *)NIL) {
+		    PutReplyBytes(sizeof(procPtr->machStatePtr->switchRegs),
+				 (Address) procPtr->machStatePtr->switchRegs);
 		} else {
-		    PutReplyBytes(sizeof(dbgTrapStack.genRegs),
-			         (Address) dbgTrapStack.genRegs);
+		    PutReplyBytes(sizeof(dbgGlobalStack.gprs),
+			         (Address) dbgGlobalStack.gprs);
 		}
 		SendReply();
 		break;
@@ -1088,7 +1099,7 @@ Dbg_Main(stackHole, trapStack)
 		    Sys_Printf("register %d data %x ", writeGPR.regNum, 
 				writeGPR.regVal);
 		}
-		dbgTrapStack.genRegs[writeGPR.regNum] = writeGPR.regVal;
+		dbgGlobalStack.gprs[writeGPR.regNum] = writeGPR.regVal;
 		break;
 	    }
 
@@ -1108,14 +1119,15 @@ Dbg_Main(stackHole, trapStack)
 		 * so that we will be able to continue.  We will put
 		 * it back when we are done.
 		 */
-		savedTrapStackLength = trapStackLength;
+		savedDbgStackLength = dbgStackLength;
 		savedExcStackLength = excStackLength;
-		Byte_Copy(trapStackLength, &dbgTrapStack, &savedTrapStack);
+		Byte_Copy(dbgStackLength, &dbgGlobalStack, &savedDbgStack);
 
-		dbgTrapStack.excStack.vor.stackFormat = EXC_SHORT;
-		trapStackLength = Exc_GetTrapStackSize(&dbgTrapStack);
-		excStackLength = trapStackLength - 
-		    (sizeof(Exc_TrapStack) - sizeof(Exc_ExcStack));
+		dbgGlobalStack.trapStack.excStack.vor.stackFormat = MACH_SHORT;
+		excStackLength =
+		    Mach_GetExcStackSize(&dbgGlobalStack.trapStack.excStack);
+		dbgStackLength = excStackLength + sizeof(DbgStack) - 
+				 sizeof(Mach_ExcStack);
 
 		callInProgress = TRUE;
 		if (dbgCanUseSyslog) {
@@ -1143,10 +1155,10 @@ Dbg_Main(stackHole, trapStack)
 		     * need to restore our state if the callInProgress flag is
 		     * set.
 		     */
-		    trapStackLength = savedTrapStackLength;
+		    dbgStackLength = savedDbgStackLength;
 		    excStackLength = savedExcStackLength;
-		    Byte_Copy(sizeof(dbgTrapStack), &savedTrapStack,
-			      &dbgTrapStack);
+		    Byte_Copy(sizeof(dbgGlobalStack), &savedDbgStack,
+			      &dbgGlobalStack);
 		    callInProgress = FALSE;
 		}
 		/*
@@ -1191,10 +1203,10 @@ Dbg_Main(stackHole, trapStack)
 		 * The client wants to continue execution.
 		 */
 		GetRequestBytes(sizeof(int), 
-				(Address) &dbgTrapStack.excStack.pc);
+			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
 		if (dbgTraceLevel >= 2) {
 		    Sys_Printf("Continuing from pc %x ",
-				dbgTrapStack.excStack.pc);
+				dbgGlobalStack.trapStack.excStack.pc);
 		}
 		if (!dbg_Rs232Debug) {
 		    int	dummy;
@@ -1212,10 +1224,10 @@ Dbg_Main(stackHole, trapStack)
 		 * The client wants to single step.
 		 */
 		GetRequestBytes(sizeof(int), 
-				(Address) &dbgTrapStack.excStack.pc);
+			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
 		if (dbgTraceLevel >= 2) {
 		    Sys_Printf("Stepping from pc %x ",
-				dbgTrapStack.excStack.pc);
+				dbgGlobalStack.trapStack.excStack.pc);
 		}
 		if (!dbg_Rs232Debug) {
 		    int	dummy;
@@ -1227,7 +1239,8 @@ Dbg_Main(stackHole, trapStack)
 		/* 
 		 * Turn the trace bit on in the SR.
 		 */
-		dbgTrapStack.excStack.statusReg |= SUN_SR_TRACEMODE;
+		dbgGlobalStack.trapStack.excStack.statusReg |= 
+							MACH_SR_TRACEMODE;
 		dbg_BeingDebugged = TRUE;
 		done = TRUE;
 		break;
@@ -1238,10 +1251,10 @@ Dbg_Main(stackHole, trapStack)
 		 * business.
 		 */
 		GetRequestBytes(sizeof(int), 
-				(Address) &dbgTrapStack.excStack.pc);
+			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
 		if (dbgTraceLevel >= 2) {
 		    Sys_Printf("Detaching at pc %x ",
-				dbgTrapStack.excStack.pc);
+				dbgGlobalStack.trapStack.excStack.pc);
 		}
 		if (!dbg_Rs232Debug) {
 		    int	dummy;
@@ -1272,9 +1285,10 @@ Dbg_Main(stackHole, trapStack)
      * exception stuff on the stack.
      */
 
-    dbgSavedSP = dbgTrapStack.genRegs[mach_SP] - trapStackLength;
-    dbgTrapStack.genRegs[mach_SP] -= excStackLength + STACK_INC;
-    Byte_Copy(trapStackLength, (Address) &dbgTrapStack, (Address) dbgSavedSP);
+    dbgSavedSP = dbgGlobalStack.gprs[SP] - dbgStackLength;
+    dbgGlobalStack.gprs[SP] -= excStackLength + STACK_INC  +
+			          MACH_TRAP_INFO_SIZE;
+    Byte_Copy(dbgStackLength, (Address) &dbgGlobalStack, (Address) dbgSavedSP);
 
     VmMachSetKernelContext(oldContext);
     sys_AtInterruptLevel = atInterruptLevel;
