@@ -274,7 +274,7 @@ DevTtyIOControl(devicePtr, iocPtr, replyPtr)
 
     LOCK_MONITOR;
     replyPtr->length = iocPtr->outBufSize;
-    result = Td_ControlCooked(ttyPtr->term, iocPtr->command,
+    result = Td_ControlCooked(ttyPtr->term, iocPtr->command, iocPtr->format,
 	    iocPtr->inBufSize, (char *) iocPtr->inBuffer,
 	    &replyPtr->length, (char *) iocPtr->outBuffer,
 	    &replyPtr->signal, &ttyPtr->selectState);
