@@ -66,12 +66,14 @@ SigMigSend(procPtr, sigNum, code)
     Proc_PID remoteProcessID;
     int remoteHostID;
     Proc_ControlBlock 	*callerProcPtr; /* The calling process */
+    Boolean locked;
 
     if (proc_MigDebugLevel > 4) {
 	printf("SigMigSend(%x, %d, %d) entered.\n", procPtr->processID,
 		   sigNum, code);
     }
 
+    processID = procPtr->processID;
     if (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
 	/*
 	 * If the current process is a user process, wait for the
@@ -92,7 +94,6 @@ SigMigSend(procPtr, sigNum, code)
 	    Proc_CallFunc(DeferSignal, (ClientData) infoPtr, 0);
 	    return(SUCCESS);
 	}
-	processID = procPtr->processID;
         Proc_Unlock(procPtr);
 	status = Proc_WaitForMigration(processID);
 	Proc_Lock(procPtr);
@@ -116,6 +117,7 @@ SigMigSend(procPtr, sigNum, code)
      * and lock the process again.
      */
     Proc_Unlock(procPtr);
+    locked = FALSE;
     status = SigSendRemoteSignal(remoteHostID, sigNum, code,
 			      remoteProcessID, FALSE);
 
@@ -124,25 +126,51 @@ SigMigSend(procPtr, sigNum, code)
     }
 
     if (status != SUCCESS) {
+	if (status == PROC_INVALID_PID) {
+	    Proc_ControlBlock *newProcPtr;
+	    newProcPtr = Proc_LockPID(processID);
+	    if (newProcPtr == (Proc_ControlBlock *) NIL) {
+		/*
+		 * This is what we're hoping for: the process doesn't
+		 * exist on either the remote host or the local host.
+		 */
+		goto done;
+	    }
+	    /*
+	     * Same process.
+	     */
+	    if (procPtr != newProcPtr) {
+		panic("SigMigSend: locked wrong process.\n");
+	    }
+	    locked = TRUE;
+	}	    
+	    
+	    
 	if (proc_MigDebugLevel > 0) {
 	    printf("Warning: SigMigSend:Error trying to signal %d to process %x (%x on host %d):\n\t%s\n",
-		   sigNum, procPtr->processID, remoteProcessID, remoteHostID,
+		   sigNum, processID, remoteProcessID, remoteHostID,
 		   Stat_GetMsg(status));
 	}
 	if (sigNum == SIG_KILL || status == PROC_INVALID_PID) {
 	    if (proc_MigDebugLevel > 0) {
 		printf("SigMigSend: killing local copy of process %x.\n",
-			   procPtr->processID);
+			   processID);
 	    }
 	    Proc_CallFunc(Proc_DestroyMigratedProc,
-			  (ClientData) procPtr->processID, 0);
+			  (ClientData) processID, 0);
 	}
     }
 
     /*
      * Give back the procPtr in the same state we found it (locked).
+     * Note that it may no longer refer to the same process (if the process
+     * has been recycled while we had it unlocked) but the caller should
+     * just unlock it and return.
      */
-    Proc_Lock(procPtr);
+    done:
+    if (!locked) {
+	Proc_Lock(procPtr);
+    }
 	
     return(status);
 }
