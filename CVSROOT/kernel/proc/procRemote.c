@@ -429,6 +429,8 @@ ContinueMigratedProc(procPtr)
     if (!(procPtr->genFlags & PROC_FOREIGN)) {
 	procPtr->peerProcessID = (Proc_PID) NIL;
 	procPtr->peerHostID = NIL;
+    } else {
+	Proc_AddMigDependency(procPtr->processID, procPtr->peerHostID);
     }
     Proc_Unlock(procPtr);
     Sched_MakeReady(procPtr);
@@ -548,7 +550,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     Address dataBuffer = (Address) NIL;
     Address replyDataBuffer = (Address) NIL;
     int i;
-    ReturnStatus status;		/* returned by assorted procedures */
+    register ReturnStatus status;	/* returned by assorted procedures */
     ReturnStatus remoteCallStatus;	/* status returned by system call */
     Proc_TraceRecord record;		/* used to store trace data */
     int lastArraySize = -1;			/* size of last array found */
@@ -560,13 +562,34 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     
     intArgsArray = (int *) argsPtr;
     
+    
+    procPtr = Proc_GetActualProc();
+
+    /*
+     * Check to make sure the home node is up, and kill the process if
+     * it isn't.  The call to exit never returns.
+     */
+    status = Recov_IsHostDown(procPtr->peerHostID);
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Printf("Proc_DoRemoteCall: host %d is down; killing process %x.\n",
+		       procPtr->peerHostID, procPtr->processID);
+	}
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_NO_PEER, 0);
+	/*
+	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
+	 * directive causes a complaint when there's code after it.
+	 */
+	Sys_Panic(SYS_FATAL, "Proc_DoRemoteCall: Proc_ExitInt returned.\n");
+	return(PROC_NO_PEER);
+    }
+
     /*
      * Set up the RPC parameters: pass the home processID, the system call
      * number, and parameter information.  Additional parameter information
      * (type and disposition) is copied below.
      */
-    
-    procPtr = Proc_GetActualProc();
+
     call.processID = procPtr->peerProcessID;
     call.callNumber = callNumber;
     call.numArgs = numWords;
@@ -958,6 +981,21 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
 	Sys_Printf("ProcRemoteFork called.\n");
     }
 
+    status = Recov_IsHostDown(parentProcPtr->peerHostID);
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Printf("ProcRemoteFork: host %d is down; killing process %x.\n",
+		       parentProcPtr->peerHostID, parentProcPtr->processID);
+	}
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_NO_PEER, 0);
+	/*
+	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
+	 * directive causes a complaint when there's code after it.
+	 */
+	Sys_Panic(SYS_FATAL, "ProcRemoteFork: Proc_ExitInt returned.\n");
+	return(PROC_NO_PEER);
+    }
+
     if (proc_DoTrace && proc_DoCallTrace) {
 	record.processID = parentProcPtr->peerProcessID;
 	record.flags = PROC_MIGTRACE_START;
@@ -993,14 +1031,30 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
 		     (ClientData *) &record);
     }
 
+    /*
+     * If we were told the process no longer exists on the home node,
+     * then blow it away.  Any other return status just means we didn't
+     * initialize the child properly.
+     */
     if (status != SUCCESS) {
-	Sys_Printf("Warning: ProcRemoteFork returning status %x.\n",
-		  status);
+	if (status == PROC_NO_PEER) {
+	    (void) Sig_Send(SIG_KILL, PROC_NO_PEER, parentProcPtr->processID,
+			    FALSE); 
+	}
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Printf("Warning: ProcRemoteFork returning status %x.\n",
+		       status);
+	}
 	return(status);
     }
     childProcPtr->peerHostID = parentProcPtr->peerHostID;
     childProcPtr->genFlags |= PROC_FOREIGN;
     childProcPtr->kcallTable = mach_MigratedHandlers;
+
+    /*
+     * Note the dependency of the new process on the other host.
+     */
+    Proc_AddMigDependency(childProcPtr->processID, childProcPtr->peerHostID);
 
     if (proc_MigDebugLevel > 3) {
 	Sys_Printf("ProcRemoteFork returning status %x.\n", status);
@@ -1028,10 +1082,10 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
  */
 
 void
-ProcRemoteExit(procPtr, reason, status, code)
+ProcRemoteExit(procPtr, reason, exitStatus, code)
     register Proc_ControlBlock 	*procPtr;  /* process that is exiting */
     int reason;	/* Why the process is dying: EXITED, SIGNALED, DESTROYED  */
-    int	status;	/* Exit status or signal # or destroy status */
+    int	exitStatus;	/* Exit status or signal # or destroy status */
     int code;	/* Signal sub-status */
 {
     Address buffer;
@@ -1039,11 +1093,25 @@ ProcRemoteExit(procPtr, reason, status, code)
     int bufferSize;
     Rpc_Storage storage;
     Proc_RemoteCall call;
-    ReturnStatus error;
+    ReturnStatus status;
     Proc_TraceRecord record;		/* used to store trace data */
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("ProcRemoteExit(%x) called.\n", status);
+	Sys_Printf("ProcRemoteExit(%x) called.\n", exitStatus);
+    }
+
+    /*
+     * Remove the dependency on the other host.
+     */
+    Proc_RemoveMigDependency(procPtr->processID);
+
+    status = Recov_IsHostDown(procPtr->peerHostID);
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Printf("ProcRemoteExit: host %d is down; ignoring exit for process %x.\n",
+		       procPtr->peerHostID, procPtr->processID);
+	}
+	return;
     }
 
     if (proc_DoTrace && proc_DoCallTrace) {
@@ -1064,7 +1132,7 @@ ProcRemoteExit(procPtr, reason, status, code)
     Byte_FillBuffer(ptr, int,  procPtr->numQuantumEnds);
     Byte_FillBuffer(ptr, int,  procPtr->numWaitEvents);
     Byte_FillBuffer(ptr, int, reason);
-    Byte_FillBuffer(ptr, int, status);
+    Byte_FillBuffer(ptr, int, exitStatus);
     Byte_FillBuffer(ptr, int, code);
 
 
@@ -1086,20 +1154,20 @@ ProcRemoteExit(procPtr, reason, status, code)
     storage.replyDataSize = 0;
 
 
-    error = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL, &storage);
+    status = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL, &storage);
 
     if (proc_DoTrace && proc_DoCallTrace) {
 	record.flags &= ~PROC_MIGTRACE_START;
-	record.info.call.status = error;
+	record.info.call.status = status;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
 		     (ClientData *) &record);
     }
 
     Mem_Free(buffer);
 
-    if (error != SUCCESS) {
-	Sys_Printf("Warning: ProcRemoteExit received status %x from Rpc_Call.\n",
-		  error);
+    if ((status != SUCCESS) && (proc_MigDebugLevel > 0)) {
+	Sys_Printf("Warning: ProcRemoteExit received status %x.\n",
+		   status);
     }
 }
 
