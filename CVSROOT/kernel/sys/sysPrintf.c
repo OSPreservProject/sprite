@@ -34,6 +34,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static	Sync_Semaphore	sysPrintMutex = SYNC_SEM_INIT_STATIC("sysPrintMutex");
 
 /*
+ * Set during a panic to prevent recursion.
+ */
+Boolean	sysPanicing = FALSE;
+
+/*
  * Used to keep track of bytes written.
  */
 static int bytesWritten;
@@ -137,46 +142,6 @@ doVprintf(format, args)
     return (bytesWritten);
 
 }
-
-
-#ifdef NOTDEF
-/* No one calls this one anyway. */
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Sys_DoPrintf --
- *
- *      Perform a C style printf to the monitor. 
- *
- * Results:
- *      Number of characters printed.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------------
- */
-/*VARARGS*/
-int
-Sys_DoPrintf(va_alist)
-    va_dcl
-{
-	char *format;
-	int  count;
-	va_list	args;
-
-	va_start(args);
-	format = va_arg(args, char *);
-	count = doVprintf(format, &args);
-	va_end(args);
-
-	return (count);
-}
-#endif /* NOTDEF */
-
-Boolean	sysPanicing = FALSE;
-
 
 /* 
  *----------------------------------------------------------------------
@@ -209,7 +174,8 @@ panic(va_alist)
     va_start(args);
     format = va_arg(args, char *);
 
-    Dev_SyslogDebug(TRUE);
+    Dev_VidEnable(TRUE);	/* unblank the screen */
+    Dev_SyslogDebug(TRUE);	/* divert /dev/syslog output to the screen */
     printf("Fatal Error: ");
     (void) doVprintf(format,&args);
     MASTER_LOCK(&sysPrintMutex);
@@ -240,7 +206,7 @@ panic(va_alist)
  *
  * ----------------------------------------------------------------------------
  */
-
+#ifdef notdef
 /*VARARGS0*/
 void
 Sys_Panic(va_alist)
@@ -275,42 +241,7 @@ Sys_Panic(va_alist)
     Dev_SyslogDebug(FALSE);
     return;
 }
-
-#ifdef NOTDEF
-/* No one calls this one, anyway. */
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Sys_UnSafePrintf --
- *
- *      Perform a C style printf without disabling interrupts.
- *	This routine does not get the sysPrintMutex and is thus truly
- *	unsafe.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------------
- */
-
-/*VARARGS*/
-void
-Sys_UnSafePrintf(va_alist)
-    va_dcl
-{
-    va_list	args;
-    char *format;
-
-    va_start(args);
-    format = va_arg(args, char *);
-    (void) doVprintf(format,  &args);
-    va_end(args);
-}
-#endif NOTDEF
+#endif
 
 /*
  * ----------------------------------------------------------------------------
@@ -347,6 +278,7 @@ printf(va_alist)
  * The following will go away after everyone has converted their calls
  * to Sys_Printf to calls to printf.
  */
+#ifdef notdef
 /*VARARGS0*/
 void
 Sys_Printf(va_alist)
@@ -361,3 +293,4 @@ Sys_Printf(va_alist)
     (void) doVprintf(format, &args);
     va_end(args);
 }
+#endif notdef
