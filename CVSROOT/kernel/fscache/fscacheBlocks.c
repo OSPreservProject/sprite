@@ -2818,7 +2818,7 @@ Fscache_PutFileOnDirtyList(cacheInfoPtr, flags)
     LOCK_MONITOR;
     cacheInfoPtr->flags |= flags;
 
-    PutFileOnDirtyList(cacheInfoPtr, Fsutil_TimeInSeconds());
+    PutFileOnDirtyList(cacheInfoPtr, (time_t)Fsutil_TimeInSeconds());
 
     UNLOCK_MONITOR;
     return (SUCCESS);
@@ -2935,7 +2935,7 @@ FscacheAllBlocksInCache(cacheInfoPtr)
  * ----------------------------------------------------------------------------
  */
 /* ARGSUSED */
-int
+ENTRY int
 Fscache_ReserveBlocks(backendPtr, numResBlocks, numNonResBlocks)
     Fscache_Backend	*backendPtr; /* unused */
     int			numResBlocks;
@@ -3507,3 +3507,46 @@ Fscache_CountBlocks(serverID, majorNumber, numBlocksPtr, numDirtyBlocksPtr)
     UNLOCK_MONITOR;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fscache_ZeroStats --
+ *
+ *	Zero out the FS cache counters, leaving the state variables alone.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Fscache_ZeroStats()
+{
+    unsigned int minCacheBlocks; /* state variables to preserve */
+    unsigned int maxCacheBlocks;
+    unsigned int maxNumBlocks;
+    unsigned int numCacheBlocks;
+    unsigned int numFreeBlocks;
+
+    LOCK_MONITOR;
+    minCacheBlocks = fs_Stats.blockCache.minCacheBlocks;
+    maxCacheBlocks = fs_Stats.blockCache.maxCacheBlocks;
+    maxNumBlocks = fs_Stats.blockCache.maxNumBlocks;
+    numCacheBlocks = fs_Stats.blockCache.numCacheBlocks;
+    numFreeBlocks = fs_Stats.blockCache.numFreeBlocks;
+
+    bzero(&fs_Stats.blockCache, sizeof(fs_Stats.blockCache));
+
+    fs_Stats.blockCache.minCacheBlocks = minCacheBlocks;
+    fs_Stats.blockCache.maxCacheBlocks = maxCacheBlocks;
+    fs_Stats.blockCache.maxNumBlocks = maxNumBlocks;
+    fs_Stats.blockCache.numCacheBlocks = numCacheBlocks;
+    fs_Stats.blockCache.numFreeBlocks = numFreeBlocks;
+
+    UNLOCK_MONITOR;
+}

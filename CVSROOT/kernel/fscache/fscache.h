@@ -77,7 +77,7 @@ typedef struct Fscache_FileInfo {
     Sync_Condition noDirtyBlocks;  /* Notified when all write backs done. */
     int		   lastTimeTried;  /* Time that last tried to see if disk was
 				    * available for this block. */
-    int		   oldestDirtyBlockTime;
+    time_t	   oldestDirtyBlockTime;
     Fscache_Attributes attr;	   /* Local version of descriptor attributes. */
     struct Fscache_Backend   *backendPtr;  
 			/* Routines for read/write/allocate/copy. */
@@ -443,6 +443,7 @@ extern void Fscache_BlockTrunc _ARGS_((Fscache_FileInfo *cacheInfoPtr,
 		int blockNum, int newBlockSize));
 
 extern void Fscache_Init _ARGS_((int blockHashSize));
+extern void Fscache_ZeroStats _ARGS_((void));
 extern int Fscache_PreventWriteBacks _ARGS_((Fscache_FileInfo *cacheInfoPtr));
 extern void Fscache_AllowWriteBacks _ARGS_((Fscache_FileInfo *cacheInfoPtr));
 extern Fscache_FileInfo *Fscache_GetDirtyFile _ARGS_((
