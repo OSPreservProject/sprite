@@ -182,8 +182,6 @@ Fs_Init()
 
 	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
 	if (status == SUCCESS) {
-	    printf("Attached disk type %d unit %d to \"%s\"\n",
-		     defaultDisk.type, defaultDisk.unit, LOCAL_DISK_NAME);
 	    fsDiskAttached = TRUE;
 	    break;
 	}
