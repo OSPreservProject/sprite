@@ -196,9 +196,8 @@ extern unsigned short rpcOutputRate;		/* This machines output rate */
 /*
  * Forward Declarations.
  */
-ReturnStatus RpcOutput();
-void RpcTrace();
+extern ReturnStatus RpcOutput _ARGS_((int spriteID, register RpcHdr *rpcHdrPtr, RpcBufferSet *message, RpcBufferSet *fragment, unsigned int dontSendMask, Sync_Semaphore *mutexPtr));
 
-void RpcGetMachineDelay();
+extern void RpcGetMachineDelay _ARGS_((unsigned short *myDelayPtr, unsigned short *outputRatePtr));
 
 #endif /* not _RPCPACKET */

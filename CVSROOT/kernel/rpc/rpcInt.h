@@ -15,6 +15,22 @@
 #ifndef _RPCINT
 #define _RPCINT
 
+#include "rpc.h"
+/*
+ * An RPC message is composed of three parts:  the RPC control information,
+ * the first data area, ``parameters'', and the second data area, ``data''.
+ * A set of three buffer scatter/gather elements is used to specify
+ * a complete message. A fourth part of the message is the transport 
+ * protocol header buffer that proceed any message.
+ */
+typedef struct RpcBufferSet {
+    Net_ScatterGather	protoHdrBuffer;
+    Net_ScatterGather	rpcHdrBuffer;
+    Net_ScatterGather	paramBuffer;
+    Net_ScatterGather	dataBuffer;
+} RpcBufferSet;
+
+
 #include "rpcPacket.h"
 
 /*
@@ -30,20 +46,6 @@ extern Boolean rpcServiceEnabled;
 extern unsigned int rpcBootID;
 
 /*
- * An RPC message is composed of three parts:  the RPC control information,
- * the first data area, ``parameters'', and the second data area, ``data''.
- * A set of three buffer scatter/gather elements is used to specify
- * a complete message. A fourth part of the message is the transport 
- * protocol header buffer that proceed any message.
- */
-typedef struct RpcBufferSet {
-    Net_ScatterGather	protoHdrBuffer;
-    Net_ScatterGather	rpcHdrBuffer;
-    Net_ScatterGather	paramBuffer;
-    Net_ScatterGather	dataBuffer;
-} RpcBufferSet;
-
-/*
  * The servers keep preallocated buffer space for client requests.
  * These constants define how large these buffers are.
  */
@@ -56,13 +58,24 @@ typedef struct RpcBufferSet {
  */
 extern unsigned int rpcCompleteMask[];
 
-extern	void	RpcScatter();
+extern void RpcScatter _ARGS_((register RpcHdr *rpcHdrPtr, RpcBufferSet *bufferPtr));
+
 
 /*
- * Byte-swap routines.
+ * Byte-swap routines and variables.
  */
 extern	Boolean	rpcTestByteSwap;
-extern	Boolean	RpcByteSwapInComing();
-extern	void	RpcPrintHdr();
-extern	void	RpcByteSwapBuffer();
+
+extern Boolean RpcByteSwapInComing _ARGS_((RpcHdr *rpcHdrPtr));
+extern int RpcSetTestByteSwap _ARGS_((void));
+extern int RpcUnsetTestByteSwap _ARGS_((void));
+extern void RpcPrintHdr _ARGS_((RpcHdr *rpcHdrPtr));
+extern void RpcByteSwapBuffer _ARGS_((register int *bufferPtr, register int numInts));
+extern void RpcCrashCallBack _ARGS_((int clientID, ClientData data));
+extern void RpcnesetNoServers _ARGS_((int value)); 
+extern void RpcDnemonWait _ARGS_((Timer_QueueElement *queueEntryPtr)); 
+extern void RpcDaemonWakeup _ARGS_((Timer_Ticks time, ClientData data));
+extern void RpcBufferInit _ARGS_((RpcHdr *rpcHdrPtr, RpcBufferSet *bufferSetPtr, int channel, int serverHint));
+
+
 #endif /* _RPCINT */

@@ -22,8 +22,6 @@
 #include "sys.h"
 #include "status.h"
 
-#include "rpcCall.h"
-
 /*
  * A client stub procedure has to set up 2 sets of 2 storage areas for an
  * RPC.  The first pair of storage areas is for the request, or input,
@@ -59,6 +57,9 @@ typedef struct Rpc_Storage {
     int		replyDataSize;
 } Rpc_Storage;
 
+#include "rpcCall.h"
+
+
 /*
  * Structure to use for the simple call back to free up memory.
  * The reply a service stub generates is held onto until the
@@ -92,33 +93,31 @@ extern Boolean rpc_NoTimeouts;
 /*
  * Forward declarations
  */
-ReturnStatus	Rpc_Call();
-void		Rpc_Reply();
-void		Rpc_ErrorReply();
-int		Rpc_FreeMem();
+extern ReturnStatus Rpc_Call _ARGS_((int serverID, int command, Rpc_Storage *storagePtr));
+extern void Rpc_Reply _ARGS_((ClientData srvToken, int error, register Rpc_Storage *storagePtr, int (*freeReplyProc)(ClientData freeReplyData), ClientData freeReplyData));
+extern void Rpc_ErrorReply _ARGS_((ClientData srvToken, int error));
+extern int Rpc_FreeMem _ARGS_((Rpc_ReplyMem *replyMemPtr));
+extern ReturnStatus Rpc_CreateServer _ARGS_((int *pidPtr));
+extern ReturnStatus Rpc_Echo _ARGS_((int serverId, Address inputPtr, Address returnPtr, int size));
+extern ReturnStatus Rpc_Ping _ARGS_((int serverId));
+extern ReturnStatus Rpc_EchoTest _ARGS_((int serverId, int numEchoes, int size, Address inputPtr, Address returnPtr, Time *deltaTimePtr));
+extern ReturnStatus Rpc_GetTime _ARGS_((int serverId, Time *timePtr, int *timeZoneMinutesPtr, int *timeZoneDSTPtr));
+extern ReturnStatus Test_RpcStub _ARGS_((int command, Address argPtr));
+extern void Rpc_Init _ARGS_((void));
+extern void Rpc_Start _ARGS_((void));
+extern void Rpc_MaxSizes _ARGS_((int *maxDataSizePtr, int *maxParamSizePtr));
+extern void Rpc_Daemon _ARGS_((void));
+extern void Rpc_Server _ARGS_((void));
+extern int Rpc_Dispatch _ARGS_((int headerType, Address headerPtr, Address rpcHdrAddr, int packetLength));
+extern void Rpc_Timeout _ARGS_((Timer_Ticks time, ClientData data));
+extern void Rpc_PrintTrace _ARGS_((int numRecords));
+extern ReturnStatus Rpc_DumpTrace _ARGS_((int firstRec, int lastRec, char *fileName));
+extern void Rpc_StampTest _ARGS_((void));
+extern void Rpc_PrintCallCount _ARGS_((void));
+extern void Rpc_PrintServiceCount _ARGS_((void));
+extern ReturnStatus Rpc_GetStats _ARGS_((int command, int option, Address argPtr));
+extern ReturnStatus Rpc_SendTest _ARGS_((int serverId, int numSends, int size, Address inputPtr, Time *deltaTimePtr));
+extern ReturnStatus Rpc_Send _ARGS_((int serverId, Address inputPtr, int size));
 
-ReturnStatus    Rpc_CreateServer();
-ReturnStatus	Rpc_Echo();
-ReturnStatus	Rpc_Ping();
-ReturnStatus	Rpc_EchoTest();
-ReturnStatus	Rpc_GetTime();
-
-ReturnStatus	Test_RpcStub();
-
-void		Rpc_Init();
-void		Rpc_Start();
-void		Rpc_MaxSizes();
-
-void		Rpc_Daemon();
-void		Rpc_Server();
-int		Rpc_Dispatch();
-void		Rpc_Timeout();
-
-void		Rpc_PrintTrace();
-ReturnStatus	Rpc_DumpTrace();
-void		Rpc_StampTest();
-
-void		Rpc_PrintCallCount();
-void		Rpc_PrintServiceCount();
 
 #endif /* _RPC */

@@ -67,8 +67,9 @@ unsigned int rpcCompleteMask[17] = {
  * Forward declarations.
  */
 void RpcScatter();
-int  RpcValidateClient();
-void VersionMismatch();
+static Boolean ValidateClient _ARGS_((int headerType, Address headerPtr, RpcHdr *rpcHdrPtr));
+static void VersionMismatch _ARGS_((int headerType, Address headerPtr, RpcHdr *rpcHdrPtr, int packetLength));
+
 
 
 
@@ -190,7 +191,7 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	 * (clientID) from the transport level source address.
 	 * This doesn't usually kick in unless the client can't do reverse arp.
 	 */
-	if ( ! RpcValidateClient(headerType, headerPtr, rpcHdrPtr)) {
+	if ( ! ValidateClient(headerType, headerPtr, rpcHdrPtr)) {
 	    rpcSrvStat.invClient++;
 	    return;
 	}
@@ -338,7 +339,7 @@ RpcScatter(rpcHdrPtr, bufferPtr)
 /*
  *----------------------------------------------------------------------
  *
- * RpcValidateClient --
+ * ValidateClient --
  *
  *      Check the clientID field of an incoming Rpc request.  Invalid ID's
  *      are screened out, and the special clientID of zero is overwritten
@@ -359,8 +360,8 @@ RpcScatter(rpcHdrPtr, bufferPtr)
  *
  *----------------------------------------------------------------------
  */
-Boolean
-RpcValidateClient(headerType, headerPtr, rpcHdrPtr)
+static Boolean
+ValidateClient(headerType, headerPtr, rpcHdrPtr)
     int		headerType;	/* Type of transport header. */
     Address	headerPtr;	/* Transport header. */
     RpcHdr 	 *rpcHdrPtr;
@@ -382,7 +383,7 @@ RpcValidateClient(headerType, headerPtr, rpcHdrPtr)
 	 * Look client's transport address up in our in core host table.
 	 */
 	clientID = Net_HdrToID(headerType, headerPtr);
-        printf("Warning: RpcValidateClient had to set clientID %d\n", clientID);
+        printf("Warning: ValidateClient had to set clientID %d\n", clientID);
 	if (clientID < 0) {
 	    char	addrBuffer[128];
 	    /*
@@ -431,7 +432,7 @@ typedef struct {
 #define NUM_VERSIONS	4
 static VersionRecord versionList[NUM_VERSIONS];
 
-void
+static void
 VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength)
     int		headerType;	/* Type of transport header. */
     Address	headerPtr;	/* Pointer to transport header. */

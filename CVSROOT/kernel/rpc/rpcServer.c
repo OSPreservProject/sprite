@@ -122,6 +122,9 @@ RpcServerTraces	rpcServerTraces = {(RpcServerStateInfo *) NIL, 0,  FALSE,
  */
 #define RPC_NUM_TRACES (0x100000 / sizeof (RpcServerStateInfo))
 
+static void NegAckFunc _ARGS_((ClientData clientData, Proc_CallInfo *callInfoPtr));
+
+
 
 
 /*
@@ -320,14 +323,14 @@ RpcReclaimServers(serversMaxed)
 		srvPtr->freeReplyProc = (int (*)())NIL;
 		srvPtr->freeReplyData = (ClientData)NIL;
 		srvPtr->state = SRV_FREE|SRV_NO_REPLY;
-		RpcAddServerTrace(srvPtr, NIL, FALSE, 5);
+		RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 5);
 	    } else if ((srvPtr->state & SRV_AGING) == 0) {
 		/*
 		 * This is the first pass over the server process that
 		 * has found it idle.  Start it aging.
 		 */
 		srvPtr->state |= SRV_AGING;
-		RpcAddServerTrace(srvPtr, NIL, FALSE, 6);
+		RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 6);
 		srvPtr->age = 1;
 		if (serversMaxed) {
 		    RpcProbe(srvPtr);
@@ -352,12 +355,12 @@ RpcReclaimServers(serversMaxed)
 		    srvPtr->freeReplyData = (ClientData)NIL;
 		    rpcSrvStat.reclaims++;
 		    srvPtr->state = SRV_FREE;
-		    RpcAddServerTrace(srvPtr, NIL, FALSE, 7);
+		    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 7);
 #ifdef notdef
 		} else if (srvPtr->clientID == rpc_SpriteID) {
 		    printf("Warning: Reclaiming from myself.\n");
 		    srvPtr->state = SRV_FREE;
-		    RpcAddServerTrace(srvPtr, NIL, FALSE, 8);
+		    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 8);
 #endif
 		} else {
 		    /*
@@ -405,7 +408,7 @@ RpcReclaimServers(serversMaxed)
  *
  *----------------------------------------------------------------------
  */
-void
+static void
 NegAckFunc(clientData, callInfoPtr)
     ClientData		clientData;
     Proc_CallInfo	*callInfoPtr;
@@ -428,7 +431,8 @@ NegAckFunc(clientData, callInfoPtr)
 	     * This should be okay to do under a masterlock since RpcAck
 	     * also calls it and it's under a masterlock.
 	     */
-	    RpcAddServerTrace(NIL, &(rpcNack.rpcHdrArray[i]), TRUE, 19);
+	    RpcAddServerTrace((RpcServerState *) NIL, &(rpcNack.rpcHdrArray[i]),
+		    TRUE, 19);
 	    rpcSrvStat.nacks++;
 	    /*
 	     * Because we pass it the mutex, it will return only when the xmit
@@ -661,7 +665,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	    }
 	    srvPtr->state = SRV_BUSY;
 #ifdef WOULD_LIKE
-	    RpcAddServerTrace(srvPtr, NIL, FALSE, 2);
+	    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 2);
 #endif WOULD_LIKE
 	    rpcSrvStat.handoffs++;
 	    Sync_MasterBroadcast(&srvPtr->waitCondition);
@@ -693,7 +697,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	     * has cleared that state bit.
 	     */
 	    srvPtr->state |= SRV_FREE;
-	    RpcAddServerTrace(srvPtr, NIL, FALSE, 9);
+	    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 9);
 	    rpcSrvStat.discards++;
 	} else if (rpcHdrPtr->flags & RPC_ACK) {
 	    if (rpcHdrPtr->flags & RPC_CLOSE) {
@@ -705,7 +709,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		 */
 		rpcSrvStat.closeAcks++;
 		srvPtr->state = SRV_FREE;
-		RpcAddServerTrace(srvPtr, NIL, FALSE, 10);
+		RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 10);
 	    } else if (rpcHdrPtr->flags & RPC_LASTFRAG) {
 		/*
 		 * This is a partial acknowledgment.  The fragMask field
@@ -790,7 +794,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 			if (srvPtr->fragsReceived ==
 			    rpcCompleteMask[rpcHdrPtr->numFrags]) {
 			    srvPtr->state = SRV_BUSY;
-			    RpcAddServerTrace(srvPtr, NIL, FALSE, 3);
+			    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 3);
 			    rpcSrvStat.handoffs++;
 			    Sync_MasterBroadcast(&srvPtr->waitCondition);
 			} else if (rpcHdrPtr->flags & RPC_LASTFRAG) {
@@ -819,7 +823,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		     */
 		    rpcSrvStat.busyAcks++;
 		    RpcAck(srvPtr, 0);
-		    RpcAddServerTrace(srvPtr, NIL, FALSE, 18);
+		    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 18);
 		    break;
 		case SRV_WAITING:
 		    /*
@@ -970,7 +974,8 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
     int			error;			/* Error code, or SUCCESS */
     register Rpc_Storage *storagePtr;		/* Only the reply fields are
     						 * significant. */
-    int			(*freeReplyProc)();	/* Procedure to call to free
+    int			(*freeReplyProc) _ARGS_((ClientData freeReplyData));
+						/* Procedure to call to free
 						 * up reply state, or NIL */
     ClientData		freeReplyData;		/* Passed to freeReplyProc */
 {
@@ -1271,18 +1276,6 @@ Rpc_FreeTraces()
     MASTER_UNLOCK(&(rpcServerTraces.mutex));
     return;
 }
-
-/*
- * The form in which the user expects the server tracing info.
- */
-typedef	struct	RpcServerUserStateInfo {
-    int		index;
-    int		clientID;
-    int		channel;
-    int		state;
-    int		num;
-    Time	time;
-} RpcServerUserStateInfo;
 
 
 /*

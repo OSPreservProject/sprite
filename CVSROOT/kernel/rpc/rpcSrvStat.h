@@ -20,10 +20,12 @@
 extern Rpc_SrvStat rpcSrvStat;
 extern Rpc_SrvStat rpcTotalSrvStat;
 
-void RpcResetSrvStat();
+extern void RpcResetSrvStat _ARGS_((void));
+extern void Rpc_PrintSrvStat _ARGS_((void));
 
-void Rpc_PrintSrvStat();
-void Rpc_StartSrvTrace();
-void Rpc_EndSrvTrace();
+#ifdef notdef
+extern void Rpc_StartSrvTrace _ARGS_((void));
+extern void Rpc_EndSrvTrace _ARGS_((void));
+#endif notdef
 
 #endif /* _RPCSRVSTAT */

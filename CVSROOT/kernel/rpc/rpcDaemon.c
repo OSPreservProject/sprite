@@ -259,16 +259,16 @@ RpcServerAlloc(rpcHdrPtr)
 	 */
 	srvPtr = rpcServerPtrPtr[freeServer];
 	srvPtr->state &= ~SRV_FREE;
-	RpcAddServerTrace(srvPtr, NIL, FALSE, 13);
+	RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 13);
 	srvPtr->clientID = rpcHdrPtr->clientID;
 	srvPtr->channel = rpcHdrPtr->channel;
-	RpcAddServerTrace(srvPtr, NIL, FALSE, 14);
+	RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 14);
     } else {
 	/*
 	 * No available server process yet.
 	 */
 	srvPtr = (RpcServerState *)NIL;
-	RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 15);
+	RpcAddServerTrace(NIL, (RpcHdr *) rpcHdrPtr, TRUE, 15);
 	if (rpcNoServers >= 0) {
 #ifdef BAD
 	    /*
@@ -326,9 +326,9 @@ RpcServerInstall()
     for (i=0 ; i<rpcNumServers ; i++) {
 	srvPtr = rpcServerPtrPtr[i];
 	if (srvPtr->state == SRV_NOTREADY) {
-	    RpcAddServerTrace(srvPtr, NIL, FALSE, 16);
+	    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 16);
 	    srvPtr->state = SRV_FREE;
-	    RpcAddServerTrace(srvPtr, NIL, FALSE, 17);
+	    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 17);
 	    goto unlock;
 	}
     }

@@ -66,11 +66,11 @@ extern Boolean rpcCallTiming;
 	Rpc_HistEnd(rpcServiceTime[command], timePtr); \
     }
 
-extern Rpc_Histogram	*Rpc_HistInit();
-extern void		Rpc_HistReset();
-extern void		Rpc_HistStart();
-extern void		Rpc_HistEnd();
-extern ReturnStatus	Rpc_HistDump();
-extern void		Rpc_HistPrint();
+extern Rpc_Histogram *Rpc_HistInit _ARGS_((int numBuckets, int usecPerBucket));
+extern void Rpc_HistReset _ARGS_((register Rpc_Histogram *histPtr));
+extern void Rpc_HistStart _ARGS_((register Rpc_Histogram *histPtr, register Time *timePtr));
+ extern void Rpc_HistEnd _ARGS_((register Rpc_Histogram *histPtr, register Time * timePtr));
+extern ReturnStatus Rpc_HistDump _ARGS_((register Rpc_Histogram *histPtr, register Address buffer));
+extern void Rpc_HistPrint _ARGS_((register Rpc_Histogram *histPtr));
 
 #endif /* _RPCHISTOGRAM */

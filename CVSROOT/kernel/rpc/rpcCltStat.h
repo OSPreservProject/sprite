@@ -19,10 +19,13 @@
 extern Rpc_CltStat rpcCltStat;
 extern Rpc_CltStat rpcTotalCltStat;
 
-void RpcResetCltStat();
+extern void RpcResetCltStat _ARGS_((void));
 
-void Rpc_PrintCltStat();
-void Rpc_EnterProcess();
-void Rpc_LeaveProcess();
+extern void Rpc_PrintCltStat _ARGS_((void));
+
+#ifdef notdef
+extern void Rpc_EnterProcess _ARGS_((void));
+extern void Rpc_LeaveProcess _ARGS_((void));
+#endif notdef
 
 #endif /* _RPCCLTSTAT */

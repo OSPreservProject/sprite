@@ -136,7 +136,7 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
      * computable by the user program using the Rpc_Stat system call.
      */
     Rpc_StartSrvTrace();
-    Rpc_EnterProcess(0);      /* for tracing */
+    Rpc_EnterProcess();      /* for tracing */
 #endif /* notdef */
  
     if (deltaTimePtr == (Time *)NIL) {
@@ -174,7 +174,7 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
     rpcDeltaTime = diff;
 
 #ifdef notdef
-    Rpc_LeaveProcess(0);      /* for tracing */
+    Rpc_LeaveProcess();      /* for tracing */
     Rpc_EndSrvTrace();
 #endif /* notdef */
 
@@ -221,7 +221,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
 
 #ifdef notdef
     Rpc_StartSrvTrace();
-    Rpc_EnterProcess(0);      /* for tracing */
+    Rpc_EnterProcess();      /* for tracing */
 #endif /* notdef */
  
     if (deltaTimePtr == (Time *)NIL) {
@@ -258,7 +258,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
  */
     rpcDeltaTime = diff;
 #ifdef notdef
-    Rpc_LeaveProcess(0);      /* for tracing */
+    Rpc_LeaveProcess();      /* for tracing */
     Rpc_EndSrvTrace();
 #endif /* notdef */
 

@@ -99,7 +99,7 @@ typedef struct RpcServerState {
      * by the RPC module when it knows the client has successfully received
      * the reply, or it has crashed.
      */
-    int			(*freeReplyProc)();
+    int			(*freeReplyProc) _ARGS_((ClientData freeReplyData));
     ClientData		freeReplyData;
 
     /*
@@ -192,12 +192,25 @@ extern	Boolean		rpcSendNegAcks;
 /*
  * The service procedure switch. This is indexed by procedure number.
  */
-typedef int		(*IntProc)();
+typedef ReturnStatus (*IntProc) _ARGS_((ClientData srvToken, int clientID, 
+			int command, struct Rpc_Storage *storagePtr));
 typedef struct RpcService {
     IntProc	serviceProc;
     char	*name;
 } RpcService;
 extern RpcService rpcService[];
+
+/*
+ * The form in which the user expects the server tracing info.
+ */
+typedef	struct	RpcServerUserStateInfo {
+    int		index;
+    int		clientID;
+    int		channel;
+    int		state;
+    int		num;
+    Time	time;
+} RpcServerUserStateInfo;
 
 /*
  * A histogram of the service times for the different RPCs.
@@ -212,22 +225,25 @@ extern int		rpcServiceCount[];
 /*
  * For tracing calls.
  */
-extern	void		Rpc_OkayToTrace();
-extern	void		Rpc_FreeTraces();
-extern	void		RpcAddServerTrace();
-extern	ReturnStatus	Rpc_DumpServerTraces();
+extern void Rpc_OkayToTrace _ARGS_((Boolean okay));
+extern void Rpc_FreeTraces _ARGS_((void));
+extern void RpcAddServerTrace _ARGS_((RpcServerState *srvPtr, RpcHdr *rpcHdrPtr, Boolean noneThere, int num));
+extern ReturnStatus Rpc_DumpServerTraces _ARGS_((int length, RpcServerUserStateInfo *resultPtr, int *lengthNeededPtr));
 
 /*
  * Forward declarations.
  */
-RpcServerState		*RpcServerAlloc();
-RpcServerState		*RpcServerInstall();
-RpcServerState		*RpcInitServerState();
-void			RpcServerDispatch();
-void			RpcAck();
-void			RpcResend();
-void			RpcProbe();
-void			RpcSrvInitHdr();
-void			RpcSetNackBufs();
+extern RpcServerState *RpcServerAlloc _ARGS_((RpcHdr *rpcHdrPtr));
+extern RpcServerState *RpcServerInstall _ARGS_((void));
+extern void RpcServerDispatch _ARGS_((register RpcServerState *srvPtr, register RpcHdr *rpcHdrPtr));
+extern RpcServerState *RpcInitServerState _ARGS_((int index));
+extern void RpcAck _ARGS_((RpcServerState *srvPtr, int flags));
+extern void RpcResend _ARGS_((RpcServerState *srvPtr));
+extern void RpcProbe _ARGS_((RpcServerState *srvPtr));
+extern void RpcSrvInitHdr _ARGS_((RpcServerState *srvPtr, RpcHdr *rpcHdrPtr, RpcHdr *requestHdrPtr));
+extern void RpcSetNackBufs _ARGS_((void));
+extern void RpcReclaimServers _ARGS_((Boolean serversMaxed));
+extern void RpcInitServerTraces _ARGS_((void));
+
 
 #endif /* _RPCSERVER */

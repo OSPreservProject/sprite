@@ -205,10 +205,13 @@ extern int		rpcClientCalls[];
 /*
  * Forward declarations.
  */
-RpcClientChannel	*RpcChanAlloc();
-void			 RpcChanFree();
-void			 RpcSetup();
-ReturnStatus		 RpcDoCall();
-void			 RpcClientDispatch();
+extern void RpcChanFree _ARGS_((RpcClientChannel *chanPtr));
+extern void RpcChanClose _ARGS_((register RpcClientChannel *chanPtr, register RpcHdr *rpcHdrPtr));
+extern void RpcSetup _ARGS_((int serverID, int command, register Rpc_Storage *storagePtr, register RpcClientChannel *chanPtr));
+extern RpcClientChannel *RpcChanAlloc _ARGS_((int serverID));
+extern ReturnStatus RpcDoCall _ARGS_((int serverID, register RpcClientChannel *chanPtr, Rpc_Storage *storagePtr, int command, unsigned int *srvBootIDPtr, int *notActivePtr));
+extern void RpcClientDispatch _ARGS_((register RpcClientChannel *chanPtr, register RpcHdr *rpcHdrPtr));
+extern void RpcInitServerChannelState _ARGS_((void));
+
 
 #endif /* _RPCCLIENT */

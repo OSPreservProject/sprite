@@ -88,8 +88,9 @@ UnhappyServer	serverAllocState[8];
 unsigned int	channelStateInterval;
 
 /* forward declaration */
-extern	void	RpcSetChannelAllocStateInt();
-extern	void	RpcSetChannelAllocState();
+static Boolean GetChannelAllocState _ARGS_((int serverID, Timer_Ticks *time));
+static void SetChannelAllocState _ARGS_((int serverID, Boolean trouble));
+static void SetChannelAllocStateInt _ARGS_((int serverID, Boolean trouble));
 
 
 /*
@@ -223,7 +224,7 @@ allocAgain:
 	 * negative acknowledgements is to ramp down the number of channels
 	 * used, so that's what we do.
 	 */
-	RpcSetChannelAllocState(serverID, TRUE);
+	SetChannelAllocState(serverID, TRUE);
 	goto allocAgain;
     }
 #ifndef NO_RECOVERY
@@ -364,11 +365,13 @@ static int 		debugCtr;
 #define CHAN_TRACE(channel, string)
 #endif
 
+
+
 
 /*
  *----------------------------------------------------------------------
  *
- * RpcGetChannelAllocState --
+ * GetChannelAllocState --
  *
  *	Get the state of channel allocation in regards to a certain server.
  *
@@ -380,8 +383,8 @@ static int 		debugCtr;
  *
  *----------------------------------------------------------------------
  */
-Boolean
-RpcGetChannelAllocState(serverID, time)
+static Boolean
+GetChannelAllocState(serverID, time)
     int		serverID;
     Timer_Ticks	*time;
 {
@@ -406,7 +409,7 @@ RpcGetChannelAllocState(serverID, time)
 /*
  *----------------------------------------------------------------------
  *
- * RpcSetChannelAllocState--
+ * SetChannelAllocState--
  *
  *	Set the state of channel allocation in regards to a certain server.
  *	If we've been getting "noAllocs" back from a server, we want to
@@ -422,15 +425,15 @@ RpcGetChannelAllocState(serverID, time)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
-RpcSetChannelAllocState(serverID, trouble)
+static ENTRY void
+SetChannelAllocState(serverID, trouble)
     int		serverID;
     Boolean	trouble;
 {
 
     MASTER_LOCK(&rpcMutex);
 
-    RpcSetChannelAllocStateInt(serverID, trouble);
+    SetChannelAllocStateInt(serverID, trouble);
 
     MASTER_UNLOCK(&rpcMutex);
 
@@ -441,7 +444,7 @@ RpcSetChannelAllocState(serverID, trouble)
 /*
  *----------------------------------------------------------------------
  *
- * RpcSetChannelAllocStateInt --
+ * SetChannelAllocStateInt --
  *
  *	Set the state of channel allocation in regards to a certain server.
  *	If we've been getting "noAllocs" back from a server, we want to
@@ -455,8 +458,8 @@ RpcSetChannelAllocState(serverID, trouble)
  *
  *----------------------------------------------------------------------
  */
-void
-RpcSetChannelAllocStateInt(serverID, trouble)
+static void
+SetChannelAllocStateInt(serverID, trouble)
     int		serverID;
     Boolean	trouble;
 {
@@ -487,7 +490,7 @@ RpcSetChannelAllocStateInt(serverID, trouble)
 	if (!found) {
 	    /* No more spaces to mark unhappy server! */
 	    rpcCltStat.noMark++;
-	    printf("RpcSetChannelAllocStateInt: %s\n",
+	    printf("SetChannelAllocStateInt: %s\n",
 		    "No more room to keep track of congested servers.");
 	    return;
 	}
@@ -557,7 +560,7 @@ waitForBusyChannel:
     firstFreeMatch = -1;
     firstFree = -1;
 
-    result = RpcGetChannelAllocState(serverID, &time);
+    result = GetChannelAllocState(serverID, &time);
     if (result) {
 	Timer_AddIntervalToTicks(time, channelStateInterval, &time);
 	Timer_GetCurrentTicks(&currentTime);
@@ -624,7 +627,7 @@ waitForBusyChannel:
 	 */
 	if (result) {
 	    /* Mark server as okay now. */
-	    RpcSetChannelAllocStateInt(serverID, FALSE);
+	    SetChannelAllocStateInt(serverID, FALSE);
 	}
 	/* use regular alloc */
 
@@ -799,7 +802,7 @@ RpcChanClose(chanPtr,rpcHdrPtr)
  *
  * RpcInitServerChannelState --
  *
- *	description.
+ *	Initialize data about the client's view of how the servers are doing.
  *
  * Results:
  *	None.

@@ -28,7 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "sync.h"
 #include "rpcSrvStat.h"
-#include "rpcCall.h"
+#include "rpc.h"
 #include "rpcServer.h"
 
 /*
@@ -54,6 +54,12 @@ static int numTracedRpcServers;
 static Sync_Lock rpcSrvTraceLock = Sync_LockInitStatic("Rpc:rpcSrvTraceLock");
 #define LOCKPTR (&rpcSrvTraceLock)
 #endif /* notdef */
+
+static void SpecialSrvStat _ARGS_((int packetLength, int expectedLength));
+static void SpecialSrvStatReset _ARGS_((void));
+static void SpecialSrvStatPrint _ARGS_((void));
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -128,7 +134,7 @@ RpcResetSrvStat()
     }
     bzero((Address)&rpcSrvStat, sizeof(Rpc_SrvStat));
 
-    RpcSpecialSrvStatReset();
+    SpecialSrvStatReset();
 }
 
 /*
@@ -150,8 +156,7 @@ RpcResetSrvStat()
  */
 #ifdef notdef
 ENTRY void
-Rpc_EndSrvTrace(pid)
-    int pid;
+Rpc_EndSrvTrace()
 {
     LOCK_MONITOR;
 
@@ -217,7 +222,7 @@ Rpc_PrintSrvStat()
     printf("unknownAcks = %4d ", rpcSrvStat.unknownAcks);
     printf("\n");
 
-    RpcSpecialSrvStatPrint();
+    SpecialSrvStatPrint();
 }
 
 /*
@@ -249,7 +254,7 @@ Rpc_PrintServiceCount()
 /*
  *----------------------------------------------------------------------
  *
- * RpcSpecialSrvStat --
+ * SpecialSrvStat --
  *
  *	Generic tracing hook.  This procedure gets changed to trace
  *	different events.  This hides the details of the statistics
@@ -274,7 +279,8 @@ static struct {
     int		lastExpLength;
 } specialSrvStat;
 
-RpcSpecialSrvStat(packetLength, expectedLength)
+static void
+SpecialSrvStat(packetLength, expectedLength)
     int packetLength, expectedLength;
 {
     specialSrvStat.hits++;
@@ -284,7 +290,8 @@ RpcSpecialSrvStat(packetLength, expectedLength)
     specialSrvStat.lastExpLength = expectedLength;
 }
 
-RpcSpecialSrvStatReset()
+static void
+SpecialSrvStatReset()
 {
     specialSrvStat.hits = 0;
     specialSrvStat.sumLength = 0;
@@ -293,7 +300,8 @@ RpcSpecialSrvStatReset()
     specialSrvStat.lastExpLength = 0;
 }
 
-RpcSpecialSrvStatPrint()
+static void
+SpecialSrvStatPrint()
 {
     if (specialSrvStat.hits) {
 	printf("Number of Special Stats: %d\n", specialSrvStat.hits);

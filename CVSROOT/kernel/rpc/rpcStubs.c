@@ -29,6 +29,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "procMigrate.h"
 #include "timer.h"
 #include "sync.h"
+#include "sig.h"
+#include "fsio.h"
 
 /*
  * The RPC service procedure switch.  This table and the arguments

@@ -160,46 +160,54 @@
 /*
  * Procedures in the rpc service switch.
  */
-extern ReturnStatus RpcNull();
-extern ReturnStatus RpcEcho();
-extern ReturnStatus Fs_RpcOpen();		/*  FS_OPEN */
-extern ReturnStatus Fs_RpcRead();		/*  READ */
-extern ReturnStatus Fs_RpcWrite();		/*  WRITE */
-extern ReturnStatus Fs_RpcClose();		/*  CLOSE */
-extern ReturnStatus Fs_RpcRemove();		/*  UNLINK, RMDIR */
-extern ReturnStatus Fs_Rpc2Path();		/*  RENAME, LINK */
-extern ReturnStatus Fs_RpcMakeDir();		/*  MKDIR */
-extern ReturnStatus RpcGetTime();		/*  GETTIME */
-extern ReturnStatus Fs_RpcPrefix();		/*  FS_PREFIX */
-extern ReturnStatus Fs_RpcGetAttr();		/*  FS_GET_ATTR */
-extern ReturnStatus Fs_RpcSetAttr();		/*  FS_SET_ATTR */
-extern ReturnStatus Fs_RpcGetAttrPath();	/*  FS_GET_ATTR_PATH */
-extern ReturnStatus Fs_RpcSetAttrPath();	/*  FS_SET_ATTR_PATH */
-extern ReturnStatus Fs_RpcGetIOAttr();		/*  FS_GET_IO_ATTR */
-extern ReturnStatus Fs_RpcSetIOAttr();		/*  FS_SET_IO_ATTR */
+extern ReturnStatus RpcNull _ARGS_((ClientData srvToken, int clientID, int command, Rpc_Storage *storagePtr));
+extern int RpcEcho _ARGS_((ClientData srvToken, int clientID, int command, Rpc_Storage *storagePtr));
+
+#ifdef JUST_LISTING
+ReturnStatus Fs_RpcOpen();		/*  FS_OPEN */
+ReturnStatus Fs_RpcRead();		/*  READ */
+ReturnStatus Fs_RpcWrite();		/*  WRITE */
+ReturnStatus Fs_RpcClose();		/*  CLOSE */
+ReturnStatus Fs_RpcRemove();		/*  UNLINK, RMDIR */
+ReturnStatus Fs_Rpc2Path();		/*  RENAME, LINK */
+ReturnStatus Fs_RpcMakeDir();		/*  MKDIR */
+#endif /* JUST_LISTING */
+
+/* GETTIME */
+extern ReturnStatus RpcGetTime _ARGS_((ClientData srvToken, int clientID, int command, Rpc_Storage *storagePtr)); 
+
+#ifdef JUST_LISTING
+ReturnStatus Fs_RpcPrefix();		/*  FS_PREFIX */
+ReturnStatus Fs_RpcGetAttr();		/*  FS_GET_ATTR */
+ReturnStatus Fs_RpcSetAttr();		/*  FS_SET_ATTR */
+ReturnStatus Fs_RpcGetAttrPath();	/*  FS_GET_ATTR_PATH */
+ReturnStatus Fs_RpcSetAttrPath();	/*  FS_SET_ATTR_PATH */
+ReturnStatus Fs_RpcGetIOAttr();		/*  FS_GET_IO_ATTR */
+ReturnStatus Fs_RpcSetIOAttr();		/*  FS_SET_IO_ATTR */
 #ifdef notdef
-extern ReturnStatus Proc_RpcMigInit();		/*  PROC_MIG_INIT */
+ReturnStatus Proc_RpcMigInit();		/*  PROC_MIG_INIT */
 #endif /* notdef */
-extern ReturnStatus Proc_RpcMigCommand();	/*  PROC_MIG_COMMAND */
-extern ReturnStatus Proc_RpcRemoteCall();	/*  PROC_REMOTE_CALL */
-extern ReturnStatus Fs_RpcStartMigration();	/*  FS_MIGRATE */
-extern ReturnStatus Fs_RpcConsist();		/*  FS_CONSIST */
-extern ReturnStatus Fs_RpcDevOpen();		/*  FS_DEV_OPEN */
-extern ReturnStatus Sync_RemoteNotifyStub();	/*  REMOTE_WAKEUP */
-extern ReturnStatus Proc_RpcRemoteWait();	/*  PROC_REMOTE_WAIT */
-extern ReturnStatus Fs_RpcSelectStub();		/*  FS_SELECT */
-extern ReturnStatus Fs_RpcIOControl();		/*  FS_RPC_IO_CONTROL */
-extern ReturnStatus Fs_RpcConsistReply();	/*  FS_CONSIST_REPLY */
-extern ReturnStatus Fs_RpcBlockCopy();		/*  FS_COPY_BLOCK */
-extern ReturnStatus Fs_RpcMakeDev();		/*  FS_MKDEV */
-extern ReturnStatus Sig_RpcSend();		/*  SIG_SEND */
-extern ReturnStatus Fs_RpcReopen();		/*  FS_REOPEN */
-extern ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
-extern ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
-extern ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
-extern ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
-extern ReturnStatus Fsio_RpcStreamMigClose();	/*  FS_RELEASE */
-extern ReturnStatus Fsio_RpcStreamMigCloseNew();/*  FS_RELEASE_NEW */
+ReturnStatus Proc_RpcMigCommand();	/*  PROC_MIG_COMMAND */
+ReturnStatus Proc_RpcRemoteCall();	/*  PROC_REMOTE_CALL */
+ReturnStatus Fs_RpcStartMigration();	/*  FS_MIGRATE */
+ReturnStatus Fs_RpcConsist();		/*  FS_CONSIST */
+ReturnStatus Fs_RpcDevOpen();		/*  FS_DEV_OPEN */
+ReturnStatus Sync_RemoteNotifyStub();	/*  REMOTE_WAKEUP */
+ReturnStatus Proc_RpcRemoteWait();	/*  PROC_REMOTE_WAIT */
+ReturnStatus Fs_RpcSelectStub();		/*  FS_SELECT */
+ReturnStatus Fs_RpcIOControl();		/*  FS_RPC_IO_CONTROL */
+ReturnStatus Fs_RpcConsistReply();	/*  FS_CONSIST_REPLY */
+ReturnStatus Fs_RpcBlockCopy();		/*  FS_COPY_BLOCK */
+ReturnStatus Fs_RpcMakeDev();		/*  FS_MKDEV */
+ReturnStatus Sig_RpcSend();		/*  SIG_SEND */
+ReturnStatus Fs_RpcReopen();		/*  FS_REOPEN */
+ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
+ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
+ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
+ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
+ReturnStatus Fsio_RpcStreamMigClose();	/*  FS_RELEASE */
+ReturnStatus Fsio_RpcStreamMigCloseNew();/*  FS_RELEASE_NEW */
+#endif /* JUST_LISTING */
 
 #endif /*	_RPCCALL */
 

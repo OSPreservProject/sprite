@@ -14,6 +14,7 @@
 #ifndef _RPCTRACE
 #define _RPCTRACE
 
+#include "rpcInt.h"
 #include "rpcPacket.h"
 #include "spriteTime.h"
 #include "trace.h"

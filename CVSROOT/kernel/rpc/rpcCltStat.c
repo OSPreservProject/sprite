@@ -30,7 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpcCltStat.h"
 #include "user/rpc.h"
 #include "rpcServer.h"
-#include "rpcCall.h"
+#include "rpc.h"
 #include "rpcClient.h"
 
 /*
@@ -56,6 +56,12 @@ static int numRpcProcesses;
 static Sync_Lock rpcTraceLock = Sync_LockInitStatic("Rpc:rpcTraceLock");
 #define LOCKPTR (&rpcTraceLock)
 #endif /* notdef */
+
+static void SpecialStat _ARGS_((int packetLength, int expectedLength));
+static void SpecialStatReset _ARGS_((void));
+static void SpecialStatPrint _ARGS_((void));
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -135,7 +141,7 @@ RpcResetCltStat()
     }
     bzero((Address)&rpcCltStat, sizeof(Rpc_CltStat));
 
-    RpcSpecialStatReset();
+    SpecialStatReset();
 }
 
 /*
@@ -157,8 +163,7 @@ RpcResetCltStat()
  */
 #ifdef notdef
 ENTRY void
-Rpc_LeaveProcess(pid)
-    int pid;
+Rpc_LeaveProcess()
 {
     LOCK_MONITOR;
 
@@ -239,7 +244,7 @@ Rpc_PrintCltStat()
     printf("longs       = %4d ", rpcCltStat.longs);
     printf("\n");
 
-    RpcSpecialStatPrint();
+    SpecialStatPrint();
 }
 
 /*
@@ -271,7 +276,7 @@ Rpc_PrintCallCount()
 /*
  *----------------------------------------------------------------------
  *
- * RpcSpecialStat --
+ * SpecialStat --
  *
  *	Generic tracing hook.  This procedure gets changed to trace
  *	different events.  This hides the details of the statistics
@@ -296,7 +301,8 @@ static struct {
     int		lastExpLength;
 } specialStat;
 
-RpcSpecialStat(packetLength, expectedLength)
+static void
+SpecialStat(packetLength, expectedLength)
     int packetLength, expectedLength;
 {
     specialStat.hits++;
@@ -306,7 +312,8 @@ RpcSpecialStat(packetLength, expectedLength)
     specialStat.lastExpLength = expectedLength;
 }
 
-RpcSpecialStatReset()
+static void
+SpecialStatReset()
 {
     specialStat.hits = 0;
     specialStat.sumLength = 0;
@@ -315,7 +322,8 @@ RpcSpecialStatReset()
     specialStat.lastExpLength = 0;
 }
 
-RpcSpecialStatPrint()
+static void
+SpecialStatPrint()
 {
     if (specialStat.hits) {
 	printf("Number of Special Stats: %d\n", specialStat.hits);
