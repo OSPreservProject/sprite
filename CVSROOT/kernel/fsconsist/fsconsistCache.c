@@ -215,17 +215,23 @@ Fsconsist_MappedConsistency(handlePtr, clientID, isMapped)
     register Fsconsist_Info		*consistPtr = &handlePtr->consist;
     ReturnStatus			status;
 
+    printf("Fsconsist_MappedConsistency: updating consistency (a)\n");
     LOCK_MONITOR;
 
-    StartConsistency(consistPtr, clientID, isMapped ? FS_MAP : 0, &cacheable);
+    printf("Fsconsist_MappedConsistency: updating consistency (b)\n");
+    StartConsistency(consistPtr, clientID, (int)(isMapped ? FS_MAP : 0),
+	    &cacheable);
 
+    printf("Fsconsist_MappedConsistency: updating consistency (c)\n");
     LIST_FORALL(&consistPtr->clientList, (List_Links *)clientPtr) {
 	if (clientPtr->clientID == clientID) {
 	    clientPtr->mapped = isMapped ? TRUE : FALSE;
 	}
     }
 
+    printf("Fsconsist_MappedConsistency: updating consistency (d)\n");
     status = EndConsistency(consistPtr);
+    printf("Fsconsist_MappedConsistency: updating consistency (e)\n");
 
     UNLOCK_MONITOR;
     return(status);
@@ -252,7 +258,7 @@ Fsconsist_MappedConsistency(handlePtr, clientID, isMapped)
  * Side effects:
  *	Issues cache consistency messages and adds the client to the
  *	list of clients of the file.
- *	THIS UNLOCKS THE HANDLE.
+ *	The handle is unlocked before Fsconsist_FileConsistency is called.
  *
  * ----------------------------------------------------------------------------
  *
