@@ -176,7 +176,8 @@ static Vm_Segment *FindCode _ARGS_((Fs_Stream *filePtr, VmProcLink *procLinkPtr,
  * Side effects:
  *     	Memory allocated, *execInfoPtrPtr may be set to point to exec info, and
  *	*userFilePtr is set to TRUE or FALSE depending on whether the filePtr
- *	is used.
+ *	is used.  If the segment couldn't be found, the file is marked 
+ *	to show that we're in the process of setting a segment up.
  *
  * ----------------------------------------------------------------------------
  */
