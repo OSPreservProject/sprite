@@ -1175,7 +1175,7 @@ Fsprefix_Export(prefix, clientID, delete)
  *
  *----------------------------------------------------------------------
  */
-ENTRY Boolean
+ENTRY ReturnStatus
 Fsprefix_Clear(prefix, deleteFlag, forced)
     char *prefix;		/* String to install as a prefix */
     int deleteFlag;		/* If TRUE then the prefix is removed from
@@ -1189,6 +1189,8 @@ Fsprefix_Clear(prefix, deleteFlag, forced)
     Fsprefix *targetPrefixPtr = (Fsprefix *)NIL;
     Fs_FileID prefixID;
     Boolean okToNuke = TRUE;
+    ReturnStatus status = SUCCESS;
+
 
     LOCK_MONITOR;
 
@@ -1241,23 +1243,23 @@ Fsprefix_Clear(prefix, deleteFlag, forced)
 	/*
 	 * No other alias
 	 */
-	UNLOCK_MONITOR;
-	return(FAILURE);
+	status = FAILURE;
+	goto done;
     }
 nukeIt:
     if (targetPrefixPtr == (Fsprefix *)NIL) {
 	/*
 	 * No prefix match.
 	 */
-	UNLOCK_MONITOR;
-	return(FAILURE);
+	status = FAILURE;
     } else {
 	/*
 	 * Was this a force-loaded prefix?  We can only delete it if this
 	 * command is also being forced from user level.
 	 */
 	if ((targetPrefixPtr->flags & FSPREFIX_FORCED) && !forced) {
-	    return FAILURE; 
+	    status = FAILURE;
+	    goto done;
 	}
 	if (targetPrefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) {
 	    FsprefixHandleCloseInt(targetPrefixPtr, FSPREFIX_ANY);
@@ -1277,9 +1279,11 @@ nukeIt:
 	    List_Remove((List_Links *)targetPrefixPtr);
 	    free((Address) targetPrefixPtr);
 	}
-	UNLOCK_MONITOR;
-	return(SUCCESS);
+	status = SUCCESS;
     }
+done:
+    UNLOCK_MONITOR;
+    return status;
 }
 
 /*

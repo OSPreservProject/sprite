@@ -149,7 +149,8 @@ extern ReturnStatus FsprefixLookupRedirect _ARGS_((
 extern ReturnStatus Fsprefix_TwoNameOperation _ARGS_((int operation, 
 		char *srcName, char *dstName, Fs_LookupArgs *lookupArgsPtr));
 
-extern Boolean Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag, Boolean forced));
+extern ReturnStatus Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag, 
+		Boolean forced));
 extern ReturnStatus Fsprefix_DumpExport _ARGS_((int size, Address buffer));
 extern ReturnStatus Fsprefix_Dump _ARGS_((int index, Address argPtr));
 extern void Fsprefix_Export _ARGS_((char *prefix, int clientID,Boolean delete));
