@@ -153,6 +153,7 @@ Boolean		dbgPanic;
 int		dbgSavedSP;
 int		dbgMaxStackAddr;
 Boolean		dbg_UsingSyslog = FALSE;
+Boolean		dbgCanUseSyslog = TRUE;
 static	   int	oldContext;
 
 /*
@@ -1102,7 +1103,9 @@ Dbg_Main(stackHole, trapStack)
 		    (sizeof(Exc_TrapStack) - sizeof(Exc_ExcStack));
 
 		callInProgress = TRUE;
-		dbg_UsingSyslog = TRUE;
+		if (dbgCanUseSyslog) {
+		    dbg_UsingSyslog = TRUE;
+		}
 		if (!dbg_Rs232Debug) {
 		    int	dummy;
 
