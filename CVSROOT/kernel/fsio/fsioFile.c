@@ -529,7 +529,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
      * The main difference is that we have a low-level reference to release.
      */
 
-    FsLockClose(&handlePtr->lock, procID, &streamPtr->hdr.fileID);
+    FsLockClose(&handlePtr->lock, &streamPtr->hdr.fileID);
     /*
      * Update the global/summary use counts for the file.
      */
@@ -632,6 +632,10 @@ FsFileClientKill(hdrPtr, clientID)
      * MAINTAIN BOTH ROUTINES PLEASE.  The difference between them is
      * that here we are removing the client from the client list, and
      * we have no low-level reference count on the handle to release.
+     * Also, we do no client-remove-callback as that would only contact
+     * the last writer who can only be the client that is being killed,
+     * unless the file is shared, in which case we have all the dirty blocks
+     * and no callback is required either.
      */
     FsLockClientKill(&handlePtr->lock, clientID);
 
@@ -646,10 +650,10 @@ FsFileClientKill(hdrPtr, clientID)
     }
     /*
      * Handle pending deletes.  We mark the disk descriptor as deleted
-     * and tell other clients about the remove.
+     * but do not make a client callback.
      */
     if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
-	FsClientRemoveCallback(&handlePtr->consist, clientID);
+	/* No client remove callback here, please */
 	(void)FsDeleteFileDesc(handlePtr);
 	FsHandleRemove(handlePtr);
     } else {
