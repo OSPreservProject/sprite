@@ -129,6 +129,7 @@ Sync_SlowLock(lockPtr)
     }
 
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
     return(SUCCESS);
 }
 
@@ -175,6 +176,7 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
     SyncEventWakeupInt((unsigned int)lockPtr);
     sigPending = SyncEventWaitInt((unsigned int) conditionPtr, wakeIfSignal);
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
 
     Sync_GetLock(lockPtr);
 
@@ -254,6 +256,7 @@ Sync_SlowMasterWait(event, mutexPtr, wakeIfSignal)
     sigPending = SyncEventWaitInt(event, wakeIfSignal);
 
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
     /*
      * re-acquire master lock before proceeding
      */
@@ -297,6 +300,7 @@ Sync_UnlockAndSwitch(lockPtr, state)
     Sched_ContextSwitchInt(state);
 
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
 }
 
 
@@ -520,6 +524,7 @@ Sync_EventWait(event, wakeIfSignal)
     MASTER_LOCK(sched_Mutex);
     sigPending = SyncEventWaitInt(event, wakeIfSignal);
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
     return(sigPending);
 }
 
@@ -665,7 +670,7 @@ Sync_ProcWait(lockPtr, wakeIfSignal)
     procPtr->waitToken++;
     procPtr->syncFlags &= ~(SYNC_WAIT_COMPLETE | SYNC_WAIT_REMOTE);
     MASTER_UNLOCK(sched_Mutex);
-
+    VmMach_SetupContext(procPtr);
     if (releasedLock) {
 	Sync_GetLock(lockPtr);
     }

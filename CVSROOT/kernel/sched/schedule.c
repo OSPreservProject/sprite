@@ -357,7 +357,7 @@ Sched_ContextSwitchInt(state)
     Proc_State state;			/* new state of current process */
 {
     register Proc_ControlBlock	*curProcPtr;  	/* PCB for currently runnning 
-					      	 * process. */
+						 * process. */
     register Proc_ControlBlock	*newProcPtr;  	/* PCB for new process. */
     int 			myProcessor;	/* Processor number. */
 
@@ -430,10 +430,8 @@ Sched_ContextSwitchInt(state)
      * Perform the hardware context switch.  After switching, make
      * sure that there is a context for this process.
      */
-    dbgMaxStackAddr = newProcPtr->stackStart + 
-			MACH_NUM_STACK_PAGES  * VM_PAGE_SIZE;
+    dbgMaxStackAddr = newProcPtr->stackStart + mach_KernStackSize;
     Mach_ContextSwitch(newProcPtr->saveRegs, curProcPtr->saveRegs);
-    Vm_SetupContext(curProcPtr);
 }
 
 
@@ -691,6 +689,7 @@ Sched_LockAndSwitch()
     sched_Instrument.numInvoluntarySwitches++;
     Sched_ContextSwitchInt(PROC_READY);
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
 }
 
 
@@ -717,6 +716,7 @@ Sched_ContextSwitch(state)
     MASTER_LOCK(sched_Mutex);
     Sched_ContextSwitchInt(state);
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
 }
 
 
@@ -743,8 +743,8 @@ Sched_ContextSwitch(state)
 void
 Sched_StartProcess()
 {
-    Vm_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
 }
 
 
@@ -797,10 +797,9 @@ Sched_StartUserProc()
 {
     register     	Proc_ControlBlock *procPtr;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-
-    Vm_SetupContext(procPtr);
     MASTER_UNLOCK(sched_Mutex);
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    VmMach_SetupContext(procPtr);
 
     Proc_Lock(procPtr);
     procPtr->genFlags |= PROC_DONT_MIGRATE;
@@ -822,5 +821,5 @@ Sched_StartUserProc()
      * Start the process running.  This does not return.
      */
     Proc_RunUserProc(procPtr->genRegs, procPtr->progCounter, Proc_Exit,
-		     procPtr->stackStart + MACH_EXEC_STACK_OFFSET);
+		     procPtr->stackStart + mach_ExecStackOffset);
 }

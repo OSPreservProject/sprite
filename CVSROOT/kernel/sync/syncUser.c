@@ -78,6 +78,7 @@ Sync_SlowLockStub(lockPtr)
 	status = SYS_ARG_NOACCESS;
     }
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(procPtr);
     Sys_UnsetJump();
     return(status);
 }
@@ -140,6 +141,7 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
 	status = SYS_ARG_NOACCESS;
     }
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
     Sys_UnsetJump();
     return(status);
 }

@@ -188,6 +188,7 @@ WaitTimeSubr(wakeupTime)
 
     Timer_DescheduleRoutine(&wakeupElement);
     MASTER_UNLOCK(sched_Mutex);
+    VmMach_SetupContext(procPtr);
 
     return(sigPending);
 }
