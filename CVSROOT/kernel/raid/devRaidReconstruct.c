@@ -15,8 +15,9 @@
  * express or implied warranty.
  */
 
-#include <string.h>
 #include "sync.h"
+#include <string.h>
+#include <stdio.h>
 #include "sprite.h"
 #include "fs.h"
 #include "dev.h"
@@ -242,7 +243,7 @@ reconstructionReadDoneProc(reconstructionControlPtr, numFailed)
 	LockSema(&diskPtr->lock);
 	if (diskPtr->state != RAID_DISK_READY) {
 	    printf("RAID:MSG:Reconctruction aborted.\n");
-	    reconstructionDoneProc(reconstructionControlPtr);
+	    InitiateReconstructionFailure(reconstructionControlPtr);
 	    UnlockSema(&diskPtr->lock);
 	    return;
 	}
@@ -284,7 +285,7 @@ reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
 	LockSema(&diskPtr->lock);
 	if (diskPtr->state != RAID_DISK_READY) {
 	    printf("RAID:MSG:Reconctruction aborted.\n");
-	    reconstructionDoneProc(reconstructionControlPtr);
+	    InitiateReconstructionFailure(reconstructionControlPtr);
 	    UnlockSema(&diskPtr->lock);
 	    return;
 	}
