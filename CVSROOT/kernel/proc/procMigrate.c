@@ -259,15 +259,20 @@ Proc_Migrate(pid, hostID)
     if (hostID == rpc_SpriteID) {
 	return(SUCCESS);
     }
-    if (hostID <= 0 || hostID > NET_NUM_SPRITE_HOSTS) {
-	return(GEN_INVALID_ARG);
-    }
     
     if (Proc_ComparePIDs(pid, PROC_ALL_PROCESSES)) {
+	procPtr = Proc_GetEffectiveProc();
+	if (procPtr->effectiveUserID != 0) {
+	    return(GEN_NO_PERMISSION);
+	}
 	status = Proc_EvictForeignProcs();
 	return(status);
     }
     
+    if (hostID <= 0 || hostID > NET_NUM_SPRITE_HOSTS) {
+	return(GEN_INVALID_ARG);
+    }
+
     if (Proc_ComparePIDs(pid, PROC_MY_PID)) {
 	migrateSelf = TRUE;
 	procPtr = Proc_GetActualProc();
@@ -727,7 +732,7 @@ Proc_MigrateTrap(procPtr)
 #ifndef CLEAN
 	if (proc_MigDoStats) {
 	    proc_MigStats.foreign--;
-	    proc_MigStats.evictions++;
+	    proc_MigStats.migrationsHome++;
 	}
 #endif /* CLEAN */
 	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
@@ -1544,6 +1549,7 @@ Proc_WaitForMigration(processID)
 
     procPtr = Proc_LockPID(processID);
     if (procPtr == NULL) {
+	UNLOCK_MONITOR;
 	return(PROC_INVALID_PID);
     }
     while (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
@@ -1886,8 +1892,16 @@ ReturnStatus
 Proc_EvictForeignProcs()
 {
     ReturnStatus status;
-    
-    status = Proc_DoForEveryProc(Proc_IsMigratedProc, Proc_EvictProc, TRUE);
+    int numEvicted;
+
+    proc_MigStats.evictCalls++;
+    status = Proc_DoForEveryProc(Proc_IsMigratedProc, Proc_EvictProc, TRUE,
+ 				 &numEvicted);
+    if (status == SUCCESS && numEvicted > 0) {
+	proc_MigStats.evictsNeeded++;
+	proc_MigStats.evictions += numEvicted;
+    }
+   
     return(status);
 }
 
