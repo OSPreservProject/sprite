@@ -17,10 +17,11 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sync.h"
-#include "syncInt.h"
-#include "stdlib.h"
-#include "dbg.h"
+#include <sync.h>
+#include <syncInt.h>
+#include <stdlib.h>
+#include <dbg.h>
+#include <stdio.h>
 
 /*
  * Lock registration semaphore.
@@ -28,17 +29,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Sync_Semaphore regMutex = Sync_SemInitStatic("regMutex");
 Sync_Semaphore *regMutexPtr = &regMutex;
 
+#ifdef LOCKREG
 /*
  * Number of types registered.
  */
-#ifndef lint
 static 	int	syncTypeCount = 0;
-#endif
-
 /*
  * Information on each type of lock registered.
  */
-#ifndef lint
 static  Sync_RegElement		regInfo[SYNC_MAX_LOCK_TYPES];
 #endif
 static 	Boolean	initialized = FALSE;

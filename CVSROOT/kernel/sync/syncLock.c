@@ -18,16 +18,17 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "./sync.h"
-#include "sprite.h"
-#include "mach.h"
-#include "list.h"
-#include "sync.h"
-#include "syncInt.h"
-#include "sched.h"
-#include "proc.h"
-#include "timer.h"
-#include "rpc.h"
+#include <sync.h>
+#include <sprite.h>
+#include <mach.h>
+#include <list.h>
+#include <sync.h>
+#include <syncInt.h>
+#include <sched.h>
+#include <proc.h>
+#include <timer.h>
+#include <rpc.h>
+#include <bstring.h>
 
 /*
  * A counter to record the number of busy wait loops executed
@@ -63,7 +64,7 @@ Sync_Instrument *sync_InstrumentPtr[MACH_MAX_NUM_PROCESSORS];
  */
 int syncProcWakeupRaces = 0;
 
-static INTERNAL void	ProcessWakeup();
+static void ProcessWakeup _ARGS_((Proc_ControlBlock *procPtr, int waitToken));
 
 
 

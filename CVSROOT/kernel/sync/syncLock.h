@@ -22,8 +22,8 @@
 #define _SYNCLOCK
 
 #ifdef KERNEL
-#include "user/list.h"
-#include "user/sync.h"
+#include <user/list.h>
+#include <user/sync.h>
 #else
 #include <list.h>
 #include <user/sync.h>

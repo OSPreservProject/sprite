@@ -39,11 +39,9 @@
 	}								\
     }
 
-extern 	void 	SyncSlowWait();
-extern 	void 	SyncSlowLock();
-extern 	void 	SyncSlowBroadcast();
-extern	void	SyncEventWakeupInt();
-extern	Boolean	SyncEventWaitInt();
+extern void SyncEventWakeupInt _ARGS_((unsigned int event));
+extern Boolean SyncEventWaitInt _ARGS_((unsigned int event, 
+					Boolean wakeIfSignal));
 
 /*
  *----------------------------------------------------------------------

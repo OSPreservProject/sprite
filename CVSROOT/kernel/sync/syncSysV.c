@@ -12,13 +12,15 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "sync.h"
-#include "sys/types.h"
-#include "sys/ipc.h"
-#include "sys/sem.h"
-#include "spriteTime.h"
-#include "fs.h"
+#include <sprite.h>
+#include <sync.h>
+#include <spriteTime.h>
+#include <fs.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <vm.h>
+#include <stdlib.h>
+
 
 Sync_SysVSem semTable[SEMMNI];
 static int totalSems = 0;
@@ -305,7 +307,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 		    Sync_Broadcast(&curSem->semLock);
 		}
 	    }
-	    free(curSem);
+	    free((char *)curSem);
 	    dprintf("semctl(IPC_RMID) done\n");
 	    break;
     }
@@ -347,7 +349,6 @@ Sync_SemgetStub(key, nsems, semflg, retValOut)
 {
     int			i;
     Sync_SysVSem	*semPtr;
-    long		searchKey;
     Proc_ControlBlock	*procPtr;
     int			uid;
     Time		timeVal;

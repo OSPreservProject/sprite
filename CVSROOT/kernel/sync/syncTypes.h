@@ -49,10 +49,10 @@
 #define _SYNCTYPES
 
 #ifdef KERNEL
-#include "user/sync.h"
-#include "procTypes.h"
-#include "syncLock.h"
-#include "machTypes.h"
+#include <user/sync.h>
+#include <procTypes.h>
+#include <syncLock.h>
+#include <machTypes.h>
 #else
 #include <sync.h>
 #include <kernel/procTypes.h>

@@ -48,18 +48,25 @@
 #ifndef _SYNC
 #define _SYNC
 
-#include "sprite.h"
-#include "list.h"
+#include <sprite.h>
+#include <list.h>
 
 #ifdef KERNEL
-#include "syncTypes.h"
-#include "mach.h"
-#include "proc.h"
+#include <syncTypes.h>
+#include <mach.h>
+#include <proc.h>
 #else
 #include <kernel/syncTypes.h>
 #include <kernel/mach.h>
 #include <kernel/proc.h>
-#endif /* */
+#endif /* KERNEL */
+
+/*
+ * These include files are needed by the SysV sema support.
+ */
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
 
 /*
  * Exported procedures and variables of the sync module.
@@ -69,44 +76,74 @@ extern Sync_Instrument 	sync_Instrument[MACH_MAX_NUM_PROCESSORS];
 extern Sync_Instrument	*sync_InstrumentPtr[MACH_MAX_NUM_PROCESSORS];
 extern int sync_BusyWaits;
 
-extern 	void 		Sync_Init();
+extern void Sync_Init _ARGS_((void));
+extern ReturnStatus Sync_GetLock _ARGS_((Sync_Lock *lockPtr));
+extern ReturnStatus Sync_Unlock _ARGS_((Sync_Lock *lockPtr));
+extern ReturnStatus Sync_SlowLock _ARGS_((register Sync_Lock *lockPtr));
+extern Boolean Sync_SlowWait _ARGS_((Sync_Condition *conditionPtr, 
+			Sync_Lock *lockPtr, Boolean wakeIfSignal));
+extern ReturnStatus Sync_SlowBroadcast _ARGS_((unsigned int event, 
+			int *waitFlagPtr));
 
-extern 	void 		Sync_WakeupProcess();
-extern 	void 		Sync_EventWakeup();
-extern 	void 		Sync_WakeWaitingProcess();
-extern 	void 		Sync_UnlockAndSwitch();
+extern Boolean Sync_SlowMasterWait _ARGS_((unsigned int event,
+			Sync_Semaphore *mutexPtr, Boolean wakeIfSignal));
+extern void Sync_UnlockAndSwitch _ARGS_((Sync_Lock *lockPtr, Proc_State state));
+extern void Sync_EventWakeup _ARGS_((unsigned int event));
+extern void Sync_WakeWaitingProcess _ARGS_((register Proc_ControlBlock *procPtr));
+extern void Sync_WakeupProcess _ARGS_((Timer_Ticks time, ClientData procAddress));
 
-extern 	Boolean 	Sync_SlowMasterWait();
-extern 	Boolean 	Sync_SlowWait();
-extern 	Boolean 	Sync_EventWait();
-extern 	Boolean 	Sync_WaitTime();
-extern 	Boolean 	Sync_WaitTimeInTicks();
-extern 	Boolean 	Sync_WaitTimeInterval();
+extern Boolean Sync_EventWait _ARGS_((unsigned int event, Boolean wakeIfSignal));
+extern void Sync_GetWaitToken _ARGS_((Proc_PID *pidPtr, int *tokenPtr));
+extern void Sync_SetWaitToken _ARGS_((Proc_ControlBlock *procPtr, int waitToken));
 
-extern 	Boolean 	Sync_ProcWait();
-extern 	void 		Sync_ProcWakeup();
-extern 	void 		Sync_GetWaitToken();
-extern 	void 		Sync_SetWaitToken();
-extern 	ReturnStatus 	Sync_RemoteNotify();
-extern 	ReturnStatus 	Sync_RemoteNotifyStub();
-	
-extern 	ReturnStatus 	Sync_SlowLockStub();
-extern 	ReturnStatus 	Sync_SlowWaitStub();
-extern 	ReturnStatus 	Sync_SlowBroadcastStub();
+extern Boolean Sync_WaitTime _ARGS_((Time time));
+extern Boolean Sync_WaitTimeInTicks _ARGS_((Timer_Ticks time));
+extern Boolean Sync_WaitTimeInterval _ARGS_((unsigned int interval));
 
-extern 	void 		Sync_PrintStat();
+extern Boolean Sync_ProcWait _ARGS_((Sync_Lock *lockPtr, Boolean wakeIfSignal));
+extern void Sync_ProcWakeup _ARGS_((Proc_PID pid, int token));
 
-extern	void		Sync_LockStatInit();
-extern	void		Sync_AddPriorInt();
-extern	void		SyncDeleteCurrentInt();
-extern 	void		SyncMergePriorInt();
-extern	void		Sync_RegisterInt();
-extern	void		Sync_CheckoutInt();
-extern	void		Sync_PrintLockStats();
+extern ReturnStatus Sync_RemoteNotify _ARGS_((Sync_RemoteWaiter *waitPtr));
+extern ReturnStatus Sync_RemoteNotifyStub _ARGS_((ClientData srvToken, 
+			int clientID, int command, Rpc_Storage *storagePtr));
 
-extern	ReturnStatus	Sync_SemgetStub();
-extern	ReturnStatus	Sync_SemopStub();
-extern	ReturnStatus	Sync_SemctlStub();
+extern ReturnStatus Sync_SlowLockStub _ARGS_((Sync_UserLock *lockPtr));
+extern ReturnStatus Sync_SlowWaitStub _ARGS_((unsigned int event, 
+			Sync_UserLock *lockPtr, Boolean wakeIfSignal));
+extern ReturnStatus Sync_SlowBroadcastStub _ARGS_((unsigned int event,
+				int *waitFlagPtr));
+
+extern void Sync_PrintStat _ARGS_((void));
+
+extern void Sync_LockStatInit _ARGS_((void));
+extern void SyncAddPriorInt _ARGS_((int type, int *priorCountPtr, 
+			int *priorTypes, Address lockPtr, 
+			Proc_ControlBlock *pcbPtr));
+
+extern void SyncDeleteCurrentInt _ARGS_((Address lockPtr, 
+				Proc_ControlBlock *pcbPtr));
+extern void SyncMergePriorInt _ARGS_((int priorCount, int *priorTypes, 
+				Sync_RegElement *regPtr));
+extern void Sync_RegisterInt _ARGS_((Address lock));
+extern void Sync_CheckoutInt _ARGS_((Address lock));
+
+extern ReturnStatus Sync_SemgetStub _ARGS_((long key, int nsems, int semflg, 
+					int *retValOut));
+extern ReturnStatus Sync_SemopStub _ARGS_((int semid, struct sembuf *sopsIn, 
+					int nsops, int retValOut));
+
+extern ReturnStatus Sync_SemctlStub _ARGS_((int semid, int semnum, int cmd, 
+					union semun arg, int *retValOut));
+extern ReturnStatus Sync_SemStruct _ARGS_((int id, int *perm, 
+					   Sync_SysVSem **retPtr));
+
+extern ReturnStatus Sync_Sleep _ARGS_((Time time));
+extern void Sync_SemInit _ARGS_((void));
+
+extern ReturnStatus Sync_GetLockStats _ARGS_((int size, Address argPtr));
+extern ReturnStatus Sync_ResetLockStats _ARGS_((void));
+
+extern void Sync_RemoveWaiter _ARGS_((Proc_ControlBlock *procPtr));
 
 extern Sync_RegElement  *regQueuePtr;
 

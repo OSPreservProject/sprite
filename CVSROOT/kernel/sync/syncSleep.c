@@ -13,15 +13,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "sync.h"
-#include "proc.h"
-#include "sched.h"
-#include "sig.h"
-#include "stdlib.h"
-#include "timer.h"
+#include <sprite.h>
+#include <sync.h>
+#include <syncInt.h>
+#include <proc.h>
+#include <sched.h>
+#include <sig.h>
+#include <stdlib.h>
+#include <timer.h>
 
-static Boolean WaitTimeSubr();
+static Boolean WaitTimeSubr _ARGS_((Timer_Ticks wakeupTime));
 
 
 
