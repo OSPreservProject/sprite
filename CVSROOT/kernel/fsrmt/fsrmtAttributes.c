@@ -116,6 +116,8 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	    status = FsRmtFileGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
 	    status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
 	    status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+	    status = FsPseudoStreamGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,
+			attrPtr);
 #endif lint
 	}
     }
@@ -323,6 +325,7 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
 	    status = FsRmtFileSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
 	    status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
 	    status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+	    status = FsPseudoStreamSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
 #endif lint
 	}
 	if (status == SUCCESS) {
@@ -1231,6 +1234,7 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
 #ifdef lint
 	status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
 	status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+	status = FsPseudoStreamGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,attrPtr);
 #endif lint
 	FsHandleRelease(hdrPtr, FALSE);
     } else {
@@ -1364,6 +1368,8 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
 #ifdef lint
     status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr,setAttrParamPtr->flags);
     status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, setAttrParamPtr->flags);
+    status = FsPseudoStreamSetIOAttr(&hdrPtr->fileID, attrPtr,
+					setAttrParamPtr->flags);
 #endif lint
 
     FsHandleRelease(hdrPtr, FALSE);
