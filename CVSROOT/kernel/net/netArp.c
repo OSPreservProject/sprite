@@ -24,7 +24,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sync.h>
 #include <rpc.h>
 #include <netInt.h>
+#include <netArp.h>
 #include <string.h>
+#include <stdio.h>
 /*
  * This flag turns on print statements in the ARP protocol
  */
@@ -49,6 +51,19 @@ static Sync_Lock arpOutputQueueLock; ;
 static ArpInputQueue arpInputQueue[ARP_INPUT_QUEUE_LEN];
 static int nextInputIndex = 0;
 static Sync_Semaphore arpInputMutex;
+
+static	void	Net_ArpTimeout _ARGS_((Timer_Ticks time, ClientData data));
+static	void	NetArpHandler _ARGS_((ClientData data, 
+				Proc_CallInfo *callInfoPtr));
+static	void	NetArpOutput _ARGS_((Net_Interface *interPtr,
+				Net_EtherAddress *destEtherAddrPtr,
+				int etherType, NetSpriteArp *requestPtr));
+static	void	NetFillInArpRequest _ARGS_((int command, 
+				Net_NetworkType	netType, int protocol,
+				ClientData targetId, ClientData senderId,
+				Net_Address *targetAddrPtr, 
+				Net_Address *senderAddrPtr, 
+				NetSpriteArp *requestPtr));
 
 /*
  *----------------------------------------------------------------------
@@ -148,7 +163,8 @@ Net_Arp(spriteID, mutexPtr)
 	    NET_ETHER_ADDR_COPY(* ARP_SRC_ETHER_ADDR(&reply),
 		netAddress.ether);
 	    (void) Net_InstallRoute(spriteID, interPtr, &netAddress,
-			NET_PROTO_RAW, &netAddress, "noname", "unknown");
+			NET_PROTO_RAW, "noname", "unknown", 
+			(ClientData) 0);
 	    return status;
 	}
     }
@@ -324,7 +340,7 @@ NetDoArp(routePtr, mutexPtr, command, gatherPtr, packetPtr)
 	    }
 	    arpStatistics.numRevArpRequests++;
 	}
-	(interPtr->output)(interPtr, &etherHdr, gatherPtr, 1);
+	(interPtr->output)(interPtr, (Address) &etherHdr, gatherPtr, 1);
 
 	arp.state |= ARP_IN_TIMEOUT_QUEUE ;
 	arp.timeout.routine = Net_ArpTimeout;
@@ -730,7 +746,7 @@ NetArpOutput(interPtr, destEtherAddrPtr, etherType, requestPtr)
     gatherPtr->mutexPtr = (Sync_Semaphore *) NIL;
 
     arpStatistics.numRevArpReplies++;
-    (interPtr->output)(interPtr, etherHdrPtr, gatherPtr, 1);
+    (interPtr->output)(interPtr, (Address) etherHdrPtr, gatherPtr, 1);
 
     UNLOCK_MONITOR;
     return;

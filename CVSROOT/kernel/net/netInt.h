@@ -21,14 +21,51 @@
 
 #include <sprite.h>
 #include <list.h>
+#include <bf.h>
 #include <net.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-typedef struct NetInterface {
-    char	*name;
-    int		 number;
-    unsigned int ctrlAddr;
-    Boolean	(*init)();
-} NetInterface;
+/*
+ * The following is a NIL function pointer.
+ */
+
+#define NILPROC	(void (*)()) NIL
+
+/*
+ * The following macros are used to access bit fields in strings of bytes.
+ * The upper 24 bits of the index are the offset of the bit field, and
+ * the lower 8 bits are the size of the bit field.  See bf.h for info
+ * on the Bf macros.
+ */
+
+#define NetBfByteSet(ptr, index, value)			\
+    Bf_ByteSet(ptr, (index) >> 8, (index) & 0xff, value)
+
+#define NetBfByteTest(ptr, index, value)			\
+    Bf_ByteTest(ptr, (index) >> 8, (index) & 0xff, value)
+
+#define NetBfByteGet(ptr, index)			\
+    Bf_ByteGet(ptr, (index) >> 8, (index) & 0xff)
+
+#define NetBfShortSet(ptr, index, value)			\
+    Bf_HalfwordSet(ptr, (index) >> 8, (index) & 0xff, value)
+
+#define NetBfShortTest(ptr, index, value)			\
+    Bf_HalfwordTest(ptr, (index) >> 8, (index) & 0xff, value)
+
+#define NetBfShortGet(ptr, index)			\
+    Bf_HalfwordGet(ptr, (index) >> 8, (index) & 0xff)
+
+#define NetBfWordSet(ptr, index, value)			\
+    Bf_WordSet(ptr, (index) >> 8, (index) & 0xff, value)
+
+#define NetBfWordTest(ptr, index, value)			\
+    Bf_WordTest(ptr, (index) >> 8, (index) & 0xff, value)
+
+#define NetBfWordGet(ptr, index)			\
+    Bf_WordGet(ptr, (index) >> 8, (index) & 0xff)
+
 /*
  * A transmission queue element.
  */
@@ -42,21 +79,24 @@ typedef struct {
 						   scatter/gather array. */
 } NetXmitElement;
 
-/*
- * The routines for the use of the proper ethernet controller.  We should
- * fix this to support multiple interfaces!
- */
-typedef struct {
-    Boolean (*init)();
-    void (*output)();
-    void (*intr)();
-    void (*reset)();
-} NetEtherFuncs;
-extern	NetEtherFuncs	netEtherFuncs;
-
+extern	Net_EtherStats	net_EtherStats;
+extern	Net_Address 	netEtherBroadcastAddress;
+extern Net_Interface	*netInterfaces[];
+extern int		netNumInterfaces;
+extern Net_Address	netZeroAddress;
+extern Boolean		netDebug;
 /*
  * Procedures for the internet packet handler.
  */
-extern	void	NetOutputWakeup();
+extern void NetOutputWakeup _ARGS_((Sync_Semaphore *mutexPtr));
+
+/*
+ * Forward declarations.
+ */
+
+extern Net_Route *NetAllocRoute _ARGS_((void));
+
+
+extern void NetEtherInit _ARGS_((void));
 
 #endif /* _NETINT */

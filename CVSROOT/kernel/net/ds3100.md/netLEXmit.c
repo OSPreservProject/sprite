@@ -16,30 +16,13 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
-#include "sprite.h"
-#include "netLEInt.h"
-#include "net.h"
-#include "netInt.h"
-#include "sys.h"
-#include "vm.h"
-#include "list.h"
-#include "sync.h"
-#include "machMon.h"
-
-/*
- * Pointer to scatter gather element for current packet being sent.
- */
-static Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
-
-/*
- * A buffer that is used when handling loop back packets.
- */
-static  char            loopBackBuffer[NET_ETHER_MAX_BYTES];
-
-/*
- * Buffer that we shove the packet into.
- */
-static volatile Address	xmitBufPtr;
+#include <sprite.h>
+#include <netLEInt.h>
+#include <sys.h>
+#include <vm.h>
+#include <list.h>
+#include <sync.h>
+#include <machMon.h>
 
 
 /*
@@ -60,13 +43,13 @@ static volatile Address	xmitBufPtr;
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     Net_EtherHdr		*etherHdrPtr;	/* Ethernet header of packet.*/
     register Net_ScatterGather	*scatterGatherPtr; /* Data portion of packet.*/
     int				scatterGatherLength;/* Length of data portion 
 						     * gather array. */
+    NetLEState		*statePtr;		/* The interface state. */
 {
-    register NetLEState		*netLEStatePtr;
     register short		*inBufPtr;
     register volatile short	*outBufPtr;
     register Address		descPtr;
@@ -74,8 +57,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     unsigned	char		*leftOverBytePtr = (unsigned char *)NIL;
     int				totLen;
 
-    netLEStatePtr = &netLEState;
-    descPtr = netLEStatePtr->xmitDescFirstPtr;
+    descPtr = statePtr->xmitDescFirstPtr;
 
     /*
      * Do a sanity check.
@@ -85,10 +67,10 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	return (FAILURE);
     }
 
-    netLEStatePtr->transmitting = TRUE;
-    curScatGathPtr = scatterGatherPtr;
-    etherHdrPtr->source = netLEStatePtr->etherAddress;
-    outBufPtr = (volatile short *)xmitBufPtr;
+    statePtr->transmitting = TRUE;
+    statePtr->curScatGathPtr = scatterGatherPtr;
+    etherHdrPtr->source = statePtr->etherAddress;
+    outBufPtr = (volatile short *)statePtr->xmitBufPtr;
 
     /* 
      * Copy the packet into the xmit buffer.  Don't be general, be fast.
@@ -117,8 +99,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	totLen += length;
 	if (totLen > NET_ETHER_MAX_BYTES) {
 	    printf("OutputPacket: Packet too large\n");
-	    curScatGathPtr = (Net_ScatterGather *)NIL;
-	    netLEStatePtr->transmitting = FALSE;
+	    statePtr->curScatGathPtr = (Net_ScatterGather *)NIL;
+	    statePtr->transmitting = FALSE;
 	    return(FAILURE);
 	}
 	bufAddr = (unsigned char *)scatterGatherPtr->bufAddr;
@@ -216,9 +198,10 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     }
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_BUF_SIZE) = -totLen;
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_BUF_ADDR_LOW) = 
-			BUF_TO_CHIP_ADDR(xmitBufPtr) & 0xFFFF;
+			BUF_TO_CHIP_ADDR(statePtr->xmitBufPtr) & 0xFFFF;
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_STATUS1) =
-	    ((BUF_TO_CHIP_ADDR(xmitBufPtr) >> 16) & NET_LE_XMIT_BUF_ADDR_HIGH) |
+	    ((BUF_TO_CHIP_ADDR(statePtr->xmitBufPtr) >> 16) & 
+			NET_LE_XMIT_BUF_ADDR_HIGH) |
 			NET_LE_XMIT_START_OF_PACKET | 
 			NET_LE_XMIT_END_OF_PACKET |
 			NET_LE_XMIT_CHIP_OWNED;
@@ -226,20 +209,14 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     /*
      * Give the chip a little kick.
      */
-    *netLEStatePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
-    *netLEStatePtr->regDataPortPtr =
+    *statePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
+    *statePtr->regDataPortPtr =
 		(NET_LE_CSR0_XMIT_DEMAND | NET_LE_CSR0_INTR_ENABLE);
     return (SUCCESS);
 
 }
 
 
-/*
- * Flag to note if xmit memory has been initialized and allocated.
- */
-
-static	Boolean	xmitMemInitialized = FALSE;
-static	Boolean	xmitMemAllocated = FALSE;
 
 /*
  *----------------------------------------------------------------------
@@ -257,20 +234,23 @@ static	Boolean	xmitMemAllocated = FALSE;
  *----------------------------------------------------------------------
  */
 static void
-AllocateXmitMem()
+AllocateXmitMem(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
+    printf("In AllocateXmitMem\n");
     /*
      * Allocate a transmission buffer descriptor.  
      * The descriptor must start on an 8-byte boundary.  
      */
-    netLEState.xmitDescFirstPtr = NetLEMemAlloc(NET_LE_XMIT_DESC_SIZE, FALSE);
+    statePtr->xmitDescFirstPtr = NetLEMemAlloc(NET_LE_XMIT_DESC_SIZE, FALSE);
 
     /*
      * Allocate a buffer for a transmitted packet.
      */
-    xmitBufPtr = NetLEMemAlloc(NET_ETHER_MAX_BYTES, TRUE);
+    statePtr->xmitBufPtr = NetLEMemAlloc(NET_ETHER_MAX_BYTES, TRUE);
 
-    xmitMemAllocated = TRUE;
+    statePtr->xmitMemAllocated = TRUE;
+    printf("Leaving AllocateXmitMem\n");
 }
 
 
@@ -291,30 +271,31 @@ AllocateXmitMem()
  *----------------------------------------------------------------------
  */
 void
-NetLEXmitInit()
+NetLEXmitInit(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
     Address	descPtr;
 
-
-    if (!xmitMemAllocated) {
-	AllocateXmitMem();
+    printf("In NetLEXmitInit\n");
+    if (!statePtr->xmitMemAllocated) {
+	AllocateXmitMem(statePtr);
     }
-    xmitMemInitialized = TRUE;
+    statePtr->xmitMemInitialized = TRUE;
 
     /*
      * Initialize the state structure to point to the ring. xmitDescFirstPtr
      * is set by AllocateXmitMem() and never moved.
      */
-    netLEState.xmitDescLastPtr = netLEState.xmitDescFirstPtr;
-    netLEState.xmitDescNextPtr = netLEState.xmitDescFirstPtr;
+    statePtr->xmitDescLastPtr = statePtr->xmitDescFirstPtr;
+    statePtr->xmitDescNextPtr = statePtr->xmitDescFirstPtr;
 
-    descPtr = netLEState.xmitDescFirstPtr;
+    descPtr = statePtr->xmitDescFirstPtr;
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_BUF_ADDR_LOW) = 0;
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_STATUS1) = 0;
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_STATUS2) = 0;
 
-    netLEState.transmitting = FALSE;
-    curScatGathPtr = (Net_ScatterGather *) NIL;
+    statePtr->transmitting = FALSE;
+    statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
 }
 
 
@@ -336,31 +317,29 @@ NetLEXmitInit()
  */
 
 ReturnStatus
-NetLEXmitDone()
+NetLEXmitDone(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
     register	NetXmitElement	*xmitElementPtr;
     register	Address		descPtr;
-    register	NetLEState	*netLEStatePtr;
     ReturnStatus		status;
     unsigned			status1;
     unsigned			status2;
 
-    netLEStatePtr = &netLEState;
-
-    descPtr = (Address)netLEStatePtr->xmitDescNextPtr;
+    descPtr = (Address)statePtr->xmitDescNextPtr;
 
     /*
      * Reset the interrupt.
      */
-    *netLEStatePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
-    *netLEStatePtr->regDataPortPtr = 
+    *statePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
+    *statePtr->regDataPortPtr = 
 		(NET_LE_CSR0_XMIT_INTR | NET_LE_CSR0_INTR_ENABLE);
 
     /*
      * If there is nothing that is currently being sent then something is
      * wrong.
      */
-    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+    if (statePtr->curScatGathPtr == (Net_ScatterGather *) NIL) {
 	printf( "NetLEXmitDone: No current packet\n.");
 	return (FAILURE);
     }
@@ -376,7 +355,7 @@ NetLEXmitDone()
      * Check for errors.
      */
     if (status1 & NET_LE_XMIT_ERROR) {
-	net_EtherStats.xmitPacketsDropped++;
+	statePtr->stats.xmitPacketsDropped++;
 	if (status2 & NET_LE_XMIT_LOST_CARRIER) {
 	    printf("LE ethernet: Lost carrier.\n");
 	}
@@ -389,8 +368,8 @@ NetLEXmitDone()
 	    printf("LE ethernet: Transmit late collision.\n");
 	}
 	if (status2 & NET_LE_XMIT_RETRY_ERROR) {
-	    net_EtherStats.xmitCollisionDrop++;
-	    net_EtherStats.collisions += 16;
+	    statePtr->stats.xmitCollisionDrop++;
+	    statePtr->stats.collisions += 16;
 	    printf("LE ethernet: Too many collisions.\n");
 	}
 	if (status2 & NET_LE_XMIT_UNDER_FLOW_ERROR) {
@@ -403,23 +382,23 @@ NetLEXmitDone()
 	return (FAILURE);
     }
     if (status1 & NET_LE_XMIT_ONE_RETRY) {
-	net_EtherStats.collisions++;
+	statePtr->stats.collisions++;
     }
     if (status1 & NET_LE_XMIT_RETRIES) {
 	/*
 	 * Two is more than one.  
 	 */
-	net_EtherStats.collisions += 2;	/* Only a guess. */
+	statePtr->stats.collisions += 2;	/* Only a guess. */
     }
 
-    net_EtherStats.packetsSent++;
+    statePtr->stats.packetsSent++;
 
     /*
      * Mark the packet as done.
      */
-    curScatGathPtr->done = TRUE;
-    if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	NetOutputWakeup(curScatGathPtr->mutexPtr);
+    statePtr->curScatGathPtr->done = TRUE;
+    if (statePtr->curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(statePtr->curScatGathPtr->mutexPtr);
     }
 
     /*
@@ -427,16 +406,16 @@ NetLEXmitDone()
      * the queue.  Otherwise there is nothing being transmitted.
      */
     status = SUCCESS;
-    if (!List_IsEmpty(netLEState.xmitList)) {
-	xmitElementPtr = (NetXmitElement *) List_First(netLEState.xmitList);
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
 	status = OutputPacket(xmitElementPtr->etherHdrPtr,
 		     xmitElementPtr->scatterGatherPtr,
-		     xmitElementPtr->scatterGatherLength);
+		     xmitElementPtr->scatterGatherLength, statePtr);
 	List_Move((List_Links *) xmitElementPtr, 
-		  LIST_ATREAR(netLEState.xmitFreeList));
+		  LIST_ATREAR(statePtr->xmitFreeList));
     } else {
-	netLEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
     return (status);
 }
@@ -464,7 +443,8 @@ NetLEXmitDone()
  */
 
 void
-NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+NetLEOutput(interPtr, etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+    Net_Interface	*interPtr;	/* The network interface. */
     Net_EtherHdr	*etherHdrPtr;	/* Ethernet header for the packet. */
     register	Net_ScatterGather	*scatterGatherPtr; /* Data portion of 
 							    * the packet. */
@@ -473,17 +453,19 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 {
     register	NetXmitElement		*xmitPtr;
     ReturnStatus			status;
+    NetLEState				*statePtr;
 
+    statePtr = (NetLEState *) interPtr->interfaceData;
     DISABLE_INTR();
 
-    net_EtherStats.packetsOutput++;
+    statePtr->stats.packetsOutput++;
 
     /*
      * See if the packet is for us.  In this case just copy in the packet
      * and call the higher level routine.
      */
 
-    if (NET_ETHER_COMPARE(netLEState.etherAddress, etherHdrPtr->destination)) {
+    if (NET_ETHER_COMPARE(statePtr->etherAddress, etherHdrPtr->destination)) {
 	int i, length;
 
         length = sizeof(Net_EtherHdr);
@@ -494,14 +476,14 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
         if (length <= NET_ETHER_MAX_BYTES) {
 	    register Address bufPtr;
 
-	    etherHdrPtr->source = netLEState.etherAddress;
+	    etherHdrPtr->source = statePtr->etherAddress;
 
-	    bufPtr = (Address)loopBackBuffer;
+	    bufPtr = (Address)statePtr->loopBackBuffer;
 	    bcopy((Address)etherHdrPtr, bufPtr, sizeof(Net_EtherHdr));
 	    bufPtr += sizeof(Net_EtherHdr);
             Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
 
-	    Net_Input((Address)loopBackBuffer, length);
+	    Net_Input(interPtr,(Address)statePtr->loopBackBuffer, length);
         }
 
         scatterGatherPtr->done = TRUE;
@@ -514,11 +496,12 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * If no packet is being sent then go ahead and send this one.
      */
 
-    if (!netLEState.transmitting) {
+    if (!statePtr->transmitting) {
 	status = 
-	    OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength);
+	    OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength,
+		    statePtr);
 	if (status != SUCCESS) {
-		NetLERestart();
+		NetLERestart(statePtr);
 	}
 	ENABLE_INTR();
 	return;
@@ -530,14 +513,14 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * If none available then drop the packet.
      */
 
-    if (List_IsEmpty(netLEState.xmitFreeList)) {
+    if (List_IsEmpty(statePtr->xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
 	ENABLE_INTR();
 	return;
     }
 
     xmitPtr = 
-	(NetXmitElement *)List_First((List_Links *) netLEState.xmitFreeList);
+	(NetXmitElement *)List_First((List_Links *) statePtr->xmitFreeList);
 
     List_Remove((List_Links *) xmitPtr);
 
@@ -551,7 +534,7 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     /* 
      * Put onto the transmission queue.
      */
-    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netLEState.xmitList)); 
+    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(statePtr->xmitList)); 
 
     ENABLE_INTR();
 }
@@ -575,14 +558,15 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
  *----------------------------------------------------------------------
  */
 void
-NetLEXmitDrop()
+NetLEXmitDrop(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
-    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
-	curScatGathPtr->done = TRUE;
-	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+    if (statePtr->curScatGathPtr != (Net_ScatterGather *) NIL) {
+	statePtr->curScatGathPtr->done = TRUE;
+	if (statePtr->curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(statePtr->curScatGathPtr->mutexPtr);
 	}
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
 }
 
@@ -604,7 +588,8 @@ NetLEXmitDrop()
  *----------------------------------------------------------------------
  */
 void
-NetLEXmitRestart()
+NetLEXmitRestart(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
     NetXmitElement	*xmitElementPtr;
     ReturnStatus	status;
@@ -612,18 +597,19 @@ NetLEXmitRestart()
     /*
      * Start output if there are any packets queued up.
      */
-    if (!List_IsEmpty(netLEState.xmitList)) {
-	xmitElementPtr = (NetXmitElement *) List_First(netLEState.xmitList);
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
 	status = OutputPacket(xmitElementPtr->etherHdrPtr,
 		     xmitElementPtr->scatterGatherPtr,
-		     xmitElementPtr->scatterGatherLength);
+		     xmitElementPtr->scatterGatherLength,
+		     statePtr);
 	if (status != SUCCESS) {
 	    panic("LE ethernet: Can not output first packet on restart.\n");
 	}
 	List_Move((List_Links *) xmitElementPtr, 
-		  LIST_ATREAR(netLEState.xmitFreeList));
+		  LIST_ATREAR(statePtr->xmitFreeList));
     } else {
-	netLEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
 }

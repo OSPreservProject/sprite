@@ -16,12 +16,16 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#include "sprite.h"
-#include "net.h"
-#include "netInt.h"
-#include "netIEInt.h"
+#include <sprite.h>
+#include <net.h>
+#include <netInt.h>
+#include <netIEInt.h>
+#include <netUltraInt.h>
 
-NetInterface netInterface[] = {
-    {"IE", 0, NET_IE_CONTROL_REG_ADDR, NetIEInit},
+Net_Interface netConfigInterfaces[] = {
+    {"IE", 0, (Address) NET_IE_CONTROL_REG_ADDR, TRUE, 6, NetIEInit},
+    {"ULTRA", 0, (Address) NET_ULTRA_CONTROL_REG_ADDR, FALSE, 220, NetUltraInit}
 };
-int numNetInterfaces = sizeof(netInterface) / sizeof(NetInterface);
+int netNumConfigInterfaces = 
+	    sizeof(netConfigInterfaces) / sizeof(Net_Interface);
+

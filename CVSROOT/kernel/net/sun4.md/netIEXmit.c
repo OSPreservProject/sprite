@@ -18,50 +18,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
-#include "netIEInt.h"
-#include "net.h"
-#include "netInt.h"
-#include "sys.h"
-#include "list.h"
-#include "vmMach.h"
-
-#include "sync.h"
-
-/*
- * Pointer to scatter gather element for current packet being sent.
- */
-static Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
-
-/*
- * The address of the array of buffer descriptor headers.
- */
-volatile static	NetIETransmitBufDesc *xmitBufAddr;
+#include <sprite.h>
+#include <netIEInt.h>
+#include <sys.h>
+#include <list.h>
+#include <vmMach.h>
+#include <sync.h>
 
 /*
  * Extra bytes for short packets.
  */
 char	*netIEXmitFiller;
 
-/*
- * Buffer for pieces of a packet that are too small or that start
- * on an odd boundary.  XMIT_TEMP_BUFSIZE limits how big a thing can
- * be and start on an odd address.
- */
-#define XMIT_TEMP_BUFSIZE	(NET_ETHER_MAX_BYTES + 2)
-char	*netIEXmitTempBuffer;
-
-/*
- * Define the minimum size allowed for a piece of a transmitted packet.
- * There is a minimum size because the Intel chip has problems if the pieces
- * are too small.
- */
-#define MIN_XMIT_BUFFER_SIZE	12
-
-/*
- * A buffer that is used when handling loop back packets.
- */
-static  char            loopBackBuffer[NET_ETHER_MAX_BYTES];
 
 
 /*
@@ -83,10 +51,11 @@ static  char            loopBackBuffer[NET_ETHER_MAX_BYTES];
  */
 
 static void
-OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     Net_EtherHdr                        *etherHdrPtr;
     register	Net_ScatterGather   	*scatterGatherPtr;
     int					scatterGatherLength;
+    NetIEState				*statePtr;
 {
     register	volatile NetIETransmitBufDesc	*xmitBufDescPtr;
     register	volatile NetIETransmitCB   	*xmitCBPtr;
@@ -103,8 +72,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     Net_ScatterGather			newScatGathArr[NET_IE_NUM_XMIT_BUFFERS];
 #endif
 
-    netIEState.transmitting = TRUE;
-    curScatGathPtr = scatterGatherPtr;
+    statePtr->transmitting = TRUE;
+    statePtr->curScatGathPtr = scatterGatherPtr;
 #if defined(sun3) || defined(sun4) 
     /*
      * Remap the packet into network addressible memory.
@@ -118,8 +87,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * and the array of buffer headers is gotten here.
      */
 
-    xmitCBPtr = netIEState.xmitCBPtr;
-    xmitBufDescPtr = xmitBufAddr;
+    xmitCBPtr = statePtr->xmitCBPtr;
+    xmitBufDescPtr = statePtr->xmitBufAddr;
 
     totalLength = sizeof(Net_EtherHdr);
 
@@ -131,7 +100,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      */
     borrowedBytesPtr = borrowedBytes;
     *borrowedBytesPtr = 0;
-    tmpBuffer = netIEXmitTempBuffer;
+    tmpBuffer = statePtr->netIEXmitTempBuffer;
     tmpBufSize = XMIT_TEMP_BUFSIZE;
     /*
      * Put all of the pieces of the packet into the linked list of xmit
@@ -161,7 +130,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	if ((length < NET_IE_MIN_DMA_SIZE) || ((int)bufAddr & 0x1)) {
 
 	    if (length > tmpBufSize) {
-		netIEState.transmitting = FALSE;
+		statePtr->transmitting = FALSE;
 		ENABLE_INTR();
 
 		panic("IE OutputPacket: Odd addressed buffer too large.");
@@ -217,10 +186,9 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	    NET_IE_ADDR_FROM_SUN_ADDR(
 		 (int) (bufAddr), (int) (xmitBufDescPtr->bufAddr));
 	}
-
-	xmitBufDescPtr->eof = 0;
-	xmitBufDescPtr->countLow = length & 0xFF;
-	xmitBufDescPtr->countHigh = length >> 8;
+	NetBfShortSet(xmitBufDescPtr->bits, Eof, 0);
+	NetBfShortSet(xmitBufDescPtr->bits, CountLow, length & 0xFF);
+	NetBfShortSet(xmitBufDescPtr->bits, CountHigh, length >> 8);
 
 	totalLength += length;
 	xmitBufDescPtr = (volatile NetIETransmitBufDesc *)
@@ -239,18 +207,17 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	if (length < MIN_XMIT_BUFFER_SIZE) {
 	    length = MIN_XMIT_BUFFER_SIZE;
 	}
-	xmitBufDescPtr->countLow = length & 0xFF;
-	xmitBufDescPtr->countHigh = length >> 8;
+	NetBfShortSet(xmitBufDescPtr->bits, CountLow, length & 0xFF);
+	NetBfShortSet(xmitBufDescPtr->bits, CountHigh, length >> 8);
     } else {
 	xmitBufDescPtr = (volatile NetIETransmitBufDesc *)
 	    ((int) xmitBufDescPtr - NET_IE_CHUNK_SIZE);
     }
-
     /*
      * Finish off the packet.
      */
 
-    xmitBufDescPtr->eof = 1;
+    NetBfShortSet(xmitBufDescPtr->bits, Eof, 1);
     xmitCBPtr->destEtherAddr = etherHdrPtr->destination;
     xmitCBPtr->type = etherHdrPtr->type;
 
@@ -259,18 +226,18 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      */
 
     *(short *) xmitCBPtr = 0;      /* Clear the status bits. */
-    xmitCBPtr->endOfList = 1;      /* Mark this as the end of the list. */
-    xmitCBPtr->interrupt = 1;      /* Have the command unit interrupt us when
-                                      it is done. */
+    NetBfWordSet(xmitCBPtr->bits, EndOfList, 1);
+    NetBfWordSet(xmitCBPtr->bits, Interrupt, 1);
+
 
     /*
      * Make sure that the last command was accepted and then
      * start the command unit.
      */
 
-    NET_IE_CHECK_SCB_CMD_ACCEPT(netIEState.scbPtr);
-    netIEState.scbPtr->cmdWord.cmdUnitCmd = NET_IE_CUC_START;
-    NET_IE_CHANNEL_ATTENTION;
+    NET_IE_CHECK_SCB_CMD_ACCEPT(statePtr->scbPtr);
+    NetBfShortSet(statePtr->scbPtr->cmdWord, CmdUnitCmd, NET_IE_CUC_START);
+    NET_IE_CHANNEL_ATTENTION(statePtr);
 }
 
 
@@ -293,7 +260,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
  */
 
 void
-NetIEXmitInit()
+NetIEXmitInit(statePtr)
+    NetIEState		*statePtr;
 {
     register volatile NetIETransmitCB	    *xmitCBPtr;
     register volatile NetIETransmitBufDesc  *xmitBufDescPtr;
@@ -305,32 +273,32 @@ NetIEXmitInit()
      * Initialize the transmit command header.
      */
 
-    xmitCBPtr = (NetIETransmitCB *) netIEState.cmdBlockPtr;
-    netIEState.xmitCBPtr = xmitCBPtr;
-    xmitCBPtr->cmdNumber = NET_IE_TRANSMIT;
-    xmitCBPtr->suspend = 0;
+    xmitCBPtr = (NetIETransmitCB *) statePtr->cmdBlockPtr;
+    statePtr->xmitCBPtr = xmitCBPtr;
+    NetBfWordSet(xmitCBPtr->bits, CmdNumber, NET_IE_TRANSMIT);
+    NetBfWordSet(xmitCBPtr->bits, Suspend, 0);
 
     /*
      * Now link in all of the buffer headers.
      */
 
-#ifdef	lint
     xmitBufDescPtr = (volatile NetIETransmitBufDesc *) NIL;
-#endif
-
     for (i = 0; i < NET_IE_NUM_XMIT_BUFFERS; i++) {
-	newXmitBufDescPtr = (volatile NetIETransmitBufDesc *) NetIEMemAlloc();
+	newXmitBufDescPtr = (volatile NetIETransmitBufDesc *) 
+				NetIEMemAlloc(statePtr);
 	if (newXmitBufDescPtr == (volatile NetIETransmitBufDesc *) NIL) {
 	    panic( "Intel: No memory for the xmit buffers.\n");
 	}
 
 	if (i == 0) {
-	    xmitBufAddr = newXmitBufDescPtr;
+	    statePtr->xmitBufAddr = newXmitBufDescPtr;
 	    xmitCBPtr->bufDescOffset = 
-			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr);
+			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr,
+				statePtr);
 	} else {
 	    xmitBufDescPtr->nextTBD = 
-			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr);
+			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr,
+				statePtr);
 	}
 
 	xmitBufDescPtr = newXmitBufDescPtr;
@@ -341,16 +309,16 @@ NetIEXmitInit()
      * the first one.
      */
 
-    if (!List_IsEmpty(netIEState.xmitList)) {
-	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
 	OutputPacket(xmitElementPtr->etherHdrPtr,
 		     xmitElementPtr->scatterGatherPtr,
-		     xmitElementPtr->scatterGatherLength);
+		     xmitElementPtr->scatterGatherLength, statePtr);
 	List_Move((List_Links *) xmitElementPtr, 
-		  LIST_ATREAR(netIEState.xmitFreeList));
+		  LIST_ATREAR(statePtr->xmitFreeList));
     } else {
-	netIEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
     return;
 }
@@ -375,16 +343,18 @@ NetIEXmitInit()
  */
 
 void
-NetIEXmitDone()
+NetIEXmitDone(statePtr)
+    NetIEState	*statePtr;
 {
     register	volatile NetXmitElement     *xmitElementPtr;
     register	volatile NetIETransmitCB    *cmdPtr;
+    Net_ScatterGather	*curScatGathPtr;
 
     /*
      * If there is nothing that is currently being sent then something is
      * wrong.
      */
-    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+    if (statePtr->curScatGathPtr == (Net_ScatterGather *) NIL) {
 #ifndef sun4
 	/*
 	 * Need to fix this for the sun4.
@@ -393,8 +363,9 @@ NetIEXmitDone()
 #endif
 	return;
     }
+    curScatGathPtr = statePtr->curScatGathPtr;
 
-    net_EtherStats.packetsSent++;
+    statePtr->stats.packetsSent++;
 
     /*
      * Mark the packet as done.
@@ -407,32 +378,31 @@ NetIEXmitDone()
     /*
      * Record statistics about the packet.
      */
-    cmdPtr = netIEState.xmitCBPtr;
-    if (cmdPtr->tooManyCollisions) {
-	net_EtherStats.xmitCollisionDrop++;
-	net_EtherStats.collisions += 16;
+    cmdPtr = statePtr->xmitCBPtr;
+    if (NetBfWordTest(cmdPtr->bits, TooManyCollisions, 1)) {
+	statePtr->stats.xmitCollisionDrop++;
+	statePtr->stats.collisions += 16;
     } else {
-	net_EtherStats.collisions += cmdPtr->numCollisions;
+	statePtr->stats.collisions += NetBfWordGet(cmdPtr->bits, NumCollisions);
     }
-
-    if (!cmdPtr->cmdOK) {
-	net_EtherStats.xmitPacketsDropped++;
+    if (NetBfWordTest(cmdPtr->bits, CmdOK, 0)) {
+	statePtr->stats.xmitPacketsDropped++;
     }
 
     /*
      * If there are more packets to send then send the first one on
      * the queue.  Otherwise there is nothing being transmitted.
      */
-    if (!List_IsEmpty(netIEState.xmitList)) {
-	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
 	OutputPacket(xmitElementPtr->etherHdrPtr,
 		     xmitElementPtr->scatterGatherPtr,
-		     xmitElementPtr->scatterGatherLength);
+		     xmitElementPtr->scatterGatherLength, statePtr);
 	List_Move((List_Links *) xmitElementPtr, 
-		  LIST_ATREAR(netIEState.xmitFreeList));
+		  LIST_ATREAR(statePtr->xmitFreeList));
     } else {
-	netIEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
     return;
 }
@@ -469,16 +439,22 @@ NetIEXmitDone()
  */
 
 void
-NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
-    Net_EtherHdr			*etherHdrPtr;
+NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
+    Net_Interface			*interPtr;
+    Address				hdrPtr;
     register	Net_ScatterGather	*scatterGatherPtr;
     int					scatterGatherLength;
 {
     register volatile NetXmitElement    *xmitPtr;
+    NetIEState				*statePtr;
+    int					i;
+    Net_ScatterGather			*gathPtr;
+    Net_EtherHdr			*etherHdrPtr = (Net_EtherHdr *) hdrPtr;
 
+    statePtr = (NetIEState *) interPtr->interfaceData;
     DISABLE_INTR();
 
-    net_EtherStats.packetsOutput++;
+    statePtr->stats.packetsOutput++;
 
     /*
      * Verify that the scatter gather array is not too large.  There is a fixed
@@ -492,14 +468,19 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	ENABLE_INTR();
 	return;
     }
-
+    statePtr->stats.bytesSent += sizeof(Net_EtherHdr);
+    for (i = scatterGatherLength, gathPtr = scatterGatherPtr; 
+	 i > 0; 
+	 i--, gathPtr++) { 
+	statePtr->stats.bytesSent += gathPtr->length; 
+    } 
 
     /*
      * See if the packet is for us.  In this case just copy in the packet
      * and call the higher level routine.
      */
 
-    if (NET_ETHER_COMPARE(netIEState.etherAddress, etherHdrPtr->destination)) {
+    if (NET_ETHER_COMPARE(statePtr->etherAddress, etherHdrPtr->destination)) {
 	int i, length;
 
         length = sizeof(Net_EtherHdr);
@@ -510,14 +491,15 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
         if (length <= NET_ETHER_MAX_BYTES) {
 	    register Address bufPtr;
 
-	    etherHdrPtr->source = netIEState.etherAddress;
+	    etherHdrPtr->source = statePtr->etherAddress;
 
-	    bufPtr = (Address)loopBackBuffer;
+	    bufPtr = (Address)statePtr->loopBackBuffer;
 	    bcopy((Address)etherHdrPtr, bufPtr, sizeof(Net_EtherHdr));
 	    bufPtr += sizeof(Net_EtherHdr);
             Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
 
-	    Net_Input((Address)loopBackBuffer, length);
+	    Net_Input(interPtr, (Address)statePtr->loopBackBuffer, 
+		    length);
         }
 
         scatterGatherPtr->done = TRUE;
@@ -530,8 +512,9 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * If no packet is being sent then go ahead and send this one.
      */
 
-    if (!netIEState.transmitting) {
-	OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength);
+    if (!statePtr->transmitting) {
+	OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength,
+		statePtr);
 	ENABLE_INTR();
 	return;
     }
@@ -542,14 +525,14 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * If none available then drop the packet.
      */
 
-    if (List_IsEmpty(netIEState.xmitFreeList)) {
+    if (List_IsEmpty(statePtr->xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
 	ENABLE_INTR();
 	return;
     }
 
     xmitPtr = (volatile NetXmitElement *)
-	List_First((List_Links *) netIEState.xmitFreeList);
+	List_First((List_Links *) statePtr->xmitFreeList);
 
     List_Remove((List_Links *) xmitPtr);
 
@@ -565,7 +548,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * Put onto the transmission queue.
      */
 
-    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netIEState.xmitList)); 
+    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(statePtr->xmitList)); 
 
     ENABLE_INTR();
     return;
@@ -591,58 +574,15 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
  */
 
 void
-NetIEXmitDrop()
+NetIEXmitDrop(statePtr)
+    NetIEState		*statePtr;
 {
-    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
-	curScatGathPtr->done = TRUE;
-	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+    if (statePtr->curScatGathPtr != (Net_ScatterGather *) NIL) {
+	statePtr->curScatGathPtr->done = TRUE;
+	if (statePtr->curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(statePtr->curScatGathPtr->mutexPtr);
 	}
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
     return;
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NetIEXmitRestart --
- *
- *	Restart transmission of packets.  This is called at the
- *	end of the restart sequence, after the chip has been
- *	reinitialized.  THIS IS NOT NEEDED.  NetIEReset will
- *	restart the output queue by calling NetIEXmitInit
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Current scatter gather pointer is reset and new packets may be
- *	sent out.
- *
- *----------------------------------------------------------------------
- */
-#ifdef not_needed
-void
-NetIEXmitRestart()
-{
-    volatile NetXmitElement     *xmitElementPtr;
-
-    /*
-     * Start output if there are any packets queued up.
-     */
-    if (!List_IsEmpty(netIEState.xmitList)) {
-	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
-	OutputPacket(xmitElementPtr->etherHdrPtr,
-		     xmitElementPtr->scatterGatherPtr,
-		     xmitElementPtr->scatterGatherLength);
-	List_Move((List_Links *) xmitElementPtr, 
-		  LIST_ATREAR(netIEState.xmitFreeList));
-    } else {
-	netIEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
-    }
-    return;
-}
-#endif

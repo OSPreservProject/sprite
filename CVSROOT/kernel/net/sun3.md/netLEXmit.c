@@ -18,45 +18,29 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
-#include "netLEInt.h"
-#include "net.h"
-#include "netInt.h"
-#include "sys.h"
-#include "vm.h"
-#include "vmMach.h"
-#include "list.h"
-
-#include "sync.h"
+#include <sprite.h>
+#include <sys.h>
+#include <netLEInt.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <list.h>
+#include <sync.h>
 
 /*
  * Macros to step ring pointers.
  */
 
-#define	NEXT_SEND(p)	( ((++p) > netLEState.xmitDescLastPtr) ? \
-				netLEState.xmitDescFirstPtr : \
+#define	NEXT_SEND(p)	( ((++p) > statePtr->xmitDescLastPtr) ? \
+				statePtr->xmitDescFirstPtr : \
 				(p))
-#define	PREV_SEND(p)	( ((--p) < netLEState.xmitDescFirstPtr) ? \
-				netLEState.xmitDescLastPtr : \
+#define	PREV_SEND(p)	( ((--p) < statePtr->xmitDescFirstPtr) ? \
+				statePtr->xmitDescLastPtr : \
 				(p))
-
-/*
- * Pointer to scatter gather element for current packet being sent.
- */
-static Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
-
-/*
- * A buffer that is used when handling loop back packets.
- */
-static  char            loopBackBuffer[NET_ETHER_MAX_BYTES];
-
-/*
- * A buffer that is used to insure that the first element of the transmit
- * buffer chain is of a minumum size.
- */
-
-static char		*firstDataBuffer;
-
+static	ReturnStatus	OutputPacket _ARGS_((Net_EtherHdr *etherHdrPtr,
+			    Net_ScatterGather *scatterGatherPtr,
+			    int scatterGatherLength,
+			    NetLEState *statePtr));
+static	void		AllocateXmitMem _ARGS_((NetLEState *statePtr));
 
 /*
  *----------------------------------------------------------------------
@@ -77,16 +61,16 @@ static char		*firstDataBuffer;
  */
 
 static ReturnStatus
-OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     Net_EtherHdr		*etherHdrPtr;	/* Ethernet header of packet.*/
     register	Net_ScatterGather   	*scatterGatherPtr; /* Data portion of
 							    * packet. */
 
     int			scatterGatherLength;	/* Length of data portion 
 						 * gather array. */
+    NetLEState		*statePtr;		/* The interface state. */
 {
     register volatile NetLEXmitMsgDesc	*descPtr;
-    volatile NetLEState			*netLEStatePtr;
     register	char			*firstBufferPtr; 
     Address				bufPtr;
     int					bufCount;
@@ -98,20 +82,18 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     register Boolean			reMapped = FALSE;
 #endif
 
-    netLEStatePtr = &netLEState;
-
-    descPtr = netLEStatePtr->xmitDescNextPtr;
+    descPtr = statePtr->xmitDescNextPtr;
 
     /*
      * Do some sanity checks.
      */
-    if (descPtr->chipOwned) {
+    if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
 	printf("LE ethernet: Transmit buffer owned by chip.\n");
 	return (FAILURE);
     }
 
-    netLEState.transmitting = TRUE;
-    curScatGathPtr = scatterGatherPtr;
+    statePtr->transmitting = TRUE;
+    statePtr->curScatGathPtr = scatterGatherPtr;
 
     /*
      * Since the first part of a packet is always the ethernet header that
@@ -119,15 +101,17 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * firstDataBuffer to build the first buffer of mimumum allowable size.
      */
 
-    firstBufferPtr = firstDataBuffer;
+    firstBufferPtr = statePtr->firstDataBuffer;
 
     /*
      * Add the buffer to the ring.
      */
-    descPtr->bufAddrLow = NET_LE_SUN_TO_CHIP_ADDR_LOW(firstDataBuffer);
-    descPtr->bufAddrHigh = NET_LE_SUN_TO_CHIP_ADDR_HIGH(firstDataBuffer);
-    descPtr->startOfPacket = 1;
-    descPtr->endOfPacket = 0;
+    descPtr->bufAddrLow = 
+	    NET_LE_SUN_TO_CHIP_ADDR_LOW(statePtr->firstDataBuffer);
+    descPtr->bufAddrHigh = 
+	    NET_LE_SUN_TO_CHIP_ADDR_HIGH(statePtr->firstDataBuffer);
+    NetBfByteSet(descPtr->bits1, StartOfPacket, 1);
+    NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
     descPtr->bufferSize = -NET_LE_MIN_FIRST_BUFFER_SIZE; /* May be wrong for 
 							  * small packets. 
 							  */
@@ -140,7 +124,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     (* ((Net_EtherHdr *) firstBufferPtr)) = *etherHdrPtr;
 
-    ((Net_EtherHdr *) firstBufferPtr)->source = netLEStatePtr->etherAddress;
+    ((Net_EtherHdr *) firstBufferPtr)->source = statePtr->etherAddress;
 
     firstBufferPtr += sizeof(Net_EtherHdr);
 
@@ -222,7 +206,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	 * Add bufPtr of length length to the next buffer of the chain.
 	 */
 	descPtr = NEXT_SEND(descPtr);
-	if (descPtr->chipOwned) {
+	if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
 	    /*
 	     * Along as we only transmit one packet at a time, a buffer
 	     * own by the chip is a serious problem.
@@ -232,8 +216,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	}
 	descPtr->bufAddrLow = NET_LE_SUN_TO_CHIP_ADDR_LOW(bufPtr);
 	descPtr->bufAddrHigh = NET_LE_SUN_TO_CHIP_ADDR_HIGH(bufPtr);
-	descPtr->startOfPacket = 0;
-	descPtr->endOfPacket = 0;
+	NetBfByteSet(descPtr->bits1, StartOfPacket, 0);
+	NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
 	descPtr->bufferSize = -length;
 
 	totalLength += length;
@@ -260,7 +244,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * Finish off the packet.
      */
 
-    descPtr->endOfPacket = 1;
+    NetBfByteSet(descPtr->bits1, EndOfPacket, 1);
 
     /*
      * Change the ownership to the chip. Avoid race conditions by doing it
@@ -268,31 +252,24 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      */
 
     while (TRUE) {
-	 descPtr->chipOwned = 1;
-	 if (descPtr == netLEStatePtr->xmitDescNextPtr) {
-	     break;
-	 }
-	 descPtr = PREV_SEND(descPtr);
+	NetBfByteSet(descPtr->bits1, ChipOwned, 1);
+	if (descPtr == statePtr->xmitDescNextPtr) {
+	 break;
+	}
+	descPtr = PREV_SEND(descPtr);
     }
 
     /*
      * Give the chip a little kick.
      */
 
-    netLEStatePtr->regPortPtr->addrPort = NET_LE_CSR0_ADDR;
-    netLEStatePtr->regPortPtr->dataPort =
+    NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
+    statePtr->regPortPtr->dataPort =
 		(NET_LE_CSR0_XMIT_DEMAND | NET_LE_CSR0_INTR_ENABLE);
     return (SUCCESS);
 
 }
 
-
-/*
- * Flag to note if xmit memory has been initialized and allocated.
- */
-
-static	Boolean	xmitMemInitialized = FALSE;
-static	Boolean	xmitMemAllocated = FALSE;
 
 /*
  *----------------------------------------------------------------------
@@ -311,7 +288,8 @@ static	Boolean	xmitMemAllocated = FALSE;
  */
 
 static void
-AllocateXmitMem()
+AllocateXmitMem(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
     unsigned int	memBase;	
 
@@ -327,13 +305,14 @@ AllocateXmitMem()
     if (memBase & 0x7) {
 	memBase = (memBase + 8) & ~0x7;
     }
-    netLEState.xmitDescFirstPtr = (NetLEXmitMsgDesc *) memBase;
+    statePtr->xmitDescFirstPtr = (NetLEXmitMsgDesc *) memBase;
 
     /*
      * Allocate the first buffer for a packet.
      */
-    firstDataBuffer = VmMach_NetMemAlloc(NET_LE_MIN_FIRST_BUFFER_SIZE);
-    xmitMemAllocated = TRUE;
+    statePtr->firstDataBuffer = 
+	VmMach_NetMemAlloc(NET_LE_MIN_FIRST_BUFFER_SIZE);
+    statePtr->xmitMemAllocated = TRUE;
     return;
 }
 
@@ -355,51 +334,53 @@ AllocateXmitMem()
  */
 
 void
-NetLEXmitInit()
+NetLEXmitInit(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
     int 		bufNum;
     volatile NetLEXmitMsgDesc	*descPtr;
 
 
-    if (!xmitMemAllocated) {
-	AllocateXmitMem();
+    if (!statePtr->xmitMemAllocated) {
+	AllocateXmitMem(statePtr);
     }
-    xmitMemInitialized = TRUE;
+    statePtr->xmitMemInitialized = TRUE;
 
     /*
      * Initialize the state structure to point to the ring. xmitDescFirstPtr
      * is set by AllocateXmitMem() and never moved.
      */
-    netLEState.xmitDescLastPtr = 
-		&(netLEState.xmitDescFirstPtr[NET_LE_NUM_XMIT_BUFFERS-1]);
-    netLEState.xmitDescNextPtr = netLEState.xmitDescFirstPtr;
+    statePtr->xmitDescLastPtr = 
+		&(statePtr->xmitDescFirstPtr[NET_LE_NUM_XMIT_BUFFERS-1]);
+    statePtr->xmitDescNextPtr = statePtr->xmitDescFirstPtr;
 
-    descPtr = netLEState.xmitDescFirstPtr;
+    descPtr = statePtr->xmitDescFirstPtr;
     for (bufNum = 0; bufNum < NET_LE_NUM_XMIT_BUFFERS; bufNum++, descPtr++) { 
 	/*
 	 * Clear out error fields. 
 	 */
-	descPtr->error = 0;
-	descPtr->retries = 0;
-	descPtr->oneRetry = 0;
-	descPtr->deferred = 0;
-	descPtr->bufferError = 0;
-	descPtr->underflowError = 0;
-	descPtr->retryError = 0;
-	descPtr->lostCarrier = 0;
-	descPtr->lateCollision = 0;
+	NetBfByteSet(descPtr->bits1, Error, 0);
+	NetBfByteSet(descPtr->bits1, Retries, 0);
+	NetBfByteSet(descPtr->bits1, OneRetry, 0);
+	NetBfByteSet(descPtr->bits1, Deferred, 0);
+	NetBfShortSet(descPtr->bits2, XmitBufferError, 0);
+	NetBfShortSet(descPtr->bits2, UnderflowError, 0);
+	NetBfShortSet(descPtr->bits2, RetryError, 0);
+	NetBfShortSet(descPtr->bits2, LostCarrier, 0);
+	NetBfShortSet(descPtr->bits2, LateCollision, 0);
 	/*
 	 * Clear packet boundry bits.
 	 */
-	descPtr->startOfPacket = descPtr->endOfPacket = 0;
+	NetBfByteSet(descPtr->bits1, StartOfPacket, 0);
+	NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
 	/*
 	 * Set ownership to the os.
 	 */
-	descPtr->chipOwned = 0;
+	NetBfByteSet(descPtr->bits1, ChipOwned, 0);
     }
 
-    netLEState.transmitting = FALSE;
-    curScatGathPtr = (Net_ScatterGather *) NIL;
+    statePtr->transmitting = FALSE;
+    statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     return;
 }
 
@@ -422,38 +403,36 @@ NetLEXmitInit()
  */
 
 ReturnStatus
-NetLEXmitDone()
+NetLEXmitDone(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
     register	volatile NetXmitElement     	*xmitElementPtr;
     register	volatile NetLEXmitMsgDesc	*descPtr;
-    register	volatile NetLEState		*netLEStatePtr;
     ReturnStatus			status;
 
-    netLEStatePtr = &netLEState;
-
-    descPtr = netLEStatePtr->xmitDescNextPtr;
+    descPtr = statePtr->xmitDescNextPtr;
 
     /*
      * Reset the interrupt.
      */
-    netLEStatePtr->regPortPtr->addrPort = NET_LE_CSR0_ADDR;
-    netLEStatePtr->regPortPtr->dataPort = 
+    NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
+    statePtr->regPortPtr->dataPort = 
 		(NET_LE_CSR0_XMIT_INTR | NET_LE_CSR0_INTR_ENABLE);
 
     /*
      * If there is nothing that is currently being sent then something is
      * wrong.
      */
-    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+    if (statePtr->curScatGathPtr == (Net_ScatterGather *) NIL) {
 	printf( "NetLEXmitDone: No current packet\n.");
 	return (FAILURE);
     }
 
-    if (descPtr->chipOwned) {
+    if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
 	printf("LE ethernet: Bogus xmit interrupt. Buffer owned by chip.\n");
 	return (FAILURE);
     }
-    if (!descPtr->startOfPacket) {
+    if (NetBfByteTest(descPtr->bits1, StartOfPacket, 0)) {
 	printf("LE ethernet: Bogus xmit interrupt. Buffer not start of packet.\n");
 	return (FAILURE);
     }
@@ -464,73 +443,74 @@ NetLEXmitDone()
      */
     while (TRUE) {
 
-	if (descPtr->error) {
-	    net_EtherStats.xmitPacketsDropped++;
-	    if (descPtr->lateCollision) {
+	if (NetBfByteTest(descPtr->bits1, Error, 1)) {
+	    statePtr->stats.xmitPacketsDropped++;
+	    if (NetBfShortTest(descPtr->bits2, LateCollision, 1)) {
 		printf("LE ethernet: Transmit late collision.\n");
 	    }
-	    if (descPtr->lostCarrier) {
+	    if (NetBfShortTest(descPtr->bits2, LostCarrier, 1)) {
 		printf("LE ethernet: Lost carrier.\n");
 	    }
 	    /*
 	     * Lost of carrier seems to also causes late collision.
 	     * Print only one of the messages.
 	     */
-	    if (descPtr->lateCollision && !descPtr->lostCarrier) {
+	    if ((NetBfShortTest(descPtr->bits2, LateCollision, 1)) &&
+		(NetBfShortTest(descPtr->bits2, LostCarrier, 0))) {
 		printf("LE ethernet: Transmit late collision.\n");
 	    }
-	    if (descPtr->retryError) {
-		net_EtherStats.xmitCollisionDrop++;
-		net_EtherStats.collisions += 16;
+	    if (NetBfShortTest(descPtr->bits2, RetryError, 1)) {
+		statePtr->stats.xmitCollisionDrop++;
+		statePtr->stats.collisions += 16;
 		printf("LE ethernet: Too many collisions.\n");
 	    }
-	    if (descPtr->underflowError) {
+	    if (NetBfShortTest(descPtr->bits2, UnderflowError, 1)) {
 		printf("LE ethernet: Memory underflow error.\n");
 		return (FAILURE);
 	    }
 	}
-	if (descPtr->bufferError) {
+	if (NetBfShortTest(descPtr->bits2, XmitBufferError, 1)) {
 	    printf("LE ethernet: Transmit buffering error.\n");
 	    return (FAILURE);
 	}
-	if (descPtr->oneRetry) {
-	    net_EtherStats.collisions++;
+	if (NetBfByteTest(descPtr->bits1, OneRetry, 1)) {
+	    statePtr->stats.collisions++;
 	}
-	if (descPtr->retries) {
+	if (NetBfByteTest(descPtr->bits1, Retries, 1)) {
 	    /*
 	     * Two is more than one.  
 	     */
-	    net_EtherStats.collisions += 2;	/* Only a guess. */
+	    statePtr->stats.collisions += 2;	/* Only a guess. */
 	}
 
-	if (descPtr->endOfPacket) {
+	if (NetBfByteTest(descPtr->bits1, EndOfPacket, 1)) {
 		break;
 	}
 
 	descPtr = NEXT_SEND(descPtr);
-	if (descPtr == netLEStatePtr->xmitDescNextPtr) {
+	if (descPtr == statePtr->xmitDescNextPtr) {
 	    panic("LE ethernet: Transmit ring with no end of packet.\n");
 	}
-	if (descPtr->chipOwned) {
+	if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
 		printf("LE ethernet: Transmit Buffer owned by chip.\n");
 		return (FAILURE);
 	}
     }
 
-    net_EtherStats.packetsSent++;
+    statePtr->stats.packetsSent++;
 
     /*
      * Update the ring pointer to point at the next buffer to use.
      */
 
-    netLEStatePtr->xmitDescNextPtr = NEXT_SEND(descPtr);
+    statePtr->xmitDescNextPtr = NEXT_SEND(descPtr);
 
     /*
      * Mark the packet as done.
      */
-    curScatGathPtr->done = TRUE;
-    if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	NetOutputWakeup(curScatGathPtr->mutexPtr);
+    statePtr->curScatGathPtr->done = TRUE;
+    if (statePtr->curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(statePtr->curScatGathPtr->mutexPtr);
     }
 
     /*
@@ -538,16 +518,16 @@ NetLEXmitDone()
      * the queue.  Otherwise there is nothing being transmitted.
      */
     status = SUCCESS;
-    if (!List_IsEmpty(netLEState.xmitList)) {
-	xmitElementPtr = (NetXmitElement *) List_First(netLEState.xmitList);
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
 	status = OutputPacket(xmitElementPtr->etherHdrPtr,
 		     xmitElementPtr->scatterGatherPtr,
-		     xmitElementPtr->scatterGatherLength);
+		     xmitElementPtr->scatterGatherLength, statePtr);
 	List_Move((List_Links *) xmitElementPtr, 
-		  LIST_ATREAR(netLEState.xmitFreeList));
+		  LIST_ATREAR(statePtr->xmitFreeList));
     } else {
-	netLEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
     return (status);
 }
@@ -575,8 +555,9 @@ NetLEXmitDone()
  */
 
 void
-NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
-    Net_EtherHdr	*etherHdrPtr;	/* Ethernet header for the packet. */
+NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
+    Net_Interface	*interPtr;	/* The network interface. */
+    Address		hdrPtr;		/* Packet header. */
     register	Net_ScatterGather	*scatterGatherPtr; /* Data portion of 
 							    * the packet. */
     int			scatterGatherLength;	/* Length of data portion gather
@@ -584,10 +565,13 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 {
     register	NetXmitElement		*xmitPtr;
     ReturnStatus			status;
+    NetLEState				*statePtr;
+    Net_EtherHdr			*etherHdrPtr = (Net_EtherHdr *) hdrPtr;
 
+    statePtr = (NetLEState *) interPtr->interfaceData;
     DISABLE_INTR();
 
-    net_EtherStats.packetsOutput++;
+    statePtr->stats.packetsOutput++;
 
     /*
      * Verify that the scatter gather array is not too large.  There is a fixed
@@ -608,7 +592,7 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * and call the higher level routine.
      */
 
-    if (NET_ETHER_COMPARE(netLEState.etherAddress, etherHdrPtr->destination)) {
+    if (NET_ETHER_COMPARE(statePtr->etherAddress, etherHdrPtr->destination)) {
 	int i, length;
 
         length = sizeof(Net_EtherHdr);
@@ -619,14 +603,14 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
         if (length <= NET_ETHER_MAX_BYTES) {
 	    register Address bufPtr;
 
-	    etherHdrPtr->source = netLEState.etherAddress;
+	    etherHdrPtr->source = statePtr->etherAddress;
 
-	    bufPtr = (Address)loopBackBuffer;
+	    bufPtr = (Address)statePtr->loopBackBuffer;
 	    bcopy((Address)etherHdrPtr, bufPtr, sizeof(Net_EtherHdr));
 	    bufPtr += sizeof(Net_EtherHdr);
             Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
 
-	    Net_Input((Address)loopBackBuffer, length);
+	    Net_Input(interPtr, (Address)statePtr->loopBackBuffer, length);
         }
 
         scatterGatherPtr->done = TRUE;
@@ -639,11 +623,12 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * If no packet is being sent then go ahead and send this one.
      */
 
-    if (!netLEState.transmitting) {
+    if (!statePtr->transmitting) {
 	status = 
-	    OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength);
+	    OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength,
+		    statePtr);
 	if (status != SUCCESS) {
-		NetLERestart();
+		NetLERestart(interPtr);
 	}
 	ENABLE_INTR();
 	return;
@@ -655,13 +640,13 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * If none available then drop the packet.
      */
 
-    if (List_IsEmpty(netLEState.xmitFreeList)) {
+    if (List_IsEmpty(statePtr->xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
 	ENABLE_INTR();
 	return;
     }
 
-    xmitPtr = (NetXmitElement *) List_First((List_Links *) netLEState.xmitFreeList);
+    xmitPtr = (NetXmitElement *) List_First((List_Links *) statePtr->xmitFreeList);
 
     List_Remove((List_Links *) xmitPtr);
 
@@ -677,7 +662,7 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * Put onto the transmission queue.
      */
 
-    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netLEState.xmitList)); 
+    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(statePtr->xmitList)); 
 
     ENABLE_INTR();
     return;
@@ -702,14 +687,15 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
  *----------------------------------------------------------------------
  */
 void
-NetLEXmitDrop()
+NetLEXmitDrop(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
-    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
-	curScatGathPtr->done = TRUE;
-	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+    if (statePtr->curScatGathPtr != (Net_ScatterGather *) NIL) {
+	statePtr->curScatGathPtr->done = TRUE;
+	if (statePtr->curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(statePtr->curScatGathPtr->mutexPtr);
 	}
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
     return;
 }
@@ -731,7 +717,8 @@ NetLEXmitDrop()
  *----------------------------------------------------------------------
  */
 void
-NetLEXmitRestart()
+NetLEXmitRestart(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
 {
     NetXmitElement	*xmitElementPtr;
     ReturnStatus	status;
@@ -739,19 +726,19 @@ NetLEXmitRestart()
     /*
      * Start output if there are any packets queued up.
      */
-    if (!List_IsEmpty(netLEState.xmitList)) {
-	xmitElementPtr = (NetXmitElement *) List_First(netLEState.xmitList);
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
 	status = OutputPacket(xmitElementPtr->etherHdrPtr,
 		     xmitElementPtr->scatterGatherPtr,
-		     xmitElementPtr->scatterGatherLength);
+		     xmitElementPtr->scatterGatherLength, statePtr);
 	if (status != SUCCESS) {
 	    panic("LE ethernet: Can not output first packet on restart.\n");
 	}
 	List_Move((List_Links *) xmitElementPtr, 
-		  LIST_ATREAR(netLEState.xmitFreeList));
+		  LIST_ATREAR(statePtr->xmitFreeList));
     } else {
-	netLEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
     return;
 }

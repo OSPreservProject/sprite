@@ -15,36 +15,19 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
-#include "sprite.h"
-#include "vm.h"
-#include "netLEInt.h"
-#include "net.h"
-#include "netInt.h"
-#include "sys.h"
-#include "list.h"
-#include "machMon.h"
+#include <sprite.h>
+#include <vm.h>
+#include <netLEInt.h>
+#include <sys.h>
+#include <list.h>
+#include <machMon.h>
 
 /*
  * Macro to step ring pointers.
  */
-#define	NEXT_RECV(p)	((p) == netLEState.recvDescLastPtr) ? \
-				netLEState.recvDescFirstPtr : \
+#define	NEXT_RECV(p)	((p) == statePtr->recvDescLastPtr) ? \
+				statePtr->recvDescFirstPtr : \
 		    (Address)BUF_TO_ADDR(p, NET_LE_RECV_DESC_SIZE)
-
-/*
- * Receive data buffers.
- */
-static	Address	recvDataBuffer[NET_LE_NUM_RECV_BUFFERS];
-
-/*
- * Buffer to copy a packet into after we receive it.
- */
-static	char	*recvBufPtr;
-/*
- * Flag to note if recv memory has been initialized and/or allocated.
- */
-static	Boolean	recvMemInitialized = FALSE;
-static	Boolean	recvMemAllocated = FALSE;
 
 
 /*
@@ -63,34 +46,38 @@ static	Boolean	recvMemAllocated = FALSE;
  *----------------------------------------------------------------------
  */
 static void
-AllocateRecvMem()
+AllocateRecvMem(statePtr)
+    NetLEState		*statePtr; /* The state of the interface. */
 {
     int			i;
 
+    printf("In AllocateRecvMem\n");
     /*
      * Allocate the ring of receive buffer descriptors.  The ring must start
      * on 8-byte boundary.  
      */
-    netLEState.recvDescFirstPtr = 
+    statePtr->recvDescFirstPtr = 
 	NetLEMemAlloc(NET_LE_NUM_RECV_BUFFERS * NET_LE_RECV_DESC_SIZE, FALSE);
 
     /*
      * Allocate the receive buffers.
      */
     for (i = 0; i < NET_LE_NUM_RECV_BUFFERS; i++) {
-	recvDataBuffer[i] = NetLEMemAlloc(NET_LE_RECV_BUFFER_SIZE, TRUE);
+	statePtr->recvDataBuffer[i] = 
+		NetLEMemAlloc(NET_LE_RECV_BUFFER_SIZE, TRUE);
     }
-    recvMemAllocated = TRUE;
+    statePtr->recvMemAllocated = TRUE;
     /*
      * Allocate memory for the buffer to copy packets into after we
      * receive them.
      */
-    recvBufPtr = (Address)Vm_BootAlloc(NET_LE_RECV_BUFFER_SIZE + 2);
+    statePtr->recvBufPtr = (Address) malloc(NET_LE_RECV_BUFFER_SIZE + 2);
     /*
      * 2 byte align the recvBufPtr so that we can 4 byte align all words
      * after the ethernet header.
      */
-    recvBufPtr += 2;
+    statePtr->recvBufPtr += 2;
+    printf("Leaving AllocateRecvMem\n");
 }
 
 
@@ -112,27 +99,28 @@ AllocateRecvMem()
  *----------------------------------------------------------------------
  */
 void
-NetLERecvInit()
+NetLERecvInit(statePtr)
+    NetLEState		*statePtr; /* The state of the interface. */
 {
     int 	bufNum;
     Address	descPtr;
 
-    if (!recvMemAllocated) {
-	AllocateRecvMem();
+    if (!statePtr->recvMemAllocated) {
+	AllocateRecvMem(statePtr);
     }
     /*
      * Initialize the state structure to point to the ring. recvDescFirstPtr
      * is set by AllocateRecvMem() and never changed.
      */
-    netLEState.recvDescLastPtr = (Address)
-	BUF_TO_ADDR(netLEState.recvDescFirstPtr,
+    statePtr->recvDescLastPtr = (Address)
+	BUF_TO_ADDR(statePtr->recvDescFirstPtr,
 		    (NET_LE_NUM_RECV_BUFFERS - 1) * NET_LE_RECV_DESC_SIZE);
-    netLEState.recvDescNextPtr = netLEState.recvDescFirstPtr;
+    statePtr->recvDescNextPtr = statePtr->recvDescFirstPtr;
 
     /* 
      * Initialize the ring buffer descriptors.
      */
-    descPtr = netLEState.recvDescFirstPtr;
+    descPtr = statePtr->recvDescFirstPtr;
     for (bufNum = 0; 
 	 bufNum < NET_LE_NUM_RECV_BUFFERS; 
 	 bufNum++, descPtr += 2 * NET_LE_RECV_DESC_SIZE) { 
@@ -142,16 +130,17 @@ NetLERecvInit()
 	*BUF_TO_ADDR(descPtr,NET_LE_RECV_BUF_SIZE) =
 			-NET_LE_RECV_BUFFER_SIZE;
 	*BUF_TO_ADDR(descPtr,NET_LE_RECV_BUF_ADDR_LOW) =
-			BUF_TO_CHIP_ADDR(recvDataBuffer[bufNum]) & 0xFFFF;
+			BUF_TO_CHIP_ADDR(statePtr->recvDataBuffer[bufNum]) & 
+			0xFFFF;
 	*BUF_TO_ADDR(descPtr,NET_LE_RECV_STATUS) =
-		((BUF_TO_CHIP_ADDR(recvDataBuffer[bufNum]) >> 16) & 
+		((BUF_TO_CHIP_ADDR(statePtr->recvDataBuffer[bufNum]) >> 16) & 
 						NET_LE_RECV_BUF_ADDR_HIGH) |
 			NET_LE_RECV_START_OF_PACKET |
 			NET_LE_RECV_END_OF_PACKET |
 			NET_LE_RECV_CHIP_OWNED;
     }
-    descPtr = netLEState.recvDescFirstPtr;
-    recvMemInitialized = TRUE;
+    descPtr = statePtr->recvDescFirstPtr;
+    statePtr->recvMemInitialized = TRUE;
 }
 
 
@@ -172,11 +161,11 @@ NetLERecvInit()
  */
 
 ReturnStatus
-NetLERecvProcess(dropPackets)
-    Boolean	dropPackets;	/* Drop all packets. */
+NetLERecvProcess(dropPackets, statePtr)
+    Boolean		dropPackets;	/* Drop all packets. */
+    NetLEState		*statePtr; 	/* The state of the interface. */
 {
     register Address		descPtr;
-    register NetLEState		*netLEStatePtr;
     register volatile short 	*inBufPtr;
     register short		*outBufPtr;
     register unsigned		status;
@@ -187,13 +176,11 @@ NetLERecvProcess(dropPackets)
     /*
      * If not initialized then forget the interrupt.
      */
-    if (!recvMemInitialized) {
+    if (!statePtr->recvMemInitialized) {
 	return (FAILURE);
     }
 
-    netLEStatePtr = &netLEState;
-
-    descPtr = (Address)netLEStatePtr->recvDescNextPtr;
+    descPtr = (Address)statePtr->recvDescNextPtr;
 
     status = *BUF_TO_ADDR(descPtr,NET_LE_RECV_STATUS);
     /*
@@ -245,7 +232,7 @@ NetLERecvProcess(dropPackets)
 	     */
 	    tossPacket = TRUE;
 	    if (status & NET_LE_RECV_OVER_FLOW_ERROR) {
-		net_EtherStats.overrunErrors++;
+		statePtr->stats.overrunErrors++;
 		printf("LE ethernet: Received packet with overflow error.\n");
 	    }
 	    /*
@@ -262,12 +249,12 @@ NetLERecvProcess(dropPackets)
 	    if (status & NET_LE_RECV_ERROR) {
 		tossPacket = TRUE;	/* Throw away packet on error. */
 		if (status & NET_LE_RECV_FRAMING_ERROR) {
-		    net_EtherStats.frameErrors++;
+		    statePtr->stats.frameErrors++;
 		    printf(
 			"LE ethernet: Received packet with framing error.\n");
 		}
 		if (status & NET_LE_RECV_CRC_ERROR) {
-		    net_EtherStats.crcErrors++;
+		    statePtr->stats.crcErrors++;
 		    printf("LE ethernet: Received packet with CRC error.\n");
 		}
 
@@ -279,7 +266,7 @@ NetLERecvProcess(dropPackets)
 	 * and the tossPacket flags says if it is good or not.
 	 */
 
-	net_EtherStats.packetsRecvd++;
+	statePtr->stats.packetsRecvd++;
 
 	/*
 	 * Remove the CRC check (4 bytes) at the end of the packet.
@@ -296,7 +283,7 @@ NetLERecvProcess(dropPackets)
 
 #define COPY_IN(n) *(outBufPtr + n) = *(inBufPtr + (2 * n))
 
-	outBufPtr = (short *)recvBufPtr;
+	outBufPtr = (short *)statePtr->recvBufPtr;
 	i = size;
 	while (i >= 64) {
 	    COPY_IN(0);  COPY_IN(1);  COPY_IN(2);  COPY_IN(3);
@@ -328,7 +315,7 @@ NetLERecvProcess(dropPackets)
 	* Call higher level protocol to process the packet.
 	*/
 	if (!tossPacket) {
-	    Net_Input((Address)recvBufPtr, size);
+	    Net_Input(statePtr->interPtr,(Address)statePtr->recvBufPtr, size);
 	}
 	/*
 	 * We're finished with it, give the buffer back to the chip. 
@@ -346,8 +333,8 @@ NetLERecvProcess(dropPackets)
 	 * interrupt.
 	 */
 
-	*netLEStatePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
-	*netLEStatePtr->regDataPortPtr = 
+	*statePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
+	*statePtr->regDataPortPtr = 
 			NET_LE_CSR0_RECV_INTR | NET_LE_CSR0_INTR_ENABLE;
 
 	/* 
@@ -365,7 +352,7 @@ NetLERecvProcess(dropPackets)
      * buffer in that the next packet will be put.
      */
 
-    netLEStatePtr->recvDescNextPtr = descPtr;
+    statePtr->recvDescNextPtr = descPtr;
 
     /*
      * RETURN a success.

@@ -24,48 +24,74 @@
 #include <user/net.h>
 #include <syncTypes.h>
 #include <netTypes.h>
+#include <user/netEther.h>
+#include <user/netInet.h>
+#include <user/netUltra.h>
+#include <netRoute.h>
 #else
 #include <sprite.h>
 #include <net.h>
 #include <kernel/syncTypes.h>
 #include <kernel/netTypes.h>
+#include <netEther.h>
+#include <netInet.h>
+#include <netUltra.h>
+#include <kernel/netRoute.h>
 #endif
 
-/*
- * Forward Declarations.
- */
-extern	Net_EtherStats	net_EtherStats;
+extern int		net_NetworkHeaderSize[];
 
-extern	void	Net_Init();
-extern  void    Net_Bin();
-extern	void	Net_Reset();
-extern	void	Net_Input();
-extern	ReturnStatus	Net_Output();
-extern	void	Net_OutputRawEther();
-extern	void	Net_RecvPoll();
-extern	void	Net_EtherOutputSync();
-extern	int	Net_Intr();
-extern	void	Net_GatherCopy();
-
-extern	ReturnStatus Net_InstallRouteStub();
-extern	ReturnStatus Net_InstallRoute();
-extern	void	Net_SpriteIDToName();
-extern	char *	Net_SpriteIDToMachType();
-extern	void	Net_RouteInit();
-extern	void	Net_NameToAddr();
-extern	void	Net_AddrToName();
-
-extern Net_Route *Net_IDToRoute();
-extern int	 Net_AddrToID();
-
-extern int Net_RouteMTU();
-extern int Net_MaxProtoHdrSize();
-
-extern Net_Route *Net_Arp();
-extern int	Net_RevArp();
-
-extern void	Net_HostPrint();	/* Moved to Sys_HostPrint */
-
-extern void	Net_HdrDestString();
+extern void Net_Init _ARGS_((void));
+extern void Net_Bin _ARGS_((void));
+extern void Net_Reset _ARGS_((Net_Interface *interPtr));
+extern void Net_Input _ARGS_((Net_Interface *interPtr, Address packetPtr, 
+			int packetLength));
+extern ReturnStatus Net_Output _ARGS_((int spriteID, 
+			Net_ScatterGather *gatherPtr, int gatherLength, 
+			Sync_Semaphore *mutexPtr, Net_Route *routePtr));
+extern void Net_RawOutput _ARGS_((Net_Interface *interPtr, Address headerPtr, 
+			Net_ScatterGather *gatherPtr, int gatherLength));
+extern void Net_RecvPoll _ARGS_((Net_Interface *interPtr));
+extern void Net_RawOutputSync _ARGS_((Net_Interface *interPtr, 
+			Address headerPtr, Net_ScatterGather *gatherPtr, 
+			int gatherLength));
+extern int Net_Intr _ARGS_((Net_Interface *interPtr));
+extern void Net_GatherCopy _ARGS_((register Net_ScatterGather *scatterGatherPtr,
+			int scatterGatherLength, register Address destAddr));
+extern void Net_SetPacketHandler _ARGS_((Net_Interface *interPtr, 
+			void (*handler)()));
+extern void Net_RemovePacketHandler _ARGS_((Net_Interface *interPtr));
+extern ReturnStatus Net_InstallRouteStub _ARGS_((int size, 
+			Net_RouteInfo *routeInfoPtr));
+#ifdef KERNEL
+extern ReturnStatus Net_InstallRoute _ARGS_((int spriteID, 
+			Net_Interface *interPtr, Net_Address *netAddressPtr, 
+			int protocol, char *hostname, char *machType, 
+			ClientData userData));
+#endif
+extern void Net_DeleteRoute _ARGS_((Net_Route *routePtr));
+extern void Net_SpriteIDToName _ARGS_((int spriteID, int bufferLen, 
+			char *buffer));
+extern void Net_SpriteIDToMachType _ARGS_((int spriteID, int bufferLen, 
+			char *buffer));
+extern void Net_RouteInit _ARGS_((void));
+extern void Net_ReleaseRoute _ARGS_((Net_Route *routePtr));
+extern Net_Route *Net_IDToRoute _ARGS_((int spriteID, int index, Boolean doArp,
+			Sync_Semaphore *mutexPtr, int size));
+extern int Net_AddrToID _ARGS_((Net_NetworkType netType, int protocol, 
+			Net_Address *addressPtr));
+extern Net_Interface *Net_GetInterface _ARGS_((Net_NetworkType netType, 
+			int number));
+extern Net_Interface *Net_NextInterface _ARGS_((Boolean running, 
+			int *indexPtr));
+extern void Net_HostPrint _ARGS_((int spriteID, char *string));
+extern void Net_ArpInit _ARGS_((void));
+extern ReturnStatus Net_Arp _ARGS_((int spriteID, Sync_Semaphore *mutexPtr));
+extern int  Net_RevArp _ARGS_((Net_Route *routePtr, int protocol, 
+		    Net_Address *netAddressPtr, Sync_Semaphore *mutexPtr));
+extern void Net_HdrDestString _ARGS_((Net_NetworkType netType, int protocol, 
+			Address headerPtr, int bufferLen, char *buffer));
+extern int  Net_HdrToID _ARGS_((Net_NetworkType netType, int protocol,
+			Address headerPtr));
 
 #endif /* _NET */

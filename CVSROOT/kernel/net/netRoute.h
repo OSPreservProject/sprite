@@ -23,10 +23,24 @@
 #define _NETROUTE
 
 #ifdef KERNEL
+#include <sprite.h>
+#include <list.h>
 #include <netInet.h>
+#include <user/net.h>
+#include <netTypes.h>
 #else
+#include <sprite.h>
+#include <list.h>
 #include <netInet.h>
+#include <net.h>
+#include <kernel/netTypes.h>
 #endif
+
+/*
+ * Maximum size for all headers of a packet.  We allow 8 extra bytes for
+ * alignment purposes.
+ */
+#define NET_MAX_HEADER_SIZE (sizeof(Net_UltraHeader) + sizeof(Net_IPHeader) + 8)
 
 /*
  * A Route: A mapping between a physical address and a Sprite Host ID.
@@ -35,108 +49,80 @@
  * is that it holds a pre-packaged transport header that is pre-pended
  * onto messages being sent to the Sprite Host.
  *
- * The second main point of this is to hold host-specific information
- * like its name and machine type.  The name is used for error reporting.
- * The machine type is queried by the file system when it has to expand
- * $MACHINE during pathname lookup.
  */
 typedef struct Net_Route {
-    int		flags;		/* values defined below */
-    int		spriteID;	/* Universal Sprite ID */
-    int		type;		/* values defined below */
-    Address	data;		/* pointer to transport header */
-    char 	*name;		/* Human recognizable name for the host */
-    char	*machType;	/* Machine type used when expanding $MACHINE
-				 * during pathname lookup */
+    List_Links		links;		/* Used to add routes to a list. */
+    int			routeID;	/* ID unique to this route. */
+    int			protocol;	/* see values defined below */
+    Net_Address		netAddress[NET_MAX_PROTOCOLS];/* host addresses */
+    int			spriteID;	/* Universal Sprite ID */
+    int			flags;		/* See below. */
+    int			refCount;	/* Reference count. */
+    char		desc[64];	/* Route description.  Useful
+					 * for debugging. */
+    Address		headerPtr[NET_MAX_PROTOCOLS]; /* Start of transport 
+						       * headers*/
+    Net_Interface	*interPtr;	/* Which network interface to use. */
+    int			maxBytes;	/* Maximum transfer unit of route. */
+    int			minBytes;	/* Minimum transfer unit of route. */
+    ClientData		userData;	/* Space available for user program
+					 * that manipulates routes. */
+    char		buffer[NET_MAX_HEADER_SIZE];  /* Network packet 
+						       * header(s). */
 } Net_Route;
 
 /*
- * Types for the address union in the above struct.
- * NET_ROUTE_UNUSED	The route is empty or unitialized.
- * NET_ROUTE_GENERIC	The route contents are uninterpreted, (not implemented)
- * NET_ROUTE_ETHER	The route contains an ethernet address.  In this
- *			case the data of the Net_Route is a pointer to
- *			a Net_EtherHdr.
- * NET_ROUTE_INET	The route contains an Internet address.  In this
- *			case the data of the Net_Route is a pointer to 
- *			a Net_EtherHdr + Net_IPHeader.
+ * Flag values for Net_Route.
  */
-#define		NET_ROUTE_UNUSED	0x00
-#define		NET_ROUTE_GENERIC	0x01
-#define		NET_ROUTE_ETHER		0x02
-#define		NET_ROUTE_INET		0x04
+
+#define NET_RFLAGS_VALID	0x1	/* The route is valid. */
 
 /*
- * Flags for the Route structure.
- * NET_ROUTE_BROAD	Using the route will result in a broadcast.
+ * The following two constants define the minimum and maximum
+ * number of free routes on the free list.  Once the number drops
+ * below the minimum we add routes to the list until there are the
+ * maximum.  Make sure that the difference between the minimum and
+ * maximum is enough to allocate all of the broadcast routes during
+ * initialization since the callback stuff is initialized later.
  */
-#define		NET_ROUTE_BROAD		0x01
-#define		NET_ROUTE_GATEWAY	0x02
+
+#define NET_MIN_FREE_ROUTES 8
+#define NET_MAX_FREE_ROUTES (NET_MIN_FREE_ROUTES + NET_MAX_INTERFACES + 2)
 
 /*
- * Define the special Sprite ID used for broadcasting.
+ *  Variables corresponding to the above two constants.
  */
-#define		NET_BROADCAST_HOSTID	0
+
+extern	int	netMinFreeRoutes;
+extern	int	netMaxFreeRoutes;
+
+/*
+ * This structure contains host information that is common to all routes
+ * to the host. The name is used for error reporting.
+ * The machine type is queried by the file system when it has to expand
+ * $MACHINE during pathname lookup.
+ */
+
+typedef struct NetHostInfo {
+    char	name[20];		/* The host name. */
+    char	machType[12];		/* Host machine type. */
+} NetHostInfo;
 
 /*
  * The routing table
  */
-extern Net_Route *netRouteArray[];
-
-/*
- * The routing information for an Internet route is the Internet
- * address and the ethernet address of the gateway machine.
- */
-typedef struct NetInetRoute {
-    Net_InetAddress inetAddr;
-    Net_EtherAddress gatewayAddress;
-} NetInetRoute;
-
-/*
- * Sprite Address Resolution Protocol packet format.  These are used to
- * find out Sprite IDs for physical addresses and vice versa.  The ARP
- * protocol is simple:  a host broadcasts an Arp Request containing a
- * Sprite ID and waits for a reply that specifies the physical (ethernet)
- * address used to reach that Sprite host.  The Reverse Arp protocol is
- * similar.  A host broadcasts a request that contains a a physical
- * (ethernet) address and waits for a reply that specifies the matching
- * Sprite ID. 
- *
- * NOTE: This packet appears on the wire in network byte ordering.
- *
- */
-
-#define	NUM_ARP_DATA_BYTES (2 * (sizeof(Net_EtherAddress) + sizeof(int)))
-
-typedef struct NetSpriteArp {
-    Net_ArpHeader arpHeader;	/* RFC826 standard header. The hardware addr
-				 * space should be NET_ARP_TYPE_ETHER.  */
-    unsigned char arpData[NUM_ARP_DATA_BYTES];
-} NetSpriteArp;
-
-/*
- * Macros for indexing into the arpData field.
- * ARP_SRC_ETHER_ADDR() - The address of the sender's ethernet address.
- * ARP_SRC_PROTO_ADDR() - The address of the sender's protocol address.
- * ARP_TARGET_ETHER_ADDR() - The address of the target's ethernet address.
- * ARP_TARGET_PROTO_ADDR() - The address of the target's protocol address.
- */
-
-#define ARP_SRC_ETHER_ADDR(ap) ((char *) &((ap)->arpData[0]))
-#define ARP_SRC_PROTO_ADDR(ap) \
-		((char *) &((ap)->arpData[(ap)->arpHeader.hardwareAddrLen]))
-#define	ARP_TARGET_ETHER_ADDR(ap) \
-		((char *) &((ap)->arpData[(ap)->arpHeader.hardwareAddrLen + \
-					 (ap)->arpHeader.protocolAddrLen]))
-#define	ARP_TARGET_PROTO_ADDR(ap) \
-		((char *) &((ap)->arpData[2*(ap)->arpHeader.hardwareAddrLen + \
-					 (ap)->arpHeader.protocolAddrLen]))
+extern List_Links netRouteArray[];
+extern NetHostInfo netHostInfo[];
 
 
 /*
  * Forward declarations.
  */
 
-extern void	 NetArpInput();
+extern void NetArpInput _ARGS_((Net_Interface *interPtr, Address packetPtr, 
+				int packetLength));
+extern void NetAddToFreeRouteList _ARGS_((ClientData data, 
+				Proc_CallInfo *infoPtr));
+extern void NetFreeRoute _ARGS_((Net_Route *routePtr));
 
 #endif /* _NETROUTE */

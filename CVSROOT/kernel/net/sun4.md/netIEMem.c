@@ -19,14 +19,13 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
-#include "netIEInt.h"
-#include "net.h"
-#include "netInt.h"
-#include "sys.h"
-#include "list.h"
-#include "vm.h"
-#include "vmMach.h"
+#include <sprite.h>
+#include <sys.h>
+#include <list.h>
+#include <netIEInt.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <stdio.h>
 
 static	Address	memAddr;
 
@@ -50,13 +49,14 @@ static	Address	memAddr;
  */
 
 void
-NetIEMemInit()
+NetIEMemInit(statePtr)
+    NetIEState		*statePtr;
 {
-    if (!netIEState.running) {
-	netIEState.memBase = (int) VmMach_NetMemAlloc(NET_IE_MEM_SIZE);
-	printf("Initializing Intel memory at 0x%x.\n",netIEState.memBase);
+    if (!statePtr->running) {
+	statePtr->memBase = (int) VmMach_NetMemAlloc(NET_IE_MEM_SIZE);
+	printf("Initializing Intel memory at 0x%x.\n",statePtr->memBase);
     }
-    memAddr = (Address) netIEState.memBase;
+    memAddr = (Address) statePtr->memBase;
     return;
 }
 
@@ -80,13 +80,14 @@ NetIEMemInit()
  */
 
 Address
-NetIEMemAlloc()
+NetIEMemAlloc(statePtr)
+    NetIEState		*statePtr;
 {
     Address	addr;
 
     addr = memAddr;
     memAddr += NET_IE_CHUNK_SIZE;
-    if (memAddr > (Address) (netIEState.memBase) + NET_IE_MEM_SIZE) {
+    if (memAddr > (Address) (statePtr->memBase) + NET_IE_MEM_SIZE) {
 	return((Address) NIL);
     }
 

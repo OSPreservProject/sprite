@@ -16,14 +16,12 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
-#include "sys.h"
-#include "list.h"
-#include "vm.h"
-#include "sync.h"
-#include "netIEInt.h"
-#include "net.h"
-#include "netInt.h"
+#include <sprite.h>
+#include <sys.h>
+#include <list.h>
+#include <vm.h>
+#include <sync.h>
+#include <netIEInt.h>
 
 
 /*
@@ -40,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Side effects:
  *	None.
  *
+ *----------------------------------------------------------------------
  */
 
 void
@@ -79,38 +78,54 @@ NetIECheckSCBCmdAccept(scbPtr)
  */
 
 void
-NetIEExecCommand(cmdPtr)
+NetIEExecCommand(cmdPtr, statePtr)
     register volatile NetIECommandBlock	*cmdPtr;
+    NetIEState		*statePtr;
 {
     /*
      * Initialize the command header.
      */
 
-    *(short *) cmdPtr = 0;	/* Clear the status bits. */
-    cmdPtr->endOfList = 1;	/* Mark this as the end of the list. */
-    cmdPtr->interrupt = 1;	/* Have the command unit interrupt us when
-				   it is done. */
+    *(short *) cmdPtr = 0;	
+    /* 
+     * Mark this as the end of the list. 
+     */
+    NetBfShortSet(cmdPtr->bits, EndOfList, 1); 
+    /* 
+     * Have the command unit interrupt us when it is done.
+
+     */
+    NetBfShortSet(cmdPtr->bits, Interrupt, 1); 
 
     /*
      * Start the command unit.
      */
 
-    netIEState.scbPtr->cmdWord.cmdUnitCmd = NET_IE_CUC_START;
-    NET_IE_CHANNEL_ATTENTION;
-    NetIECheckSCBCmdAccept(netIEState.scbPtr);
+    NetBfShortSet(statePtr->scbPtr->cmdWord, CmdUnitCmd, NET_IE_CUC_START); 
+    NET_IE_CHANNEL_ATTENTION(statePtr);
+    NetIECheckSCBCmdAccept(statePtr->scbPtr);
 
     /*
      * Wait for the command to complete.
      */
 
-    NET_IE_DELAY(cmdPtr->cmdDone && netIEState.scbPtr->statusWord.cmdDone &&
-	         netIEState.scbPtr->statusWord.cmdUnitNotActive);
-    if (!cmdPtr->cmdDone ||
-        !netIEState.scbPtr->statusWord.cmdDone ||
-	!netIEState.scbPtr->statusWord.cmdUnitNotActive) {
+    NET_IE_DELAY(NetBfShortTest(cmdPtr->bits, CmdDone, 1) && 
+		 NetBfShortTest(statePtr->scbPtr->statusWord, CmdDone, 1) &&
+	         NetBfShortTest(statePtr->scbPtr->statusWord, CmdUnitNotActive,
+		     1));
+    if (NetBfShortTest(cmdPtr->bits, CmdDone, 0) ||
+        NetBfShortTest(statePtr->scbPtr->statusWord, CmdDone, 0) ||
+	NetBfShortTest(statePtr->scbPtr->statusWord, CmdUnitNotActive, 0)) {
+
+	int cmdCmdDone;
+	int statusCmdDone;
+	int cmdNotActive;
+	cmdCmdDone = NetBfShortGet(cmdPtr->bits, CmdDone);
+	statusCmdDone = NetBfShortGet(statePtr->scbPtr->statusWord, CmdDone);
+	cmdNotActive = NetBfShortGet(statePtr->scbPtr->statusWord, 
+	    CmdUnitNotActive);
 	panic( "Intel: Could not execute a simple command: %d %d %d\n", 
-			cmdPtr->cmdDone, netIEState.scbPtr->statusWord.cmdDone,
-			netIEState.scbPtr->statusWord.cmdUnitNotActive);
+		    cmdCmdDone, statusCmdDone, cmdNotActive);
 	return;
     }
 
@@ -118,10 +133,10 @@ NetIEExecCommand(cmdPtr)
      * Ack the the command completion and the command unit going not active.
      */
 
-    netIEState.scbPtr->cmdWord.ackCmdDone = 1;
-    netIEState.scbPtr->cmdWord.ackCmdUnitNotActive = 1;
+    NetBfShortSet(statePtr->scbPtr->cmdWord, AckCmdDone, 1);
+    NetBfShortSet(statePtr->scbPtr->cmdWord, AckCmdUnitNotActive, 1);
 
-    NET_IE_CHANNEL_ATTENTION;
-    NetIECheckSCBCmdAccept(netIEState.scbPtr);
+    NET_IE_CHANNEL_ATTENTION(statePtr);
+    NetIECheckSCBCmdAccept(statePtr->scbPtr);
     return;
 }

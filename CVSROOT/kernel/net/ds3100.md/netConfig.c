@@ -14,13 +14,14 @@
  * $Header$ SPRITE (DECWRL)
  */
 
-#include "sprite.h"
-#include "net.h"
-#include "netInt.h"
-#include "netLEInt.h"
+#include <sprite.h>
+#include <net.h>
+#include <netInt.h>
+#include <netLEInt.h>
+#include <machAddrs.h>
 
-NetInterface netInterface[] = {
-    {"LE", 0, NET_LE_CONTROL_REG_ADDR, NetLEInit}
+Net_Interface netConfigInterfaces[] = {
+    {"LE", 0, (Address) MACH_NETWORK_INTERFACE_ADDR, TRUE, 1, NetLEInit}
 };
-int numNetInterfaces = sizeof(netInterface) / sizeof(NetInterface);
-
+int netNumConfigInterfaces = 
+	    sizeof(netConfigInterfaces) / sizeof(Net_Interface);

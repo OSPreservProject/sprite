@@ -20,9 +20,7 @@
 #ifndef _NETLEINT
 #define _NETLEINT
 
-#include "netEther.h"
-#include "net.h"
-#include "netInt.h"
+#include <netInt.h>
 
 /*
  * Defined constants:
@@ -90,20 +88,14 @@
  * and read as zeros. The register accessable in the register data port (RDP)
  * is selected by the value of the RAP. (page 15)
  *
- * The sun4 compiler generates byte loads and stores for short bit fields but
- * the hardware doesn't support byte access to the the LE registers.  Making
- * addrPort a short will cause the compiler to use sth/lduh instructions.
  */
 
 typedef struct NetLE_Reg {
 	unsigned short	dataPort;	/* RDP */
-#ifdef sun4
-        unsigned short	addrPort;	/* RAP */
-#else
-        unsigned int        	: 14;	/* Reserved - must be zero */
-	unsigned int	addrPort: 2;	/* RAP */
-#endif
+        unsigned short	addrPort[1];	/* RAP */
 } NetLE_Reg;
+
+#define AddrPort	0x0e02
 
 /*
  * Possible RAP values. (page15)
@@ -178,32 +170,50 @@ typedef struct NetLE_Reg {
 
 /*
  * First in the mode register.
+ *
+ *typedef struct NetLEModeReg {
+ *    unsigned int	promiscuous	:1;	Read all incoing packets.  
+ *    unsigned int			:8;	Reserved  
+ *    unsigned int        internalLoop	:1;	Internal if lookBack.  
+ *    unsigned int	disableRetry	:1;	Disable collision retry.  
+ *    unsigned int	forceCollision	:1;	Force collision.	 
+ *    unsigned int	disableCRC	:1;	Disable transmit CRC.  
+ *    unsigned int	loopBack	:1;	Loop back mode.  
+ *    unsigned int	disableXmit	:1;	Disable the transmitter.  
+ *    unsigned int	disableRecv	:1;	Disable the receiver.  
+ *} NetLEModeReg;
  */
 
-typedef struct NetLEModeReg {
-    unsigned int	promiscuous	:1;	/* Read all incoing packets. */
-    unsigned int			:8;	/* Reserved */
-    unsigned int        internalLoop	:1;	/* Internal if lookBack. */
-    unsigned int	disableRetry	:1;	/* Disable collision retry. */
-    unsigned int	forceCollision	:1;	/* Force collision.	*/
-    unsigned int	disableCRC	:1;	/* Disable transmit CRC. */
-    unsigned int	loopBack	:1;	/* Loop back mode. */
-    unsigned int	disableXmit	:1;	/* Disable the transmitter. */
-    unsigned int	disableRecv	:1;	/* Disable the receiver. */
-} NetLEModeReg;
+typedef unsigned short NetLEModeReg[1];
+
+#define Promiscuous               0x0001
+#define InternalLoop              0x0901
+#define DisableRetry              0x0a01
+#define ForceCollision            0x0b01
+#define DisableCRC                0x0c01
+#define LoopBack                  0x0d01
+#define DisableXmit               0x0e01
+#define DisableRecv               0x0f01
+
 
 /*
  *  Descriptor Ring Pointer (page 21) (Byte swapped. )
- *  Also, 
+ *
+ *typedef struct NetLERingPointer {
+ *    unsigned short	ringAddrLow	:16;	  Low order ring address.
+ *						 * Must be quad word aligned. 
+ *						  
+ *    unsigned int	logRingLength	:3;	  log2 of ring length.  
+ *    unsigned int			:5;	  Reserved  
+ *    unsigned int	ringAddrHigh	:8;	  High order ring address.  
+ *} NetLERingPointer;
  */
-typedef struct NetLERingPointer {
-    unsigned short	ringAddrLow	:16;	/* Low order ring address.
-						 * Must be quad word aligned. 
-						 */
-    unsigned int	logRingLength	:3;	/* log2 of ring length. */
-    unsigned int			:5;	/* Reserved */
-    unsigned int	ringAddrHigh	:8;	/* High order ring address. */
-} NetLERingPointer;
+
+typedef unsigned int NetLERingPointer[1];
+
+#define RingAddrLow               0x0010
+#define LogRingLength             0x1003
+#define RingAddrHigh              0x1808
 
 /*
  * LE Initialization block. (Page 19)
@@ -223,18 +233,29 @@ typedef struct NetLEInitBlock {
 
 /*
  * LE Net Recv messages descriptors
+ * 
+ * typedef struct NetLERecvMsgDesc {
+ *     unsigned short	bufAddrLow;	  Low order 16 addr bits of buffer.  
+ *     unsigned int	chipOwned	:1;	  Buffer is owned by LANCE.  
+ *     unsigned int	error		:1;	  Error summary  
+ *     unsigned int	framingError	:1;	  Framing Error occured.   
+ *     unsigned int	overflowError	:1;	  Packet overflowed.  
+ *     unsigned int	crcError	:1;	  CRC error.  
+ *     unsigned int	bufferError	:1;	  Buffer error.  
+ *     unsigned int	startOfPacket	:1;	  First buffer of packet.  
+ *     unsigned int	endOfPacket	:1;	  Last buffer of packet.  
+ *     unsigned char	bufAddrHigh;	  High order 8 addr bits of buffer.  
+ *     short	        bufferSize;	  Size of buffer in bytes. This 
+ * 					 * has to be the 2's complement of
+ * 					 * the buffer size.
+ * 					  
+ *     short	packetSize;		  Size of the packet (bytes).  
+ * } NetLERecvMsgDesc;
  */
 
 typedef struct NetLERecvMsgDesc {
     unsigned short	bufAddrLow;	/* Low order 16 addr bits of buffer. */
-    unsigned int	chipOwned	:1;	/* Buffer is owned by LANCE. */
-    unsigned int	error		:1;	/* Error summary */
-    unsigned int	framingError	:1;	/* Framing Error occured.  */
-    unsigned int	overflowError	:1;	/* Packet overflowed. */
-    unsigned int	crcError	:1;	/* CRC error. */
-    unsigned int	bufferError	:1;	/* Buffer error. */
-    unsigned int	startOfPacket	:1;	/* First buffer of packet. */
-    unsigned int	endOfPacket	:1;	/* Last buffer of packet. */
+    unsigned char	bits[1];	/* Control bits. */
     unsigned char	bufAddrHigh;	/* High order 8 addr bits of buffer. */
     short	        bufferSize;	/* Size of buffer in bytes. This 
 					 * has to be the 2's complement of
@@ -243,21 +264,47 @@ typedef struct NetLERecvMsgDesc {
     short	packetSize;		/* Size of the packet (bytes). */
 } NetLERecvMsgDesc;
 
+#define ChipOwned                 0x0001
+#define Error                     0x0101
+#define FramingError              0x0201
+#define OverflowError             0x0301
+#define CrcError                  0x0401
+#define RecvBufferError           0x0501
+#define StartOfPacket             0x0601
+#define EndOfPacket               0x0701
 
 /*
  * LE Net Xmit messages descriptors (page 23-23)
+ * 
+ * typedef struct NetLEXmitMsgDesc {
+ *     unsigned short  bufAddrLow;	  Low order 16 addr bits of buffer. 
+ *     unsigned int    chipOwned	    :1;	  Buffer owned by the LANCE  
+ *     unsigned int    error	    :1;	  Error summary  
+ *     unsigned int		    :1;	  Reserved.   
+ *     unsigned int    retries	    :1;	  More than one retry was needed.   
+ *     unsigned int    oneRetry	    :1;	  Exactly one retry was needed.  
+ *     unsigned int    deferred	    :1;	  Transmission deferred.  
+ *     unsigned int    startOfPacket   :1;	  First buffer of packet.  
+ *     unsigned int    endOfPacket     :1;	  Last buffer of packet.  
+ *     unsigned char   bufAddrHigh;	  High order 8 addr bits of buffer.  
+ *     short           bufferSize;	  Signed size of buffer in bytes. This 
+ * 					 * has to be the 2's complement of
+ * 					 * the buffer size.
+ * 					 * Note that the first buffer in a
+ * 					 * chain must have at least 100 bytes.
+ * 					  
+ *     unsigned int    bufferError	    :1;	  Buffering error.  
+ *     unsigned int    underflowError  :1;	  Underflow error.  
+ *     unsigned int		    :1;	  Reserved.  
+ *     unsigned int    lateCollision   :1;	  Late collision error.  
+ *     unsigned int    lostCarrier	    :1;	  Loss of carrier error.  
+ *     unsigned int    retryError	    :1;	  Too many collision.  
+ *     unsigned int    tdrCounter   :10;  Time Domain Reflectometry counter.  
+ * } NetLEXmitMsgDesc;
  */
-
 typedef struct NetLEXmitMsgDesc {
     unsigned short  bufAddrLow;	/* Low order 16 addr bits of buffer.*/
-    unsigned int    chipOwned	    :1;	/* Buffer owned by the LANCE */
-    unsigned int    error	    :1;	/* Error summary */
-    unsigned int		    :1;	/* Reserved.  */
-    unsigned int    retries	    :1;	/* More than one retry was needed.  */
-    unsigned int    oneRetry	    :1;	/* Exactly one retry was needed. */
-    unsigned int    deferred	    :1;	/* Transmission deferred. */
-    unsigned int    startOfPacket   :1;	/* First buffer of packet. */
-    unsigned int    endOfPacket	    :1;	/* Last buffer of packet. */
+    unsigned char   bits1[1];	/* Control bits. See below. */
     unsigned char   bufAddrHigh;	/* High order 8 addr bits of buffer. */
     short           bufferSize;		/* Signed size of buffer in bytes. This 
 					 * has to be the 2's complement of
@@ -265,14 +312,24 @@ typedef struct NetLEXmitMsgDesc {
 					 * Note that the first buffer in a
 					 * chain must have at least 100 bytes.
 					 */
-    unsigned int    bufferError	    :1;	/* Buffering error. */
-    unsigned int    underflowError  :1;	/* Underflow error. */
-    unsigned int		    :1;	/* Reserved. */
-    unsigned int    lateCollision   :1;	/* Late collision error. */
-    unsigned int    lostCarrier	    :1;	/* Loss of carrier error. */
-    unsigned int    retryError	    :1;	/* Too many collision. */
-    unsigned int    tdrCounter	    :10;/* Time Domain Reflectometry counter. */
+    unsigned short   bits2[1];	/* Control bits. See below. */
 } NetLEXmitMsgDesc;
+
+#define ChipOwned                 0x0001
+#define Error                     0x0101
+#define Retries                   0x0301
+#define OneRetry                  0x0401
+#define Deferred                  0x0501
+#define StartOfPacket             0x0601
+#define EndOfPacket               0x0701
+
+#define XmitBufferError              0x0001
+#define UnderflowError            0x0101
+#define LateCollision             0x0301
+#define LostCarrier               0x0401
+#define RetryError                0x0501
+#define TdrCounter                0x060a
+
 
 
 /*
@@ -302,8 +359,10 @@ typedef struct {
     volatile NetLEXmitMsgDesc	*xmitDescLastPtr;
                                             /* Ring of xmit descriptors end. */
 
+    List_Links		xmitListHdr;	/* List of packets to be transmited. */
     List_Links		*xmitList;	/* Pointer to the front of the list of
 					   packets to be transmited. */
+    List_Links		xmitFreeListHdr; /* List of unused packets. */
     List_Links      	*xmitFreeList;	/* Pointer to a list of unused 
 					   transmission queue elements. */
     Boolean		transmitting;	/* Set if are currently transmitting a
@@ -312,39 +371,58 @@ typedef struct {
     Net_EtherAddress	etherAddressBackward;	/* The ethernet address in 
 						 * reverse byte order. */
     Net_EtherAddress	etherAddress;	/* The ethernet address */
+    Address		recvDataBuffer[NET_LE_NUM_RECV_BUFFERS]; /* Receive
+							* data buffers. */
+    Boolean		recvMemInitialized;	/* Flag for initializing
+						 * kernel memory. */
+    Boolean		recvMemAllocated;	/* Flag for allocating
+						 * memory for ring buffers. */
+    Net_ScatterGather 	*curScatGathPtr;  /* Pointer to scatter gather element 
+					   * for current packet being sent. */
+    char            	loopBackBuffer[NET_ETHER_MAX_BYTES]; /* Buffer for the
+						  * loopback address. */
+    char		*firstDataBuffer; /* Buffer used to ensure that
+					   * first element is of a minimum
+					   * size. */
+    Boolean		xmitMemInitialized; /* Flag to note if xmit memory
+					     * has been initialized. */
+    Boolean		xmitMemAllocated; /* Flag to note if xmit memory
+					   * has been allocated. */
+    Net_Interface	*interPtr;	/* Pointer back to network interface. */
+    Net_EtherStats	stats;		/* Performance statistics. */
 } NetLEState;
-
-/*
- * The state of all of the interfaces. 
- */
-
-extern	NetLEState	netLEState;
 
 
 /*
  * General routines.
  */
 
-extern	Boolean	NetLEInit();
-extern	void	NetLEOutput();
-extern	void	NetLEIntr();
-extern	void	NetLERestart();
-
-extern	void	NetLEReset();
+extern	ReturnStatus	NetLEInit _ARGS_((Net_Interface *interPtr));
+extern	void		NetLEOutput _ARGS_((Net_Interface *interPtr,
+			    Address hdrPtr,Net_ScatterGather *scatterGatherPtr,
+			    int scatterGatherLength));
+extern	void		NetLEIntr _ARGS_((Net_Interface *interPtr, 
+			    Boolean polling));
+extern	void		NetLERestart _ARGS_((Net_Interface *interPtr));
+extern	void		NetLEReset _ARGS_((Net_Interface *interPtr));
+extern	ReturnStatus	NetLEGetStats _ARGS_((Net_Interface *interPtr, 
+			    Net_Stats *statPtr));
 
 /*
  * Routines for transmitting.
  */
 
-extern	void	NetLEXmitInit();
-extern	ReturnStatus	NetLEXmitDone();
-extern	void	NetLEXmitRestart();
+extern	void		NetLEXmitInit _ARGS_((NetLEState *statePtr));
+extern	ReturnStatus	NetLEXmitDone _ARGS_((NetLEState *statePtr));
+extern	void		NetLEXmitRestart _ARGS_((NetLEState *statePtr));
+extern	void		NetLEXmitDrop _ARGS_((NetLEState *statePtr));
 
 /*
  * Routines for the receive unit.
  */
 
-extern	void	NetLERecvInit();
-extern	ReturnStatus	NetLERecvProcess();
+extern	void		NetLERecvInit _ARGS_((NetLEState *statePtr));
+extern	ReturnStatus	NetLERecvProcess _ARGS_((Boolean dropPackets,
+			    NetLEState *statePtr));
 
 #endif /* _NETLEINT */

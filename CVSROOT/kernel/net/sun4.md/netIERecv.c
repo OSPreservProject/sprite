@@ -16,12 +16,10 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
-#include "netIEInt.h"
-#include "net.h"
-#include "netInt.h"
-#include "sys.h"
-#include "list.h"
+#include <sprite.h>
+#include <netIEInt.h>
+#include <sys.h>
+#include <list.h>
 
 
 /*
@@ -45,7 +43,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 void
-NetIERecvUnitInit()
+NetIERecvUnitInit(statePtr)
+    NetIEState		*statePtr;
 {
     int i;
     register volatile NetIERecvBufDesc   *recvBufDescPtr;
@@ -54,13 +53,12 @@ NetIERecvUnitInit()
     int		bufferSize;
 
     bufferSize = NET_IE_RECV_BUFFER_SIZE - sizeof(Net_EtherHdr);
-
     /*
      * Allocate the receive buffer descriptors.  
      */
 
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
-	recvBufDescPtr = (volatile NetIERecvBufDesc *) NetIEMemAlloc();
+	recvBufDescPtr = (volatile NetIERecvBufDesc *) NetIEMemAlloc(statePtr);
 	if (recvBufDescPtr == (volatile NetIERecvBufDesc *) NIL) {
 	    panic("No memory for a receive buffer descriptor pointer\n");
 	}
@@ -68,13 +66,14 @@ NetIERecvUnitInit()
 	*(short *)recvBufDescPtr = 0;	/* Clear out the status word */
 
 	if (i == 0) {
-	    netIEState.recvBufDscHeadPtr = recvBufDescPtr;
-	    netIEState.recvBufDscTailPtr = recvBufDescPtr;
+	    statePtr->recvBufDscHeadPtr = recvBufDescPtr;
+	    statePtr->recvBufDscTailPtr = recvBufDescPtr;
 	} else {
-	    netIEState.recvBufDscTailPtr->nextRBD = 
-			NetIEOffsetFromSUNAddr((int) recvBufDescPtr);
-	    netIEState.recvBufDscTailPtr->realNextRBD = recvBufDescPtr;
-	    netIEState.recvBufDscTailPtr = recvBufDescPtr;
+	    statePtr->recvBufDscTailPtr->nextRBD = 
+			NetIEOffsetFromSUNAddr((int) recvBufDescPtr,
+				statePtr);
+	    statePtr->recvBufDscTailPtr->realNextRBD = recvBufDescPtr;
+	    statePtr->recvBufDscTailPtr = recvBufDescPtr;
 	}
 
 	/*
@@ -84,11 +83,12 @@ NetIERecvUnitInit()
 	 */
 
 	recvBufDescPtr->bufAddr = 
-			NetIEAddrFromSUNAddr((int) (netIERecvBuffers[i] + sizeof(Net_EtherHdr)));
-	recvBufDescPtr->realBufAddr = netIERecvBuffers[i];
-	recvBufDescPtr->bufSizeHigh = bufferSize >> 8;
-	recvBufDescPtr->bufSizeLow = bufferSize & 0xff;
-	recvBufDescPtr->endOfList = 0;
+		NetIEAddrFromSUNAddr((int) (statePtr->netIERecvBuffers[i] + 
+			sizeof(Net_EtherHdr)));
+	recvBufDescPtr->realBufAddr = statePtr->netIERecvBuffers[i];
+	NetBfShortSet(recvBufDescPtr->bits2, BufSizeHigh, bufferSize >> 8);
+	NetBfShortSet(recvBufDescPtr->bits2, BufSizeLow, bufferSize & 0xff);
+	NetBfShortSet(recvBufDescPtr->bits2, RBDEndOfList, 0);
     }
 
     /*
@@ -97,28 +97,29 @@ NetIERecvUnitInit()
      */
 
     recvBufDescPtr->nextRBD = 
-		NetIEOffsetFromSUNAddr((int) netIEState.recvBufDscHeadPtr);
-    recvBufDescPtr->realNextRBD = netIEState.recvBufDscHeadPtr;
-    recvBufDescPtr->endOfList = 1;
+		NetIEOffsetFromSUNAddr((int) statePtr->recvBufDscHeadPtr,
+			statePtr);
+    recvBufDescPtr->realNextRBD = statePtr->recvBufDscHeadPtr;
+    NetBfShortSet(recvBufDescPtr->bits2, RBDEndOfList, 1);
 
     /*
      * Now allocate the receive frame headers.
      */
 
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS - 1; i++) {
-	recvFrDescPtr = (volatile NetIERecvFrameDesc *) NetIEMemAlloc();
+	recvFrDescPtr = (volatile NetIERecvFrameDesc *) NetIEMemAlloc(statePtr);
 	if (recvFrDescPtr == (volatile NetIERecvFrameDesc *) NIL) {
 	    panic("No memory for a receive frame descriptor pointer\n");
 	}
 
 	*(short *)recvFrDescPtr = 0;	/* Clear out the status word */
 
-	recvFrDescPtr->endOfList = 0;
-	recvFrDescPtr->suspend = 0;
+	NetBfWordSet(recvFrDescPtr->bits, EndOfList, 0);
+	NetBfWordSet(recvFrDescPtr->bits, Suspend, 0);
 
 	if (i == 0) {
-	    netIEState.recvFrDscHeadPtr = recvFrDescPtr;
-	    netIEState.recvFrDscTailPtr = recvFrDescPtr;
+	    statePtr->recvFrDscHeadPtr = recvFrDescPtr;
+	    statePtr->recvFrDscTailPtr = recvFrDescPtr;
 
 	    /*
 	     * The first receive frame descriptor points to the list of buffer
@@ -126,14 +127,16 @@ NetIERecvUnitInit()
 	     */
 
 	    recvFrDescPtr->recvBufferDesc = 
-		    NetIEOffsetFromSUNAddr((int) netIEState.recvBufDscHeadPtr);
+		    NetIEOffsetFromSUNAddr((int) statePtr->recvBufDscHeadPtr,
+			    statePtr);
 
 	} else {
 	    recvFrDescPtr->recvBufferDesc = NET_IE_NULL_RECV_BUFF_DESC;
-	    netIEState.recvFrDscTailPtr->nextRFD = 
-			NetIEOffsetFromSUNAddr((int) recvFrDescPtr);
-	    netIEState.recvFrDscTailPtr->realNextRFD = recvFrDescPtr;
-	    netIEState.recvFrDscTailPtr = recvFrDescPtr;
+	    statePtr->recvFrDscTailPtr->nextRFD = 
+			NetIEOffsetFromSUNAddr((int) recvFrDescPtr,
+				statePtr);
+	    statePtr->recvFrDscTailPtr->realNextRFD = recvFrDescPtr;
+	    statePtr->recvFrDscTailPtr = recvFrDescPtr;
 	}
     }
 
@@ -142,37 +145,40 @@ NetIERecvUnitInit()
      */
 
     recvFrDescPtr->nextRFD = 
-		    NetIEOffsetFromSUNAddr((int) netIEState.recvFrDscHeadPtr);
-    recvFrDescPtr->realNextRFD = netIEState.recvFrDscHeadPtr;
+		    NetIEOffsetFromSUNAddr((int) statePtr->recvFrDscHeadPtr,
+			    statePtr);
+    recvFrDescPtr->realNextRFD = statePtr->recvFrDscHeadPtr;
 
-    recvFrDescPtr->endOfList = 1;
+    NetBfWordSet(recvFrDescPtr->bits, EndOfList, 1);
 
-    scbPtr = netIEState.scbPtr;
+    scbPtr = statePtr->scbPtr;
 
     /*
      * Now start up the receive unit.  To do this we first make sure that
      * it is idle.  Then we start it up.
      */
 
-    if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_IDLE) {
+    if (!NetBfShortTest(scbPtr->statusWord, RecvUnitStatus, NET_IE_RUS_IDLE)) {
 	printf("Intel: The receive unit is not idle!!!\n");
 
-	scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_ABORT;
+	NetBfShortSet(scbPtr->cmdWord, RecvUnitCmd, NET_IE_RUC_ABORT);
 
-	NET_IE_CHANNEL_ATTENTION;
+	NET_IE_CHANNEL_ATTENTION(statePtr);
 	NetIECheckSCBCmdAccept(scbPtr);
     }
 
     scbPtr->recvFrameAreaOffset = 
-		    NetIEOffsetFromSUNAddr((int) netIEState.recvFrDscHeadPtr);
-    scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
+		    NetIEOffsetFromSUNAddr((int) statePtr->recvFrDscHeadPtr,
+			    statePtr);
+    NetBfShortSet(scbPtr->cmdWord, RecvUnitCmd, NET_IE_RUC_START);
 
-    NET_IE_CHANNEL_ATTENTION;
+    NET_IE_CHANNEL_ATTENTION(statePtr);
     NetIECheckSCBCmdAccept(scbPtr);
 
-    NET_IE_DELAY(scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY);
+    NET_IE_DELAY(NetBfShortTest(scbPtr->statusWord, RecvUnitStatus, 
+	NET_IE_RUS_READY));
 
-    if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY) {
+    if (!NetBfShortTest(scbPtr->statusWord, RecvUnitStatus, NET_IE_RUS_READY)){
 	printf("Intel: Receive unit never became ready.\n");
     }
     return;
@@ -196,20 +202,19 @@ NetIERecvUnitInit()
  */
 
 void
-NetIERecvProcess(dropPackets)
+NetIERecvProcess(dropPackets, statePtr)
     Boolean	dropPackets;	/* Drop all packets. */
+    NetIEState	*statePtr;
 {
     register	volatile NetIERecvBufDesc	*recvBufDescPtr;
     register	volatile NetIERecvFrameDesc	*recvFrDescPtr;
-    register	volatile NetIEState		*netIEStatePtr;
     register	volatile Net_EtherHdr		*etherHdrPtr;
     volatile    NetIERecvFrameDesc		*newRecvFrDescPtr;
     int		size;
     int		num;
 
-    netIEStatePtr = &netIEState;
 
-    recvFrDescPtr = netIEStatePtr->recvFrDscHeadPtr;
+    recvFrDescPtr = statePtr->recvFrDscHeadPtr;
 
     /*
      * If not initialized then forget the interrupt.
@@ -223,9 +228,9 @@ NetIERecvProcess(dropPackets)
      * Loop as long as there are packets to process.
      */
 
-    while (recvFrDescPtr->done) {
+    while (NetBfWordTest(recvFrDescPtr->bits, Done, 1)) {
 
-	net_EtherStats.packetsRecvd++;
+	statePtr->stats.packetsRecvd++;
 
 	/*
 	 * If this packet has a buffer associated with it then process it.
@@ -234,10 +239,10 @@ NetIERecvProcess(dropPackets)
 	if ((unsigned short) recvFrDescPtr->recvBufferDesc != 
 			NET_IE_NULL_RECV_BUFF_DESC) {
 
-	    recvBufDescPtr = netIEStatePtr->recvBufDscHeadPtr;
-
-	    size = recvBufDescPtr->countLow +
-	           (recvBufDescPtr->countHigh << 8) + sizeof(Net_EtherHdr);
+	    recvBufDescPtr = statePtr->recvBufDscHeadPtr;
+	    size = NetBfShortGet(recvBufDescPtr->bits1, CountLow) +
+		(NetBfShortGet(recvBufDescPtr->bits1, CountHigh) << 8) + 
+		sizeof(Net_EtherHdr);
 
 	    /*
 	     * Put the ethernet header into the packet.
@@ -252,7 +257,7 @@ NetIERecvProcess(dropPackets)
 	     * Call higher level protocol to process the packet.
 	     */
 	    if (!dropPackets) {
-		Net_Input((Address)etherHdrPtr, size);
+		Net_Input(statePtr->interPtr, (Address)etherHdrPtr, size);
 	    }
 
 	    /*
@@ -261,12 +266,11 @@ NetIERecvProcess(dropPackets)
 	     */
 
 	    *(short *) recvBufDescPtr = 0;	/* Clear out the status word. */
-	    recvBufDescPtr->endOfList = 1;
-	    netIEStatePtr->recvBufDscTailPtr->endOfList = 0; 
-	    netIEStatePtr->recvBufDscTailPtr = recvBufDescPtr;
-	    netIEStatePtr->recvBufDscHeadPtr = recvBufDescPtr->realNextRBD;
+	    NetBfShortSet(recvBufDescPtr->bits2, RBDEndOfList, 1);
+	    NetBfShortSet(statePtr->recvBufDscTailPtr->bits2, RBDEndOfList, 0);
+	    statePtr->recvBufDscTailPtr = recvBufDescPtr;
+	    statePtr->recvBufDscHeadPtr = recvBufDescPtr->realNextRBD;
 	}
-
 	/*
 	 * Make the element that was just processed the last element in the
 	 * list.  Since this is circular list, no relinking has to be done.
@@ -274,12 +278,12 @@ NetIERecvProcess(dropPackets)
 
 	newRecvFrDescPtr = recvFrDescPtr->realNextRFD;
 	recvFrDescPtr->recvBufferDesc = NET_IE_NULL_RECV_BUFF_DESC;
-	recvFrDescPtr->endOfList = 1;
+	NetBfWordSet(recvFrDescPtr->bits, EndOfList, 1);
 	*(short *) recvFrDescPtr = 0;
-	netIEStatePtr->recvFrDscTailPtr->endOfList = 0;
-	netIEStatePtr->recvFrDscTailPtr = recvFrDescPtr;
+	NetBfWordSet(statePtr->recvFrDscTailPtr->bits, EndOfList, 0);
+	statePtr->recvFrDscTailPtr = recvFrDescPtr;
 
-	netIEStatePtr->recvFrDscHeadPtr = newRecvFrDescPtr;
+	statePtr->recvFrDscHeadPtr = newRecvFrDescPtr;
 	recvFrDescPtr = newRecvFrDescPtr;
     }
 
@@ -287,35 +291,36 @@ NetIERecvProcess(dropPackets)
      * Record statistics about packets.
      */
 
-    if (netIEStatePtr->scbPtr->crcErrors != 0) {
-	num = netIEStatePtr->scbPtr->crcErrors;
-	netIEStatePtr->scbPtr->crcErrors = 0;
-	net_EtherStats.crcErrors += NetIEShortSwap(num);
+    if (statePtr->scbPtr->crcErrors != 0) {
+	num = statePtr->scbPtr->crcErrors;
+	statePtr->scbPtr->crcErrors = 0;
+	statePtr->stats.crcErrors += NetIEShortSwap(num);
     }
 
-    if (netIEStatePtr->scbPtr->alignErrors != 0) {
-	num = netIEStatePtr->scbPtr->alignErrors;
-	netIEStatePtr->scbPtr->alignErrors = 0;
-	net_EtherStats.frameErrors += NetIEShortSwap(num);
+    if (statePtr->scbPtr->alignErrors != 0) {
+	num = statePtr->scbPtr->alignErrors;
+	statePtr->scbPtr->alignErrors = 0;
+	statePtr->stats.frameErrors += NetIEShortSwap(num);
     }
 
-    if (netIEStatePtr->scbPtr->resourceErrors != 0) {
-	num = netIEStatePtr->scbPtr->resourceErrors;
-	netIEStatePtr->scbPtr->resourceErrors = 0;
-	net_EtherStats.recvPacketsDropped += NetIEShortSwap(num);
+    if (statePtr->scbPtr->resourceErrors != 0) {
+	num = statePtr->scbPtr->resourceErrors;
+	statePtr->scbPtr->resourceErrors = 0;
+	statePtr->stats.recvPacketsDropped += NetIEShortSwap(num);
     }
 
-    if (netIEStatePtr->scbPtr->overrunErrors != 0) {
-	num = netIEStatePtr->scbPtr->overrunErrors;
-	netIEStatePtr->scbPtr->overrunErrors = 0;
-	net_EtherStats.overrunErrors += NetIEShortSwap(num);
+    if (statePtr->scbPtr->overrunErrors != 0) {
+	num = statePtr->scbPtr->overrunErrors;
+	statePtr->scbPtr->overrunErrors = 0;
+	statePtr->stats.overrunErrors += NetIEShortSwap(num);
     }
 
     /*
      * See if the receive unit is ready.  If it is, then return.
      */
 
-    if (netIEStatePtr->scbPtr->statusWord.recvUnitStatus == NET_IE_RUS_READY) {
+    if (NetBfShortTest(statePtr->scbPtr->statusWord, RecvUnitStatus, 
+	NET_IE_RUS_READY)) {
 	return;
     }
 
@@ -325,14 +330,16 @@ NetIERecvProcess(dropPackets)
      * headers and give the reinit command to the chip.
      */
 
-printf("Reinit recv unit\n");
+    printf("Reinit recv unit\n");
 
-    netIEStatePtr->recvFrDscHeadPtr->recvBufferDesc = 
-		NetIEOffsetFromSUNAddr((int) netIEStatePtr->recvBufDscHeadPtr);
-    netIEStatePtr->scbPtr->recvFrameAreaOffset =
-		NetIEOffsetFromSUNAddr((int) netIEStatePtr->recvFrDscHeadPtr);
-    NET_IE_CHECK_SCB_CMD_ACCEPT(netIEStatePtr->scbPtr);
-    netIEStatePtr->scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
-    NET_IE_CHANNEL_ATTENTION;
+    statePtr->recvFrDscHeadPtr->recvBufferDesc = 
+		NetIEOffsetFromSUNAddr((int) statePtr->recvBufDscHeadPtr,
+			statePtr);
+    statePtr->scbPtr->recvFrameAreaOffset =
+		NetIEOffsetFromSUNAddr((int) statePtr->recvFrDscHeadPtr,
+			statePtr);
+    NET_IE_CHECK_SCB_CMD_ACCEPT(statePtr->scbPtr);
+    NetBfShortSet(statePtr->scbPtr->cmdWord, RecvUnitCmd, NET_IE_RUC_START);
+    NET_IE_CHANNEL_ATTENTION(statePtr);
     return;
 }

@@ -17,7 +17,6 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include <netInt.h>
 #include <sprite.h>
 #include <vm.h>
 #include <vmMach.h>
@@ -28,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sync.h>
 #include <dbg.h>
 #include <rpcPacket.h>
+#include <assert.h>
 
 /*
  * "Borrow" the Vax format for the format of the Ultranet adapter (it
@@ -95,19 +95,37 @@ static char	*extDiagNames[] = {
 static Net_UltraTLAddress	wildcardAddress = 
 			    {7, NET_ULTRA_TSAP_SIZE};
 
+/*
+ * Forward declarations.
+ */
+
 static Sync_Condition	dsndTestDone;
 static int		dsndCount;
 
-static char 		*GetStatusString();
-static void		InitQueues();
-static void		StandardDone();
-static void		ReadDone();
-static void		EchoDone();
-static ReturnStatus	NetUltraSendDgram();
-static void		DgramSendDone();
-static void		OutputDone();
-static void		SourceDone();
-static ReturnStatus	NetUltraSource();
+static char 		*GetStatusString _ARGS_ ((int status));
+static void		InitQueues _ARGS_((NetUltraState *statePtr));
+static void		StandardDone _ARGS_((Net_Interface *interPtr, 
+				NetUltraXRBInfo *infoPtr));
+static void		ReadDone _ARGS_((Net_Interface *interPtr, 
+				NetUltraXRBInfo *infoPtr));
+static void		EchoDone _ARGS_((Net_Interface *interPtr, 
+				NetUltraXRBInfo *infoPtr));
+static ReturnStatus	NetUltraSendDgram _ARGS_((Net_Interface *interPtr,
+				Net_Address *netAddressPtr, int count,
+				int bufSize, Address buffer, Time *timePtr));
+static void		DgramSendDone _ARGS_((Net_Interface *interPtr, 
+				NetUltraXRBInfo *infoPtr));
+static void		OutputDone _ARGS_((Net_Interface *interPtr, 
+				NetUltraXRBInfo *infoPtr));
+static void		SourceDone _ARGS_((Net_Interface *interPtr, 
+				NetUltraXRBInfo *infoPtr));
+static ReturnStatus	NetUltraSource _ARGS_((Net_Interface *interPtr,
+				Net_Address *netAddressPtr, int count,
+				int bufSize, Address buffer, Time *timePtr));
+
+/*
+ * Macros for mapping between kernel, DVMA and VME addresses.
+ */
 
 #define	DVMA_TO_BUFFER(addr, statePtr) 		\
     ((Address) (((((unsigned int) (addr)) - 	\
@@ -167,15 +185,36 @@ NetUltraInit(interPtr)
     NetUltraInfoCommand		infoCmd;
     char			*buffer;
 
+    /*
+     * Make sure that we agree with the adapter as to the size of the 
+     * command blocks and other structures.
+     */
+    assert(sizeof(Net_UltraAddress) == 8);
+    assert(sizeof(Net_UltraTLAddress) == 16);
+    assert(sizeof(Net_UltraHeader) == 56);
+    assert(sizeof(NetUltraDMAInfo) == 16);
+    assert(sizeof(NetUltraRequestHdr) == 16);
+    assert(sizeof(NetUltraDatagramRequest) == 56);
+    assert(sizeof(NetUltraStartRequest) == 112);
+    assert(sizeof(NetUltraStopRequest) == 16);
+    assert(sizeof(NetUltraRequest) == 112);
+    assert(sizeof(NetUltraXRB) == 132);
+    assert(sizeof(NetUltraInitCommand) == 64);
+    assert(sizeof(NetUltraDiagCommand) == 36);
+    assert(sizeof(NetUltraExtDiagCommand) == 24);
+    assert(sizeof(NetUltraLoadCommand) == 24);
+    assert(sizeof(NetUltraGoCommand) == 12);
+
     ctrlAddr = (unsigned int) interPtr->ctrlAddr;
     /*
      * If the address is physical (not in kernel's virtual address space)
      * then we have to map it in.
      */
     if (interPtr->virtual == FALSE) {
-	ctrlAddr = (unsigned int) VmMach_MapInDevice(ctrlAddr, 3);
+	ctrlAddr = (unsigned int) VmMach_MapInDevice((Address) ctrlAddr, 3);
     }
     statePtr = (NetUltraState *) malloc (sizeof(NetUltraState));
+    bzero((char *) statePtr, sizeof(NetUltraState));
     /*
      * The first register is the interrupt register, then
      * the reset register, separated by 12 bytes.
@@ -185,8 +224,8 @@ NetUltraInit(interPtr)
     /*
      * Now poke the reset register.
      */
-    status = Mach_Probe(sizeof(int), &zero, (char *)
-		statePtr->resetReg);
+    status = Mach_Probe(sizeof(int), (char *) &zero,
+		(char *) statePtr->resetReg);
     if (status != SUCCESS) {
 	/* 
 	 * Got a bus error.
@@ -318,8 +357,8 @@ NetUltraHardReset(interPtr)
 
     statePtr = (NetUltraState *) interPtr->interfaceData;
     printf("Ultra: adapter reset.\n");
-    status = Mach_Probe(sizeof(int), &zero, (char *)
-		statePtr->resetReg);
+    status = Mach_Probe(sizeof(int), (char *) &zero, 
+		(char *) statePtr->resetReg);
     if (status != SUCCESS) {
 	/*
 	 * Adapter is no longer responding.
@@ -483,7 +522,7 @@ NetUltraStart(statePtr)
     startPtr->netAddressBuf[0] = 0x49;
     startPtr->netAddressBuf[5] = 0xfe;
     status = NetUltraSendReq(statePtr, StandardDone, 
-		(ClientData) &startComplete,
+		(ClientData) &startComplete, FALSE, 
 		0, (Net_ScatterGather *) NIL, sizeof(NetUltraStartRequest), 
 		&request);
     if (status != SUCCESS) {
@@ -627,7 +666,7 @@ NetUltraStop(statePtr)
     bzero((char *) &request, sizeof(request));
     hdrPtr->cmd = NET_ULTRA_STOP_REQ;
     status = NetUltraSendReq(statePtr, StandardDone, 
-		(ClientData) &stopComplete,
+		(ClientData) &stopComplete, FALSE,
 		0, (Net_ScatterGather *) NIL, sizeof(NetUltraStopRequest), 
 		&request);
     if (status != SUCCESS) {
@@ -784,7 +823,7 @@ NetUltraDiag(statePtr, cmdPtr)
     if (netUltraDebug) {
 	printf("Sending diagnostic command to adapter.\n");
     }
-    bzero(&tmpCmd, sizeof(tmpCmd));
+    bzero((char *) &tmpCmd, sizeof(tmpCmd));
     tmpCmd.opcode = NET_ULTRA_DIAG_OPCODE;
     status = NetUltraSendCmd(statePtr, NET_ULTRA_DIAG_OK, 
 		    sizeof(tmpCmd), (Address) &tmpCmd);
@@ -854,7 +893,7 @@ NetUltraInfo(statePtr, cmdPtr)
     if (netUltraDebug) {
 	printf("Sending Info command to adapter.\n");
     }
-    bzero(&tmpCmd, sizeof(NetUltraInfoCommand));
+    bzero((char *) &tmpCmd, sizeof(NetUltraInfoCommand));
     tmpCmd.opcode = NET_ULTRA_INFO_OPCODE;
     status = NetUltraSendCmd(statePtr, NET_ULTRA_INFO_OK, 
 		    sizeof(NetUltraInfoCommand), (Address) &tmpCmd);
@@ -926,7 +965,7 @@ NetUltraExtDiag(statePtr, external, buffer, cmdPtr)
 	printf("NetUltraExtDiag: unable to allocate buffer in DMA space.\n");
 	status = FAILURE;
     }
-    bzero(cmdPtr, sizeof(*cmdPtr));
+    bzero((char *) cmdPtr, sizeof(*cmdPtr));
     cmdPtr->opcode = NET_ULTRA_EXT_DIAG_OPCODE;
     cmdPtr->externalLoopback = (external == TRUE) ? 1 : 0;
     cmdPtr->bufferAddress = (int) DVMA_TO_VME(bufAddress, statePtr);
@@ -1793,111 +1832,6 @@ NetUltraIOControl(interPtr, ioctlPtr, replyPtr)
 	    netUltraMapThreshold = value;
 	    break;
 	}
-	case IOC_ULTRA_SG_BCOPY_TEST: {
-	    int				value;
-	    Net_ScatterGather		scatter[4];
-	    int				i;
-	    Timer_Ticks 		startTime;
-	    Timer_Ticks 		endTime;
-	    Time			time;
-	    char			*targetPtr;
-	    outSize = sizeof(int);
-	    inSize = ioctlPtr->inBufSize;
-	    fmtStatus = Fmt_Convert("w", ioctlPtr->format, &inSize,
-			    ioctlPtr->inBuffer, mach_Format, &outSize,
-			    (Address) &value);
-	    if (fmtStatus != 0) {
-		printf(
-		"Format of IOC_ULTRA_BCOPY_TEST parameter failed, 0x%x\n",
-		    fmtStatus);
-		return GEN_INVALID_ARG;
-	    }
-	    scatter[0].length = 0;
-	    scatter[1].length = sizeof(RpcHdr);
-	    scatter[1].bufAddr = (Address) malloc(sizeof(RpcHdr));
-	    scatter[2].length = 0;
-	    scatter[3].length = value;
-	    scatter[3].bufAddr = (Address) malloc(value);
-	    targetPtr = (char *) malloc(value + sizeof(RpcHdr));
-	    Timer_GetCurrentTicks(&startTime);
-	    for (i = 0; i < 100; i++) {
-		Net_GatherCopy(scatter, 4, targetPtr);
-	    }
-	    Timer_GetCurrentTicks(&endTime);
-	    Timer_SubtractTicks(endTime, startTime, &endTime);
-	    Timer_TicksToTime(endTime, &time);
-	    Time_Divide(time, 100, &time);
-	    outSize = ioctlPtr->outBufSize;
-	    inSize = sizeof(Time);
-	    fmtStatus = Fmt_Convert("w*", mach_Format, &inSize,
-			    (Address) &time, 
-			    ioctlPtr->format, &outSize,
-			    ioctlPtr->outBuffer);
-	    if (fmtStatus != 0) {
-		printf(
-		    "Format of IOC_ULTRA_BCOPY_TEST parameter failed, 0x%x\n", 
-		    fmtStatus);
-		return GEN_INVALID_ARG;
-	    }
-	    free((char *) targetPtr);
-	    free((char *) scatter[1].bufAddr);
-	    free((char *) scatter[3].bufAddr);
-	    break;
-	}
-	case IOC_ULTRA_BCOPY_TEST: {
-	    int				value;
-	    int				i;
-	    Address			buffer;
-	    Timer_Ticks 		startTime;
-	    Timer_Ticks 		endTime;
-	    Time			time;
-	    char			*targetPtr;
-	    outSize = sizeof(int);
-	    inSize = ioctlPtr->inBufSize;
-	    fmtStatus = Fmt_Convert("w", ioctlPtr->format, &inSize,
-			    ioctlPtr->inBuffer, mach_Format, &outSize,
-			    (Address) &value);
-	    if (fmtStatus != 0) {
-		printf(
-		"Format of IOC_ULTRA_BCOPY_TEST parameter failed, 0x%x\n",
-		    fmtStatus);
-		return GEN_INVALID_ARG;
-	    }
-	    targetPtr = (char *) malloc(value);
-	    buffer = (Address) malloc(value);
-	    if (buffer > targetPtr) {
-		char 	*tmp;
-		tmp = buffer;
-		buffer = targetPtr;
-		targetPtr = tmp;
-	    }
-	    printf("buffer = 0x%x\n", buffer);
-	    printf("targetPtr = 0x%x\n", targetPtr);
-	    Timer_GetCurrentTicks(&startTime);
-	    for (i = 0; i < 100; i++) {
-		bcopy(buffer, targetPtr, value);
-	    }
-	    Timer_GetCurrentTicks(&endTime);
-	    Timer_SubtractTicks(endTime, startTime, &endTime);
-	    Timer_TicksToTime(endTime, &time);
-	    Time_Divide(time, 100, &time);
-	    outSize = ioctlPtr->outBufSize;
-	    inSize = sizeof(Time);
-	    fmtStatus = Fmt_Convert("w*", mach_Format, &inSize,
-			    (Address) &time, 
-			    ioctlPtr->format, &outSize,
-			    ioctlPtr->outBuffer);
-	    if (fmtStatus != 0) {
-		printf(
-		    "Format of IOC_ULTRA_BCOPY_TEST parameter failed, 0x%x\n", 
-		    fmtStatus);
-		return GEN_INVALID_ARG;
-	    }
-	    free((char *) targetPtr);
-	    free((char *) buffer);
-	    break;
-	}
-
 	default: {
 	    printf("NetUltraIOControl: unknown ioctl 0x%x\n",
 		ioctlPtr->command);
@@ -1925,12 +1859,13 @@ NetUltraIOControl(interPtr, ioctlPtr, replyPtr)
  */
 
 ReturnStatus
-NetUltraSendReq(statePtr, doneProc, data, scatterLength, scatterPtr, 
+NetUltraSendReq(statePtr, doneProc, data, rpc, scatterLength, scatterPtr, 
 	requestSize, requestPtr)
     NetUltraState	*statePtr;	/* State of the adapter. */
     void		(*doneProc)();	/* Procedure to call when
 					 * XRB is done. */
     ClientData		data;		/* Data used by doneProc. */
+    Boolean		rpc;		/* Is this an RPC packet? */
     int			scatterLength;	/* Size of scatter/gather array. */
     Net_ScatterGather	*scatterPtr;	/* The scatter/gather array. */
     int			requestSize;	/* Size of the request. */
@@ -1972,7 +1907,8 @@ NetUltraSendReq(statePtr, doneProc, data, scatterLength, scatterPtr,
 		printf("NetUltraSendReq: no XRB free, waiting\n");
 	    }
 	    statePtr->toAdapterAvail.waiting = TRUE;
-	    signal = Sync_SlowMasterWait(&statePtr->toAdapterAvail,
+	    signal = Sync_SlowMasterWait(
+		    (unsigned int) &statePtr->toAdapterAvail,
 		    &statePtr->interPtr->mutex, TRUE);
 	    if (signal) {
 		return GEN_ABORTED_BY_SIGNAL;
@@ -2025,7 +1961,8 @@ NetUltraSendReq(statePtr, doneProc, data, scatterLength, scatterPtr,
 	    while(List_IsEmpty(statePtr->freeBufferList)) {
 		int		signal;
 		statePtr->bufferAvail.waiting = TRUE;
-		signal = Sync_SlowMasterWait(&statePtr->bufferAvail,
+		signal = Sync_SlowMasterWait(
+			(unsigned int) &statePtr->bufferAvail,
 			&statePtr->interPtr->mutex, TRUE);
 		if (signal) {
 		    status = GEN_ABORTED_BY_SIGNAL;
@@ -2039,10 +1976,10 @@ NetUltraSendReq(statePtr, doneProc, data, scatterLength, scatterPtr,
 	    List_Remove(itemPtr);
 	    buffer = (Address) itemPtr;
 	    infoPtr->flags |= NET_ULTRA_INFO_STD_BUFFER;
-	    if (scatterLength > 1) {
+	    if (rpc) {
 		int	lastIndex;
 		/*
-		 * Assume that this is a standard RPC packet with 4 parts --
+		 * This is a standard RPC packet with 4 parts --
 		 * packet header, RPC header, RPC params, and data. 
 		 * Copy the first three into the DVMA buffer.  If the data
 		 * is below a threshold then copy it also.  Otherwise
@@ -2179,7 +2116,7 @@ NetUltraSendReq(statePtr, doneProc, data, scatterLength, scatterPtr,
     }
     /*
      * Poke the adapter by setting the address register to 0. This
-     * tells it to look in  the queue.
+     * tells it to look in the queue.
      */
     *statePtr->intrReg = 0;
 #ifndef CLEAN
@@ -2197,7 +2134,7 @@ exit:
  * GetStatusString --
  *
  *	Returns a string corresponding to the given status (status
- *	is a field in a NetUltraRequestHdr..
+ *	is a field in a NetUltraRequestHdr.
  *
  * Results:
  *	Ptr to string describing the status.
@@ -2417,7 +2354,7 @@ NetUltraPendingRead(interPtr, size, buffer)
     size -= sizeof(NetUltraDatagramRequest);
     scatter.bufAddr = buffer;
     scatter.length = size;
-    status = NetUltraSendReq(statePtr, ReadDone, (ClientData) 0, 
+    status = NetUltraSendReq(statePtr, ReadDone, (ClientData) 0, FALSE,  
 	1, &scatter, sizeof(NetUltraDatagramRequest), &request);
     if (status != SUCCESS) {
 	printf("NetUltraPendingRead: could not send request to adapter\n");
@@ -2475,9 +2412,11 @@ ReadDone(interPtr, infoPtr)
 	    printf("ReadDone: received a packet.\n");
 	    *local = '\0';
 	    *remote = '\0';
-	    (void) Net_AddrToString(&reqPtr->localAddress.address, 
+	    (void) Net_AddrToString((Net_Address *) 
+		    &reqPtr->localAddress.address, 
 		    NET_PROTO_RAW, NET_NETWORK_ULTRA, local);
-	    (void) Net_AddrToString(&reqPtr->remoteAddress.address, 
+	    (void) Net_AddrToString((Net_Address *) 
+		    &reqPtr->remoteAddress.address, 
 		    NET_PROTO_RAW, NET_NETWORK_ULTRA, remote);
 	    printf("Local address: %s\n", local);
 	    printf("Remote address: %s\n", remote);
@@ -2522,7 +2461,7 @@ ReadDone(interPtr, infoPtr)
 	    tmpScatter.bufAddr = BUFFER_TO_DVMA(buffer, statePtr);
 	    tmpScatter.length = hdrPtr->size;
 	    status = NetUltraSendReq(statePtr, EchoDone, (ClientData) NIL, 
-			1, &tmpScatter,sizeof(NetUltraDatagramRequest),
+			FALSE, 1, &tmpScatter,sizeof(NetUltraDatagramRequest),
 			(NetUltraRequest *) reqPtr);
 	    if (status != SUCCESS) {
 		panic("ReadDone: unable to return datagram to sender.\n");
@@ -2539,7 +2478,8 @@ ReadDone(interPtr, infoPtr)
 		tmpScatter.bufAddr = BUFFER_TO_DVMA(buffer, statePtr);
 		tmpScatter.length = hdrPtr->size;
 		status = NetUltraSendReq(statePtr, EchoDone, (ClientData) NIL, 
-			    1, &tmpScatter,sizeof(NetUltraDatagramRequest),
+			    FALSE, 1, &tmpScatter,
+			    sizeof(NetUltraDatagramRequest),
 			    (NetUltraRequest *) reqPtr);
 		if (status != SUCCESS) {
 		    panic("ReadDone: unable to return datagram to sender.\n");
@@ -2700,7 +2640,7 @@ NetUltraSendDgram(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
 #endif
     Timer_GetCurrentTicks(&startTime);
     status = NetUltraSendReq(statePtr, DgramSendDone, (ClientData) NIL,
-		1, &scatter, sizeof(NetUltraDatagramRequest), &request);
+		FALSE, 1, &scatter, sizeof(NetUltraDatagramRequest), &request);
     Sync_MasterWait(&(dsndTestDone), &(interPtr->mutex), FALSE);
     Timer_GetCurrentTicks(&endTime);
 #ifndef CLEAN
@@ -2792,27 +2732,29 @@ DgramSendDone(interPtr, infoPtr)
  */
 
 void
-NetUltraOutput(interPtr, ultraHdrPtr, scatterGatherPtr, scatterGatherLength)
+NetUltraOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
     Net_Interface		*interPtr;	/* The interface to use. */
-    Net_UltraHeader		*ultraHdrPtr;	/* Ultranet packet header. */
+    Address			hdrPtr;		/* Packet header. */
     Net_ScatterGather		*scatterGatherPtr; /* Scatter/gather elements.*/
     int				scatterGatherLength; /* Number of elements in
 						      * scatter/gather list. */
 {
     NetUltraState		*statePtr;
     ReturnStatus		status = SUCCESS;
+    Net_UltraHeader		*ultraHdrPtr = (Net_UltraHeader *) hdrPtr;
 
     statePtr = (NetUltraState *) interPtr->interfaceData;
     MASTER_LOCK(&interPtr->mutex);
     if (netUltraDebug) {
 	char	address[100];
-	(void) Net_AddrToString(&ultraHdrPtr->remoteAddress.address, 
+	(void) Net_AddrToString((Net_Address *) 
+		&ultraHdrPtr->remoteAddress.address, 
 		NET_PROTO_RAW, NET_NETWORK_ULTRA,
 		    address);
 	printf("NetUltraOutput: sending to %s\n", address);
     }
     status = NetUltraSendReq(statePtr, OutputDone, 
-		(ClientData) NIL, scatterGatherLength, scatterGatherPtr, 
+		(ClientData) NIL, TRUE, scatterGatherLength, scatterGatherPtr, 
 		sizeof(Net_UltraHeader), 
 		(NetUltraRequest *) ultraHdrPtr);
     if (status != SUCCESS) {
@@ -2952,7 +2894,7 @@ NetUltraSource(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
 	while(List_IsEmpty(statePtr->freeBufferList)) {
 	    int		signal;
 	    statePtr->bufferAvail.waiting = TRUE;
-	    signal = Sync_SlowMasterWait(&statePtr->bufferAvail,
+	    signal = Sync_SlowMasterWait((unsigned int) &statePtr->bufferAvail,
 		    &interPtr->mutex, TRUE);
 	    if (signal) {
 		status = GEN_ABORTED_BY_SIGNAL;
@@ -2979,7 +2921,7 @@ NetUltraSource(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
 	scatter.bufAddr = (Address) itemPtr;
 	scatter.length = bufSize;
 	status = NetUltraSendReq(statePtr, SourceDone, 
-		    (ClientData) NIL, 1, &scatter,
+		    (ClientData) NIL, FALSE, 1, &scatter,
 		    sizeof(NetUltraDatagramRequest), &request);
     }
     Timer_GetCurrentTicks(&endTime);

@@ -19,9 +19,7 @@
 #ifndef _NETLEINT
 #define _NETLEINT
 
-#include "netEther.h"
-#include "net.h"
-#include "netInt.h"
+#include <netInt.h>
 
 /*
  * Defined constants:
@@ -258,8 +256,10 @@ typedef struct {
     Address		xmitDescNextPtr; /* Next xmit desc to be filled. */
     Address		xmitDescLastPtr; /* Ring of xmit descriptors end. */
 
+    List_Links		xmitListHdr;	/* List of packets to be transmited. */
     List_Links		*xmitList;	/* Pointer to the front of the list of
 					   packets to be transmited. */
+    List_Links		xmitFreeListHdr; /* List of unused packets. */
     List_Links      	*xmitFreeList;	/* Pointer to a list of unused 
 					   transmission queue elements. */
     Boolean		transmitting;	/* Set if are currently transmitting a
@@ -268,6 +268,27 @@ typedef struct {
     Net_EtherAddress	etherAddressBackward;	/* The ethernet address in 
 						 * reverse byte order. */
     Net_EtherAddress	etherAddress;	/* The ethernet address */
+    Address		recvDataBuffer[NET_LE_NUM_RECV_BUFFERS]; /* Receive
+							* data buffers. */
+    Boolean		recvMemInitialized;	/* Flag for initializing
+						 * kernel memory. */
+    Boolean		recvMemAllocated;	/* Flag for allocating
+						 * memory for ring buffers. */
+    Net_ScatterGather 	*curScatGathPtr;  /* Pointer to scatter gather element 
+					   * for current packet being sent. */
+    char            	loopBackBuffer[NET_ETHER_MAX_BYTES]; /* Buffer for the
+						  * loopback address. */
+    char		*firstDataBuffer; /* Buffer used to ensure that
+					   * first element is of a minimum
+					   * size. */
+    Boolean		xmitMemInitialized; /* Flag to note if xmit memory
+					     * has been initialized. */
+    Boolean		xmitMemAllocated; /* Flag to note if xmit memory
+					   * has been allocated. */
+    Net_Interface	*interPtr;	/* Pointer back to network interface. */
+    Address		xmitBufPtr;	/* Buffer for a transmitted packet. */	
+    Address		recvBufPtr;	/* Buffer for a received packet. */	
+    Net_EtherStats	stats;		/* Performance statistics. */
 } NetLEState;
 
 /*
@@ -281,28 +302,37 @@ extern	NetLEState	netLEState;
  * General routines.
  */
 
-extern	Boolean	NetLEInit();
-extern	void	NetLEOutput();
-extern	void	NetLEIntr();
-extern	void	NetLERestart();
-extern	Address	NetLEMemAlloc();
+extern	ReturnStatus	NetLEInit _ARGS_((Net_Interface *interPtr));
+extern	void		NetLEReset _ARGS_((Net_Interface *interPtr));
+extern	void		NetLERestart _ARGS_((Net_Interface *interPtr));
+extern	void		NetLEIntr _ARGS_((Net_Interface *interPtr, 
+					Boolean polling));
+extern	Address		NetLEMemAlloc _ARGS_((unsigned int numBytes, 
+					Boolean wordAlign));
 
-extern	void	NetLEReset();
+extern	ReturnStatus	NetLEGetStats _ARGS_((Net_Interface *interPtr, 
+			    Net_Stats *statPtr));
 
 /*
  * Routines for transmitting.
  */
 
-extern	void	NetLEXmitInit();
-extern	ReturnStatus	NetLEXmitDone();
-extern	void	NetLEXmitRestart();
+extern	void		NetLEXmitInit _ARGS_((NetLEState *statePtr));
+extern	ReturnStatus	NetLEXmitDone _ARGS_((NetLEState *statePtr));
+extern	void		NetLEOutput _ARGS_((Net_Interface *interPtr,
+				Net_EtherHdr *etherHdrPtr, 
+				Net_ScatterGather *scatterGatherPtr,
+				int scatterGatherLength));
+extern	void		NetLEXmitDrop _ARGS_((NetLEState *statePtr));
+extern	void	NetLEXmitRestart _ARGS_((NetLEState *statePtr));
 
 /*
  * Routines for the receive unit.
  */
 
-extern	void	NetLERecvInit();
-extern	ReturnStatus	NetLERecvProcess();
+extern	void		NetLERecvInit _ARGS_((NetLEState *statePtr));
+extern	ReturnStatus	NetLERecvProcess _ARGS_((Boolean dropPackets,
+				NetLEState *statePtr));
 
 
 

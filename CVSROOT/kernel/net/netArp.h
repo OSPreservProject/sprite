@@ -121,6 +121,10 @@ typedef struct ArpInputQueue {
 /*
  * Forward declarations.
  */
+extern ReturnStatus	NetDoArp _ARGS_((Net_Route *routePtr,
+			    Sync_Semaphore *mutexPtr, int command, 
+			    Net_ScatterGather *gatherPtr, 
+			    NetSpriteArp *packetPtr));
 
 #endif /* _NETARP */
 

@@ -17,29 +17,16 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
-#include "sprite.h"
-#include "sys.h"
-#include "list.h"
-#include "vm.h"
-#include "vmMach.h"
-#include "mach.h"
-#include "netLEInt.h"
-#include "net.h"
-#include "netInt.h"
-#include "machAddrs.h"
-
-/*
- * Define global variables.
- */
-
-NetLEState	netLEState;
-
-/*
- * Define the header that the transmit list will point to. 
- */
-
-static 	List_Links	xmitListHdr;
-static 	List_Links	xmitFreeListHdr;
+#include <netInt.h>
+#include <sprite.h>
+#include <sys.h>
+#include <list.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <mach.h>
+#include <netLEInt.h>
+#include <machAddrs.h>
+#include <assert.h>
 
 Address	NetLEMemAlloc();
 
@@ -52,91 +39,124 @@ Address	NetLEMemAlloc();
  *	Initialize the LANCE AMD 7990 Ethernet chip.
  *
  * Results:
- *	TRUE if the LANCE controller was found and initialized,
- *	FALSE otherwise.
+ *	SUCCESS if the LANCE controller was found and initialized,
+ *	FAILURE otherwise.
  *
  * Side effects:
  *	Initializes the netEtherFuncs record, as well as the chip.
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
-Boolean
-NetLEInit(name, number, ctrlAddr)
-    char 	*name;		/* Sprite name for controller. */	
-    int 	number;		/* Unit number of device (not used). */
-    unsigned int ctrlAddr;	/* Kernel virtual address of controller. */
+ReturnStatus
+NetLEInit(interPtr)
+    Net_Interface	*interPtr; 	/* Network interface. */
 {
+    Address 		ctrlAddr;/* Kernel virtual address of controller. */
     int 		i;
     List_Links		*itemPtr;
-    volatile unsigned	*romPtr;
+    NetLEState		*statePtr;
+    char		buffer[32];
+
+    assert(sizeof(NetLE_Reg) == 4);
 
     DISABLE_INTR();
 
-    netLEState.running = FALSE;
+    ctrlAddr = interPtr->ctrlAddr;
+    /*
+     * If the address is physical (not in kernel's virtual address space)
+     * then we have to map it in.
+     */
+    if (interPtr->virtual == FALSE) {
+	printf("NetLEInit: ds3100 does not support mapping in devices yet.\n");
+	printf("NetLEInit: can't map in network device at 0x%x\n", ctrlAddr);
+	return FAILURE;
+#if 0
+	ctrlAddr = (char *) VmMach_MapInDevice(ctrlAddr, 1);
+#endif
+    }
+    statePtr = (NetLEState *) malloc (sizeof(NetLEState));
+    statePtr->running = FALSE;
 
     /*
      * The onboard control register is at a pre-defined kernel virtual
      * address.
      */
-    netLEState.regAddrPortPtr =
-		    (unsigned short *)(MACH_NETWORK_INTERFACE_ADDR + 4);
-    netLEState.regDataPortPtr = (unsigned short *)MACH_NETWORK_INTERFACE_ADDR;
-
+    statePtr->regDataPortPtr = (unsigned short *)MACH_NETWORK_INTERFACE_ADDR;
+    statePtr->regAddrPortPtr = statePtr->regDataPortPtr + 2;
+    {
+	/*
+	 * Poke the controller by setting the RAP.
+	 */
+	short value = NET_LE_CSR0_ADDR;
+	ReturnStatus status;
+	status = Mach_Probe(sizeof(short), (char *) &value, 
+			  (char *) statePtr->regAddrPortPtr);
+	if (status != SUCCESS) {
+	    /*
+	     * Got a bus error.
+	     */
+	    free((char *) statePtr);
+	    ENABLE_INTR();
+	    return(FAILURE);
+	}
+    }
+    Mach_SetHandler(interPtr->vector, Net_Intr, (ClientData) interPtr);
     /*
      * Initialize the transmission list.  
      */
-    netLEState.xmitList = &xmitListHdr;
-    List_Init(netLEState.xmitList);
+    statePtr->xmitList = &statePtr->xmitListHdr;
+    List_Init(statePtr->xmitList);
 
-    netLEState.xmitFreeList = &xmitFreeListHdr;
-    List_Init(netLEState.xmitFreeList);
+    statePtr->xmitFreeList = &statePtr->xmitFreeListHdr;
+    List_Init(statePtr->xmitFreeList);
 
     for (i = 0; i < NET_LE_NUM_XMIT_ELEMENTS; i++) {
-	itemPtr = (List_Links *) Vm_BootAlloc(sizeof(NetXmitElement)), 
+	itemPtr = (List_Links *) malloc(sizeof(NetXmitElement)), 
 	List_InitElement(itemPtr);
-	List_Insert(itemPtr, LIST_ATREAR(netLEState.xmitFreeList));
+	List_Insert(itemPtr, LIST_ATREAR(statePtr->xmitFreeList));
     }
 
-    /*
-     * Get ethernet address out of the clocks RAM.
-     */
-    romPtr = (unsigned *)0xBD000000;
-    netLEState.etherAddress.byte1 = (romPtr[0] >> 8) & 0xff;
-    netLEState.etherAddress.byte2 = (romPtr[1] >> 8) & 0xff;
-    netLEState.etherAddress.byte3 = (romPtr[2] >> 8) & 0xff;
-    netLEState.etherAddress.byte4 = (romPtr[3] >> 8) & 0xff;
-    netLEState.etherAddress.byte5 = (romPtr[4] >> 8) & 0xff;
-    netLEState.etherAddress.byte6 = (romPtr[5] >> 8) & 0xff;
-    printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
-	      netLEState.etherAddress.byte1 & 0xff,
-	      netLEState.etherAddress.byte2 & 0xff,
-	      netLEState.etherAddress.byte3 & 0xff,
-	      netLEState.etherAddress.byte4 & 0xff,
-	      netLEState.etherAddress.byte5 & 0xff,
-	      netLEState.etherAddress.byte6 & 0xff);
-
+    Mach_GetEtherAddress(&statePtr->etherAddress);
+    (void) Net_EtherAddrToString(&statePtr->etherAddress, buffer);
+    printf("%s-%d Ethernet address %s\n", interPtr->name, interPtr->number, 
+	    buffer);
     /*
      * Allocate the initialization block.
      */
-    netLEState.initBlockPtr = NetLEMemAlloc(NET_LE_INIT_SIZE, TRUE);
+    statePtr->initBlockPtr = NetLEMemAlloc(NET_LE_INIT_SIZE, TRUE);
+
+    interPtr->init	= NetLEInit;
+    interPtr->output 	= NetLEOutput;
+    interPtr->intr	= NetLEIntr;
+    interPtr->reset 	= NetLERestart;
+    interPtr->getStats	= NetLEGetStats;
+    interPtr->netType	= NET_NETWORK_ETHER;
+    interPtr->maxBytes	= NET_ETHER_MAX_BYTES - sizeof(Net_EtherHdr);
+    interPtr->minBytes	= 0;
+    interPtr->interfaceData = (ClientData) statePtr;
+    NET_ETHER_ADDR_COPY(statePtr->etherAddress, 
+	interPtr->netAddress[NET_PROTO_RAW].ether);
+    interPtr->broadcastAddress.ether = netEtherBroadcastAddress.ether;
+    interPtr->flags |= NET_IFLAGS_BROADCAST;
+    statePtr->interPtr = interPtr;
+    statePtr->recvMemInitialized = FALSE;
+    statePtr->recvMemAllocated = FALSE;
+    statePtr->xmitMemInitialized = FALSE;
+    statePtr->xmitMemAllocated = FALSE;
+
+
     /*
      * Reset the world.
      */
-    NetLEReset();
+    NetLEReset(interPtr);
 
     /*
      * Now we are running.
      */
 
-    netLEState.running = TRUE;
-    netEtherFuncs.init	 = NetLEInit;
-    netEtherFuncs.output = NetLEOutput;
-    netEtherFuncs.intr   = NetLEIntr;
-    netEtherFuncs.reset  = NetLERestart;
-
+    statePtr->running = TRUE;
     ENABLE_INTR();
-    return (TRUE);
+    return (SUCCESS);
 }
 
 
@@ -156,60 +176,62 @@ NetLEInit(name, number, ctrlAddr)
  *----------------------------------------------------------------------
  */
 void
-NetLEReset()
+NetLEReset(interPtr)
+    Net_Interface	*interPtr; /* Interface to reset. */
 {
-    NetLEState		*netLEStatePtr = &netLEState;
+    NetLEState		*statePtr;
     unsigned		addr;
     int			i;
 
+    statePtr = (NetLEState *) interPtr->interfaceData;
     /* 
      * Reset (and stop) the chip.
      */
-    *netLEStatePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
-    *netLEStatePtr->regDataPortPtr = NET_LE_CSR0_STOP; 
+    *statePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
+    *statePtr->regDataPortPtr = NET_LE_CSR0_STOP; 
 
     /*
      * Set up the receive and transmit rings. 
      */
-     NetLERecvInit();
-     NetLEXmitInit();
+     NetLERecvInit(statePtr);
+     NetLEXmitInit(statePtr);
 
     /*
      * Zero out the mode word.
      */
-    *BUF_TO_ADDR(netLEState.initBlockPtr,NET_LE_INIT_MODE)=0;
+    *BUF_TO_ADDR(statePtr->initBlockPtr,NET_LE_INIT_MODE)=0;
     /*
      * Insert the ethernet address.
      */
-    *BUF_TO_ADDR(netLEState.initBlockPtr, 
+    *BUF_TO_ADDR(statePtr->initBlockPtr, 
 			  NET_LE_INIT_ETHER_ADDR) = 
-		    (unsigned char)netLEState.etherAddress.byte1 |
-		    ((unsigned char)netLEState.etherAddress.byte2 << 8);
-    *BUF_TO_ADDR(netLEState.initBlockPtr, 
+		    (unsigned char)statePtr->etherAddress.byte1 |
+		    ((unsigned char)statePtr->etherAddress.byte2 << 8);
+    *BUF_TO_ADDR(statePtr->initBlockPtr, 
 			  NET_LE_INIT_ETHER_ADDR + 2) = 
-		    (unsigned char)netLEState.etherAddress.byte3 | 
-		    ((unsigned char)netLEState.etherAddress.byte4 << 8);
-    *BUF_TO_ADDR(netLEState.initBlockPtr, 
+		    (unsigned char)statePtr->etherAddress.byte3 | 
+		    ((unsigned char)statePtr->etherAddress.byte4 << 8);
+    *BUF_TO_ADDR(statePtr->initBlockPtr, 
 			NET_LE_INIT_ETHER_ADDR + 4) = 
-		    (unsigned char)netLEState.etherAddress.byte5 | 
-		    ((unsigned char)netLEState.etherAddress.byte6 << 8);
+		    (unsigned char)statePtr->etherAddress.byte5 | 
+		    ((unsigned char)statePtr->etherAddress.byte6 << 8);
     /*
      * Reject all multicast addresses.
      */
     for (i = 0; i < 4; i++) {
-	*BUF_TO_ADDR(netLEState.initBlockPtr, 
+	*BUF_TO_ADDR(statePtr->initBlockPtr, 
 		      NET_LE_INIT_MULTI_MASK + (sizeof(short) * i)) = 0;
     }
 
     /*
      * Set up the receive ring pointer.
      */
-    addr = BUF_TO_CHIP_ADDR(netLEState.recvDescFirstPtr);
-    *BUF_TO_ADDR(netLEState.initBlockPtr, NET_LE_INIT_RECV_LOW) = addr & 0xffff;
-    *BUF_TO_ADDR(netLEState.initBlockPtr, NET_LE_INIT_RECV_HIGH) =
+    addr = BUF_TO_CHIP_ADDR(statePtr->recvDescFirstPtr);
+    *BUF_TO_ADDR(statePtr->initBlockPtr, NET_LE_INIT_RECV_LOW) = addr & 0xffff;
+    *BUF_TO_ADDR(statePtr->initBlockPtr, NET_LE_INIT_RECV_HIGH) =
 				(unsigned)((addr >> 16) & 0xff) |
 		((unsigned)((NET_LE_NUM_RECV_BUFFERS_LOG2 << 5) & 0xe0) << 8);
-    if (*BUF_TO_ADDR(netLEState.initBlockPtr,
+    if (*BUF_TO_ADDR(statePtr->initBlockPtr,
 			      NET_LE_INIT_RECV_LOW) & 0x07) {
 	printf("netLE: Receive list not on QUADword boundary\n");
 	return;
@@ -218,12 +240,12 @@ NetLEReset()
     /*
      * Set up the transmit ring pointer.
      */
-    addr = BUF_TO_CHIP_ADDR(netLEState.xmitDescFirstPtr);
-    *BUF_TO_ADDR(netLEState.initBlockPtr, NET_LE_INIT_XMIT_LOW) = addr & 0xffff;
-    *BUF_TO_ADDR(netLEState.initBlockPtr, NET_LE_INIT_XMIT_HIGH) =
+    addr = BUF_TO_CHIP_ADDR(statePtr->xmitDescFirstPtr);
+    *BUF_TO_ADDR(statePtr->initBlockPtr, NET_LE_INIT_XMIT_LOW) = addr & 0xffff;
+    *BUF_TO_ADDR(statePtr->initBlockPtr, NET_LE_INIT_XMIT_HIGH) =
 				(unsigned)((addr >> 16) & 0xff) |
 		((unsigned)((NET_LE_NUM_XMIT_BUFFERS_LOG2 << 5) & 0xe0) << 8);
-    if (*BUF_TO_ADDR(netLEState.initBlockPtr, NET_LE_INIT_XMIT_LOW) & 0x07) {
+    if (*BUF_TO_ADDR(statePtr->initBlockPtr, NET_LE_INIT_XMIT_LOW) & 0x07) {
 	printf("netLE: Transmit list not on QUADword boundary\n");
 	return;
     }
@@ -231,28 +253,28 @@ NetLEReset()
     /*
      * Clear the Bus master control register (csr3).
      */
-    *netLEStatePtr->regAddrPortPtr = NET_LE_CSR3_ADDR;
-    *netLEStatePtr->regDataPortPtr = 0;
+    *statePtr->regAddrPortPtr = NET_LE_CSR3_ADDR;
+    *statePtr->regDataPortPtr = 0;
 
     /*
      * Set the init block pointer address in csr1 and csr2
      */
-    addr = BUF_TO_CHIP_ADDR(netLEState.initBlockPtr);
-    *netLEStatePtr->regAddrPortPtr = NET_LE_CSR1_ADDR;
-    *netLEStatePtr->regDataPortPtr = (short)(addr & 0xffff);
+    addr = BUF_TO_CHIP_ADDR(statePtr->initBlockPtr);
+    *statePtr->regAddrPortPtr = NET_LE_CSR1_ADDR;
+    *statePtr->regDataPortPtr = (short)(addr & 0xffff);
 
-    *netLEStatePtr->regAddrPortPtr = NET_LE_CSR2_ADDR;
-    *netLEStatePtr->regDataPortPtr = (short)((addr >> 16) & 0xff);
+    *statePtr->regAddrPortPtr = NET_LE_CSR2_ADDR;
+    *statePtr->regDataPortPtr = (short)((addr >> 16) & 0xff);
 
     /*
      * Tell the chip to initialize and wait for results.
      */
-    *netLEStatePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
-    *netLEStatePtr->regDataPortPtr = NET_LE_CSR0_INIT | NET_LE_CSR0_INIT_DONE;
+    *statePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
+    *statePtr->regDataPortPtr = NET_LE_CSR0_INIT | NET_LE_CSR0_INIT_DONE;
 
     {
 	int	i;
-	volatile unsigned short *csr0Ptr = netLEStatePtr->regDataPortPtr;
+	volatile unsigned short *csr0Ptr = statePtr->regDataPortPtr;
 
 
 	for (i = 0; ((*csr0Ptr & NET_LE_CSR0_INIT_DONE) == 0); i++) {
@@ -270,10 +292,11 @@ NetLEReset()
     /*
      * Start the chip and enable interrupts.
      */
-    *netLEStatePtr->regDataPortPtr = 
+    *statePtr->regDataPortPtr = 
 		    (NET_LE_CSR0_START | NET_LE_CSR0_INTR_ENABLE);
 
     printf("LE ethernet: Reinitialized chip.\n");
+    interPtr->flags |= NET_IFLAGS_RUNNING;
 
 }
 
@@ -294,25 +317,27 @@ NetLEReset()
  *----------------------------------------------------------------------
  */
 void
-NetLERestart()
+NetLERestart(interPtr)
+    Net_Interface	*interPtr; 	/* Interface to restart. */
 {
+    NetLEState	*statePtr = (NetLEState *) interPtr->interfaceData;
 
     DISABLE_INTR();
 
     /*
      * Drop the current packet so the sender does't get hung.
      */
-    NetLEXmitDrop();
+    NetLEXmitDrop(statePtr);
 
     /*
      * Reset the world.
      */
-    NetLEReset();
+    NetLEReset(interPtr);
 
     /*
      * Restart transmission of packets.
      */
-    NetLEXmitRestart();
+    NetLEXmitRestart(statePtr);
 
     ENABLE_INTR();
 }
@@ -334,19 +359,19 @@ NetLERestart()
  *----------------------------------------------------------------------
  */
 void
-NetLEIntr(polling)
-    Boolean	polling;	/* TRUE if are being polled instead of
-				 * processing an interrupt. */
+NetLEIntr(interPtr, polling)
+    Net_Interface	*interPtr;	/* Network interface.*/
+    Boolean	polling;		/* TRUE if are being polled instead of
+					 * processing an interrupt. */
 {
-    register NetLEState		*netLEStatePtr;
+    volatile register	NetLEState	*statePtr;
     ReturnStatus		statusXmit, statusRecv;
     register unsigned short	csr0;
     Boolean			reset;
 
-    netLEStatePtr = &netLEState;
-
-    *netLEStatePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
-    csr0 = *netLEStatePtr->regDataPortPtr;
+    statePtr = (NetLEState *) interPtr->interfaceData;
+    *statePtr->regAddrPortPtr = NET_LE_CSR0_ADDR;
+    csr0 = *statePtr->regDataPortPtr;
 
     /*
      * Check for errors.
@@ -359,7 +384,7 @@ NetLEIntr(polling)
 	    /*
 	     * Clear interrupt bit but don't reset controller.
 	     */
-	    *netLEStatePtr->regDataPortPtr = NET_LE_CSR0_MISSED_PACKET;
+	    *statePtr->regDataPortPtr = NET_LE_CSR0_MISSED_PACKET;
 	    reset = FALSE;
 	}
 	if (csr0 & NET_LE_CSR0_COLLISION_ERROR) {
@@ -387,7 +412,7 @@ NetLEIntr(polling)
 	 * Clear the error the easy way, reinitialize everything.
 	 */
 	if (reset == TRUE) {
-	    NetLERestart();
+	    NetLERestart(interPtr);
 	    return;
 	}
     }
@@ -397,13 +422,13 @@ NetLEIntr(polling)
      * Did we receive a packet.
      */
     if (csr0 & NET_LE_CSR0_RECV_INTR) {
-	statusRecv = NetLERecvProcess(FALSE);
+	statusRecv = NetLERecvProcess(FALSE, statePtr);
     }
     /*
      * Did we transmit a packet.
      */
     if (csr0 & NET_LE_CSR0_XMIT_INTR) {
-	statusXmit = NetLEXmitDone();
+	statusXmit = NetLEXmitDone(statePtr);
     }
     /*
      * Did the chip magically initialize itself?
@@ -417,7 +442,7 @@ NetLEIntr(polling)
     }
 
     if (statusRecv != SUCCESS || statusXmit != SUCCESS) {
-	NetLERestart();
+	NetLERestart(interPtr);
 	return;
     }
     /*
@@ -512,3 +537,33 @@ BUF_TO_CHIP_ADDR(addr)
     return(retAddr);
 }
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLEGetStats --
+ *
+ *	Return the statistics for the interface.
+ *
+ * Results:
+ *	A pointer to the statistics structure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+NetLEGetStats(interPtr, statPtr)
+    Net_Interface	*interPtr;		/* Current interface. */
+    Net_Stats		*statPtr;		/* Statistics to return. */
+{
+    NetLEState	*statePtr;
+    statePtr = (NetLEState *) interPtr->interfaceData;
+    DISABLE_INTR();
+    statPtr->ether = statePtr->stats;
+    ENABLE_INTR();
+    return SUCCESS;
+}
+

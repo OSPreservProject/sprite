@@ -23,9 +23,7 @@
 #ifndef _NETIEINT
 #define _NETIEINT
 
-#include "netEther.h"
-#include "net.h"
-#include "netInt.h"
+#include <netInt.h>
 
 /*
  * Defined constants:
@@ -95,11 +93,12 @@
  * NET_IE_ADDR_TO_SUN_ADDR	Change an intel address to a SUN address.
  */
 
-#define NET_IE_CHIP_RESET (*(volatile char *) netIEState.controlReg = 0)
-#define NET_IE_CHANNEL_ATTENTION \
+#define NET_IE_CHIP_RESET(statePtr) \
+    (*(volatile char *) statePtr->controlReg = 0)
+#define NET_IE_CHANNEL_ATTENTION(statePtr) \
 	{ \
-	    netIEState.controlReg->channelAttn = 1; \
-	    netIEState.controlReg->channelAttn = 0; \
+	    NetBfByteSet(statePtr->controlReg, ChannelAttn, 1); \
+	    NetBfByteSet(statePtr->controlReg, ChannelAttn, 0); \
 	}
 
 #define NET_IE_DELAY(condition) \
@@ -107,6 +106,9 @@
 	    register int i = (NET_IE_DELAY_CONST); \
 	    while (i > 0 && !(condition)) { \
 		    i--; \
+	    } \
+	    if (!(condition)) { \
+		printf("Delay %s:%d failed.\n", __FILE__, __LINE__); \
 	    } \
 	}
 
@@ -171,46 +173,64 @@ typedef struct {
 } NetIEIntSysConfPtr;
 
 /*
- * The system control block status.
+ * The system control block (SCB) status has the following format:
+ *
+ *typedef struct {
+ *    unsigned int 		    :1;	  Must be zero   
+ *    unsigned int recvUnitStatus     :3;	  Receive unit status   
+ *    unsigned int 	            :4;	  Must be zero   
+ *    unsigned int cmdDone	    :1;	  A command which has its interrupt
+ *					   bit set completed.   
+ *    unsigned int frameRecvd	    :1;	  A frame received interrupt has been
+ *					   given.   
+ *    unsigned int cmdUnitNotActive   :1;  The command unit has left the active
+ *					   state.   
+ *    unsigned int recvUnitNotReady   :1;  The command unit has left the ready
+					   state.   
+ *    unsigned int                    :1;	  Must be zero.   
+
+ *    unsigned int cmdUnitStatus	    :3;   Command unit status.   
+ *} NetIESCBStatus;
  */
+typedef unsigned short NetIESCBStatus[1];
 
-typedef struct {
-    unsigned int 		    :1;	/* Must be zero */
-    unsigned int recvUnitStatus     :3;	/* Receive unit status */
-    unsigned int 	            :4;	/* Must be zero */
-    unsigned int cmdDone	    :1;	/* A command which has its interrupt
-					   bit set completed. */
-    unsigned int frameRecvd	    :1;	/* A frame received interrupt has been
-					   given. */
-    unsigned int cmdUnitNotActive   :1;	/* The command unit has left the active
-					   state. */
-    unsigned int recvUnitNotReady   :1;	/* The command unit has left the ready
-					   state. */
-    unsigned int                    :1;	/* Must be zero. */
+#define RecvUnitStatus            0x0103
+#define CmdDone                   0x0801
+#define FrameRecvd                0x0901
+#define CmdUnitNotActive          0x0a01
+#define RecvUnitNotReady          0x0b01
+#define CmdUnitStatus             0x0d03
 
-    unsigned int cmdUnitStatus	    :3; /* Command unit status. */
-} NetIESCBStatus;
-
-/* 
- * The system control block command word.
+/*
+ * The system control block (SCB) command word has the following format:
+ *
+ * typedef struct {
+ *    unsigned int reset		     :1;     Reset the chip.   
+ *    unsigned int recvUnitCmd        :3;    The command for the receive unit   
+ *    unsigned int 		     :4;     Unused.   
+ *
+ *    unsigned int ackCmdDone         :1;     Ack the command completed bit in
+ *					     the status word.   
+ *    unsigned int ackFrameRecvd      :1;     Ack the frame received bit in the
+ *					     the status word.   
+ *    unsigned int ackCmdUnitNotActive:1;     Ack that the command unit became
+ *					     not active.   
+ *    unsigned int ackRecvUnitNotReady:1;     Ack that the receive unit became
+ *					     not ready   
+ *    unsigned int		     :1;     Unused.   
+ *    unsigned int cmdUnitCmd         :3;    The command for the command unit   
+ *} NetIESCBCommand;
  */
+typedef unsigned short NetIESCBCommand[1];
 
-typedef struct {
-    unsigned int reset		     :1;  /* Reset the chip. */
-    unsigned int recvUnitCmd        :3;  /* The command for the receive unit */
-    unsigned int 		     :4;  /* Unused. */
+#define Reset                     0x0001
+#define RecvUnitCmd               0x0103
+#define AckCmdDone                0x0801
+#define AckFrameRecvd             0x0901
+#define AckCmdUnitNotActive       0x0a01
+#define AckRecvUnitNotReady       0x0b01
+#define CmdUnitCmd                0x0d03
 
-    unsigned int ackCmdDone         :1;  /* Ack the command completed bit in
-					     the status word. */
-    unsigned int ackFrameRecvd      :1;  /* Ack the frame received bit in the
-					     the status word. */
-    unsigned int ackCmdUnitNotActive:1;  /* Ack that the command unit became
-					     not active. */
-    unsigned int ackRecvUnitNotReady:1;  /* Ack that the receive unit became
-					     not ready */
-    unsigned int		     :1;  /* Unused. */
-    unsigned int cmdUnitCmd         :3;  /* The command for the command unit */
-} NetIESCBCommand;
 
 /*
  * Define the macros to Check and acknowledge the status of the chip.
@@ -285,23 +305,42 @@ typedef struct {
  * Generic command block
  */
 
+/* 
+ * The NetIECommandBlock has the following format:
+ *
+ * typedef struct {
+ *    unsigned int 		:8;	  Low order bits of status.  
+ *    unsigned int cmdDone	:1;	  Command done.  
+ *    unsigned int cmdBusy	:1;	  Command busy.  
+ *    unsigned int cmdOK	:1;	  Command completed successfully.  
+ *    unsigned int cmdAborted	:1;	  The command aborted.  
+ *    unsigned int		:4;	  High order bits of status.  
+ *    unsigned int		:5;	  Unused.  
+ *    unsigned int cmdNumber	:3;	  Command number.  
+ *    unsigned int endOfList	:1;	  The end of the command list.  
+ *    unsigned int suspend	:1;	  Suspend when command completes.  
+ *    unsigned int interrupt	:1;	  Interrupt when the command 
+ *					   completes.  
+ *    unsigned int		:5;	  Unused.  
+ *   short	   nextCmdBlock;	  The offset of the next command 
+ *					   block.  
+ *} NetIECommandBlock;
+ */
+
 typedef struct {
-    unsigned int 		:8;	/* Low order bits of status. */
-    unsigned int cmdDone	:1;	/* Command done. */
-    unsigned int cmdBusy	:1;	/* Command busy. */
-    unsigned int cmdOK		:1;	/* Command completed successfully. */
-    unsigned int cmdAborted	:1;	/* The command aborted. */
-    unsigned int		:4;	/* High order bits of status. */
-    unsigned int		:5;	/* Unused. */
-    unsigned int cmdNumber	:3;	/* Command number. */
-    unsigned int endOfList	:1;	/* The end of the command list. */
-    unsigned int suspend	:1;	/* Suspend when command completes. */
-    unsigned int interrupt	:1;	/* Interrupt when the command 
-					   completes. */
-    unsigned int		:5;	/* Unused. */
-    short	   nextCmdBlock;	/* The offset of the next command 
+    unsigned short	bits[2];	/* Control bits.  See below. */
+    short	   	nextCmdBlock;	/* The offset of the next command 
 					   block. */
 } NetIECommandBlock;
+
+#define CmdDone                   0x0801
+#define CmdBusy                   0x0901
+#define CmdOK                     0x0a01
+#define CmdAborted                0x0b01
+#define CmdNumber                 0x1503
+#define EndOfList                 0x1801
+#define Suspend                   0x1901
+#define Interrupt                 0x1a01
 
 /*
  * Command block commands.
@@ -334,89 +373,102 @@ typedef	struct {
 } NetIEIASetupCB;
 
 /*
- * The configure command block.
+ * The bits of the configure command block have the following format:
+ *
+ * typedef struct {
+ *    NetIECommandBlock	cmdBlock;	  The command block.  
+ *
+ *    unsigned int		:4;	  Unused.  
+ *    unsigned int byteCount	:4;	  Number of configuration bytes.  
+ *
+ *    unsigned int          	:4;	  Number of configuration bytes.  
+ *    unsigned int fifoLimit	:4;	  The fifo limit.  
+ *
+ *    unsigned int saveBadFrames :1;	  Save bad frames.  
+ *    unsigned int srdyArdy	:1;	  srdy/ardy.  
+ *    unsigned int 		:6;	  Unused.  
+ *
+ *    unsigned int excLoopback	:1;	  External loop back.  
+ *    unsigned int intLoopback	:1;	  Internal loop back.  
+ *    unsigned int preamble	:2;	  Preamble length code.  
+ *    unsigned int atLoc 	:1;	  Address and type fields are part  
+ *    unsigned int addrLen	:3;	  The number of address bytes.  
+ *
+ *    unsigned int backOff	:1;	  Backoff method.  
+ *    unsigned int expPrio	:3;	  Exponential priority.  
+ *    unsigned int 		:1;	  Unused.  
+ *    unsigned int linPrio	:3;	  Linear priority.  
+ *
+ *    unsigned int interFrameSpace:8;	  Interframe spacing.  
+ *
+ *    unsigned int slotTimeLow	:8;	  Low bits of slot time.  
+ *
+ *    unsigned int numRetries	:4;	  Number of transmit retries.  
+ *    unsigned int 		:1;	  Unused.  	
+ *    unsigned int slotTimeHigh	:3;	  High bits of the slot time.  
+ *
+ *    unsigned int pad		:1;	  Padding.  
+ *    unsigned int bitStuff	:1;	  Hdlc bit stuffing.  
+ *    unsigned int crc16		:1;	  CRC 16 bits or 32.  
+ *    unsigned int noCrcInsert	:1;	  No crc insertion.  
+ *    unsigned int xmitOnNoCarr  :1;	  Transmit even if no carrier sense.  
+ *    unsigned int manch	:1;	  Manchester or NRZ encoding.  
+ *    unsigned int noBroadcast	:1;	  Disable broadcasts.  
+ *    unsigned int promisc	:1;	  Promiscuous mode.  
+ *
+ *    unsigned int collDetectSrc	:1;	  Collision detect source.  
+ *    unsigned int cdFilter	:3;	  Collision detect filter bits.  
+ *    unsigned int carrSenseSrc	:1;	  Carrier sense source.  
+ *    unsigned int carrSenseFilter:3;	
+ *
+ *    unsigned int minFrameLength:8;	  Minimum frame length.  
+ *
+ *    unsigned int		:8;	  Unused.  
+ *} NetIEConfigureCB;
  */
 
 typedef struct {
     NetIECommandBlock	cmdBlock;	/* The command block. */
-
-    unsigned int		:4;	/* Unused. */
-    unsigned int byteCount	:4;	/* Number of configuration bytes. */
-
-    unsigned int          	:4;	/* Number of configuration bytes. */
-    unsigned int fifoLimit	:4;	/* The fifo limit. */
-
-    unsigned int saveBadFrames :1;	/* Save bad frames. */
-    unsigned int srdyArdy	:1;	/* srdy/ardy. */
-    unsigned int 		:6;	/* Unused. */
-
-    unsigned int excLoopback	:1;	/* External loop back. */
-    unsigned int intLoopback	:1;	/* Internal loop back. */
-    unsigned int preamble	:2;	/* Preamble length code. */
-    unsigned int atLoc 	:1;	/* Address and type fields are part */
-    unsigned int addrLen	:3;	/* The number of address bytes. */
-
-    unsigned int backOff	:1;	/* Backoff method. */
-    unsigned int expPrio	:3;	/* Exponential priority. */
-    unsigned int 		:1;	/* Unused. */
-    unsigned int linPrio	:3;	/* Linear priority. */
-
-    unsigned int interFrameSpace:8;	/* Interframe spacing. */
-
-    unsigned int slotTimeLow	:8;	/* Low bits of slot time. */
-
-    unsigned int numRetries	:4;	/* Number of transmit retries. */
-    unsigned int 		:1;	/* Unused. */	
-    unsigned int slotTimeHigh	:3;	/* High bits of the slot time. */
-
-    unsigned int pad		:1;	/* Padding. */
-    unsigned int bitStuff	:1;	/* Hdlc bit stuffing. */
-    unsigned int crc16		:1;	/* CRC 16 bits or 32. */
-    unsigned int noCrcInsert	:1;	/* No crc insertion. */
-    unsigned int xmitOnNoCarr  :1;	/* Transmit even if no carrier sense. */
-    unsigned int manch		:1;	/* Manchester or NRZ encoding. */
-    unsigned int noBroadcast	:1;	/* Disable broadcasts. */
-    unsigned int promisc	:1;	/* Promiscuous mode. */
-
-    unsigned int collDetectSrc	:1;	/* Collision detect source. */
-    unsigned int cdFilter	:3;	/* Collision detect filter bits. */
-    unsigned int carrSenseSrc	:1;	/* Carrier sense source. */
-    unsigned int carrSenseFilter:3;	
-
-    unsigned int minFrameLength:8;	/* Minimum frame length. */
-
-    unsigned int		:8;	/* Unused. */
+    unsigned short	bits[6];
 } NetIEConfigureCB;
 
+#define ByteCount                 0x0404
+#define FifoLimit                 0x0c04
+#define SaveBadFrames             0x1001
+#define SrdyArdy                  0x1101
+#define ExcLoopback               0x1801
+#define IntLoopback               0x1901
+#define Preamble                  0x1a02
+#define AtLoc                     0x1c01
+#define AddrLen                   0x1d03
+#define BackOff                   0x2001
+#define ExpPrio                   0x2103
+#define LinPrio                   0x2503
+#define InterFrameSpace           0x2808
+#define SlotTimeLow               0x3008
+#define NumRetries                0x3804
+#define SlotTimeHigh              0x3d03
+#define Pad                       0x4001
+#define BitStuff                  0x4101
+#define Crc16                     0x4201
+#define NoCrcInsert               0x4301
+#define XmitOnNoCarr              0x4401
+#define Manch                     0x4501
+#define NoBroadcast               0x4601
+#define Promisc                   0x4701
+#define CollDetectSrc             0x4801
+#define CdFilter                  0x4903
+#define CarrSenseSrc              0x4c01
+#define CarrSenseFilter           0x4d03
+#define MinFrameLength            0x5008
+
+
 /*
- * The transmit command block.
+ * Transmit command block. 
  */
 
 typedef struct {
-    unsigned int xmitDeferred	:1;	/* Transmission deferred. */
-    unsigned int heartBeat	:1;	/* Heart beat. */
-    unsigned int tooManyCollisions:1;	/* Too many transmit collisions. */
-    unsigned int 		:1;	/* Unused. */
-    unsigned int numCollisions	:4;	/* The number of collisions 
-					   experienced */
-    unsigned int cmdDone	:1;	/* Command done. */
-    unsigned int cmdBusy	:1;	/* Command busy. */
-    unsigned int cmdOK		:1;	/* Command completed successfully. */
-    unsigned int cmdAborted	:1;	/* The command aborted. */
-    unsigned int 		:1;	/* Unused. */
-    unsigned int noCarrSense	:1;	/* No carrier sense. */
-    unsigned int noClearToSend	:1;	/* Transmission unsuccessful because
-					   of loss of clear to send signal. */
-    unsigned int underRun	:1; 	/* DMA underrun. */
-
-    unsigned int		:5;	/* Unused. */
-    unsigned int cmdNumber	:3;	/* Command number. */
-
-    unsigned int endOfList	:1;	/* The end of the command list. */
-    unsigned int suspend	:1;	/* Suspend when command completes. */
-    unsigned int interrupt	:1;	/* Interrupt when the command 
-    unsigned int 		:5;	/* Unused. */
-
+    unsigned int bits[1];		/* See below. */
     short	  nextCmdBlock;		/* The offset of the next command 
 					   block */
     short	  bufDescOffset;	/* The offset of the buffer descriptor */
@@ -425,46 +477,96 @@ typedef struct {
     short	  type;			/* Ethernet packet type field. */
 } NetIETransmitCB;
 
+/*
+ * The transmit command block has the following format:
+ *
+ * typedef struct {
+ *    unsigned int xmitDeferred	:1;	  Transmission deferred.  
+ *    unsigned int heartBeat	:1;	  Heart beat.  
+ *    unsigned int tooManyCollisions:1;	  Too many transmit collisions.  
+ *    unsigned int 		:1;	  Unused.  
+ *    unsigned int numCollisions	:4;	  The number of collisions 
+ *					   experienced  
+ *    unsigned int cmdDone	:1;	  Command done.  
+ *    unsigned int cmdBusy	:1;	  Command busy.  
+ *    unsigned int cmdOK		:1; Command completed successfully.  
+ *    unsigned int cmdAborted	:1;	  The command aborted.  
+ *    unsigned int 		:1;	  Unused.  
+ *    unsigned int noCarrSense	:1;	  No carrier sense.  
+ *    unsigned int noClearToSend	:1; Transmission unsuccessful because
+ *					   of loss of clear to send signal.  
+ *    unsigned int underRun	:1; 	  DMA underrun.  
+ *
+ *    unsigned int		:5;	  Unused.  
+ *    unsigned int cmdNumber	:3;	  Command number.  
+ *
+ *    unsigned int endOfList	:1;	  The end of the command list.  
+ *    unsigned int suspend	:1;	  Suspend when command completes.  
+ *    unsigned int interrupt	:1;	  Interrupt when the command 
+ *    unsigned int 		:5;	  Unused.  
+ *
+ *    short	  nextCmdBlock;		  The offset of the next command 
+ *					   block  
+ *    short	  bufDescOffset;	  The offset of the buffer descriptor  
+ *    Net_EtherAddress  destEtherAddr;	  The ethernet address of the 
+ *					   destination machine.  
+ *    short	  type;			  Ethernet packet type field.  
+ *} NetIETransmitCB;
+ */
+
+#define XmitDeferred              0x0001
+#define HeartBeat                 0x0101
+#define TooManyCollisions         0x0201
+#define NumCollisions             0x0404
+#define CmdDone                   0x0801
+#define CmdBusy                   0x0901
+#define CmdOK                     0x0a01
+#define CmdAborted                0x0b01
+#define NoCarrSense               0x0d01
+#define NoClearToSend             0x0e01
+#define UnderRun                  0x0f01
+#define CmdNumber                 0x1503
+#define EndOfList                 0x1801
+#define Suspend                   0x1901
+#define Interrupt                 0x1a01
+
+
 /* 
  * The transmit buffer descriptor.
  */
 
 typedef struct {
-    unsigned	int countLow	:8;	/* Low order 8 bits of count of bytes */
-    unsigned	int eof	:1;	/* Last buffer in the packet. */
-    unsigned	int		:1;	/* Unused. */
-    unsigned	int countHigh	:6;	/* High order 6 bits of the count. */
-
+    unsigned short bits[1];		/* See below. */
     short	nextTBD;		/* Offset of the next transmit 
 					   buffer descriptor. */
     int		bufAddr;		/* Address of buffer of data. */
 } NetIETransmitBufDesc;
 
 /*
+ * The transmit buffer descriptor has the following format:
+ *
+ * typedef struct {
+ *    unsigned	int countLow	:8;	  Low order 8 bits of count of bytes  
+ *    unsigned	int eof	:1;	  Last buffer in the packet.  
+ *    unsigned	int		:1;	  Unused.  
+ *    unsigned	int countHigh	:6;	  High order 6 bits of the count.  
+ *
+ *    short	nextTBD;		  Offset of the next transmit 
+ *					   buffer descriptor.  
+ *    int		bufAddr;		  Address of buffer of data.  
+ *} NetIETransmitBufDesc;
+ */
+
+#define CountLow                  0x0008
+#define Eof                       0x0801
+#define CountHigh                 0x0a06
+
+/*
  * The receive frame descriptor.
  */
 
 typedef struct NetIERecvFrameDesc {
-    unsigned int shortFrame	:1;	/* Was a short frame. */
-    unsigned int noEOF		:1;	/* No EOF (bitstuffing mode only). */
-    unsigned int 		:6;	/* Unused. */
-
-    unsigned int done		:1;	/* Frame completely stored. */
-    unsigned int busy		:1;	/* Busy storing frame. */
-    unsigned int ok		:1;	/* Frame received OK */
-    unsigned int 		:1;	/* Unused. */
-    unsigned int crcError	:1;	/* Received packet had a crc error */
-    unsigned int alignError	:1;	/* Received packet had an alignment 
-					   error */
-    unsigned int outOfBufs	:1;	/* Receive unit ran out of memory */
-    unsigned int overrun	:1;	/* DMA overrun. */
-
-    unsigned int 		:8;	/* Unused. */
-
-    unsigned int endOfList	:1;	/* End of list. */
-    unsigned int suspend	:1;	/* Suspend when done receiving. */
-    unsigned int 		:6;	/* Unused. */
-
+    unsigned int bits[1];		/* See below. */
     short nextRFD;			/* Next receive frame descriptor. */
     short recvBufferDesc;		/* Offset of the first receive buffer
 					   descriptor. */
@@ -477,27 +579,64 @@ typedef struct NetIERecvFrameDesc {
 } NetIERecvFrameDesc;
 
 /*
- * Receive buffer descriptor.
+ * The receive frame descriptor has the following format:
+ *
+ * typedef struct NetIERecvFrameDesc {
+ *    unsigned int shortFrame	:1;	  Was a short frame.  
+ *    unsigned int noEOF	:1;	  No EOF (bitstuffing mode only).  
+ *    unsigned int 		:6;	  Unused.  
+ *
+ *    unsigned int done		:1;	  Frame completely stored.  
+ *    unsigned int busy		:1;	  Busy storing frame.  
+ *    unsigned int ok		:1;	  Frame received OK  
+ *    unsigned int 		:1;	  Unused.  
+ *    unsigned int crcError	:1;	  Received packet had a crc error  
+ *    unsigned int alignError	:1;	  Received packet had an alignment * 
+ *					   error  
+ *    unsigned int outOfBufs	:1;	  Receive unit ran out of memory  
+ *    unsigned int overrun	:1;	  DMA overrun.  
+ *
+ *    unsigned int 		:8;	  Unused.  
+ *
+ *    unsigned int endOfList	:1;	  End of list.  
+ *    unsigned int suspend	:1;	  Suspend when done receiving.  
+ *    unsigned int 		:6;	  Unused.  
+ *
+ *    short nextRFD;			  Next receive frame descriptor.  
+ *    short recvBufferDesc;		  Offset of the first receive buffer
+ *					   descriptor.  
+ *
+ *    Net_EtherAddress destAddr;	  Destination ethernet address.  
+ *    Net_EtherAddress srcAddr;		  Source ethernet address.  
+ *    short 	 type;			  Ethernet packet type.  
+ *    volatile struct NetIERecvFrameDesc *realNextRFD;   The SUN address of 
+ *                                        the next receive frame descriptor.  
+ *} NetIERecvFrameDesc;
  */
 
+#define ShortFrame                0x0001
+#define NoEOF                     0x0101
+#define Done                      0x0801
+#define Busy                      0x0901
+#define Ok                        0x0a01
+#define CrcError                  0x0c01
+#define AlignError                0x0d01
+#define OutOfBufs                 0x0e01
+#define Overrun                   0x0f01
+#define EndOfList                 0x1801
+#define Suspend                   0x1901
+
+/*
+ * Receive buffer descriptor.
+ */
 typedef struct NetIERecvBufDesc {
-    unsigned int countLow	:8;	/* Low order bits of the count of bytes
-					   in this buffer. */
-    unsigned int eof		:1;	/* Last buffer for this packet. */
-    unsigned int countValid	:1;	/* The value in the count field is 
-					   valid. */
-    unsigned int countHigh	:6;	/* High order bits of the count. */
+    unsigned short bits1[1];		/* See below. */
 
     short nextRBD;			/* Next receive buffer descriptor. */
     int	  bufAddr;			/* The address of the buffer that
 					   this descriptor puts its data. */
 
-    unsigned int bufSizeLow	:8;	/* Low order bits of amount of bytes
-					   this buffer is capable of holding */
-    unsigned int endOfList	:1;	/* This is the end of the RBD list. */
-    unsigned int		:1;	/* Unused. */
-    unsigned int bufSizeHigh	:6;	/* High order 6 bits of the buffer 
-					   size. */
+    unsigned short bits2[1];		/* See below. */
     Address	realBufAddr;		/* The SUN address of the buffer 
 					   where this descriptor puts its data*/
     volatile struct NetIERecvBufDesc *realNextRBD; /* The 6800 Address of the
@@ -505,20 +644,70 @@ typedef struct NetIERecvBufDesc {
 } NetIERecvBufDesc;
 
 /*
+ * The receive buffer descriptor has the following format:
+ *
+ * typedef struct NetIERecvBufDesc {
+ *    unsigned int countLow	:8;	  Low order bits of the count of bytes
+ *					   in this buffer.  
+ *    unsigned int eof		:1;	  Last buffer for this packet.  
+ *    unsigned int countValid	:1;	  The value in the count field is 
+ *					   valid.  
+ *    unsigned int countHigh	:6;	  High order bits of the count.  
+ *
+ *    short nextRBD;			  Next receive buffer descriptor.  
+ *    int	  bufAddr;		  The address of the buffer that
+ *					   this descriptor puts its data.  
+ *
+ *    unsigned int bufSizeLow	:8;	  Low order bits of amount of bytes
+ *					   this buffer is capable of holding  
+ *    unsigned int endOfList	:1;	  This is the end of the RBD list.  
+ *    unsigned int		:1;	  Unused.  
+ *    unsigned int bufSizeHigh	:6;	  High order 6 bits of the buffer 
+ *					   size.  
+ *    Address	realBufAddr;		  The SUN address of the buffer 
+ *					   where this descriptor puts its data 
+ *    volatile struct NetIERecvBufDesc *realNextRBD;   The 6800 Address of the
+ *                                            next receive buffer descriptor.  
+ *} NetIERecvBufDesc;
+ */
+
+#define CountLow                  0x0008
+#define Eof                       0x0801
+#define CountValid                0x0901
+#define CountHigh                 0x0a06
+
+#define BufSizeLow                0x0008
+#define RBDEndOfList              0x0801
+#define BufSizeHigh               0x0a06
+
+/*
  * The intel ethernet register.
  */
 
-typedef struct {
-    unsigned int noReset	:1;	/* R/W: 0 => Ethernet reset, 
-						1 => Normal. */
-    unsigned int noLoopback	:1;	/* R/W: 0 => Loopback, 
-						1 => Normal. */
-    unsigned int channelAttn	:1;	/* R/W: Channel Attention. */
-    unsigned int intrEnable	:1;	/* R/W: Interrupt enable. */
-    unsigned int 		:2;	/* Reserved. */
-    unsigned int busError	:1;	/* R/O: DMA bus error. */
-    unsigned int intrPending	:1;	/* R/O: Got an interrupt request. */
-} NetIEControlRegister;
+typedef unsigned char NetIEControlRegister;
+
+/*
+ * The intel ethernet register has the following format:
+ *
+ * typedef struct {
+ *    unsigned int noReset	:1;	  R/W: 0 => Ethernet reset, 
+ *						1 => Normal.  
+ *    unsigned int noLoopback	:1;	  R/W: 0 => Loopback, 
+ *						1 => Normal.  
+ *    unsigned int channelAttn	:1;	  R/W: Channel Attention.  
+ *    unsigned int intrEnable	:1;	  R/W: Interrupt enable.  
+ *    unsigned int 		:2;	  Reserved.  
+ *    unsigned int busError	:1;	  R/O: DMA bus error.  
+ *    unsigned int intrPending	:1;	  R/O: Got an interrupt request.  
+ *} NetIEControlRegister;
+ */
+
+#define NoReset                   0x0001
+#define NoLoopback                0x0101
+#define ChannelAttn               0x0201
+#define IntrEnable                0x0301
+#define BusError                  0x0601
+#define IntrPending               0x0701
 
 /*
  * Structure to hold all state information associated with one of these
@@ -547,6 +736,8 @@ typedef struct {
 					   packets to be transmited. */
     List_Links      	*xmitFreeList;	/* Pointer to a list of unused 
 					   transmission queue elements. */
+    List_Links		xmitListHdr;	/* The transmit list. */
+    List_Links		xmitFreeListHdr;/* The unused elements. */
     volatile NetIETransmitCB *xmitCBPtr; /* Pointer to the single command block
 					   for transmitting packets. */
     Boolean		transmitting;	/* Set if are currently transmitting a
@@ -555,75 +746,97 @@ typedef struct {
     volatile NetIEControlRegister *controlReg;/* The onboard device register.*/
     Net_EtherAddress	etherAddress;	/* The ethernet address in reverse
 					   byte order. */
+    char		*netIEXmitTempBuffer;	/* Buffer for pieces of a 
+						 * packet that are too small
+						 * or misaligned. */
+    volatile NetIETransmitBufDesc *xmitBufAddr;	/* The address of the array 
+						 * of buffer descriptor 
+						 * headers. */
+    Net_ScatterGather 	*curScatGathPtr;  /* Pointer to scatter gather element 
+					   * for current packet being sent. */
+    Net_Interface	*interPtr;	/* Pointer back to network interface. */
+    Net_EtherStats	stats;		/* Performance statistics. */
+    Address		netIERecvBuffers[NET_IE_NUM_RECV_BUFFERS]; /* Buffers.*/
+    char            	loopBackBuffer[NET_ETHER_MAX_BYTES]; /* Buffer for the
+						  * loopback address. */
 } NetIEState;
 
 /*
- * The state of all of the interfaces. 
+ * XMIT_TEMP_BUFSIZE limits how big a thing can
+ * be and start on an odd address.
  */
-  
-extern	NetIEState	netIEState;
+#define XMIT_TEMP_BUFSIZE	(NET_ETHER_MAX_BYTES + 2)
 
 /*
- * The table of receive buffer addresses.
+ * Define the minimum size allowed for a piece of a transmitted packet.
+ * There is a minimum size because the Intel chip has problems if the pieces
+ * are too small.
  */
-
-extern	Address	netIERecvBuffers[];
+#define MIN_XMIT_BUFFER_SIZE	12
 
 /*
  * Buffers for output.
  */
 extern	char	*netIEXmitFiller;
-extern	char	*netIEXmitTempBuffer;
 
 /*
  * General routines.
  */
 
-extern	Boolean	NetIEInit();
-extern	void	NetIEOutput();
-extern	void	NetIEIntr();
-extern	void	NetIERestart();
-
-extern	void	NetIEReset();
+extern ReturnStatus NetIEInit _ARGS_((Net_Interface *interPtr));
+extern void NetIEOutput _ARGS_((Net_Interface *interPtr, 
+		Address hdrPtr, Net_ScatterGather *scatterGatherPtr,
+		int scatterGatherLength));
+extern void NetIEIntr _ARGS_((Net_Interface *interPtr, Boolean polling));
+extern ReturnStatus NetIEIOControl _ARGS_((Net_Interface *interPtr, 
+			Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern void NetIERestart _ARGS_((Net_Interface *interPtr));
+extern void NetIEReset _ARGS_((Net_Interface *interPtr));
+extern ReturnStatus NetIEGetStats _ARGS_((Net_Interface *interPtr, 
+			Net_Stats *statPtr));
 
 /*
  * Routines for transmitting.
  */
 
-extern	void	NetIEXmitInit();
-extern	void	NetIEXmitDone();
-extern	void	NetIEXmitRestart();
+extern void NetIEXmitInit _ARGS_((NetIEState *statePtr));
+extern void NetIEXmitDone _ARGS_((NetIEState *statePtr));
+extern void NetIEXmitDrop _ARGS_((NetIEState *statePtr));
 
 /*
  * Routines for the command unit.
  */
 
-extern	void	NetIECheckSCBCmdAccept();
-extern	void	NetIEExecCommand();
+extern void NetIECheckSCBCmdAccept _ARGS_((volatile NetIESCB *scbPtr));
+extern void NetIEExecCommand _ARGS_((register volatile NetIECommandBlock *cmdPtr, NetIEState *statePtr));
 
 /*
  * Routines for the receive unit.
  */
 
-extern	void	NetIERecvUnitInit();
-extern	void	NetIERecvProcess();
+extern void NetIERecvUnitInit _ARGS_((NetIEState *statePtr));
+extern void NetIERecvProcess _ARGS_((Boolean dropPackets, NetIEState *statePtr));
 
 /*
  * Memory routines.
  */
 
-extern	void	NetIEMemInit();
-extern	Address	NetIEMemAlloc();
-extern	void	NetIEMemFree();
+extern void NetIEMemInit _ARGS_((NetIEState *statePtr));
+extern Address NetIEMemAlloc _ARGS_((NetIEState *statePtr));
 
 /*
  * Routines to convert to addresses and offsets.
  */
 
-extern	int	NetIEAddrFromSUNAddr();
-extern	int	NetIEAddrToSUNAddr();
-extern	int	NetIEOffsetFromSUNAddr();
-extern	int	NetIEOffsetToSUNAddr();
-extern	int	NetIEShortSwap();
+extern int NetIEAddrFromSUNAddr _ARGS_((int addr));
+extern int NetIEAddrToSUNAddr _ARGS_((int addr));
+extern int NetIEOffsetFromSUNAddr _ARGS_((int addr, NetIEState *statePtr));
+extern int NetIEOffsetToSUNAddr _ARGS_((int offset, NetIEState *statePtr));
+extern int NetIEShortSwap _ARGS_((int num));
+
+extern void NetIEStatePrint _ARGS_((NetIEState *statePtr));
+extern void NetIEIntSysConfPtrPrint _ARGS_((volatile 
+		NetIEIntSysConfPtr *confPtr));
+extern void NetIESCBPrint _ARGS_((volatile NetIESCB *scbPtr));
 
 #endif /* _NETIEINT */

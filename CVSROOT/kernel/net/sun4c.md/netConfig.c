@@ -21,8 +21,14 @@
 #include "netInt.h"
 #include "netLEInt.h"
 
-NetInterface netInterface[] = {
-    {"LE", 0, NET_LE_CONTROL_REG_ADDR, NetLEInit}
+/*
+ * On the sparcstations the control register isn't mapped by the prom.
+ * It is at physical address 0x8c00000.
+ */
+
+Net_Interface netConfigInterfaces[] = {
+    {"LE", 0, (Address) 0x8c00000, FALSE, 5, NetLEInit}
 };
-int numNetInterfaces = sizeof(netInterface) / sizeof(NetInterface);
+int netNumConfigInterfaces = 
+	    sizeof(netConfigInterfaces) / sizeof(Net_Interface);
 

@@ -18,13 +18,11 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
-#include "sys.h"
-#include "list.h"
-#include "vm.h"
-#include "netIEInt.h"
-#include "net.h"
-#include "netInt.h"
+#include <sprite.h>
+#include <sys.h>
+#include <list.h>
+#include <vm.h>
+#include <netIEInt.h>
 
 
 /*
@@ -117,15 +115,16 @@ NetIEAddrToSUNAddr(addr)
  */
 
 int
-NetIEOffsetFromSUNAddr(addr)
-    int	addr;
+NetIEOffsetFromSUNAddr(addr, statePtr)
+    int		addr;
+    NetIEState	*statePtr;
 {
     union {
 	short 	s;
 	char	ch[2];
     } offsetTo, offsetFrom;
 
-    offsetFrom.s = (short) (addr - netIEState.memBase);
+    offsetFrom.s = (short) (addr - statePtr->memBase);
 
     offsetTo.ch[0] = offsetFrom.ch[1];
     offsetTo.ch[1] = offsetFrom.ch[0];
@@ -151,8 +150,9 @@ NetIEOffsetFromSUNAddr(addr)
  */
 
 int
-NetIEOffsetToSUNAddr(offset)
-    int	offset;
+NetIEOffsetToSUNAddr(offset, statePtr)
+    int		offset;
+    NetIEState	*statePtr;
 {
     union {
 	short 	s;
@@ -164,7 +164,7 @@ NetIEOffsetToSUNAddr(offset)
     offsetTo.ch[0] = offsetFrom.ch[1];
     offsetTo.ch[1] = offsetFrom.ch[0];
 
-    return(netIEState.memBase + offsetTo.s);
+    return(statePtr->memBase + offsetTo.s);
 }
 
 
