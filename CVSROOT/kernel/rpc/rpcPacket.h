@@ -84,7 +84,7 @@ typedef struct RpcHdr {
  * The flags field is used to type packets and for flags that
  * modify the packet type.
  *
- *	Packet Types:
+ * Packet Types:
  *	RPC_REQUEST a request message sent by the client to the server.
  *
  *	RPC_REPLY a reply message returned to the client from the server.
@@ -96,7 +96,7 @@ typedef struct RpcHdr {
  *	RPC_ECHO a special packet that just is bounced off the server by
  *	the dispatcher.  A server process is not involved.
  *
- *	Packet Flags:
+ * Packet Flags:
  *	RPC_PLSACK demands an explicit acknowledgment message from the receiver.
  *
  *	RPC_LASTFRAG is present on the last fragment of a batch being sent,
@@ -111,7 +111,10 @@ typedef struct RpcHdr {
  *	RPC_ERROR indicates the service routine had an error, in this
  *	case the command field contains an error code.
  *
- *	Flags only valid in trace records:
+ *	RPC_NOT_ACTIVE means that the originating host is not fully alive.
+ *	This means the packet is ignored by the recovery module, but still good.
+ *
+ * Flags only valid in trace records:
  *	RPC_SERVER the packet is bound for the server side of the rpc system.
  *
  *	RPC_LAST_REC the trace record is the oldest trace record in the
@@ -125,6 +128,7 @@ typedef struct RpcHdr {
 #define RPC_ERROR	0x0008
 #define RPC_SERVER	0x0010
 #define RPC_LAST_REC	0x0020
+#define RPC_NOT_ACTIVE	0x0040
 
 #define RPC_TYPE	0xff00
 #define RPC_REQUEST	0x0100
