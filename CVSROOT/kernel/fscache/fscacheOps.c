@@ -826,7 +826,32 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	status = (*fsStreamOpTable[streamType].allocate)(cacheInfoPtr->hdrPtr,
 			offset, toAlloc, &blockAddr, &newBlock);
 	if (blockAddr == FS_NIL_INDEX) {
-	    printf("Fs_Write: Domain Alloc failed\n");
+	    /*
+	     * HACK to limit the number of "Alloc failed" messages.
+	     * MAX_MESSAGES - the max number of messages within the interval
+	     * INTERVAL_LIMIT - the time in which MAX_MESSAGES can appear.
+	     * The idea is that less than MAX_MESSAGES can appear within
+	     * any INTERVAL_LIMIT period.
+	     */
+	    static int lastPrintTime = 0;
+	    static int numRecentPrints = 0;
+#define MAX_MESSAGES	2
+#define INTERVAL_LIMIT	30
+
+	    if (fsTimeInSeconds - lastPrintTime >= INTERVAL_LIMIT) {
+		numRecentPrints = 0;
+	    }
+	    if (numRecentPrints < MAX_MESSAGES) {
+		numRecentPrints++;
+		printf("Fs_Write: Alloc failed <%d,%d> \"%s\"\n",
+		    cacheInfoPtr->hdrPtr->fileID.major,
+		    cacheInfoPtr->hdrPtr->fileID.major,
+		    FsHandleName(cacheInfoPtr->hdrPtr));
+		lastPrintTime = fsTimeInSeconds;
+	    }
+#undef MAX_MESSAGES
+#undef INTERVAL_LIMIT
+
 	    if (status == SUCCESS) {
 		status = FS_NO_DISK_SPACE;
 	    }
