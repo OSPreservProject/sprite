@@ -31,7 +31,7 @@
  * about the various Sprite hosts.
  */
 
-#define NET_NUM_SPRITE_HOSTS	50
+#define NET_NUM_SPRITE_HOSTS	200
 
 /*
  * Scatter/gather vector element.  The network output routines take
