@@ -17,15 +17,19 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "dbg.h"
-#include "vm.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <string.h>
+#include <dbg.h>
+#include <vm.h>
 
-#include "rpc.h"
-#include "rpcClient.h"
-#include "rpcServer.h"
-#include "rpcTrace.h"
-#include "net.h"
+#include <rpc.h>
+#include <rpcClient.h>
+#include <rpcServer.h>
+#include <rpcTrace.h>
+#include <rpcInt.h>
+#include <net.h>
 
 /*
  * Our sprite ID.  It is exported for general use by other modules.
@@ -90,7 +94,7 @@ static void VersionMismatch _ARGS_((int headerType, Address headerPtr, RpcHdr *r
  *
  *----------------------------------------------------------------------
  */
-
+void
 Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
     int		headerType;	/* Type of transport header. */
     Address	headerPtr;	/* Pointer to transport header. */

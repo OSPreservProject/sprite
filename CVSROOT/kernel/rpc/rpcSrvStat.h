@@ -15,7 +15,7 @@
 #ifndef _RPCSRVSTAT
 #define _RPCSRVSTAT
 
-#include "user/rpc.h"
+#include <user/rpc.h>
 
 extern Rpc_SrvStat rpcSrvStat;
 extern Rpc_SrvStat rpcTotalSrvStat;

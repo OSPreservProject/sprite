@@ -25,11 +25,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "sync.h"
-#include "rpcSrvStat.h"
-#include "rpc.h"
-#include "rpcServer.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <sync.h>
+#include <rpcSrvStat.h>
+#include <rpc.h>
+#include <rpcServer.h>
 
 /*
  * Stats are taken during RPC to help make sure all parts

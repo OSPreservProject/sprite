@@ -15,17 +15,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "rpc.h"
-#include "rpcInt.h"
-#include "rpcTrace.h"
-#include "rpcServer.h"
-#include "net.h"
-#include "status.h"
-#include "dbg.h"
-#include "fs.h"
-#include "timer.h"
-#include "string.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcTrace.h>
+#include <rpcServer.h>
+#include <net.h>
+#include <status.h>
+#include <dbg.h>
+#include <fs.h>
+#include <timer.h>
+#include <string.h>
 
 /*
  * The circular buffer of trace records.

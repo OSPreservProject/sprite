@@ -15,22 +15,24 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
+#include <sprite.h>
+#include <stdio.h>
 
-#include "rpc.h"
-#include "rpcClient.h"
-#include "rpcTrace.h"
-#include "rpcHistogram.h"
-#include "sys.h"
-#include "timerTick.h"
-#include "timer.h"
+#include <rpc.h>
+#include <rpcPacket.h>
+#include <rpcClient.h>
+#include <rpcTrace.h>
+#include <rpcHistogram.h>
+#include <sys.h>
+#include <timerTick.h>
+#include <timer.h>
 /* Not needed if recov tracing is removed. */
-#include "recov.h"
+#include <recov.h>
 
 /*
  * So we can print out rpc names we include the rpcServer definitions.
  */
-#include "rpcServer.h"
+#include <rpcServer.h>
 
 /*
  * The client channel table is kept as an array of pointers to channels.
@@ -538,7 +540,8 @@ ENTRY RpcClientChannel *
 RpcChanAlloc(serverID)
     int serverID;	/* Server ID to base our allocation on. */
 {
-    register RpcClientChannel *chanPtr;	/* The channel we allocate */
+    RpcClientChannel *chanPtr = (RpcClientChannel *) NULL;
+					/* The channel we allocate */
     register int i;			/* Index into channel table */
     int firstUnused = -1;		/* The first unused channel */
     int firstBusy = -1;			/* The first busy channel for server */

@@ -14,14 +14,25 @@
 #ifndef _RPCCLIENT
 #define _RPCCLIENT
 
-#include "netEther.h"
-#include "net.h"
-#include "sync.h"
-#include "timer.h"
+#include <netEther.h>
+#ifdef KERNEL
+#include <net.h>
+#include <sync.h>
+#include <timer.h>
+#include <rpcTypes.h>
+#include <rpcPacket.h>
+#include <rpcCltStat.h>
+#include <rpcHistogram.h>
+#else
+#include <kernel/net.h>
+#include <kernel/sync.h>
+#include <kernel/timer.h>
+#include <kernel/rpcTypes.h>
+#include <kernel/rpcPacket.h>
+#include <kernel/rpcCltStat.h>
+#include <kernel/rpcHistogram.h>
+#endif /* KERNEL */
 
-#include "rpcInt.h"
-#include "rpcCltStat.h"
-#include "rpcHistogram.h"
 
 /*
  * Tunable parameters used by Rpc_Call.  They are packaged up here so

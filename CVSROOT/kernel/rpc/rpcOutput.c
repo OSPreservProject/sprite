@@ -13,16 +13,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "mach.h"
-#include "rpc.h"
-#include "rpcInt.h"
-#include "rpcTrace.h"
-#include "net.h"
-#include "proc.h"
-#include "sync.h"
-#include "status.h"
-#include "dbg.h"
+#include <sprite.h>
+#include <mach.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcTrace.h>
+#include <net.h>
+#include <proc.h>
+#include <sync.h>
+#include <status.h>
+#include <dbg.h>
 
 /*
  * A delay variable that represents our preferred inter-fragment delay.

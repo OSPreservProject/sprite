@@ -14,7 +14,7 @@
 #ifndef _RPCCLTSTAT
 #define _RPCCLTSTAT
 
-#include "user/rpc.h"
+#include <user/rpc.h>
 
 extern Rpc_CltStat rpcCltStat;
 extern Rpc_CltStat rpcTotalCltStat;

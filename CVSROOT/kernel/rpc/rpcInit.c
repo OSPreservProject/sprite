@@ -11,14 +11,16 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "rpc.h"
-#include "rpcClient.h"
-#include "rpcServer.h"
-#include "rpcTrace.h"
-#include "vm.h"
-#include "timer.h"
-#include "net.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcClient.h>
+#include <rpcServer.h>
+#include <rpcTrace.h>
+#include <vm.h>
+#include <timer.h>
+#include <net.h>
 
 /*
  * These are the rpc version numbers, both in native format and in
@@ -67,7 +69,6 @@ Rpc_Init()
     register int i;
     register int frag;
     Net_EtherAddress etherAddress;
-    int	     maxHdrSize;
     extern void	RpcInitServerTraces();
 
     /*
@@ -362,11 +363,11 @@ RpcInitServerState(index)
      * Allocate buffer space for the largest possible request.
      */
     RpcBufferInit(&srvPtr->requestRpcHdr, &srvPtr->request, -1, srvPtr->index);
-    srvPtr->request.paramBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_PARAM_SIZE);
-    srvPtr->request.paramBuffer.length = RPC_MAX_PARAM_SIZE;
+    srvPtr->request.paramBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_PARAMSIZE);
+    srvPtr->request.paramBuffer.length = RPC_MAX_PARAMSIZE;
 
-    srvPtr->request.dataBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_DATA_SIZE);
-    srvPtr->request.dataBuffer.length = RPC_MAX_DATA_SIZE;
+    srvPtr->request.dataBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_DATASIZE);
+    srvPtr->request.dataBuffer.length = RPC_MAX_DATASIZE;
 
     /*
      * Initialize temporaries.

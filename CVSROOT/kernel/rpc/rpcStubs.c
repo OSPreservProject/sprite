@@ -17,20 +17,20 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "stdlib.h"
-#include "rpc.h"
-#include "rpcInt.h"
-#include "rpcServer.h"
-#include "fsrmtRpcStubs.h"
-#include "fsconsist.h"
-#include "fsutil.h"
-#include "procMigrate.h"
-#include "timer.h"
-#include "sync.h"
-#include "sig.h"
-#include "fsio.h"
+#include <stdlib.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcServer.h>
+#include <fsrmtRpcStubs.h>
+#include <fsconsist.h>
+#include <fsutil.h>
+#include <procMigrate.h>
+#include <timer.h>
+#include <sync.h>
+#include <sig.h>
+#include <fsio.h>
 
 /*
  * The RPC service procedure switch.  This table and the arguments

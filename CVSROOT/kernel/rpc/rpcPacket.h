@@ -25,6 +25,12 @@
 #ifndef _RPCPACKET
 #define _RPCPACKET
 
+#ifdef KERNEL
+#include <rpcTypes.h>
+#else
+#include <kernel/rpcTypes.h>
+#endif /* KERNEL */
+
 /*
  * The Rpc header.
  */

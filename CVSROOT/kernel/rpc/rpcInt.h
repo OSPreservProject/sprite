@@ -15,23 +15,15 @@
 #ifndef _RPCINT
 #define _RPCINT
 
-#include "rpc.h"
-/*
- * An RPC message is composed of three parts:  the RPC control information,
- * the first data area, ``parameters'', and the second data area, ``data''.
- * A set of three buffer scatter/gather elements is used to specify
- * a complete message. A fourth part of the message is the transport 
- * protocol header buffer that proceed any message.
- */
-typedef struct RpcBufferSet {
-    Net_ScatterGather	protoHdrBuffer;
-    Net_ScatterGather	rpcHdrBuffer;
-    Net_ScatterGather	paramBuffer;
-    Net_ScatterGather	dataBuffer;
-} RpcBufferSet;
-
-
-#include "rpcPacket.h"
+#ifdef KERNEL
+#include <rpc.h>
+#include <rpcPacket.h>
+#include <rpcTypes.h>
+#else
+#include <kernel/rpc.h>
+#include <kernel/rpcPacket.h>
+#include <kernel/rpcTypes.h>
+#endif /* KERNEL */
 
 /*
  * A general On/Off switch set via the Sys_Stats SYS_RPC_ENABLE_SERVICE command.
@@ -44,13 +36,6 @@ extern Boolean rpcServiceEnabled;
  * other machines detect that we have re-booted when this changes.
  */
 extern unsigned int rpcBootID;
-
-/*
- * The servers keep preallocated buffer space for client requests.
- * These constants define how large these buffers are.
- */
-#define RPC_MAX_PARAM_SIZE	 1024
-#define RPC_MAX_DATA_SIZE	16384
 
 /*
  * A set of masks used by the client and server dispatcher to see

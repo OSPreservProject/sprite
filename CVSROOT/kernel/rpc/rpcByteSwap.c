@@ -18,10 +18,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "net.h"
-#include "rpcInt.h"
-#include "rpcPacket.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <net.h>
+#include <rpcInt.h>
+#include <rpcPacket.h>
 
 /*
  * Global var for testing byte-swapping.  Causes out-going messages to

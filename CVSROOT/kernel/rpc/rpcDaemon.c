@@ -16,12 +16,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "rpc.h"
-#include "rpcInt.h"
-#include "rpcServer.h"
-#include "sync.h"
-#include "proc.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcServer.h>
+#include <sync.h>
+#include <proc.h>
+#include <recov.h>
 
 /*
  * Server processes are dynamically created by the Rpc_Daemon process.

@@ -13,13 +13,23 @@
 #ifndef _RPCSERVER
 #define _RPCSERVER
 
-#include "net.h"
-#include "sync.h"
-#include "timer.h"
-
-#include "rpcInt.h"
-#include "rpcSrvStat.h"
-#include "rpcHistogram.h"
+#ifdef KERNEL
+#include <net.h>
+#include <sync.h>
+#include <timer.h>
+#include <rpcTypes.h>
+#include <rpcPacket.h>
+#include <rpcSrvStat.h>
+#include <rpcHistogram.h>
+#else
+#include <kernel/net.h>
+#include <kernel/sync.h>
+#include <kernel/timer.h>
+#include <kernel/rpcTypes.h>
+#include <kernel/rpcPacket.h>
+#include <kernel/rpcSrvStat.h>
+#include <kernel/rpcHistogram.h>
+#endif /* KERNEL */
 
 
 /*

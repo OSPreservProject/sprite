@@ -17,16 +17,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "rpc.h"
-#include "rpcInt.h"
-#include "rpcServer.h"
-#include "rpcTrace.h"
-#include "rpcHistogram.h"
-#include "net.h"
-#include "proc.h"
-#include "dbg.h"
-#include "stdlib.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcServer.h>
+#include <rpcTrace.h>
+#include <rpcHistogram.h>
+#include <net.h>
+#include <proc.h>
+#include <dbg.h>
+#include <stdlib.h>
+#include <recov.h>
 
 /*
  * An on/off switch for the service side of the RPC system.  Hosts do not
@@ -302,7 +305,7 @@ RpcReclaimServers(serversMaxed)
     int srvIndex;
     register RpcServerState *srvPtr;
     int (*procPtr)();
-    ClientData data;
+    ClientData data = (ClientData) NULL;
 
     for (srvIndex=0 ; srvIndex < rpcNumServers ; srvIndex++) {
 	srvPtr = rpcServerPtrPtr[srvIndex];
@@ -1266,8 +1269,6 @@ Rpc_OkayToTrace(okay)
 ENTRY void
 Rpc_FreeTraces()
 {
-    RpcServerStateInfo	*itemPtr;
-
     MASTER_LOCK(&(rpcServerTraces.mutex));
     rpcServerTraces.okay = FALSE;
 

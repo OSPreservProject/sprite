@@ -12,19 +12,21 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "status.h"
-#include "rpc.h"
-#include "fs.h"
-#include "timer.h"
-#include "vm.h"
-#include "sync.h"
-#include "sched.h"
-#include "rpcClient.h"
-#include "rpcServer.h"
-#include "rpcTrace.h"
-#include "dev.h"
-#include "user/sysStats.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <status.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <fs.h>
+#include <timer.h>
+#include <vm.h>
+#include <sync.h>
+#include <sched.h>
+#include <rpcClient.h>
+#include <rpcServer.h>
+#include <rpcTrace.h>
+#include <dev.h>
+#include <user/sysStats.h>
 
 
 
@@ -361,7 +363,7 @@ Rpc_GetStats(command, option, argPtr)
 		/*
 		 * Reset all the server side histograms
 		 */
-		status == SUCCESS;
+		status = SUCCESS;
 		for (option = 1 ; option <= RPC_LAST_COMMAND ; option++) {
 		    Rpc_HistReset(rpcServiceTime[option]);
 		}
@@ -384,7 +386,7 @@ Rpc_GetStats(command, option, argPtr)
 		/*
 		 * Reset all the client side histograms
 		 */
-		status == SUCCESS;
+		status = SUCCESS;
 		for (option = 1 ; option <= RPC_LAST_COMMAND ; option++) {
 		    Rpc_HistReset(rpcCallTime[option]);
 		}

@@ -14,11 +14,18 @@
 #ifndef _RPCTRACE
 #define _RPCTRACE
 
-#include "rpcInt.h"
-#include "rpcPacket.h"
-#include "spriteTime.h"
-#include "trace.h"
-#include "sync.h"
+#include <spriteTime.h>
+#ifdef KERNEL
+#include <rpcTypes.h>
+#include <rpcPacket.h>
+#include <trace.h>
+#include <sync.h>
+#else
+#include <kernel/rpcTypes.h>
+#include <kernel/rpcPacket.h>
+#include <kernel/trace.h>
+#include <kernel/sync.h>
+#endif /* KERNEL */
 
 /*
  * RPC_TRACE_LEN determines how big the circular buffer of trace records is.
@@ -81,9 +88,9 @@ typedef struct Rpc_TraceHdr2 {
 
 typedef Rpc_TraceHdr2 Rpc_TraceFileHdr;
 
-/* #define RPC_TRACE_VERSION	1	/* Jan 29 '86 */
-/* #define RPC_TRACE_VERSION	2	/* Jan 31 '86 */
-#define RPC_TRACE_VERSION	3	/* Nov 19 '86 */
+/* #define RPC_TRACE_VERSION	1	 Jan 29 '86 */
+/* #define RPC_TRACE_VERSION	2	 Jan 31 '86 */
+#define RPC_TRACE_VERSION	3	 /* Nov 19 '86 */
 
 /*
  * Tracing related defines.  These are values for the second

@@ -13,8 +13,12 @@
 #ifndef _RPCHISTOGRAM
 #define _RPCHISTOGRAM
 
-#include "spriteTime.h"
-#include "sync.h"
+#include <spriteTime.h>
+#ifdef KERNEL
+#include <sync.h>
+#else
+#include <kernel/sync.h>
+#endif /* KERNEL */
 
 /*
  * An empirical time distribution is kept in the following structure.

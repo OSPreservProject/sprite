@@ -15,12 +15,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "status.h"
-#include "sync.h"
-#include "timer.h"
-#include "rpcHistogram.h"
-#include "stdlib.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <status.h>
+#include <sync.h>
+#include <timer.h>
+#include <rpcHistogram.h>
+#include <stdlib.h>
+#include <vm.h>
 
 #define LOCKPTR (&histPtr->lock)
 
