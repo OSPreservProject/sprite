@@ -116,8 +116,11 @@ typedef struct FsSprite2PathData {
 } FsSprite2PathData;
 
 typedef struct FsSprite2PathReplyParams {
-    int		prefixLength;
-    Boolean	name1RedirectP;
+    int		prefixLength;	/* Length of returned prefix on re-direct */
+    Boolean	name1ErrorP;	/* TRUE if the error returned, which is either
+				 * a re-direct or stale-handle, applies to
+				 * the first of the two pathnames, FALSE if
+				 * it applies to the second pathname */
 } FsSprite2PathReplyParams;
 
 /*
