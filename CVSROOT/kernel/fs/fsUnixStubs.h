@@ -113,15 +113,12 @@ int Fs_NewOpenStubInt _ARGS_((char *pathName, int unixFlags,
 extern ReturnStatus Fs_SelectStub _ARGS_ ((int numStreams,
     Time *userTimeoutPtr, int *userReadMaskPtr, int *userWriteMaskPtr,
     int *userExceptMaskPtr, int *numReadyPtr));
-extern ReturnStatus Fs_Select _ARGS_ ((int numStreams, Time *timeoutPtr,
+extern ReturnStatus Fs_Select _ARGS_ ((int numStreams, int wordsInMask,
+    Time *timeoutPtr,
     int *inReadMaskPtr, int *outReadMaskPtr, int *inWriteMaskPtr,
     int *outWriteMaskPtr, int *inExceptMaskPtr, int *outExceptMaskPtr,
     int *numReadyPtr, int *doTimeoutPtr));
 extern int Fs_NewSelectStub _ARGS_((int numStreams, int *userReadMaskPtr,
 	int *userWriteMaskPtr, int *userExceptMaskPtr, Time *userTimeoutPtr));
-extern ReturnStatus Fs_Select _ARGS_((int numStreams, Time *timeoutPtr,
-	int *inReadMaskPtr, int *outReadMaskPtr, int *inWriteMaskPtr,
-	int *outWriteMaskPtr, int *inExceptMaskPtr, int *outExceptMaskPtr,
-	int *numReadyPtr, int *doTimeoutPtr));
 
 #endif /* _FS_UNIX_STUBS */
