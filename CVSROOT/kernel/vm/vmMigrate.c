@@ -69,7 +69,7 @@ Vm_FreezeSegments(procPtr, nodeID, procListPtr, numProcsPtr)
 
     LOCK_MONITOR;
 
-    segPtr = procPtr->segPtrArray[VM_HEAP];
+    segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
 #ifdef WONT_WORK_YET
     *numProcsPtr = 0;
     LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
@@ -287,11 +287,11 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
 		    Fs_Close(filePtr);
 		}
 	    }
-	    procPtr->segPtrArray[type] = segPtr;
+	    procPtr->vmPtr->segPtrArray[type] = segPtr;
 	    return(SUCCESS);
 	case VM_HEAP:
-	    Fs_StreamCopy(procPtr->segPtrArray[VM_CODE]->filePtr, &filePtr,
-			    procPtr->processID);
+	    Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+			  &filePtr, procPtr->processID);
 	    if (filePtr == (Fs_Stream *) NIL) {
 		Sys_Panic(SYS_FATAL,
 			  "Vm_ReceiveSegmentInfo: no code file pointer.\n");
@@ -311,7 +311,7 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
     if (segPtr == (Vm_Segment *) NIL) {
 	return(VM_NO_SEGMENTS);
     }
-    procPtr->segPtrArray[type] = segPtr;
+    procPtr->vmPtr->segPtrArray[type] = segPtr;
     segPtr->ptSize = ptSize;
     varSize = ptSize * sizeof(Vm_PTE);
     LoadSegment(varSize, buffer, segPtr);

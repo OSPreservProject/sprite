@@ -95,6 +95,40 @@ Vm_Init()
 
 
 /*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_ProcInit --
+ *
+ *     Initialize virtual info for this process.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Virtual memory information for the given process is initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Vm_ProcInit(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    int			i;
+
+    if (procPtr->vmPtr == (Vm_ProcInfo *)NIL) {
+	procPtr->vmPtr = (Vm_ProcInfo *)Mem_Alloc(sizeof(Vm_ProcInfo));
+	procPtr->vmPtr->machPtr = (struct VmMachProcInfo *)Mem_Alloc(sizeof(VmMachProcInfo));
+    }
+    for (i = 0; i < VM_NUM_SEGMENTS; i++) {
+	procPtr->vmPtr->segPtrArray[i] = (Vm_Segment *)NIL;
+    }
+    procPtr->vmPtr->vmFlags = 0;
+    procPtr->vmPtr->machPtr->context = VM_INV_CONTEXT;
+}
+
+
+/*
  *----------------------------------------------------------------------
  *
  * Vm_RawAlloc --

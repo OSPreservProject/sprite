@@ -23,24 +23,20 @@
 /*
  * A pte with a zero value.
  */
-
 Vm_PTE	vm_ZeroPTE;
 
 /*
  * The type of segment.
  */
-
 #define VM_SYSTEM	0
 #define VM_CODE		1
 #define VM_HEAP		2
 #define VM_STACK	3
 
 /*
- * All kernel code and data is stored in the system segment which is
- * the first segment in the segment table.  Hence it has segment id 0.
+ * Number of segments
  */
-
-#define VM_SYSTEM_SEGMENT       0
+#define	VM_NUM_SEGMENTS		4
 
 /*
  * The type of accessibility desired when making a piece of data user
@@ -49,7 +45,6 @@ Vm_PTE	vm_ZeroPTE;
  * data will be overwritten.  VM_READWRITE_ACCESS means that the data 
  * will both be read and written.
  */
-
 #define	VM_READONLY_ACCESS		1
 #define	VM_OVERWRITE_ACCESS		2
 #define	VM_READWRITE_ACCESS		3
@@ -80,7 +75,6 @@ typedef struct {
  * The segment table structure.  This shouldn't be external but lint
  * complains like crazy if we try to hide it.  So to make lint happy ...
  */
-
 typedef struct Vm_Segment {
     List_Links		links;		/* Links used to put the segment
     					   table entry in list of free segments
@@ -125,7 +119,6 @@ typedef struct Vm_Segment {
 /*
  * Virtual memory bit map structure.
  */
-
 typedef struct {
     Address	baseAddr;	/* Base virtual address to start 
 				   allocating at. */
@@ -133,9 +126,17 @@ typedef struct {
 } Vm_DevBuffer;
 
 /*
+ * Information stored by each process.
+ */
+typedef struct {
+    Vm_Segment			*segPtrArray[VM_NUM_SEGMENTS];
+    int				vmFlags;
+    struct VmMachProcInfo	*machPtr;
+} Vm_ProcInfo;
+
+/*
  * The initialization procedure.
  */
-
 extern	void	Vm_Init();
 
 /*

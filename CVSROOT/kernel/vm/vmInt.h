@@ -145,9 +145,9 @@ typedef enum {
 } VmDeleteStatus;
 
 /*
- * Pointer to system segment.
+ * System segment number and pointer to it.
  */
-
+#define VM_SYSTEM_SEGMENT       0
 extern 	Vm_Segment	*vmSysSegPtr;
 
 /*

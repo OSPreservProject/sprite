@@ -450,7 +450,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
 
     if (virtAddr.page == firstPage) {
 	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-        VmDecExpandCount(procPtr->segPtrArray[VM_HEAP]);
+        VmDecExpandCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
 	*retBytesPtr = 0;
 	*retAddrPtr = (Address) NIL;
 	return;
@@ -499,7 +499,7 @@ Vm_MakeUnaccessible(addr, numBytes)
     LOCK_MONITOR;
 
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-    segPtr = procPtr->segPtrArray[VM_HEAP];
+    segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
 
     if (((unsigned int) (addr) >> VM_PAGE_SHIFT) >= segPtr->offset) {
 	/*

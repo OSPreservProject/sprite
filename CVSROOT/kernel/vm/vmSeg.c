@@ -1420,13 +1420,16 @@ Vm_GetSegInfo(procPtr, segNum, segBufPtr)
 		      (Address) &pcb) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
+	if (procPtr->vmPtr == (Vm_ProcInfo *)NIL) {
+	    return(SYS_INVALID_ARG);
+	}
 	minSegAddr = segmentTable;
 	maxSegAddr = &(segmentTable[numSegments - 1]);
 	for (i = VM_CODE; i <= VM_STACK; i++, segBufPtr++) {
 	    if (pcb.genFlags & PROC_KERNEL) {
 		segPtr = vmSysSegPtr;
 	    } else {
-		segPtr = pcb.segPtrArray[i];
+		segPtr = pcb.vmPtr->segPtrArray[i];
 		if (segPtr < minSegAddr || segPtr > maxSegAddr) {
 		    return(SYS_INVALID_ARG);
 		}

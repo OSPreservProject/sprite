@@ -1174,7 +1174,7 @@ Vm_PageIn(virtAddr)
      */
     if (transVirtAddr.segPtr->type != VM_CODE) {
 	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-	VmDecExpandCount(procPtr->segPtrArray[VM_HEAP]);
+	VmDecExpandCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
     }
 
     return(status);

@@ -98,7 +98,7 @@ Vm_CreateVA(address, size)
     firstPage = (unsigned) (address) >> VM_PAGE_SHIFT;
     lastPage = (unsigned) ((int) address + size - 1) >> VM_PAGE_SHIFT;
 
-    segPtr = (Vm_Segment *) procPtr->segPtrArray[VM_HEAP];
+    segPtr = (Vm_Segment *) procPtr->vmPtr->segPtrArray[VM_HEAP];
 
     /*
      * Make sure that the beginning address falls into the heap segment and
@@ -156,7 +156,7 @@ Vm_DestroyVA(address, size)
     firstPage = (unsigned) (address) >> VM_PAGE_SHIFT;
     lastPage = (unsigned) ((int) address + size - 1) >> VM_PAGE_SHIFT;
 
-    segPtr = (Vm_Segment *) procPtr->segPtrArray[VM_HEAP];
+    segPtr = (Vm_Segment *) procPtr->vmPtr->segPtrArray[VM_HEAP];
 
     /*
      * Make sure that the beginning address falls into the 
