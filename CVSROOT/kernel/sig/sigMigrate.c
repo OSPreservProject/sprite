@@ -29,12 +29,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Information sent when sending a signal
  */
 
+#ifdef notdef
 typedef struct {
     Proc_PID			remotePID;
     int				sigNum;
     int				code;
 } SigMigInfo;
     
+#endif 
 
 
 /*
@@ -44,13 +46,6 @@ typedef struct {
  *
  *	Send a signal to a migrated process.  The current host is found
  *	in the process control block for the process.  
- *
- * RPC: Input parameters:
- *		process ID
- *		signal number
- *		code
- *	Return parameters:
- *		ReturnStatus
  *
  * Results:
  *	SUCCESS or an error condition from the RPC or remote node.
@@ -69,49 +64,50 @@ SigMigSend(procPtr, sigNum, code)
     int				  code;
 {
     ReturnStatus status;
-    Rpc_Storage storage;
-    SigMigInfo info;
+    Proc_PID remoteProcessID;
+    int remoteHostID;
 
     if (proc_MigDebugLevel > 4) {
 	Sys_Printf("SigMigSend(%x, %d, %d) entered.\n", procPtr->processID,
 		   sigNum, code);
     }
+
+    remoteProcessID = procPtr->peerProcessID;
+    remoteHostID = procPtr->peerHostID;
+
     /*
-     * Set up for the RPC.
+     * It is necessary to unlock the process while sending the remote
+     * signal, since the signal could cause the remote node to come back
+     * and lock the process again.
      */
-    info.remotePID = procPtr->peerProcessID;
-    info.sigNum = sigNum;
-    info.code = code;
-    storage.requestParamPtr = (Address) &info;
-    storage.requestParamSize = sizeof(SigMigInfo);
-
-    storage.requestDataPtr = (Address) NIL;
-    storage.requestDataSize = 0;
-
-    storage.replyParamPtr = (Address) NIL;
-    storage.replyParamSize = 0;
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-    status = Rpc_Call(procPtr->peerHostID, RPC_SIG_MIG_SEND, &storage);
+    Proc_Unlock(procPtr);
+    status = SendRemoteSignal(remoteHostID, sigNum, code,
+			      remoteProcessID, FALSE);
 
     if (proc_MigDebugLevel > 4) {
 	Sys_Printf("SigMigSend returning %x.\n", status);
     }
 
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "SigMigSend:Error %x returned by Rpc_Call.\n", status);
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Panic(SYS_WARNING,
+		      "SigMigSend:Error %x returned by Rpc_Call.\n", status);
+	}
 	if (status == RPC_TIMEOUT && sigNum == SIG_KILL) {
 	    if (proc_MigDebugLevel > 0) {
 		Sys_Printf("SigMigSend: killing local copy of process %x.\n",
 			   procPtr->processID);
 	    }
-	    Proc_CallFunc(Proc_DestroyMigratedProc,
-			  (ClientData) procPtr->processID, 0);
+	    Proc_DestroyMigratedProc(procPtr, PROC_TERM_SIGNALED, sigNum,
+				     code);
 	}
-
     }
+
+    /*
+     * Give back the procPtr in the same state we found it (locked).
+     */
+    Proc_Lock(procPtr);
+	
     return(status);
 }
 
@@ -135,11 +131,13 @@ SigMigSend(procPtr, sigNum, code)
  */
 
 /* ARGSUSED */
+ReturnStatus
 Sig_RpcMigSend(dataPtr, remoteHostID)
     ClientData dataPtr;
     int remoteHostID;
 {
 #ifdef notdef
+    SigMigInfo *infoPtr;
     Proc_ControlBlock *procPtr;
     ReturnStatus status = SUCCESS;
 
@@ -166,3 +164,4 @@ Sig_RpcMigSend(dataPtr, remoteHostID)
     }
     return(status);
 #endif
+}
