@@ -318,4 +318,5 @@ DevConsoleInputProc(ttyPtr, value)
     }
     c = asciiChar;
     Td_PutRaw(ttyPtr->term, 1, &c);
+    Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL, (Boolean *) NIL);
 }

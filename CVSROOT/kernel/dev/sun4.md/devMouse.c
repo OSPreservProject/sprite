@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include <sprite.h>
+#include "dev.h"
 #include "devAddrs.h"
 #include <dev/mouse.h>
 #include <errno.h>
@@ -566,6 +567,8 @@ MouseInputProc(dummy, value)
 	    List_InitElement(&eventPtr->links);
 	    eventPtr->event = event;
 	    List_Insert(&eventPtr->links, LIST_ATREAR(&eventList));
+	    Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL,
+		    (Boolean *) NIL);
 	    Fs_DevNotifyReader(token);
 	    break;
     }
@@ -632,6 +635,7 @@ KbdInputProc(dummy, value)
     Timer_TicksToTime(ticks, &time);
     eventPtr->event.time = (time.seconds*1000) + (time.microseconds/1000);
     List_Insert(&eventPtr->links, LIST_ATREAR(&eventList));
+    Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL, (Boolean *) NIL);
     Fs_DevNotifyReader(token);
 }
 
