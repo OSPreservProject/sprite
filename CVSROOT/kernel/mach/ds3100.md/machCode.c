@@ -1286,6 +1286,7 @@ MachUserReturn(procPtr)
     SignalStack	sigStack;
     Address	pc;
     int		restarted = 0;
+    Address	savePC;
 
 
     if (procPtr->Prof_Scale >= 2 && procPtr->Prof_PC != 0) {
@@ -1369,7 +1370,6 @@ MachUserReturn(procPtr)
 		    printf("Restarting system call with progress %d\n",
 			    procPtr->unixProgress);
 		}
-		procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	    }
 	    /*
 	     * Disable interrupts.  Note that we don't use the DISABLE_INTR 
@@ -1382,6 +1382,16 @@ MachUserReturn(procPtr)
 		break;
 	    }
 	    Mach_EnableIntr();
+	    savePC = machCurStatePtr->userState.regState.pc;
+	    if (restarted) {
+		/*
+		 * We have to move the PC now so the migrated process
+		 * will start in the right place.
+		 * If we don't migrate, we put the PC back after the
+		 * Sig_Handle.
+		 */
+		machCurStatePtr->userState.regState.pc -= 4;
+	    }
 	    sigStack.sigStack.contextPtr = &sigStack.sigContext;
 	    if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
 		SetupSigHandler(procPtr, &sigStack, pc);
@@ -1394,11 +1404,14 @@ MachUserReturn(procPtr)
 		    if (debugProcStubs) {
 			printf("No signal action, so we restarted call\n");
 		    }
-		    procPtr->unixProgress = PROC_PROGRESS_UNIX;
 		} else if (restarted && debugProcStubs) {
 		    printf("No signal, yet we restarted system call!\n");
 		}
 	    }
+	    /*
+	     * Restore PC if we didn't migrate.
+	     */
+	    machCurStatePtr->userState.regState.pc = savePC;
 	}
     }
     
@@ -1410,6 +1423,7 @@ MachUserReturn(procPtr)
     Sig_AllowMigration(procPtr);
 
     if (restarted) {
+	procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	if (debugProcStubs) {
 	    printf("Moving the PC to restart the system call\n");
 	    printf("Our PC = %x\n",
