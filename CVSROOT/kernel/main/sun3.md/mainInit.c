@@ -16,6 +16,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dbg.h>
 #include <dev.h>
 #include <net.h>
+#include <fs.h>
 #include <fsutil.h>
 #include <proc.h>
 #include <prof.h>
@@ -32,6 +33,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <mach.h>
 #include <main.h>
 #include <stdio.h>
+#include <bstring.h>
+#include <string.h>
+#include <dump.h>
 
 static void Init _ARGS_((void));
 
