@@ -40,6 +40,29 @@ int debugSysStubs;
 /*
  *----------------------------------------------------------------------
  *
+ * Sys_NopStub --
+ *
+ *      This routine performs a nop.  It is for system calls that
+ *	need to exist, but don't need any functionality.
+ *
+ * Results:
+ *      Returns 0.
+ *
+ * Side effects:
+ *      None.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Sys_NopStub()
+{
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Sys_RebootStub --
  *
  *      The stub for the "reboot" Unix system call.
