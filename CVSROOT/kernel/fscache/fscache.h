@@ -107,6 +107,8 @@ typedef struct Fscache_FileInfo {
  *				to only a few blocks in the cache.
  *   FSCACHE_FILE_GONE		The file has been removed and any delayed
  *				writes should be discarded.
+ *   FSCACHE_IS_DIR		File not cacheable because it's a directory.
+ *				This is used for keeping statistics.
  *   FSCACHE_ALLOC_FAILED	Allocated failed due to disk full.  This
  *				is used to throttle error messages.
  *   FSCACHE_FILE_BEING_CLEANED
@@ -123,7 +125,7 @@ typedef struct Fscache_FileInfo {
 #define FSCACHE_FILE_NOT_CACHEABLE	0x0200
 #define	FSCACHE_LARGE_FILE_MODE		0x0400
 #define FSCACHE_FILE_GONE		0x0800
-/* There's space for a new flag in here. */
+#define	FSCACHE_IS_DIR			0x1000
 #define FSCACHE_ALLOC_FAILED		0x2000
 #define	FSCACHE_FILE_FSYNC		0x4000
 #define	FSCACHE_FILE_DESC_DIRTY		0x8000
