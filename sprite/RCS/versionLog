@@ -69,4 +69,8 @@ Sun - SCSI3 target select bug was fixed and timeout value reduced.
 Bug is raw scsi device access patched.  Scsi INQUIRE command fixed to 
 handle UNIT_ATTENTION errors.
 The famous "framming" error message has had its spelling corrected.
+
+1.055	Wed Jan 31 16:54:19 PST 1990
+Only the sun4 and sun4c are affected by this change:  I fixed a bug
+in the new window underflow trap handler that caused some processes to hang.
     New files linked in from the net library.
