@@ -168,9 +168,10 @@ DoneWithUserStuff:
 	 * call number for system call traps!
 	 */
 	MACH_SAVE_GLOBAL_STATE()
-	
+
 	/* traps on, maskable interrupts off */
 	MACH_SR_HIGHPRIO()
+
 	/*
 	 * It is tedious to do all these serial comparisons against the
 	 * trap type, so this should be changed to a jump table.  It's this
@@ -192,9 +193,19 @@ DoneWithUserStuff:
 	nop
 
 NotAnInterrupt:
+#ifdef NOTDEF
+#ifdef sun4c
+	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
+	bne	GoOn
+	nop
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
+#endif NOTDEF
 	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
 	be	MachSyscallTrap
 	nop
+GoOn:
 
 	cmp	%VOL_TEMP1, MACH_INSTR_ACCESS		/* instruction fault */
 	be	MachHandlePageFault
@@ -249,10 +260,6 @@ NotAnInterrupt:
 	nop
 
 	cmp	%VOL_TEMP1, MACH_FP_EXCEP		/* fp unit badness */
-#ifdef FP_ENABLED
-	set	_machSavedFsr, %o0			/* save fp state reg */
-	st	%fsr, [%o0]
-#endif FP_ENABLED
 	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
 	mov	%VOL_TEMP1, %o0
 	mov	%CUR_PC_REG, %o1
@@ -1169,9 +1176,15 @@ MachSyscallTrap:
 	nop
 GoodSysCall:
 	/*
-	 * Sun3 stuff saves sys call # in a lastSysCall field in state
-	 * struct. Why?
+	 * Save sys call number into lastSysCall field in process state so
+	 * that migration can figure out what it was supposed to be.
+	 * %g1 must still contain syscall number.
 	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	set	_machLastSysCallOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	st	%g1, [%VOL_TEMP1]
 	/*
 	 * Fetch args.  Copy them from user space if they aren't all in
 	 * the input registers.  For now I copy all the input registers,

@@ -26,11 +26,6 @@
 #include "status.h"
 #endif
 
-/*
- * Turn on code for floating point compilation.
- *
-    #define	FP_ENABLED	1
- */
 
 /*
  * Return codes from some trap routines.
@@ -167,17 +162,6 @@
 #define	MACH_DISABLE_TRAP_BIT		0xFFFFFFDF	/* and with %psr */
 #define	MACH_SUPER_BIT			0x80
 #define	MACH_PS_BIT			0x40	/* and with psr - prev. state */
-#ifdef FP_ENABLED
-#define	MACH_FIRST_USER_PSR		0x1080	/* traps off, interrupts on,
-						 * previous mode not supervisor,
-						 * current mode supervisor. */
-#define	MACH_NO_INTR_USER_PSR		0x1F80
-/*
- * psr value for interrupts disabled, traps enabled and window 0.
- * Both supervisor and previous supervisor mode bits are set.
- */
-#define	MACH_HIGH_PRIO_PSR		0x00001FE0
-#else
 #define	MACH_FIRST_USER_PSR		0x080	/* traps off, interrupts on,
 						 * previous mode not supervisor,
 						 * current mode supervisor. */
@@ -187,8 +171,18 @@
  * Both supervisor and previous supervisor mode bits are set.
  */
 #define	MACH_HIGH_PRIO_PSR		0x00000FE0
-#endif /* FP_ENABLED */
 
+/*
+ * FPU fsr bits.
+ */
+
+#define	MACH_FSR_QUEUE_NOT_EMPTY	 0x2000
+#define	MACH_FSR_TRAP_TYPE_MASK		0x1c000
+#define	MACH_FSR_NO_TRAP		0x00000
+#define	MACH_FSR_IEEE_TRAP		0x04000
+#define	MACH_FSR_UNFINISH_TRAP		0x08000
+#define	MACH_FSR_UNIMPLEMENT_TRAP	0x0c000
+#define	MACH_FSR_SEQ_ERRROR_TRAP	0x10000
 
 /*
  * Bits to enable interrupts in interrupt register.
@@ -310,11 +304,16 @@
 #define	MACH_INS_OFFSET		(MACH_LOCALS_OFFSET + MACH_NUM_LOCALS * 4)
 #define	MACH_GLOBALS_OFFSET	(MACH_INS_OFFSET + (MACH_NUM_INS * 2) * 4 + \
 				 MACH_NUM_EXTRA_ARGS * 4)
+#define	MACH_FPU_FSR_OFFSET	(MACH_GLOBALS_OFFSET + (MACH_NUM_GLOBALS * 4))
+#define	MACH_FPU_QUEUE_COUNT	(MACH_FPU_FSR_OFFSET + 4)
+#define	MACH_FPU_REGS_OFFSET	(MACH_FPU_QUEUE_COUNT + 4)
+#define	MACH_FPU_QUEUE_OFFSET	(MACH_FPU_REGS_OFFSET + (MACH_NUM_FPS * 4))
+
 						/* skip over calleeInputs too */
 /*
  * Byte offset from beginning of a Mach_State structure to various register
- * fields, the savedSps field, the savedRegs field, the savedMask field, and
- * the kernStackStart field.
+ * fields, the savedSps field, the savedRegs field, the savedMask field, 
+ * the kernStackStart, and the FPU status field.
  */
 #define	MACH_TRAP_REGS_OFFSET	0
 #define	MACH_SWITCH_REGS_OFFSET	(MACH_TRAP_REGS_OFFSET + 4)
@@ -323,6 +322,7 @@
 				MACH_NUM_WINDOW_REGS * 4))
 #define	MACH_SAVED_SPS_OFFSET	(MACH_SAVED_MASK_OFFSET + 4)
 #define	MACH_KSP_OFFSET		(MACH_SAVED_SPS_OFFSET + (MACH_NUM_WINDOWS * 4))
+#define	MACH_FPU_STATUS_OFFSET  (MACH_KSP_OFFSET + 4)
 
 /*
  * Maximum number of processors configurable.
@@ -336,7 +336,10 @@
 #define	MACH_NUM_WINDOWS		7	/* # of implemented windows */
 #define	MACH_VALID_WIM_BITS	0x0000007f	/* is wim value in range? */
 
-
+/*
+ * The size of the floating point state size in Mach_RegState.
+ */
+#define	MACH_FP_STATE_SIZE (8 + (MACH_NUM_FPS*4) + (MACH_FPU_MAX_QUEUE_DEPTH*8))
 /*
  * The size of a single saved window (locals and ins) in bytes.
  */
@@ -348,14 +351,9 @@
  * shouldn't succeed in booting if these constants are out of whack.  Keep
  * it this way!  Size is in bytes.
  */
-#ifdef FP_ENABLED
 #define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE +\
-				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4 \
-				+ MACH_NUM_FPS * 4)
-#else
-#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE +\
-				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4)
-#endif /* FP_ENABLED */
+				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4\
+				+ MACH_FP_STATE_SIZE)
 
 /*
  * The compiler stores parameters to C routines in its caller's stack frame,
@@ -423,14 +421,25 @@
 
 /*
  * The number of registers.
+ * MACH_NUM_GLOBALS - Number of %g registers in sparc.
+ * MACH_NUM_INS     - Number of %i registers in sparc.
+ * MACH_NUM_LOCALS  - Number of %l registers in sparc.
+ * MACH_NUM_WINDOW_REGS - Number of registers in each window.
+ * MACH_NUM_FPS     - Number of %f registers in sparc. This registers may be
+ *		      used as MACH_NUM_FPS floats or MACH_NUM_FPS/2 doubles or
+ *		      MACH_NUM_FPS/4 extendeds.
+ * MACH_FPU_MAX_QUEUE_DEPTH - The maximum number of entires in the FPU queue
+ *			      of unfinished instructions.  This number is 
+ *			      implementation dependent with the current 
+ *			      value set to match SunOS 4.0.3.
+ * 
  */
 #define	MACH_NUM_GLOBALS		8
 #define	MACH_NUM_INS			8
 #define	MACH_NUM_LOCALS			8
 #define	MACH_NUM_WINDOW_REGS		(MACH_NUM_LOCALS + MACH_NUM_INS)
-#ifdef FP_ENABLED
 #define	MACH_NUM_FPS			32
-#endif /* FP_ENABLED */
+#define	MACH_FPU_MAX_QUEUE_DEPTH	16
 /*
  * The amount to shift left by to multiply a number by the number of registers
  * per window.  How would I get this from the constant above?
@@ -508,5 +517,6 @@
 #define	TBR_REG			r6		/* g6 */
 #define	OUT_TEMP1		r12		/* o4 */
 #define	OUT_TEMP2		r13		/* o5 */
+
 
 #endif /* _MACHCONST */

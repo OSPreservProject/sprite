@@ -257,12 +257,7 @@ _Mach_ContextSwitch:
 	 * the stack.
 	 */
 	save 	%sp, -MACH_SAVED_STATE_FRAME, %sp
-	andn	%sp, 0x7, %sp		/* should already be okay */
 	mov	%psr, %CUR_PSR_REG
-	MACH_SR_HIGHPRIO()		/*
-					 * MAY BE EXTRANEOUS - interrupts should
-					 * already be off!
-					 */
 	/*
 	 * Switch contexts to that of toProcPtr.  It's the second arg, so
 	 * move it to be first arg of routine we call.
@@ -277,23 +272,81 @@ _Mach_ContextSwitch:
 	 */
 	call	_VmMachSetContextReg, 1
 	nop
+
 	/*
+	 * Enable the floating point processor so we can save and
+	 * restore FPU state if necessary.
+	 */
+	set	MACH_ENABLE_FPP, %VOL_TEMP1
+	or	%CUR_PSR_REG,%VOL_TEMP1,%VOL_TEMP1
+	mov	%VOL_TEMP1, %psr
+	/*
+	 * No delay instructions needed here as long as the following
+	 * three instructions don't touch the FPU.
+	 *
 	 * Save stack pointer into state struct.  This is also the pointer
 	 * in the mach state struct of the saved context switch state.  It
 	 * just so happens it's stored on the stack...
 	 */
 	set	_machStatePtrOffset, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* get offset */
+		/* FPU is now active. */
 	add	%i0, %VOL_TEMP1 , %VOL_TEMP1		/* add to base */
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* get machStatePtr */
-	add	%VOL_TEMP1, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %SAFE_TEMP		/* get machStatePtr */
+	add	%SAFE_TEMP, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
 	st	%sp, [%VOL_TEMP1]
-	
-	/*
-	 * Where was trapRegs pointer saved into mach state?
-	 * if this were user process, save user stack pointer?
-	 */
 
+	/*
+	 * If FPU is active for this process, save FPU state.
+	 */
+	ld	[%SAFE_TEMP+MACH_FPU_STATUS_OFFSET], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	bz	noFPUactive
+	/*
+	 *  Note: Part of following set instruction executed in "bz" delay
+	 *  slot.  This trashes %VOL_TEMP1 when the branch is taken.
+	 *  
+	 *  We are saving the user's FPU state into the trap regs during
+	 *  the context switch because we don't want the latency of saving
+	 *  all the floating point state on every trap.  This works because
+	 *  the kernel doesn't user floating point instructions.  
+	 *
+	 *  Tricky code - We save the fromProcPtr in _machFPUSaveProcPtr and
+	 *  execute a "st %fsr". The "st fsr" will pause until all FPU ops
+	 *  are compete.  If any FPU execptions are pending we will get a
+	 *  FP_EXECPTION trap on the instruction marked by the label 
+	 *  _machFPUSyncInst. The routine MachHandleWeirdoInstruction in
+	 *  machCode.c will catch this fault and note it in the processes
+	 *  PCB.  
+	 */
+	set	_machFPUSaveProcPtr, %VOL_TEMP1
+	st	%i0, [%VOL_TEMP1];
+.global _machFPUSyncInst
+_machFPUSyncInst: st	%fsr, [%SAFE_TEMP + MACH_FPU_FSR_OFFSET + MACH_TRAP_REGS_OFFSET]
+        /*
+	 * The following symbol is include to make the following code 
+	 * be attributed to the routine Mach_ContextSwitch2 and not
+	 * _machFPUSyncInst.
+	 */
+.globl	Mach_ContextSwitch2
+Mach_ContextSwitch2:
+	std %f0, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*0]
+	std %f2, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*2]
+	std %f4, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*4]
+	std %f6, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*6]
+	std %f8, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*8]
+	std %f10, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*10]
+	std %f12, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*12]
+	std %f14, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*14]
+	std %f16, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*16]
+	std %f18, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*18]
+	std %f20, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*20]
+	std %f22, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*22]
+	std %f24, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*24]
+	std %f26, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*26]
+	std %f28, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*28]
+	std %f30, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*30]
+noFPUactive:
 	/*
 	 * Save context switch state, globals only for the time being...
 	 * This gets saved in our stack frame.
@@ -335,6 +388,31 @@ ContextRestoreSomeMore:
 	/* Update machCurStatePtr */
 	set	_machCurStatePtr, %VOL_TEMP1
 	st	%SAFE_TEMP, [%VOL_TEMP1]
+	/*
+	 * If FPU is active for this process, restore the FPU state.
+	 */
+	ld	[%SAFE_TEMP+MACH_FPU_STATUS_OFFSET], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	bz	dontRestoreFPU
+	nop
+	ld  [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_FSR_OFFSET], %fsr
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*0],%f0
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*2],%f2 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*4],%f4 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*6],%f6 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*8],%f8 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*10],%f10
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*12],%f12
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*14],%f14 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*16],%f16 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*18],%f18 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*20],%f20 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*22],%f22
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*24],%f24 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*26],%f26
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*28],%f28
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*30],%f30
+dontRestoreFPU:
 
 	/* restore global registers of new process */
 	MACH_RESTORE_GLOBAL_STATE()
@@ -1117,3 +1195,129 @@ _MachHandleBadQuickCopy:
 	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
 	ret		/* return from non-leaf routine */
 	restore
+/*
+ *---------------------------------------------------------------------
+ *
+ * _MachFPULoadState -
+ *
+ *	Load the current state into the FPU.
+ *
+ *	void MachFPULoadState(regStatePtr)
+ * 	     Mach_RegState *regStatePtr;
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	FPU registers changed.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachFPULoadState
+_MachFPULoadState:
+	/*
+	 * Insure that the FPU is enabled.
+	 */
+	mov	%psr, %o1
+	set	MACH_ENABLE_FPP, %o2
+	or	%o2,%o1,%o2
+	mov	%o2,%psr
+	nop
+	nop
+	nop
+	ld	[%o0 + MACH_FPU_FSR_OFFSET], %fsr
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*0],%f0
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*2],%f2 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*4],%f4 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*6],%f6 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*8],%f8 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*10],%f10
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*12],%f12
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*14],%f14 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*16],%f16 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*18],%f18 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*20],%f20 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*22],%f22
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*24],%f24 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*26],%f26
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*28],%f28
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*30],%f30
+	retl
+	mov	%o1,%psr
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachFPUDumpState -
+ *
+ *	Save the FPU state of a process into the Mach_RegState structure.
+ *
+ *	void MachFPUDumpState(regStatePtr)
+ *		Mach_RegState *regStatePtr;
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Pending exception state cleared from FPU.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachFPUDumpState
+_MachFPUDumpState:
+	/*
+	 * Insure that the FPU is enabled.
+	 */
+	mov	%psr, %o1
+	set	MACH_ENABLE_FPP, %o2
+	or	%o2,%o1,%o2
+	mov	%o2,%psr
+	/*
+	 * Next three instructions should not be FPU instructions. 
+	 */
+	set     MACH_FSR_QUEUE_NOT_EMPTY, %o3
+	add	%o0, MACH_FPU_QUEUE_OFFSET, %o4
+	mov	0, %o5
+	/*
+	 * While MACH_FSR_QUEUE_NOT_EMPTY set in the FSR, save
+	 * the entry in the %fq register.
+	 */
+clearQueueLoop:
+	st	%fsr, [%o0 + MACH_FPU_FSR_OFFSET]
+	ld      [%o0 + MACH_FPU_FSR_OFFSET], %o2
+	andcc	%o2,%o3,%g0
+	be	queueEmpty
+	nop
+	std	%fq, [%o4+%o5]
+	ba	clearQueueLoop
+	add	%o5,8,%o5
+queueEmpty:
+	/*
+	 * Compute numQueueEntries.
+	 */
+	srl	%o5,3,%o5
+	st	%o5, [%o0 + MACH_FPU_QUEUE_COUNT]
+	/*
+	 * Save registers two at a time.
+	 */
+	std	%f0, [%o0 + MACH_FPU_REGS_OFFSET+4*0]
+	std	%f2, [%o0 + MACH_FPU_REGS_OFFSET+4*2]
+	std	%f4, [%o0 + MACH_FPU_REGS_OFFSET+4*4]
+	std	%f6, [%o0 + MACH_FPU_REGS_OFFSET+4*6]
+	std	%f8, [%o0 + MACH_FPU_REGS_OFFSET+4*8]
+	std	%f10, [%o0 + MACH_FPU_REGS_OFFSET+4*10]
+	std	%f12, [%o0 + MACH_FPU_REGS_OFFSET+4*12]
+	std	%f14, [%o0 + MACH_FPU_REGS_OFFSET+4*14]
+	std	%f16, [%o0 + MACH_FPU_REGS_OFFSET+4*16]
+	std	%f18, [%o0 + MACH_FPU_REGS_OFFSET+4*18]
+	std	%f20, [%o0 + MACH_FPU_REGS_OFFSET+4*20]
+	std	%f22, [%o0 + MACH_FPU_REGS_OFFSET+4*22]
+	std	%f24, [%o0 + MACH_FPU_REGS_OFFSET+4*24]
+	std	%f26, [%o0 + MACH_FPU_REGS_OFFSET+4*26]
+	std	%f28, [%o0 + MACH_FPU_REGS_OFFSET+4*28]
+	std	%f30, [%o0 + MACH_FPU_REGS_OFFSET+4*30]
+	/*
+	 * Restore the FPU to previous state and return.
+	 */
+	retl
+	mov	%o1,%psr
+
+

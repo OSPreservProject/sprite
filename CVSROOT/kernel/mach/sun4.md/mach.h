@@ -136,11 +136,6 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
 #include <kernel/machSig.h>
 #endif
 
-typedef struct Mach_FPUState {
-    unsigned int stateReg;	/* FPU state register. */
-    unsigned int fregs[32];     /* 32 singles or 14 double registers. */
-} Mach_FPUState;
-
 typedef struct Mach_RegWindow {
      int locals[MACH_NUM_LOCALS];
      int ins[MACH_NUM_INS];
@@ -186,12 +181,24 @@ typedef struct Mach_State {
 						 * correct place.  */
     Address		kernStackStart;		/* top of kernel stack
 						 * for this process. */
+    int			fpuStatus;		/* FPU status. See below. */
     Sig_Stack		sigStack;		/* sig stack holder for setting
 						 * up signal handling */
     Sig_Context		sigContext;		/* sig context holder for
 						 * setting up signal handling */
-    Mach_FPUState	fpuState;		/* Process FPU state. */
+    int			lastSysCall;		/* Needed for migration. */
 } Mach_State;
+
+/*
+ * Values for the fpuStatus field.
+ * MACH_FPU_ACTIVE - FPU is active for this process.
+ * MACH_FPU_EXCEPTION_PENDING - The process caused a FPU exception to occur.
+ * MACH_FPU_TRAP_TYPE_MASK - Execption trap type read from the %fsr reg.
+ */
+#define	MACH_FPU_ACTIVE			0x1
+#define	MACH_FPU_EXCEPTION_PENDING      0x2
+#define	MACH_FPU_TRAP_TYPE_MASK		0xff00
+
 
 /*
  * Structure on top of user stack when Sig_Handler is called.  This must

@@ -145,11 +145,15 @@ int	machSigCodeOffsetInSig;		/* offset of sigCode field in
 					 * Sig_Stack structure. */
 int	machSigPCOffsetOnStack;		/* offset of pcValue field in
 					 * MachSignalStack on user stack. */
+int	machLastSysCallOffset;		/* offset of lastSysCall field in
+					 * Mach_State structure. */
 
-#ifdef FP_ENABLED
-unsigned int	machSavedFsr;		/* saved %fsr on fp exception trap */
-#endif FP_ENABLED
 
+Proc_ControlBlock *machFPUSaveProcPtr;	/* Set to the Proc_ControlBlock of the
+					 * process we are saving the FPU
+					 * state for in Mach_Context switch. */
+int		machFPUSyncInst();     /* PC of stfsr instruction in 
+					* context switch. */
 /*
  * Pointer to the state structure for the current process.
  */
@@ -241,6 +245,7 @@ Mach_Init()
 	panic("Bad offset for trap registers.  Redo machConst.h!\n");\
     }
 
+
     CHECK_SIZE(Mach_RegState, MACH_SAVED_STATE_FRAME);
     CHECK_OFFSETS(trapRegs, MACH_TRAP_REGS_OFFSET);
     CHECK_OFFSETS(switchRegs, MACH_SWITCH_REGS_OFFSET);
@@ -248,9 +253,14 @@ Mach_Init()
     CHECK_OFFSETS(savedMask, MACH_SAVED_MASK_OFFSET);
     CHECK_OFFSETS(savedSps[0], MACH_SAVED_SPS_OFFSET);
     CHECK_OFFSETS(kernStackStart, MACH_KSP_OFFSET);
+    CHECK_OFFSETS(fpuStatus, MACH_FPU_STATUS_OFFSET)
     CHECK_TRAP_REG_OFFSETS(curPsr, MACH_LOCALS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(ins[0], MACH_INS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(globals[0], MACH_GLOBALS_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(fsr, MACH_FPU_FSR_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(numQueueEntries, MACH_FPU_QUEUE_COUNT);
+    CHECK_TRAP_REG_OFFSETS(fregs, MACH_FPU_REGS_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(fqueue, MACH_FPU_QUEUE_OFFSET);
 
 #ifdef sun4c
     if ((*(romVectorPtr->virtMemory))->address !=
@@ -302,6 +312,8 @@ Mach_Init()
     machSigCodeOffsetInSig = offsetof(Sig_Stack, sigCode);
     machSigPCOffsetOnStack = offsetof(MachSignalStack, 
         sigContext.machContext.pcValue);
+
+    machLastSysCallOffset = offsetof(Mach_State, lastSysCall);
 
     /*
      * base of the debugger stack
@@ -509,8 +521,6 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * from the parent as well.
      */
     if (user) {
-	Proc_ControlBlock	*curProcPtr;	/* Pointer to current proc */
-
 	/*
 	 * Trap state regs are the same for child process.
 	 */
@@ -524,11 +534,6 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 	 * to the new process, so that when it returns from the fork trap, it
 	 * will copy out the saved windows to its stack.
 	 */
-	curProcPtr = Proc_GetCurrentProc();
-	if (curProcPtr->machStatePtr != fromStatePtr) {
-	    panic("%s %s\n", "Mach_SetupNewState: Forking process must",
-		    "be current process!");
-	}
 	if (fromStatePtr->savedMask != 0) {
 	    procPtr->specialHandling = 1;
 	    statePtr->savedMask = fromStatePtr->savedMask;
@@ -695,6 +700,10 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     procPtr->machStatePtr->trapRegs->pc = (unsigned int) entryPoint;
     procPtr->machStatePtr->trapRegs->tbr = (unsigned int) machTBRAddr;
     /*
+     * Initialized the floating point state.
+     */
+    procPtr->machStatePtr->fpuStatus = 0;
+    /*
      * Return value is cleared for exec'ing user process.  This shouldn't
      * matter since a good exec won't return.
      */
@@ -756,7 +765,7 @@ Mach_GetDebugState(procPtr, debugStatePtr)
 
     machStatePtr = procPtr->machStatePtr;
     bcopy((Address)machStatePtr->trapRegs,
-	      (Address)(&debugStatePtr->regState), sizeof(Mach_RegState));
+	      (Address)(&debugStatePtr->regState), sizeof(Mach_DebugState));
     return;
 }
 
@@ -1358,7 +1367,45 @@ HandleItAgain:
 	goto HandleItAgain;
     }
     Mach_EnableIntr();
+    /*
+     * Check for floating point problems.
+     */
+    if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
+	int		i;
+	Mach_RegWindow	*curWindow;
+	switch (machStatePtr->fpuStatus & MACH_FSR_TRAP_TYPE_MASK) {
+	    case	MACH_FSR_IEEE_TRAP:
+	    case	MACH_FSR_UNFINISH_TRAP:
+	    case	MACH_FSR_UNIMPLEMENT_TRAP:
+		break;
+	    case	MACH_FSR_SEQ_ERRROR_TRAP: {
+		panic("Floating point sequence error, fsr = 0x%x\n",
+		     machStatePtr->trapRegs->fsr);
+		break;
+	    }
+	    case	MACH_FSR_NO_TRAP:
+	    default: {
+		panic(
+"Floating point exception with bad trap code, fsr = 0x%x\n", 
+		    machStatePtr->trapRegs->fsr);
+		break;
+	    }
+	}
+	machStatePtr->fpuStatus &= ~MACH_FPU_EXCEPTION_PENDING;
+	/*
+	 * Emulate the evil instructions, and restore the result into the FPU.
+	 */
+	curWindow = (Mach_RegWindow *)
+		    (machStatePtr->trapRegs->ins[MACH_FP_REG]);
+	for (i = 0; i < machStatePtr->trapRegs->numQueueEntries; i++) {
+	    MachFPU_Emulate(procPtr->processID, 
+			machStatePtr->trapRegs->fqueue[i].address,
+			machStatePtr->trapRegs,
+			curWindow);
+	}
+	MachFPULoadState(machStatePtr->trapRegs);
 
+    }
     /*
      * Now check for signal stuff.
      */
@@ -1406,11 +1453,17 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 {
     Proc_ControlBlock	*procPtr;
 
-    procPtr = Proc_GetCurrentProc();
-    if (procPtr == (Proc_ControlBlock *) NIL) {
-	printf("%s: pc = 0x%x, trapType = %d\n",
+    /*
+     * Find the current process.  If we took a MACH_FP_EXCEP at machFPUSyncInst
+     * we used the process saved in machFPUSaveProcPtr.
+     */
+    procPtr = ((trapType == MACH_FP_EXCEP) && 
+	       (pcValue == (Address) &machFPUSyncInst)) ? machFPUSaveProcPtr :
+							  Proc_GetCurrentProc();
+    if ((procPtr == (Proc_ControlBlock *) NIL)) {
+	    printf("%s: pc = 0x%x, trapType = %d\n",
 		"MachHandleWeirdoInstruction", pcValue, trapType);
-	panic("Current process was NIL!\n");
+	    panic("Current process was NIL!\n");
     }
     /*
      * Handle kernel-mode traps.
@@ -1433,13 +1486,27 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 	    printf("%s %s\n", "MachHandleWeirdoInstruction: tag",
 		    "overflow trap in the kernel!");
 	    break;
-	case MACH_FP_EXCEP:
-	    printf("%s %s\n", "MachHandleWeirdoInstruction: fp",
-		    "exception trap in the kernel!");
-#ifdef FP_ENABLED
-	    printf("%fsr is 0x%x\n", machSavedFsr);
-#endif FP_ENABLED
+	case MACH_FP_EXCEP: {
+	    unsigned int fsr;
+	    /*
+	     * We got a FP execption will running in kernel mode. This is
+	     * exception occured at machFPUSyncInst we clear the
+	     * exception and mark the Mach_State.
+	     */
+	    if (pcValue == (Address) &machFPUSyncInst) {
+		  MachFPUDumpState(procPtr->machStatePtr->trapRegs);
+		  fsr = procPtr->machStatePtr->trapRegs->fsr;
+		  procPtr->machStatePtr->fpuStatus |= 
+				(fsr & MACH_FSR_TRAP_TYPE_MASK) |
+					     MACH_FPU_EXCEPTION_PENDING;
+		  procPtr->specialHandling = 1;
+		  return;
+	    } else {
+		   printf("%s. ",
+	"MachHandleWeirdoInstruction: FPU exception from kernel process.");
+	    }
 	    break;
+	}
 	case MACH_FP_DISABLED:
 	    printf("%s %s\n", "MachHandleWeirdoInstruction: fp unit",
 		    "disabled trap in the kernel!");
@@ -1470,42 +1537,47 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, procPtr->processID,
 		FALSE);
 	break;
-    case MACH_FP_EXCEP:
-#ifdef FP_ENABLED
-	printf("%s.  %fsr was 0x%x\n",
-		"MachHandleWeirdoInstruction: fp exception from user process.",
-		machSavedFsr);
-#endif FP_ENABLED
-    (void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, procPtr->processID,
-		FALSE);
-	break;
+    case MACH_FP_EXCEP: {
+         unsigned int fsr;
+	 /*
+	  * An FP exception from user mode.  Clear the exception and 
+	  * mark it in the Mach_State struct.  
+	  * 
+	  */
+	 MachFPUDumpState(procPtr->machStatePtr->trapRegs);
+	 fsr = procPtr->machStatePtr->trapRegs->fsr;
+	 if (!(procPtr->machStatePtr->fpuStatus & MACH_FPU_ACTIVE)) {
+		 printf(
+"FPU exception from process without MACH_FPU_ACTIVE, fsr = 0x%x\n",fsr);
+	 }
+	 procPtr->machStatePtr->fpuStatus |= (fsr & MACH_FSR_TRAP_TYPE_MASK) |
+					    MACH_FPU_EXCEPTION_PENDING;
+	 procPtr->specialHandling = 1;
+	 break;
+	}
     case MACH_FP_DISABLED: {
-	Mach_State 	*machStatePtr;
-	int		curSp;
-	Mach_RegWindow	*curWindow;
+	register Mach_State 	*machStatePtr;
 
-	/* 
-	 * Insure the user's registers are memory resident.
-	 */
 	MachFlushWindowsToStack();
 	machStatePtr = procPtr->machStatePtr;
 	/*
-	 * See if the user's window was saved to the internal buffers.
+	 * Upon a user's first FPU disable trap we initialize and enable
+	 * the FPU for him. 
 	 */
-	curSp = machStatePtr->trapRegs->ins[MACH_FP_REG];
-	curWindow = (Mach_RegWindow *) curSp;
-	if (machStatePtr->savedMask != 0) {
-	    int	i;
-	    for (i = 0; i < MACH_NUM_WINDOWS; i++) {
-		if (((1 << i) & machStatePtr->savedMask) &&
-		    (machStatePtr->savedSps[i] == curSp))  {
-		    curWindow = (Mach_RegWindow *)
-				    &(machStatePtr->savedRegs[i][0]);
-		}
-	    }
+	if (machStatePtr->fpuStatus & MACH_FPU_ACTIVE) {
+	    panic("Double FPU_DISABLE trap.\n");
 	}
-	MachFPU_Emulate(procPtr->processID,pcValue, machStatePtr->trapRegs, 
-			curWindow,  &machStatePtr->fpuState);
+	machStatePtr->fpuStatus = MACH_FPU_ACTIVE;
+	/*
+	 * Enable the FPU in the trap PSR.
+	 */
+	machStatePtr->trapRegs->curPsr |= MACH_ENABLE_FPP;
+	/*
+	 * Initialize the FPU registers. 
+	 */
+	machStatePtr->trapRegs->fsr = 0;
+	bzero((Address) (machStatePtr->trapRegs->fregs), MACH_NUM_FPS*4);
+	MachFPULoadState(machStatePtr->trapRegs);
 	break;
 	}
     case MACH_TAG_OVERFLOW:
