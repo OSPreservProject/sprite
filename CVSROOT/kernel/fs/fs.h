@@ -259,7 +259,7 @@ typedef struct Fs_Stream {
 #define FS_LINK			0x00040000
 #define FS_RENAME		0x00080000
 #define FS_CLIENT_CACHE_WRITE	0x00100000
-/* There's space for another flag here. */
+#define	FS_DIR			0x00200000
 #define FS_HEAP			0x00400000
 #define FS_USER_OUT		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
