@@ -767,11 +767,11 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
  */
 /* ARGSUSED */ 
 Boolean
-DevSCSI0Intr(clientDataArg, newRequestPtr)
+DevSCSI0Intr(clientDataArg)
     ClientData	clientDataArg;
-    List_Links *newRequestPtr;
 {
     register Controller *ctrlPtr;
+    List_Links *newRequestPtr;
     Device	*devPtr;
     volatile CtrlRegs *regsPtr;
     int		residual;

@@ -18,12 +18,14 @@
 #ifndef _DEVSCSI0
 #define _DEVSCSI0
 
+#include "devInt.h"
 #include "scsiHBA.h"
 
-extern ClientData DevSCSI0Init();
-extern Boolean DevSCSI0Intr();
-extern Boolean DevSCSI0IntrStub();
-extern ScsiDevice   *DevSCSI0AttachDevice();
+extern ClientData DevSCSI0Init _ARGS_ ((DevConfigController *ctrlLocPtr));
+extern Boolean DevSCSI0Intr _ARGS_ ((ClientData clientData));
+extern ScsiDevice *DevSCSI0AttachDevice _ARGS_ ((Fs_Device *devicePtr,
+    void (*insertProc) _ARGS_ ((List_Links *elementPtr,
+                                List_Links *elementListHdrPtr))));
 
 #endif /* _DEVSCSI0 */
 
