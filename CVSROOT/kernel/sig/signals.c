@@ -505,6 +505,7 @@ Sig_SendProc(procPtr, sigNum, code)
     int				  sigNum;
     int				  code;
 {
+    ReturnStatus status;
     /*
      * Make sure that the signal is in range.
      */
@@ -516,10 +517,23 @@ Sig_SendProc(procPtr, sigNum, code)
 	}
     }
 
+    /*
+     * Handle migrated processes specially. There's a race condition
+     * when sending a signal to a migrated process, since it can
+     * migrate back to this host while we're doing it.  Therefore,
+     * if the problem was that the process didn't exist, check
+     * to see if it has migrated back to this host (it's no longer MIGRATED).
+     * We don't have to check for MIGRATING, since SigMigSend waits for
+     * a migration in progress to complete.
+     */
     if (procPtr->state == PROC_MIGRATED ||
         (procPtr->genFlags & PROC_MIGRATING)) {
-	return(SigMigSend(procPtr, sigNum, code));
-    } else if (procPtr->state == PROC_EXITING) {
+	status = SigMigSend(procPtr, sigNum, code);
+	if (!(status == PROC_INVALID_PID && procPtr->state != PROC_MIGRATED)) {
+	    return(status);
+	}
+    }
+    if (procPtr->state == PROC_EXITING) {
 	return(PROC_INVALID_PID);
     } else if (procPtr->state == PROC_NEW) {
 	if (procPtr->genFlags & PROC_FOREIGN && proc_MigDebugLevel > 0) {
