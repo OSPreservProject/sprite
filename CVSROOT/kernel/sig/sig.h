@@ -94,5 +94,5 @@ extern ReturnStatus	Sig_EncapState();
 extern ReturnStatus	Sig_DeencapState();
 extern	void		Sig_AllowMigration();
 
-#endif _SIG
+#endif /* _SIG */
 

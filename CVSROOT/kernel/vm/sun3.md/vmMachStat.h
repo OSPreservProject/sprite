@@ -24,4 +24,4 @@ typedef struct {
 				   pmeg away from a process. */
 } VmMachDepStat;
 
-#endif _VMMACHSTAT
+#endif /* _VMMACHSTAT */

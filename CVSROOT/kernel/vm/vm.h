@@ -324,4 +324,4 @@ extern	unsigned int	Vm_GetKernPageFrame();
 extern	Boolean		vm_Tracing;
 extern	void		Vm_StoreTraceTime();
 
-#endif _VM
+#endif /* _VM */

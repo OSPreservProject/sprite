@@ -258,7 +258,7 @@ typedef struct Fs_Stream {
 typedef enum {
     FS_CODE_PAGE,
     FS_HEAP_PAGE,
-    FS_SWAP_PAGE,
+    FS_SWAP_PAGE
 } Fs_PageType;
 
 /*
