@@ -896,9 +896,15 @@ Fs_BlocksToDiskAddr(fragNumber, data, diskAddrPtr)
 
     rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
     blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+/*
+ * The follow statment had to be broken into two because the compiler used
+ * register d2 to do the modulo operation, but wasn't saving its value.
+ */
     sectorNumber	= geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
-		  	  rotationalSet + geoPtr->blockOffset[blockNumber] +
+			  rotationalSet + geoPtr->blockOffset[blockNumber];
+    sectorNumber	+=
 		    (fragNumber % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+
     diskAddrPtr->head	= sectorNumber / geoPtr->sectorsPerTrack;
     diskAddrPtr->sector = sectorNumber -
 			  diskAddrPtr->head * geoPtr->sectorsPerTrack;
