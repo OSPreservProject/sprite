@@ -1679,7 +1679,7 @@ UNIXSyscall:
     add		t0, t0, t3
     lw		t3, 4(t0)	# t3 <= number of arguments.
     nop
-    bltz	t3, 42f
+    bltz	t3, doNewSysCall
     nop
 
 
@@ -1818,7 +1818,6 @@ unixSyscallReturn:
  */
 
 newUNIXSyscall:
-    sw          v0, sysCallNum
     add		t7, gp, zero			# Save the user's gp in t7
     la		gp, _gp				# Switch to the kernel's gp
 /*
@@ -1834,8 +1833,12 @@ newUNIXSyscall:
     bne		k0, zero, Mach_UserGenException
 /*
  * See if this system call is valid.
+ * Note: This is currently the actual entry point, since we jump out
+ * of the middle of the old unix code.  This is so old/new can be
+ * set on a call-by-call basis, by changing the table.
  */
-42:
+doNewSysCall:
+    sw          v0, sysCallNum
     sltu	t0, v0, MACH_MAX_UNIX_SYSCALL   # t0 <= Maximum sys call value.
     bne		t0, zero, 1f			# If so then continue on.
     nop
