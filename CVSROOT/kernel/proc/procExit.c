@@ -1175,10 +1175,17 @@ ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
 	} else if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
 	    status = GEN_ABORTED_BY_SIGNAL;
 	    break;
-	}
+	}  
     }
 
-    if (proc_MigDebugLevel > 3) {
+    if (status == PROC_NO_PEER) {
+	(void) Sig_Send(SIG_KILL, (int) PROC_NO_PEER, procPtr->processID,
+			FALSE); 
+	if (proc_MigDebugLevel > 1) {
+	    printf("ProcRemoteWait killing process %x: home node's copy died.\n",
+		   procPtr->processID);
+	}
+    } else if (proc_MigDebugLevel > 3) {
 	printf("ProcRemoteWait returning status %x.\n", status);
 	if (status == SUCCESS && proc_MigDebugLevel > 6) {
 	    printf("Child's id is %x, status %x.\n",
