@@ -280,6 +280,13 @@ Rpc_Server()
  *	an explicit acknowledgment from the client and then marking
  *	the server as SRV_FREE.
  *
+ *	WARNING: it is possible for this routine to be called very often,
+ *	with the daemon being woken up by DAEMON_POKED rather than the
+ *	DAEMON_TIMEOUT.  Potentially, this might not give clients enough
+ *	time to do an RPC.  This doesn't seem to happen, but we should
+ *	change this routine at some point to make sure it can't happen.
+ *
+ *
  * Results:
  *	None.
  *
@@ -334,8 +341,8 @@ RpcReclaimServers(serversMaxed)
 		}
 	    } else {
 		/*
-		 * This process has aged since the last time we looked, at
-		 * least sleepTime ago.  We resend to the client with the
+		 * This process has aged since the last time we looked, maybe
+		 * sleepTime ago.  We resend to the client with the
 		 * close flag and continue on.  If RpcServerDispatch gets
 		 * a reply from the client closing its connection it will
 		 * mark the server process SRV_FREE.  If we continue to
