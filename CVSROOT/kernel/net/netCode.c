@@ -23,12 +23,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 
-#include "sys.h"
 #include "list.h"
 #include "net.h"
 #include "netInt.h"
 #include "devNet.h"
-#include "byte.h"
 #include "dbg.h"
 
 Net_EtherStats	net_EtherStats;
@@ -76,21 +74,17 @@ Net_Init()
     /*
      * Zero out the statistics struct.
      */
-    Byte_Zero(sizeof(net_EtherStats), (Address) &net_EtherStats);
+    bzero((Address) &net_EtherStats, sizeof(net_EtherStats));
 
     /*
      * Determine the number and kind of network interfaces by calling
      * each network interface initialization procedure.
      */
     for (inter = 0 ; inter<numNetInterfaces ; inter++) {
-	Sys_Printf("Probing %s-%d net interface at 0x%x ...\n",
-		netInterface[inter].name,
-		netInterface[inter].number,
-		netInterface[inter].ctrlAddr);
 	if ((*netInterface[inter].init)(netInterface[inter].name,
 					netInterface[inter].number,
 					netInterface[inter].ctrlAddr)) {
-	    Sys_Printf("%s-%d net interface at 0x%x\n",
+	    printf("%s-%d net interface at 0x%x\n",
 		netInterface[inter].name,
 		netInterface[inter].number,
 		netInterface[inter].ctrlAddr);
@@ -133,9 +127,9 @@ Net_GatherCopy(scatterGatherPtr, scatterGatherLength, destAddr)
 	    continue;
 	}
 
-	Byte_Copy(scatterGatherPtr->length,
-		  (Address) scatterGatherPtr->bufAddr, 
-		  (Address) &(destAddr[soFar]));
+	bcopy((Address) scatterGatherPtr->bufAddr, 
+	     (Address) &(destAddr[soFar]), 
+	     scatterGatherPtr->length);
 	soFar += scatterGatherPtr->length;
     }
 }
@@ -229,8 +223,8 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		return(SUCCESS);
 	    }
 	default:
-	    Sys_Panic(SYS_WARNING, 
-		"Net_Output: unsupported route type: %x\n", routePtr->type);
+	    printf("Warning: Net_Output: unsupported route type: %x\n", 
+			routePtr->type);
 	    return(FAILURE);
     }
 }
@@ -477,7 +471,7 @@ EnterDebugger(packetPtr, packetLength)
      * Copy the length out of the packet into a correctly aligned integer.
      * Correct its byte order.
      */
-    Byte_Copy(sizeof(len), packetPtr, (Address) &len);
+    bcopy( packetPtr, (Address) &len, sizeof(len));
 
     len = Net_NetToHostInt(len);
 
@@ -487,9 +481,9 @@ EnterDebugger(packetPtr, packetLength)
     if (len < 100) {
 	name = (char *) (packetPtr + sizeof(len));
 	name[len] = '\0';
-	Sys_Printf("\n*** Got a debugger packet from %s ***\n", name);
+	printf("\n*** Got a debugger packet from %s ***\n", name);
     } else {
-	Sys_Printf("\n*** Got a debugger packet ***\n");
+	printf("\n*** Got a debugger packet ***\n");
     }
 
     DBG_CALL;
