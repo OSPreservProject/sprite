@@ -159,7 +159,6 @@ HDRS = sprite.h
 sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
-	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	cc -c ${CFLAGS} version.c
@@ -170,14 +169,14 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	update -f -s $@ /sprite/boot/$@.md/new
 	cp /sprite/boot/$@.md/new /vmsprite.new
 	rcp /sprite/boot/$@.md/new ${GINGER}:/sprite3/$@.new
-	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
 	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
 	nm -n  > $@.nm
+	-Save $@
 
 sun4: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
-	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
 	cc -c ${CFLAGS} -Dsun4 version.c
@@ -187,11 +186,11 @@ sun4: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
 	nm -n $@ > $@.nm
+	-Save $@
 
 sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
-	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
@@ -201,6 +200,26 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
 	nm -n $@ > $@.nm
+	-Save $@
+
+ds3100: ${OBJS} .PRECIOUS
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
+	rm -f $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	@cc -c ${CFLAGS} version.c
+	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
+		-L/sprite/lib/${TM}.md ${LIBC}
+	@ls -l $@
+	@size $@
+	update -f $@ /sprite/boot/$@.md/new
+	strip /sprite/boot/$@.md/new
+	rcp $@ dill:/sprite/src/kernel/nelson/$@
+	rm -f $@.nm
+	nm -n $@ > $@.nm
+	-Save $@
+	rsh dill '(cd /sprite/src/kernel/nelson ; Save $@)'
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
 	sed 's/MACHINE/$@/g' version.h.template > version.h
@@ -230,22 +249,6 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	@size $@
 	update -f -s $@ /sprite/boot/sun3.md/prof
 	rcp /sprite/boot/sun3.md/prof ${GINGER}:/sprite3/tmp/$@
-	nm -n $@ > $@.nm
-
-ds3100: ${OBJS} .PRECIOUS
-	sed 's/MACHINE/$@/g' version.h.template > version.h
-	cat version.h >> $@.versionLog
-	rm -f $@
-	rm -f mainHook.o
-	cc -c ${CFLAGS} mainHook.c
-	@cc -c ${CFLAGS} version.c
-	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
-		-L/sprite/lib/${TM}.md ${LIBC}
-	@ls -l $@
-	@size $@
-	update -f $@ /sprite/boot/$@.md/new
-	strip /sprite/boot/$@.md/new
-	rm -f $@.nm
 	nm -n $@ > $@.nm
 
 nm: ${OBJS}
