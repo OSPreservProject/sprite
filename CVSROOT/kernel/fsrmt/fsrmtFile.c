@@ -942,7 +942,7 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 		    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_CLEAR_READ_AHEAD);
 		} else {
-#ifdef SOSP
+#ifdef SOSP91
 		    if (readPtr->flags & FS_SWAP) {
 			fs_MoreStats.hitsOnSwapPage++;
 			if (isForeign) {
