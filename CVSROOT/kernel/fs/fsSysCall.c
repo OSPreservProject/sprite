@@ -1652,18 +1652,22 @@ Fs_ReadLinkStub(linkName, bufSize, buffer, linkSizePtr)
     status = Fs_Open(newLinkName, FS_READ | FS_USER,
 		     FS_SYMBOLIC_LINK|FS_REMOTE_LINK, 0, &streamPtr);
     if (status == SUCCESS) {
-	status = Fs_Read(streamPtr, buffer, 0, &bufSize);
+	status = Fs_Read(streamPtr, newLinkName, 0, &linkNameLength);
 	if (status == SUCCESS) {
 	    /*
 	     * Sprite's link count includes the terminating null character
 	     * in the character count return while Unix doesn't.  Make our
 	     * count backward-compatible with Unix.
 	     */
-	    if (buffer[bufSize-1] == '\0') {
-		bufSize--;
+	    if (newLinkName[linkNameLength-1] == '\0') {
+		linkNameLength--;
 	    }
-	    status = Proc_ByteCopy(FALSE, sizeof(int), (Address)&bufSize, 
+	    status = Proc_ByteCopy(FALSE, sizeof(int), (Address)&linkNameLength,
 			       (Address)linkSizePtr);
+	    if (status == SUCCESS) {
+		status = Proc_ByteCopy(FALSE, linkNameLength,
+			(Address) newLinkName, (Address) buffer);
+	    }
 	}
 	(void)Fs_Close(streamPtr);
     }
