@@ -175,6 +175,11 @@ typedef struct {
 					   migration to each host */
     int			rpcKbytes; 	/* Total number of Kbytes sent during
 					   migration. */
+    int			migrationsHome; /* Number of times processes migrate
+					   home, including evictions. */
+    int			evictCalls; 	/* Number of times user-level daemon
+					   requested evictions. */
+					   
 } Proc_MigStats;
 
   
