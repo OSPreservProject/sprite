@@ -367,6 +367,7 @@ Vm_FinishMigration(procPtr, hostID, infoPtr, bufferPtr, failure)
     /*
      * Would also need to set PROC_NO_VM here...
      */
+    return(SUCCESS);
 }
 
 
