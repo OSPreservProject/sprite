@@ -109,10 +109,20 @@ FsLocalExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
 {
     register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
     register ReturnStatus status;
+    FsOpenArgs openArgs;
+    FsOpenResults openResults;
+
+    bzero((Address)&openArgs, sizeof(openArgs));
+    openArgs.clientID = clientID;
+    openArgs.useFlags = FS_PREFIX;
 
     FsHandleLock(handlePtr);
-    status = FsFileSrvOpen(handlePtr, clientID, FS_PREFIX,
-		    ioFileIDPtr, (Fs_FileID *)NIL, dataSizePtr, clientDataPtr);
+    status = FsFileSrvOpen(handlePtr, &openArgs, &openResults);
+    if (status == SUCCESS) {
+	*ioFileIDPtr = openResults.ioFileID;
+	*dataSizePtr = openResults.dataSize;
+	*clientDataPtr = openResults.streamData;
+    }
     return(status);
 }
 
@@ -167,9 +177,7 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 	 * For regular files, this is when cache consistency is done.
 	 */
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
-		(handlePtr, openArgsPtr->clientID, openArgsPtr->useFlags,
-		 &openResultsPtr->ioFileID, &openResultsPtr->streamID,
-		 &openResultsPtr->dataSize, &openResultsPtr->streamData);
+		(handlePtr, openArgsPtr, openResultsPtr);
 	openResultsPtr->nameID = handlePtr->hdr.fileID;
 	if (openArgsPtr->clientID != rpc_SpriteID) {
 	    openResultsPtr->nameID.type = FS_RMT_FILE_STREAM;
@@ -214,6 +222,7 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     FsOpenArgs 		*openArgsPtr;
     FsLocalFileIOHandle *handlePtr;
     FsGetAttrResults	*attrResultsPtr;
+    FsOpenResults	openResults;
 
 
     openArgsPtr =  (FsOpenArgs *)argsPtr;
@@ -236,12 +245,13 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     /*
      * Get the I/O fileID so our client can contact the I/O server.
      */
+    openArgsPtr->useFlags = 0;
     status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
-	    (handlePtr, openArgsPtr->clientID, 0, attrResultsPtr->fileIDPtr,
-	     (Fs_FileID *)NIL, (int *)NIL, (ClientData *)NIL);
+	    (handlePtr, openArgsPtr, &openResults);
+    *attrResultsPtr->fileIDPtr = openResults.ioFileID;
+
     if (status != SUCCESS) {
-	printf(
-	    "FsLocalGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+	printf("FsLocalGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
 	    relativeName, handlePtr->hdr.fileID.minor,
 	    handlePtr->hdr.fileID.major, status);
     }
@@ -283,6 +293,7 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     FsOpenArgs			*openArgsPtr;
     Fs_FileID			*fileIDPtr;
     FsLocalFileIOHandle		*handlePtr;
+    FsOpenResults		openResults;
 
     setAttrArgsPtr =  (FsSetAttrArgs *)argsPtr;
     openArgsPtr = &setAttrArgsPtr->openArgs;
@@ -307,9 +318,11 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      */
     if (status == SUCCESS) {
 	FsHandleLock(handlePtr);
+	openArgsPtr->useFlags = 0;
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
-		(handlePtr, openArgsPtr->clientID, 0, fileIDPtr,
-		 (Fs_FileID *)NIL, (int *)NIL, (ClientData *)NIL);
+		(handlePtr, openArgsPtr, &openResults);
+	*fileIDPtr = openResults.ioFileID;
+
 	if (status != SUCCESS) {
 	    printf(
 		"FsLocalSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
@@ -359,10 +372,11 @@ FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     register FsFileDescriptor *descPtr;
 
     makeDevArgsPtr = (FsMakeDeviceArgs *)argsPtr;
-    status = FsLocalLookup(prefixHandle, relativeName, &makeDevArgsPtr->rootID,
+    status = FsLocalLookup(prefixHandle, relativeName,
+		&makeDevArgsPtr->open.rootID,
 		FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW, FS_DEVICE,
-		makeDevArgsPtr->clientID,
-		&makeDevArgsPtr->id, makeDevArgsPtr->permissions,
+		makeDevArgsPtr->open.clientID,
+		&makeDevArgsPtr->open.id, makeDevArgsPtr->open.permissions,
 		0, &handlePtr, newNameInfoPtrPtr);
     if (status == SUCCESS) {
 	descPtr = handlePtr->descPtr;
