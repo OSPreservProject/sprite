@@ -243,7 +243,17 @@ RpcReclaimServers()
 	deadClientID = -1;
 	if ((srvPtr->clientID >= 0) &&
 	    (srvPtr->state & SRV_WAITING)) {
-	    if ((srvPtr->state & SRV_AGING) == 0) {
+	     if (srvPtr->state & SRV_NO_REPLY) {
+		/*
+		 * Reclaim right away if the server process is tied
+		 * up not replying to a broadcast request.
+		 */
+		procPtr = srvPtr->freeReplyProc;
+		data = srvPtr->freeReplyData;
+		srvPtr->freeReplyProc = (int (*)())NIL;
+		srvPtr->freeReplyData = (ClientData)NIL;
+		srvPtr->state = SRV_FREE|SRV_NO_REPLY;
+	    } else if ((srvPtr->state & SRV_AGING) == 0) {
 		/*
 		 * This is the first pass over the server process that
 		 * has found it idle.  Start it aging.
@@ -267,22 +277,10 @@ RpcReclaimServers()
 		    srvPtr->freeReplyProc = (int (*)())NIL;
 		    srvPtr->freeReplyData = (ClientData)NIL;
 		    rpcSrvStat.reclaims++;
-		    if ((srvPtr->state & SRV_NO_REPLY) == 0) {
-			deadClientID = srvPtr->clientID;
-		    }
+		    deadClientID = srvPtr->clientID;
 		    srvPtr->state = SRV_FREE;
 		} else if (srvPtr->clientID == rpc_SpriteID) {
 		    Sys_Panic(SYS_WARNING, "Reclaiming from myself.\n");
-		    srvPtr->state = SRV_FREE;
-		} else if (srvPtr->state & SRV_NO_REPLY) {
-		    /*
-		     * Reclaim right away if the server process is tied
-		     * up not replying to a broadcast request.
-		     */
-		    procPtr = srvPtr->freeReplyProc;
-		    data = srvPtr->freeReplyData;
-		    srvPtr->freeReplyProc = (int (*)())NIL;
-		    srvPtr->freeReplyData = (ClientData)NIL;
 		    srvPtr->state = SRV_FREE;
 		} else {
 		    /*
@@ -514,9 +512,9 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		     * Reset srvPtr->replyRpcHdr.ID so that we can accept
 		     * new requests from the client.
 		     */
-	    Sys_Printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x>\n",
+	    Sys_Printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x> clientID %d\n",
 			    srvPtr->index, srvPtr->state, rpcHdrPtr->ID,
-			    rpcHdrPtr->flags);
+			    rpcHdrPtr->flags, rpcHdrPtr->clientID);
 		    rpcSrvStat.badState++;
 		    srvPtr->replyRpcHdr.ID = 0;
 		    srvPtr->state = SRV_FREE;
