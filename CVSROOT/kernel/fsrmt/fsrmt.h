@@ -101,16 +101,9 @@ extern ReturnStatus Fsrmt_IOMigClose _ARGS_((Fs_HandleHeader *hdrPtr,
 		int flags));
 extern ReturnStatus Fsrmt_IOMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr, int size,
 		ClientData data, Fs_HandleHeader **hdrPtrPtr));
-#ifdef SOSP91
-extern ReturnStatus Fsrmt_IOClose _ARGS_((Fs_Stream *streamPtr, int clientID,
-		Proc_PID procID, int flags, int dataSize, 
-		ClientData closeData, int *offsetPtr, int *rwFlagsPtr));
-#else
 extern ReturnStatus Fsrmt_IOClose _ARGS_((Fs_Stream *streamPtr, int clientID,
 		Proc_PID procID, int flags, int dataSize, 
 		ClientData closeData));
-#endif
-
 extern ReturnStatus Fsrmt_DeviceOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
 		int useFlags, int inSize, ClientData inBuffer));
 extern ReturnStatus Fsrmt_DeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,

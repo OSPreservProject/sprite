@@ -152,19 +152,10 @@ extern ReturnStatus FsrmtHardLink _ARGS_((Fs_HandleHeader *prefixHandle1,
  * Sprite Domain functions called via the fsAttrOpsTable switch.
  * These are called with a fileID.
  */
-#ifdef SOSP91
-extern ReturnStatus FsrmtGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
-		Fs_Attributes *attrPtr, int hostID, int userID));
-extern ReturnStatus FsrmtSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
-		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags, int
-		clientID, int hostID, int userID));
-#else
 extern ReturnStatus FsrmtGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
 		Fs_Attributes *attrPtr));
 extern ReturnStatus FsrmtSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
 		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
-#endif
-
 extern ReturnStatus FsrmtDeviceIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
 		int *flagsPtr, int clientID, ClientData streamData,
 		char *name, Fs_HandleHeader **ioHandlePtrPtr));
@@ -190,14 +181,8 @@ extern ReturnStatus FsrmtFileIoOpen _ARGS_((Fs_FileID *ioFileIDPtr,
 extern ReturnStatus FsrmtFileReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
 		int clientID, ClientData inData, int *outSizePtr, 
 		ClientData *outDataPtr));
-#ifdef SOSP91
-extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID, 
-		Proc_PID procID, int flags, int dataSize, 
-		ClientData closeData, int *offsetPtr, int *rwFlagsPtr));
-#else
 extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID, 
 		Proc_PID procID, int flags, int dataSize, ClientData closeData));
-#endif
 extern Boolean FsrmtFileScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
 extern Fs_HandleHeader *FsrmtFileVerify _ARGS_((Fs_FileID *fileIDPtr, 
 		int clientID, int *domainTypePtr));

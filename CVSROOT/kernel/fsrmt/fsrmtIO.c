@@ -27,7 +27,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsprefix.h>
 #include <fscache.h>
 #include <fsconsist.h>
-#include <fsutilTrace.h>
 #include <fsioFile.h>
 #include <fsStat.h>
 #include <proc.h>
@@ -565,8 +564,6 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	    Fsutil_HandleUnlock(streamPtr);
 	}
     }
-    FSUTIL_TRACE_IO(FSUTIL_TRACE_SRV_WRITE_2, hdrPtr->fileID,
-		paramsPtr->io.offset, paramsPtr->io.length );
     paramsPtr->io.buffer = storagePtr->requestDataPtr;
     status = (fsio_StreamOpTable[hdrPtr->fileID.type].write)(streamPtr,
 		&paramsPtr->io, &paramsPtr->waiter, replyPtr);
@@ -586,7 +583,6 @@ n",
                     hdrPtr->fileID.type);
         } else {
             Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
-            FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_DEL_LAST_WR, hdrPtr);
             Fsconsist_DeleteLastWriter(&handlePtr->consist, clientID);
 	}
     }

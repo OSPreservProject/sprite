@@ -40,10 +40,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include <stdio.h>
 
-#ifdef SOSP91
-#include <sospRecord.h>
-#endif
-
 extern Boolean fsio_MigDebug;
 #define DEBUG( format ) \
 	if (fsio_MigDebug) { printf format ; }
@@ -187,12 +183,6 @@ Fsrmt_RpcMigrateStream(srvToken, clientID, command, storagePtr)
 	    return(FAILURE);
 	}
     } 
-#ifdef SOSP91
-    {
-	SOSP_ADD_MIGRATE_TRACE(migInfoPtr->srcClientID, clientID,
-	    migInfoPtr->streamID, migInfoPtr->offset);
-    }
-#endif
     Fsutil_HandleRelease(hdrPtr, FALSE);
 
     replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));

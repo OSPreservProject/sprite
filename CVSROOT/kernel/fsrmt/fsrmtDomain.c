@@ -34,7 +34,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsprefix.h>
 #include <fsrmtInt.h>
 #include <fslcl.h>
-#include <fsutilTrace.h>
 #include <fsStat.h>
 #include <recov.h>
 #include <proc.h>
@@ -43,12 +42,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dbg.h>
 
 #include <string.h>
-
-#ifdef SOSP91
-#include <sospRecord.h>
-#include <rpcPacket.h>
 #include <rpcServer.h>
-#endif
 
 /*
  * Used to contain fileID and stream data results from open calls.
@@ -191,13 +185,6 @@ Fsrmt_RpcPrefix(srvToken, clientID, command, storagePtr)
     int					serverID;
     ReturnStatus			status;
     FsPrefixReplyParam			*prefixReplyPtr;
-#ifdef SOSP91
-    RpcServerState			*srvPtr = (RpcServerState *) srvToken;
-
-    SOSP_ADD_PREFIX_TRACE(srvPtr->requestRpcHdr.clientID, 
-	srvPtr->requestRpcHdr.ID);
-#endif
-
 
     status = Fsprefix_Lookup((char *) storagePtr->requestDataPtr,
 		FSPREFIX_EXPORTED | FSPREFIX_EXACT, clientID, &hdrPtr,
@@ -302,11 +289,7 @@ FsrmtOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
      * Set up for the RPC.
      */
     storage.requestParamPtr = (Address) argsPtr;
-#ifdef SOSP91
-    storage.requestParamSize = sizeof(Fs_OpenArgsSOSP);
-#else
     storage.requestParamSize = sizeof(Fs_OpenArgs);
-#endif
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
     storage.replyParamPtr = (Address) &openResultsParam;
@@ -408,16 +391,6 @@ Fsrmt_RpcOpen(srvToken, clientID, command, storagePtr)
     newNameInfoPtr = (Fs_RedirectInfo *) NIL;
     openResultsParamPtr = mnew(FsrmtOpenResultsParam);
     openResultsPtr = &(openResultsParamPtr->openResults);
-#ifdef SOSP91
-    /*
-     * Store the size of the open args here so Fsio_FileNameOpen can
-     * determine whether or not the client is running a tracing kernel,
-     * and therefore whether or not the realID field in the open args is
-     * valid.  Gross, but doesn't require many changes to the code.
-     */
-    openResultsPtr->dataSize = storagePtr->requestParamSize;
-#endif
-
     fs_Stats.srvName.numReadOpens++;
     status = (*fs_DomainLookup[domainType][FS_DOMAIN_OPEN])(prefixHandlePtr,
 		(char *)storagePtr->requestDataPtr, (Address)openArgsPtr,
@@ -630,19 +603,6 @@ typedef struct FsRemoteCloseParams {
     int		closeDataSize;	/* actual size of info in closeData field. */
 } FsRemoteCloseParams;
 
-#ifdef SOSP91
-typedef struct FsRemoteCloseParamsSOSP {
-    Fs_FileID	fileID;		/* File to close */
-    Fs_FileID	streamID;	/* Stream to close */
-    Proc_PID	procID;		/* Process doing the close */
-    int		flags;		/* Flags from the stream */
-    FsCloseData	closeData;	/* Seems to be only Fscache_Attributes... */
-    int		closeDataSize;	/* actual size of info in closeData field. */
-    int		offset;
-    int		rwFlags;
-} FsRemoteCloseParamsSOSP;
-#endif
-
 /*
  *----------------------------------------------------------------------
  *
@@ -679,12 +639,7 @@ Fsrmt_Close(streamPtr, clientID, procID, flags, dataSize, closeData)
     Rpc_Storage 	storage;
     ReturnStatus 	status;
 
-#ifdef SOSP91
-    FsRemoteCloseParamsSOSP	params;
-#else
     FsRemoteCloseParams	params;
-#endif
-
     rmtHandlePtr = (Fsrmt_IOHandle *)streamPtr->ioHandlePtr;
     params.fileID = rmtHandlePtr->hdr.fileID;
     params.streamID = streamPtr->hdr.fileID;
@@ -696,11 +651,6 @@ Fsrmt_Close(streamPtr, clientID, procID, flags, dataSize, closeData)
     } else {
 	params.closeDataSize = 0;
     }
-
-#ifdef SOSP91
-    params.offset = streamPtr->offset;
-    params.rwFlags = (streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8;
-#endif
     storage.requestParamPtr = (Address)&params;
     storage.requestParamSize = sizeof(params);
     storage.requestDataPtr = (Address)NIL;
@@ -798,39 +748,14 @@ Fsrmt_RpcClose(srvToken, clientID, command, storagePtr)
      * and clean up.  This call unlocks and decrements the reference
      * count on the handle.
      */
-    FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_CLOSE, hdrPtr);
     if (paramsPtr->closeDataSize != 0) {
 	clientData = (ClientData)&paramsPtr->closeData;
     } else {
 	clientData = (ClientData)NIL;
     }
-#ifdef SOSP91
-    {
-	int offset;
-	int rwFlags;
-	if (storagePtr->requestParamSize != sizeof(FsRemoteCloseParamsSOSP)) {
-	    /*
-	     * Request is from an old kernel.  Set the offset to -1 because
-	     * we don't know it.
-	     */
-	    offset = -1;
-	    rwFlags = -1;
-	} else {
-	    FsRemoteCloseParamsSOSP	*sospParamsPtr;
-	    sospParamsPtr = (FsRemoteCloseParamsSOSP *) paramsPtr;
-	    offset = sospParamsPtr->offset;
-	    rwFlags = sospParamsPtr->rwFlags;
-	}
-	status = (*fsio_StreamOpTable[hdrPtr->fileID.type].close)
-		(streamPtr, clientID, paramsPtr->procID,
-		paramsPtr->flags, paramsPtr->closeDataSize, clientData,
-		&offset, &rwFlags);
-    }
-#else
     status = (*fsio_StreamOpTable[hdrPtr->fileID.type].close)
 	    (streamPtr, clientID, paramsPtr->procID,
 	    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-#endif
 #ifdef lint
     status = Fsio_FileClose(streamPtr, clientID, paramsPtr->procID,
 	    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
