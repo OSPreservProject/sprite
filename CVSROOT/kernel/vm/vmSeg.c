@@ -1516,6 +1516,25 @@ IncPTUserCount(segPtr)
     UNLOCK_MONITOR;
 }
 
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * The following routines, VmSegCanCOW, VmSegCantCOW and VmSegCOWDone,
+ * synchronize the marking of a segment as non-copy-on-writeable (i.e. it
+ * has to be copied at fork time). The routines that wire pages into a
+ * user's address space can't allow pages that they have wired down to all
+ * of a sudden become copy-on-write because this can cause page faults
+ * at bad times (e.g. with interrupts disabled).  Thus before they wire
+ * pages down they make sure that the segment that the pages reside in
+ * cannot be made copy-on-write.  They do this by calling the routine
+ * VmSegCantCOW.  The routine above (Vm_SegmentDup) wants to decide if it
+ * should duplicate the segment with COW or with copy-on-fork.  It decides
+ * what to do by calling the routine VmSegCanCOW which will return TRUE
+ * if the segment can be copied copy-on-write and will prevent the routine
+ * VmSegCantCOW from doing its thing.  Once a segment has been successfully
+ * duplicated with COW then the routine VmSegCOWDone is called which allows
+ * VmSegCantCOW to proceed.
+ */
 
 /*
  * ----------------------------------------------------------------------------
@@ -1523,9 +1542,9 @@ IncPTUserCount(segPtr)
  * VmSegCanCOW --
  *
  *     	Return TRUE if can fork this segment copy-on-write.  If the 
- *	VM_SEG_COW_IN_PROGRESS flag is set then wait until it s cleared
+ *	VM_SEG_COW_IN_PROGRESS flag is set then wait until its cleared
  *	before making the decision about whether this segment can
- *	be forked copy-on-write.
+ *	be forked copy-on-write. 
  *
  * Results:
  *	TRUE if can fork this segment copy-on-write.
