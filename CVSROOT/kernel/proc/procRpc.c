@@ -214,10 +214,18 @@ RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
     *replyDataLengthPtr = 0;
     *replyDataPtr = (Address) NIL;
 
+    /*
+     * It's possible for an exit to come in while a process is in the NEW
+     * state if an error occurs while migrating it back home.  In this case,
+     * allow an exit to come in.  Otherwise, be more particular about which
+     * processIDs correspond to valid shadow processes.
+     */
     procPtr = Proc_LockPID(callPtr->processID);
     if (procPtr == (Proc_ControlBlock *) NIL
-	|| ((procPtr->state != PROC_MIGRATED) &&
-	    !(procPtr->genFlags & PROC_MIGRATION_DONE)))   {
+	|| ( ((procPtr->state != PROC_MIGRATED) &&
+	      !(procPtr->genFlags & PROC_MIGRATION_DONE)) &&
+	    !((procPtr->state == PROC_NEW) &&
+	      (callPtr->callNumber == SYS_PROC_EXIT)))) {
  	printf("Warning: Proc_RpcRemoteCall: invalid pid: %x.\n",
 		callPtr->processID);
 	if (procPtr != (Proc_ControlBlock *) NIL) {
