@@ -22,16 +22,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "fsutil.h"
-#include "fsutilTrace.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fslcl.h"
-#include "vm.h"
-#include "proc.h"
+#include <fs.h>
+#include <fsutil.h>
+#include <fsutilTrace.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fslcl.h>
+#include <fsdm.h>
+#include <vm.h>
+#include <proc.h>
 
 
 /*
@@ -1682,7 +1683,7 @@ Fs_ReadLinkStub(linkName, bufSize, buffer, linkSizePtr)
  * Results:
  *	A return status.  The output buffer is modified with results
  *	for the command.  The format of the various results is explained
- *	in user/fs.h for generic operations, and in dev/*.h for
+ *	in user/fs.h for generic operations, and in dev/ *.h for
  *	device specific operations.
  *
  * Side effects:
