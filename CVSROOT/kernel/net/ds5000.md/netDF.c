@@ -612,9 +612,9 @@ NetDFDoModcamCommand(statePtr)
 
     result = NetDFCommandTimeout(statePtr, comDescPtr);
     if (result != SUCCESS) {
-	panic("DEC FDDI: MODCAM command did not work!\n");
+	printf("DEC FDDI: MODCAM command did not work!\n");
     }
-    return SUCCESS;
+    return result;
 }
 
 /*
@@ -795,7 +795,8 @@ NetDFDoParamCommand(statePtr)
 
     result = NetDFCommandTimeout(statePtr, comDescPtr);
     if (result != SUCCESS) {
-	panic("DEC FDDI: uh oh...the PARAM command did not work\n");
+	printf("DEC FDDI: uh oh...the PARAM command did not work\n");
+	return result;
     }
     /*
      * We should have transitioned into the RUNNING state.
@@ -854,7 +855,7 @@ NetDFDoModpromCommand(statePtr)
 
     result = NetDFCommandTimeout(statePtr, comDescPtr);
     if (result != SUCCESS) {
-	printf("DEC FDDI: MODPROM command flopped all over the place\n");
+	printf("DEC FDDI: MODPROM command didn't work\n");
 	return FAILURE;
     }
     return SUCCESS;
@@ -1076,15 +1077,29 @@ NetDFReset(interPtr)
      * Now that the rings are initialized, massage the adapter into the
      * RUNNING state and connect to the network.  Please please please.
      */
-    NetDFDoModcamCommand(statePtr);
-    NetDFDoParamCommand(statePtr);
-    NetDFDoModpromCommand(statePtr);
+    status = NetDFDoModcamCommand(statePtr);
+    if (status != SUCCESS) {
+	goto done;
+    }
+    status = NetDFDoParamCommand(statePtr);
+    if (status != SUCCESS) {
+	goto done;
+    }
+    status = NetDFDoModpromCommand(statePtr);
+    if (status != SUCCESS) {
+	goto done;
+    }
 
     NET_DF_CLEAR_ALL_EVENTS(*(statePtr->regEvent));
 
+done:
     statePtr->numResets++;
     statePtr->flags &= ~NET_DF_FLAGS_RESETTING;
-    interPtr->flags = NET_IFLAGS_RUNNING;
+    if (status == SUCCESS) {
+	interPtr->flags = NET_IFLAGS_RUNNING;
+    } else {
+	interPtr->flags &= ~NET_IFLAGS_RUNNING;
+    }
     Sync_Broadcast(&statePtr->doingReset);
     return;
 }
