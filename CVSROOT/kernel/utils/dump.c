@@ -42,7 +42,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void	Mem_DumpStats();
 void	Timer_TimerGetInfo();
 void 	Sched_DumpReadyQueue();
-void	Fs_SyncStub();
 
 /*
  * Forward references to void procedures internal to this file.
@@ -54,7 +53,6 @@ void	DumpTimerStats();
 void 	PrintL1Menu();
 static void	PrintVersion();
 static void	PrintTOD();
-void FslclNameHashStats();
 /*
  * Table of routines and their arguments to be called on dump events.
  * Only machine independent dump events should be added to this table.
@@ -71,9 +69,6 @@ static EventTableType eventTable[] = {
     {'d', RESERVED_EVENT, NULL_ARG, "Put machine into the kernel debugger"},
     {'e', Timer_DumpStats, (ClientData) 'e', "Dump timer stats"},
     {'f', Fsutil_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
-#ifdef 0
-    {'h', FslclNameHashStats, (ClientData)NULL, "Dump name hash stats"},
-#endif
     {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
     {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
     {'p', (void (*)()) Proc_Dump, (ClientData) 0,"Dump process table"},
@@ -82,7 +77,7 @@ static EventTableType eventTable[] = {
     {'s', Timer_DumpStats,   (ClientData) 's',"Reset timer stats"},
     {'t', Timer_DumpQueue,  (ClientData) 0,"Dump the timer queue"},
     {'v', PrintVersion, (ClientData) 0,"Print version string of the kernel"},
-    {'w', Fs_SyncStub, (ClientData) FALSE, "WRITE BACK CACHE"},
+    {'w', Fsutil_SyncStub, (ClientData) FALSE, "WRITE BACK CACHE"},
     {'x', Fsutil_HandleScavengeStub, (ClientData) 0,"Scavenge filesystem handles"},
     {'y', Recov_PrintTrace, (ClientData) 50,"Dump RPC recovery trace"},
     {'z', Rpc_PrintTrace, (ClientData) 50,"Dump RPC packet trace"},
