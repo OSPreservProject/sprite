@@ -137,29 +137,102 @@ Sig_Init()
  *
  * Sig_ProcInit --
  *
- *	Initialize the signal data structures for a process.  It is assumed
- *	that this routine is able to muck with the signaling stuff in
- *	the proc table without having to grab any lock or anything.
+ *	Initialize the signal data structures for the first process.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The set of bit masks and the set of default actions are set up.
+ *	Signal state initialized.
  *
  *----------------------------------------------------------------------
  */
-
 void
 Sig_ProcInit(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
-    procPtr->sigFlags = 0;
     procPtr->sigHoldMask = 0;
     procPtr->sigPendingMask = 0;
+    Byte_Copy(sizeof(sigDefActions), (Address)sigDefActions, 
+	      (Address)procPtr->sigActions);
+    Byte_Zero(sizeof(procPtr->sigMasks), (Address)procPtr->sigMasks);
+    Byte_Zero(sizeof(procPtr->sigCodes), (Address)procPtr->sigCodes);
+    procPtr->sigFlags = 0;
+}
 
-    Byte_Copy(sizeof(sigDefActions), (Address) sigDefActions, 
-	      (Address) procPtr->sigActions);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Fork --
+ *
+ *	Copy over the parents signal state into the child.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Signal state copied from parent to child and pending mask cleared in
+ *	child.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sig_Fork(parProcPtr, childProcPtr)
+    register	Proc_ControlBlock	*parProcPtr;
+    register	Proc_ControlBlock	*childProcPtr;
+{
+    childProcPtr->sigHoldMask = parProcPtr->sigHoldMask;
+    childProcPtr->sigPendingMask = 0;
+    Byte_Copy(sizeof(childProcPtr->sigActions), 
+	      (Address)parProcPtr->sigActions, 
+	      (Address)childProcPtr->sigActions);
+    Byte_Copy(sizeof(childProcPtr->sigMasks), 
+	      (Address)parProcPtr->sigMasks, 
+	      (Address)childProcPtr->sigMasks);
+    Byte_Zero(sizeof(childProcPtr->sigCodes), (Address)childProcPtr->sigCodes);
+    childProcPtr->sigFlags = 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Exec --
+ *
+ *	Clear all signal handlers on exec.  Assumed called with the proc
+ * 	table entry locked such that signals against this process are
+ *	prevented.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	All signal handlers are cleared and the pending mask is cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sig_Exec(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    register	int	*actionPtr;
+    register	int	i;
+
+    for (i = SIG_MIN_SIGNAL, actionPtr = &procPtr->sigActions[SIG_MIN_SIGNAL]; 
+	 i < SIG_NUM_SIGNALS;
+	 i++, actionPtr++) {
+	if (*actionPtr > SIG_SUSPEND_ACTION) {
+	    /*
+	     * The action contains a signal handler to call.  Reset back to
+	     * the default action.
+	     */
+	    *actionPtr = sigDefActions[i];
+	    procPtr->sigMasks[i] = 0;
+	}
+    }
+    procPtr->sigPendingMask = 0;
 }
 
 
@@ -768,8 +841,10 @@ Sig_SetAction(sigNum, newActionPtr, oldActionPtr)
 	} else {
 	    return(SIG_INVALID_SIGNAL);
 	}
+	procPtr->sigMasks[sigNum] = 0;
     } else {
 	procPtr->sigActions[sigNum] = action.action;
+	procPtr->sigMasks[sigNum] = 0;
     }
 
     return(SUCCESS);
