@@ -178,6 +178,7 @@ NetIEInit(name, number, ctrlAddr)
     netEtherFuncs.reset  = NetIERestart;
 
     ENABLE_INTR();
+    return (TRUE);
 }
 
 
