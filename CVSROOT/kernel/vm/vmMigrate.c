@@ -126,6 +126,17 @@ Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
 
     *numPagesPtr = 0;
     if (segPtr->type != VM_CODE) {
+	if (vm_CanCOW) {
+	    /*
+	     * Get rid of all copy-on-write dependencies.
+	     */
+	    status = VmCOWCopySeg(segPtr);
+	    if (status != SUCCESS) {
+		Sys_Panic(SYS_WARNING, 
+			  "Vm_MigrateSegment: Could not copy segment\n");
+		return(status);
+	    }
+	}
 	PrepareFlush(segPtr, numPagesPtr);
 	status = FlushSegment(segPtr);
 	if (status != SUCCESS) {
@@ -559,9 +570,6 @@ FreeSegment(segPtr)
     status = VmSegmentDeleteInt(segPtr, (Proc_ControlBlock *) NIL,
 				&procLinkPtr, &objStreamPtr, TRUE);
     if (status == VM_DELETE_SEG) {
-	if (vm_CanCOW) {
-	    VmCOWDeleteFromSeg(segPtr, -1, -1);
-	}
 	VmMach_SegDelete(segPtr);
 	Mem_Free((Address)segPtr->ptPtr);
 	segPtr->ptPtr = (Vm_PTE *)NIL;
