@@ -101,8 +101,7 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
 	 * Use the client-open routine to set up an I/O handle for the prefix.
 	 */
 	status = (*fsStreamOpTable[fileID.type].cltOpen)(&fileID, &flags,
-		    rpc_SpriteID, (ClientData)streamData, (FsNameInfo *)NIL,
-		    hdrPtrPtr);
+		    rpc_SpriteID, (ClientData)streamData, hdrPtrPtr);
 	if (status == SUCCESS) {
 	    /*
 	     * Register the server with the recovery module so we find out
@@ -153,12 +152,13 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
     char				*lookupName;
     FsPrefix				*prefixPtr;
     FsHandleHeader			*hdrPtr;
+    FsFileID				rootID;
     int					domainType;
     ReturnStatus			status;
 
     status = FsPrefixLookup((char *) storagePtr->requestDataPtr,
-			    FS_EXPORTED_PREFIX|FS_EXACT_PREFIX, clientID,
-			    &hdrPtr, &lookupName, &domainType, &prefixPtr);
+			FS_EXPORTED_PREFIX | FS_EXACT_PREFIX, clientID,
+			&hdrPtr, &rootID, &lookupName, &domainType, &prefixPtr);
     if (status == SUCCESS) {
 	register Rpc_ReplyMem		*replyMemPtr;
 	register FsLocalFileIOHandle	*handlePtr;
