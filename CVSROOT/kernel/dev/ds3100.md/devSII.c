@@ -102,6 +102,7 @@ typedef struct Device {
 	int amountTransferred;    /* Number of bytes transferred by this 
 				   * command.
 				   */
+	int status;		  /* Status of frozen command. */
     } frozen;	
     char senseBuffer[DEV_MAX_SENSE_BYTES]; /* Data buffer for request sense */
     ScsiCmd		SenseCmd;  	   /* Request sense command buffer. */
@@ -113,6 +114,7 @@ typedef struct Device {
 struct Controller {
     volatile SIIRegs *regsPtr; /* Pointer to the registers of this controller.*/
     int	    dmaState;	/* DMA state for this controller, defined below. */
+    Boolean dmaStarted; /* TRUE => dma was started. */
     char    *name;	/* String for error message for this controller.  */
     DevCtrlQueues devQueues;    /* Device queues for devices attached to this
 				 * controller.	 */
@@ -154,7 +156,7 @@ static Controller *controllers[MAX_SII_CTRLS];
  */
 static int numSIIControllers = 0;
 
-int devSIIDebug = 6;
+int devSIIDebug = 1;
 
 /*
  * Forward declarations.  
@@ -164,9 +166,10 @@ static void		Reset();
 static ReturnStatus	SendCommand();
 static ReturnStatus	GetStatusByte();
 static ReturnStatus	WaitPhase();
-static ReturnStatus RecvBytes();
-static void 	PrintRegs();
-static void 	StartDMA();
+static ReturnStatus 	RecvBytes();
+static void 		PrintRegs();
+static ReturnStatus 	StartDMA();
+static char		*PhaseName();
 
 
 /*
@@ -244,7 +247,7 @@ Reset(ctrlPtr)
  */
 ReturnStatus
 SelectTarget(devPtr)
-    Device	*devPtr;
+    Device	*devPtr;	/* Device we want to select target for. */
 {
     volatile register SIIRegs *regsPtr;	
     int retval, i;
@@ -353,11 +356,12 @@ SendCommand(devPtr, scsiCmdPtr)
 	ctrlPtr->dmaState = (scsiCmdPtr->dataToDevice) ? DMA_SEND :
 							 DMA_RECEIVE;
     }
+    ctrlPtr->dmaStarted = FALSE;
 
     if (devSIIDebug > 3) {
-	printf("SIICommand: %s addr %x size %d dma %s\n",
-	    devPtr->handle.locationName, addr, size,
-	    (ctrlPtr->dmaState == DMA_INACTIVE) ? "not active" :
+	printf("SIICommand: %s cmd 0x%x addr %x size %d dma %s\n",
+	    devPtr->handle.locationName, scsiCmdPtr->commandBlock[0], addr,
+	    size, (ctrlPtr->dmaState == DMA_INACTIVE) ? "not active" :
 		((ctrlPtr->dmaState == DMA_SEND) ? "send" :
 						      "receive"));
     }
@@ -386,45 +390,14 @@ SendCommand(devPtr, scsiCmdPtr)
 	printf("SCSI3Command: %s stuffing command of %d bytes.\n", 
 		devPtr->handle.locationName, scsiCmdPtr->commandBlockLen);
     }
-    tmpPhase = regsPtr->dstat & SII_PHA_MSK;
-    tmpState = regsPtr->cstat & SII_STATE_MSK;
-    if (devSIIDebug > 5) {
-	printf("SendCommand: tmpPhase is 0x%x.\n", tmpPhase);
-	printf("SendCommand: tmpState is 0x%x.\n", tmpState);
-    }
-    regsPtr->comm = tmpState | tmpPhase;
     charPtr = scsiCmdPtr->commandBlock;
 
     if((unsigned char)charPtr & 0x1) {
 	panic("SendCommand: Misaligned scsi command\n");
     }
-    CopyToBuffer((unsigned short *)charPtr, 
-		 (unsigned short *)(ctrlPtr->ramBuff + devPtr->buffOffset), 
-		scsiCmdPtr->commandBlockLen);
-    Mach_EmptyWriteBuffer();
-    regsPtr->dmaddrl = devPtr->buffOffset & 0x00ffffff;
-    regsPtr->dmaddrh = (devPtr->buffOffset & 0x00ffffff)>>16;
-    Mach_EmptyWriteBuffer();
-    regsPtr->dmlotc = scsiCmdPtr->commandBlockLen;
-    regsPtr->comm = SII_DMA | SII_INXFER | tmpState | tmpPhase;
-    if (devSIIDebug > 5) {
-	printf("SendCommand: cstat is 0x%x.\n", regsPtr->cstat);
-	printf("SendCommand: dstat is 0x%x.\n", regsPtr->dstat);
-	printf("SendCommand: setting comm reg to 0x%x.\n", regsPtr->comm);
-    }
-    Mach_EmptyWriteBuffer();
-
-    /* 
-     * Wait for DMA to complete 
-     */
-    SII_WAIT_UNTIL((regsPtr->dstat & SII_DNE), SII_WAIT_COUNT, retval);
-    regsPtr->comm &= ~(SII_INXFER | SII_DMA);
-    regsPtr->dstat = SII_DNE;
-    Mach_EmptyWriteBuffer();
-    if(retval >= SII_WAIT_COUNT) {
-	return(DEV_TIMEOUT);
-    }
-    return(SUCCESS);
+    status = StartDMA(ctrlPtr, DMA_SEND, TRUE, scsiCmdPtr->commandBlockLen, 
+		    charPtr);
+    return status;
 }
 
 
@@ -434,11 +407,16 @@ SendCommand(devPtr, scsiCmdPtr)
  * StartDMA --
  *
  *	Issue the sequence of commands to the controller to start DMA.
- *	This can be called by Dev_SIIIntr in response to a DATA_{IN,OUT}
- *	phase message.
+ *	If the wait parameter is TRUE then this procedure will wait 
+ *	until the DMA is finished and copy the results into the
+ *	buffer. Otherwise it will just return and whoever handles the
+ *	DMA interrupt will have to copy the data.
+ *
+ *	NOTE: the data buffer should be word-aligned for DMA out.
  *
  * Results:
- *	None.
+ *	SUCCESS if DMA was started (and possibly finished) correctly.
+ *	DEV_TIMEOUT if we timed out waiting for the DMA to finish.
  *
  * Side effects:
  *	DMA is enabled.  No registers other than the control register are
@@ -446,32 +424,33 @@ SendCommand(devPtr, scsiCmdPtr)
  *
  *----------------------------------------------------------------------
  */
-static void
-StartDMA(ctrlPtr, wait)
-    register Controller *ctrlPtr;
-    Boolean		wait;
+static ReturnStatus
+StartDMA(ctrlPtr, direction, wait, size, buffer)
+    register Controller *ctrlPtr;	/* Controller */
+    Boolean		wait;		/* TRUE => wait for DMA to complete. */
+    int			direction;	/* DMA_SEND or DMA_RECEIVE. */
+    int			size;		/* # of bytes to transfer. */
+    char		*buffer;	/* Data buffer. */
 {
     volatile register SIIRegs	*regsPtr;
-    int				size;
     register Device		*devPtr;
     unsigned short		tmpPhase;
     unsigned short		tmpState;
 
     devPtr = ctrlPtr->devPtr;
-    size = ctrlPtr->scsiCmdPtr->bufferLen;
 
     if (devSIIDebug > 4) {
 	printf("%s: StartDMA %s called size = %d.\n", ctrlPtr->name,
-	    (ctrlPtr->dmaState == DMA_RECEIVE) ? "receive" :
-		((ctrlPtr->dmaState == DMA_SEND) ? "send" :
+	    (direction == DMA_RECEIVE) ? "receive" :
+		((direction == DMA_SEND) ? "send" :
 						  "not-active!"), size);
     }
     regsPtr = ctrlPtr->regsPtr;
     regsPtr->comm &= ~(SII_INXFER | SII_DMA);
-    regsPtr->cstat = SII_DNE;
+    regsPtr->dstat = SII_DNE;
     Mach_EmptyWriteBuffer();
-    if (ctrlPtr->dmaState == DMA_SEND) {
-	CopyToBuffer((unsigned short *)ctrlPtr->scsiCmdPtr->buffer, 
+    if (direction == DMA_SEND) {
+	CopyToBuffer((unsigned short *)buffer, 
 		     (unsigned short *)(ctrlPtr->ramBuff + devPtr->buffOffset),
 		     size);
 	Mach_EmptyWriteBuffer();
@@ -482,6 +461,12 @@ StartDMA(ctrlPtr, wait)
     Mach_EmptyWriteBuffer();
     tmpPhase = regsPtr->dstat & SII_PHA_MSK;
     tmpState = regsPtr->cstat & SII_STATE_MSK;
+    if (devSIIDebug > 4) {
+	printf("StartDMA: dstat is 0x%x.\n", regsPtr->dstat);
+	printf("StartDMA: cstat is 0x%x.\n", regsPtr->cstat);
+	printf("StartDMA: setting comm to 0x%x.\n", 
+	    SII_DMA | SII_INXFER | tmpState | tmpPhase);
+    }
     regsPtr->comm = SII_DMA | SII_INXFER | tmpState | tmpPhase;
     Mach_EmptyWriteBuffer();
 
@@ -496,12 +481,21 @@ StartDMA(ctrlPtr, wait)
 	if (!(regsPtr->dstat & SII_DNE)) {
 	    printf("StartDMA: DMA failed\n");
 	}
+	if (retval >= SII_WAIT_COUNT) {
+	    return (DEV_TIMEOUT);
+	}
 	regsPtr->dstat = SII_DNE;
 	regsPtr->dmlotc = 0;
 	Mach_EmptyWriteBuffer();
-	CopyFromBuffer((unsigned short *)(ctrlPtr->ramBuff+devPtr->buffOffset),
-		       (unsigned char *)ctrlPtr->scsiCmdPtr->buffer, size);
+	if (direction == DMA_RECEIVE) {
+	    CopyFromBuffer(
+		(unsigned short *)(ctrlPtr->ramBuff+devPtr->buffOffset),
+	        (unsigned char *) buffer, size);
+	}
+    } else {
+	ctrlPtr->dmaStarted = TRUE;
     }
+    return (SUCCESS);
 }
 
 
@@ -550,7 +544,7 @@ GetStatusByte(ctrlPtr,statusBytePtr)
     /*
      * Get one status byte.
      */
-    status = RecvBytes(ctrlPtr, 1, (char *)statusBytePtr);
+    status = StartDMA(ctrlPtr, DMA_RECEIVE, TRUE, 1, (char *)statusBytePtr);
     if (status != SUCCESS) {
 	printf("Warning: %s error 0x%x getting status byte\n", 
 		ctrlPtr->name, status);
@@ -569,7 +563,7 @@ GetStatusByte(ctrlPtr,statusBytePtr)
 		ctrlPtr->name);
 	return(status);
     } 
-    status = RecvBytes(ctrlPtr, 1, &message);
+    status = StartDMA(ctrlPtr, DMA_RECEIVE, TRUE, 1, &message);
     if (status != SUCCESS) {
 	printf("Warning: %s got error 0x%x getting message and status.\n",
 			     ctrlPtr->name, status);
@@ -584,6 +578,7 @@ GetStatusByte(ctrlPtr,statusBytePtr)
     }
     return(SUCCESS);
 }
+
 
 #define	WAIT_LENGTH		500000
 
@@ -639,73 +634,6 @@ WaitPhase(ctrlPtr, phase, reset)
 	Reset(ctrlPtr);
     }
     return(status);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RecvBytes --
- *
- *	Get a byte from the SCSI bus, corresponding to the specified phase.
- * 	This entails waiting for a request, checking the phase, reading
- *	the byte, and sending an acknowledgement.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static ReturnStatus
-RecvBytes(ctrlPtr, numBytes, dataPtr)
-    Controller	*ctrlPtr;
-    int		numBytes;
-    char	*dataPtr;
-{
-    Device			*devPtr;
-    volatile register SIIRegs	*regsPtr;
-    unsigned short		tmpPhase;
-    unsigned short		tmpState;
-    unsigned			retval;
-
-    devPtr = ctrlPtr->devPtr;
-    regsPtr = ctrlPtr->regsPtr;
-
-    tmpPhase = regsPtr->dstat & SII_PHA_MSK;
-    tmpState = regsPtr->cstat & SII_STATE_MSK;
-    regsPtr->comm = tmpState | tmpPhase;
-    Mach_EmptyWriteBuffer();
-    regsPtr->dmaddrl = devPtr->buffOffset;
-    regsPtr->dmaddrh = devPtr->buffOffset >> 16;
-    Mach_EmptyWriteBuffer();
-    regsPtr->dmlotc = numBytes;
-    regsPtr->comm = SII_DMA | SII_INXFER | tmpState | tmpPhase;
-    Mach_EmptyWriteBuffer();
-    /*
-     * Wait for the DMA to complete.
-     */
-    SII_WAIT_UNTIL((regsPtr->dstat & SII_DNE), SII_WAIT_COUNT, retval);
-    regsPtr->comm &= ~(SII_INXFER | SII_DMA);
-    if (retval >= SII_WAIT_COUNT && !(regsPtr->dstat & SII_DNE)) {
-	int i;
-	i = 10000;
-	while(--i && ((regsPtr->dstat & SII_DNE) == 0)) {
-	}
-    }
-    regsPtr->dstat = SII_DNE;
-    regsPtr->dmlotc = 0;
-    Mach_EmptyWriteBuffer();
-    if(retval >= SII_WAIT_COUNT && !(regsPtr->dstat & SII_MIS)) {
-	return(FAILURE);
-    }
-
-    CopyFromBuffer((unsigned short *)(ctrlPtr->ramBuff + devPtr->buffOffset),
-		   (unsigned char *)dataPtr, numBytes);
-    Mach_EmptyWriteBuffer();
-    return(SUCCESS);
 }
 
 
@@ -804,7 +732,7 @@ RequestDone(devPtr, scsiCmdPtr, status, scsiStatusByte, amountTransferred)
      */
     if (scsiCmdPtr->doneProc == SpecialSenseProc) {
 	(devPtr->frozen.scsiCmdPtr->doneProc)(devPtr->frozen.scsiCmdPtr, 
-			SUCCESS,
+			devPtr->frozen.status,
 			devPtr->frozen.statusByte, 
 			devPtr->frozen.amountTransferred,
 			amountTransferred,
@@ -824,6 +752,9 @@ RequestDone(devPtr, scsiCmdPtr, status, scsiStatusByte, amountTransferred)
 	 ctrlPtr->scsiCmdPtr = (ScsiCmd *) NIL;
 	 return;
    } 
+   if (status != SUCCESS) {
+       amountTransferred = 0;
+   }
    /*
     * If we got here than the SCSI command came back from the device
     * with the CHECK bit set in the status byte.
@@ -834,6 +765,7 @@ RequestDone(devPtr, scsiCmdPtr, status, scsiStatusByte, amountTransferred)
    devPtr->frozen.scsiCmdPtr = scsiCmdPtr;
    devPtr->frozen.statusByte = scsiStatusByte;
    devPtr->frozen.amountTransferred = amountTransferred;
+   devPtr->frozen.status = status;
    DevScsiSenseCmd((ScsiDevice *)devPtr, DEV_MAX_SENSE_BYTES, 
 		   devPtr->senseBuffer, &(devPtr->SenseCmd));
    devPtr->SenseCmd.doneProc = SpecialSenseProc,
@@ -960,7 +892,7 @@ Dev_SIIIntr()
     Controller			*ctrlPtr;
     volatile register SIIRegs	*regsPtr;
     Device			*devPtr;
-    unsigned char		statusByte;
+    unsigned char		statusByte = 0;
     ReturnStatus		status;
     register int		i;
     Boolean			found;
@@ -1060,12 +992,17 @@ Dev_SIIIntr()
 		if (devSIIDebug > 4) {
 		    printf("Data Phase Interrupt\n");
 		}
-		StartDMA(ctrlPtr, FALSE);
+		status = StartDMA(ctrlPtr, ctrlPtr->dmaState, FALSE, 
+		    ctrlPtr->scsiCmdPtr->bufferLen, 
+		    ctrlPtr->scsiCmdPtr->buffer);
+		if (status != SUCCESS) {
+		    printf("Warning: couldn't start dma.\n");
+		}
 		return(TRUE);
 	    }
 	    case MSG_IN_PHASE: {
 		char	message;
-		status = RecvBytes(ctrlPtr, 1, &message);
+		status = StartDMA(ctrlPtr, DMA_RECEIVE, TRUE, 1, &message);
 		if (devSIIDebug > 4) {
 		    printf("Msg Phase Interrupt\n");
 		}
@@ -1084,14 +1021,17 @@ Dev_SIIIntr()
 		if (devSIIDebug > 4) {
 		    printf("Status Phase Interrupt\n");
 		}
-		if (ctrlPtr->dmaState == DMA_RECEIVE) {
+		if ((ctrlPtr->dmaStarted == TRUE) && 
+		    (ctrlPtr->dmaState == DMA_RECEIVE)) {
 		    /*
-		     * Copy in the data.
+		     * We just transitioned from the data phase so copy
+		     * in the data.
 		     */
 		    CopyFromBuffer((unsigned short *)(ctrlPtr->ramBuff + 
 						      devPtr->buffOffset),
 			       (unsigned char *)ctrlPtr->scsiCmdPtr->buffer,
 		   (int)(ctrlPtr->scsiCmdPtr->bufferLen - regsPtr->dmlotc));
+		   ctrlPtr->dmaStarted = FALSE;
 		}
     
 		status =  GetStatusByte(ctrlPtr, &statusByte);
@@ -1137,7 +1077,7 @@ rtnHardErrorAndGetNext:
     printf("Warning: %s reset and current command terminated.\n",
 	   devPtr->handle.locationName);
     if (ctrlPtr->scsiCmdPtr != (ScsiCmd *) NIL) {
-	RequestDone(devPtr,ctrlPtr->scsiCmdPtr,status,0,0);
+	RequestDone(devPtr,ctrlPtr->scsiCmdPtr,status,statusByte,0);
     }
     Reset(ctrlPtr);
     /*
@@ -1232,13 +1172,23 @@ DevSIIInit(ctrlLocPtr)
     return((ClientData) ctrlPtr);
 }
 
+/*
+ * Offset into DMA buffer. We partition the DMA buffer into seperate 
+ * regions for each device.  We have to have seperate regions if we
+ * ever want disconnect/reconnect.
+ *
+ * IMPORTANT!!!
+ * For some reason DMA doesn't work if this offset is anything other than
+ * 0. Do not increment it when attaching devices.
+ */
+
 static unsigned ramBuffOffset = 0;
 
 
 /*
  *----------------------------------------------------------------------
  *
- * DevSIIAttachDevice --
+ * DevSIIDevice --
  *
  *	Attach a SCSI device using the SII HBA.
  *
@@ -1306,53 +1256,6 @@ DevSIIAttachDevice(devicePtr, insertProc)
     devPtr->targetID = targetID;
     devPtr->ctrlPtr = ctrlPtr;
     devPtr->buffOffset = ramBuffOffset;
-    /*
-     * See if the target is really there by executing an inquiry command.
-     */
-    DevScsiGroup0Cmd((ScsiDevice *)devPtr, SCSI_INQUIRY, 0,
-		      DEV_MAX_INQUIRY_SIZE, &scsiCmd);
-    scsiCmd.dataToDevice = FALSE;
-    scsiCmd.bufferLen = sizeof(ScsiInquiryData);
-    scsiCmd.buffer = (Address)&inqData;
-    scsiCmd.doneProc = (int (*)()) NIL;
-    if (devSIIDebug > 5) {
-	printf("DevSIIAttachDevice: %s sending inquiry.\n",
-	    devPtr->handle.locationName);
-    }
-    status = SendCommand(devPtr, &scsiCmd);
-    if (status != SUCCESS) {
-	printf("DevSIIAttachDevice: Couldn't send inquiry command\n");
-	goto error;
-    }
-    if (devSIIDebug > 5) {
-	printf("DevSIIAttachDevice: %s waiting for data in phase.\n",
-	    devPtr->handle.locationName);
-    }
-    status = WaitPhase(ctrlPtr, DATA_IN_PHASE, RESET);
-#if 0
-    if (status != SUCCESS) {
-	printf("DevSIIAttachDevice: Wait on DATA_IN_PHASE failed\n");
-	goto error;
-    }
-    StartDMA(ctrlPtr, TRUE);
-#endif
-/******/
-    if (status != SUCCESS) {
-	printf("DevSIIAttachDevice: Wait on DATA_IN_PHASE failed\n");
-	status = GetStatusByte(ctrlPtr, &statusByte);
-	if (status != SUCCESS) {
-	    printf("DevSIIAttachDevice: Couldn't get status\n");
-	}
-	goto error;
-    }
-    StartDMA(ctrlPtr, TRUE);
-/*****/
-
-    status = GetStatusByte(ctrlPtr, &statusByte);
-    if (status != SUCCESS) {
-	printf("DevSIIAttachDevice: Couldn't get status\n");
-	goto error;
-    }
     ctrlPtr->devPtr = (Device *)NIL;
     ctrlPtr->scsiCmdPtr = (ScsiCmd *)NIL;
     ctrlPtr->devicePtr[targetID][lun] = devPtr;
@@ -1370,7 +1273,13 @@ DevSIIAttachDevice(devicePtr, insertProc)
     length = strlen(tmpBuffer);
     devPtr->handle.locationName = (char *) strcpy(malloc(length+1),tmpBuffer);
 
+    /*
+     * IMPORTANT: the following statement is ifdef'd out for a reason.
+     * See comment above.
+     */
+#if 0
     ramBuffOffset += SII_MAX_DMA_XFER_LENGTH * 2;
+#endif
 
     MASTER_UNLOCK(&(ctrlPtr->mutex));
     return (ScsiDevice *) devPtr;
@@ -1388,7 +1297,8 @@ error:
  *
  * CopyToBuffer --
  *
- *	Copy data to the dma buffer.
+ *	Copy data to the dma buffer. The dma buffer can only be written
+ *	one word at a time.
  *
  * Results:
  *	None.
@@ -1416,7 +1326,8 @@ CopyToBuffer(src, dst, length)
  *
  * CopyFromBuffer --
  *
- *	Copy data from the dma buffer.
+ *	Copy data from the dma buffer. The dma buffer can only be read
+ *	one word at a time.
  *
  * Results:
  *	None.
@@ -1474,4 +1385,3 @@ CopyFromBuffer(src, dst, length)
 	}
     }
 }
-
