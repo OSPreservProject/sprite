@@ -15,11 +15,6 @@
 
 #ifndef _RECOV
 #define _RECOV
-/*
- * Flags to call-backs indicating why they were called.
- */
-#define RECOV_WHEN_HOST_DOWN		0x1
-#define RECOV_WHEN_HOST_REBOOTS		0x2
 
 /*
  * Host state flags for use by Recov clients.  These flags are set
@@ -38,11 +33,11 @@
  */
 #define RECOV_TRACE_FS_STALE	0x1000
 
-void		Recov_Register();
+void		Recov_CrashRegister();
+void		Recov_RebootRegister();
 void		Recov_HostAlive();
 void		Recov_HostDead();
 ReturnStatus	Recov_IsHostDown();
-void		Recov_RebootCallBack();
 void		Recov_HostTrace();
 void		Recov_SetClientState();
 int		Recov_GetClientState();
