@@ -26,7 +26,7 @@ TM = sun4c
 MTFLAGS = -msun4
 #endif
 
-LIBC = -lnet -lc
+LIBNET = -lnet
 
 MODULE = sprite
 SPRITEDIR =	/sprite/src/kernel
@@ -90,7 +90,7 @@ TIMER = ${TOP}/timer/${ODIR}
 UTILS = ${TOP}/utils/${ODIR}
 VM = ${TOP}/vm/${ODIR}
 MEM = ${TOP}/mem/${ODIR}
-
+LIBC = ${TOP}/libc/${ODIR}
 
 # This is the list of objects excluding raid.
 
@@ -108,6 +108,7 @@ OBJS1 =	${LIB}/mach.o \
         ${LIB}/fsprefix.o \
         ${LIB}/fsrmt.o \
         ${LIB}/fsutil.o \
+	${LIB}/libc.o \
 	${LIB}/main.o \
 	${LIB}/mem.o \
 	${LIB}/net.o \
@@ -142,7 +143,8 @@ PROFOBJS= ${LIB}/dbg.o	${PROFD}/fs.o	${LIB}/prof.o \
 	${PROFD}/sched.o \
 	${PROFD}/timer.o ${PROFD}/sync.o	${PROFD}/utils.o \
 	${PROFD}/vm.o \
-	${PROFD}/sun.o	${PROFD}/sys.o
+	${PROFD}/sun.o	${PROFD}/sys.o ${PROFD}/libc
+
 ###############################################################################
 
 ALLSRCS= Makefile version.c
@@ -159,7 +161,7 @@ HDRS = sprite.h
 #	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
 #	cc -c ${CFLAGS} version.c
 #	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
-#	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+#	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
 #	@ls -l $@
 #	@size $@
 #	update -f -s $@ /sprite/boot/$@.sprite
@@ -173,7 +175,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} mainHook.c
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
@@ -191,7 +193,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
 	cc -c ${CFLAGS} -Dsun4 version.c
 	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBC}
+	    -L/sprite/lib/${TM}.md ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
@@ -207,7 +209,7 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
 	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o \
-	    -L/sprite/lib/sun4.md ${LIBC}
+	    -L/sprite/lib/sun4.md ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
@@ -224,7 +226,7 @@ ds3100: ${OBJS} .PRECIOUS
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
 	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
-		-L/sprite/lib/${TM}.md ${LIBC}
+		-L/sprite/lib/${TM}.md ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f $@ /sprite/boot/$@.md/new
@@ -243,7 +245,7 @@ profile2: ${PROFOBJS} Makefile .PRECIOUS
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.sprite
@@ -258,7 +260,7 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/sun3.md/prof
@@ -281,120 +283,64 @@ clean:
 	rm -f $*.o
 	${CC} ${CFLAGS} -c $*.c
 
+ALL_MODULES = \
+dbg \
+dev \
+fs \
+fscache \
+fsconsist \
+fsdm \
+fsio \
+fslcl \
+fspdev \
+fsprefix \
+fsrmt \
+libc \
+main \
+mem \
+net \
+proc \
+prof \
+rpc \
+sched \
+sig \
+sync \
+sys \
+timer \
+utils \
+vm
+#fsutil
+#recov
+
 All:
-	cd ../dbg; make
-	cd ../dev; make
-	cd ../fs; make
-	cd ../main; make
-	cd ../mem; make
-	cd ../net; make
-	cd ../proc; make
-	cd ../prof; make
-	cd ../rpc; make
-	cd ../sched; make
-	cd ../sig; make
-	cd ../sun; make
-	cd ../sync; make
-	cd ../sys; make
-	cd ../timer; make
-	cd ../utils; make
-	cd ../vm; make
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make
+	done
 
 All-install:
-	cd ../dbg; make install
-	cd ../dev; make install
-	cd ../fs; make install
-	cd ../main; make install
-	cd ../mem; make install
-	cd ../net; make install
-	cd ../proc; make install
-	cd ../prof; make install
-	cd ../rpc; make install
-	cd ../sched; make install
-	cd ../sig; make install
-	cd ../sun; make install
-	cd ../sync; make install
-	cd ../sys; make install
-	cd ../timer; make install
-	cd ../utils; make install
-	cd ../vm; make install
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make install
+	done
 
 All-installhdrs:
-	cd ../dbg; make installhdrs
-	cd ../dev; make installhdrs
-	cd ../fs; make installhdrs
-	cd ../main; make installhdrs
-	cd ../mem; make installhdrs
-	cd ../net; make installhdrs
-	cd ../proc; make installhdrs
-	cd ../prof; make installhdrs
-	cd ../rpc; make installhdrs
-	cd ../sched; make installhdrs
-	cd ../sig; make installhdrs
-	cd ../sun; make installhdrs
-	cd ../sync; make installhdrs
-	cd ../sys; make installhdrs
-	cd ../timer; make installhdrs
-	cd ../utils; make installhdrs
-	cd ../vm; make installhdrs
-
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make installhdrs
+	done
 
 All-lint:
-	cd ../dbg; make ../Lint/dbg.ln
-	cd ../dev; make ../Lint/dev.ln
-	cd ../fs; make ../Lint/fs.ln
-	cd ../main; make ../Lint/main.ln
-	cd ../mem; make ../Lint/mem.ln
-	cd ../net; make ../Lint/net.ln
-	cd ../proc; make ../Lint/proc.ln
-	cd ../prof; make ../Lint/prof.ln
-	cd ../rpc; make ../Lint/rpc.ln
-	cd ../sched; make ../Lint/sched.ln
-	cd ../sig; make ../Lint/sig.ln
-	cd ../sun; make ../Lint/sun.ln
-	cd ../sync; make ../Lint/sync.ln
-	cd ../sys; make ../Lint/sys.ln
-	cd ../timer; make ../Lint/timer.ln
-	cd ../utils; make ../Lint/utils.ln
-	cd ../vm; make ../Lint/vm.ln
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make ../Lint/$i.ln
+	done
 
 All-depend:
-	cd ../dbg; make depend
-	cd ../dev; make depend
-	cd ../fs; make depend
-	cd ../main; make depend
-	cd ../mem; make depend
-	cd ../net; make depend
-	cd ../proc; make depend
-	cd ../prof; make depend
-	cd ../rpc; make depend
-	cd ../sched; make depend
-	cd ../sig; make depend
-	cd ../sun; make depend
-	cd ../sync; make depend
-	cd ../sys; make depend
-	cd ../timer; make depend
-	cd ../utils; make depend
-	cd ../vm; make depend
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make depend
+	done
 
 rcsinfo:
-	cd ../dbg; rcsinfo
-	cd ../dev; rcsinfo
-	cd ../fs; rcsinfo
-	cd ../main; rcsinfo
-	cd ../mem; rcsinfo
-	cd ../net; rcsinfo
-	cd ../proc; rcsinfo
-	cd ../prof; rcsinfo
-	cd ../rpc; rcsinfo
-	cd ../sched; rcsinfo
-	cd ../sig; rcsinfo
-	cd ../sun; rcsinfo
-	cd ../sync; rcsinfo
-	cd ../sys; rcsinfo
-	cd ../timer; rcsinfo
-	cd ../utils; rcsinfo
-	cd ../vm; rcsinfo
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ;  rcsinfo
+	done
 
 mainHook.o: ${H}/proc.h ${H}/fs.h
 # DO NOT DELETE THIS LINE -- make depend depends on it.
