@@ -91,7 +91,9 @@ extern Mach_DebugState	mach_DebugState;
  */
 
 void
-main()
+main(argc,argv)
+int argc;
+MachStringTable *argv;
 {
     Proc_PID	pid;
     int		i;
@@ -470,7 +472,7 @@ Init()
 {
     char		*initArgs[10];
     ReturnStatus	status;
-    char		argBuffer[100];
+    char		argBuffer[256];
     int			argc;
     Fs_Stream		*dummy;
     char		bootCommand[103];
@@ -482,8 +484,11 @@ Init()
 	Mach_MonPrintf("In Init\n");
     }
     bzero(bootCommand, 103);
-    argc = Mach_GetBootArgs(8, 100, &(initArgs[2]), argBuffer);
-    if (argc > 0) {
+    argc = Mach_GetBootArgs(8, 256, &(initArgs[2]), argBuffer);
+    if (argc>0 && !strcmp(initArgs[argc+1],"-a")) {
+	argc--;
+    }
+    if (argc>0) {
 	argLength = (((int) initArgs[argc+1]) + strlen(initArgs[argc+1]) +
 			1 - ((int) argBuffer));
     } else {
