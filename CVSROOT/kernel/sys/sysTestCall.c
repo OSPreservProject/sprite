@@ -24,8 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * passing structs this way sure won't work on the sun4.
  */
 
-#ifndef sun4
-#ifndef sun4c
+#if !defined(sun4) && !defined(sun4c)
 int 
 Test_PrintOut(args)
     struct {
@@ -96,8 +95,7 @@ Test_PrintOut(args)
 Test_PrintOut()
 {
 }
-#endif sun4c
-#endif sun4
+#endif 
 
 #ifndef sun4c
 int 
