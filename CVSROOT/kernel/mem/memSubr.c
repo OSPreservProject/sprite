@@ -18,9 +18,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "vm.h"
 #include "stdlib.h"
+#include "varargs.h"
 
 /*
- * MemPrintProc is the routine called by the routines in memory.c
+ * memPrintProc is the routine called by the routines in memory.c
  * when they have something to print. It is set to PrintProc in
  * MemProcInit().
  */
@@ -138,12 +139,19 @@ Mem_DumpStats()
  */
 /*ARGSUSED*/
 static void
-PrintProc(clientData, format, args)
-    ClientData	clientData;
-    char	*format;
-    int		args;
+PrintProc(va_alist)
+    va_dcl		/* ClientData, then char *format, then any number
+			 * of additional values to be printed. */
 {
-    printf(format, (char *) &args);
+    ClientData clientData;
+    char *format;
+    va_list args;
+
+    va_start(args);
+    clientData = va_arg(args, ClientData);
+    format = va_arg(args, char *);
+    (void)vprintf(format, args);
+    va_end(args);
 }
 
 
