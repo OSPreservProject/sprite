@@ -197,17 +197,19 @@ extern TraceLog_Header *SOSP91TracePtr;
  * streamID		Fs_FileID in the header of stream for this operation
  * oldOffset		Offset of stream before lseek
  * newOffset		Offset of stream after lseek
+ * flags		The RW flags from the streamPtr->hdr.flags.
  */ 
-#define	SOSP_ADD_LSEEK_TRACE(streamID, oldOffset, newOffset)\
+#define	SOSP_ADD_LSEEK_TRACE(streamID, oldOffset, newOffset, flags)\
 {\
-	unsigned int	sospBuffer[7];\
+	unsigned int	sospBuffer[8];\
 \
 	sospBuffer[0] = SOSP_LSEEK;\
 	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
 	sospBuffer[5] = oldOffset;\
 	sospBuffer[6] = newOffset;\
+	sospBuffer[7] = flags;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(7 * sizeof (int)),SOSP_LSEEK);\
+		(8 * sizeof (int)),SOSP_LSEEK);\
 }
 
 /*
@@ -216,18 +218,21 @@ extern TraceLog_Header *SOSP91TracePtr;
  * streamID		Fs_FileID in the header of stream for this operation
  * currentOffset	Offset of stream
  * fileSize		Size of file being closed
+ * flags		Stream flags.
+ * rwflags		The RW flags from the streamPtr->hdr.flags.
  */ 
-#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags)\
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags)\
 {\
-	unsigned int	sospBuffer[8];\
+	unsigned int	sospBuffer[9];\
 \
 	sospBuffer[0] = SOSP_CLOSE;\
 	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
 	sospBuffer[5] = currentOffset;\
 	sospBuffer[6] = fileSize;\
 	sospBuffer[7] = flags;\
+	sospBuffer[8] = rwflags;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(8 * sizeof (int)),SOSP_CLOSE);\
+		(9 * sizeof (int)),SOSP_CLOSE);\
 }
 
 /*
