@@ -1,5 +1,5 @@
 /*
- * fsDevice.h --
+ * fsioDevice.h --
  *
  *	Declarations for device access.  The DEVICE operation switch is
  *	defined here.  The I/O handle formas for devices is defined here.
@@ -21,30 +21,24 @@
 #ifndef _FSDEVICE
 #define _FSDEVICE
 
-#include "fsRecovery.h"
+#include "fsio.h"
+#include "fsioLock.h"
 
 /*
- * Include the device switch declaration from dev.
- */
-#include "devFsOpTable.h"
-
-
-
-/*
- * The I/O descriptor for a local device: FS_LCL_DEVICE_STREAM
+ * The I/O descriptor for a local device: FSIO_LCL_DEVICE_STREAM
  */
 
-typedef struct FsDeviceIOHandle {
-    FsHandleHeader	hdr;		/* Standard handle header. The
+typedef struct Fsio_DeviceIOHandle {
+    Fs_HandleHeader	hdr;		/* Standard handle header. The
 					 * 'major' field of the fileID is
 					 * the device type.  The 'minor'
 					 * field is the unit number. */
     List_Links		clientList;	/* List of clients of the device. */
-    FsUseCounts		use;		/* Summary reference counts. */
+    Fsutil_UseCounts		use;		/* Summary reference counts. */
     Fs_Device		device;		/* Device info passed to drivers.
 					 * This includes a clientData field. */
     int			flags;		/* Flags returned by the device open.*/
-    FsLockState		lock;		/* User level lock state. */
+    Fsio_LockState		lock;		/* User level lock state. */
     int			accessTime;	/* Cached version of access time */
     int			modifyTime;	/* Cached version of modify time */
     List_Links		readWaitList;	/* List of waiting reader processes. */
@@ -52,58 +46,50 @@ typedef struct FsDeviceIOHandle {
     List_Links		exceptWaitList;	/* List of process waiting for
 					 * exceptions (is this needed?). */
     int			notifyFlags;	/* Bits set to optimize out notifies */
-} FsDeviceIOHandle;			/* 136 BYTES */
+} Fsio_DeviceIOHandle;			/* 136 BYTES */
 
 /*
  * Data transferred when a local device stream migrates.
  */
-typedef struct FsDeviceMigData {
+typedef struct Fsio_DeviceMigData {
     int foo;
-} FsDeviceMigData;
+} Fsio_DeviceMigData;
 
 /*
  * The client data set up by the device pre-open routine on the server and
  * used by the device open routine on the client.
  */
-typedef struct FsDeviceState {
+typedef struct Fsio_DeviceState {
     int		accessTime;	/* Access time from disk descriptor */
     int		modifyTime;	/* Modify time from disk descriptor */
     Fs_FileID	streamID;	/* Used to set up client list */
-} FsDeviceState;
+} Fsio_DeviceState;
 
 /*
  * Open operations.
  */
-extern ReturnStatus	FsDeviceSrvOpen();
-extern ReturnStatus	FsDeviceClose();
-extern ReturnStatus	FsDeviceReopen();
+extern ReturnStatus	Fsio_DeviceNameOpen();
+extern ReturnStatus	Fsio_DeviceClose();
 extern ReturnStatus	FsDeviceDelete();
 
 /*
  * Stream operations.
  */
-extern ReturnStatus FsDeviceCltOpen();
-extern ReturnStatus FsDeviceRead();
-extern ReturnStatus FsDeviceWrite();
-extern ReturnStatus FsDeviceIOControl();
-extern ReturnStatus FsDeviceSelect();
-extern ReturnStatus FsDeviceGetIOAttr();
-extern ReturnStatus FsDeviceSetIOAttr();
-extern ReturnStatus FsDeviceRelease();
-extern ReturnStatus FsDeviceMigEnd();
-extern ReturnStatus FsDeviceMigrate();
-extern Boolean	    FsDeviceScavenge();
-extern void	    FsDeviceClientKill();
-extern ReturnStatus FsDeviceClose();
+extern ReturnStatus Fsio_DeviceIoOpen();
+extern ReturnStatus Fsio_DeviceRead();
+extern ReturnStatus Fsio_DeviceWrite();
+extern ReturnStatus Fsio_DeviceIOControl();
+extern ReturnStatus Fsio_DeviceSelect();
+extern ReturnStatus Fsio_DeviceGetIOAttr();
+extern ReturnStatus Fsio_DeviceSetIOAttr();
+extern ReturnStatus Fsio_DeviceMigClose();
+extern ReturnStatus Fsio_DeviceMigOpen();
+extern ReturnStatus Fsio_DeviceMigrate();
+extern Boolean	    Fsio_DeviceScavenge();
+extern void	    Fsio_DeviceClientKill();
+extern ReturnStatus Fsio_DeviceClose();
 
-extern ReturnStatus FsRmtDeviceCltOpen();
-extern FsHandleHeader *FsRmtDeviceVerify();
-extern ReturnStatus FsRemoteIORelease();
-extern ReturnStatus FsRemoteIOMigEnd();
-extern ReturnStatus FsRmtDeviceMigrate();
-extern ReturnStatus FsRmtDeviceReopen();
-extern ReturnStatus FsRemoteIOClose();
 
-extern ReturnStatus FsDeviceBlockIO();
+extern ReturnStatus Fsio_DeviceBlockIO();
 
-#endif /* _FSDEVICE */
+#endif _FSDEVICE

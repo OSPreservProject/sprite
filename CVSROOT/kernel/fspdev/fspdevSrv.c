@@ -38,15 +38,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsOpTable.h"
-#include "fsFile.h"
-#include "fsStream.h"
-#include "fsClient.h"
-#include "fsMigrate.h"
-#include "fsLock.h"
-#include "fsDisk.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "fsio.h"
+#include "fsconsist.h"
+#include "fsioLock.h"
+#include "fsdm.h"
 #include "fsStat.h"
+#include "fspdev.h"
 #include "proc.h"
 #include "rpc.h"
 
@@ -54,11 +53,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Prevent tracing by defining CLEAN here before this next include
  */
 #undef CLEAN
-#include "fsPdev.h"
+#include "fspdevInt.h"
 #include "dev/pfs.h"
 
 /*
- * Access to PdevServerIOHandle is monitored to serialize access to
+ * Access to FspdevServerIOHandle is monitored to serialize access to
  * the request-response communication channel.
  */
 #define LOCKPTR (&pdevHandlePtr->lock)
@@ -144,7 +143,7 @@ void				FsRmtPseudoStreamClose();
 INTERNAL static ReturnStatus
 RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	replySize, replyBuf, ioReplyPtr, waitPtr)
-    register PdevServerIOHandle *pdevHandlePtr;	/* Caller should lock this
+    register FspdevServerIOHandle *pdevHandlePtr;	/* Caller should lock this
 						 * with the monitor lock. */
     int			hdrSize;	/* Either sizeof(Pdev_Request) or
 					 * sizeof(Pfs_Request) */
@@ -175,7 +174,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	ioReplyPtr->length = 0;
     }
 
-    if ((pdevHandlePtr == (PdevServerIOHandle *)NIL) ||
+    if ((pdevHandlePtr == (FspdevServerIOHandle *)NIL) ||
 	(pdevHandlePtr->flags & PDEV_SERVER_GONE)) {
 	return(DEV_OFFLINE);
     } else if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
@@ -335,7 +334,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
      * in cases where a write can linger a long time in the request buffer.
      * (cat /dev/syslog in a tx window is a good test case.)
      */
-    FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
+    Fsutil_FastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 
     if (pdevHandlePtr->operation != PDEV_WRITE_ASYNC) {
 	/*
@@ -386,10 +385,10 @@ failure:
 /*
  *----------------------------------------------------------------------
  *
- * FsServerStreamCreate --
+ * FspdevServerStreamCreate --
  *
  *	Set up the stream state for a server's private channel to a client.
- *	This creates a PdevServerIOHandle that has all the state for the
+ *	This creates a FspdevServerIOHandle that has all the state for the
  *	connection to the client.
  *
  * Results:
@@ -403,28 +402,28 @@ failure:
  *----------------------------------------------------------------------
  */
 
-PdevServerIOHandle *
-FsServerStreamCreate(ioFileIDPtr, name, naming)
+FspdevServerIOHandle *
+FspdevServerStreamCreate(ioFileIDPtr, name, naming)
     Fs_FileID	*ioFileIDPtr;	/* File ID used for pseudo stream handle */
     char	*name;		/* File name for error messages */
     Boolean	naming;		/* True if this is a naming stream for a pfs */
 {
-    FsHandleHeader *hdrPtr;
-    register PdevServerIOHandle *pdevHandlePtr;
+    Fs_HandleHeader *hdrPtr;
+    register FspdevServerIOHandle *pdevHandlePtr;
     Boolean found;
 
-    ioFileIDPtr->type = FS_SERVER_STREAM;
-    found = FsHandleInstall(ioFileIDPtr, sizeof(PdevServerIOHandle), name,
+    ioFileIDPtr->type = FSIO_SERVER_STREAM;
+    found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(FspdevServerIOHandle), name,
 			    &hdrPtr);
-    pdevHandlePtr = (PdevServerIOHandle *)hdrPtr;
+    pdevHandlePtr = (FspdevServerIOHandle *)hdrPtr;
     if (found) {
 	printf("ServerStreamCreate, found handle <%x,%x,%x>\n",
 		  hdrPtr->fileID.serverID, hdrPtr->fileID.major,
 		  hdrPtr->fileID.minor);
-	FsHandleRelease(pdevHandlePtr, TRUE);
-	return((PdevServerIOHandle *)NIL);
+	Fsutil_HandleRelease(pdevHandlePtr, TRUE);
+	return((FspdevServerIOHandle *)NIL);
     }
-    fsStats.object.pseudoStreams++;
+    fs_Stats.object.pseudoStreams++;
 
     DBG_PRINT( ("ServerStreamOpen <%d,%x,%x>\n",
 	    ioFileIDPtr->serverID, ioFileIDPtr->major, ioFileIDPtr->minor) );
@@ -477,7 +476,7 @@ FsServerStreamCreate(ioFileIDPtr, name, naming)
     List_Init(&pdevHandlePtr->cltWriteWaitList);
     List_Init(&pdevHandlePtr->cltExceptWaitList);
 
-    pdevHandlePtr->ctrlHandlePtr = (PdevControlIOHandle *)NIL;
+    pdevHandlePtr->ctrlHandlePtr = (FspdevControlIOHandle *)NIL;
 
     pdevHandlePtr->userLevelID = *ioFileIDPtr;
     pdevHandlePtr->open.clientID = NIL;
@@ -490,7 +489,7 @@ FsServerStreamCreate(ioFileIDPtr, name, naming)
 /*
  *----------------------------------------------------------------------
  *
- * FsServerStreamSelect --
+ * FspdevServerStreamSelect --
  *
  *	Select a server's request/response stream.  This returns
  *	FS_READABLE in the outFlags if there is data in the
@@ -507,14 +506,14 @@ FsServerStreamCreate(ioFileIDPtr, name, naming)
  */
 
 ReturnStatus
-FsServerStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
-    FsHandleHeader	*hdrPtr;	/* Handle on device to select */
+FspdevServerStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    Fs_HandleHeader	*hdrPtr;	/* Handle on device to select */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     int 		*readPtr;	/* Bit to clear if non-readable */
     int 		*writePtr;	/* Bit to clear if non-writeable */
     int 		*exceptPtr;	/* Bit to clear if non-exceptable */
 {
-    register PdevServerIOHandle	*pdevHandlePtr = (PdevServerIOHandle *)hdrPtr;
+    register FspdevServerIOHandle	*pdevHandlePtr = (FspdevServerIOHandle *)hdrPtr;
 
     LOCK_MONITOR;
     if (*readPtr) {
@@ -524,7 +523,7 @@ FsServerStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 		  pdevHandlePtr->requestBuf.lastByte))) {
 	    *readPtr = 0;
 	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
-		FsFastWaitListInsert(&pdevHandlePtr->srvReadWaitList, waitPtr);
+		Fsutil_FastWaitListInsert(&pdevHandlePtr->srvReadWaitList, waitPtr);
 	    }
 	}
     }
@@ -537,7 +536,7 @@ FsServerStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsServerStreamRead --
+ * FspdevServerStreamRead --
  *
  *	When the server reads on a server stream it is looking for a
  *	message containing pointers into the request buffer that's
@@ -553,15 +552,15 @@ FsServerStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsServerStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
+FspdevServerStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
     register Fs_Stream 	*streamPtr;	/* Stream to read from. */
     Fs_IOParam		*readPtr;	/* Read parameter block. */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any,
 					 * plus the amount read. */
 {
-    register PdevServerIOHandle *pdevHandlePtr =
-	    (PdevServerIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevServerIOHandle *pdevHandlePtr =
+	    (FspdevServerIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
     Pdev_BufPtrs bufPtrs;
     register int reqFirstByte, reqLastByte;
@@ -584,7 +583,7 @@ FsServerStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	((reqFirstByte == -1) || (reqFirstByte > reqLastByte))) {
 	status = FS_WOULD_BLOCK;
 	replyPtr->length = 0;
-	FsFastWaitListInsert(&pdevHandlePtr->srvReadWaitList, waitPtr);
+	Fsutil_FastWaitListInsert(&pdevHandlePtr->srvReadWaitList, waitPtr);
 	PDEV_TRACE(&pdevHandlePtr->hdr.fileID, PDEVT_SRV_READ_WAIT);
     } else {
 	/*
@@ -640,7 +639,7 @@ FsServerStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsServerStreamIOControl --
+ * FspdevServerStreamIOControl --
  *
  *	IOControls for the server's stream.  The server process uses this
  *	to manipulate the request and read ahead buffers in its address
@@ -661,14 +660,14 @@ FsServerStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
  */
 /*ARGSUSED*/
 ENTRY ReturnStatus
-FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
+FspdevServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream	*streamPtr;	/* Stream to server handle. */
     Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
     Fs_IOReply *replyPtr;	/* Output buffer length and signal to return */
 {
     ReturnStatus	status = SUCCESS;
-    register PdevServerIOHandle	*pdevHandlePtr =
-	    (PdevServerIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevServerIOHandle	*pdevHandlePtr =
+	    (FspdevServerIOHandle *)streamPtr->ioHandlePtr;
 
     LOCK_MONITOR;
 
@@ -832,7 +831,7 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		    break;
 		}
 		if (argPtr->readLastByte > pdevHandlePtr->readBuf.size) {
-		    printf("FsServerStreamIOControl: set bad readPtr\n");
+		    printf("FspdevServerStreamIOControl: set bad readPtr\n");
 		    status = GEN_INVALID_ARG;
 		    break;
 		}
@@ -877,7 +876,7 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		 */
 		pdevHandlePtr->readBuf.lastByte = argPtr->readLastByte;
 		pdevHandlePtr->selectBits |= FS_READABLE;
-		FsFastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
+		Fsutil_FastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
 	    }
 	    break;
 	}
@@ -973,10 +972,10 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		     * Put the client process on the appropriate wait list.
 		     */
 		    if (pdevHandlePtr->operation == PDEV_READ) {
-			FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList,
+			Fsutil_FastWaitListInsert(&pdevHandlePtr->cltReadWaitList,
 					     &pdevHandlePtr->clientWait);
 		    } else if (pdevHandlePtr->operation == PDEV_WRITE) {
-			FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList,
+			Fsutil_FastWaitListInsert(&pdevHandlePtr->cltWriteWaitList,
 					     &pdevHandlePtr->clientWait);
 		    }
 		}
@@ -1013,7 +1012,7 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 	     * the device.  This is used, for example, to implement processing
 	     * of interrupt characters by the TTY driver.
 	     */
-	    status = FsPdevSignalOwner(pdevHandlePtr->ctrlHandlePtr, ioctlPtr);
+	    status = FspdevSignalOwner(pdevHandlePtr->ctrlHandlePtr, ioctlPtr);
 	    break;
 	}
 	case IOC_PFS_OPEN: {
@@ -1023,12 +1022,12 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 	     * It gives us a Fs_FileID for its own identification of the
 	     * connection.  The connection is set up here. A user-level
 	     * streamID is generated for the server process and returned.
-	     * To finish up, we set up the FsOpenResults that the waiting
+	     * To finish up, we set up the Fs_OpenResults that the waiting
 	     * client has to RequestResponse.  This includes a fileID so
 	     * the client process can fetch its half of the connection.
 	     */
 	    int newStreamID;			/* For the server */
-	    FsOpenResults openResults;		/* For the client */
+	    Fs_OpenResults openResults;		/* For the client */
 
 	    if (ioctlPtr->inBufSize < sizeof(Fs_FileID) ||
 		ioctlPtr->outBufSize < sizeof(int)) {
@@ -1038,7 +1037,7 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		PdevClientNotify(pdevHandlePtr);
 		break;
 	    } else {
-		newStreamID = FsPfsOpenConnection(pdevHandlePtr,
+		newStreamID = FspdevPfsOpenConnection(pdevHandlePtr,
 			    (Fs_FileID *)ioctlPtr->inBuffer, &openResults);
 		if (ioctlPtr->flags & FS_USER_OUT) {
 		    Vm_CopyOut(sizeof(int), (Address)&newStreamID,
@@ -1051,11 +1050,11 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		} else {
 		    /*
 		     * Here we copy the openResults to the waiting processes
-		     * kernel stack (it's waiting in FsPfsOpen on this
+		     * kernel stack (it's waiting in FspdevPfsOpen on this
 		     * same host.)
 		     */
-		    register FsOpenResults *openResultsPtr =
-			    (FsOpenResults *)pdevHandlePtr->replyBuf;
+		    register Fs_OpenResults *openResultsPtr =
+			    (Fs_OpenResults *)pdevHandlePtr->replyBuf;
 		    *openResultsPtr = openResults;
 		}
 	    }
@@ -1063,7 +1062,7 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		pdevHandlePtr->flags |= PDEV_REPLY_FAILED;
 		pdevHandlePtr->reply.replySize = 0;
 	    } else {
-		pdevHandlePtr->reply.replySize = sizeof(FsOpenResults);
+		pdevHandlePtr->reply.replySize = sizeof(Fs_OpenResults);
 	    }
 	    pdevHandlePtr->reply.status = status;
 	    pdevHandlePtr->flags |= PDEV_REPLY_READY;
@@ -1092,11 +1091,11 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 	     * asking us to pass one of its open streams to the client.
 	     */
 	    register int passedStreamID;	/* From the server */
-	    FsOpenResults openResults;		/* For the client */
+	    Fs_OpenResults openResults;		/* For the client */
 	    Address encapStream;		/* packaged stream */
 	    int encapSize;			/* size of package */
 	    register Proc_ControlBlock *procPtr;
-	    register FsOpenResults *openResultsPtr;
+	    register Fs_OpenResults *openResultsPtr;
 
 	    if (ioctlPtr->inBufSize < sizeof(int)) {
 		status = GEN_INVALID_ARG;
@@ -1107,23 +1106,23 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 	    } else {
 		passedStreamID = *(int *)ioctlPtr->inBuffer;
 		procPtr = Proc_GetEffectiveProc();
-		status = FsGetStreamPtr(procPtr, passedStreamID, &streamPtr);
+		status = Fs_GetStreamPtr(procPtr, passedStreamID, &streamPtr);
 		if (status == SUCCESS) {
 		    encapSize = Fs_GetEncapSize();
 		    encapStream = (Address)malloc(encapSize);
-		    status = Fs_EncapStream(streamPtr, encapStream);
+		    status = Fsio_EncapStream(streamPtr, encapStream);
 		    if (status == SUCCESS) {
 			/*
 			 * Set up open results so Fs_Open will call a cltOpen
 			 * routine that will unpackage the encapsulated stream.
 			 */
-			bzero((char *)&openResults, sizeof(FsOpenResults));
-			openResults.ioFileID.type = FS_PASSING_STREAM;
+			bzero((char *)&openResults, sizeof(Fs_OpenResults));
+			openResults.ioFileID.type = FSIO_PASSING_STREAM;
 			openResults.dataSize = encapSize;
 			openResults.streamData = (ClientData)encapStream;
 
 			openResultsPtr =
-				(FsOpenResults *)pdevHandlePtr->replyBuf;
+				(Fs_OpenResults *)pdevHandlePtr->replyBuf;
 			*openResultsPtr = openResults;
 		    }
 		}
@@ -1132,7 +1131,7 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		pdevHandlePtr->flags |= PDEV_REPLY_FAILED;
 		pdevHandlePtr->reply.replySize = 0;
 	    } else {
-		pdevHandlePtr->reply.replySize = sizeof(FsOpenResults);
+		pdevHandlePtr->reply.replySize = sizeof(Fs_OpenResults);
 	    }
 	    pdevHandlePtr->reply.status = status;
 	    pdevHandlePtr->flags |= PDEV_REPLY_READY;
@@ -1204,7 +1203,7 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPdevSignalOwner --
+ * FspdevSignalOwner --
  *
  *	Send a signal to the owning process or family of a pseudo-device.
  *
@@ -1219,8 +1218,8 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
  */
 
 ReturnStatus
-FsPdevSignalOwner(ctrlHandlePtr, ioctlPtr)
-    PdevControlIOHandle *ctrlHandlePtr;
+FspdevSignalOwner(ctrlHandlePtr, ioctlPtr)
+    FspdevControlIOHandle *ctrlHandlePtr;
     Fs_IOCParam *ioctlPtr;
 {
     register ReturnStatus status;
@@ -1253,7 +1252,7 @@ FsPdevSignalOwner(ctrlHandlePtr, ioctlPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsServerStreamClose --
+ * FspdevServerStreamClose --
  *
  *	Clean up the state associated with a server stream.  This makes
  *	sure the client processes associated with the pseudo stream get
@@ -1274,7 +1273,7 @@ FsPdevSignalOwner(ctrlHandlePtr, ioctlPtr)
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
+FspdevServerStreamClose(streamPtr, clientID, procID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Service stream to close */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process */
@@ -1282,8 +1281,8 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
 {
-    register PdevServerIOHandle *pdevHandlePtr =
-	    (PdevServerIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevServerIOHandle *pdevHandlePtr =
+	    (FspdevServerIOHandle *)streamPtr->ioHandlePtr;
 
     DBG_PRINT( ("Server Closing pdev %x,%x\n", 
 		pdevHandlePtr->hdr.fileID.major,
@@ -1294,20 +1293,20 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 	/*
 	 * Clean up the prefix table entry associated with the pfs.
 	 */
-	register PdevControlIOHandle *ctrlHandlePtr;
+	register FspdevControlIOHandle *ctrlHandlePtr;
 	Fs_Stream dummy;
 
 	ctrlHandlePtr = pdevHandlePtr->ctrlHandlePtr;
 	dummy.hdr.fileID.type = -1;
-	dummy.ioHandlePtr = (FsHandleHeader *)ctrlHandlePtr;
-	FsHandleLock(ctrlHandlePtr);
-	FsPrefixHandleClose(ctrlHandlePtr->prefixPtr, FS_ANY_PREFIX);
-	(void)FsControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
+	dummy.ioHandlePtr = (Fs_HandleHeader *)ctrlHandlePtr;
+	Fsutil_HandleLock(ctrlHandlePtr);
+	Fsprefix_HandleClose(ctrlHandlePtr->prefixPtr, FSPREFIX_ANY);
+	(void)FspdevControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
     }
     Sync_LockClear(&pdevHandlePtr->lock);
-    FsHandleRelease(pdevHandlePtr, TRUE);
-    FsHandleRemove(pdevHandlePtr);	/* No need for scavenging */
-    fsStats.object.pseudoStreams--;
+    Fsutil_HandleRelease(pdevHandlePtr, TRUE);
+    Fsutil_HandleRemove(pdevHandlePtr);	/* No need for scavenging */
+    fs_Stats.object.pseudoStreams--;
     return(SUCCESS);
 }
 
@@ -1332,7 +1331,7 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 
 ENTRY static void
 PdevClientWakeup(pdevHandlePtr)
-    PdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
+    FspdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
 {
     LOCK_MONITOR;
     /*
@@ -1344,22 +1343,22 @@ PdevClientWakeup(pdevHandlePtr)
     Sync_Broadcast(&pdevHandlePtr->access);
     Sync_Broadcast(&pdevHandlePtr->caughtUp);
     Sync_Broadcast(&pdevHandlePtr->replyReady);
-    FsFastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
-    FsFastWaitListNotify(&pdevHandlePtr->cltWriteWaitList);
-    FsFastWaitListNotify(&pdevHandlePtr->cltExceptWaitList);
-    FsWaitListDelete(&pdevHandlePtr->cltReadWaitList);
-    FsWaitListDelete(&pdevHandlePtr->cltWriteWaitList);
-    FsWaitListDelete(&pdevHandlePtr->cltExceptWaitList);
-    FsWaitListDelete(&pdevHandlePtr->srvReadWaitList);
+    Fsutil_FastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
+    Fsutil_FastWaitListNotify(&pdevHandlePtr->cltWriteWaitList);
+    Fsutil_FastWaitListNotify(&pdevHandlePtr->cltExceptWaitList);
+    Fsutil_WaitListDelete(&pdevHandlePtr->cltReadWaitList);
+    Fsutil_WaitListDelete(&pdevHandlePtr->cltWriteWaitList);
+    Fsutil_WaitListDelete(&pdevHandlePtr->cltExceptWaitList);
+    Fsutil_WaitListDelete(&pdevHandlePtr->srvReadWaitList);
     UNLOCK_MONITOR;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPdevServerOK --
+ * FspdevPdevServerOK --
  *
- *	Called from FsPfsExport to see if the server of a prefix still exists.
+ *	Called from FspdevPfsExport to see if the server of a prefix still exists.
  *
  * Results:
  *	TRUE if the server process is still around.
@@ -1371,8 +1370,8 @@ PdevClientWakeup(pdevHandlePtr)
  */
 
 ENTRY Boolean
-FsPdevServerOK(pdevHandlePtr)
-    PdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
+FspdevPdevServerOK(pdevHandlePtr)
+    FspdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
 {
     register Boolean answer;
     LOCK_MONITOR;
@@ -1389,7 +1388,7 @@ FsPdevServerOK(pdevHandlePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamOpen --
+ * FspdevPseudoStreamOpen --
  *
  *	Do the first request-response with a pseudo-device server to see if it
  *	will accept the open by the client.   This is used to tell
@@ -1406,8 +1405,8 @@ FsPdevServerOK(pdevHandlePtr)
  */
 
 ENTRY ReturnStatus
-FsPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
-    register PdevServerIOHandle *pdevHandlePtr;	/* Pdev connection state */
+FspdevPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
+    register FspdevServerIOHandle *pdevHandlePtr;	/* Pdev connection state */
     int		flags;		/* Open flags */
     int		clientID;	/* Host ID of the client */
     Proc_PID	procID;		/* Process ID of the client process */
@@ -1459,7 +1458,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamLookup --
+ * FspdevPseudoStreamLookup --
  *
  *	Do a lookup request-response to a pseudo-filesystem server over
  *	the naming request-response stream that is hooked to the prefix table.
@@ -1481,19 +1480,19 @@ exit:
  */
 
 ENTRY ReturnStatus
-FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
+FspdevPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 		    resultsSizePtr, resultsPtr, newNameInfoPtrPtr)
-    register PdevServerIOHandle *pdevHandlePtr;	/* Pdev connection state */
+    register FspdevServerIOHandle *pdevHandlePtr;	/* Pdev connection state */
     Pfs_Request		*requestPtr;	/* Semi-initialized request header */
     int			argSize;	/* Size of argsPtr buffer */
     Address		argsPtr;	/* Ref. to bundled args, usually name */
     int			*resultsSizePtr;/* Out size of results */
     Address		resultsPtr;	/* Ref. to bundled results or 
-					 * FsRedirectInfo */
-    FsRedirectInfo	**newNameInfoPtrPtr;/* Set if server returns name */
+					 * Fs_RedirectInfo */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;/* Set if server returns name */
 {
     register ReturnStatus 	status;
-    FsRedirectInfo		redirectInfo;	/* This is a large buffer
+    Fs_RedirectInfo		redirectInfo;	/* This is a large buffer
 						 * that is used for EITHER
 						 * normal reply parameters
 						 * or a redirected pathname */
@@ -1501,7 +1500,7 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 
     LOCK_MONITOR;
 
-    *newNameInfoPtrPtr = (FsRedirectInfo *)NIL;
+    *newNameInfoPtrPtr = (Fs_RedirectInfo *)NIL;
 
     while (pdevHandlePtr->flags & PDEV_BUSY) {
 	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
@@ -1516,11 +1515,11 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 
     pdevHandlePtr->flags &= ~(FS_USER_IN|FS_USER_OUT);
     status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
-		&requestPtr->hdr, argSize, argsPtr, sizeof(FsRedirectInfo),
+		&requestPtr->hdr, argSize, argsPtr, sizeof(Fs_RedirectInfo),
 		(Address)&redirectInfo, &ioReply,
 		(Sync_RemoteWaiter *)NIL);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     } else {
@@ -1550,7 +1549,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStream2Path --
+ * FspdevPseudoStream2Path --
  *
  *	Do a rename/link request-response to a pseudo-filesystem server over
  *	the naming request-response stream that is hooked to the prefix table.
@@ -1572,16 +1571,16 @@ exit:
  */
 
 ENTRY ReturnStatus
-FsPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
+FspdevPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
 		    newNameInfoPtrPtr)
-    register PdevServerIOHandle *pdevHandlePtr;	/* Pdev connection state */
+    register FspdevServerIOHandle *pdevHandlePtr;	/* Pdev connection state */
     Pfs_Request		*requestPtr;	/* Semi-initialized request header */
-    Fs2PathData		*dataPtr;	/* 2 pathnames */
+    Fs_2PathData		*dataPtr;	/* 2 pathnames */
     Boolean		*name1ErrorPtr;	/* TRUE if error applies to first path*/
-    FsRedirectInfo	**newNameInfoPtrPtr;/* Set if server returns name */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;/* Set if server returns name */
 {
     register ReturnStatus 	status;
-    Fs2PathRedirectInfo		redirectInfo;
+    Fs_2PathRedirectInfo		redirectInfo;
 
     LOCK_MONITOR;
 
@@ -1598,11 +1597,11 @@ FsPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
 
     pdevHandlePtr->flags &= ~(FS_USER_IN|FS_USER_OUT);
     status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
-		&requestPtr->hdr, sizeof(Fs2PathData), (Address)dataPtr,
-		sizeof(Fs2PathRedirectInfo), (Address)&redirectInfo,
+		&requestPtr->hdr, sizeof(Fs_2PathData), (Address)dataPtr,
+		sizeof(Fs_2PathRedirectInfo), (Address)&redirectInfo,
 		(Fs_IOReply *)NIL, (Sync_RemoteWaiter *)NIL);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
@@ -1629,7 +1628,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoGetAttr --
+ * FspdevPseudoGetAttr --
  *
  *	Called from Fs_GetAttributesID to get the attributes of a file
  *	in a pseudo-filesystem.  The stream's nameInfoPtr->fileID is
@@ -1646,25 +1645,25 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
+FspdevPseudoGetAttr(fileIDPtr, clientID, attrPtr)
     register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
     int				clientID;	/* Host ID of process asking
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
 {
-    PdevClientIOHandle		*cltHandlePtr;
+    FspdevClientIOHandle		*cltHandlePtr;
     Pdev_Request		request;
-    register PdevServerIOHandle	*pdevHandlePtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
     register ReturnStatus	status;
 
-    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
-    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	printf( "FsPseudoGetAttr, no %s handle <%d,%x,%x>\n",
-	    FsFileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
+    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+	printf( "FspdevPseudoGetAttr, no %s handle <%d,%x,%x>\n",
+	    Fsutil_FileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
     }
-    FsHandleRelease(cltHandlePtr, TRUE);
+    Fsutil_HandleRelease(cltHandlePtr, TRUE);
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
 
@@ -1700,7 +1699,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoSetAttr --
+ * FspdevPseudoSetAttr --
  *
  *	Set the attributes of a file in a pseudo-filesystem.  We have the
  *	fileID of the request-response stream to the server.  This issues
@@ -1716,25 +1715,25 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
+FspdevPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
     Fs_UserIDs			*idPtr;		/* Identfies user */
     int				flags;		/* Tells which attrs to set */
 {
-    PdevClientIOHandle		*cltHandlePtr;
+    FspdevClientIOHandle		*cltHandlePtr;
     Pdev_Request		request;
-    register PdevServerIOHandle	*pdevHandlePtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
     register ReturnStatus	status;
 
-    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
-    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	printf( "FsPseudoSetAttr, no handle <%d,%d,%x,%x>\n",
+    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+	printf( "FspdevPseudoSetAttr, no handle <%d,%d,%x,%x>\n",
 	    fileIDPtr->serverID, fileIDPtr->type,
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
     }
-    FsHandleRelease(cltHandlePtr, TRUE);
+    Fsutil_HandleRelease(cltHandlePtr, TRUE);
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
 
@@ -1766,7 +1765,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamGetIOAttr --
+ * FspdevPseudoStreamGetIOAttr --
  *
  *	Called from Fs_GetAttrStream to get the I/O attributes of a
  *	pseudo-device.  The access and modify times of the pseudo-device
@@ -1781,23 +1780,23 @@ exit:
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPseudoStreamGetIOAttr(fileIDPtr, clientID, attrPtr)
+FspdevPseudoStreamGetIOAttr(fileIDPtr, clientID, attrPtr)
     register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
     int				clientID;	/* Host ID of process asking
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
 {
-    PdevClientIOHandle		*cltHandlePtr;
-    register PdevServerIOHandle	*pdevHandlePtr;
+    FspdevClientIOHandle		*cltHandlePtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
 
-    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
-    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	printf( "FsPseudoStreamGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
-	    FsFileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
+    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+	printf( "FspdevPseudoStreamGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
+	    Fsutil_FileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
 	    fileIDPtr->major, fileIDPtr->minor, clientID);
 	return(FS_FILE_NOT_FOUND);
     }
-    FsHandleRelease(cltHandlePtr, TRUE);
+    Fsutil_HandleRelease(cltHandlePtr, TRUE);
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
 
@@ -1811,7 +1810,7 @@ FsPseudoStreamGetIOAttr(fileIDPtr, clientID, attrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamSetIOAttr --
+ * FspdevPseudoStreamSetIOAttr --
  *
  *	Set the IO attributes of a pseudo-device.
  *
@@ -1824,22 +1823,22 @@ FsPseudoStreamGetIOAttr(fileIDPtr, clientID, attrPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPseudoStreamSetIOAttr(fileIDPtr, attrPtr, flags)
+FspdevPseudoStreamSetIOAttr(fileIDPtr, attrPtr, flags)
     register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
     int				flags;		/* Tells which attrs to set */
 {
-    PdevClientIOHandle		*cltHandlePtr;
-    register PdevServerIOHandle	*pdevHandlePtr;
+    FspdevClientIOHandle		*cltHandlePtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
 
-    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
-    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	printf( "FsPseudoStreamSetIOAttr, no handle <%d,%d,%x,%x>\n",
+    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+	printf( "FspdevPseudoStreamSetIOAttr, no handle <%d,%d,%x,%x>\n",
 	    fileIDPtr->serverID, fileIDPtr->type,
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
     }
-    FsHandleRelease(cltHandlePtr, TRUE);
+    Fsutil_HandleRelease(cltHandlePtr, TRUE);
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
     if (flags & FS_SET_TIMES) {
@@ -1853,7 +1852,7 @@ FsPseudoStreamSetIOAttr(fileIDPtr, attrPtr, flags)
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamRead --
+ * FspdevPseudoStreamRead --
  *
  *	Read from a pseudo-device stream. If there is data in the read
  *	ahead buffer (if one exists), that is used to satisfy the read.
@@ -1876,7 +1875,7 @@ FsPseudoStreamSetIOAttr(fileIDPtr, attrPtr, flags)
  */
 
 ReturnStatus
-FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
+FspdevPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
     register Fs_Stream 	*streamPtr;	/* Stream to read from. */
     Fs_IOParam		*readPtr;	/* Read parameter block. */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
@@ -1884,9 +1883,9 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 					 * plus the amount read. */
 {
     ReturnStatus 	status;
-    register PdevClientIOHandle *cltHandlePtr =
-	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
-    register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    register FspdevClientIOHandle *cltHandlePtr =
+	    (FspdevClientIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     Pdev_Request	request;
 
     LOCK_MONITOR;
@@ -1927,7 +1926,7 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	 */
 	if (pdevHandlePtr->flags & PDEV_READ_BUF_EMPTY) {
 	    status = FS_WOULD_BLOCK;
-	    FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList, waitPtr);
+	    Fsutil_FastWaitListInsert(&pdevHandlePtr->cltReadWaitList, waitPtr);
 	    PDEV_TRACE(&pdevHandlePtr->hdr.fileID, PDEVT_READ_WAIT);
 	    DBG_PRINT( ("PDEV %x,%x Read (%d) Blocked\n", 
 		    streamPtr->ioHandlePtr->fileID.major,
@@ -1942,7 +1941,7 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	    lastByte = pdevHandlePtr->readBuf.lastByte;
 	    dataAvail = lastByte - firstByte + 1;
 	    if (dataAvail <= 0) {
-		panic("FsPseudoStreamRead, dataAvail in read buf <= 0 bytes\n");
+		panic("FspdevPseudoStreamRead, dataAvail in read buf <= 0 bytes\n");
 		status = DEV_OFFLINE;
 		goto exit;
 	    }
@@ -1981,7 +1980,7 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	    replyPtr->length = toRead;
 	    pdevHandlePtr->readBuf.firstByte = firstByte + toRead;
 	    pdevHandlePtr->flags |= PDEV_READ_PTRS_CHANGED;
-	    FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
+	    Fsutil_FastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 	}
     } else if (pdevHandlePtr->selectBits & FS_READABLE) {
 	/*
@@ -2001,12 +2000,12 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	/*
 	 * The pseudo-device is not readable now.
 	 */
-	FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList, waitPtr);
+	Fsutil_FastWaitListInsert(&pdevHandlePtr->cltReadWaitList, waitPtr);
 	replyPtr->length = 0;
 	status = FS_WOULD_BLOCK;
     }
     if (status == SUCCESS) {
-	pdevHandlePtr->ctrlHandlePtr->accessTime = fsTimeInSeconds;
+	pdevHandlePtr->ctrlHandlePtr->accessTime = fsutil_TimeInSeconds;
     }
 exit:
     if (status == DEV_OFFLINE) {
@@ -2026,7 +2025,7 @@ exitNoServer:
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamWrite --
+ * FspdevPseudoStreamWrite --
  *
  *	Write to a pseudo-device by a client.  The write is done
  *	asynchronously if the stream allows that.  In that case we
@@ -2050,15 +2049,15 @@ exitNoServer:
  *----------------------------------------------------------------------
  */
 ENTRY ReturnStatus
-FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
+FspdevPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
     Fs_Stream 	*streamPtr;	/* Stream to write to. */
     Fs_IOParam		*writePtr;	/* Read parameter block */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any */
 {
-    register PdevClientIOHandle *cltHandlePtr =
-	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
-    register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    register FspdevClientIOHandle *cltHandlePtr =
+	    (FspdevClientIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     ReturnStatus 	status = SUCCESS;
     Pdev_Request	request;
     int			amountWritten;
@@ -2114,7 +2113,7 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
      */
     if ((pdevHandlePtr->selectBits & FS_WRITABLE) == 0) {
 	replyPtr->length = 0;
-	FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, waitPtr);
+	Fsutil_FastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, waitPtr);
 	status = FS_WOULD_BLOCK;
 	goto exit;
     }
@@ -2164,13 +2163,13 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
 	writePtr->length -= numBytes;
     }
     if (amountWritten > totalToWrite) {
-	printf("FsPseudoStreamWrite: \"%s\" amount written (%d) > requested (%d)\n",
-	    FsHandleName(streamPtr->ioHandlePtr), amountWritten, totalToWrite);
+	printf("FspdevPseudoStreamWrite: \"%s\" amount written (%d) > requested (%d)\n",
+	    Fsutil_HandleName(streamPtr->ioHandlePtr), amountWritten, totalToWrite);
 	amountWritten = totalToWrite;
     }
     replyPtr->length = amountWritten;
     if (amountWritten > 0) {
-	pdevHandlePtr->ctrlHandlePtr->modifyTime = fsTimeInSeconds;
+	pdevHandlePtr->ctrlHandlePtr->modifyTime = fsutil_TimeInSeconds;
     }
 exit:
     if (status == DEV_OFFLINE) {
@@ -2193,7 +2192,7 @@ exitNoServer:
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamIOControl --
+ * FspdevPseudoStreamIOControl --
  *
  *	IOControls for pseudo-device.  The in parameter block of the
  *	IOControl is passed to the server, and its response is used
@@ -2209,16 +2208,16 @@ exitNoServer:
  */
 
 ReturnStatus
-FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr)
+FspdevPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream	*streamPtr;	/* Stream to pseudo-device */
     Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
     Fs_IOReply *replyPtr;	/* Output buffer length and signal to return */
 {
     ReturnStatus 	status;
     Pdev_Request	request;
-    register PdevClientIOHandle *cltHandlePtr =
-	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
-    register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    register FspdevClientIOHandle *cltHandlePtr =
+	    (FspdevClientIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     Boolean	sendToServer;
 
     LOCK_MONITOR;
@@ -2344,7 +2343,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamSelect --
+ * FspdevPseudoStreamSelect --
  *
  *	Select on a pseudo-device.  This is done by checking the stream
  *	state kept on the host of the server.  If the pseudo device isn't
@@ -2363,16 +2362,16 @@ exit:
  */
 
 ReturnStatus
-FsPseudoStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
-    FsHandleHeader	*hdrPtr;	/* Handle on pdev to select */
+FspdevPseudoStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    Fs_HandleHeader	*hdrPtr;	/* Handle on pdev to select */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     int 		*readPtr;	/* Bit to clear if non-readable */
     int 		*writePtr;	/* Bit to clear if non-writeable */
     int 		*exceptPtr;	/* Bit to clear if non-exceptable */
 {
     ReturnStatus status;
-    register PdevClientIOHandle *cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
-    register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    register FspdevClientIOHandle *cltHandlePtr = (FspdevClientIOHandle *)hdrPtr;
+    register FspdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
 
     LOCK_MONITOR;
 
@@ -2389,7 +2388,7 @@ FsPseudoStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 		 (pdevHandlePtr->flags & PDEV_READ_BUF_EMPTY))) {
 		*readPtr = 0;
 		if (waitPtr != (Sync_RemoteWaiter *)NIL) {
-		    FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList,
+		    Fsutil_FastWaitListInsert(&pdevHandlePtr->cltReadWaitList,
 					waitPtr);
 		}
 	    }
@@ -2397,13 +2396,13 @@ FsPseudoStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	if (*writePtr && ((pdevHandlePtr->selectBits & FS_WRITABLE) == 0)) {
 	    *writePtr = 0;
 	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
-		FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, waitPtr);
+		Fsutil_FastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, waitPtr);
 	    }
 	}    
 	if (*exceptPtr && ((pdevHandlePtr->selectBits & FS_EXCEPTION) == 0)) {
             *exceptPtr = 0;
 	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
-		FsFastWaitListInsert(&pdevHandlePtr->cltExceptWaitList,waitPtr);
+		Fsutil_FastWaitListInsert(&pdevHandlePtr->cltExceptWaitList,waitPtr);
 	    }
 	}
 	status = SUCCESS;
@@ -2431,27 +2430,27 @@ FsPseudoStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 
 INTERNAL static void
 PdevClientNotify(pdevHandlePtr)
-    PdevServerIOHandle *pdevHandlePtr;
+    FspdevServerIOHandle *pdevHandlePtr;
 {
     register int selectBits = pdevHandlePtr->selectBits;
 
     PDEV_WAKEUP(&pdevHandlePtr->hdr.fileID, pdevHandlePtr->clientPID,
 		pdevHandlePtr->selectBits);
     if (selectBits & FS_READABLE) {
-	FsFastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
+	Fsutil_FastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
     }
     if (selectBits & FS_WRITABLE) {
-	FsFastWaitListNotify(&pdevHandlePtr->cltWriteWaitList);
+	Fsutil_FastWaitListNotify(&pdevHandlePtr->cltWriteWaitList);
     }
     if (selectBits & FS_EXCEPTION) {
-	FsFastWaitListNotify(&pdevHandlePtr->cltExceptWaitList);
+	Fsutil_FastWaitListNotify(&pdevHandlePtr->cltExceptWaitList);
     }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamCloseInt --
+ * FspdevPseudoStreamCloseInt --
  *
  *	Do a close request-response with the server.
  *
@@ -2465,8 +2464,8 @@ PdevClientNotify(pdevHandlePtr)
  */
 
 ENTRY void
-FsPseudoStreamCloseInt(pdevHandlePtr)
-    register PdevServerIOHandle *pdevHandlePtr;
+FspdevPseudoStreamCloseInt(pdevHandlePtr)
+    register FspdevServerIOHandle *pdevHandlePtr;
 {
     Pdev_Request	request;
 

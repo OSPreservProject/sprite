@@ -3,7 +3,7 @@
  *
  *	Internal definitions for pathname related operations that go
  *	with the other definitions in fsNameOps.h.  This file is
- *	needed because of the FsUnionData which is a pain to export
+ *	needed because of the FsrmtUnionData which is a pain to export
  *	to user programs because it references private
  *	file, device, and pseudo-device data.
  *
@@ -18,24 +18,24 @@
 #define _FSNAMEOPSINT
 
 #include "fsNameOps.h"
-#include "fsFile.h"
-#include "fsDevice.h"
-#include "fsPdevState.h"
+#include "fsioFile.h"
+#include "fsioDevice.h"
+#include "fspdev.h"
 
 /*
  * The stream data is a reference to the following union.  The union is used
  * to facilitate byte-swaping in the RPC stubs.
  */
-typedef	union	FsUnionData {
-    FsFileState		fileState;
-    FsDeviceState	devState;
-    FsPdevState		pdevState;
-} FsUnionData;
+typedef	union	FsrmtUnionData {
+    Fsio_FileState		fileState;
+    Fsio_DeviceState	devState;
+    Fspdev_State		pdevState;
+} FsrmtUnionData;
 
-typedef	struct	FsOpenResultsParam {
+typedef	struct	FsrmtOpenResultsParam {
     int			prefixLength;
-    FsOpenResults	openResults;
-    FsUnionData		openData;
-} FsOpenResultsParam;
+    Fs_OpenResults	openResults;
+    FsrmtUnionData		openData;
+} FsrmtOpenResultsParam;
 
-#endif /* _FSNAMEOPSINT */
+#endif _FSNAMEOPSINT

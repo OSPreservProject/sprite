@@ -16,8 +16,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
+#include "fsutil.h"
 #include "fsNameHash.h"
+#include "fslcl.h"
 #include "fsStat.h"
 #include "string.h"
 #include "list.h"
@@ -26,13 +27,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static	Sync_Lock nameHashLock = Sync_LockInitStatic("Fs:nameHashLock");
 #define	LOCKPTR	&nameHashLock
 
+
 
 /*
  *---------------------------------------------------------
  * 
- * FsNameHashInit --
+ * HashInit --
  *
- *	This routine just sets up the hash table.
+ *	This routine just sets up the hash table with the given size.
  *
  * Results:	
  *	None.
@@ -43,15 +45,15 @@ static	Sync_Lock nameHashLock = Sync_LockInitStatic("Fs:nameHashLock");
  *---------------------------------------------------------
  */
 
-void
-FsNameHashInit(table, numBuckets)
-    register FsHashTable	*table;
+static void
+HashInit(table, numBuckets)
+    register FslclHashTable	*table;
     int			numBuckets;	/* How many buckets to create for 
 					 * starters. This number is rounded up 
 					 * to a power of two. */
 {
     register	int 		i;
-    register	FsHashBucket 	*tablePtr;
+    register	FslclHashBucket 	*tablePtr;
 
     /* 
      * Round up the size to a power of two, and compute a shift and mask
@@ -71,13 +73,42 @@ FsNameHashInit(table, numBuckets)
 	table->downShift--;
     }
 
-    fsStats.nameCache.size = table->size;
+    fs_Stats.nameCache.size = table->size;
 
     List_Init(&(table->lruList));
     table->table =
-	(FsHashBucket *) malloc(sizeof(FsHashBucket) * table->size);
+	(FslclHashBucket *) malloc(sizeof(FslclHashBucket) * table->size);
     for (i=0, tablePtr = table->table; i < table->size; i++, tablePtr++) {
 	List_Init(&(tablePtr->list));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclNameHashInit --
+ *
+ *	Make sure the local name hash table is initialized.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	HashInit is called which allocates memory for the initial bucket area.
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+FslclNameHashInit()
+{
+    /*
+     * Make sure a name hash table exists .
+     */
+    if (fslclNameTablePtr == (FslclHashTable *)NIL) {
+	fslclNameTablePtr = &fslclNameTable;
+	HashInit(fslclNameTablePtr, fslclNameHashSize);
     }
 }
 
@@ -105,9 +136,9 @@ FsNameHashInit(table, numBuckets)
 
 INTERNAL static int
 Hash(table, string, keyHdrPtr)
-    register FsHashTable *table;	/* The hash table (per domain?) */
+    register FslclHashTable *table;	/* The hash table (per domain?) */
     register char 	*string;	/* Name of the component */
-    FsHandleHeader	*keyHdrPtr;	/* Handle of the parent directory */
+    Fs_HandleHeader	*keyHdrPtr;	/* Handle of the parent directory */
 {
     register int 	i = 0;
 
@@ -135,14 +166,14 @@ Hash(table, string, keyHdrPtr)
  *---------------------------------------------------------
  */
 
-INTERNAL static FsHashEntry *
+INTERNAL static FslclHashEntry *
 ChainSearch(table, string, keyHdrPtr, hashList)
-    FsHashTable 		*table;		/* Hash table to search. */
+    FslclHashTable 		*table;		/* Hash table to search. */
     register char		*string;	/* Hash key, part 1 */
-    register FsHandleHeader	*keyHdrPtr;	/* Hash key, part 2 */
+    register Fs_HandleHeader	*keyHdrPtr;	/* Hash key, part 2 */
     register List_Links 	*hashList;	/* Bucket list indexed by Hash*/
 {
-    register FsHashEntry *hashEntryPtr;
+    register FslclHashEntry *hashEntryPtr;
 
     LIST_FORALL(hashList, (List_Links *) hashEntryPtr) {
 	if ((strcmp(hashEntryPtr->keyName, string) == 0) &&
@@ -159,13 +190,13 @@ ChainSearch(table, string, keyHdrPtr, hashList)
      * The desired entry isn't there 
      */
 
-    return ((FsHashEntry *) NIL);
+    return ((FslclHashEntry *) NIL);
 }
 
 /*
  *---------------------------------------------------------
  *
- * FsHashLookOnly --
+ * FslclHashLookOnly --
  *
  * 	Searches a hash table for an entry corresponding to the string
  *	and parent file.
@@ -181,20 +212,20 @@ ChainSearch(table, string, keyHdrPtr, hashList)
  *---------------------------------------------------------
  */
 
-ENTRY FsHashEntry *
-FsHashLookOnly(table, string, keyHdrPtr)
-    register FsHashTable *table;		/* Hash table to search. */
+ENTRY FslclHashEntry *
+FslclHashLookOnly(table, string, keyHdrPtr)
+    register FslclHashTable *table;		/* Hash table to search. */
     char		*string;		/* Hash key, part 1. */
-    FsHandleHeader	*keyHdrPtr;		/* Hash key, part 2. */
+    Fs_HandleHeader	*keyHdrPtr;		/* Hash key, part 2. */
 {
-    FsHashEntry *hashEntryPtr;
+    FslclHashEntry *hashEntryPtr;
 
     LOCK_MONITOR;
-    fsStats.nameCache.accesses++;
+    fs_Stats.nameCache.accesses++;
     hashEntryPtr = ChainSearch(table, string, keyHdrPtr,
 		  &(table->table[Hash(table, string, keyHdrPtr)].list));
-    if (hashEntryPtr != (FsHashEntry  *) NIL) {
-	fsStats.nameCache.hits++;
+    if (hashEntryPtr != (FslclHashEntry  *) NIL) {
+	fs_Stats.nameCache.hits++;
     }
 
     UNLOCK_MONITOR;
@@ -220,15 +251,15 @@ FsHashLookOnly(table, string, keyHdrPtr)
  *---------------------------------------------------------
  */
 
-ENTRY FsHashEntry *
-FsHashInsert(table, string, keyHdrPtr, hdrPtr)
-    register FsHashTable	*table;		/* Hash table to search. */
+ENTRY FslclHashEntry *
+FslclHashInsert(table, string, keyHdrPtr, hdrPtr)
+    register FslclHashTable	*table;		/* Hash table to search. */
     register	char		*string;	/* Hash key, part 1 */
-    FsHandleHeader		*keyHdrPtr;	/* Hash key, part 2 */
-    FsHandleHeader		*hdrPtr;	/* Value */
+    Fs_HandleHeader		*keyHdrPtr;	/* Hash key, part 2 */
+    Fs_HandleHeader		*hdrPtr;	/* Value */
 {
-    register 	FsHashBucket 	*bucketPtr;
-    register 	FsHashEntry	*hashEntryPtr;
+    register 	FslclHashBucket 	*bucketPtr;
+    register 	FslclHashEntry	*hashEntryPtr;
     register	List_Links	*lruLinkPtr;
 
     LOCK_MONITOR;
@@ -237,7 +268,7 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
     hashEntryPtr = ChainSearch(table, string, keyHdrPtr,
 					&(bucketPtr->list));
 
-    if (hashEntryPtr != (FsHashEntry *) NIL) {
+    if (hashEntryPtr != (FslclHashEntry *) NIL) {
 	UNLOCK_MONITOR;
 	return(hashEntryPtr);
     }
@@ -247,11 +278,11 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
      */
 
     if (table->numEntries >= table->size) {
-	fsStats.nameCache.replacements++;
+	fs_Stats.nameCache.replacements++;
 	lruLinkPtr = LIST_ATREAR(&(table->lruList));
 	hashEntryPtr = ((struct FsLruList *)lruLinkPtr)->entryPtr;
-	FsHandleDecRefCount(hashEntryPtr->hdrPtr);
-	FsHandleDecRefCount(hashEntryPtr->keyHdrPtr);
+	Fsutil_HandleDecRefCount(hashEntryPtr->hdrPtr);
+	Fsutil_HandleDecRefCount(hashEntryPtr->keyHdrPtr);
 	List_Remove((List_Links *)hashEntryPtr);
 	List_Remove(&(hashEntryPtr->lru.links));
 	free((Address)hashEntryPtr);
@@ -264,7 +295,7 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
      * bytes, then we have to allocate extra space in the entry.
      */
 
-    hashEntryPtr = (FsHashEntry *) malloc(sizeof(FsHashEntry) + 
+    hashEntryPtr = (FslclHashEntry *) malloc(sizeof(FslclHashEntry) + 
 			strlen(string) - 3);
     (void)strcpy(hashEntryPtr->keyName, string);
     hashEntryPtr->keyHdrPtr = keyHdrPtr;
@@ -277,8 +308,8 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
      * Increment the reference count on the handle since we now have it
      * in the name cache.
      */
-    FsHandleIncRefCount(hdrPtr, 1);
-    FsHandleIncRefCount(keyHdrPtr, 1);
+    Fsutil_HandleIncRefCount(hdrPtr, 1);
+    Fsutil_HandleIncRefCount(keyHdrPtr, 1);
     UNLOCK_MONITOR;
 
     return(hashEntryPtr);
@@ -287,7 +318,7 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
 /*
  *---------------------------------------------------------
  *
- * FsHashDelete --
+ * FslclHashDelete --
  *
  * 	Search the hash table for an entry corresponding to the string
  *	and parent file and then delete it if it is there.
@@ -302,26 +333,26 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
  */
 
 void
-FsHashDelete(table, string, keyHdrPtr)
-    register FsHashTable *table;	/* Hash table to search. */
+FslclHashDelete(table, string, keyHdrPtr)
+    register FslclHashTable *table;	/* Hash table to search. */
     char		 *string;		/* Hash key, part 1. */
-    FsHandleHeader	 *keyHdrPtr;		/* Hash key, part 2. */
+    Fs_HandleHeader	 *keyHdrPtr;		/* Hash key, part 2. */
 {
-    FsHashEntry *hashEntryPtr;
+    FslclHashEntry *hashEntryPtr;
 
     LOCK_MONITOR;
 
-    fsStats.nameCache.accesses++;
+    fs_Stats.nameCache.accesses++;
     hashEntryPtr = ChainSearch(table, string, keyHdrPtr,
 		  &(table->table[Hash(table, string, keyHdrPtr)].list));
-    if (hashEntryPtr != (FsHashEntry  *) NIL) {
+    if (hashEntryPtr != (FslclHashEntry  *) NIL) {
 	/*
 	 * Release the two handles referenced by the name cache entry.
 	 * This is called when deleting the file, at which point both
 	 * the parent (keyHdrPtr) and the file itself (hdrPtr) are locked.
 	 */
-	FsHandleDecRefCount(hashEntryPtr->hdrPtr);
-	FsHandleDecRefCount(hashEntryPtr->keyHdrPtr);
+	Fsutil_HandleDecRefCount(hashEntryPtr->hdrPtr);
+	Fsutil_HandleDecRefCount(hashEntryPtr->keyHdrPtr);
 	List_Remove((List_Links *)hashEntryPtr);
 	List_Remove(&(hashEntryPtr->lru.links));
 	free((Address)hashEntryPtr);
@@ -351,15 +382,15 @@ FsHashDelete(table, string, keyHdrPtr)
 #ifdef notdef
 static void
 FsRebuildTable(table)
-    register	FsHashTable 	*table;		/* Table to be enlarged. */
+    register	FslclHashTable 	*table;		/* Table to be enlarged. */
 {
-    register	FsHashBucket	*oldTable;
-    register	FsHashEntry  	*hashEntryPtr;
+    register	FslclHashBucket	*oldTable;
+    register	FslclHashEntry  	*hashEntryPtr;
     register	int 		oldSize;
     int 		 	bucket;
-    FsHashBucket		*saveTable;
-    FsHashBucket		*bucketPtr;
-    FsHandleHeader		*keyHdrPtr;
+    FslclHashBucket		*saveTable;
+    FslclHashBucket		*bucketPtr;
+    Fs_HandleHeader		*keyHdrPtr;
     int			 	version;
 
     LOCK_MONITOR;
@@ -371,11 +402,11 @@ FsRebuildTable(table)
      * Build a new table 4 times as large as the old one. 
      */
 
-    FsNameHashInit(table, table->size * 4);
+    HashInit(table, table->size * 4);
 
     for (oldTable = saveTable; oldSize > 0; oldSize--, oldTable++) {
 	while (!List_IsEmpty(&(oldTable->list))) {
-	    hashEntryPtr = (FsHashEntry *) List_First(&(oldTable->list));
+	    hashEntryPtr = (FslclHashEntry *) List_First(&(oldTable->list));
 	    List_Remove((List_Links *) hashEntryPtr);
 	    List_Remove(&(hashEntryPtr->lru.links));
 	    keyHdrPtr = hashEntryPtr->keyHdrPtr;
@@ -413,11 +444,11 @@ FsRebuildTable(table)
  */
 
 void
-Fs_NameHashStats()
+FslclNameHashStats()
 {
-    FsHashTable *table = fsNameTablePtr;
+    FslclHashTable *table = fslclNameTablePtr;
     int count[10], overflow, i, j;
-    FsHashEntry 	*hashEntryPtr;
+    FslclHashEntry 	*hashEntryPtr;
     List_Links	*hashList;
 
     for (i=0; i<10; i++) {

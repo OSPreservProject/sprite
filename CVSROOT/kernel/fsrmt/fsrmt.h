@@ -1,5 +1,5 @@
 /*
- * fsSpriteDomain.h --
+ * fsrmt.h --
  *
  *	Definitions of the parameters required for Sprite Domain operations
  *
@@ -17,96 +17,82 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _FSSPRITEDOMAIN
-#define _FSSPRITEDOMAIN
+#ifndef _FSRMT
+#define _FSRMT
 
 #include "fsNameOps.h"
 #include "proc.h"
 
-/*
- * Parameters for the read and write RPCs.
+#include "fsutil.h"
+#include "fscache.h"
+
+
+/* 
+ * The I/O descriptor for remote streams.  This is all that is needed for
+ *	remote devices, remote pipes, and named pipes that are not cached
+ *	on the local machine.  This structure is also embedded into the
+ *	I/O descriptor for remote files.  These stream types share some
+ *	common remote procedure stubs, and this structure provides
+ *	a common interface.
+ *	FSIO_RMT_DEVICE_STREAM, FSIO_RMT_PIPE_STREAM, FS_RMT_NAMED_PIPE_STREAM,
+ *	FSIO_RMT_PSEUDO_STREAM, FSIO_RMT_PFS_STREAM
  */
 
-typedef struct FsRemoteIOParam {
-    Fs_FileID	fileID;			/* Identifies file to read from */
-    Fs_FileID	streamID;		/* Identifies stream (for offset) */
-    Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
-    Fs_IOParam	io;			/* I/O parameter block */
-} FsRemoteIOParam;
+typedef struct Fsrmt_IOHandle {
+    Fs_HandleHeader	hdr;		/* Standard handle header.  The server
+					 * ID field in the hdr is used to
+					 * forward the I/O operation. */
+    Fsutil_RecoveryInfo	recovery;	/* For I/O server recovery */
+} Fsrmt_IOHandle;
+
+extern void Fsrmt_IOHandleInit();
 
 /*
- * Parameters for the iocontrol RPC
+ * The I/O descriptor for a remote file.  Used with FSIO_RMT_FILE_STREAM.
  */
 
-typedef struct FsSpriteIOCParams {
-    Fs_FileID	fileID;		/* File to manipulate. */
-    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
-    Proc_PID	procID;		/* ID of invoking process */
-    Proc_PID	familyID;	/* Family of invoking process */
-    int		command;	/* I/O Control to perform. */
-    int		inBufSize;	/* Size of input params to ioc. */
-    int		outBufSize;	/* Size of results from ioc. */
-    Fmt_Format	format;		/* Defines client's byte order/alignment 
-				 * format. */
-    int		uid;		/* Effective User ID */
-} FsSpriteIOCParams;
+typedef struct Fsrmt_FileIOHandle {
+    Fsrmt_IOHandle	rmt;		/* Remote I/O handle used for RPCs. */
+    Fscache_FileInfo	cacheInfo;	/* Used to access block cache. */
+    Fscache_ReadAheadInfo	readAhead;	/* Read ahead info used to synchronize
+					 * with other I/O and closes/deletes. */
+    int			openTimeStamp;	/* Returned on open from the server
+					 * and used to catch races with cache
+					 * consistency msgs due to other opens*/
+    int			flags;		/* FS_SWAP */
+    struct Vm_Segment	*segPtr;	/* Reference to code segment needed
+					 * to flush VM cache. */
+} Fsrmt_FileIOHandle;			/* 216 BYTES  (264 with traced locks)*/
 
 /*
- * Parameters for the I/O Control RPC.  (These aren't used, oops,
- * someday they should be used.)
+ * RPC debugging.
  */
+extern	Boolean	fsrmt_RpcDebug;
 
-typedef struct FsRemoteIOCParam {
-    Fs_FileID	fileID;		/* File to manipulate. */
-    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
-    Fs_IOCParam	ioc;		/* IOControl parameter block */
-} FsRemoteIOCParam;
-
-/*
- * Parameters for the block copy RPC.
- */
-typedef struct FsRemoteBlockCopyParams {
-    Fs_FileID	srcFileID;	/* File to copy from. */
-    Fs_FileID	destFileID;	/* File to copy to. */
-    int		blockNum;	/* Block to copy to. */
-} FsRemoteBlockCopyParams;
-
-/*
- * Sprite Domain functions called via FsLookupOperation.
- * These are called with a pathname.
- */
-extern	ReturnStatus	FsSpriteImport();
-extern	ReturnStatus	FsSpriteOpen();
-extern	ReturnStatus	FsSpriteReopen();
-extern	ReturnStatus	FsSpriteDevOpen();
-extern	ReturnStatus	FsSpriteDevClose();
-extern	ReturnStatus	FsRemoteGetAttrPath();
-extern	ReturnStatus	FsRemoteSetAttrPath();
-extern	ReturnStatus	FsSpriteMakeDevice();
-extern	ReturnStatus	FsSpriteMakeDir();
-extern	ReturnStatus	FsSpriteRemove();
-extern	ReturnStatus	FsSpriteRemoveDir();
-extern	ReturnStatus	FsSpriteRename();
-extern	ReturnStatus	FsSpriteHardLink();
-
-/*
- * Sprite Domain functions called via the fsAttrOpsTable switch.
- * These are called with a fileID.
- */
-extern	ReturnStatus	FsRemoteGetAttr();
-extern	ReturnStatus	FsRemoteSetAttr();
 
 /*
  * General purpose remote stubs shared by remote files, devices, pipes, etc.
  */
-extern	ReturnStatus	FsRemoteRead();
-extern	ReturnStatus	FsRemoteWrite();
-extern	ReturnStatus	FsRemoteSelect();
-extern	ReturnStatus	FsRemoteIOControl();
-extern	ReturnStatus	FsRemoteClose();
-extern	ReturnStatus	FsRemoteGetIOAttr();
-extern	ReturnStatus	FsRemoteSetIOAttr();
-extern	ReturnStatus	FsRemoteBlockCopy();
-extern	ReturnStatus	FsRemoteDomainInfo();
+extern	ReturnStatus	Fsrmt_Read();
+extern	ReturnStatus	Fsrmt_Write();
+extern	ReturnStatus	Fsrmt_Select();
+extern	ReturnStatus	Fsrmt_IOControl();
+extern	ReturnStatus	Fsrmt_Close();
+extern	ReturnStatus	Fsrmt_GetIOAttr();
+extern	ReturnStatus	Fsrmt_SetIOAttr();
+extern	ReturnStatus	Fsrmt_BlockCopy();
+extern	ReturnStatus	Fsrmt_DomainInfo();
+extern  ReturnStatus    Fsrmt_IOMigClose();
+extern  ReturnStatus    Fsrmt_IOMigOpen();
+extern  ReturnStatus    Fsrmt_IOClose();
 
-#endif /* _FSSPRITEDOMAIN */
+
+extern ReturnStatus	Fsrmt_DeviceOpen();
+extern ReturnStatus	Fsrmt_DeviceReopen();
+
+extern ReturnStatus	Fsrmt_NotifyOfMigration();
+
+extern void	Fsrmt_InitializeOps();
+extern void	Fsrmt_Bin();
+
+#endif _FSRMT

@@ -15,19 +15,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
-#include "fs.h"
-#include "fsInt.h"
-#include "fsPipe.h"
-#include "fsOpTable.h"
-#include "fsStream.h"
-#include "fsMigrate.h"
-#include "fsRecovery.h"
-#include "fsClient.h"
-#include "fsStat.h"
 
+#include "fs.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsNameOps.h"
+#include "fsconsist.h"
+#include "fsStat.h"
+#include "fsrmt.h"
 #include "vm.h"
 #include "proc.h"
 #include "rpc.h"
+#include "fsioPipe.h"
 
 /*
  * Monitor to synchronize access to the openInstance in GetFileID.
@@ -39,7 +38,7 @@ static	Sync_Lock	pipeLock = Sync_LockInitStatic("Fs:pipeLock");
  * Forward references.
  */
 void GetFileID();
-FsPipeIOHandle *FsPipeHandleInit();
+Fsio_PipeIOHandle *Fsio_PipeHandleInit();
 
 /*
  * Migration debugging.
@@ -98,7 +97,7 @@ FsPipeIOHandle *FsPipeHandleInit();
 /*
  *----------------------------------------------------------------------
  *
- * Fs_CreatePipe --
+ * Fsio_CreatePipe --
  *
  *      Create an unnamed pipe.  Pointers to streams for both ends of the pipe
  *	are returned in *inStreamPtrPtr and *outStreamPtrPtr.
@@ -113,12 +112,12 @@ FsPipeIOHandle *FsPipeHandleInit();
  */
 
 ReturnStatus
-Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
+Fsio_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
     Fs_Stream **inStreamPtrPtr;		/* Return - in (reading) stream */
     Fs_Stream **outStreamPtrPtr;	/* Return - out (writing) stream */
 {
     Fs_FileID		fileID;
-    register FsPipeIOHandle	*handlePtr;
+    register Fsio_PipeIOHandle	*handlePtr;
     register Fs_Stream		*streamPtr;
 
     /*
@@ -127,30 +126,30 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
      */
 
     GetFileID(&fileID);
-    handlePtr = FsPipeHandleInit(&fileID, FALSE);
-    (void)FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_READ, FALSE);
-    (void)FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_WRITE, FALSE);
+    handlePtr = Fsio_PipeHandleInit(&fileID, FALSE);
+    (void)Fsconsist_IOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_READ, FALSE);
+    (void)Fsconsist_IOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_WRITE, FALSE);
 
     /*
      * Allocate and initialize the read, or "in", end of the stream.
      */
-    streamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
-			    (FsHandleHeader *)handlePtr,
+    streamPtr = Fsio_StreamCreate(rpc_SpriteID, rpc_SpriteID,
+			    (Fs_HandleHeader *)handlePtr,
 			    FS_READ | FS_CONSUME | FS_USER, "read-pipe");
-    FsHandleUnlock(streamPtr);
+    Fsutil_HandleUnlock(streamPtr);
     *inStreamPtrPtr = streamPtr;
 
     /*
      * Set up the writing end.  Note that we get a second reference to
      * the I/O handle by duping it.
      */
-    FsHandleUnlock(handlePtr);
-    (void)FsHandleDup((FsHandleHeader *)handlePtr);
-    streamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
-			(FsHandleHeader *)handlePtr,
+    Fsutil_HandleUnlock(handlePtr);
+    (void)Fsutil_HandleDup((Fs_HandleHeader *)handlePtr);
+    streamPtr = Fsio_StreamCreate(rpc_SpriteID, rpc_SpriteID,
+			(Fs_HandleHeader *)handlePtr,
 			FS_WRITE | FS_APPEND | FS_USER, "write-pipe");
-    FsHandleUnlock(handlePtr);
-    FsHandleUnlock(streamPtr);
+    Fsutil_HandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(streamPtr);
     *outStreamPtrPtr = streamPtr;
 
     PIPE_CREATED(*inStreamPtrPtr, *outStreamPtrPtr);
@@ -184,7 +183,7 @@ GetFileID(fileIDPtr)
 
     LOCK_MONITOR;
 
-    fileIDPtr->type = FS_LCL_PIPE_STREAM;
+    fileIDPtr->type = FSIO_LCL_PIPE_STREAM;
     fileIDPtr->serverID = rpc_SpriteID;
     fileIDPtr->major = 0;
     fileIDPtr->minor = openInstance;
@@ -196,7 +195,7 @@ GetFileID(fileIDPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeHandleInit --
+ * Fsio_PipeHandleInit --
  *
  *	Initialize a handle for a pipe.
  *
@@ -209,20 +208,20 @@ GetFileID(fileIDPtr)
  *
  *----------------------------------------------------------------------
  */
-FsPipeIOHandle *
-FsPipeHandleInit(fileIDPtr, findIt)
+Fsio_PipeIOHandle *
+Fsio_PipeHandleInit(fileIDPtr, findIt)
     Fs_FileID	*fileIDPtr;	/* Pipe file ID */
     Boolean	findIt;		/* TRUE if we expect to find its handle */
 {
-    FsHandleHeader *hdrPtr;
-    register FsPipeIOHandle *handlePtr;
+    Fs_HandleHeader *hdrPtr;
+    register Fsio_PipeIOHandle *handlePtr;
     register Boolean found;
 
-    found = FsHandleInstall(fileIDPtr, sizeof(FsPipeIOHandle), "pipe", &hdrPtr);
-    handlePtr = (FsPipeIOHandle *)hdrPtr;
+    found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fsio_PipeIOHandle), "pipe", &hdrPtr);
+    handlePtr = (Fsio_PipeIOHandle *)hdrPtr;
     if (!found) {
 	if (findIt) {
-	    panic( "FsPipeHandleInit, didn't find handle\n");
+	    panic( "Fsio_PipeHandleInit, didn't find handle\n");
 	}
 	/*
 	 * When a pipe is created, it has one read and one write
@@ -238,7 +237,7 @@ FsPipeHandleInit(fileIDPtr, findIt)
 	handlePtr->bufSize = FS_BLOCK_SIZE;
 	List_Init(&handlePtr->readWaitList);
 	List_Init(&handlePtr->writeWaitList);
-	fsStats.object.pipes++;
+	fs_Stats.object.pipes++;
     }
     return(handlePtr);
 }
@@ -246,7 +245,7 @@ FsPipeHandleInit(fileIDPtr, findIt)
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeClose --
+ * Fsio_PipeClose --
  *
  *      Close a local pipe.  Other processes waiting on the pipe are
  *	unblocked and the pipe's buffer is freed when the last
@@ -262,7 +261,7 @@ FsPipeHandleInit(fileIDPtr, findIt)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
+Fsio_PipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     Fs_Stream		*streamPtr;	/* Stream to a pipe */
     int			clientID;	/* Host ID of closing process */
     Proc_PID		procID;		/* Process closing */
@@ -270,13 +269,13 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     int			dataSize;	/* Should be 0 */
     ClientData		closeData;	/* Should be NIL */
 {
-    register FsPipeIOHandle *handlePtr = 
-	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_PipeIOHandle *handlePtr = 
+	    (Fsio_PipeIOHandle *)streamPtr->ioHandlePtr;
     Boolean cache = FALSE;
 
-    if (!FsIOClientClose(&handlePtr->clientList, clientID, flags, &cache)) {
-	printf( "FsPipeClose, unknown client %d\n", clientID);
-	FsHandleUnlock(handlePtr);
+    if (!Fsconsist_IOClientClose(&handlePtr->clientList, clientID, flags, &cache)) {
+	printf( "Fsio_PipeClose, unknown client %d\n", clientID);
+	Fsutil_HandleUnlock(handlePtr);
     } else {
 	/*
 	 * Update the global/summary use counts for the file.
@@ -286,7 +285,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    handlePtr->use.write--;
 	}
 	if (handlePtr->use.ref < 0 || handlePtr->use.write < 0) {
-	    panic("FsPipeClose <%d,%d> use %d, write %d\n",
+	    panic("Fsio_PipeClose <%d,%d> use %d, write %d\n",
 		      handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		      handlePtr->use.ref, handlePtr->use.write);
 	}
@@ -294,25 +293,25 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    /*
 	     * Notify reader that the writer has closed.
 	     */
-	    handlePtr->flags |= PIPE_WRITER_GONE;
-	    FsFastWaitListNotify(&handlePtr->readWaitList);
+	    handlePtr->flags |= FSIO_PIPE_WRITER_GONE;
+	    Fsutil_FastWaitListNotify(&handlePtr->readWaitList);
 	} else if ((flags & FS_READ) &&
 		    handlePtr->use.ref == handlePtr->use.write) {
 	    /*
 	     * Update state and notify any blocked writers.  Their write
 	     * will fail with no remaining readers.
 	     */
-	    handlePtr->flags |= PIPE_READER_GONE;
-	    FsFastWaitListNotify(&handlePtr->writeWaitList);
+	    handlePtr->flags |= FSIO_PIPE_READER_GONE;
+	    Fsutil_FastWaitListNotify(&handlePtr->writeWaitList);
 	}
 	PIPE_CLOSE(streamPtr, handlePtr);
-	FsHandleRelease(handlePtr, TRUE);
-	if (handlePtr->flags == (PIPE_WRITER_GONE|PIPE_READER_GONE)) {
+	Fsutil_HandleRelease(handlePtr, TRUE);
+	if (handlePtr->flags == (FSIO_PIPE_WRITER_GONE|FSIO_PIPE_READER_GONE)) {
 	    free(handlePtr->buffer);
-	    FsWaitListDelete(&handlePtr->readWaitList);
-	    FsWaitListDelete(&handlePtr->writeWaitList);
-	    FsHandleRemove(handlePtr);
-	    fsStats.object.pipes--;
+	    Fsutil_WaitListDelete(&handlePtr->readWaitList);
+	    Fsutil_WaitListDelete(&handlePtr->writeWaitList);
+	    Fsutil_HandleRemove(handlePtr);
+	    fs_Stats.object.pipes--;
 	}
     }
     return(SUCCESS);
@@ -321,7 +320,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeRead --
+ * Fsio_PipeRead --
  *
  *      Read on a pipe.  Data is copied out of the pipe to satisfy the
  *	read.  If the pipe is empty this routine returns FS_WOULD_BLOCK.
@@ -339,7 +338,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeRead(streamPtr, readPtr, waitPtr, replyPtr)
+Fsio_PipeRead(streamPtr, readPtr, waitPtr, replyPtr)
     Fs_Stream           *streamPtr;     /* Stream to read from */
     Fs_IOParam		*readPtr;	/* Read parameter block. */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
@@ -347,14 +346,14 @@ FsPipeRead(streamPtr, readPtr, waitPtr, replyPtr)
 					 * plus the amount read. */
 {
     ReturnStatus 	status = SUCCESS;
-    register FsPipeIOHandle *handlePtr =
-	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_PipeIOHandle *handlePtr =
+	    (Fsio_PipeIOHandle *)streamPtr->ioHandlePtr;
     int 		toRead;
     int 		startOffset;
     int			startByte;
     int			endByte;
 
-    FsHandleLock(handlePtr);
+    Fsutil_HandleLock(handlePtr);
 
     if (handlePtr->firstByte == -1) {
 	/*
@@ -363,7 +362,7 @@ FsPipeRead(streamPtr, readPtr, waitPtr, replyPtr)
 	 * otherwise block waiting for input.
 	 */
 	replyPtr->length = 0;
-	if (handlePtr->flags & PIPE_WRITER_GONE) {
+	if (handlePtr->flags & FSIO_PIPE_WRITER_GONE) {
 	    status = SUCCESS;
 	    goto exit;
 	} else {
@@ -425,7 +424,7 @@ FsPipeRead(streamPtr, readPtr, waitPtr, replyPtr)
     /*
      * We just made space in the pipe so wake up blocked writers.
      */
-    FsFastWaitListNotify(&handlePtr->writeWaitList);
+    Fsutil_FastWaitListNotify(&handlePtr->writeWaitList);
 
     /*
      * Update the first byte and the parameters.
@@ -438,9 +437,9 @@ FsPipeRead(streamPtr, readPtr, waitPtr, replyPtr)
     replyPtr->length = toRead;
 exit:
     if (status == FS_WOULD_BLOCK) {
-	FsFastWaitListInsert(&handlePtr->readWaitList, waitPtr);
+	Fsutil_FastWaitListInsert(&handlePtr->readWaitList, waitPtr);
     }
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
     return(status);
 }
 
@@ -448,7 +447,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeWrite --
+ * Fsio_PipeWrite --
  *
  *      Write on a pipe.  This will put as much data as possible into the
  *	pipe buffer, and then block the process (return would-block) if
@@ -464,23 +463,23 @@ exit:
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPipeWrite(streamPtr, writePtr, waitPtr, replyPtr)
+Fsio_PipeWrite(streamPtr, writePtr, waitPtr, replyPtr)
     Fs_Stream           *streamPtr;     /* Stream to write to */
     Fs_IOParam		*writePtr;	/* Read parameter block */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any */
 {
     register ReturnStatus 	status = SUCCESS;
-    register FsPipeIOHandle	*handlePtr =
-	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_PipeIOHandle	*handlePtr =
+	    (Fsio_PipeIOHandle *)streamPtr->ioHandlePtr;
     int 			startOffset;
     register int 		toWrite;
     int				startByte;
     int				endByte;
 
-    FsHandleLock(handlePtr);
+    Fsutil_HandleLock(handlePtr);
 
-    if (handlePtr->flags & PIPE_READER_GONE) {
+    if (handlePtr->flags & FSIO_PIPE_READER_GONE) {
 	replyPtr->length = 0;
 	replyPtr->signal = SIG_PIPE;
 	status = FS_BROKEN_PIPE;
@@ -567,7 +566,7 @@ FsPipeWrite(streamPtr, writePtr, waitPtr, replyPtr)
     /*
      * We just wrote to the pipe so wake up blocked readers.
      */
-    FsFastWaitListNotify(&handlePtr->readWaitList);
+    Fsutil_FastWaitListNotify(&handlePtr->readWaitList);
 
     /*
      * Update first byte, last byte and the parameters.
@@ -579,9 +578,9 @@ FsPipeWrite(streamPtr, writePtr, waitPtr, replyPtr)
     replyPtr->length = toWrite;
 exit:
     if (status == FS_WOULD_BLOCK) {
-	FsFastWaitListInsert(&handlePtr->writeWaitList, waitPtr);
+	Fsutil_FastWaitListInsert(&handlePtr->writeWaitList, waitPtr);
     }
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
     return(status);
 }
 
@@ -589,7 +588,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeIOControl --
+ * Fsio_PipeIOControl --
  *
  *	Check the IOC_CLEAR_FLAG control, and allow the IOC_SET_FLAG control.
  *
@@ -603,13 +602,13 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeIOControl(streamPtr, ioctlPtr, replyPtr)
+Fsio_PipeIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream *streamPtr;
     Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
     Fs_IOReply *replyPtr;		/* Return length and signal */
 {
-    register FsPipeIOHandle *handlePtr =
-	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_PipeIOHandle *handlePtr =
+	    (Fsio_PipeIOHandle *)streamPtr->ioHandlePtr;
     register int command = ioctlPtr->command;
     ReturnStatus status = SUCCESS;
 
@@ -697,7 +696,7 @@ FsPipeIOControl(streamPtr, ioctlPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeSelect --
+ * Fsio_PipeSelect --
  *
  *	Select on a pipe.
  *
@@ -710,16 +709,16 @@ FsPipeIOControl(streamPtr, ioctlPtr, replyPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPipeSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
-    FsHandleHeader *hdrPtr;	/* The handle of the file */
+Fsio_PipeSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    Fs_HandleHeader *hdrPtr;	/* The handle of the file */
     Sync_RemoteWaiter *waitPtr;	/* Process info for waiting */
     int		*readPtr;	/* Read bit */
     int		*writePtr;	/* Write bit */
     int		*exceptPtr;	/* Exception bit */
 {
-    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
+    register Fsio_PipeIOHandle *handlePtr = (Fsio_PipeIOHandle *)hdrPtr;
 
-    FsHandleLock(hdrPtr);
+    Fsutil_HandleLock(hdrPtr);
     *exceptPtr = 0;
     if (*writePtr) {
 	/*
@@ -729,9 +728,9 @@ FsPipeSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	 */
 	if ((((handlePtr->firstByte + 1) % FS_BLOCK_SIZE) ==
 	     handlePtr->lastByte) && 
-	     ((handlePtr->flags & PIPE_READER_GONE) == 0)) {
+	     ((handlePtr->flags & FSIO_PIPE_READER_GONE) == 0)) {
 	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
-		FsFastWaitListInsert(&handlePtr->writeWaitList, waitPtr);
+		Fsutil_FastWaitListInsert(&handlePtr->writeWaitList, waitPtr);
 	    }
 	    *writePtr = 0;
 	}
@@ -744,21 +743,21 @@ FsPipeSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	 * discover there's no writer when it tries to read the pipe.
 	 */
 	if ((handlePtr->firstByte == -1) &&
-	    ((handlePtr->flags & PIPE_WRITER_GONE) == 0)) {
+	    ((handlePtr->flags & FSIO_PIPE_WRITER_GONE) == 0)) {
 	    *readPtr = 0;
 	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
-		FsFastWaitListInsert(&handlePtr->readWaitList, waitPtr);
+		Fsutil_FastWaitListInsert(&handlePtr->readWaitList, waitPtr);
 	    }
         }
     }
-    FsHandleUnlock(hdrPtr);
+    Fsutil_HandleUnlock(hdrPtr);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeGetIOAttr --
+ * Fsio_PipeGetIOAttr --
  *
  *	Get the most up-to-date I/O attributes for a pipe.
  *
@@ -772,22 +771,22 @@ FsPipeSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeGetIOAttr(fileIDPtr, clientID, attrPtr)
+Fsio_PipeGetIOAttr(fileIDPtr, clientID, attrPtr)
     Fs_FileID			*fileIDPtr;	/* FileID of pipe */
     int 			clientID;	/* IGNORED */
     register Fs_Attributes	*attrPtr;	/* Attributes to update */
 {
-    FsPipeIOHandle *handlePtr;
+    Fsio_PipeIOHandle *handlePtr;
 
-    handlePtr = FsHandleFetchType(FsPipeIOHandle, fileIDPtr);
-    if (handlePtr != (FsPipeIOHandle *)NIL) {
+    handlePtr = Fsutil_HandleFetchType(Fsio_PipeIOHandle, fileIDPtr);
+    if (handlePtr != (Fsio_PipeIOHandle *)NIL) {
 	attrPtr->serverID	= fileIDPtr->serverID;
 	attrPtr->domain		= fileIDPtr->major;
 	attrPtr->fileNumber	= fileIDPtr->minor;
 	attrPtr->type		= FS_LOCAL_PIPE;
 	attrPtr->size		= handlePtr->lastByte - handlePtr->firstByte +1;
 	attrPtr->devServerID	= fileIDPtr->serverID;
-	FsHandleUnlock(handlePtr);
+	Fsutil_HandleUnlock(handlePtr);
     }
     return(SUCCESS);
 }
@@ -795,7 +794,7 @@ FsPipeGetIOAttr(fileIDPtr, clientID, attrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeSetIOAttr --
+ * Fsio_PipeSetIOAttr --
  *
  *	Set the I/O attributes for a pipe.  This doesn't do anything.
  *
@@ -809,7 +808,7 @@ FsPipeGetIOAttr(fileIDPtr, clientID, attrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeSetIOAttr(fileIDPtr, attrPtr, flags)
+Fsio_PipeSetIOAttr(fileIDPtr, attrPtr, flags)
     Fs_FileID		*fileIDPtr;	/* FileID of pipe */
     Fs_Attributes	*attrPtr;	/* Attributes to update */
     int			flags;		/* What attrs to set */
@@ -820,7 +819,7 @@ FsPipeSetIOAttr(fileIDPtr, attrPtr, flags)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsPipeRelease --
+ * Fsio_PipeMigClose --
  *
  *	Release a reference on a Pipe I/O handle.
  *	
@@ -835,29 +834,29 @@ FsPipeSetIOAttr(fileIDPtr, attrPtr, flags)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeRelease(hdrPtr, flags)
-    FsHandleHeader *hdrPtr;	/* File being released */
+Fsio_PipeMigClose(hdrPtr, flags)
+    Fs_HandleHeader *hdrPtr;	/* File being released */
     int flags;			/* Use flags from the stream */
 {
-    panic("FsPipeRelease called\n");
-    FsHandleRelease(hdrPtr, FALSE);
+    panic("Fsio_PipeMigClose called\n");
+    Fsutil_HandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FsPipeMigrate --
+ * Fsio_PipeMigrate --
  *
  *	This takes care of transfering references from one client to the other.
  *	A useful side-effect of this routine is	to properly set the type in
- *	the ioFileID, either FS_LCL_PIPE_STREAM or FS_RMT_PIPE_STREAM.
- *	In the latter case FsRmtPipeMigrate is called to do all the work.
+ *	the ioFileID, either FSIO_LCL_PIPE_STREAM or FSIO_RMT_PIPE_STREAM.
+ *	In the latter case FsrmtPipeMigrate is called to do all the work.
  *
  * Results:
  *	An error status if the I/O handle can't be set-up.
  *	Otherwise SUCCESS is returned, *flagsPtr may have the FS_RMT_SHARED
- *	bit set, and *sizePtr and *dataPtr are set to reference FsDeviceState.
+ *	bit set, and *sizePtr and *dataPtr are set to reference Fsio_DeviceState.
  *
  * Side effects:
  *	Sets the correct stream type on the ioFileID.
@@ -868,47 +867,47 @@ FsPipeRelease(hdrPtr, flags)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
+Fsio_PipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     FsMigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - new stream offset (not needed) */
-    int		*sizePtr;	/* Return - sizeof(FsDeviceState) */
-    Address	*dataPtr;	/* Return - pointer to FsDeviceState */
+    int		*sizePtr;	/* Return - sizeof(Fsio_DeviceState) */
+    Address	*dataPtr;	/* Return - pointer to Fsio_DeviceState */
 {
-    FsPipeIOHandle			*handlePtr;
+    Fsio_PipeIOHandle			*handlePtr;
     Boolean				closeSrcClient;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
 	 * The pipe was local, which is usually true, but is now remote.
 	 */
-	migInfoPtr->ioFileID.type = FS_RMT_PIPE_STREAM;
-	return(FsRmtPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
+	migInfoPtr->ioFileID.type = FSIO_RMT_PIPE_STREAM;
+	return(FsrmtPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
 		sizePtr, dataPtr));
     }
-    migInfoPtr->ioFileID.type = FS_LCL_PIPE_STREAM;
-    handlePtr = FsPipeHandleInit(&migInfoPtr->ioFileID, TRUE);
+    migInfoPtr->ioFileID.type = FSIO_LCL_PIPE_STREAM;
+    handlePtr = Fsio_PipeHandleInit(&migInfoPtr->ioFileID, TRUE);
 
     PIPE_MIG_1(migInfoPtr, dstClientID);
     /*
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr,
+    Fsio_StreamMigClient(migInfoPtr, dstClientID, (Fs_HandleHeader *)handlePtr,
 		    &closeSrcClient);
     PIPE_MIG_2(migInfoPtr, closeSrcClient, handlePtr);
 
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
-    FsMigrateUseCounts(migInfoPtr->flags, closeSrcClient, &handlePtr->use);
+    Fsio_MigrateUseCounts(migInfoPtr->flags, closeSrcClient, &handlePtr->use);
     PIPE_MIG_3(handlePtr);
 
     /*
      * Move the client at the I/O handle level.
      */
-    FsIOClientMigrate(&handlePtr->clientList, migInfoPtr->srcClientID,
+    Fsio_IOClientMigrate(&handlePtr->clientList, migInfoPtr->srcClientID,
 			dstClientID, migInfoPtr->flags, closeSrcClient);
 
     *sizePtr = 0;
@@ -918,74 +917,17 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     /*
      * We don't need this reference on the I/O handle; there is no change.
      */
-    FsHandleRelease(handlePtr, TRUE);
+    Fsutil_HandleRelease(handlePtr, TRUE);
     return(SUCCESS);
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FsRmtPipeMigrate --
+ * Fsio_PipeMigOpen --
  *
- *	This takes care of transfering references from one client to the other.
- *	A useful side-effect of this routine is	to properly set the type in
- *	the ioFileID, either FS_LCL_PIPE_STREAM or FS_RMT_PIPE_STREAM,
- *	so that the subsequent call to FsRemoteIOMigEnd will set up
- *	the right I/O handle.
- *
- * Results:
- *	An error status if the I/O handle can't be set-up.
- *	Otherwise SUCCESS is returned, *flagsPtr may have the FS_RMT_SHARED
- *	bit set, and *sizePtr and *dataPtr are set to reference FsDeviceState.
- *
- * Side effects:
- *	Sets the correct stream type on the ioFileID.
- *	Shifts client references from the srcClient to the destClient.
- *	Set up and return FsDeviceState for use by the MigEnd routine.
- *
- * ----------------------------------------------------------------------------
- *
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRmtPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
-    int		dstClientID;	/* ID of target client */
-    int		*flagsPtr;	/* In/Out Stream usage flags */
-    int		*offsetPtr;	/* Return - new stream offset (not needed) */
-    int		*sizePtr;	/* Return - sizeof(FsDeviceState) */
-    Address	*dataPtr;	/* Return - pointer to FsDeviceState */
-{
-    register ReturnStatus		status;
-
-    if (migInfoPtr->ioFileID.serverID == rpc_SpriteID) {
-	/*
-	 * The pipe was remote, which is why we were called, but is now local.
-	 */
-	migInfoPtr->ioFileID.type = FS_LCL_PIPE_STREAM;
-	return(FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
-		sizePtr, dataPtr));
-    }
-    migInfoPtr->ioFileID.type = FS_RMT_PIPE_STREAM;
-    status = FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr,
-				 0, (Address)NIL);
-    if (status != SUCCESS) {
-	printf( "FsRmtPipeMigrate, server error <%x>\n",
-	    status);
-    } else {
-	*dataPtr = (Address)NIL;
-	*sizePtr = 0;
-    }
-    return(status);
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * FsPipeMigEnd --
- *
- *	Complete setup of a FS_LCL_PIPE_STREAM after migration (back) to the
- *	pipe I/O server.  FsPipeMigrate has done the work of shifting use
+ *	Complete setup of a FSIO_LCL_PIPE_STREAM after migration (back) to the
+ *	pipe I/O server.  Fsio_PipeMigrate has done the work of shifting use
  *	counts at the stream and I/O handle level.  This routine has to
  *	increment the low level reference count on the pipe I/O handle
  *	to reflect the existence of a new stream to the I/O handle.
@@ -1001,22 +943,22 @@ FsRmtPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeMigEnd(migInfoPtr, size, data, hdrPtrPtr)
+Fsio_PipeMigOpen(migInfoPtr, size, data, hdrPtrPtr)
     FsMigInfo	*migInfoPtr;	/* Migration state */
     int		size;		/* Zero */
     ClientData	data;		/* NIL */
-    FsHandleHeader **hdrPtrPtr;	/* Return - handle for the file */
+    Fs_HandleHeader **hdrPtrPtr;	/* Return - handle for the file */
 {
-    register FsPipeIOHandle *handlePtr;
+    register Fsio_PipeIOHandle *handlePtr;
 
-    handlePtr = FsHandleFetchType(FsPipeIOHandle, &migInfoPtr->ioFileID);
-    if (handlePtr == (FsPipeIOHandle *)NIL) {
-	panic( "FsPipeMigEnd, no handle\n");
+    handlePtr = Fsutil_HandleFetchType(Fsio_PipeIOHandle, &migInfoPtr->ioFileID);
+    if (handlePtr == (Fsio_PipeIOHandle *)NIL) {
+	panic( "Fsio_PipeMigOpen, no handle\n");
 	return(FAILURE);
     } else {
 	PIPE_MIG_END(handlePtr);
-	FsHandleUnlock(handlePtr);
-	*hdrPtrPtr = (FsHandleHeader *)handlePtr;
+	Fsutil_HandleUnlock(handlePtr);
+	*hdrPtrPtr = (Fs_HandleHeader *)handlePtr;
 	return(SUCCESS);
     }
 }
@@ -1024,105 +966,7 @@ FsPipeMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsRmtPipeVerify --
- *
- *	Verify that the remote client is known for the pipe, and return
- *	a locked pointer to the pipe's I/O handle.
- *
- * Results:
- *	A pointer to the I/O handle for the pipe, or NIL if
- *	the client is bad.
- *
- * Side effects:
- *	The handle is returned locked and with its refCount incremented.
- *	It should be released with FsHandleRelease.
- *
- *----------------------------------------------------------------------
- */
-
-FsHandleHeader *
-FsRmtPipeVerify(fileIDPtr, clientID, domainTypePtr)
-    Fs_FileID	*fileIDPtr;	/* Client's I/O file ID */
-    int		clientID;	/* Host ID of the client */
-    int		*domainTypePtr;	/* Return - FS_LOCAL_DOMAIN */
-{
-    register FsPipeIOHandle	*handlePtr;
-    register FsClientInfo	*clientPtr;
-    Boolean			found = FALSE;
-
-    fileIDPtr->type = FS_LCL_PIPE_STREAM;
-    handlePtr = FsHandleFetchType(FsPipeIOHandle, fileIDPtr);
-    if (handlePtr != (FsPipeIOHandle *)NIL) {
-	LIST_FORALL(&handlePtr->clientList, (List_Links *) clientPtr) {
-	    if (clientPtr->clientID == clientID) {
-		found = TRUE;
-		break;
-	    }
-	}
-	if (!found) {
-	    FsHandleRelease(handlePtr, TRUE);
-	    handlePtr = (FsPipeIOHandle *)NIL;
-	}
-    }
-    if (!found) {
-	printf(
-	    "FsRmtPipeVerify, client %d not known for pipe <%d,%d>\n",
-	    clientID, fileIDPtr->major, fileIDPtr->minor);
-    }
-    if (domainTypePtr != (int *)NIL) {
-	*domainTypePtr = FS_LOCAL_DOMAIN;
-    }
-    return((FsHandleHeader *)handlePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRmtPipeReopen --
- *
- *	Reopen a remote pipe.  This sets up and conducts an 
- *	RPC_FS_REOPEN remote procedure call to re-open the remote pipe.
- *
- * Results:
- *	A  non-SUCCESS return code if the re-open failed.
- *
- * Side effects:
- *	If the reopen works we'll have a valid I/O handle.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRmtPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
-    FsHandleHeader	*hdrPtr;
-    int			clientID;		/* Should be rpc_SpriteID */
-    ClientData		inData;			/* IGNORED */
-    int			*outSizePtr;		/* IGNORED */
-    ClientData		*outDataPtr;		/* IGNORED */
-{
-    register FsRemoteIOHandle	*rmtHandlePtr;
-    ReturnStatus		status;
-    FsPipeReopenParams		reopenParams;
-    int				outSize;
-
-    rmtHandlePtr = (FsRemoteIOHandle *)hdrPtr;
-    reopenParams.fileID = hdrPtr->fileID;
-    reopenParams.fileID.type = FS_LCL_PIPE_STREAM;
-    reopenParams.use = rmtHandlePtr->recovery.use;
-
-    /*
-     * Contact the server to do the reopen, and then notify waiters.
-     */
-    outSize = 0;
-    status = FsSpriteReopen(hdrPtr, sizeof(FsPipeReopenParams),
-		(Address)&reopenParams, &outSize, (Address)NIL);
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsPipeReopen --
+ * Fsio_PipeReopen --
  *
  *	Reopen a pipe for a client.  This executed on a server and will
  *	only work if it was a network partition that made us forget
@@ -1139,29 +983,29 @@ FsRmtPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
-    FsHandleHeader	*hdrPtr;		/* NIL */
+Fsio_PipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
+    Fs_HandleHeader	*hdrPtr;		/* NIL */
     int			clientID;		/* Host ID of client */
-    ClientData		inData;			/* sizeof FsPipeReopenParams */
+    ClientData		inData;			/* sizeof Fsio_PipeReopenParams */
     int			*outSizePtr;		/* Returns 0 */
     ClientData		*outDataPtr;		/* Returns NIL */
 {
-    register FsPipeIOHandle	*handlePtr;
+    register Fsio_PipeIOHandle	*handlePtr;
     ReturnStatus		status;
-    FsPipeReopenParams		*reopenParamsPtr;
+    Fsio_PipeReopenParams		*reopenParamsPtr;
 
-    reopenParamsPtr = (FsPipeReopenParams *)inData;
-    handlePtr = FsHandleFetchType(FsPipeIOHandle, &reopenParamsPtr->fileID);
-    if (handlePtr == (FsPipeIOHandle *)NIL) {
+    reopenParamsPtr = (Fsio_PipeReopenParams *)inData;
+    handlePtr = Fsutil_HandleFetchType(Fsio_PipeIOHandle, &reopenParamsPtr->fileID);
+    if (handlePtr == (Fsio_PipeIOHandle *)NIL) {
 	status = FAILURE;
     } else {
-	FsIOClientStatus(&handlePtr->clientList, clientID,
+	Fsconsist_IOClientStatus(&handlePtr->clientList, clientID,
 				 &reopenParamsPtr->use);
-	(void)FsIOClientReopen(&handlePtr->clientList, clientID,
+	(void)Fsconsist_IOClientReopen(&handlePtr->clientList, clientID,
 				 &reopenParamsPtr->use);
 	handlePtr->use.ref += reopenParamsPtr->use.ref;
 	handlePtr->use.write += reopenParamsPtr->use.write;
-	FsHandleRelease(handlePtr, TRUE);
+	Fsutil_HandleRelease(handlePtr, TRUE);
 	status = SUCCESS;
     }
     *outSizePtr = 0;
@@ -1172,7 +1016,7 @@ FsPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeClientKill --
+ * Fsio_PipeClientKill --
  *
  *	Clean up after a crashed client.  Note, this doesn't handle the
  *	obscure case of one end of a pipe being duplicated and then
@@ -1191,29 +1035,29 @@ FsPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  *----------------------------------------------------------------------
  */
 void
-FsPipeClientKill(hdrPtr, clientID)
-    FsHandleHeader *hdrPtr;     /* Handle to clean up */
+Fsio_PipeClientKill(hdrPtr, clientID)
+    Fs_HandleHeader *hdrPtr;     /* Handle to clean up */
     int clientID;		/* Host assumed down */
 {
-    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
+    register Fsio_PipeIOHandle *handlePtr = (Fsio_PipeIOHandle *)hdrPtr;
     int refs, writes, execs;
 
-    FsIOClientKill(&handlePtr->clientList, clientID, &refs, &writes, &execs);
+    Fsconsist_IOClientKill(&handlePtr->clientList, clientID, &refs, &writes, &execs);
     if (refs > 0) {
 	if (writes) {
-	    handlePtr->flags |= PIPE_WRITER_GONE;
+	    handlePtr->flags |= FSIO_PIPE_WRITER_GONE;
 	} else {
-	    handlePtr->flags |= PIPE_READER_GONE;
+	    handlePtr->flags |= FSIO_PIPE_READER_GONE;
 	}
     }
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPipeScavenge --
+ * Fsio_PipeScavenge --
  *
  *	Scavenge a pipe.  The handle might be usless if all its
  *	client's have crashed.
@@ -1227,26 +1071,26 @@ FsPipeClientKill(hdrPtr, clientID)
  *----------------------------------------------------------------------
  */
 Boolean
-FsPipeScavenge(hdrPtr)
-    FsHandleHeader *hdrPtr;     /* Handle about to be deleted */
+Fsio_PipeScavenge(hdrPtr)
+    Fs_HandleHeader *hdrPtr;     /* Handle about to be deleted */
 {
 #ifdef notdef
-    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
+    register Fsio_PipeIOHandle *handlePtr = (Fsio_PipeIOHandle *)hdrPtr;
     if (List_IsEmpty(&handlePtr->clientList) &&
-	(handlePtr->flags == (PIPE_WRITER_GONE|PIPE_READER_GONE))) {
+	(handlePtr->flags == (FSIO_PIPE_WRITER_GONE|FSIO_PIPE_READER_GONE))) {
 	/*
 	 * Never scavenge pipe handles.  Regular recovery cleanup
 	 * should invoke the pipe close routines and do proper cleanup.
 	 */
 	free(handlePtr->buffer);
-	FsWaitListDelete(&handlePtr->readWaitList);
-	FsWaitListDelete(&handlePtr->writeWaitList);
-	FsHandleRemove(hdrPtr);
-	fsStats.object.pipes--;
+	Fsutil_WaitListDelete(&handlePtr->readWaitList);
+	Fsutil_WaitListDelete(&handlePtr->writeWaitList);
+	Fsutil_HandleRemove(hdrPtr);
+	fs_Stats.object.pipes--;
 	return(TRUE);
     }
 #endif notdef
-    FsHandleUnlock(hdrPtr);
+    Fsutil_HandleUnlock(hdrPtr);
     return(FALSE);
 }
 

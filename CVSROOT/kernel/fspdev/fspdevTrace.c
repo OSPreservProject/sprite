@@ -19,25 +19,26 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
+#include "fsutil.h"
+#include "fspdev.h"
 /*
  * Prevent tracing by defining CLEAN here before this next include
  */
 #undef CLEAN
-#include "fsPdev.h"
-Boolean fsPdevDebug = FALSE;		/* Turns on print statements */
-Trace_Header pdevTraceHdr;
-Trace_Header *pdevTraceHdrPtr = &pdevTraceHdr;
-int pdevTraceLength = 50;
-Boolean pdevTracing = FALSE;		/* Turns on circular trace */
-int pdevMaxTraceDataSize;
-int pdevTraceIndex = 0;
+#include "fspdevInt.h"
+Boolean fspdev_Debug = FALSE;		/* Turns on print statements */
+Trace_Header fspdevTraceHdr;
+Trace_Header *fspdevTraceHdrPtr = &fspdevTraceHdr;
+int fspdevTraceLength = 50;
+Boolean fspdevTracing = FALSE;		/* Turns on circular trace */
+int fspdevMaxTraceDataSize;
+int fspdevTraceIndex = 0;
 
 
 /*
  *----------------------------------------------------------------------------
  *
- * FsPdevTraceInit --
+ * Fspdev_TraceInit --
  *
  *	Initialize the pseudo-device trace buffer.  Used for debugging
  *	and profiling.
@@ -52,16 +53,16 @@ int pdevTraceIndex = 0;
  *
  */
 ReturnStatus
-FsPdevTraceInit()
+Fspdev_TraceInit()
 {
-    Trace_Init(pdevTraceHdrPtr, pdevTraceLength, sizeof(PdevTraceRecord),
+    Trace_Init(fspdevTraceHdrPtr, fspdevTraceLength, sizeof(FspdevTraceRecord),
 		TRACE_NO_TIMES);
 }
 
 /*
  *----------------------------------------------------------------------------
  *
- * Fs_PdevPrintRec --
+ * Fspdev_PrintRec --
  *
  *	Print a record of the pseudo-device trace buffer.
  *
@@ -75,20 +76,20 @@ FsPdevTraceInit()
  *
  */
 ReturnStatus
-Fs_PdevPrintRec(clientData, event, printHeaderFlag)
+Fspdev_PrintRec(clientData, event, printHeaderFlag)
     ClientData clientData;	/* Client data in the trace record */
     int event;			/* Type, or event, from the trace record */
     Boolean printHeaderFlag;	/* If TRUE, a header line is printed */
 {
-    PdevTraceRecord *recPtr = (PdevTraceRecord *)clientData;
-    PdevTraceRecType pdevEvent = (PdevTraceRecType)event;
+    FspdevTraceRecord *recPtr = (FspdevTraceRecord *)clientData;
+    FspdevTraceRecType pdevEvent = (FspdevTraceRecType)event;
     if (printHeaderFlag) {
 	/*
 	 * Print column headers and a newline.
 	 */
 	printf("%6s %17s %8s\n", "REC", "  <File ID>  ", " Event ");
     }
-    if (recPtr != (PdevTraceRecord *)NIL) {
+    if (recPtr != (FspdevTraceRecord *)NIL) {
 	/*
 	 * Print out the fileID that's part of each record.
 	 */
@@ -137,7 +138,7 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 		printf("Wait List Notify"); break;
 	    case PDEVT_SELECT: {
 		printf("Select "); 
-		if (recPtr != (PdevTraceRecord *)NIL ) {
+		if (recPtr != (FspdevTraceRecord *)NIL ) {
 		    if (recPtr->un.selectBits & FS_READABLE) {
 			printf("R");
 		    }
@@ -156,7 +157,7 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 		 * and the select bits stashed in the wait info token.
 		 */
 		printf("Wakeup");
-		if (recPtr != (PdevTraceRecord *)NIL ) {
+		if (recPtr != (FspdevTraceRecord *)NIL ) {
 		    printf(" %x ", recPtr->un.wait.procID);
 		    if (recPtr->un.wait.selectBits & FS_READABLE) {
 			printf("R");
@@ -172,7 +173,7 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 	    }
 	    case PDEVT_REQUEST: {
 		printf("Request");
-		if (recPtr != (PdevTraceRecord *)NIL) {
+		if (recPtr != (FspdevTraceRecord *)NIL) {
 		    switch(recPtr->un.requestHdr.operation) {
 			case PDEV_OPEN:
 			    printf(" OPEN"); break;
@@ -198,7 +199,7 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 	    }
 	    case PDEVT_REPLY: {
 		printf("Reply");
-		if (recPtr != (PdevTraceRecord *)NIL) {
+		if (recPtr != (FspdevTraceRecord *)NIL) {
 		    printf(" <%x> ", recPtr->un.reply.status);
 		    if (recPtr->un.reply.selectBits & FS_READABLE) {
 			printf("R");
@@ -219,7 +220,7 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_PdevPrintTrace --
+ * Fspdev_PrintTrace --
  *
  *	Dump out the pdev trace.
  *
@@ -233,12 +234,12 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
  */
 
 void
-Fs_PdevPrintTrace(numRecs)
+Fspdev_PrintTrace(numRecs)
     int numRecs;
 {
     if (numRecs < 0) {
-	numRecs = pdevTraceLength;
+	numRecs = fspdevTraceLength;
     }
     printf("PDEV TRACE\n");
-    (void)Trace_Print(pdevTraceHdrPtr, numRecs, Fs_PdevPrintRec);
+    (void)Trace_Print(fspdevTraceHdrPtr, numRecs, Fspdev_PrintRec);
 }

@@ -107,7 +107,7 @@ Fsrmt_InitializeOps()
 {
     int	i;
 
-    Fs_InstallDomainLookupOps(FS_REMOTE_SPRITE_DOMAIN, &rmtDomainLookup, 
+    Fs_InstallDomainLookupOps(FS_REMOTE_SPRITE_DOMAIN, rmtDomainLookup, 
 				&rmtAttrOpTable );
     for (i = 0; i < numRmtFileStreamOps; i++)  { 
 	Fsio_InstallStreamOps(rmtFileStreamOps[i].type, &(rmtFileStreamOps[i]));

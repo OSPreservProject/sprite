@@ -1,7 +1,7 @@
 /* 
  * fsDevice.c --
  *
- *	Routines to manage devices.  Remote devices are	supported.
+ *	Routines to manage devices.  
  *	The handle for a device is uniquified using the device type and
  *	unit number.  This ensures that different filesystem names for
  *	the same device map to the same device I/O handle.
@@ -33,37 +33,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 
 #include "fs.h"
-#include "fsInt.h"
-#include "fsDevice.h"
-#include "fsOpTable.h"
-#include "fsDebug.h"
-#include "fsFile.h"
-#include "fsDisk.h"
-#include "fsClient.h"
-#include "fsStream.h"
-#include "fsLock.h"
-#include "fsMigrate.h"
-#include "fsNameOpsInt.h"
-#include "fsPrefix.h"
-
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsNameOps.h"
+#include "fsdm.h"
+#include "fsconsist.h"
+#include "fsioLock.h"
+#include "fsprefix.h"
 #include "dev.h"
 #include "rpc.h"
 #include "fsStat.h"
-
-/*
- * Parameters for RPC_FS_DEV_OPEN remote procedure call.
- * The return value from this call is a new I/O fileID.
- */
-typedef struct FsDeviceRemoteOpenPrm {
-    Fs_FileID	fileID;		/* I/O fileID from name server. */
-    int		useFlags;	/* FS_READ | FS_WRITE ... */
-    int		dataSize;	/* size of openData */
-    FsUnionData	openData;	/* FsFileState, FsDeviceState or PdevState.
-				 * NOTE. be careful when assigning this.
-				 * bcopy() of the whole union can cause
-				 * bus errors if really only a small object
-				 * exists and it's at the end of a page. */
-} FsDeviceRemoteOpenPrm;
+#include "fsioDevice.h"
+#include "devFsOpTable.h"
 
 /*
  * INET is defined so a file server can be used to open the
@@ -76,7 +57,7 @@ typedef struct FsDeviceRemoteOpenPrm {
  * DEV_PLACEHOLDER_2	is defined in devTypesInt.h, which is not exported.
  *	This is an ugly hack, anyway, so we just define it here.  3/89
  *	The best solution is to define a new disk file type and not
- *	use FsDeviceSrvOpen at all.
+ *	use Fsio_DeviceNameOpen at all.
  */
 #define DEV_PLACEHOLDER_2	3
 static int sockCounter = 0;
@@ -91,7 +72,7 @@ static void ExceptionNotify();
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceHandleInit --
+ * FsioDeviceHandleInit --
  *
  *	Initialize a handle for a local device.
  *
@@ -105,16 +86,16 @@ static void ExceptionNotify();
  *----------------------------------------------------------------------
  */
 Boolean
-FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
+FsioDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
     Fs_FileID		*fileIDPtr;
     char		*name;
-    FsDeviceIOHandle	**newHandlePtrPtr;
+    Fsio_DeviceIOHandle	**newHandlePtrPtr;
 {
     register Boolean found;
-    register FsDeviceIOHandle *devHandlePtr;
+    register Fsio_DeviceIOHandle *devHandlePtr;
 
-    found = FsHandleInstall(fileIDPtr, sizeof(FsDeviceIOHandle), name,
-		    (FsHandleHeader **)newHandlePtrPtr);
+    found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fsio_DeviceIOHandle), name,
+		    (Fs_HandleHeader **)newHandlePtrPtr);
     if (!found) {
 	devHandlePtr = *newHandlePtrPtr;
 	List_Init(&devHandlePtr->clientList);
@@ -126,14 +107,14 @@ FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	devHandlePtr->device.unit = fileIDPtr->minor;
 	devHandlePtr->device.data = (ClientData)NIL;
 	devHandlePtr->flags = 0;
-	FsLockInit(&devHandlePtr->lock);
+	Fsio_LockInit(&devHandlePtr->lock);
 	devHandlePtr->modifyTime = 0;
 	devHandlePtr->accessTime = 0;
 	List_Init(&devHandlePtr->readWaitList);
 	List_Init(&devHandlePtr->writeWaitList);
 	List_Init(&devHandlePtr->exceptWaitList);
 	devHandlePtr->notifyFlags = 0;
-	fsStats.object.devices++;
+	fs_Stats.object.devices++;
     }
     return(found);
 }
@@ -142,7 +123,7 @@ FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceSrvOpen --
+ * Fsio_DeviceNameOpen --
  *
  *	This routine sets up an ioFileID for the device based on the
  *	device file found on the name server.  This is called on the name
@@ -165,16 +146,16 @@ FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
-    FsLocalFileIOHandle	*handlePtr;	/* A handle obtained by FsLocalLookup.
+Fsio_DeviceNameOpen(handlePtr, openArgsPtr, openResultsPtr)
+    Fsio_FileIOHandle	*handlePtr;	/* A handle obtained by FslclLookup.
 					 * Should be locked upon entry,
 					 * is unlocked upon exit. */
-     FsOpenArgs		*openArgsPtr;	/* Standard open arguments */
-     FsOpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
-					 * and FsDeviceState */
+     Fs_OpenArgs		*openArgsPtr;	/* Standard open arguments */
+     Fs_OpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
+					 * and Fsio_DeviceState */
 {
-    register FsFileDescriptor *descPtr = handlePtr->descPtr;
-    register FsDeviceState *deviceDataPtr;
+    register Fsdm_FileDescriptor *descPtr = handlePtr->descPtr;
+    register Fsio_DeviceState *deviceDataPtr;
     register Fs_FileID *ioFileIDPtr = &openResultsPtr->ioFileID;
 
     ioFileIDPtr->serverID = descPtr->devServerID;
@@ -197,56 +178,56 @@ FsDeviceSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
 	ioFileIDPtr->minor = sockCounter++;
 	switch(descPtr->devUnit) {
 	    case NET_IP_PROTOCOL_IP:
-		ioFileIDPtr->type = FS_RAW_IP_STREAM;
+		ioFileIDPtr->type = FSIO_RAW_IP_STREAM;
 		break;
 	    case NET_IP_PROTOCOL_UDP:
-		ioFileIDPtr->type = FS_UDP_STREAM;
+		ioFileIDPtr->type = FSIO_UDP_STREAM;
 		break;
 	    case NET_IP_PROTOCOL_TCP:
-		ioFileIDPtr->type = FS_TCP_STREAM;
+		ioFileIDPtr->type = FSIO_TCP_STREAM;
 		break;
 	    default:
 		ioFileIDPtr->major = descPtr->devType;
 		ioFileIDPtr->minor = descPtr->devUnit;
 		if (ioFileIDPtr->serverID == openArgsPtr->clientID) {
-		    ioFileIDPtr->type = FS_LCL_DEVICE_STREAM;
+		    ioFileIDPtr->type = FSIO_LCL_DEVICE_STREAM;
 		} else {
-		    ioFileIDPtr->type = FS_RMT_DEVICE_STREAM;
+		    ioFileIDPtr->type = FSIO_RMT_DEVICE_STREAM;
 		}
 		break;
 	}
     } else
 #endif
     if (ioFileIDPtr->serverID == openArgsPtr->clientID) {
-	ioFileIDPtr->type = FS_LCL_DEVICE_STREAM;
+	ioFileIDPtr->type = FSIO_LCL_DEVICE_STREAM;
     } else {
-	ioFileIDPtr->type = FS_RMT_DEVICE_STREAM;
+	ioFileIDPtr->type = FSIO_RMT_DEVICE_STREAM;
     }
     if (openArgsPtr->useFlags != 0) {
 	/*
 	 * Truely preparing for an open.
 	 * Return the current modify/access times for the I/O server's cache.
 	 */
-	deviceDataPtr = mnew(FsDeviceState);
+	deviceDataPtr = mnew(Fsio_DeviceState);
 	deviceDataPtr->modifyTime = descPtr->dataModifyTime;
 	deviceDataPtr->accessTime = descPtr->accessTime;
 	/*
 	 * Choose a streamID for the client that points to the device server.
 	 */
-	FsStreamNewID(ioFileIDPtr->serverID, &openResultsPtr->streamID);
+	Fsio_StreamCreateID(ioFileIDPtr->serverID, &openResultsPtr->streamID);
 	deviceDataPtr->streamID = openResultsPtr->streamID;
 
 	openResultsPtr->streamData = (ClientData)deviceDataPtr;
-	openResultsPtr->dataSize = sizeof(FsDeviceState);
+	openResultsPtr->dataSize = sizeof(Fsio_DeviceState);
     }
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceCltOpen --
+ * Fsio_DeviceIoOpen --
  *
  *	Complete opening of a local device.  This is called on the I/O
  *	server and sets up state concerning this client.  The device
@@ -266,27 +247,27 @@ FsDeviceSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
+Fsio_DeviceIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
-    ClientData		streamData;	/* Reference to FsDeviceState struct */
+    ClientData		streamData;	/* Reference to Fsio_DeviceState struct */
     char		*name;		/* File name for error msgs */
-    FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a device, NIL if failure. */
 {
     ReturnStatus 		status;
     Boolean			found;
-    register FsDeviceState	*deviceDataPtr;
-    register FsDeviceIOHandle	*devHandlePtr;
-    FsDeviceIOHandle		*tDevHandlePtr;	/* tempory devHandlePtr */
+    register Fsio_DeviceState	*deviceDataPtr;
+    register Fsio_DeviceIOHandle	*devHandlePtr;
+    Fsio_DeviceIOHandle		*tDevHandlePtr;	/* tempory devHandlePtr */
     register Fs_Stream		*streamPtr;
     register int		flags = *flagsPtr;
 
-    deviceDataPtr = (FsDeviceState *)streamData;
-    *ioHandlePtrPtr = (FsHandleHeader *)NIL;
+    deviceDataPtr = (Fsio_DeviceState *)streamData;
+    *ioHandlePtrPtr = (Fs_HandleHeader *)NIL;
 
-    found = FsDeviceHandleInit(ioFileIDPtr, name, &tDevHandlePtr);
+    found = FsioDeviceHandleInit(ioFileIDPtr, name, &tDevHandlePtr);
     devHandlePtr = tDevHandlePtr;
     /*
      * The device driver open routine gets the device specification,
@@ -314,21 +295,21 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
 	 * The client is recorded at the stream level to support migration,
 	 * and at the I/O handle level for regular I/O.
 	 */
-	(void)FsIOClientOpen(&devHandlePtr->clientList, clientID, flags, FALSE);
+	(void)Fsconsist_IOClientOpen(&devHandlePtr->clientList, clientID, flags, FALSE);
 
-	streamPtr = FsStreamAddClient(&deviceDataPtr->streamID, clientID,
-			(FsHandleHeader *)devHandlePtr, flags,
+	streamPtr = Fsio_StreamAddClient(&deviceDataPtr->streamID, clientID,
+			(Fs_HandleHeader *)devHandlePtr, flags,
 			name, (Boolean *)NIL, (Boolean *)NIL);
-	FsHandleRelease(streamPtr, TRUE);
+	Fsutil_HandleRelease(streamPtr, TRUE);
 
 	devHandlePtr->use.ref++;
 	if (flags & FS_WRITE) {
 	    devHandlePtr->use.write++;
 	}
-	*ioHandlePtrPtr = (FsHandleHeader *)devHandlePtr;
-	FsHandleUnlock(devHandlePtr);
+	*ioHandlePtrPtr = (Fs_HandleHeader *)devHandlePtr;
+	Fsutil_HandleUnlock(devHandlePtr);
     } else {
-	FsHandleRelease(devHandlePtr, TRUE);
+	Fsutil_HandleRelease(devHandlePtr, TRUE);
     }
     free((Address) deviceDataPtr);
     return(status);
@@ -337,247 +318,14 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
 /*
  *----------------------------------------------------------------------
  *
- * FsRmtDeviceCltOpen --
- *
- *      Set up the stream IO handle for a remote device.  This makes
- *	an RPC to the I/O server, which will invoke FsDeviceCltOpen there,
- *	and then sets up the remote device handle.
- *
- * Results:
- *	SUCCESS or a device dependent open error code.
- *
- * Side effects:
- *	Sets up and installs the remote device's ioHandle.
- *	The use counts on the handle are updated.
- *	The handle is returned unlocked, but with a new
- *	reference than gets released when the device is closed.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
-    Fs_FileID		*ioFileIDPtr;	/* I/O fileID */
-    int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
-    int			clientID;	/* Host doing the open */
-    ClientData		streamData;	/* FsDeviceState */
-    char		*name;		/* Device file name */
-    FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
-					 * I/O to a device, NIL if failure. */
-{
-    register ReturnStatus 	status;
-
-    /*
-     * Do a device open at the I/O server.  We set the ioFileID type so
-     * that the local device client open procedure gets called at the I/O
-     * server, as opposed to the local pipe (or whatever) open routine.
-     * NAME note: are not passing the file name to the I/O server.
-     */
-    ioFileIDPtr->type = FS_LCL_DEVICE_STREAM;
-    status = FsDeviceRemoteOpen(ioFileIDPtr, *flagsPtr,	sizeof(FsDeviceState),
-				streamData);
-    if (status == SUCCESS) {
-	ioFileIDPtr->type = FS_RMT_DEVICE_STREAM;
-	FsRemoteIOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
-    } else {
-	*ioHandlePtrPtr = (FsHandleHeader *)NIL;
-    }
-    free((Address)streamData);
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRemoteIOHandleInit --
- *
- *	Initialize a handle for a remote device/pseudo-device/whatever.
- *
- * Results:
- *	Sets its *ioHandlePtrPtr to reference the installed handle.
- *
- * Side effects:
- *	Create and install a handle for remote thing.  The handle is
- *	returned unlocked.  The recovery use counts are incremented
- *	to reflect the use of the handle.
- *
- *----------------------------------------------------------------------
- */
-void
-FsRemoteIOHandleInit(ioFileIDPtr, useFlags, name, newHandlePtrPtr)
-    Fs_FileID		*ioFileIDPtr;		/* Remote IO File ID */
-    int			useFlags;		/* Stream usage flags */
-    char		*name;			/* File name */
-    FsHandleHeader	**newHandlePtrPtr;	/* Return - installed handle */
-{
-    register Boolean found;
-    register FsRecoveryInfo *recovPtr;
-
-    found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle), name,
-	    newHandlePtrPtr);
-    recovPtr = &((FsRemoteIOHandle *)*newHandlePtrPtr)->recovery;
-    if (!found) {
-	FsRecoveryInit(recovPtr);
-	fsStats.object.remote++;
-    }
-    recovPtr->use.ref++;
-    if (useFlags & FS_WRITE) {
-	recovPtr->use.write++;
-    }
-    FsHandleUnlock(*newHandlePtrPtr);
-}
-
-/*----------------------------------------------------------------------
- *
- * FsDeviceRemoteOpen --
- *
- *	Client side stub to open a remote device, remote named pipe,
- *	or remote pseudo stream.  Uses the RPC_FS_DEV_OPEN remote
- *	procedure call to invoke the pipe, device, or pseudo device
- *	open routine on the I/O server.  We are given an ioFileID from
- *	the name server, although we just use the sererID part here.
- *	The I/O server returns a new fileID that connects to the device.
- *
- * Results:
- *	(May) modify *ioFileIDPtr.  Returns a status from the RPC or the
- *	I/O device driver.
- *
- * Side effects:
- *	Sets up a recovery reboot call-back for the I/O server if the remote
- *	device open succeeds.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-FsDeviceRemoteOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
-    Fs_FileID	*ioFileIDPtr;	/* Indicates I/O server.  This is modified
-				 * by the I/O server and returned to our
-				 * caller for use in the dev/pipe/etc handle */
-    int		useFlags;	/* FS_READ | FS_WRITE ... */
-    int		inSize;		/* Size of input parameters */
-    ClientData	inBuffer;	/* Input data for remote server */
-{
-    ReturnStatus	status;		/* Return code from RPC */
-    Rpc_Storage		storage;	/* Specifies inputs/outputs to RPC */
-    FsDeviceRemoteOpenPrm param;
-
-    param.fileID = *ioFileIDPtr;
-    param.useFlags = useFlags;
-    param.dataSize = inSize;
-    if (inSize > 0) {
-	bcopy((Address)inBuffer, (Address)&param.openData, inSize);
-    }
-    storage.requestParamPtr = (Address) &param;
-    storage.requestParamSize = sizeof(FsDeviceRemoteOpenPrm);
-    storage.requestDataPtr = (Address) NIL;
-    storage.requestDataSize = 0;
-    storage.replyParamPtr = (Address) ioFileIDPtr;
-    storage.replyParamSize = sizeof(Fs_FileID);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-    status = Rpc_Call(ioFileIDPtr->serverID, RPC_FS_DEV_OPEN, &storage);
-
-    if (status == SUCCESS) {
-	/*
-	 * Register a callback with the recovery module.  This ensures that
-	 * someone is paying attention to the I/O server and the filesystem
-	 * will get called back when the I/O server reboots.
-	 */
-	Recov_RebootRegister(ioFileIDPtr->serverID, FsReopen, (ClientData)NIL);
-    }
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcDevOpen --
- *
- *	Server stub for the RPC_FS_DEV_OPEN call.
- *	This host is the IO server for a handle.  This message from the
- *	remote host indicates that a client process there will be
- *	using us as the IO server.  This adds that client to the handle's
- *	client list for recovery and consistency checks.  This then branches
- *	to the file type client-open procedure to set up an I/O
- *	handle for the (device, pipe, pseudo-device).
- *
- * Results:
- *	If this procedure returns SUCCESS then a reply has been sent to
- *	the client.  If the arguments are bad then an error is 
- *	returned and the main RPC server level sends back an error reply.
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
-    ClientData 		 srvToken;	/* Handle on server process passed to
-					 * Rpc_Reply */
-    int 		 clientID;	/* Sprite ID of client host */
-    int 		 command;	/* Command identifier */
-    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
-					 * request buffers and also indicate 
-					 * the exact amount of data in the 
-					 * request buffers.  The reply fields 
-					 * are initialized to NIL for the
-				 	 * pointers and 0 for the lengths.  
-					 * This can be passed to Rpc_Reply */
-{
-    FsHandleHeader	*hdrPtr;	/* I/O handle created by type-specific
-					 * open routine. */
-    ReturnStatus	status;
-    FsDeviceRemoteOpenPrm *paramPtr;
-    register int	dataSize;
-    ClientData		streamData;
-
-    /*
-     * Call the client-open routine to set up an I/O handle here on the
-     * I/O server for the device.  This is either the device, pipe, or
-     * named pipe open routine.  We allocate storage and copy the stream
-     * data so the CltOpen routine can free it, as it expects to do.
-     * NAME note: we don't have a name for the device here.
-     */
-    paramPtr = (FsDeviceRemoteOpenPrm *) storagePtr->requestParamPtr;
-    dataSize = paramPtr->dataSize;
-    if (dataSize > 0) {
-	streamData = (ClientData)malloc(dataSize);
-	bcopy((Address)&paramPtr->openData, (Address)streamData, dataSize);
-    } else {
-	streamData = (ClientData)NIL;
-    }
-    paramPtr->fileID.type = FsMapRmtToLclType(paramPtr->fileID.type);
-    if (paramPtr->fileID.type < 0) {
-	return(GEN_INVALID_ARG);
-    }
-    status = (fsStreamOpTable[paramPtr->fileID.type].cltOpen)
-		    (&paramPtr->fileID, &paramPtr->useFlags,
-		     clientID, streamData, (char *)NIL, &hdrPtr);
-    if (status == SUCCESS) {
-	/*
-	 * Return the fileID to the other host so it can
-	 * set up its own I/O handle.
-	 */
-	storagePtr->replyParamPtr = (Address)&hdrPtr->fileID;
-	storagePtr->replyParamSize = sizeof(Fs_FileID);
-    }
-    Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL, (ClientData)NIL);
-    return(SUCCESS);	/* So that Rpc_Server doesn't send error reply */
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsDeviceClose --
+ * Fsio_DeviceClose --
  *
  *	Close a stream to a device.  We just need to clean up our state with
  *	the device driver.  The file server that named the device file keeps
  *	no state about us, so we don't have to contact it.
  *
  * FIX ME: need to write back access/modify times to name server
- *	Can use fsAttrOpTable and the nameInfoPtr->fileID as long
+ *	Can use fs_AttrOpTable and the nameInfoPtr->fileID as long
  *	if the shadow stream on the I/O server is set up enough.
  *
  * Results:
@@ -590,7 +338,7 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
+Fsio_DeviceClose(streamPtr, clientID, procID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Stream to device */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process */
@@ -599,29 +347,29 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
     ClientData		data;		/* IGNORED */
 {
     ReturnStatus		status;
-    register FsDeviceIOHandle	*devHandlePtr =
-	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_DeviceIOHandle	*devHandlePtr =
+	    (Fsio_DeviceIOHandle *)streamPtr->ioHandlePtr;
     Boolean			cache = FALSE;
 
-    if (!FsIOClientClose(&devHandlePtr->clientList, clientID, flags, &cache)) {
-	printf("FsDeviceClose, client %d unknown for device <%d,%d>\n",
+    if (!Fsconsist_IOClientClose(&devHandlePtr->clientList, clientID, flags, &cache)) {
+	printf("Fsio_DeviceClose, client %d unknown for device <%d,%d>\n",
 		  clientID, devHandlePtr->hdr.fileID.major,
 		  devHandlePtr->hdr.fileID.minor);
-	FsHandleRelease(devHandlePtr, TRUE);
+	Fsutil_HandleRelease(devHandlePtr, TRUE);
 	return(FS_STALE_HANDLE);
     }
     /*
      * Clean up locks, then
      * clean up summary use counts and call driver's close routine.
      */
-    FsLockClose(&devHandlePtr->lock, &streamPtr->hdr.fileID);
+    Fsio_LockClose(&devHandlePtr->lock, &streamPtr->hdr.fileID);
 
-    status = FsDeviceCloseInt(devHandlePtr, flags, 1, (flags & FS_WRITE) != 0);
+    status = FsioDeviceCloseInt(devHandlePtr, flags, 1, (flags & FS_WRITE) != 0);
     /*
      * We don't bother to remove the handle here if the device isn't
      * being used.  Instead we let the handle get scavenged.
      */
-    FsHandleRelease(devHandlePtr, TRUE);
+    Fsutil_HandleRelease(devHandlePtr, TRUE);
 
     return(status);
 }
@@ -629,7 +377,7 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsDeviceClientKill --
+ * Fsio_DeviceClientKill --
  *
  *	Called when a client is assumed down.  This cleans up the
  *	references due to the client.
@@ -646,8 +394,8 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
  *
  */
 ReturnStatus
-FsDeviceCloseInt(devHandlePtr, useFlags, refs, writes)
-    FsDeviceIOHandle *devHandlePtr;	/* Device handle */
+FsioDeviceCloseInt(devHandlePtr, useFlags, refs, writes)
+    Fsio_DeviceIOHandle *devHandlePtr;	/* Device handle */
     int useFlags;			/* Flags from the stream */
     int refs;				/* Number of refs to close */
     int writes;				/* Number of these that were writing */
@@ -660,7 +408,7 @@ FsDeviceCloseInt(devHandlePtr, useFlags, refs, writes)
     }
 
     if (devHandlePtr->use.ref < 0 || devHandlePtr->use.write < 0) {
-	panic("FsDeviceCloseInt <%d,%d> ref %d, write %d\n",
+	panic("FsioDeviceCloseInt <%d,%d> ref %d, write %d\n",
 	    devHandlePtr->hdr.fileID.major, devHandlePtr->hdr.fileID.minor,
 	    devHandlePtr->use.ref, devHandlePtr->use.write);
     }
@@ -673,7 +421,7 @@ FsDeviceCloseInt(devHandlePtr, useFlags, refs, writes)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsDeviceClientKill --
+ * Fsio_DeviceClientKill --
  *
  *	Called when a client is assumed down.  This cleans up the
  *	references due to the client.
@@ -691,20 +439,19 @@ FsDeviceCloseInt(devHandlePtr, useFlags, refs, writes)
  */
 /*ARGSUSED*/
 void
-FsDeviceClientKill(hdrPtr, clientID)
-    FsHandleHeader	*hdrPtr;	/* File to clean up */
+Fsio_DeviceClientKill(hdrPtr, clientID)
+    Fs_HandleHeader	*hdrPtr;	/* File to clean up */
     int			clientID;	/* Host assumed down */
 {
-    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)hdrPtr;
-    register int flags;
+    register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)hdrPtr;
     int refs, writes, execs;
 
     /*
      * Remove the client from the list of users, and see what it was doing.
      */
-    FsIOClientKill(&devHandlePtr->clientList, clientID, &refs, &writes, &execs);
+    Fsconsist_IOClientKill(&devHandlePtr->clientList, clientID, &refs, &writes, &execs);
 
-    FsLockClientKill(&devHandlePtr->lock, clientID);
+    Fsio_LockClientKill(&devHandlePtr->lock, clientID);
 
     if (refs > 0) {
 	int useFlags = FS_READ;		/* Have to assume this,
@@ -712,90 +459,15 @@ FsDeviceClientKill(hdrPtr, clientID)
 	if (writes > 0) {
 	    useFlags |= FS_WRITE;
 	}
-	(void)FsDeviceCloseInt(devHandlePtr, useFlags, refs, writes);
+	(void)FsioDeviceCloseInt(devHandlePtr, useFlags, refs, writes);
     }
-    FsHandleUnlock(devHandlePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRemoteIOClose --
- *
- *	Close a stream to a remote device/pipe.  We just need to clean up our
- *	connection to the I/O server.  (The file server that named the
- *	device file keeps no state about us, so we don't have to contact it.)
- *	We make an RPC to the I/O server which invokes close routine there.
- *	We also update our own use counts.
- *
- * Results:
- *	SUCCESS.
- *
- * Side effects:
- *	RPC to the I/O server to invoke FsDeviceClose/FsPipeClose.
- *	Release the remote I/O handle.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
-    Fs_Stream		*streamPtr;	/* Stream to remote object */
-    int			clientID;	/* ID of closing host */
-    Proc_PID		procID;		/* ID of closing process */
-    int			flags;		/* Flags from the stream being closed */
-    int			dataSize;	/* Size of *closeData, or Zero */
-    ClientData		closeData;	/* Copy of cached I/O attributes. */
-{
-    ReturnStatus		status;
-    register FsRemoteIOHandle *rmtHandlePtr =
-	    (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
-
-    /*
-     * Decrement local references.
-     */
-    rmtHandlePtr->recovery.use.ref--;
-    if (flags & FS_WRITE) {
-	rmtHandlePtr->recovery.use.write--;
-    }
-
-    if (rmtHandlePtr->recovery.use.ref < 0 ||
-	rmtHandlePtr->recovery.use.write < 0) {
-	panic( "FsRemoteIOClose: <%d,%d> ref %d write %d\n",
-	    rmtHandlePtr->hdr.fileID.major, rmtHandlePtr->hdr.fileID.minor,
-	    rmtHandlePtr->recovery.use.ref,
-	    rmtHandlePtr->recovery.use.write);
-    }
-
-    if (!FsHandleValid(streamPtr->ioHandlePtr)) {
-	status = FS_STALE_HANDLE;
-    } else {
-	status = FsRemoteClose(streamPtr, clientID, procID, flags,
-			       dataSize, closeData);
-    }
-    /*
-     * Check the number of users with the handle still locked, then
-     * remove the handle if we aren't using it anymore.  Note that if
-     * we get an RPC timeout we hold onto the handle and will do a
-     * reopen later to reconcile the server with our state.  A transient
-     * communication failure, for example, would otherwise cause a close
-     * to be dropped and leave lingering references to the device
-     * on the I/O server.
-     */
-    if (status == SUCCESS && rmtHandlePtr->recovery.use.ref == 0) {
-	FsRecoverySyncLockCleanup(&rmtHandlePtr->recovery);
-	FsHandleRelease(rmtHandlePtr, TRUE);
-	FsHandleRemove(rmtHandlePtr);
-	fsStats.object.remote--;
-    } else {
-	FsHandleRelease(rmtHandlePtr, TRUE);
-    }
-    return(status);
+    Fsutil_HandleUnlock(devHandlePtr);
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FsDeviceScavenge --
+ * Fsio_DeviceScavenge --
  *
  *	Called periodically to see if this handle is still needed.
  *	
@@ -811,173 +483,34 @@ FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  *
  */
 Boolean
-FsDeviceScavenge(hdrPtr)
-    FsHandleHeader	*hdrPtr;	/* File to clean up */
+Fsio_DeviceScavenge(hdrPtr)
+    Fs_HandleHeader	*hdrPtr;	/* File to clean up */
 {
-    register FsDeviceIOHandle *handlePtr = (FsDeviceIOHandle *)hdrPtr;
+    register Fsio_DeviceIOHandle *handlePtr = (Fsio_DeviceIOHandle *)hdrPtr;
 
     if (handlePtr->use.ref == 0) {
 	/*
 	 * Remove handles for devices with no users.
 	 */
-	FsWaitListDelete(&handlePtr->readWaitList);
-	FsWaitListDelete(&handlePtr->writeWaitList);
-	FsWaitListDelete(&handlePtr->exceptWaitList);
-	FsHandleRemove(handlePtr);
-	fsStats.object.devices--;
+	Fsutil_WaitListDelete(&handlePtr->readWaitList);
+	Fsutil_WaitListDelete(&handlePtr->writeWaitList);
+	Fsutil_WaitListDelete(&handlePtr->exceptWaitList);
+	Fsutil_HandleRemove(handlePtr);
+	fs_Stats.object.devices--;
 	return(TRUE);
     } else {
-        FsHandleUnlock(handlePtr);
+        Fsutil_HandleUnlock(handlePtr);
 	return(FALSE);
     }
 }
 
 /*
- * Parameters for a device reopen RPC used to reestablish state on
- * the I/O server for a device.
- */
-typedef struct FsRmtDeviceReopenParams {
-    Fs_FileID	fileID;		/* File ID of file to reopen. MUST BE FIRST! */
-    FsUseCounts use;		/* Device usage information */
-} FsRmtDeviceReopenParams;
-
-/*
  *----------------------------------------------------------------------
  *
- * FsRmtDeviceReopen --
- *
- *	Reopen a remote device at the I/O server.  This sets up and conducts an 
- *	RPC_FS_DEV_REOPEN remote procedure call to re-open the remote device.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *	
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRmtDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
-    FsHandleHeader	*hdrPtr;	/* Device I/O handle to reopen */
-    int			clientID;	/* Client doing the reopen */
-    ClientData		inData;		/* IGNORED */
-    int			*outSizePtr;	/* Size of returned data, 0 here */
-    ClientData		*outDataPtr;	/* Returned data, NIL here */
-{
-    register FsRemoteIOHandle	*handlePtr = (FsRemoteIOHandle *)hdrPtr;
-    ReturnStatus		status;
-    int				outSize;
-    FsRmtDeviceReopenParams	reopenParams;
-
-    /*
-     * Set up reopen parameters.  fileID must be first in order
-     * to use the generic FsSpriteReopen/Fs_RpcReopen stubs.
-     */
-    reopenParams.fileID = handlePtr->hdr.fileID;
-    reopenParams.use = handlePtr->recovery.use;
-
-    outSize = 0;
-    status = FsSpriteReopen(hdrPtr, sizeof(reopenParams),
-			    (Address)&reopenParams, &outSize, (Address)NIL);
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsDeviceReopen --
- *
- *	Reopen a device here on the I/O server.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *	
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
-    FsHandleHeader	*hdrPtr;	/* NIL on the I/O server */
-    int			clientID;	/* Client doing the reopen */
-    ClientData		inData;		/* Ref. to FsRmtDeviceReopenParams */
-    int			*outSizePtr;	/* Size of returned data, 0 here */
-    ClientData		*outDataPtr;	/* Returned data, NIL here */
-{
-    FsDeviceIOHandle	*devHandlePtr;
-    FsUseCounts		oldUse;
-    Boolean		found;
-    ReturnStatus	status;
-    register		devIndex;
-    register FsRmtDeviceReopenParams *paramPtr =
-	    (FsRmtDeviceReopenParams *)inData;
-
-    *outDataPtr = (ClientData) NIL;
-    *outSizePtr = 0;
-
-    found = FsDeviceHandleInit(&paramPtr->fileID, (char *)NIL, &devHandlePtr); 
-
-    devIndex = DEV_TYPE_INDEX(devHandlePtr->device.type);
-    if (devIndex >= devNumDevices) {
-	status = FS_DEVICE_OP_INVALID;
-    } else {
-	/*
-	 * Compute the difference between the client's and our version
-	 * of the client's use state, and then call the device driver
-	 * with that information.  We may have missed opens (across a
-	 * reboot) or closes (during transient communication failures)
-	 * so the net difference may be positive or negative.
-	 */
-	FsIOClientStatus(&devHandlePtr->clientList, clientID, &paramPtr->use);
-	if (paramPtr->use.ref == 0) {
-	    status = SUCCESS;	/* No change visible to driver */
-	} else if (paramPtr->use.ref > 0) {
-	    /*
-	     * Reestablish open connections.
-	     */
-	    status = (*devFsOpTable[devIndex].reopen)(&devHandlePtr->device,
-				    paramPtr->use.ref, paramPtr->use.write,
-				    (Fs_NotifyToken)devHandlePtr,
-				    &devHandlePtr->flags);
-	    if (status == SUCCESS) {
-		(void)FsIOClientReopen(&devHandlePtr->clientList, clientID,
-					 &paramPtr->use);
-		devHandlePtr->use.ref += paramPtr->use.ref;
-		devHandlePtr->use.write += paramPtr->use.write;
-	    }
-	} else {
-	    /*
-	     * Clean up closed connections.  Note, we assume that
-	     * the client was reading, even though it may have had
-	     * a write-only stream.  This could break syslog, which
-	     * is a single-reader/multiple-writer stream.  "ref" should
-	     * be changed to "read".
-	     */
-	    int useFlags = FS_READ;
-	    if (paramPtr->use.write > 0) {
-		useFlags |= FS_WRITE;
-	    }
-	    status = FsDeviceCloseInt(devHandlePtr, useFlags, paramPtr->use.ref,
-						    paramPtr->use.write);
-	 }
-    }
-    FsHandleRelease(devHandlePtr, TRUE);
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsVanillaDevReopen --
+ * Fsio_VanillaDevReopen --
  *
  *	This is a simplified device driver re-open procedure.  It is called
- *	from FsDeviceReopen via the device operation switch.  It, in turn,
+ *	from Fsrmt_DeviceReopen via the device operation switch.  It, in turn,
  *	calls back through the device switch to the regular device open
  *	procedure.  Form many simple devices this is sufficient for a reopen.
  *
@@ -992,11 +525,11 @@ FsDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsVanillaDevReopen(devicePtr, refs, writes, notifyToken)
+Fsio_VanillaDevReopen(devicePtr, refs, writes, notifyToken)
     Fs_Device *devicePtr;	/* Identifies the device */
     int refs;			/* Number of streams to the device */
     int writes;			/* Number of those that are for writing */
-    Fs_NotifyToken notifyToken;	/* Used with Fs_DevNotifyReader */
+    Fs_NotifyToken notifyToken;	/* Used with Fsio_DevNotifyReader */
 {
     int devIndex = DEV_TYPE_INDEX(devicePtr->type);
     int useFlags = 0;
@@ -1015,7 +548,7 @@ FsVanillaDevReopen(devicePtr, refs, writes, notifyToken)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsDeviceRelease --
+ * Fsio_DeviceMigClose --
  *
  *	Release a reference from a Device I/O handle.
  *	
@@ -1030,12 +563,12 @@ FsVanillaDevReopen(devicePtr, refs, writes, notifyToken)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceRelease(hdrPtr, flags)
-    FsHandleHeader *hdrPtr;	/* File being encapsulated */
+Fsio_DeviceMigClose(hdrPtr, flags)
+    Fs_HandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
 {
-    panic( "FsDeviceRelease called\n");
-    FsHandleRelease(hdrPtr, FALSE);
+    panic( "Fsio_DeviceMigClose called\n");
+    Fsutil_HandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
 
@@ -1043,88 +576,51 @@ FsDeviceRelease(hdrPtr, flags)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsRemoteIORelease --
- *
- *	Release a reference on a remote I/O handle.  This decrements
- *	recovery use counts as well as releasing the handle.
- *	
- * Results:
- *	SUCCESS.
- *
- * Side effects:
- *	Decrement recovery use counts and release the I/O handle.
- *
- * ----------------------------------------------------------------------------
- *
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRemoteIORelease(hdrPtr, flags)
-    FsHandleHeader *hdrPtr;	/* File being encapsulated */
-    int flags;			/* Use flags from the stream */
-{
-    register FsRemoteIOHandle *rmtHandlePtr = (FsRemoteIOHandle *)hdrPtr;
-
-    FsHandleLock(rmtHandlePtr);
-    rmtHandlePtr->recovery.use.ref--;
-    if (flags & FS_WRITE) {
-	rmtHandlePtr->recovery.use.write--;
-    }
-    if (flags & FS_EXECUTE) {
-	rmtHandlePtr->recovery.use.exec--;
-    }
-    FsHandleRelease(rmtHandlePtr, TRUE);
-    return(SUCCESS);
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * FsDeviceMigrate --
+ * Fsio_DeviceMigrate --
  *
  *	This takes care of transfering references from one client to the other.
  *	A useful side-effect of this routine is	to properly set the type in
- *	the ioFileID, either FS_LCL_DEVICE_STREAM or FS_RMT_DEVICE_STREAM.
+ *	the ioFileID, either FSIO_LCL_DEVICE_STREAM or FSIO_RMT_DEVICE_STREAM.
  *	In the latter case FsRmtDevoceMigrate is called to do all the work.
  *
  * Results:
  *	An error status if the I/O handle can't be set-up.
  *	Otherwise SUCCESS is returned, *flagsPtr may have the FS_RMT_SHARED
- *	bit set, and *sizePtr and *dataPtr are set to reference FsDeviceState.
+ *	bit set, and *sizePtr and *dataPtr are set to reference Fsio_DeviceState.
  *
  * Side effects:
  *	Sets the correct stream type on the ioFileID.
  *	Shifts client references from the srcClient to the destClient.
- *	Set up and return FsDeviceState for use by the MigEnd routine.
+ *	Set up and return Fsio_DeviceState for use by the MigEnd routine.
  *
  * ----------------------------------------------------------------------------
  *
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
+Fsio_DeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     FsMigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - new stream offset */
-    int		*sizePtr;	/* Return - sizeof(FsDeviceState) */
-    Address	*dataPtr;	/* Return - pointer to FsDeviceState */
+    int		*sizePtr;	/* Return - sizeof(Fsio_DeviceState) */
+    Address	*dataPtr;	/* Return - pointer to Fsio_DeviceState */
 {
-    FsDeviceIOHandle			*devHandlePtr;
+    Fsio_DeviceIOHandle			*devHandlePtr;
     Boolean				closeSrcClient;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
 	 * The device was local, which is why we were called, but is now remote.
 	 */
-	migInfoPtr->ioFileID.type = FS_RMT_DEVICE_STREAM;
-	return(FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
+	migInfoPtr->ioFileID.type = FSIO_RMT_DEVICE_STREAM;
+	return(FsrmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
 		sizePtr, dataPtr));
     }
-    migInfoPtr->ioFileID.type = FS_LCL_DEVICE_STREAM;
-    if (!FsDeviceHandleInit(&migInfoPtr->ioFileID, (char *)NIL, &devHandlePtr)){
+    migInfoPtr->ioFileID.type = FSIO_LCL_DEVICE_STREAM;
+    if (!FsioDeviceHandleInit(&migInfoPtr->ioFileID, (char *)NIL, &devHandlePtr)){
 	printf(
-		"FsDeviceMigrate, I/O handle <%d,%d> not found\n",
+		"Fsio_DeviceMigrate, I/O handle <%d,%d> not found\n",
 		 migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FS_FILE_NOT_FOUND);
     }
@@ -1132,17 +628,17 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)devHandlePtr,
+    Fsio_StreamMigClient(migInfoPtr, dstClientID, (Fs_HandleHeader *)devHandlePtr,
 		    &closeSrcClient);
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
-    FsMigrateUseCounts(migInfoPtr->flags, closeSrcClient, &devHandlePtr->use);
+    Fsio_MigrateUseCounts(migInfoPtr->flags, closeSrcClient, &devHandlePtr->use);
 
     /*
      * Move the client at the I/O handle level.
      */
-    FsIOClientMigrate(&devHandlePtr->clientList, migInfoPtr->srcClientID,
+    Fsio_IOClientMigrate(&devHandlePtr->clientList, migInfoPtr->srcClientID,
 			dstClientID, migInfoPtr->flags, closeSrcClient);
 
     *sizePtr = 0;
@@ -1152,70 +648,14 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     /*
      * We don't need this reference on the I/O handle; there is no change.
      */
-    FsHandleRelease(devHandlePtr, TRUE);
+    Fsutil_HandleRelease(devHandlePtr, TRUE);
     return(SUCCESS);
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FsRmtDeviceMigrate --
- *
- *	This takes care of transfering references from one client to the other.
- *	A useful side-effect of this routine is	to properly set the type in
- *	the ioFileID, either FS_LCL_DEVICE_STREAM or FS_RMT_DEVICE_STREAM.
- *	In the latter case FsDevoceMigrate is called to do all the work.
- *
- * Results:
- *	An error status if the I/O handle can't be set-up.
- *	Otherwise SUCCESS is returned, *flagsPtr may have the FS_RMT_SHARED
- *	bit set, and *sizePtr and *dataPtr are set to reference FsDeviceState.
- *
- * Side effects:
- *	Sets the correct stream type on the ioFileID.
- *	Shifts client references from the srcClient to the destClient.
- *	Set up and return FsDeviceState for use by the MigEnd routine.
- *
- * ----------------------------------------------------------------------------
- *
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
-    int		dstClientID;	/* ID of target client */
-    int		*flagsPtr;	/* In/Out Stream usage flags */
-    int		*offsetPtr;	/* Return - the new stream offset */
-    int		*sizePtr;	/* Return - sizeof(FsDeviceState) */
-    Address	*dataPtr;	/* Return - pointer to FsDeviceState */
-{
-    register ReturnStatus		status;
-
-    if (migInfoPtr->ioFileID.serverID == rpc_SpriteID) {
-	/*
-	 * The device was remote, which is why we were called, but is now local.
-	 */
-	migInfoPtr->ioFileID.type = FS_LCL_DEVICE_STREAM;
-	return(FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
-		sizePtr, dataPtr));
-    }
-    migInfoPtr->ioFileID.type = FS_RMT_DEVICE_STREAM;
-    status = FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr,
-				0, (Address)NIL);
-    if (status != SUCCESS) {
-	printf( "FsRmtDeviceMigrate, server error <%x>\n",
-	    status);
-    } else {
-	*dataPtr = (Address)NIL;
-	*sizePtr = 0;
-    }
-    return(status);
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * FsDeviceMigEnd --
+ * Fsio_DeviceMigOpen --
  *
  *	Complete setup of a FS_DEVICE_STREAM after migration to the I/O server.
  *	The migrate routine has done the work of shifting use counts
@@ -1234,136 +674,33 @@ FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPt
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceMigEnd(migInfoPtr, size, data, hdrPtrPtr)
+Fsio_DeviceMigOpen(migInfoPtr, size, data, hdrPtrPtr)
     FsMigInfo	*migInfoPtr;	/* Migration state */
     int		size;		/* Zero */
     ClientData	data;		/* NIL */
-    FsHandleHeader **hdrPtrPtr;	/* Return - handle for the file */
+    Fs_HandleHeader **hdrPtrPtr;	/* Return - handle for the file */
 {
-    register FsDeviceIOHandle *devHandlePtr;
+    register Fsio_DeviceIOHandle *devHandlePtr;
 
-    devHandlePtr = FsHandleFetchType(FsDeviceIOHandle, &migInfoPtr->ioFileID);
-    if (devHandlePtr == (FsDeviceIOHandle *)NIL) {
-	panic( "FsDeviceMigEnd, no handlel\n");
+    devHandlePtr = Fsutil_HandleFetchType(Fsio_DeviceIOHandle, &migInfoPtr->ioFileID);
+    if (devHandlePtr == (Fsio_DeviceIOHandle *)NIL) {
+	panic( "Fsio_DeviceMigOpen, no handlel\n");
 	return(FAILURE);
     } else {
-	FsHandleUnlock(devHandlePtr);
-	*hdrPtrPtr = (FsHandleHeader *)devHandlePtr;
+	Fsutil_HandleUnlock(devHandlePtr);
+	*hdrPtrPtr = (Fs_HandleHeader *)devHandlePtr;
 	return(SUCCESS);
     }
 }
 
 /*
- * ----------------------------------------------------------------------------
- *
- * FsRemoteIOMigEnd --
- *
- *	Create a FS_RMT_DEVICE_STREAM or FS_RMT_PIPE_STREAM after migration.
- *	The srvMigrate routine has done most all the work.
- *	We just grab a reference on the I/O handle for the stream.
- *
- * Results:
- *	Sets the I/O handle.
- *
- * Side effects:
- *	May install the handle.  Ups use and reference counts.
- *
- * ----------------------------------------------------------------------------
- *
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRemoteIOMigEnd(migInfoPtr, size, data, hdrPtrPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
-    int		size;		/* Zero */
-    ClientData	data;		/* NIL */
-    FsHandleHeader **hdrPtrPtr;	/* Return - handle for the file */
-{
-    register FsRemoteIOHandle *rmtHandlePtr;
-    register FsRecoveryInfo *recovPtr;
-    Boolean found;
-
-    found = FsHandleInstall(&migInfoPtr->ioFileID, sizeof(FsRemoteIOHandle),
-		(char *)NIL, hdrPtrPtr);
-    rmtHandlePtr = (FsRemoteIOHandle *)*hdrPtrPtr;
-    recovPtr = &rmtHandlePtr->recovery;
-    if (!found) {
-	FsRecoveryInit(recovPtr);
-	fsStats.object.remote++;
-    }
-    recovPtr->use.ref++;
-    if (migInfoPtr->flags & FS_WRITE) {
-	recovPtr->use.write++;
-    }
-    FsHandleUnlock(rmtHandlePtr);
-    return(SUCCESS);
-}
-
-/*
  *----------------------------------------------------------------------
  *
- * FsRmtDeviceVerify --
- *
- *	Verify that the remote client is known for the device, and return
- *	a locked pointer to the device's I/O handle.
- *
- * Results:
- *	A pointer to the I/O handle for the device, or NIL if
- *	the client is bad.
- *
- * Side effects:
- *	The handle is returned locked and with its refCount incremented.
- *	It should be released with FsHandleRelease.
- *
- *----------------------------------------------------------------------
- */
-
-FsHandleHeader *
-FsRmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
-    Fs_FileID	*fileIDPtr;	/* Client's I/O file ID */
-    int		clientID;	/* Host ID of the client */
-    int		*domainTypePtr;	/* Return - FS_LOCAL_DOMAIN */
-{
-    register FsDeviceIOHandle	*devHandlePtr;
-    register FsClientInfo	*clientPtr;
-    Boolean			found = FALSE;
-
-    fileIDPtr->type = FsMapRmtToLclType(fileIDPtr->type);
-    if (fileIDPtr->type != FS_LCL_DEVICE_STREAM) {
-	printf("FsRmtDeviceVerify, bad file ID type\n");
-	return((FsHandleHeader *)NIL);
-    }
-    devHandlePtr = FsHandleFetchType(FsDeviceIOHandle, fileIDPtr);
-    if (devHandlePtr != (FsDeviceIOHandle *)NIL) {
-	LIST_FORALL(&devHandlePtr->clientList, (List_Links *) clientPtr) {
-	    if (clientPtr->clientID == clientID) {
-		found = TRUE;
-		break;
-	    }
-	}
-	if (!found) {
-	    FsHandleRelease(devHandlePtr, TRUE);
-	    devHandlePtr = (FsDeviceIOHandle *)NIL;
-	}
-    }
-    if (!found) {
-	printf("FsRmtDeviceVerify, client %d not known for device <%d,%d>\n",
-	    clientID, fileIDPtr->major, fileIDPtr->minor);
-    }
-    if (domainTypePtr != (int *)NIL) {
-	*domainTypePtr = FS_LOCAL_DOMAIN;
-    }
-    return((FsHandleHeader *)devHandlePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsDeviceRead --
+ * Fsio_DeviceRead --
  *
  *      Read on a stream connected to a local peripheral device.
  *	This branches to the driver routine after setting up buffers.
- *	This is called from Fs_Read and from Fs_RpcRead.
+ *	This is called from Fs_Read and from Fsrmt_RpcRead.
  *
  * Results:
  *	SUCCESS unless there was an address error or I/O error.
@@ -1374,17 +711,16 @@ FsRmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
+Fsio_DeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     Fs_Stream		*streamPtr;	/* Open stream to the device. */
     Fs_IOParam		*readPtr;	/* Read parameter block. */
     Sync_RemoteWaiter	*remoteWaitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any,
 					 * plus the amount read. */
 {
-    register FsDeviceIOHandle	*devHandlePtr =
-	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_DeviceIOHandle	*devHandlePtr =
+	    (Fsio_DeviceIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
-    register Address	readBuffer;
     register Fs_Device	*devicePtr;
     int	     flags;
     Address userBuffer;
@@ -1397,7 +733,7 @@ FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
      * it doesn't want it.
      */
     if (!(flags & FS_DEV_DONT_LOCK)) { 
-	FsHandleLock(devHandlePtr);
+	Fsutil_HandleLock(devHandlePtr);
     }
     /*
      * Because the read could take a while and we aren't mapping in
@@ -1417,7 +753,7 @@ FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
      * This is to prevent races with the device's notification which
      * happens from an interrupt handler.
      */
-    FsWaitListInsert(&devHandlePtr->readWaitList, remoteWaitPtr);
+    Fsutil_WaitListInsert(&devHandlePtr->readWaitList, remoteWaitPtr);
     devicePtr = &devHandlePtr->device;
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)(devicePtr,
 		readPtr, replyPtr);
@@ -1431,12 +767,12 @@ FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 	readPtr->buffer = userBuffer;
     }
     if (status != FS_WOULD_BLOCK) {
-	FsWaitListRemove(&devHandlePtr->readWaitList, remoteWaitPtr);
+	Fsutil_WaitListRemove(&devHandlePtr->readWaitList, remoteWaitPtr);
     }
-    devHandlePtr->accessTime = fsTimeInSeconds;
-    fsStats.gen.deviceBytesRead += replyPtr->length;
+    devHandlePtr->accessTime = fsutil_TimeInSeconds;
+    fs_Stats.gen.deviceBytesRead += replyPtr->length;
     if (!(flags & FS_DEV_DONT_LOCK)) { 
-	FsHandleUnlock(devHandlePtr);
+	Fsutil_HandleUnlock(devHandlePtr);
     }
     return(status);
 }
@@ -1444,10 +780,10 @@ FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceWrite --
+ * Fsio_DeviceWrite --
  *
  *      Write on a stream connected to a local peripheral device.
- *	This is called from Fs_Write and Fs_RpcWrite.
+ *	This is called from Fs_Write and Fsrmt_RpcWrite.
  *
  * Results:
  *	SUCCESS unless there was an address error or I/O error.
@@ -1458,16 +794,15 @@ FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
+Fsio_DeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     Fs_Stream		*streamPtr;	/* Open stream to the device. */
     Fs_IOParam		*writePtr;	/* Read parameter block */
     Sync_RemoteWaiter	*remoteWaitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any */
 {
-    register FsDeviceIOHandle	*devHandlePtr =
-	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_DeviceIOHandle	*devHandlePtr =
+	    (Fsio_DeviceIOHandle *)streamPtr->ioHandlePtr;
     ReturnStatus	status = SUCCESS;
-    register Address	writeBuffer;
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     Address		userBuffer;
     int			flags;
@@ -1479,7 +814,7 @@ FsDeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
      * it doesn't want it.
      */
     if (!(flags & FS_DEV_DONT_LOCK)) { 
-	FsHandleLock(devHandlePtr);
+	Fsutil_HandleLock(devHandlePtr);
     }
     /*
      * Because the write could take a while and we aren't mapping in
@@ -1502,14 +837,14 @@ FsDeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	 * This is to prevent races with the device's notification which
 	 * happens from an interrupt handler.
 	 */
-	FsWaitListInsert(&devHandlePtr->writeWaitList, remoteWaitPtr);
+	Fsutil_WaitListInsert(&devHandlePtr->writeWaitList, remoteWaitPtr);
 	status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].write)(devicePtr,
 		writePtr, replyPtr);
 	if (status != FS_WOULD_BLOCK) {
-	    FsWaitListRemove(&devHandlePtr->writeWaitList, remoteWaitPtr);
+	    Fsutil_WaitListRemove(&devHandlePtr->writeWaitList, remoteWaitPtr);
 	}
-	devHandlePtr->modifyTime = fsTimeInSeconds;
-	fsStats.gen.deviceBytesWritten += replyPtr->length;
+	devHandlePtr->modifyTime = fsutil_TimeInSeconds;
+	fs_Stats.gen.deviceBytesWritten += replyPtr->length;
     }
 
     if (copy) {
@@ -1517,7 +852,7 @@ FsDeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	writePtr->buffer = userBuffer;
     }
     if (!(flags & FS_DEV_DONT_LOCK)) { 
-	FsHandleUnlock(devHandlePtr);
+	Fsutil_HandleUnlock(devHandlePtr);
     }
     return(status);
 }
@@ -1525,7 +860,7 @@ FsDeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceSelect --
+ * Fsio_DeviceSelect --
  *
  *      Select on a stream connected to a local peripheral device.  This
  *	ensures that the calling process is on a waiting list, then calls
@@ -1544,27 +879,27 @@ FsDeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
-    FsHandleHeader	*hdrPtr;	/* Handle on device to select */
+Fsio_DeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    Fs_HandleHeader	*hdrPtr;	/* Handle on device to select */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     int 		*readPtr;	/* Bit to clear if non-readable */
     int 		*writePtr;	/* Bit to clear if non-writeable */
     int 		*exceptPtr;	/* Bit to clear if non-exceptable */
 {
-    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)hdrPtr;
+    register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)hdrPtr;
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     register ReturnStatus status;
 
-    FsHandleLock(devHandlePtr);
+    Fsutil_HandleLock(devHandlePtr);
     if (waitPtr != (Sync_RemoteWaiter *)NIL) {
 	if (*readPtr) {
-	    FsWaitListInsert(&devHandlePtr->readWaitList, waitPtr);
+	    Fsutil_WaitListInsert(&devHandlePtr->readWaitList, waitPtr);
 	}
 	if (*writePtr) {
-	    FsWaitListInsert(&devHandlePtr->writeWaitList, waitPtr);
+	    Fsutil_WaitListInsert(&devHandlePtr->writeWaitList, waitPtr);
 	}
 	if (*exceptPtr) {
-	    FsWaitListInsert(&devHandlePtr->exceptWaitList, waitPtr);
+	    Fsutil_WaitListInsert(&devHandlePtr->exceptWaitList, waitPtr);
 	}
     }
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].select)(devicePtr,
@@ -1572,23 +907,23 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 
     if (waitPtr != (Sync_RemoteWaiter *)NIL) {
 	if (*readPtr != 0) {
-	    FsWaitListRemove(&devHandlePtr->readWaitList, waitPtr);
+	    Fsutil_WaitListRemove(&devHandlePtr->readWaitList, waitPtr);
 	}
 	if (*writePtr != 0) {
-	    FsWaitListRemove(&devHandlePtr->writeWaitList, waitPtr);
+	    Fsutil_WaitListRemove(&devHandlePtr->writeWaitList, waitPtr);
 	}
 	if (*exceptPtr != 0) {
-	    FsWaitListRemove(&devHandlePtr->exceptWaitList, waitPtr);
+	    Fsutil_WaitListRemove(&devHandlePtr->exceptWaitList, waitPtr);
 	}
     }
-    FsHandleUnlock(devHandlePtr);
+    Fsutil_HandleUnlock(devHandlePtr);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceIOControl --
+ * Fsio_DeviceIOControl --
  *
  *      Write on a stream connected to a peripheral device.  Called from
  *	FsDomainWrite.
@@ -1602,35 +937,34 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr)
+Fsio_DeviceIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream *streamPtr;		/* Stream to a device. */
     Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
     Fs_IOReply *replyPtr;		/* Return length and signal */
 {
-    register FsDeviceIOHandle *devHandlePtr =
-	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_DeviceIOHandle *devHandlePtr =
+	    (Fsio_DeviceIOHandle *)streamPtr->ioHandlePtr;
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     register ReturnStatus status = SUCCESS;
-    static Boolean warned = FALSE;
 
     switch (ioctlPtr->command) {
 	case IOC_LOCK:
 	case IOC_UNLOCK:
-	    FsHandleLock(devHandlePtr);
-	    status = FsIocLock(&devHandlePtr->lock, ioctlPtr,
+	    Fsutil_HandleLock(devHandlePtr);
+	    status = Fsio_IocLock(&devHandlePtr->lock, ioctlPtr,
 			&streamPtr->hdr.fileID);
-	    FsHandleUnlock(devHandlePtr);
+	    Fsutil_HandleUnlock(devHandlePtr);
 	    break;
 	case IOC_PREFIX:
 	    break;
 	default:
 	    if (!(devHandlePtr->flags & FS_DEV_DONT_LOCK)) { 
-		FsHandleLock(devHandlePtr);
+		Fsutil_HandleLock(devHandlePtr);
 	    }
 	    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].ioctl)
 		    (devicePtr, ioctlPtr, replyPtr);
 	    if (!(devHandlePtr->flags & FS_DEV_DONT_LOCK)) { 
-		FsHandleUnlock(devHandlePtr);
+		Fsutil_HandleUnlock(devHandlePtr);
 	    }
 	    break;
     }
@@ -1640,11 +974,11 @@ FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceGetIOAttr --
+ * Fsio_DeviceGetIOAttr --
  *
  *      Get the I/O attributes for a device.  A copy of the access and
  *	modify times are kept at the I/O server.  This routine is called
- *	either from Fs_GetAttrStream or Fs_RpcGetIOAttr to update
+ *	either from Fs_GetAttrStream or Fsrmt_RpcGetIOAttr to update
  *	the initial copy of the attributes obtained from the name server.
  *
  * Results:
@@ -1657,22 +991,22 @@ FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceGetIOAttr(fileIDPtr, clientID, attrPtr)
+Fsio_DeviceGetIOAttr(fileIDPtr, clientID, attrPtr)
     Fs_FileID			*fileIDPtr;	/* FileID of device */
     int 			clientID;	/* IGNORED */
     register Fs_Attributes	*attrPtr;	/* Attributes to update */
 {
-    register FsDeviceIOHandle *devHandlePtr;
+    register Fsio_DeviceIOHandle *devHandlePtr;
 
-    devHandlePtr = FsHandleFetchType(FsDeviceIOHandle, fileIDPtr);
-    if (devHandlePtr != (FsDeviceIOHandle *)NIL) {
+    devHandlePtr = Fsutil_HandleFetchType(Fsio_DeviceIOHandle, fileIDPtr);
+    if (devHandlePtr != (Fsio_DeviceIOHandle *)NIL) {
 	if (devHandlePtr->accessTime > attrPtr->accessTime.seconds) {
 	    attrPtr->accessTime.seconds = devHandlePtr->accessTime;
 	}
 	if (devHandlePtr->modifyTime > attrPtr->dataModifyTime.seconds) {
 	    attrPtr->dataModifyTime.seconds = devHandlePtr->modifyTime;
 	}
-	FsHandleRelease(devHandlePtr, TRUE);
+	Fsutil_HandleRelease(devHandlePtr, TRUE);
     }
     return(SUCCESS);
 }
@@ -1680,11 +1014,11 @@ FsDeviceGetIOAttr(fileIDPtr, clientID, attrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceSetIOAttr --
+ * Fsio_DeviceSetIOAttr --
  *
  *      Set the I/O attributes for a device.  A copy of the access and
  *	modify times are kept at the I/O server.  This routine is called
- *	either from Fs_SetAttrStream or Fs_RpcSetIOAttr to update
+ *	either from Fs_SetAttrStream or Fsrmt_RpcSetIOAttr to update
  *	the cached copy of the attributes.
  *
  * Results:
@@ -1697,30 +1031,31 @@ FsDeviceGetIOAttr(fileIDPtr, clientID, attrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceSetIOAttr(fileIDPtr, attrPtr, flags)
+Fsio_DeviceSetIOAttr(fileIDPtr, attrPtr, flags)
     Fs_FileID			*fileIDPtr;	/* FileID of device */
     register Fs_Attributes	*attrPtr;	/* Attributes to copy */
     int				flags;		/* What attrs to set */
 {
-    register FsDeviceIOHandle *devHandlePtr;
+    register Fsio_DeviceIOHandle *devHandlePtr;
 
     if (flags & FS_SET_TIMES) {
-	devHandlePtr = FsHandleFetchType(FsDeviceIOHandle, fileIDPtr);
-	if (devHandlePtr != (FsDeviceIOHandle *)NIL) {
+	devHandlePtr = Fsutil_HandleFetchType(Fsio_DeviceIOHandle, fileIDPtr);
+	if (devHandlePtr != (Fsio_DeviceIOHandle *)NIL) {
 	    devHandlePtr->accessTime = attrPtr->accessTime.seconds;
 	    devHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
-	    FsHandleRelease(devHandlePtr, TRUE);
+	    Fsutil_HandleRelease(devHandlePtr, TRUE);
 	}
     }
     return(SUCCESS);
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Fs_DevNotifyReader --
+ * Fsio_DevNotifyReader --
  *
- *	Fs_DevNotifyReader is available to device driver interrupt handlers
+ *	Fsio_DevNotifyReader is available to device driver interrupt handlers
  *	that need to notify waiting processes that the device is readable.
  *	It schedules a process level call to ReadNotify, which
  *	in turn iterates down the list of handles for the device waking up
@@ -1731,22 +1066,22 @@ FsDeviceSetIOAttr(fileIDPtr, attrPtr, flags)
  *
  * Side effects:
  *	Schedules a call to DevListNotify, which in turn calls
- *	FsWaitListNotify to schedule any waiting readers.
+ *	Fsutil_WaitListNotify to schedule any waiting readers.
  *
  *----------------------------------------------------------------------
  */
 void
-Fs_DevNotifyReader(notifyToken)
+Fsio_DevNotifyReader(notifyToken)
     Fs_NotifyToken notifyToken;
 {
-    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)notifyToken;
+    register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)notifyToken;
 
-    if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
+    if ((devHandlePtr == (Fsio_DeviceIOHandle *)NIL) ||
 	(devHandlePtr->notifyFlags & FS_READABLE)) {
 	return;
     }
-    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	printf("Fs_DevNotifyReader, bad handle\n");
+    if (devHandlePtr->hdr.fileID.type != FSIO_LCL_DEVICE_STREAM) {
+	printf("Fsio_DevNotifyReader, bad handle\n");
     }
     devHandlePtr->notifyFlags |= FS_READABLE;
     Proc_CallFunc(ReadNotify, (ClientData) devHandlePtr, 0);
@@ -1757,12 +1092,12 @@ ReadNotify(data, callInfoPtr)
     ClientData		data;
     Proc_CallInfo	*callInfoPtr;
 {
-    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
-    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
+    register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)data;
+    if (devHandlePtr->hdr.fileID.type != FSIO_LCL_DEVICE_STREAM) {
 	printf("ReadNotify, lost device handle\n");
     } else {
 	devHandlePtr->notifyFlags &= ~FS_READABLE;
-	FsWaitListNotify(&devHandlePtr->readWaitList);
+	Fsutil_WaitListNotify(&devHandlePtr->readWaitList);
     }
     callInfoPtr->interval = 0;
 }
@@ -1771,9 +1106,9 @@ ReadNotify(data, callInfoPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_DevNotifyWriter --
+ * Fsio_DevNotifyWriter --
  *
- *	Fs_DevNotifyWriter is available to device driver interrupt handlers
+ *	Fsio_DevNotifyWriter is available to device driver interrupt handlers
  *	that need to notify waiting processes that the device is writeable.
  *	It schedules a process level call to Fs_WaitListNotifyStub on the
  *	devices's write wait list.
@@ -1787,17 +1122,17 @@ ReadNotify(data, callInfoPtr)
  *----------------------------------------------------------------------
  */
 void
-Fs_DevNotifyWriter(notifyToken)
+Fsio_DevNotifyWriter(notifyToken)
     Fs_NotifyToken notifyToken;
 {
-    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)notifyToken;
+    register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)notifyToken;
 
-    if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
+    if ((devHandlePtr == (Fsio_DeviceIOHandle *)NIL) ||
 	(devHandlePtr->notifyFlags & FS_WRITABLE)) {
 	return;
     }
-    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	printf("Fs_DevNotifyWriter, bad handle\n");
+    if (devHandlePtr->hdr.fileID.type != FSIO_LCL_DEVICE_STREAM) {
+	printf("Fsio_DevNotifyWriter, bad handle\n");
 	return;
     }
     devHandlePtr->notifyFlags |= FS_WRITABLE;
@@ -1809,12 +1144,12 @@ WriteNotify(data, callInfoPtr)
     ClientData		data;
     Proc_CallInfo	*callInfoPtr;
 {
-    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
-    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
+    register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)data;
+    if (devHandlePtr->hdr.fileID.type != FSIO_LCL_DEVICE_STREAM) {
 	printf( "WriteNotify, lost device handle\n");
     } else {
 	devHandlePtr->notifyFlags &= ~FS_WRITABLE;
-	FsWaitListNotify(&devHandlePtr->writeWaitList);
+	Fsutil_WaitListNotify(&devHandlePtr->writeWaitList);
     }
     callInfoPtr->interval = 0;
 }
@@ -1824,7 +1159,7 @@ WriteNotify(data, callInfoPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_DevNotifyException --
+ * Fsio_DevNotifyException --
  *
  *	This is available to device driver interrupt handlers
  *	that need to notify waiting processes that there is an exception
@@ -1842,12 +1177,12 @@ WriteNotify(data, callInfoPtr)
  *----------------------------------------------------------------------
  */
 void
-Fs_DevNotifyException(notifyToken)
+Fsio_DevNotifyException(notifyToken)
     Fs_NotifyToken notifyToken;
 {
-    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)notifyToken;
+    register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)notifyToken;
 
-    if (devHandlePtr == (FsDeviceIOHandle *)NIL) {
+    if (devHandlePtr == (Fsio_DeviceIOHandle *)NIL) {
 	return;
     }
     Proc_CallFunc(ExceptionNotify, (ClientData) devHandlePtr, 0);
@@ -1858,15 +1193,15 @@ ExceptionNotify(data, callInfoPtr)
     ClientData		data;
     Proc_CallInfo	*callInfoPtr;
 {
-    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
-    FsWaitListNotify(&devHandlePtr->exceptWaitList);
+    register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)data;
+    Fsutil_WaitListNotify(&devHandlePtr->exceptWaitList);
     callInfoPtr->interval = 0;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsDeviceBlockIO --
+ * Fsio_DeviceBlockIO --
  *
  *	Map a file system block address to a block device block address 
  *	perform the requested operation.
@@ -1884,7 +1219,7 @@ ExceptionNotify(data, callInfoPtr)
  */
 
 ReturnStatus
-FsDeviceBlockIO(readWriteFlag, devicePtr, fragNumber, numFrags, buffer)
+Fsio_DeviceBlockIO(readWriteFlag, devicePtr, fragNumber, numFrags, buffer)
     int readWriteFlag;		/* FS_READ or FS_WRITE */
     Fs_Device *devicePtr;	/* Specifies device type to do I/O with */
     int fragNumber;		/* CAREFUL, fragment index, not block index.
@@ -1911,7 +1246,7 @@ FsDeviceBlockIO(readWriteFlag, devicePtr, fragNumber, numFrags, buffer)
 	if (extraFrags > numFrags) {
 	    extraFrags = numFrags;
 	}
-	firstSector = Fs_BlocksToSectors(fragNumber, handlePtr->clientData);
+	firstSector = Fsdm_BlocksToSectors(fragNumber, handlePtr->clientData);
 	request.operation = readWriteFlag;
 	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
 	request.startAddrHigh = 0;
@@ -1930,7 +1265,7 @@ FsDeviceBlockIO(readWriteFlag, devicePtr, fragNumber, numFrags, buffer)
 	/*
 	 * Transfer whole blocks.
 	 */
-	firstSector = Fs_BlocksToSectors(fragNumber, handlePtr->clientData);
+	firstSector = Fsdm_BlocksToSectors(fragNumber, handlePtr->clientData);
 	request.operation = readWriteFlag;
 	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
 	request.startAddrHigh = 0;
@@ -1948,7 +1283,7 @@ FsDeviceBlockIO(readWriteFlag, devicePtr, fragNumber, numFrags, buffer)
 	/*
 	 * Transfer the left over fragments.
 	 */
-	firstSector = Fs_BlocksToSectors(fragNumber, handlePtr->clientData);
+	firstSector = Fsdm_BlocksToSectors(fragNumber, handlePtr->clientData);
 	request.operation = readWriteFlag;
 	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
 	request.startAddrHigh = 0;

@@ -1,7 +1,7 @@
 /*
- * fsMigrate.h --
+ * fsRmtMigrate.h --
  *
- *	Declarations for file migration routines.
+ *	Declarations for RMT file migration routines.
  *
  * Copyright 1987, 1988 Regents of the University of California
  * All rights reserved.
@@ -16,48 +16,29 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _FSMIGRATE
-#define _FSMIGRATE
+#ifndef _FSRMTMIGRATE
+#define _FSRMTMIGRATE
 
+#include "fsNameOps.h"
 #include "fsNameOpsInt.h"
-/*
- * Structure that is transfered when a process is migrated.
- */
-
-typedef struct FsMigInfo {
-    Fs_FileID	streamID;	/* Stream identifier. */
-    Fs_FileID    ioFileID;     	/* I/O handle for the stream. */
-    Fs_FileID	nameID;		/* ID of name of the file.  Used for attrs. */
-    Fs_FileID	rootID;		/* ID of the root of the file's domain. */
-    int		srcClientID;	/* Client transfering from. */
-    int         offset;     	/* File access position. */
-    int         flags;      	/* Usage flags from the stream. */
-} FsMigInfo;
-
-extern Boolean fsMigDebug;	/* enable migration debugging statements? */
+extern Boolean fsio_MigDebug;	/* enable migration debugging statements? */
 
 /*
  * The following record defines what parameters the I/O server returns
  * after being told about a migration.
  */
-typedef struct FsMigrateReply {
+typedef struct FsrmtMigrateReply {
     int flags;		/* New stream flags, the FS_RMT_SHARED bit is modified*/
     int offset;		/* New stream offset */
-} FsMigrateReply;
+} FsrmtMigrateReply;
 
 /*
  * This structure is for byte-swapping the rpc parameters correctly.
  */
-typedef struct  FsMigParam {
+typedef struct  FsrmtMigParam {
     int			dataSize;
-    FsUnionData		data;
-    FsMigrateReply	migReply;
-} FsMigParam;
+    FsrmtUnionData		data;
+    FsrmtMigrateReply	migReply;
+} FsrmtMigParam;
 
-/*
- * File migration utilities.
- */
-extern ReturnStatus	FsMigrateUseCounts();
-extern void		FsIOClientMigrate();
-extern ReturnStatus	FsNotifyOfMigration();
-#endif /* _FSMIGRATE */
+#endif _FSRMTMIGRATE

@@ -14,59 +14,59 @@
 
 #include "list.h"
 
-/*
+/* 
  * The hash table includes an array of bucket list headers,
  * and some administrative information that affects the hash
  * function and comparison functions.  The table is contrained to
  * have a power of two number of entries to make the hashing go faster.
  */
-typedef struct FsHashTable {
-    struct FsHashBucket *table;	/* Pointer to array of List_Links. */
+typedef struct FslclHashTable {
+    struct FslclHashBucket *table;	/* Pointer to array of List_Links. */
     List_Links		lruList;	/* The header of the LRU list */
     int 		size;		/* Actual size of array. */
     int 		numEntries;	/* Number of entries in the table. */
-    int 		downShift;	/* Shift count, used in hashing
+    int 		downShift;	/* Shift count, used in hashing 
 					 * function. */
     int 		mask;		/* Used to select bits for hashing. */
-} FsHashTable;
+} FslclHashTable;
 
 /*
  * Default size of the name hash table.
  */
-extern fsNameHashSize;
-#define FS_NAME_HASH_SIZE	512
+extern fslclNameHashSize;
+#define FSLCL_NAME_HASH_SIZE	512
 
 /*
  * The bucket header is just a list header.
  */
 
-typedef struct FsHashBucket {
+typedef struct FslclHashBucket {
     List_Links	list;
-} FsHashBucket;
+} FslclHashBucket;
 
-/*
- * The following defines one entry in the hash table.
+/* 
+ * The following defines one entry in the hash table. 
  */
 
-typedef struct FsHashEntry {
+typedef struct FslclHashEntry {
     List_Links	links;		/* For the list starting at the bucket header */
-    FsHashBucket *bucketPtr;	/* Pointer to hash bucket for this entry */
+    FslclHashBucket *bucketPtr;	/* Pointer to hash bucket for this entry */
     struct FsLruList {
 	List_Links links;	/* Links for the LRU list */
-	struct FsHashEntry *entryPtr;	/* Back pointer needed to get entry */
+	struct FslclHashEntry *entryPtr;	/* Back pointer needed to get entry */
     } lru;
-    FsHandleHeader *hdrPtr;	/* Pointer to handle of named component. */
-    FsHandleHeader *keyHdrPtr;	/* Pointer to handle of parent directory. */
+    Fs_HandleHeader *hdrPtr;	/* Pointer to handle of named component. */
+    Fs_HandleHeader *keyHdrPtr;	/* Pointer to handle of parent directory. */
     char 	keyName[4];	/* Text name of this entry.  Note: the
 				 * actual size may be longer if necessary
 				 * to hold the whole string. This MUST be
 				 * the last entry in the structure!!! */
-} FsHashEntry;
+} FslclHashEntry;
 
-typedef struct FsLruEntry {
+typedef struct FslclLruEntry {
     List_Links	lruList;	/* This record is used to map from the LRU */
-    FsHashBucket *entryPtr;	/* List back to the hash entry */
-} FsLruEntry;
+    FslclHashBucket *entryPtr;	/* List back to the hash entry */
+} FslclLruEntry;
 
 /*
  * The following procedure declarations and macros
@@ -74,34 +74,30 @@ typedef struct FsLruEntry {
  * the implementation code.
  */
 
-extern FsHashTable	fsNameTable;
-extern FsHashTable	*fsNameTablePtr;
-extern Boolean		fsNameCaching;
+extern FslclHashTable	fslclNameTable;
+extern FslclHashTable	*fslclNameTablePtr;
+extern Boolean		fslclNameCaching;
 
-extern void 		FsNameHashInit();
-extern void		Fs_NameHashStats();
-extern void		FsHashKill();
-extern FsHashEntry 	*FsHashFind();
-extern FsHashEntry 	*FsHashLookOnly();
-extern void 		FsHashDelete();
-extern void 		FsHashStartSearch();
-extern FsHashEntry	*FsHashInsert();
-extern FsHashEntry	*FsHashNext();
+extern void 		FslclNameHashInit();
+extern void		FslclNameHashStats();
+extern FslclHashEntry 	*FslclHashLookOnly();
+extern void 		FslclHashDelete();
+extern FslclHashEntry	*FslclHashInsert();
 
-#define FS_HASH_LOOK_ONLY(table, string, keyHandle) \
-    (fsNameCaching ? \
-	FsHashLookOnly(table, string, (FsHandleHeader *)keyHandle) : \
-	(FsHashEntry *)NIL)
+#define FSLCL_HASH_LOOK_ONLY(table, string, keyHandle) \
+    (fslclNameCaching ? \
+	FslclHashLookOnly(table, string, (Fs_HandleHeader *)keyHandle) : \
+	(FslclHashEntry *)NIL)
 
-#define FS_HASH_INSERT(table, string, keyHandle, handle) \
-    if (fsNameCaching) { \
-	(void)FsHashInsert(table, string, (FsHandleHeader *)keyHandle, \
-			   (FsHandleHeader *)handle); \
+#define FSLCL_HASH_INSERT(table, string, keyHandle, handle) \
+    if (fslclNameCaching) { \
+	(void)FslclHashInsert(table, string, (Fs_HandleHeader *)keyHandle, \
+			   (Fs_HandleHeader *)handle); \
     }
 
-#define FS_HASH_DELETE(table, string, keyHandle) \
-    if (fsNameCaching) { \
-	FsHashDelete(table, string, (FsHandleHeader *)keyHandle); \
+#define FSLCL_HASH_DELETE(table, string, keyHandle) \
+    if (fslclNameCaching) { \
+	FslclHashDelete(table, string, (Fs_HandleHeader *)keyHandle); \
     }
 
-#endif /* _FSNAMEHASH */
+#endif _FSNAMEHASH

@@ -31,14 +31,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include	"sprite.h"
 #include	"fs.h"
-#include	"fsInt.h"
-#include	"fsClient.h"
-#include	"fsConsist.h"
-#include	"fsBlockCache.h"
-#include	"fsCacheOps.h"
-#include	"fsOpTable.h"
-#include	"fsLocalDomain.h"
-#include	"fsDebug.h"
+#include	"fsutil.h"
+#include	"fsconsist.h"
+#include	"fscache.h"
+#include	"fsNameOps.h"
+#include	"fslcl.h"
 #include	"hash.h"
 #include	"vm.h"
 #include	"proc.h"
@@ -47,17 +44,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include	"recov.h"
 #include	"timer.h"
 #include	"dbg.h"
+#include 	"fsio.h"
+#include	"fsrmt.h"
+#include	"fsdm.h"
 
 #define	LOCKPTR	(&consistPtr->lock)
 
-Boolean	fsCacheDebug = FALSE;
-Boolean	fsClientCaching = TRUE;
+Boolean	fsconsist_Debug = FALSE;
+Boolean	fsconsist_ClientCachingEnabled = TRUE;
 #ifdef CONSIST_DEBUG
 int	fsTraceConsistMinor = 2249;
 #endif /* CONSIST_DEBUG */
 
 /*
- * Flags for the FsConsistInfo struct that's defined in fsInt.h
+ * Flags for the Fsconsist_Info struct that's defined in fsInt.h
  *
  *	FS_CONSIST_IN_PROGRESS	Cache consistency is being performed on this
  *				file.
@@ -76,7 +76,7 @@ int	fsTraceConsistMinor = 2249;
  * complete.  This time has to be enough to let a client with a large
  * main-memory cache writeback a large file.
  */
-int fsConsistTimeoutMinutes = 5;
+int fsconsist_TimeoutMinutes = 5;
 
 /*
  * Rpc to send when forcing a client to invalidate or write back a file.
@@ -96,7 +96,7 @@ typedef struct ConsistMsg {
 
 typedef struct ConsistReply {
     Fs_FileID 		fileID;
-    FsCachedAttributes	cachedAttr;
+    Fscache_Attributes	cachedAttr;
     ReturnStatus	status;
 } ConsistReply;
 
@@ -121,7 +121,7 @@ static	int	openTimeStamp = 0;
  * Cache conistency statistics.
  */
 
-FsCacheConsistStats fsConsistStats;
+Fsconsist_Stats fsconsist_Stats;
 
 /*
  * Forward declarations.
@@ -140,7 +140,7 @@ char *		ConsistType();
 /*
  * ----------------------------------------------------------------------------
  *
- * FsConsistInit --
+ * Fsconsist_Init --
  *
  *      Initialize the client use information for a file.  This is done
  *	before adding any clients so it just resets all the fields.
@@ -155,9 +155,9 @@ char *		ConsistType();
  *
  */
 void
-FsConsistInit(consistPtr, hdrPtr)
-    register FsConsistInfo *consistPtr;	/* State to initialize */
-    FsHandleHeader *hdrPtr;		/* Back pointer to handle */
+Fsconsist_Init(consistPtr, hdrPtr)
+    register Fsconsist_Info *consistPtr;	/* State to initialize */
+    Fs_HandleHeader *hdrPtr;		/* Back pointer to handle */
 {
     Sync_LockInitDynamic(&consistPtr->lock, "Fs:consistLock");
     consistPtr->flags = 0;
@@ -173,7 +173,7 @@ FsConsistInit(consistPtr, hdrPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsConsistSyncLockCleanup --
+ * Fsconsist_SyncLockCleanup --
  *
  *      Clean up Sync_Lock tracing for the cache lock.
  *
@@ -187,8 +187,8 @@ FsConsistInit(consistPtr, hdrPtr)
  *
  */
 void
-FsConsistSyncLockCleanup(consistPtr)
-    register FsConsistInfo *consistPtr;	/* State to initialize */
+Fsconsist_SyncLockCleanup(consistPtr)
+    register Fsconsist_Info *consistPtr;	/* State to initialize */
 {
     Sync_LockClear(&consistPtr->lock);
 }
@@ -196,7 +196,7 @@ FsConsistSyncLockCleanup(consistPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFileConsistency --
+ * Fsconsist_FileConsistency --
  *
  *	Take action to ensure that the caches are consistency for this
  *	file.  This checks against use conflicts and will return an
@@ -220,9 +220,9 @@ FsConsistSyncLockCleanup(consistPtr)
  *
  */
 ENTRY ReturnStatus
-FsFileConsistency(handlePtr, clientID, useFlags, cacheablePtr,
+Fsconsist_FileConsistency(handlePtr, clientID, useFlags, cacheablePtr,
     openTimeStampPtr)
-    FsLocalFileIOHandle *handlePtr;	/* File to check consistency of. */
+    Fsio_FileIOHandle *handlePtr;	/* File to check consistency of. */
     int 		clientID;	/* ID of the host doing the open */
     register int 	useFlags;	/* useFlags from the open call */
     Boolean		*cacheablePtr;	/* TRUE if file is cacheable. */
@@ -230,7 +230,7 @@ FsFileConsistency(handlePtr, clientID, useFlags, cacheablePtr,
 					 * to catch races between open replies
 					 * and cache consistency messages */
 {
-    register FsConsistInfo *consistPtr = &handlePtr->consist;
+    register Fsconsist_Info *consistPtr = &handlePtr->consist;
     ReturnStatus status;
 
     LOCK_MONITOR;
@@ -279,14 +279,14 @@ FsFileConsistency(handlePtr, clientID, useFlags, cacheablePtr,
 
 INTERNAL void
 StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
-    FsConsistInfo	*consistPtr;	/* File's consistency state. */
+    Fsconsist_Info	*consistPtr;	/* File's consistency state. */
     int			clientID;	/* ID of host opening the file */
     int			useFlags;	/* Indicates how they are using it */
     Boolean		*cacheablePtr;	/* Return, TRUE if client can cache */
 {
-    register FsClientInfo *clientPtr;
-    register FsClientInfo *nextClientPtr;
-    register FsCacheConsistStats *statPtr = &fsConsistStats;
+    register Fsconsist_ClientInfo *clientPtr;
+    register Fsconsist_ClientInfo *nextClientPtr;
+    register Fsconsist_Stats *statPtr = &fsconsist_Stats;
     register int openForWriting = useFlags & FS_WRITE;
     register Boolean cacheable;
 
@@ -310,10 +310,10 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
      *     This includes one writer and one or more readers on other hosts,
      *	   and writers on multiple hosts.
      */
-    cacheable = fsClientCaching;
+    cacheable = fsconsist_ClientCachingEnabled;
     if ((useFlags & FS_SWAP) && (clientID != rpc_SpriteID)) {
 	cacheable = FALSE;
-    } else if (((FsLocalFileIOHandle *)consistPtr->hdrPtr)->descPtr->fileType
+    } else if (((Fsio_FileIOHandle *)consistPtr->hdrPtr)->descPtr->fileType
 		    != FS_FILE) {
 	cacheable = FALSE;
     }
@@ -334,7 +334,7 @@ done:
 	printf("File <%d,%d> version %d start consist w/ use 0x%x, %s\n",
 		consistPtr->hdrPtr->fileID.major,
 		consistPtr->hdrPtr->fileID.minor,
-		((FsLocalFileIOHandle *)consistPtr->hdrPtr)->cacheInfo.version,
+		((Fsio_FileIOHandle *)consistPtr->hdrPtr)->cacheInfo.version,
 		useFlags, (cacheable ? "cacheable" : "not cacheable"));
     }
 #endif /* CONSIST_DEBUG */
@@ -348,11 +348,11 @@ done:
      * a call-back so we can't use a simple LIST_FOR_ALL here.
      */
     statPtr->numConsistChecks++;
-    nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
+    nextClientPtr = (Fsconsist_ClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
 	clientPtr->locked = FALSE;
-	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+	nextClientPtr = (Fsconsist_ClientInfo *)List_Next((List_Links *)clientPtr);
 	/*
 	 * Hang onto the next client element across calls to ClientCommand,
 	 * which releases the consistency lock and may allow client list
@@ -365,7 +365,7 @@ done:
 	    /*
 	     * Don't call back to the client doing the open.  That can
 	     * cause deadlock.  Instead, that client takes care of its
-	     * own cache via the FsCacheUpdate procedure.
+	     * own cache via the Fscache_UpdateFile procedure.
 	     */
 	    continue;
 	}
@@ -401,7 +401,7 @@ done:
 		 * dirty blocks so the opening client will get good data.
 		 */
 		ClientCommand(consistPtr, clientPtr,
-					FS_WRITE_BACK_BLOCKS);
+					FSCONSIST_WRITE_BACK_BLOCKS);
 		statPtr->writeBack++;
 	    }
 	} else {
@@ -410,7 +410,7 @@ done:
 		 * Case 5, another reader needs to stop caching.
 		 */
 		ClientCommand(consistPtr, clientPtr,
-					FS_INVALIDATE_BLOCKS);
+					FSCONSIST_INVALIDATE_BLOCKS);
 		statPtr->readInvalidate++;
 	    } else if (clientPtr->use.write > 0) {
 		/*
@@ -418,7 +418,7 @@ done:
 		 * us back its dirty blocks.
 		 */
 		ClientCommand(consistPtr, clientPtr,
-			    FS_WRITE_BACK_BLOCKS | FS_INVALIDATE_BLOCKS);
+			    FSCONSIST_WRITE_BACK_BLOCKS | FSCONSIST_INVALIDATE_BLOCKS);
 		statPtr->writeInvalidate++;
 	    }
 	}
@@ -452,7 +452,7 @@ done:
 INTERNAL void
 UpdateList(consistPtr, clientID, useFlags, cacheable,
 	   openTimeStampPtr)
-    register FsConsistInfo *consistPtr;	/* Consistency state for the file. */
+    register Fsconsist_Info *consistPtr;	/* Consistency state for the file. */
     int			clientID;	/* ID of client using the file */
     int			useFlags;	/* FS_READ|FS_WRITE|FS_EXECUTE */
     Boolean		cacheable;	/* TRUE if client is caching the file */
@@ -460,12 +460,12 @@ UpdateList(consistPtr, clientID, useFlags, cacheable,
 					 * catch races between the return from
 					 * this open and other cache messages */
 {
-    register	FsClientInfo	*clientPtr;	/* State for other clients */
+    register	Fsconsist_ClientInfo	*clientPtr;	/* State for other clients */
 
     /*
      * Add the client to the I/O handle client list.
      */
-    clientPtr = FsIOClientOpen(&consistPtr->clientList, clientID, useFlags,
+    clientPtr = Fsconsist_IOClientOpen(&consistPtr->clientList, clientID, useFlags,
 				cacheable);
 
     if (cacheable && (useFlags & FS_WRITE)) {
@@ -518,7 +518,7 @@ UpdateList(consistPtr, clientID, useFlags, cacheable,
 
 INTERNAL ReturnStatus
 EndConsistency(consistPtr)
-    FsConsistInfo	*consistPtr;
+    Fsconsist_Info	*consistPtr;
 {
     register ReturnStatus status;
     Timer_QueueElement timeout;
@@ -530,7 +530,7 @@ EndConsistency(consistPtr)
      * to re-iterate what ever high level operation we are doing.
      */
     timeout.routine = ConsistTimeoutIntr;
-    timeout.interval = timer_IntOneMinute * fsConsistTimeoutMinutes;
+    timeout.interval = timer_IntOneMinute * fsconsist_TimeoutMinutes;
     timeout.clientData = (ClientData)consistPtr;
     consistPtr->flags |= FS_CONSIST_TIMEOUT;
     Timer_ScheduleRoutine(&timeout, TRUE);
@@ -578,13 +578,13 @@ EndConsistency(consistPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 void
 ConsistTimeoutIntr(time, data)
     Timer_Ticks time;	/* The time we timed out at. */
-    ClientData data;	/* A pointer to a FsConsistInfo */
+    ClientData data;	/* A pointer to a Fsconsist_Info */
 {
-    FsConsistInfo *consistPtr = (FsConsistInfo *)data;
+    Fsconsist_Info *consistPtr = (Fsconsist_Info *)data;
 
     consistPtr->flags &= ~FS_CONSIST_TIMEOUT;
     Proc_CallFunc(ConsistTimeout, (ClientData)consistPtr, 0);
@@ -592,10 +592,10 @@ ConsistTimeoutIntr(time, data)
 
 void
 ConsistTimeout(data, callInfoPtr)
-    ClientData		data;	/* A pointer to a FsConsistInfo */
+    ClientData		data;	/* A pointer to a Fsconsist_Info */
     Proc_CallInfo	*callInfoPtr;
 {
-    FsConsistInfo *consistPtr = (FsConsistInfo *)data;
+    Fsconsist_Info *consistPtr = (Fsconsist_Info *)data;
     ConsistMsgInfo *msgPtr;
 
     LOCK_MONITOR;
@@ -603,11 +603,11 @@ ConsistTimeout(data, callInfoPtr)
 	msgPtr = (ConsistMsgInfo *)List_First(&consistPtr->msgList);
 
 	printf("ConsistTimeout (%d minutes) client %d %s file <%d,%d> \"%s\"\n",
-		fsConsistTimeoutMinutes,
+		fsconsist_TimeoutMinutes,
 		msgPtr->clientID, ConsistType(msgPtr->flags),
 		consistPtr->hdrPtr->fileID.major,
 		consistPtr->hdrPtr->fileID.minor,
-		FsHandleName(consistPtr->hdrPtr));
+		Fsutil_HandleName(consistPtr->hdrPtr));
 
 	if (msgPtr->clientID == consistPtr->lastWriter) {
 	    consistPtr->lastWriter = -1;
@@ -624,14 +624,14 @@ ConsistTimeout(data, callInfoPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsReopenClient --
+ * Fsconsist_ReopenClient --
  *
  *	Conflict checking has already been done for the re-open, and this
  *	routine updates global use counts and the client list so that
  *	regular opens know the file is being used.  This is called with
  *	the handle locked and it also grabs the consistency monitor lock
  *	to update the client list.
- *	Consistency call-backs are made	later by FsReopenConsistency.
+ *	Consistency call-backs are made	later by Fsconsist_ReopenConsistency.
  *
  * Results:
  *	None.
@@ -640,23 +640,23 @@ ConsistTimeout(data, callInfoPtr)
  *	Updates the global use counts of the file, the last writer of
  *	the file, and the client list entry for this client.  Note that
  *	by updating the lastWriter here we may cause a call-back to
- *	the re-opening client during FsReopenConsistency.  This is the
+ *	the re-opening client during Fsconsist_ReopenConsistency.  This is the
  *	best we can do if another client has slipped in and opened
  *	for reading already.
  *
  * ----------------------------------------------------------------------------
  */
 ENTRY void
-FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
-    FsLocalFileIOHandle	*handlePtr;	/* Should be LOCKED. */
+Fsconsist_ReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
+    Fsio_FileIOHandle	*handlePtr;	/* Should be LOCKED. */
     int			clientID;	/* The client who is opening the file.*/
-    FsUseCounts		use;		/* Clients usage of the file */
+    Fsutil_UseCounts		use;		/* Clients usage of the file */
     Boolean 		haveDirtyBlocks;/* TRUE if client expects it to be
 					 * cacheable because it has
 					 * outstanding dirty blocks. */
 {
-    register FsConsistInfo	*consistPtr = &handlePtr->consist;
-    register FsClientInfo	*clientPtr;
+    register Fsconsist_Info	*consistPtr = &handlePtr->consist;
+    register Fsconsist_ClientInfo	*clientPtr;
     Boolean			found;
 
     LOCK_MONITOR;
@@ -684,21 +684,21 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 	     */
 	    printf(
 	"FsReopenHandle: file \"%s\" <%d,%d>: client %d has dirty blocks, but client %d is using\n",
-		FsHandleName(handlePtr),
+		Fsutil_HandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		clientID, clientPtr->clientID);
 	}
     }
 #ifdef notdef
     if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
-	printf("FsReopenClient %d, use %d write %d, %s, last writer %d\n",
+	printf("Fsconsist_ReopenClient %d, use %d write %d, %s, last writer %d\n",
 		clientID, use.ref, use.write, (found ? "found" : "not found"),
 		consistPtr->lastWriter);
     }
 #endif /* notdef */
 
     if (!found) {
-	clientPtr = mnew(FsClientInfo);
+	clientPtr = mnew(Fsconsist_ClientInfo);
 	clientPtr->clientID = clientID;
 	clientPtr->use = use;
 	clientPtr->cached = haveDirtyBlocks;
@@ -718,7 +718,7 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 	     * Version number checking should have prevented this.
 	     */
 	    printf("FsReopenHandle: file \"%s\" <%d,%d>: Client %d with dirty blocks not last writer %d\n",
-		FsHandleName(handlePtr),
+		Fsutil_HandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		clientID, consistPtr->lastWriter);
 	} else {
@@ -733,11 +733,11 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsReopenConsistency --
+ * Fsconsist_ReopenConsistency --
  *
  *	Perform cache consistency actions for a file that the client had 
  *	open before we crashed.  This is similar to regular cache consistency,
- *	except that the client list has already been updated by FsReopenClient.
+ *	except that the client list has already been updated by Fsconsist_ReopenClient.
  *	This can result in a call-back to the re-opening client to get
  *	its version of the file.
  *
@@ -754,10 +754,10 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
  * ----------------------------------------------------------------------------
  */
 ENTRY ReturnStatus
-FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampPtr)
-    FsLocalFileIOHandle	*handlePtr;	/* Should be UNLOCKED. */
+Fsconsist_ReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampPtr)
+    Fsio_FileIOHandle	*handlePtr;	/* Should be UNLOCKED. */
     int			clientID;	/* The client who is opening the file.*/
-    FsUseCounts		use;		/* Clients usage of the file */
+    Fsutil_UseCounts		use;		/* Clients usage of the file */
     int			swap;		/* 0 or FS_SWAP to indicate swap file.*/
     Boolean 		*cacheablePtr;	/* IN: TRUE if client expects it to be
 					 * cacheable, i.e. has dirty blocks.
@@ -768,8 +768,8 @@ FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampP
     int				useFlags;
     Boolean			cacheable;
     ReturnStatus		status;
-    register FsConsistInfo	*consistPtr = &handlePtr->consist;
-    register FsClientInfo	*clientPtr;
+    register Fsconsist_Info	*consistPtr = &handlePtr->consist;
+    register Fsconsist_ClientInfo	*clientPtr;
 
     LOCK_MONITOR;
 
@@ -809,7 +809,7 @@ FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampP
 	    }
 	}
 	if (status != SUCCESS) {
-	    panic( "FsReopenConsistency, no client entry\n");
+	    panic( "Fsconsist_ReopenConsistency, no client entry\n");
 	}
 	/*
 	 * Get a new openTimeStamp so the client can detect races between
@@ -839,7 +839,7 @@ FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampP
 /*
  * ----------------------------------------------------------------------------
  *
- * FsMigrateConsistency --
+ * Fsconsist_MigrateConsistency --
  *
  *	Shift the references on a file from one client to another.  If
  *	the stream to this handle is not shared accross network this
@@ -862,9 +862,9 @@ FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampP
  */
 
 ENTRY ReturnStatus
-FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags, closeSrc,
+Fsconsist_MigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags, closeSrc,
 	cacheablePtr, openTimeStampPtr)
-    FsLocalFileIOHandle	*handlePtr;	/* Needs to be UNLOCKED  */
+    Fsio_FileIOHandle	*handlePtr;	/* Needs to be UNLOCKED  */
     int			srcClientID;	/* ID of client using the file */
     int			dstClientID;	/* ID of client using the file */
     int			useFlags;	/* FS_READ|FS_WRITE|FS_EXECUTE
@@ -872,13 +872,13 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags, closeSrc,
 					 * FS_NEW_STREAM if dstClientID is
 					 * getting stream for first time. */
     Boolean		closeSrc;	/* TRUE if should close source client.
-					 * This is set by FsStreamMigClient */
+					 * This is set by Fsio_StreamMigClient */
     Boolean		*cacheablePtr;	/* Return - Cachability of file */
     int			*openTimeStampPtr;/* Generated for the client so it can
 					 * catch races between the return from
 					 * this open and other cache messages */
 {
-    register FsConsistInfo *consistPtr = &handlePtr->consist;
+    register Fsconsist_Info *consistPtr = &handlePtr->consist;
     Boolean			cache;
     register	ReturnStatus	status;
 
@@ -892,13 +892,13 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags, closeSrc,
 	 * disturb the last writer state so any dirty blocks on the old client
 	 * will get handled properly.
 	 */
-	if (!FsIOClientClose(&consistPtr->clientList, srcClientID, useFlags,
+	if (!Fsconsist_IOClientClose(&consistPtr->clientList, srcClientID, useFlags,
 		&cache)) {
 	    printf(
-	"FsMigrateConsistency, srcClient %d unknown for %s %s <%d,%d>\n",
+	"Fsconsist_MigrateConsistency, srcClient %d unknown for %s %s <%d,%d>\n",
 		srcClientID,
-		FsFileTypeToString(handlePtr->hdr.fileID.type),
-		FsHandleName(handlePtr),
+		Fsutil_FileTypeToString(handlePtr->hdr.fileID.type),
+		Fsutil_HandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	}
     }
@@ -927,7 +927,7 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags, closeSrc,
 /*
  * ----------------------------------------------------------------------------
  *
- * FsGetClientAttrs --
+ * Fsconsist_GetClientAttrs --
  *
  *	This does call-backs to clients to flush back cached attributes.
  *	Files that are being executed are treated as a special case.  They
@@ -949,8 +949,8 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags, closeSrc,
  * ----------------------------------------------------------------------------
  */
 ENTRY void
-FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
-    register FsLocalFileIOHandle *handlePtr;
+Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
+    register Fsio_FileIOHandle *handlePtr;
     int			clientID;	/* The client who is doing the stat.*/
     Boolean		*isExecedPtr;	/* TRUE if file is being executed.
 					 * Our caller will use the current
@@ -958,9 +958,9 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
 					 * case */
 {
     register Boolean		isExeced = FALSE;
-    register FsConsistInfo	*consistPtr = &handlePtr->consist;
-    register FsClientInfo	*clientPtr;
-    register FsClientInfo	*nextClientPtr;
+    register Fsconsist_Info	*consistPtr = &handlePtr->consist;
+    register Fsconsist_ClientInfo	*clientPtr;
+    register Fsconsist_ClientInfo	*nextClientPtr;
 
     LOCK_MONITOR;
 
@@ -975,7 +975,7 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
      * handle until the close finishes.  The close can't finish because
      * it is blocked here on the locked handle.
      */
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
 
     /*
      * Make sure that noone else is in the middle of performing cache
@@ -990,11 +990,11 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
      * Go through the set of clients using the file and see if they
      * are caching attributes.
      */
-    nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
+    nextClientPtr = (Fsconsist_ClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
 	clientPtr->locked = FALSE;;
-	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+	nextClientPtr = (Fsconsist_ClientInfo *)List_Next((List_Links *)clientPtr);
 	/*
 	 * Hang onto the next client list element across calls to ClientCommand,
 	 * which releases the consistency lock and allows list deletetions.
@@ -1016,7 +1016,7 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
 		 * is an optimization to not make stating of binaries
 		 * abysmally slow.
 		 */
-		ClientCommand(consistPtr, clientPtr, FS_WRITE_BACK_ATTRS);
+		ClientCommand(consistPtr, clientPtr, FSCONSIST_WRITE_BACK_ATTRS);
 	    }
 	}
     }
@@ -1026,7 +1026,7 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
      */
     (void)EndConsistency(consistPtr);
 
-    FsHandleLock(handlePtr);
+    Fsutil_HandleLock(handlePtr);
     *isExecedPtr = isExeced;
     UNLOCK_MONITOR;
 }
@@ -1034,9 +1034,9 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsConsistClose --
+ * Fsconsist_Close --
  *
- *	A thin layer on top of FsIOClientClose that also cleans up
+ *	A thin layer on top of Fsconsist_IOClientClose that also cleans up
  *	the last writer of a file.
  *
  * Results:
@@ -1054,8 +1054,8 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
  *
  */
 ENTRY Boolean
-FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
-    register FsConsistInfo *consistPtr;	/* Handle of file being closed */
+Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
+    register Fsconsist_Info *consistPtr;	/* Handle of file being closed */
     int			clientID;	/* Host ID of client that had it open */
     register int	flags;		/* Flags from the stream. */
     Boolean		*wasCachedPtr;	/* TRUE upon return if the client was
@@ -1070,7 +1070,7 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 		    clientID, consistPtr->lastWriter);
     }
 #endif CONSIST_DEBUG
-    if (!FsIOClientClose(&consistPtr->clientList, clientID, flags,
+    if (!Fsconsist_IOClientClose(&consistPtr->clientList, clientID, flags,
 			 wasCachedPtr)) {
 	UNLOCK_MONITOR;
 	return(FALSE);
@@ -1083,8 +1083,8 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 	     * a warning and then nuke the lastWriter field below.
 	     */
 	    printf(
-	    "FsConsistClose, \"%s\" <%d,%d>: client %d not last writer %d, %s\n",
-		    FsHandleName(consistPtr->hdrPtr),
+	    "Fsconsist_Close, \"%s\" <%d,%d>: client %d not last writer %d, %s\n",
+		    Fsutil_HandleName(consistPtr->hdrPtr),
 		    consistPtr->hdrPtr->fileID.major,
 		    consistPtr->hdrPtr->fileID.minor,
 		    clientID, consistPtr->lastWriter,
@@ -1105,7 +1105,7 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsConsistClients --
+ * Fsconsist_NumClients --
  *
  *	Returns the number of clients in the client list for a file.
  *	Called to see if it's ok to scavenge the file handle.
@@ -1122,12 +1122,12 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
  *
  */
 ENTRY int
-FsConsistClients(consistPtr)
-    register FsConsistInfo *consistPtr;	/* Handle of file being closed */
+Fsconsist_NumClients(consistPtr)
+    register Fsconsist_Info *consistPtr;	/* Handle of file being closed */
 {
     register int numClients = 0;
-    register FsClientInfo *clientPtr;
-    register FsClientInfo *nextClientPtr;
+    register Fsconsist_ClientInfo *clientPtr;
+    register Fsconsist_ClientInfo *nextClientPtr;
 
     LOCK_MONITOR;
 
@@ -1138,15 +1138,15 @@ FsConsistClients(consistPtr)
 	UNLOCK_MONITOR;
 	return(1);
     }
-    nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
+    nextClientPtr = (Fsconsist_ClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
-	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+	nextClientPtr = (Fsconsist_ClientInfo *)List_Next((List_Links *)clientPtr);
 
 	if (clientPtr->use.ref == 0 &&
 	    clientPtr->clientID != consistPtr->lastWriter) {
 	    if (clientPtr->locked) {
-		printf("FsConsistClients hit locked client %d for <%d,%d>\n",
+		printf("Fsconsist_NumClients hit locked client %d for <%d,%d>\n",
 		    clientPtr->clientID, consistPtr->hdrPtr->fileID.major,
 		    consistPtr->hdrPtr->fileID.minor);
 	    } else {
@@ -1165,7 +1165,7 @@ FsConsistClients(consistPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsDeleteLastWriter --
+ * Fsconsist_DeleteLastWriter --
  *
  *	Remove the last writer from the consistency list.  This is called
  *	from the write rpc stub when the last block of a file comes
@@ -1182,18 +1182,18 @@ FsConsistClients(consistPtr)
  *
  */
 ENTRY void
-FsDeleteLastWriter(consistPtr, clientID)
-    FsConsistInfo *consistPtr;
+Fsconsist_DeleteLastWriter(consistPtr, clientID)
+    Fsconsist_Info *consistPtr;
     int		clientID;
 {
-    register	FsClientInfo	*clientPtr;
+    register	Fsconsist_ClientInfo	*clientPtr;
 
     LOCK_MONITOR;
 
     if (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
 	/*
 	 * Not safe to mess with list during consistency.  We are called
-	 * from Fs_RpcWrite on the client's last block, but we will
+	 * from Fsrmt_RpcWrite on the client's last block, but we will
 	 * delete the last writer in ProcessConsistReply if the write-back
 	 * is forced as part of cache consistency.
 	 */
@@ -1206,13 +1206,13 @@ FsDeleteLastWriter(consistPtr, clientID)
 		consistPtr->lastWriter == clientID) {
 #ifdef CONSIST_DEBUG
 		if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-		    printf("FsDeleteLastWriter <%d,%d> host %d\n",
+		    printf("Fsconsist_DeleteLastWriter <%d,%d> host %d\n",
 			consistPtr->hdrPtr->fileID.major,
 			consistPtr->hdrPtr->fileID.minor, clientID);
 		}
 #endif CONSIST_DEBUG
 		if (clientPtr->locked) {
-		    printf("FsDeleteLastWriter: locked client %d of <%d,%d>\n",
+		    printf("Fsconsist_DeleteLastWriter: locked client %d of <%d,%d>\n",
 			clientPtr->clientID, consistPtr->hdrPtr->fileID.major,
 			consistPtr->hdrPtr->fileID.minor);
 		} else {
@@ -1230,7 +1230,7 @@ FsDeleteLastWriter(consistPtr, clientID)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsClientRemoveCallback --
+ * Fsconsist_ClientRemoveCallback --
  *
  *      Called when a file is deleted.  Send an rpc to everyone who has
  *      dirty blocks cached telling them to delete them from their cache.
@@ -1249,20 +1249,20 @@ FsDeleteLastWriter(consistPtr, clientID)
  *
  */
 ENTRY void
-FsClientRemoveCallback(consistPtr, clientID)
-    FsConsistInfo *consistPtr;	/* File to check */
+Fsconsist_ClientRemoveCallback(consistPtr, clientID)
+    Fsconsist_Info *consistPtr;	/* File to check */
     int		clientID;	/* Client who is removing the file.  This
 				 * host is not contacted via call-back.
 				 * Instead, the current RPC (close) should
 				 * return FS_FILE_REMOVED.  Note, a callback
 				 * is made during a remove-by-name. */
 {
-    register	FsClientInfo	*clientPtr;
+    register	Fsconsist_ClientInfo	*clientPtr;
     int				curClientID;
 
     LOCK_MONITOR;
 
-    FsHandleUnlock(consistPtr->hdrPtr);
+    Fsutil_HandleUnlock(consistPtr->hdrPtr);
 
     while (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
 	(void) Sync_Wait(&consistPtr->consistDone, FALSE);
@@ -1273,16 +1273,16 @@ FsClientRemoveCallback(consistPtr, clientID)
      * Loop through the list notifying clients and deleting client elements.
      */
     while (!List_IsEmpty((List_Links *)&consistPtr->clientList)) {
-	clientPtr = (FsClientInfo *)
+	clientPtr = (Fsconsist_ClientInfo *)
 		    List_First((List_Links *) &consistPtr->clientList);
 	curClientID = clientPtr->clientID;
 	if (clientPtr->use.ref > 0) {
-	    panic("FsClientRemoveCallback: Client using removed file\n");
+	    panic("Fsconsist_ClientRemoveCallback: Client using removed file\n");
 	} else if (consistPtr->lastWriter != -1) {
 	    if (clientPtr->clientID != consistPtr->lastWriter) {
 		printf(
-    "FsClientRemoveCallback: \"%s\" <%d,%d> client %d not last writer (%d).\n",
-			FsHandleName(consistPtr->hdrPtr),
+    "Fsconsist_ClientRemoveCallback: \"%s\" <%d,%d> client %d not last writer (%d).\n",
+			Fsutil_HandleName(consistPtr->hdrPtr),
 			consistPtr->hdrPtr->fileID.major,
 			consistPtr->hdrPtr->fileID.minor,
 			clientPtr->clientID, consistPtr->lastWriter);
@@ -1292,7 +1292,7 @@ FsClientRemoveCallback(consistPtr, clientID)
 		 * This should only be the last writer as we are called only
 		 * when it is truely time to remove the file.
 		 */
-		ClientCommand(consistPtr, clientPtr, FS_DELETE_FILE);
+		ClientCommand(consistPtr, clientPtr, FSCONSIST_DELETE_FILE);
 		while (!List_IsEmpty(&consistPtr->msgList)) {
 		    (void) Sync_Wait(&consistPtr->repliesIn, FALSE);
 		}
@@ -1313,14 +1313,14 @@ FsClientRemoveCallback(consistPtr, clientID)
     }
     consistPtr->flags = 0;
     consistPtr->lastWriter = -1;
-    FsHandleLock(consistPtr->hdrPtr);
+    Fsutil_HandleLock(consistPtr->hdrPtr);
     UNLOCK_MONITOR;
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FsConsistKill --
+ * Fsconsist_Kill --
  *
  *	Find and remove the given client in the list for the handle.  The
  *	number of client references, writers, and executers is returned
@@ -1340,8 +1340,8 @@ FsClientRemoveCallback(consistPtr, clientID)
  *
  */
 ENTRY void
-FsConsistKill(consistPtr, clientID, refPtr, writePtr, execPtr)
-    FsConsistInfo *consistPtr;	/* Consistency state from which to remove
+Fsconsist_Kill(consistPtr, clientID, refPtr, writePtr, execPtr)
+    Fsconsist_Info *consistPtr;	/* Consistency state from which to remove
 				 * the client. */
     int		clientID;	/* Client to delete. */
     int		*refPtr;	/* Number of times client has file open. */
@@ -1352,7 +1352,7 @@ FsConsistKill(consistPtr, clientID, refPtr, writePtr, execPtr)
 
     LOCK_MONITOR;
 
-    FsIOClientKill(&consistPtr->clientList, clientID, refPtr, writePtr,
+    Fsconsist_IOClientKill(&consistPtr->clientList, clientID, refPtr, writePtr,
 		    execPtr);
 
     if (consistPtr->lastWriter == clientID) {
@@ -1377,7 +1377,7 @@ FsConsistKill(consistPtr, clientID, refPtr, writePtr, execPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FsGetAllDirtyBlocks --
+ * Fsconsist_GetAllDirtyBlocks --
  *
  *	Retrieve dirty blocks from all clients that have files open on the
  *	given domain.  This is called when a disk is being detached.  We
@@ -1392,32 +1392,32 @@ FsConsistKill(consistPtr, clientID, refPtr, writePtr, execPtr)
  *----------------------------------------------------------------------------
  */
 void
-FsGetAllDirtyBlocks(domain, invalidate)
+Fsconsist_GetAllDirtyBlocks(domain, invalidate)
     int		domain;		/* Domain to get dirty blocks for. */
     Boolean	invalidate;	/* Remove file from cache after getting blocks
 				 * back. */
 {
     Hash_Search				hashSearch;
-    register	FsHandleHeader		*hdrPtr;
+    register	Fs_HandleHeader		*hdrPtr;
 
     Hash_StartSearch(&hashSearch);
-    for (hdrPtr = FsGetNextHandle(&hashSearch);
-	 hdrPtr != (FsHandleHeader *) NIL;
-         hdrPtr = FsGetNextHandle(&hashSearch)) {
-	if (hdrPtr->fileID.type == FS_LCL_FILE_STREAM &&
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+	if (hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM &&
 	    hdrPtr->fileID.major == domain) {
-	    register FsLocalFileIOHandle *handlePtr =
-		    (FsLocalFileIOHandle *) hdrPtr;
-	    FsFetchDirtyBlocks(&handlePtr->consist, invalidate);
+	    register Fsio_FileIOHandle *handlePtr =
+		    (Fsio_FileIOHandle *) hdrPtr;
+	    Fsconsist_FetchDirtyBlocks(&handlePtr->consist, invalidate);
 	}
-	FsHandleUnlock(hdrPtr);
+	Fsutil_HandleUnlock(hdrPtr);
     }
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFetchDirtyBlocks --
+ * Fsconsist_FetchDirtyBlocks --
  *
  *      Fetch dirty blocks back from the last writer of the file.
  *	This is called when a domain is being detached (dis-mounted)
@@ -1434,16 +1434,16 @@ FsGetAllDirtyBlocks(domain, invalidate)
  *
  */
 ENTRY void
-FsFetchDirtyBlocks(consistPtr, invalidate)
-    FsConsistInfo *consistPtr;	/* Consistency state for file. */
+Fsconsist_FetchDirtyBlocks(consistPtr, invalidate)
+    Fsconsist_Info *consistPtr;	/* Consistency state for file. */
     Boolean	invalidate;	/* If TRUE the client is told to invalidate
 				 * after writing back the blocks */
 {
-    register	FsClientInfo	*clientPtr;
-    register	FsClientInfo	*nextClientPtr;
+    register	Fsconsist_ClientInfo	*clientPtr;
+    register	Fsconsist_ClientInfo	*nextClientPtr;
 
     LOCK_MONITOR;
-    FsHandleUnlock(consistPtr->hdrPtr);
+    Fsutil_HandleUnlock(consistPtr->hdrPtr);
 
     /*
      * Make sure that noone else is in the middle of performing cache
@@ -1457,7 +1457,7 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
      */
     if (consistPtr->lastWriter == -1 ||
 	consistPtr->lastWriter == rpc_SpriteID) {
-	FsHandleLock(consistPtr->hdrPtr);
+	Fsutil_HandleLock(consistPtr->hdrPtr);
         UNLOCK_MONITOR;
 	return;
     }
@@ -1468,19 +1468,19 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
      * the client that is the last writer because we know the domain for
      * the file is in-active.
      */
-    nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
+    nextClientPtr = (Fsconsist_ClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
 	clientPtr->locked = FALSE;
-	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+	nextClientPtr = (Fsconsist_ClientInfo *)List_Next((List_Links *)clientPtr);
 	if (!List_IsAtEnd(&consistPtr->clientList,(List_Links *)nextClientPtr)){
 	    nextClientPtr->locked = TRUE;
 	}
 	if (clientPtr->clientID != consistPtr->lastWriter) {
-	    FsHandleLock(consistPtr->hdrPtr);
+	    Fsutil_HandleLock(consistPtr->hdrPtr);
 	    consistPtr->flags = 0;
 	    UNLOCK_MONITOR;
-	    panic("FsFetchDirtyBlocks: Non last writer in list.\n");
+	    panic("Fsconsist_FetchDirtyBlocks: Non last writer in list.\n");
 	    return;
 	} else if (clientPtr->use.write > 0) {
 	    /*
@@ -1488,16 +1488,16 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
 	     * do anything because he can have more dirty blocks anyway.
 	     */
 	} else {
-	    register int flags = FS_WRITE_BACK_BLOCKS;
+	    register int flags = FSCONSIST_WRITE_BACK_BLOCKS;
 	    if (invalidate) {
-		flags |= FS_INVALIDATE_BLOCKS;
+		flags |= FSCONSIST_INVALIDATE_BLOCKS;
 	    }
 	    ClientCommand(consistPtr, clientPtr, flags);
 	    (void)EndConsistency(consistPtr);
 	}
     }
     consistPtr->flags = 0;
-    FsHandleLock(consistPtr->hdrPtr);
+    Fsutil_HandleLock(consistPtr->hdrPtr);
     UNLOCK_MONITOR;
     return;
 }
@@ -1541,8 +1541,8 @@ typedef struct ConsistItem {
 
 INTERNAL void
 ClientCommand(consistPtr, clientPtr, flags)
-    register FsConsistInfo *consistPtr;	/* Consistency state of file */
-    FsClientInfo	*clientPtr;	/* State of other client's cache */
+    register Fsconsist_Info *consistPtr;	/* Consistency state of file */
+    Fsconsist_ClientInfo	*clientPtr;	/* State of other client's cache */
     int			flags;		/* Command for the other client */
 {
     Rpc_Storage		storage;
@@ -1557,14 +1557,14 @@ ClientCommand(consistPtr, clientPtr, flags)
 	 * issued to the other clients (write-back, invalidate, etc.) will
 	 * all result in a consistent server cache anyway.
 	 */
-	if (flags & FS_INVALIDATE_BLOCKS) {
+	if (flags & FSCONSIST_INVALIDATE_BLOCKS) {
 	    /*
 	     * If we told ourselves to invalidate the file then mark us
 	     * as not caching the file.
 	     */
 	    clientPtr->cached = FALSE;
 	}
-	if (flags & FS_WRITE_BACK_BLOCKS) {
+	if (flags & FSCONSIST_WRITE_BACK_BLOCKS) {
 	    /*
 	     * We already have the most recent blocks.
 	     */
@@ -1572,7 +1572,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 	}
 	if (clientPtr->use.ref == 0 && 
 	    consistPtr->lastWriter != clientPtr->clientID) {
-	    FS_CACHE_DEBUG_PRINT1("ClientCommand: Removing %d ",
+	    FSCACHE_DEBUG_PRINT1("ClientCommand: Removing %d ",
 					clientPtr->clientID);
 	    List_Remove((List_Links *) clientPtr);
 	    free((Address) clientPtr);
@@ -1583,11 +1583,11 @@ ClientCommand(consistPtr, clientPtr, flags)
      * Map to the client's view of the file (i.e. remote).
      */
     consistRpc.fileID = consistPtr->hdrPtr->fileID;
-    if (consistRpc.fileID.type != FS_LCL_FILE_STREAM) {
+    if (consistRpc.fileID.type != FSIO_LCL_FILE_STREAM) {
 	    panic( "ClientCommand, bad stream type <%d>\n",
 		consistRpc.fileID.type);
     } else {
-	consistRpc.fileID.type = FS_RMT_FILE_STREAM;
+	consistRpc.fileID.type = FSIO_RMT_FILE_STREAM;
     }
     /*
      * The openTimeStamp lets the client catch races between this message
@@ -1596,7 +1596,7 @@ ClientCommand(consistPtr, clientPtr, flags)
     consistRpc.flags = flags;
     consistRpc.openTimeStamp = clientPtr->openTimeStamp;
     consistRpc.version =
-	((FsLocalFileIOHandle *)consistPtr->hdrPtr)->cacheInfo.version;
+	((Fsio_FileIOHandle *)consistPtr->hdrPtr)->cacheInfo.version;
 
     storage.requestParamPtr = (Address) &consistRpc;
     storage.requestParamSize = sizeof(ConsistMsg);
@@ -1620,7 +1620,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 
     /*
      * Have to release this monitor during the call-back so that
-     * an unrelated close can complete its call to FsConsistClose.
+     * an unrelated close can complete its call to Fsconsist_Close.
      * Alternatives are to fix the consistency call-back RPC stubs
      * so they don't lock the handle.
      */
@@ -1642,12 +1642,12 @@ ClientCommand(consistPtr, clientPtr, flags)
 	    if (numRefusals > 30) {
 		printf("Client %d dropped 30 %s requests for \"%s\" <%d,%d>\n",
 			    clientPtr->clientID, ConsistType(flags),
-			    FsHandleName(consistPtr->hdrPtr),
+			    Fsutil_HandleName(consistPtr->hdrPtr),
 			    consistRpc.fileID.major, consistRpc.fileID.minor);
-		consistRpc.flags |= FS_DEBUG_CONSIST;
+		consistRpc.flags |= FSCONSIST_DEBUG;
 		numRefusals = 0;
 	    } else {
-		consistRpc.flags &= ~FS_DEBUG_CONSIST;
+		consistRpc.flags &= ~FSCONSIST_DEBUG;
 	    }
 	}
     }
@@ -1658,9 +1658,9 @@ ClientCommand(consistPtr, clientPtr, flags)
 	 */
 	int ref, write, exec;
 	int clientID = clientPtr->clientID;
-	FsConsistKill(consistPtr, clientPtr->clientID, &ref, &write, &exec);
+	Fsconsist_Kill(consistPtr, clientPtr->clientID, &ref, &write, &exec);
 	printf("ClientCommand, %s msg to client %d file \"%s\" <%d,%d> failed %x\n",
-	    ConsistType(flags), clientID, FsHandleName(consistPtr->hdrPtr),
+	    ConsistType(flags), clientID, Fsutil_HandleName(consistPtr->hdrPtr),
 	    consistRpc.fileID.major, consistRpc.fileID.minor, status);
 	printf("\tClient had %d refs %d write %d exec\n", ref, write, exec);
     }
@@ -1670,7 +1670,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcConsist --
+ * Fsconsist_RpcConsist --
  *
  *	Service stub for RPC_FS_CONSIST.  This is executed on a filesystem
  *	client in response to a cache consistency command.  This schedules
@@ -1689,7 +1689,7 @@ ClientCommand(consistPtr, clientPtr, flags)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcConsist(srvToken, clientID, command, storagePtr)
+Fsconsist_RpcConsist(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
     int clientID;		/* ID of server controlling the file */
@@ -1703,12 +1703,12 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 {
     register ConsistMsg	*consistArgPtr;
     register ConsistItem	*consistPtr;
-    register FsRmtFileIOHandle	*rmtHandlePtr;
+    register Fsrmt_FileIOHandle	*rmtHandlePtr;
     register ReturnStatus	status;
 
     consistArgPtr = (ConsistMsg *)storagePtr->requestParamPtr;
-    if (consistArgPtr->fileID.type != FS_RMT_FILE_STREAM) {
-	printf("Fs_RpcConsist, bad stream type <%d>\n",
+    if (consistArgPtr->fileID.type != FSIO_RMT_FILE_STREAM) {
+	printf("Fsconsist_RpcConsist, bad stream type <%d>\n",
 		    consistArgPtr->fileID.type);
 	return(FAILURE);
     }
@@ -1716,11 +1716,11 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
      * This fetch locks the handle.  In earlier versions of the kernel
      * this could cause deadlock.  This may still be true.  3/9/88.
      */
-    rmtHandlePtr = FsHandleFetchType(FsRmtFileIOHandle, &consistArgPtr->fileID);
-    if (rmtHandlePtr == (FsRmtFileIOHandle *)NIL) {
-	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
+    rmtHandlePtr = Fsutil_HandleFetchType(Fsrmt_FileIOHandle, &consistArgPtr->fileID);
+    if (rmtHandlePtr == (Fsrmt_FileIOHandle *)NIL) {
+	if (Fsprefix_OpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
-	    printf("Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
+	    printf("Fsconsist_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
@@ -1736,9 +1736,9 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	    status = FAILURE;
 	}
     } else if (rmtHandlePtr->openTimeStamp != consistArgPtr->openTimeStamp) {
-	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
+	if (Fsprefix_OpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
-	    printf("Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d\n\t version %d and %d, returning stale handle\n",
+	    printf("Fsconsist_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d\n\t version %d and %d, returning stale handle\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
@@ -1756,8 +1756,8 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	status = SUCCESS;
     }
 
-    if (rmtHandlePtr != (FsRmtFileIOHandle *)NIL) {
-	FsHandleRelease(rmtHandlePtr, TRUE);
+    if (rmtHandlePtr != (Fsrmt_FileIOHandle *)NIL) {
+	Fsutil_HandleRelease(rmtHandlePtr, TRUE);
     }
     if (status == SUCCESS) {
 	/*
@@ -1768,8 +1768,8 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	consistPtr->serverID = clientID;
 	consistPtr->args = *consistArgPtr;
 	Proc_CallFunc(ProcessConsist, (ClientData) consistPtr, 0);
-    } else if (consistArgPtr->flags & FS_DEBUG_CONSIST) {
-	printf("Fs_RpcConsist: <%d,%d> Lots of %s msgs dropped: %s\n",
+    } else if (consistArgPtr->flags & FSCONSIST_DEBUG) {
+	printf("Fsconsist_RpcConsist: <%d,%d> Lots of %s msgs dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
@@ -1802,7 +1802,7 @@ ProcessConsist(data, callInfoPtr)
     ClientData		data;
     Proc_CallInfo	*callInfoPtr;
 {
-    register FsRmtFileIOHandle 	*handlePtr;
+    register Fsrmt_FileIOHandle 	*handlePtr;
     ReturnStatus		status;
     Rpc_Storage			storage;
     ConsistReply		reply;
@@ -1811,8 +1811,8 @@ ProcessConsist(data, callInfoPtr)
     consistPtr = (ConsistItem *) data;
     callInfoPtr->interval = 0;
 
-    handlePtr = FsHandleFetchType(FsRmtFileIOHandle, &consistPtr->args.fileID);
-    if (handlePtr == (FsRmtFileIOHandle *)NIL) {
+    handlePtr = Fsutil_HandleFetchType(Fsrmt_FileIOHandle, &consistPtr->args.fileID);
+    if (handlePtr == (Fsrmt_FileIOHandle *)NIL) {
 	printf("<%d, %d, %d, %d>:", consistPtr->args.fileID.type,
 		     consistPtr->args.fileID.serverID,
 		     consistPtr->args.fileID.major,
@@ -1820,35 +1820,35 @@ ProcessConsist(data, callInfoPtr)
 	printf( "ProcessConsist: lost the handle\n");
 	return;
     }
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
 
-    FS_CACHE_DEBUG_PRINT2("ProcessConsist: Got %s request for file %d\n", 
+    FSCACHE_DEBUG_PRINT2("ProcessConsist: Got %s request for file %d\n", 
 	ConsistType(consistPtr->args.flags), handlePtr->rmt.hdr.fileID.minor);
 
     /*
      * Process the request under the per file cache lock.
      */
-    reply.status = FsCacheConsist(&handlePtr->cacheInfo, consistPtr->args.flags,
+    reply.status = Fscache_Consist(&handlePtr->cacheInfo, consistPtr->args.flags,
 			    &reply.cachedAttr);
 #ifdef CONSIST_DEBUG
     if (fsTraceConsistMinor == handlePtr->rmt.hdr.fileID.minor) {
 	printf(
 	"ProcessConsist, %s msg for file \"%s\" <%d,%d> version %d status %x\n",
 	    ConsistType(consistPtr->args.flags), 
-	    FsHandleName(handlePtr),
+	    Fsutil_HandleName(handlePtr),
 	    handlePtr->rmt.hdr.fileID.major, handlePtr->rmt.hdr.fileID.minor,
 	    consistPtr->args.version, reply.status);
     }
 #endif /* CONSIST_DEBUG */
 
-    FS_CACHE_DEBUG_PRINT2("Returning: mod (%d), acc (%d),",
+    FSCACHE_DEBUG_PRINT2("Returning: mod (%d), acc (%d),",
 		       reply.cachedAttr.modifyTime,
 		       reply.cachedAttr.accessTime);
-    FS_CACHE_DEBUG_PRINT2(" first (%d), last (%d)\n",
+    FSCACHE_DEBUG_PRINT2(" first (%d), last (%d)\n",
 		       reply.cachedAttr.firstByte, reply.cachedAttr.lastByte);
     reply.fileID = handlePtr->rmt.hdr.fileID;
-    reply.fileID.type = FS_LCL_FILE_STREAM;
-    FsHandleRelease(handlePtr, FALSE);
+    reply.fileID.type = FSIO_LCL_FILE_STREAM;
+    Fsutil_HandleRelease(handlePtr, FALSE);
     /*
      * Set up the reply buffer.
      */
@@ -1873,7 +1873,7 @@ ProcessConsist(data, callInfoPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcConsistReply --
+ * Fsconsist_RpcConsistReply --
  *
  *	Service stub for RPC_FS_CONSIST_REPLY.  This indicates that
  *	the client has handled the consistency command.
@@ -1888,7 +1888,7 @@ ProcessConsist(data, callInfoPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcConsistReply(srvToken, clientID, command, storagePtr)
+Fsconsist_RpcConsistReply(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
     int clientID;		/* Sprite ID of client host */
@@ -1900,22 +1900,22 @@ Fs_RpcConsistReply(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-    FsLocalFileIOHandle	*handlePtr;
+    Fsio_FileIOHandle	*handlePtr;
     ConsistReply	*replyPtr;
 
     replyPtr = (ConsistReply *) storagePtr->requestParamPtr;
-    if (replyPtr->fileID.type != FS_LCL_FILE_STREAM) {
-	panic( "Fs_RpcConsistReply bad stream type <%d>\n",
+    if (replyPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
+	panic( "Fsconsist_RpcConsistReply bad stream type <%d>\n",
 	    replyPtr->fileID.type);
     }
-    handlePtr = FsHandleFetchType(FsLocalFileIOHandle, &(replyPtr->fileID));
-    if (handlePtr == (FsLocalFileIOHandle *) NIL) {
-	printf("Fs_RpcConsistReply: no handle <%d,%d> for client %d\n",
+    handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, &(replyPtr->fileID));
+    if (handlePtr == (Fsio_FileIOHandle *) NIL) {
+	printf("Fsconsist_RpcConsistReply: no handle <%d,%d> for client %d\n",
 	    replyPtr->fileID.major, replyPtr->fileID.minor, clientID);
 	return(FS_STALE_HANDLE);
     }
     ProcessConsistReply(&handlePtr->consist, clientID, replyPtr);
-    FsHandleRelease(handlePtr, TRUE);
+    Fsutil_HandleRelease(handlePtr, TRUE);
     Rpc_Reply(srvToken, SUCCESS, storagePtr, 
 	      (int (*)())NIL, (ClientData)NIL);
     return(SUCCESS);
@@ -1944,15 +1944,15 @@ Fs_RpcConsistReply(srvToken, clientID, command, storagePtr)
  */
 ENTRY void
 ProcessConsistReply(consistPtr, clientID, replyPtr)
-    FsConsistInfo		*consistPtr;	/* File to process reply for*/
+    Fsconsist_Info		*consistPtr;	/* File to process reply for*/
     int				clientID;	/* Client who sent us the 
 						 * reply. */
     register	ConsistReply	*replyPtr;	/* The reply that was sent. */
 {
     register	ConsistMsgInfo		*msgPtr;
-    register	FsClientInfo 		*clientPtr;
+    register	Fsconsist_ClientInfo 		*clientPtr;
     Boolean				found = FALSE;
-    FsLocalFileIOHandle			*handlePtr;
+    Fsio_FileIOHandle			*handlePtr;
 
     LOCK_MONITOR;
 
@@ -1985,7 +1985,7 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	printf(
 	"ConsistReply, %s msg for file \"%s\" <%d,%d> writer %d status %x\n",
 	    ConsistType(msgPtr->flags), 
-	    FsHandleName(consistPtr->hdrPtr),
+	    Fsutil_HandleName(consistPtr->hdrPtr),
 	    consistPtr->hdrPtr->fileID.major, consistPtr->hdrPtr->fileID.minor,
 	    consistPtr->lastWriter,
 	    replyPtr->status);
@@ -1995,12 +1995,12 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	printf(
 	    "ProcessConsist: %s request failed <%x> file \"%s\" <%d,%d>\n",
 		ConsistType(msgPtr->flags), replyPtr->status,
-		FsHandleName(consistPtr->hdrPtr),
+		Fsutil_HandleName(consistPtr->hdrPtr),
 		consistPtr->hdrPtr->fileID.major,
 		consistPtr->hdrPtr->fileID.minor);
 	consistPtr->flags |= FS_CONSIST_ERROR;
     } else {
-	if ((msgPtr->flags & FS_WRITE_BACK_BLOCKS) &&
+	if ((msgPtr->flags & FSCONSIST_WRITE_BACK_BLOCKS) &&
 	    (consistPtr->lastWriter == clientID)) {
 	    /*
 	     * We just got the most recent blocks so we don't care who the
@@ -2017,11 +2017,11 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	 */
 	LIST_FORALL(&(consistPtr->clientList), (List_Links *) clientPtr) {
 	    if (clientPtr->clientID == clientID) {
-		handlePtr = (FsLocalFileIOHandle *)consistPtr->hdrPtr;
+		handlePtr = (Fsio_FileIOHandle *)consistPtr->hdrPtr;
 
-		if (msgPtr->flags & (FS_WRITE_BACK_BLOCKS |
-				     FS_WRITE_BACK_ATTRS)) {
-		    FsUpdateAttrFromClient(clientID, &handlePtr->cacheInfo,
+		if (msgPtr->flags & (FSCONSIST_WRITE_BACK_BLOCKS |
+				     FSCONSIST_WRITE_BACK_ATTRS)) {
+		    Fscache_UpdateAttrFromClient(clientID, &handlePtr->cacheInfo,
 			&replyPtr->cachedAttr);
 		}
 		
@@ -2029,7 +2029,7 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 		    consistPtr->lastWriter != clientID) {
 		    List_Remove((List_Links *) clientPtr);
 		    free((Address) clientPtr);
-		} else if (msgPtr->flags & FS_INVALIDATE_BLOCKS) {
+		} else if (msgPtr->flags & FSCONSIST_INVALIDATE_BLOCKS) {
 		    clientPtr->cached = FALSE;
 		}
 		break;
@@ -2062,20 +2062,20 @@ ConsistType(flags)
     int flags;		/* Cache consistency message flags */
 {
     register char *result;
-    switch (flags & ~FS_DEBUG_CONSIST) {
-	case FS_WRITE_BACK_BLOCKS:
+    switch (flags & ~FSCONSIST_DEBUG) {
+	case FSCONSIST_WRITE_BACK_BLOCKS:
 	    result = "write-back";
 	    break;
-	case FS_INVALIDATE_BLOCKS:
+	case FSCONSIST_INVALIDATE_BLOCKS:
 	    result = "invalidate";
 	    break;
-	case (FS_WRITE_BACK_BLOCKS|FS_INVALIDATE_BLOCKS):
+	case (FSCONSIST_WRITE_BACK_BLOCKS|FSCONSIST_INVALIDATE_BLOCKS):
 	    result = "write-back & invalidate";
 	    break;
-	case FS_DELETE_FILE:
+	case FSCONSIST_DELETE_FILE:
 	    result = "delete";
 	    break;
-	case FS_WRITE_BACK_ATTRS:
+	case FSCONSIST_WRITE_BACK_ATTRS:
 	    result = "return-attrs";
 	    break;
     }

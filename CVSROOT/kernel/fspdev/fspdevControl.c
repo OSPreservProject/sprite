@@ -17,13 +17,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsPdev.h"
-#include "fsOpTable.h"
-#include "fsStream.h"
-#include "fsClient.h"
-#include "fsLock.h"
-#include "fsRecovery.h"
+#include "fsutil.h"
+#include "fspdev.h"
+#include "fspdevInt.h"
+#include "fsNameOps.h"
+#include "fsio.h"
+#include "fsconsist.h"
+#include "fsioLock.h"
 #include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  *----------------------------------------------------------------------------
  *
- * FsControlHandleInit --
+ * FspdevControlHandleInit --
  *
  *	Fetch and initialize a control handle for a pseudo-device.
  *
@@ -45,31 +45,31 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *----------------------------------------------------------------------------
  *
  */
-PdevControlIOHandle *
-FsControlHandleInit(fileIDPtr, name)
+FspdevControlIOHandle *
+FspdevControlHandleInit(fileIDPtr, name)
     Fs_FileID *fileIDPtr;
     char *name;
 {
     register Boolean found;
-    register PdevControlIOHandle *ctrlHandlePtr;
-    FsHandleHeader *hdrPtr;
+    register FspdevControlIOHandle *ctrlHandlePtr;
+    Fs_HandleHeader *hdrPtr;
 
-    found = FsHandleInstall(fileIDPtr, sizeof(PdevControlIOHandle), name,
+    found = Fsutil_HandleInstall(fileIDPtr, sizeof(FspdevControlIOHandle), name,
 			    &hdrPtr);
-    ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
+    ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
     if (!found) {
 	ctrlHandlePtr->serverID = NIL;
 	List_Init(&ctrlHandlePtr->queueHdr);
 	ctrlHandlePtr->seed = 0;
 	List_Init(&ctrlHandlePtr->readWaitList);
-	FsLockInit(&ctrlHandlePtr->lock);
-	FsRecoveryInit(&ctrlHandlePtr->rmt.recovery);
+	Fsio_LockInit(&ctrlHandlePtr->lock);
+	Fsutil_RecoveryInit(&ctrlHandlePtr->rmt.recovery);
 	ctrlHandlePtr->accessTime = 0;
 	ctrlHandlePtr->modifyTime = 0;
 	ctrlHandlePtr->owner.id = (Proc_PID)NIL;
 	ctrlHandlePtr->owner.procOrFamily = 0;
-	ctrlHandlePtr->prefixPtr = (FsPrefix *)NIL;
-	fsStats.object.controls++;
+	ctrlHandlePtr->prefixPtr = (Fsprefix *)NIL;
+	fs_Stats.object.controls++;
     }
     return(ctrlHandlePtr);
 }
@@ -77,7 +77,7 @@ FsControlHandleInit(fileIDPtr, name)
 /*
  *----------------------------------------------------------------------
  *
- * FsControlCltOpen --
+ * FspdevControlIoOpen --
  *
  *	Complete setup of the server's control stream.  Called from
  *	Fs_Open on the host running the server.  We mark the Control
@@ -94,36 +94,36 @@ FsControlHandleInit(fileIDPtr, name)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+FspdevControlIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 		 ioHandlePtrPtr)
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* NIL. */
     char		*name;		/* File name for error msgs */
-    FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a control stream, or NIL */
 {
-    register PdevControlIOHandle	*ctrlHandlePtr;
+    register FspdevControlIOHandle	*ctrlHandlePtr;
 
-    ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, name);
+    ctrlHandlePtr = FspdevControlHandleInit(ioFileIDPtr, name);
     if (!List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
 	panic( "FsControlStreamCltOpen found control msgs\n");
     }
     ctrlHandlePtr->serverID = clientID;
-    *ioHandlePtrPtr = (FsHandleHeader *)ctrlHandlePtr;
+    *ioHandlePtrPtr = (Fs_HandleHeader *)ctrlHandlePtr;
     /*
      * Can't migrate pseudo-device servers.
      */
     Proc_NeverMigrate(Proc_GetCurrentProc());
-    FsHandleUnlock(ctrlHandlePtr);
+    Fsutil_HandleUnlock(ctrlHandlePtr);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsControlSelect --
+ * FspdevControlSelect --
  *
  *	Select on the server's control stream.  This returns readable
  *	if there are control messages in the queue.
@@ -139,32 +139,32 @@ FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
  */
 
 ReturnStatus
-FsControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
-    FsHandleHeader	*hdrPtr;	/* Handle on device to select */
+FspdevControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    Fs_HandleHeader	*hdrPtr;	/* Handle on device to select */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     int 		*readPtr;	/* Bit to clear if non-readable */
     int 		*writePtr;	/* Bit to clear if non-writeable */
     int 		*exceptPtr;	/* Bit to clear if non-exceptable */
 {
-    register PdevControlIOHandle *ctrlHandlePtr =
-	    (PdevControlIOHandle *)hdrPtr;
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)hdrPtr;
 
-    FsHandleLock(ctrlHandlePtr);
+    Fsutil_HandleLock(ctrlHandlePtr);
     if (List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
 	if (waitPtr != (Sync_RemoteWaiter *)NIL) {
-	    FsFastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+	    Fsutil_FastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
 	}
 	*readPtr = 0;
     }
     *writePtr = *exceptPtr = 0;
-    FsHandleUnlock(ctrlHandlePtr);
+    Fsutil_HandleUnlock(ctrlHandlePtr);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsControlRead --
+ * FspdevControlRead --
  *
  *	Read from the server's control stream.  The server learns of new
  *	clients by reading this stream.  Internally the stream is a list
@@ -182,7 +182,7 @@ FsControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsControlRead(streamPtr, readPtr, waitPtr, replyPtr)
+FspdevControlRead(streamPtr, readPtr, waitPtr, replyPtr)
     Fs_Stream 		*streamPtr;	/* Control stream */
     Fs_IOParam		*readPtr;	/* Read parameter block. */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
@@ -190,26 +190,26 @@ FsControlRead(streamPtr, readPtr, waitPtr, replyPtr)
 					 * plus the amount read. */
 {
     ReturnStatus 		status;
-    register PdevControlIOHandle *ctrlHandlePtr =
-	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
     Pdev_Notify			notify;		/* Message returned to
 						 * user-level server proc */
 
-    FsHandleLock(ctrlHandlePtr);
+    Fsutil_HandleLock(ctrlHandlePtr);
 
     if (List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
 	/*
 	 * No control messages ready.
 	 */
-	FsFastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+	Fsutil_FastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
 	replyPtr->length = 0;
 	status = FS_WOULD_BLOCK;
     } else {
-	register PdevNotify *notifyPtr;		/* Internal message */
-	notifyPtr = (PdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
+	register FspdevNotify *notifyPtr;		/* Internal message */
+	notifyPtr = (FspdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
 	List_Remove((List_Links *)notifyPtr);
 	notify.magic = PDEV_NOTIFY_MAGIC;
-	status = FsGetStreamID(notifyPtr->streamPtr, &notify.newStreamID);
+	status = Fs_GetStreamID(notifyPtr->streamPtr, &notify.newStreamID);
 	if (status != SUCCESS) {
 	    replyPtr->length = 0;
 	} else {
@@ -228,14 +228,14 @@ FsControlRead(streamPtr, readPtr, waitPtr, replyPtr)
 	}
 	free((Address)notifyPtr);
     }
-    FsHandleUnlock(ctrlHandlePtr);
+    Fsutil_HandleUnlock(ctrlHandlePtr);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsControlIOControl --
+ * FspdevControlIOControl --
  *
  *	IOControls for the control stream.
  *
@@ -249,13 +249,13 @@ FsControlRead(streamPtr, readPtr, waitPtr, replyPtr)
  */
 
 ReturnStatus
-FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
+FspdevControlIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream *streamPtr;		/* I/O handle */
     Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
     Fs_IOReply *replyPtr;		/* Return length and signal */
 {
-    register PdevControlIOHandle *ctrlHandlePtr =
-	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
     if (ioctlPtr->format != mach_Format) {
@@ -263,7 +263,7 @@ FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
     }
     switch(ioctlPtr->command) {
 	case IOC_PDEV_SIGNAL_OWNER:
-	    status = FsPdevSignalOwner(ctrlHandlePtr, ioctlPtr);
+	    status = FspdevSignalOwner(ctrlHandlePtr, ioctlPtr);
 	    break;
 	case IOC_REPOSITION:
 	    status = SUCCESS;
@@ -285,10 +285,10 @@ FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
 	    break;
 	case IOC_LOCK:
 	case IOC_UNLOCK:
-	    FsHandleLock(ctrlHandlePtr);
-	    status = FsIocLock(&ctrlHandlePtr->lock, ioctlPtr,
+	    Fsutil_HandleLock(ctrlHandlePtr);
+	    status = Fsio_IocLock(&ctrlHandlePtr->lock, ioctlPtr,
 			    &streamPtr->hdr.fileID);
-	    FsHandleUnlock(ctrlHandlePtr);
+	    Fsutil_HandleUnlock(ctrlHandlePtr);
 	    break;
 	case IOC_NUM_READABLE: {
 	    register int bytesAvailable;
@@ -296,13 +296,13 @@ FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
 	    if (ioctlPtr->outBufSize < sizeof(int)) {
 		return(GEN_INVALID_ARG);
 	    }
-	    FsHandleLock(ctrlHandlePtr);
+	    Fsutil_HandleLock(ctrlHandlePtr);
 	    if (List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
 		bytesAvailable = 0;
 	    } else {
 		bytesAvailable = sizeof(Pdev_Notify);
 	    }
-	    FsHandleUnlock(ctrlHandlePtr);
+	    Fsutil_HandleUnlock(ctrlHandlePtr);
 	    status = SUCCESS;
 	    *(int *)ioctlPtr->outBuffer = bytesAvailable;
 	    break;
@@ -325,7 +325,7 @@ FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsControlGetIOAttr --
+ * FspdevControlGetIOAttr --
  *
  *	Called from Fs_GetAttrStream to get the I/O attributes of a
  *	pseudo-device.  The access and modify times of the pseudo-device
@@ -340,18 +340,18 @@ FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsControlGetIOAttr(fileIDPtr, clientID, attrPtr)
+FspdevControlGetIOAttr(fileIDPtr, clientID, attrPtr)
     register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
     int				clientID;	/* Host ID of process asking
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
 {
-    PdevControlIOHandle		*ctrlHandlePtr;
+    FspdevControlIOHandle		*ctrlHandlePtr;
 
-    ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle, fileIDPtr);
-    if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
-	printf( "FsControlGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
-	    FsFileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
+    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+	printf( "FspdevControlGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
+	    Fsutil_FileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
 	    fileIDPtr->major, fileIDPtr->minor, clientID);
 	return(FS_FILE_NOT_FOUND);
     }
@@ -363,14 +363,14 @@ FsControlGetIOAttr(fileIDPtr, clientID, attrPtr)
 	attrPtr->dataModifyTime.seconds = ctrlHandlePtr->modifyTime;
     }
 
-    FsHandleRelease(ctrlHandlePtr, TRUE);
+    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsControlSetIOAttr --
+ * FspdevControlSetIOAttr --
  *
  *	Set the IO attributes of a pseudo-device.
  *
@@ -383,16 +383,16 @@ FsControlGetIOAttr(fileIDPtr, clientID, attrPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsControlSetIOAttr(fileIDPtr, attrPtr, flags)
+FspdevControlSetIOAttr(fileIDPtr, attrPtr, flags)
     register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
     int				flags;		/* Tells which attrs to set */
 {
-    PdevControlIOHandle		*ctrlHandlePtr;
+    FspdevControlIOHandle		*ctrlHandlePtr;
 
-    ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle, fileIDPtr);
-    if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
-	printf( "FsControlSetIOAttr, no handle <%d,%d,%x,%x>\n",
+    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+	printf( "FspdevControlSetIOAttr, no handle <%d,%d,%x,%x>\n",
 	    fileIDPtr->serverID, fileIDPtr->type,
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
@@ -401,19 +401,19 @@ FsControlSetIOAttr(fileIDPtr, attrPtr, flags)
 	ctrlHandlePtr->accessTime = attrPtr->accessTime.seconds;
 	ctrlHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
     }
-    FsHandleRelease(ctrlHandlePtr, TRUE);
+    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsControlVerify --
+ * FspdevControlVerify --
  *
  *	This is called during recovery.
  *	When the server at a remote site reopens its control stream it
  *	contacts the file server to re-establish itself as the server.
- *	This procedure is called from FsStreamReopen to get the control
+ *	This procedure is called from Fsio_StreamReopen to get the control
  *	handle associated with the top-level shadow stream here at the
  *	file server.
  *
@@ -422,39 +422,39 @@ FsControlSetIOAttr(fileIDPtr, attrPtr, flags)
  *
  * Side effects:
  *	The handle is returned locked and with its refCount incremented.
- *	It should be released with FsHandleRelease.
+ *	It should be released with Fsutil_HandleRelease.
  *
  *----------------------------------------------------------------------
  */
 
-FsHandleHeader *
-FsControlVerify(fileIDPtr, pdevServerHostID)
+Fs_HandleHeader *
+FspdevControlVerify(fileIDPtr, pdevServerHostID)
     Fs_FileID	*fileIDPtr;		/* control I/O file ID */
     int		pdevServerHostID;	/* Host ID of the client */
 {
-    register PdevControlIOHandle	*ctrlHandlePtr;
+    register FspdevControlIOHandle	*ctrlHandlePtr;
     int serverID = -1;
 
-    ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle, fileIDPtr);
-    if (ctrlHandlePtr != (PdevControlIOHandle *)NIL) {
+    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr != (FspdevControlIOHandle *)NIL) {
 	if (ctrlHandlePtr->serverID != pdevServerHostID) {
 	    serverID = ctrlHandlePtr->serverID;
-	    FsHandleRelease(ctrlHandlePtr, TRUE);
-	    ctrlHandlePtr = (PdevControlIOHandle *)NIL;
+	    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+	    ctrlHandlePtr = (FspdevControlIOHandle *)NIL;
 	}
     }
-    if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
-	printf("FsControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
-	    pdevServerHostID, serverID, FsFileTypeToString(fileIDPtr->type),
+    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+	printf("FspdevControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
+	    pdevServerHostID, serverID, Fsutil_FileTypeToString(fileIDPtr->type),
 	    fileIDPtr->major, fileIDPtr->minor);
     }
-    return((FsHandleHeader *)ctrlHandlePtr);
+    return((Fs_HandleHeader *)ctrlHandlePtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsControlReopen --
+ * FspdevControlReopen --
  *
  *	Reopen a control stream.  A control handle is kept on both the
  *	file server as well as the pseudo-device server's host.  If the
@@ -473,33 +473,33 @@ FsControlVerify(fileIDPtr, pdevServerHostID)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
-    FsHandleHeader	*hdrPtr;
+FspdevControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
+    Fs_HandleHeader	*hdrPtr;
     int			clientID;		/* ID of pdev server's host */
-    ClientData		inData;			/* PdevControlReopenParams */
+    ClientData		inData;			/* FspdevControlReopenParams */
     int			*outSizePtr;		/* IGNORED */
     ClientData		*outDataPtr;		/* IGNORED */
 
 {
-    register PdevControlIOHandle *ctrlHandlePtr;
-    register PdevControlReopenParams *reopenParamsPtr;
+    register FspdevControlIOHandle *ctrlHandlePtr;
+    register FspdevControlReopenParams *reopenParamsPtr;
     register ReturnStatus status = SUCCESS;
 
-    if (hdrPtr != (FsHandleHeader *)NIL) {
+    if (hdrPtr != (Fs_HandleHeader *)NIL) {
 	/*
 	 * Called on the pdev server's host to contact the remote
 	 * file server and re-establish state.
 	 */
-	PdevControlIOHandle *ctrlHandlePtr;
-	PdevControlReopenParams params;
+	FspdevControlIOHandle *ctrlHandlePtr;
+	FspdevControlReopenParams params;
 	int outSize = 0;
 
-	ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
+	ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
 	reopenParamsPtr = &params;
 	reopenParamsPtr->fileID = hdrPtr->fileID;
 	reopenParamsPtr->serverID = ctrlHandlePtr->serverID;
 	reopenParamsPtr->seed = ctrlHandlePtr->seed;
-	status = FsSpriteReopen(hdrPtr, sizeof(PdevControlReopenParams),
+	status = FsrmtReopen(hdrPtr, sizeof(FspdevControlReopenParams),
 		(Address)reopenParamsPtr, &outSize, (Address)NIL);
     } else {
 	/*
@@ -507,8 +507,8 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	 * that corresponds to a control handle on the pdev server's host.
 	 */
 
-	reopenParamsPtr = (PdevControlReopenParams *)inData;
-	ctrlHandlePtr = FsControlHandleInit(&reopenParamsPtr->fileID,
+	reopenParamsPtr = (FspdevControlReopenParams *)inData;
+	ctrlHandlePtr = FspdevControlHandleInit(&reopenParamsPtr->fileID,
 					    (char *)NIL);
 	if (reopenParamsPtr->serverID != NIL) {
 	    /*
@@ -521,7 +521,7 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 		printf(
 		    "PdevControlReopen conflict, %d lost to %d, %s <%x,%x>\n",
 		    clientID, ctrlHandlePtr->serverID,
-		    FsFileTypeToString(ctrlHandlePtr->rmt.hdr.fileID.type),
+		    Fsutil_FileTypeToString(ctrlHandlePtr->rmt.hdr.fileID.type),
 		    ctrlHandlePtr->rmt.hdr.fileID.major,
 		    ctrlHandlePtr->rmt.hdr.fileID.minor);
 		status = FS_FILE_BUSY;
@@ -533,7 +533,7 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	     */
 	    ctrlHandlePtr->serverID = NIL;
 	}
-	FsHandleRelease(ctrlHandlePtr, TRUE);
+	Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
      }
     return(status);
 }
@@ -541,7 +541,7 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsControlClose --
+ * FspdevControlClose --
  *
  *	Close a server process's control stream.  After this the pseudo-device
  *	is no longer active and client operations will fail.
@@ -557,7 +557,7 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsControlClose(streamPtr, clientID, procID, flags, size, data)
+FspdevControlClose(streamPtr, clientID, procID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Control stream */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process */
@@ -565,9 +565,9 @@ FsControlClose(streamPtr, clientID, procID, flags, size, data)
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
 {
-    register PdevControlIOHandle *ctrlHandlePtr =
-	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
-    register PdevNotify *notifyPtr;
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevNotify *notifyPtr;
     int extra = 0;
 
     /*
@@ -575,14 +575,14 @@ FsControlClose(streamPtr, clientID, procID, flags, size, data)
      * the master process yet.
      */
     while (!List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
-	notifyPtr = (PdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
+	notifyPtr = (FspdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
 	List_Remove((List_Links *)notifyPtr);
 	extra++;
 	(void)Fs_Close(notifyPtr->streamPtr);
 	free((Address)notifyPtr);
     }
     if (extra) {
-	printf( "FsControlClose found %d left over messages\n",
+	printf( "FspdevControlClose found %d left over messages\n",
 			extra);
     }
     /*
@@ -590,18 +590,18 @@ FsControlClose(streamPtr, clientID, procID, flags, size, data)
      */
     ctrlHandlePtr->serverID = NIL;
     if (ctrlHandlePtr->rmt.hdr.fileID.serverID != rpc_SpriteID) {
-	(void)FsRemoteClose(streamPtr, rpc_SpriteID, procID, 0, 0,
+	(void)Fsrmt_Close(streamPtr, rpc_SpriteID, procID, 0, 0,
 		(ClientData)NIL);
     }
-    FsWaitListDelete(&ctrlHandlePtr->readWaitList);
-    FsHandleRelease(ctrlHandlePtr, TRUE);
+    Fsutil_WaitListDelete(&ctrlHandlePtr->readWaitList);
+    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsControlClientKill --
+ * FspdevControlClientKill --
  *
  *	See if a crashed client was running a pseudo-device master.
  *
@@ -616,25 +616,25 @@ FsControlClose(streamPtr, clientID, procID, flags, size, data)
  */
 /*ARGSUSED*/
 void
-FsControlClientKill(hdrPtr, clientID)
-    FsHandleHeader *hdrPtr;	/* File being encapsulated */
+FspdevControlClientKill(hdrPtr, clientID)
+    Fs_HandleHeader *hdrPtr;	/* File being encapsulated */
 {
-    register PdevControlIOHandle *ctrlHandlePtr =
-	    (PdevControlIOHandle *)hdrPtr;
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)hdrPtr;
 
     if (ctrlHandlePtr->serverID == clientID) {
 	ctrlHandlePtr->serverID = NIL;
-	FsHandleRemove(ctrlHandlePtr);
-	fsStats.object.controls--;
+	Fsutil_HandleRemove(ctrlHandlePtr);
+	fs_Stats.object.controls--;
     } else {
-        FsHandleUnlock(ctrlHandlePtr);
+        Fsutil_HandleUnlock(ctrlHandlePtr);
     }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsControlScavenge --
+ * FspdevControlScavenge --
  *
  *	See if this control stream handle is still needed.
  *
@@ -647,17 +647,17 @@ FsControlClientKill(hdrPtr, clientID)
  *----------------------------------------------------------------------
  */
 Boolean
-FsControlScavenge(hdrPtr)
-    FsHandleHeader *hdrPtr;	/* File being encapsulated */
+FspdevControlScavenge(hdrPtr)
+    Fs_HandleHeader *hdrPtr;	/* File being encapsulated */
 {
-    register PdevControlIOHandle *ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
+    register FspdevControlIOHandle *ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
 
     if (ctrlHandlePtr->serverID == NIL) {
-	FsHandleRemove(ctrlHandlePtr);
-	fsStats.object.controls--;
+	Fsutil_HandleRemove(ctrlHandlePtr);
+	fs_Stats.object.controls--;
 	return(TRUE);
     } else {
-        FsHandleUnlock(ctrlHandlePtr);
+        Fsutil_HandleUnlock(ctrlHandlePtr);
 	return(FALSE);
     }
 }

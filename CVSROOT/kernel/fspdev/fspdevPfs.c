@@ -35,35 +35,32 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsOpTable.h"
-#include "fsStream.h"
-#include "fsClient.h"
-#include "fsFile.h"
-#include "fsDisk.h"
-#include "fsLock.h"
-#include "fsPrefix.h"
+#include "fsutil.h"
 #include "fsNameOps.h"
+#include "fsio.h"
+#include "fsconsist.h"
+#include "fsdm.h"
+#include "fsioLock.h"
+#include "fsprefix.h"
 #include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
-#include "swapBuffer.h"
-#include "fsPdev.h"
+#include "fspdev.h"
+#include "fspdevInt.h"
 #include "dev/pfs.h"
 
-PdevControlIOHandle *PfsControlHandleInit();
-PdevServerIOHandle *PfsGetUserLevelIDs();
+static FspdevServerIOHandle *PfsGetUserLevelIDs();
 
 /*
  *----------------------------------------------------------------------------
  *
- * FsRmtLinkSrvOpen --
+ * FspdevRmtLinkNameOpen --
  *
  *	The user-level server for a pseudo-filesystem is established by
  *	opening a remote link type file with the FS_PFS_MASTER flag.
  *	This procedure is invoked on the file server when remote links
  *	are opened and detects this situation.  (If FS_PFS_MASTER is
- *	not specified then FsFileSrvOpen is called and the remote link
+ *	not specified then Fsio_FileNameOpen is called and the remote link
  *	is treated normally.)  Futhermore, there are two kinds of
  *	pseudo-filesystem servers, "local agents" and "network agents".
  *	If the FS_EXCLUSIVE flag is specified a local agent is created
@@ -85,26 +82,26 @@ PdevServerIOHandle *PfsGetUserLevelIDs();
  *
  */
 ReturnStatus
-FsRmtLinkSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
-     register FsLocalFileIOHandle *handlePtr;	/* A handle from FsLocalLookup.
+FspdevRmtLinkNameOpen(handlePtr, openArgsPtr, openResultsPtr)
+     register Fsio_FileIOHandle *handlePtr;	/* A handle from FslclLookup.
 					 * Should be LOCKED upon entry,
 					 * unlocked upon exit. */
-     FsOpenArgs		*openArgsPtr;	/* Standard open arguments */
-     FsOpenResults	*openResultsPtr;/* For returning ioFileID, streamID */
+     Fs_OpenArgs		*openArgsPtr;	/* Standard open arguments */
+     Fs_OpenResults	*openResultsPtr;/* For returning ioFileID, streamID */
 {
     register ReturnStatus status = SUCCESS;
     register Fs_FileID *ioFileIDPtr = &openResultsPtr->ioFileID;
 
     if ((openArgsPtr->useFlags & FS_PFS_MASTER) == 0) {
-	return(FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr));
+	return(Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr));
     }
     /*
-     * Generate an ID which is just like a FS_CONTROL_STREAM, except that
+     * Generate an ID which is just like a FSIO_CONTROL_STREAM, except that
      * the serverID will be set to us, the file server, for exported
      * pseudo-filesystems, or set to the host running the server if the
      * pseudo-filesystem is not exported.
      */
-    ioFileIDPtr->type = FS_PFS_CONTROL_STREAM;
+    ioFileIDPtr->type = FSIO_PFS_CONTROL_STREAM;
     ioFileIDPtr->major = handlePtr->hdr.fileID.major;
     ioFileIDPtr->minor = handlePtr->hdr.fileID.minor ^
 			 (handlePtr->descPtr->version << 16);
@@ -117,7 +114,7 @@ FsRmtLinkSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
 	 */
 	ioFileIDPtr->serverID = openArgsPtr->clientID;
 	ioFileIDPtr->major ^= rpc_SpriteID << 16;
-	FsStreamNewID(openArgsPtr->clientID, &openResultsPtr->streamID);
+	Fsio_StreamCreateID(openArgsPtr->clientID, &openResultsPtr->streamID);
     } else {
 	/*
 	 * The pseudo-filesystem will be exported to the network.  Setting
@@ -128,28 +125,28 @@ FsRmtLinkSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
 	 * control handle on the client.  Thus there is no shadow stream,
 	 * only a control handle here..
 	 */
-	register PdevControlIOHandle *ctrlHandlePtr;
+	register FspdevControlIOHandle *ctrlHandlePtr;
 
 	ioFileIDPtr->serverID = rpc_SpriteID;
-	ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, handlePtr->hdr.name);
+	ctrlHandlePtr = FspdevControlHandleInit(ioFileIDPtr, handlePtr->hdr.name);
 	if (ctrlHandlePtr->serverID != NIL) {
 	    status = FS_FILE_BUSY;
 	} else {
 	    ctrlHandlePtr->serverID = openArgsPtr->clientID;
-	    FsStreamNewID(openArgsPtr->clientID, &openResultsPtr->streamID);
+	    Fsio_StreamCreateID(openArgsPtr->clientID, &openResultsPtr->streamID);
 	}
-	FsHandleRelease(ctrlHandlePtr, TRUE);
+	Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
     }
     openResultsPtr->streamData = (ClientData)NIL;
     openResultsPtr->dataSize = 0;
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsCltOpen --
+ * FspdevPfsIoOpen --
  *
  *	This is called from Fs_Open to complete setup of the stream
  *	returned to the server of a pseudo-filesystem.  This stream
@@ -169,8 +166,8 @@ FsRmtLinkSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
  *
  * Side effects:
  *	Three handles are created.  They have the same server, major, and minor,
- *	but differ in their types (FS_PFS_CONTROL_STREAM, FS_SERVER_STREAM,
- *	and FS_LCL_PSEUDO_STREAM).  The server stream is returned to our caller,
+ *	but differ in their types (FSIO_PFS_CONTROL_STREAM, FSIO_SERVER_STREAM,
+ *	and FSIO_LCL_PSEUDO_STREAM).  The server stream is returned to our caller,
  *	the client stream is hooked to the prefix table, and the control
  *	stream is left around for conflict checking.
  *
@@ -178,26 +175,26 @@ FsRmtLinkSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+FspdevPfsIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
-    ClientData		streamData;	/* Pointer to FsPdevState. */
+    ClientData		streamData;	/* Pointer to Fspdev_State. */
     char		*name;		/* File name for error msgs */
-    FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a pseudo device, or NIL */
 {
     register ReturnStatus	status = SUCCESS;
-    register PdevControlIOHandle *ctrlHandlePtr;
-    register PdevServerIOHandle *pdevHandlePtr;
-    register PdevClientIOHandle *cltHandlePtr;
-    FsHandleHeader		*prefixHdrPtr;
+    register FspdevControlIOHandle *ctrlHandlePtr;
+    register FspdevServerIOHandle *pdevHandlePtr;
+    register FspdevClientIOHandle *cltHandlePtr;
+    Fs_HandleHeader		*prefixHdrPtr;
     Fs_FileID			rootID;
     int				domain;
     int				id;
     char			*ignoredName;
-    FsPrefix			*prefixPtr;
+    Fsprefix			*prefixPtr;
     int				prefixFlags;
 
     /*
@@ -209,8 +206,8 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	    "Need absolute name (not \"%s\") for pseudo-filesystem\n", name);
 	return(FS_INVALID_ARG);
     }
-    status = FsPrefixLookup(name,
-		FS_IMPORTED_PREFIX|FS_EXPORTED_PREFIX|FS_EXACT_PREFIX, -1,
+    status = Fsprefix_Lookup(name,
+		FSPREFIX_IMPORTED|FSPREFIX_EXPORTED|FSPREFIX_EXACT, -1,
 		&prefixHdrPtr, &rootID, &ignoredName, &id, &domain, &prefixPtr);
     if (status == SUCCESS) {
 	printf( "Prefix \"%s\" already serviced\n", name);
@@ -227,7 +224,7 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
      * pseudo-device connections to the pseudo-filesystem server.  It is
      * important to set the serverID so the control stream won't get scavenged.
      */
-    ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, name);
+    ctrlHandlePtr = FspdevControlHandleInit(ioFileIDPtr, name);
     ctrlHandlePtr->serverID = rpc_SpriteID;
     /*
      * Setup the request-response connection, and return the server
@@ -236,17 +233,17 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
      * when clients do opens in the pseudo-filesystem, and so we
      * can close it and clean up the prefix table when the server process exits.
      */
-    ioFileIDPtr->type = FS_LCL_PSEUDO_STREAM;
+    ioFileIDPtr->type = FSIO_LCL_PSEUDO_STREAM;
     ioFileIDPtr->serverID = rpc_SpriteID;
-    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, rpc_SpriteID, 1);
-    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
+    cltHandlePtr = FspdevConnect(ctrlHandlePtr, ioFileIDPtr, rpc_SpriteID, 1);
+    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
 	status = FAILURE;
 	goto cleanup;
     }
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
-    *ioHandlePtrPtr = (FsHandleHeader *)pdevHandlePtr;
+    *ioHandlePtrPtr = (Fs_HandleHeader *)pdevHandlePtr;
     /*
-     * This ID gets passed in FsLookupArgs
+     * This ID gets passed in Fs_LookupArgs
      * as the prefixID if the prefix is the root of the pseudo domain.
      * It can be reset by the user with IOC_PFS_SET_ROOT.
      */
@@ -257,25 +254,25 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     /*
      * Install the client side of the connection in the prefix table.
      */
-    prefixFlags = FS_IMPORTED_PREFIX;
+    prefixFlags = FSPREFIX_IMPORTED;
     if (*flagsPtr & FS_EXCLUSIVE) {
-	prefixFlags |= FS_LOCAL_PREFIX;
+	prefixFlags |= FSPREFIX_LOCAL;
     } else {
-	prefixFlags |= FS_EXPORTED_PREFIX;
+	prefixFlags |= FSPREFIX_EXPORTED;
     }
-    ctrlHandlePtr->prefixPtr = FsPrefixInstall(name,
-		(FsHandleHeader *)cltHandlePtr, FS_PSEUDO_DOMAIN, prefixFlags);
+    ctrlHandlePtr->prefixPtr = Fsprefix_Install(name,
+		(Fs_HandleHeader *)cltHandlePtr, FS_PSEUDO_DOMAIN, prefixFlags);
     /*
      * No migration of pseudo-filesystem servers.
      */
     Proc_NeverMigrate(Proc_GetCurrentProc());
-    FsHandleUnlock(cltHandlePtr);
+    Fsutil_HandleUnlock(cltHandlePtr);
 cleanup:
     if (status != SUCCESS) {
-	FsHandleRelease(ctrlHandlePtr, TRUE);
-	*ioHandlePtrPtr = (FsHandleHeader *)NIL;
+	Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+	*ioHandlePtrPtr = (Fs_HandleHeader *)NIL;
     } else {
-	FsHandleUnlock(ctrlHandlePtr);
+	Fsutil_HandleUnlock(ctrlHandlePtr);
     }
     return(status);
 
@@ -284,14 +281,14 @@ cleanup:
 /*
  *----------------------------------------------------------------------------
  *
- * FsPfsExport --
+ * FspdevPfsExport --
  *
- *	This is called from the Fs_RpcPrefix stub to complete setup for
+ *	This is called from the Fsrmt_RpcPrefix stub to complete setup for
  *	a client that will be importing a prefix of a pseudo-filesystem
  *	that has its server process on this host.  This has to add the
  *	client to the client end of the naming request response stream
  *	so future naming operations by that client are accepted here.
- *	The remote Sprite host will call FsPfsNamingCltOpen to set
+ *	The remote Sprite host will call FspdevPfsNamingIoOpen to set
  *	up the handle that it will attach to its own prefix table.
  *
  * Results:
@@ -305,49 +302,49 @@ cleanup:
  *
  */
 ReturnStatus
-FsPfsExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
-     FsHandleHeader	*hdrPtr;	/* A handle from the prefix table. */
+FspdevPfsExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
+     Fs_HandleHeader	*hdrPtr;	/* A handle from the prefix table. */
      int		clientID;	/* Host ID of client importing prefix */
      register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
      int		*dataSizePtr;	/* Return - 0 */
      ClientData		*clientDataPtr;	/* Return - NIL */
 {
-    register PdevClientIOHandle *cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
+    register FspdevClientIOHandle *cltHandlePtr = (FspdevClientIOHandle *)hdrPtr;
     register ReturnStatus status;
 
-    FsHandleLock(cltHandlePtr);
-    if (FsPdevServerOK(cltHandlePtr->pdevHandlePtr)) {
-	(void)FsIOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
+    Fsutil_HandleLock(cltHandlePtr);
+    if (FspdevPdevServerOK(cltHandlePtr->pdevHandlePtr)) {
+	(void)Fsconsist_IOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
 	*ioFileIDPtr = cltHandlePtr->hdr.fileID;
-	ioFileIDPtr->type = FS_PFS_NAMING_STREAM;
+	ioFileIDPtr->type = FSIO_PFS_NAMING_STREAM;
 	*dataSizePtr = 0;
 	*clientDataPtr = (ClientData)NIL;
 	status = SUCCESS;
     } else {
 	status = FAILURE;
     }
-    FsHandleUnlock(cltHandlePtr);
+    Fsutil_HandleUnlock(cltHandlePtr);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsNamingCltOpen --
+ * FspdevPfsNamingIoOpen --
  *
- *	This is called from FsSpriteImport to complete setup of the I/O
+ *	This is called from FsrmtImport to complete setup of the I/O
  *	handle that hangs off the prefix table.  This stream
  *	is called a "naming stream" because it will be used to
  *	forward naming operations to the pseudo-filesystem server.  This
- *	routine is similar to FsRmtPseudoStreamCltOpen, except that at
+ *	routine is similar to FspdevRmtPseudoStreamIoOpen, except that at
  *	this point the server already knows about us, so we don't have
- *	to contact it with FsDeviceRemoteOpen.
+ *	to contact it with Fsrmt_DeviceOpen.
  *
  * Results:
  *	SUCCESS.
  *
  * Side effects:
- *	Creates a FS_PFS_NAMING_STREAM, which is like a FS_RMT_PSEUDO_STREAM
+ *	Creates a FSIO_PFS_NAMING_STREAM, which is like a FSIO_RMT_PSEUDO_STREAM
  *	in that its operations are forwarded via RPC to the host running
  *	the pseudo-filesystem server.
  *
@@ -355,35 +352,35 @@ FsPfsExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPfsNamingCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+FspdevPfsNamingIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
-    ClientData		streamData;	/* Pointer to FsPdevState. */
+    ClientData		streamData;	/* Pointer to Fspdev_State. */
     char		*name;		/* File name for error msgs */
-    FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a pseudo device, or NIL */
 {
     Boolean found;
-    FsRemoteIOHandle *rmtHandlePtr;
+    Fsrmt_IOHandle *rmtHandlePtr;
 
-    found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle), name,
-	    (FsHandleHeader **)&rmtHandlePtr);
+    found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(Fsrmt_IOHandle), name,
+	    (Fs_HandleHeader **)&rmtHandlePtr);
     if (!found) {
-	FsRecoveryInit(&rmtHandlePtr->recovery);
-	fsStats.object.remote++;
+	Fsutil_RecoveryInit(&rmtHandlePtr->recovery);
+	fs_Stats.object.remote++;
     }
     rmtHandlePtr->recovery.use.ref++;
-    *ioHandlePtrPtr = (FsHandleHeader *)rmtHandlePtr;
-    FsHandleUnlock(rmtHandlePtr);
+    *ioHandlePtrPtr = (Fs_HandleHeader *)rmtHandlePtr;
+    Fsutil_HandleUnlock(rmtHandlePtr);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoDomainInfo --
+ * FspdevPfsDomainInfo --
  *
  *	Get information about a pseudo-file-system.
  *
@@ -397,20 +394,20 @@ FsPfsNamingCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
  */
 
 ReturnStatus
-FsPseudoDomainInfo(fileIDPtr, domainInfoPtr)
+FspdevPfsDomainInfo(fileIDPtr, domainInfoPtr)
     Fs_FileID *fileIDPtr;
     Fs_DomainInfo *domainInfoPtr;
 {
     ReturnStatus		status;
     Pfs_Request			request;
-    FsRedirectInfo		*redirectPtr;
-    PdevClientIOHandle		*cltHandlePtr;
+    Fs_RedirectInfo		*redirectPtr;
+    FspdevClientIOHandle		*cltHandlePtr;
     int				resultSize;
 
 
-    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
-    if (cltHandlePtr != (PdevClientIOHandle *)NIL) {
-	FsHandleUnlock(cltHandlePtr);
+    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr != (FspdevClientIOHandle *)NIL) {
+	Fsutil_HandleUnlock(cltHandlePtr);
 	/*
 	 * Go to the pseudo-device server to get the domain information.
 	 * We also change the fileID of the domain to be the user-visible
@@ -422,13 +419,13 @@ FsPseudoDomainInfo(fileIDPtr, domainInfoPtr)
 	request.hdr.operation = PFS_DOMAIN_INFO;
 	request.param.domainInfo = *fileIDPtr;
 	resultSize = sizeof(Fs_DomainInfo);
-	status = FsPseudoStreamLookup(cltHandlePtr->pdevHandlePtr, &request,
+	status = FspdevPseudoStreamLookup(cltHandlePtr->pdevHandlePtr, &request,
 		    0, (Address)NIL,
 		    &resultSize, (Address)domainInfoPtr, &redirectPtr);
-	if (redirectPtr != (FsRedirectInfo *)NIL) {
+	if (redirectPtr != (Fs_RedirectInfo *)NIL) {
 	    free((Address)redirectPtr);
 	}
-	FsHandleRelease(cltHandlePtr, FALSE);
+	Fsutil_HandleRelease(cltHandlePtr, FALSE);
     }
     return(status);
 }
@@ -437,7 +434,7 @@ FsPseudoDomainInfo(fileIDPtr, domainInfoPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsOpen --
+ * FspdevPfsOpen --
  *
  *	Open a file served by a pseudo-filesystem server.  The stream returned
  *	to the client can either be a pseudo-device connection to the
@@ -455,23 +452,23 @@ FsPseudoDomainInfo(fileIDPtr, domainInfoPtr)
  */
 
 ReturnStatus
-FsPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FspdevPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	     newNameInfoPtrPtr)
-    FsHandleHeader  *prefixHandle;	/* Handle from prefix table or cwd */
+    Fs_HandleHeader  *prefixHandle;	/* Handle from prefix table or cwd */
     char 	  *relativeName;	/* The name of the file to open. */
-    Address 	  argsPtr;		/* Ref. to FsOpenArgs */
-    Address 	  resultsPtr;		/* Ref. to FsOpenResults */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
+    Address 	  argsPtr;		/* Ref. to Fs_OpenArgs */
+    Address 	  resultsPtr;		/* Ref. to Fs_OpenResults */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
 {
-    register PdevClientIOHandle	*cltHandlePtr;
-    register PdevServerIOHandle *pdevHandlePtr;
-    register FsOpenArgs		*openArgsPtr = (FsOpenArgs *)argsPtr;
+    register FspdevClientIOHandle	*cltHandlePtr;
+    register FspdevServerIOHandle *pdevHandlePtr;
+    register Fs_OpenArgs		*openArgsPtr = (Fs_OpenArgs *)argsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    cltHandlePtr = (PdevClientIOHandle *)prefixHandle;
+    cltHandlePtr = (FspdevClientIOHandle *)prefixHandle;
 
     /*
      * Set up the open arguments, and get ahold of the naming stream.
@@ -479,18 +476,18 @@ FsPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     request.hdr.operation = PFS_OPEN;
     pdevHandlePtr = PfsGetUserLevelIDs(cltHandlePtr->pdevHandlePtr,
 			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
-    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.open = *openArgsPtr;
 
-    resultSize = sizeof(FsOpenResults);
+    resultSize = sizeof(Fs_OpenResults);
 
     /*
      * Do the open.  The openResults are setup by the server-side IOC
      * handler, so just we return.
      */
-    status = FsPseudoStreamLookup(pdevHandlePtr, &request,
+    status = FspdevPseudoStreamLookup(pdevHandlePtr, &request,
 		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
@@ -510,7 +507,7 @@ FsPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
  *
  * Results:
  *	Returns the pdevHandlePtr for the naming request-response stream.  This
- *	is in turn passed to FsPseudoStreamLookup.  This also sets the prefixID
+ *	is in turn passed to FspdevPseudoStreamLookup.  This also sets the prefixID
  *	to be the user-level version.
  *
  * Side effects:
@@ -519,33 +516,33 @@ FsPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
  *----------------------------------------------------------------------
  */
 
-PdevServerIOHandle *
+static FspdevServerIOHandle *
 PfsGetUserLevelIDs(pdevHandlePtr, prefixIDPtr, rootIDPtr)
-    PdevServerIOHandle *pdevHandlePtr;	/* Handle of name prefix */
+    FspdevServerIOHandle *pdevHandlePtr;	/* Handle of name prefix */
     Fs_FileID *prefixIDPtr;		/* Prefix fileID */
     Fs_FileID *rootIDPtr;		/* ID of naming request-response */
 {
-    register PdevClientIOHandle *cltHandlePtr;
+    register FspdevClientIOHandle *cltHandlePtr;
 
     *prefixIDPtr = pdevHandlePtr->userLevelID;
-    rootIDPtr->type = fsRmtToLclType[rootIDPtr->type];
-    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, rootIDPtr);
-    if (cltHandlePtr != (PdevClientIOHandle *)NIL) {
-	FsHandleRelease(cltHandlePtr, TRUE);
+    rootIDPtr->type = fsio_RmtToLclType[rootIDPtr->type];
+    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, rootIDPtr);
+    if (cltHandlePtr != (FspdevClientIOHandle *)NIL) {
+	Fsutil_HandleRelease(cltHandlePtr, TRUE);
 	return(cltHandlePtr->pdevHandlePtr);
     } else {
-	return((PdevServerIOHandle *)NIL);
+	return((FspdevServerIOHandle *)NIL);
     }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsOpenConnection --
+ * FspdevPfsOpenConnection --
  *
  *	This is called when the server does an IOC_PFS_OPEN to respond
- *	to an open request issued by FsPfsOpen.  This sets up the server's
- *	half of the pseudo-device connection, while FsPfsOpen completes
+ *	to an open request issued by FspdevPfsOpen.  This sets up the server's
+ *	half of the pseudo-device connection, while FspdevPfsOpen completes
  *	the connection by opening the client's half.  This knows it is
  *	executing in the kernel context of the server process so it can
  *	establish the user-level streamID needed by the server.
@@ -559,13 +556,13 @@ PfsGetUserLevelIDs(pdevHandlePtr, prefixIDPtr, rootIDPtr)
  *----------------------------------------------------------------------
  */
 int
-FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
-    PdevServerIOHandle	*namingPdevHandlePtr;/* From naming request-response */
+FspdevPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
+    FspdevServerIOHandle	*namingPdevHandlePtr;/* From naming request-response */
     Fs_FileID *srvrFileIDPtr;		/* FileID from user-level server */
-    FsOpenResults *openResultsPtr;	/* Info returned to client's open */
+    Fs_OpenResults *openResultsPtr;	/* Info returned to client's open */
 {
-    register PdevControlIOHandle *ctrlHandlePtr;
-    register PdevClientIOHandle *cltHandlePtr;
+    register FspdevControlIOHandle *ctrlHandlePtr;
+    register FspdevClientIOHandle *cltHandlePtr;
     register Fs_Stream *srvStreamPtr;
     register Fs_Stream *cltStreamPtr;
     int newStreamID;
@@ -577,26 +574,26 @@ FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
     ctrlHandlePtr = namingPdevHandlePtr->ctrlHandlePtr;
     ctrlHandlePtr->seed++;
     fileIDPtr = &openResultsPtr->ioFileID;
-    fileIDPtr->type = FS_LCL_PFS_STREAM;
+    fileIDPtr->type = FSIO_LCL_PFS_STREAM;
     fileIDPtr->serverID = rpc_SpriteID;
     fileIDPtr->major = ctrlHandlePtr->rmt.hdr.fileID.major;
     fileIDPtr->minor = (ctrlHandlePtr->rmt.hdr.fileID.minor << 12)
 			^ ctrlHandlePtr->seed;
 
-    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, fileIDPtr,
+    cltHandlePtr = FspdevConnect(ctrlHandlePtr, fileIDPtr,
 		    namingPdevHandlePtr->open.clientID, 0);
-    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	printf( "FsPfsOpenConnection failing\n");
+    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+	printf( "FspdevPfsOpenConnection failing\n");
 	return(-1);
     }
     /*
-     * Set the ioFileID type. (FsPdevConnect has munged it to FS_SERVER_STREAM.)
+     * Set the ioFileID type. (FspdevConnect has munged it to FSIO_SERVER_STREAM.)
      * The open.clientID has been set curtesy of the PFS_OPEN RequestResponse.
      */
     if (namingPdevHandlePtr->open.clientID == rpc_SpriteID) {
-	fileIDPtr->type = FS_LCL_PFS_STREAM;
+	fileIDPtr->type = FSIO_LCL_PFS_STREAM;
     } else {
-	fileIDPtr->type = FS_RMT_PFS_STREAM;
+	fileIDPtr->type = FSIO_RMT_PFS_STREAM;
     }
     /*
      * Save the server process's ID for the connection.
@@ -607,33 +604,33 @@ FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
      * Set up a stream to the server's half of the connection and
      * then choose a user level streamID.
      */
-    srvStreamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
-		    (FsHandleHeader *)cltHandlePtr->pdevHandlePtr,
+    srvStreamPtr = Fsio_StreamCreate(rpc_SpriteID, rpc_SpriteID,
+		    (Fs_HandleHeader *)cltHandlePtr->pdevHandlePtr,
 		    FS_READ|FS_USER, namingPdevHandlePtr->open.name);
-    if (FsGetStreamID(srvStreamPtr, &newStreamID) != SUCCESS) {
-	(void)FsStreamClientClose(&srvStreamPtr->clientList, rpc_SpriteID);
-	FsStreamDispose(srvStreamPtr);
+    if (Fs_GetStreamID(srvStreamPtr, &newStreamID) != SUCCESS) {
+	(void)Fsio_StreamClientClose(&srvStreamPtr->clientList, rpc_SpriteID);
+	Fsio_StreamDestroy(srvStreamPtr);
 	Sync_LockClear(&cltHandlePtr->pdevHandlePtr->lock);
-	FsHandleRemove(cltHandlePtr->pdevHandlePtr);
-	FsHandleRemove(cltHandlePtr);
-	fsStats.object.pseudoStreams--;
+	Fsutil_HandleRemove(cltHandlePtr->pdevHandlePtr);
+	Fsutil_HandleRemove(cltHandlePtr);
+	fs_Stats.object.pseudoStreams--;
 	newStreamID = -1;
     } else {
 	/*
 	 * Set up a stream to the client's half of the connection.
 	 */
-	cltStreamPtr = FsStreamNewClient(rpc_SpriteID,
+	cltStreamPtr = Fsio_StreamCreate(rpc_SpriteID,
 			    namingPdevHandlePtr->open.clientID,
-			    (FsHandleHeader *)cltHandlePtr,
+			    (Fs_HandleHeader *)cltHandlePtr,
 			    namingPdevHandlePtr->open.useFlags,
 			    namingPdevHandlePtr->open.name);
 	openResultsPtr->nameID = openResultsPtr->ioFileID;
 	openResultsPtr->streamID = cltStreamPtr->hdr.fileID;
 	openResultsPtr->dataSize = 0;
 	openResultsPtr->streamData = (ClientData)NIL;
-	FsHandleRelease(cltStreamPtr, TRUE);
-	FsHandleUnlock(cltHandlePtr);
-	FsHandleUnlock(srvStreamPtr);
+	Fsutil_HandleRelease(cltStreamPtr, TRUE);
+	Fsutil_HandleUnlock(cltHandlePtr);
+	Fsutil_HandleUnlock(srvStreamPtr);
     }
     return(newStreamID);
 }
@@ -641,7 +638,7 @@ FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsStreamCltOpen --
+ * FspdevPfsStreamIoOpen --
  *
  *	This is called from Fs_Open to complete setup of a client's
  *	stream to a pseudo-filesystem server.  The server is running on this
@@ -659,22 +656,22 @@ FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+FspdevPfsStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
-    ClientData		streamData;	/* Pointer to FsPdevState. */
+    ClientData		streamData;	/* Pointer to Fspdev_State. */
     char		*name;		/* File name for error msgs */
-    FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a pseudo device, or NIL */
 {
-    register PdevClientIOHandle *cltHandlePtr;
+    register FspdevClientIOHandle *cltHandlePtr;
 
-    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, ioFileIDPtr);
-    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	printf( "FsPfsStreamCltOpen, no handle\n");
-	*ioHandlePtrPtr = (FsHandleHeader *)NIL;
+    cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, ioFileIDPtr);
+    if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+	printf( "FspdevPfsStreamIoOpen, no handle\n");
+	*ioHandlePtrPtr = (Fs_HandleHeader *)NIL;
 	return(FS_FILE_NOT_FOUND);
     } else {
 	if (cltHandlePtr->hdr.name != (char *)NIL) {
@@ -682,8 +679,8 @@ FsPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	}
 	cltHandlePtr->hdr.name = (char *)malloc(strlen(name) + 1);
 	(void)strcpy(cltHandlePtr->hdr.name, name);
-	*ioHandlePtrPtr = (FsHandleHeader *)cltHandlePtr;
-	FsHandleUnlock(cltHandlePtr);
+	*ioHandlePtrPtr = (Fs_HandleHeader *)cltHandlePtr;
+	Fsutil_HandleUnlock(cltHandlePtr);
 	return(SUCCESS);
     }
 }
@@ -691,7 +688,7 @@ FsPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 /*
  *----------------------------------------------------------------------
  *
- * FsRmtPfsStreamCltOpen --
+ * FspdevRmtPfsStreamIoOpen --
  *
  *	This is called from Fs_Open to complete setup of a client's
  *	stream to a remote pseudo-filesystem server.  The server is running
@@ -709,23 +706,23 @@ FsPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsRmtPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+FspdevRmtPfsStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* NIL. */
     char		*name;		/* File name for error msgs */
-    FsHandleHeader	**ioHandlePtrPtr;/* Return - FS_RMT_PFS_STREAM handle */
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - FSIO_RMT_PFS_STREAM handle */
 {
-    FsRemoteIOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
+    Fsrmt_IOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
     return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsGetAttrPath --
+ * FspdevPfsGetAttrPath --
  *
  *	Get the attributes of a file in a pseudo-filesystem.
  *
@@ -738,37 +735,37 @@ FsRmtPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
+FspdevPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
          	    newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandle;	/* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle;	/* Handle from the prefix table */
     char           *relativeName;	/* The name of the file. */
     Address        argsPtr;		/* Bundled arguments for us */
     Address        resultsPtr;		/* Where to store attributes */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
 {
-    register PdevServerIOHandle	*pdevHandlePtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
     Pfs_Request			request;
     register ReturnStatus	status;
-    register FsOpenArgs		*openArgsPtr;
-    register FsGetAttrResults	*getAttrResultsPtr;
+    register Fs_OpenArgs		*openArgsPtr;
+    register Fs_GetAttrResults	*getAttrResultsPtr;
     int				resultSize;
 
-    pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
-    openArgsPtr = (FsOpenArgs *)argsPtr;
+    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    openArgsPtr = (Fs_OpenArgs *)argsPtr;
 
     request.hdr.operation = PFS_GET_ATTR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
-    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
-    request.param.open = *(FsOpenArgs *)argsPtr;
+    request.param.open = *(Fs_OpenArgs *)argsPtr;
 
-    getAttrResultsPtr = (FsGetAttrResults *)resultsPtr;
+    getAttrResultsPtr = (Fs_GetAttrResults *)resultsPtr;
     resultSize = sizeof(Fs_Attributes);
 
-    status = FsPseudoStreamLookup(pdevHandlePtr, &request,
+    status = FspdevPseudoStreamLookup(pdevHandlePtr, &request,
 		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, (Address)getAttrResultsPtr->attrPtr,
 		newNameInfoPtrPtr);
@@ -780,7 +777,7 @@ FsPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     /*
      * The pseudo-filesystem server has given us all the attributes.  There
      * is no reason to do a getIOAttr so we inhibit that with a special
-     * ioFileID type.  However, because FsDomainInfo calls this routine
+     * ioFileID type.  However, because Fsutil_DomainInfo calls this routine
      * to fill in the file ID for the user-visible prefix table entry
      * we set up the rest of the fields to match the return of a stat() call.
      */
@@ -794,7 +791,7 @@ FsPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsSetAttrPath --
+ * FspdevPfsSetAttrPath --
  *
  *	Set the attributes of a file in a pseudo-filesystem.
  *
@@ -807,33 +804,33 @@ FsPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
+FspdevPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
          	    newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandle;	/* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle;	/* Handle from the prefix table */
     char           *relativeName;	/* The name of the file. */
     Address        argsPtr;		/* Bundled arguments for us */
     Address        resultsPtr;		/* Where to store attributes */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
 {
-    register PdevServerIOHandle	*pdevHandlePtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
     Pfs_Request			request;
     register ReturnStatus	status;
-    register FsSetAttrArgs	*setAttrArgsPtr;
+    register Fs_SetAttrArgs	*setAttrArgsPtr;
     register Pfs_SetAttrData	*setAttrDataPtr;
     register int		nameLength;
     register int		dataLength;
     int				zero = 0;
 
-    pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
 
-    setAttrArgsPtr = (FsSetAttrArgs *)argsPtr;
+    setAttrArgsPtr = (Fs_SetAttrArgs *)argsPtr;
 
     request.hdr.operation = PFS_SET_ATTR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &setAttrArgsPtr->openArgs.prefixID,
 			    &setAttrArgsPtr->openArgs.rootID);
-    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.open = setAttrArgsPtr->openArgs;
@@ -851,7 +848,7 @@ FsPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     setAttrDataPtr->nameLength = nameLength;
     (void)strcpy(setAttrDataPtr->name, relativeName);
 
-    status = FsPseudoStreamLookup(pdevHandlePtr, &request,
+    status = FspdevPseudoStreamLookup(pdevHandlePtr, &request,
 	    dataLength, (Address)setAttrDataPtr,
 	    &zero, (Address)NIL, newNameInfoPtrPtr);
     free((Address)setAttrDataPtr);
@@ -866,7 +863,7 @@ FsPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsMakeDir --
+ * FspdevPfsMakeDir --
  *
  *	Make the named directory in a pseudo-filesystem.
  *
@@ -880,35 +877,35 @@ FsPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FspdevPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
 		newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandle;   /* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle;   /* Handle from the prefix table */
     char 	   *relativeName;   /* The name of the directory to create */
-    Address 	   argsPtr;	    /* Ref. to FsOpenArgs */
+    Address 	   argsPtr;	    /* Ref. to Fs_OpenArgs */
     Address 	   resultsPtr;	    /* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
 					* its domain during the lookup. */
 {
-    register PdevServerIOHandle	*pdevHandlePtr;
-    register FsOpenArgs		*openArgsPtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fs_OpenArgs		*openArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
-    openArgsPtr = (FsOpenArgs *)argsPtr;
+    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    openArgsPtr = (Fs_OpenArgs *)argsPtr;
 
     request.hdr.operation = PFS_MAKE_DIR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
-    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.makeDir = *openArgsPtr;
 
     resultSize = 0;
 
-    status = FsPseudoStreamLookup(pdevHandlePtr, &request,
+    status = FspdevPseudoStreamLookup(pdevHandlePtr, &request,
 		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
@@ -917,7 +914,7 @@ FsPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsMakeDevice --
+ * FspdevPfsMakeDevice --
  *
  *	Create a device file in a pseudo-filesystem.
  *
@@ -931,35 +928,35 @@ FsPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
+FspdevPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 			       newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandle;   /* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle;   /* Handle from the prefix table */
     char           *relativeName;   /* The name of the file. */
     Address        argsPtr;	    /* Ref. to FsMakeDevArgs */
     Address        resultsPtr;	    /* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
 					* its domain during the lookup. */
 {
-    register PdevServerIOHandle	*pdevHandlePtr;
-    register FsMakeDeviceArgs	*makeDevArgsPtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fs_MakeDeviceArgs	*makeDevArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
-    makeDevArgsPtr = (FsMakeDeviceArgs *)argsPtr;
+    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    makeDevArgsPtr = (Fs_MakeDeviceArgs *)argsPtr;
 
     request.hdr.operation = PFS_MAKE_DEVICE;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 	    &makeDevArgsPtr->open.prefixID, &makeDevArgsPtr->open.rootID);
-    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.makeDevice = *makeDevArgsPtr;
 
     resultSize = 0;
 
-    status = FsPseudoStreamLookup(pdevHandlePtr, &request,
+    status = FspdevPseudoStreamLookup(pdevHandlePtr, &request,
 		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
@@ -968,7 +965,7 @@ FsPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsRemove --
+ * FspdevPfsRemove --
  *
  *	Remove a file served by a pseudo-filesystem server.
  *
@@ -982,35 +979,35 @@ FsPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FspdevPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	       newNameInfoPtrPtr)
-    FsHandleHeader   *prefixHandle;	/* Handle from the prefix table */
+    Fs_HandleHeader   *prefixHandle;	/* Handle from the prefix table */
     char 	   *relativeName;	/* The name of the file to remove */
-    Address 	   argsPtr;		/* Ref to FsLookupArgs */
+    Address 	   argsPtr;		/* Ref to Fs_LookupArgs */
     Address 	   resultsPtr;		/* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
 					   its domain during the lookup. */
 {
-    register PdevServerIOHandle	*pdevHandlePtr;
-    register FsLookupArgs	*lookupArgsPtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fs_LookupArgs	*lookupArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
-    lookupArgsPtr = (FsLookupArgs *)argsPtr;
+    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
 
     request.hdr.operation = PFS_REMOVE;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
-    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.remove = *lookupArgsPtr;
 
     resultSize = 0;
 
-    status = FsPseudoStreamLookup(pdevHandlePtr, &request,
+    status = FspdevPseudoStreamLookup(pdevHandlePtr, &request,
 		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
@@ -1019,7 +1016,7 @@ FsPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsRemoveDir --
+ * FspdevPfsRemoveDir --
  *
  *	Remove a directory in a pseudo-filesystem.
  *
@@ -1033,35 +1030,35 @@ FsPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FspdevPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	       newNameInfoPtrPtr)
-    FsHandleHeader   *prefixHandle;	/* Handle from the prefix table */
+    Fs_HandleHeader   *prefixHandle;	/* Handle from the prefix table */
     char 	   *relativeName;	/* The name of the file to remove */
-    Address 	   argsPtr;		/* Ref to FsLookupArgs */
+    Address 	   argsPtr;		/* Ref to Fs_LookupArgs */
     Address 	   resultsPtr;		/* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
 					   its domain during the lookup. */
 {
-    register PdevServerIOHandle	*pdevHandlePtr;
-    register FsLookupArgs	*lookupArgsPtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
+    register Fs_LookupArgs	*lookupArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
-    pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
-    lookupArgsPtr = (FsLookupArgs *)argsPtr;
+    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
+    lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
 
     request.hdr.operation = PFS_REMOVE_DIR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
-    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.removeDir = *lookupArgsPtr;
 
     resultSize = 0;
 
-    status = FsPseudoStreamLookup(pdevHandlePtr, &request,
+    status = FspdevPseudoStreamLookup(pdevHandlePtr, &request,
 		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
@@ -1070,7 +1067,7 @@ FsPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsRename --
+ * FspdevPfsRename --
  *
  *	Rename a file is a pseudo-filesystem.
  *
@@ -1083,27 +1080,27 @@ FsPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPfsRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+FspdevPfsRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
-    FsHandleHeader *prefixHandle1;	/* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle1;	/* Handle from the prefix table */
     char *relativeName1;		/* The new name of the file. */
-    FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
+    Fs_HandleHeader *prefixHandle2;	/* Token from the prefix table */
     char *relativeName2;		/* The new name of the file. */
-    FsLookupArgs *lookupArgsPtr;	/* Contains IDs */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
+    Fs_LookupArgs *lookupArgsPtr;	/* Contains IDs */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
     Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error
 				 * condition if for the first pathname,
 				 * FALSE means error is on second pathname. */
 {
-    return(FsPfs2Path(PFS_RENAME, prefixHandle1, relativeName1, prefixHandle2,
+    return(FspdevPfs2Path(PFS_RENAME, prefixHandle1, relativeName1, prefixHandle2,
 	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr));
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPfsHardLink --
+ * FspdevPfsHardLink --
  *
  *	Make a hard link between two files in a pseudo-filesystem.
  *
@@ -1117,26 +1114,26 @@ FsPfsRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPfsHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+FspdevPfsHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
-    FsHandleHeader *prefixHandle1;	/* Token from the prefix table */
+    Fs_HandleHeader *prefixHandle1;	/* Token from the prefix table */
     char *relativeName1;		/* The new name of the file. */
-    FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
+    Fs_HandleHeader *prefixHandle2;	/* Token from the prefix table */
     char *relativeName2;		/* The new name of the file. */
-    FsLookupArgs *lookupArgsPtr;	/* Contains IDs */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server 
+    Fs_LookupArgs *lookupArgsPtr;	/* Contains IDs */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server 
 					 * leaves its domain during the lookup*/
     Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error is
 				 * for first path, FALSE if for the second. */
 {
-    return(FsPfs2Path(PFS_HARD_LINK, prefixHandle1, relativeName1,prefixHandle2,
+    return(FspdevPfs2Path(PFS_HARD_LINK, prefixHandle1, relativeName1,prefixHandle2,
 	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr));
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsPfs2Path --
+ * FspdevPfs2Path --
  *
  *	Rename or Hardlink a file is a pseudo-filesystem.  This bundles the
  *	arguments up for shipment to the server.  The prefix fileIDs are
@@ -1151,36 +1148,36 @@ FsPfsHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+FspdevPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
     Pdev_Op operation;			/* PFS_RENAME or PFS_HARD_LINK */
-    FsHandleHeader *prefixHandle1;	/* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle1;	/* Handle from the prefix table */
     char *relativeName1;		/* The new name of the file. */
-    FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
+    Fs_HandleHeader *prefixHandle2;	/* Token from the prefix table */
     char *relativeName2;		/* The new name of the file. */
-    FsLookupArgs *lookupArgsPtr;	/* Contains IDs */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
+    Fs_LookupArgs *lookupArgsPtr;	/* Contains IDs */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
     Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error
 				 * condition if for the first pathname,
 				 * FALSE means error is on second pathname. */
 {
-    register PdevServerIOHandle	*pdevHandlePtr;
-    register PdevServerIOHandle	*pdevHandle2Ptr;
-    Fs2PathData			*dataPtr;
+    register FspdevServerIOHandle	*pdevHandlePtr;
+    register FspdevServerIOHandle	*pdevHandle2Ptr;
+    Fs_2PathData			*dataPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
 
-    pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle1)->pdevHandlePtr;
+    pdevHandlePtr = ((FspdevClientIOHandle *)prefixHandle1)->pdevHandlePtr;
 
     request.hdr.operation = operation;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
-    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+    if (pdevHandlePtr == (FspdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.rename.lookup = *lookupArgsPtr;
-    if ((prefixHandle2 == (FsHandleHeader *)NIL) ||
+    if ((prefixHandle2 == (Fs_HandleHeader *)NIL) ||
 	(prefixHandle2->fileID.type != prefixHandle1->fileID.type) ||
 	(prefixHandle2->fileID.major != prefixHandle1->fileID.major) ||
 	(prefixHandle2->fileID.minor != prefixHandle1->fileID.minor)) {
@@ -1190,14 +1187,14 @@ FsPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	 */
 	request.param.rename.prefixID2.type = -1;
     } else {
-	pdevHandle2Ptr = ((PdevClientIOHandle *)prefixHandle2)->pdevHandlePtr;
+	pdevHandle2Ptr = ((FspdevClientIOHandle *)prefixHandle2)->pdevHandlePtr;
 	request.param.rename.prefixID2 = pdevHandle2Ptr->userLevelID;
     }
-    dataPtr = (Fs2PathData *)malloc(sizeof(Fs2PathData));
+    dataPtr = (Fs_2PathData *)malloc(sizeof(Fs_2PathData));
     (void)strcpy(dataPtr->path1, relativeName1);
     (void)strcpy(dataPtr->path2, relativeName2);
 
-    status = FsPseudoStream2Path(pdevHandlePtr, &request, dataPtr,
+    status = FspdevPseudoStream2Path(pdevHandlePtr, &request, dataPtr,
 		name1ErrorPtr, newNameInfoPtrPtr);
     free((Address)dataPtr);
     return(status);

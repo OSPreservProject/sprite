@@ -5,8 +5,8 @@
  *	These routines are presented in pairs, the client stub followed
  *	by the server stub.  The general style is for the server stub
  *	to call the LocalDomain equivalent of the SpriteDomain client stub.
- *	i.e. FsSpriteOpen invokes via RPC Fs_RpcOpen which calls
- *	FsLocalOpen.  Occasionally a client or server stub will do some
+ *	i.e. FsrmtOpen invokes via RPC Fsrmt_RpcOpen which calls
+ *	FslclOpen.  Occasionally a client or server stub will do some
  *	extra processing, or use lower level primatives for efficiency.
  *
  * Copyright (C) 1987 Regents of the University of California
@@ -26,15 +26,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
 #include "fsNameOpsInt.h"
-#include "fsPrefix.h"
-#include "fsSpriteDomain.h"
-#include "fsLocalDomain.h"
-#include "fsOpTable.h"
-#include "fsStream.h"
-#include "fsTrace.h"
-#include "fsDebug.h"
+#include "fsprefix.h"
+#include "fsrmtInt.h"
+#include "fslcl.h"
+#include "fsio.h"
+#include "fsutilTrace.h"
 #include "fsStat.h"
 #include "recov.h"
 #include "proc.h"
@@ -42,11 +41,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "dbg.h"
 
+
 /*
  * Used to contain fileID and stream data results from open calls.
  */
 typedef	struct	FsOpenReplyParam {
-    FsUnionData	openData;
+    FsrmtUnionData	openData;
     Fs_FileID	fileID;
 } FsOpenReplyParam;
 
@@ -54,7 +54,7 @@ typedef	struct	FsOpenReplyParam {
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteImport --
+ * FsrmtImport --
  *
  *	Get a handle for a prefix.  This conducts an RPC_FS_PREFIX
  *	to see if there is a server for the prefix.  If there is one this
@@ -75,7 +75,7 @@ typedef	struct	FsOpenReplyParam {
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
+FsrmtImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
     char	*prefix;		/* Prefix for which to find a server. */
     int		serverID;		/* Suggested server ID.  This is the
 					 * broadcast address for nearby domains,
@@ -84,7 +84,7 @@ FsSpriteImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
     Fs_UserIDs	*idPtr;			/* IGNORED */
     int		*domainTypePtr;		/* Return - FS_REMOTE_SPRITE_DOMAIN or
 					 *          FS_REMOTE_PSEUDO_DOMAIN */
-    FsHandleHeader **hdrPtrPtr;		/* Return - handle for prefix table */
+    Fs_HandleHeader **hdrPtrPtr;		/* Return - handle for prefix table */
 {
     ReturnStatus 	status;
     Rpc_Storage 	storage;
@@ -93,7 +93,7 @@ FsSpriteImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
     int			flags = FS_PREFIX;
     FsOpenReplyParam	openReplyParam;
 
-    *hdrPtrPtr = (FsHandleHeader *)NIL;
+    *hdrPtrPtr = (Fs_HandleHeader *)NIL;
     *domainTypePtr = -1;
 
     storage.requestParamPtr = (Address) NIL;
@@ -112,21 +112,21 @@ FsSpriteImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
      * It is necessary to allocate and copy over the stream data, since
      * the cltOpen proc frees this space.
      */
-    streamData = (ClientData)malloc(sizeof(FsUnionData));
-    *((FsUnionData *) streamData) = openReplyParam.openData;
+    streamData = (ClientData)malloc(sizeof(FsrmtUnionData));
+    *((FsrmtUnionData *) streamData) = openReplyParam.openData;
 
     if (status == SUCCESS) {
 	/*
 	 * Use the client-open routine to set up an I/O handle for the prefix.
 	 */
-	status = (*fsStreamOpTable[fileIDPtr->type].cltOpen)(fileIDPtr, &flags,
+	status = (*fsio_StreamOpTable[fileIDPtr->type].cltOpen)(fileIDPtr, &flags,
 		    rpc_SpriteID, (ClientData)streamData, prefix, hdrPtrPtr);
 	if (status == SUCCESS) {
 	    /*
 	     * Register the server with the recovery module so we find out
 	     * when it goes away and when it reboots.
 	     */
-	    Recov_RebootRegister((*hdrPtrPtr)->fileID.serverID, FsReopen,
+	    Recov_RebootRegister((*hdrPtrPtr)->fileID.serverID, Fsutil_Reopen,
 				 (ClientData)NIL);
 	    *domainTypePtr = FS_REMOTE_SPRITE_DOMAIN;
 	}
@@ -137,7 +137,7 @@ FsSpriteImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcPrefix --
+ * Fsrmt_RpcPrefix --
  *
  *	Server stub for RPC_FS_PREFIX.  This looks in the prefix
  *	table for the given prefix.  If found, the handle is opened
@@ -156,7 +156,7 @@ FsSpriteImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcPrefix(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
 					 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
@@ -170,16 +170,16 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 					 * This can be passed to Rpc_Reply */
 {
     char				*lookupName;
-    FsPrefix				*prefixPtr;
-    FsHandleHeader			*hdrPtr;
+    Fsprefix				*prefixPtr;
+    Fs_HandleHeader			*hdrPtr;
     Fs_FileID				rootID;
     int					domainType;
     int					serverID;
     ReturnStatus			status;
     FsOpenReplyParam			*openReplyPtr;
 
-    status = FsPrefixLookup((char *) storagePtr->requestDataPtr,
-		FS_EXPORTED_PREFIX | FS_EXACT_PREFIX, clientID, &hdrPtr,
+    status = Fsprefix_Lookup((char *) storagePtr->requestDataPtr,
+		FSPREFIX_EXPORTED | FSPREFIX_EXACT, clientID, &hdrPtr,
 		&rootID, &lookupName, &serverID, &domainType, &prefixPtr);
     if (status == SUCCESS) {
 	register Rpc_ReplyMem		*replyMemPtr;
@@ -187,7 +187,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 	int				dataSize;
 
 	openReplyPtr = mnew(FsOpenReplyParam);
-	status = (*fsDomainLookup[domainType][FS_DOMAIN_EXPORT])(hdrPtr,
+	status = (*fs_DomainLookup[domainType][FS_DOMAIN_EXPORT])(hdrPtr,
 		    clientID, &openReplyPtr->fileID, &dataSize, &streamData);
 	if (status == SUCCESS) {
 	    if (dataSize > 0) {
@@ -207,9 +207,9 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 	    return(SUCCESS);
 	} else {
 	    free((Address)openReplyPtr);
-	    printf( "Fs_RpcPrefix, export \"%s\" failed %x\n",
+	    printf( "Fsrmt_RpcPrefix, export \"%s\" failed %x\n",
 		    storagePtr->requestDataPtr, status);
-	    FsPrefixHandleClose(prefixPtr, FS_ANY_PREFIX);
+	    Fsprefix_HandleClose(prefixPtr, FSPREFIX_ANY);
 	}
     }
     return(RPC_NO_REPLY);
@@ -218,15 +218,15 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteOpen --
+ * FsrmtOpen --
  *
  *	Open a remote file.  This sets up and conducts an RPC_FS_OPEN
  *	remote procedure call to open the remote file.  This is called
- *	from FsLookupOperation based on the prefix table.  FsSpriteOpen
- *	makes an RPC to FsLocalOpen on the remote machine, and returns
+ *	from Fsprefix_LookupOperation based on the prefix table.  FsrmtOpen
+ *	makes an RPC to FslclOpen on the remote machine, and returns
  *	the streamData for use by the client-open routine.
  *
- * RPC: The input parameters are the FsOpenArgs defined in fsNameOps.h.
+ * RPC: The input parameters are the Fs_OpenArgs defined in fsNameOps.h.
  *	The input data is a relative name.  The return parameter is a file
  *	type used by our caller to branch to the client-open routine.  The
  *	return data area has two possible return values.  In the normal
@@ -247,27 +247,27 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
  */
 
 ReturnStatus
-FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FsrmtOpen(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	     newNameInfoPtrPtr)
-    FsHandleHeader  *prefixHandle;	/* Token from the prefix table */
+    Fs_HandleHeader  *prefixHandle;	/* Token from the prefix table */
     char 	  *relativeName;	/* The name of the file to open. */
-    Address 	  argsPtr;		/* Ref. to FsOpenArgs */
-    Address 	  resultsPtr;		/* Ref. to FsOpenResults */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
+    Address 	  argsPtr;		/* Ref. to Fs_OpenArgs */
+    Address 	  resultsPtr;		/* Ref. to Fs_OpenResults */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
 {
     ReturnStatus	status;
-    FsOpenResults	*openResultsPtr = (FsOpenResults *)resultsPtr;
+    Fs_OpenResults	*openResultsPtr = (Fs_OpenResults *)resultsPtr;
     Rpc_Storage		storage;	/* Specifies RPC parameters/results */
     char		replyName[FS_MAX_PATH_NAME_LENGTH];	 /* This
 					 * may get filled with a
 					 * redirected pathname */
-    FsOpenResultsParam	openResultsParam;
+    FsrmtOpenResultsParam	openResultsParam;
     /*
      * Synchronize with the re-open phase of recovery.
      * We don't want opens to race with the recovery actions.
      */
-    status = FsPrefixOpenCheck(prefixHandle);
+    status = Fsprefix_OpenCheck(prefixHandle);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -276,11 +276,11 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
      * Set up for the RPC.
      */
     storage.requestParamPtr = (Address) argsPtr;
-    storage.requestParamSize = sizeof(FsOpenArgs);
+    storage.requestParamSize = sizeof(Fs_OpenArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
     storage.replyParamPtr = (Address) &openResultsParam;
-    storage.replyParamSize = sizeof(FsOpenResultsParam);
+    storage.replyParamSize = sizeof(FsrmtOpenResultsParam);
     storage.replyDataPtr = (Address) replyName;
     storage.replyDataSize = FS_MAX_PATH_NAME_LENGTH;
 
@@ -304,20 +304,20 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
 	 * Allocate space for the re-directed pathname and
 	 * copy over the structure that we have on our stack.  A large
 	 * buffer is allocated because it is used as a work area in
-	 * FsLookupRedirect to create a new absolute pathname.
+	 * FsprefixLookupRedirect to create a new absolute pathname.
 	 */
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = openResultsParam.prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, replyName);
     }
-    FsPrefixOpenDone(prefixHandle);
+    Fsprefix_OpenDone(prefixHandle);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcOpen --
+ * Fsrmt_RpcOpen --
  *
  *      Service stub for the RPC_FS_OPEN call.  This unpackages parameters
  *	and branches to the local open routine.
@@ -328,14 +328,14 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
  *	returned and the main level sends back an error reply.
  *
  * Side effects:
- *	None here, see FsLocalOpen.
+ *	None here, see FslclOpen.
  *	
  *
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcOpen(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcOpen(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
 					 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
@@ -349,12 +349,12 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 					 * This can be passed to Rpc_Reply */
 {
     ReturnStatus		status;
-    register FsOpenArgs		*openArgsPtr;		/* RPC parameters */
-    register FsOpenResults	*openResultsPtr;	/* RPC results */
-    FsHandleHeader		*prefixHandlePtr;	/* Handle for domain */
-    FsRedirectInfo		*newNameInfoPtr;	/* prefix info for
+    register Fs_OpenArgs		*openArgsPtr;		/* RPC parameters */
+    register Fs_OpenResults	*openResultsPtr;	/* RPC results */
+    Fs_HandleHeader		*prefixHandlePtr;	/* Handle for domain */
+    Fs_RedirectInfo		*newNameInfoPtr;	/* prefix info for
 							 * redirected lookups */
-    FsOpenResultsParam		*openResultsParamPtr;	/* open results, etc. */
+    FsrmtOpenResultsParam		*openResultsParamPtr;	/* open results, etc. */
     int				domainType;		/* Local or Pseudo */
 
 
@@ -362,37 +362,37 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 	Net_HostPrint(clientID, "Dropping regular open during recovery\n");
 	return(RPC_SERVICE_DISABLED);
     }
-    openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
+    openArgsPtr = (Fs_OpenArgs *) storagePtr->requestParamPtr;
     /*
      * Get a handle on the prefix.  We need to have it unlocked in case
      * we do I/O on the directory.
      */
     prefixHandlePtr =
-	(*fsStreamOpTable[openArgsPtr->prefixID.type].clientVerify)
+	(*fsio_StreamOpTable[openArgsPtr->prefixID.type].clientVerify)
 	    (&openArgsPtr->prefixID, clientID, &domainType);
-    if (prefixHandlePtr == (FsHandleHeader *)NIL) {
+    if (prefixHandlePtr == (Fs_HandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }
-    FsHandleUnlock(prefixHandlePtr);
+    Fsutil_HandleUnlock(prefixHandlePtr);
 
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
-    openResultsParamPtr = mnew(FsOpenResultsParam);
+    newNameInfoPtr = (Fs_RedirectInfo *) NIL;
+    openResultsParamPtr = mnew(FsrmtOpenResultsParam);
     openResultsPtr = &(openResultsParamPtr->openResults);
 
-    fsStats.srvName.numReadOpens++;
-    status = (*fsDomainLookup[domainType][FS_DOMAIN_OPEN])(prefixHandlePtr,
+    fs_Stats.srvName.numReadOpens++;
+    status = (*fs_DomainLookup[domainType][FS_DOMAIN_OPEN])(prefixHandlePtr,
 		(char *)storagePtr->requestDataPtr, (Address)openArgsPtr,
 		(Address)openResultsPtr, &newNameInfoPtr);
-    FsHandleRelease(prefixHandlePtr, FALSE);
+    Fsutil_HandleRelease(prefixHandlePtr, FALSE);
     if (status == SUCCESS) {
 	/*
-	 * The open worked.  We return the whole FsOpenResults structure
+	 * The open worked.  We return the whole Fs_OpenResults structure
 	 * in the RPC parameter area, but it contains a pointer to
 	 * stream data and a dataSize. That stream data is returned also
 	 * as a separate field in the RPC parameter area, so it must be copied.
 	 */
 	storagePtr->replyParamPtr = (Address)openResultsParamPtr;
-	storagePtr->replyParamSize = sizeof(FsOpenResultsParam);
+	storagePtr->replyParamSize = sizeof(FsrmtOpenResultsParam);
 	/* copy openData */
 	if (openResultsPtr->dataSize != 0 &&
 		((Address)openResultsPtr->streamData) != (Address)NIL) {
@@ -406,7 +406,7 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 	 * The file is not found on this server.
 	 */
 	storagePtr->replyParamPtr = (Address)openResultsParamPtr;
-	storagePtr->replyParamSize = sizeof(FsOpenResultsParam);
+	storagePtr->replyParamSize = sizeof(FsrmtOpenResultsParam);
 	openResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
 	storagePtr->replyDataSize = strlen(newNameInfoPtr->fileName) + 1;
 	storagePtr->replyDataPtr = (Address)malloc(storagePtr->replyDataSize);
@@ -431,7 +431,7 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteReopen --
+ * FsrmtReopen --
  *
  *	Open a handle at its server.  This sets up and conducts an RPC_FS_REOPEN
  *	remote procedure call to reopen the remote file handle.
@@ -446,8 +446,8 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
  */
 
 ReturnStatus
-FsSpriteReopen(hdrPtr, inSize, inData, outSizePtr, outData)
-    FsHandleHeader  *hdrPtr;		/* Handle to reopen */
+FsrmtReopen(hdrPtr, inSize, inData, outSizePtr, outData)
+    Fs_HandleHeader  *hdrPtr;		/* Handle to reopen */
     int			inSize;		/* Size of input data */
     Address		inData;		/* Input data to server's reopen proc */
     int			*outSizePtr;	/* In/Out return data size */
@@ -473,7 +473,7 @@ FsSpriteReopen(hdrPtr, inSize, inData, outSizePtr, outData)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcReopen --
+ * Fsrmt_RpcReopen --
  *
  *	This is the service stub for RPC_FS_REOPEN.  This switches
  *	out to a stream type reopen procedure.  To do this it must
@@ -493,7 +493,7 @@ FsSpriteReopen(hdrPtr, inSize, inData, outSizePtr, outData)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcReopen(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcReopen(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
 				 	 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
@@ -521,11 +521,11 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
 	 */
 	return(GEN_INVALID_ARG);
     }
-    fileIDPtr->type = FsMapRmtToLclType(fileIDPtr->type);
+    fileIDPtr->type = Fsio_MapRmtToLclType(fileIDPtr->type);
     if (fileIDPtr->type < 0) {
 	return(GEN_INVALID_ARG);
     }
-    status = (*fsStreamOpTable[fileIDPtr->type].reopen)((FsHandleHeader *)NIL,
+    status = (*fsio_StreamOpTable[fileIDPtr->type].reopen)((Fs_HandleHeader *)NIL,
 		clientID, storagePtr->requestParamPtr,
 		&storagePtr->replyParamSize,
 		&storagePtr->replyParamPtr);
@@ -547,7 +547,7 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
  * be cached attributes.
  */
 typedef union FsCloseData {
-    FsCachedAttributes	attrs;
+    Fscache_Attributes	attrs;
 } FsCloseData;
 
 
@@ -555,7 +555,7 @@ typedef union FsCloseData {
  * Request params for the close RPC.  The data for the close is put in the
  * closeData field so that it too can be byte-swapped. The field is for stream
  * specific data that gets pushed back to the server when the client closes.
- * Currently, it seems only to be FsCachedAttributes.
+ * Currently, it seems only to be Fscache_Attributes.
  * 
  */
 typedef struct FsRemoteCloseParams {
@@ -563,14 +563,14 @@ typedef struct FsRemoteCloseParams {
     Fs_FileID	streamID;	/* Stream to close */
     Proc_PID	procID;		/* Process doing the close */
     int		flags;		/* Flags from the stream */
-    FsCloseData	closeData;	/* Seems to be only FsCachedAttributes... */
+    FsCloseData	closeData;	/* Seems to be only Fscache_Attributes... */
     int		closeDataSize;	/* actual size of info in closeData field. */
 } FsRemoteCloseParams;
 
 /*
  *----------------------------------------------------------------------
  *
- * FsRemoteClose --
+ * Fsrmt_Close --
  *
  *	Tell the server that we have closed one reference to its file.  This
  *	is used by the remote file and remote device close routines.  This
@@ -588,7 +588,7 @@ typedef struct FsRemoteCloseParams {
  */
 /*ARGSUSED*/
 ReturnStatus
-FsRemoteClose(streamPtr, clientID, procID, flags, dataSize, closeData)
+Fsrmt_Close(streamPtr, clientID, procID, flags, dataSize, closeData)
     Fs_Stream		*streamPtr;	/* Stream to close.  This is needed
 					 * (instead of I/O handle) so the
 					 * server can close its shadow stream */
@@ -599,12 +599,12 @@ FsRemoteClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     ClientData		closeData;	/* Copy of cached I/O attributes.
    					 * Sometimes NIL!  */
 {
-    FsRemoteIOHandle	*rmtHandlePtr;	/* Handle to close */
+    Fsrmt_IOHandle	*rmtHandlePtr;	/* Handle to close */
     Rpc_Storage 	storage;
     ReturnStatus 	status;
     FsRemoteCloseParams	params;
 
-    rmtHandlePtr = (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
+    rmtHandlePtr = (Fsrmt_IOHandle *)streamPtr->ioHandlePtr;
     params.fileID = rmtHandlePtr->hdr.fileID;
     params.streamID = streamPtr->hdr.fileID;
     params.procID = procID;
@@ -633,7 +633,7 @@ FsRemoteClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	 * Mark the handle as needing recovery if we can't tell the server
 	 * about this close.
 	 */
-	FsWantRecovery((FsHandleHeader *)rmtHandlePtr);
+	Fsutil_WantRecovery((Fs_HandleHeader *)rmtHandlePtr);
     }
     return(status);
 }
@@ -641,7 +641,7 @@ FsRemoteClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcClose --
+ * Fsrmt_RpcClose --
  *
  *	Server stub for RPC_FS_CLOSE.  This verifies the client and branches
  *	to the stream-type close routine.
@@ -658,7 +658,7 @@ FsRemoteClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcClose(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcClose(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
 				 	 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
@@ -673,7 +673,7 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 {
     register	FsRemoteCloseParams	*paramsPtr;
     register	Fs_Stream		*streamPtr;
-    register	FsHandleHeader		*hdrPtr;
+    register	Fs_HandleHeader		*hdrPtr;
     ReturnStatus			status;
     Fs_Stream				dummy;
 
@@ -686,32 +686,32 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	streamPtr = &dummy;
 	bzero((Address)&dummy, sizeof(Fs_Stream));
     } else {
-	streamPtr = FsStreamClientVerify(&paramsPtr->streamID, clientID);
+	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
     }
     if (streamPtr == (Fs_Stream *)NIL) {
 	status = FS_STALE_HANDLE;
     } else {
 
-	hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
+	hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
 		    (&paramsPtr->fileID, clientID, (int *)NIL);
 	dummy.ioHandlePtr = hdrPtr;
-	if (hdrPtr == (FsHandleHeader *) NIL) {
+	if (hdrPtr == (Fs_HandleHeader *) NIL) {
 	    status = FS_STALE_HANDLE;
 	} else if (streamPtr->ioHandlePtr != hdrPtr) {
-	    printf("Fs_RpcClose: Stream/handle mis-match from client %d\n",
+	    printf("Fsrmt_RpcClose: Stream/handle mis-match from client %d\n",
 		clientID);
 #ifdef notdef
 	    /*
 	     * This print statement wedged mint horribly, 12/5/88.
 	     */
-	    if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
+	    if (streamPtr->ioHandlePtr != (Fs_HandleHeader *)NIL) {
 		register Fs_FileID *fileIDPtr;
 		fileIDPtr = &streamPtr->ioHandlePtr->fileID;
 		printf("My stream <%d> => %s I/O <%d, %d> \"%s\"\n",
 		    paramsPtr->streamID.minor,
-		    FsFileTypeToString(fileIDPtr->type),
+		    Fsutil_FileTypeToString(fileIDPtr->type),
 		    fileIDPtr->major, fileIDPtr->minor,
-		    FsHandleName(streamPtr->ioHandlePtr));
+		    Fsutil_HandleName(streamPtr->ioHandlePtr));
 	    } else {
 		printf("My stream <%d> => NIL I/O handle\n",
 		    paramsPtr->streamID.minor);
@@ -720,9 +720,9 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	    printf("My stream I/O handlePtr <%x>\n", streamPtr->ioHandlePtr);
 #endif
 	    printf("His stream => %s I/O <%d, %d>\n",
-		FsFileTypeToString(paramsPtr->fileID.type),
+		Fsutil_FileTypeToString(paramsPtr->fileID.type),
 		paramsPtr->fileID.major, paramsPtr->fileID.minor);
-	    FsHandleRelease(hdrPtr, TRUE);
+	    Fsutil_HandleRelease(hdrPtr, TRUE);
 	    status = FS_STALE_HANDLE;
 	} else {
 	    /*
@@ -731,23 +731,23 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	     * count on the handle.
 	     */
 	    register ClientData clientData;
-	    FS_TRACE_HANDLE(FS_TRACE_CLOSE, hdrPtr);
+	    FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_CLOSE, hdrPtr);
 	    if (paramsPtr->closeDataSize != 0) {
 		clientData = (ClientData)&paramsPtr->closeData;
 	    } else {
 		clientData = (ClientData)NIL;
 	    }
-	    status = (*fsStreamOpTable[hdrPtr->fileID.type].close)
+	    status = (*fsio_StreamOpTable[hdrPtr->fileID.type].close)
 		    (streamPtr, clientID, paramsPtr->procID,
 		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
 #ifdef lint
-	    status = FsFileClose(streamPtr, clientID, paramsPtr->procID,
+	    status = Fsio_FileClose(streamPtr, clientID, paramsPtr->procID,
 		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-	    status = FsPipeClose(streamPtr, clientID, paramsPtr->procID,
+	    status = Fsio_PipeClose(streamPtr, clientID, paramsPtr->procID,
 		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-	    status = FsDeviceClose(streamPtr, clientID, paramsPtr->procID,
+	    status = Fsio_DeviceClose(streamPtr, clientID, paramsPtr->procID,
 		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-	    status = FsPseudoStreamClose(streamPtr, clientID, paramsPtr->procID,
+	    status = FspdevPseudoStreamClose(streamPtr, clientID, paramsPtr->procID,
 		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
 #endif /* lint */
 	}
@@ -756,10 +756,10 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	     * Take the client of the stream's list and nuke the server's
 	     * shadow stream if there are no client's left.
 	     */
-	    if (FsStreamClientClose(&streamPtr->clientList, clientID)) {
-		FsStreamDispose(streamPtr);
+	    if (Fsio_StreamClientClose(&streamPtr->clientList, clientID)) {
+		Fsio_StreamDestroy(streamPtr);
 	    } else {
-		FsHandleRelease(streamPtr, TRUE);
+		Fsutil_HandleRelease(streamPtr, TRUE);
 	    }
 	}
     }
@@ -774,9 +774,9 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteRemove --
+ * FsrmtRemove --
  *
- *	This uses the RPC_FS_UNLINK call to invoke FsLocalRemove
+ *	This uses the RPC_FS_UNLINK call to invoke FslclRemove
  *	on the file server.
  *
  * Results:
@@ -789,32 +789,32 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FsrmtRemove(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	       newNameInfoPtrPtr)
-    FsHandleHeader   *prefixHandle;	/* Handle from the prefix table */
+    Fs_HandleHeader   *prefixHandle;	/* Handle from the prefix table */
     char 	   *relativeName;	/* The name of the file to remove */
-    Address 	   argsPtr;		/* Ref to FsLookupArgs */
+    Address 	   argsPtr;		/* Ref to Fs_LookupArgs */
     Address 	   resultsPtr;		/* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
 					   its domain during the lookup. */
 {
     ReturnStatus	status;
     Rpc_Storage		storage;
-    FsRedirectInfo	redirectInfo;
+    Fs_RedirectInfo	redirectInfo;
     int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
-    storage.requestParamSize = sizeof(FsLookupArgs);
+    storage.requestParamSize = sizeof(Fs_LookupArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
     storage.replyParamPtr = (Address) &prefixLength;
     storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
-    storage.replyDataSize = sizeof(FsRedirectInfo);
+    storage.replyDataSize = sizeof(Fs_RedirectInfo);
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_UNLINK, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
@@ -824,10 +824,10 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteRemoveDir --
+ * FsrmtRemoveDir --
  *
  *	Remove a directory.  This uses the RPC_FS_RMDIR call to invoke
- *	FsLocalRemoveDir on the file server.
+ *	FslclRemoveDir on the file server.
  *
  * Results:
  *	None.
@@ -839,32 +839,32 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FsrmtRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	       newNameInfoPtrPtr)
-    FsHandleHeader   *prefixHandle;	/* Handle from the prefix table */
+    Fs_HandleHeader   *prefixHandle;	/* Handle from the prefix table */
     char 	   *relativeName;	/* The name of the file to remove */
-    Address 	   argsPtr;		/* Ref to FsLookupArgs */
+    Address 	   argsPtr;		/* Ref to Fs_LookupArgs */
     Address 	   resultsPtr;		/* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
 					   its domain during the lookup. */
 {
     ReturnStatus	status;
     Rpc_Storage		storage;
-    FsRedirectInfo	redirectInfo;
+    Fs_RedirectInfo	redirectInfo;
     int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
-    storage.requestParamSize = sizeof(FsLookupArgs);
+    storage.requestParamSize = sizeof(Fs_LookupArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
     storage.replyParamPtr = (Address) &prefixLength;
     storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
-    storage.replyDataSize = sizeof(FsRedirectInfo);
+    storage.replyDataSize = sizeof(Fs_RedirectInfo);
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_RMDIR, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
@@ -874,7 +874,7 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcRemove --
+ * Fsrmt_RpcRemove --
  *
  *	The service stub for FS_RPC_UNLINK use to remove a file or directory.
  *
@@ -890,7 +890,7 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcRemove(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcRemove(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
 				 	 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
@@ -904,41 +904,41 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
 					 * This can be passed to Rpc_Reply */
 {
     ReturnStatus	status;
-    FsHandleHeader	*prefixHandlePtr;
-    FsRedirectInfo	*newNameInfoPtr;
-    FsLookupArgs	*lookupArgsPtr;
+    Fs_HandleHeader	*prefixHandlePtr;
+    Fs_RedirectInfo	*newNameInfoPtr;
+    Fs_LookupArgs	*lookupArgsPtr;
     int			domainType;
 
-    lookupArgsPtr = (FsLookupArgs *)storagePtr->requestParamPtr;
+    lookupArgsPtr = (Fs_LookupArgs *)storagePtr->requestParamPtr;
     prefixHandlePtr =
-	(*fsStreamOpTable[lookupArgsPtr->prefixID.type].clientVerify)
+	(*fsio_StreamOpTable[lookupArgsPtr->prefixID.type].clientVerify)
 	    (&lookupArgsPtr->prefixID, clientID, &domainType);
-    if (prefixHandlePtr == (FsHandleHeader *) NIL) {
+    if (prefixHandlePtr == (Fs_HandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     } 
-    FsHandleRelease(prefixHandlePtr, TRUE);
+    Fsutil_HandleRelease(prefixHandlePtr, TRUE);
 
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
+    newNameInfoPtr = (Fs_RedirectInfo *) NIL;
     switch (command) {
 	case RPC_FS_UNLINK:
-	    fsStats.srvName.removes++;
+	    fs_Stats.srvName.removes++;
 	    command = FS_DOMAIN_REMOVE;
 	    break;
 	case RPC_FS_RMDIR:
-	    fsStats.srvName.removeDirs++;
+	    fs_Stats.srvName.removeDirs++;
 	    command = FS_DOMAIN_REMOVE_DIR;
 	    break;
 	default:
 	    return(GEN_INVALID_ARG);
     }
-    status = (*fsDomainLookup[domainType][command])(prefixHandlePtr,
+    status = (*fs_DomainLookup[domainType][command])(prefixHandlePtr,
 		    (char *) storagePtr->requestDataPtr,
 		    (Address) lookupArgsPtr, (Address) NIL, &newNameInfoPtr);
     if (status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
 
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
-	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	storagePtr->replyDataSize = sizeof(Fs_RedirectInfo);
 	storagePtr->replyParamPtr = (Address) malloc(sizeof (int));
 	storagePtr->replyParamSize = sizeof (int);
 	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
@@ -960,10 +960,10 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteMakeDir --
+ * FsrmtMakeDir --
  *
  *	Make the named directory.  This uses the RPC_FS_MAKE_DIR call
- *	to invoke FsLocalMakeDir on the file server.
+ *	to invoke FslclMakeDir on the file server.
  *
  * Results:
  *	A return code from the file server or the RPC.
@@ -975,32 +975,32 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FsrmtMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
 		newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandle;   /* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle;   /* Handle from the prefix table */
     char 	   *relativeName;   /* The name of the directory to create */
-    Address 	   argsPtr;	    /* Ref. to FsOpenArgs */
+    Address 	   argsPtr;	    /* Ref. to Fs_OpenArgs */
     Address 	   resultsPtr;	    /* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
 					* its domain during the lookup. */
 {
     ReturnStatus	status;
     Rpc_Storage		storage;
-    FsRedirectInfo	redirectInfo;
+    Fs_RedirectInfo	redirectInfo;
     int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
-    storage.requestParamSize = sizeof(FsOpenArgs);
+    storage.requestParamSize = sizeof(Fs_OpenArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
     storage.replyParamPtr = (Address) &prefixLength;
     storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
-    storage.replyDataSize = sizeof(FsRedirectInfo);
+    storage.replyDataSize = sizeof(Fs_RedirectInfo);
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_MKDIR, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
@@ -1010,7 +1010,7 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcMakeDir --
+ * Fsrmt_RpcMakeDir --
  *
  *	Handle a make directory request from a client.
  *
@@ -1027,7 +1027,7 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcMakeDir(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
 				 	 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
@@ -1041,34 +1041,34 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
 					 * This can be passed to Rpc_Reply */
 {
     ReturnStatus	status;
-    FsHandleHeader	*prefixHandlePtr;
-    FsRedirectInfo	*newNameInfoPtr;
-    FsOpenArgs		*openArgsPtr;
+    Fs_HandleHeader	*prefixHandlePtr;
+    Fs_RedirectInfo	*newNameInfoPtr;
+    Fs_OpenArgs		*openArgsPtr;
     int			domainType;
 
-    openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
+    openArgsPtr = (Fs_OpenArgs *) storagePtr->requestParamPtr;
     if (openArgsPtr->prefixID.serverID != rpc_SpriteID) {
 	return(GEN_INVALID_ARG);
     }
 
     prefixHandlePtr =
-	(*fsStreamOpTable[openArgsPtr->prefixID.type].clientVerify)
+	(*fsio_StreamOpTable[openArgsPtr->prefixID.type].clientVerify)
 	    (&openArgsPtr->prefixID, clientID, &domainType);
-    if (prefixHandlePtr == (FsHandleHeader *) NIL) {
+    if (prefixHandlePtr == (Fs_HandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     }
-    FsHandleRelease(prefixHandlePtr, TRUE);
+    Fsutil_HandleRelease(prefixHandlePtr, TRUE);
 
-    fsStats.srvName.makeDirs++;
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
-    status = (*fsDomainLookup[domainType][FS_DOMAIN_MAKE_DIR])(prefixHandlePtr,
+    fs_Stats.srvName.makeDirs++;
+    newNameInfoPtr = (Fs_RedirectInfo *) NIL;
+    status = (*fs_DomainLookup[domainType][FS_DOMAIN_MAKE_DIR])(prefixHandlePtr,
 	    (char *)storagePtr->requestDataPtr,
 	    (Address) openArgsPtr, (Address) NIL, &newNameInfoPtr);
     if (status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
-	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	storagePtr->replyDataSize = sizeof(Fs_RedirectInfo);
 	storagePtr->replyParamPtr = (Address) malloc(sizeof (int));
 	storagePtr->replyParamSize = sizeof (int);
 	*((int *)(storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
@@ -1090,7 +1090,7 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteMakeDevice --
+ * FsrmtMakeDevice --
  *
  *	Create a device file.  This uses the RPC_FS_MAKE_DEV call to create
  *	the special file on the file server.
@@ -1105,32 +1105,32 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
+FsrmtMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 			       newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandle;   /* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle;   /* Handle from the prefix table */
     char           *relativeName;   /* The name of the file. */
     Address        argsPtr;	    /* Ref. to FsMakeDevArgs */
     Address        resultsPtr;	    /* == NIL */
-    FsRedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
+    Fs_RedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
 					* its domain during the lookup. */
 {
     ReturnStatus	status;
     Rpc_Storage		storage;
-    FsRedirectInfo	redirectInfo;
+    Fs_RedirectInfo	redirectInfo;
     int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
-    storage.requestParamSize = sizeof(FsMakeDeviceArgs);
+    storage.requestParamSize = sizeof(Fs_MakeDeviceArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
     storage.replyParamPtr = (Address) &prefixLength;
     storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
-    storage.replyDataSize = sizeof(FsRedirectInfo);
+    storage.replyDataSize = sizeof(Fs_RedirectInfo);
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_MKDEV, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
@@ -1140,9 +1140,9 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcMakeDev --
+ * Fsrmt_RpcMakeDev --
  *
- *	Service stub for RPC_FS_MKDEV.  This calls FsLocalMakeDevice.
+ *	Service stub for RPC_FS_MKDEV.  This calls FslclMakeDevice.
  *
  * Results:
  *	If this procedure returns SUCCESS then a reply has been sent to
@@ -1157,7 +1157,7 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcMakeDev(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
 				 	 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
@@ -1171,30 +1171,30 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
 					 * This can be passed to Rpc_Reply */
 {
     ReturnStatus	status;
-    FsMakeDeviceArgs	*makeDevArgsPtr;
-    FsHandleHeader	*prefixHandlePtr;
-    FsRedirectInfo	*newNameInfoPtr;
+    Fs_MakeDeviceArgs	*makeDevArgsPtr;
+    Fs_HandleHeader	*prefixHandlePtr;
+    Fs_RedirectInfo	*newNameInfoPtr;
     int			domainType;
 
-    makeDevArgsPtr = (FsMakeDeviceArgs *) storagePtr->requestParamPtr;
+    makeDevArgsPtr = (Fs_MakeDeviceArgs *) storagePtr->requestParamPtr;
     prefixHandlePtr = 
-	(*fsStreamOpTable[makeDevArgsPtr->open.prefixID.type].clientVerify)
+	(*fsio_StreamOpTable[makeDevArgsPtr->open.prefixID.type].clientVerify)
 	    (&makeDevArgsPtr->open.prefixID, clientID, &domainType);
-    if (prefixHandlePtr == (FsHandleHeader *) NIL) {
+    if (prefixHandlePtr == (Fs_HandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     }
-    FsHandleRelease(prefixHandlePtr, TRUE);
+    Fsutil_HandleRelease(prefixHandlePtr, TRUE);
 
-    fsStats.srvName.makeDevices++;
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
-    status = (*fsDomainLookup[domainType][FS_DOMAIN_MAKE_DEVICE])(prefixHandlePtr,
+    fs_Stats.srvName.makeDevices++;
+    newNameInfoPtr = (Fs_RedirectInfo *) NIL;
+    status = (*fs_DomainLookup[domainType][FS_DOMAIN_MAKE_DEVICE])(prefixHandlePtr,
 	    (char *)storagePtr->requestDataPtr, (Address) makeDevArgsPtr,
 	    (Address) NIL, &newNameInfoPtr);
     if (status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
-	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	storagePtr->replyDataSize = sizeof(Fs_RedirectInfo);
 	storagePtr->replyParamPtr = (Address) malloc(sizeof (int));
 	storagePtr->replyParamSize = sizeof (int);
 	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
@@ -1230,12 +1230,12 @@ static ReturnStatus
 TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2, 
 	 relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
     int			command;		/* Which Rpc: Mv or Ln */
-    FsHandleHeader 	*prefixHandle1;		/* Handle from prefix table */
+    Fs_HandleHeader 	*prefixHandle1;		/* Handle from prefix table */
     char 		*relativeName1;		/* The new name of the file. */
-    FsHandleHeader 	*prefixHandle2;		/* Handle from prefix table */
+    Fs_HandleHeader 	*prefixHandle2;		/* Handle from prefix table */
     char 		*relativeName2;		/* The new name of the file. */
-    FsLookupArgs	*lookupArgsPtr;		/* Contains IDs */
-    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+    Fs_LookupArgs	*lookupArgsPtr;		/* Contains IDs */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 						 * leaves its domain during the
 						 * lookup. */
     Boolean 		*name1ErrorPtr;		/* If we return REDIRECT or
@@ -1243,14 +1243,14 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
 						 * if that applies to the first
 						 * pathname or the second */
 {
-    Fs2PathParams	params;
-    Fs2PathData		*requestDataPtr;	/* too big for stack */
-    Fs2PathReply	replyParams;
+    Fs_2PathParams	params;
+    Fs_2PathData		*requestDataPtr;	/* too big for stack */
+    Fs_2PathReply	replyParams;
     Rpc_Storage		storage;
     ReturnStatus	status;
-    FsRedirectInfo	redirectInfo;
+    Fs_RedirectInfo	redirectInfo;
 
-    requestDataPtr = mnew(Fs2PathData);
+    requestDataPtr = mnew(Fs_2PathData);
 
     params.lookup = *lookupArgsPtr;
     params.lookup.prefixID = prefixHandle1->fileID;
@@ -1260,19 +1260,19 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
     (void)strcpy(requestDataPtr->path2, relativeName2);
 
     storage.requestParamPtr = (Address) &params;
-    storage.requestParamSize = sizeof (Fs2PathParams);
+    storage.requestParamSize = sizeof (Fs_2PathParams);
     storage.requestDataPtr = (Address) requestDataPtr;
-    storage.requestDataSize = sizeof (Fs2PathData);
+    storage.requestDataSize = sizeof (Fs_2PathData);
 
     storage.replyParamPtr = (Address) &replyParams;
-    storage.replyParamSize = sizeof (Fs2PathReply);
+    storage.replyParamSize = sizeof (Fs_2PathReply);
     storage.replyDataPtr = (Address)&redirectInfo;
-    storage.replyDataSize = sizeof(FsRedirectInfo);
+    storage.replyDataSize = sizeof(Fs_RedirectInfo);
 
     status = Rpc_Call(prefixHandle1->fileID.serverID, command, &storage);
     *name1ErrorPtr = replyParams.name1ErrorP;
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = replyParams.prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
@@ -1284,9 +1284,9 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
 /*
  *----------------------------------------------------------------------
  *
- * Fs_Rpc2Path --
+ * Fsrmt_Rpc2Path --
  *
- *	Common service stub for FsSpriteRename and FsSpriteHardLink.
+ *	Common service stub for FsrmtRename and FsrmtHardLink.
  *
  * Results:
  *	If this procedure returns SUCCESS then a reply has been sent to
@@ -1300,7 +1300,7 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
+Fsrmt_Rpc2Path(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
     int clientID;		/* Sprite ID of client host */
@@ -1312,77 +1312,77 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-    register	Fs2PathParams		*paramsPtr;
-    register	FsLookupArgs		*lookupArgsPtr;
-    register	FsHandleHeader		*prefixHandle1Ptr;
-    register	FsHandleHeader		*prefixHandle2Ptr;
+    register	Fs_2PathParams		*paramsPtr;
+    register	Fs_LookupArgs		*lookupArgsPtr;
+    register	Fs_HandleHeader		*prefixHandle1Ptr;
+    register	Fs_HandleHeader		*prefixHandle2Ptr;
     register	Rpc_ReplyMem		*replyMemPtr;
-    FsRedirectInfo			*newNameInfoPtr;
+    Fs_RedirectInfo			*newNameInfoPtr;
     Boolean				name1Error = FALSE;
-    Fs2PathReply			*replyParamsPtr;
-    Fs2PathData				*pathDataPtr;
+    Fs_2PathReply			*replyParamsPtr;
+    Fs_2PathData				*pathDataPtr;
     ReturnStatus			status = SUCCESS;
     int					domainType;
 
-    paramsPtr = (Fs2PathParams *)storagePtr->requestParamPtr;
-    pathDataPtr = (Fs2PathData *)storagePtr->requestDataPtr;
+    paramsPtr = (Fs_2PathParams *)storagePtr->requestParamPtr;
+    pathDataPtr = (Fs_2PathData *)storagePtr->requestDataPtr;
     lookupArgsPtr = &paramsPtr->lookup;
     prefixHandle1Ptr =
-	(*fsStreamOpTable[lookupArgsPtr->prefixID.type].clientVerify)
+	(*fsio_StreamOpTable[lookupArgsPtr->prefixID.type].clientVerify)
 	    (&lookupArgsPtr->prefixID, clientID, &domainType);
 
-    if (prefixHandle1Ptr == (FsHandleHeader *)NIL) {
+    if (prefixHandle1Ptr == (Fs_HandleHeader *)NIL) {
 	name1Error = TRUE;
 	status = FS_STALE_HANDLE;
 	goto exit;
     } else {
-	FsHandleUnlock(prefixHandle1Ptr);
+	Fsutil_HandleUnlock(prefixHandle1Ptr);
     }
     if (paramsPtr->prefixID2.serverID != rpc_SpriteID) {
 	/*
 	 * Second pathname doesn't even start with us.  However, we are
 	 * called in case the first pathname redirects away from us.
 	 */
-	prefixHandle2Ptr = (FsHandleHeader *)NIL;
+	prefixHandle2Ptr = (Fs_HandleHeader *)NIL;
     } else {
 	prefixHandle2Ptr =
-	    (*fsStreamOpTable[paramsPtr->prefixID2.type].clientVerify)
+	    (*fsio_StreamOpTable[paramsPtr->prefixID2.type].clientVerify)
 		(&paramsPtr->prefixID2, clientID, (int *)NIL);
-	if (prefixHandle2Ptr == (FsHandleHeader *)NIL) {
-	    FsHandleRelease(prefixHandle1Ptr, FALSE);
+	if (prefixHandle2Ptr == (Fs_HandleHeader *)NIL) {
+	    Fsutil_HandleRelease(prefixHandle1Ptr, FALSE);
 	    name1Error = FALSE;
 	    status = FS_STALE_HANDLE;
 	    goto exit;
 	} else {
-	    FsHandleUnlock(prefixHandle2Ptr);
+	    Fsutil_HandleUnlock(prefixHandle2Ptr);
 	}
     }
 
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
+    newNameInfoPtr = (Fs_RedirectInfo *) NIL;
     if (command == RPC_FS_RENAME) {
-	fsStats.srvName.renames++;
+	fs_Stats.srvName.renames++;
 	command = FS_DOMAIN_RENAME;
     } else if (command == RPC_FS_LINK) {
-	fsStats.srvName.hardLinks++;
+	fs_Stats.srvName.hardLinks++;
 	command = FS_DOMAIN_HARD_LINK;
     } else {
-	printf( "Fs_Rpc2Path: Bad command %d\n", command);
+	printf( "Fsrmt_Rpc2Path: Bad command %d\n", command);
 	status = FS_INVALID_ARG;
     }
     if (status == SUCCESS) {
-	status = (*fsDomainLookup[domainType][command])(prefixHandle1Ptr,
+	status = (*fs_DomainLookup[domainType][command])(prefixHandle1Ptr,
 		    pathDataPtr->path1, prefixHandle2Ptr, pathDataPtr->path2,
 		    lookupArgsPtr, &newNameInfoPtr, &name1Error);
     }
-    FsHandleRelease(prefixHandle1Ptr, FALSE);
-    if (prefixHandle2Ptr != (FsHandleHeader *)NIL) {
-	FsHandleRelease(prefixHandle2Ptr, FALSE);
+    Fsutil_HandleRelease(prefixHandle1Ptr, FALSE);
+    if (prefixHandle2Ptr != (Fs_HandleHeader *)NIL) {
+	Fsutil_HandleRelease(prefixHandle2Ptr, FALSE);
     }
 exit:
-    replyParamsPtr = (Fs2PathReply *) malloc(sizeof (Fs2PathReply));
+    replyParamsPtr = (Fs_2PathReply *) malloc(sizeof (Fs_2PathReply));
     replyParamsPtr->name1ErrorP = name1Error;
     storagePtr->replyParamPtr = (Address) replyParamsPtr;
-    storagePtr->replyParamSize = sizeof (Fs2PathReply);
+    storagePtr->replyParamSize = sizeof (Fs_2PathReply);
     if (status == FS_LOOKUP_REDIRECT) {
 	replyParamsPtr->prefixLength = newNameInfoPtr->prefixLength;
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
@@ -1407,7 +1407,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteRename --
+ * FsrmtRename --
  *
  *	Stub for renaming a file.
  *
@@ -1420,14 +1420,14 @@ exit:
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+FsrmtRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
-    FsHandleHeader *prefixHandle1;	/* Handle from the prefix table */
+    Fs_HandleHeader *prefixHandle1;	/* Handle from the prefix table */
     char *relativeName1;		/* The new name of the file. */
-    FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
+    Fs_HandleHeader *prefixHandle2;	/* Token from the prefix table */
     char *relativeName2;		/* The new name of the file. */
-    FsLookupArgs *lookupArgsPtr;	/* Contains IDs */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
+    Fs_LookupArgs *lookupArgsPtr;	/* Contains IDs */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
     Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error
 				 * condition if for the first pathname,
@@ -1442,7 +1442,7 @@ FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteHardLink --
+ * FsrmtHardLink --
  *
  *	Stub for making a hard link between two files.
  *
@@ -1455,14 +1455,14 @@ FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsSpriteHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+FsrmtHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
-    FsHandleHeader *prefixHandle1;	/* Token from the prefix table */
+    Fs_HandleHeader *prefixHandle1;	/* Token from the prefix table */
     char *relativeName1;		/* The new name of the file. */
-    FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
+    Fs_HandleHeader *prefixHandle2;	/* Token from the prefix table */
     char *relativeName2;		/* The new name of the file. */
-    FsLookupArgs *lookupArgsPtr;	/* Contains IDs */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server 
+    Fs_LookupArgs *lookupArgsPtr;	/* Contains IDs */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server 
 					 * leaves its domain during the lookup*/
     Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error is
 				 * for first path, FALSE if for the second. */

@@ -22,23 +22,23 @@
 
 #include "fsNameOps.h"
 #include "proc.h"
-
+#include "fsrmt.h"
 /*
  * Parameters for the read and write RPCs.
  */
 
-typedef struct FsRemoteIOParam {
+typedef struct FsrmtRemoteIOParam {
     Fs_FileID	fileID;			/* Identifies file to read from */
     Fs_FileID	streamID;		/* Identifies stream (for offset) */
     Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
     Fs_IOParam	io;			/* I/O parameter block */
-} FsRemoteIOParam;
+} FsrmtRemoteIOParam;
 
 /*
  * Parameters for the iocontrol RPC
  */
 
-typedef struct FsSpriteIOCParams {
+typedef struct FsrmtSpriteIOCParams {
     Fs_FileID	fileID;		/* File to manipulate. */
     Fs_FileID	streamID;	/* Stream to the file, needed for locking */
     Proc_PID	procID;		/* ID of invoking process */
@@ -46,67 +46,119 @@ typedef struct FsSpriteIOCParams {
     int		command;	/* I/O Control to perform. */
     int		inBufSize;	/* Size of input params to ioc. */
     int		outBufSize;	/* Size of results from ioc. */
-    Fmt_Format	format;		/* Defines client's byte order/alignment 
-				 * format. */
+    int		byteOrder;	/* Defines client's byte ordering */
     int		uid;		/* Effective User ID */
-} FsSpriteIOCParams;
+} FsrmtSpriteIOCParams;
 
 /*
  * Parameters for the I/O Control RPC.  (These aren't used, oops,
  * someday they should be used.)
  */
 
-typedef struct FsRemoteIOCParam {
+typedef struct FsrmtRemoteIOCParam {
     Fs_FileID	fileID;		/* File to manipulate. */
     Fs_FileID	streamID;	/* Stream to the file, needed for locking */
     Fs_IOCParam	ioc;		/* IOControl parameter block */
-} FsRemoteIOCParam;
+} FsrmtRemoteIOCParam;
 
 /*
  * Parameters for the block copy RPC.
  */
-typedef struct FsRemoteBlockCopyParams {
+typedef struct FsrmtRemoteBlockCopyParams {
     Fs_FileID	srcFileID;	/* File to copy from. */
     Fs_FileID	destFileID;	/* File to copy to. */
     int		blockNum;	/* Block to copy to. */
-} FsRemoteBlockCopyParams;
+} FsrmtRemoteBlockCopyParams;
+
 
 /*
- * Sprite Domain functions called via FsLookupOperation.
+ * RPC debugging.
+ */
+#ifndef CLEAN
+#define FSRMT_RPC_DEBUG_PRINT(string) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string);\
+	}
+#define FSRMT_RPC_DEBUG_PRINT1(string, arg1) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string, arg1);\
+	}
+#define FSRMT_RPC_DEBUG_PRINT2(string, arg1, arg2) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string, arg1, arg2);\
+	}
+#define FSRMT_RPC_DEBUG_PRINT3(string, arg1, arg2, arg3) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string, arg1, arg2, arg3);\
+	}
+#define FSRMT_RPC_DEBUG_PRINT4(string, arg1, arg2, arg3, arg4) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string, arg1, arg2, arg3, arg4);\
+	}
+#else
+#define FSRMT_RPC_DEBUG_PRINT(string)
+#define FSRMT_RPC_DEBUG_PRINT1(string, arg1)
+#define FSRMT_RPC_DEBUG_PRINT2(string, arg1, arg2)
+#define FSRMT_RPC_DEBUG_PRINT3(string, arg1, arg2, arg3)
+#define FSRMT_RPC_DEBUG_PRINT4(string, arg1, arg2, arg3, arg4)
+#endif not CLEAN
+
+
+ /*
+ * Sprite Domain functions called via Fsprefix_LookupOperation.
  * These are called with a pathname.
  */
-extern	ReturnStatus	FsSpriteImport();
-extern	ReturnStatus	FsSpriteOpen();
-extern	ReturnStatus	FsSpriteReopen();
-extern	ReturnStatus	FsSpriteDevOpen();
-extern	ReturnStatus	FsSpriteDevClose();
-extern	ReturnStatus	FsRemoteGetAttrPath();
-extern	ReturnStatus	FsRemoteSetAttrPath();
-extern	ReturnStatus	FsSpriteMakeDevice();
-extern	ReturnStatus	FsSpriteMakeDir();
-extern	ReturnStatus	FsSpriteRemove();
-extern	ReturnStatus	FsSpriteRemoveDir();
-extern	ReturnStatus	FsSpriteRename();
-extern	ReturnStatus	FsSpriteHardLink();
+extern	ReturnStatus	FsrmtSpriteImport();
+extern	ReturnStatus	FsrmtSpriteOpen();
+extern	ReturnStatus	FsrmtSpriteReopen();
+extern	ReturnStatus	FsrmtSpriteDevOpen();
+extern	ReturnStatus	FsrmtSpriteDevClose();
+extern	ReturnStatus	FsrmtRemoteGetAttrPath();
+extern	ReturnStatus	FsrmtRemoteSetAttrPath();
+extern	ReturnStatus	FsrmtSpriteMakeDevice();
+extern	ReturnStatus	FsrmtSpriteMakeDir();
+extern	ReturnStatus	FsrmtSpriteRemove();
+extern	ReturnStatus	FsrmtSpriteRemoveDir();
+extern	ReturnStatus	FsrmtSpriteRename();
+extern	ReturnStatus	FsrmtSpriteHardLink();
+
 
 /*
  * Sprite Domain functions called via the fsAttrOpsTable switch.
  * These are called with a fileID.
  */
-extern	ReturnStatus	FsRemoteGetAttr();
-extern	ReturnStatus	FsRemoteSetAttr();
+extern	ReturnStatus	FsrmtRemoteGetAttr();
+extern	ReturnStatus	FsrmtRemoteSetAttr();
 
-/*
- * General purpose remote stubs shared by remote files, devices, pipes, etc.
- */
-extern	ReturnStatus	FsRemoteRead();
-extern	ReturnStatus	FsRemoteWrite();
-extern	ReturnStatus	FsRemoteSelect();
-extern	ReturnStatus	FsRemoteIOControl();
-extern	ReturnStatus	FsRemoteClose();
-extern	ReturnStatus	FsRemoteGetIOAttr();
-extern	ReturnStatus	FsRemoteSetIOAttr();
-extern	ReturnStatus	FsRemoteBlockCopy();
-extern	ReturnStatus	FsRemoteDomainInfo();
+extern ReturnStatus FsrmtRmtDeviceCltOpen();
+extern Fs_HandleHeader *FsrmtRmtDeviceVerify();
+extern ReturnStatus FsrmtRmtDeviceMigrate();
+extern ReturnStatus FsrmtRmtDeviceReopen();
 
-#endif /* _FSSPRITEDOMAIN */
+extern Fs_HandleHeader *FsrmtRmtPipeVerify();
+extern ReturnStatus FsrmtRmtPipeMigrate();
+extern ReturnStatus FsrmtRmtPipeReopen();
+extern ReturnStatus FsrmtRmtPipeClose();
+
+
+extern ReturnStatus	FsrmtRmtFileCltOpen();
+extern Fs_HandleHeader	*FsrmtRmtFileVerify();
+extern ReturnStatus	FsrmtRmtFileRead();
+extern ReturnStatus	FsrmtRmtFileWrite();
+extern ReturnStatus	FsrmtRmtFileIOControl();
+extern ReturnStatus	FsrmtRmtFileSelect();
+extern ReturnStatus	FsrmtRmtFileGetIOAttr();
+extern ReturnStatus	FsrmtRmtFileSetIOAttr();
+extern ReturnStatus	FsrmtRmtFileRelease();
+extern ReturnStatus	FsrmtRmtFileMigEnd();
+extern ReturnStatus	FsrmtRmtFileMigrate();
+extern ReturnStatus	FsrmtRmtFileReopen();
+extern ReturnStatus     FsrmtRmtFileAllocate();
+extern ReturnStatus     FsrmtRmtFileBlockRead();
+extern ReturnStatus     FsrmtRmtFileBlockWrite();
+extern ReturnStatus     FsrmtRmtFileBlockCopy();
+extern Boolean		FsrmtRmtFileScavenge();
+extern ReturnStatus	FsrmtRmtFileClose();
+
+
+#endif _FSSPRITEDOMAIN

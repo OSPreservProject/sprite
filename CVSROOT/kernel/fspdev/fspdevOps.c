@@ -20,10 +20,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
+#include "fsNameOps.h"
 #include "fspdev.h"
 #include "fspdevInt.h"
 #include "fsio.h"
-#include "fsNameOps.h"
 #include "fsrmt.h"
 
 /*
@@ -220,7 +220,7 @@ Fspdev_InitializeOps()
 {
     int	i;
 
-    Fs_InstallDomainLookupOps(FS_PSEUDO_DOMAIN, &pdevDomainLookup, 
+    Fs_InstallDomainLookupOps(FS_PSEUDO_DOMAIN, pdevDomainLookup, 
 			&pdevAttrOpTable);
     for (i = 0; i < numPdevFileStreamOps; i++)  { 
 	Fsio_InstallStreamOps(pdevFileStreamOps[i].type, &(pdevFileStreamOps[i]));

@@ -23,19 +23,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsFile.h"
-#include "fsDevice.h"
-#include "fsLocalDomain.h"
-#include "fsMigrate.h"
-#include "fsOpTable.h"
-#include "fsBlockCache.h"
-#include "fsCacheOps.h"
-#include "fsConsist.h"
-#include "fsStream.h"
-#include "fsPrefix.h"
-#include "fsLock.h"
-#include "fsDisk.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fslcl.h"
+#include "fsNameOps.h"
+#include "fscache.h"
+#include "fsconsist.h"
+#include "fsprefix.h"
+#include "fsioLock.h"
+#include "fsdm.h"
 #include "fsStat.h"
 #include "vm.h"
 #include "rpc.h"
@@ -43,11 +39,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 void IncVersionNumber();
 
+static Fscache_IOProcs  lclFileIOProcs = {
+    Fsdm_BlockAllocate, 
+    Fsio_FileBlockRead, 
+    Fsio_FileBlockWrite,
+    Fsio_FileBlockCopy
+};
+
 
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalFileHandleInit --
+ * Fsio_LocalFileHandleInit --
  *
  *	Initialize a handle for a local file from its descriptor on disk.
  *
@@ -61,25 +64,25 @@ void IncVersionNumber();
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
+Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
     Fs_FileID	*fileIDPtr;
     char	*name;
-    FsLocalFileIOHandle	**newHandlePtrPtr;
+    Fsio_FileIOHandle	**newHandlePtrPtr;
 {
     register ReturnStatus status;
-    register FsLocalFileIOHandle *handlePtr;
-    register FsFileDescriptor *descPtr;
-    register FsDomain *domainPtr;
+    register Fsio_FileIOHandle *handlePtr;
+    register Fsdm_FileDescriptor *descPtr;
+    register Fsdm_Domain *domainPtr;
     register Boolean found;
 
-    found = FsHandleInstall(fileIDPtr, sizeof(FsLocalFileIOHandle), name,
-		    (FsHandleHeader **)newHandlePtrPtr);
+    found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fsio_FileIOHandle), name,
+		    (Fs_HandleHeader **)newHandlePtrPtr);
     if (found) {
 	/*
 	 * All set.
 	 */
-	if ((*newHandlePtrPtr)->descPtr == (FsFileDescriptor *)NIL) {
-	    panic("FsLocalFileHandleInit, found handle with no descPtr\n");
+	if ((*newHandlePtrPtr)->descPtr == (Fsdm_FileDescriptor *)NIL) {
+	    panic("Fsio_LocalFileHandleInit, found handle with no descPtr\n");
 	}
 	return(SUCCESS);
     }
@@ -87,22 +90,22 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
      * Get a hold of the disk file descriptor.
      */
     handlePtr = *newHandlePtrPtr;
-    domainPtr = FsDomainFetch(fileIDPtr->major, FALSE);
-    if (domainPtr == (FsDomain *)NIL) {
-	FsHandleRelease(handlePtr, TRUE);
-	FsHandleRemove(handlePtr);
+    domainPtr = Fsdm_DomainFetch(fileIDPtr->major, FALSE);
+    if (domainPtr == (Fsdm_Domain *)NIL) {
+	Fsutil_HandleRelease(handlePtr, TRUE);
+	Fsutil_HandleRemove(handlePtr);
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-    descPtr = (FsFileDescriptor *)malloc(sizeof(FsFileDescriptor));
-    status = FsFetchFileDesc(domainPtr, fileIDPtr->minor, descPtr);
-    FsDomainRelease(fileIDPtr->major);
+    descPtr = (Fsdm_FileDescriptor *)malloc(sizeof(Fsdm_FileDescriptor));
+    status = Fsdm_FileDescFetch(domainPtr, fileIDPtr->minor, descPtr);
+    Fsdm_DomainRelease(fileIDPtr->major);
 
     if (status != SUCCESS) {
-	printf( "FsLocalFileHandleInit: FsFetchFileDesc failed");
-    } else if (!(descPtr->flags & FS_FD_ALLOC)) {
+	printf( "Fsio_LocalFileHandleInit: Fsdm_FileDescFetch failed");
+    } else if (!(descPtr->flags & FSDM_FD_ALLOC)) {
 	status = FS_FILE_REMOVED;
     } else {
-	FsCachedAttributes attr;
+	Fscache_Attributes attr;
 
 	handlePtr->descPtr = descPtr;
 	handlePtr->flags = 0;
@@ -126,25 +129,25 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	attr.uid = descPtr->uid;
 	attr.gid = descPtr->gid;
 
-	FsCacheInfoInit(&handlePtr->cacheInfo, (FsHandleHeader *)handlePtr,
-		descPtr->version, TRUE, &attr);
+	Fscache_InfoInit(&handlePtr->cacheInfo, (Fs_HandleHeader *)handlePtr,
+		descPtr->version, TRUE, &attr, &lclFileIOProcs);
 
-	FsConsistInit(&handlePtr->consist, (FsHandleHeader *)handlePtr);
-	FsLockInit(&handlePtr->lock);
-	FsReadAheadInit(&handlePtr->readAhead);
+	Fsconsist_Init(&handlePtr->consist, (Fs_HandleHeader *)handlePtr);
+	Fsio_LockInit(&handlePtr->lock);
+	Fscache_ReadAheadInit(&handlePtr->readAhead);
 
 	handlePtr->segPtr = (Vm_Segment *)NIL;
     }
     if (status != SUCCESS) {
-	FsHandleRelease(handlePtr, TRUE);
-	FsHandleRemove(handlePtr);
+	Fsutil_HandleRelease(handlePtr, TRUE);
+	Fsutil_HandleRemove(handlePtr);
 	free((Address)descPtr);
-	*newHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
+	*newHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
     } else {
 	if (descPtr->fileType == FS_DIRECTORY) {
-	    fsStats.object.directory++;
+	    fs_Stats.object.directory++;
 	} else {
-	    fsStats.object.files++;
+	    fs_Stats.object.files++;
 	}
 	*newHandlePtrPtr = handlePtr;
     }
@@ -154,10 +157,10 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsFileSyncLockCleanup --
+ * Fsio_FileSyncLockCleanup --
  *
  *	This takes care of the dynamically allocated Sync_Lock's that
- *	are embedded in a FsLocalFileIOHandle.  This routine is
+ *	are embedded in a Fsio_FileIOHandle.  This routine is
  *	called when the file handle is being removed.
  *
  * Results:
@@ -170,24 +173,24 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
  *----------------------------------------------------------------------
  */
 void
-FsFileSyncLockCleanup(handlePtr)
-    FsLocalFileIOHandle *handlePtr;
+Fsio_FileSyncLockCleanup(handlePtr)
+    Fsio_FileIOHandle *handlePtr;
 {
-    FsConsistSyncLockCleanup(&handlePtr->consist);
-    FsCacheInfoSyncLockCleanup(&handlePtr->cacheInfo);
-    FsReadAheadSyncLockCleanup(&handlePtr->readAhead);
+    Fsconsist_SyncLockCleanup(&handlePtr->consist);
+    Fscache_InfoSyncLockCleanup(&handlePtr->cacheInfo);
+    Fscache_ReadAheadSyncLockCleanup(&handlePtr->readAhead);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsFileSrvOpen --
+ * Fsio_FileNameOpen --
  *
  *	This is called in two cases after name lookup on the server.
  *	The first is when a client is opening the file from Fs_Open.
  *	The second is when a lookup is done when getting/setting the
  *	attributes of the files.  In the open case this routine has
- *	to set up FsFileState that the client will use to complete
+ *	to set up Fsio_FileState that the client will use to complete
  *	the setup of its stream, and create a server-side stream.
  *	The handle should be locked upon entry, it remains locked upon return.
  *
@@ -203,15 +206,15 @@ FsFileSyncLockCleanup(handlePtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
-     register FsLocalFileIOHandle *handlePtr;	/* A handle from FsLocalLookup.
+Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
+     register Fsio_FileIOHandle *handlePtr;	/* A handle from FslclLookup.
 					 * Should be LOCKED upon entry,
 					 * Returned UNLOCKED. */
-     FsOpenArgs		*openArgsPtr;	/* Standard open arguments */
-     FsOpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
-					 * and FsFileState */
+     Fs_OpenArgs		*openArgsPtr;	/* Standard open arguments */
+     Fs_OpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
+					 * and Fsio_FileState */
 {
-    FsFileState *fileStatePtr;
+    Fsio_FileState *fileStatePtr;
     ReturnStatus status;
     register useFlags = openArgsPtr->useFlags;
     register clientID = openArgsPtr->clientID;
@@ -250,7 +253,7 @@ FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
      */
     openResultsPtr->ioFileID = handlePtr->hdr.fileID;
     if (clientID != rpc_SpriteID) {
-	openResultsPtr->ioFileID.type = FS_RMT_FILE_STREAM;
+	openResultsPtr->ioFileID.type = FSIO_RMT_FILE_STREAM;
     }
     if (useFlags == 0) { 
 	/*
@@ -274,15 +277,15 @@ FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
 	if (useFlags & FS_EXECUTE) {
 	    handlePtr->use.exec++;
 	}
-	FsHandleUnlock(handlePtr);
-	fileStatePtr = mnew(FsFileState);
-	status = FsFileConsistency(handlePtr, clientID, useFlags,
+	Fsutil_HandleUnlock(handlePtr);
+	fileStatePtr = mnew(Fsio_FileState);
+	status = Fsconsist_FileConsistency(handlePtr, clientID, useFlags,
 		    &fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
 	if (status == SUCCESS) {
 	    /*
 	     * Copy cached attributes into the returned file state.
 	     */
-	    FsGetCachedAttr(&handlePtr->cacheInfo, &fileStatePtr->version,
+	    Fscache_GetCachedAttr(&handlePtr->cacheInfo, &fileStatePtr->version,
 			&fileStatePtr->attr);
 	    /*
 	     * Return new usage flags to the client.  This lets us strip
@@ -291,19 +294,19 @@ FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
 	     */
 	    fileStatePtr->newUseFlags = useFlags;
 	    openResultsPtr->streamData = (ClientData)fileStatePtr;
-	    openResultsPtr->dataSize = sizeof(FsFileState);
+	    openResultsPtr->dataSize = sizeof(Fsio_FileState);
 
 	    /*
 	     * Now set up a shadow stream on here on the server so we
 	     * can support shared offset even after migration.
 	     * Note: prefix handles get opened, but the stream is not used,
-	     * could dispose stream in FsLocalExport.
+	     * could dispose stream in FslclExport.
 	     */
 
-	    streamPtr = FsStreamNewClient(rpc_SpriteID, clientID,
-		(FsHandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
+	    streamPtr = Fsio_StreamCreate(rpc_SpriteID, clientID,
+		(Fs_HandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
 	    openResultsPtr->streamID = streamPtr->hdr.fileID;
-	    FsHandleRelease(streamPtr, TRUE);
+	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    return(SUCCESS);
 	} else {
 	    /*
@@ -314,8 +317,8 @@ FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
 	    int ref, write, exec;
 	    printf("Consistency failed %x on <%d,%d>\n", status,
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
-	    FsHandleLock(handlePtr);
-	    FsConsistKill(&handlePtr->consist, clientID,
+	    Fsutil_HandleLock(handlePtr);
+	    Fsconsist_Kill(&handlePtr->consist, clientID,
 			  &ref, &write, &exec);
 	    handlePtr->use.ref   -= ref;
 	    handlePtr->use.write -= write;
@@ -324,14 +327,14 @@ FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
 	}
     }
 exit:
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsFileReopen --
+ * Fsio_FileReopen --
  *
  *      Reopen a file for use by a remote client. State is maintained in the
  *      handle's client list about this open and whether or not the client
@@ -351,18 +354,18 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
-    FsHandleHeader	*hdrPtr;	/* IGNORED here on the server */
+Fsio_FileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
+    Fs_HandleHeader	*hdrPtr;	/* IGNORED here on the server */
     int			clientID;	/* Client doing the reopen */
-    ClientData		inData;		/* FsFileReopenParams */
+    ClientData		inData;		/* Fsio_FileReopenParams */
     int			*outSizePtr;	/* Size of returned data */
     ClientData		*outDataPtr;	/* Returned data */
 {
-    register FsFileReopenParams *reopenParamsPtr; /* Parameters from RPC */
-    register FsFileState	*fileStatePtr;	/* Results for RPC */
-    FsLocalFileIOHandle	    	*handlePtr;	/* Local handle for file */
+    register Fsio_FileReopenParams *reopenParamsPtr; /* Parameters from RPC */
+    register Fsio_FileState	*fileStatePtr;	/* Results for RPC */
+    Fsio_FileIOHandle	    	*handlePtr;	/* Local handle for file */
     register ReturnStatus	status = SUCCESS; /* General return code */
-    FsDomain			*domainPtr;
+    Fsdm_Domain			*domainPtr;
 
     *outDataPtr = (ClientData) NIL;
     *outSizePtr = 0;
@@ -372,12 +375,12 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
      * as doing recovery, and fetch a local handle for the file.
      * NAME note: we have no name for the file after a re-open.
      */
-    reopenParamsPtr = (FsFileReopenParams *) inData;
-    domainPtr = FsDomainFetch(reopenParamsPtr->fileID.major, FALSE);
-    if (domainPtr == (FsDomain *)NIL) {
+    reopenParamsPtr = (Fsio_FileReopenParams *) inData;
+    domainPtr = Fsdm_DomainFetch(reopenParamsPtr->fileID.major, FALSE);
+    if (domainPtr == (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-    status = FsLocalFileHandleInit(&reopenParamsPtr->fileID, (char *)NIL,
+    status = Fsio_LocalFileHandleInit(&reopenParamsPtr->fileID, (char *)NIL,
 	&handlePtr);
     if (status != SUCCESS) {
 	goto reopenReturn;
@@ -385,29 +388,29 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     /*
      * See if the client can still cache its dirty blocks.
      */
-    if (reopenParamsPtr->flags & FS_HAVE_BLOCKS) {
-	status = FsCacheCheckVersion(&handlePtr->cacheInfo,
+    if (reopenParamsPtr->flags & FSIO_HAVE_BLOCKS) {
+	status = Fscache_CheckVersion(&handlePtr->cacheInfo,
 				     reopenParamsPtr->version, clientID);
 	if (status != SUCCESS) {
-	    FsHandleRelease(handlePtr, TRUE);
+	    Fsutil_HandleRelease(handlePtr, TRUE);
 	    goto reopenReturn;
 	}
     }
     /*
      * Update global use counts and version number.
      */
-    FsReopenClient(handlePtr, clientID, reopenParamsPtr->use,
-			reopenParamsPtr->flags & FS_HAVE_BLOCKS);
+    Fsconsist_ReopenClient(handlePtr, clientID, reopenParamsPtr->use,
+			reopenParamsPtr->flags & FSIO_HAVE_BLOCKS);
     if (reopenParamsPtr->use.write > 0) {
 	IncVersionNumber(handlePtr);
     }
     /*
      * Now unlock the handle and do cache consistency call-backs.
      */
-    fileStatePtr = mnew(FsFileState);
-    fileStatePtr->cacheable = reopenParamsPtr->flags & FS_HAVE_BLOCKS;
-    FsHandleUnlock(handlePtr);
-    status = FsReopenConsistency(handlePtr, clientID, reopenParamsPtr->use,
+    fileStatePtr = mnew(Fsio_FileState);
+    fileStatePtr->cacheable = reopenParamsPtr->flags & FSIO_HAVE_BLOCKS;
+    Fsutil_HandleUnlock(handlePtr);
+    status = Fsconsist_ReopenConsistency(handlePtr, clientID, reopenParamsPtr->use,
 		reopenParamsPtr->flags & FS_SWAP,
 		&fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
     if (status != SUCCESS) {
@@ -417,39 +420,39 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	 * after this re-open fails.
 	 */
 	int ref, write, exec;
-	FsHandleLock(handlePtr);
-	FsConsistKill(&handlePtr->consist, clientID, &ref, &write, &exec);
+	Fsutil_HandleLock(handlePtr);
+	Fsconsist_Kill(&handlePtr->consist, clientID, &ref, &write, &exec);
 	handlePtr->use.ref   -= ref;
 	handlePtr->use.write -= write;
 	handlePtr->use.exec  -= exec;
-	FsHandleUnlock(handlePtr);
+	Fsutil_HandleUnlock(handlePtr);
 	free((Address)fileStatePtr);
     } else {
 	/*
 	 * Successful re-open here on the server. Copy cached attributes
 	 * into the returned file state.
 	 */
-	FsGetCachedAttr(&handlePtr->cacheInfo, &fileStatePtr->version,
+	Fscache_GetCachedAttr(&handlePtr->cacheInfo, &fileStatePtr->version,
 		    &fileStatePtr->attr);
 	fileStatePtr->newUseFlags = 0;		/* Not used in re-open */
 	*outDataPtr = (ClientData) fileStatePtr;
-	*outSizePtr = sizeof(FsFileState);
+	*outSizePtr = sizeof(Fsio_FileState);
     }
-    FsHandleRelease(handlePtr, FALSE);
+    Fsutil_HandleRelease(handlePtr, FALSE);
 reopenReturn:
-    FsDomainRelease(reopenParamsPtr->fileID.major);
+    Fsdm_DomainRelease(reopenParamsPtr->fileID.major);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsFileCltOpen --
+ * Fsio_FileIoOpen --
  *
  *      Set up a stream for a local disk file.  This is called from Fs_Open to
  *	complete the opening of a stream.  By this time any cache consistency
  *	actions have already been taken, and local use counts have been
- *	incremented by FsFileSrvOpen.
+ *	incremented by Fsio_FileNameOpen.
  *
  * Results:
  *	SUCCESS, unless there was an error installing the handle.
@@ -462,27 +465,27 @@ reopenReturn:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
+Fsio_FileIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
     Fs_FileID		*ioFileIDPtr;	/* I/O fileID from the name server */
     int			*flagsPtr;	/* Return only.  The server returns
-					 * a modified useFlags in FsFileState */
+					 * a modified useFlags in Fsio_FileState */
     int			clientID;	/* IGNORED */
-    ClientData		streamData;	/* FsFileState. */
+    ClientData		streamData;	/* Fsio_FileState. */
     char		*name;		/* File name for error msgs */
-    FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
 					 * I/O to a file, NIL if failure. */
 {
     register ReturnStatus	status;
 
-    status = FsLocalFileHandleInit(ioFileIDPtr, name,
-		(FsLocalFileIOHandle **)ioHandlePtrPtr);
+    status = Fsio_LocalFileHandleInit(ioFileIDPtr, name,
+		(Fsio_FileIOHandle **)ioHandlePtrPtr);
     if (status == SUCCESS) {
 	/*
 	 * Return the new useFlags from the server.  It has stripped off
 	 * execute permission for directories.
 	 */
-	*flagsPtr = ( (FsFileState *)streamData )->newUseFlags;
-	FsHandleUnlock(*ioHandlePtrPtr);
+	*flagsPtr = ( (Fsio_FileState *)streamData )->newUseFlags;
+	Fsutil_HandleUnlock(*ioHandlePtrPtr);
     }
     free((Address)streamData);
     return(status);
@@ -491,7 +494,7 @@ FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsFileClose --
+ * Fsio_FileClose --
  *
  *	Close time processing for local files.  We need to remove ourselves
  *	from the list of clients of the file, decrement use counts, and
@@ -514,43 +517,43 @@ FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
  */
 
 ReturnStatus
-FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
+Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     Fs_Stream		*streamPtr;	/* Stream to regular file */
     int			clientID;	/* Host ID of closer */
     Proc_PID		procID;		/* Process ID of closer */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of closeData */
-    ClientData		closeData;	/* Ref. to FsCachedAttributes */
+    ClientData		closeData;	/* Ref. to Fscache_Attributes */
 {
-    register FsLocalFileIOHandle *handlePtr =
-	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_FileIOHandle *handlePtr =
+	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     ReturnStatus		status;
     Boolean			wasCached = TRUE;
 
     /*
      * Update the client state to reflect the close by the client.
      */
-    if (!FsConsistClose(&handlePtr->consist, clientID, flags, &wasCached)) {
-	printf("FsFileClose, client %d pid %x unknown for file <%d,%d>\n",
+    if (!Fsconsist_Close(&handlePtr->consist, clientID, flags, &wasCached)) {
+	printf("Fsio_FileClose, client %d pid %x unknown for file <%d,%d>\n",
 		  clientID, procID, handlePtr->hdr.fileID.major,
 		  handlePtr->hdr.fileID.minor);
-	FsHandleUnlock(handlePtr);
+	Fsutil_HandleUnlock(handlePtr);
 	return(FS_STALE_HANDLE);
     }
     if (wasCached && dataSize != 0) {
 	/*
 	 * Update the server's attributes from ones cached on the client.
 	 */
-	FsUpdateAttrFromClient(clientID, &handlePtr->cacheInfo,
-				(FsCachedAttributes *)closeData);
+	Fscache_UpdateAttrFromClient(clientID, &handlePtr->cacheInfo,
+				(Fscache_Attributes *)closeData);
     }
 
-    FsLockClose(&handlePtr->lock, &streamPtr->hdr.fileID);
+    Fsio_LockClose(&handlePtr->lock, &streamPtr->hdr.fileID);
 
     /*
      * Update use counts and handle pending deletions.
      */
-    status = FsFileCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
+    status = Fsio_FileCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
 				     (flags & FS_EXECUTE) != 0,
 				     clientID, TRUE);
     if (status == FS_FILE_REMOVED) {
@@ -563,25 +566,25 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	 */
 	if (flags & FS_WB_ON_LDB) {
 	    int blocksSkipped;
-	    status = FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
-				    FS_LAST_BLOCK,
-				    FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT,
+	    status = Fscache_FileWriteBack(&handlePtr->cacheInfo, 0, 
+				    FSCACHE_LAST_BLOCK,
+				    FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT,
 				    &blocksSkipped);
 	    if (status != SUCCESS) {
-		printf("FsFileClose: write back <%d,%d> \"%s\" err <%x>\n",
+		printf("Fsio_FileClose: write back <%d,%d> \"%s\" err <%x>\n",
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		    FsHandleName(handlePtr), status);
+		    Fsutil_HandleName(handlePtr), status);
 	    }
-	    status = FsWriteBackDesc(handlePtr, TRUE);
+	    status = Fsdm_FileDescWriteBack(handlePtr, TRUE);
 	    if (status != SUCCESS) {
-		printf("FsFileClose: desc write <%d,%d> \"%s\" err <%x>\n",
+		printf("Fsio_FileClose: desc write <%d,%d> \"%s\" err <%x>\n",
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		    FsHandleName(handlePtr), status);
+		    Fsutil_HandleName(handlePtr), status);
 	    }
 	} else {
 	    status = SUCCESS;
 	}
-	FsHandleRelease(handlePtr, TRUE);
+	Fsutil_HandleRelease(handlePtr, TRUE);
     }
 
     return(status);
@@ -590,7 +593,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFileCloseInt --
+ * Fsio_FileCloseInt --
  *
  *	Close a file, handling pending deletions.
  *	This is called from the regular close routine, from
@@ -609,8 +612,8 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  *
  */
 ReturnStatus
-FsFileCloseInt(handlePtr, ref, write, exec, clientID, callback)
-    FsLocalFileIOHandle *handlePtr;	/* File to clean up */
+Fsio_FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
+    Fsio_FileIOHandle *handlePtr;	/* File to clean up */
     int ref;				/* Number of uses to remove */
     int write;				/* Number of writers to remove */
     int exec;				/* Number of executers to remove */
@@ -628,7 +631,7 @@ FsFileCloseInt(handlePtr, ref, write, exec, clientID, callback)
     handlePtr->use.exec -= exec;
     if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
 	handlePtr->use.exec < 0) {
-	panic("FsFileCloseInt <%d,%d> use %d, write %d, exec %d\n",
+	panic("Fsio_FileCloseInt <%d,%d> use %d, write %d, exec %d\n",
 	    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
     }
@@ -641,21 +644,21 @@ FsFileCloseInt(handlePtr, ref, write, exec, clientID, callback)
      *	3. Remove the file handle.
      *	4. Return FS_FILE_REMOVED so clients know to nuke their cache.
      */
-    if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
+    if ((handlePtr->use.ref == 0) && (handlePtr->flags & FSIO_FILE_DELETED)) {
 	if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
-	    fsStats.object.directory--;
+	    fs_Stats.object.directory--;
 	} else {
-	    fsStats.object.files--;
+	    fs_Stats.object.files--;
 	}
 	if (callback) {
-	    FsClientRemoveCallback(&handlePtr->consist, clientID);
+	    Fsconsist_ClientRemoveCallback(&handlePtr->consist, clientID);
 	}
-	(void)FsDeleteFileDesc(handlePtr);
-	FsFileSyncLockCleanup(handlePtr);
+	(void)Fslcl_DeleteFileDesc(handlePtr);
+	Fsio_FileSyncLockCleanup(handlePtr);
 	if (callback) {
-	    FsHandleRelease(handlePtr, TRUE);
+	    Fsutil_HandleRelease(handlePtr, TRUE);
 	}
-	FsHandleRemove(handlePtr);
+	Fsutil_HandleRemove(handlePtr);
 	status = FS_FILE_REMOVED;
     } else {
 	status = SUCCESS;
@@ -666,7 +669,7 @@ FsFileCloseInt(handlePtr, ref, write, exec, clientID, callback)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFileClientKill --
+ * Fsio_FileClientKill --
  *
  *	Called when a client is assumed down.  This cleans up the
  *	cache consistency state associated with the client, and reflects
@@ -685,28 +688,28 @@ FsFileCloseInt(handlePtr, ref, write, exec, clientID, callback)
  *
  */
 void
-FsFileClientKill(hdrPtr, clientID)
-    FsHandleHeader	*hdrPtr;	/* File to clean up */
+Fsio_FileClientKill(hdrPtr, clientID)
+    Fs_HandleHeader	*hdrPtr;	/* File to clean up */
     int			clientID;	/* Host assumed down */
 {
-    FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+    Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
     int refs, writes, execs;
     register ReturnStatus status;
 
-    FsIOClientKill(&handlePtr->consist.clientList, clientID,
+    Fsconsist_IOClientKill(&handlePtr->consist.clientList, clientID,
 		    &refs, &writes, &execs);
-    FsLockClientKill(&handlePtr->lock, clientID);
+    Fsio_LockClientKill(&handlePtr->lock, clientID);
 
-    status = FsFileCloseInt(handlePtr, refs, writes, execs, clientID, FALSE);
+    status = Fsio_FileCloseInt(handlePtr, refs, writes, execs, clientID, FALSE);
     if (status != FS_FILE_REMOVED) {
-	FsHandleUnlock(handlePtr);
+	Fsutil_HandleUnlock(handlePtr);
     }
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFileScavenge --
+ * Fsio_FileScavenge --
  *
  *	Called periodically to see if this handle is still needed.
  *	
@@ -724,35 +727,35 @@ FsFileClientKill(hdrPtr, clientID)
  */
 /*ARGSUSED*/
 Boolean
-FsFileScavenge(hdrPtr)
-    FsHandleHeader	*hdrPtr;	/* File to clean up */
+Fsio_FileScavenge(hdrPtr)
+    Fs_HandleHeader	*hdrPtr;	/* File to clean up */
 {
-    register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
-    register FsFileDescriptor *descPtr = handlePtr->descPtr;
+    register Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
+    register Fsdm_FileDescriptor *descPtr = handlePtr->descPtr;
     register Boolean noUsers;
-    FsDomain *domainPtr;
+    Fsdm_Domain *domainPtr;
     ReturnStatus status;
 
     /*
      * Write back the descriptor in case we decide below to remove the handle.
      */
-    if (descPtr->flags & FS_FD_DIRTY) {
-	descPtr->flags &= ~FS_FD_DIRTY;
-	domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
-	if (domainPtr == (FsDomain *)NIL ){
-	    panic("FsFileScavenge: Dirty descriptor in detached domain.\n");
+    if (descPtr->flags & FSDM_FD_DIRTY) {
+	descPtr->flags &= ~FSDM_FD_DIRTY;
+	domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+	if (domainPtr == (Fsdm_Domain *)NIL ){
+	    panic("Fsio_FileScavenge: Dirty descriptor in detached domain.\n");
 	} else {
-	    status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, 
+	    status = Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor, 
 				      descPtr);
-	    FsDomainRelease(handlePtr->hdr.fileID.major);
+	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
 	    if (status != SUCCESS) {
-		printf("FsFileScavenge: Could not store file desc <%x>\n",
+		printf("Fsio_FileScavenge: Could not store file desc <%x>\n",
 			status);
 	    }
 	}
     }
     noUsers = (handlePtr->use.ref == 0) &&
-	      (FsConsistClients(&handlePtr->consist) == 0);
+	      (Fsconsist_NumClients(&handlePtr->consist) == 0);
     if (noUsers && handlePtr->descPtr->fileType == FS_DIRECTORY) {
 	/*
 	 * Flush unused directories, otherwise they linger for a long
@@ -762,17 +765,17 @@ FsFileScavenge(hdrPtr)
 	 * stops after reclaiming 1/64 of the handles.
 	 */
 	int blocksSkipped;
-	status = FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, FS_LAST_BLOCK,
-		FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT | FS_FILE_WB_INVALIDATE,
+	status = Fscache_FileWriteBack(&handlePtr->cacheInfo, 0, FSCACHE_LAST_BLOCK,
+		FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT | FSCACHE_WRITE_BACK_AND_INVALIDATE,
 		&blocksSkipped);
 	noUsers = (status == SUCCESS) && (blocksSkipped == 0);
     }
-    if (noUsers && FsCacheOkToScavenge(&handlePtr->cacheInfo)) {
+    if (noUsers && Fscache_OkToScavenge(&handlePtr->cacheInfo)) {
 	register Boolean isDir;
 #ifdef CONSIST_DEBUG
 	extern int fsTraceConsistMinor;
 	if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
-	    printf("FsFileScavenge <%d,%d> nuked, lastwriter %d\n",
+	    printf("Fsio_FileScavenge <%d,%d> nuked, lastwriter %d\n",
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		handlePtr->consist.lastWriter);
 	}
@@ -786,19 +789,19 @@ FsFileScavenge(hdrPtr)
 	 */
 	Vm_FileChanged(&handlePtr->segPtr);
 	isDir = (handlePtr->descPtr->fileType == FS_DIRECTORY);
-	if (FsHandleAttemptRemove(handlePtr)) {
+	if (Fsutil_HandleAttemptRemove(handlePtr)) {
 	    if (isDir) {
-		fsStats.object.directory--;
-		fsStats.object.dirFlushed++;
+		fs_Stats.object.directory--;
+		fs_Stats.object.dirFlushed++;
 	    } else {
-		fsStats.object.files--;
+		fs_Stats.object.files--;
 	    }
 	    return(TRUE);
 	} else {
 	    return(FALSE);
 	}
     } else {
-	FsHandleUnlock(hdrPtr);
+	Fsutil_HandleUnlock(hdrPtr);
 	return(FALSE);
     }
 }
@@ -806,10 +809,10 @@ FsFileScavenge(hdrPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFileRelease --
+ * Fsio_FileMigClose --
  *
- *	Initiate migration of a FS_LCL_FILE_STREAM.  There is no extra
- *	state needed than already put together by Fs_EncapStream.  However,
+ *	Initiate migration of a FSIO_LCL_FILE_STREAM.  There is no extra
+ *	state needed than already put together by Fsio_EncapStream.  However,
  *	we do release a low-level reference on the handle which is
  *	re-obtained by FsFileDeencap.  Other than that, we leave the
  *	book-keeping alone, waiting to atomically switch references from
@@ -827,12 +830,12 @@ FsFileScavenge(hdrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileRelease(hdrPtr, flags)
-    FsHandleHeader *hdrPtr;	/* File being encapsulated */
+Fsio_FileMigClose(hdrPtr, flags)
+    Fs_HandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
 {
-    panic( "FsFileRelease called\n");
-    FsHandleRelease(hdrPtr, FALSE);
+    panic( "Fsio_FileMigClose called\n");
+    Fsutil_HandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
 
@@ -840,10 +843,10 @@ FsFileRelease(hdrPtr, flags)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFileMigEnd --
+ * Fsio_FileMigOpen --
  *
  *	Complete setup of a stream to a local file after migration to the
- *	file server.  FsFileMigrate has done the work of shifting use
+ *	file server.  Fsio_FileMigrate has done the work of shifting use
  *	counts at the stream and I/O handle level.  This routine has to
  *	increment the low level I/O handle reference count to reflect
  *	the existence of a new stream to the I/O handle.
@@ -859,25 +862,25 @@ FsFileRelease(hdrPtr, flags)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileMigEnd(migInfoPtr, size, data, hdrPtrPtr)
+Fsio_FileMigOpen(migInfoPtr, size, data, hdrPtrPtr)
     FsMigInfo	*migInfoPtr;	/* Migration state */
-    int		size;		/* sizeof(FsFileState), IGNORED */
-    ClientData	data;		/* referenced to FsFileState */
-    FsHandleHeader **hdrPtrPtr;	/* Return - I/O handle for the file */
+    int		size;		/* sizeof(Fsio_FileState), IGNORED */
+    ClientData	data;		/* referenced to Fsio_FileState */
+    Fs_HandleHeader **hdrPtrPtr;	/* Return - I/O handle for the file */
 {
     register ReturnStatus status;
-    register FsLocalFileIOHandle *handlePtr;
+    register Fsio_FileIOHandle *handlePtr;
 
-    handlePtr = FsHandleFetchType(FsLocalFileIOHandle,
+    handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle,
 		&migInfoPtr->ioFileID);
-    if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	printf("FsFileMigEnd, file <%d,%d> from client %d not found\n",
+    if (handlePtr == (Fsio_FileIOHandle *)NIL) {
+	printf("Fsio_FileMigOpen, file <%d,%d> from client %d not found\n",
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
 	    migInfoPtr->srcClientID);
 	status = FS_FILE_NOT_FOUND;
     } else {
-	FsHandleUnlock(handlePtr);
-	*hdrPtrPtr = (FsHandleHeader *)handlePtr;
+	Fsutil_HandleUnlock(handlePtr);
+	*hdrPtrPtr = (Fs_HandleHeader *)handlePtr;
 	status = SUCCESS;
     }
     free((Address)data);
@@ -887,43 +890,43 @@ FsFileMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFileMigrate --
+ * Fsio_FileMigrate --
  *
  *	This takes care of transfering references from one client to the other.
  *	Three things are done:  cache consistency actions are taken to
  *	reflect the movement of the client, file state is set up for use
  *	on the client in the MigEnd procedure, and cross-network stream
  *	sharing is detected.  A useful side-effect of this routine is
- *	to properly set the type in the ioFileID, either FS_LCL_FILE_STREAM
- *	or FS_RMT_FILE_STREAM.  In the latter case FsRmtFileMigrate
+ *	to properly set the type in the ioFileID, either FSIO_LCL_FILE_STREAM
+ *	or FSIO_RMT_FILE_STREAM.  In the latter case FsrmtFileMigrate
  *	is called to do all the work.
  *
  * Results:
  *	An error status if the I/O handle can't be set-up or if there
  *	is a cache consistency failure.  Otherwise SUCCESS is returned,
  *	*flagsPtr may have the FS_RMT_SHARED bit set, and *sizePtr
- *	and *dataPtr are set to reference FsFileState.
+ *	and *dataPtr are set to reference Fsio_FileState.
  *
  * Side effects:
  *	Sets the correct stream type on the ioFileID.
  *	Shifts client references from the srcClient to the destClient.
- *	Set up and return FsFileState for use by the MigEnd routine.
+ *	Set up and return Fsio_FileState for use by the MigEnd routine.
  *
  * ----------------------------------------------------------------------------
  *
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
+Fsio_FileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     FsMigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - correct stream offset */
-    int		*sizePtr;	/* Return - sizeof(FsFileState) */
-    Address	*dataPtr;	/* Return - pointer to FsFileState */
+    int		*sizePtr;	/* Return - sizeof(Fsio_FileState) */
+    Address	*dataPtr;	/* Return - pointer to Fsio_FileState */
 {
-    register FsLocalFileIOHandle	*handlePtr;
-    register FsFileState		*fileStatePtr;
+    register Fsio_FileIOHandle	*handlePtr;
+    register Fsio_FileState		*fileStatePtr;
     register ReturnStatus		status;
     Boolean				closeSrcClient;
 
@@ -931,14 +934,14 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	/*
 	 * The file was local, which is why we were called, but is now remote.
 	 */
-	migInfoPtr->ioFileID.type = FS_RMT_FILE_STREAM;
-	return(FsRmtFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
+	migInfoPtr->ioFileID.type = FSIO_RMT_FILE_STREAM;
+	return(FsrmtFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
 		sizePtr, dataPtr));
     }
-    migInfoPtr->ioFileID.type = FS_LCL_FILE_STREAM;
-    handlePtr = FsHandleFetchType(FsLocalFileIOHandle, &migInfoPtr->ioFileID);
-    if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	panic("FsFileMigrate, no I/O handle");
+    migInfoPtr->ioFileID.type = FSIO_LCL_FILE_STREAM;
+    handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, &migInfoPtr->ioFileID);
+    if (handlePtr == (Fsio_FileIOHandle *)NIL) {
+	panic("Fsio_FileMigrate, no I/O handle");
 	status = FS_STALE_HANDLE;
     } else {
 
@@ -948,27 +951,27 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * We only close the orignial client if the stream is unshared,
 	 * i.e. there are no references left there.
 	 */
-	FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr,
+	Fsio_StreamMigClient(migInfoPtr, dstClientID, (Fs_HandleHeader *)handlePtr,
 			&closeSrcClient);
 
 	/*
 	 * Adjust use counts on the I/O handle to reflect any new sharing.
 	 */
-	FsMigrateUseCounts(migInfoPtr->flags, closeSrcClient, &handlePtr->use);
+	Fsio_MigrateUseCounts(migInfoPtr->flags, closeSrcClient, &handlePtr->use);
 
 	/*
 	 * Update the client list, and take any required cache consistency
 	 * actions. The handle returns unlocked from the consistency routine.
 	 */
-	fileStatePtr = mnew(FsFileState);
-	FsHandleUnlock(handlePtr);
-	status = FsMigrateConsistency(handlePtr, migInfoPtr->srcClientID,
+	fileStatePtr = mnew(Fsio_FileState);
+	Fsutil_HandleUnlock(handlePtr);
+	status = Fsconsist_MigrateConsistency(handlePtr, migInfoPtr->srcClientID,
 		dstClientID, migInfoPtr->flags, closeSrcClient,
 		&fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
 	if (status == SUCCESS) {
-	    FsGetCachedAttr(&handlePtr->cacheInfo, &fileStatePtr->version,
+	    Fscache_GetCachedAttr(&handlePtr->cacheInfo, &fileStatePtr->version,
 				&fileStatePtr->attr);
-	    *sizePtr = sizeof(FsFileState);
+	    *sizePtr = sizeof(Fsio_FileState);
 	    *dataPtr = (Address)fileStatePtr;
 	    *flagsPtr = fileStatePtr->newUseFlags = migInfoPtr->flags;
 	    *offsetPtr = migInfoPtr->offset;
@@ -978,7 +981,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	/*
 	 * We don't need this reference on the I/O handle, there is no change.
 	 */
-	FsHandleRelease(handlePtr, FALSE);
+	Fsutil_HandleRelease(handlePtr, FALSE);
     }
     return(status);
 }
@@ -986,32 +989,32 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsFileRead --
+ * Fsio_FileRead --
  *
  *	Read from a file.  This is a thin layer on top of the cache
  *	read routine.
  *
  * Results:
- *	The results of FsCacheRead.
+ *	The results of Fscache_Read.
  *
  * Side effects:
- *	None, because FsCacheRead does most everything.
+ *	None, because Fscache_Read does most everything.
  *
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsFileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
+Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     Fs_Stream		*streamPtr;	/* Open stream to the file. */
     Fs_IOParam		*readPtr;	/* Read parameter block. */
     Sync_RemoteWaiter	*remoteWaitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any,
 					 * plus the amount read. */
 {
-    register FsLocalFileIOHandle *handlePtr =
-	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_FileIOHandle *handlePtr =
+	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
-    status = FsCacheRead(&handlePtr->cacheInfo, readPtr->flags, readPtr->buffer,
+    status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags, readPtr->buffer,
 			    readPtr->offset, &readPtr->length, remoteWaitPtr);
     replyPtr->length = readPtr->length;
     return(status);
@@ -1020,14 +1023,14 @@ FsFileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsFileWrite --
+ * Fsio_FileWrite --
  *
  *	Write to a disk file.  This is a thin layer on top of the cache
  *	write routine.  Besides doing the write, this routine synchronizes
  *	with read ahead on the file.
  *
  * Results:
- *	The results of FsCacheWrite.
+ *	The results of Fscache_Write.
  *
  * Side effects:
  *	The handle is locked during the I/O.
@@ -1035,45 +1038,45 @@ FsFileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsFileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
+Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     Fs_Stream		*streamPtr;	/* Open stream to the file. */
     Fs_IOParam		*writePtr;	/* Read parameter block */
     Sync_RemoteWaiter	*remoteWaitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any */
 {
-    register FsLocalFileIOHandle *handlePtr =
-	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_FileIOHandle *handlePtr =
+	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
     /*
      * Get a reference to the domain so it can't be dismounted during the I/O.
      * Then synchronize with read ahead before actually doing the write.
      */
-    if (FsDomainFetch(handlePtr->hdr.fileID.major, FALSE) == (FsDomain *)NIL) {
+    if (Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE) == (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-    FsWaitForReadAhead(&handlePtr->readAhead);
-    status = FsCacheWrite(&handlePtr->cacheInfo, writePtr->flags,
+    FscacheWaitForReadAhead(&handlePtr->readAhead);
+    status = Fscache_Write(&handlePtr->cacheInfo, writePtr->flags,
 			  writePtr->buffer, writePtr->offset,
 			  &writePtr->length, remoteWaitPtr);
     replyPtr->length = writePtr->length;
-    if (status == SUCCESS && (fsWriteThrough || fsWriteBackASAP)) {
+    if (status == SUCCESS && (fsutil_WriteThrough || fsutil_WriteBackASAP)) {
 	/*
 	 * When in write-through or asap mode we have to force the descriptor
 	 * to disk on every write.
 	 */
-	status = FsWriteBackDesc(handlePtr, FALSE);
+	status = Fsdm_FileDescWriteBack(handlePtr, FALSE);
     }
 
-    FsAllowReadAhead(&handlePtr->readAhead);
-    FsDomainRelease(handlePtr->hdr.fileID.major);
+    FscacheAllowReadAhead(&handlePtr->readAhead);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsFileBlockRead --
+ * Fsio_FileBlockRead --
  *
  *	Read a block from the local disk.  This is called when the cache
  *	needs data, and from the paging routines.  Synchronization with
@@ -1091,36 +1094,36 @@ FsFileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
-    FsHandleHeader	*hdrPtr;	/* Handle on a local file. */
+Fsio_FileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
+    Fs_HandleHeader	*hdrPtr;	/* Handle on a local file. */
     int			flags;		/* IGNORED */
     register Address	buffer;		/* Where to read into. */
     int 		*offsetPtr;	/* Byte offset at which to read.  Return
 					 * value isn't used, but by-reference
 					 * passing is done to be compatible
-					 * with FsRemoteRead */
+					 * with Fsrmt_Read */
     int			*lenPtr;	/* Return,  bytes read. */
     Sync_RemoteWaiter	*remoteWaitPtr;	/* IGNORED */
 {
-    register FsLocalFileIOHandle *handlePtr =
-	    (FsLocalFileIOHandle *)hdrPtr;
-    register	FsDomain	 *domainPtr;
-    register	FsFileDescriptor *descPtr;
+    register Fsio_FileIOHandle *handlePtr =
+	    (Fsio_FileIOHandle *)hdrPtr;
+    register	Fsdm_Domain	 *domainPtr;
+    register	Fsdm_FileDescriptor *descPtr;
     register			 offset = *offsetPtr;
     register int		 numBytes;
     ReturnStatus		 status;
-    FsBlockIndexInfo		 indexInfo;
+    Fsdm_BlockIndexInfo		 indexInfo;
 
     numBytes = *lenPtr;
     if ((offset & FS_BLOCK_OFFSET_MASK) != 0) {
-	panic("FsFileBlockRead: Non-block aligned offset\n");
+	panic("Fsio_FileBlockRead: Non-block aligned offset\n");
     }
     if (numBytes > FS_BLOCK_SIZE) {
-	panic("FsFileBlockRead: Reading more than block\n");
+	panic("Fsio_FileBlockRead: Reading more than block\n");
     }
 
-    domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (FsDomain *) NIL) {
+    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+    if (domainPtr == (Fsdm_Domain *) NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
 
@@ -1128,10 +1131,10 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	/*
 	 * If is a physical block address then read it in directly.
 	 */
-	status = FsDeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
+	status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
 			   offset / FS_FRAGMENT_SIZE, FS_FRAGMENTS_PER_BLOCK, 
 			   buffer);
-	fsStats.gen.physBytesRead += FS_BLOCK_SIZE;
+	fs_Stats.gen.physBytesRead += FS_BLOCK_SIZE;
     } else {
 	/*
 	 * Is a logical file read. Round the size down to the actual
@@ -1141,26 +1144,26 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	descPtr = handlePtr->descPtr;
 	if (offset > descPtr->lastByte) {
 	    *lenPtr = 0;
-	    FsDomainRelease(handlePtr->hdr.fileID.major);
+	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
 	    return(SUCCESS);
 	} else if (offset + numBytes - 1 > descPtr->lastByte) {
 	    numBytes = descPtr->lastByte - offset + 1;
 	}
 
-	status = FsGetFirstIndex(handlePtr, offset / FS_BLOCK_SIZE, 
+	status = Fsdm_GetFirstIndex(handlePtr, offset / FS_BLOCK_SIZE, 
 				 &indexInfo, 0);
 	if (status != SUCCESS) {
-	    printf("FsFileRead: Could not setup indexing\n");
-	    FsDomainRelease(handlePtr->hdr.fileID.major);
+	    printf("Fsio_FileRead: Could not setup indexing\n");
+	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
 	    return(status);
 	}
 
 	if (indexInfo.blockAddrPtr != (int *) NIL &&
-	    *indexInfo.blockAddrPtr != FS_NIL_INDEX) {
+	    *indexInfo.blockAddrPtr != FSDM_NIL_INDEX) {
 	    /*
 	     * Read in the block.
 	     */
-	    status = FsDeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
+	    status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
 		      *indexInfo.blockAddrPtr +
 		      domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
 		      (numBytes - 1) / FS_FRAGMENT_SIZE + 1, buffer);
@@ -1170,15 +1173,15 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	     */
 	    bzero(buffer, numBytes);
 	}
-	FsEndIndex(handlePtr, &indexInfo, FALSE);
-	FsStat_Add(numBytes, fsStats.gen.fileBytesRead,
-		   fsStats.gen.fileReadOverflow);
+	Fsdm_EndIndex(handlePtr, &indexInfo, FALSE);
+	Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead,
+		   fs_Stats.gen.fileReadOverflow);
 #ifndef CLEAN
-	if (fsKeepTypeInfo) {
+	if (fsdmKeepTypeInfo) {
 	    int fileType;
 	
-	    fileType = FsFindFileType(&handlePtr->cacheInfo);
-	    fsTypeStats.diskBytes[FS_STAT_READ][fileType] += numBytes;
+	    fileType = Fsdm_FindFileType(&handlePtr->cacheInfo);
+	    fs_TypeStats.diskBytes[FS_STAT_READ][fileType] += numBytes;
 	}
 #endif CLEAN
     }
@@ -1186,14 +1189,14 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
     if (status == SUCCESS) {
 	*lenPtr = numBytes;
     }
-    FsDomainRelease(handlePtr->hdr.fileID.major);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsFileBlockWrite --
+ * Fsio_FileBlockWrite --
  *
  *	Write a block given a disk block number to a normal file, directory, 
  *	or symbolic link.
@@ -1209,8 +1212,8 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, flags)
-    FsHandleHeader *hdrPtr;	/* Pointer to handle for file to write to. */
+Fsio_FileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, flags)
+    Fs_HandleHeader *hdrPtr;	/* Pointer to handle for file to write to. */
     int 	blockAddr;	/* Disk address. For regular files this
 				 * counts from the beginning of the data blocks.
 				 * For raw I/O they count from the start
@@ -1219,13 +1222,13 @@ FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, flags)
     register Address buffer;	/* Where to read bytes from. */
     int		flags;		/* IGNORED */
 {
-    register FsLocalFileIOHandle *handlePtr =
-	    (FsLocalFileIOHandle *)hdrPtr;
-    register	FsDomain	 *domainPtr;
+    register Fsio_FileIOHandle *handlePtr =
+	    (Fsio_FileIOHandle *)hdrPtr;
+    register	Fsdm_Domain	 *domainPtr;
     ReturnStatus		status;
 
-    domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, TRUE);
-    if (domainPtr == (FsDomain *)NIL) {
+    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
+    if (domainPtr == (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
 
@@ -1239,36 +1242,36 @@ FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, flags)
 	if (blockAddr < 0) {
 	    blockAddr = -blockAddr;
 	}
-	fsStats.gen.physBytesWritten += numBytes;
-	status = FsDeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
+	fs_Stats.gen.physBytesWritten += numBytes;
+	status = Fsio_DeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
 			 blockAddr, FS_FRAGMENTS_PER_BLOCK, buffer);
     } else {
 	/*
 	 * The block number is relative to the start of the data blocks.
 	 */
-	FsStat_Add(numBytes, fsStats.gen.fileBytesWritten,
-		   fsStats.gen.fileWriteOverflow);
+	Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesWritten,
+		   fs_Stats.gen.fileWriteOverflow);
 #ifndef CLEAN
-	if (fsKeepTypeInfo) {
+	if (fsdmKeepTypeInfo) {
 	    int fileType;
 	
-	    fileType = FsFindFileType(&handlePtr->cacheInfo);
-	    fsTypeStats.diskBytes[FS_STAT_WRITE][fileType] += numBytes;
+	    fileType = Fsdm_FindFileType(&handlePtr->cacheInfo);
+	    fs_TypeStats.diskBytes[FS_STAT_WRITE][fileType] += numBytes;
 	}
 #endif CLEAN
-	status = FsDeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
+	status = Fsio_DeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
 	       blockAddr + 
 	       domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
 	       (numBytes - 1) / FS_FRAGMENT_SIZE + 1, buffer);
     }
-    FsDomainRelease(handlePtr->hdr.fileID.major);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsFileBlockCopy --
+ * Fsio_FileBlockCopy --
  *
  *	Copy the block from the source swap file to the destination swap file.
  *
@@ -1291,31 +1294,31 @@ FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, flags)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
-    FsHandleHeader	*srcHdrPtr;	/* File to copy block from.  */
-    FsHandleHeader	*dstHdrPtr;	/* File to copy block to.  */
+Fsio_FileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
+    Fs_HandleHeader	*srcHdrPtr;	/* File to copy block from.  */
+    Fs_HandleHeader	*dstHdrPtr;	/* File to copy block to.  */
     int			blockNum;	/* Block to copy. */
 {
     int			offset;
     ReturnStatus	status;
-    FsCacheBlock	*cacheBlockPtr;
+    Fscache_Block	*cacheBlockPtr;
     int			numBytes;
-    register FsLocalFileIOHandle *srcHandlePtr =
-	    (FsLocalFileIOHandle *)srcHdrPtr;
-    register FsLocalFileIOHandle *dstHandlePtr =
-	    (FsLocalFileIOHandle *)dstHdrPtr;
+    register Fsio_FileIOHandle *srcHandlePtr =
+	    (Fsio_FileIOHandle *)srcHdrPtr;
+    register Fsio_FileIOHandle *dstHandlePtr =
+	    (Fsio_FileIOHandle *)dstHdrPtr;
 
     /*
      * Look in the cache for the source block.
      */
-    status = FsCacheBlockRead(&srcHandlePtr->cacheInfo, blockNum,
-		    &cacheBlockPtr, &numBytes, FS_DATA_CACHE_BLOCK, FALSE);
+    status = Fscache_BlockRead(&srcHandlePtr->cacheInfo, blockNum,
+		    &cacheBlockPtr, &numBytes, FSCACHE_DATA_BLOCK, FALSE);
     if (status != SUCCESS) {
 	return(status);
     }
     if (numBytes != FS_BLOCK_SIZE) {
 	if (numBytes != 0) {
-	    FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+	    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 	}
 	return(VM_SHORT_READ);
     }
@@ -1324,7 +1327,7 @@ FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
      */
     numBytes = FS_BLOCK_SIZE;
     offset = blockNum * FS_BLOCK_SIZE;
-    status = FsCacheWrite(&dstHandlePtr->cacheInfo, FALSE,
+    status = Fscache_Write(&dstHandlePtr->cacheInfo, FALSE,
 		    cacheBlockPtr->blockAddr, offset, &numBytes,
 		    (Sync_RemoteWaiter *) NIL);
     if (status == SUCCESS && numBytes != FS_BLOCK_SIZE) {
@@ -1332,10 +1335,10 @@ FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 	status = VM_SHORT_WRITE;
     }
 
-    FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 
-    srcHandlePtr->cacheInfo.attr.accessTime = fsTimeInSeconds;
-    dstHandlePtr->cacheInfo.attr.modifyTime = fsTimeInSeconds;
+    srcHandlePtr->cacheInfo.attr.accessTime = fsutil_TimeInSeconds;
+    dstHandlePtr->cacheInfo.attr.modifyTime = fsutil_TimeInSeconds;
 
     return(status);
 }
@@ -1343,7 +1346,7 @@ FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 /*
  *----------------------------------------------------------------------
  *
- * FsFileIOControl --
+ * Fsio_FileIOControl --
  *
  *	IOControls for regular files.  The handle should be locked up entry.
  *	This handles byte swapping of its input and output buffers if
@@ -1360,16 +1363,16 @@ FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 
 /*ARGSUSED*/
 ReturnStatus
-FsFileIOControl(streamPtr, ioctlPtr, replyPtr)
+Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream *streamPtr;		/* Stream to local file */
     Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
     Fs_IOReply *replyPtr;		/* Return length and signal */
 {
-    register FsLocalFileIOHandle *handlePtr =
-	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
+    register Fsio_FileIOHandle *handlePtr =
+	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status = SUCCESS;
 
-    FsHandleLock(handlePtr);
+    Fsutil_HandleLock(handlePtr);
     switch(ioctlPtr->command) {
 	case IOC_REPOSITION:
 	    break;
@@ -1409,14 +1412,14 @@ FsFileIOControl(streamPtr, ioctlPtr, replyPtr)
 		if (length < 0) {
 		    status = GEN_INVALID_ARG;
 		} else {
-		    status = FsFileTrunc(handlePtr, length, 0);
+		    status = Fsio_FileTrunc(handlePtr, length, 0);
 		}
 	    }
 	    break;
 	}
 	case IOC_LOCK:
 	case IOC_UNLOCK:
-	    status = FsIocLock(&handlePtr->lock, ioctlPtr,
+	    status = Fsio_IocLock(&handlePtr->lock, ioctlPtr,
 				&streamPtr->hdr.fileID);
 	    break;
 	case IOC_NUM_READABLE: {
@@ -1427,12 +1430,12 @@ FsFileIOControl(streamPtr, ioctlPtr, replyPtr)
 	    int bytesAvailable;
 	    int streamOffset;
 	    int size;
-	    int inSize;
 
 	    if (ioctlPtr->inBufSize != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else if (ioctlPtr->format != mach_Format) {
 		int fmtStatus;
+		int inSize;
 		inSize = ioctlPtr->inBufSize;
 		fmtStatus = Fmt_Convert("w", ioctlPtr->format, &inSize, 
 				ioctlPtr->inBuffer, mach_Format, &size,
@@ -1454,6 +1457,7 @@ FsFileIOControl(streamPtr, ioctlPtr, replyPtr)
 		    status = GEN_INVALID_ARG;
 		} else if (ioctlPtr->format != mach_Format) {
 		    int fmtStatus;
+		    int	inSize;
 		    inSize = sizeof(int);
 		    fmtStatus = Fmt_Convert("w", mach_Format, &inSize, 
 				    (Address) &bytesAvailable, ioctlPtr->format,
@@ -1482,20 +1486,20 @@ FsFileIOControl(streamPtr, ioctlPtr, replyPtr)
 	    status = GEN_INVALID_ARG;
 	    break;
     }
-    FsHandleUnlock(handlePtr);
+    Fsutil_HandleUnlock(handlePtr);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsFileTrunc --
+ * Fsio_FileTrunc --
  *
  *	Shorten a file to length bytes.  This calls routines to update
  *	the cacheInfo and the fileDescriptor.
  *
  * Results:
- *	Error status from FsDescTrunc.
+ *	Error status from Fsdm_FileDescTrunc.
  *
  * Side effects:
  *	None.
@@ -1504,16 +1508,16 @@ FsFileIOControl(streamPtr, ioctlPtr, replyPtr)
  */
 
 ReturnStatus
-FsFileTrunc(handlePtr, size, flags)
-    FsLocalFileIOHandle	*handlePtr;	/* File to truncate. */
+Fsio_FileTrunc(handlePtr, size, flags)
+    Fsio_FileIOHandle	*handlePtr;	/* File to truncate. */
     int			size;		/* Size to truncate the file to. */
-    int			flags;		/* FS_TRUNC_DELETE */
+    int			flags;		/* FSCACHE_TRUNC_DELETE */
 {
     ReturnStatus status;
-    FsCacheTrunc(&handlePtr->cacheInfo, size, flags);
-    status = FsDescTrunc(handlePtr, size);
-    if ((flags & FS_TRUNC_DELETE) && handlePtr->cacheInfo.blocksInCache > 0) {
-	panic("FsFileTrunc (delete) %d blocks left over\n",
+    Fscache_Trunc(&handlePtr->cacheInfo, size, flags);
+    status = Fsdm_FileDescTrunc(handlePtr, size);
+    if ((flags & FSCACHE_TRUNC_DELETE) && handlePtr->cacheInfo.blocksInCache > 0) {
+	panic("Fsio_FileTrunc (delete) %d blocks left over\n",
 		    handlePtr->cacheInfo.blocksInCache);
     }
     return(status);
@@ -1522,7 +1526,7 @@ FsFileTrunc(handlePtr, size, flags)
 /*
  *----------------------------------------------------------------------
  *
- * FsFileSelect --
+ * Fsio_FileSelect --
  *
  *	Always returns that file is readable and writable.
  *
@@ -1536,8 +1540,8 @@ FsFileTrunc(handlePtr, size, flags)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
-    FsHandleHeader *hdrPtr;	/* The handle of the file */
+Fsio_FileSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    Fs_HandleHeader *hdrPtr;	/* The handle of the file */
     Sync_RemoteWaiter *waitPtr;	/* Process info for waiting */
     int		*readPtr;	/* Read bit */
     int		*writePtr;	/* Write bit */
@@ -1567,21 +1571,21 @@ FsFileSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  */
 void
 IncVersionNumber(handlePtr)
-    FsLocalFileIOHandle	*handlePtr;
+    Fsio_FileIOHandle	*handlePtr;
 {
-    FsFileDescriptor	*descPtr;
-    FsDomain		*domainPtr;
+    Fsdm_FileDescriptor	*descPtr;
+    Fsdm_Domain		*domainPtr;
 
     descPtr = handlePtr->descPtr;
     descPtr->version++;
     handlePtr->cacheInfo.version = descPtr->version;
-    domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (FsDomain *)NIL) {
+    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+    if (domainPtr == (Fsdm_Domain *)NIL) {
 	printf( "FsIncVersionNumber: Domain gone.\n");
     } else {
-	(void)FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
+	(void)Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor,
 			descPtr);
-	FsDomainRelease(handlePtr->hdr.fileID.major);
+	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     }
     Vm_FileChanged(&handlePtr->segPtr);
 }

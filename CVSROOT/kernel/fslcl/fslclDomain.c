@@ -3,7 +3,7 @@
  *
  *	Implementation of name-space operations in the local domain.
  *	The routines here are called via the prefix table.
- *	They use FsLocalLookup (in fsLocalLookup.c) to do the guts of
+ *	They use FslclLookup (in fsLocalLookup.c) to do the guts of
  *	recursive name lookup.
  *
  * Copyright (C) 1987 Regents of the University of California
@@ -24,26 +24,25 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
+#include "fsutil.h"
 #include "fsNameOps.h"
-#include "fsPrefix.h"
-#include "fsLocalDomain.h"
-#include "fsConsist.h"
-#include "fsOpTable.h"
-#include "fsTrace.h"
-#include "fsDebug.h"
+#include "fsprefix.h"
+#include "fslclInt.h"
+#include "fsdm.h"
+#include "fsconsist.h"
+#include "fsutilTrace.h"
 #include "rpc.h"
 #include "vm.h"
 #include "string.h"
 #include "proc.h"
 #include "spriteTime.h"
 
-char *fsEmptyDirBlock;
+char *fslclEmptyDirBlock;
 
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalDomainInit --
+ * Fslcl_DomainInit --
  *
  *	Do general initialization for the local domain.
  *
@@ -57,40 +56,38 @@ char *fsEmptyDirBlock;
  *----------------------------------------------------------------------
  */
 void
-FsLocalDomainInit()
+Fslcl_DomainInit()
 {
-    register int index;
-    register FsDirEntry *dirEntryPtr;
+    register FslclDirEntry *dirEntryPtr;
 
-    for (index = 0; index < FS_MAX_LOCAL_DOMAINS; index++) {
-        fsDomainTable[index] = (FsDomain *) NIL;
-    }
-    fsEmptyDirBlock = (char *)malloc(FS_DIR_BLOCK_SIZE);
-    dirEntryPtr = (FsDirEntry *)fsEmptyDirBlock;
-    dirEntryPtr->fileNumber = FS_ROOT_FILE_NUMBER;
+    Fsdm_Init();
+
+    fslclEmptyDirBlock = (char *)malloc(FSLCL_DIR_BLOCK_SIZE);
+    dirEntryPtr = (FslclDirEntry *)fslclEmptyDirBlock;
+    dirEntryPtr->fileNumber = FSDM_ROOT_FILE_NUMBER;
     dirEntryPtr->nameLength = strlen(".");
     dirEntryPtr->recordLength = FsDirRecLength(dirEntryPtr->nameLength);
     (void)strcpy(dirEntryPtr->fileName, ".");
-    dirEntryPtr = (FsDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
-    dirEntryPtr->fileNumber = FS_ROOT_FILE_NUMBER;
+    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+    dirEntryPtr->fileNumber = FSDM_ROOT_FILE_NUMBER;
     dirEntryPtr->nameLength = strlen("..");
-    dirEntryPtr->recordLength = FS_DIR_BLOCK_SIZE - FsDirRecLength(1);
+    dirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE - FsDirRecLength(1);
     (void)strcpy(dirEntryPtr->fileName, "..");
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalExport --
+ * FslclExport --
  *
  *	This is called from the RPC_FS_PREFIX stub to export a domain
  *	to a remote Sprite host.  The prefix table has already been
  *	examined, and we are passed in the handle that's hooked to it.
- *	This uses FsFileSrvOpen to setup FsFileState so the client
+ *	This uses Fsio_FileNameOpen to setup Fsio_FileState so the client
  *	can set up a remote file handle for its own prefix table.
  *
  * Results:
- *	That of FsFileSrvOpen
+ *	That of Fsio_FileNameOpen
  *
  * Side effects:
  *	Adds the client to the set of clients using the directory that
@@ -100,24 +97,24 @@ FsLocalDomainInit()
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
-     FsHandleHeader	*hdrPtr;	/* A handle from the prefix table. */
+FslclExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
+     Fs_HandleHeader	*hdrPtr;	/* A handle from the prefix table. */
      int		clientID;	/* Host ID of client importing prefix */
      register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
-     int		*dataSizePtr;	/* Return - sizeof(FsFileState) */
-     ClientData		*clientDataPtr;	/* Return - ref to FsFileState */
+     int		*dataSizePtr;	/* Return - sizeof(Fsio_FileState) */
+     ClientData		*clientDataPtr;	/* Return - ref to Fsio_FileState */
 {
-    register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+    register Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
     register ReturnStatus status;
-    FsOpenArgs openArgs;
-    FsOpenResults openResults;
+    Fs_OpenArgs openArgs;
+    Fs_OpenResults openResults;
 
     bzero((Address)&openArgs, sizeof(openArgs));
     openArgs.clientID = clientID;
     openArgs.useFlags = FS_PREFIX;
 
-    FsHandleLock(handlePtr);
-    status = FsFileSrvOpen(handlePtr, &openArgs, &openResults);
+    Fsutil_HandleLock(handlePtr);
+    status = Fsio_FileNameOpen(handlePtr, &openArgs, &openResults);
     if (status == SUCCESS) {
 	*ioFileIDPtr = openResults.ioFileID;
 	*dataSizePtr = openResults.dataSize;
@@ -129,9 +126,9 @@ FsLocalExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalOpen --
+ * FslclOpen --
  *
- *      Open a file stored locally.  This uses FsLocalLookup to get a
+ *      Open a file stored locally.  This uses FslclLookup to get a
  *	regular handle on the file, and then calls the server-open
  *	routine to bundle up state needed later by the client-open routine.
  *	That routine will set up a handle for I/O, which for devices and
@@ -148,25 +145,25 @@ FsLocalExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr, 
+FslclOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr, 
 	    newNameInfoPtrPtr)
-    FsHandleHeader	*prefixHandlePtr; /* Handle that indicates the starting 
+    Fs_HandleHeader	*prefixHandlePtr; /* Handle that indicates the starting 
 					   * point of the lookup */
     char 	*relativeName;		  /* The name of the file to open */
     Address 	argsPtr;		  /* Bundled arguments for us */
     Address 	resultsPtr;		  /* Bundled results for us */
-    FsRedirectInfo **newNameInfoPtrPtr;   /* We return this if the server 
+    Fs_RedirectInfo **newNameInfoPtrPtr;   /* We return this if the server 
 					   * leaves its domain during the 
 					   * lookup. */
 {
-    register FsOpenArgs *openArgsPtr = (FsOpenArgs *)argsPtr;
-    register FsOpenResults *openResultsPtr = (FsOpenResults *)resultsPtr;
-    FsLocalFileIOHandle *handlePtr;	/* The handle returned for the file */
+    register Fs_OpenArgs *openArgsPtr = (Fs_OpenArgs *)argsPtr;
+    register Fs_OpenResults *openResultsPtr = (Fs_OpenResults *)resultsPtr;
+    Fsio_FileIOHandle *handlePtr;	/* The handle returned for the file */
     ReturnStatus 	status;		/* Error return from RPC */
 
 
 
-    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+    status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 	    openArgsPtr->useFlags, openArgsPtr->type, openArgsPtr->clientID,
 	    &openArgsPtr->id, openArgsPtr->permissions, 0, &handlePtr,
 	    newNameInfoPtrPtr);
@@ -176,14 +173,14 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 	 * needed later by the client to open a stream to the file.
 	 * For regular files, this is when cache consistency is done.
 	 */
-	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
 		(handlePtr, openArgsPtr, openResultsPtr);
 	openResultsPtr->nameID = handlePtr->hdr.fileID;
 	if (openArgsPtr->clientID != rpc_SpriteID) {
-	    openResultsPtr->nameID.type = FS_RMT_FILE_STREAM;
+	    openResultsPtr->nameID.type = FSIO_RMT_FILE_STREAM;
 	}
-	FsHandleRelease(handlePtr, FALSE);
-	FsDomainRelease(handlePtr->hdr.fileID.major);
+	Fsutil_HandleRelease(handlePtr, FALSE);
+	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     }
     return(status);
 }
@@ -191,14 +188,14 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalGetAttrPath --
+ * FslclGetAttrPath --
  *
  *	Get the attributes of a local file given its path name.  The attributes
  *	are copied from the disk descriptor need to be updated by contacting
  *	the I/O server for the file (for non-regular files).
  *
  * Results:
- *	Return code from FsLocalLookup.
+ *	Return code from FslclLookup.
  *
  * Side effects:
  *	Does call-backs to clients to grab up-to-date access and modify
@@ -207,28 +204,28 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
+FslclGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 				  newNameInfoPtrPtr)
-    FsHandleHeader	*prefixHandlePtr;	/* Handle from prefix table */
+    Fs_HandleHeader	*prefixHandlePtr;	/* Handle from prefix table */
     char		*relativeName;		/* The name of the file. */
     Address		argsPtr;		/* Bundled arguments for us */
     Address		resultsPtr;		/* == NIL */
-    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 						 * leaves its domain during
 						 * the lookup. */
 {
     ReturnStatus	status;
     Boolean		isExeced;
-    FsOpenArgs 		*openArgsPtr;
-    FsLocalFileIOHandle *handlePtr;
-    FsGetAttrResults	*attrResultsPtr;
-    FsOpenResults	openResults;
+    Fs_OpenArgs 		*openArgsPtr;
+    Fsio_FileIOHandle *handlePtr;
+    Fs_GetAttrResults	*attrResultsPtr;
+    Fs_OpenResults	openResults;
 
 
-    openArgsPtr =  (FsOpenArgs *)argsPtr;
-    attrResultsPtr = (FsGetAttrResults *)resultsPtr;
+    openArgsPtr =  (Fs_OpenArgs *)argsPtr;
+    attrResultsPtr = (Fs_GetAttrResults *)resultsPtr;
 
-    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+    status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 			openArgsPtr->useFlags, openArgsPtr->type,
 			openArgsPtr->clientID,
 			&openArgsPtr->id, openArgsPtr->permissions, 0,
@@ -240,30 +237,30 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      * Do call-backs to get attributes cached (for regular files) on clients,
      * then copy the attributes from the disk descriptor.
      */
-    FsGetClientAttrs(handlePtr, openArgsPtr->clientID, &isExeced);
-    FsAssignAttrs(handlePtr, isExeced, attrResultsPtr->attrPtr);
+    Fsconsist_GetClientAttrs(handlePtr, openArgsPtr->clientID, &isExeced);
+    FslclAssignAttrs(handlePtr, isExeced, attrResultsPtr->attrPtr);
     /*
      * Get the I/O fileID so our client can contact the I/O server.
      */
     openArgsPtr->useFlags = 0;
-    status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+    status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
 	    (handlePtr, openArgsPtr, &openResults);
     *attrResultsPtr->fileIDPtr = openResults.ioFileID;
 
     if (status != SUCCESS) {
-	printf("FsLocalGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+	printf("FslclGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
 	    relativeName, handlePtr->hdr.fileID.minor,
 	    handlePtr->hdr.fileID.major, status);
     }
-    FsHandleRelease(handlePtr, FALSE);
-    FsDomainRelease(handlePtr->hdr.fileID.major);
+    Fsutil_HandleRelease(handlePtr, FALSE);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalSetAttrPath --
+ * FslclSetAttrPath --
  *
  *	Set the attributes of a local file given its pathname.  First
  *	we update the disk descriptor, then call the srvOpen routine
@@ -279,27 +276,27 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
+FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 				  newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandlePtr;	/* File handle from prefix table */
+    Fs_HandleHeader *prefixHandlePtr;	/* File handle from prefix table */
     char *relativeName;		/* The name of the file. */
     Address argsPtr;		/* Bundled arguments for us */
     Address resultsPtr;		/* Bundled results from us */
-    FsRedirectInfo **newNameInfoPtrPtr;/*We return this if the server leaves its
+    Fs_RedirectInfo **newNameInfoPtrPtr;/*We return this if the server leaves its
 				        * domain during the lookup. */
 {
     ReturnStatus		status;
-    FsSetAttrArgs		*setAttrArgsPtr;
-    FsOpenArgs			*openArgsPtr;
+    Fs_SetAttrArgs		*setAttrArgsPtr;
+    Fs_OpenArgs			*openArgsPtr;
     Fs_FileID			*fileIDPtr;
-    FsLocalFileIOHandle		*handlePtr;
-    FsOpenResults		openResults;
+    Fsio_FileIOHandle		*handlePtr;
+    Fs_OpenResults		openResults;
 
-    setAttrArgsPtr =  (FsSetAttrArgs *)argsPtr;
+    setAttrArgsPtr =  (Fs_SetAttrArgs *)argsPtr;
     openArgsPtr = &setAttrArgsPtr->openArgs;
     fileIDPtr = (Fs_FileID *)resultsPtr;
 
-    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+    status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 			openArgsPtr->useFlags, openArgsPtr->type,
 			openArgsPtr->clientID,
 			&openArgsPtr->id, openArgsPtr->permissions, 0,
@@ -310,35 +307,35 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     /*
      * Set the attributes on the disk descriptor.
      */
-    FsHandleUnlock(handlePtr);
-    status = FsLocalSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
+    Fsutil_HandleUnlock(handlePtr);
+    status = FslclSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
 			    &openArgsPtr->id, setAttrArgsPtr->flags);
     /*
      * Get the I/O handle so our client can contact the I/O server.
      */
     if (status == SUCCESS) {
-	FsHandleLock(handlePtr);
+	Fsutil_HandleLock(handlePtr);
 	openArgsPtr->useFlags = 0;
-	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
 		(handlePtr, openArgsPtr, &openResults);
 	*fileIDPtr = openResults.ioFileID;
 
 	if (status != SUCCESS) {
 	    printf(
-		"FsLocalSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+		"FslclSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
 		relativeName, handlePtr->hdr.fileID.minor,
 		handlePtr->hdr.fileID.major, status);
 	}
     }
-    FsHandleRelease(handlePtr, FALSE);
-    FsDomainRelease(handlePtr->hdr.fileID.major);
+    Fsutil_HandleRelease(handlePtr, FALSE);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalMakeDevice --
+ * FslclMakeDevice --
  *
  *	Create a device file.  A file is created with type FS_DEVICE and
  *	then the handle and the descriptor have their device information
@@ -356,23 +353,23 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
+FslclMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 				newNameInfoPtrPtr)
-    FsHandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+    Fs_HandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
     char		*relativeName;	/* The name of the file. */
     Address		argsPtr;	/* Bundled arguments for us */
     Address		resultsPtr;	/* == NIL */
-    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 					 *leaves its domain during lookup. */
 {
     ReturnStatus	status;
-    FsMakeDeviceArgs	*makeDevArgsPtr;
-    FsLocalFileIOHandle *handlePtr;
-    FsDomain		*domainPtr;
-    register FsFileDescriptor *descPtr;
+    Fs_MakeDeviceArgs	*makeDevArgsPtr;
+    Fsio_FileIOHandle *handlePtr;
+    Fsdm_Domain		*domainPtr;
+    register Fsdm_FileDescriptor *descPtr;
 
-    makeDevArgsPtr = (FsMakeDeviceArgs *)argsPtr;
-    status = FsLocalLookup(prefixHandle, relativeName,
+    makeDevArgsPtr = (Fs_MakeDeviceArgs *)argsPtr;
+    status = FslclLookup(prefixHandle, relativeName,
 		&makeDevArgsPtr->open.rootID,
 		FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW, FS_DEVICE,
 		makeDevArgsPtr->open.clientID,
@@ -383,16 +380,16 @@ FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 	descPtr->devServerID = makeDevArgsPtr->device.serverID;
 	descPtr->devType = makeDevArgsPtr->device.type;
 	descPtr->devUnit = makeDevArgsPtr->device.unit;
-	domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
-	if (domainPtr == (FsDomain *)NIL) {
+	domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+	if (domainPtr == (Fsdm_Domain *)NIL) {
 	    status = FS_DOMAIN_UNAVAILABLE;
-	    printf( "FsLocalMakeDevice: Domain unavailable\n");
+	    printf( "FslclMakeDevice: Domain unavailable\n");
 	} else {
-	    status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
+	    status = Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor,
 				     descPtr);
-	    FsDomainRelease(handlePtr->hdr.fileID.major);
+	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
 	}
-	FsHandleRelease(handlePtr, TRUE);
+	Fsutil_HandleRelease(handlePtr, TRUE);
     }
     return(status);
 }
@@ -401,7 +398,7 @@ FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalMakeDir --
+ * FslclMakeDir --
  *
  *	Make the named directory.
  *
@@ -415,28 +412,28 @@ FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsLocalMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FslclMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	       newNameInfoPtrPtr)
-    FsHandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+    Fs_HandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
     char		*relativeName;	/* The name of the dir. to create */
-    Address		argsPtr;	/* Ref. to FsOpenArgs */
+    Address		argsPtr;	/* Ref. to Fs_OpenArgs */
     Address		resultsPtr;	/* == NIL */
-    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 					 * leaves its domain during lookup. */
 {
     ReturnStatus	status;
-    FsOpenArgs		*openArgsPtr;	/* Pointer to bundled arguments */
-    FsLocalFileIOHandle	*handlePtr;
+    Fs_OpenArgs		*openArgsPtr;	/* Pointer to bundled arguments */
+    Fsio_FileIOHandle	*handlePtr;
 
-    openArgsPtr = (FsOpenArgs *)argsPtr;
+    openArgsPtr = (Fs_OpenArgs *)argsPtr;
 
-    status = FsLocalLookup(prefixHandle, relativeName, &openArgsPtr->rootID,
+    status = FslclLookup(prefixHandle, relativeName, &openArgsPtr->rootID,
 	    openArgsPtr->useFlags, openArgsPtr->type, openArgsPtr->clientID,
 	    &openArgsPtr->id, openArgsPtr->permissions, 0, &handlePtr,
 	    newNameInfoPtrPtr);
     if (status == SUCCESS) {
-	FsHandleRelease(handlePtr, TRUE);
-	FsDomainRelease(handlePtr->hdr.fileID.major);
+	Fsutil_HandleRelease(handlePtr, TRUE);
+	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     }
     return(status);
 }
@@ -445,7 +442,7 @@ FsLocalMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalRemove --
+ * FslclRemove --
  *
  *	Remove a file from the local domain.
  *
@@ -459,23 +456,23 @@ FsLocalMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsLocalRemove(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FslclRemove(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	      newNameInfoPtrPtr)
-    FsHandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+    Fs_HandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
     char		*relativeName;	/* The name of the file to remove */
     Address		argsPtr;	/* Bundled arguments for us */
     Address		resultsPtr;	/* == NIL */
-    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server 
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server 
 					 * leaves its domain during lookup. */
 {
     register ReturnStatus status;
-    register FsLookupArgs *lookupArgsPtr;
+    register Fs_LookupArgs *lookupArgsPtr;
 
-    lookupArgsPtr = (FsLookupArgs *)argsPtr;
+    lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
 
-    status = FsLocalLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
+    status = FslclLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
 	    lookupArgsPtr->useFlags, FS_FILE, lookupArgsPtr->clientID,
-	    &lookupArgsPtr->id, 0, 0, (FsLocalFileIOHandle **)NIL,
+	    &lookupArgsPtr->id, 0, 0, (Fsio_FileIOHandle **)NIL,
 	    newNameInfoPtrPtr);
     return(status);
 }
@@ -483,7 +480,7 @@ FsLocalRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalRemoveDir --
+ * FslclRemoveDir --
  *
  *	Remove a directory from the local domain.
  *
@@ -497,23 +494,23 @@ FsLocalRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsLocalRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+FslclRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
 	      newNameInfoPtrPtr)
-    FsHandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+    Fs_HandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
     char		*relativeName;	/* The name of the file to remove */
     Address		argsPtr;	/* Bundled arguments for us */
     Address		resultsPtr;	/* == NIL */
-    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server 
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server 
 					 * leaves its domain during lookup. */
 {
     register ReturnStatus status;
-    register FsLookupArgs *lookupArgsPtr;
+    register Fs_LookupArgs *lookupArgsPtr;
 
-    lookupArgsPtr = (FsLookupArgs *)argsPtr;
+    lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
 
-    status = FsLocalLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
+    status = FslclLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
 	    lookupArgsPtr->useFlags, FS_DIRECTORY, lookupArgsPtr->clientID,
-	    &lookupArgsPtr->id, 0, 0, (FsLocalFileIOHandle **)NIL,
+	    &lookupArgsPtr->id, 0, 0, (Fsio_FileIOHandle **)NIL,
 	    newNameInfoPtrPtr);
     return(status);
 }
@@ -521,7 +518,7 @@ FsLocalRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalRename --
+ * FslclRename --
  *
  *	Rename a local file.
  *
@@ -534,14 +531,14 @@ FsLocalRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+FslclRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
-    FsHandleHeader	*prefixHandle1;	/* Token from the prefix table */
+    Fs_HandleHeader	*prefixHandle1;	/* Token from the prefix table */
     char		*relativeName1;	/* The new name of the file. */
-    FsHandleHeader	*prefixHandle2;	/* Token from the prefix table */
+    Fs_HandleHeader	*prefixHandle2;	/* Token from the prefix table */
     char		*relativeName2;	/* The new name of the file. */
-    FsLookupArgs	*lookupArgsPtr;	/* Contains ID info */
-    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+    Fs_LookupArgs	*lookupArgsPtr;	/* Contains ID info */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 						 * leaves its domain during
 						 * lookup. */
     Boolean		*name1ErrorPtr;	/* TRUE if redirect info or stale
@@ -551,11 +548,11 @@ FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     ReturnStatus status;
 
     lookupArgsPtr->useFlags = FS_LINK | FS_RENAME;
-    status = FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2,
+    status = FslclHardLink(prefixHandle1, relativeName1, prefixHandle2,
 	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr);
     if (status == SUCCESS) {
 	lookupArgsPtr->useFlags = FS_DELETE | FS_RENAME;
-	status = FsLocalRemove(prefixHandle1, relativeName1, 
+	status = FslclRemove(prefixHandle1, relativeName1, 
 		    (Address) lookupArgsPtr, (Address)NIL, newNameInfoPtrPtr);
     }
     return(status);
@@ -564,7 +561,7 @@ FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 /*
  *----------------------------------------------------------------------
  *
- * FsLocalHardLink --
+ * FslclHardLink --
  *
  *	Make another name for an existing file.
  *
@@ -577,14 +574,14 @@ FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+FslclHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
-    FsHandleHeader	*prefixHandle1;	/* Token from the prefix table */
+    Fs_HandleHeader	*prefixHandle1;	/* Token from the prefix table */
     char		*relativeName1;	/* The new name of the file. */
-    FsHandleHeader	*prefixHandle2;	/* Token from the prefix table */
+    Fs_HandleHeader	*prefixHandle2;	/* Token from the prefix table */
     char		*relativeName2;	/* The new name of the file. */
-    FsLookupArgs	*lookupArgsPtr;	/* Contains ID info */
-    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+    Fs_LookupArgs	*lookupArgsPtr;	/* Contains ID info */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 						 * leaves its domain during
 						 * lookup. */
     Boolean		*name1ErrorPtr;	/* TRUE if redirect-info or stale
@@ -592,24 +589,24 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 					 * FALSE if for the second. */
 {
     ReturnStatus status;
-    FsLocalFileIOHandle *handle1Ptr;
-    FsLocalFileIOHandle *handle2Ptr;
+    Fsio_FileIOHandle *handle1Ptr;
+    Fsio_FileIOHandle *handle2Ptr;
 
     *name1ErrorPtr = FALSE;
 
     /*
      * This lookup gets a locked handle on the (presumably) existing file.
      */
-    status = FsLocalLookup(prefixHandle1, relativeName1, &lookupArgsPtr->rootID,
+    status = FslclLookup(prefixHandle1, relativeName1, &lookupArgsPtr->rootID,
 	   lookupArgsPtr->useFlags & FS_FOLLOW, FS_FILE,
 	   lookupArgsPtr->clientID, &lookupArgsPtr->id,
-	   0, 0, (FsLocalFileIOHandle **)&handle1Ptr, newNameInfoPtrPtr);
+	   0, 0, (Fsio_FileIOHandle **)&handle1Ptr, newNameInfoPtrPtr);
     if (status != SUCCESS) {
 	*name1ErrorPtr = TRUE;
 	return(status);
     }
-    FsHandleUnlock(handle1Ptr);
-    if (prefixHandle2 == (FsHandleHeader *)NIL ||
+    Fsutil_HandleUnlock(handle1Ptr);
+    if (prefixHandle2 == (Fs_HandleHeader *)NIL ||
 	prefixHandle2->fileID.major != prefixHandle1->fileID.major) {
 	/*
 	 * The second pathname which isn't in our domain.  We have
@@ -626,18 +623,18 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	 * both handle1 and handle2 reference the same handle, and that
 	 * handle is locked.
 	 */
-	status = FsLocalLookup(prefixHandle2, relativeName2,
+	status = FslclLookup(prefixHandle2, relativeName2,
 		&lookupArgsPtr->rootID,
 		lookupArgsPtr->useFlags, handle1Ptr->descPtr->fileType,
 		lookupArgsPtr->clientID,
 		&lookupArgsPtr->id, 0, handle1Ptr->hdr.fileID.minor,
-		(FsLocalFileIOHandle **)&handle2Ptr, newNameInfoPtrPtr);
+		(Fsio_FileIOHandle **)&handle2Ptr, newNameInfoPtrPtr);
     }
     if (status == SUCCESS) {
-	FsHandleRelease(handle2Ptr, TRUE);
-	FsDomainRelease(handle2Ptr->hdr.fileID.major);
+	Fsutil_HandleRelease(handle2Ptr, TRUE);
+	Fsdm_DomainRelease(handle2Ptr->hdr.fileID.major);
     }
-    FsHandleRelease(handle1Ptr, FALSE);
-    FsDomainRelease(handle1Ptr->hdr.fileID.major);
+    Fsutil_HandleRelease(handle1Ptr, FALSE);
+    Fsdm_DomainRelease(handle1Ptr->hdr.fileID.major);
     return(status);
 }

@@ -8,12 +8,6 @@
  *	the access time and modify time.  There are two ways to get to
  *	the name server, either via a pathname or an open file.  The
  *	I/O server is always contacted using a fileID.
- *	The 3 corrsponding RPCs are:
- *	RPC_FS_GET_ATTR_PATH	To get attributes from name server given path.
- *	RPC_FS_GET_ATTR		To get attributes from name server given fileID
- *	RPC_FS_GET_IO_ATTR	To get (a few) attributes from the I/O server.
- *	Setting attributes is done the same way, and there are three more
- *	corresponding RPCs.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -33,105 +27,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsOpTable.h"
-#include "fsLocalDomain.h"
+#include "fsutil.h"
 #include "fsNameOps.h"
-#include "fsConsist.h"
-#include "fsCacheOps.h"
-#include "fsRecovery.h"
-#include "fsDisk.h"
+#include "fslclInt.h"
+#include "fsconsist.h"
+#include "fscache.h"
+#include "fsdm.h"
 #include "fsStat.h"
 #include "rpc.h"
 
-FsHandleHeader *VerifyIOHandle();
-
 
 /*
  *----------------------------------------------------------------------
  *
- * Fs_GetAttrStream --
- *
- *	Get the attributes of an open file.  The name server for the
- *	file (if any, anonymous pipes won't have one) is contacted
- *	to get the initial version of the attributes.  This includes
- *	ownership, permissions, and a guess as to the size.  Then
- *	a stream-specific call is made to update the attributes
- *	from info at the I/O server.  For example, there may be
- *	more up-to-date access and modify times at the I/O server.
- *
- * Results:
- *	An error code and the attibutes.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-Fs_GetAttrStream(streamPtr, attrPtr)
-    Fs_Stream *streamPtr;
-    Fs_Attributes *attrPtr;
-{
-    register ReturnStatus	status;
-    register FsHandleHeader	*hdrPtr = streamPtr->ioHandlePtr;
-    register FsNameInfo		*nameInfoPtr = streamPtr->nameInfoPtr;
-
-    if (!FsHandleValid(hdrPtr)) {
-	status = FS_STALE_HANDLE;
-    } else {
-	if (nameInfoPtr == (FsNameInfo *)NIL) {
-	    /*
-	     * Anonymous pipes have no name info.
-	     */
-	    bzero((Address)attrPtr, sizeof(Fs_Attributes));
-	    status = SUCCESS;
-	} else {
-	    /*
-	     * Get the initial version of the attributes from the file server
-	     * that has the name of the file.
-	     */
-	    status = (*fsAttrOpTable[nameInfoPtr->domainType].getAttr)
-			(&nameInfoPtr->fileID, rpc_SpriteID, attrPtr);
-#ifdef lint
-	    status = FsLocalGetAttr(&nameInfoPtr->fileID, rpc_SpriteID,attrPtr);
-	    status = FsRemoteGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
-	    status = FsPseudoGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
-#endif lint
-	    if (status != SUCCESS) {
-		printf(
-		    "Fs_GetAttrStream: can't get name attributes <%x> for %s\n",
-		    status, Fs_GetFileName(streamPtr));
-	    }
-	}
-	if (status == SUCCESS) {
-	    /*
-	     * Update the attributes by contacting the I/O server.
-	     */
-	    fsStats.cltName.getIOAttrs++;
-	    status = (*fsStreamOpTable[hdrPtr->fileID.type].getIOAttr)
-			(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-#ifdef lint
-	    status = FsRemoteGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-	    status = FsRmtFileGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-	    status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-	    status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-	    status = FsRmtControlGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,
-			attrPtr);
-	    status = FsControlGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,
-			attrPtr);
-#endif lint
-	}
-	fsStats.cltName.getAttrIDs++;
-    }
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsLocalGetAttr --
+ * FslclGetAttr --
  *
  *	Get the attributes of a local file given its fileID.  This is called
  *	from Fs_GetAttrStream to get the attributes from the file descriptor.
@@ -148,24 +57,24 @@ Fs_GetAttrStream(streamPtr, attrPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
+FslclGetAttr(fileIDPtr, clientID, attrPtr)
     register Fs_FileID		*fileIDPtr;	/* Identfies file */
     int				clientID;	/* Host ID of process asking
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
 {
-    if (fileIDPtr->type != FS_LCL_FILE_STREAM) {
-	panic( "FsLocalGetAttr, bad fileID type <%d>\n",
+    if (fileIDPtr->type != FSIO_LCL_FILE_STREAM) {
+	panic( "FslclGetAttr, bad fileID type <%d>\n",
 	    fileIDPtr->type);
 	return(GEN_INVALID_ARG);
     } else {
-	FsLocalFileIOHandle *handlePtr;
+	Fsio_FileIOHandle *handlePtr;
 	Boolean isExeced;
 	ReturnStatus status;
 
-	handlePtr = FsHandleFetchType(FsLocalFileIOHandle, fileIDPtr);
-	if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	    status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL, &handlePtr);
+	handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, fileIDPtr);
+	if (handlePtr == (Fsio_FileIOHandle *)NIL) {
+	    status = Fsio_LocalFileHandleInit(fileIDPtr, (char *)NIL, &handlePtr);
 	    if (status != SUCCESS) {
 		bzero((Address)attrPtr, sizeof(Fs_Attributes));
 		return(status);
@@ -180,9 +89,9 @@ FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
 	 * generic devices crossed with migration lead to cases where
 	 * we, the name server, don't know what's happening on the client.
 	 */
-	FsGetClientAttrs(handlePtr, clientID, &isExeced);
-	FsAssignAttrs(handlePtr, isExeced, attrPtr);
-	FsHandleRelease(handlePtr, TRUE);
+	Fsconsist_GetClientAttrs(handlePtr, clientID, &isExeced);
+	FslclAssignAttrs(handlePtr, isExeced, attrPtr);
+	Fsutil_HandleRelease(handlePtr, TRUE);
 	return(SUCCESS);
     }
 }
@@ -190,7 +99,7 @@ FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsAssignAttrs --
+ * FslclAssignAttrs --
  *
  *	Fill in the Fs_Attributes structure for a regular file.
  *	If the isExeced flag is TRUE then the current time is used as the
@@ -208,15 +117,15 @@ FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
  *----------------------------------------------------------------------
  */
 void
-FsAssignAttrs(handlePtr, isExeced, attrPtr)
-    register	FsLocalFileIOHandle	*handlePtr;
+FslclAssignAttrs(handlePtr, isExeced, attrPtr)
+    register	Fsio_FileIOHandle	*handlePtr;
     Boolean				isExeced;  /* TRUE if being executed,
 						    * use current time for
 						    * the access time. */
     register	Fs_Attributes		*attrPtr;
 {
-    register FsFileDescriptor *descPtr = handlePtr->descPtr;
-    register FsCacheFileInfo *cacheInfoPtr = &handlePtr->cacheInfo;
+    register Fsdm_FileDescriptor *descPtr = handlePtr->descPtr;
+    register Fscache_FileInfo *cacheInfoPtr = &handlePtr->cacheInfo;
 
     attrPtr->serverID			= handlePtr->hdr.fileID.serverID;
     attrPtr->domain			= handlePtr->hdr.fileID.major;
@@ -254,7 +163,7 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
     attrPtr->dataModifyTime.seconds	= cacheInfoPtr->attr.modifyTime;
     attrPtr->dataModifyTime.microseconds= 0;
     if (isExeced) {
-	attrPtr->accessTime.seconds	= fsTimeInSeconds;
+	attrPtr->accessTime.seconds	= fsutil_TimeInSeconds;
     } else {
 	attrPtr->accessTime.seconds	= cacheInfoPtr->attr.accessTime;
     }
@@ -278,77 +187,7 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_SetAttrStream --
- *
- *	Set the attributes of an open file.  First the name server is
- *	contacted to verify permissions and to update the file descriptor.
- *	Then the I/O server is contacted to update any cached attributes.
- *
- * Results:
- *	An error code.
- *
- * Side effects:
- *	The modify and access times are set.
- *	The owner and group ID are set.
- *	The permission bits are set.
- * 	If the operation is successful, the count of setAttrs is incremented.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
-    Fs_Stream *streamPtr;	/* References file to manipulate. */
-    Fs_Attributes *attrPtr;	/* Attributes to give to the file. */
-    Fs_UserIDs *idPtr;		/* Owner and groups of calling process */
-    int flags;			/* Specify what attributes to set. */
-{
-    register ReturnStatus	status;
-    register FsHandleHeader	*hdrPtr = streamPtr->ioHandlePtr;
-    register FsNameInfo		*nameInfoPtr = streamPtr->nameInfoPtr;
-
-    if (!FsHandleValid(hdrPtr)) {
-	status = FS_STALE_HANDLE;
-    } else {
-	if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
-	    /*
-	     * Set the attributes at the name server.
-	     */
-	    status = (*fsAttrOpTable[nameInfoPtr->domainType].setAttr)
-			(&nameInfoPtr->fileID, attrPtr, idPtr, flags);
-#ifdef lint
-	    status = FsLocalSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
-	    status = FsRemoteSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
-	    status = FsPseudoSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
-#endif lint
-	} else {
-	    status = SUCCESS;
-	}
-	if (status == SUCCESS) {
-	    /*
-	     * Set the attributes at the I/O server.
-	     */
-	    fsStats.cltName.setIOAttrs++;
-	    status = (*fsStreamOpTable[hdrPtr->fileID.type].setIOAttr)
-			(&hdrPtr->fileID, attrPtr, flags);
-#ifdef lint
-	    status = FsRemoteSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
-	    status = FsRmtFileSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
-	    status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
-	    status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
-	    status = FsRmtControlSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
-	    status = FsControlSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
-#endif lint
-	}
-    fsStats.cltName.setAttrIDs++;
-    }
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsLocalSetAttr --
+ * FslclSetAttr --
  *
  *	Set the attributes of a local file given its fileID.  This is
  *	called from Fs_SetAttrStream to set the attributes at the name server.
@@ -377,28 +216,28 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
+FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     Fs_FileID			*fileIDPtr;	/* Target file. */
     register Fs_Attributes	*attrPtr;	/* New attributes */
     register Fs_UserIDs		*idPtr;		/* Process's owner/group */
     register int		flags;		/* What attrs to set */
 {
     register ReturnStatus	status = SUCCESS;
-    FsLocalFileIOHandle		*handlePtr;
-    register FsFileDescriptor	*descPtr;
-    FsDomain			*domainPtr;
+    Fsio_FileIOHandle		*handlePtr;
+    register Fsdm_FileDescriptor	*descPtr;
+    Fsdm_Domain			*domainPtr;
 
-    handlePtr = FsHandleFetchType(FsLocalFileIOHandle, fileIDPtr);
-    if (handlePtr == (FsLocalFileIOHandle *)NIL) {
+    handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, fileIDPtr);
+    if (handlePtr == (Fsio_FileIOHandle *)NIL) {
 	printf(
-		"FsLocalSetAttr, no handle for %s <%d,%d,%d>\n",
-		FsFileTypeToString(fileIDPtr->type),
+		"FslclSetAttr, no handle for %s <%d,%d,%d>\n",
+		Fsutil_FileTypeToString(fileIDPtr->type),
 		fileIDPtr->serverID, fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
     }
     descPtr = handlePtr->descPtr;
-    if (descPtr == (FsFileDescriptor *)NIL) {
-	printf( "FsLocalSetAttr, NIL descPtr\n");
+    if (descPtr == (Fsdm_FileDescriptor *)NIL) {
+	printf( "FslclSetAttr, NIL descPtr\n");
 	status = FAILURE;
 	goto exit;
     }
@@ -474,7 +313,7 @@ setMode:
 	descPtr->accessTime       = attrPtr->accessTime.seconds;
 	descPtr->dataModifyTime   = attrPtr->dataModifyTime.seconds;
 	/*
-	 * Patch this because it gets copied below by FsUpdateCachedAttr.
+	 * Patch this because it gets copied below by Fscache_UpdateCachedAttr.
 	 */
 	attrPtr->createTime.seconds = descPtr->createTime;
     }
@@ -486,978 +325,22 @@ setMode:
     /*
      * Copy this new information into the cache block containing the descriptor.
      */
-    descPtr->descModifyTime   = fsTimeInSeconds;
-    domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (FsDomain *)NIL) {
+    descPtr->descModifyTime   = fsutil_TimeInSeconds;
+    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+    if (domainPtr == (Fsdm_Domain *)NIL) {
 	status = FS_DOMAIN_UNAVAILABLE;
     } else {
-	status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
+	status = Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor,
 		 descPtr);
-	FsDomainRelease(handlePtr->hdr.fileID.major);
+	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     }
     if (status == SUCCESS) {
 	/*
 	 * Update the attributes cached in the file handle.
 	 */
-	FsUpdateCachedAttr(&handlePtr->cacheInfo, attrPtr, flags);
+	Fscache_UpdateCachedAttr(&handlePtr->cacheInfo, attrPtr, flags);
     }
 exit:
-    FsHandleRelease(handlePtr, TRUE);
+    Fsutil_HandleRelease(handlePtr, TRUE);
     return(status);
-}
-
-/*
- * Return parameters from RPC_FS_GET_ATTR_PATH.  The file ID is used to
- * get to the I/O server.
- */
-typedef struct FsRemoteGetAttrResults {
-    Fs_Attributes	attributes;
-    Fs_FileID		fileID;
-} FsRemoteGetAttrResults;
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRemoteGetAttrPath --
- *
- *	Get the attributes of a remote Sprite file given its name.  This
- *	is called from Fs_GetAttributes for files named by remote servers.
- *	Note:  the attributes from the disk descriptor on the name server
- *	are returned.  The attributes need to be updated by the I/O server
- *	if there is one.
- *
- * Results:
- *	A return code from the RPC or the remote server.
- *
- * Side effects:
- *	FS_RPC_GET_ATTR.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-FsRemoteGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
-         	    newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandle;	/* Handle from the prefix table */
-    char           *relativeName;	/* The name of the file. */
-    Address        argsPtr;		/* Bundled arguments for us */
-    Address        resultsPtr;		/* Where to store attributes */
-    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
-					 * its domain during the lookup. */
-{
-    ReturnStatus 		status;
-    FsOpenArgs			*openArgsPtr;
-    FsGetAttrResults		*getAttrResultsPtr;
-    FsGetAttrResultsParam	getAttrResultsParam;
-    Rpc_Storage			storage;
-    char			replyName[FS_MAX_PATH_NAME_LENGTH];	 /* This
-						     * may get filled with a
-						     * redirected pathname. */
-
-    openArgsPtr = (FsOpenArgs *) argsPtr;
-    getAttrResultsPtr = (FsGetAttrResults *)resultsPtr;
-
-    storage.requestParamPtr = (Address) openArgsPtr;
-    storage.requestParamSize = sizeof(FsOpenArgs);
-    storage.requestDataPtr = (Address) relativeName;
-    storage.requestDataSize = strlen(relativeName) + 1;
-    storage.replyParamPtr = (Address) &(getAttrResultsParam);
-    storage.replyParamSize = sizeof(FsGetAttrResultsParam);
-    storage.replyDataPtr = (Address) replyName;
-    storage.replyDataSize = FS_MAX_PATH_NAME_LENGTH;
-
-    status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_GET_ATTR_PATH,
-			&storage);
-     if (status == SUCCESS) {
-	/*
-	 * The return param area has a fileID that we need.  The
-	 * return parameter area has also been filled in with
-	 * the attributes.
-	 */
-	*(getAttrResultsPtr->fileIDPtr) =
-		 getAttrResultsParam.attrResults.fileID;
-	*(getAttrResultsPtr->attrPtr) =
-		getAttrResultsParam.attrResults.attrs;
-    } else if (status == FS_LOOKUP_REDIRECT) {
-	/*
-	 * Copy the info from our stack to a buffer for our caller
-	 */
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
-	(*newNameInfoPtrPtr)->prefixLength = getAttrResultsParam.prefixLength;
-	(void)strcpy((*newNameInfoPtrPtr)->fileName, replyName);
-	return(FS_LOOKUP_REDIRECT);
-    }
-
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcGetAttrPath --
- *
- *	Service stub for the RPC_FS_GET_ATTR_PATH call.  This is used to
- *	get the attributes from the disk descriptor of a file.  NOTE:  the
- *	attributes are not complete until the I/O server for the (non-regular)
- *	file is contacted.  This routine does, however, suck in attributes
- *	of regular files that are cached.
- *
- * Results:
- *	If this procedure returns SUCCESS then a reply has been sent to
- *	the client.  If the arguments are bad then an error is 
- *	returned and the main level sends back an error reply.
- *
- * Side effects:
- *	Allocates a buffer to return the results in.
- *	
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
-    ClientData 		 srvToken;	/* Handle on server process passed to
-				 	 * Rpc_Reply */
-    int 		 clientID;	/* Sprite ID of client host */
-    int 		 command;	/* IGNORED */
-    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
-					 * request buffers and also indicate 
-					 * the exact amount of data in the 
-					 * request buffers.  The reply fields 
-					 * are initialized to NIL for the
-				 	 * pointers and 0 for the lengths.  
-					 * This can be passed to Rpc_Reply */
-{
-    register FsOpenArgs		*openArgsPtr;	/* Tmp pointer into openParams*/
-    FsGetAttrResults 		getAttrResults;	/* Results from local  routine */
-    FsGetAttrResultsParam	*getAttrResultsParamPtr;	/* rpc param
-								 * bundle */
-    FsHandleHeader		*prefixHandle;	/* Handle for domain */
-    ReturnStatus		status;		/* General return code */
-    FsRedirectInfo		*newNameInfoPtr;/* For prefix re-directs,
-						 * unallocated since proc call
-						 * allocates space for it. */
-    int				domainType;
-
-    openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
-
-    if (openArgsPtr->prefixID.serverID != rpc_SpriteID) {
-	/*
-	 * Filesystem mis-match.
-	 */
-	return(GEN_INVALID_ARG);
-    }
-    prefixHandle = (*fsStreamOpTable[openArgsPtr->prefixID.type].clientVerify)
-	    (&openArgsPtr->prefixID, clientID, &domainType);
-    if (prefixHandle == (FsHandleHeader *)NIL) {
-	return(FS_STALE_HANDLE);
-    }
-    FsHandleRelease(prefixHandle, TRUE);
-
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
-    getAttrResultsParamPtr = mnew(FsGetAttrResultsParam);
-
-    getAttrResults.attrPtr = &(getAttrResultsParamPtr->attrResults.attrs);
-    getAttrResults.fileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
-
-    fsStats.srvName.getAttrs++;
-    status = (*fsDomainLookup[domainType][FS_DOMAIN_GET_ATTR])(prefixHandle,
-		(char *) storagePtr->requestDataPtr, (Address)openArgsPtr,
-		(Address)(&getAttrResults), &newNameInfoPtr);
-
-    if (status == SUCCESS) {
-	storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
-	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
-	storagePtr->replyDataPtr = (Address) NIL;
-	storagePtr->replyDataSize = 0;
-    } else if (status == FS_LOOKUP_REDIRECT) {
-	/*
-	 * The file is not found on this server, but somewhere else.
-	 */
-	getAttrResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
-	storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
-	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
-	storagePtr->replyDataSize = strlen(newNameInfoPtr->fileName) + 1;
-	storagePtr->replyDataPtr =
-		(Address) malloc(storagePtr->replyDataSize);
-	(void)strcpy((char *) storagePtr->replyDataPtr, newNameInfoPtr->fileName);
-	free((Address)newNameInfoPtr);
-    }
-    if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
-	Rpc_ReplyMem	*replyMemPtr;
-
-        replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-        replyMemPtr->paramPtr = storagePtr->replyParamPtr;
-        replyMemPtr->dataPtr = storagePtr->replyDataPtr;
-        Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
-		    (ClientData)replyMemPtr);
-        return(SUCCESS);
-    } else {
-	free((Address) getAttrResultsParamPtr);
-        return(status);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRemoteSetAttrPath --
- *
- *	Set the attributes of a remote Sprite file given its path name.
- *	This is called from Fs_SetAttributes.  This used the
- *	RPC_FS_SET_ATTR_PATH rpc to invoke FsLocalSetAttrPath on the
- *	name server.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-FsRemoteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
-         	    newNameInfoPtrPtr)
-    FsHandleHeader *prefixHandle;   /* Token from the prefix table */
-    char           *relativeName;   /* The name of the file. */
-    Address        argsPtr;	    /* Bundled arguments for us */
-    Address        resultsPtr;	    /* FileID */
-    FsRedirectInfo **newNameInfoPtrPtr; /* We return this if the server leaves 
-					 * its domain during the lookup. */
-{
-    ReturnStatus 		status;
-    Rpc_Storage			storage;
-    char			replyName[FS_MAX_PATH_NAME_LENGTH];
-    FsGetAttrResultsParam	getAttrResultsParam;
-    Fs_FileID			*fileIDPtr;
-
-    storage.requestParamPtr = (Address) argsPtr;
-    storage.requestParamSize = sizeof(FsSetAttrArgs);
-    storage.requestDataPtr = (Address) relativeName;
-    storage.requestDataSize = strlen(relativeName) + 1;
-    storage.replyParamPtr = (Address) &(getAttrResultsParam);
-    storage.replyParamSize = sizeof(FsGetAttrResultsParam);
-    storage.replyDataPtr = (Address) replyName;
-    storage.replyDataSize = FS_MAX_PATH_NAME_LENGTH;
-
-    fileIDPtr = (Fs_FileID *) resultsPtr;
-
-    status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_SET_ATTR_PATH,
-			&storage);
-    if (status == SUCCESS) {
-	/*
-	 * Copy result fileID to resultsPtr (== fileIDPtr).
-	 */
-	(* fileIDPtr) = getAttrResultsParam.attrResults.fileID;
-    } else if (status == FS_LOOKUP_REDIRECT) {
-	/*
-	 * Copy the info from our stack to a buffer for our caller.
-	 */
-	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
-	(*newNameInfoPtrPtr)->prefixLength = getAttrResultsParam.prefixLength;
-	(void)strcpy((*newNameInfoPtrPtr)->fileName, replyName);
-    }
-
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcSetAttrPath --
- *
- *	Service stub for the RPC_FS_SET_ATTR_PATH call.  This branches
- *	to FsLocalSetAttrPath which sets the attributes on the file descriptor.
- *
- * Results:
- *	If this procedure returns SUCCESS then a reply has been sent to
- *	the client.  If the arguments are bad then an error is 
- *	returned and the main level sends back an error reply.
- *
- * Side effects:
- *	Allocates a buffer to return the results in.
- *	
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
-    ClientData 		 srvToken;	/* Handle on server process passed to
-				 	 * Rpc_Reply */
-    int 		 clientID;	/* Sprite ID of client host */
-    int 		 command;	/* IGNORED */
-    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
-					 * request buffers and also indicate 
-					 * the exact amount of data in the 
-					 * request buffers.  The reply fields 
-					 * are initialized to NIL for the
-				 	 * pointers and 0 for the lengths.  
-					 * This can be passed to Rpc_Reply */
-{
-    Fs_FileID			*ioFileIDPtr;	/* Results from local routine */
-    FsHandleHeader		*prefixHandle;	/* Handle for domain */
-    ReturnStatus		status;		/* General return code */
-    FsSetAttrArgs		*setAttrArgsPtr;
-    FsRedirectInfo		*newNameInfoPtr;/* For prefix re-directs */
-    FsGetAttrResultsParam	*getAttrResultsParamPtr;	/* rpc param
-								 * bundle */
-    int				domainType;
-
-    setAttrArgsPtr = (FsSetAttrArgs *) storagePtr->requestParamPtr;
-
-    prefixHandle =
-	(*fsStreamOpTable[setAttrArgsPtr->openArgs.prefixID.type].clientVerify)
-	    (&setAttrArgsPtr->openArgs.prefixID, clientID, &domainType);
-    if (prefixHandle == (FsHandleHeader *)NIL) {
-	return(FS_STALE_HANDLE);
-    }
-    FsHandleRelease(prefixHandle, TRUE);
-
-
-    fsStats.srvName.setAttrs++;
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
-    getAttrResultsParamPtr = mnew(FsGetAttrResultsParam);
-    ioFileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
-    status = (*fsDomainLookup[domainType][FS_DOMAIN_SET_ATTR])(prefixHandle,
-		(char *) storagePtr->requestDataPtr,
-		(Address) storagePtr->requestParamPtr,
-		(Address) ioFileIDPtr, &newNameInfoPtr);
-
-    if (status == SUCCESS) {
-	storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
-	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
-	storagePtr->replyDataPtr = (Address) NIL;
-	storagePtr->replyDataSize = 0;
-    } else if (status == FS_LOOKUP_REDIRECT) {
-	/*
-	 * The file is not found on this server.
-	 */
-	getAttrResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
-	storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
-	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
-	storagePtr->replyDataSize = strlen(newNameInfoPtr->fileName) + 1;
-	storagePtr->replyDataPtr =
-		(Address) malloc(storagePtr->replyDataSize);
-	(void)strcpy((char *) storagePtr->replyDataPtr, newNameInfoPtr->fileName);
-	free((Address)newNameInfoPtr);
-    }
-    if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
-	Rpc_ReplyMem	*replyMemPtr;
-
-        replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-        replyMemPtr->paramPtr = storagePtr->replyParamPtr;
-        replyMemPtr->dataPtr = storagePtr->replyDataPtr;
-        Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
-		(ClientData)replyMemPtr);
-        return(SUCCESS);
-    } else {
-	free((Address)getAttrResultsParamPtr);
-        return(status);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRemoteGetAttr --
- *
- *	Get the attributes of a remote file given its fileID.  This is called
- *	from Fs_GetAttrStream.  This does an RPC to the name server which
- *	then calls FsLocalGetAttr.
- *
- * Results:
- *	An error code.
- *
- * Side effects:
- *	Fills in the attributes structure with info from the file server.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRemoteGetAttr(fileIDPtr, clientID, attrPtr)
-    register Fs_FileID		*fileIDPtr;	/* Identfies file */
-    int				clientID;	/* IGNORED, implicitly passed
-						 * by the RPC system. */
-    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
-{
-    register ReturnStatus	status;
-    Rpc_Storage storage;
-
-    storage.requestParamPtr = (Address) fileIDPtr;
-    storage.requestParamSize = sizeof(Fs_FileID);
-    storage.requestDataPtr = (Address) NIL;
-    storage.requestDataSize = 0;
-
-    storage.replyParamPtr = (Address) attrPtr;
-    storage.replyParamSize = sizeof(Fs_Attributes);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-    status = Rpc_Call(fileIDPtr->serverID, RPC_FS_GET_ATTR, &storage);
-    if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
-	status == RPC_SERVICE_DISABLED) {
-	/*
-	 * If there was a problem at the server then try to recover
-	 * the handle.  We may not have a handle in the case of devices.
-	 * In that case the fileID we have here comes from the stream's
-	 * nameInfo, which doesn't get installed into the handle table.
-	 */
-	register FsHandleHeader *hdrPtr = FsHandleFetch(fileIDPtr);
-	if (hdrPtr != (FsHandleHeader *)NIL) {
-	    FsWantRecovery(hdrPtr);
-	    FsHandleRelease(hdrPtr, TRUE);
-	}
-    }
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcGetAttr --
- *
- *	Service stub for the RPC_FS_GET_ATTR call.  This calls FsLocalGetAttr
- *	(or FsPseudoGetAttr) to get the attributes of a file.  This
- *	is a name server operation used when the file is already open.
- *	Note: Attributes are not complete until the I/O server has also
- *	been contacted.  See Fs_RpcGetIOAttr.
- *
- * Results:
- *	If this procedure returns SUCCESS then a reply has been sent to
- *	the client.  If the arguments are bad then an error is 
- *	returned and the main level sends back an error reply.
- *
- * Side effects:
- *	Allocates a buffer to return the results in.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
-    ClientData 		 srvToken;	/* Handle on server process passed to
-				 	 * Rpc_Reply */
-    int 		 clientID;	/* Sprite ID of client host */
-    int 		 command;	/* IGNORED */
-    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
-					 * request buffers and also indicate 
-					 * the exact amount of data in the 
-					 * request buffers.  The reply fields 
-					 * are initialized to NIL for the
-					 * pointers and 0 for the lengths.  
-					 * This can be passed to Rpc_Reply */
-{
-    register ReturnStatus	status;
-    FsHandleHeader		*tHdrPtr;
-    register FsHandleHeader	*hdrPtr;
-    register Fs_FileID		*fileIDPtr;
-    register Fs_Attributes	*attrPtr;
-    Rpc_ReplyMem		*replyMemPtr;
-    int				domainType = FS_LOCAL_DOMAIN;
-
-    fileIDPtr = (Fs_FileID *) storagePtr->requestParamPtr;
-    hdrPtr = VerifyIOHandle(fileIDPtr);
-    if (fileIDPtr->type == FS_LCL_PFS_STREAM) {
-	if (hdrPtr == (FsHandleHeader *)NIL) {
-	    return(FS_STALE_HANDLE);
-	}
-	domainType = FS_PSEUDO_DOMAIN;
-    } else if (hdrPtr == (FsHandleHeader *)NIL) {
-	status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL,
-			(FsLocalFileIOHandle **)&tHdrPtr);
-	if (status != SUCCESS) {
-	    return(status);
-	}
-	hdrPtr = tHdrPtr;
-    }
-    FsHandleUnlock(hdrPtr);
-
-    fsStats.srvName.getAttrs++;
-    attrPtr = mnew(Fs_Attributes);
-    status = (*fsAttrOpTable[domainType].getAttr)(fileIDPtr, clientID, attrPtr);
-#ifdef lint
-    status = FsLocalGetAttr(fileIDPtr, clientID, attrPtr);
-    status = FsPseudoGetAttr(fileIDPtr, clientID, attrPtr);
-#endif lint
-    FsHandleRelease(hdrPtr, FALSE);
-
-    storagePtr->replyParamPtr = (Address) attrPtr;
-    storagePtr->replyParamSize = sizeof(Fs_Attributes);
-    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
-    replyMemPtr->dataPtr = (Address) NIL;
-
-    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
-	    (ClientData)replyMemPtr);
-    return(SUCCESS);
-}
-
-/*
- * Parameters for RPC_FS_SET_ATTR.  This is a sub-set of FsSetAttrArgs
- * (which has extra stuff required to handle path name lookup).
- */
-
-typedef struct FsRemoteSetAttrParams {
-    Fs_FileID		fileID;
-    Fs_UserIDs		ids;
-    Fs_Attributes	attrs;
-    int			flags;
-} FsRemoteSetAttrParams;
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRemoteSetAttr
- *
- *	Set selected attributes of a remote file given its fileID.  This
- *	is called from Fs_SetAttrStream.  This does the RPC_FS_SET_ATTR
- *	remote call which invokes FsLocalSetAttr on the name server.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-FsRemoteSetAttr(fileIDPtr, attrPtr, idPtr, flags)
-    Fs_FileID		*fileIDPtr;
-    Fs_Attributes	*attrPtr;
-    Fs_UserIDs		 *idPtr;
-    int			flags;
-{
-    ReturnStatus status;
-    Rpc_Storage storage;
-    FsRemoteSetAttrParams params;
-
-    params.fileID = *fileIDPtr;
-    params.ids = *idPtr;
-    params.attrs = *attrPtr;
-    params.flags = flags;
-    storage.requestParamPtr = (Address)&params;
-    storage.requestParamSize = sizeof(FsRemoteSetAttrParams);
-    storage.requestDataPtr = (Address)NIL;;
-    storage.requestDataSize = 0;
-    storage.replyParamPtr = (Address)NIL;
-    storage.replyParamSize = 0;
-    storage.replyDataPtr = (Address)NIL;
-    storage.replyDataSize = 0;
-
-    status = Rpc_Call(fileIDPtr->serverID, RPC_FS_SET_ATTR, &storage);
-    if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
-	status == RPC_SERVICE_DISABLED) {
-	register FsHandleHeader *hdrPtr = FsHandleFetch(fileIDPtr);
-	if (hdrPtr != (FsHandleHeader *)NIL) {
-	    FsWantRecovery(hdrPtr);
-	    FsHandleRelease(hdrPtr, TRUE);
-	}
-    }
-
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcSetAttr --
- *
- *	Service stub for RPC_FS_SET_ATTR.  This calls FsLocalSetAttr.
- *
- * Results:
- *	If this procedure returns SUCCESS then a reply has been sent to
- *	the client.  If the arguments are bad then FS_STALE_HANDLE is 
- *	returned and the main level sends back an error reply.
- *
- * Side effects:
- *	Uses FsLocalSetAttr to set attributes in the file descriptor.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
-    ClientData 		 srvToken;	/* Handle on server process passed to
-				 	 * Rpc_Reply */
-    int 		 clientID;	/* Sprite ID of client host */
-    int 		 command;	/* IGNORED */
-    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
-					 * request buffers and also indicate 
-					 * the exact amount of data in the 
-					 * request buffers.  The reply fields 
-					 * are initialized to NIL for the
-				 	 * pointers and 0 for the lengths.  
-					 * This can be passed to Rpc_Reply */
-{
-    FsHandleHeader		*hdrPtr;
-    register Fs_FileID		*fileIDPtr;
-    register Fs_Attributes	*attrPtr;
-    register ReturnStatus	status;
-    FsRemoteSetAttrParams	*paramPtr;
-    int				domainType = FS_LOCAL_DOMAIN;
-
-    paramPtr = (FsRemoteSetAttrParams *) storagePtr->requestParamPtr;
-    attrPtr = &paramPtr->attrs;
-    fileIDPtr = &paramPtr->fileID;
-
-    hdrPtr = VerifyIOHandle(fileIDPtr);
-    if (fileIDPtr->type == FS_LCL_PFS_STREAM) {
-	if (hdrPtr == (FsHandleHeader *)NIL) {
-	    return(FS_STALE_HANDLE);
-	}
-	domainType = FS_PSEUDO_DOMAIN;
-    } else if (hdrPtr == (FsHandleHeader *)NIL) {
-	status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL,
-			(FsLocalFileIOHandle **)&hdrPtr);
-	if (status != SUCCESS) {
-	    return(status);
-	}
-    }
-    fsStats.srvName.setAttrs++;
-    FsHandleUnlock(hdrPtr);
-    status = (*fsAttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
-						&paramPtr->ids,paramPtr->flags);
-#ifdef lint
-    status = FsLocalSetAttr(fileIDPtr, attrPtr, &paramPtr->ids,paramPtr->flags);
-    status = FsPseudoSetAttr(fileIDPtr,attrPtr, &paramPtr->ids,paramPtr->flags);
-#endif lint
-    FsHandleRelease(hdrPtr, FALSE);
-
-    Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL,
-		(ClientData)NIL);
-    return(SUCCESS);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRemoteGetIOAttr --
- *
- *	Get the attributes cached at a remote I/O server.  This makes the
- *	RPC_FS_GET_IO_ATTR RPC to the I/O server which then calls
- *	stream-type getIOAttrs routine.
- *
- * Results:
- *	An error code.
- *
- * Side effects:
- *	Update attributes structure with info from the I/O server.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRemoteGetIOAttr(fileIDPtr, clientID, attrPtr)
-    register Fs_FileID		*fileIDPtr;	/* Remote device/pipe fileID */
-    int				clientID;	/* IGNORED, implicitly passed
-						 * by the RPC system. */
-    register Fs_Attributes	*attrPtr;	/* In/Out - the attributes are
-						 * updated by the I/O server */
-{
-    register ReturnStatus status;
-    Rpc_Storage storage;
-    FsGetAttrResultsParam	getAttrResultsParam;
-
-    getAttrResultsParam.attrResults.fileID = *fileIDPtr;
-    getAttrResultsParam.attrResults.attrs = *attrPtr;
-    /*
-     * We have to fix up the fileID of control handles in the case that
-     * the pseudo-device server is remote from us.  The problem is that
-     * we have to RPC to the pseduo-device server, but the fileID of the
-     * control stream (where the access/modify times are) has the
-     * file serverID.  Fortuneatly this is in the regular attributes so
-     * we can patch it up.  We add two lines of code here instead of
-     * nearly duplicating this procedure into a FsRmtControlGetIOAttr
-     * routine that has the patch.
-     */
-    if (fileIDPtr->type == FS_RMT_CONTROL_STREAM) {
-	getAttrResultsParam.attrResults.fileID.serverID = attrPtr->serverID;
-    }
-
-    storage.requestParamPtr = (Address) &getAttrResultsParam;
-    storage.requestParamSize = sizeof(FsGetAttrResultsParam);
-    storage.requestDataPtr = (Address) NIL;
-    storage.requestDataSize = 0;
-
-    storage.replyParamPtr = (Address) attrPtr;
-    storage.replyParamSize = sizeof(Fs_Attributes);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-    status = Rpc_Call(fileIDPtr->serverID, RPC_FS_GET_IO_ATTR, &storage);
-    /*
-     * We punt on I/O server recovery, and mask errors so a stat() works.
-     */
-    if (status != SUCCESS) {
-	printf(
-	    "FsRemoteGetIOAttr failed <%x>: device <%d,%d> at server %d\n",
-	    status, fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
-	status = SUCCESS;
-    }
-
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcGetIOAttr --
- *
- *	Service stub for the RPC_FS_GET_IO_ATTR call.  This calls
- *	the stream-type routine to get attributes cached at the I/O server.
- *
- * Results:
- *	If this procedure returns SUCCESS then a reply has been sent to
- *	the client.  If the arguments are bad then an error is 
- *	returned and the main level sends back an error reply.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
-    ClientData 		 srvToken;	/* Handle on server process passed to
-				 	 * Rpc_Reply */
-    int 		 clientID;	/* Sprite ID of client host */
-    int 		 command;	/* IGNORED */
-    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
-					 * request buffers and also indicate 
-					 * the exact amount of data in the 
-					 * request buffers.  The reply fields 
-					 * are initialized to NIL for the
-				 	 * pointers and 0 for the lengths.  
-					 * This can be passed to Rpc_Reply */
-{
-    register ReturnStatus	status;
-    register FsHandleHeader	*hdrPtr;
-    register Fs_FileID		*fileIDPtr;
-    Fs_Attributes		*attrPtr;
-    FsGetAttrResultsParam	*getAttrResultsParamPtr;
-
-    getAttrResultsParamPtr =
-	    (FsGetAttrResultsParam *) storagePtr->requestParamPtr;
-    fileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
-    attrPtr = &(getAttrResultsParamPtr->attrResults.attrs);
-
-    hdrPtr = VerifyIOHandle(fileIDPtr);
-    if (hdrPtr != (FsHandleHeader *) NIL) {
-	/*
-	 * If someone has the I/O device open we'll have a handle and
-	 * should go get the access and modify times.
-	 */
-	fsStats.srvName.getIOAttrs++;
-	FsHandleUnlock(hdrPtr);
-	status = (*fsStreamOpTable[hdrPtr->fileID.type].getIOAttr)
-		(&hdrPtr->fileID, clientID, attrPtr);
-#ifdef lint
-	status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-	status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-	status = FsControlGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,attrPtr);
-#endif lint
-	FsHandleRelease(hdrPtr, FALSE);
-    } else {
-	/*
-	 * No information to add. We just return what was passed to us.
-	 */
-	status = SUCCESS;
-    }
-    if (status == SUCCESS) {
-	storagePtr->replyParamPtr = (Address) attrPtr;
-	storagePtr->replyParamSize = sizeof(Fs_Attributes);
-    }
-    /*
-     * No clean-up call-back needed because we are returning the attributes
-     * that are sitting in the request buffer.
-     */
-    Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL, (ClientData)NIL);
-    return(SUCCESS);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsRemoteSetIOAttr --
- *
- *	Set the attributes cached at a remote I/O server.  This makes the
- *	RPC_FS_SET_IO_ATTR RPC to the I/O server which then calls
- *	stream-type setIOAttrs routine.
- *
- * Results:
- *	An error code.
- *
- * Side effects:
- *	Set attributes cached with the I/O server.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsRemoteSetIOAttr(fileIDPtr, attrPtr, flags)
-    register Fs_FileID		*fileIDPtr;	/* Remote device/pipe fileID */
-    register Fs_Attributes	*attrPtr;	/* Attributes to copy */
-    int				flags;		/* What attributes to set */
-{
-    register ReturnStatus	status;
-    Rpc_Storage			storage;
-    FsRemoteSetAttrParams	setAttrParam;
-
-    setAttrParam.fileID = *fileIDPtr;
-    setAttrParam.attrs = *attrPtr;
-    setAttrParam.flags = flags;
-    /*
-     * We have to fix up the fileID of control handles in the case that
-     * the pseudo-device server is remote from us.  The problem is that
-     * we have to RPC to the pseduo-device server, but the fileID of the
-     * control stream (where the access/modify times are) has the
-     * file serverID.  Fortuneatly this is in the regular attributes so
-     * we can patch it up.  We add two lines of code here instead of
-     * nearly duplicating this procedure into a FsRmtControlSetIOAttr
-     * routine that has the patch.
-     */
-    if (fileIDPtr->type == FS_RMT_CONTROL_STREAM) {
-	setAttrParam.fileID.serverID = attrPtr->serverID;
-    }
-    storage.requestParamPtr = (Address) &setAttrParam;
-    storage.requestParamSize = sizeof(FsRemoteSetAttrParams);
-    storage.requestDataPtr = (Address) NIL;
-    storage.requestDataSize = 0;
-
-    storage.replyParamPtr = (Address) NIL;
-    storage.replyParamSize = 0;
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-    status = Rpc_Call(fileIDPtr->serverID, RPC_FS_SET_IO_ATTR, &storage);
-    /*
-     * We punt on I/O server recovery, and mask errors so a chmod() works.
-     */
-    if (status != SUCCESS) {
-	printf(
-	    "FsRemoteSetIOAttr failed <%x>: device <%d,%d> at server %d\n",
-	    status, fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
-	status = SUCCESS;
-    }
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcSetIOAttr --
- *
- *	Service stub for the RPC_FS_SET_IO_ATTR call.  This calls
- *	the stream-type routine to set attributes cached at the I/O server.
- *
- * Results:
- *	If this procedure returns SUCCESS then a reply has been sent to
- *	the client.  If the arguments are bad then an error is 
- *	returned and the main level sends back an error reply.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
-    ClientData 		 srvToken;	/* Handle on server process passed to
-				 	 * Rpc_Reply */
-    int 		 clientID;	/* Sprite ID of client host */
-    int 		 command;	/* IGNORED */
-    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
-					 * request buffers and also indicate 
-					 * the exact amount of data in the 
-					 * request buffers.  The reply fields 
-					 * are initialized to NIL for the
-				 	 * pointers and 0 for the lengths.  
-					 * This can be passed to Rpc_Reply */
-{
-    register ReturnStatus	status;
-    register FsHandleHeader	*hdrPtr;
-    register Fs_FileID		*fileIDPtr;
-    Fs_Attributes		*attrPtr;
-    FsRemoteSetAttrParams	*setAttrParamPtr;
-
-    setAttrParamPtr =
-	    (FsRemoteSetAttrParams *) storagePtr->requestParamPtr;
-    fileIDPtr = &(setAttrParamPtr->fileID);
-    attrPtr = &(setAttrParamPtr->attrs);
-
-   fsStats.srvName.setIOAttrs++;
-   hdrPtr = VerifyIOHandle(fileIDPtr);
-    if (hdrPtr == (FsHandleHeader *) NIL) {
-	/*
-	 * Noone has the I/O device open so we don't have a handle.
-	 * Return SUCCESS but take no action.
-	 */
-	return(SUCCESS);
-    } 
-    FsHandleUnlock(hdrPtr);
-
-    status = (*fsStreamOpTable[hdrPtr->fileID.type].setIOAttr)
-	    (&hdrPtr->fileID, attrPtr, setAttrParamPtr->flags);
-#ifdef lint
-    status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr,setAttrParamPtr->flags);
-    status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, setAttrParamPtr->flags);
-    status = FsControlSetIOAttr(&hdrPtr->fileID, attrPtr,
-					setAttrParamPtr->flags);
-#endif lint
-
-    FsHandleRelease(hdrPtr, FALSE);
-
-    /*
-     * No clean-up call-back needed because there are no reply parameters.
-     */
-    Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL, (ClientData)NIL);
-    return(SUCCESS);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * VerifyIOHandle --
- *
- *	Verify an I/O handle from a remote client.  This is only used when
- *	getting/setting attributes.  We do not require that the client be
- *	listed for the I/O handle because in two important cases it won't be.
- *	The first is if we are the I/O server for a device, and someone
- *	does a Fs_GetAttributes(pathname, ...).  We are contacted for the
- *	latest I/O attributes, and the client won't have opened the device.
- *	The second case is if we are the name server and someone is doing
- *	a Fs_GetAttributesID(streamID, ...).  Here the I/O server has the
- *	client in its list, but we (the name server) do not.
- *
- * Results:
- *	A locked pointer to the I/O handle if it exists.
- *
- * Side effects:
- *	The returned handle must be released because we fetch it here.
- *
- *----------------------------------------------------------------------
- */
-FsHandleHeader *
-VerifyIOHandle(fileIDPtr)
-    Fs_FileID *fileIDPtr;
-{
-    if (fileIDPtr->type <= 0 || fileIDPtr->type >= FS_NUM_STREAM_TYPES) {
-	printf(
-		"Bad stream type (%d) in VerifyIOHandle.\n",
-		fileIDPtr->type);
-	return((FsHandleHeader *)NIL);
-    } else {
-	fileIDPtr->type = fsRmtToLclType[fileIDPtr->type];
-    }
-    return(FsHandleFetch(fileIDPtr));
 }

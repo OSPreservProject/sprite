@@ -20,32 +20,30 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsFile.h"
-#include "fsSpriteDomain.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsrmtInt.h"
 #include "fsNameOps.h"
-#include "fsPrefix.h"
-#include "fsBlockCache.h"
-#include "fsConsist.h"
-#include "fsOpTable.h"
-#include "fsTrace.h"
-#include "fsDebug.h"
-#include "fsStream.h"
+#include "fsprefix.h"
+#include "fscache.h"
+#include "fsconsist.h"
+#include "fsutilTrace.h"
+#include "fsioFile.h"
 #include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
 #include "vm.h"
 #include "dbg.h"
 
-void FsRpcCacheUnlockBlock();
+void FsrmtRpcCacheUnlockBlock();
 
-Boolean fsRpcDebug = FALSE;
+Boolean fsrmt_RpcDebug = FALSE;
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FsRemoteRead --
+ * Fsrmt_Read --
  *
  *	Read data from a remote file/device/pipe/etc.
  *	This routine is in charge of breaking the request up into pieces
@@ -65,18 +63,18 @@ Boolean fsRpcDebug = FALSE;
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteRead(streamPtr, readPtr, waitPtr, replyPtr)
+Fsrmt_Read(streamPtr, readPtr, waitPtr, replyPtr)
     Fs_Stream	*streamPtr;		/* Stream to Remote I/O handle. */
     Fs_IOParam		*readPtr;	/* Read parameter block. */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any,
 					 * plus the amount read. */
 {
-    register FsRemoteIOHandle *rmtHandlePtr =
-	    (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
+    register Fsrmt_IOHandle *rmtHandlePtr =
+	    (Fsrmt_IOHandle *)streamPtr->ioHandlePtr;
     ReturnStatus 	status;
     Rpc_Storage 	storage;
-    FsRemoteIOParam	readParams;
+    FsrmtIOParam	readParams;
     register Boolean	userSpace;
     int			amountRead;
     register Address	readBufferPtr;
@@ -160,15 +158,15 @@ FsRemoteRead(streamPtr, readPtr, waitPtr, replyPtr)
 	    }
 	} else if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	    status == RPC_SERVICE_DISABLED) {
-	    FsWantRecovery((FsHandleHeader *)rmtHandlePtr);
+	    Fsutil_WantRecovery((Fs_HandleHeader *)rmtHandlePtr);
 	    break;
 	} else {
 	    break;
 	}
     }
     replyPtr->length = amountRead;
-    FsStat_Add(amountRead, fsStats.gen.remoteBytesRead,
-	       fsStats.gen.remoteReadOverflow);
+    Fs_StatAdd(amountRead, fs_Stats.gen.remoteBytesRead,
+	       fs_Stats.gen.remoteReadOverflow);
     if (userSpace) {
 	free(readBufferPtr);
     }
@@ -178,7 +176,7 @@ FsRemoteRead(streamPtr, readPtr, waitPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcRead --
+ * Fsrmt_RpcRead --
  *
  *	Service stub for the RPC_FS_READ call.  This verifies the client
  *	and uses the stream read routine to get data.
@@ -200,7 +198,7 @@ FsRemoteRead(streamPtr, readPtr, waitPtr, replyPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcRead(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
     ClientData		srvToken;	/* Handle for the server process */
     int			clientID;	/* Sprite ID of client host */
     int			command;	/* IGNORED */
@@ -210,8 +208,8 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
 					 * indicate the size and location of
 					 * the read reply. */
 {
-    register FsRemoteIOParam	*paramsPtr;
-    register FsHandleHeader	*hdrPtr;
+    register FsrmtIOParam	*paramsPtr;
+    register Fs_HandleHeader	*hdrPtr;
     register Fs_Stream		*streamPtr;
     ReturnStatus	status;
     Rpc_ReplyMem	*replyMemPtr;	/* For call-back to free buffer */
@@ -222,21 +220,21 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
     Proc_PID		origFamilyID, origPID;
 #endif
 
-    paramsPtr = (FsRemoteIOParam *)storagePtr->requestParamPtr;
+    paramsPtr = (FsrmtIOParam *)storagePtr->requestParamPtr;
 
     /*
      * Fetch the handle for the file and verify the client.
      */
-    hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
+    hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
 		(&paramsPtr->fileID, clientID, (int *)NIL);
-    if (hdrPtr == (FsHandleHeader *) NIL) {
-	printf("Fs_RpcRead, no handle <%d,%d> client %d\n",
+    if (hdrPtr == (Fs_HandleHeader *) NIL) {
+	printf("Fsrmt_RpcRead, no handle <%d,%d> client %d\n",
 		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
 	return(FS_STALE_HANDLE);
     }
-    FsHandleUnlock(hdrPtr);
+    Fsutil_HandleUnlock(hdrPtr);
 
-    if (hdrPtr->fileID.type == FS_LCL_FILE_STREAM &&
+    if (hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM &&
 	paramsPtr->io.length == FS_BLOCK_SIZE &&
 	(paramsPtr->io.offset & FS_BLOCK_OFFSET_MASK) == 0) {
 	/*
@@ -245,18 +243,18 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
 	 * Stream read interface so it is left as a wart here instead of
 	 * permeating the whole interface.
 	 */
-	FsCacheBlock	*cacheBlockPtr;	/* Direct reference to cache block */
-	FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+	Fscache_Block	*cacheBlockPtr;	/* Direct reference to cache block */
+	Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
 	int lengthRead = 0;
 
-	status = FsCacheBlockRead(&handlePtr->cacheInfo,
+	status = Fscache_BlockRead(&handlePtr->cacheInfo,
 				  paramsPtr->io.offset / FS_BLOCK_SIZE,
 				  &cacheBlockPtr, &lengthRead, 
-				  FS_DATA_CACHE_BLOCK, FALSE);
-	if (cacheBlockPtr != (FsCacheBlock *)NIL) {
+				  FSCACHE_DATA_BLOCK, FALSE);
+	if (cacheBlockPtr != (Fscache_Block *)NIL) {
 	    storagePtr->replyDataPtr = cacheBlockPtr->blockAddr;
 	    storagePtr->replyDataSize = lengthRead;
-	    callBack = (int(*)())FsRpcCacheUnlockBlock;
+	    callBack = (int(*)())FsrmtRpcCacheUnlockBlock;
 	    clientData = (ClientData)cacheBlockPtr;
 	} else {
 	    /*
@@ -295,19 +293,19 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
 	 * we need to use the offset in it, and then call the stream
 	 * type read routine.
 	 */
-	streamPtr = FsStreamClientVerify(&paramsPtr->streamID, clientID);
+	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
 	if (streamPtr == (Fs_Stream *)NIL) {
 	    status = FS_STALE_HANDLE;
 	} else {
-	    FsHandleUnlock(streamPtr);
+	    Fsutil_HandleUnlock(streamPtr);
 	    if (paramsPtr->io.flags & FS_RMT_SHARED) {
 		paramsPtr->io.offset = streamPtr->offset;
 	    }
-	    status = (fsStreamOpTable[hdrPtr->fileID.type].read)(streamPtr,
+	    status = (fsio_StreamOpTable[hdrPtr->fileID.type].read)(streamPtr,
 			    &paramsPtr->io, &paramsPtr->waiter, replyPtr);
 	    streamPtr->offset = paramsPtr->io.offset + replyPtr->length;
-	    FsHandleLock(streamPtr);
-	    FsHandleRelease(streamPtr, TRUE);
+	    Fsutil_HandleLock(streamPtr);
+	    Fsutil_HandleRelease(streamPtr, TRUE);
 	}
 
 	if (status == SUCCESS || status == FS_WOULD_BLOCK) {
@@ -329,8 +327,8 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
 	procPtr->processID = origPID;
 #endif
     }
-    FsHandleRelease(hdrPtr, FALSE);
-    FS_RPC_DEBUG_PRINT1("Fs_RpcRead: Returning %x\n", status);
+    Fsutil_HandleRelease(hdrPtr, FALSE);
+    FSRMT_RPC_DEBUG_PRINT1("Fsrmt_RpcRead: Returning %x\n", status);
     if (status == SUCCESS || status == FS_WOULD_BLOCK) {
 	Rpc_Reply(srvToken, status, storagePtr, callBack, clientData);
 	return(SUCCESS);
@@ -342,7 +340,7 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsRpcCacheUnlockBlock --
+ * FsrmtRpcCacheUnlockBlock --
  *
  *	A call-back to release a cache block after a successful read RPC.
  *
@@ -355,17 +353,17 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
  *----------------------------------------------------------------------
  */
 void
-FsRpcCacheUnlockBlock(cacheBlockPtr)
-    FsCacheBlock *cacheBlockPtr;
+FsrmtRpcCacheUnlockBlock(cacheBlockPtr)
+    Fscache_Block *cacheBlockPtr;
 {
-    FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 }
 
 
 
 /*----------------------------------------------------------------------
  *
- * FsRemoteWrite --
+ * Fsrmt_Write --
  *
  *      Write to a remote Sprite file, device, or pipe.  This is in charge
  *	of breaking the write up into pieces that the RPC system can handle.
@@ -380,17 +378,17 @@ FsRpcCacheUnlockBlock(cacheBlockPtr)
  */
 
 ReturnStatus
-FsRemoteWrite(streamPtr, writePtr, waitPtr, replyPtr)
+Fsrmt_Write(streamPtr, writePtr, waitPtr, replyPtr)
     Fs_Stream		*streamPtr;	/* Open stream to a remote thing */
     Fs_IOParam		*writePtr;	/* Read parameter block */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     Fs_IOReply		*replyPtr;	/* Signal to return, if any */
 {
-    register FsRemoteIOHandle *rmtHandlePtr =
-	    (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
+    register Fsrmt_IOHandle *rmtHandlePtr =
+	    (Fsrmt_IOHandle *)streamPtr->ioHandlePtr;
     ReturnStatus 	status;
     Rpc_Storage 	storage;
-    FsRemoteIOParam	writeParams;
+    FsrmtIOParam	writeParams;
     int			amountWritten;	/* Total amount written */
     register int	writeLen;	/* Amount to write each RPC */
     register Boolean	userSpace = writePtr->flags & FS_USER;
@@ -400,7 +398,7 @@ FsRemoteWrite(streamPtr, writePtr, waitPtr, replyPtr)
      * If we are in write-back-on-last-dirty-block mode then mark this
      * block specially.
      */
-    if (fsWBOnLastDirtyBlock && (writePtr->flags & FS_LAST_DIRTY_BLOCK)) {
+    if (fsutil_WBOnLastDirtyBlock && (writePtr->flags & FS_LAST_DIRTY_BLOCK)) {
 	writePtr->flags |= FS_WB_ON_LDB;
     }
     /*
@@ -471,15 +469,15 @@ FsRemoteWrite(streamPtr, writePtr, waitPtr, replyPtr)
 	    }
 	} else if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	    status == RPC_SERVICE_DISABLED) {
-	    FsWantRecovery((FsHandleHeader *)rmtHandlePtr);
+	    Fsutil_WantRecovery((Fs_HandleHeader *)rmtHandlePtr);
 	    break;
 	} else {
 	    break;
 	}
     }
     replyPtr->length = amountWritten;
-    FsStat_Add(amountWritten, fsStats.gen.remoteBytesWritten,
-	       fsStats.gen.remoteWriteOverflow);
+    Fs_StatAdd(amountWritten, fs_Stats.gen.remoteBytesWritten,
+	       fs_Stats.gen.remoteWriteOverflow);
     if (userSpace) {
 	free(writeBufferPtr);
     }
@@ -489,7 +487,7 @@ FsRemoteWrite(streamPtr, writePtr, waitPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcWrite --
+ * Fsrmt_RpcWrite --
  *
  *	Server stub for the FS_RPC_WRITE call.  This verifies the client
  *	and then calls the stream-type write routine.
@@ -506,7 +504,7 @@ FsRemoteWrite(streamPtr, writePtr, waitPtr, replyPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcWrite(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
 					 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
@@ -519,24 +517,24 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 				 	 * pointers and 0 for the lengths.  
 					 * This can be passed to Rpc_Reply */
 {
-    register FsHandleHeader	 *hdrPtr;
-    register FsRemoteIOParam	*paramsPtr;
+    register Fs_HandleHeader	 *hdrPtr;
+    register FsrmtIOParam	*paramsPtr;
     register Fs_Stream		*streamPtr;
     Fs_Stream			dummyStream;
     Fs_IOReply			*replyPtr;
     ReturnStatus		 status;
     Rpc_ReplyMem		*replyMemPtr;
 
-    paramsPtr = (FsRemoteIOParam *) storagePtr->requestParamPtr;
+    paramsPtr = (FsrmtIOParam *) storagePtr->requestParamPtr;
 
-    hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
+    hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
 		(&paramsPtr->fileID, clientID, (int *)NIL);
-    if (hdrPtr == (FsHandleHeader *) NIL) {
-	printf( "Fs_RpcWrite, stale handle <%d,%d> client %d\n",
+    if (hdrPtr == (Fs_HandleHeader *) NIL) {
+	printf( "Fsrmt_RpcWrite, stale handle <%d,%d> client %d\n",
 		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
 	return(FS_STALE_HANDLE);
     }
-    FsHandleUnlock(hdrPtr);
+    Fsutil_HandleUnlock(hdrPtr);
 
     replyPtr = mnew(Fs_IOReply);
     replyPtr->length = 0;
@@ -548,25 +546,25 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 	dummyStream.ioHandlePtr = hdrPtr;
 	streamPtr = &dummyStream;
     } else {
-	streamPtr = FsStreamClientVerify(&paramsPtr->streamID, clientID);
+	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
     }
     if (streamPtr == (Fs_Stream *)NIL) {
 	status = FS_STALE_HANDLE;
     } else {
 	if (streamPtr != &dummyStream) {
-	    FsHandleUnlock(streamPtr);
+	    Fsutil_HandleUnlock(streamPtr);
 	}
 	if (paramsPtr->io.flags & FS_RMT_SHARED) {
 	    paramsPtr->io.offset = streamPtr->offset;
 	}
-	FS_TRACE_IO(FS_TRACE_SRV_WRITE_2, hdrPtr->fileID, paramsPtr->io.offset,
+	FSUTIL_TRACE_IO(FSUTIL_TRACE_SRV_WRITE_2, hdrPtr->fileID, paramsPtr->io.offset,
 		    paramsPtr->io.length );
 	paramsPtr->io.buffer = storagePtr->requestDataPtr;
-	status = (fsStreamOpTable[hdrPtr->fileID.type].write)(streamPtr,
+	status = (fsio_StreamOpTable[hdrPtr->fileID.type].write)(streamPtr,
 		    &paramsPtr->io, &paramsPtr->waiter, replyPtr);
 	if (streamPtr != &dummyStream) {
-	    FsHandleLock(streamPtr);
-	    FsHandleRelease(streamPtr, TRUE);
+	    Fsutil_HandleLock(streamPtr);
+	    Fsutil_HandleRelease(streamPtr, TRUE);
 	}
     }
     if (status == SUCCESS && (paramsPtr->io.flags & FS_LAST_DIRTY_BLOCK)) {
@@ -574,40 +572,40 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 	 * This is done here because the regular file write routine doesn't
 	 * know what client is doing the write.
 	 */
-	if (hdrPtr->fileID.type != FS_LCL_FILE_STREAM) {
-	    printf("Fs_RpcWrite, lastDirtyBlock flag on bad stream type (%d)\n",
+	if (hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
+	    printf("Fsrmt_RpcWrite, lastDirtyBlock flag on bad stream type (%d)\n",
 		    hdrPtr->fileID.type);
 	} else {
-	    FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
-	    FS_TRACE_HANDLE(FS_TRACE_DEL_LAST_WR, hdrPtr);
-	    FsDeleteLastWriter(&handlePtr->consist, clientID);
+	    Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
+	    FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_DEL_LAST_WR, hdrPtr);
+	    Fsconsist_DeleteLastWriter(&handlePtr->consist, clientID);
 	    if (paramsPtr->io.flags & FS_WB_ON_LDB) {
 		Boolean	blocksSkipped;
 		/*
 		 * Force out all data, indirect and descriptor blocks
 		 * for this file.
 		 */
-		status = FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
-					FS_LAST_BLOCK,
-					FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT,
+		status = Fscache_FileWriteBack(&handlePtr->cacheInfo, 0, 
+					FSCACHE_LAST_BLOCK,
+					FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT,
 				        &blocksSkipped);
 		if (status != SUCCESS) {
-		    printf("Fs_RpcWrite: write back <%d,%d> \"%s\" err <%x>\n",
+		    printf("Fsrmt_RpcWrite: write back <%d,%d> \"%s\" err <%x>\n",
 			handlePtr->hdr.fileID.major,
 			handlePtr->hdr.fileID.minor,
-			FsHandleName(handlePtr), status);
+			Fsutil_HandleName(handlePtr), status);
 		}
-		status = FsWriteBackDesc(handlePtr, TRUE);
+		status = Fsdm_FileDescWriteBack(handlePtr, TRUE);
 		if (status != SUCCESS) {
-		    printf("Fs_RpcWrite: desc write <%d,%d> \"%s\" err <%x>\n",
+		    printf("Fsrmt_RpcWrite: desc write <%d,%d> \"%s\" err <%x>\n",
 			handlePtr->hdr.fileID.major,
 			handlePtr->hdr.fileID.minor,
-			FsHandleName(handlePtr), status);
+			Fsutil_HandleName(handlePtr), status);
 		}
 	    }
 	}
     }
-    FsHandleRelease(hdrPtr, FALSE);
+    Fsutil_HandleRelease(hdrPtr, FALSE);
 
     storagePtr->replyParamPtr = (Address)replyPtr;
     storagePtr->replyParamSize = sizeof(Fs_IOReply);
@@ -641,7 +639,7 @@ typedef struct FsRemoteSelectResults {
 /*
  *----------------------------------------------------------------------
  *
- * FsRemoteSelect --
+ * Fsrmt_Select --
  *
  *	Select on a remote file/device/pipe.  This does an RPC to the
  *	I/O server which invokes a stream-specific select routine.
@@ -655,8 +653,8 @@ typedef struct FsRemoteSelectResults {
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
-    FsHandleHeader	*hdrPtr;	/* Handle from stream to select */
+Fsrmt_Select(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    Fs_HandleHeader	*hdrPtr;	/* Handle from stream to select */
     Sync_RemoteWaiter	*waitPtr;	/* Information for remote waiting. */
     int      		*readPtr;	/* In/Out read ability */
     int      		*writePtr;	/* In/Out write ability */
@@ -667,7 +665,7 @@ FsRemoteSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
     FsRemoteSelectParams	selectParams;
     FsRemoteSelectResults	selectResults;
 
-    FS_RPC_DEBUG_PRINT("FsRemoteSelect: Selecting file\n");
+    FSRMT_RPC_DEBUG_PRINT("Fsrmt_Select: Selecting file\n");
 
     selectParams.fileID = hdrPtr->fileID;
     selectParams.read = *readPtr;
@@ -700,7 +698,7 @@ FsRemoteSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	 * recovery will be done on it, and part of that will be
 	 * to notify the handle's wait lists, which is were we may be.
 	 */
-	FsWantRecovery(hdrPtr);
+	Fsutil_WantRecovery(hdrPtr);
     } else {
 	*readPtr = selectResults.read;
 	*writePtr = selectResults.write;
@@ -713,7 +711,7 @@ FsRemoteSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcSelectStub --
+ * Fsrmt_RpcSelectStub --
  *
  *	The service stub for RPC_FS_SELECT.
  *
@@ -729,7 +727,7 @@ FsRemoteSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcSelectStub(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
     int clientID;		/* Sprite ID of client host */
@@ -743,21 +741,21 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
 {
     register	FsRemoteSelectParams	*paramsPtr;
     register	FsRemoteSelectResults	*resultsPtr;
-    register	FsHandleHeader		*hdrPtr;
+    register	Fs_HandleHeader		*hdrPtr;
     register	Rpc_ReplyMem		*replyMemPtr;
     register	Sync_RemoteWaiter	*waitPtr;
     ReturnStatus			status;
 
-    FS_RPC_DEBUG_PRINT("RPC select request\n");
+    FSRMT_RPC_DEBUG_PRINT("RPC select request\n");
 
     paramsPtr = (FsRemoteSelectParams *)storagePtr->requestParamPtr;
 
-    hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
+    hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
 	(&paramsPtr->fileID, clientID, (int *)NIL);
-    if (hdrPtr == (FsHandleHeader *) NIL) {
+    if (hdrPtr == (Fs_HandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     }
-    FsHandleUnlock(hdrPtr);
+    Fsutil_HandleUnlock(hdrPtr);
     if (paramsPtr->waiter.hostID == NIL) {
 	/*
 	 * Indicate a polling select.
@@ -766,10 +764,10 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
     } else {
 	waitPtr = &paramsPtr->waiter;
     }
-    status = (*fsStreamOpTable[paramsPtr->fileID.type].select)
+    status = (*fsio_StreamOpTable[paramsPtr->fileID.type].select)
 	(hdrPtr, waitPtr, &paramsPtr->read,
 	 &paramsPtr->write, &paramsPtr->except);
-    FsHandleRelease(hdrPtr, FALSE);
+    Fsutil_HandleRelease(hdrPtr, FALSE);
     if (status == SUCCESS) {
 	resultsPtr = mnew(FsRemoteSelectResults);
 	resultsPtr->read = paramsPtr->read;
@@ -793,7 +791,7 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsRemoteIOControl --
+ * Fsrmt_IOControl --
  *
  *	Client stub for RPC_FS_IOCONTROL.
  *	Do a special operation on a remote Sprite file/device/pipe/etc.
@@ -807,17 +805,17 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr)
+Fsrmt_IOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream	*streamPtr;
     Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
     Fs_IOReply *replyPtr;		/* Return length and signal */
 {
-    register FsHandleHeader	*hdrPtr = streamPtr->ioHandlePtr;
-    FsSpriteIOCParams		params;
+    register Fs_HandleHeader	*hdrPtr = streamPtr->ioHandlePtr;
+    FsrmtIOCParam		params;
     ReturnStatus		status;
     Rpc_Storage			storage;
 
-    FS_RPC_DEBUG_PRINT("FsRemoteIOControl\n");
+    FSRMT_RPC_DEBUG_PRINT("Fsrmt_IOControl\n");
 	
     params.fileID = hdrPtr->fileID;
     params.streamID = streamPtr->hdr.fileID;
@@ -830,7 +828,7 @@ FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr)
     params.uid = ioctlPtr->uid;
 
     storage.requestParamPtr = (Address)&params;
-    storage.requestParamSize = sizeof(FsSpriteIOCParams);
+    storage.requestParamSize = sizeof(FsrmtIOCParam);
     storage.requestDataPtr = (Address) ioctlPtr->inBuffer;
     storage.requestDataSize = ioctlPtr->inBufSize;
     storage.replyParamPtr = (Address)replyPtr;
@@ -841,7 +839,7 @@ FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr)
     status = Rpc_Call(hdrPtr->fileID.serverID, RPC_FS_IO_CONTROL, &storage);
     if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	status == RPC_SERVICE_DISABLED) {
-	FsWantRecovery(hdrPtr);
+	Fsutil_WantRecovery(hdrPtr);
     }
 
     return(status);
@@ -850,7 +848,7 @@ FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcIOControl --
+ * Fsrmt_RpcIOControl --
  *
  *	Service stub for RPC_FS_IOCONTROL.
  *
@@ -866,7 +864,7 @@ FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
     int clientID;		/* Sprite ID of client host */
@@ -878,8 +876,8 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-    register	FsSpriteIOCParams	*paramsPtr;
-    register	FsHandleHeader		*hdrPtr;
+    register	FsrmtIOCParam	*paramsPtr;
+    register	Fs_HandleHeader		*hdrPtr;
     register	Fs_Stream		*streamPtr;
     register	Rpc_ReplyMem		*replyMemPtr;
     ReturnStatus			status;
@@ -887,33 +885,33 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
     Fs_IOCParam				ioctl;
     Fs_IOReply				*replyPtr;
 
-    paramsPtr = (FsSpriteIOCParams *)storagePtr->requestParamPtr;
+    paramsPtr = (FsrmtIOCParam *)storagePtr->requestParamPtr;
 
-    streamPtr = FsStreamClientVerify(&paramsPtr->streamID, clientID);
+    streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
     if (streamPtr == (Fs_Stream *)NIL) {
-	printf( "Fs_RpcIOControl, no stream to %s <%d, %d>\n",
-		FsFileTypeToString(paramsPtr->fileID.type),
+	printf( "Fsrmt_RpcIOControl, no stream to %s <%d, %d>\n",
+		Fsutil_FileTypeToString(paramsPtr->fileID.type),
 		paramsPtr->fileID.major, paramsPtr->fileID.minor);
 	return(FS_STALE_HANDLE);
     }
-    FsHandleRelease(streamPtr, TRUE);
+    Fsutil_HandleRelease(streamPtr, TRUE);
 
-    hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
+    hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
 		(&paramsPtr->fileID, clientID, (int *)NIL);
-    if (hdrPtr == (FsHandleHeader *)NIL) {
+    if (hdrPtr == (Fs_HandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     } else if (streamPtr->ioHandlePtr != hdrPtr) {
-	    printf( "Fs_RpcIOControl: Stream/handle mis-match\n");
+	    printf( "Fsrmt_RpcIOControl: Stream/handle mis-match\n");
 	    printf("Stream <%d, %d, %d> => %s I/O <%d, %d, %d>\n",
 		paramsPtr->streamID.serverID, paramsPtr->streamID.major,
 		paramsPtr->streamID.minor,
-		FsFileTypeToString(paramsPtr->fileID.type),
+		Fsutil_FileTypeToString(paramsPtr->fileID.type),
 		paramsPtr->fileID.serverID, paramsPtr->fileID.major,
 		paramsPtr->fileID.minor);
-	    FsHandleRelease(hdrPtr, TRUE);
+	    Fsutil_HandleRelease(hdrPtr, TRUE);
 	    return(FS_STALE_HANDLE);
     }
-    FsHandleUnlock(hdrPtr);
+    Fsutil_HandleUnlock(hdrPtr);
 
     if (paramsPtr->outBufSize != 0) {
 	outBufPtr = (Address)malloc(paramsPtr->outBufSize);
@@ -937,17 +935,17 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
     replyPtr->signal = 0;
     replyPtr->code = 0;
 
-    status = (*fsStreamOpTable[hdrPtr->fileID.type].ioControl)(streamPtr,
+    status = (*fsio_StreamOpTable[hdrPtr->fileID.type].ioControl)(streamPtr,
 		&ioctl, replyPtr);
 #ifdef lint
-    status = FsFileIOControl(streamPtr, &ioctl, replyPtr);
-    status = FsPipeIOControl(streamPtr, &ioctl, replyPtr);
-    status = FsDeviceIOControl(streamPtr, &ioctl, replyPtr);
-    status = FsPseudoStreamIOControl(streamPtr, &ioctl, replyPtr);
+    status = Fsio_FileIOControl(streamPtr, &ioctl, replyPtr);
+    status = Fsio_PipeIOControl(streamPtr, &ioctl, replyPtr);
+    status = Fsio_DeviceIOControl(streamPtr, &ioctl, replyPtr);
+    status = FspdevPseudoStreamIOControl(streamPtr, &ioctl, replyPtr);
 #endif /* lint */
-    FsHandleRelease(hdrPtr, FALSE);
+    Fsutil_HandleRelease(hdrPtr, FALSE);
 
-    FS_RPC_DEBUG_PRINT1("Fs_RpcIOControl returns <%x>\n", status);
+    FSRMT_RPC_DEBUG_PRINT1("Fsrmt_RpcIOControl returns <%x>\n", status);
 
     if ((replyPtr->length == 0) && (outBufPtr != (Address)NIL)) {
 	free((Address) outBufPtr);
@@ -970,7 +968,7 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsRemoteBlockCopy --
+ * Fsrmt_BlockCopy --
  *
  *	Copy the file system block from the source to the destination file.
  *	This only works for remote file handles as this is only used
@@ -986,30 +984,30 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
  */
 
 ReturnStatus
-FsRemoteBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
-    FsHandleHeader	*srcHdrPtr;	/* Source file handle. */
-    FsHandleHeader	*dstHdrPtr;	/* Dest file handle. */
+Fsrmt_BlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
+    Fs_HandleHeader	*srcHdrPtr;	/* Source file handle. */
+    Fs_HandleHeader	*dstHdrPtr;	/* Dest file handle. */
     int			blockNum;	/* Block to copy. */
 {
     ReturnStatus 		status;
-    FsRemoteBlockCopyParams	params;
+    FsrmtBlockCopyParam	params;
     Rpc_Storage 		storage;
-    FsRmtFileIOHandle		*srcHandlePtr;
-    FsRmtFileIOHandle		*dstHandlePtr;
+    Fsrmt_FileIOHandle		*srcHandlePtr;
+    Fsrmt_FileIOHandle		*dstHandlePtr;
 
-    if (srcHdrPtr->fileID.type != FS_RMT_FILE_STREAM) {
-	panic( "FsRemoteBlockCopy, bad stream type <%d>\n",
+    if (srcHdrPtr->fileID.type != FSIO_RMT_FILE_STREAM) {
+	panic( "Fsrmt_BlockCopy, bad stream type <%d>\n",
 	    srcHdrPtr->fileID.type);
     } else {
-	srcHandlePtr = (FsRmtFileIOHandle *)srcHdrPtr;
-	dstHandlePtr = (FsRmtFileIOHandle *)dstHdrPtr;
+	srcHandlePtr = (Fsrmt_FileIOHandle *)srcHdrPtr;
+	dstHandlePtr = (Fsrmt_FileIOHandle *)dstHdrPtr;
     }
 
     params.srcFileID = srcHdrPtr->fileID;
     params.destFileID = dstHdrPtr->fileID;
     params.blockNum = blockNum;
     storage.requestParamPtr = (Address)&params;
-    storage.requestParamSize = sizeof(FsRemoteBlockCopyParams);
+    storage.requestParamSize = sizeof(FsrmtBlockCopyParam);
     storage.requestDataPtr = (Address)NIL;
     storage.requestDataSize = 0;
     storage.replyParamPtr = (Address)NIL;
@@ -1020,8 +1018,8 @@ FsRemoteBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
     status = Rpc_Call(srcHdrPtr->fileID.serverID, RPC_FS_COPY_BLOCK, &storage);
     if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	status == RPC_SERVICE_DISABLED) {
-	FsWantRecovery((FsHandleHeader *)srcHandlePtr);
-	FsWantRecovery((FsHandleHeader *)dstHandlePtr);
+	Fsutil_WantRecovery((Fs_HandleHeader *)srcHandlePtr);
+	Fsutil_WantRecovery((Fs_HandleHeader *)dstHandlePtr);
     }
     return(status);
 }
@@ -1030,9 +1028,9 @@ FsRemoteBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcBlockCopy --
+ * Fsrmt_RpcBlockCopy --
  *
- *	Service stub for FsRemoteBlockCopy.
+ *	Service stub for Fsrmt_BlockCopy.
  *
  * Results:
  *	If this procedure returns SUCCESS then a reply has been sent to
@@ -1046,7 +1044,7 @@ FsRemoteBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcBlockCopy(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcBlockCopy(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
     int clientID;		/* Sprite ID of client host */
@@ -1058,35 +1056,39 @@ Fs_RpcBlockCopy(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-    register	FsRemoteBlockCopyParams	*paramsPtr;
-    register	FsHandleHeader		*srcHdrPtr;
-    register	FsHandleHeader		*dstHdrPtr;
+    register	FsrmtBlockCopyParam	*paramsPtr;
+    register	Fs_HandleHeader		*srcHdrPtr;
+    register	Fs_HandleHeader		*dstHdrPtr;
     ReturnStatus			status;
+    Fscache_IOProcs	        *ioProcsPtr;
 
-    FS_RPC_DEBUG_PRINT("RPC block copy request\n");
+    FSRMT_RPC_DEBUG_PRINT("RPC block copy request\n");
 
-    paramsPtr = (FsRemoteBlockCopyParams *)storagePtr->requestParamPtr;
+    paramsPtr = (FsrmtBlockCopyParam *)storagePtr->requestParamPtr;
 
     /*
      * Fetch the source and dest handles.  We know that they won't go away
      * while we are using them because of the way swap files are handled.
      */
-    dstHdrPtr = (*fsStreamOpTable[paramsPtr->destFileID.type].clientVerify)
+    dstHdrPtr = (*fsio_StreamOpTable[paramsPtr->destFileID.type].clientVerify)
 		(&paramsPtr->destFileID, clientID, (int *)NIL);
-    if (dstHdrPtr == (FsHandleHeader *)NIL) {
+    if (dstHdrPtr == (Fs_HandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }
-    FsHandleRelease(dstHdrPtr, TRUE);
+    Fsutil_HandleRelease(dstHdrPtr, TRUE);
 
-    srcHdrPtr = (*fsStreamOpTable[paramsPtr->srcFileID.type].clientVerify)
+    srcHdrPtr = (*fsio_StreamOpTable[paramsPtr->srcFileID.type].clientVerify)
 		(&paramsPtr->srcFileID, clientID, (int *)NIL);
-    if (srcHdrPtr == (FsHandleHeader *)NIL) {
+    if (srcHdrPtr == (Fs_HandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }
+    ioProcsPtr = (dstHdrPtr->fileID.type == FSIO_LCL_FILE_STREAM) ? 
+		(((Fsio_FileIOHandle *) dstHdrPtr)->cacheInfo.ioProcsPtr) :
+		(((Fsrmt_FileIOHandle *) dstHdrPtr)->cacheInfo.ioProcsPtr);
 
-    status = (*fsStreamOpTable[dstHdrPtr->fileID.type].blockCopy)
-		(srcHdrPtr, dstHdrPtr, paramsPtr->blockNum);
-    FsHandleRelease(srcHdrPtr, TRUE);
+
+    status = (ioProcsPtr->blockCopy)(srcHdrPtr, dstHdrPtr, paramsPtr->blockNum);
+    Fsutil_HandleRelease(srcHdrPtr, TRUE);
 
     Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL, (ClientData)NIL);
     return(SUCCESS);
@@ -1103,7 +1105,7 @@ typedef struct FsDomainInfoResults {
 /*
  *----------------------------------------------------------------------
  *
- * FsRemoteDomainInfo --
+ * Fsrmt_DomainInfo --
  *
  *	Return information about the given domain.
  *
@@ -1116,7 +1118,7 @@ typedef struct FsDomainInfoResults {
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteDomainInfo(fileIDPtr, domainInfoPtr)
+Fsrmt_DomainInfo(fileIDPtr, domainInfoPtr)
     Fs_FileID		*fileIDPtr;
     Fs_DomainInfo	*domainInfoPtr;	
 {
@@ -1141,21 +1143,21 @@ retry:
     if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	status == RPC_SERVICE_DISABLED) {
 	/*
-	 * Wait for recovery here, instead of higher up in FsDomainInfo.
+	 * Wait for recovery here, instead of higher up in Fsutil_DomainInfo.
 	 * This is because the server-side stub can't check against
-	 * stale handle conditions, so it always calls FsDomainInfo.
+	 * stale handle conditions, so it always calls Fsutil_DomainInfo.
 	 * We don't want to ever wait for recovery on the server,
 	 * so we do it here where we know we are a client.
 	 */
-	FsHandleHeader *hdrPtr;
-	hdrPtr = FsHandleFetch(fileIDPtr);
-	if (hdrPtr == (FsHandleHeader *)NIL) {
-	    printf("FsRemoteDomainInfo: Can't fetch <%d,%d,%d,%d>\n",
+	Fs_HandleHeader *hdrPtr;
+	hdrPtr = Fsutil_HandleFetch(fileIDPtr);
+	if (hdrPtr == (Fs_HandleHeader *)NIL) {
+	    printf("Fsrmt_DomainInfo: Can't fetch <%d,%d,%d,%d>\n",
 		    fileIDPtr->type, fileIDPtr->serverID,
 		    fileIDPtr->major, fileIDPtr->minor);
 	} else {
-	    FsHandleUnlock(hdrPtr);
-	    FsWantRecovery(hdrPtr);
+	    Fsutil_HandleUnlock(hdrPtr);
+	    Fsutil_WantRecovery(hdrPtr);
 #ifdef notdef
 	    /*
 	     * We don't wait for recovery because that hangs getwd(),
@@ -1163,9 +1165,9 @@ retry:
 	     * handle as needing recovery, however, so recovery will
 	     * happen eventually.
 	     */
-	    printf("FsRemoteDomainInfo: waiting for recovery <%d,%d> server %d\n",
+	    printf("Fsrmt_DomainInfo: waiting for recovery <%d,%d> server %d\n",
 		    fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
-	    status = FsWaitForRecovery(hdrPtr, status);
+	    status = Fsutil_WaitForRecovery(hdrPtr, status);
 	    if (status == SUCCESS) {
 		goto retry;
 	    }
@@ -1183,7 +1185,7 @@ retry:
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcDomainInfo --
+ * Fsrmt_RpcDomainInfo --
  *
  *	Service stub for RPC_FS_DOMAIN_INFO.
  *
@@ -1193,14 +1195,14 @@ retry:
  *	returned and the main level sends back an error reply.
  *
  * Side effects:
- *	Calls the top-level FsDomainInfo routine to get information
+ *	Calls the top-level Fsutil_DomainInfo routine to get information
  *	about the domain.
  *
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcDomainInfo(srvToken, clientID, command, storagePtr)
+Fsrmt_RpcDomainInfo(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
     int clientID;		/* IGNORED */
@@ -1219,10 +1221,10 @@ Fs_RpcDomainInfo(srvToken, clientID, command, storagePtr)
 
     fileIDPtr = (Fs_FileID *)storagePtr->requestParamPtr;
     resultsPtr = mnew(FsDomainInfoResults);
-    fileIDPtr->type = FsMapRmtToLclType(fileIDPtr->type);
+    fileIDPtr->type = Fsio_MapRmtToLclType(fileIDPtr->type);
     resultsPtr->fileID = *fileIDPtr;
 
-    status = FsDomainInfo(&resultsPtr->fileID, &resultsPtr->domain);
+    status = Fsutil_DomainInfo(&resultsPtr->fileID, &resultsPtr->domain);
 
     storagePtr->replyParamPtr = (Address) resultsPtr;
     storagePtr->replyParamSize = sizeof(FsDomainInfoResults);

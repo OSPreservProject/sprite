@@ -1,5 +1,5 @@
 /*
- * fsDisk.h --
+ * fsdm.h --
  *
  *	Definitions related to the storage of a filesystem on a disk.
  *
@@ -10,27 +10,29 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _FSDISK
-#define _FSDISK
+#ifndef _FSDM
+#define _FSDM
 
 #include "dev.h"
+#include "fslcl.h"
+#include "fsioFile.h"
 
 /*
  * A disk is partitioned into domains that are managed separately.
  * Each domain takes up an even number of cylinders.
- * An array of FsDiskPartition's is kept on the disk to define how the
+ * An array of Fsdm_DiskPartition's is kept on the disk to define how the
  * disk is divided into domains.
  *
- * FS_NUM_DISK_PARTS defines how many different domains there could be
- *	on a disk.  Generally, not all the domains are defined.
+ * FSDM_NUM_DISK_PARTS defines how many different domains there could be
+ *	on a disk.  Generally, not all the domains are defined.  
  */
-#define FS_NUM_DISK_PARTS	8
+#define FSDM_NUM_DISK_PARTS	8
 
-typedef struct FsDiskPartition {
+typedef struct Fsdm_DiskPartition {
     int firstCylinder;	/* The first cylinder in the partition. */
     int numCylinders;	/* The number of cylinders in the partition.  Set
 			 * this to zero for unused partitions. */
-} FsDiskPartition;
+} Fsdm_DiskPartition;
 
 /*
  * The first few blocks of each domain are reserved.  They contain a copy
@@ -46,14 +48,14 @@ typedef struct FsDiskPartition {
  *      NOTE: we are temporarily using Sun's format of the Disk Header,
  *      not the following typedef.  Sun's label is defined in
  *      "../sun/sunDiskLabel.h".  We assume that sector zero contains a
- *      Sun format label, and the boot program starts at sector 1.
+ *      Sun format label, and the boot program starts at sector 1. 
  *	Sun3's read 16 boot sectors and Sun4's read 64.
  */
 
-#define FS_MAX_BOOT_SECTORS	128
-#define FS_BOOT_SECTOR_INC	16
+#define FSDM_MAX_BOOT_SECTORS	128
+#define FSDM_BOOT_SECTOR_INC	16
 
-typedef struct FsDiskHeader {
+typedef struct Fsdm_DiskHeader {
     char asciiLabel[128];	/* Human readable string used for manufacturer's
 				 * model number and redudant geometry info */
     /*
@@ -62,7 +64,7 @@ typedef struct FsDiskHeader {
      * how may integer fields there are in this struct.
      */
     char pad[DEV_BYTES_PER_SECTOR - 128 -
-	     (12 + FS_NUM_DISK_PARTS * 2) * sizeof(int)];
+	     (12 + FSDM_NUM_DISK_PARTS * 2) * sizeof(int)];
     unsigned int magic;		/* Magic number used for consistency check */
     int numCylinders;		/* The number of cylinders on the disk */
     int numAltCylinders;	/* # of alternates used for bad blocks */
@@ -79,13 +81,181 @@ typedef struct FsDiskHeader {
     int partition;		/* Index of the partition that this copy of
 				 * the Disk Header is on.  Each partition has
 				 * a copy of the Disk Header */
-    FsDiskPartition map[FS_NUM_DISK_PARTS];	/* Partition map */
+    Fsdm_DiskPartition map[FSDM_NUM_DISK_PARTS];	/* Partition map */
     int checkSum;		/* Checksum such that an XOR of all the ints
 				 * in the sector results in the same thing
 				 * as the magic number */
-} FsDiskHeader;
+} Fsdm_DiskHeader;
 
-#define FS_DISK_MAGIC	(unsigned int)0xD15CFEBA	/* 'disk fever' */
+#define FSDM_DISK_MAGIC	(unsigned int)0xD15CFEBA	/* 'disk fever' */
+
+
+/*
+ * FSDM_NUM_DOMAIN_SECTORS is the standard number of sectors taken
+ * up by the domain header.
+ */
+#define FSDM_NUM_DOMAIN_SECTORS	((sizeof(Fsdm_DomainHeader)-1) / DEV_BYTES_PER_SECTOR + 1)
+
+
+/*
+ * ONE sector of summary information is kept on disk.  This records things
+ * like the number of free blocks and free file descriptors.  This info
+ * is located just before the domain header.
+ */
+typedef struct Fsdm_SummaryInfo {
+    int		numFreeKbytes;		/* Free space in kbytes, not blocks */
+    int		numFreeFileDesc;	/* Number of free file descriptors */
+    int		state;			/* Unused. */
+    char	domainPrefix[64];	/* Last prefix used for the domain */
+    int		domainNumber;		/* The domain number of the domain
+					 * under which this file system was
+					 * last mounted. */
+    int		flags;			/* Flags defined below. */
+    int		attachSeconds;		/* Time the disk was attached */
+    int		detachSeconds;		/* Time the disk was off-lined.  This
+					 * is the fsutil_TimeInSeconds that the
+					 * system was shutdown or the disk
+					 * was detached.  If the domain is
+					 * marked NOT_SAFE then this field
+					 * is undefined, but attachTime is ok
+					 * as long as TIMES_VALID is set. */
+    int		fixCount;		/* Number of consecutive times that 
+					 * fscheck has found an error in this
+					 * domain. Used to prevent infinite
+					 * looping.
+					 */
+
+} Fsdm_SummaryInfo;
+
+/*
+ * Flags for summary info structure.
+ *	FSDM_DOMAIN_NOT_SAFE	Set during normal operation. This is unset
+ *		when we know we	are shutting down cleanly and the data
+ *		structures on the disk partition (domain) are ok.
+ *	FSDM_DOMAIN_ATTACHED_CLEAN	Set if the initial attach found the
+ *		disk marked 'safe'
+ *	FSDM_DOMAIN_TIMES_VALID	If set then the attach/detachSeconds fields
+ *		are valid.
+ */
+#define	FSDM_DOMAIN_NOT_SAFE		0x1
+#define FSDM_DOMAIN_ATTACHED_CLEAN	0x2
+#define	FSDM_DOMAIN_TIMES_VALID		0x4
+
+
+/*
+ * A File Descriptor is kept on disk for every file in a domain.  It
+ * contains administrative information and also the indexing structure
+ * used to access the file's data blocks.
+ */
+
+#define FSDM_NUM_DIRECT_BLOCKS	10
+#define FSDM_NUM_INDIRECT_BLOCKS	3
+#define	FSDM_INDICES_PER_BLOCK	1024
+
+#define FSDM_MAX_FILE_DESC_SIZE	128
+#define FSDM_FILE_DESC_PER_BLOCK	(FS_BLOCK_SIZE / FSDM_MAX_FILE_DESC_SIZE)
+
+typedef struct Fsdm_FileDescriptor {
+    unsigned short magic;/* FSDM_FD_MAGIC, for disk consistency check */
+    short flags;	/* FSDM_FD_FREE, FSDM_FD_ALLOC, FSDM_FD_RESERVED */
+    short fileType;	/* FS_REGULAR, FS_DIRECTORY, FS_PIPE, FS_DEVICE,
+			 * FS_SYMLINK, FS_RMTLINK */
+    short permissions;	/* 9 permission bits plus flags for set user ID
+			 * upon execution */
+    int uid;		/* ID of owner */
+    int gid;		/* Group ID of owner */
+    int lastByte;	/* The number of bytes in the file */
+    int lastByteXtra;	/* (Some day we may have 64 bit sizes?) */
+    int firstByte;	/* For named pipes, offset of the first valid byte */
+    int userType;	/* Information about what sort of user file it is. */
+    int numLinks;	/* Number of directory references to the file */
+    int devServerID;	/* ID of the host that controls the device */
+    short devType;	/* For devices, their type.  For others this is the
+			 * type of disk the file is stored on */
+    unsigned short devUnit;	/* For devices, their unit number.  For others,
+			 * the unit indicates the disk partition */
+    /*
+     * All times in seconds since Jan 1 1970, Greenwich time.
+     */
+
+    int createTime;	/* Time the file was created. */
+    int accessTime;	/* Time of last access.  This is not updated by
+			 * directory traversals. */
+    int descModifyTime;	/* Time of last modification to the file descriptor */
+    int dataModifyTime;	/* Time of last modification to the file data */
+
+    /*
+     * Pointers to the data blocks of the file.   The pointers are really
+     * indexes into the array of blocks stored in the data block section
+     * of a partition.  The direct array contains the indexes of the first
+     * several blocks of the files.  The indirect indexes are interpreted
+     * as follows.  The first indirect index is the index of a block that
+     * contains 1 K indexes of data blocks.  This is called a singly-indirect
+     * block.  The second indirect index is the index of a block that
+     * contains 1 K indexes of singly-indirect blocks.  This is called
+     * a doubly-indirect block.  Finally, the third indirect index is the index
+     * of a block that contains 1 K indexes of doubly-indirect blocks.
+     * Each data block contains 4Kbytes, so this indexing scheme supports
+     * files up to 40K + 4Meg + 4Gig + 4Pig bytes.
+     *
+     * The values of the direct and indirect indexes are indexes of
+     * fragments, ie. 1k pieces.  All the but the last index point to the
+     * beginning of a filesystem block, ie. 4K.  The last valid direct
+     * block may point to a fragment, and fragments can start on 1K
+     * boundaries.
+     */
+
+    int direct[FSDM_NUM_DIRECT_BLOCKS];
+    int indirect[FSDM_NUM_INDIRECT_BLOCKS];
+    int numKbytes;	/* The number of KiloBytes acutally allocated towards
+			 * the file on disk.  This accounts for fragments
+			 * and indirect blocks. */
+    int version;	/* Version number of the handle for the file.  Needed
+			 * on disk for recovery purposes (client re-open */
+} Fsdm_FileDescriptor;
+
+/*
+ * Magic number and flag definitions for file descriptors.
+ *	FSDM_FD_FREE	The file descriptor is unused
+ *	FSDM_FD_ALLOC	The file descriptor is used for a file.
+ *	FSDM_FD_RESERVED	The file descriptor is reserved and not for use.
+ *	FSDM_FD_DIRTY	The file descriptor has been modified since the
+ *			last time that it was written to disk.
+ */
+#define FSDM_FD_MAGIC	(unsigned short)0xF1D0
+#define FSDM_FD_FREE	0x1
+#define FSDM_FD_ALLOC	0x2
+#define FSDM_FD_RESERVED	0x4
+#define FSDM_FD_DIRTY	0x8
+
+/*
+ * The special index value FSDM_NIL_INDEX for direct[] and indirect[]
+ * means there is no block allocated for that index.
+ */ 
+#define FSDM_NIL_INDEX	-1
+
+
+/*
+ * Stuff for block allocation 
+ */
+
+#define	FSDM_NUM_FRAG_SIZES	3
+
+/*
+ * The bad block file, the root directory of a domain and the lost and found 
+ * directory have well known file numbers.
+ */
+#define FSDM_BAD_BLOCK_FILE_NUMBER	1
+#define FSDM_ROOT_FILE_NUMBER		2
+#define FSDM_LOST_FOUND_FILE_NUMBER	3
+
+/*
+ * Structure to keep statistics about each cylinder.
+ */
+
+typedef struct Fsdm_Cylinder {
+    int	blocksFree;	/* Number of blocks free in this cylinder. */
+} Fsdm_Cylinder;
 
 
 
@@ -94,9 +264,9 @@ typedef struct FsDiskHeader {
  * It is stored in disk in the Domain header so that different configurations
  * on the same disk can be tried out and compared.
  *
- * The following parameters define array sizes in the FsGeometry struct.
+ * The following parameters define array sizes in the Fsdm_Geometry struct.
  *
- * FS_MAX_ROT_POSITIONS defines how many different rotational positions are
+ * FSDM_MAX_ROT_POSITIONS defines how many different rotational positions are
  * possible for a filesystem block.  An Eagle Drive, for example, has 23
  * rotational positions.  There are 46 sectors per track.  That means that
  * 5 4K filesystem blocks fit on a track and the 6th spills over onto the
@@ -106,13 +276,13 @@ typedef struct FsDiskHeader {
  * Also, because the Eagle has 20 heads, and each rotational set occupies
  * 4 tracks, there are 5 rotational sets per cylinder.
  *
- * FS_MAX_TRACKS_PER_SET defines how many tracks a rotational set can
+ * FSDM_MAX_TRACKS_PER_SET defines how many tracks a rotational set can
  * take up.
  */
-#define FS_MAX_ROT_POSITIONS	32
-#define FS_MAX_TRACKS_PER_SET	10
+#define FSDM_MAX_ROT_POSITIONS	32
+#define FSDM_MAX_TRACKS_PER_SET	10
 
-typedef struct FsGeometry {
+typedef struct Fsdm_Geometry {
     /*
      * Fundamental disk geometry that cannot be varied.
      */
@@ -161,17 +331,18 @@ typedef struct FsGeometry {
      * rotational positions are sorted by increasing offset.  In the
      * above example, the sorted ordering is (1, 7, 13, 19, 2, 8...)
      */
-    int		blockOffset[FS_MAX_ROT_POSITIONS];	/* This keeps the
+    int		blockOffset[FSDM_MAX_ROT_POSITIONS];	/* This keeps the
 					 * starting sector number for each
 					 * rotational position.  This table
 					 * is computed by the makeFilesystem
 					 * user program */
-    int		sortedOffsets[FS_MAX_ROT_POSITIONS];	/* An ordered set of
+    int		sortedOffsets[FSDM_MAX_ROT_POSITIONS];	/* An ordered set of
 					 * the rotational positions */
     /*
      * Add more data after here so we have to reformat the disk less often.
      */
-} FsGeometry;
+} Fsdm_Geometry;
+
 
 /*
  * A disk is partitioned into areas that each store a domain.  Each domain
@@ -179,7 +350,7 @@ typedef struct FsGeometry {
  * used.  The layout information takes into account the blocks that are
  * reserved for the copy of the Disk Header and the boot program.
  */
-typedef struct FsDomainHeader {
+typedef struct Fsdm_DomainHeader {
     unsigned int magic;		/* magic number for consistency check */
     int		firstCylinder;	/* Disk relative number of the first cylinder
 				 * in the domain.  This is redundant with
@@ -209,7 +380,7 @@ typedef struct FsDomainHeader {
 				 * from numFileDesc */
     int		numFileDesc;	/* The number of FsDescriptors in the domain.
 				 * This is an upper limit on the number of
-				 * files that be kept in the domain */
+				 * files that be kept in the domain */ 
     /*
      * A large bitmap is used to record the status of all the data blocks
      * in the domain.
@@ -226,196 +397,172 @@ typedef struct FsDomainHeader {
      * Disk geometery parameters are used map from block indexes to
      * disk sectors, and also to optimally allocate blocks.
      */
-    FsGeometry	geometry;	/* Used by the allocation routines and
+    Fsdm_Geometry	geometry;	/* Used by the allocation routines and
 				 * by the block IO routines */
-} FsDomainHeader;
+} Fsdm_DomainHeader;
 
-#define FS_DOMAIN_MAGIC	(unsigned int)0xF8E7D6C5
-
-/*
- * FS_NUM_DOMAIN_SECTORS is the standard number of sectors taken
- * up by the domain header.
- */
-#define FS_NUM_DOMAIN_SECTORS	((sizeof(FsDomainHeader)-1) / DEV_BYTES_PER_SECTOR + 1)
-
-
-/*
- * ONE sector of summary information is kept on disk.  This records things
- * like the number of free blocks and free file descriptors.  This info
- * is located just before the domain header.
- */
-typedef struct FsSummaryInfo {
-    int		numFreeKbytes;		/* Free space in kbytes, not blocks */
-    int		numFreeFileDesc;	/* Number of free file descriptors */
-    int		state;			/* Unused. */
-    char	domainPrefix[64];	/* Last prefix used for the domain */
-    int		domainNumber;		/* The domain number of the domain
-					 * under which this file system was
-					 * last mounted. */
-    int		flags;			/* Flags defined below. */
-    int		attachSeconds;		/* Time the disk was attached */
-    int		detachSeconds;		/* Time the disk was off-lined.  This
-					 * is the fsTimeInSeconds that the
-					 * system was shutdown or the disk
-					 * was detached.  If the domain is
-					 * marked NOT_SAFE then this field
-					 * is undefined, but attachTime is ok
-					 * as long as TIMES_VALID is set. */
-    int		fixCount;		/* Number of consecutive times that
-					 * fscheck has found an error in this
-					 * domain. Used to prevent infinite
-					 * looping.
-					 */
-
-} FsSummaryInfo;
+#define FSDM_DOMAIN_MAGIC	(unsigned int)0xF8E7D6C5
 
 /*
- * Flags for summary info structure.
- *	FS_DOMAIN_NOT_SAFE	Set during normal operation. This is unset
- *		when we know we	are shutting down cleanly and the data
- *		structures on the disk partition (domain) are ok.
- *	FS_DOMAIN_ATTACHED_CLEAN	Set if the initial attach found the
- *		disk marked 'safe'
- *	FS_DOMAIN_TIMES_VALID	If set then the attach/detachSeconds fields
- *		are valid.
- */
-#define	FS_DOMAIN_NOT_SAFE		0x1
-#define FS_DOMAIN_ATTACHED_CLEAN	0x2
-#define	FS_DOMAIN_TIMES_VALID		0x4
-
-
-/*
- * A File Descriptor is kept on disk for every file in a domain.  It
- * contains administrative information and also the indexing structure
- * used to access the file's data blocks.
+ * Structure for each domain.
  */
 
-#define FS_NUM_DIRECT_BLOCKS	10
-#define FS_NUM_INDIRECT_BLOCKS	3
-#define	FS_INDICES_PER_BLOCK	1024
-
-#define FS_MAX_FILE_DESC_SIZE	128
-#define FS_FILE_DESC_PER_BLOCK	(FS_BLOCK_SIZE / FS_MAX_FILE_DESC_SIZE)
-
-typedef struct FsFileDescriptor {
-    unsigned short magic;/* FS_FD_MAGIC, for disk consistency check */
-    short flags;	/* FS_FD_FREE, FS_FD_ALLOC, FS_FD_RESERVED */
-    short fileType;	/* FS_REGULAR, FS_DIRECTORY, FS_PIPE, FS_DEVICE,
-			 * FS_SYMLINK, FS_RMTLINK */
-    short permissions;	/* 9 permission bits plus flags for set user ID
-			 * upon execution */
-    int uid;		/* ID of owner */
-    int gid;		/* Group ID of owner */
-    int lastByte;	/* The number of bytes in the file */
-    int lastByteXtra;	/* (Some day we may have 64 bit sizes?) */
-    int firstByte;	/* For named pipes, offset of the first valid byte */
-    int userType;	/* Information about what sort of user file it is. */
-    int numLinks;	/* Number of directory references to the file */
-    int devServerID;	/* ID of the host that controls the device */
-    short devType;	/* For devices, their type.  For others this is the
-			 * type of disk the file is stored on */
-    unsigned short devUnit;	/* For devices, their unit number.  For others,
-			 * the unit indicates the disk partition */
+typedef struct Fsdm_Domain {
+    Fsio_FileIOHandle	physHandle;	/* Handle to use to read and write
+					 * physical blocks. */
+    Fsdm_DomainHeader *headerPtr; 		/* Disk information for the domain. */
     /*
-     * All times in seconds since Jan 1 1970, Greenwich time.
+     * Disk summary information.
      */
-
-    int createTime;	/* Time the file was created. */
-    int accessTime;	/* Time of last access.  This is not updated by
-			 * directory traversals. */
-    int descModifyTime;	/* Time of last modification to the file descriptor */
-    int dataModifyTime;	/* Time of last modification to the file data */
-
+    Fsdm_SummaryInfo *summaryInfoPtr;
+    int		  summarySector;
     /*
-     * Pointers to the data blocks of the file.   The pointers are really
-     * indexes into the array of blocks stored in the data block section
-     * of a partition.  The direct array contains the indexes of the first
-     * several blocks of the files.  The indirect indexes are interpreted
-     * as follows.  The first indirect index is the index of a block that
-     * contains 1 K indexes of data blocks.  This is called a singly-indirect
-     * block.  The second indirect index is the index of a block that
-     * contains 1 K indexes of singly-indirect blocks.  This is called
-     * a doubly-indirect block.  Finally, the third indirect index is the index
-     * of a block that contains 1 K indexes of doubly-indirect blocks.
-     * Each data block contains 4Kbytes, so this indexing scheme supports
-     * files up to 40K + 4Meg + 4Gig + 4Pig bytes.
-     *
-     * The values of the direct and indirect indexes are indexes of
-     * fragments, ie. 1k pieces.  All the but the last index point to the
-     * beginning of a filesystem block, ie. 4K.  The last valid direct
-     * block may point to a fragment, and fragments can start on 1K
-     * boundaries.
+     * Data block allocation.
      */
-
-    int direct[FS_NUM_DIRECT_BLOCKS];
-    int indirect[FS_NUM_INDIRECT_BLOCKS];
-    int numKbytes;	/* The number of KiloBytes acutally allocated towards
-			 * the file on disk.  This accounts for fragments
-			 * and indirect blocks. */
-    int version;	/* Version number of the handle for the file.  Needed
-			 * on disk for recovery purposes (client re-open */
-} FsFileDescriptor;
-
-/*
- * Magic number and flag definitions for file descriptors.
- *	FS_FD_FREE	The file descriptor is unused
- *	FS_FD_ALLOC	The file descriptor is used for a file.
- *	FS_FD_RESERVED	The file descriptor is reserved and not for use.
- *	FS_FD_DIRTY	The file descriptor has been modified since the
- *			last time that it was written to disk.
- */
-#define FS_FD_MAGIC	(unsigned short)0xF1D0
-#define FS_FD_FREE	0x1
-#define FS_FD_ALLOC	0x2
-#define FS_FD_RESERVED	0x4
-#define FS_FD_DIRTY	0x8
+    unsigned char *dataBlockBitmap;	/* The per domain data block bit map.*/
+    int		bytesPerCylinder;	/* The number of bytes in the bit map
+					 * for each cylinder. */
+    Fsdm_Cylinder	*cylinders;		/* Pointer to array of cylinder
+					 * information. */
+    List_Links	*fragLists[FSDM_NUM_FRAG_SIZES];	/* Lists of fragments. */
+    Sync_Lock	dataBlockLock;		/* Lock for data block allocation. */
+    int		minKFree;		/* The minimum number of kbytes that 
+					 * must be free at all times. */
+    /*
+     * File descriptor allocation.
+     */
+    unsigned char *fileDescBitmap;	/* The per domain file descriptor bit
+					 * map.*/
+    Sync_Lock	fileDescLock;		/* Lock for file descriptor
+					 * allocation. */
+    int		flags;		/* Flags defined below. */		
+    int		refCount;	/* Number of active users of the domain. */
+    Sync_Condition condition;	/* Condition to wait on. */
+} Fsdm_Domain;
 
 /*
- * The special index value FS_NIL_INDEX for direct[] and indirect[]
- * means there is no block allocated for that index.
+ * Domain flags used for two stage process of detaching a domain:
+ *
+ *    FSDM_DOMAIN_GOING_DOWN	This domain is being detached.
+ *    FSDM_DOMAIN_DOWN		The domain is detached.
  */
-#define FS_NIL_INDEX	-1
+#define	FSDM_DOMAIN_GOING_DOWN	0x1
+#define	FSDM_DOMAIN_DOWN 		0x2
+
 /*
- * The bad block file, the root directory of a domain and the lost and found
- * directory have well known file numbers.
+ * Types of indexing.  Order is important here because the indirect and
+ * double indirect types can be used to index into the indirect block 
+ * pointers in the file descriptor.
  */
-#define FS_BAD_BLOCK_FILE_NUMBER	1
-#define FS_ROOT_FILE_NUMBER		2
-#define FS_LOST_FOUND_FILE_NUMBER	3
+
+#define	FSDM_INDIRECT		0 
+#define	FSDM_DBL_INDIRECT		1
+#define	FSDM_DIRECT		2
+
+typedef	int	Fsdm_BlockIndexType;
+
 /*
- * The lost and found directory is preallocated and is of a fixed size. Define
- * its size in 4K blocks here.
+ * Structure to keep information about the indirect and doubly indirect
+ * blocks used in indexing.
  */
-#define	FS_NUM_LOST_FOUND_BLOCKS	2
+
+typedef struct Fsdm_IndirectInfo {
+    	Fscache_Block 	*blockPtr;	/* Pointer to indirect block. */
+    	int		index;		/* An index into the indirect block. */
+    	Boolean	 	blockDirty;	/* TRUE if the block has been
+					   modified. */
+    	int	 	deleteBlock;	/* FSCACHE_DELETE_BLOCK bit set if should 
+					   delete the block when are
+					   done with it. */
+} Fsdm_IndirectInfo;
+
+/*
+ * Structure used when going through the indexing structure of a file.
+ */
+
+typedef struct Fsdm_BlockIndexInfo {
+    Fsdm_BlockIndexType	 indexType;	/* Whether chasing direct, indirect,
+					   or doubly indirect blocks. */
+    int		blockNum;		/* Block that is being read, written,
+					   or allocated. */
+    int		lastDiskBlock;		/* The disk block for the last file
+					   block. */
+    int		*blockAddrPtr;		/* Pointer to pointer to block. */
+    int		directIndex;		/* Index into direct block pointers. */
+    Fsdm_IndirectInfo indInfo[2];		/* Used to keep track of the two 
+					   indirect blocks. */
+    int		 flags;			/* Flags defined below. */
+    Fsdm_Domain	*domainPtr;		/* Domain that the file is in. */
+} Fsdm_BlockIndexInfo;
+
+/*
+ * Flags for the index structure.
+ *
+ *     FSDM_ALLOC_INDIRECT_BLOCKS		If an indirect is not allocated then
+ *					allocate it.
+ *     FSDM_DELETE_INDIRECT_BLOCKS	After are finished with an indirect
+ *					block if it is empty delete it.
+ *     FSDM_DELETING_FROM_FRONT		Are deleting blocks from the front
+ *					of the file.
+ *     FSDM_DELETE_EVERYTHING		The file is being truncated to length
+ *					0 so delete all blocks and indirect
+ *					blocks.
+ */
+
+#define	FSDM_ALLOC_INDIRECT_BLOCKS	0x01
+#define	FSDM_DELETE_INDIRECT_BLOCKS	0x02
+#define	FSDM_DELETING_FROM_FRONT		0x04
+#define	FSDM_DELETE_EVERYTHING		0x08
+
+/*
+ * Whether or not to keep information about file I/O by user file type.
+ */
+extern Boolean fsdmKeepTypeInfo;
+
 
 /*
- * A directory entry:
+ * Declarations for the file descriptor allocation routines.
  */
-typedef struct FsDirEntry {
-    int fileNumber;		/* Index of the file descriptor for the file. */
-    short recordLength;		/* How many bytes this directory entry is */
-    short nameLength;		/* The length of the name in bytes */
-    char fileName[FS_MAX_NAME_LENGTH+1];	/* The name itself */
-} FsDirEntry;
-/*
- *	FS_DIR_BLOCK_SIZE	Directory's grow in multiples of this constant,
- *		and records within a directory don't cross directory blocks.
- *	FS_DIR_ENTRY_HEADER	The size of the header of a FsDirEntry;
- *	FS_REC_LEN_GRAIN	The number of bytes in a directory record
- *				are rounded up to a multiple of this constant.
- */
-#define FS_DIR_BLOCK_SIZE	512
-#define FS_DIR_ENTRY_HEADER	(sizeof(int) + 2 * sizeof(short))
-#define FS_REC_LEN_GRAIN	4
+
+extern ReturnStatus	Fsdm_FileDescInit();
+extern ReturnStatus	Fsdm_FileDescFetch();
+extern ReturnStatus	Fsdm_FileDescStore();
+extern ReturnStatus	Fsdm_FileDescFree();
+extern ReturnStatus	Fsdm_FileDescTrunc();
+extern ReturnStatus 	Fsdm_GetNewFileNumber();
+extern ReturnStatus	Fsdm_FileDescWriteBack();
+
+extern ReturnStatus	Fsdm_BlockAllocate();
+extern ReturnStatus	Fsdm_FindFileType();
+extern ReturnStatus	Fsdm_FreeFileNumber();
+
 
 /*
- * FsDirRecLength --
- *	This computes the number of bytes needed for a directory entry.
- *	The argument should be the return of the String_Length function,
- *	ie, not include the terminating null in the count.
+ * Declarations for the local Domain data block allocation routines and 
+ * indexing routines.
  */
-#define FsDirRecLength(stringLength) \
-    (FS_DIR_ENTRY_HEADER + \
-    ((stringLength / FS_REC_LEN_GRAIN) + 1) * FS_REC_LEN_GRAIN)
 
-#endif /* _FSDISK */
+extern	ReturnStatus	Fsdm_GetFirstIndex();
+extern	ReturnStatus	Fsdm_GetNextIndex();
+extern	void		Fsdm_EndIndex();
+
+/*
+ * Routines for attaching/detaching disk.
+ */
+extern  ReturnStatus	Fsdm_AttachDisk();
+extern  ReturnStatus	Fsdm_AttachDiskByHandle();
+extern  ReturnStatus	Fsdm_DetachDisk();
+/*
+ * Routines to manipulate domains.
+ */
+extern	Fsdm_Domain	*Fsdm_DomainFetch();
+extern	void		Fsdm_DomainRelease();
+extern  ReturnStatus	Fsdm_DomainInfo();
+extern void 	     Fsdm_DomainWriteBack();
+extern ReturnStatus	Fsdm_RereadSummaryInfo();
+
+
+
+extern  void		Fsdm_Init();
+
+#endif _FSDM
