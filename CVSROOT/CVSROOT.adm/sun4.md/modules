@@ -60,4 +60,4 @@ vm		kernel/vm
 
 # For testing and debugging scvs et al.
 
-Test		kernel/Test
+Test		Test
