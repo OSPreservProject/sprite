@@ -2,3 +2,5 @@
 # information.  Each line is of the form "link target"
 # $Header
 modf.go                  modf.o
+bcopy.c                  /sprite/src/lib/c/bstring/bcopy.c
+modf.o                   /sprite/src/lib/c/crt/ds3100.md/modf.o
