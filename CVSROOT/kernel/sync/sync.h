@@ -488,13 +488,14 @@ extern Sync_RegElement  *regQueuePtr;
 #define Sync_SemInitStatic(name) \
     {0}
 
-#elif (defined(LOCKREG)) 
+#else
+#ifdef LOCKREG
 
 #define Sync_SemInitStatic(name) \
     {0,0,0, SYNC_SEMAPHORE, 0, SYNC_LISTINFO_INIT, name,(Address) NIL, \
      (Address) NIL}
-
-#elif (defined(LOCKDEP))
+#else
+#ifdef LOCKDEP
 
 #define Sync_SemInitStatic(name) \
     {0,0,0, SYNC_SEMAPHORE, 0, SYNC_LISTINFO_INIT, name,(Address) NIL, \
@@ -505,7 +506,10 @@ extern Sync_RegElement  *regQueuePtr;
 #define Sync_SemInitStatic(name) \
     {0,name, (Address) NIL, (Address) NIL}
 
-#endif 
+#endif /* LOCKDEP */
+#endif /* LOCKREG */
+#endif /* CLEAN_LOCK */
+
 
 /*
  *----------------------------------------------------------------------
@@ -530,7 +534,8 @@ extern Sync_RegElement  *regQueuePtr;
 #define Sync_SemInitDynamic(sem,semName) \
     { (sem)->value = 0; }
 
-#elif (defined(LOCKREG)) 
+#else
+#ifdef LOCKREG
 
 #define Sync_SemInitDynamic(sem, semName) { \
 	(sem)->value = (sem)->miss = 0; (sem)->name = semName; \
@@ -539,7 +544,8 @@ extern Sync_RegElement  *regQueuePtr;
 	(sem)->holderPCBPtr = (Address) NIL; \
 }
 
-#elif (defined(LOCKDEP))
+#else
+#ifdef LOCKDEP
 
 #define Sync_SemInitDynamic(sem, semName) { \
 	(sem)->value = (sem)->miss = 0; (sem)->name = semName; \
@@ -557,8 +563,10 @@ extern Sync_RegElement  *regQueuePtr;
 	(sem)->holderPC = (Address)NIL;\
 	(sem)->holderPCBPtr = (Address) NIL; \
 }
+#endif /* LOCKDEP */
+#endif /* LOCKREG */
+#endif /* CLEAN_LOCK */
 
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -581,13 +589,15 @@ extern Sync_RegElement  *regQueuePtr;
 
 #define Sync_LockInitStatic(name) {0,0}
 
-#elif (defined(LOCKREG)) 
+#else
+#ifdef LOCKREG
 
 #define Sync_LockInitStatic(name) \
     {0,0,0,SYNC_LOCK, 0, SYNC_LISTINFO_INIT, 0, name, (Address) NIL, \
      (Address) NIL}
 
-#elif (defined(LOCKDEP))
+#else
+#ifdef LOCKDEP
 
 #define Sync_LockInitStatic(name) \
     {0,0,0,SYNC_LOCK, 0, SYNC_LISTINFO_INIT, 0, name, (Address) NIL, \
@@ -599,7 +609,9 @@ extern Sync_RegElement  *regQueuePtr;
     {0,0,name, (Address) NIL, (Address) NIL}
 
 
-#endif 
+#endif /* LOCKDEP */
+#endif /* LOCKREG */
+#endif /* CLEAN_LOCK */
 
 
 /*
@@ -625,7 +637,8 @@ extern Sync_RegElement  *regQueuePtr;
 #define Sync_LockInitDynamic(lock, lockName) \
     {(lock)->inUse = (lock)->waiting = 0;}
 
-#elif (defined(LOCKREG)) 
+#else
+#ifdef LOCKREG
 
 #define Sync_LockInitDynamic(lock, lockName) { \
     (lock)->inUse = (lock)->waiting = 0; (lock)->class = SYNC_LOCK;\
@@ -634,7 +647,8 @@ extern Sync_RegElement  *regQueuePtr;
     (lock)->holderPCBPtr  = (Address) NIL; \
 }
 
-#elif (defined(LOCKDEP))
+#else
+#ifdef LOCKDEP
 
 #define Sync_LockInitDynamic(lock, lockName) { \
     (lock)->inUse = (lock)->waiting = 0; (lock)->class = SYNC_LOCK;\
@@ -651,6 +665,8 @@ extern Sync_RegElement  *regQueuePtr;
     (lock)->holderPCBPtr  = (Address) NIL; \
 }
 
+#endif /* LOCKDEP */
+#endif /* LOCKREG */
 #endif /* CLEAN_LOCK */
 
 
