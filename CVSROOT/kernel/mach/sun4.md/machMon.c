@@ -19,8 +19,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTimer.h"
 #include "char.h"
 
-static	int (*savedNmiVec)() = (int (*)()) 0;
-extern	int MonNmiNop();
+static	int	(*savedNmiVec)() = (int (*)()) 0;
+extern	int	MonNmiNop();
+static	Boolean	stoppedNMI = FALSE;
 
 
 /*
@@ -175,15 +176,17 @@ Mon_Reboot(rebootString)
 void
 Mon_StartNmi()
 {
+    if (stoppedNMI) {
 #ifdef SUN2
-    if (savedNmiVec != 0) {
-	exc_VectorTablePtr->autoVec[6] = savedNmiVec;
-    }
+	if (savedNmiVec != 0) {
+	    exc_VectorTablePtr->autoVec[6] = savedNmiVec;
+	}
 #endif
-
 #ifdef SUN3
-    *SunInterruptReg |= SUN_ENABLE_LEVEL7_INTR;
+	*SunInterruptReg |= SUN_ENABLE_LEVEL7_INTR;
 #endif
+	stoppedNMI = FALSE;
+    }
 }
 
 
@@ -212,14 +215,8 @@ Mon_StopNmi()
 {
     extern Boolean main_AllowNMI;
 
-#ifdef SUN2
-    savedNmiVec = exc_VectorTablePtr->autoVec[6];
-    exc_VectorTablePtr->autoVec[6] = MonNmiNop;
-#endif SUN2
-
-#ifdef SUN3
     /*
-     * For debugging purposes, NMI's must be enabled.
+     * For debugging purposes, NMI's may need to be enabled.
      * If NMI's are disabled and the kernel goes into an infinite loop, 
      * then getting back to the monitor via L1-A is impossible 
      * However, if NMI's are enabled, level-7 interrupts are caused 
@@ -227,7 +224,13 @@ Mon_StopNmi()
      * Also, spurious exceptions may occur.
      */
     if (!main_AllowNMI) {
+	stoppedNMI = TRUE;
+#ifdef SUN2
+	savedNmiVec = exc_VectorTablePtr->autoVec[6];
+	exc_VectorTablePtr->autoVec[6] = MonNmiNop;
+#endif SUN2
+#ifdef SUN3
 	*SunInterruptReg &= ~SUN_ENABLE_LEVEL7_INTR;
-    }
 #endif SUN3
+    }
 }
