@@ -798,7 +798,7 @@ DevSCSISetupTapeCommand(command, devPtr, countPtr)
  *      interface here is in terms of a particular SCSI disk and the
  *      number of sectors to transfer.  This routine takes care of mapping
  *      its buffer into the special multibus memory area that is set up
- *      for Sun DMA.
+ *      for Sun DMA.  It retries in the event of errors.
  *
  * Results:
  *	None.
@@ -821,6 +821,7 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
 {
     ReturnStatus status;
     register DevSCSIController *scsiPtr; /* Controller for the disk */
+    int i;
 
     /*
      * Synchronize with the interrupt handling routine and with other
@@ -840,7 +841,6 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
 	Sync_MasterWait(&scsiPtr->readyForIO, &scsiPtr->mutex, FALSE);
     }
     scsiPtr->flags |= SCSI_CNTRLR_BUSY;
-    scsiPtr->flags &= ~SCSI_IO_COMPLETE;
 
     /*
      * Map the buffer into the special area of multibus memory that
@@ -848,19 +848,36 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
      */
     buffer = VmMach_DevBufferMap(*numSectorsPtr * devPtr->sectorSize,
 			     buffer, scsiPtr->IOBuffer);
-    DevSCSISetupCommand(command, devPtr, firstSector, *numSectorsPtr);
-    status = DevSCSICommand(devPtr->slaveID, scsiPtr,
-			     *numSectorsPtr * devPtr->sectorSize,
-			     buffer, INTERRUPT);
     /*
-     * Wait for the command to complete.  The interrupt handler checks
-     * for I/O errors, computes the residual, and notifies us.
+     * Retry the operation if we hit a hard error. This is because
+     * many hard errors seem to work when retried.  Retry recovered
+     * errors too, though that may not be necessary.  (Alternatively,
+     * convert the error status to success on a recovered error.)
      */
-    if (status == SUCCESS) {
-	while((scsiPtr->flags & SCSI_IO_COMPLETE) == 0) {
-	    Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex, FALSE);
+    i = -1;
+    do {
+	i++;
+
+	scsiPtr->flags &= ~SCSI_IO_COMPLETE;
+	DevSCSISetupCommand(command, devPtr, firstSector, *numSectorsPtr);
+	status = DevSCSICommand(devPtr->slaveID, scsiPtr,
+				 *numSectorsPtr * devPtr->sectorSize,
+				 buffer, INTERRUPT);
+	/*
+	 * Wait for the command to complete.  The interrupt handler checks
+	 * for I/O errors, computes the residual, and notifies us.
+	 */
+	if (status == SUCCESS) {
+	    while((scsiPtr->flags & SCSI_IO_COMPLETE) == 0) {
+		Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex, FALSE);
+	    }
+	    status = scsiPtr->status;
 	}
-	status = scsiPtr->status;
+    } while ((status == DEV_HARD_ERROR || status == DEV_RETRY_ERROR ||
+	      status == DEV_DMA_FAULT) && i < SCSI_NUM_HARD_ERROR_RETRIES);
+    if (i >= SCSI_NUM_HARD_ERROR_RETRIES) {
+	Sys_Panic((devSCSIDebug > 2) ? SYS_FATAL : SYS_WARNING,
+	    "SCSI: Too many retries after error.\n");
     }
     *numSectorsPtr -= (scsiPtr->residual / devPtr->sectorSize);
     scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
@@ -965,12 +982,16 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
  *
  * DevSCSICommand --
  *
- *      Send a command to a controller specified by targetID on the SCSI
+ *      Send a command to a controller on the SCSI
  *      bus controlled through scsiPtr.  The control block needs to have
  *      been set up previously with DevSCSISetupCommand.  If the interrupt
  *      argument is WAIT (FALSE) then this waits around for the command to
  *      complete and checks the status results.  Otherwise Dev_SCSIIntr
  *      will be invoked later to check completion status.
+ *
+ *	Note: the ID of the controller is never placed on the bus
+ *	(contrary to standard protocol, but necessary for the early Sun
+ *	SCSI interface).
  *
  * Results:
  *	An error code.
@@ -981,8 +1002,8 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
-    int targetID;			/* Id of the SCSI device to select */
+DevSCSICommand(slaveID, scsiPtr, size, addr, interrupt)
+    int slaveID;			/* Id of the SCSI device to select */
     DevSCSIController *scsiPtr;		/* The SCSI controller that will be
 					 * doing the command. The control block
 					 * within this specifies the unit
@@ -1043,7 +1064,7 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
      * put in the data word because of problems with Sun's Host Adaptor.
      */
     regsPtr->control = 0;
-    regsPtr->data = (1 << targetID);
+    regsPtr->data = (1 << slaveID);
     regsPtr->control = SCSI_SELECT;
     status = DevSCSIWait(regsPtr, SCSI_BUSY, NO_RESET, FALSE);
     if (status != SUCCESS) {
@@ -1051,7 +1072,7 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
 	regsPtr->control = 0;
 	if (scsiPtr->controlBlock.command != SCSI_TEST_UNIT_READY) {
 	    Sys_Printf("SCSI-%d: can't select slave %d\n", 
-				 scsiPtr->number, targetID);
+				 scsiPtr->number, slaveID);
 	}
 	return(status);
     }
