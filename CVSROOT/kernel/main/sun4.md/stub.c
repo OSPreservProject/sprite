@@ -42,7 +42,7 @@ int *	etherAddressPtr;
 char	*
 SpriteVersion()
 {
-    return "Things are bad.\n";
+    return "Sun4 kernel.\n";
 }
 
 VmMach_UnmapIntelPage()

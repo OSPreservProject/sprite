@@ -54,6 +54,9 @@ main()
 
     DBG_CALL;
     Mach_MonPrintf("Debugger returned\n");
+    Mach_MonPrintf("Trying it again\n");
+    DBG_CALL;
+    Mach_MonPrintf("Debugger returned again\n");
 #ifdef NOTDEF
     Timer_TimerInit();
     Timer_TimerStart();
