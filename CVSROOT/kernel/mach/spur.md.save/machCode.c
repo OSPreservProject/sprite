@@ -320,7 +320,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
      * MachContextSwitch does a "return curPC,$8" so the starting address
      * should be startFunc - 8.
      */
-    statePtr->switchRegState.curPC = ((Address)startFunc) - 8;
+    statePtr->switchRegState.curPC = (Address)((unsigned int)startFunc) - 8;
     /*
      * Start the cwp such that when MachContextSwitch returns it won't
      * cause an overflow.  Note that we want the second window so we set
@@ -951,11 +951,11 @@ MachVMDataFault(faultType, PC, destAddr, kpsw)
 		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
 			       procPtr->processID, FALSE);
 	    } else {
-		if ((unsigned)PC >= (unsigned)MachFetchArgStart &&
-	            (unsigned)PC < (unsigned)MachFetchArgEnd) {
+		if (PC >= (Address)((unsigned int)((int (*)())MachFetchArgStart)) &&
+	            PC < (Address)((unsigned int)((int (*)())MachFetchArgEnd))) {
 		    return(MACH_FAILED_ARG_FETCH);
-		} else if ((unsigned)PC >= (unsigned)VmMachDoCopy &&
-	                   (unsigned)PC < (unsigned)VmMachCopyEnd) {
+		} else if (PC >= (Address)((unsigned int)((int (*)())VmMachDoCopy)) &&
+	                   PC < (Address)((unsigned int)((int (*)())VmMachCopyEnd))) {
 		    return(MACH_FAILED_COPY);
 		} else {
 		    return(MACH_KERN_ACCESS_VIOL);
@@ -1001,19 +1001,22 @@ MachVMPCFault(faultType, PC, kpsw)
 	} else {
 	    return(MACH_NORM_RETURN);
 	}
-    }
-    if (faultType & MACH_VM_FAULT_REF_BIT) {
-	VmMach_SetRefBit(PC);
-	return(MACH_NORM_RETURN);
-    } else if (faultType & MACH_VM_FAULT_PAGE_FAULT) {
-	/* 
-	 * Take a page fault on this address.
-	 */
-	if (Vm_PageIn(PC, FALSE) != SUCCESS) {
-	    procPtr = Proc_GetCurrentProc();
-	    (void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
-			   procPtr->processID, FALSE);
-	    return(MACH_USER_ACCESS_VIOL);
+    } else {
+	if (faultType & MACH_VM_FAULT_REF_BIT) {
+	    VmMach_SetRefBit(PC);
+	    return(MACH_NORM_RETURN);
+	} else if (faultType & MACH_VM_FAULT_PAGE_FAULT) {
+	    /* 
+	     * Take a page fault on this address.
+	     */
+	    if (Vm_PageIn(PC, FALSE) != SUCCESS) {
+		procPtr = Proc_GetCurrentProc();
+		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
+			       procPtr->processID, FALSE);
+		return(MACH_USER_ACCESS_VIOL);
+	    } else {
+		return(MACH_NORM_RETURN);
+	    }
 	} else {
 	    return(MACH_NORM_RETURN);
 	}
