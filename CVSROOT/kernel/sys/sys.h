@@ -39,6 +39,7 @@ extern	int	sys_NumCalls[];
 extern	void	Sys_Init();
 extern	void	printf();
 extern	void	panic();
+extern	int	vprintf();
 
 extern  ReturnStatus	Sys_OutputNumCalls();
 
