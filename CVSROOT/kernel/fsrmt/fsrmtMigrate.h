@@ -27,6 +27,7 @@ typedef struct FsMigInfo {
     FsFileID	streamID;	/* Stream identifier. */
     FsFileID    ioFileID;     	/* I/O handle for the stream. */
     FsFileID	nameID;		/* ID of name of the file.  Used for attrs. */
+    FsFileID	rootID;		/* ID of the root of the file's domain. */
     int		srcClientID;	/* Client transfering from. */
     int         offset;     	/* File access position. */
     int         flags;      	/* Usage flags from the stream. */
