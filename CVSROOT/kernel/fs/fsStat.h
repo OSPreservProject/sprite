@@ -228,8 +228,7 @@ typedef struct {
     unsigned int versionMismatch; /* Version mismatch on file. */
     unsigned int cacheFlushes;	/* Cache flushed because of version mismatch
 				 * of not cacheable. */
-    unsigned int oldHandles;	/* Handles whose creation date is out of
-				 * date. */
+    unsigned int lruScans;	/* Number of scans through LRU list. */
     unsigned int fetchCalls;	/* Calls to FsHandleFetch. */
     unsigned int fetchHits;	/* Number of fetches in which handle was
 				 * found. */
@@ -264,7 +263,7 @@ typedef struct {
  * Counts of various file system objects.
  */
 typedef struct {
-    int lruScans;
+    int scavenges;
     int streams;
     int streamClients;
     int files;
