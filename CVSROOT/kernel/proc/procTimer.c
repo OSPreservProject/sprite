@@ -447,7 +447,7 @@ SendTimerSigFunc(data, infoPtr)
 
 	    timerPtr = &procPtr->timerArray[i];
 	    if (timerPtr->token == infoPtr->token) {
-		(void) Sig_SendProc(procPtr, SIG_TIMER, i);
+		(void) Sig_SendProc(procPtr, SIG_TIMER, i, (Address)0);
 
 		/*
 		 * See if the signal is supposed to be repeated in the future.

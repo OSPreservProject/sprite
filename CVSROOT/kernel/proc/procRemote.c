@@ -311,7 +311,7 @@ Proc_ResumeMigProc(pc)
 	/*
 	 * Just to make sure we migrate back home ASAP...
 	 */
-	Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0);
+	Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0, (Address)0);
     }
     if (procPtr->genFlags & PROC_REMOTE_EXEC_PENDING) {
 	ProcDoRemoteExec(procPtr);
@@ -699,7 +699,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     if (remoteCallStatus == PROC_NO_PEER) {
 	status = PROC_NO_PEER;
 	(void) Sig_Send(SIG_KILL, (int) PROC_NO_PEER, procPtr->processID,
-			FALSE); 
+			FALSE, (Address)0); 
 	goto failure;
     }
     /*
@@ -899,7 +899,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     if (status != SUCCESS) {
 	if (status == PROC_NO_PEER) {
 	    (void) Sig_Send(SIG_KILL, (int) PROC_NO_PEER,
-			    parentProcPtr->processID, FALSE); 
+			    parentProcPtr->processID, FALSE, (Address)0); 
 	}
 	if (proc_MigDebugLevel > 0) {
 	    printf("Warning: ProcRemoteFork returning status %x.\n",
