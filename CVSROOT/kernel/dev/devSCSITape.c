@@ -176,7 +176,6 @@ InitTapeDevice(devicePtr, devPtr)
 		     */
 		    return DEV_NO_DEVICE;
 		}
-		printf("InitTapeDevice: max = %d, min = %d\n", max, min);
 		tapePtr->maxBlockSize = max;
 		tapePtr->minBlockSize = min;
 		tapePtr->tapeIOProc = DevSCSITapeVariableIO;
@@ -201,14 +200,12 @@ InitTapeDevice(devicePtr, devPtr)
 	    length = (descPtr->len2 << 16) | (descPtr->len1 << 8) |
 			descPtr->len0;
 	    if (length != 0) {
-		printf("InitTapeDevice: fixed length = %d\n", length);
 	    } else {
 		/*
 		 * A length of 0 means that the logical block size is 
 		 * variable. In that case use the default.
 		 */
 		length = SCSI_TAPE_DEFAULT_BLOCKSIZE;
-		printf("InitTapeDevice: fixed default length %d\n", length);
 	    }
 	    tapePtr->blockSize = length;
 	    tapePtr->tapeIOProc = DevSCSITapeFixedBlockIO;
