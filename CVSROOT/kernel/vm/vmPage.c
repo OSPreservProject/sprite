@@ -1987,6 +1987,58 @@ Vm_Clock(data, callInfoPtr)
     UNLOCK_MONITOR;
 }
 
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmCountDirtyPages --
+ *
+ *	Return the number of dirty pages.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *     	The allocate list is modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY int
+VmCountDirtyPages()
+{
+    register	Vm_PTE	*ptePtr;
+    register	VmCore	*corePtr;
+    register	int	i;
+    register	int	numDirtyPages = 0;
+    Boolean		referenced;
+    Boolean		modified;
+
+    LOCK_MONITOR;
+
+    for (corePtr = &coreMap[vmFirstFreePage], i = vmFirstFreePage;
+         i < vmStat.numPhysPages;
+	 i++, corePtr++) {
+	if ((corePtr->flags & VM_FREE_PAGE) || corePtr->lockCount > 0) {
+	    continue;
+	}
+	if (corePtr->flags & VM_DIRTY_PAGE) {
+	    numDirtyPages++;
+	    continue;
+	}
+	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
+	if (*ptePtr & VM_MODIFIED_BIT) {
+	    numDirtyPages++;
+	    continue;
+	}
+	VmMach_GetRefModBits(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr),
+			     &referenced, &modified);
+	if (modified) {
+	    numDirtyPages++;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(numDirtyPages);
+}
+
 
 /*
  *----------------------------------------------------------------------

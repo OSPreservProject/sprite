@@ -208,6 +208,9 @@ Vm_Cmd(command, arg)
     ReturnStatus	status = SUCCESS;
  
     switch (command) {
+	case VM_COUNT_DIRTY_PAGES:
+	    vmStat.numModifiedPages = VmCountDirtyPages();
+	    break;
 	case VM_SET_MAX_DIRTY_PAGES:
 	    vmMaxDirtyPages = arg;
 	    break;
