@@ -718,6 +718,7 @@ Mach_AllocExtIntrNumber(handler,intrNumberPtr)
 		break;
 	    }
 	}
+        *intrNumberPtr = intrType;
     }
     /*
      * Validate the interrupt number.
