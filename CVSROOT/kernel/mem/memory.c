@@ -1527,8 +1527,14 @@ Mem_DumpTrace(blockSize)
 	    continue;
 	}
 
-	(*memPrintProc)(memPrintData, "Trace for size = %d:\n",
-				      trPtr->traceInfo.size);
+	if (trPtr->traceInfo.flags & MEM_DONT_USE_ORIG_SIZE) {
+	    (*memPrintProc)(memPrintData, "Trace for block size = %d:\n",
+					  trPtr->traceInfo.size);
+	} else {
+	    (*memPrintProc)(memPrintData, "Trace for size = %d (%d):\n",
+				  trPtr->traceInfo.size,
+				  BYTES_TO_BLOCKSIZE(trPtr->traceInfo.size));
+	}
 	(*memPrintProc)(memPrintData, "Caller-PC      Num-blocks  \n");
 	for (j = 0; j < MAX_CALLERS_TO_TRACE; j++) {
 	    if (trPtr->allocInfo[j].numBlocks == 0) {
