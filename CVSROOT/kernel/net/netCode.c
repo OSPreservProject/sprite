@@ -3,7 +3,18 @@
  *
  *	Various routines for initialzation, input and output.
  *
- * Copyright 1985 Regents of the University of California
+ *	TODO: This needs to be fixed to handle more than one interface.
+ *	Update the route table accessed by spriteID to include a
+ *	interface 
+ *
+ * Copyright 1987 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  * All rights reserved.
  */
 
@@ -25,6 +36,12 @@ NetEtherFuncs	netEtherFuncs;
 static	int	outputMutex = 0;
 static void	EnterDebugger();
 
+/*
+ * Network configuration table defined by machine dependent code.
+ */
+extern NetInterface	netInterface[];
+extern int		numNetInterfaces;
+
 #define	INC_BYTES_SENT(gatherPtr, gatherLength) { \
 	register	Net_ScatterGather	*gathPtr; \
 	int					i; \
@@ -34,6 +51,90 @@ static void	EnterDebugger();
 	} \
     }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Init --
+ *
+ *	Initialize the network module data structures.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_Init()
+{
+    register int inter;
+
+    /*
+     * Zero out the statistics struct.
+     */
+    Byte_Zero(sizeof(net_EtherStats), (Address) &net_EtherStats);
+
+    /*
+     * Determine the number and kind of network interfaces by calling
+     * each network interface initialization procedure.
+     */
+#ifdef notdef
+    for (inter = 0 ; inter<numNetInterfaces ; inter++) {
+	Sys_Printf("Probing %s-%d net interface at 0x%x ...\n",
+		netInterface[inter].name,
+		netInterface[inter].number,
+		netInterface[inter].ctrlAddr);
+	if ((*netInterface[inter].init)(netInterface[inter].name,
+					netInterface[inter].number,
+					netInterface[inter].ctrlAddr)) {
+	    Sys_Printf("%s-%d net interface at 0x%x\n",
+		netInterface[inter].name,
+		netInterface[inter].number,
+		netInterface[inter].ctrlAddr);
+	}
+    }
+#endif notdef
+    /*
+     * Set up the struct of functions to be called depending on the 
+     * machine type.
+     */
+    machineType = Mach_GetMachineType();
+    switch(machineType) {
+	case SYS_SUN_2_120:
+	    netEtherFuncs.init   = Net3CInit;
+	    netEtherFuncs.output = Net3COutput;
+	    netEtherFuncs.intr   = Net3CIntr;
+	    netEtherFuncs.reset  = Net3CRestart;
+	    break;
+
+	case SYS_SUN_2_50: /* SYS_SUN_2_160 has the same value */
+	case SYS_SUN_3_75: /* SYS_SUN_3_160 has the same value */
+	    netEtherFuncs.init   = NetIEInit;
+	    netEtherFuncs.output = NetIEOutput;
+	    netEtherFuncs.intr   = NetIEIntr;
+	    netEtherFuncs.reset  = NetIERestart;
+	    break;
+
+	default:
+	    Sys_Panic(SYS_FATAL, 
+			"Net_Init: unknown machine type: %d\n", machineType);
+	    break;
+    }
+
+    /*
+     * Call the initialization routine.
+     */
+    (netEtherFuncs.init)();
+
+    /*
+     * Pre-load some addresses, including the broadcast address.
+     */
+    Net_RouteInit();
+}
 
 /*
  *----------------------------------------------------------------------
@@ -73,70 +174,6 @@ Net_GatherCopy(scatterGatherPtr, scatterGatherLength, destAddr)
     }
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Net_Init --
- *
- *	Initialize the network module data structures.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Net_Init()
-{
-    int machineType;
-
-    /*
-     * Zero out the statistics struct.
-     */
-    Byte_Zero(sizeof(net_EtherStats), (Address) &net_EtherStats);
-
-    /*
-     * Set up the struct of functions to be called depending on the 
-     * machine type.
-     */
-    machineType = Mach_GetMachineType();
-    switch(machineType) {
-	case SYS_SUN_2_120:
-	    netEtherFuncs.init   = Net3CInit;
-	    netEtherFuncs.output = Net3COutput;
-	    netEtherFuncs.intr   = Net3CIntr;
-	    netEtherFuncs.reset  = Net3CRestart;
-	    break;
-
-	case SYS_SUN_2_50: /* SYS_SUN_2_160 has the same value */
-	case SYS_SUN_3_75: /* SYS_SUN_3_160 has the same value */
-	    netEtherFuncs.init   = NetIEInit;
-	    netEtherFuncs.output = NetIEOutput;
-	    netEtherFuncs.intr   = NetIEIntr;
-	    netEtherFuncs.reset  = NetIERestart;
-	    break;
-
-	default:
-	    Sys_Panic(SYS_FATAL, 
-			"Net_Init: unknown machine type: %d\n", machineType);
-	    break;
-    }
-
-    /*
-     * Call the initialization routine.
-     */
-    (netEtherFuncs.init)();
-
-    /*
-     * Pre-load some addresses, including the broadcast address.
-     */
-    Net_RouteInit();
-}
 
 
 /*
