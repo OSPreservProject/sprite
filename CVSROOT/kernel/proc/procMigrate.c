@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "procInt.h"
 #include "procMigrate.h"
 #include "migrate.h"
+#include "migVersion.h"
 #include "fs.h"
 #include "stdlib.h"
 #include "sig.h"
@@ -70,13 +71,8 @@ Boolean proc_KillMigratedDebugs = TRUE;
 int proc_AllowMigrationState = PROC_MIG_ALLOW_DEFAULT;
 
 /*
- * Set the migration version number.  Machines can only migrate to other
- * machines of the same architecture and version number.
+ * defined in migVersion.h, in the machine-dependent directory.
  */
-#ifndef PROC_MIGRATE_VERSION
-#define PROC_MIGRATE_VERSION 9
-#endif /* PROC_MIGRATE_VERSION */
-
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
 
 /*
@@ -90,7 +86,6 @@ static ReturnStatus UpdateState();
 
 static ReturnStatus ResumeExecution();
 static ReturnStatus KillRemoteCopy();
-static void	    LockAndSwitch();
 
 /*
  * Procedures for statistics gathering
@@ -167,7 +162,7 @@ static struct {
     { "GetProcEncapSize", "EncapProcState", "DeencapProcState", NULL},
     { "ProcExecGetEncapSize", "ProcExecEncapState", "ProcExecDeencapState", "ProcExecFinishMigration"},
     { "Vm_InitiateMigration", "Vm_EncapState", "Vm_DeencapState",
-	  "Vm_FinishMigration"},
+	  NULL},
     { "Fs_InitiateMigration", "Fs_EncapFileState", "Fs_DeencapFileState",
 	  "Fs_MigDone"},
     { "Mach_InitiateMigration", "Mach_EncapState", "Mach_DeencapState", NULL},
