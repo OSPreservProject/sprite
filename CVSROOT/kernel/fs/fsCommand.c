@@ -1,7 +1,8 @@
 /* 
- * fsTest.c --
+ * fsCommand.c --
  *
- *	Procedures that test the filesystem.
+ *	The guts of the Fs_Command system call.  This is used to
+ *	set/get various filesystem parameters.
  *
  * Copyright (C) 1985 Regents of the University of California
  * All rights reserved.
@@ -80,10 +81,7 @@ Fs_Command(command, bufSize, buffer)
 	}
 	case FS_PREFIX_EXPORT: {
 	    /*
-	     * Export a local directory under a prefix.  The local directory
-	     * should be the root of a domain so that dot-dot will get
-	     * trapped correctly.  This isn't a fundamental limitation, and
-	     * could be fixed in the lookup routine.
+	     * Export a local directory under a prefix.
 	     */
 	    Fs_TwoPaths *argPtr = (Fs_TwoPaths *)buffer;
 	    char *localPath, *prefix;
@@ -104,6 +102,7 @@ Fs_Command(command, bufSize, buffer)
 		    "Tried to export non-local file \"%s\" as prefix \"%s\"\n",
 				localPath, prefix);
 			    (void)Fs_Close(streamPtr);
+			    status = FS_NO_ACCESS;
 			} else {
 			    FsPrefixInstall(prefix, streamPtr->ioHandlePtr,
 						    FS_LOCAL_DOMAIN,
@@ -344,6 +343,7 @@ Fs_Command(command, bufSize, buffer)
     return(status);
 }
 
+#ifdef notdef
 /*
  *----------------------------------------------------------------------
  *
@@ -351,7 +351,7 @@ Fs_Command(command, bufSize, buffer)
  *
  *	Cat a file to the screen.  The named file is opened, then
  *	a series of reads are done and the returned data is printed
- *	on the screen.
+ *	on the screen.  (Used when testing simple kernels.)
  *
  * Results:
  *	0 or an error code from any of the file operations.
@@ -398,13 +398,15 @@ Fs_Cat(fileName)
     Mem_Free(buffer);
     return(error);
 }
+#endif /* notdef */
 
+#ifdef notdef
 /*
  *----------------------------------------------------------------------
  *
  * Fs_Copy --
  *
- *	Copy a file.
+ *	Copy a file. (Used when testing simple kernels.)
  *
  * Results:
  *	0 or an error code from any of the file operations.
@@ -469,3 +471,4 @@ Fs_Copy(srcFileName, dstFileName)
     Mem_Free(buffer);
     return(error);
 }
+#endif /* notdef */
