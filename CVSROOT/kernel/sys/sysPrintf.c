@@ -76,7 +76,7 @@ writeProc(stream, flush)
     Fs_IOReply	reply;
 
     bzero((char *)&io, sizeof(io));
-    io.buffer = stream->buffer;
+    io.buffer = (Address) stream->buffer;
     io.length = stream->lastAccess + 1 - stream->buffer;
     bzero((char *)&reply, sizeof(reply));
 
@@ -182,8 +182,6 @@ panic(va_alist)
     DBG_CALL;
     Dev_SyslogDebug(FALSE);
 }
-
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -215,4 +213,38 @@ printf(va_alist)
     (void) vprintf(format, args);
     va_end(args);
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * fprintf --
+ *
+ *      Perform a C style fprintf with disabling of interrupts (output
+ *	always goes to the console:  stream arg is ignored).
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
 
+/*VARARGS0*/
+int
+fprintf(va_alist)
+    va_dcl
+{
+    char *format;
+    va_list	args;
+    int result;
+
+    va_start(args);
+    (void) va_arg(args, FILE *);
+    format = va_arg(args, char *);
+
+    result = vprintf(format, args);
+    va_end(args);
+    return result;
+}
