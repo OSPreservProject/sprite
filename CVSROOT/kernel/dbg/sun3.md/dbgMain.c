@@ -899,6 +899,16 @@ Dbg_Main(stackHole, trapStack)
 		SendReply();
 		break;
 
+	    case GET_VERSION_STRING: {
+		char	*SpriteVersion();
+		char	*version;
+
+		version = SpriteVersion();
+		PutReplyBytes(String_Length(version) + 1, version);
+		SendReply();
+		break;
+	    }
+	    
 	    case INSTREAD:
 	    case DATAREAD: {
 		Dbg_ReadMem	readMem;
