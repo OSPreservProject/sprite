@@ -142,10 +142,19 @@ void Mem_PrintConfigSubr();
  *	Definitions (these are all related:  if you change one, you'll
  *	have to change several):
  *
+ *	GRANULARITY: The difference in size between succesive buckets.  This
+ *		is determined by data alignment restrictions and should be
+ *		a power of 2 to allow for shifting to map from size to bucket.
+ *	SIZE_SHIFT: The shift distance to convert between size and bucket.
  *	SMALL_SIZE: largest blocksize (total including administrative word)
- *		managed by default by the binned-object allocator.
+ *		managed by default by the binned-object allocator.  This
+ *		should be 1 less than a multiple of the granularity.
+ *	BIN_SIZE: largest possible that can be binned.  Should be one less
+ *		than a multiple of the granularity.
+ *
+ *	These can be computed from the above constants.
+ *
  *	SMALL_BUCKETS: default number of separate free lists.
- *	BIN_SIZE: largest possible that can be binned.
  *	BIN_BUCKETS: number of binned free lists.
  *	BYTES_TO_BLOCKSIZE: how many bytes a block must contain (total
  *		including admin. word) to satisfy a user request in bytes.
@@ -153,21 +162,42 @@ void Mem_PrintConfigSubr();
  *		size (total including administrative word).
  *	INDEX_TO_BLOCKSIZE: the (maximum) size corresponding to a bucket.
  *		This will include the size of the administrative word.
- *	BLOCKS_AT_ONCE: when allocating a new region to hold blocks of
- *		a given size, how many blocks worth should be allocated
- *		at once.
+ *
+ *	These constants determine how many new blocks are allocated to
+ *		a bin at one time.
+ *
+ *	MIN_BLOCKS_AT_ONCE: The amount allocate the first time, and the amount
+ *		to increment the number of blocks each successive time.
+ *	MIN_SHIFT: The log2 of MIN_BLOCKS_AT_ONCE.
+ *	MAX_BLOCKS_AT_ONCE: the most number of blocks to be allocated at once.
  *
  * ----------------------------------------------------------------------------
  */
 
-#define SMALL_SIZE 127
-#define SMALL_BUCKETS 32
-#define	BIN_SIZE 4199
-#define BIN_BUCKETS 2100
-#define BYTES_TO_BLOCKSIZE(bytes) ((bytes+7+sizeof(AdminInfo)) & (~7))
-#define BLOCKSIZE_TO_INDEX(size) ((size)>>3)
-#define INDEX_TO_BLOCKSIZE(index) ((index)<<3)
-#define BLOCKS_AT_ONCE 16
+/*
+ * 8 byte granularity to handle SPUR and SPARC.
+ */
+#define GRANULARITY			8
+#define SIZE_SHIFT			3
+/*
+ * This SMALL_SIZE determined by examination of memory tracing, 1/89.
+ * The BIN_SIZE allows us to bin an FS_BLOCK_SIZE object.
+ */
+#define SMALL_SIZE			271
+#define	BIN_SIZE			4199
+
+#define SMALL_BUCKETS			((SMALL_SIZE + 1) / GRANULARITY)
+#define BIN_BUCKETS			((BIN_SIZE + 1) / GRANULARITY)
+#define MASK				(GRANULARITY - 1)
+#define BYTES_TO_BLOCKSIZE(bytes) ((bytes+MASK+sizeof(AdminInfo)) & (~MASK))
+#define BLOCKSIZE_TO_INDEX(size)  ((size) >> SIZE_SHIFT)
+#define INDEX_TO_BLOCKSIZE(index) ((index) << SIZE_SHIFT)
+/*
+ * These are set up to allocate 4, 8, 12, and then 16 blocks at a time.
+ */
+#define MIN_BLOCKS_AT_ONCE		4
+#define MIN_SHIFT			2
+#define MAX_BLOCKS_AT_ONCE 		16
 
 /*
  * The following array holds pointers to the first free blocks of each size.
@@ -177,9 +207,6 @@ void Mem_PrintConfigSubr();
  * bytes up to INDEX_TO_BLOCKSIZE(i)-1 bytes.
  * Buckets 0 and 1 are never used, since they correspond to blocks too small
  * to hold any information for the user.
- * NOTE: the above setup was a bit cleaner with single-word administrative
- * info.  The BLOCKSIZE_TO_INDEX shift was 2 (divide by 4), now it is 3
- * so the granularity of the buckets is bigger.
  */
 
 static Address freeLists[BIN_BUCKETS];
@@ -271,7 +298,7 @@ static int	initialized = FALSE;
  * Mem_SetTraceSizes(). PrintTrace calls a default printing routine; it can
  * be changed with Mem_SetPrintProc().
  */
-#define MAX_NUM_TRACE_SIZES	12
+#define MAX_NUM_TRACE_SIZES	14
 #define	MAX_CALLERS_TO_TRACE	20
 static	struct TraceElement {
     Mem_TraceInfo	traceInfo;
@@ -284,6 +311,8 @@ static	struct TraceElement {
 static	int	numSizesToTrace = 0;
 static	void	DoTrace();
 static	void	PrintTrace();
+
+int		mem_PrintLargeAllocPC = 0;
 
 #endif /* MEM_TRACE */
 
@@ -443,6 +472,7 @@ malloc(numBytes)
     index = BLOCKSIZE_TO_INDEX(numBytes);
     if (numBytes <= BIN_SIZE && numBlocks[index] != -1) {
 	if (freeLists[index] == (Address) NIL) {
+	    register int blocksAtOnce;
 
 	    /*
 	     * There aren't currently any free objects of this size.
@@ -451,9 +481,13 @@ malloc(numBytes)
 	     * of objects of this size once and put all but one back
 	     * on the free list.
 	     */
-
-	    regionSize = MemChunkAlloc(BLOCKS_AT_ONCE * numBytes,
-				       &newRegion);
+	    if (numBlocks[index] < MAX_BLOCKS_AT_ONCE) {
+		blocksAtOnce = ((numBlocks[index] >> MIN_SHIFT) + 1) *
+				MIN_BLOCKS_AT_ONCE;
+	    } else {
+		blocksAtOnce = MAX_BLOCKS_AT_ONCE;
+	    }
+	    regionSize = MemChunkAlloc(blocksAtOnce * numBytes, &newRegion);
 
 	    while (regionSize >= numBytes) {
 		SET_ADMIN(newRegion, freeLists[index]);
@@ -467,15 +501,15 @@ malloc(numBytes)
 	     * If we were given more bytes than we wanted, and there aren't
 	     * quite enough left to make a full block, put the leftovers
 	     * on the free list for the smallest size.  This may still result
-	     * in 4 bytes leftover that we have to throw away.
+	     * in GRANULARITY bytes leftover that we have to throw away.
 	     */
 
-	    while (regionSize >= (sizeof(AdminInfo) + 4)) {
+	    while (regionSize >= (sizeof(AdminInfo) + GRANULARITY)) {
 		SET_ADMIN(newRegion, freeLists[2]);
 		freeLists[2] = newRegion;
 		numBlocks[2] += 1;
-		newRegion += (sizeof(AdminInfo) + 4);
-		regionSize -= (sizeof(AdminInfo) + 4);
+		newRegion += (sizeof(AdminInfo) + GRANULARITY);
+		regionSize -= (sizeof(AdminInfo) + GRANULARITY);
 	    }
 	}
 
@@ -1126,7 +1160,7 @@ Mem_PrintConfigSubr(PrintProc, clientData)
 	if (freeLists[i] == (Address) NIL) {
 	    continue;
 	}
-	(*PrintProc)(clientData, "    %d bytes:", i*4);
+	(*PrintProc)(clientData, "    %d bytes:", i*GRANULARITY);
 	j = 5;
 	for (ptr = freeLists[i]; ptr != (Address) NIL;
 		ptr = (Address) GET_ADMIN(ptr)) {
@@ -1396,30 +1430,37 @@ DoTrace(allocated, infoPtr, curPC, size)
 	    PrintTrace(allocated, infoPtr, curPC);
 	}
 	if (trPtr->traceInfo.flags & MEM_STORE_TRACE) {
+	    register int slot;
 	    if (trPtr->traceInfo.flags & MEM_TRACE_NOT_INIT) {
 		for (j = 0; j < MAX_CALLERS_TO_TRACE; j++) {
 		    trPtr->allocInfo[j].numBlocks = 0;
+		    trPtr->allocInfo[j].callerPC = 0;
 		}
 		trPtr->traceInfo.flags &= ~MEM_TRACE_NOT_INIT;
 	    }
+	    slot = -1;
 	    for (j = 0; j < MAX_CALLERS_TO_TRACE; j++) {
-		if (trPtr->allocInfo[j].numBlocks == 0) {
-		    if (allocated) {
-			trPtr->allocInfo[j].callerPC = callerPC;
-			trPtr->allocInfo[j].numBlocks = 1;
-		    }
-		    break;
-		} else if (trPtr->allocInfo[j].callerPC == callerPC) {
+		if (trPtr->allocInfo[j].callerPC == callerPC) {
 		    if (allocated) {
 			trPtr->allocInfo[j].numBlocks++;
 		    } else {
 			trPtr->allocInfo[j].numBlocks--;
 		    }
-		    break;
+		    return;
+		}
+		if ((trPtr->allocInfo[j].numBlocks == 0) && (slot < 0)) {
+		    slot = j;
 		}
 	    }
+	    if ((slot >= 0) && allocated) {
+		trPtr->allocInfo[slot].callerPC = callerPC;
+		trPtr->allocInfo[slot].numBlocks = 1;
+	    }
 	}
-	break;
+	return;
+    }
+    if (size > BIN_SIZE && mem_PrintLargeAllocPC) {
+	printf("malloc(%d[%d]) from PC 0x%x\n", origSize, size, callerPC);
     }
 }
 #endif /* MEM_TRACE */
