@@ -44,6 +44,7 @@ typedef struct RecovHostState {
     int			spriteID;	/* Sprite Host ID */
     int			bootID;		/* Timestamp from RPC header */
     Time		time;		/* Time of last message */
+    int			numPings;	/* Number ping callbacks scheduled */
     Sync_Condition	alive;		/* Notified when host comes up */
     Sync_Condition	recovery;	/* Notified when recovery is complete */
 } RecovHostState;
@@ -457,11 +458,13 @@ RpcHostAlive(spriteID, bootID, asyncRecovery)
 		 */
 		char *name;
 		Net_SpriteIDToName(spriteID, &name);
-		if (name == (char *)NIL) {
-		    Sys_Printf("Sprite Host <%d> is now up\n", spriteID);
-		} else {
-		    Sys_Printf("Sprite Host %s (%d) is now up\n", name,
-				spriteID);
+		if ( !reboot ) {
+		    if (name == (char *)NIL) {
+			Sys_Printf("Sprite Host <%d> is now up\n", spriteID);
+		    } else {
+			Sys_Printf("Sprite Host %s (%d) is now up\n", name,
+				    spriteID);
+		    }
 		}
 		hostPtr->state = RECOV_HOST_ALIVE;
 		Sync_Broadcast(&hostPtr->alive)
@@ -668,7 +671,10 @@ MarkHostDead(hostPtr)
 			    hostPtr->spriteID);
 	    }
 	    RECOV_TRACE(hostPtr->spriteID, hostPtr->state, RECOV_CUZ_CRASH);
-	    Proc_CallFunc(RpcHostCheck, hostPtr->spriteID, 0);
+	    if (hostPtr->numPings <= 0) {
+		Proc_CallFunc(RpcHostCheck, hostPtr->spriteID, 0);
+		hostPtr->numPings = 1;
+	    }
 	    hostPtr->state |= RECOV_STATE_RECOVERING;
 	    Proc_CallFunc(RpcCrashCallBacks, hostPtr->spriteID, 0);
 	    break;
@@ -703,11 +709,13 @@ RpcHostCheck(data, callInfoPtr)
     ReturnStatus status;
 
     RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_PING);
+    IncPings(spriteID, -1);
     if (Rpc_Ping(spriteID) != SUCCESS) {
 	/*
 	 * Try again later if the host is still down.
 	 */
 	callInfoPtr->interval = rpcPingSeconds * timer_IntOneSecond;
+	IncPings(spriteID, 1);
     } else {
 	callInfoPtr->interval = 0;
     }
@@ -814,6 +822,43 @@ GetHostState(spriteID)
     }
     UNLOCK_MONITOR;
     return(state);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IncPings --
+ *
+ *	Increment (decrement) the number of pings that are scheduled
+ *	for a host.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds the increment paramenter to hostPtr->numPings.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+IncPings(spriteID, increment)
+    int spriteID;
+    int increment;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    hostPtr->numPings += increment;
+	}
+    }
+    UNLOCK_MONITOR;
 }
 
 /*
