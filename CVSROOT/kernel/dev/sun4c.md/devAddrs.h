@@ -31,4 +31,4 @@
 
 #define DEV_UART_VECTOR			30
 
-#endif _DEVADDRS
+#endif /* _DEVADDRS */
