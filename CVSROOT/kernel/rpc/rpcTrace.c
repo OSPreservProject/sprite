@@ -80,6 +80,17 @@ Rpc_PrintTrace(clientData)
     int stringIndex;
     int linesPrinted = 0;
 
+    /* 
+     * Provide a quick way to turn RPC tracing on.  Otherwise, somebody has 
+     * to log in and invoke rpccmd, which can be slow or even impossible if 
+     * the load is high enough.
+     */
+    if (!rpc_Tracing) {
+	rpc_Tracing = TRUE;
+	printf("RPC tracing has now been enabled.  Please try again.\n");
+	return;
+    }
+
     rpcTraceHdrPtr->flags |= TRACE_INHIBIT;
     if (numRecords > rpcTraceHdrPtr->numRecords) {
 	numRecords = rpcTraceHdrPtr->numRecords;
