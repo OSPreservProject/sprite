@@ -49,10 +49,11 @@ static	List_Links      deadSegListHdr;
  */
 static	Sync_Condition	codeSegCondition;
 
-extern	Vm_Segment	**Fs_RetSegPtr();
-void	DeleteSeg();
-void	CleanSegment();
-static 	void	FillSegmentInfo();
+extern	Vm_Segment  **Fs_RetSegPtr();
+static  void	    DeleteSeg();
+static  void	    CleanSegment();
+static 	void	    FillSegmentInfo();
+static ReturnStatus AddToSeg();
 
 int	vmNumSegments = 256;
 
@@ -145,7 +146,7 @@ VmSegTableInit()
     }
 }
 
-Vm_Segment	*FindCode();
+static Vm_Segment	*FindCode();
 
 
 /*
@@ -213,7 +214,7 @@ Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY Vm_Segment *
+ENTRY static Vm_Segment *
 FindCode(filePtr, procLinkPtr, usedFilePtr)
     Fs_Stream		*filePtr;	/* The unique identifier for this file
 					   (if any) */
@@ -380,7 +381,7 @@ Vm_FileChanged(segPtrPtr)
     UNLOCK_MONITOR;
 }
 
-void	GetNewSegment();
+static void	GetNewSegment();
 
 
 /*
@@ -468,7 +469,7 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+ENTRY static void
 GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
 	      spacePtr, segPtrPtr, deletePtr)
     int			type;		/* The type of segment that this is */
@@ -755,7 +756,7 @@ Vm_SegmentDelete(segPtr, procPtr)
  *
  * ----------------------------------------------------------------------------
  */
-void
+static void
 DeleteSeg(segPtr)
     register	Vm_Segment	*segPtr;
 {
@@ -844,8 +845,8 @@ CleanSegment(segPtr)
     UNLOCK_MONITOR;
 }
 
-Boolean		StartDelete();
-ReturnStatus	EndDelete();
+static Boolean		StartDelete();
+static ReturnStatus	EndDelete();
 
 
 /*
@@ -1052,9 +1053,9 @@ VmDecPTUserCount(segPtr)
     UNLOCK_MONITOR;
 }
 
-void	StartExpansion();
-void	EndExpansion();
-void	AllocMoreSpace();
+static void	StartExpansion();
+static void	EndExpansion();
+static void	AllocMoreSpace();
 
 
 /*
@@ -1133,7 +1134,7 @@ VmAddToSeg(segPtr, firstPage, lastPage)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+ENTRY static void
 StartExpansion(segPtr)
     Vm_Segment	*segPtr;
 {
@@ -1166,7 +1167,7 @@ StartExpansion(segPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+ENTRY static void
 EndExpansion(segPtr)
     Vm_Segment	*segPtr;
 {
@@ -1237,7 +1238,7 @@ AllocMoreSpace(segPtr, newNumPages, spacePtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY ReturnStatus 
+ENTRY static ReturnStatus 
 AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
     register	Vm_Segment	*segPtr;	/* The segment to add the
 						 * virtual pages to. */
@@ -1327,9 +1328,9 @@ AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
     return(SUCCESS);
 }
 
-void	IncPTUserCount();
-void	CopyInfo();
-Boolean	CopyPage();
+static void	IncPTUserCount();
+static void	CopyInfo();
+static Boolean	CopyPage();
 
 
 /*
@@ -1774,7 +1775,7 @@ CopyPage(srcSegPtr, srcPTEPtr, destPTEPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+ENTRY static void
 SegmentIncRef(segPtr, procLinkPtr) 
     register	Vm_Segment	*segPtr;
     register	VmProcLink	*procLinkPtr;

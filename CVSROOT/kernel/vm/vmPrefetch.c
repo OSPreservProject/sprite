@@ -33,10 +33,10 @@ typedef struct {
     Vm_VirtAddr	virtAddr;
 } PrefetchInfo;
 
-Boolean	StartPrefetch();
-void	DoPrefetch();
-void	FinishPrefetch();
-void	AbortPrefetch();
+static Boolean	StartPrefetch();
+static void	DoPrefetch();
+static void	FinishPrefetch();
+static void	AbortPrefetch();
 
 
 /*
@@ -212,7 +212,7 @@ exit:
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+ENTRY static void
 FinishPrefetch(virtAddrPtr, ptePtr)
     Vm_VirtAddr		*virtAddrPtr;
     register	Vm_PTE	*ptePtr;

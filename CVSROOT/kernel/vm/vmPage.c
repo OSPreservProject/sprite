@@ -121,9 +121,9 @@ Boolean	vmCORReadOnly = FALSE;
  */
 int	vmPhysPageLimit = -1;
 
-void		PageOut();
-void		PutOnReserveList();
-void		PutOnFreeList();
+static void	PageOut();
+static void	PutOnReserveList();
+static void	PutOnFreeList();
 
 
 /*
@@ -1367,8 +1367,8 @@ typedef enum {
     NOT_DONE,	/* The page-in is not yet done yet. */
 } PrepareResult;
 
-PrepareResult	PreparePage();
-void		FinishPage();
+static PrepareResult	PreparePage();
+static void		FinishPage();
 
 
 /*

@@ -103,19 +103,19 @@ Boolean	vm_CanCOW = FALSE;
 Boolean	vm_CanCOW = TRUE;
 #endif /* sun4 */
 
-void		DoFork();
-void		GiveAwayPage();
-void		ReleaseCOW();
-Boolean		COWStart();
-Vm_Segment	*FindNewMasterSeg();
-Boolean		IsResident();
-void		COWEnd();
-void		SetPTE();
-void		CopyPage();
-ReturnStatus	COR();
-void		COW();
-unsigned int	GetMasterPF();
-void		SeeIfLastCOR();
+static void	    DoFork();
+static void	    GiveAwayPage();
+static void	    ReleaseCOW();
+static Boolean	    COWStart();
+static Vm_Segment   *FindNewMasterSeg();
+static Boolean      IsResident();
+static void	    COWEnd();
+static void	    SetPTE();
+static void	    CopyPage();
+static ReturnStatus COR();
+static void	    COW();
+static unsigned int GetMasterPF();
+static void	    SeeIfLastCOR();
 
 
 /*
@@ -168,7 +168,7 @@ VmSegFork(srcSegPtr, destSegPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+static void
 DoFork(srcSegPtr, destSegPtr)
     register	Vm_Segment	*srcSegPtr;
     register	Vm_Segment	*destSegPtr;
@@ -426,7 +426,7 @@ VmCOWDeleteFromSeg(segPtr, firstPage, lastPage)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static Boolean
+static Boolean
 COWStart(segPtr, cowInfoPtrPtr)
     register	Vm_Segment	*segPtr;	/* Segment to begin COW for.*/
     register	VmCOWInfo	**cowInfoPtrPtr;/* Pointer to pointer to
@@ -483,7 +483,7 @@ again:
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+static void
 COWEnd(segPtr, cowInfoPtrPtr)
     register	Vm_Segment	*segPtr;	 /* Segment that was involved
 						  * in the COW or COR. */
@@ -615,7 +615,7 @@ FindNewMasterSeg(segPtr, page, othersPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static Boolean
+static Boolean
 IsResident(ptePtr)
     Vm_PTE	*ptePtr;
 {
@@ -706,7 +706,7 @@ VmCOR(virtAddrPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+static ReturnStatus
 COR(virtAddrPtr, ptePtr)
     register	Vm_VirtAddr	*virtAddrPtr;
     register	Vm_PTE		*ptePtr;
@@ -779,7 +779,7 @@ COR(virtAddrPtr, ptePtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY unsigned int
+static unsigned int
 GetMasterPF(mastSegPtr, virtPage)
     Vm_Segment	*mastSegPtr;
     int		virtPage;
@@ -820,7 +820,7 @@ GetMasterPF(mastSegPtr, virtPage)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+static void
 SeeIfLastCOR(mastSegPtr, page)
     register	Vm_Segment	*mastSegPtr;
     int				page;
@@ -1074,7 +1074,7 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+static void
 GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
     register	Vm_Segment	*srcSegPtr;	/* Segment to take page from.*/
     int				virtPage;	/* Virtual page to give away.*/
@@ -1157,7 +1157,7 @@ GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+static void
 SetPTE(virtAddrPtr, pte)
     Vm_VirtAddr	*virtAddrPtr;
     Vm_PTE	pte;
@@ -1234,7 +1234,7 @@ CopyPage(srcPF, destPF)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+static void
 ReleaseCOW(ptePtr)
     Vm_PTE	*ptePtr;
 {
