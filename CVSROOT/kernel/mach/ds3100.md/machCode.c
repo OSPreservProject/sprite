@@ -1086,6 +1086,12 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
  *
  * ----------------------------------------------------------------------------
  */
+#define DEBUG_INTR
+#ifdef DEBUG_INTR
+static int lastInterruptCalled = -1;
+#endif  /* DEBUG_INTR */
+
+
 static ReturnStatus
 Interrupt(statusReg, causeReg)
     unsigned	statusReg;
@@ -1094,7 +1100,6 @@ Interrupt(statusReg, causeReg)
     int		n;
     unsigned	mask;
 
-#define DEBUG_INTR
 #ifdef DEBUG_INTR
     if (mach_AtInterruptLevel) {
 	printf("Received interrupt while at interrupt level.\n");
@@ -1114,6 +1119,14 @@ Interrupt(statusReg, causeReg)
 						MACH_CR_HARD_INT_SHIFT;
     while (mask != 0) {
 	if (mask & 1) {
+#ifdef DEBUG_INTR
+	    if (n >= MACH_NUM_HARD_INTERRUPTS) {
+		printf("Bogus index (%d) for interrupt handler\n", n);
+		mach_AtInterruptLevel = 0;
+		return(MACH_KERN_ERROR);
+	    }
+	    lastInterruptCalled = n;
+#endif /* DEBUG_INTR */
 	    interruptHandlers[n]();
 	}
 	mask >>= 1;
@@ -1121,6 +1134,9 @@ Interrupt(statusReg, causeReg)
     }
 
     mach_AtInterruptLevel = 0;
+#ifdef DEBUG_INTR
+    lastInterruptCalled = -1;
+#endif /* DEBUG_INTR */
     return(MACH_OK);
 }
 
