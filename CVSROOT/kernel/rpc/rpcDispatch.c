@@ -125,9 +125,10 @@ Rpc_Dispatch(packetPtr, packetLength)
     if (rpcHdrPtr->flags & RPC_SERVER) {
 	register RpcServerState *srvPtr;
 	/*
-	 * Only respond if the RPC system is "on".
+	 * Only respond if the RPC system is "on".  We allow echoes to
+	 * come in, however, so that other hosts know we are up.
 	 */
-	if (!rpcServiceEnabled) {
+	if (!rpcServiceEnabled && rpcHdrPtr->command != RPC_ECHO_2) {
 	    return;
 	}
 	rpcSrvStat.toServer++;
