@@ -367,7 +367,6 @@ DumpPCB(procPtr)
 	"waiting",
 	"exiting",
 	"dead",
-	"debug",
 	"migrated",
 	"new",
 	"suspended",
