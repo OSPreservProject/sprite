@@ -427,7 +427,7 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
 	diskAddr.head = diskPtr->numHeads - 1;
 	diskAddr.sector = diskPtr->numSectors - 1;
 	diskAddr.cylinder = diskPtr->numCylinders - 1;
-    
+
 	error = DevXylogicsCommand(xyPtr, XY_SET_DRIVE_SIZE, diskPtr,
 			       &diskAddr, 0, (Address)0, WAIT);
 	if (error != SUCCESS) {
@@ -500,7 +500,7 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
     part = deviceUnit % DEV_NUM_DISK_PARTS;
     diskPtr = xyDisk[disk];
     if (diskPtr->magic != XY_DISK_STATE_MAGIC) {
-	Sys_Panic("DevXylogicsDiskIO, bad disk state info\n");
+	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: bad disk state info\n");
     }
 
     /*
@@ -522,6 +522,7 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
 	 * The offset is past the end of the partition.
 	 */
 	*numSectorsPtr = 0;
+	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: Past end of partition\n");
 	return(SUCCESS);
     } else if ((startSector + totalSectors - 1) > lastSector) {
 	/*
@@ -529,6 +530,7 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
 	 * sector count so there is no overrun.
 	 */
 	totalSectors = lastSector - startSector + 1;
+	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: Overrun end of partition\n");
     }
     /*
      * Relocate the disk address to be relative to this partition.
@@ -617,7 +619,32 @@ DevXylogicsSectorIO(command, diskPtr, diskAddrPtr, numSectorsPtr, buffer)
     ReturnStatus error;
     register DevXylogicsController *xyPtr; /* Controller for the disk */
     int retries = 0;
-
+#ifdef mouse_trap
+    if (command == XY_WRITE) {
+	int		i, j;
+	register char	*bufPtr;
+	register int	*intPtr;
+	/*
+	 * Check all sectors for sectors full of zeroes.
+	 */
+	for (i = 0, bufPtr = buffer; i < *numSectorsPtr; i++, bufPtr += 512) {
+	    intPtr = (int *)bufPtr;
+	    if (*intPtr == 0 && *(intPtr + 127) == 0) {
+		Boolean	allZero = TRUE;
+		for (j = 0; j < 128; j++, intPtr++) {
+		    if (*intPtr != 0) {
+			allZero = FALSE;
+			break;
+		    }
+		}
+		if (allZero) {
+		    Sys_Panic(SYS_FATAL,
+				"DevXylogicsSectorIO: Writing all 0's\n");
+		}
+	    }
+	}
+    }
+#endif mouse_trap
     /*
      * Synchronize with the interrupt handling routine and with other
      * processes that are trying to initiate I/O with this controller.
@@ -656,9 +683,19 @@ retry:
 	    Sync_MasterWait(&xyPtr->IOComplete, &xyPtr->mutex, FALSE);
 	}
     }
-    if ((xyPtr->flags & XYLOGICS_RETRY) && retries++ < 3) {
+    if (xyPtr->flags & XYLOGICS_RETRY) {
+	retries++;
 	xyPtr->flags &= ~XYLOGICS_RETRY;
-	goto retry;
+	if (retries < 3) {
+	    Sys_Panic(SYS_WARNING, "Xylogics retrying cmd %d at <%d,%d,%d>",
+				command, diskAddrPtr->cylinder,
+				diskAddrPtr->head, diskAddrPtr->sector);
+	    goto retry;
+	} else {
+	    Sys_Panic(SYS_WARNING, "Xylogics retry cmd %d FAILED at <%d,%d,%d>",
+				command, diskAddrPtr->cylinder,
+				diskAddrPtr->head, diskAddrPtr->sector);
+	}
     }
     *numSectorsPtr -= (xyPtr->residual / DEV_BYTES_PER_SECTOR);
     if (xyPtr->flags & XYLOGICS_IO_ERROR) {
@@ -787,9 +824,8 @@ DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr, numSectors, address,
      */
     regsPtr = xyPtr->regsPtr;
     if (regsPtr->status & XY_GO_BUSY) {
-	Sys_Panic(SYS_WARNING, "Xylogics command found busy controller\n");
-	DELAY(100000);
-	DevXylogicsReset(regsPtr);
+	Sys_Panic(SYS_WARNING, "Xylogics waiting for busy controller\n");
+	DevXylogicsWait(regsPtr, XY_GO_BUSY);
     }
     /*
      * Set up the I/O registers for the transfer.  All addresses given to
@@ -931,8 +967,8 @@ DevXylogicsStatus(xyPtr)
 		case  XY_SOFT_ERR_FAULT:
 		case  XY_SOFT_ERR_SEEK:
 		    error = DEV_RETRY_ERROR;
-		    Sys_Printf("%x: ", IOPBPtr->errorCode);
-		    Sys_Panic(SYS_WARNING, "Retryable Xylogics error\n");
+		    Sys_Panic(SYS_WARNING, "Retryable Xylogics error: %x\n",
+				IOPBPtr->errorCode);
 		    break;
 		case XY_WRITE_PROTECT_ON:
 		    Sys_Printf("Xylogics-%d: ", xyPtr->number);
@@ -995,6 +1031,7 @@ DevXylogicsWait(regsPtr, condition)
 	}
 	DELAY(10);
     }
+    Sys_Panic(SYS_WARNING, "Xylogics reset");
     DevXylogicsReset(regsPtr);
     return(status);
 }
