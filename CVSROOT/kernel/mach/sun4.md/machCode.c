@@ -560,7 +560,9 @@ Mach_StartUserProc(procPtr, entryPoint)
     (Address) statePtr->trapRegs->pc = (Address)entryPoint;
     (Address) statePtr->trapRegs->nextPc = (Address)entryPoint + 4;
 
+#ifdef NOTDEF
     Mach_MonPrintf("Mach_StartUserProc: calling MachRunUserProc with procPtr 0x%x and entryPoint 0x%x\n", procPtr, entryPoint);
+#endif NOTDEF
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -738,21 +740,12 @@ Mach_GetDebugState(procPtr, debugStatePtr)
     Proc_ControlBlock	*procPtr;
     Proc_DebugState	*debugStatePtr;
 {
-#ifdef NOTDEF
     register	Mach_State	*machStatePtr;
 
     machStatePtr = procPtr->machStatePtr;
-    bcopy((Address)machStatePtr->userState.trapRegs,
-	      (Address)debugStatePtr->regState.regs,
-	      sizeof(machStatePtr->userState.trapRegs));
-    debugStatePtr->regState.regs[SP] = 
-			(int)machStatePtr->userState.userStackPtr;
-    debugStatePtr->regState.pc = machStatePtr->userState.excStackPtr->pc;
-    debugStatePtr->regState.statusReg  =
-			machStatePtr->userState.excStackPtr->statusReg;
-#else
-    panic("Mach_GetDebugState called.\n");
-#endif NOTDEF
+    bcopy((Address)machStatePtr->trapRegs,
+	      (Address)(&debugStatePtr->regState), sizeof(Mach_RegState));
+    return;
 }
 
 
@@ -777,24 +770,19 @@ Mach_SetDebugState(procPtr, debugStatePtr)
     Proc_ControlBlock	*procPtr;
     Proc_DebugState	*debugStatePtr;
 {
-#ifdef NOTDEF
     register	Mach_State	*machStatePtr;
 
+/* y, pc's g1-g7 all in's*/
     machStatePtr = procPtr->machStatePtr;
-    bcopy((Address)debugStatePtr->regState.regs,
-	      (Address)machStatePtr->userState.trapRegs,
-	      sizeof(machStatePtr->userState.trapRegs) - sizeof(int));
-    machStatePtr->userState.userStackPtr = 
-				(Address)debugStatePtr->regState.regs[SP];
-    machStatePtr->userState.excStackPtr->pc = 
-				debugStatePtr->regState.pc;
-    if (!(debugStatePtr->regState.statusReg & MACH_SR_SUPSTATE)) {
-	machStatePtr->userState.excStackPtr->statusReg = 
-				debugStatePtr->regState.statusReg;
-    }
-#else
-    panic("Mach_SetDebugState called.\n");
-#endif NOTDEF
+    machStatePtr->trapRegs->pc = debugStatePtr->regState.pc;
+    machStatePtr->trapRegs->nextPc = debugStatePtr->regState.nextPc;
+    machStatePtr->trapRegs->y = debugStatePtr->regState.y;
+    bcopy((Address)debugStatePtr->regState.ins,
+	    (Address)machStatePtr->trapRegs->ins, MACH_NUM_INS * sizeof (int));
+    bcopy((Address)debugStatePtr->regState.globals,
+	    (Address)machStatePtr->trapRegs->globals,
+	    MACH_NUM_GLOBALS * sizeof (int));
+    return;
 }
 
 
@@ -1264,7 +1252,13 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 		panic("MachPageFault: kernel tried to fault NIL address at pc 0x%x.\n", pcValue);
 	    }
 	}
+	/*
+	 * Since this is called from trap handlers only, we know interrupts
+	 * are off here.  The Vm system needs them on?
+	 */
+	Mach_EnableIntr();
 	status = Vm_PageIn(addrErrorReg, protError);
+	Mach_DisableIntr();
 	if (status != SUCCESS) {
 	    if (copyInProgress) {
 		/* sun3 just returns MACH_USER_ERROR here */
@@ -1282,13 +1276,18 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     }
     /* user page fault */
     protError = busErrorReg & MACH_PROT_ERROR;
+    Mach_EnableIntr();
     if (Vm_PageIn(addrErrorReg, protError) != SUCCESS) {
 	printf(
     "MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
 		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
 	/* Kill user process */
+	DEBUG_ADD(0xcccccccc);
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
+	Mach_DisableIntr();
+	return;
     }
+    Mach_DisableIntr();
     return;
 }
 
@@ -1331,6 +1330,7 @@ MachUserAction()
      * If other stuff, such as flushing the windows to the stack needs to
      * be done, it will happen when the process is switched back in again.
      */
+    Mach_EnableIntr();
     if (procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING) {
 	Sched_LockAndSwitch();
     }
@@ -1370,20 +1370,20 @@ MachUserAction()
      * want the signal stuff in our process state to be overwritten by another
      * signal until we have a chance to copy it out to the user stack and to
      * jump to the signal pc without its being overwritten.  Note that we do
-     * not user the DISABLE_INTR macro, because it increments the nesting
+     * not use the DISABLE_INTR macro, because it increments the nesting
      * depth of interrupts and we don't want this since there is an implicit
      * enable interrupts on rett.
      */
     sigStackPtr = &(machStatePtr->sigStack);
     sigStackPtr->contextPtr = &(machStatePtr->sigContext);
-    Mach_DisableIntr();
     if (Sig_Handle(procPtr, sigStackPtr, &pc)) {
 	machStatePtr->sigContext.machContext.pcValue = pc;
 	machStatePtr->sigContext.machContext.trapInst = MACH_SIG_TRAP_INSTR;
 	/* leave interrupts disabled */
+	Mach_DisableIntr();
 	return TRUE;
     }
-    Mach_EnableIntr();
+    Mach_DisableIntr();
     return FALSE;
 }
 
@@ -1455,13 +1455,16 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
      */
     switch (trapType) {
     case MACH_ILLEGAL_INSTR:
+	DEBUG_ADD(0xeeeeeeee);
 	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, procPtr->processID,
 		FALSE);
 	break;
     case MACH_PRIV_INSTR:
+	DEBUG_ADD(0xeeeeeeee);
 	(void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST, procPtr->processID, FALSE);
 	break;
     case MACH_MEM_ADDR_ALIGN:
+	DEBUG_ADD(0xdddddddd);
 	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, procPtr->processID,
 		FALSE);
 	break;

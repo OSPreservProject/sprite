@@ -375,6 +375,21 @@ _MachReturnFromTrap:
 	/* Look at context switches */
 	/* Look at signal stuff */
 	/* Look at window overflow stuff */
+/* FOR_DEBUGGING */
+	set	0x88888888, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet0, %OUT_TEMP1)
+	mov	%tbr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet1, %OUT_TEMP1)
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet2, %OUT_TEMP1)
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet3, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet4, %CUR_TBR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet5, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet6, %CUR_PC_REG)
+	set	0x999999999, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet7, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
 
 	/* Are we a user or kernel process? */
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
@@ -430,12 +445,16 @@ NormalReturn:
 	 * Call VM Stuff with the %fp which will be stack pointer in
 	 * the window we restore..
 	 */
-/* TURN ON INTERRUPTS */
+	QUICK_ENABLE_INTR()
+/* FOR_DEBUGGING */
+	set	0x34343434, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage2, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
 	mov	%fp, %o0
 	clr	%o1		/* also check for protection????? */
 	call	_Vm_PageIn, 2
 	nop
-/* TURN OFF INTERRUPTS */
+	QUICK_DISABLE_INTR()
 	tst	%RETURN_VAL_REG
 	bne	KillUserProc
 	nop
@@ -445,9 +464,15 @@ CheckNextFault:
 	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
 	be	CallUnderflow
 	nop
+	QUICK_ENABLE_INTR()
+/* FOR_DEBUGGING */
+	set	0x43434343, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage3, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
 	clr	%o1
 	call	_Vm_PageIn, 2
 	nop
+	QUICK_DISABLE_INTR()
 	tst	%RETURN_VAL_REG
 	be	CallUnderflow
 	nop
@@ -471,7 +496,7 @@ UnderflowOkay:
 	mov	%CUR_Y_REG, %y
 
 /* FOR_DEBUGGING */
-	set	0x88888888, %OUT_TEMP1
+	set	0x81818181, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn0, %OUT_TEMP1)
 	mov	%tbr, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn1, %OUT_TEMP1)
@@ -482,7 +507,7 @@ UnderflowOkay:
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn4, %CUR_TBR_REG)
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn5, %CUR_PSR_REG)
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn6, %CUR_PC_REG)
-	set	0x999999999, %OUT_TEMP1
+	set	0x91919191, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn7, %OUT_TEMP1)
 /*END  FOR_DEBUGGING */
 
@@ -559,6 +584,18 @@ MachHandleWindowOverflowTrap:
 	 * here.  Maybe?
 	 */
 MachReturnToOverflowWithSavedState:
+/* FOR_DEBUGGING */
+	set	0x44444444, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved0, %OUT_TEMP1)
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved1, %OUT_TEMP1)
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved2, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved3, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved4, %CUR_PC_REG)
+	set	0x55555555, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved5, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
 	call	_MachReturnFromTrap
 	nop
 
@@ -888,11 +925,17 @@ MachReturnToUnderflowWithSavedState:
 	nop
 	mov	%fp, %o0			/* do the page in for first */
 	save					/* back to trap window */
+	QUICK_ENABLE_INTR()
+/* FOR_DEBUGGING */
+	set	0x23232323, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage0, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
 		/* Address that would fault is in %i0 now. */
 	mov	%i0, %o0
-	set	0x1, %o1			/* also check protection???? */
+	clr	%o1			/* also check protection???? */
 	call	_Vm_PageIn, 2
 	nop
+	QUICK_DISABLE_INTR()
 	tst	%RETURN_VAL_REG
 	be,a	CheckNextUnderflow		/* succeeded, try next */
 	restore		/* back to window to check in, only if branching!! */
@@ -909,11 +952,17 @@ CheckNextUnderflow:
 	save					/* back to trap window */
 	be	NormalUnderflow			/* we were okay here */
 	nop
+	QUICK_ENABLE_INTR()
+/* FOR_DEBUGGING */
+	set	0x32323232, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage1, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
 		/* Address that would fault is in %i1 now. */
 	mov	%i1, %o0
-	set	0x1, %o1			/* also check protection???? */
+	clr	%o1			/* also check protection???? */
 	call	_Vm_PageIn, 2
 	nop
+	QUICK_DISABLE_INTR()
 	tst	%RETURN_VAL_REG
 	bne	KillTheProc
 	nop
@@ -1007,20 +1056,21 @@ MachWindowUnderflow:
 	 */
 /* FOR_DEBUGGING */
 	mov	%psr, %VOL_TEMP1
+	set	MACH_ENABLE_TRAP_BIT, %VOL_TEMP2
+	andcc	%VOL_TEMP1, %VOL_TEMP2, %g0
+	be	ThingsAreOkay
+	nop
 	set	MACH_DISABLE_INTR, %VOL_TEMP2
 	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
 	cmp	%VOL_TEMP1, %VOL_TEMP2		/* interrupts totally off? */
 	be	ThingsAreOkay
 	nop
-#ifdef NOTDEF
-	ta	MACH_CALL_DBG_TRAP
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr1, %CUR_PC_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr2, %RETURN_ADDR_REG)
+	ta	MACH_CALL_DBG_TRAP		/* interrupts should be off! */
 	nop
-#endif NOTDEF
-	mov	%psr, %VOL_TEMP1
-	set	MACH_DISABLE_INTR, %VOL_TEMP2
-	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	mov	%VOL_TEMP1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
 ThingsAreOkay:
 /* END FOR_DEBUGGING */
 	set	_machDebugStackStart, %VOL_TEMP1

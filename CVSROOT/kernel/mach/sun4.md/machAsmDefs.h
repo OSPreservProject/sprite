@@ -276,6 +276,51 @@ NoDisableLabel:
 	MACH_WAIT_FOR_STATE_REGISTER();		\
 NoEnableLabel:
 
+/*
+ * Enable interrupts if they are off and keep traps enabled.  To do this,
+ * we must disable traps, change the interrupt level, and then re-enable
+ * traps.  If interrupts are really off when we start, then this is safe.
+ * If they aren't off, then this is safe only if interrupt handlers are
+ * guarenteed to return to the same window they started in.  This is because
+ * if interrupts are enabled when we start, and we read the psr into a temp
+ * register and get an interrupt that changes the window value before we
+ * write back the new psr value, we would be writing back an old and incorrect
+ * current window pointer if the interrupt caused us to change widows.
+ *
+ * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
+ */
+#define	QUICK_ENABLE_INTR()				\
+	MACH_DISABLE_TRAPS();				\
+	mov	%psr, %VOL_TEMP1;			\
+	set	MACH_ENABLE_INTR, %VOL_TEMP2;		\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER();			\
+	MACH_ENABLE_TRAPS()
+
+/*
+ * Disable interrupts and keep traps enabled.  To do this,
+ * we must disable traps, change the interrupt level, and then re-enable
+ * traps.  This is safe only if interrupts are guarenteed to return to the same
+ * same window in which they occured.  This is because
+ * if interrupts are enabled when we start, and we read the psr into a temp
+ * register and get an interrupt that changes the window value before we
+ * write back the new psr value, we would be writing back an old and incorrect
+ * current window pointer if the interrupt caused us to change widows.
+ *
+ * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
+ */
+#define	QUICK_DISABLE_INTR()				\
+	MACH_DISABLE_TRAPS();				\
+	mov	%psr, %VOL_TEMP1;			\
+	set	MACH_DISABLE_INTR, %VOL_TEMP2;		\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER();			\
+	MACH_ENABLE_TRAPS()
+
+
+
 
 /*
  * Run at high priority: supervisor mode, interrupts disabled, traps enabled.

@@ -52,11 +52,24 @@ __MachGetPc:
  */
 .globl	_Mach_DisableIntr
 _Mach_DisableIntr:
-	mov %psr, %OUT_TEMP1
-	set MACH_DISABLE_INTR, %OUT_TEMP2
-	or %OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
-	mov %OUT_TEMP1, %psr
-	nop					/* time for valid state reg */
+	/* first disable traps */
+	mov	%psr, %OUT_TEMP1
+	set	MACH_DISABLE_TRAP_BIT, %OUT_TEMP2
+	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/* now disable interrupts */
+	set	MACH_DISABLE_INTR, %OUT_TEMP2
+	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/* now enable traps */
+	set	MACH_ENABLE_TRAP_BIT, %OUT_TEMP2
+	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
 	retl
 	nop
 
@@ -82,11 +95,24 @@ _Mach_DisableIntr:
  */
 .globl	_Mach_EnableIntr
 _Mach_EnableIntr:
-	mov %psr, %OUT_TEMP1
-	set MACH_ENABLE_INTR, %OUT_TEMP2
-	and %OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
-	mov %OUT_TEMP1, %psr
-	nop					/* time for valid state reg */
+	/* first disable traps */
+	mov	%psr, %OUT_TEMP1
+	set	MACH_DISABLE_TRAP_BIT, %OUT_TEMP2
+	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/* Now turn on interrupts */
+	set	MACH_ENABLE_INTR, %OUT_TEMP2
+	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/* Now turn traps back on */
+	set	MACH_ENABLE_TRAP_BIT, %OUT_TEMP2
+	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
 	retl
 	nop
 
@@ -373,6 +399,12 @@ ContextRestoreSomeMore:
  */
 .globl	_MachRunUserProc
 _MachRunUserProc:
+/* FOR DEBUGGING */
+	set	0xaaaaaaaa, %o0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser0, %o0)
+	mov	%psr, %o0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser1, %o0)
+/* END FOR DEBUGGING */
 	/*
 	 * Get values to restore registers to from the state structure.
 	 * We set up %VOL_TEMP2 to point to trapRegs structure and restore
@@ -441,6 +473,12 @@ UserStackOkay:
 	/*
 	 * Now go through regular return from trap code.
 	 */
+/* FOR DEBUGGING */
+	set	0xbbbbbbbb, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser2, %OUT_TEMP1)
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser3, %OUT_TEMP1)
+/* END FOR DEBUGGING */
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop
@@ -512,8 +550,10 @@ _MachHandleSignal:
 	set	_machSigStackOffsetInMach, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig stack */
+	QUICK_ENABLE_INTR()
 	call	_Vm_CopyOut, 3				/* copy Sig_Stack */
 	nop
+	QUICK_DISABLE_INTR()
 	be	CopiedOutSigStack
 	nop
 CopyOutForSigFailed:
@@ -529,6 +569,8 @@ CopyOutForSigFailed:
 
 CopiedOutSigStack:
 	/* Copy out sig context from state structure to user stack */
+	/* put addr of mach state structure in %VOL_TEMP1 again */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
 	set	_machSigContextOffsetOnStack, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
 	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* dest addr of Sig_Context */
@@ -536,23 +578,27 @@ CopiedOutSigStack:
 	ld	[%o0], %o0			/* size of Sig_Context */
 	set	_machSigContextOffsetInMach, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
-	/* addr of mach state structure is still in %VOL_TEMP1 */
 	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig context */
+	QUICK_ENABLE_INTR()
 	call	_Vm_CopyOut, 3				/* copy Sig_Context */
 	nop
+	QUICK_DISABLE_INTR()
 	bne	CopyOutForSigFailed
 	nop
 
 	/* Copy out user trap state from state structure to user stack */
+	/* put addr of mach state structure in %VOL_TEMP1 again */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
 	set	_machSigUserStateOffsetOnStack, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2
 	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* dest addr of user state */
 	set	MACH_SAVED_STATE_FRAME, %o0	/* size of copy */
-	/* addr of mach state structure is still in %VOL_TEMP1 */
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %o1		/* address of trap regs */
+	QUICK_ENABLE_INTR()
 	call	_Vm_CopyOut, 3
 	nop
+	QUICK_DISABLE_INTR()
 	bne	CopyOutForSigFailed
 	nop
 
@@ -710,8 +756,10 @@ _MachReturnFromSignal:
 	set	_machSigStackOffsetInMach, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig stack */
+	QUICK_ENABLE_INTR()
 	call	_Vm_CopyIn, 3			/* copy Sig_Stack */
 	nop
+	QUICK_DISABLE_INTR()
 	be	CopiedInSigStack
 	nop
 CopyInForSigFailed:
@@ -724,6 +772,8 @@ CopyInForSigFailed:
 
 CopiedInSigStack:
 	/* Copy in sig context from user stack to state structure */
+	/* put addr of mach state structure in %VOL_TEMP1 again */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
 	set	_machSigContextOffsetOnStack, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
 	add	%SAFE_TEMP, %VOL_TEMP2, %o1	/* src addr of Sig_Context */
@@ -731,10 +781,11 @@ CopiedInSigStack:
 	ld	[%o0], %o0			/* size of Sig_Context */
 	set	_machSigContextOffsetInMach, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset of Sig_Context */
-	/* addr of mach state structure is still in %VOL_TEMP1 */
 	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig context */
+	QUICK_ENABLE_INTR()
 	call	_Vm_CopyIn, 3			/* copy Sig_Context */
 	nop
+	QUICK_DISABLE_INTR()
 	bne	CopyInForSigFailed
 	nop
 
@@ -754,8 +805,10 @@ CopiedInSigStack:
 	/* destination of copy is trapRegs, but our sp points to that already */
 	/* SHOULD I VERIFY THIS? */
 	mov	%sp, %o2				/* dest addr of copy */
+	QUICK_ENABLE_INTR()
 	call	_Vm_CopyIn, 3
 	nop
+	QUICK_DISABLE_INTR()
 	bne	CopyInForSigFailed
 	nop
 
@@ -817,5 +870,17 @@ RestoreTheWindow:
 
 	mov	%o0, %g3
 
+	retl
+	nop
+
+
+/*
+ * _Mach_ReadPsr:
+ *
+ * Capture psr for c routines.
+ */
+.globl	_Mach_ReadPsr
+_Mach_ReadPsr:
+	mov	%psr, %o0
 	retl
 	nop

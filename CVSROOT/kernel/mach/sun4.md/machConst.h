@@ -94,8 +94,8 @@
  * the tbr), and ta 1 has a trap type of 129 showing up as 0x810 in the tbr.
  */
 /* trap instruction number is trap type - trap type 128 = 0x80 (== -0x800) */
-#define	MACH_CALL_DBG_TRAP	(MACH_TRAP_DEBUGGER - 0x800)
-#define	MACH_BRKPT_TRAP		(MACH_TRAP_INSTR_2 - 0x800)
+#define	MACH_CALL_DBG_TRAP	((MACH_TRAP_DEBUGGER - 0x800) >>4)
+#define	MACH_BRKPT_TRAP		((MACH_TRAP_INSTR_2 - 0x800) >>4)
 #define	MACH_SYSCALL_TRAP	((MACH_TRAP_SYSCALL - 0x800) >> 4)
 #define	MACH_RET_FROM_SIG_TRAP	((MACH_TRAP_SIG_RETURN - 0x800) >> 4)
 #define	MACH_FLUSH_WINDOWS_TRAP	((MACH_TRAP_FLUSH_WINDOWS - 0x800) >> 4)
