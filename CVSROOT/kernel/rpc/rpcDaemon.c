@@ -257,20 +257,24 @@ RpcServerAlloc(rpcHdrPtr)
 	srvPtr->state &= ~SRV_FREE;
 	srvPtr->clientID = rpcHdrPtr->clientID;
 	srvPtr->channel = rpcHdrPtr->channel;
-    } else if (rpcNoServers >= 0) {
+    } else {
 	/*
-	 * No available server process yet.  Poke the Rpc_Daemon process
-	 * so it will create us one.  The client's request gets discarded
-	 * and it has to re-try.
+	 * No available server process yet.
 	 */
 	srvPtr = (RpcServerState *)NIL;
-	rpcNoServers++;
-	if (daemonState & DAEMON_TIMEOUT) {
-	    (void)Timer_DescheduleRoutine(&queueEntry);
-	    daemonState &= ~DAEMON_TIMEOUT;
+	if (rpcNoServers >= 0) {
+	    /*
+	     * If rpcNoServers hasn't been set to -1 we can create more.
+	     * Poke the Rpc_Daemon process so it can create one.
+	     */
+	    rpcNoServers++;
+	    if (daemonState & DAEMON_TIMEOUT) {
+		(void)Timer_DescheduleRoutine(&queueEntry);
+		daemonState &= ~DAEMON_TIMEOUT;
+	    }
+	    daemonState |= DAEMON_POKED;
+	    Sync_MasterBroadcast(&rpcDaemon);
 	}
-	daemonState |= DAEMON_POKED;
-	Sync_MasterBroadcast(&rpcDaemon);
     }
 unlock:
     MASTER_UNLOCK(&serverMutex);
