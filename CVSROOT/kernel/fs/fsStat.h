@@ -363,6 +363,19 @@ typedef struct Fs_WriteBackStats {
 } Fs_WriteBackStats;
 
 /*
+ * Some miscellaneous stats to determine why we read remote bytes.
+ */
+typedef struct Fs_RemoteIOStats {
+    int blocksReadForVM;	/* Count of block reads from Fs_PageRead */
+    int bytesReadForCache;	/* Count of bytes read into the cache */
+    int bytesWrittenFromCache;	/* Count of bytes written from the cache */
+    int uncacheableBytesRead;	/* Count of uncacheable bytes read */
+    int uncacheableBytesWritten;/* Count of uncacheable bytes read */
+    int sharedStreamBytesRead;	/* Count of bytes read from shared streams */
+    int sharedStreamBytesWritten;/* Count of bytes written to shared streams */
+} Fs_RemoteIOStats;
+
+/*
  * File system statistics.
  */
 typedef struct Fs_Stats {
@@ -379,6 +392,7 @@ typedef struct Fs_Stats {
     Fs_RecoveryStats	recovery;	/* Crash recovery and reopening */
     Fs_ConsistStats	consist;	/* Cache consistency actions */
     Fs_WriteBackStats	writeBack;	/* Cache write-back stats */
+    Fs_RemoteIOStats	rmtIO;		/* Remote I/O stats */
 } Fs_Stats;
 
 /*
