@@ -160,7 +160,7 @@ ALLSRCS= Makefile version.c
 HDRS = sprite.h
 
 .BEGIN: 
-	doversion ${RELEASE} ${NEWVERSION} > version.h.template
+	doversion ${RELEASE} ${NEWVERSION} version.h.template
 
 #sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 #	rm -f $@ version.o
@@ -190,9 +190,8 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
-#	cp /sprite/boot/$@.md/new /vmsprite.new
 	rcp /sprite/boot/$@.md/new ${GINGER}:/sprite3/$@.new
-	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	cp $@ /rosemary/tmp/sprite/$@.sprite
 	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
 	nm -n $@ > $@.nm
 	-Save $@
@@ -209,7 +208,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
-	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	cp $@ /rosemary/tmp/sprite/$@.sprite
 	rsh rosemary "(cd /tmp/sprite ; ./Save sun4.sprite)"
 	nm -n $@ > $@.nm
 	-Save $@
@@ -226,7 +225,7 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
-	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	cp $@ /rosemary/tmp/sprite/$@.sprite
 	rsh rosemary "(cd /tmp/sprite ; ./Save sun4c.sprite)"
 	nm -n $@ > $@.nm
 	-Save $@
@@ -244,11 +243,11 @@ ds3100: ${OBJS} .PRECIOUS
 	@size $@
 	update -f $@ /sprite/boot/$@.md/new
 	strip /sprite/boot/$@.md/new
-	rcp $@ dill:/sprite/src/kernel/nelson/$@
 	rm -f $@.nm
 	nm -n $@ > $@.nm
+	rsh thyme "rcp /sprite/src/kernel/sprite/$@ dill:/sprite/src/kernel/nelson/$@"
+	rsh dill "(cd /sprite/src/kernel/nelson ; Save $@)"
 	-Save $@
-	rsh dill '(cd /sprite/src/kernel/nelson ; Save $@)'
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
 	sed 's/MACHINE/$@/g' version.h.template > version.h
