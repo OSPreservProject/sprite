@@ -42,6 +42,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void	Mem_DumpStats();
 void	Timer_TimerGetInfo();
 void 	Sched_DumpReadyQueue();
+ReturnStatus 	Dev_VidEnable();
 
 /*
  * Forward references to void procedures internal to this file.
@@ -71,6 +72,7 @@ static EventTableType eventTable[] = {
     {'f', Fsutil_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
     {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
     {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
+    {'o', (void (*)()) Dev_VidEnable, (ClientData) 1,"Turn video on"},
     {'p', (void (*)()) Proc_Dump, (ClientData) 0,"Dump process table"},
     {'r', Sched_DumpReadyQueue,  (ClientData) 0,"Dump ready queue"},
     {'q', Fspdev_PrintTrace,  (ClientData) 200,"Dump pseudo-device trace"},
