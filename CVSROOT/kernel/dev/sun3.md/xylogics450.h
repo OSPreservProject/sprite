@@ -40,4 +40,4 @@ extern ClientData DevXylogics450Init();
 extern Boolean	DevXylogics450Intr();		
 extern DevBlockDeviceHandle	*DevXylogics450DiskAttach();
 
-#endif _XYLOGICS450
+#endif /* _XYLOGICS450 */

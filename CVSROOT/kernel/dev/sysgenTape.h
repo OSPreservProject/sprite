@@ -22,4 +22,4 @@
 
 extern ReturnStatus DevSysgenAttach();
 
-#endif _DEVSCSISYSGEN
+#endif /* _DEVSCSISYSGEN */

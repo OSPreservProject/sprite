@@ -22,4 +22,4 @@
 
 extern ReturnStatus DevEmulexAttach();
 
-#endif _DEVSCSIEMULEX
+#endif /* _DEVSCSIEMULEX */

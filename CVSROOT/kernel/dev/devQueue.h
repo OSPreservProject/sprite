@@ -59,4 +59,3 @@ extern List_Links	*Dev_QueueGetNextFromSet();
 
 
 #endif /* _DEVQUEUE */
-

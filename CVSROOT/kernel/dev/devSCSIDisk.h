@@ -26,4 +26,4 @@
 DevBlockDeviceHandle	*DevScsiDiskAttach();
 
 
-#endif _DEVSCSIDISK
+#endif /* _DEVSCSIDISK */

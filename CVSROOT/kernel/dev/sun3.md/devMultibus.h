@@ -20,4 +20,4 @@
  */
 #define DEV_MULTIBUS_BASE	0xF00000
 
-#endif _DEVMULTIBUS
+#endif /* _DEVMULTIBUS */

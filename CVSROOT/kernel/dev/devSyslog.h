@@ -26,4 +26,4 @@ extern void	    Dev_SyslogPutChar();
 extern void	    Dev_SyslogDebug();
 extern void	    Dev_SyslogReturnBuffer();
 
-#endif _DEVSYSLOG
+#endif /* _DEVSYSLOG */

@@ -138,7 +138,7 @@ typedef struct Device {
 		    * to the device.
 		    */
     struct FrozenCommand {		       
-	ScsiCmd	*scsiCmdPtr;	   /* The frozen command. */
+	ScsiCmd	*scsiCmdPtr;	  /* The frozen command. */
 	unsigned char statusByte; /* It's SCSI status byte, Will always have
 				   * the check bit set.  */
 	int amountTransferred;    /* Number of bytes transferred by this 
@@ -155,7 +155,8 @@ typedef struct Device {
  * devices attached to it. 
  */
 struct Controller {
-    CtrlRegs *regsPtr;	/* Pointer to the registers of this controller. */
+    volatile CtrlRegs *regsPtr;	/* Pointer to the registers
+                                    of this controller. */
     int	    dmaState;	/* DMA state for this controller, defined below. */
     char    *name;	/* String for error message for this controller.  */
     DevCtrlQueues devQueues;    /* Device queues for devices attached to this
@@ -164,7 +165,8 @@ struct Controller {
     Device     *devPtr;	   /* Current active command. */
     ScsiCmd   *scsiCmdPtr; /* Current active command. */
     Address   dmaBuffer;  /* dma buffer allocated for request. */
-    Device  *devicePtr[8][8]; /* Pointers to the device attached to the 
+    Device  *devicePtr[8][8]; /* Pointers to the device
+                               * attached to the
 			       * controller index by [targetID][LUN].
 			       * NIL if device not attached yet. Zero if
 			       * device conflicts with HBA address.  */
@@ -238,7 +240,7 @@ Probe(address)
     int address;			/* Alledged controller address */
 {
     ReturnStatus	status;
-    register CtrlRegs *regsPtr = (CtrlRegs *)address;
+    register volatile CtrlRegs *regsPtr = (CtrlRegs *)address;
     short value;
 
     /*
@@ -275,7 +277,7 @@ static void
 Reset(ctrlPtr)
     Controller *ctrlPtr;
 {
-    volatile CtrlRegs *regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
 
     regsPtr->control = SCSI_RESET;
     MACH_DELAY(100);
@@ -304,11 +306,11 @@ Reset(ctrlPtr)
  */
 static ReturnStatus
 SendCommand(devPtr, scsiCmdPtr)
-    Device	 *devPtr;		/* Device to sent to. */
+    Device	*devPtr;		/* Device to sent to. */
     ScsiCmd	*scsiCmdPtr;		/* Command to send. */
 {
     register ReturnStatus status;
-    register CtrlRegs *regsPtr;		/* Host Adaptor registers */
+    register volatile CtrlRegs *regsPtr;/* Host Adaptor registers */
     char *charPtr;			/* Used to put the control block
 					 * into the commandStatus register */
     int bits = 0;			/* variable bits to OR into control */
@@ -328,7 +330,7 @@ SendCommand(devPtr, scsiCmdPtr)
     size = scsiCmdPtr->bufferLen;
     addr = scsiCmdPtr->buffer;
     targetID = devPtr->targetID;
-    regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     if (size == 0) {
 	ctrlPtr->dmaState = DMA_INACTIVE;
     } else {
@@ -447,14 +449,14 @@ GetStatusByte(ctrlPtr, statusBytePtr)
     unsigned char *statusBytePtr;
 {
     register ReturnStatus status;
-    register CtrlRegs *regsPtr;
+    register volatile CtrlRegs *regsPtr;
     short message;
     char statusByte;
     int numStatusBytes = 0;
 
     regsPtr = ctrlPtr->regsPtr;
     *statusBytePtr = 0;
-    for ( ; ; ) {
+    for (;;) {
 	/*
 	 * Could probably wait either on the INTERUPT_REQUEST bit or the
 	 * REQUEST bit.  Reading the byte out of the commandStatus
@@ -476,7 +478,7 @@ GetStatusByte(ctrlPtr, statusBytePtr)
 				     ctrlPtr->name, message);
 	    }
 	    break;
-	}  else {
+	} else {
 	    /*
 	     * This is another status byte.  Place the first status
 	     * bytes into the status block.
@@ -514,12 +516,12 @@ Wait(ctrlPtr, condition, reset)
     int condition;
     Boolean reset;
 {
-    volatile CtrlRegs *regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     register int i;
     ReturnStatus status = DEV_TIMEOUT;
     register int control;
 
-    for (i=0 ; i<SCSI_WAIT_LENGTH ; i++) {
+    for (i=0 ; i < SCSI_WAIT_LENGTH ; i++) {
 	control = regsPtr->control;
 	if (devSCSI0Debug && i < 5) {
 	    printf("%d/%x ", i, control);
@@ -826,7 +828,7 @@ DevSCSI0Intr(clientDataArg)
 		 * Programmers' Manual.
 		 */
 		if (!ctrlPtr->scsiCmdPtr->dataToDevice) {
-		    *(char *)(DEV_MULTIBUS_BASE + regsPtr->dmaAddress) =
+		  *(volatile char *)(DEV_MULTIBUS_BASE + regsPtr->dmaAddress) =
 			regsPtr->data;
 		    residual--;
 		} else {
@@ -917,7 +919,7 @@ DevSCSI0Init(ctrlLocPtr)
     }
     Controllers[ctrlNum] = ctrlPtr = (Controller *) malloc(sizeof(Controller));
     bzero((char *) ctrlPtr, sizeof(Controller));
-    ctrlPtr->regsPtr = (CtrlRegs *) (ctrlLocPtr->address);
+    ctrlPtr->regsPtr = (volatile CtrlRegs *) (ctrlLocPtr->address);
     ctrlPtr->regsPtr->intrVector = ctrlLocPtr->vectorNumber;
     ctrlPtr->name = ctrlLocPtr->name;
     Sync_SemInitDynamic(&(ctrlPtr->mutex),ctrlPtr->name);

@@ -95,7 +95,7 @@
  * NET_IE_ADDR_TO_SUN_ADDR	Change an intel address to a SUN address.
  */
 
-#define NET_IE_CHIP_RESET *(char *) netIEState.controlReg = 0;
+#define NET_IE_CHIP_RESET (*(volatile char *) netIEState.controlReg = 0)
 #define NET_IE_CHANNEL_ATTENTION \
 	{ \
 	    netIEState.controlReg->channelAttn = 1; \
@@ -472,8 +472,8 @@ typedef struct NetIERecvFrameDesc {
     Net_EtherAddress destAddr;		/* Destination ethernet address. */
     Net_EtherAddress srcAddr;		/* Source ethernet address. */
     short 	 type;			/* Ethernet packet type. */
-    struct NetIERecvFrameDesc *realNextRFD; /* The SUN address of the next
-					       receive frame descriptor. */
+    volatile struct NetIERecvFrameDesc *realNextRFD; /* The SUN address of 
+                                        the next receive frame descriptor. */
 } NetIERecvFrameDesc;
 
 /*
@@ -500,8 +500,8 @@ typedef struct NetIERecvBufDesc {
 					   size. */
     Address	realBufAddr;		/* The SUN address of the buffer 
 					   where this descriptor puts its data*/
-    struct NetIERecvBufDesc *realNextRBD; /* The 6800 Address of the next
-					     receive buffer descriptor. */
+    volatile struct NetIERecvBufDesc *realNextRBD; /* The 6800 Address of the
+                                            next receive buffer descriptor. */
 } NetIERecvBufDesc;
 
 /*
@@ -531,26 +531,26 @@ typedef struct {
 					   pointer is at. */
     NetIEIntSysConfPtr	*intSysConfPtr;	/* Where the intermediate system 
 					   configuration pointer is at. */
-    NetIESCB		*scbPtr;	/* Pointer to system control block. */
-    NetIECommandBlock	*cmdBlockPtr;	/* Head of command block list */
-    NetIERecvFrameDesc	*recvFrDscHeadPtr;/* Head of receive frame descriptor
-					   list. */
-    NetIERecvFrameDesc	*recvFrDscTailPtr;/* Tail of receive frame descriptor
-					   list. */
-    NetIERecvBufDesc	*recvBufDscHeadPtr;/* Head of receive buffer descriptor
-					   list. */
-    NetIERecvBufDesc	*recvBufDscTailPtr;/* Tail of receive buffer descriptor
-					   list. */
+    volatile NetIESCB	*scbPtr;	/* Pointer to system control block. */
+    volatile NetIECommandBlock *cmdBlockPtr;/* Head of command block list */
+    volatile NetIERecvFrameDesc	*recvFrDscHeadPtr; /* Head of receive frame
+                                            descriptor list. */
+    volatile NetIERecvFrameDesc	*recvFrDscTailPtr; /* Tail of receive frame
+                                            descriptor list. */
+    volatile NetIERecvBufDesc *recvBufDscHeadPtr; /* Head of receive buffer
+                                            descriptor list. */
+    volatile NetIERecvBufDesc *recvBufDscTailPtr; /* Tail of receive buffer
+                                            descriptor list. */
     List_Links		*xmitList;	/* Pointer to the front of the list of
 					   packets to be transmited. */
     List_Links      	*xmitFreeList;	/* Pointer to a list of unused 
 					   transmission queue elements. */
-    NetIETransmitCB	*xmitCBPtr;	/* Pointer to the single command block
+    volatile NetIETransmitCB *xmitCBPtr; /* Pointer to the single command block
 					   for transmitting packets. */
     Boolean		transmitting;	/* Set if are currently transmitting a
 					   packet. */
     Boolean		running;	/* Is the chip currently active. */
-    NetIEControlRegister *controlReg;	/* The onboard device register. */
+    volatile NetIEControlRegister *controlReg;/* The onboard device register.*/
     Net_EtherAddress	etherAddress;	/* The ethernet address in reverse
 					   byte order. */
 } NetIEState;
@@ -624,4 +624,4 @@ extern	int	NetIEOffsetFromSUNAddr();
 extern	int	NetIEOffsetToSUNAddr();
 extern	int	NetIEShortSwap();
 
-#endif _NETIEINT
+#endif /* _NETIEINT */

@@ -110,7 +110,7 @@ NetIEInit(name, number, ctrlAddr)
      * and passed to us from the netInterface table.
      */
 
-    netIEState.controlReg = (NetIEControlRegister *) ctrlAddr;
+    netIEState.controlReg = (volatile NetIEControlRegister *) ctrlAddr;
 
      {
 	/*
@@ -118,7 +118,8 @@ NetIEInit(name, number, ctrlAddr)
 	 */
 	char zero = 0;
 	ReturnStatus status;
-	status = Mach_Probe(sizeof(char), &zero,(char *)netIEState.controlReg); 
+	status = Mach_Probe(sizeof(char), &zero,
+	    (volatile char *)netIEState.controlReg);
 	if (status != SUCCESS) {
 	    /*
 	     * Got a bus error.
@@ -274,8 +275,8 @@ NetIEDefaultConfig()
 void
 NetIEReset()
 {
-    NetIEIASetupCB	*addressCommandPtr;
-    NetIECommandBlock	*diagCmdPtr;
+    NetIEIASetupCB	        *addressCommandPtr;
+    volatile NetIECommandBlock	*diagCmdPtr;
 
     /*
      * Nil out all pointers.
@@ -515,7 +516,7 @@ NetIEIntr(polling)
 				 * processing an interrupt. */
 {
     register	NetIEState	*netIEStatePtr;
-    register	NetIESCB	*scbPtr;
+    volatile register NetIESCB	*scbPtr;
     register	int		status;
 
     netIEStatePtr = &netIEState;

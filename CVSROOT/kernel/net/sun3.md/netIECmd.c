@@ -44,7 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 void
 NetIECheckSCBCmdAccept(scbPtr)
-    NetIESCB	*scbPtr;
+    volatile NetIESCB	*scbPtr;
 {
     int	 i;
 
@@ -80,7 +80,7 @@ NetIECheckSCBCmdAccept(scbPtr)
 
 void
 NetIEExecCommand(cmdPtr)
-    register	NetIECommandBlock	*cmdPtr;
+    register volatile NetIECommandBlock	*cmdPtr;
 {
     /*
      * Initialize the command header.

@@ -20,7 +20,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "scsi3.h"
@@ -511,7 +511,8 @@ typedef struct Device {
  * devices attached to it. 
  */
 struct Controller {
-    CtrlRegs *regsPtr;	/* Pointer to the registers of this controller. */
+    volatile CtrlRegs *regsPtr; /* Pointer to the registers of
+                                    this controller. */
     Boolean  onBoard;	/* TRUE if this is a on board version of the 
 			 * controller such as in the Sun 3/50, 3/60. FALSE
 			 * if it is the VME version.
@@ -533,7 +534,6 @@ struct Controller {
 			       * controller index by [targetID][LUN].
 			       * NIL if device not attached yet. Zero if
 			       * device conflicts with HBA address.  */
-
 };
 
 /*
@@ -605,7 +605,7 @@ static ProbeOnBoard(address)
     int address;			/* Alledged controller address */
 {
     ReturnStatus	status;
-    register CtrlRegs *regsPtr = (CtrlRegs *)address;
+    register volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)address;
     int x;
 
     /*
@@ -645,7 +645,7 @@ static Boolean
 ProbeVME(address)
     int address;			/* Alledged controller address */
 {
-    CtrlRegs *regsPtr = (CtrlRegs *)address;
+    volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)address;
     ReturnStatus	status;
 
     /*
@@ -695,7 +695,7 @@ static void
 Reset(ctrlPtr)
     Controller *ctrlPtr;
 {
-    volatile CtrlRegs *regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     unsigned char clear;
 
     SET_FIFO_COUNT(regsPtr,0);
@@ -745,9 +745,9 @@ SendCommand(devPtr, scsiCmdPtr)
     ScsiCmd	*scsiCmdPtr;		/* Command to send. */
 {
     ReturnStatus status;
-    register CtrlRegs *regsPtr;		/* Host Adaptor registers */
-    register unsigned char *initCmdPtr;	/* pointer to initCmd register */
-    register unsigned char *modePtr;	/* pointer to mode register */
+    register volatile CtrlRegs *regsPtr; /* Host Adaptor registers */
+    register volatile unsigned char *initCmdPtr; /* pointer to initCmd reg */
+    register volatile unsigned char *modePtr; /* pointer to mode register */
     register char *charPtr;
     Controller	*ctrlPtr;
     int i;
@@ -781,7 +781,7 @@ SendCommand(devPtr, scsiCmdPtr)
 						      "receive"));
     }
 
-    regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     initCmdPtr = &regsPtr->sbc.write.initCmd;
     modePtr = &regsPtr->sbc.write.mode;
     /*
@@ -1135,7 +1135,7 @@ static void
 StartDMA(ctrlPtr)
     register Controller *ctrlPtr;
 {
-    register CtrlRegs *regsPtr;
+    register volatile CtrlRegs *regsPtr;
     unsigned char junk;
     int	size;
 
@@ -1203,14 +1203,14 @@ GetStatusByte(ctrlPtr,statusBytePtr)
     Controller *ctrlPtr;		/* Controller to get byte from. */
     unsigned char *statusBytePtr;	/* Where to put the status byte. */
 {
-    register CtrlRegs *regsPtr;
+    register volatile CtrlRegs *regsPtr;
     ReturnStatus status;
     char message;
 
     if (devSCSI3Debug > 4) {
 	printf("GetStatusByte called ");
     }
-    regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     *statusBytePtr = 0;
 
     /*
@@ -1315,7 +1315,7 @@ WaitReg(ctrlPtr, thisRegPtr, type, conditions, reset, bitSel)
     Boolean reset;		/* whether to reset the bus on error */
     BitSelection bitSel;	/* check for all or some bits going to 1/0 */
 {
-    volatile register CtrlRegs *regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    volatile register CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     register int i;
     ReturnStatus status = DEV_TIMEOUT;
     register unsigned int thisReg;
@@ -1450,7 +1450,7 @@ WaitPhase(ctrlPtr, phase, reset)
     unsigned char phase;	/* phase to check */
     Boolean reset;		/* whether to reset the bus on error */
 {
-    volatile register CtrlRegs *regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    volatile register CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     register int i;
     ReturnStatus status = DEV_TIMEOUT;
     register unsigned char thisReg;
@@ -1519,7 +1519,7 @@ PutByte(ctrlPtr, dataPtr)
     Controller *ctrlPtr;
     char *dataPtr;    
 {
-    volatile register CtrlRegs *regsPtr = (CtrlRegs *) ctrlPtr->regsPtr;
+    volatile register CtrlRegs *regsPtr = (volatile CtrlRegs *) ctrlPtr->regsPtr;
     volatile unsigned char *initCmdPtr = &regsPtr->sbc.write.initCmd;
     register ReturnStatus status;
     unsigned char junk;
@@ -1587,7 +1587,7 @@ GetByte(ctrlPtr, phase, charPtr)
     unsigned short phase;
     char *charPtr;    
 {
-    register CtrlRegs *regsPtr = (CtrlRegs *)ctrlPtr->regsPtr;
+    register volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     ReturnStatus status;
     
     status = WaitReg(ctrlPtr, (Address) &regsPtr->sbc.read.curStatus,
@@ -1645,7 +1645,7 @@ GetByte(ctrlPtr, phase, charPtr)
  */
 static void
 PrintRegs(regsPtr)
-    register CtrlRegs *regsPtr;
+    register volatile CtrlRegs *regsPtr;
 {
     printf("ctl %x addr %x%x dmaCount %x%x fifoCount %x%x data %x\n\tinitCmd %x mode %x target %x curStatus %x status %x\n", 
 	       regsPtr->control,
@@ -1887,7 +1887,7 @@ DevSCSI3Intr(clientDataArg)
     ClientData	clientDataArg;
 {
     Controller *ctrlPtr;
-    register CtrlRegs *regsPtr;
+    register volatile CtrlRegs *regsPtr;
     Device	*devPtr;
     unsigned char statusByte;
     ReturnStatus status;
@@ -2223,7 +2223,7 @@ DevSCSI3Init(ctrlLocPtr)
     }
     Controllers[ctrlNum] = ctrlPtr = (Controller *) malloc(sizeof(Controller));
     bzero((char *) ctrlPtr, sizeof(Controller));
-    ctrlPtr->regsPtr = (CtrlRegs *) (ctrlLocPtr->address);
+    ctrlPtr->regsPtr = (volatile CtrlRegs *) (ctrlLocPtr->address);
     if (ctrlLocPtr->space == DEV_OBIO) {
 	ctrlPtr->onBoard = TRUE;
 	ctrlPtr->udcDmaTable = (UDCDMAtable *) 

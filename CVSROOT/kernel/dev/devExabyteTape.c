@@ -215,7 +215,8 @@ ExabyteError(tapePtr, statusByte, senseLength, senseDataPtr)
     char	 *senseDataPtr;	/* Sense data. */
 {
     ReturnStatus status;
-    register ExabyteSense *exabyteSensePtr = (ExabyteSense *)senseDataPtr;
+    register volatile ExabyteSense *exabyteSensePtr =
+        (volatile ExabyteSense *)senseDataPtr;
 
     status = DevSCSITapeError(tapePtr, statusByte, senseLength, senseDataPtr);
     if (status == SUCCESS) {

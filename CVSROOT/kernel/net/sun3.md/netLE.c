@@ -93,7 +93,7 @@ NetLEInit(name, number, ctrlAddr)
      * and passed to us from the netInterface table.
      */
 
-    netLEState.regPortPtr = (NetLE_Reg *) ctrlAddr;
+    netLEState.regPortPtr = (volatile NetLE_Reg *) ctrlAddr;
 
     {
 	/*
@@ -196,8 +196,8 @@ NetLEInit(name, number, ctrlAddr)
 void
 NetLEReset()
 {
-    NetLEInitBlock	*initPtr;
-    NetLEState		*netLEStatePtr = &netLEState;
+    volatile NetLEInitBlock *initPtr;
+    NetLEState		    *netLEStatePtr = &netLEState;
 
     /* 
      * Reset (and stop) the chip.
@@ -457,5 +457,4 @@ NetLEIntr(polling)
 	} 
     } 
     return;
-
 }

@@ -79,4 +79,4 @@ ReturnStatus DevSCSITapeSpecialCmd();
 ReturnStatus DevSCSITapeVariableIO();
 ReturnStatus DevSCSITapeFixedBlockIO();
 
-#endif _SCSITAPE
+#endif /* _SCSITAPE */

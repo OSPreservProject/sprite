@@ -263,13 +263,13 @@ typedef struct Request	Request;
 typedef struct XylogicsController {
     int			magic;		/* To catch bad pointers */
     Boolean		busy;		/* TRUE if the controller is busy. */
-    XylogicsRegs	*regsPtr;	/* Pointer to Controller's registers */
+    volatile XylogicsRegs *regsPtr;	/* Pointer to Controller's registers */
     int			number;		/* Controller number, 0, 1 ... */
     Request		*requestPtr;	/* Current active request. */
     Address		dmaBuffer;	/* Address of the DMA buffer
 					 * for reads/writes */
     int			dmaBufferSize;	/* Size of the dmaBuffer mapped. */
-    XylogicsIOPB	*IOPBPtr;	/* Ref to IOPB */
+    volatile XylogicsIOPB *IOPBPtr;	/* Ref to IOPB */
     Sync_Semaphore	mutex;		/* Mutex for queue access */
     Sync_Condition	specialCmdWait; /* Condition to wait of for special
 					 * commands liked test unit ready and
@@ -428,7 +428,7 @@ DevXylogics450Init(cntrlrPtr)
     DevConfigController *cntrlrPtr;	/* Config info for the controller */
 {
     XylogicsController *xyPtr;	/* Xylogics specific state */
-    register XylogicsRegs *regsPtr;	/* Control registers for Xylogics */
+    register volatile XylogicsRegs *regsPtr;/* Control registers for Xylogics */
     char x;				/* Used when probing the controller */
     int	i;
     ReturnStatus status;
@@ -438,7 +438,7 @@ DevXylogics450Init(cntrlrPtr)
      * Poke at the controller's registers to see if it works
      * or we get a bus error.
      */
-    regsPtr = (XylogicsRegs *) cntrlrPtr->address;
+    regsPtr = (volatile XylogicsRegs *) cntrlrPtr->address;
     status = Mach_Probe(sizeof(regsPtr->resetUpdate),
 			 (char *) &(regsPtr->resetUpdate), (char *) &x);
     if (status != SUCCESS) {
@@ -469,7 +469,8 @@ DevXylogics450Init(cntrlrPtr)
      * Allocate the mapped DMA memory for the IOPB. This memory should not
      * be freed unless the controller is not going to be accessed again.
      */
-    xyPtr->IOPBPtr = (XylogicsIOPB *)VmMach_DMAAlloc(sizeof(XylogicsIOPB),
+    xyPtr->IOPBPtr = 
+        (volatile XylogicsIOPB *)VmMach_DMAAlloc(sizeof(XylogicsIOPB),
 						malloc(sizeof(XylogicsIOPB)));
 
     /*
@@ -483,9 +484,7 @@ DevXylogics450Init(cntrlrPtr)
     for (i = 0 ; i < XYLOGICS_MAX_DISKS ; i++) {
 	 xyPtr->disks[i] =  (XylogicsDisk *) NIL;
     }
-
     ResetController(regsPtr);
-
     return( (ClientData) xyPtr);
 }
 
@@ -774,7 +773,7 @@ DevXylogics450DiskAttach(devicePtr)
  */
 static void
 ResetController(regsPtr)
-    XylogicsRegs *regsPtr;
+    volatile XylogicsRegs *regsPtr;
 {
     char x;
     x = regsPtr->resetUpdate;
@@ -782,6 +781,7 @@ ResetController(regsPtr)
     regsPtr->resetUpdate = x;
 #endif
     MACH_DELAY(100);
+    return;
 }
 
 /*
@@ -1041,8 +1041,8 @@ FillInDiskTransfer(pdiskPtr, startAddress, length, diskAddrPtr, numSectorsPtr)
 	    diskAddrPtr->cylinder);
     }
     *numSectorsPtr = totalSectors;
-
- }
+    return;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1070,7 +1070,7 @@ SetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address, interrupt,IOPBPtr)
     int numSectors;			/* Number of sectors to transfer */
     register Address address;		/* Main memory address of the buffer */
     Boolean interrupt;			/* If TRUE use interupts, else poll */
-    register XylogicsIOPB *IOPBPtr;	/* I/O Parameter Block  */
+    register volatile XylogicsIOPB *IOPBPtr;	/* I/O Parameter Block  */
 {
     bzero((Address)IOPBPtr,sizeof(XylogicsIOPB));
 
@@ -1113,6 +1113,7 @@ SetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address, interrupt,IOPBPtr)
 	IOPBPtr->dataAddrHigh	= ((int)address & 0x0000ff00) >> 8;
 	IOPBPtr->dataAddrLow	= ((int)address & 0x000000ff);
     }
+    return;
 }
 
 /*
@@ -1147,7 +1148,7 @@ SendCommand(diskPtr, requestPtr, wait)
     int numSectors;		/* Number of sectors to transfer */
     Address address;		/* Main memory address of the buffer */
     ReturnStatus error;
-    register XylogicsRegs *regsPtr;	/* I/O registers */
+    register volatile XylogicsRegs *regsPtr;	/* I/O registers */
     unsigned int IOPBAddr;
     int retries = 0;
 
@@ -1292,8 +1293,8 @@ GetStatus(xyPtr)
     XylogicsController *xyPtr;
 {
     register ReturnStatus error = SUCCESS;
-    register XylogicsRegs *regsPtr;
-    register XylogicsIOPB *IOPBPtr;
+    register volatile XylogicsRegs *regsPtr;
+    register volatile XylogicsIOPB *IOPBPtr;
 
     regsPtr = xyPtr->regsPtr;
     IOPBPtr = xyPtr->IOPBPtr;
@@ -1395,7 +1396,7 @@ GetStatus(xyPtr)
  */
 static ReturnStatus
 WaitForCondition(regsPtr, condition)
-    XylogicsRegs *regsPtr;
+    volatile XylogicsRegs *regsPtr;
     int condition;
 {
     register int i;
@@ -1440,8 +1441,8 @@ DevXylogics450Intr(clientData)
 {
     ReturnStatus error = SUCCESS;
     register XylogicsController *xyPtr;
-    register XylogicsRegs *regsPtr;
-    register XylogicsIOPB *IOPBPtr;
+    register volatile XylogicsRegs *regsPtr;
+    register volatile XylogicsIOPB *IOPBPtr;
     Request	*requestPtr;
 
     xyPtr = (XylogicsController *) clientData;
@@ -1584,7 +1585,6 @@ StartNextRequest(xyPtr)
 	    break;
 	}
     }
-
-
+    return;
 }
 

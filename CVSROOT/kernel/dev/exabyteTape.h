@@ -23,4 +23,4 @@
 
 extern ReturnStatus DevExabyteAttach();
 
-#endif _DEVSCSIEXABYTE
+#endif /* _DEVSCSIEXABYTE */

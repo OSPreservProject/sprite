@@ -53,4 +53,4 @@ extern void Dev_Config();
 extern void Dev_GatherDiskStats();
 extern int  Dev_GetDiskStats();
 
-#endif _DEV
+#endif /* _DEV */

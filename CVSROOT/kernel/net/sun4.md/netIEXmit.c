@@ -36,7 +36,7 @@ static Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
 /*
  * The address of the array of buffer descriptor headers.
  */
-static	NetIETransmitBufDesc *xmitBufAddr;
+volatile static	NetIETransmitBufDesc *xmitBufAddr;
 
 /*
  * Extra bytes for short packets.
@@ -84,12 +84,12 @@ static  char            loopBackBuffer[NET_ETHER_MAX_BYTES];
 
 static void
 OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
-    Net_EtherHdr			*etherHdrPtr;
+    Net_EtherHdr                        *etherHdrPtr;
     register	Net_ScatterGather   	*scatterGatherPtr;
     int					scatterGatherLength;
 {
-    register	NetIETransmitBufDesc	*xmitBufDescPtr;
-    register	NetIETransmitCB   	*xmitCBPtr;
+    register	volatile NetIETransmitBufDesc	*xmitBufDescPtr;
+    register	volatile NetIETransmitCB   	*xmitCBPtr;
     register int			bufCount;
     int					totalLength;
     register int			length;
@@ -282,11 +282,11 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 void
 NetIEXmitInit()
 {
-    register	NetIETransmitCB		*xmitCBPtr;
-    register	NetIETransmitBufDesc	*xmitBufDescPtr;
-    NetIETransmitBufDesc		*newXmitBufDescPtr;
-    NetXmitElement	                *xmitElementPtr;
-    int					i;
+    register volatile NetIETransmitCB	    *xmitCBPtr;
+    register volatile NetIETransmitBufDesc  *xmitBufDescPtr;
+    volatile NetIETransmitBufDesc	    *newXmitBufDescPtr;
+    volatile NetXmitElement	            *xmitElementPtr;
+    int	     i;
 
     /*
      * Initialize the transmit command header.
@@ -363,8 +363,8 @@ NetIEXmitInit()
 void
 NetIEXmitDone()
 {
-    register	NetXmitElement	*xmitElementPtr;
-    register	NetIETransmitCB	*cmdPtr;
+    register	volatile NetXmitElement     *xmitElementPtr;
+    register	volatile NetIETransmitCB    *cmdPtr;
 
     /*
      * If there is nothing that is currently being sent then something is
@@ -454,7 +454,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     register	Net_ScatterGather	*scatterGatherPtr;
     int					scatterGatherLength;
 {
-    register	NetXmitElement		*xmitPtr;
+    register volatile NetXmitElement    *xmitPtr;
 
     DISABLE_INTR();
 
@@ -609,7 +609,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 void
 NetIEXmitRestart()
 {
-    NetXmitElement	*xmitElementPtr;
+    volatile NetXmitElement     *xmitElementPtr;
 
     /*
      * Drop the current outgoing packet.

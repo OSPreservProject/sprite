@@ -58,4 +58,4 @@ extern int devNumDevices;
 extern Fs_Device devFsDefaultDiskPartitions[];
 extern int devNumDefaultDiskPartitions;
 
-#endif _DEVOPTABLE
+#endif /* _DEVOPTABLE */

@@ -161,7 +161,7 @@ typedef struct Device {
     int	numActiveCmds;	/* Number of commands enqueued on the HBA for this
 			 * command. */
     DevQueue	queue;	/* Queue for the device. */
-    Controller *ctrlPtr; /* Controller to which device is attached. */
+    Controller  *ctrlPtr; /* Controller to which device is attached. */
     Address	dmaBuffer; /* DMA buffer for device. */
 		   /*
 		    * The following part of this structure is 
@@ -198,8 +198,9 @@ typedef struct CmdAction {
  * controller may have from zero to 14 devices attached to it. 
  */
 struct Controller {
-    JaguarMem *memPtr;	/* Pointer to the registers of this controller. */
-    JaguarCQE *nextCQE; /* Next available CQE. */
+    volatile JaguarMem *memPtr;	/* Pointer to the registers
+                                    of this controller. */
+    volatile JaguarCQE *nextCQE; /* Next available CQE. */
     Boolean workQueue0Busy; /* Work Queue 0 is being used. */
     char    *name;	/* String for error message for this controller.  */
     DevCtrlQueues devQueues;    /* Device queues for devices attached to this
@@ -215,7 +216,6 @@ struct Controller {
 				     * completes. */
     Device  *devices[NUM_WORK_QUEUES];   /* Pointers to the device attached. The
 					 * index is the workQueue number - 1. */
-
 };
 
 #define MAX_JAGUAR_CTRLS	16
@@ -290,9 +290,9 @@ static Boolean SendJaguarCmd();
 
 static void
 WaitForResponseBlock(ctrlPtr,crbPtr)
-    Controller		*ctrlPtr; /* Controller to which command 
+    Controller	*ctrlPtr;         /* Controller to which command 
 				   * was submitted. */
-    JaguarCRB	*crbPtr;  	  /* Command Response Block to be filled in by
+    volatile JaguarCRB *crbPtr;   /* Command Response Block to be filled in by
 				   * interrupt handler. 
 				   */
 {
@@ -300,7 +300,6 @@ WaitForResponseBlock(ctrlPtr,crbPtr)
 	Sync_MasterWait(&(ctrlPtr->ctrlCmdWait), &ctrlPtr->mutex,FALSE);
     }
     return;
-
 }
 
 
@@ -334,7 +333,7 @@ InitializeWorkq(ctrlPtr,workqNum, parity, priority)
     int		priority;	/* The priority level of this workq. (1-14) */
 {
     JaguarIOPB		inMemIOPB;
-    register JaguarIOPB	*iopb = &inMemIOPB;
+    volatile register JaguarIOPB	*iopb = &inMemIOPB;
     JaguarCRB		crb;
 
     /*
@@ -397,15 +396,15 @@ InitializeWorkq(ctrlPtr,workqNum, parity, priority)
 
 static Boolean
 InitializeJaguar(memPtr, name, intrLevel, intrVector)
-    JaguarMem	*memPtr;	/* Pointer to VME Short IO space of HBA. */
+    volatile JaguarMem *memPtr;	/* Pointer to VME Short IO space of HBA. */
     char	*name;		/* Name of the controller for error messges. */
     int		intrLevel;	/* VME Interrupt level for HBA. */
     int		intrVector;	/* VME Interrupt vector for HBA. */
 {
-     register JaguarMCSB	*mcsb = &(memPtr->mcsb);
-     register JaguarCQE	*cqe;
-     register JaguarIOPB	*iopb;
-     register JaguarCRB	*crb;
+     register volatile JaguarMCSB *mcsb = &(memPtr->mcsb);
+     register volatile JaguarCQE  *cqe;
+     register volatile JaguarIOPB *iopb;
+     register volatile JaguarCRB  *crb;
 
     /*
      * Start off with a clean slate by reseting the board. Documentation
@@ -483,7 +482,7 @@ InitializeJaguar(memPtr, name, intrLevel, intrVector)
      * gather vectors with the CIP.
      */
     {
-	JaguarCIB	*cib = (JaguarCIB *) (memPtr->sgElements);
+	volatile JaguarCIB *cib = (volatile JaguarCIB *) (memPtr->sgElements);
 	ZeroJaguarMem((short *) cib, sizeof(JaguarCIB));
 
 	cib->numQueueSlots = NUM_CQE;
@@ -579,7 +578,7 @@ static struct errorString {
     int	code;
     char *string ;
 } errorStrings[] = JAGUAR_ERROR_CODES;
-static int numErrorStrings = sizeof(errorStrings) / sizeof(errorStrings[0]);
+#define NUM_ERROR_STRINGS (sizeof(errorStrings) / sizeof(errorStrings[0]))
 
 
 /*
@@ -605,7 +604,7 @@ ErrorString(returnStatus)
     int	code = returnStatus & 0xff;
     int	i;
 
-    for (i = 0; i < numErrorStrings; i++) {
+    for (i = 0; i < NUM_ERROR_STRINGS; i++) {
 	if (errorStrings[i].code == code) {
 	    return errorStrings[i].string;
 	}
@@ -665,7 +664,7 @@ SendScsiCommand( devPtr, scsiCmdPtr)
     ScsiCmd	*scsiCmdPtr; /* SCSI command to send. */
 
 {
-    JaguarIOPB iopbMem;	
+    volatile JaguarIOPB iopbMem;	
     Boolean	retVal;
 
     /*
@@ -713,11 +712,11 @@ Boolean
 DevJaguarIntr(clientData)
     ClientData	clientData;	/* Controller to process. */
 {
-    register JaguarCRB	*crb;
-    unsigned int	status;
-    unsigned int 	returnStatus;
-    CmdAction		*actionPtr;
-    register Controller		*ctrlPtr;
+    register volatile JaguarCRB *crb;
+    unsigned int	        status;
+    unsigned int 	        returnStatus;
+    CmdAction		        *actionPtr;
+    register Controller         *ctrlPtr;
 
     ctrlPtr = (Controller *) clientData;
     crb = &(ctrlPtr->memPtr->crb);
@@ -835,13 +834,13 @@ static Boolean
 SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
     Controller	*ctrlPtr;	/* Controller to enter command. */
     int		workQueue;	/* Command destination workq number. */
-    JaguarIOPB *iopbPtr;	/* Jaguar IOPB command block. */
+    volatile JaguarIOPB *iopbPtr;	/* Jaguar IOPB command block. */
     int		action;		/* Action to be performed on completion. */
     ClientData  actionArg;	/* Argument to action. */
 {
-    JaguarMem	*memPtr = ctrlPtr->memPtr;
-    JaguarCQE	*cqe;
-    JaguarIOPB	*iopb;
+    volatile JaguarMem	*memPtr = ctrlPtr->memPtr;
+    volatile JaguarCQE	*cqe;
+    volatile JaguarIOPB	*iopb;
 
     MASTER_LOCK(&ctrlPtr->mutex);
     /*
@@ -883,7 +882,7 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
      * If the caller specified a CRB we wait for the response.
      */
     if(IS_WAIT_ACTION(action)) { 
-	WaitForResponseBlock(ctrlPtr,(JaguarCRB *) actionArg);
+	WaitForResponseBlock(ctrlPtr,(volatile JaguarCRB *) actionArg);
     }
     if (workQueue == 0) {
 	UnLockWorkq0(ctrlPtr);	
@@ -965,8 +964,8 @@ UnLockWorkq0(ctrlPtr)
 
 static void
 CopyFromJaguarMem(blockPtr, hostPtr, blockSize)
-    register  short	*blockPtr;	/* Block in Jaguar Memory to copy. */
-    register  short	*hostPtr;	/* Address in host memory. */
+    register short	*blockPtr;	/* Block in Jaguar Memory to copy. */
+    register short	*hostPtr;	/* Address in host memory. */
     register int	blockSize;	/* Size of block in bytes. */
 
 {
@@ -1003,8 +1002,8 @@ CopyFromJaguarMem(blockPtr, hostPtr, blockSize)
 
 static void
 CopyToJaguarMem(blockPtr, hostPtr, blockSize)
-    register  short	*blockPtr;	/* Block in Jaguar Memory to copy. */
-    register  short	*hostPtr;	/* Address in host memory. */
+    register short	*blockPtr;	/* Block in Jaguar Memory to copy. */
+    register short	*hostPtr;	/* Address in host memory. */
     register int	blockSize;	/* Size of block in bytes. */
 
 {
@@ -1073,7 +1072,7 @@ ZeroJaguarMem(blockPtr, blockSize)
 
 static Boolean
 WaitForBitSet(wordPtr, bit, maxCount)
-    register  unsigned short *wordPtr;	/* Word to check. */
+    register volatile unsigned short *wordPtr;	/* Word to check. */
     register unsigned short bit;	/* Bit to check for. */
     int	     maxCount;			/* Number of 100 microseconds to check 
 					 * before giving up.
@@ -1148,7 +1147,7 @@ static void
 FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
     Device	*devPtr;	/* Target device for command. */
     ScsiCmd	*scsiCmdPtr;	/* SCSI command being sent. */
-    JaguarIOPB	*iopbPtr;	/* IOPB to be filled in . */
+    volatile JaguarIOPB	*iopbPtr;	/* IOPB to be filled in . */
 {
     Address	addr;
     iopbPtr->command = JAGUAR_PASS_THRU_CMD;
@@ -1194,7 +1193,7 @@ ScsiErrorProc(data, callInfoPtr)
     Proc_CallInfo       *callInfoPtr;
 {
     Device	*devPtr = (Device *) data;
-    JaguarIOPB iopbMem;	
+    volatile JaguarIOPB iopbMem;	
     JaguarCRB	crb;
     ScsiCmd	senseCmd;
     char	senseBuffer[DEV_MAX_SENSE_BYTES];
@@ -1453,7 +1452,8 @@ DevJaguarInit(ctrlLocPtr)
     ctrlNum = ctrlLocPtr->controllerID;
     { 
 	Boolean	good;
-	good = InitializeJaguar((JaguarMem *) address, ctrlLocPtr->name, 
+	good = InitializeJaguar((volatile JaguarMem *) address,
+	                     ctrlLocPtr->name,
 			     VME_INTERRUPT_PRIORITY,
 			     ctrlLocPtr->vectorNumber);
 	if (!good) {
@@ -1575,7 +1575,4 @@ DevJaguarAttachDevice(devicePtr, insertProc)
     devPtr->handle.locationName = (char *) strcpy(malloc(length+1),tmpBuffer);
     return (ScsiDevice *) devPtr;
 }
-
-
-
 

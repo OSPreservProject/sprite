@@ -73,4 +73,4 @@ typedef struct DevConfigController {
 extern DevConfigController devCntrlr[];
 extern int devNumConfigCntrlrs;
 
-#endif _DEVINT
+#endif /* _DEVINT */

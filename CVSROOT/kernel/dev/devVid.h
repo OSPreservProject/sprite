@@ -17,4 +17,4 @@
 
 extern ReturnStatus Dev_VidEnable();
 
-#endif _DEVVID
+#endif /* _DEVVID */

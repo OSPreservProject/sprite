@@ -48,10 +48,10 @@ void
 NetIERecvUnitInit()
 {
     int i;
-    register	NetIERecvBufDesc   *recvBufDescPtr;
-    register	NetIERecvFrameDesc *recvFrDescPtr;
-    register	NetIESCB 	   *scbPtr;
-    int				   bufferSize;
+    register volatile NetIERecvBufDesc   *recvBufDescPtr;
+    register volatile NetIERecvFrameDesc *recvFrDescPtr;
+    register	volatile NetIESCB           *scbPtr;
+    int		bufferSize;
 
     bufferSize = NET_IE_RECV_BUFFER_SIZE - sizeof(Net_EtherHdr);
 
@@ -198,13 +198,13 @@ void
 NetIERecvProcess(dropPackets)
     Boolean	dropPackets;	/* Drop all packets. */
 {
-    register	NetIERecvBufDesc	*recvBufDescPtr;
-    register	NetIERecvFrameDesc	*recvFrDescPtr;
-    register	NetIEState		*netIEStatePtr;
-    register	Net_EtherHdr		*etherHdrPtr;
-    NetIERecvFrameDesc			*newRecvFrDescPtr;
-    int					size;
-    int					num;
+    register	volatile NetIERecvBufDesc	*recvBufDescPtr;
+    register	volatile NetIERecvFrameDesc	*recvFrDescPtr;
+    register	volatile NetIEState		*netIEStatePtr;
+    register	volatile Net_EtherHdr		*etherHdrPtr;
+    volatile    NetIERecvFrameDesc		*newRecvFrDescPtr;
+    int		size;
+    int		num;
 
     netIEStatePtr = &netIEState;
 

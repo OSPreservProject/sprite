@@ -29,4 +29,4 @@ extern ReturnStatus Dev_NullIOControl();
 extern ReturnStatus Dev_NullClose();
 extern ReturnStatus Dev_NullSelect();
 
-#endif _DEVNULL
+#endif /* _DEVNULL */

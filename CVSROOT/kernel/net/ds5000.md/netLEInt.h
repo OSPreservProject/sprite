@@ -267,8 +267,8 @@ typedef struct NetLEXmitMsgDesc {
  */
 
 typedef struct {
-    NetLE_Reg		*regPortPtr;	/* Port to chip's registers. */
-    NetLEInitBlock	*initBlockPtr;	/* Chip initialization block. */
+    volatile NetLE_Reg	    *regPortPtr;    /* Port to chip's registers. */
+    volatile NetLEInitBlock *initBlockPtr;  /* Chip initialization block. */
     /*
      * Pointers for ring of receive buffers. 
      */
@@ -327,10 +327,4 @@ extern	void	NetLEXmitRestart();
 extern	void	NetLERecvInit();
 extern	ReturnStatus	NetLERecvProcess();
 
-
-
-#endif _NETLEINT
-
-
-
-
+#endif /* _NETLEINT */
