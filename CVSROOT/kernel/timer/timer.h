@@ -200,7 +200,9 @@
 typedef struct {
     List_Links	links;		/* private: */
 
-    void	(*routine)();	/* public:  address of the routine */
+    void	(*routine) _ARGS_((Timer_Ticks timeTicks, 
+				  ClientData  clientData));	
+			        /* public:  address of the routine */
     Timer_Ticks	time;		/* public:  time when the routine should be
 				 * 	    called. interval field is ignored*/ 
     ClientData	clientData;	/* public:  data passed to the routine when
@@ -234,22 +236,9 @@ extern Sync_Semaphore 	timer_ClockMutex;
 /*
  * Used to get the current seconds value of the universal time. This is
  * the quickest way to get a timestamp and is used in the filesystem.
- * The universal time is only updated at interrupt level, so we don't
- * need to syncronize reads on a uniprocessor.
  */
 
-#if MACH_MAX_NUM_PROCESSORS == 1
-#define Timer_GetUniversalTimeInSeconds(a) { \
-    (a) = (timer_UniversalApprox.seconds); \
-}
-#else
-#define Timer_GetUniversalTimeInSeconds(a) { \
-    MASTER_LOCK(&timer_ClockMutex); \
-    (a) = (timer_UniversalApprox.seconds); \
-    MASTER_UNLOCK(&timer_ClockMutex); \
-}
-#endif
-
+#define Timer_GetUniversalTimeInSeconds()  (timer_UniversalApprox.seconds)
 
 extern void Timer_Init _ARGS_((void));
 extern void Timer_ScheduleRoutine _ARGS_((register 
