@@ -1417,6 +1417,7 @@ MachLinkTrap:
 	/* do normal return from trap */
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
+	nop
 
 /*
  * ----------------------------------------------------------------------
