@@ -45,18 +45,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *----------------------------------------------------------------------------
  *
  */
-FspdevControlIOHandle *
+Fspdev_ControlIOHandle *
 FspdevControlHandleInit(fileIDPtr, name)
     Fs_FileID *fileIDPtr;
     char *name;
 {
     register Boolean found;
-    register FspdevControlIOHandle *ctrlHandlePtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr;
     Fs_HandleHeader *hdrPtr;
 
-    found = Fsutil_HandleInstall(fileIDPtr, sizeof(FspdevControlIOHandle), name,
+    found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fspdev_ControlIOHandle), name,
 			    FALSE, &hdrPtr);
-    ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
+    ctrlHandlePtr = (Fspdev_ControlIOHandle *)hdrPtr;
     if (!found) {
 	ctrlHandlePtr->serverID = NIL;
 	List_Init(&ctrlHandlePtr->queueHdr);
@@ -104,7 +104,7 @@ FspdevControlIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a control stream, or NIL */
 {
-    register FspdevControlIOHandle	*ctrlHandlePtr;
+    register Fspdev_ControlIOHandle	*ctrlHandlePtr;
 
     ctrlHandlePtr = FspdevControlHandleInit(ioFileIDPtr, name);
     if (!List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
@@ -146,8 +146,8 @@ FspdevControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
     int 		*writePtr;	/* Bit to clear if non-writeable */
     int 		*exceptPtr;	/* Bit to clear if non-exceptable */
 {
-    register FspdevControlIOHandle *ctrlHandlePtr =
-	    (FspdevControlIOHandle *)hdrPtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)hdrPtr;
 
     Fsutil_HandleLock(ctrlHandlePtr);
     if (List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
@@ -190,8 +190,8 @@ FspdevControlRead(streamPtr, readPtr, waitPtr, replyPtr)
 					 * plus the amount read. */
 {
     ReturnStatus 		status;
-    register FspdevControlIOHandle *ctrlHandlePtr =
-	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)streamPtr->ioHandlePtr;
     Pdev_Notify			notify;		/* Message returned to
 						 * user-level server proc */
 
@@ -254,8 +254,8 @@ FspdevControlIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
     Fs_IOReply *replyPtr;		/* Return length and signal */
 {
-    register FspdevControlIOHandle *ctrlHandlePtr =
-	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
     if (ioctlPtr->format != mach_Format) {
@@ -346,10 +346,10 @@ FspdevControlGetIOAttr(fileIDPtr, clientID, attrPtr)
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
 {
-    FspdevControlIOHandle		*ctrlHandlePtr;
+    Fspdev_ControlIOHandle		*ctrlHandlePtr;
 
-    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
-    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+    ctrlHandlePtr = Fsutil_HandleFetchType(Fspdev_ControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (Fspdev_ControlIOHandle *)NIL) {
 	printf( "FspdevControlGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
 	    Fsutil_FileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
 	    fileIDPtr->major, fileIDPtr->minor, clientID);
@@ -388,10 +388,10 @@ FspdevControlSetIOAttr(fileIDPtr, attrPtr, flags)
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
     int				flags;		/* Tells which attrs to set */
 {
-    FspdevControlIOHandle		*ctrlHandlePtr;
+    Fspdev_ControlIOHandle		*ctrlHandlePtr;
 
-    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
-    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+    ctrlHandlePtr = Fsutil_HandleFetchType(Fspdev_ControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (Fspdev_ControlIOHandle *)NIL) {
 	printf( "FspdevControlSetIOAttr, no handle <%d,%d,%x,%x>\n",
 	    fileIDPtr->serverID, fileIDPtr->type,
 	    fileIDPtr->major, fileIDPtr->minor);
@@ -433,18 +433,18 @@ FspdevControlVerify(fileIDPtr, pdevServerHostID, domainTypePtr)
     int		pdevServerHostID;	/* Host ID of the client */
     int         *domainTypePtr; 	/* Return - FS_PSEUDO_DOMAIN */
 {
-    register FspdevControlIOHandle	*ctrlHandlePtr;
+    register Fspdev_ControlIOHandle	*ctrlHandlePtr;
     int serverID = -1;
 
-    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
-    if (ctrlHandlePtr != (FspdevControlIOHandle *)NIL) {
+    ctrlHandlePtr = Fsutil_HandleFetchType(Fspdev_ControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr != (Fspdev_ControlIOHandle *)NIL) {
 	if (ctrlHandlePtr->serverID != pdevServerHostID) {
 	    serverID = ctrlHandlePtr->serverID;
 	    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
-	    ctrlHandlePtr = (FspdevControlIOHandle *)NIL;
+	    ctrlHandlePtr = (Fspdev_ControlIOHandle *)NIL;
 	}
     }
-    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+    if (ctrlHandlePtr == (Fspdev_ControlIOHandle *)NIL) {
 	printf("FspdevControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
 	    pdevServerHostID, serverID, Fsutil_FileTypeToString(fileIDPtr->type),
 	    fileIDPtr->major, fileIDPtr->minor);
@@ -485,7 +485,7 @@ FspdevControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     ClientData		*outDataPtr;		/* IGNORED */
 
 {
-    register FspdevControlIOHandle *ctrlHandlePtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr;
     register FspdevControlReopenParams *reopenParamsPtr;
     register ReturnStatus status = SUCCESS;
 
@@ -494,11 +494,11 @@ FspdevControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	 * Called on the pdev server's host to contact the remote
 	 * file server and re-establish state.
 	 */
-	FspdevControlIOHandle *ctrlHandlePtr;
+	Fspdev_ControlIOHandle *ctrlHandlePtr;
 	FspdevControlReopenParams params;
 	int outSize = 0;
 
-	ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
+	ctrlHandlePtr = (Fspdev_ControlIOHandle *)hdrPtr;
 	reopenParamsPtr = &params;
 	reopenParamsPtr->fileID = hdrPtr->fileID;
 	reopenParamsPtr->serverID = ctrlHandlePtr->serverID;
@@ -579,8 +579,8 @@ FspdevControlClose(streamPtr, clientID, procID, flags, size, data)
     int			*rwFlagsPtr;	/* Not used. */
 #endif
 {
-    register FspdevControlIOHandle *ctrlHandlePtr =
-	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)streamPtr->ioHandlePtr;
     register FspdevNotify *notifyPtr;
     int extra = 0;
 
@@ -634,8 +634,8 @@ FspdevControlClientKill(hdrPtr, clientID)
     Fs_HandleHeader *hdrPtr;	/* File being killed */
     int		clientID;	/* Client ID to kill. */
 {
-    register FspdevControlIOHandle *ctrlHandlePtr =
-	    (FspdevControlIOHandle *)hdrPtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)hdrPtr;
 
     if (ctrlHandlePtr->serverID == clientID) {
 	ctrlHandlePtr->serverID = NIL;
@@ -666,7 +666,7 @@ Boolean
 FspdevControlScavenge(hdrPtr)
     Fs_HandleHeader *hdrPtr;	/* File being encapsulated */
 {
-    register FspdevControlIOHandle *ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr = (Fspdev_ControlIOHandle *)hdrPtr;
 
     if (ctrlHandlePtr->serverID == NIL) {
 	Fsutil_RecoverySyncLockCleanup(&ctrlHandlePtr->rmt.recovery);

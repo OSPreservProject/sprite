@@ -25,6 +25,8 @@
  *	The user include file <dev/pdev.h> defines the request-response
  *	protocol as viewed by the user-level server process.
  *
+ *      The handle definitions have been moved to fspdev.h   JMS
+ *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
  *
@@ -38,57 +40,10 @@
 #include <trace.h>
 #include <dev/pdev.h>
 #include <dev/pfs.h>
-#include <fsprefix.h>
-#include <fsrmt.h>
 #include <fsioLock.h>
 #include <fspdev.h>
 
 #include <stdio.h>
-
-/*
- * Both the pseudo-device and pseudo-filesystem implementation use a
- * control stream to note what host runs the master, and to keep a seed.
- * With pseudo-devices the control IO handle is hooked to a stream that
- * is returned to the server, and the server reads new streamIDs off
- * of this stream.  With pseudo-filesystems the server gets new streamIDs
- * via IOC_PFS_OPEN, instead, and the control stream is used to keep
- * a pointer to the prefix table entry that represents the pseudo-filesystem.
- *
- * There is a control handle kept on both on the file server and on the
- * host running the server process.  The one on the file server is used
- * by the SrvOpen routine to detect if a master exists, and the one on
- * the server's host is used for control messages, and it also is used
- * to detect if the server process is still alive (by looking at serverID).
- */
-typedef struct FspdevControlIOHandle {
-    Fsrmt_IOHandle rmt;	/* FSIO_CONTROL_STREAM or FSIO_PFS_CONTROL_STREAM.
-				 * This is a remote I/O handle in order to do
-				 * a remote close to the name server so
-				 * the serverID field gets cleaned up right. */
-    int serverID;		/* Host ID of server process.  If NIL it
-				 * means there is no server.  This is kept */
-    int	seed;			/* Used to make FileIDs for client handles */
-    /*
-     * These fields are used to implement reading from a pdev control stream.
-     */
-    List_Links	queueHdr;	/* Control message queue, pdev's only */
-    List_Links readWaitList;	/* So the server can wait for control msgs */
-    Fsio_LockState lock;		/* So the server can flock() the pdev file */
-    /*
-     * Cached I/O attributes.
-     */
-    int		accessTime;	/* Time of last write operation */
-    int		modifyTime;	/* Time of last read operation */
-    /*
-     *  IOC_SET/GET_OWNER support.
-     */
-    Ioc_Owner	owner;		/* Owning process or family */
-    /*
-     * This pointer is used to clean up the prefix table entry that the
-     * naming request-response stream is hooked to (pseudo-filesystems)
-     */
-    Fsprefix *prefixPtr;	/* Prefix of pseudo-filesystem */
-} FspdevControlIOHandle;
 
 /*
  * Because there are corresponding control handles on the file server,
@@ -115,94 +70,6 @@ typedef struct FspdevNotify {
     List_Links links;
     Fs_Stream *streamPtr;
 } FspdevNotify;
-
-/*
- * Circular buffers are used for a request buffer and a read data buffer.
- * These buffers are in the address space of the server process so the
- * server can access them without system calls.  The server uses I/O controls
- * to change the pointers.
- */
-typedef struct FspdevCircBuffer {
-    Address data;		/* Location of the buffer in user-space */
-    int firstByte;		/* Byte index of first valid data in buffer.
-				 * if -1 then the buffer is empty */
-    int lastByte;		/* Byte index of last valid data in buffer. */
-    int size;			/* Number of bytes in the circular buffer */
-} FspdevCircBuffer;
-
-/*
- * FspdevServerIOHandle has the main state for a client-server connection.
- * The client's handle is a stub which just has a pointer to this handle.
- */
-typedef struct FspdevServerIOHandle {
-    Fs_HandleHeader hdr;		/* Standard header, type FSIO_LCL_PSEUDO_STREAM */
-    Sync_Lock lock;		/* Used to synchronize access to this struct. */
-    int flags;			/* Flags bits are defined in fsPdev.c */
-    int selectBits;		/* Select state of the pseudo-stream */
-    Proc_PID serverPID;		/* Server's processID needed for copy out */
-    Proc_PID clientPID;		/* Client's processID needed for copy out */
-    FspdevCircBuffer	requestBuf;	/* Reference to server's request buffer.
-				 * The kernel fills this buffer and the
-				 * server takes the requests and data out */
-    Address nextRequestBuffer;	/* The address of the next request buffer in
-				 * the server's address space to use.  We let
-				 * the server change buffers in mid-flight. */
-    int nextRequestBufSize;	/* Size of the new request buffer */
-    FspdevCircBuffer readBuf;		/* This buffer contains read-ahead data for
-				 * the pseudo-device.  The server process puts
-				 * data here and the kernel removes it to
-				 * satisfy client reads. If non-existent,
-				 * the kernel asks the server explicitly for
-				 * read data with PDEV_READ requests */
-    Pdev_Op operation;		/* Current operation.  Checked when handling
-				 * the reply. */
-    Pdev_Reply reply;		/* Server's reply message */
-    Address replyBuf;		/* Pointer to reply data buffer.  This is in
-				 * the client's address space if the
-				 * FS_USER flag is set */
-    int replySize;		/* Amount of data the client expects returned */
-    Sync_Condition setup;	/* This is notified after the server has set
-				 * up buffer space for us.  A pseudo stream
-				 * can't be used until this is done. */
-    Sync_Condition access;	/* Notified after a RequestResponse to indicate
-				 * that another client process can use the
-				 * pseudo-stream. */
-    Sync_Condition caughtUp;	/* This is notified after the server has read
-				 * or set the buffer pointers.  The kernel
-				 * waits for the server to catch up
-				 * before safely resetting the pointers to
-				 * the beginning of the buffer */
-    Sync_Condition replyReady;	/* Notified after the server has replied */
-    List_Links srvReadWaitList;	/* To remember the server process waiting
-				 * to read new pointer values. */
-    Sync_RemoteWaiter clientWait;/* Client process info for I/O waiting */
-    List_Links cltReadWaitList;	/* These lists are used to remember clients */
-    List_Links cltWriteWaitList;/*   waiting to read, write, or detect */
-    List_Links cltExceptWaitList;/*   exceptions on the pseudo-stream. */
-    FspdevControlIOHandle *ctrlHandlePtr;	/* Back pointer to control stream */
-    /*
-     * The following fields support pseudo-filesystems.
-     */
-    Fs_FileID	userLevelID;	/* User-defined FileID for connections to
-				 * pseudo-filesystem servers.  This is passed
-				 * as 'prefixID' of name operation arguments
-				 * to represent lookup starting points. */
-    struct {			/* Info needed to set up new pdev connection */
-	int clientID;		/* Host ID of client doing PFS_OPEN */
-	int useFlags;		/* Usage flags of the open */
-	char *name;		/* Name of pseudo-file, for handle headers */
-    } open;
-} FspdevServerIOHandle;
-
-/*
- * The client side stream for a pseudo-device.  This keeps a reference
- * to the server's handle with all the state.
- */
-typedef struct FspdevClientIOHandle {
-    Fs_HandleHeader	hdr;
-    FspdevServerIOHandle	*pdevHandlePtr;
-    List_Links		clientList;
-} FspdevClientIOHandle;
 
 /*
  * The following types and macros are used to take pdev traces.
@@ -326,9 +193,9 @@ typedef struct FspdevTraceRecord {
  * Internal Pdev routines
  */
 extern ReturnStatus FspdevSignalOwner _ARGS_((
-		FspdevControlIOHandle *ctrlHandlePtr, Fs_IOCParam *ioctlPtr));
-extern FspdevClientIOHandle *FspdevConnect _ARGS_((
-		FspdevControlIOHandle *ctrlHandlePtr, Fs_FileID *ioFileIDPtr,
+		Fspdev_ControlIOHandle *ctrlHandlePtr, Fs_IOCParam *ioctlPtr));
+extern Fspdev_ClientIOHandle *FspdevConnect _ARGS_((
+		Fspdev_ControlIOHandle *ctrlHandlePtr, Fs_FileID *ioFileIDPtr,
 		int clientID, Boolean naming));
 
 /*
@@ -350,7 +217,7 @@ extern ReturnStatus FspdevRmtLinkNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr,
 /*
  * Control Stream routines.
  */
-extern FspdevControlIOHandle *FspdevControlHandleInit _ARGS_((
+extern Fspdev_ControlIOHandle *FspdevControlHandleInit _ARGS_((
 		Fs_FileID *fileIDPtr, char *name));
 extern ReturnStatus FspdevControlIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
 		int *flagsPtr, int clientID, ClientData streamData, char *name,
@@ -417,7 +284,7 @@ extern ReturnStatus FspdevPseudoStreamIoOpen _ARGS_(( Fs_FileID *ioFileIDPtr,
 		int *flagsPtr, int clientID, ClientData streamData, char *name,
 		Fs_HandleHeader **ioHandlePtrPtr));
 extern ReturnStatus FspdevPseudoStreamOpen _ARGS_((
-		FspdevServerIOHandle *pdevHandlePtr, int flags, int clientID, 
+		Fspdev_ServerIOHandle *pdevHandlePtr, int flags, int clientID, 
 		Proc_PID procID, int userID));
 extern ReturnStatus FspdevPseudoStreamRead _ARGS_((Fs_Stream *streamPtr, 
 		Fs_IOParam *readPtr, Sync_RemoteWaiter *waitPtr, 
@@ -451,9 +318,9 @@ extern ReturnStatus FspdevPseudoStreamClose _ARGS_((Fs_Stream *streamPtr,
 		ClientData data));
 #endif
 extern void FspdevPseudoStreamCloseInt _ARGS_((	
-		FspdevServerIOHandle *pdevHandlePtr));
+		Fspdev_ServerIOHandle *pdevHandlePtr));
 
-extern FspdevServerIOHandle *FspdevServerStreamCreate _ARGS_((
+extern Fspdev_ServerIOHandle *FspdevServerStreamCreate _ARGS_((
 		Fs_FileID *ioFileIDPtr, char *name, Boolean naming));
 
 /*
@@ -523,12 +390,12 @@ extern ReturnStatus FspdevPfs2Path _ARGS_((Pdev_Op operation,
 		Fs_LookupArgs *lookupArgsPtr, 
 		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
 extern ReturnStatus FspdevPseudoStream2Path _ARGS_((
-		FspdevServerIOHandle *pdevHandlePtr, Pfs_Request *requestPtr,
+		Fspdev_ServerIOHandle *pdevHandlePtr, Pfs_Request *requestPtr,
 		Fs_2PathData *dataPtr, Boolean *name1ErrorPtr, 
 		Fs_RedirectInfo **newNameInfoPtrPtr));
 
 extern ReturnStatus FspdevPseudoStreamLookup _ARGS_((
-		FspdevServerIOHandle *pdevHandlePtr, Pfs_Request *requestPtr,
+		Fspdev_ServerIOHandle *pdevHandlePtr, Pfs_Request *requestPtr,
 		int argSize, Address argsPtr, int *resultsSizePtr, 
 		Address resultsPtr, Fs_RedirectInfo **newNameInfoPtrPtr));
 
@@ -540,7 +407,7 @@ extern ReturnStatus FspdevPseudoGetAttr _ARGS_((Fs_FileID *fileIDPtr,
 extern ReturnStatus FspdevPseudoSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
 		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
 
-extern Boolean FspdevPdevServerOK _ARGS_((FspdevServerIOHandle *pdevHandlePtr));
+extern Boolean FspdevPdevServerOK _ARGS_((Fspdev_ServerIOHandle *pdevHandlePtr));
 
 extern ReturnStatus FspdevPassStream _ARGS_((Fs_FileID *ioFileIDPtr,
 		int *flagsPtr, int clientID, ClientData streamData, 
@@ -548,7 +415,7 @@ extern ReturnStatus FspdevPassStream _ARGS_((Fs_FileID *ioFileIDPtr,
 
 
 extern int FspdevPfsOpenConnection _ARGS_((
-		FspdevServerIOHandle *namingPdevHandlePtr, 
+		Fspdev_ServerIOHandle *namingPdevHandlePtr, 
 		Fs_FileID *srvrFileIDPtr, Fs_OpenResults *openResultsPtr));
 
 #endif _FSPDEVINT
