@@ -30,15 +30,15 @@
 #define _FS
 
 #ifdef KERNEL
-#include "sys.h"
-#include "sync.h"
-#include "proc.h"
-#include "user/fs.h"
+#include <sys.h>
+#include <syncTypes.h>
+#include <procTypes.h>
+#include <user/fs.h>
 #include <fmt.h>
 #else
 #include <kernel/sys.h>
-#include <kernel/sync.h>
-#include <kernel/proc.h>
+#include <kernel/syncTypes.h>
+#include <kernel/procTypes.h>
 #include <fs.h>
 #include <fmt.h>
 #endif
