@@ -37,7 +37,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsprefixInt.h>
 #include <fsNameOps.h>
 #include <fsutil.h>
-#include <fsutilTrace.h>
 #include <fsStat.h>
 #include <fsio.h>
 #include <vm.h>
@@ -46,27 +45,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dbg.h>
 #include <string.h>
 
-#ifdef SOSP91
-#include <sospRecord.h>
-#endif
-
-#ifdef SOSP91
-int SOSPLookupNum = 0;		/* Number of name lookups. */
-int SOSPLookupComponent = 0;	/* Number of name components. */
-int SOSPLookupPrefixComponent = 0; /* Number of prefix components. */
-int SOSPLookupAbs = 0;		/* Number of absolute lookups. */
-#endif
-
 static List_Links prefixListHeader;
 static List_Links *prefixList = &prefixListHeader;
 
 static Sync_Lock prefixLock = Sync_LockInitStatic("Fs:prefixLock");
 #define LOCKPTR (&prefixLock)
-
-/*
- * Debuging variables.
- */
-Boolean fsprefix_FileNameTrace = FALSE;
 
 /*
  * Forward references.
@@ -165,8 +148,6 @@ Fsprefix_LookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameI
 		case FS_DOMAIN_EXPORT:
 		    break;
 		case FS_DOMAIN_OPEN:
-		    FSUTIL_TRACE_NAME(FSUTIL_TRACE_LOOKUP_START, lookupName);
-		    /* Fall Through */
 		default: {
 		    /*
 		     * It is assumed that the first part of the bundled
@@ -186,9 +167,6 @@ Fsprefix_LookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameI
 	     */
 	    status = (*fs_DomainLookup[domainType][operation])
 	       (hdrPtr, lookupName, argsPtr, resultsPtr, &redirectInfoPtr);
-	    if (fsprefix_FileNameTrace) {
-		printf("\treturns <%x>\n", status);
-	    }
 	    switch (status) {
 	        case FS_LOOKUP_REDIRECT: {
 		    /*
@@ -370,9 +348,6 @@ retry:
     status = (*fs_DomainLookup[srcDomain][operation])
        (srcHdrPtr, srcLookupName, dstHdrPtr, dstLookupName, lookupArgsPtr,
 		    &redirectInfoPtr, &srcNameError);
-    if (fsprefix_FileNameTrace) {
-	printf("\treturns <%x>\n", status);
-    }
     switch(status) {
 	case RPC_SERVICE_DISABLED:
 	case RPC_TIMEOUT:
@@ -571,10 +546,6 @@ FsprefixLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 {
     register char *prefix;
 
-    if (fsprefix_FileNameTrace) {
-	printf("FsRedirect: \"%s\" (%d)\n", redirectInfoPtr->fileName,
-				redirectInfoPtr->prefixLength);
-    }
     if (redirectInfoPtr->prefixLength > 0) {
 	/*
 	 * We are being told about a new prefix after the server
@@ -1127,27 +1098,6 @@ Fsprefix_Lookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
 	    status = FS_FILE_NOT_FOUND;
 	}
     }
-#ifdef SOSP91
-    if (status==SUCCESS) {
-	register char *ptr;
-	register int nameComponent, restComponent;
-	SOSPLookupNum++;
-	nameComponent = 1; /* Components in incoming path. */
-	for (ptr = fileName+1;*ptr != '\0';ptr++) {
-	    if (*ptr=='/') {
-		nameComponent++;
-	    }
-	}
-	restComponent = 1; /* Components in returned path. */
-	for (ptr = *lookupNamePtr;*ptr != '\0';ptr++) {
-	    if (*ptr=='/') {
-		restComponent++;
-	    }
-	}
-	SOSPLookupPrefixComponent += nameComponent-restComponent;
-	SOSPLookupComponent += nameComponent;
-    }
-#endif
     UNLOCK_MONITOR;
     return(status);
 }
@@ -1406,14 +1356,8 @@ FsprefixHandleCloseInt(prefixPtr, flags)
 	Fsutil_HandleLock(hdrPtr);
 	dummy.ioHandlePtr = hdrPtr;
 	dummy.hdr.fileID.type = -1;
-#ifdef SOSP91
-	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
-		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL, (int *) NIL,
-		    (int *) NIL);
-#else
 	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
 		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL);
-#endif
 #ifdef lint
 	(void) Fsio_FileClose(&dummy, rpc_SpriteID, 0,
 		    0, 0, (ClientData)NIL);
@@ -1522,17 +1466,11 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
     ReturnStatus status;
     register int flags = FSPREFIX_IMPORTED;
     int		 serverID;
-#ifdef SOSP91
-    SOSP_IN_NAME_LOOKUP_FIELD = 2;
-#endif
 
     if (!follow) {
 	flags |= FSPREFIX_LINK_NOT_PREFIX;
     }
     do {
-	if (fsprefix_FileNameTrace) {
-	    printf("Lookup: %s,", fileName);
-	}
 	status = Fsprefix_Lookup(fileName, flags, FS_LOCALHOST_ID, hdrPtrPtr,
 			rootIDPtr, lookupNamePtr, &serverID, domainTypePtr, 
 			prefixPtrPtr);
@@ -1548,9 +1486,6 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
 	     * it now.
 	     */
 	    if (serverID == rpc_SpriteID) {
-#ifdef SOSP91
-		SOSP_IN_NAME_LOOKUP_FIELD = 0;
-#endif
 		return FAILURE;
 	    }
 	    if (serverID == RPC_BROADCAST_SERVER_ID) {
@@ -1580,9 +1515,6 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
 	    }
 	}
     } while (status == FS_NEW_PREFIX);
-#ifdef SOSP91
-		SOSP_IN_NAME_LOOKUP_FIELD = 0;
-#endif
     return(status);
 }
 

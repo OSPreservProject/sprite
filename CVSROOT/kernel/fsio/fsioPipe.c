@@ -266,25 +266,14 @@ Fsio_PipeHandleInit(fileIDPtr, findIt)
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-#ifndef SOSP91
 ReturnStatus
 Fsio_PipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
-#else
-ReturnStatus
-Fsio_PipeClose(streamPtr, clientID, procID, flags, dataSize, closeData,
-    offsetPtr, rwFlagsPtr)
-#endif
     Fs_Stream		*streamPtr;	/* Stream to a pipe */
     int			clientID;	/* Host ID of closing process */
     Proc_PID		procID;		/* Process closing */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Should be 0 */
     ClientData		closeData;	/* Should be NIL */
-#ifdef SOSP91
-    int			*offsetPtr;	/* Not used. */
-    int			*rwFlagsPtr;	/* Not used. */
-#endif
-
 {
     register Fsio_PipeIOHandle *handlePtr = 
 	    (Fsio_PipeIOHandle *)streamPtr->ioHandlePtr;

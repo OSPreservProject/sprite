@@ -260,14 +260,6 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
 		descPtr->bufferSize = -NET_ETHER_MIN_BYTES;
 	} 
     }
-    if (rpc_SanityCheck && (etherHdrPtr->type == NET_ETHER_SPRITE)) {
-	ReturnStatus 	status;
-	status = Rpc_SanityCheck(scatterGatherLength, 
-		    statePtr->curScatGathPtr, totalLength);
-	if (status != SUCCESS) {
-	    panic("Sanity check failed on outgoing packet.\n");
-	}
-    }
 
     /*
      * Finish off the packet.

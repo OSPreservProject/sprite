@@ -30,8 +30,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include <fsio.h>
 
-Boolean		rpc_SanityCheck = FALSE;
-
 
 
 /*
@@ -414,7 +412,7 @@ Rpc_GetStats(command, option, argPtr)
 		callCountPtr == (int *)0 ||
 		callCountPtr == (int *)USER_NIL ||
 		option <= 0) {
-		
+
 		Rpc_PrintCallCount();
 	    } else {
 		status = Vm_CopyOut(option,
@@ -431,7 +429,7 @@ Rpc_GetStats(command, option, argPtr)
 		serviceCountPtr == (int *)0 ||
 		serviceCountPtr == (int *)USER_NIL ||
 		option <= 0) {
-		
+
 		Rpc_PrintServiceCount();
 	    } else {
 		status = Vm_CopyOut(option,
@@ -440,195 +438,9 @@ Rpc_GetStats(command, option, argPtr)
 	    }
 	    break;
 	}
-	case SYS_RPC_SANITY_CHECK: {
-	    printf("Turning RPC sanity checking %s, was %s.\n",
-		    option ? "on" : "off",
-		    rpc_SanityCheck ? "on" : "off");
-	    rpc_SanityCheck = option;
-	    break;
-	}
 	default:
 	    status = RPC_INVALID_ARG;
 	    break;
     }
     return(status);
 }
-
-#if 0
-/*
- * List of the minimum allowable size for the parameter area of Rpc
- * requests. 
- */
-static int rpcSanityParamSize[RPC_NUM_COMMANDS] = {
-   {0,	 				/* RPC_BAD_COMMAND */
-    0,	 				/* RPC_ECHO_1 */
-    0,					/* RPC_ECHO_2 */
-    0, 					/* RPC_SEND */
-    0, 					/* RPC_RECEIVE */
-    0,					/* RPC_GETTIME */
-    0,	  				/* RPC_FS_PREFIX */
-    sizeof(Fs_OpenArgs), 		/* RPC_FS_OPEN */
-    sizeof(FsrmtIOParam), 		/* RPC_FS_READ */
-    sizeof(FsrmtIOParam), 		/* RPC_FS_WRITE */
-    sizeof(FsRemoteCloseParams),	/* RPC_FS_CLOSE */
-    sizeof(Fs_LookupArgs), 		/* RPC_FS_UNLINK */
-    sizeof(Fs_2PathParams),		/* RPC_FS_RENAME */
-    sizeof(Fs_OpenArgs),		/* RPC_FS_MKDIR */
-    sizeof(Fs_LookupArgs),		/* RPC_FS_RMDIR */
-    sizeof(Fs_MakeDeviceArgs),		/* RPC_FS_MKDEV */
-    sizeof(Fs_2PathParams),		/* RPC_FS_LINK */
-    0,					/* RPC_FS_SYM_LINK */
-    sizeof(Fs_FileID), 			/* RPC_FS_GET_ATTR */
-    sizeof(FsRemoteSetAttrParams), 	/* RPC_FS_SET_ATTR */
-    sizeof(Fs_OpenArgs),		/* RPC_FS_GET_ATTR_PATH */
-    sizeof(Fs_SetAttrArgs),		/* RPC_FS_SET_ATTR_PATH */
-    sizeof(Fs_GetAttrResultsParam), 	/* RPC_FS_GET_IO_ATTR */
-    sizeof(FsRemoteSetAttrParams),	/* RPC_FS_SET_IO_ATTR */
-    sizeof(FsDeviceRemoteOpenParam),	/* RPC_FS_DEV_OPEN */
-    sizeof(FsRemoteSelectParams),	/* RPC_FS_SELECT */
-    sizeof(FsrmtIOCParam),		/* RPC_FS_IO_CONTROL */
-    sizeof(ConsistMsg),			/* RPC_FS_CONSIST */
-    sizeof(ConsistReply),		/* RPC_FS_CONSIST_REPLY */
-    sizeof(FsrmtBlockCopyParam),	/* RPC_FS_COPY_BLOCK */
-    sizeof(FsMigInfo),			/* RPC_FS_MIGRATE */
-    sizeof(FsStreamReleaseParam),	/* RPC_FS_RELEASE */
-    sizeof(Fs_FileID),			/* RPC_FS_REOPEN */
-    sizeof(int),			/* RPC_FS_RECOVERY */
-    sizeof(Fs_FileID),			/* RPC_FS_DOMAIN_INFO */
-    sizeof(ProcMigCmd),			/* RPC_PROC_MIG_COMMAND */
-    0,					/* RPC_PROC_REMOTE_CALL */
-    sizeof(ProcRemoteWaitCmd),		/* RPC_PROC_REMOTE_WAIT */
-    sizeof(int),			/* RPC_PROC_GETPCB */
-    sizeof(Sync_RemoteWaiter),		/* RPC_REMOTE_WAKEUP */
-    sizeof(SigParms),			/* RPC_SIG_SEND */
-    sizeof(FsStreamReleaseParam), 	/* RPC_FS_RELEASE_NEW */
-};
-#endif
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Rpc_SanityCheck --
- *
- *	Do some sanity checks on the packet.  This is not meant to be
- *	an exhaustive test of the validity of a packet; rather it
- *	is intended to be a debugging aid for weeding out bad packets
- *	from clients.
- *
- * Results:
- *	SUCCESS if the packet looks ok, FAILURE otherwise
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-Rpc_SanityCheck(length, scatterPtr, packetLength)
-    int			length;		/* Length of the scatter/gather 
-					 * array. */	
-    Net_ScatterGather	*scatterPtr; 	/* The scatter/gather array. */
-    int			packetLength;	/* Length of the network packet. */
-
-{
-    static int		buffer[(RPC_MAX_SIZE + sizeof(RpcHdr)) / sizeof(int)];
-    RpcHdr		*rpcHdrPtr = NULL;
-    int			rpcLength;
-    ReturnStatus	status = SUCCESS;
-    char		*packetPtr;
-    int			paramSize;
-    int			dataSize;
-
-    if (packetLength < sizeof(RpcHdr)) {
-	printf("RpcSanityCheck: packet smaller than an RpcHdr (%d)\n",
-	    packetLength);
-	return FAILURE;
-    }
-    if (length == 1) {
-	rpcHdrPtr = (RpcHdr *) scatterPtr->bufAddr;
-	packetPtr = (char *) scatterPtr->bufAddr;
-    } else {
-	Net_GatherCopy(scatterPtr, length, 
-	    (Address) buffer);
-	rpcHdrPtr = (RpcHdr *) buffer;
-	packetPtr = (char *) buffer;
-    }
-    if ((int) rpcHdrPtr & 0x3) {
-	printf("rpcHdrPtr = 0x%x\n", rpcHdrPtr);
-	rpc_SanityCheck = FALSE;
-	panic("Bye\n");
-    }
-    rpcLength = sizeof(RpcHdr) + rpcHdrPtr->paramSize + rpcHdrPtr->dataSize;
-    if (rpcLength > packetLength) {
-	printf("RpcSanityCheck: packet too short, %d < %d\n", 
-	    packetLength, rpcLength);
-	status = FAILURE;
-	goto done;
-    }
-    /*
-     * We only deal with the first fragment of an RPC.
-     */
-
-    if ((rpcHdrPtr->numFrags != 0) && (rpcHdrPtr->fragMask != 0x1)) {
-	return SUCCESS;
-    }
-    paramSize = rpcHdrPtr->paramSize;
-    dataSize = rpcHdrPtr->dataSize;
-    if (rpcHdrPtr->flags & RPC_REQUEST) {
-	switch(rpcHdrPtr->command) {
-	    case RPC_FS_OPEN:
-	    case RPC_FS_READ:
-	    case RPC_FS_WRITE:
-	    case RPC_FS_CLOSE:
-	    case RPC_FS_UNLINK:
-	    case RPC_FS_MKDIR:
-	    case RPC_FS_RMDIR:
-	    case RPC_FS_MKDEV:
-	    case RPC_FS_GET_ATTR:
-	    case RPC_FS_SET_ATTR:
-	    case RPC_FS_GET_ATTR_PATH:
-	    case RPC_FS_SET_ATTR_PATH:
-	    case RPC_FS_SET_IO_ATTR:
-	    case RPC_FS_DEV_OPEN:
-	    case RPC_FS_SELECT: 
-	    case RPC_FS_IO_CONTROL:
-	    case RPC_FS_CONSIST:
-	    case RPC_FS_CONSIST_REPLY:
-	    case RPC_FS_COPY_BLOCK:
-	    case RPC_FS_MIGRATE:
-	    case RPC_FS_RELEASE:
-	    case RPC_FS_REOPEN:
-	    case RPC_FS_DOMAIN_INFO: {
-		Fs_FileID	*fileIDPtr;
-		if (paramSize < sizeof(Fs_FileID)) {
-		    printf("Rpc_SanityCheck: request %d param too small (%d)\n",
-			paramSize);
-		    status = FAILURE;
-		    break;
-		}
-		fileIDPtr = (Fs_FileID *) (packetPtr + sizeof(RpcHdr));
-		if ((int) packetPtr & 0x3) {
-		    printf("packetPtr = 0x%x\n", packetPtr);
-		    panic("Bye\n");
-		}
-		if ((fileIDPtr->type < 0) || 
-		    (fileIDPtr->type >= FSIO_NUM_STREAM_TYPES)) {
-		    printf("Rpc_SanityCheck: request %d file id type = %d\n", 
-			rpcHdrPtr->command, fileIDPtr->type);
-		    status = FAILURE;
-		}
-		break;
-	    }
-	}
-    }
-done:
-    if (status != SUCCESS) {
-	printf("Rpc_SanityCheck: client %d, server %d:\n", 
-	    rpcHdrPtr->clientID, rpcHdrPtr->serverID);
-    }
-    return status;
-}
-
-

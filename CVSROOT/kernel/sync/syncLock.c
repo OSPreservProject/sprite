@@ -63,13 +63,7 @@ Sync_Instrument *sync_InstrumentPtr[MACH_MAX_NUM_PROCESSORS];
  */
 int syncProcWakeupRaces = 0;
 
-/* 
- * Locks held during initialization, when there's no "current process".
- */
-static nullProcLocks = 0;
-
 static void ProcessWakeup _ARGS_((Proc_ControlBlock *procPtr, int waitToken));
-static void CheckUnlock _ARGS_ ((Sync_Lock *lockPtr));
 
 
 /*
@@ -139,14 +133,6 @@ Sync_GetLock(lockPtr)
 	Sync_StoreDbgInfo(lockPtr, FALSE);
 	Sync_AddPrior(lockPtr);
     }
-
-    procPtr = Proc_GetCurrentProc();
-    if (procPtr == (Proc_ControlBlock *)NIL) {
-	nullProcLocks++;
-    } else {
-	procPtr->locksHeld++;
-    }
-
     return status;
 }
 
@@ -173,8 +159,6 @@ Sync_Unlock(lockPtr)
     Sync_Lock *lockPtr;
 {
     ReturnStatus	status = SUCCESS;
-
-    CheckUnlock(lockPtr);
 
     lockPtr->inUse = 0;
     SyncDeleteCurrent(lockPtr);
@@ -285,8 +269,6 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
     Boolean	sigPending;
 
     conditionPtr->waiting = TRUE;
-    CheckUnlock(lockPtr);
-
     MASTER_LOCK(sched_MutexPtr);
     /*
      * release the monitor lock and wait on the condition
@@ -421,7 +403,6 @@ Sync_UnlockAndSwitch(lockPtr, state)
     register	Sync_Lock 	*lockPtr;
     Proc_State			state;
 {
-    CheckUnlock(lockPtr);
 
     MASTER_LOCK(sched_MutexPtr);
     /*
@@ -777,7 +758,6 @@ Sync_ProcWait(lockPtr, wakeIfSignal)
 		/*
 		 * We were given a monitor lock to release, so release it.
 		 */
-		CheckUnlock(lockPtr);
 		lockPtr->inUse = 0;
 		lockPtr->waiting = FALSE;
 		SyncEventWakeupInt((unsigned int)lockPtr);
@@ -964,56 +944,3 @@ Sync_RemoteNotifyStub(srvToken, clientID, command, storagePtr)
     return(SUCCESS);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * CheckUnlock --
- *
- *	Paranoia checks when releasing a monitor or master lock.  Make 
- *	sure that 
- *	(1) the count of obtained locks is high enough
- *	(2) the lock is actually in use
- *	(3) the process that owns the lock is the process that 
- *	    releases it .
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Decrements the counter in the current process's pcb.  If there 
- *	isn't a current process, decrements the global "no process" 
- *	lock counter.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-CheckUnlock(lockPtr)
-    Sync_Lock	*lockPtr;
-{
-    int			locksHeld; /* locks held by current process */
-    Proc_ControlBlock	*procPtr;
-
-    procPtr = Proc_GetCurrentProc();
-    if (procPtr == (Proc_ControlBlock *)NIL) {
-	nullProcLocks--;
-	locksHeld = nullProcLocks;
-    } else {
-	procPtr->locksHeld--;
-	locksHeld = procPtr->locksHeld;
-    }
-    if (locksHeld < 0) {
-	panic("more unlocks than locks.\n");
-    }
-    if (!lockPtr->inUse) {
-	panic("unlocking an unlocked lock.\n");
-    }
-
-#ifndef CLEAN_LOCK
-    if (lockPtr->holderPCBPtr != (Proc_ControlBlock *)NIL &&
-	    lockPtr->holderPCBPtr != procPtr) {
-	panic("unlocking somebody else's lock.\n");
-    }
-#endif
-}

@@ -19,7 +19,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sysStats.h>
 #include <time.h>
 #include <timer.h>
-#include <traceLog.h>
 #include <vm.h>
 #include <machMon.h>
 #include <proc.h>
@@ -41,24 +40,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 #ifdef sun4c
 #include <devSCSIC90.h>
-#endif sun4c
-#ifdef SOSP91
-#include <fsStat.h>
-#include <sospRecord.h>
-#include <fscache.h>
-#endif SOSP91
+#endif /* sun4c */
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
-
-#ifdef SOSP91
-TraceLog_Header *SOSP91TracePtr = NULL;
-extern Boolean traceLog_Disable;
-
-/* Ken's statistics. */
-extern Timer_Ticks nameTime[], totalNameTime;
-extern int SOSPLookupNum, SOSPLookupComponent, SOSPLookupPrefixComponent;
-#endif
 
 
 /*
@@ -559,115 +544,6 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    break;
 	}
-#ifdef SOSP91
-	case SYS_SCHED_MORE_STATS: {
-	    Sys_SchedOverallTimes *schedOverallPtr;
-	    Sys_SchedOverallTimes schedOverall;
-
-	    schedOverallPtr = (Sys_SchedOverallTimes *)argPtr;
-	    if (schedOverallPtr == (Sys_SchedOverallTimes *)NIL ||
-		    schedOverallPtr == (Sys_SchedOverallTimes *)0 ||
-		    schedOverallPtr == (Sys_SchedOverallTimes *)USER_NIL) {
-		status = GEN_INVALID_ARG;
-	    } else if (option < sizeof (Sys_SchedOverallTimes)) {
-		status = GEN_INVALID_ARG;
-	    } else {
-		Timer_TicksToTime(sched_OverallTimesPerProcessor[0].kernelTime,
-		    &schedOverall.kernelTime);
-		Timer_TicksToTime(sched_OverallTimesPerProcessor[0].userTime,
-		        &schedOverall.userTime);
-		Timer_TicksToTime(
-			sched_OverallTimesPerProcessor[0].userTimeMigrated,
-			&schedOverall.userTimeMigrated);
-		status = Vm_CopyOut(sizeof(Sys_SchedOverallTimes),
-			(Address)&schedOverall, argPtr);
-	    }
-	    break;
-	}
-	case SYS_FS_SOSP_MIG_STATS: {
-	    Fs_SospMigStats	*statsPtr;
-
-	    statsPtr = (Fs_SospMigStats *) argPtr;
-	    if (statsPtr == (Fs_SospMigStats *)NIL ||
-		    statsPtr == (Fs_SospMigStats *) 0 ||
-		    statsPtr == (Fs_SospMigStats *) USER_NIL) {
-		status = GEN_INVALID_ARG;
-	    } else if (option < sizeof (Fs_SospMigStats)) {
-		status = GEN_INVALID_ARG;
-	    } else {
-		status = Vm_CopyOut(sizeof (Fs_SospMigStats),
-			(Address) &fs_SospMigStats, argPtr);
-	    }
-	    break;
-	}
-	case SYS_FS_EXTRA_STATS: {
-	    Fs_NewStats		*statsPtr;
-
-	    statsPtr = (Fs_NewStats *) argPtr;
-	    if (statsPtr == (Fs_NewStats *)NIL ||
-		    statsPtr == (Fs_NewStats *) 0 ||
-		    statsPtr == (Fs_NewStats *) USER_NIL) {
-		status = GEN_INVALID_ARG;
-	    } else if (option < sizeof (Fs_NewStats)) {
-		status = GEN_INVALID_ARG;
-	    } else {
-		status = Vm_CopyOut(sizeof (Fs_NewStats),
-			(Address) &fs_MoreStats, argPtr);
-		/*
-		 * This is a hack so that the getcounters program will
-		 * be able to tell the difference in kernel versions.
-		 */
-		if (status == SUCCESS) {
-		    status = sizeof (fs_MoreStats);
-		}
-	    }
-	    break;
-	}
-
-	case SYS_FSCACHE_EXTRA_STATS: {
-	    Fscache_ExtraStats	*statsPtr;
-
-	    statsPtr = (Fscache_ExtraStats *) argPtr;
-	    if (statsPtr == (Fscache_ExtraStats *)NIL ||
-		    statsPtr == (Fscache_ExtraStats *) 0 ||
-		    statsPtr == (Fscache_ExtraStats *) USER_NIL) {
-		status = GEN_INVALID_ARG;
-	    } else if (option < sizeof (Fscache_ExtraStats)) {
-		status = GEN_INVALID_ARG;
-	    } else {
-		status = Vm_CopyOut(sizeof (Fscache_ExtraStats),
-			(Address) &fscache_ExtraStats, argPtr);
-	    }
-	    break;
-	}
-        case SYS_FS_SOSP_NAME_STATS: {
-	    Sys_SospNameStats	stats;
-
-	    if (argPtr == (Address)NIL ||
-		    argPtr == (Address) 0 ||
-		    argPtr == (Address) USER_NIL) {
-		status = GEN_INVALID_ARG;
-	    } else if (option < sizeof (Sys_SospNameStats)) {
-		status = GEN_INVALID_ARG;
-	    } else {
-		Time timeVal;
-		Timer_TicksToTime(totalNameTime,&timeVal);
-		stats.totalNameTime = timeVal;
-		Timer_TicksToTime(nameTime[1],&timeVal);
-		stats.nameTime = timeVal;
-		Timer_TicksToTime(nameTime[2],&timeVal);
-		stats.prefixTime = timeVal;
-		Timer_TicksToTime(nameTime[0],&timeVal);
-		stats.miscTime = timeVal;
-		stats.numPrefixLookups = SOSPLookupNum;
-		stats.numComponents = SOSPLookupComponent;
-		stats.numPrefixComponents = SOSPLookupPrefixComponent;
-		status = Vm_CopyOut(sizeof (Sys_SospNameStats),
-			(Address) &stats, argPtr);
-	    }
-	    break;
-	}
-#endif SOSP91
 	case SYS_SCHED_STATS: {
 	    Sched_Instrument *schedStatPtr;
 	    Time curTime;
@@ -1114,56 +990,13 @@ Sys_StatsStub(command, option, argPtr)
 	    status = SUCCESS;
 	    break;
 	}
-#ifdef SOSP91
-	case SYS_TRACELOG_STATS: { /* Tracing for SOSP91 */
-	    if (option == SYS_TRACELOG_ON) {
-		int args[2]; /* NumBuffers, BufSize */
-		status = Vm_CopyIn(2*sizeof (int), (Address) argPtr,
-			(Address)args);
-		if (status != SUCCESS) {
-		    break;
-		}
-		if (SOSP91TracePtr == NULL) {
-		    SOSP91TracePtr = (TraceLog_Header *)
-			    malloc(sizeof(TraceLog_Header));
-		    if (args[0]<0) {
-			/*
-			 * Negative # of buffers is the magic indicator
-			 * that we don't want to buffer data.
-			 */
-			TraceLog_Init(SOSP91TracePtr, -args[0], args[1],
-				TRACELOG_NO_BUF, VERSIONLETTER);
-		    } else {
-			TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0,
-				VERSIONLETTER);
-		    }
-		}
-		traceLog_Disable = FALSE;
-	    } else if (option == SYS_TRACELOG_OFF) {
-		TraceLog_Header *tmpPtr;
-		tmpPtr = SOSP91TracePtr;
-		SOSP91TracePtr = NULL;
-		TraceLog_Finish(tmpPtr);
-		traceLog_Disable = TRUE;
-	    } else if (option == SYS_TRACELOG_RESET) {
-		if (SOSP91TracePtr != NULL) {
-		    TraceLog_Reset(SOSP91TracePtr);
-		}
-	    } else if (option == SYS_TRACELOG_DUMP) {
-		TraceLog_Dump(SOSP91TracePtr, argPtr+
-			sizeof(Sys_TracelogHeaderKern), argPtr);
-	    }
-	    status = SUCCESS;
-	    break;
-	}
-#endif
 #ifdef sun4c
         case SYS_DEV_CHANGE_SCSI_DEBUG: {
 	    Dev_ChangeScsiDebugLevel(option);
 	    status = SUCCESS;
 	    break;
 	}
-#endif sun4c
+#endif /* sun4c */
 	case SYS_PROC_ADD_SERVERS: {
 	    if (option < 0) {
 		status = GEN_INVALID_ARG;

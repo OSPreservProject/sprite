@@ -117,7 +117,6 @@ typedef struct Fsprefix {
 #define FSPREFIX_FORCED			0x200
 
 
-extern Boolean fsprefix_FileNameTrace;
 /*
  * Major prefix table entry points.
  */

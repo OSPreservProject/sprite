@@ -246,10 +246,14 @@ typedef unsigned short NetIESCBCommand[1];
  * NET_IE_RECEIVED	Return true if a packet was received.
  */
 
+#ifndef lint 
 #define	NET_IE_CHECK_STATUS(scbStatus) ((*(short *) &(scbStatus)) & 0xF0)
+#else 
+#define	NET_IE_CHECK_STATUS(scbStatus) 0
+#endif
 #define	NET_IE_ACK(scbCommand, status) ((*(short *) &(scbCommand)) |= status)
-#define	NET_IE_TRANSMITTED(status) status & 0xA0
-#define	NET_IE_RECEIVED(status) status & 0x50
+#define	NET_IE_TRANSMITTED(status)     (status & 0xA0)
+#define	NET_IE_RECEIVED(status)        (status & 0x50)
 
 /*
  * The system control block.

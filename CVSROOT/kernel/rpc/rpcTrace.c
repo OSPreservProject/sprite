@@ -33,11 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * The circular buffer of trace records.
  */
-#ifdef CLEAN
-Boolean		rpc_Tracing = FALSE;	/* No tracing in clean version  */
-#else
-Boolean		rpc_Tracing = TRUE;	/* flag to turn on tracing */
-#endif /* not CLEAN */
+Boolean		rpc_Tracing = FALSE;	/* flag to turn on tracing */
 
 Trace_Header	rpcTraceHdr;		/* Trace header info */
 Trace_Header	*rpcTraceHdrPtr = &rpcTraceHdr;

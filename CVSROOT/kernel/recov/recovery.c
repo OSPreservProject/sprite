@@ -1607,8 +1607,9 @@ Recov_GetStats(size, userAddr)
     Address userAddr;
 {
     ReturnStatus status;
+#ifdef notdef    
     int extraSpace = -1;
-
+#endif
     if (size <= 0) {
 	return(GEN_INVALID_ARG);
     }
@@ -1616,7 +1617,9 @@ Recov_GetStats(size, userAddr)
      * See if the caller wants more than just statistics.
      */
     if (size > sizeof(Recov_Stats)) {
+#ifdef notdef	
 	extraSpace = size - sizeof(Recov_Stats);
+#endif	
 	size = sizeof(Recov_Stats);
     }
     status = Vm_CopyOut(size, (Address)&recov_Stats, userAddr);

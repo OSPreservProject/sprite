@@ -475,21 +475,8 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
     register OfsIndirectInfo	*indInfoPtr;
     register int		*intPtr;
     Boolean			dontBlock;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     dontBlock = indexInfoPtr->flags & FSCACHE_DONT_BLOCK;
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
-
     indInfoPtr = &(indexInfoPtr->indInfo[indBlockNum]);
     if (indInfoPtr->blockPtr == (Fscache_Block *) NIL) {
 	if (*blockAddrPtr == FSDM_NIL_INDEX) {
@@ -523,11 +510,6 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 	    Fscache_IODone(indInfoPtr->blockPtr);
 	} else {
 	    fs_Stats.blockCache.indBlockAccesses++;
-#ifdef SOSP91
-	    if (isForeign) {
-		fs_SospMigStats.blockCache.indBlockAccesses++;
-	    }
-#endif SOSP91
 	    Fscache_FetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
 		FSCACHE_IND_BLOCK|dontBlock, &(indInfoPtr->blockPtr), &found);
 	    if (indInfoPtr->blockPtr == (Fscache_Block *)NIL) {
@@ -543,11 +525,6 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 		Fscache_IODone(indInfoPtr->blockPtr);
 	    } else {
 		fs_Stats.blockCache.indBlockHits++;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.blockCache.indBlockHits++;
-		}
-#endif SOSP91
 	    }
 	    indInfoPtr->blockDirty = FALSE;
 	}
@@ -586,9 +563,6 @@ FreeIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr)
     int				modTime;
     int				indBlock;
     register	OfsIndirectInfo	*indInfoPtr;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     indInfoPtr = &indexInfoPtr->indInfo[indBlockNum];
 
@@ -596,21 +570,7 @@ FreeIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr)
 	if (indInfoPtr->blockDirty) {
 	    modTime = Fsutil_TimeInSeconds();
 	    if (!indInfoPtr->deleteBlock) {
-#ifdef SOSP91
-		if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-		    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-			    (proc_RunningProcesses[0]->genFlags &
-			    (PROC_FOREIGN | PROC_MIGRATING))) {
-			isForeign = TRUE;
-		    }
-		}
-#endif SOSP91
 		fs_Stats.blockCache.indBlockWrites++;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.blockCache.indBlockWrites++;
-		}
-#endif SOSP91
 	    }
 	} else {
 	    modTime = 0;

@@ -31,6 +31,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpcInt.h>
 #include <net.h>
 
+int ultra;
+
 /*
  * Our sprite ID.  It is exported for general use by other modules.
  * This is set by a reverse arp transaction at boot time (see Rpc_Start),
@@ -141,16 +143,6 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	 */
 	VersionMismatch(interPtr, protocol, headerPtr, rpcHdrPtr, packetLength);
 	return;
-    }
-    if (rpc_SanityCheck) {
-	Net_ScatterGather	scatter;
-	ReturnStatus		status;
-	scatter.bufAddr = (Address) rpcHdrAddr;
-	scatter.length = packetLength;
-	status = Rpc_SanityCheck(1, &scatter, packetLength);
-	if (status != SUCCESS) {
-	    return;
-	}
     }
     expectedLength =  sizeof(RpcHdr) +
 		     rpcHdrPtr->paramSize +
@@ -551,7 +543,7 @@ VersionMismatch(interPtr, protocol, headerPtr, rpcHdrPtr, packetLength)
     versionList[numVersions].count = 1;
     versionList[numVersions].protocol = protocol;
     versionList[numVersions].interPtr = interPtr;
-    strncpy(versionList[numVersions].sourceAddr, addrBuffer, ADDR_LEN);
+    (void) strncpy(versionList[numVersions].sourceAddr, addrBuffer, ADDR_LEN);
     numVersions++;
 
     return;

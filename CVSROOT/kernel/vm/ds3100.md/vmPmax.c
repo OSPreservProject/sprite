@@ -1582,27 +1582,6 @@ VmMach_MapKernelIntoUser()
 /*
  *----------------------------------------------------------------------
  *
- * VmMach_Trace --
- *
- *	Virtual memory tracing.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-VmMach_Trace()
-{
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * VmMach_MakeDebugAccessible --
  *
  *	Make the given address accessible for the debugger.

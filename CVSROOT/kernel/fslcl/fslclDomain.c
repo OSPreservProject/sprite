@@ -31,17 +31,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsprefix.h>
 #include <fslclInt.h>
 #include <fsdm.h>
-#include <fsutilTrace.h>
 #include <rpc.h>
 #include <vm.h>
 #include <string.h>
 #include <proc.h>
 #include <spriteTime.h>
-
-#ifdef SOSP91
-#include <sospRecord.h>
-static Fs_FileID NullFileID = {0};
-#endif
 
 char *fslclEmptyDirBlock;
 
@@ -167,13 +161,6 @@ FslclOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     Fsio_FileIOHandle *handlePtr;	/* The handle returned for the file */
     ReturnStatus 	status;		/* Error return from RPC */
 
-
-
-#ifdef SOSP91
-    SOSP_REMEMBERED_OP = FS_DOMAIN_OPEN;
-    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
-    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
-#endif
     status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 	    openArgsPtr->useFlags, openArgsPtr->type, openArgsPtr->clientID,
 	    &openArgsPtr->id, openArgsPtr->permissions, 0, &handlePtr,
@@ -236,11 +223,6 @@ FslclGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     openArgsPtr =  (Fs_OpenArgs *)argsPtr;
     attrResultsPtr = (Fs_GetAttrResults *)resultsPtr;
 
-#ifdef SOSP91
-    SOSP_REMEMBERED_OP = FS_DOMAIN_GET_ATTR;
-    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
-    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
-#endif
     status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 			openArgsPtr->useFlags, openArgsPtr->type,
 			openArgsPtr->clientID,
@@ -312,11 +294,6 @@ FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     openArgsPtr = &setAttrArgsPtr->openArgs;
     fileIDPtr = (Fs_FileID *)resultsPtr;
 
-#ifdef SOSP91
-    SOSP_REMEMBERED_OP = FS_DOMAIN_SET_ATTR;
-    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
-    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
-#endif
     status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 			openArgsPtr->useFlags, openArgsPtr->type,
 			openArgsPtr->clientID,
@@ -329,15 +306,8 @@ FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      * Set the attributes on the disk descriptor.
      */
     Fsutil_HandleUnlock(handlePtr);
-#ifdef SOSP91
-    status = FslclSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
-			    &openArgsPtr->id, setAttrArgsPtr->flags,
-			    openArgsPtr->clientID, openArgsPtr->migClientID,
-			    -1);
-#else
     status = FslclSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
 			    &openArgsPtr->id, setAttrArgsPtr->flags);
-#endif
     /*
      * Get the I/O handle so our client can contact the I/O server.
      */
@@ -396,11 +366,6 @@ FslclMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     register Fsdm_FileDescriptor *descPtr;
 
     makeDevArgsPtr = (Fs_MakeDeviceArgs *)argsPtr;
-#ifdef SOSP91
-    SOSP_REMEMBERED_OP = FS_DOMAIN_MAKE_DEVICE;
-    SOSP_REMEMBERED_CLIENT = makeDevArgsPtr->open.clientID;
-    SOSP_REMEMBERED_MIG = makeDevArgsPtr->open.migClientID;
-#endif
     status = FslclLookup(prefixHandle, relativeName,
 		&makeDevArgsPtr->open.rootID,
 		FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW, FS_DEVICE,
@@ -451,12 +416,6 @@ FslclMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     Fsio_FileIOHandle	*handlePtr;
 
     openArgsPtr = (Fs_OpenArgs *)argsPtr;
-
-#ifdef SOSP91
-    SOSP_REMEMBERED_OP = FS_DOMAIN_MAKE_DIR;
-    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
-    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
-#endif
     status = FslclLookup(prefixHandle, relativeName, &openArgsPtr->rootID,
 	    openArgsPtr->useFlags, openArgsPtr->type, openArgsPtr->clientID,
 	    &openArgsPtr->id, openArgsPtr->permissions, 0, &handlePtr,
@@ -499,12 +458,6 @@ FslclRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     register Fs_LookupArgs *lookupArgsPtr;
 
     lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
-
-#ifdef SOSP91
-    SOSP_REMEMBERED_OP = FS_DOMAIN_REMOVE;
-    SOSP_REMEMBERED_CLIENT = lookupArgsPtr->clientID;
-    SOSP_REMEMBERED_MIG = lookupArgsPtr->migClientID;
-#endif
     status = FslclLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
 	    lookupArgsPtr->useFlags, FS_FILE, lookupArgsPtr->clientID,
 	    &lookupArgsPtr->id, 0, 0, (Fsio_FileIOHandle **)NIL,
@@ -542,12 +495,6 @@ FslclRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     register Fs_LookupArgs *lookupArgsPtr;
 
     lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
-
-#ifdef SOSP91
-    SOSP_REMEMBERED_OP = FS_DOMAIN_REMOVE_DIR;
-    SOSP_REMEMBERED_CLIENT = lookupArgsPtr->clientID;
-    SOSP_REMEMBERED_MIG = lookupArgsPtr->migClientID;
-#endif
     status = FslclLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
 	    lookupArgsPtr->useFlags, FS_DIRECTORY, lookupArgsPtr->clientID,
 	    &lookupArgsPtr->id, 0, 0, (Fsio_FileIOHandle **)NIL,
@@ -637,13 +584,6 @@ FslclHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     /*
      * This lookup gets a locked handle on the (presumably) existing file.
      */
-#ifdef SOSP91
-    SOSP_ADD_MKLINK_TRACE(lookupArgsPtr->clientID, lookupArgsPtr->migClientID, 
-	    NullFileID);
-    SOSP_REMEMBERED_OP = FS_DOMAIN_HARD_LINK;
-    SOSP_REMEMBERED_CLIENT = lookupArgsPtr->clientID;
-    SOSP_REMEMBERED_MIG = lookupArgsPtr->migClientID;
-#endif
     status = FslclLookup(prefixHandle1, relativeName1, &lookupArgsPtr->rootID,
 	   lookupArgsPtr->useFlags & FS_FOLLOW, FS_FILE,
 	   lookupArgsPtr->clientID, &lookupArgsPtr->id,
@@ -670,11 +610,6 @@ FslclHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	 * both handle1 and handle2 reference the same handle, and that
 	 * handle is locked.
 	 */
-#ifdef SOSP91
-	SOSP_REMEMBERED_OP = FS_DOMAIN_HARD_LINK|0x80;
-	SOSP_REMEMBERED_CLIENT = lookupArgsPtr->clientID;
-	SOSP_REMEMBERED_MIG = lookupArgsPtr->migClientID;
-#endif
 	status = FslclLookup(prefixHandle2, relativeName2,
 		&lookupArgsPtr->rootID,
 		lookupArgsPtr->useFlags, handle1Ptr->descPtr->fileType,

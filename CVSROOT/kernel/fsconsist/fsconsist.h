@@ -42,7 +42,6 @@
  *				separate clients tried to read the named pipe
  *				at the same time.
  *	FSCONSIST_WRITE_BACK_ATTRS	Write back the cached attributes.
- *	FSCONSIST_DEBUG	Forces machine into debugger
  *	FSCONSIST_MIGRATION	Consistency operation is due to migration
  *				(for statistics purposes).
  */
@@ -52,7 +51,6 @@
 #define	FSCONSIST_DELETE_FILE			0x04
 #define	FSCONSIST_CANT_CACHE_NAMED_PIPE		0x08
 #define	FSCONSIST_WRITE_BACK_ATTRS		0x10
-#define FSCONSIST_DEBUG				0x100
 #define	FSCONSIST_MIGRATION			0x200
 
 /*
@@ -206,16 +204,10 @@ extern ReturnStatus Fsconsist_RpcConsist _ARGS_((ClientData srvToken,
 extern ReturnStatus Fsconsist_RpcConsistReply _ARGS_((ClientData srvToken, 
 			int clientID, int command, Rpc_Storage *storagePtr));
 
-
-#ifdef SOSP91
-extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr,
-					int *numReadPtr, int *numWritePtr));
-#else
 extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr));
-#endif
 
 extern void Fsconsist_AddClient _ARGS_((int clientID));
 
 #endif
 
-#endif _FSCONSIST
+#endif /* _FSCONSIST */

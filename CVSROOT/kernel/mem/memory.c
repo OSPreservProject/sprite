@@ -13,6 +13,7 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
+
 #include <stdlib.h>
 #include <mem.h>
 #include <memInt.h>
@@ -20,6 +21,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sync.h>
 #include <stdio.h>
 #undef free
+
+extern void _free _ARGS_((Address blockPtr));
 
 /*
  * If the MEM_TRACE flag is defined, extra code will be compiled to allow
@@ -707,7 +710,7 @@ malloc(numBytes)
      * on the list so it can merge with either this block or the next,
      * whichever gets freed first).
      */
-    
+
     if (size == numBytes) {
 	SET_ADMIN(currentPtr, MARK_IN_USE(admin));
     } else {
@@ -752,12 +755,13 @@ ENTRY int
 free(blockPtr) 
     Address blockPtr;
 {
-    return _free(blockPtr);
+     _free(blockPtr);
+    return 0;
 }
 
-ENTRY int
+ENTRY void
 _free(blockPtr)
-    register Address blockPtr;	/* Pointer to storage to be freed.  Must
+    Address blockPtr;   	/* Pointer to storage to be freed.  Must
 				 * have been the return value from Mem_Alloc
 				 * at some previous time.  */
 {
@@ -771,14 +775,14 @@ _free(blockPtr)
 
     if (!initialized) {
         MemPanic("Mem_Free: allocator not initialized!\n");
-	return 0;		/* should never get here */
+	return;		/* should never get here */
     }
 
     /*
      *  Make sure that this block bears some resemblance to a
      *  well-formed storage block.
      */
-    
+
     blockPtr -= sizeof(AdminInfo);
     admin = GET_ADMIN(blockPtr);
     if (ADMIN_BITS(admin) != USE_BIT) {
@@ -790,7 +794,7 @@ _free(blockPtr)
 	    MemPanic("Mem_Free: storage block is corrupted\n");
 	}
 	UNLOCK_MONITOR;
-	return 0;			/* (should never get here) */
+	return;			/* (should never get here) */
     }
 
     /* This procedure is easier for large blocks than for small ones.
@@ -820,7 +824,7 @@ _free(blockPtr)
 #endif /* MEM_TRACE */
 
     UNLOCK_MONITOR;
-    return 0;
+    return;
 }
 
 /*

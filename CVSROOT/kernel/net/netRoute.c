@@ -344,7 +344,7 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	routePtr->protocol = protocol;
 	routePtr->routeID |= spriteID << 16;
 	routePtr->userData = clientData;
-	sprintf(routePtr->desc, "Route to %s - ", hostname);
+	(void) sprintf(routePtr->desc, "Route to %s - ", hostname);
     }
     /*
      * Prepare the Route.  This includes the transport header that
@@ -354,7 +354,7 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
     switch(interPtr->netType) {
 	case NET_NETWORK_ETHER: {
 	    Net_EtherHdr *etherHdrPtr;
-	    strcat(routePtr->desc, "ethernet, ");
+	    (void) strcat(routePtr->desc, "ethernet, ");
 	    /*
 	     * Fill in an ethernet header for the route.
 	     * The drivers fill in the source part of the ethernet header 
@@ -400,7 +400,7 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 
 	    ultraHdrPtr = (Net_UltraHeader *) routePtr->buffer;
 	    bzero((char *) ultraHdrPtr, sizeof(Net_UltraHeader));
-	    strcat(routePtr->desc, "ultranet, ");
+	    (void) strcat(routePtr->desc, "ultranet, ");
 	    routePtr->headerPtr[NET_PROTO_RAW] = (Address) ultraHdrPtr;
 	    ultraHdrPtr->remoteAddress = wildcardAddress;
 	    ultraHdrPtr->remoteAddress.tsapSize=2;
@@ -428,11 +428,11 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
     headerPtr += net_NetworkHeaderSize[interPtr->netType];
     switch (protocol) {
 	case NET_PROTO_RAW:
-	    strcat(routePtr->desc, "raw");
+	    (void) strcat(routePtr->desc, "raw");
 	    break;
     case NET_PROTO_INET: {
 	    Net_IPHeader *ipHeader;
-	    strcat(routePtr->desc, "IP");
+	    (void) strcat(routePtr->desc, "IP");
 	    ipHeader = (Net_IPHeader *) headerPtr;
 	    routePtr->headerPtr[protocol] = (Address)ipHeader;
 	    /*
@@ -1004,8 +1004,9 @@ FillRouteInfo(routePtr, infoPtr)
     for(i = 0; i < NET_MAX_PROTOCOLS; i++) {
 	infoPtr->netAddress[i] = routePtr->netAddress[i];
     }
-    strncpy(infoPtr->hostname, netHostInfo[routePtr->spriteID].name, 20);
-    strncpy(infoPtr->machType, netHostInfo[routePtr->spriteID].machType, 12);
-    strncpy(infoPtr->desc, routePtr->desc, 64);
+    (void) strncpy(infoPtr->hostname, netHostInfo[routePtr->spriteID].name, 20);
+    (void) strncpy(infoPtr->machType,
+	           netHostInfo[routePtr->spriteID].machType, 12);
+    (void) strncpy(infoPtr->desc, routePtr->desc, 64);
 }
 

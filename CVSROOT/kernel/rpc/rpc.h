@@ -61,9 +61,6 @@ extern int rpc_SpriteID;
 extern Boolean rpc_Tracing;
 extern Boolean rpc_NoTimeouts;
 
-
-extern int	rpc_SanityCheck;
-
 /*
  * Forward declarations
  */
@@ -97,9 +94,4 @@ extern ENTRY void	Rpc_OkayToTrace _ARGS_((Boolean okay));
 extern ENTRY void	Rpc_FreeTraces _ARGS_((void));
 extern ENTRY ReturnStatus	Rpc_DumpServerTraces _ARGS_((int length,
 	RpcServerUserStateInfo *resultPtr, int *lengthNeededPtr));
-
-extern ReturnStatus Rpc_SanityCheck _ARGS_((int length, 
-		    Net_ScatterGather *scatterPtr, int packetLength));
-
-
 #endif /* _RPC */

@@ -244,10 +244,6 @@ Rpc_Server()
 
 	    rpcServiceCount[command]++;
 
-	    if (procPtr->locksHeld != 0) {
-		panic("Starting RPC with locks held.\n");
-	    }
-
 	    RPC_SERVICE_TIMING_START(command, &histTime);
 
 	    storage.requestParamPtr	= srvPtr->request.paramBuffer.bufAddr;
@@ -261,10 +257,6 @@ Rpc_Server()
 	    error = (rpcService[command].serviceProc)((ClientData)srvPtr,
 				  srvPtr->clientID, command, &storage);
 	    RPC_SERVICE_TIMING_END(command, &histTime);
-
-	    if (procPtr->locksHeld != 0) {
-		panic("Finished RPC with locks held.\n");
-	    }
 	}
 	/*
 	 * Return an error reply for the stubs.  Note: We could send all

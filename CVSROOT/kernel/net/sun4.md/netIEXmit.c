@@ -213,18 +213,11 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
 	xmitBufDescPtr = (volatile NetIETransmitBufDesc *)
 	    ((int) xmitBufDescPtr - NET_IE_CHUNK_SIZE);
     }
+
     /*
      * Finish off the packet.
      */
 
-    if (rpc_SanityCheck && (etherHdrPtr->type == NET_ETHER_SPRITE)) {
-	ReturnStatus 	status;
-	status = Rpc_SanityCheck(scatterGatherLength, 
-		    statePtr->curScatGathPtr, totalLength);
-	if (status != SUCCESS) {
-	    panic("Sanity check failed on outgoing packet.\n");
-	}
-    }
     NetBfShortSet(xmitBufDescPtr->bits, Eof, 1);
     xmitCBPtr->destEtherAddr = etherHdrPtr->destination;
     xmitCBPtr->type = etherHdrPtr->type;

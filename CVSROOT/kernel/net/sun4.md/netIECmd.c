@@ -48,9 +48,9 @@ NetIECheckSCBCmdAccept(scbPtr)
     int	 i;
 
     for (i = 0; i < 5; i++) {
-	NET_IE_DELAY((*(short *) &(scbPtr->cmdWord) == 0));
+	NET_IE_DELAY((*(short *) scbPtr->cmdWord == 0));
 
-	if (*(short *) &(scbPtr->cmdWord) != 0) {
+	if (*(short *) scbPtr->cmdWord != 0) {
 	    printf( "Intel: scb command not accepted\n");
 	} else {
 	    return;

@@ -37,7 +37,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fslcl.h>
 #include <fslclNameHash.h>
 #include <fscache.h>
-#include <fsutilTrace.h>
 #include <fsStat.h>
 #include <rpc.h>
 #include <net.h>
@@ -45,16 +44,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <string.h>
 #include <proc.h>
 #include <dbg.h>
-#ifdef SOSP91
-#include  <sospRecord.h>
-#include <timer.h>
-#endif
-
-/*
- * Debugging flags.
- */
-int fslclComponentTrace = FALSE;
-extern int fsprefix_FileNameTrace;
 
 int fsCompacts;		/* The number of times a directory block was so
 			 * fragmented that we could have compacted it to
@@ -152,10 +141,6 @@ static ReturnStatus CacheDirBlockWrite _ARGS_((Fsio_FileIOHandle *handlePtr,
  *
  *----------------------------------------------------------------------
  */
-#ifdef SOSP91
-Timer_Ticks totalNameTime = {0};
-Fs_FileID NullFileID = {0};
-#endif
 ReturnStatus
 FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	    idPtr, permissions, fileNumber, handlePtrPtr, newNameInfoPtrPtr)
@@ -206,19 +191,6 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 					 * directory being operated on. */
     ClientData	logClientData;		/* Client data for directory change
 					 * logging. */
-#ifdef SOSP91
-#define MAX_RECORDS 20
-    char buf[SOSP_LOOKUP_OFFSET+MAX_RECORDS*sizeof(Fs_FileID)];
-    Fs_FileID *sospTracePtr = (Fs_FileID*)(buf+SOSP_LOOKUP_OFFSET);
-    Timer_Ticks startTicks, endTicks;
-    int sospTraceCount = 0;
-    Timer_GetCurrentTicks(&startTicks);
-    bcopy((Address)prefixHdrPtr, (Address)sospTracePtr,
-	    sizeof(Fs_FileID));
-    sospTracePtr++;
-    sospTraceCount++;
-#endif
-
     /*
      * Get a handle on the domain of the file.  This is needed for disk I/O.
      * Remember that the <major> field of the fileID is a domain number.
@@ -234,9 +206,6 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	    Fsutil_HandleName(prefixHdrPtr), relativeName);
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-#ifdef SOSP91
-    SOSP_IN_NAME_LOOKUP_FIELD = 1;
-#endif
     /*
      * Duplicate the prefixHandle into the handle for the current point
      * in the directory.  This locks and ups the reference count on the handle.
@@ -274,9 +243,6 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		char machTypeBuffer[32];
 		char *machType;
 
-		if (fslclComponentTrace) {
-		    printf(" $MACHINE -> ");
-		}
 		fs_Stats.lookup.numSpecial++;
 		if (clientID == rpc_SpriteID) {
 		    /*
@@ -319,9 +285,6 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	fs_Stats.lookup.numComponents++;
 	*compPtr = '\0';
 	compLen = compPtr - component;
-	if (fslclComponentTrace) {
-	    printf(" %s ", component);
-	}
 	/*
 	 * Skip intermediate and trailing slashes so that *curCharPtr
 	 * is Null when 'component' has the last component of the name.
@@ -399,15 +362,6 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	 * lookup is completed.  On the last component, we only
 	 * expand the link if the FS_FOLLOW flag is present.
 	 */
-#ifdef SOSP91
-	if (sospTraceCount<MAX_RECORDS && curHandlePtr !=
-		(Fsio_FileIOHandle *)NIL) {
-	    bcopy((Address)curHandlePtr, (Address)sospTracePtr,
-		    sizeof(Fs_FileID));
-	    sospTracePtr++;
-	    sospTraceCount++;
-	}
-#endif
 	if ((status == SUCCESS) &&
 	    ((*curCharPtr != '\0') || (useFlags & FS_FOLLOW)) &&
 	    ((curHandlePtr->descPtr->fileType == FS_SYMBOLIC_LINK ||
@@ -461,20 +415,6 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 			(*newNameInfoPtrPtr)->prefixLength = 0;
 		    }
 		} else if (parentHandlePtr != (Fsio_FileIOHandle *)NIL) {
-#ifdef SOSP91
-		    /*
-		     * Put an indication in the trace that we hit a link.
-		     */
-		    if (sospTraceCount<MAX_RECORDS && curHandlePtr !=
-			    (Fsio_FileIOHandle *)NIL) {
-			((int *)sospTracePtr)[0] = -1;
-			((int *)sospTracePtr)[1] = -2;
-			((int *)sospTracePtr)[2] = -3;
-			((int *)sospTracePtr)[3] = -4;
-			sospTracePtr++;
-			sospTraceCount++;
-		    }
-#endif
 		    Fsutil_HandleRelease(curHandlePtr, TRUE);
 		    curHandlePtr = parentHandlePtr;
 		    parentHandlePtr = (Fsio_FileIOHandle *)NIL;
@@ -487,9 +427,6 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	}
     }
 endScan:
-    if (useFlags & FSUTIL_TRACE_FLAG) {
-	FSUTIL_TRACE_NAME(FSUTIL_TRACE_LOOKUP_DONE, relativeName);
-    }
     if ((status == SUCCESS) ||
 	((status == FS_FILE_NOT_FOUND) && (*curCharPtr == '\0'))) {
 	/*
@@ -657,15 +594,6 @@ endScan:
 				curHandlePtr, component, compLen,
 				(int) (useFlags & FS_RENAME), idPtr, logOp);
 			if (status == SUCCESS) {
-#ifdef SOSP91
-			SOSP_ADD_DELETE_TRACE(clientID, 
-			    SOSP_REMEMBERED_MIG,  
-			    curHandlePtr->hdr.fileID,
-			    curHandlePtr->cacheInfo.attr.modifyTime,
-			    curHandlePtr->cacheInfo.attr.createTime,
-			    curHandlePtr->cacheInfo.attr.lastByte + 1);
-#endif
-
 			    CloseDeletedFile(&parentHandlePtr,
 					&curHandlePtr);
 			}
@@ -703,32 +631,9 @@ endScan:
 	(handlePtrPtr == (Fsio_FileIOHandle **)NIL)) {
 	Fsdm_DomainRelease(prefixHdrPtr->fileID.major);
     }
-    if (fslclComponentTrace && !fsprefix_FileNameTrace) {
-	printf(" <%x>\n", status);
-    }
     if (status == FS_FILE_NOT_FOUND) {
 	fs_Stats.lookup.notFound++;
     }
-#ifdef SOSP91
-    if (curHandlePtr != (Fsio_FileIOHandle *)NIL) {
-	SOSP_ADD_LOOKUP(((int *)buf), clientID,
-	    (*(Fs_FileID *)(&(curHandlePtr->hdr))), status, sospTraceCount,
-	    SOSP_REMEMBERED_MIG,
-	    SOSP_REMEMBERED_OP|(curHandlePtr->descPtr->fileType<<8));
-    } else {
-	SOSP_ADD_LOOKUP(((int *)buf), clientID,
-	    NullFileID, status, sospTraceCount,
-	    SOSP_REMEMBERED_MIG, SOSP_REMEMBERED_OP);
-    }
-    SOSP_REMEMBERED_CLIENT = -1;
-    SOSP_REMEMBERED_MIG = -1;
-    SOSP_REMEMBERED_OP = -1;
-    SOSP_IN_NAME_LOOKUP_FIELD = 0;
-    Timer_GetCurrentTicks(&endTicks);
-    Timer_SubtractTicks(endTicks, startTicks, &endTicks);
-    /* Should really have a lock here, but I'll trust that this works. */
-    Timer_AddTicks(totalNameTime, endTicks, &totalNameTime);
-#endif
     return(status);
 }
 
@@ -821,8 +726,8 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr,
 		printf(" dirBlockNum <%d>, blockOffset <%d>",
 			     dirBlockNum, blockOffset);
 		printf("\n");
-		Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0,
-				    FSCACHE_CLEAR_READ_AHEAD);
+		Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+		                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
 		return(FS_FILE_NOT_FOUND);
 	    }
@@ -864,8 +769,8 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr,
 					    (Fsdm_FileDescriptor *) NIL, FALSE,
 					    curHandlePtrPtr);
 
-			    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0,
-					       FSCACHE_CLEAR_READ_AHEAD);
+			    Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+				            -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 			    if (status == SUCCESS) {
 				FSLCL_HASH_INSERT(fslclNameTablePtr, component,
 					     parentHandlePtr, *curHandlePtrPtr);
@@ -915,7 +820,7 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr,
 					 dirEntryPtr->recordLength);
 	}
 	dirBlockNum++;
-	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, 0);
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0, -1, 0, 0);
     } while(TRUE);
 exit:
     return(status);
@@ -1049,7 +954,8 @@ InsertComponent(curHandlePtr, component, compLen, fileNumber, dirOffsetPtr)
 	}
 
 	dirBlockNum++;
-	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	Fscache_UnlockBlock(cacheBlockPtr,
+	                    (time_t) 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
     } while(TRUE);
 
 haveASlot:
@@ -1160,7 +1066,8 @@ DeleteComponent(parentHandlePtr, component, compLen, dirOffsetPtr)
 		(Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
 	}
 	dirBlockNum++;
-	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
     } while(TRUE);
     /*NOTREACHED*/
 }
@@ -1817,7 +1724,8 @@ GetParentNumber(curHandlePtr, parentNumberPtr)
 	    *parentNumberPtr = dirEntryPtr->fileNumber;
 	}
     }
-    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+    Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 
     return(status);
 }
@@ -1861,7 +1769,8 @@ SetParentNumber(curHandlePtr, newParentNumber)
 	dirEntryPtr->fileName[1] != '\0') {
 	printf(
 		  "SetParentNumber: \".\", corrupted directory\n");
-	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 	return(FAILURE);
     }
     dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
@@ -1870,7 +1779,8 @@ SetParentNumber(curHandlePtr, newParentNumber)
 	dirEntryPtr->fileName[1] != '.' ||
 	dirEntryPtr->fileName[2] != '\0') {
 	printf("SetParentNumber: \"..\", corrupted directory\n");
-	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 	return(FAILURE);
     }
     dirEntryPtr->fileNumber = newParentNumber;
@@ -2125,7 +2035,6 @@ Fslcl_DeleteFileDesc(handlePtr)
      * 2. Truncate the blocks out of the cache and from the descriptor.
      * 3. Mark the file descriptor as available in the bitmask.
      */
-    FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_DELETE, ((Fs_HandleHeader *)handlePtr));
     handlePtr->descPtr->flags = FSDM_FD_FREE | FSDM_FD_DIRTY;
     status = Fsdm_FileDescStore(handlePtr,TRUE);
     if (status != SUCCESS) {
@@ -2196,8 +2105,8 @@ DirectoryEmpty(handlePtr)
 		     * "." and ".." are ok
 		     */
 		} else {
-		    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, 
-					FSCACHE_CLEAR_READ_AHEAD);
+		    Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+			                -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 		    return(FALSE);
 		}
 	    }
@@ -2206,7 +2115,8 @@ DirectoryEmpty(handlePtr)
 		(Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
 	}
 	dirBlockNum++;
-	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
     } while(TRUE);
     /*NOTREACHED*/
 }
@@ -2384,19 +2294,7 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
     int			offset;
     int			newLastByte;
     int			blockSize;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
     offset =  blockNum * FS_BLOCK_SIZE;
     newLastByte = offset + length - 1;
     (void) (handlePtr->cacheInfo.backendPtr->ioProcs.allocate)
@@ -2424,17 +2322,11 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
     handlePtr->descPtr->flags |= FSDM_FD_MODTIME_DIRTY;
     fs_Stats.blockCache.dirBytesWritten += FSLCL_DIR_BLOCK_SIZE;
     fs_Stats.blockCache.dirBlockWrites++;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_SospMigStats.blockCache.dirBytesWritten += FSLCL_DIR_BLOCK_SIZE;
-	    fs_SospMigStats.blockCache.dirBlockWrites++;
-	}
-#endif SOSP91
     blockSize = handlePtr->descPtr->lastByte + 1 - (blockNum * FS_BLOCK_SIZE);
     if (blockSize > FS_BLOCK_SIZE) {
 	blockSize = FS_BLOCK_SIZE;
     }
-    Fscache_UnlockBlock(blockPtr, (unsigned int)Fsutil_TimeInSeconds(), blockAddr,
+    Fscache_UnlockBlock(blockPtr, (time_t) Fsutil_TimeInSeconds(), blockAddr,
 			blockSize, flags);
     return(status);
 }

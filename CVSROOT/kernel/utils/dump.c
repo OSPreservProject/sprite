@@ -64,7 +64,9 @@ static EventTableType eventTable[] = {
     {'c', Fscache_DumpStats, (ClientData)0, "Dump cache stats"},
     {'d', RESERVED_EVENT, NULL_ARG, "Put machine into the kernel debugger"},
     {'e', Timer_DumpStats, (ClientData) 'e', "Dump timer stats"},
+#ifdef notdef
     {'f', Fsutil_PrintTrace, (ClientData) -1, "Dump filesystem trace"},
+#endif
     {'i', Proc_KDump, (ClientData) 0, "Info on waiting processes"},
     {'j', Dev_SyslogDisable, (ClientData) 0, "Disable/enable syslog"},
     {'m', Mem_DumpStats, (ClientData) FALSE, "Dump memory stats"},
@@ -72,7 +74,9 @@ static EventTableType eventTable[] = {
     {'o', VidEnable, (ClientData) 1, "Turn video on"},
     {'p', DumpProcTable, (ClientData) 0, "Dump process table"},
     {'r', Sched_DumpReadyQueue, (ClientData) 0, "Dump ready queue"},
+#ifdef notdef
     {'q', Fspdev_PrintTrace, (ClientData) 200, "Dump pseudo-device trace"},
+#endif
     {'s', Timer_DumpStats,   (ClientData) 's', "Reset timer stats"},
     {'t', Timer_DumpQueue,  (ClientData) 0, "Dump the timer queue"},
     {'v', PrintVersion, (ClientData) 0, "Print version string of the kernel"},
@@ -192,7 +196,7 @@ PrintL1Menu(arg)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static void
 PrintTOD(arg)
     ClientData arg;		/* unused */
@@ -230,7 +234,7 @@ PrintTOD(arg)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static void
 PrintVersion(arg)
     ClientData arg;		/* unused */
@@ -257,7 +261,7 @@ PrintVersion(arg)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static void
 ResetNetworks(arg)
     ClientData arg;		/* unused */

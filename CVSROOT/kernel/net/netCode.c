@@ -63,7 +63,7 @@ int			net_NetworkHeaderSize[NET_NUM_NETWORK_TYPES];
 } 
 
 int netDebug = FALSE;
-Boolean	ultra = FALSE;
+/* Boolean	ultra = FALSE; */
 
 static void NetAddStats _ARGS_((Net_Stats *aPtr, Net_Stats *bPtr, 
 		    Net_Stats *sumPtr));
@@ -118,10 +118,10 @@ Net_Init()
 	    interPtr->devNetData = (ClientData) NIL;
 	    interPtr->number = counter[interPtr->netType];
 	    counter[interPtr->netType]++;
-	    sprintf(buffer, "NetOutputMutex:%d", i);
+	    (void) sprintf(buffer, "NetOutputMutex:%d", i);
 	    Sync_SemInitDynamic(&interPtr->syncOutputMutex, 
 		buffer);
-	    sprintf(buffer, "NetMutex:%d", i);
+	    (void) sprintf(buffer, "NetMutex:%d", i);
 	    Sync_SemInitDynamic(&interPtr->mutex, buffer);
 	} 
     }
@@ -592,7 +592,6 @@ Net_Input(interPtr, packetPtr, packetLength)
 {
     int		headerSize;
     int		packetType = NET_PACKET_UNKNOWN;
-    Boolean	ultra = FALSE;
 
 #if 0
     printf("in Net_Input\n");
@@ -631,13 +630,11 @@ Net_Input(interPtr, packetPtr, packetLength)
 		    packetType = NET_PACKET_UNKNOWN;
 		    break;
 	    }
-	    ultra = FALSE;
 	    break;
 	}
 	case NET_NETWORK_ULTRA: {
 	    Net_UltraHeader	*ultraHdrPtr;
 	    ultraHdrPtr = (Net_UltraHeader *) packetPtr;
-	    ultra = TRUE;
 	    if ((ultraHdrPtr->localAddress.tsapSize == 2) &&
 		(ultraHdrPtr->localAddress.tsap[0] == (unsigned char) 0xff) &&
 		(ultraHdrPtr->localAddress.tsap[1] == (unsigned char) 0xff)) {

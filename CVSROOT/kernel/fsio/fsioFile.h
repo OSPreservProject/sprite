@@ -176,16 +176,9 @@ extern ReturnStatus Fsio_FileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 extern ReturnStatus Fsio_FileBlockCopy _ARGS_((Fs_HandleHeader *srcHdrPtr, 
 		Fs_HandleHeader *dstHdrPtr, int blockNum));
 extern Boolean Fsio_FileScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
-
-#ifdef SOSP91
-extern ReturnStatus Fsio_FileClose _ARGS_((Fs_Stream *streamPtr, int clientID,
-		Proc_PID procID, int flags, int dataSize,
-		ClientData closeData, int *offsetPtr, int *rwFlagsPtr));
-#else
 extern ReturnStatus Fsio_FileClose _ARGS_((Fs_Stream *streamPtr, int clientID,
 		Proc_PID procID, int flags, int dataSize,
 		ClientData closeData));
-#endif
 extern ReturnStatus Fsio_FileCloseInt _ARGS_((Fsio_FileIOHandle *handlePtr,
 		int ref, int write, int exec, int clientID, Boolean callback));
 extern void Fsio_FileClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
@@ -207,4 +200,4 @@ extern ReturnStatus Fsio_DeviceNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr,
 extern ReturnStatus Fsio_FileTrunc _ARGS_((Fsio_FileIOHandle *handlePtr, 
 			int size, int flags));
 
-#endif _FSFILE
+#endif /* _FSFILE */

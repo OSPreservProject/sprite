@@ -613,7 +613,7 @@ NetIEIntr(interPtr, polling)
      * Go ahead and ack the events that got us here.
      */
     NET_IE_CHECK_SCB_CMD_ACCEPT(scbPtr);
-    NET_IE_ACK(scbPtr->cmdWord, status);
+    NET_IE_ACK(scbPtr->cmdWord[0], status);
     NET_IE_CHANNEL_ATTENTION(statePtr);
 
     /*
@@ -776,8 +776,8 @@ void
 NetIESCBPrint(scbPtr)
     volatile NetIESCB	*scbPtr;
 {
-    printf("status = 0x%x\n", * ((unsigned short *) &scbPtr->statusWord));
-    printf("cmd = 0x%x\n", * ((unsigned short *) &scbPtr->cmdWord));
+    printf("status = 0x%x\n", * ((unsigned short *) scbPtr->statusWord));
+    printf("cmd = 0x%x\n", * ((unsigned short *) scbPtr->cmdWord));
     printf("cmdListOffset = 0x%x\n",  scbPtr->cmdListOffset);
     printf("recvFrameAreaOffset = 0x%x\n",  scbPtr->recvFrameAreaOffset);
     printf("crcErrors = %d\n",  scbPtr->crcErrors);

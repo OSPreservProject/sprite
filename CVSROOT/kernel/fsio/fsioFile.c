@@ -39,10 +39,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <recov.h>
 
-#ifdef SOSP91
-#include <sospRecord.h>
-#endif
-
 #include <stdio.h>
 void IncVersionNumber _ARGS_((Fsio_FileIOHandle	*handlePtr));
 
@@ -236,12 +232,6 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
     register useFlags = openArgsPtr->useFlags;
     register clientID = openArgsPtr->clientID;
     register Fs_Stream *streamPtr;
-#ifdef SOSP91
-    int realID = -1;
-    if (openResultsPtr->dataSize == sizeof(Fs_OpenArgsSOSP)) {
-	realID = ((Fs_OpenArgsSOSP *) openArgsPtr)->realID;
-    }
-#endif
 
     if ((useFlags & FS_WRITE) &&
 	(handlePtr->descPtr->fileType == FS_DIRECTORY)) {
@@ -318,11 +308,6 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	    fileStatePtr->newUseFlags = useFlags;
 	    openResultsPtr->streamData = (ClientData)fileStatePtr;
 	    openResultsPtr->dataSize = sizeof(Fsio_FileState);
-#ifdef SOSP91
-	if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
-	    fileStatePtr->newUseFlags |= FS_DIR;
-	}
-#endif SOSP91
 
 	    /*
 	     * Now set up a shadow stream on here on the server so we
@@ -334,24 +319,6 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	    streamPtr = Fsio_StreamCreate(rpc_SpriteID, clientID,
 		(Fs_HandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
 	    openResultsPtr->streamID = streamPtr->hdr.fileID;
-
-#ifdef SOSP91
-	    {
-		int numWriters;
-		int numReaders;
-		(void) Fsconsist_NumClients(&handlePtr->consist, 
-		    &numReaders, &numWriters);
-		SOSP_ADD_OPEN_TRACE(openArgsPtr->clientID, 
-			openArgsPtr->migClientID, openResultsPtr->ioFileID,
-			openResultsPtr->streamID, openArgsPtr->id.user,
-			realID, openArgsPtr->useFlags, numReaders, numWriters,
-			fileStatePtr->attr.createTime,
-			fileStatePtr->attr.lastByte + 1,
-			fileStatePtr->attr.modifyTime,
-			handlePtr->descPtr->fileType, fileStatePtr->cacheable);
-	    }
-#endif
-
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    return(SUCCESS);
 	} else {
@@ -575,32 +542,19 @@ Fsio_FileIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
  *----------------------------------------------------------------------
  */
 
-#ifndef SOSP91
 ReturnStatus
 Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
-#else
-ReturnStatus
-Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
-    offsetPtr, rwFlagsPtr)
-#endif
     Fs_Stream		*streamPtr;	/* Stream to regular file */
     int			clientID;	/* Host ID of closer */
     Proc_PID		procID;		/* Process ID of closer */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of closeData */
     ClientData		closeData;	/* Ref. to Fscache_Attributes */
-#ifdef SOSP91
-    int			*offsetPtr;
-    int			*rwFlagsPtr;
-#endif
 {
     register Fsio_FileIOHandle *handlePtr =
 	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     ReturnStatus		status;
     Boolean			wasCached = TRUE;
-#ifdef SOSP91
-    Boolean			didCloseConsist;
-#endif /* SOSP91 */
 
     /*
      * Update the client state to reflect the close by the client.
@@ -623,14 +577,7 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
 	    }
         }
     }
-
-#ifdef SOSP91
-    didCloseConsist = Fsconsist_Close(&handlePtr->consist, clientID, flags,
-	    &wasCached);
-    if (!didCloseConsist) {
-#else /* SOSP91 */
     if (!Fsconsist_Close(&handlePtr->consist, clientID, flags, &wasCached)) {
-#endif /* SOSP91 */
 	printf("Fsio_FileClose, client %d pid %x unknown for file <%d,%d>\n",
 		  clientID, procID, handlePtr->hdr.fileID.major,
 		  handlePtr->hdr.fileID.minor);
@@ -654,22 +601,6 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
     status = Fsio_FileCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
 				     (flags & FS_EXECUTE) != 0,
 				     clientID, TRUE);
-#ifdef SOSP91
-    {
-	int offset;
-	int rwFlags;
-	if ((offsetPtr != (int *) NIL) && !(streamPtr->flags & FS_RMT_SHARED)) {
-	    offset = *offsetPtr;
-	    rwFlags = *rwFlagsPtr;
-	} else {
-	    offset = streamPtr->offset;
-	    rwFlags = (streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8;
-	}
-	SOSP_ADD_CLOSE_TRACE(streamPtr->hdr.fileID, offset, 
-	    handlePtr->cacheInfo.attr.lastByte + 1, streamPtr->flags,
-	    rwFlags, handlePtr->use.ref, didCloseConsist);
-    }
-#endif
     if (status == FS_FILE_REMOVED) {
 	if (clientID == rpc_SpriteID) {
 	    status = SUCCESS;
@@ -751,13 +682,6 @@ Fsio_FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
 	    if (callback) {
 		Fsconsist_ClientRemoveCallback(&handlePtr->consist, clientID);
 	    }
-#ifdef SOSP91
-	    SOSP_ADD_DELETE_DESC_TRACE(handlePtr->hdr.fileID,
-		    handlePtr->cacheInfo.attr.modifyTime,
-		    handlePtr->cacheInfo.attr.createTime,
-		    handlePtr->cacheInfo.attr.lastByte + 1);
-#endif
-
 	    (void)Fslcl_DeleteFileDesc(handlePtr);
 	    Fsio_FileSyncLockCleanup(handlePtr);
 	    if (callback) {
@@ -862,22 +786,9 @@ Fsio_FileScavenge(hdrPtr)
                (handlePtr->use.ref == 0) &&
 	     ((handlePtr->flags & (FSIO_FILE_DESC_DELETED|
 				   FSIO_FILE_NAME_DELETED)) == 0) &&
-#ifdef SOSP91
-	      (Fsconsist_NumClients(&handlePtr->consist, (int *) NIL,
-		  (int *) NIL) == 0);
-#else
 	      (Fsconsist_NumClients(&handlePtr->consist) == 0);
-#endif
     if (noUsers && Fscache_OkToScavenge(&handlePtr->cacheInfo)) {
 	register Boolean isDir;
-#ifdef CONSIST_DEBUG
-	extern int fsTraceConsistMinor;
-	if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
-	    printf("Fsio_FileScavenge <%d,%d> nuked, lastwriter %d\n",
-		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		handlePtr->consist.lastWriter);
-	}
-#endif	CONSIST_DEBUG
 	/*
 	 * Remove handles for files with no users and no blocks in cache.
 	 * We tell VM not to cache the segment associated with the file.
@@ -1115,39 +1026,6 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     register ReturnStatus status;
     int savedOffset = readPtr->offset;
     int savedLength = readPtr->length;
-#ifdef SOSP91
-    Fsconsist_Info *consistPtr = &handlePtr->consist;
-    Fsconsist_ClientInfo	*clientPtr;
-    Boolean			maybeShared = FALSE;
-    int				numReading, numWriting;
-
-    if ((handlePtr->descPtr != (Fsdm_FileDescriptor *) NIL) &&
-	    (handlePtr->descPtr->fileType == FS_FILE)) {
-	/*
-	 * If this file is marked uncacheable or if we are the server doing
-	 * a read and it's marked uncacheable on another client, then record
-	 * this read.
-	 */
-	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
-	    if ((clientPtr->clientID == readPtr->reserved) &&
-		    (!clientPtr->cached)) {
-		maybeShared = TRUE;
-		break;
-	    } else if ((readPtr->reserved == rpc_SpriteID) &&
-		    (!clientPtr->cached)) {
-		maybeShared = TRUE;
-		break;
-	    }
-	}
-    }
-    if (maybeShared) {
-	(void) Fsconsist_NumClients(consistPtr, &numReading, &numWriting);
-	SOSP_ADD_READ_TRACE(readPtr->reserved, 
-		handlePtr->hdr.fileID, streamPtr->hdr.fileID, TRUE,
-		readPtr->offset, readPtr->length, numReading, numWriting);
-
-    }
-#endif SOSP91
 
     status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags,
 	    readPtr->buffer, readPtr->offset, &readPtr->length, remoteWaitPtr);
@@ -1202,39 +1080,6 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     register ReturnStatus status;
     int savedOffset = writePtr->offset;
     int savedLength = writePtr->length;
-#ifdef SOSP91
-    Fsconsist_Info *consistPtr = &handlePtr->consist;
-    Fsconsist_ClientInfo	*clientPtr;
-    Boolean			maybeShared = FALSE;
-    int				numReading, numWriting;
-
-    if ((handlePtr->descPtr != (Fsdm_FileDescriptor *) NIL) &&
-	    (handlePtr->descPtr->fileType == FS_FILE)) {
-	/*
-	 * If this file is marked uncacheable or if we are the server doing
-	 * a read and it's marked uncacheable on another client, then record
-	 * this read.
-	 */
-	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
-	    if ((clientPtr->clientID == writePtr->reserved) &&
-		    (!clientPtr->cached)) {
-		maybeShared = TRUE;
-		break;
-	    } else if ((writePtr->reserved == rpc_SpriteID) &&
-		    (!clientPtr->cached)) {
-		maybeShared = TRUE;
-		break;
-	    }
-	}
-    }
-    if (maybeShared) {
-	(void) Fsconsist_NumClients(consistPtr, &numReading, &numWriting);
-	SOSP_ADD_READ_TRACE(writePtr->reserved, handlePtr->hdr.fileID,
-		streamPtr->hdr.fileID, FALSE, writePtr->offset, 
-		writePtr->length, numReading, numWriting);
-    }
-
-#endif SOSP91
 
     /*
      * Get a reference to the domain so it can't be dismounted during the I/O.
@@ -1429,22 +1274,7 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		    if (arg < 0) {
 			status = GEN_INVALID_ARG;
 		    } else {
-#ifdef SOSP91
-			{
-			    int oldSize;
-			    int modifyTime = 
-				handlePtr->cacheInfo.attr.modifyTime;
-			    oldSize = handlePtr->cacheInfo.attr.lastByte;
-			    status = Fsio_FileTrunc(handlePtr, arg, 0);
-			    SOSP_ADD_TRUNCATE_TRACE(streamPtr->hdr.fileID,
-				oldSize + 1, 
-				handlePtr->cacheInfo.attr.lastByte + 1,
-				modifyTime,
-				handlePtr->cacheInfo.attr.createTime);
-			}
-#else
 			status = Fsio_FileTrunc(handlePtr, arg, 0);
-#endif
 		    }
 		} else {
 		    Fsutil_HandleUnlock(handlePtr);
@@ -1566,9 +1396,6 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		} else {
 		    lastBlock = FSCACHE_LAST_BLOCK;
 		}
-#ifdef SOSP91
-		cacheInfoPtr->flags |= FSCACHE_SYNC;
-#endif SOSP91
 		/*
 		 * Release the handle lock during the FileWriteBack to 
 		 * avoid hanging up everyone who stumbles over the handle

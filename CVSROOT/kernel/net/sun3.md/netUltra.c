@@ -521,7 +521,7 @@ NetUltraStart(statePtr)
      */
     startPtr->netAddressSize = 7;
     bcopy((char *) &interPtr->netAddress[NET_PROTO_RAW].generic.data[1],
-	(char *) &startPtr->netAddressBuf, sizeof(Net_Address)-1);
+	(char *) startPtr->netAddressBuf, sizeof(Net_Address)-1);
     startPtr->netAddressBuf[0] = 0x49;
     startPtr->netAddressBuf[5] = 0xfe;
     status = NetUltraSendReq(statePtr, StandardDone, 
@@ -783,7 +783,7 @@ Net_UltraReset(interPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static void
 NetUltraResetCallback(data, infoPtr)
     ClientData		data;		/* Ptr to the interface to reset. */

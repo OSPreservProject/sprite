@@ -246,7 +246,7 @@ extern	void	Mach_MonReboot _ARGS_((char *rebootString));
 extern  void    Mach_MonTrap _ARGS_((Address address_to_trap_to));
 extern	void	Mach_MonStopNmi _ARGS_((void));
 extern	void	Mach_MonStartNmi _ARGS_((void));
-extern	void	Mach_MonTraverseDevTree _ARGS_((unsigned int node, int (*func)(), void *clientData));
+extern	void	Mach_MonTraverseDevTree _ARGS_((unsigned int node, int (*func)(), Address clientData));
 extern	int	Mach_MonSearchProm _ARGS_((char *name, char *attr, char *buf, int buflen));
 extern	void	Mach_MonTraverseAndPrintDevTree _ARGS_((void));
 

@@ -61,7 +61,12 @@ RpcByteSwapBuffer(bufferPtr, numInts)
 #define	MIDDLE_HIGH_BYTE_MASK	0x00ff0000
 #define	HIGH_BYTE_MASK		0xff000000
 
+#ifdef lint
+    while (numInts > 0) {
+	--numInts;
+#else	
     while (--numInts >= 0) {
+#endif	
 	in = *bufferPtr;
 	*bufferPtr++ =   ((in << 8)  & MIDDLE_HIGH_BYTE_MASK)
 	               | ((in << 24) & HIGH_BYTE_MASK)

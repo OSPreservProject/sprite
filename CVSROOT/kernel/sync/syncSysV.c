@@ -28,11 +28,16 @@ static int totalSems = 0;
 static Sync_Lock semLock = Sync_LockInitStatic("Sync:sysVSemaphores");
 #define LOCKPTR (&semLock)
 
+extern int vmShmDebug;
+
 /*
  * Debugging print statement declaration.
  */
+#ifndef lint 
 #define dprintf if (vmShmDebug) printf
-extern int vmShmDebug;
+#else
+#define dprintf printf
+#endif
 
 /*
  * Compat. defs.

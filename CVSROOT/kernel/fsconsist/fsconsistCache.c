@@ -27,7 +27,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 #include	<sprite.h>
 #include	<fs.h>
@@ -55,9 +55,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Boolean	fsconsist_Debug = FALSE;
 Boolean	fsconsist_ClientCachingEnabled = TRUE;
-#ifdef CONSIST_DEBUG
-int	fsTraceConsistMinor = 2249;
-#endif /* CONSIST_DEBUG */
 
 /*
  * Flags for the Fsconsist_Info struct that's defined in fsInt.h
@@ -140,7 +137,6 @@ extern void ProcessConsistReply _ARGS_((Fsconsist_Info *consistPtr,
 		int clientID, ConsistReply *replyPtr));
 
 extern char *ConsistType _ARGS_((int flags));
-
 
 
 /*
@@ -415,15 +411,6 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
 	countMigration = FALSE;
     }
 done:
-#ifdef CONSIST_DEBUG
-    if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	printf("File <%d,%d> version %d start consist w/ use 0x%x, %s\n",
-		consistPtr->hdrPtr->fileID.major,
-		consistPtr->hdrPtr->fileID.minor,
-		((Fsio_FileIOHandle *)consistPtr->hdrPtr)->cacheInfo.version,
-		useFlags, (cacheable ? "cacheable" : "not cacheable"));
-    }
-#endif /* CONSIST_DEBUG */
     /*
      * Now that we know the cacheable state of the file, check the use
      * by other clients, perhaps sending them cache consistency
@@ -466,14 +453,6 @@ done:
 	    }
 	    continue;
 	}
-#ifdef CONSIST_DEBUG
-	if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	    printf("Client %d, %s, use %d write %d\n",
-		    clientPtr->clientID,
-		    (clientPtr->cached ? "caching" : "not caching"),
-		    clientPtr->use.ref, clientPtr->use.write);
-	}
-#endif /* CONSIST_DEBUG */
 	clients++;
 	if (!clientPtr->cached) {
 	    /*
@@ -612,13 +591,6 @@ UpdateList(consistPtr, clientID, useFlags, cacheable, openTimeStampPtr)
     if (cacheable && (useFlags & FS_WRITE)) {
 	consistPtr->lastWriter = clientID;
     }
-#ifdef CONSIST_DEBUG
-    if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	printf("UpdateList: client %d %s, last writer %d\n",
-	    clientID, (clientPtr->cached ? "caching" : "not caching"),
-	    consistPtr->lastWriter);
-    }
-#endif /* CONSIST_DEBUG */
     /*
      * Return a time stamp for the open.  This timestamp is used by clients
      * to catch races between the reply message for an open, and a cache
@@ -842,14 +814,6 @@ Fsconsist_ReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 		clientID, clientPtr->clientID);
 	}
     }
-#ifdef CONSIST_DEBUG
-    if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
-	printf("Fsconsist_ReopenClient %d, use %d write %d, %s, last writer %d\n",
-		clientID, use.ref, use.write, (found ? "found" : "not found"),
-		consistPtr->lastWriter);
-    }
-#endif /* notdef */
-
     if (!found) {
 	INSERT_CLIENT(&consistPtr->clientList, clientPtr, clientID);
 	clientPtr->use = use;
@@ -1217,12 +1181,6 @@ Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
     LOCK_MONITOR;
 
     *wasCachedPtr = (consistPtr->lastWriter == clientID);
-#ifdef CONSIST_DEBUG
-    if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-	printf("ConsistClose: closing client %d, lastwriter %d\n",
-		    clientID, consistPtr->lastWriter);
-    }
-#endif CONSIST_DEBUG
     if (!Fsconsist_IOClientClose(&consistPtr->clientList, clientID, flags,
 			 wasCachedPtr)) {
 	UNLOCK_MONITOR;
@@ -1235,19 +1193,14 @@ Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
              * Probably a client error with the lastWriter.  We print
              * a warning and then nuke the lastWriter field below.
              */
-            printf("Fsconsist_Close, \"%s\" <%d,%d>: client %d not last writer %
-d, %s\n",
+            printf("%s, \"%s\" <%d,%d>: client %d not last writer %d, %s\n",
+                    "Fsconsist_Close",
                     Fsutil_HandleName(consistPtr->hdrPtr),
                     consistPtr->hdrPtr->fileID.major,
                     consistPtr->hdrPtr->fileID.minor,
                     clientID, consistPtr->lastWriter,
                     (*wasCachedPtr) ? "was cached" : "wasn't cached");
         }
-#ifdef CONSIST_DEBUG
-        if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-            printf("ConsistClose: erasing %d lastwriter\n", clientID);
-        }
-#endif CONSIST_DEBUG
         consistPtr->lastWriter = -1;
     }
 
@@ -1359,13 +1312,6 @@ Fsconsist_DeleteLastWriter(consistPtr, clientID)
 	if (clientPtr->clientID == clientID) {
 	    if (clientPtr->use.ref == 0 &&
 		consistPtr->lastWriter == clientID) {
-#ifdef CONSIST_DEBUG
-		if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-		    printf("Fsconsist_DeleteLastWriter <%d,%d> host %d\n",
-			consistPtr->hdrPtr->fileID.major,
-			consistPtr->hdrPtr->fileID.minor, clientID);
-		}
-#endif CONSIST_DEBUG
 		if (!clientPtr->locked) {
 		    REMOVE_CLIENT(clientPtr);
 		}
@@ -1799,10 +1745,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 			    clientPtr->clientID, ConsistType(flags),
 			    Fsutil_HandleName(consistPtr->hdrPtr),
 			    consistRpc.fileID.major, consistRpc.fileID.minor);
-		consistRpc.flags |= FSCONSIST_DEBUG;
 		numRefusals = 0;
-	    } else {
-		consistRpc.flags &= ~FSCONSIST_DEBUG;
 	    }
 	}
     }
@@ -1893,14 +1836,6 @@ Fsconsist_RpcConsist(srvToken, clientID, command, storagePtr)
     if (rmtHandlePtr == (Fsrmt_FileIOHandle *)NIL) {
 	if (Fsprefix_OpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
-#ifdef CONSIST_DEBUG
-	    printf("Fsconsist_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
-		    consistArgPtr->fileID.major,
-		    consistArgPtr->fileID.minor,
-		    ConsistType(consistArgPtr->flags),
-		    consistArgPtr->fileID.serverID,
-		    "no handle");
-#endif /* CONSIST_DEBUG */
 	} else {
 	    /*
 	     * A consistency message has arrived from an open from which
@@ -1953,13 +1888,6 @@ Fsconsist_RpcConsist(srvToken, clientID, command, storagePtr)
 	consistPtr->serverID = clientID;
 	consistPtr->args = *consistArgPtr;
 	Proc_CallFunc(ProcessConsist, (ClientData) consistPtr, 0);
-    } else if (consistArgPtr->flags & FSCONSIST_DEBUG) {
-	printf("Fsconsist_RpcConsist: <%d,%d> Lots of %s msgs dropped: %s\n",
-		    consistArgPtr->fileID.major,
-		    consistArgPtr->fileID.minor,
-		    ConsistType(consistArgPtr->flags),
-		    (status == FS_STALE_HANDLE) ? "stale handle" :
-						  "open in progress");
     }
     Rpc_Reply(srvToken, status, storagePtr, (int(*)())NIL, (ClientData)NIL);
     return(SUCCESS);
@@ -2019,22 +1947,6 @@ ProcessConsist(data, callInfoPtr)
      */
     reply.status = Fscache_Consist(&handlePtr->cacheInfo,
 			consistPtr->args.flags, &reply.cachedAttr);
-#ifdef CONSIST_DEBUG
-    if (fsTraceConsistMinor == handlePtr->rmt.hdr.fileID.minor) {
-	printf(
-	"ProcessConsist, %s msg for file \"%s\" <%d,%d> version %d status %x\n",
-	    ConsistType(consistPtr->args.flags), 
-	    Fsutil_HandleName(handlePtr),
-	    handlePtr->rmt.hdr.fileID.major, handlePtr->rmt.hdr.fileID.minor,
-	    consistPtr->args.version, reply.status);
-    }
-#endif /* CONSIST_DEBUG */
-
-    FSCACHE_DEBUG_PRINT2("Returning: mod (%d), acc (%d),",
-		       reply.cachedAttr.modifyTime,
-		       reply.cachedAttr.accessTime);
-    FSCACHE_DEBUG_PRINT2(" first (%d), last (%d)\n",
-		       reply.cachedAttr.firstByte, reply.cachedAttr.lastByte);
     reply.fileID = handlePtr->rmt.hdr.fileID;
     reply.fileID.type = FSIO_LCL_FILE_STREAM;
     Fsutil_HandleRelease(handlePtr, FALSE);
@@ -2194,17 +2106,6 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	UNLOCK_MONITOR;
 	return;
     }
-#ifdef CONSIST_DEBUG
-    if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	printf(
-	"ConsistReply, %s msg for file \"%s\" <%d,%d> writer %d status %x\n",
-	    ConsistType(msgPtr->flags), 
-	    Fsutil_HandleName(consistPtr->hdrPtr),
-	    consistPtr->hdrPtr->fileID.major, consistPtr->hdrPtr->fileID.minor,
-	    consistPtr->lastWriter,
-	    replyPtr->status);
-    }
-#endif /* CONSIST_DEBUG */
     if (replyPtr->status != SUCCESS) {
 	printf("ProcessConsist: %s request failed <%x> file \"%s\" <%d,%d>\n",
 		ConsistType(msgPtr->flags), replyPtr->status,
@@ -2252,6 +2153,7 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 
     UNLOCK_MONITOR;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -2274,25 +2176,26 @@ ConsistType(flags)
     int flags;		/* Cache consistency message flags */
 {
     register char *result;
-    switch (flags & ~FSCONSIST_DEBUG) {
-	case FSCONSIST_WRITE_BACK_BLOCKS:
-	    result = "write-back";
-	    break;
-	case FSCONSIST_INVALIDATE_BLOCKS:
-	    result = "invalidate";
-	    break;
-	case (FSCONSIST_WRITE_BACK_BLOCKS|FSCONSIST_INVALIDATE_BLOCKS):
-	    result = "write-back & invalidate";
-	    break;
-	case FSCONSIST_DELETE_FILE:
-	    result = "delete";
-	    break;
-	case FSCONSIST_WRITE_BACK_ATTRS:
-	    result = "return-attrs";
-	    break;
-	default:
-	    result = "UNKNOWN";
-	    break;
+
+    switch (flags) {
+    case FSCONSIST_WRITE_BACK_BLOCKS:
+	result = "write-back";
+	break;
+    case FSCONSIST_INVALIDATE_BLOCKS:
+	result = "invalidate";
+	break;
+    case (FSCONSIST_WRITE_BACK_BLOCKS|FSCONSIST_INVALIDATE_BLOCKS):
+	result = "write-back & invalidate";
+	break;
+    case FSCONSIST_DELETE_FILE:
+	result = "delete";
+	break;
+    case FSCONSIST_WRITE_BACK_ATTRS:
+	result = "return-attrs";
+	break;
+    default:
+	result = "UNKNOWN";
+	break;
     }
-    return(result);
+    return result;
 }

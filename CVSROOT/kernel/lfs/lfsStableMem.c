@@ -318,16 +318,10 @@ LfsStableMemLayout(segPtr, flags, clientDataPtr, smemPtr)
 	if (full) {
 	    Fscache_ReturnDirtyBlock(blockPtr, GEN_EINTR);
 	} else {
-#ifdef SOSP91
-	Fscache_AddBlockToStats(cacheInfoPtr, blockPtr);
-#endif SOSP91
 	    smemPtr->numCacheBlocksOut++;
 	}
 
     }
-#ifdef SOSP91
-	cacheInfoPtr->flags &= ~FSCACHE_REASON_FLAGS;
-#endif SOSP91
     if (!full && (smemPtr->numCacheBlocksOut == 0)) {
 	Fscache_ReturnDirtyFile(cacheInfoPtr, FALSE);
     }

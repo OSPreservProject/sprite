@@ -44,9 +44,6 @@ extern unsigned int rpcBootID;
 extern unsigned int rpcCompleteMask[];
 
 extern void RpcScatter _ARGS_((register RpcHdr *rpcHdrPtr, RpcBufferSet *bufferPtr));
-extern ReturnStatus RpcSanityCheck _ARGS_((int length, 
-		    Net_ScatterGather *scatterPtr, int packetLength));
-
 
 /*
  * Byte-swap routines and variables.

@@ -177,9 +177,6 @@ Timer_CallBack(interval, time)
 	timeOfDay = timer_UniversalApprox;
 	MASTER_UNLOCK(&timer_ClockMutex);
 
-	if (vm_Tracing) {
-	    Vm_StoreTraceTime(timeOfDay);
-	}
 	Sched_GatherProcessInfo(interval);
 	Dev_GatherDiskStats();
 
