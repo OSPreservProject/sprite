@@ -131,13 +131,15 @@ extern 	void 		Sync_PrintStat();
 
 #define MASTER_LOCK(semaphore) \
     { \
-	sync_Instrument.numLocks++; \
-	DISABLE_INTR(); \
-	if (semaphore == 1) { \
-	    Sys_Panic(SYS_FATAL, "Deadlock!!! (semaphore @ 0x%x)\n", \
-			(int)&semaphore); \
+        sync_Instrument.numLocks++; \
+	if (!sys_AtInterruptLevel) { \
+	    asm("movw #0x2700,sr"); \
+	    sys_NumDisableIntrsPtr[0]++; \
 	} \
-	semaphore = 1; \
+	if ((semaphore)++ == 1) { \
+	    Sys_Panic(SYS_FATAL, "Deadlock!!! (semaphore @ 0x%x)\n", \
+			(int)&(semaphore)); \
+	} \
     }
 
 /*
@@ -162,9 +164,13 @@ extern 	void 		Sync_PrintStat();
 
 #define MASTER_UNLOCK(semaphore) \
     { \
-	sync_Instrument.numUnlocks++; \
-	semaphore = 0; \
-	ENABLE_INTR(); \
+        sync_Instrument.numUnlocks++; \
+	(semaphore) = 0; \
+	if (!sys_AtInterruptLevel) { \
+	    if (--(sys_NumDisableIntrsPtr[0]) == 0) { \
+		asm("movw #0x2000,sr"); \
+	    } \
+	} \
     }
 
 /* 
