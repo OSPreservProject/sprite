@@ -41,7 +41,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsLocalDomain.h"
 #include "fsBlockCache.h"
 #include "fsStat.h"
-#include "time.h"
+#include "spriteTime.h"
 
 ReturnStatus	FetchIndirectBlock();
 ReturnStatus	MakePtrAccessible();
