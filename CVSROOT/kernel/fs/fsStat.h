@@ -264,7 +264,7 @@ typedef struct FsPrefixStats {
  */
 typedef struct FsObjectStats {
     int lruScans;		/* Number of LRU replacement scans */
-    int scavenges;		/* Number of handles reclaimed */
+    int scavenges;		/* Number of handles actually reclaimed */
     int streams;
     int streamClients;		/* Equal to streams, except during migration */
     int files;			/* Local files, not including directories */
@@ -276,6 +276,7 @@ typedef struct FsObjectStats {
     int remote;			/* All the various remote objects but files*/
     int directory;
     int dirFlushed;		/* Directories that were flushed */
+    int lruChecks;		/* Number of handles checked for reclaimation */
 } FsObjectStats;
 
 /*
