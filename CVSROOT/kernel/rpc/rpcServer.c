@@ -940,3 +940,67 @@ RpcProbe(srvPtr)
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 			 (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_DumpServerTraces --
+ *
+ *	Stub, for now.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_DumpServerTraces()
+{
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_FreeTraces --
+ *
+ *	Stub, for now.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_FreeTraces()
+{
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_OkayToTrace --
+ *
+ *	Stub, for now.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_OkayToTrace()
+{
+    return;
+}
