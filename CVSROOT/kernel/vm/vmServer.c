@@ -67,9 +67,6 @@ VmSwapFileRemove(swapStreamPtr, swapFileName)
 
     (void)Fs_Close(swapStreamPtr);
     procPtr = Proc_GetEffectiveProc();
-    if (procPtr->genFlags & PROC_FOREIGN) {
-	return;
-    }
     if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
 	origID = procPtr->effectiveUserID;
 	procPtr->effectiveUserID = PROC_SUPER_USER_ID;
