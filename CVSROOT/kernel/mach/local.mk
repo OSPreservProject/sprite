@@ -7,6 +7,8 @@
 
 NAME = mach
 
+CFLAGS += -DNEW_NET
+
 NOOPTIMIZATION	= no -O please
 
 #if !empty(TM:Mds3100) || !empty(TM:Mds5000)
