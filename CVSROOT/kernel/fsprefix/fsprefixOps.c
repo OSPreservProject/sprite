@@ -841,7 +841,22 @@ PrefixInsert(prefix, serverID, hdrPtr, domainType, flags)
     prefixPtr->delayOpens	= FALSE;
     List_Init(&prefixPtr->exportList);
 
-    List_Insert((List_Links *)prefixPtr, LIST_ATFRONT(prefixList));
+    /*
+     * At this point one could think about sorting the prefix table
+     * in some way.  However, for now we just add new prefixes
+     * to the end.  The PrefixLookup look scans the whole list anyway.
+     * Finally, there is a silly dependency on the ordering from
+     * the use of a prefix table entry to block OPENS during recovery.
+     * The first prefix that is controlled by a particular server is
+     * used to synchronize OPENS and REOPENS.  If this stupid
+     * dependency were removed (by using a different data
+     * structure, please, than the prefix table (I did all this to
+     * myself - my thanks to whoever fixes it)) then the prefix
+     * table could be sorted in order of increasing prefix length
+     * so that the prefix table scan could halt at the first non
+     * matching prefix.
+     */
+    List_Insert((List_Links *)prefixPtr, LIST_ATREAR(prefixList));
     return(prefixPtr);
 }
 
