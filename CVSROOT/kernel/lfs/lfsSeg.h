@@ -181,6 +181,10 @@ typedef struct LfsSegIoInterface {
 	 * Called when a segment write finishes.
 	 */
 
+    ReturnStatus (*detach) _ARGS_((struct Lfs *lfsPtr)); 
+	/*
+	 * Detach an LFS file system routine. 
+	 */
     int	clientDataPerSegSize; /* Size in bytes of client data for each segment
 			       * for this module. */
 } LfsSegIoInterface;
