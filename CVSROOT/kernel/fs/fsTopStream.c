@@ -308,6 +308,18 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 }
 
 /*
+ * Parameters and results for RPC_FS_RELEASE that is called
+ * to release a reference to a stream on the source of a migration.
+ */
+typedef struct {
+    Fs_FileID streamID;		/* Stream from which to release a reference */
+} FsStreamReleaseParam;
+
+typedef struct {
+    Boolean	inUse;		/* TRUE if stream still in use after release */
+} FsStreamReleaseReply;
+
+/*
  *----------------------------------------------------------------------
  *
  * StreamMigCallback --
@@ -330,45 +342,100 @@ StreamMigCallback(migInfoPtr, sharedPtr)
     Boolean	*sharedPtr;	/* TRUE if stream still used on client */
 {
     register ReturnStatus	status;
-    Rpc_Storage 	storage;
-    FsMigInfo		migInfo;
-    FsMigParam		migParam;
+    Rpc_Storage 		storage;
+    FsStreamReleaseParam	param;
+    FsStreamReleaseReply	reply;
 
-    /*
-     * We want to call FsStreamMigrate, so we change the ioFileID to
-     * the streamID before passing it.
-     */
-    migInfo = *migInfoPtr;
-    migInfo.ioFileID = migInfoPtr->streamID;
-    storage.requestParamPtr = (Address) &migInfo;
-    storage.requestParamSize = sizeof(FsMigInfo);
+    param.streamID = migInfoPtr->streamID;
+    storage.requestParamPtr = (Address) &param;
+    storage.requestParamSize = sizeof(param);
     storage.requestDataPtr = (Address)NIL;
     storage.requestDataSize = 0;
 
-    storage.replyParamPtr = (Address)&migParam;
-    storage.replyParamSize = sizeof(FsMigParam);
+    reply.inUse = FALSE;
+    storage.replyParamPtr = (Address)&reply;
+    storage.replyParamSize = sizeof(reply);
     storage.replyDataPtr = (Address) NIL;
     storage.replyDataSize = 0;
 
-    status = Rpc_Call(migInfoPtr->srcClientID, RPC_FS_MIGRATE, &storage);
+    status = Rpc_Call(migInfoPtr->srcClientID, RPC_FS_RELEASE, &storage);
 
-    if (status == SUCCESS) {
-	FsMigrateReply	*migReplyPtr;
-
-	migReplyPtr = &(migParam.migReply);
-	*sharedPtr = migReplyPtr->flags & FS_RMT_SHARED;
-    } else if (fsMigDebug) {
-	printf(
-	  "StreamMigCallback: status %x from remote migrate routine.\n",
-		  status);
+    *sharedPtr = reply.inUse;
+    if (status != SUCCESS && fsMigDebug) {
+	printf("StreamMigCallback: status %x from RPC.\n", status);
     }
     return(status);
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RpcReleaseStream --
+ *
+ *	The service stub for FsStreamMigCallback.
+ *	This invokes the StreamMigrate routine that releases a reference
+ *	to a stream on this host.  Our reply message indicates if
+ *	the stream is still in use on this host.
+ *
+ * Results:
+ *	FS_STALE_HANDLE if handle that if client that is migrating the file
+ *	doesn't have the file opened on this machine.  Otherwise return
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fs_RpcReleaseStream(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;    /* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    register FsStreamReleaseParam	*paramPtr;
+    register Fs_Stream			*streamPtr;
+    register ReturnStatus		status;
+    register FsStreamReleaseReply	*replyPtr;
+    register Rpc_ReplyMem		*replyMemPtr;
+
+    paramPtr = (FsStreamReleaseParam *) storagePtr->requestParamPtr;
+
+    streamPtr = FsStreamClientVerify(&paramPtr->streamID, rpc_SpriteID);
+    if (streamPtr == (Fs_Stream *) NIL) {
+	printf("Fs_RpcReleaseStream, unknown stream <%d>, client %d\n",
+	    paramPtr->streamID.major, clientID);
+	return(FS_STALE_HANDLE);
+    }
+    replyPtr = mnew(FsStreamReleaseReply);
+    storagePtr->replyParamPtr = (Address)replyPtr;
+    storagePtr->replyParamSize = sizeof(FsStreamReleaseReply);
+    storagePtr->replyDataPtr = (Address)NIL;
+    storagePtr->replyDataSize = 0;
+
+    status = FsStreamRelease(streamPtr, &replyPtr->inUse);
+
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = (Address) NIL;
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+		(ClientData)replyMemPtr);
+    return(SUCCESS);
+}
+
+
+/*
  * ----------------------------------------------------------------------------
  *
- * FsStreamMigrate --
+ * FsStreamRelease --
  *
  *	This is called to release a reference to a stream at the source
  *	of a migration.  We are told to release the reference by the
@@ -377,10 +444,6 @@ StreamMigCallback(migInfoPtr, sharedPtr)
  *	properly synchronized - the I/O server has to know how many
  *	stream references we, the source of a migration, really have.
  *
- *	FIXME: this uses FS_RPC_MIGRATE instead of a new RPC.  This requires
- *	a patch in the RPC stub for FS_RPC_MIGRATE, and a patch here because
- *	there are more references to the stream that originally thought.
- *
  * Results:
  *	SUCCESS unless the stream isn't even found.  This sets the FS_RMT_SHARED
  *	flag in the *flagsPtr field if the stream is still in use here,
@@ -388,50 +451,24 @@ StreamMigCallback(migInfoPtr, sharedPtr)
  *
  * Side effects:
  *	This releases one reference to the stream.  If it is the last
- *	reference then this propogates the close down to the I/O handle.
+ *	reference then this propogates the close down to the I/O handle
+ *	by calling the stream-specific release procedure.
  *
  * ----------------------------------------------------------------------------
  *
  */
 /*ARGSUSED*/
 ReturnStatus
-FsStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
-    int		dstClientID;	/* ID of target client */
-    int		*flagsPtr;	/* In/Out Stream usage flags */
-    int		*offsetPtr;	/* Return - new stream offset (not needed) */
-    int		*sizePtr;	/* Return - 0 */
-    Address	*dataPtr;	/* Return - NIL */
+FsStreamRelease(streamPtr, inUsePtr)
+    Fs_Stream *streamPtr;	/* Stream to release, should be locked */
+    Boolean *inUsePtr;		/* TRUE if still in use after release */
 {
-    register Fs_Stream *streamPtr;
-
-    *sizePtr = 0;
-    *dataPtr = (Address)NIL;
-    /*
-     * Fetch the stream but don't increment the refernece count while
-     * keeping it locked.
-     */
-    streamPtr = FsHandleFetchType(Fs_Stream, &migInfoPtr->streamID);
-    if (streamPtr == (Fs_Stream *)NIL) {
-	printf(
-		"FsStreamMigrate, no stream <%d> for %s handle <%d,%d>\n",
-		migInfoPtr->streamID.minor,
-		FsFileTypeToString(migInfoPtr->ioFileID.type),
-		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
-	return(FS_FILE_NOT_FOUND);
-    }
-    FsHandleDecRefCount((FsHandleHeader *)streamPtr);
-
-    *flagsPtr = streamPtr->flags;
-    *offsetPtr = streamPtr->offset;
     /*
      * If this is the last refernece then call down to the I/O handle
      * so it can decrement use counts that come from the stream.
      * (The funky check against 2 is because there have been two fetches
-     * of the stream.  One by Fs_RpcStartMigration, and one by use.  We
-     * decrement our reference above, but there is still an extra from
-     * Fs_RpcStartMigration.  Plus there is the original ref from the
-     * stream that has migrated.  Thus 2 is the minimum.)
+     * of the stream.  One by Fs_RpcReleaseStream, plus there is the
+     * original ref from the stream that has migrated.  Thus 2 is the minimum.)
      */
     if (streamPtr->hdr.refCount <= 2) {
 	(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
@@ -440,12 +477,12 @@ FsStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	    /*
 	     * No references, no other clients, nuke it.
 	     */
-	    *flagsPtr &= ~FS_RMT_SHARED;
+	    *inUsePtr = FALSE;
 	    FsStreamDispose(streamPtr);
 	    return(SUCCESS);
 	}
     }
-    *flagsPtr |= FS_RMT_SHARED;
+    *inUsePtr = TRUE;
     FsHandleRelease(streamPtr, TRUE);
     return(SUCCESS);
 }
