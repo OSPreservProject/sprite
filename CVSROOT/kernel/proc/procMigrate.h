@@ -27,6 +27,7 @@ extern int proc_MigDebugLevel;
 extern int proc_MigrationVersion;
 extern Boolean proc_DoTrace;
 extern Boolean proc_DoCallTrace;
+extern Boolean proc_KillMigratedDebugs;
 
 
 #define PROC_MIG_ANY 0
