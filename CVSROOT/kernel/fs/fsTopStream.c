@@ -234,7 +234,10 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 
     /*
      * Get the stream and synchronize with closes from the client.
+     * The I/O handle has to be unlocked while the stream is locked
+     * in order to prevent deadlock with un-related open/close activity.
      */
+    FsHandleUnlock(ioHandlePtr);
     found = FsHandleInstall(&migInfoPtr->streamID, sizeof(Fs_Stream),
 			    (char *)NIL, (FsHandleHeader **)&newStreamPtr);
     streamPtr = newStreamPtr;
@@ -265,9 +268,7 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 	 * lock prevents closes of other references to this stream
 	 * from comming in and changing the state.
 	 */
-	FsHandleUnlock(ioHandlePtr);
 	status = StreamMigCallback(migInfoPtr, &shared);
-	FsHandleLock(ioHandlePtr);
     } else {
 	/*
 	 * The stream has been migrated away from us, the I/O server.
@@ -304,6 +305,7 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
     migInfoPtr->flags = streamPtr->flags | newClientStream;
     migInfoPtr->offset = streamPtr->offset;
     FsHandleRelease(streamPtr, TRUE);
+    FsHandleLock(ioHandlePtr);
 }
 
 /*
