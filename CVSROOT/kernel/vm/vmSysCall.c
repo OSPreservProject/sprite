@@ -17,6 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmInt.h"
 #include "vmMachInt.h"
 #include "vmTrace.h"
+#include "lock.h"
 #include "user/vm.h"
 #include "sync.h"
 #include "sys.h"
@@ -25,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "sys/mman.h"
 
+static ReturnStatus	VmMunmapInt();
 extern Vm_SharedSegTable sharedSegTable;
 void		Fs_StreamCopy();
 
@@ -239,6 +241,7 @@ Vm_Cmd(command, arg)
 	    Vm_Segment	*segPtr;
 	    int		lowPage;
 	    int		highPage;
+	    Vm_VirtAddr	virtAddr;
 
 	    status = Vm_CopyIn(3 * sizeof(int), (Address)arg, 
 				(Address)intArr);
@@ -263,7 +266,10 @@ Vm_Cmd(command, arg)
 	    if (intArr[2] >= lowPage && intArr[2] <= highPage) {
 		highPage = intArr[2];
 	    }
-	    VmFlushSegment(segPtr, lowPage, highPage);
+	    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
+	    virtAddr.segPtr = segPtr;
+	    virtAddr.page = lowPage;
+	    VmFlushSegment(&virtAddr, highPage);
 	    break;
 	}
 	case VM_SET_FREE_WHEN_CLEAN:
@@ -450,7 +456,6 @@ Vm_Cmd(command, arg)
 	case 1999:
 	    SETVAR(vmShmDebug, arg);
 	    break;
-
         default:
 	    status = VmMach_Cmd(command, arg);
             break;
@@ -500,7 +505,8 @@ SetVal(descript, newVal, valPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+/*ARGSUSED*/
+ENTRY ReturnStatus
 Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     Address	startAddr;	/* Requested starting virt-addr. */
     int		length;		/* Length of mapped segment. */
@@ -520,26 +526,14 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     Vm_SegProcList		*sharedSeg;
     Fs_Stream 		*filePtr;
 
-    vmShmDebug = 1;
     dprintf("Vm_Mmap: Entering\n");
     if ( ((int)startAddr & (vm_PageSize-1)) ||
 	    ((int)fileAddr & (vm_PageSize-1))) {
 	printf("Vm_Mmap: Invalid start or offset\n");
 	return VM_WRONG_SEG_TYPE;
     }
+
     procPtr = Proc_GetCurrentProc();
-    if (procPtr->vmPtr->sharedSegs == (List_Links *)NIL) {
-	dprintf("Vm_Mmap: New proc list\n");
-	procPtr->vmPtr->sharedSegs = (List_Links *)
-		malloc(sizeof(Vm_SegProcList));
-	VmMach_SharedProcStart(procPtr);
-	List_Init((List_Links *)procPtr->vmPtr->sharedSegs);
-    }
-    status = VmMach_SharedStartAddr(procPtr, length, &startAddr);
-    if (status != SUCCESS) {
-	printf("Vm_Mmap: VmMach_SharedStart failure\n");
-	return status;
-    }
     status = Fs_GetStreamPtr(procPtr,streamID,&streamPtr);
     dprintf("Vm_Mmap: procPtr: %x  streamID: %d streamPtr: %x\n",
 	    procPtr,streamID,(int)streamPtr);
@@ -552,22 +546,42 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     status = Fs_GetAttrStream(filePtr,&attr);
     if (status != SUCCESS) {
 	printf("Vm_Mmap: Fs_GetAttrStream failure\n");
+	Fs_Close(filePtr);
 	return status;
     }
-    printf("file: fileNumber %d size %d\n",attr.fileNumber, attr.size);
+    dprintf("file: fileNumber %d size %d\n",attr.fileNumber, attr.size);
 
     /* 
      * Check permissions.
      */
     if (attr.type != FS_FILE) {
 	printf("Vm_Mmap: not a file\n");
+	Fs_Close(filePtr);
 	return VM_WRONG_SEG_TYPE;
     }
     if (!(filePtr->flags & FS_READ) || !(prot & (PROT_READ | PROT_WRITE)) ||
 	    ((prot & PROT_WRITE) && !(filePtr->flags & FS_WRITE)) ||
 	    ((prot & PROT_EXEC) && !(filePtr->flags & FS_EXECUTE))) {
 	printf("Vm_Mmap: protection failure\n");
+	Fs_Close(filePtr);
 	return VM_WRONG_SEG_TYPE;
+    }
+
+    LOCK_SHM_MONITOR;
+    if (procPtr->vmPtr->sharedSegs == (List_Links *)NIL) {
+	dprintf("Vm_Mmap: New proc list\n");
+	procPtr->vmPtr->sharedSegs = (List_Links *)
+		malloc(sizeof(Vm_SegProcList));
+	VmMach_SharedProcStart(procPtr);
+	dprintf("Vm_Mmap: sharedStart: %x\n",procPtr->vmPtr->sharedStart);
+	List_Init((List_Links *)procPtr->vmPtr->sharedSegs);
+    }
+    status = VmMach_SharedStartAddr(procPtr, length, &startAddr);
+    if (status != SUCCESS) {
+	printf("Vm_Mmap: VmMach_SharedStart failure\n");
+	UNLOCK_SHM_MONITOR;
+	Fs_Close(filePtr);
+	return status;
     }
 
     /*
@@ -606,7 +620,6 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 		pnum,pnum+(length>>vmPageShift)-1);
 	Vm_ValidatePages(segTabPtr->segPtr,pnum,pnum+(length>>vmPageShift)-1,
 		FALSE,TRUE);
-	dprintf("Vm_Mmap: Finished validating pages\n");
 	List_Insert((List_Links *)segTabPtr,
 		LIST_ATFRONT((List_Links *)&sharedSegTable));
     } else {
@@ -621,6 +634,8 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 		    (length>>vmPageShift)-1);
 	    if (status != SUCCESS) {
 		printf("VmAddToSeg failure\n");
+		UNLOCK_SHM_MONITOR;
+		Fs_Close(filePtr);
 		return status;
 	    }
 	}
@@ -650,7 +665,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     /*
      * Unmap any current mapping at the address range.
      */
-    status=Vm_Munmap(startAddr,length,1);
+    status=VmMunmapInt(startAddr,length,1);
     if (status != SUCCESS) {
 	printf("Vm_Mmap: Vm_Munmap failure\n");
 	return status;
@@ -672,18 +687,17 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     sharedSeg->offset = (int)startAddr>>vmPageShift;
     sharedSeg->mappedEnd = startAddr+length-1;
     sharedSeg->prot = (prot&PROT_WRITE) ? 0 : VM_READONLY_SEG;
+    dprintf("Set prot to %d\n",sharedSeg->prot);
     if ((int)sharedSeg->segTabPtr == -1) {
 	dprintf("Vm_Mmap: Danger: sharedSeg->segTabPtr is -1!\n");
     }
     List_Insert((List_Links *)sharedSeg,
 	    LIST_ATFRONT((List_Links *)procPtr->vmPtr->sharedSegs));
+    
 
     PrintSharedSegs(procPtr);
+    UNLOCK_SHM_MONITOR;
     dprintf("Vm_Mmap: Completed page mapping\n");
-    dprintf("HEAP->ptSize: %x HEAP->offset: %x STACK->offset %x\n",
-	    procPtr->vmPtr->segPtrArray[VM_HEAP]->ptSize,
-	    procPtr->vmPtr->segPtrArray[VM_HEAP]->offset,
-	    procPtr->vmPtr->segPtrArray[VM_STACK]->offset);
     return(Vm_CopyOut(sizeof(Address), (Address) &startAddr,
 	    (Address) mappedAddr));
 
@@ -695,6 +709,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
  * Vm_Munmap --
  *
  *	Unmaps the process's pages in a specified address range.
+ *	Gets the lock and then calls VmMunmapInt.
  *
  * Results:
  *	Status from the unmap operation.
@@ -708,9 +723,39 @@ ReturnStatus
 Vm_Munmap(startAddr, length, noError)
     Address	startAddr;	/* Starting virt-addr. */
     int		length;		/* Length of mapped segment. */
+    int		noError;	/* Ignore errors. */
+{
+    ReturnStatus status;
+
+    LOCK_SHM_MONITOR;
+    status = VmMunmapInt(startAddr,length, noError);
+    UNLOCK_SHM_MONITOR;
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMunmapInt --
+ *
+ *	Unmaps the process's pages in a specified address range.
+ *
+ * Results:
+ *	Status from the unmap operation.
+ *
+ * Side effects:
+ *	Unmaps the pages.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+VmMunmapInt(startAddr, length, noError)
+    Address	startAddr;	/* Starting virt-addr. */
+    int		length;		/* Length of mapped segment. */
     int		noError;	/* 1 if don't care about errors
 				   from absent segments. */
 {
+
     ReturnStatus	status = SUCCESS;
     Proc_ControlBlock	*procPtr;
     Vm_SegProcList		*segProcPtr;
@@ -729,7 +774,8 @@ Vm_Munmap(startAddr, length, noError)
     endAddr = startAddr+length;
     for (addr=startAddr; addr<endAddr; ) {
 
-	dprintf("Vm_Munmap: eliminating %x to %x\n",(int)addr,(int)endAddr-1);
+	dprintf("Vm_Munmap: trying to eliminate %x to %x\n",
+		(int)addr,(int)endAddr-1);
 	/* Find the segment corresponding to this address. */
 	if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
 	    segProcPtr = VmFindSharedSegment(procPtr->vmPtr->sharedSegs,addr);
@@ -747,21 +793,20 @@ Vm_Munmap(startAddr, length, noError)
 	*/
 
 	if (segProcPtr == (Vm_SegProcList *)NIL) {
-	    if (noError) {
-		/*
-		 * Move to next mapped segment, so we can keep unmapping.
-		 */
-		addr1 = endAddr;
-		LIST_FORALL(procPtr->vmPtr->sharedSegs,
-			(List_Links *)segProcPtr) {
-		    if (segProcPtr->mappedStart > addr && 
-			segProcPtr->mappedStart < addr1) {
-			addr1 = segProcPtr->mappedStart;
-		    }
-		}
-	    } else {
+	    if (!noError) {
 		dprintf("Vm_Munmap: Page to unmap not in valid range\n");
 		status = VM_WRONG_SEG_TYPE;
+	    }
+	    /*
+	     * Move to next mapped segment, so we can keep unmapping.
+	     */
+	    addr1 = endAddr;
+	    LIST_FORALL(procPtr->vmPtr->sharedSegs,
+		    (List_Links *)segProcPtr) {
+		if (segProcPtr->mappedStart > addr && 
+		    segProcPtr->mappedStart < addr1) {
+		    addr1 = segProcPtr->mappedStart;
+		}
 	    }
 	} else {
 	    addr1 = segProcPtr->mappedEnd+1;
@@ -776,9 +821,8 @@ Vm_Munmap(startAddr, length, noError)
 	    dprintf("Vm_Munmap: invalidating: %x to %x\n",
 		    (int)virtAddr.page<<vmPageShift,
 		    min((int)segProcPtr->mappedEnd+1, (int)endAddr));
-		    
-	    VmPageInvalidateRange(&virtAddr,min((int)segProcPtr->mappedEnd+1,
-		    (int)endAddr)-(((int)virtAddr.page)<<vmPageShift));
+	    VmFlushSegment(&virtAddr,min((int)segProcPtr->mappedEnd+1,
+		    (int)endAddr)>>vmPageShift);
 
 	    if (segProcPtr->mappedStart < addr) {
 		dprintf("Vm_Munmap: Shortening mapped region (1)\n");
@@ -787,7 +831,8 @@ Vm_Munmap(startAddr, length, noError)
 		    /*
 		     * Split the mapped region.
 		     */
-		    newSegProcPtr = (Vm_SegProcList *)malloc(sizeof(Vm_SegProcList));
+		    newSegProcPtr = (Vm_SegProcList *)
+			    malloc(sizeof(Vm_SegProcList));
 		    *newSegProcPtr = *segProcPtr;
 		    newSegProcPtr->mappedStart = endAddr;
 		    newSegProcPtr->mappedEnd = segProcPtr->mappedEnd;
@@ -813,6 +858,9 @@ Vm_Munmap(startAddr, length, noError)
 		VmDeleteSharedSegment(procPtr,segProcPtr);
 	    }
 	}
+	if (addr == addr1) {
+	    panic("Vm_Munmap loop\n");
+	}
 	addr = addr1;
     }
 
@@ -821,7 +869,11 @@ Vm_Munmap(startAddr, length, noError)
     return status ;
 }
 
-#ifdef SEGOFFSETCODE
+/*
+ * Expansion of the segOffset and VmGetAddrPTEPtr macros for easier
+ * debugging.
+ */
+#ifdef NOTDEF
 segOffset(virtAddrPtr)
 Vm_VirtAddr *virtAddrPtr;
 {
@@ -842,5 +894,24 @@ Vm_VirtAddr *virtAddrPtr;
 	    return off;
 	}
     }
+}
+
+Vm_PTE * VmGetAddrPTEPtr(virtAddrPtr, page)
+Vm_VirtAddr	*virtAddrPtr;
+int		page;
+{
+    int segoff;
+    Vm_PTE *res;
+    int num;
+    segoff = segOffset(virtAddrPtr);
+    if (page-segoff < 0) {
+	panic("page # too small: %d %d\n",page,segoff);
+    } else if (page-segoff > virtAddrPtr->segPtr->ptSize) {
+	panic("page # too large: %d %d %d\n",page,segoff,
+		virtAddrPtr->segPtr->ptSize);
+    }
+    num = page-segoff;
+    res = &virtAddrPtr->segPtr->ptPtr[num];
+    return res;
 }
 #endif SEGOFFSETCODE
