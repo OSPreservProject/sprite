@@ -102,11 +102,6 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     reply.flags = 0;
     reply.signal = 0;
     reply.code = 0;
-/* This code should be removed after SOSP.  -Mary 10/1/91 */
-    if (streamType == FSIO_LCL_FILE_STREAM) {
-	ioPtr->reserved = rpc_SpriteID;
-    }
-/* End of code to remove. */
 
     /*
      * Outer loop to attempt the read and then block if no data is ready.
@@ -256,12 +251,6 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
     reply.flags = 0;
     reply.signal = 0;
     reply.code = 0;
-
-/* This code should be removed after SOSP.  -Mary 10/1/91 */
-    if (streamType == FSIO_LCL_FILE_STREAM) {
-	ioPtr->reserved = rpc_SpriteID;
-    }
-/* End of code to remove. */
 
     remoteWaiter.hostID = rpc_SpriteID;
 
