@@ -561,10 +561,6 @@ done:
 	}
     }
     if (cacheable) {
-#ifdef SOSP91
-	SOSP_ADD_CONSIST_CHANGE_TRACE(clientID, consistPtr->hdrPtr->fileID, SOSP_OPEN, openForWriting);
-#endif /* SOSP91 */
-
 	statPtr->cacheable++;
 	if (countMigration) {
 	    if (notCaching == clients) {
@@ -1069,7 +1065,7 @@ Fsconsist_MigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	}
 #ifdef SOSP91
-		SOSP_ADD_CONSIST_CHANGE_TRACE(srcClientID, consistPtr->hdrPtr->fileID, SOSP_CLOSE, cache);
+	SOSP_ADD_CONSIST_CHANGE_TRACE(srcClientID, consistPtr->hdrPtr->fileID, SOSP_CLOSE, cache);
 #endif SOSP91
     }
     /*
@@ -1078,6 +1074,12 @@ Fsconsist_MigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 
     StartConsistency(consistPtr, dstClientID, useFlags | FS_MIGRATING,
 		     cacheablePtr);
+#ifdef SOSP91
+    if (*cacheablePtr) {
+	SOSP_ADD_CONSIST_CHANGE_TRACE(dstClientID, consistPtr->hdrPtr->fileID,
+		SOSP_OPEN, useFlags & FS_WRITE);
+    }
+#endif /* SOSP91 */
     if (useFlags & FS_NEW_STREAM) {
 	/*
 	 * The client is getting the stream to this I/O handle for
@@ -1252,10 +1254,6 @@ Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
 	return(FALSE);
     }
 
-#ifdef SOSP91
-    SOSP_ADD_CONSIST_CHANGE_TRACE(clientID, consistPtr->hdrPtr->fileID, SOSP_CLOSE, *wasCachedPtr);
-#endif SOSP91
-
     if ((consistPtr->lastWriter != -1) && (flags & FS_LAST_DIRTY_BLOCK)) {
 	if (clientID != consistPtr->lastWriter) {
 	    /*
@@ -1302,6 +1300,7 @@ Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
  */
 
 #ifdef SOSP91
+ENTRY int
 Fsconsist_NumClients(consistPtr, numReadPtr, numWritePtr)
     register Fsconsist_Info *consistPtr;   /* Handle of file being closed */
     int	*numReadPtr;		/* Number of clients reading the file. */
