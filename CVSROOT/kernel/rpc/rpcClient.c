@@ -429,12 +429,16 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
      * Deadlock occurs here when doing RPCs to oneself and the client
      * resends and then the server acknowledges.
      */
+#if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
     if (chanPtr->mutex.value != 0) {
 	printf("Warning:  Rpc to myself?\n");
 	return;
     } else {
 	MASTER_LOCK(&chanPtr->mutex);
     }
+#else	/* Multiprocessor implementation. */
+    MASTER_LOCK(&chanPtr->mutex);
+#endif
     
     /*
      * Discover our own Sprite ID from the packet header.
