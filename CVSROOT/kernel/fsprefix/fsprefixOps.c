@@ -1332,7 +1332,26 @@ FsprefixHandleCloseInt(prefixPtr, flags)
 	dummy.ioHandlePtr = hdrPtr;
 	dummy.hdr.fileID.type = -1;
 	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
-		    rpc_SpriteID, 0, 0, (ClientData)NIL);
+		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL);
+#ifdef lint
+	status = Fsio_FileClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = FsrmtFileClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = Fsio_PipeClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = Fsio_DeviceClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = Fsrmt_IOClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = FspdevControlClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = FspdevPseudoStreamClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = FspdevServerStreamClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+#endif /* lint */
+
 	if (prefixPtr->activeOpens > 0) {
 	    prefixPtr->activeOpens = 0;
 	    Sync_Broadcast(&prefixPtr->okToRecover);
