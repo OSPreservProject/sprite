@@ -37,6 +37,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "dev.h"
+
+/*
+ * Procedures internal to this file
+ */
+
+void TimerDumpElement();
+
 
 
 /* DATA STRUCTURES */
@@ -465,4 +472,122 @@ Timer_DescheduleRoutine(elementPtr)
     }
 
     MASTER_UNLOCK(timerMutex); 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_DumpQueue --
+ *
+ *	Output the timer queue on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_DumpQueue()
+{
+    Timer_Ticks	ticks;
+    Time	time;
+    List_Links *itemPtr;
+
+    Timer_GetCurrentTicks(&ticks);
+    Timer_TicksToTime(ticks, &time);
+    printf("Now: %d.%06u sec\n", time.seconds, time.microseconds);
+
+    if (List_IsEmpty(timerQueueList)) {
+	printf("\nList is empty.\n");
+    } else {
+	printf("\n");
+
+	MASTER_LOCK(timerMutex); 
+
+	LIST_FORALL(timerQueueList, itemPtr) {
+	    TimerDumpElement((Timer_QueueElement *) itemPtr);
+	}
+
+	MASTER_UNLOCK(timerMutex); 
+
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerDumpElement --
+ *
+ *	Output the more important parts of a Timer_QueueElement on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TimerDumpElement(timerPtr)
+    Timer_QueueElement *timerPtr;
+{
+    Time  	time;
+
+    Timer_TicksToTime(timerPtr->time, &time);
+
+    printf("(*0x%x)(0x%x) @ %d.%06u\n",
+	    (Address) timerPtr->routine, 
+	    (Address) timerPtr->clientData,
+	    time.seconds, time.microseconds);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_DumpStats --
+ *
+ *	Initializes and prints the timer module statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Timer_DumpStats(arg)
+    ClientData	arg;
+{
+    static   Timer_Ticks	start;
+    static   Timer_Ticks	end;
+    Timer_Ticks	diff;
+    Time  	time;
+
+    if (arg ==  (ClientData) 's') {
+	Timer_GetCurrentTicks(&start);
+	bzero((Address) &timer_Statistics,sizeof(timer_Statistics));
+    } else {
+	Timer_GetCurrentTicks(&end);
+	Timer_SubtractTicks(end, start, &diff);
+	Timer_TicksToTime(diff, &time);
+
+	printf(
+	"\n%d.%06d cb %d prof %d spur %d; Sched %d Res %d Des %d\n",
+	    time.seconds, time.microseconds,
+	    timer_Statistics.callback,
+	    timer_Statistics.profile,
+	    timer_Statistics.spurious,
+	    timer_Statistics.schedule,
+	    timer_Statistics.resched,
+	    timer_Statistics.desched
+	);
+    }
 }

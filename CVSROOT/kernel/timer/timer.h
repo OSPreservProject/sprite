@@ -263,5 +263,7 @@ extern	void	Timer_TimerServiceInterrupts();
  * Used by the dump routines in the utils module for debugging.
  */
 extern void 	Timer_TimerGetInfo();
+extern void	Timer_DumpQueue();
+extern void	Timer_DumpStats();
 
 #endif _TIMER
