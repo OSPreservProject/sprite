@@ -182,6 +182,9 @@ Recov_Proc()
 	 * and we'll deactivate our interest if there is no set
 	 * of reboot call backs associated with the host.
 	 */
+	if (recov_BlockingRpcs) {
+	    continue;
+	}
 	pingPtr = FirstHostToCheck();
 	while (pingPtr != (RecovPing *)NIL) {
 	    check = RecovCheckHost(pingPtr->spriteID);

@@ -142,7 +142,7 @@ Rpc_Call(serverID, command, storagePtr)
     unsigned	int srvBootID;		/* Boot time stamp from server, used to
 					 * track server reboots */
     Boolean notActive = 0;		/* Not active flag from server */
-    Boolean fastBoot = FALSE;		/* Whether rpc reply had fast flag. */
+    unsigned int recovType = 0;		/* Whether rpc reply had recov flags. */
 
     if (serverID < 0 || serverID >= NET_NUM_SPRITE_HOSTS) {
 	printf("Rpc_Call, bad serverID <%d>\n", serverID);
@@ -202,7 +202,7 @@ allocAgain:
 	Sys_HostPrint(serverID, "Pinging server\n");
     }
     error = RpcDoCall(serverID, chanPtr, storagePtr, command,
-		      &srvBootID, &notActive, &fastBoot);
+		      &srvBootID, &notActive, &recovType);
     RpcChanFree(chanPtr);
     
 #ifdef TIMESTAMP
@@ -239,7 +239,7 @@ allocAgain:
 	}
 	Recov_HostDead(serverID);
     } else {
-	Recov_HostAlive(serverID, srvBootID, TRUE, notActive, fastBoot);
+	Recov_HostAlive(serverID, srvBootID, TRUE, notActive, recovType);
     }
 #endif /* NO_RECOVERY */
     return(error);

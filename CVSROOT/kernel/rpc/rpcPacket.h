@@ -150,29 +150,39 @@ extern int	rpc_SwappedVersion;
  *	with a "fast boot" and therefor no recovery is necessary if we
  *	thought it was dead.
  *
+ *	RPC_SERVER_RECOV means that the server is driving crash recovery
+ *	and the clients must wait until it contacts them in order to reopen
+ *	their files.
+ *
  * Flags only valid in trace records:
  *	RPC_SERVER the packet is bound for the server side of the rpc system.
  *
  *	RPC_LAST_REC the trace record is the oldest trace record in the
  *	circular buffer.
+ *
+ *	RPC_FLAGS is gross, because it has two non-contiguous flag areas.
+ *	This is because the RPC_TYPE fields are smack in the middle of
+ *	the flags integer, and we ran out of space for regular flags.
  */
-#define RPC_NO_FLAGS	0x0
-#define RPC_FLAG	0x00ff
-#define RPC_PLSACK	0x0001
-#define RPC_LASTFRAG	0x0002
-#define RPC_CLOSE	0x0004
-#define RPC_ERROR	0x0008
-#define RPC_SERVER	0x0010
-#define RPC_LAST_REC	0x0020
-#define RPC_NOT_ACTIVE	0x0040
-#define	RPC_FAST	0x0080
+#define RPC_NO_FLAGS		0x0
+#define RPC_FLAGS		0xff00ff
+#define RPC_PLSACK		0x000001
+#define RPC_LASTFRAG		0x000002
+#define RPC_CLOSE		0x000004
+#define RPC_ERROR		0x000008
+#define RPC_SERVER		0x000010
+#define RPC_LAST_REC		0x000020
+#define RPC_NOT_ACTIVE		0x000040
+#define	RPC_FAST		0x000080
+/* Skip over bits used in RPC_TYPE, below. */
+#define	RPC_SERVER_RECOV	0x010000
 
-#define RPC_TYPE	0xff00
-#define RPC_REQUEST	0x0100
-#define RPC_ACK		0x0200
-#define RPC_REPLY	0x0400
-#define RPC_ECHO	0x0800
-#define	RPC_NACK	0x1000
+#define RPC_TYPE		0x00ff00
+#define RPC_REQUEST		0x000100
+#define RPC_ACK			0x000200
+#define RPC_REPLY		0x000400
+#define RPC_ECHO		0x000800
+#define	RPC_NACK		0x001000
 
 /*
  * Items related to Fragmenting.

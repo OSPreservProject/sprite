@@ -31,6 +31,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpcInt.h>
 #include <net.h>
 
+#include <recov.h>
+
 int ultra;
 
 /*
@@ -174,7 +176,7 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
     RPC_TRACE(rpcHdrPtr, RPC_INPUT, "Input");
 
     if (rpcHdrPtr->flags & RPC_SERVER) {
-	register RpcServerState *srvPtr;
+	register RpcServerState *srvPtr = (RpcServerState *) NIL;
 	/*
 	 * Don't do anything if we don't know who we are.  This occurs
 	 * at boot time if we get a request before doing reverse ARP.
@@ -228,7 +230,15 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	/*
 	 * Match the input message to a server process.
 	 */
+	if (Recov_HoldForRecovery(rpcHdrPtr->clientID, rpcHdrPtr->command)) {
+	    srvPtr = (RpcServerState *) NIL;
+	} else {
+	    srvPtr = RpcServerAlloc(rpcHdrPtr);
+	}
+#ifdef NOTDEF
 	srvPtr = RpcServerAlloc(rpcHdrPtr);
+#endif /* NOTDEF */
+	
 	if (srvPtr == (RpcServerState *)NIL) {
 	    /*
 	     * Is it okay to check this here?

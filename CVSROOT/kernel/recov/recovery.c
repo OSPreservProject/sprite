@@ -42,10 +42,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsutil.h>
 #include <bstring.h>
 #include <stdio.h>
-#ifdef NOTDEF		/* Wait for future install to get this stuff working. */
 #include <devClientDev.h>
-#endif /* NOTDEF */
-#include <hostd.h>
 
 /*
  * Other kernel modules arrange call-backs when a host crashes or reboots.
@@ -82,6 +79,8 @@ Recov_Stats recov_Stats;
 
 /*
  * For per-client statistics about recovery on the server.
+ * This is only used for getting stats, and isn't used for keeping
+ * track of client state.
  * This amounts to a per-host list, in array form.
  * Each host has numTries elements in the array.  The spriteID and numTries
  * fields are only initialized in the first element.
@@ -116,7 +115,7 @@ typedef	struct	RecovStampList {
 } RecovStampList;
 
 typedef struct RecovHostState {
-    int			state;		/* flags defined below */
+    int			state;		/* flags defined in .h file */
     int			clientState;	/* flags defined in recov.h */
     int			spriteID;	/* Sprite Host ID */
     unsigned int	bootID;		/* Boot timestamp from RPC header */
@@ -141,6 +140,15 @@ typedef struct RecovHostState {
     int			currentSuccessful;
     List_Links		timeStampList;	/* List of time stamps for recovery. */
     int			oldState;	/* Used for screening out trace recs. */
+    ClientData		callToken;	/* Token for timeout callback to
+					 * do recovery with server if server
+					 * didn't contact us.  We must be
+					 * able to deschedule the callback, so
+					 * that's what this token is for. */
+    Sync_Condition	waitForServer;	/* Waiting for server-driven recovery
+					 * to wake us.  Or else for our
+					 * timeout to wake us.
+					 */
 } RecovHostState;
 
 #define RECOV_INIT_HOST(hostPtr, zspriteID, zstate, zbootID) \
@@ -152,7 +160,8 @@ typedef struct RecovHostState {
     (hostPtr)->state = zstate; \
     (hostPtr)->bootID = zbootID; \
     (hostPtr)->numFailures = 0; \
-    (hostPtr)->oldState = 0;
+    (hostPtr)->oldState = 0; \
+    (hostPtr)->callToken = (ClientData) NIL;
 
 /*
  * Access to the hash table is monitored.
@@ -208,6 +217,17 @@ Boolean	recov_DoInitDataCopy = TRUE;
 #endif /* RECOV_NOCOPY */
 
 /*
+ * TRUE if we're recovering using server-driven method.
+ * This is set to true by an initialization routine that is called
+ * as a result of the user-level daemon contacting the kernel.
+ */
+Boolean	recov_ServerDriven = FALSE;
+
+/*
+ * TRUE if the clients should ignore server-driven recovery.
+ */
+Boolean recov_ClientIgnoreServerDriven = TRUE;
+/*
  * Don't bother to reopen files that only have clean blocks in the cache.
  * Invalidate their clean cache blocks and scavenge the handles.
  * This variable and recov_SkipCleanFiles should never both be set true!
@@ -222,6 +242,12 @@ Boolean	recov_IgnoreCleanFiles = FALSE;
 Boolean	recov_SkipCleanFiles = TRUE;
 
 /*
+ * Are we blocking out some rpc's because server-driven recovery is
+ * in progress?
+ */
+Boolean	recov_BlockingRpcs = FALSE;
+
+/*
  * Forward declarations.
  */
 
@@ -231,7 +257,6 @@ static void MarkRecoveryComplete _ARGS_((int spriteID));
 static void GetRebootList _ARGS_((List_Links *notifyListHdr, int spriteID));
 static char *GetState _ARGS_((int state));
 static void PrintExtraState _ARGS_((RecovHostState *hostPtr));
-
 
 
 
@@ -259,6 +284,7 @@ Recov_Init()
     List_Init(&crashCallBackList);
     Trace_Init(recovTraceHdrPtr, recovTraceLength,
 		sizeof(RecovTraceRecord), 0);
+    Fsutil_InitBulkReopenTables();
     recov_CrashDelay = (unsigned int)(timer_IntOneMinute);
     RecovPingInit();
     return;
@@ -500,7 +526,7 @@ Recov_RebootUnRegister(spriteID, rebootCallBackProc, rebootData)
  */
 
 ENTRY void
-Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
+Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, recovType)
     int spriteID;		/* Host ID of the message sender */
     unsigned int bootID;	/* Boot time stamp from message header */
     Boolean asyncRecovery;	/* TRUE means do recovery call-backs in
@@ -511,8 +537,9 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
 				 * system on the remote host isn't fully
 				 * turned on.  Reboot recovery is delayed
 				 * until this changes. */
-    Boolean fastBoot;		/* Whether the host that's alive went through
-				 * a fast boot or not. */
+    unsigned int recovType;	/* Whether the host that's alive went through
+				 * a fast boot or is doing server-driven
+				 * recovery or not. */
 {
     register	Hash_Entry *hashPtr;
     register	RecovHostState *hostPtr;
@@ -676,7 +703,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
 	    Sys_HostPrint(spriteID, "\n");
 	    break;
     }
-    if (fastBoot) {
+    if (recovType & RECOV_FAST_BOOT) {
 	if (!(hostPtr->state & RECOV_FAST_BOOT)) {
 	    printf("Recov_HostAlive: setting state for host %d to FAST_BOOT\n",
 		    spriteID);
@@ -688,6 +715,22 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
 		    spriteID);
 	}
 	hostPtr->state &= ~RECOV_FAST_BOOT;
+    }
+    /* Test whether it's trying to do more than one kind of recovery? XXX */
+    if (recovType & RECOV_SERVER_DRIVEN) {
+	if (!(hostPtr->state & RECOV_SERVER_DRIVEN)) {
+	    printf(
+		"Recov_HostAlive: setting state for host %d to SERVER_DRIVEN\n",
+		spriteID);
+	}
+	hostPtr->state |= RECOV_SERVER_DRIVEN;
+    } else {
+	if ((hostPtr->state & RECOV_SERVER_DRIVEN)) {
+	    printf(
+		"Recov_HostAlive: removing SERVER_DRIVEN state for host %d\n",
+		spriteID);
+	}
+	hostPtr->state &= ~RECOV_SERVER_DRIVEN;
     }
     /*
      * After a host comes up enough to support RPC service, we
@@ -705,12 +748,13 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
     }
 exit:
     if (hostState == DEV_CLIENT_STATE_NEW_HOST) {
-#ifdef NOTDEF
 	/*
-	 * Wait for future install to get this stuff working.
+	 * Only call into device module if this isn't a client we're
+	 * doing server-driven recovery with at this very moment.
 	 */
-	Dev_ClientHostUp(spriteID);
-#endif /* NOTDEF */
+	if ((hostPtr->clientState & CLT_DOING_SRV_RECOV) == 0) {
+	    Dev_ClientHostUp(spriteID);
+	}
     }
     UNLOCK_MONITOR;
     return;
@@ -799,12 +843,13 @@ Recov_HostDead(spriteID)
 	    break;
     }
     if (hostState == DEV_CLIENT_STATE_DEAD_HOST) {
-#ifdef NOTDEF
 	/*
-	 * Wait for future install to get this stuff working.
+	 * Only call into device module if this isn't a client we're
+	 * doing server-driven recovery with at this very moment.
 	 */
-	Dev_ClientHostDown(spriteID);
-#endif /* NOTDEF */
+	if ((hostPtr->clientState & CLT_DOING_SRV_RECOV) == 0) {
+	    Dev_ClientHostDown(spriteID);
+	}
     }
     UNLOCK_MONITOR;
     return;
@@ -960,6 +1005,7 @@ Recov_SetClientState(spriteID, stateBits)
     register oldState;
     RecovStampList	*stampPtr;
 
+
     LOCK_MONITOR;
 
     hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
@@ -970,6 +1016,17 @@ Recov_SetClientState(spriteID, stateBits)
 	RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
     }
     if ((stateBits & CLT_RECOV_IN_PROGRESS) != 0) {
+	/*
+	 * This is a test to see if we get potential inconsistency from lacking
+	 * backwards compatibility with old kernels on clients and new server-
+	 * driven recovery.  It can go away when everybody is running a kernel
+	 * with the new recovery stuff in it.  - Mary 11/10/92.
+	 */
+	if ((hostPtr->clientState & CLT_OLD_RECOV) && !recov_BlockingRpcs) {
+	    printf("Recov_SetClient: got late recovery from old client %d.\n",
+		    spriteID);
+	}
+
 	if (hostPtr->numTries == 0) {
 	    /* First recovery attempt */
 	    if ((hostPtr->clientState & CLT_RECOV_IN_PROGRESS) != 0) {
@@ -1222,6 +1279,7 @@ RecovRebootCallBacks(data, callInfoPtr)
     register NotifyElement *notifyPtr;
     register int spriteID = (int)data;
 
+printf("RecovRebootCallBacks called for %d\n", spriteID);
     GetRebootList(&notifyList, spriteID);
     RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_DOING_CALLBACKS);
     recov_Stats.reboots++;
@@ -2068,7 +2126,6 @@ GetState(state)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 PrintExtraState(hostPtr)
     RecovHostState *hostPtr;
@@ -2099,5 +2156,486 @@ Recov_ChangePrintLevel(newLevel)
     int	newLevel;
 {
     recov_PrintLevel = newLevel;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_InitServerDriven --
+ *
+ *	Initialize system to use server-driven recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Turns on this kind of server recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_InitServerDriven()
+{
+    recov_ServerDriven = TRUE;
+    printf("Recov_InitServerDriven called.\n");
+    if (recov_ServerDriven && recov_Transparent) {
+	printf("Recov_InitServerDriven: can't do transparent recovery too.\n");
+	printf("\tTurning it off!\n");
+	recov_Transparent = FALSE;
+    }
+
+    return;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_StopServerDriven --
+ *
+ *	Stop system from using server-driven recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Turns off this kind of server recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_StopServerDriven()
+{
+    recov_ServerDriven = FALSE;
+    printf("Recov_StopServerDriven called.\n");
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_StartServerDrivenRecovery --
+ *
+ *	Kick off server-driven recovery on client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Starts recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_StartServerDrivenRecovery(serverID)
+    int		serverID;	/* ID of server requesting recovery. */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    /* Set flag saying server-driven recovery is in progress. */
+    hashPtr = Hash_Find(recovHashTable, (Address) serverID);
+    if (hashPtr->value == (Address) NIL) {
+	/*
+	 * Client may have been rebooted during server crash, so it may
+	 * not know about server when server contacts it for recovery.
+	 * That's why this isn't a panic.
+	 */
+	printf("Recov_StartServerDrivenRecovery: don't know about server %d\n",
+		serverID);
+	printf("\tBut probably I should since it's trying to recover with me!");
+	RECOV_INIT_HOST(hostPtr, serverID, RECOV_HOST_ALIVE, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(serverID, RECOV_HOST_ALIVE, RECOV_CUZ_INIT);
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    if (hostPtr->state & SRV_DRIVEN_IN_PROGRESS) {
+	UNLOCK_MONITOR;
+	panic("Server called us for server-driven recovery more than once.\n");
+    }
+    hostPtr->state |= SRV_DRIVEN_IN_PROGRESS;
+    /* XX Test if client already blocked.   If not, panic.  XX */
+    Sync_Broadcast(&hostPtr->waitForServer);
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_ServerStartingRecovery --
+ *
+ *	Mark that server-driven recovery has started, so that we
+ *	can block out various rpc's.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Blocks some rpcs.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_ServerStartingRecovery()
+{
+    LOCK_MONITOR;
+    if (!recov_ServerDriven) {
+	UNLOCK_MONITOR;
+	panic("Recov_ServerStartingRecovery: server-driven not true!");
+    }
+    recov_BlockingRpcs = TRUE;
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_ServerFinishedRecovery --
+ *
+ *	Mark that server-driven recovery is finished, so that we
+ *	can unblock various rpc's.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Unblocks some rpcs.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_ServerFinishedRecovery()
+{
+    LOCK_MONITOR;
+    if (!recov_ServerDriven) {
+	UNLOCK_MONITOR;
+	panic("Recov_ServerFinishedRecovery: server-driven not true!");
+    }
+    recov_BlockingRpcs = FALSE;
+    /*
+     * Before turning off blocking, we should check if all up clients have
+     * recovered.  The "old" clients may not have.  If their state
+     * is marked CLT_RECOV_IN_PROGRESS, or if their finished is not after
+     * their start, then we're waiting for them to go through regular
+     * recovery with us.  We should have a condition that client recovery
+     * wakes up to check if it can turn off blocking.  But since we don't want
+     * to wait forever, we'd have to have a timeout also.  But maybe the
+     * easiest thing is to reboot everybody and not worry about backwards
+     * compatibility??
+     */
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_HoldForRecovery --
+ *
+ *	Are we blocking rpc's and is this an rpc that should be blocked out?
+ *	This is called from Rpc_Dispatch, which means it's called at
+ *	interrupt level, which means we can't grab a monitor lock, but
+ *	that this should be okay.
+ *
+ * Results:
+ *	True or false.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+Recov_HoldForRecovery(clientID, command)
+    int			clientID;
+    int			command;
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    if (!recov_BlockingRpcs) {
+	return FALSE;
+    }
+    switch (command) {
+    case RPC_FS_PREFIX:
+    case RPC_FS_OPEN:
+    case RPC_FS_READ:
+    case RPC_FS_WRITE:
+    case RPC_FS_CLOSE:
+    case RPC_FS_UNLINK:
+    case RPC_FS_RENAME:
+    case RPC_FS_MKDIR:
+    case RPC_FS_RMDIR:
+    case RPC_FS_MKDEV:
+    case RPC_FS_LINK:
+    case RPC_FS_SYM_LINK:
+    case RPC_FS_GET_ATTR:
+    case RPC_FS_SET_ATTR:
+    case RPC_FS_GET_ATTR_PATH:
+    case RPC_FS_SET_ATTR_PATH:
+    case RPC_FS_GET_IO_ATTR:
+    case RPC_FS_SET_IO_ATTR:
+    case RPC_FS_DEV_OPEN:
+    case RPC_FS_SELECT:
+    case RPC_FS_IO_CONTROL:
+    /* Leave consistency rpc's unblocked for recovery. */
+    case RPC_FS_MIGRATE:
+    case RPC_FS_RELEASE:
+    case RPC_PROC_MIG_COMMAND:
+    case RPC_PROC_REMOTE_CALL:
+    case RPC_PROC_REMOTE_WAIT:
+    case RPC_FS_RELEASE_NEW:
+	return TRUE;
+	break;
+    default:
+	break;
+    }
+    /*
+     * If host is not marked doing recovery right now, then ignore it.
+     * We do this to avoid race conditions and deadlocks with some new
+     * hosts trying to talk to the server while we're recovering old hosts.
+     */
+    if (!Mach_AtInterruptLevel()) {
+	LOCK_MONITOR;
+    }
+    hashPtr = Hash_Find(recovHashTable, (Address) clientID);
+    if (hashPtr->value == (Address) NIL) {
+	RECOV_INIT_HOST(hostPtr, clientID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(clientID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+/* No, don't ignore it?? */
+	if (!Mach_AtInterruptLevel()) {
+	    UNLOCK_MONITOR;
+	}
+	return TRUE;
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    if ((hostPtr->clientState & CLT_DOING_SRV_RECOV) == 0) {
+	if (!Mach_AtInterruptLevel()) {
+	    UNLOCK_MONITOR;
+	}
+	return TRUE;
+    }
+
+    if (!Mach_AtInterruptLevel()) {
+	UNLOCK_MONITOR;
+    }
+    return FALSE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_MarkOldClient --
+ *
+ *	Mark this client as one running an old kernel, and thus unable
+ *	to allow server-drivven recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marks state of client.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_MarkOldClient(clientID)
+    int			clientID;
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    hashPtr = Hash_Find(recovHashTable, (Address) clientID);
+    if (hashPtr->value == (Address) NIL) {
+	RECOV_INIT_HOST(hostPtr, clientID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(clientID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->clientState |= CLT_OLD_RECOV;
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_WaitForServerDriven --
+ *
+ *	Make client wait for rpc from server telling it to start recovery.
+ *	Also set a timeout in case server gets hosed and forgets us.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Makes us wait for recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_WaitForServerDriven(serverID)
+    int			serverID;
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    /*
+     * Set something saying client is waiting for server, so that server
+     * rpc can check this to make sure client is already waiting when
+     * it wakes it?  For now, the client checks to see if server thing
+     * already tried to wake it.  XXX  This isn't good enough, though, if
+     * server recovery finishes and then client recovery tries again and sees
+     * nothing going.
+     */
+    hashPtr = Hash_Find(recovHashTable, (Address) serverID);
+    if (hashPtr->value == (Address) NIL) {
+	panic("Recov_WaitForServer: should already know about this server.");
+    }
+    hostPtr = (RecovHostState *) hashPtr->value;
+    /* Also set timeout so that if server forgets us, we'll be okay. XX */
+    while ((hostPtr->state & SRV_DRIVEN_IN_PROGRESS) == 0) {
+	(void) Sync_Wait(&hostPtr->waitForServer, FALSE);
+    }
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_GetCurrentHostStates --
+ *
+ *	Get the current state of hosts we know about as a server.
+ *
+ * Results:
+ *	Number of hosts in list.  A negative number if there wasn't enough
+ *	buffer space.
+ *
+ * Side effects:
+ *	Fills in buffer with hosts and their state.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Recov_GetCurrentHostStates(infoBuffer, bufEntries)
+    Dev_ClientInfo	*infoBuffer;	/* The array of info entries to fill. */
+    int			bufEntries;	/* Number of available entries. */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+    Hash_Search		hashSearch;
+    int			i;
+
+    i = 0;
+    Hash_StartSearch(&hashSearch);
+    for (hashPtr = Hash_Next(recovHashTable, &hashSearch);
+	    hashPtr != (Hash_Entry *) NIL;
+	    hashPtr = Hash_Next(recovHashTable, &hashSearch)) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr->state & RECOV_HOST_DEAD) {
+	     continue;
+	}
+	infoBuffer[i].hostNumber = hostPtr->spriteID;
+	infoBuffer[i].hostState = DEV_CLIENT_STATE_NEW_HOST;
+	i++;
+	if (i >= bufEntries) {
+	    return -1;
+	}
+    }
+
+    return i;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_MarkDoingServerRecovery --
+ *
+ *	Mark client state as doing server recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marked.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_MarkDoingServerRecovery(clientID)
+    int		clientID;	/* The client. */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    hashPtr = Hash_Find(recovHashTable, (Address) clientID);
+    if (hashPtr->value == (Address) NIL) {
+	RECOV_INIT_HOST(hostPtr, clientID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(clientID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->clientState |= CLT_DOING_SRV_RECOV;
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_UnmarkDoingServerRecovery --
+ *
+ *	Mark client state as not doing server recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marked.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_UnmarkDoingServerRecovery(clientID)
+    int		clientID;	/* The client. */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    hashPtr = Hash_Find(recovHashTable, (Address) clientID);
+    if (hashPtr->value == (Address) NIL) {
+	printf("Recov_UnmarkDoingServerRecovery: don't know about client %d\n",
+		clientID);
+	RECOV_INIT_HOST(hostPtr, clientID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(clientID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->clientState &= ~(CLT_DOING_SRV_RECOV);
+
+    UNLOCK_MONITOR;
+
     return;
 }

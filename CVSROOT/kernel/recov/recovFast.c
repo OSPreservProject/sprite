@@ -1478,6 +1478,8 @@ Recov_Cmd(option, argPtr)
     if (option != RECOV_TOGGLE_CHECKSUM &&
 	    option != RECOV_PRINT_REBOOT_TIMES && option != RECOV_BULK_REOPEN
 	    && option != RECOV_SINGLE_REOPEN &&
+	    option != RECOV_DO_SERVER_DRIVEN &&
+	    option != RECOV_NO_SERVER_DRIVEN &&
 	    (argPtr == (Address) NIL || argPtr == (Address) 0 ||
 	    argPtr == (Address) USER_NIL)) {
 	return GEN_INVALID_ARG;
@@ -1973,6 +1975,18 @@ Recov_Cmd(option, argPtr)
 	    recov_SkipCleanFiles = TRUE;
 	    status = SUCCESS;
 	}
+	break;
+    }
+    case RECOV_DO_SERVER_DRIVEN: {
+	recov_ClientIgnoreServerDriven = FALSE;
+	printf("Client is now responding to server-driven recovery.\n");
+	status = SUCCESS;
+	break;
+    }
+    case RECOV_NO_SERVER_DRIVEN: {
+	recov_ClientIgnoreServerDriven = TRUE;
+	printf("Client is now ignoring server-driven recovery.\n");
+	status = SUCCESS;
 	break;
     }
     case RECOV_PRINT_SIZE: {

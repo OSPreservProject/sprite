@@ -27,6 +27,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <proc.h>
 #include <sys.h>
 
+#include <recov.h>
+
 
 /*
  * For debugging servers.  We allow client's to retry forever instead
@@ -99,7 +101,7 @@ Boolean	rpcChannelNegAcks = FALSE;
  */
 ReturnStatus
 RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr,
-	fastBootPtr)
+	recovTypePtr)
     int serverID;		/* The Sprite host that will execute the
 				 * service procedure */
     register RpcClientChannel *chanPtr;	/* The channel for the RPC */
@@ -109,8 +111,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr,
     int *notActivePtr;		/* Return, RPC_NOT_ACTIVE flag from server.
 				 * These last two return parameters are later
 				 * passed to the recovery module. */
-    Boolean	*fastBootPtr;	/* Wether rpc packet comes from fast booted
-				 * server. */
+    unsigned int *recovTypePtr;	/* Wether rpc packet comes from fast booted
+				 * server or server doing special recovery. */
 {
     register RpcHdr *rpcHdrPtr;	/* Pointer to received message header */
     register RpcConst *constPtr;/* Timeout parameter block */
@@ -208,8 +210,13 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr,
 	     */
 	    chanPtr->state &= ~CHAN_INPUT;
 	    rpcHdrPtr = &chanPtr->replyRpcHdr;
-	    *fastBootPtr = rpcHdrPtr->flags & RPC_FAST;
-
+	    *recovTypePtr = 0;
+	    if (rpcHdrPtr->flags & RPC_FAST) {
+		*recovTypePtr |= RECOV_FAST_BOOT;
+	    }
+	    if (rpcHdrPtr->flags & RPC_SERVER_RECOV) {
+		*recovTypePtr |= RECOV_SERVER_DRIVEN;
+	    }
 	    /*
 	     * Pick off the boot timestamp and active state of the server so
 	     * the recovery module can pay attention to traffic.

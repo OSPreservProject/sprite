@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdlib.h>
 #include <recov.h>
 
+
 /*
  * An on/off switch for the service side of the RPC system.  Hosts do not
  * initially respond to RPC requests so they can configure themselves
@@ -165,11 +166,13 @@ Rpc_Server()
     }
     error = SUCCESS;
     for ( ; ; ) {
+	int	oldState;
 	/*
 	 * Synchronize with RpcServerDispatch and await a request message.
 	 * Change our state to indicate that we are ready for input.
 	 */
 	MASTER_LOCK(&srvPtr->mutex);
+	oldState = srvPtr->state;
 	srvPtr->state &= ~(SRV_BUSY|SRV_STUCK);
 	srvPtr->state |= SRV_WAITING;
 	if (error == RPC_NO_REPLY) {
@@ -192,6 +195,19 @@ Rpc_Server()
 	 * the server state.  We are marked BUSY, however, and
 	 * RpcServerDispatch knows this and doesn't muck accordingly.
 	 */
+	rpcHdrPtr = &srvPtr->requestRpcHdr;
+#ifdef NOTDEF
+	if (Recov_HoldForRecovery(rpcHdrPtr->clientID, rpcHdrPtr->command)) {
+	    /* This will send a NegAck. */
+printf("Trying to send a neg ack to %d for command %d\n", rpcHdrPtr->clientID,
+rpcHdrPtr->command);
+	    RpcServerDispatch((RpcServerState *) NIL, rpcHdrPtr);
+	    MASTER_LOCK(&srvPtr->mutex);
+	    srvPtr->state = oldState;
+	    MASTER_UNLOCK(&srvPtr->mutex);
+	    continue;
+	}
+#endif /* NOTDEF */
 
 	/*
 	 * Free up our previous reply.  The freeReplyProc is set by the
@@ -205,7 +221,6 @@ Rpc_Server()
 	}
 #endif /* lint */
 
-	rpcHdrPtr = &srvPtr->requestRpcHdr;
 #ifdef TIMESTAMP
 	RPC_TRACE(rpcHdrPtr, RPC_SERVER_A, " input");
 #endif /* TIMESTAMP */

@@ -24,6 +24,7 @@
 #include <kernel/proc.h>
 #endif
 #include <recovBox.h>
+#include <hostd.h>
 
 /*
  * External view of the state kept about each host.
@@ -64,6 +65,7 @@ extern int recov_PrintLevel;
  *	RECOV_PINGING_HOST	Set for hosts we ping to see when it reboots.
  *	RECOV_REBOOT_CALLBACKS	Set while reboot callbacks are pending.
  *	RECOV_FAST_BOOT		Set if the server went through a fast boot.
+ *	RECOV_SERVER_DRIVEN	Set if the server is driving recovery.
  *	RECOV_FAILURE		Set if a communication failure occurs during
  *				the reboot callbacks.  This triggers another
  *				invokation of the reboot callbacks so that
@@ -88,6 +90,7 @@ extern int recov_PrintLevel;
 #define RECOV_REBOOT_CALLBACKS	0x0800
 
 #define	RECOV_FAST_BOOT		0x1000
+#define	RECOV_SERVER_DRIVEN	0x2000
 
 /*
  * If dying_state is not defined then crash callbacks are made
@@ -100,10 +103,14 @@ extern int recov_PrintLevel;
  * Host state flags for use by Recov clients.  These flags are set
  * by users of the Recov module to define/get host states beyond
  * the simple up/down state maintained by the Recov system.
- *	CLT_RECOV_IN_PROGESS	The client has crashed and needs to go
- *				through full recovery.  This is set when
- *				we detect a crash, and reset after the
+ *	CLT_RECOV_IN_PROGRESS	The client needs to go through full
+ *				recovery with the server.  This is set when
+ *				the server gets a reopen from the client,
+ *				and reset after the
  *				client tells us it's done re-opening files.
+ *				The flag is used on the server to tell us to
+ *				block opens from this client while it is
+ *				going through recovery.
  *	SRV_RECOV_IN_PROGRESS	This is set on a client while it is reopening
  *				files in order to ensure only one set of
  *				reopens is in process.
@@ -115,10 +122,20 @@ extern int recov_PrintLevel;
  *				SRV_RECOV_IN_PROGRESS bit, then a reboot
  *				callback could get lost.  This bit is used
  *				to detect this.
+ *	CLT_OLD_RECOV		This client is running an old kernel and
+ *				returned INVALID_RPC to server trying to get
+ *				it to do server-driven recovery.
+ *	CLT_DOING_SRV_RECOV	Client is currently going through server-driven
+ *				recovery.
+ *	SRV__DRIVEN_IN_PROGRESS	Set on client if server has contacted client
+ *				for server-driven recovery.
  */
-#define CLT_RECOV_IN_PROGRESS	0x1
-#define SRV_RECOV_IN_PROGRESS	0x2
-#define SRV_RECOV_FAILED	0x4
+#define CLT_RECOV_IN_PROGRESS	0x01
+#define SRV_RECOV_IN_PROGRESS	0x02
+#define SRV_RECOV_FAILED	0x04
+#define CLT_OLD_RECOV		0x08
+#define CLT_DOING_SRV_RECOV	0x10
+#define	SRV_DRIVEN_IN_PROGRESS	0x20
 
 /*
  * Whether or not to use absolute intervals for pinging servers.  The default
@@ -212,6 +229,12 @@ typedef struct RecovTraceRecord {
 					 * only clean blocks in the cache.
 					 * But don't invalidate them as is
 					 * done for IGNORE_CLEAN. */
+#define RECOV_DO_SERVER_DRIVEN	105	/* Turn on server-driven recovery
+					 * acceptance for clients.
+					 */
+#define RECOV_NO_SERVER_DRIVEN	106	/* Turn off server-driven recovery
+					 * acceptance for clients.
+					 */
 
 extern Trace_Header *recovTraceHdrPtr;
 extern Boolean recovTracing;
@@ -244,6 +267,13 @@ extern	Boolean		recov_Transparent;
  * the client's info against what it has stored in its recovery box.)
  */
 extern	Boolean		recov_ClientIgnoreTransparent;
+
+/*
+ * TRUE if client is ignoring server-driven recovery.  It will repsond
+ * instead with "invalid rpc."
+ */
+extern	Boolean		recov_ClientIgnoreServerDriven;
+
 /*
  * TRUE if we're avoiding downloading text and initialized data.  (Should
  * be true usually.)
@@ -266,12 +296,26 @@ extern	Boolean		recov_IgnoreCleanFiles;
  * the next time somebody opens the file.
  */
 extern	Boolean		recov_SkipCleanFiles;
+/*
+ * Server is driving recovery, rather than allowing clients to initiate it.
+ */
+extern	Boolean	recov_ServerDriven;
+
+/*
+ * We're blocking rpc's that aren't related to recovery.
+ */
+extern	Boolean	recov_BlockingRpcs;
+
+/*
+ * A printf for during recovery.
+ */
+#define qprintf if (recov_BlockingRpcs) printf
 
 extern void 	Recov_Init _ARGS_((void));
 extern void 	Recov_CrashRegister _ARGS_((void (*crashCallBackProc)(), ClientData crashData));
 extern void 	Recov_RebootRegister _ARGS_((int spriteID, void (*rebootCallBackProc)(), ClientData rebootData));
 extern void 	Recov_RebootUnRegister _ARGS_((int spriteID, void (*rebootCallBackProc)(), ClientData rebootData));
-extern void 	Recov_HostAlive _ARGS_((int spriteID, unsigned int bootID, Boolean asyncRecovery, Boolean rpcNotActive, Boolean fastBoot));
+extern void 	Recov_HostAlive _ARGS_((int spriteID, unsigned int bootID, Boolean asyncRecovery, Boolean rpcNotActive, unsigned int recovType));
 extern void 	Recov_HostDead _ARGS_((int spriteID));
 extern int 	Recov_GetHostState _ARGS_((int spriteID));
 extern int 	Recov_GetHostOldState _ARGS_((int spriteID));
@@ -315,7 +359,16 @@ extern ReturnStatus	Recov_MapType _ARGS_((int applicationTypeID, int *typeIDPtr)
 extern ReturnStatus	Recov_MapObjectNum _ARGS_((int typeID, int applicationObjectNum, int *objectNumPtr));
 extern unsigned short	Recov_Checksum _ARGS_((int len, Address bufPtr));
 extern	ReturnStatus	Recov_Cmd _ARGS_((int option, Address argPtr));
-
-
+extern	void		Recov_InitServerDriven _ARGS_((void));
+extern	void		Recov_StartServerDrivenRecovery _ARGS_((int serverID));
+extern	void 		Recov_WaitForServerDriven _ARGS_((int serverID));
+extern	void		Recov_MarkOldClient _ARGS_((int clientID));
+extern	void		Recov_ServerStartingRecovery _ARGS_((void));
+extern	void		Recov_ServerFinishedRecovery _ARGS_((void));
+extern	Boolean		Recov_HoldForRecovery _ARGS_((int clientID, int command));
+extern	void		Recov_StopServerDriven _ARGS_((void));
+extern	int		Recov_GetCurrentHostStates _ARGS_((Dev_ClientInfo *infoBuffer, int bufEntries));
+extern	void		Recov_MarkDoingServerRecovery _ARGS_((int clientID));
+extern	void		Recov_UnmarkDoingServerRecovery _ARGS_((int clientID));
 #endif /* _RECOV */
 

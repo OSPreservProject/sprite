@@ -140,6 +140,9 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
     if (recov_Transparent && fsrecov_AlreadyInit) {
 	rpcHdrPtr->flags |= RPC_FAST;
     }
+    if (recov_ServerDriven) {
+	rpcHdrPtr->flags |= RPC_SERVER_RECOV;
+    }
     /* 
      * Find a route to the host. 
      */
