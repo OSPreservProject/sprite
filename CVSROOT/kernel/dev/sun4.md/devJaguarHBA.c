@@ -13,7 +13,6 @@
  * software for any purpose.  It is provided "as is" without
  * express or implied warranty.
  */
-
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
@@ -97,6 +96,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * NUM_WORK_QUEUES   Number of work queues to use. 
  * 
  */
+
 #define	SIZE_JAUGAR_MEM	(2*1024)
 #define	NUM_CQE 8
 #define	NUM_SG_ELEMENTS	64
@@ -257,10 +257,11 @@ static JaguarMem DebugJaguarMem;
  * DMA_BURST_COUNT - The number of VME DMA transfers performed in a 
  *		     single burst before releasing the bus.  A value of
  *		     0 uses the maximum of 128 32-bit transfers.
- * JAGUAR_ADDRESS_MODIFIER - The Address space modifier and transfer type
+ * JAGUAR_WORD_ADDRESS_MODIFIER
+ * JAGUAR_BLOCK_ADDRESS_MODIFIER - The Address space modifier and transfer type
  *			     for Jaguar DMA. We choose 32 bit normal mode
  *			     transfers with a A24 bit supervisor data address
- *			     modifier (0x3d).
+ *			     modifier (0x3d or 0x3f).
  * MAX_CMDS_QUEUED - Maximum number of command to queue per device.
  * SELECTION_TIMEOUT - Timeout value for selecting a device in 1 millisecond
  *		       ticks. We choose 1 second timeout.
@@ -271,14 +272,16 @@ static JaguarMem DebugJaguarMem;
  */
 
 #define	DMA_BURST_COUNT		0
-#define	JAGUAR_ADDRESS_MODIFIER  (JAGUAR_32BIT_MEM_TYPE | \
-				  JAGUAR_NORMAL_MODE_XFER | 0x0D)
+#define	JAGUAR_WORD_ADDRESS_MODIFIER  (JAGUAR_32BIT_MEM_TYPE | \
+				  JAGUAR_NORMAL_MODE_XFER | 0x0d)
+#define	JAGUAR_BLOCK_ADDRESS_MODIFIER  (JAGUAR_32BIT_MEM_TYPE | \
+				  JAGUAR_BLOCK_MODE_XFER | 0x0f)
 #define	MAX_CMDS_QUEUED		2
 #define	SELECTION_TIMEOUT	1000
 #define	RESELECTION_TIMEOUT	0
 #define	VME_TIMEOUT		0
 #define	DEV_MAX_DMA_SIZE	(128*1024)
-#define	VME_INTERRUPT_PRIORITY	2
+#define	VME_INTERRUPT_PRIORITY	3	/* was 2, changed by elm */
 
 
 /*
@@ -959,9 +962,10 @@ DevJaguarIntr(clientData)
     /*
      * Release the device's DMA space.
      */
-    if (actionPtr->dmaBufferLen > 0) {
-	if (((unsigned)actionPtr->dmaBuffer) & 0x80000000) { 
-	    VmMach_32BitDMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
+    if (!VmMachIsXbusMem(actionPtr->dmaBuffer) && actionPtr->dmaBufferLen > 0) {
+	if (((unsigned)actionPtr->dmaBuffer) & 0x80000000) {
+	    VmMach_32BitDMAFree(actionPtr->dmaBufferLen,
+		    actionPtr->dmaBuffer);
 	} else {
 	    VmMach_DMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
 	}
@@ -1390,6 +1394,7 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
     volatile JaguarIOPB	*iopbPtr;	/* IOPB to be filled in . */
 {
     Address	addr;
+    int		amod;
 
     bzero((char *)iopbPtr, sizeof(JaguarIOPB));
     iopbPtr->command = JAGUAR_PASS_THRU_CMD;
@@ -1397,27 +1402,32 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
 		    (scsiCmdPtr->dataToDevice ? JAGUAR_IOPB_TO_HBA : 0);
     iopbPtr->intrVector =  devPtr->ctrlPtr->intrVector;
     iopbPtr->intrLevel = devPtr->ctrlPtr->intrLevel;
-    iopbPtr->addrModifier = JAGUAR_ADDRESS_MODIFIER;
-    if (scsiCmdPtr->bufferLen > 0) {
-	/*
-	 * If the address is already in DMA space we do not have to
-	 * map it.  We set the lowest bit of the address to inform
-	 * the interrupt handler not to free it.
-	 */
-	if (((unsigned) scsiCmdPtr->buffer) < (unsigned)VMMACH_DMA_START_ADDR) {
-	    addr = VmMach_32BitDMAAlloc(scsiCmdPtr->bufferLen, 
-					 scsiCmdPtr->buffer);
+    if (VmMachIsXbusMem(scsiCmdPtr->buffer)) {
+	amod = JAGUAR_BLOCK_ADDRESS_MODIFIER;
+	addr = scsiCmdPtr->buffer;
+    } else {
+	amod = JAGUAR_WORD_ADDRESS_MODIFIER;
+	if (scsiCmdPtr->bufferLen > 0) {
+	    /*
+	     * If the address is already in DMA space we do not have to
+	     * map it.  We set the lowest bit of the address to inform
+	     * the interrupt handler not to free it.
+	     */
+	    if (((unsigned)scsiCmdPtr->buffer)<(unsigned)VMMACH_DMA_START_ADDR){
+		addr = VmMach_32BitDMAAlloc(scsiCmdPtr->bufferLen, 
+					     scsiCmdPtr->buffer);
+	    } else {
+		addr = (Address) (((unsigned) scsiCmdPtr->buffer) | 1);
+	    }
 	} else {
-	    addr = (Address) (((unsigned) scsiCmdPtr->buffer) | 1);
+	    addr = (Address) VMMACH_DMA_START_ADDR;
 	}
-    } else {
-	addr = (Address) VMMACH_DMA_START_ADDR;
+	if ((unsigned) addr >= (unsigned)VMMACH_DMA_START_ADDR) {
+	    addr -= VMMACH_DMA_START_ADDR;
+	}
     }
-    if ((unsigned) addr < (unsigned)VMMACH_DMA_START_ADDR) {
-	SET_LONG(iopbPtr->bufferAddr, (unsigned)addr);
-    } else {
-	SET_LONG(iopbPtr->bufferAddr, (unsigned)addr - VMMACH_DMA_START_ADDR);
-    }
+    iopbPtr->addrModifier = amod;
+    SET_LONG(iopbPtr->bufferAddr, (unsigned)addr);
     SET_LONG(iopbPtr->maxXferLen, scsiCmdPtr->bufferLen);
     iopbPtr->cmd.scsiArg.unitAddress = devPtr->unitAddress;
     bcopy(scsiCmdPtr->commandBlock, (char *) iopbPtr->cmd.scsiArg.cmd, 
