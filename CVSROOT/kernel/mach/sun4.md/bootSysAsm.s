@@ -139,13 +139,6 @@ copyingTable:
 	cmp	%g3, %l2				/* how many copies */
 	bne	copyingTable
 	nop
-	mov	%g3, %o0
-	mov	%g2, %l5
-	call	_PrintArg				/* print counter */
-	nop
-	mov	%l5, %o0
-	call	_PrintArg				/* print after dest */
-	nop
 	mov	%tbr, %g6				/* save real tbr */
 	and	%g6, MACH_TRAP_ADDR_MASK, %g6		/* mask off trap type */
 	set	reserveSpace, %g2			/* g2 to be trap base */
