@@ -82,7 +82,7 @@ RecovPingInterval(time, clientData)
     Timer_Ticks	time;
     ClientData	clientData;
 {
-    Sync_EventWakeup(recovPingEvent);
+    Sync_EventWakeup((unsigned int) &recovPingEvent);
     Timer_ScheduleRoutine(&recovIntervalElement, TRUE);
 
     return;
@@ -156,7 +156,7 @@ Recov_Proc()
 	    Time_Multiply(time_OneSecond, recovPingSeconds, &wait);
 	    Sync_WaitTime(wait);
 	} else {
-	    (void) Sync_EventWait(recovPingEvent, FALSE);
+	    (void) Sync_EventWait((unsigned int) &recovPingEvent, FALSE);
 	}
 	if (sys_ShuttingDown) {
 	    printf("Recov_Proc exiting.\n");
