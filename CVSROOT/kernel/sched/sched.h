@@ -128,7 +128,7 @@ extern void Sched_StartUserProc _ARGS_((Address pc));
 extern void Sched_StartKernProc _ARGS_((void (*func)()));
 extern void Sched_ContextSwitch _ARGS_((Proc_State state));
 extern void Sched_ContextSwitchInt _ARGS_((register Proc_State state));
-extern void Sched_ForgetUsage _ARGS_((Timer_Ticks time));
+extern void Sched_ForgetUsage _ARGS_((Timer_Ticks time, ClientData clientData));
 extern void Sched_GatherProcessInfo _ARGS_((unsigned int interval));
 extern void Sched_Init _ARGS_((void));
 extern void Sched_TimeTicks _ARGS_((void));

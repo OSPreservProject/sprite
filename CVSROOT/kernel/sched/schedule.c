@@ -190,9 +190,10 @@ Sched_Init()
 
 /*ARGSUSED*/
 void
-Sched_ForgetUsage(time)
+Sched_ForgetUsage(time, clientData)
     Timer_Ticks time;	/* The absolute time when this routine is called. 
 			 * (not used). */
+    ClientData	clientData;	/* 0 - not used. */
 {
     register Proc_ControlBlock *procPtr;
     register int i;
