@@ -956,12 +956,6 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 #endif
 
     /*
-     * This should be in the Vm_ExecInfo structure, so it can get reused
-     * when a program is re-run.  I'll fix this soon.  --Ken
-     */
-    objInfo.unixCompat = 0;
-
-    /*
      * Use the encapsulation buffer and arguments arrays to determine
      * whether everything is local, or we're starting a remote exec,
      * or finishing one from another host.
@@ -974,6 +968,13 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	}
     }
     procPtr = Proc_GetActualProc();
+
+    /*
+     * This should be in the Vm_ExecInfo structure, so it can get reused
+     * when a program is re-run.  I'll fix this soon.  --Ken
+     */
+    objInfo.unixCompat = 0;
+    procPtr->unixProgress = -1;
 
     /* Turn off profiling */
     if (procPtr->Prof_Scale != 0) {
@@ -1233,12 +1234,16 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
      * because there is an implicit enable interrupts when we return to user 
      * mode.
      */
-#ifdef sun4
     if (objInfo.unixCompat) {
+#ifdef sun4
 	userStackPointer += 32;
 	printf("Moving stack pointer for Unix binary.\n");
-    }
 #endif
+	/*
+	 * I'm using a magic number here.  This should be temporary.
+	 */
+	procPtr->unixProgress = 0x11beef22;
+    }
     Mach_ExecUserProc(procPtr, userStackPointer, (Address) execInfoPtr->entry);
     panic("DoExec: Proc_RunUserProc returned.\n");
 
