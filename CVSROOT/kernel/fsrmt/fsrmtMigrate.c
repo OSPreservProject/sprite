@@ -787,7 +787,7 @@ Fs_DeencapFileState(procPtr, buffer)
     ReturnStatus status;
     char *cwdName;
     int cwdLength;
-    Fs_Stream prefixStream;
+    Fs_Stream *prefixStreamPtr;
 
     procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
     
@@ -832,7 +832,8 @@ Fs_DeencapFileState(procPtr, buffer)
     Byte_EmptyBuffer(buffer, int, cwdLength);
     cwdName = buffer;
     buffer += Byte_AlignAddr(cwdLength + 1);
-    status = Fs_Open(cwdName, FS_READ | FS_FOLLOW, FS_FILE, 0, &prefixStream);
+    status = Fs_Open(cwdName, FS_READ | FS_FOLLOW, FS_FILE, 0,
+		     &prefixStreamPtr);
     if (status != SUCCESS) {
 	if (fsMigDebug) {
 	    panic("Unable to open prefix '%s' for migrated process.\n",
@@ -843,7 +844,7 @@ Fs_DeencapFileState(procPtr, buffer)
 	}
 	return(status);
     } else {
-	(void) Fs_Close(&prefixStream);
+	(void) Fs_Close(prefixStreamPtr);
     }
 
     status = Fs_DeencapStream(buffer, &fsPtr->cwdPtr);
