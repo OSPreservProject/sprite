@@ -15,10 +15,10 @@
 /*
  * ----------------------------------------------------------------------
  *
- * __MachGetPc --
+ * Mach_GetPC --
  *
- *	Jump back to caller without over-writing pc that was put into
- *	%RETURN_VAL_REG as a side effect of the jmp to this routine.
+ *	Jump back to caller, moving the return address that was put into
+ *	%RETURN_ADDR_REG as a side effect of the call into the %RETURN_VAL_REG.
  *
  * Results:
  *	Old pc is returned in %RETURN_VAL_REG.
@@ -28,120 +28,11 @@
  *
  * ----------------------------------------------------------------------
  */
-.globl	__MachGetPc
-__MachGetPc:
-	jmpl	%RETURN_VAL_REG, %g0
-	nop
-
-/*
- * ----------------------------------------------------------------------
- *
- * Mach_DisableIntr --
- *
- *	Disable interrupts.  This leaves nonmaskable interrupts enabled.
- *	Note that this uses out registers.  Since it's a leaf
- *	routine, callable from C, it cannot use %VOL_TEMP1 and %VOL_TEMP2.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Maskable interrupts are disabled.
- *
- * ----------------------------------------------------------------------
- */
-.globl	_Mach_DisableIntr
-_Mach_DisableIntr:
-	/* first disable traps */
-	mov	%psr, %OUT_TEMP1
-	set	MACH_DISABLE_TRAP_BIT, %OUT_TEMP2
-	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
-	mov	%OUT_TEMP1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
-
-	/* now disable interrupts */
-	set	MACH_DISABLE_INTR, %OUT_TEMP2
-	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
-	mov	%OUT_TEMP1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
-
-	/* now enable traps */
-	set	MACH_ENABLE_TRAP_BIT, %OUT_TEMP2
-	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
-	mov	%OUT_TEMP1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
-	retl
-	nop
-
-/*
- * ----------------------------------------------------------------------
- *
- * Mach_EnableIntr --
- *
- *      Enable interrupts.
- *	Note that this uses out registers.  Since it's a leaf
- *	routine, callable from C, it cannot use %VOL_TEMP1 and %VOL_TEMP2.
- *	This enables all interrupts, so if before disabling them
- *	we had only certain priority interrupts enabled, this will lose
- *	that information.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *      Interrupts are enabled.
- *
- * ----------------------------------------------------------------------
- */
-.globl	_Mach_EnableIntr
-_Mach_EnableIntr:
-	/* first disable traps */
-	mov	%psr, %OUT_TEMP1
-	set	MACH_DISABLE_TRAP_BIT, %OUT_TEMP2
-	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
-	mov	%OUT_TEMP1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
-
-	/* Now turn on interrupts */
-	set	MACH_ENABLE_INTR, %OUT_TEMP2
-	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
-	mov	%OUT_TEMP1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
-
-	/* Now turn traps back on */
-	set	MACH_ENABLE_TRAP_BIT, %OUT_TEMP2
-	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
-	mov	%OUT_TEMP1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
-	retl
-	nop
-
-/*
- * ----------------------------------------------------------------------
- *
- * Mach_GetPC --
- *
- *	Jmpl writes current pc into RETURN_VAL_REG_CHILD here,
- *	which is where values are returned from calls.  The return
- *	from __MachGetPc must not overwrite this.  Since this uses a
- *	non-pc-relative jump, we CANNOT use this routine while executing before
- *	we've copied the kernel to where it was linked for. 
- *
- * Results:
- *	PC whence we came.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------
- */
 .globl	_Mach_GetPC
 _Mach_GetPC:
-	set	__MachGetPc, %RETURN_VAL_REG
-	jmpl	%RETURN_VAL_REG, %RETURN_VAL_REG
-	nop
 	retl
-	nop
+	mov	%RETURN_ADDR_REG, %RETURN_VAL_REG
+
 
 /*
  *---------------------------------------------------------------------
@@ -175,12 +66,7 @@ _Mach_TestAndSet:
 #ifdef SWAP_INSTR_WORKS
 	swap	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* set addr with addr */
 #else
-	DISABLE_INTR_ASM(%OUT_TEMP1, %OUT_TEMP2, TestAndSetDisableIntrs)
-	set	0x1, %OUT_TEMP1
-	ld	[%RETURN_VAL_REG], %OUT_TEMP2
-	st	%OUT_TEMP1, [%RETURN_VAL_REG]
-	mov	%OUT_TEMP2, %RETURN_VAL_REG
-	ENABLE_INTR_ASM(%OUT_TEMP1, %OUT_TEMP2, TestAndSetEnableIntrs)
+	ldstub	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* value into reg */
 #endif /* SWAP_INSTR_WORKS */
 	tst	%RETURN_VAL_REG				/* was it set? */
 	be,a	ReturnZero				/* if not, return 0 */
