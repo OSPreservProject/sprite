@@ -84,7 +84,7 @@ DevFsTypeOps devFsOpTable[] = {
      * SCSI Worm interface.
      */
     {DEV_SCSI_WORM, Dev_TimerOpen, Dev_TimerRead, NullProc,
-> 		    Dev_TimerIOControl, NullProc, NullProc,
+		    Dev_TimerIOControl, NullProc, NullProc,
 		    DEV_NO_ATTACH_PROC, NoDevice},
 
     /*
