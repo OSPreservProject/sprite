@@ -17,57 +17,34 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
 #include "sprite.h"
+#define _MONFUNCS
 #include "machMon.h"
 #include "machConst.h"
 #include "machInt.h"
 #include "ctype.h"
 #include "mach.h"
 
-Mach_MonFuncs mach_MonFuncs = {
-    (int (*)()) MACH_MON_RESET,
-    (int (*)()) MACH_MON_EXEC,
-    (int (*)()) MACH_MON_RESTART,
-    (int (*)()) MACH_MON_REINIT,
-    (int (*)()) MACH_MON_REBOOT,
-    (int (*)()) MACH_MON_AUTOBOOT,
-    (int (*)()) MACH_MON_OPEN,
-    (int (*)()) MACH_MON_READ,
-    (int (*)()) MACH_MON_WRITE,
-    (int (*)()) MACH_MON_IOCTL,
-    (int (*)()) MACH_MON_CLOSE,
-    (int (*)()) MACH_MON_LSEEK,
-    (int (*)()) MACH_MON_GETCHAR,
-    (int (*)()) MACH_MON_PUTCHAR,
-    (int (*)()) MACH_MON_SHOWCHAR,
-    (int (*)()) MACH_MON_GETS,
-    (int (*)()) MACH_MON_PUTS,
-    (int (*)()) MACH_MON_PRINTF,
-    (int (*)()) MACH_MON_MEM1,
-    (int (*)()) MACH_MON_MEM2,
-    (int (*)()) MACH_MON_SAVEREGS,
-    (int (*)()) MACH_MON_LOADREGS,
-    (int (*)()) MACH_MON_JUMPS8,
-    (char *(*)()) MACH_MON_GETENV2,
-    (int (*)()) MACH_MON_SETENV2,
-    (int (*)()) MACH_MON_ATONUM,
-    (int (*)()) MACH_MON_STRCMP,
-    (int (*)()) MACH_MON_STRLEN,
-    (char *(*)()) MACH_MON_STRCPY,
-    (char *(*)()) MACH_MON_STRCAT,
-    (int (*)()) MACH_MON_GETCMD,
-    (int (*)()) MACH_MON_GETNUMS,
-    (int (*)()) MACH_MON_ARGPARSE,
-    (int (*)()) MACH_MON_HELP,
-    (int (*)()) MACH_MON_DUMP,
-    (int (*)()) MACH_MON_SETENV,
-    (int (*)()) MACH_MON_UNSETENV,
-    (int (*)()) MACH_MON_PRINTENV,
-    (int (*)()) MACH_MON_JUMP2S8,
-    (int (*)()) MACH_MON_ENABLE,
-    (int (*)()) MACH_MON_DISABLE,
-    (int (*)()) MACH_MON_ZEROB,
-};
-
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonAbort --
+ *
+ *     Abort to prom.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Aborts to monitor.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Mach_MonAbort()
+{
+	mach_MonFuncs.restart();
+}
 
 /*
  * ----------------------------------------------------------------------------
@@ -91,27 +68,6 @@ Mach_MonPutChar(ch)
     return(Dev_GraphicsPutc(ch));
 }
 
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Mach_MonAbort --
- *
- *     	Abort to the monitor.
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- * ----------------------------------------------------------------------------
- */
-void
-Mach_MonAbort()
-{
-    mach_MonFuncs.restart();
-}
 
 /*
  * ----------------------------------------------------------------------------
@@ -151,27 +107,4 @@ Mach_MonReboot(rebootString)
     *MACH_USE_NON_VOLATILE |= MACH_NON_VOLATILE_FLAG;
     mach_MonFuncs.autoboot();
     panic("Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Mach_ArgParse --
- *
- *	Parse a string into ds3100 string table form.
- *
- * Results:
- *     Returns argc.
- *
- * Side effects:
- *     None.
- *
- * ----------------------------------------------------------------------------
- */
-int
-Mach_ArgParse(string,table)
-char *string;
-MachStringTable *table;
-{
-    mach_MonFuncs.argparse(string,table);
 }

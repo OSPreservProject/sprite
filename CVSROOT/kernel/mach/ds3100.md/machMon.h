@@ -87,13 +87,7 @@ typedef struct Mach_MonFuncs {
     int		(*disable)();
     int		(*zero_buf)();
 } Mach_MonFuncs;
-extern	Mach_MonFuncs	mach_MonFuncs;
 
-/*
- * The nonvolatile ram has a flag to indicate it is usable.
- */
-#define MACH_USE_NON_VOLATILE 	((char *)0xbd0000c0)
-#define MACH_NON_VOLATILE_FLAG	0x02
 /*
  * Each entry in the jump table is 8 bytes - 4 for the jump and 4 for a nop.
  */
@@ -194,18 +188,78 @@ extern	Mach_MonFuncs	mach_MonFuncs;
 #define MACH_MON_DISABLE	MACH_MON_FUNC_ADDR(50)
 #define MACH_MON_ZEROB		MACH_MON_FUNC_ADDR(51)
 
+#ifdef _MONFUNCS
+Mach_MonFuncs mach_MonFuncs = {
+    (int (*)()) MACH_MON_RESET,
+    (int (*)()) MACH_MON_EXEC,
+    (int (*)()) MACH_MON_RESTART,
+    (int (*)()) MACH_MON_REINIT,
+    (int (*)()) MACH_MON_REBOOT,
+    (int (*)()) MACH_MON_AUTOBOOT,
+    (int (*)()) MACH_MON_OPEN,
+    (int (*)()) MACH_MON_READ,
+    (int (*)()) MACH_MON_WRITE,
+    (int (*)()) MACH_MON_IOCTL,
+    (int (*)()) MACH_MON_CLOSE,
+    (int (*)()) MACH_MON_LSEEK,
+    (int (*)()) MACH_MON_GETCHAR,
+    (int (*)()) MACH_MON_PUTCHAR,
+    (int (*)()) MACH_MON_SHOWCHAR,
+    (int (*)()) MACH_MON_GETS,
+    (int (*)()) MACH_MON_PUTS,
+    (int (*)()) MACH_MON_PRINTF,
+    (int (*)()) MACH_MON_MEM1,
+    (int (*)()) MACH_MON_MEM2,
+    (int (*)()) MACH_MON_SAVEREGS,
+    (int (*)()) MACH_MON_LOADREGS,
+    (int (*)()) MACH_MON_JUMPS8,
+    (char *(*)()) MACH_MON_GETENV2,
+    (int (*)()) MACH_MON_SETENV2,
+    (int (*)()) MACH_MON_ATONUM,
+    (int (*)()) MACH_MON_STRCMP,
+    (int (*)()) MACH_MON_STRLEN,
+    (char *(*)()) MACH_MON_STRCPY,
+    (char *(*)()) MACH_MON_STRCAT,
+    (int (*)()) MACH_MON_GETCMD,
+    (int (*)()) MACH_MON_GETNUMS,
+    (int (*)()) MACH_MON_ARGPARSE,
+    (int (*)()) MACH_MON_HELP,
+    (int (*)()) MACH_MON_DUMP,
+    (int (*)()) MACH_MON_SETENV,
+    (int (*)()) MACH_MON_UNSETENV,
+    (int (*)()) MACH_MON_PRINTENV,
+    (int (*)()) MACH_MON_JUMP2S8,
+    (int (*)()) MACH_MON_ENABLE,
+    (int (*)()) MACH_MON_DISABLE,
+    (int (*)()) MACH_MON_ZEROB,
+};
+#else
+extern	Mach_MonFuncs	mach_MonFuncs;
+#endif
+
 /*
  * Functions and defines to access the monitor.
  */
 
-#define Mach_MonPrintf (mach_MonFuncs.printf)
 extern	int 	Mach_MonPutChar ();
 #define Mach_MonMayPut Mach_MonPutChar
-extern	void	Mach_MonAbort();
 extern	void	Mach_MonReboot();
+extern	void	Mach_MonAbort();
 
-#define Mach_MonGetChar (mach_MonFuncs.getchar)
-#define Mach_MonGetNextChar (mach_MonFuncs.getchar)
-#define Mach_MonGetLine (mach_MonFuncs.gets)
+#define Mach_MonGetChar			(mach_MonFuncs.getchar)
+#define Mach_MonGetNextChar		(mach_MonFuncs.getchar)
+#define Mach_MonGetLine			(mach_MonFuncs.gets)
+#define Mach_ArgParse(string,table)	(mach_MonFuncs.argparse)(string,table)
+#define Mach_MonPrintf			(mach_MonFuncs.printf)
+#define Mach_MonOpen(name,flags)	(mach_MonFuncs.open)(name,flags)
+#define Mach_MonRead(fd,buf,len)	(mach_MonFuncs.read)(fd,buf,len)
+#define Mach_MonClose(fd)		(mach_MonFuncs.close)(fd)
+#define Mach_MonLseek(fd,offset,mode)	(mach_MonFuncs.lseek)(fd,offset,mode)
+
+/*
+ * The nonvolatile ram has a flag to indicate it is usable.
+ */
+#define MACH_USE_NON_VOLATILE 	((char *)0xbd0000c0)
+#define MACH_NON_VOLATILE_FLAG	0x02
 
 #endif /* _MACHPROM */
