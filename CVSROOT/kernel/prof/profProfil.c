@@ -92,9 +92,7 @@ Prof_Profil(buffer, bufSize, offset, scale)
     int offset;
     int scale;
 {
-#if 0
     Prof_Enable(Proc_GetCurrentProc(), buffer, bufSize, offset, scale);
-#endif
     return SUCCESS;
 }
 
@@ -125,7 +123,6 @@ Prof_Enable(procPtr, buffer, bufSize, offset, scale)
     int offset;
     int scale;
 {
-#if 0
     assert(procPtr != (Proc_ControlBlock *) NIL);
     LOCK_MONITOR;
     if (scale != 0 && procPtr->Prof_Scale == 0) {
@@ -153,7 +150,6 @@ Prof_Enable(procPtr, buffer, bufSize, offset, scale)
     procPtr->Prof_Scale = scale;
     procPtr->Prof_PC = 0;
     UNLOCK_MONITOR;
-#endif
     return;
 }
 
@@ -183,7 +179,6 @@ Prof_Tick(time, clientData)
     ClientData clientData;
 {
     Proc_ControlBlock *curProcPtr;
-#if 0
     assert(clientData == profTimer_QueueElement.clientData);
     if (!mach_KernelMode) {
 	curProcPtr = Proc_GetCurrentProc();
@@ -194,7 +189,6 @@ Prof_Tick(time, clientData)
 	}
     }
     Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
-#endif
     return;
 }
 
@@ -223,7 +217,6 @@ Prof_RecordPC(procPtr)
 	short shrt;
 	char c[2];
     } u;
-#if 0
     assert(procPtr->Prof_Scale);
     ptr = &procPtr->Prof_Buffer[(((procPtr->Prof_PC -
         procPtr->Prof_Offset) * procPtr->Prof_Scale) >> 16) / sizeof(*ptr)];
@@ -248,7 +241,6 @@ Prof_RecordPC(procPtr)
 	return;
     }
     procPtr->Prof_PC = 0;
-#endif
     return;
 }
 
@@ -275,7 +267,6 @@ void
 Prof_Disable(procPtr)
     Proc_ControlBlock *procPtr;
 {
-#if 0
     LOCK_MONITOR;
     if (procPtr->Prof_Scale != 0) {
 	assert(profCount > 0);
@@ -286,13 +277,11 @@ Prof_Disable(procPtr)
 	}
     }
     UNLOCK_MONITOR;
-#endif
     return;
 }
 
 
 
-#if 0
 struct profEncapsulation {
     short *Prof_Buffer;
     int Prof_BufferSize;
@@ -391,6 +380,4 @@ Prof_DeencapState(procPtr, ptr)
 	encap->Prof_Offset, encap->Prof_Scale);
     return;
 }
-
-#endif
 
