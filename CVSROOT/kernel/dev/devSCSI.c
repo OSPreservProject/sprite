@@ -148,7 +148,7 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 	    break;
 	case SCSI_CLASS7_MEDIA_ERROR:
 	case SCSI_CLASS7_HARDWARE_ERROR:
-	     printf(errorString, "%s error - info bytes 0x%x 0x%x 0x%x 0x%x",
+	     sprintf(errorString, "%s error - info bytes 0x%x 0x%x 0x%x 0x%x",
 		(sensePtr->key == SCSI_CLASS7_MEDIA_ERROR) ? "media" :
 							     "hardware",
 		sensePtr->info1 & 0xff,
