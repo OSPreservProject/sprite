@@ -40,6 +40,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #ifdef sun4
 #include <vmMach.h>
 #endif
+#ifdef sun4c
+#include <devSCSIC90.h>
+#endif sun4c
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
@@ -1017,6 +1020,13 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 #endif
+#ifdef sun4c
+        case SYS_DEV_CHANGE_SCSI_DEBUG: {
+	    Dev_ChangeScsiDebugLevel(option);
+	    status = SUCCESS;
+	    break;
+	}
+#endif sun4c
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
