@@ -593,6 +593,7 @@ Fsio_StreamMigClose(streamPtr, inUsePtr)
 	}
     }
     *inUsePtr = TRUE;
+    streamPtr->flags |= FS_RMT_SHARED;
     Fsutil_HandleRelease(streamPtr, TRUE);
     return(SUCCESS);
 }
@@ -657,6 +658,7 @@ Fsio_StreamMigCloseNew(streamPtr, inUsePtr, offsetPtr)
 	}
     }
     *inUsePtr = TRUE;
+    streamPtr->flags |= FS_RMT_SHARED;
     Fsutil_HandleRelease(streamPtr, TRUE);
     return(SUCCESS);
 }
