@@ -19,11 +19,11 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "stdio.h"
-#include "dbg.h"
-#include "machMon.h"
-#include "net.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <dbg.h>
+#include <machMon.h>
+#include <net.h>
 
 /*
  * Information about registered commands:
@@ -158,8 +158,16 @@ Dev_InvokeConsoleCmd(commandChar)
 static void
 Abort()
 {
+    int			i;
+    Net_Interface	*interPtr;
     Mach_MonAbort();
-    Net_Reset();
+    i = 0;
+    interPtr = Net_NextInterface(FALSE, &i);
+    while(interPtr != (Net_Interface *) NIL) {
+	Net_Reset(interPtr);
+	i++;
+	interPtr = Net_NextInterface(FALSE, &i);
+    }
 }
 
 static void
