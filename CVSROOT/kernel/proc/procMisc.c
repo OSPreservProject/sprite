@@ -31,70 +31,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  *----------------------------------------------------------------------
  *
- * Proc_Suspend --
- *
- *	Suspend execution of the calling process.  The parent is notified
- *	that this child stopped but the child remains attached to the
- *	parent.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Process context switches to the suspended state.
- *
- *----------------------------------------------------------------------
- */
-void
-Proc_Suspend(sigNum)
-    int	sigNum;
-{
-    register	Proc_ControlBlock	*procPtr;
-
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
-    procPtr->termReason = PROC_TERM_SIGNALED;
-    procPtr->termStatus = sigNum;
-    procPtr->termCode = SIG_NO_CODE;
-    ProcInformParent();
-    Sched_ContextSwitch(PROC_SUSPENDED);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Proc_Resume --
- *
- *	Resume execution of the given process if it is currently suspended.
- *	
- *	SYNCHRONIZATION NOTE:
- *
- *	This routine is only called from the signal module with its monitor
- *	lock down which ensures that we are the only ones who can change the 
- *	state of the process to or from the suspended state.  Thus there
- *	is no race condition on the state of the destination process.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Process is made runnable
- *
- *----------------------------------------------------------------------
- */
-void
-Proc_Resume(procPtr)
-    Proc_ControlBlock	*procPtr;
-{
-    if (procPtr->state == PROC_SUSPENDED) {
-	Sched_MakeReady(procPtr);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Proc_GetPCBInfo --
  *
  *	Returns the process control block.  If firstPid is equal to  
@@ -486,11 +422,12 @@ Proc_Dump()
 	    case PROC_DEAD:
 		Sys_Printf(" dead      ");
 		break;
-	    case PROC_DEBUGABLE:
-		Sys_Printf(" debug     ");
-		break;
 	    case PROC_SUSPENDED:
-		Sys_Printf(" suspended ");
+		if (pcbPtr->genFlags & (PROC_DEBUGGED | PROC_ON_DEBUG_LIST)) {
+		    Sys_Printf(" debug     ");
+		} else {
+		    Sys_Printf(" suspended ");
+		}
 		break;
 	}
 	Sys_Printf(" %8x", pcbPtr->event);
