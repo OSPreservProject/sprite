@@ -223,12 +223,11 @@ static	int	pageSize;		/* The size of a physical page. */
 static	int	numWriteBackBlocks = 0;	/* The number of blocks that are being 
 					 * forced back to disk by 
 					 * Fscache_WriteBack. */
-static	int	numBlockCleaners;	/* Number of block cleaner processes
-					 * currently in action. */
-int		fscache_MaxBlockCleaners = 3;	/* The maximum number of block cleaners
-					 * that there can be. */
 static	int	blocksPerPage;		/* Number of blocks in a page. */
 
+static	int	numBlockCleaners;	/* Number of block cleaner processes
+					 * currently in action. */
+int	fscache_MaxBlockCleaners = FSCACHE_MAX_CLEANER_PROCS;
 
 /*
  * Macros for large page sizes.
