@@ -41,10 +41,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Important: servers won't respond to requests until their rpc_SpriteID is set.
  */
 int	rpc_SpriteID = 0;
-/*
- * Set to FALSE for debugging a few isolated machines without tons of msgs.
- */
-Boolean	rpc_PrintMismatch = TRUE;
 
 /*
  * The packet as it looks sitting in the ethernet buffers.
@@ -62,6 +58,19 @@ typedef struct RpcRawPacket {
  * We count garbage packets and reset the interface after a series of junk.
  */
 int badErrors = 0;
+
+/*
+ * Set to FALSE for debugging a few isolated machines without tons of msgs.
+ * Since a few of the errors are printed out every once in a while anyway,
+ * we may want to leave this FALSE.
+ */
+Boolean	rpc_PrintMismatch = FALSE;
+/*
+ * While testing there may be many version mismatch errors.  If
+ * rpc_PrintMismatch is FALSE, then we only report a few of these errors
+ * every once in a while.
+ */
+int mismatchErrors = 0;
 
 /*
  * An array of bitmasks is kept for faster comparisions by the dispatcher. 
@@ -119,10 +128,32 @@ Rpc_Dispatch(packetPtr, packetLength)
 	    Sys_Panic(SYS_WARNING, "Rpc_Dispatch failed byte-swap.");
 	    return;
 	}
-    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION && rpc_PrintMismatch) {
-	Sys_Panic(SYS_WARNING,
-	    "Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
-	    rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
+    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION) {
+	if (rpc_PrintMismatch) {
+	    Sys_Panic(SYS_WARNING,
+		"Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
+		rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
+	} else {
+	    if (mismatchErrors < 5) {
+		Sys_Panic(SYS_WARNING, "%s %x not %x from client(?) %d\n",
+		    "Rpc_Dispatch version mismatch:",
+		    rpcHdrPtr->version, RPC_NATIVE_VERSION,
+		    rpcHdrPtr->clientID);
+		mismatchErrors++;
+	    } else if (mismatchErrors == 5) {
+		Sys_Panic(SYS_WARNING, "%s %x not %x from client(?) %d\n%s\n",
+		    "Rpc_Dispatch version mismatch:",
+		    rpcHdrPtr->version, RPC_NATIVE_VERSION,
+		    rpcHdrPtr->clientID,
+		    "I'll report no more version mismatches for a while.");
+		mismatchErrors++;
+	    } else {
+		mismatchErrors++;
+		if (mismatchErrors > 5000) {
+		    mismatchErrors = 0;
+		}
+	    }
+	}
 	return;
     }
     expectedLength = sizeof(Net_EtherHdr) +
