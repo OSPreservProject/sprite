@@ -146,7 +146,15 @@ Proc_Migrate(pid, nodeID)
      */
     if (procPtr->state == PROC_DEAD || procPtr->state == PROC_EXITING) {
 	if (proc_MigDebugLevel > 3) {
-	    Sys_Printf("Proc_Migrate: the process has exited.\n");
+	    Sys_Printf("Proc_Migrate: process %x has exited.\n",
+		       procPtr->processID);
+	}
+	return(PROC_INVALID_PID);
+    }
+    if (procPtr->state == PROC_MIGRATED) {
+	if (proc_MigDebugLevel > 1) {
+	    Sys_Printf("Proc_Migrate: process %x has already migrated.\n",
+		       procPtr->processID);
 	}
 	return(PROC_INVALID_PID);
     }
@@ -774,7 +782,9 @@ SendFileState(procPtr, nodeID, foreign)
 		  "SendFileState:Error %x returned by Rpc_Call.\n", status);
 	return(status);
     } else {
+#ifndef TO_BE_REMOVED
 	Fs_ClearFileState(procPtr);
+#endif
 	return(returnInfo.status);
     }
 }
@@ -1075,7 +1085,11 @@ Proc_MigSendUserInfo(procPtr)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
 		     (ClientData) &record);
     }
-   
+
+    /*
+     * Note: this depends on the size of a Proc_PID being the size of
+     * an int.
+     */
     procBufferSize = PROC_NUM_USER_INFO_FIELDS * sizeof(int);
     procBuffer = Mem_Alloc(procBufferSize);
 
@@ -1086,6 +1100,7 @@ Proc_MigSendUserInfo(procPtr)
      */
     Byte_FillBuffer(ptr, int, procPtr->userID);
     Byte_FillBuffer(ptr, int, procPtr->effectiveUserID);
+    Byte_FillBuffer(ptr, int, procPtr->familyID);
     Byte_FillBuffer(ptr, int, procPtr->billingRate);
 
     /*

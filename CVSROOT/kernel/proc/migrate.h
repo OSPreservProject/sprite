@@ -33,11 +33,12 @@
 #define PROC_NUM_SCHED_FIELDS (7 + 4 * (sizeof(Timer_Ticks) / sizeof(int)))
 
 /*
- * A process is allowed to update its userID, effectiveUserID, or billingRate.
+ * A process is allowed to update its userID, effectiveUserID, billingRate,
+ * or familyID.
  * If any of these fields is modified, all of them are transferred to
  * the remote node.
  */
-#define PROC_NUM_USER_INFO_FIELDS 3
+#define PROC_NUM_USER_INFO_FIELDS 4
 
 /*
  * Size of various fields of the PCB structure copied upon migration.

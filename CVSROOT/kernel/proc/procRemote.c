@@ -388,6 +388,7 @@ GetUserInfo(procPtr, buffer)
      */
     Byte_EmptyBuffer(buffer, int, procPtr->userID);
     Byte_EmptyBuffer(buffer, int, procPtr->effectiveUserID);
+    Byte_EmptyBuffer(buffer, int, procPtr->familyID);
     Byte_EmptyBuffer(buffer, int, procPtr->billingRate);
 
     Proc_Unlock(procPtr);
