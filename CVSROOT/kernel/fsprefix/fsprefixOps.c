@@ -407,17 +407,83 @@ retry:
 	    break;
 	case FS_CROSS_DOMAIN_OPERATION: {
 	    /*
-	     * Should try to get the attributes of the parent in order
-	     * to get the correct prefix handle and relative name for
-	     * the destination pathname.
+	     * The server thinks the second name is not served by it.
+	     * Here we attempt to get the attributes of the second name
+	     * in order to bounce through links and end up with a good prefix.
 	     */
-#ifdef notyet
-	    Fs_Attributes	srcAttr;	/* Attrs of source file */
-	    Fs_Attributes	dstParentAttr;	/* Attrs of parent of the
-						 * destination */
-	    char *lastSlash, *cPtr, *pPtr;	/* Used to make dstParentName */
-	    char *dstParentName;		/* The parent of dstName */
-#endif /* not yet */
+	    ReturnStatus	status2;
+	    FsOpenArgs		openArgs;
+	    FsGetAttrResults	getAttrResults;
+	    Fs_Attributes	dstAttr;	/* Attrs of destination */
+	    FsFileID		dstFileID;
+
+	    openArgs.useFlags = FS_FOLLOW;
+	    openArgs.permissions = 0;
+	    openArgs.type = FS_FILE;
+	    openArgs.clientID = rpc_SpriteID;
+	    FsSetIDs((Proc_ControlBlock *)NIL, &openArgs.id);
+
+	    openArgs.prefixID = dstHdrPtr->fileID;
+	    openArgs.rootID = dstRootID;
+
+	    getAttrResults.attrPtr = &dstAttr;
+	    getAttrResults.fileIDPtr = &dstFileID;
+getAttr:
+	    status2 = (*fsDomainLookup[dstDomain][FS_DOMAIN_GET_ATTR])
+			(dstHdrPtr, dstLookupName, (Address)&openArgs,
+			(Address)&getAttrResults, &redirectInfoPtr);
+	    switch(status2) {
+		default:
+		    if (dstRootID.serverID != srcRootID.serverID ||
+			dstRootID.major != srcRootID.major) {
+			/*
+			 * Really is a cross-domain operation.
+			 */
+			status = FS_CROSS_DOMAIN_OPERATION;
+			break;
+		    } else {
+			goto retry;
+		    }
+		case FS_LOOKUP_REDIRECT: {
+		    fsStats.prefix.redirects++;
+		    numRedirects++;
+		    if (numRedirects > FS_MAX_LINKS) {
+			status = FS_NAME_LOOP;
+			fsStats.prefix.loops++;
+		    } else {
+			status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr,
+						  &dstName);
+			if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
+			    Mem_Free((Address)dstRedirectPtr);
+			}
+			dstRedirectPtr = redirectInfoPtr;
+			redirectInfoPtr = (FsRedirectInfo *)NIL;
+			srcNameError = FALSE;
+			/*
+			 * Will fall out and then zip up to getDstPrefix.
+			 */
+		    }
+		    break;
+		}
+		case RPC_SERVICE_DISABLED:
+		case RPC_TIMEOUT:
+		case FS_STALE_HANDLE: {
+		    FsWantRecovery(dstHdrPtr);
+		    Sys_Printf("Get Attr of \"%s\" waiting for recovery\n",
+				     dstName);
+		    status2 = FsWaitForRecovery(dstHdrPtr, status2);
+		    if (status2 == SUCCESS) {
+			goto getAttr;
+		    } else if (status2 == FS_STALE_HANDLE) {
+			if (dstName[0] == '/') {
+			    PrefixHandleClear(dstPrefixPtr);
+			    status = FS_LOOKUP_REDIRECT;
+			    srcNameError = FALSE;
+			}
+		    }
+		    break;
+		}
+	    }
 	    break;
 	}
 	default:
