@@ -211,7 +211,7 @@ static SysCallEntry sysCalls[] = {
     Sys_GetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_SetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_DoNothing,	       Sys_DoNothing,      TRUE,	0,   NILPARM,
-    Proc_GetPCBInfo,	       Proc_DoRemoteCall,  FALSE,	5,   NILPARM,
+    Proc_GetPCBInfo,	       Proc_GetPCBInfo,    TRUE,	6,   NILPARM,
     Vm_GetSegInfo,	       Proc_RemoteDummy,   TRUE,	3,   NILPARM,
     Proc_GetResUsage,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_GetPriority,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
@@ -373,11 +373,7 @@ static Sys_CallParam paramsArray[] = {
     SYS_PARAM_INT,	      PARM_I,
     SYS_PARAM_INT,	      PARM_I,
     /* local */				     	/* SYS_SYS_DONOTHING	37 */
-    SYS_PARAM_RANGE1,	      PARM_I,		/* SYS_PROC_GETPCBINFO	38 */
-    SYS_PARAM_RANGE2,	      PARM_I,
-    SYS_PARAM_PCB,	      PARM_OCR,
-    SYS_PARAM_PCBARG,         PARM_OCR,
-    SYS_PARAM_INT,            PARM_OC,
+    /* local */				     	/* SYS_PROC_GETPCBINFO	38 */
     /* special (don't migrate?) */		/* SYS_VM_GETSEGINFO	39 */
     SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETRESUSAGE 40 */
     SYS_PARAM_PROC_RES,	      PARM_OC,
