@@ -68,7 +68,8 @@ static char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
         __LINE__, __FILE__); } Proc_GetActualProc()->unixErrno = (err)
 
 #if 1
-#define	DebugMsg(status, string) printf("%x: %s\n", status, string)
+#define	DebugMsg(status, string) if (debugFsStubs) \
+	printf("%x: %s\n", status, string)
 #else
 #define	DebugMsg(status, string)	;
 #endif
@@ -122,13 +123,12 @@ Fs_AcceptStub(socketID, addrPtr, addrLenPtr)
     int			addrLen;
 
     Address		usp;
-    int			*newSocketPtr;
     ClientData		*acceptTokenPtr;
     struct sockaddr_in	addr;
+    Fs_Stream		*streamPtr;
 
     usp = (Address)Mach_UserStack();
-    newSocketPtr = (int *)(usp - sizeof(int));
-    acceptTokenPtr = (ClientData *) (usp - sizeof(int) - sizeof(ClientData));
+    acceptTokenPtr = (ClientData *) (usp - sizeof(ClientData));
 
     if (addrLenPtr == (int *) NULL) {
 	addrLen = 0;
@@ -198,13 +198,18 @@ Fs_AcceptStub(socketID, addrPtr, addrLenPtr)
      * connection.
      */
 
-    status = Fs_OpenStub(streamDevice, FS_READ|FS_WRITE, 0666, newSocketPtr);
+    status = Fs_Open(streamDevice, FS_READ|FS_WRITE|FS_USER|FS_FOLLOW,
+	    FS_FILE, 0666, &streamPtr);
     if (status != SUCCESS) {
 	DebugMsg(status, "accept (open)");
 	UNIXRETURN(status);
     }
-    (void)Vm_CopyIn(sizeof(newSocket), (Address)newSocketPtr, 
-		    (Address)&newSocket);
+    status = Fs_GetStreamID(streamPtr, &newSocket);
+    if (status != SUCCESS) {
+	DebugMsg(status, "accept (streamID)");
+	UNIXRETURN(status);
+    }
+
 
     /*
      * Make the new socket have the same characteristics as the
@@ -1501,13 +1506,12 @@ Wait(socketID, readSelect, timeOutPtr)
     if (status == FS_TIMEOUT) {
 	return(status);
     } else if (status != SUCCESS) {
-	printf("Wait (socket.c): Fs_Select failed.\n");
+	DebugMsg(status, "Wait (socket.c): Fs_Select failed.\n");
     }
 
     (void)Vm_CopyIn(sizeof(int), (Address)numReadyPtr, (Address)&numReady);
     if (numReady != 1) {
-	printf("Wait (socket.c): Fs_Select returned %d ready\n",
-			    numReady);
+	DebugMsg(numReady, "Wait (socket.c): Fs_Select numReady != 1\n");
     }
 
     return(SUCCESS);
