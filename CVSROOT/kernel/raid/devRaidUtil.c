@@ -848,7 +848,7 @@ AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
         reqControlPtr->numReq++;
     }
     if (reqControlPtr->numReq >= raidPtr->numCol +4) {
-	printf("Error: AddRaidParity: reqControl overrun.\n");
+	panic("Error: AddRaidParity: reqControl overrun.\n");
     }
 }
 
@@ -927,6 +927,6 @@ AddRaidDataRangeRequests(reqControlPtr, raidPtr, operation,
 	buffer += SectorToByte(raidPtr, numSectorsToTransfer);
     }
     if (reqControlPtr->numReq >= raidPtr->numCol +4) {
-	printf("Error: AddRaidData: reqControl overrun.\n");
+	panic("Error: AddRaidData: reqControl overrun.\n");
     }
 }
