@@ -521,6 +521,11 @@ Sys_Panic(level, format, args)
     (void) Sys_DoPrintf(format, (char *) &args);
 
     if (level == SYS_FATAL) {
+	/*
+	 * Make sure the monitor is enabled.
+	 */
+	Dev_VidEnable(TRUE);
+
 	sysPanicing = TRUE;
         DBG_CALL;
 	Dev_SyslogDebug(FALSE);
