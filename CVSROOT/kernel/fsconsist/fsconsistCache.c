@@ -145,16 +145,15 @@ FsConsistInit(consistPtr, hdrPtr)
     register FsConsistInfo *consistPtr;	/* State to initialize */
     FsHandleHeader *hdrPtr;		/* Back pointer to handle */
 {
+    SYNC_LOCK_INIT_DYNAMIC(&consistPtr->lock);
     consistPtr->flags = 0;
     consistPtr->lastWriter = -1;
     consistPtr->openTimeStamp = 0;
     consistPtr->hdrPtr = hdrPtr;
-    SYNC_LOCK_INIT_DYNAMIC(&consistPtr->lock);
-    consistPtr->consistDone.waiting = 0;
-    consistPtr->repliesIn.waiting = 0;
     List_Init(&consistPtr->clientList);
     List_Init(&consistPtr->msgList);
-    List_Init(&consistPtr->migList);
+    consistPtr->consistDone.waiting = 0;
+    consistPtr->repliesIn.waiting = 0;
 }
 
 /*
