@@ -96,11 +96,11 @@ typedef struct {
  */
 static void TimeoutProc _ARGS_((Timer_Ticks ticks, ClientData clientData));
 
-static ReturnStatus readInMasks _ARGS_ ((int numStreams, int *userReadMaskPtr,
+static ReturnStatus readInMasks _ARGS_ ((int wordsInMask, int *userReadMaskPtr,
     int *readMaskPtr, int *userWriteMaskPtr, int *writeMaskPtr,
     int *userExceptMaskPtr, int *exceptMaskPtr));
 
-static ReturnStatus writeOutMasks _ARGS_ ((int numStreams,
+static ReturnStatus writeOutMasks _ARGS_ ((int wordsInMask,
     int *userReadMaskPtr, int *readMaskPtr, int *userWriteMaskPtr, 
     int *writeMaskPtr, int *userExceptMaskPtr, int *exceptMaskPtr));
 
@@ -172,12 +172,8 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
     int                 *outWriteMaskPtr;
     int                 *inExceptMaskPtr;
     int                 *outExceptMaskPtr;
+    int			wordsInMask;
 
-    if ((userReadMaskPtr == (int *) USER_NIL) &&
-        (userWriteMaskPtr == (int *) USER_NIL) &&
-        (userExceptMaskPtr == (int *) USER_NIL)) {
-	numStreams = 0;
-    }
 
     /*
      * Make sure the number of streams is in the proper range.
@@ -186,6 +182,12 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	return(SYS_INVALID_ARG);
     } else if (numStreams > MAX_NUM_STREAMS) {
 	numStreams = MAX_NUM_STREAMS;
+    }
+
+    if ((userReadMaskPtr == (int *) USER_NIL) &&
+        (userWriteMaskPtr == (int *) USER_NIL) &&
+        (userExceptMaskPtr == (int *) USER_NIL)) {
+	numStreams = -1;
     }
 
     if (userTimeoutPtr == (Time *) USER_NIL) {
@@ -218,16 +220,18 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	inExceptMaskPtr = inExceptMasks;
 	outExceptMaskPtr = outExceptMasks;
     }
-    status = readInMasks(numStreams, userReadMaskPtr, inReadMaskPtr,
+    wordsInMask = (numStreams+(BITS_PER_ROW-1))/BITS_PER_ROW;
+    status = readInMasks(wordsInMask, userReadMaskPtr, inReadMaskPtr,
 	userWriteMaskPtr, inWriteMaskPtr, userExceptMaskPtr, inExceptMaskPtr);
     if (status != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
-    status = Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+    status = Fs_Select(numStreams, wordsInMask, timeoutPtr, inReadMaskPtr,
+	outReadMaskPtr,
 	inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
 	&numReady, &doTimeout);
     if (status == SUCCESS || status == FS_TIMEOUT) {
-	writeStatus = writeOutMasks(numStreams, userReadMaskPtr,
+	writeStatus = writeOutMasks(wordsInMask, userReadMaskPtr,
 		outReadMaskPtr, userWriteMaskPtr, outWriteMaskPtr,
 	       userExceptMaskPtr, outExceptMaskPtr);
 	if (status == SUCCESS && doTimeout && writeStatus==SUCCESS) {
@@ -283,8 +287,6 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
     extern int          debugFsStubs;
     int                 doTimeout;
     ReturnStatus        status, writeStatus;
-    Address		usp;
-    int			*userNumReadyPtr;
     int			numReady=0;
     Time		timeout;	/* Copy of *userTimeoutPtr. */
     Time                *timeoutPtr;
@@ -300,6 +302,7 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
     int                 *outWriteMaskPtr;
     int                 *inExceptMaskPtr;
     int                 *outExceptMaskPtr;
+    int			wordsInMask;
 
     if (debugFsStubs) {
 	printf("Fs_NewSelectStub(%d, %x, %x, %x, %x)\n", numStreams,
@@ -360,17 +363,19 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
 	outExceptMaskPtr = outExceptMasks;
     }
 
-    status = readInMasks(numStreams, userReadMaskPtr, inReadMaskPtr,
+    wordsInMask = (numStreams+(BITS_PER_ROW-1))/BITS_PER_ROW;
+    status = readInMasks(wordsInMask, userReadMaskPtr, inReadMaskPtr,
 	userWriteMaskPtr, inWriteMaskPtr, userExceptMaskPtr, inExceptMaskPtr);
     if (status != SUCCESS) {
 	Mach_SetErrno(EFAULT);
 	return -1;
     }
-    status = Fs_Select(numStreams-1, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+    status = Fs_Select(numStreams-1, wordsInMask, timeoutPtr, inReadMaskPtr,
+	outReadMaskPtr,
 	inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
 	&numReady, &doTimeout);
     if (status == SUCCESS || status == FS_TIMEOUT) {
-	writeStatus = writeOutMasks(numStreams, userReadMaskPtr,
+	writeStatus = writeOutMasks(wordsInMask, userReadMaskPtr,
 		outReadMaskPtr, userWriteMaskPtr, outWriteMaskPtr,
 		userExceptMaskPtr, outExceptMaskPtr);
 	if (status == SUCCESS && doTimeout && writeStatus==SUCCESS) {
@@ -402,6 +407,7 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
  *
  *      The internal select system call.
  *	This stub checks descriptors 0 to numStreams.
+ *	If numStreams is -1, it will wait for timeout, but not check anything.
  *
  * Results:
  *      Returns ReturnStatus.
@@ -414,11 +420,12 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+Fs_Select(numStreams, wordsInMask, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
     inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
     numReadyPtr, doTimeoutPtr)
     int		numStreams;	/* The length in bits of the read and write 
 				 * masks. */
+    int		wordsInMask;	/* Number of words in the masks. */
     Time	*timeoutPtr;    /* Timer value indicating timeout period or
 				 * NIL if no timeout. (in/out) */
     int		*inReadMaskPtr;
@@ -450,8 +457,6 @@ Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
     register int	inReadMask = 0;	/* Contents of a row of inReadMasks. */
     register int	inWriteMask = 0;/* Contents of a row of inWriteMasks. */
     int			inExceptMask = 0;/* Content of a row of inExceptMasks.*/
-    int			intsInMask;	/* # of integers in inReadMasks,
-					 * inWriteMasks and inExceptMasks. */
     register int	bit;		/* Loop counter */
     int			bitMax;		/* Loop terminating condition */
     Boolean		poll;		/* If TRUE, don't wait if the first
@@ -462,7 +467,7 @@ Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
 
     /*
      * If all the masks are NIL, then there aren't any streams to select.
-     * Set the numStreams to zero so we can see if we can return once the
+     * Set the numStreams to -1 so we can see if we can return once the
      * timeout argument is examined.
      */
     if ((inReadMaskPtr == (int *) NIL) &&
@@ -530,7 +535,6 @@ Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
 	return status;
     }
 
-    intsInMask = (numStreams + (BITS_PER_ROW)) / BITS_PER_ROW;
     procPtr = Proc_GetCurrentProc();
 
     /*
@@ -571,7 +575,7 @@ Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
 	 * smallest stream number.
 	 */
 	s = numStreams + 1;
-	for (row = 0; row < intsInMask; row++) {
+	for (row = 0; row < wordsInMask; row++) {
 	    int	outReadMask = 0;
 	    int	outWriteMask = 0;
 	    int	outExceptMask = 0;
@@ -690,7 +694,7 @@ deschedule:
      */
     if (status == SUCCESS || status == FS_TIMEOUT) {
 	if (status != SUCCESS) {
-	    for (row=0 ; row<intsInMask ; row++) {
+	    for (row=0 ; row<wordsInMask ; row++) {
 		if (outReadMaskPtr != (int *) NIL) {
 		    outReadMaskPtr[row] = 0;
 		}
@@ -766,9 +770,9 @@ TimeoutProc(ticks, clientData)
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-readInMasks(numStreams, userReadMaskPtr, readMaskPtr,
+readInMasks(wordsInMask, userReadMaskPtr, readMaskPtr,
     userWriteMaskPtr, writeMaskPtr, userExceptMaskPtr, exceptMaskPtr)
-    int         numStreams;
+    int         wordsInMask;
     int		*userReadMaskPtr;
     int		*readMaskPtr;
     int		*userWriteMaskPtr;
@@ -779,10 +783,10 @@ readInMasks(numStreams, userReadMaskPtr, readMaskPtr,
     int bytesInMask;
     int status;
 
-    if (numStreams == 0) {
+    if (wordsInMask <= 0) {
 	return SUCCESS;
     }
-    bytesInMask = ((numStreams+(BITS_PER_ROW -1))/BITS_PER_ROW)*sizeof(int);
+    bytesInMask = wordsInMask*sizeof(int);
 
     /*
      * Copy in the masks from user's address space.
@@ -828,9 +832,9 @@ readInMasks(numStreams, userReadMaskPtr, readMaskPtr,
  */
 
 static ReturnStatus
-writeOutMasks(numStreams, userReadMaskPtr, readMaskPtr,
+writeOutMasks(wordsInMask, userReadMaskPtr, readMaskPtr,
     userWriteMaskPtr, writeMaskPtr, userExceptMaskPtr, exceptMaskPtr)
-    int         numStreams;
+    int         wordsInMask;
     int		*userReadMaskPtr;
     int		*readMaskPtr;
     int		*userWriteMaskPtr;
@@ -841,10 +845,10 @@ writeOutMasks(numStreams, userReadMaskPtr, readMaskPtr,
     int bytesInMask;
     int status;
 
-    if (numStreams == 0) {
+    if (wordsInMask <= 0) {
 	return SUCCESS;
     }
-    bytesInMask = ((numStreams+(BITS_PER_ROW -1))/BITS_PER_ROW)*sizeof(int);
+    bytesInMask = wordsInMask*sizeof(int);
     if (userReadMaskPtr != (int *)USER_NIL) {
 	status = Vm_CopyOut(bytesInMask, (Address) readMaskPtr,
 	                      (Address) userReadMaskPtr);
