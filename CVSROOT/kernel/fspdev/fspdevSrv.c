@@ -958,6 +958,61 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    PdevClientNotify(pdevHandlePtr);
 	    break;
 	}
+	case IOC_PFS_OPEN: {
+	    /*
+	     * A pseudo-filesystem server is replying to an open request by
+	     * asking us to open a pseudo-device connection to the client.
+	     * We open this connection and return a user-level streamID to
+	     * the server for its half of the connection, and we pass an
+	     * I/O fileID to the client process so it can set up the other
+	     * half of the connection.
+	     */
+	    int newStreamID;
+	    FsOpenResults openResults;
+
+	    if (outBufPtr == (Fs_Buffer *)NIL || outBufPtr->size < sizeof(int)){
+		status = GEN_INVALID_ARG;
+	    } else {
+		newStreamID = FsPfsOpenConnection(pdevHandlePtr,
+						  &openResults.ioFileID);
+		if (outBufPtr->flags & FS_USER) {
+		    Vm_CopyOut(sizeof(int), (Address)&newStreamID,
+				outBufPtr->addr);
+		} else {
+		    *(int *)outBufPtr->addr = newStreamID;
+		}
+		if (newStreamID < 0) {
+		    status = FAILURE;
+		} else {
+		    /*
+		     * Here we copy the openResults to the waiting processes
+		     * kernel stack (it's waiting in FsPfsOpen).
+		     */
+		    register FsOpenResults *openResultsPtr =
+			    (FsOpenResults *)pdevHandlePtr->replyBuf;
+
+		    openResults.nameID = openResults.ioFileID;
+		    FsStreamNewID(rpc_SpriteID, &openResults.streamID);
+		    openResults.dataSize = 0;
+		    openResults.streamData = (ClientData)NIL;
+
+		    *openResultsPtr = openResults;
+		}
+	    }
+	    if (status != SUCCESS) {
+		pdevHandlePtr->flags |= PDEV_REPLY_FAILED;
+	    }
+	    pdevHandlePtr->flags |= PDEV_REPLY_READY;
+	    Sync_Broadcast(&pdevHandlePtr->replyReady);
+	    PdevClientNotify(pdevHandlePtr);
+	    break;
+	}
+	case IOC_PFS_PASS_STREAM:
+	    /*
+	     * A pseudo-filesystem server is replying to an open request by
+	     * asking us to pass one of its open streams to the client.
+	     */
+	    break;
 	case IOC_PDEV_READY:
 	    /*
 	     * Master has made the device ready.  The inBuffer contains
@@ -1098,7 +1153,7 @@ FsPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     request.param.open.uid	= userID;
 
     pdevHandlePtr->flags &= ~FS_USER;
-    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request,
+    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
 			 0, (Address) NIL, 0, (Address) NIL, (int *)NIL,
 			 (Sync_RemoteWaiter *)NIL);
 exit:
@@ -1147,7 +1202,25 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 
     LOCK_MONITOR;
 
+    while ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
+	/*
+	 * Wait for the server to set up its request buffer.
+	 */
+	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
+	    status = DEV_OFFLINE;
+	    goto exit;
+	}
+	Sys_Panic(SYS_WARNING,
+	    "Pseudo-domain lookup waiting for server to set up\n");
+	if (Sync_Wait(&pdevHandlePtr->setup, TRUE)) {
+	    UNLOCK_MONITOR;
+	    return(GEN_ABORTED_BY_SIGNAL);
+	}
+    }
     while (pdevHandlePtr->flags & PDEV_BUSY) {
+	/*
+	 * Wait for exclusive access to the naming stream.
+	 */
 	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    status = DEV_OFFLINE;
@@ -1172,6 +1245,132 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 	}
     }
 
+exit:
+    pdevHandlePtr->flags &= ~PDEV_BUSY;
+    Sync_Broadcast(&pdevHandlePtr->access);
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPseudoGetAttr --
+ *
+ *	Get the attributes of a file in a pseudo-filesystem.  We have the
+ *	fileID of the request-response stream to the server.
+ *
+ * Results:
+ *	The attributes structure is passed back from the pfs server.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
+    register FsFileID		*fileIDPtr;	/* Identfies pdev connection */
+    int				clientID;	/* Host ID of process asking
+						 * for the attributes */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+{
+    PdevClientIOHandle		*cltHandlePtr;
+    Pdev_Request		request;
+    register PdevServerIOHandle	*pdevHandlePtr;
+    register ReturnStatus	status;
+
+    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
+	Sys_Panic(SYS_WARNING, "FsPseudoGetAttr, no handle <%d,%d,%x,%x>\n",
+	    fileIDPtr->serverID, fileIDPtr->type,
+	    fileIDPtr->major, fileIDPtr->minor);
+	return(FS_FILE_NOT_FOUND);
+    }
+    pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    LOCK_MONITOR;
+    /*
+     * Wait for exclusive access to the stream.  Different clients might
+     * be using the shared pseudo stream at about the same time.  Things
+     * are kept simple by only letting one process through at a time.
+     */
+    while (pdevHandlePtr->flags & PDEV_BUSY) {
+	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
+	    status = DEV_OFFLINE;
+	    goto exit;
+	}
+    }
+    pdevHandlePtr->flags |= PDEV_BUSY;
+    pdevHandlePtr->flags &= ~FS_USER;
+    request.hdr.operation = PDEV_GET_ATTR;
+    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
+			0, (Address) NIL,
+			sizeof(Fs_Attributes), (Address)attrPtr,
+			(int *)NIL, (Sync_RemoteWaiter *)NIL);
+exit:
+    pdevHandlePtr->flags &= ~PDEV_BUSY;
+    Sync_Broadcast(&pdevHandlePtr->access);
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPseudoSetAttr --
+ *
+ *	Set the attributes of a file in a pseudo-filesystem.  We have the
+ *	fileID of the request-response stream to the server.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	None here.  The new attributes are shipped to the pfs server.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
+    register FsFileID		*fileIDPtr;	/* Identfies pdev connection */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+    FsUserIDs			*idPtr;		/* Identfies user */
+    int				flags;		/* Tells which attrs to set */
+{
+    PdevClientIOHandle		*cltHandlePtr;
+    Pdev_Request		request;
+    register PdevServerIOHandle	*pdevHandlePtr;
+    register ReturnStatus	status;
+
+    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
+	Sys_Panic(SYS_WARNING, "FsPseudoSetAttr, no handle <%d,%d,%x,%x>\n",
+	    fileIDPtr->serverID, fileIDPtr->type,
+	    fileIDPtr->major, fileIDPtr->minor);
+	return(FS_FILE_NOT_FOUND);
+    }
+    pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    LOCK_MONITOR;
+
+    while (pdevHandlePtr->flags & PDEV_BUSY) {
+	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
+	    status = DEV_OFFLINE;
+	    goto exit;
+	}
+    }
+    pdevHandlePtr->flags |= PDEV_BUSY;
+    pdevHandlePtr->flags &= ~FS_USER;
+    request.hdr.operation = PDEV_SET_ATTR;
+    request.param.setAttr.uid = idPtr->user;
+    request.param.setAttr.flags = flags;
+    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
+			sizeof(Fs_Attributes), (Address)attrPtr,
+			0, (Address) NIL,
+			(int *)NIL, (Sync_RemoteWaiter *)NIL);
 exit:
     pdevHandlePtr->flags &= ~PDEV_BUSY;
     Sync_Broadcast(&pdevHandlePtr->access);
