@@ -34,7 +34,7 @@ typedef struct VmMach_SegData {
  * Machine dependent data for each process.
  */
 typedef struct VmMach_ProcData {
-    int			context;	/* The context for the process. */
+    struct VmMach_Context *contextPtr;	/* The context for the process. */
     struct Vm_Segment	*mapSegPtr;	/* Pointer to segment which is mapped
 					 * into this processes address
 					 * space. */
