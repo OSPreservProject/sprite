@@ -566,6 +566,16 @@ TransferInProc(ttyPtr, callInfoPtr)
 
     LOCK_MONITOR;
 
+    /*
+     * If the terminal is no longer open then don't do anything:  there's
+     * no Td_Terminal to do it on.
+     */
+
+    if (ttyPtr->openCount == 0) {
+	UNLOCK_MONITOR;
+	return;
+    }
+
     while (ttyPtr->extractInput != ttyPtr->insertInput) {
 	value = ttyPtr->inBuffer[ttyPtr->extractInput];
 	next = ttyPtr->extractInput + 1;
@@ -673,7 +683,14 @@ TransferOutProc(ttyPtr, callInfoPtr)
 {
     LOCK_MONITOR;
 
-    Transfer(ttyPtr);
+    /*
+     * Make sure that the terminal is still open.  Otherwise its Td_Terminal
+     * will have gone away.
+     */
+
+    if (ttyPtr->openCount != 0) {
+	Transfer(ttyPtr);
+    }
 
     UNLOCK_MONITOR;
 }
