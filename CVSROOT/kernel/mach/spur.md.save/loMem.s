@@ -1370,6 +1370,12 @@ cmpTrap_Const1:
 	.long	~MACH_KPSW_USE_CUR_PC
 CmpTrap:
 	/*
+   	 * Clear any pending faults caused by the fetch of the instruction
+	 * following the compare trap.
+	 */
+	add_nt		SAFE_TEMP1,r0,$-1
+	WRITE_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
+	/*
 	 * On this type of trap we are supposed to return to next PC instead
 	 * of cur PC.
 	 */
