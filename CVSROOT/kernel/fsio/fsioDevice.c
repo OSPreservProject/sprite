@@ -1325,7 +1325,7 @@ FsDeviceWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
 		*offsetPtr, length, writeBuffer, lenPtr);
 	length = *lenPtr;
 	if (status != FS_WOULD_BLOCK) {
-	    FsWaitListRemove(&devHandlePtr->readWaitList, remoteWaitPtr);
+	    FsWaitListRemove(&devHandlePtr->writeWaitList, remoteWaitPtr);
 	}
 	devHandlePtr->modifyTime = fsTimeInSeconds;
 	*offsetPtr += length;
