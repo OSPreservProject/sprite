@@ -1356,9 +1356,7 @@ MachSysCall:
  * Check the magic number.
  */
     li		k0, MACH_SYSCALL_MAGIC
-    beq		t1, k0, 1f
-    nop
-    j		Mach_UserGenException
+    bne		t1, k0, UNIXSyscall
     nop
 1:
     add		t7, gp, zero			# Save the user's gp in t7
@@ -1486,6 +1484,12 @@ sysCallReturn:
     lw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(s0)
     lw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(s0)
     lw		a2, MACH_TRAP_REGS_OFFSET + (A2 * 4)(s0)
+/*
+ * V1 and A3 are restored for UNIX binary compatibility.
+ */
+    lw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
+    lw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(s0)
+
     beq		v0, zero, sysCallRestore
     lw		v0, MACH_TRAP_REGS_OFFSET + (V0 * 4)(s0)
     or		s8, s8, MACH_SR_COP_1_BIT
@@ -1523,6 +1527,172 @@ sysCallRestore:
  */
     j		k0
     rfe
+
+.end MachSysCall
+.set reorder
+
+/*----------------------------------------------------------------------------
+ *
+ * UNIXSyscall --
+ *
+ *	Handle a UNIX system call.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+.set noreorder
+    .globl UNIXSyscall
+    .ent UNIXSyscall, 0
+UNIXSyscall:
+/*
+ * If we are tracing system calls are we have a signal or long jump return
+ * do it the slow way.  Signal returns are done the slow way because they
+ * have to do a full restore.
+ */
+    lw		k0, machUNIXSyscallTrace
+    beq		v0, MACH_UNIX_LONG_JUMP_RETURN, Mach_UserGenException
+    nop
+    beq		v0, MACH_UNIX_SIG_RETURN, Mach_UserGenException
+    nop
+    bne		k0, zero, Mach_UserGenException
+    nop
+
+    add		t7, gp, zero			# Save the user's gp in t7
+    la		gp, _gp				# Switch to the kernel's gp
+/*
+ * See if this system call is valid.
+ */
+    lw		t0, machNumUNIXSyscalls		# t0 <= Maximum sys call value.
+    nop
+    add		t0, t0, 1			
+    sltu	t0, v0, t0			# Is v0 < t0 ?	
+    bne		t0, zero, 1f			# If so then continue on.
+    nop
+/*
+ * System call number is too big.  Return EINVAL to
+ * the user.
+ */
+    mfc0	t0, MACH_COP_0_EXC_PC
+    add		gp, t7, zero
+    li		v0, 22
+    li		a3, 1
+    add		t0, t0, 4
+    j		t0
+    rfe
+/* 
+ * Now we know that we have a good system call number so go ahead and
+ * save state and switch to the kernel's stack.
+ */
+1:
+    lw		t1, machCurStatePtr
+    add		t2, sp, zero
+    mfc0	t3, MACH_COP_0_EXC_PC
+    sw		sp, MACH_TRAP_REGS_OFFSET + (SP * 4)(t1)
+    sw		t7, MACH_TRAP_REGS_OFFSET + (GP * 4)(t1)
+    sw		s0, MACH_TRAP_REGS_OFFSET + (S0 * 4)(t1)
+    sw		s1, MACH_TRAP_REGS_OFFSET + (S1 * 4)(t1)
+    sw		s2, MACH_TRAP_REGS_OFFSET + (S2 * 4)(t1)
+    sw		s3, MACH_TRAP_REGS_OFFSET + (S3 * 4)(t1)
+    sw		s4, MACH_TRAP_REGS_OFFSET + (S4 * 4)(t1)
+    sw		s5, MACH_TRAP_REGS_OFFSET + (S5 * 4)(t1)
+    sw		s6, MACH_TRAP_REGS_OFFSET + (S6 * 4)(t1)
+    sw		s7, MACH_TRAP_REGS_OFFSET + (S7 * 4)(t1)
+    sw		s8, MACH_TRAP_REGS_OFFSET + (S8 * 4)(t1)
+    sw		ra, MACH_TRAP_REGS_OFFSET + (RA * 4)(t1)
+    sw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(t1)
+    sw		t3, MACH_USER_PC_OFFSET(t1)
+/*
+ * Change to the kernel's stack, enable interrupts and turn off the
+ * floating point coprocessor.
+ */
+    mfc0	s8, MACH_COP_0_STATUS_REG
+    lw		sp, MACH_KERN_STACK_END_OFFSET(t1)
+    and		s8, s8, ~MACH_SR_COP_1_BIT
+    or		t3, s8, MACH_SR_INT_ENA_CUR
+    mtc0	t3, MACH_COP_0_STATUS_REG
+/*
+ * Now fetch the args.  The user's stack pointer is in t2 and the 
+ * current state pointer in t1.
+ */
+    sll		t0, v0, 2	# t0 <= v0 * 4
+    sll		t3, v0, 3	# t3 <= v0 * 8
+    add		t0, t0, t3	# t0 <= v0 * 12
+    la		t3, machUNIXSysCallTable
+    add		t0, t0, t3
+    lw		t3, 4(t0)	# t3 <= number of arguments.
+    add		s3, v0, zero	# Save syscall type in s3.
+    sll		t3, t3, 2
+    la		t4, machArgDispatchTable
+    add		t3, t3, t4
+    lw		t3, 0(t3)	# t3 <= pointer to arg fetch routine.
+    nop
+    jal		t3
+    add		v0, zero, zero
+    bne		v0, zero, unixSyscallReturn
+    add		s0, t1, zero			# Save pointer to current state
+						#    in s0
+
+/* 
+ * We got the args now call the routine.
+ */
+    lw		t3, 8(t0)	# t3 <= routine to call.
+    nop		
+    jal		t3		# Call the routine.
+    nop
+
+/*
+ * Return to the user.  We have the following saved information:
+ *	s0:	machCurStatePtr
+ *	s3:	syscall type.
+ *	s8:	status register.
+ */
+unixSyscallReturn:
+    lw		s2, proc_RunningProcesses	# s2 <= pointer to running
+						#       processes array.
+    lw		s1, machKcallTableOffset	# s1 <= Offset of kcall table
+						#       in proc table entry.
+    lw		s2, 0(s2)			# s2 <= pointer to currently
+						#       running process
+    add		s1, s1, 4			# Special handling flag follows
+						# kcallTable field. 
+    add		s1, s2, s1			# s1 <= pointer to special
+						#       handling flag.
+/*
+ * We now have the following saved information:
+ *
+ *	s0:	machCurStatePtr
+ *	s1:	procPtr->specialHandling
+ *	s2:	procPtr
+ *	s3:	syscall type.
+ *	s8:	status register
+ */
+/*
+ * Set up the registers correctly.  
+ */
+1:
+    bne		v0, zero, 1f
+    nop
+    lw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET(s0)
+    lw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
+    add		a3, zero, zero
+    sw		v0, MACH_TRAP_REGS_OFFSET + (V0 * 4)(s0)
+    sw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(s0)
+    j		sysCallReturn
+    nop
+1:
+    jal		Compat_MapCode
+    add		a0, v0, zero
+    sw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET(s0)
+    lw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
+    li		a3, 1
+    sw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(s0)
+    j		sysCallReturn
+    nop
 
 .end MachSysCall
 .set reorder
