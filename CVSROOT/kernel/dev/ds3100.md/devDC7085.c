@@ -523,8 +523,6 @@ ENTRY void
 DevDC7085Activate(dcPtr)
     register DevDC7085 *dcPtr;		/* Information about the device. */
 {
-    int speed;
-
     MASTER_LOCK(&dc7085Mutex);
 
     switch (dcPtr->port) {
@@ -702,7 +700,7 @@ int
 BaudToReg(baud)
     int	baud;
 {
-    int	i;
+    int	i = 0;
 
     while (baudMap[i].baud != baud && baudMap[i].baud != -1) {
 	i++;
