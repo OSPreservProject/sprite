@@ -24,13 +24,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "string.h"
 #include "fs.h"
+#include "fsio.h"
 #include "sys/mman.h"
 
-static ReturnStatus	VmMunmapInt();
 extern Vm_SharedSegTable sharedSegTable;
-void		Fsio_StreamCopy();
+char	 *sprintf();
 
 int vmShmDebug = 0;	/* Shared memory debugging flag. */
+
+/*
+ * Forward declaration.
+ */
+static ReturnStatus vmMunmapInt();
 
 
 /*
@@ -546,7 +551,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     status = Fs_GetAttrStream(filePtr,&attr);
     if (status != SUCCESS) {
 	printf("Vm_Mmap: Fs_GetAttrStream failure\n");
-	Fs_Close(filePtr);
+	(void)Fs_Close(filePtr);
 	return status;
     }
     dprintf("file: fileNumber %d size %d\n",attr.fileNumber, attr.size);
@@ -556,14 +561,14 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
      */
     if (attr.type != FS_FILE) {
 	printf("Vm_Mmap: not a file\n");
-	Fs_Close(filePtr);
+	(void)Fs_Close(filePtr);
 	return VM_WRONG_SEG_TYPE;
     }
     if (!(filePtr->flags & FS_READ) || !(prot & (PROT_READ | PROT_WRITE)) ||
 	    ((prot & PROT_WRITE) && !(filePtr->flags & FS_WRITE)) ||
 	    ((prot & PROT_EXEC) && !(filePtr->flags & FS_EXECUTE))) {
 	printf("Vm_Mmap: protection failure\n");
-	Fs_Close(filePtr);
+	(void)Fs_Close(filePtr);
 	return VM_WRONG_SEG_TYPE;
     }
 
@@ -580,7 +585,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     if (status != SUCCESS) {
 	printf("Vm_Mmap: VmMach_SharedStart failure\n");
 	UNLOCK_SHM_MONITOR;
-	Fs_Close(filePtr);
+	(void)Fs_Close(filePtr);
 	return status;
     }
 
@@ -635,7 +640,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	    if (status != SUCCESS) {
 		printf("VmAddToSeg failure\n");
 		UNLOCK_SHM_MONITOR;
-		Fs_Close(filePtr);
+		(void)Fs_Close(filePtr);
 		return status;
 	    }
 	}
@@ -855,7 +860,7 @@ VmMunmapInt(startAddr, length, noError)
 		/*
 		 * Remove the mapped region.
 		 */
-		VmDeleteSharedSegment(procPtr,segProcPtr);
+		Vm_DeleteSharedSegment(procPtr,segProcPtr);
 	    }
 	}
 	if (addr == addr1) {
@@ -868,7 +873,7 @@ VmMunmapInt(startAddr, length, noError)
     dprintf("Vm_Munmap: done\n");
     return status ;
 }
-
+
 /*
  * Expansion of the segOffset and VmGetAddrPTEPtr macros for easier
  * debugging.
