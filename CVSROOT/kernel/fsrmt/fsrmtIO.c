@@ -1019,7 +1019,7 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 		size = 3 * sizeof(int);
 		fmtStatus = Fmt_Convert("w3", ioctl.format, &inSize,
 			    offsetPtr, mach_Format, &size,
-			    (Address) &tmp);
+			    (Address) tmp);
 		if (fmtStatus != 0) {
 		    printf("Format of old offset failed <0x%x>\n", 
 			fmtStatus);
