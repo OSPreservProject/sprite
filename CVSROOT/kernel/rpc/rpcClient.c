@@ -57,10 +57,10 @@ int	rpcMaxFactor = 5000;	/* rpcMaxWait is rpcMaxFactor times
 				 * each retry (when receiving acks or not),
 				 * up to this maximum.  */
 
-int	rpcMaxTries = 5;	/* Number of times to re-send before aborting.
+int	rpcMaxTries = 8;	/* Number of times to re-send before aborting.
 				 * If the initial timeout is .1 sec, and it
 				 * doubles until 5 sec, 5 retries means a
-				 * total timeout period of about 3 seconds. */
+				 * total timeout period of about 6 seconds. */
 
 /*
  * Watchdog against lots of acknowledgments from a server.  This limit causes
