@@ -736,13 +736,13 @@ retry:
 void
 DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
 		     interrupt, IOPBPtr)
-    char command;		/* One of the standard Xylogics commands */
-    DevXylogicsDisk *diskPtr;	/* Spefifies unit, drive type, etc */
-    Dev_DiskAddr *diskAddrPtr;	/* Head, sector, cylinder */
-    int numSectors;		/* Number of sectors to transfer */
-    Address address;		/* Main memory address of the buffer */
-    Boolean interrupt;		/* If TRUE use interupts, else poll */
-    DevXylogicsIOPB *IOPBPtr;	/* I/O Parameter Block passed to controller */
+    char command;			/* One of the Xylogics commands */
+    DevXylogicsDisk *diskPtr;		/* Spefifies unit, drive type, etc */
+    register Dev_DiskAddr *diskAddrPtr;	/* Head, sector, cylinder */
+    int numSectors;			/* Number of sectors to transfer */
+    register Address address;		/* Main memory address of the buffer */
+    Boolean interrupt;			/* If TRUE use interupts, else poll */
+    register DevXylogicsIOPB *IOPBPtr;	/* I/O Parameter Block  */
 {
     Byte_Zero(sizeof(DevXylogicsIOPB), (Address)IOPBPtr);
 
@@ -752,7 +752,7 @@ DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
     IOPBPtr->interrupt	 	= interrupt;
     IOPBPtr->command	 	= command;
 
-    IOPBPtr->intrIOPB	 	= interrupt;
+    IOPBPtr->intrIOPB	 	= interrupt;	/* Polling or interrupt mode */
     IOPBPtr->autoSeekRetry	= 1;
     IOPBPtr->enableExtras	= 0;
     IOPBPtr->eccMode		= 2;	/* Correct soft errors for me, please */
@@ -779,7 +779,7 @@ DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
 	    Sys_Printf("%x: ", address);
 	    Sys_Panic(SYS_FATAL, "Xylogics data address not in DMA space\n");
 	}
-	(int)address = (int)address - VMMACH_DMA_START_ADDR;
+	address = (Address)( (int)address - VMMACH_DMA_START_ADDR );
 	IOPBPtr->relocHigh	= ((int)address & 0xff000000) >> 24;
 	IOPBPtr->relocLow	= ((int)address & 0x00ff0000) >> 16;
 	IOPBPtr->dataAddrHigh	= ((int)address & 0x0000ff00) >> 8;
