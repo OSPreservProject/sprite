@@ -149,18 +149,16 @@ WaitTimeSubr(wakeupTime)
     Timer_Ticks wakeupTime;		/* Time when process will wakeup */
 {
     Proc_ControlBlock 	*procPtr;	
-    Timer_QueueElement 	*wakeupElementPtr;
+    Timer_QueueElement 	wakeupElement;
     Boolean 		wokeUp = FALSE;
     Timer_Ticks		currentTime;		
     Boolean		sigPending;
 
     
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-    wakeupElementPtr = 
-		(Timer_QueueElement *) Mem_Alloc(sizeof(Timer_QueueElement));
-    wakeupElementPtr->routine    = Sync_WakeupProcess; 
-    wakeupElementPtr->clientData = (ClientData) procPtr;
-    wakeupElementPtr->time       = wakeupTime;
+    wakeupElement.routine    = Sync_WakeupProcess; 
+    wakeupElement.clientData = (ClientData) procPtr;
+    wakeupElement.time       = wakeupTime;
 
     /*
      * Get the scheduler master lock here.  This is done to ensure that
@@ -169,7 +167,7 @@ WaitTimeSubr(wakeupTime)
      */
 
     MASTER_LOCK(sched_Mutex);
-    Timer_ScheduleRoutine(wakeupElementPtr, FALSE);
+    Timer_ScheduleRoutine(&wakeupElement, FALSE);
 
     /*
      * Sleep until the designated time passes.  This is done in a loop,
@@ -188,9 +186,8 @@ WaitTimeSubr(wakeupTime)
 	Timer_GetCurrentTicks(&currentTime);
     } while (Timer_TickLT(currentTime, wakeupTime) && !sigPending);
 
-    Timer_DescheduleRoutine(wakeupElementPtr);
+    Timer_DescheduleRoutine(&wakeupElement);
     MASTER_UNLOCK(sched_Mutex);
-    Mem_Free((Address) wakeupElementPtr);
 
     return(sigPending);
 }
