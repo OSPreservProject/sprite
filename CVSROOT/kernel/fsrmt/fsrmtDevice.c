@@ -406,12 +406,6 @@ FsDeviceRemoteOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
     storage.replyDataSize = 0;
 
     status = Rpc_Call(ioFileIDPtr->serverID, RPC_FS_DEV_OPEN, &storage);
-    /*
-     * This used to be freed automatically when the request data pointed
-     * to this rather than our copying it over to the request parameter
-     * portion.
-     */
-    Mem_Free(inBuffer);
 
     if (status == SUCCESS) {
 	/*
