@@ -16,14 +16,14 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _SCSIHBADEVICE
-#define _SCSIHBADEVICE
+#ifndef _SCSI_HBA_DEVICE
+#define _SCSI_HBA_DEVICE
 
 
 
-ReturnStatus DevSCSIDeviceOpen();
-ReturnStatus DevSCSIDeviceIOControl();
-ReturnStatus DevSCSIDeviceClose();
+extern ReturnStatus DevSCSIDeviceOpen();
+extern ReturnStatus DevSCSIDeviceIOControl();
+extern ReturnStatus DevSCSIDeviceClose();
 
 
 #endif /* _SCSIHBADEVICE */

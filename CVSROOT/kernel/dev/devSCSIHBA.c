@@ -55,10 +55,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 /* ARGSUSED */
 ReturnStatus
-DevSCSIDeviceOpen(devicePtr, useFlags, token)
+DevSCSIDeviceOpen(devicePtr, useFlags, token, flagsPtr)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
     int useFlags;		/* Flags from the stream being opened */
     Fs_NotifyToken token;	/* Call-back token for input, unused here */
+    int	 *flagsPtr;		/* OUT: Device open flags. */
 {
     ReturnStatus status;
     ScsiDevice *devPtr;
@@ -71,7 +72,7 @@ DevSCSIDeviceOpen(devicePtr, useFlags, token)
     if (devPtr == (ScsiDevice *) NIL) {
 	return DEV_NO_DEVICE;
     }
-    devicePtr->clientData = (ClientData) devPtr;
+    devicePtr->data = (ClientData) devPtr;
     return(SUCCESS);
 }
 
@@ -97,8 +98,7 @@ DevSCSIDeviceIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
     Fs_IOReply *replyPtr;	/* Size of outBuffer and returned signal */
 {
-    ScsiTape *tapePtr;
-
+    ScsiDevice *devPtr;
     devPtr = (ScsiDevice *)(devicePtr->data);
     return DevScsiIOControl(devPtr, ioctlPtr, replyPtr);
 }
@@ -130,7 +130,7 @@ DevSCSIDeviceClose(devicePtr, useFlags, openCount, writerCount)
     ReturnStatus status = SUCCESS;
 
     devPtr = (ScsiDevice *)(devicePtr->data);
-    (void) DevScsiReleaseDevice(tapePtr->devPtr);
+    (void) DevScsiReleaseDevice(devPtr);
     devicePtr->data = (ClientData) NIL;
     return(status);
 }
