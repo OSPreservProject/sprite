@@ -1806,13 +1806,28 @@ ProcDoRemoteExec(procPtr)
 }
 
 
+/*
+ * The following table contains the functions to check if an executable
+ * is of a particular machine type.
+ */
 int	hostFmt = HOST_FMT;
-char *(*(machType[])) () =  {
+#ifdef __STDC__
+procMachType *machType[] =  {
     machType68k,
     machTypeSparc,
     machTypeSpur,
     machTypeMips,
+    machTypeSymm,
 };
+#else
+procMachType (*machType[])() =  {
+    machType68k,
+    machTypeSparc,
+    machTypeSpur,
+    machTypeMips,
+    machTypeSymm,
+};
+#endif
 /*
  *----------------------------------------------------------------------
  *
