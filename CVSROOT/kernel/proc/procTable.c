@@ -34,8 +34,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Sync_Lock	tableLock = {0, 0};
 #define	LOCKPTR &tableLock
 
+static Proc_ControlBlock  *RunningProcesses[MACH_MAX_NUM_PROCESSORS];
+Proc_ControlBlock  **proc_RunningProcesses = RunningProcesses;
 Proc_ControlBlock **proc_PCBTable;
-Proc_ControlBlock  **proc_RunningProcesses = (Proc_ControlBlock **)NIL;
+
 #define PROC_MAX_PROCESSES 256
 #define PROC_PCB_NUM_ALLOC 16
 int proc_MaxNumProcesses;
@@ -96,9 +98,6 @@ Proc_InitTable()
 	proc_PCBTable[i] = (Proc_ControlBlock *) NIL;
     }
     
-    proc_RunningProcesses = (Proc_ControlBlock **)
-        Vm_BootAlloc(maxRunningProcesses * sizeof(pcbPtr));
-
     for (i = 0; i < maxRunningProcesses; i++) {
         proc_RunningProcesses[i] = (Proc_ControlBlock *) NIL;
     }
