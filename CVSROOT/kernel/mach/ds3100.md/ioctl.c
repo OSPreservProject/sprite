@@ -394,13 +394,38 @@ MachUNIXIoctl(retValPtr, fd, request, buf)
 		sizeof(DevColorMap), (Address) buf, 0, (Address)NULL);
 	    break;
 	case SIOCGIFCONF: {
-	    struct ifconf ifc;
-
 	    /*
-	     * Fake this IO control so that X will work (gasp!!).
+	     * Fake the ifconfig ioctl.  This is a hack done for X.  
+	     * A more general implementation is probably needed.
 	     */
-	    ifc.ifc_len = 0;
-	    status = Vm_CopyOut(sizeof(struct ifconf), &ifc, buf);
+	    struct ifconf ifc;
+	    struct ifreq   ifreq;
+	    extern int	  machHostID;
+	    int		  *intPtr;
+
+	    status = Vm_CopyIn(sizeof(struct ifconf), buf, (Address)&ifc);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	    
+	    if (ifc.ifc_len < 32) {
+		status = SYS_INVALID_ARG;
+		break;
+	    }
+	    /*
+	     * We give a length of 32 and put in the request buffer 
+	     * the name ("se0"), followed by the family (AF_INET), 
+	     * and finally our internet address.
+	     */
+	    ifc.ifc_len = 32;
+	    strcpy(ifreq.ifr_name, "se0");
+	    intPtr = (int *)&ifreq.ifr_ifru;
+	    *intPtr = AF_INET;
+	    *(intPtr + 1) = machHostID;
+		
+	    status = Vm_CopyOut(sizeof(struct ifconf), (Address)&ifc, buf);
+	    status = Vm_CopyOut(32, (Address)&ifreq,
+				(Address)ifc.ifc_ifcu.ifcu_req);
 	    break;
 	}
 
