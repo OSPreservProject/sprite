@@ -123,15 +123,17 @@ Fs_EncapStream(streamPtr, bufPtr)
     status = (*fsStreamOpTable[ioHandlePtr->fileID.type].migStart) (ioHandlePtr,
 		    streamPtr->flags, rpc_SpriteID, migInfoPtr->data);
 
-    /*
-     * Clean up our reference to the stream.  We'll remove the stream from
-     * the handle table entirely if this is the last reference.  Otherwise
-     * we mark the stream as potentially being shared across the network.
-     */
-    if (streamPtr->hdr.refCount <= 1) {
-	FsStreamDispose(streamPtr);
-    } else {
-	FsHandleRelease(streamPtr, TRUE);
+    if (status == SUCCESS) {
+	/*
+	 * Clean up our reference to the stream.  We'll remove the stream from
+	 * the handle table entirely if this is the last reference.  Otherwise
+	 * we mark the stream as potentially being shared across the network.
+	 */
+	if (streamPtr->hdr.refCount <= 1) {
+	    FsStreamDispose(streamPtr);
+	} else {
+	    FsHandleRelease(streamPtr, TRUE);
+	}
     }
     DEBUG( (" status %x\n", status) );
     return(status);
