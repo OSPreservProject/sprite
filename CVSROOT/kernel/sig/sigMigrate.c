@@ -100,19 +100,25 @@ again:
         Proc_Unlock(procPtr);
 	status = Proc_WaitForMigration(processID);
 	Proc_Lock(procPtr);
-	if (status != SUCCESS) {
-	    return(status);
-	}
-	if (status == SUCCESS && procPtr->state != PROC_MIGRATED) {
+	if ((procPtr->state != PROC_MIGRATED) ||
+	    (procPtr->processID != processID)) {
 	    /*
-	     * Process was migrating back home.  Return PROC_INVALID_PID,
+	     * Process is not now migrated.  Return PROC_INVALID_PID,
 	     * which will make Sig_SendProc do a local send.
 	     */
 	    return(PROC_INVALID_PID);
 	}
+	if (status != SUCCESS) {
+	    return(status);
+	}
     }
     remoteProcessID = procPtr->peerProcessID;
     remoteHostID = procPtr->peerHostID;
+    if (remoteHostID == (int) NIL) {
+	printf("Warning: SigMigSend: process %x has no peer.\n", processID);
+	return(PROC_INVALID_PID);
+    }
+	
 
     /*
      * It is necessary to unlock the process while sending the remote
