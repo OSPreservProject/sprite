@@ -279,12 +279,16 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr)
 	(void)FsStreamClientClose(&streamPtr->clientList,
 				  migInfoPtr->srcClientID);
     }
+    /*
+     * Mark (unmark) the stream if it is being shared.  This is checked
+     * in the read and write RPC stubs in order to know what offset to use,
+     * the one here in the shadow stream, or the one from the client.
+     */
     if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
 			    migInfoPtr->flags, (Boolean *)NIL)) {
-	/*
-	 * We detected network sharing so we mark the stream.
-	 */
 	streamPtr->flags |= FS_RMT_SHARED;
+    } else {
+	streamPtr->flags &= ~FS_RMT_SHARED;
     }
     migInfoPtr->flags = streamPtr->flags | newClientStream;
     migInfoPtr->offset = streamPtr->offset;
@@ -354,9 +358,10 @@ StreamMigCallback(migInfoPtr, sharedPtr)
  *
  * FsStreamMigrate --
  *
- *	This is used to tell the source of a migration that it is ok to
- *	release its reference on the stream that migrated.  This has to
- *	done from the I/O server during the I/O migrate call in order
+ *	This is called from the stub for RPC_FS_MIGRATE on a host that
+ *	is the source of a migration.  At this point this host can
+ *	release its reference on a stream that migrated.  We are told
+ *	by the I/O server during the I/O migrate call in order
  *	to properly synchronize with closes to the stream.  For example,
  *	a stream often gets duped, then one refernce migrates and the olther
  *	reference gets closed.
