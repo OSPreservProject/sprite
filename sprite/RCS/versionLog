@@ -407,4 +407,7 @@ accessing a kernel rather than user address for the frame buffer.
 1.090	Thu Apr 18 13:27:36 PDT 1991
 Changes to SCSI code to support bigger devices.
 lockProcID => lockProcPtr.
+
+1.091	Fri Apr 19 13:54:46 PDT 1991
+fixed stupid bug in test of count limit in scsi group 0 command
     New files linked in from the net library.
