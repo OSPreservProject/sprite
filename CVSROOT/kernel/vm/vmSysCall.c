@@ -197,13 +197,13 @@ void	SetVal();
 
 /*
  * The # construct to turn a variable into a string is not handled correctly
- * on the current sun4 compiler/preprocessor set up.  This will change when
- * it's handled correctly.
+ * on the current ds3100 (non-ansi) compiler/preprocessor set up.
+ * This will change when it's handled correctly.
  */
-#if !defined(sun4) && !defined(mips)
+#if defined(__STDC__)
 #define SETVAR(var, val) SetVal(#var, val, (int *)&(var))
 #else
-#define	SETVAR(var, val) SetVal("var val", val, (int *)&(var))
+#define	SETVAR(var, val) SetVal("var", val, (int *)&(var))
 #endif /* sun4 */
 
 
