@@ -69,6 +69,7 @@ int devScsiNumHBATypes = sizeof(devScsiAttachProcs) /
  * A list of disk devices that is used when probing for a root partition.
  * The choices are:
  * Drive 0 partition 0 of xylogics 450 controller 0.
+ * Drive 1 partition c of xylogics 450 controller 0.
  * SCSI Disk target ID 0 LUN 0 partition 2 on SCSI0 HBA 0.
  * SCSI Disk target ID 0 LUN 0 partition 2 on SCSI3 HBA 0. 
  * SCSI Disk target ID 0 LUN 0 partition 0 on SCSI0 HBA 0.
@@ -79,6 +80,11 @@ Fs_Device devFsDefaultDiskPartitions[] = {
      * Mint boots from its 'a' partition.
      */
     { -1, DEV_XYLOGICS, 0, (ClientData) NIL },
+    /*
+     * Nadreck (at PARC) boots from disk LUN 1, partition c.
+     * (2 bits for LUN, then three bits for partition => 013)
+     */
+    { -1, DEV_XYLOGICS, 013, (ClientData) NIL },
     /*
      * Try the 'c' partition (#2) first.  This is the whole disk.
      * If really the 'a' partition is formatted, then Fsdm_AttachDisk
