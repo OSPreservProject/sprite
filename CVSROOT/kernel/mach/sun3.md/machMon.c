@@ -186,6 +186,9 @@ Mach_MonStartNmi()
 #ifdef sun3
 	*Mach_InterruptReg |= MACH_ENABLE_LEVEL7_INTR;
 #endif
+#ifdef sun4
+	*Mach_InterruptReg |= MACH_ENABLE_ALL_INTERRUPTS;
+#endif
 	stoppedNMI = FALSE;
     }
 }
@@ -232,6 +235,9 @@ Mach_MonStopNmi()
 #endif
 #ifdef sun3
 	*Mach_InterruptReg &= ~MACH_ENABLE_LEVEL7_INTR;
+#endif
+#ifdef sun4
+	*Mach_InterruptReg &= ~MACH_ENABLE_ALL_INTERRUPTS;
 #endif
     }
 }
