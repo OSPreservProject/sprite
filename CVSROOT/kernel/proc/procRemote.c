@@ -474,7 +474,10 @@ Proc_ResumeMigProc(pc)
      */
 
     if (proc_MigDebugLevel > 5) {
-	Sys_Printf("Calling Mach_StartUserProc.\n");
+	Sys_Printf("Calling Mach_StartUserProc(%x, %x). D0 = %x, SP = %x.\n",
+		   (Address) procPtr, pc,
+		   procPtr->machStatePtr->userState.trapRegs[D0],
+		   procPtr->machStatePtr->userState.trapRegs[SP]);
     }
     Mach_StartUserProc(procPtr, pc);
     Sys_Panic(SYS_FATAL, "ProcResumeMigProc: Mach_StartUserProc returned.\n");
