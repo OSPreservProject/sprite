@@ -201,6 +201,8 @@ typedef struct Fs_Stream {
  *	(These I/O related bit values are defined below)
  *      FS_USER - the file is a user file.  The buffer space is
  *              in a user's address space.
+ *	FS_USER_IN - For I/O Control, the input buffer is in user space
+ *	FS_USER_OUT - For I/O Control, the output buffer is in user space
  *	FS_CLIENT_CACHE_WRITE -	This write is coming from a client's cache.
  *              This means the modify time should not be updated
  *              since the client has the correct modify time.
@@ -231,6 +233,7 @@ typedef struct Fs_Stream {
 #define FS_PREFIX		0x00002000
 #define FS_SWAP			0x00004000
 #define FS_USER			0x00008000
+#define FS_USER_IN		FS_USER
 #define FS_OWNERSHIP		0x00010000
 #define FS_DELETE		0x00020000
 #define FS_LINK			0x00040000
@@ -238,6 +241,7 @@ typedef struct Fs_Stream {
 #define FS_CLIENT_CACHE_WRITE	0x00100000
 #define FS_CONSUME		0x00200000
 #define FS_TRACE_FLAG		0x00400000
+#define FS_USER_OUT		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
 #define	FS_LAST_DIRTY_BLOCK	0x02000000
 #define FS_RMT_SHARED		0x04000000
@@ -262,7 +266,7 @@ typedef struct Fs_IOParam {
     Proc_PID	procID;			/* Process ID and Family ID of this */
     Proc_PID	familyID;		/* process */
     int		uid;			/* Effective user ID */
-    int		gid;			/* Effective group ID */
+    int		reserved;		/* Not used */
 } Fs_IOParam;
 
 /*
@@ -278,11 +282,7 @@ typedef struct Fs_IOParam {
 	(ioPtr)->procID = procPtr->processID; \
 	(ioPtr)->familyID = procPtr->familyID; \
 	(ioPtr)->uid = procPtr->userID; \
-	if (procPtr->fsPtr->numGroupIDs > 0) { \
-	    (ioPtr)->gid = procPtr->fsPtr->groupIDs[0]; \
-	} else { \
-	    (ioPtr)->gid = -1; \
-	} \
+	(ioPtr)->reserved = 0; \
     }
 
 /*
@@ -327,7 +327,9 @@ typedef struct Fs_IOCParam {
     Proc_PID	procID;		/* ID of invoking process */
     Proc_PID	familyID;	/* Family of invoking process */
     int		uid;		/* Effective user ID */
-    int		gid;		/* Effective group ID */
+    int		flags;		/* FS_USER_IN and FS_USER_OUT indicate if
+				 * input and output buffers are in user space,
+				 * respectively */
 } Fs_IOCParam;
 
 /*
@@ -356,6 +358,7 @@ typedef enum {
     FS_SWAP_PAGE
 } Fs_PageType;
 
+#ifdef notdef
 /*
  * Buffer type that includes size, location, and kernel space flag.
  * This is passed into Fs_IOControl to specify the input/output buffers.
@@ -365,6 +368,7 @@ typedef struct Fs_Buffer {
     int size;
     int flags;		/* 0 or FS_USER */
 } Fs_Buffer;
+#endif
 
 /*
  * Device drivers use Fs_NotifyReader and Fs_NotifyWriter to indicate
