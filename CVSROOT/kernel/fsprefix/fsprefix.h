@@ -97,8 +97,12 @@ typedef struct FsPrefixExport {
  *					forever and causes prefix requests
  *					to be issued directly to the server
  *					instead of using broadcast.
- *	FS_PREFIX_OPEN_LOCK		Used to lock out a domain as part
- *					of bringing it offline.
+ *	FS_ANY_PREFIX			This is passed to FsPrefixHandleClose
+ *					to indicate that any type of prefix
+ *					is ok to nuke.  FsPrefixHandleClose
+ *					also takes FS_LOCAL_PREFIX,
+ *					FS_EXPORTED_PREFIX, FS_IMPORTED_PREFIX
+ *					as types to remove.
  */
 
 #define	FS_EXPORTED_PREFIX		0x1
@@ -109,7 +113,7 @@ typedef struct FsPrefixExport {
 #define FS_LINK_NOT_PREFIX		0x20
 #define FS_PREFIX_LOCKED		0x40
 #define FS_REMOTE_PREFIX		0x80
-#define FS_PREFIX_OPEN_LOCK		0x100
+#define FS_ANY_PREFIX			0x100
 
 /*
  * Major prefix table entry points.
