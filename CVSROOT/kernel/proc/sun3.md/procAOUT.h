@@ -51,6 +51,7 @@ typedef struct {
 #define	PROC_ZMAGIC	0413		/* Demand load format */
 #define PROC_MC68010	1		/* runs on '10 or '20 */
 #define PROC_MC68020	2		/* runs on '20 only */
+#define	PROC_SPARC	3		/* runs on SPARC only */
 
 /*
  * Macros which take exec structures as arguments and tell whether
