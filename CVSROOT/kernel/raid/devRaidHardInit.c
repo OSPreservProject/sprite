@@ -14,7 +14,6 @@
  * express or implied warranty.
  */
 
-#include <stdio.h>
 #include <string.h>
 #include "sync.h"
 #include "sprite.h"
@@ -25,10 +24,8 @@
 #include "devRaidLock.h"
 #include "stdlib.h"
 #include "devRaidUtil.h"
-#include "devRaidMap.h"
-#include "devRaidIOC.h"
-#include "debugMem.h"
 #include "schedule.h"
+#include "devRaidProto.h"
 
 
 /*
@@ -68,7 +65,7 @@ InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
 		    (RaidDisk *) NIL, doneProc, clientData, ctrlData);
     reconstructionControlPtr->stripeID = startStripe;
     reconstructionControlPtr->numStripe = numStripe;
-    printf("RAID:MSG:Initiating reconstruction.\n");
+    printf("RAID:MSG:Initiating reconstruction %d %d.\n",startStripe,numStripe);
     InitiateStripeHardInit(reconstructionControlPtr);
 }
 
@@ -88,11 +85,12 @@ InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
  *
  *----------------------------------------------------------------------
  */
-
+static void
 hardInitDoneProc(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {
-    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData);
+    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData,
+	    reconstructionControlPtr->status);
     FreeReconstructionControl(reconstructionControlPtr);
 }
 
@@ -235,6 +233,11 @@ hardInitReadDoneProc(reconstructionControlPtr, numFailed)
  *
  *----------------------------------------------------------------------
  */
+#ifdef TESTING
+#define NUM_REPORT_STRIPE 1
+#else
+#define NUM_REPORT_STRIPE 100
+#endif
 
 static void
 hardInitWriteDoneProc(reconstructionControlPtr, numFailed)
@@ -248,14 +251,9 @@ hardInitWriteDoneProc(reconstructionControlPtr, numFailed)
 
     if (numFailed > 0) {
         ReportHardInitFailure(stripeID);
-	MapParity(raidPtr,
-		StripeIDToSector(raidPtr, stripeID), &col, &row, &sector);
-	diskPtr = raidPtr->disk[col][row];
-	MASTER_LOCK(&diskPtr->mutex);
-	diskPtr->numValidSector = MIN(diskPtr->numValidSector, sector);
-	MASTER_UNLOCK(&diskPtr->mutex);
+	reconstructionControlPtr->status = FAILURE;
     }
-    if (stripeID % 100 == 0) {
+    if (stripeID % NUM_REPORT_STRIPE == 0) {
 	printf("RAID:MSG:%d", stripeID);
     }
     XUnlockStripe(reconstructionControlPtr->raidPtr, stripeID);
