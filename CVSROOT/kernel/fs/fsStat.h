@@ -340,7 +340,8 @@ typedef struct Fs_ConsistStats {
     int files;			/* The number of times consistency was checked*/
     int clients;		/* The number of clients considered */
     int notCaching;		/* # of other clients that weren't caching */
-    int readCaching;		/* # of other clients that were read caching */
+    int readCachingMyself;	/* # of clients that were read caching */
+    int readCachingOther;	/* # of other clients that were read caching */
     int writeCaching;		/* # of lastWriters that re-opened  */
     int writeBack;		/* # of lastWriters forced to write-back */
     int readInvalidate;		/* # of readers forced to stop caching */
