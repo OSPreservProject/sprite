@@ -16,7 +16,6 @@
 
 #include "user/proc.h"
 #include "syncMonitor.h"
-#include "vm.h"
 #include "list.h"
 #include "timer.h"
 #include "machine.h"
@@ -238,7 +237,7 @@ typedef struct Proc_ControlBlock {
      *
      *-----------------------------------------------------------------
      */
-    Vm_ProcInfo	*vmPtr;
+    struct	Vm_ProcInfo	*vmPtr;
 
     /*
      *-----------------------------------------------------------------
