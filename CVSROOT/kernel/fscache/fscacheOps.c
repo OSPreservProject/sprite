@@ -1196,7 +1196,13 @@ exit:
  * Fscache_Trunc --
  *
  *	Truncate data out of the cache.  This knows how to truncate
- *	Consuming streams.
+ *	Consuming streams.  This is called as part of file deletion
+ *	before the disk-resident descriptor and index blocks are
+ *	modified.  It is possible for blocks to remain in the cache
+ *	after this call for various reasons like they are locked
+ *	due to I/O.  The Fscache_DeleteFile procedure can be called
+ *	after the descriptor is re-written in order to really clean
+ *	up the cache state associated with this file.
  *
  * Results:
  *	None.
@@ -1274,70 +1280,93 @@ Fscache_Trunc(cacheInfoPtr, length, flags)
 		Fscache_BlockTrunc(cacheInfoPtr, firstBlock - 1,
 				  length - (firstBlock - 1) * FS_BLOCK_SIZE);
 	    }
-	    if (flags & FSCACHE_TRUNC_DELETE) {
-		if (!List_IsEmpty(&cacheInfoPtr->blockList)) {
-		    printf("FirstByte %d LastByte %d\n", firstByte, lastByte);
-		    printf("File \"%s\" <%d,%d>: %d cache blocks left after delete blocks %d->%d\n",
+        }
+	cacheInfoPtr->attr.modifyTime = fsutil_TimeInSeconds;
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fscache_DeleteFile --
+ *
+ *	Nuke the cache state associated with this file.  This is called
+ *	from Fsio_FileTrunc after the file has been deleted from disk.
+ *	The file handle will be deleted shortly, and it is crucial that
+ *	this procedure be called in order to fully clean up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data blocks are removed from the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fscache_DeleteFile(cacheInfoPtr)
+    Fscache_FileInfo *cacheInfoPtr;
+{
+    int firstBlock;
+    int lastBlock;
+    int firstByte, lastByte;	/* For debugging */
+
+    LOCK_MONITOR;
+
+    if (cacheInfoPtr->blocksInCache > 0) {
+	printf("Fscache_DeleteFile \"%s\" <%d,%d>: %d cache blocks left\n",
 			Fsutil_HandleName(cacheInfoPtr->hdrPtr),
 			cacheInfoPtr->hdrPtr->fileID.major,
 			cacheInfoPtr->hdrPtr->fileID.minor,
-			cacheInfoPtr->blocksInCache, firstBlock, lastBlock);
-		    /*
-		     * Use this loop to recover.  Apparently disk full
-		     * conditions can cause file truncations to fail.
-		     */
-		    while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
-			register Fscache_Block *blockPtr;
-			register List_Links *listItem;
-			listItem = List_First(&cacheInfoPtr->blockList);
-			blockPtr = FILE_LINKS_TO_BLOCK(listItem);
-			printf("%d ", blockPtr->blockNum);
-			if (blockPtr->refCount > 0) {
-			    printf("ref %d! ", blockPtr->refCount);
-			}
-			if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-			    panic("Mistake in block list code\n");
-			}
-			Fscache_FileInvalidate(cacheInfoPtr, blockPtr->blockNum,
-				blockPtr->blockNum);
-		    }
-		    printf("\n");
-		}
-		if (!List_IsEmpty(&cacheInfoPtr->dirtyList)) {
-		    register Fscache_Block *blockPtr;
-		    register List_Links *listItem;
-		    printf("File \"%s\" <%d,%d>: dirty blocks left in cache\n",
-			Fsutil_HandleName(cacheInfoPtr->hdrPtr),
-			cacheInfoPtr->hdrPtr->fileID.major,
-			cacheInfoPtr->hdrPtr->fileID.minor);
-		    printf("FirstByte %d LastByte %d Blocks:",
-			firstByte, lastByte);
-		    listItem = List_First(&cacheInfoPtr->dirtyList);
-		    while (!List_IsAtEnd(&cacheInfoPtr->dirtyList, listItem)) {
-			blockPtr = DIRTY_LINKS_TO_BLOCK(listItem);
-			printf("%d ", blockPtr->blockNum);
-			if (blockPtr->refCount > 0) {
-			    printf("ref %d! ", blockPtr->refCount);
-			}
-			if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-			    panic("Mistake in block list code\n");
-			}
-			listItem = listItem->nextPtr;
-#ifdef notdef
-			/*
-			 * Don't want to invalidate these as they are
-			 * probably indirect blocks that will be needed
-			 * shortly by Fsdm_FileDescTrunc.
-			 */
-			Fscache_FileInvalidate(cacheInfoPtr, blockPtr->blockNum,
-				blockPtr->blockNum);
-#endif notdef
-		    }
-		    printf("\n");
-		}
+			cacheInfoPtr->blocksInCache);
+	/*
+	 * Use this loop to recover.  Disk full
+	 * conditions can cause file truncations to fail.
+	 */
+	while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
+	    register Fscache_Block *blockPtr;
+	    register List_Links *listItem;
+	    listItem = List_First(&cacheInfoPtr->blockList);
+	    blockPtr = FILE_LINKS_TO_BLOCK(listItem);
+	    printf("%d ", blockPtr->blockNum);
+	    if (blockPtr->refCount > 0) {
+		printf("ref %d! ", blockPtr->refCount);
 	    }
-        }
-	cacheInfoPtr->attr.modifyTime = fsutil_TimeInSeconds;
+	    Fscache_FileInvalidate(cacheInfoPtr, blockPtr->blockNum,
+		    blockPtr->blockNum);
+	}
+	printf("\n");
+    }
+    if (!List_IsEmpty(&cacheInfoPtr->dirtyList)) {
+	register Fscache_Block *blockPtr;
+	register List_Links *listItem;
+	printf("Fscache_DeleteFile \"%s\" <%d,%d>: dirty blocks left in cache\n",
+	    Fsutil_HandleName(cacheInfoPtr->hdrPtr),
+	    cacheInfoPtr->hdrPtr->fileID.major,
+	    cacheInfoPtr->hdrPtr->fileID.minor);
+	listItem = List_First(&cacheInfoPtr->dirtyList);
+	while (!List_IsAtEnd(&cacheInfoPtr->dirtyList, listItem)) {
+	    blockPtr = DIRTY_LINKS_TO_BLOCK(listItem);
+	    printf("%d ", blockPtr->blockNum);
+	    if (blockPtr->refCount > 0) {
+		printf("ref %d! ", blockPtr->refCount);
+	    }
+	    listItem = listItem->nextPtr;
+	    Fscache_FileInvalidate(cacheInfoPtr, blockPtr->blockNum,
+		    blockPtr->blockNum);
+	}
+	printf("\n");
+    }
+    /*
+     * At this point the file should have no cache blocks associated
+     * with it, clean or dirty, and the file itself should not be
+     * on the dirty list or being written out.
+     */
+    if ((cacheInfoPtr->blocksInCache > 0) ||
+	(cacheInfoPtr->flags & (FSCACHE_FILE_ON_DIRTY_LIST|
+				FSCACHE_FILE_BEING_WRITTEN))) {
+	panic("Fscache_DeleteFile failed\n");
     }
     UNLOCK_MONITOR;
 }
