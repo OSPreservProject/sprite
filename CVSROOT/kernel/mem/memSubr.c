@@ -19,6 +19,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "vm.h"
 
+/*
+ * MemPrintProc is the routine called by the routines in memory.c
+ * when they have something to print. It is set to PrintProc in 
+ * MemProcInit().
+ */
+
+static  void	PrintProc();
+void		(*memPrintProc)();
+ClientData	memPrintData;
+
+
 
 
 /*
@@ -75,14 +86,14 @@ MemChunkAlloc(size, addressPtr)
     *addressPtr = Vm_RawAlloc(size);
     return(size);
 }
-
 
+
 /*
  *----------------------------------------------------------------------
  *
- * Mem_PrintTrace --
+ * PrintProc --
  *
- *	Print out the given trace information about a memory trace record.
+ *	The default printing routine for the kernel.
  *
  * Results:
  *	None.
@@ -92,50 +103,36 @@ MemChunkAlloc(size, addressPtr)
  *
  *----------------------------------------------------------------------
  */
-void
-Mem_Trace(allocated, blockAddr, pc, numBytes)
-    Boolean	allocated;
-    Address	blockAddr;
-    Address	pc;
-    int		numBytes;
-{
-    Sys_Printf("%s: PC=%x size=%d blockAddr=%d\n",
-		allocated ? "Alloc" : "Free", pc, numBytes, blockAddr);
-}
 
-void	PrintProc();
-
-static	int	smallMinNum = 50;
-static	int	largeMinNum = 10;
-static	int	largeMaxSize = 10000;
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Mem_DumpStats --
- *
- *	Print out memory statistics.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-Mem_DumpStats()
-{
-    Mem_PrintStats(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
-}
-
-void
+static void
 PrintProc(clientData, format, args)
     ClientData	clientData;
     char	*format;
     int		args;
 {
     Sys_DoPrintf(format, (char *) &args);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MemPrintInit --
+ *
+ *	Initializes the default printing routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The default printing routine is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MemPrintInit()
+{
+    memPrintProc = PrintProc;
+    memPrintData = (ClientData) 0;
 }
