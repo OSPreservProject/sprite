@@ -26,10 +26,8 @@
 #include "devRaidLock.h"
 #include "stdlib.h"
 #include "devRaidUtil.h"
-#include "devRaidMap.h"
-#include "devRaidIOC.h"
-#include "debugMem.h"
 #include "schedule.h"
+#include "devRaidProto.h"
 
 
 /*
@@ -126,11 +124,13 @@ blockIODoneProc(reqPtr, status, amountTransferred)
     /*
      * Check to see if disk has failed since request was initiated.
      */
+    LockSema(&reqPtr->diskPtr->lock);
     if (!IsValid(reqPtr->diskPtr,
 	    ByteToSector(reqPtr->raidPtr, reqPtr->devReq.startAddress),
 	    ByteToSector(reqPtr->raidPtr, reqPtr->devReq.bufferLen))) {
 	status = FAILURE;
     }
+    UnlockSema(&reqPtr->diskPtr->lock);
 
     reqPtr->status = status;
     if (status != SUCCESS) {
