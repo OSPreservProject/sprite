@@ -32,13 +32,15 @@
  *	Changes the insert register.
  */
 #define LD_CONSTANT(rd, constant) \
+	rd_insert	VOL_TEMP1; \
 	add_nt		rd, r0, $((constant)&0xff) ; \
 	wr_insert	$1 ; \
 	insert		rd, rd, $(((constant)>>8)&0xff) ; \
 	wr_insert	$2 ; \
 	insert		rd, rd, $(((constant)>>16)&0xff) ; \
 	wr_insert	$3 ; \
-	insert		rd, rd, $(((constant)>>24)&0xff)
+	insert		rd, rd, $(((constant)>>24)&0xff); \
+	wr_insert	VOL_TEMP1
 
 /*
  * SET_KPSW --
@@ -201,44 +203,6 @@
 	st_external	VOL_TEMP2, r0, $MACH_RPTEVA_3|MACH_CO_WR_REG 
 
 /*
- * JUMP_VIRTUAL(rx) --  
- *	
- *	Switch from fetching instructions from the physical address space
- *	to the virtual address space.
- *
- *	rx -- 	register containing the virtual address to begin execution.
- *
- * Side Effects:
- *	1) IB is disabled. VOL_TEMP1 contains the previous value of the
- *	   K_IBuffer
- *	   bit.
- *	2) The INVALIDATE_IB instruction MUST be executed before re-enabling
- *	   the IBuffer.
- */
-#define JUMP_VIRTUAL(rx) \
-	rd_kpsw		VOL_TEMP1 ;\
-	and		VOL_TEMP2, VOL_TEMP1, $~MACH_KPSW_IBUFFER_ENA ;\
-	and 		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_IBUFFER_ENA ;\
-	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_VIRT_IFETCH_ENA ;\
-	jump_reg	rx, r0 ;\
-	wr_kpsw		VOL_TEMP2, r0
-
-
-/*
- * REENABLE_IB -- 
- *
- *	Re-enable the IB after executing a 'jump_virtual' macro
- *
- *	Assumptions:
- *		VOL_TEMP1 contains the previous value of the K_IBuffer bit.
- */
-#define REENABLE_IB() \
-	invalidate_ib ;\
-	rd_kpsw		VOL_TEMP2 ;\
-	or		VOL_TEMP2, VOL_TEMP2, VOL_TEMP1 ;\
-	wr_kpsw		VOL_TEMP2, r0
-
-/*
  * READ_STATUS_REGS(baseVal, resReg)
  *
  *	Read the value out of the interrupt status, interrupt mask and
@@ -293,7 +257,7 @@
 	cmp_br_delayed	lt, VOL_TEMP2, VOL_TEMP3, 1f; \
 	Nop; \
 	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MAX_SWP_OFFSET; \
-	sub_nt		VOL_TEMP3, VOL_TEMP3, $MACH_SAVED_REG_SET_SIZE; \
+	sub		VOL_TEMP3, VOL_TEMP3, $MACH_SAVED_REG_SET_SIZE; \
 	cmp_br_delayed	le, VOL_TEMP2, VOL_TEMP3, goodLabel; \
 	Nop; \
 1:
@@ -319,7 +283,7 @@
 	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END; \
 	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START; \
 	rd_special	VOL_TEMP3, cwp; \
-	sub_nt		VOL_TEMP3, VOL_TEMP3, $4; \
+	sub		VOL_TEMP3, VOL_TEMP3, $4; \
 	and		VOL_TEMP3, VOL_TEMP3, 0x1c; \
 	sll		VOL_TEMP3, VOL_TEMP3, $3; \
 	sll		VOL_TEMP3, VOL_TEMP3, $2; \
@@ -386,7 +350,7 @@
 #define	USER_SWP_ERROR() \
 	rd_kpsw		VOL_TEMP1; \
 	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA; \
-	wr_kpsw		VOL_TEMP1; \
+	wr_kpsw		VOL_TEMP1, $0; \
 	SWITCH_TO_KERNEL_STACKS(); \
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP; \
 	call		_MachUserError; \
@@ -412,7 +376,7 @@
 	ld_32		SPILL_SP, r0, $debugSpillStackEnd; \
 	ld_32		VOL_TEMP1, r0, $debugSWStackBase; \
 	rd_special	VOL_TEMP2, cwp; \
-	sub_nt		VOL_TEMP2, VOL_TEMP2, $4; \
+	sub		VOL_TEMP2, VOL_TEMP2, $4; \
 	and		VOL_TEMP2, VOL_TEMP2, 0x1c; \
 	sll		VOL_TEMP2, VOL_TEMP2, $3; \
 	sll		VOL_TEMP2, VOL_TEMP2, $2; \
@@ -484,5 +448,12 @@
 #define FETCH_CUR_INSTRUCTION(destReg) \
         ld_32           destReg, CUR_PC_REG, $0
 #endif
+
+/*
+ * EXT_MASK(mask)
+ *
+ *	Take the given unsigned mask and extend the sign bit.
+ */
+#define	EXT_MASK(mask) (-((~(mask))+1))
 
 #endif _MACHASMDEFS

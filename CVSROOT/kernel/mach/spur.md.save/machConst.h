@@ -343,12 +343,6 @@
 #define	MACH_INPUT_REG1		11
 
 /*
- * The base of the user's saved window stack is the base of the stack
- * segment.
- */
-#define	MACH_SAVED_WINDOW_STACK_BASE	(3 * VMMACH_SEG_SIZE)
-
-/*
  * Bound on the kernel's address space.
  *
  *	MACH_KERN_START		The lowest valid kernel address.

@@ -122,7 +122,7 @@
 	Nop
 
 	.org 0x1010
-	jump Error		# Error
+	jump ErrorTrap		# Error
 	Nop
 
 	.org 0x1020
@@ -244,8 +244,6 @@ OpRecov:
 	add_nt		r31, r27, $0
 	add_nt		r31, r28, $0
 	add_nt		r31, r29, $0
-	Error					# last two cases are errors
-	Error
 
 /*
  ****************************************************************************
@@ -254,6 +252,130 @@ OpRecov:
  *
  ****************************************************************************
  */
+
+.org	0x2000
+Start:
+/*
+ * The initial boot code.  This is where we start executing in physical mode
+ * after we are down loaded.  Our job is to:
+ *
+ *	1) Initialize VM.
+ *	2) Jump to virtual mode
+ *	3) Initialize the swp, cwp and spill sp.
+ *	4) Jump to the main routine.
+ *
+ * The following code assumes that the initial kernel does not take more
+ * than 4 Mbytes of memory since it starts the kernel page tables at
+ * 4 Mbytes.
+ */
+#define	KERN_PT_FIRST_PAGE	1024
+#define	KERN_PT_BASE		(KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE)
+#define	KERN_PT2_BASE		(KERN_PT_BASE + VMMACH_SEG_PT_SIZE / 4 * VM_KERN_PT_QUAD)
+
+/*
+ * In this code registers have the following meaning:
+ *
+ *	r1:	The base address of the page tables.
+ *	r2:	The number of page table pages.
+ *	r3:	The page table entry.
+ *	r4:	The page table increment.
+ *
+ * First initialize the second level page tables so that they map
+ * all of the kernel page tables.
+ */
+	LD_CONSTANT(r1, KERN_PT2_BASE)
+	add_nt		r2, r0, $VMMACH_NUM_PT_PAGES
+	LD_CONSTANT(r3, (KERN_PT_FIRST_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT)
+	LD_CONSTANT(r4, 1 << VMMACH_PAGE_FRAME_SHIFT)
+
+1:
+	cmp_br_delayed	eq, r2, $0, 2f
+	Nop
+	st_32		r3, r1, $0
+	add_nt		r1, r1, $4
+	add_nt		r3, r3, r4
+	sub		r2, r2, $1
+	jump		1b
+	Nop
+2:
+
+/*
+ * Next initialize the kernel page table to point to 4 Mbytes of mapped
+ * code.
+ */
+	LD_CONSTANT(r1, KERN_PT_BASE)
+	add_nt		r2, r0, $KERN_PT_FIRST_PAGE
+	LD_CONSTANT(r3, VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT)
+
+1:
+	cmp_br_delayed	eq, r2, $0, 2f
+	Nop
+	st_32		r3, r1, $0
+	add_nt		r1, r1, $4
+	add_nt		r3, r3, r4
+	sub		r2, r2, $1
+	jump		1b
+	Nop
+2:
+
+/*
+ * Initialize the PTEVA.
+ */
+	LD_CONSTANT(r1, VMMACH_KERN_PT_BASE >> VMMACH_PAGE_SHIFT)
+	ST_PT_BASE(r1)
+/*
+ * Initialize the RPTEVA.
+ */
+	ST_RPT_BASE(r1)
+/*
+ * Initialize the 0th segment register.
+ */
+	ST_GSN(r0, MACH_GSN_0)
+/*
+ * Initialize the RPTM register.
+ */
+	LD_CONSTANT(r1, KERN_PT2_BASE)
+	ST_RPTM(r1, MACH_RPTM_0)
+/*
+ * Clear out the cache.
+ */
+	LD_CONSTANT(r1, 0x3000000)
+	LD_CONSTANT(r2, VMMACH_CACHE_SIZE)
+1:
+	st_32		r0, r1, $0
+	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
+	cmp_br_delayed	lt, r1, r2, 1b
+	Nop
+
+/*
+ * Now to jump to virtual mode through the following sequence:
+ *
+ *	1) Disable instruction buffer just in case it is on.
+ *	2) Invalidate the instruction buffer.
+ *	3) Make a good kpsw.
+ *	4) Jump to virtual mode.
+ */
+	wr_kpsw		r0, $0
+	invalidate_ib
+	add_nt		r1, r0, $(MACH_KPSW_PREFETCH_ENA | MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
+	rd_special	r2, pc
+	jump_reg	r2, $12
+	wr_kpsw		r1, $0
+
+/*
+ * Now we are executing in virtual mode (hopefully).  Initialize the cwp, 
+ * swp and SPILL_SP to their proper values and then jump to the main
+ * function.
+ */
+	wr_special	cwp, r0, $1
+	LD_CONSTANT(r1, MACH_STACK_BOTTOM)
+	wr_special	swp, r1, $0
+	LD_CONSTANT(SPILL_SP, MACH_CODE_START)
+
+	call		_main
+	Nop
+	jump		ErrorTrap
+	Nop
 
 /*
  *---------------------------------------------------------------------------
@@ -318,7 +440,7 @@ winOvFlow_SaveWindow:
 	Nop
 	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
 	rd_special	VOL_TEMP2, swp
-	sub_nt		VOL_TEMP1, VOL_TEMP1, $(2 * MACH_SAVED_REG_SET_SIZE)
+	sub		VOL_TEMP1, VOL_TEMP1, $(2 * MACH_SAVED_REG_SET_SIZE)
 	cmp_br_delayed	le, VOL_TEMP2, VOL_TEMP1, winOvFlow_Return
 	Nop
 	/*
@@ -517,7 +639,7 @@ PowerUp: 			# Jump to power up sequencer
  *
  *---------------------------------------------------------------------------
  */
-Error:	
+ErrorTrap:	
 	SWITCH_TO_KERNEL_STACKS()
 	CALL_DEBUGGER(r0, MACH_ERROR)
 
@@ -536,7 +658,8 @@ FaultIntr:
 	 * PC.
 	 */
 	rd_kpsw		KPSW_REG
-	or		KPSW_REG, KPSW_REG, $MACH_KPSW_USE_CUR_PC
+	LD_CONSTANT(SAFE_TEMP1, MACH_KPSW_USE_CUR_PC)
+	or		KPSW_REG, KPSW_REG, SAFE_TEMP1
 	/*
 	 * Read the fault/error status register.
 	 */
@@ -575,7 +698,6 @@ Interrupt:
 	 * Read the interrupt status register and clear it.  The ISR is passed
 	 * as a arg to the interrupt routine.
 	 */
-	 */
 	READ_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
 	WRITE_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
 	/*
@@ -591,9 +713,9 @@ Interrupt:
 	/*
 	 * Disable interrupts but enable all other traps.
 	 */
-	and		VOL_TEMP2, KPSW_REG, $((~MACH_KPSW_INTR_TRAP_ENA)&0x3fff)
+	and		VOL_TEMP2, KPSW_REG, $(~MACH_KPSW_INTR_TRAP_ENA)
 	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP2
+	wr_kpsw		VOL_TEMP2, $0
 	/*
 	 * See if took the interrupt from user mode.
 	 */
@@ -615,7 +737,7 @@ Interrupt:
 	call		_MachInterrupt
 	Nop
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	write_kpsw	VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
 	call		_MachUserError
 	Nop
@@ -641,7 +763,7 @@ interrupt_KernMode:
 	 * Restore insert register and kpsw and return.
 	 */
 	wr_insert	SAFE_TEMP1
-	wr_kpsw		KPSW_REG
+	wr_kpsw		KPSW_REG, $0
 	jump_reg	CUR_PC_REG, $0
 	return_trap	NEXT_PC_REG, $0
 	Nop
@@ -679,7 +801,7 @@ vmFault_GetDataAddr:
 	 * Enable all traps.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 
 	/*
 	 * See if is a load, store or test-and-set instruction.  These types
@@ -692,7 +814,8 @@ vmFault_GetDataAddr:
 	srl		VOL_TEMP1, VOL_TEMP1, $1	# Opcode <07:01> ->
 							#	 <06:00>
 	and		VOL_TEMP1, VOL_TEMP1, $0xf0	# Get upper 4 bits.
-	cmp_br_delayed	ge, VOL_TEMP1, $0x30, vmFault_NoData
+	add_nt		VOL_TEMP2, r0, $0x30
+	cmp_br_delayed	ge, VOL_TEMP1, VOL_TEMP2, vmFault_NoData
 	Nop
 	/*
 	 * Get the data address by calling ParseInstruction.  We pass the
@@ -712,7 +835,7 @@ vmFault_GetDataAddr:
 						#   that there is a data addr
 	add_nt		OUTPUT_REG4, VOL_TEMP2, $0	# 4th arg is the data
 							#    addr.
-	cmp_br_delayed	always, vmFault_CallHandler
+	cmp_br_delayed	always, r0, r0, vmFault_CallHandler
 	Nop
 vmFault_NoData:
 	add_nt		OUTPUT_REG3, r0, $0		# 3rd arg is FALSE
@@ -752,7 +875,8 @@ CmpTrap:
 	 * or cur PC.
 	 */
 	rd_kpsw		KPSW_REG
-	or		KPSW_REG, KPSW_REG, $MACH_KPSW_USE_NEXT_PC
+	LD_CONSTANT(SAFE_TEMP1, MACH_KPSW_USE_NEXT_PC)
+	or		KPSW_REG, KPSW_REG, SAFE_TEMP1
 
 	/*
 	 * Get the trap number.
@@ -843,7 +967,7 @@ cmpTrap_BadTrapType:
 	cmp_br_delayed	eq, VOL_TEMP2, $0, cmpTrap_KernError
 	Nop
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, r0, $MACH_BAD_TRAP_TYPE
 	rd_insert	VOL_TEMP2
 	call		_MachUserError
@@ -877,7 +1001,7 @@ BreakpointTrap:
 	 * Enable all traps and call the user error routine.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, r0, $MACH_BREAKPOINT_ERROR
 	rd_insert	VOL_TEMP1
 	call		_MachUserError
@@ -907,7 +1031,7 @@ SysCallTrap:
 	 * Enable all traps.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	/*
 	 * Get the type of system call.  It was stored in the callers 
 	 * r16 before they trapped.
@@ -971,13 +1095,13 @@ sysCallTrap_FetchArgs:
 	/*
 	 * Haven't fetched enough args so we have to copy them from the user's
 	 * spill stack to the kernel's spill stack.  Set VOL_TEMP1 to be
-	 * the user stack pointer.  Then move the kernel's stack pointer 
-	 * back by numArgs * 4 to point to the first arg on the spill stack.
+	 * the user stack pointer - numArgs * 4 to point to the base
+	 * of the arguments on the spill stack.
 	 */
 	ld_32		VOL_TEMP1, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * MACH_SPILL_SP)
 	Nop
-	sll		VOL_TEMP2, SAFE_TEMP3, $2
-	sub_nt		SPILL_SP, SPILL_SP, VOL_TEMP2
+	sll		VOL_TEMP3, SAFE_TEMP3, $2
+	add_nt		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
 	/*
 	 * Now fetch the args.  This code fetches up to 7 more args by jumping
 	 * into the right spot in the sequence.  The spot to jump is 
@@ -989,50 +1113,52 @@ sysCallTrap_FetchArgs:
 	 *	SAFE_TEMP2:	sysCallType
 	 *	SAFE_TEMP3:	(12 - numArgs) * 16
 	 *	VOL_TEMP1:	User spill SP
-	 *	VOL_TEMP2:	Stack increment
-	 *	VOL_TEMP3:	Temporary
+	 *	VOL_TEMP2:	Temporary.
+	 *	VOL_TEMP3:	Spill stack size.
 	 */
-	add_nt		VOL_TEMP2, r0, r0
-	add_nt		VOL_TEMP3, r0, $12
-	sub_nt		SAFE_TEMP3, VOL_TEMP3, SAFE_TEMP3
+	add_nt		VOL_TEMP2, r0, $12
+	sub		SAFE_TEMP3, VOL_TEMP2, SAFE_TEMP3
 	sll		SAFE_TEMP3, SAFE_TEMP3, $3
 	sll		SAFE_TEMP3, SAFE_TEMP3, $1
-	rd_special	VOL_TEMP3, pc
-	add_nt		VOL_TEMP3, SAFE_TEMP3, VOL_TEMP3
-	jump_reg	VOL_TEMP3, $16
+	rd_special	VOL_TEMP2, pc
+	add_nt		VOL_TEMP2, SAFE_TEMP3, VOL_TEMP2
+	jump_reg	VOL_TEMP2, $16
 	Nop
 	.globl	_MachFetchArgStart
-_MachFetchArgStart
-	ld_32		VOL_TEMP3, VOL_TEMP1, VOL_TEMP2	# 7 args
+_MachFetchArgStart:
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-28	# 7 args
 	Nop
-	st_32		VOL_TEMP3, SPILL_SP, VOL_TEMP2
-	add_nt		VOL_TEMP2, VOL_TEMP2, $4
-	ld_32		VOL_TEMP3, VOL_TEMP1, VOL_TEMP2	# 6 args
+	st_32		VOL_TEMP2, SPILL_SP, $-28
 	Nop
-	st_32		VOL_TEMP3, SPILL_SP, VOL_TEMP2
-	add_nt		VOL_TEMP2, VOL_TEMP2, $4
-	ld_32		VOL_TEMP3, VOL_TEMP1, VOL_TEMP2	# 5 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-24	# 6 args
 	Nop
-	st_32		VOL_TEMP3, SPILL_SP, VOL_TEMP2
-	add_nt		VOL_TEMP2, VOL_TEMP2, $4
-	ld_32		VOL_TEMP3, VOL_TEMP1, VOL_TEMP2	# 4 args
+	st_32		VOL_TEMP2, SPILL_SP, $-24
 	Nop
-	st_32		VOL_TEMP3, SPILL_SP, VOL_TEMP2
-	add_nt		VOL_TEMP2, VOL_TEMP2, $4
-	ld_32		VOL_TEMP3, VOL_TEMP1, VOL_TEMP2	# 3 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-20	# 5 args
 	Nop
-	st_32		VOL_TEMP3, SPILL_SP, VOL_TEMP2
-	add_nt		VOL_TEMP2, VOL_TEMP2, $4
-	ld_32		VOL_TEMP3, VOL_TEMP1, VOL_TEMP2	# 2 args
+	st_32		VOL_TEMP2, SPILL_SP, $-20
 	Nop
-	st_32		VOL_TEMP3, SPILL_SP, VOL_TEMP2
-	add_nt		VOL_TEMP2, VOL_TEMP2, $4
-	ld_32		VOL_TEMP3, VOL_TEMP1, VOL_TEMP2	# 1 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-16	# 4 args
 	Nop
-	st_32		VOL_TEMP3, SPILL_SP, VOL_TEMP2
-	add_nt		VOL_TEMP2, VOL_TEMP2, $4
+	st_32		VOL_TEMP2, SPILL_SP, $-16
+	Nop
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-12	# 3 args
+	Nop
+	st_32		VOL_TEMP2, SPILL_SP, $-12
+	Nop
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-8	# 2 args
+	Nop
+	st_32		VOL_TEMP2, SPILL_SP, $-8
+	Nop
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-4	# 1 args
+	Nop
+	st_32		VOL_TEMP2, SPILL_SP, $-4
+	Nop
 	.globl _MachFetchArgEnd
-_MachFetchArgEnd
+_MachFetchArgEnd:
+	/*
+	 * Set the kernel's spill stack.
+	add_nt		SPILL_SP, VOL_TEMP3, $0
 	/*
 	 * Now call the routine to handle the system call.  We do this
 	 * by jumping through 
@@ -1071,7 +1197,7 @@ _MachFetchArgEnd
 	Nop
 	call		1f
 	Nop
-1f:
+1:
 	rd_special	RETURN_ADDR_REG, pc
 	add_nt		RETURN_ADDR_REG, RETURN_ADDR_REG, $16
 	jump_reg	r9, $0
@@ -1109,7 +1235,7 @@ UserErrorTrap:
 	 * Enable all traps.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	/*
 	 * Call the user error handler.
 	 */
@@ -1140,7 +1266,7 @@ SigReturnTrap:
 	 * Enable traps.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	/*
 	 * Go back to the previous window.
 	 */
@@ -1152,7 +1278,7 @@ SigReturnTrap:
 	 * that we saved in the previous window when we called the signal
 	 * handler.  It will have all traps disabled.
 	 */
-	wr_kpsw		KPSW_REG
+	wr_kpsw		KPSW_REG, $0
 	/*
 	 * Switch over to the kernel stacks and save the user state.
 	 */
@@ -1162,7 +1288,7 @@ SigReturnTrap:
 	 * Reenable traps.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	/*
 	 * The old hold mask was stored in NON_INTR_TEMP1.  Also the first and
 	 * second PCs were saved in CUR_PC_REG and NEXT_PC_REG.  Call
@@ -1170,7 +1296,7 @@ SigReturnTrap:
 	 */
 	add_nt		OUTPUT_REG1, NON_INTR_TEMP1, $0
 	rd_insert	VOL_TEMP1
-	call		_MachSigReturn()
+	call		_MachSigReturn
 	Nop
 	wr_insert	VOL_TEMP1
 
@@ -1199,7 +1325,7 @@ getWinMemTrap_GoodSWP:
 	 * Enable all traps.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	/*
 	 * Call _MachGetWinMem()
 	 */
@@ -1235,7 +1361,7 @@ ReturnTrap:
 	/*
 	 * Restore the kpsw to that which we trapped with.
 	 */
-	wr_kpsw		KPSW_REG
+	wr_kpsw		KPSW_REG, $0
 
 	/*
 	 * Check the return code from the fault handler.
@@ -1279,7 +1405,7 @@ returnTrap_NormReturn:
 	 * Put us back into user mode.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_CUR_MODE
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 
 returnTrap_Return:
 	/*
@@ -1287,8 +1413,9 @@ returnTrap_Return:
 	 * PC to the next PC and clear the next PC so that the return
 	 * happens correctly.
 	 */
-	and		VOL_TEMP1, KPSW_REG, $MACH_USE_CUR_PC
-	cmp_br_delayed	eq, VOL_TEMP1, $MACH_USE_CUR_PC, 1f
+	LD_CONSTANT(VOL_TEMP2, MACH_USE_CUR_PC)
+	and		VOL_TEMP1, KPSW_REG, VOL_TEMP2
+	cmp_br_delayed	eq, VOL_TEMP1, VOL_TEMP2, 1f
 	Nop
 	add_nt		CUR_PC_REG, NEXT_PC_REG, $0
 	add_nt		NEXT_PC_REG, r0, $0
@@ -1317,7 +1444,7 @@ returnTrap_FailedCopy:
 	 * error to the caller.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	rd_special	VOL_TEMP1, pc
 	return		VOL_TEMP1, $12
 	Nop
@@ -1348,7 +1475,7 @@ returnTrap_FailedArgFetch:
 	 * Enable all traps and go back to the previous window.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	rd_special	VOL_TEMP1, pc
 	return		VOL_TEMP1, $12
 	Nop
@@ -1379,7 +1506,7 @@ returnTrap_SpecialAction:
 	 * that tells us what action to take.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	rd_insert	VOL_TEMP1
 	call		_MachUserAction
 	Nop
@@ -1400,7 +1527,7 @@ returnTrap_SpecialAction:
  *	Need to start the process off calling a signal handler.
  */
 returnTrap_CallSigHandler:
-	wr_kpsw		KPSW_REG
+	wr_kpsw		KPSW_REG, $0
 	RESTORE_USER_STATE()
 	/* 
 	 * Save the old hold mask in the current window.  The PCs
@@ -1423,7 +1550,7 @@ returnTrap_CallSigHandler:
 	 * Enable traps so that we can safely advance the window.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	/*
 	 * Advance to the window where the signal handler will execute.
 	 */
@@ -1438,7 +1565,7 @@ returnTrap_CallSigHandler:
 	rd_kpsw		VOL_TEMP2
 	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_CUR_MODE|MACH_KPSW_ALL_TRAPS_ENA
 	jump_reg	VOL_TEMP1, $0
-	wr_kpsw		VOL_TEMP2
+	wr_kpsw		VOL_TEMP2, $0
 
 /*
  *----------------------------------------------------------------------------
@@ -1496,10 +1623,10 @@ SaveState:
 	 */
 	rd_kpsw		r5
 	or		VOL_TEMP3, r5, $MACH_KPSW_ALL_TRAPS_ENA
-	and		VOL_TEMP3, VOL_TEMP3, $((~MACH_KPSW_INTR_TRAP_ENA)&0x3fff)
-	wr_kpsw		VOL_TEMP3
+	and		VOL_TEMP3, VOL_TEMP3, $(~MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP3, $0
 	rd_special	VOL_TEMP3, pc
-	return_reg	VOL_TEMP3, $12
+	return		VOL_TEMP3, $12
 	Nop
 
 	/*
@@ -1589,7 +1716,7 @@ saveState_Done:
 	/*
 	 * Restore the kpsw and return to our caller.
 	 */
-	wr_kpsw		r5
+	wr_kpsw		r5, $0
 	jump_reg	VOL_TEMP2, $0
 	Nop
 
@@ -1613,10 +1740,10 @@ RestoreState:
 	 */
 	add_nt		r1, VOL_TEMP1, $0
 	add_nt		r9, VOL_TEMP2, $0
-	ld_32		r2, r1, $MACH_REG_STATE_CWP
-	ld_32		r3, r1, $MACH_REG_STATE_SWP
-	wr_special	cwp, r2
-	wr_special	swp, r3
+	ld_32		r2, r1, $MACH_REG_STATE_CWP_OFFSET
+	ld_32		r3, r1, $MACH_REG_STATE_SWP_OFFSET
+	wr_special	cwp, r2, $0
+	wr_special	swp, r3, $0
 	/*
 	 * Now we are back in the window that we want to restore since the
 	 * saved cwp points to the window that we saved in the reg state 
@@ -1695,7 +1822,7 @@ _MachRunUserProc:
 	 */
 	rd_kpsw		KPSW_REG
 	or		KPSW_REG, KPSW_REG, $MACH_KPSW_PREV_MODE
-	and		KPSW_REG, KPSW_REG, $((~MACH_KPSW_ALL_TRAPS_ENA)&0x3fff)
+	and		KPSW_REG, KPSW_REG, $(~MACH_KPSW_ALL_TRAPS_ENA)
 	/*
 	 * Do a normal return from trap.
 	 */
@@ -1788,8 +1915,8 @@ _MachContextSwitch:
 	.globl	_Mach_DisableIntr
 _Mach_DisableIntr:
 	rd_kpsw		VOL_TEMP1
-	and		VOL_TEMP1, VOL_TEMP1, $((~MACH_KPSW_INTR_TRAP_ENA)&0x3fff)
-	wr_kpsw		VOL_TEMP1
+	and		VOL_TEMP1, VOL_TEMP1, $(~MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP1, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -1814,7 +1941,7 @@ _Mach_DisableIntr:
 _Mach_EnableIntr:
 	rd_kpsw		VOL_TEMP1
 	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_INTR_TRAP_ENA
-	wr_kpsw		VOL_TEMP1
+	wr_kpsw		VOL_TEMP1, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -1926,7 +2053,7 @@ parse1up:
 	Nop
 	cmp_br_delayed	eq, SRC1_REG,  $31, parse1b
 	Nop
-	CallDebugger(MACH_BAD_SRC_REG)
+	CALL_DEBUGGER(r0, MACH_BAD_SRC_REG)
 
 parse1a:
 	add_nt		SRC1_VAL, SAVED_R14, $0
@@ -1966,7 +2093,7 @@ parse5:
 	and		PARSE_TEMP1, PARSE_TEMP1, $0x40
 	cmp_br_delayed  ne, PARSE_TEMP1, $0, parse5a
 	Nop
-	cmp_br_delayed	always, parse5b
+	cmp_br_delayed	always, r0, r0, parse5b
 	Nop
 
 parse5a:
@@ -1979,8 +2106,8 @@ parse5a:
 	and		PARSE_TEMP1, PARSE_TEMP1, $0x1000 
 	cmp_br_delayed	eq, PARSE_TEMP1, $0, parse_end
 	Nop
-	add_nt		SRC2_VAL, SRC2_VAL, $0x2000	# Sign extend SRC2_VAL
-	cmp_br_delayed	always, parse_end
+	add_nt		SRC2_VAL, SRC2_VAL, $~0x1fff	# Sign extend SRC2_VAL
+	cmp_br_delayed	always, r0, r0, parse_end
 	Nop
 
 parse5b:
@@ -2006,7 +2133,7 @@ pars2up:
 	Nop
 	cmp_br_delayed	 eq, SRC2_REG,  $31, parse2b
 	Nop
-	CallDebugger(MACH_BAD_SRC_REG)
+	CALL_DEBUGGER(r0, MACH_BAD_SRC_REG)
 
 parse2a:
 	add_nt		SRC2_VAL, SAVED_R14, $0
@@ -2044,7 +2171,7 @@ parse_store:
 	and		PARSE_TEMP2, PARSE_TEMP2, $0x1000 # Check for negative
 	cmp_br_delayed	eq, PARSE_TEMP2, $0, parse_pos    #    number
 	and 		PARSE_TEMP1, PARSE_TEMP1,$0x1e00  # Mask out valid bits.
-	add_nt		PARSE_TEMP1, PARSE_TEMP1,$0x2000  # Sign extend 
+	add_nt		PARSE_TEMP1, PARSE_TEMP1,$~0x1fff  # Sign extend 
 							  #    PARSE_TEMP2.
 parse_pos:
 	and		PARSE_TEMP2, TRAP_INST, $0x01ff	     # Put together into
