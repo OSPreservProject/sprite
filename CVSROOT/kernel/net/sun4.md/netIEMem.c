@@ -93,7 +93,7 @@ NetIEMemAlloc()
 
     addr = memAddr;
     memAddr += NET_IE_CHUNK_SIZE;
-    if ((int) memAddr > netIEState.memBase + NET_IE_MEM_SIZE) {
+    if (memAddr > (Address) (netIEState.memBase) + NET_IE_MEM_SIZE) {
 	return((Address) NIL);
     }
 
