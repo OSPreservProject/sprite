@@ -2,8 +2,8 @@
  *
  */
 
-#ifndef BITVEC_H
-#define BITVEC_H
+#ifndef _BITVEC
+#define _BITVEC
 
 #define BIT_VEC_SIZE 4
 
@@ -21,4 +21,8 @@ typedef int *BitVec;
 #define FOR_ALL_VEC(bitVec, i, n)	\
     for ((i) = -1; ((i) = GetBitIndex((bitVec), (i), (n))) != -1;)
 
-#endif BITVEC_H
+extern BitVec MakeBitVec _ARGS_((int n));
+extern void ClearBitVec _ARGS_((BitVec bitVec, int n));
+extern int GetBitIndex _ARGS_((BitVec bitVec, int i, int n));
+
+#endif /* _BITVEC */

@@ -2,6 +2,8 @@
  *
  */
 
+#include <stdlib.h>
+#include <bstring.h>
 #include "bitvec.h"
 
 BitVec
@@ -16,6 +18,7 @@ MakeBitVec(n)
     return vec;
 }
 
+void
 ClearBitVec(bitVec, n)
     BitVec	bitVec;
     int		n;
@@ -24,6 +27,7 @@ ClearBitVec(bitVec, n)
     bzero((char *) bitVec, size);
 }
 
+int
 GetBitIndex(bitVec, i, n)
     BitVec bitVec;
     int    i;

@@ -25,6 +25,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sync.h"
+#include <sprite.h>
+#include <stdio.h>
 #include "hash.h"
 #include "devRaid.h"
 #include "devRaidLock.h"
@@ -42,7 +44,7 @@ static Sync_Semaphore mutex =
 /*
  *----------------------------------------------------------------------
  *
- * InitStripeLocks --
+ * Raid_InitStripeLocks --
  *
  *	Should be called at least once before calling any other procedure
  *	from this module.
@@ -57,7 +59,7 @@ static Sync_Semaphore mutex =
  */
 
 void
-InitStripeLocks()
+Raid_InitStripeLocks()
 {
     static int	initialized = 0;
 
@@ -75,7 +77,7 @@ InitStripeLocks()
 /*
  *----------------------------------------------------------------------
  *
- * SLockStripe --
+ * Raid_SLockStripe --
  *
  * Results:
  *	None.
@@ -87,7 +89,7 @@ InitStripeLocks()
  */
 
 void
-SLockStripe(raidPtr, stripe)
+Raid_SLockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
@@ -113,7 +115,7 @@ SLockStripe(raidPtr, stripe)
 /*
  *----------------------------------------------------------------------
  *
- * XLockStripe --
+ * Raid_XLockStripe --
  *
  * Results:
  *	None.
@@ -124,7 +126,8 @@ SLockStripe(raidPtr, stripe)
  *----------------------------------------------------------------------
  */
 
-CheckPointRaid(raidPtr)
+void
+Raid_CheckPoint(raidPtr)
     Raid	*raidPtr;
 {
     MASTER_LOCK(&raidPtr->log.mutex);
@@ -134,12 +137,12 @@ CheckPointRaid(raidPtr)
     }
     MASTER_UNLOCK(&raidPtr->log.mutex);
     printf("RAID:MSG:Checkpointing RAID\n");
-    LockRaid(raidPtr);
+    Raid_Lock(raidPtr);
 #ifndef TESTING
     ClearBitVec(raidPtr->log.diskLockVec, raidPtr->log.diskLockVecNum);
 #endif TESTING
-    SaveRaidLog(raidPtr);
-    UnlockRaid(raidPtr);
+    Raid_SaveLog(raidPtr);
+    Raid_Unlock(raidPtr);
     printf("RAID:MSG:Checkpoint Complete\n");
 }
 
@@ -150,21 +153,23 @@ CheckPointRaid(raidPtr)
 #endif
 
 void
-XLockStripe(raidPtr, stripe)
+Raid_XLockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
-    SLockStripe(raidPtr, stripe);
+    Raid_SLockStripe(raidPtr, stripe);
     if (!IsSet(raidPtr->log.diskLockVec, stripe)) {
 	MASTER_LOCK(&raidPtr->mutex);
 	raidPtr->numStripeLocked++;
 	if (raidPtr->numStripeLocked % NUM_LOG_STRIPE == 0) {
 	    MASTER_UNLOCK(&raidPtr->mutex);
-	    Proc_CallFunc(CheckPointRaid, raidPtr, 0);
+	    Proc_CallFunc((void (*)
+		    _ARGS_((ClientData clientData, Proc_CallInfo *callInfoPtr)))
+		    Raid_CheckPoint, (ClientData) raidPtr, 0);
 	} else {
 	    MASTER_UNLOCK(&raidPtr->mutex);
 	}
-	LogStripe(raidPtr, stripe);
+	Raid_LogStripe(raidPtr, stripe);
     }
 }
 
@@ -172,7 +177,7 @@ XLockStripe(raidPtr, stripe)
 /*
  *----------------------------------------------------------------------
  *
- * SUnlockStripe --
+ * Raid_SUnlockStripe --
  *
  * Results:
  *	None.
@@ -184,7 +189,7 @@ XLockStripe(raidPtr, stripe)
  */
 
 void
-SUnlockStripe(raidPtr, stripe)
+Raid_SUnlockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
@@ -211,7 +216,7 @@ SUnlockStripe(raidPtr, stripe)
 /*
  *----------------------------------------------------------------------
  *
- * XUnlockStripe --
+ * Raid_XUnlockStripe --
  *
  * Results:
  *	None.
@@ -223,17 +228,17 @@ SUnlockStripe(raidPtr, stripe)
  */
 
 void
-XUnlockStripe(raidPtr, stripe)
+Raid_XUnlockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
-    SUnlockStripe(raidPtr, stripe);
+    Raid_SUnlockStripe(raidPtr, stripe);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * LockRaid --
+ * Raid_Lock --
  *
  * Results:
  *	None.
@@ -245,7 +250,7 @@ XUnlockStripe(raidPtr, stripe)
  */
 
 void
-LockRaid (raidPtr)
+Raid_Lock (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);
@@ -262,7 +267,7 @@ LockRaid (raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * UnlockRaid --
+ * Raid_Unlock --
  *
  * Results:
  *	None.
@@ -274,7 +279,7 @@ LockRaid (raidPtr)
  */
 
 void
-UnlockRaid (raidPtr)
+Raid_Unlock (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);
@@ -291,7 +296,7 @@ UnlockRaid (raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * BeginRaidUse --
+ * Raid_BeginUse --
  *
  * Results:
  *	None.
@@ -302,7 +307,7 @@ UnlockRaid (raidPtr)
  */
 
 void
-BeginRaidUse (raidPtr)
+Raid_BeginUse (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);
@@ -317,7 +322,7 @@ BeginRaidUse (raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * EndRaidUse --
+ * Raid_EndUse --
  *
  * Results:
  *	None.
@@ -328,7 +333,7 @@ BeginRaidUse (raidPtr)
  */
 
 void
-EndRaidUse (raidPtr)
+Raid_EndUse (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);

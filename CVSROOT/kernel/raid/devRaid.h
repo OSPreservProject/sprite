@@ -177,4 +177,6 @@ typedef struct RaidReconstructionControl {
     char		*readBuf;
 } RaidReconstructionControl;
 
+extern DevBlockDeviceHandle *DevRaidAttach _ARGS_((Fs_Device *devicePtr));
+
 #endif _DEVRAID

@@ -33,7 +33,7 @@
 /*
  *----------------------------------------------------------------------
  *
- * InitiateIORequests --
+ * Raid_InitiateIORequests --
  *
  *	Initiates IO requests specified by reqControlPtr.
  *	Calls doneProc with clientData, the number of requests that have
@@ -52,7 +52,7 @@ void blockIODoneProc();
 void nonInterruptLevelCallBackProc();
 
 void 
-InitiateIORequests(reqControlPtr, doneProc, clientData)
+Raid_InitiateIORequests(reqControlPtr, doneProc, clientData)
     RaidRequestControl	*reqControlPtr;
     void	       (*doneProc)();
     ClientData		 clientData;
@@ -64,7 +64,7 @@ InitiateIORequests(reqControlPtr, doneProc, clientData)
     /*
      * Initiate IO's.
      */
-    IOControlPtr = MakeIOControl(doneProc, clientData);
+    IOControlPtr = Raid_MakeIOControl(doneProc, clientData);
     IOControlPtr->numIO++;
     for ( i = 0; i < reqControlPtr->numReq; i++ ) {
 	reqPtr = &reqControlPtr->reqPtr[i];
@@ -87,7 +87,7 @@ InitiateIORequests(reqControlPtr, doneProc, clientData)
         MASTER_UNLOCK(&IOControlPtr->mutex);
         IOControlPtr->doneProc(IOControlPtr->clientData,
 		IOControlPtr->numFailed, IOControlPtr->failedReqPtr);
-	FreeIOControl(IOControlPtr);
+	Raid_FreeIOControl(IOControlPtr);
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }
@@ -99,7 +99,7 @@ InitiateIORequests(reqControlPtr, doneProc, clientData)
  *
  * blockIODoneProc --
  *
- *	Callback procedure for InitiateIORequests.
+ *	Callback procedure for Raid_InitiateIORequests.
  *	This procedure is called once each time an individual IO reqeust
  *	completes.
  *
@@ -133,9 +133,9 @@ blockIODoneProc(reqPtr, status, amountTransferred)
     reqPtr->status = status;
     if (status != SUCCESS) {
         reqPtr->state = REQ_FAILED;
-	ReportRequestError(reqPtr);
+	Raid_ReportRequestError(reqPtr);
 	if (reqPtr->devReq.operation == FS_WRITE) {
-	    FailRaidDisk(reqPtr->raidPtr,
+	    Raid_FailDisk(reqPtr->raidPtr,
 		    reqPtr->col, reqPtr->row, reqPtr->version);
 	}
     } else {
@@ -175,7 +175,7 @@ blockIODoneProc(reqPtr, status, amountTransferred)
  *
  * nonInterruptLevelCallBackProc --
  *
- *	None-interrupt level callback procedure for InitiateIORequests.
+ *	None-interrupt level callback procedure for Raid_InitiateIORequests.
  *
  * Results:
  *	None.
@@ -191,7 +191,7 @@ nonInterruptLevelCallBackProc(IOControlPtr)
 {
     IOControlPtr->doneProc(IOControlPtr->clientData,
 	    IOControlPtr->numFailed, IOControlPtr->failedReqPtr);
-    FreeIOControl(IOControlPtr);
+    Raid_FreeIOControl(IOControlPtr);
 }
 
 
@@ -228,7 +228,7 @@ InitiateStripeIOFailure(stripeIOControlPtr)
  * InitiateStripeWrite --
  *
  *	Initiates a stripe write (i.e. an IO that does not span stripe
- *	boundaries) via either InitiateIORequests, InitiateReconstructWrite
+ *	boundaries) via either Raid_InitiateIORequests, InitiateReconstructWrite
  *	or InitiateReadModifyWrite.
  *	Sets up the recovery procedure if recovery is possible.  Note that
  *	the recovery procedure for InitiateReconstructWrite is
@@ -278,7 +278,7 @@ InitiateStripeWrite(stripeIOControlPtr)
 	AddRaidDataRequests(reqControlPtr, raidPtr, FS_WRITE,
 		firstSector, nthSector, buffer, ctrlData);
 	if (reqControlPtr->numFailed == 0) {
-	    InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+	    Raid_InitiateIORequests(stripeIOControlPtr->reqControlPtr,
 		    stripeIODoneProc, (ClientData) stripeIOControlPtr);
 	} else {
 	    InitiateStripeIOFailure(stripeIOControlPtr);
@@ -368,11 +368,11 @@ InitiateSplitStripeWrite(stripeIOControlPtr)
     /*
      * reconstructWrite strip
      */
-    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    FirstSectorOfStripe(raidPtr, firstSector), firstSector,
 	    readBuf, ctrlData,
 	    failedAddr, failedLen);
-    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    nthSector, NthSectorOfStripe(raidPtr, firstSector),
 	    readBuf + SectorToByte(raidPtr,
 	    	    firstSector - FirstSectorOfStripe(raidPtr, firstSector)),
@@ -380,15 +380,15 @@ InitiateSplitStripeWrite(stripeIOControlPtr)
     /*
      * RMW strip
      */
-    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, nthSector, readBuf + SectorToByte(raidPtr,
 		    raidPtr->dataSectorsPerStripe - (nthSector-firstSector)),
 	    ctrlData, rangeOff, rangeLen);
-    AddRaidParityRangeRequest(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddParityRangeRequest(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, parityBuf, ctrlData,
 	    rangeOff, rangeLen);
     if (reqControlPtr->numFailed == 0) {
-	InitiateIORequests(reqControlPtr,
+	Raid_InitiateIORequests(reqControlPtr,
 		oldInfoReadDoneProc, (ClientData) stripeIOControlPtr);
     } else {
 	stripeIOControlPtr->recoverProc(stripeIOControlPtr);
@@ -443,11 +443,11 @@ InitiateReadModifyWrite(stripeIOControlPtr)
 	stripeIOControlPtr->rangeOff = 0;
 	stripeIOControlPtr->rangeLen = raidPtr->bytesPerStripeUnit;
     }
-    AddRaidParityRangeRequest(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddParityRangeRequest(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, parityBuf, ctrlData,
 	    stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
     if (reqControlPtr->numFailed == 0) {
-	InitiateIORequests(reqControlPtr,
+	Raid_InitiateIORequests(reqControlPtr,
 		oldInfoReadDoneProc, (ClientData) stripeIOControlPtr);
     } else {
 	/*
@@ -518,17 +518,17 @@ InitiateReconstructWrite(stripeIOControlPtr)
 	stripeIOControlPtr->rangeLen = raidPtr->bytesPerStripeUnit;
     }
     reqControlPtr->numReq = reqControlPtr->numFailed = 0;
-    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    FirstSectorOfStripe(raidPtr, firstSector), firstSector,
 	    readBuf, ctrlData,
 	    stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
-    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    nthSector, NthSectorOfStripe(raidPtr, firstSector),
 	    readBuf + SectorToByte(raidPtr,
 	    	    firstSector - FirstSectorOfStripe(raidPtr, firstSector)),
 	    ctrlData,stripeIOControlPtr->rangeOff,stripeIOControlPtr->rangeLen);
     if (reqControlPtr->numFailed == 0) {
-	InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+	Raid_InitiateIORequests(stripeIOControlPtr->reqControlPtr,
 		oldInfoReadDoneProc, (ClientData) stripeIOControlPtr);
     } else {
 	/*
@@ -586,35 +586,35 @@ oldInfoReadDoneProc(stripeIOControlPtr, numFailed, failedReqPtr)
 	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
 #endif
 
-	XorRaidRangeRequests(stripeIOControlPtr->reqControlPtr,
+	Raid_XorRangeRequests(stripeIOControlPtr->reqControlPtr,
 		raidPtr, parityBuf,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
         stripeIOControlPtr->reqControlPtr->numReq = 0;
         stripeIOControlPtr->reqControlPtr->numFailed = 0;
-        AddRaidDataRangeRequests(stripeIOControlPtr->reqControlPtr,
+        Raid_AddDataRangeRequests(stripeIOControlPtr->reqControlPtr,
 		raidPtr, FS_WRITE,
 		stripeIOControlPtr->firstSector, stripeIOControlPtr->nthSector,
                 stripeIOControlPtr->buffer, stripeIOControlPtr->ctrlData,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
-	XorRaidRangeRequests(stripeIOControlPtr->reqControlPtr,
+	Raid_XorRangeRequests(stripeIOControlPtr->reqControlPtr,
 		raidPtr, parityBuf,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
 #ifndef NODATA
 	Free(stripeIOControlPtr->parityBuf);
 #endif
 	stripeIOControlPtr->parityBuf = parityBuf;
-        AddRaidParityRangeRequest(stripeIOControlPtr->reqControlPtr,
+        Raid_AddParityRangeRequest(stripeIOControlPtr->reqControlPtr,
 		raidPtr, FS_WRITE,
 	        stripeIOControlPtr->firstSector, stripeIOControlPtr->parityBuf,
 		stripeIOControlPtr->ctrlData,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
 	switch (stripeIOControlPtr->reqControlPtr->numFailed) {
 	case 0:
-            InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+            Raid_InitiateIORequests(stripeIOControlPtr->reqControlPtr,
 		    stripeWriteDoneProc, (ClientData) stripeIOControlPtr);
 	    break;
 	case 1:
-            InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+            Raid_InitiateIORequests(stripeIOControlPtr->reqControlPtr,
 		    stripeIODoneProc, (ClientData) stripeIOControlPtr);
 	    break;
 	default:
@@ -718,7 +718,7 @@ InitiateStripeRead(stripeIOControlPtr)
 	    firstSector, nthSector, buffer, ctrlData);
     switch (reqControlPtr->numFailed) {
     case 0:
-        InitiateIORequests(reqControlPtr,
+        Raid_InitiateIORequests(reqControlPtr,
 		stripeReadDoneProc, (ClientData) stripeIOControlPtr);
 	break;
     case 1:
@@ -802,25 +802,25 @@ InitiateReconstructRead(stripeIOControlPtr)
     char		*readBuf       = stripeIOControlPtr->readBuf;
 
     reqControlPtr->numFailed = 0;
-    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    FirstSectorOfStripe(raidPtr, firstSector), firstSector,
 	    readBuf, ctrlData,
 	    (int) reqControlPtr->failedReqPtr->devReq.startAddress,
 	    reqControlPtr->failedReqPtr->devReq.bufferLen);
-    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    nthSector, NthSectorOfStripe(raidPtr, firstSector),
 	    readBuf + SectorToByte(raidPtr,
 		    firstSector - FirstSectorOfStripe(raidPtr, firstSector)),
 	    ctrlData,
 	    (int) reqControlPtr->failedReqPtr->devReq.startAddress,
 	    reqControlPtr->failedReqPtr->devReq.bufferLen);
-    AddRaidParityRangeRequest(reqControlPtr, raidPtr, FS_READ,
+    Raid_AddParityRangeRequest(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, parityBuf, ctrlData,
 	    (int) reqControlPtr->failedReqPtr->devReq.startAddress,
 	    reqControlPtr->failedReqPtr->devReq.bufferLen);
     switch (reqControlPtr->numFailed) {
     case 0:
-	InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+	Raid_InitiateIORequests(stripeIOControlPtr->reqControlPtr,
 		reconstructStripeReadDoneProc, (ClientData) stripeIOControlPtr);
 	break;
     default:
@@ -859,7 +859,7 @@ reconstructStripeReadDoneProc(stripeIOControlPtr, numFailed)
 #ifndef NODATA
 	bzero(failedReqPtr->devReq.buffer, failedReqPtr->devReq.bufferLen);
 #endif
-	XorRaidRangeRequests(stripeIOControlPtr->reqControlPtr,
+	Raid_XorRangeRequests(stripeIOControlPtr->reqControlPtr,
 		stripeIOControlPtr->raidPtr, failedReqPtr->devReq.buffer,
 		(int) failedReqPtr->devReq.startAddress,
 		failedReqPtr->devReq.bufferLen);
@@ -908,17 +908,17 @@ InitiateSingleStripeIO(raidPtr, operation, firstSector, nthSector,
     int         ctrlData;
 {
     RaidStripeIOControl	*stripeIOControlPtr;
-    stripeIOControlPtr = MakeStripeIOControl(raidPtr, operation,
+    stripeIOControlPtr = Raid_MakeStripeIOControl(raidPtr, operation,
 	    firstSector, nthSector, buffer, doneProc, clientData, ctrlData);
 
     switch (stripeIOControlPtr->operation) {
     case FS_READ:
-	SLockStripe(raidPtr,
+	Raid_SLockStripe(raidPtr,
 		SectorToStripeID(raidPtr, stripeIOControlPtr->firstSector));
 	InitiateStripeRead(stripeIOControlPtr);
 	break;
     case FS_WRITE:
-	XLockStripe(raidPtr,
+	Raid_XLockStripe(raidPtr,
 		SectorToStripeID(raidPtr, stripeIOControlPtr->firstSector));
 	InitiateStripeWrite(stripeIOControlPtr);
 	break;
@@ -947,14 +947,12 @@ stripeIODoneProc(stripeIOControlPtr, numFailed)
     RaidStripeIOControl	*stripeIOControlPtr;
     int			 numFailed;
 {
-    char	buf[120];
-
     if (stripeIOControlPtr->operation == FS_WRITE) {
-	XUnlockStripe(stripeIOControlPtr->raidPtr,
+	Raid_XUnlockStripe(stripeIOControlPtr->raidPtr,
 		SectorToStripeID(stripeIOControlPtr->raidPtr,
 		stripeIOControlPtr->firstSector));
     } else {
-	SUnlockStripe(stripeIOControlPtr->raidPtr,
+	Raid_SUnlockStripe(stripeIOControlPtr->raidPtr,
 		SectorToStripeID(stripeIOControlPtr->raidPtr,
 		stripeIOControlPtr->firstSector));
     }
@@ -966,14 +964,14 @@ stripeIODoneProc(stripeIOControlPtr, numFailed)
     } else {
     	stripeIOControlPtr->doneProc(stripeIOControlPtr->clientData, FAILURE,0);
     }
-    FreeStripeIOControl(stripeIOControlPtr);
+    Raid_FreeStripeIOControl(stripeIOControlPtr);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * InitiateStripeIOs --
+ * Raid_InitiateStripeIOs --
  *
  *	Breaks IO requests into single stripe requests.
  *	Calls doneProc with clientData, status and the amount transferreed
@@ -991,7 +989,7 @@ stripeIODoneProc(stripeIOControlPtr, numFailed)
 static void singleStripeIODoneProc();
 
 void 
-InitiateStripeIOs(raidPtr, operation, firstSector, nthSector,
+Raid_InitiateStripeIOs(raidPtr, operation, firstSector, nthSector,
 				buffer, doneProc, clientData, ctrlData)
     Raid       *raidPtr;
     int		operation;
@@ -1008,8 +1006,8 @@ InitiateStripeIOs(raidPtr, operation, firstSector, nthSector,
     /*
      * Break up IO request into stripe requests.
      */
-    BeginRaidUse(raidPtr);
-    IOControlPtr = MakeIOControl(doneProc, clientData);
+    Raid_BeginUse(raidPtr);
+    IOControlPtr = Raid_MakeIOControl(doneProc, clientData);
     IOControlPtr->raidPtr = raidPtr;
     IOControlPtr->numIO++;
     currentSector = firstSector;
@@ -1037,8 +1035,8 @@ InitiateStripeIOs(raidPtr, operation, firstSector, nthSector,
         MASTER_UNLOCK(&IOControlPtr->mutex);
         IOControlPtr->doneProc(IOControlPtr->clientData,
 		IOControlPtr->status, IOControlPtr->amountTransferred);
-	FreeIOControl(IOControlPtr);
-	EndRaidUse(IOControlPtr->raidPtr);
+	Raid_FreeIOControl(IOControlPtr);
+	Raid_EndUse(IOControlPtr->raidPtr);
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }
@@ -1050,7 +1048,7 @@ InitiateStripeIOs(raidPtr, operation, firstSector, nthSector,
  *
  * singleStripeIODoneProc --
  *
- *	Callback procedure for InitiateStripeIOs.
+ *	Callback procedure for Raid_InitiateStripeIOs.
  *
  * Results:
  *	None.
@@ -1086,8 +1084,8 @@ singleStripeIODoneProc(IOControlPtr, status, amountTransferred)
         MASTER_UNLOCK(&IOControlPtr->mutex);
         IOControlPtr->doneProc(IOControlPtr->clientData,
 		IOControlPtr->status, IOControlPtr->amountTransferred);
-	FreeIOControl(IOControlPtr);
-	EndRaidUse(IOControlPtr->raidPtr);
+	Raid_FreeIOControl(IOControlPtr);
+	Raid_EndUse(IOControlPtr->raidPtr);
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }
@@ -1097,7 +1095,7 @@ singleStripeIODoneProc(IOControlPtr, status, amountTransferred)
 /*
  *----------------------------------------------------------------------
  *
- * InitiateSimpleStripeIOs --
+ * Raid_InitiateSimpleStripeIOs --
  *
  *	Breaks up IO requests in stripes and then initiates them.
  *	This procedure is used when the RAID device is configured without
@@ -1115,7 +1113,7 @@ singleStripeIODoneProc(IOControlPtr, status, amountTransferred)
 static void simpleStripeIODoneProc();
 
 void 
-InitiateSimpleStripeIOs(raidPtr, operation, firstSector, nthSector,
+Raid_InitiateSimpleStripeIOs(raidPtr, operation, firstSector, nthSector,
 				buffer, doneProc, clientData, ctrlData)
     Raid       *raidPtr;
     int		operation;
@@ -1135,15 +1133,15 @@ InitiateSimpleStripeIOs(raidPtr, operation, firstSector, nthSector,
     /*
      * Break up entire IO request into stripe units.
      */
-    IOControlPtr = MakeIOControl(doneProc, clientData);
+    IOControlPtr = Raid_MakeIOControl(doneProc, clientData);
     IOControlPtr->numIO++;
     currentSector = firstSector;
     while ( currentSector < nthSector ) {
         numSectorsToTransfer = MIN( raidPtr->sectorsPerStripeUnit -
                 currentSector%raidPtr->sectorsPerStripeUnit,
                 nthSector - currentSector );
-	MapSector(raidPtr, currentSector, &col, &row, &diskSector);
-	devReqPtr = MakeBlockDeviceRequest(raidPtr, operation,
+	Raid_MapSector(raidPtr, currentSector, &col, &row, &diskSector);
+	devReqPtr = Raid_MakeBlockDeviceRequest(raidPtr, operation,
 		diskSector, numSectorsToTransfer, buffer,
 		simpleStripeIODoneProc, (ClientData) IOControlPtr, ctrlData);
 
@@ -1163,7 +1161,7 @@ InitiateSimpleStripeIOs(raidPtr, operation, firstSector, nthSector,
         MASTER_UNLOCK(&IOControlPtr->mutex);
         IOControlPtr->doneProc(IOControlPtr->clientData,
 		IOControlPtr->status, IOControlPtr->amountTransferred);
-	FreeIOControl(IOControlPtr);
+	Raid_FreeIOControl(IOControlPtr);
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }
@@ -1175,7 +1173,7 @@ InitiateSimpleStripeIOs(raidPtr, operation, firstSector, nthSector,
  *
  * simpleStripeIODoneProc --
  *
- *	Callback procedure for InitiateSimpleStripeIOs.
+ *	Callback procedure for Raid_InitiateSimpleStripeIOs.
  *
  * Results:
  *	None.
@@ -1195,7 +1193,7 @@ simpleStripeIODoneProc(devReqPtr, status, amountTransferred)
 {
     RaidIOControl	*IOControlPtr = (RaidIOControl *) devReqPtr->clientData;
 
-    FreeBlockDeviceRequest(devReqPtr);
+    Raid_FreeBlockDeviceRequest(devReqPtr);
 
     MASTER_LOCK(&IOControlPtr->mutex);
     IOControlPtr->amountTransferred += amountTransferred;
@@ -1216,7 +1214,7 @@ simpleStripeIODoneProc(devReqPtr, status, amountTransferred)
         MASTER_UNLOCK(&IOControlPtr->mutex);
         IOControlPtr->doneProc(IOControlPtr->clientData,
 		IOControlPtr->status, IOControlPtr->amountTransferred);
-	FreeIOControl(IOControlPtr);
+	Raid_FreeIOControl(IOControlPtr);
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }

@@ -17,6 +17,9 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
+#include <sprite.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "devRaid.h"
 #include "devRaidProto.h"
 
@@ -39,7 +42,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 void
-ReportRaidDiskAttachError(type, unit)
+Raid_ReportDiskAttachError(type, unit)
     int		type, unit;
 {
     printf("RAID:ATTACH_ERR:dev %d %d:Could not attach device.\n", type, unit);
@@ -49,7 +52,7 @@ ReportRaidDiskAttachError(type, unit)
 /*
  *----------------------------------------------------------------------
  *
- * MakeRaidDisk --
+ * Raid_MakeDisk --
  *
  *	Allocate and initialize RaidDisk.
  *
@@ -63,7 +66,7 @@ ReportRaidDiskAttachError(type, unit)
  */
 
 RaidDisk *
-MakeRaidDisk(col, row, type, unit, version, numSector)
+Raid_MakeDisk(col, row, type, unit, version, numSector)
     int 	 col, row;
     int 	 type, unit, version;
     int		 numSector;
@@ -81,7 +84,7 @@ MakeRaidDisk(col, row, type, unit, version, numSector)
     if (diskPtr->handlePtr == (DevBlockDeviceHandle *) NIL) {
         diskPtr->numValidSector = 0;
         diskPtr->state = RAID_DISK_INVALID;
-	ReportRaidDiskAttachError(type, unit);
+	Raid_ReportDiskAttachError(type, unit);
     } else {
         diskPtr->numValidSector = numSector;
         diskPtr->state = RAID_DISK_READY;
@@ -93,7 +96,7 @@ MakeRaidDisk(col, row, type, unit, version, numSector)
 /*
  *----------------------------------------------------------------------
  *
- * FreeRaidDisk --
+ * Raid_FreeDisk --
  *
  *	Free RaidDisk.
  *
@@ -106,7 +109,7 @@ MakeRaidDisk(col, row, type, unit, version, numSector)
  *----------------------------------------------------------------------
  */
 
-void FreeRaidDisk(diskPtr)
+void Raid_FreeDisk(diskPtr)
     RaidDisk	*diskPtr;
 {
     if (diskPtr->handlePtr != (DevBlockDeviceHandle *) NIL) {
@@ -119,7 +122,7 @@ void FreeRaidDisk(diskPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FailRaidDisk --
+ * Raid_FailDisk --
  *
  *	Mark specified disk as failed.
  *
@@ -133,7 +136,7 @@ void FreeRaidDisk(diskPtr)
  */
 
 void
-FailRaidDisk(raidPtr, col, row, version)
+Raid_FailDisk(raidPtr, col, row, version)
     Raid	*raidPtr;
     int		 col, row;
     int		 version;
@@ -148,7 +151,7 @@ FailRaidDisk(raidPtr, col, row, version)
 	        raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
 		row, col, version,
 		diskPtr->device.type, diskPtr->device.unit);
-	SaveDiskState(raidPtr, col, row,
+	Raid_SaveDiskState(raidPtr, col, row,
 		diskPtr->device.type, diskPtr->device.unit, diskPtr->version,0);
 	diskPtr->numValidSector = 0;
     }
@@ -159,7 +162,7 @@ FailRaidDisk(raidPtr, col, row, version)
 /*
  *----------------------------------------------------------------------
  *
- * ReplaceRaidDisk --
+ * Raid_ReplaceDisk --
  *
  *	Replace specified disk with new disk.
  *
@@ -173,7 +176,7 @@ FailRaidDisk(raidPtr, col, row, version)
  */
 
 void
-ReplaceRaidDisk(raidPtr, col, row, version, type, unit, numValidSector)
+Raid_ReplaceDisk(raidPtr, col, row, version, type, unit, numValidSector)
     Raid	*raidPtr;
     int		 col, row;
     int		 version;
@@ -182,7 +185,6 @@ ReplaceRaidDisk(raidPtr, col, row, version, type, unit, numValidSector)
 {
     RaidDisk	*diskPtr    = raidPtr->disk[col][row];
     RaidDisk	*newDiskPtr;
-    char	 buf[120];
 
     LockSema(&raidPtr->disk[col][row]->lock);
     diskPtr = raidPtr->disk[col][row];
@@ -199,9 +201,9 @@ ReplaceRaidDisk(raidPtr, col, row, version, type, unit, numValidSector)
     }
     diskPtr->state = RAID_DISK_REPLACED;
     diskPtr->version = -version;
-    newDiskPtr = MakeRaidDisk(col, row, type, unit, 1, numValidSector);
+    newDiskPtr = Raid_MakeDisk(col, row, type, unit, 1, numValidSector);
     newDiskPtr->version = version + 1;
-    SaveDiskState(raidPtr, col, row,
+    Raid_SaveDiskState(raidPtr, col, row,
 	    newDiskPtr->device.type, newDiskPtr->device.unit,
 	    newDiskPtr->version, newDiskPtr->numValidSector);
 printf("RAID:DISK_REPLACED:raid %d %d:pos %d %d %d:oldDev %d %d:newDev %d %d\n",

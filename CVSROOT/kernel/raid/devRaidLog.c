@@ -18,7 +18,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sync.h"
-#include "sprite.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "devRaid.h"
 #include "devRaidDisk.h"
 #include "devRaidLog.h"
@@ -46,7 +48,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  *----------------------------------------------------------------------
  *
- * InitRaidLog --
+ * Raid_InitLog --
  *
  * Results:
  *
@@ -55,7 +57,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *----------------------------------------------------------------------
  */
 void
-InitRaidLog(raidPtr)
+Raid_InitLog(raidPtr)
     Raid *raidPtr;
 {
     Sync_SemInitDynamic(&raidPtr->log.mutex, "RAID log mutex");
@@ -82,7 +84,7 @@ InitRaidLog(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * EnableLog --
+ * Raid_EnableLog --
  *
  * Results:
  *
@@ -91,7 +93,7 @@ InitRaidLog(raidPtr)
  *----------------------------------------------------------------------
  */
 void
-EnableLog(raidPtr)
+Raid_EnableLog(raidPtr)
     Raid *raidPtr;
 {
     raidPtr->log.enabled = 1;
@@ -101,7 +103,7 @@ EnableLog(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * DisableLog --
+ * Raid_DisableLog --
  *
  * Results:
  *
@@ -110,7 +112,7 @@ EnableLog(raidPtr)
  *----------------------------------------------------------------------
  */
 void
-DisableLog(raidPtr)
+Raid_DisableLog(raidPtr)
     Raid *raidPtr;
 {
     raidPtr->log.enabled = 0;
@@ -157,8 +159,8 @@ ProcessRaidLog(raidPtr)
 	MASTER_LOCK(&controlBlock.mutex);
 	controlBlock.numIO++;
 	MASTER_UNLOCK(&controlBlock.mutex);
-	InitiateHardInit(raidPtr, stripeID, 1,
-		initDoneProc, (ClientData) &controlBlock, &statusCtrl);
+	Raid_InitiateHardInit(raidPtr, stripeID, 1,
+		initDoneProc, (ClientData) &controlBlock, (int) &statusCtrl);
     }
     MASTER_LOCK(&controlBlock.mutex);
     controlBlock.numIO--;
@@ -177,7 +179,7 @@ ProcessRaidLog(raidPtr)
  *
  * initDoneProc --
  *
- *	Callback procedure used by ApplyRaidLog.
+ *	Callback procedure used by Raid_ApplyLog.
  *      Is called after each parity reconstruction.
  *
  * Results:
@@ -206,7 +208,7 @@ initDoneProc(controlBlockPtr, status)
 /*
  *----------------------------------------------------------------------
  *
- * ApplyRaidLog --
+ * Raid_ApplyLog --
  *
  * Results:
  *
@@ -215,7 +217,7 @@ initDoneProc(controlBlockPtr, status)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-ApplyRaidLog(raidPtr)
+Raid_ApplyLog(raidPtr)
     Raid *raidPtr;
 {
     int				xferAmt;
@@ -243,7 +245,7 @@ ApplyRaidLog(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * SaveDiskState --
+ * Raid_SaveDiskState --
  *	
  * Results:
  *
@@ -252,7 +254,7 @@ ApplyRaidLog(raidPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-SaveDiskState(raidPtr, col, row, type, unit, version, numValidSector)
+Raid_SaveDiskState(raidPtr, col, row, type, unit, version, numValidSector)
     Raid	*raidPtr;
     int		 col, row;
     int		 type, unit, version;
@@ -278,7 +280,7 @@ SaveDiskState(raidPtr, col, row, type, unit, version, numValidSector)
     if (status != SUCCESS) {
 	return status;
     }
-    free(iBuf);
+    free((char *) iBuf);
     return SUCCESS;
 }
 
@@ -286,7 +288,7 @@ SaveDiskState(raidPtr, col, row, type, unit, version, numValidSector)
 /*
  *----------------------------------------------------------------------
  *
- * SaveRaidParam --
+ * Raid_SaveParam --
  *	
  * Results:
  *
@@ -295,7 +297,7 @@ SaveDiskState(raidPtr, col, row, type, unit, version, numValidSector)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-SaveRaidParam(raidPtr)
+Raid_SaveParam(raidPtr)
     Raid	*raidPtr;
 {
     DevBlockDeviceRequest req;
@@ -321,7 +323,7 @@ SaveRaidParam(raidPtr)
     if (status != SUCCESS) {
 	return status;
     }
-    free(iBuf);
+    free((char *) iBuf);
     return SUCCESS;
 }
 
@@ -329,7 +331,7 @@ SaveRaidParam(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * SaveRaidLog --
+ * Raid_SaveLog --
  *	
  * Results:
  *
@@ -338,7 +340,7 @@ SaveRaidParam(raidPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-SaveRaidLog(raidPtr)
+Raid_SaveLog(raidPtr)
     Raid	*raidPtr;
 {
     DevBlockDeviceRequest	req;
@@ -363,7 +365,7 @@ SaveRaidLog(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * SaveRaidState --
+ * Raid_SaveState --
  *	
  *	Perform a consistent checkpoint of the raid state.
  *      System must be queiesced.
@@ -375,14 +377,14 @@ SaveRaidLog(raidPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-SaveRaidState(raidPtr)
+Raid_SaveState(raidPtr)
     Raid *raidPtr;
 {
     int		col, row;
     ReturnStatus status;
     RaidDisk	*diskPtr;
 
-    status = SaveRaidParam(raidPtr);
+    status = Raid_SaveParam(raidPtr);
     if (status != SUCCESS) {
 	return status;
     }
@@ -390,7 +392,7 @@ SaveRaidState(raidPtr)
         for ( col = 0; col < raidPtr->numCol; col++ ) {
 	    LockSema(&raidPtr->disk[col][row]->lock);
 	    diskPtr = raidPtr->disk[col][row];
-	    status = SaveDiskState(raidPtr, col, row, diskPtr->device.type,
+	    status = Raid_SaveDiskState(raidPtr, col, row, diskPtr->device.type,
 		    diskPtr->device.unit, diskPtr->version,
 		    diskPtr->numValidSector);
 	    UnlockSema(&diskPtr->lock);
@@ -402,7 +404,7 @@ SaveRaidState(raidPtr)
 #ifndef TESTING
     ClearBitVec(raidPtr->log.diskLockVec, raidPtr->log.diskLockVecNum);
 #endif TESTING
-    status = SaveRaidLog(raidPtr);
+    status = Raid_SaveLog(raidPtr);
     if (status != SUCCESS) {
 	return status;
     }
@@ -465,7 +467,7 @@ ComputeRaidParam(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * RaidConfigure --
+ * Raid_Configure --
  *
  *	Configure raid device by reading the appropriate configuration file.
  *
@@ -479,7 +481,7 @@ ComputeRaidParam(raidPtr)
  */
 
 /* static */ ReturnStatus
-RaidConfigure(raidPtr, charBuf)
+Raid_Configure(raidPtr, charBuf)
     Raid	*raidPtr;
     char	*charBuf;
 {
@@ -555,7 +557,7 @@ RaidConfigure(raidPtr, charBuf)
 		return FAILURE;
 	    }
 	    unit = atoi(charBuf);
-	    diskPtr = MakeRaidDisk(col, row, type, unit, 1,
+	    diskPtr = Raid_MakeDisk(col, row, type, unit, 1,
 		    raidPtr->sectorsPerDisk);
 	    if (diskPtr == (RaidDisk *) NIL) {
 		printf("Could not attach disk %d %d\n", type, unit);
@@ -565,7 +567,7 @@ RaidConfigure(raidPtr, charBuf)
 	}
     }
 
-    InitRaidLog(raidPtr);
+    Raid_InitLog(raidPtr);
 
     raidPtr->state = RAID_VALID;
     return SUCCESS;
@@ -575,7 +577,7 @@ RaidConfigure(raidPtr, charBuf)
 /*
  *----------------------------------------------------------------------
  *
- * RestoreRaidState --
+ * Raid_RestoreState --
  *
  * Results:
  *
@@ -584,7 +586,7 @@ RaidConfigure(raidPtr, charBuf)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-RestoreRaidState(raidPtr)
+Raid_RestoreState(raidPtr)
     Raid *raidPtr;
 {
     DevBlockDeviceRequest	req;
@@ -637,7 +639,7 @@ RestoreRaidState(raidPtr)
 	if (status != SUCCESS) {
 	    return FAILURE;
 	}
-	diskPtr = MakeRaidDisk(col,row, iBuf[0], iBuf[1], iBuf[2], iBuf[3]);
+	diskPtr = Raid_MakeDisk(col,row, iBuf[0], iBuf[1], iBuf[2], iBuf[3]);
 	if (diskPtr == (RaidDisk *) NIL) {
 	    return FAILURE;
 	}
@@ -645,8 +647,8 @@ RestoreRaidState(raidPtr)
 	}
     }
 
-    InitRaidLog(raidPtr);
-    if (ApplyRaidLog(raidPtr) != SUCCESS) {
+    Raid_InitLog(raidPtr);
+    if (Raid_ApplyLog(raidPtr) != SUCCESS) {
 	return FAILURE;
     }
     raidPtr->state = RAID_VALID;
@@ -657,7 +659,7 @@ RestoreRaidState(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * MasterFlushLog --
+ * Raid_MasterFlushLog --
  *
  *	Flush log to disk.
  *
@@ -669,7 +671,7 @@ RestoreRaidState(raidPtr)
  */
 
 void
-MasterFlushLog(raidPtr)
+Raid_MasterFlushLog(raidPtr)
     Raid *raidPtr;
 {
     if (raidPtr->log.busy) {
@@ -717,7 +719,7 @@ MasterFlushLog(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * LogStripe --
+ * Raid_LogStripe --
  *
  *	Make an entry in the specified log.
  *
@@ -729,7 +731,7 @@ MasterFlushLog(raidPtr)
  *----------------------------------------------------------------------
  */
 void
-LogStripe(raidPtr, stripeID)
+Raid_LogStripe(raidPtr, stripeID)
     Raid *raidPtr;
     int	  stripeID;
 {
@@ -745,7 +747,7 @@ LogStripe(raidPtr, stripeID)
     if (stripeID > raidPtr->log.maxLogElem) {
 	raidPtr->log.maxLogElem = stripeID;
     }
-    MasterFlushLog(raidPtr);
+    Raid_MasterFlushLog(raidPtr);
     MASTER_UNLOCK(&raidPtr->log.mutex);
 }
 

@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sync.h"
+#include <stdio.h>
 #include "devRaid.h"
 #include "devRaidUtil.h"
 
@@ -26,7 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  *----------------------------------------------------------------------
  *
- * ReportRequestError --
+ * Raid_ReportRequestError --
  *
  *	This procedure is called when an IO request issued by the RAID
  *	device driver failes.
@@ -41,7 +42,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 void
-ReportRequestError(reqPtr)
+Raid_ReportRequestError(reqPtr)
     RaidBlockRequest	*reqPtr;
 {
     printf("RAID:REQ_ERR:raid %d %d:pos %d %d %d:op %d:status %d:dev %d %d:req %d %d\n",
@@ -56,7 +57,7 @@ ReportRequestError(reqPtr)
 /*
  *----------------------------------------------------------------------
  *
- * ReportHardInitFailure --
+ * Raid_ReportHardInitFailure --
  *
  *	This procedure is called when a hard initialization failes on a stripe.
  *
@@ -70,7 +71,7 @@ ReportRequestError(reqPtr)
  */
 
 void
-ReportHardInitFailure(stripeID)
+Raid_ReportHardInitFailure(stripeID)
     int		stripeID;
 {
     printf("RAID:HARD_INIT_ERR:stripe %d\n", stripeID);
@@ -80,7 +81,7 @@ ReportHardInitFailure(stripeID)
 /*
  *----------------------------------------------------------------------
  *
- * ReportParityCheckFailure --
+ * Raid_ReportParityCheckFailure --
  *
  *	This procedure is called when a parity check failes on a stripe.
  *
@@ -94,7 +95,7 @@ ReportHardInitFailure(stripeID)
  */
 
 void
-ReportParityCheckFailure(stripeID)
+Raid_ReportParityCheckFailure(stripeID)
     int		stripeID;
 {
     printf("RAID:PARITY_CHECK_ERR:stripe %d\n", stripeID);
@@ -104,7 +105,7 @@ ReportParityCheckFailure(stripeID)
 /*
  *----------------------------------------------------------------------
  *
- * ReportReconstructionFailure --
+ * Raid_ReportReconstructionFailure --
  *
  *	This procedure is called when a reconstruction failes.
  *
@@ -118,7 +119,7 @@ ReportParityCheckFailure(stripeID)
  */
 
 void
-ReportReconstructionFailure(col, row)
+Raid_ReportReconstructionFailure(col, row)
     int		col, row;
 {
     printf("RAID:RECONST_ERR:pos %d %d\n", row, col);

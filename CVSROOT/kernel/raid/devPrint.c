@@ -19,7 +19,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sync.h"
-#include "sprite.h"
+#include <sprite.h>
+#include <stdio.h>
 #include "fs.h"
 #include "devBlockDevice.h"
 #include "devRaid.h"
@@ -42,6 +43,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *----------------------------------------------------------------------
  */
 
+void
 PrintHandle(handlePtr)
     DevBlockDeviceHandle  *handlePtr; /* Handle pointer of device. */
 {
@@ -73,6 +75,7 @@ PrintHandle(handlePtr)
  *----------------------------------------------------------------------
  */
 
+void
 PrintDevice(devicePtr)
     Fs_Device  *devicePtr; /* Handle pointer of device. */
 {
@@ -100,6 +103,7 @@ PrintDevice(devicePtr)
  *----------------------------------------------------------------------
  */
 
+void
 PrintRequest(requestPtr)
     DevBlockDeviceRequest *requestPtr; /* IO Request to be performed. */
 {
@@ -139,6 +143,7 @@ PrintRequest(requestPtr)
  *----------------------------------------------------------------------
  */
 
+void
 PrintRaid(raidPtr)
     Raid *raidPtr;
 {
@@ -197,6 +202,7 @@ PrintRaid(raidPtr)
  *----------------------------------------------------------------------
  */
 
+void
 PrintTime()
 {
     printf("TIME: %lg\n", LocalTime());

@@ -14,8 +14,9 @@
  * express or implied warranty.
  */
 
-#include <string.h>
 #include "sync.h"
+#include <stdio.h>
+#include <string.h>
 #include "sprite.h"
 #include "fs.h"
 #include "dev.h"
@@ -31,7 +32,7 @@
 /*
  *----------------------------------------------------------------------
  *
- * InitiateHardInit --
+ * Raid_InitiateHardInit --
  *	
  *	Reconstructs the parity beginning at startStripe for numStripe.
  *	If numStripe is negative, all stripes will be reconstucted.
@@ -51,7 +52,7 @@ static void hardInitReadDoneProc();
 static void hardInitWriteDoneProc();
 
 void
-InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
+Raid_InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
     Raid	*raidPtr;
     int		 startStripe;
     int		 numStripe;
@@ -61,7 +62,7 @@ InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
 {
     RaidReconstructionControl	*reconstructionControlPtr;
     reconstructionControlPtr =
-	    MakeReconstructionControl(raidPtr, (int) NIL, (int) NIL,
+	    Raid_MakeReconstructionControl(raidPtr, (int) NIL, (int) NIL,
 		    (RaidDisk *) NIL, doneProc, clientData, ctrlData);
     reconstructionControlPtr->stripeID = startStripe;
     reconstructionControlPtr->numStripe = numStripe;
@@ -75,7 +76,7 @@ InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
  *
  * hardInitDoneProc --
  *
- *	Callback procedure for InitiateHardInit.
+ *	Callback procedure for Raid_InitiateHardInit.
  *
  * Results:
  *	None.
@@ -91,14 +92,14 @@ hardInitDoneProc(reconstructionControlPtr)
 {
     reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData,
 	    reconstructionControlPtr->status);
-    FreeReconstructionControl(reconstructionControlPtr);
+    Raid_FreeReconstructionControl(reconstructionControlPtr);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * InitiateHardInitFailure --
+ * Raid_InitiateHardInitFailure --
  *
  *	Causes the initialization of the current stripe to fail.
  *
@@ -112,7 +113,7 @@ hardInitDoneProc(reconstructionControlPtr)
  */
 
 static void
-InitiateHardInitFailure(reconstructionControlPtr)
+Raid_InitiateHardInitFailure(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {
     hardInitWriteDoneProc(reconstructionControlPtr, 1);
@@ -158,16 +159,16 @@ InitiateStripeHardInit(reconstructionControlPtr)
 	hardInitDoneProc(reconstructionControlPtr);
 	return;
     }
-    XLockStripe(raidPtr, stripeID);
+    Raid_XLockStripe(raidPtr, stripeID);
     reqControlPtr->numReq = reqControlPtr->numFailed = 0;
     AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, nthSector, readBuf, ctrlData);
     if (reqControlPtr->numFailed == 0) {
-	InitiateIORequests(reqControlPtr,
+	Raid_InitiateIORequests(reqControlPtr,
 		hardInitReadDoneProc,
 		(ClientData) reconstructionControlPtr);
     } else {
-	InitiateHardInitFailure(reconstructionControlPtr);
+	Raid_InitiateHardInitFailure(reconstructionControlPtr);
     }
 }
 
@@ -202,7 +203,7 @@ hardInitReadDoneProc(reconstructionControlPtr, numFailed)
     int		        stripeID      = reconstructionControlPtr->stripeID;
 
     if (numFailed > 0) {
-	InitiateHardInitFailure(reconstructionControlPtr);
+	Raid_InitiateHardInitFailure(reconstructionControlPtr);
     } else {
 #ifndef NODATA
 	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
@@ -211,7 +212,7 @@ hardInitReadDoneProc(reconstructionControlPtr, numFailed)
 	AddRaidParityRequest(reqControlPtr, raidPtr, FS_WRITE,
 		(unsigned) StripeIDToSector(raidPtr, stripeID),
 		parityBuf, ctrlData);
-	InitiateIORequests(reqControlPtr,
+	Raid_InitiateIORequests(reqControlPtr,
 		hardInitWriteDoneProc,
 		(ClientData) reconstructionControlPtr);
     }
@@ -246,17 +247,15 @@ hardInitWriteDoneProc(reconstructionControlPtr, numFailed)
 {
     Raid	*raidPtr = reconstructionControlPtr->raidPtr;
     int		stripeID = reconstructionControlPtr->stripeID;
-    RaidDisk	*diskPtr;
-    int		col, row, sector;
 
     if (numFailed > 0) {
-        ReportHardInitFailure(stripeID);
+        Raid_ReportHardInitFailure(stripeID);
 	reconstructionControlPtr->status = FAILURE;
     }
     if (stripeID % NUM_REPORT_STRIPE == 0) {
 	printf("RAID:MSG:%d", stripeID);
     }
-    XUnlockStripe(reconstructionControlPtr->raidPtr, stripeID);
+    Raid_XUnlockStripe(raidPtr, stripeID);
     reconstructionControlPtr->stripeID++;
     reconstructionControlPtr->numStripe--;
     InitiateStripeHardInit(reconstructionControlPtr);

@@ -16,22 +16,22 @@
  */
 
 #include "sync.h"
-#include "sprite.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "fs.h"
-#include "dev.h"
-#include "devDiskLabel.h"
-#include "devDiskStats.h"
+#include "devRaid.h"
 #include "devBlockDevice.h"
-#include "stdlib.h"
-#include "dbg.h"
 #include "schedule.h"
 #include "timer.h"
+#include "devRaidProto.h"
 
 typedef struct DebugHandle {
     DevBlockDeviceHandle blockHandle;	/* Must be FIRST field. */
     Fs_Device		*devPtr;	/* Device corresponding to handle */
 } DebugHandle;
 
+#ifdef TESTING
 /*
  * Storage for contents of simulated disks.
  * (16 disks of 32 bytes each)
@@ -55,7 +55,8 @@ static char devDebugData[4][4][32] = {
 "P0P1P2P3P4P5P6P7p0p1p2p3p4p5p6p7",
 };
 
-static logData[30000];
+static char logData[30000];
+#endif
 
 /*
  * Forward Declarations.
@@ -184,12 +185,6 @@ BlockIOProc(handlePtr, requestPtr)
     DevBlockDeviceRequest *requestPtr; /* IO Request to be performed. */
 {
     DebugHandle	   *debugHandlePtr = (DebugHandle *) handlePtr;
-    DevBlockDeviceRequest *localRequestPtr = requestPtr; 
-    ReturnStatus    status;
-
-    int		    row, col;
-    char	  **statusCtrl;
-    int		    i;
 
     /*
      * Debug device with unit number == 101 is the same as /dev/null except
@@ -203,6 +198,15 @@ BlockIOProc(handlePtr, requestPtr)
 	PrintDevice(debugHandlePtr->devPtr);
 	PrintRequest(requestPtr);
     }
+
+#ifdef TESTING
+{
+    DevBlockDeviceRequest *localRequestPtr = requestPtr; 
+    ReturnStatus    status;
+    int		    row, col;
+    char	  **statusCtrl;
+    int		    i;
+
     if (debugHandlePtr->devPtr->unit == 99) {
 	int *iBuf;
 	if (requestPtr->operation == FS_READ) {
@@ -223,7 +227,6 @@ BlockIOProc(handlePtr, requestPtr)
 	return SUCCESS;
     }
 
-#ifdef TESTING
     row = debugHandlePtr->devPtr->unit/10;
     col = debugHandlePtr->devPtr->unit%10;
 
@@ -262,6 +265,7 @@ BlockIOProc(handlePtr, requestPtr)
     } else {
         return SUCCESS;
     }
+}
 #else
     requestPtr->doneProc(requestPtr, SUCCESS, requestPtr->bufferLen);
     return SUCCESS;
@@ -332,14 +336,14 @@ BlockIOProc1(handlePtr, requestPtr)
     DevBlockDeviceHandle  *handlePtr;  /* Handle pointer of device. */
     DevBlockDeviceRequest *requestPtr; /* IO Request to be performed. */
 {
-    DebugHandle	   *debugHandlePtr = (DebugHandle *) handlePtr;
+#ifdef TESTING
     DevBlockDeviceRequest *localRequestPtr = requestPtr; 
+    DebugHandle	   *debugHandlePtr = (DebugHandle *) handlePtr;
     ReturnStatus    status;
     char	  **statusCtrl;
     int		    row, col;
     int		    i;
 
-#ifdef TESTING
     printf("\nBlockIOProc\n");
     PrintTime();
     PrintHandle(handlePtr);
@@ -404,10 +408,10 @@ BlockIOProc1(handlePtr, requestPtr)
     timerQueueElemPtr->clientData = (ClientData) timerCallBackDataPtr;
     timerQueueElemPtr->interval = 10;
     timerCallBackDataPtr->timerQueueElemPtr = timerQueueElemPtr;
-    timerCallBackDataPtr->proc = localRequestPtr->doneProc;
-    timerCallBackDataPtr->requestPtr = localRequestPtr;
+    timerCallBackDataPtr->proc = requestPtr->doneProc;
+    timerCallBackDataPtr->requestPtr = requestPtr;
     timerCallBackDataPtr->status = SUCCESS;
-    timerCallBackDataPtr->amountTransferred = localRequestPtr->bufferLen;
+    timerCallBackDataPtr->amountTransferred = requestPtr->bufferLen;
     Timer_ScheduleRoutine(timerQueueElemPtr, TRUE);
     return SUCCESS;
 }

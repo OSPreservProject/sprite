@@ -23,8 +23,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sync.h"
+#include <sprite.h>
+#include <stdio.h>
 #include <string.h>
-#include "sprite.h"
 #include "fs.h"
 #include "dev.h"
 /*
@@ -121,10 +122,10 @@ DevRaidAttach(devicePtr)
 	Sync_CondInit(&raidPtr->waitExclusive);
 	Sync_CondInit(&raidPtr->waitNonExclusive);
 #endif TESTING
-	InitStripeLocks();
+	Raid_InitStripeLocks();
 	InitDebugMem();
 	raidPtr->devicePtr = devicePtr;
-	LockRaid(raidPtr);
+	Raid_Lock(raidPtr);
     } else {
 	MASTER_UNLOCK(&raidPtr->mutex);
     }
@@ -227,7 +228,6 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    (DevBlockDeviceRequest *) ioctlPtr->inBuffer;
     int		  col;
     int		  row;
-    char	  fileName[80];
     ReturnStatus  status;
     IOCControl	  iocCtrl;
 
@@ -245,7 +245,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	PrintRaid(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_RECONFIG:
-	status = RaidConfigure(raidPtr, raidIOCParamPtr->buf);
+	status = Raid_Configure(raidPtr, raidIOCParamPtr->buf);
 	return status;
     case IOC_DEV_RAID_FAIL:
 	if (row < 0 || row >= raidPtr->numRow) {
@@ -256,7 +256,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    printf("RAID:MSG:col=%d out of range on ioctl call", col);
 	    return FAILURE;
 	}
-	FailRaidDisk(raidPtr, col, row, raidPtr->disk[col][row]->version);
+	Raid_FailDisk(raidPtr, col, row, raidPtr->disk[col][row]->version);
 	return SUCCESS;
     case IOC_DEV_RAID_REPLACE:
 	if (row < 0 || row >= raidPtr->numRow) {
@@ -267,12 +267,12 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    printf("RAID:MSG:col=%d out of range on ioctl call", col);
 	    return FAILURE;
 	}
-	ReplaceRaidDisk(raidPtr, col, row, raidPtr->disk[col][row]->version,
+	Raid_ReplaceDisk(raidPtr, col, row, raidPtr->disk[col][row]->version,
 		raidIOCParamPtr->type, raidIOCParamPtr->unit, 0);
 	return SUCCESS;
     case IOC_DEV_RAID_HARDINIT:
 	InitSema(&iocCtrl.sema, "Raid HardInit", 0);
-	InitiateHardInit(raidPtr,
+	Raid_InitiateHardInit(raidPtr,
 		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
 		iocDoneProc, (ClientData) &iocCtrl,
 		raidIOCParamPtr->ctrlData);
@@ -280,7 +280,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	return iocCtrl.status;
     case IOC_DEV_RAID_PARITYCHECK:
 	InitSema(&iocCtrl.sema, "Raid ParityCheck", 0);
-	InitiateParityCheck(raidPtr,
+	Raid_InitiateParityCheck(raidPtr,
 		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
 		iocDoneProc, (ClientData) &iocCtrl,
 		raidIOCParamPtr->ctrlData);
@@ -288,7 +288,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	return iocCtrl.status;
     case IOC_DEV_RAID_RECONSTRUCT:
 	InitSema(&iocCtrl.sema, "Raid Reconstruct", 0);
-	InitiateReconstruction(raidPtr, col, row,
+	Raid_InitiateReconstruction(raidPtr, col, row,
 		raidPtr->disk[col][row]->version,
 		raidIOCParamPtr->numStripe, raidIOCParamPtr->uSec,
 		iocDoneProc, (ClientData) &iocCtrl,
@@ -303,22 +303,22 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	return Dev_BlockDeviceIOSync(handlePtr, requestPtr,
 		(int *)ioctlPtr->outBuffer);
     case IOC_DEV_RAID_LOCK:
-	LockRaid(raidPtr);
+	Raid_Lock(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_UNLOCK:
-	UnlockRaid(raidPtr);
+	Raid_Unlock(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_SAVE_STATE:
-	status = SaveRaidState(raidPtr);
+	status = Raid_SaveState(raidPtr);
 	if (status != SUCCESS) {
 	    printf("RAID:MSG:Could not checkpoint state.\n");
 	}
 	return status;
     case IOC_DEV_RAID_ENABLE_LOG:
-	EnableLog(raidPtr);
+	Raid_EnableLog(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_DISABLE_LOG:
-	DisableLog(raidPtr);
+	Raid_DisableLog(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_RESTORE_STATE:
 	raidPtr->logDev.type = raidIOCParamPtr->type;
@@ -333,7 +333,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 		    raidPtr->logDev.type, raidPtr->logDev.unit);
 	    return FAILURE;
 	}
-	status = RestoreRaidState(raidPtr);
+	status = Raid_RestoreState(raidPtr);
 	if (status != SUCCESS) {
 	    printf("RAID:MSG:Could not checkpoint state.\n");
 	}
@@ -406,7 +406,7 @@ StripeBlockIOProc(handlePtr, requestPtr)
         nthSector = raidPtr->numSector;
     } 
 
-    InitiateSimpleStripeIOs(raidPtr, requestPtr->operation,
+    Raid_InitiateSimpleStripeIOs(raidPtr, requestPtr->operation,
             firstSector, nthSector, requestPtr->buffer,
             requestPtr->doneProc, (ClientData) requestPtr,
             requestPtr->ctrlData[0]);
@@ -477,7 +477,7 @@ RaidBlockIOProc(handlePtr, requestPtr)
         nthSector = raidPtr->numSector;
     } 
 
-    InitiateStripeIOs(raidPtr, requestPtr->operation,
+    Raid_InitiateStripeIOs(raidPtr, requestPtr->operation,
             firstSector, nthSector, requestPtr->buffer,
             requestPtr->doneProc, (ClientData) requestPtr,
             requestPtr->ctrlData[0]);

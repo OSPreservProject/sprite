@@ -32,7 +32,7 @@
 /*
  *----------------------------------------------------------------------
  *
- * InitiateParityCheck --
+ * Raid_InitiateParityCheck --
  *	
  *	Check the parity beginning at startStripe for numStripe.
  *	If numStripe is negative, all stripes will be checked.
@@ -51,7 +51,7 @@ static void InitiateStripeParityCheck();
 static void parityCheckReadDoneProc();
 
 void
-InitiateParityCheck(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
+Raid_InitiateParityCheck(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
     Raid	*raidPtr;
     int		 startStripe;
     int		 numStripe;
@@ -61,7 +61,7 @@ InitiateParityCheck(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlDat
 {
     RaidReconstructionControl	*reconstructionControlPtr;
     reconstructionControlPtr =
-	    MakeReconstructionControl(raidPtr, (int) NIL, (int) NIL,
+	    Raid_MakeReconstructionControl(raidPtr, (int) NIL, (int) NIL,
 		    (RaidDisk *) NIL, doneProc, clientData, ctrlData);
     reconstructionControlPtr->stripeID = startStripe;
     reconstructionControlPtr->numStripe = numStripe;
@@ -75,7 +75,7 @@ InitiateParityCheck(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlDat
  *
  * parityCheckDoneProc --
  *
- *	Callback procedure for InitiateParityCheck.
+ *	Callback procedure for Raid_InitiateParityCheck.
  *
  * Results:
  *	None.
@@ -91,14 +91,14 @@ parityCheckDoneProc(reconstructionControlPtr)
 {
     reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData,
 	    reconstructionControlPtr->status);
-    FreeReconstructionControl(reconstructionControlPtr);
+    Raid_FreeReconstructionControl(reconstructionControlPtr);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * InitiateParityCheckFailure --
+ * Raid_InitiateParityCheckFailure --
  *
  *	Causes the initialization of the current stripe to fail.
  *
@@ -112,7 +112,7 @@ parityCheckDoneProc(reconstructionControlPtr)
  */
 
 static void
-InitiateParityCheckFailure(reconstructionControlPtr)
+Raid_InitiateParityCheckFailure(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {
     parityCheckReadDoneProc(reconstructionControlPtr, 1);
@@ -159,7 +159,7 @@ InitiateStripeParityCheck(reconstructionControlPtr)
 	parityCheckDoneProc(reconstructionControlPtr);
 	return;
     }
-    SLockStripe(raidPtr, stripeID);
+    Raid_SLockStripe(raidPtr, stripeID);
     reqControlPtr->numReq = reqControlPtr->numFailed = 0;
     AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, nthSector, readBuf, ctrlData);
@@ -167,11 +167,11 @@ InitiateStripeParityCheck(reconstructionControlPtr)
 	    (unsigned) StripeIDToSector(raidPtr, stripeID),
 	    parityBuf, ctrlData);
     if (reqControlPtr->numFailed == 0) {
-	InitiateIORequests(reqControlPtr,
+	Raid_InitiateIORequests(reqControlPtr,
 		parityCheckReadDoneProc,
 		(ClientData) reconstructionControlPtr);
     } else {
-	InitiateParityCheckFailure(reconstructionControlPtr);
+	Raid_InitiateParityCheckFailure(reconstructionControlPtr);
     }
 }
 
@@ -205,7 +205,7 @@ parityCheckReadDoneProc(reconstructionControlPtr, numFailed)
     int		        stripeID      = reconstructionControlPtr->stripeID;
 
     if (numFailed > 0) {
-	ReportParityCheckFailure(reconstructionControlPtr->stripeID);
+	Raid_ReportParityCheckFailure(reconstructionControlPtr->stripeID);
 	reconstructionControlPtr->status = FAILURE;
     } else {
 	char	       *xorBuf = malloc((unsigned)raidPtr->bytesPerStripeUnit);
@@ -214,7 +214,7 @@ parityCheckReadDoneProc(reconstructionControlPtr, numFailed)
 #ifndef NODATA
 	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
 	if (bcmp(parityBuf, xorBuf, raidPtr->bytesPerStripeUnit) != 0) {
-	    ReportParityCheckFailure(stripeID);
+	    Raid_ReportParityCheckFailure(stripeID);
 	    reconstructionControlPtr->status = FAILURE;
 	}
 	free(xorBuf);
@@ -223,7 +223,7 @@ parityCheckReadDoneProc(reconstructionControlPtr, numFailed)
     if (reconstructionControlPtr->stripeID % 100 == 0) {
 	printf("RAID:MSG:%d", reconstructionControlPtr->stripeID);
     }
-    SUnlockStripe(raidPtr, reconstructionControlPtr->stripeID);
+    Raid_SUnlockStripe(raidPtr, reconstructionControlPtr->stripeID);
     reconstructionControlPtr->stripeID++;
     reconstructionControlPtr->numStripe--;
     InitiateStripeParityCheck(reconstructionControlPtr);

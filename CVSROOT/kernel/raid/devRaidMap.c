@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sync.h"
+#include <stdio.h>
 #include "sprite.h"
 #include "fs.h"
 #include "dev.h"
@@ -34,7 +35,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  *----------------------------------------------------------------------
  *
- * MapPhysicalToStripeID --
+ * Raid_MapPhysicalToStripeID --
  *
  *	Maps physical address (raid, col, row, sector) to stripeID.
  *
@@ -48,7 +49,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 void
-MapPhysicalToStripeID(raidPtr, col, row, sector, outStripeIDPtr)
+Raid_MapPhysicalToStripeID(raidPtr, col, row, sector, outStripeIDPtr)
     Raid	*raidPtr;
     int		 col;
     int		 row;
@@ -71,7 +72,7 @@ MapPhysicalToStripeID(raidPtr, col, row, sector, outStripeIDPtr)
 /*
  *----------------------------------------------------------------------
  *
- * MapParity --
+ * Raid_MapParity --
  *
  *	Maps logical sector address to (col, row, sector) of corresponding
  *	parity sector.
@@ -86,7 +87,7 @@ MapPhysicalToStripeID(raidPtr, col, row, sector, outStripeIDPtr)
  */
 
 void
-MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
+Raid_MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
     Raid	*raidPtr;
     unsigned	 sectorNum;
     int		*outColPtr, *outRowPtr;
@@ -107,7 +108,7 @@ MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
     sectorNum /= raidPtr->groupsPerArray;
 
     if (sectorNum != 0) {
-	(void)printf("Error: MapSector: sectorNum=%d\n", (int) sectorNum);
+	(void)printf("Error: Raid_MapSector: sectorNum=%d\n", (int) sectorNum);
     }
 
     row = group * raidPtr->rowsPerGroup + groupRow;
@@ -145,7 +146,7 @@ MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
 /*
  *----------------------------------------------------------------------
  *
- * MapSector --
+ * Raid_MapSector --
  *
  *	Maps logical sector address to (col, row, sector).
  *
@@ -159,7 +160,7 @@ MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
  */
 
 void
-MapSector(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
+Raid_MapSector(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
     Raid	*raidPtr;
     unsigned	 sectorNum;
     int		*outColPtr, *outRowPtr;
@@ -180,7 +181,7 @@ MapSector(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
     sectorNum /= raidPtr->groupsPerArray;
 
     if (sectorNum != 0) {
-	(void)printf("Error: MapSector: sectorNum=%d\n", (int) sectorNum);
+	(void)printf("Error: Raid_MapSector: sectorNum=%d\n", (int) sectorNum);
     }
 
     row = group * raidPtr->rowsPerGroup + groupRow;

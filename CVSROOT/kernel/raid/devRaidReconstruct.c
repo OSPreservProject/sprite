@@ -33,7 +33,7 @@
 /*
  *----------------------------------------------------------------------
  *
- * InitiateReconstruction --
+ * Raid_InitiateReconstruction --
  *
  *	Reconstruct the contents of the failed disk.
  *	System must be quiesced
@@ -50,7 +50,7 @@
 static void InitiateStripeReconstruction();
 
 void
-InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, doneProc,
+Raid_InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, doneProc,
 	clientData, ctrlData)
     Raid	*raidPtr;
     int		 col, row, version;
@@ -70,7 +70,7 @@ InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, doneProc,
 	return;
     }
     UnlockSema(&diskPtr->lock);
-    reconstructionControlPtr = MakeReconstructionControl(raidPtr,
+    reconstructionControlPtr = Raid_MakeReconstructionControl(raidPtr,
 	    col, row, diskPtr, doneProc, clientData, ctrlData);
     InitiateStripeReconstruction(reconstructionControlPtr);
 }
@@ -81,7 +81,7 @@ InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, doneProc,
  *
  * reconstructionDoneProc --
  *
- *	Callback procedure for InitiateReconstruction.
+ *	Callback procedure for Raid_InitiateReconstruction.
  *
  * Results:
  *	None.
@@ -98,14 +98,14 @@ reconstructionDoneProc(reconstructionControlPtr)
 {
     reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData,
             reconstructionControlPtr->status);
-    FreeReconstructionControl(reconstructionControlPtr);
+    Raid_FreeReconstructionControl(reconstructionControlPtr);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * InitiateReconstructionFailure --
+ * Raid_InitiateReconstructionFailure --
  *
  *	Causes the reconstruction to fail.
  *
@@ -119,13 +119,13 @@ reconstructionDoneProc(reconstructionControlPtr)
  */
 
 static void
-InitiateReconstructionFailure(reconstructionControlPtr)
+Raid_InitiateReconstructionFailure(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {
     int	         stripeID = reconstructionControlPtr->stripeID;
 
-    XUnlockStripe(reconstructionControlPtr->raidPtr, stripeID);
-    ReportReconstructionFailure(reconstructionControlPtr->col,
+    Raid_XUnlockStripe(reconstructionControlPtr->raidPtr, stripeID);
+    Raid_ReportReconstructionFailure(reconstructionControlPtr->col,
     	    reconstructionControlPtr->row);
     reconstructionControlPtr->status = FAILURE;
     reconstructionDoneProc(reconstructionControlPtr);
@@ -180,8 +180,8 @@ InitiateStripeReconstruction(reconstructionControlPtr)
 	UnlockSema(&diskPtr->lock);
 	return;
     }
-    MapPhysicalToStripeID(raidPtr, col,row, diskPtr->numValidSector, &stripeID);
-    XLockStripe(raidPtr, stripeID);
+    Raid_MapPhysicalToStripeID(raidPtr, col,row, diskPtr->numValidSector, &stripeID);
+    Raid_XLockStripe(raidPtr, stripeID);
     UnlockSema(&diskPtr->lock);
     reconstructionControlPtr->stripeID = stripeID;
     firstSector = StripeIDToSector(raidPtr, stripeID);
@@ -192,11 +192,11 @@ InitiateStripeReconstruction(reconstructionControlPtr)
     AddRaidParityRequest(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, parityBuf, ctrlData);
     if (reqControlPtr->numFailed == 1) {
-	InitiateIORequests(reqControlPtr,
+	Raid_InitiateIORequests(reqControlPtr,
 		reconstructionReadDoneProc,
 		(ClientData) reconstructionControlPtr);
     } else {
-	InitiateReconstructionFailure(reconstructionControlPtr);
+	Raid_InitiateReconstructionFailure(reconstructionControlPtr);
     }
 }
 
@@ -229,12 +229,12 @@ reconstructionReadDoneProc(reconstructionControlPtr, numFailed)
 	    	          reconstructionControlPtr->reqControlPtr->failedReqPtr;
 
     if (numFailed > 0) {
-	InitiateReconstructionFailure(reconstructionControlPtr);
+	Raid_InitiateReconstructionFailure(reconstructionControlPtr);
     } else {
 #ifndef NODATA
 	bzero(failedReqPtr->devReq.buffer, failedReqPtr->devReq.bufferLen);
 #endif
-	XorRaidRangeRequests(reqControlPtr, raidPtr,
+	Raid_XorRangeRequests(reqControlPtr, raidPtr,
 		failedReqPtr->devReq.buffer,
 		(int) failedReqPtr->devReq.startAddress,
 		failedReqPtr->devReq.bufferLen);
@@ -243,14 +243,14 @@ reconstructionReadDoneProc(reconstructionControlPtr, numFailed)
 	LockSema(&diskPtr->lock);
 	if (diskPtr->state != RAID_DISK_READY) {
 	    printf("RAID:MSG:Reconctruction aborted.\n");
-	    InitiateReconstructionFailure(reconstructionControlPtr);
+	    Raid_InitiateReconstructionFailure(reconstructionControlPtr);
 	    UnlockSema(&diskPtr->lock);
 	    return;
 	}
 	diskPtr->numValidSector =
 		NthSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
 	UnlockSema(&diskPtr->lock);
-	InitiateIORequests(reqControlPtr, reconstructionWriteDoneProc,
+	Raid_InitiateIORequests(reqControlPtr, reconstructionWriteDoneProc,
 		(ClientData) reconstructionControlPtr);
     }
 }
@@ -285,26 +285,26 @@ reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
 	LockSema(&diskPtr->lock);
 	if (diskPtr->state != RAID_DISK_READY) {
 	    printf("RAID:MSG:Reconctruction aborted.\n");
-	    InitiateReconstructionFailure(reconstructionControlPtr);
+	    Raid_InitiateReconstructionFailure(reconstructionControlPtr);
 	    UnlockSema(&diskPtr->lock);
 	    return;
 	}
 	diskPtr->numValidSector =
 		FirstSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
 	UnlockSema(&diskPtr->lock);
-	InitiateReconstructionFailure(reconstructionControlPtr);
+	Raid_InitiateReconstructionFailure(reconstructionControlPtr);
     } else {
 	LockSema(&diskPtr->lock);
 	if (diskPtr->state == RAID_DISK_READY) {
 	    printf("RAID:RECON:%d %d %d\n",
 		    diskPtr->device.type, diskPtr->device.unit,
 		    SectorToStripeUnitID(raidPtr, diskPtr->numValidSector-1));
-	    SaveDiskState(raidPtr, diskPtr->col, diskPtr->row,
+	    Raid_SaveDiskState(raidPtr, diskPtr->col, diskPtr->row,
 		    diskPtr->device.type, diskPtr->device.unit,
 		    diskPtr->version, diskPtr->numValidSector);
 	}
 	UnlockSema(&diskPtr->lock);
-	XUnlockStripe(raidPtr, stripeID);
+	Raid_XUnlockStripe(raidPtr, stripeID);
 	InitiateStripeReconstruction(reconstructionControlPtr);
     }
 }

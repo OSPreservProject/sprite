@@ -80,7 +80,7 @@ InitRaidBlockRequest(reqPtr, raidPtr, operation, col, row, diskSector,
 /*
  *----------------------------------------------------------------------
  *
- * MakeBlockDeviceRequest --
+ * Raid_MakeBlockDeviceRequest --
  *
  *	Allocate and initialize DevBlockDeviceRequest.
  *
@@ -94,7 +94,7 @@ InitRaidBlockRequest(reqPtr, raidPtr, operation, col, row, diskSector,
  */
 
 DevBlockDeviceRequest *
-MakeBlockDeviceRequest(raidPtr, operation, diskSector, numSectorsToTransfer,
+Raid_MakeBlockDeviceRequest(raidPtr, operation, diskSector, numSectorsToTransfer,
 	buffer, doneProc, clientData, ctrlData)
     Raid		*raidPtr;
     int			 operation;
@@ -124,7 +124,7 @@ MakeBlockDeviceRequest(raidPtr, operation, diskSector, numSectorsToTransfer,
 /*
  *----------------------------------------------------------------------
  *
- * FreeBlockDeviceRequest --
+ * Raid_FreeBlockDeviceRequest --
  *
  *	Free DevBlockDeviceRequest.
  *
@@ -138,7 +138,7 @@ MakeBlockDeviceRequest(raidPtr, operation, diskSector, numSectorsToTransfer,
  */
 
 void
-FreeBlockDeviceRequest(requestPtr)
+Raid_FreeBlockDeviceRequest(requestPtr)
     DevBlockDeviceRequest	*requestPtr;
 {
     Free((char *) requestPtr);
@@ -162,7 +162,7 @@ FreeBlockDeviceRequest(requestPtr)
  */
 
 RaidIOControl *
-MakeIOControl(doneProc, clientData)
+Raid_MakeIOControl(doneProc, clientData)
     void	       (*doneProc)();
     ClientData		 clientData;
 {
@@ -185,7 +185,7 @@ MakeIOControl(doneProc, clientData)
 /*
  *----------------------------------------------------------------------
  *
- * FreeIOControl --
+ * Raid_FreeIOControl --
  *
  *	Free RaidIOControl.
  *
@@ -199,7 +199,7 @@ MakeIOControl(doneProc, clientData)
  */
 
 void
-FreeIOControl(IOControlPtr)
+Raid_FreeIOControl(IOControlPtr)
     RaidIOControl	*IOControlPtr;
 {
     Sync_LockClear(&IOControlPtr->mutex);
@@ -224,7 +224,7 @@ FreeIOControl(IOControlPtr)
  */
 
 RaidRequestControl *
-MakeRequestControl(raidPtr)
+Raid_MakeRequestControl(raidPtr)
     Raid	*raidPtr;
 {
     RaidRequestControl	*reqControlPtr;
@@ -243,7 +243,7 @@ MakeRequestControl(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FreeRequestControl --
+ * Raid_FreeRequestControl --
  *
  *	Free RaidRequestControl.
  *
@@ -257,7 +257,7 @@ MakeRequestControl(raidPtr)
  */
 
 void
-FreeRequestControl(reqControlPtr)
+Raid_FreeRequestControl(reqControlPtr)
     RaidRequestControl	*reqControlPtr;
 {
     Free((char *) reqControlPtr->reqPtr);
@@ -282,7 +282,7 @@ FreeRequestControl(reqControlPtr)
  */
 
 RaidStripeIOControl *
-MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
+Raid_MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
 	doneProc, clientData, ctrlData)
     Raid                *raidPtr;
     int			 operation;
@@ -306,7 +306,7 @@ MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
     stripeIOControlPtr->clientData    = clientData;
     stripeIOControlPtr->recoverProc   = (void (*)()) NIL;
     stripeIOControlPtr->ctrlData      = ctrlData;
-    stripeIOControlPtr->reqControlPtr = MakeRequestControl(raidPtr);
+    stripeIOControlPtr->reqControlPtr = Raid_MakeRequestControl(raidPtr);
     stripeIOControlPtr->parityBuf     =
 #ifdef NODATA
 	    (char *) NIL;
@@ -329,7 +329,7 @@ MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
 /*
  *----------------------------------------------------------------------
  *
- * FreeStripeIOControl --
+ * Raid_FreeStripeIOControl --
  *
  *	Free RaidStripeIOControl.
  *
@@ -343,10 +343,10 @@ MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
  */
 
 void
-FreeStripeIOControl(stripeIOControlPtr)
+Raid_FreeStripeIOControl(stripeIOControlPtr)
     RaidStripeIOControl	*stripeIOControlPtr;
 {
-    FreeRequestControl(stripeIOControlPtr->reqControlPtr);
+    Raid_FreeRequestControl(stripeIOControlPtr->reqControlPtr);
 #ifndef NODATA
     Free((char *) stripeIOControlPtr->parityBuf);
     Free((char *) stripeIOControlPtr->readBuf);
@@ -372,7 +372,7 @@ FreeStripeIOControl(stripeIOControlPtr)
  */
 
 RaidReconstructionControl *
-MakeReconstructionControl(raidPtr, col, row, diskPtr, doneProc, clientData,
+Raid_MakeReconstructionControl(raidPtr, col, row, diskPtr, doneProc, clientData,
 	ctrlData)
     Raid        *raidPtr;
     int		 col;
@@ -395,7 +395,7 @@ MakeReconstructionControl(raidPtr, col, row, diskPtr, doneProc, clientData,
     reconstructionControlPtr->doneProc      = doneProc;
     reconstructionControlPtr->clientData    = clientData;
     reconstructionControlPtr->ctrlData      = ctrlData;
-    reconstructionControlPtr->reqControlPtr = MakeRequestControl(raidPtr);
+    reconstructionControlPtr->reqControlPtr = Raid_MakeRequestControl(raidPtr);
     reconstructionControlPtr->status        = SUCCESS;
     reconstructionControlPtr->parityBuf     =
 #ifdef NODATA
@@ -416,7 +416,7 @@ MakeReconstructionControl(raidPtr, col, row, diskPtr, doneProc, clientData,
 /*
  *----------------------------------------------------------------------
  *
- * FreeReconstructionControl --
+ * Raid_FreeReconstructionControl --
  *
  *	Free RaidReconstructionControl.
  *
@@ -430,10 +430,10 @@ MakeReconstructionControl(raidPtr, col, row, diskPtr, doneProc, clientData,
  */
 
 void
-FreeReconstructionControl(reconstructionControlPtr)
+Raid_FreeReconstructionControl(reconstructionControlPtr)
     RaidReconstructionControl *reconstructionControlPtr;
 {
-    FreeRequestControl(reconstructionControlPtr->reqControlPtr);
+    Raid_FreeRequestControl(reconstructionControlPtr->reqControlPtr);
 #ifndef NODATA
     Free((char *) reconstructionControlPtr->parityBuf);
     Free((char *) reconstructionControlPtr->readBuf);
@@ -445,7 +445,7 @@ FreeReconstructionControl(reconstructionControlPtr)
 /*
  *----------------------------------------------------------------------
  *
- * RangeRestrict --
+ * Raid_RangeRestrict --
  *
  *	Restricts start and len so that they lie within rangeOffset and
  *	rangeLen.  Note that start is restricted modulo the fieldLen.
@@ -460,7 +460,7 @@ FreeReconstructionControl(reconstructionControlPtr)
  */
 
 void
-RangeRestrict(start, len, rangeOffset, rangeLen, fieldLen, newStart, newLen)
+Raid_RangeRestrict(start, len, rangeOffset, rangeLen, fieldLen, newStart, newLen)
     int		 start, len;
     int		 rangeOffset, rangeLen;
     int		 fieldLen;
@@ -480,7 +480,7 @@ RangeRestrict(start, len, rangeOffset, rangeLen, fieldLen, newStart, newLen)
 /*
  *----------------------------------------------------------------------
  *
- * XorRaidRangeRequests --
+ * Raid_XorRangeRequests --
  *
  *	Xor's the contents of the buffers of the requests in *reqControlPtr 
  *	restricted by rangeOffset and rangeLen and place the result in 
@@ -496,7 +496,7 @@ RangeRestrict(start, len, rangeOffset, rangeLen, fieldLen, newStart, newLen)
  */
 
 void
-XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
+Raid_XorRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
     RaidRequestControl	*reqControlPtr;
     Raid		*raidPtr;
     char		*destBuf;   
@@ -512,7 +512,7 @@ XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
     for (i = 0; i < reqControlPtr->numReq; i++) {
 	reqPtr = &reqControlPtr->reqPtr[i];
 	if (reqPtr->state == REQ_READY || reqPtr->state == REQ_COMPLETED ) {
-	    RangeRestrict((int) reqPtr->devReq.startAddress,
+	    Raid_RangeRestrict((int) reqPtr->devReq.startAddress,
 		    reqPtr->devReq.bufferLen,
 		    rangeOffset, rangeLen, raidPtr->bytesPerStripeUnit,
 		    &rangeStartAddress, &newRangeLen);
@@ -528,7 +528,7 @@ XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
 /*
  *----------------------------------------------------------------------
  *
- * AddRaidParityRangeRequest --
+ * Raid_AddParityRangeRequest --
  *
  *	Add a RaidBlockRequest for the indicated parity sectors to
  *	reqControlPtr.
@@ -543,7 +543,7 @@ XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
  */
 
 void
-AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
+Raid_AddParityRangeRequest(reqControlPtr, raidPtr, operation,
 	sector, buffer, ctrlData, rangeOffset, rangeLen)
     RaidRequestControl	*reqControlPtr;
     Raid		*raidPtr;
@@ -569,7 +569,7 @@ AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
     /*
      * Map logical Raid sector address to (diskHandlePtr, diskSector).
      */
-    MapParity(raidPtr, sector, &col, &row, &diskSector);
+    Raid_MapParity(raidPtr, sector, &col, &row, &diskSector);
 
     if (numSectorsToTransfer > 0) {
 	InitRaidBlockRequest(reqPtr, raidPtr, operation, col, row,
@@ -592,7 +592,7 @@ AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
 /*
  *----------------------------------------------------------------------
  *
- * AddRaidDataRangeRequests --
+ * Raid_AddDataRangeRequests --
  *
  *	Add RaidBlockRequest's for the indicated data sectors to
  *	reqControlPtr.
@@ -607,7 +607,7 @@ AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
  */
 
 void
-AddRaidDataRangeRequests(reqControlPtr, raidPtr, operation,
+Raid_AddDataRangeRequests(reqControlPtr, raidPtr, operation,
 		firstSector, nthSector, buffer, ctrlData, rangeOffset, rangeLen)
     RaidRequestControl	*reqControlPtr;
     Raid		*raidPtr;
@@ -639,9 +639,9 @@ AddRaidDataRangeRequests(reqControlPtr, raidPtr, operation,
 	/*
 	 * Map logical Raid sector address to (diskHandlePtr, diskSector).
 	 */
-	MapSector(raidPtr, currentSector, &col, &row, &diskSector);
+	Raid_MapSector(raidPtr, currentSector, &col, &row, &diskSector);
 
-	RangeRestrict((int) diskSector, numSectorsToTransfer,
+	Raid_RangeRestrict((int) diskSector, numSectorsToTransfer,
 		rangeOffset, rangeLen,
 		raidPtr->sectorsPerStripeUnit,
 		(int *) &(diskSector), &rangeSectorsToTransfer);

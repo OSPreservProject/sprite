@@ -13,10 +13,11 @@
  * express or implied warranty.
  */
 
-#ifndef _DEV_RAID_LOG
-#define _DEV_RAID_LOG
+#ifndef _DEVRAIDLOG
+#define _DEVRAIDLOG
 
 #include "sync.h"
+#include <sprite.h>
 #include "bitvec.h"
 #include "devRaid.h"
 
@@ -39,4 +40,4 @@ typedef struct {
     Sync_Condition       flushed2;
 } RaidLog;
 
-#endif _DEV_RAID_LOG
+#endif /* _DEVRAIDLOG */

@@ -15,6 +15,10 @@
  * $Header$ SPRITE (Berkeley)
  */
 
+#ifndef _DEVRAIDUTIL
+#define _DEVRAIDUTIL
+
+#include <sprite.h>
 #include "devBlockDevice.h"
 #include "devRaid.h"
 
@@ -67,15 +71,33 @@
 	((byteAddr) % (raidPtr)->bytesPerStripeUnit)
 
 #define XorRaidRequests(reqControlPtr, raidPtr, destBuf)		\
-    (XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf,		\
+    (Raid_XorRangeRequests(reqControlPtr, raidPtr, destBuf,		\
 	    0, raidPtr->bytesPerStripeUnit))
 
 #define AddRaidDataRequests(reqControlPtr, raidPtr, operation, firstSector, nthSector, buffer, ctrlData)			\
-    (AddRaidDataRangeRequests(reqControlPtr, raidPtr, operation, 	\
+    (Raid_AddDataRangeRequests(reqControlPtr, raidPtr, operation, 	\
 	    firstSector, nthSector, buffer, ctrlData,			\
 	    0, raidPtr->bytesPerStripeUnit))
 
 #define AddRaidParityRequest(reqControlPtr, raidPtr, operation, firstSector, buffer, ctrlData)			\
-    (AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation, 	\
+    (Raid_AddParityRangeRequest(reqControlPtr, raidPtr, operation, 	\
 	    firstSector, buffer, ctrlData,			\
 	    0, raidPtr->bytesPerStripeUnit))
+
+extern DevBlockDeviceRequest *Raid_MakeBlockDeviceRequest _ARGS_((Raid *raidPtr,
+ int operation, unsigned diskSector, int numSectorsToTransfer, Address buffer, void (*doneProc)(), ClientData clientData, int ctrlData));
+extern void Raid_FreeBlockDeviceRequest _ARGS_((DevBlockDeviceRequest *requestPtr));
+extern RaidIOControl *Raid_MakeIOControl _ARGS_((void (*doneProc)(), ClientData clientData));
+extern void Raid_FreeIOControl _ARGS_((RaidIOControl *IOControlPtr));
+extern RaidRequestControl *Raid_MakeRequestControl _ARGS_((Raid *raidPtr));
+extern void Raid_FreeRequestControl _ARGS_((RaidRequestControl *reqControlPtr));
+extern RaidStripeIOControl *Raid_MakeStripeIOControl _ARGS_((Raid *raidPtr, int operation, unsigned firstSector, unsigned nthSector, Address buffer, void (*doneProc)(), ClientData clientData, int ctrlData));
+extern void Raid_FreeStripeIOControl _ARGS_((RaidStripeIOControl *stripeIOControlPtr));
+extern RaidReconstructionControl *Raid_MakeReconstructionControl _ARGS_((Raid *raidPtr, int col, int row, RaidDisk *diskPtr, void (*doneProc)(), ClientData clientData, int ctrlData));
+extern void Raid_FreeReconstructionControl _ARGS_((RaidReconstructionControl *reconstructionControlPtr));
+extern void Raid_RangeRestrict _ARGS_((int start, int len, int rangeOffset, int rangeLen, int fieldLen, int *newStart, int *newLen));
+extern void Raid_XorRangeRequests _ARGS_((RaidRequestControl *reqControlPtr, Raid *raidPtr, char *destBuf, int rangeOffset, int rangeLen));
+extern void Raid_AddParityRangeRequest _ARGS_((RaidRequestControl *reqControlPtr, Raid *raidPtr, int operation, unsigned sector, Address buffer, int ctrlData, int rangeOffset, int rangeLen));
+extern void Raid_AddDataRangeRequests _ARGS_((RaidRequestControl *reqControlPtr, Raid *raidPtr, int operation, unsigned firstSector, unsigned nthSector, Address buffer, int ctrlData, int rangeOffset, int rangeLen));
+
+#endif /* _DEVRAIDUTIL */

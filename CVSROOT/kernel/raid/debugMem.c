@@ -27,6 +27,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sync.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include "hash.h"
 
 extern char *malloc();
@@ -100,8 +102,6 @@ void
 Free(memPtr)
     char *memPtr;
 {
-    Hash_Entry		*hashEntryPtr;
-
     MASTER_LOCK(&_debugMemMutex);
     if (freeListIndex == FREE_LIST_SIZE) {
         MASTER_UNLOCK(&_debugMemMutex);
@@ -112,6 +112,9 @@ Free(memPtr)
         MASTER_UNLOCK(&_debugMemMutex);
     }
 #ifdef TESTING
+{
+    Hash_Entry		*hashEntryPtr;
+
     MASTER_LOCK(&_debugMemMutex);
     if (--_debugMemCount == 0) {
         MASTER_UNLOCK(&_debugMemMutex);
@@ -128,6 +131,7 @@ Free(memPtr)
         Hash_Delete(&_debugMemTable, hashEntryPtr);
         MASTER_UNLOCK(&_debugMemMutex);
     }
+}
 #endif TESTING
 }
 
@@ -155,7 +159,6 @@ Malloc(size)
     unsigned size;
 {
     char *memPtr;
-    Hash_Entry		*hashEntryPtr;
 
     MASTER_LOCK(&_debugMemMutex);
     for (; freeListIndex > 0;) {
@@ -165,7 +168,11 @@ Malloc(size)
     MASTER_UNLOCK(&_debugMemMutex);
 
     memPtr = malloc(size);
+
 #ifdef TESTING
+{
+    Hash_Entry		*hashEntryPtr;
+
     MASTER_LOCK(&_debugMemMutex);
     if (_debugMemCount++ == 0) {
         MASTER_UNLOCK(&_debugMemMutex);
@@ -182,6 +189,7 @@ Malloc(size)
         MASTER_UNLOCK(&_debugMemMutex);
     }
     Hash_SetValue(hashEntryPtr, memPtr);
+}
 #endif TESTING
     return(memPtr);
 }
