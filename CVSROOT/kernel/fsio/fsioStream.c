@@ -141,16 +141,17 @@ Fsio_StreamCreate(serverID, clientID, ioHandlePtr, useFlags, name)
  *	Find a stream and add another client to its client list.
  *
  * Results:
- *	A pointer to a locked stream with 1 reference and one client entry.
- *	Our call should release this reference if this is just a shadow stream.
+ *	A pointer to a locked stream with 1 reference and one or more 
+ *	client entries.  Our call should release this reference if 
+ *	this is just a shadow stream.
  *
  * Side effects:
- *	Install the new stream into the handle table and increment the global
- *	streamCount used to generate IDs.
+ *	Install the stream into the handle table if it's not there 
+ *	already.
  *
  *----------------------------------------------------------------------
  */
-ENTRY Fs_Stream *
+Fs_Stream *
 Fsio_StreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
 	    foundClientPtr, foundStreamPtr)
     Fs_FileID		*streamIDPtr;	/* File ID for stream */
@@ -186,7 +187,7 @@ Fsio_StreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
     if (foundStreamPtr != (Boolean *)NIL) {
 	*foundStreamPtr = found;
     }
-    UNLOCK_MONITOR;
+
     return(streamPtr);
 }
 
