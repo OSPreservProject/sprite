@@ -384,6 +384,8 @@ extern	void		Fs_HandleScavenge();
 extern	void		Fs_HandleScavengeStub();
 extern	void		Fs_PrintTrace();
 extern  void		Fs_BlocksToDiskAddr();
+extern  void		Fs_CheckSetID();
+extern  void		Fs_CloseOnExec();
 
 /*
  * Routines to support process migration: encapsulate and deencapsulate
