@@ -1,61 +1,337 @@
 /* 
- * devXylogics.c --
+ * devXylogics450.c --
  *
- *	Driver the for Xylogics 450 controller.
+ *	Driver the for Xylogics 450 SMD controller.
+ *	The technical
+ *	manual to refer to is "XYLOGICS 450 Disk Controller User's Manual".
+ *	(Date Aug 1983, Rev. B)
  *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
-
+#endif /* not lint */
 
 #include "sprite.h"
 #include "mach.h"
 #include "dev.h"
 #include "devInt.h"
-#include "devXylogics.h"
-#include "devMultibus.h"
 #include "devDiskLabel.h"
 #include "dbg.h"
 #include "vm.h"
 #include "sys.h"
 #include "sync.h"
-#include "proc.h"	/* for Mach_SetJump */
 #include "fs.h"
 #include "vmMach.h"
-#include "sched.h"
+#include "devQueue.h"
+#include "devBlockDevice.h"
+#include "xylogics450.h"
+#include "devDiskStats.h"
 #include "stdlib.h"
+
+/*
+ * RANDOM NOTES:
+ *
+ * The Xylogics board does crazed address relocation, either to 20-bit
+ * or 24-bit addresses.  I expect only 24-bit mode with the sun3's,
+ * which means the top half of the DVMA addresses has to be cropped
+ * off and put in the relocation register part of the IOPB
+ *
+ * The IOPB format must be byte swapped with respect to the documentation
+ * because of disagreement between the multibus/8086 ordering and the
+ * sun3/Motorola ordering.
+ */
+
+/*
+ * The I/O Registers of the 450 are used to initiate commands and to
+ * specify where parameter blocks (IOPB) are.  The bytes are swapped
+ * because the controller thinks it's on a multibus.
+ */
+typedef struct XylogicsRegs {
+    char relocHigh;	/* Byte 1 - IOPB Relocation Register High Byte */
+    char relocLow;	/* Byte 0 - IOPB Relocation Register Low Byte */
+    char addrHigh;	/* Byte 3 - IOPB Address Register High Byte */
+    char addrLow;	/* Byte 2 - IOPB Address Register Low Byte */
+    char resetUpdate;	/* Byte 5 - Controller Reset/Update Register */
+    char status;	/* Byte 4 - Controller Status Register (CSR) */
+} XylogicsRegs;
+
+/*
+ * Definitions for the bits in the status register
+ *	XY_GO_BUSY	- set by driver to start command, remains set
+ *			  until the command completes.
+ *	XY_ERROR	- set by the controller upon error
+ *			  Do error reset by setting this bit to 1
+ *	XY_DBL_ERROR	- set by controller upon error DMA'ing status bytes.
+ *	XY_INTR_PENDING	- set by controller, must be unset by handler
+ *			  by writing a 1 to it.
+ *	XY_20_OR_24	- If zero, the controller does 20 bit relocation,
+ *			  otherwise it uses the relocation bytes as the
+ *			  top 16 bits of the DMA address.
+ *	XY_ATTN_REQ	- Set when you want to add more IOPB's to the chain,
+ *			  clear this when work on the chain is complete.
+ *	XY_ATTN_ACK	- Set by the controller when it's safe to add/delete
+ *			  IOPB's to the command chain.
+ *	XY_READY	- "Indicates the Ready-On Cylinder status of the
+ *			  last drive selected.
+ */
+#define	XY_GO_BUSY	0x80
+#define XY_ERROR	0x40
+#define XY_DBL_ERROR	0x20
+#define XY_INTR_PENDING	0x10
+#define	XY_20_OR_24	0x08
+#define XY_ATTN_REQ	0x04
+#define XY_ATTN_ACK	0x02
+#define XY_READY	0x01
+
+typedef struct XylogicsIOPB {
+    /*
+     * Byte 1 - Interrupt Mode
+     */
+    unsigned char		:1;
+    unsigned char intrIOPB	:1;	/* Interrupt upon completion of IOPB */
+    unsigned char intrError	:1;	/* Interrupt upon error (440 only) */
+    unsigned char holdDualPort	:1;	/* Don't release dual port drive */
+    unsigned char autoSeekRetry	:1;	/* Enables re-calibration on error */
+    unsigned char enableExtras	:1;	/* Enables commands 3 and 4 */
+    unsigned char eccMode	:2;	/* ECC Correction Mode, set to 2 */
+    /*
+     * Byte 0 - Command Byte
+     */
+    unsigned char autoUpdate	:1;	/* Update IOPB after completion */
+    unsigned char relocation	:1;	/* Enables relocation on data addrs */
+    unsigned char doChaining	:1;	/* Enables chaining of IOPBs */
+    unsigned char interrupt	:1;	/* When set interupts upon completion */
+    unsigned char command	:4;	/* Commands defined below */
+    /*
+     * Byte 3 - Status Byte 2
+     */
+    unsigned char errorCode;	/* Error codes, 0 means success, the rest
+				 * of the codes are explained in the manual */
+    /*
+     * Byte 2 - Status Byte 1
+     */
+    unsigned char error		:1;	/* Indicates an error occurred */
+    unsigned char 		:2;
+    unsigned char cntrlType	:3;	/* Controller type, 1 = 450 */
+    unsigned char		:1;
+    unsigned char done		:1;	/* Command is complete */
+    /*
+     * Byte 5 - Drive Type, Unit Select
+     */
+    unsigned char driveType	:2;	/* 2 => Fujitsu 2351 (Eagle) */
+    unsigned char		:4;
+    unsigned char unit		:2;	/* Up to 4 drives per controller */
+    /*
+     * Byte 4 - Throttle
+     */
+    unsigned char transferMode	:1;	/* == 0 for words, 1 for bytes */
+    unsigned char interleave	:4;	/* == 0 for 1:1 interleave */
+    unsigned char throttle	:3;	/* 4 => 32 words per DMA burst */
+
+    unsigned char sector;	/* Byte 7 - Sector Byte */
+    unsigned char head;		/* Byte 6 - Head Byte */
+    unsigned char cylHigh;	/* Byte 9 - High byte of cylinder address */
+    unsigned char cylLow;	/* Byte 8 - Low byte of cylinder address */
+    unsigned char numSectHigh;	/* Byte B - High byte of sector count */
+    unsigned char numSectLow;	/* Byte A - Low byte of sector count.
+				 * This byte is also used to return status
+				 * with the Read Drive Status command */
+    /*
+     * Don't byteswap the data address and relocation offset.  All the
+     * byte-swapped device is going to do is turn around and put these
+     * addresses back onto the bus, so don't have to worry about ordering.
+     * (The relocation register is scary, but the Sun MMU puts all the
+     * DMA buffer space into low physical memory addresses, so the relocation
+     * register is probably zero anyway.)
+     */
+    unsigned char dataAddrHigh;	/* Byte D - High byte of data address */
+    unsigned char dataAddrLow;	/* Byte C - Low byte of data address */
+    unsigned char relocHigh;	/* Byte F - High byte of relocation value */
+    unsigned char relocLow;	/* Byte E - Low byte of relocation value */
+    /*
+     * Back to byte-swapping
+     */
+    unsigned char reserved1;	/* Byte 11 */
+    unsigned char headOffset;	/* Byte 10 */
+    unsigned char nextHigh;	/* Byte 13 - High byte of next IOPB address */
+    unsigned char nextLow;	/* Byte 12 - Low byte of next IOPB address */
+    unsigned char eccByte15;	/* Byte 15 - ECC Pattern byte 15 */
+    unsigned char eccByte14;	/* Byte 14 - ECC Pattern byte 14 */
+    unsigned char eccAddrHigh;	/* Byte 17 - High byte of sector bit address */
+    unsigned char eccAddrLow;	/* Byte 16 - Low byte of sector bit address */
+} XylogicsIOPB;
+
+#define XYLOGICS_MAX_CONTROLLERS	2
+#define XYLOGICS_MAX_DISKS		4
+
+/*
+ * Defines for the command field of Byte 0. These are explained in
+ * pages 25 to 58 of the manual.  The code here uses READ and WRITE, of course,
+ * and also XY_RAW_READ to learn the proper drive type, and XY_READ_STATUS
+ * to see if a drive exists.
+ */
+#define XY_NO_OP		0x0
+#define XY_WRITE		0x1
+#define XY_READ			0x2
+#define XY_WRITE_HEADER		0x3
+#define XY_READ_HEADER		0x4
+#define XY_SEEK			0x5
+#define XY_DRIVE_RESET		0x6
+#define XY_WRITE_FORMAT		0x7
+#define XY_RAW_READ		0x8
+#define XY_READ_STATUS		0x9
+#define XY_RAW_WRITE		0xA
+#define XY_SET_DRIVE_SIZE	0xB
+#define XY_SELF_TEST		0xC
+/*      reserved  		0xD */
+#define XY_BUFFER_LOAD		0xE
+#define XY_BUFFER_DUMP		0xF
+
+/*
+ * Defines for error code values.  They are explained fully in the manual.
+ */
+#define XY_NO_ERROR		0x00
+/*
+ * Programming errors
+ */
+#define XY_ERR_INTR_PENDING	0x01
+#define XY_ERR_BUSY_CONFLICT	0x03
+#define XY_ERR_BAD_CYLINDER	0x07
+#define XY_ERR_BAD_SECTOR	0x0A
+#define XY_ERR_BAD_COMMAND	0x15
+#define XY_ERR_ZERO_COUNT	0x17
+#define XY_ERR_BAD_SECTOR_SIZE	0x19
+#define XY_ERR_SELF_TEST_A	0x1A
+#define XY_ERR_SELF_TEST_B	0x1B
+#define XY_ERR_SELF_TEST_C	0x1C
+#define XY_ERR_BAD_HEAD		0x20
+#define XY_ERR_SLIP_SECTOR	0x09
+#define XY_ERR_SLAVE_ACK	0x0E
+/*
+ * Soft errors that may be recovered by retrying.  Retry at most twice.
+ */
+#define XY_SOFT_ERR_TIME_OUT	0x04
+#define XY_SOFT_ERR_BAD_HEADER	0x05
+#define XY_SOFT_ERR_ECC		0x06
+#define XY_SOFT_ERR_NOT_READY	0x16
+/*
+ * These errors cause a drive re-calibration, then you retry the transfer.
+ */
+#define XY_SOFT_ERR_HEADER	0x12
+#define XY_SOFT_ERR_FAULT	0x18
+#define XY_SOFT_ERR_SEEK	0x25
+/*
+ * Errors during formatting.
+ */
+#define XY_FORMAT_ERR_RUNT	0x0D
+#define XY_FORMAT_ERR_BAD_SIZE	0x13
+/*
+ * Noteworthy errors.
+ */
+#define XY_WRITE_PROTECT_ON	0x14
+#define XY_SOFT_ECC_RECOVERED	0x1F
+#define XY_SOFT_ECC		0x1E
+
+/*
+ * Bit values for the numSectLow byte used to return Read Drive Status
+ *	XY_ON_CYLINDER		== 0 if drive is not seeking
+ *	XY_DISK_READY		== 0 if drive is ready
+ *	XY_WRITE_PROTECT	== 1 if write protect is on
+ *	XY_DUAL_PORT_BUSY	== 1 if dual ported drive is busy
+ *	XY_HARD_SEEK_ERROR	== 1 if the drive reports a seek error
+ *	XY_DISK_FAULT		== 1 if the drive reports any kind of fault
+ */
+#define XY_ON_CYLINDER		0x80
+#define XY_DISK_READY		0x40
+#define XY_WRITE_PROTECT	0x20
+#define XY_DUAL_PORT_BUSY	0x10
+#define XY_HARD_SEEK_ERROR	0x80
+#define XY_DISK_FAULT		0x40
+
+typedef struct XylogicsDisk XylogicsDisk;
+typedef struct Request	Request;
+
+typedef struct XylogicsController {
+    int			magic;		/* To catch bad pointers */
+    Boolean		busy;		/* TRUE if the controller is busy. */
+    XylogicsRegs	*regsPtr;	/* Pointer to Controller's registers */
+    int			number;		/* Controller number, 0, 1 ... */
+    Request		*requestPtr;	/* Current active request. */
+    Address		dmaBuffer;	/* Address of the DMA buffer
+					 * for reads/writes */
+    int			dmaBufferSize;	/* Size of the dmaBuffer mapped. */
+    XylogicsIOPB	*IOPBPtr;	/* Ref to IOPB */
+    Sync_Semaphore	mutex;		/* Mutex for queue access */
+    Sync_Condition	specialCmdWait; /* Condition to wait of for special
+					 * commands liked test unit ready and
+					 * reading labels. */
+    int			numSpecialWaiting; /* Number of processes waiting to 
+					    * get access to the controller for
+					    * a sync command. */
+    DevCtrlQueues	ctrlQueues;	/* Queues of disk attached to the 
+					 * controller. */
+    XylogicsDisk	*disks[XYLOGICS_MAX_DISKS]; /* Disk attached to the
+						     * controller. */
+} XylogicsController;
+
+#define XY_CNTRLR_STATE_MAGIC	0xf5e4d3c2
+
+
+struct XylogicsDisk {
+    int				magic;		/* Check against bad pointers */
+    XylogicsController	*xyPtr;	/* Back pointer to controller state */
+    int				xyDriveType;	/* Xylogics code for disk */
+    int				slaveID;	/* Drive number */
+    int				numCylinders;	/* ... on the disk */
+    int				numHeads;	/* ... per cylinder */
+    int				numSectors;	/* ... on each track */
+    DevQueue			queue;
+    DevDiskMap			map[DEV_NUM_DISK_PARTS];/* partitions */
+    Sys_DiskStats		*diskStatsPtr;
+};
+
+#define XY_DISK_STATE_MAGIC	0xa1b2c3d4
+
+/*
+ * The interface to XylogicsDisk the outside world views the disk as a 
+ * partitioned disk.  
+ */
+typedef struct PartitionDisk {
+    DevBlockDeviceHandle handle; /* Must be FIRST field. */
+    int	partition;		 /* Partition number on disk. */
+    XylogicsDisk	*diskPtr; /* Real disk. */
+} PartitionDisk;
+
+/*
+ * Format of request queued for a Xylogics disk. This request is 
+ * built in the ctrlData area of the DevBlockDeviceRequest.
+ */
+
+struct Request {
+    List_Links	queueLinks;	/* For the dev queue modole. */
+    int		command;	/* XY_READ or XY_WRITE. */
+    XylogicsDisk *diskPtr;	/* Target disk for request. */
+    Dev_DiskAddr diskAddress;	/* Starting address of request. */
+    int		numSectors;	/* Number of sectors to transfer. */
+    Address	buffer;		/* Memory to transfer to/from. */
+    int		retries;	/* Number of retries on the command. */
+    DevBlockDeviceRequest *requestPtr; /* Block device generating this 
+					* request. */
+};
 
 /*
  * State for each Xylogics controller.
  */
-static DevXylogicsController *xylogics[XYLOGICS_MAX_CONTROLLERS];
-
-/*
- * State for each disk.  The state for all the disks are kept
- * together so that the driver can easily find the disk and partition
- * that correspond to a filesystem unitNumber.
- */
-
-DevXylogicsDisk *xyDisk[XYLOGICS_MAX_DISKS];
-static int xyDiskIndex = -1;
-static Boolean xyDiskInit = FALSE;
-
-/*
- * SetJump stuff needed when probing for the existence of a device.
- */
-static Mach_SetJumpState setJumpState;
-
-/*
- * DevXyCommand() takes a Boolean that indicates whether it should cause
- * an interupt when the command is complete or whether it should busy wait
- * until the command finishes.  These defines make the calls clearer.
- */
-#define INTERRUPT	TRUE
-#define WAIT		FALSE
+static XylogicsController *xylogics[XYLOGICS_MAX_CONTROLLERS];
 
 /*
  * This controlls the time spent busy waiting for the transfer completion
@@ -69,32 +345,76 @@ static Mach_SetJumpState setJumpState;
 #define SECTORS_PER_BLOCK	(FS_BLOCK_SIZE / DEV_BYTES_PER_SECTOR)
 
 /*
- * Enable chaining of control blocks (IOPB) by setting this boolean.
- */
-Boolean xyDoChaining = FALSE;
-
-/*
  * Forward declarations.
  */
 
-void		DevXylogicsReset();
-ReturnStatus	DevXylogicsTest();
-ReturnStatus	DevXylogicsDoLabel();
-void		DevXylogicsSetupIOPB();
-ReturnStatus	DevXylogicsCommand();
-ReturnStatus	DevXylogicsStatus();
-ReturnStatus	DevXylogicsWait();
+static void		ResetController();
+static ReturnStatus	TestDisk();
+static ReturnStatus	ReadDiskLabel();
+static void		SetupIOPB();
+static ReturnStatus	SendCommand();
+static ReturnStatus	GetStatus();
+static ReturnStatus	WaitForCondition();
+static void 		RequestDone();
+static void 		StartNextRequest();
+static void		FillInDiskTransfer();
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Dev_XylogicsInitController --
+ * xyEntryAvailProc --
+ *
+ *	Act upon an entry becomming available in the queue for a
+ *	device.. This routine is the Dev_Queue callback function that
+ *	is called whenever work becomes available for a device. 
+ *	If the controller is not already busy we dequeue and start the
+ *	request.
+ *
+ * Results:
+ *	TRUE if the request is processed. FALSE if the request should be
+ *	enqueued.
+ *
+ * Side effects:
+ *	Request may be dequeue and submitted to the device. Request callback
+ *	function may be called.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Boolean
+xyEntryAvailProc(clientData, newRequestPtr) 
+   ClientData	clientData;	/* Really the Device this request ready. */
+   List_Links *newRequestPtr;	/* The new request. */
+{
+    register XylogicsDisk *diskPtr = (XylogicsDisk *) clientData ;
+    XylogicsController	*xyPtr = diskPtr->xyPtr;
+    register Request	*requestPtr = (Request *) newRequestPtr;
+    ReturnStatus	status;
+
+    if (xyPtr->busy) {
+	return FALSE;
+    }
+    status = SUCCESS;
+    if (requestPtr->numSectors > 0) {
+	status = SendCommand(diskPtr, requestPtr, FALSE);
+    }
+    if (status != SUCCESS) {
+	RequestDone(requestPtr->diskPtr, requestPtr, status, 0);
+    }
+    return TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevXylogics450Init --
  *
  *	Initialize a Xylogics controller.
  *
  * Results:
- *	None.
+ *	A NIL pointer if the controller does not exists. Otherwise a pointer
+ *	the the XylogicsController stucture.
  *
  * Side effects:
  *	Map the controller into kernel virtual space.
@@ -103,120 +423,158 @@ ReturnStatus	DevXylogicsWait();
  *
  *----------------------------------------------------------------------
  */
-Boolean
-Dev_XylogicsInitController(cntrlrPtr)
+ClientData
+DevXylogics450Init(cntrlrPtr)
     DevConfigController *cntrlrPtr;	/* Config info for the controller */
 {
-    DevXylogicsController *xyPtr;	/* Xylogics specific state */
-    register DevXylogicsRegs *regsPtr;	/* Control registers for Xylogics */
-    int x;				/* Used when probing the controller */
-    Address buffer;			/* DMA space buffer */
-    int bufSize;			/* Size of buffer */
+    XylogicsController *xyPtr;	/* Xylogics specific state */
+    register XylogicsRegs *regsPtr;	/* Control registers for Xylogics */
+    char x;				/* Used when probing the controller */
+    int	i;
+    ReturnStatus status;
 
 
-    /*
-     * Allocate and initialize the controller state info.
-     */
-    xyPtr = (DevXylogicsController *)malloc(sizeof(DevXylogicsController));
-    xylogics[cntrlrPtr->controllerID] = xyPtr;
-    xyPtr->magic = XY_CNTRLR_STATE_MAGIC;
-    xyPtr->number = cntrlrPtr->controllerID;
-    xyPtr->regsPtr = (DevXylogicsRegs *)cntrlrPtr->address;
-
-    /*
-     * Reset the array of disk information.
-     */
-    if (!xyDiskInit) {
-	for (x = 0 ; x < XYLOGICS_MAX_DISKS ; x++) {
-	    xyDisk[x] = (DevXylogicsDisk *)NIL;
-	}
-	xyDiskInit = TRUE;
-    }
     /*
      * Poke at the controller's registers to see if it works
      * or we get a bus error.
      */
-    regsPtr = xyPtr->regsPtr;
-    if (Mach_SetJump(&setJumpState) == SUCCESS) {
-	x = regsPtr->resetUpdate;
-	regsPtr->addrLow = 'x';
-	if (regsPtr->addrLow != 'x') {
-	    Mach_UnsetJump();
-	    free((Address) xyPtr);
-	    xylogics[cntrlrPtr->controllerID] = (DevXylogicsController *)NIL;
-	    return(FALSE);
-	}
-    } else {
-	Mach_UnsetJump();
-	/*
-	 * Got a bus error. Zap the info about the non-existent controller.
-	 */
-	free((Address) xyPtr);
-	xylogics[cntrlrPtr->controllerID] = (DevXylogicsController *)NIL;
-	return(FALSE);
+    regsPtr = (XylogicsRegs *) cntrlrPtr->address;
+    status = Mach_Probe(sizeof(regsPtr->resetUpdate),
+			 (char *) &(regsPtr->resetUpdate), (char *) &x);
+    if (status != SUCCESS) {
+	return DEV_NO_CONTROLLER;
     }
-    Mach_UnsetJump();
-
-    DevXylogicsReset(regsPtr);
+    status = Mach_Probe(sizeof(regsPtr->addrLow), "x",
+				(char *) &(regsPtr->addrLow));
+    if (status == SUCCESS) {
+	status = Mach_Probe(sizeof(regsPtr->addrLow),
+			    (char *) &(regsPtr->addrLow), &x);
+    }
+    if (status != SUCCESS || (x != 'x') ) {
+	return DEV_NO_CONTROLLER;
+    }
 
     /*
-     * Allocate the mapped DMA memory to buffers:  a one sector buffer for
-     * the label, and one buffer for reading and writing filesystem
-     * blocks.  A physical page is obtained for the IOPB and the label.
-     * The label buffer has 8 extra bytes for reading low-level sector info.
-     * The general buffer gets mapped just before a read or write.
+     * Allocate and initialize the controller state info.
      */
-    bufSize = sizeof(DevXylogicsIOPB) + DEV_BYTES_PER_SECTOR + 8;
-    buffer = (Address)VmMach_DevBufferAlloc(&devIOBuffer, bufSize);
-    VmMach_GetDevicePage(buffer);
-    xyPtr->IOPBPtr = (DevXylogicsIOPB *)buffer;
-    buffer += sizeof(DevXylogicsIOPB);
-    xyPtr->labelBuffer = buffer;
-
-    xyPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer, DEV_MAX_IO_BUF_SIZE);
+    xyPtr = (XylogicsController *)malloc(sizeof(XylogicsController));
+    bzero((char *) xyPtr, sizeof(XylogicsController));
+    xylogics[cntrlrPtr->controllerID] = xyPtr;
+    xyPtr->magic = XY_CNTRLR_STATE_MAGIC;
+    xyPtr->busy = FALSE;
+    xyPtr->regsPtr = regsPtr;
+    xyPtr->number = cntrlrPtr->controllerID;
+    xyPtr->requestPtr = (Request *) NIL;
+    /*
+     * Allocate the mapped DMA memory for the IOPB. This memory should not
+     * be freed unless the controller is not going to be accessed again.
+     */
+    xyPtr->IOPBPtr = (XylogicsIOPB *)VmMach_DMAAlloc(sizeof(XylogicsIOPB),
+						malloc(sizeof(XylogicsIOPB)));
 
     /*
      * Initialize synchronization variables and set the controllers
      * state to alive and not busy.
      */
     Sync_SemInitDynamic(&xyPtr->mutex,"Dev:xylogics mutex");
-    xyPtr->IOComplete.waiting = 0;
-    xyPtr->readyForIO.waiting = 0;
-    xyPtr->flags = XYLOGICS_CNTRLR_ALIVE;
-    xyPtr->configPtr = cntrlrPtr;
+    xyPtr->numSpecialWaiting = 0;
+    xyPtr->ctrlQueues = Dev_CtrlQueuesCreate(&xyPtr->mutex, xyEntryAvailProc);
 
-    return(TRUE);
+    for (i = 0 ; i < XYLOGICS_MAX_DISKS ; i++) {
+	 xyPtr->disks[i] =  (XylogicsDisk *) NIL;
+    }
+
+    ResetController(regsPtr);
+
+    return( (ClientData) xyPtr);
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
- * Dev_XylogicsIdleCheck --
+ * ReleaseProc --
  *
- *	Check to see if the controller is idle.
+ *	Device release proc for controller.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Increments the idle check count and possibly the idle count in
- *	the controller entry.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
-void
-Dev_XylogicsIdleCheck(cntrlrPtr)
-    DevConfigController *cntrlrPtr;	/* Config info for the controller */
+static ReturnStatus
+ReleaseProc(handlePtr)
+    DevBlockDeviceHandle	*handlePtr; /* Handle pointer of device. */
 {
-    DevXylogicsController *xyPtr;		/* SBC specific state */
+    PartitionDisk	*pdiskPtr = (PartitionDisk *) handlePtr;
+    free((char *) pdiskPtr);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IOControlProc --
+ *
+ *      Do a special operation on a raw SMD Disk.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 
-    xyPtr = xylogics[cntrlrPtr->controllerID];
-    if (xyPtr != (DevXylogicsController *)NIL) {
-	cntrlrPtr->numSamples++;
-	if (!(xyPtr->flags & XYLOGICS_CNTRLR_BUSY)) {
-	    cntrlrPtr->idleCount++;
-	}
+/*ARGSUSED*/
+static ReturnStatus
+IOControlProc(handlePtr, command, inBufSize, inBuffer,
+                                 outBufSize, outBuffer)
+    DevBlockDeviceHandle	*handlePtr; /* Handle pointer of device. */
+    int command;
+    int inBufSize;
+    char *inBuffer;
+    int outBufSize;
+    char *outBuffer;
+{
+
+     switch (command) {
+	case	IOC_REPOSITION:
+	    /*
+	     * Reposition is ok
+	     */
+	    return(SUCCESS);
+	    /*
+	     * No disk specific bits are set this way.
+	     */
+	case	IOC_GET_FLAGS:
+	case	IOC_SET_FLAGS:
+	case	IOC_SET_BITS:
+	case	IOC_CLEAR_BITS:
+	    return(SUCCESS);
+
+	case	IOC_GET_OWNER:
+	case	IOC_SET_OWNER:
+	    return(GEN_NOT_IMPLEMENTED);
+
+	case	IOC_TRUNCATE:
+	    return(GEN_INVALID_ARG);
+
+	case	IOC_LOCK:
+	case	IOC_UNLOCK:
+	    return(GEN_NOT_IMPLEMENTED);
+
+	case	IOC_NUM_READABLE:
+	    return(GEN_NOT_IMPLEMENTED);
+
+	case	IOC_MAP:
+	    return(GEN_NOT_IMPLEMENTED);
+	    
+	default:
+	    return(GEN_INVALID_ARG);
     }
 }
 
@@ -224,14 +582,80 @@ Dev_XylogicsIdleCheck(cntrlrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_XylogicsInitDevice --
+ * BlockIOProc --
  *
- *      Initialize a device hanging off an Xylogics controller.  This
- *      keeps track of how many times it is called so that it can properly
- *      correlate filesystem unit numbers to particular devices.
+ *	Start a block IO operations on a SMD disk attach to a xylogics 
+ *	controller.
  *
  * Results:
- *	TRUE if the disk exists and the label is ok.
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+BlockIOProc(handlePtr, requestPtr) 
+    DevBlockDeviceHandle	*handlePtr; /* Handle pointer of device. */
+    DevBlockDeviceRequest *requestPtr; /* IO Request to be performed. */
+{
+    PartitionDisk	*pdiskPtr = (PartitionDisk *) handlePtr;
+    register XylogicsDisk *diskPtr = pdiskPtr->diskPtr;
+    register Request	*reqPtr;
+
+    reqPtr = (Request *) requestPtr->ctrlData;
+    if (requestPtr->operation == FS_READ) {
+	reqPtr->command = XY_READ;
+    } else {
+	reqPtr->command = XY_WRITE;
+    }
+    reqPtr->diskPtr = diskPtr;
+    FillInDiskTransfer(pdiskPtr, requestPtr->startAddress, 
+			(unsigned) requestPtr->bufferLen,
+			&(reqPtr->diskAddress), &(reqPtr->numSectors));
+    reqPtr->buffer = requestPtr->buffer;
+    reqPtr->retries = 0;
+    reqPtr->requestPtr = requestPtr;
+    Dev_QueueInsert(diskPtr->queue, (List_Links *) reqPtr);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * xyIdleCheck --
+ *
+ *	Routine for the Disk Stats module to use to determine the idleness
+ *	for a disk.
+ *
+ * Results:
+ *	TRUE if the disk pointed to by clientData is idle, FALSE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Boolean
+xyIdleCheck(clientData) 
+    ClientData	clientData;
+{
+    XylogicsDisk *diskPtr = (XylogicsDisk *) clientData;
+    return (!diskPtr->xyPtr->busy);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevXylogics450DiskAttach --
+ *
+ *      Initialize a device hanging off an Xylogics controller. 
+ *
+ * Results:
+ *	A DevBlockDeviceHanlde for this disk.
  *
  * Side effects:
  *	Disks:  The label sector is read and the partitioning of
@@ -240,67 +664,102 @@ Dev_XylogicsIdleCheck(cntrlrPtr)
  *
  *----------------------------------------------------------------------
  */
-Boolean
-Dev_XylogicsInitDevice(devPtr)
-    DevConfigDevice *devPtr;	/* Config info about the device */
+DevBlockDeviceHandle *
+DevXylogics450DiskAttach(devicePtr)
+    Fs_Device	    *devicePtr;	/* Device to attach. */
 {
     ReturnStatus error;
-    DevXylogicsController *xyPtr;	/* Xylogics specific controller state */
-    register DevXylogicsDisk *diskPtr;
+    XylogicsController *xyPtr;	/* Xylogics specific controller state */
+    register XylogicsDisk *diskPtr;
+    PartitionDisk	*pdiskPtr;	/* Partitioned disk pointer. */
+    int		controllerID;
+    int		diskNumber;
 
-    /*
-     * Increment this before checking for the controller so the
-     * unit numbers match up right.  ie. each controller accounts
-     * for DEV_NUM_DISK_PARTS unit numbers, and the unit number is
-     * used to index the devDisk array (div DEV_NUM_DISK_PARTS).
-     */
-    xyDiskIndex++;
-
-    xyPtr = xylogics[devPtr->controllerID];
-    if (xyPtr == (DevXylogicsController *)NIL ||
-	xyPtr == (DevXylogicsController *)0 ||
-	xyPtr->magic != XY_CNTRLR_STATE_MAGIC) {
-	xyDisk[xyDiskIndex] = (DevXylogicsDisk *)NIL;
-	return(FALSE);
+    controllerID = XYLOGICS_CTRL_NUM_FROM_DEVUNIT(devicePtr->unit);
+    diskNumber = XYLOGICS_DISK_NUM_FROM_DEVUNIT(devicePtr->unit);
+    xyPtr = xylogics[controllerID];
+    if (xyPtr == (XylogicsController *)NIL ||
+	xyPtr == (XylogicsController *)0 ||
+	xyPtr->magic != XY_CNTRLR_STATE_MAGIC ||
+	diskNumber > XYLOGICS_MAX_DISKS) {
+	return ((DevBlockDeviceHandle *) NIL);
     }
-
     /*
-     * Set up a slot in the disk list. See above about xyDiskIndex.
+     * Set up a slot in the disk list. We do a malloc before we grap the
+     * MASTER_LOCK().
      */
-    if (xyDiskIndex >= XYLOGICS_MAX_DISKS) {
-	printf("Xylogics: To many disks configured\n");
-	return(FALSE);
-    }
-    diskPtr = (DevXylogicsDisk *) malloc(sizeof(DevXylogicsDisk));
+    diskPtr = (XylogicsDisk *) malloc(sizeof(XylogicsDisk));
+    bzero((char *) diskPtr, sizeof(XylogicsDisk));
     diskPtr->magic = XY_DISK_STATE_MAGIC;
     diskPtr->xyPtr = xyPtr;
-    diskPtr->slaveID = devPtr->slaveID;
     diskPtr->xyDriveType = 0;
-    /*
-     * See if the disk is really there.
-     */
-    error = DevXylogicsTest(xyPtr, diskPtr);
-    if (error != SUCCESS) {
-	free((Address)diskPtr);
-	return(FALSE);
-    }
-    /*
-     * Look at the zero'th sector for disk information.  This also
-     * sets the drive type with the controller.
-     */
-    if (DevXylogicsDoLabel(xyPtr, diskPtr) != SUCCESS) {
-	free((Address)diskPtr);
-	return(FALSE);
+    diskPtr->slaveID = diskNumber;
+    diskPtr->queue = Dev_QueueCreate(xyPtr->ctrlQueues, 1, 
+				DEV_QUEUE_FIFO_INSERT, (ClientData) diskPtr);
+
+    MASTER_LOCK(&(xyPtr->mutex));
+    if (xyPtr->disks[diskNumber] == (XylogicsDisk *) NIL) {
+	/*
+	 * See if the disk is really there.
+	 */
+	xyPtr->disks[diskNumber] = diskPtr;
+	error = TestDisk(xyPtr, diskPtr);
+	if (error == SUCCESS) {
+	    /*
+	     * Look at the zero'th sector for disk information.  This also
+	     * sets the drive type with the controller.
+	     */
+	    error = ReadDiskLabel(xyPtr, diskPtr);
+	}
+
+	if (error != SUCCESS) {
+	    xyPtr->disks[diskNumber] =  (XylogicsDisk *) NIL;
+	    MASTER_UNLOCK(&(xyPtr->mutex));
+	    Dev_QueueDestroy(diskPtr->queue);
+	    free((Address)diskPtr);
+	    return ((DevBlockDeviceHandle *) NIL);
+	} 
+	MASTER_UNLOCK(&(xyPtr->mutex));
+	/* 
+	 * Register the disk with the disk stats module. 
+	 */
+	{
+	    Fs_Device	rawDevice;
+	    char	name[128];
+
+	    rawDevice =  *devicePtr;
+	    rawDevice.unit = rawDevice.unit & ~0xf;
+	    sprintf(name, "xy%d-%d", xyPtr->number, diskPtr->slaveID);
+	    diskPtr->diskStatsPtr = DevRegisterDisk(&rawDevice, name, 
+				   xyIdleCheck, (ClientData) diskPtr);
+	}
     } else {
-	xyDisk[xyDiskIndex] = diskPtr;
-	return(TRUE);
+	/*
+	 * The disk already exists. Use it.
+	 */
+	MASTER_UNLOCK(&(xyPtr->mutex));
+	Dev_QueueDestroy(diskPtr->queue);
+	free((Address)diskPtr);
+	diskPtr = xyPtr->disks[diskNumber];
     }
+    pdiskPtr = (PartitionDisk *) malloc(sizeof(*pdiskPtr));
+    bzero((char *) pdiskPtr, sizeof(*pdiskPtr));
+    pdiskPtr->handle.blockIOProc = BlockIOProc;
+    pdiskPtr->handle.IOControlProc = IOControlProc;
+    pdiskPtr->handle.releaseProc = ReleaseProc;
+    pdiskPtr->handle.minTransferUnit = DEV_BYTES_PER_SECTOR;
+    pdiskPtr->handle.maxTransferSize = FS_BLOCK_SIZE;
+    pdiskPtr->partition = DISK_IS_PARTITIONED(devicePtr) ? 
+					DISK_PARTITION(devicePtr) : 
+					WHOLE_DISK_PARTITION;
+    pdiskPtr->diskPtr = diskPtr;
+    return ((DevBlockDeviceHandle *) pdiskPtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DevXylogicsReset --
+ * ResetController --
  *
  *	Reset the controller.  This is done by reading the reset/update
  *	register of the controller.
@@ -313,9 +772,9 @@ Dev_XylogicsInitDevice(devPtr)
  *
  *----------------------------------------------------------------------
  */
-void
-DevXylogicsReset(regsPtr)
-    DevXylogicsRegs *regsPtr;
+static void
+ResetController(regsPtr)
+    XylogicsRegs *regsPtr;
 {
     char x;
     x = regsPtr->resetUpdate;
@@ -328,7 +787,7 @@ DevXylogicsReset(regsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * DevXylogicsTest --
+ * TestDisk --
  *
  *	Get a drive's status to see if it exists.
  *
@@ -340,28 +799,23 @@ DevXylogicsReset(regsPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevXylogicsTest(xyPtr, diskPtr)
-    DevXylogicsController *xyPtr;
-    DevXylogicsDisk *diskPtr;
+static ReturnStatus
+TestDisk(xyPtr, diskPtr)
+    XylogicsController *xyPtr;
+    XylogicsDisk *diskPtr;
 {
     register ReturnStatus status;
-    /*
-     * Synchronize with the interrupt handling routine and with other
-     * processes that are trying to initiate I/O with this controller.
-     */
-    MASTER_LOCK(&xyPtr->mutex);
-    Sync_SemRegister(&xyPtr->mutex);
-    while (xyPtr->flags & XYLOGICS_CNTRLR_BUSY) {
-	Sync_MasterWait(&xyPtr->readyForIO, &xyPtr->mutex, FALSE);
-    }
-    xyPtr->flags |= XYLOGICS_CNTRLR_BUSY;
+    Request	request;
 
-	(void) DevXylogicsCommand(xyPtr, XY_READ_STATUS, diskPtr,
-		       (Dev_DiskAddr *)NIL, 0, (Address)0, WAIT);
+    bzero((char *) &request, sizeof(request));
+
+    request.command = XY_READ_STATUS;
+    request.diskPtr = diskPtr;
+
+    (void) SendCommand(diskPtr, &request, TRUE);
 
 #ifdef notdef
-	printf("DevXylogicsTest:\n");
+	printf("TestDisk:\n");
 	printf("Xylogics-%d disk %d\n", xyPtr->number, diskPtr->slaveID);
 	printf("Drive Status Byte %x\n", xyPtr->IOPBPtr->numSectLow);
 	printf("Drive Type %d: Cyls %d Heads %d Sectors %d\n",
@@ -387,16 +841,13 @@ DevXylogicsTest(xyPtr, diskPtr)
 	    status = DEV_OFFLINE;
 	}
 
-    xyPtr->flags &= ~XYLOGICS_CNTRLR_BUSY;
-    Sync_MasterBroadcast(&xyPtr->readyForIO);
-    MASTER_UNLOCK(&xyPtr->mutex);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DevXylogicsDoLabel --
+ * ReadDiskLabel --
  *
  *	Read the label of the disk and record the partitioning info.
  *
@@ -412,25 +863,22 @@ DevXylogicsTest(xyPtr, diskPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevXylogicsDoLabel(xyPtr, diskPtr)
-    DevXylogicsController *xyPtr;
-    DevXylogicsDisk *diskPtr;
+static ReturnStatus
+ReadDiskLabel(xyPtr, diskPtr)
+    XylogicsController *xyPtr;
+    XylogicsDisk *diskPtr;
 {
     register ReturnStatus error ;
     Sun_DiskLabel *diskLabelPtr;
     Dev_DiskAddr diskAddr;
     int part;
+    Request	request;
+    char labelBuffer[DEV_BYTES_PER_SECTOR + 8]; /* Buffer for reading the
+						 * disk label into. The
+						 * buffer has 8 extra bytes
+						 * reading low-level sector 
+						 * info. */
 
-    /*
-     * Synchronize with the interrupt handling routine and with other
-     * processes that are trying to initiate I/O with this controller.
-     */
-    MASTER_LOCK(&xyPtr->mutex);
-    while (xyPtr->flags & XYLOGICS_CNTRLR_BUSY) {
-	Sync_MasterWait(&xyPtr->readyForIO, &xyPtr->mutex, FALSE);
-    }
-    xyPtr->flags |= XYLOGICS_CNTRLR_BUSY;
 
     /*
      * Do a low level read that includes sector header info and ecc codes.
@@ -440,23 +888,30 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
     diskAddr.sector = 0;
     diskAddr.cylinder = 0;
 
-    error = DevXylogicsCommand(xyPtr, XY_RAW_READ, diskPtr,
-			   &diskAddr, 1, xyPtr->labelBuffer, WAIT);
+    bzero((char *) &request, sizeof(request));
+    request.command = XY_RAW_READ;
+    request.diskPtr = diskPtr;
+    request.diskAddress = diskAddr;
+    request.numSectors = 1;
+    request.buffer = labelBuffer;
+
+    error = SendCommand(diskPtr, &request, TRUE);
     if (error != SUCCESS) {
 	printf("Xylogics-%d: disk%d, couldn't read the label\n",
 			     xyPtr->number, diskPtr->slaveID);
     } else {
-	diskPtr->xyDriveType = (xyPtr->labelBuffer[3] & 0xC0) >> 6;
-	diskLabelPtr = (Sun_DiskLabel *)(&xyPtr->labelBuffer[4]);
-#ifdef notdef
+	diskPtr->xyDriveType = (labelBuffer[3] & 0xC0) >> 6;
+	diskLabelPtr = (Sun_DiskLabel *)(&labelBuffer[4]);
+
 	printf("Header Bytes: ");
 	for (part=0 ; part<4 ; part++) {
-	    printf("%x ", xyPtr->labelBuffer[part] & 0xff);
+	    printf("%x ", labelBuffer[part] & 0xff);
 	} 
 	printf("\n");
 	printf("Label magic <%x>\n", diskLabelPtr->magic);
 	printf("Drive type byte (%x) => type %x\n",
-			  xyPtr->labelBuffer[3] & 0xff, diskPtr->xyDriveType);
+			  labelBuffer[3] & 0xff, diskPtr->xyDriveType);
+#ifdef notdef
 	MACH_DELAY(1000000);
 #endif notdef
 	if (diskLabelPtr->magic == SUN_DISK_MAGIC) {
@@ -487,9 +942,13 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
 	    diskAddr.head = diskPtr->numHeads - 1;
 	    diskAddr.sector = diskPtr->numSectors - 1;
 	    diskAddr.cylinder = diskPtr->numCylinders - 1;
-    
-	    error = DevXylogicsCommand(xyPtr, XY_SET_DRIVE_SIZE, diskPtr,
-				   &diskAddr, 0, (Address)0, WAIT);
+
+	    bzero((char *) &request, sizeof(request));
+	    request.command = XY_SET_DRIVE_SIZE;
+	    request.diskPtr = diskPtr;
+	    request.diskAddress = diskAddr;
+
+	    error = SendCommand(diskPtr, &request, TRUE);
 	    if (error != SUCCESS) {
 		printf("Xylogics-%d: disk%d, couldn't set drive size\n",
 				     xyPtr->number, diskPtr->slaveID);
@@ -501,24 +960,14 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
 	    error = FAILURE;
 	}
     }
-    xyPtr->flags &= ~XYLOGICS_CNTRLR_BUSY;
-    Sync_MasterBroadcast(&xyPtr->readyForIO);
-    MASTER_UNLOCK(&xyPtr->mutex);
     return(error);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DevXylogicsDiskIO --
- *
- *      Read or Write (to/from) a raw Xylogics disk file.  The deviceUnit
- *      number is mapped to a particular partition on a particular disk.
- *      The starting coordinate, diskAddrPtr, is relative to the
- *      corresponding disk partition.  This routine relocates it using the
- *      disk parition info. The transfer is checked against the partition
- *      size to make sure that the I/O doesn't cross a disk partition.
- *      The number of sectors to read could be more than one block.
+ *  FillInDiskTransfer
+ *	Fill in the disk address and number of sectors of a command.
  *
  * Results:
  *	None.
@@ -529,243 +978,79 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
-    int command;			/* XY_READ or XY_WRITE */
-    int deviceUnit;			/* Unit from the filesystem that
-					 * indicates a disk and partition */
-    char *buffer;			/* Target buffer */
-    Dev_DiskAddr *diskAddrPtr;		/* Partition relative disk address of
+static void
+FillInDiskTransfer(pdiskPtr, startAddress, length, diskAddrPtr, numSectorsPtr)
+    PartitionDisk	*pdiskPtr;	/* Target Disk Partition. */
+    unsigned int	startAddress;	/* Starting offset in bytes.*/
+    unsigned int	length;		/* Length in bytes. */
+    Dev_DiskAddr *diskAddrPtr;		/* Disk disk address of
 					 * the first sector to transfer */
-    int *numSectorsPtr;			/* Upon entry, the number of sectors to
-					 * transfer.  Upon return, the number
-					 * of sectors actually transferred. */
+    int *numSectorsPtr;			/* The number
+					 * of sectors to transferred. */
 {
-    ReturnStatus error;
-    int disk;		/* Disk number of disk that has the partition that
-			 * corresponds to the unit number */
-    int part;		/* Partition of disk that corresponds to unit number */
-    DevXylogicsDisk *diskPtr;	/* State of the disk */
+    XylogicsDisk *diskPtr;	/* State of the disk */
     int totalSectors;	/* The total number of sectors to transfer */
-    int numSectors;	/* The number of sectors to transfer at
-			 * one time, up to a blocks worth. */
     int lastSector;	/* Last sector of the partition */
-    int totalRead;	/* The total number of sectors actually transferred */
     int startSector;	/* The first sector of the transfer */
+    int	part;		/* Partition number. */
+    int	cylinderSize;	/* Size of a cylinder in sectors. */
 
-    int loopCount;	/* For debugging */
-    char *bufferOrig;	/* For debugging */
-
-    bufferOrig = buffer;
-
-    disk = deviceUnit / DEV_NUM_DISK_PARTS;
-    part = deviceUnit % DEV_NUM_DISK_PARTS;
-    diskPtr = xyDisk[disk];
-    if (diskPtr->magic != XY_DISK_STATE_MAGIC) {
-	printf("Warning: DevXylogicsDiskIO: bad disk state info\n");
-    }
-
+    diskPtr = pdiskPtr->diskPtr;
+    part = pdiskPtr->partition;
+    cylinderSize = diskPtr->numHeads * diskPtr->numSectors;
     /*
      * Do bounds checking to keep the I/O within the partition.
      * sectorZero is the sector number of the first sector in the partition,
      * lastSector is the sector number of the last sector in the partition.
      * (These sector numbers are relative to the start of the partition.)
      */
-    lastSector = diskPtr->map[part].numCylinders *
-		 (diskPtr->numHeads * diskPtr->numSectors) - 1;
-    totalSectors = *numSectorsPtr;
+    lastSector = diskPtr->map[part].numCylinders * cylinderSize - 1;
+    totalSectors = length/DEV_BYTES_PER_SECTOR;
 
-    startSector = diskAddrPtr->cylinder *
-		     (diskPtr->numHeads * diskPtr->numSectors) +
-		  diskAddrPtr->head * diskPtr->numSectors +
-		  diskAddrPtr->sector;
+    startSector = startAddress / DEV_BYTES_PER_SECTOR;
+
     if (startSector > lastSector) {
 	/*
 	 * The offset is past the end of the partition.
 	 */
 	*numSectorsPtr = 0;
-	printf("Warning: DevXylogicsDiskIO: Past end of partition %d\n",
+	printf("Warning: XylogicsDiskIO: Past end of partition %d\n",
 				part);
-	return(SUCCESS);
+	return;
     } else if ((startSector + totalSectors - 1) > lastSector) {
 	/*
 	 * The transfer is at the end of the partition.  Reduce the
 	 * sector count so there is no overrun.
 	 */
 	totalSectors = lastSector - startSector + 1;
-	printf("Warning: DevXylogicsDiskIO: Overrun partition %d\n",
+	printf("Warning: XylogicsDiskIO: Overrun partition %d\n",
 				part);
     }
-    /*
-     * Relocate the disk address to be relative to this partition.
-     */
+    diskAddrPtr->cylinder = startSector / cylinderSize;
+    startSector -= diskAddrPtr->cylinder * cylinderSize;
+
+    diskAddrPtr->head = startSector / diskPtr->numSectors;
+    startSector -= diskAddrPtr->head * diskPtr->numSectors;
+
+    diskAddrPtr->sector = startSector;
+
     diskAddrPtr->cylinder += diskPtr->map[part].firstCylinder;
+
     if (diskAddrPtr->cylinder > diskPtr->numCylinders) {
 	panic("Xylogics, bad cylinder # %d\n",
 	    diskAddrPtr->cylinder);
     }
+    *numSectorsPtr = totalSectors;
 
-    /*
-     * Chop up the IO into blocksize pieces.  This is due to a size limit
-     * on the pre-allocated disk block buffer. (The filesystem cache doesn't
-     * call us for more than one fs block, but the raw device interface might.)
-     */
-    totalRead = 0;
-    loopCount = 0;
-    do {
-	loopCount++;
-	if (loopCount > 1) {
-	    printf("bufferOrig = %x, buffer = %x\n", bufferOrig, buffer);
-	    printf("Warning: DevXylogicsDiskIO transferring >1 block");
-	}
-	if (totalSectors > SECTORS_PER_BLOCK) {
-	    numSectors = SECTORS_PER_BLOCK;
-	} else {
-	    numSectors = totalSectors;
-	}
-	error = DevXylogicsSectorIO(command, diskPtr, diskAddrPtr,
-				&numSectors, buffer);
-	if (error == SUCCESS) {
-	    if (numSectors != totalSectors && numSectors != SECTORS_PER_BLOCK) {
-		panic("SectorIO: numSectors corrupted");
-	    }
-	    totalRead += numSectors;
-	    totalSectors -= numSectors;
-	    if (totalSectors > 0) {
-		buffer += numSectors * DEV_BYTES_PER_SECTOR;
-		diskAddrPtr->sector += numSectors;
-		if (diskAddrPtr->sector >= diskPtr->numSectors) {
-		    diskAddrPtr->sector -= diskPtr->numSectors;
-		    diskAddrPtr->head++;
-		    if (diskAddrPtr->head >= diskPtr->numHeads) {
-			diskAddrPtr->cylinder++;
-		    }
-		}
-	    }
-	}
-    } while (error == SUCCESS && totalSectors > 0);
-    *numSectorsPtr = totalRead;
-    return(error);
-}
+ }
 
 /*
  *----------------------------------------------------------------------
  *
- * DevXylogicsSectorIO --
- *
- *      Lower level routine to read or write an Xylogics device.  Use this
- *      to transfer a contiguous set of sectors.  This routine is the
- *      point of synchronization over the controller.  The interface here
- *      is in terms of a particular Xylogics disk and the number of
- *      sectors to transfer.  This routine takes care of mapping its
- *      buffer into the special multibus memory area that is set up for
- *      Sun DMA.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-DevXylogicsSectorIO(command, diskPtr, diskAddrPtr, numSectorsPtr, buffer)
-    int command;			/* XY_READ or XY_WRITE */
-    DevXylogicsDisk *diskPtr;		/* Which disk to do I/O with */
-    Dev_DiskAddr *diskAddrPtr;		/* The disk address at which the
-					 * transfer begins. */
-    int *numSectorsPtr;			/* Upon entry, the number of sectors to
-					 * transfer.  Upon return, the number
-					 * of sectors transferred. */
-    char *buffer;			/* Target buffer */
-{
-    ReturnStatus error;
-    register DevXylogicsController *xyPtr; /* Controller for the disk */
-    int retries = 0;
-    /*
-     * Synchronize with the interrupt handling routine and with other
-     * processes that are trying to initiate I/O with this controller.
-     */
-    xyPtr = diskPtr->xyPtr;
-    MASTER_LOCK(&xyPtr->mutex);
-    if (command == XY_READ) {
-	xyPtr->configPtr->diskReads++;
-    } else {
-	xyPtr->configPtr->diskWrites++;
-    }
-
-    /*
-     * Here we are using a condition variable and the scheduler to
-     * synchronize access to the controller.  An alternative would be to
-     * have a command queue associated with the controller.  Note that We
-     * can't rely on the mutex variable because that is relinquished later
-     * when the process using the controller waits for the I/O to complete.
-     */
-    while (xyPtr->flags & XYLOGICS_CNTRLR_BUSY) {
-	Sync_MasterWait(&xyPtr->readyForIO, &xyPtr->mutex, FALSE);
-    }
-    xyPtr->flags |= XYLOGICS_CNTRLR_BUSY;
-    xyPtr->flags &= ~XYLOGICS_IO_COMPLETE;
-
-    /*
-     * Map the buffer into the special area of multibus memory that
-     * the device can DMA into.
-     */
-    buffer = VmMach_DevBufferMap(*numSectorsPtr * DEV_BYTES_PER_SECTOR,
-			     buffer, xyPtr->IOBuffer);
-retry:
-    error = DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr,
-			  *numSectorsPtr, buffer, INTERRUPT);
-    /*
-     * Wait for the command to complete.  The interrupt handler checks
-     * for I/O errors and notifies us.
-     */
-    if (error == SUCCESS) {
-	while((xyPtr->flags & XYLOGICS_IO_COMPLETE) == 0) {
-	    Sync_MasterWait(&xyPtr->IOComplete, &xyPtr->mutex, FALSE);
-	}
-    }
-    if (xyPtr->flags & XYLOGICS_RETRY) {
-	retries++;
-	xyPtr->flags &= ~(XYLOGICS_RETRY|XYLOGICS_IO_COMPLETE);
-	if (command == XY_READ || command == XY_WRITE) {
-	    printf("(%s)", (command == XY_READ) ? "Read" : "Write");
-	} else {
-	    printf("(%d)", command);
-	}
-	if (retries < 3) {
-	    printf("\n");
-	    goto retry;
-	} else {
-	    printf("Warning: Xylogics retry at <%d,%d,%d> FAILED\n",
-		diskAddrPtr->cylinder, diskAddrPtr->head, diskAddrPtr->sector);
-	    error = DEV_RETRY_ERROR;
-	}
-    }
-    *numSectorsPtr -= (xyPtr->residual / DEV_BYTES_PER_SECTOR);
-    if (xyPtr->flags & XYLOGICS_IO_ERROR) {
-	xyPtr->flags &= ~XYLOGICS_IO_ERROR;
-	error = DEV_DMA_FAULT;
-    }
-    xyPtr->flags &= ~XYLOGICS_CNTRLR_BUSY;
-    Sync_MasterBroadcast(&xyPtr->readyForIO);
-    MASTER_UNLOCK(&xyPtr->mutex);
-    /*
-     * Voluntarily give up the CPU in case anyone else wants to use the
-     * disk.
-     */
-    Sched_ContextSwitch(PROC_READY);
-    return(error);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DevXylogicsSetupIOPB --
+ * SetupIOPB --
  *
  *      Setup a IOPB for a command.  The IOPB can then
- *      be passed to DevXylogicsCommand.  It specifies everything the
+ *      be passed to SendCommand.  It specifies everything the
  *	controller needs to know to do a transfer, and it is updated
  *	with status information upon completion.
  *
@@ -777,18 +1062,17 @@ retry:
  *
  *----------------------------------------------------------------------
  */
-void
-DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
-		     interrupt, IOPBPtr)
+static void
+SetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address, interrupt,IOPBPtr)
     char command;			/* One of the Xylogics commands */
-    DevXylogicsDisk *diskPtr;		/* Spefifies unit, drive type, etc */
+    XylogicsDisk *diskPtr;		/* Spefifies unit, drive type, etc */
     register Dev_DiskAddr *diskAddrPtr;	/* Head, sector, cylinder */
     int numSectors;			/* Number of sectors to transfer */
     register Address address;		/* Main memory address of the buffer */
     Boolean interrupt;			/* If TRUE use interupts, else poll */
-    register DevXylogicsIOPB *IOPBPtr;	/* I/O Parameter Block  */
+    register XylogicsIOPB *IOPBPtr;	/* I/O Parameter Block  */
 {
-    bzero((Address)IOPBPtr,sizeof(DevXylogicsIOPB));
+    bzero((Address)IOPBPtr,sizeof(XylogicsIOPB));
 
     IOPBPtr->autoUpdate	 	= 1;
     IOPBPtr->relocation	 	= 1;
@@ -818,12 +1102,12 @@ DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
     IOPBPtr->numSectHigh	= (numSectors & 0xff00) >> 8;
     IOPBPtr->numSectLow		= (numSectors & 0x00ff);
 
-    if ((int)address != 0 && (int)address != NIL) {
+    if ((unsigned)address != 0 && (unsigned)address != (unsigned) NIL) {
 	if ((unsigned)address < VMMACH_DMA_START_ADDR) {
 	    printf("%x: ", address);
 	    panic("Xylogics data address not in DMA space\n");
 	}
-	address = (Address)( (int)address - VMMACH_DMA_START_ADDR );
+	address = (Address)( (unsigned int)address - VMMACH_DMA_START_ADDR );
 	IOPBPtr->relocHigh	= ((int)address & 0xff000000) >> 24;
 	IOPBPtr->relocLow	= ((int)address & 0x00ff0000) >> 16;
 	IOPBPtr->dataAddrHigh	= ((int)address & 0x0000ff00) >> 8;
@@ -834,12 +1118,14 @@ DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
 /*
  *----------------------------------------------------------------------
  *
- * DevXylogicsCommand --
+ * SendCommand --
  *
- *	Set the controller working on a command specified by an IOPB.
- *	This routine will poll for the I/O to finish if the interrupt
- *	argument is FALSE.  Otherwise it will return and the caller
- *	should wait on the controlles IOComplete condition.
+ *      Lower level routine to read or write an Xylogics device.  Use this
+ *      to transfer a contiguous set of sectors.    The interface here
+ *      is in terms of a particular Xylogics disk and the command to be
+ *      sent.  This routine takes care of mapping its
+ *      buffer into the special multibus memory area that is set up for
+ *      Sun DMA.
  *
  * Results:
  *	An error code.
@@ -849,34 +1135,51 @@ DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr, numSectors, address,
-		     interrupt)
-    DevXylogicsController *xyPtr;	/* The Xylogics controller that will be
-					 * doing the command. The control block
-					 * within this specifies the unit
-					 * number and device address of the
-					 * transfer */
+static ReturnStatus
+SendCommand(diskPtr, requestPtr, wait)
+    XylogicsDisk *diskPtr;	/* Unit, type, etc, of disk to send command. */
+    Request	 *requestPtr;	/* Command request block. */
+    Boolean 	 wait;		/* Wait for the command to complete. */
+{
+    XylogicsController *xyPtr;	/* The Xylogics controller doing the command. */
     char command;		/* One of the standard Xylogics commands */
-    DevXylogicsDisk *diskPtr;	/* Unit, type, etc, of disk */
     Dev_DiskAddr *diskAddrPtr;	/* Head, sector, cylinder */
     int numSectors;		/* Number of sectors to transfer */
     Address address;		/* Main memory address of the buffer */
-    Boolean interrupt;		/* If TRUE use interupts, else poll */
-{
-    register ReturnStatus error;
-    register DevXylogicsRegs *regsPtr;	/* I/O registers */
-    register int IOPBAddr;
+    ReturnStatus error;
+    register XylogicsRegs *regsPtr;	/* I/O registers */
+    unsigned int IOPBAddr;
     int retries = 0;
+
+    xyPtr = diskPtr->xyPtr;
+
+    if (xyPtr->busy) {
+	if (wait) {
+	    while (xyPtr->busy) {
+		xyPtr->numSpecialWaiting++;
+		Sync_MasterWait(&xyPtr->specialCmdWait, &xyPtr->mutex, FALSE);
+		xyPtr->numSpecialWaiting--;
+	    }
+	} else { 
+	    panic("Xylogics-%d: Software error, marked busy in SendCommand\n",
+		    xyPtr->number);
+	}
+    }
+    xyPtr->busy = TRUE;
+
+    command = requestPtr->command;
+    diskAddrPtr = &requestPtr->diskAddress;
+    address = requestPtr->buffer;
+    numSectors = requestPtr->numSectors;
 
     /*
      * Without chaining the controller should always be idle at this
-     * point.  (Raw device access can conflict.  IMPLEMENT QUEUEING!)
+     * point.  
      */
     regsPtr = xyPtr->regsPtr;
     if (regsPtr->status & XY_GO_BUSY) {
 	printf("Warning: Xylogics waiting for busy controller\n");
-	(void)DevXylogicsWait(regsPtr, XY_GO_BUSY);
+	(void)WaitForCondition(regsPtr, XY_GO_BUSY);
     }
     /*
      * Set up the I/O registers for the transfer.  All addresses given to
@@ -886,60 +1189,84 @@ DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr, numSectors, address,
      * the level of indirection means the system can use any physical page
      * for an I/O buffer.)
      */
-    if ((int)xyPtr->IOPBPtr < VMMACH_DMA_START_ADDR) {
+    if ((unsigned int)xyPtr->IOPBPtr < VMMACH_DMA_START_ADDR) {
 	printf("%x: ", xyPtr->IOPBPtr);
-	printf("Warning: Xylogics IOPB not in DMA space\n");
+	panic("Warning: Xylogics IOPB not in DMA space\n");
+	xyPtr->busy = FALSE;
 	return(FAILURE);
     }
-    IOPBAddr = (int)xyPtr->IOPBPtr - VMMACH_DMA_START_ADDR;
+    IOPBAddr = (unsigned int)xyPtr->IOPBPtr - VMMACH_DMA_START_ADDR;
     regsPtr->relocHigh = (IOPBAddr & 0xFF000000) >> 24;
     regsPtr->relocLow  = (IOPBAddr & 0x00FF0000) >> 16;
     regsPtr->addrHigh  = (IOPBAddr & 0x0000FF00) >>  8;
     regsPtr->addrLow   = (IOPBAddr & 0x000000FF);
 
+    /*
+     * If the command is going to transfer data be relocate the address
+     * into DMA space. 
+     */
+    if ((address != (Address) 0) && (numSectors > 0)) {
+	if (command == XY_RAW_READ || command == XY_RAW_WRITE) {
+	    xyPtr->dmaBufferSize = (DEV_BYTES_PER_SECTOR + 8) * numSectors;
+	} else {
+	    xyPtr->dmaBufferSize = DEV_BYTES_PER_SECTOR  * numSectors;
+	}
+	xyPtr->dmaBuffer =  VmMach_DMAAlloc(xyPtr->dmaBufferSize, address);
+    } else {
+	xyPtr->dmaBufferSize = 0;
+    }
+
 retry:
-    DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
-		     interrupt, xyPtr->IOPBPtr);
+    SetupIOPB(command, diskPtr, diskAddrPtr, numSectors, xyPtr->dmaBuffer, 
+		!wait, xyPtr->IOPBPtr);
 #ifdef notdef
-    if (xylogicsPrints) {
-	printf("IOBP bytes\n");
+    if (TRUE) {
+	char *address;
+	int	i;
+	printf("IOBP bytes: ");
 	address = (char *)xyPtr->IOPBPtr;
 	for (i=0 ; i<24 ; i++) {
 	    printf("%x ", address[i] & 0xff);
 	}
 	printf("\n");
     }
-#endif notdef
-
+#endif
     /*
      * Start up the controller
      */
     regsPtr->status = XY_GO_BUSY;
 
-    if (interrupt == WAIT) {
-	/*
-	 * A synchronous command.  Wait here for the command to complete.
-	 */
-	error = DevXylogicsWait(regsPtr, XY_GO_BUSY);
-	if (error != SUCCESS) {
-	    printf("Xylogics-%d: couldn't wait for command to complete\n",
-				 xyPtr->number);
-	} else {
-	    /*
-	     * Check for error status from the operation itself.
-	     */
-	    error = DevXylogicsStatus(xyPtr);
-	    if (error == DEV_RETRY_ERROR && retries < 3) {
-		retries++;
-#ifdef notdef
-	    printf("Warning: Xylogics Retrying...\n");
-#endif
-		goto retry;
-	    }
+    if (wait) {
+        /*
+         * A synchronous command.  Wait here for the command to complete.
+         */
+        error = WaitForCondition(regsPtr, XY_GO_BUSY);
+        if (error != SUCCESS) {
+            printf("Xylogics-%d: couldn't wait for command to complete\n",
+                                 xyPtr->number);
+        } else {
+            /*
+             * Check for error status from the operation itself.
+             */
+            error = GetStatus(xyPtr);
+            if (error == DEV_RETRY_ERROR && retries < 3) {
+                retries++;
+		printf("Warning: Xylogics Retrying...\n");
+                goto retry;
+            }
+        }
+	if (xyPtr->dmaBufferSize > 0) { 
+	    VmMach_DMAFree(xyPtr->dmaBufferSize, xyPtr->dmaBuffer);
+	    xyPtr->dmaBufferSize = 0;
 	}
-    } else {
-	xyPtr->flags |= XYLOGICS_WANT_INTERRUPT;
-	error = SUCCESS;
+	xyPtr->busy = FALSE;
+	StartNextRequest(xyPtr);
+    } else { 
+       /*
+        * Store request for interrupt handler. 
+	*/
+       xyPtr->requestPtr = requestPtr;
+       error = SUCCESS;
     }
     return(error);
 }
@@ -947,7 +1274,7 @@ retry:
 /*
  *----------------------------------------------------------------------
  *
- * DevXylogicsStatus --
+ * GetStatus --
  *
  *	Tidy up after a Xylogics command by looking at status bytes from
  *	the device.
@@ -960,13 +1287,13 @@ retry:
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevXylogicsStatus(xyPtr)
-    DevXylogicsController *xyPtr;
+static ReturnStatus
+GetStatus(xyPtr)
+    XylogicsController *xyPtr;
 {
     register ReturnStatus error = SUCCESS;
-    register DevXylogicsRegs *regsPtr;
-    register DevXylogicsIOPB *IOPBPtr;
+    register XylogicsRegs *regsPtr;
+    register XylogicsIOPB *IOPBPtr;
 
     regsPtr = xyPtr->regsPtr;
     IOPBPtr = xyPtr->IOPBPtr;
@@ -1052,7 +1379,7 @@ DevXylogicsStatus(xyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * DevXylogicsWait --
+ * WaitForCondition --
  *
  *	Wait for the Xylogics controller to finish.  This is done by
  *	polling its GO_BUSY bit until it reads zero.
@@ -1066,9 +1393,9 @@ DevXylogicsStatus(xyPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevXylogicsWait(regsPtr, condition)
-    DevXylogicsRegs *regsPtr;
+static ReturnStatus
+WaitForCondition(regsPtr, condition)
+    XylogicsRegs *regsPtr;
     int condition;
 {
     register int i;
@@ -1079,27 +1406,24 @@ DevXylogicsWait(regsPtr, condition)
 	    return(SUCCESS);
 	} else if (regsPtr->status & XY_ERROR) {
 	    /*
-	     * Let XylogicsStatus() figure out what happened
+	     * Let GetStatus() figure out what happened
 	     */
 	    return(SUCCESS);
 	}
 	MACH_DELAY(10);
     }
     printf("Warning: Xylogics reset");
-    DevXylogicsReset(regsPtr);
+    ResetController(regsPtr);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Dev_XylogicsIntr --
+ * DevXylogics450Intr --
  *
- *	Handle interrupts from the Xylogics controller.  This has to poll
- *	through the possible Xylogics controllers to find the one generating
- *	the interrupt.  The usual action is to wake up whoever is waiting
- *	for I/O to complete.  This may also start up another transaction
- *	with the controller if there are things in its queue.
+ *	Handle interrupts from the Xylogics controller.   This routine
+ *	may start any queued requests.
  *
  * Results:
  *	TRUE if an Xylogics controller was responsible for the interrupt
@@ -1111,53 +1435,156 @@ DevXylogicsWait(regsPtr, condition)
  *----------------------------------------------------------------------
  */
 Boolean
-Dev_XylogicsIntr()
+DevXylogics450Intr(clientData)
+    ClientData	clientData;
 {
     ReturnStatus error = SUCCESS;
-    int index;
-    register DevXylogicsController *xyPtr;
-    register DevXylogicsRegs *regsPtr;
-    register DevXylogicsIOPB *IOPBPtr;
+    register XylogicsController *xyPtr;
+    register XylogicsRegs *regsPtr;
+    register XylogicsIOPB *IOPBPtr;
+    Request	*requestPtr;
 
-    for (index = 0; index < XYLOGICS_MAX_CONTROLLERS ; index++) {
-	xyPtr = xylogics[index];
-	if (xyPtr == (DevXylogicsController *)NIL ||
-	    xyPtr == (DevXylogicsController *)0 ||
-	    xyPtr->magic != XY_CNTRLR_STATE_MAGIC) {
-	    continue;
+    xyPtr = (XylogicsController *) clientData;
+    regsPtr = xyPtr->regsPtr;
+    if (regsPtr->status & XY_INTR_PENDING) {
+	MASTER_LOCK(&(xyPtr->mutex));
+	/*
+	 * Reset the pending interrupt by writing a 1 to the
+	 * INTR_PENDING bit of the status register.
+	 */
+	regsPtr->status = XY_INTR_PENDING;
+	IOPBPtr = xyPtr->IOPBPtr;
+	requestPtr = xyPtr->requestPtr;
+	/*
+	 * Release the DMA buffer if command mapped one. 
+	 */
+	if (xyPtr->dmaBufferSize > 0) {
+	    VmMach_DMAFree(xyPtr->dmaBufferSize, xyPtr->dmaBuffer);
+	    xyPtr->dmaBufferSize = 0;
 	}
-	regsPtr = xyPtr->regsPtr;
-	if (regsPtr->status & XY_INTR_PENDING) {
-	    if (xyPtr->flags & XYLOGICS_WANT_INTERRUPT) {
-		IOPBPtr = xyPtr->IOPBPtr;
-		if ((regsPtr->status & XY_ERROR) || IOPBPtr->error) {
-		    error = DevXylogicsStatus(xyPtr);
+	if ((regsPtr->status & XY_ERROR) || IOPBPtr->error) {
+	    error = GetStatus(xyPtr);
+	    if (error == DEV_RETRY_ERROR) {
+		requestPtr->retries++;
+		if (requestPtr->retries < 3) {
+		    xyPtr->busy = FALSE;
+		    error = SendCommand(requestPtr->diskPtr, requestPtr,FALSE);
+		    if (error == SUCCESS) {
+			MASTER_UNLOCK(&(xyPtr->mutex));
+			return (TRUE);
+		    }
 		}
-		xyPtr->flags |= XYLOGICS_IO_COMPLETE;
-		if (error == DEV_RETRY_ERROR) {
-		    xyPtr->flags |= XYLOGICS_RETRY;
-		} else if (error != SUCCESS) {
-		    xyPtr->flags |= XYLOGICS_IO_ERROR;
-		}
-		/*
-		 * For now there are no occasions where only part
-		 * of an I/O can complete.
-		 */
-		xyPtr->residual = 0;
-		/*
-		 * Reset the pending interrupt by writing a 1 to the
-		 * INTR_PENDING bit of the status register.
-		 */
-		regsPtr->status = XY_INTR_PENDING;
-		xyPtr->flags &= ~XYLOGICS_WANT_INTERRUPT;
-		Sync_MasterBroadcast(&xyPtr->IOComplete);
-		return(TRUE);
-	    } else {
-		printf("Xylogics spurious interrupt\n");
-		regsPtr->status = XY_INTR_PENDING;
-		return(TRUE);
 	    }
 	}
+	/*
+	 * For now there are no occasions where only part
+	 * of an I/O can complete.
+	 */
+	xyPtr->busy = FALSE;
+	RequestDone(requestPtr->diskPtr,requestPtr,error,requestPtr->numSectors);
+	StartNextRequest(xyPtr);
+	MASTER_UNLOCK(&(xyPtr->mutex));
+	return(TRUE);
     }
     return(FALSE);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RequestDone --
+ *
+ *	Mark a request as done by calling the request's doneProc. DMA memory
+ *	is released.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RequestDone(diskPtr, requestPtr, status, numSectors)
+    XylogicsDisk *diskPtr;
+    Request	*requestPtr;
+    ReturnStatus	status;
+    int		numSectors;
+{
+    if (numSectors > 0) {
+	if (requestPtr->requestPtr->operation == FS_READ) {
+	    diskPtr->diskStatsPtr->diskReads++;
+	} else {
+	    diskPtr->diskStatsPtr->diskWrites++;
+	}
+    }
+    MASTER_UNLOCK(&diskPtr->xyPtr->mutex);
+    (requestPtr->requestPtr->doneProc)(requestPtr->requestPtr, status,
+				numSectors*DEV_BYTES_PER_SECTOR);
+    MASTER_LOCK(&diskPtr->xyPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartNextRequest --
+ *
+ *	Start the next request of a Xylogics450 controller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+StartNextRequest(xyPtr)
+    XylogicsController *xyPtr;
+{
+    ClientData	clientData;
+    List_Links *newRequestPtr;
+    ReturnStatus	status;
+
+     /*
+     * If the controller is busy, just return.
+     */
+    if (xyPtr->busy) {
+	return;
+    }
+    /*
+     * If a SPECIAL command is waiting wake up the process to do the command.
+     */
+    if (xyPtr->numSpecialWaiting > 0) {
+	Sync_MasterBroadcast(&xyPtr->specialCmdWait);
+	return;
+    }
+    /* 
+     * Otherwise process requests from the Queue. 
+     */
+    newRequestPtr = Dev_QueueGetNextFromSet(xyPtr->ctrlQueues,
+				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+    while (newRequestPtr != (List_Links *) NIL) {
+	register Request *requestPtr;
+	XylogicsDisk	*diskPtr;
+
+	requestPtr = (Request *) newRequestPtr;
+	diskPtr = (XylogicsDisk *) clientData;
+
+	status = SendCommand(diskPtr, requestPtr, FALSE);
+	if (status != SUCCESS) {
+	    RequestDone(requestPtr->diskPtr, requestPtr, status, 0);
+	    newRequestPtr = Dev_QueueGetNextFromSet(xyPtr->ctrlQueues,
+				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+	} else {
+	    break;
+	}
+    }
+
+
+}
+
