@@ -34,6 +34,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <vm.h>
 #include <dbg.h>
+#ifdef SOSP91
+#include <sospRecord.h>
+#endif /* SOSP91 */
 
 int FsrmtRpcCacheUnlockBlock _ARGS_((ClientData clientData));
 
@@ -263,6 +266,10 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	streamPtr = (Fs_Stream *)NIL;
     }
 
+#ifdef SOSP91
+    paramsPtr->io.reserved = clientID;
+#endif SOSP91
+
     if (hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM &&
 	paramsPtr->io.length == FS_BLOCK_SIZE &&
 	(paramsPtr->io.offset & FS_BLOCK_OFFSET_MASK) == 0) {
@@ -275,6 +282,19 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	Fscache_Block	*cacheBlockPtr;	/* Direct reference to cache block */
 	Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
 	int lengthRead = 0;
+#ifdef SOSP91
+	Fsconsist_Info *consistPtr = &handlePtr->consist;
+	Fsconsist_ClientInfo	*clientPtr;
+
+	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
+	    if (clientPtr->clientID == clientID) {
+	        if (!clientPtr->cached) {
+		    SOSP_ADD_READ_TRACE(clientID, paramsPtr->streamID, TRUE, paramsPtr->io.offset, paramsPtr->io.length);
+		}
+		break;
+	    }
+	}
+#endif SOSP91
 
 	status = Fscache_BlockRead(&handlePtr->cacheInfo,
 				  paramsPtr->io.offset / FS_BLOCK_SIZE,
@@ -574,6 +594,9 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	    Fsutil_HandleUnlock(streamPtr);
 	}
     }
+#ifdef SOSP91
+    paramsPtr->io.reserved = clientID;
+#endif SOSP91
     FSUTIL_TRACE_IO(FSUTIL_TRACE_SRV_WRITE_2, hdrPtr->fileID,
 		paramsPtr->io.offset, paramsPtr->io.length );
     paramsPtr->io.buffer = storagePtr->requestDataPtr;
