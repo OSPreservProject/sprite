@@ -290,38 +290,6 @@ FsStreamScavenge(hdrPtr)
 }
 
 
-#ifdef notdef
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamCloseCheck --
- *
- *	Return TRUE if an actual close should be performed on the stream
- *	because this is the last reference to a particular open.
- *	MUST BE CALLED WITH stream handle LOCKED so it is safe to
- *	look at the reference count of the handle.
- *
- * Results:
- *	TRUE if an actual close should be performed on this stream.
- *
- * Side effects:
- *	Reference count of the stream is decremented.
- *
- *----------------------------------------------------------------------
- */
-ENTRY Boolean
-FsStreamCloseCheck(streamPtr)
-    Fs_Stream	*streamPtr;
-{
-    register Boolean	shouldClose;
-    LOCK_MONITOR;
-    streamPtr->refCount--;
-    shouldClose = (streamPtr->refCount == 0);
-    UNLOCK_MONITOR;
-    return(shouldClose);
-}
-#endif notdef
-
 typedef struct StreamReopenParams {
     FsFileID	streamID;
     FsFileID	ioFileID;
