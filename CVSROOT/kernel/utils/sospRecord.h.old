@@ -32,19 +32,20 @@ extern TraceLog_Header *SOSP91TracePtr;
  * Definitions for the types of log records.  These are the events being
  * traced.
  */
-#define	SOSP_OPEN	1
-#define	SOSP_DELETE	2
-#define	SOSP_CREATE	3
-#define	SOSP_MKLINK	4
-#define	SOSP_SET_ATTR	5
-#define	SOSP_GET_ATTR	6
-#define	SOSP_LSEEK	7
-#define	SOSP_CLOSE	8
-#define	SOSP_MIGRATE	9
-#define	SOSP_TRUNCATE	10
-#define	SOSP_CONSIST	11
-#define	SOSP_READ	12
-#define	SOSP_LOOKUP	13
+#define	SOSP_OPEN		1
+#define	SOSP_DELETE		2
+#define	SOSP_CREATE		3
+#define	SOSP_MKLINK		4
+#define	SOSP_SET_ATTR		5
+#define	SOSP_GET_ATTR		6
+#define	SOSP_LSEEK		7
+#define	SOSP_CLOSE		8
+#define	SOSP_MIGRATE		9
+#define	SOSP_TRUNCATE		10
+#define	SOSP_CONSIST_CHANGE	11
+#define	SOSP_READ		12
+#define	SOSP_LOOKUP		13
+#define	SOSP_CONSIST_ACTION	14
 
 #ifdef KERNEL
 /*
@@ -263,25 +264,52 @@ extern TraceLog_Header *SOSP91TracePtr;
 }
 
 /*
- * Trace a consistency operation.  The fields are
+ * Trace a consistency change operation.  The fields are
  * 
- * causingHostID:	ID of host causing the consistency change
- * affectedHostID:	ID of host affected by consistency change
- * streamID		Stream ID of file causing the fuss
- * flushCache		Whether the action to take on the client is flushing
-			the cache (TRUE) or invalidating the cache (FALSE)
+ * hostID:		ID of host causing the consistency change
+ * fileID		file ID of file causing the fuss
+ * operation		Is change due to an open or a close or what?
+ *			This uses SOSP_OPEN, etc, defines.
+ * writeOp		Whether the open/etc operation is for writing (TRUE)
+ *			or reading (FALSE).
  */ 
-#define	SOSP_ADD_CONSISTENCY_TRACE(causingHostID, affectedHostID, streamID, flushCache) \
+#define	SOSP_ADD_CONSIST_CHANGE_TRACE(hostID, fileID, operation, writeOp) \
 {\
 	unsigned int	sospBuffer[8];\
 \
-	sospBuffer[0] = SOSP_CONSISTENCY;\
+	sospBuffer[0] = SOSP_CONSIST_CHANGE;\
+	sospBuffer[1] = hostID;\
+	*((Fs_FileID *) &(sospBuffer[2])) = fileID;\
+	sospBuffer[6] = operation;\
+	sospBuffer[7] = writeOp;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(8 * sizeof (int)),SOSP_CONSIST_CHANGE);\
+}
+
+
+/*
+ * Trace a consistency action operation.  The fields are
+ * 
+ * causingHostID:	ID of host causing the consistency change
+ * affectedHostID:	ID of host affected by consistency change
+ * fileID		fileID of file causing the fuss
+ * action		Whether the action to take on the client is flushing
+ *			the cache (FSCONSIST_WRITE_BACK_BLOCKS) and/or
+ * 			invalidating the cache (FSCONSIST_INVALIDATE_BLOCKS)
+ *			These flags must be &'ed out since other flags may
+ *			also be set.
+ */ 
+#define	SOSP_ADD_CONSIST_ACTION_TRACE(causingHostID, affectedHostID, fileID, action) \
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_CONSIST_ACTION;\
 	sospBuffer[1] = causingHostID;\
 	sospBuffer[2] = affectedHostID;\
-	*((Fs_FileID *) &(sospBuffer[3])) = streamID;\
-	sospBuffer[7] = flushCache;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	sospBuffer[7] = action;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(8 * sizeof (int)),SOSP_CONSISTENCY);\
+		(8 * sizeof (int)),SOSP_CONSIST_ACTION);\
 }
 
 /*
