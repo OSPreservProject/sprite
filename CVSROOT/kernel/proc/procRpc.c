@@ -43,6 +43,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <bstring.h>
 
 /* 
+ * Macro to verify that a process is migrated.  If its state is MIGRATED, 
+ * it's okay.  Otherwise, both the MIGRATING and MIGRATION_DONE flags must 
+ * be on.  The MIGRATING flag must be on because the home process hasn't 
+ * finished migrating yet (hasn't context switched).  The MIGRATION_DONE 
+ * flag must be on because otherwise we shouldn't yet be getting RPC 
+ * requests from the peer process.
+ */
+#define IsMigrated(procPtr) \
+    ((procPtr)->state == PROC_MIGRATED \
+     || (((procPtr)->genFlags & (PROC_MIGRATING|PROC_MIGRATION_DONE)) \
+	 == (PROC_MIGRATING|PROC_MIGRATION_DONE)))
+    
+/* 
  * The PARANOIA code contains temporary checks to verify that 
  * Proc_StringNCopy is being used correctly. -mdk 27-May-91.
  */
@@ -65,8 +78,11 @@ static ReturnStatus 	RpcProcExec _ARGS_((Proc_ControlBlock *procPtr,
 				Address *replyDataPtr, 
 				int *replyDataLengthPtr));
 static ReturnStatus 	RpcRemoteCall _ARGS_((Proc_RemoteCall *callPtr, 
-			Address dataPtr, int dataLength, 
-			Address *replyDataPtr, int *replyDataLengthPtr));
+				Address dataPtr, int dataLength, 
+				Address *replyDataPtr,
+				int *replyDataLengthPtr));
+static ReturnStatus	WaitSanityChecks _ARGS_((Proc_ControlBlock *procPtr,
+				int clientID));
 
 typedef ReturnStatus ((*PRS) ());
 
@@ -304,9 +320,6 @@ RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	     * Migration is complete, but it hasn't context switched yet.
 	     * This is okay, since nothing it does after that point
 	     * affects the process.  But, if the call is EXIT, flag an error.
-	     * (There's still a race condition in the period between checking
-	     * for this bit and context switching in the migration trap
-	     * routine.  Hmm... Poll, maybe?)
 	     */
 	    if (callPtr->callNumber == SYS_PROC_EXIT) {
 		procPtr->genFlags |= PROC_MIG_ERROR;
@@ -976,26 +989,50 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
 
     cmdPtr = (ProcRemoteWaitCmd *) storagePtr->requestParamPtr;
     procPtr = Proc_LockPID(cmdPtr->pid);
+
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	if (proc_MigDebugLevel > 1) {
 	    printf("Proc_RpcRemoteWait: no such process %x\n", cmdPtr->pid);
 	}
 	return (PROC_NO_PEER);
-    } else if (procPtr->state != PROC_MIGRATED ||
-	    procPtr->peerHostID != clientID) {
-	Proc_Unlock(procPtr);
-	if (proc_MigDebugLevel > 1) {
-	    if (procPtr->state != PROC_MIGRATED) {
-		printf("Proc_RpcRemoteWait: process %x not migrated (%d)\n",
-		       procPtr->processID, procPtr->state);
-	    } else {
-		printf("%s: process %x has peer host %d, expected %d.\n",
-		       "Proc_RpcRemoteWait", procPtr->processID,
-		       procPtr->peerHostID, clientID);
-	    }
+    } else {
+	status = WaitSanityChecks(procPtr, clientID);
+	if (status != SUCCESS) {
+	    Proc_Unlock(procPtr);
+	    return (status);
 	}
-	return (PROC_NO_PEER);
     }
+
+    /* 
+     * If the local process is still finishing up migration, wait for it to 
+     * complete. 
+     */
+    if (procPtr->state != PROC_MIGRATED) {
+	if (proc_MigDebugLevel > 2) {
+	    printf("%s: waiting for process %x to context switch.\n",
+		   "Proc_RpcRemoteWait", procPtr->processID);
+	}
+	Proc_Unlock(procPtr);
+	status = Proc_WaitForMigration(cmdPtr->pid);
+	if (status != SUCCESS) {
+	    if (proc_MigDebugLevel > 1) {
+		printf("%s: error waiting for pid %x to context switch.\n",
+		       "Proc_RpcRemoteWait", cmdPtr->pid);
+	    }
+	    return (PROC_NO_PEER);
+	}
+	Proc_Lock(procPtr);
+	status = WaitSanityChecks(procPtr, clientID);
+	if (status != SUCCESS) {
+	    if (proc_MigDebugLevel > 1) {
+		printf("%s: error after waiting for pid %x to ctxt switch\n",
+		       "Proc_RpcRemoteWait", procPtr->processID);
+	    }
+	    Proc_Unlock(procPtr);
+	    return (status);
+	}
+    }
+
     pidArray = (Proc_PID *) storagePtr->requestDataPtr;
     childInfoPtr = (ProcChildInfo *) malloc(sizeof(ProcChildInfo));
 
@@ -1023,6 +1060,50 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
     return(status);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitSanityChecks --
+ *
+ *	Do some sanity checks for the remote wait() call on the given 
+ *	locked PCB.
+ *
+ * Results:
+ *	Returns a Sprite status code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+WaitSanityChecks(procPtr, clientID)
+    Proc_ControlBlock *procPtr;
+    int clientID;		/* host that made the wait request */
+{
+    /* 
+     * Verify that the process is migrated and that the process's remote
+     * host is the one making the wait request.
+     */
+    if (!IsMigrated(procPtr) || procPtr->peerHostID != clientID) {
+	if (proc_MigDebugLevel > 1) {
+	    if (procPtr->peerHostID != clientID) {
+		printf("%s: process %x has peer host %d, expected %d.\n",
+		       "Proc_RpcRemoteWait", procPtr->processID,
+		       procPtr->peerHostID, clientID);
+	    } else {
+		printf("%s: process %x not migrated (state %d, flags 0x%x)\n",
+		       "Proc_RpcRemoteWait", procPtr->processID,
+		       procPtr->state, procPtr->genFlags);
+	    }
+	}
+	return(PROC_NO_PEER);
+    }
+
+    return(SUCCESS);
+}
 
 
 /*
