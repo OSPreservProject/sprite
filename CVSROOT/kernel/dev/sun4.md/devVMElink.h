@@ -37,12 +37,13 @@
 #define	DEV_VMELINK_STATE_DMA_IN_USE	0x1
 #define	DEV_VMELINK_STATE_PAGE_MODE	0x2
 #define	DEV_VMELINK_STATE_SAFE_COPY	0x4
+#define	DEV_VMELINK_STATE_VME_A32	0x1000
 
 #define	DEV_VMELINK_INTVEC0		220
 
 #define	DEV_VMELINK_DMA_BUFSIZE_MASK	0xffffff00
 
-#define DEV_VMELINK_MAX_TRANSFER_SIZE	(1 << 22)	/* 4 MB max */
+#define DEV_VMELINK_MAX_TRANSFER_SIZE	(1 << 20)	/* 1 MB max */
 
 #define DEV_VMELINK_HANDLE_MAGIC	0xface6789
 
@@ -76,6 +77,9 @@ typedef struct VMELinkInfo {
     Address smallMap;		/* 64K window for use with window register */
     int minDmaSize;		/* minimum size to DMA instead of bcopy */
     unsigned int position;	/* current position for read/write */
+    unsigned int curAddrModifier; /* current address modifier */
+    char	name[40];	/* device name (from devConfig.c) */
+    char	semName[50];	/* semaphore name */
     List_Links		reqHdr;	/* queue of requests to this link board */
     DevVMElinkHandle handle;	/* handle to return to attach() */
     int numAttached;		/* # of attach calls (w/o releasing) */

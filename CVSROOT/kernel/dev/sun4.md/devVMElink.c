@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "vmMach.h"
 #include "devVMElink.h"
+#include "string.h"
 
 #include "dbg.h"
 
@@ -53,7 +54,7 @@ Boolean DevVMElinkXferData	_ARGS_((VMELinkInfo* linkInfo));
 /*
  * These are the addresses for each card's "window" register access.
  */
-unsigned int windowPhysAddr[] = {0xff8e0000,};
+unsigned int windowPhysAddr[] = {0xf0010000,0xff8e0000};
 
     
 
@@ -127,7 +128,10 @@ VMELinkInfo *linkInfo;
 	printf ("DevVMElinkReset: starting reset.\n");
     }
 
-    linkInfo->state = 0;
+    /*
+     * Clear all state except vme address space state bit.
+     */
+    linkInfo->state &= DEV_VMELINK_STATE_VME_A32;
     linkInfo->position = 0;
     curStatus = regPtr->LocalStatus;
     if (devVMElinkDebug) {
@@ -172,7 +176,7 @@ VMELinkInfo *linkInfo;
     linkInfo->LocalFlags = 0;
     regPtr->LocalCmd = linkInfo->LocalFlags;
     linkInfo->RemoteFlags1 = 0;
-    linkInfo->RemoteFlags2 = 0 /*DEV_VMELINK_REMOTE_BLKMODE_DMA*/;
+    linkInfo->RemoteFlags2 = 0 /*DEV_VMELINK_REMOTE_PAUSE_16*/;
     if (!(curStatus & DEV_VMELINK_REMOTE_DOWN)) {
 	if (devVMElinkDebug) {
 	    printf ("Just before putting in remote flags, status is 0x%x\n",
@@ -320,6 +324,7 @@ VMELinkInfo*	linkInfo;
     if (reqPtr->dmaSize > 0) {
 	VmMach_DMAFree (reqPtr->dmaSize, (Address)(reqPtr->dmaSpace));
     }
+    linkInfo->regArea->RemoteCmd2 = linkInfo->RemoteFlags2;
     linkInfo->state &= ~DEV_VMELINK_STATE_DMA_IN_USE;
     /*
      * Check to see if there's another request outstanding.  If there
@@ -370,7 +375,7 @@ VMELinkInfo*	linkInfo;
     unsigned long bufAddr;
     unsigned long dmaAddr;
     int dmaSize = 0;
-    int size;
+    int copySize;
     unsigned char dmaCmd;
     DmaRegs *dmaPtr = linkInfo->dmaRegs;
     register CtrlRegs*	regPtr = linkInfo->regArea;
@@ -385,11 +390,16 @@ VMELinkInfo*	linkInfo;
      * First, copy the data that won't be DMAed.
      */
     linkInfo->state |= DEV_VMELINK_STATE_DMA_IN_USE;
-    dmaSize = bufSize & DEV_VMELINK_DMA_BUFSIZE_MASK;
+    if (bufSize >= linkInfo->minDmaSize) {
+	dmaSize = bufSize & DEV_VMELINK_DMA_BUFSIZE_MASK;
+    } else {
+	dmaSize = 0;
+    }	
+    copySize = bufSize - dmaSize;
     if (devVMElinkDebug) {
-	printf("DevVMElinkXferData: size=0x%x dmaSize=0x%x\n",bufSize,dmaSize);
+	printf("DevVMElinkXferData: bufsize=0x%x dmaSize=0x%x copySize=0x%x\n",
+	       bufSize, dmaSize, copySize);
     }
-    size = bufSize - dmaSize;
     remoteAddr = (unsigned int)linkInfo->position + dmaSize;
     bufAddr = (unsigned int)(reqPtr->buffer + dmaSize);
     dmaAddr = (unsigned int)(linkInfo->smallMap + (remoteAddr & 0xffff));
@@ -397,11 +407,11 @@ VMELinkInfo*	linkInfo;
     regPtr->RemotePageAddrHigh = ((unsigned int)remoteAddr >> 24) & 0xff;
     regPtr->RemotePageAddrLow =  ((unsigned int)remoteAddr >> 16) & 0xff;
     if (reqPtr->operation == FS_READ) {
-	while (size > 0) {
+	while (copySize > 0) {
 	    *(int *)bufAddr = *(int *)dmaAddr;
 	    dmaAddr += 4;
 	    bufAddr += 4;
-	    size -= 4;
+	    copySize -= 4;
 	    remoteAddr += 4;
 	    if (((unsigned int)remoteAddr & 0xffff) == 0) {
 		regPtr->RemotePageAddrHigh =
@@ -411,11 +421,11 @@ VMELinkInfo*	linkInfo;
 	    }
 	}
     } else {
-	while (size > 0) {
+	while (copySize > 0) {
 	    *(int *)dmaAddr = *(int *)bufAddr;
 	    dmaAddr += 4;
 	    bufAddr += 4;
-	    size -= 4;
+	    copySize -= 4;
 	    remoteAddr += 4;
 	    if (((unsigned int)remoteAddr & 0xffff) == 0) {
 		regPtr->RemotePageAddrHigh =
@@ -443,7 +453,7 @@ VMELinkInfo*	linkInfo;
 
 	/*
 	 * gets user address modifier.
-	 * requires addr mod 0x3d on link board
+	 * requires addr mod 0x3d (for A24) or 0x0d (for A32) on link board
 	 * Convert dmaAddr to a VME address.
 	 */
 	dmaAddr &= 0x000fffff;
@@ -465,13 +475,26 @@ VMELinkInfo*	linkInfo;
 	*(uint16*)dmaPtr->remoteDmaAddr1 = (uint16)(remoteAddr & 0xffff);
 	*(uint16*)dmaPtr->dmaLength2 = (uint16)((dmaSize >> 8) & 0xffff);
 #endif
-	regPtr->LocalAddrMod = 0x3d;
-	regPtr->RemoteAddrMod = 0x3d;
+	if (linkInfo->state & DEV_VMELINK_STATE_VME_A32) {
+	    regPtr->LocalAddrMod = 0x0d;
+	    if (linkInfo->RemoteFlags2 & DEV_VMELINK_REMOTE_DMA_BLOCK_MODE) {
+		regPtr->RemoteAddrMod = 0x0f;
+	    } else {
+		regPtr->RemoteAddrMod = 0x0d;
+	    }
+	} else {
+	    regPtr->LocalAddrMod = 0x3d;
+	    if (linkInfo->RemoteFlags2 & DEV_VMELINK_REMOTE_DMA_BLOCK_MODE) {
+		regPtr->RemoteAddrMod = 0x3f;
+	    } else {
+		regPtr->RemoteAddrMod = 0x3d;
+	    }
+	}
+	    
 	regPtr->LocalCmd = linkInfo->LocalFlags |
-	    DEV_VMELINK_DISABLE_LOCAL_INT;
-	regPtr->RemoteCmd2 = (linkInfo->RemoteFlags2 &
-			      ~DEV_VMELINK_REMOTE_BLKMODE_DMA) |
-				  DEV_VMELINK_DISABLE_REMOTE_INT;
+	    DEV_VMELINK_LOCAL_DISABLE_INT;
+	regPtr->RemoteCmd2 = linkInfo->RemoteFlags2 |
+	    DEV_VMELINK_REMOTE_DISABLE_INT;
 	dmaCmd = DEV_VMELINK_DMA_START | DEV_VMELINK_DMA_LONGWORD |
 	    DEV_VMELINK_DMA_LOCAL_PAUSE | DEV_VMELINK_DMA_ENABLE_INTR
 	/* | DEV_VMELINK_DMA_BLOCK_MODE */  ;
@@ -520,10 +543,11 @@ ClientData data;
     unsigned char tmpReg;
 
     dmaRegs = linkInfo->dmaRegs;
-    MASTER_LOCK (&linkInfo->mutex);
     if (devVMElinkDebug) {
-	printf ("DevVMElinkIntr: got VME interrupt.\n");
+	printf ("DevVMElinkIntr: got VME interrupt for %s\n",
+		linkInfo->name);
     }
+    MASTER_LOCK (&linkInfo->mutex);
     tmpReg = dmaRegs->localDmaCmdReg;
     if (tmpReg & DEV_VMELINK_DMA_DONE) {
 	tmpReg &= ~(DEV_VMELINK_DMA_DONE & DEV_VMELINK_DMA_START);
@@ -631,7 +655,7 @@ unsigned int		mod;
     linkInfo->regArea->RemoteAddrMod = (unsigned char) mod;
     linkInfo->regArea->RemoteCmd2 = linkInfo->RemoteFlags2;
     if (devVMElinkDebug) {
-	printf ("VME address modifier set to 0x%x\n", mod);
+	printf ("VME address modifier set to 0x%02x\n", mod);
     }
 }
 
@@ -716,7 +740,7 @@ register VMELinkInfo *linkInfo;
     remotePage = ((unsigned int)memAccess.destAddress >> 16) & 0xffff;
     remote = (unsigned int *)(linkInfo->smallMap + remoteOffsetInPage);
     setRemotePage (linkInfo, remotePage);
-    setAddrModifier (linkInfo, 0x0d);
+    setAddrModifier (linkInfo, linkInfo->curAddrModifier);
     local = buf;
     if (devVMElinkDebug) {
 	printf ("DevVMELinkAccessRemoteMemory: local 0x%x, remote 0x%x\n",
@@ -743,6 +767,10 @@ register VMELinkInfo *linkInfo;
 		status = Mach_Probe (sizeof (int), (Address)(local++),
 				     (Address)(remote++));
 		if (status != SUCCESS) {
+		    if (devVMElinkDebug) {
+			printf ("%s: Writing to VME addr 0x%x failed.\n",
+				linkInfo->name, --remote);
+		    }
 		    goto accessExit;
 		}
 	    } else {
@@ -761,6 +789,10 @@ register VMELinkInfo *linkInfo;
 		status = Mach_Probe (sizeof (int), (Address)(remote++),
 				     (Address)(local++));
 		if (status != SUCCESS) {
+		    if (devVMElinkDebug) {
+			printf ("%s: Reading from VME addr 0x%x failed.\n",
+				linkInfo->name, --remote);
+		    }
 		    goto accessExit;
 		}
 	    } else {
@@ -856,10 +888,25 @@ register Fs_IOReply *replyPtr;
 	break;
       case IOC_VMELINK_SET_ADDRMOD:
 	passedData = *(unsigned int *)ioctlPtr->inBuffer;
-	regPtr->RemoteAddrMod = (unsigned char)passedData;
-	linkData->RemoteFlags2 |= DEV_VMELINK_REMOTE_USE_ADDRMOD;
-	regPtr->RemoteCmd2 = linkData->RemoteFlags2;
+	linkData->curAddrModifier = (unsigned char)passedData;
 	break;
+      case IOC_VMELINK_SET_MIN_DMA_SIZE:
+	outSize = sizeof (linkData->minDmaSize);
+	inSize = ioctlPtr->inBufSize;
+	fmtStatus = Fmt_Convert ("w", ioctlPtr->format, &inSize,
+				 (Address)ioctlPtr->inBuffer, mach_Format,
+				 &outSize, (Address)&(linkData->minDmaSize));
+	if (fmtStatus != FMT_OK) {
+	    printf ("Format of VMELINK_SET_MIN_DMA_SIZE failed, 0x%x\n",
+		    fmtStatus);
+	    return GEN_INVALID_ARG;
+	}
+	if (devVMElinkDebug) {
+	    printf ("VMELINK_SET_MIN_DMA_SIZE: min DMA size set to 0x%x\n",
+		    linkData->minDmaSize);
+	}
+	break;
+#if 0
       case IOC_VMELINK_NO_ADDRMOD:
 	linkData->RemoteFlags2 &= ~DEV_VMELINK_REMOTE_USE_ADDRMOD;
 	regPtr->RemoteCmd2 = linkData->RemoteFlags2;
@@ -870,6 +917,8 @@ register Fs_IOReply *replyPtr;
       case IOC_VMELINK_HIGH_VME:
 	linkData->addrMsb = 0x80000000;
 	break;
+#endif
+
       case IOC_VMELINK_DEBUG_ON:
 	devVMElinkDebug = TRUE;
 	break;
@@ -884,6 +933,12 @@ register Fs_IOReply *replyPtr;
 	break;
       case IOC_VMELINK_SAFE_COPY_OFF:
 	linkData->state &= ~DEV_VMELINK_STATE_SAFE_COPY;
+	break;
+      case IOC_VMELINK_REMOTE_BLOCK_MODE_ON:
+	linkData->RemoteFlags2 |= DEV_VMELINK_REMOTE_DMA_BLOCK_MODE;
+	break;
+      case IOC_VMELINK_REMOTE_BLOCK_MODE_OFF:
+	linkData->RemoteFlags2 &= ~DEV_VMELINK_REMOTE_DMA_BLOCK_MODE;
 	break;
       case IOC_VMELINK_READ_BOARD_STATUS:
 	{
@@ -1099,15 +1154,14 @@ DevVMElinkInit(cntrlPtr)
      * just return.
      */
     linkNum = cntrlPtr->controllerID;
-    if (linkNum >= DEV_VMELINK_MAX_BOARDS ||
-	ProbeVMEBoard (regPtr) == FALSE) {
+    if (linkNum >= DEV_VMELINK_MAX_BOARDS || (ProbeVMEBoard(regPtr)== FALSE)) {
 	return (DEV_NO_CONTROLLER);
     }
     linkInfo = VMEInfo[linkNum] = (VMELinkInfo *)malloc (sizeof (VMELinkInfo));
     linkInfo->unit = linkNum;
     linkInfo->LocalFlags = 0;
     linkInfo->RemoteFlags1 = 0;
-    linkInfo->RemoteFlags2 = 0 /*DEV_VMELINK_REMOTE_BLKMODE_DMA*/;
+    linkInfo->RemoteFlags2 = 0 /*DEV_VMELINK_REMOTE_PAUSE_16*/;
     linkInfo->regArea = regPtr;
     linkInfo->dmaRegs = (DmaRegs *)((char *)regPtr + sizeof (CtrlRegs));
     linkInfo->addrMsb = 0x80000000;
@@ -1116,7 +1170,7 @@ DevVMElinkInit(cntrlPtr)
     linkInfo->minDmaSize = DEV_VMELINK_MIN_DMA_SIZE;
     linkInfo->position = 0;
 
-    sprintf (semName, "VME link 0x%x", linkNum);
+    sprintf (linkInfo->semName, "VME link 0x%x", linkNum);
     Sync_SemInitDynamic (&(linkInfo->mutex), semName);
 
     List_Init (&(linkInfo->reqHdr));
@@ -1124,6 +1178,8 @@ DevVMElinkInit(cntrlPtr)
     linkInfo->curReq = NULL;
     blockHandle = &(linkInfo->handle.blockHandle);
     linkInfo->handle.linkInfo = linkInfo;
+    linkInfo->handle.magic = 0xfaced;
+    strcpy (linkInfo->name, cntrlPtr->name);
     blockHandle->blockIOProc = DevVMElinkBlockIO;
     blockHandle->IOControlProc = DevVMElinkBlockIOControl;
     blockHandle->releaseProc = DevVMElinkRelease;
@@ -1136,9 +1192,19 @@ DevVMElinkInit(cntrlPtr)
      */
 #ifdef MAP_IN_BIG_DEVICE
     linkInfo->smallMap = (Address)VmMach_MapInBigDevice
-	(windowPhysAddr[linkNum], 0x10000, 3);
+	((void*)windowPhysAddr[linkNum], 0x10000, VMMACH_TYPE_VME32DATA);
     if (linkInfo->smallMap == NULL) {
 	printf ("DevVMElinkInit: couldn't map window.\n");
+    } else if (((unsigned)windowPhysAddr[linkNum] & 0xff000000) !=
+	       0xff000000) {
+	linkInfo->state |= DEV_VMELINK_STATE_VME_A32;
+	linkInfo->curAddrModifier = 0x0d;
+	printf ("%s is A32D32 with window at 0x%x mapped into 0x%x\n",
+		linkInfo->name,	windowPhysAddr[linkNum], linkInfo->smallMap);
+    } else {
+	linkInfo->curAddrModifier = 0x3d;
+	printf ("%s is A32D24 with window at 0x%x mapped into 0x%x\n",
+		linkInfo->name,	windowPhysAddr[linkNum], linkInfo->smallMap);
     }
 #else
     curMapAddr = (Address)windowPhysAddr[linkNum];
@@ -1158,7 +1224,6 @@ DevVMElinkInit(cntrlPtr)
 	}
     }
 #endif
-    printf ("DevVMElinkInit: window mapped into 0x%x\n", linkInfo->smallMap);
 
     status = DevVMElinkReset (linkInfo);
 
