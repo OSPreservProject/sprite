@@ -118,7 +118,7 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
 				 * this is a NIL pointer then the results
 				 * are printed to the console */
 {
-    int			packetId;
+    int			packetCount;
     ReturnStatus	status;
     Timer_Ticks		startTime;
     Timer_Ticks		endTime;
@@ -144,11 +144,11 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
     }
                  
     Timer_GetCurrentTicks(&startTime);
-    packetId = 0;
+    packetCount = 0;
     do {
-        packetId++;
+        packetCount++;
         status = Rpc_Echo(serverId, localInBuffer, localOutBuffer, size);
-    } while ((status == SUCCESS) && (packetId < numEchoes));
+    } while ((status == SUCCESS) && (packetCount < numEchoes));
  
     Timer_GetCurrentTicks(&endTime);
  
@@ -161,7 +161,7 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
      */
     Timer_SubtractTicks(endTime, startTime, &endTime);
     Timer_TicksToTime(endTime, &diff);
-    Time_Divide(diff, numEchoes, &diff);
+    Time_Divide(diff, packetCount, &diff);
     if (deltaTimePtr == (Time *)NIL) {
 	printf("time per RPC %d.%06d\n",
                         diff.seconds, diff.microseconds);
@@ -209,7 +209,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
 			 * a NIL pointer then the results are printed to
 			 * the console instead. */
 {
-    int			packetId;
+    int			packetCount;
     ReturnStatus	status;
     Timer_Ticks		startTime;
     Timer_Ticks		endTime;
@@ -229,11 +229,11 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
     }
                  
     Timer_GetCurrentTicks(&startTime);
-    packetId = 0;
+    packetCount = 0;
     do {
-        packetId++;
+        packetCount++;
         status = Rpc_Send(serverId, localInBuffer, size);
-    } while ((status == SUCCESS) && (packetId < numSends));
+    } while ((status == SUCCESS) && (packetCount < numSends));
  
     Timer_GetCurrentTicks(&endTime);
  
@@ -246,7 +246,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
      */
     Timer_SubtractTicks(endTime, startTime, &endTime);
     Timer_TicksToTime(endTime, &diff);
-    Time_Divide(diff, numSends, &diff);
+    Time_Divide(diff, packetCount, &diff);
     if (deltaTimePtr == (Time *)NIL) {
 	printf("time per RPC %d.%06d\n",
                         diff.seconds, diff.microseconds);
