@@ -18,15 +18,6 @@
 #include "sig.h"
 
 /*
- * The internal signal stack format.
- */
-typedef struct {
-    Address	retAddr;	/* Address of trap instruction to execute
-				 * upon return. */
-    Sig_Stack	sigStack;	/* The user visible part of the signal stack.*/
-} SigStack;
-
-/*
  * Flags for the sigFlags field in the proc table.
  *
  * SIG_PAUSE_IN_PROGRESS	A Sig_Pause is currently being executed.

@@ -62,12 +62,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sig.h"
 #include "sync.h"
 #include "dbg.h"
-#include "exc.h"
 #include "list.h"
 #include "proc.h"
+#include "procMigrate.h"
 #include "status.h"
 #include "byte.h"
-#include "machine.h"
 #include "sync.h"
 #include "sched.h"
 #include "sigInt.h"
@@ -953,5 +952,181 @@ SigClearPendingMask(procPtr, sigNum)
     procPtr->sigPendingMask &= ~sigBitMasks[sigNum];
 
     UNLOCK_MONITOR;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Routines for signal handlers --
+ *
+ * A signal handler is called right before a process is to return to 
+ * user space.  In order to do this the current state before the signal
+ * is taken must be saved, the signal handler called, and then the state
+ * restored when the signal handler returns.  It is this modules responsibility
+ * to handle the signal state;  all of the actual saving and restoring of
+ * machine state and the calling of the handler is done in the machine
+ * dependent routines in the mach module.
+ */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Handle --
+ *
+ *	Set things up so that the signal handler is called for one of the
+ *	signals that are pending for the current process.  This is done
+ *	by saving the old trap stack and modifying the current one.
+ *
+ * Results:
+ *	Return TRUE if a signal is setup to be handled by the user.
+ *
+ * Side effects:
+ *	*trapStackPtr is modified and also the user stack is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean		
+Sig_Handle(procPtr, sigStackPtr, pcPtr)
+    register	Proc_ControlBlock	*procPtr;
+    register	Sig_Stack		*sigStackPtr;
+    Address				*pcPtr;
+{
+    int					sigs;
+    int					sigNum;
+    unsigned	int			*bitMaskPtr;
+    int					sigBitMask;
+
+    /*
+     * Find out which signals are pending.
+     */
+    sigs = procPtr->sigPendingMask & ~procPtr->sigHoldMask;
+    if (sigs == 0) {
+	return(FALSE);
+    }
+
+    /*
+     * Check for the signal SIG_KILL.  This is processed specially because
+     * it is how processes that have some problem such as being unable
+     * to write to swap space on the file server are destroyed.
+     */
+    if (sigs & sigBitMasks[SIG_KILL]) {
+	if (procPtr->sigCodes[SIG_KILL] != SIG_NO_CODE) {
+	    Proc_ExitInt(PROC_TERM_DESTROYED, 
+			procPtr->sigCodes[SIG_KILL], 0);
+	} else {
+	    Proc_ExitInt(PROC_TERM_SIGNALED, SIG_KILL, 0);
+	}
+    }
+
+    for (sigNum = SIG_MIN_SIGNAL, bitMaskPtr = &sigBitMasks[SIG_MIN_SIGNAL];
+	 !(sigs & *bitMaskPtr);
+	 sigNum++, bitMaskPtr++) {
+    }
+
+    SigClearPendingMask(procPtr, sigNum);
+
+    /*
+     * Process the signal.
+     */
+    switch (procPtr->sigActions[sigNum]) {
+	case SIG_IGNORE_ACTION:
+	    Sys_Panic(SYS_WARNING, 
+	    "Sig_Handle:  An ignored signal was in a signal pending mask.\n");
+	    return(FALSE);
+
+	case SIG_KILL_ACTION:
+	    Proc_ExitInt(PROC_TERM_SIGNALED, sigNum, procPtr->sigCodes[sigNum]);
+	    Sys_Panic(SYS_FATAL, "Sig_Handle: Proc_Exit returned!\n");
+
+	case SIG_SUSPEND_ACTION:
+	case SIG_DEBUG_ACTION:
+	    /* 
+	     * A suspended process and a debugged process are basically
+	     * the same.  A suspended process can be debugged just like
+	     * a process in the debug state.   The only difference is that
+	     * a suspended process does not go onto the debug list; it can
+	     * only be debugged by a debugger that specifically asks for
+	     * it.
+	     *
+	     * Suspend the process.
+	     */
+	    Proc_SuspendProcess(procPtr,
+			procPtr->sigActions[sigNum] == SIG_DEBUG_ACTION,
+			PROC_TERM_SIGNALED, sigNum, 
+			procPtr->sigCodes[sigNum]);
+	    return(FALSE);
+
+	case SIG_MIGRATE_ACTION:
+	    if (procPtr->peerHostID != NIL) {
+		if (proc_MigDebugLevel > 6) {
+		    Sys_Printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
+			       procPtr->processID);
+		}
+		Proc_MigrateTrap(procPtr);
+	    }
+	    return(FALSE);
+
+	case SIG_DEFAULT_ACTION:
+	    Sys_Panic(SYS_FATAL, 
+		 "Sig_Handle: SIG_DEFAULT_ACTION found in array of actions?\n");
+    }
+
+    /*
+     * Set up our part of the signal stack.
+     */
+    sigStackPtr->sigNum = sigNum;
+    sigStackPtr->sigCode = procPtr->sigCodes[sigNum];
+    /*
+     * If this signal handler is being called after a call to Sig_Pause then
+     * the real signal hold mask has to be restored after the handler returns.
+     * This is assured by pushing the real hold mask which is stored in 
+     * the proc table onto the stack.
+     */
+    if (procPtr->sigFlags & SIG_PAUSE_IN_PROGRESS) {
+	procPtr->sigFlags &= ~SIG_PAUSE_IN_PROGRESS;
+	sigStackPtr->oldHoldMask = procPtr->oldSigHoldMask;
+    } else {
+	sigStackPtr->oldHoldMask = procPtr->sigHoldMask;
+    }
+
+    procPtr->sigHoldMask |= procPtr->sigMasks[sigNum];
+    sigBitMask = sigBitMasks[sigNum];
+    if (sigBitMask & ~sigCanHoldMask) {
+	/*
+	 * If this is a non-blockable signal then add it to the hold mask
+	 * so that if we get it again we know that it can't be handled.
+	 */
+	procPtr->sigHoldMask |= sigBitMask;
+    }
+    procPtr->specialHandling = 1;
+    *pcPtr = (Address)procPtr->sigActions[sigNum];
+    return(TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Return --
+ *
+ *	Process a return from signal.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The trap stack is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+void		
+Sig_Return(procPtr, sigStackPtr)
+    register Proc_ControlBlock	*procPtr;	/* Process that is returning
+						 * from a signal. */
+    Sig_Stack			*sigStackPtr;	/* Signal stack. */
+{
+    procPtr->sigHoldMask = sigStackPtr->oldHoldMask;
+    procPtr->specialHandling = 1;
 }
 

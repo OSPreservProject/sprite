@@ -15,10 +15,10 @@
 #define _SIG
 
 #include "user/sig.h"
-#include "exc.h"
+#include "mach.h"
 
 /*
- * Structure pushed onto stack when a signal is taken.
+ * Structure that user sees on stack when a signal is taken.
  */
 typedef struct {
     int		  sigNum;	/* The number of this signal. */
@@ -27,12 +27,12 @@ typedef struct {
 				   before this signal handler was called.  */
     int		  trapInst;	/* The trap instruction that is executed upon
 				   return. */
-    Exc_TrapStack trapStack;	/* The trap stack that would have been restored
-				   if this signal were not taken. This must
-				   be last because it can vary in size
-				   depending on the architecture. */
+    Mach_UserState userState;	/* The user process machine state info. */
+    Mach_ExcStack excStack;	/* The exception stack that would have been
+				 * restored if this signal were not taken.
+				 * This must be last because it can vary in 
+				 * size depending on the architecture. */
 } Sig_Stack;
-
 
 /*
  *----------------------------------------------------------------------
