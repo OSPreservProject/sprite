@@ -680,7 +680,9 @@ FlushSegment(segPtr)
     }
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    Proc_MigAddToCounter(&proc_MigStats.pagesWritten, pagesWritten);
+	    Proc_MigAddToCounter(pagesWritten,
+				 &proc_MigStats.varStats.pagesWritten,
+				 &proc_MigStats.squared.pagesWritten);
 	}
 #endif /* CLEAN */
     return(SUCCESS);
