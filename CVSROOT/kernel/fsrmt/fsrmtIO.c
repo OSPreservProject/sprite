@@ -1124,7 +1124,9 @@ FsRemoteDomainInfo(fileIDPtr, domainInfoPtr)
     FsDomainInfoResults		results;
     Rpc_Storage			storage;
 
+#ifdef notdef
 retry:
+#endif
     storage.requestParamPtr = (Address)fileIDPtr;
     storage.requestParamSize = sizeof(Fs_FileID);
     storage.requestDataPtr = (Address) NIL;
@@ -1154,12 +1156,20 @@ retry:
 	} else {
 	    FsHandleUnlock(hdrPtr);
 	    FsWantRecovery(hdrPtr);
+#ifdef notdef
+	    /*
+	     * We don't wait for recovery because that hangs getwd(),
+	     * which in turn hangs shell scripts.  We have marked the
+	     * handle as needing recovery, however, so recovery will
+	     * happen eventually.
+	     */
 	    printf("FsRemoteDomainInfo: waiting for recovery <%d,%d> server %d\n",
 		    fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
 	    status = FsWaitForRecovery(hdrPtr, status);
 	    if (status == SUCCESS) {
 		goto retry;
 	    }
+#endif
 	}
     }
     if (status == SUCCESS) {
