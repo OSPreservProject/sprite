@@ -254,15 +254,15 @@ Sync_RegisterAnyLock(lock)
     int			i;
 #ifdef LOCKREG
 
+    name = FIELD(lock,name);
+    typePtr = &(FIELD(lock,type)) ;
+    if (*typePtr != 0 || name == (char *) 0) {
+	return;
+    }
     if (initialized) {
 	MASTER_LOCK(regMutexPtr);
     }
-    name = FIELD(lock,name);
-    typePtr = &(FIELD(lock,type)) ;
     listInfoPtr = &(FIELD(lock,listInfo));
-    if (*typePtr != 0 || name == (char *) 0) {
-	goto exit;
-    }
     regPtr = (Sync_RegElement *) NIL;
     for (i = 0; i < syncTypeCount; i++) {
 	if (!strcmp(name, regInfo[i].name)) {
@@ -430,4 +430,51 @@ exit:
 #else  /* LOCKREG */
     return (FAILURE);
 #endif /* LOCKREG */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_ResetLockStats --
+ *
+ *	Resets all the locking statistics.
+ *
+ * Results:
+ *	FAILURE if an error occurred, SUCCESS otherwise.
+ *
+ * Side effects:
+ *	Hit and miss counts are reset, count of prior lock types is
+ *	reset.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sync_ResetLockStats()
+{
+#ifdef LOCKREG
+    int 		i;
+    List_Links		*lockQueuePtr;
+    List_Links		*itemPtr;
+    Sync_RegElement	*regPtr;
+
+    MASTER_LOCK(regMutexPtr);
+    for (i = 0; i < syncTypeCount; i++) {
+	regPtr = &regInfo[i];
+	lockQueuePtr = (List_Links *) &(regPtr->activeLocks);
+	LIST_FORALL(lockQueuePtr, itemPtr) {
+	    FIELD(((Sync_ListInfo *) itemPtr)->lock, hit) = 0;
+	    FIELD(((Sync_ListInfo *) itemPtr)->lock, miss) = 0;
+	    FIELD(((Sync_ListInfo *) itemPtr)->lock, priorCount) = 0;
+	}
+	regPtr->hit = 0;
+	regPtr->miss = 0;
+	regPtr->priorCount = 0;
+    }
+    MASTER_UNLOCK(regMutexPtr);
+    return SUCCESS;
+#else  /* LOCKREG */
+    return (FAILURE);
+#endif /* LOCKREG */
+
 }
