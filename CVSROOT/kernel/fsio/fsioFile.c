@@ -1707,12 +1707,8 @@ Fsio_FileTrunc(handlePtr, size, flags)
     ReturnStatus status;
     Fscache_Trunc(&handlePtr->cacheInfo, size, flags);
     status = Fsdm_FileDescTrunc(handlePtr, size);
-    if ((flags & FSCACHE_TRUNC_DELETE) &&
-	handlePtr->cacheInfo.blocksInCache > 0) {
-	printf("Fsio_FileTrunc (delete) %d blocks left over <%d,%d> \"%s\"\n",
-		    handlePtr->cacheInfo.blocksInCache,
-		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		    Fsutil_HandleName(handlePtr));
+    if (flags & FSCACHE_TRUNC_DELETE) {
+	Fscache_DeleteFile(&handlePtr->cacheInfo);
     }
     return(status);
 }
