@@ -80,8 +80,14 @@ typedef struct RpcHdr {
  *	To change the version number increment the right-most byte
  *	in the native version.
  */
-#define	RPC_NATIVE_VERSION	0x0f0e0001
-#define RPC_SWAPPED_VERSION	0x01000e0f
+
+/*
+ *	Version 1:	6-13-88		Original.
+ *	Version 2:	6-19-88		For cleaning up parameters in
+ *					preparation for byte-swapping.
+ */
+#define	RPC_NATIVE_VERSION	0x0f0e0002
+#define RPC_SWAPPED_VERSION	0x02000e0f
 
 /*
  * The flags field is used to type packets and for flags that
