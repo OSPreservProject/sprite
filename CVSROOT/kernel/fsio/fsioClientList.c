@@ -146,6 +146,57 @@ found:
 /*
  * ----------------------------------------------------------------------------
  *
+ * FsIOClientReopen --
+ *
+ *	Add the client to the set of clients doing I/O on a file.  This
+ *	updates reference counts due to the client's reopen attempt.
+ *
+ * Results:
+ *	TRUE if the client was already listed.
+ *
+ * Side effects:
+ *	As well as adding the client to the set of clients for the I/O handle,
+ *	the client is recorded in the master list of clients (if it isn't
+ *	already there) so clients can be easily scavenged.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+Boolean
+FsIOClientReopen(clientList, clientID, usePtr)
+    List_Links	*clientList;	/* List of clients for the I/O handle. */
+    int		clientID;	/* The client who is opening the file. */
+    FsUseCounts	*usePtr;	/* Client's usage of the object */
+{
+    register FsClientInfo *clientPtr;
+    register Boolean found = FALSE;
+
+    LIST_FORALL(clientList, (List_Links *)clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    found = TRUE;
+	    goto doit;
+	}
+    }
+    fsStats.object.fileClients++;
+    clientPtr = mnew(FsClientInfo);
+    clientPtr->clientID = clientID;
+    clientPtr->openTimeStamp = 0;
+    clientPtr->locked = FALSE;
+    clientPtr->cached = FALSE;
+    List_InitElement((List_Links *)clientPtr);
+    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+doit:
+    clientPtr->use = *usePtr;
+    /*
+     * Make sure the client is in the master list of all clients for this host.
+     */
+    ClientOpenInt(clientID);
+    return(found);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * FsIOClientClose --
  *
  *	Decrement the reference, executor and/or writer counts for the client 
@@ -541,12 +592,10 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
  *
  */
 void
-FsIOClientStatus(clientList, clientID, refPtr, writePtr, execPtr)
+FsIOClientStatus(clientList, clientID, usePtr)
     List_Links *clientList;	/* List of clients to a file. */
     int		clientID;	/* Client to check. */
-    int		*refPtr;	/* Number of times client has file open. */
-    int		*writePtr;	/* Number of times client is writing file. */
-    int		*execPtr;	/* Number of times clients is executing file.*/
+    FsUseCounts	*usePtr;	/* Useage to return */
 {
     register FsClientInfo 	*clientPtr;
 
@@ -555,27 +604,13 @@ FsIOClientStatus(clientList, clientID, refPtr, writePtr, execPtr)
      */
     LIST_FORALL(clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == clientID) {
-	    if (refPtr != (int *) NIL) {
-		*refPtr = clientPtr->use.ref;
-	    }
-	    if (writePtr != (int *) NIL) {
-		*writePtr = clientPtr->use.write;
-	    }
-	    if (execPtr != (int *) NIL) {
-		*execPtr = clientPtr->use.exec;
-	    }
+	    *usePtr = clientPtr->use;
 	    return;
 	}
     }
-    if (refPtr != (int *) NIL) {
-	*refPtr = 0;
-    }
-    if (writePtr != (int *) NIL) {
-	*writePtr = 0;
-    }
-    if (execPtr != (int *) NIL) {
-	*execPtr = 0;
-    }
+    usePtr->ref = 0;
+    usePtr->write = 0;
+    usePtr->exec = 0;
 }
 
 
