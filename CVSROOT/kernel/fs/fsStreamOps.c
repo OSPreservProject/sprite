@@ -80,7 +80,7 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	return(FS_NO_ACCESS);
     } else if (size == 0) {
 	return(SUCCESS);
-    } else if (size < 0) {
+    } else if ((size < 0) || (offset < 0)) {
 	return(GEN_INVALID_ARG);
     } else if (!FsHandleValid(streamPtr->ioHandlePtr)) {
 	return(FS_STALE_HANDLE);
@@ -179,7 +179,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	return(FS_NO_ACCESS);
     } else if (size == 0) {
 	return(SUCCESS);
-    } else if (size < 0) {
+    } else if ((size < 0) || (offset < 0)) {
 	return(GEN_INVALID_ARG);
     } else if (!FsHandleValid(streamPtr->ioHandlePtr)) {
 	return(FS_STALE_HANDLE);
