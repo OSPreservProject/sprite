@@ -65,8 +65,8 @@ Mach_EncapState(procPtr, buffer)
     Mach_State *machStatePtr = procPtr->machStatePtr;
     MigratedState *migPtr = (MigratedState *) buffer;
     
-    Byte_Copy(sizeof(Mach_UserState), (Address) &machStatePtr->userState,
-	      (Address) &migPtr->userState);
+    bcopy((Address) &machStatePtr->userState, (Address) &migPtr->userState,
+	    sizeof(Mach_UserState));
     migPtr->pc = machStatePtr->userState.excStackPtr->pc;
 }    
     
@@ -168,7 +168,7 @@ Mach_CanMigrate(procPtr)
      * but it seems okay for others.
      */
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("Mach_CanMigrate called.  PC %x, stackFormat %x, returning %d.\n",
+	printf("Mach_CanMigrate called.  PC %x, stackFormat %x, returning %d.\n",
 		   procPtr->machStatePtr->userState.excStackPtr->pc,
 		   stackFormat, okay);
     }
