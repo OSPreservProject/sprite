@@ -316,14 +316,14 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
     switch (machArch) {
     case SYS_SUN4:
 	if ((machType & SYS_SUN_ARCH_MASK) == SYS_SUN_4_C ) {
-#ifndef BOING
+#ifndef PROM_1_4
 	    whichFb = GetFBType();
-#else /* BOING */
+#else /* PROM_1_4 */
 	    /*
 	     * Boing can't handle getting this out of the prom.
 	     */
 	    whichFb = FBTYPE_SUN2BW;
-#endif /* BOING */
+#endif /* PROM_1_4 */
 	    if (whichFb == -1) {
 		whichFb = FBTYPE_SUN2BW;
 	    }
