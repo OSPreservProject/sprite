@@ -20,6 +20,9 @@
 .seg	"text"
 
 #define	VIDEO_ENABLE_BIT	0x8
+#ifdef SUCCESS
+#undef SUCCESS
+#endif
 #define	SUCCESS			0
 
 /*
