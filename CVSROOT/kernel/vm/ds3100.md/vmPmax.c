@@ -873,8 +873,10 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 /*ARGSUSED*/
 void
 VmMach_FlushCode(procPtr, virtAddrPtr, virtPage, numBytes)
-    Vm_VirtAddr	*virtAddrPtr;
-    unsigned	virtPage;
+    Proc_ControlBlock	*procPtr;
+    Vm_VirtAddr		*virtAddrPtr;
+    unsigned		virtPage;
+    int			numBytes;
 {
     Mach_FlushCode((virtPage << VMMACH_PAGE_SHIFT) + virtAddrPtr->offset, 
 		   numBytes);
