@@ -580,6 +580,14 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 
     LOCK_MONITOR;
 
+#ifdef sun4
+    if (!VMMACH_ADDR_CHECK(virtAddr)) {
+	transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
+	UNLOCK_MONITOR;
+	return;
+    }
+#endif sun4
+	
     seg1Ptr = procPtr->vmPtr->segPtrArray[VM_HEAP];
     while (seg1Ptr->flags & VM_PT_EXCL_ACC) {
 	Vm_Segment	*tSegPtr;
@@ -610,9 +618,6 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     if (page > mach_LastUserStackPage) {
 	transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
 	UNLOCK_MONITOR;
-#ifdef sun4
-	DBG_CALL;
-#endif sun4
 	return;
     }
     seg2Ptr = procPtr->vmPtr->segPtrArray[VM_STACK];
@@ -640,9 +645,6 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 		     mach_LastUserStackPage - newPTSize + 1) {
 		transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
 		UNLOCK_MONITOR;
-#ifdef sun4
-		DBG_CALL;
-#endif sun4
 		return;
 	    }
 	}
@@ -683,10 +685,11 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     UNLOCK_MONITOR;
 #ifdef sun4
     seg1Ptr = procPtr->vmPtr->segPtrArray[VM_HEAP];
-    printf("VmVirtAddrParse is failing.  page = %d.\n", page);
-    printf("heap->offset is %d and heap->numPages is %d\n",
-	    seg1Ptr->offset, seg1Ptr->numPages);
-    DBG_CALL;
+    printf("VmVirtAddrParse is failing.  virtAddr 0x%x, pid 0x%x.\n",
+	    virtAddr, procPtr->processID);
+    if (virtAddr == (Address) 0) {
+	printf("It's zero.\n");
+    }
 #endif sun4
 }
 
