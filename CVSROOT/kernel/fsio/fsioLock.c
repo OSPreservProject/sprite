@@ -81,16 +81,16 @@ FsFileLock(lockPtr, argPtr)
      * any locks, while shared locks can exist with other shared locks.
      */
     if (operation & IOC_LOCK_EXCLUSIVE) {
-	if (lockPtr->flags & (FS_SHARED_LOCK|FS_EXCLUSIVE_LOCK)) {
+	if (lockPtr->flags & (IOC_LOCK_SHARED|IOC_LOCK_EXCLUSIVE)) {
 	    status = FS_WOULD_BLOCK;
 	} else {
-	    lockPtr->flags |= FS_EXCLUSIVE_LOCK;
+	    lockPtr->flags |= IOC_LOCK_EXCLUSIVE;
 	}
     } else if (operation & IOC_LOCK_SHARED) {
-	if (lockPtr->flags & FS_EXCLUSIVE_LOCK) {
+	if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
 	    status = FS_WOULD_BLOCK;
 	} else {
-	    lockPtr->flags |= FS_SHARED_LOCK;
+	    lockPtr->flags |= IOC_LOCK_SHARED;
 	    lockPtr->numShared++;
 	}
     } else {
@@ -137,18 +137,18 @@ FsFileUnlock(lockPtr, argPtr)
      * Release the lock on the file.
      */
     if (operation & IOC_LOCK_EXCLUSIVE) {
-	if (lockPtr->flags & FS_EXCLUSIVE_LOCK) {
+	if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
 	    status = SUCCESS;
-	    lockPtr->flags &= ~FS_EXCLUSIVE_LOCK;
+	    lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
 	} else {
 	    status = FS_NO_EXCLUSIVE_LOCK;
 	}
     } else if (operation & IOC_LOCK_SHARED) {
-	if (lockPtr->flags & FS_SHARED_LOCK) {
+	if (lockPtr->flags & IOC_LOCK_SHARED) {
 	    status = SUCCESS;
 	    lockPtr->numShared--;
 	    if (lockPtr->numShared == 0) {
-		lockPtr->flags &= ~FS_SHARED_LOCK;
+		lockPtr->flags &= ~IOC_LOCK_SHARED;
 	    }
 	} else {
 	    status = FS_NO_SHARED_LOCK;
