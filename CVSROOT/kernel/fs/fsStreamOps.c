@@ -34,6 +34,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "rpc.h"
 #include "vm.h"
+
+extern Boolean fsClientCaching;
+
 
 /*
  *----------------------------------------------------------------------
@@ -295,10 +298,10 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 	} else {
 	    cacheFlags = FS_CLEAR_READ_AHEAD;
 	}
+	blockPtr = (FsCacheBlock *)NIL;
 	for (i = (unsigned int) offset / FS_BLOCK_SIZE; i <= lastBlock; i++) {
 	    do {
-		if ((streamPtr->flags & FS_SWAP) == 0) {
-
+		if (!(streamPtr->flags & FS_SWAP) && fsClientCaching) {
 		    FsCacheFetchBlock(&handlePtr->cacheInfo, i,
 			    FS_DATA_CACHE_BLOCK, &blockPtr, &found);
 		    if (found) {
@@ -307,10 +310,12 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			    fsStats.blockCache.readAheadHits++;
 			}
 			FsCacheUnlockBlock(blockPtr, 0, -1, 0, cacheFlags);
+			blockPtr = (FsCacheBlock *)NIL;
 			offset += FS_BLOCK_SIZE;
 			break;	/* do-while, go to next for loop iteration */
 		    } else if (pageType == FS_CODE_PAGE) {
 			FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
+			blockPtr = (FsCacheBlock *)NIL;
 		    }
 		}
 
@@ -337,25 +342,42 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			} else {
 			    Sys_Panic(SYS_WARNING,
 				"Fs_PageRead recovery failed <%x>\n", status);
+			    if (blockPtr != (FsCacheBlock *)NIL) {
+				FsCacheUnlockBlock(blockPtr, 0, -1, 0,
+						   FS_DELETE_BLOCK);
+			    }
 			    return(status);
 			}
 		    } else if (status != SUCCESS) {
-			Sys_Panic(SYS_WARNING,
+			    Sys_Panic(SYS_WARNING,
 				"Fs_PageRead: Read failed <%x>\n", status);
+			    if (blockPtr != (FsCacheBlock *)NIL) {
+				FsCacheUnlockBlock(blockPtr, 0, -1, 0,
+						   FS_DELETE_BLOCK);
+			    }
 			    return(status);
 		    }
 		} else if (bytesRead != FS_BLOCK_SIZE) {
 		    Sys_Panic(SYS_WARNING,
 			    "FsPageRead: Short read of length %d\n", bytesRead);
+		    if (blockPtr != (FsCacheBlock *)NIL) {
+			FsCacheUnlockBlock(blockPtr, 0, -1, 0,
+					   FS_DELETE_BLOCK);
+		    }
 		    return(VM_SHORT_READ);
 		}
-		if (!retry && pageType == FS_HEAP_PAGE) {
-		    /*
-		     * We read the data into the page, now copy it into the
-		     * cache since initialized heap pages live in the cache.
-		     */
-		    Byte_Copy(FS_BLOCK_SIZE, pageAddr, blockPtr->blockAddr);
-		    FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
+		if (blockPtr != (FsCacheBlock *)NIL) {
+		    if (retry) {
+			FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
+		    } else {
+			/*
+			 * We read the data into the page, now copy it into the
+			 * cache since initialized heap pages live in the cache.
+			 */
+			Byte_Copy(FS_BLOCK_SIZE, pageAddr, blockPtr->blockAddr);
+			FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
+		    }
+		    blockPtr = (FsCacheBlock *)NIL;
 		}
 	    } while (retry);
 	    pageAddr += FS_BLOCK_SIZE;
