@@ -2289,6 +2289,7 @@ Fs_IoctlStub(streamID, request, buf)
 	 * Tty-related calls:
 	 */
 
+     case TCGETP:
      case TIOCGETP: {
 	    struct sgttyb temp;
 
@@ -3109,28 +3110,26 @@ Fs_IoctlStub(streamID, request, buf)
 	 break;
 
      default:
-	if (debugFsStubs) {
-	    /*
-	     * This code is for debugging, to make it easy to figure
-	     * out what ioctl is unimplemented.
-	     * It can be removed when ioctl development is reasonably
-	     * complete.
-	     */
-	    if ((request&IOC_DIRMASK)==IOC_VOID) {
-		printf("Bad Ioctl: _IO('%c',%d)\n", (request>>8)&0xff,
-			request&0xff);
-	    } else if ((request&IOC_DIRMASK)==IOC_OUT) {
-		printf("Bad Ioctl: _IOR('%c',%d,%d)\n", (request>>8)&0xff,
-			request&0xff, IOCPARM_LEN(request));
-	    } else if ((request&IOC_DIRMASK)==IOC_IN) {
-		printf("Bad Ioctl: _IOW('%c',%d,%d)\n", (request>>8)&0xff,
-			request&0xff, IOCPARM_LEN(request));
-	    } else if ((request&IOC_DIRMASK)==IOC_INOUT) {
-		printf("Bad Ioctl: _IOWR('%c',%d,%d)\n", (request>>8)&0xff,
-			request&0xff, IOCPARM_LEN(request));
-	    } else {
-		printf("Bad Ioctl: 0x%08x\n",request);
-	    }
+	/*
+	 * This code is for debugging, to make it easy to figure
+	 * out what ioctl is unimplemented.
+	 * It can be removed when ioctl development is reasonably
+	 * complete.
+	 */
+	if ((request&IOC_DIRMASK)==IOC_VOID) {
+	    printf("Bad Ioctl: _IO(%c,%d)\n", (request>>8)&0xff,
+		    request&0xff);
+	} else if ((request&IOC_DIRMASK)==IOC_OUT) {
+	    printf("Bad Ioctl: _IOR(%c,%d,%d)\n", (request>>8)&0xff,
+		    request&0xff, IOCPARM_LEN(request));
+	} else if ((request&IOC_DIRMASK)==IOC_IN) {
+	    printf("Bad Ioctl: _IOW(%c,%d,%d)\n", (request>>8)&0xff,
+		    request&0xff, IOCPARM_LEN(request));
+	} else if ((request&IOC_DIRMASK)==IOC_INOUT) {
+	    printf("Bad Ioctl: _IOWR(%c,%d,%d)\n", (request>>8)&0xff,
+		    request&0xff, IOCPARM_LEN(request));
+	} else {
+	    printf("Bad Ioctl: 0x%08x\n",request);
 	}
 	Mach_SetErrno(EINVAL);
 	return -1;
