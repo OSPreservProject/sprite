@@ -23,54 +23,13 @@
 #include <net.h>
 #include <sys.h>
 #include <rpcTypes.h>
+#include <rpcCall.h>
 #else
 #include <kernel/net.h>
 #include <kernel/sys.h>
 #include <kernel/rpcTypes.h>
-#endif /* KERNEL */
-
-
-/*
- * A client stub procedure has to set up 2 sets of 2 storage areas for an
- * RPC.  The first pair of storage areas is for the request, or input,
- * parameters of the service procedure.  The second pair is for the reply,
- * or return, parameters of the service procedure.  Both the request and
- * the reply have a "data" area and a "parameter" area.  The general
- * convention is that the parameter area is meant for flags, tokens, and
- * other small control information.  The data area is for larger chunks of
- * data like pathnames or fileblocks. Either, or both, of the areas can
- * be empty by setting the address to NIL and the size to zero.
- *
- * The function of a client stub is to arrange its input parameters into
- * two buffers for the two parts of the request.  Also, it must set up the
- * buffer space for the two parts of the reply.  The RPC system will copy
- * the reply data and parameters into these areas, and the stub can access
- * them after Rpc_Call returns.
- */
-
-typedef struct Rpc_Storage {
-    /*
-     * Two areas for data sent to the server.
-     */
-    Address	requestParamPtr;
-    int		requestParamSize;
-    Address	requestDataPtr;
-    int		requestDataSize;
-    /*
-     * Two areas for data returned from the server.
-     */
-    Address	replyParamPtr;
-    int		replyParamSize;
-    Address	replyDataPtr;
-    int		replyDataSize;
-} Rpc_Storage;
-
-#ifdef KERNEL
-#include <rpcCall.h>
-#else
 #include <kernel/rpcCall.h>
-#endif
-
+#endif /* KERNEL */
 
 /*
  * Structure to use for the simple call back to free up memory.

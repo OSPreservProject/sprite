@@ -18,6 +18,7 @@
 #ifndef _RPC_TYPES
 #define _RPC_TYPES
 
+#include <sprite.h>
 #ifdef KERNEL
 #include <netTypes.h>
 #else
@@ -25,8 +26,8 @@
 #endif /* KERNEL */
 
 /*
- * Currently this is the only data structure in this file.  It's here due
- * to conflicts between internal and exported header files.
+ * This data structure is here due to conflicts between internal and
+ * exported header files.
  */
 /*
  * An RPC message is composed of three parts:  the RPC control information,
@@ -53,5 +54,40 @@ typedef struct  RpcServerUserStateInfo {
     int         num;
     Time        time;
 } RpcServerUserStateInfo;
+
+/*
+ * A client stub procedure has to set up 2 sets of 2 storage areas for an
+ * RPC.  The first pair of storage areas is for the request, or input,
+ * parameters of the service procedure.  The second pair is for the reply,
+ * or return, parameters of the service procedure.  Both the request and
+ * the reply have a "data" area and a "parameter" area.  The general
+ * convention is that the parameter area is meant for flags, tokens, and
+ * other small control information.  The data area is for larger chunks of
+ * data like pathnames or fileblocks. Either, or both, of the areas can
+ * be empty by setting the address to NIL and the size to zero.
+ *
+ * The function of a client stub is to arrange its input parameters into
+ * two buffers for the two parts of the request.  Also, it must set up the
+ * buffer space for the two parts of the reply.  The RPC system will copy
+ * the reply data and parameters into these areas, and the stub can access
+ * them after Rpc_Call returns.
+ */
+
+typedef struct Rpc_Storage {
+    /*
+     * Two areas for data sent to the server.
+     */
+    Address	requestParamPtr;
+    int		requestParamSize;
+    Address	requestDataPtr;
+    int		requestDataSize;
+    /*
+     * Two areas for data returned from the server.
+     */
+    Address	replyParamPtr;
+    int		replyParamSize;
+    Address	replyDataPtr;
+    int		replyDataSize;
+} Rpc_Storage;
 
 #endif /* _RPC_TYPES */

@@ -16,6 +16,12 @@
 #ifndef	_RPCCALL
 #define	_RPCCALL
 
+#ifdef KERNEL
+#include <rpcTypes.h>
+#else
+#include <kernel/rpcTypes.h>
+#endif
+
 /*
  *	The remote procedures.  For each procedure the format the request
  *	and reply message is summarized.  See the Rpc_Storage type for
