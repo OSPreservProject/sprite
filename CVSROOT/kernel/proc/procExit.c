@@ -1039,10 +1039,19 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
 	     *  compared to having every process wait on the same
 	     *  event (e.g. exiting list address) when it goes to
 	     *  sleep.  When we wake up, the search will start again.
+	     *
+	     * Check for the signal being SIG_CHILD, in which case
+	     * don't abort the Proc_Wait.  This can happen if the parent and
+	     * the child are on different hosts so the Sync_Wait is aborted
+	     * by the signal rather than a wakeup.  (The parent should handle
+	     * SIGCHLD better, but it might not, thereby missing the child's
+	     * change in state.)
 	     */
 	    if (Sync_Wait(&curProcPtr->waitCondition, TRUE)) {
-		status = GEN_ABORTED_BY_SIGNAL;
-		break;
+		if (Sig_Pending(curProcPtr) != (1 << (SIG_CHILD - 1))) {
+		    status = GEN_ABORTED_BY_SIGNAL;
+		    break;
+		}
 	    }
 	}
     }
