@@ -275,8 +275,8 @@ Proc_KernExec(fileName, argPtrArray)
     return(status);
 }
 
-ReturnStatus	SetupInterpret();
-Boolean		SetupVM();
+static ReturnStatus	SetupInterpret();
+static Boolean		SetupVM();
 
 
 /*

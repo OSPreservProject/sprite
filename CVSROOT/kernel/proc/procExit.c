@@ -139,9 +139,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static	Sync_Lock	exitLock = Sync_LockInitStatic("Proc:exitLock"); 
 #define	LOCKPTR &exitLock
 
+static INTERNAL ReturnStatus FindExitingChild();
 static INTERNAL void WakeupMigratedParent();
 static void SendSigChild();
-ReturnStatus	FindExitingChild();
 
 
 
