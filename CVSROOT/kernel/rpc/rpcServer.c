@@ -875,6 +875,7 @@ Rpc_ErrorReply(srvToken, error)
     RpcServerState *srvPtr;
     register RpcHdr	*rpcHdrPtr;
     register RpcHdr	*requestHdrPtr;
+    char errMsg[1024];
 
     srvPtr = (RpcServerState *)srvToken;
     rpcHdrPtr = &srvPtr->replyRpcHdr;
@@ -886,8 +887,19 @@ Rpc_ErrorReply(srvToken, error)
     RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr);
 
     /*
-     * Communicate the error code back in the command feild.
+     * Communicate the error code back in the command field.  Identify the
+     * client if the problem is no disk space, so that someone can put it
+     * in the debugger or kill the offending process.
      */
+    if (error == FS_NO_DISK_SPACE) {
+	sprintf(errMsg,
+		"%s: <%s> returning \"no disk space\" to client %d.\n",
+		"Rpc_ErrorReply", rpcService[rpcHdrPtr->command].name,
+		srvPtr->clientID);
+	if (Timer_OkToWhine(errMsg)) {
+	    printf(errMsg);
+	}
+    }
     rpcHdrPtr->command = error;
     rpcHdrPtr->flags = RPC_REPLY | RPC_ERROR;
 
@@ -979,7 +991,7 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
     RpcServerState	*srvPtr;
     register RpcHdr	*rpcHdrPtr;
     register RpcHdr	*requestHdrPtr;
-
+    char errMsg[1024];
 
     srvPtr = (RpcServerState *)srvToken;
     rpcHdrPtr = &srvPtr->replyRpcHdr;
@@ -996,8 +1008,19 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
     rpcHdrPtr->flags = RPC_REPLY;
     if (error) {
 	/*
-	 * Communicate the error code back in the command field.
+	 * Communicate the error code back in the command field.  Identify 
+	 * the client if the problem is no disk space, so that someone can 
+	 * put it in the debugger or kill the offending process.
 	 */
+	if (error == FS_NO_DISK_SPACE) {
+	    sprintf(errMsg,
+		    "%s: <%s> returning \"no disk space\" to client %d.\n",
+		    "Rpc_Reply", rpcService[rpcHdrPtr->command].name,
+		    srvPtr->clientID);
+	    if (Timer_OkToWhine(errMsg)) {
+		printf(errMsg);
+	    }
+	}
 	rpcHdrPtr->command = error;
 	rpcHdrPtr->flags |= RPC_ERROR;
     }
