@@ -60,8 +60,8 @@ Boolean fsWBOnLastDirtyBlock = FALSE;
 
 Trace_Header fsTraceHdr;
 Trace_Header *fsTraceHdrPtr = &fsTraceHdr;
-int fsTraceLength = 50;
-Boolean fsTracing = FALSE;
+int fsTraceLength = 256;
+Boolean fsTracing = TRUE;
 Time fsTraceTime;		/* Cost of taking a trace record */
 
 typedef struct FsTracePrintTable {
@@ -71,32 +71,32 @@ typedef struct FsTracePrintTable {
 } FsTracePrintTable;
 
 FsTracePrintTable fsTracePrintTable[] = {
-    /* TRACE_0 */		FST_NIL, "zero",
-    /* TRACE_1 */		FST_NAME, "after prefix",
-    /* TRACE_2 */		FST_NAME, "after setup",
-    /* TRACE_3 */		FST_NAME, "after scan",
-    /* TRACE_4 */		FST_NAME, "after domain lookup",
-    /* TRACE_5 */		FST_NAME, "after lookup",
-    /* TRACE_6 */		FST_NIL, "six",
-    /* TRACE_7 */		FST_NIL, "seven",
-    /* TRACE_8 */		FST_NIL, "eight",
-    /* TRACE_9 */		FST_NIL, "nine",
-    /* TRACE_10 */		FST_NAME, "after Fs_Open",
-    /* TRACE_11 */		FST_NIL, "open complete",
-    /* SRV_OPEN_1 */		FST_NAME,	"srv open 1",
-    /* SRV_OPEN_2 */		FST_HANDLE,	"srv open 2",
-    /* SRV_CLOSE_1 */		FST_NIL,	"srv close 1",
-    /* SRV_CLOSE_2 */		FST_HANDLE,	"srv close 2",
-    /* SRV_READ_1 */		FST_IO,		"srv read 1",
-    /* SRV_READ_2 */		FST_HANDLE,	"srv read 2",
-    /* SRV_WRITE_1 */		FST_IO,		"srv write 1",
+    /* TRACE_0 */		FST_NIL, 	"zero",
+    /* TRACE_OPEN_START */	FST_NAME, 	"open start",
+    /* TRACE_LOOKUP_START */	FST_NAME, 	"after prefix",
+    /* TRACE_LOOKUP_DONE */	FST_NAME, 	"after lookup",
+    /* TRACE_4 */		FST_HANDLE, 	"delete last writer",
+    /* TRACE_OPEN_DONE */	FST_NAME, 	"open done",
+    /* TRACE_BLOCK_SKIP */	FST_BLOCK,	"skip block",
+    /* TRACE_BLOCK_HIT */	FST_BLOCK, 	"hit block",
+    /* TRACE_DELETE */		FST_HANDLE, 	"delete",
+    /* TRACE_NO_BLOCK */	FST_NIL, 	"no block",
+    /* TRACE_OPEN_DONE_2 */	FST_NAME, 	"after Fs_Open",
+    /* TRACE_OPEN_DONE_3 */	FST_NIL, 	"open complete",
+    /* INSTALL_NEW */		FST_HANDLE,	"inst. new",
+    /* INSTALL_HIT */		FST_HANDLE,	"inst. hit",
+    /* RELEASE_FREE */		FST_HANDLE,	"rels. free",
+    /* RELEASE_LEAVE */		FST_HANDLE,	"rels. leave",
+    /* REMOVE_FREE */		FST_HANDLE,	"remv. free",
+    /* REMOVE_LEAVE */		FST_HANDLE,	"remv. leave",
+    /* SRV_WRITE_1 */		FST_IO,		"invalidate",
     /* SRV_WRITE_2 */		FST_HANDLE,	"srv write 2",
     /* SRV_GET_ATTR_1 */	FST_NIL, "srv get attr 1",
     /* SRV_GET_ATTR_2 */	FST_NIL, "srv get attr 2",
     /* OPEN */			FST_NIL, "open",
-    /* READ */			FST_NIL, "read",
-    /* WRITE */			FST_NIL, "write",
-    /* CLOSE */			FST_NIL, "close",
+    /* READ */			FST_NIL, 	"read",
+    /* WRITE */			FST_HANDLE, 	"write",
+    /* CLOSE */			FST_HANDLE, 	"close",
     /* TRACE_RA_SCHED */	FST_RA, "Read ahead scheduled",
     /* TRACE_RA_BEGIN */	FST_RA, "Read ahead started",
     /* TRACE_RA_END */		FST_RA, "Read ahead completed",
@@ -180,7 +180,7 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
     }
     if (clientData != (ClientData)NIL) {
 	if (event >= 0 && event < numTraceTypes) {
-	    Sys_Printf("%20s", fsTracePrintTable[event].string);
+	    Sys_Printf("%20s ", fsTracePrintTable[event].string);
 	    switch(fsTracePrintTable[event].type) {
 		case FST_IO: {
 		    FsTraceIORec *ioRecPtr = (FsTraceIORec *)clientData;
@@ -198,13 +198,26 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 		    break;
 		}
 		case FST_HANDLE: {
-		    FsHandleHeader *hdrPtr = (FsHandleHeader *)clientData;
-		    Sys_Printf("<%2d, %2d, %1d, %4d> ",
-		      hdrPtr->fileID.type, 
-		      hdrPtr->fileID.serverID,
-		      hdrPtr->fileID.major, 
-		      hdrPtr->fileID.minor);
+		    FsTraceHdrRec *recPtr = (FsTraceHdrRec *)clientData;
+		    Sys_Printf("<%2d, %2d, %1d, %4d> ref %d blocks %d ",
+		      recPtr->fileID.type, 
+		      recPtr->fileID.serverID,
+		      recPtr->fileID.major, 
+		      recPtr->fileID.minor,
+		      recPtr->refCount,
+		      recPtr->numBlocks);
 		    break;
+		}
+		case FST_BLOCK: {
+		    FsTraceBlockRec *blockPtr = (FsTraceBlockRec *)clientData;
+		    Sys_Printf("<%2d, %2d, %1d, %4d> block %d flags %x ",
+		      blockPtr->fileID.type, 
+		      blockPtr->fileID.serverID,
+		      blockPtr->fileID.major, 
+		      blockPtr->fileID.minor,
+		      blockPtr->blockNum,
+		      blockPtr->flags);
+		      break;
 		}
 		case FST_RA: {
 		    int	*blockNumPtr;
@@ -533,7 +546,8 @@ Fs_GetSegPtr(fileHandle)
  *
  */
 int		fsScavengeInterval = 2;			/* 2 Minutes */
-static int	lastScavengeTime = 0;
+int		fsLastScavengeTime = 0;
+static	int	numScavengers = 0;
 
 /*ARGSUSED*/
 void Fs_HandleScavengeStub(data)
@@ -554,7 +568,14 @@ Fs_HandleScavenge(data, callInfoPtr)
     Hash_Search				hashSearch;
     register	FsHandleHeader		*hdrPtr;
 
-    lastScavengeTime = fsTimeInSeconds;
+    if (numScavengers > 0) {
+       Sys_Panic(SYS_WARNING, "Multiple scavengers (%x)\n", callInfoPtr);
+       callInfoPtr->interval = 0;
+       return;
+    }
+    numScavengers++;
+
+    fsLastScavengeTime = fsTimeInSeconds;	/* XXX unsynchronized access */
 
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = FsGetNextHandle(&hashSearch);
@@ -565,9 +586,10 @@ Fs_HandleScavenge(data, callInfoPtr)
     /*
      * Set up our next call.
      */
-    if ((Boolean)data) {
+    if ((Boolean)data && numScavengers == 1) {
 	callInfoPtr->interval = fsScavengeInterval * timer_IntOneMinute;
     }
+    numScavengers--;
 }
 
 /*
@@ -637,7 +659,7 @@ FsFileError(hdrPtr, string, status)
 	    Sys_Printf("NFSFile ");
 	    break;
     }
-    Sys_Printf("<%d,%d> server %d: %s", hdrPtr->fileID.major,
+    Sys_Printf("<%d,%d> server %d: %s: ", hdrPtr->fileID.major,
 	    hdrPtr->fileID.minor, hdrPtr->fileID.serverID, string);
     switch (status) {
 	case FS_DOMAIN_UNAVAILABLE:
