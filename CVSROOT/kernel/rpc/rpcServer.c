@@ -122,7 +122,6 @@ Rpc_Server()
 	    if (sys_ShuttingDown) {
 		srvPtr->state = SRV_NOTREADY;
 		MASTER_UNLOCK(&srvPtr->mutex);
-		printf("Rpc_Server %d exiting\n", srvPtr->index);
 		Proc_Exit(0);
 	    }
 	}
@@ -236,7 +235,10 @@ Rpc_Server()
  *----------------------------------------------------------------------
  */
 ENTRY void
-RpcReclaimServers()
+RpcReclaimServers(serversMaxed)
+    Boolean serversMaxed;	/* TRUE if the maximum number of servers
+				 * have been created.  We reclaim more
+				 * quickly if this is set. */
 {
     int srvIndex;
     register RpcServerState *srvPtr;
@@ -269,6 +271,9 @@ RpcReclaimServers()
 		 */
 		srvPtr->state |= SRV_AGING;
 		srvPtr->age = 1;
+		if (serversMaxed) {
+		    RpcProbe(srvPtr);
+		}
 	    } else {
 		/*
 		 * This process has aged since the last time we looked, at
@@ -279,7 +284,7 @@ RpcReclaimServers()
 		 * send probes with no reply, we give up after N tries
 		 * and free up the server.  It is possible that the client
 		 * has re-allocated its channel, in which case it drops
-		 * our probes on the floor.
+		 * our probes on the floor, or that it has crashed.
 		 */
 		srvPtr->age++;
 		if (srvPtr->age >= rpcMaxServerAge) {
@@ -289,9 +294,11 @@ RpcReclaimServers()
 		    srvPtr->freeReplyData = (ClientData)NIL;
 		    rpcSrvStat.reclaims++;
 		    srvPtr->state = SRV_FREE;
+#ifdef notdef
 		} else if (srvPtr->clientID == rpc_SpriteID) {
 		    printf("Warning: Reclaiming from myself.\n");
 		    srvPtr->state = SRV_FREE;
+#endif
 		} else {
 		    /*
 		     * Poke at the client to get a response.
@@ -374,7 +381,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
      * last transaction ID is saved in the rpc header of our last reply
      * message.
      */
-    if (rpcHdrPtr->ID != srvPtr->replyRpcHdr.ID) {
+    if (rpcHdrPtr->ID != srvPtr->ID) {
 
 	rpcSrvStat.requests++;
 	if (srvPtr->state & SRV_WAITING) {
@@ -417,7 +424,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	 *
 	 * Update the server's idea of the current transaction.
 	 */
-	srvPtr->replyRpcHdr.ID = rpcHdrPtr->ID;
+	srvPtr->ID = rpcHdrPtr->ID;
 	/*
 	 * Reset the true sizes of the two data areas in the arriving message.
 	 */
