@@ -147,7 +147,11 @@ static void SendSigChild();
  * Shared memory.
  */
 extern int vmShmDebug;
+#ifndef lint
 #define dprintf if (vmShmDebug) printf
+#else /* lint */
+#define dprintf printf
+#endif /* lint */
 
 /*
  * SIGNAL_PARENT
@@ -477,7 +481,6 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
     int 			code;		/* Signal sub-status */
     Boolean 			thisProcess;	/* TRUE => context switch */
 {
-    int				i;
     register Boolean 		migrated;
     Boolean			noVm;
 
@@ -742,13 +745,11 @@ Proc_DetachInt(procPtr)
  *----------------------------------------------------------------------
  */
 ENTRY void
-Proc_InformParent(procPtr, childStatus, backGroundSig)
+Proc_InformParent(procPtr, childStatus)
     register Proc_ControlBlock	*procPtr;	/* Process whose parent to
 						 * inform of state change. */
     int				childStatus;	/* PROC_SUSPEND_STATUS |
 						 * PROC_RESUME_STATUS */
-    Boolean			backGroundSig;	/* Send the SIG_CHILD to
-						 * the parent in background.*/
 {
     Proc_ControlBlock 	*parentProcPtr;
     Boolean migrated = FALSE;
@@ -782,15 +783,7 @@ Proc_InformParent(procPtr, childStatus, backGroundSig)
 	parentProcPtr = Proc_GetPCB(procPtr->parentID);
 	Sync_Broadcast(&parentProcPtr->waitCondition);
     }
-#ifdef notdef
-    if (backGroundSig || migrated || parentProcPtr->state == PROC_MIGRATED) {
-#endif
-	Proc_CallFunc(SendSigChild, (ClientData)procPtr->parentID, 0);
-#ifdef notdef
-    } else {
-	SIGNAL_PARENT(parentProcPtr, "ProcInformParent");
-    }
-#endif
+    Proc_CallFunc(SendSigChild, (ClientData)procPtr->parentID, 0);
     procPtr->exitFlags &= ~PROC_STATUSES;
     procPtr->exitFlags |= childStatus;
 
