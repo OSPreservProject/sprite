@@ -149,8 +149,8 @@ Fs_InitData()
  *	Initialize the filesystem name space.
  *	This does the first steps in boot-strapping
  *	the name space.  The prefix table is primed with "/", and
- *	a local disk is attached under "/local" if possible.  Later
- *	in Fs_ProcInit "/local" gets promoted to root if noone
+ *	a local disk is attached under "/bootTmp" if possible.  Later
+ *	in Fs_ProcInit "/bootTmp" gets promoted to root if noone
  *	else is around to serve root.
  *
  *	This also initializes the file system's time (which could
@@ -162,7 +162,7 @@ Fs_InitData()
  *
  * Side effects:
  *	"/" is stuck in the prefix table with no handle.
- *	Local disk is attached under "/local".
+ *	Local disk is attached under "/bootTmp".
  *
  *----------------------------------------------------------------------
  */
@@ -173,32 +173,6 @@ Fs_InitNameSpace()
     Time time;
     int	i;
     Fs_Device defaultDisk;
-
-    /*
-     * Initialized the known domains. Local, Remote, and Pfs.
-     */
-    Fslcl_NameInitializeOps();
-    Fsio_InitializeOps();
-    Fsrmt_InitializeOps();
-    Fspdev_InitializeOps();
-
-    bzero((Address) &fs_Stats, sizeof(Fs_Stats));
-    /*
-     * The handle cache and the block cache start out with a hash table of
-     * a given size which grows on demand.  Thus the numbers passed to
-     * the next two routines are not crucial.
-     */
-    Fsutil_HandleInit(64);
-    Fscache_Init(64);
-
-    Fsprefix_Init();
-
-    Fsconsist_ClientInit();
-
-    Fslcl_DomainInit();
-
-    Fsutil_TraceInit();
-    Fspdev_TraceInit();
 
     /*
      * Put the routine on the timeout queue that keeps the time in
@@ -229,7 +203,7 @@ Fs_InitNameSpace()
     for (i=0 ; i<devNumDefaultDiskPartitions; i++) {
 	/*
 	 * Second step in bootstrapping the name space.  Try and attach
-	 * a disk under the /local prefix.  Later this local partition
+	 * a disk under the /bootTmp prefix.  Later this local partition
 	 * may be promoted to the root domain (see Fs_ProcInit).
 	 */
 	defaultDisk = devFsDefaultDiskPartitions[i];
@@ -338,17 +312,16 @@ Fs_ProcInit()
 	status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
 	if (status != SUCCESS) {
 	    standalone = FALSE;
+/* XXX */	printf ("no /boot, status %x\n", status);
 	} else if ((attr.type != FS_DIRECTORY)) {
 		printf("%s/boot is not a directory!\n", LOCAL_DISK_NAME);
 		standalone = FALSE;
 	}
-	if (standalone) {
-	    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
-	    for (i = 0; i < argc; i++) {
-		if (!strcmp(argv[i], "-c")) {
-		    standalone = FALSE;
-		    break;
-		}
+	argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+	for (i = 0; i < argc; i++) {
+	    if (!strcmp(argv[i], "-c")) {
+		standalone = FALSE;
+		break;
 	    }
 	}
 	if (standalone) {
@@ -358,7 +331,8 @@ Fs_ProcInit()
 	    status = Fs_Open(LOCAL_DISK_NAME, FS_READ|FS_FOLLOW,
 			    FS_DIRECTORY, 0, &streamPtr);
 	    if (status != SUCCESS) {
-		panic("Fs_ProcInit: Unable to open local disk prefix!");
+		printf("Fs_ProcInit: Unable to open local disk prefix!");
+		standalone = FALSE;
 	    } else {
 		(void)Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
 			FS_LOCAL_DOMAIN, 
@@ -380,8 +354,7 @@ Fs_ProcInit()
 	    /*
 	     *  Wait a bit and retry the open of "/".
 	     */
-	    printf(
-		    "Can't find server for \"/\", waiting 1 min.\n");
+	    printf("Can't find server for \"/\", waiting 1 min.\n");
 	    (void)Sync_WaitTime(time_OneMinute);
 	}
     } while (status != SUCCESS);
