@@ -3,6 +3,7 @@
  *
  *      The standard Open, Read, Write, IOControl, and Close operations
  *      are defined here for the SCSI tape.
+ *
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright
@@ -24,212 +25,102 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "dev.h"
 #include "devInt.h"
-#include "devSCSI.h"
+#include "scsi.h"
+#include "scsiDevice.h"
+#include "scsiTape.h"
 #include "devSCSITape.h"
-#include "devSCSISysgen.h"
-#include "devSCSIEmulex.h"
-#include "devSCSIExabyte.h"
+#include "dev/scsi.h"
 
 #include "dbg.h"
 int SCSITapeDebug = FALSE;
 
-/*
- * State for each SCSI tape drive.  This used to map from unit numbers
- * back to the controller for the drive.
- */
-int scsiTapeIndex = -1;
-DevSCSIDevice *scsiTape[SCSI_MAX_TAPES];
 
 
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSITapeInit --
+ * InitTapeDevice --
  *
  *	Initialize the device driver state for a SCSI Tape drive.
- *	In order for filesystem unit numbers to correctly match up
- *	with different disks we depend on Dev_SCSIInitDevice to
- *	increment the scsiTapeIndex properly.
  *
  * Results:
- *	SUCCESS.  Because tape drives take up to several seconds to
- *	initialize themselves we always assume one is out there.
+ *	SUCCESS.  If the tape driver is successfully initialized. A 
+ *	Sprite error code otherwise.
  *
  * Side effects:
- *	A DevSCSITape structure is allocated and referneced by the private
- *	data pointer in	the generic DevSCSIDevice structure.
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-DevSCSITapeInit(devPtr)
-    DevSCSIDevice *devPtr;		/* Device state to complete */
+static ReturnStatus
+InitTapeDevice(devicePtr, devPtr)
+    Fs_Device *devicePtr;	/* Device info, unit number etc. */
+    ScsiDevice *devPtr;		/* Attached SCSI tape. */
 {
-    register DevSCSITape *tapePtr;
-
-    /*
-     * Don't try to talk to the tape drive at boot time.  It may be doing
-     * stuff after the SCSI bus reset like auto load.
-     */
-    if (scsiTapeIndex >= SCSI_MAX_TAPES) {
-	printf("SCSI: Too many tape drives configured\n");
-	return(FAILURE);
-    }
-    devPtr->type = SCSI_TAPE;
-    devPtr->errorProc = DevSCSITapeError;
-    devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
-    tapePtr = (DevSCSITape *) malloc(sizeof(DevSCSITape));
-    devPtr->data = (ClientData)tapePtr;
-    tapePtr->state = SCSI_TAPE_CLOSED;
-    tapePtr->type = SCSI_UNKNOWN;
-    tapePtr->setupProc = (void (*)())NIL;
-    tapePtr->statusProc = (void (*)())NIL;
-    scsiTape[scsiTapeIndex] = devPtr;
-    printf("SCSI-%d tape %d at slave %d\n",
-		devPtr->scsiPtr->number, scsiTapeIndex, devPtr->targetID);
-    return(SUCCESS);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DevSCSITapeType --
- *
- *	This determines the type of the tape drive depending on
- *	the amount of sense data returned from the drive and initializes
- *	the tapePtr structure.. 
- *
- * Results:
- *	SUCCESS.  Because tape drives take up to several seconds to
- *	initialize themselves we always assume one is out there.
- *
- * Side effects:
- *	A DevSCSITape structure is allocated and referneced by the private
- *	data pointer in	the generic DevSCSIDevice structure.
- *
- *----------------------------------------------------------------------
- */
-void
-DevSCSITapeType(senseSize, tapePtr)
-    int senseSize;			/* Amount of sense data in bytes */
-    DevSCSITape *tapePtr;
-{
-
-    printf("SCSITape, %d sense bytes => ", senseSize);
-    switch(senseSize) {
-	case DEV_SYSGEN_SENSE_BYTES:
-	    DevSysgenInit(tapePtr);
-	    printf("Sysgen\n");
-	    break;
-	case DEV_EMULEX_SENSE_BYTES:
-	    DevEmulexInit(tapePtr);
-	    printf("Emulex\n");
-	    break;
-	case DEV_EXABYTE_SENSE_BYTES:
-	    DevExabyteInit(tapePtr);
-	    printf("Exabyte\n");
-	    break;
-	default:
-	    printf("Unknown sense size\n");
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DevSCSITapeIO --
- *
- *      Low level routine to read or write an SCSI tape device.  The
- *      interface here is in terms of a particular SCSI tape and the
- *      number of sectors to transfer.  This routine takes care of mapping
- *      its buffer into the special multibus memory area that is set up
- *      for Sun DMA.  Each IO involves one tape block, and all tape blocks
- *	are multiples of the underlying device block size (DEV_BYTES_PER_SECTOR)
- *
- *	This should be combined with DevSCSISectorIO as it is so similar.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-DevSCSITapeIO(command, devPtr, buffer, countPtr)
-    int command;			/* SCSI_READ, SCSI_WRITE, etc. */
-    register DevSCSIDevice *devPtr; 	/* State info for the tape */
-    char *buffer;			/* Target buffer */
-    int *countPtr;			/* In/Out Byte count, or generalized
-					 * count for SKIP, etc. */
-{
+    ScsiTape	tapeData;	
+    ScsiTape	*tapePtr;
     ReturnStatus status;
-    register DevSCSIController *scsiPtr; /* Controller for the drive */
+    int		i;
 
     /*
-     * Synchronize with the interrupt handling routine and with other
-     * processes that are trying to initiate I/O with this controller.
-     */
-    scsiPtr = devPtr->scsiPtr;
-    MASTER_LOCK(&scsiPtr->mutex);
-
+    * Determine the type of device from the inquiry return by the
+    * attach. Reject device if not of tape type. If the target 
+    * didn't respond to the INQUIRY command we assume that it
+    * just a stupid tape.
+    */ 
+    if ((devPtr->inquiryLength > 0) &&
+	(((ScsiInquiryData *) (devPtr->inquiryDataPtr))->type != 
+						    SCSI_TAPE_TYPE)) {
+	return DEV_NO_DEVICE;
+    } 
     /*
-     * Here we are using a condition variable and the scheduler to
-     * synchronize access to the controller.  An alternative would be
-     * to have a command queue associated with the controller.  We can't
-     * rely on the mutex variable because that is relinquished later
-     * when the process using the controller waits for the I/O to complete.
+     * Do a quick ready test on the device.
      */
-    while (scsiPtr->flags & SCSI_CNTRLR_BUSY) {
-	Sync_MasterWait(&scsiPtr->readyForIO, &scsiPtr->mutex, FALSE);
+    status = DevScsiTestReady(devPtr);
+    if (status != SUCCESS) {
+	return status;
     }
-    scsiPtr->flags |= SCSI_CNTRLR_BUSY;
-    scsiPtr->flags &= ~SCSI_IO_COMPLETE;
-
-    if (command == SCSI_READ || command == SCSI_WRITE) {
-	/*
-	 * Map the buffer into the special area of multibus memory that
-	 * the device can DMA into.
-	 */
-	buffer = VmMach_DevBufferMap(*countPtr, buffer, scsiPtr->IOBuffer);
+    if (devicePtr->data == (ClientData) NIL) {
+	tapePtr = &tapeData;
+	bzero((char *) tapePtr, sizeof(ScsiTape));
+	tapePtr->devPtr = devPtr;
+	tapePtr->state = SCSI_TAPE_CLOSED;
+	tapePtr->name = "SCSI Tape";
+	tapePtr->blockSize = SCSI_TAPE_DEFAULT_BLOCKSIZE;
+	tapePtr->tapeIOProc = DevSCSITapeFixedBlockIO;
+	tapePtr->errorProc = DevSCSITapeError;
+	tapePtr->specialCmdProc =  DevSCSITapeSpecialCmd;
+    } else {
+	tapePtr = (ScsiTape *) (devicePtr->data);
     }
-    DevSCSITapeSetupCommand(command, devPtr, countPtr);
-    status = (*scsiPtr->commandProc)(devPtr->targetID, scsiPtr, *countPtr,
-				     buffer, INTERRUPT);
-    /*
-     * Wait for the command to complete.  The interrupt handler checks
-     * for I/O errors, computes the residual, and notifies us.
-     */
-    if (status == SUCCESS) {
-	while((scsiPtr->flags & SCSI_IO_COMPLETE) == 0) {
-	    Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex, FALSE);
+    for (i = 0; i < devNumSCSITapeTypes; i++) {
+	status = (devSCSITapeAttachProcs[i])(devicePtr,devPtr,tapePtr);
+	if (status == SUCCESS) {
+	    break;
 	}
-	status = scsiPtr->status;
     }
-    if (scsiPtr->residual) {
-	printf("Warning: SCSI residual %d, cmd %x\n", scsiPtr->residual,
-			    command);
+    /*
+     * Allocate and return the ScsiTape structure in the data field of the
+     * Fs_Device.
+     */
+    if ((status == SUCCESS) && devicePtr->data == (ClientData) NIL) { 
+	tapePtr = (ScsiTape *) malloc(sizeof(ScsiTape));
+	*tapePtr = tapeData;
+        devicePtr->data = (ClientData)tapePtr;
     }
-    *countPtr -= scsiPtr->residual;
-    scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
-    Sync_MasterBroadcast(&scsiPtr->readyForIO);
-    MASTER_UNLOCK(&scsiPtr->mutex);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSITapeSetupCommand --
+ * SetupCommand --
  *
- *	A variation on DevSCSISetupCommand that creates a control block
+ *	A variation on DevScsiGroup0Cmd that creates a control block
  *	designed for tape drives.  SCSI tape drives read from the current
  *	tape position, so there is only a block count, no offset.  There
  *	is a special code that modifies the command in the tape control
  *	block.  The value of the code is a function of the command and the
- *	type of the tape drive (ugh.)  The correct code is determined by
- *	a tape-specific setup procedure.
+ *	type of the tape drive (ugh.)  
  *
  * Results:
  *	None.
@@ -239,46 +130,304 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
  *
  *----------------------------------------------------------------------
  */
-void
-DevSCSITapeSetupCommand(command, devPtr, dmaCountPtr)
+static void
+SetupCommand(devPtr, command, code, len, scsiCmdPtr)
+    ScsiDevice	*devPtr;	/* Scsi device for command. */
     int command;		/* One of SCSI_* commands */
-    DevSCSIDevice *devPtr;	/* Device state */
-    int *dmaCountPtr;		/* In - Transfer count
-				 * Out - The proper dma byte count for caller */
+    unsigned int code;		/* Value for "code" field of command. The code
+				 * field is the low 4 bits of the 2nd byte. */
+    unsigned int len;		/* Length of the data in bytes or blocks. */
+    ScsiCmd	*scsiCmdPtr;	/* Command block to fill in. */
 {
-    register DevSCSITapeControlBlock	*tapeControlBlockPtr;
-    register DevSCSITape		*tapePtr;
-    int count = *dmaCountPtr;		/* Count put in the control block */
+   DevScsiGroup0Cmd(devPtr, command, ((code&0xf) << 16) | (len>>8),
+		    (len & 0xff), scsiCmdPtr);
+}
 
-    devPtr->scsiPtr->devPtr = devPtr;
-    tapeControlBlockPtr =
-	    (DevSCSITapeControlBlock *)&devPtr->scsiPtr->controlBlock;
-    bzero((Address)tapeControlBlockPtr,sizeof(DevSCSITapeControlBlock));
-    tapePtr = (DevSCSITape *)devPtr->data;
-    if ((int)tapePtr->setupProc != NIL) {
-	/*
-	 * If the drive type is known we have to customize the control
-	 * block with various vendor-specific bits.  This means that
-	 * the first commands done can't depend on this.  This is ok
-	 * as we do a REQUEST_SENSE first to detect the drive type.
-	 */
-	(*tapePtr->setupProc)(tapePtr, &command, tapeControlBlockPtr,
-		&count, dmaCountPtr);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSITapeError --
+ *
+ *	Map SCSI errors indicated by the sense data into Sprite ReturnStatus
+ *	and error message. This proceedure handles two types of 
+ *	sense data Class 0 and class 7.
+ *
+ * Results:
+ *	A sprite error code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSITapeError(tapePtr, statusByte, senseLength, senseDataPtr)
+    ScsiTape	 *tapePtr;	/* SCSI Tape that's complaining. */
+    unsigned char statusByte;	/* The status byte of the command. */
+    int		 senseLength;	/* Length of SCSI sense data in bytes. */
+    char	 *senseDataPtr;	/* Sense data. */
+{
+    ScsiStatus *statusPtr = (ScsiStatus *) &statusByte;
+    ScsiClass0Sense *sensePtr = (ScsiClass0Sense *) senseDataPtr;
+    char	*name = tapePtr->devPtr->locationName;
+    char	errorString[MAX_SCSI_ERROR_STRING];
+    ReturnStatus	status;
+
+    /*
+     * Check for status byte to see if the command returned sense
+     * data. If no sense data exists then we only have the status
+     * byte to look at.
+     */
+    if (!statusPtr->check) {
+	if (SCSI_RESERVED_STATUS(statusByte) || statusPtr->intStatus) {
+	    printf("Warning: %s at %s unknown status byte 0x%x\n",
+		   tapePtr->name, name, statusByte);
+	    return SUCCESS;
+	} 
+	if (statusPtr->busy) {
+	    return DEV_OFFLINE;
+	}
+	return SUCCESS;
     }
-    tapeControlBlockPtr->command = command & 0xff;
-    tapeControlBlockPtr->unitNumber = devPtr->LUN;
-    tapeControlBlockPtr->highCount = (count & 0x1f0000) >> 16;
-    tapeControlBlockPtr->midCount =  (count & 0x00ff00) >> 8;
-    tapeControlBlockPtr->lowCount =  (count & 0x0000ff);
+    if (senseLength == 0) {
+	 printf("Warning: %s at %s error: no sense data\n", tapePtr->name,name);
+	 return DEV_NO_SENSE;
+    }
+    if (DevScsiMapClass7Sense(senseLength, senseDataPtr,&status, errorString)) {
+	ScsiClass7Sense	*s = (ScsiClass7Sense *) senseDataPtr;
+	if (errorString[0]) {
+	     printf("Warning: %s at %s error: %s\n", tapePtr->name, name, 
+		    errorString);
+	}
+	if (status == SUCCESS) {
+	    if (s->fileMark) {
+		/*
+		 * Hit the file mark after reading good data. Setting this 
+		 * bit causes the next read to return zero bytes.
+		 */
+		tapePtr->state |= SCSI_TAPE_AT_EOF;
+	    } else if (s->endOfMedia) {
+		status = DEV_END_OF_TAPE;
+	    }
+	}
+	return status;
+    }
+    /*
+     * If its not a class 7 error it must be Old style sense data..
+     */
+    if (sensePtr->error == SCSI_NO_SENSE_DATA) {	    
+	status = SUCCESS;
+    } else {
+	    register int class = (sensePtr->error & 0x70) >> 4;
+	    register int code = sensePtr->error & 0xF;
+	    register int addr;
+	    addr = (sensePtr->highAddr << 16) |
+		    (sensePtr->midAddr << 8) |
+		    sensePtr->lowAddr;
+	    printf("Warning: %s at %s: Sense error (%d-%d) at <%x> ",
+			     tapePtr->name, name, class, code, addr);
+	    if (devScsiNumErrors[class] > code) {
+		printf("%s", devScsiErrors[class][code]);
+	    }
+	    printf("\n");
+	    status = DEV_INVALID_ARG;
+    } 
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSITapeSpecialCmd --
+ *
+ *	Performance a special tape command on a SCSI Tape drive. This 
+ *	routine should work on any SCSI Tape drive adhering to the SCSI
+ *	common command set.
+ *
+ * Results:
+ *	The sprite return status.
+ *
+ * Side effects:
+ *	Command dependent.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+DevSCSITapeSpecialCmd(tapePtr, command, count)
+    ScsiTape	*tapePtr;	/* Target drive for command. */
+    int		command;	/* Command to be performed. */
+    int		count;		/* Argument to command. */
+{
+    ReturnStatus status;
+    ScsiCmd	 scsiTapeCmd;
+    unsigned char statusByte;
+    int		senseLength;
+    char	senseBuffer[SCSI_MAX_SENSE_LEN];
+    int		code;
+    int		scsiCmd;
+
+   code = 0;
+   switch (command) {
+    case IOC_TAPE_SKIP_FILES:
+    case IOC_TAPE_SKIP_BLOCKS: 
+	scsiCmd = SCSI_SPACE;
+	code = (command == IOC_TAPE_SKIP_FILES) ? 1 : 0;
+	break;
+    case IOC_TAPE_REWIND:
+	scsiCmd = SCSI_REWIND;
+	count = 0;
+	break;
+    case IOC_TAPE_WEOF:
+	scsiCmd = SCSI_WRITE_EOF;
+	break;
+    case IOC_TAPE_ERASE:
+	scsiCmd = SCSI_ERASE_TAPE;
+	count = 0;
+	break;
+    case IOC_TAPE_NO_OP:
+	scsiCmd = SCSI_TEST_UNIT_READY;
+	count = 0;
+	break;
+    case IOC_TAPE_RETENSION:
+	return DEV_INVALID_ARG;
+    default:
+	panic("DevSCSITapeSpecialCmd: Unknown command %d\n", command);
+    }
+    SetupCommand(tapePtr->devPtr, scsiCmd, code, count, &scsiTapeCmd);
+    scsiTapeCmd.buffer = (char *) 0;
+    scsiTapeCmd.bufferLen = 0;
+    scsiTapeCmd.dataToDevice = FALSE;
+    senseLength = SCSI_MAX_SENSE_LEN;
+    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, &statusByte,
+				&code, &senseLength, senseBuffer);
+
+    if (status == SUCCESS) {
+	status = (tapePtr->errorProc)(tapePtr,statusByte, senseLength, 
+				      senseBuffer);
+    }
+    return(status);
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSITapeVariableIO --
+ *
+ *      Low level routine to read or write an SCSI tape device using a
+ *	variable size block format.   Each IO involves some number of
+ *	bytes.
+ *
+ * Results:
+ *	The Sprite return status.
+ *
+ * Side effects:
+ *	Tape is written or read.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSITapeVariableIO(tapePtr,command, buffer, countPtr)
+    register ScsiTape *tapePtr; 	/* State info for the tape */
+    int command;			/* SCSI_READ, SCSI_WRITE, etc. */
+    char *buffer;			/* Target buffer */
+    int *countPtr;			/* In/Out byte count. */
+{
+    ReturnStatus status;
+    ScsiCmd	 scsiTapeCmd;
+    unsigned char statusByte;
+    int		senseLength;
+    char	senseBuffer[SCSI_MAX_SENSE_LEN];
+
+
+    /* 
+     * Setup the command, a code value of zero means variable block.
+     */
+    SetupCommand(tapePtr->devPtr, command, 0,  *countPtr, &scsiTapeCmd);
+    scsiTapeCmd.buffer = buffer;
+    scsiTapeCmd.bufferLen = *countPtr;
+    scsiTapeCmd.dataToDevice = (command == SCSI_WRITE);
+    senseLength = SCSI_MAX_SENSE_LEN;
+    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, &statusByte,
+				countPtr, &senseLength, senseBuffer);
+
+    if (status == SUCCESS) {
+	status = (tapePtr->errorProc)(tapePtr,statusByte, senseLength, 
+				      senseBuffer);
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSITapeFixedBlockIO --
+ *
+ *      Low level routine to read or write an SCSI tape device using a
+ *	fixed size block format.   Each IO involves one or more tape blocks 
+ *	and must be  multiples of the underlying device block size.
+ *
+ * Results:
+ *	The Sprite return status.
+ *
+ * Side effects:
+ *	Tape is written or read.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSITapeFixedBlockIO(tapePtr, command, buffer, countPtr)
+    register ScsiTape *tapePtr; 	/* State info for the tape */
+    int command;			/* SCSI_READ, SCSI_WRITE, etc. */
+    char *buffer;			/* Target buffer */
+    int *countPtr;			/* In/Out byte count. */
+{
+    ReturnStatus status;
+    ScsiCmd	 scsiTapeCmd;
+    unsigned char statusByte;
+    int		senseLength;
+    char	senseBuffer[SCSI_MAX_SENSE_LEN];
+    int		lengthInBlocks;
+
+   /*
+     * For simplicity reads and writes that are multiple of the block size
+     * are rejected.
+     */
+    if ((*countPtr % (tapePtr->blockSize)) != 0) {
+	*countPtr = 0;
+	return DEV_INVALID_ARG;
+    }
+    lengthInBlocks = *countPtr / tapePtr->blockSize;
+    /*
+     * Set up the command with a code value of 1 meaning fixed block.
+     */
+    SetupCommand(tapePtr->devPtr, command, 1, lengthInBlocks, &scsiTapeCmd);
+    scsiTapeCmd.buffer = buffer;
+    scsiTapeCmd.bufferLen = *countPtr;
+    scsiTapeCmd.dataToDevice = (command == SCSI_WRITE);
+    senseLength = SCSI_MAX_SENSE_LEN;
+    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, &statusByte,
+				countPtr, &senseLength, senseBuffer);
+
+    if (status == SUCCESS) {
+	status = (tapePtr->errorProc)(tapePtr,statusByte, senseLength, 
+				      senseBuffer);
+    }
+    return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Dev_SCSITapeOpen --
+ * DevSCSITapeOpen --
  *
- *	Open a SCSI tape drive as a file.  This merely
- *	checks to see if the drive is on-line before succeeding.
+ *	Open a SCSI tape drive as a file.  This routine verifies the
+ *	drives existance and sets any special mode flags.
  *
  * Results:
  *	SUCCESS if the tape is on-line.
@@ -290,79 +439,50 @@ DevSCSITapeSetupCommand(command, devPtr, dmaCountPtr)
  */
 /* ARGSUSED */
 ReturnStatus
-Dev_SCSITapeOpen(devicePtr, useFlags, token)
+DevSCSITapeOpen(devicePtr, useFlags, token)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
     int useFlags;		/* Flags from the stream being opened */
     ClientData token;		/* Call-back token for input, unused here */
 {
     ReturnStatus status;
-    DevSCSIDevice *devPtr;
-    DevSCSITape *tapePtr;
-    int retries = 0;
+    ScsiDevice *devPtr;
+    ScsiTape *tapePtr;
 
-    /*
-     * Unix has a complex encoding of tape densities and no-rewind
-     * characteristics in the unit number.
-     *	0	first drive, rewind
-     *	1	second drive, rewind
-     *	2	third drive, rewind
-     *	3	forth drive, rewind
-     *	4	first drive, no rewind
-     *	5	second drive, no rewind
-     *	6	third drive, no rewind
-     *	7	forth drive, no rewind
-     *	unit numbers 8-15 are for the QIC 24 format, not QIC 11.
-     *
-     * For now we just ignore this and support one kind of tape interface:
-     * a raw one where reads return the next tape record, and writes
-     * create a record.
-     */
-    if (devicePtr->unit > SCSI_MAX_TAPES * DEV_TAPES_PER_CNTRLR) {
-	return(DEV_INVALID_UNIT);
-    }
-    devPtr = scsiTape[devicePtr->unit / DEV_TAPES_PER_CNTRLR];
-    if (devPtr == (DevSCSIDevice *)0 || devPtr == (DevSCSIDevice *)NIL) {
-	return(DEV_NO_DEVICE);
-    }
-    tapePtr = (DevSCSITape *)devPtr->data;
-    if (tapePtr->state & SCSI_TAPE_OPEN) {
-	return(FS_FILE_BUSY);
-    }
-    devPtr->scsiPtr->command = SCSI_OPENING;
-    do {
-	status = DevSCSITest(devPtr);
-	if (status == DEV_OFFLINE) {
-	    break;
-	}
-#ifdef notdef
-	status = DevSCSIRequestSense(devPtr->scsiPtr, devPtr);
-#endif notdef
-    } while (status != SUCCESS && ++retries < 3);
-    if (status == SUCCESS) {
+    tapePtr = (ScsiTape *) (devicePtr->data);
+    if (devicePtr->data == (ClientData) NIL) {
 	/*
-	 * Check for EMULEX controller, because it comes up in the
-	 * wrong mode (QIC_24) and needs to be reset to use QIC 2 format.
+	 * Ask the HBA to set up the path to the device with FIFO ordering
+	 * of requests.
 	 */
-	if (tapePtr->type == SCSI_EMULEX) {
-	    status = DevSCSITapeModeSelect(devPtr, SCSI_MODE_QIC_02);
+	devPtr = DevScsiAttachDevice(devicePtr, DEV_QUEUE_FIFO_INSERT);
+	if (devPtr == (ScsiDevice *) NIL) {
+	    return DEV_NO_DEVICE;
 	}
-	if (status == SUCCESS) {
-	    tapePtr->state = SCSI_TAPE_OPEN;
+    } else { 
+	/*
+	 * If the tapePtr is already attached to the device insure that it
+	 * is not busy.
+	 */
+	tapePtr = (ScsiTape *) (devicePtr->data);
+	if (tapePtr->state & SCSI_TAPE_OPEN) {
+	    return(FS_FILE_BUSY);
 	}
-   }
+	devPtr = tapePtr->devPtr;
+    }
+    status = InitTapeDevice(devicePtr, devPtr);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Dev_SCSITapeRead --
+ * DevSCSITapeRead --
  *
  *	Read from a raw SCSI Tape.  The offset is ignored because
  *	you can't seek the SCSI tape drive, only rewind it.
  *
  * Results:
- *	None.
+ *	The return status of the read.
  *
  * Side effects:
  *	The process will sleep waiting for the I/O to complete.
@@ -372,7 +492,7 @@ Dev_SCSITapeOpen(devicePtr, useFlags, token)
 
 /*ARGSUSED*/
 ReturnStatus
-Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
+DevSCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
     Fs_Device *devicePtr;	/* Handle for raw SCSI tape device */
     int offset;			/* IGNORED for tape. */
     int bufSize;		/* Number of bytes to read,  this gets rounded
@@ -380,15 +500,13 @@ Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
     char *buffer;		/* Buffer for the read */
     int *lenPtr;		/* How many bytes actually read */
 {
-    ReturnStatus error;	/* Error code */
-    DevSCSIDevice *devPtr;
-    DevSCSITape *tapePtr;
+    ReturnStatus error;	
+    ScsiTape *tapePtr;
+    int	totalTransfer;
+    int transferSize;
+    int	maxXfer;
 
-    devPtr = scsiTape[devicePtr->unit / DEV_TAPES_PER_CNTRLR];
-    if (devPtr == (DevSCSIDevice *)0 || devPtr == (DevSCSIDevice *)NIL) {
-	return(DEV_NO_DEVICE);
-    }
-    tapePtr = (DevSCSITape *)devPtr->data;
+    tapePtr = (ScsiTape *)(devicePtr->data);
     if (tapePtr->state & SCSI_TAPE_AT_EOF) {
 	/*
 	 * Force the use of the SKIP_FILES control to get past the end of
@@ -398,13 +516,27 @@ Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
 	return(SUCCESS);
     }
     /*
-     * For simplicity the amount to read is also rounded down to a whole number
-     * of tape sectors.  This should break misaligned reads up so the first and
-     * last sectors are read into an extra buffer and copied into the
-     * user's buffer.
+     * Break up the IO into piece the device/HBA can handle.
      */
-    *lenPtr = bufSize & ~(tapePtr->blockSize - 1);
-    error = DevSCSITapeIO(SCSI_READ, devPtr, buffer, lenPtr);
+    totalTransfer = 0;
+    error = SUCCESS;
+    maxXfer = tapePtr->devPtr->maxTransferSize;
+    while((*lenPtr > 0) && (error == SUCCESS)) {  
+	int	byteCount;
+	transferSize = (*lenPtr > maxXfer) ? maxXfer : *lenPtr;
+	byteCount = transferSize;
+	error = (tapePtr->tapeIOProc)(tapePtr, SCSI_READ, buffer,&byteCount);
+	/*
+	 * A short read implies we hit end of file or end of tape. 
+	 */
+	totalTransfer += byteCount;
+	if (byteCount < transferSize) {
+	    break;
+	}
+	buffer += transferSize;
+	*lenPtr -= transferSize;
+    }
+    *lenPtr = totalTransfer;
     /*
      * Special check against funky end-of-file situations.  The Emulex tape
      * doesn't compute a correct residual when it hits the file mark
@@ -420,12 +552,12 @@ Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_SCSITapeWrite --
+ * DevSCSITapeWrite --
  *
  *	Write to a raw SCSI tape.
  *
  * Results:
- *	None.
+ *	A Sprite error code.
  *
  * Side effects:
  *	None.
@@ -435,31 +567,42 @@ Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-Dev_SCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
+DevSCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
     Fs_Device *devicePtr;	/* Handle of raw tape device */
     int offset;			/* IGNORED for tape. */
-    int bufSize;		/* Number of bytes to write.  Rounded down
-				 * to a multiple of the sector size */
+    int bufSize;		/* Number of bytes to write.  */
     char *buffer;		/* Write buffer */
     int *lenPtr;		/* How much was actually written */
 {
-    ReturnStatus error;
-    DevSCSIDevice *devPtr;
-    DevSCSITape *tapePtr;
+    ReturnStatus error;	
+    ScsiTape *tapePtr;
+    int totalTransfer;
+    int transferSize;
+    int	maxXfer;
 
+    tapePtr = (ScsiTape *)(devicePtr->data);
     /*
-     * For simplicity the amount to write is also rounded down to a whole number
-     * of blocks.  For misaligned writes we need to first read in the sector
-     * and then overwrite part of it.
+     * Break up the IO into piece the device/HBA can handle.
      */
-
-    devPtr = scsiTape[devicePtr->unit / DEV_TAPES_PER_CNTRLR];
-    if (devPtr == (DevSCSIDevice *)0 || devPtr == (DevSCSIDevice *)NIL) {
-	return(DEV_NO_DEVICE);
+    totalTransfer = 0;
+    error = SUCCESS;
+    maxXfer = tapePtr->devPtr->maxTransferSize;
+    while((*lenPtr > 0) && (error == SUCCESS)) {  
+	int	byteCount;
+	transferSize = (*lenPtr > maxXfer) ? maxXfer : *lenPtr;
+	byteCount = transferSize;
+	error = (tapePtr->tapeIOProc)(tapePtr,SCSI_WRITE, buffer,&byteCount);
+	/*
+	 * A short write implies we hit end of tape. 
+	 */
+	totalTransfer += byteCount;
+	if (byteCount < transferSize) {
+	    break;
+	}
+	buffer += transferSize;
+	*lenPtr -= transferSize;
     }
-    tapePtr = (DevSCSITape *)devPtr->data;
-    *lenPtr = bufSize & ~(tapePtr->blockSize - 1);
-    error = DevSCSITapeIO(SCSI_WRITE, devPtr, buffer, lenPtr);
+    *lenPtr = totalTransfer;
     if (error == SUCCESS) {
 	tapePtr->state |= SCSI_TAPE_WRITTEN;
     }
@@ -469,7 +612,7 @@ Dev_SCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_SCSITapeIOControl --
+ * DevSCSITapeIOControl --
  *
  *	Do a special operation on a raw SCSI Tape.
  *
@@ -483,7 +626,7 @@ Dev_SCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
+DevSCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
 				 outBufSize, outBuffer)
     Fs_Device *devicePtr;
     int command;
@@ -492,16 +635,16 @@ Dev_SCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
     int outBufSize;
     char *outBuffer;
 {
+    ScsiTape *tapePtr;
     ReturnStatus status = SUCCESS;
-    int count = 0;
-    DevSCSIDevice *devPtr;
-    DevSCSITape *tapePtr;
 
-   devPtr = scsiTape[devicePtr->unit / DEV_TAPES_PER_CNTRLR];
-    if (devPtr == (DevSCSIDevice *)0 || devPtr == (DevSCSIDevice *)NIL) {
-	return(DEV_NO_DEVICE);
-    }
-    tapePtr = (DevSCSITape *)devPtr->data;
+    tapePtr = (ScsiTape *)(devicePtr->data);
+     if ((command&~0xffff) == IOC_SCSI) {
+	 status = DevScsiIOControl(tapePtr->devPtr, command, inBufSize,
+				inBuffer, outBufSize, outBuffer);
+	 return status;
+
+     }
 
     switch(command) {
 	case IOC_REPOSITION: {
@@ -525,9 +668,8 @@ Dev_SCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
 			 * If not atlready at the end of the tape by writing,
 			 * space to the end of the current file.
 			 */
-			int count = 1;
-			status = DevSCSITapeIO(SCSI_SPACE_FILES,
-				    devPtr, (char *)0, &count);
+			status = (tapePtr->specialCmdProc)(tapePtr, 
+						   IOC_TAPE_SKIP_FILES, 1);
 		    }
 		    break;
 	    }
@@ -540,17 +682,15 @@ Dev_SCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
 	    }
 	    switch (cmdPtr->command) {
 		case IOC_TAPE_WEOF: {
-		    count = 1;
-		    while (cmdPtr->count) {
-			cmdPtr->count--;
-			status = DevSCSITapeIO(SCSI_WRITE_EOF, devPtr,
-					(char *)0, &count);
-		    }
+		    status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_WEOF,
+							cmdPtr->count);
 		    break;
 		}
-		case IOC_TAPE_RETENSION:
-		    tapePtr->state |= SCSI_TAPE_RETENSION;
-		    /* fall through */
+		case IOC_TAPE_RETENSION: {
+		    status = (tapePtr->specialCmdProc)(tapePtr,
+						  IOC_TAPE_RETENSION, 1);
+		    break;
+		}
 		case IOC_TAPE_OFFLINE:
 		case IOC_TAPE_REWIND: {
 rewind:		    /*
@@ -558,35 +698,26 @@ rewind:		    /*
 		     * was a write...
 		     */
 		    if (tapePtr->state & SCSI_TAPE_WRITTEN) {
-			count = 1;
-			status = DevSCSITapeIO(SCSI_WRITE_EOF, devPtr,
-					(char *)0, &count);
+			status = (tapePtr->specialCmdProc)(tapePtr,
+						   IOC_TAPE_WEOF, 1);
 			tapePtr->state &= ~SCSI_TAPE_WRITTEN;
 		    }
-		    status = DevSCSITapeIO(SCSI_REWIND, devPtr,
-						(char *)0, &count);
+		    status = (tapePtr->specialCmdProc)(tapePtr,
+						  IOC_TAPE_REWIND, 1);
 		    break;
 		}
 		case IOC_TAPE_SKIP_BLOCKS: {
-		    while (cmdPtr->count) {
-			cmdPtr->count--;
-			count = 1;
-			status = DevSCSITapeIO(SCSI_SPACE_BLOCKS, devPtr,
-					(char *)0, &count);
-			if (status == DEV_END_OF_TAPE) {
-			    status = SUCCESS;
-			}
+		    status = (tapePtr->specialCmdProc)(tapePtr, 
+					IOC_TAPE_SKIP_BLOCKS, cmdPtr->count);
+		    if (status == DEV_END_OF_TAPE) {
+			status = SUCCESS;
 		    }
 		    break;
 		case IOC_TAPE_SKIP_FILES:
-		    while (cmdPtr->count) {
-			cmdPtr->count--;
-			count = 1;
-			status = DevSCSITapeIO(SCSI_SPACE_FILES, devPtr,
-					(char *)0, &count);
-			if (status == DEV_END_OF_TAPE) {
-			    status = SUCCESS;
-			}
+		    status = (tapePtr->specialCmdProc)(tapePtr, 
+					IOC_TAPE_SKIP_FILES,  cmdPtr->count);
+		    if (status == DEV_END_OF_TAPE) {
+			status = SUCCESS;
 		    }
 		    break;
 		}
@@ -595,40 +726,20 @@ rewind:		    /*
 		    status = DEV_INVALID_ARG;
 		    break;
 		case IOC_TAPE_ERASE: {
-		    status = DevSCSITapeIO(SCSI_ERASE_TAPE, devPtr,
-				    (char *)0, &count);
+		    status = (tapePtr->specialCmdProc)(tapePtr, 
+							IOC_TAPE_ERASE,1);
 		    break;
 		}
 		case IOC_TAPE_NO_OP: {
-		    status = DevSCSITapeIO(SCSI_TEST_UNIT_READY, devPtr,
-				    (char *)0, &count);
+		    status = (tapePtr->specialCmdProc)(tapePtr, 
+						      IOC_TAPE_NO_OP,1);
 		    break;
 		}
 	    }
 	    break;
 	}
 	case IOC_TAPE_STATUS: {
-	    DevSCSIController *scsiPtr = devPtr->scsiPtr;
-	    Dev_TapeStatus *statusPtr = (Dev_TapeStatus *)outBuffer;
-	    if (outBufSize < sizeof(Dev_TapeStatus)) {
 		return(DEV_INVALID_ARG);
-	    }
-	    status = DevSCSIRequestSense(devPtr->scsiPtr, devPtr);
-
-	    if (scsiPtr->type == SCSI0) {
-		DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
-		statusPtr->statusReg = regsPtr->control;
-	    } else if (scsiPtr->type == SCSI3) {
-		DevSCSI3Regs *regsPtr = (DevSCSI3Regs *)scsiPtr->regsPtr;
-		statusPtr->statusReg = regsPtr->control;
-	    }
-	    if (tapePtr->statusProc != (void (*)())NIL) {
-		(*tapePtr->statusProc)(devPtr, statusPtr);
-	    }
-	    statusPtr->residual = scsiPtr->residual;
-	    statusPtr->fileNumber = 0;
-	    statusPtr->blockNumber = 0;
-	    break;
 	}
 	    /*
 	     * No tape specific bits are set this way.
@@ -684,140 +795,32 @@ rewind:		    /*
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SCSITapeClose(devicePtr, useFlags, openCount, writerCount)
+DevSCSITapeClose(devicePtr, useFlags, openCount, writerCount)
     Fs_Device	*devicePtr;
     int		useFlags;	/* FS_READ | FS_WRITE */
     int		openCount;	/* Number of times device open. */
     int		writerCount;	/* Number of times device open for writing. */
 {
-    register ReturnStatus	status;
-    DevSCSIDevice		*devPtr;
-    DevSCSITape			*tapePtr;
-    int 			count = 0;
+    ScsiTape *tapePtr;
+    ReturnStatus status = SUCCESS;
 
-    devPtr = scsiTape[devicePtr->unit / DEV_TAPES_PER_CNTRLR];
-    if (devPtr == (DevSCSIDevice *)0 || devPtr == (DevSCSIDevice *)NIL) {
-	return(DEV_NO_DEVICE);
-    }
+    tapePtr = (ScsiTape *)(devicePtr->data);
     if (openCount > 0) {
 	return(SUCCESS);
     }
-    tapePtr = (DevSCSITape *)devPtr->data;
     if (tapePtr->state & SCSI_TAPE_WRITTEN) {
 	/*
 	 * Make sure an end-of-file mark is at the end of the file on tape.
 	 */
-	count = 1;
-	status = DevSCSITapeIO(SCSI_WRITE_EOF, devPtr,
-			(char *)0, &count);
+	status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_WEOF,1);
     }
     /*
      * Use the unit number to indicate rewind or no-rewind.  An
      * ``even'' number (0 and 8) means rewind.
      */
     if ((devicePtr->unit % DEV_TAPES_PER_CNTRLR) == 0) {
-	status = DevSCSITapeIO(SCSI_REWIND, devPtr, (char *)0, &count);
+	status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_REWIND,1);
     }
     tapePtr->state = SCSI_TAPE_CLOSED;
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DevSCSITapeModeSelect --
- *
- *	Do the special mode select command to the tape drive.
- *	The mode select command sets the block size and the density of
- *	the tape.  This differs between the QIC 24 standard and the
- *	QIC 02 format.  We always want the QIC 02 standard, but some
- *	controllers start out in the other mode.
- *
- * Results:
- *	An error code from the command
- *
- * Side effects:
- *	This overwrites the label buffer used to read the disk label.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-DevSCSITapeModeSelect(devPtr, modeCommand)
-    DevSCSIDevice *devPtr;
-    int modeCommand;	/* SCSI_MODE_QIC_24 or SCSI_MODE_QIC_02 */
-{
-    ReturnStatus status;
-    DevSCSIController *scsiPtr = devPtr->scsiPtr;
-    DevSCSITape *tapePtr = (DevSCSITape *)devPtr->data;
-    register DevEmulexModeSelParams *modeParamsPtr;
-    int count;
-
-    if (modeCommand == SCSI_MODE_QIC_24) {
-	printf("Warning: SCSI Mode select won't do QIC 24 format");
-	return(DEV_INVALID_ARG);
-    } else if (tapePtr->type != SCSI_EMULEX) {
-	printf("Warning: SCSI Mode select won't do Sysgen drives");
-	return(DEV_INVALID_ARG);
-    }
-    modeParamsPtr = (DevEmulexModeSelParams *)scsiPtr->labelBuffer;
-    bzero((Address)modeParamsPtr, sizeof(DevEmulexModeSelParams));
-    modeParamsPtr->header.bufMode = 1;
-    modeParamsPtr->header.blockLength = sizeof(DevEmulexModeSelBlock);
-    modeParamsPtr->block.density = SCSI_EMULEX_QIC_02;
-    /*
-     * The rest of the fields in the select params can be left zero.
-     */
-    count = sizeof(DevEmulexModeSelParams);
-    status = DevSCSITapeIO(SCSI_MODE_SELECT, devPtr, (Address)modeParamsPtr,
-			    &count);
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DevSCSITapeError --
- *
- *	Handle error conditions from the tape drive.  This looks at
- *	the sense data returned after a command and determines what
- *	happened based on the drive type.  This is usually called
- *	at interrupt time.
- *
- * Results:
- *	An error code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-DevSCSITapeError(devPtr, sensePtr)
-    DevSCSIDevice *devPtr;
-    DevSCSISense *sensePtr;
-{
-    register ReturnStatus status = SUCCESS;
-    DevSCSITape *tapePtr = (DevSCSITape *)devPtr->data;
-
-    if (tapePtr->type == SCSI_UNKNOWN) {
-	printf("DevSCSITapeError: Unknown tape drive type");
-	if (sensePtr->error != SCSI_NO_SENSE_DATA) {
-	    register int class = (sensePtr->error & 0x70) >> 4;
-	    register int code = sensePtr->error & 0xF;
-	    register int addr;
-	    addr = (sensePtr->highAddr << 16) |
-		    (sensePtr->midAddr << 8) |
-		    sensePtr->lowAddr;
-	    printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
-			     devPtr->scsiPtr->number, class, code, addr);
-	    if (scsiNumErrors[class] > code) {
-		printf("%s", scsiErrors[class][code]);
-	    }
-	    printf("\n");
-	    status = DEV_INVALID_ARG;
-	}
-    } else {
-	status = (*tapePtr->errorProc)(devPtr, sensePtr);
-    }
     return(status);
 }
