@@ -322,7 +322,7 @@ DevConsoleInputProc(ttyPtr, value)
      */
 
     if (asciiChar != -2) {
-	if (ttyPtr->inputProc != NIL) {
+	if (ttyPtr->inputProc != (void (*)()) NIL) {
 	    DevTtyInputChar(ttyPtr, value);
 	} else if (asciiChar >= 0) {
 	    DevTtyInputChar(ttyPtr, asciiChar);
