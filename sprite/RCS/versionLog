@@ -415,4 +415,13 @@ fixed stupid bug in test of count limit in scsi group 0 command
 first installed ds5000 kernel
 
 1.093	Wed May 29 17:50:34 PDT 1991
+
+1.095	Mon Jun  3 11:15:38 PDT 1991
+Converted Sys_DiskStats to be sector rather than request count.
+Fixed infinite recovery loop due to stale prefixes.
+Fixed access to user buffer in Fs_ReadLinkStub().
+Fixed a bug in Fs_ReadLinkStub that was a result of a previous bug fix...
+Temporary paranoia checks for Proc_StringNCopy.
+increased size of kernel heap
+
     New files linked in from the net library.
