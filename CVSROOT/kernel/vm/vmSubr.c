@@ -35,7 +35,7 @@ int	vm_PageSize;
 int	vmPageShift;
 int	vmPageTableInc;
 int	vmKernMemSize;
-int	vmMaxProcesses = 64;
+int	vmMaxProcesses = 80;
 Address	vmBlockCacheBaseAddr;
 Address vmBlockCacheEndAddr;
 
