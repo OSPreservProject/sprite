@@ -342,7 +342,8 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 			realID, openArgsPtr->useFlags, numReaders, numWriters,
 			fileStatePtr->attr.createTime,
 			fileStatePtr->attr.lastByte + 1,
-			fileStatePtr->attr.modifyTime);
+			fileStatePtr->attr.modifyTime,
+			handlePtr->descPtr->fileType);
 	    }
 #endif
 
