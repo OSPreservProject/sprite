@@ -365,7 +365,7 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
     FsOpenResultsParam		*openResultsParamPtr;	/* open results, etc. */
 
 
-    if (Recov_GetClientState(clientID) & RECOV_IN_PROGRESS) {
+    if (Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) {
 	Net_HostPrint(clientID, "Dropping regular open during recovery\n");
 	return(RPC_SERVICE_DISABLED);
     }
@@ -524,8 +524,8 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
     register FsFileID *fileIDPtr;
     register ReturnStatus status;
 
-    if ((Recov_GetClientState(clientID) & RECOV_IN_PROGRESS) == 0) {
-	Recov_SetClientState(clientID, RECOV_IN_PROGRESS);
+    if ((Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) == 0) {
+	Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
 	Net_HostPrint(clientID, "starting recovery\n");
     }
 
