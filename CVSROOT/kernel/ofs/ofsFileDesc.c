@@ -331,13 +331,21 @@ FsInitFileDesc(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr)
     fileDescPtr->devUnit = -1;
 
     /*
-     * Set the time stamps.  This assumes that universal time, not local
-     * time, is used for time stamps.
+     * Set the time stamps.  The data access and modify times are set
+     * later via I/O operations.  If set now, time skew between a remote
+     * client and us the server can result in the following problem:
+     * 1 - At file create we set the modify time to now(server)
+     * 2 - Remote client write sets modify time to now(client)
+     * 3 - Remote client closes and pushes its modify time to us.
+     * Editors do this sequence of operations rapidly.  If our modify time
+     * (really create time) is greater than the client's, then we'll ignore
+     * the client's time when copying the modify time from the cached
+     * attributes to the file descriptor on disk. Et voila, time warp.
      */
     fileDescPtr->createTime = fsTimeInSeconds;
-    fileDescPtr->accessTime = fsTimeInSeconds;
+    fileDescPtr->accessTime = 0;
     fileDescPtr->descModifyTime = fsTimeInSeconds;
-    fileDescPtr->dataModifyTime = fsTimeInSeconds;
+    fileDescPtr->dataModifyTime = 0;
 
     for (index = 0; index < FS_NUM_DIRECT_BLOCKS ; index++) {
 	fileDescPtr->direct[index] = FS_NIL_INDEX;
