@@ -311,13 +311,12 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
 	}
     } else if (status == FS_LOOKUP_REDIRECT) {
 	/*
-	 * Allocate enough space to fit the prefix length and the file name and
-	 * copy over the structure that we have on our stack.
+	 * Allocate space for the re-directed pathname and
+	 * copy over the structure that we have on our stack.  A large
+	 * buffer is allocated because it is used as a work area in
+	 * FsLookupRedirect to create a new absolute pathname.
 	 */
-	register int redirectSize;
-
-	redirectSize = sizeof(int) + String_Length(replyName)+1;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = openResultsParam.prefixLength;
 	(void)String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
     }
@@ -792,9 +791,7 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_UNLINK, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	register int redirectSize;
-	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
 	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
@@ -847,9 +844,7 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_RMDIR, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	register int redirectSize;
-	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
 	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
@@ -924,14 +919,16 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	/* 3 * an int for padding to save us from netword interface */
+	/*
+	 * We are only returning an int, but the Intel ethernet driver
+	 * will gratuitously pad this to 12 bytes to avoid DMA overruns.
+	 * The routine NetIEXmit needs to be fixed.  Until then we patch here.
+	 */
 	storagePtr->replyParamPtr = (Address) Mem_Alloc(3 * sizeof (int));
 	storagePtr->replyParamSize = 3 * sizeof (int);
-	/*
-	 * prefixLength must be returned in parameter area for byte-swapping.
-	 */
 	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
-        replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+
+	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
         Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
@@ -991,9 +988,7 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_MKDIR, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	register int redirectSize;
-	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
 	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
@@ -1059,12 +1054,14 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	storagePtr->replyParamPtr = (Address) Mem_Alloc(3 * sizeof (int));
-	storagePtr->replyParamSize = 3 * sizeof (int);
 	/*
 	 * prefixLength must be returned in param area for byte-swapping.
+	 * We pad the buffer to 12 bytes here to avoid bug in NetIEXmit!
 	 */
+	storagePtr->replyParamPtr = (Address) Mem_Alloc(3 * sizeof (int));
+	storagePtr->replyParamSize = 3 * sizeof (int);
 	*((int *)(storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
+
         replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
@@ -1125,9 +1122,7 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_MKDEV, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	register int redirectSize;
-	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
 	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
@@ -1190,9 +1185,14 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	/*
+	 * Return prefix length in buffer padded to 12 bytes to avoid
+	 * a bug in NetIEXmit.
+	 */
 	storagePtr->replyParamPtr = (Address) Mem_Alloc(3 * sizeof (int));
 	storagePtr->replyParamSize = 3 * sizeof (int);
 	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
+
         replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
@@ -1223,7 +1223,7 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
 static ReturnStatus
 TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2, 
 		 relativeName2, lookupArgsPtr, newNameInfoPtrPtr,
-		 name1RedirectPtr)
+		 name1RedirectPtr, name1StalePtr)
     int			command;		/* Which Rpc: Mv or Ln */
     FsHandleHeader 	*prefixHandle1;		/* Handle from prefix table */
     char 		*relativeName1;		/* The new name of the file. */
@@ -1235,6 +1235,8 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
 						 * lookup. */
     Boolean 		*name1RedirectPtr;	/* TRUE if redirect info is for
 						 * first path */
+    Boolean 		*name1StalePtr;		/* TRUE if stale hdr or timeout
+						 * error is for first path */
 {
     FsSprite2PathParams	params;
     FsSprite2PathData	*requestDataPtr;	/* too big for stack */
@@ -1245,17 +1247,13 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
     FsRedirectInfo	redirectInfo;
 
     requestDataPtr = Mem_New(FsSprite2PathData);
+
     params.lookupArgs = *lookupArgsPtr;
     params.lookupArgs.prefixID = prefixHandle1->fileID;
     params.prefixID2 = prefixHandle2->fileID;
-    nameLength = String_Length(relativeName1);
-    Byte_Copy(nameLength, (Address) relativeName1,
-	    (Address) requestDataPtr->path1);
-    requestDataPtr->path1[nameLength] = '\0';
-    nameLength = String_Length(relativeName2);
-    Byte_Copy(nameLength, (Address) relativeName2,
-	    (Address) requestDataPtr->path2);
-    requestDataPtr->path2[nameLength] = '\0';
+
+    (void)String_Copy(relativeName1, requestDataPtr->path1);
+    (void)String_Copy(relativeName2, requestDataPtr->path2);
 
     storage.requestParamPtr = (Address) &params;
     storage.requestParamSize = sizeof (FsSprite2PathParams);
@@ -1269,13 +1267,17 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
 
     status = Rpc_Call(prefixHandle1->fileID.serverID, command, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	register int redirectSize;
-	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
-    /* Is the following field only of value if LOOKUP returned? */
 	*name1RedirectPtr = replyParams.name1RedirectP;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = replyParams.prefixLength;
 	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+    } else if (status == FS_STALE_HANDLE) {
+	/*
+	 * Temporarily pretend that the source prefix handle was stale.
+	 * It is possible that a stale handle error could happend on
+	 * the destination prefix.  Need to fix the RPC interface. XXX
+	 */
+	*name1StalePtr = TRUE;
     }
     Mem_Free((Address)requestDataPtr);
 
@@ -1320,6 +1322,7 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
     register	Rpc_ReplyMem		*replyMemPtr;
     FsRedirectInfo			*newNameInfoPtr;
     Boolean				name1Redirect;
+    Boolean				name1Stale;
     FsSprite2PathReplyParams		*replyParamsPtr;
     FsSprite2PathData			*pathDataPtr;
     ReturnStatus			status;
@@ -1332,18 +1335,34 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 	    (&lookupArgsPtr->prefixID, clientID);
 
     if (prefixHandle1Ptr == (FsHandleHeader *)NIL) {
+	/*
+	 * Should set RPC parameter name1StaleP = TRUE
+	 * and fall through to Rpc_Reply call.
+	 */
 	return(FS_STALE_HANDLE);
     } else {
 	FsHandleUnlock(prefixHandle1Ptr);
     }
-    prefixHandle2Ptr =
-	(*fsStreamOpTable[paramsPtr->prefixID2.type].clientVerify)
-	    (&paramsPtr->prefixID2, clientID);
-    if (prefixHandle2Ptr == (FsHandleHeader *)NIL) {
-	FsHandleRelease(prefixHandle1Ptr, FALSE);
-	return(FS_STALE_HANDLE);
+    if (paramsPtr->prefixID2.serverID != rpc_SpriteID) {
+	/*
+	 * Second pathname doesn't even start with us.  However, we are
+	 * called in case the first pathname redirects away from us.
+	 */
+	prefixHandle2Ptr = (FsHandleHeader *)NIL;
     } else {
-	FsHandleUnlock(prefixHandle2Ptr);
+	prefixHandle2Ptr =
+	    (*fsStreamOpTable[paramsPtr->prefixID2.type].clientVerify)
+		(&paramsPtr->prefixID2, clientID);
+	if (prefixHandle2Ptr == (FsHandleHeader *)NIL) {
+	    FsHandleRelease(prefixHandle1Ptr, FALSE);
+	    /*
+	     * Should set RPC parameter name1StaleP = FALSE
+	     * and fall through to Rpc_Reply call.
+	     */
+	    return(FS_STALE_HANDLE);
+	} else {
+	    FsHandleUnlock(prefixHandle2Ptr);
+	}
     }
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
@@ -1351,22 +1370,21 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 	status = FsLocalRename(prefixHandle1Ptr, pathDataPtr->path1, 
 		  		prefixHandle2Ptr, pathDataPtr->path2,
 				lookupArgsPtr, &newNameInfoPtr, 
-				&name1Redirect);
+				&name1Redirect, &name1Stale);
     } else if (command == RPC_FS_LINK) {
 	status = FsLocalHardLink(prefixHandle1Ptr, pathDataPtr->path1, 
 				prefixHandle2Ptr, pathDataPtr->path2, 
 				lookupArgsPtr, &newNameInfoPtr, 
-				&name1Redirect);
+				&name1Redirect, &name1Stale);
     } else {
 	Sys_Panic(SYS_FATAL, "Fs_Rpc2Path: Bad command %d\n", command);
     }
     FsHandleRelease(prefixHandle1Ptr, FALSE);
-    FsHandleRelease(prefixHandle2Ptr, FALSE);
+    if (prefixHandle2Ptr != (FsHandleHeader *)NIL) {
+	FsHandleRelease(prefixHandle2Ptr, FALSE);
+    }
 
-    if (status != FS_LOOKUP_REDIRECT) {
-	Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL,
-		(ClientData)NIL);
-    } else {
+    if (status == FS_LOOKUP_REDIRECT) {
 	replyParamsPtr = (FsSprite2PathReplyParams *)
 		Mem_Alloc(sizeof (FsSprite2PathReplyParams));
 	replyParamsPtr->name1RedirectP = name1Redirect;
@@ -1382,6 +1400,12 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 	replyMemPtr->dataPtr = (Address) newNameInfoPtr;
 	Rpc_Reply(srvToken, status, storagePtr, 
 		  (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);
+    } else {
+	/*
+	 * Put in check against FS_STALE_HANDLE and return name1StaleP.
+	 */
+	Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL,
+		(ClientData)NIL);
     }
 
     return(SUCCESS);
@@ -1405,7 +1429,7 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
  */
 ReturnStatus
 FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
-			lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr)
+	lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
     FsHandleHeader *prefixHandle1;	/* Handle from the prefix table */
     char *relativeName1;		/* The new name of the file. */
     FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
@@ -1414,10 +1438,12 @@ FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
     Boolean *name1redirectPtr;	/* TRUE if redirect info is for first path */
+    Boolean *name1StalePtr;	/* TRUE if stale error is for first path */
 {
     return(TwoNameOperation(RPC_FS_RENAME, prefixHandle1, relativeName1, 
 		     	    prefixHandle2, relativeName2, lookupArgsPtr, 
-		     	    newNameInfoPtrPtr, name1redirectPtr));
+			    newNameInfoPtrPtr, name1redirectPtr,
+			    name1StalePtr));
 }
 
 
@@ -1438,7 +1464,7 @@ FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
  */
 ReturnStatus
 FsSpriteHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
-			lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr)
+	    lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
     FsHandleHeader *prefixHandle1;	/* Token from the prefix table */
     char *relativeName1;		/* The new name of the file. */
     FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
@@ -1447,9 +1473,11 @@ FsSpriteHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server 
 					 * leaves its domain during the lookup*/
     Boolean *name1redirectPtr;	/* TRUE if redirect info is for first path */
+    Boolean *name1StalePtr;	/* TRUE if stale error is for first path */
 {
     return(TwoNameOperation(RPC_FS_LINK, prefixHandle1, relativeName1, 
 		     	    prefixHandle2, relativeName2, lookupArgsPtr, 
-		     	    newNameInfoPtrPtr, name1redirectPtr));
+			    newNameInfoPtrPtr, name1redirectPtr,
+			    name1StalePtr));
 }
 
