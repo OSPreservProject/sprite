@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static struct {
     void (*proc)();		/* Procedure to invoke. */
     ClientData clientData;	/* Argument to pass to proc. */
-} commands[128];
+} commands[256];
 
 /*
  * Forward declarations for procedures defined later in this file:
@@ -80,13 +80,15 @@ Dev_RegisterConsoleCmd(commandChar, proc, clientData)
     ClientData clientData;	/* Arbitrary one-word value to pass to
 				 * command. */
 {
-    commandChar &= 0x7f;
-    if (commands[commandChar].proc != 0) {
-	printf("Warning: Dev_RegisterConsoleCmd replacing procedure for \"%c\".\n",
-		commandChar);
+    int index = commandChar & 0x7f;
+
+    if (commands[index].proc != 0) {
+	printf("%s for \"%c\" (0x%x).\n",
+		"Warning: Dev_RegisterConsoleCmd replacing procedure",
+		commandChar, index);
     }
-    commands[commandChar].proc = proc;
-    commands[commandChar].clientData = clientData;
+    commands[index].proc = proc;
+    commands[index].clientData = clientData;
 }
 
 /*
@@ -187,7 +189,7 @@ Debug(rs232)
  *----------------------------------------------------------------------
  */
 
-void
+int
 Dev_KbdQueueAttachProc(character, proc, clientData)
     char character;
     void (*proc)();

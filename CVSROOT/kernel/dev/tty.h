@@ -102,7 +102,7 @@ typedef struct DevTty {
     int selectState;			/* Current select state for terminal:
 					 * OR'ed combination of FS_READABLE,
 					 * FS_WRITABLE, and FS_EXCEPTION. */
-    ClientData notifyToken;		/* Token identifying device;  used to
+    Fs_NotifyToken notifyToken;		/* Token identifying device;  used to
 					 * notify Fs when terminal becomes
 					 * readable or writable. */
     int openCount;			/* Number of active opens of

@@ -81,7 +81,7 @@ static DevZ8530 mouse = {		/* Information used by device driver. */
     Z_CHANNEL_B | Z_INACTIVE		/* flags */
 };
 
-static ClientData token;		/* Used for Fs call-backs to wake up
+static Fs_NotifyToken token;		/* Used for Fs call-backs to wake up
 					 * waiting processes. */
 static int mouseOpenCount;		/* # active opens for mouse. */
 static volatile int outputBuffer = -1;	/* One-character output buffer shared
@@ -153,7 +153,7 @@ DevMouseOpen(devicePtr, useFlags, notifyToken)
     int useFlags;		/* Flags for the stream being opened:
 				 * OR'ed combination of FS_READ and
 				 * FS_WRITE. */
-    ClientData notifyToken;	/* Used for Fs call-back to notify waiting
+    Fs_NotifyToken notifyToken;	/* Used for Fs call-back to notify waiting
 				 * processes that the terminal is ready. */
 {
     if (devicePtr->unit != 0) {
@@ -318,9 +318,9 @@ DevMouseWrite(devicePtr, writePtr, replyPtr)
 ReturnStatus
 DevMouseIOControl(devicePtr, iocPtr, replyPtr)
     Fs_Device *devicePtr;		/* Information about device. */
-    register Fs_IOCParam *iocPtr;	/* Parameter information (buffer sizes
+    Fs_IOCParam *iocPtr;		/* Parameter information (buffer sizes
 					 * etc.). */
-    register Fs_IOReply *replyPtr;	/* Place to store result information. */
+    Fs_IOReply *replyPtr;		/* Place to store result information. */
 {
     return Compat_MapToSprite(ENOTTY);
 }

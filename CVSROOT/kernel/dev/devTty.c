@@ -87,7 +87,7 @@ DevTtyOpen(devicePtr, useFlags, notifyToken)
     int useFlags;		/* Flags for the stream being opened:
 				 * OR'ed combination of FS_READ and
 				 * FS_WRITE. */
-    ClientData notifyToken;	/* Used for Fs call-back to notify waiting
+    Fs_NotifyToken notifyToken;	/* Used for Fs call-back to notify waiting
 				 * processes that the terminal is ready. */
 {
     register DevTty *ttyPtr;
@@ -414,7 +414,7 @@ CookedProc(ttyPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
 	case TD_COOKED_SIGNAL:
 	    sigNum = ((int *) inBuffer)[0];
 	    pID = ((int *) inBuffer)[1];
-	    Signal(sigNum, pID, TRUE);
+	    Signal(sigNum, (Proc_PID) pID, TRUE);
 	    break;
 	case TD_COOKED_READS_OK:
 	    if (!(ttyPtr->selectState & FS_READABLE)) {
