@@ -23,7 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Sync_SysVSem semTable[SEMMNI];
 static int totalSems = 0;
 
-Sync_Lock semLock;
+static Sync_Lock semLock = Sync_LockInitStatic("Sync:sysVSemaphores");
 #define LOCKPTR (&semLock)
 
 /*
