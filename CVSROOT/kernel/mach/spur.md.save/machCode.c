@@ -24,7 +24,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMachInt.h"
 #include "sig.h"
 #include "sigMach.h"
-#include "mem.h"
 #include "swapBuffer.h"
 #include "dev/ccdev.h"
 #include "machConfig.h"
@@ -69,9 +68,10 @@ int *mach_NumDisableIntrsPtr = mach_NumDisableInterrupts;
 char *mach_MachineType = "spur";
 
 /*
- * The byte ordering/alignment type used by Swap_Buffer for I/O control data.
+ * The byte ordering/alignment type used by Fmt_Convert for I/O control data.
+ * For compatablity we set this to the old Swap_Buffer constant.
  */
-int mach_ByteOrder = SWAP_SPUR_TYPE;
+Fmt_Format mach_Format = SWAP_SPUR_TYPE;
 
 
 /* 
@@ -106,11 +106,15 @@ Address	mach_KernStart;
 Address	mach_CodeStart;
 Address	mach_StackBottom;
 int	mach_KernStackSize;
+int	mach_SpecialStackSize;
 Address	mach_KernEnd;
 Address	mach_FirstUserAddr;
 Address	mach_LastUserAddr;
 Address	mach_MaxUserStackAddr;
 int	mach_LastUserStackPage;
+
+Mach_InstCountInfo mach_InstCount[MACH_MAX_INST_COUNT];
+Boolean	mach_DoInstCounts = FALSE;
 
 unsigned int	mach_CycleTime = MACH_CYCLE_TIME;
 
@@ -146,6 +150,9 @@ extern int machSpecialHandlingOffset;	/* Byte offset of the special handling
 					 * flag in the proc table. */
 extern int machTrapTableOffset;		/* The offset of the trap table
 					 * within the special user page. */
+
+
+extern int machDebugSlave;
 
 /*
  * Interrupt table struct.
@@ -193,6 +200,7 @@ Mach_Init()
     mach_CodeStart = (Address)MACH_CODE_START;
     mach_StackBottom = (Address)MACH_STACK_BOTTOM;
     mach_KernStackSize = MACH_KERN_STACK_SIZE;
+    mach_SpecialStackSize = MACH_SPECIAL_STACK_SIZE;
     mach_FirstUserAddr = (Address)MACH_FIRST_USER_ADDR;
     mach_LastUserAddr = (Address)MACH_LAST_USER_ADDR;
     mach_MaxUserStackAddr = (Address)MACH_MAX_USER_STACK_ADDR;
@@ -250,9 +258,15 @@ Mach_Init()
 	interruptHandlers[i] = InterruptError;
     }
     /*
-     * Turn off all timers.
+     * Turn off all timers (unless we're trying to do instruction counts.)
      */
-    Mach_Write8bitCCReg(MACH_MODE_REG,0);
+    if (mach_DoInstCounts) {
+	Mach_Write8bitCCReg(MACH_MODE_REG /* | MACH_MODE_T0_ENABLE */, 
+	    MACH_MODE_PERF_COUNTER_MASK & MACH_MODE_PERF_COUNTER_SYS);
+    } else {
+	Mach_Write8bitCCReg(MACH_MODE_REG,0);
+    }
+    bzero(mach_InstCount, sizeof(mach_InstCount));
     /*
      * Clear the interrupt mask register and any pending interrupts.
      */
@@ -381,7 +395,8 @@ Mach_InitFirstProc(procPtr)
     procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
     bzero((char *)procPtr->machStatePtr, sizeof(Mach_State));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
-    procPtr->machStatePtr->kernStackEnd = mach_StackBottom + mach_KernStackSize;
+    procPtr->machStatePtr->kernStackEnd = mach_StackBottom + 
+					  mach_SpecialStackSize;
     machCurStatePtrs[Mach_GetProcessorNumber()] = procPtr->machStatePtr;
 }
 
@@ -1019,7 +1034,7 @@ MachInterrupt(intrStatusReg, kpsw)
     }	
     if (Mach_AtInterruptLevel() || 
 	mach_NumDisableInterrupts[Mach_GetProcessorNumber()] > 0) {
-	panic( "Non-maskable interrupt while interrupts disabled\n");
+	panic( "Maskable interrupt while interrupts disabled\n");
     }
     mach_AtInterruptLevel[Mach_GetProcessorNumber()] = TRUE;
     intrType = 0;
@@ -2100,9 +2115,14 @@ void
 Mach_InitSlaveProcessor()
 {
     /*
-     * Turn off all timers.
+     * Turn off all timers (unless we're trying to do instruction counts.)
      */
-    Mach_Write8bitCCReg(MACH_MODE_REG,0);
+    if (mach_DoInstCounts) {
+	Mach_Write8bitCCReg(MACH_MODE_REG /* | MACH_MODE_T0_ENABLE */, 
+	    MACH_MODE_PERF_COUNTER_MASK & MACH_MODE_PERF_COUNTER_SYS);
+    } else {
+	Mach_Write8bitCCReg(MACH_MODE_REG,0);
+    }
     /*
      * Clear the interrupt mask register and any pending interrupts.
      */
@@ -2552,3 +2572,63 @@ Mach_GetDebugStateInfo(pNum)
     return &machDebugState[pNum];
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachSlaveDebug --
+ *
+	print out debugging information for starting slave processor
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MachSlaveDebug(index)
+    int	index;
+{
+    static char *msgs[] = {
+	"message 0",
+	"message 1",
+    };
+
+    printf(msgs[index]);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetInstCountInfo --
+ *
+ *	Returns instruction count and timing information. We have
+ *	to convert the Timer_Ticks into Time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Mach_GetInstCountInfo(infoPtr)
+    Mach_InstCountInfo 	*infoPtr;  	/* buffer for converted info */
+{
+    int		i;
+
+    bzero(infoPtr, sizeof(mach_InstCount));
+    for (i = 0; i < MACH_MAX_INST_COUNT; i++) {
+	infoPtr[i] = mach_InstCount[i];
+	Timer_TicksToTime(mach_InstCount[i].totalTime.ticks,
+		&infoPtr[i].totalTime.time);
+    }
+}

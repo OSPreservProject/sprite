@@ -505,14 +505,19 @@
  *	MACH_DEBUG_STACK_BOTTOM	The bottom of the debugger's stack.
  *	MACH_STACK_BOTTOM	The bottom of the first process's stack.
  *	MACH_KERN_STACK_SIZE	The number of bytes in a kernel stack.
+ *	MACH_SPECIAL_STACK_SIZE	The number of bytes in the debugger and
+ *				first processes stack.  This is burned into
+ *				the prom so don't change this.
  */
 #define	MACH_KERN_START		0
 #define	MACH_KERN_END		(16 * 1024 * 1024)
 #define	MACH_DEBUG_STACK_BOTTOM	0x6000
-#define	MACH_STACK_BOTTOM	(MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
-#define	MACH_STACK_TOP		(MACH_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
+#define	MACH_STACK_BOTTOM	(MACH_DEBUG_STACK_BOTTOM + \
+				 MACH_SPECIAL_STACK_SIZE)
+#define	MACH_STACK_TOP		(MACH_STACK_BOTTOM + MACH_SPECIAL_STACK_SIZE)
 #define	MACH_CODE_START		(MACH_STACK_TOP)
-#define	MACH_KERN_STACK_SIZE	0x4000
+#define	MACH_KERN_STACK_SIZE	0x6000
+#define MACH_SPECIAL_STACK_SIZE 0x4000
 
 /*
  * Bounds on the user's address space.
@@ -619,4 +624,11 @@
  */
 #define	PATCH_IBUFFER 
 #define	FAST_REFRESH
+
+/*
+ * Number of separate instruction counts.
+ */
+
+#define MACH_MAX_INST_COUNT 10
+
 #endif _MACHCONST

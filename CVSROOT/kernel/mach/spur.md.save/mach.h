@@ -15,9 +15,13 @@
 #ifdef KERNEL
 #include "machConst.h"
 #include "machCCRegs.h"
+#include "timer.h"
+#include "user/fmt.h"
 #else
 #include <kernel/machConst.h>
 #include <kernel/machCCRegs.h>
+#include <kernel/timer.h>
+#include <fmt.h>
 #endif
 
 /*
@@ -280,6 +284,37 @@ extern Mach_ProcessorStatus mach_ProcessorStatus[];
 #endif
 
 /*
+ * Mach_Time is a union used to represent time in both the kernel and
+ * in user programs.  User programs should use the time field and
+ * the kernel should use the ticks.  It is converted when passed to
+ * user programs.
+ */
+
+typedef union {
+    Timer_Ticks	ticks;  /* kernel */
+    Time	time;   /* user */
+} Mach_Time;
+
+/*
+ * Structure for storing instruction count information.
+ */
+
+typedef struct {
+    Boolean		on;	 	/* Is counting on? */
+    unsigned int	start; 	  	/* starting count */
+    unsigned int	end;	  	/* ending count */
+    unsigned int	total;    	/* total of all runs */
+    int			runs;  	  	/* number of runs */
+    Address		startPC;   	/* pc where current run began */
+    Address		endPC;     	/* pc at end of current run */
+    int			sofar;     	/* count from start, excluding pauses */
+    Timer_Ticks		startTime; 	/* time when run started */
+    Timer_Ticks		endTime;   	/* time when run started */
+    Mach_Time		totalTime;   	/* total time of all runs */
+    Timer_Ticks		sofarTime;   	/* time from start, without pauses */
+} Mach_InstCountInfo;
+
+/*
  * ----------------------------------------------------------------------------
  *
  * Mach_GetBootArgs --
@@ -289,6 +324,160 @@ extern Mach_ProcessorStatus mach_ProcessorStatus[];
  * ----------------------------------------------------------------------------
  */
 #define Mach_GetBootArgs(argc, bufferSize, argv, buffer) (0)
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountStart --
+ *
+ * Start counting instructions. The index parameter differentiates between
+ * different counts. Interrupts should be off.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define Mach_InstCountStart(index) { \
+    int modeReg; \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)){\
+	mach_InstCount[(index)].runs++; \
+	if (mach_InstCount[(index)].on == TRUE) { \
+	    panic("Instruction counting already on.\n"); \
+	} \
+	modeReg = Dev_CCIdleCounters(FALSE, MACH_MODE_PERF_COUNTER_OFF); \
+	mach_InstCount[(index)].start = Mach_Read32bitCCReg(0x15 << 8); \
+	Timer_ReadT0(&mach_InstCount[(index)].startTime);   \
+	(void) Dev_CCIdleCounters(TRUE, modeReg); \
+	mach_InstCount[(index)].on = TRUE; \
+	mach_InstCount[(index)].startPC = Mach_GetPC(); \
+	mach_InstCount[(index)].sofar = 0; \
+	mach_InstCount[(index)].sofarTime = timer_TicksZeroSeconds; \
+    } \
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountEnd --
+ *
+ * Stop counting instructions. The index parameter differentiates between
+ * different counts. The number of instructions since the start is added
+ * to the total. Interrupts should be off.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define Mach_InstCountEnd(index) { \
+    int modeReg; \
+    int diff; \
+    Timer_Ticks	diffTime; \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)&&\
+	(mach_InstCount[(index)].on == TRUE)) { \
+	modeReg = Dev_CCIdleCounters(FALSE, MACH_MODE_PERF_COUNTER_OFF); \
+	mach_InstCount[(index)].end = Mach_Read32bitCCReg(0x15 << 8); \
+	 Timer_ReadT0(&mach_InstCount[(index)].endTime) ; \
+	(void) Dev_CCIdleCounters(TRUE, modeReg); \
+	diff = mach_InstCount[(index)].end - mach_InstCount[(index)].start; \
+ 	Timer_SubtractTicks(mach_InstCount[(index)].endTime, \
+			    mach_InstCount[(index)].startTime, \
+			    &diffTime);  \
+	if (diff > 20000) { \
+	    panic("diff is %d.\n", diff); \
+	} \
+	diff += mach_InstCount[(index)].sofar; \
+ 	Timer_AddTicks(diffTime, mach_InstCount[(index)].sofarTime, \
+	    &diffTime);  \
+	if (diff > 0) { \
+	    mach_InstCount[(index)].total +=  diff;\
+ 	    Timer_AddTicks(diffTime, mach_InstCount[(index)].totalTime.ticks,\
+		    &mach_InstCount[(index)].totalTime.ticks); \
+	} \
+	mach_InstCount[(index)].on = FALSE; \
+	mach_InstCount[(index)].endPC = Mach_GetPC(); \
+	mach_InstCount[(index)].sofar = 0; \
+    } \
+}
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountOff --
+ *
+ * Stop counting instructions, but don't record results.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define Mach_InstCountOff(index) { \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)){\
+	mach_InstCount[(index)].on = FALSE; \
+    } \
+}
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountResume --
+ *
+ * Resume counting instructions.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define Mach_InstCountResume(index) { \
+    int modeReg; \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)&&\
+	(mach_InstCount[(index)].on == TRUE)){\
+	modeReg = Dev_CCIdleCounters(FALSE, MACH_MODE_PERF_COUNTER_OFF); \
+	mach_InstCount[(index)].start = Mach_Read32bitCCReg(0x15 << 8); \
+	Timer_ReadT0(&mach_InstCount[(index)].startTime); \
+	(void) Dev_CCIdleCounters(TRUE, modeReg); \
+	mach_InstCount[(index)].startPC = Mach_GetPC(); \
+    } \
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountPause --
+ *
+ * Stop counting instructions, and store count so far for later continuation.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define Mach_InstCountPause(index) { \
+    int modeReg; \
+    int diff; \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)&&\
+	(mach_InstCount[(index)].on == TRUE)) { \
+	modeReg = Dev_CCIdleCounters(FALSE, MACH_MODE_PERF_COUNTER_OFF); \
+	mach_InstCount[(index)].end = Mach_Read32bitCCReg(0x15 << 8); \
+	Timer_ReadT0(&mach_InstCount[(index)].endTime); \
+	(void) Dev_CCIdleCounters(TRUE, modeReg); \
+	diff = mach_InstCount[(index)].end - mach_InstCount[(index)].start; \
+	Timer_SubtractTicks(mach_InstCount[(index)].endTime, \
+			    mach_InstCount[(index)].startTime, \
+			    &diffTime); \
+	if (diff > 20000) { \
+	    panic("diff is %d.\n", diff); \
+	} \
+	if (diff > 0) { \
+	    mach_InstCount[(index)].sofar +=  diff;\
+	    Timer_AddTicks(diffTime, mach_InstCount[(index)].sofarTime, \
+		    &mach_InstCount[(index)].sofarTime); \
+	} \
+	mach_InstCount[(index)].endPC = Mach_GetPC(); \
+    } \
+}
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountIsOn --
+ *
+ *	TRUE if instruction counting is on.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define Mach_InstCountIsOn(index) \
+    ((mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)&&\
+	(mach_InstCount[(index)].on == TRUE)) ? TRUE : FALSE)
 
 
 extern	Boolean	mach_KernelMode[];
@@ -300,11 +489,11 @@ extern	int	*mach_NumDisableIntrsPtr;
  */
 extern	char	*mach_MachineType;
 /*
- * mach_ByteOrder defines a byte ordering/structure alignment type
+ * mach_Format defines a byte ordering/structure alignment type
  * used when servicing IOControls.  The input and output buffers for
  * IOControls have to be made right by the server.
  */
-extern	int	mach_ByteOrder;
+extern	Fmt_Format	mach_Format;
 
 /*
  * Routine to initialize mach module.  Must be called first as part of boot 
@@ -356,6 +545,7 @@ extern	void	Mach_SetNonmaskableIntr();
 extern  ReturnStatus Mach_CallProcessor();
 extern int	Mach_GetNumProcessors();
 extern Mach_RegState *Mach_GetDebugStateInfo();
+extern void	Mach_GetInstCountInfo();
 /*
  * Routines to read and write physical memory.
  */
@@ -376,11 +566,15 @@ extern	Address	mach_KernStart;
 extern	Address	mach_CodeStart;
 extern	Address	mach_StackBottom;
 extern	int	mach_KernStackSize;
+extern	int	mach_SpecialStackSize;
 extern	Address	mach_KernEnd;
 extern	Address	mach_FirstUserAddr;
 extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
+
+extern 	Mach_InstCountInfo mach_InstCount[MACH_MAX_INST_COUNT];
+extern  Boolean	mach_DoInstCounts;
 
 /*
  * mach_CycleTime - The cycle time of the machine (and hence the T{0,1,2}

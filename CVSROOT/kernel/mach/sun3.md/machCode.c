@@ -70,9 +70,10 @@ char *mach_MachineType = "sun2";
 #endif
 
 /*
- * The byte ordering/alignment type used with Swap_Buffer and I/O control data
+ * The byte ordering/alignment type used with Fmt_Convert and I/O control data
+ * For compatablity we set this to the old Swap_Buffer constant.
  */
-int mach_ByteOrder = SWAP_SUN_TYPE;
+Fmt_Format mach_Format = SWAP_SUN_TYPE;
 
 /*
  *  Count of number of ``calls'' to enable interrupts minus number of calls

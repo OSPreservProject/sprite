@@ -266,7 +266,7 @@ debugSWStackBasePtr:	.long MACH_DEBUG_STACK_BOTTOM
 /*
  * Pointers to the end of the debugger's spill stack.
  */
-debugSpillStackEndPtr:	.long (MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
+debugSpillStackEndPtr:	.long (MACH_DEBUG_STACK_BOTTOM +MACH_SPECIAL_STACK_SIZE)
 /*
  * _machMapSlotToPnum is index by slot ID and performs the mapping of 
  * slot ids into processor numbers.
@@ -303,6 +303,7 @@ _machLEDValues:			.long 0; .long 0; .long 0; .long 0;
 				.long 0; .long 0; .long 0; .long 0
 _machRefreshCount:		.long 0; .long 0; .long 0; .long 0;
 				.long 0; .long 0; .long 0; .long 0
+_machDebugSlave:		.long 0
 
 /*
  * The instruction to execute on return from a signal handler.  Is here
@@ -516,7 +517,7 @@ start:
 	LD_CONSTANT(r2, (0x03000000 | VMMACH_CACHE_SIZE))
 1:
 	st_32		r0, r1, $0
-	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
+	add_nt		r1, r1, $VMMACH_CACHE_LINE_SIZE
 	cmp_br_delayed	lt, r1, r2, 1b
 	Nop
 
@@ -527,7 +528,7 @@ start:
 	LD_CONSTANT(r2, (0x04000000 | VMMACH_CACHE_SIZE))
 1:
 	st_32		r0, r1, $0
-	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
+	add_nt		r1, r1, $VMMACH_CACHE_LINE_SIZE
 	cmp_br_delayed	lt, r1, r2, 1b
 	Nop
 
@@ -1547,7 +1548,7 @@ vmFault_Return:
         LD_CONSTANT(VOL_TEMP2, VMMACH_CACHE_SIZE); 
         add_nt          VOL_TEMP1, r0, $0;
 2:      st_external     r0, VOL_TEMP1, $MACH_CO_FLUSH; 
-        add_nt          VOL_TEMP1, VOL_TEMP1, $VMMACH_CACHE_BLOCK_SIZE; 
+        add_nt          VOL_TEMP1, VOL_TEMP1, $VMMACH_CACHE_LINE_SIZE; 
         cmp_br_delayed  lt, VOL_TEMP1, VOL_TEMP2, 2b; 
 	nop
 #endif
@@ -3735,6 +3736,7 @@ codeStart:
  * processor.  Current it is assumed that the processor is executing in 
  * physical mode.
  */
+
 slaveStart:
 
 /*
@@ -3768,7 +3770,7 @@ slaveStart:
 	LD_CONSTANT(r2, (0x03000000 | VMMACH_CACHE_SIZE))
 1:
 	st_32		r0, r1, $0
-	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
+	add_nt		r1, r1, $VMMACH_CACHE_LINE_SIZE
 	cmp_br_delayed	lt, r1, r2, 1b
 	Nop
 
@@ -3780,7 +3782,7 @@ slaveStart:
 	LD_CONSTANT(r2, (0x04000000 | VMMACH_CACHE_SIZE))
 1:
 	st_32		r0, r1, $0
-	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
+	add_nt		r1, r1, $VMMACH_CACHE_LINE_SIZE
 	cmp_br_delayed	lt, r1, r2, 1b
 	Nop
 
@@ -3823,6 +3825,10 @@ slaveMain:
 /*
  * Initialized the kpsw with the processor number.
  */
+
+	add_nt r3, r0, $1
+	st_32  r3, r0, $_machDebugSlave
+
 	GET_PNUM_FROM_BOARD(SAFE_TEMP1)
 	rd_kpsw		SAFE_TEMP2
 	wr_insert	$3
@@ -3842,6 +3848,9 @@ slaveMain:
 	wr_special	cwp, r0, r2
 	wr_special	swp, r3, $0
 	ld_32		r4, r1, $MACH_REG_STATE_REGS_OFFSET+32
+
+	add_nt r3, r0, $2
+	st_32  r3, r0, $_machDebugSlave
 	jump		_mainSlaveStart
 	Nop
 

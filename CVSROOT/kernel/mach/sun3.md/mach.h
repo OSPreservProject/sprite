@@ -21,9 +21,11 @@
 #ifdef KERNEL
 #include "devAddrs.h"
 #include "machConst.h"
+#include "user/fmt.h"
 #else
 #include <kernel/devAddrs.h>
 #include <kernel/machConst.h>
+#include <fmt.h>
 #endif
 
 /*
@@ -367,11 +369,11 @@ extern	int	*mach_NumDisableIntrsPtr;
  */
 extern	char	*mach_MachineType;
 /*
- * mach_ByteOrder defines a byte ordering/structure alignment type
+ * mach_Format defines a byte ordering/structure alignment type
  * used when servicing IOControls.  The input and output buffers for
  * IOControls have to be made right by the server.
  */
-extern	int	mach_ByteOrder;
+extern	Fmt_Format	mach_Format;
 
 /*
  * Routine to initialize mach module.  Must be called first as part of boot 

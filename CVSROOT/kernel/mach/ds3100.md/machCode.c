@@ -31,7 +31,6 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "vmMachInt.h"
 #include "sig.h"
 #include "sigMach.h"
-#include "mem.h"
 #include "machMon.h"
 #include "swapBuffer.h"
 #include "net.h"
@@ -69,9 +68,9 @@ Boolean mach_AtInterruptLevel = FALSE;
 char *mach_MachineType = "ds3100";
 
 /*
- * The byte ordering/alignment type used with Swap_Buffer and I/O control data
+ * The byte ordering/alignment type used with Fmt_Convert and I/O control data
  */
-int mach_ByteOrder = SWAP_VAX_TYPE;
+Fmt_Format mach_Format = SWAP_VAX_TYPE;
 
 /*
  *  Count of number of ``calls'' to enable interrupts minus number of calls
