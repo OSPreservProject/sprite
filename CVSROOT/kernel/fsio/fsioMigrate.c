@@ -123,11 +123,16 @@ Fs_EncapStream(streamPtr, bufPtr)
  *	server.  Then the migEnd routine is called to do local book-keeping.
  *
  * Results:
- *	A return status.
+ *	A return status, plus *streamPtrPtr is set to the new stream.
  *
  * Side effects:
- *	Calls the migrate and migEnd stream-type procedures.  See these
- *	routines for further details.
+ *	Ensures that the stream exists on this host, along with the
+ *	associated I/O handle.  This calls a stream-type specific routine
+ *	to shuffle reference counts and detect cross-machine stream
+ *	sharing.  If a stream is shared by proceses on different machines
+ *	its flags field is marked with FS_RMT_SHARED.  This also calls
+ *	a stream-type specific routine to create the I/O handle when the
+ *	first reference to a stream migrates to this host.
  *
  * ----------------------------------------------------------------------------
  *
@@ -161,8 +166,11 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	}
     }
     /*
-     * Create a top-level stream.  We bump the reference count and add
-     * ourselves as a client because Fs_Close will clean up later.
+     * Create a top-level stream and note if this is a new stream.  This is
+     * important because extra things happen when the first reference to
+     * a stream migrates to this host.  FS_NEW_STREAM is used to indicate this.
+     * Note that the stream has (at least) one reference count and a client
+     * list entry that will be cleaned up by a future call to Fs_Close.
      */
     streamPtr = FsStreamAddClient(&migInfoPtr->streamID, rpc_SpriteID,
 			     (FsHandleHeader *)NIL,
@@ -188,7 +196,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	    streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
 	} else {
 	    /*
-	     * Set up the nameInfo.  We sacrifice the name as it is only
+	     * Set up the nameInfo.  We sacrifice the name string as it is only
 	     * used in error messages.  The fileID is used with get/set attr.
 	     * If this file is the current directory then rootID is passed
 	     * to the server to trap "..", domainType is used to index the
@@ -207,6 +215,9 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 		nameInfoPtr->rootID.type =
 		    fsLclToRmtType[nameInfoPtr->rootID.type];
 	    } else {
+		/*
+		 * FIX HERE PROBABLY TO HANDLE PSEUDO_FILE_SYSTEMS.
+		 */
 		nameInfoPtr->domainType = FS_LOCAL_DOMAIN;
 		nameInfoPtr->fileID.type =
 		    fsRmtToLclType[nameInfoPtr->fileID.type];
@@ -224,8 +235,10 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     /*
      * Contact the I/O server to tell it that the client moved.  The I/O
      * server checks for cross-network stream sharing and sets the
-     * FS_RMT_SHARED flag if it is shared.  It also looks at the
-     * FS_NEW_STREAM flag which we've set/unset above.
+     * FS_RMT_SHARED flag if it is shared.  Note that we set FS_NEW_STREAM
+     * in the migInfoPtr->flags, and this flag often gets rammed into
+     * the streamPtr->flags, which we don't want because it would confuse
+     * FsMigrateUseCounts on subsequent migrations.
      */
     FsHandleUnlock(streamPtr);
     status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migrate)
@@ -233,30 +246,15 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 		 &streamPtr->offset, &size, &data);
     streamPtr->flags &= ~FS_NEW_STREAM;
 
-#define CHECK_FAILURE
-#ifdef CHECK_FAILURE
-    /*
-     * Try to check for a NoProc where it doesn't belong.  Unfortunately,
-     * NoProc is static, so we can only compare to a known entry that
-     * contains NoProc.
-     */
-    if (status == FAILURE &&
-	(fsStreamOpTable[migInfoPtr->ioFileID.type].migrate ==
-	 fsStreamOpTable[FS_STREAM].read)) {
-	panic("Fs_DeencapStream: trying to deencapsulate a file descriptor that can't migrate.  (Continuable, but call Fred.)");
-    }
-#endif /* CHECK_FAILURE */
-
     DEBUG( (" Type %d <%d,%d> offset %d, ", migInfoPtr->ioFileID.type,
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
 		streamPtr->offset) );
 
     if (status == SUCCESS && !foundClient) {
 	/*
-	 * Complete the setup of the stream with local book-keeping.  The
-	 * local book-keeping only needs to be done the first time the
-	 * stream is created here because stream sharing is not reflected
-	 * in the reference/use counts on the I/O handle.
+	 * The stream is newly created on this host so we call down to
+	 * the I/O handle level to ensure that the I/O handle exists and
+	 * so the local object manager gets told about the new stream.
 	 */
 	migInfoPtr->flags = streamPtr->flags;
 	status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migEnd)
@@ -290,7 +288,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
  *	is a result of migration.  The rule adhered to is that there
  *	are use counts kept on the I/O handle for each stream on each client
  *	that uses the I/O handle.  A stream with only one reference
- *	does not change use counts, for example, when it migrates because
+ *	does not change use counts when it migrates, for example, because
  *	the reference just moves.  A stream with two references will
  *	cause a new client host to have a stream after migration, so the
  *	use counts are updated in case both clients do closes.  Finally,
@@ -394,8 +392,7 @@ FsIOClientMigrate(clientList, srcClientID, dstClientID, flags, closeSrcClient)
 	 */
 	found = FsIOClientClose(clientList, srcClientID, flags, &cache);
 	if (!found) {
-	    printf("FsIOClientMigrate, srcClient %d not found\n",
-		srcClientID);
+	    printf("FsIOClientMigrate, srcClient %d not found\n", srcClientID);
 	}
     }
     if (flags & FS_NEW_STREAM) {
@@ -412,13 +409,16 @@ FsIOClientMigrate(clientList, srcClientID, dstClientID, flags, closeSrcClient)
  *
  * FsNotifyOfMigration --
  *
- *	Send an rpc to the I/O server to inform it about a migration.
+ *	This invokes the stream-specific migration routine on the I/O server.
+ *	This is used by various RMT (remote) stream types.
  *
  * Results:
- *	A return status.
+ *	A return status, plus new flags containing FS_RMT_SHARED bit,
+ *	a new stream offset, plus some stream-type-specific data used
+ *	when creating the I/O handle in the migEnd procedure.
  *
  * Side effects:
- *      None.
+ *      None here, but bookkeeping is done at the I/O server.
  *	
  *----------------------------------------------------------------------
  */
@@ -473,7 +473,7 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
  *
  * Fs_RpcMigrateStream --
  *
- *	The service stub for FsNotifyOfMigration.
+ *	The RPC service stub for FsNotifyOfMigration.
  *	This invokes the Migrate routine for the I/O handle given in
  *	the encapsulated stream state.
  *
