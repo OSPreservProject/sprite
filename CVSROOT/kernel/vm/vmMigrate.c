@@ -514,7 +514,7 @@ PrepareFlush(segPtr, numPagesPtr)
 	 */
 	VmMach_GetRefModBits(&virtAddr, Vm_GetPageFrame(*ptePtr), &referenced,
 			     &modified);
-	if (modified) {
+	if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
 	    VmLockPageInt(Vm_GetPageFrame(*ptePtr));
 	    *numPagesPtr += 1;
 	} else {
