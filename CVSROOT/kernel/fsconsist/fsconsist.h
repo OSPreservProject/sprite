@@ -65,6 +65,7 @@ extern FsCacheConsistStats fsConsistStats;
  * Cache consistency routines.
  */
 extern void		FsConsistInit();
+extern void		FsConsistSyncLockCleanup();
 extern ReturnStatus	FsFileConsistency();
 extern void		FsReopenClient();
 extern ReturnStatus	FsReopenConsistency();
