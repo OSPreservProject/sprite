@@ -102,8 +102,15 @@ doneZeroing:
 	 * first code.  Set it really at the beginning of the text segment and
 	 * not at the beginning of the code.), and it can grow up to
 	 * MACH_KERN_START.
+	 *
+	 * The %fp points to top word on stack of one's caller, so it points
+	 * to the base of our stack.  %sp points to the top word on the
+	 * stack for our current stack frame.   This must be set at least
+	 * to enough room to save our in registers and local registers upon
+	 * window overflow.
 	 */
-	set	MACH_KERN_STACK_START, %sp
+	set	MACH_KERN_STACK_START, %fp
+	set	(MACH_KERN_STACK_START + MACH_MIN_STACK_FRAME), %sp
 
 	/*
 	 * Now set up initial trap table by copying machProtoVectorTable
@@ -134,10 +141,10 @@ copyingTable:
 	nop
 	mov	%g3, %o0
 	mov	%g2, %l5
-	call	_printArg				/* print counter */
+	call	_PrintArg				/* print counter */
 	nop
 	mov	%l5, %o0
-	call	_printArg				/* print after dest */
+	call	_PrintArg				/* print after dest */
 	nop
 	mov	%tbr, %g6				/* save real tbr */
 	and	%g6, MACH_TRAP_ADDR_MASK, %g6		/* mask off trap type */
@@ -148,17 +155,17 @@ copyingTable:
 	call	_main
 	nop
 .align 8
-.global	_printArg
+.global	_PrintArg
 /*
- * printArg:
+ * PrintArg:
  *
  * Move integer argument to print into %o0.  This will print
  * desired integer in hex.  This routine uses o0, o1, l3, and l4.
  */
-_printArg:
+_PrintArg:
 	.seg	"data1"
 argString:
-	.ascii	"printArg: %x\012\0"
+	.ascii	"PrintArg: %x\012\0"
 	.seg	"text"
 
 	mov	%o0, %o1
@@ -172,22 +179,7 @@ argString:
 	retl
 	nop
 
-/*
- *	MachTrap:  jump to system trap table.
- *	%l3 is trap type and then place to jump to.
- *	%l4 is address of my trap table to reset %tbr with.
- *	Remember to add trap type back into %tbr after resetting.
- *	Note that this code cannot use l1 or l2 since that's where pc and
- *	npc are written in a trap.
- */
-MachTrap:
-	/* %g6 is their real tbr */
-	rd	%tbr, %l3
-	and	%l3, MACH_TRAP_TYPE_MASK, %l3		/* get trap type */
-	add	%l3, %g6, %l3			/* add t.t. to real tbr */
-	jmp	%l3			/* jmp (non-pc-rel) to real tbr */
-	nop
-
+.globl	_MachTrap
 /*
  * Reserve twice the amount of space we need for the trap table.
  * Then copy machProtoVectorTable into it repeatedly, starting at
@@ -199,8 +191,8 @@ MachTrap:
  */
 .align	8
 machProtoVectorTable:
-	sethi	%hi(MachTrap), %l3		/* "set MachTrap, %l3" */
-	or	%l3, %lo(MachTrap), %l3
+	sethi	%hi(_MachTrap), %l3		/* "set _MachTrap, %l3" */
+	or	%l3, %lo(_MachTrap), %l3
 	jmp	%l3			/* must use non-pc-relative jump here */
 	nop
 

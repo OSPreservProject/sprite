@@ -20,49 +20,44 @@
 #endif
 
 /*
- * Here are the different types of exceptions.  These are listed in order of
- * highest priority to lowest. All the MACH_TRAP_INSTR's are of the same
+ * Here are the different types of exceptions, represented by the contents
+ * of the trap type bits in the trap base register..  These are listed in order
+ * of highest priority to lowest. All the MACH_TRAP_INSTR's are of the same
  * priority.
  *
  * Trap Name			Trap Type Field
  */
-#define	MACH_RESET		0
-#define	MACH_INSTR_ACCESS	1
-#define	MACH_ILLEGAL_INSTR	2
-#define	MACH_PRIV_INSTR		3
-#define	MACH_FP_DISABLED	4
-#define	MACH_CP_DISABLED	36
-#define	MACH_WINDOW_OVERFLOW	5
-#define	MACH_WINDOW_UNDERFLOW	6
-#define	MACH_MEM_ADDR_ALIGN	7
-#define	MACH_FP_EXCEP		8
-#define	MACH_CP_EXCEP		40
-#define	MACH_DATA_ACCESS	9
-#define	MACH_TAG_OVERFLOW	10
-#define	MACH_TRAP_INSTR_FIRST	128
-#define	MACH_TRAP_INSTR_LAST	255
+#define	MACH_RESET		0x000
+#define	MACH_INSTR_ACCESS	0x010
+#define	MACH_ILLEGAL_INSTR	0x020
+#define	MACH_PRIV_INSTR		0x030
+#define	MACH_FP_DISABLED	0x040
+#define	MACH_CP_DISABLED	0x240		/* 36 */
+#define	MACH_WINDOW_OVERFLOW	0x050
+#define	MACH_WINDOW_UNDERFLOW	0x060
+#define	MACH_MEM_ADDR_ALIGN	0x070
+#define	MACH_FP_EXCEP		0x080
+#define	MACH_CP_EXCEP		0x280		/* 40 */
+#define	MACH_DATA_ACCESS	0x090
+#define	MACH_TAG_OVERFLOW	0x0a0
+#define	MACH_TRAP_INSTR_FIRST	0x800		/* 128 */
+#define	MACH_TRAP_INSTR_LAST	0xff0
 
-#define	MACH_LEVEL1_INT		17
-#define	MACH_LEVEL2_INT		18
-#define	MACH_LEVEL3_INT		19
-#define	MACH_LEVEL4_INT		20
-#define	MACH_LEVEL5_INT		21
-#define	MACH_LEVEL6_INT		22
-#define	MACH_LEVEL7_INT		23
-#define	MACH_LEVEL8_INT		24
-#define	MACH_LEVEL9_INT		25
-#define	MACH_LEVEL10_INT	26
-#define	MACH_LEVEL11_INT	27
-#define	MACH_LEVEL12_INT	28
-#define	MACH_LEVEL13_INT	29
-#define	MACH_LEVEL14_INT	30
-#define	MACH_LEVEL15_INT	31
-
-#define	MACH_SYSCALL_TRAP	21
-#define	MACH_SIG_RET_TRAP	22
-#define	MACH_BAD_TRAP		23
-#define	MACH_BRKPT_TRAP		24
-#define	MACH_UNKNOWN_EXC	25
+#define	MACH_LEVEL1_INT		0x110		/* 17 */
+#define	MACH_LEVEL2_INT		0x120
+#define	MACH_LEVEL3_INT		0x130
+#define	MACH_LEVEL4_INT		0x140
+#define	MACH_LEVEL5_INT		0x150
+#define	MACH_LEVEL6_INT		0x160
+#define	MACH_LEVEL7_INT		0x170
+#define	MACH_LEVEL8_INT		0x180
+#define	MACH_LEVEL9_INT		0x190
+#define	MACH_LEVEL10_INT	0x1a0
+#define	MACH_LEVEL11_INT	0x1b0
+#define	MACH_LEVEL12_INT	0x1c0
+#define	MACH_LEVEL13_INT	0x1d0
+#define	MACH_LEVEL14_INT	0x1e0
+#define	MACH_LEVEL15_INT	0x1f0
 
 /*
  * Mask for extracting the trap type from the psr.
@@ -170,7 +165,13 @@
 #define	MACH_ENABLE_LEVEL15_INTR	0x0F00
 #define MACH_ENABLE_FPP			0x1000
 #define	MACH_CWP_BITS			0x1f	/* cwp bits in psr */
+#define	MACH_ENABLE_TRAP_BIT		0x20
 
+/*
+ * Window-related constants
+ */
+#define	MACH_NWINDOWS		7		/* # of implemented windows */
+#define	MACH_VALID_WIM_BITS	0x0000007f	/* is wim value in range? */
 
 #ifdef NOTDEF
 /*
@@ -200,6 +201,8 @@
 /*
  * MACH_KERN_START	The address where the kernel image is loaded at.
  * MACH_CODE_START	The address where the kernel code is loaded at.
+ * MACH_KERN_STACK_START The address of the base of the stack. (1st word is
+ *							unusable.)
  * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
  *			main process that is initially run.
  * MACH_KERN_END	The address where the last kernel virtual address is
@@ -244,6 +247,12 @@
  */
 
 #define	MACH_MAX_NUM_PROCESSORS		1
+
+/*
+ * Minimum stack frame (in bytes) needed to save window
+ * registers (locals and ins).
+ */
+#define	MACH_MIN_STACK_FRAME	64
 
 /*
  * Definitions of registers.
