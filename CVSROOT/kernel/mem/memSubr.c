@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * MemProcInit().
  */
 
+extern	void	Mem_PrintStatsSubrInt();
 static  void	PrintProc();
 void		(*memPrintProc)() = PrintProc;
 ClientData	memPrintData = (ClientData) 0;
@@ -150,6 +151,9 @@ PrintProc(va_alist)
 
     va_start(args);
     clientData = va_arg(args, ClientData);
+#ifdef lint
+    clientData = clientData;
+#endif /* lint */
     format = va_arg(args, char *);
     (void)vprintf(format, args);
     va_end(args);
