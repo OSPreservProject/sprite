@@ -1085,9 +1085,9 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
      */
     if (procPtr->sigFlags & SIG_PAUSE_IN_PROGRESS) {
 	procPtr->sigFlags &= ~SIG_PAUSE_IN_PROGRESS;
-	sigStackPtr->oldHoldMask = procPtr->oldSigHoldMask;
+	sigStackPtr->contextPtr->oldHoldMask = procPtr->oldSigHoldMask;
     } else {
-	sigStackPtr->oldHoldMask = procPtr->sigHoldMask;
+	sigStackPtr->contextPtr->oldHoldMask = procPtr->sigHoldMask;
     }
 
     procPtr->sigHoldMask |= procPtr->sigMasks[sigNum];
@@ -1126,7 +1126,7 @@ Sig_Return(procPtr, sigStackPtr)
 						 * from a signal. */
     Sig_Stack			*sigStackPtr;	/* Signal stack. */
 {
-    procPtr->sigHoldMask = sigStackPtr->oldHoldMask;
+    procPtr->sigHoldMask = sigStackPtr->contextPtr->oldHoldMask;
     procPtr->specialHandling = 1;
 }
 
