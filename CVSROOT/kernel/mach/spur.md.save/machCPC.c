@@ -75,7 +75,7 @@ Mach_CPC_Init()
      */
     bzero(machCPCData, sizeof(machCPCData));
     for (i = 0; i  < MACH_MAX_NUM_PROCESSORS; i++) {
-	SYNC_SEM_INIT_DYNAMIC(&(machCPCData[i].lock),"CPCMutex");
+	Sync_SemInitDynamic(&(machCPCData[i].lock),"CPCMutex");
     }
     /*
      * Allocate an external interrupt for CPCs. 
