@@ -421,7 +421,7 @@ FsStreamClientVerify(streamIDPtr, clientID)
 	if (!found) {
 	    register FsHandleHeader *tHdrPtr = streamPtr->ioHandlePtr;
 	    Sys_Panic(SYS_WARNING,
-		"FsClientVerify, client %d not known for stream <%d>\n",
+		"FsStreamClientVerify, client %d not known for stream <%d>\n",
 		clientID, tHdrPtr->fileID.minor);
 	    FsHandleRelease(streamPtr, TRUE);
 	    streamPtr = (Fs_Stream *)NIL;
