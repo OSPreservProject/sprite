@@ -8,9 +8,7 @@
 |* rcs = $Header$ SPRITE (Berkeley)
 |*
 
-#include "sunSR.h"
-#include "vmSunConst.h"
-#include "machineConst.h"
+#include "machConst.h"
 #include "asmDefs.h"
 
 |*---------------------------------------------------------------------
@@ -36,14 +34,14 @@ _Sys_SetIntrLevel:
 	movl	a6@(8),d1		| copy argument to d1
 
     					| input error check:
-	andw	#SUN_SR_INTMASK,d1	| make sure the arg. has just
+	andw	#MACH_SR_INTMASK,d1	| make sure the arg. has just
 					| the interrupt bits set.
 
-	orw	#SUN_SR_SUPSTATE,d1	| set the supervisor state bit
+	orw	#MACH_SR_SUPSTATE,d1	| set the supervisor state bit
 
 	clrl	d0
 	movw	sr,d0			| save status register in d0
-	andw	#SUN_SR_INTMASK,d0	| return previous interrupt level mask
+	andw	#MACH_SR_INTMASK,d0	| return previous interrupt level mask
 
 	movw	d1,sr			| put new value in status register
 	unlk	a6

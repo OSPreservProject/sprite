@@ -44,11 +44,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "exc.h"
 #include "sys.h"
 #include "dbg.h"
 #include "proc.h"
-#include "machine.h"
 #include "sync.h"
 #include "sched.h"
 #include "byte.h"
@@ -493,10 +491,10 @@ SysInitSysCall()
 	if (!entryPtr->special) {
 	    entryPtr->paramsPtr = paramPtr;
 	    paramPtr += entryPtr->numWords;
-	    Exc_InitSyscall(sysCallNum, entryPtr->numWords,
+	    Mach_InitSyscall(sysCallNum, entryPtr->numWords,
 		    (Address) entryPtr->localFunc, (Address) SysMigCall);
 	} else {
-	    Exc_InitSyscall(sysCallNum, entryPtr->numWords,
+	    Mach_InitSyscall(sysCallNum, entryPtr->numWords,
 		    (Address) entryPtr->localFunc,
 		    (Address) entryPtr->remoteFunc);
 	}

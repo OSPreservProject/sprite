@@ -304,7 +304,7 @@ SysErrorShutdown(trapType)
     int		trapType;
 {
     if (sys_ShouldSyncDisks && !sys_AtInterruptLevel && !sys_ShuttingDown &&
-        !dbg_BeingDebugged && (trapType != EXC_BRKPT_TRAP || sysPanicing)) {
+        !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	sys_ErrorShutdown = TRUE;
 	Sys_Shutdown(SYS_KILL_PROCESSES);
     }
@@ -350,7 +350,7 @@ Sys_SyncDisks(trapType)
 	return;
     }
     if (sys_ShouldSyncDisks && !sys_AtInterruptLevel && !sys_ShuttingDown &&
-        !dbg_BeingDebugged && (trapType != EXC_BRKPT_TRAP || sysPanicing)) {
+        !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	Sys_Printf("Syncing disks.  Version: %s\n", SpriteVersion());
 	errorSync = TRUE;
 	Fs_Sync(-1, TRUE, TRUE);

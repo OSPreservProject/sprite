@@ -15,14 +15,14 @@
 
 #include "user/sys.h"
 #include "sprite.h"
-#include "sunSR.h"
+#include "machConst.h"
 #include "status.h"
 
 /*
  *  Flags for Sys_SetIntrLevel.
  */
-#define SYS_INTR_DISABLE	SUN_SR_PRIO_7
-#define SYS_INTR_ENABLE		SUN_SR_PRIO_0
+#define SYS_INTR_DISABLE	MACH_SR_PRIO_7
+#define SYS_INTR_ENABLE		MACH_SR_PRIO_0
 
 /*
  * Stuff for system calls.
