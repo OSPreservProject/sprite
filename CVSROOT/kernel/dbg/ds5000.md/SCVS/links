@@ -1,0 +1,11 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+dbg.h                    ../ds3100.md/dbg.h
+dbgAsm.s                 ../ds3100.md/dbgAsm.s
+dbgDbxInt.h              ../ds3100.md/dbgDbxInt.h
+dbgDis.c                 ../ds3100.md/dbgDis.c
+dbgIP.c                  ../ds3100.md/dbgIP.c
+dbgInt.h                 ../ds3100.md/dbgInt.h
+dbgMain.c                ../ds3100.md/dbgMain.c
+dbgMainDbx.c             ../ds3100.md/dbgMainDbx.c

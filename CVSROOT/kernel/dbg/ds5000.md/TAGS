@@ -1,0 +1,30 @@
+
+dbg.h,44
+} Dbg_Reply;79,1768
+} Dbg_Request;73,1689
+
+dbgDis.c,106
+DbgGetDestPC(100,2138
+GetBranchDest(219,4948
+} ITypeFmt;34,996
+} JTypeFmt;39,1067
+} RTypeFmt;48,1208
+
+dbgIP.c,131
+Dbg_FormatPacket(213,6639
+Dbg_PacketHdrSize(272,8565
+Dbg_ValidatePacket(57,1386
+ProtNumToName(332,9952
+TestInputProc(300,9021
+
+dbgInt.h,0
+
+dbgMain.c,194
+Boolean Dbg_InRange(197,4802
+Dbg_Init(289,6874
+Dbg_InputPacket(320,7627
+Dbg_Main(564,13973
+ReadRequest(442,11188
+SendReply(498,12313
+TranslateException(261,6322
+TranslateOpcode(231,5705
