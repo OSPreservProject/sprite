@@ -83,6 +83,10 @@ int sched_Mutex = 0;
 static unsigned int gatherInterval;
 
 /*
+ * Pre-computed ticks to add when timer goes off.
+ */
+static Timer_Ticks	gatherTicks;
+/*
  * It is possible that a process might run and not be charged for any
  * CPU usage. This happens when the process starts and stops between
  * calls to Sched_GatherProcesseInfo. To make sure a process is charged
@@ -160,6 +164,7 @@ Sched_Init()
 #endif TESTING
     
     gatherInterval	= GATHER_INTERVAL * timer_IntOneMillisecond;
+    Timer_AddIntervalToTicks(gatherTicks, gatherInterval, &gatherTicks);
     noRecentUsageCharge	= ((gatherInterval / 2) * REMEMBER_FACTOR) /DENOMINATOR;
     quantumTicks	= quantumInterval / gatherInterval;
 
@@ -259,7 +264,7 @@ void
 Sched_GatherProcessInfo()
 {
     register Proc_ControlBlock  *curProcPtr;
-    int cpu;
+    register int		cpu;
 
     if (!init) {
 	return;
@@ -280,9 +285,8 @@ Sched_GatherProcessInfo()
 	 * charge the usage to a particular process but keep track of it.
 	 */
 	if (curProcPtr == (Proc_ControlBlock *) NIL) {
-	    Timer_AddIntervalToTicks(sched_Instrument.noProcessRunning, 
-				       gatherInterval,
-				       &(sched_Instrument.noProcessRunning));
+	    Time_Add(sched_Instrument.noProcessRunning, gatherTicks,
+		     &(sched_Instrument.noProcessRunning));
 	    continue;
 	}
 
@@ -292,13 +296,11 @@ Sched_GatherProcessInfo()
 	 *  calling a machine-dependent routine.
 	 */
 	if (Sys_ProcessorState(cpu) == SYS_KERNEL) {
-	    Timer_AddIntervalToTicks(curProcPtr->kernelCpuUsage, 
-				    gatherInterval,
-				    &(curProcPtr->kernelCpuUsage));
+	    Time_Add(curProcPtr->kernelCpuUsage, gatherTicks,
+		     &(curProcPtr->kernelCpuUsage));
 	} else {
-	    Timer_AddIntervalToTicks(curProcPtr->userCpuUsage, 
-				    gatherInterval,
-				    &(curProcPtr->userCpuUsage));
+	    Time_Add(curProcPtr->userCpuUsage, gatherTicks,
+		     &(curProcPtr->userCpuUsage));
 	}
 
 	/*
@@ -354,58 +356,60 @@ Sched_GatherProcessInfo()
 
 void
 Sched_ContextSwitchInt(state)
-    Proc_State state;			/* new state of current process */
+    register	Proc_State state;	/* New state of current process */
 {
     register Proc_ControlBlock	*curProcPtr;  	/* PCB for currently runnning 
 						 * process. */
     register Proc_ControlBlock	*newProcPtr;  	/* PCB for new process. */
-    int 			myProcessor;	/* Processor number. */
 
     sched_Instrument.numContextSwitches++;
 
-    myProcessor = Sys_GetProcessorNumber();
-
-    curProcPtr = Proc_GetCurrentProc(myProcessor);
-    if (curProcPtr == (Proc_ControlBlock *) NIL) {
-	Sys_Panic(SYS_FATAL, "Current process is NIL!!\n");
-    }
-
+    curProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
     /*
      * If we have a context switch pending get rid of it.
      */
     curProcPtr->schedFlags &= ~SCHED_CONTEXT_SWITCH_PENDING;
 
     /*
-     * Charge the current process for the CPU usage since the last call
-     * to Sched_GatherProcessInfo.  This is done primarily to keep user
-     * processes from hogging the CPU by sleeping and not being
-     * charged for any usage, then waking up again immediately.
+     * Adjust scheduling priorities.
      */
     RememberUsage(curProcPtr);
 
-    /*
-     * If the current process is PROC_READY, add it to the ready queue.
-     * Also, record what type of context switch this is.
-     */
-    curProcPtr->state = state;
     if (state == PROC_READY) {
-	Sched_MoveInQueue(curProcPtr);
+	/*
+	 * If the current process is PROC_READY, add it to the ready queue and
+	 * get the next runnable process.  If that happens to be the current
+	 */
 	curProcPtr->numQuantumEnds++; 
-    } else if (state == PROC_WAITING) {
-	curProcPtr->numWaitEvents++; 
+	if (List_IsEmpty(schedReadyQueueHdrPtr)) {
+	    curProcPtr->schedQuantumTicks = quantumTicks;
+	    return;
+	}
+
+	newProcPtr = Sched_InsertInQueue(curProcPtr, TRUE);
+	if (newProcPtr == curProcPtr) {
+	    curProcPtr->schedQuantumTicks = quantumTicks;
+	    return;
+	}
+	curProcPtr->state = PROC_READY;
+    } else {
+	if (state == PROC_WAITING) {
+	    curProcPtr->numWaitEvents++; 
+	}
+	curProcPtr->state = state;
+	/*
+	 * Drop into the idle loop and come out with a runnable process.
+	 * This procedure exists to try and capture idle time when profiling.
+	 */
+	newProcPtr = IdleLoop(Sys_GetProcessorNumber());
     }
 
-    /*
-     * Drop into the idle loop and come out with a runnable process.
-     * This procedure exists to try and capture idle time when profiling.
-     */
-    newProcPtr = IdleLoop(myProcessor);
 
     /*
      * Set the state of the new process.  
      */
     newProcPtr->state = PROC_RUNNING;
-    Proc_SetCurrentProc(myProcessor, newProcPtr);
+    Proc_SetCurrentProc(Sys_GetProcessorNumber(), newProcPtr);
 
     /*
      * Set up the quantum as the number of clocks ticks that this process 
@@ -431,7 +435,7 @@ Sched_ContextSwitchInt(state)
      * sure that there is a context for this process.
      */
     dbgMaxStackAddr = newProcPtr->stackStart + mach_KernStackSize;
-    Mach_ContextSwitch(newProcPtr->saveRegs, curProcPtr->saveRegs);
+    VmMach_ContextSwitch(curProcPtr, newProcPtr);
 }
 
 
@@ -543,10 +547,11 @@ static Proc_ControlBlock *
 IdleLoop(myProcessor)
     int myProcessor;
 {
-    register Proc_ControlBlock *newProcPtr;
+    register Proc_ControlBlock	*procPtr;
+    register List_Links		*queuePtr;
 
-    newProcPtr = Sched_GetRunnableProcess();
-    while (newProcPtr == (Proc_ControlBlock *) NIL) {
+    queuePtr = schedReadyQueueHdrPtr;
+    while (List_IsEmpty(queuePtr)) {
 	/*
 	 * Wait for a process to become runnable.  Turn on interrupts, then
 	 * turn off interrupts again and see if someone became runnable.
@@ -563,9 +568,20 @@ IdleLoop(myProcessor)
 	}
 	MASTER_UNLOCK(sched_Mutex);
 	MASTER_LOCK(sched_Mutex);
-	newProcPtr = Sched_GetRunnableProcess();
     }
-    return(newProcPtr);
+    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+    if (procPtr->state != PROC_READY) {
+	Sys_Panic(SYS_FATAL, "Non-ready process found in ready queue.\n");
+    }
+    ((List_Links *)procPtr)->prevPtr->nextPtr =
+					    ((List_Links *)procPtr)->nextPtr;
+    ((List_Links *)procPtr)->nextPtr->prevPtr =
+					    ((List_Links *)procPtr)->prevPtr;
+/*
+    List_Remove((List_Links *)procPtr);
+*/
+    sched_Instrument.numReadyProcesses -= 1;
+    return(procPtr);
 }
 
 /*
@@ -689,7 +705,6 @@ Sched_LockAndSwitch()
     sched_Instrument.numInvoluntarySwitches++;
     Sched_ContextSwitchInt(PROC_READY);
     MASTER_UNLOCK(sched_Mutex);
-    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
 }
 
 
@@ -716,7 +731,6 @@ Sched_ContextSwitch(state)
     MASTER_LOCK(sched_Mutex);
     Sched_ContextSwitchInt(state);
     MASTER_UNLOCK(sched_Mutex);
-    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
 }
 
 
@@ -744,7 +758,6 @@ void
 Sched_StartProcess()
 {
     MASTER_UNLOCK(sched_Mutex);
-    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
 }
 
 
@@ -799,7 +812,6 @@ Sched_StartUserProc()
 
     MASTER_UNLOCK(sched_Mutex);
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-    VmMach_SetupContext(procPtr);
 
     Proc_Lock(procPtr);
     procPtr->genFlags |= PROC_DONT_MIGRATE;
