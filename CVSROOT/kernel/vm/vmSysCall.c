@@ -631,7 +631,7 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
          */
         status = Fsio_DeviceMmap(streamPtr, startAddr, length, fileAddr,
                 &startAddr);
-        if (status != SUCCESS) {
+        if (status == SUCCESS) {
 	    *mappedAddr = startAddr;
         }
 	return status;
