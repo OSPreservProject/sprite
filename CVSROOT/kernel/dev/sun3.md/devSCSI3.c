@@ -123,9 +123,14 @@ DevSCSI3ProbeOnBoard(address, scsiPtr)
 	return(FALSE);
     }
     Mach_UnsetJump();
+    /*
+     * Initialize SCSI-3 specific parts of the general SCSI controller struct.
+     * One exception is that the UDC control block is allocated in
+     * Dev_SCSIControllerInit so it can easily be put in the same hardware
+     * page as the sense data buffer and the label data buffer.
+     */
     scsiPtr->onBoard = TRUE;
     scsiPtr->type = SCSI3;
-    scsiPtr->udcDmaTable = (DevUDCDMAtable *) malloc(sizeof(DevUDCDMAtable));
     scsiPtr->resetProc = DevSCSI3Reset;
     scsiPtr->commandProc = DevSCSI3Command;
     scsiPtr->intrProc = DevSCSI3Intr;
