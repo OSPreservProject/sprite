@@ -241,6 +241,10 @@ RpcServerAlloc(rpcHdrPtr)
 	    } else if (srvPtr->clientID == rpcHdrPtr->clientID &&
 		srvPtr->channel == rpcHdrPtr->channel) {
 		srvPtr->state &= ~SRV_FREE;
+#ifdef WOULD_LIKE
+		/* I would like this, but it's too much info. */
+		RpcAddServerTrace(srvPtr, NIL, FALSE, 12);
+#endif WOULD_LIKE
 		goto unlock;
 	    } else if ((freeServer == -1) && (srvPtr->state & SRV_FREE)) {
 		freeServer = srvIndex;
@@ -255,14 +259,24 @@ RpcServerAlloc(rpcHdrPtr)
 	 */
 	srvPtr = rpcServerPtrPtr[freeServer];
 	srvPtr->state &= ~SRV_FREE;
+	RpcAddServerTrace(srvPtr, NIL, FALSE, 13);
 	srvPtr->clientID = rpcHdrPtr->clientID;
 	srvPtr->channel = rpcHdrPtr->channel;
+	RpcAddServerTrace(srvPtr, NIL, FALSE, 14);
     } else {
 	/*
 	 * No available server process yet.
 	 */
 	srvPtr = (RpcServerState *)NIL;
+	RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 15);
 	if (rpcNoServers >= 0) {
+#ifdef BAD
+	    /*
+	     * This is where I used to have it and this is bad.  It doesn't
+	     * catch requests after the number of server procs has maxed.
+	     */
+	    RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 15);
+#endif BAD
 	    /*
 	     * If rpcNoServers hasn't been set to -1 we can create more.
 	     * Poke the Rpc_Daemon process so it can create one.
@@ -312,7 +326,9 @@ RpcServerInstall()
     for (i=0 ; i<rpcNumServers ; i++) {
 	srvPtr = rpcServerPtrPtr[i];
 	if (srvPtr->state == SRV_NOTREADY) {
+	    RpcAddServerTrace(srvPtr, NIL, FALSE, 16);
 	    srvPtr->state = SRV_FREE;
+	    RpcAddServerTrace(srvPtr, NIL, FALSE, 17);
 	    goto unlock;
 	}
     }

@@ -70,6 +70,18 @@ static int 		dbgCtr;
 #define CHAN_TRACE(zchanPtr, serverID, string)
 #endif
 
+#ifdef NEG_ACK
+#define NACK_RETRY_POLICY	1
+#define	NACK_CHANNEL_POLICY	2
+int	nackPolicy = NACK_RETRY_POLICY;
+int	nackRetryWait;
+int	maxNackWait;
+#define RPC_NACK_ERROR	0x3000b		/* move to status.h after testing */
+
+/* Use policy of ramping down channels for neg acks? Default is use backoff */
+Boolean	rpcChannelNegAcks = FALSE;
+#endif NEG_ACK
+
 
 /*
  *----------------------------------------------------------------------
@@ -210,6 +222,34 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		 * Note old message.
 		 */
 		rpcCltStat.oldInputs++;
+#ifdef NEG_ACK
+	    } else if (rpcHdrPtr->flags & RPC_NACK) {
+#ifdef NOTDEF
+		rpcCltStat.nacks++;
+#endif NOTDEF
+		/*
+		 * Try out different nack-handling policies.  
+		 * We can either back off as in an ACK, or try to ramp
+		 * down the number of channels.
+		 */
+		if (serverID != RPC_BROADCAST_SERVER_ID) {
+		    numTries = 0;
+		    if (nackPolicy == NACK_RETRY_POLICY) {
+			if (wait < nackRetryWait) {
+			    wait = nackRetryWait;
+			} else {
+			    wait *= 2;
+			}
+			if (wait > maxNackWait) {
+			    wait = maxNackWait;
+			}
+		    } else {
+			/* Assume NACK_CHANNELS_POLICY */
+			error = RPC_NACK_ERROR; 
+		    }
+		}
+		printf("Client received negative acknowledgement.\n");
+#endif NEG_ACK
 	    } else if (rpcHdrPtr->flags & RPC_REPLY) {
 		/*
 		 * Our reply, check for an error code and break from the
@@ -294,7 +334,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		 * Unexpected kind of input
 		 */
 		rpcCltStat.badInput++;
-		printf("Warning: Rpc_Call: Unexpected input.");
+		printf("Warning: Rpc_Call: Unexpected input.\n");
 		error = RPC_INTERNAL_ERROR;
 	    }
 	} else {

@@ -42,8 +42,9 @@ Boolean rpcServiceEnabled = FALSE;
  * servers is maintained, as well as the total number of created servers.
  */
 RpcServerState **rpcServerPtrPtr = (RpcServerState **)NIL;
-int              rpcMaxServers = 50;
-int              rpcNumServers = 0;
+int		rpcAbsoluteMaxServers = 70;
+int		rpcMaxServers = 50;
+int		rpcNumServers = 0;
 
 /*
  * rpcMaxServerAge is the number of times the Rpc_Daemon will send
@@ -66,6 +67,49 @@ Boolean rpcServiceTiming = FALSE;
  * A raw count of the number of service calls.
  */
 int rpcServiceCount[RPC_LAST_COMMAND+1];
+
+/*
+ * Data structures for nack for servers that can't be allocated.
+ */
+typedef struct	NackData {
+    RpcHdr		rpcHdr;
+    RpcBufferSet	bufferSet;
+    Sync_Semaphore	mutex;
+} NackData;
+
+NackData	rpcNack;
+
+Boolean		rpcSendNegAcks = FALSE;
+
+
+/*
+ * For tracing the behavior of the rpc servers.
+ */
+typedef struct	RpcServerStateInfo {
+    int		index;
+    int		clientID;
+    int		channel;
+    int		state;
+    int		num;
+    Timer_Ticks	time;
+} RpcServerStateInfo;
+
+typedef	struct	RpcServerTraces {
+    RpcServerStateInfo	*traces;
+    int			traceIndex;
+    Boolean		okay;
+    Boolean		error;
+    Sync_Semaphore	mutex;
+} RpcServerTraces;
+
+RpcServerTraces	rpcServerTraces = {(RpcServerStateInfo *) NIL, 0,  FALSE,
+				FALSE, Sync_SemInitStatic("rpcServerTraces")};
+
+/*
+ * Try 1 Meg of traces.
+ */
+#define RPC_NUM_TRACES (0x100000 / sizeof (RpcServerStateInfo))
+
 
 
 /*
@@ -126,6 +170,9 @@ Rpc_Server()
 	    }
 	}
 	srvPtr->state &= ~SRV_NO_REPLY;
+#ifdef NOTDEF
+	RpcAddServerTrace(srvPtr, NIL, FALSE, 4);
+#endif NOTDEF
 	MASTER_UNLOCK(&srvPtr->mutex);
 
 	/*
@@ -264,12 +311,14 @@ RpcReclaimServers(serversMaxed)
 		srvPtr->freeReplyProc = (int (*)())NIL;
 		srvPtr->freeReplyData = (ClientData)NIL;
 		srvPtr->state = SRV_FREE|SRV_NO_REPLY;
+		RpcAddServerTrace(srvPtr, NIL, FALSE, 5);
 	    } else if ((srvPtr->state & SRV_AGING) == 0) {
 		/*
 		 * This is the first pass over the server process that
 		 * has found it idle.  Start it aging.
 		 */
 		srvPtr->state |= SRV_AGING;
+		RpcAddServerTrace(srvPtr, NIL, FALSE, 6);
 		srvPtr->age = 1;
 		if (serversMaxed) {
 		    RpcProbe(srvPtr);
@@ -294,10 +343,12 @@ RpcReclaimServers(serversMaxed)
 		    srvPtr->freeReplyData = (ClientData)NIL;
 		    rpcSrvStat.reclaims++;
 		    srvPtr->state = SRV_FREE;
+		    RpcAddServerTrace(srvPtr, NIL, FALSE, 7);
 #ifdef notdef
 		} else if (srvPtr->clientID == rpc_SpriteID) {
 		    printf("Warning: Reclaiming from myself.\n");
 		    srvPtr->state = SRV_FREE;
+		    RpcAddServerTrace(srvPtr, NIL, FALSE, 8);
 #endif
 		} else {
 		    /*
@@ -357,6 +408,29 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 					 * in the hardware buffers */
 {
     register int size;		/* The amount of the data in the message */
+
+
+#ifdef NEG_ACK
+    if (srvPtr == (RpcServerState *) NIL) {
+	MASTER_LOCK(&(rpcNack.mutex));
+	rpcNack.rpcHdr.flags = RPC_NACK;
+	/* RpcSrvInitHdr takes srvrPtr as first arg and ignores it. */
+	RpcSrvInitHdr(NIL, &(rpcNack.rpcHdr), rpcHdrPtr);
+	/*
+	 * This should be okay to do under a masterlock since RpcAck below
+	 * also calls it and it's under a masterlock.
+	 */
+#ifdef NOTDEF
+	/* This is identical to one printed elsewhere. */
+	RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 19);
+#endif NOTDEF
+	(void) RpcOutput(rpcHdrPtr->clientID, &(rpcNack.rpcHdr),
+		&(rpcNack.bufferSet),
+		(RpcBufferSet *) NIL, 0, (Sync_Semaphore *) NIL);
+	MASTER_UNLOCK(&(rpcNack.mutex));
+	return;
+    }
+#endif NEG_ACK
     /*
      * Acquire the server's mutex for multiprocessor synchronization.  We
      * synchronize with each server process with a mutex that is part of
@@ -372,6 +446,9 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
      * The reception of a message for the server makes it no longer idle.
      */
     srvPtr->state &= ~SRV_AGING;
+#ifdef NOTDEF
+    RpcAddServerTrace(srvPtr, NIL, FALSE, 1);
+#endif NOTDEF
     srvPtr->age = 0;
 
     /*
@@ -462,6 +539,9 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		RpcAck(srvPtr, 0);
 	    }
 	    srvPtr->state = SRV_BUSY;
+#ifdef WOULD_LIKE
+	    RpcAddServerTrace(srvPtr, NIL, FALSE, 2);
+#endif WOULD_LIKE
 	    rpcSrvStat.handoffs++;
 	    Sync_MasterBroadcast(&srvPtr->waitCondition);
 	} else {
@@ -492,6 +572,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	     * has cleared that state bit.
 	     */
 	    srvPtr->state |= SRV_FREE;
+	    RpcAddServerTrace(srvPtr, NIL, FALSE, 9);
 	    rpcSrvStat.discards++;
 	} else if (rpcHdrPtr->flags & RPC_ACK) {
 	    if (rpcHdrPtr->flags & RPC_CLOSE) {
@@ -503,6 +584,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		 */
 		rpcSrvStat.closeAcks++;
 		srvPtr->state = SRV_FREE;
+		RpcAddServerTrace(srvPtr, NIL, FALSE, 10);
 	    } else if (rpcHdrPtr->flags & RPC_LASTFRAG) {
 		/*
 		 * This is a partial acknowledgment.  The fragMask field
@@ -538,6 +620,10 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		    rpcSrvStat.badState++;
 		    srvPtr->replyRpcHdr.ID = 0;
 		    srvPtr->state = SRV_FREE;
+#ifdef NOTDEF
+		    /* We never seem to get this one. */
+		    RpcAddServerTrace(srvPtr, NIL, FALSE, 11);
+#endif NOTDEF
 		    break;
 		case SRV_FREE:
 		    /*
@@ -587,6 +673,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 			if (srvPtr->fragsReceived ==
 			    rpcCompleteMask[rpcHdrPtr->numFrags]) {
 			    srvPtr->state = SRV_BUSY;
+			    RpcAddServerTrace(srvPtr, NIL, FALSE, 3);
 			    rpcSrvStat.handoffs++;
 			    Sync_MasterBroadcast(&srvPtr->waitCondition);
 			} else if (rpcHdrPtr->flags & RPC_LASTFRAG) {
@@ -615,6 +702,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		     */
 		    rpcSrvStat.busyAcks++;
 		    RpcAck(srvPtr, 0);
+		    RpcAddServerTrace(srvPtr, NIL, FALSE, 18);
 		    break;
 		case SRV_WAITING:
 		    /*
@@ -945,62 +1033,197 @@ RpcProbe(srvPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Rpc_DumpServerTraces --
+ * RpcAddServerTrace --
  *
- *	Stub, for now.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-Rpc_DumpServerTraces()
-{
-    return SUCCESS;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Rpc_FreeTraces --
- *
- *	Stub, for now.
+ *	Add another trace to the list of state tracing for rpc servers.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	The list is lengthened.
  *
  *----------------------------------------------------------------------
  */
 void
-Rpc_FreeTraces()
+RpcAddServerTrace(srvPtr, rpcHdrPtr, noneThere, num)
+    RpcServerState	*srvPtr;	/* State to record */
+    RpcHdr 		*rpcHdrPtr;	/* The request message header */
+    Boolean		noneThere;	/* No server free */
+    int			num;		/* Which trace */
 {
+    RpcServerStateInfo	*rpcTracePtr;
+
+    if (!rpcServerTraces.okay) {
+	return;
+    }
+    rpcTracePtr = &(rpcServerTraces.traces[rpcServerTraces.traceIndex]);
+    (void) bzero((Address) rpcTracePtr, sizeof (RpcServerStateInfo));
+    if (!noneThere) {
+	rpcTracePtr->index = srvPtr->index;
+	rpcTracePtr->clientID = srvPtr->clientID;
+	rpcTracePtr->channel = srvPtr->channel;
+	rpcTracePtr->state = srvPtr->state;
+    } else {
+	rpcTracePtr->index = -1;
+	rpcTracePtr->clientID = rpcHdrPtr->clientID;
+	rpcTracePtr->channel = rpcHdrPtr->channel;
+	rpcTracePtr->state = rpcHdrPtr->command;
+    }
+    rpcTracePtr->num = num;
+    Timer_GetCurrentTicks(&rpcTracePtr->time);
+    rpcServerTraces.traceIndex++;
+    if (rpcServerTraces.traceIndex >= RPC_NUM_TRACES) {
+	rpcServerTraces.okay = FALSE;
+	rpcServerTraces.error = TRUE;
+    }
+
     return;
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
  * Rpc_OkayToTrace --
  *
- *	Stub, for now.
+ *	Okay to turn on rpc server state tracing.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	The tracing is turned on.
  *
  *----------------------------------------------------------------------
  */
-void
-Rpc_OkayToTrace()
+ENTRY void
+Rpc_OkayToTrace(okay)
+    Boolean	okay;
 {
+    MASTER_LOCK(&(rpcServerTraces.mutex));
+    if (okay) {
+	if (!rpcServerTraces.error) {
+	    rpcServerTraces.okay = okay;
+	}
+    } else {
+	rpcServerTraces.okay = okay;
+    }
+    MASTER_UNLOCK(&(rpcServerTraces.mutex));
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_FreeTraces --
+ *
+ *	If memory allocation is involved, free up the space used by the rpc
+ *	server tracing.  Otherwise, just reinitialize it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Tracing is turned off and some reinitialization is done.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Rpc_FreeTraces()
+{
+    RpcServerStateInfo	*itemPtr;
+
+    MASTER_LOCK(&(rpcServerTraces.mutex));
+    rpcServerTraces.okay = FALSE;
+
+    rpcServerTraces.traceIndex = 0;
+    rpcServerTraces.error = FALSE;
+
+    MASTER_UNLOCK(&(rpcServerTraces.mutex));
+    return;
+}
+
+/*
+ * The form in which the user expects the server tracing info.
+ */
+typedef	struct	RpcServerUserStateInfo {
+    int		index;
+    int		clientID;
+    int		channel;
+    int		state;
+    int		num;
+    Time	time;
+} RpcServerUserStateInfo;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_DumpServerTraces --
+ *
+ *	Dump the server traces into a buffer for the user.
+ *
+ * Results:
+ *	Failure if something goes wrong.  Success otherwise.
+ *
+ * Side effects:
+ *	The trace info is copied into a buffer.  Size of needed buffer is
+ *	also copied out.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Rpc_DumpServerTraces(length, resultPtr, lengthNeededPtr)
+    int                 	length;         /* size of data buffer */
+    RpcServerUserStateInfo	*resultPtr;	/* Array of info structs. */
+    int                 	*lengthNeededPtr;/* to return space needed */
+
+{
+    RpcServerUserStateInfo	*infoPtr;
+    RpcServerStateInfo		*itemPtr;
+    int				numNeeded;
+    int				numAvail;
+    int				i;
+
+    MASTER_LOCK(&(rpcServerTraces.mutex));
+    if (rpcServerTraces.traceIndex <= 0) {
+	MASTER_UNLOCK(&(rpcServerTraces.mutex));
+	return FAILURE;
+    }
+    if (resultPtr != (RpcServerUserStateInfo *) NIL) {
+	bzero(resultPtr, length);
+    }
+    numNeeded = 0;
+    numAvail = length / sizeof (RpcServerUserStateInfo);
+
+    infoPtr = resultPtr;
+    for (i = 0; i < rpcServerTraces.traceIndex; i++) {
+	itemPtr = &(rpcServerTraces.traces[i]);
+	numNeeded++;
+	if (numNeeded > numAvail) {
+	    continue;
+	}
+	infoPtr->index = itemPtr->index;
+	infoPtr->clientID = itemPtr->clientID;
+	infoPtr->channel = itemPtr->channel;
+	infoPtr->state = itemPtr->state;
+	infoPtr->num = itemPtr->num;
+	Timer_GetRealTimeFromTicks(itemPtr->time, &(infoPtr->time), NIL, NIL);
+	infoPtr++;
+    }
+    *lengthNeededPtr = numNeeded * sizeof (RpcServerUserStateInfo);
+
+    MASTER_UNLOCK(&(rpcServerTraces.mutex));
+    return SUCCESS;
+}
+
+void
+RpcInitServerTraces()
+{
+    rpcServerTraces.traces = (RpcServerStateInfo *) malloc(RPC_NUM_TRACES *
+						sizeof (RpcServerStateInfo));
     return;
 }

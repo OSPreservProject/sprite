@@ -115,6 +115,9 @@ extern int	rpc_SwappedVersion;
  *	RPC_ECHO a special packet that just is bounced off the server by
  *	the dispatcher.  A server process is not involved.
  *
+ *	RPC_NACK a negative acknowledgement from the server saying that it's
+ *	alive, but can't handle the request yet (no server process for it, etc).
+ *
  * Packet Flags:
  *	RPC_PLSACK demands an explicit acknowledgment message from the receiver.
  *
@@ -154,6 +157,7 @@ extern int	rpc_SwappedVersion;
 #define RPC_ACK		0x0200
 #define RPC_REPLY	0x0400
 #define RPC_ECHO	0x0800
+#define	RPC_NACK	0x1000
 
 /*
  * Items related to Fragmenting.

@@ -22,7 +22,6 @@
 #include "rpcHistogram.h"
 
 
-
 /*
  *      Definition of the state table maintained for all the RPC server
  *      processes.  The state of each server is similar to the state kept
@@ -181,6 +180,14 @@ extern Rpc_Histogram	*rpcServiceTime[];
  * A raw count of the number of service calls.
  */
 extern int		rpcServiceCount[];
+
+/*
+ * For tracing calls.
+ */
+extern	void		Rpc_OkayToTrace();
+extern	void		Rpc_FreeTraces();
+extern	void		RpcAddServerTrace();
+extern	ReturnStatus	Rpc_DumpServerTraces();
 
 /*
  * Forward declarations.

@@ -20,6 +20,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "net.h"
 
+#ifdef NEG_ACK
+typedef struct	NackData {
+    RpcHdr		rpcHdr;
+    RpcBufferSet	bufferSet;
+    Sync_Semaphore	mutex;
+} NackData;
+extern	NackData	rpcNack;
+extern	int	nackRetryWait;
+extern	int	maxNackWait;
+#endif NEG_ACK
+
 /*
  * These are the rpc version numbers, both in native format and in
  * byte-swapped format. 
@@ -68,6 +79,7 @@ Rpc_Init()
     register int frag;
     Net_EtherAddress etherAddress;
     int	     maxHdrSize;
+    extern void	RpcInitServerTraces();
 
     /*
      * Initialize sets of time parameters.  These structures are used in
@@ -177,6 +189,12 @@ Rpc_Init()
 	}
 
     }
+#ifdef NEG_ACK
+    RpcBufferInit(&(rpcNack.rpcHdr), &(rpcNack.bufferSet), -1, -1);
+    RpcInitServerChannelState();
+    nackRetryWait = 2 * timer_IntOneSecond;
+    maxNackWait = 15 * timer_IntOneSecond;
+#endif NEG_ACK
 
     /*
      * Initialize the servers' state table.  Most slots are left
@@ -185,7 +203,7 @@ Rpc_Init()
      * claims a table entry with RpcServerInstall.
      */
     rpcServerPtrPtr = (RpcServerState **)
-	    Vm_RawAlloc(rpcMaxServers * sizeof(RpcServerState *));
+	    Vm_RawAlloc(rpcAbsoluteMaxServers * sizeof(RpcServerState *));
     for (i=0 ; i<rpcMaxServers ; i++) {
 	rpcServerPtrPtr[i] = (RpcServerState *)NIL;
     }
@@ -201,6 +219,10 @@ Rpc_Init()
     if (rpc_SpriteID < 0) {
 	rpc_SpriteID = 0;
     }
+
+    RpcInitServerTraces();
+
+    return;
 }
 
 /*
