@@ -129,6 +129,7 @@
  *	RPC_FS_CONSIST_REPLY	Reply from the client indicating that
  *				it has completed the cache consistency action.
  *	RPC_FS_DEV_OPEN	Open a connection to the I/O server for a device.
+ *	RPC_FS_GET_ATTR_PATH	Get attributes given a path name.
  *	RPC_SIG_MIG_SEND	Send a signal to a migrated process.
  *	RPC_PROC_REMOTE_WAIT	Perform a Proc_Wait for a migrated process.
  *	RPC_FS_SELECT	See if a file is readable or writable.
@@ -143,6 +144,9 @@
  *				its open file handles, and when they are done.
  *	RPC_FS_REQUEST		Pseudo-device request message.
  *	RPC_FS_REPLY		Pseudo-device reply message.
+ *	RPC_FS_SET_ATTR_PATH	Set attributes given a pathname.
+ *	RPC_FS_GET_IO_ATTR	Get attributes cached at the I/O server.
+ *	RPC_FS_SET_IO_ATTR	Set attributes cached at the I/O server.
  *	
  *
  * These procedure numbers and the service switch should be generated
@@ -201,11 +205,13 @@
 #define RPC_FS_RECOVERY		50
 #define RPC_FS_REQUEST		51
 #define RPC_FS_REPLY		52
-#define	RPC_LAST_COMMAND RPC_FS_REPLY
-
+#define RPC_FS_SET_ATTR_PATH	53
+#define RPC_FS_GET_IO_ATTR	54
+#define RPC_FS_SET_IO_ATTR	55
+#define	RPC_LAST_COMMAND	RPC_FS_SET_IO_ATTR
 /*
- * The above constant RPC_LAST_COMMAND is used to declare arrays that
- * keep information for each procedure.
+ * RPC_LAST_COMMAND is used to declare the rpc procedure switch
+ * and arrays of counters for each rpc.
  */
 
 /*
@@ -244,13 +250,15 @@ extern ReturnStatus Fs_RpcBlockCopy();		/* 43 - FS_COPY_BLOCK */
 extern ReturnStatus Fs_RpcMakeDev();		/* 44 - FS_MKDEV */
 extern ReturnStatus Fs_RpcGetAttrPath();	/* 45 - FS_GET_ATTR_PATH */
 extern ReturnStatus Sig_RpcSend();		/* 46 - SIG_SEND */
-extern ReturnStatus Fs_RpcReopen();		/* 47 - FS_RPC_REOPEN */
-extern ReturnStatus Fs_RpcDomainInfo();		/* 48 - FS_RPC_DOMAIN_INFO */
-extern ReturnStatus Fs_RpcDevReopen();		/* 49 - FS_RPC_DEV_REOPEN */
-extern ReturnStatus Fs_RpcRecovery();		/* 50 - FS_RPC_RECOVERY */
-extern ReturnStatus Fs_RpcRequest();		/* 51 - FS_RPC_REQUEST */
-extern ReturnStatus Fs_RpcReply();		/* 52 - FS_RPC_REPLY */
-
+extern ReturnStatus Fs_RpcReopen();		/* 47 - FS_REOPEN */
+extern ReturnStatus Fs_RpcDomainInfo();		/* 48 - FS_DOMAIN_INFO */
+extern ReturnStatus Fs_RpcDevReopen();		/* 49 - FS_DEV_REOPEN */
+extern ReturnStatus Fs_RpcRecovery();		/* 50 - FS_RECOVERY */
+extern ReturnStatus Fs_RpcRequest();		/* 51 - FS_REQUEST */
+extern ReturnStatus Fs_RpcReply();		/* 52 - FS_REPLY */
+extern ReturnStatus Fs_RpcSetAttrPath();	/* 53 - FS_SET_ATTR_PATH */
+extern ReturnStatus Fs_RpcGetIOAttr();		/* 54 - FS_GET_IO_ATTR */
+extern ReturnStatus Fs_RpcSetIOAttr();		/* 55 - FS_SET_IO_ATTR */
 
 #endif	_RPCCALL
 
