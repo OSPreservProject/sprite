@@ -309,22 +309,10 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    /*
 		     * Too many acks.  It is very likely that the server
 		     * process is hung on some lock.  We hang too in
-		     * order to facilitate debugging, except in the case
-		     * of broadcasts.  We only broadcast for prefixes
-		     * so far, and can tolerate failure.
+		     * order to facilitate debugging.
 		     */
 		    rpcCltStat.tooManyAcks++;
-		    if (serverID == RPC_BROADCAST_SERVER_ID) {
-			Net_SpriteIDToName(rpcHdrPtr->serverID, 100, name);
-			if (*name == '\0') {
-			    printf("RpcDoCall: <%d> hanging my broadcast\n",
-				    rpcHdrPtr->serverID);
-			} else {
-			    printf("RpcDoCall: %s hanging my broadcast\n",
-				name);
-			}
-			error = RPC_TIMEOUT;
-		    } else if (!seemsHung) {
+		    if (!seemsHung) {
 			Net_SpriteIDToName(serverID, 100, name);
 			if (name == (char *)NIL) {
 			    printf("RpcDoCall: <%s> RPC to host <%d> is hung\n",
