@@ -125,7 +125,7 @@ FsAttachDisk(devicePtr, localName, flags)
      * zero'th sector of the whole disk which describes how the rest of the
      * domain's zero'th cylinder is layed out.
      */
-    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR);
+    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR * FS_NUM_DOMAIN_SECTORS);
     io.buffer = buffer;
     io.length = DEV_BYTES_PER_SECTOR;
     io.offset = 0;
@@ -140,13 +140,34 @@ FsAttachDisk(devicePtr, localName, flags)
      * of the zero'th cylinder is layed out.
      */
     if (IsSunLabel(buffer)) {
+	FsDomainHeader		*domainHeaderPtr = (FsDomainHeader *) buffer;
+	int			i;
 	/*
 	 * For Sun formatted disks we put the domain header well past
 	 * the disk label and the boot program.
 	 */
-	headerSector = SUN_DOMAIN_SECTOR;
 	numHeaderSectors = FS_NUM_DOMAIN_SECTORS;
-	summarySector = SUN_SUMMARY_SECTOR;
+	io.length = DEV_BYTES_PER_SECTOR * FS_NUM_DOMAIN_SECTORS;
+	for (i = 2; i < FS_MAX_BOOT_SECTORS + 3; i+= FS_BOOT_SECTOR_INC) {
+	    io.offset = i * DEV_BYTES_PER_SECTOR;
+	    io.length = DEV_BYTES_PER_SECTOR * FS_NUM_DOMAIN_SECTORS;
+	    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)
+			(devicePtr, &io, &reply);
+	    if (status != SUCCESS) {
+		free(buffer);
+		return(status);
+	    }
+	    if (domainHeaderPtr->magic == FS_DOMAIN_MAGIC) {
+		headerSector = i;
+		summarySector = i - 1;
+	        break;
+	    }
+	}
+	if (i >= FS_MAX_BOOT_SECTORS + 3) {
+	    printf("FsAttachDisk: Can't find domain header.\n");
+	    free(buffer);
+	    return(FAILURE);
+	}
     } else if (IsSpriteLabel(buffer)) {
 	register FsDiskHeader *diskHeaderPtr;
 	diskHeaderPtr = (FsDiskHeader *)buffer;

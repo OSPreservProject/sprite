@@ -39,17 +39,19 @@ typedef struct FsDiskPartition {
  * cylinders into domains,  and the layout of the rest of the reserved
  * blocks.  The Disk Header is replicated on the zero'th sector of each
  * domain. For the Sun implementation, the boot program is expected to
- * start in sector #1 and contain at most 15 sectors.  The boot program on
+ * start in sector #1. The boot program on
  * the zero'th cylinder of the disk is used automatically, although other
  * boot program locations can be specified manually.
  *
  *      NOTE: we are temporarily using Sun's format of the Disk Header,
  *      not the following typedef.  Sun's label is defined in
  *      "../sun/sunDiskLabel.h".  We assume that sector zero contains a
- *      Sun format label, sectors 1 through 16 contain a boot program.
- *      Sector SUN_SUMMARY_SECTOR contains an FsSummaryInfo structure.
- *      Sector SUN_DOMAIN_SECTOR contains an FsDomainHeader structure.
+ *      Sun format label, and the boot program starts at sector 1. 
+ *	Sun3's read 16 boot sectors and Sun4's read 64.
  */
+
+#define FS_MAX_BOOT_SECTORS	128
+#define FS_BOOT_SECTOR_INC	16
 
 typedef struct FsDiskHeader {
     char asciiLabel[128];	/* Human readable string used for manufacturer's
