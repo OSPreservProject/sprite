@@ -182,8 +182,18 @@ typedef struct {
 #define PROC_MIGTRACE_HOME	0x02
 
 /*
+ * Define a structure for passing information via callback for killing
+ * a migrated process.  [Not used yet, but potentially.]
+ */
+typedef struct Proc_DestroyMigProcData {
+    Proc_ControlBlock *procPtr;		/* local copy of process to kill */
+    ReturnStatus status;		/* status to return when it exits */
+} Proc_DestroyMigProcData;
+
+/*
  * Functions for process migration.  [Others should be moved here.]
  */
 extern void Proc_ResumeMigProc();
+extern void Proc_DestroyMigratedProc();
 
 #endif _PROCMIGRATE
