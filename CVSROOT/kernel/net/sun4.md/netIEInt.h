@@ -34,6 +34,8 @@
  *				ethernet chip.
  * NET_IE_SYS_CONF_PTR_ADDR 	Place where the system configuration pointer 
  *				must start. 
+ * NET_IE_DELAY_CONST		Number of loops to poll the ethernet chip
+ *				before giving up. (see NET_IE_DELAY())
  * NET_IE_CHUNK_SIZE		The number of bytes that memory is allocated
  *				in.
  * NET_IE_MEM_SIZE	      	Amount of memory to set aside for the control 
@@ -56,11 +58,21 @@
 #ifdef sun3
 #define NET_IE_CONTROL_REG_ADDR		0xfe0c000
 #define NET_IE_SYS_CONF_PTR_ADDR	0xffffff6
-#endif
+#define	NET_IE_DELAY_CONST		400000
+#endif /* sun3 */
+
+
 #ifdef sun2
 #define NET_IE_CONTROL_REG_ADDR		0xee3000
 #define NET_IE_SYS_CONF_PTR_ADDR	0xfffff6
-#endif
+#define	NET_IE_DELAY_CONST		(400000>>2)
+#endif /* sun2 */
+
+#ifdef sun4
+#define NET_IE_CONTROL_REG_ADDR		0xffd0c000
+#define NET_IE_SYS_CONF_PTR_ADDR	0xfffffff4
+#define	NET_IE_DELAY_CONST		(400000<<2)
+#endif /* sun4 */
 
 #define	NET_IE_CHUNK_SIZE		32
 #define	NET_IE_MEM_SIZE			2048
@@ -79,8 +91,8 @@
  * NET_IE_DELAY			Delay until the microsecond limit is up or
  *				until the condition is true.
  * NET_IE_CHECK_SCB_CMD_ACCEPT	Check to see if the command has been accepted.
- * NET_IE_ADDR_FROM_68000_ADDR	Change a 68000 address to an intel address.
- * NET_IE_ADDR_TO_68000_ADDR	Change an intel address to a 68000 address.
+ * NET_IE_ADDR_FROM_SUN_ADDR	Change a SUN address to an intel address.
+ * NET_IE_ADDR_TO_SUN_ADDR	Change an intel address to a SUN address.
  */
 
 #define NET_IE_CHIP_RESET *(char *) netIEState.controlReg = 0;
@@ -90,30 +102,20 @@
 	    netIEState.controlReg->channelAttn = 0; \
 	}
 
-#ifdef sun3
 #define NET_IE_DELAY(condition) \
 	{ \
-	    register int i = (400000); \
+	    register int i = (NET_IE_DELAY_CONST); \
 	    while (i > 0 && !(condition)) { \
 		    i--; \
 	    } \
 	}
-#else
-#define NET_IE_DELAY(condition) \
-	{ \
-	    register int i = (400000 >> 2); \
-	    while (i > 0 && !(condition)) { \
-		    i--; \
-	    } \
-	}
-#endif
 
 #define	NET_IE_CHECK_SCB_CMD_ACCEPT(scbPtr) \
     if (*(short *) &(scbPtr->cmdWord) != 0) { \
 	NetIECheckSCBCmdAccept(scbPtr); \
     }
 
-#define NET_IE_ADDR_FROM_68000_ADDR(src, dest) { \
+#define NET_IE_ADDR_FROM_SUN_ADDR(src, dest) { \
     union { \
         int     i; \
         char    ch[4]; \
@@ -126,7 +128,7 @@
     dest = addrTo.i; \
 }
 
-#define	NET_IE_ADDR_TO_68000_ADDR(src, dest) { \
+#define	NET_IE_ADDR_TO_SUN_ADDR(src, dest) { \
     union { \
 	int 	i; \
 	char	ch[4]; \
@@ -144,6 +146,12 @@
  */
 
 typedef struct {
+#ifdef sun4
+    short padding;	/* Since structures can't start on a half-word boundry
+			 * on the sun4, we start the structure on a word 
+			 * boundry and include 2 bytes of padding.
+			 */
+#endif /* sun4 */
     char busWidth;	/* Bus width.  0 => 16 bits.  1 => 8 bits. */
     char filler[5];	/* Unused. */
     int	 intSysConfPtr;	/* Address of intermediate system configuration 
@@ -464,7 +472,7 @@ typedef struct NetIERecvFrameDesc {
     Net_EtherAddress destAddr;		/* Destination ethernet address. */
     Net_EtherAddress srcAddr;		/* Source ethernet address. */
     short 	 type;			/* Ethernet packet type. */
-    struct NetIERecvFrameDesc *realNextRFD; /* The 68000 address of the next
+    struct NetIERecvFrameDesc *realNextRFD; /* The SUN address of the next
 					       receive frame descriptor. */
 } NetIERecvFrameDesc;
 
@@ -490,7 +498,7 @@ typedef struct NetIERecvBufDesc {
     unsigned char		:1;	/* Unused. */
     unsigned char bufSizeHigh	:6;	/* High order 6 bits of the buffer 
 					   size. */
-    Address	realBufAddr;		/* The 68000 address of the buffer 
+    Address	realBufAddr;		/* The SUN address of the buffer 
 					   where this descriptor puts its data*/
     struct NetIERecvBufDesc *realNextRBD; /* The 6800 Address of the next
 					     receive buffer descriptor. */
@@ -518,7 +526,7 @@ typedef struct {
  */
 
 typedef struct {
-    int			memBase;	/* Address of control block memory. */
+    unsigned int	memBase;	/* Address of control block memory. */
     NetIESysConfPtr	*sysConfPtr;	/* Where the system configuration 
 					   pointer is at. */
     NetIEIntSysConfPtr	*intSysConfPtr;	/* Where the intermediate system 
@@ -610,10 +618,10 @@ extern	void	NetIEMemFree();
  * Routines to convert to addresses and offsets.
  */
 
-extern	int	NetIEAddrFrom68000Addr();
-extern	int	NetIEAddrTo68000Addr();
-extern	int	NetIEOffsetFrom68000Addr();
-extern	int	NetIEOffsetTo68000Addr();
+extern	int	NetIEAddrFromSUNAddr();
+extern	int	NetIEAddrToSUNAddr();
+extern	int	NetIEOffsetFromSUNAddr();
+extern	int	NetIEOffsetToSUNAddr();
 extern	int	NetIEShortSwap();
 
 #endif _NETIEINT

@@ -1,7 +1,7 @@
 /* netIESubr.c -
  *
  * Subroutines for the intel device driver.  These routines are to convert 
- * 68000 addresses to/from Intel address and offsets into Intel memory.
+ * SUN addresses to/from Intel address and offsets into Intel memory.
  *
  * Copyright 1985, 1988 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -30,9 +30,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  *----------------------------------------------------------------------
  *
- * NetIEAddrFrom68000Addr --
+ * NetIEAddrFromSUNAddr --
  *
- *	Change 24-bit 68000 address to Intel 24-bit address.
+ *	Change 24-bit SUN address to Intel 24-bit address.
  *
  * Results:
  *	The modified address.
@@ -44,7 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 int
-NetIEAddrFrom68000Addr(addr)
+NetIEAddrFromSUNAddr(addr)
     int	addr;
 {
     union {
@@ -66,9 +66,9 @@ NetIEAddrFrom68000Addr(addr)
 /*
  *----------------------------------------------------------------------
  *
- * NetIEAddrTo68000Addr --
+ * NetIEAddrToSUNAddr --
  *
- *	Change 24-bit Intel address to a 68000 address.
+ *	Change 24-bit Intel address to a SUN address.
  *
  * Results:
  *	The modified address.
@@ -80,7 +80,7 @@ NetIEAddrFrom68000Addr(addr)
  */
 
 int
-NetIEAddrTo68000Addr(addr)
+NetIEAddrToSUNAddr(addr)
     int	addr;
 {
     union {
@@ -102,9 +102,9 @@ NetIEAddrTo68000Addr(addr)
 /*
  *----------------------------------------------------------------------
  *
- * NetIEOffsetFrom68000Addr --
+ * NetIEOffsetFromSUNAddr --
  *
- *	Change 24-bit 68000 address to Intel 16-bit offset into
+ *	Change 24-bit SUN address to Intel 16-bit offset into
  *	Intel memory.
  *
  * Results:
@@ -117,7 +117,7 @@ NetIEAddrTo68000Addr(addr)
  */
 
 int
-NetIEOffsetFrom68000Addr(addr)
+NetIEOffsetFromSUNAddr(addr)
     int	addr;
 {
     union {
@@ -137,12 +137,12 @@ NetIEOffsetFrom68000Addr(addr)
 /*
  *----------------------------------------------------------------------
  *
- * NetIEOffsetTo68000Addr --
+ * NetIEOffsetToSUNAddr --
  *
- *	Change 16 bit Intel offset into Intel memory to 24 bit 68000 address.
+ *	Change 16 bit Intel offset into Intel memory to 24 bit SUN address.
  *
  * Results:
- *	The 68000 address.
+ *	The SUN address.
  *
  * Side effects:
  *	None.
@@ -151,7 +151,7 @@ NetIEOffsetFrom68000Addr(addr)
  */
 
 int
-NetIEOffsetTo68000Addr(offset)
+NetIEOffsetToSUNAddr(offset)
     int	offset;
 {
     union {
@@ -171,9 +171,9 @@ NetIEOffsetTo68000Addr(offset)
 /*
  *----------------------------------------------------------------------
  *
- * NetIEShortFrom68000Short --
+ * NetIEShortFromSUNShort --
  *
- *	Change a short on the 68000 to a short on the intel.
+ *	Change a short on the SUN to a short on the intel.
  *
  * Results:
  *	The Intel short .

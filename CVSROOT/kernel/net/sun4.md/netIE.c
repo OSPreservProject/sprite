@@ -56,11 +56,12 @@ Address		netIERecvBuffers[NET_IE_NUM_RECV_BUFFERS];
 static 	List_Links	xmitListHdr;
 static 	List_Links	xmitFreeListHdr;
 
+#ifndef sun4
 /*
  * Setup state for probing the existence of the device
  */
 static Mach_SetJumpState setJumpState;
-
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -95,6 +96,9 @@ NetIEInit(name, number, ctrlAddr)
 #ifdef sun3
     allocFunc = VmMach_NetMemAlloc;
 #endif
+#ifdef sun4
+    allocFunc = Vm_RawAlloc;
+#endif
 
     DISABLE_INTR();
 
@@ -108,6 +112,12 @@ NetIEInit(name, number, ctrlAddr)
 
     netIEState.controlReg = (NetIEControlRegister *) ctrlAddr;
 
+#ifdef sun4
+	/*
+	 * Poke the controller by resetting it.
+	 */
+	*(char *)netIEState.controlReg = 0;
+#else
     if (Mach_SetJump(&setJumpState) == SUCCESS) {
 	/*
 	 * Poke the controller by resetting it.
@@ -122,7 +132,7 @@ NetIEInit(name, number, ctrlAddr)
 	return(FALSE);
     }
     Mach_UnsetJump();
-
+#endif
     /*
      * Initialize the transmission list.  
      */
@@ -311,7 +321,7 @@ NetIEReset()
 
 	bzero((Address) netIEState.sysConfPtr, sizeof(NetIESysConfPtr));
 	netIEState.sysConfPtr->intSysConfPtr = 
-			NetIEAddrFrom68000Addr((int) netIEState.intSysConfPtr);
+			NetIEAddrFromSUNAddr((int) netIEState.intSysConfPtr);
 
 	/* 
 	 * Initialize the intermediate system configuration pointer.
@@ -320,9 +330,9 @@ NetIEReset()
 	bzero((Address) netIEState.intSysConfPtr, sizeof(NetIEIntSysConfPtr));
 	netIEState.intSysConfPtr->busy = 1;
 	netIEState.intSysConfPtr->base = 
-			    NetIEAddrFrom68000Addr(netIEState.memBase);
+			    NetIEAddrFromSUNAddr(netIEState.memBase);
 	netIEState.intSysConfPtr->scbOffset = 
-			    NetIEOffsetFrom68000Addr((int) netIEState.scbPtr);
+			    NetIEOffsetFromSUNAddr((int) netIEState.scbPtr);
 
 	/*
 	 * Initialize the system control block.
@@ -383,7 +393,7 @@ NetIEReset()
 	panic("NetIE: No memory for the command block.\n");
     }
     netIEState.scbPtr->cmdListOffset =
-			NetIEOffsetFrom68000Addr((int) netIEState.cmdBlockPtr);
+			NetIEOffsetFromSUNAddr((int) netIEState.cmdBlockPtr);
 
     /*
      * Do a diagnose command on the interface.

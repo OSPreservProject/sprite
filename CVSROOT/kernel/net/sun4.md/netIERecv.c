@@ -72,7 +72,7 @@ NetIERecvUnitInit()
 	    netIEState.recvBufDscTailPtr = recvBufDescPtr;
 	} else {
 	    netIEState.recvBufDscTailPtr->nextRBD = 
-			NetIEOffsetFrom68000Addr((int) recvBufDescPtr);
+			NetIEOffsetFromSUNAddr((int) recvBufDescPtr);
 	    netIEState.recvBufDscTailPtr->realNextRBD = recvBufDescPtr;
 	    netIEState.recvBufDscTailPtr = recvBufDescPtr;
 	}
@@ -84,7 +84,7 @@ NetIERecvUnitInit()
 	 */
 
 	recvBufDescPtr->bufAddr = 
-			NetIEAddrFrom68000Addr((int) (netIERecvBuffers[i] + sizeof(Net_EtherHdr)));
+			NetIEAddrFromSUNAddr((int) (netIERecvBuffers[i] + sizeof(Net_EtherHdr)));
 	recvBufDescPtr->realBufAddr = netIERecvBuffers[i];
 	recvBufDescPtr->bufSizeHigh = bufferSize >> 8;
 	recvBufDescPtr->bufSizeLow = bufferSize & 0xff;
@@ -97,7 +97,7 @@ NetIERecvUnitInit()
      */
 
     recvBufDescPtr->nextRBD = 
-		NetIEOffsetFrom68000Addr((int) netIEState.recvBufDscHeadPtr);
+		NetIEOffsetFromSUNAddr((int) netIEState.recvBufDscHeadPtr);
     recvBufDescPtr->realNextRBD = netIEState.recvBufDscHeadPtr;
     recvBufDescPtr->endOfList = 1;
 
@@ -126,12 +126,12 @@ NetIERecvUnitInit()
 	     */
 
 	    recvFrDescPtr->recvBufferDesc = 
-		    NetIEOffsetFrom68000Addr((int) netIEState.recvBufDscHeadPtr);
+		    NetIEOffsetFromSUNAddr((int) netIEState.recvBufDscHeadPtr);
 
 	} else {
 	    recvFrDescPtr->recvBufferDesc = NET_IE_NULL_RECV_BUFF_DESC;
 	    netIEState.recvFrDscTailPtr->nextRFD = 
-			NetIEOffsetFrom68000Addr((int) recvFrDescPtr);
+			NetIEOffsetFromSUNAddr((int) recvFrDescPtr);
 	    netIEState.recvFrDscTailPtr->realNextRFD = recvFrDescPtr;
 	    netIEState.recvFrDscTailPtr = recvFrDescPtr;
 	}
@@ -142,7 +142,7 @@ NetIERecvUnitInit()
      */
 
     recvFrDescPtr->nextRFD = 
-		    NetIEOffsetFrom68000Addr((int) netIEState.recvFrDscHeadPtr);
+		    NetIEOffsetFromSUNAddr((int) netIEState.recvFrDscHeadPtr);
     recvFrDescPtr->realNextRFD = netIEState.recvFrDscHeadPtr;
 
     recvFrDescPtr->endOfList = 1;
@@ -164,7 +164,7 @@ NetIERecvUnitInit()
     }
 
     scbPtr->recvFrameAreaOffset = 
-		    NetIEOffsetFrom68000Addr((int) netIEState.recvFrDscHeadPtr);
+		    NetIEOffsetFromSUNAddr((int) netIEState.recvFrDscHeadPtr);
     scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
 
     NET_IE_CHANNEL_ATTENTION;
@@ -327,9 +327,9 @@ NetIERecvProcess(dropPackets)
 printf("Reinit recv unit\n");
 
     netIEStatePtr->recvFrDscHeadPtr->recvBufferDesc = 
-		NetIEOffsetFrom68000Addr((int) netIEStatePtr->recvBufDscHeadPtr);
+		NetIEOffsetFromSUNAddr((int) netIEStatePtr->recvBufDscHeadPtr);
     netIEStatePtr->scbPtr->recvFrameAreaOffset =
-		NetIEOffsetFrom68000Addr((int) netIEStatePtr->recvFrDscHeadPtr);
+		NetIEOffsetFromSUNAddr((int) netIEStatePtr->recvFrDscHeadPtr);
     NET_IE_CHECK_SCB_CMD_ACCEPT(netIEStatePtr->scbPtr);
     netIEStatePtr->scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
     NET_IE_CHANNEL_ATTENTION;

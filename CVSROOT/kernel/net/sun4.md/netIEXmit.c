@@ -198,10 +198,10 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		length = NET_IE_MIN_DMA_SIZE;
 	    }
 
-	    NET_IE_ADDR_FROM_68000_ADDR(
+	    NET_IE_ADDR_FROM_SUN_ADDR(
 		 (int) (netIEXmitTempBuffer), (int) (xmitBufDescPtr->bufAddr));
 	} else {
-	    NET_IE_ADDR_FROM_68000_ADDR(
+	    NET_IE_ADDR_FROM_SUN_ADDR(
 		 (int) (bufAddr), (int) (xmitBufDescPtr->bufAddr));
 	}
 
@@ -220,7 +220,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      */
 
     if (totalLength < NET_ETHER_MIN_BYTES) {
-        NET_IE_ADDR_FROM_68000_ADDR((int) netIEXmitFiller, 
+        NET_IE_ADDR_FROM_SUN_ADDR((int) netIEXmitFiller, 
 			            (int) xmitBufDescPtr->bufAddr); 
 	length = NET_ETHER_MIN_BYTES - totalLength;
 	if (length < MIN_XMIT_BUFFER_SIZE) {
@@ -314,10 +314,10 @@ NetIEXmitInit()
 	if (i == 0) {
 	    xmitBufAddr = newXmitBufDescPtr;
 	    xmitCBPtr->bufDescOffset = 
-			NetIEOffsetFrom68000Addr((int) newXmitBufDescPtr);
+			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr);
 	} else {
 	    xmitBufDescPtr->nextTBD = 
-			NetIEOffsetFrom68000Addr((int) newXmitBufDescPtr);
+			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr);
 	}
 
 	xmitBufDescPtr = newXmitBufDescPtr;
