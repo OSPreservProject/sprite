@@ -130,13 +130,14 @@ typedef struct RpcServerState {
  * no server available, this stuff isn't part of the server state.
  */
 typedef struct  NackData {
-    RpcHdr              rpcHdrArray[4];		/* headers to transmit */
-    int			hdrState[4];		/* which headers are free */
-    RpcBufferSet        bufferSet[4];		/* buffers for transmission */
+    RpcHdr              *rpcHdrArray;		/* headers to transmit */
+    int			*hdrState;		/* which headers are free */
+    RpcBufferSet        *bufferSet;		/* buffers for transmission */
     Sync_Semaphore      mutex;			/* protect nack data */
     int			numFree;		/* are any free? */
 } NackData;
 extern	NackData	rpcNack;
+extern	int		rpc_NumNackBuffers;	/* settable number of buffers */
 #define	RPC_NACK_FREE		0		/* Can use this header */
 #define	RPC_NACK_WAITING	1		/* Hdr full, waiting for xmit */
 #define	RPC_NACK_XMITTING	2		/* Hdr being xmitted */
@@ -222,10 +223,11 @@ extern	ReturnStatus	Rpc_DumpServerTraces();
 RpcServerState		*RpcServerAlloc();
 RpcServerState		*RpcServerInstall();
 RpcServerState		*RpcInitServerState();
-void			 RpcServerDispatch();
-void			 RpcAck();
-void			 RpcResend();
-void			 RpcProbe();
-void			 RpcSrvInitHdr();
+void			RpcServerDispatch();
+void			RpcAck();
+void			RpcResend();
+void			RpcProbe();
+void			RpcSrvInitHdr();
+void			RpcSetNackBufs();
 
 #endif /* _RPCSERVER */

@@ -53,7 +53,7 @@ int		rpcNumServers = 0;
  * message gets sent each time the daemon wakes up and finds the
  * server process still idle awaiting a new request from the client.
  */
-int rpcMaxServerAge = 10;
+int rpcMaxServerAge = 10;	/* For testing set to 1. Was 10. */
 
 /*
  * A histogram is kept of service time.  This is available to user
@@ -76,6 +76,22 @@ NackData	rpcNack;
  * Whether or not to send negative acknowledgements.
  */
 Boolean		rpcSendNegAcks = FALSE;
+/*
+ * Number of nack buffers in system.
+ */
+int	rpc_NumNackBuffers = 4;
+/*
+ * To tell if we've already initialized the correct number of nack buffers
+ * when the rpc system is turned on.  This variable equals the number of
+ * nack buffers last initialized.
+ */
+int	oldNumNackBuffers = 0;
+/*
+ * For tracing nack behavior - the high-water mark of nack buffers used.
+ * These are temporary stats until they can be put into rpcstats.
+ */
+int	mostNackBuffers = 0;
+int	selfNacks = 0;
 
 
 /*
@@ -166,9 +182,6 @@ Rpc_Server()
 	    }
 	}
 	srvPtr->state &= ~SRV_NO_REPLY;
-#ifdef NOTDEF
-	RpcAddServerTrace(srvPtr, NIL, FALSE, 4);
-#endif NOTDEF
 	MASTER_UNLOCK(&srvPtr->mutex);
 
 	/*
@@ -403,7 +416,7 @@ NegAckFunc(clientData, callInfoPtr)
     /*
      * We may handle more than one request here.
      */
-    for (i = 0; i < (sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr)); i++) {
+    for (i = 0; i < rpc_NumNackBuffers; i++) {
 	if (rpcNack.hdrState[i] == RPC_NACK_WAITING) {
 	    rpcNack.hdrState[i] = RPC_NACK_XMITTING;
 	    rpcNack.rpcHdrArray[i].flags = RPC_NACK | RPC_ACK;
@@ -465,6 +478,8 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 {
     register int size;		/* The amount of the data in the message */
     int		i;
+    Boolean	foundSpot;
+    Boolean	alreadyFunc;
 
 
     /*
@@ -472,7 +487,19 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
      * and a negative acknowledgement must be issued.
      */
     if (srvPtr == (RpcServerState *) NIL) {
+	if (rpcHdrPtr->clientID == rpc_SpriteID) {
+	    /*
+	     * Can't nack myself since the network module turns around and
+	     * reroutes the message and we get deadlock.  Drop the neg ack.
+	     */
+	    printf("Can't nack to myself!\n");
+	    selfNacks++;
+	    return;
+	}
 	MASTER_LOCK(&(rpcNack.mutex));
+	if (rpc_NumNackBuffers - rpcNack.numFree > mostNackBuffers) {
+	    mostNackBuffers = rpc_NumNackBuffers - rpcNack.numFree;
+	}
 	if (rpcNack.numFree <= 0) {
 	    /* Drop the negative ack. */
 	    MASTER_UNLOCK(&(rpcNack.mutex));
@@ -482,15 +509,25 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	 * Copy rpc header info to safe place that won't be freed when
 	 * we return.
 	 */
-	for (i = 0; i < (sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr)); i++) {
-	    if (rpcNack.hdrState[i] == RPC_NACK_FREE) {
+	alreadyFunc = FALSE;
+	foundSpot = FALSE;
+	for (i = 0; i < rpc_NumNackBuffers; i++) {
+	    if (!foundSpot && rpcNack.hdrState[i] == RPC_NACK_FREE) {
 		rpcNack.numFree--;
 		rpcNack.hdrState[i] = RPC_NACK_WAITING;
+		foundSpot = TRUE;
 		RpcSrvInitHdr(NIL, &(rpcNack.rpcHdrArray[i]), rpcHdrPtr);
-		Proc_CallFunc(NegAckFunc, (ClientData) NIL, 0);
-		MASTER_UNLOCK(&(rpcNack.mutex));
-		return;
+	    } else if (rpcNack.hdrState[i] == RPC_NACK_WAITING) {
+		alreadyFunc = TRUE;
 	    }
+	}
+	if (foundSpot && !alreadyFunc) {
+	    MASTER_UNLOCK(&(rpcNack.mutex));
+	    Proc_CallFunc(NegAckFunc, (ClientData) NIL, 0);
+	    return;
+	} else if (foundSpot) {
+	    MASTER_UNLOCK(&(rpcNack.mutex));
+	    return;
 	}
 	MASTER_UNLOCK(&(rpcNack.mutex));
 	panic("RpcServerDispatch: couldn't find free rpcHdr.\n");
@@ -511,9 +548,6 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
      * The reception of a message for the server makes it no longer idle.
      */
     srvPtr->state &= ~SRV_AGING;
-#ifdef NOTDEF
-    RpcAddServerTrace(srvPtr, NIL, FALSE, 1);
-#endif NOTDEF
     srvPtr->age = 0;
 
     /*
@@ -685,10 +719,6 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		    rpcSrvStat.badState++;
 		    srvPtr->replyRpcHdr.ID = 0;
 		    srvPtr->state = SRV_FREE;
-#ifdef NOTDEF
-		    /* We never seem to get this one. */
-		    RpcAddServerTrace(srvPtr, NIL, FALSE, 11);
-#endif NOTDEF
 		    break;
 		case SRV_FREE:
 		    /*
@@ -1299,5 +1329,65 @@ RpcInitServerTraces()
 {
     rpcServerTraces.traces = (RpcServerStateInfo *) malloc(RPC_NUM_TRACES *
 						sizeof (RpcServerStateInfo));
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcSetNackBufs --
+ *
+ *	Allocate and set up the correct number of nack buffers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Some freeing and malloc'ing.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcSetNackBufs()
+{
+    int	i;
+
+    if (oldNumNackBuffers == rpc_NumNackBuffers) {
+	/* Nothing to do, initialized already. */
+	return;
+    }
+    if (rpcServiceEnabled) {
+	/* Cannot change nack buffers once service is enabled, for now. */
+	return;
+    }
+    /* Free old nack buffers if there were any. */
+    if (oldNumNackBuffers > 0 && rpcNack.rpcHdrArray != (RpcHdr *) NIL) {
+	free((char *) rpcNack.rpcHdrArray);
+	free((char *) rpcNack.hdrState);
+	free((char *) rpcNack.bufferSet);
+	/*
+	 * Note, this won't free up all the buffer stuff since
+	 * RpcBufferInit calls Vm_RawAlloc instead of malloc.
+	 */
+    }
+    /* Allocate new nack buffers. */
+    rpcNack.rpcHdrArray = (RpcHdr *) malloc(rpc_NumNackBuffers *
+	    sizeof (RpcHdr));
+    rpcNack.hdrState = (int *) malloc(rpc_NumNackBuffers * sizeof (int));
+
+    rpcNack.bufferSet = (RpcBufferSet *) malloc(rpc_NumNackBuffers *
+            sizeof (RpcBufferSet));
+
+    for (i = 0; i < rpc_NumNackBuffers; i++) {
+        rpcNack.hdrState[i] = RPC_NACK_FREE;
+        RpcBufferInit(&(rpcNack.rpcHdrArray[i]),
+                &(rpcNack.bufferSet[i]), -1, -1);
+    }
+    /* set old to new */
+    rpcNack.numFree = rpc_NumNackBuffers;
+    oldNumNackBuffers = rpc_NumNackBuffers;
+
     return;
 }

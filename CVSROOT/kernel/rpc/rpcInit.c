@@ -179,19 +179,20 @@ Rpc_Init()
 
     }
     /*
-     * Initialize server nack buffers.
+     * Initialize server nack info.
      */
     Sync_SemInitDynamic(&rpcNack.mutex,"Rpc:RpcNackData.mutex");
     Sync_SemRegister(&rpcNack.mutex);
-    rpcNack.numFree = sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr);
-    for (i = 0; i < sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr); i++) {
-	rpcNack.hdrState[i] = RPC_NACK_FREE;
-	RpcBufferInit(&(rpcNack.rpcHdrArray[i]),
-		&(rpcNack.bufferSet[i]), -1, -1);
-    }
+    /*
+     * Set nack buffers to NIL until allocated when rpc system turned on.
+     */
+    rpcNack.numFree = 0;
+    rpcNack.rpcHdrArray = (RpcHdr *) NIL;
+    rpcNack.hdrState = (int *) NIL;
+    rpcNack.bufferSet = (RpcBufferSet *) NIL;
 
     /*
-     * Initialize client's table on whether servers are sending negatvie
+     * Initialize client's table on whether servers are sending negative
      * acknowledgements or not (if channel ramping-down is used).
      */
     RpcInitServerChannelState();

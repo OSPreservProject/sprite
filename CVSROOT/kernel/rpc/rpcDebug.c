@@ -164,11 +164,30 @@ Rpc_GetStats(command, option, argPtr)
 	     * to clients.
 	     */
 	    if (option) {
+		if (rpcSendNegAcks) {
+		    RpcSetNackBufs();
+		}
 		printf("Starting RPC service\n");
 		rpcServiceEnabled = TRUE;
 	    } else {
 		printf("Warning: Disabling RPC service\n");
 		rpcServiceEnabled = FALSE;
+	    }
+	    break;
+	}
+	case SYS_RPC_NUM_NACK_BUFS: {
+	    /*
+	     * Set the number of negative ack buffers.
+	     */
+	    if (rpcServiceEnabled) {
+		printf(
+		    "Rpc service already enabled, cannot change nack bufs.\n");
+		break;
+	    }
+	    if (option > 0) {
+		printf("Setting number of nack bufs to %d\n", option);
+		rpc_NumNackBuffers = option;
+		RpcSetNackBufs();
 	    }
 	    break;
 	}
@@ -281,6 +300,27 @@ Rpc_GetStats(command, option, argPtr)
 		status = Vm_CopyOut(sizeof(Rpc_SrvStat),
 				  (Address)&rpcTotalSrvStat,
 				  (Address) srvStatPtr);
+	    }
+	    break;
+	}
+	case SYS_RPC_EXTRA_SRV_STATS: {
+	    register int *srvStatPtr;
+	    extern	int	mostNackBuffers;
+	    extern	int	selfNacks;
+	    int		sillyArray[2];
+
+	    srvStatPtr = (int *)argPtr;
+	    if (srvStatPtr == (int *)NIL ||
+		srvStatPtr == (int *)0 ||
+		srvStatPtr == (int *)USER_NIL) {
+		
+		printf("most nack buffers used: %d\n", mostNackBuffers);
+		printf("self nacks dropped: %d\n", selfNacks);
+	    } else {
+		sillyArray[0] = mostNackBuffers;
+		sillyArray[1] = selfNacks;
+		status = Vm_CopyOut(2 * sizeof (int),
+			(Address)sillyArray, (Address) srvStatPtr);
 	    }
 	    break;
 	}
