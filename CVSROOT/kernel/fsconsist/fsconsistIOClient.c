@@ -1,8 +1,7 @@
 /* 
- * fsClient.c --
+ * fsIOClient.c --
  *
- *	Routines to handle the client lists at the I/O handle
- *	level.  
+ *	Routines to handle the client lists at the I/O handle level.  
  *	The I/O handle client list is needed for cache consistency and to
  *	verify that client's are valid.  The routines here add and remove
  *	clients.
@@ -252,7 +251,7 @@ Fsconsist_IOClientClose(clientList, clientID, flags, cachePtr)
 	}
 	if ((clientPtr->use.ref < 0) || (clientPtr->use.write < 0) ||
 	    (clientPtr->use.exec < 0)) {
-	    panic("FsClientClose: client %d ref %d write %d exec %d\n",
+	    panic("Fsconsist_IOClientClose: client %d ref %d write %d exec %d\n",
 		clientPtr->clientID,
 		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
 	}
@@ -311,7 +310,7 @@ Fsconsist_IOClientRemoveWriter(clientList, clientID)
     if (found) {
 	clientPtr->use.write--;
 	if (clientPtr->use.write < 0) {
-	    panic("FsClientRemoveWriter: client %d ref %d write %d exec %d\n",
+	    panic("Fsconsist_IOClientRemoveWriter: client %d ref %d write %d exec %d\n",
 		clientPtr->clientID,
 		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
 	}
@@ -347,7 +346,7 @@ Fsconsist_ClientScavenge()
 
     LIST_FORALL(masterClientList, (List_Links *)listPtr) {
 	if (listPtr->clientID != rpc_SpriteID && 
-	    Recov_IsHostDown(listPtr->clientID) == FAILURE) {
+	    Recov_IsHostDown(listPtr->clientID)) {
 	    Fsutil_RemoveClient(listPtr->clientID);
 	}
     }
