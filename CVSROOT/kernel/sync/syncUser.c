@@ -57,7 +57,7 @@ Sync_SlowLockStub(lockPtr)
 
     procPtr = Proc_GetCurrentProc();
 
-    status = Vm_UserMap(VM_READWRITE_ACCESS, sizeof(*lockPtr),
+    status = Vm_PinUserMem(VM_READWRITE_ACCESS, sizeof(*lockPtr),
 			(Address)lockPtr);
     if (status != SUCCESS) {
 	return(status);
@@ -75,7 +75,7 @@ Sync_SlowLockStub(lockPtr)
     }
     MASTER_UNLOCK(sched_Mutex);
 
-    (void)Vm_UserUnmap(sizeof(*lockPtr), (Address)lockPtr);
+    (void)Vm_UnpinUserMem(sizeof(*lockPtr), (Address)lockPtr);
     return(status);
 }
 
@@ -111,7 +111,7 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
 {
     ReturnStatus	status;
 
-    status = Vm_UserMap(VM_READWRITE_ACCESS, sizeof(*lockPtr),
+    status = Vm_PinUserMem(VM_READWRITE_ACCESS, sizeof(*lockPtr),
 			(Address)lockPtr);
     if (status != SUCCESS) {
 	return(status);
@@ -131,7 +131,7 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     }
     MASTER_UNLOCK(sched_Mutex);
 
-    (void)Vm_UserUnmap(sizeof(*lockPtr), (Address)lockPtr);
+    (void)Vm_UnpinUserMem(sizeof(*lockPtr), (Address)lockPtr);
     return(status);
 }
 
@@ -166,7 +166,7 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
     int			len;
     ReturnStatus	status;
 
-    status = Vm_UserMap(VM_READWRITE_ACCESS, sizeof(*waitFlagPtr), 
+    status = Vm_PinUserMem(VM_READWRITE_ACCESS, sizeof(*waitFlagPtr), 
 			(Address)waitFlagPtr);
     if (status != SUCCESS) {
 	return(status);
@@ -179,7 +179,7 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
 
     MASTER_UNLOCK(sched_Mutex);
 
-    (void)Vm_UserUnmap(sizeof(*waitFlagPtr), (Address)waitFlagPtr);
+    (void)Vm_UnpinUserMem(sizeof(*waitFlagPtr), (Address)waitFlagPtr);
 
     return(SUCCESS);
 }
