@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "rpc.h"
 #include "proc.h"
+#include "string.h"
 
 /*
  * Each domain, which is a separate piece of disk, is locked
@@ -97,11 +98,38 @@ static unsigned char bitMasks[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
 #define	LAST_FRAG	 (FS_FRAGMENTS_PER_BLOCK - 1)
 #define	FRAG_OFFSET_MASK (FS_FRAGMENTS_PER_BLOCK - 1)
 
+/*
+ * Size of a fragment (1K).
+ */
+#define FRAG_SIZE (FS_BLOCK_SIZE / FS_FRAGMENTS_PER_BLOCK)
 
 /*
  * Percent of disk to keep free.
  */
 int	fsPercentFree = 10;
+
+/*
+ * Flag to determine whether to keep track of file deletions and read/writes
+ * by file type, and deletions by size/age/type.
+ */
+Boolean	fsKeepTypeInfo = TRUE;
+
+/*
+ * Information about each set of buckets, to be used to determine dynamically
+ * what the upper limit is for each bucket.
+ */
+static FsHistGroupInfo fsHistGroupInfo[] = {		/* cum. range: */
+    {1, FS_HIST_SECONDS},				/* < 10 secs */
+    {10, FS_HIST_TEN_SECONDS},				/* < 1 min */
+    {60, FS_HIST_MINUTES},				/* < 10 min */
+    {600, FS_HIST_TEN_MINUTES},				/* < 1 hr */
+    {3600, FS_HIST_HOURS},				/* < 10 hr */
+    {18000, FS_HIST_FIVE_HOURS},			/* < 20 hr */
+    {14400, FS_HIST_REST_HOURS},			/* < 1 day */
+    {86400, FS_HIST_DAYS},				/* < 10 days */
+    {864000, FS_HIST_TEN_DAYS },			/* < 60 days */
+    {2592000, FS_HIST_THIRTY_DAYS },			/* < 90 days */
+    {5184000, FS_HIST_SIXTY_DAYS }};			/* < 360 days */
 
 /*
  * Forward references.
@@ -110,7 +138,7 @@ static ReturnStatus FragToBlock();
 static ReturnStatus AllocateBlock();
 void FsFreeFrag();
 void FsFreeBlock();
-
+static int FindHistBucket();
 
 
 /*
@@ -426,6 +454,7 @@ FsDescTrunc(handlePtr, size)
     int				flags;
     Boolean			dirty;
     int				fragsToFree;
+    int				bytesToFree;
 
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (FsDomain *)NIL) {
@@ -433,6 +462,14 @@ FsDescTrunc(handlePtr, size)
     }
     descPtr = handlePtr->descPtr;
 
+    bytesToFree = descPtr->lastByte - size + 1;
+
+#ifndef CLEAN
+    if (bytesToFree > 0) {
+	FsRecordDeletionStats(handlePtr, bytesToFree);
+    }
+#endif CLEAN
+	
     newLastByte = size - 1;
     if (descPtr->lastByte <= newLastByte) {
 	status = SUCCESS;
@@ -598,6 +635,193 @@ exit:
     }
     FsDomainRelease(handlePtr->hdr.fileID.major);
     return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsRecordDeletionStats --
+ *
+ *	Record information about bytes deleted from a file.  This can
+ *	be a result of truncation or overwriting.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The counts of bytes deleted, overall and by file type & age, are
+ *	updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+FsRecordDeletionStats(cacheInfoPtr, bytesToFree)
+    FsCacheFileInfo *cacheInfoPtr;
+    int bytesToFree;
+{
+    unsigned int fragsToFree;	/* number of fragment-sized chunks to free */
+    int timeIndex;  	/* counters into histogram */
+    int sizeIndex = 0;
+    int type;
+    int when;
+
+    /*
+     * Record information about the number of bytes deleted.  Take the
+     * information from the handle rather than the descriptor, since
+     * the handle is the most up-to-date record of the size and modified
+     * date of the file.  There's no easy way to check for holes in the
+     * file, but the number of Kbytes on disk (corresponding to blocks in the
+     * cache) is an upper bound on the actual amount of data to be deleted.
+     * Therefore, for swap files, use that figure to get around holes.
+     */
+
+    if (fsKeepTypeInfo) {
+
+	type = FsFindFileType(cacheInfoPtr);
+	
+	if (type == FS_FILE_TYPE_SWAP &&
+	    cacheInfoPtr->hdrPtr->type == FS_LCL_FILE_STREAM) {
+	    register FsLocalFileIOHandle *handlePtr;
+	    register FsFileDescriptor 	*descPtr;
+
+	    handlePtr = (FsLocalFileIOHandle *) cacheInfoPtr->hdrPtr;
+	    descPtr = handlePtr->descPtr;
+	    if (bytesToFree > descPtr->numKbytes * FRAG_SIZE) {
+		bytesToFree = descPtr->numKbytes * FRAG_SIZE;
+	    }
+	}
+	fsStats.type.bytesDeleted[type] += bytesToFree;
+        if (cacheInfoPtr->attr.modifyTime > cacheInfoPtr->attr.createTime) {
+	    when = cacheInfoPtr->attr.modifyTime;
+	} else {
+	    when = cacheInfoPtr->attr.createTime;
+	}
+	timeIndex = FindHistBucket(fsTimeInSeconds - when);
+	fragsToFree = bytesToFree / FRAG_SIZE;
+	while (fragsToFree != 0) {
+	    sizeIndex ++;
+	    fragsToFree = fragsToFree >> 1;
+	}
+	fsStats.type.deleteHist[timeIndex][sizeIndex][type] ++;
+	/*
+	 * Store the actual number of bytes freed in the last column.
+	 * For this, save the number of 1K blocks actually affected,
+	 * so round *up*.  (We could save the real number of bytes, but
+	 * then we run a greater risk of overflowing the counter, and
+	 * it makes little difference whether we delete 200 bytes or
+	 * 400 in a shot.)
+	 */
+	fragsToFree = (bytesToFree + FRAG_SIZE - 1) / FRAG_SIZE;
+	fsStats.type.deleteHist
+		[timeIndex][FS_HIST_SIZE_BUCKETS -1][type] += fragsToFree;
+    }
+    FsStat_Add(bytesToFree, fsStats.gen.fileBytesDeleted,
+	       fsStats.gen.fileDeleteOverflow);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindHistBucket --
+ *
+ *	Given a number of seconds, return an index into the deletion
+ *	histogram.  Performs a binary search into a static array that
+ *	delimits the range of each bucket.
+ *
+ * Results:
+ *	The index is returned.
+ *
+ * Side effects:
+ *	The static array of bucket ranges is initialized if necessary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FindHistBucket(secs)
+    int secs;		/* number of seconds to be mapped into index */
+{
+    static int init = FALSE;
+    static int buckets[FS_HIST_TIME_BUCKETS];
+    int i;
+    int max;
+    int min;
+
+    if (!init) {
+	int current = 0;	/* current bucket */
+	int group = 0;		/* index into group array */
+	int total = 0;		/* current subtotal */
+	
+	for (group = 0;
+	     group < sizeof(fsHistGroupInfo) / sizeof(FsHistGroupInfo);
+	     group ++) {
+	    for (i = 0; i < fsHistGroupInfo[group].bucketsPerGroup; i++) {
+		total += fsHistGroupInfo[group].secondsPerBucket;
+		buckets[current] = total;
+		current ++;
+	    }
+	}
+	init = TRUE;
+    }
+    /*
+     * Anything out of the range of the binary search is in the final bucket.
+     */
+    if (secs > buckets[FS_HIST_TIME_BUCKETS - 2]) {
+	return(FS_HIST_TIME_BUCKETS - 1);
+    }
+    
+    min = 0;
+    max = FS_HIST_TIME_BUCKETS - 2;
+    while (max > min) {
+	i = min + (max - min) / 2;
+	if (secs >= buckets[i]) {
+	    min = i + 1;
+	} else if (i > 0 && secs < buckets[i-1]) {
+	    max = i - 1;
+	} else {
+	    return(i);
+	}
+    }
+    return(max);
+}
+	
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsFindFileType --
+ *
+ *	Map from flags in the handle to a constant corresponding to
+ *	the file type for the kernel.  
+ *
+ * Results:
+ *	The value corresponding to the file's type is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+FsFindFileType(cacheInfoPtr)
+    FsCacheFileInfo *cacheInfoPtr;	/* File to determine type of */
+{
+    switch (cacheInfoPtr->attr.userType) {
+	case FS_USER_TYPE_TMP:
+	    return(FS_FILE_TYPE_TMP);
+	case FS_USER_TYPE_SWAP:
+	    return(FS_FILE_TYPE_SWAP);
+	case FS_USER_TYPE_OBJECT:
+	    return(FS_FILE_TYPE_DERIVED);
+	case FS_USER_TYPE_BINARY:
+	    return(FS_FILE_TYPE_BINARY);
+	default:
+            return(FS_FILE_TYPE_OTHER);
+    }
 }
 
 

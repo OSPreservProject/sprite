@@ -115,7 +115,9 @@ FsLocalFileHandleInit(fileIDPtr, newHandlePtrPtr)
 	attr.firstByte = descPtr->firstByte;
 	attr.lastByte = descPtr->lastByte;
 	attr.accessTime = descPtr->accessTime;
+	attr.createTime = descPtr->createTime;
 	attr.modifyTime = descPtr->dataModifyTime;
+	attr.userType = descPtr->userType;
 	attr.permissions = descPtr->permissions;
 	attr.uid = descPtr->uid;
 	attr.gid = descPtr->gid;

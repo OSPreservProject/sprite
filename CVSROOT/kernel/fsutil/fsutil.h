@@ -246,6 +246,10 @@ extern Boolean fsShouldSyncDisks;
  */
 extern  Boolean fsInitialized;		
 
+/*
+ * The directory that temporary file will live in.
+ */
+extern	int	fsTmpDirNum;
 
 /*
  * Define the types of files that we care about in the kernel, for such

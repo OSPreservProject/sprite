@@ -211,6 +211,7 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
     attrPtr->numLinks			= descPtr->numLinks;
     attrPtr->uid			= descPtr->uid;
     attrPtr->gid			= descPtr->gid;
+    attrPtr->userType			= descPtr->userType;
     attrPtr->devServerID		= descPtr->devServerID;
     attrPtr->devType			= descPtr->devType;
     attrPtr->devUnit			= descPtr->devUnit;
@@ -250,7 +251,7 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
     }
     attrPtr->blockSize			= FS_BLOCK_SIZE;
     attrPtr->version			= descPtr->version;
-    attrPtr->userType			= descPtr->fileUsageType;
+    attrPtr->userType			= descPtr->userType;
 }
 
 /*
@@ -269,6 +270,7 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
  *	The modify and access times are set.
  *	The owner and group ID are set.
  *	The permission bits are set.
+ * 	If the operation is successful, the count of setAttrs is incremented.
  *
  *----------------------------------------------------------------------
  */
@@ -301,6 +303,9 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr)
 	     */
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].setIOAttr)
 			(&hdrPtr->fileID, attrPtr);
+	}
+	if (status == SUCCESS) {
+	    fsStats.gen.numSetAttrs ++;
 	}
     }
     return(status);
@@ -364,7 +369,15 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
     descPtr->dataModifyTime   = attrPtr->dataModifyTime.seconds;
     descPtr->descModifyTime   = fsTimeInSeconds;
        
-    descPtr->fileUsageType    = attrPtr->userType;
+    descPtr->userType    = attrPtr->userType;
+
+    /*
+     * Set the cached user file type in the handle, unless it's specified
+     * as undefined.
+     */
+    if (attrPtr->userType != FS_USER_TYPE_UNDEFINED) {
+	handlePtr->cacheInfo.attr.userType = attrPtr->userType;
+    }
 
     if (attrPtr->uid >= 0 && descPtr->uid != attrPtr->uid) {
 	if (idPtr->user != 0) {

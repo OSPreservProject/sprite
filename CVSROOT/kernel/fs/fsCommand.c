@@ -261,6 +261,16 @@ Fs_Command(command, bufSize, buffer)
 	    Fs_CacheEmpty(numLockedBlocksPtr);
 	    break;
 	}
+	case FS_ZERO_STATS: {
+	    /*
+	     * Zero out the counters in the fsStats struct.  Unfortunately,
+	     * some values in the structure can't be zeroed out, so this
+	     * must be changed to zero out only some portions.
+	     */
+	    Byte_Zero(sizeof(FsStats), (Address) &fsStats);
+	    status = SUCCESS;
+	    break;
+	}
 	case FS_RETURN_STATS: {
 	    if (bufSize >= sizeof(FsStats)) {
 		Byte_Copy(sizeof(FsStats), (Address) &fsStats, buffer);

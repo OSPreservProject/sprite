@@ -172,7 +172,8 @@ FsSpriteRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     }
     *lenPtr = amountRead;
     *offsetPtr = offset;
-    fsStats.gen.remoteBytesRead += amountRead;
+    FsStat_Add(amountRead, fsStats.gen.remoteBytesRead,
+	       fsStats.gen.remoteReadOverflow);
     if (userSpace) {
 	Mem_Free(readBufferPtr);
     }
@@ -466,7 +467,8 @@ FsSpriteWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     }
     *lenPtr = amountWritten;
     *offsetPtr += amountWritten;
-    fsStats.gen.remoteBytesWritten += amountWritten;
+    FsStat_Add(amountWritten, fsStats.gen.remoteBytesWritten,
+	       fsStats.gen.remoteWriteOverflow);
     if (userSpace) {
 	Mem_Free(writeBufferPtr);
     }

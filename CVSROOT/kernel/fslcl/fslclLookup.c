@@ -72,6 +72,7 @@ static ReturnStatus	ExpandLink();
 static ReturnStatus	FindComponent();
 static ReturnStatus 	InsertComponent();
 static Boolean		DirectoryEmpty();
+static int		FindFileType();
 static ReturnStatus CreateFile();
 static ReturnStatus LinkFile();
 static ReturnStatus OkToMoveDirectory();
@@ -401,8 +402,16 @@ endScan:
     if ((status == SUCCESS) ||
 	((status == FS_FILE_NOT_FOUND) && (*curCharPtr == '\0'))) {
 	/*
-	 * Done with the lookup.  Process creates, links, and deletes.
+	 * Done with the lookup.  Determine the type of the file once
+	 * we have a handle for it if its type is not already set from the
+	 * file descriptor. Process creates, links, and deletes.
 	 */
+ 	if (curHandlePtr != (FsLocalFileIOHandle *)NIL &&
+ 	    (curHandlePtr->cacheInfo.attr.userType ==
+	     FS_USER_TYPE_UNDEFINED)) {
+ 	    curHandlePtr->cacheInfo.attr.userType =
+		    FindFileType(parentHandlePtr, relativeName);
+ 	}
 	switch(useFlags & (FS_CREATE|FS_DELETE|FS_LINK)) {
 	    case 0:
 		if (status == SUCCESS) {
@@ -444,7 +453,15 @@ endScan:
 				     permissions, idPtr, &curHandlePtr);
 			    if (status != SUCCESS) {
 				FsFreeFileNumber(domainPtr, fileNumber);
+			    } else if (curHandlePtr !=
+				       (FsLocalFileIOHandle *)NIL &&
+				       (curHandlePtr->cacheInfo.attr.userType ==
+					FS_USER_TYPE_UNDEFINED)) {
+				curHandlePtr->cacheInfo.attr.userType =
+					FindFileType(parentHandlePtr,
+						     relativeName);
 			    }
+
 			}
 		    }
 		} else {
@@ -458,7 +475,7 @@ endScan:
 		break;
 	    case FS_LINK:
 		/*
-		 * The presense of FS_LINK means that curHandlePtr references
+		 * The presence of FS_LINK means that curHandlePtr references
 		 * a file that is being linked to.  If the file already exists
 		 * it is deleted first.  Then link is made with LinkFile.
 		 */
@@ -553,6 +570,61 @@ endScan:
     return(status);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindFileType --
+ *
+ *	Determine the type of a file, given its directory and name.
+ *	By default, files are "other files", but identify tmp/swap/object
+ *	files when possible.  Note: this is intended to be used if there
+ *	is no advisory type already associated with the file, because it
+ *	uses naming and directory information only.
+ *
+ * Results:
+ *	The best guess at a file type is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+FindFileType(parentHandlePtr, relativeName)
+    FsLocalFileIOHandle	*parentHandlePtr;	/* Locked handle of current 
+						 * directory */
+    char		*relativeName;		/* Path to file from cwd */
+{
+    int parentType;
+
+    parentType  = parentHandlePtr->cacheInfo.attr.userType;
+
+    if (parentHandlePtr != (FsLocalFileIOHandle *)NIL) {
+	if (parentHandlePtr->hdr.fileID.minor == fsTmpDirNum ||
+	    parentType == FS_USER_TYPE_TMP) {
+	    return(FS_USER_TYPE_TMP);
+	}
+	if (parentType == FS_USER_TYPE_SWAP) {
+	    return(FS_USER_TYPE_SWAP);
+	}
+    }
+
+    /*
+     * The check for "swap" is to catch /sprite/swap, and then the parent
+     * handle should catch the children.  NOTE: it's a kludge until file
+     * types are first-class attributes.
+     */
+    if (relativeName != (char *) NIL) {
+	if (String_Match(relativeName, "*swap/*") ||
+	    String_Match(relativeName, "*swap")) {
+	    return(FS_USER_TYPE_SWAP);
+	} else if (String_Match(relativeName, "*.o")) {
+	    return(FS_USER_TYPE_OBJECT);
+	}
+    }
+    return(FS_USER_TYPE_OTHER);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1618,7 +1690,7 @@ SetParentNumber(curHandlePtr, newParentNumber)
  *
  * DeleteFileName --
  *
- *      Delete a file by clearing it's fileNumber in the directory and
+ *      Delete a file by clearing its fileNumber in the directory and
  *	reducing its link count.  If there are no links left then the
  *	file's handle is marked as deleted.  Finally, if this routine
  *	has the last reference on the handle then the file's data blocks
@@ -1672,7 +1744,7 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	status = FS_DIR_NOT_EMPTY;
     } else {
 	/*
-	 * One needs write permission in the parent to do the delte.
+	 * One needs write permission in the parent to do the delete.
 	 */
 	status = CheckPermissions(parentHandlePtr, FS_WRITE, idPtr,
 					FS_DIRECTORY);

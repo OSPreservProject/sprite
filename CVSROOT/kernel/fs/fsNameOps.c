@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsNameOps.h"
 #include "fsTrace.h"
 #include "fsStream.h"
+#include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
 #include "dbg.h"
@@ -145,6 +146,23 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 				    (Address)&length, 0, (Address)NIL);
 	    }
 	    *streamPtrPtr = streamPtr;
+	    switch (useFlags & (FS_READ | FS_WRITE)) {
+		case FS_READ: {
+		    fsStats.gen.numReadOpens ++;
+		    break;
+		}
+		case FS_WRITE: {
+		    fsStats.gen.numWriteOpens ++;
+		    break;
+		}
+		case (FS_READ | FS_WRITE): {
+		    fsStats.gen.numReadWriteOpens ++;
+		    break;
+		}
+		default: {
+		    break;
+		}
+	    }
 	} else {
 	    FsHandleLock(streamPtr);
 	    FsStreamDispose(streamPtr);
@@ -509,6 +527,8 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
  *	See FsLocalSetAttrID for which attributes get updated at the
  *	file server.
  *
+ * 	If the operation is successful, the count of setAttrs is incremented.
+ *
  *----------------------------------------------------------------------
  */
 ReturnStatus
@@ -550,6 +570,9 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr)
 	 */
 	status = (*fsStreamOpTable[ioFileID.type].setIOAttr)
 			(&ioFileID, attrPtr);
+    }
+    if (status == SUCCESS) {
+	fsStats.gen.numSetAttrs ++;
     }
     return(status);
 }

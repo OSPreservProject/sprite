@@ -308,6 +308,7 @@ FsInitFileDesc(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr)
     fileDescPtr->gid = gid;
     fileDescPtr->lastByte = -1;
     fileDescPtr->firstByte = -1;
+    fileDescPtr->userType = FS_USER_TYPE_UNDEFINED;
     fileDescPtr->numLinks = 1;
     fileDescPtr->numKbytes = 0;
     /*

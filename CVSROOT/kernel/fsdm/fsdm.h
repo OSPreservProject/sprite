@@ -284,7 +284,7 @@ typedef struct FsFileDescriptor {
     int lastByte;	/* The number of bytes in the file */
     int lastByteXtra;	/* (Some day we may have 64 bit sizes?) */
     int firstByte;	/* For named pipes, offset of the first valid byte */
-    int fileUsageType;	/* Information about what sort of user file it is. */
+    int userType;	/* Information about what sort of user file it is. */
     int numLinks;	/* Number of directory references to the file */
     int devServerID;	/* ID of the host that controls the device */
     short devType;	/* For devices, their type.  For others this is the

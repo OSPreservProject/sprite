@@ -309,7 +309,7 @@ FsGetCachedAttr(cacheInfoPtr, versionPtr, attrPtr)
  *	None.
  *
  * Side effects:
- *	Blindly updates the times, permissions, and ownership info.
+ *	Blindly updates the times, permissions, file type, and ownership info.
  *
  * ----------------------------------------------------------------------------
  *
@@ -323,9 +323,11 @@ FsUpdateCachedAttr(cacheInfoPtr, attrPtr)
     if ((cacheInfoPtr->flags & FS_FILE_NOT_CACHEABLE) == 0) {
 	cacheInfoPtr->attr.accessTime = attrPtr->accessTime.seconds;
 	cacheInfoPtr->attr.modifyTime = attrPtr->dataModifyTime.seconds;
+	cacheInfoPtr->attr.createTime = attrPtr->createTime.seconds;
 	cacheInfoPtr->attr.permissions = attrPtr->permissions;
 	cacheInfoPtr->attr.uid = attrPtr->uid;
 	cacheInfoPtr->attr.gid = attrPtr->gid;
+	cacheInfoPtr->attr.userType = attrPtr->userType;
     }
     UNLOCK_MONITOR;
 }
@@ -519,7 +521,16 @@ FsCacheRead(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
     }
     *lenPtr -= size;
-    fsStats.blockCache.bytesRead += *lenPtr;
+    FsStat_Add(*lenPtr, fsStats.blockCache.bytesRead,
+	       fsStats.blockCache.bytesReadOverflow);
+#ifndef CLEAN
+    if (fsKeepTypeInfo) {
+	int fileType;
+
+	fileType = FsFindFileType(cacheInfoPtr);
+	fsStats.type.cacheBytes[FS_STAT_READ][fileType] += *lenPtr;
+    }
+#endif CLEAN
 
     /*
      * Consume data if the flags indicate a consuming stream.
@@ -584,6 +595,8 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     int			blockAddr;	/* For allocating blocks */
     Boolean		newBlock;	/* A brand new block was allocated. */
     int			streamType;	/* Type from handle header */
+    int			bytesToFree; 	/* number of bytes overwritten
+					 * in file */
 
     /*
      * Serialize access to the cache for this file.
@@ -616,6 +629,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     oldOffset = offset;
     size = *lenPtr;
     *lenPtr = 0;
+    bytesToFree = 0;
     streamType = cacheInfoPtr->hdrPtr->fileID.type;
 
     /*
@@ -693,6 +707,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	if (toWrite == FS_BLOCK_SIZE) {
 	    if (found) {
 		fsStats.blockCache.overWrites++;
+		bytesToFree += FS_BLOCK_SIZE;
 	    }
 	} else {
 	    /*
@@ -706,6 +721,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		    if (blockPtr->flags & FS_READ_AHEAD_BLOCK) {
 			fsStats.blockCache.readAheadHits++;
 		    }
+		    bytesToFree += toWrite;
 		} else {
 		    int blockOffset = blockNum * FS_BLOCK_SIZE;
 
@@ -726,6 +742,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 			Byte_Zero(FS_BLOCK_SIZE - numBytes,
 				  blockPtr->blockAddr + numBytes);
 		    }
+		    bytesToFree += numBytes;
 		}
 	    } else {
 		/*
@@ -771,7 +788,19 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     }
 
     *lenPtr = offset - oldOffset;
-    fsStats.blockCache.bytesWritten += offset - oldOffset;
+    FsStat_Add(offset - oldOffset, fsStats.blockCache.bytesWritten,
+	       fsStats.blockCache.bytesWrittenOverflow);
+#ifndef CLEAN
+    if (fsKeepTypeInfo) {
+	int fileType;
+
+	fileType = FsFindFileType(cacheInfoPtr);
+	fsStats.type.cacheBytes[FS_STAT_WRITE][fileType] += offset - oldOffset;
+    }
+    if (bytesToFree > 0) {
+	FsRecordDeletionStats(cacheInfoPtr, bytesToFree);
+    }
+#endif CLEAN
 
     /*
      * Update the firstByte so that Fs_Read knows there is data.
@@ -916,7 +945,16 @@ FsCacheBlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
     if (blockType == FS_DIR_CACHE_BLOCK) {
 	fsStats.blockCache.dirBytesRead += *numBytesPtr;
     } else {
-	fsStats.blockCache.bytesRead += *numBytesPtr;
+	FsStat_Add(*numBytesPtr, fsStats.blockCache.bytesRead,
+		   fsStats.blockCache.bytesReadOverflow);
+#ifndef CLEAN
+	if (fsKeepTypeInfo) {
+	    int fileType;
+
+	    fileType = FsFindFileType(cacheInfoPtr);
+	    fsStats.type.cacheBytes[FS_STAT_READ][fileType] += *numBytesPtr;
+	}
+#endif CLEAN
     }
     /*
      * Read ahead the next block.
