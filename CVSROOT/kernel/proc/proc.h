@@ -412,6 +412,13 @@ typedef struct Proc_ControlBlock {
      int Prof_PC;           /* Program counter recorded during the last
                              * timer tick. */
 
+    /*
+     * This needs to go with the other migration stuff but can't without
+     * a world recompile.
+     */
+    Address	remoteExecBuffer;	 /* Buffer to store info for remote
+					  * exec prior to migration */
+
 } Proc_ControlBlock;
 
 /*
@@ -549,6 +556,7 @@ extern void			Proc_PutOnDebugList();
 extern void			Proc_SuspendProcess();
 extern void			Proc_ResumeProcess();
 extern int			Proc_ExecEnv();
+extern int			Proc_RemoteExec();
 extern ReturnStatus 		Proc_GetHostIDs();
 
 
