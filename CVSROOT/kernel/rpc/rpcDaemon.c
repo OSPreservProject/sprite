@@ -118,9 +118,15 @@ Rpc_Daemon()
 	     } else {
 		 printf("Warning: Rpc_Daemon: no more RPC servers\n");
 		 RpcResetNoServers(-1);
+		 queueEntry.interval = timer_IntOneSecond;
 	     }
 	}
-	RpcReclaimServers();
+	/*
+	 * Reclaim servers from channels that have become idle.
+	 * We are more aggressive about this if we have maxed
+	 * out the number of server processes.
+	 */
+	RpcReclaimServers(rpcNoServers < 0);
     }
 }
 
