@@ -96,7 +96,7 @@ typedef struct {
 
 typedef struct {
     int			refCount;	/* Number of processes using this 
-					   environment. */
+					 * environment. */
     int			size;		/* Number of elements in environment. */
     struct ProcEnvironVar *varArray;	/* The environment itself. */
 } Proc_EnvironInfo;
@@ -412,7 +412,7 @@ typedef struct Proc_ControlBlock {
     int specialHandling;		/* If non-zero, means the process
 					 * requires special (slower) handling
 					 * (deliver signal, switch contexts,
-					 * ect.) on return from the next kernel
+					 * etc.) on return from the next kernel
 					 * call. */
 
     /*
@@ -447,14 +447,55 @@ typedef struct Proc_ControlBlock {
 					  * currently in genFlags but that will
 					  * also require a world recompile.) */
     Proc_Time   preEvictionUsage; 	 /* CPU usage (user + kernel)
-					  * as of the start of eviction. */
+					  * as of the start of
+					  * eviction. */
+
+    /*
+     * UNIX compatibility.
+     */
+
     int         unixErrno;               /* Errno for unix system call. */
-    /* As a random convention, we'll set unixProgress to -1 if the program
-       is not in unix compatibility mode; otherwise unixProgres != -1. */
+    /* 
+     * As a random convention, we'll set unixProgress to -1 if the 
+     * program is not in unix compatibility mode; otherwise 
+     * unixProgres != -1.
+     */
     int         unixProgress;            /* Progress indicator for restarting
                                             unix system calls. */
-    int		extraField[10];		/* Extra fields for later use. */
 
+    /* 
+     * More lock instrumentation.  This should go with the LOCKDEP 
+     * fields above (if you're willing to do a world recompile).
+     */
+
+    int		locksHeld;	/* number of locks currently held by 
+				 * the process; not necessarily the
+				 * same as lockStackSize because of
+				 * the way the stack is popped */
+
+#ifdef SOSP91
+    /* 
+     * Fields for stashing away instrumentation information.
+     */
+    int		rememberedClient;
+    int		rememberedMig;
+    int		rememberedOp;
+    int		inNameLookup;
+#else
+    int		sospFields[4];	/* padding to keep the struct size constant */
+#endif
+
+    /*
+     *---------------------------------------------------------------------
+     *
+     *  Extra padding, so that we can add fields to this struct 
+     *  without changing its size.
+     *
+     *---------------------------------------------------------------------
+     */
+
+    int		extraField[5];		/* Extra fields for later use. */
+    
 } Proc_ControlBlock;
 
 /*
