@@ -1,7 +1,19 @@
 /*
  * fsInt.h --
  *
- *      Filesystem wide internal types and definitions for the fs module.
+ *      Internal types and definitions for the fs module.
+ *	This file defines handle types and some sub-structures
+ *	that are embedded in various types of handles.  A
+ *	"handle" is a data structure that corresponds one-for-one
+ *	with a file system object, i.e. a particular file, a device,
+ *	a pipe, or a pseudo-device.  A handle is not always one-for-one
+ *	with a file system name.  Devices can have more than one name,
+ *	and pseudo-devices have many handles associated with one name.
+ *	Each handle is identfied by a unique FsFileID, and has a standard
+ *	header for manipulation by generic routines.
+ *	Note: some obviously internal things like FsFileID and
+ *	FsHandleHeader are defined in fs.h because they are
+ *	embedded in the Fs_Stream type which is exported.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -110,8 +122,9 @@ typedef struct FsRecoveryInfo {
     Sync_Condition	reopenComplete;	/* Notified when the handle has been
 					 * re-opened at the I/O server */
     int			flags;		/* WANT_RECOVERY, RECOVERY_FAILED. */
+    ReturnStatus	status;		/* Recovery status */
     FsUseCounts		use;		/* Client's copy of use state */
-} FsRecoveryInfo;			/* 28 BYTES */
+} FsRecoveryInfo;			/* 32 BYTES */
 
 /*
  * Values for the recovery info flags field.
@@ -168,6 +181,7 @@ typedef struct FsCacheFileInfo {
 				    * available for this block. */
     FsCachedAttributes attr;	   /* Local version of descriptor attributes. */
 } FsCacheFileInfo;		   /* 108 BYTES */
+
 
 /*
  * The client use state needed to allow remote client access and to
@@ -219,7 +233,7 @@ typedef struct FsRemoteIOHandle {
 					 * ID field in the hdr is used to
 					 * forward the I/O operation. */
     FsRecoveryInfo	recovery;	/* For I/O server recovery */
-} FsRemoteIOHandle;			/* 60 BYTES */
+} FsRemoteIOHandle;			/* 64 BYTES */
 
 
 /*
