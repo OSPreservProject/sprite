@@ -951,13 +951,14 @@ stripeIODoneProc(stripeIOControlPtr, numFailed)
 {
     char	buf[120];
 
-    UnlockStripe(SectorToStripeID(stripeIOControlPtr->raidPtr,
-	    stripeIOControlPtr->firstSector));
     if (stripeIOControlPtr->operation == FS_WRITE) {
-	sprintf(buf, "U %d\n",
-		 SectorToStripeID(stripeIOControlPtr->raidPtr,
-			stripeIOControlPtr->firstSector));
-	LogEntry(stripeIOControlPtr->raidPtr, buf);
+	XUnlockStripe(stripeIOControlPtr->raidPtr,
+		SectorToStripeID(stripeIOControlPtr->raidPtr,
+		stripeIOControlPtr->firstSector));
+    } else {
+	SUnlockStripe(stripeIOControlPtr->raidPtr,
+		SectorToStripeID(stripeIOControlPtr->raidPtr,
+		stripeIOControlPtr->firstSector));
     }
     if (numFailed == 0) {
     	stripeIOControlPtr->doneProc(stripeIOControlPtr->clientData, SUCCESS, 
@@ -1091,229 +1092,6 @@ singleStripeIODoneProc(IOControlPtr, status, amountTransferred)
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * InitiateHardInit --
- *	
- *	Reconstructs the parity beginning at startStripe for numStripe.
- *	If numStripe is negative, all stripes will be reconstucted.
- *	(ctrlData is used by the debug device when debugging in user mode.)
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Parity is updated.
- *
- *----------------------------------------------------------------------
- */
-
-static void InitiateStripeHardInit();
-static void hardInitReadDoneProc();
-static void hardInitWriteDoneProc();
-
-void
-InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
-    Raid	*raidPtr;
-    int		 startStripe;
-    int		 numStripe;
-    void       (*doneProc)();
-    ClientData   clientData;
-    int		 ctrlData;
-{
-    RaidReconstructionControl	*reconstructionControlPtr;
-    reconstructionControlPtr =
-	    MakeReconstructionControl(raidPtr, (int) NIL, (int) NIL,
-		    (RaidDisk *) NIL, doneProc, clientData, ctrlData);
-    reconstructionControlPtr->stripeID = startStripe;
-    reconstructionControlPtr->numStripe = numStripe;
-    printf("RAID:MSG:Initiating reconstruction.\n");
-    InitiateStripeHardInit(reconstructionControlPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * hardInitDoneProc --
- *
- *	Callback procedure for InitiateHardInit.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-hardInitDoneProc(reconstructionControlPtr)
-    RaidReconstructionControl	*reconstructionControlPtr;
-{
-    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData);
-    FreeReconstructionControl(reconstructionControlPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * InitiateHardInitFailure --
- *
- *	Causes the initialization of the current stripe to fail.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Prints an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-InitiateHardInitFailure(reconstructionControlPtr)
-    RaidReconstructionControl	*reconstructionControlPtr;
-{
-    hardInitWriteDoneProc(reconstructionControlPtr, 1);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * InitiateStripeHardInit --
- *
- *	Reconstructs the parity on a single stripe.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Locks stripe.
- *	Parity is updated.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-InitiateStripeHardInit(reconstructionControlPtr)
-    RaidReconstructionControl	*reconstructionControlPtr;
-{
-    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
-
-
-    int	       		ctrlData      = reconstructionControlPtr->ctrlData;
-    RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
-    char	       *readBuf       = reconstructionControlPtr->readBuf;
-
-    int		        stripeID      = reconstructionControlPtr->stripeID;
-    int		        numStripe     = reconstructionControlPtr->numStripe;
-    unsigned	        firstSector;
-    unsigned	        nthSector;
-
-    firstSector = StripeIDToSector(raidPtr, stripeID);
-    nthSector   = NthSectorOfStripe(raidPtr, firstSector);
-    if (stripeID >= raidPtr->numStripe || stripeID < 0 || numStripe == 0) {
-	hardInitDoneProc(reconstructionControlPtr);
-	return;
-    }
-    XLockStripe(raidPtr, stripeID);
-    reqControlPtr->numReq = reqControlPtr->numFailed = 0;
-    AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
-	    firstSector, nthSector, readBuf, ctrlData);
-    if (reqControlPtr->numFailed == 0) {
-	InitiateIORequests(reqControlPtr,
-		hardInitReadDoneProc,
-		(ClientData) reconstructionControlPtr);
-    } else {
-	InitiateHardInitFailure(reconstructionControlPtr);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * hardInitReadDoneProc --
- *
- *	Callback procedure for InitiateStripeHardInit.
- *	Called after the data on a stripe is read.
- *	Calculates the parity and then writes it.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Parity write.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-hardInitReadDoneProc(reconstructionControlPtr, numFailed)
-    RaidReconstructionControl	*reconstructionControlPtr;
-    int			 	 numFailed;
-{
-    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
-    char	       *parityBuf     = reconstructionControlPtr->parityBuf;
-    int	       		ctrlData      = reconstructionControlPtr->ctrlData;
-    RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
-    int		        stripeID      = reconstructionControlPtr->stripeID;
-
-    if (numFailed > 0) {
-	InitiateHardInitFailure(reconstructionControlPtr);
-    } else {
-#ifndef NODATA
-	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
-#endif
-	XorRaidRequests(reqControlPtr, raidPtr, parityBuf);
-	AddRaidParityRequest(reqControlPtr, raidPtr, FS_WRITE,
-		(unsigned) StripeIDToSector(raidPtr, stripeID),
-		parityBuf, ctrlData);
-	InitiateIORequests(reqControlPtr,
-		hardInitWriteDoneProc,
-		(ClientData) reconstructionControlPtr);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * hardInitWriteDoneProc --
- *
- *	Callback procedure for hardInitReadDoneProc.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Unlocks stripe and initiates reconstruction for the next stripe.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-hardInitWriteDoneProc(reconstructionControlPtr, numFailed)
-    RaidReconstructionControl	*reconstructionControlPtr;
-    int				 numFailed;
-{
-    if (numFailed > 0) {
-	ReportHardInitFailure(reconstructionControlPtr->stripeID);
-    }
-    if (reconstructionControlPtr->stripeID % 100 == 0) {
-	printf("RAID:MSG:%d", reconstructionControlPtr->stripeID);
-    }
-    UnlockStripe(reconstructionControlPtr->stripeID);
-    reconstructionControlPtr->stripeID++;
-    reconstructionControlPtr->numStripe--;
-    InitiateStripeHardInit(reconstructionControlPtr);
 }
 
 
