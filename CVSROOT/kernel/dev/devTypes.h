@@ -56,10 +56,27 @@
 #define	DEV_SCSI_HBA		9
 #define	DEV_RAID		10
 #define	DEV_DEBUG		11
+#ifndef ds3100
 #define DEV_MOUSE		12
+#endif /* not ds3100 */
 #define DEV_GRAPHICS		13
 #define DEV_PLACEHOLDER_3	13	/* for ds3100 unused graphics device */
 #define DEV_AUDIO		15
+
+#ifdef ds3100
+#define	DEV_CONSOLE		0
+#define DEV_GRAPHICS		9
+/*
+ * Unit numbers for the graphics device.
+ */
+#define DEV_MOUSE		0
+#define DEV_XCONS		1
+
+/*
+ * SCSI HBA's attached to the system.
+ */
+#define DEV_SII_HBA	0
+#endif /* ds3100 */
 
 /*
  * Following device(s) exist only on Sequent Symmetry
@@ -84,4 +101,10 @@
 #define	DEV_SCSI0_HBA	1
 #define	DEV_JAGUAR_HBA  2
 
+/*
+ * The following exists only on the sparc station.
+ */
+#define DEV_SCSIC90_HBA	0
+
 #endif /* _DEVTYPES */
+
