@@ -530,10 +530,11 @@ ReleaseProc(handlePtr)
 
 /*ARGSUSED*/
 static ReturnStatus
-IOControlProc(handlePtr, command, inBufSize, inBuffer,
+IOControlProc(handlePtr, command, byteOrder, inBufSize, inBuffer,
                                  outBufSize, outBuffer)
     DevBlockDeviceHandle	*handlePtr; /* Handle pointer of device. */
     int command;
+    int byteOrder;
     int inBufSize;
     char *inBuffer;
     int outBufSize;
