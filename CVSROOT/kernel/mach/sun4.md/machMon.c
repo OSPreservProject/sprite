@@ -152,7 +152,7 @@ Mach_MonReboot(rebootString)
     /*
      * If we reach this far something went wrong.
      */
-    Sys_Panic(SYS_FATAL, "Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
+    panic("Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
 }
 
 
