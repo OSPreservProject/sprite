@@ -20,7 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "devTimer.h"
 #include "sys.h"
 #include "sysStats.h"
 
@@ -29,7 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  * Dev_Init --
  *
- *	Initialize the timer.  Device initialization routines are called
+ *	Device initialization routines are called
  *	later by Dev_Config.
  *
  * Results:
@@ -44,9 +43,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void
 Dev_Init()
 {
-    Dev_CounterInit();
-    Dev_TimerInit(DEV_CALLBACK_TIMER);
-    Dev_TimerStart(DEV_CALLBACK_TIMER);
 
 }
 
