@@ -101,7 +101,7 @@ FsAttachDisk(devicePtr, localName, flags)
     register FsDomain *domainPtr;	/* Top level info for the domain stored
 					 * on the device */
     FsLocalFileIOHandle	*handlePtr;	/* Reference to file handle for root */
-    FsFileID	fileID;			/* ID for root directory of domain */
+    Fs_FileID	fileID;			/* ID for root directory of domain */
     int		prefixFlags;		/* For installing the prefix */
     int		partition;		/* Partition number from the disk. */
 
@@ -402,7 +402,7 @@ FsDetachDisk(prefixName)
     char		*lookupName;
     int			domainType;
     FsPrefix		*prefixPtr;
-    FsFileID		rootID;
+    Fs_FileID		rootID;
     int			domain;
     register FsDomain	*domainPtr;
     int			i;

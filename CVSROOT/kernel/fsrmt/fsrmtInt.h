@@ -21,8 +21,8 @@
  */
 
 typedef struct FsSpriteReadParams {
-    FsFileID	fileID;			/* Identifies file to read from */
-    FsFileID	streamID;		/* Identifies stream (for offset) */
+    Fs_FileID	fileID;			/* Identifies file to read from */
+    Fs_FileID	streamID;		/* Identifies stream (for offset) */
     int		offset;			/* Byte offset at which to read */
     int		length;			/* Byte amount to read */
     int		flags;			/* FS_CLIENT_CACHE_READ if file is
@@ -39,8 +39,8 @@ typedef struct FsSpriteReadParams {
  */
 
 typedef struct FsSpriteWriteParams {
-    FsFileID	fileID;			/* File to write to */
-    FsFileID	streamID;		/* Stream to write to (for offset) */
+    Fs_FileID	fileID;			/* File to write to */
+    Fs_FileID	streamID;		/* Stream to write to (for offset) */
     int		offset;			/* Byte offset at which to write */
     int		length;			/* Byte amout to write */
     int		flags;			/* FS_APPEND | FS_CLIENT_CACHE_WRITE
@@ -53,7 +53,7 @@ typedef struct FsSpriteWriteParams {
  */
 
 typedef struct FsSpriteDevOpenParams {
-    FsFileID	fileID;		/* File ID from the name server used by the
+    Fs_FileID	fileID;		/* File ID from the name server used by the
 				 * I/O server to construct its own file ID */
     Fs_Device	device;		/* Specifies device server, type, unit */
     int		flags;		/* FS_MIGRATING_HANDLE. */
@@ -64,7 +64,7 @@ typedef struct FsSpriteDevOpenParams {
 } FsSpriteDevOpenParams;
 
 typedef struct FsSpriteDevOpenResults {
-    FsFileID	fileID;		/* File ID that identifies the handle on the
+    Fs_FileID	fileID;		/* File ID that identifies the handle on the
 				 * I/O server. */
 } FsSpriteDevOpenResults;
 
@@ -73,8 +73,8 @@ typedef struct FsSpriteDevOpenResults {
  */
 
 typedef struct FsSpriteIOCParams {
-    FsFileID	fileID;		/* File to manipulate. */
-    FsFileID	streamID;	/* Stream to the file, needed for locking */
+    Fs_FileID	fileID;		/* File to manipulate. */
+    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
     Proc_PID	procID;		/* ID of invoking process */
     Proc_PID	familyID;	/* Family of invoking process */
     int		command;	/* I/O Control to perform. */
@@ -88,8 +88,8 @@ typedef struct FsSpriteIOCParams {
  * Parameters for the block copy RPC.
  */
 typedef struct FsSpriteBlockCopyParams {
-    FsFileID	srcFileID;	/* File to copy from. */
-    FsFileID	destFileID;	/* File to copy to. */
+    Fs_FileID	srcFileID;	/* File to copy from. */
+    Fs_FileID	destFileID;	/* File to copy to. */
     int		blockNum;	/* Block to copy to. */
 } FsSpriteBlockCopyParams;
 
@@ -99,7 +99,7 @@ typedef struct FsSpriteBlockCopyParams {
 
 typedef struct FsSprite2PathParams {
     FsLookupArgs	lookupArgs;	/* Includes first prefixID */
-    FsFileID		prefixID2;
+    Fs_FileID		prefixID2;
 } FsSprite2PathParams;
 
 typedef struct FsSprite2PathData {

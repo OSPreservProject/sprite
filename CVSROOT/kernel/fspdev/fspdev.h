@@ -28,14 +28,14 @@
  * is initialized.
  */
 typedef struct FsPdevState {
-    FsFileID	ctrlFileID;	/* Control stream FileID */
+    Fs_FileID	ctrlFileID;	/* Control stream FileID */
     /*
      * The following fields are used when the client process is remote
      * from the server host.
      */
     Proc_PID	procID;		/* Process ID of remote client */
     int		uid;		/* User ID of remote client */
-    FsFileID	streamID;	/* Client's stream ID used to set up a
+    Fs_FileID	streamID;	/* Client's stream ID used to set up a
 				 * matching stream here on the server */
 } FsPdevState;
 

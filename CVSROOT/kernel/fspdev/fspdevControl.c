@@ -45,7 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 PdevControlIOHandle *
 FsControlHandleInit(fileIDPtr, name)
-    FsFileID *fileIDPtr;
+    Fs_FileID *fileIDPtr;
     char *name;
 {
     register Boolean found;
@@ -87,7 +87,7 @@ FsControlHandleInit(fileIDPtr, name)
 ReturnStatus
 FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 		 ioHandlePtrPtr)
-    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* NIL. */
@@ -322,7 +322,7 @@ FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 
 FsHandleHeader *
 FsControlVerify(fileIDPtr, pdevServerHostID)
-    FsFileID	*fileIDPtr;		/* control I/O file ID */
+    Fs_FileID	*fileIDPtr;		/* control I/O file ID */
     int		pdevServerHostID;	/* Host ID of the client */
 {
     register PdevControlIOHandle	*ctrlHandlePtr;

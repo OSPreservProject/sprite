@@ -68,26 +68,26 @@ typedef enum { FST_NIL, FST_IO, FST_NAME,
 		FST_HANDLE, FST_RA, FST_BLOCK } FsTraceRecType ;
 
 typedef struct FsTraceIORec {
-    FsFileID	fileID;
+    Fs_FileID	fileID;
     int		offset;
     int		numBytes;
 } FsTraceIORec;
 
 typedef struct FsTraceHdrRec {
-    FsFileID	fileID;
+    Fs_FileID	fileID;
     int		refCount;
     int		numBlocks;
 } FsTraceHdrRec;
 
 typedef struct FsTraceBlockRec {
-    FsFileID	fileID;
+    Fs_FileID	fileID;
     int		blockNum;
     int		flags;
 } FsTraceBlockRec;
 
 typedef struct FsTraceRecord {
     union {
-	FsFileID	fileID;
+	Fs_FileID	fileID;
 	FsTraceHdrRec	hdrRec;
 	FsTraceIORec	ioRec;
 	FsTraceBlockRec	blockRec;

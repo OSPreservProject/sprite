@@ -90,7 +90,7 @@ FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
     register Boolean found;
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
-    FsFileID fileID;
+    Fs_FileID fileID;
     FsStreamClientInfo *clientPtr;
 
     LOCK_MONITOR;
@@ -152,7 +152,7 @@ FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
  */
 ENTRY Fs_Stream *
 FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name, foundPtr)
-    FsFileID		*streamIDPtr;	/* File ID for stream */
+    Fs_FileID		*streamIDPtr;	/* File ID for stream */
     int			clientID;	/* Client of the stream */
     FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
     int			useFlags;	/* Usage flags from Fs_Open call */
@@ -205,7 +205,7 @@ FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name, foundPtr)
 ENTRY void
 FsStreamMigClient(streamIDPtr, srcClientID, dstClientID, ioHandlePtr,
 	    offsetPtr, flagsPtr)
-    FsFileID		*streamIDPtr;	/* File ID for stream */
+    Fs_FileID		*streamIDPtr;	/* File ID for stream */
     int			srcClientID;	/* Original client of the stream */
     int			dstClientID;	/* New client of the stream */
     FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
@@ -276,11 +276,11 @@ FsStreamMigClient(streamIDPtr, srcClientID, dstClientID, ioHandlePtr,
 ENTRY void
 FsStreamNewID(serverID, streamIDPtr)
     int			serverID;	/* I/O server for stream */
-    FsFileID		*streamIDPtr;	/* Return - FileID for the stream */
+    Fs_FileID		*streamIDPtr;	/* Return - FileID for the stream */
 {
     register Boolean found;
     Fs_Stream *newStreamPtr;
-    FsFileID fileID;
+    Fs_FileID fileID;
 
     LOCK_MONITOR;
 
@@ -329,7 +329,7 @@ FsStreamNewID(serverID, streamIDPtr)
  */
 Fs_Stream *
 FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, name, foundPtr)
-    FsFileID *streamIDPtr;
+    Fs_FileID *streamIDPtr;
     FsHandleHeader *ioHandlePtr;
     int useFlags;
     char *name;
@@ -404,7 +404,7 @@ Fs_StreamCopy(oldStreamPtr, newStreamPtrPtr)
 
 Fs_Stream *
 FsStreamClientVerify(streamIDPtr, clientID)
-    FsFileID	*streamIDPtr;	/* Client's stream ID */
+    Fs_FileID	*streamIDPtr;	/* Client's stream ID */
     int		clientID;	/* Host ID of the client */
 {
     register FsStreamClientInfo *clientPtr;
@@ -534,8 +534,8 @@ FsStreamScavenge(hdrPtr)
 
 
 typedef struct StreamReopenParams {
-    FsFileID	streamID;
-    FsFileID	ioFileID;
+    Fs_FileID	streamID;
+    Fs_FileID	ioFileID;
     int		useFlags;
     int		offset;
 } StreamReopenParams;
@@ -595,7 +595,7 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	 * can set up the stream.
 	 */
 	StreamReopenParams	*reopenParamsPtr;
-	register FsFileID	*fileIDPtr;
+	register Fs_FileID	*fileIDPtr;
 	FsHandleHeader		*ioHandlePtr;
 
 	reopenParamsPtr = (StreamReopenParams *)inData;

@@ -1307,7 +1307,7 @@ Fs_SetAttributesIDStub(streamID, attrPtr)
     register 	ReturnStatus 	status;
     Fs_Stream			*streamPtr;
     Fs_Attributes		attr;
-    FsUserIDs			ids;
+    Fs_UserIDs			ids;
     Proc_ControlBlock		*procPtr;
 
     if (Vm_CopyIn(sizeof(attr), (Address) attrPtr, 
@@ -1352,7 +1352,7 @@ Fs_SetAttrIDStub(streamID, attrPtr, flags)
     register 	ReturnStatus 	status;
     Fs_Stream			*streamPtr;
     Fs_Attributes		attr;
-    FsUserIDs			ids;
+    Fs_UserIDs			ids;
     Proc_ControlBlock		*procPtr;
 
     if (Vm_CopyIn(sizeof(attr), (Address) attrPtr, 

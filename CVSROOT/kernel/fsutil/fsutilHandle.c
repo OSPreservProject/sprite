@@ -2,7 +2,7 @@
  * fsHandle.c --
  *
  *	Routines to manage file handles.  They are kept in a table hashed
- *	by the FsFileID type.  They are referenced counted and eligible for
+ *	by the Fs_FileID type.  They are referenced counted and eligible for
  *	removal when their reference count goes to zero.  FsHandleInstall
  *	adds handles to the table.  FsHandleFetch returns a locked handle.
  *	FsHandleLock locks a handle that you already have.
@@ -128,7 +128,7 @@ FsHandleInit(fileHashSize)
     int	fileHashSize;	/* The number of hash table entries to put in the
 			 * file hash table for starters. */
 {
-    Hash_Init(fileHashTable, fileHashSize, Hash_Size(sizeof(FsFileID)));
+    Hash_Init(fileHashTable, fileHashSize, Hash_Size(sizeof(Fs_FileID)));
 }
 
 int	fsMaxNumHandles = 1024;
@@ -157,7 +157,7 @@ extern	fsLastScavengeTime;
  */
 ENTRY Boolean
 FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
-    register FsFileID	*fileIDPtr;	/* Identfies handle to install. */
+    register Fs_FileID	*fileIDPtr;	/* Identfies handle to install. */
     int		 	size;		/* True size of the handle.  This
 					 * routine only looks at the header,
 					 * but more data follows that. */
@@ -261,7 +261,7 @@ again:
  */
 ENTRY FsHandleHeader *
 FsHandleFetch(fileIDPtr)
-    FsFileID 	*fileIDPtr;	/* Identfies handle to fetch. */
+    Fs_FileID 	*fileIDPtr;	/* Identfies handle to fetch. */
 {
     register	Hash_Entry	*hashEntryPtr;
     register	FsHandleHeader	*hdrPtr;

@@ -46,7 +46,7 @@ typedef struct FsPipeIOHandle {
  * When a client re-opens a pipe it sends the following state to the server.
  */
 typedef struct FsPipeReopenParams {
-    FsFileID	fileID;		/* File ID of pipe to reopen. MUST BE FIRST */
+    Fs_FileID	fileID;		/* File ID of pipe to reopen. MUST BE FIRST */
     FsUseCounts use;		/* Recovery use counts */
 } FsPipeReopenParams;
 

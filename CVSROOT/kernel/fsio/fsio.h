@@ -94,10 +94,10 @@ typedef struct FsOpenOps {
      *		FsLocalFileIOHandle	*handlePtr;
      *		int			clientID;
      *		int			useFlags;	(From the stream)
-     *		FsFileID		ioFileIDPtr;	(Returned to client)
+     *		Fs_FileID		ioFileIDPtr;	(Returned to client)
      *	   (The following arguments are ignored during set/get attrs)
      *	   (This case is indicated by a NIL streamIDPtr)
-     *		FsFileID		streamIDPtr;	(Returned to client,)
+     *		Fs_FileID		streamIDPtr;	(Returned to client,)
      *		int			*sizePtr;	(Return size of data)
      *		ClientData		*dataPtr;	(Extra return data)
      */
@@ -138,7 +138,7 @@ typedef struct FsStreamTypeOps {
      *  BRENT - why can't nameFileID be set by the server?
      *
      *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, hdrPtrPtr)
-     *		FsFileID	*fileIDPtr;	(indicates file)
+     *		Fs_FileID	*fileIDPtr;	(indicates file)
      *		int		*flagsPtr;	(from the stream)
      *		int		clientID;	(who's opening it)
      *		ClientData	data;		(stream data from srvOpen)
@@ -210,7 +210,7 @@ typedef struct FsStreamTypeOps {
      *
      *	FooGetIOAttr(fileIDPtr, clientID, attrPtr)
      *	FooSetIOAttr(fileIDPtr, attrPtr, flags)
-     *		FsFileID		*fileIDPtr;	(Identfies file)
+     *		Fs_FileID		*fileIDPtr;	(Identfies file)
      *		int			clientID;	(Client getting attrs)
      *		Fs_Attributes		*attrPtr;	(Attrs to set/update)
      *		int			flags;		(which attrs to set)
@@ -228,7 +228,7 @@ typedef struct FsStreamTypeOps {
      *
      *	FsHandleHeader *
      *	FooClientVerify(fileIDPtr, clientID, domainTypePtr)
-     *		FsFileID	*fileIDPtr;		(Client's handle)
+     *		Fs_FileID	*fileIDPtr;		(Client's handle)
      *		int		clientID;		(The client hostID)
      *		int		*domainTypePtr;		(may be NIL)
      */

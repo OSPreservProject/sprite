@@ -2,7 +2,7 @@
  * fsFile.c --
  *
  *	Routines for operations on files.  A file handle is identified
- *	by using the <major> field of the FsFileID for the domain index,
+ *	by using the <major> field of the Fs_FileID for the domain index,
  *	and the <minor> field for the file number.
  *
  * Copyright 1987 Regents of the University of California
@@ -63,7 +63,7 @@ void IncVersionNumber();
  */
 ReturnStatus
 FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
-    FsFileID	*fileIDPtr;
+    Fs_FileID	*fileIDPtr;
     char	*name;
     FsLocalFileIOHandle	**newHandlePtrPtr;
 {
@@ -176,8 +176,8 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 					 * Returned UNLOCKED. */
      int		clientID;	/* Host ID of client doing the open */
      register int	useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
-     FsFileID		*ioFileIDPtr;	/* Return - same as handle file ID */
-     FsFileID		*streamIDPtr;	/* Return ID of stream to the file. 
+     Fs_FileID		*ioFileIDPtr;	/* Return - same as handle file ID */
+     Fs_FileID		*streamIDPtr;	/* Return ID of stream to the file. 
 					 * NIL during set/get attributes */
      int		*dataSizePtr;	/* Return - sizeof(FsFileState) */
      ClientData		*clientDataPtr;	/* Return - a reference to FsFileState
@@ -270,7 +270,7 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * up for them as there is never an offset for them, hence
 	     * this check against a NIL streamID pointer.
 	     */
-	    if (streamIDPtr != (FsFileID *)NIL) {
+	    if (streamIDPtr != (Fs_FileID *)NIL) {
 		register Fs_Stream *streamPtr;
 
 		streamPtr = FsStreamNewClient(rpc_SpriteID, clientID,
@@ -437,7 +437,7 @@ reopenReturn:
 /*ARGSUSED*/
 ReturnStatus
 FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
-    FsFileID		*ioFileIDPtr;	/* I/O fileID from the name server */
+    Fs_FileID		*ioFileIDPtr;	/* I/O fileID from the name server */
     int			*flagsPtr;	/* Return only.  The server returns
 					 * a modified useFlags in FsFileState */
     int			clientID;	/* IGNORED */

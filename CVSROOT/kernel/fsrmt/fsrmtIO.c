@@ -612,7 +612,7 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
  */
 
 typedef struct FsSpriteSelectParams {
-    FsFileID	fileID;		/* File to be re-opened */
+    Fs_FileID	fileID;		/* File to be re-opened */
     int		read;		/* 1 or zero */
     int		write;		/* 1 or zero */
     int		except;		/* 1 or zero */
@@ -1070,7 +1070,7 @@ Fs_RpcBlockCopy(srvToken, clientID, command, storagePtr)
  */
 ReturnStatus
 FsSpriteDomainInfo(fileIDPtr, domainInfoPtr)
-    FsFileID		*fileIDPtr;
+    Fs_FileID		*fileIDPtr;
     Fs_DomainInfo	*domainInfoPtr;	
 {
     register ReturnStatus	status;

@@ -33,10 +33,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsPdev.h"
 #include "fsFile.h"
 #include "fsDevice.h"
-#include "fsSpriteDomain.h"
 #include "fsPrefix.h"
 #include "fsOpTable.h"
 #include "fsDebug.h"
+#include "fsNameOpsInt.h"
 #include "mem.h"
 #include "rpc.h"
 
@@ -897,7 +897,7 @@ Fs_DeencapFileState(procPtr, buffer)
 
 static void
 LocalToRemoteDomain(fileIDPtr)
-    FsFileID *fileIDPtr;
+    Fs_FileID *fileIDPtr;
 {
     if (fileIDPtr->type == FS_LCL_FILE_STREAM) {
 	fileIDPtr->type = FS_RMT_FILE_STREAM;
@@ -932,7 +932,7 @@ LocalToRemoteDomain(fileIDPtr)
 
 static void
 RemoteToLocalDomain(fileIDPtr)
-    FsFileID *fileIDPtr;
+    Fs_FileID *fileIDPtr;
 {
     if (fileIDPtr->type == FS_RMT_FILE_STREAM) {
 	fileIDPtr->type = FS_LCL_FILE_STREAM;

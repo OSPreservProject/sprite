@@ -2332,7 +2332,7 @@ PutInBadBlockFile(handlePtr, domainPtr, blockNum)
     FsDomain	*domainPtr;		/* Pointer to domain. */
     int		blockNum;	/* Block number to put in bad block file. */
 {
-    FsFileID		fileID;
+    Fs_FileID		fileID;
     FsLocalFileIOHandle	*badBlockHandlePtr;
     FsFileDescriptor	*descPtr;
     FsBlockIndexInfo	indexInfo;

@@ -65,7 +65,7 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
     Fs_Stream **inStreamPtrPtr;		/* Return - in (reading) stream */
     Fs_Stream **outStreamPtrPtr;	/* Return - out (writing) stream */
 {
-    FsFileID		fileID;
+    Fs_FileID		fileID;
     register FsPipeIOHandle	*handlePtr;
     register Fs_Stream		*streamPtr;
 
@@ -124,7 +124,7 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
 
 ENTRY void
 GetFileID(fileIDPtr)
-    FsFileID	*fileIDPtr;
+    Fs_FileID	*fileIDPtr;
 {
     static int openInstance = 0;
 
@@ -157,7 +157,7 @@ GetFileID(fileIDPtr)
  */
 FsPipeIOHandle *
 FsPipeHandleInit(fileIDPtr, findIt)
-    FsFileID	*fileIDPtr;	/* Pipe file ID */
+    Fs_FileID	*fileIDPtr;	/* Pipe file ID */
     Boolean	findIt;		/* TRUE if we expect to find its handle */
 {
     FsHandleHeader *hdrPtr;
@@ -694,7 +694,7 @@ FsPipeSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 /*ARGSUSED*/
 ReturnStatus
 FsPipeGetIOAttr(fileIDPtr, clientID, attrPtr)
-    FsFileID			*fileIDPtr;	/* FileID of pipe */
+    Fs_FileID			*fileIDPtr;	/* FileID of pipe */
     int 			clientID;	/* IGNORED */
     register Fs_Attributes	*attrPtr;	/* Attributes to update */
 {
@@ -731,7 +731,7 @@ FsPipeGetIOAttr(fileIDPtr, clientID, attrPtr)
 /*ARGSUSED*/
 ReturnStatus
 FsPipeSetIOAttr(fileIDPtr, attrPtr, flags)
-    FsFileID		*fileIDPtr;	/* FileID of pipe */
+    Fs_FileID		*fileIDPtr;	/* FileID of pipe */
     Fs_Attributes	*attrPtr;	/* Attributes to update */
     int			flags;		/* What attrs to set */
 {
@@ -977,7 +977,7 @@ FsPipeMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 
 FsHandleHeader *
 FsRmtPipeVerify(fileIDPtr, clientID, domainTypePtr)
-    FsFileID	*fileIDPtr;	/* Client's I/O file ID */
+    Fs_FileID	*fileIDPtr;	/* Client's I/O file ID */
     int		clientID;	/* Host ID of the client */
     int		*domainTypePtr;	/* Return - FS_LOCAL_DOMAIN */
 {

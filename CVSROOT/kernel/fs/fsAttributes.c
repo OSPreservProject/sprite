@@ -144,7 +144,7 @@ Fs_GetAttrStream(streamPtr, attrPtr)
  */
 ReturnStatus
 FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
-    register FsFileID		*fileIDPtr;	/* Identfies file */
+    register Fs_FileID		*fileIDPtr;	/* Identfies file */
     int				clientID;	/* Host ID of process asking
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
@@ -289,7 +289,7 @@ ReturnStatus
 Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
     Fs_Stream *streamPtr;	/* References file to manipulate. */
     Fs_Attributes *attrPtr;	/* Attributes to give to the file. */
-    FsUserIDs *idPtr;		/* Owner and groups of calling process */
+    Fs_UserIDs *idPtr;		/* Owner and groups of calling process */
     int flags;			/* Specify what attributes to set. */
 {
     register ReturnStatus	status;
@@ -366,9 +366,9 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
  */
 ReturnStatus
 FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
-    FsFileID			*fileIDPtr;	/* Target file. */
+    Fs_FileID			*fileIDPtr;	/* Target file. */
     register Fs_Attributes	*attrPtr;	/* New attributes */
-    register FsUserIDs		*idPtr;		/* Process's owner/group */
+    register Fs_UserIDs		*idPtr;		/* Process's owner/group */
     register int		flags;		/* What attrs to set */
 {
     register ReturnStatus	status = SUCCESS;
@@ -500,7 +500,7 @@ exit:
  */
 typedef struct FsSpriteGetAttrResults {
     Fs_Attributes	attributes;
-    FsFileID		fileID;
+    Fs_FileID		fileID;
 } FsSpriteGetAttrResults;
 
 
@@ -720,7 +720,7 @@ FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     Rpc_Storage			storage;
     char			replyName[FS_MAX_PATH_NAME_LENGTH];
     FsGetAttrResultsParam	getAttrResultsParam;
-    FsFileID			*fileIDPtr;
+    Fs_FileID			*fileIDPtr;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsSetAttrArgs);
@@ -731,7 +731,7 @@ FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     storage.replyDataPtr = (Address) replyName;
     storage.replyDataSize = FS_MAX_PATH_NAME_LENGTH;
 
-    fileIDPtr = (FsFileID *) resultsPtr;
+    fileIDPtr = (Fs_FileID *) resultsPtr;
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_SET_ATTR_PATH,
 			&storage);
@@ -786,7 +786,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 				 	 * pointers and 0 for the lengths.  
 					 * This can be passed to Rpc_Reply */
 {
-    FsFileID			*ioFileIDPtr;	/* Results from local routine */
+    Fs_FileID			*ioFileIDPtr;	/* Results from local routine */
     FsHandleHeader		*prefixHandle;	/* Handle for domain */
     ReturnStatus		status;		/* General return code */
     FsSetAttrArgs		*setAttrArgsPtr;
@@ -867,7 +867,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 /*ARGSUSED*/
 ReturnStatus
 FsSpriteGetAttr(fileIDPtr, clientID, attrPtr)
-    register FsFileID		*fileIDPtr;	/* Identfies file */
+    register Fs_FileID		*fileIDPtr;	/* Identfies file */
     int				clientID;	/* IGNORED, implicitly passed
 						 * by the RPC system. */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
@@ -881,7 +881,7 @@ FsSpriteGetAttr(fileIDPtr, clientID, attrPtr)
 	return(GEN_INVALID_ARG);
     }
     storage.requestParamPtr = (Address) fileIDPtr;
-    storage.requestParamSize = sizeof(FsFileID);
+    storage.requestParamSize = sizeof(Fs_FileID);
     storage.requestDataPtr = (Address) NIL;
     storage.requestDataSize = 0;
 
@@ -947,11 +947,11 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
     register ReturnStatus	status;
     FsHandleHeader		*tHdrPtr;
     register FsHandleHeader	*hdrPtr;
-    register FsFileID		*fileIDPtr;
+    register Fs_FileID		*fileIDPtr;
     register Fs_Attributes	*attrPtr;
     Rpc_ReplyMem		*replyMemPtr;
 
-    fileIDPtr = (FsFileID *) storagePtr->requestParamPtr;
+    fileIDPtr = (Fs_FileID *) storagePtr->requestParamPtr;
     hdrPtr = VerifyIOHandle(fileIDPtr);
     if (hdrPtr == (FsHandleHeader *)NIL) {
 	status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL,
@@ -984,8 +984,8 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
  */
 
 typedef struct FsSpriteSetAttrParams {
-    FsFileID		fileID;
-    FsUserIDs		ids;
+    Fs_FileID		fileID;
+    Fs_UserIDs		ids;
     Fs_Attributes	attrs;
     int			flags;
 } FsSpriteSetAttrParams;
@@ -1010,9 +1010,9 @@ typedef struct FsSpriteSetAttrParams {
 
 ReturnStatus
 FsSpriteSetAttr(fileIDPtr, attrPtr, idPtr, flags)
-    FsFileID		*fileIDPtr;
+    Fs_FileID		*fileIDPtr;
     Fs_Attributes	*attrPtr;
-    FsUserIDs		 *idPtr;
+    Fs_UserIDs		 *idPtr;
     int			flags;
 {
     ReturnStatus status;
@@ -1084,7 +1084,7 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
 					 * This can be passed to Rpc_Reply */
 {
     FsHandleHeader		*hdrPtr;
-    register FsFileID		*fileIDPtr;
+    register Fs_FileID		*fileIDPtr;
     register Fs_Attributes	*attrPtr;
     register ReturnStatus	status;
     FsSpriteSetAttrParams	*paramPtr;
@@ -1131,7 +1131,7 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
 /*ARGSUSED*/
 ReturnStatus
 FsRemoteGetIOAttr(fileIDPtr, clientID, attrPtr)
-    register FsFileID		*fileIDPtr;	/* Remote device/pipe fileID */
+    register Fs_FileID		*fileIDPtr;	/* Remote device/pipe fileID */
     int				clientID;	/* IGNORED, implicitly passed
 						 * by the RPC system. */
     register Fs_Attributes	*attrPtr;	/* In/Out - the attributes are
@@ -1203,7 +1203,7 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
 {
     register ReturnStatus	status;
     register FsHandleHeader	*hdrPtr;
-    register FsFileID		*fileIDPtr;
+    register Fs_FileID		*fileIDPtr;
     Fs_Attributes		*attrPtr;
     FsGetAttrResultsParam	*getAttrResultsParamPtr;
 
@@ -1263,7 +1263,7 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
 /*ARGSUSED*/
 ReturnStatus
 FsRemoteSetIOAttr(fileIDPtr, attrPtr, flags)
-    register FsFileID		*fileIDPtr;	/* Remote device/pipe fileID */
+    register Fs_FileID		*fileIDPtr;	/* Remote device/pipe fileID */
     register Fs_Attributes	*attrPtr;	/* Attributes to copy */
     int				flags;		/* What attributes to set */
 {
@@ -1332,7 +1332,7 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
 {
     register ReturnStatus	status;
     register FsHandleHeader	*hdrPtr;
-    register FsFileID		*fileIDPtr;
+    register Fs_FileID		*fileIDPtr;
     Fs_Attributes		*attrPtr;
     FsSpriteSetAttrParams	*setAttrParamPtr;
 
@@ -1392,7 +1392,7 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
  */
 FsHandleHeader *
 VerifyIOHandle(fileIDPtr)
-    FsFileID *fileIDPtr;
+    Fs_FileID *fileIDPtr;
 {
     switch(fileIDPtr->type) {
 	case FS_LCL_FILE_STREAM:

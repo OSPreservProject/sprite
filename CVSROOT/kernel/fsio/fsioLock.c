@@ -43,7 +43,7 @@ typedef struct FsLockOwner {
     List_Links links;		/* A list of these hangs from FsLockState */
     int hostID;			/* SpriteID of process that got the lock */
     int procID;			/* ProcessID of owning process */
-    FsFileID streamID;		/* Stream on which lock call was made */
+    Fs_FileID streamID;		/* Stream on which lock call was made */
     int flags;			/* IOC_LOCK_EXCLUSIVE, IOC_LOCK_SHARED */
 } FsLockOwner;
 
@@ -98,7 +98,7 @@ FsIocLock(lockPtr, command, byteOrder, inBufPtr, streamIDPtr)
     int		command;		/* IOC_LOCK, IOC_UNLOCK */
     int		byteOrder;		/* Client's byte ordering */
     Fs_Buffer	*inBufPtr;		/* Buffer containing Ioc_LockArgs */
-    FsFileID	*streamIDPtr;		/* ID of stream associated with lock */
+    Fs_FileID	*streamIDPtr;		/* ID of stream associated with lock */
 {
     register Ioc_LockArgs *lockArgsPtr;
     register ReturnStatus status;
@@ -151,7 +151,7 @@ ReturnStatus
 FsLock(lockPtr, argPtr, streamIDPtr)
     register FsLockState *lockPtr;	/* Locking state for a file. */
     Ioc_LockArgs *argPtr;		/* IOC_LOCK_EXCLUSIVE|IOC_LOCK_SHARED */
-    FsFileID	*streamIDPtr;		/* Stream that owns the lock */
+    Fs_FileID	*streamIDPtr;		/* Stream that owns the lock */
 {
     ReturnStatus status = SUCCESS;
     register int operation = argPtr->flags;
@@ -185,7 +185,7 @@ FsLock(lockPtr, argPtr, streamIDPtr)
 	List_InitElement((List_Links *)lockOwnerPtr);
 	lockOwnerPtr->hostID = argPtr->hostID;
 	lockOwnerPtr->procID = argPtr->pid;
-	if (streamIDPtr != (FsFileID *)NIL) {
+	if (streamIDPtr != (Fs_FileID *)NIL) {
 	    lockOwnerPtr->streamID = *streamIDPtr;
 	} else {
 	    lockOwnerPtr->streamID.type = -1;
@@ -232,7 +232,7 @@ ReturnStatus
 FsUnlock(lockPtr, argPtr, streamIDPtr)
     register FsLockState *lockPtr;	/* Locking state for the file. */
     Ioc_LockArgs *argPtr;	/* Lock flags and process info for waiting */
-    FsFileID	*streamIDPtr;	/* Verified against the lock ownership list */ 
+    Fs_FileID	*streamIDPtr;	/* Verified against the lock ownership list */ 
 {
     ReturnStatus status = SUCCESS;
     register int operation = argPtr->flags;
@@ -242,7 +242,7 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
 	if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
 	    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
 		if ((lockOwnerPtr->procID == argPtr->pid) ||
-		    (streamIDPtr != (FsFileID *)NIL &&
+		    (streamIDPtr != (Fs_FileID *)NIL &&
 		     lockOwnerPtr->streamID.major == streamIDPtr->major &&
 		     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
 		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
@@ -278,7 +278,7 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
 	    lockPtr->numShared--;
 	    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
 		if ((lockOwnerPtr->procID == argPtr->pid) ||
-		    (streamIDPtr != (FsFileID *)NIL &&
+		    (streamIDPtr != (Fs_FileID *)NIL &&
 		     lockOwnerPtr->streamID.major == streamIDPtr->major &&
 		     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
 		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
@@ -339,13 +339,13 @@ void
 FsLockClose(lockPtr, procID, streamIDPtr)
     register FsLockState *lockPtr;	/* Locking state for the file. */
     Proc_PID procID;			/* ProcessID of closing process. */
-    FsFileID *streamIDPtr;		/* Stream being closed */
+    Fs_FileID *streamIDPtr;		/* Stream being closed */
 {
     register FsLockOwner *lockOwnerPtr;
 
     LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
 	if ((lockOwnerPtr->procID == procID) ||
-	    (streamIDPtr != (FsFileID *)NIL &&
+	    (streamIDPtr != (Fs_FileID *)NIL &&
 	     lockOwnerPtr->streamID.major == streamIDPtr->major &&
 	     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
 	     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)) {

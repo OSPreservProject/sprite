@@ -43,8 +43,8 @@ typedef struct FsFileState {
  * When a client re-opens a file it sends the following state to the server.
  */
 typedef struct FsFileReopenParams {
-    FsFileID	fileID;		/* File ID of file to reopen. MUST BE FIRST */
-    FsFileID	prefixFileID;	/* File ID for the prefix of this file. */
+    Fs_FileID	fileID;		/* File ID of file to reopen. MUST BE FIRST */
+    Fs_FileID	prefixFileID;	/* File ID for the prefix of this file. */
     FsUseCounts	use;		/* Reference counts */
     Boolean	flags;		/* FS_HAVE_BLOCKS | FS_SWAP */
     int		version;	/* Expected version number for the file. */
@@ -112,7 +112,7 @@ typedef struct FsRmtFileIOHandle {
 					 * and used to catch races with cache
 					 * consistency msgs due to other opens*/
     int			flags;		/* FS_SWAP */
-    FsFileID		prefixFileID;	/* Passed to the server so it can
+    Fs_FileID		prefixFileID;	/* Passed to the server so it can
 					 * properly trap out lookups that
 					 * ascend past the prefix. */
     struct Vm_Segment	*segPtr;	/* Reference to code segment needed

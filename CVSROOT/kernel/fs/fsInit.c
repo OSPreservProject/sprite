@@ -254,7 +254,7 @@ Fs_ProcInit()
 	    FsHandleHeader *hdrPtr;
 	    char *lookupName;
 	    int domainType;
-	    FsFileID rootID;
+	    Fs_FileID rootID;
 	    FsPrefix *prefixPtr;
 	    ReturnStatus status2;
     

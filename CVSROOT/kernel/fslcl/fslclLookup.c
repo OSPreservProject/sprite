@@ -98,7 +98,7 @@ static ReturnStatus WriteNewDirectory();
  *	the target file itself according to useFlags. The type of the
  *	target file has to agree with the type parameter.
  *
- *	The major and minor fields of the FsFileID for local files correspond
+ *	The major and minor fields of the Fs_FileID for local files correspond
  *	to the domain and fileNumber, respectively, of a file.  The domain
  *	is an index into the set of active domains (disks), and the fileNumber
  *	is an index into the array of file descriptors on disk.
@@ -124,7 +124,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 					 * the current working directory */
     char *relativeName;			/* Name to lookup relative to the
 					 * file indicated by prefixHandlePtr */
-    FsFileID *rootIDPtr;		/* File ID of the root of the domain */
+    Fs_FileID *rootIDPtr;		/* File ID of the root of the domain */
     int useFlags;			/* FS_READ|FS_WRITE|FS_EXECUTE,
 					 * FS_CREATE|FS_EXCLUSIVE, FS_OWNER,
 					 * FS_LINK, FS_FOLLOW (links) */
@@ -134,7 +134,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
     int clientID;			/* Host ID of the client doing the open.
 					 * Require to properly expand $MACHINE
 					 * in pathnames */
-    FsUserIDs *idPtr;			/* User and group IDs */
+    Fs_UserIDs *idPtr;			/* User and group IDs */
     int permissions;			/* Permission bits to use on a newly
 					 * created file. */
     int fileNumber;			/* File number to link to if FS_LINK
@@ -658,7 +658,7 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr)
     int 		dirBlockNum;	/* Block number within directory */
     int 		length;		/* Length variable for read call */
     FsHashEntry		*entryPtr;	/* Name cache entry */
-    FsFileID		fileID;		/* Used when fetching handles */
+    Fs_FileID		fileID;		/* Used when fetching handles */
 
     /*
      * Check in system-wide name cache here before scanning
@@ -1157,7 +1157,7 @@ GetHandle(fileNumber, curHandlePtr, name, newHandlePtrPtr)
     FsLocalFileIOHandle	**newHandlePtrPtr;/* Return, ref. to installed handle */
 {
     register ReturnStatus status;
-    FsFileID fileID;
+    Fs_FileID fileID;
 
     fileID.type = FS_LCL_FILE_STREAM;
     fileID.serverID = rpc_SpriteID;
@@ -1195,7 +1195,7 @@ CreateFile(domainPtr, parentHandlePtr, component, compLen, fileNumber, type,
     int		fileNumber;		/* Domain relative file number */
     int		type;			/* Type of the file */
     int		permissions;		/* Permission bits on the file */
-    FsUserIDs	*idPtr;			/* User ID of calling process */
+    Fs_UserIDs	*idPtr;			/* User ID of calling process */
     FsLocalFileIOHandle	**curHandlePtrPtr;/* Return, handle for the new file */
 {
     ReturnStatus	status;
@@ -1721,7 +1721,7 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
     int forRename;		/* if FS_RENAME, then the file being delted
 				 * is being renamed.  This allows non-empty
 				 * directories to be deleted */
-    FsUserIDs *idPtr;		/* User and group IDs */
+    Fs_UserIDs *idPtr;		/* User and group IDs */
 {
     ReturnStatus status;
     register FsLocalFileIOHandle *curHandlePtr;	/* Local copy */
@@ -1986,7 +1986,7 @@ static ReturnStatus
 CheckPermissions(handlePtr, useFlags, idPtr, type)
     FsLocalFileIOHandle		*handlePtr;
     register int		useFlags;
-    register FsUserIDs		*idPtr;
+    register Fs_UserIDs		*idPtr;
     int 			type;
 {
     register FsFileDescriptor	*descPtr;

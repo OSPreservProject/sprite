@@ -43,7 +43,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStream.h"
 #include "fsLock.h"
 #include "fsMigrate.h"
-#include "fsNameOps.h"
+#include "fsNameOpsInt.h"
 
 #include "dev.h"
 #include "rpc.h"
@@ -54,7 +54,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The return value from this call is a new I/O fileID.
  */
 typedef struct FsDeviceRemoteOpenPrm {
-    FsFileID	fileID;		/* I/O fileID from name server. */
+    Fs_FileID	fileID;		/* I/O fileID from name server. */
     int		useFlags;	/* FS_READ | FS_WRITE ... */
     int		dataSize;	/* size of openData */
     FsUnionData	openData;	/* FsFileState, FsDeviceState or PdevState */
@@ -83,7 +83,7 @@ void ExceptionNotify();
  */
 Boolean
 FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
-    FsFileID		*fileIDPtr;
+    Fs_FileID		*fileIDPtr;
     char		*name;
     FsDeviceIOHandle	**newHandlePtrPtr;
 {
@@ -149,9 +149,9 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     int		clientID;		/* ID of client doing the open.
 					 * SHOULD REFLECT MIGRATION SOMEHOW */
     int		useFlags;		/* Use flags from the stream */
-    register FsFileID	*ioFileIDPtr;	/* Return - FileID used for I/O or
+    register Fs_FileID	*ioFileIDPtr;	/* Return - FileID used for I/O or
 					 * to get/set I/O attributes */
-    FsFileID	*streamIDPtr;		/* ID of stream being opened.  NIL
+    Fs_FileID	*streamIDPtr;		/* ID of stream being opened.  NIL
 					 * during set/get attributes */
     int		*dataSizePtr;		/* Return - sizeof(FsDeviceState) */
     ClientData	*clientDataPtr;		/* Return - FsDeviceState.  Nothing
@@ -172,7 +172,7 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     ioFileIDPtr->major = descPtr->devType;
     ioFileIDPtr->minor = descPtr->devUnit;
 
-    if (streamIDPtr != (FsFileID *)NIL) {
+    if (streamIDPtr != (Fs_FileID *)NIL) {
 	/*
 	 * Truely preparing for an open.  Return the current modify
 	 * and access times for the I/O server's cache.  Return the
@@ -218,7 +218,7 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
  */
 ReturnStatus
 FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
-    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* Reference to FsDeviceState struct */
@@ -303,7 +303,7 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
 /*ARGSUSED*/
 ReturnStatus
 FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
-    FsFileID		*ioFileIDPtr;	/* I/O fileID */
+    Fs_FileID		*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* FsDeviceState */
@@ -379,7 +379,7 @@ FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePt
  */
 ReturnStatus
 FsDeviceRemoteOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
-    FsFileID	*ioFileIDPtr;	/* Indicates I/O server.  This is modified
+    Fs_FileID	*ioFileIDPtr;	/* Indicates I/O server.  This is modified
 				 * by the I/O server and returned to our
 				 * caller for use in the dev/pipe/etc handle */
     int		useFlags;	/* FS_READ | FS_WRITE ... */
@@ -401,7 +401,7 @@ FsDeviceRemoteOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
     storage.requestDataPtr = (Address) NIL;
     storage.requestDataSize = 0;
     storage.replyParamPtr = (Address) ioFileIDPtr;
-    storage.replyParamSize = sizeof(FsFileID);
+    storage.replyParamSize = sizeof(Fs_FileID);
     storage.replyDataPtr = (Address) NIL;
     storage.replyDataSize = 0;
 
@@ -486,7 +486,7 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
 	 * set up its own I/O handle.
 	 */
 	storagePtr->replyParamPtr = (Address)&hdrPtr->fileID;
-	storagePtr->replyParamSize = sizeof(FsFileID);
+	storagePtr->replyParamSize = sizeof(Fs_FileID);
     }
     Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL, (ClientData)NIL);
     return(SUCCESS);	/* So that higher level doesn't send error reply */
@@ -743,7 +743,7 @@ FsDeviceScavenge(hdrPtr)
  * the I/O server for a device.
  */
 typedef struct FsRmtDeviceReopenParams {
-    FsFileID	fileID;		/* File ID of file to reopen. */
+    Fs_FileID	fileID;		/* File ID of file to reopen. */
     int		openCount;	/* Number of times we have the device open. */
     int		writerCount;	/* Number of writers we have. */
 } FsRmtDeviceReopenParams;
@@ -1159,7 +1159,7 @@ FsRemoteIOMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 
 FsHandleHeader *
 FsRmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
-    FsFileID	*fileIDPtr;	/* Client's I/O file ID */
+    Fs_FileID	*fileIDPtr;	/* Client's I/O file ID */
     int		clientID;	/* Host ID of the client */
     int		*domainTypePtr;	/* Return - FS_LOCAL_DOMAIN */
 {
@@ -1483,7 +1483,7 @@ FsDeviceIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 /*ARGSUSED*/
 ReturnStatus
 FsDeviceGetIOAttr(fileIDPtr, clientID, attrPtr)
-    FsFileID			*fileIDPtr;	/* FileID of device */
+    Fs_FileID			*fileIDPtr;	/* FileID of device */
     int 			clientID;	/* IGNORED */
     register Fs_Attributes	*attrPtr;	/* Attributes to update */
 {
@@ -1523,7 +1523,7 @@ FsDeviceGetIOAttr(fileIDPtr, clientID, attrPtr)
 /*ARGSUSED*/
 ReturnStatus
 FsDeviceSetIOAttr(fileIDPtr, attrPtr, flags)
-    FsFileID			*fileIDPtr;	/* FileID of device */
+    Fs_FileID			*fileIDPtr;	/* FileID of device */
     register Fs_Attributes	*attrPtr;	/* Attributes to copy */
     int				flags;		/* What attrs to set */
 {

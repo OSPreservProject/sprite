@@ -86,7 +86,7 @@ typedef struct FsDeviceMigData {
 typedef struct FsDeviceState {
     int		accessTime;	/* Access time from disk descriptor */
     int		modifyTime;	/* Modify time from disk descriptor */
-    FsFileID	streamID;	/* Used to set up client list */
+    Fs_FileID	streamID;	/* Used to set up client list */
 } FsDeviceState;
 
 /*

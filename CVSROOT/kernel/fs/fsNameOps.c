@@ -202,7 +202,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 void
 FsSetIDs(procPtr, idPtr)
     Proc_ControlBlock 		*procPtr;
-    FsUserIDs			*idPtr;
+    Fs_UserIDs			*idPtr;
 {
     register	Fs_ProcessState *fsPtr;
     register	int	*procGroupIDs;
@@ -497,7 +497,7 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
     ReturnStatus status;
     FsOpenArgs openArgs;
     FsGetAttrResults getAttrResults;	/* References attrPtr and ioFileID */
-    FsFileID ioFileID;			/* Returned from name server, indicates
+    Fs_FileID ioFileID;			/* Returned from name server, indicates
 					 * who the I/O server is. */
 
     openArgs.useFlags = (fileOrLink == FS_ATTRIB_LINK) ? 0 : FS_FOLLOW;
@@ -515,7 +515,7 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
     status = FsLookupOperation(pathName, FS_DOMAIN_GET_ATTR, openArgs.useFlags,
 		 (Address)&openArgs, (Address)&getAttrResults,
 		 (FsNameInfo *)NIL);
-    if (status == SUCCESS) {
+    if (status == SUCCESS && ioFileID.type > 0) {
 	/*
 	 * Update those with attributes cached at the I/O server.
 	 */
@@ -564,7 +564,7 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr, flags)
     register ReturnStatus status;
     FsSetAttrArgs setAttrArgs;		/* Bundled openArgs and attributes */
     FsOpenArgs *openArgsPtr;		/* Pointer into setAttrArgs */
-    FsFileID ioFileID;			/* Used to get to I/O server */
+    Fs_FileID ioFileID;			/* Used to get to I/O server */
 
     openArgsPtr = &setAttrArgs.openArgs;
     openArgsPtr->useFlags = FS_OWNERSHIP;
@@ -589,7 +589,7 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr, flags)
     status = FsLookupOperation(pathName, FS_DOMAIN_SET_ATTR, 0,
 		     (Address)&setAttrArgs, (Address)&ioFileID,
 		     (FsNameInfo *)NIL);
-    if (status == SUCCESS) {
+    if (status == SUCCESS && ioFileID.type > 0) {
 	/*
 	 * Set the attributes at the I/O server.
 	 */

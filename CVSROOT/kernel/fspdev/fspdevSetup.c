@@ -76,8 +76,8 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
      int		clientID;	/* Host ID of client doing the open */
      register int	useFlags;	/* FS_MASTER, plus
 					 * FS_READ | FS_WRITE | FS_EXECUTE*/
-     register FsFileID	*ioFileIDPtr;	/* Return - I/O handle ID */
-     FsFileID		*streamIDPtr;	/* Return - stream ID. 
+     register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
+     Fs_FileID		*streamIDPtr;	/* Return - stream ID. 
 					 * NIL during set/get attributes */
      int		*dataSizePtr;	/* Return - sizeof(FsPdevState) */
      ClientData		*clientDataPtr;	/* Return - a reference to FsPdevState.
@@ -86,7 +86,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 
 {
     register	ReturnStatus status = SUCCESS;
-    FsFileID	ioFileID;
+    Fs_FileID	ioFileID;
     register	PdevControlIOHandle *ctrlHandlePtr;
     register	Fs_Stream *streamPtr;
     register	FsPdevState *pdevStatePtr;
@@ -134,7 +134,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    FsHandleRelease(streamPtr, TRUE);
 	}
     } else {
-	if (streamIDPtr == (FsFileID *)NIL) {
+	if (streamIDPtr == (Fs_FileID *)NIL) {
 	    /*
 	     * Set up for get/set attributes.  We point the client
 	     * at the name of the pseudo-device, what else?
@@ -221,7 +221,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 ReturnStatus
 FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
-    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* Pointer to FsPdevState. */
@@ -362,7 +362,7 @@ exit:
 
 PdevClientIOHandle *
 FsPdevConnect(ioFileIDPtr, clientID, name)
-    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			clientID;	/* Host ID of client-side */
     char		*name;		/* File name for error msgs */
 {
@@ -443,7 +443,7 @@ FsPdevConnect(ioFileIDPtr, clientID, name)
 ReturnStatus
 FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
-    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* IGNORED (== rpc_SpriteID) */
     ClientData		streamData;	/* NIL for us. */
@@ -807,7 +807,7 @@ FsPseudoStreamMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 
 FsHandleHeader *
 FsRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
-    FsFileID	*fileIDPtr;	/* Client's I/O file ID */
+    Fs_FileID	*fileIDPtr;	/* Client's I/O file ID */
     int		clientID;	/* Host ID of the client */
     int		*domainTypePtr;	/* Return - FS_PSEUDO_DOMAIN */
 {

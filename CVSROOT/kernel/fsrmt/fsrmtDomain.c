@@ -27,7 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "fs.h"
 #include "fsInt.h"
-#include "fsNameOps.h"
+#include "fsNameOpsInt.h"
 #include "fsPrefix.h"
 #include "fsSpriteDomain.h"
 #include "fsLocalDomain.h"
@@ -47,7 +47,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 typedef	struct	FsOpenReplyParam {
     FsUnionData	openData;
-    FsFileID	fileID;
+    Fs_FileID	fileID;
 } FsOpenReplyParam;
 
 
@@ -77,14 +77,14 @@ typedef	struct	FsOpenReplyParam {
 ReturnStatus
 FsSpriteImport(prefix, idPtr, domainTypePtr, hdrPtrPtr)
     char	*prefix;		/* Prefix for which to find a server. */
-    FsUserIDs	*idPtr;			/* IGNORED */
+    Fs_UserIDs	*idPtr;			/* IGNORED */
     int		*domainTypePtr;		/* Return - FS_REMOTE_SPRITE_DOMAIN or
 					 *          FS_REMOTE_PSEUDO_DOMAIN */
     FsHandleHeader **hdrPtrPtr;		/* Return - handle for prefix table */
 {
     ReturnStatus 	status;
     Rpc_Storage 	storage;
-    FsFileID		*fileIDPtr;	/* Returned from server */
+    Fs_FileID		*fileIDPtr;	/* Returned from server */
     ClientData		streamData;	/* Returned from server */
     int			flags = FS_PREFIX;
     FsOpenReplyParam	openReplyParam;
@@ -168,7 +168,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
     char				*lookupName;
     FsPrefix				*prefixPtr;
     FsHandleHeader			*hdrPtr;
-    FsFileID				rootID;
+    Fs_FileID				rootID;
     int					domainType;
     ReturnStatus			status;
     FsOpenReplyParam			*openReplyPtr;
@@ -504,7 +504,7 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
 				 	 * pointers and 0 for the lengths.  
 					 * This can be passed to Rpc_Reply */
 {
-    register FsFileID *fileIDPtr;
+    register Fs_FileID *fileIDPtr;
     register ReturnStatus status;
 
     if ((Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) == 0) {
@@ -512,7 +512,7 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
 	Net_HostPrint(clientID, "starting recovery\n");
     }
 
-    fileIDPtr = (FsFileID *)storagePtr->requestParamPtr;
+    fileIDPtr = (Fs_FileID *)storagePtr->requestParamPtr;
     if (fileIDPtr->serverID != rpc_SpriteID) {
 	/*
 	 * Filesystem version mis-match.
@@ -553,8 +553,8 @@ typedef union FsCloseData {
  * 
  */
 typedef struct FsSpriteCloseParams {
-    FsFileID	fileID;		/* File to close */
-    FsFileID	streamID;	/* Stream to close */
+    Fs_FileID	fileID;		/* File to close */
+    Fs_FileID	streamID;	/* Stream to close */
     Proc_PID	procID;		/* Process doing the close */
     int		flags;		/* Flags from the stream */
     FsCloseData	closeData;	/* Seems to be only FsCachedAttributes... */

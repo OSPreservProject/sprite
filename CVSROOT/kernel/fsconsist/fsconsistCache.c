@@ -71,7 +71,7 @@ int	fsTraceConsistMinor = 2249;
  */
 
 typedef struct ConsistMsg {
-    FsFileID	fileID;		/* Which file to invalidate. */
+    Fs_FileID	fileID;		/* Which file to invalidate. */
     int		flags;		/* One of the flags defined below. */
     int		openTimeStamp;	/* Open that this rpc pertains to. */
     int		version;	/* Version number of the file */
@@ -83,7 +83,7 @@ typedef struct ConsistMsg {
  */
 
 typedef struct ConsistReply {
-    FsFileID 		fileID;
+    Fs_FileID 		fileID;
     FsCachedAttributes	cachedAttr;
     ReturnStatus	status;
 } ConsistReply;

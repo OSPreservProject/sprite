@@ -131,7 +131,7 @@ void				FsRmtPseudoStreamClose();
 
 PdevServerIOHandle *
 FsServerStreamCreate(ioFileIDPtr, name)
-    FsFileID	*ioFileIDPtr;	/* File ID used for pseudo stream handle */
+    Fs_FileID	*ioFileIDPtr;	/* File ID used for pseudo stream handle */
     char	*name;		/* File name for error messages */
 {
     FsHandleHeader *hdrPtr;
@@ -1271,7 +1271,7 @@ exit:
 /*ARGSUSED*/
 ReturnStatus
 FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
-    register FsFileID		*fileIDPtr;	/* Identfies pdev connection */
+    register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
     int				clientID;	/* Host ID of process asking
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
@@ -1335,9 +1335,9 @@ exit:
 /*ARGSUSED*/
 ReturnStatus
 FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
-    register FsFileID		*fileIDPtr;	/* Identfies pdev connection */
+    register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
-    FsUserIDs			*idPtr;		/* Identfies user */
+    Fs_UserIDs			*idPtr;		/* Identfies user */
     int				flags;		/* Tells which attrs to set */
 {
     PdevClientIOHandle		*cltHandlePtr;

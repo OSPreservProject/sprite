@@ -103,7 +103,7 @@ ReturnStatus
 FsLocalExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
      FsHandleHeader	*hdrPtr;	/* A handle from the prefix table. */
      int		clientID;	/* Host ID of client importing prefix */
-     register FsFileID	*ioFileIDPtr;	/* Return - I/O handle ID */
+     register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
      int		*dataSizePtr;	/* Return - sizeof(FsFileState) */
      ClientData		*clientDataPtr;	/* Return - ref to FsFileState */
 {
@@ -112,7 +112,7 @@ FsLocalExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
 
     FsHandleLock(handlePtr);
     status = FsFileSrvOpen(handlePtr, clientID, FS_PREFIX,
-		    ioFileIDPtr, (FsFileID *)NIL, dataSizePtr, clientDataPtr);
+		    ioFileIDPtr, (Fs_FileID *)NIL, dataSizePtr, clientDataPtr);
     return(status);
 }
 
@@ -238,7 +238,7 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      */
     status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
 	    (handlePtr, openArgsPtr->clientID, 0, attrResultsPtr->fileIDPtr,
-	     (FsFileID *)NIL, (int *)NIL, (ClientData *)NIL);
+	     (Fs_FileID *)NIL, (int *)NIL, (ClientData *)NIL);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING,
 	    "FsLocalGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
@@ -281,12 +281,12 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     ReturnStatus		status;
     FsSetAttrArgs		*setAttrArgsPtr;
     FsOpenArgs			*openArgsPtr;
-    FsFileID			*fileIDPtr;
+    Fs_FileID			*fileIDPtr;
     FsLocalFileIOHandle		*handlePtr;
 
     setAttrArgsPtr =  (FsSetAttrArgs *)argsPtr;
     openArgsPtr = &setAttrArgsPtr->openArgs;
-    fileIDPtr = (FsFileID *)resultsPtr;
+    fileIDPtr = (Fs_FileID *)resultsPtr;
 
     status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 			openArgsPtr->useFlags, openArgsPtr->type,
@@ -309,7 +309,7 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 	FsHandleLock(handlePtr);
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
 		(handlePtr, openArgsPtr->clientID, 0, fileIDPtr,
-		 (FsFileID *)NIL, (int *)NIL, (ClientData *)NIL);
+		 (Fs_FileID *)NIL, (int *)NIL, (ClientData *)NIL);
 	if (status != SUCCESS) {
 	    Sys_Panic(SYS_WARNING,
 		"FsLocalSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",

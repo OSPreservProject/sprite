@@ -89,8 +89,8 @@ FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
      int		clientID;	/* Host ID of client doing the open */
      register int	useFlags;	/* FS_MASTER, plus
 					 * FS_READ | FS_WRITE | FS_EXECUTE*/
-     register FsFileID	*ioFileIDPtr;	/* Return - I/O handle ID */
-     FsFileID		*streamIDPtr;	/* Return - stream ID. 
+     register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
+     Fs_FileID		*streamIDPtr;	/* Return - stream ID. 
 					 * NIL during set/get attributes */
      int		*dataSizePtr;	/* Return - sizeof(FsPdevState) */
      ClientData		*clientDataPtr;	/* Return - a reference to FsPdevState.
@@ -171,7 +171,7 @@ FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
  */
 PdevControlIOHandle *
 PfsControlHandleInit(fileIDPtr, name)
-    FsFileID *fileIDPtr;
+    Fs_FileID *fileIDPtr;
     char *name;
 {
     register Boolean found;
@@ -229,7 +229,7 @@ PfsControlHandleInit(fileIDPtr, name)
 ReturnStatus
 FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
-    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* Pointer to FsPdevState. */
@@ -241,7 +241,7 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     register PdevControlIOHandle *ctrlHandlePtr;
     register PdevClientIOHandle *cltHandlePtr;
     FsHandleHeader		*prefixHdrPtr;
-    FsFileID			rootID;
+    Fs_FileID			rootID;
     int				domain;
     char			*ignoredName;
     FsPrefix			*prefixPtr;
@@ -334,7 +334,7 @@ ReturnStatus
 FsPfsExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
      FsHandleHeader	*hdrPtr;	/* A handle from the prefix table. */
      int		clientID;	/* Host ID of client importing prefix */
-     register FsFileID	*ioFileIDPtr;	/* Return - I/O handle ID */
+     register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
      int		*dataSizePtr;	/* Return - 0 */
      ClientData		*clientDataPtr;	/* Return - NIL */
 {
@@ -377,7 +377,7 @@ FsPfsExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
 ReturnStatus
 FsPfsNamingCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
-    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* Pointer to FsPdevState. */
@@ -472,7 +472,7 @@ FsPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
 int
 FsPfsOpenConnection(pdevHandlePtr, fileIDPtr)
     PdevServerIOHandle	*pdevHandlePtr;	/* From naming request-response */
-    FsFileID		*fileIDPtr;	/* FileID for new connection */
+    Fs_FileID		*fileIDPtr;	/* FileID for new connection */
 {
     PdevControlIOHandle *ctrlHandlePtr;
     PdevClientIOHandle *cltHandlePtr;
@@ -481,7 +481,7 @@ FsPfsOpenConnection(pdevHandlePtr, fileIDPtr)
 
     /*
      * Fetch the control stream associated with the pfs naming stream
-     * in order to get a seed for the FsFileID's generated here.
+     * in order to get a seed for the Fs_FileID's generated here.
      */
     *fileIDPtr = pdevHandlePtr->hdr.fileID;
     fileIDPtr->type = FS_PFS_CONTROL_STREAM;
@@ -551,7 +551,7 @@ FsPfsOpenConnection(pdevHandlePtr, fileIDPtr)
 ReturnStatus
 FsPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioHandlePtrPtr)
-    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* Pointer to FsPdevState. */
@@ -684,7 +684,7 @@ FsPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
      * The pseudo-filesystem server has dealt with all the attributes so
      * we don't fill in the ioFileID.
      */
-    ((FsFileID *)resultsPtr)->type = -1;
+    ((Fs_FileID *)resultsPtr)->type = -1;
     return(status);
 }
 

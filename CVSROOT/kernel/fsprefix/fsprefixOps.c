@@ -122,7 +122,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
     FsRedirectInfo 	*oldInfoPtr;	/* Needed to free up the new name
 					 * buffer allocated by the domain
 					 * lookup routine. */
-    FsFileID		rootID;		/* ID of domain root */
+    Fs_FileID		rootID;		/* ID of domain root */
     FsPrefix 		*prefixPtr;	/* Returned from prefix table lookup 
 					 * and saved in the file handle */
     int 		numRedirects = 0;/* Number of iterations between 
@@ -309,8 +309,8 @@ FsTwoNameOperation(operation, srcName, dstName, lookupArgsPtr)
     char 		*dstLookupName;
     FsPrefix		*srcPrefixPtr;	/* Prefix entry for srcName */
     FsPrefix 		*dstPrefixPtr;
-    FsFileID		srcRootID;	/* ID of srcName domain root */
-    FsFileID		dstRootID;
+    Fs_FileID		srcRootID;	/* ID of srcName domain root */
+    Fs_FileID		dstRootID;
     int			numRedirects;	/* To detect loops in directories */
     Boolean		srcNameError;	/* TRUE if redirect info or stale
 					 * handle error applies to srcName,
@@ -426,7 +426,7 @@ retry:
 	    FsOpenArgs		openArgs;
 	    FsGetAttrResults	getAttrResults;
 	    Fs_Attributes	dstAttr;	/* Attrs of destination */
-	    FsFileID		dstFileID;
+	    Fs_FileID		dstFileID;
 
 	    openArgs.useFlags = FS_FOLLOW;
 	    openArgs.permissions = 0;
@@ -944,7 +944,7 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
     int		clientID;	/* Use to check export list */
     FsHandleHeader **hdrPtrPtr;	/* Return, the handle for the prefix.  This is
 				 * NOT LOCKED and has no extra references. */
-    FsFileID	*rootIDPtr;	/* Return, ID of the root of the domain */
+    Fs_FileID	*rootIDPtr;	/* Return, ID of the root of the domain */
     char 	**lookupNamePtr;/* Return, If FS_NO_HANDLE this is the prefix
 				 * itself.  If SUCCESS, this is the relative
 				 * name after the prefix */
@@ -1256,7 +1256,7 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
 {
     register ReturnStatus	status;
     register int		domainType;
-    FsUserIDs			ids;
+    Fs_UserIDs			ids;
 
     FsSetIDs(Proc_GetEffectiveProc(), &ids);
     for (domainType = 0; domainType < FS_NUM_DOMAINS; domainType++) {
@@ -1294,7 +1294,7 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
     Boolean	follow;			/* TRUE means lookup will follow links.
 					 * FALSE allows opening of links */
     FsHandleHeader **hdrPtrPtr;		/* Result, handle for the prefix */
-    FsFileID	*rootIDPtr;		/* Result, ID of domain root */
+    Fs_FileID	*rootIDPtr;		/* Result, ID of domain root */
     char 	**lookupNamePtr;	/* Result, remaining pathname to 
 					 * lookup */
     int 	*domainTypePtr;		/* Result, domain type of the prefix */
@@ -1631,7 +1631,7 @@ FsPrefixAllowOpens(serverID)
  */
 ENTRY FsPrefix *
 FsPrefixFromFileID(fileIDPtr)
-    FsFileID	*fileIDPtr;		/* FileID from a client */
+    Fs_FileID	*fileIDPtr;		/* FileID from a client */
 {
     FsPrefix *prefixPtr;
     LOCK_MONITOR;
@@ -1674,7 +1674,7 @@ FsPrefixFromFileID(fileIDPtr)
  */
 ENTRY int
 FsPrefixOpenInProgress(fileIDPtr)
-    FsFileID *fileIDPtr;		/* ID for some file */
+    Fs_FileID *fileIDPtr;		/* ID for some file */
 {
     int activeOpens;
     FsPrefix *prefixPtr;
@@ -1753,7 +1753,7 @@ Fs_PrefixDump(index, argPtr)
 	} else if (i == index) {
 	    Fs_Prefix userPrefix;
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
-		register FsFileID *fileIDPtr =
+		register Fs_FileID *fileIDPtr =
 			&prefixPtr->hdrPtr->fileID;
 		userPrefix.serverID	= fileIDPtr->serverID;
 		userPrefix.domain	= fileIDPtr->major;
@@ -1825,7 +1825,7 @@ Fs_PrefixDumpExport(size, buffer)
     FsPrefix *prefixPtr;	/* Pointer to table entry */
     char     prefix[FS_MAX_NAME_LENGTH];
     FsHandleHeader *hdrPtr;
-    FsFileID rootID;
+    Fs_FileID rootID;
     char *name;
     int domain;
     int length;
