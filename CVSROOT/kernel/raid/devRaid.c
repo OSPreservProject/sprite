@@ -160,7 +160,7 @@ RaidDeallocate(raidPtr)
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
+/* static */ ReturnStatus
 RaidConfigure(raidPtr, devicePtr)
     Raid	*raidPtr;
     Fs_Device   *devicePtr;
@@ -192,6 +192,12 @@ RaidConfigure(raidPtr, devicePtr)
         raidPtr->state = RAID_BUSY;
         MASTER_UNLOCK(&raidPtr->mutex);
     }
+
+    raidPtr->numReqInSys = 0;
+#ifdef TESTING
+    Sync_CondInit(&raidPtr->waitExclusive);
+    Sync_CondInit(&raidPtr->waitNonExclusive);
+#endif TESTING
 
     /*
      * Create name of RAID configuration file.
@@ -247,6 +253,18 @@ RaidConfigure(raidPtr, devicePtr)
 	raidPtr->numDataCol = raidPtr->numCol;
     } else {
 	raidPtr->numDataCol = raidPtr->numCol - 1;
+    }
+    switch (raidPtr->parityConfig) {
+    case 'X': case 'x': case 'f':
+	raidPtr->stripeUnitsPerDisk -=
+		raidPtr->stripeUnitsPerDisk % raidPtr->numCol;
+        raidPtr->dataStripeUnitsPerDisk =
+                (raidPtr->stripeUnitsPerDisk * raidPtr->numDataCol) /
+		raidPtr->numCol;
+	break;
+    default:
+	raidPtr->dataStripeUnitsPerDisk = raidPtr->stripeUnitsPerDisk;
+	break;
     }
     raidPtr->groupsPerArray = raidPtr->numRow / raidPtr->rowsPerGroup;
     raidPtr->numSector  = (unsigned) raidPtr->numRow * raidPtr->numDataCol
@@ -410,9 +428,12 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
     Fs_IOCParam			*ioctlPtr;
     Fs_IOReply			*replyPtr;
 {
+    static char  *IObuf;
     RaidHandle	 *raidHandlePtr   = (RaidHandle *) handlePtr;
     Raid         *raidPtr         = raidHandlePtr->raidPtr;
     RaidIOCParam *raidIOCParamPtr = (RaidIOCParam *) ioctlPtr->inBuffer;
+    DevBlockDeviceRequest *requestPtr =
+	    (DevBlockDeviceRequest *) ioctlPtr->inBuffer;
     int		  col;
     int		  row;
 
@@ -465,6 +486,18 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 		raidIOCParamPtr->numStripe, raidIOCParamPtr->uSec,
 		raidIOCParamPtr->ctrlData);
 	return SUCCESS;
+    case IOC_DEV_RAID_IO:
+	if (!IObuf) {
+	    IObuf = (char *) malloc(1024*1024);
+	}
+	requestPtr->buffer = IObuf;
+	return Dev_BlockDeviceIOSync(handlePtr, requestPtr,ioctlPtr->outBuffer);
+    case IOC_DEV_RAID_LOCK:
+	LockRaid(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_UNLOCK:
+	UnlockRaid(raidPtr);
+	return SUCCESS;
     default:
 	return SUCCESS;
     }
@@ -475,9 +508,8 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
  *----------------------------------------------------------------------
  *
  * StripeBlockIOProc --
- *
- *	Perform block IO w/o parity, i.e. data striping only,
- *	on specified RAID device.
+ *    Perform block IO w/o parity, i.e. data striping only,
+ *    on specified RAID device.
  *
  * Results:
  *	None.
