@@ -240,7 +240,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    procPtr->termReason = PROC_TERM_RESUMED;
 	    procPtr->termStatus = SIG_RESUME;
 	    procPtr->termCode = SIG_NO_CODE;
-	    Proc_InformParent(procPtr, PROC_RESUME_STATUS, FALSE);
+	    Proc_InformParent(procPtr, PROC_RESUME_STATUS);
 	    break;
 
 	default:
@@ -308,7 +308,7 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
 	     * the debug list and its parent is notified of a state change.
 	     */
 	    AddToDebugList(procPtr);
-	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, FALSE);
+	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS);
 	    ProcDebugWakeup();
 	} else if (procPtr->genFlags & PROC_DEBUG_WAIT) {
 	    /*
@@ -321,7 +321,7 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
 	 * The process is being suspended.  Notify the parent and then wakeup
 	 * anyone waiting for this process to enter the debug state.
 	 */
-	Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, FALSE);
+	Proc_InformParent(procPtr, PROC_SUSPEND_STATUS);
 	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
 	    ProcDebugWakeup();
 	}
@@ -385,7 +385,7 @@ Proc_ResumeProcess(procPtr, killingProc)
 	    if (procPtr->genFlags & PROC_FOREIGN) {
 		ProcRemoteSuspend(procPtr, PROC_RESUME_STATUS);
 	    } else {
-		Proc_InformParent(procPtr, PROC_RESUME_STATUS, TRUE);
+		Proc_InformParent(procPtr, PROC_RESUME_STATUS);
 	    }
 	}
     }
