@@ -25,9 +25,15 @@
 #ifndef _FS
 #define _FS
 
+#ifdef KERNEL
 #include "sys.h"
 #include "sync.h"
 #include "user/fs.h"
+#else
+#include <kernel/sys.h>
+#include <kernel/sync.h>
+#include <fs.h>
+#endif
 
 
 /*
