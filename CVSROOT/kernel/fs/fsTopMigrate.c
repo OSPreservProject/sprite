@@ -450,7 +450,7 @@ Fs_DeencapFileState(procPtr, infoPtr, buffer)
     
 failure:
     Proc_Lock(procPtr);
-    Fs_CloseState(procPtr);
+    Fs_CloseState(procPtr,1);
     return(status);
     
 }
