@@ -56,7 +56,7 @@ typedef struct LfsSuperBlockHdr {
     int logStartOffset;     /* The block offset starting the segmented log. */
     int	 checkpointInterval;	/* Frequency of checkpoint in seconds. */
     int  maxNumCacheBlocks;     /* Maximum number of blocks to clean at time.*/
-    char reserved[LFS_SUPER_BLOCK_HDR_SIZE-8*sizeof(int)];
+    char reserved[LFS_SUPER_BLOCK_HDR_SIZE-9*sizeof(int)];
 			    /* Reserved, must be set to zero. */
 
 } LfsSuperBlockHdr;
@@ -70,12 +70,13 @@ typedef struct LfsSuperBlockHdr {
  */
 typedef struct LfsSuperBlock {
     LfsSuperBlockHdr  hdr;	/* Header describing the layout of the LFS. */
+    int		reserved;	/* Reseved field must be zero. */
     LfsDescMapParams  descMap;	/* Descriptor map parameters. */
     LfsSegUsageParams usageArray; /* The segment usage map parameters. */
     LfsFileLayoutParams fileLayout; /* Parameters describing file layout. */
     char padding[LFS_SUPER_BLOCK_SIZE-sizeof(LfsFileLayoutParams) - 
 		 sizeof(LfsSegUsageParams)-sizeof(LfsDescMapParams) -
-		 sizeof(LfsSuperBlockHdr)];	
+		 sizeof(int) - sizeof(LfsSuperBlockHdr)];	
 } LfsSuperBlock;
 
 
@@ -109,5 +110,13 @@ typedef struct LfsCheckPointTrailer {
     unsigned int checkSum;	/* A checksum of the checkpoint check used to
 				 * detect partial checkpoint writes. */
 } LfsCheckPointTrailer;
+
+
+#define	LFS_SUPER_BLOCK_SIZE_OK() \
+	((sizeof(LfsSuperBlock) == LFS_SUPER_BLOCK_SIZE) &&		\
+	 (sizeof(LfsSuperBlockHdr) == LFS_SUPER_BLOCK_HDR_SIZE) &&	\
+	 (sizeof(LfsDescMapParams) == LFS_DESC_MAP_PARAM_SIZE) &&	\
+	 (sizeof(LfsSegUsageParams) == LFS_USAGE_ARRAY_PARAM_SIZE) &&   \
+	 (sizeof(LfsFileLayoutParams) == LFS_FILE_LAYOUT_PARAMS_SIZE))
 
 #endif /* _LFSSUPERBLOCK */
