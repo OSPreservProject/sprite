@@ -29,7 +29,7 @@ typedef struct TraceLog_Header {
     int	blocked;		/* Set if we're blocked on buffer full. */
     int totalNumRecords;	/* Total records given to record. */
     int totalLostRecords;	/* Total records lost. */
-    Sys_TracelogHeader hdr;	/* The header for the user. */
+    Sys_TracelogHeaderKern hdr;	/* The header for the user. */
     struct TraceLog_Buffer *buffers;  /* pointer to array of buffers */
 } TraceLog_Header;
 
@@ -38,10 +38,12 @@ typedef struct TraceLog_Header {
  *
  *	TRACELOG_INHIBIT		- Don't do traces.
  *	TRACELOG_NO_TIMES		- Don't take time stamps, faster.
+ *	TRACELOG_NO_BUF			- Return records immediately.
  */
 
 #define TRACELOG_INHIBIT		0x0100
 #define TRACELOG_NO_TIMES		0x0200
+#define TRACELOG_NO_BUF			0x0400
 
 /*
  * Information stored per-record.
