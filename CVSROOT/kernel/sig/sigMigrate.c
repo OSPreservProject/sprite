@@ -24,17 +24,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 
 /* 
- * Information sent when sending a signal
+ * Information sent when sending a signal.  Needed when doing a callback.
  */
 
-#ifdef notdef
 typedef struct {
-    Proc_PID			remotePID;
+    Proc_ControlBlock 		*procPtr;
     int				sigNum;
     int				code;
-} SigMigInfo;
-    
-#endif 
+} DeferInfo;
+
+static void DeferSignal();
 
 
 /*
@@ -64,12 +63,36 @@ SigMigSend(procPtr, sigNum, code)
     ReturnStatus status;
     Proc_PID remoteProcessID;
     int remoteHostID;
+    Proc_ControlBlock 	*callerProcPtr; /* The calling process */
 
     if (proc_MigDebugLevel > 4) {
 	printf("SigMigSend(%x, %d, %d) entered.\n", procPtr->processID,
 		   sigNum, code);
     }
 
+    if (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
+	/*
+	 * If the current process is a user process, wait for the
+	 * process to finish migrating before signalling it. If
+	 * it's a kernel process, start a background process to
+	 * wait for migration and deliver the signal asynchronously.
+	 */
+	callerProcPtr = Proc_GetActualProc();
+	if (callerProcPtr->genFlags & PROC_KERNEL) {
+	    DeferInfo *infoPtr;
+
+	    infoPtr = (DeferInfo *) malloc(sizeof(*infoPtr));
+	    infoPtr->procPtr = procPtr;
+	    infoPtr->sigNum = sigNum;
+	    infoPtr->code = code;
+	    Proc_CallFunc(DeferSignal, (ClientData) infoPtr, 0);
+	    return(SUCCESS);
+	}
+	status = Proc_WaitForMigration(procPtr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
     remoteProcessID = procPtr->peerProcessID;
     remoteHostID = procPtr->peerHostID;
 
@@ -109,3 +132,38 @@ SigMigSend(procPtr, sigNum, code)
 	
     return(status);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeferSignal --
+ *
+ *	Wait for a process to migrate, then send it a signal. This
+ *	is done using the callback queue so the sender of the signal,
+ *	if a kernel process, doesn't block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process doing the callback goes to sleep until the process
+ *	being signalled has migrated or been killed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void 
+DeferSignal(data)
+    ClientData data;
+{
+    DeferInfo *infoPtr = (DeferInfo *) data;
+    ReturnStatus status;
+
+    status = Proc_WaitForMigration(infoPtr->procPtr);
+    if (status != SUCCESS) {
+	return;
+    }
+    (void) SigMigSend(infoPtr->procPtr, infoPtr->sigNum, infoPtr->code);
+}
+    
