@@ -149,9 +149,7 @@ typedef struct PdevServerIOHandle {
     int flags;			/* Flags defined below */
     int selectBits;		/* Select state of the pseudo-stream */
     Proc_PID serverPID;		/* Server's processID needed for copy out */
-    Proc_PID clientPID;		/* Client's processID needed for copy out
-				 * and for using the wait lists */
-    int clientSpriteID;		/* Used for wait list notification */
+    Proc_PID clientPID;		/* Client's processID needed for copy out */
     CircBuffer	requestBuf;	/* This buffer contains requests and any data
 				 * that needs to follow the request header.
 				 * The kernel fills this buffer and the
@@ -185,6 +183,7 @@ typedef struct PdevServerIOHandle {
 				 * the beginning of the buffer */
     Sync_Condition replyReady;	/* Notified after the server has replied */
     List_Links srvReadWaitList;	/* To remember the waiting server process */
+    Sync_RemoteWaiter clientWait;/* Client process info for I/O waiting */
     List_Links cltReadWaitList;	/* These lists are used to remember clients */
     List_Links cltWriteWaitList;/*   waiting to read, write, or detect */
     List_Links cltExceptWaitList;/*   exceptions on the pseudo-stream. */
@@ -247,17 +246,7 @@ typedef struct PdevClientIOHandle {
     FsHandleHeader	hdr;
     PdevServerIOHandle	*pdevHandlePtr;
     List_Links		clientList;
-    Fs_Stream		*streamPtr;	/* Only if client is remote */
 } PdevClientIOHandle;
-
-/*
- * Parameter block passed via RPC when doing operations at remote servers.
- */
-typedef struct {
-    FsFileID		fileID;		/* FileID of cloned handle. */
-    Sync_RemoteWaiter	wait;		/* Process info for remote waiting */
-    Pdev_NewRequest	hdr;		/* Request header. */
-} PdevRpcParams;
 
 /*
  * Forward declarations.
@@ -567,9 +556,10 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 			    ioHandlePtrPtr);
     cltHandlePtr = (PdevClientIOHandle *)(*ioHandlePtrPtr);
     if (found) {
-	Sys_Panic(SYS_WARNING,
-	    "FsPseudoStreamCltOpen found client handle\n");
-	if (cltHandlePtr->pdevHandlePtr != (PdevServerIOHandle *)NIL) {
+	if ((cltHandlePtr->pdevHandlePtr != (PdevServerIOHandle *)NIL) &&
+	    (cltHandlePtr->pdevHandlePtr->clientPID != NIL)) {
+	    Sys_Panic(SYS_WARNING,
+		"FsPseudoStreamCltOpen found client handle\n");
 	    Sys_Printf("Check (and kill) client process %x\n",
 		cltHandlePtr->pdevHandlePtr->clientPID);
 	}
@@ -599,17 +589,17 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 	procPtr = Proc_GetEffectiveProc();
 	procID = procPtr->processID;
 	uid = procPtr->effectiveUserID;
-
-	cltHandlePtr->streamPtr = (Fs_Stream *)NIL;
     } else {
+	register Fs_Stream *cltStreamPtr;
+
 	procID = pdevStatePtr->procID;
 	uid = pdevStatePtr->uid;
 
-	cltHandlePtr->streamPtr = FsStreamFind(&pdevStatePtr->streamID,
+	cltStreamPtr = FsStreamFind(&pdevStatePtr->streamID,
 			    cltHandlePtr, *flagsPtr, &found);
-	(void)FsStreamClientOpen(&cltHandlePtr->streamPtr->clientList,
+	(void)FsStreamClientOpen(&cltStreamPtr->clientList,
 				clientID, *flagsPtr);
-	FsHandleUnlock(cltHandlePtr->streamPtr);
+	FsHandleUnlock(cltStreamPtr);
     }
     /*
      * Set up a service stream and hook the client handle to it.
@@ -789,7 +779,9 @@ ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID)
     pdevHandlePtr->replyBuf = (Address)NIL;
     pdevHandlePtr->serverPID = (Proc_PID)NIL;
     pdevHandlePtr->clientPID = (Proc_PID)NIL;
-    pdevHandlePtr->clientSpriteID = NIL;
+    pdevHandlePtr->clientWait.pid = NIL;
+    pdevHandlePtr->clientWait.hostID = NIL;
+    pdevHandlePtr->clientWait.waitToken = NIL;
 
     List_Init(&pdevHandlePtr->srvReadWaitList);
     List_Init(&pdevHandlePtr->cltReadWaitList);
@@ -910,7 +902,7 @@ PseudoStreamCloseInt(pdevHandlePtr)
      */
     request.operation = PDEV_CLOSE;
     (void) RequestResponse(pdevHandlePtr, &request, 0, (Address)NIL,
-				0, (Address)NIL, (int *) NIL);
+		    0, (Address)NIL, (int *) NIL, (Sync_RemoteWaiter *)NIL);
 exit:
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
     Sync_Broadcast(&pdevHandlePtr->access);
@@ -1517,8 +1509,8 @@ FsControlScavenge(hdrPtr)
  */
 
 INTERNAL static ReturnStatus
-RequestResponse(pdevHandlePtr, requestPtr,
-		inputSize, inputBuf, replySize, replyBuf, replySizePtr)
+RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
+	replyBuf, replySizePtr, waitPtr)
     register PdevServerIOHandle *pdevHandlePtr;	/* Caller should lock this
 						 * with the monitor lock. */
     register Pdev_NewRequest	*requestPtr;	/* The caller should fill in the
@@ -1535,9 +1527,11 @@ RequestResponse(pdevHandlePtr, requestPtr,
     Address		replyBuf;	/* Results of the remote command. */
     int			*replySizePtr;	/* Amount of data actually in replyBuf.
 					 * (May be NIL if not needed.) */
+    Sync_RemoteWaiter	*waitPtr;	/* Client process info for waiting.
+					 * Only needed for read & write. */
 {
     register ReturnStatus	status;
-    Proc_ControlBlock		*procPtr;	/* For blocking signals */
+    Proc_ControlBlock		*procPtr;	/* Used to get clientPID */
     Proc_ControlBlock		*serverProcPtr;	/* For VM copy operations */
     register int		firstByte;	/* Offset into request buffer */
     register int		lastByte;	/* Offset into request buffer */
@@ -1551,10 +1545,6 @@ RequestResponse(pdevHandlePtr, requestPtr,
 	(pdevHandlePtr->flags & PDEV_SERVER_GONE)) {
 	return(DEV_OFFLINE);
     }
-    /*
-     * Put an entry in the scheduler trace so we can correlate...
-     */
-    procPtr = Proc_GetEffectiveProc();
     /*
      * See if we have to switch to a new request buffer.  This is needed
      * to support UDP, which wants to set a maximum write size.  The max
@@ -1686,11 +1676,12 @@ RequestResponse(pdevHandlePtr, requestPtr,
 	 * kernel can copy the reply directly from the server's address space
 	 * to the client's when the server makes the IOC_PDEV_REPLY IOControl.
 	 */
-    
-	procPtr = Proc_GetEffectiveProc();
+
 	pdevHandlePtr->replyBuf = replyBuf;
-	pdevHandlePtr->clientPID = procPtr->processID;
-	pdevHandlePtr->clientSpriteID = rpc_SpriteID;
+	pdevHandlePtr->clientPID = (Proc_GetEffectiveProc())->processID;
+	if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+	    pdevHandlePtr->clientWait = *waitPtr;
+	}
 	pdevHandlePtr->flags &= ~PDEV_REPLY_READY;
 	while ((pdevHandlePtr->flags & PDEV_REPLY_READY) == 0) {
 	    Sync_Wait(&pdevHandlePtr->replyReady, FALSE);
@@ -1773,8 +1764,8 @@ PseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     request.param.open.uid	= userID;
 
     pdevHandlePtr->flags &= ~FS_USER;
-    status = RequestResponse(pdevHandlePtr,
-		    &request, 0, (Address) NIL, 0, (Address) NIL, (int *)NIL);
+    status = RequestResponse(pdevHandlePtr, &request, 0, (Address) NIL, 0,
+			 (Address) NIL, (int *)NIL, (Sync_RemoteWaiter *)NIL);
 exit:
     pdevHandlePtr->flags &= ~PDEV_BUSY;
     Sync_Broadcast(&pdevHandlePtr->access);
@@ -1808,7 +1799,6 @@ exit:
  */
 
 ReturnStatus
-
 FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     register Fs_Stream 	*streamPtr;	/* Stream to read from. */
     Address 	buffer;			/* Where to read into. */
@@ -1916,7 +1906,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 
 	pdevHandlePtr->flags |= (flags & FS_USER);
 	status = RequestResponse(pdevHandlePtr, &request, 0, (Address) NIL,
-				 *lenPtr, buffer, lenPtr);
+				 *lenPtr, buffer, lenPtr, waitPtr);
     }
 exit:
     if (status == DEV_OFFLINE) {
@@ -1958,7 +1948,6 @@ exit:
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
 ENTRY ReturnStatus
 FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Fs_Stream 	*streamPtr;	/* Stream to write to. */
@@ -1966,7 +1955,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Address 	buffer;		/* Where to write to. */
     int		*offsetPtr;	/* In/Out byte offset */
     int 	*lenPtr;	/* In/Out byte count */
-    Sync_RemoteWaiter *waitPtr;	/* IGNORED */
+    Sync_RemoteWaiter *waitPtr;	/* Process info for waiting on I/O */
 {
     register Proc_ControlBlock *procPtr;
     register PdevClientIOHandle *cltHandlePtr =
@@ -2026,7 +2015,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	 */
 	replySize = (pdevHandlePtr->flags&PDEV_WRITE_BEHIND) ? -1 : sizeof(int);
 	status = RequestResponse(pdevHandlePtr, &request, length, buffer,
-			    replySize, (Address)&numBytes, &replySize);
+			    replySize, (Address)&numBytes, &replySize, waitPtr);
 	if (replySize == sizeof(int)) {
 	    /*
 	     * Pay attention to the number of bytes the server accepted.
@@ -2150,7 +2139,7 @@ FsPseudoStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
     request.param.ioctl.procID		= procPtr->processID;
 
     status = RequestResponse(pdevHandlePtr, &request, inBufSize, inBuffer,
-				outBufSize, outBuffer, (int *) NIL);
+		outBufSize, outBuffer, (int *) NIL, (Sync_RemoteWaiter *)NIL);
 exit:
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
     Sync_Broadcast(&pdevHandlePtr->access);
@@ -2637,15 +2626,12 @@ FsServerStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
 	    }
 	    PDEV_REPLY(&pdevHandlePtr->hdr.fileID, srvReplyPtr);
 	    if (srvReplyPtr->status == FS_WOULD_BLOCK) {
-		Sync_RemoteWaiter w;
-
-		w.pid = pdevHandlePtr->clientPID;
-		w.hostID = pdevHandlePtr->clientSpriteID;
-		w.waitToken = SYNC_BROADCAST_TOKEN;
 		if (pdevHandlePtr->operation == PDEV_READ) {
-		    FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList, &w);
+		    FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList,
+					 &pdevHandlePtr->clientWait);
 		} else if (pdevHandlePtr->operation == PDEV_WRITE) {
-		    FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, &w);
+		    FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList,
+					 &pdevHandlePtr->clientWait);
 		}
 	    }
 	    /*
