@@ -1129,7 +1129,7 @@ FsControlRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 
 ReturnStatus
 FsControlIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
-    FsHandleHeader *hdrPtr;		/* File handle */
+    FsHandleHeader *hdrPtr;		/* I/O handle */
     int command;			/* File specific I/O control */
     int byteOrder;			/* Client byte order, should be same */
     int inBufSize;			/* Size of inBuffer */
@@ -1159,21 +1159,13 @@ FsControlIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
 	case IOC_CLEAR_BITS:
 	    status = SUCCESS;
 	    break;
-	case IOC_TRUNCATE: {
+	case IOC_TRUNCATE:
 	    status = SUCCESS;
 	    break;
-	}
 	case IOC_LOCK:
 	case IOC_UNLOCK:
-	    if (inBufSize < sizeof(Ioc_LockArgs)) {
-		status = GEN_INVALID_ARG;
-	    } else if (command == IOC_LOCK) {
-		status = FsFileLock(&ctrlHandlePtr->lock,
-			    (Ioc_LockArgs *)inBuffer);
-	    } else {
-		status = FsFileUnlock(&ctrlHandlePtr->lock,
-			    (Ioc_LockArgs *)inBuffer);
-	    }
+	    status = FsIocLock(&ctrlHandlePtr->lock, command, byteOrder,
+				inBuffer, inBufSize, (FsFileID *)NIL);
 	    break;
 	case IOC_NUM_READABLE: {
 	    register int bytesAvailable;

@@ -41,6 +41,7 @@ typedef struct FsLockOwner {
     List_Links links;		/* A list of these hangs from FsLockState */
     int hostID;			/* SpriteID of process that got the lock */
     int procID;			/* ProcessID of owning process */
+    FsFileID streamID;		/* Stream on which lock call was made */
     int flags;			/* IOC_LOCK_EXCLUSIVE, IOC_LOCK_SHARED */
 } FsLockOwner;
 
@@ -73,10 +74,68 @@ FsLockInit(lockPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsFileLock --
+ * FsIocLock --
  *
- *	Try to get a lock a file in the local domain.  If the lock cannot
- *	be taken then return FS_WOULD_BLOCK so our caller can wait.
+ *	Top-level locking/unlocking routine that handles I/O control
+ *	related byte swapping.  If the lock I/O control has been issued
+ *	from a client with a different archetecture the data block containing
+ *	the lock arguments has to be byte swapped.
+ *
+ * Results:
+ *	SUCCESS or FS_WOULD_BLOCK
+ *
+ * Side effects:
+ *	Lock or unlock the file, see FsLock and FsUnlock.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FsIocLock(lockPtr, command, byteOrder, inBuffer, inBufSize, streamIDPtr)
+    register FsLockState *lockPtr;	/* Locking state for a file. */
+    int		command;		/* IOC_LOCK, IOC_UNLOCK */
+    int		byteOrder;		/* Client's byte ordering */
+    Address	inBuffer;		/* Ref to Ioc_LockArgs */
+    int		inBufSize;		/* Size of inBuffer */
+    FsFileID	*streamIDPtr;		/* ID of stream associated with lock */
+{
+    register Ioc_LockArgs *lockArgsPtr;
+    register ReturnStatus status;
+    Ioc_LockArgs lockArgs;
+
+    if (byteOrder != mach_ByteOrder) {
+	int size = sizeof(Ioc_LockArgs);
+	Swap_Buffer(inBuffer, inBufSize, byteOrder, mach_ByteOrder,
+		    "wwww", (Address)&lockArgs, &size);
+	if (size != sizeof(Ioc_LockArgs)) {
+	    status = GEN_INVALID_ARG;
+	} else {
+	    lockArgsPtr = &lockArgs;
+	}
+    } else if (inBufSize < sizeof(Ioc_LockArgs)) {
+	status = GEN_INVALID_ARG;
+    } else {
+	lockArgsPtr = (Ioc_LockArgs *)inBuffer;
+    }
+    if (status == SUCCESS) {
+	if (command == IOC_LOCK) {
+	    status = FsLock(lockPtr, lockArgsPtr, streamIDPtr);
+	} else {
+	    status = FsUnlock(lockPtr, lockArgsPtr, streamIDPtr);
+	}
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsLock --
+ *
+ *	Try to get a lock a stream.  If the lock is already held then
+ *	the caller is added to the waitlist for the lock and FS_WOULD_BLOCK
+ *	is returned.  Otherwise, the lock is marked as held and our
+ *	caller is put on the ownership list for the lock.
  *
  * Results:
  *	SUCCESS or FS_WOULD_BLOCK
@@ -88,9 +147,10 @@ FsLockInit(lockPtr)
  */
 
 ReturnStatus
-FsFileLock(lockPtr, argPtr)
+FsLock(lockPtr, argPtr, streamIDPtr)
     register FsLockState *lockPtr;	/* Locking state for a file. */
     Ioc_LockArgs *argPtr;		/* IOC_LOCK_EXCLUSIVE|IOC_LOCK_SHARED */
+    FsFileID	*streamIDPtr;		/* Stream that owns the lock */
 {
     ReturnStatus status = SUCCESS;
     register int operation = argPtr->flags;
@@ -124,6 +184,11 @@ FsFileLock(lockPtr, argPtr)
 	List_InitElement((List_Links *)lockOwnerPtr);
 	lockOwnerPtr->hostID = argPtr->hostID;
 	lockOwnerPtr->procID = argPtr->pid;
+	if (streamIDPtr != (FsFileID *)NIL) {
+	    lockOwnerPtr->streamID = *streamIDPtr;
+	} else {
+	    lockOwnerPtr->streamID.type = -1;
+	}
 	lockOwnerPtr->flags = operation & (IOC_LOCK_EXCLUSIVE|IOC_LOCK_SHARED);
 	List_Insert((List_Links *)lockOwnerPtr,
 		    LIST_ATREAR(&lockPtr->ownerList));
@@ -133,7 +198,7 @@ FsFileLock(lockPtr, argPtr)
 	 * Put the potential waiter on the file's lockWaitList.
 	 */
 	if (argPtr->hostID > NET_NUM_SPRITE_HOSTS) {
-	    Sys_Panic(SYS_WARNING, "FsFileLock: bad hostID %d.\n",
+	    Sys_Panic(SYS_WARNING, "FsLock: bad hostID %d.\n",
 		      argPtr->hostID);
 	} else {
 	    wait.hostID = argPtr->hostID;
@@ -148,9 +213,10 @@ FsFileLock(lockPtr, argPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsFileUnlock --
+ * FsUnlock --
  *
- *	Release a lock a file in the local domain.
+ *	Release a lock a stream.  The ownership list is checked here, but
+ *	the lock is released anyway (so far).
  *
  * Results:
  *	SUCCESS or FS_WOULD_BLOCK
@@ -162,9 +228,10 @@ FsFileLock(lockPtr, argPtr)
  */
 
 ReturnStatus
-FsFileUnlock(lockPtr, argPtr)
+FsUnlock(lockPtr, argPtr, streamIDPtr)
     register FsLockState *lockPtr;	/* Locking state for the file. */
     Ioc_LockArgs *argPtr;	/* Lock flags and process info for waiting */
+    FsFileID	*streamIDPtr;	/* Verified against the lock ownership list */ 
 {
     ReturnStatus status = SUCCESS;
     register int operation = argPtr->flags;
@@ -173,7 +240,11 @@ FsFileUnlock(lockPtr, argPtr)
     if (operation & IOC_LOCK_EXCLUSIVE) {
 	if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
 	    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
-		if (lockOwnerPtr->procID == argPtr->pid) {
+		if ((lockOwnerPtr->procID == argPtr->pid) ||
+		    (streamIDPtr != (FsFileID *)NIL &&
+		     lockOwnerPtr->streamID.major == streamIDPtr->major &&
+		     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
 		    lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
 		    List_Remove((List_Links *)lockOwnerPtr);
 		    Mem_Free((Address)lockOwnerPtr);
@@ -188,12 +259,12 @@ FsFileUnlock(lockPtr, argPtr)
 		    lockOwnerPtr =
 			(FsLockOwner *)List_First(&lockPtr->ownerList);
 		    Sys_Panic(SYS_WARNING,
-			"FsFileUnlock, non-owner <%x> unlocked, owner <%x>\n",
+			"FsUnlock, non-owner <%x> unlocked, owner <%x>\n",
 			argPtr->pid, lockOwnerPtr->procID);
 		    List_Remove((List_Links *)lockOwnerPtr);
 		    Mem_Free((Address)lockOwnerPtr);
 		} else {
-		    Sys_Panic(SYS_WARNING, "FsFileUnlock, no lock owner\n");
+		    Sys_Panic(SYS_WARNING, "FsUnlock, no lock owner\n");
 		}
 		lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
 	    }
@@ -205,7 +276,11 @@ FsFileUnlock(lockPtr, argPtr)
 	    status = FAILURE;
 	    lockPtr->numShared--;
 	    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
-		if (lockOwnerPtr->procID == argPtr->pid) {
+		if ((lockOwnerPtr->procID == argPtr->pid) ||
+		    (streamIDPtr != (FsFileID *)NIL &&
+		     lockOwnerPtr->streamID.major == streamIDPtr->major &&
+		     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
 		    status = SUCCESS;
 		    List_Remove((List_Links *)lockOwnerPtr);
 		    Mem_Free((Address)lockOwnerPtr);
@@ -217,7 +292,7 @@ FsFileUnlock(lockPtr, argPtr)
 		 * Oops, unlocking process didn't match lock owner.
 		 */
 		Sys_Panic(SYS_WARNING,
-		    "FsFileUnlock, non-owner <%x> did shared unlock\n",
+		    "FsUnlock, non-owner <%x> did shared unlock\n",
 		    argPtr->pid);
 		status = SUCCESS;
 	    }
@@ -260,14 +335,19 @@ FsFileUnlock(lockPtr, argPtr)
  */
 
 void
-FsLockClose(lockPtr, procID)
+FsLockClose(lockPtr, procID, streamIDPtr)
     register FsLockState *lockPtr;	/* Locking state for the file. */
     Proc_PID procID;			/* ProcessID of closing process. */
+    FsFileID *streamIDPtr;		/* Stream being closed */
 {
     register FsLockOwner *lockOwnerPtr;
 
     LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
-	if (lockOwnerPtr->procID == procID) {
+	if ((lockOwnerPtr->procID == procID) ||
+	    (streamIDPtr != (FsFileID *)NIL &&
+	     lockOwnerPtr->streamID.major == streamIDPtr->major &&
+	     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+	     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)) {
 	    lockPtr->flags &= ~lockOwnerPtr->flags;
 	    List_Remove((List_Links *)lockOwnerPtr);
 	    Mem_Free((Address)lockOwnerPtr);

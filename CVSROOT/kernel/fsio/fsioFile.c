@@ -525,7 +525,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
      * The main difference is that we have a low-level reference to release.
      */
 
-    FsLockClose(&handlePtr->lock, procID);
+    FsLockClose(&handlePtr->lock, procID, &streamPtr->hdr.fileID);
     /*
      * Update the global/summary use counts for the file.
      */
@@ -1353,32 +1353,10 @@ FsFileIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, out
 	    break;
 	}
 	case IOC_LOCK:
-	case IOC_UNLOCK: {
-	    register Ioc_LockArgs *lockArgsPtr;
-	    Ioc_LockArgs lockArgs;
-	    if (byteOrder != mach_ByteOrder) {
-		int size = sizeof(Ioc_LockArgs);
-		Swap_Buffer(inBuffer, inBufSize, byteOrder, mach_ByteOrder,
-			    "wwww", (Address)&lockArgs, &size);
-		if (size != sizeof(Ioc_LockArgs)) {
-		    status = GEN_INVALID_ARG;
-		} else {
-		    lockArgsPtr = &lockArgs;
-		}
-	    } else if (inBufSize < sizeof(Ioc_LockArgs)) {
-		status = GEN_INVALID_ARG;
-	    } else {
-		lockArgsPtr = (Ioc_LockArgs *)inBuffer;
-	    }
-	    if (status != SUCCESS) {
-		break;
-	    } else if (command == IOC_LOCK) {
-		status = FsFileLock(&handlePtr->lock, lockArgsPtr);
-	    } else {
-		status = FsFileUnlock(&handlePtr->lock, lockArgsPtr);
-	    }
+	case IOC_UNLOCK:
+	    status = FsIocLock(&handlePtr->lock, command, byteOrder, inBuffer,
+				inBufSize, (FsFileID *)NIL);
 	    break;
-	}
 	case IOC_NUM_READABLE: {
 	    /*
 	     * Return the number of bytes available to read.  The top-level

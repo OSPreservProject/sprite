@@ -545,7 +545,7 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
     /*
      * Decrement use counts.
      */
-    FsLockClose(&devHandlePtr->lock, procID);
+    FsLockClose(&devHandlePtr->lock, procID, &streamPtr->hdr.fileID);
 
     devHandlePtr->use.ref--;
     if (flags & FS_WRITE) {
@@ -1502,13 +1502,22 @@ FsDeviceIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     register ReturnStatus status;
 
-    if (byteOrder != mach_ByteOrder) {
-	FsFileError(hdrPtr, "Device I/O control byte swapping not done",
-	    SUCCESS);
-    }
     FsHandleLock(devHandlePtr);
-    status = (*devFsOpTable[devicePtr->type].ioControl) (devicePtr,
-	    command, inBufSize,	inBuffer, outBufSize, outBuffer);
+    switch (command) {
+	case IOC_LOCK:
+	case IOC_UNLOCK:
+	    status = FsIocLock(&devHandlePtr->lock, command, byteOrder,
+				inBuffer, inBufSize, (FsFileID *)NIL);
+	    break;
+	default:
+	    if (byteOrder != mach_ByteOrder) {
+		FsFileError(hdrPtr, "Device I/O control byte swapping not done",
+		    SUCCESS);
+	    }
+	    status = (*devFsOpTable[devicePtr->type].ioControl) (devicePtr,
+		    command, inBufSize, inBuffer, outBufSize, outBuffer);
+	    break;
+    }
     FsHandleUnlock(devHandlePtr);
     return(status);
 }
