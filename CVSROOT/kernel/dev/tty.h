@@ -28,6 +28,9 @@
 #ifndef _SYNC
 #include "sync.h"
 #endif
+#ifndef _FS
+#include "fs.h"
+#endif
 
 /*
  * For each terminal or terminal-like device supported by the kernel,
