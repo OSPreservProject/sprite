@@ -1665,6 +1665,7 @@ Proc_DestroyMigratedProc(pidData)
 	 */
 	if (procPtr->remoteExecBuffer != (Address) NIL) {
 	    free(procPtr->remoteExecBuffer);
+	    procPtr->remoteExecBuffer = (Address) NIL;
 	}
 	procPtr->state = PROC_DEAD;
 	Proc_CallFunc(Proc_Reaper, (ClientData) procPtr, 0);
@@ -1677,16 +1678,12 @@ Proc_DestroyMigratedProc(pidData)
     }	
 	
 	
-    if (procPtr->state == PROC_MIGRATED ||
-	(procPtr->genFlags & PROC_MIGRATING)) {
+    if (procPtr->state == PROC_MIGRATED) {
 	/*
 	 * Perform an exit on behalf of the process -- it's not
-	 * in a state where we can signal it.  Unlock the
-	 * process again, since ProcExitProcess locks it.  [Is there
-	 * any race condition?  e.g., ProcExitProcess must be careful
-	 * about the process it's passed.]
+	 * in a state where we can signal it.  The process is
+         * unlocked as a side effect.
 	 */
-	Proc_Unlock(procPtr);
 	ProcExitProcess(procPtr, PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0,
 			FALSE);
 	Proc_RemoveMigDependency(pid);
