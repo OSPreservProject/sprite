@@ -35,11 +35,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "char.h"
 #include "vm.h"
 #include "sys.h"
-#include "machine.h"
 #include "procAOUT.h"
 #include "status.h"
 #include "byte.h"
 #include "string.h"
+#include "mach.h"
 
 static ReturnStatus	DoExec();
 
@@ -705,18 +705,6 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      */
     Mem_Free((Address) newArgPtrArray);
     Mem_Free((Address) newEnvPtrArray);
-    
-    /*
-     * Finally we are actually ready to start the new process.
-     */
-    procPtr->genRegs[SP] = (int)userStackPointer;
-    procPtr->genFlags |= PROC_DONT_MIGRATE;
-    if (debugMe) {
-	procPtr->progCounter = entry - 2;
-	procPtr->genFlags |= PROC_DEBUG_ON_EXEC;
-    } else {
-	procPtr->progCounter = entry;
-    }
 
     /*
      * Close any streams that have been marked close-on-exec.
@@ -737,6 +725,12 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * Take signal actions for execed process.
      */
     Sig_Exec(procPtr);
+    if (debugMe) {
+	/*
+	 * Debugged processes get a SIG_DEBUG at start up.
+	 */
+	Sig_SendProc(procPtr, SIG_DEBUG, SIG_NO_CODE);
+    }
     Proc_Unlock(procPtr);
 
     /*
@@ -745,8 +739,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * mode.
      */
     Sys_DisableIntr();
-    Proc_RunUserProc(procPtr->genRegs, procPtr->progCounter, Proc_Exit,
-		    procPtr->stackStart + mach_ExecStackOffset);
+    Mach_ExecUserProc(procPtr, userStackPointer, entry);
     Sys_Panic(SYS_FATAL, "DoExec: Proc_RunUserProc returned.\n");
 
 execError:
