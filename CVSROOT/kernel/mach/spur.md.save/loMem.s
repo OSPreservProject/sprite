@@ -114,6 +114,25 @@
 	.set rt9, 25
 
 /*
+ * C structures and routines that are called from here.
+ */
+	.globl _proc_RunningProcesses
+	.globl _machCurStatePtr
+	.globl _machStatePtrOffset
+	.globl _machSpecialHandlingOffset
+	.globl _machMaxSysCall
+	.globl _machKcallTableOffset
+	.globl _machNumArgs
+	.globl _machDebugState
+	.globl _MachCallDebugger
+	.globl _MachInterrupt
+	.globl _MachUserError
+	.globl _MachVMFault 
+	.globl _MachSigReturn
+	.globl _MachGetWinMem
+	.globl _MachUserAction
+
+/*
  * Trap table.  The hardware jumps to virtual 0x1000 when any type of trap
  * occurs.
  */
@@ -197,8 +216,8 @@ _machKcallTableOffset:		.long 0
 
 numArgsPtr:			.long _machNumArgs
 debugStatePtr:			.long _machDebugState
-debugSWStackBase:		.long MACH_DEBUG_STACK_BASE
-debugSpillStackEnd:		.long (MACH_DEBUG_STACK_BASE + MACH_KERN_STACK_SIZE)
+debugSWStackBase:		.long MACH_DEBUG_STACK_BOTTOM
+debugSpillStackEnd:		.long (MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
 
 /*
  * The instruction to execute on return from a signal handler.  Is here
@@ -267,10 +286,22 @@ Start:
  * The following code assumes that the initial kernel does not take more
  * than 4 Mbytes of memory since it starts the kernel page tables at
  * 4 Mbytes.
+ *
+ *	KERN_PT_FIRST_PAGE	The physical page where the page tables start.
+ *	KERN_NUM_PAGES		The number of physical pages in the kernel.
+ *	KERN_PT_VIRT_BASE	The virtual address of the kernel's page tables.
+ *	KERN_PT_PHYS_BASE	The physical address of the kernel's page tables
+ *	KERN_PT2_VIRT_BASE	The virtual address of the 2nd level kernel
+ *				page tables.
+ *	KERN_PT2_PHYS_BASE	The physical address of the 2nd level kernel
+ *				page tables.
  */
 #define	KERN_PT_FIRST_PAGE	1024
-#define	KERN_PT_BASE		(KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE)
-#define	KERN_PT2_BASE		(KERN_PT_BASE + VMMACH_SEG_PT_SIZE / 4 * VM_KERN_PT_QUAD)
+#define	KERN_NUM_PAGES		1024
+#define	KERN_PT_VIRT_BASE	(KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE)
+#define	KERN_PT_PHYS_BASE	(0xff000000 + KERN_PT_VIRT_BASE)
+#define	KERN_PT2_VIRT_BASE	(KERN_PT_VIRT_BASE + VMMACH_SEG_PT_SIZE / 4 * VMMACH_KERN_PT_QUAD)
+#define	KERN_PT2_PHYS_BASE	(0xff000000 + KERN_PT2_VIRT_BASE)
 
 /*
  * In this code registers have the following meaning:
@@ -283,7 +314,7 @@ Start:
  * First initialize the second level page tables so that they map
  * all of the kernel page tables.
  */
-	LD_CONSTANT(r1, KERN_PT2_BASE)
+	LD_CONSTANT(r1, KERN_PT2_PHYS_BASE)
 	add_nt		r2, r0, $VMMACH_NUM_PT_PAGES
 	LD_CONSTANT(r3, (KERN_PT_FIRST_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT)
 	LD_CONSTANT(r4, 1 << VMMACH_PAGE_FRAME_SHIFT)
@@ -295,7 +326,7 @@ Start:
 	add_nt		r1, r1, $4
 	add_nt		r3, r3, r4
 	sub		r2, r2, $1
-	jump		1b
+	cmp_br_delayed	always, r0, r0, 1b
 	Nop
 2:
 
@@ -303,7 +334,7 @@ Start:
  * Next initialize the kernel page table to point to 4 Mbytes of mapped
  * code.
  */
-	LD_CONSTANT(r1, KERN_PT_BASE)
+	LD_CONSTANT(r1, KERN_NUM_PAGES)
 	add_nt		r2, r0, $KERN_PT_FIRST_PAGE
 	LD_CONSTANT(r3, VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT)
 
@@ -314,7 +345,7 @@ Start:
 	add_nt		r1, r1, $4
 	add_nt		r3, r3, r4
 	sub		r2, r2, $1
-	jump		1b
+	cmp_br_delayed	always, r0, r0, 1b
 	Nop
 2:
 
@@ -334,7 +365,7 @@ Start:
 /*
  * Initialize the RPTM register.
  */
-	LD_CONSTANT(r1, KERN_PT2_BASE)
+	LD_CONSTANT(r1, KERN_PT2_PHYS_BASE)
 	ST_RPTM(r1, MACH_RPTM_0)
 /*
  * Clear out the cache.
@@ -348,32 +379,26 @@ Start:
 	Nop
 
 /*
- * Now to jump to virtual mode through the following sequence:
- *
- *	1) Disable instruction buffer just in case it is on.
- *	2) Invalidate the instruction buffer.
- *	3) Make a good kpsw.
- *	4) Jump to virtual mode.
- */
-	wr_kpsw		r0, $0
-	invalidate_ib
-	add_nt		r1, r0, $(MACH_KPSW_PREFETCH_ENA | MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
-	rd_special	r2, pc
-	jump_reg	r2, $12
-	wr_kpsw		r1, $0
-
-/*
- * Now we are executing in virtual mode (hopefully).  Initialize the cwp, 
- * swp and SPILL_SP to their proper values and then jump to the main
- * function.
+ * Initialize the cwp, swp and SPILL_SP to their proper values.
  */
 	wr_special	cwp, r0, $1
 	LD_CONSTANT(r1, MACH_STACK_BOTTOM)
 	wr_special	swp, r1, $0
 	LD_CONSTANT(SPILL_SP, MACH_CODE_START)
 
+/*
+ * Now jump to virtual mode through the following sequence:
+ *
+ *	1) Disable instruction buffer just in case it is on.
+ *	2) Invalidate the instruction buffer.
+ *	3) Make a good kpsw.
+ *	4) Jump to the main function.
+ */
+	wr_kpsw		r0, $0
+	invalidate_ib
+	add_nt		r1, r0, $(MACH_KPSW_PREFETCH_ENA | MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
 	call		_main
-	Nop
+	wr_kpsw		r1, $0
 	jump		ErrorTrap
 	Nop
 
@@ -855,7 +880,7 @@ vmFault_CallHandler:
 	/* 
 	 * Clear fault bits.
 	 */
-	st_external	SAFE_TEMP1, r0, $MACH_FE_STATUS_2|MACH_WR_REG	
+	st_external	SAFE_TEMP1, r0, $MACH_FE_STATUS_2|MACH_CO_WR_REG	
 	jump		ReturnTrap
 	Nop
 
@@ -1002,7 +1027,7 @@ BreakpointTrap:
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
-	add_nt		OUTPUT_REG1, r0, $MACH_BREAKPOINT_ERROR
+	add_nt		OUTPUT_REG1, r0, $MACH_BREAKPOINT
 	rd_insert	VOL_TEMP1
 	call		_MachUserError
 	Nop
@@ -1051,7 +1076,7 @@ SysCallTrap:
 	 * Bad kernel call.  Take a user error and then do a normal return
 	 * from trap.
 	 */
-	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SYS_CALL
+	add_nt		OUTPUT_REG1, r0, $MACH_BAD_SYS_CALL
 	call		_MachUserError
 	Nop
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
@@ -1158,7 +1183,10 @@ _MachFetchArgStart:
 _MachFetchArgEnd:
 	/*
 	 * Set the kernel's spill stack.
+	 */
 	add_nt		SPILL_SP, VOL_TEMP3, $0
+
+sysCallTrap_CallRoutine:
 	/*
 	 * Now call the routine to handle the system call.  We do this
 	 * by jumping through 
@@ -1176,7 +1204,7 @@ _MachFetchArgEnd:
 	/*
 	 * VOL_TEMP2 <= offset of kcall table pointer in PCB
 	 */
-	ld_32		VOL_TEMP2, r0, $machKcallTableOffset
+	ld_32		VOL_TEMP2, r0, $_machKcallTableOffset
 	Nop						
 	/*
 	 * VOL_TEMP2 <= pointer to Oth entry in kcall table
@@ -1389,7 +1417,7 @@ returnTrap_NormReturn:
 	ld_32		VOL_TEMP1, r0, $runningProcesses
 	Nop
 	ld_32		VOL_TEMP1, VOL_TEMP1, $0
-	ld_32		VOL_TEMP2, r0, $machSpecialHandlingOffset
+	ld_32		VOL_TEMP2, r0, $_machSpecialHandlingOffset
 	Nop
 	add_nt		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
 	ld_32		VOL_TEMP1, VOL_TEMP1, $0
@@ -1413,7 +1441,7 @@ returnTrap_Return:
 	 * PC to the next PC and clear the next PC so that the return
 	 * happens correctly.
 	 */
-	LD_CONSTANT(VOL_TEMP2, MACH_USE_CUR_PC)
+	LD_CONSTANT(VOL_TEMP2, MACH_KPSW_USE_CUR_PC)
 	and		VOL_TEMP1, KPSW_REG, VOL_TEMP2
 	cmp_br_delayed	eq, VOL_TEMP1, VOL_TEMP2, 1f
 	Nop
@@ -1854,7 +1882,7 @@ _MachContextSwitch:
 	 * the restore and save state routines do not touch any of the
 	 * NON_INTR_TEMP registers.
 	 */
-	ld_32		NON_INTR_TEMP1, r0, $statePtrOffset
+	ld_32		NON_INTR_TEMP1, r0, $_machStatePtrOffset
 	Nop
 	add_nt		VOL_TEMP1, INPUT_REG1, NON_INTR_TEMP1
 	ld_32		VOL_TEMP1, VOL_TEMP1, $0

@@ -15,6 +15,8 @@
 #include "machConst.h"
 #include "machCCRegs.h"
 
+typedef int	Mach_ExcStack;
+
 /*
  * The state of each processor: user mode or kernel mode.
  */
@@ -81,14 +83,14 @@ typedef struct {
     int		regs[MACH_NUM_ACTIVE_REGS][2];	/* Registers at time of trap.*/
     int		kpsw;				/* Kernel psw. */
     int		upsw;				/* User psw. */
-    int		curPC;				/* Current program counter. */
-    int		nextPC;				/* Next program counter. */
+    Address	curPC;				/* Current program counter. */
+    Address	nextPC;				/* Next program counter. */
     int		trapType;			/* One of MACH_USE_CUR_PC or
 						 * MACH_USE_NEXT_PC. */
     int		insert;				/* The insert register. */
-    int		swp;				/* The saved window pointer. */
+    Address	swp;				/* The saved window pointer. */
     int		cwp;				/* Current window pointer. */
-    int		usp;				/* User stack pointer. */
+    Address	usp;				/* User stack pointer. */
 } Mach_RegState;
 
 /*

@@ -258,7 +258,7 @@
 	Nop; \
 	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MAX_SWP_OFFSET; \
 	sub		VOL_TEMP3, VOL_TEMP3, $MACH_SAVED_REG_SET_SIZE; \
-	cmp_br_delayed	le, VOL_TEMP2, VOL_TEMP3, goodLabel; \
+	cmp_br_delayed	le, VOL_TEMP2, VOL_TEMP3, label; \
 	Nop; \
 1:
 
@@ -280,11 +280,11 @@
 #define	SWITCH_TO_KERNEL_STACKS() \
 	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
 	Nop; \
-	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END; \
-	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START; \
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END_OFFSET; \
+	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START_OFFSET; \
 	rd_special	VOL_TEMP3, cwp; \
 	sub		VOL_TEMP3, VOL_TEMP3, $4; \
-	and		VOL_TEMP3, VOL_TEMP3, 0x1c; \
+	and		VOL_TEMP3, VOL_TEMP3, $0x1c; \
 	sll		VOL_TEMP3, VOL_TEMP3, $3; \
 	sll		VOL_TEMP3, VOL_TEMP3, $2; \
 	add_nt		VOL_TEMP3, VOL_TEMP3, VOL_TEMP2; \
@@ -377,7 +377,7 @@
 	ld_32		VOL_TEMP1, r0, $debugSWStackBase; \
 	rd_special	VOL_TEMP2, cwp; \
 	sub		VOL_TEMP2, VOL_TEMP2, $4; \
-	and		VOL_TEMP2, VOL_TEMP2, 0x1c; \
+	and		VOL_TEMP2, VOL_TEMP2, $0x1c; \
 	sll		VOL_TEMP2, VOL_TEMP2, $3; \
 	sll		VOL_TEMP2, VOL_TEMP2, $2; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, VOL_TEMP1; \
