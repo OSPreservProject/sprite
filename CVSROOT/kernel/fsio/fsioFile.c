@@ -142,7 +142,11 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	free((Address)descPtr);
 	*newHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
     } else {
-	fsStats.object.files++;
+	if (descPtr->fileType == FS_DIRECTORY) {
+	    fsStats.object.directory++;
+	} else {
+	    fsStats.object.files++;
+	}
 	*newHandlePtrPtr = handlePtr;
     }
     return(status);
@@ -522,45 +526,17 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 				(FsCachedAttributes *)closeData);
     }
 
-    /*
-     * THE REST OF THIS ROUTINE LOOKS Almost LIKE FsFileClientKill.
-     * The main difference is that we have a low-level reference to release.
-     */
-
     FsLockClose(&handlePtr->lock, &streamPtr->hdr.fileID);
-    /*
-     * Update the global/summary use counts for the file.
-     */
-    handlePtr->use.ref--;
-    if (flags & FS_WRITE) {
-	handlePtr->use.write--;
-    }
-    if (flags & FS_EXECUTE) {
-	handlePtr->use.exec--;
-    }
-    if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
-	handlePtr->use.exec < 0) {
-	panic( "FsFileClose <%d,%d> use %d, write %d, exec %d\n",
-	    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
-    }
 
     /*
-     * Handle pending deletes
-     *	1. We scan the client list and call-back to the last writer if
-     *		it is not the client doing the close.
-     *	2. We mark the disk descriptor as deleted,
-     *	3. We return FS_FILE_REMOVED to the calling client so it knows
-     *		to nuke its cache.
+     * Update use counts and handle pending deletions.
      */
-    if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
-	FsClientRemoveCallback(&handlePtr->consist, clientID);
-	status = FsDeleteFileDesc(handlePtr);
-	FsHandleRelease(handlePtr, TRUE);
-	FsHandleRemove(handlePtr);
-	fsStats.object.files--;
-	if (clientID != rpc_SpriteID && status == SUCCESS) {
-	    status = FS_FILE_REMOVED;
+    status = FileCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
+				     (flags & FS_EXECUTE) != 0,
+				     clientID, TRUE);
+    if (status == FS_FILE_REMOVED) {
+	if (clientID == rpc_SpriteID) {
+	    status = SUCCESS;
 	}
     } else {
 	/*
@@ -568,9 +544,6 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	 */
 	if (flags & FS_WB_ON_LDB) {
 	    int blocksSkipped;
-	    /*
-	     * Force this files blocks to disk.
-	     */
 	    status = FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
 				    FS_LAST_BLOCK,
 				    FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT,
@@ -592,6 +565,80 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	FsHandleRelease(handlePtr, TRUE);
     }
 
+    return(status);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FileCloseInt --
+ *
+ *	Close a file, handling pending deletions.
+ *	This is called from the regular close routine and from
+ *	the file client-kill cleanup routine.
+ *
+ * Results:
+ *	SUCCESS or FS_FILE_REMOVED.
+ *
+ * Side effects:
+ *	Adjusts use counts and does pending deletions.  If the file is
+ *	deleted the handle can not be used anymore.  Otherwise it
+ *	is left locked.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
+    FsLocalFileIOHandle *handlePtr;	/* File to clean up */
+    int ref;				/* Number of uses to remove */
+    int write;				/* Number of writers to remove */
+    int exec;				/* Number of executers to remove */
+    int clientID;			/* Closing, or crashed, client */
+    Boolean callback;			/* TRUE if we should call back to
+					 * the client and tell it about
+					 * the deletion. */
+{
+    register ReturnStatus status;
+    /*
+     * Update the global/summary use counts for the file.
+     */
+    handlePtr->use.ref -= ref;
+    handlePtr->use.write -= write;
+    handlePtr->use.exec -= exec;
+    if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
+	handlePtr->use.exec < 0) {
+	panic("FileCloseInt <%d,%d> use %d, write %d, exec %d\n",
+	    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
+    }
+
+    /*
+     * Handle pending deletes
+     *	1. Scan the client list and call-back to the last writer if
+     *		it is not the client doing the close.
+     *	2. Mark the disk descriptor as deleted,
+     *	3. Remove the file handle.
+     *	4. Return FS_FILE_REMOVED so clients know to nuke their cache.
+     */
+    if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
+	if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
+	    fsStats.object.directory--;
+	} else {
+	    fsStats.object.files--;
+	}
+	if (callback) {
+	    FsClientRemoveCallback(&handlePtr->consist, clientID);
+	}
+	(void)FsDeleteFileDesc(handlePtr);
+	if (callback) {
+	    FsHandleRelease(handlePtr, TRUE);
+	}
+	FsHandleRemove(handlePtr);
+	status = FS_FILE_REMOVED;
+    } else {
+	status = SUCCESS;
+    }
     return(status);
 }
 
@@ -623,40 +670,14 @@ FsFileClientKill(hdrPtr, clientID)
 {
     FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
     int refs, writes, execs;
+    register ReturnStatus status;
 
     FsIOClientKill(&handlePtr->consist.clientList, clientID,
 		    &refs, &writes, &execs);
-    /*
-     * THIS LOOKS MUCH LIKE THE LAST PART OF FsFileClose.
-     * MAINTAIN BOTH ROUTINES PLEASE.  The difference between them is
-     * that here we are removing the client from the client list, and
-     * we have no low-level reference count on the handle to release.
-     * Also, we do no client-remove-callback as that would only contact
-     * the last writer who can only be the client that is being killed,
-     * unless the file is shared, in which case we have all the dirty blocks
-     * and no callback is required either.
-     */
     FsLockClientKill(&handlePtr->lock, clientID);
 
-    handlePtr->use.ref -= refs;
-    handlePtr->use.write -= writes;
-    handlePtr->use.exec -= execs;
-    if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
-	handlePtr->use.exec < 0) {
-	panic( "FsFileClientKill <%d,%d> use %d, write %d, exec %d\n",
-	    hdrPtr->fileID.major, hdrPtr->fileID.minor,
-	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
-    }
-    /*
-     * Handle pending deletes.  We mark the disk descriptor as deleted
-     * but do not make a client callback.
-     */
-    if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
-	/* No client remove callback here, please */
-	(void)FsDeleteFileDesc(handlePtr);
-	FsHandleRemove(handlePtr);
-	fsStats.object.files--;
-    } else {
+    status = FileCloseInt(handlePtr, refs, writes, execs, clientID, FALSE);
+    if (status != FS_FILE_REMOVED) {
 	FsHandleUnlock(handlePtr);
     }
 }
@@ -687,6 +708,8 @@ FsFileScavenge(hdrPtr)
 {
     register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
     register FsFileDescriptor *descPtr = handlePtr->descPtr;
+    register Boolean noUsers;
+    Boolean dirFlushed = FALSE;
     FsDomain *domainPtr;
     ReturnStatus status;
 
@@ -708,10 +731,25 @@ FsFileScavenge(hdrPtr)
 	    }
 	}
     }
-
-    if (handlePtr->use.ref == 0 &&
-	FsCacheOkToScavenge(&handlePtr->cacheInfo) &&
-	FsConsistClients(&handlePtr->consist) == 0) {
+    noUsers = (handlePtr->use.ref == 0) &&
+	      (FsConsistClients(&handlePtr->consist) == 0);
+    if (noUsers && handlePtr->descPtr->fileType == FS_DIRECTORY) {
+	/*
+	 * Flush unused directories, otherwise they linger for a long
+	 * time.  They may still be in the name cache, in which case
+	 * HandleAttemptRemove won't delete them.  This isn't that extreme
+	 * because LRU replacement (which calls this scavenge routine)
+	 * stops after reclaiming 1/64 of the handles.
+	 */
+	int blocksSkipped;
+	status = FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, FS_LAST_BLOCK,
+		FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT | FS_FILE_WB_INVALIDATE,
+		&blocksSkipped);
+	noUsers = (status == SUCCESS) && (blocksSkipped == 0);
+	dirFlushed = TRUE;
+    }
+    if (noUsers && FsCacheOkToScavenge(&handlePtr->cacheInfo)) {
+	register Boolean isDir;
 #ifdef CONSIST_DEBUG
 	extern int fsTraceConsistMinor;
 	if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
@@ -728,8 +766,18 @@ FsFileScavenge(hdrPtr)
 	 * hash table.
 	 */
 	Vm_FileChanged(&handlePtr->segPtr);
+	isDir = (handlePtr->descPtr->fileType == FS_DIRECTORY);
 	if (FsHandleAttemptRemove(handlePtr)) {
-	    fsStats.object.files--;
+	    if (isDir) {
+		fsStats.object.directory--;
+		if (dirFlushed) {
+		    fsStats.object.dirFlushed++;
+		} else {
+		    fsStats.object.dirAged++;
+		}
+	    } else {
+		fsStats.object.files--;
+	    }
 	    return(TRUE);
 	} else {
 	    return(FALSE);
