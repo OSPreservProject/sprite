@@ -7,7 +7,7 @@
  * I/O server about it, and finish up with local book-keeping on the
  * new client.  There are three stream-type procedures used: 'migStart'
  * does the initial book-keeping on the original client, 'migEnd' does
- * the final book-keeping on the new client, and 'srvMigrate' is called
+ * the final book-keeping on the new client, and 'migrate' is called
  * on the I/O server to shift around state associated with the client.
  *
  * Copyright (C) 1985, 1988 Regents of the University of California
@@ -152,11 +152,11 @@ Fs_EncapStream(streamPtr, bufPtr)
 	/*
 	 * Clean up our reference to the stream.  We'll remove the
 	 * stream from the handle table entirely if this is the last
-	 * reference on a client.  If we're the server, we still need
-	 * the stream around as a "shadow".
+	 * reference on a client and the stream is not a shadow for
+	 * remote clients.
 	 */
-	if ((ioHandlePtr->fileID.serverID != rpc_SpriteID) &&
-	    (streamPtr->hdr.refCount <= 1)) {
+	if ((streamPtr->hdr.refCount <= 1) &&
+	    FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
 	    FsStreamDispose(streamPtr);
 	} else {
 	    FsHandleRelease(streamPtr, TRUE);
@@ -174,14 +174,14 @@ Fs_EncapStream(streamPtr, bufPtr)
  *	Deencapsulate the stream that was packaged up on another machine
  *	and recreate the stream on this machine.  This uses two stream-type
  *	routines to complete the setup of the stream.  First, the
- *	srvMigrate routine is called to shift client references on the
+ *	migrate routine is called to shift client references on the
  *	server.  Then the migEnd routine is called to do local book-keeping.
  *
  * Results:
  *	A return status.
  *
  * Side effects:
- *	Calls the srvMigrate and migEnd stream-type procedures.  See these
+ *	Calls the migrate and migEnd stream-type procedures.  See these
  *	routines for further details.
  *
  * ----------------------------------------------------------------------------
@@ -198,33 +198,19 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     register	FsNameInfo	*nameInfoPtr;
     ReturnStatus		status = SUCCESS;
     Boolean			found;
-    Boolean			disposeOnError;
     int				size;
     ClientData			data;
 
     migInfoPtr = (FsMigInfo *) bufPtr;
 
     /*
-     * Allocate and set up the stream.  We note if this is the first
-     * occurence of the stream on this host so the server can
-     * do the right thing.  If we're the server, we have to distinguish
-     * between a stream that's in use on this host and a "shadow stream".
-     * DisposeOnError
-     * is used to keep track of the original value of "found", since
-     * we want to dispose if we hit an error if & only if FsStreamFind
-     * created a new stream (found == FALSE).
+     * Create a top-level stream.  We bump the reference count and add
+     * ourselves as a client because Fs_Close will clean up later.
      */
 
-    streamPtr = FsStreamFind(&migInfoPtr->streamID, (FsHandleHeader *)NIL,
+    streamPtr = FsStreamAddClient(&migInfoPtr->streamID, rpc_SpriteID,
+			     (FsHandleHeader *)NIL,
 			     migInfoPtr->flags, (char *)NIL, &found);
-
-    disposeOnError = !found;
-
-    if (found && (migInfoPtr->ioFileID.serverID == rpc_SpriteID)) {
-	if (!FsStreamClientFind(&streamPtr->clientList, rpc_SpriteID)) {
-	    found = FALSE;
-	}
-    }
     if (!found) {
 	migInfoPtr->flags |= FS_NEW_STREAM;
 	streamPtr->offset = migInfoPtr->offset;
@@ -279,11 +265,6 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
      * server checks for cross-network stream sharing and sets the
      * FS_RMT_SHARED flag if it is shared.  It also looks at the
      * FS_NEW_STREAM flag which we've set/unset above.
-     *
-     * NOTE: It is clear that holding the handle while eventually calling
-     * FsFileMigrate will deadlock on the handle, since it gets locked again.
-     * it's NOT clear whether freeing it beforehand is actually the right
-     * thing to do!!  Help?!
      */
     FsHandleUnlock(streamPtr);
     status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migrate)
@@ -310,16 +291,146 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 
     if (status == SUCCESS) {
 	*streamPtrPtr = streamPtr;
-    } else if (disposeOnError) {
-	FsHandleLock(streamPtr);
-	FsStreamDispose(streamPtr);
     } else {
-	FsHandleLock(streamPtr);
-	FsHandleRelease(streamPtr, TRUE);
+	if (!found &&
+	    FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	    FsHandleLock(streamPtr);
+	    FsStreamDispose(streamPtr);
+	} else {
+	    FsHandleRelease(streamPtr, FALSE);
+	}
     }
 
     return(status);
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsMigrateUseCounts --
+ *
+ *	This updates use counts to reflect any network sharing that
+ *	is a result of migration.  The rule adhered to is that there
+ *	are use counts kept on the I/O handle for each stream on each client
+ *	that uses the I/O handle.  A stream with only one reference
+ *	does not change use counts, for example, when it migrates because
+ *	the reference just moves.  A stream with two references will
+ *	cause a new client host to have a stream after migration, so the
+ *	use counts are updated in case both clients do closes.  Finally,
+ *	use counts get decremented when a stream completely leaves a
+ *	client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adjusts the use counts to reflect sharing of the I/O handle
+ *	due to migration.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+FsMigrateUseCounts(flags, usePtr)
+    register int	 flags;		/* Flags from the stream */
+    register FsUseCounts *usePtr;	/* Use counts from the I/O handle */
+{
+    if ((flags & FS_NEW_STREAM) && (flags & FS_RMT_SHARED)) {
+	/*
+	 * The stream is becoming shared across the network.
+	 * Increment the use counts on the I/O handle
+	 * to reflect the additional client stream.
+	 */
+	usePtr->ref++;
+	if ((flags & FS_WRITE) && !(flags & FS_LAST_WRITER)) {
+	    usePtr->write++;
+	}
+	if (flags & FS_EXECUTE) {
+	    usePtr->exec++;
+	}
+    } else if ((flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
+	/*
+	 * The stream is becoming un-shared.
+	 * Decrement the use counts to reflect the fact that the stream on
+	 * the original client is not referencing the I/O handle.
+	 */
+	usePtr->ref--;
+	if (flags & FS_WRITE) {
+	    usePtr->write--;
+	}
+	if (flags & FS_EXECUTE) {
+	    usePtr->exec--;
+	}
+    } else {
+	/*
+	 * The stream moved completly, or a reference just moved between
+	 * two existing streams, so there is no change visible to
+	 * the I/O handle use counts.
+	 */
+     }
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsIOClientMigrate --
+ *
+ *	Move a client of an I/O handle from one host to another.  Flags
+ *	indicate if the migration results in a newly shared stream, or
+ *	in a stream that is no longer shared, or in a stream with
+ *	no change visible at the I/O handle level.  We are careful to only
+ *	open the dstClient if it getting the stream for the first time.
+ *	Also, if the srcClient is switching from a writer to a reader, we
+ *	remove its write reference.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds the destination client to the clientList, if needed.
+ *	Removes the source client from the list, if needed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+FsIOClientMigrate(clientList, srcClientID, dstClientID, flags)
+    List_Links	*clientList;	/* List of clients for the I/O handle. */
+    int		srcClientID;	/* The original client. */
+    int		dstClientID;	/* The destination client. */
+    int		flags;		/* FS_RMT_SHARED if stream is now shared.
+				 * FS_NEW_STREAM if stream is new on dst.
+				 * FS_READ | FS_WRITE | FS_EXECUTE */
+{
+    register Boolean found;
+    Boolean cache = FALSE;
+
+    if ((flags & FS_RMT_SHARED) == 0) {
+	/*
+	 * The stream is not shared so we nuke the original client's use.
+	 */
+	found = FsIOClientClose(clientList, srcClientID, flags, &cache);
+	if (!found) {
+	    Sys_Panic(SYS_WARNING,"FsIOClientMigrate, srcClient %d not found\n",
+		srcClientID);
+	}
+#ifdef notdef
+    } else if (flags & FS_LAST_WRITER) {
+	found = FsIOClientRemoveWriter(clientList, srcClientID);
+	if (!found) {
+	    Sys_Panic(SYS_WARNING,
+		"FsIOClientMigrate, last writer %d not found\n", srcClientID);
+	}
+#endif notdef
+    }
+    if (flags & FS_NEW_STREAM) {
+	/*
+	 * The stream is new on the destination host.
+	 */
+	(void)FsIOClientOpen(clientList, dstClientID, flags, FALSE);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
