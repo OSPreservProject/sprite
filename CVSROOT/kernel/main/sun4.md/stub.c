@@ -109,10 +109,6 @@ Rpc_Reply()
 {
 }
 
-Mem_Bin()
-{
-}
-
 Proc_PushLockStack()
 {
 }
@@ -195,9 +191,5 @@ Proc_Lock()
 {
 }
 Fs_Write()
-{
-}
-
-_free()
 {
 }

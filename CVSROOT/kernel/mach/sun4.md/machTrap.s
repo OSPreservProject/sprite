@@ -446,7 +446,7 @@ MachWindowUnderflow:
 	 * the top of the regular stack, so that when we return to the previous
 	 * window, our sp is at the top of the regular stack.
 	 */
-	set	MACH_DEBUG_STACK_START, %VOL_TEMP1
+	set	_mach_DebugStack, %VOL_TEMP1
 	cmp	%VOL_TEMP1, %fp
 	bne	RegularStack
 	nop
@@ -529,7 +529,7 @@ RestoreSomeMore:
 	bne	RestoreSomeMore
 	nop
 	/* Set stack base for debugger */
-	set	MACH_DEBUG_STACK_START, %sp
+	set	_mach_DebugStack, %sp
 	/* get trap type into o0 from local saved value */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
 	srl	%o0, 4, %o0

@@ -55,24 +55,16 @@ main()
     Mach_MonPrintf("After Sync_Init\n");
     Vm_Init();
     Mach_MonPrintf("After Vm_Init\n");
-#ifdef NOTDEF
-    NetIEInit("IE", 0, 0x3fd0c000);
-    Mach_MonPrintf("After NetIEInit\n");
-#else
     Net_Init();
     Mach_MonPrintf("After Net_Init\n");
-#endif NOTDEF
     Mach_MonPrintf("Enabling interrupts\n");
     ENABLE_INTR();
-#ifdef NOTDEF
     DBG_CALL;
     Mach_MonPrintf("Debugger returned\n");
     Mach_MonPrintf("Trying it again\n");
     DBG_CALL;
     Mach_MonPrintf("Debugger returned again\n");
-#else
     Mach_MonPrintf("Here we are.\n");
-#endif
 
     for ( ; ; ) {
 	;

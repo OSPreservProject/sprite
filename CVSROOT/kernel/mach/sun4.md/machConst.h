@@ -139,7 +139,10 @@
  * MACH_CODE_START	The address where the kernel code is loaded at.
  * MACH_STACK_START The address of the base of the stack. (1st word is
  *							unusable.)
+#ifdef NOTDEF
+	    No -- I'm allocating this as a variable now, for testing.
  * MACH_DEBUG_STACK_START The address of the base of the debugger stack.
+#endif NOTDEF
  *						(1st word is unusable.)
  * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
  *			main process that is initially run.
@@ -156,7 +159,9 @@
  */
 #define	MACH_KERN_START		0xff000000
 #define	MACH_STACK_START	(MACH_KERN_START + 0x4000)
+#ifdef NOTDEF
 #define	MACH_DEBUG_STACK_START	(MACH_KERN_START + 0x2000)
+#endif NOTDEF
 #define	MACH_CODE_START		(MACH_STACK_START + 0x20)
 #define	MACH_STACK_BOTTOM	MACH_KERN_START
 #define MACH_KERN_END		VMMACH_DEV_START_ADDR

@@ -76,6 +76,7 @@ Mach_RegState	regStateHolder;
 Mach_State	stateHolder;
 int		debugCounter = 0;		/* for debugging */
 int		debugSpace[500];
+char		mach_DebugStack[0x2000];	/* debugger stack */
 
 
 /*

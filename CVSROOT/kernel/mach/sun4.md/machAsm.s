@@ -124,7 +124,6 @@ _Mach_GetPC:
  */
 .globl	_Mach_TestAndSet
 _Mach_TestAndSet:
-#ifdef NOTDEF
 	/*
 	 * We're a leaf routine, so our return value goes in the save register
 	 * that our operand does.  Move the operand before overwriting.
@@ -133,21 +132,21 @@ _Mach_TestAndSet:
 	 * put the address into the addressed location to set it.  That means
 	 * we can't use address 0, but we shouldn't be doing that anyway.
 	 */
+#ifdef	NO_SUN4_CACHING
+	set	0x1, %OUT_TEMP1
+	ld	[%RETURN_VAL_REG], %OUT_TEMP2
+	st	%OUT_TEMP1, [%RETURN_VAL_REG]
+	mov	%OUT_TEMP2, %RETURN_VAL_REG
+#else
 	swap	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* set addr with addr */
+#endif /* NO_SUN4_CACHING */
 	tst	%RETURN_VAL_REG				/* was it set? */
 	be,a	ReturnZero				/* if not, return 0 */
-	clr	%RETURN_VAL_REG				/* 0 it in delay slot */
+	clr	%RETURN_VAL_REG				/* silly, delay slot */
 	mov	0x1, %RETURN_VAL_REG			/* yes set, return 1 */
 ReturnZero:
 	retl
 	nop
-#else
-	clr	%RETURN_VAL_REG
-	retl
-	nop
-#endif NOTDEF
-
-
 
 
 .globl	_Mach_GetMachineType
@@ -156,18 +155,6 @@ _Mach_GetMachineType:
 	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
 	retl
 	nop
-
-#ifdef NOTDEF
-/*
- * VmMach_MapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR)) is call.
- */
-.globl	_VmMach_MapIntelPage
-_VmMach_MapIntelPage:
-	set	((0x800000 / VMMACH_SEG_SIZE) - 1), %VOL_TEMP1	/* pmeg */
-	stha	%VOL_TEMP1, [%o0] VMMACH_SEG_MAP_SPACE		/* segment */
-	retl
-	nop
-#endif NOTDEF
 
 .globl	_panic
 _panic:
