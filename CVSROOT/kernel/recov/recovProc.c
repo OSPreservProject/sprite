@@ -76,8 +76,11 @@ static void Deactivate();
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
-RecovPingInterval()
+RecovPingInterval(timer, clientData)
+    Timer_Ticks	time;
+    ClientData	clientData;
 {
     Sync_EventWakeup(recovPingEvent);
     Timer_ScheduleRoutine(&recovIntervalElement, TRUE);
