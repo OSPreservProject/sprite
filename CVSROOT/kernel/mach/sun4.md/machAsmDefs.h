@@ -45,6 +45,17 @@
 	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
+ * Set the window invalid mask to point to the current window.
+ */
+#define	MACH_SET_WIM_TO_CWP()					\
+	mov	%psr, %VOL_TEMP1;				\
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+	set	0x1, %VOL_TEMP2;				\
+	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %wim;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
  * Move the invalid window backwards one.  This is done by changing the
  * invalid window mask.  We shift the invalid window bit right by 1,
  * but modulo the number of implemented windows.

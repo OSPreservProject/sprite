@@ -405,6 +405,48 @@ MachHandleWindowUnderflowTrap:
  */
 .globl	MachWindowUnderflow
 MachWindowUnderflow:
+#ifndef NOTDEF
+	/*
+	 * wait - I can't do that! - Debugger restores from debug window t
+	 * debug window, too, of course.  So, if we're in debug window, fp
+	 * should be debug stack base.  Check that.
+	 */
+	set	MACH_DEBUG_STACK_START, %VOL_TEMP1
+	cmp	%VOL_TEMP1, %fp
+	bne	RegularStack
+	nop
+	/* Deal with restoring regular stack */
+
+#else	NOTDEF
+	/*
+	 * Check value of sp - is it in debugger range?  If so, we're returning
+	 * from the debugger and must switch stacks.
+	 * MACH_KERN_START < debugSP <= MACH_DEBUG_STACK_START
+	 */
+	set	MACH_DEBUG_STACK_START, %VOL_TEMP1
+	subcc	%VOL_TEMP1, %sp, %g0
+	bl	RegularStack
+	nop
+	set	MACH_KERN_START, %VOL_TEMP1
+	subcc	%sp, %VOL_TEMP1, %g0
+	bg	DealWithDebugStack
+	nop
+	/* We're in trouble - the stack pointer is bogus */
+	/* For now I deal with this for debugging by infinite looping. */
+BogusStackPtr:
+	set	BogusStackPtr, %VOL_TEMP2
+	jmp	%VOL_TEMP2
+	nop
+
+#endif NOTDEF
+
+DealWithDebugStack:
+	/* Set stack pointer of next window to regular frame pointer */
+	set	_machSavedRegisterState, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %fp
+	nop
+	
+RegularStack:
 	/*
 	 * It should be ok to use locals here - it's a dead window.
 	 * Note that this means one cannot do a restore and then a save
@@ -483,6 +525,19 @@ RestoreSomeMore:
 	/* put saved reg ptr into o1 */
 	set	_machSavedRegisterState, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %o1
+	/*
+	 * Set wim to this window, so that when we return from debugger,
+	 * we'll restore the registers for this window from the stack state
+	 * handled by the debugger.  This is safe to do before calling the
+	 * debugger, since we just saved all the windows to the stack.
+	 */
+	MACH_SET_WIM_TO_CWP()
+	/*
+	 * Is there a window of vulnerability here when the sp doesn't match
+	 * what's saved on the stack and I might restore incorrectly from
+	 * stack if I took another trap?
+	 */
+
 	/* call debugger */
 	call	_Dbg_Main,2
 	nop
