@@ -180,6 +180,7 @@ typedef struct {
     int				lockCount;	/* The number of times that
 						 * this PMEG has been locked.*/
     int				flags;		/* Flags defined below. */
+
 } PMEG;
 
 /*
@@ -1775,10 +1776,20 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	 * The address falls into the special mapping segment.  Translate
 	 * the address back to the segment that it falls into.
 	 */
+	transVirtAddrPtr->segPtr = procPtr->vmPtr->machPtr->mapSegPtr;
 	origVirtAddr = 
 	    (Address)(procPtr->vmPtr->machPtr->mapHardSeg << VMMACH_SEG_SHIFT);
+	transVirtAddrPtr->sharedPtr = procPtr->vmPtr->machPtr->sharedPtr;
+	if (transVirtAddrPtr->segPtr->type == VM_SHARED) {
+	    origVirtAddr += ((segOffset(transVirtAddrPtr)-
+		    transVirtAddrPtr->segPtr->offset)
+		    >>(VMMACH_SEG_SHIFT-VMMACH_PAGE_SHIFT))
+		    << VMMACH_SEG_SHIFT;
+	}
+	printf("segOffset = %x, offset = %x, mapHardSeg = %x\n",
+		segOffset(transVirtAddrPtr), transVirtAddrPtr->segPtr->offset,
+		procPtr->vmPtr->machPtr->mapHardSeg);
 	origVirtAddr += (unsigned int)virtAddr & (VMMACH_SEG_SIZE - 1);
-	transVirtAddrPtr->segPtr = procPtr->vmPtr->machPtr->mapSegPtr;
 	transVirtAddrPtr->page = (unsigned) (origVirtAddr) >> VMMACH_PAGE_SHIFT;
 	transVirtAddrPtr->offset = (unsigned)virtAddr & VMMACH_OFFSET_MASK;
 	transVirtAddrPtr->flags = USING_MAPPED_SEG;
@@ -1834,6 +1845,16 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
     machPtr = toProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (fromAddr) >> VMMACH_SEG_SHIFT;
+    machPtr->sharedPtr = virtAddrPtr->sharedPtr;
+    if (virtAddrPtr->sharedPtr != (Vm_SegProcList*)NIL) {
+	/*
+	 * Mangle the segment offset so that it matches the offset
+	 * of the mapped segment.
+	 */
+	machPtr->mapHardSeg -= (virtAddrPtr->sharedPtr->offset<<
+		VMMACH_PAGE_SHIFT_INT)>>VMMACH_SEG_SHIFT;
+	machPtr->mapHardSeg += machPtr->mapSegPtr->machPtr->offset;
+    }
     /*
      * Do a hardware segments worth at a time until done.
      */
@@ -1916,6 +1937,16 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     machPtr = fromProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (toAddr) >> VMMACH_SEG_SHIFT;
+    machPtr->sharedPtr = virtAddrPtr->sharedPtr;
+    if (virtAddrPtr->sharedPtr != (Vm_SegProcList*)NIL) {
+	/*
+	 * Mangle the segment offset so that it matches the offset
+	 * of the mapped segment.
+	 */
+	machPtr->mapHardSeg -= (virtAddrPtr->sharedPtr->offset<<
+		VMMACH_PAGE_SHIFT_INT)>>VMMACH_SEG_SHIFT;
+	machPtr->mapHardSeg += machPtr->mapSegPtr->machPtr->offset;
+    }
     /*
      * Do a hardware segments worth at a time until done.
      */
@@ -3856,13 +3887,13 @@ VmMach_Unalloc(sharedData, addr)
     int numBlocks = SIZE(firstBlock);
     int i;
 
-    dprintf("VmMach_Unalloc: freeing %d blocks at %x\n",firstBlock,addr);
+    dprintf("VmMach_Unalloc: freeing %d blocks at %x\n",numBlocks,addr);
     if (firstBlock < sharedData->allocFirstFree) {
 	sharedData->allocFirstFree = firstBlock;
     }
     for (i=0;i<numBlocks;i++) {
 	if (ISFREE(i+firstBlock)) {
-	    printf("Freeing free shared address %d %d %d\n",i,i+firstBlock,
+	    printf("Freeing free shared address %d %d %x\n",i,i+firstBlock,
 		    (int)addr);
 	    return;
 	}
@@ -3924,9 +3955,15 @@ VmMach_SharedProcStart(procPtr)
     sharedData->allocFirstFree = 0;
     bzero((Address) sharedData->allocVector, VMMACH_SHARED_NUM_BLOCKS*
 	    sizeof(int));
+#if 0
     procPtr->vmPtr->sharedStart = (Address) VMMACH_SHARED_START_ADDR;
     procPtr->vmPtr->sharedEnd = (Address) VMMACH_SHARED_START_ADDR +
 	    VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE;
+#else
+    procPtr->vmPtr->sharedStart = (Address) 0x00000000;
+    procPtr->vmPtr->sharedEnd = (Address) 0xffff0000;
+    
+#endif
 }
 
 /*
