@@ -181,20 +181,19 @@ FsControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
 ReturnStatus
-FsControlRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
-    Fs_Stream 	*streamPtr;	/* Control stream */
-    int		flags;		/* FS_USER is checked */
-    Address 	buffer;		/* Where to read into. */
-    int		*offsetPtr;	/* IGNORED */
-    int 	*lenPtr;	/* In/Out length parameter */
-    Sync_RemoteWaiter *waitPtr;	/* Info for waiting */
+FsControlRead(streamPtr, readPtr, waitPtr, replyPtr)
+    Fs_Stream 		*streamPtr;	/* Control stream */
+    Fs_IOParam		*readPtr;	/* Read parameter block. */
+    Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
+    Fs_IOReply		*replyPtr;	/* Signal to return, if any,
+					 * plus the amount read. */
 {
-    ReturnStatus 		status = SUCCESS;
+    ReturnStatus 		status;
     register PdevControlIOHandle *ctrlHandlePtr =
 	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
-    Pdev_Notify			notify;		/* Message returned */
+    Pdev_Notify			notify;		/* Message returned to
+						 * user-level server proc */
 
     FsHandleLock(ctrlHandlePtr);
 
@@ -203,28 +202,29 @@ FsControlRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	 * No control messages ready.
 	 */
 	FsFastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
-	*lenPtr = 0;
+	replyPtr->length = 0;
 	status = FS_WOULD_BLOCK;
     } else {
-	register PdevNotify *notifyPtr;
+	register PdevNotify *notifyPtr;		/* Internal message */
 	notifyPtr = (PdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
 	List_Remove((List_Links *)notifyPtr);
 	notify.magic = PDEV_NOTIFY_MAGIC;
 	status = FsGetStreamID(notifyPtr->streamPtr, &notify.newStreamID);
 	if (status != SUCCESS) {
-	    *lenPtr = 0;
+	    replyPtr->length = 0;
 	} else {
-	    if (flags & FS_USER) {
-		status = Vm_CopyOut(sizeof(notify), (Address) &notify, buffer);
+	    if (readPtr->flags & FS_USER) {
+		status = Vm_CopyOut(sizeof(notify), (Address) &notify,
+				    readPtr->buffer);
 		/*
 		 * No need to close on error because the stream is already
 		 * installed in the server process's state.  It'll be
 		 * closed automatically when the server exits.
 		 */
 	    } else {
-		bcopy((Address)&notify, buffer, sizeof(notify));
+		bcopy((Address)&notify, readPtr->buffer, sizeof(notify));
 	    }
-	    *lenPtr = sizeof(notify);
+	    replyPtr->length = sizeof(notify);
 	}
 	free((Address)notifyPtr);
     }
