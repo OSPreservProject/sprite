@@ -58,16 +58,16 @@ static List_Links *lruList = &lruListHeader;
  *	Starting the window system jumps the number of handles to about 250.
  *	The file servers ramp up to 2500 handles, but this is a
  *	function of the activity of their clients and the number of
- *	directories they have.  Directory handles linger a long time
- *	because they have associated cache blocks and may also be
- *	referenced by the name cache.
+ *	directories they have.
  * LIMIT_INC defines the amount the table grows by (1/64)
- * THREASHOLD defines how many handles are reclaimed before stopping (1/16)
+ * THREASHOLD defines how many handles are reclaimed before stopping.  This
+ *	is set very low so in the steady state we don't waste much time
+ *	looking at un-reclaimable handles.
  */
 #define		FS_HANDLE_TABLE_SIZE	   256
 #define		LIMIT_INC(max)		   ( (max) >> 6 )
 int		handleLimitInc =	   LIMIT_INC(FS_HANDLE_TABLE_SIZE);
-#define		THREASHOLD(max)		   ( (max) >> 4 )
+#define		THREASHOLD(max)		   ( 1 )
 int		handleScavengeThreashold = THREASHOLD(FS_HANDLE_TABLE_SIZE);
 
 FsHandleHeader *FsGetNextLRUHandle();
@@ -255,6 +255,8 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 		    if (numScavenged >= handleScavengeThreashold) {
 			break;
 		    }
+		} else {
+		    fsStats.object.lruChecks++;
 		}
 	    }
 	    FsDoneLRU(&listPtr);
@@ -328,10 +330,11 @@ again:
 	 * size.
 	 */
 	hdrPtr = (FsHandleHeader *) malloc(size);
-	bzero((Address) hdrPtr, size);
+/*	bzero((Address) hdrPtr, size); */
 	hdrPtr->fileID = *fileIDPtr;
+	hdrPtr->flags = FS_HANDLE_INSTALLED;
+	hdrPtr->unlocked.waiting = FALSE;
 	hdrPtr->refCount = 1;
-	hdrPtr->flags |= FS_HANDLE_INSTALLED;
 #ifndef FS_NO_HDR_NAMES
 	if (name != (char *)NIL) {
 	    hdrPtr->name = (char *)malloc(strlen(name) + 1);
@@ -342,6 +345,7 @@ again:
 #else
 	hdrPtr->name = (char *)NIL;
 #endif
+	List_InitElement(&hdrPtr->lruLinks);
 	List_Insert(&hdrPtr->lruLinks, LIST_ATREAR(lruList));
 	Hash_SetValue(hashEntryPtr, hdrPtr);
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_NEW, hdrPtr);
@@ -1112,6 +1116,11 @@ FsHandleDescWriteBack(shutdown, domain)
          hashEntryPtr != (Hash_Entry *) NIL;  
 	 hashEntryPtr = Hash_Next(fileHashTable, &hashSearch)) {
 	hdrPtr = (FsHandleHeader *) Hash_GetValue(hashEntryPtr);
+	if (hdrPtr == (FsHandleHeader *)NIL) {
+	    UNLOCK_MONITOR;
+	    panic("FsHandleDescWriteBack, no handle\n");
+	    return (lockedDesc);
+	}
 	switch (hdrPtr->fileID.type) {
 	    case FS_LCL_FILE_STREAM: {
 		register FsLocalFileIOHandle *handlePtr =
@@ -1152,6 +1161,11 @@ FsHandleDescWriteBack(shutdown, domain)
 	/*
 	 * Propogate times from the cache info.
 	 */
+	if (descPtr == (FsFileDescriptor *)NIL) {
+	    UNLOCK_MONITOR;
+	    panic("FsHandleDescWriteBack, no descriptor\n");
+	    return (lockedDesc);
+	}
 	if (descPtr->accessTime < cachedAttrPtr->accessTime) {
 	    descPtr->accessTime = cachedAttrPtr->accessTime;
 	    descPtr->flags |= FS_FD_DIRTY;
