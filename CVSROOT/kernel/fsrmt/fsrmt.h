@@ -28,12 +28,12 @@
  * (New) Parameters for the read and write RPCs.
  */
 
-typedef struct FsRemoteIOParams {
+typedef struct FsRemoteIOParam {
     Fs_FileID	fileID;			/* Identifies file to read from */
     Fs_FileID	streamID;		/* Identifies stream (for offset) */
     Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
     Fs_IOParam	io;			/* I/O parameter block */
-}
+} FsRemoteIOParam;
 
 /*
  * (New) Parameters for the I/O Control RPC.
