@@ -14,9 +14,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "stdlib.h"
+#include "mem.h"
 #include "memInt.h"
 #include "sprite.h"
 #include "sync.h"
+#include "stdio.h"
 #undef free
 
 /*
@@ -110,23 +112,26 @@ typedef double AdminInfo;
 static Sync_Lock memMonitorLock = Sync_LockInitStatic("memMonitorLock");
 #define LOCKPTR (&memMonitorLock)
 
-/*
- * Global variables that can be set to control thresholds for printing
- * statistics.
- */
+static int mem_NumAllocs = 0;
+static int mem_NumFrees = 0;
 
-int     mem_SmallMinNum = 1;            /* There must be at least this many
-                                         * binned objects of a size before info
-                                         * about its size gets printed. */
-int     mem_LargeMinNum  = 1;           /* There must be at least this many
-                                         * non-binned objects of a size before
-                                         * info about the size gets printed. */
-int     mem_LargeMaxSize = 10000;       /* Info is printed for non-binned
-                                         * objects larger than this regardless
-                                         * of how many of them there are. */
+#define	MAX_TO_PRINT	256
+static struct {
+    int		size;		/* Size of the block. */
+    int		num;		/* Number of blocks allocated. */
+    int		free;		/* Number of blocks freed. */
+    int		inUse;		/* Number of blocks still in use. */
+    int		dummy;		/* Number of blocks used as dummy blocks. */
+} topN[MAX_TO_PRINT + 1];
 
-void Mem_PrintStatsSubrInt();
-void Mem_PrintConfigSubr();
+static void Init _ARGS_((void));
+
+#ifdef MEM_TRACE
+INTERNAL static void PrintTrace _ARGS_((Boolean allocated,
+	register Address infoPtr, Address curPC));
+INTERNAL static void DoTrace _ARGS_((Boolean allocated,
+	register Address infoPtr, Address curPC, int size));
+#endif
 
 /*
  * ----------------------------------------------------------------------------
@@ -311,8 +316,6 @@ static	struct TraceElement {
 } sizeTraceArray[MAX_NUM_TRACE_SIZES];
 
 static	int	numSizesToTrace = 0;
-static	void	DoTrace();
-static	void	PrintTrace();
 
 int		mem_PrintLargeAllocPC = 0;
 
@@ -458,7 +461,8 @@ Mem_Bin(numBytes)
 
 ENTRY Address
 malloc(numBytes)
-    register int numBytes;	/* How many bytes to allocate.  Must be > 0 */
+    register unsigned int numBytes;	/* How many bytes to allocate.
+					 *	Must be > 0 */
 {
     register int size, admin;
     Address	result;
@@ -775,6 +779,21 @@ _free(blockPtr)
 }
 
 /*
+ * Global variables that can be set to control thresholds for printing
+ * statistics.
+ */
+
+static int mem_SmallMinNum = 1;         /* There must be at least this many
+                                         * binned objects of a size before info
+                                         * about its size gets printed. */
+static int mem_LargeMinNum  = 1;        /* There must be at least this many
+                                         * non-binned objects of a size before
+                                         * info about the size gets printed. */
+static int mem_LargeMaxSize = 10000;    /* Info is printed for non-binned
+                                         * objects larger than this regardless
+                                         * of how many of them there are. */
+
+/*
  * ----------------------------------------------------------------------------
  *
  * Mem_Size --
@@ -908,10 +927,10 @@ Mem_PrintStatsInt()
  * ----------------------------------------------------------------------------
  */
 ENTRY void
-Mem_PrintStatsSubr(PrintProc, clientData, smallMinNum, largeMinNum,
+Mem_PrintStatsSubr(printProc, clientData, smallMinNum, largeMinNum,
 	largeMaxSize)
-    void 	(*PrintProc)();	/* Procedure to actually print stuff. */
-    ClientData	clientData;	/* Argument to pass to PrintProc. */
+    void 	(*printProc)();	/* Procedure to actually print stuff. */
+    ClientData	clientData;	/* Argument to pass to printProc. */
     int		smallMinNum;	/* Minimum number of elements in a bucket
 				 * before will print out stats. */
     int		largeMinNum;	/* Minimum number of large objects of a given
@@ -922,202 +941,10 @@ Mem_PrintStatsSubr(PrintProc, clientData, smallMinNum, largeMinNum,
 {
     LOCK_MONITOR;
 
-    Mem_PrintStatsSubrInt(PrintProc, clientData, smallMinNum, largeMinNum,
+    Mem_PrintStatsSubrInt(printProc, clientData, smallMinNum, largeMinNum,
 			  largeMaxSize);
 
     UNLOCK_MONITOR;
-}
-
-#define	MAX_TO_PRINT	256
-static struct {
-    int		size;		/* Size of the block. */
-    int		num;		/* Number of blocks allocated. */
-    int		free;		/* Number of blocks freed. */
-    int		inUse;		/* Number of blocks still in use. */
-    int		dummy;		/* Number of blocks used as dummy blocks. */
-} topN[MAX_TO_PRINT + 1];
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Mem_PrintStatsSubrInt --
- *
- *      This procedure prints out statistics about memory allocation
- *	so far.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      The procedure PrintProc is called several times to print out
- *	information.  Its calling sequence is:
- *
- *	void
- *	PrintProc(clientData, format, arg1, arg2, arg3, arg4, arg5)
- *	    ClientData clientData;
- *	    char *format;
- *
- *	This is identical to the calling sequence for the standard I/o
- *	routine Io_Print.  The first argument is the clientData argument
- *	passed to this procedure, which need not necessarily be a
- *	(Io_Stream *).  There will never be more than 5 arguments.
- *	A typical calling sequence is:
- *	"Mem_PrintStatsSubr(Io_PrintStream, (ClientData) io_StdOut,
- *				50, 100, 1000)".
- *
- * ----------------------------------------------------------------------------
- */
-INTERNAL void
-Mem_PrintStatsSubrInt(PrintProc, clientData, smallMinNum, largeMinNum,
-	largeMaxSize)
-    void 	(*PrintProc)();	/* Procedure to actually print stuff. */
-    ClientData	clientData;	/* Argument to pass to PrintProc. */
-    int		smallMinNum;	/* Minimum number of elements in a bucket
-				 * before will print out stats. */
-    int		largeMinNum;	/* Minimum number of large objects of a given
-				 * size before will print out stats about
-				 * the size. */
-    int		largeMaxSize;	/* Statistics will be printed about all blocks
-				 * over size regardless of how many there are*/
-{
-    register Address	ptr;
-    register int	i;
-    int		totalBlocks, totalAllocs, totalFree;
-    int		allocBytes = 0;
-    int		freeBytes = 0;
-    Boolean	firstTime = TRUE;
-    Boolean	warnedAboutOverflow;
-
-    if (!initialized) {
-	(*PrintProc)(clientData, "Allocator not initialized yet.\n");
-	return;
-    }
-
-    (*PrintProc)(clientData, "\nTotal allocs = %d, frees = %d\n\n",
-		mem_NumAllocs, mem_NumFrees);
-
-    (*PrintProc)(clientData, "Small object allocator:\n");
-    totalBlocks = totalAllocs = totalFree = 0;
-    for (i = 2; i < BIN_BUCKETS; i++) {
-	int	numFree = 0;
-
-	if (numBlocks[i] <= 0) {
-	    continue;
-	}
-	allocBytes += numBlocks[i] * INDEX_TO_BLOCKSIZE(i);
-	for (ptr = freeLists[i];
-	     ptr != (Address) NIL;
-	     ptr = (Address) GET_ADMIN(ptr)) {
-
-	    freeBytes += INDEX_TO_BLOCKSIZE(i);
-	    numFree += 1;
-	}
-	if (numBlocks[i] >= smallMinNum) {
-	    if (firstTime) {
-		(*PrintProc)(clientData,
-				"    Size     Total    Allocs    In Use\n");
-		firstTime = FALSE;
-	    }
-	    (*PrintProc)(clientData, "%8d%10d%10d%10d\n",
-			INDEX_TO_BLOCKSIZE(i), numBlocks[i],
-			numAllocs[i], numBlocks[i] - numFree);
-	}
-	totalBlocks += numBlocks[i];
-	totalAllocs += numAllocs[i];
-	totalFree += numFree;
-    }
-    (*PrintProc)(clientData, "   Total%10d%10d%10d\n", totalBlocks,
-	    totalAllocs, totalBlocks - totalFree);
-    (*PrintProc)(clientData, "Bytes allocated = %d, freed = %d\n\n",
-				allocBytes, freeBytes);
-
-    /*
-     * Initialize the largest N-sizes buffer.
-     */
-    for (i = 0; i < MAX_TO_PRINT + 1; i++) {
-	topN[i].size = -1;
-	topN[i].free = 0;
-	topN[i].dummy = 0;
-    }
-
-    warnedAboutOverflow = FALSE;
-    for (ptr = first + SIZE(GET_ADMIN(first));
-	 ptr != last;
-	 ptr += SIZE(GET_ADMIN(ptr))) {
-
-	int	admin;
-	int	size;
-	Boolean	found;
-
-	admin = GET_ADMIN(ptr);
-	if (!IS_DUMMY(admin) && !IS_IN_USE(admin)) {
-	    freeBytes += SIZE(admin);
-	}
-
-	size = SIZE(admin);
-#ifdef MEM_TRACE
-	if (size - GET_ORIG_SIZE(ptr) < 4 &&
-	    size - GET_ORIG_SIZE(ptr) >= 0) {
-	    size = GET_ORIG_SIZE(ptr);
-	}
-#endif /* MEM_TRACE */
-
-	found = FALSE;
-	for (i = 0; i < MAX_TO_PRINT; i++) {
-	    if (size == topN[i].size) {
-		found = TRUE;
-		topN[i].num++;
-		if (IS_DUMMY(admin)) {
-		    topN[i].dummy++;
-		} else if (IS_IN_USE(admin)) {
-		    topN[i].inUse++;
-		} else {
-		    topN[i].free++;
-		}
-		break;
-	    } else if (topN[i].size == -1) {
-		found = TRUE;
-		topN[i].size = size;
-		topN[i].num = 1;
-		if (IS_DUMMY(admin)) {
-		    topN[i].dummy = 1;
-		} else if (IS_IN_USE(admin)) {
-		    topN[i].inUse = 1;
-		} else {
-		    topN[i].free = 1;
-		}
-		break;
-	    }
-	}
-
-	if (!found && !warnedAboutOverflow) {
-	    (*PrintProc)(clientData, "Largest-Size buffer overflow: %d\n",size);
-	    warnedAboutOverflow = TRUE;
-	}
-    }
-    (*PrintProc)(clientData, "Large object allocator:\n");
-    (*PrintProc)(clientData, "   Total bytes managed: %d\n", numLargeBytes);
-    (*PrintProc)(clientData, "   Bytes in use:        %d\n",
-	    			    numLargeBytes - freeBytes);
-    firstTime = TRUE;
-    for (i = 0; topN[i].size != -1; i++) {
-	if ((topN[i].num >= largeMinNum || topN[i].size >= largeMaxSize) &&
-	    (topN[i].num != topN[i].dummy)) {
-	    if (firstTime) {
-		(*PrintProc)(clientData, "%10s%10s%10s%10s\n",
-#ifdef MEM_TRACE
-			"Orig. Size", "Num", "Free", "In Use");
-#else
-			"Size", "Num", "Free", "In Use");
-#endif /* MEM_TRACE */
-		firstTime = FALSE;
-	    }
-	    (*PrintProc)(clientData, "%10d%10d%10d%10d\n",
-		topN[i].size, topN[i].num, topN[i].free, topN[i].inUse);
-	}
-    }
-    (*PrintProc)(clientData, "\n");
 }
 
 
@@ -1156,17 +983,17 @@ Mem_PrintConfig()
  *      None.
  *
  * Side effects:
- *      Stuff gets printed (?) by passing it to PrintProc.  See the
+ *      Stuff gets printed (?) by passing it to printProc.  See the
  *	documentation in Mem_PrintStatsSubr for the calling sequence to
- *	PrintProc.
+ *	printProc.
  *
  * ----------------------------------------------------------------------------
  */
 
 ENTRY void
-Mem_PrintConfigSubr(PrintProc, clientData)
-    void (*PrintProc)();	/* Procedure to actually print stuff. */
-    ClientData clientData;	/* Argument to pass to PrintProc. */
+Mem_PrintConfigSubr(printProc, clientData)
+    void (*printProc)();	/* Procedure to actually print stuff. */
+    ClientData clientData;	/* Argument to pass to printProc. */
 {
     register Address ptr;
 #ifdef VERBOSE
@@ -1176,58 +1003,58 @@ Mem_PrintConfigSubr(PrintProc, clientData)
     LOCK_MONITOR;
 
     if (!initialized) {
-	(*PrintProc)(clientData, "Allocator not initialized yet.\n");
+	(*printProc)(clientData, "Allocator not initialized yet.\n");
 	return;
     }
 
 #ifdef VERBOSE
-    (*PrintProc)(clientData, "Small object allocator:\n");
+    (*printProc)(clientData, "Small object allocator:\n");
     for (i = 2; i < BIN_BUCKETS; i++) {
 	if (freeLists[i] == (Address) NIL) {
 	    continue;
 	}
-	(*PrintProc)(clientData, "    %d bytes:", i*GRANULARITY);
+	(*printProc)(clientData, "    %d bytes:", i*GRANULARITY);
 	j = 5;
 	for (ptr = freeLists[i]; ptr != (Address) NIL;
 		ptr = (Address) GET_ADMIN(ptr)) {
 	    if (j == 5) {
-		(*PrintProc)(clientData, "\n    ");
+		(*printProc)(clientData, "\n    ");
 		j = 0;
 	    } else {
 		j += 1;
 	    }
-	    (*PrintProc)(clientData, "%12#x", ptr);
+	    (*printProc)(clientData, "%12#x", ptr);
 	}
-	(*PrintProc)(clientData, "\n");
+	(*printProc)(clientData, "\n");
     }
 #endif /* VERBOSE */
 
-    (*PrintProc)(clientData, "Large object allocator:\n");
+    (*printProc)(clientData, "Large object allocator:\n");
 
 #ifdef MEM_TRACE
-    (*PrintProc)(clientData, "    Location   Orig. Size   State\n");
+    (*printProc)(clientData, "    Location   Orig. Size   State\n");
 #else
-    (*PrintProc)(clientData, "    Location       Size     State\n");
+    (*printProc)(clientData, "    Location       Size     State\n");
 #endif /* MEM_TRACE */
 
     for (ptr = first + SIZE(GET_ADMIN(first)); ptr != last;
 	    ptr += SIZE(GET_ADMIN(ptr))) {
 
 #ifdef MEM_TRACE
-	(*PrintProc)(clientData, "%12#x %10d", ptr, GET_ORIG_SIZE(ptr));
+	(*printProc)(clientData, "%12#x %10d", ptr, GET_ORIG_SIZE(ptr));
 	if (IS_DUMMY(GET_ADMIN(ptr))) {
-	    (*PrintProc)(clientData, "     Dummy\n");
+	    (*printProc)(clientData, "     Dummy\n");
 	} else if (IS_IN_USE(GET_ADMIN(ptr))) {
-	    (*PrintProc)(clientData, "     In use (PC=0x%x)\n", GET_PC(ptr));
+	    (*printProc)(clientData, "     In use (PC=0x%x)\n", GET_PC(ptr));
 #else
-	(*PrintProc)(clientData, "%12#x %10d", ptr, SIZE(GET_ADMIN(ptr)));
+	(*printProc)(clientData, "%12#x %10d", ptr, SIZE(GET_ADMIN(ptr)));
 	if (IS_DUMMY(GET_ADMIN(ptr))) {
-	    (*PrintProc)(clientData, "     Dummy\n");
+	    (*printProc)(clientData, "     Dummy\n");
 	} else if (IS_IN_USE(GET_ADMIN(ptr))) {
-	    (*PrintProc)(clientData, "     In use\n");
+	    (*printProc)(clientData, "     In use\n");
 #endif /* MEM_TRACE */
 	} else {
-	    (*PrintProc)(clientData, "     Free\n");
+	    (*printProc)(clientData, "     Free\n");
 	}
     }
     UNLOCK_MONITOR;
@@ -1280,45 +1107,6 @@ Mem_PrintInUse()
     UNLOCK_MONITOR;
 #endif /* MEM_TRACE */
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * PrintTrace --
- *
- *	Print out the given trace information about a memory trace record.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-#ifdef MEM_TRACE
-INTERNAL static void
-PrintTrace(allocated, infoPtr, curPC)
-    Boolean		allocated;	/* If TRUE, we are called by Mem_Alloc,
-					 * otherwise by Mem_Free. */
-    register Address	infoPtr;	/* Address of admin. info. */
-    Address		curPC;		/* If called by Mem_Free, PC of
-					 * call to Mem_Free, NULL otherwise. */
-{
-    if (allocated) {
-	(*memPrintProc)(memPrintData,
-		"Mem_Alloc: PC=0x%x  addr=0x%x  size=%d\n",
-		GET_PC(infoPtr), infoPtr+sizeof(AdminInfo),
-		GET_ORIG_SIZE(infoPtr));
-    } else {
-	(*memPrintProc)(memPrintData,
-		"Mem_Free:  PC=0x%x  addr=0x%x  size=%d *\n",
-		curPC, infoPtr+sizeof(AdminInfo), GET_ORIG_SIZE(infoPtr));
-    }
-}
-#endif /* MEM_TRACE */
-
 
 /*
  *----------------------------------------------------------------------
@@ -1389,21 +1177,202 @@ Mem_SetTraceSizes(numSizes, arrayPtr)
  *----------------------------------------------------------------------
  */
 
-typedef void (*VoidProc)();
+typedef int (*IntProc)();
 
 ENTRY void
 Mem_SetPrintProc(proc, data)
-    VoidProc	proc;		/* Address of new print routine. */
+    IntProc	proc;		/* Address of new print routine. */
     ClientData	data;		/* Data to be passed to proc. */
 {
     LOCK_MONITOR;
-    if (proc != (VoidProc) NIL && proc != (VoidProc) NULL) {
+    if (proc != (IntProc) NIL && proc != (IntProc) NULL) {
 	memPrintProc = proc;
 	memPrintData = data;
     }
     UNLOCK_MONITOR;
 }
 
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mem_PrintStatsSubrInt --
+ *
+ *      This procedure prints out statistics about memory allocation
+ *	so far.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The procedure printProc is called several times to print out
+ *	information.  Its calling sequence is:
+ *
+ *	void
+ *	printProc(clientData, format, arg1, arg2, arg3, arg4, arg5)
+ *	    ClientData clientData;
+ *	    char *format;
+ *
+ *	This is identical to the calling sequence for the standard I/o
+ *	routine Io_Print.  The first argument is the clientData argument
+ *	passed to this procedure, which need not necessarily be a
+ *	(Io_Stream *).  There will never be more than 5 arguments.
+ *	A typical calling sequence is:
+ *	"Mem_PrintStatsSubr(Io_PrintStream, (ClientData) io_StdOut,
+ *				50, 100, 1000)".
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL void
+Mem_PrintStatsSubrInt(printProc, clientData, smallMinNum, largeMinNum,
+	largeMaxSize)
+    void 	(*printProc)();	/* Procedure to actually print stuff. */
+    ClientData	clientData;	/* Argument to pass to printProc. */
+    int		smallMinNum;	/* Minimum number of elements in a bucket
+				 * before will print out stats. */
+    int		largeMinNum;	/* Minimum number of large objects of a given
+				 * size before will print out stats about
+				 * the size. */
+    int		largeMaxSize;	/* Statistics will be printed about all blocks
+				 * over size regardless of how many there are*/
+{
+    register Address	ptr;
+    register int	i;
+    int		totalBlocks, totalAllocs, totalFree;
+    int		allocBytes = 0;
+    int		freeBytes = 0;
+    Boolean	firstTime = TRUE;
+    Boolean	warnedAboutOverflow;
+
+    if (!initialized) {
+	(*printProc)(clientData, "Allocator not initialized yet.\n");
+	return;
+    }
+
+    (*printProc)(clientData, "\nTotal allocs = %d, frees = %d\n\n",
+		mem_NumAllocs, mem_NumFrees);
+
+    (*printProc)(clientData, "Small object allocator:\n");
+    totalBlocks = totalAllocs = totalFree = 0;
+    for (i = 2; i < BIN_BUCKETS; i++) {
+	int	numFree = 0;
+
+	if (numBlocks[i] <= 0) {
+	    continue;
+	}
+	allocBytes += numBlocks[i] * INDEX_TO_BLOCKSIZE(i);
+	for (ptr = freeLists[i];
+	     ptr != (Address) NIL;
+	     ptr = (Address) GET_ADMIN(ptr)) {
+
+	    freeBytes += INDEX_TO_BLOCKSIZE(i);
+	    numFree += 1;
+	}
+	if (numBlocks[i] >= smallMinNum) {
+	    if (firstTime) {
+		(*printProc)(clientData,
+				"    Size     Total    Allocs    In Use\n");
+		firstTime = FALSE;
+	    }
+	    (*printProc)(clientData, "%8d%10d%10d%10d\n",
+			INDEX_TO_BLOCKSIZE(i), numBlocks[i],
+			numAllocs[i], numBlocks[i] - numFree);
+	}
+	totalBlocks += numBlocks[i];
+	totalAllocs += numAllocs[i];
+	totalFree += numFree;
+    }
+    (*printProc)(clientData, "   Total%10d%10d%10d\n", totalBlocks,
+	    totalAllocs, totalBlocks - totalFree);
+    (*printProc)(clientData, "Bytes allocated = %d, freed = %d\n\n",
+				allocBytes, freeBytes);
+
+    /*
+     * Initialize the largest N-sizes buffer.
+     */
+    for (i = 0; i < MAX_TO_PRINT + 1; i++) {
+	topN[i].size = -1;
+	topN[i].free = 0;
+	topN[i].dummy = 0;
+    }
+
+    warnedAboutOverflow = FALSE;
+    for (ptr = first + SIZE(GET_ADMIN(first));
+	 ptr != last;
+	 ptr += SIZE(GET_ADMIN(ptr))) {
+
+	int	admin;
+	int	size;
+	Boolean	found;
+
+	admin = GET_ADMIN(ptr);
+	if (!IS_DUMMY(admin) && !IS_IN_USE(admin)) {
+	    freeBytes += SIZE(admin);
+	}
+
+	size = SIZE(admin);
+#ifdef MEM_TRACE
+	if (size - GET_ORIG_SIZE(ptr) < 4 &&
+	    size - GET_ORIG_SIZE(ptr) >= 0) {
+	    size = GET_ORIG_SIZE(ptr);
+	}
+#endif /* MEM_TRACE */
+
+	found = FALSE;
+	for (i = 0; i < MAX_TO_PRINT; i++) {
+	    if (size == topN[i].size) {
+		found = TRUE;
+		topN[i].num++;
+		if (IS_DUMMY(admin)) {
+		    topN[i].dummy++;
+		} else if (IS_IN_USE(admin)) {
+		    topN[i].inUse++;
+		} else {
+		    topN[i].free++;
+		}
+		break;
+	    } else if (topN[i].size == -1) {
+		found = TRUE;
+		topN[i].size = size;
+		topN[i].num = 1;
+		if (IS_DUMMY(admin)) {
+		    topN[i].dummy = 1;
+		} else if (IS_IN_USE(admin)) {
+		    topN[i].inUse = 1;
+		} else {
+		    topN[i].free = 1;
+		}
+		break;
+	    }
+	}
+
+	if (!found && !warnedAboutOverflow) {
+	    (*printProc)(clientData, "Largest-Size buffer overflow: %d\n",size);
+	    warnedAboutOverflow = TRUE;
+	}
+    }
+    (*printProc)(clientData, "Large object allocator:\n");
+    (*printProc)(clientData, "   Total bytes managed: %d\n", numLargeBytes);
+    (*printProc)(clientData, "   Bytes in use:        %d\n",
+	    			    numLargeBytes - freeBytes);
+    firstTime = TRUE;
+    for (i = 0; topN[i].size != -1; i++) {
+	if ((topN[i].num >= largeMinNum || topN[i].size >= largeMaxSize) &&
+	    (topN[i].num != topN[i].dummy)) {
+	    if (firstTime) {
+		(*printProc)(clientData, "%10s%10s%10s%10s\n",
+#ifdef MEM_TRACE
+			"Orig. Size", "Num", "Free", "In Use");
+#else
+			"Size", "Num", "Free", "In Use");
+#endif /* MEM_TRACE */
+		firstTime = FALSE;
+	    }
+	    (*printProc)(clientData, "%10d%10d%10d%10d\n",
+		topN[i].size, topN[i].num, topN[i].free, topN[i].inUse);
+	}
+    }
+    (*printProc)(clientData, "\n");
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1551,4 +1520,43 @@ Mem_DumpTrace(blockSize)
     }
 #endif
 }
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintTrace --
+ *
+ *	Print out the given trace information about a memory trace record.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef MEM_TRACE
+INTERNAL static void
+PrintTrace(allocated, infoPtr, curPC)
+    Boolean		allocated;	/* If TRUE, we are called by Mem_Alloc,
+					 * otherwise by Mem_Free. */
+    register Address	infoPtr;	/* Address of admin. info. */
+    Address		curPC;		/* If called by Mem_Free, PC of
+					 * call to Mem_Free, NULL otherwise. */
+{
+    if (allocated) {
+	(*memPrintProc)(memPrintData,
+		"Mem_Alloc: PC=0x%x  addr=0x%x  size=%d\n",
+		GET_PC(infoPtr), infoPtr+sizeof(AdminInfo),
+		GET_ORIG_SIZE(infoPtr));
+    } else {
+	(*memPrintProc)(memPrintData,
+		"Mem_Free:  PC=0x%x  addr=0x%x  size=%d *\n",
+		curPC, infoPtr+sizeof(AdminInfo), GET_ORIG_SIZE(infoPtr));
+    }
+}
+#endif /* MEM_TRACE */
 
