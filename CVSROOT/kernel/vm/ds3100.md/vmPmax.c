@@ -866,27 +866,26 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
  *
  * VmMach_FlushCode --
  *
- *	Change the protection in the page table for the given range of bytes
- *	for the given segment.
+ *	Flush the specified address range from the instruction cache.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Page table may be modified for the segment.
+ *	Code is flushed from the cache.
  *
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
 void
-VmMach_FlushCode(procPtr, virtAddrPtr, virtPage, numBytes)
+VmMach_FlushCode(procPtr, virtAddrPtr, physPage, numBytes)
     Proc_ControlBlock	*procPtr;
     Vm_VirtAddr		*virtAddrPtr;
-    unsigned		virtPage;
+    unsigned		physPage;
     int			numBytes;
 {
-    Mach_FlushCode((Address)((virtPage << VMMACH_PAGE_SHIFT) +
-	    segOffset(virtAddrPtr)), (unsigned)numBytes);
+    Mach_FlushCode((Address)((physPage << VMMACH_PAGE_SHIFT) +
+	    virtAddrPtr->offset), (unsigned)numBytes);
 }
 
 
