@@ -112,7 +112,9 @@
 #define SYS_PROF_PROFIL         93
 #define SYS_PROC_REMOTE_EXEC    94
 #define SYS_SYS_GETMACHINEINFO_NEW	95
+#define SYS_VM_MMAP	96
+#define SYS_VM_MUNMAP	97
 
-#define SYS_NUM_SYSCALLS	96
+#define SYS_NUM_SYSCALLS	98
 
 #endif /* _SYSSYSCALL */
