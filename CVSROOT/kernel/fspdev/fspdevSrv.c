@@ -1138,7 +1138,12 @@ PdevClientWakeup(pdevHandlePtr)
     PdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
 {
     LOCK_MONITOR;
-    pdevHandlePtr->flags |= (PDEV_SERVER_GONE|PDEV_REPLY_FAILED);
+    /*
+     * Set both "busy" and "server gone" because the standard preamble
+     * for all client routines only checks against "server gone"
+     * inside a while-not-busy loop.
+     */
+    pdevHandlePtr->flags |= (PDEV_SERVER_GONE|PDEV_REPLY_FAILED|PDEV_BUSY);
     Sync_Broadcast(&pdevHandlePtr->access);
     Sync_Broadcast(&pdevHandlePtr->caughtUp);
     Sync_Broadcast(&pdevHandlePtr->replyReady);
@@ -1218,7 +1223,7 @@ FsPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
      * the routines that call RequestResponse.  PDEV_BUSY is cleared after
      * the server initializes the request buffer with IOC_PDEV_SETUP.
      */
-    while (pdevHandlePtr->flags & PDEV_BUSY) {
+    while (pdevHandlePtr->flags & PDEV_BUSY) { 
 	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
 	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
 	}
@@ -1243,8 +1248,8 @@ FsPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
 			 0, (Address) NIL, 0, (Address) NIL, (int *)NIL,
 			 (Sync_RemoteWaiter *)NIL);
-exit:
     pdevHandlePtr->flags &= ~PDEV_BUSY;
+exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
@@ -1318,7 +1323,6 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 	}
     }
 
-exit:
     if (status == DEV_OFFLINE) {
 	/*
 	 * Return stale handle so remote clients know to nuke
@@ -1327,6 +1331,7 @@ exit:
 	status = FS_STALE_HANDLE;
     }
     pdevHandlePtr->flags &= ~PDEV_BUSY;
+exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
@@ -1398,7 +1403,6 @@ FsPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
 	*name1ErrorPtr = FALSE;
     }
 
-exit:
     if (status == DEV_OFFLINE) {
 	/*
 	 * Return stale handle so remote clients know to nuke
@@ -1407,6 +1411,7 @@ exit:
 	status = FS_STALE_HANDLE;
     }
     pdevHandlePtr->flags &= ~PDEV_BUSY;
+exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
@@ -1470,8 +1475,8 @@ FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
 			0, (Address) NIL,
 			sizeof(Fs_Attributes), (Address)attrPtr,
 			(int *)NIL, (Sync_RemoteWaiter *)NIL);
-exit:
     pdevHandlePtr->flags &= ~PDEV_BUSY;
+exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
@@ -1536,8 +1541,8 @@ FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 			sizeof(Fs_Attributes), (Address)attrPtr,
 			0, (Address) NIL,
 			(int *)NIL, (Sync_RemoteWaiter *)NIL);
-exit:
     pdevHandlePtr->flags &= ~PDEV_BUSY;
+exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
@@ -1589,7 +1594,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    status = DEV_OFFLINE;
-	    goto exit;
+	    goto exitNoServer;
 	}
     }
     pdevHandlePtr->flags |= PDEV_BUSY;
@@ -1693,6 +1698,7 @@ exit:
 	*lenPtr = 0;
     }
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
+exitNoServer:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
@@ -1827,7 +1833,6 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     }
     *lenPtr = amountWritten;
     *offsetPtr += amountWritten;
-exit:
     if (status == DEV_OFFLINE) {
 	/*
 	 * Simulate a broken pipe so writers die.
@@ -1835,6 +1840,7 @@ exit:
 	status = FS_BROKEN_PIPE;
     }
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
+exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
@@ -1929,25 +1935,30 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 			pdevHandlePtr->hdr.fileID.major,
 			pdevHandlePtr->hdr.fileID.minor,
 			bytesAvail) );
-		goto exit;
+		break;
 	    }
-	    break;
+	    /*
+	     * FALL through to request-response if no read-ahead buffer
+	     */
+	}
+	default: {
+	    procPtr = Proc_GetEffectiveProc();
+	    request.hdr.operation		= PDEV_IOCTL;
+	    request.param.ioctl.command		= command;
+	    request.param.ioctl.familyID	= procPtr->familyID;
+	    request.param.ioctl.procID		= procPtr->processID;
+	    request.param.ioctl.byteOrder	= byteOrder;
+	
+	    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
+				     &request.hdr,
+				     inBufPtr->size, inBufPtr->addr,
+				     outBufPtr->size, outBufPtr->addr,
+				     (int *) NIL, (Sync_RemoteWaiter *)NIL);
 	}
     }
 
-    procPtr = Proc_GetEffectiveProc();
-    request.hdr.operation		= PDEV_IOCTL;
-    request.param.ioctl.command		= command;
-    request.param.ioctl.familyID	= procPtr->familyID;
-    request.param.ioctl.procID		= procPtr->processID;
-    request.param.ioctl.byteOrder	= byteOrder;
-
-    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
-			     inBufPtr->size, inBufPtr->addr,
-			     outBufPtr->size, outBufPtr->addr,
-			     (int *) NIL, (Sync_RemoteWaiter *)NIL);
-exit:
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
+exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
@@ -2095,8 +2106,8 @@ FsPseudoStreamCloseInt(pdevHandlePtr)
     (void) RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
 		    0, (Address)NIL, 0, (Address)NIL, (int *) NIL,
 		    (Sync_RemoteWaiter *)NIL);
-exit:
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
+exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
 }
