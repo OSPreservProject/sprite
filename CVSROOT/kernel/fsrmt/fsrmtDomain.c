@@ -209,7 +209,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 	    free((Address)openReplyPtr);
 	    printf( "Fs_RpcPrefix, export \"%s\" failed %x\n",
 		    storagePtr->requestDataPtr, status);
-	    FsPrefixHandleClose(prefixPtr);
+	    FsPrefixHandleClose(prefixPtr, FS_ANY_PREFIX);
 	}
     }
     return(RPC_NO_REPLY);
