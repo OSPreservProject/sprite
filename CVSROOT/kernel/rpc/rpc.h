@@ -129,5 +129,6 @@ void		Rpc_StampTest();
 void		Rpc_HostNotify();
 int		Rpc_WaitForHost();
 Boolean		Rpc_HostIsDown();
+void		Rpc_HostPrint();
 
 #endif _RPC
