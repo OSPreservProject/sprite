@@ -205,6 +205,8 @@ _Mach_Read8bitCCReg:
 	 */
 	or		ADDR, ADDR, $RDREG
 	ld_external	RESULT, ADDR, $BYTE7_0
+	Nop
+	and		RESULT, RESULT, $0xff
 	return		r10,$8
 	nop
 
