@@ -1055,9 +1055,16 @@ Controller *ctrlPtr;
 	devPtr->lastPhase = PHASE_BUS_FREE;
 	break;
     case SCSI_EXTENDED_MESSAGE:
-	devPtr->msgFlag |= STARTEXTENDEDMSG;
-	status = PerformExtendedMsgIn(ctrlPtr,(unsigned int)message);
-	return status;
+	if (devPtr->msgFlag & ENABLEEXTENDEDMSG) {
+	    devPtr->msgFlag |= STARTEXTENDEDMSG;
+	    status = PerformExtendedMsgIn(ctrlPtr,(unsigned int)message);
+	    return status;
+	} else {
+	    devPtr->lastPhase = PHASE_MSG_OUT;
+	    devPtr->messageBuf[0] = SCSI_MESSAGE_REJECT;
+	    devPtr->messageBufLen = 1;
+	    regsPtr->scsi_ctrl.write.command = CR_SET_ATN;
+	}
 	break;
     case SCSI_MESSAGE_REJECT:
 	/* kill any synchronous agreement in effect */
