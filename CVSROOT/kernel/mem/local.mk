@@ -6,6 +6,6 @@
 # By defining MEM_TRACE we turn on extra caller-PC tracing.
 #
 
-XCFLAGS = -DMEM_TRACE
+XCFLAGS += -DMEM_TRACE
 
 #include	<$(SYSMAKEFILE)>
