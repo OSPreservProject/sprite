@@ -495,6 +495,7 @@ extern Sync_RegElement  *regQueuePtr;
 	(sem)->holderPC = (Address)NIL; (sem)->class = SYNC_SEMAPHORE;\
 	(sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; \
 	(sem)->priorCount = 0;\
+	List_InitElement(&(sem)->listInfo.links);\
 }
 
 
@@ -507,6 +508,7 @@ extern Sync_RegElement  *regQueuePtr;
 	(sem)->hit = 0; (sem)->type = 0;\
 	(sem)->holderPC = (Address)NIL; (sem)->class = SYNC_SEMAPHORE;\
 	(sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; \
+	List_InitElement(&(sem)->listInfo.links);\
 }
 
 #else
