@@ -1320,11 +1320,12 @@ Fsconsist_NumClients(consistPtr)
 	nextClientPtr = (Fsconsist_ClientInfo *)List_Next((List_Links *)clientPtr);
 	/*
 	 * Nuke the client list entry if the client isn't using the file now,
-	 * and it isn't holding dirty blocks,
+	 * and it isn't a remote client holding dirty blocks,
 	 * and this element isn't locked by another process doing consistency.
 	 */
 	if (clientPtr->use.ref == 0 &&
-	    clientPtr->clientID != consistPtr->lastWriter &&
+	    ((clientPtr->clientID == rpc_SpriteID) || 
+	     (clientPtr->clientID != consistPtr->lastWriter)) &&
 	    !clientPtr->locked) {
 	    REMOVE_CLIENT(clientPtr);
 	} else {
