@@ -100,8 +100,8 @@ typedef	union	FsGetAttrResultsParam {
 typedef struct FsSetAttrArgs {
     FsOpenArgs		openArgs;
     Fs_Attributes	attr;
+    int			flags;	/* Set attr flags defined in user/fs.h */
 } FsSetAttrArgs;
-
 
 /*
  * FS_DOMAIN_MAKE_DEVICE arguments and results.
