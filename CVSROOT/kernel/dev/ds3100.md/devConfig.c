@@ -57,6 +57,9 @@ int devScsiNumHBATypes = sizeof(devScsiAttachProcs) /
  */
 Fs_Device devFsDefaultDiskPartitions[] = {
     { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 0),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 0),
+                (ClientData) NIL },
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 2),
           SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 2),
                 (ClientData) NIL },
     };
