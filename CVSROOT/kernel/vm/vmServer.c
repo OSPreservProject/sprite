@@ -232,7 +232,7 @@ Vm_OpenSwapDirectory(data, callInfoPtr)
     ClientData		data;	
     Proc_CallInfo	*callInfoPtr;
 {
-    char		number[CVT_INT_BUF_SIZE];
+    char		number[34];
     char		fileName[FS_MAX_PATH_NAME_LENGTH];
     ReturnStatus	status;
 
@@ -350,7 +350,7 @@ VmMakeSwapName(segNum, fileName)
     int  segNum;		/* segment for which to create name */ 
     char *fileName;		/* pointer to area to hold name */
 {
-    char number[CVT_INT_BUF_SIZE];
+    char number[34];
 
     (void)strcpy(fileName, VM_SWAP_DIR_NAME);
     (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
