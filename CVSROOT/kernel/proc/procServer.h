@@ -11,11 +11,11 @@
  * makes no representations about the suitability of this
  * software for any purpose.  It is provided "as is" without
  * express or implied warranty.
+ *
+ * rcsid $Header$ SPRITE (Berkeley)
  */
 
 #ifndef _PROCSERVER
-#define _PROCSERVER
-#define _PROCSERVER
 #define _PROCSERVER
 
 /*
