@@ -69,6 +69,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcDomainInfo, "domain info",	/* 37 - FS_DOMAIN_INFO */
 	Fs_RpcDevReopen, "dev reopen",		/* 38 - FS_DEV_REOPEN */
 	Fs_RpcRecovery, "recover",		/* 39 - FS_RECOVERY */
+	Proc_RpcGetPCB, "get PCB",		/* 40 - PROC_GETPCB */
 };
 
 
