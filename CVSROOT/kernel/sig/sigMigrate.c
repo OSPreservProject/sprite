@@ -368,7 +368,8 @@ Sig_DeencapState(procPtr, infoPtr, bufPtr)
     COPY_STATE(encapPtr, procPtr, sigHoldMask);
     COPY_STATE(encapPtr, procPtr, sigPendingMask);
     procPtr->sigPendingMask &=
-	    ~((1 << SIG_MIGRATE_TRAP) | (1 << SIG_MIGRATE_HOME));
+	~(Sig_NumberToMask(SIG_MIGRATE_TRAP) |
+	  Sig_NumberToMask(SIG_MIGRATE_HOME));
     COPY_STATE(encapPtr, procPtr, sigFlags);
     bcopy((Address) encapPtr->sigActions, (Address) procPtr->sigActions,
 	  SIG_NUM_SIGNALS * sizeof(int));
