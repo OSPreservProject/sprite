@@ -256,7 +256,6 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
     Vm_ExecInfo	*execInfoPtr;
     Vm_ExecInfo	*oldExecInfoPtr;
     Boolean	usedFile;
-    Vm_PTE	pte;
 
     fsInfoSize = Fs_GetEncapSize();
 
@@ -285,13 +284,14 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
 		segPtr = Vm_SegmentNew(VM_CODE, filePtr, fileAddr,
 				       numPages, offset, procPtr);
 		if (segPtr == (Vm_Segment *) NIL) {
+		    Vm_InitCode(filePtr, (Vm_Segment *) NIL,
+				(Vm_ExecInfo *) NIL);
 		    Fs_Close(filePtr);
 		    return(VM_NO_SEGMENTS);
 		}
-		Vm_InitCode(filePtr, segPtr, oldExecInfoPtr);
-		Byte_Zero(sizeof(pte), (Address) &pte);
 		Vm_ValidatePages(segPtr, offset, 
 				 offset + numPages - 1, FALSE, TRUE);
+		Vm_InitCode(filePtr, segPtr, oldExecInfoPtr);
 	    } else {
 		if (!usedFile) {
 		    Fs_Close(filePtr);
