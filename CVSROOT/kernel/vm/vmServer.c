@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "string.h"
 #include "stdlib.h"
 #include "proc.h"
+#include "stdio.h"
 
 Boolean	vmUseFSReadAhead = TRUE;
 extern	Boolean	vm_NoStickySegments;
@@ -253,7 +254,7 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
 {
     register	int	page;
     register	Vm_PTE	*ptePtr;
-    ReturnStatus	status;
+    ReturnStatus	status = SUCCESS;
     register	int	i;
 
     VmSwapFileLock(srcSegPtr);

@@ -288,8 +288,8 @@ extern	Boolean		vmTraceDumpStarted;
 extern	Fs_Stream	*vmTraceFilePtr;
 extern	char		*vmTraceFileName;
 extern	Boolean		vmTraceDumpStarted;
-extern	void		VmTraceDump();
-extern	void		VmStoreTraceRec();
-extern	void		VmCheckTraceOverflow();
+extern void VmTraceDump _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+extern void VmStoreTraceRec _ARGS_((int recType, int size, Address traceRecAddr, Boolean checkOverflow));
+extern void VmCheckTraceOverflow _ARGS_((void));
 
 #endif /* _VMTRACE */

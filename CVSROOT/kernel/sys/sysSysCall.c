@@ -51,6 +51,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "fs.h"
 #include "sys.h"
+#include "sysInt.h"
 #include "dbg.h"
 #include "proc.h"
 #include "sync.h"
@@ -65,17 +66,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sysSysCallParam.h"
 #include "sysTestCall.h"
 #include "status.h"
+#include "stdio.h"
 
 /*
  * Forward declarations to procedures defined in this file:
  */
 
-extern	ReturnStatus	SysMigCall();
-extern	ReturnStatus	Sys_StatsStub();
-
-extern	ReturnStatus	Sync_SemctlStub();
-extern	ReturnStatus	Sync_SemgetStub();
-extern	ReturnStatus	Sync_SemopStub();
+static int ErrorProc _ARGS_((void));
+static ReturnStatus SysMigCall _ARGS_((Sys_ArgArray args));
 
 #define TMP_EXTERN
 #ifdef TMP_EXTERN
@@ -110,12 +108,6 @@ typedef struct {
     Sys_CallParam *paramsPtr;	  /* pointer to parameter information for
 				     generic stub to use */
 } SysCallEntry;
-
-/*
- * This declaration will go away when all system calls have been set up
- * for migration.
- */
-extern ReturnStatus Proc_RemoteDummy();
 
 /*
  * Sys_ParamSizes is an array of sizes corresponding to
@@ -182,9 +174,9 @@ static SysCallEntry sysCalls[] = {
     Proc_Exec,		       Proc_Exec,	   TRUE,	5,   NILPARM,
     CAST Proc_Exit,       CAST Proc_Exit,	   TRUE,	1,   NILPARM,
     Sync_WaitTime,	       Sync_WaitTime,	   TRUE,	2,   NILPARM,
-    Test_PrintOut,	       Test_PrintOut,      TRUE,       10,   NILPARM,
-    Test_GetLine,	       Test_GetLine,       TRUE,	2,   NILPARM,
-    Test_GetChar,	       Test_GetChar,  	   TRUE,	1,   NILPARM,
+    ErrorProc,		       ErrorProc,   	   TRUE,       10,   NILPARM,
+    ErrorProc,		       ErrorProc,   	   TRUE,	2,   NILPARM,
+    ErrorProc,		       ErrorProc,   	   TRUE,	1,   NILPARM,
     Fs_OpenStub,	       Fs_OpenStub,  	   TRUE,	4,   NILPARM,
     Fs_ReadStub,	       Fs_ReadStub,  	   TRUE, 	4,   NILPARM,
     Fs_WriteStub,	       Fs_WriteStub,  	   TRUE, 	4,   NILPARM,
@@ -574,7 +566,7 @@ SysInitSysCall()
  *----------------------------------------------------------------------
  */
 
-ReturnStatus
+static ReturnStatus
 SysMigCall(args)
     Sys_ArgArray args;			/* The arguments to the system call. */
 {

@@ -13,7 +13,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "lock.h"
@@ -23,14 +22,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsio.h"
 #include "stdlib.h"
 #include "byte.h"
+#include "stdio.h"
+#include "bstring.h"
     
 
-static ReturnStatus 		EncapSegment();
-ENTRY static void	 	PrepareSegment();
-static ReturnStatus		FlushSegment();
-static void			FreePages();
-ENTRY static void		LoadSegment();
-ENTRY static ReturnStatus	CheckSharers();
+static ReturnStatus EncapSegment _ARGS_((Vm_Segment *segPtr,
+	Proc_ControlBlock *procPtr, Address *bufPtrPtr));
+ENTRY static void PrepareSegment _ARGS_((Vm_Segment *segPtr));
+static ReturnStatus FlushSegment _ARGS_((Vm_Segment *segPtr));
+static void FreePages _ARGS_((Vm_Segment *segPtr));
+ENTRY static void LoadSegment _ARGS_((int length, register Address buffer,
+	register Vm_Segment *segPtr));
+ENTRY static ReturnStatus CheckSharers _ARGS_((register Vm_Segment *segPtr,
+	Proc_EncapInfo *infoPtr));
 
 /*
  * Define the number of ints transferred... FIXME: change to a struct.

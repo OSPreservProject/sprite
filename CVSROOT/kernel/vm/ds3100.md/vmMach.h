@@ -62,101 +62,14 @@ typedef struct VmMach_ProcData {
 extern unsigned *vmMach_KernelTLBMap;
 
 /*
- * Machine dependent functions.
+ * Machine dependent functions exported to machine dependent modules.
  */
 
-/*
- * Initialization
- */
-extern	void		VmMach_BootInit();
-extern	Address		VmMach_AllocKernSpace();
-extern	void		VmMach_Init();
-/*
- * Segment creation, expansion, and destruction.
- */
-extern	void		VmMach_SegInit();
-extern	void		VmMach_SegExpand();
-extern	void		VmMach_SegDelete();
-/*
- * Process initialization.
- */
-extern	void		VmMach_ProcInit();
-/*
- * Manipulating protection.
- */
-extern	void		VmMach_SetSegProt();
-extern	void		VmMach_SetPageProt();
-/*
- * Reference and modify bits.
- */
-extern	void		VmMach_GetRefModBits();
-extern	void		VmMach_ClearRefBit();
-extern	void		VmMach_ClearModBit();
-extern	void		VmMach_AllocCheck();
-/*
- * Page validation and invalidation.
- */
-extern	void		VmMach_PageValidate();
-extern	void		VmMach_PageInvalidate();
-/*
- * Routine to parse a virtual address.
- */
-extern	Boolean		VmMach_VirtAddrParse();
+extern Boolean VmMach_MakeDebugAccessible _ARGS_((unsigned addr));
+extern ENTRY ReturnStatus VmMach_TLBFault _ARGS_((Address virtAddr));
+extern ReturnStatus VmMach_TLBModFault _ARGS_((Address virtAddr));
+extern Address VmMach_UserMap _ARGS_((int numBytes, Address physAddr,
+	Boolean firstTime));
+extern ENTRY void VmMach_UserUnmap _ARGS_((void));
 
-/*
- * Routines to manage contexts.
- */
-extern	ClientData	VmMach_SetupContext();
-extern	void		VmMach_FreeContext();
-extern	void		VmMach_ReinitContext();
-/*
- * Routines to copy data to/from user space.
- */
-extern	ReturnStatus	VmMach_CopyIn();
-extern	ReturnStatus	VmMach_CopyOut();
-extern	ReturnStatus	VmMach_CopyInProc();
-extern	ReturnStatus	VmMach_CopyOutProc();
-extern	ReturnStatus	VmMach_StringNCopy();
-extern	ReturnStatus	VmMach_MapKernelIntoUser();
-extern	int		VmMachCopyEnd();
-/*
- * Pinning and unpinning user memory pages.
- */
-extern	void		VmMach_PinUserPages();
-extern	void		VmMach_UnpinUserPages();
-/*
- * Cache flushing.
- */
-extern	void		VmMach_FlushPage();
-extern	void		VmMach_FlushCode();
-/*
- * Migration.
- */
-extern	void		VmMach_HandleSegMigration();
-/*
- * Routines to map and unmap kernel data into/out-of the user's address space.
- */
-extern	Address		VmMach_UserMap();
-extern	void		VmMach_UserUnmap();
-
-extern	ReturnStatus	VmMach_Cmd();
-extern	void		VmMach_Trace();
-extern	void		VmMach_MakeNonCacheable();
-
-/*
- * Shared memory.
- */ 
-extern  ReturnStatus	VmMach_SharedStartAddr(); 
-extern  void		VmMach_SharedSegFinish(); 
-extern	void		VmMach_SharedProcStart();
-extern	void		VmMach_SharedProcFinish();
-
-/*
- * File cache page lock/unlock routines.
- */
-
-extern	void		VmMach_LockCachePage();
-extern	void		VmMach_UnlockCachePage();
-
-
-#endif /* _VMMACH */
+#endif _VMMACH

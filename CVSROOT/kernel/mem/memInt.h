@@ -15,16 +15,14 @@
 
 #include "sprite.h"
 
-extern void	MemPanic();
-extern int	MemChunkAlloc();
-extern void	MemAdjustHeap();
-extern void	MemPrintInit();
+extern void Mem_DumpTrace _ARGS_((int blockSize));
+extern void MemPanic _ARGS_((char *message));
+extern int MemChunkAlloc _ARGS_((int size, Address *addressPtr));
+extern void MemPrintInit _ARGS_((void));
+extern Address Mem_CallerPC _ARGS_((void));
 
-extern void		(*memPrintProc)();
+extern void	(*memPrintProc) _ARGS_(());
 extern ClientData	memPrintData;
 extern Boolean		memAllowFreeingFree;
-
-extern int	mem_NumAllocs;
-extern int	mem_NumFrees;
 
 #endif /* _MEMINT */

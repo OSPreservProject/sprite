@@ -81,7 +81,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "vmStat.h"
-#include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "vmTrace.h"
@@ -92,6 +91,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "lock.h"
 #include "sys.h"
 #include "stdlib.h"
+#include "stdio.h"
+#include "bstring.h"
 
 #ifdef sun4
 /*
@@ -103,19 +104,28 @@ Boolean	vm_CanCOW = FALSE;
 Boolean	vm_CanCOW = TRUE;
 #endif /* sun4 */
 
-static void	    DoFork();
-static void	    GiveAwayPage();
-static void	    ReleaseCOW();
-static Boolean	    COWStart();
-static Vm_Segment   *FindNewMasterSeg();
-static Boolean      IsResident();
-static void	    COWEnd();
-static void	    SetPTE();
-static void	    CopyPage();
-static ReturnStatus COR();
-static void	    COW();
+static void DoFork _ARGS_((register Vm_Segment *srcSegPtr,
+	register Vm_Segment *destSegPtr));
+static void GiveAwayPage _ARGS_((register Vm_Segment *srcSegPtr, int virtPage,
+	register Vm_PTE *srcPTEPtr, register Vm_Segment *destSegPtr,
+	Boolean others));
+static void ReleaseCOW  _ARGS_((Vm_PTE *ptePtr));
+static Boolean COWStart _ARGS_((register Vm_Segment *segPtr,
+	register VmCOWInfo **cowInfoPtrPtr));
+static Vm_Segment *FindNewMasterSeg _ARGS_((register Vm_Segment *segPtr,
+	int page, Boolean *othersPtr));
+static Boolean IsResident _ARGS_((Vm_PTE *ptePtr));
+static void COWEnd _ARGS_((register Vm_Segment *segPtr,
+	VmCOWInfo **cowInfoPtrPtr));
+static void SetPTE _ARGS_((Vm_VirtAddr *virtAddrPtr, Vm_PTE pte));
+static void CopyPage _ARGS_((unsigned int srcPF, unsigned int destPF));
+static ReturnStatus COR _ARGS_((register Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr));
+static void COW _ARGS_((register Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr, Boolean isResident, Boolean deletePage));
 static unsigned int GetMasterPF();
-static void	    SeeIfLastCOR();
+static void SeeIfLastCOR _ARGS_((register Vm_Segment *mastSegPtr,
+	int page));
 
 
 /*

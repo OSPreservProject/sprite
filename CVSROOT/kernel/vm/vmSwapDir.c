@@ -35,6 +35,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmInt.h"
 #include "sync.h"
 #include "vmSwapDir.h"
+#include "stdio.h"
+#include "string.h"
+#include "stdlib.h"
 
 static Sync_Lock vmSwapDirLock = Sync_LockInitStatic("vmSwapDirLock");
 #define LOCKPTR &vmSwapDirLock
@@ -151,7 +154,7 @@ VmOpenSwapFile(segPtr)
     char			fileName[FS_MAX_PATH_NAME_LENGTH];
     char			*swapFileNamePtr;
     Fs_Stream			*swapDirPtr;
-    Fs_Stream			*origCwdPtr;
+    Fs_Stream			*origCwdPtr = (Fs_Stream *)NIL;
 
     if (segPtr->swapFileName == (char *) NIL) {
 	/*
@@ -258,6 +261,7 @@ VmMakeSwapName(segNum, fileName)
  *	The swap file is removed.
  *----------------------------------------------------------------------
  */
+void
 VmSwapFileRemove(swapStreamPtr, swapFileName)
     Fs_Stream	*swapStreamPtr;
     char	*swapFileName;

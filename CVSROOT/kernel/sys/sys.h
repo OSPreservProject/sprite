@@ -17,6 +17,7 @@
 #include "user/sys.h"
 #include "sprite.h"
 #include "status.h"
+#include "timer.h"
 #endif /* _ASM */
 
 /*
@@ -38,30 +39,37 @@
 extern	Boolean	sys_ShuttingDown;	/* Set when halting */
 extern	Boolean	sys_ErrorShutdown;	/* Set after a bad trap or error */
 extern	Boolean	sys_ErrorSync;		/* Set while syncing disks */
-extern	int	sysPanicOK;		/* Set by main when ok to panic */
 extern	int	sys_NumCalls[];
 
-extern	void	Sys_Init();
-extern  void     printf _ARGS_((char *format, ...));
-extern	void	panic();
-extern	int	vprintf();
+extern void	Sys_Init _ARGS_((void));
+extern void	Sys_SyncDisks _ARGS_((int trapType));
+extern int	Sys_GetHostId _ARGS_((void));
+extern void	Sys_HostPrint _ARGS_((int spriteID, char *string));
+extern ReturnStatus Sys_GetTimeOfDay _ARGS_((Time *timePtr,
+		    int *localOffsetPtr, Boolean *DSTPtr));
+extern ReturnStatus Sys_SetTimeOfDay _ARGS_((Time *timePtr, int localOffset,
+		    Boolean DST));
 
-extern  ReturnStatus	Sys_OutputNumCalls();
-extern	void		Sys_HostPrint();
+extern int	vprintf _ARGS_(());
+extern void	panic _ARGS_(());
 
-#endif /* KERNEL */
+/* Temporary declaration until prototyping is done */
+extern ReturnStatus Proc_RemoteDummy();
+
+#else
 
 /*
  *  Declarations of system call stubs, which happen to have the
  *  same name as the user-visible routines.
  */
 
-extern	ReturnStatus	Sys_GetTimeOfDay();
-extern	ReturnStatus	Sys_SetTimeOfDay();
-extern	ReturnStatus	Sys_DoNothing();
-extern	ReturnStatus	Sys_Shutdown();
-extern	ReturnStatus	Sys_GetMachineInfo();
-extern	ReturnStatus	Sys_GetMachineInfoNew();
+extern ReturnStatus Sys_GetTimeOfDay();
+extern ReturnStatus Sys_SetTimeOfDay();
+extern ReturnStatus Sys_DoNothing();
+extern ReturnStatus Sys_Shutdown();
+extern ReturnStatus Sys_GetMachineInfo();
+extern ReturnStatus Sys_GetMachineInfoNew();
 
+#endif /* KERNEL */
 #endif /* _ASM */
 #endif /* _SYS */

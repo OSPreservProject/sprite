@@ -21,9 +21,10 @@
 /*
  * Assembly language routines in vmPmaxAsm.s.
  */
-extern	int	VmMachDoCopy();
-extern	int	VmMachCopyEnd();
-extern	int	VmMachWriteTLB();
-extern	void	VmMachSetPID();
+extern ReturnStatus VmMachDoCopy _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr));
+extern int VmMachCopyEnd _ARGS_((void));
+extern int VmMachWriteTLB _ARGS_((unsigned lowEntry, unsigned highEntry));
+extern void VmMachSetPID _ARGS_((int pid));
 
 #endif /* _VMMACHINT */

@@ -16,9 +16,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "vmSunConst.h"
 #include "machMon.h"
-#include "vmMachInt.h"
 #include "vm.h"
 #include "vmInt.h"
+#include "vmMach.h"
+#include "vmMachInt.h"
 #include "vmTrace.h"
 #include "list.h"
 #include "mach.h"
@@ -29,6 +30,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "dbg.h"
 #include "net.h"
+#include "stdio.h"
+#include "bstring.h"
 
 #ifndef multiprocessor
 
@@ -267,14 +270,22 @@ int	vmMachKernMemSize = VMMACH_MAX_KERN_SIZE;
  */
 #define	MAP_SEG_NUM (VMMACH_MAP_SEG_ADDR >> VMMACH_SEG_SHIFT)
 
-static void	MMUInit();
-static int	PMEGGet();
-static void	PMEGFree();
-static Boolean	PMEGLock();
-static void	ByteFill();
-static void	SetupContext();
-void		VmMachTracePage();
-void		PageInvalidate();
+static void MMUInit _ARGS_((int firstFreeSegment));
+static int GetNumPages _ARGS_((void));
+static int PMEGGet _ARGS_((Vm_Segment *softSegPtr, int hardSegNum,
+	Boolean flags));
+static void PMEGFree _ARGS_((int pmegNum));
+ENTRY static Boolean PMEGLock _ARGS_((register VmMach_SegData *machPtr,
+	int segNum));
+static void ByteFill _ARGS_((register unsigned int fillByte,
+	register int numBytes, Address destPtr));
+INTERNAL static void SetupContext _ARGS_((register Proc_ControlBlock *procPtr));
+INTERNAL void VmMachTracePage _ARGS_((register VmMachPTE pte,
+	unsigned int pageNum));
+static void PageInvalidate _ARGS_((register Vm_VirtAddr *virtAddrPtr,
+	unsigned int virtPage, Boolean segDeletion));
+static void VmMach_Unalloc _ARGS_((VmMach_SharedData *sharedData,
+	Address addr));
 
 static	VmMach_SegData	*sysMachPtr;
 Address			vmMachPTESegAddr;
@@ -381,7 +392,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
  *
  * ----------------------------------------------------------------------------
  */
-int
+static int
 GetNumPages()
 {
 #ifdef sun3
@@ -1370,7 +1381,7 @@ SetupContext(procPtr)
 	/*
 	 * Push map out to hardware.
 	 */
-	VmMachSegMapCopy(contextPtr->map, 0, mach_KernStart);
+	VmMachSegMapCopy((Address)contextPtr->map, 0, (int)mach_KernStart);
     } else {
 	VmMachSetContextReg(contextPtr->context);
     }
@@ -2010,7 +2021,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
     register	Address		virtAddr;
     register	unsigned char	*pmegNumPtr;
     register	PMEG		*pmegPtr;
-    register	Boolean		skipSeg;
+    register	Boolean		skipSeg = FALSE;
     Boolean			nextSeg = TRUE;
     Address			tVirtAddr;
     Address			pageVirtAddr;
@@ -2969,6 +2980,7 @@ VmMach_32BitDMAAlloc(numBytes, srcAddr)
     Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
 {
     panic("VmMach_32BitDMAAlloc: should never be called on a sun3!\n");
+    return (Address) 0;
 }
 /*ARGSUSED*/
 void
@@ -3104,6 +3116,7 @@ VmMach_DMAFree(numBytes, mapAddr)
 }
 
 
+#if 0 /* Dead code shirriff 9/90 */
 /*
  * ----------------------------------------------------------------------------
  *
@@ -3139,6 +3152,7 @@ VmMach_GetDevicePage(virtAddr)
     SET_ALL_PAGE_MAP(virtAddr, pte);
 }
 
+#endif
 
 /*
  * ----------------------------------------------------------------------------
@@ -3289,7 +3303,7 @@ VmMach_IntMapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr, newAddrPtr)
      * Reinitialize this process's context using the new segment table.
      */
     VmMach_ReinitContext(procPtr);
-    *newAddrPtr = userVirtAddr;
+    *newAddrPtr = (Address)userVirtAddr;
 
     return SUCCESS;
 }
@@ -3557,6 +3571,7 @@ VmMach_FlushCode(procPtr, virtAddrPtr, virtPage, numBytes)
  * to make a dummy procedure because it was to confusing seeing the
  * previous procedure (VmMach_MapKernelIntoUser) on every backtrace.
  */
+void
 VmMachTrap()
 {
 }
@@ -3582,7 +3597,7 @@ VmMachTrap()
 
 static void
 ByteFill(fillByte, numBytes, destPtr)
-    register unsigned char fillByte;	/* The byte to be filled in. */
+    register unsigned int fillByte;	/* The byte to be filled in. */
     register int numBytes;	/* The number of bytes to be filled in. */
     Address destPtr;		/* Where to fill. */
 {
@@ -3848,7 +3863,6 @@ VmMach_SharedProcFinish(procPtr)
 {
     dprintf("VmMach_SharedProcFinish: freeing process's allocVector\n");
     free((Address)procPtr->vmPtr->machPtr->sharedData.allocVector);
-    procPtr->vmPtr->machPtr->sharedData.allocVector;
     procPtr->vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
 }
 
@@ -3880,59 +3894,8 @@ VmMach_CopySharedMem(parentProcPtr, childProcPtr)
 
     VmMach_SharedProcStart(childProcPtr);
 
-    bcopy(parentSharedData->allocVector, childSharedData->allocVector,
+    bcopy((Address)parentSharedData->allocVector,
+	    (Address)childSharedData->allocVector,
             VMMACH_SHARED_NUM_BLOCKS*sizeof(int));
     childSharedData->allocFirstFree = parentSharedData->allocFirstFree;
 }
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmMach_LockCachePage --
- *
- *      Perform machine dependent locking of a kernel resident file cache
- *	page.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *
- * ----------------------------------------------------------------------------
- */
-void
-VmMach_LockCachePage(kernelAddress)
-    Address	kernelAddress;	/* Address on page to lock. */
-{
-    /*
-     * Sun3 leaves file cache pages always available so there is no need to
-     * lock or unlock them.
-     */
-    return;
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmMach_UnlockCachePage --
- *
- *      Perform machine dependent unlocking of a kernel resident page.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *
- * ----------------------------------------------------------------------------
- */
-void
-VmMach_UnlockCachePage(kernelAddress)
-    Address	kernelAddress;	/* Address on page to unlock. */
-{
-    /*
-     * Sun3 leaves file cache pages always available so there is no need to
-     * lock or unlock them.
-     */
-    return;
-}
-

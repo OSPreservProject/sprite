@@ -452,7 +452,7 @@ VmMachSetPID:
  *	This routine is optimized to do transfers when sourcePtr and 
  *	destPtr are both 4-byte aligned.
  *
- *	void
+ *	ReturnStatus
  *	Vm_Copy{In,Out}(numBytes, sourcePtr, destPtr)
  *	    register int numBytes;      * The number of bytes to copy *
  *	    Address sourcePtr;          * Where to copy from. *

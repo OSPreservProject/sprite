@@ -20,6 +20,8 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "vmMachInt.h"
 #include "vm.h"
 #include "vmInt.h"
+#include "vmMach.h"
+#include "vmMachInt.h"
 #include "list.h"
 #include "mach.h"
 #include "proc.h"
@@ -133,11 +135,6 @@ typedef struct TLBHashBucket {
  */
 TLBHashBucket	vmMachTLBHashTable[VMMACH_NUM_TLB_HASH_ENTRIES];
 
-static void 		TLBHashInsert();
-static void 		TLBHashDelete();
-static void 		TLBHashFlushPID();
-static TLBHashBucket	*TLBHashFind();
-
 /*
  * Performance counters.  The number of fields cannot
  */
@@ -167,7 +164,18 @@ static Proc_ControlBlock	*mappedProcPtr = (Proc_ControlBlock *)NIL;
 /*
  * Forward declarations.
  */
-static void 		PageInvalidate();
+static int GetNumPages _ARGS_((void));
+static void PageInvalidate _ARGS_((register Vm_VirtAddr *virtAddrPtr,
+	unsigned int virtPage, Boolean segDeletion));
+INTERNAL static void TLBHashInsert _ARGS_((int pid, unsigned page,
+	unsigned lowReg, unsigned hiReg));
+INTERNAL static void TLBHashDelete _ARGS_((int pid, unsigned page));
+INTERNAL static void TLBHashFlushPID _ARGS_((int pid));
+INTERNAL static TLBHashBucket *TLBHashFind _ARGS_((int pid, unsigned page));
+static ReturnStatus VmMach_Alloc _ARGS_((VmMach_SharedData *sharedData,
+	int regionSize, Address *addr));
+static void VmMach_Unalloc _ARGS_((VmMach_SharedData *sharedData,
+	Address addr));
 
 
 /*
@@ -244,7 +252,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
  *
  * ----------------------------------------------------------------------------
  */
-int
+static int
 GetNumPages()
 {
     unsigned		page;

@@ -15,6 +15,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "mach.h"
 #include "sys.h"
+#include "sysInt.h"
 #include "sysStats.h"
 #include "time.h"
 #include "timer.h"
@@ -31,10 +32,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "recov.h"
 #include "procMigrate.h"
 #include "string.h"
+#include "stdio.h"
+#include "main.h"
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
-extern	Boolean	sysPanicing;
 
 
 /*
@@ -296,40 +298,6 @@ Sys_Shutdown(flags, rebootString)
 }
 
 Boolean	sys_ShouldSyncDisks = TRUE;
-
-/*
- *----------------------------------------------------------------------
- *
- * SysErrorShutdown --
- *
- *	This routine is called when the system encountered an error and
- *	needs to be shut down.  [Actually, apparently not used, since the
- *	system goes into the debugger instead.]
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-SysErrorShutdown(trapType)
-    int		trapType;
-{
-    if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
-        !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
-	sys_ErrorShutdown = TRUE;
-	(void) Sys_Shutdown(SYS_KILL_PROCESSES, "");
-    }
-    if (sys_ShouldSyncDisks && sys_ShuttingDown) {
-	printf("Error type %d while shutting down system. Exiting ...\n",
-		   trapType);
-	Proc_Exit(trapType);
-    }
-}
 
 /*
  *----------------------------------------------------------------------

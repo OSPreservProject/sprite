@@ -199,7 +199,6 @@ extern	Fs_Stream *vmSwapStreamPtr;	/* Swap directory stream. */
 extern	int	vmPageShift;		/* Log base 2 of vm_PageSize. */
 extern	int	vmPageTableInc;		/* The size in which page tables can
 					 * grow. */
-extern	Address	vmMemEnd;		/* Current end of kernel code + data. */
 extern	int	vmKernMemSize;		/* Amount of code + data available for
 					 * the kernel. */
 extern	int	vmMaxProcesses;		/* The maximum number of processes that
@@ -510,12 +509,11 @@ extern int vmShmDebug;
 /*
  * Initialization routines.
  */
-extern	void		VmSegTableAlloc();
-extern	void		VmSegTableInit();
-extern	void		VmSwapFileInit();
-extern	void		VmStackInit();
-extern	void		VmCoreMapAlloc();
-extern	void		VmCoreMapInit();
+extern void VmSegTableAlloc _ARGS_((void));
+extern void VmSegTableInit _ARGS_((void));
+extern void VmStackInit _ARGS_((void));
+extern void VmCoreMapAlloc _ARGS_((void));
+extern void VmCoreMapInit _ARGS_((void));
 /*
  * Page allocation routines.
  */
@@ -525,96 +523,234 @@ extern	unsigned int	VmGetReservePage();
 /*
  * Routine to free pags.
  */
-extern	void		VmPageFree();
-extern	void		VmPageFreeInt();
+extern void VmPageFree _ARGS_((unsigned int pfNum));
+extern void VmPageFreeInt _ARGS_((unsigned int pfNum));
 /*
  * Routines to put pages on lists.
  */
-extern	void		VmPutOnFreeSegList();
-extern	void		VmPutOnFreePageList();
+extern void VmPutOnFreeSegList _ARGS_((register Vm_Segment *segPtr));
+extern void VmPutOnFreePageList _ARGS_((unsigned int pfNum));
 /*
  * Routines to lock pages.
  */
-extern	void		VmLockPageInt();
-extern	void		VmUnlockPage();
-extern	void		VmUnlockPageInt();
+extern void VmLockPageInt _ARGS_((unsigned int pfNum));
+extern void VmUnlockPage _ARGS_((unsigned int pfNum));
+extern void VmUnlockPageInt _ARGS_((unsigned int pfNum));
 /*
  * Routine to see if a page is pinned down.
  */
-extern	Boolean		VmPagePinned();
+extern Boolean VmPagePinned _ARGS_((Vm_PTE *ptePtr));
 /*
  * Routine to handle page faults.
  */
 extern	ReturnStatus	VmDoPageIn();
-extern	void		VmVirtAddrParse();
-extern	Boolean		VmCheckBounds();
-extern	void		VmZeroPage();
-extern	void		VmKillSharers();
+extern void VmVirtAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+	Address virtAddr, register Vm_VirtAddr *transVirtAddrPtr));
+extern Boolean VmCheckBounds _ARGS_((register Vm_VirtAddr *virtAddrPtr));
+extern void VmZeroPage _ARGS_((unsigned int pfNum));
+extern void VmKillSharers _ARGS_((register Vm_Segment *segPtr));
+extern void VmSwapFileRemove _ARGS_((Fs_Stream *swapStreamPtr,
+	char *swapFileName));
+extern ReturnStatus VmPageFlush _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	int length, Boolean toDisk, Boolean wantRes));
+extern int VmCountDirtyPages _ARGS_((void));
+
 /*
  * Segment handling routines.
  */
-extern	ReturnStatus 	VmAddToSeg();
-extern  VmDeleteStatus 	VmSegmentDeleteInt();
-extern	void		VmDecPTUserCount();
+extern ReturnStatus VmAddToSeg _ARGS_((register Vm_Segment *segPtr,
+	int firstPage, int lastPage));
+extern VmDeleteStatus VmSegmentDeleteInt _ARGS_((register Vm_Segment *segPtr,
+	register Proc_ControlBlock *procPtr, VmProcLink **procLinkPtrPtr,
+	Fs_Stream **objStreamPtrPtr, Boolean migFlag));
+extern void VmDecPTUserCount _ARGS_((register Vm_Segment *segPtr));
 extern	Vm_Segment	*VmGetSegPtr();
-extern	void		VmFlushSegment();
-extern	Vm_SegProcList	*VmFindSharedSegment();
-extern	Boolean		VmCheckSharedSegment();
+extern void VmFlushSegment _ARGS_((Vm_VirtAddr *virtAddrPtr, int lastPage));
+extern Vm_SegProcList *VmFindSharedSegment _ARGS_((List_Links *sharedSegs,
+	Address virtAddr));
+extern Boolean VmCheckSharedSegment _ARGS_((Proc_ControlBlock *procPtr,
+	Vm_Segment *segPtr));
+extern void VmPrintSharedSegs _ARGS_((Proc_ControlBlock *procPtr));
+
 /*
  * Routines to validate and invalidate pages.
  */
-extern	void		VmPageValidate();
-extern	void		VmPageValidateInt();
-extern	void		VmPageInvalidate();
-extern	void		VmPageInvalidateInt();
-extern	void		VmValidatePagesInt();
+extern void VmPageValidate _ARGS_((Vm_VirtAddr *virtAddrPtr));
+extern void VmPageValidateInt _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr));
+extern void VmPageInvalidate _ARGS_((register Vm_VirtAddr *virtAddrPtr));
+extern void VmPageInvalidateInt _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr));
+extern void VmValidatePagesInt _ARGS_((Vm_Segment *segPtr, int firstPage,
+	int lastPage, Boolean zeroFill, Boolean clobber));
 /*
  * VM list routines.  Like normal list routines but do more sanity checks.
  */
-extern	void		VmListMove();
-extern	void		VmListRemove();
-extern	void		VmListInsert();
+extern void VmListMove _ARGS_((register List_Links *itemPtr,
+	register List_Links *destPtr));
+extern void VmListRemove _ARGS_((register List_Links *itemPtr));
+extern void VmListInsert _ARGS_((register List_Links *itemPtr,
+	register List_Links *destPtr));
 /*
  * Routines for copy-on-write and copy-on-reference.
  */
-extern	Boolean		VmSegCanCOW();
-extern	void		VmSegCantCOW();
-extern	void		VmSegCOWDone();
-extern	void		VmSegFork();
-extern	void		VmCOWDeleteFromSeg();
-extern	ReturnStatus	VmCOR();
-extern	void		VmCOW();
-extern	void		VmPageSwitch();
+extern Boolean VmSegCanCOW _ARGS_((Vm_Segment *segPtr));
+extern void VmSegCantCOW _ARGS_((Vm_Segment *segPtr));
+extern void VmSegCOWDone _ARGS_((Vm_Segment *segPtr, Boolean cantCOW));
+extern void VmSegFork _ARGS_((Vm_Segment *srcSegPtr, Vm_Segment *destSegPtr));
+extern void VmCOWDeleteFromSeg _ARGS_((register Vm_Segment *segPtr,
+	register int firstPage, register int lastPage));
+extern ReturnStatus VmCOR _ARGS_((register Vm_VirtAddr *virtAddrPtr));
+extern void VmCOW _ARGS_((register Vm_VirtAddr *virtAddrPtr));
+extern void VmPageSwitch _ARGS_((unsigned int pageNum, Vm_Segment *newSegPtr));
+extern ReturnStatus VmCOWCopySeg _ARGS_((register Vm_Segment *segPtr));
 /*
  * Procedures for remote page access.
  */
-extern	ReturnStatus	VmCopySwapSpace();
-extern	ReturnStatus	VmPageServerRead();
-extern	ReturnStatus	VmPageServerWrite();
-extern	ReturnStatus	VmFileServerRead();
-extern	void 		VmMakeSwapName();
-extern	ReturnStatus	VmOpenSwapFile();
-extern	ReturnStatus	VmCopySwapPage();
-extern	void 		VmSwapFileLock();
-extern	void 		VmSwapFileUnlock();
+extern ReturnStatus VmCopySwapSpace _ARGS_((register Vm_Segment *srcSegPtr,
+	register Vm_Segment *destSegPtr));
+extern ReturnStatus VmPageServerRead _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	unsigned int pageFrame));
+extern ReturnStatus VmPageServerWrite _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	unsigned int pageFrame, Boolean toDisk));
+extern ReturnStatus VmFileServerRead _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	unsigned int pageFrame));
+extern void VmMakeSwapName _ARGS_((int segNum, char *fileName));
+extern ReturnStatus VmOpenSwapFile _ARGS_((register Vm_Segment *segPtr));
+extern ReturnStatus VmCopySwapPage _ARGS_((register Vm_Segment *srcSegPtr,
+	int virtPage, register Vm_Segment *destSegPtr));
+extern void VmSwapFileLock _ARGS_((register Vm_Segment *segPtr));
+extern void VmSwapFileUnlock _ARGS_((register Vm_Segment *segPtr));
 /*
  * Procedures for process migration.
  */
 extern	ReturnStatus	VmOpenSwapByName();
-extern  ENTRY void	VmPutOnDirtyList();
+extern void VmPutOnDirtyList _ARGS_((unsigned int pfNum));
 /*
  * Procedures for mapping.
  */
-extern	Address		VmMapPage();
-extern	void		VmUnmapPage();
-extern	void		VmRemapPage();
+extern Address VmMapPage _ARGS_((unsigned int pfNum));
+extern void VmUnmapPage _ARGS_((Address mappedAddr));
+extern void VmRemapPage _ARGS_((Address addr, unsigned int pfNum));
 /*
  * Prefetch routine.
  */
-extern	void		VmPrefetch();
+extern void VmPrefetch _ARGS_((register Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr));
 /*
  * Vm tracing.
  */
 extern	void		VmTraceSegStart();
-extern	void		VmCheckListIntegrity();
+extern void VmCheckListIntegrity _ARGS_((List_Links *listHdr));
+
+/*
+ * Machine-dependent routines used by machine-independent VM routines.
+ */
+
+/*
+ * Initialization
+ */
+extern void VmMach_BootInit _ARGS_((int *pageSizePtr, int *pageShiftPtr,
+        int *pageTableIncPtr, int *kernMemSizePtr, int *numKernPagesPtr,
+        int *maxSegsPtr, int *maxProcessesPtr));
+extern Address VmMach_AllocKernSpace _ARGS_((Address baseAddr));
+extern void VmMach_Init _ARGS_((int firstFreePage));
+
+/*
+ * Segment creation, expansion, and destruction.
+ */
+extern void VmMach_SegInit _ARGS_((struct Vm_Segment *segPtr));
+extern void VmMach_SegExpand _ARGS_((register struct Vm_Segment *segPtr,
+        int firstPage, int lastPage));
+extern void VmMach_SegDelete _ARGS_((register struct Vm_Segment *segPtr));
+
+/*
+ * Process initialization.
+ */
+extern void VmMach_ProcInit _ARGS_((register struct Vm_ProcInfo *vmPtr));
+
+/*
+ * Manipulating protection.
+ */
+extern void VmMach_SetSegProt _ARGS_((register struct Vm_Segment *segPtr,
+        register int firstPage, int lastPage, Boolean makeWriteable));
+extern void VmMach_SetPageProt _ARGS_((register struct Vm_VirtAddr
+        *virtAddrPtr, Vm_PTE softPTE));
+
+/*
+ * Reference and modify bits.
+ */
+extern void VmMach_GetRefModBits _ARGS_((register struct Vm_VirtAddr
+        *virtAddrPtr, unsigned int virtFrameNum, register Boolean *refPtr,
+        register Boolean *modPtr));
+extern void VmMach_ClearRefBit _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum));
+extern void VmMach_ClearModBit _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum));
+extern void VmMach_AllocCheck _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum, register Boolean *refPtr,
+        register Boolean *modPtr));
+
+/*
+ * Page validation and invalidation.
+ */
+extern void VmMach_PageValidate _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, Vm_PTE pte));
+extern void VmMach_PageInvalidate _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtPage, Boolean segDeletion));
+
+/*
+ * Routine to parse a virtual address.
+ */
+extern Boolean VmMach_VirtAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+        Address virtAddr, register struct Vm_VirtAddr *transVirtAddrPtr));
+
+/*
+ * Routines to copy data to/from user space.
+ */
+extern ReturnStatus VmMach_CopyInProc _ARGS_((int numBytes,
+        Proc_ControlBlock *fromProcPtr, Address fromAddr,
+        struct Vm_VirtAddr *virtAddrPtr, Address toAddr, Boolean toKernel));
+extern ReturnStatus VmMach_CopyOutProc _ARGS_((int numBytes,
+        Address fromAddr, Boolean fromKernel, Proc_ControlBlock *toProcPtr,
+        Address toAddr, struct Vm_VirtAddr *virtAddrPtr));
+
+/*
+ * Tracing.
+ */
+extern void VmMach_Trace _ARGS_((void));
+
+/*
+ * Pinning and unpinning user memory pages.
+ */
+extern void VmMach_PinUserPages _ARGS_((int mapType, struct Vm_VirtAddr
+        *virtAddrPtr, int lastPage));
+extern void VmMach_UnpinUserPages _ARGS_((struct Vm_VirtAddr *virtAddrPtr,
+        int lastPage));
+/*
+ * Cache flushing.
+ */
+extern void VmMach_FlushPage _ARGS_((struct Vm_VirtAddr *virtAddrPtr,
+        Boolean invalidate));
+extern void VmMach_FlushCode _ARGS_((Proc_ControlBlock *procPtr,
+        struct Vm_VirtAddr *virtAddrPtr, unsigned virtPage, int numBytes));
+/*
+ * Migration.
+ */
+extern void VmMach_HandleSegMigration _ARGS_((struct Vm_Segment *segPtr));
+
+extern ReturnStatus VmMach_Cmd _ARGS_((int command, int arg));
+
+/*
+ * Shared memory.
+ */
+extern void VmMach_SharedSegFinish _ARGS_((Proc_ControlBlock *procPtr,
+        Address addr));
+extern void VmMach_SharedProcStart _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_SharedProcFinish _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_CopySharedMem _ARGS_((Proc_ControlBlock *parentProcPtr,
+        Proc_ControlBlock *childProcPtr));
+extern ReturnStatus VmMach_SharedStartAddr _ARGS_((Proc_ControlBlock *procPtr,
+        int size, Address *reqAddr));
+
 #endif _VMINT

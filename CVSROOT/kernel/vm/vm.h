@@ -11,6 +11,7 @@
  * $Header$ SPRITE (Berkeley)
  */
 
+
 #ifndef _VM
 #define _VM
 
@@ -18,21 +19,31 @@
 
 #ifdef KERNEL
 #include "user/vm.h"
+#if 0
 #include "vmMach.h"
+#endif
 #include "vmStat.h"
 #include "fs.h"
 #include "sync.h"
+#include "proc.h"
+#include "procMigrate.h"
+#include "sprite.h"
 #else
+#if 0
 #include <kernel/vmMach.h>
+#endif
 #include <vmStat.h>
 #include <kernel/fs.h>
 #include <kernel/sync.h>
+#include <kernel/proc.h>
+#include <kernel/procMigrate.h>
+#include <sprite.h>
 #endif
 
 /*
  * Structure to represent a translated virtual address
  */
-typedef struct {
+typedef struct Vm_VirtAddr {
     struct Vm_Segment	*segPtr;	/* Segment that address falls into.*/
     int 		page;		/* Virtual page. */
     int 		offset;		/* Offset in the page. */
@@ -98,6 +109,11 @@ typedef unsigned int	Vm_PTE;
  * The page size.
  */
 extern	int	vm_PageSize;
+
+/*
+ * The end of allocated kernel+data memory.
+ */
+extern	Address	vmMemEnd;
 
 /*
  * The type of accessibility desired when making a piece of data user
@@ -266,119 +282,164 @@ extern	Boolean	vm_CanCOW;
 /*
  * The initialization procedures.
  */
-extern	void	Vm_BootInit();
-extern	void	Vm_Init();
+extern void Vm_BootInit _ARGS_((void));
+extern void Vm_Init _ARGS_((void));
 
 /*
  * Procedure for segments
  */
-extern	void 	 	Vm_SegmentIncRef();
-extern	Vm_Segment	*Vm_FindCode();
-extern	void		Vm_InitCode();
-extern	void		Vm_FlushCode();
-extern	Vm_Segment  	*Vm_SegmentNew();
-extern	ReturnStatus 	Vm_SegmentDup();
-extern	void		Vm_SegmentDelete();
-extern	void		Vm_ChangeCodeProt();
-extern	ReturnStatus	Vm_DeleteFromSeg();
+extern void Vm_SegmentIncRef _ARGS_((Vm_Segment *segPtr, Proc_ControlBlock *procPtr));
+extern Vm_Segment *Vm_FindCode _ARGS_((Fs_Stream *filePtr, Proc_ControlBlock *procPtr, Vm_ExecInfo **execInfoPtrPtr, Boolean *usedFilePtr));
+extern void Vm_InitCode _ARGS_((Fs_Stream *filePtr, register Vm_Segment *segPtr, Vm_ExecInfo *execInfoPtr));
+extern void Vm_FlushCode _ARGS_((Proc_ControlBlock *procPtr, Address addr, int numBytes));
+extern Vm_Segment *Vm_SegmentNew _ARGS_((int type, Fs_Stream *filePtr, int fileAddr, int numPages, int offset, Proc_ControlBlock *procPtr));
+extern ReturnStatus Vm_SegmentDup _ARGS_((register Vm_Segment *srcSegPtr, Proc_ControlBlock *procPtr, Vm_Segment **destSegPtrPtr));
+extern void Vm_SegmentDelete _ARGS_((register Vm_Segment *segPtr, Proc_ControlBlock *procPtr));
+extern void Vm_ChangeCodeProt _ARGS_((Proc_ControlBlock *procPtr, Address startAddr, int numBytes, Boolean makeWriteable));
+extern ReturnStatus Vm_DeleteFromSeg _ARGS_((Vm_Segment *segPtr, int firstPage, int lastPage));
 
 /*
  * Procedures for pages.
  */
-extern	ReturnStatus	Vm_PageIn();
-extern	void		Vm_PageOut();
-extern	void		Vm_Clock();
-extern	int		Vm_GetPageSize();
+extern ReturnStatus Vm_PageIn _ARGS_((Address virtAddr, Boolean protFault));
+extern void Vm_Clock _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+extern int Vm_GetPageSize _ARGS_((void));
+extern ReturnStatus Vm_TouchPages _ARGS_ ((int firstPage, int numPages));
+ENTRY int Vm_GetRefTime _ARGS_ ((void));
 
 /*
  * Procedures for page tables.
  */
-extern	void		Vm_ValidatePages();
+extern void Vm_ValidatePages _ARGS_((Vm_Segment *segPtr, int firstPage, int lastPage, Boolean zeroFill, Boolean clobber));
 
 /*
  * Procedure to allocate bytes of memory
  */
-extern	Address		Vm_BootAlloc();
-extern	Address		Vm_RawAlloc();
+extern Address Vm_BootAlloc _ARGS_((int numBytes));
+extern Address Vm_RawAlloc _ARGS_((int numBytes));
 
 /*
  * Procedures for process migration.
  */
-extern	ReturnStatus	Vm_InitiateMigration();
-extern	ReturnStatus	Vm_EncapState();
-extern	ReturnStatus	Vm_DeencapState();
-extern	ReturnStatus	Vm_FinishMigration();
+extern ReturnStatus Vm_InitiateMigration _ARGS_((Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr));
+extern ReturnStatus Vm_EncapState _ARGS_((register Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr, Address bufferPtr));
+extern ReturnStatus Vm_DeencapState _ARGS_((register Proc_ControlBlock *procPtr, Proc_EncapInfo *infoPtr, Address buffer));
+extern ReturnStatus Vm_FinishMigration _ARGS_((register Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr, Address bufferPtr, int failure));
+extern ReturnStatus Vm_EncapSegInfo _ARGS_((int segNum,
+	Vm_SegmentInfo *infoPtr));
 
 /*
- * Procedure for the file sytem.
+ * Procedure for the file system.
  */
-extern	int		Vm_MapBlock();
-extern	int		Vm_UnmapBlock();
-extern	void		Vm_FileChanged();
-extern	void		Vm_FsCacheSize();
+extern int Vm_MapBlock _ARGS_((Address addr));
+extern int Vm_UnmapBlock _ARGS_((Address addr, Boolean retOnePage, unsigned int *pageNumPtr));
+extern void Vm_FileChanged _ARGS_((Vm_Segment **segPtrPtr));
+extern void Vm_FsCacheSize _ARGS_((Address *startAddrPtr, Address *endAddrPtr));
 
 /*
  * System calls.
  */
-extern	ReturnStatus	Vm_PageSize();
-extern	ReturnStatus	Vm_CreateVA();
-extern	ReturnStatus	Vm_DestroyVA();
-extern	ReturnStatus	Vm_Cmd();
-extern	ReturnStatus	Vm_GetSegInfo();
+extern ReturnStatus Vm_PageSize _ARGS_((int *pageSizePtr));
+extern ReturnStatus Vm_CreateVA _ARGS_((Address address, int size));
+extern ReturnStatus Vm_DestroyVA _ARGS_((Address address, int size));
+extern ReturnStatus Vm_Cmd _ARGS_((int command, int arg));
+extern ReturnStatus Vm_GetSegInfo _ARGS_((Proc_PCBInfo *infoPtr,
+	Vm_SegmentID segID, int infoSize, Address segBufPtr));
 
 /*
  * Procedures to get to user addresses.
  */
-extern	ReturnStatus	Vm_CopyIn();
-extern	ReturnStatus	Vm_CopyOut();
-extern	ReturnStatus	Vm_CopyInProc();
-extern	ReturnStatus	Vm_CopyOutProc();
-extern	ReturnStatus	Vm_StringNCopy();
-extern	void		Vm_MakeAccessible();
-extern	void		Vm_MakeUnaccessible();
+extern ReturnStatus Vm_CopyIn _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr));
+extern ReturnStatus Vm_CopyOut _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr));
+extern ReturnStatus Vm_CopyInProc _ARGS_((int numBytes,
+	register Proc_ControlBlock *fromProcPtr, Address fromAddr,
+	Address toAddr, Boolean toKernel));
+extern ReturnStatus Vm_CopyOutProc _ARGS_((int numBytes, Address fromAddr,
+	Boolean fromKernel, register Proc_ControlBlock *toProcPtr,
+	Address toAddr));
+extern ReturnStatus VmMach_StringNCopy _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr, int *bytesCopiedPtr));
+extern void Vm_MakeAccessible _ARGS_((int accessType, int numBytes,
+	Address startAddr, register int *retBytesPtr,
+	register Address *retAddrPtr));
+extern void Vm_MakeUnaccessible _ARGS_((Address addr, int numBytes));
 
 /* 
  * Procedures for recovery.
  */
-extern	void		Vm_OpenSwapDirectory();
-extern	void		Vm_Recovery();
+extern void Vm_OpenSwapDirectory _ARGS_((ClientData data,
+	Proc_CallInfo *callInfoPtr));
+extern void Vm_Recovery _ARGS_((void));
 
 /*
  * Miscellaneous procedures.
  */
-extern	Address		Vm_GetKernelStack();
-extern	void		Vm_FreeKernelStack();
-extern	void		Vm_ProcInit();
-extern	ReturnStatus	Vm_PinUserMem();
-extern	void		Vm_UnpinUserMem();
-extern	void		Vm_ReservePage();
+extern Address Vm_GetKernelStack _ARGS_((int invalidPage));
+extern void Vm_FreeKernelStack _ARGS_((Address stackBase));
+extern void Vm_ProcInit _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus Vm_PinUserMem _ARGS_((int mapType, int numBytes,
+	register Address addr));
+extern void Vm_UnpinUserMem _ARGS_((int numBytes, Address addr));
+extern void Vm_ReservePage _ARGS_((unsigned int pfNum));
+extern Boolean VmMach_VirtAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+	Address virtAddr, register Vm_VirtAddr *transVirtAddrPtr));
 
 /*
  * Routines to provide access to internal virtual memory stuff for the machine
  * dependent code.
  */
-extern	unsigned int	Vm_KernPageAllocate();
-extern	void		Vm_KernPageFree();
-extern	unsigned int	Vm_GetKernPageFrame();
+extern unsigned int Vm_KernPageAllocate _ARGS_((void));
+extern void Vm_KernPageFree _ARGS_((unsigned int pfNum));
+extern unsigned int Vm_GetKernPageFrame _ARGS_((int pageFrame));
 
 /*
- * Virtual memory tracing routines are variables.
+ * Virtual memory tracing routines and variables.
  */
 extern	Boolean		vm_Tracing;
-extern	void		Vm_StoreTraceTime();
+extern void Vm_StoreTraceTime _ARGS_((Timer_Ticks timeStamp));
 
 /*
  * Shared memory routines.
  */
-extern	ReturnStatus	Vm_Mmap();
-extern	ReturnStatus	Vm_Munmap();
-extern	ReturnStatus	Vm_Msync();
-extern	ReturnStatus	Vm_Mlock();
-extern	ReturnStatus	Vm_Munlock();
-extern	ReturnStatus	Vm_Mincore();
-extern	ReturnStatus	Vm_Mprotect();
-extern	void		Vm_CleanupSharedFile();
-extern	void		Vm_CleanupSharedProc();
-extern	void		Vm_DeleteSharedSegment();
+extern ReturnStatus Vm_Mmap _ARGS_((Address startAddr, int length, int prot,
+	int share, int streamID, int fileAddr, Address *mappedAddr));
+extern ReturnStatus Vm_Munmap _ARGS_((Address startAddr, int length,
+	int noError));
+extern ReturnStatus Vm_Msync _ARGS_((Address startAddr, int length));
+extern ReturnStatus Vm_Mlock _ARGS_((Address startAddr, int length));
+extern ReturnStatus Vm_Munlock _ARGS_((Address startAddr, int length));
+extern ReturnStatus Vm_Mincore _ARGS_((Address startAddr, int length,
+	char *retVec));
+extern ReturnStatus Vm_Mprotect _ARGS_((Address startAddr, int length,
+	int prot));
+extern void Vm_CleanupSharedFile _ARGS_((Proc_ControlBlock *procPtr,
+	Fs_Stream *streamPtr));
+extern void Vm_CleanupSharedProc _ARGS_((Proc_ControlBlock *procPtr));
+extern void Vm_DeleteSharedSegment _ARGS_((Proc_ControlBlock *procPtr,
+	Vm_SegProcList *segProcPtr));
+extern void Vm_CopySharedMem _ARGS_((Proc_ControlBlock *parentProcPtr,
+	Proc_ControlBlock *childProcPtr));
+
+/*
+ * Machine-dependent routines exported to other modules.
+ */
+/*
+ * Device mapping.
+ */
+extern Address VmMach_DMAAlloc _ARGS_((int numBytes, Address srcAddr));
+extern void VmMach_DMAFree _ARGS_((int numBytes, Address mapAddr));
+extern ReturnStatus VmMach_MapKernelIntoUser _ARGS_((unsigned int
+        kernelVirtAddr, int numBytes, unsigned int userVirtAddr,
+        unsigned int *realVirtAddrPtr));
+
+/*
+ * Routines to manage contexts.
+ */
+extern void VmMach_FreeContext _ARGS_((register Proc_ControlBlock *procPtr));
+extern void VmMach_ReinitContext _ARGS_((register Proc_ControlBlock *procPtr));
+extern ClientData VmMach_SetupContext _ARGS_((register Proc_ControlBlock
+        *procPtr));
 
 #endif /* _VM */

@@ -20,12 +20,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "machMon.h"
-#include "stdio.h"
-#include "varargs.h"
 #include "sync.h"
 #include "mach.h"
+#include "main.h"
 #include "fs.h"
+#include "varargs.h"
+#include "stdio.h"
 #include "sys.h"
+#include "sysInt.h"
 #include "dbg.h"
 #include "dev.h"
 
@@ -44,13 +46,14 @@ Boolean	sysPanicing = FALSE;
  */
 static int bytesWritten;
 
+static void writeProc _ARGS_((FILE *stream, Boolean flush));
+
 /*
  * vprintf buffer.
  */
 #define	STREAM_BUFFER_SIZE	512
 static char streamBuffer[STREAM_BUFFER_SIZE];
 
-int sysPanicOK = 0;	/* 1 if initialized enough to panic */
 
 /*
  * ----------------------------------------------------------------------------
@@ -200,7 +203,7 @@ panic(va_alist)
     va_start(args);
     format = va_arg(args, char *);
 
-    if (!sysPanicOK) {
+    if (!main_PanicOK) {
 	Mach_MonPrintf("Fatal Error: ");
 	Mach_MonPrintf(format, args);
     }

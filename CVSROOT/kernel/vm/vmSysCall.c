@@ -15,7 +15,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "vm.h"
 #include "vmInt.h"
-#include "vmMachInt.h"
 #include "vmTrace.h"
 #include "lock.h"
 #include "user/vm.h"
@@ -26,6 +25,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "fsio.h"
 #include "sys/mman.h"
+#include "stdio.h"
+#include "bstring.h"
 
 extern Vm_SharedSegTable sharedSegTable;
 char	 *sprintf();
@@ -35,7 +36,8 @@ int vmShmDebug = 0;	/* Shared memory debugging flag. */
 /*
  * Forward declaration.
  */
-static ReturnStatus VmMunmapInt();
+static ReturnStatus VmMunmapInt _ARGS_((Address startAddr, int length,
+	int noError));
 
 /*
  * VmVirtAddrParseUnlock calls VmVirtAddrParse and then unlocks
@@ -742,7 +744,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	    LIST_ATFRONT((List_Links *)procPtr->vmPtr->sharedSegs));
     
 
-    PrintSharedSegs(procPtr);
+    VmPrintSharedSegs(procPtr);
     UNLOCK_SHM_MONITOR;
     dprintf("Vm_Mmap: Completed page mapping\n");
     return(Vm_CopyOut(sizeof(Address), (Address) &startAddr,
@@ -916,7 +918,7 @@ VmMunmapInt(startAddr, length, noError)
 	addr = addr1;
     }
 
-    PrintSharedSegs(procPtr);
+    VmPrintSharedSegs(procPtr);
     dprintf("Vm_Munmap: done\n");
     return status ;
 }
@@ -952,8 +954,6 @@ Vm_Msync(startAddr, length)
 {
     Vm_VirtAddr		virtAddr;
     ReturnStatus	status;
-    Vm_PTE		*ptePtr;
-    int			lastPage;
     Proc_ControlBlock	*procPtr;
 
     dprintf("msync( %x, %d)\n", startAddr, length);
@@ -998,7 +998,6 @@ Vm_Mlock(startAddr, length)
     Vm_VirtAddr		virtAddr;
     Proc_ControlBlock	*procPtr;
     int			maptype = VM_READWRITE_ACCESS;
-    int			page;
 
     dprintf("mlock( %x, %d)\n", startAddr, length);
     if (BADALIGN(startAddr) || BADALIGN(length)) {

@@ -13,7 +13,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "vmStat.h"
-#include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "user/vm.h"
@@ -23,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "lock.h"
 #include "sys.h"
 #include "stdlib.h"
+#include "stdio.h"
 
 Boolean	vmPrefetch = FALSE;
 
@@ -33,10 +33,12 @@ typedef struct {
     Vm_VirtAddr	virtAddr;
 } PrefetchInfo;
 
-static Boolean	StartPrefetch();
-static void	DoPrefetch();
-static void	FinishPrefetch();
-static void	AbortPrefetch();
+static Boolean StartPrefetch _ARGS_((register Vm_Segment *segPtr,
+	register Vm_PTE *ptePtr));
+static void DoPrefetch _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void FinishPrefetch _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr));
+static void AbortPrefetch _ARGS_((Vm_VirtAddr *virtAddrPtr, Vm_PTE *ptePtr));
 
 
 /*

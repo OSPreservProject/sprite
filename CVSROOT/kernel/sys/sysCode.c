@@ -14,17 +14,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "dbg.h"
 #include "sys.h"
+#include "sysInt.h"
 #include "rpc.h"
 #include "sync.h"
 #include "sched.h"
 #include "vm.h"
 #include "net.h"
-
-/*
- * Should be in some header file?
- */
-extern	void	SysInitSysCall();
-
+#include "stdio.h"
 
 
 /*

@@ -36,42 +36,19 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "machMon.h"
 #include "mach.h"
 #include "fs.h"
+#include "main.h"
+#include "stdio.h"
 
-void main();
-static void Init();
-extern char *SpriteVersion();
-extern void Main_HookRoutine();	/* routine to allow custom initialization */
-extern void Main_InitVars();
-extern void Dump_Init();
-extern void Timer_Init();
-extern void Fs_Bin();
-extern void Proc_MigInit();
+static void Init _ARGS_((void));
 
 /*
  *  Pathname of the Init program.
  */
 #define INIT	 	"cmds/initsprite"
 
-/*
- * Flags defined in individual's mainHook.c to modify the startup behavior. 
- */
-extern Boolean main_Debug;	/* If TRUE then enter the debugger */
-extern Boolean main_DoProf;	/* If TRUE then start profiling */
-extern Boolean main_DoDumpInit;	/* If TRUE then initialize dump routines */
-extern char   *main_AltInit;	/* If non-null, then it gives name of
-				 * alternate init program. */
-extern Boolean main_AllowNMI;	/* If TRUE then allow non-maskable interrupts.*/
-
-extern int main_NumRpcServers;	/* # of rpc servers to spawn off */
-
 int main_PrintInitRoutines = FALSE;/* print out each routine as it's called? */
 
-extern	Address	vmMemEnd;	/* The end of allocated kernel memory. */
-
-extern Mach_DebugState	mach_DebugState;
-
-extern int	sysPanicOK;	/* 1 if ok to panic. */
-
+int main_PanicOK = 0;	/* Set to 1 if it's OK to panic. */
 
 /*
  *----------------------------------------------------------------------
@@ -210,7 +187,7 @@ MachStringTable *argv;
     /*
      * Sys_Printfs are not allowed before this point.
      */  
-    sysPanicOK++;
+    main_PanicOK++;
     printf("Sprite kernel: %s\n", SpriteVersion());
 
     /*

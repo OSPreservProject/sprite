@@ -25,6 +25,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "status.h"
 #include "string.h"
+#include "stdio.h"
+#include "bstring.h"
 
 Boolean	vm_NoStickySegments = FALSE;		/* TRUE if sticky segments
 						 * are disabled. */
@@ -50,11 +52,12 @@ static	List_Links      deadSegListHdr;
 Sync_Condition	codeSegCondition;
 
 extern	Vm_Segment  **Fs_RetSegPtr();
-static  void	    DeleteSeg();
-static  void	    CleanSegment();
+static void DeleteSeg _ARGS_((register Vm_Segment *segPtr));
+static void CleanSegment _ARGS_((register Vm_Segment *segPtr));
 static 	void	    FillSegmentInfo();
-static ReturnStatus AddToSeg();
-static ReturnStatus GetRemoteSegInfo();
+static ReturnStatus AddToSeg _ARGS_((register Vm_Segment *segPtr,
+	int firstPage, int lastPage, int newNumPages, VmSpace newSpace,
+	VmSpace *oldSpacePtr));
 void		    Fsio_StreamCopy();
 
 int	vmNumSegments = 256;
@@ -150,7 +153,7 @@ VmSegTableInit()
     }
 }
 
-static Vm_Segment	*FindCode();
+static Vm_Segment *FindCode _ARGS_((Fs_Stream *filePtr, VmProcLink *procLinkPtr, Boolean *usedFilePtr));
 
 
 /*
@@ -385,7 +388,7 @@ Vm_FileChanged(segPtrPtr)
     UNLOCK_MONITOR;
 }
 
-static void	GetNewSegment();
+static void GetNewSegment _ARGS_((int type, Fs_Stream *filePtr, int fileAddr, int numPages, int offset, Proc_ControlBlock *procPtr, VmSpace *spacePtr, Vm_Segment **segPtrPtr, Boolean *deletePtr));
 
 
 /*
@@ -882,8 +885,8 @@ CleanSegment(segPtr)
     UNLOCK_MONITOR;
 }
 
-static Boolean		StartDelete();
-static ReturnStatus	EndDelete();
+static Boolean StartDelete _ARGS_((Vm_Segment *segPtr, int firstPage, int *lastPagePtr));
+static ReturnStatus EndDelete _ARGS_((register Vm_Segment *segPtr, int firstPage, int lastPage));
 
 
 /*
@@ -1091,9 +1094,9 @@ VmDecPTUserCount(segPtr)
     UNLOCK_MONITOR;
 }
 
-static void	StartExpansion();
-static void	EndExpansion();
-static void	AllocMoreSpace();
+static void StartExpansion _ARGS_((Vm_Segment *segPtr));
+static void EndExpansion _ARGS_((Vm_Segment *segPtr));
+static void AllocMoreSpace _ARGS_((register Vm_Segment *segPtr, int newNumPages, register VmSpace *spacePtr));
 
 
 /*
@@ -1367,9 +1370,10 @@ AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
     return(SUCCESS);
 }
 
-static void	IncPTUserCount();
-static void	CopyInfo();
-static Boolean	CopyPage();
+static void IncPTUserCount _ARGS_((register Vm_Segment *segPtr));
+static void CopyInfo _ARGS_((register Vm_Segment *srcSegPtr, register Vm_Segment *destSegPtr, register Vm_PTE **srcPTEPtrPtr, register Vm_PTE **destPTEPtrPtr, Vm_VirtAddr *srcVirtAddrPtr, Vm_VirtAddr *destVirtAddrPtr));
+ENTRY static Boolean CopyPage _ARGS_((Vm_Segment *srcSegPtr,
+	register Vm_PTE *srcPTEPtr, register Vm_PTE *destPTEPtr));
 
 
 /*
@@ -1412,7 +1416,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     Vm_VirtAddr			destVirtAddr;
     int				i;
     Address			srcAddr;
-    Address			destAddr;
+    Address			destAddr = (Address)NIL;
     Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {

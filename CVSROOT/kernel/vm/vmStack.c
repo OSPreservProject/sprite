@@ -53,8 +53,8 @@ static	List_Links	freeListHdr;
 
 static	int	numStackPages;
 
-static	StackList	*GetFreeStack();
-static	void		FreeStack();
+static StackList *GetFreeStack _ARGS_((void));
+static void FreeStack _ARGS_((Address stackBase));
 
 
 /*

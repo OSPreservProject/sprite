@@ -15,9 +15,15 @@
 #define _VMMACH
 
 #ifdef KERNEL
+#include "vm.h"
 #include "vmSunConst.h"
+#include "proc.h"
+#include "net.h"
 #else
+#include <kernel/vm.h>
 #include <kernel/vmSunConst.h>
+#include <kernel/proc.h>
+#include <kernel/net.h>
 #endif
 
 /*
@@ -76,121 +82,49 @@ typedef struct VmMach_ProcData {
 typedef unsigned int	VmMachPTE;
 
 /*
- * Machine dependent functions.
+ * Exported machine dependent functions.
  */
-/*
- * Initialization
- */
-extern	void		VmMach_BootInit();
-extern	Address		VmMach_AllocKernSpace();
-extern	void		VmMach_Init();
-/*
- * Segment creation, expansion, and destruction.
- */
-extern	void		VmMach_SegInit();
-extern	void		VmMach_SegExpand();
-extern	void		VmMach_SegDelete();
-/*
- * Process initialization.
- */
-extern	void		VmMach_ProcInit();
+
 /*
  * Manipulating protection.
  */
-extern	void		VmMach_SetSegProt();
-extern	void		VmMach_SetPageProt();
-extern	void		VmMach_SetProtForDbg();
-/*
- * Reference and modify bits.
- */
-extern	void		VmMach_GetRefModBits();
-extern	void		VmMach_ClearRefBit();
-extern	void		VmMach_ClearModBit();		
-extern	void		VmMach_AllocCheck();		
-/*
- * Page validation and invalidation.
- */
-extern	void		VmMach_PageValidate();
-extern	void		VmMach_PageInvalidate();
-/*
- * Routine to parse a virtual address.
- */
-extern	Boolean		VmMach_VirtAddrParse();
-
-/*
- * Routines to manage contexts.
- */
-extern	ClientData	VmMach_SetupContext();
-extern	void		VmMach_FreeContext();
-extern	void		VmMach_ReinitContext();
+extern void VmMach_SetProtForDbg _ARGS_((Boolean readWrite, int numBytes,
+	Address addr));
 /*
  * Routines to copy data to/from user space.
  */
-extern	ReturnStatus	VmMach_CopyIn();
-extern	ReturnStatus	VmMach_CopyOut();
-extern	ReturnStatus	VmMach_CopyInProc();
-extern	ReturnStatus	VmMach_CopyOutProc();
-extern	ReturnStatus	VmMach_StringNCopy();
-extern	int		VmMachCopyEnd();
+extern int  VmMachCopyEnd _ARGS_((void));
+extern ReturnStatus VmMach_IntMapKernelIntoUser _ARGS_((unsigned int
+	kernelVirtAddr, int numBytes, unsigned int userVirtAddr,
+	Address *newAddrPtr));
+
+
 /*
  * Routines for the INTEL device driver.
  */
-extern	void		VmMach_MapIntelPage();
-extern	void		VmMach_UnmapIntelPage();
+extern void VmMach_MapIntelPage _ARGS_((Address virtAddr));
+extern void VmMach_UnmapIntelPage _ARGS_((Address virtAddr));
+
+/*
+ * Routines for DMA
+ */
+extern Address VmMach_32BitDMAAlloc _ARGS_((int numBytes, Address srcAddr));
+extern void VmMach_32BitDMAFree _ARGS_((int numBytes, Address mapAddr));
+
 /*
  * Device mapping.
  */
-extern	Address		VmMach_MapInDevice();
-extern	void		VmMach_GetDevicePage();
-extern	ReturnStatus	VmMach_MapKernelIntoUser();
-extern	Address		VmMach_DMAAlloc();
-extern	void		VmMach_DMAFree();
+extern Address VmMach_MapInDevice _ARGS_((Address devPhysAddr, int type));
 /*
- * Tracing.
+ * Network mapping routines.
  */
-extern	void		VmMach_Trace();
+extern Address VmMach_NetMemAlloc _ARGS_((int numBytes));
+extern void VmMach_NetMapPacket _ARGS_((register Net_ScatterGather
+	*inScatGathPtr, register int scatGathLength,
+	register Net_ScatterGather *outScatGathPtr));
 /*
- * Pinning and unpinning user memory pages.
+ * Context routines.
  */
-extern	void		VmMach_PinUserPages();
-extern	void		VmMach_UnpinUserPages();
-/*
- * Cache flushing.
- */
-extern	void		VmMach_FlushPage();
-extern	void		VmMach_FlushCode();
-/*
- * Migration.
- */
-extern	void		VmMach_HandleSegMigration();
-
-extern	ReturnStatus	VmMach_Cmd();
-
-#if defined(sun3) || defined(sun4)
-/*
- * Network mapping routines for the Sun 3.
- */
-extern	Address	VmMach_NetMemAlloc();
-extern	void	VmMach_NetMapPacket();
-#endif
-
-/*
- * Shared memory.
- */
-
-extern  ReturnStatus    VmMach_SharedStartAddr();
-extern  void            VmMach_SharedSegFinish();
-extern  void            VmMach_SharedProcStart();
-extern  void            VmMach_SharedProcFinish();
-
-/*
- * File cache page lock/unlock routines.
- */
-
-extern	void		VmMach_LockCachePage();
-extern	void		VmMach_UnlockCachePage();
-
-extern Address          VmMach_32BitDMAAlloc();
-extern void             VmMach_32BitDMAFree();
+extern int VmMach_GetContext _ARGS_((Proc_ControlBlock *procPtr));
 
 #endif /* _VMMACH */

@@ -14,7 +14,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmInt.h"
 #include "vmTrace.h"
-#include "vmMach.h"
 #include "lock.h"
 #include "sync.h"
 #include "sys.h"
@@ -23,6 +22,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "fs.h"
 #include "fsio.h"
+#include "stdio.h"
+#include "bstring.h"
 #ifdef sun4
 #include "machMon.h"
 #endif sun4
@@ -213,6 +214,7 @@ Vm_ProcInit(procPtr)
  */
 ENTRY Address
 Vm_RawAlloc(numBytes)
+int numBytes;
 {
     Address 		retAddr;
     Address 		maxAddr;
@@ -1371,7 +1373,7 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
 	    segPtr->flags |= VM_SWAP_FILE_OPENED;
 	}
     }
-    PrintSharedSegs(procPtr);
+    VmPrintSharedSegs(procPtr);
     dprintf("Vm_DeleteSharedSegment: done\n");
 
 }
@@ -1481,7 +1483,7 @@ VmCheckListIntegrity(listHdr)
 /*
  *----------------------------------------------------------------------
  *
- * PrintSharedSegs --
+ * VmPrintSharedSegs --
  *
  *	Print info on the shared segments for a proc.
  *
@@ -1493,15 +1495,15 @@ VmCheckListIntegrity(listHdr)
  *
  *----------------------------------------------------------------------
  */
-int
-PrintSharedSegs(procPtr)
+void
+VmPrintSharedSegs(procPtr)
     Proc_ControlBlock	*procPtr;	/* Process to check. */
 {
     Vm_SegProcList		*procListPtr;
     Vm_SharedSegTable	*segTabPtr;
 
     CHECK_SHM_MONITOR;
-    dprintf("PrintSharedSegs: info for %x (%x)\n",(int)procPtr,
+    dprintf("VmPrintSharedSegs: info for %x (%x)\n",(int)procPtr,
 	    (int)procPtr->processID);
     dprintf("  Shared Segment Table:\n");
     LIST_FORALL((List_Links *)&sharedSegTable,(List_Links *)segTabPtr) {
@@ -1598,7 +1600,8 @@ Vm_CopySharedMem(parentProcPtr, childProcPtr)
 	LIST_FORALL(parentProcPtr->vmPtr->sharedSegs,
 		(List_Links *)parentSeg) {
 	    sharedSeg = (Vm_SegProcList *)malloc(sizeof(Vm_SegProcList));
-	    bcopy(parentSeg, sharedSeg, sizeof(Vm_SegProcList));
+	    bcopy((Address)parentSeg, (Address)sharedSeg,
+		    sizeof(Vm_SegProcList));
 	    segPtr = sharedSeg->segTabPtr->segPtr;
 	    if(!VmCheckSharedSegment(childProcPtr, segPtr)) {
 		Vm_SegmentIncRef(segPtr, childProcPtr);

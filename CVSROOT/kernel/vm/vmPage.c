@@ -34,7 +34,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "vmStat.h"
-#include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "vmTrace.h"
@@ -49,6 +48,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fscache.h"
 #include "fsio.h"
 #include "fsrmt.h"
+#include "stdio.h"
 
 Boolean	vmDebug	= FALSE;
 
@@ -125,10 +125,9 @@ Boolean	vmCORReadOnly = FALSE;
  */
 int	vmPhysPageLimit = -1;
 
-static void	PageOut();
-static void	PutOnReserveList();
-static void	PutOnFreeList();
-void		Fscache_GetPageFromFS();
+static void PageOut _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void PutOnReserveList _ARGS_((register VmCore *corePtr));
+static void PutOnFreeList _ARGS_((register VmCore *corePtr));
 
 
 /*
@@ -1375,8 +1374,8 @@ typedef enum {
     NOT_DONE,	/* The page-in is not yet done yet. */
 } PrepareResult;
 
-static PrepareResult	PreparePage();
-static void		FinishPage();
+static PrepareResult PreparePage _ARGS_((register Vm_VirtAddr *virtAddrPtr, Boolean protFault, register Vm_PTE *curPTEPtr));
+static void FinishPage _ARGS_((register Vm_VirtAddr *transVirtAddrPtr, register Vm_PTE *ptePtr));
 
 
 /*
@@ -1819,7 +1818,7 @@ VmKillSharers(segPtr)
     UNLOCK_MONITOR;
 }
 
-static void	PinPages();
+static void PinPages _ARGS_((register Vm_VirtAddr *virtAddrPtr, register int lastPage));
 
 
 /*
@@ -1929,7 +1928,7 @@ PinPages(virtAddrPtr, lastPage)
     UNLOCK_MONITOR;
 }
 
-static void	UnpinPages();
+static void UnpinPages _ARGS_((Vm_VirtAddr *virtAddrPtr, int lastPage));
 
 
 /*
@@ -2070,8 +2069,8 @@ VmPagePinned(ptePtr)
  * returns (and dies).
  */
 
-static	void	PageOutPutAndGet();
-static	void	PutOnFront();
+static void PageOutPutAndGet _ARGS_((VmCore **corePtrPtr, ReturnStatus status, Boolean *doRecoveryPtr, Fs_Stream **recStreamPtrPtr));
+static void PutOnFront _ARGS_((register VmCore *corePtr));
 
 /*
  * ----------------------------------------------------------------------------
@@ -2911,9 +2910,9 @@ VmPageFlush(virtAddrPtr, length, toDisk, wantRes)
 	    wantRes);
     segPtr = virtAddrPtr->segPtr;
     lastPage = virtAddrPtr->page + (length>>vmPageShift) - 1;
+    streamPtr = segPtr->swapFilePtr;
     dprintf("segPtr = %x, firstPage = %d, lastPage = %d, streamPtr = %x\n",
 	   segPtr, virtAddrPtr->page, lastPage, streamPtr);
-    streamPtr = segPtr->swapFilePtr;
     for (ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
 	    virtAddrPtr->page <= lastPage;
 	    VmIncPTEPtr(ptePtr,1), virtAddrPtr->page++) {
