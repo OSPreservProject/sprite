@@ -433,13 +433,26 @@ LocalSend(procPtr, sigNum, code)
 	    Sync_WakeWaitingProcess(procPtr);
 	    if (sigNum == SIG_KILL || sigNum == SIG_MIGRATE_TRAP ||
 		sigNum == SIG_MIGRATE_HOME) {
-		/*
-		 * Resume the process so that we can perform the signal.
-		 * If we're killing it, we tell Proc_ResumeProcess so it
-		 * will even wake up a debugged process.
-		 */
-		Proc_ResumeProcess(procPtr,
-				   (sigNum == SIG_KILL) ? TRUE : FALSE);
+		if (sigNum == SIG_KILL && procPtr->state == PROC_NEW &&
+		    (procPtr->genFlags & PROC_FOREIGN)) {
+		    /*
+		     * The process was only partially created.  We can't make
+		     * it runnable so we have to reclaim it directly.
+		     */
+		    Proc_Unlock(procPtr);
+		    Proc_RemoveMigDependency(procPtr->processID);
+		    ProcExitProcess(procPtr, PROC_TERM_DESTROYED,
+				    (int) PROC_NO_PEER, 0, FALSE);
+		    Proc_Lock(procPtr);
+		} else {
+		    /*
+		     * Resume the process so that we can perform the signal.
+		     * If we're killing it, we tell Proc_ResumeProcess so it
+		     * will even wake up a debugged process.
+		     */
+		    Proc_ResumeProcess(procPtr,
+				       (sigNum == SIG_KILL) ? TRUE : FALSE);
+		}
 	    }
 	}
     }
