@@ -24,5 +24,6 @@ extern ReturnStatus Dev_SyslogClose();
 extern ReturnStatus Dev_SyslogSelect();
 extern void	    Dev_SyslogPutChar();
 extern void	    Dev_SyslogDebug();
+extern void	    Dev_SyslogReturnBuffer();
 
 #endif _DEVSYSLOG

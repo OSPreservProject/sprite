@@ -72,5 +72,6 @@ extern void 			Sched_MakeReady();
 extern void 			Sched_MoveInQueue();
 extern void 			Sched_PrintStat();
 extern void 			Sched_StartProcess();
+extern void			Sched_SetClearUsageFlag();
 
 #endif _SCHED
