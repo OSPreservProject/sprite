@@ -760,9 +760,7 @@ FsPrefixInstall(prefix, hdrPtr, domainType, flags)
  *	None.
  *
  * Side effects:
- *	Add an entry to the prefix table.  If the FS_OVERRIDE_PREFIX flag
- *	is present then the existing flags (like import/export) will be
- *	over-written by the passed-in flags.
+ *	Add an entry to the prefix table.  
  *
  *----------------------------------------------------------------------
  */
@@ -778,9 +776,11 @@ Fs_PrefixLoad(prefix, serverID, flags)
 
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
 	if (strcmp(prefixPtr->prefix, prefix) == 0) {
-	    if (flags & FS_OVERRIDE_PREFIX) {
-		prefixPtr->flags = flags & ~FS_OVERRIDE_PREFIX;
-	    }
+	    /*
+	     * Update information in the table.
+	     */
+	    PrefixUpdate(prefixPtr, serverID, (FsHandleHeader *)NIL, -1, 
+		flags);	
 	    UNLOCK_MONITOR;
 	    return;
 	}
@@ -789,7 +789,7 @@ Fs_PrefixLoad(prefix, serverID, flags)
      * Add new entry to the table.
      */
     (void)PrefixInsert(prefix, serverID, (FsHandleHeader *)NIL, -1,
-			flags & ~FS_OVERRIDE_PREFIX);
+			flags);
     UNLOCK_MONITOR;
     return;
 }
