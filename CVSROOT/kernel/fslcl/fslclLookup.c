@@ -118,12 +118,13 @@ static ReturnStatus WriteNewDirectory();
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
-		permissions, fileNumber, handlePtrPtr, newNameInfoPtrPtr)
+FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
+	    idPtr, permissions, fileNumber, handlePtrPtr, newNameInfoPtrPtr)
     FsHandleHeader *prefixHdrPtr;	/* Handle from the prefix table or
 					 * the current working directory */
     char *relativeName;			/* Name to lookup relative to the
 					 * file indicated by prefixHandlePtr */
+    FsFileID *rootIDPtr;		/* File ID of the root of the domain */
     int useFlags;			/* FS_READ|FS_WRITE|FS_EXECUTE,
 					 * FS_CREATE|FS_EXCLUSIVE, FS_OWNER,
 					 * FS_LINK, FS_FOLLOW (links) */
@@ -195,7 +196,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 	 * for "$MACHINE" embedded in the pathname.  This gets expanded
 	 * to a machine type string, i.e. "sun3" or "spur", sort of like
 	 * a symbolic link.  The value is dependent on the ID of the client
-	 * doing the open.  For this host we use a compiled in string so
+	 * doing the open.  For the local host we use a compiled in string so
 	 * we can bootstrap ok, and for other clients we get the machine
 	 * type string from the net module.  (why net?  why not...
 	 * Net_InstallRoute installs a host's name and machine type.)
@@ -266,13 +267,8 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 	if ((compLen == 2) && component[0] == '.' && component[1] == '.') {
 	    /* 
 	     * Going to the parent directory ".."
-	     * Remember that the fileID <minor> field is the fileNumber.
-	     * Compare with the fileNumber of the prefix to check against
-	     * falling out of the top of the domain.
-	     *
-	     * FIX HERE to allow exporting non-roots.
 	     */
-	    if (curHandlePtr->hdr.fileID.minor == FS_ROOT_FILE_NUMBER) {
+	    if (curHandlePtr->hdr.fileID.minor == rootIDPtr->minor) {
 		/*
 		 * We are falling off the top of the domain.  Make the
 		 * remaining part of the filename, including "../",

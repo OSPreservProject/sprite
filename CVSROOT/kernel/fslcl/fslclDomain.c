@@ -151,10 +151,10 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     ReturnStatus 	status;		/* Error return from RPC */
 
 
-    status = FsLocalLookup(prefixHandlePtr, relativeName, openArgsPtr->useFlags,
-			  openArgsPtr->type, openArgsPtr->clientID,
-			  &openArgsPtr->id, openArgsPtr->permissions,
-			  0, &handlePtr, newNameInfoPtrPtr);
+    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+	    openArgsPtr->useFlags, openArgsPtr->type, openArgsPtr->clientID,
+	    &openArgsPtr->id, openArgsPtr->permissions, 0, &handlePtr,
+	    newNameInfoPtrPtr);
     if (status == SUCCESS) {
 	/*
 	 * Call the file-type server-open routine to set up any state
@@ -213,7 +213,7 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     openArgsPtr =  (FsOpenArgs *)argsPtr;
     attrResultsPtr = (FsGetAttrResults *)resultsPtr;
 
-    status = FsLocalLookup(prefixHandlePtr, relativeName,
+    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 			openArgsPtr->useFlags, openArgsPtr->type,
 			openArgsPtr->clientID,
 			&openArgsPtr->id, openArgsPtr->permissions, 0,
@@ -282,7 +282,7 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     openArgsPtr = &setAttrArgsPtr->openArgs;
     fileIDPtr = (FsFileID *)resultsPtr;
 
-    status = FsLocalLookup(prefixHandlePtr, relativeName,
+    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 			openArgsPtr->useFlags, openArgsPtr->type,
 			openArgsPtr->clientID,
 			&openArgsPtr->id, openArgsPtr->permissions, 0,
@@ -353,7 +353,7 @@ FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     register FsFileDescriptor *descPtr;
 
     makeDevArgsPtr = (FsMakeDeviceArgs *)argsPtr;
-    status = FsLocalLookup(prefixHandle, relativeName,
+    status = FsLocalLookup(prefixHandle, relativeName, &makeDevArgsPtr->rootID,
 		FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW, FS_DEVICE,
 		makeDevArgsPtr->clientID,
 		&makeDevArgsPtr->id, makeDevArgsPtr->permissions,
@@ -410,10 +410,10 @@ FsLocalMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 
     openArgsPtr = (FsOpenArgs *)argsPtr;
 
-    status = FsLocalLookup(prefixHandle, relativeName, openArgsPtr->useFlags,
-			  openArgsPtr->type, openArgsPtr->clientID,
-			  &openArgsPtr->id, openArgsPtr->permissions,
-			  0, &handlePtr, newNameInfoPtrPtr);
+    status = FsLocalLookup(prefixHandle, relativeName, &openArgsPtr->rootID,
+	    openArgsPtr->useFlags, openArgsPtr->type, openArgsPtr->clientID,
+	    &openArgsPtr->id, openArgsPtr->permissions, 0, &handlePtr,
+	    newNameInfoPtrPtr);
     if (status == SUCCESS) {
 	FsHandleRelease(handlePtr, TRUE);
 	FsDomainRelease(handlePtr->hdr.fileID.major);
@@ -453,9 +453,10 @@ FsLocalRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
 
     lookupArgsPtr = (FsLookupArgs *)argsPtr;
 
-    status = FsLocalLookup(prefixHandle, relativeName, lookupArgsPtr->useFlags,
-			 FS_FILE, lookupArgsPtr->clientID, &lookupArgsPtr->id,
-			 0, 0, (FsLocalFileIOHandle **)NIL, newNameInfoPtrPtr);
+    status = FsLocalLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
+	    lookupArgsPtr->useFlags, FS_FILE, lookupArgsPtr->clientID,
+	    &lookupArgsPtr->id, 0, 0, (FsLocalFileIOHandle **)NIL,
+	    newNameInfoPtrPtr);
     return(status);
 }
 
@@ -490,9 +491,10 @@ FsLocalRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 
     lookupArgsPtr = (FsLookupArgs *)argsPtr;
 
-    status = FsLocalLookup(prefixHandle, relativeName, lookupArgsPtr->useFlags,
-		     FS_DIRECTORY, lookupArgsPtr->clientID, &lookupArgsPtr->id,
-		     0, 0, (FsLocalFileIOHandle **)NIL, newNameInfoPtrPtr);
+    status = FsLocalLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
+	    lookupArgsPtr->useFlags, FS_DIRECTORY, lookupArgsPtr->clientID,
+	    &lookupArgsPtr->id, 0, 0, (FsLocalFileIOHandle **)NIL,
+	    newNameInfoPtrPtr);
     return(status);
 }
 
@@ -578,7 +580,7 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     /*
      * This lookup gets a locked handle on the (presumably) existing file.
      */
-    status = FsLocalLookup(prefixHandle1, relativeName1,
+    status = FsLocalLookup(prefixHandle1, relativeName1, &lookupArgsPtr->rootID,
 	   lookupArgsPtr->useFlags & FS_FOLLOW, FS_FILE,
 	   lookupArgsPtr->clientID, &lookupArgsPtr->id,
 	   0, 0, (FsLocalFileIOHandle **)&handle1Ptr, newNameInfoPtrPtr);
@@ -605,6 +607,7 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	 * handle is locked.
 	 */
 	status = FsLocalLookup(prefixHandle2, relativeName2,
+		&lookupArgsPtr->rootID,
 		lookupArgsPtr->useFlags, handle1Ptr->descPtr->fileType,
 		lookupArgsPtr->clientID,
 		&lookupArgsPtr->id, 0, handle1Ptr->hdr.fileID.minor,
