@@ -65,6 +65,8 @@ FsControlHandleInit(fileIDPtr, name)
 	FsRecoveryInit(&ctrlHandlePtr->rmt.recovery);
 	ctrlHandlePtr->accessTime = 0;
 	ctrlHandlePtr->modifyTime = 0;
+	ctrlHandlePtr->owner.id = (Proc_PID)NIL;
+	ctrlHandlePtr->owner.procOrFamily = 0;
 	ctrlHandlePtr->prefixPtr = (FsPrefix *)NIL;
     }
     return(ctrlHandlePtr);
@@ -259,6 +261,9 @@ FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	panic( "FsControlIOControl: wrong byte order\n");
     }
     switch(command) {
+	case IOC_PDEV_SIGNAL_OWNER:
+	    status = FsPdevSignalOwner(ctrlHandlePtr, inBufPtr);
+	    break;
 	case IOC_REPOSITION:
 	    status = SUCCESS;
 	    break;
