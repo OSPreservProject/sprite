@@ -22,7 +22,9 @@
 #define START_FRAME	((4 * 4) + 4 + 4)
 
     .globl	start
+    .globl	eprol
 start:
+eprol:
     mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
     li		sp, MACH_CODE_START - START_FRAME
     la		gp, _gp
