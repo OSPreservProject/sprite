@@ -239,7 +239,7 @@ FsAttachDisk(devicePtr, localName, flags)
 	if ((devicePtr->unit % FS_NUM_DISK_PARTS) != partition) {
 	    if (devicePtr->unit % FS_NUM_DISK_PARTS) {
 		/*
-		 * Only allow automatic corrections with partition 'a'.
+		 * Only allow automatic corrections with partition 'a' -> 'c'.
 		 */
 		printf(
 		    "FsAttachDisk: partition mis-match, arg %d disk %d\n",
@@ -300,11 +300,18 @@ FsAttachDisk(devicePtr, localName, flags)
      * Finally mark the domain to indicate that if we go down hard,
      * clean recovery of this domain is impossible.
      */
-    domainPtr->summaryInfoPtr->flags |= FS_DOMAIN_NOT_SAFE;
+    if ((domainPtr->summaryInfoPtr->flags & FS_DOMAIN_NOT_SAFE) == 0) {
+	domainPtr->summaryInfoPtr->flags |= FS_DOMAIN_ATTACHED_CLEAN;
+    } else {
+	domainPtr->summaryInfoPtr->flags &= ~FS_DOMAIN_ATTACHED_CLEAN;
+	printf("Warning: FsAttachDisk: \"%s\" not clean\n", localName);
+    }
+    domainPtr->summaryInfoPtr->flags |= FS_DOMAIN_NOT_SAFE |
+					FS_DOMAIN_TIMES_VALID;
+    domainPtr->summaryInfoPtr->attachSeconds = fsTimeInSeconds;
     status = FsWriteBackSummary(domainPtr);
     if (status != SUCCESS) {
-	panic( "FsAttachDisk: Summary write failed, status %x\n",
-		    status);
+	panic( "FsAttachDisk: Summary write failed, status %x\n", status);
     }
     domainPtr->flags = 0;
 
@@ -451,8 +458,10 @@ FsDetachDisk(prefixName)
     domainPtr->refCount--;
     /*
      * We successfully brought down the disk, so mark it as OK.
+     * The detach time is noted in order to track how long disks are available.
      */
     domainPtr->summaryInfoPtr->flags &= ~FS_DOMAIN_NOT_SAFE;
+    domainPtr->summaryInfoPtr->detachSeconds = fsTimeInSeconds;
     status = FsWriteBackSummary(domainPtr);
     if (status != SUCCESS) {
 	panic( "FsDetachDisk: Summary write failed, status %x\n",
@@ -508,9 +517,10 @@ FsLocalDomainWriteBack(domain, shutdown, detach)
 				 * marked as down. */
 {
     register	FsDomain	*domainPtr;
-    int		firstDomain;
-    register int lastDomain;
-    register int i;
+    ReturnStatus		status1, status2;
+    int				firstDomain;
+    register int 		lastDomain;
+    register int 		i;
 
     if (domain >= 0) {
 	/*
@@ -529,10 +539,13 @@ FsLocalDomainWriteBack(domain, shutdown, detach)
     for (i = firstDomain; i <= lastDomain; i++) {
 	domainPtr = FsDomainFetch(i, detach);
 	if (domainPtr != (FsDomain *) NIL) {
-	    (void)FsWriteBackDataBlockBitmap(domainPtr);
-	    (void)FsWriteBackFileDescBitmap(domainPtr);
-	    if (shutdown) {
+	    status1 = FsWriteBackDataBlockBitmap(domainPtr);
+	    status2 = FsWriteBackFileDescBitmap(domainPtr);
+	    if (shutdown && status1 == SUCCESS && status2 == SUCCESS) {
 		domainPtr->summaryInfoPtr->flags &= ~FS_DOMAIN_NOT_SAFE;
+		domainPtr->summaryInfoPtr->detachSeconds = fsTimeInSeconds;
+	    } else {
+		domainPtr->summaryInfoPtr->flags |= FS_DOMAIN_NOT_SAFE;
 	    }
 	    (void)FsWriteBackSummary(domainPtr);
 	    FsDomainRelease(i);

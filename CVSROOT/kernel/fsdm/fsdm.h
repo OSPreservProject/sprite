@@ -251,12 +251,29 @@ typedef struct FsSummaryInfo {
 					 * under which this file system was
 					 * last mounted. */
     int		flags;			/* Flags defined below. */
+    int		attachSeconds;		/* Time the disk was attached */
+    int		detachSeconds;		/* Time the disk was off-lined.  This
+					 * is the fsTimeInSeconds that the
+					 * system was shutdown or the disk
+					 * was detached.  If the domain is
+					 * marked NOT_SAFE then this field
+					 * is undefined, but attachTime is ok
+					 * as long as TIMES_VALID is set. */
 } FsSummaryInfo;
 
 /*
  * Flags for summary info structure.
+ *	FS_DOMAIN_NOT_SAFE	Set during normal operation. This is unset
+ *		when we know we	are shutting down cleanly and the data
+ *		structures on the disk partition (domain) are ok.
+ *	FS_DOMAIN_ATTACHED_CLEAN	Set if the initial attach found the
+ *		disk marked 'safe'
+ *	FS_DOMAIN_TIMES_VALID	If set then the attach/detachSeconds fields
+ *		are valid.
  */
-#define	FS_DOMAIN_NOT_SAFE	0x1
+#define	FS_DOMAIN_NOT_SAFE		0x1
+#define FS_DOMAIN_ATTACHED_CLEAN	0x2
+#define	FS_DOMAIN_TIMES_VALID		0x4
 
 
 /*
