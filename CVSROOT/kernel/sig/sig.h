@@ -14,8 +14,13 @@
 #ifndef _SIG
 #define _SIG
 
+#ifdef KERNEL
 #include "user/sig.h"
 #include "mach.h"
+#else
+#include <sig.h>
+#include <kernel/mach.h>
+#endif
 
 /*
  * The signal context that is used to restore the state after a signal.

@@ -20,12 +20,21 @@
 #ifndef _PROC
 #define _PROC
 
+#ifdef KERNEL
 #include "user/proc.h"
 #include "user/sync.h"
 #include "list.h"
 #include "timer.h"
 #include "sig.h"
 #include "mach.h"
+#else
+#include <proc.h>
+#include <sync.h>
+#include <list.h>
+#include <kernel/timer.h>
+#include <kernel/sig.h>
+#include <kernel/mach.h>
+#endif
 
 /*
  * Constants for Proc_Exec().  

@@ -21,7 +21,12 @@
 #include "list.h"
 #include "time.h"
 
+#ifdef KERNEL
 #include "timerTick.h"
+#else
+#include <kernel/timerTick.h>
+#endif
+
 /*
  * timerTick.h should define the following types/structures/routine/macros for 
  * the desired architecture:

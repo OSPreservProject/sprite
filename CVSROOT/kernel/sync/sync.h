@@ -16,10 +16,18 @@
 #define _SYNC
 
 #include "sprite.h"
+
+#ifdef KERNEL
 #include "user/sync.h"
 #include "sys.h"
 #include "proc.h"
 #include "mach.h"
+#else
+#include <sync.h>
+#include <kernel/sys.h>
+#include <kernel/proc.h>
+#include <kernel/mach.h>
+#endif
 
 /*
  * Flags for syncFlags field in the proc table:
