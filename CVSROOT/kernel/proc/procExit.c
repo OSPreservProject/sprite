@@ -417,7 +417,7 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
     migrated = (exitProcPtr->genFlags & PROC_FOREIGN);
 
     /*
-     * Decrement the reference count on the environmenet.
+     * Decrement the reference count on the environment.
      */
 
     if (!migrated && exitProcPtr->environPtr != (Proc_EnvironInfo *) NIL) {
@@ -445,11 +445,12 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
     /*
      * Clean up the filesystem state of the exiting process.
      * Do this after deleting VM segments so we can remove swap files.
+     * Remove the process from its process family.  In each case,
+     * migrated processes have already been handled so don't do them again.
      */
 
-    Fs_CloseState(exitProcPtr);
-
     if (!migrated) {
+	Fs_CloseState(exitProcPtr);
 	ProcFamilyRemove(exitProcPtr);
     }
 
@@ -500,7 +501,16 @@ Proc_Reaper(procPtr, callInfoPtr)
 		"Proc_Reaper: non-DEAD proc on dead list.\n");
     }
 
-    Mach_FreeState(procPtr);
+    /*
+     * At this point a migrated process is not in the PROC_MIGRATED
+     * state since it's been moved to the PROC_DEAD state.  
+     * Migrated processes don't have a local machine-dependent state
+     * hanging off them.  They also don't have a current context, but
+     * VmMach_FreeContext can handle that.
+     */
+    if (procPtr->machStatePtr != (Mach_State *) NIL) {
+	Mach_FreeState(procPtr);
+    }
     VmMach_FreeContext(procPtr);
 
     ProcFreePCB(procPtr);
@@ -592,6 +602,7 @@ Proc_InformParent(procPtr, childStatus, backGroundSig)
 						 * the parent in background.*/
 {
     Proc_ControlBlock 	*parentProcPtr;
+    Boolean migrated = FALSE;
 
     LOCK_MONITOR;
 
@@ -607,10 +618,19 @@ Proc_InformParent(procPtr, childStatus, backGroundSig)
      * Wake up the parent in case it has called Proc_Wait to
      * wait for this child (or any other children) to terminate.  Also
      * clear the suspended and waited on flag.
+     *
+     * For a migrated process, just send a signal no matter what, since it
+     * can go to an arbitrary node.
      */
-    parentProcPtr = Proc_GetPCB(procPtr->parentID);
-    Sync_Broadcast(&parentProcPtr->waitCondition);
-    if (backGroundSig) {
+
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	migrated = TRUE;
+    }
+    if (!migrated) {
+	parentProcPtr = Proc_GetPCB(procPtr->parentID);
+	Sync_Broadcast(&parentProcPtr->waitCondition);
+    }
+    if (backGroundSig || migrated) {
 	Proc_CallFunc(SendSigChild, (ClientData)procPtr->parentID, 0);
     } else {
 	SIGNAL_PARENT(parentProcPtr, "ProcInformParent");
