@@ -881,7 +881,6 @@ faultIntr_NormFault:
 	 */
 	READ_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
 	st_32		SAFE_TEMP1, r0, $feStatusReg
-	st_32		r0, r0, $-1
 	WRITE_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
 #ifdef BARB
 	/*
@@ -935,11 +934,12 @@ mark:
 Interrupt:
 	/*
 	 * Read the interrupt status register and clear it.  The ISR is passed
-	 * as an arg to the interrupt routine.
+	 * as an arg to the interrupt routine. Store the interrupt mask in
+         * SAFE_TEMP3.
 	 */
 	READ_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
-	READ_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
-	and		OUTPUT_REG1, OUTPUT_REG1, SAFE_TEMP1
+	READ_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
+	and		OUTPUT_REG1, OUTPUT_REG1, SAFE_TEMP3
 	WRITE_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
 	/*
 	 * The second argument is the kpsw.
@@ -972,9 +972,7 @@ Interrupt:
 	SWITCH_TO_KERNEL_STACKS()
 	call		_MachInterrupt
 	Nop
-	ld_32		SAFE_TEMP1, r0, $_machIntrMask
-	nop
-	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
 	call		_MachUserError
 	Nop
@@ -992,9 +990,7 @@ interrupt_GoodSWP:
 	 */
 	wr_insert	SAFE_TEMP1
 	wr_kpsw		KPSW_REG, $0
-	ld_32		SAFE_TEMP1, r0, $_machIntrMask
-	nop
-	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
 	jump		ReturnTrap
 	Nop
@@ -1006,9 +1002,7 @@ interrupt_KernMode:
 	 * Restore insert register and kpsw, enable interrupts and return.
 	 */
 	wr_insert	SAFE_TEMP1
-	ld_32		SAFE_TEMP1, r0, $_machIntrMask
-	nop
-	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
 	or		KPSW_REG, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		KPSW_REG, $0
 	jump_reg	CUR_PC_REG, $0
@@ -2371,8 +2365,10 @@ _Mach_DisableNonmaskableIntr:
  */
 	.globl	_Mach_EnableNonmaskableIntr
 _Mach_EnableNonmaskableIntr:
-	ld_32		SAFE_TEMP1, r0, $_machNonmaskableIntrMask
+	READ_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	ld_32		VOL_TEMP1, r0, $_machNonmaskableIntrMask
 	nop
+	or		SAFE_TEMP1, SAFE_TEMP1, VOL_TEMP1
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	rd_kpsw		VOL_TEMP1
 	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_INTR_TRAP_ENA
@@ -2399,9 +2395,13 @@ _Mach_EnableNonmaskableIntr:
  */
 	.globl	_Mach_DisableIntr
 _Mach_DisableIntr:
+	rd_kpsw		SAFE_TEMP2
+	and		VOL_TEMP1, SAFE_TEMP2, $(~MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP1, $0
 	ld_32		SAFE_TEMP1, r0, $_machNonmaskableIntrMask
 	nop
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	wr_kpsw		SAFE_TEMP2, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -2424,9 +2424,13 @@ _Mach_DisableIntr:
  */
 	.globl	_Mach_EnableIntr
 _Mach_EnableIntr:
+	rd_kpsw		SAFE_TEMP2
+	and		VOL_TEMP1, SAFE_TEMP2, $(~MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP1, $0
 	ld_32		SAFE_TEMP1, r0, $_machIntrMask
 	nop
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	wr_kpsw		SAFE_TEMP2, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
