@@ -193,7 +193,7 @@ extern	Boolean		rpcSendNegAcks;
  * The service procedure switch. This is indexed by procedure number.
  */
 typedef ReturnStatus (*IntProc) _ARGS_((ClientData srvToken, int clientID, 
-			int command, struct Rpc_Storage *storagePtr));
+			int command, Rpc_Storage *storagePtr));
 typedef struct RpcService {
     IntProc	serviceProc;
     char	*name;

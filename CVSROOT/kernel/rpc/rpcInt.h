@@ -72,8 +72,8 @@ extern int RpcUnsetTestByteSwap _ARGS_((void));
 extern void RpcPrintHdr _ARGS_((RpcHdr *rpcHdrPtr));
 extern void RpcByteSwapBuffer _ARGS_((register int *bufferPtr, register int numInts));
 extern void RpcCrashCallBack _ARGS_((int clientID, ClientData data));
-extern void RpcnesetNoServers _ARGS_((int value)); 
-extern void RpcDnemonWait _ARGS_((Timer_QueueElement *queueEntryPtr)); 
+extern void RpcResetNoServers _ARGS_((int value)); 
+extern void RpcDaemonWait _ARGS_((Timer_QueueElement *queueEntryPtr)); 
 extern void RpcDaemonWakeup _ARGS_((Timer_Ticks time, ClientData data));
 extern void RpcBufferInit _ARGS_((RpcHdr *rpcHdrPtr, RpcBufferSet *bufferSetPtr, int channel, int serverHint));
 
