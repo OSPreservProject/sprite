@@ -332,23 +332,6 @@ NetLEReset(interPtr)
     return;
 }
 
-#ifdef sun4c
-/*
- * This is here temporarily while I hack the sparc scsi driver. - Mary 11/9/90
- */
-void
-Dev_ScsiResetDMA()
-{
-    register volatile int *dmaReg = ((int *) 0xffd14000);
-    *dmaReg = 0x80;
-    MACH_DELAY(200);
-    *dmaReg = *dmaReg & ~(0x80);
-    MACH_DELAY(200);
-    *dmaReg = 0x10;
-    MACH_DELAY(200);
-}
-#endif sun4c
-
 
 /*
  *----------------------------------------------------------------------
