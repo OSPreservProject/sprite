@@ -292,3 +292,27 @@ Dev_UartStartTx(uartPtr, ch)
     char ch;
 {
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_KbdConsole --
+ *
+ *      Read the EEPROM to determine which device is used as
+ *      the system console.
+ *
+ * Results:
+ *      Returns the device number.  A -1 is returned if the
+ *      device can't be determined.
+ * 
+ * Side effects:
+ *      None.
+ *  
+ *----------------------------------------------------------------------
+ */ 
+
+int
+Dev_KbdConsole()
+{
+    return(-1);
+}

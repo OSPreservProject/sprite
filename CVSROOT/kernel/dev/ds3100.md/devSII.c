@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "scsi.h"
 #include "sync.h"
 #include "stdlib.h"
+#include "user/fs.h"
 
 #define RESET TRUE
 

@@ -667,26 +667,38 @@ KBDPutc(c)
 {
     register unsigned	short	tcr;
     register int	timeout;
+    int			line;
 
     tcr = *devTCRPtr & 1;
     *devTCRPtr |= 1;
     while (1) {
-	timeout = 1000000;
-	while (!(*devCSRPtr & CSR_TRDY) && timeout > 0) {
-	    timeout--;
-	}
-	if(timeout == 0) {
-	    break;
-	}
-	if ((*devCSRPtr & CSR_TX_LINE_NUM) != 0) {
-	    continue;
-	}
-	*devTDRPtr = c & 0xff;
-	while (*devCSRPtr & CSR_TRDY) {
-	}
-	while (!(*devCSRPtr & CSR_TRDY)) {
-	}
-	break;
+        timeout = 1000000;
+        while (!(*devCSRPtr & CSR_TRDY) && timeout > 0) {
+            timeout--;
+        }
+        if (timeout == 0) {
+            break;
+        }
+        line = (*devCSRPtr >> 8) & 3;
+        if (line != 0) {
+            tcr |= 1 << line;
+            *devTCRPtr &= ~(1 << line);
+            continue;
+        }
+        *devTDRPtr = c & 0xff;
+        MACH_DELAY(5);
+        while (1) {
+            while (!(*devCSRPtr & CSR_TRDY)) {
+            }
+            line = (*devCSRPtr >> 8) & 3;
+            if (line != 0) {
+                tcr |= 1 << line;
+                *devTCRPtr &= ~(1 << line);
+                continue;
+            }
+            break;
+        }
+        break;
     }
     *devTCRPtr &= ~1;
     if (tcr != 0) {
@@ -951,7 +963,7 @@ RecvIntr()
 		scrInfo.eventQueue.eTail = i;
 
 		if (devGraphicsOpen) {
-		    Fs_NotifyReader(notifyToken);
+		    Fs_DevNotifyReader(notifyToken);
 		}
 
 		break;
@@ -1123,7 +1135,7 @@ MouseEvent(newRepPtr)
     eventPtr->device = DEV_MOUSE_DEVICE;
     scrInfo.eventQueue.eTail = DEV_EVROUND(scrInfo.eventQueue.eTail + 1);
     if (devGraphicsOpen) {
-	Fs_NotifyReader(notifyToken);
+	Fs_DevNotifyReader(notifyToken);
     }
 }
 
@@ -1200,7 +1212,7 @@ MouseButtons(newRepPtr)
 	}
 	scrInfo.eventQueue.eTail = i;
 	if (devGraphicsOpen) {
-	    Fs_NotifyReader(notifyToken);
+	    Fs_DevNotifyReader(notifyToken);
 	}
 
 	/* 
@@ -1535,11 +1547,12 @@ XmitIntr()
  */
 /*ARGSUSED*/
 ReturnStatus
-DevGraphicsOpen(devicePtr, useFlags, inNotifyToken)
+DevGraphicsOpen(devicePtr, useFlags, inNotifyToken, flagsPtr)
     Fs_Device *devicePtr;	/* Specifies type and unit number. */
     int useFlags;		/* Flags from the stream being opened */
     ClientData inNotifyToken;	/* Used for Fs call-back to notify waiting
 				 * processes that the console device is ready.*/
+    int		*flagsPtr;	/* Device open flags. */
 {
     Time	time;
 
@@ -1633,13 +1646,10 @@ DevGraphicsClose(devicePtr, useFlags, openCount, writerCount)
  */
 /*ARGSUSED*/
 ReturnStatus
-DevGraphicsRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
-    Fs_Device	*devicePtr;
-    int		offset;	  	/* Ignored. */
-    int		bufSize;	/* Size of buffer. */
-    Address	bufPtr;		/* Place to store data. */
-    int		*lenPtr;  	/* Maximum number of chars to read 
-				 * before returning. */ 
+DevGraphicsRead(devicePtr, readPtr, replyPtr)
+    Fs_Device	*devicePtr;	/* Device to read from */
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
 }
 
@@ -1661,12 +1671,10 @@ DevGraphicsRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-DevGraphicsWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
-    Fs_Device     *devicePtr;	
-    int		 offset;		/* Ignored. */
-    int		 bufSize;		/* Number of bytes to write. */
-    Address	 bufPtr;		/* Place to find data */
-    int 	 *bytesWrittenPtr;	/* Number of chars written */ 
+DevGraphicsWrite(devicePtr, writePtr, replyPtr)
+    Fs_Device	*devicePtr;	/* Indicates device */	
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
 }
 
@@ -1688,20 +1696,16 @@ DevGraphicsWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-DevGraphicsIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
-		      outBuffer)
-    Fs_Device	        *devicePtr;
-    int			command;
-    int			inBufSize;
-    Address		inBuffer;
-    int			outBufSize;
-    Address		outBuffer;
+DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
+    Fs_Device		*devicePtr;
+    Fs_IOCParam		*ioctlPtr;
+    Fs_IOReply		*replyPtr;
 {
     ReturnStatus status = SUCCESS;
 
     MASTER_LOCK(&graphicsMutex);
 
-    switch (command) {
+    switch (ioctlPtr->command) {
 	case IOC_GRAPHICS_GET_INFO: {
 	    Address		addr;
 
@@ -1712,7 +1716,7 @@ DevGraphicsIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 	    if (addr == (Address)NIL) {
 		goto mapError;
 	    }
-	    bcopy((char *)&addr, outBuffer, sizeof(addr));
+	    bcopy((char *)&addr, ioctlPtr->outBuffer, sizeof(addr));
 	    /*
 	     * Map the events into the user's address space.
 	     */
@@ -1758,7 +1762,7 @@ mapError:
 	    /*
 	     * Set mouse state.
 	     */
-	    scrInfo.mouse = *((DevCursor *)inBuffer);
+	    scrInfo.mouse = *((DevCursor *)ioctlPtr->inBuffer);
 	    PosCursor(scrInfo.mouse.x, scrInfo.mouse.y );
 	    break;
 
@@ -1773,7 +1777,7 @@ mapError:
 	    DevKpCmd		*kpCmdPtr;
 	    unsigned char	*cp;
 
-	    kpCmdPtr = (DevKpCmd *)inBuffer;
+	    kpCmdPtr = (DevKpCmd *)ioctlPtr->inBuffer;
 	    if (kpCmdPtr->nbytes == 0) {
 		kpCmdPtr->cmd |= 0x80;
 	    }
@@ -1794,19 +1798,19 @@ mapError:
 	}
 
 	case IOC_GRAPHICS_GET_INFO_ADDR:	
-	    *(DevScreenInfo **)outBuffer = &scrInfo;
+	    *(DevScreenInfo **)ioctlPtr->outBuffer = &scrInfo;
 	    break;
 
 	case IOC_GRAPHICS_CURSOR_BIT_MAP:
-	    LoadCursor((unsigned short *)inBuffer);
+	    LoadCursor((unsigned short *)ioctlPtr->inBuffer);
 	    break;
 
 	case IOC_GRAPHICS_CURSOR_COLOR:
-	    CursorColor((unsigned int *)inBuffer);
+	    CursorColor((unsigned int *)ioctlPtr->inBuffer);
 	    break;
 	     
         case IOC_GRAPHICS_COLOR_MAP:
-	    LoadColorMap((DevColorMap *)inBuffer);
+	    LoadColorMap((DevColorMap *)ioctlPtr->inBuffer);
 	    break;
 
 	case IOC_GRAPHICS_KERN_LOOP: 
@@ -1844,7 +1848,8 @@ mapError:
 	    break;
 
 	default:
-	    printf("DevGraphicsIOControl: Unknown command %d\n", command);
+	    printf("DevGraphicsIOControl: Unknown command %d\n", 
+		   ioctlPtr->command);
 	    status = FS_INVALID_ARG;
 	    break;
     }
@@ -1914,6 +1919,11 @@ DevGraphicsSelect(devicePtr, inFlags, outFlagsPtr)
 ReturnStatus
 Dev_VidEnable()
 {
-    panic("Dev_VidEnable: I'm here.\n");
-    return(FAILURE);
+    if (!isMono) {
+	RestoreCursorColor();
+    }
+    curReg |= (DEV_CURSOR_ENPA);
+    curReg &= ~(DEV_CURSOR_FOPB);
+    pccPtr->cmdReg = curReg;
+    return(SUCCESS);
 }
