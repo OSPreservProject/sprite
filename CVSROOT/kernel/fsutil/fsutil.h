@@ -118,8 +118,10 @@ extern Boolean fsutil_ShouldSyncDisks;
     Fsutil_HandleRemoveHdr((Fs_HandleHeader *)handlePtr)
 
 #define Fsutil_HandleName(handlePtr) \
-    ((((Fs_HandleHeader *)handlePtr)->name == (char *)NIL) ? "(no name)" : \
-	((Fs_HandleHeader *)handlePtr)->name)
+    ((((Fs_HandleHeader *)handlePtr) == (Fs_HandleHeader *)NIL) ? \
+	    "(no handle)": \
+      ((((Fs_HandleHeader *)handlePtr)->name == (char *)NIL) ? "(no name)" : \
+	((Fs_HandleHeader *)handlePtr)->name) )
 
 #define mnew(type)	(type *)malloc(sizeof(type))
 
