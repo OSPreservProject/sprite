@@ -40,6 +40,20 @@ typedef struct Fsio_LockState {
  */
 
 /*
+ * flock() support
+ */
+extern void Fsio_LockInit _ARGS_((Fsio_LockState *lockPtr));
+extern ReturnStatus Fsio_IocLock _ARGS_((Fsio_LockState *lockPtr, 
+			Fs_IOCParam *ioctlPtr, Fs_FileID *streamIDPtr));
+extern ReturnStatus Fsio_Lock _ARGS_((Fsio_LockState *lockPtr, 
+			Ioc_LockArgs *argPtr, Fs_FileID *streamIDPtr));
+extern ReturnStatus Fsio_Unlock _ARGS_((Fsio_LockState *lockPtr, 
+			Ioc_LockArgs *argPtr, Fs_FileID *streamIDPtr));
+extern void Fsio_LockClose _ARGS_((Fsio_LockState *lockPtr,
+			Fs_FileID *streamIDPtr));
+extern void Fsio_LockClientKill _ARGS_((Fsio_LockState *lockPtr, int clientID));
+
+/*
  * Cache consistency routines.
  */
 #endif _FSLOCK

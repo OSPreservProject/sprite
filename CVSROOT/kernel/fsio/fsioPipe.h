@@ -16,10 +16,10 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _FSPIPE
-#define _FSPIPE
+#ifndef _FSIOPIPE
+#define _FSIOPIPE
 
-#include "fsio.h"
+#include <fsio.h>
 /*
  * The I/O descriptor for a local anonymous pipe: FSIO_LCL_PIPE_STREAM.
  */
@@ -30,7 +30,7 @@ typedef struct Fsio_PipeIOHandle {
 					 * number. 'minor' field is unused. */
     List_Links		clientList;	/* Client use info needed to allow
 					 * remote access after migration. */
-    Fsutil_UseCounts		use;		/* Summary reference counts. */
+    Fsio_UseCounts		use;		/* Summary reference counts. */
     int			flags;		/* FSIO_PIPE_READER_GONE, FSIO_PIPE_WRITER_GONE */
     int			firstByte;	/* Indexes into buffer. */
     int			lastByte;
@@ -48,24 +48,41 @@ typedef struct Fsio_PipeIOHandle {
  */
 typedef struct Fsio_PipeReopenParams {
     Fs_FileID	fileID;		/* File ID of pipe to reopen. MUST BE FIRST */
-    Fsutil_UseCounts use;		/* Recovery use counts */
+    Fsio_UseCounts use;		/* Recovery use counts */
 } Fsio_PipeReopenParams;
 
 /*
  * Stream operations.
  */
-extern ReturnStatus Fsio_PipeRead();
-extern ReturnStatus Fsio_PipeWrite();
-extern ReturnStatus Fsio_PipeIOControl();
-extern ReturnStatus Fsio_PipeSelect();
-extern ReturnStatus Fsio_PipeGetIOAttr();
-extern ReturnStatus Fsio_PipeSetIOAttr();
-extern ReturnStatus Fsio_PipeMigClose();
-extern ReturnStatus Fsio_PipeMigOpen();
-extern ReturnStatus Fsio_PipeMigrate();
-extern ReturnStatus Fsio_PipeReopen();
-extern Boolean	    Fsio_PipeScavenge();
-extern void	    Fsio_PipeClientKill();
-extern ReturnStatus Fsio_PipeClose();
 
-#endif _FSPIPE
+extern ReturnStatus Fsio_PipeRead _ARGS_((Fs_Stream *streamPtr, 
+	Fs_IOParam *readPtr, Sync_RemoteWaiter *waitPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_PipeWrite _ARGS_((Fs_Stream *streamPtr, 
+	Fs_IOParam *writePtr, Sync_RemoteWaiter *waitPtr, 
+	Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_PipeIOControl _ARGS_((Fs_Stream *streamPtr, 
+	Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_PipeSelect _ARGS_((Fs_HandleHeader *hdrPtr, 
+	Sync_RemoteWaiter *waitPtr, int *readPtr, int *writePtr, 
+	int *exceptPtr));
+extern ReturnStatus Fsio_PipeGetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+	int clientID, register Fs_Attributes *attrPtr));
+extern ReturnStatus Fsio_PipeSetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+	Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fsio_PipeMigClose _ARGS_((Fs_HandleHeader *hdrPtr, 
+	int flags));
+extern ReturnStatus Fsio_PipeMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+	int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+	Address *dataPtr));
+extern ReturnStatus Fsio_PipeMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr, 
+	int size, ClientData data, Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus Fsio_PipeReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+	int clientID, ClientData inData, int *outSizePtr, 
+	ClientData *outDataPtr));
+extern void Fsio_PipeClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+extern Boolean Fsio_PipeScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
+extern ReturnStatus Fsio_PipeClose _ARGS_((Fs_Stream *streamPtr, int clientID,
+	Proc_PID procID, int flags, int dataSize, ClientData closeData));
+
+
+#endif /* _FSIOPIPE */
