@@ -1300,7 +1300,7 @@ SegmentCleanProc(clientData, callInfoPtr)
 		 */
 		if ((cacheBlocksInUse + segs[segNo].activeBytes/FS_BLOCK_SIZE >
 						    cacheBlocksReserved) ||
-		   ((size + segs[segNo].activeBytes) > 
+		   ((totalSize + segs[segNo].activeBytes) > 
 				LfsSegSize(lfsPtr)*maxAvailToWrite)) {
 		    break;
 		}
