@@ -1015,8 +1015,8 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 		char	*offsetPtr;
 		int	tmp[3];
 		offsetPtr = ioctl.inBuffer + inSize;
-		inSize = sizeof(int);
-		size = sizeof(int);
+		inSize = 3 * sizeof(int);
+		size = 3 * sizeof(int);
 		fmtStatus = Fmt_Convert("w3", ioctl.format, &inSize,
 			    offsetPtr, mach_Format, &size,
 			    (Address) &tmp);
@@ -1024,7 +1024,7 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 		    printf("Format of old offset failed <0x%x>\n", 
 			fmtStatus);
 		}
-		if (size != sizeof(int)) {
+		if (size != 3 * sizeof(int)) {
 		    printf("Old offset wrong size %d\n", size);
 		}
 		oldOffset = tmp[0];
@@ -1048,6 +1048,11 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 	    }
 #endif
 	}
+#ifdef SOSP91
+	if (streamPtr->flags & FS_RMT_SHARED) {
+	    oldOffset = streamPtr->offset;
+	}
+#endif
 	if (status == SUCCESS) {
 	    switch(iocArgsPtr->base) {
 		case IOC_BASE_ZERO:
