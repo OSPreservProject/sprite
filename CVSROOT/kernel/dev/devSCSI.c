@@ -238,9 +238,9 @@ DevScsiGroup0Cmd(devPtr, cmd, blockNumber,countNumber,scsiCmdPtr)
 	    blockNumber, 0x1fffff);
 	return FAILURE;
     }
-    if (countNumber > 0xff) {
+    if (countNumber > 0x100) {
 	printf("DevScsiGroup0Cmd: count too big (%d > %d)\n",
-	    countNumber, 0xff);
+	    countNumber, 0x100);
 	return FAILURE;
     }
     bzero((char *)scsiCmdPtr, sizeof(ScsiCmd));
