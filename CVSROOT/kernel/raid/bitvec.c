@@ -16,6 +16,14 @@ MakeBitVec(n)
     return vec;
 }
 
+ClearBitVec(bitVec, n)
+    BitVec	bitVec;
+    int		n;
+{
+    int size = (n/32 + 1) * sizeof(int);
+    bzero((char *) bitVec, size);
+}
+
 GetBitIndex(bitVec, i, n)
     BitVec bitVec;
     int    i;
