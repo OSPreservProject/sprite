@@ -984,9 +984,6 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 		FsCacheBlockTrunc(cacheInfoPtr, firstBlock - 1,
 				  length - (firstBlock - 1) * FS_BLOCK_SIZE);
 	    }
-	    if ((flags & FS_TRUNC_DELETE) && cacheInfoPtr->blocksInCache > 0) {
-		Sys_Panic(SYS_FATAL, "CacheTrunc (delete) blocks left over\n");
-	    }
         }
 	cacheInfoPtr->attr.modifyTime = fsTimeInSeconds;
     }
