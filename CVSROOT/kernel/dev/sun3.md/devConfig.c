@@ -69,11 +69,31 @@ int devScsiNumHBATypes = sizeof(devScsiAttachProcs) /
  * A list of disk devices that is used when probing for a root partition.
  * The choices are:
  * Drive 0 partition 0 of xylogics 450 controller 0.
+ * SCSI Disk target ID 0 LUN 0 partition 2 on SCSI0 HBA 0.
+ * SCSI Disk target ID 0 LUN 0 partition 2 on SCSI3 HBA 0. 
  * SCSI Disk target ID 0 LUN 0 partition 0 on SCSI0 HBA 0.
  * SCSI Disk target ID 0 LUN 0 partition 0 on SCSI3 HBA 0. 
  */
 Fs_Device devFsDefaultDiskPartitions[] = { 
-    { -1, DEV_XYLOGICS, 0, (ClientData) NIL },	
+    /*
+     * Mint boots from its 'a' partition.
+     */
+    { -1, DEV_XYLOGICS, 0, (ClientData) NIL },
+    /*
+     * Try the 'c' partition (#2) first.  This is the whole disk.
+     * If really the 'a' partition is formatted, then Fsdm_AttachDisk
+     * will complain, but do the attach anyway.
+     */
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 0),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
+		(ClientData) NIL }, 
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 0),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 2),
+		(ClientData) NIL },
+    /*
+     * Now try 'a' partiion (#0).  This is a smaller partition at the
+     * front of the disk.
+     */
     { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 0),
 	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 0),
 		(ClientData) NIL }, 
