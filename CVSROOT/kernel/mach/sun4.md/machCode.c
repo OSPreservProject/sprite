@@ -1836,4 +1836,3 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
     }
     return i;
 }
-

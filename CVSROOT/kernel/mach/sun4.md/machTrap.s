@@ -439,14 +439,17 @@ KillUserProc:
 	call	_Proc_ExitInt, 3
 	nop
 DebugIt:					/* Else, make it debuggable. */
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	call	_Sig_CheckForKill, 1		/* kill proc if KILL signal */
+	nop
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
 	set	TRUE, %o1			/* debug TRUE */
 	set	PROC_TERM_DESTROYED, %o2
 	set	PROC_BAD_STACK, %o3
 	clr	%o4
-KeepSuspended:
 	call	_Proc_SuspendProcess, 5
 	nop
-	ba	KeepSuspended
+	ba	DebugIt			/* proc should loop if continued */
 	nop
 
 CallUnderflow:
@@ -903,14 +906,17 @@ KillTheProc:
 	call	_Proc_ExitInt, 3
 	nop
 SuspendIt:					/* Else, make it debuggable. */
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	call	_Sig_CheckForKill, 1		/* kill proc if KILL signal */
+	nop
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
 	set	TRUE, %o1			/* debug TRUE */
 	set	PROC_TERM_DESTROYED, %o2
 	set	PROC_BAD_STACK, %o3
 	clr	%o4
-KeepFromContinuing:
 	call	_Proc_SuspendProcess, 5
 	nop
-	ba	KeepFromContinuing
+	ba	SuspendIt		/* proc should loop if continued */
 	nop
 
 CheckNextUnderflow:
