@@ -543,7 +543,8 @@ Sig_Send(sigNum, code, id, familyID)
 		hostID >  NET_NUM_SPRITE_HOSTS || hostID < 0) {
 		return(PROC_INVALID_PID);
 	    } else {
-		return(SendRemoteSignal(hostID, sigNum, code, id, familyID));
+		return(SigSendRemoteSignal(hostID, sigNum, code, id,
+					   familyID));
 	    }
 	}
     }
@@ -610,7 +611,7 @@ typedef struct {
 /*
  *----------------------------------------------------------------------
  *
- * SendRemoteSignal --
+ * SigSendRemoteSignal --
  *
  *	Send a signal to a process on a remote machine.
  *
@@ -623,7 +624,7 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 ReturnStatus	
-SendRemoteSignal(hostID, sigNum, code, id, familyID)
+SigSendRemoteSignal(hostID, sigNum, code, id, familyID)
     int		hostID;		/* Host to send message to. */
     int		sigNum;		/* Signal to send. */
     int		code;		/* Code to send. */

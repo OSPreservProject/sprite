@@ -80,7 +80,7 @@ SigMigSend(procPtr, sigNum, code)
      * and lock the process again.
      */
     Proc_Unlock(procPtr);
-    status = SendRemoteSignal(remoteHostID, sigNum, code,
+    status = SigSendRemoteSignal(remoteHostID, sigNum, code,
 			      remoteProcessID, FALSE);
 
     if (proc_MigDebugLevel > 4) {
@@ -89,11 +89,11 @@ SigMigSend(procPtr, sigNum, code)
 
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 0) {
-	    printf("Warning: SigMigSend:Error trying to signal %x to process %x (%x on host %x):\n\t%s\n",
+	    printf("Warning: SigMigSend:Error trying to signal %d to process %x (%x on host %d):\n\t%s\n",
 		   sigNum, procPtr->processID, remoteProcessID, remoteHostID,
 		   Stat_GetMsg(status));
 	}
-	if (status == RPC_TIMEOUT && sigNum == SIG_KILL) {
+	if (sigNum == SIG_KILL) {
 	    if (proc_MigDebugLevel > 0) {
 		printf("SigMigSend: killing local copy of process %x.\n",
 			   procPtr->processID);
