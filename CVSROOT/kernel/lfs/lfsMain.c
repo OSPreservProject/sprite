@@ -330,6 +330,24 @@ Lfs_Command(command, bufSize, buffer)
 	    Fsdm_DomainRelease(domainPtr->domainNumber);
 	    break;
 	}
+	case FS_FREE_FILE_NUMBER_LFS_COMMAND: {
+	    int	fileNumber;
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    if (bufSize >= sizeof(int)) {
+		bcopy(buffer, (char *) &fileNumber, sizeof(int));
+		printf("Lfs_FreeFileNumber(%s,%d)\n", lfsPtr->name, 
+				fileNumber);
+		status = Lfs_FreeFileNumber(domainPtr, fileNumber);
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
+	    Fsdm_DomainRelease(domainPtr->domainNumber);
+	    return status;
+	}
 	default: {
 	    status = GEN_INVALID_ARG;
 	}
