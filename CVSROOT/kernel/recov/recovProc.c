@@ -80,7 +80,7 @@ void
 RecovPingInterval()
 {
     Sync_EventWakeup(recovPingEvent);
-    Timer_ScheduleRoutine(&recovIntervalElement);
+    Timer_ScheduleRoutine(&recovIntervalElement, TRUE);
 
     return;
 }
