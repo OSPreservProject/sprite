@@ -553,7 +553,7 @@ DecodeRequest(request)
     /*
      * For now search the list linearly. It's slow but simple...
      */
-    for (i = sizeof(mapping)/sizeof(*mapping); --i >= 0;) {
+    for (i = sizeof(mapping)/sizeof(*mapping) - 1; i >= 0; --i) {
 	if (request == mapping[i].request) {
 	    printf("ioctl: bad command %s\n", mapping[i].name);
 	    return;
