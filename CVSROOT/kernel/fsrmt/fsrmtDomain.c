@@ -695,6 +695,7 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	 * This is a close of a prefix handle which doesn't have a stream.
 	 */
 	streamPtr = &dummy;
+	Byte_Zero(sizeof(Fs_Stream), (Address)&dummy);
     } else {
 	streamPtr = FsStreamClientVerify(&paramsPtr->streamID, clientID);
     }
@@ -708,7 +709,14 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	if (hdrPtr == (FsHandleHeader *) NIL) {
 	    status = FS_STALE_HANDLE;
 	} else if (streamPtr->ioHandlePtr != hdrPtr) {
-	    Sys_Panic(SYS_FATAL, "Fs_RpcClose: Stream/handle mis-match\n");
+	    Sys_Panic(SYS_WARNING, "Fs_RpcClose: Stream/handle mis-match\n");
+	    Sys_Printf("Stream <%d, %d, %d> => %s I/O <%d, %d, %d>\n",
+		paramsPtr->streamID.serverID, paramsPtr->streamID.major,
+		paramsPtr->streamID.minor,
+		FsFileTypeToString(paramsPtr->fileID.type),
+		paramsPtr->fileID.serverID, paramsPtr->fileID.major,
+		paramsPtr->fileID.minor);
+	    status = FS_STALE_HANDLE;
 	} else {
 	    /*
 	     * Call the file type close routine to release the I/O handle
