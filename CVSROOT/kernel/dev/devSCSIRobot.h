@@ -19,7 +19,7 @@
 #ifndef _SCSIEXBROBOT
 #define _SCSIEXBROBOT
 
-#include <robot.h>
+#include <dev/robot.h>
 #include <scsiDevice.h>
 
 typedef struct ScsiExbRobot {
