@@ -387,11 +387,15 @@ Ofs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
     *newBlockPtr = (*indexInfo.blockAddrPtr == FSDM_NIL_INDEX);
 
     /*
-     * Allocate space for the block.
+     * Allocate space for the block, but only if we need to.  We don't need to
+     * call AllocateBlock if we're not adding a new block to the end of the
+     * file, and we're not adding a new fragment because the block is an
+     * indirect block (which we don't fragment).
      */
-
-    status = AllocateBlock(handlePtr, descPtr, &indexInfo, newLastByte, 
+    if (!(curLastBlock == blockNum && blockNum >= FSDM_NUM_DIRECT_BLOCKS)) {
+	status = AllocateBlock(handlePtr, descPtr, &indexInfo, newLastByte, 
 		       curLastBlock, flags, &dirtiedIndex);
+    }
 
     if (status == SUCCESS) {
 	*blockAddrPtr = *indexInfo.blockAddrPtr;
