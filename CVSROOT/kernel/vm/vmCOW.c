@@ -232,6 +232,7 @@ DoFork(srcSegPtr, destSegPtr)
 	    *srcPTEPtr |= VM_COW_BIT;
 	    if (*srcPTEPtr & VM_PHYS_RES_BIT) {
 		virtAddr.page = virtPage;
+		virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
 		VmMach_SetPageProt(&virtAddr, *srcPTEPtr);
 	    }
 	    numCOWPages++;
@@ -887,6 +888,7 @@ SeeIfLastCOR(mastSegPtr, page)
     if (*ptePtr & VM_PHYS_RES_BIT) {
 	virtAddr.segPtr = mastSegPtr;
 	virtAddr.page = page;
+	virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
 	VmMach_SetPageProt(&virtAddr, *ptePtr);
     }
 
