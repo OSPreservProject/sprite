@@ -85,7 +85,7 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
 		Fsio_NoProc,			/* migrate */
 		Fsio_StreamReopen,
 		(Boolean (*)())NIL,		/* scavenge */
-		Fsio_NullClientKill,
+		Fsio_StreamClientKill,
 		Fsio_NoProc},			/* close */
     /*
      * Local file stream.  The file is on a local disk and blocks are

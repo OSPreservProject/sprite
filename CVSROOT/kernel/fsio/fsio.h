@@ -485,6 +485,7 @@ extern void Fsio_MigrateClient _ARGS_((List_Links *clientList, int srcClientID,
  * Null procs for switch tables.
  */
 extern void Fsio_NullClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+extern void Fsio_StreamClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
 extern ReturnStatus Fsio_NullProc ();
 extern ReturnStatus Fsio_NoProc ();
 extern Fs_HandleHeader *Fsio_NoHandle ();
