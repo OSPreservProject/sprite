@@ -85,8 +85,6 @@ void DoneLRU();
  *	FS_HANDLE_INSTALLED - the structure has been put into the hash table.
  *	FS_HANDLE_LOCKED    - the lock bit on the handle.  Handles are locked
  *		when they are fetched from the hash table.
- *	FS_HANDLE_WANTED    - set when iterating through the handle table
- *		so that the handle doesn't get free'ed by FsHandleRemoveInt
  *	FS_HANDLE_REMOVED   - set instead of freeing the handle if the
  *		remove procedure sees the 'wanted' or 'don't move' bit.
  *	FS_HANDLE_INVALID   - set when a handle becomes invalid after
@@ -96,31 +94,55 @@ void DoneLRU();
  */
 #define FS_HANDLE_INSTALLED	0x1
 #define FS_HANDLE_LOCKED	0x2
-#define FS_HANDLE_WANTED	0x4
 #define FS_HANDLE_REMOVED	0x8
 #define FS_HANDLE_FREED		0x10
 #define FS_HANDLE_INVALID	0x20
 #define FS_HANDLE_DONT_CACHE	0x40
 
 /*
- * Macro to lock a file handle.
+ * Macro to lock a file handle.  If CLEAN is defined we don't
+ * remember the process ID of the locker, nor do we count events.
  */
+
+#ifdef CLEAN
 
 #define	LOCK_HANDLE(hdrPtr) \
 	while (((hdrPtr)->flags & FS_HANDLE_LOCKED) && !sys_ShuttingDown) { \
 	    (void) Sync_Wait(&((hdrPtr)->unlocked), FALSE); \
 	} \
-	fsStats.handle.locks++; \
 	(hdrPtr)->flags |= FS_HANDLE_LOCKED;
+
+#else
+
+#define LOCK_HANDLE(hdrPtr) \
+	while (((hdrPtr)->flags & FS_HANDLE_LOCKED) && !sys_ShuttingDown) { \
+	    fsStats.handle.lockWaits++; \
+	    (void) Sync_Wait(&((hdrPtr)->unlocked), FALSE); \
+	} \
+	fsStats.handle.locks++; \
+	(hdrPtr)->lockProcID = (int)Proc_GetEffectiveProc(); \
+	(hdrPtr)->flags |= FS_HANDLE_LOCKED;
+
+#endif
 
 /*
  * Macro to unlock a file handle.
  */
 
+#ifdef CLEAN
+
 #define	UNLOCK_HANDLE(hdrPtr) \
 	(hdrPtr)->flags &= ~FS_HANDLE_LOCKED; \
 	Sync_Broadcast(&((hdrPtr)->unlocked));
 
+#else
+
+#define	UNLOCK_HANDLE(hdrPtr) \
+	(hdrPtr)->flags &= ~FS_HANDLE_LOCKED; \
+	(hdrPtr)->lockProcID = NIL; \
+	Sync_Broadcast(&((hdrPtr)->unlocked));
+
+#endif
 /*
  * Macro to remove a handle, so no details get fogotten.  Note, removal
  * from the hash table is separate, because we do that first, and then
@@ -162,11 +184,11 @@ int fsHandleTrace = FALSE;
     if (fsHandleTrace) {						\
 	printf("<%d, %d, %d, %d> flags %x ref %d : %s\n",		\
 	(hdrPtr)->fileID.type, (hdrPtr)->fileID.serverID,		\
-	(hdrPtr)->fileID.major, (hdrPtr)->fileID.minor,		\
+	(hdrPtr)->fileID.major, (hdrPtr)->fileID.minor,			\
 	(hdrPtr)->flags, (hdrPtr)->refCount, comment);			\
     }
 #else
-#define HANDLE_TRACE
+#define HANDLE_TRACE(hdrPtr, comment)
 #endif
 
 
@@ -263,17 +285,9 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 	}
 	tableFull = HandleInstallInt(fileIDPtr, name,
 		    fsStats.handle.maxNumber, newHdrPtr, &found);
-	if (found) {
-	    /*
-	     * Someone has slipped in between our Fetch and Install
-	     * and installed the handle themselves.
-	     */
-	    break;
-	}
 	if (!tableFull) {
 	    /*
-	     * Return a locked handle with found == FALSE so caller does
-	     * any required initialization.
+	     * Got the handle.  'found' indicates if the handle is new or not.
 	     */
 	    hdrPtr = newHdrPtr;
 	} else {
@@ -355,7 +369,7 @@ HandleInstallInt(fileIDPtr, name, handleLimit, hdrPtr, foundPtr)
     Boolean		*foundPtr;	/* TRUE upon return if handle found */
 {
     register	Hash_Entry	*hashEntryPtr;
-    Boolean			tableFull;
+    Boolean			tableFull = FALSE;
     Boolean			found;
 
     LOCK_MONITOR;
@@ -384,7 +398,6 @@ again:
 	/*
 	 * Initialize the new file handle.
 	 */
-	tableFull = FALSE;
 	fsStats.handle.created++;
 	fsStats.handle.exists++;
 
@@ -424,8 +437,7 @@ again:
 	MOVE_HANDLE(hdrPtr);
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_HIT, hdrPtr);
     }
-    hdrPtr->flags |= FS_HANDLE_LOCKED;
-    fsStats.handle.locks++;
+    LOCK_HANDLE(hdrPtr);
 exit:
     *foundPtr = found;
     UNLOCK_MONITOR;
@@ -488,8 +500,7 @@ again:
 		goto again;
 	    }
 	    MOVE_HANDLE(hdrPtr);
-	    fsStats.handle.locks++;
-	    hdrPtr->flags |= FS_HANDLE_LOCKED;
+	    LOCK_HANDLE(hdrPtr);
 	    hdrPtr->refCount++;
 	}
     }
@@ -688,16 +699,7 @@ FsHandleUnlockHdr(hdrPtr)
  *
  *	FsHandleRelease is a macro that does type casting, see fsInt.h
  *	Decrement the reference count on the file handle.  The caller specifies
- *	if the handle is already locked, in which case it is unlocked. If
- *	the handle is unlocked on entry it is no longer locked before
- *	decrementing the reference count because that causes deadlock.
- *	Hoever, this also means that access to the refCount outside this file
- *	has to be explicitly synchronized by ensuring that the handle
- *	is locked before releasing it.  The refCount is only examined outside
- *	this file (and monitor lock) by the routines that migrate top-level
- *	stream objects.  All other kinds of handles have use counts which
- *	are different than the hdr's refCount, and which are protected
- *	explicitly by the handle lock bit.
+ *	if the handle is already locked, in which case it is unlocked.
  *
  * Results:
  *	None.
@@ -719,8 +721,7 @@ FsHandleReleaseHdr(hdrPtr, locked)
 
     if (locked && ((hdrPtr->flags & FS_HANDLE_LOCKED) == 0)) {
 	UNLOCK_MONITOR;
-	panic(
-	    "HandleRelease, handle <%d,%d,%d,%d> \"%s\" not locked\n",
+	panic("HandleRelease, handle <%d,%d,%d,%d> \"%s\" not locked\n",
 	    hdrPtr->fileID.type, hdrPtr->fileID.serverID,
 	    hdrPtr->fileID.major, hdrPtr->fileID.minor, HDR_FILE_NAME(hdrPtr));
 	return;
@@ -729,17 +730,15 @@ FsHandleReleaseHdr(hdrPtr, locked)
 
     if (hdrPtr->refCount < 0) {
 	UNLOCK_MONITOR;
-	panic( "refCount %d on %s handle <%d,%d,%d> \"%s\"\n",
+	panic("refCount %d on %s handle <%d,%d,%d> \"%s\"\n",
 		hdrPtr->refCount, FsFileTypeToString(hdrPtr->fileID.type),
 		hdrPtr->fileID.serverID, hdrPtr->fileID.major,
 		hdrPtr->fileID.minor, HDR_FILE_NAME(hdrPtr));
 	return;
     } else if ((hdrPtr->refCount == 0) &&
-	       (hdrPtr->flags & FS_HANDLE_REMOVED) &&
-	       ((hdrPtr->flags & FS_HANDLE_WANTED) == 0)){
+	       (hdrPtr->flags & FS_HANDLE_REMOVED)) {
 	/*
-	 * The handle has been removed, we are the last reference, and
-	 * noone in GetNextHandle is trying to grab this handle.
+	 * The handle has been removed, and we are the last reference.
 	 */
 	fsStats.object.limbo--;
 	FS_TRACE_HANDLE(FS_TRACE_RELEASE_FREE, hdrPtr);
@@ -797,11 +796,10 @@ FsHandleRemoveInt(hdrPtr)
      */
     UNLOCK_HANDLE(hdrPtr);
 
-    if ((hdrPtr->flags & FS_HANDLE_WANTED) || (hdrPtr->refCount > 0)) {
+    if (hdrPtr->refCount > 0) {
 	/*
 	 * We've removed the handle from the hash table so it won't
-	 * be found, but either someone is trying to get it in GetNextHandle,
-	 * or simply has a reference to it.  GetNextHandle or HandleRelease
+	 * be found, but someone has a reference to it.  HandleRelease
 	 * will free the handle for us later.
 	 */
 	fsStats.object.limbo++;
@@ -892,15 +890,21 @@ FsHandleAttemptRemove(handlePtr)
  * FsGetNextHandle --
  *
  *	Get the next handle in the hash table.  Return the handle locked.
- *	The hashSearchPtr is initialized with Hash_StartSearch. 
+ *	The hashSearchPtr is initialized with Hash_StartSearch.  This
+ *	always skips locked handles.  The users of this routine are:
+ *	recovery stuff:  it is important not to block recovery as
+ *		that ends up hanging the whole machine.
+ *	unmounting a disk: this is a rare operation, but it should not
+ *		be hung-up by a wedged handle.
+ *	scavenging:  if a handle is locked, then it should not
+ *		be scavenged anyway.
  *
  * Results:
  *	The next handle in the hash table.
  *
  * Side effects:
  *	Locks the handle (but does not increment its reference count).
- *	While waiting to lock a handle it will mark it as being wanted
- *	so that it doesn't get deleted out from under us.
+ *	This prints a warning if a handle is skipped when locked.
  *
  *----------------------------------------------------------------------------
  *
@@ -919,40 +923,26 @@ FsGetNextHandle(hashSearchPtr)
          hashEntryPtr != (Hash_Entry *) NIL;  
 	 hashEntryPtr = Hash_Next(fileHashTable, hashSearchPtr)) {
 	hdrPtr = (FsHandleHeader *) Hash_GetValue(hashEntryPtr);
+	if (hdrPtr == (FsHandleHeader *)NIL) {
+	    /*
+	     * Caught handle in the process of being installed.
+	     */
+	    continue;
+	}
 	/*
-	 * See if another iterator is blocked on this handle, and skip
-	 * it if there is one.  This is done for two reasons,
-	 * 1) to avoid freeing the handle more than once (once for each
-	 *	iterator that sets the FS_HANDLE_WANTED bit) if it gets
-	 *	removed while we are waiting for it.  This problem could
-	 *	be fixed by adding a waitCount field to the handle header.
-	 * 2) to avoid hanging the system on single locked handle. 
+	 * Skip locked handles to avoid hanging the system on locked handle. 
 	 */
-	if ((hdrPtr->flags & FS_HANDLE_WANTED) &&
-	    (hdrPtr->flags & FS_HANDLE_LOCKED)){
+	if (hdrPtr->flags & FS_HANDLE_LOCKED) {
 	    printf( "GetNextHandle skipping %s <%d,%d> \"%s\"\n",
 		FsFileTypeToString(hdrPtr->fileID.type),
 		hdrPtr->fileID.major, hdrPtr->fileID.minor,
 		HDR_FILE_NAME(hdrPtr));
 	    continue;
 	}
-	/*
-	 * Mark the handle so that it won't get blown away while we are
-	 * trying to lock it and then lock it.  If it gets removed from
-	 * the hash table while we were locking it, then throw it away.
-	 */
-	hdrPtr->flags |= FS_HANDLE_WANTED;
-	LOCK_HANDLE(hdrPtr);
-	hdrPtr->flags &= ~FS_HANDLE_WANTED;
 	if (hdrPtr->flags & FS_HANDLE_REMOVED) {
-	    UNLOCK_HANDLE(hdrPtr);
-	    if (hdrPtr->refCount == 0) {
-		FS_TRACE_HANDLE(FS_TRACE_GET_NEXT_FREE, hdrPtr);
-		fsStats.object.limbo--;
-		REMOVE_HANDLE(hdrPtr);
-	    }
 	    continue;
 	}
+	LOCK_HANDLE(hdrPtr);
 	UNLOCK_MONITOR;
 	return(hdrPtr);
     }
@@ -1091,8 +1081,7 @@ FsHandleInvalidate(hdrPtr)
 	hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) &hdrPtr->fileID);
 	if (hashEntryPtr == (Hash_Entry *) NIL) {
 	    UNLOCK_MONITOR;
-	    panic(
-		"FsHandleInvalidate: Can't find %s handle <%d,%d,%d>\n",
+	    panic("FsHandleInvalidate: Can't find %s handle <%d,%d,%d>\n",
 			FsFileTypeToString(hdrPtr->fileID.type),
 			hdrPtr->fileID.serverID,
 			hdrPtr->fileID.major, hdrPtr->fileID.minor);
@@ -1177,9 +1166,6 @@ FsHandleDescWriteBack(shutdown, domain)
 	    continue;
 	}
 	if (hdrPtr->flags & FS_HANDLE_LOCKED) {
-	    /*
-	     * The handle is locked.
-	     */
 	    lockedDesc++;
 	    continue;
 	}
@@ -1213,8 +1199,7 @@ FsHandleDescWriteBack(shutdown, domain)
 	    descPtr->flags &= ~FS_FD_DIRTY;
 	    status =  FsStoreFileDesc(domainPtr, hdrPtr->fileID.minor, descPtr);
 	    if (status != SUCCESS) {
-		printf(
-		    "FsHandleDescWriteBack: Couldn't store file desc <%x>\n",
+		printf("FsHandleDescWriteBack: Couldn't store file desc <%x>\n",
 		    status);
 	    }
 	}
