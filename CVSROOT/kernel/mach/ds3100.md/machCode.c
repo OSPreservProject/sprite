@@ -160,7 +160,6 @@ Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 Mach_State	*machFPCurStatePtr = (Mach_State *)NIL;
 
 extern Boolean Dev_SIIIntr();
-extern void Net_Intr();
 extern void Timer_TimerServiceInterrupt();
 extern void Dev_DC7085Interrupt();
 extern void MachFPInterrupt();
@@ -171,7 +170,7 @@ static void MemErrorInterrupt();
  */
 void (*interruptHandlers[MACH_NUM_HARD_INTERRUPTS])() = {
     (void (*)())Dev_SIIIntr,
-    Net_Intr,
+    (void (*)())Net_Intr,
     Dev_DC7085Interrupt,
     Timer_TimerServiceInterrupt,
     MemErrorInterrupt,
@@ -244,6 +243,13 @@ static ReturnStatus 	Interrupt();
  */
 Mach_State	machStateTable[VMMACH_MAX_KERN_STACKS];
 int		nextStateIndex = 0;
+
+/*
+ *  Save the bad address that caused an exception. This makes debugging
+ *  of TLB misses easier.
+ */
+
+Address		machBadVaddr = (Address) NIL;
 
 
 /*
@@ -824,6 +830,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
     Boolean				retVal;
     ReturnStatus			status;
 
+    machBadVaddr = badVaddr;
     cause = (causeReg & MACH_CR_EXC_CODE) >> MACH_CR_EXC_CODE_SHIFT;
     if (cause != MACH_EXC_INT) {
 	Mach_EnableIntr();
@@ -1002,6 +1009,7 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	case MACH_EXC_TLB_MOD: {
 	    Boolean	copyInProgress = FALSE;
 
+	    machBadVaddr = badVaddr;
 	    if (statusReg & MACH_SR_INT_ENA_PREV) {
 		/*
 		 * Enable interrupts.
@@ -1018,7 +1026,12 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 		       (badVaddr >= (Address)VMMACH_PHYS_CACHED_START ||
 			procPtr == (Proc_ControlBlock *)NIL ||
 			procPtr->vmPtr->numMakeAcc == 0)) {
-		printf("Bad kernel TLB Fault\n");
+		printf("Bad kernel TLB Fault at 0x%x, procPtr = 0x%x\n",
+			badVaddr, procPtr);
+		if (procPtr != (Proc_ControlBlock *)NIL) {
+		    printf("procPtr->vmPtr->numMakeAcc = %d\n", 
+			procPtr->vmPtr->numMakeAcc);
+		}
 		return(MACH_KERN_ERROR);
 	    }
 	    if (((causeReg & MACH_CR_EXC_CODE) >> 
