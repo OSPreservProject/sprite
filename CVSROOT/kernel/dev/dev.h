@@ -53,5 +53,7 @@ typedef struct Dev_DiskAddr {
 
 extern void Dev_Init();
 extern void Dev_Config();
+extern void Dev_GatherDiskStats();
+extern int  Dev_GetDiskStats();
 
 #endif _DEV
