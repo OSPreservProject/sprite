@@ -67,6 +67,7 @@ static void PrefixUpdate();
 static FsPrefix *PrefixInsert();
 static void GetNilPrefixes();
 static char *NameOp();
+extern void FsPrefixHandleCloseInt();
 
 
 /*
