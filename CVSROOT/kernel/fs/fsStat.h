@@ -179,7 +179,8 @@ typedef struct Fs_BlockCacheStats {
     unsigned int unmapped;		/* Created a new block. */
     unsigned int lru;	    		/* Recycled a block. */
     /*
-     * Cache size numbers.
+     * Cache size numbers.  These are monitored data, not counters--don't
+     * reset them.
      */
     unsigned int minCacheBlocks;	/* The minimum number of blocks that
 				 	 * can be in the cache. */
@@ -194,9 +195,9 @@ typedef struct Fs_BlockCacheStats {
     /*
      * Miscellaneous.
      */
-    unsigned int blocksPitched;		/* The number of blocks that were
-					 * thrown out at the command of
-					 * virtual memory. */
+    unsigned int blocksPitched;		/* The number of blocks thrown
+					 * out because they duplicated
+					 * VM-managed blocks. */
     int blocksFlushed;			/* The number of blocks written back
 					   due to consistency. */
     int migBlocksFlushed;		/* The number of blocks written back
@@ -470,7 +471,8 @@ typedef struct Fs_MigStats {
 } Fs_MigStats;
 
 /*
- * File system statistics.
+ * File system statistics.  If you change this struct, be sure to verify 
+ * that ZeroFsStats is still okay.
  */
 #define FS_STAT_VERSION 2
 typedef struct Fs_Stats {
