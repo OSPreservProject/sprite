@@ -386,9 +386,9 @@ VmMach_SegInit(segPtr)
 	segDataPtr->pt2BasePtr =
 		    kernPT2Ptr + segPtr->segNum * (VMMACH_SEG_PT2_SIZE / 4); 
 	segDataPtr->RPTPM = rootPTPageNum + segPtr->segNum / 4;
+	segDataPtr->createTime = 0;
     } else {
 	segDataPtr = segPtr->machPtr;
-	segDataPtr->createTime = 0;
     }
 
     SetCreateTime(segDataPtr);
@@ -412,42 +412,6 @@ VmMach_SegInit(segPtr)
 	numPages = segPtr->numPages;
     }
     AllocPageTable(segPtr, segOffset, numPages);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * SetCreateTime --
- *
- *	Set the creation time of the segment and flush all of the caches
- *	if necessary.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	createTime incremented and the createTime field is set in the
- *	segment data struct.  Also the cache may be flushed and flushTime
- *	incremented.
- *
- *----------------------------------------------------------------------
- */
-ENTRY void
-SetCreateTime(segDataPtr)
-    register	VmMach_SegData	*segDataPtr;
-{
-    LOCK_MONITOR;
-
-    if (segDataPtr->createTime > flushTime) {
-	createTime++;
-	flushTime = createTime;
-	FlushAllCaches();
-    }
-    createTime++;
-    segDataPtr->createTime = createTime;
-
-    UNLOCK_MONITOR;
 }
 
 
@@ -913,7 +877,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
  * The following routines read and write segments page tables. These
  * are underneath a monitor lock in order to synchronize access to these
  * structures.  We don't rely on the machine indepenent module to synchronize
- * for us because we made be called directly by the routines in the mach
+ * for us because we may be called directly by the routines in the mach
  * module.
  *
  *----------------------------------------------------------------------
@@ -1957,6 +1921,42 @@ FlushAllCaches()
     for (i = 0; i < VMMACH_CACHE_SIZE; i += VMMACH_CACHE_BLOCK_SIZE) {
 	VmMachFlushBlock(i);
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetCreateTime --
+ *
+ *	Set the creation time of the segment and flush all of the caches
+ *	if necessary.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	createTime incremented and the createTime field is set in the
+ *	segment data struct.  Also the cache may be flushed and flushTime
+ *	incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+SetCreateTime(segDataPtr)
+    register	VmMach_SegData	*segDataPtr;
+{
+    LOCK_MONITOR;
+
+    if (segDataPtr->createTime > flushTime) {
+	createTime++;
+	flushTime = createTime;
+	FlushAllCaches();
+    }
+    createTime++;
+    segDataPtr->createTime = createTime;
+
+    UNLOCK_MONITOR;
 }
 
 
