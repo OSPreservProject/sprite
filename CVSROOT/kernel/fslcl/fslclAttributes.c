@@ -234,7 +234,7 @@ FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     register Fsdm_FileDescriptor	*descPtr;
 
 #ifdef SOSP91
-    SOSP_ADD_GET_ATTR_TRACE(-1, -1, *fileIDPtr);
+    SOSP_ADD_SET_ATTR_TRACE(-1, -1, *fileIDPtr);
 #endif
     handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, fileIDPtr);
     if (handlePtr == (Fsio_FileIOHandle *)NIL) {
