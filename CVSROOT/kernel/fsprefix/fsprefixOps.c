@@ -1486,7 +1486,18 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
 	    status = LocatePrefix(*lookupNamePtr, serverID, domainTypePtr,
 						    hdrPtrPtr);
 	    if (status == FS_NEW_PREFIX) {
+		char *hostname;
+
 		fs_Stats.prefix.found++;
+
+		Net_SpriteIDToName((*hdrPtrPtr)->fileID.serverID, &hostname);
+		if (hostname != (char *)NIL) {
+		    printf("Importing \"%s\" from %s\n", *lookupNamePtr,
+				hostname);
+		} else {
+		    printf("Importing \"%s\" from host #%d\n", *lookupNamePtr,
+			(*hdrPtrPtr)->fileID.serverID);
+		}
 		(void)Fsprefix_Install(*lookupNamePtr, *hdrPtrPtr,*domainTypePtr,
 				FSPREFIX_IMPORTED);
 	    }
