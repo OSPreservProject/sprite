@@ -373,6 +373,8 @@ typedef enum {
  *   VM_SEG_CANT_COW		This segment cannot be forked copy-on-write.
  *   VM_SEG_COW_IN_PROGRESS	This segment is being actively copied at
  *				fork time.
+ *   VM_SEG_IO_ERROR		An I/O error has occurred while paging to
+ *				or from this segment.
  */
 
 #define	VM_SEG_FREE			0x001
@@ -385,6 +387,7 @@ typedef enum {
 #define	VM_SEG_CREATE_TRACED		0x080
 #define	VM_SEG_CANT_COW			0x100
 #define	VM_SEG_COW_IN_PROGRESS		0x200
+#define VM_SEG_IO_ERROR		        0x400
 
 
 /*---------------------------------------------------------------------------*/
