@@ -145,21 +145,84 @@ WindowOkay:
 	 */
 	MACH_SR_HIGHPRIO()	/* traps on, maskable interrupts off */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap */
+
 	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
-	be	MachHandleTimerInterrupt
+	set	_Timer_TimerServiceInterrupt, %o0
+	be	MachHandleInterrupt
 	nop
-	cmp	%VOL_TEMP1, MACH_LEVEL14_INT
-	be	MachHandleTimerInterrupt
+
+	cmp	%VOL_TEMP1, MACH_LEVEL14_INT		/* unused clock level */
+	set	_Timer_TimerServiceInterrupt, %o0
+	be	MachHandleInterrupt
 	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL12_INT		/* keyboard interrupt */
+	set	_Dev_KbdServiceInterrupt, %o0
+	be	MachHandleInterrupt
+	nop
+
 	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
-	be	MachHandleEtherInterrupt
+	set	_Net_Intr, %o0
+	be	MachHandleInterrupt
 	nop
-	cmp	%VOL_TEMP1, 0x100			/* level 0 int */
-	be	MachHandleLevel0Interrupt
+
+	/* level 8 autovector is video - later */
+	/* levels 1, 4 and 6 are software, 6 is also ether */
+	/* levels 2, 3, 5, 7, 9, 11 and 13 are vme bus */
+	cmp	%VOL_TEMP1, 0x100			/* level 0 int - none */
+	set	_MachNoLevel0Interrupt, %o0
+	be	MachHandleInterrupt
 	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL1_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL2_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL3_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL4_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL5_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL7_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL9_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL11_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL13_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
 	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER		/* enter debugger */
 	be	MachHandleDebugTrap
 	nop
+
 	be	MachHandleDebugTrap		/* all  others to debugger */
 	nop
 
