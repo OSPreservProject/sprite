@@ -270,7 +270,7 @@ int	vmMachKernMemSize = 4096 * 1024;
  * The segment that is used to map a segment into a process's virtual address
  * space for cross-address-space copies.
  */
-#define	MAP_SEG_NUM (VMMACH_MAP_SEG_ADDR >> VMMACH_SEG_SHIFT)
+#define	MAP_SEG_NUM (((unsigned int) VMMACH_MAP_SEG_ADDR) >> VMMACH_SEG_SHIFT)
 
 static void	MMUInit();
 static int	PMEGGet();
@@ -513,7 +513,11 @@ VmMach_Init(firstFreePage)
 	 virtAddr += VMMACH_PAGE_SIZE, i++) {
 	if (virtAddr >= (Address)MACH_CODE_START && 
 	    virtAddr <= lastCodeAddr) {
+#ifdef NOTDEF		/* for debugging */
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KR_PROT | 
+#else
+	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
+#endif NOTDEF
 			  i * VMMACH_CLUSTER_SIZE;
 	} else {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
@@ -2002,18 +2006,20 @@ VmMachFlushCacheRange(startAddr, endAddr)
     char	*beginFlush, *endFlush;
     char	readChar;
     char	*cacheFlushPtr;
+#define	 VMMACH_CACHE_SIZE (VMMACH_CACHE_LINE_SIZE * VMMACH_NUM_CACHE_LINES)
+#define	 VMMACH_CACHE_MASK (VMMACH_CACHE_SIZE - 1)
+#define	 VMMACH_LINE_MASK (VMMACH_CACHE_LINE_SIZE - 1)
 
     /* Offset into array where entry maps to 1st entry of cache. */
     cacheFlushPtr = (char *) (((unsigned int) (cacheFlusherArray +
-	    (VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE))) &
-	    ~((VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE) - 1));
+	    VMMACH_CACHE_SIZE)) & ~VMMACH_CACHE_MASK);
     /* Get bits that map address into cache location. */
-    beginFlush = (char *)((((unsigned int)startAddr) & ~VMMACH_CACHE_LINE_SIZE)
-	    & ((VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE) - 1));
-    endFlush = (char *)(((((unsigned int) endAddr) & ~VMMACH_CACHE_LINE_SIZE)) &
-	    ((VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE) - 1));
+    beginFlush = (char *)((((unsigned int)startAddr) & ~VMMACH_LINE_MASK) &
+	    VMMACH_CACHE_MASK);
+    endFlush = (char *)((((unsigned int) endAddr) & ~VMMACH_LINE_MASK) &
+	    VMMACH_CACHE_MASK);
     beginFlush = cacheFlushPtr + ((unsigned int) beginFlush);
-    endFlush = cacheFlushPtr + ((unsigned int) beginFlush);
+    endFlush = cacheFlushPtr + ((unsigned int) endFlush);
 
     while (beginFlush <= endFlush) {
 	readChar = *beginFlush;
@@ -3373,6 +3379,7 @@ VmMach_DMAAlloc(numBytes, srcAddr)
  
     if (!initialized) {
 	/* Where to allocate the memory from. */
+	initialized = TRUE;
 	DevBufferInit();
     }
 
@@ -3406,7 +3413,7 @@ VmMach_DMAAlloc(numBytes, srcAddr)
     for (j = 0; j < numPages; j++) {
 	VmMachFlushPage(srcAddr);
 	dmaPageBitMap[i + j] = 1;	/* allocate page */
-	virtPage = (unsigned int) (srcAddr) >> VMMACH_PAGE_SHIFT;
+	virtPage = ((unsigned int) srcAddr) >> VMMACH_PAGE_SHIFT;
 	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT |
 	      VirtToPhysPage(Vm_GetKernPageFrame(virtPage));
 	SET_ALL_PAGE_MAP(((i + j) * VMMACH_PAGE_SIZE_INT) +
@@ -3456,10 +3463,10 @@ VmMach_DMAFree(numBytes, mapAddr)
     numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
 	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
 
-    i = ((unsigned int) mapAddr) >> VMMACH_PAGE_SHIFT_INT -
-	(VMMACH_DMA_START_ADDR >> VMMACH_PAGE_SHIFT_INT);
+    i = (((unsigned int) mapAddr) >> VMMACH_PAGE_SHIFT_INT) -
+	(((unsigned int) VMMACH_DMA_START_ADDR) >> VMMACH_PAGE_SHIFT_INT);
     for (j = 0; j < numPages; j++) {
-	dmaPageBitMap[i + j] == 0;	/* free page */
+	dmaPageBitMap[i + j] = 0;	/* free page */
 	VmMachFlushPage(mapAddr);
 	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) 0);
 	(unsigned int) mapAddr += VMMACH_PAGE_SIZE_INT;
@@ -3776,6 +3783,7 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
     register	int		firstPage;
     register	int		lastPage;
 
+#ifdef NOTDEF	/* nop for debugging */
     firstPage = (unsigned)addr >> VMMACH_PAGE_SHIFT;
     lastPage = ((unsigned)addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     for (; firstPage <= lastPage; firstPage++) {
@@ -3784,9 +3792,10 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
 	pte &= ~VMMACH_PROTECTION_FIELD;
 	pte |= readWrite ? VMMACH_KRW_PROT : VMMACH_KR_PROT;
 	/* Could just flush in current context? XXX */
-	VmMachFlushCacheRange(virtAddr, virtAddr + numBytes);
+	VmMachFlushCacheRange(virtAddr, virtAddr + numBytes - 1);
 	SET_ALL_PAGE_MAP(virtAddr, pte);
     }
+#endif NOTDEF	/* nop for debugging */
 }
 
 

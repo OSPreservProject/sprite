@@ -327,9 +327,18 @@ Mach_Init()
 	if (i == 13 || i == 11 || i == 9 || i == 7 || i == 5 || i == 3 ||
 		i == 2) {
 	    machVectorTable[i] = (Address) MachVectoredInterrupt;
-	    /* set arg to vme vector address for this trap level */
+	    /*
+	     * Set arg to vme vector address for this trap level.
+	     * In the high bits of the address, we want MACH_VME_INTR_VECTOR.
+	     * In bits 3 to 1 we want the VME bus level.  We want bit 0 to be
+	     * 1.  So, for example, for interrupt level 13, we want to put
+	     * VME level7 into bits 3 to 1 and then set bit 0 high.  But this
+	     * is equivalent to putting the number 14 into bits 3 to 0 and then
+	     * setting bit 0 high.  So this means adding 1 to the interrupt
+	     * level and then setting bit 0 high.
+	     */
 	    machInterruptArgs[i] = (ClientData)
-		    (MACH_VME_INTR_VECTOR || ((i + 1) || 1));
+		    (MACH_VME_INTR_VECTOR | ((i + 1) | 1));
 	} else { 
 	    machVectorTable[i] = (Address) MachHandleDebugTrap;
 	    machInterruptArgs[i] = (ClientData) 0;
@@ -1098,14 +1107,10 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     Boolean		copyInProgress = FALSE;
     ReturnStatus	status;
 
-    procPtr = Proc_GetActualProc();
-    if (procPtr == (Proc_ControlBlock *) NIL) {
-	panic(
-	"MachPageFault: Current process is NIL!!  Trap pc is 0x%x, addr 0x%x\n",
-		(unsigned) pcValue, addrErrorReg);
-    }
     /*
      * Are we poking at or peeking into memory-mapped devices?
+     * We must check this before looking for the current process, since this
+     * can happen during boot-time before we have set up processes.
      */
     if ((pcValue >= (Address) &Mach_ProbeStart)  &&
 	    (pcValue < (Address) &Mach_ProbeEnd)) {
@@ -1115,6 +1120,12 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	 * got the page fault return FAILURE to its caller.
 	 */
 	MachHandleBadProbe();
+    }
+    procPtr = Proc_GetActualProc();
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	panic(
+	"MachPageFault: Current process is NIL!!  Trap pc is 0x%x, addr 0x%x\n",
+		(unsigned) pcValue, addrErrorReg);
     }
     /* process kernel page fault */
     if (trapPsr & MACH_PS_BIT) {		/* kernel mode before trap */
