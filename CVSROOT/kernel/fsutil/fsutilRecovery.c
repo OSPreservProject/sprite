@@ -446,6 +446,47 @@ Fsutil_WantRecovery(hdrPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * Fsutil_AttemptRecovery --
+ *
+ *	Attempt recovery if the server appears up.  This is called
+ *	(in the background) by the block cleaner if it gets a stale
+ *	handle error on a write-back.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invokes the reopen procedure if the server responds to an RPC.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsutil_AttemptRecovery(data, callInfoPtr)
+    ClientData		data;		/* Ref to Fs_HandleHeader */
+    Proc_CallInfo	*callInfoPtr;
+{
+    register Fs_HandleHeader *hdrPtr =
+	    (Fs_HandleHeader *)data;
+
+    if (!RemoteHandle(hdrPtr)) {
+	/*
+	 * We get called on a local naming request-response stream after the
+	 * pseudo-filesystem server crashes.  There is no recovery possible
+	 * so we just return an error and the naming operation fails.
+	 */
+	printf( "Fsutil_AttemptRecovery, no recovery for type: %s\n",
+		Fsutil_FileTypeToString(hdrPtr->fileID.type));
+	return;
+    }
+    if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
+	Fsutil_Reopen(hdrPtr->fileID.serverID, (ClientData)NIL);
+    }
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Fsutil_WaitForRecovery --
  *
  *	Wait until recovery actions have completed for the stream.
