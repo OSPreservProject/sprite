@@ -491,7 +491,7 @@ typedef enum {
     PROC_MIG_ENCAP_MACH,
     PROC_MIG_ENCAP_PROF,
     PROC_MIG_ENCAP_SIG,
-    PROC_MIG_ENCAP_EXEC,
+    PROC_MIG_ENCAP_EXEC
 } Proc_EncapToken;
 
 #define PROC_MIG_NUM_CALLBACKS 7
@@ -513,7 +513,7 @@ typedef struct {
 					   destructive encapsulation operation
 					   and should be called to clean up
 					   on failure */
-					   
+
 } Proc_EncapInfo;
 
 #endif /* _PROCTYPES */
