@@ -101,7 +101,8 @@ Prof_Init()
      * to PC to index calculations done in mcount and Prof_CollectInfo.
      */
 
-    numInstructions = ((unsigned)&etext) >> PROF_INSTR_SIZE_SHIFT;
+    numInstructions = ((unsigned)&etext - (unsigned) mach_CodeStart) >> 
+	PROF_INSTR_SIZE_SHIFT;
     printf("Prof_Init: # instructions in kernel = %d\n", numInstructions);
 
     /*
@@ -189,6 +190,8 @@ Prof_Start()
     profArcListFreePtr = &profArcList[0];
     profArcListEndPtr = &profArcList[profArcListSize-1];
 #endif
+    Timer_TimerInit(TIMER_PROFILE_TIMER);
+    Timer_TimerStart(TIMER_PROFILE_TIMER);
     profEnabled = TRUE;
 
     return(SUCCESS);
@@ -224,8 +227,8 @@ Prof_CollectInfo(pc)
 	return;
     }
 
-    if (pc <= (int) &etext) {
-	index = pc >> PROF_PC_SHIFT;
+    if (pc >= (unsigned int) mach_CodeStart && pc <= (unsigned int) &etext ) {
+	index = (pc - (unsigned int) mach_CodeStart) >> PROF_PC_SHIFT;
 	if (index < pcSampleSize) {
 	    pcSamples[index]++;
 	}
@@ -252,7 +255,8 @@ Prof_CollectInfo(pc)
 ReturnStatus
 Prof_End()
 {
-    profEnabled = FALSE;
+    Timer_TimerInactivate(TIMER_PROFILE_TIMER);
+       profEnabled = FALSE;
     return(SUCCESS);
 }
 
@@ -299,11 +303,22 @@ Prof_Dump(dumpName)
      * sampling buffer.  (The size includes the header size...)
      */
 
-    sampleHdr.lowpc	= (Address) 0;
+    sampleHdr.lowpc	= mach_CodeStart;
     sampleHdr.highpc	= (Address) &etext;
     sampleHdr.size	= (pcSampleSize * sizeof(short)) + sizeof(sampleHdr);
 
-    fileOffset = 0;
+    {
+	int magic = 0x0f0e0001;
+	fileOffset = 0;
+	writeLen = sizeof(int);
+	status = Fs_Write(streamPtr, (Address) &magic, fileOffset, &writeLen);
+	if (status != SUCCESS) {
+	    printf(
+		    "Prof_Dump: Fs_Write(1) failed, status = %x\n",status);
+	    goto dumpError;
+	}
+    }
+    fileOffset += writeLen;
     writeLen = sizeof(sampleHdr);
     status = Fs_Write(streamPtr, (Address) &sampleHdr, fileOffset, &writeLen);
     if (status != SUCCESS) {
@@ -345,7 +360,7 @@ Prof_Dump(dumpName)
 	/*
 	 * Reverse the PC to index calculation done in mcount.
 	 */
-	arc.callerPC = 0 + (index << PROF_ARC_SHIFT);
+	arc.callerPC = mach_CodeStart + (index << PROF_ARC_SHIFT);
 
 	do {
 	    arc.calleePC = rawArcPtr->calleePC;
