@@ -547,20 +547,9 @@ Fsrmt_RpcGetAttr(srvToken, clientID, command, storagePtr)
     fs_Stats.srvName.getAttrs++;
     attrPtr = mnew(Fs_Attributes);
 #ifdef SOSP91
-    {
-    /*
-     * Get the host ID and user ID for tracing.
-     */
-    int hostID, userID;
-    userID = Proc_GetEffectiveProc()->userID;
-    if (Proc_GetEffectiveProc()->genFlags & PROC_FOREIGN) {
-	hostID = Proc_GetEffectiveProc()->peerHostID;
-    } else {
-	hostID = rpc_SpriteID;
-    }
     status = (*fs_AttrOpTable[domainType].getAttr)(fileIDPtr, clientID,
-	    attrPtr, hostID, userID);
-    }
+	    attrPtr, ((int *)storagePtr->requestParamPtr)[5],
+	    ((int *)storagePtr->requestParamPtr)[6]);
 #else
     status = (*fs_AttrOpTable[domainType].getAttr)(fileIDPtr, clientID, attrPtr);
 #endif
@@ -617,11 +606,12 @@ typedef struct FsRemoteSetAttrParams {
 
 ReturnStatus
 #ifdef SOSP91
-FsrmtSetAttr(fileIDPtr, attrPtr, idPtr, flags, hostID, userID)
+FsrmtSetAttr(fileIDPtr, attrPtr, idPtr, flags, clientID, hostID, userID)
     Fs_FileID		*fileIDPtr;
     Fs_Attributes	*attrPtr;
     Fs_UserIDs		 *idPtr;
     int			flags;
+    int			clientID;
     int			hostID;
     int			userID;
 #else
@@ -726,20 +716,9 @@ Fsrmt_RpcSetAttr(srvToken, clientID, command, storagePtr)
     fs_Stats.srvName.setAttrs++;
     Fsutil_HandleUnlock(hdrPtr);
 #ifdef SOSP91
-    {
-    /*
-     * Get the host ID and user ID for tracing.
-     */
-    int hostID, userID;
-    userID = Proc_GetEffectiveProc()->userID;
-    if (Proc_GetEffectiveProc()->genFlags & PROC_FOREIGN) {
-	hostID = Proc_GetEffectiveProc()->peerHostID;
-    } else {
-	hostID = rpc_SpriteID;
-    }
     status = (*fs_AttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
-	    &paramPtr->ids,paramPtr->flags, hostID, userID);
-    }
+	    &paramPtr->ids,paramPtr->flags, clientID,
+	    paramPtr->hostID, paramPtr->userID);
 #else
     status = (*fs_AttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
 						&paramPtr->ids,paramPtr->flags);

@@ -60,14 +60,24 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *----------------------------------------------------------------------
  */
 ReturnStatus
+#ifdef SOSP91
+FslclGetAttr(fileIDPtr, clientID, attrPtr, hostID, userID)
+    register Fs_FileID		*fileIDPtr;	/* Identfies file */
+    int				clientID;	/* Host ID of process asking
+						 * for the attributes */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+    int				hostID;
+    int				userID;
+#else
 FslclGetAttr(fileIDPtr, clientID, attrPtr)
     register Fs_FileID		*fileIDPtr;	/* Identfies file */
     int				clientID;	/* Host ID of process asking
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+#endif
 {
 #ifdef SOSP91
-    SOSP_ADD_GET_ATTR_TRACE(clientID, -1, *fileIDPtr);
+    SOSP_ADD_GET_ATTR_TRACE(clientID, hostID, *fileIDPtr, userID);
 #endif
     if (fileIDPtr->type != FSIO_LCL_FILE_STREAM) {
 	panic( "FslclGetAttr, bad fileID type <%d>\n",
@@ -223,18 +233,31 @@ FslclAssignAttrs(handlePtr, isExeced, attrPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
+#ifdef SOSP91
+FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags, clientID, hostID, userID)
+    Fs_FileID			*fileIDPtr;	/* Target file. */
+    register Fs_Attributes	*attrPtr;	/* New attributes */
+    register Fs_UserIDs		*idPtr;		/* Process's owner/group */
+    register int		flags;		/* What attrs to set */
+    int				clientID;
+    int				hostID;
+    int				userID;
+#else
 FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     Fs_FileID			*fileIDPtr;	/* Target file. */
     register Fs_Attributes	*attrPtr;	/* New attributes */
     register Fs_UserIDs		*idPtr;		/* Process's owner/group */
     register int		flags;		/* What attrs to set */
+#endif
 {
     register ReturnStatus	status = SUCCESS;
     Fsio_FileIOHandle		*handlePtr;
     register Fsdm_FileDescriptor	*descPtr;
 
 #ifdef SOSP91
-    SOSP_ADD_SET_ATTR_TRACE(-1, -1, *fileIDPtr);
+    if (userID != -1) {
+	SOSP_ADD_SET_ATTR_TRACE(clientID, hostID, *fileIDPtr, userID);
+    }
 #endif
     handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, fileIDPtr);
     if (handlePtr == (Fsio_FileIOHandle *)NIL) {
