@@ -1081,7 +1081,7 @@ FsRmtPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     outSize = 0;
     status = FsSpriteReopen(hdrPtr, sizeof(FsPipeReopenParams),
 		(Address)&reopenParams, &outSize, (Address)NIL);
-    FsRecoveryWakeup(&rmtHandlePtr->recovery, status);
+    FsRecoveryComplete(&rmtHandlePtr->recovery, status);
     return(status);
 }
 
