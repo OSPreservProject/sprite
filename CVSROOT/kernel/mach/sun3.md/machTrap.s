@@ -232,7 +232,10 @@ _MachFetchArgsEnd:			| Marks last place where PC could be
 
 	|*
 	|* Disable interrupts and see if any special processing must
-	|* be done on the process.
+	|* be done on the process.  Note:  this is checking the
+	|* specialHandling field of the process control block, and depends
+	|* on the fact that specialHandling follows immediately after the
+	|* kcallTable field, whose address was loaded into a2 above.
 	|*
 
 	movl	a3, sp			| Pop kcall args off stack.
