@@ -585,8 +585,15 @@ Net_Input(interPtr, packetPtr, packetLength)
     int		packetType = NET_PACKET_UNKNOWN;
     Boolean	ultra = FALSE;
 
+#if 0
+    printf("in Net_Input\n");
+    printf("Net_Input(0x%x, 0x%x, 0x%x)\n", interPtr, packetPtr, packetLength);
+    printf("netType = %08x\n", interPtr->netType);
+#endif
+
     if (netDebug) {
-	printf("Net_Input\n");
+	printf("Net_Input(0x%x, 0x%x, 0x%x) netType = %08x\n",
+	    interPtr, packetPtr, packetLength, interPtr->netType);
     }
     switch(interPtr->netType) {
 	case NET_NETWORK_ETHER : {
