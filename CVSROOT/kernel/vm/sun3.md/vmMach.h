@@ -119,5 +119,9 @@ extern	Address		VmMach_DevBufferAlloc();
 extern	Address		VmMach_DevBufferMap();
 extern	void		VmMach_GetDevicePage();
 extern	ReturnStatus	VmMach_MapKernelIntoUser();
+/*
+ * Tracing.
+ */
+extern	void		VmMach_Trace();
 
 #endif _VMMACH
