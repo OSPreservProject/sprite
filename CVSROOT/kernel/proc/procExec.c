@@ -551,9 +551,11 @@ SetupArgs(userArgsPtr, extraArgArray, argStackPtr, argStringPtr)
     List_Init(&envList);
 
     /*
-     * Copy in the arguments.
+     * Copy in the arguments.  argStringLength is an upper bound on
+     * the total length permitted.
      */
     numArgs = userArgsPtr->numArgs;
+    argStringLength = PROC_MAX_EXEC_ARG_LENGTH;
     status = GrabArgArray(PROC_MAX_EXEC_ARG_LENGTH + 1,
 			  userArgsPtr->userMode, extraArgArray,
 			  userArgsPtr->argPtrArray, &numArgs,
@@ -728,7 +730,8 @@ GrabArgArray(maxLength, userProc, extraArgArray, argPtrArray, numArgsPtr,
 				 * copied data. Assumed to be initialized by
 				 * caller. */
     int      *realLengthPtr; 	/* Pointer to contain combined size, without
-				 * padding. */
+				 * padding.   Value passed in contains
+				 * maximum. */
     int      *paddedLengthPtr; 	/* Pointer to contain combined size, including
 				 * padding. */
 {
@@ -833,6 +836,14 @@ GrabArgArray(maxLength, userProc, extraArgArray, argPtrArray, numArgsPtr,
 	}
     }
     if (realLengthPtr != (int *) NIL) {
+	if (totalLength > *realLengthPtr) {
+	    /*
+	     * Would really like to flag "argument too long" here.
+	     * Also, should we check after every argument?
+	     */
+	    status = GEN_INVALID_ARG;
+	    goto execError;
+	}
 	*realLengthPtr = totalLength;
     }
     if (paddedLengthPtr != (int *) NIL) {
