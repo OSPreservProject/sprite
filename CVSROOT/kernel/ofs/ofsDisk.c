@@ -72,6 +72,7 @@ static void	MarkDomainDown();
 static Boolean	OkToDetach();
 static Boolean	IsSunLabel();
 static Boolean	IsSpriteLabel();
+static Boolean	IsDecLabel();
 
 /*
  *----------------------------------------------------------------------
@@ -213,9 +214,26 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
 	numHeaderSectors = diskHeaderPtr->numDomainSectors;
 	summarySector = diskHeaderPtr->summarySector;
     } else {
-	printf("Fsdm_AttachDisk: No disk header\n");
-	free(buffer);
-	return(FAILURE);
+	io.buffer = buffer;
+	io.length = DEV_BYTES_PER_SECTOR;
+	io.offset = DEC_LABEL_SECTOR * DEV_BYTES_PER_SECTOR;
+	status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)
+		(devicePtr, &io, &reply);
+	if (status != SUCCESS) {
+	    free(buffer);
+	    return(status);
+	}
+	if (IsDecLabel(buffer)){
+	    register Dec_DiskLabel *decLabelPtr;
+	    decLabelPtr = (Dec_DiskLabel *)buffer;
+	    headerSector = decLabelPtr->domainSector;
+	    numHeaderSectors = decLabelPtr->numDomainSectors;
+	    summarySector = decLabelPtr->summarySector;
+	} else {
+	    printf("Fsdm_AttachDisk: No disk header\n");
+	    free(buffer);
+	    return(FAILURE);
+	}
     }
     /*
      * Read in summary information.
@@ -886,6 +904,36 @@ IsSunLabel(buffer)
 	/*
 	 * Should check checkSum...
 	 */
+	return(TRUE);
+    } else {
+	return(FALSE);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsDecLabel --
+ *
+ *	Poke around in the input buffer and see if it looks like
+ *	a Dec format disk label.
+ *
+ * Results:
+ *	TRUE or FALSE
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Boolean
+IsDecLabel(buffer)
+    Address buffer;	/* Buffer containing zero'th sector */
+{
+    register Dec_DiskLabel *decLabelPtr;
+
+    decLabelPtr = (Dec_DiskLabel *)buffer;
+    if (decLabelPtr->magic == DEC_LABEL_MAGIC) {
 	return(TRUE);
     } else {
 	return(FALSE);
