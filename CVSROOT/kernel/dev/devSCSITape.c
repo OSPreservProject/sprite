@@ -915,6 +915,7 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 	case IOC_TAPE_STATUS: {
 	    Dev_TapeStatus		tapeStatus;
 	    ScsiReadPositionResult	position;
+	    Boolean			readPosition = 1;
 
 	    bzero((char *) &position, sizeof(position));
 	    bzero((char *) &tapeStatus, sizeof(tapeStatus));
@@ -928,16 +929,19 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 	    tapeStatus.bufferedMode = -1;
 	    tapeStatus.speed = -1;
 	    tapeStatus.density = -1;
-	    status = DevScsiReadPosition(tapePtr->devPtr, 0, &position);
-	    if ((status == SUCCESS) && (position.bpu == 0)) {
-		tapeStatus.position = 
-			(position.firstBlock3 << 24) |
-			(position.firstBlock2 << 16) |
-			(position.firstBlock1 << 8) |
-			(position.firstBlock0);
-	    }
 	    if (tapePtr->statusProc != (ReturnStatus (*)()) NIL) {
-		status = (tapePtr->statusProc)(tapePtr, &tapeStatus);
+		status = (tapePtr->statusProc)(tapePtr, &tapeStatus, 
+		    &readPosition);
+	    }
+	    if (readPosition) {
+		status = DevScsiReadPosition(tapePtr->devPtr, 0, &position);
+		if ((status == SUCCESS) && (position.bpu == 0)) {
+		    tapeStatus.position = 
+			    (position.firstBlock3 << 24) |
+			    (position.firstBlock2 << 16) |
+			    (position.firstBlock1 << 8) |
+			    (position.firstBlock0);
+		}
 	    }
 	    inSize = sizeof(Dev_TapeStatus);
 	    outSize = ioctlPtr->outBufSize;
