@@ -261,6 +261,13 @@ Fs_Command(command, bufSize, buffer)
 	    Fs_CacheEmpty(numLockedBlocksPtr);
 	    break;
 	}
+	case FS_SET_TMP_DIR_NUM: {
+	    /*
+	     * Set the directory that contains /tmp.
+	     */
+	    SWAP_TO_BUFFER(fsTmpDirNum, buffer);
+	    break;
+	}
 	case FS_ZERO_STATS: {
 	    /*
 	     * Zero out the counters in the fsStats struct.  Unfortunately,
