@@ -144,6 +144,7 @@ FsrmtImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
 	    *domainTypePtr = FS_REMOTE_SPRITE_DOMAIN;
 	}
     }
+
     return(status);
 }
 
@@ -233,7 +234,11 @@ Fsrmt_RpcPrefix(srvToken, clientID, command, storagePtr)
 	    Fsprefix_HandleClose(prefixPtr, FSPREFIX_ANY);
 	}
     }
-    return(RPC_NO_REPLY);
+    if (RPC_IS_BROADCAST(srvToken)) {
+	return(RPC_NO_REPLY);
+    } else {
+	return(RPC_FS_NO_PREFIX);
+    }
 }
 
 /*

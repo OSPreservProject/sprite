@@ -372,7 +372,7 @@ Fs_ProcInit()
 		    if (strcmp(LOCAL_DISK_NAME, rootPrefix)) {
 			printf("Clearing local disk prefix %s.\n", 
 			    LOCAL_DISK_NAME);
-			Fsprefix_Clear(LOCAL_DISK_NAME, TRUE);
+			Fsprefix_Clear(LOCAL_DISK_NAME, TRUE, FALSE);
 		    }
 		    fsDiskAttached = TRUE;
 		    break;

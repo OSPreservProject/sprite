@@ -89,7 +89,7 @@ Fs_Command(command, bufSize, buffer)
 		int prefixFlags = FSPREFIX_IMPORTED;
 
 		if (argPtr->serverID != RPC_BROADCAST_SERVER_ID) {
-		    prefixFlags |= FSPREFIX_REMOTE;
+		    prefixFlags |= FSPREFIX_REMOTE | FSPREFIX_FORCED;
 		}
 		Fsprefix_Load(argPtr->prefix, argPtr->serverID, prefixFlags);
 		status = SUCCESS;
@@ -136,14 +136,14 @@ Fs_Command(command, bufSize, buffer)
 	    /*
 	     * Clear the handle information about a prefix.
 	     */
-	    status = Fsprefix_Clear(buffer, FALSE);
+	    status = Fsprefix_Clear(buffer, FALSE, TRUE);
 	    break;
 	}
 	case FS_PREFIX_DELETE: {
 	    /*
 	     * Remote a prefix table entry all-together.
 	     */
-	    status = Fsprefix_Clear(buffer, TRUE);
+	    status = Fsprefix_Clear(buffer, TRUE, TRUE);
 	    break;
 	}
 	case FS_PREFIX_CONTROL: {

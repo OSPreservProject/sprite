@@ -1226,11 +1226,14 @@ Fsprefix_Export(prefix, clientID, delete)
  *----------------------------------------------------------------------
  */
 ENTRY Boolean
-Fsprefix_Clear(prefix, deleteFlag)
+Fsprefix_Clear(prefix, deleteFlag, forced)
     char *prefix;		/* String to install as a prefix */
     int deleteFlag;		/* If TRUE then the prefix is removed from
 				 * the table.  Otherwise just the handle
 				 * information is cleared. */
+    Boolean forced;		/* If true, then this command is being forced
+				 * from user-level.
+				 */
 {
     register Fsprefix *prefixPtr;
     Fsprefix *targetPrefixPtr = (Fsprefix *)NIL;
@@ -1299,6 +1302,13 @@ nukeIt:
 	UNLOCK_MONITOR;
 	return(FAILURE);
     } else {
+	/*
+	 * Was this a force-loaded prefix?  We can only delete it if this
+	 * command is also being forced from user level.
+	 */
+	if ((targetPrefixPtr->flags & FSPREFIX_FORCED) && !forced) {
+	    return FAILURE; 
+	}
 	if (targetPrefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) {
 	    FsprefixHandleCloseInt(targetPrefixPtr, FSPREFIX_ANY);
 	}
@@ -1470,6 +1480,9 @@ LocatePrefix(fileName, serverID, domainTypePtr, hdrPtrPtr)
 #endif /* lint */
 	if (status == SUCCESS) {
 	    return(FS_NEW_PREFIX);
+	} else if (status == RPC_FS_NO_PREFIX) {
+	    /* Delete prefix.  This won't delete it if load was also forced. */
+	    (void) Fsprefix_Clear(fileName, FALSE, FALSE);
 	}
     }
     return(FS_FILE_NOT_FOUND);

@@ -101,6 +101,8 @@ typedef struct Fsprefix {
  *					also takes FSPREFIX_LOCAL,
  *					FSPREFIX_EXPORTED, FSPREFIX_IMPORTED
  *					as types to remove.
+ *	FSPREFIX_FORCED		This prefix was forced to be loaded to avoid
+ *					broadcasting for the server.
  */
 
 #define	FSPREFIX_EXPORTED		0x1
@@ -112,6 +114,8 @@ typedef struct Fsprefix {
 #define FSPREFIX_LOCKED		0x40
 #define FSPREFIX_REMOTE		0x80
 #define FSPREFIX_ANY			0x100
+#define FSPREFIX_FORCED			0x200
+
 
 extern Boolean fsprefix_FileNameTrace;
 /*
@@ -146,9 +150,10 @@ extern ReturnStatus FsprefixLookupRedirect _ARGS_((
 extern ReturnStatus Fsprefix_TwoNameOperation _ARGS_((int operation, 
 		char *srcName, char *dstName, Fs_LookupArgs *lookupArgsPtr));
 
-extern Boolean Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag));
+extern Boolean Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag, Boolean forced));
 extern ReturnStatus Fsprefix_DumpExport _ARGS_((int size, Address buffer));
 extern ReturnStatus Fsprefix_Dump _ARGS_((int index, Address argPtr));
 extern void Fsprefix_Export _ARGS_((char *prefix, int clientID,Boolean delete));
+extern Boolean Fsprefix_WasForced _ARGS_((char *prefix));
 
 #endif _FSPREFIX
