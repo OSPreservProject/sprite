@@ -319,8 +319,10 @@ sigReturn:
 |*
 |* Call bcopy((Address)excStack, (Address)sp, sizeof(excStack));
 |*
+	movl	sp, d0
 	movl	a0@(MACH_SIG_EXC_STACK_SIZE_OFFSET), sp@-
-	movl	sp, sp@-
+	movl	d0, sp@-
+|*	movl	sp, sp@-
 	pea	a0@(MACH_SIG_EXC_STACK_OFFSET)
 	jsr	_bcopy
 	addl	#12, sp
