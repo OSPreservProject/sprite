@@ -1286,7 +1286,10 @@ void
 Sig_AllowMigration(procPtr)
     register Proc_ControlBlock	*procPtr;	/* process to modify */
 {
-    procPtr->sigHoldMask &= ~SigGetBitMask(SIG_MIGRATE_TRAP);
+    if (procPtr->sigPendingMask & sigBitMasks[SIG_MIGRATE_TRAP]) {
+    	procPtr->sigHoldMask &= ~sigBitMasks[SIG_MIGRATE_TRAP];
+	procPtr->specialHandling = 1;
+    }
 }
 
 
