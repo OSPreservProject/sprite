@@ -180,6 +180,8 @@ Address			theAddrOfMachPtr = 0;
 Address			oldAddrOfVmPtr = 0; 
 Address			oldAddrOfMachPtr = 0;
 
+MachMonBootParam	machMonBootParam;
+
 /*
  * For debugging stuff, put values into a circular buffer.  After each value,
  * stamp a special mark, which gets overwritten by next value, so we
@@ -217,6 +219,7 @@ Mach_Init()
     int		i;
     extern	void	MachVectoredInterrupt();
     extern	void	MachHandleDebugTrap();
+    int		offset;
 
     /*
      * Set exported machine dependent variables.
@@ -351,6 +354,25 @@ Mach_Init()
 
     /* Temporary: for debugging net module and debugger: */
     mach_NumDisableInterrupts[0] = 1;
+
+    /*
+     * Copy the boot parameter structure. The original location will get
+     * unmapped during vm initialization so we need to get our own copy.
+     */
+    machMonBootParam = **(romVectorPtr->bootParam);
+    offset = (unsigned int) *(romVectorPtr->bootParam) - 
+	     (unsigned int) &(machMonBootParam);
+    for (i = 0; i < 8; i++) {
+	if (machMonBootParam.argPtr[i] != (char *) 0 &&
+	 machMonBootParam.argPtr[i] != (char *) NIL) {
+	    machMonBootParam.argPtr[i] -= offset;
+	}
+    }
+    /*
+     * Clear out the line input buffer to the prom so we don't get extra
+     * characters at the end of shorter reboot strings.
+     */
+    bzero(romVectorPtr->lineBuf, *romVectorPtr->lineSize);
 
     return;
 }
@@ -1426,11 +1448,38 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 		"MachHandleWeirdoInstruction: fp exception from user process.",
 		machSavedFsr);
 #endif FP_ENABLED
-	/* fall through */
-    case MACH_FP_DISABLED:
-	(void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, procPtr->processID,
+    (void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, procPtr->processID,
 		FALSE);
 	break;
+    case MACH_FP_DISABLED: {
+	Mach_State 	*machStatePtr;
+	int		curSp;
+	Mach_RegWindow	*curWindow;
+
+	/* 
+	 * Insure the user's registers are memory resident.
+	 */
+	MachFlushWindowsToStack();
+	machStatePtr = procPtr->machStatePtr;
+	/*
+	 * See if the user's window was saved to the internal buffers.
+	 */
+	curSp = machStatePtr->trapRegs->ins[MACH_FP_REG];
+	curWindow = (Mach_RegWindow *) curSp;
+	if (machStatePtr->savedMask != 0) {
+	    int	i;
+	    for (i = 0; i < MACH_NUM_WINDOWS; i++) {
+		if (((1 << i) & machStatePtr->savedMask) &&
+		    (machStatePtr->savedSps[i] == curSp))  {
+		    curWindow = (Mach_RegWindow *)
+				    &(machStatePtr->savedRegs[i][0]);
+		}
+	    }
+	}
+	MachFPU_Emulate(procPtr->processID,pcValue, machStatePtr->trapRegs, 
+			curWindow,  &machStatePtr->fpuState);
+	break;
+	}
     case MACH_TAG_OVERFLOW:
 	panic("%s %s\n", "MachHandleWeirdoInstruction: tag",
 		"overflow trap in user process, but I don't deal with it yet.");
@@ -1493,3 +1542,43 @@ MachUserDebug()
 
     return;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetBootArgs --
+ *
+ *	Returns the arguments out of the boot parameter structure. 
+ *
+ * Results:
+ *	Number of elements returned in argv.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Mach_GetBootArgs(argc, bufferSize, argv, buffer)
+	int	argc;			/* Number of elements in argv */
+	int	bufferSize;		/* Size of buffer */
+	char	**argv;			/* Ptr to array of arg pointers */
+	char	*buffer;		/* Storage for arguments */
+{
+    int		i;
+    int		offset;
+
+    bcopy(machMonBootParam.strings, buffer, 
+	  (bufferSize < 100) ? bufferSize : 100);
+    offset = (unsigned int) machMonBootParam.strings - (unsigned int) buffer;
+    for(i = 0; i < argc; i++) {
+	if (machMonBootParam.argPtr[i] == (char *) 0 ||
+	    machMonBootParam.argPtr[i] == (char *) NIL) {
+	    break;
+	}
+	argv[i] = (char *) (machMonBootParam.argPtr[i] - (char *) offset);
+    }
+    return i;
+}
+

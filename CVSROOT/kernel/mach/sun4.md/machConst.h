@@ -224,7 +224,7 @@
  *			a context switch.  Used to verify that the stack 
  *			doesn't get trashed.
  */
-#define	MACH_KERN_START		0xff000000
+#define	MACH_KERN_START		0xf6000000
 #define	MACH_STACK_START	(MACH_KERN_START + 0x4000)
 #define	MACH_CODE_START		(MACH_STACK_START + 0x20)
 #define	MACH_STACK_BOTTOM	MACH_KERN_START

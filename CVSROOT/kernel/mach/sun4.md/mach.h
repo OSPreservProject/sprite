@@ -19,6 +19,7 @@
 #define _MACH
 
 #ifdef KERNEL
+#include "sprite.h"
 #include "devAddrs.h"
 #include "machConst.h"
 #else
@@ -117,6 +118,16 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
 #include <kernel/machSig.h>
 #endif
 
+typedef struct Mach_FPUState {
+    unsigned int stateReg;	/* FPU state register. */
+    unsigned int fregs[32];     /* 32 singles or 14 double registers. */
+} Mach_FPUState;
+
+typedef struct Mach_RegWindow {
+     int locals[MACH_NUM_LOCALS];
+     int ins[MACH_NUM_INS];
+} Mach_RegWindow;
+
 /*
  * Ugh, I have to include this here, since it needs Mach_RegState, and
  * Mach_SigContext, defined above.   But I need the include file before
@@ -161,6 +172,7 @@ typedef struct Mach_State {
 						 * up signal handling */
     Sig_Context		sigContext;		/* sig context holder for
 						 * setting up signal handling */
+    Mach_FPUState	fpuState;		/* Process FPU state. */
 } Mach_State;
 
 /*
