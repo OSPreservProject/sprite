@@ -1402,7 +1402,7 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
 	 * the interrupt handler not to free it.
 	 */
 	if (((unsigned) scsiCmdPtr->buffer) < (unsigned)VMMACH_DMA_START_ADDR) {
-	    addr = (Address) VmMach_32BitDMAAlloc(scsiCmdPtr->bufferLen, 
+	    addr = VmMach_32BitDMAAlloc(scsiCmdPtr->bufferLen, 
 					 scsiCmdPtr->buffer);
 	} else {
 	    addr = (Address) (((unsigned) scsiCmdPtr->buffer) | 1);
