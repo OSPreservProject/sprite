@@ -672,6 +672,7 @@ Recov_RebootRegister(spriteID, rebootCallBackProc, rebootData)
 	    notifyPtr = Mem_New(NotifyElement);
 	    notifyPtr->proc = rebootCallBackProc;
 	    notifyPtr->data = rebootData;
+	    List_InitElement((List_Links *)notifyPtr);
 	    List_Insert((List_Links *)notifyPtr,
 			LIST_ATFRONT(&hostPtr->rebootList));
 	}
