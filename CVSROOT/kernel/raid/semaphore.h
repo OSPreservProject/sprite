@@ -16,8 +16,8 @@
 #ifndef _SEMA
 #define _SEMA
 
-#include "syncLock.h"
 #include "sync.h"
+#include "syncLock.h"
 
 typedef struct {
     Sync_Semaphore	mutex;
