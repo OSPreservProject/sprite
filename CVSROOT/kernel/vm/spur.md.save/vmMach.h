@@ -126,4 +126,6 @@ extern	void		VmMach_UnpinUserPages();
  */
 extern	void		VmMach_FlushPage();
 
+extern	ReturnStatus	VmMach_Cmd();
+
 #endif _VMMACH
