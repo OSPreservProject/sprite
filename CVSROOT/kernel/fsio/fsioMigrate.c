@@ -39,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsDebug.h"
 #include "fsNameOpsInt.h"
 #include "rpc.h"
+#include "procMigrate.h"
 
 Boolean fsMigDebug = FALSE;
 #define DEBUG( format ) \
@@ -600,10 +601,29 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
     int i;
     int numEncap;
     ReturnStatus status;
+    FsPrefix *prefixPtr;
+    char *cwdName;
+    int cwdLength;
 
 
     fsPtr = procPtr->fsPtr;
     numStreams = fsPtr->numStreams;
+    /*
+     * Get the prefix for the current working directory, and its size.
+     * We pass the name over so it can be opened to make sure the prefix
+     * is available.
+     */
+    if (fsPtr->cwdPtr->nameInfoPtr == (FsNameInfo *)NIL) {
+	panic("Fs_EncapFileState: no name information for cwd.\n");
+	return(FAILURE);
+    }
+    prefixPtr = fsPtr->cwdPtr->nameInfoPtr->prefixPtr;
+    if (prefixPtr == (FsPrefix *)NIL) {
+	panic("Fs_EncapFileState: no prefix for cwd.\n");
+	return(FAILURE);
+    }
+    cwdLength = Byte_AlignAddr(prefixPtr->prefixLength + 1);
+    
     /*
      * When sending an array of characters, it has to be even-aligned.
      */
@@ -623,11 +643,11 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
      *		# files			int
      *		per-file flags		(# files) * char
      *		encapsulated files	(# files) * (FsMigInfo + int)
-     *		cwd			FsMigInfo
+     *		cwd			FsMigInfo + int + strlen(cwdPrefix) + 1
      */
-    *sizePtr = (3 + fsPtr->numGroupIDs) * sizeof(int) +
+    *sizePtr = (4 + fsPtr->numGroupIDs) * sizeof(int) +
 	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
-	    sizeof(FsMigInfo);
+	    sizeof(FsMigInfo) + cwdLength;
     *bufPtr = (Address)malloc(*sizePtr);
     ptr = *bufPtr;
 
@@ -648,6 +668,11 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
 	ptr += streamFlagsLen;
     }
     
+    Byte_FillBuffer(ptr, int, prefixPtr->prefixLength);
+    strncpy(ptr, prefixPtr->prefix, prefixPtr->prefixLength);
+    ptr[prefixPtr->prefixLength] = '\0';
+    ptr += cwdLength;
+
     status = Fs_EncapStream(fsPtr->cwdPtr, ptr);
     if (status != SUCCESS) {
 	printf(
@@ -760,6 +785,9 @@ Fs_DeencapFileState(procPtr, buffer)
     int numGroups;
     int numStreams;
     ReturnStatus status;
+    char *cwdName;
+    int cwdLength;
+    Fs_Stream prefixStream;
 
     procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
     
@@ -797,13 +825,41 @@ Fs_DeencapFileState(procPtr, buffer)
 	fsPtr->streamList = (Fs_Stream **)NIL;
 	fsPtr->streamFlags = (char *)NIL;
     }
+    /*
+     * Get the name of the current working directory and make sure it's
+     * an installed prefix.
+     */
+    Byte_EmptyBuffer(buffer, int, cwdLength);
+    cwdName = buffer;
+    buffer += Byte_AlignAddr(cwdLength + 1);
+    status = Fs_Open(cwdName, FS_READ | FS_FOLLOW, FS_FILE, 0, &prefixStream);
+    if (status != SUCCESS) {
+	if (fsMigDebug) {
+	    panic("Unable to open prefix '%s' for migrated process.\n",
+		   cwdName);
+	} else if (proc_MigDebugLevel > 1) {
+	    printf("%s unable to open prefix '%s' for migrated process.\n",
+		   "Warning: Fs_DeencapFileState:", cwdName);
+	}
+	return(status);
+    } else {
+	(void) Fs_Close(&prefixStream);
+    }
+
     status = Fs_DeencapStream(buffer, &fsPtr->cwdPtr);
     if (status != SUCCESS) {
-	panic(
-		  "GetFileState: Fs_DeencapStream returned %x for cwd.\n",
+	if (fsMigDebug) {
+	    panic("GetFileState: Fs_DeencapStream returned %x for cwd.\n",
 		  status);
+	} else if (proc_MigDebugLevel > 1) {
+	    printf("%s Fs_DeencapStream returned %x for cwd.\n",
+		  "Warning: Fs_DeencapFileState:", status);
+	}
+	return(status);
     }
     buffer += sizeof(FsMigInfo);
+
+    
 
     /*
      * Get the other streams.
