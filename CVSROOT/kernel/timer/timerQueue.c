@@ -45,7 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Procedures internal to this file
  */
 
-void TimerDumpElement();
+void TimerDumpElement _ARGS_((Timer_QueueElement *timerPtr));
 
 
 
@@ -218,7 +218,8 @@ Timer_CallBack(interval, time)
 		    if (ELEMENTPTR->routine == 0) {
 			panic("Timer_ServiceInterrupt: t.q.e. routine == 0\n");
 		    } else {
-			void        (*routine)();
+			void        (*routine) _ARGS_((Timer_Ticks timeTicks,
+						      ClientData  clientData));
 			Timer_Ticks timeTk;
 			ClientData  clientData;
 
