@@ -2038,8 +2038,9 @@ returnTrap_CallSigHandler:
 1:
 	/*
 	 * Set the signal handler executing in user mode.
+	 * Assume that the user's signal handler will to a "return r10,r0,8".
 	 */
-	add_nt		RETURN_ADDR_REG, r0, $SigReturnAddr
+	add_nt		RETURN_ADDR_REG, r0, $(SigReturnAddr-8)
 	ld_32		VOL_TEMP1, INPUT_REG5, $MACH_NEW_CUR_PC_OFFSET
 	rd_kpsw		VOL_TEMP2
 	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_CUR_MODE|MACH_KPSW_ALL_TRAPS_ENA
