@@ -55,6 +55,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 #undef CLEAN
 #include "fsPdev.h"
+#include "dev/pfs.h"
 
 /*
  * Access to PdevServerIOHandle is monitored.
@@ -146,11 +147,10 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     int			inputSize;	/* Size of input buffer. */
     Address		inputBuf;	/* Inputs of the remote command. */
     int			replySize;	/* Size of output buffer.  0 means
-					 * no reply data expected.  -1
-					 * means no reply wanted.  This causes
-					 * a SUCCESS return immediately
-					 * without having to switch out to
-					 * the server process for the reply. */
+					 * no reply data expected.  Of the
+					 * operation is PDEV_WRITE_ASYNC then
+					 * no reply is wanted and ths argument
+					 * is ignored. */
     Address		replyBuf;	/* Results of the remote command. */
     int			*replySizePtr;	/* Amount of data actually in replyBuf.
 					 * (May be NIL if not needed.) */
@@ -194,7 +194,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	firstByte = -1;
     }
     /*
-     * Format the request header.  Note that the complete message size is
+     * FORMAT THE REQUEST HEADER.  Note that the complete message size is
      * rounded up so subsequent messages start on word boundaries.
      */
     if (hdrSize == sizeof(Pdev_Request)) {
@@ -217,8 +217,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     PDEV_REQUEST(&pdevHandlePtr->hdr.fileID, requestHdrPtr);
 
     /*
-     * Put the request into the request buffer.
-     *
+     * PUT THE REQUEST INTO THE REQUEST BUFFER.
      * We assume that our caller will not give us a request that can't all
      * fit into the buffer.  However, if the buffer is not empty enough we
      * wait for the server to catch up with us.  (Things could be optimized
@@ -283,6 +282,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     }
 
     /*
+     * COPY REQUEST AND DATA.
      * Copy the request and data out into the server's request buffer.
      * We map to a proc table pointer for the server which has a side
      * effect of locking down the server process so it can't disappear.
@@ -316,7 +316,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     }
 
     /*
-     * Poke the server so it can read the new pointer values.
+     * POKE THE SERVER so it can read the new pointer values.
      * This is done here even if write-behind is enabled, even though our
      * scheduler tends to wake up the server too soon.
      * Although it is possible to put a notify in about 3 other places
@@ -327,10 +327,10 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
      */
     FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 
-    if (replySize >= 0) {  
+    if (pdevHandlePtr->operation != PDEV_WRITE_ASYNC) {
 	/*
-	 * If this operation needs a reply we wait for it.  We save
-	 * the client's reply buffer address and processID in the
+	 * WAIT FOR A REPLY.
+	 * We save the client's reply buffer address and processID in the
 	 * stream state so the kernel can copy the reply directly from
 	 * the server's address space to the client's when the server
 	 * makes the IOC_PDEV_REPLY IOControl.
@@ -429,7 +429,7 @@ FsServerStreamCreate(ioFileIDPtr, name)
 
     pdevHandlePtr->nextRequestBuffer = (Address)NIL;
 
-    pdevHandlePtr->operation = PDEV_INVALID;
+    pdevHandlePtr->operation = 0;
     pdevHandlePtr->replyBuf = (Address)NIL;
     pdevHandlePtr->serverPID = (Proc_PID)NIL;
     pdevHandlePtr->clientPID = (Proc_PID)NIL;
@@ -1551,6 +1551,93 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
+ * FsPseudoStreamGetIOAttr --
+ *
+ *	Called from Fs_GetAttrStream to get the I/O attributes of a
+ *	pseudo-device.  The access and modify times of the pseudo-device
+ *	are obtained from the internal pdev state.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsPseudoStreamGetIOAttr(fileIDPtr, clientID, attrPtr)
+    register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
+    int				clientID;	/* Host ID of process asking
+						 * for the attributes */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+{
+    PdevClientIOHandle		*cltHandlePtr;
+    register PdevServerIOHandle	*pdevHandlePtr;
+
+    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
+	printf( "FsPseudoStreamGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
+	    FsFileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
+	    fileIDPtr->major, fileIDPtr->minor, clientID);
+	return(FS_FILE_NOT_FOUND);
+    }
+    FsHandleRelease(cltHandlePtr, TRUE);
+    pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    LOCK_MONITOR;
+
+    attrPtr->accessTime.seconds = pdevHandlePtr->accessTime;
+    attrPtr->dataModifyTime.seconds = pdevHandlePtr->modifyTime;
+
+    UNLOCK_MONITOR;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPseudoStreamSetIOAttr --
+ *
+ *	Set the IO attributes of a pseudo-device.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Updates the access and modify times kept in the pdev state.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsPseudoStreamSetIOAttr(fileIDPtr, attrPtr, flags)
+    register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+    int				flags;		/* Tells which attrs to set */
+{
+    PdevClientIOHandle		*cltHandlePtr;
+    register PdevServerIOHandle	*pdevHandlePtr;
+
+    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
+	printf( "FsPseudoStreamSetIOAttr, no handle <%d,%d,%x,%x>\n",
+	    fileIDPtr->serverID, fileIDPtr->type,
+	    fileIDPtr->major, fileIDPtr->minor);
+	return(FS_FILE_NOT_FOUND);
+    }
+    FsHandleRelease(cltHandlePtr, TRUE);
+    pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    LOCK_MONITOR;
+    if (flags & FS_SET_TIMES) {
+	pdevHandlePtr->accessTime = attrPtr->accessTime.seconds;
+	pdevHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
+    }
+    UNLOCK_MONITOR;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FsPseudoStreamRead --
  *
  *	Read from a pseudo-device stream. If there is data in the read
@@ -1689,6 +1776,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	status = FS_WOULD_BLOCK;
     }
     *offsetPtr += *lenPtr;
+    pdevHandlePtr->accessTime = fsTimeInSeconds;
 exit:
     if (status == DEV_OFFLINE) {
 	/*
@@ -1761,8 +1849,8 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
 	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
-	    UNLOCK_MONITOR;
-	    return(FS_BROKEN_PIPE);
+	    status = FS_BROKEN_PIPE;
+	    goto exitNoServer;
 	}
     }
     pdevHandlePtr->flags |= (PDEV_BUSY|(flags & FS_USER));
@@ -1782,7 +1870,11 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
      * The buffer contains the data to write.
      */
     procPtr = Proc_GetEffectiveProc();
-    request.hdr.operation		= PDEV_WRITE;
+    if (pdevHandlePtr->flags & PDEV_WRITE_BEHIND) {
+	request.hdr.operation		= PDEV_WRITE_ASYNC;
+    } else {
+	request.hdr.operation		= PDEV_WRITE;
+    }
     request.param.write.offset		= *offsetPtr;
     request.param.write.familyID	= procPtr->familyID;
     request.param.write.procID		= procPtr->processID;
@@ -1808,11 +1900,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	} else {
 	    length = toWrite;
 	}
-	/*
-	 * Do a synchronous or asynchronous write.
-	 */
-	replySize = (pdevHandlePtr->flags & PDEV_WRITE_BEHIND) ? -1 :
-		sizeof(int);
+	replySize = sizeof(int);
 	status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
 				 &request.hdr, length, buffer,
 				 replySize, (Address)&numBytes, &replySize,
@@ -1823,7 +1911,8 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	     */
 	    numBytes = length;
 	} else if (replySize != sizeof(int)) {
-	    printf( "Pdev_Write, no return amtWritten\n");
+	    printf("Pdev_Write, no return amtWritten (%s)\n",
+		    FsHandleName(pdevHandlePtr));
 	    numBytes = 0;
 	}
 	amountWritten += numBytes;
@@ -1833,6 +1922,8 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     }
     *lenPtr = amountWritten;
     *offsetPtr += amountWritten;
+    pdevHandlePtr->modifyTime = fsTimeInSeconds;
+exit:
     if (status == DEV_OFFLINE) {
 	/*
 	 * Simulate a broken pipe so writers die.
@@ -1840,7 +1931,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	status = FS_BROKEN_PIPE;
     }
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
-exit:
+exitNoServer:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
     return(status);
