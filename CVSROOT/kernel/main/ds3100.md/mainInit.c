@@ -376,7 +376,7 @@ main()
      * Start the process that synchronizes the filesystem caches
      * with the data kept on disk.
      */
-    Proc_CallFunc(Fs_SyncProc, (ClientData) NIL, 0);
+    Proc_CallFunc(Fsutil_SyncProc, (ClientData) NIL, 0);
 
     /*
      * Create a few RPC server processes and the Rpc_Daemon process which
