@@ -26,13 +26,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
+#include "fsio.h"
 #include "fsutil.h"
 #include "fsNameOps.h"
 #include "fsNameOpsInt.h"
 #include "fsprefix.h"
 #include "fsrmtInt.h"
 #include "fslcl.h"
-#include "fsio.h"
 #include "fsutilTrace.h"
 #include "fsStat.h"
 #include "recov.h"
@@ -110,7 +110,7 @@ FsrmtImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
     status = Rpc_Call(serverID, RPC_FS_PREFIX, &storage);
     /*
      * It is necessary to allocate and copy over the stream data, since
-     * the cltOpen proc frees this space.
+     * the ioOpen proc frees this space.
      */
     streamData = (ClientData)malloc(sizeof(FsrmtUnionData));
     *((FsrmtUnionData *) streamData) = prefixReplyParam.openData;
@@ -119,7 +119,7 @@ FsrmtImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
 	/*
 	 * Use the client-open routine to set up an I/O handle for the prefix.
 	 */
-	status = (*fsio_StreamOpTable[fileIDPtr->type].cltOpen)(fileIDPtr, &flags,
+	status = (*fsio_StreamOpTable[fileIDPtr->type].ioOpen)(fileIDPtr, &flags,
 		    rpc_SpriteID, (ClientData)streamData, prefix, hdrPtrPtr);
 	if (status == SUCCESS) {
 	    /*
@@ -149,7 +149,7 @@ FsrmtImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
  *	returned and the main level sends back an error reply.
  *
  * Side effects:
- *	The srvOpen routine is called on the prefix handle.  This ups
+ *	The nameOpen routine is called on the prefix handle.  This ups
  *	reference counts.
  *
  *----------------------------------------------------------------------

@@ -23,8 +23,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 
 #include "fs.h"
-#include "fsutil.h"
 #include "fsio.h"
+#include "fsutil.h"
 #include "fsNameOps.h"
 #include "fsNameOpsInt.h"
 #include "fsdm.h"
@@ -273,7 +273,7 @@ Fsrmt_RpcDevOpen(srvToken, clientID, command, storagePtr)
     if (paramPtr->fileID.type < 0) {
 	return(GEN_INVALID_ARG);
     }
-    status = (fsio_StreamOpTable[paramPtr->fileID.type].cltOpen)
+    status = (fsio_StreamOpTable[paramPtr->fileID.type].ioOpen)
 		    (&paramPtr->fileID, &paramPtr->useFlags,
 		     clientID, streamData, (char *)NIL, &hdrPtr);
     if (status == SUCCESS) {
