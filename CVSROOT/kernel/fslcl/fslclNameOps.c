@@ -405,10 +405,8 @@ FsDeviceTypeOps fsDeviceOpTable[] = {
     /*
      * SCSI-3 Disk interface.  Sun's newer SCSI host adaptor.
      */
-#ifdef sbc_disk
     {FS_DEV_SBC_DISK, Dev_SBCDiskOpen, Dev_SBCDiskRead, Dev_SBCDiskWrite,
 		     Dev_SBCDiskIOControl, Dev_SBCDiskClose, NullProc},
-#endif sbc_disk
 };
 
 int fsNumDevices = sizeof(fsDeviceOpTable) / sizeof(FsDeviceTypeOps);
@@ -429,9 +427,7 @@ FsBlockOps fsBlockOpTable[] = {
     { FS_DEV_MEMORY, 0 },
     { FS_DEV_XYLOGICS, Dev_XylogicsDiskBlockIO },
     { FS_DEV_NET, 0 },
-#ifdef sbc_disk
     { FS_DEV_SBC_DISK, Dev_SBCDiskBlockIO },
-#endif
 };
 
 static ReturnStatus
