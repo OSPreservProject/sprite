@@ -44,11 +44,17 @@ static LfsSeg *GetSegStruct _ARGS_((Lfs *lfsPtr, LfsSegLogRange
 			*segLogRangePtr, int startBlockOffset, char *memPtr));
 static void AddNewSummaryBlock _ARGS_((LfsSeg *segPtr));
 static Boolean DoOutCallBacks _ARGS_((enum CallBackType type, LfsSeg *segPtr, int flags, char *checkPointPtr, int *sizePtr, ClientData *clientDataPtr));
-static ReturnStatus WriteSegment _ARGS_((LfsSeg *segPtr, Boolean full));
+static ReturnStatus WriteSegmentStart _ARGS_((LfsSeg *segPtr));
+static ReturnStatus WriteSegmentFinish _ARGS_((LfsSeg *segPtr));
 static void RewindCurPtrs _ARGS_((LfsSeg *segPtr));
 static Boolean DoInCallBacks _ARGS_((enum CallBackType type, LfsSeg *segPtr, int flags, int *sizePtr, int *numCacheBlocksPtr, ClientData *clientDataPtr));
 static void DestorySegStruct _ARGS_((LfsSeg *segPtr));
 
+/*
+ * Macro returning TRUE if segment is completely empty.
+ */
+#define SegIsEmpty(segPtr) (((segPtr)->numBlocks == 1) && 		\
+	    ((segPtr)->curSegSummaryPtr->size == sizeof(LfsSegSummary)))
 
 /*
  *----------------------------------------------------------------------
@@ -117,7 +123,10 @@ LfsSegmentWriteProc(clientData, callInfoPtr)
 	    segPtr = CreateSegmentToWrite(lfsPtr, FALSE);
 	    full = DoOutCallBacks(SEG_LAYOUT, segPtr, 0, (char *) NIL,
 				    (int *) NIL, clientDataArray);
-	    status = WriteSegment(segPtr, full);
+	    status = WriteSegmentStart(segPtr);
+	    if (status == SUCCESS) {
+		status = WriteSegmentFinish(segPtr);
+	    }
 	    if (status != SUCCESS) {
 		LfsError(lfsPtr, status, "Can't write segment to log\n");
 	    }
@@ -323,6 +332,7 @@ InitSegmentMem(lfsPtr)
     LfsSeg	*segPtr;
     int		maxSegElementSize;
     int		i;
+    DevBlockDeviceHandle *handlePtr;
 
     /*
      * Compute the maximum size of the seg element array. It can't be
@@ -341,7 +351,10 @@ InitSegmentMem(lfsPtr)
 	segPtr->lfsPtr = lfsPtr;
 	segPtr->segElementPtr = (LfsSegElement *) malloc(maxSegElementSize);
     }
-
+    handlePtr = (DevBlockDeviceHandle *) lfsPtr->devicePtr->data;
+    lfsPtr->writeBuffers[0] = malloc(handlePtr->maxTransferSize*2);
+    lfsPtr->writeBuffers[1] = lfsPtr->writeBuffers[0] + 
+				handlePtr->maxTransferSize;
 
 }
 
@@ -365,6 +378,7 @@ FreeSegmentMem(lfsPtr)
     Lfs	*lfsPtr;
 {
     int i;
+    free(lfsPtr->writeBuffers[0]);
     lfsPtr->segsInUse = 0;
     for (i = 0; i < LFS_NUM_PREALLOC_SEGS; i++) { 
 	free((char *)(lfsPtr->segs[i].segElementPtr));
@@ -421,16 +435,140 @@ AddNewSummaryBlock(segPtr)
     segPtr->curSummaryPtr = sumBufferPtr->address + sizeof(LfsSegSummary);
     segPtr->curSummaryLimitPtr = sumBufferPtr->address + sumBytes;
 }
-#define SUN4HACK
+
+void
+CopySegToBuffer( segPtr, maxSize, bufferPtr, lenPtr)
+    LfsSeg	*segPtr;
+    int		maxSize;
+    char	*bufferPtr;
+    int		*lenPtr;
+{
+    int bytes, offset;
+    LfsSegElement *elementPtr;
+    Boolean full;
+
+    *lenPtr = 0;
+    offset = 0;
+    full = FALSE;
+    while ((segPtr->curElement >= 0) && !full) {
+	elementPtr = segPtr->segElementPtr + segPtr->curElement;
+	bytes = LfsBlocksToBytes(segPtr->lfsPtr, 
+		elementPtr->lengthInBlocks - segPtr->curBlockOffset);
+	if (*lenPtr + bytes > maxSize) {
+	    /*
+	     * Element doesn't fit in this buffer. 
+	     */
+	    if (*lenPtr == maxSize) {
+		offset = 0;
+	    } else { 
+		offset = LfsBytesToBlocks(segPtr->lfsPtr,(maxSize - *lenPtr));
+	    }
+	    bytes = LfsBlocksToBytes(segPtr->lfsPtr, offset);
+	    full = TRUE;
+	} 
+	if (segPtr->curBlockOffset == 0) { 
+	    bcopy(elementPtr->address, bufferPtr + *lenPtr, bytes);
+	} else {
+	    bcopy(elementPtr->address + 
+		   LfsBlocksToBytes(segPtr->lfsPtr,segPtr->curBlockOffset),
+		  bufferPtr + *lenPtr, bytes);
+	}
+	*lenPtr += bytes;
+	if (full) {
+	    segPtr->curBlockOffset += offset;
+	} else {
+	    segPtr->curElement--;
+	    segPtr->curBlockOffset = 0;
+	}
+    }
+}
+
+/*
+ * By defining SUN4DMAHACK, LFS copies data to block already allocated
+ * in DMA space.  This saves DMA allocation and free in the device
+ * driver.
+ */
+#ifdef notdef
+#define	SUN4DMAHACK
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SegIoDoneProc --
+ *
+ *	This procedure is called when a sync block command started by 
+ *	WriteSegmentStart finished. It's calling sequence is 
+ *	defined by the call back caused by the Dev_BlockDeviceIO routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SegIoDoneProc(requestPtr, status, amountTransferred)
+    DevBlockDeviceRequest	*requestPtr;
+    ReturnStatus status;
+    int	amountTransferred;
+{
+    LfsSeg	*segPtr = (LfsSeg *) (requestPtr->clientData);
+    DevBlockDeviceHandle *handlePtr;
+
+    handlePtr = (DevBlockDeviceHandle *) segPtr->lfsPtr->devicePtr->data;
+    /*
+     * A pointer to the LfsSeg is passed as the clientData to this call.
+     * Start the new request if one is available. If this is the last
+     * request note the I/O as done.
+     */
+    MASTER_LOCK(&segPtr->ioMutex);
+    if (amountTransferred != requestPtr->bufferLen) {
+	status = VM_SHORT_WRITE;
+    }
+    if (status != SUCCESS) {
+	segPtr->ioReturnStatus = status;
+    }
+    requestPtr->startAddress = DEV_BYTES_PER_SECTOR * 
+				LfsDiskAddrToOffset(segPtr->nextDiskAddress);
+    requestPtr->bufferLen = 0;
+    CopySegToBuffer(segPtr, handlePtr->maxTransferSize, requestPtr->buffer, 
+			&requestPtr->bufferLen);
+    segPtr->nextDiskAddress += requestPtr->bufferLen/DEV_BYTES_PER_SECTOR;
+    if (requestPtr->bufferLen == 0) { 
+	segPtr->requestActive--;
+#ifdef SUN4DMAHACK
+	    if (segPtr->numElements >= 8) {
+		VmMach_DMAFree(handlePtr->maxTransferSize, requestPtr->buffer);
+	    }
+#endif
+	if (segPtr->requestActive == 0) {
+	    segPtr->ioDone = TRUE;
+	    Sync_MasterBroadcast(&segPtr->ioDoneWait);
+	}
+    } 
+    MASTER_UNLOCK(&segPtr->ioMutex);
+    if (requestPtr->bufferLen > 0) {
+	status = Dev_BlockDeviceIO(handlePtr, requestPtr);
+	if (status != SUCCESS) {
+	    LfsError(segPtr->lfsPtr, status, "Can't start log write.\n");
+	}
+    }
+    return;
+}
 
 
 /*
  *----------------------------------------------------------------------
  *
- * WriteSegment --
- *	Write a segment to the log.
+ * WriteSegmentStart --
+ *
+ *	Start a segment write to the log.
  *
  * Results:
+ *	SUCCESS if write complete. The ReturnStatus otherwise.
  *
  * Side effects:
  *	None.
@@ -438,103 +576,160 @@ AddNewSummaryBlock(segPtr)
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-WriteSegment(segPtr, full) 
+WriteSegmentStart(segPtr) 
     LfsSeg	*segPtr;	/* Segment to write. */
-    Boolean	full;		/* TRUE if the segment is full. */
 {
     Lfs	*lfsPtr = segPtr->lfsPtr;
-    int element, offset;
-    LfsDiskAddr newDiskAddr, diskAddress;
+    int offset;
+    LfsDiskAddr  diskAddress;
     ReturnStatus status = SUCCESS;
-    Boolean	segEmpty;
-    int		newStartBlockOffset;
-#ifdef SUN4HACK
-    char	*buffer;
-    static char	*dmaBuffer = (char *) NIL; 
-    if (dmaBuffer == (char *) NIL) {
-	dmaBuffer = malloc((int)LfsSegSize(lfsPtr));
-    }
-#endif
+    DevBlockDeviceHandle *handlePtr;
+    DevBlockDeviceRequest *requestPtr;
 
+    Sync_SemInitDynamic(&(segPtr->ioMutex),"LfsSegIoMutex");
+    segPtr->ioDone = FALSE;
+    segPtr->ioReturnStatus = SUCCESS;
+
+    if (SegIsEmpty(segPtr)) { 
+	/*
+	 * The segment being written is empty so we don't have
+	 * to write anytime. Just mark the I/O as done.
+	 */
+	segPtr->ioDone = TRUE;
+	return SUCCESS;
+    }
+
+    handlePtr = (DevBlockDeviceHandle *) lfsPtr->devicePtr->data;
+
+    /*
+     * Writing to a segment nukes the segment cache.
+     */
     if (lfsPtr->segCache.valid && 
 	 (lfsPtr->segCache.segNum == segPtr->logRange.current)) {
 	lfsPtr->segCache.valid = FALSE;
     }
     LFS_STATS_INC(lfsPtr->stats.log.segWrites);
-    /*
-     * Update the size of the last summary block.
-     */
-    segPtr->curSegSummaryPtr->size = segPtr->curSummaryPtr - 
-					(char *) segPtr->curSegSummaryPtr;
 
-    newStartBlockOffset = -1;
-    segEmpty = FALSE;
-    if (!full) {
-	if ((segPtr->numBlocks == 1) && 
-	    (segPtr->curSegSummaryPtr->size == sizeof(LfsSegSummary))) {
-	    /*
-	     * The segment is totally empty.  We don't need to write
-	     * this one yet.
-	     */
-	    LFS_STATS_INC(lfsPtr->stats.log.emptyWrites);
-	    newStartBlockOffset = segPtr->startBlockOffset;
-	    segEmpty = TRUE;
-	} else if ((segPtr->curDataBlockLimit -  segPtr->curBlockOffset) > 
-			       lfsPtr->superBlock.usageArray.wasteBlocks) { 
-	    /*
-	     * If this is considered to be a partial segment write add the
-	     * summary block we needed.
-	     */
-	    AddNewSummaryBlock(segPtr);
-	    newStartBlockOffset = segPtr->curBlockOffset-1;
-	    LFS_STATS_INC(lfsPtr->stats.log.partialWrites);
+    LFS_STATS_ADD(lfsPtr->stats.log.wasteBlocks,
+			    segPtr->curDataBlockLimit - segPtr->curBlockOffset);
+    /*
+     * Compute the starting disk address of this I/O.
+     */
+    LfsSegNumToDiskAddress(lfsPtr, segPtr->logRange.current, &diskAddress);
+    offset = LfsSegSizeInBlocks(lfsPtr)	- segPtr->curBlockOffset;
+    LfsDiskAddrPlusOffset(diskAddress,offset, &segPtr->nextDiskAddress);
+
+
+    /*
+     * Fill in the request block fields that don't change between 
+     * requests.
+     */
+
+    segPtr->bioreq[0].operation = segPtr->bioreq[1].operation = FS_WRITE;
+    segPtr->bioreq[0].startAddrHigh = segPtr->bioreq[1].startAddrHigh = 0;
+    segPtr->bioreq[0].doneProc = segPtr->bioreq[1].doneProc = SegIoDoneProc;
+    segPtr->bioreq[0].clientData = segPtr->bioreq[1].clientData = 
+				(ClientData) segPtr;
+
+    segPtr->curElement = segPtr->numElements-1;
+    segPtr->curBlockOffset = 0;
+    /*
+     * Start up the first two disk I/Os. 
+     */
+    requestPtr = segPtr->bioreq+0;
+    requestPtr->startAddress = DEV_BYTES_PER_SECTOR * 
+				LfsDiskAddrToOffset(segPtr->nextDiskAddress);
+#ifdef SUN4DMAHACK
+    if (segPtr->numElements >= 8) {
+	requestPtr->buffer = VmMach_DMAAlloc(handlePtr->maxTransferSize,
+					     lfsPtr->writeBuffers[0]);
+    } else {
+	requestPtr->buffer = lfsPtr->writeBuffers[0];
+    }
+#else
+    requestPtr->buffer = lfsPtr->writeBuffers[0];
+#endif
+    requestPtr->bufferLen = 0;
+    CopySegToBuffer(segPtr, handlePtr->maxTransferSize, requestPtr->buffer,
+		&requestPtr->bufferLen);
+    segPtr->nextDiskAddress += requestPtr->bufferLen/DEV_BYTES_PER_SECTOR;
+    segPtr->requestActive = 1;
+
+    /*
+     * Disk request number 2.
+     */
+    requestPtr = segPtr->bioreq+1;
+    requestPtr->startAddress = DEV_BYTES_PER_SECTOR * 
+				LfsDiskAddrToOffset(segPtr->nextDiskAddress);
+#ifdef SUN4DMAHACK
+    if (segPtr->numElements >= 8) {
+	requestPtr->buffer = VmMach_DMAAlloc(handlePtr->maxTransferSize,
+					     lfsPtr->writeBuffers[1]);
+    } else {
+	requestPtr->buffer = lfsPtr->writeBuffers[1];
+    }
+#else
+    requestPtr->buffer = lfsPtr->writeBuffers[1];
+#endif 
+    requestPtr->bufferLen = 0;
+    CopySegToBuffer(segPtr, handlePtr->maxTransferSize, requestPtr->buffer,
+			&requestPtr->bufferLen);
+    segPtr->nextDiskAddress += requestPtr->bufferLen/DEV_BYTES_PER_SECTOR;
+    if (requestPtr->bufferLen > 0) { 
+	segPtr->requestActive = 2;
+    } else {
+	segPtr->requestActive = 1;
+    }
+    status = Dev_BlockDeviceIO(handlePtr, segPtr->bioreq);
+    if (status != SUCCESS) {
+	LfsError(lfsPtr, status, "Can't start disk log write.\n");
+    }
+    if (requestPtr->bufferLen > 0) {
+	status = Dev_BlockDeviceIO(handlePtr, segPtr->bioreq+1);
+	if (status != SUCCESS) {
+	    LfsError(lfsPtr, status, "Can't start disk log write.\n");
 	}
     }
-    if (!segEmpty) { 
-	LFS_STATS_ADD(lfsPtr->stats.log.wasteBlocks,
-			    segPtr->curDataBlockLimit -  segPtr->curBlockOffset);
-	LfsSegNumToDiskAddress(lfsPtr, segPtr->logRange.current, &diskAddress);
-	offset = LfsSegSizeInBlocks(lfsPtr)	- segPtr->curBlockOffset;
-#ifdef SUN4HACK
-	buffer = dmaBuffer;
-	for (element = segPtr->numElements-1; element >= 0; element--) {
-	    int	bytes = 
-		LfsBlocksToBytes(lfsPtr, 
-			    segPtr->segElementPtr[element].lengthInBlocks);
-	    bcopy(segPtr->segElementPtr[element].address, buffer, bytes);
-	    buffer += bytes;
-	}
-	LfsDiskAddrPlusOffset(diskAddress,offset, &newDiskAddr);
-	status = LfsWriteBytes(lfsPtr, newDiskAddr, buffer - dmaBuffer, dmaBuffer);
-	if (lfsSegWriteDebug) { 
-	    printf("LfsSeg wrote segment %d at %d - %d bytes.\n",
-		    segPtr->logRange.current, LfsDiskAddrToOffset(newDiskAddr),
-				    buffer - dmaBuffer);
-	}
-#else
-	for (element = segPtr->numElements-1; element >= 0; element--) {
-	    LfsSegElement *elPtr = segPtr->segElementPtr[element];
-	    LfsDiskAddrPlusOffset(diskAddress,offset, &newDiskAddr);
-	    status = LfsWriteBytes(lfsPtr, diskAddress,
-			    LfsBlocksToBytes(lfsPtr, elPtr->lengthInBlocks), 
-				    elPtr->address);
-	    if (status != SUCCESS) {
-		break;
-	    }
-	    offset += elPtr->lengthInBlocks;
-	}
-#endif
-	LFS_STATS_ADD(lfsPtr->stats.log.blocksWritten, segPtr->numBlocks);
-	LFS_STATS_ADD(lfsPtr->stats.log.bytesWritten, segPtr->activeBytes);
-    } 
-    LfsSetLogTail(lfsPtr, &segPtr->logRange, newStartBlockOffset, 
-					segPtr->activeBytes);  
+
+
+    LFS_STATS_ADD(lfsPtr->stats.log.blocksWritten, segPtr->numBlocks);
+    LFS_STATS_ADD(lfsPtr->stats.log.bytesWritten, segPtr->activeBytes);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteSegmentFinish --
+ *
+ *	Wait for a segment write to finish.
+ *
+ * Results:
+ *	SUCCESS if write complete. The ReturnStatus otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+WriteSegmentFinish(segPtr) 
+    LfsSeg	*segPtr;	/* Segment to wait for. */
+{
+    Lfs	*lfsPtr = segPtr->lfsPtr;
+    MASTER_LOCK((&segPtr->ioMutex));
+    while (segPtr->ioDone == FALSE) { 
+	Sync_MasterWait((&segPtr->ioDoneWait),(&segPtr->ioMutex),FALSE);
+    }
+    MASTER_UNLOCK((&segPtr->ioMutex));
+
     LOCK_MONITOR;
     lfsPtr->activeFlags &= ~LFS_WRITE_ACTIVE;
     Sync_Broadcast(&lfsPtr->writeWait);
     UNLOCK_MONITOR;
-    return status;
+    return SUCCESS;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -854,6 +1049,7 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
     int	moduleType, startOffset;
     Boolean full;
     char	*summaryPtr, *endSummaryPtr;
+    int		newStartBlockOffset;
 
     full = FALSE;
     for(moduleType = 0; moduleType < LFS_MAX_NUM_MODS; ) {
@@ -934,6 +1130,34 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
 	    moduleType++;
 	 }
    }
+   /*
+    * Update the size of the last summary block and cap off this segment. 
+    */
+   segPtr->curSegSummaryPtr->size = segPtr->curSummaryPtr - 
+					(char *) segPtr->curSegSummaryPtr;
+
+   newStartBlockOffset = -1;
+   if (!full) {
+	if (SegIsEmpty(segPtr)) { 
+	    /*
+	     * The segment is totally empty.  We don't need to write
+	     * this one yet.
+	     */
+	    LFS_STATS_INC(segPtr->lfsPtr->stats.log.emptyWrites);
+	    newStartBlockOffset = segPtr->startBlockOffset;
+	} else if ((segPtr->curDataBlockLimit -  segPtr->curBlockOffset) > 
+		       segPtr->lfsPtr->superBlock.usageArray.wasteBlocks) { 
+	    /*
+	     * If this is considered to be a partial segment write add the
+	     * summary block we needed.
+	     */
+	    AddNewSummaryBlock(segPtr);
+	    newStartBlockOffset = segPtr->curBlockOffset-1;
+	    LFS_STATS_INC(segPtr->lfsPtr->stats.log.partialWrites);
+	}
+   }
+   LfsSetLogTail(segPtr->lfsPtr, &segPtr->logRange, newStartBlockOffset, 
+					segPtr->activeBytes);  
    return full;
 }
 
@@ -1044,7 +1268,10 @@ SegmentCleanProc(clientData, callInfoPtr)
 				LFS_CLEANING_LAYOUT, (char *) NIL,
 				(int *) NIL, clientDataArray);
 
-		status = WriteSegment(segPtr, full);
+		status = WriteSegmentStart(segPtr);
+		if (status == SUCCESS) {
+		    status = WriteSegmentFinish(segPtr);
+		}
 		if (status != SUCCESS) {
 		    LfsError(lfsPtr, status, "Can't write segment to log\n");
 		}
@@ -1079,6 +1306,7 @@ SegmentCleanProc(clientData, callInfoPtr)
 			numWritten);
 	}
     } while (numCleaned > 2);
+    lfsPtr->segCache.valid = FALSE;
     LfsMemRelease(lfsPtr, cacheBlocksReserved, memPtr);
     LOCK_MONITOR;
     lfsPtr->activeFlags &= ~LFS_CLEANER_ACTIVE;
@@ -1113,6 +1341,7 @@ CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
     /*
      * Get a LfsSeg structure.
      */
+    lfsPtr->segCache.valid = FALSE;
     segPtr = GetSegStruct(lfsPtr, &logRange, 0, cleaningMemPtr);
 
     /*
@@ -1317,7 +1546,10 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
 					segPtr->numBlocks);
 	LFS_STATS_ADD(lfsPtr->stats.checkpoint.bytesWritten,
 				segPtr->activeBytes);
-	status = WriteSegment(segPtr, full);
+	status = WriteSegmentStart(segPtr);
+	if (status == SUCCESS) {
+	    status = WriteSegmentFinish(segPtr);
+	}
 	if (status != SUCCESS) {
 	    LfsError(lfsPtr, status, "Can't write segment to log\n");
 	}

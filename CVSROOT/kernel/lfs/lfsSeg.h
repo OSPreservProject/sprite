@@ -24,6 +24,7 @@
 
 #include <lfsInt.h>
 #include <lfsSegLayout.h>
+#include <devBlockDevice.h>
 
 /* 
  * The interface to writing objects to the LFS log is operated using a 
@@ -102,6 +103,18 @@ typedef struct LfsSeg {
     char     *curSummaryPtr;    /* Current offset into the summary region. */
     char     *curSummaryLimitPtr; /* Current last byte of the summary block 
 				   * plus 1. */
+		/*
+		 * It following fields are used during I/O.
+		 */
+    Sync_Semaphore ioMutex;	       /* Used to sync access to I/O structures
+					*/
+    Boolean	  ioDone;	       /* TRUE if I/O has finished. */
+    ReturnStatus ioReturnStatus;       /* ReturnStatus of I/O. */
+    Sync_Condition ioDoneWait;         /* Condition to wait for I/O finish. */
+    DevBlockDeviceRequest  bioreq[2]; /* Two request for double buffered I/O.*/
+    int		requestActive;	      /* Number of IO request active. */
+    int		nextDiskAddress;      /* Next disk address to write. */
+
 } LfsSeg;
 
 /*
