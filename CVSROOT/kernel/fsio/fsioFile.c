@@ -39,6 +39,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <recov.h>
 
+#ifdef SOSP91
+#include <sospRecord.h>
+#endif
+
 #include <stdio.h>
 void IncVersionNumber _ARGS_((Fsio_FileIOHandle	*handlePtr));
 
@@ -329,7 +333,6 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 		/*
 		 * BUG: Right now this records effective user id instead of
 		 * real user id. 
-		 * Get attributes out of open results!
 		 */
 
 		SOSP_ADD_OPEN_TRACE(openArgsPtr->clientID, 
@@ -337,8 +340,8 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 			openResultsPtr->streamID, openArgsPtr->id.user,
 			openArgsPtr->useFlags, numReaders, numWriters,
 			fileStatePtr->attr.createTime,
-			fileStatePtr->attr.lastByte);
-
+			fileStatePtr->attr.lastByte + 1);
+	    }
 #endif
 
 	    Fsutil_HandleRelease(streamPtr, TRUE);
@@ -564,14 +567,23 @@ Fsio_FileIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
  *----------------------------------------------------------------------
  */
 
+#ifndef SOSP91
 ReturnStatus
 Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
+#else
+ReturnStatus
+Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
+    offsetPtr)
+#endif
     Fs_Stream		*streamPtr;	/* Stream to regular file */
     int			clientID;	/* Host ID of closer */
     Proc_PID		procID;		/* Process ID of closer */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of closeData */
     ClientData		closeData;	/* Ref. to Fscache_Attributes */
+#ifdef SOSP91
+    int			*offsetPtr;
+#endif
 {
     register Fsio_FileIOHandle *handlePtr =
 	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
@@ -596,6 +608,18 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 				(Fscache_Attributes *)closeData);
 	(void)Fsdm_UpdateDescAttr(handlePtr, &handlePtr->cacheInfo.attr, -1);
     }
+#ifdef SOSP91
+    {
+	int offset;
+	if ((offsetPtr != (int *) NIL) && !(streamPtr->flags & FS_RMT_SHARED)) {
+	    offset = *offsetPtr;
+	} else {
+	    offset = streamPtr->offset;
+	}
+	SOSP_ADD_CLOSE_TRACE(streamPtr->hdr.fileID, offset, 
+	    handlePtr->cacheInfo.attr.lastByte + 1);
+    }
+#endif
 
     Fsio_LockClose(&handlePtr->lock, &streamPtr->hdr.fileID);
 
@@ -817,7 +841,12 @@ Fsio_FileScavenge(hdrPtr)
                (handlePtr->use.ref == 0) &&
 	     ((handlePtr->flags & (FSIO_FILE_DESC_DELETED|
 				   FSIO_FILE_NAME_DELETED)) == 0) &&
+#ifdef SOSP91
+	      (Fsconsist_NumClients(&handlePtr->consist, (int *) NIL,
+		  (int *) NIL) == 0);
+#else
 	      (Fsconsist_NumClients(&handlePtr->consist) == 0);
+#endif
     if (noUsers && Fscache_OkToScavenge(&handlePtr->cacheInfo)) {
 	register Boolean isDir;
 #ifdef CONSIST_DEBUG
@@ -1065,9 +1094,25 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     register ReturnStatus status;
     int savedOffset = readPtr->offset;
     int savedLength = readPtr->length;
+#ifdef SOSP91
+    Fsconsist_Info *consistPtr = &handlePtr->consist;
+    Fsconsist_ClientInfo	*clientPtr;
+
+    LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == readPtr->reserved) {
+	    if (!clientPtr->cached) {
+		SOSP_ADD_READ_TRACE(clientPtr->clientID, 
+			streamPtr->hdr.fileID, TRUE, readPtr->offset, 
+			readPtr->length);
+	    }
+	    break;
+	}
+    }
+#endif SOSP91
 
     status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags,
 	    readPtr->buffer, readPtr->offset, &readPtr->length, remoteWaitPtr);
+    
     if ((status == SUCCESS) || (readPtr->length > 0)) { 
 	(void)Fsdm_UpdateDescAttr(handlePtr, &handlePtr->cacheInfo.attr,
 				FSDM_FD_ACCESSTIME_DIRTY);
@@ -1118,6 +1163,21 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     register ReturnStatus status;
     int savedOffset = writePtr->offset;
     int savedLength = writePtr->length;
+#ifdef SOSP91
+    Fsconsist_Info *consistPtr = &handlePtr->consist;
+    Fsconsist_ClientInfo	*clientPtr;
+
+    LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == writePtr->reserved) {
+	    if (!clientPtr->cached) {
+		SOSP_ADD_READ_TRACE(clientPtr->clientID, 
+		    streamPtr->hdr.fileID, FALSE, writePtr->offset, 
+		    writePtr->length);
+	    }
+	    break;
+	}
+    }
+#endif SOSP91
 
     /*
      * Get a reference to the domain so it can't be dismounted during the I/O.
@@ -1319,7 +1379,18 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		    if (arg < 0) {
 			status = GEN_INVALID_ARG;
 		    } else {
+#ifdef SOSP91
+			{
+			    int oldSize;
+			    oldSize = handlePtr->cacheInfo.attr.lastByte;
+			    status = Fsio_FileTrunc(handlePtr, arg, 0);
+			    SOSP_ADD_TRUNCATE_TRACE(streamPtr->hdr.fileID,
+				oldSize + 1, 
+				handlePtr->cacheInfo.attr.lastByte + 1);
+			}
+#else
 			status = Fsio_FileTrunc(handlePtr, arg, 0);
+#endif
 		    }
 		} else {
 		    Fsutil_HandleUnlock(handlePtr);
@@ -1488,6 +1559,7 @@ Fsio_FileTrunc(handlePtr, size, flags)
     int			flags;		/* FSCACHE_TRUNC_DELETE */
 {
     ReturnStatus status;
+
     status = Fscache_Trunc(&handlePtr->cacheInfo, size, flags);
     if ((flags & FSCACHE_TRUNC_DELETE) == 0) {
 	(void)Fsdm_UpdateDescAttr(handlePtr, &handlePtr->cacheInfo.attr, 
