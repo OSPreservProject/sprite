@@ -264,7 +264,7 @@ Fs_ProcInit()
 				&domainType, &prefixPtr);
 	    if (status2 == SUCCESS) {
 		Sys_Printf("Exporting \"%s\" as root\n", LOCAL_DISK_NAME);
-		FsPrefixInstall("/", hdrPtr, domainType,
+		(void)FsPrefixInstall("/", hdrPtr, domainType,
 				     FS_EXPORTED_PREFIX | FS_IMPORTED_PREFIX);
 		status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
 		if (status != SUCCESS) {

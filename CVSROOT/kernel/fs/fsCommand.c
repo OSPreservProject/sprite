@@ -106,7 +106,7 @@ Fs_Command(command, bufSize, buffer)
 			    (void)Fs_Close(streamPtr);
 			    status = FS_NO_ACCESS;
 			} else {
-			    FsPrefixInstall(prefix, streamPtr->ioHandlePtr,
+			    (void)FsPrefixInstall(prefix,streamPtr->ioHandlePtr,
 						    FS_LOCAL_DOMAIN,
 		    FS_EXPORTED_PREFIX|FS_IMPORTED_PREFIX|FS_OVERRIDE_PREFIX);
 			}
