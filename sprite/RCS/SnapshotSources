@@ -13,7 +13,6 @@ if (-e $insDir/$version/.ssdone) then
     echo "$insDir/$version already exists. Skipping snapshot of sources."
     exit
 endif
-
 pushd $srcDir
 pmake SNAPDIR=$insDir SNAPVERSION=$version snapshot
 popd
@@ -46,6 +45,7 @@ end
 popd
 
 touch $insDir/$version/.ssdone
+echo "***** KERNEL $version" `date` "*****" >> /sprite/src/kernel/scvs.log
 
 cleanup:
     rm -f /tmp/ss.$$
