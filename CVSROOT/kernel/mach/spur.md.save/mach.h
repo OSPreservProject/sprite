@@ -53,7 +53,7 @@ typedef enum {
 /*
  * Delay for N microseconds.
  */
-#define	MACH_DELAY(n)	{ register int N = (n)<<2; N--; while (N > 0) {N--;} }
+#define	MACH_DELAY(n)	{ register int N = (n)>>1; N--; while (N > 0) {N--;} }
 
 /*
  * Dispatch tables for kernel calls.
