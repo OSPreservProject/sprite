@@ -330,12 +330,14 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
     register state;
 
     LOCK_MONITOR;
-    if (spriteID == NET_BROADCAST_HOSTID || bootID == 0) {
+    if (spriteID == NET_BROADCAST_HOSTID || bootID == 0 || sys_ShuttingDown) {
 	/*
 	 * Don't track the broadcast address.  Also ignore zero valued
 	 * bootIDs.  These come from hosts at early boot time, or
 	 * in certain error conditions like trying to send too much
-	 * data in a single RPC.
+	 * data in a single RPC.  Also don't bother to check things
+	 * where we are shutting down the system because we don't want 
+	 * RPCs for the cache data to get blocked.
 	 */
 	UNLOCK_MONITOR;
 	return;
@@ -410,6 +412,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    Sync_Wait(&hostPtr->recovery, FALSE);
 	    if (sys_ShuttingDown) {
 		Sys_Printf("Warning, Server exiting Recov_HostAlive\n");
+		UNLOCK_MONITOR;
 		Proc_Exit(1);
 	    }
 	}
