@@ -325,6 +325,43 @@ typedef struct ReadElemStatCommand {
 } ReadElemStatCommand;
 
 
+typedef struct InitElemStatCommand {
+#if BYTE_ORDER == BIG_ENDIAN
+    unsigned char command;		/* 0xe7 for this Command. */
+    unsigned char unitNumber	:3;	/* Logical Unit Number to which to
+					 * pass the command. */
+    unsigned char reserved1	:4;	
+    unsigned char range		:1;	/* 0 == init all elements.
+					 * 1 == init elements specified. */
+    unsigned char elemAddr[2];		/* Specifies starting address
+					 * of the series of elements
+					 * to be scanned. Ignored when
+					 * range == 0. */
+    unsigned char reserved2[2];	
+    unsigned char numElements[2];	/* Maximum number of elements
+					 * to be scanned. ignored when
+					 * range == 0. */
+    unsigned char reserved3[2];
+#else /* BYTE_ORDER == LITTLE_ENDIAN */
+    unsigned char command;		/* 0xe7 for this Command. */
+    unsigned char range		:1;	/* 0 == init all elements.
+					 * 1 == init elements specified. */
+    unsigned char reserved1	:4;	
+    unsigned char unitNumber	:3;	/* Logical Unit Number to which to
+					 * pass the command. */
+    unsigned char elemAddr[2];		/* Specifies starting address
+					 * of the series of elements
+					 * to be scanned. Ignored when
+					 * range == 0. */
+    unsigned char reserved2[2];	
+    unsigned char numElements[2];	/* Maximum number of elements
+					 * to be scanned. ignored when
+					 * range == 0. */
+    unsigned char reserved3[2];
+#endif
+} InitElemStatCommand;
+
+
 /* Function Prototypes */
 
 extern ReturnStatus DevSCSIExbRobotError _ARGS_((ScsiDevice *devPtr,
