@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTimer.h"
 #include "char.h"
 #include "vmMachInt.h"
+#include "mach.h"
 
 static	int	(*savedNmiVec)() = (int (*)()) 0;
 extern	int	MonNmiNop();
