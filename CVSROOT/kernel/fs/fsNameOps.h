@@ -78,6 +78,18 @@ extern	ReturnStatus (*fs_DomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])();
  * this switch is keyed on the nameFileID.type (i.e. local or remote file).
  */
 
+#ifdef SOSP91
+typedef struct Fs_AttrOps {
+    ReturnStatus	(*getAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID,
+						Fs_Attributes *attrPtr,
+						int hostID, int userID));
+
+    ReturnStatus	(*setAttr) _ARGS_((Fs_FileID *fileIDPtr, 
+					  Fs_Attributes *attrPtr, 
+					  Fs_UserIDs *idPtr, int flags,
+					  int hostID, int userID));
+} Fs_AttrOps;
+#else
 typedef struct Fs_AttrOps {
     ReturnStatus	(*getAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID,
 						Fs_Attributes *attrPtr));
@@ -86,6 +98,7 @@ typedef struct Fs_AttrOps {
 					  Fs_Attributes *attrPtr, 
 					  Fs_UserIDs *idPtr, int flags));
 } Fs_AttrOps;
+#endif
 
 extern Fs_AttrOps fs_AttrOpTable[];
 
