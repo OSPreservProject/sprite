@@ -72,3 +72,4 @@ Net_AddrCmp.c            /sprite/src/lib/c/netlib/Net_AddrCmp.c
 Net_FDDIAddrToString.c   /sprite/src/lib/c/netlib/Net_FDDIAddrToString.c
 Net_UltraAddrToString.c  /sprite/src/lib/c/netlib/Net_UltraAddrToString.c
 Net_SetAddress.c         /sprite/src/lib/c/netlib/Net_SetAddress.c
+List_ListInsert.c        /sprite/src/lib/c/list/List_ListInsert.c

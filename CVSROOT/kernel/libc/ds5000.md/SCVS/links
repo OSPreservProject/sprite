@@ -3,3 +3,4 @@
 # $Header
 bcopy.c                  ../ds3100.md/bcopy.c
 modf.o                   ../ds3100.md/modf.o
+modf.go                  modf.o
