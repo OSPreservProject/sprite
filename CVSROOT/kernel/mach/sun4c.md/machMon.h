@@ -218,11 +218,13 @@ typedef struct {
 
 #define Mach_MonPrintf (romVectorPtr->printf)
 #define Mach_MonGetChar (romVectorPtr->getChar)
-extern	void 	Mach_MonPutChar ();
-extern	int  	Mach_MonMayPut();
-extern	void	Mach_MonAbort();
-extern	void	Mach_MonReboot();
-extern	void	Mach_MonStopNmi();
-extern	void	Mach_MonStartNmi();
+
+extern	void 	Mach_MonPutChar _ARGS_((int ch));
+extern	int  	Mach_MonMayPut _ARGS_((int ch));
+extern	void	Mach_MonAbort _ARGS_((void));
+extern	void	Mach_MonReboot _ARGS_((char *rebootString));
+extern  void    Mach_MonTrap _ARGS_((Address address_to_trap_to));
+extern	void	Mach_MonStopNmi _ARGS_((void));
+extern	void	Mach_MonStartNmi _ARGS_((void));
 
 #endif /* _MACHMON */
