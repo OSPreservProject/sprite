@@ -1323,7 +1323,7 @@ exit:
 #define INT(x)	((int)(x))
 #define INTP(x)	((int *)(x))
 #define ISADDRR(x,range)  ((INT(x)&1)==0 && Dbg_InRange((unsigned)(x),2,FALSE)\
-		&& Dbg_InRange(((unsigned)(x))-(range)-2,2,FALSE))
+		&& Dbg_InRange(((unsigned)(x))+(range)-2,2,FALSE))
 #define ISADDR(x)	ISADDRR(x,sizeof(int))
 #define ISSTR(x)	(ISADDRR(x,20) && \
     (strncpy(buf,(char *)(x),20),strlen(buf)<20) && isprint(buf[0]))
