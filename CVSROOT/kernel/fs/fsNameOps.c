@@ -86,10 +86,13 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
      * Override the type if user flags indicate special files.
      */
     if (useFlags & FS_NAMED_PIPE_OPEN) {
-	type = FS_NAMED_PIPE;
-    }
-    if (useFlags & (FS_MASTER|FS_NEW_MASTER)) {
+	Sys_Panic(SYS_WARNING, "Named pipes (%s) not implemented\n", name);
+	return(FS_INVALID_ARG);
+    } else if (useFlags & FS_PDEV_MASTER) {
 	type = FS_PSEUDO_DEV;
+    } else if (useFlags & FS_PFS_MASTER) {
+	type = FS_REMOTE_LINK;
+	useFlags &= ~FS_FOLLOW;
     }
     /*
      * Make sure we check for write permission before truncating.
@@ -99,24 +102,22 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
     }
 
     /*
-     * Call the Domain specific open routine.  The parameters to this are
-     * packaged up and then it is called via the routine that deals
-     * with the prefix table to choose domain type and server.  The domain
-     * open routine returns streamData used to set up the I/O handle.
-     * The stream's nameInfo is also set up as a side effect of going
-     * through the prefix table.
+     * Set up arguments to the Domain specific open routine.  The domain
+     * open routine returns streamData used to set up the I/O handle
+     * by the client open routine called below.  The stream's nameInfo is
+     * set up as a side effect of going through FsLookupOperation.
      */
     procPtr = Proc_GetEffectiveProc();
-    openArgs.useFlags		= useFlags;
     if (type != FS_SYMBOLIC_LINK && type != FS_REMOTE_LINK) {
 	openArgs.permissions	= permissions & procPtr->fsPtr->filePermissions;
     } else {
 	openArgs.permissions	= permissions;
     }
+    openArgs.useFlags		= useFlags;
     openArgs.type		= type;
     openArgs.clientID		= rpc_SpriteID;
-    FsSetIDs(procPtr, &openArgs.id);
     openResults.streamData	= (ClientData) NIL;
+    FsSetIDs(procPtr, &openArgs.id);
 
     nameInfoPtr = Mem_New(FsNameInfo);
 
@@ -124,15 +125,13 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
     status = FsLookupOperation(name, FS_DOMAIN_OPEN, useFlags & FS_FOLLOW,
 		    (Address)&openArgs, (Address)&openResults, nameInfoPtr);
     FS_TRACE_NAME(FS_TRACE_OPEN_DONE, name);
-    /*
-     * Call the stream type open routine to set up the I/O handle.
-     */
     if (status == SUCCESS) {
 	/*
 	 * Install the stream and then call the client open procedure
 	 * to complete the setup of the stream's I/O handle
 	 */
-	streamPtr = FsStreamFind(&openResults.streamID, (FsHandleHeader *)NIL,
+	streamPtr = FsStreamAddClient(&openResults.streamID, rpc_SpriteID,
+				 (FsHandleHeader *)NIL,
 				 useFlags, name, (Boolean *)NIL);
 	streamPtr->nameInfoPtr = nameInfoPtr;
 	FsHandleUnlock(streamPtr);
@@ -155,21 +154,17 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	    }
 	    *streamPtrPtr = streamPtr;
 	    switch (useFlags & (FS_READ | FS_WRITE)) {
-		case FS_READ: {
+		case FS_READ:
 		    fsStats.gen.numReadOpens ++;
 		    break;
-		}
-		case FS_WRITE: {
+		case FS_WRITE:
 		    fsStats.gen.numWriteOpens ++;
 		    break;
-		}
-		case (FS_READ | FS_WRITE): {
+		case (FS_READ | FS_WRITE):
 		    fsStats.gen.numReadWriteOpens ++;
 		    break;
-		}
-		default: {
+		default:
 		    break;
-		}
 	    }
 	} else {
 	    FsHandleLock(streamPtr);
