@@ -120,6 +120,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
     Time		timeVal;
     int			retVal=0;
 
+    dprintf("call: semctl(%d, %d, %d, %x)\n", semid, semnum, cmd, arg);
     Sync_SemInit();
     LOCK_MONITOR;
     if (cmd != GETKEYS) {
@@ -181,6 +182,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
     switch (cmd) {
 	case GETVAL:
 	    retVal = curSem->semval;
+	    dprintf("semctl(GETVAL) returns %d\n", retVal);
 	    break;
 	case SETVAL:
 	    if (arg.val < 0 || arg.val > SEMVMX) {
@@ -193,15 +195,19 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 		    (arg.val > 0 && curSem->semncnt > 0)) {
 		Sync_Broadcast(&curSem->semLock);
 	    }
+	    dprintf("semctl(SETVAL) returns %d\n", retVal);
 	    break;
 	case GETPID:
 	    retVal = curSem->sempid;
+	    dprintf("semctl(GETPID) returns %d\n", retVal);
 	    break;
 	case GETNCNT:
 	    retVal = curSem->semncnt;
+	    dprintf("semctl(GETNCNT) returns %d\n", retVal);
 	    break;
 	case GETZCNT:
 	    retVal = curSem->semzcnt;
+	    dprintf("semctl(GETZCNT) returns %d\n", retVal);
 	    break;
 	case GETALL:
 	    for (i=0;i<semPtr->sem_nsems;i++) {
@@ -214,6 +220,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 		dprintf("Copy-out fault\n");
 		return EFAULT;
 	    }
+	    dprintf("semctl(GETALL) done\n");
 	    break;
 	case GETKEYS:
 	    bzero((Address)&semBuf, sizeof(struct semid_ds));
@@ -233,6 +240,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 		    return EFAULT;
 		}
 	    }
+	    dprintf("semctl(GETALL) done\n");
 	    break;
 	case IPC_STAT:
 	    status = Vm_CopyOut(sizeof(struct semid_ds), (Address) semPtr,
@@ -242,6 +250,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 		dprintf("Copy-out fault\n");
 		return EFAULT;
 	    }
+	    dprintf("semctl(IPC_STAT) done\n");
 	    break;
 	case SETALL:
 	    status = Vm_CopyIn(sizeof(ushort)*semPtr->sem_nsems,
@@ -269,6 +278,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 		    Sync_Broadcast(&curSem->semLock);
 		}
 	    }
+	    dprintf("semctl(SETALL) done\n");
 	    break;
 	case IPC_SET:
 	    status = Vm_CopyIn(sizeof(struct semid_ds), (Address) arg.buf,
@@ -281,6 +291,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 	    semPtr->sem_perm.uid = semBuf.sem_perm.uid;
 	    semPtr->sem_perm.gid = semBuf.sem_perm.gid;
 	    semPtr->sem_perm.mode = semBuf.sem_perm.mode & 0666;
+	    dprintf("semctl(IPC_SET) done\n");
 	    break;
 	case IPC_RMID:
 	    semPtr->sem_perm.seq++;
@@ -288,12 +299,14 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 	    if (nsems > SEMMNI) nsems = SEMMNI;
 	    curSem = semPtr->sem_base;
 	    semPtr->sem_base = (struct sem *)NIL;
+	    semPtr->sem_perm.key = 0;
 	    for (i=0;i<nsems;i++) {
 		if (curSem[i].semzcnt != 0 || curSem[i].semncnt != 0) {
 		    Sync_Broadcast(&curSem->semLock);
 		}
 	    }
 	    free(curSem);
+	    dprintf("semctl(IPC_RMID) done\n");
 	    break;
     }
     if (cmd == SETVAL || cmd == SETALL || cmd == IPC_SET) {
@@ -342,6 +355,7 @@ Sync_SemgetStub(key, nsems, semflg, retValOut)
     ReturnStatus	status;
     Fs_ProcessState	*fsPtr;
 
+    dprintf("call: semget(%d, %d, %d)\n", key, nsems, semflg);
     Sync_SemInit();
     if (nsems < 0 || nsems > SEMMSL) {
 	UNLOCK_MONITOR;
@@ -350,9 +364,13 @@ Sync_SemgetStub(key, nsems, semflg, retValOut)
     }
     LOCK_MONITOR;
     if (key != IPC_PRIVATE) {
+	/*
+	 * Check if the key is in the semaphore table.
+	 */
 	semPtr = NULL;
 	for (i=0;i<SEMMNI;i++) {
-	    if ((long)semTable[i].sem_perm.key == key) {
+	    if ((long)semTable[i].sem_perm.key == key &&
+		    semTable[i].sem_base != (struct sem *)NIL) {
 		semPtr = &semTable[i];
 		break;
 	    }
@@ -364,6 +382,14 @@ Sync_SemgetStub(key, nsems, semflg, retValOut)
 	}
     }
     if (key == IPC_PRIVATE || semPtr == NULL) {
+	/*
+	 * Want to create a new semaphore set.
+	 */
+	if (nsems == 0) {
+	    UNLOCK_MONITOR;
+	    dprintf("Can't create 0 semaphores.\n");
+	    return EINVAL;
+	}
 	semPtr = NULL;
 	for (i=0;i<SEMMNI;i++) {
 	    if (semTable[i].sem_base == (struct sem *)NIL) {
@@ -408,7 +434,7 @@ Sync_SemgetStub(key, nsems, semflg, retValOut)
     } else {
 	if (semPtr->sem_nsems < nsems) {
 	    UNLOCK_MONITOR;
-	    dprintf("Not enough semaphores created\n");
+	    dprintf("Semaphore exists, but not enough semaphores.\n");
 	    return EINVAL;
 	}
 	if ((semflg & IPC_CREAT) && (semflg & IPC_EXCL)) {
@@ -429,6 +455,7 @@ Sync_SemgetStub(key, nsems, semflg, retValOut)
 	dprintf("Copy-out failure\n");
 	return EFAULT;
     }
+    dprintf("semget: returns %d\n",retVal);
     return SUCCESS;
 }
 
@@ -468,6 +495,8 @@ Sync_SemopStub(semid, sopsIn, nsops, retValOut)
     int			retVal;
     Boolean		sig;
 
+    dprintf("call: semop(%d, %x, %d)\n", semid, sopsIn, nsops);
+
     if (nsops <= 0 || nsops > SEMOPM) {
 	dprintf("Too many semaphore operations\n");
 	return E2BIG;
@@ -490,7 +519,8 @@ Sync_SemopStub(semid, sopsIn, nsops, retValOut)
     for (i=0;i<nsops;i++) {
 	if (sops[i].sem_num < 0 || sops[i].sem_num >= semPtr->sem_nsems) {
 	    UNLOCK_MONITOR;
-	    dprintf("Semaphore value too big\n");
+	    dprintf("Semaphore value too big: #%d = %d, max: %d\n",
+		    i, sops[i].sem_num, semPtr->sem_nsems);
 	    return EFBIG;
 	}
 	if ((sops[i].sem_op != 0 && !(perms & SEM_A)) ||
