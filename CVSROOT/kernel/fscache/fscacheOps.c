@@ -543,7 +543,7 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
 ReturnStatus
 Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     register Fscache_FileInfo *cacheInfoPtr;	/* Cache state for file. */
-    int			flags;		/* FS_USER | FS_CONSUME */
+    int			flags;		/* FS_USER | etc */
     register Address	buffer;		/* Buffer to fill with file data */
     int 		offset;		/* Byte offset */
     int 		*lenPtr;	/* In/Out byte count */
@@ -581,18 +581,8 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     }
 #endif SOSP91
     /*
-     * Determine the offset at which to read, consuming reads always
-     * start at the beginning of the data.
+     * Determine the offset at which to read.
      */
-    if (flags & FS_CONSUME) {
-	if (cacheInfoPtr->attr.firstByte == -1) {
-	    *lenPtr = 0;
-	    status = SUCCESS;
-	    goto exit;
-	} else {
-	    offset = cacheInfoPtr->attr.firstByte;
-	}
-    }
     if (offset > cacheInfoPtr->attr.lastByte) {
 	*lenPtr = 0;
 	status = SUCCESS;
@@ -727,21 +717,6 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     }
 #endif SOSP91
 
-
-    /*
-     * Consume data if the flags indicate a consuming stream.
-     * This doesn't update the modify time of the file.
-     */
-    if (flags & FS_CONSUME) {
-#ifdef old
-	int length;
-	length = cacheInfoPtr->attr.lastByte - (int) offset + 1;
-	(void)(*fsio_StreamOpTable[cacheInfoPtr->hdrPtr->fileID.type].ioControl)
-		(cacheInfoPtr->hdrPtr, IOC_TRUNCATE, mach_Format,
-			sizeof(length), (Address) &length, 0, (Address) NIL); 
-#endif
-	panic("Broken code called in Fscache_Read\n");
-    }
 exit:
     if ((status == SUCCESS) ||
 	(status == FS_WOULD_BLOCK && (*lenPtr > 0))) {

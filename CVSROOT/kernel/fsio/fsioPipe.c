@@ -140,7 +140,7 @@ Fsio_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
      */
     streamPtr = Fsio_StreamCreate(rpc_SpriteID, rpc_SpriteID,
 			    (Fs_HandleHeader *)handlePtr,
-			    FS_READ | FS_CONSUME | FS_USER, "read-pipe");
+			    FS_READ | FS_USER, "read-pipe");
     Fsutil_HandleUnlock(streamPtr);
     *inStreamPtrPtr = streamPtr;
 
