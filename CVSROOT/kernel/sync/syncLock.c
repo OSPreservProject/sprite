@@ -359,52 +359,24 @@ Sync_SlowMasterWait(event, mutexPtr, wakeIfSignal)
 {
     Boolean	sigPending;
 
-#ifdef sun4
-    Proc_ControlBlock	*curProcPtr;
-
-    curProcPtr = Proc_GetCurrentProc();
-    MACH_DEBUG_ADD(0x88888888);
-    MACH_DEBUG_ADD(curProcPtr);
-    MACH_DEBUG_ADD(mutexPtr);
-#endif
     MASTER_LOCK(sched_MutexPtr);
 
     /*
      * release the master lock and wait on the condition
      */
     MASTER_UNLOCK(mutexPtr);
-#ifdef sun4
-    MACH_DEBUG_ADD(curProcPtr);
-    MACH_DEBUG_ADD(mutexPtr);
-#endif
 
     sigPending = SyncEventWaitInt(event, wakeIfSignal);
-#ifdef sun4
-    MACH_DEBUG_ADD(0x61616161);
-    MACH_DEBUG_ADD(curProcPtr);
-    MACH_DEBUG_ADD(mutexPtr);
-    MACH_DEBUG_ADD(0x66666666);
-#endif
 
 #ifdef spur
     Mach_InstCountEnd(1);
 #endif
 
     MASTER_UNLOCK(sched_MutexPtr);
-#ifdef sun4
-    MACH_DEBUG_ADD(0x77777777);
-    MACH_DEBUG_ADD(curProcPtr);
-    MACH_DEBUG_ADD(mutexPtr);
-#endif
     /*
      * re-acquire master lock before proceeding
      */
     MASTER_LOCK(mutexPtr);
-#ifdef sun4
-    MACH_DEBUG_ADD(curProcPtr);
-    MACH_DEBUG_ADD(mutexPtr);
-    MACH_DEBUG_ADD(0x99999999);
-#endif
 
     return(sigPending);
 }
