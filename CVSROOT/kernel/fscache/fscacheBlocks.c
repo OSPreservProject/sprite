@@ -1220,6 +1220,53 @@ Fscache_IODone(blockPtr)
 
     UNLOCK_MONITOR;
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fscache_MoveBlock --
+ *
+ *	Change the disk location of a block.  This has to synchronize
+ *	with delayed writes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The diskBlock field of the cache block is modified.  The block is
+ *	not marked dirty, however.  That will be done by UnlockBlock.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+Fscache_MoveBlock(blockPtr, diskBlock, blockSize)
+    Fscache_Block *blockPtr;	/* Pointer to block information for block.*/
+    int diskBlock;		/* New location for the block */
+    int blockSize;		/* New size for the block */
+{
+    LOCK_MONITOR;
+
+    if (diskBlock != -1) {
+	if (blockPtr->diskBlock != diskBlock ||
+	    blockPtr->blockSize != blockSize) {
+	    while (blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN) {
+		(void)Sync_Wait(&blockPtr->ioDone, FALSE);
+	    }
+	    blockPtr->diskBlock = diskBlock;
+	    blockPtr->blockSize = blockSize;
+	}
+    } else if (blockPtr->blockSize == -1 && blockSize > 0) {
+	/*
+	 * Patch up the block size so our internal fragmentation
+	 * calculation is correct.  The size of a read-only block
+	 * is not used for anything else.
+	 */
+	blockPtr->blockSize = blockSize;
+    }
+
+    UNLOCK_MONITOR;
+}
 
 
 /*
@@ -1308,6 +1355,20 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	     */
 	    while (blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN) {
 		(void)Sync_Wait(&blockPtr->ioDone, FALSE);
+		if (timeDirtied != 0 &&
+		    (blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN) == 0) {
+		    /*
+		     * I assert that the cache block is no longer marked
+		     * dirty and may never be written out to its proper
+		     * location.
+		     */
+		    if ((blockPtr->flags & FSCACHE_BLOCK_DIRTY) == 0) {
+			printf("Fscache_UnlockBlock: file <%d,%d> block %d disk block %d => %d no longer dirty\n",
+			    blockPtr->cacheInfoPtr->hdrPtr->fileID.major,
+			    blockPtr->cacheInfoPtr->hdrPtr->fileID.minor,
+			   blockPtr->blockNum, blockPtr->diskBlock, diskBlock);
+		    }
+		}
 	    }
 	    blockPtr->diskBlock = diskBlock;
 	    blockPtr->blockSize = blockSize;
@@ -2562,7 +2623,7 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 	/*
 	 * We have to keep writing this block until its gets clean, so
 	 * rewrite the same block.   (Hmmm.  Does this mean that a
-	 * continually modified block will prevent the whole file
+	 * continually modified block will prevent the rest of the file
 	 * from being written out?)
 	 */
 	blockPtr->flags &= ~FSCACHE_BLOCK_DIRTY;
