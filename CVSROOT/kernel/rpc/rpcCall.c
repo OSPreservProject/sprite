@@ -189,7 +189,7 @@ Rpc_Call(serverID, command, storagePtr)
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
 	if (command != RPC_ECHO_2) {
 	    Sys_Printf("<%s> ", rpcService[command].name);
-	    Net_HostPrint(serverID, "RPC timed-out");
+	    Net_HostPrint(serverID, "RPC timed-out\n");
 	}
 	Recov_HostDead(serverID);
     } else {
