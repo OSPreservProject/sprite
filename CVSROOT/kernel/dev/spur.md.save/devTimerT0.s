@@ -3,8 +3,15 @@
  * 	Routines for reading and writing the T0 free running timer on the
  *	Spur's Cache controller chip. 
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
  *
  * rcs = $Header$ SPRITE (Berkeley)
  *
@@ -236,31 +243,25 @@ _Dev_TimerT0Write:
 	 * Write register high order bytes first. 
 	 */
 	ld_32		HALF, VALPTR, $4
-	wr_insert	$3
-	extract		TEMP, HALF, HALF
+	extract		TEMP, HALF,$3
 	st_external	TEMP, r0, $T07|WRREG
-	wr_insert	$2
-	extract		TEMP, HALF, HALF
+	extract		TEMP, HALF, $2
 	st_external	TEMP, r0, $T06|WRREG
-	wr_insert	$1
-	extract		TEMP, HALF, HALF
+	extract		TEMP, HALF, $1
 	st_external	TEMP, r0, $T05|WRREG
 	st_external	HALF, r0, $T04|WRREG
 	/*
 	 * Then write low order bytes.
 	 */
 	ld_32		HALF, VALPTR, r0
-	wr_insert	$3
-	extract		TEMP, HALF, HALF
+	extract		TEMP, HALF, $3
 	st_external	TEMP, r0, $T03|WRREG
-	wr_insert	$2
-	extract		TEMP, HALF, HALF
+	extract		TEMP, HALF, $2
 	st_external	TEMP, r0, $T02|WRREG
-	wr_insert	$1
-	extract		TEMP, HALF, HALF
+	extract		TEMP, HALF, $1
 	st_external	TEMP, r0, $T01|WRREG
 	st_external	HALF, r0, $T00|WRREG
-	add_nt		RESULT, r0, $STATUS
+	add_nt		RESULT, r0, $SUCCESS
 	return		r10,$8
 	nop
 

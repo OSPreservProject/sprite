@@ -23,9 +23,15 @@
  *	provides 64-bit (Timer_Ticks) and 32-bit (interval) time values 
  *	based on the value of the counter. See timerClock.c for details.
  *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
  */
 
 #ifndef lint
@@ -57,12 +63,12 @@ static	DevCounter	zeroCount = {0,0};
 /*
  * The largest interval value.
  */
-#define	MAXINT	0xffffffff
-/* 
- * Largest interval in floating point.
- */
-#define	MAXINT_FLOAT	((double) MAXINT)
+#define	MAXINT	((unsigned int ) 0xffffffff)
 
+/*
+ * Scale factor to make integer division more accurate. 
+ */
+#define	SCALE_FACTOR	100
 
 
 /*
@@ -103,10 +109,12 @@ Dev_TimerInit(timer)
 	intrMaskBit = CALLBACK_TIMER_MASK_BIT;
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
 	callbackTicks = (int) (TIMER_FREQ/1000.0 * DEV_CALLBACK_INTERVAL); 
+#ifdef notdef
     } else if (timer == DEV_PROFILE_TIMER) {
 	intrMaskBit = PROFILE_TIMER_MASK_BIT;
 	modeRegBit = PROFILE_TIMER_MODE_BIT;
 	profileTicks = (int) (TIMER_FREQ/1000.0 * DEV_PROFILE_INTERVAL); 
+#endif
     } else {
 	Sys_Panic(SYS_FATAL,"Dev_TimerInit: unknown timer %d\n", timer);
     }
@@ -114,23 +122,34 @@ Dev_TimerInit(timer)
      * Stop the timer in case it is ticking.
      */
     DISABLE_INTR();
+    Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     if (modeRegister & modeRegBit) { 
 	modeRegister &= ((~modeRegBit) & 0xff);
 	Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
     }
+    Mach_EnableNonmaskableIntr();
     /*
      * Reset the timer's bit in the CC's Istatus register. Note that the
      * Istatus register always writes by anding the ones complement of the
      * data. ([Wood87] Section 5.1)
      */
-    Write32bitCCRegister(MACH_INTR_STATUS_0,intrMaskBit);
+    Mach_Write32bitCCReg(MACH_INTR_STATUS_0,intrMaskBit);
     /*
-     * Enable interrupts from the timer.
+     * Register the routine to call on this interrupt.
      */
+    Mach_SetHandler(intrMaskBit,Dev_TimerServiceInterrupts);
+    /*
+     * Enable interrupts from the timer. 
+     *
+     * The current thinking is that the imask register should always be 
+     * either on or off. In that cause we wont need this code.
+     */
+#ifdef notdef
     imaskRegister = Mach_Read32bitCCReg(MACH_INTR_MASK_0);
     imaskRegister |= intrMaskBit;
-    Write32bitCCRegister(MACH_INTR_MASK_0,imaskRegister);
+    Mach_Write32bitCCReg(MACH_INTR_MASK_0,imaskRegister);
+#endif
     ENABLE_INTR();
 }
 
@@ -168,10 +187,12 @@ Dev_TimerStart(timer)
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
 	timerAddress = CALLBACK_TIMER_ADDR;
 	ticks = callbackTicks;
+#ifdef notdef
     } else if (timer == DEV_PROFILE_TIMER) {
 	modeRegBit = PROFILE_TIMER_MODE_BIT;
 	timerAddress = PROFILE_TIMER_ADDR;
 	ticks = profileTicks;
+#endif
     } else {
 	Sys_Panic(SYS_FATAL,"Dev_TimerStart: unknown timer %d\n", timer);
     }
@@ -179,6 +200,7 @@ Dev_TimerStart(timer)
     /*
      * Make sure the timer is really off.
      */
+    Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     if (modeRegister & modeRegBit) { 
 	/*
@@ -187,19 +209,32 @@ Dev_TimerStart(timer)
 	modeRegister &= (~modeRegBit) & 0xff;
 	Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
     }
+    Mach_EnableNonmaskableIntr();
+
+#ifdef notdef
+    /*
+     * Setup the nonMaskable interupt for the PROFILE/refresh timer.
+     */
+    if (timer == DEV_PROFILE_TIMER) {
+	Mach_SetNonmaskableIntr(PROFILE_TIMER_MASK_BIT);
+	Mach_EnableNonmaskableIntr();
+    }
+#endif
     /*
      * Initialize the timer. Since the timers count up the a negative number
      * is loaded.
      */
-    Write32bitCCRegister(timerAddress,(unsigned int) -ticks);
+    Mach_Write32bitCCReg(timerAddress,(unsigned int) -ticks);
     /*
      * Start the timer ticking. We re-read the mode register to narrow the
      * window for the race condition with the other counter reseting themselves.
      *
      */
+    Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     modeRegister |= modeRegBit;
     Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
+    Mach_EnableNonmaskableIntr();
     ENABLE_INTR();
 }
 
@@ -235,10 +270,12 @@ RestartTimer(timer)
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
 	timerAddress = CALLBACK_TIMER_ADDR;
 	ticks = callbackTicks;
+#ifdef notdef
     } else if (timer == DEV_PROFILE_TIMER) {
 	modeRegBit = PROFILE_TIMER_MODE_BIT;
 	timerAddress = PROFILE_TIMER_ADDR;
 	ticks = profileTicks;
+#endif
     } else {
 	Sys_Panic(SYS_FATAL,"RestartTimer: unknown timer %d\n", timer);
     }
@@ -246,13 +283,16 @@ RestartTimer(timer)
      * Initialize the timer. Since the timers count up the a negative number
      * is loaded.
      */
-    Write32bitCCRegister(timerAddress,(unsigned int) -ticks);
+    Mach_Write32bitCCReg(timerAddress,(unsigned int) -ticks);
     /*
      * Start the timer ticking. 
      */
+    Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     modeRegister |= modeRegBit;
     Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
+    Mach_EnableNonmaskableIntr();
+
 }
 
 /*
@@ -288,10 +328,12 @@ Dev_TimerInactivate(timer)
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
 	timerAddress = CALLBACK_TIMER_ADDR;
 	intrMaskBit = CALLBACK_TIMER_MASK_BIT;
+#ifdef notdef
     } else if (timer == DEV_PROFILE_TIMER) {
 	modeRegBit = PROFILE_TIMER_MODE_BIT;
 	timerAddress = PROFILE_TIMER_ADDR;
 	intrMaskBit = PROFILE_TIMER_MASK_BIT;
+#endif
     } else {
 	Sys_Panic(SYS_FATAL,"Dev_TimerStart: unknown timer %d\n", timer);
     }
@@ -299,19 +341,26 @@ Dev_TimerInactivate(timer)
      * Stop the timer in case it is ticking.
      */
     DISABLE_INTR();
+    Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     if (modeRegister & modeRegBit) { 
 	modeRegister &= (~modeRegBit & 0xff);
 	Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
     }
+    Mach_EnableNonmaskableIntr();
     /*
      * Clear the interrupt status bit and turn the interrupt mask bit off.
      */
-    Write32bitCCRegister(MACH_INTR_STATUS_0,intrMaskBit);
+    Mach_Write32bitCCReg(MACH_INTR_STATUS_0,intrMaskBit);
+    /*
+     * Currently, we leave the interrupt mask turned on at all times.
+     */
 
+#ifdef notdef
     imaskRegister = Mach_Read32bitCCReg(MACH_INTR_MASK_0);
     imaskRegister &= (~intrMaskBit) & 0xff;
-    Write32bitCCRegister(MACH_INTR_MASK_0,imaskRegister);
+    Mach_Write32bitCCReg(MACH_INTR_MASK_0,imaskRegister);
+#endif
 
     ENABLE_INTR();
 
@@ -320,7 +369,7 @@ Dev_TimerInactivate(timer)
 /*
  *----------------------------------------------------------------------
  *
- *  Dev_TimerServiceInterrupt --
+ *  Dev_TimerServiceInterrupts --
  *
  *      This routine is called at every timer interrupt. 
  *      It calls the timer callback queue handling if the callback timer 
@@ -340,11 +389,13 @@ Dev_TimerInactivate(timer)
  */
 
 void
-Dev_TimerServiceInterrupt(stack)
-    Mach_IntrStack stack;
+Dev_TimerServiceInterrupts(intrStatusPtr)
+    unsigned int	*intrStatusPtr;		/* Copy of interrupt status 
+						 * register.
+						 */
 { 
     unsigned int modeRegister;
-    unsigned int istatusReg;
+    unsigned int istatusReg = *intrStatusPtr;
 
     /*
      *  Determine if the callback and profile timers have expired.
@@ -352,10 +403,7 @@ Dev_TimerServiceInterrupt(stack)
      *  The profile timer is checked first because routines on the callback
      *  queue might cause a delay in collecting profiling information.
      */
-
-
     DISABLE_INTR();
-    istatusReg = Mach_Read32bitCCReg(MACH_INTR_STATUS_0);
     if (istatusReg & PROFILE_TIMER_MASK_BIT) {
 		/*
 		 * Time to profile.  First make sure the timer didn't 
@@ -367,34 +415,34 @@ Dev_TimerServiceInterrupt(stack)
 		 * and clears its mode bit. When we write the mode register
 		 * back we set the timer back on.  
 		 */
+	Mach_DisableNonmaskableIntr();
 	modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
 	if (modeRegister & PROFILE_TIMER_MODE_BIT) {  
 	    modeRegister &= (~PROFILE_TIMER_MODE_BIT & 0xff);
 	    Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
 	}
+	Mach_EnableNonmaskableIntr();
 		/* 
-		 * Reset the interrupt bit in the status word..
+		 * Reseting the interrupt bit in the status word is done in
+		 * the routines calling us. 
 		 */
-	Write32bitCCRegister(MACH_INTR_STATUS_0,PROFILE_TIMER_MASK_BIT);
 		/*
 		 * Collect the profile information.
 		 */
-	Prof_CollectInfo(&stack);
+	Prof_CollectInfo();
 	RestartTimer(DEV_PROFILE_TIMER);
      } 
      if (istatusReg & CALLBACK_TIMER_MASK_BIT) {
 	/*
 	 * Make sure the timer is off. See comment above.
 	 */
+	Mach_DisableNonmaskableIntr();
 	modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
 	if (modeRegister & CALLBACK_TIMER_MODE_BIT) {  
 	    modeRegister &= (~CALLBACK_TIMER_MODE_BIT & 0xff);
 	    Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
 	}
-		/* 
-		 * Reset the interrupt bit in the status word..
-		 */
-	Write32bitCCRegister(MACH_INTR_STATUS_0,CALLBACK_TIMER_MASK_BIT);
+	Mach_EnableNonmaskableIntr();
 		/*
 		 * Do the call back stuff. 
 		 */
@@ -402,7 +450,14 @@ Dev_TimerServiceInterrupt(stack)
 
 	RestartTimer(DEV_CALLBACK_TIMER);
     }
+    /*
+     * Reset the two timer bits in the status register so we wont get called
+     * twice when both timer's interrupt.
+     */
+    *intrStatusPtr = (*intrStatusPtr) & 
+			~(CALLBACK_TIMER_MODE_BIT | PROFILE_TIMER_MODE_BIT);
     ENABLE_INTR();
+
     return;
 }
 
@@ -433,11 +488,13 @@ Dev_CounterInit()
     /*
      * Make sure the timer is not ticking.
      */
+    Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     if (modeRegister & FREERUNNING_TIMER_MODE_BIT) {
 	modeRegister &= (~(FREERUNNING_TIMER_MODE_BIT) & 0xff);
 	Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
     }
+    Mach_EnableNonmaskableIntr();
     /*
      * Load the 64 bit register.
      */
@@ -445,9 +502,11 @@ Dev_CounterInit()
     /*
      * Start the counter running.
      */
+    Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     modeRegister |= (FREERUNNING_TIMER_MODE_BIT);
     Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
+    Mach_EnableNonmaskableIntr();
     ENABLE_INTR();
 }
 
@@ -540,11 +599,12 @@ Dev_CounterCountToTime(count, resultPtr)
     DevCounter	count;
     Time *resultPtr;
 {
+    unsigned int leftOver;
 
     resultPtr->seconds = (int) (count.low / TIMER_FREQ);
-    resultPtr->microseconds =
-	(int) ((count.low - (resultPtr->seconds * TIMER_FREQ)) *
-		((double) ONE_SECOND / TIMER_FREQ));
+    leftOver = (unsigned int) (count.low - (resultPtr->seconds * TIMER_FREQ));
+    resultPtr->microseconds = (int) ((leftOver * SCALE_FACTOR) /
+				((TIMER_FREQ * SCALE_FACTOR) / ONE_SECOND));
     Time_Multiply(*resultPtr,count.high,resultPtr);
 
 }
@@ -619,15 +679,13 @@ Dev_CounterTimeToCount(time, resultPtr)
 
     /*
      * Number of seconds in each DevCounter.high tick.
-     *	SECONDS_HIGH = (MAXINT+1)/TIMER_FREQ
-     * We do the calculation at compile time in floating point because
-     * we can't represent 2^32 in a 32-bit integer.
      */
-#define	SECONDS_HIGH	((int)((MAXINT_FLOAT+1)/TIMER_FREQ))
+#define	SECONDS_HIGH	((int)(MAXINT/TIMER_FREQ))
 
     resultPtr->high =  (time.seconds / SECONDS_HIGH);
     resultPtr->low = (int) ((time.seconds % SECONDS_HIGH) * TIMER_FREQ);
-    intervalLow = (int) (time.microseconds * (TIMER_FREQ/(double)ONE_SECOND));
+    intervalLow = (int) ((time.microseconds / SCALE_FACTOR) *
+		((TIMER_FREQ * SCALE_FACTOR)/ONE_SECOND));
     resultPtr->low += intervalLow;
     if (resultPtr->low < intervalLow) {
 	resultPtr->high += 1;

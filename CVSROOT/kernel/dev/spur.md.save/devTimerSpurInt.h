@@ -9,8 +9,14 @@
  *	SPUR Memory System Architecture by Wood, Eggers, and Gibson
  *	UCB/CSD 87/394
  *
- * Copyright 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  *
  * $Header$ SPRITE (Berkeley)
@@ -32,8 +38,15 @@
  * speeds between 100ns and 150ns. This makes TIMER_FREQ in the range
  * of 10000000.0 to 6666666.66 cycles per second. 
  */
-#define	TIMER_FREQ	((double) machCycleTime)
+#ifdef notdef
+#define	TIMER_FREQ	((unsigned int) mach_CycleTime)
+#endif
 
+/*
+ * For the first spur kernel - 200ns.
+ */
+
+#define	TIMER_FREQ	((unsigned int) 5000000)
 
 
 /*
