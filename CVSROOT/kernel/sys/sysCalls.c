@@ -19,12 +19,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sysStats.h>
 #include <time.h>
 #include <timer.h>
+#include <traceLog.h>
 #include <vm.h>
 #include <machMon.h>
 #include <proc.h>
 #include <dbg.h>
 #include <fs.h>
 #include <fsutil.h>
+#include <fsprefix.h>
 #include <rpc.h>
 #include <net.h>
 #include <sched.h>
@@ -35,9 +37,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include <main.h>
 #include <net.h>
+#ifdef sun4
+#include <vmMach.h>
+#endif
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
+
+#ifdef SOSP91
+TraceLog_Header *SOSP91TracePtr = NULL;
+extern Boolean traceLog_Disable;
+#endif
 
 
 /*
@@ -836,7 +846,8 @@ Sys_StatsStub(command, option, argPtr)
 	    } else {
 		resultPtr = (Address) NIL;
 	    }
-	    status = Fsutil_FsRecovInfo(length, resultPtr, &lengthNeeded);
+	    status = Fsutil_FsRecovInfo(length,
+		    (Fsutil_FsRecovNamedStats *) resultPtr, &lengthNeeded);
 	    if (status != SUCCESS) {
 		if (resultPtr != (Address) NIL) {
 		    free(resultPtr);
@@ -937,7 +948,8 @@ Sys_StatsStub(command, option, argPtr)
 	    } else {
 		resultPtr = (Address) NIL;
 	    }
-	    status = Rpc_DumpServerTraces(length, resultPtr, &lengthNeeded);
+	    status = Rpc_DumpServerTraces(length,
+		    (RpcServerUserStateInfo *)resultPtr, &lengthNeeded);
 	    if (status != SUCCESS) {
 		if (resultPtr != (Address) NIL) {
 		    free(resultPtr);
@@ -972,6 +984,39 @@ Sys_StatsStub(command, option, argPtr)
 	    status = SUCCESS;
 	    break;
 	}
+#ifdef SOSP91
+	case SYS_TRACELOG_STATS: { /* Tracing for SOSP91 */
+	    if (option == SYS_TRACELOG_ON) {
+		int args[2]; /* NumBuffers, BufSize */
+		status = Vm_CopyIn(2*sizeof (int), (Address) argPtr,
+			(Address)args);
+		if (status != SUCCESS) {
+		    break;
+		}
+		if (SOSP91TracePtr == NULL) {
+		    SOSP91TracePtr = (TraceLog_Header *)
+			    malloc(sizeof(TraceLog_Header));
+		    TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0);
+		}
+		traceLog_Disable = FALSE;
+	    } else if (option == SYS_TRACELOG_OFF) {
+		TraceLog_Header *tmpPtr;
+		tmpPtr = SOSP91TracePtr;
+		SOSP91TracePtr = NULL;
+		TraceLog_Finish(tmpPtr);
+		traceLog_Disable = TRUE;
+	    } else if (option == SYS_TRACELOG_RESET) {
+		if (SOSP91TracePtr != NULL) {
+		    TraceLog_Reset(SOSP91TracePtr);
+		}
+	    } else if (option == SYS_TRACELOG_DUMP) {
+		TraceLog_Dump(SOSP91TracePtr, argPtr+sizeof(Sys_TracelogHeader),
+			argPtr);
+	    }
+	    status = SUCCESS;
+	    break;
+	}
+#endif
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
