@@ -570,15 +570,20 @@ FindNewMasterSeg(segPtr, page, othersPtr)
     cowList = &segPtr->cowInfoPtr->cowList;
     newSegPtr = (Vm_Segment *)List_Next((List_Links  *)segPtr);
     while (!List_IsAtEnd(cowList, (List_Links *)newSegPtr)) {
-	ptePtr = VmGetPTEPtr(newSegPtr, page);
-	if ((*ptePtr & VM_COR_BIT) &&
-	    Vm_GetPageFrame(*ptePtr) == segPtr->segNum) {
-	    if (mastSegPtr != (Vm_Segment *)NIL) {
-		*ptePtr &= ~VM_PAGE_FRAME_FIELD;
-		*ptePtr |= mastSegPtr->segNum;
-		*othersPtr = TRUE;
-	    } else {
-		mastSegPtr = newSegPtr;
+	/*
+	 * Make sure the page exists in this segment, then check the PTE.
+	 */
+	if (page - newSegPtr->offset < newSegPtr->ptSize) {
+	    ptePtr = VmGetPTEPtr(newSegPtr, page);
+	    if ((*ptePtr & VM_COR_BIT) &&
+		Vm_GetPageFrame(*ptePtr) == segPtr->segNum) {
+		if (mastSegPtr != (Vm_Segment *)NIL) {
+		    *ptePtr &= ~VM_PAGE_FRAME_FIELD;
+		    *ptePtr |= mastSegPtr->segNum;
+		    *othersPtr = TRUE;
+		} else {
+		    mastSegPtr = newSegPtr;
+		}
 	    }
 	}
 	newSegPtr = (Vm_Segment *)List_Next((List_Links  *)newSegPtr);
@@ -822,11 +827,16 @@ SeeIfLastCOR(mastSegPtr, page)
     cowList = &mastSegPtr->cowInfoPtr->cowList;
     childSegPtr = (Vm_Segment *)List_Next((List_Links *)mastSegPtr);
     while (!List_IsAtEnd(cowList, (List_Links *)childSegPtr)) {
-	ptePtr = VmGetPTEPtr(childSegPtr, page);
-	if ((*ptePtr & VM_COR_BIT) &&
-	    Vm_GetPageFrame(*ptePtr) == mastSegPtr->segNum) {
-	    UNLOCK_MONITOR;
-	    return;
+	/*
+	 * Make sure the page exists in this segment, then check the PTE.
+	 */
+	if (page - childSegPtr->offset < childSegPtr->ptSize) {
+	    ptePtr = VmGetPTEPtr(childSegPtr, page);
+	    if ((*ptePtr & VM_COR_BIT) &&
+		Vm_GetPageFrame(*ptePtr) == mastSegPtr->segNum) {
+		UNLOCK_MONITOR;
+		return;
+	    }
 	}
 	childSegPtr = (Vm_Segment *)List_Next((List_Links *)childSegPtr);
     }
