@@ -1382,7 +1382,9 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 
     procPtr = Proc_GetCurrentProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
-	panic("MachHandleWeirdoInstruction: current process was NIL!\n");
+	printf("%s: pc = 0x%x, trapType = %d\n",
+		"MachHandleWeirdoInstruction", pcValue, trapType);
+	panic("Current process was NIL!\n");
     }
     /*
      * Handle kernel-mode traps.

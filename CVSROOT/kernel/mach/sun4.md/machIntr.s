@@ -50,6 +50,11 @@ MachHandleInterrupt:
 	ld	[%VOL_TEMP1], %SAFE_TEMP
 	set	1, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
+
+	and	%CUR_PSR_REG, MACH_PS_BIT, %VOL_TEMP1
+	set	_mach_KernelMode, %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2]	/* 0 = user, 1 = kernel */
+
 	/* Call into vector table using tbr */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
 	sub	%o0, MACH_LEVEL0_INT, %o0	/* get interrupt level */
@@ -57,6 +62,12 @@ MachHandleInterrupt:
 	set	_machInterruptArgs, %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %o0		/* arg, if any */
+	/*
+	 * For now, this is the only way to get the interrupt pc to the
+	 * profiler via the Timer_TimerService callback.  It's an implicit
+	 * parameter.
+	 */
+	mov	%CUR_PC_REG, %o1	/* pc as next arg. */
 	set	_machVectorTable, %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1

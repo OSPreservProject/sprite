@@ -495,7 +495,7 @@
  * separate them out and fix ths.
  */
 #define	SYS_MAX_ARGS		10
-#define	SYS_NUM_SYSCALLS	94
+#define	SYS_NUM_SYSCALLS	95
 #define	SYS_ARG_NOACCESS	0x00020000
 #define	SYS_INVALID_ARG		0x00020001
 #define	SYS_INVALID_SYSTEM_CALL	0x00020002
