@@ -80,6 +80,7 @@ typedef struct {
 typedef struct {
     Address	retAddr;
     Sig_Stack	sigStack;
+    Sig_Context	sigContext;
 } SignalStack;
 
 /*
@@ -1028,6 +1029,7 @@ MachUserReturn(procPtr)
 	    break;
 	}
 	Mach_EnableIntr();
+	sigStack.sigStack.contextPtr = &sigStack.sigContext;
 	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
 	    SetupSigHandler(procPtr, &sigStack, pc);
 	    Mach_DisableIntr();
@@ -1107,20 +1109,24 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 
     statePtr = procPtr->machStatePtr;
     usp = statePtr->userState.userStackPtr - sizeof(SignalStack);
-    sigStackPtr->sigStack.trapInst = 0x4e424e42;
+    sigStackPtr->sigStack.contextPtr =
+	(Sig_Context *)(usp + (unsigned int)(&sigStackPtr->sigContext) -
+			      (unsigned int)sigStackPtr);
+    sigStackPtr->sigContext.machContext.trapInst = 0x4e424e42;
     sigStackPtr->retAddr =
-	    usp + ((int)(&sigStackPtr->sigStack.trapInst) - (int)sigStackPtr);
+	usp + (unsigned int)(&sigStackPtr->sigContext.machContext.trapInst) -
+	      (unsigned int)sigStackPtr;
     /*
      * Copy the exception stack onto the signal stack.
      */
     excStackSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
     Byte_Copy(excStackSize, (Address)statePtr->userState.excStackPtr,
-	      (Address)&(sigStackPtr->sigStack.excStack));
+	      (Address)&(sigStackPtr->sigContext.machContext.excStack));
     /*
      * Copy the user state onto the signal stack.
      */
     Byte_Copy(sizeof(Mach_UserState), (Address)&statePtr->userState,
-	      (Address)&(sigStackPtr->sigStack.userState));
+	      (Address)&(sigStackPtr->sigContext.machContext.userState));
     /*
      * Copy the stack out to user space.
      */
@@ -1181,7 +1187,7 @@ ReturnFromSigHandler(procPtr)
     /*
      * Copy the signal stack in.
      */
-    if (Vm_CopyIn(sizeof(Sig_Stack),
+    if (Vm_CopyIn(sizeof(Sig_Stack) + sizeof(Sig_Context),
 		  (Address) (statePtr->userState.userStackPtr), 
 		  (Address) &sigStack.sigStack) != SUCCESS) {
 	Sys_Panic(SYS_WARNING,
@@ -1189,6 +1195,7 @@ ReturnFromSigHandler(procPtr)
 	  procPtr->processID);
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
+    sigStack.sigStack.contextPtr = &sigStack.sigContext;
     /*
      * Take the proper action on return from a signal.
      */
@@ -1198,28 +1205,28 @@ ReturnFromSigHandler(procPtr)
      * pointer.
      */
     statePtr->userState.userStackPtr = 
-			sigStack.sigStack.userState.userStackPtr;
+		    sigStack.sigContext.machContext.userState.userStackPtr;
     Byte_Copy(sizeof(int) * (MACH_NUM_GPRS - 1),
-	      (Address)sigStack.sigStack.userState.trapRegs,
+	      (Address)sigStack.sigContext.machContext.userState.trapRegs,
 	      (Address)statePtr->userState.trapRegs);
 
     /*
      * Verify that the exception stack is OK.
      */
     curSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
-    oldSize = Mach_GetExcStackSize(&sigStack.sigStack.excStack);
+    oldSize = Mach_GetExcStackSize(&sigStack.sigContext.machContext.excStack);
     if (oldSize == -1) {
 	Sys_Printf("Mach_Code: Bad signal stack type.\n");
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
-    if (sigStack.sigStack.excStack.statusReg & MACH_SR_SUPSTATE) {
+    if (sigStack.sigContext.machContext.excStack.statusReg & MACH_SR_SUPSTATE) {
 	Sys_Printf("Mach_Code: User set kernel bit on signal stack\n");
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
     /*
      * Copy the exception stack in.
      */
-    Byte_Copy(oldSize, (Address)&sigStack.sigStack.excStack,
+    Byte_Copy(oldSize, (Address)&sigStack.sigContext.machContext.excStack,
 	      (Address)&statePtr->sigExcStack);
     statePtr->sigExcStackSize = oldSize;
     /*

@@ -305,6 +305,19 @@ typedef struct {
 } Mach_IntrStack;
 
 /*
+ * The machine dependent signal structure.
+ */
+typedef struct {
+    int		  	trapInst;	/* The trap instruction that is
+					 * executed upon return. */
+    Mach_UserState	userState;	/* The user process machine state
+					 * info. */
+    Mach_ExcStack	excStack;	/* The exception stack that would
+					 * have been restored if this signal
+					 * were not taken. */
+} Mach_SigContext;
+
+/*
  * Macro to get processor number
  */
 #define	Mach_GetProcessorNumber() 	0
