@@ -6,22 +6,12 @@
 #
 
 #
-# Use the old compiler.  The newer compilers break the bit fields
-# in the net module.  We need to rewrite all this stuff so it doesn't
-# use bitfields.  They are not very portable.
+# Optimization breaks the ds3100.
 #
-#if !empty(TM:Msun4) || !empty(TM:Msun4c) || !empty(TM:Mcleansun4) || !empty(TM:Mcleansun4c)
-CFLAGS	+= -B/sprite/cmds/1.34/
-#elif !empty(TM:Msun3) || !empty(TM:Mcleansun3)
-CFLAGS	+= -B/sprite/cmds/1.36/
-#endif
 
-CFLAGS	+= -Dvolatile=
-
-#
-# Optimization breaks just about everything.
-#
+#if !empty(TM:Mds3100)
 NOOPTIMIZATION	= no -O please
+#endif
 
 #include	<$(SYSMAKEFILE)>
 
