@@ -157,6 +157,21 @@ Rpc_GetStats(command, option, argPtr)
     ReturnStatus status = SUCCESS;
     
     switch(command) {
+	case SYS_RPC_ENABLE_SERVICE: {
+	    /*
+	     * A basic On/Off switch for the RPC system.  Servers in
+	     * particular want to get everything ready before responding
+	     * to clients.
+	     */
+	    if (option) {
+		Sys_Printf("Starting RPC service\n");
+		rpcServiceEnabled = TRUE;
+	    } else {
+		Sys_Panic(SYS_WARNING, "Disabling RPC service\n");
+		rpcServiceEnabled = FALSE;
+	    }
+	    break;
+	}
 	case SYS_RPC_CLT_STATS: {
 	    register Rpc_CltStat *cltStatPtr;
 
