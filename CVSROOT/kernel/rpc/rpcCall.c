@@ -44,7 +44,7 @@ int		   numFreeChannels = 8;
  * A process might have to wait for a free RPC channel.
  */
 Sync_Condition freeChannels;
-Sync_Lock rpcLock = SYNC_LOCK_INIT_STATIC();
+Sync_Lock rpcLock = Sync_LockInitStatic("Rpc:rpcLock");
 #define LOCKPTR (&rpcLock)
 
 /*
@@ -315,6 +315,8 @@ RpcChanAlloc(serverID)
     register int firstFree = -1;	/* The first chan used but now free */
 
     LOCK_MONITOR;
+
+    Sync_LockRegister(&rpcLock);
 
     while (numFreeChannels < 1) {
 	rpcCltStat.chanWaits++;

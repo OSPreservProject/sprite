@@ -89,7 +89,8 @@ Rpc_Init()
 	chanPtr->state = CHAN_FREE;
 	chanPtr->index = i;
 	chanPtr->serverID = -1;
-	SYNC_SEM_INIT_DYNAMIC(&chanPtr->mutex,"chanPtr->mutex");
+	Sync_SemInitDynamic(&chanPtr->mutex,"Rpc:RpcClientChannel.mutex");
+	Sync_SemRegister(&chanPtr->mutex);
 	chanPtr->waitCondition.waiting = FALSE;
 
 	/*
@@ -203,7 +204,9 @@ RpcInitServerState(index)
     register int frag;			/* Index into array of headers used
 					 * for fragmenting */
     static Sync_Semaphore mutexInit =
-	SYNC_SEM_INIT_STATIC("RpcServerState->mutex");
+	Sync_SemInitStatic("RpcServerState->mutex");
+
+    Sync_SemRegister(&mutexInit);
 
     srvPtr = (RpcServerState *)Vm_RawAlloc(sizeof(RpcServerState));
 

@@ -49,7 +49,7 @@ static int numTracedRpcServers;
 /*
  * The entering and leaving monitored.
  */
-static Sync_Lock rpcSrvTraceLock = SYNC_LOCK_INIT_STATIC();
+static Sync_Lock rpcSrvTraceLock = Sync_LockInitStatic("Rpc:rpcSrvTraceLock");
 #define LOCKPTR (&rpcSrvTraceLock)
 #endif /* notdef */
 
@@ -77,6 +77,8 @@ ENTRY void
 Rpc_StartSrvTrace()
 {
     LOCK_MONITOR;
+
+    Sync_LockRegister(&rpcSrvTraceLock);
 
     numTracedRpcServers++;
     if (numTracedRpcServers == 1) {

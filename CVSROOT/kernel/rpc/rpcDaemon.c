@@ -29,7 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Rpc_Daemon process is all synchronized with the serverMutex master lock.
  * rpcDaemon is the condition that is used to wakeup the Rpc_Deamon.
  */
-static Sync_Semaphore serverMutex = SYNC_SEM_INIT_STATIC("serverMutex");
+static Sync_Semaphore serverMutex = Sync_SemInitStatic("Rpc:serverMutex");
 Sync_Condition rpcDaemon;
 
 /*
@@ -208,6 +208,7 @@ RpcServerAlloc(rpcHdrPtr)
     int	freeServer = -1;
 
     MASTER_LOCK(&serverMutex);
+    Sync_SemRegister(&serverMutex);
 
     if (daemonState == DAEMON_DEAD) {
 	/*

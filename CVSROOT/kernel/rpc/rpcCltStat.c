@@ -50,7 +50,7 @@ static int numRpcProcesses;
 /*
  * The entering and leaving monitored.
  */
-static Sync_Lock rpcTraceLock = SYNC_LOCK_INIT_STATIC();
+static Sync_Lock rpcTraceLock = Sync_LockInitStatic("Rpc:rpcTraceLock");
 #define LOCKPTR (&rpcTraceLock)
 #endif /* notdef */
 
@@ -81,6 +81,8 @@ ENTRY void
 Rpc_EnterProcess()
 {
     LOCK_MONITOR;
+
+    Sync_LockRegister(&rpcTraceLock);
 
     numRpcProcesses++;
     if (numRpcProcesses == 1) {

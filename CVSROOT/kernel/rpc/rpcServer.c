@@ -26,7 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 #include "proc.h"
 #include "dbg.h"
-#include "mem.h"
+#include "stdlib.h"
 
 /*
  * An on/off switch for the service side of the RPC system.  Hosts do not
@@ -661,9 +661,10 @@ Rpc_ErrorReply(srvToken, error)
 	/*
 	 * Make sure we have a good route back to the client.
 	 */
-	Sync_Semaphore mutex;
+	static Sync_Semaphore mutex = 
+	    Sync_SemInitStatic("Rpc_ErrorReply.mutex");
 
-	SYNC_SEM_INIT_DYNAMIC(&mutex,"Rpc_ErrorReply.mutex");
+	Sync_SemRegister(&mutex);
 	MASTER_LOCK(&mutex);
 	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
 	MASTER_UNLOCK(&mutex);
@@ -779,9 +780,10 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
 	/*
 	 * Make sure we have a good route back to the client.
 	 */
-	Sync_Semaphore mutex;
-	  
-	SYNC_SEM_INIT_DYNAMIC(&mutex,"Rpc_Reply.mutex");
+	static Sync_Semaphore mutex = 
+	    Sync_SemInitStatic("Rpc:Rpc_Reply.mutex");
+
+	Sync_SemRegister(&mutex);
 	MASTER_LOCK(&mutex);
 	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
 	MASTER_UNLOCK(&mutex);
