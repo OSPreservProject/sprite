@@ -1934,7 +1934,7 @@ FillSegmentInfo(segPtr, infoPtr)
     infoPtr->refCount = segPtr->refCount;
     infoPtr->type = segPtr->type;
     if (infoPtr->type == VM_CODE) {
-	strncpy(segPtr->objFileName, infoPtr->objFileName, 
+	strncpy(infoPtr->objFileName, segPtr->objFileName,
 	        VM_OBJ_FILE_NAME_LENGTH);
 	infoPtr->objFileName[VM_OBJ_FILE_NAME_LENGTH -1] = '\0';
     } else {
