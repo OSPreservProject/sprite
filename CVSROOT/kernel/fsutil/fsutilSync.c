@@ -40,6 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #define	MAX_WAIT_INTERVALS	5
 
+
 Boolean fsutil_ShouldSyncDisks;
 
 int		fsWriteBackInterval = 30;	/* How long blocks have to be
@@ -81,9 +82,9 @@ Fsutil_SyncProc(data, callInfoPtr)
 	lastHandleWBTime = Fsutil_TimeInSeconds();
     }
 
-    if (fsutil_ShouldSyncDisks && !fsutil_WriteThrough && !fsutil_WriteBackASAP) {
-	Fscache_WriteBack((unsigned) (Fsutil_TimeInSeconds() - fsWriteBackInterval), 
-			  &blocksLeft, FALSE);
+    if (fsutil_ShouldSyncDisks) {
+	Fscache_WriteBack((unsigned) (Fsutil_TimeInSeconds() -
+		fsWriteBackInterval), &blocksLeft, FALSE);
     }
     if (fsWriteBackCheckInterval < fsWriteBackInterval) {
 	callInfoPtr->interval = fsWriteBackCheckInterval * timer_IntOneSecond;

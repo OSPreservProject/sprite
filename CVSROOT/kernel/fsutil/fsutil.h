@@ -63,6 +63,11 @@
 #define FSUTIL_FILE_TYPE_BINARY 3
 #define FSUTIL_FILE_TYPE_OTHER 4
 
+/*
+ * How often to try rewriting a file.
+ */
+#define	FSUTIL_WRITE_RETRY_INTERVAL	30
+
 /* data structures */
 
 /*
