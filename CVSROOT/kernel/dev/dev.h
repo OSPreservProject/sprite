@@ -22,13 +22,9 @@
 #include "status.h"
 #ifdef KERNEL
 #include "devSyslog.h"
-#include "devConsole.h"
-#include "devKeyboard.h"
 #include "devDependent.h"
 #else
 #include <kernel/devSyslog.h>
-#include <kernel/devConsole.h>
-#include <kernel/devKeyboard.h>
 #include <kernel/devDependent.h>
 #endif
 
@@ -48,9 +44,11 @@ typedef struct Dev_DiskAddr {
  */
 #define DEV_BYTES_PER_SECTOR	512
 
-extern void Dev_Init();
-extern void Dev_Config();
-extern void Dev_GatherDiskStats();
-extern int  Dev_GetDiskStats();
+extern void	Dev_Init();
+extern void	Dev_Config();
+extern void	Dev_GatherDiskStats();
+extern int	Dev_GetDiskStats();
+extern void	Dev_InvokeConsoleCmd();
+extern void	Dev_RegisterConsoleCmd();
 
 #endif /* _DEV */
