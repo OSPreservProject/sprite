@@ -181,8 +181,9 @@ Proc_Migrate(pid, nodeID)
  *
  *	Transfer the state of a process once it has reached a state with no
  *	relevant information on the kernel stack.  This is done following a
- *	kernel call, when the only information on the kernel stack is an
- *	Exc_TrapStack.  
+ *	kernel call, when the process can migrate and immediately return
+ *	to user mode and there is no relevant information on the kernel
+ *	stack.  
  *
  * Results:
  *	No value is returned.
@@ -195,11 +196,9 @@ Proc_Migrate(pid, nodeID)
  */
 
 void
-Proc_MigrateTrap(procPtr, machStatePtr)
+Proc_MigrateTrap(procPtr)
     register Proc_ControlBlock 	*procPtr; /* The process being migrated */
-    Mach_State	*machStatePtr;		  /* Machine state at time of call. */
 {
-#ifdef notdef
     int nodeID;				  /* node to which it migrates */
     Proc_PCBLink *procLinkPtr;
     register Proc_ControlBlock *procItemPtr;
@@ -241,7 +240,8 @@ Proc_MigrateTrap(procPtr, machStatePtr)
      * one process will be migrated.
      */
     if (numSharers > 1) {
-	Sys_Panic(SYS_FATAL, "Proc_MigrateTrap: cannot handle shared heaps.\n");
+	Sys_Panic(SYS_WARNING,
+		  "Proc_MigrateTrap: cannot handle shared heaps.\n");
 	return;
     }
     LIST_FORALL(sharersPtr, itemPtr) {
@@ -250,7 +250,7 @@ Proc_MigrateTrap(procPtr, machStatePtr)
 	if (proc_MigDebugLevel > 7) {
 	    Sys_Printf("Proc_Migrate: Sending process state.\n");
 	}
-	status = SendProcessState(procItemPtr, nodeID, trapStackPtr, foreign);
+	status = SendProcessState(procItemPtr, nodeID, foreign);
 	if (status != SUCCESS) {
 	    Sys_Panic(SYS_WARNING, "Error %x returned by SendProcessState.\n",
 		      status);
@@ -340,7 +340,6 @@ failure:
     Proc_Unlock(procPtr);
     WakeupCallers();
 
-#endif
 }
 
 
@@ -358,17 +357,15 @@ failure:
  *	The relevant fields are as follows, with contiguous entries
  * 	listed with vertical bars:
  *
- *	Proc_PID	processID
- *   |	int		genFlags
- *   |	int		syncFlags
- *   |	int		schedFlags
- *   |	int		exitFlags
+ *    	Proc_PID	processID    [not stored contiguously on remote]
  *    | Proc_PID	parentID
  *    | int		familyID
  *    | int		userID
  *    |	int		effectiveUserID
- *    |	int		numGroupIDs
- *	int		groupIDs[]   (depends on numGroupIDs)
+ *   |	int		genFlags
+ *   |	int		syncFlags
+ *   |	int		schedFlags
+ *   |	int		exitFlags
  * |	int 		billingRate
  * |	unsigned int 	recentUsage
  * |	unsigned int 	weightedUsage
@@ -386,12 +383,11 @@ failure:
  *  |	int		sigMasks[SIG_NUM_SIGNALS]
  *  |	int		sigCodes[SIG_NUM_SIGNALS]
  *  |	int		sigFlags
+ *	variable: encapsulated machine state
  *
  *	Note that if the Proc_ControlBlock structure is changed, it may
  * 	be necessary to change the logic of this procedure to copy
  *	fields separately.
- *
- *	In addition, the trap stack is transferred.
  *
  * RPC: Input parameters:
  *		process ID
@@ -411,22 +407,20 @@ failure:
  */
 
 static ReturnStatus
-SendProcessState(procPtr, nodeID, machStatePtr, foreign)
+SendProcessState(procPtr, nodeID, foreign)
     register Proc_ControlBlock 	*procPtr; /* The process being migrated */
     int nodeID;				  /* node to which it migrates */
-    Mach_State	*machStatePtr;	  /* trap stack at time of migration */
     Boolean foreign;			  /* Is it migrating back home? */
 {
-#ifdef notdef
     Address procBuffer;
     Address ptr;
     int procBufferSize;
+    int machStateSize;
     ReturnStatus error;
     Rpc_Storage storage;
     Proc_MigrateCommand migrateCommand;
     Proc_MigrateReply returnInfo;
     int argStringLength;
-    int trapStackSize;
     Proc_TraceRecord record;
 
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
@@ -441,13 +435,13 @@ SendProcessState(procPtr, nodeID, machStatePtr, foreign)
 		     (ClientData *) &record);
     }
    
+    machStateSize = Mach_GetEncapSize();
+    
     argStringLength = Byte_AlignAddr(String_Length(procPtr->argString) + 1);
-    trapStackSize = Exc_GetTrapStackSize(machStatePtr->trapStackPtr);
-    procBufferSize = (3 + PROC_NUM_FLAGS + PROC_NUM_BILLING_FIELDS +
-		      PROC_NUM_ID_FIELDS + procPtr->numGroupIDs) *
-	    sizeof(int) +
-            sizeof(Proc_PID) + sizeof(Proc_State) + SIG_INFO_SIZE +
-	    trapStackSize + argStringLength;
+    procBufferSize = 2 * sizeof(Proc_PID) +
+	    (PROC_NUM_ID_FIELDS + PROC_NUM_FLAGS +
+	     PROC_NUM_SCHED_FIELDS + 1) * sizeof(int) +
+	    SIG_INFO_SIZE + machStateSize + argStringLength;
     procBuffer = Mem_Alloc(procBufferSize);
 
     ptr = procBuffer;
@@ -457,33 +451,28 @@ SendProcessState(procPtr, nodeID, machStatePtr, foreign)
     } else {
 	Byte_FillBuffer(ptr, Proc_PID, NIL);
     }
-    Byte_FillBuffer(ptr, Proc_PID, procPtr->processID);
 
     /*
-     * Copy in flags, IDs, scheduling information, registers, and the PC.
+     * Copy in IDs, flags, scheduling information, and machine-dependent
+     * state.
      */
+    Byte_FillBuffer(ptr, Proc_PID, procPtr->processID);
+    Byte_Copy(PROC_NUM_ID_FIELDS * sizeof(int),
+	      (Address) &procPtr->parentID, ptr);
+    ptr += PROC_NUM_ID_FIELDS * sizeof(int);
     Byte_Copy(PROC_NUM_FLAGS * sizeof(int),
 	      (Address) &procPtr->genFlags, ptr);
     ptr += PROC_NUM_FLAGS * sizeof(int);
 
-    Byte_Copy(PROC_NUM_ID_FIELDS * sizeof(int),
-	      (Address) &procPtr->parentID, ptr);
-    ptr += PROC_NUM_ID_FIELDS * sizeof(int);
-    if (procPtr->numGroupIDs > 0) {
-	Byte_Copy(procPtr->numGroupIDs * sizeof(int),
-		  (Address) procPtr->groupIDs, ptr);
-	ptr += procPtr->numGroupIDs * sizeof(int);
-    }
-    
-    Byte_Copy(PROC_NUM_BILLING_FIELDS * sizeof(int),
+    Byte_Copy(PROC_NUM_SCHED_FIELDS * sizeof(int),
 	      (Address) &procPtr->billingRate, ptr);
-    ptr += PROC_NUM_BILLING_FIELDS * sizeof(int);
+    ptr += PROC_NUM_SCHED_FIELDS * sizeof(int);
 
     Byte_Copy(SIG_INFO_SIZE, (Address) &procPtr->sigHoldMask, ptr);
     ptr += SIG_INFO_SIZE;
-    Byte_FillBuffer(ptr, int, trapStackSize);
-    Byte_Copy(trapStackSize, (Address) trapStackPtr, ptr);
-    ptr += trapStackSize;
+
+    Mach_EncapState(procPtr, ptr);
+    ptr += machStateSize;
 
     Byte_FillBuffer(ptr, int, argStringLength);
     Byte_Copy(argStringLength, (Address) procPtr->argString, ptr);
@@ -526,7 +515,6 @@ SendProcessState(procPtr, nodeID, machStatePtr, foreign)
 	}
 	return(returnInfo.status);
     }
-#endif
 }
 
 
@@ -642,13 +630,10 @@ SendSegment(procPtr, type, nodeID, foreign)
  *
  * SendFileState --
  *
- *	Encapsulate all open file streams and send them to another node.  
+ *	Transfer the file state of a process to another node.  
  *
- *	TODO: Move a chunk of this over to fs.
- *		
  * RPC: Input parameters:
- *		process ID
- *		for each stream (other than CWD): file ID, encapsulated data
+ *		encapsulated file state
  *	Return parameters:
  *		ReturnStatus
  *
@@ -668,19 +653,13 @@ SendFileState(procPtr, nodeID, foreign)
     int nodeID;				     /* Node to which it migrates */
     Boolean foreign;			     /* Is it migrating back home? */
 {
-    Fs_ProcessState *fsPtr;
-    Address fsInfoPtr;
-    register Address ptr;
-    int fsInfoSize;
+    Address buffer;
     int totalSize;
     Proc_MigrateReply returnInfo;
     ReturnStatus status;
     Rpc_Storage storage;
     Proc_MigrateCommand migrateCommand;
-    Fs_Stream *streamPtr;
-    int i;
-    int numFiles;
-    int numEncap = 0;
+    int numEncap;
     Proc_TraceRecord record;
 
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
@@ -695,51 +674,19 @@ SendFileState(procPtr, nodeID, foreign)
 		     (ClientData *) &record);
     }
 
-    fsPtr = procPtr->fsPtr;
-    numFiles = fsPtr->numStreams;
-
-    fsInfoSize = Fs_GetEncapSize();
-    totalSize = numFiles * (fsInfoSize + sizeof(int)) + sizeof (int) 
-	    + fsInfoSize + sizeof(int)
-		    ;
-    fsInfoPtr = Mem_Alloc(totalSize);
-    ptr = fsInfoPtr;
-
-    /*
-     * Send filePermissions, numStreams, the cwd, and each file.
-     */
-    
-    Byte_FillBuffer(ptr, int, fsPtr->filePermissions);
-    Byte_FillBuffer(ptr, int, fsPtr->numStreams);
-    
-    status = Fs_EncapStream(fsPtr->cwdPtr, ptr);
+    if (proc_MigDebugLevel > 6) {
+	Sys_Printf("SendFileState: calling Fs_EncapFileState.\n");
+    }
+    status = Fs_EncapFileState(procPtr, &buffer, &totalSize, &numEncap);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "SendFileState: Error %x from Fs_EncapStream on cwd.\n",
-		  status);
-	return(status);
+	if (proc_MigDebugLevel > 6) {
+	    Sys_Panic(SYS_WARNING,
+		      "SendFileState: error %x returned by Fs_EncapFileState",
+		      status);
+	}
+	return (status);
     }
-    ptr += fsInfoSize;
-    numEncap += 1;
-
-    for (i = 0; i < fsPtr->numStreams; i++) {
-	streamPtr = fsPtr->streamList[i];
-	if (streamPtr != (Fs_Stream *) NIL) {
-	    numEncap += 1;
-	    Byte_FillBuffer(ptr, int, i);
-	    status = Fs_EncapStream(streamPtr, ptr);
-	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING,
-			  "SendFileState: Error %x from Fs_EncapStream.\n",
-			  status);
-		return(status);
-	    }
-	} else {
-	    Byte_FillBuffer(ptr, int, NIL);
-	    Byte_Zero(fsInfoSize, ptr);
-	}	
-	ptr += fsInfoSize;
-    }
+	
     /*
      * Set up for the RPC.
      */
@@ -748,7 +695,7 @@ SendFileState(procPtr, nodeID, foreign)
     storage.requestParamPtr = (Address) &migrateCommand;
     storage.requestParamSize = sizeof(Proc_MigrateCommand);
 
-    storage.requestDataPtr = fsInfoPtr;
+    storage.requestDataPtr = buffer;
     storage.requestDataSize = totalSize;
 
     storage.replyParamPtr = (Address) &returnInfo;
@@ -759,7 +706,7 @@ SendFileState(procPtr, nodeID, foreign)
 
     status = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
 
-    Mem_Free(fsInfoPtr);
+    Mem_Free(buffer);
 
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
@@ -773,10 +720,7 @@ SendFileState(procPtr, nodeID, foreign)
 		  "SendFileState:Error %x returned by Rpc_Call.\n", status);
 	return(status);
     } else {
-	for (i = 0; i < fsPtr->numStreams; i++) {
-	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
-	}
-	fsPtr->cwdPtr = (Fs_Stream *) NIL;
+	Fs_ClearFileState(procPtr);
 	return(returnInfo.status);
     }
 }
