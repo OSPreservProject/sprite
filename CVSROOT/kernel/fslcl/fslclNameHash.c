@@ -86,9 +86,11 @@ HashInit(table, numBuckets)
 /*
  *----------------------------------------------------------------------
  *
- * FslclNameHashInit --
+ * Fslcl_NameHashInit --
  *
- *	Make sure the local name hash table is initialized.
+ *	Make sure the local name hash table is initialized.  Called
+ *	when disks are attached so that diskless clients don't allocate
+ *	space for the name hash table.
  *
  * Results:
  *	None.
@@ -101,11 +103,8 @@ HashInit(table, numBuckets)
  */
 
 void
-FslclNameHashInit()
+Fslcl_NameHashInit()
 {
-    /*
-     * Make sure a name hash table exists .
-     */
     if (fslclNameTablePtr == (FslclHashTable *)NIL) {
 	fslclNameTablePtr = &fslclNameTable;
 	HashInit(fslclNameTablePtr, fslclNameHashSize);
