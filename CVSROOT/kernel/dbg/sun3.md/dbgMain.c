@@ -25,7 +25,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netEther.h"
 #include "netInet.h"
 #include "dev.h"
-#include "byte.h"
 
 Boolean	dbg_BeingDebugged = FALSE;		/* TRUE if are under control
 						 * of kdbx.*/
@@ -51,7 +50,7 @@ int	dbgTraceLevel;				/* The debugger tracing
 /*
  * Number of times to poll before timing out and resending (about 2 seconds).
  */
-#ifdef SUN3
+#ifdef sun3
 int	dbgTimeout = 50000;
 #else
 int	dbgTimeout = 15000;
@@ -198,7 +197,7 @@ static	Boolean		callInProgress = FALSE;
  */
 DbgCheckNmis()
 {
-#ifdef SUN2
+#ifdef sun2
     int	oldContext;
     oldContext = VmMachGetKernelContext(); 
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
@@ -238,7 +237,7 @@ static Boolean InRange(addr, numBytes, writeable)
     int			lastPage;
     unsigned	int	maxAddr;
 
-#ifdef SUN2
+#ifdef sun2
     maxAddr = 0x1000000;
 #else
     maxAddr = 0x10000000;
@@ -702,10 +701,10 @@ typedef struct {
  * original value of sp and 68020 stores sp - 4.  This has to be fixed
  * when getting around the exception stack.
  */
-#ifdef SUN3
+#ifdef sun3
 #define STACK_INC	4
 #endif
-#ifdef SUN2
+#ifdef sun2
 #define STACK_INC	0
 #endif
 
@@ -750,7 +749,7 @@ Dbg_Main(stackHole, dbgStack)
     Boolean		atInterruptLevel;/* TRUE if we were entered from an
 					  * interrupt handler. */
 
-#ifdef SUN3
+#ifdef sun3
     /*
      * Turn on non-maskable interrupts.
      */
@@ -1223,6 +1222,35 @@ Dbg_Main(stackHole, dbgStack)
 		SendReply();
 		break;
 	    }
+	    case DBG_CALL_FUNCTION: {
+		Dbg_CallFunc		callFunc;
+		int			returnVal;
+		static int		argBuf[128];
+		GetRequestBytes(2 * sizeof(int), (Address) &callFunc);
+		if (dbgTraceLevel >= 2) {
+		    printf("Addr=%x Numbytes=%d ",
+				callFunc.address, callFunc.numBytes);
+		}
+
+		if ((callFunc.numBytes >= 0 && callFunc.numBytes < 128) &&
+		     InRange((unsigned int) callFunc.address,4,FALSE)) {
+		    GetRequestBytes(callFunc.numBytes,(Address) argBuf);
+		    returnVal = (* ((int (*)()) callFunc.address))(argBuf[0],
+		    argBuf[1],argBuf[2],argBuf[3],argBuf[4],argBuf[5],argBuf[6],
+		    argBuf[7],argBuf[8],argBuf[9]);
+		} else {
+
+		    if (dbgTraceLevel >= 2) {
+			printf("FAILURE ");
+		    }
+		    GetRequestBytes(callFunc.numBytes,argBuf);
+		    returnVal = -1;
+		}
+		PutReplyBytes(4, (char *) &returnVal);
+		SendReply();
+
+		break;
+	    }
 	    case DBG_CONTINUE: 
 		/*
 		 * The client wants to continue execution.
@@ -1325,7 +1353,7 @@ Dbg_Main(stackHole, dbgStack)
     if (!syslogDiverted) {
 	Dev_SyslogDebug(FALSE);
     }
-#ifdef SUN3
+#ifdef sun3
     /*
      * Turn off non-maskable interrupts.
      */
