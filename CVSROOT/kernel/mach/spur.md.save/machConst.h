@@ -29,16 +29,18 @@
  * 	      the macro DBG_CALL in dbg.h must be changed accordingly.
  */
 #define	MACH_BREAKPOINT_TRAP		0
-#define	MACH_SYS_CALL_TRAP		1
-#define	MACH_SIG_RETURN_TRAP		2
-#define	MACH_GET_WIN_MEM_TRAP		3
-#define	MACH_USER_FPU_EXCEPT_TRAP	4
-#define	MACH_USER_ILLEGAL_TRAP		5
-#define	MACH_USER_FIXNUM_TRAP		6
-#define	MACH_USER_OVERFLOW_TRAP		7
-#define	MACH_USER_BAD_SWP_TRAP		8
-#define	MACH_TEST_FAULT_TRAP		9
-#define	MACH_MAX_TRAP_TYPE		9
+#define	MACH_SINGLE_STEP_TRAP		1
+#define	MACH_SYS_CALL_TRAP		2
+#define	MACH_SIG_RETURN_TRAP		3
+#define	MACH_GET_WIN_MEM_TRAP		4
+#define	MACH_USER_FPU_EXCEPT_TRAP	5
+#define	MACH_USER_ILLEGAL_TRAP		6
+#define	MACH_USER_FIXNUM_TRAP		7
+#define	MACH_USER_OVERFLOW_TRAP		8
+#define	MACH_USER_BAD_SWP_TRAP		9
+#define	MACH_TEST_FAULT_TRAP		10
+#define	MACH_REFRESH_TRAP		11
+#define	MACH_MAX_TRAP_TYPE		11
 
 /*
  * The return codes from the C trap handler routine:
@@ -79,6 +81,7 @@
  *				kernel.
  *	MACH_BAD_SYS_CALL	A bad system call type was passed in.
  *	MACH_BREAKPOINT		A process called the debugger.
+ *	MACH_SINGLE_STEP	A single step trap occured.
  */
 #define	MACH_USER_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 1)
 #define	MACH_KERN_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 2)
@@ -96,6 +99,7 @@
 #define	MACH_KERN_ACCESS_VIOL		(MACH_MAX_RETURN_CODE + 14)
 #define	MACH_BAD_SYS_CALL		(MACH_MAX_RETURN_CODE + 15)
 #define	MACH_BREAKPOINT			(MACH_MAX_RETURN_CODE + 16)
+#define	MACH_SINGLE_STEP		(MACH_MAX_RETURN_CODE + 17)
 
 /*
  * The size of a single saved window and all of the saved windows.
@@ -443,5 +447,10 @@
  * 	Currently == 150ns
  */
 #define	MACH_CYCLE_TIME		(unsigned int) ((1.0/(150e-9)))
+
+/*
+ * The physical address of the UART.
+ */
+#define	MACH_UART_PHYS_ADDR	0x10000
 
 #endif _MACHCONST

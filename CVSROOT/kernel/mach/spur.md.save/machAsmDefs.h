@@ -394,7 +394,8 @@
  *	
  *	    1) Saves the state into _machDebugState
  *	    2) Switch to the debuggers own spill and saved window stacks.
- *	    3) Turn off and invalidate the ibuffer.
+ *	    3) Turn off interrupts, turn on all traps, and turn off and 
+ *	       invalidate the ibuffer.
  *	    4) Call routine _MachCallDebugger(errorType)
  *	    5) Restore state from _machDebugState (note that this will 
  *	       reenable the ibuffer unless the debugger has modified the
@@ -414,6 +415,8 @@
 	SWITCH_TO_DEBUGGER_STACKS(); \
 	\
 	rd_kpsw		VOL_TEMP1; \
+	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_INTR_TRAP_ENA; \
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_ALL_TRAPS_ENA; \
 	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_IBUFFER_ENA; \
 	wr_kpsw		VOL_TEMP1, $0; \
 	invalidate_ib; \

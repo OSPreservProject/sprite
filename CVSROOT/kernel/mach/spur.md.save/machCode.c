@@ -121,6 +121,11 @@ void	InterruptError();
 void	MachFetchArgStart();
 void	MachFetchArgEnd();
 
+/*
+ * The address where the UART is mapped.
+ */
+Address	mach_UARTAddr = (Address)VMMACH_UART_ADDR;
+
 
 /*
  * ----------------------------------------------------------------------------

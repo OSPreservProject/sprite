@@ -303,7 +303,22 @@ start:
 #define	KERN_PT2_BASE	(KERN_PT_BASE + VMMACH_SEG_PT_SIZE / 4 * VMMACH_KERN_PT_QUAD)
 
 /*
- * In this code registers have the following meaning:
+ * Zero out all of the physical memory where the kernel page tables are
+ * going to be at.
+ */
+	LD_CONSTANT(r1, KERN_PT_BASE)
+	add_nt		r2, r2, $0
+	LD_CONSTANT(r3, VMMACH_NUM_PT_PAGES * VMMACH_PAGE_SIZE)
+
+1:	add_nt		r4, r1, r2
+	st_32		r0, r4, $0
+	add_nt		r2, r2, $4
+	cmp_br_delayed	lt, r2, r3, 1b
+	Nop
+
+/*
+ * Initialize the kernel page tables.  In the code that follows registers have 
+ * the following meaning:
  *
  *	r1:	The base address of the second-level page tables.
  *	r2:	The number of page table pages.
@@ -404,7 +419,8 @@ start:
  *	1) Disable instruction buffer just in case it is on.
  *	2) Invalidate the instruction buffer.
  *	3) Make a good kpsw.
- *	4) Jump to the main function.
+ *	4) Call the main function while setting the kpsw to put is in
+ *	   virtual mode in the nop slot of the call.
  */
 	wr_kpsw		r0, $0
 	invalidate_ib
@@ -925,7 +941,7 @@ cmpTrap_Const1:
 CmpTrap:
 	/*
 	 * On this type of trap we are supposed to return to next PC instead
-	 * or cur PC.
+	 * of cur PC.
 	 */
 	rd_kpsw		KPSW_REG
 	LD_PC_RELATIVE(SAFE_TEMP1, cmpTrap_Const1)
@@ -968,6 +984,8 @@ cmpTrap_CallFunc:
 	Nop
 	jump		BreakpointTrap
 	Nop
+	jump		SingleStepTrap
+	Nop
 	jump		SysCallTrap	
 	Nop
 	jump		SigReturnTrap
@@ -986,11 +1004,7 @@ cmpTrap_CallFunc:
 	Nop
 	jump		cmpTrap_TestFaultTrap
 	Nop
-
-cmpTrap_TestFaultTrap:
-	add_nt		CUR_PC_REG, CUR_PC_REG, $8
-	add_nt		NEXT_PC_REG, r0, $0
-	jump		FaultIntr
+	jump		cmpTrap_RefreshTrap
 	Nop
 
 cmpTrap_FPUTrap:
@@ -1018,6 +1032,17 @@ cmpTrap_BadSWPTrap:
 	jump		UserErrorTrap
 	Nop
 
+cmpTrap_TestFaultTrap:
+	add_nt		CUR_PC_REG, CUR_PC_REG, $8
+	add_nt		NEXT_PC_REG, r0, $0
+	jump		FaultIntr
+	Nop
+
+cmpTrap_RefreshTrap:
+	wr_kpsw		KPSW_REG, $0
+	return_trap	NEXT_PC_REG, $0
+	Nop
+
 cmpTrap_BadTrapType:
 	/*
 	 * A trap type greater than the maximum value was specified.  If
@@ -1039,7 +1064,6 @@ cmpTrap_BadTrapType:
 
 cmpTrap_KernError:
 	CALL_DEBUGGER(r0, MACH_BAD_TRAP_TYPE)
-
 
 /*
  *----------------------------------------------------------------------------
@@ -1077,6 +1101,41 @@ BreakpointTrap:
 breakpoint_KernBP:
 	CALL_DEBUGGER(r0, MACH_BREAKPOINT);
 
+/*
+ *----------------------------------------------------------------------------
+ *
+ * SingleStepTrap --
+ *
+ *	Handle a single step trap.
+ *
+ *----------------------------------------------------------------------------
+ */
+SingleStepTrap:
+	/*
+	 * We just took a single step trap.  If this is a user trap then 
+	 * call the user error routine.  Otherwise call the kernel debugger.
+	 */
+	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, $0, singleStep_KernSS
+	Nop
+	/*
+	 * Enable all traps and call the user error routine.
+	 */
+	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	add_nt		OUTPUT_REG1, r0, $MACH_SINGLE_STEP
+	rd_insert	VOL_TEMP1
+	call		_MachUserError
+	Nop
+	wr_insert	VOL_TEMP1
+	/*
+	 * Do a return from trap.
+	 */
+	jump		ReturnTrap
+	Nop
+
+singleStep_KernSS:
+	CALL_DEBUGGER(r0, MACH_SINGLE_STEP);
 
 /*
  *----------------------------------------------------------------------------
@@ -2049,7 +2108,8 @@ _Mach_EnableIntr:
  */
 	.globl	_Mach_TestAndSet
 _Mach_TestAndSet:
-	return	RETURN_ADDR_REG, $8
+	test_and_set	RETURN_VAL_REG, INPUT_REG1, $0
+	return		RETURN_ADDR_REG, $8
 	Nop
 
 /*

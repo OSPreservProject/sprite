@@ -196,5 +196,9 @@ extern	int	mach_LastUserStackPage;
 
 extern 	unsigned int	mach_CycleTime;
 
+/*
+ * The address of the UART.
+ */
+extern	Address	mach_UARTAddr;
 
 #endif _MACH
