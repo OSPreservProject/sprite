@@ -38,14 +38,25 @@ typedef enum {
 
 /*
  * Routines to enable and disable interrupts.  These leave unmaskable
- * interrupts enabled.  NOTE:  these are macros for the other suns,
- * but on the sun4 I'd have to use 2 local registers for them, so it's
- * best to make them calls to a new window.  Later, when I can run gcc
- * on all of this and tell it what registers I've used, then we can once
- * again make these macros.
+ * interrupts enabled.  These are assembly macros to be called from C code.
+ * They use the in-line capabilities of GCC.
  */
-extern	void	Mach_DisableIntr();
-extern	void	Mach_EnableIntr();
+#define	Mach_EnableIntr()	({\
+	register unsigned int	tmpPsr;	\
+	asm volatile ( "mov	%%psr, %1;	\
+			andn	%1, 0xf00, %1;	\
+			mov	%1, %%psr; nop; nop; nop\n":	\
+			"=r"(tmpPsr):"r"(tmpPsr));	\
+	})
+
+#define	Mach_DisableIntr()	({\
+	register unsigned int tmpPsr;	\
+	asm volatile ( "mov	%%psr, %1;	\
+			or	%1, 0xf00, %1;	\
+			mov	%1, %%psr; nop; nop; nop\n":	\
+			"=r"(tmpPsr):"r"(tmpPsr));	\
+	})
+
 
 #define DISABLE_INTR() \
     if (!Mach_AtInterruptLevel()) { \
