@@ -46,6 +46,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "lock.h"
 #include "sys.h"
+#include "fscache.h"
+#include "fsio.h"
+#include "fsrmt.h"
 
 Boolean	vmDebug	= FALSE;
 
@@ -2855,4 +2858,112 @@ Vm_Recovery()
     }
 
     UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmPageFlush --
+ *
+ *	Flush (shared) pages to the server or disk.
+ *
+ * Results:
+ *	SUCCESS if it worked.
+ *
+ * Side effects:
+ *	Page is written to disk and removed from memory.
+ *	If page is pinned down, it will be unpinned.
+ *	The page is invalidated from the local cache.
+ *	*virtAddrPtr is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+VmPageFlush(virtAddrPtr, length, toDisk, wantRes)
+    Vm_VirtAddr		*virtAddrPtr;
+    int			length;
+    Boolean		toDisk;
+    Boolean		wantRes;
+{
+    VmCore		*corePtr;
+    Fscache_FileInfo	*cacheInfoPtr;
+    ReturnStatus	status = SUCCESS;
+    ReturnStatus	statusTmp;
+    int			firstBlock;
+    Vm_Segment		*segPtr;
+    Fs_Stream		*streamPtr;
+    Vm_PTE		*ptePtr;
+    int			lastPage;
+    int			pageFrame;
+    int			referenced, modified;
+
+    LOCK_MONITOR;
+    dprintf("VmPageFlush(%x, %d, %d, %d)\n", virtAddrPtr, length, toDisk,
+	    wantRes);
+    segPtr = virtAddrPtr->segPtr;
+    lastPage = virtAddrPtr->page + (length>>vmPageShift) - 1;
+    dprintf("segPtr = %x, firstPage = %d, lastPage = %d, streamPtr = %x\n",
+	   segPtr, virtAddrPtr->page, lastPage, streamPtr);
+    streamPtr = segPtr->swapFilePtr;
+    for (ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
+	    virtAddrPtr->page <= lastPage;
+	    VmIncPTEPtr(ptePtr,1), virtAddrPtr->page++) {
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	    if (wantRes) {
+		dprintf("Page is not physically resident\n");
+		status = FAILURE;
+	    }
+	    continue;
+	}
+	pageFrame = Vm_GetPageFrame(*ptePtr);
+	corePtr = &coreMap[pageFrame];
+	referenced = *ptePtr & VM_REFERENCED_BIT;
+	modified = *ptePtr & VM_MODIFIED_BIT;
+	VmMach_AllocCheck(&corePtr->virtPage, pageFrame,
+			  &referenced, &modified);
+	if (!modified) {
+	    dprintf("Page is clean, so skipping\n");
+	    continue;
+	}
+	*ptePtr |= VM_ON_SWAP_BIT;
+	corePtr->flags |= VM_PAGE_BEING_CLEANED;
+	*ptePtr &= ~VM_MODIFIED_BIT;
+	dprintf("VmPageFlush: paging out %d (%d)\n", virtAddrPtr->page, 
+		corePtr-coreMap);
+	VmMach_ClearModBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr)); 
+	UNLOCK_MONITOR;
+	statusTmp = VmPageServerWrite(&corePtr->virtPage,
+		(unsigned int)(corePtr-coreMap));
+	dprintf("VmPageFlush: status = %x, wrote %x, %x\n", statusTmp,
+		&corePtr->virtPage, (unsigned int)(corePtr-coreMap));
+	LOCK_MONITOR;
+	corePtr->flags &= ~VM_PAGE_BEING_CLEANED;
+	if (statusTmp != SUCCESS) {
+	    status = statusTmp;
+	    break;
+	}
+	/*
+	 * This stuff should probably be in the fs module.
+	 */
+	if (streamPtr->ioHandlePtr->fileID.type == FSIO_RMT_FILE_STREAM) {
+	    cacheInfoPtr = & ((Fsrmt_FileIOHandle *)streamPtr
+		    ->ioHandlePtr)->cacheInfo;
+	    if (segPtr->type == VM_STACK) {
+		firstBlock = mach_LastUserStackPage - virtAddrPtr->page;
+	    } else if (segPtr->type == VM_SHARED) {
+		firstBlock= virtAddrPtr->page - segOffset(virtAddrPtr) +
+			(virtAddrPtr->sharedPtr->fileAddr>>vmPageShift);
+	    } else {
+		firstBlock = virtAddrPtr->page - segPtr->offset;
+	    }
+	    printf("Invalidating block %d\n", firstBlock);
+	    Fscache_FileInvalidate(cacheInfoPtr, firstBlock,
+		firstBlock+ (length>>vmPageShift)-1);
+	}
+    }
+    UNLOCK_MONITOR;
+    if (status != SUCCESS) {
+	dprintf("VmPageFlush: failure: %x\n", status);
+    }
+    return status;
 }

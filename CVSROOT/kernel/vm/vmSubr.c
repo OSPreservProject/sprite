@@ -1327,7 +1327,8 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
     virtAddr.sharedPtr = segProcPtr;
     UNLOCK_MONITOR;
 
-    VmFlushSegment(&virtAddr, ((int)segProcPtr->mappedEnd+1)>>vmPageShift);
+    VmPageFlush(&virtAddr, segProcPtr->mappedEnd - segProcPtr->mappedStart +1,
+	    TRUE, TRUE);
     List_Remove((List_Links *)segProcPtr);
     VmMach_SharedSegFinish(procPtr,segProcPtr->addr);
     free((Address)segProcPtr);
@@ -1352,6 +1353,7 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
 	 * Don't want Vm_SegmentDelete to destroy swap file unless we're
 	 * through with it.
 	 */
+	segPtr->flags &= ~VM_SWAP_FILE_OPENED;
 	Vm_SegmentDelete(segPtr,procPtr);
 	if (!done) {
 	    dprintf("Vm_DeleteSharedSegment: Restoring VM_SWAP_FILE_OPENED\n");
@@ -1544,7 +1546,6 @@ Vm_CleanupSharedFile(procPtr,streamPtr)
 	    nextPtr = (Vm_SegProcList *)List_Next((List_Links *)segPtr);
 	    if (segPtr->stream==streamPtr) {
 		dprintf("sharedSegment being deleted in Vm_CleanupSharedFile\n");
-		segPtr->segTabPtr->segPtr->flags &= ~VM_SWAP_FILE_OPENED;
 		Vm_DeleteSharedSegment(procPtr,segPtr);
 		if (sharedSegs == (List_Links *)NIL) {
 		    break;
