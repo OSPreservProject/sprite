@@ -53,11 +53,13 @@ extern	int		vmTraceNextByte;
  *				until hit a multiple of VM_TRACE_BUFFER_SIZE.
  *	VM_TRACE_STEAL_PMEG_REC	The following segment record relates to a
  *				stolen PMEG.
+ *	VM_TRACE_START_REC	A record of type Vm_TraceStart
  */
 #define	VM_TRACE_TIME_REC	-1
 #define	VM_TRACE_SEG_REC	-2
 #define	VM_TRACE_SKIP_REC	-3
 #define	VM_TRACE_STEAL_PMEG_REC	-4
+#define	VM_TRACE_START_REC	-5
 
 /*
  * Trace begin time stamp record.
@@ -91,6 +93,22 @@ typedef struct {
 typedef unsigned short	Vm_TracePage;
 
 /*
+ * Start trace record.
+ */
+typedef struct {
+    short	recType;
+    int		hostID;
+    int		pageSize;
+    int		numPages;
+    Address	codeStartAddr;
+    Address	dataStartAddr;
+    Address	stackStartAddr;
+    Address	mapStartAddr;
+    Address	cacheStartAddr;
+    Address	cacheEndAddr;
+} Vm_TraceStart;
+
+/*
  * Variable to indicate which trace iteration that this is.  Is incremented
  * every time a trace is taken.
  */
@@ -112,6 +130,12 @@ typedef struct {
     VmMach_TraceStats	machStats;
 } VmTraceStats;
 extern	VmTraceStats	vmTraceStats;
+
+/*
+ * The name of the trace file is the following followed by the host on
+ * which the trace is occuring.
+ */
+#define	VM_TRACE_FILE_NAME	"/sprite/vmtrace/tfile."
 
 /*
  * Trace dump file and function to do the tracing.

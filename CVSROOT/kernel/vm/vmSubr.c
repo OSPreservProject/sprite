@@ -46,7 +46,6 @@ int		vmTraceFirstByte;
 int		vmTraceNextByte;
 int		vmTraceTime = 0;
 Fs_Stream	*vmTraceFilePtr = (Fs_Stream *)NIL;
-char		*vmTraceFileName = "/sprite/vmtrace/tracefile";
 Boolean		vmTraceDumpStarted = FALSE;
 VmTraceStats	vmTraceStats;
 
