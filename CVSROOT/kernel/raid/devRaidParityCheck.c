@@ -203,12 +203,12 @@ parityCheckReadDoneProc(reconstructionControlPtr, numFailed)
     char	       *parityBuf     = reconstructionControlPtr->parityBuf;
     RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
     int		        stripeID      = reconstructionControlPtr->stripeID;
-    char	       *xorBuf = malloc((unsigned)raidPtr->bytesPerStripeUnit);
 
     if (numFailed > 0) {
 	ReportParityCheckFailure(reconstructionControlPtr->stripeID);
 	reconstructionControlPtr->status = FAILURE;
     } else {
+	char	       *xorBuf = malloc((unsigned)raidPtr->bytesPerStripeUnit);
 	bzero(xorBuf, raidPtr->bytesPerStripeUnit);
 	XorRaidRequests(reqControlPtr, raidPtr, xorBuf);
 #ifndef NODATA
@@ -217,6 +217,7 @@ parityCheckReadDoneProc(reconstructionControlPtr, numFailed)
 	    ReportParityCheckFailure(stripeID);
 	    reconstructionControlPtr->status = FAILURE;
 	}
+	free(xorBuf);
 #endif
     }
     if (reconstructionControlPtr->stripeID % 100 == 0) {
