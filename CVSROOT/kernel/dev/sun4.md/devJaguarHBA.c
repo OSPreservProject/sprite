@@ -1062,7 +1062,7 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
      * Inform interrupt handler of the action we want on completion.
      * To do this we must allocate a cmdAction buffer. We store the 
      * index into cmdAction in the cqe's commandTag to allow the 
-     * interrupt handler to associated the command wil 
+     * interrupt handler to associated it with the command.
      */
     {
 	CmdAction *actionPtr;
@@ -1406,10 +1406,10 @@ ScsiErrorProc(data, callInfoPtr)
     JaguarCRB	crb;
     ScsiCmd	senseCmd;
     char	senseBuffer[DEV_MAX_SENSE_BYTES];
-
     DevScsiSenseCmd((ScsiDevice *)devPtr, DEV_MAX_SENSE_BYTES, senseBuffer, 
 			&senseCmd);
     FillInScsiIOPB(devPtr, &senseCmd, &iopbMem);
+    bzero((char *)&crb, sizeof(crb));
     MASTER_LOCK(&devPtr->ctrlPtr->mutex);
     (void) SendJaguarCmd(devPtr->ctrlPtr, 0, &iopbMem, FILL_IN_CRB_ACTION, 
 			  (ClientData) &crb);
