@@ -71,5 +71,6 @@ extern ReturnStatus VmMach_TLBModFault _ARGS_((Address virtAddr));
 extern Address VmMach_UserMap _ARGS_((int numBytes, Address physAddr,
 	Boolean firstTime));
 extern ENTRY void VmMach_UserUnmap _ARGS_((void));
+extern int VmMachCopyEnd _ARGS_((void));
 
 #endif _VMMACH
