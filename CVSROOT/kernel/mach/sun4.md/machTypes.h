@@ -19,10 +19,10 @@
 #define _MACHTYPES
 
 #ifdef KERNEL
-#include "sprite.h"
-#include "devAddrs.h"
-#include "machConst.h"
-#include "user/fmt.h"
+#include <sprite.h>
+#include <devAddrs.h>
+#include <machConst.h>
+#include <user/fmt.h>
 #else
 #include <kernel/devAddrs.h>
 #include <kernel/machConst.h>

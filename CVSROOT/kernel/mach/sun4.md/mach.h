@@ -19,7 +19,7 @@
 #define _MACH
 
 #ifdef KERNEL
-#include "machTypes.h"
+#include <machTypes.h>
 #include <user/setjmp.h>
 #else
 #include <kernel/machTypes.h>
