@@ -181,4 +181,9 @@ typedef struct {
 #define PROC_MIGTRACE_START	0x01
 #define PROC_MIGTRACE_HOME	0x02
 
+/*
+ * Functions for process migration.  [Others should be moved here.]
+ */
+extern void Proc_ResumeMigProc();
+
 #endif _PROCMIGRATE
