@@ -55,7 +55,7 @@
 #define	VMMACH_PAGE_PROT_SHIFT	29
 /*
  * Compare shifted pte (above) with this to see if user residence and protection
- * are okay for the user to write to this address.
+ * are okay for the kernel to read and write this address.
  */
 #define	VMMACH_PTE_OKAY_VALUE	6
 
