@@ -2856,14 +2856,14 @@ FsAllInCache(cacheInfoPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsCacheFileBlocks --
+ * FsBlockCacheOkToScavenge --
  *
- *	Return the number of blocks in the cache for the file.  This is
- *	called from FsCacheNumBlocks (sigh, sorry for the names) which
+ *	Decide if it is safe to scavenge the file handle.  This is
+ *	called from FsCacheOkToScavenge which
  *	has already grabbed the per-file cache lock.
  *
  * Results:
- *	The number of blocks in the cache for the file.
+ *	TRUE if there are no blocks (clean or dirty) in the cache for this file.
  *
  * Side effects:
  *	None.
@@ -2871,11 +2871,12 @@ FsAllInCache(cacheInfoPtr)
  * ----------------------------------------------------------------------------
  */
 ENTRY int
-FsCacheFileBlocks(cacheInfoPtr)
+FsBlockCacheOkToScavenge(cacheInfoPtr)
     register FsCacheFileInfo	*cacheInfoPtr;	/* Cache state to check. */
 {
     register int numBlocks;
     register int numBlocksCheck = 0;
+    register Boolean ok;
     register FsCacheBlock *blockPtr;
     List_Links		*linkPtr;
 
@@ -2886,17 +2887,25 @@ FsCacheFileBlocks(cacheInfoPtr)
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 	    UNLOCK_MONITOR;
 	    panic( "FsCacheFileBlocks, bad block\n");
-	    return(numBlocks);
+	    return(FALSE);
 	}
+	numBlocksCheck++;
+    }
+    LIST_FORALL(&cacheInfoPtr->indList, (List_Links *)linkPtr) {
 	numBlocksCheck++;
     }
     if (numBlocksCheck != numBlocks) {
 	UNLOCK_MONITOR;
 	panic( "FsCacheFileBlocks, wrong block count\n");
-	return(numBlocks);
+	return(FALSE);
     }
+    if (numBlocks == 0 && (cacheInfoPtr->flags & FS_FILE_ON_DIRTY_LIST)) {
+	printf("FsBlockCacheOkToScavenge dirty file with no regular blocks\n");
+    }
+    ok = (numBlocks == 0) &&
+	((cacheInfoPtr->flags & FS_FILE_ON_DIRTY_LIST) == 0);
     UNLOCK_MONITOR;
-    return(numBlocks);
+    return(ok);
 }
 
 /*
