@@ -70,7 +70,6 @@ Sync_SlowLockStub(lockPtr)
 	    lockPtr->waiting = TRUE;
 	    (void) SyncEventWaitInt((unsigned int)lockPtr, TRUE);
 	    MASTER_UNLOCK(sched_Mutex);
-	    VmMach_SetupContext(procPtr);
 	    MASTER_LOCK(sched_Mutex);
 	    if (Sig_Pending(procPtr)) {
 		status = GEN_ABORTED_BY_SIGNAL;
@@ -143,7 +142,6 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
 	status = SYS_ARG_NOACCESS;
     }
     MASTER_UNLOCK(sched_Mutex);
-    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
     Sys_UnsetJump();
     return(status);
 }
