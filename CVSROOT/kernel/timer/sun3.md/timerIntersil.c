@@ -1,5 +1,5 @@
 /*
- * timerSun3.c --
+ * timerIntersil.c --
  *
  *	This file contains routines that manipulate the Intersil
  *	ICM7170 real-time clock chip for the SUN-3.
@@ -56,7 +56,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devAddrs.h"
 #include "timer.h"
 #include "timerInt.h"
-#include "timerSun3Int.h"
+#include "timerIntersilInt.h"
 #include "spriteTime.h"
 
 
@@ -440,7 +440,7 @@ Timer_TimerServiceInterrupt(stack)
     Boolean spurious;
 
     if (Timer_TimerExamineStatus(timerStatus, TIMER_PROFILE_TIMER, &spurious)) {
-	Prof_CollectInfo(&stack);
+	TIMER_PROFILE_ROUTINE(&stack);
 	profiled = TRUE;
 #	ifdef GATHER_STAT
 	timer_Statistics.profile++;
@@ -448,7 +448,7 @@ Timer_TimerServiceInterrupt(stack)
     } 
 
     if (Timer_TimerExamineStatus(timerStatus, TIMER_CALLBACK_TIMER, &spurious)) {
-	Timer_CallBack();
+	TIMER_CALLBACK_ROUTINE();
     } else {
 	if (!profiled) {
 
