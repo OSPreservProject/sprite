@@ -1097,6 +1097,11 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 			  writePtr->buffer, writePtr->offset,
 			  &writePtr->length, remoteWaitPtr);
     replyPtr->length = writePtr->length;
+#ifdef WANT_CLIENT_SWAPPING_TO_KILL_ALLSPICE
+    /*
+     * Note that client swap files come over with the FS_SWAP flag set and
+     * these files should not be ejected from the cache.  
+     */
     if (status == SUCCESS) {
 	if (writePtr->flags & FS_SWAP) {
 	    /*
@@ -1113,7 +1118,7 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	    status = Fsdm_FileDescWriteBack(handlePtr, FALSE);
 	}
     }
-
+#endif
     Fscache_AllowReadAhead(&handlePtr->readAhead);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
