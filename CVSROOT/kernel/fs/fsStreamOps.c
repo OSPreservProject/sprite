@@ -573,7 +573,8 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
     } while (retry);
 
     /*
-     * Do stream-level operations after the ioHandle operation.
+     * Do generic I/O controls that affect streams -
+     * flag manipulation, and offset seeking.
      */
     switch (command) {
 	case IOC_REPOSITION: {
