@@ -3,9 +3,14 @@
  *
  *	Internal globals and constants needed for the dev module.
  *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
- *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  * $Header$ SPRITE (Berkeley)
  */
@@ -14,38 +19,6 @@
 #define _DEVINT
 
 #include "vm.h"
-/*
- * This keeps the state of the memory allocator for the kernel
- * virtual address range reserved for DMA.
- */
-extern VmMach_DevBuffer devIOBuffer;
-
-/*
- * Disks contain a map that defines the way the disk is partitioned.
- * Each partition corresponds to a different device unit.  Partitions
- * are made up of complete cylinders because the disk layout and
- * allocation strategies are cylinder oriented.
- */
-typedef struct DevDiskMap {
-    int firstCylinder;		/* The first cylinder in the partition */
-    int numCylinders;		/* The number of cylinders in the partition */
-} DevDiskMap;
-
-/*
- * There are generally 8 disk partitions defined for a disk.
- */
-#define DEV_NUM_DISK_PARTS	8
-
-/*
- * As with disks, 8 unit numbers are assigned to each tape drive.
- * the differences between the 8 are not yet defined, however.
- */
-#define DEV_TAPES_PER_CNTRLR	8
-
-/*
- * There is just one worm per controller.
- */
-#define DEV_WORMS_PER_CNTRLR	1
 
 
 /*
@@ -62,18 +35,9 @@ typedef struct DevConfigController {
 			 * Sun2's have Multibus memory mapped into a
 			 * particular range of kernel virtual addresses. */
     int controllerID;	/* Controller number: 0, 1, 2... */
-    Boolean (*initProc)();	/* Initialization procedure */
+    ClientData (*initProc)();	/* Initialization procedure */
     int vectorNumber;	/* Vector number for autovectored architectures */
     int (*intrProc)();	/* Interrupt handler called from autovector */
-    Boolean exists;	/* TRUE if the controller exists. */
-    void (*idleProc)();	/* Routine to call to see if the controller is
-			 * idle or not. */
-    int	numSamples;	/* Number of times checked to see if the controller
-			 * was idle. */
-    int	idleCount;	/* Number of times that the controller was idle
-			 * when checked. */
-    int diskReads;	/* Number of reads from the disk. */
-    int diskWrites;	/* Number of writes to the disk. */
 } DevConfigController;
 
 /*
@@ -97,15 +61,11 @@ typedef struct DevConfigController {
 #define DEV_VME_D32A16	36
 
 /*
- * A configuration table that describes the devices in the system.
+ * Special valued returned from Controller init procedures indicating 
+ * the controller doesn't exists.
  */
-typedef struct DevConfigDevice {
-    int controllerID;	/* Controller number: 0, 1, 2... */
-    int slaveID;	/* Controller relative ID of device */
-    int flags;		/* Device specific flags.  Used, for example,
-			 * to distinquish tapes from disks on the SCSI bus. */
-    Boolean (*initProc)();	/* Initialization procedure */
-} DevConfigDevice;
+
+#define	DEV_NO_CONTROLLER	((ClientData) 0)
 
 /*
  * The controller configuration table.
@@ -113,9 +73,4 @@ typedef struct DevConfigDevice {
 extern DevConfigController devCntrlr[];
 extern int devNumConfigCntrlrs;
 
-/*
- * The device configuration table.
- */
-extern DevConfigDevice devDevice[];
-extern int devNumConfigDevices;
 #endif _DEVINT
