@@ -13,6 +13,7 @@
 #ifndef _NETINT
 #define _NETINT
 
+#include "sprite.h"
 #include "list.h"
 #include "net.h"
 
@@ -40,7 +41,7 @@ typedef struct {
  * fix this to support multiple interfaces!
  */
 typedef struct {
-    void (*init)();
+    Boolean (*init)();
     void (*output)();
     void (*intr)();
     void (*reset)();
