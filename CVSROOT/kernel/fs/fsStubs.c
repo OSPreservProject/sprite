@@ -3104,6 +3104,7 @@ Fs_IoctlStub(streamID, request, buf)
 	  struct ifreq   ifreq;
 	  extern int	  sysHostID;
 	  int		  *intPtr;
+	  Net_Interface	  *interPtr;
 
 	  if (debugFsStubs) {
                 printf("ioctl: SIOCGIFCONF\n");
@@ -3123,11 +3124,24 @@ Fs_IoctlStub(streamID, request, buf)
 	   * and finally our internet address.
 	   */
 	  ifc.ifc_len = 32;
-	  (void) strcpy(ifreq.ifr_name, "se0");
-	  intPtr = (int *)&ifreq.ifr_ifru;
-	  *intPtr = AF_INET;
-	  *(intPtr + 1) = sysHostID;
+	  interPtr = Net_GetInterface(NET_NETWORK_ETHER, 0);
+	  if (interPtr == NULL) {
+	      return FAILURE;
+	  }
+	  if (!strcmp(interPtr->name, "LE")) {
+	      (void) strcpy(ifreq.ifr_name, "le0");
+	  } else if (!strcmp(interPtr->name, "IE")) {
+	      (void) strcpy(ifreq.ifr_name, "ie0");
+	  }
+	  ifreq.ifr_addr.sa_family = AF_INET;
+	  /*
+	   * I'm not sure how to cast the sa_data field properly, but
+	   * sunos returns the IP address starting in the third byte
+	   * of the field.  Without the cast it's kind of brute force.
+	   */
 
+	  * ((int *) &ifreq.ifr_addr.sa_data[2]) = 
+	      (int) interPtr->netAddress[NET_PROTO_INET].inet;
 	  status = Vm_CopyOut(sizeof(struct ifconf), (Address)&ifc, buf);
 	  status = Vm_CopyOut(32, (Address)&ifreq,
 	      (Address)ifc.ifc_ifcu.ifcu_req);
@@ -3154,6 +3168,21 @@ Fs_IoctlStub(streamID, request, buf)
 	      status = SUCCESS;
          }
 	 break;
+
+	case SIOCGIFFLAGS: {
+	  struct ifreq   ifreq;
+
+	  if (debugFsStubs) {
+                printf("ioctl: SIOCGIFFLAGS\n");
+	  }
+	  status = Vm_CopyIn(sizeof(struct ifreq), buf, (Address)&ifreq);
+	  if (status != SUCCESS) {
+	      return(status);
+	  }
+	  ifreq.ifr_flags = IFF_UP | IFF_RUNNING;
+	  status = Vm_CopyOut(sizeof(struct ifreq), (Address)&ifreq, buf);
+	}
+	break;
 
      default:
 	/*
