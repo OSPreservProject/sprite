@@ -85,13 +85,37 @@ typedef struct {
 #define SET_ORIG_SIZE(blockPtr,size)	\
 			((AdminInfo *) (blockPtr))->origSize = size
 
-#else
+#else /* MEM_TRACE */
+#if defined(sequent)
 
+/*
+ * Need 16-byte alignment for Sequent Symmetry due to various IO devices
+ * (eg, SCED needs 8-byte alignment, DCC needs 16-byte).  Would be nicer if
+ * all upper level code doing IO insured the buffers were aligned (hence avoid
+ * extra fragmentation here), but will live with this.  Note that this isn't a
+ * problem in Sequent Dynix, since all IO buffers are implicitly aligned.
+ *
+ * Note that can probably align the bin'd objects differently so that the
+ * admin word lives just before a 16-byte boundary.  This is more than I want
+ * to modify right now ;-)
+ *
+ * This assumes Vm_RawAlloc() returns 16-byte aligned data, as well.
+ */
+
+typedef struct {
+    int		admin;		/* Administrative word. */
+    int         padding[3];	/* To make it 16-byte aligned */
+} AdminInfo;
+
+#define GET_ADMIN(blockPtr)	(((AdminInfo *) (blockPtr))->admin)
+#define SET_ADMIN(blockPtr, value)  \
+			((AdminInfo *) (blockPtr))->admin = (int) (value)
+#else   /* sequent */			
 typedef double AdminInfo;
 
 #define GET_ADMIN(blockPtr)	(*(int *)(AdminInfo *) (blockPtr))
 #define SET_ADMIN(blockPtr, value) *((int *)(AdminInfo *) (blockPtr)) = (int) (value)
-
+#endif /* sequent */
 #endif /* MEM_TRACE */
 
 #define USE_BIT		1
@@ -180,6 +204,25 @@ INTERNAL static void DoTrace _ARGS_((Boolean allocated,
  * ----------------------------------------------------------------------------
  */
 
+#if defined(sequent)
+
+/*
+ * 16 byte alignment to for Sequent Symmetry.  Making granularity also 16
+ * bytes has nice cache effects (at least thru Model B; this isn't
+ * functionally important, but it may affect performance).
+ */
+#define GRANULARITY			16
+#define SIZE_SHIFT			4
+
+/*
+ * This SMALL_SIZE determined by examination of memory tracing, 1/89.
+ * The BIN_SIZE allows us to bin an FS_BLOCK_SIZE object.
+ */
+#define SMALL_SIZE			271
+#define	BIN_SIZE			4207
+
+#else	/* sequent */
+
 /*
  * 8 byte granularity to handle SPUR and SPARC.
  */
@@ -191,6 +234,8 @@ INTERNAL static void DoTrace _ARGS_((Boolean allocated,
  */
 #define SMALL_SIZE			271
 #define	BIN_SIZE			4199
+
+#endif /* sequent */ 
 
 #define SMALL_BUCKETS			((SMALL_SIZE + 1) / GRANULARITY)
 #define BIN_BUCKETS			((BIN_SIZE + 1) / GRANULARITY)
