@@ -29,13 +29,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "procInt.h"
 #include "rpc.h"
 #include "dbg.h"
+#include "vm.h"
 
+#define min(a,b) ((a) < (b) ? (a) : (b))
 /*
  * Procedures internal to this file
  */
 
-static Boolean CheckIfUsed();
-static ReturnStatus GetRemotePCB();
+static Boolean 		CheckIfUsed();
+static ReturnStatus 	GetRemotePCB();
+static void		FillPCBInfo();	
 
 /*
  *----------------------------------------------------------------------
@@ -89,12 +92,13 @@ Proc_Init()
  */
 
 ReturnStatus
-Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
-		trueNumBuffersPtr)
+Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr, 
+		argsPtr, trueNumBuffersPtr)
     Proc_PID 		firstPid;	     /* First pid to get info for. */
     Proc_PID		lastPid;	     /* Last pid to get info for. */
     int			hostID;		     /* Host ID to get info for. */
-    Proc_ControlBlock 	*bufferPtr;	     /* Pointer to buffers. */
+    int			infoSize;   	     /* Size of structure */
+    Proc_PCBInfo 	*bufferPtr;	     /* Pointer to buffers. */
     Proc_PCBArgString	*argsPtr;	     /* Pointer to argument strings. */
     int 		*trueNumBuffersPtr;  /* The actual number of buffers 
 						used.*/
@@ -106,6 +110,9 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
     Boolean			remote = FALSE;
     Proc_PID			processID = firstPid;
     ReturnStatus		status = SUCCESS;
+    Proc_PCBInfo		statusInfo;
+    int				bytesToCopy;
+
 
     if (firstPid != PROC_MY_PID) {
 	firstPid &= PROC_INDEX_MASK;
@@ -123,6 +130,7 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 	return(GEN_INVALID_ARG);
     }
 
+    bytesToCopy = min(sizeof(Proc_PCBInfo), infoSize);
     /*
      * Determine whether to get process table entries for this machine.
      * Currently, the information for this machine is returned unless
@@ -169,8 +177,9 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 	Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks, 
 			  &pcbEntry.childUserCpuUsage.time);
 
-	if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
-		(Address)&pcbEntry, (Address) bufferPtr) != SUCCESS) {
+	FillPCBInfo(&pcbEntry, &statusInfo);
+	if (Proc_ByteCopy(FALSE, bytesToCopy,
+		(Address)&statusInfo, (Address) bufferPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
 	if (argsPtr != (Proc_PCBArgString *) NIL) {
@@ -196,7 +205,9 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 	 */
 
 	
-	for (i = firstPid, j = 0; i <= lastPid; i++, j++) {
+	for (i = firstPid, j = 0; 
+	     i <= lastPid; 
+	     i++, j++, (Address) bufferPtr += infoSize) {
 	    if (!remote) {
 		if (i >= proc_MaxNumProcesses) {
 		    break;
@@ -234,8 +245,10 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 			      &pcbEntry.childKernelCpuUsage.time);
 	    Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks, 
 			      &pcbEntry.childUserCpuUsage.time);
-	    if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
-		(Address)&pcbEntry, (Address) &(bufferPtr[j])) != SUCCESS) {
+
+	    FillPCBInfo(&pcbEntry, &statusInfo);
+	    if (Proc_ByteCopy(FALSE, bytesToCopy,
+		    (Address)&statusInfo, (Address) bufferPtr) != SUCCESS) {
 		return(SYS_ARG_NOACCESS);
 	    }
 	    if (argsPtr != (Proc_PCBArgString *) NIL) {
@@ -309,6 +322,68 @@ GetRemotePCB(hostID, pid, pcbPtr, argString)
     }
     return(status);
 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FillPCBInfo --
+ *
+ *	Fills in a Proc_PCBInfo structure from the contents of a
+ *	control block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FillPCBInfo(pcbPtr, statusInfoPtr)
+    Proc_ControlBlock		*pcbPtr; 	/* Ptr to pcb to convert */
+    Proc_PCBInfo		*statusInfoPtr; /* Structure to fill in */
+{
+    int 	i;
+
+    statusInfoPtr->processor = pcbPtr->processor;
+    statusInfoPtr->state = pcbPtr->state;
+    statusInfoPtr->genFlags = pcbPtr->genFlags;
+    statusInfoPtr->processID = pcbPtr->processID;
+    statusInfoPtr->parentID = pcbPtr->parentID;
+    statusInfoPtr->familyID = pcbPtr->familyID;
+    statusInfoPtr->userID = pcbPtr->userID;
+    statusInfoPtr->effectiveUserID = pcbPtr->effectiveUserID;
+    statusInfoPtr->event = pcbPtr->event;
+    statusInfoPtr->billingRate = pcbPtr->billingRate;
+    statusInfoPtr->recentUsage = pcbPtr->recentUsage;
+    statusInfoPtr->weightedUsage = pcbPtr->weightedUsage;
+    statusInfoPtr->unweightedUsage = pcbPtr->unweightedUsage;
+    statusInfoPtr->kernelCpuUsage = pcbPtr->kernelCpuUsage.time;
+    statusInfoPtr->userCpuUsage = pcbPtr->userCpuUsage.time;
+    statusInfoPtr->childKernelCpuUsage = pcbPtr->childKernelCpuUsage.time;
+    statusInfoPtr->childUserCpuUsage = pcbPtr->childUserCpuUsage.time;
+    statusInfoPtr->numQuantumEnds = pcbPtr->numQuantumEnds;
+    statusInfoPtr->numWaitEvents = pcbPtr->numWaitEvents;
+    statusInfoPtr->schedQuantumTicks = pcbPtr->schedQuantumTicks;
+    for(i = 0; i < VM_NUM_SEGMENTS; i++) {
+	if (pcbPtr->vmPtr != (Vm_ProcInfo *) NIL && 
+	    pcbPtr->vmPtr->segPtrArray[i] != (Vm_Segment *) NIL) {
+	    statusInfoPtr->vmSegments[i] = 
+		(Vm_SegmentID) pcbPtr->vmPtr->segPtrArray[i]->segNum;
+	} else {
+	    statusInfoPtr->vmSegments[i] = (Vm_SegmentID) -1;
+	}
+    }
+    statusInfoPtr->sigHoldMask = pcbPtr->sigHoldMask;
+    statusInfoPtr->sigPendingMask = pcbPtr->sigPendingMask;
+    for(i = 0; i < SIG_NUM_SIGNALS; i++) {
+	statusInfoPtr->sigActions[i] = pcbPtr->sigActions[i];
+    }
+    statusInfoPtr->peerHostID = pcbPtr->peerHostID;
+    statusInfoPtr->peerProcessID = pcbPtr->peerProcessID;
 }
 
 

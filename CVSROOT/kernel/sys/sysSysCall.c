@@ -207,8 +207,8 @@ static SysCallEntry sysCalls[] = {
     Sys_GetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_SetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_DoNothing,	       Sys_DoNothing,      TRUE,	0,   NILPARM,
-    Proc_GetPCBInfo,	       Proc_GetPCBInfo,    TRUE,	6,   NILPARM,
-    Vm_GetSegInfo,	       Vm_GetSegInfo,      TRUE,	3,   NILPARM,
+    Proc_GetPCBInfo,	       Proc_GetPCBInfo,    TRUE,	7,   NILPARM,
+    Vm_GetSegInfo,	       Vm_GetSegInfo,      TRUE,	4,   NILPARM,
     Proc_GetResUsage,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_GetPriority,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     CAST Proc_SetPriority,     Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
@@ -454,7 +454,6 @@ static Sys_CallParam paramsArray[] = {
     /* local */ 			/* SYS_SCHED_START_PROCESSOR	91 */
     /* local */ 			/* SYS_MACH_NUM_PROCESSORS	92 */
     /* local */                         /* SYS_PROF_PROFIL              93 */
-
     /*
      * Insert new system call information above this line.
      */

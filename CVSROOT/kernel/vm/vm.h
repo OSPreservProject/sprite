@@ -17,6 +17,7 @@
 #include "list.h"
 
 #ifdef KERNEL
+#include "user/vm.h"
 #include "vmMach.h"
 #include "vmStat.h"
 #include "fs.h"
@@ -24,7 +25,7 @@
 #include "sync.h"
 #else
 #include <kernel/vmMach.h>
-#include <kernel/vmStat.h>
+#include <vmStat.h>
 #include <kernel/fs.h>
 #include <kernel/procAOUT.h>
 #include <kernel/sync.h>
@@ -48,20 +49,6 @@ typedef struct {
  *				its page table marked as being in use.
  */
 #define	VM_HEAP_PT_IN_USE	0x1
-
-/*
- * The type of segment.
- */
-#define VM_SYSTEM	0
-#define VM_CODE		1
-#define VM_HEAP		2
-#define VM_STACK	3
-
-/*
- * Number of segments
- */
-#define	VM_NUM_SEGMENTS		4
-
 /*
  * A page table entry.
  */
@@ -134,12 +121,6 @@ typedef struct {
     int	bssLastPage;
     int	entry;
 } Vm_ExecInfo;
-
-/*
- * Length of the object file name that is embedded in each segment table
- * entry.
- */
-#define	VM_OBJ_FILE_NAME_LENGTH	50
 
 /*
  * The segment table structure.  Details about the segment table and

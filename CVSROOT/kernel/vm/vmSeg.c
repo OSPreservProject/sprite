@@ -42,6 +42,8 @@ static	List_Links      deadSegListHdr;
 #define	inactiveSegList	(&inactiveSegListHdr)
 #define	deadSegList	(&deadSegListHdr)
 
+#define min(a,b) ((a) < (b) ? (a) : (b))
+
 /*
  * Condition to wait on when waiting for a code segment to be set up.
  */
@@ -50,6 +52,7 @@ static	Sync_Condition	codeSegCondition;
 extern	Vm_Segment	**Fs_RetSegPtr();
 void	DeleteSeg();
 void	CleanSegment();
+static 	void	FillSegmentInfo();
 
 int	vmNumSegments = 256;
 
@@ -1824,6 +1827,7 @@ Vm_SegmentIncRef(segPtr, procPtr)
  *
  * Vm_GetSegInfo --
  *
+ *
  *	This routine takes in a pointer to a proc table entry and returns
  *	the segment table information for the segments that it uses.
  *
@@ -1840,41 +1844,48 @@ Vm_SegmentIncRef(segPtr, procPtr)
  */
 
 ReturnStatus
-Vm_GetSegInfo(procPtr, segNum, segBufPtr)
-    Proc_ControlBlock	*procPtr;	/* User's copy of PCB.  Contains
+Vm_GetSegInfo(infoPtr, segID, infoSize, segBufPtr)
+    Proc_PCBInfo	*infoPtr;	/* User's copy of PCB.  Contains
 					 * pointers to segment structures.
 					 * USER_NIL => Want to use a 
 					 *     specific segment number. */
-    int			segNum;		/* Segment number of get info for.  
+    Vm_SegmentID	segID;		/* Segment number of get info for.  
 					 * Ignored unless previous argument
 					 * is USER_NIL. */
-    Vm_Segment		*segBufPtr;	/* Where to store segment information.*/
+    int			infoSize;	/* Size of segment info structures */
+    Vm_SegmentInfo	*segBufPtr;	/* Where to store segment information.*/
 {
-    Proc_ControlBlock	pcb;
+    Proc_PCBInfo	pcbInfo;
     Vm_Segment		*minSegAddr, *maxSegAddr, *segPtr;
     int			i;
+    int			segNum;
+    int			bytesToCopy;
+    Vm_SegmentInfo	segmentInfo;
 
-    if (procPtr != (Proc_ControlBlock *)USER_NIL) {
-	if (Vm_CopyIn(sizeof(pcb), (Address) procPtr,
-		      (Address) &pcb) != SUCCESS) {
+    segNum = (int) segID;
+    bytesToCopy = min(sizeof(Vm_SegmentInfo), infoSize);
+    minSegAddr = segmentTable;
+    maxSegAddr = &(segmentTable[vmNumSegments - 1]);
+    if (infoPtr != (Proc_PCBInfo *)USER_NIL) {
+	if (Vm_CopyIn(sizeof(pcbInfo), (Address) infoPtr,
+		      (Address) &pcbInfo) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
-	if (procPtr->vmPtr == (Vm_ProcInfo *)NIL) {
-	    return(SYS_INVALID_ARG);
-	}
-	minSegAddr = segmentTable;
-	maxSegAddr = &(segmentTable[vmNumSegments - 1]);
-	for (i = VM_CODE; i <= VM_STACK; i++, segBufPtr++) {
-	    if (pcb.genFlags & PROC_KERNEL) {
+	for (i = VM_CODE; i <= VM_STACK; i++,(Address) segBufPtr += infoSize) {
+	    if (pcbInfo.genFlags & PROC_KERNEL) {
 		segPtr = vm_SysSegPtr;
 	    } else {
-		segPtr = pcb.vmPtr->segPtrArray[i];
+		segNum = pcbInfo.vmSegments[i];
+		if (segNum < 0 || segNum >= vmNumSegments) {
+		    return(SYS_INVALID_ARG);
+		}
+		segPtr = &segmentTable[segNum];
 		if (segPtr < minSegAddr || segPtr > maxSegAddr) {
 		    return(SYS_INVALID_ARG);
 		}
 	    }
-
-	    if (Vm_CopyOut(sizeof(Vm_Segment), (Address) segPtr, 
+	    FillSegmentInfo(segPtr, &segmentInfo);
+	    if (Vm_CopyOut(bytesToCopy, (Address) &segmentInfo, 
 			   (Address)segBufPtr) != SUCCESS) { 
 		return(SYS_ARG_NOACCESS);
 	    }
@@ -1883,13 +1894,62 @@ Vm_GetSegInfo(procPtr, segNum, segBufPtr)
 	return(SYS_INVALID_ARG);
     } else {
 	segPtr = &segmentTable[segNum];
-	if (Vm_CopyOut(sizeof(Vm_Segment), (Address) segPtr, 
+	if (segPtr < minSegAddr || segPtr > maxSegAddr) {
+	    return(SYS_INVALID_ARG);
+	}
+	FillSegmentInfo(segPtr, &segmentInfo);
+	if (Vm_CopyOut(bytesToCopy, (Address) &segmentInfo, 
 		       (Address) segBufPtr) != SUCCESS) { 
 	    return(SYS_ARG_NOACCESS);
 	}
     }
 
     return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FillSegmentInfo --
+ *
+ *	Converts the contents of a Vm_Segment to a Vm_SegmentInfo.
+ *	This allows the kernel definition of Vm_Segment to change without
+ *	affecting user programs.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FillSegmentInfo(segPtr, infoPtr)
+    Vm_Segment		*segPtr;	/* Segment to convert */
+    Vm_SegmentInfo	*infoPtr;	/* Conversion result */
+{
+    infoPtr->segNum = segPtr->segNum;
+    infoPtr->refCount = segPtr->refCount;
+    infoPtr->type = segPtr->type;
+    if (infoPtr->type == VM_CODE) {
+	strncpy(segPtr->objFileName, infoPtr->objFileName, 
+	        VM_OBJ_FILE_NAME_LENGTH);
+	infoPtr->objFileName[VM_OBJ_FILE_NAME_LENGTH -1] = '\0';
+    } else {
+	infoPtr->objFileName[0] = '\0';
+    }
+    infoPtr->numPages = segPtr->numPages;
+    infoPtr->ptSize = segPtr->ptSize;
+    infoPtr->resPages = segPtr->resPages;
+    infoPtr->flags = segPtr->flags;
+    infoPtr->ptUserCount = segPtr->ptUserCount;
+    infoPtr->numCOWPages = segPtr->numCOWPages;
+    infoPtr->numCORPages = segPtr->numCORPages;
+    infoPtr->minAddr = segPtr->minAddr;
+    infoPtr->maxAddr = segPtr->maxAddr;
+    infoPtr->traceTime = segPtr->traceTime;
 }
 
 

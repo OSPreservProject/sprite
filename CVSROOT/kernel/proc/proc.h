@@ -54,17 +54,15 @@
  * procTable slot, and they need to be unique from host to host.
  */
 
-#define	PROC_INDEX_MASK		0x000000FF
+/*
+ * PROC_INDEX_MASK is defined in user/proc.h.
+ * #define	PROC_INDEX_MASK		0x000000FF
+ */
 #define	PROC_ID_NUM_MASK	0x0000FF00
 #define PROC_ID_NUM_SHIFT	8
 #define	PROC_GEN_NUM_MASK	0x000F0000
 #define PROC_GEN_NUM_SHIFT	16
 
-/* 
- * Size of the buffer containing arguments, to be passed back to users.  
- */
-
-#define PROC_PCB_ARG_LENGTH 256
 
 /*
  * Number of locks that can be pushed on the lock stack for a process. The
@@ -98,21 +96,8 @@ typedef struct {
 } Proc_EnvironInfo;
 
 /*
- *  Process state flags:
+ * >>> Process state flags have been moved to user/proc.h <<<
  */
-typedef enum {
-    PROC_UNUSED,	/* The process doesn't exist yet. */
-    PROC_RUNNING,	/* The process is executing on a processor. */
-    PROC_READY,		/* The process is ready to execute. */
-    PROC_WAITING,	/* The process is waiting for an event to occur such
-			 * as I/O completion or a mutex lock released. */
-    PROC_EXITING,	/* The process has terminated and is on the 
-			 * exiting list. */
-    PROC_DEAD,		/* The process has been terminated is on the dead list*/
-    PROC_MIGRATED,	/* The process is running on a remote machine. */
-    PROC_NEW,		/* The process was just created. */
-    PROC_SUSPENDED	/* The process is suspended. */
-} Proc_State;
 
 /*
  *  Proc_PCBLinks is used to link the PCB entry into various doubly-linked
@@ -123,6 +108,7 @@ typedef struct {
     List_Links links;			/* Linked list for the hash chain. */
     struct Proc_ControlBlock *procPtr;	/* Back pointer to this structure. */
 } Proc_PCBLink;
+
 
 /*
  * Proc_Time is used to represent time such that it can be understood
@@ -428,56 +414,6 @@ typedef struct Proc_ControlBlock {
 
 } Proc_ControlBlock;
 
-
-/*
- * Process attributes flags:
- *
- *  PROC_KERNEL   	        - The process is a kernel process.
- *  PROC_USER     	        - The process is a user process.
- *  PROC_DEBUGGED		- The process is being debugged by the system
- *				  debugger.
- *  PROC_DEBUG_ON_EXEC		- The process will start in debugged mode.
- *  PROC_DEBUG_WAIT		- A debugger is waiting for this process to go
- *				  onto the debug list.
- *  PROC_SINGLE_STEP_FLAG	- The process will have the trace bit set
- *				  before it runs.
- *  PROC_MIG_PENDING		- The process will be migrated when it
- *				  completes its next trap.
- *  PROC_DONT_MIGRATE		- The process should not be migrated yet, even
- *				  when it traps.
- *  PROC_FOREIGN		- The process has been migrated from another
- *				  workstation to this one.
- *  PROC_DIEING			- The process is comitting hari-kari.
- *  PROC_LOCKED			- This process is locked.
- *  PROC_NO_VM			- The virtual memory resources have been
- *				  freed up for this user process.
- *  PROC_MIGRATING		- The process is in the middle of migrating
- *				  to another workstation.  This happens after
- *				  PROC_MIG_PENDING is set but before the
- *				  process's state becomes PROC_MIGRATED and
- *				  its PROC_MIGRATION_DONE flag is set.
- *  PROC_MIGRATION_DONE		- indicates successful completion of a
- *				  migration trap.
- *  PROC_ON_DEBUG_LIST		- the process is on the debug list.
- */
-
-#define PROC_KERNEL			0x00001
-#define PROC_USER			0x00002
-#define PROC_DEBUGGED			0x00004
-#define PROC_DEBUG_ON_EXEC		0x00008
-#define PROC_SINGLE_STEP_FLAG		0x00010
-#define PROC_DEBUG_WAIT			0x00020
-#define PROC_MIG_PENDING		0x00040
-#define PROC_DONT_MIGRATE		0x00080
-#define PROC_FOREIGN			0x00100
-#define PROC_DIEING			0x00200
-#define PROC_LOCKED			0x00400
-#define PROC_NO_VM			0x00800
-#define PROC_MIGRATING			0x01000
-#define PROC_MIGRATION_DONE		0x02000
-#define PROC_ON_DEBUG_LIST		0x04000
-
-
 /*
  * Exit-detach-wait monitor flags:
  *
@@ -500,18 +436,6 @@ typedef struct Proc_ControlBlock {
 #define	PROC_STATUSES		(PROC_SUSPEND_STATUS | PROC_RESUME_STATUS)
 
 
-
-/*
- * The following structure is used to transfer fixed-length argument strings
- * from the kernel back to user space.  A typedef simplifies later
- * declarations (and may be the only way to do it?), since 
- *	char *argPtr[PROC_PCB_ARG_LENGTH]
- * would be an array of pointers to strings rather than an array of strings.
- */
-
-typedef struct {
-    char argString[PROC_PCB_ARG_LENGTH];
-} Proc_PCBArgString;
 
 
 
@@ -552,8 +476,6 @@ extern Boolean proc_RefuseMigrations;
 #define Proc_ComparePIDs(p1, p2) (p1 == p2)
 
 #define Proc_GetPCB(pid) (proc_PCBTable[pid & PROC_INDEX_MASK])
-
-#define	Proc_PIDToIndex(pid) (pid & PROC_INDEX_MASK)
 
 #define Proc_ValidatePID(pid) \
     (((pid & PROC_INDEX_MASK) < proc_MaxNumProcesses) && \
