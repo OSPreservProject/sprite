@@ -90,6 +90,14 @@ Fs_Device devFsDefaultDiskPartitions[] = {
     { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
 	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
 		(ClientData) NIL }, 
+    /*
+     * The first entry is repeated to get around the problems with 
+     * unit attentions.  Right now the kernel will get a unit attention on
+     * the first access and will bail out.  Gross. jhh 12/6/90
+     */
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
+		(ClientData) NIL }, 
     { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 2),
 	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 2),
 		(ClientData) NIL },
