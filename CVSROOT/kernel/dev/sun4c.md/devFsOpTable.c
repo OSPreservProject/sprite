@@ -18,30 +18,31 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "dev.h"
-#include "devInt.h"
-#include "fs.h"
-#include "rawBlockDev.h"
-#include "devFsOpTable.h"
-#include "devTypes.h"
+#include <sprite.h>
+#include <dev.h>
+#include <devInt.h>
+#include <fs.h>
+#include <rawBlockDev.h>
+#include <devFsOpTable.h>
+#include <devTypes.h>
 
 /*
  * Device specific include files.
  */
 
-#include "devSyslog.h"
-#include "devNull.h"
-#include "devSCSIDisk.h"
-#include "devSCSITape.h"
-#include "devNet.h"
-#include "devBlockDevice.h"
-#include "devfb.h"
-#include "scsiHBADevice.h"
-#include "raidExt.h"
-#include "tty.h"
-#include "mouse.h"
-#include "devSmem.h"
+#include <devSyslog.h>
+#include <devNull.h>
+#include <devSCSIDisk.h>
+#include <devSCSITape.h>
+#include <devNet.h>
+#include <devBlockDevice.h>
+#include <devfb.h>
+#include <scsiHBADevice.h>
+#include <raidExt.h>
+#include <tty.h>
+#include <mouse.h>
+#include <devSmem.h>
+#include <devClientDev.h>
 
 
 static ReturnStatus nullOpenProc _ARGS_ ((Fs_Device *devicePtr,
@@ -174,6 +175,55 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_SMEM,     nullOpenProc, Dev_SmemRead, Dev_SmemWrite,
                    Dev_SmemIOControl, nullCloseProc, Dev_SmemSelect,
                    DEV_NO_ATTACH_PROC, nullReopenProc, noMmapProc},
+    /*
+     * /dev/audio
+     */
+    {DEV_AUDIO,    noOpenProc, nullReadProc, nullWriteProc,
+		   Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * /dev/vmelink
+     */
+    {DEV_VMELINK,  noOpenProc, nullReadProc, nullWriteProc,
+		   Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * /dev/stdfb
+     */
+    {DEV_STDFB,    noOpenProc, nullReadProc, nullWriteProc,
+		   Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * /dev/nothing
+     */
+    {DEV_PLACEHOLDER_4,noOpenProc, nullReadProc, nullWriteProc,
+		   Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * /dev/nothing
+     */
+    {DEV_PLACEHOLDER_5,noOpenProc, nullReadProc, nullWriteProc,
+		   Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * /dev/robot
+     */
+    {DEV_SCSI_ROBOT,noOpenProc, nullReadProc, nullWriteProc,
+		   Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * /dev/xbus
+     */
+    {DEV_XBUS,     noOpenProc, nullReadProc, nullWriteProc,
+		   Dev_NullIOControl, nullCloseProc, nullSelectProc,
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * /dev/clients
+     */
+    {DEV_CLIENT_STATE,  DevClientStateOpen, DevClientStateRead, nullWriteProc,
+		   DevClientStateIOControl, DevClientStateClose,
+		   DevClientStateSelect, DEV_NO_ATTACH_PROC,
+		   noReopenProc, noMmapProc},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
