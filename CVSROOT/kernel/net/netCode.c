@@ -207,10 +207,8 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
      */
     routePtr = netRouteArray[spriteID];
     if (routePtr == (Net_Route *)NIL) {
-	routePtr = NetArp(spriteID, mutexPtr);
+	routePtr = Net_Arp(spriteID, mutexPtr);
 	if (routePtr == (Net_Route *)NIL) {
-	    Sys_Panic(SYS_WARNING, "Net_Output: ARP failed for spriteID %d\n",
-				    spriteID);
 	    return(NET_UNREACHABLE_NET);
 	}
     }
@@ -424,7 +422,7 @@ Net_Input(packetPtr, packetLength)
             break;
 
         case NET_ETHER_SPRITE_ARP:
-            Net_ArpInput(packetPtr, packetLength);
+            NetArpInput(packetPtr, packetLength);
             break;
 
         case NET_ETHER_SPRITE_DEBUG:
