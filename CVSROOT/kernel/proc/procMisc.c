@@ -37,6 +37,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpcServer.h>
 #include <procServer.h>
 #include <fsrmt.h>
+#include <fsconsist.h>
 #include <bstring.h>
 #include <stdio.h>
 
@@ -1707,6 +1708,8 @@ Proc_KDumpInt(data, callInfoPtr)
     RpcClientChannel *rpcClientPtr;
     RpcServerState *rpcServerPtr;
     ServerInfo *serverProcPtr;
+    Sync_Lock *syncLockPtr;
+    Fsconsist_Info consistInfo;
     int match;
 
     for (i = 0; i < proc_MaxNumProcesses; i++) {
@@ -1804,6 +1807,26 @@ Proc_KDumpInt(data, callInfoPtr)
 				FINDPID(tmpProcPtr));
 			match++;
 		    }
+		    /* Or we might be blocked on Fsconsist_Info */
+		    syncLockPtr = (Sync_Lock *)(event-
+			    OFF(Fsconsist_Info,consistDone));
+		    if (PRINTLOCK(syncLockPtr)) {
+			printf(" (consistDone)\n");
+			match++;
+			if (READIN(Fsconsist_Info,syncLockPtr,&consistInfo)) {
+			    (void) PRINTHANDLE("handle:", consistInfo.hdrPtr);
+			}
+		    }
+		    syncLockPtr = (Sync_Lock *)(event-
+			    OFF(Fsconsist_Info,repliesIn));
+		    if (PRINTLOCK(syncLockPtr)) {
+			printf(" (repliesIn)\n");
+			match++;
+			if (READIN(Fsconsist_Info,syncLockPtr,&consistInfo)) {
+			    (void) PRINTHANDLE("handle:", consistInfo.hdrPtr);
+			}
+		    }
+		    /* Or maybe something else. */
 		    serverProcPtr = (ServerInfo *)(event-
 			    OFF(ServerInfo, condition));
 		    if (PRINTSERVERPROC(serverProcPtr)) {
