@@ -33,6 +33,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "string.h"
 #include "ttyAttach.h"
+#ifdef sun4c
+#include "machMon.h"
+#endif
 
 int devConfigDebug = FALSE;
 
