@@ -49,7 +49,7 @@ extern void Proc_RecovInit();
 /*
  *  Pathname of the Init program.
  */
-#define INIT	 	"/initsprite"
+#define INIT	 	"cmds/initsprite"
 
 /*
  * Flags defined in individual's mainHook.c to modify the startup behavior. 
@@ -461,12 +461,35 @@ Init()
     ReturnStatus	status;
     char		argBuffer[100];
     int			argc;
+    Fs_Stream		*dummy;
+    char		bootCommand[103];
+    char		*ptr;
+    int			i;
+    int			argLength;
 
     if (main_PrintInitRoutines) {
-	printf("In Init\n");
+	Mach_MonPrintf("In Init\n");
     }
-    argc = Mach_GetBootArgs(9, 100, &(initArgs[1]), argBuffer);
-    initArgs[argc + 1] = (char *) NIL;
+    initArgs[1] = "-b";
+    argc = Mach_GetBootArgs(8, 100, &(initArgs[2]), argBuffer);
+    if (argc > 0) {
+	argLength = (((int) initArgs[argc+1]) + strlen(initArgs[argc+1]) +
+			1 - ((int) argBuffer));
+    } else {
+	argLength = 0;
+    }
+    bzero(bootCommand, 103);
+    ptr = bootCommand;
+    for (i = 0; i < argLength; i++) {
+	if (argBuffer[i] == '\0') {
+	    *ptr++ = ' ';
+	} else {
+	    *ptr++ = argBuffer[i];
+	}
+    }
+    bootCommand[argLength] = '\0';
+    initArgs[2] = bootCommand;
+    initArgs[argc + 2] = (char *) NIL;
     if (main_AltInit != 0) {
 	initArgs[0] = main_AltInit;
 	printf("Execing \"%s\"\n", initArgs[0]);
@@ -474,9 +497,11 @@ Init()
 	printf( "Init: Could not exec %s status %x.\n",
 			initArgs[0], status);
     }
+    status = Fs_Open(INIT,FS_EXECUTE | FS_FOLLOW, FS_FILE, 0, &dummy);
+    if (status != SUCCESS) {
+	printf("Can't open %s <0x%x>\n", INIT,status);
+    }
     initArgs[0] = INIT;
-    initArgs[1] = (char *)NIL;
-
     status = Proc_KernExec(initArgs[0], initArgs);
     printf( "Init: Could not exec %s status %x.\n",
 			initArgs[0], status);
