@@ -29,14 +29,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *	Return the hardware page size.
  *
  * Results:
- *	The size of a hardware page.
+ *	Status from copying the page size out to user space.
  *
  * Side effects:
- *	None.
+ *	Copy page size out to user address space.
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 Vm_PageSize(pageSizePtr)
     int	*pageSizePtr;
@@ -173,4 +172,94 @@ Vm_DestroyVA(address, size)
     VmDeleteFromSeg(segPtr, firstPage, lastPage);
 
     return(SUCCESS);
+}
+
+static int	copySize = 4096;
+static char	buffer[8192];
+
+extern	int		vmMaxPageOutProcs;
+extern	int		vmPagesToCheck;
+extern	unsigned int	vmClockSleep;
+extern	Boolean		vmForceRef;
+extern	Boolean		vmForceSwap;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_Cmd --
+ *
+ *      This routine allows a user level program to give commands to
+ *      the virtual memory system.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Some parameter of the virtual memory system will be modified.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Vm_Cmd(command, arg)
+    Vm_Command  command;
+    int         arg;
+{
+    int			numBytes;
+    ReturnStatus	status = SUCCESS;
+ 
+    switch (command) {
+	case VM_SET_PAGEOUT_PROCS:
+	    vmMaxPageOutProcs = arg;
+	    break;
+        case VM_SET_CLOCK_PAGES:
+            vmPagesToCheck = arg;
+            break;
+        case VM_SET_CLOCK_INTERVAL:
+	    vmClockSleep = arg * timer_IntOneSecond;
+            break;
+        case VM_FORCE_REF:
+            vmForceRef = arg;
+            break;
+	case VM_FORCE_SWAP:
+	    vmForceSwap = arg;
+	    break;
+	case VM_SET_COPY_SIZE:
+	    copySize = arg;
+	    break;
+	case VM_DO_COPY_IN:
+	    Vm_CopyIn(copySize, (Address) arg, buffer);
+	    break;
+	case VM_DO_COPY_OUT:
+	    Vm_CopyOut(copySize, buffer, (Address) arg);
+	    break;
+	case VM_DO_MAKE_ACCESS_IN:
+	    Vm_MakeAccessible(0, copySize, (Address) arg, &numBytes,
+			      (Address *) &arg);
+	    Byte_Copy(copySize, (Address) arg, buffer);
+	    Vm_MakeUnaccessible((Address) arg, numBytes);
+	    break;
+	case VM_DO_MAKE_ACCESS_OUT:
+	    Vm_MakeAccessible(0, copySize, (Address) arg, &numBytes,
+			      (Address *) &arg);
+	    Byte_Copy(copySize, buffer, (Address) arg);
+	    Vm_MakeUnaccessible((Address) arg, numBytes);
+	    break;
+	case VM_GET_STATS:
+	    vmStat.kernMemPages = 
+	    		((int) vmMemEnd - MACH_KERNEL_START) / VM_PAGE_SIZE;
+	    if (Vm_CopyOut(sizeof(Vm_Stat), (Address) &vmStat, 
+			   (Address) arg) != SUCCESS) {
+		status = SYS_ARG_NOACCESS;
+	    }
+	    break;
+	case VM_SET_COW:
+	    vm_CanCOW = arg;
+	    break;
+        default:
+            Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");
+            break;
+    }
+ 
+    return(status);
 }
