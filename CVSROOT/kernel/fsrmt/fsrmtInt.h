@@ -183,6 +183,20 @@ extern ReturnStatus FsrmtFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 		ClientData *outDataPtr));
 extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID, 
 		Proc_PID procID, int flags, int dataSize, ClientData closeData));
+
+extern ReturnStatus FsrmtSetupFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address paramsPtr));
+extern ReturnStatus FsrmtFinishFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address statePtr, ReturnStatus status));
+extern ReturnStatus FsrmtSetupDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address paramsPtr));
+extern ReturnStatus FsrmtFinishDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address statePtr, ReturnStatus status));
+extern ReturnStatus FsrmtSetupPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address paramsPtr));
+extern ReturnStatus FsrmtFinishPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address statePtr, ReturnStatus status));
+
 extern Boolean FsrmtFileScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
 extern Fs_HandleHeader *FsrmtFileVerify _ARGS_((Fs_FileID *fileIDPtr, 
 		int clientID, int *domainTypePtr));

@@ -1054,6 +1054,78 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * FsioSetupStreamReopen --
+ *
+ *	This is called on the client side from FsHandleReopen.
+ *
+ * Results:
+ *	SUCCESS if the stream is setup to be reopened.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsioSetupStreamReopen(hdrPtr, paramsPtr)
+    Fs_HandleHeader	*hdrPtr;	/* Stream's handle header */
+    Address		paramsPtr;
+{
+    register Fs_Stream	*streamPtr = (Fs_Stream *)hdrPtr;
+    StreamReopenParams	*reopenParamsPtr = (StreamReopenParams *)paramsPtr;
+    ReturnStatus status;
+
+    /*
+     * Called on the client side.  We contact the server to invoke
+     * this procedure there with some input parameters.
+     */
+
+    reopenParamsPtr->streamID = hdrPtr->fileID;
+    reopenParamsPtr->ioFileID = streamPtr->ioHandlePtr->fileID;
+    reopenParamsPtr->useFlags = streamPtr->flags;
+    reopenParamsPtr->offset   = streamPtr->offset;
+    /*
+     * This is a mousetrap to catch the "poison packets" reported in
+     * log message 30402.  It can be removed once that bug is fixed.
+     * JHH 12/10/90
+     */
+    if (reopenParamsPtr->ioFileID.type == -1) {
+	panic("About to reopen stream with ioFileID.type set to -1\n");
+    }
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsioFinishStreamReopen --
+ *
+ *	This is called on the client side after the bulk reopen.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsioFinishStreamReopen(hdrPtr, statePtr, status)
+    Fs_HandleHeader	*hdrPtr;
+    Address		statePtr;
+    ReturnStatus	status;
+{
+    /* Nothing to do for streams. */
+    return;
+}
+
+
+/*
  * There are stubs for old routines.  When we are sure this has run on clients
  * and the file server for a while, then we can remove these stubs and
  * their corresponding declarations in the .h files.  -- 11/5/91 Mary

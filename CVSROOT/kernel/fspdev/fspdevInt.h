@@ -154,6 +154,10 @@ extern Fs_HandleHeader *FspdevControlVerify _ARGS_((Fs_FileID *fileIDPtr,
 extern ReturnStatus FspdevControlReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 		int clientID, ClientData inData, int *outSizePtr, 
 		ClientData *outDataPtr));
+extern ReturnStatus FspdevSetupControlReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+		Address paramsPtr));
+extern void FspdevFinishControlReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+		Address statePtr, ReturnStatus status));
 extern ReturnStatus FspdevControlClose _ARGS_((Fs_Stream *streamPtr, 
 		int clientID, Proc_PID procID, int flags, int size,
 		ClientData data));

@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsprefix.h>
 #include <fsNameOps.h>
 #include <fsrmt.h>
+#include <recov.h>
 
 #include <rpc.h>
 #include <vm.h>
@@ -271,9 +272,15 @@ FsrmtFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
      * it's okay to do this even if there's already an active scavenger,
      * because it will have locked the handle if it's working on it.
      */
-    if (rmtHandlePtr->rmt.recovery.use.ref == 0 &&
-	    Fscache_OkToScavenge(&rmtHandlePtr->cacheInfo) &&
-	    !Fsutil_RecoveryNeeded(&rmtHandlePtr->rmt.recovery)) {
+    if (recov_SkipCleanFiles && (rmtHandlePtr->rmt.recovery.use.ref == 0 &&
+	    Fscache_OkToScavengeExceptDirty(&rmtHandlePtr->cacheInfo) &&
+	    !Fsutil_RecoveryNeeded(&rmtHandlePtr->rmt.recovery))) {
+	fs_Stats.recovery.reopensAvoided++;
+	return FS_RECOV_SKIP;
+    } else if (!recov_SkipCleanFiles &&
+	    (rmtHandlePtr->rmt.recovery.use.ref == 0 &&
+	    Fscache_OkToScavengeExceptDirty(&rmtHandlePtr->cacheInfo) &&
+	    !Fsutil_RecoveryNeeded(&rmtHandlePtr->rmt.recovery))) {
         Vm_FileChanged(&rmtHandlePtr->segPtr);
         Fsutil_RecoverySyncLockCleanup(&rmtHandlePtr->rmt.recovery);
         Fscache_InfoSyncLockCleanup(&rmtHandlePtr->cacheInfo);
@@ -1560,4 +1567,151 @@ FileMatch( cacheInfoPtr, cleintData)
     ClientData	cleintData;
 {
     return TRUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FsrmtSetupFileReopen --
+ *
+ *	Set up the data for an RPC to reopen a file handle.
+ *
+ * Results:
+ *	Return status.
+ *
+ * Side effects:
+ *	Data structure set up.
+ *
+ *----------------------------------------------------------------------------
+ */
+ReturnStatus
+FsrmtSetupFileReopen(hdrPtr, paramsPtr)
+    Fs_HandleHeader		*hdrPtr;
+    Address			paramsPtr;
+{
+    Fsrmt_FileIOHandle		*rmtHandlePtr;
+    int				numDirtyBlocks;
+    Fsio_FileReopenParams	*reopenParamsPtr =
+					(Fsio_FileReopenParams *) paramsPtr;
+    Boolean			okayToScavenge;
+
+    rmtHandlePtr = (Fsrmt_FileIOHandle *) hdrPtr;
+    numDirtyBlocks = Fscache_PreventWriteBacks(&rmtHandlePtr->cacheInfo);
+    Fscache_AllowWriteBacks(&rmtHandlePtr->cacheInfo);
+    /*
+     * Optimize out re-opens for files that aren't being waited
+     * on, that have no users, and that have no blocks in the cache.
+     * I don't call OkToScavenge from fsutilHandleScavenge.c, since I think
+     * it's okay to do this even if there's already an active scavenger,
+     * because it will have locked the handle if it's working on it.
+     */
+    okayToScavenge = Fscache_OkToScavengeExceptDirty(&rmtHandlePtr->cacheInfo);
+
+    if (recov_SkipCleanFiles && (rmtHandlePtr->rmt.recovery.use.ref == 0 &&
+	    okayToScavenge &&
+	    !Fsutil_RecoveryNeeded(&rmtHandlePtr->rmt.recovery))) {
+	fs_Stats.recovery.reopensAvoided++;
+	return FS_RECOV_SKIP;
+    } else if ((rmtHandlePtr->rmt.recovery.use.ref == 0 && okayToScavenge &&
+	    !Fsutil_RecoveryNeeded(&rmtHandlePtr->rmt.recovery))) {
+        Vm_FileChanged(&rmtHandlePtr->segPtr);
+        Fsutil_RecoverySyncLockCleanup(&rmtHandlePtr->rmt.recovery);
+        Fscache_InfoSyncLockCleanup(&rmtHandlePtr->cacheInfo);
+        Fscache_ReadAheadSyncLockCleanup(&rmtHandlePtr->readAhead);
+        Fsutil_HandleRemove(rmtHandlePtr);
+        fs_Stats.object.rmtFiles--;
+	fs_Stats.recovery.reopensAvoided++;
+	return FS_NO_HANDLE;
+    }
+	
+/* for debugging */
+#define	FS_HANDLE_INVALID 0x20
+    if (hdrPtr->flags & FS_HANDLE_INVALID) {
+	printf("Attempting to recover invalid file handle <%d,0x%x,0x%x>\n",
+		hdrPtr->fileID.serverID, hdrPtr->fileID.major,
+		hdrPtr->fileID.minor);
+	return FAILURE;
+    }
+/* end for debugging */
+
+    reopenParamsPtr->flags = rmtHandlePtr->flags;
+    if (numDirtyBlocks > 0) {
+	reopenParamsPtr->flags |= FSIO_HAVE_BLOCKS;
+    }
+    reopenParamsPtr->fileID = hdrPtr->fileID;
+    reopenParamsPtr->fileID.type = FSIO_LCL_FILE_STREAM;
+    reopenParamsPtr->prefixFileID.type = NIL;	/* not used */
+    reopenParamsPtr->use = rmtHandlePtr->rmt.recovery.use;
+    reopenParamsPtr->version = rmtHandlePtr->cacheInfo.version;
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FsrmtFinishFileReopen --
+ *
+ *	Do post-processing for a file handle after bulk reopen.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Write-backs, etc., may occur.
+ *
+ *----------------------------------------------------------------------------
+ */
+void
+FsrmtFinishFileReopen(hdrPtr, statePtr, status)
+    Fs_HandleHeader		*hdrPtr;
+    Address			statePtr;
+    ReturnStatus		status;
+{
+    Fsrmt_FileIOHandle		*rmtHandlePtr;
+    int				numDirtyBlocks;
+    Fsio_FileState		*fileStatePtr = (Fsio_FileState *) statePtr;
+
+    rmtHandlePtr = (Fsrmt_FileIOHandle *) hdrPtr;
+    numDirtyBlocks = Fscache_PreventWriteBacks(&rmtHandlePtr->cacheInfo);
+    Fscache_AllowWriteBacks(&rmtHandlePtr->cacheInfo);
+    if (status != SUCCESS) {
+	if (numDirtyBlocks > 0) {
+	    printf(
+"Re-open failed <%x> with dirty blocks in cache, \"%s\" <%d,%d> server %d\n",
+		status, Fsutil_HandleName(hdrPtr), hdrPtr->fileID.major,
+		hdrPtr->fileID.minor, hdrPtr->fileID.serverID);
+	}
+	if (status != RPC_TIMEOUT &&
+	    status != RPC_SERVICE_DISABLED) {
+	    /*
+	     * Nuke the cache because our caller will nuke the handle.
+	     */
+	    Fscache_FileInvalidate(&rmtHandlePtr->cacheInfo, 0, FSCACHE_LAST_BLOCK);
+	}
+    } else {
+	/*
+	 * Flush any lanquishing dirty blocks back to the server.
+	 */
+	if (numDirtyBlocks > 0) {
+	    int skipped;
+	    (void) Fscache_FileWriteBack(&rmtHandlePtr->cacheInfo, 0,
+				FSCACHE_LAST_BLOCK, 0, &skipped);
+	}
+	/*
+	 * Update the handle - take care of cache flushes, updating cached
+	 * attributes, etc.
+	 */
+	if (Fscache_UpdateFile(&rmtHandlePtr->cacheInfo,
+		    rmtHandlePtr->rmt.recovery.use.write,
+		    fileStatePtr->version, fileStatePtr->cacheable,
+		    &fileStatePtr->attr)) {
+	    Vm_FileChanged(&rmtHandlePtr->segPtr);
+	}
+
+	rmtHandlePtr->openTimeStamp = fileStatePtr->openTimeStamp;
+    }
+    return;
 }

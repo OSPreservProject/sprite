@@ -253,6 +253,7 @@ void
 Fspdev_InitializeOps()
 {
     int	i;
+    Fsutil_BulkReopenOps	reopenOps;
 
     Fs_InstallDomainLookupOps(FS_PSEUDO_DOMAIN, &pdevDomainLookup, 
 			&pdevAttrOpTable);
@@ -262,7 +263,11 @@ Fspdev_InitializeOps()
     for (i = 0; i < numPdevOpenOps; i++)  { 
 	Fsio_InstallSrvOpenOp(pdevOpenOps[i].type, &(pdevOpenOps[i]));
     }
+    reopenOps.setup = FspdevSetupControlReopen;
+    reopenOps.finish = FspdevFinishControlReopen;
+    Fsutil_InitBulkReopenOps(FSIO_CONTROL_STREAM, &reopenOps);
 
+    return;
 }
 
 /*

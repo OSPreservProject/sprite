@@ -576,6 +576,243 @@ Fsrmt_RpcReopen(srvToken, clientID, command, storagePtr)
     }
     return(status);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsrmtBulkReopen --
+ *
+ *	Open a set of handles at the server.  This sets up and conducts an
+ *	RPC_FS_BULK_REOPEN
+ *	remote procedure call to reopen the remote file handles.
+ *
+ * Results:
+ *	The return from the RPC.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FsrmtBulkReopen(serverID, inSize, inData, outSizePtr, outData)
+    int			serverID;	/* Server to do reopens. */
+    int			inSize;		/* Size of input data */
+    Address		inData;		/* Input data to server's reopen proc */
+    int			*outSizePtr;	/* In/Out return data size */
+    Address		outData;	/* Return parameter block */
+{
+    register ReturnStatus	status;
+    Rpc_Storage		storage;	/* Specifies RPC parameters/results */
+    Fmt_Format		sendFormat = mach_Format;
+    Fmt_Format		returnFormat;
+    int			fmtStatus;
+
+    storage.requestParamPtr = (Address) &sendFormat;
+    storage.requestParamSize = sizeof (mach_Format);
+    storage.requestDataPtr = inData;
+    storage.requestDataSize = inSize;
+    storage.replyParamPtr = (Address) &returnFormat;
+    storage.replyParamSize = sizeof (Fmt_Format);;
+    storage.replyDataPtr = (Address) malloc(*outSizePtr);
+    storage.replyDataSize = *outSizePtr;
+
+    status = Rpc_Call(serverID, RPC_FS_BULK_REOPEN, &storage);
+    if (storage.replyDataSize > *outSizePtr) {
+	panic("FsrmtBulkReopen: size of return data is too large.");
+    }
+    if (status == SUCCESS) {
+	if (mach_Format != returnFormat) {
+	    int		outSize;
+
+	    inSize = storage.replyDataSize;
+	    if (Fmt_Size("w*", returnFormat, &inSize, mach_Format,
+		    &outSize) != 0 || outSize > storage.replyDataSize) {
+		/*
+		 * Different alignment on two machines.  This isn't
+		 * set up to deal with this, since I'm assuming that
+		 * all the stuff here is int's and won't have different
+		 * alignnment properties.
+		 */
+		printf("FsrmtBulkReopen: bad alignment on two machines.");
+		free((char *) storage.replyDataPtr);
+		return GEN_INVALID_ARG;
+	    }
+	    inSize = storage.replyDataSize;
+	    fmtStatus = Fmt_Convert("w*", returnFormat, &inSize,
+		    storage.replyDataPtr, mach_Format, &outSize, outData);
+	    if (fmtStatus != 0) {
+		printf("Format of bulk reopen failed <0x%x>\n", fmtStatus);
+		free((char *) storage.replyDataPtr);
+		return GEN_INVALID_ARG;
+	    }
+	    *outSizePtr = outSize;
+	} else {
+	    *outSizePtr = storage.replyDataSize;
+	    bcopy(storage.replyDataPtr, outData, *outSizePtr);
+	}
+    }
+	    
+    free((char *) storage.replyDataPtr);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsrmt_RpcBulkReopen --
+ *
+ *	This is the service stub for RPC_FS_BULK_REOPEN.  This switches
+ *	out to stream type reopen procedures.
+ *
+ * Results:
+ *	If this procedure returns SUCCESS then a reply has been sent to
+ *	the client.  If the arguments are bad then an error is 
+ *	returned and the main level sends back an error reply.
+ *
+ * Side effects:
+ *	None.
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fsrmt_RpcBulkReopen(srvToken, clientID, command, storagePtr)
+    ClientData 		 srvToken;	/* Handle on server process passed to
+				 	 * Rpc_Reply */
+    int 		 clientID;	/* Sprite ID of client host */
+    int 		 command;	/* IGNORED */
+    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
+					 * request buffers and also indicate 
+					 * the exact amount of data in the 
+					 * request buffers.  The reply fields 
+					 * are initialized to NIL for the
+				 	 * pointers and 0 for the lengths.  
+					 * This can be passed to Rpc_Reply */
+{
+    ReturnStatus	status;
+    Fsutil_BulkHandle		*bulkHandleSpace;
+    int				numBulkHandles;
+    Fsutil_BulkReturn		*bulkReturnSpace;
+    int				i;
+    Address			newStatePtr;
+    int				newSize;
+    Fmt_Format			inFormat;
+    Rpc_ReplyMem		*replyMemPtr;
+    int				fmtStatus;
+
+    extern int fsutil_NumRecovering; /* XXX put in fsutil.h */
+
+    printf("Got BulkRpc on server.\n");
+    if (storagePtr->requestParamSize != sizeof (Fmt_Format)) {
+	/*
+	 * Check to make sure our parameter size is correct for
+	 * a proper reopen request.
+	 */
+	Net_HostPrint(clientID, "Bad length params to bulk reopen request!\n");
+	return FAILURE;
+    }
+    if (storagePtr->requestDataSize <= 0) {
+	Net_HostPrint(clientID, "Zero-length data to bulk reopen request!\n");
+	return FAILURE;
+    }
+    if ((Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) == 0) {
+	Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
+	fsutil_NumRecovering++;
+	if (fsutil_NumRecovering == 1) {
+	    /*
+	     * The print statements are tweaked so that the first client
+	     * to recover triggers this message, and the last
+	     * client to end recovery triggers another message.
+	     * See fsRecovery.c for the complementary printf.
+	     */
+	    Net_HostPrint(clientID, "initiating recovery\n");
+	}
+    }
+    inFormat = *((Fmt_Format *) (storagePtr->requestParamPtr));
+    if (inFormat != mach_Format) {
+	int	inSize;
+	int	outSize;
+
+	inSize = storagePtr->requestDataSize;
+	if (Fmt_Size("w*", inFormat, &inSize, mach_Format, &outSize) != 0 ||
+		outSize > storagePtr->requestDataSize) {
+	    /*
+	     * Different alignment on two machines.  This isn't
+	     * set up to deal with this, since I'm assuming that
+	     * all the stuff here is int's and won't have different
+	     * alignnment properties.
+	     */
+	    printf("Fsrmt_RpcBulkReopen: bad alignment on two machines.");
+	    return GEN_INVALID_ARG;
+	}
+
+	inSize = storagePtr->requestDataSize;
+	bulkHandleSpace = (Fsutil_BulkHandle *) malloc(outSize);
+	fmtStatus = Fmt_Convert("w*", inFormat, &inSize,
+		(Address) storagePtr->requestDataPtr, mach_Format, &outSize,
+		(Address) bulkHandleSpace);
+	if (fmtStatus != 0) {
+	    printf("Format of bulk reopen failed <0x%x>\n", fmtStatus);
+	    free((char *) bulkHandleSpace);
+	    return GEN_INVALID_ARG;
+	}
+	storagePtr->requestDataSize = outSize;
+    } else {
+	bulkHandleSpace = (Fsutil_BulkHandle *) (storagePtr->requestDataPtr);
+    }
+    numBulkHandles = storagePtr->requestDataSize / sizeof (Fsutil_BulkHandle);
+    storagePtr->replyDataPtr =
+	    (Address) malloc(numBulkHandles * sizeof (Fsutil_BulkReturn));
+    bulkReturnSpace = (Fsutil_BulkReturn *) (storagePtr->replyDataPtr);
+    storagePtr->replyDataSize = numBulkHandles * sizeof (Fsutil_BulkReturn);
+
+    for (i = 0; i < numBulkHandles; i++) {
+	newStatePtr = (Address) NIL;
+	newSize = 0;
+	if (bulkHandleSpace[i].serverID != rpc_SpriteID) {
+	    /*
+	     * Filesystem version mis-match.
+	     */
+	    bulkReturnSpace[i].status = GEN_INVALID_ARG;
+	    continue;
+	}
+	bulkHandleSpace[i].type = Fsio_MapRmtToLclType(bulkHandleSpace[i].type);
+	if (bulkHandleSpace[i].type < 0) {
+	    bulkReturnSpace[i].status = GEN_INVALID_ARG;
+	    continue;
+	}
+	status = (*fsio_StreamOpTable[bulkHandleSpace[i].type].reopen)
+		((Fs_HandleHeader *)NIL,
+		clientID, (ClientData) (bulkHandleSpace[i].reopenParams),
+		&newSize, (ClientData *) &newStatePtr);
+	if (newSize != 0) {
+	    bcopy((Address) newStatePtr, (Address) bulkReturnSpace[i].state,
+		    newSize);
+	    free((Address) newStatePtr);
+	}
+
+	Recov_AddHandleCountToClientState(bulkHandleSpace[i].type, clientID,
+		status);
+	bulkReturnSpace[i].status = status;
+    }
+
+    if (inFormat != mach_Format) {
+	free((char *) bulkHandleSpace);
+    }
+    storagePtr->replyParamPtr = (Address) malloc(sizeof (Fmt_Format));
+    *((Fmt_Format *) storagePtr->replyParamPtr) = mach_Format;
+    storagePtr->replyParamSize = sizeof (Fmt_Format);
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = storagePtr->replyDataPtr;
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
+
+    return SUCCESS;
+}
 
 /*
  * Union of things passed as close data.  Right now, it only seems to

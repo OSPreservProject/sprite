@@ -877,3 +877,67 @@ Fspdev_ControlSetupHandle(recovInfoPtr)
 
     return SUCCESS;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevSetupControlReopen --
+ *
+ *	Set up the data for an RPC to reopen a control handle.
+ *
+ * Results:
+ *	Return status.
+ *
+ * Side effects:
+ *	Data structure set up.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FspdevSetupControlReopen(hdrPtr, paramsPtr)
+    Fs_HandleHeader	*hdrPtr;
+    Address		paramsPtr;
+{
+    Fspdev_ControlIOHandle *ctrlHandlePtr;
+    FspdevControlReopenParams *reopenParamsPtr;
+
+    if (hdrPtr != (Fs_HandleHeader *)NIL) {
+	/*
+	 * Called on the pdev server's host to contact the remote
+	 * file server and re-establish state.
+	 */
+	ctrlHandlePtr = (Fspdev_ControlIOHandle *)hdrPtr;
+	reopenParamsPtr = (FspdevControlReopenParams *) paramsPtr;
+	reopenParamsPtr->fileID = hdrPtr->fileID;
+	reopenParamsPtr->serverID = ctrlHandlePtr->serverID;
+	reopenParamsPtr->seed = ctrlHandlePtr->seed;
+    } else {
+	panic("FspdevSetupControlReopen called on file server.");
+    }
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevFinishControlReopen --
+ *
+ *	Do post-processing for a device handle after bulk reopen.  There is
+ *	none for a pseudo device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FspdevFinishControlReopen(hdrPtr, statePtr, status)
+    Fs_HandleHeader	*hdrPtr;
+    Address		statePtr;
+    ReturnStatus	status;
+{
+    return;
+}

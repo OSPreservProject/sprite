@@ -59,6 +59,8 @@ extern ReturnStatus Fsrmt_RpcDomainInfo _ARGS_((ClientData srvToken,
 		int clientID, int command, Rpc_Storage *storagePtr));
 extern ReturnStatus Fsrmt_RpcMigrateStream _ARGS_((ClientData srvToken, 
 		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcBulkReopen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
 
 
 #endif _FS_RPC_STUBS

@@ -242,3 +242,60 @@ FsrmtPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 		(Address)&reopenParams, &outSize, (Address)NIL);
     return(status);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsrmtSetupPipeReopen --
+ *
+ *	Set up the data for an RPC to reopen a pipe handle.
+ *
+ * Results:
+ *	Return status;
+ *
+ * Side effects:
+ *	Data structure set up.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsrmtSetupPipeReopen(hdrPtr, paramsPtr)
+    Fs_HandleHeader		*hdrPtr;
+    Address			paramsPtr;
+{
+    Fsrmt_IOHandle		*rmtHandlePtr;
+    Fsio_PipeReopenParams	*reopenParamsPtr;
+
+    rmtHandlePtr = (Fsrmt_IOHandle *)hdrPtr;
+    reopenParamsPtr = (Fsio_PipeReopenParams *)	paramsPtr;
+    reopenParamsPtr->fileID = hdrPtr->fileID;
+    reopenParamsPtr->fileID.type = FSIO_LCL_PIPE_STREAM;
+    reopenParamsPtr->use = rmtHandlePtr->recovery.use;
+
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsrmtFinishPipeReopen --
+ *
+ *	Do post-processing for a file handle after bulk reopen.
+ *	There is none for a pipe.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsrmtFinishPipeReopen(hdrPtr, statePtr, status)
+    Fs_HandleHeader		*hdrPtr;
+    Address			statePtr;
+    ReturnStatus		status;
+{
+    return;
+}

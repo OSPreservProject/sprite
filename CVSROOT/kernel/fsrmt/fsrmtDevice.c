@@ -621,3 +621,67 @@ FsrmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
     }
     return((Fs_HandleHeader *)devHandlePtr);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsrmtSetupDeviceReopen --
+ *
+ *	Set up the data for an RPC to reopen a device handle.
+ *
+ * Results:
+ *	Return status.
+ *
+ * Side effects:
+ *	Data structure set up.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsrmtSetupDeviceReopen(hdrPtr, paramsPtr)
+    Fs_HandleHeader		*hdrPtr;
+    Address			paramsPtr;
+{
+    register Fsrmt_IOHandle	*handlePtr = (Fsrmt_IOHandle *)hdrPtr;
+    Fsio_DeviceReopenParams	*reopenParamsPtr;
+
+    /*
+     * Set up reopen parameters.  fileID must be first in order
+     * to use the generic FsrmtReopen/Fsrmt_RpcReopen stubs.
+     */
+    if (handlePtr->recovery.use.ref == 0) {
+	return FS_NO_REFERENCE;
+    }
+    reopenParamsPtr = (Fsio_DeviceReopenParams *) paramsPtr;
+    reopenParamsPtr->fileID = handlePtr->hdr.fileID;
+    reopenParamsPtr->use = handlePtr->recovery.use;
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsrmtFinishDeviceReopen --
+ *
+ *	Do post-processing for a device handle after bulk reopen.  There is
+ *	none for devices.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsrmtFinishDeviceReopen(hdrPtr, statePtr, status)
+    Fs_HandleHeader		*hdrPtr;
+    Address			statePtr;
+    ReturnStatus		status;
+{
+    return;
+}

@@ -1211,7 +1211,6 @@ Fsio_DeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
     }
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].select)(devicePtr,
 		    readPtr, writePtr, exceptPtr);
-
     if (waitPtr != (Sync_RemoteWaiter *)NIL) {
 	if (*readPtr != 0) {
 	    Fsutil_WaitListRemove(&devHandlePtr->readWaitList, waitPtr);

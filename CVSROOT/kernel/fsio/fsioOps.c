@@ -129,6 +129,16 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
 
 static int numIoStreamOps = sizeof(ioStreamOps)/
 				 sizeof(ioStreamOps[0]);
+
+
+/*
+ * These next two externs should be in a stream header file, but there isn't
+ * one, except for fsio.h, but that would export these.
+ */
+extern ReturnStatus FsioSetupStreamReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address paramsPtr));
+extern void FsioFinishStreamReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	ReturnStatus status));
 
 /*
  *----------------------------------------------------------------------
@@ -151,6 +161,7 @@ void
 Fsio_InitializeOps()
 {
     int	i;
+    Fsutil_BulkReopenOps	reopenOps;
 
     for (i = 0; i < numIoStreamOps; i++)  { 
 	Fsio_InstallStreamOps(ioStreamOps[i].type, &(ioStreamOps[i]));
@@ -158,7 +169,9 @@ Fsio_InitializeOps()
     for (i = 0; i < numIoOpenOps; i++)  { 
 	Fsio_InstallSrvOpenOp(ioOpenOps[i].type, &(ioOpenOps[i]));
     }
-
+    reopenOps.setup = FsioSetupStreamReopen;
+    reopenOps.finish = FsioFinishStreamReopen;
+    Fsutil_InitBulkReopenOps(FSIO_STREAM, &reopenOps);
 }
 
 /*

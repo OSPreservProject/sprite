@@ -111,13 +111,24 @@ void
 Fsrmt_InitializeOps()
 {
     int	i;
+    Fsutil_BulkReopenOps	reopenOps;
 
     Fs_InstallDomainLookupOps(FS_REMOTE_SPRITE_DOMAIN, &rmtDomainLookup, 
 				&rmtAttrOpTable );
     for (i = 0; i < numRmtFileStreamOps; i++)  { 
 	Fsio_InstallStreamOps(rmtFileStreamOps[i].type, &(rmtFileStreamOps[i]));
     }
+    reopenOps.setup = FsrmtSetupFileReopen;
+    reopenOps.finish = FsrmtFinishFileReopen;
+    Fsutil_InitBulkReopenOps(FSIO_RMT_FILE_STREAM, &reopenOps);
+    reopenOps.setup = FsrmtSetupDeviceReopen;
+    reopenOps.finish = FsrmtFinishDeviceReopen;
+    Fsutil_InitBulkReopenOps(FSIO_RMT_DEVICE_STREAM, &reopenOps);
+    reopenOps.setup = FsrmtSetupPipeReopen;
+    reopenOps.finish = FsrmtFinishPipeReopen;
+    Fsutil_InitBulkReopenOps(FSIO_RMT_PIPE_STREAM, &reopenOps);
 
+    return;
 }
 
 /*
