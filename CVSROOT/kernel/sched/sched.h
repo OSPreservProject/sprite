@@ -110,6 +110,7 @@ extern Sync_Semaphore sched_Mutex;	/* Mutual exclusion in scheduler */
 
 extern Sync_Semaphore *sched_MutexPtr;
 extern Sched_Instrument sched_Instrument;   /* Counters for instrumentation. */
+extern int sched_Quantum;		/* Timer interrupts per quantum. */
 
 extern void			Sched_MakeReady();
 extern void			Sched_StartUserProc();

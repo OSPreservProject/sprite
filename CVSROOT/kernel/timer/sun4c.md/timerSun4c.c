@@ -25,13 +25,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "sys.h"
+#include "timer.h"
 #include "timerInt.h"
 #include "timerTick.h"
 #include "spriteTime.h"
 #include "mach.h"
 #include "prof.h"
 #include "devAddrs.h"
-#include "timer.h"
 
 #include "timerMK48T12Int.h"
 
@@ -72,6 +72,15 @@ static volatile Counters *counterPtr = (volatile Counters *) DEV_COUNTER_ADDR;
 static Timer_Ticks todCounter;
 
 void Timer_TimerServiceInterrupt();
+
+/*
+ * Timer interval expressed as an integer and as a Time. This is the
+ * period between callbacks, so it is actually twice the timer period
+ * since we callback every other time. 
+ */
+
+static int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
+static Time time = { 0, TIMER_CALLBACK_INTERVAL_APPROX};
 
 
 /* 
@@ -138,7 +147,7 @@ Timer_TimerStart(timer)
      */
      if (timer == TIMER_CALLBACK_TIMER) {
 	 counterPtr->callBackLimit =
-		     ((TIMER_CALLBACK_INTERVAL*1000) << COUNTER_SHIFT);
+		     ((TIMER_CALLBACK_INTERVAL_APPROX*1000) << COUNTER_SHIFT);
 	 junk = counterPtr->callBackLimit;
 	  DISABLE_INTR();
 	 *Mach_InterruptReg |= MACH_ENABLE_COUNTER0_INTR_LEVEL;
@@ -146,7 +155,7 @@ Timer_TimerStart(timer)
 
      } else if (timer == TIMER_PROFILE_TIMER) {
 	 counterPtr->profileLimit =
-		     ((TIMER_PROFILE_INTERVAL*1000) << COUNTER_SHIFT);
+		     ((TIMER_PROFILE_INTERVAL_APPROX*1000) << COUNTER_SHIFT);
 	 junk = counterPtr->profileLimit;
          DISABLE_INTR();
 	 *Mach_InterruptReg |= MACH_ENABLE_COUNTER1_INTR_LEVEL;
@@ -245,13 +254,13 @@ Timer_TimerServiceInterrupt(clientData, pc)
 	 * Until we get the TOD chip working. Use the callback counter
 	 * to keep track on time of day.
 	 */
-	 todCounter.microseconds += TIMER_CALLBACK_INTERVAL*1000;
+	 todCounter.microseconds += TIMER_CALLBACK_INTERVAL_APPROX*1000;
 	 if (todCounter.microseconds > ONE_SECOND) {
 	     todCounter.seconds++;
 	     todCounter.microseconds -= ONE_SECOND;
 	 }
 #endif
-        TIMER_CALLBACK_ROUTINE();
+        TIMER_CALLBACK_ROUTINE(interval, time);
     } else {
 	panic("Timer_TimerServiceInterrupt: Unknown timer %d\n", 
 		    (int) clientData);

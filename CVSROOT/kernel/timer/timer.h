@@ -23,9 +23,11 @@
 #ifdef KERNEL
 #include "spriteTime.h"
 #include "timerTick.h"
+#include "timerMach.h"
 #else
 #include <spriteTime.h>
 #include <kernel/timerTick.h>
+#include <kernel/timerMach.h>
 #endif
 
 
@@ -46,16 +48,6 @@
 
 #define TIMER_PROFILE_TIMER	3
 #define	TIMER_PROFILE_ROUTINE	Prof_CollectInfo
-
-/*
- * The number of milliseconds between interrupts from the timers. This probably
- * should be moved into the device dependent headers because longer or 
- * shorter intervals may be necessary or desirable on different speed machines.
- */
-
-#define TIMER_CALLBACK_INTERVAL	20
-#define TIMER_PROFILE_INTERVAL	10
-
 
 /*
  * timerTick.h should define the following types/structures/routine/macros for 

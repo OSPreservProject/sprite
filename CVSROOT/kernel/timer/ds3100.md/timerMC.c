@@ -65,6 +65,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define WHEN_TO_ADD_ONE		0x1
 
 /*
+ * Set up the interval structures. These are passed to Timer_CallBack
+ * and are used to compute the interval between callbacks. Since we have
+ * an interval of 7812.5 on the stupid ds3100 we have two structures and
+ * alternate passing them to Timer_CallBack.
+ * The interval is represented both as a Time, and as an integer. It is
+ * too expensive to convert between them later so set them both up here.
+ */
+
+
+
+static Time lowTime = {0, 7812};
+static int lowInterval = 7812;
+static Time highTime = {0, 7813};
+static int highInterval = 7813;
+
+/*
  * Control register B.
  */
 #define REGB_SET_TIME		0x80
@@ -229,6 +245,8 @@ Timer_TimerServiceInterrupt()
 { 
     static unsigned	addOne = 0;
     unsigned char timerStatus;
+    Time	*timePtr;
+    unsigned int interval;
 
     timerStatus = *regCPtr;
     if (!(timerStatus & REGC_PER_INT_PENDING)) {
@@ -243,6 +261,11 @@ Timer_TimerServiceInterrupt()
     counter.microseconds += RATE_US;
     if ((addOne & WHEN_TO_ADD_ONE) == WHEN_TO_ADD_ONE) {
 	counter.microseconds++;
+	timePtr = &highTime;
+	interval = highInterval;
+    } else {
+	timePtr = &lowTime;
+	interval = lowInterval;
     }
     addOne++;
     if (counter.microseconds > ONE_MILLION) {
@@ -258,7 +281,7 @@ Timer_TimerServiceInterrupt()
     if (profileIntrsWanted) {
 	TIMER_PROFILE_ROUTINE(0);
     } 
-    TIMER_CALLBACK_ROUTINE();
+    TIMER_CALLBACK_ROUTINE(interval, *timePtr);
 }
 
 

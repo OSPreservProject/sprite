@@ -74,28 +74,6 @@ Sync_Semaphore sched_Mutex ;
 Sync_Semaphore *sched_MutexPtr = &sched_Mutex;
 
 /*
- * GATHER_INTERVAL is the amount of time in milliseconds between calls to
- * Sched_GatherProcInfo when it is called by the timer module. 
- */
-#define GATHER_INTERVAL 	TIMER_CALLBACK_INTERVAL
-static unsigned int gatherInterval;
-
-/*
- * Pre-computed ticks to add when timer goes off.
- */
-static Timer_Ticks	gatherTicks;
-
-/*
- * QuantumInterval is the interval a process is allowed to run before 
- * possibly being preempted. QUANTUM is the quantum length in milliseconds.
- * QuantumTicks is the quantum interval expressed as the number of calls 
- * to Sched_GatherProcessInfo before the quantum has expired.
- */
-#define QUANTUM 100
-static unsigned int quantumInterval;
-static int quantumTicks;
-
-/*
  * Flag to see if Sched_Init has been called.  Used by Sched_GatherProcessInfo
  * to know when things have been initialized. It's needed because GPI
  * is called from the timer module and possibly before Sched_Init has been
@@ -117,6 +95,14 @@ Sched_Instrument sched_Instrument;
  * Status of each processor.
  */
 Sched_ProcessorStatus	sched_ProcessorStatus[MACH_MAX_NUM_PROCESSORS];
+
+/*
+ * Length of time that a process can run before it is preempted.  This is
+ * expressed as a number of timer interrupts.  The quantum length and
+ * timer interrupt interval may not divide evenly.
+ */
+
+int	sched_Quantum = SCHED_DESIRED_QUANTUM / TIMER_CALLBACK_INTERVAL_APPROX;
 
 /*
  * Forward Declarations.
@@ -152,16 +138,6 @@ Sched_Init()
     for(cpu = 1; cpu < MACH_MAX_NUM_PROCESSORS; cpu++) {
 	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_NOT_STARTED;
     }
-    quantumInterval = QUANTUM * timer_IntOneMillisecond;
-#ifdef TESTING
-    quantumInterval = timer_IntOneSecond;
-    quantumInterval = timer_IntOneHour;
-#endif /* TESTING */
-
-    gatherInterval	= GATHER_INTERVAL * timer_IntOneMillisecond;
-    Timer_AddIntervalToTicks(gatherTicks, gatherInterval, &gatherTicks);
-    quantumTicks	= quantumInterval / gatherInterval;
-
     bzero((Address) &(sched_Instrument),sizeof(sched_Instrument));
 
     List_Init(schedReadyQueueHdrPtr);
@@ -254,7 +230,8 @@ Sched_ForgetUsage(time)
  *----------------------------------------------------------------------
  */
 void
-Sched_GatherProcessInfo()
+Sched_GatherProcessInfo(interval)
+    unsigned int interval;	/* Number of ticks since last invocation. */
 {
     register Proc_ControlBlock  *curProcPtr;
     register int		cpu;
@@ -278,9 +255,10 @@ Sched_GatherProcessInfo()
 	 * charge the usage to a particular process but keep track of it.
 	 */
 	if (curProcPtr == (Proc_ControlBlock *) NIL) {
-	    Timer_AddTicks(sched_Instrument.processor[cpu].noProcessRunning, 
-		      gatherTicks,
-		      &(sched_Instrument.processor[cpu].noProcessRunning));
+	    Timer_AddIntervalToTicks(
+		    sched_Instrument.processor[cpu].noProcessRunning, 
+		    interval,
+		    &(sched_Instrument.processor[cpu].noProcessRunning));
 	    continue;
 	}
 
@@ -290,10 +268,10 @@ Sched_GatherProcessInfo()
 	 *  calling a machine-dependent routine.
 	 */
 	if (Mach_ProcessorState(cpu) == MACH_KERNEL) {
-	    Timer_AddTicks(curProcPtr->kernelCpuUsage.ticks, gatherTicks,
+	    Timer_AddIntervalToTicks(curProcPtr->kernelCpuUsage.ticks, interval,
 		           &(curProcPtr->kernelCpuUsage.ticks));
 	} else {
-	    Timer_AddTicks(curProcPtr->userCpuUsage.ticks, gatherTicks,
+	    Timer_AddIntervalToTicks(curProcPtr->userCpuUsage.ticks, interval,
 		           &(curProcPtr->userCpuUsage.ticks));
 	}
 
@@ -301,7 +279,7 @@ Sched_GatherProcessInfo()
 	 *  Update the CPU usage for scheduling priority calculations
 	 *  for the current process.
 	 */
-	curProcPtr->recentUsage += gatherInterval;
+	curProcPtr->recentUsage += interval;
 
 	/*
 	 * See if the quantum has expired for the process.  It can go
@@ -377,13 +355,13 @@ Sched_ContextSwitchInt(state)
 	 */
 	curProcPtr->numQuantumEnds++; 
 	if (List_IsEmpty(schedReadyQueueHdrPtr)) {
-	    curProcPtr->schedQuantumTicks = quantumTicks;
+	    curProcPtr->schedQuantumTicks = sched_Quantum;
 	    return;
 	}
 
 	newProcPtr = Sched_InsertInQueue(curProcPtr, TRUE);
 	if (newProcPtr == curProcPtr) {
-	    curProcPtr->schedQuantumTicks = quantumTicks;
+	    curProcPtr->schedQuantumTicks = sched_Quantum;
 	    return;
 	} 
 	curProcPtr->state = PROC_READY;
@@ -421,7 +399,7 @@ Sched_ContextSwitchInt(state)
      * a billing rate of PROC_NO_INTR_PRIORITY, which allows them to run 
      * forever.)
      */
-    newProcPtr->schedQuantumTicks = quantumTicks;
+    newProcPtr->schedQuantumTicks = sched_Quantum;
 
     /*
      * If the current process is continuing, then don't bother to 

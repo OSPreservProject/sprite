@@ -35,4 +35,12 @@ typedef enum {
 	SCHED_PROCESSOR_IDLE 
 } Sched_ProcessorStatus;
 
+/*
+ * The desired quantum length, in microseconds.  The real quantum length
+ * might be different since it has to be a multiple of the timer interrupt
+ * interval.
+ */
+
+#define SCHED_DESIRED_QUANTUM 100000
+
 #endif /* _SCHEDINT */

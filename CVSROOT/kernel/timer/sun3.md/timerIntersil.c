@@ -111,6 +111,16 @@ static    IntersilCounters	initialCounter = {
 static void CountersToTime();
 void Timer_TimerServiceInterrupt();
 
+
+/*
+ * Timer interval expressed as an integer and as a Time. This is the
+ * period between callbacks, so it is actually twice the timer period
+ * since we callback every other time. A tick on a sun3 is 1 ms and
+ * we callback every 20 ms.
+ */
+
+static int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
+static Time time = { 0, TIMER_CALLBACK_INTERVAL_APPROX};
 /*
  * Constants used to convert the contents of the free-running counters
  * to time in seconds and microseconds.
@@ -485,7 +495,7 @@ Timer_TimerServiceInterrupt(clientData, stack)
      */
     callbackTimerToggle = !callbackTimerToggle;
     if (callbackTimerToggle) {
-	TIMER_CALLBACK_ROUTINE();
+	TIMER_CALLBACK_ROUTINE(interval, time);
     }
 }
 

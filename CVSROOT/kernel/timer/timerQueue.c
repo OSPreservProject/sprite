@@ -77,15 +77,6 @@ static int count = 0;
 #endif DEBUG
 
 /*
- * The value to update the time of day at every timer interrupt.
- * It equals the amount of time between callback timer interrupts.
- */
-
-static Time todUpdate = {
-    0, TIMER_CALLBACK_INTERVAL * (ONE_SECOND/ONE_MILLISECOND)
-};
-
-/*
  * Instrumentation for counting how many times the routines get called.
  */
 
@@ -157,12 +148,15 @@ Timer_Init()
  */
 
 void
-Timer_CallBack()
+Timer_CallBack(interval, time)
+    unsigned int interval;  /* Number of ticks since last invocation. */
+    Time   time;    	    /* Interval as time. */
 {
 	register List_Links	*readyPtr;	/* Ptr to TQE that's ready
 						 * to be called. */
 	Time			timeOfDay;	/* Best guess at tod. */
 	Timer_Ticks		currentTime;
+	Time			intervalTime;
 
 	/*
 	 *  The callback timer has expired. This means at least the first
@@ -176,16 +170,15 @@ Timer_CallBack()
 	timer_Statistics.callback++;
 #endif
 
-
 	MASTER_LOCK(&timerClockMutex);
-	Time_Add(timerTimeOfDay, todUpdate, &timerTimeOfDay);
+	Time_Add(timerTimeOfDay, time, &timerTimeOfDay);
 	timeOfDay = timerTimeOfDay;
 	MASTER_UNLOCK(&timerClockMutex);
 
 	if (vm_Tracing) {
 	    Vm_StoreTraceTime(timeOfDay);
 	}
-	Sched_GatherProcessInfo();
+	Sched_GatherProcessInfo(interval);
 	Dev_GatherDiskStats();
 
 	MASTER_LOCK(&timerMutex);
