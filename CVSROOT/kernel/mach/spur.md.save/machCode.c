@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sigMach.h"
 #include "mem.h"
 #include "byte.h"
+#include "swapBuffer.h"
 
 /*
  *  Number of processors in the system.
@@ -54,6 +55,11 @@ Boolean mach_AtInterruptLevel = FALSE;
  * used when expanding $MACHINE in file names.
  */
 char *mach_MachineType = "spur";
+
+/*
+ * The byte ordering/alignment type used by Swap_Buffer for I/O control data.
+ */
+int mach_ByteOrder = SWAP_SPUR_TYPE;
 
 /*
  *  Count of number of ``calls'' to enable interrupts minus number of calls

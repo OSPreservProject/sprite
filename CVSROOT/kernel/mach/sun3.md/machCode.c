@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "machMon.h"
 #include "byte.h"
+#include "swapBuffer.h"
 
 int	machLastSP, machPOP;
 
@@ -62,6 +63,11 @@ char *mach_MachineType = "sun3";
 #ifdef SUN2
 char *mach_MachineType = "sun2";
 #endif
+
+/*
+ * The byte ordering/alignment type used with Swap_Buffer and I/O control data
+ */
+int mach_ByteOrder = SWAP_SUN_TYPE;
 
 /*
  *  Count of number of ``calls'' to enable interrupts minus number of calls
