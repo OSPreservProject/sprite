@@ -802,6 +802,13 @@ Fsconsist_ReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 	    handlePtr->use.exec  += use.exec  - clientPtr->use.exec;
 	    clientPtr->use = use;
 	    clientPtr->cached = haveDirtyBlocks;
+	    if ((handlePtr->use.ref < 0) || (handlePtr->use.write < 0) ||
+		    (handlePtr->use.exec < 0)) {
+		panic("Fsconsist_ReopenClient: client %d ref %d write %d exec %d\n" ,
+			clientID,
+			handlePtr->use.ref, handlePtr->use.write,
+			handlePtr->use.exec);
+	    }
 	} else if ((clientPtr->use.ref > 0) && haveDirtyBlocks) {
 	    /*
 	     * Oops, another client is reading this file but the re-opening
@@ -1385,9 +1392,9 @@ Fsconsist_ClientRemoveCallback(consistPtr, clientID)
     register	Fsconsist_ClientInfo	*clientPtr;
     int				curClientID;
 
-    LOCK_MONITOR;
-
     Fsutil_HandleUnlock(consistPtr->hdrPtr);
+
+    LOCK_MONITOR;
 
     while (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
 	(void) Sync_Wait(&consistPtr->consistDone, FALSE);
@@ -1435,8 +1442,8 @@ Fsconsist_ClientRemoveCallback(consistPtr, clientID)
     }
     consistPtr->flags = 0;
     consistPtr->lastWriter = -1;
-    Fsutil_HandleLock(consistPtr->hdrPtr);
     UNLOCK_MONITOR;
+    Fsutil_HandleLock(consistPtr->hdrPtr);
 }
 
 /*
@@ -1564,8 +1571,8 @@ Fsconsist_FetchDirtyBlocks(consistPtr, invalidate)
     register	Fsconsist_ClientInfo	*clientPtr;
     register	Fsconsist_ClientInfo	*nextClientPtr;
 
-    LOCK_MONITOR;
     Fsutil_HandleUnlock(consistPtr->hdrPtr);
+    LOCK_MONITOR;
 
     /*
      * Make sure that no one else is in the middle of performing cache
@@ -1579,8 +1586,8 @@ Fsconsist_FetchDirtyBlocks(consistPtr, invalidate)
      */
     if (consistPtr->lastWriter == -1 ||
 	consistPtr->lastWriter == rpc_SpriteID) {
-	Fsutil_HandleLock(consistPtr->hdrPtr);
         UNLOCK_MONITOR;
+	Fsutil_HandleLock(consistPtr->hdrPtr);
 	return;
     }
     consistPtr->flags = FS_CONSIST_IN_PROGRESS;
@@ -1619,8 +1626,8 @@ Fsconsist_FetchDirtyBlocks(consistPtr, invalidate)
 	}
     }
     consistPtr->flags = 0;
-    Fsutil_HandleLock(consistPtr->hdrPtr);
     UNLOCK_MONITOR;
+    Fsutil_HandleLock(consistPtr->hdrPtr);
     return;
 }
 
