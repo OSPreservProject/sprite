@@ -1424,10 +1424,9 @@ typedef struct LockEntry {
 
 extern Sync_Condition cleanBlockCondition, writeBackComplete,
     closeCondition, lruDone, debugListCondition, familyCondition,
-    migrateCondition, evictCondition, recovCondition, rpcDaemon, freeChannels,
-    signalCondition, codeSegCondition, cleanCondition, swapDownCondition,
-mappingCondition, swapFileCondition;
-extern int recovPingEvent;
+    migrateCondition, evictCondition, recovCondition, recovPingCondition,
+    rpcDaemon, freeChannels, signalCondition, codeSegCondition,
+    cleanCondition, swapDownCondition, mappingCondition, swapFileCondition;
 
 LockEntry locks[] = {
     (int)&cleanBlockCondition, "cleanBlockCondition",
@@ -1447,7 +1446,7 @@ LockEntry locks[] = {
     (int)&swapDownCondition, "swapDownCondition",
     (int)&mappingCondition, "mappingCondition",
     (int)&swapFileCondition, "swapFileCondition",
-    (int)&recovPingEvent, "recovPingEvent",
+    (int)&recovPingCondition, "recovPingCondition",
     0, 0
 };
 
