@@ -190,6 +190,50 @@ Fsconsist_SyncLockCleanup(consistPtr)
 /*
  * ----------------------------------------------------------------------------
  *
+ * Fsconsist_MappedConsistency --
+ *
+ *	Take action to ensure that everything is consistent for a
+ *	file that is being mapped.
+ *
+ * Results:
+ *	SUCCESS or FS_FILE_BUSY.
+ *
+ * Side effects:
+ *	Issues cache consistency messages.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY ReturnStatus
+Fsconsist_MappedConsistency(handlePtr, clientID, isMapped)
+    Fsio_FileIOHandle 	*handlePtr;	/* File to check consistency of. */
+    int 		clientID;	/* ID of the host doing the map. */
+    int			isMapped;	/* 1 if file is being mapped. */
+{
+    int					cacheable;	/* Dummy. */
+    register Fsconsist_ClientInfo	*clientPtr;
+    register Fsconsist_Info		*consistPtr = &handlePtr->consist;
+    ReturnStatus			status;
+
+    LOCK_MONITOR;
+
+    StartConsistency(consistPtr, clientID, isMapped ? FS_MAP : 0, &cacheable);
+
+    LIST_FORALL(&consistPtr->clientList, (List_Links *)clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    clientPtr->mapped = isMapped ? TRUE : FALSE;
+	}
+    }
+
+    status = EndConsistency(consistPtr);
+
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * Fsconsist_FileConsistency --
  *
  *	Take action to ensure that the caches are consistent for this
@@ -207,7 +251,7 @@ Fsconsist_SyncLockCleanup(consistPtr)
  *
  * Side effects:
  *	Issues cache consistency messages and adds the client to the
- *	lis of clients of the file.
+ *	list of clients of the file.
  *	THIS UNLOCKS THE HANDLE.
  *
  * ----------------------------------------------------------------------------
@@ -312,6 +356,8 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
 		    != FS_FILE) {
 	cacheable = FALSE;
 	statPtr->nonFiles++;
+    } else if (useFlags & FS_MAP) {
+	cacheable = FALSE;
     }
     if (cacheable) {
 	LIST_FORALL(&consistPtr->clientList, (List_Links *)clientPtr) {
