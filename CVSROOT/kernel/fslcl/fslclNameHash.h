@@ -94,9 +94,10 @@ extern FsHashEntry	*FsHashNext();
 	(FsHashEntry *)NIL)
 
 #define FS_HASH_INSERT(table, string, keyHandle, handle) \
-    (fsNameCaching ? \
-	FsHashInsert(table, string, (FsHandleHeader *)keyHandle, \
-	(FsHandleHeader *)handle) : (FsHashEntry *)NIL)
+    if (fsNameCaching) { \
+	(void)FsHashInsert(table, string, (FsHandleHeader *)keyHandle, \
+			   (FsHandleHeader *)handle); \
+    }
 
 #define FS_HASH_DELETE(table, string, keyHandle) \
     if (fsNameCaching) { \
