@@ -1554,6 +1554,7 @@ MoveDirectory(domainPtr, modTimePtr, newParentHandlePtr, curHandlePtr)
 	    /*
 	     * Patch the directory entry for ".."
 	     */
+	    FS_HASH_DELETE(fsNameTablePtr, "..", curHandlePtr);
 	    status = SetParentNumber(curHandlePtr, newParentNumber);
 	}
 	if (status == SUCCESS) {
@@ -1807,12 +1808,6 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	     * mark the handle as deleted and FsFileClose will take care of it.
 	     */
 	    curHandlePtr->flags |= FS_FILE_DELETED;
-	    if (type == FS_DIRECTORY) {
-		/*
-		 * Remove .. from name cache so we don't ascend to old parent.
-		 */
-		FS_HASH_DELETE(fsNameTablePtr, "..", curHandlePtr);
-	    }
 	    if (curHandlePtr->use.ref == 0) {
 		/*
 		 * Tell other clients (only the last writer) that the
