@@ -99,6 +99,12 @@
 #define	Mach_InterruptReg	((unsigned char *) DEV_INTERRUPT_REG_ADDR)
 
 /*
+ * Suns don't have a write buffer, but this macro makes it easier to
+ * write machine-independent device drivers for both the Decstations and Suns.
+ */
+#define Mach_EmptyWriteBuffer()
+
+/*
  * Dispatch tables for kernel calls.
  */
 extern ReturnStatus (*(mach_NormalHandlers[]))();
