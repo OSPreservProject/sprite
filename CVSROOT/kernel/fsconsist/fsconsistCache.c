@@ -29,24 +29,27 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include	"sprite.h"
-#include	"fs.h"
-#include	"fsutil.h"
-#include	"fsconsist.h"
-#include	"fscache.h"
-#include	"fsStat.h"
-#include	"fslcl.h"
-#include	"hash.h"
-#include	"vm.h"
-#include	"proc.h"
-#include	"sys.h"
-#include	"rpc.h"
-#include	"recov.h"
-#include	"timer.h"
-#include	"dbg.h"
-#include 	"fsio.h"
-#include	"fsrmt.h"
-#include	"fsdm.h"
+#include	<sprite.h>
+#include	<fs.h>
+#include	<fsutil.h>
+#include	<fsconsist.h>
+#include	<fscache.h>
+#include	<fsStat.h>
+#include	<fslcl.h>
+#include	<fsprefix.h>
+#include	<hash.h>
+#include	<vm.h>
+#include	<proc.h>
+#include	<sys.h>
+#include	<rpc.h>
+#include	<recov.h>
+#include	<timer.h>
+#include	<dbg.h>
+#include 	<fsio.h>
+#include	<fsrmt.h>
+#include	<fsdm.h>
+
+#include <stdio.h>
 
 #define	LOCKPTR	(&consistPtr->lock)
 
@@ -120,15 +123,24 @@ static	int	openTimeStamp = 0;
 /*
  * Forward declarations.
  */
-void		StartConsistency();
-void 		UpdateList();
-ReturnStatus	EndConsistency();
-void	 	ClientCommand();
-void		ProcessConsist();
-void		ProcessConsistReply();
-void		ConsistTimeoutIntr();
-void		ConsistTimeout();
-char *		ConsistType();
+extern void StartConsistency _ARGS_((Fsconsist_Info *consistPtr, 
+			int clientID, int useFlags, Boolean *cacheablePtr));
+extern void UpdateList _ARGS_((Fsconsist_Info *consistPtr, int clientID, 
+		int useFlags, Boolean cacheable, int *openTimeStampPtr));
+extern ReturnStatus EndConsistency _ARGS_((Fsconsist_Info *consistPtr));
+extern void ConsistTimeoutIntr _ARGS_((Timer_Ticks time, ClientData data));
+extern void ConsistTimeout _ARGS_((ClientData data, 
+		Proc_CallInfo *callInfoPtr));
+
+extern void ClientCommand _ARGS_((Fsconsist_Info *consistPtr,
+		Fsconsist_ClientInfo *clientPtr, int flags));
+
+extern void ProcessConsist _ARGS_((ClientData data,Proc_CallInfo *callInfoPtr));
+extern void ProcessConsistReply _ARGS_((Fsconsist_Info *consistPtr, 
+		int clientID, ConsistReply *replyPtr));
+
+extern char *ConsistType _ARGS_((int flags));
+
 
 
 /*
@@ -180,9 +192,10 @@ Fsconsist_Init(consistPtr, hdrPtr)
  * ----------------------------------------------------------------------------
  *
  */
+/*ARGSUSED*/
 void
 Fsconsist_SyncLockCleanup(consistPtr)
-    register Fsconsist_Info *consistPtr;	/* State to initialize */
+    Fsconsist_Info *consistPtr;	/* State to initialize */
 {
     Sync_LockClear(&consistPtr->lock);
 }
@@ -195,10 +208,6 @@ Fsconsist_SyncLockCleanup(consistPtr)
  *	Take action to ensure that everything is consistent for a
  *	file that is being mapped.
  *
- *	This routine looks after consistency of a file mapped on multiple
- *	clients.  Since nobody's wanted to do that, I haven't got this
- *	routine implemented yet.  -- Ken Shirriff 8/90
- *
  * Results:
  *	SUCCESS or FS_FILE_BUSY.
  *
@@ -208,12 +217,40 @@ Fsconsist_SyncLockCleanup(consistPtr)
  * ----------------------------------------------------------------------------
  *
  */
+/*ARGSUSED*/
 ENTRY ReturnStatus
 Fsconsist_MappedConsistency(handlePtr, clientID, isMapped)
     Fsio_FileIOHandle 	*handlePtr;	/* File to check consistency of. */
     int 		clientID;	/* ID of the host doing the map. */
     int			isMapped;	/* 1 if file is being mapped. */
 {
+#ifdef notdef
+    int					cacheable;	/* Dummy. */
+    register Fsconsist_ClientInfo	*clientPtr;
+    register Fsconsist_Info		*consistPtr = &handlePtr->consist;
+    ReturnStatus			status;
+
+    printf("Fsconsist_MappedConsistency: updating consistency (a)\n");
+    LOCK_MONITOR;
+
+    printf("Fsconsist_MappedConsistency: updating consistency (b)\n");
+    StartConsistency(consistPtr, clientID, (int)(isMapped ? FS_MAP : 0),
+	    &cacheable);
+
+    printf("Fsconsist_MappedConsistency: updating consistency (c)\n");
+    LIST_FORALL(&consistPtr->clientList, (List_Links *)clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    clientPtr->mapped = isMapped ? TRUE : FALSE;
+	}
+    }
+
+    printf("Fsconsist_MappedConsistency: updating consistency (d)\n");
+    status = EndConsistency(consistPtr);
+    printf("Fsconsist_MappedConsistency: updating consistency (e)\n");
+
+    UNLOCK_MONITOR;
+    return(status);
+#endif
     return SUCCESS;
 }
 
@@ -643,7 +680,7 @@ EndConsistency(consistPtr)
 	(void) Sync_Wait(&consistPtr->repliesIn, FALSE);
     }
     if (consistPtr->flags & FS_CONSIST_TIMEOUT) {
-	Timer_DescheduleRoutine(&timeout);
+	(void)Timer_DescheduleRoutine(&timeout);
 	consistPtr->flags &= ~FS_CONSIST_TIMEOUT;
     }
     if (consistPtr->flags & FS_CONSIST_ERROR) {
@@ -760,7 +797,7 @@ ENTRY void
 Fsconsist_ReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
     Fsio_FileIOHandle	*handlePtr;	/* Should be LOCKED. */
     int			clientID;	/* The client who is opening the file.*/
-    Fsutil_UseCounts		use;		/* Clients usage of the file */
+    Fsio_UseCounts		use;		/* Clients usage of the file */
     Boolean 		haveDirtyBlocks;/* TRUE if client expects it to be
 					 * cacheable because it has
 					 * outstanding dirty blocks. */
@@ -869,7 +906,7 @@ Fsconsist_ReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr,
 	openTimeStampPtr)
     Fsio_FileIOHandle	*handlePtr;	/* Should be UNLOCKED. */
     int			clientID;	/* The client who is opening the file.*/
-    Fsutil_UseCounts	use;		/* Clients usage of the file */
+    Fsio_UseCounts	use;		/* Clients usage of the file */
     int			swap;		/* 0 or FS_SWAP to indicate swap file.*/
     Boolean 		*cacheablePtr;	/* IN: TRUE if client expects it to be
 					 * cacheable, i.e. has dirty blocks.
@@ -1077,7 +1114,6 @@ Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
     register Fsconsist_ClientInfo	*clientPtr;
     register Fsconsist_ClientInfo	*nextClientPtr;
 
-
     /*
      * Unlock the handle so other operations on the file can proceed while
      * we probe around the network for the most up-to-date attributes.
@@ -1089,6 +1125,7 @@ Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
      * handle until the close finishes.  The close can't finish because
      * it is blocked here on the locked handle.
      */
+
     Fsutil_HandleUnlock(handlePtr);
     LOCK_MONITOR;
 
@@ -2192,6 +2229,8 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 				     FSCONSIST_WRITE_BACK_ATTRS)) {
 		    Fscache_UpdateAttrFromClient(clientID,
 			    &handlePtr->cacheInfo, &replyPtr->cachedAttr);
+		    (void) Fsdm_UpdateDescAttr(handlePtr, 
+					&handlePtr->cacheInfo.attr, -1);
 		}
 		if (clientPtr->use.ref == 0 &&
 		    consistPtr->lastWriter != clientID) {
@@ -2244,6 +2283,9 @@ ConsistType(flags)
 	    break;
 	case FSCONSIST_WRITE_BACK_ATTRS:
 	    result = "return-attrs";
+	    break;
+	default:
+	    result = "UNKNOWN";
 	    break;
     }
     return(result);
