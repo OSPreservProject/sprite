@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Net_EtherStats	net_EtherStats;
 NetEtherFuncs	netEtherFuncs;
-static	int	outputMutex = 0;
+static	Sync_Semaphore	outputMutex = SYNC_SEM_INIT_STATIC("outputMutex");
 static void	EnterDebugger();
 
 /*
@@ -186,7 +186,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
     Net_ScatterGather *gatherPtr;	/* Specifies buffers containing the
 					 * pieces of the packet */
     int gatherLength;			/* Number of elements in gatherPtr[] */
-    int *mutexPtr;			/* Mutex that is released during the
+    Sync_Semaphore *mutexPtr;		/* Mutex that is released during the
 					 * ARP transaction (if needed).  This
 					 * doesn't mess up the caller because
 					 * its packet isn't output until
@@ -222,7 +222,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		gatherPtr->conditionPtr = (Sync_Condition *)mutexPtr;
 		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
 					    gatherPtr, gatherLength);
-		while (!gatherPtr->done && mutexPtr != (int *)NIL) {
+		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
 		    Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
 		}
 		return(SUCCESS);
@@ -319,7 +319,7 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
     gatherPtr->conditionPtr = (Sync_Condition *)&outputMutex;
     gatherPtr->done = FALSE;
 
-    MASTER_LOCK(outputMutex);
+    MASTER_LOCK(&outputMutex);
 
     INC_BYTES_SENT(gatherPtr, gatherLength);
     netEtherFuncs.output(etherHdrPtr, gatherPtr, gatherLength);
@@ -327,7 +327,7 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
 	Sync_SlowMasterWait(&outputMutex, &outputMutex, FALSE);
     }
 
-    MASTER_UNLOCK(outputMutex);
+    MASTER_UNLOCK(&outputMutex);
 }
 
 /*

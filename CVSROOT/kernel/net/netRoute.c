@@ -71,7 +71,7 @@ typedef struct ArpState {
     List_Links		links;		/* Chain for all current ARPs */
     int			state;		/* See bits defined below */
     Timer_QueueElement	timeout;	/* Used for the call-back upon timeout*/
-    int			*mutexPtr;	/* Used for synchronization */
+    Sync_Semaphore	*mutexPtr;	/* Used for synchronization */
     Sync_Condition	condition;	/* Used for synchronization */
     int			spriteID;	/* Target Sprite ID, used to identify
 					 * this ARP transaction from others */
@@ -132,7 +132,7 @@ typedef struct ArpInputQueue {
 #define ARP_INPUT_QUEUE_LEN		5
 ArpInputQueue arpInputQueue[ARP_INPUT_QUEUE_LEN];
 static int nextInputIndex = 0;
-int arpInputMutex = 0;
+Sync_Semaphore arpInputMutex = SYNC_SEM_INIT_STATIC("arpInputMutex");
 
 void Net_ArpTimeout();
 void NetArpOutput();
@@ -738,10 +738,11 @@ Net_RevArp(etherAddrPtr)
     NetSpriteArp request;		/* Sprite RARP request packet data */
     NetSpriteArp reply;			/* Sprite RARP reply packet data */
     Net_ScatterGather gather;		/* Points to packet data */
-    int mutex;				/* Reverse arp is called during
-					 * initialization when there is no
-					 * mutex held (unlike regular arp) so
-					 * we need our own mutex for sync */
+    static Sync_Semaphore mutex =
+	SYNC_SEM_INIT_STATIC("Net_RevArp.mutex"); /* Reverse arp is called
+					 * during initialization when there is
+					 * no mutex held (unlike regular arp)
+					 * so we need our own mutex for sync */
 
     request.flags = NET_SPRITE_REV_ARP_REQUEST;
     request.spriteHostID = 0;
@@ -750,11 +751,10 @@ Net_RevArp(etherAddrPtr)
     gather.length = sizeof(NetSpriteArp);
     gather.done = FALSE;
     gather.conditionPtr = (Sync_Condition *) NIL;
-    mutex = 0;
-    
-    MASTER_LOCK(mutex);
+
+    MASTER_LOCK(&mutex);
     status = NetDoArp(&mutex, NET_SPRITE_REV_ARP_REQUEST, &gather, &reply);
-    MASTER_UNLOCK(mutex);
+    MASTER_UNLOCK(&mutex);
     if (status == SUCCESS) {
 	return(reply.spriteHostID);
     } else {
@@ -781,7 +781,7 @@ Net_RevArp(etherAddrPtr)
 
 ReturnStatus
 NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
-    int *mutexPtr;			/* Address of the mutex that the
+    Sync_Semaphore *mutexPtr;		/* Address of the mutex that the
 					 * caller of Net_Output used for
 					 * synchronization.  This needs to
 					 * be released during the ARP so that
@@ -799,7 +799,7 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
     NetSpriteArp *requestPtr;		/* Pointer to request data */
     List_Links *listPtr;		/* Either arpList or revArpList */
 
-    if (mutexPtr == (int *)NIL) {
+    if (mutexPtr == (Sync_Semaphore *)NIL) {
 	return(FAILURE);
     }
     /*
@@ -930,14 +930,14 @@ NetArpInput(packetPtr, packetLength)
 		     * so that the call-back procedure sees a consistent view.
 		     */
 		    register ArpInputQueue *arpInputPtr;
-		    MASTER_LOCK(arpInputMutex);
+		    MASTER_LOCK(&arpInputMutex);
 		    arpInputPtr = &arpInputQueue[nextInputIndex];
 		    arpInputPtr->spriteID = arpDataPtr->spriteHostID;
 		    NET_ETHER_ADDR_COPY(
 			    NET_ETHER_HDR_DESTINATION(*inputEtherHdrPtr),
 			    arpInputPtr->destination);
 		    nextInputIndex = (nextInputIndex + 1) % ARP_INPUT_QUEUE_LEN;
-		    MASTER_UNLOCK(arpInputMutex);
+		    MASTER_UNLOCK(&arpInputMutex);
 		    Proc_CallFunc(NetArpHandler, (ClientData)arpInputPtr, 0);
 		}
 	    }
@@ -1037,10 +1037,10 @@ NetArpHandler(data, callInfoPtr)
     Net_EtherAddress destination;
     int spriteID;
 
-    MASTER_LOCK(arpInputMutex);
+    MASTER_LOCK(&arpInputMutex);
     NET_ETHER_ADDR_COPY(arpInputPtr->destination,destination);
     spriteID = arpInputPtr->spriteID;
-    MASTER_UNLOCK(arpInputMutex);
+    MASTER_UNLOCK(&arpInputMutex);
 
     NetArpOutput(spriteID, &destination, NET_SPRITE_ARP_REPLY);
     callInfoPtr->interval = 0;
@@ -1182,11 +1182,11 @@ Net_ArpTimeout(time, data)
 {
     ArpState *arpPtr = (ArpState *)data;    
 
-    MASTER_LOCK(*arpPtr->mutexPtr);
+    MASTER_LOCK(arpPtr->mutexPtr);
     if (arpDebug) {
 	printf("Arp timeout\n");
     }
     arpPtr->state &= ~ARP_IN_TIMEOUT_QUEUE;
     Sync_MasterBroadcast(&arpPtr->condition);
-    MASTER_UNLOCK(*arpPtr->mutexPtr);
+    MASTER_UNLOCK(arpPtr->mutexPtr);
 }
