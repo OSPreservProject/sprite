@@ -357,7 +357,7 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* umount  */
     { SYS_UNIX_ERROR,         0  },      /* sigpending  */
     { SYS_UNIX_ERROR,         0  },      /* setsid  */
-    { Proc_WaitpidStub(),     3  },      /* waitpid  */
+    { Proc_WaitpidStub,     3  },      /* waitpid  */
 #else
     { SYS_UNIX_ERROR,         0  },      /* getmsg  */
     { SYS_UNIX_ERROR,         0  },      /* putmsg  */
