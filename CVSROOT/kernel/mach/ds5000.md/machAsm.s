@@ -533,6 +533,9 @@ MachKernException:
  * status register and the cause register and the multiply lo and high 
  * registers.  In addition we need to set
  * this up for linkage conventions.
+ *
+ * Kgdb depends on the following definitions.  If you change them you
+ * must modify the routine frame_saved_pc in kgdb.mips accordingly.
  */
 #define	KERN_EXC_FRAME_SIZE	(STAND_FRAME_SIZE + 8 + SAVED_REG_SIZE + 8)
 #define KERN_SR_OFFSET		(STAND_FRAME_SIZE)
