@@ -853,6 +853,19 @@ RpcResend(srvPtr)
     RpcServerState	*srvPtr;
 {
     /*
+     * Consistency check against a service stub that forgot to send a reply.
+     * We can't check sequence numbers because RpcServerDispatch updates the
+     * reply sequence number, but we can verify that the command
+     * in the reply matches the command in the reply.
+     */
+    if ((srvPtr->replyRpcHdr.flags & RPC_ERROR) == 0 &&
+	(srvPtr->replyRpcHdr.command != srvPtr->requestRpcHdr.command)) {
+	printf("RpcResend: request (%d) reply (%d) mismatch, RPC seq # %x\n",
+	    srvPtr->requestRpcHdr.command, srvPtr->replyRpcHdr.command,
+	    srvPtr->requestRpcHdr.ID);
+	return;
+    }
+    /*
      * Note, can't try ARP here because of it's synchronization with
      * a master lock and because we are called at interrupt time.
      */
