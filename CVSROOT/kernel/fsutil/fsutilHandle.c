@@ -910,8 +910,7 @@ FsGetNextHandle(hashSearchPtr)
  *
  * Side effects:
  *	Increments the number of handles checked in this LRU scan so
- *	we know when to terminate.  This also handles pending removals
- *	of handles.
+ *	we know when to terminate.
  *
  *----------------------------------------------------------------------------
  *
@@ -920,7 +919,6 @@ ENTRY FsHandleHeader *
 GetNextLRUHandle()
 {
     register 	FsHandleHeader	*hdrPtr;
-    register 	FsHandleHeader	*nextHdrPtr;
     register	List_Links	*listPtr;
 
     LOCK_MONITOR;
@@ -977,8 +975,6 @@ ENTRY void
 DoneLRU(numScavenged)
     int numScavenged;		/* Number of handles replaced */
 {
-    register FsHandleHeader *hdrPtr;
-
     LOCK_MONITOR;
     if (numScavenged == 0) {
 	/*
