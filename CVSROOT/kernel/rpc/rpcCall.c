@@ -111,6 +111,7 @@ Rpc_Call(serverID, command, storagePtr)
     Time histTime;			/* Time for histogram taking */
     int srvBootID;			/* Boot time stamp from server, used to
 					 * track server reboots */
+    int notActive = 0;			/* Not active flag from server */
 
     if (serverID < 0) {
 	Sys_Panic(SYS_FATAL, "Rpc_Call, bad serverID");
@@ -159,7 +160,8 @@ Rpc_Call(serverID, command, storagePtr)
      * Call RpcDoCall, which synchronizes with RpcClientDispatch,
      * to do the send-receive-timeout loop for the RPC.
      */
-    error = RpcDoCall(serverID, chanPtr, storagePtr, command, &srvBootID);
+    error = RpcDoCall(serverID, chanPtr, storagePtr, command,
+		      &srvBootID, &notActive);
     RpcChanFree(chanPtr);
     
 #ifdef TIMESTAMP
@@ -170,7 +172,7 @@ Rpc_Call(serverID, command, storagePtr)
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
 	Recov_HostDead(serverID);
     } else {
-	Recov_HostAlive(serverID, srvBootID, TRUE);
+	Recov_HostAlive(serverID, srvBootID, TRUE, notActive);
     }
     return(error);
 }
