@@ -102,4 +102,21 @@ a function of FSCACHE_MAX_CLEANER_PROCS and VM_MAX_PAGE_OUT_PROCS
 fsio was fixed so that fsync() in the local works.
 Also, sun3 kernel leaves mapping for frame buffers (0x0fd0000)
 intact.
+
+1.059	Tue Feb 20 16:30:30 PST 1990
+SIOCRPHYSADDR returns correct status.
+Dec disk labels are supported.
+Kernel now uses Fmt constants, rather than Swap.
+Screen blanking works for ds3100s.
+If a disk is not ready when it is attached then a "start unit" scsi command
+is sent to the disk.
+FSCACHE_MAX_CLEANER_PROCS is used in fsBlockCache.c
+Added IOClientKill call after a consistency call-back times-out.
+Generate SIGWINCH signal when window size changes.
+Patched Host_Dead to clear RECOV_REBOOT_CALLBACKS state bit
+which otherwise prevents a subsequent reboot event from being
+suppressed (if it occurs before the reboot callbacks complete)
+
+
+1.060	Fri Mar  2 16:36:20 PST 1990
     New files linked in from the net library.
