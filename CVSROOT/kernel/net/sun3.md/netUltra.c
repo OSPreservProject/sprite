@@ -2982,7 +2982,7 @@ NetUltraSource(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
 	    tracePtr->ticks = curTime;
 	}
 #endif
-	scatter.bufAddr = (Address) itemPtr;
+	scatter.bufAddr = BUFFER_TO_DVMA(itemPtr, statePtr);
 	scatter.length = bufSize;
 	status = NetUltraSendReq(statePtr, SourceDone, 
 		    (ClientData) NIL, FALSE, 1, &scatter,
