@@ -502,7 +502,7 @@ Fs_GetsockoptStub(socketID, level, optName, optVal, optLenPtr)
 			optLen, tmp);
 
     if (status != SUCCESS) {
-	DebugMsg(status, "getsockopt");
+	printf("getsockopt: option %d returned status %d\n", optName, status);
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
