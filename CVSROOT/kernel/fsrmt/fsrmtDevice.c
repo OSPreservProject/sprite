@@ -628,6 +628,7 @@ FsrmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
     }
     return((Fs_HandleHeader *)devHandlePtr);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -642,6 +643,10 @@ FsrmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
  * Side effects:
  *	None.
  *	
+REMOVE this code whenever the fsio and fsrmt modules are both reinstalled.
+This routine has been renamed Fsio_DeviceReopen and is now found in the
+fsio module.  It has been left here for temporary backwards-compatibility.
+			Mary Baker 9/20/91
  *
  *----------------------------------------------------------------------
  */
