@@ -31,8 +31,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "sync.h"
 #include "fs.h"
-#include "stdlib.h"
 #include "sched.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "bstring.h"
 
 /*
  * The error codes for class 0-6 sense data are class specific.
@@ -301,7 +304,6 @@ DevScsiFormatInquiry(dataPtr, outputString)
 					 */
     char	*outputString;		/* String to format into. */
 {
-    int	len;
     static char *deviceTypeNames[] = {
 	"Disk", "Tape", "Printer", "Processor", "WORM", "ROM",
     };
@@ -312,31 +314,33 @@ DevScsiFormatInquiry(dataPtr, outputString)
 	 * data is not really meaningful so we return.
 	 */
 	if (dataPtr->type == SCSI_NODEVICE_TYPE) {
-	    len = sprintf(outputString,"Logical unit not present");
-	    return len;
+	    (void) sprintf(outputString,"Logical unit not present");
+	    return strlen(outputString);
 	} else {
-	    len = sprintf(outputString,"Unknown 0x%x",dataPtr->type);
+	    (void) sprintf(outputString,"Unknown 0x%x",dataPtr->type);
+	    return strlen(outputString);
 	}
     } else {
-	len = sprintf(outputString,"%s",deviceTypeNames[dataPtr->type]);
+	(void) sprintf(outputString,"%s",deviceTypeNames[dataPtr->type]);
     }
     if (dataPtr->length < 0x1f) {
-	return len;
+	return strlen(outputString);
     } else {
 #ifdef notdef
 	char	v[32], p[32], f[32];
 	CopyAndTerminateString(8,dataPtr->vendorInfo, v);
 	CopyAndTerminateString(8,dataPtr->productInfo, p);
 	CopyAndTerminateString(4,dataPtr->firmwareInfo, f);
-	len += sprintf(outputString+len,"%s %s %s",v,p,f);
+	(void) sprintf(outputString + strlen(outputString),"%s %s %s",v,p,f);
 #endif
 	char	v[32], p[32], rl[32], rd[32];
 	CopyAndTerminateString(8,(char *) (dataPtr->vendorID), v);
 	CopyAndTerminateString(16,(char *) (dataPtr->productID), p);
 	CopyAndTerminateString(4,(char *) (dataPtr->revLevel), rl);
 	CopyAndTerminateString(8,(char*) (dataPtr->revData), rd);
-	len += sprintf(outputString+len,"%s %s %s", v, p, rl, rd);
+	(void) sprintf(outputString + strlen(outputString),
+	    "%s %s %s", v, p, rl, rd);
     }
-    return len;
+    return strlen(outputString);
 }
 
