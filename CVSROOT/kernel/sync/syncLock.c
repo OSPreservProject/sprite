@@ -731,6 +731,7 @@ Sync_ProcWakeup(pid, token)
  *----------------------------------------------------------------------------
  */
 
+/* ARGSUSED */
 static INTERNAL void
 ProcessWakeup(procPtr, waitToken)
     register	Proc_ControlBlock 	*procPtr;	/* Process to wake up.*/
@@ -806,12 +807,14 @@ Sync_RemoteNotify(waitPtr)
  *
  *----------------------------------------------------------------------
  */
+
+/* ARGSUSED */
 ReturnStatus
 Sync_RemoteNotifyStub(srvToken, clientID, command, storagePtr)
     ClientData 	srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply. */
-    int 	clientID;	/* Sprite ID of client host. */
-    int 	command;	/* Command identifier. */
+    int 	clientID;	/* Sprite ID of client host (ignored). */
+    int 	command;	/* Command identifier (ignored). */
     Rpc_Storage *storagePtr;    /* The request fields refer to the request
 				 * buffers and also indicate the exact amount
 				 * of data in the request buffers.  The reply
@@ -823,6 +826,7 @@ Sync_RemoteNotifyStub(srvToken, clientID, command, storagePtr)
 
     waitPtr = (Sync_RemoteWaiter *)storagePtr->requestParamPtr;
     Sync_ProcWakeup(waitPtr->pid, waitPtr->waitToken);
-    Rpc_Reply(srvToken, SUCCESS, storagePtr, NIL, NIL);
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, (int (*) ()) NIL,
+	      (ClientData) NIL);
     return(SUCCESS);
 }
