@@ -308,7 +308,7 @@ Fs_ProcInit()
 	    if (status != SUCCESS) {
 		panic("Fs_ProcInit: Unable to open local disk prefix!");
 	    } else {
-		Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
+		(void)Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
 			FS_LOCAL_DOMAIN, 
 			FSPREFIX_LOCAL|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
 	    }
