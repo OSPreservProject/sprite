@@ -20,21 +20,21 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "stdio.h"
-#include "fs.h"
-#include "dev.h"
-#include "devInt.h"
-#include "scsi.h"
-#include "scsiDevice.h"
-#include "devDiskLabel.h"
-#include "devDiskStats.h"
-#include "devBlockDevice.h"
-#include "stdlib.h"
-#include "bstring.h"
-#include "dev/scsi.h"
-#include "dbg.h"
-#include "fsdm.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <fs.h>
+#include <dev.h>
+#include <devInt.h>
+#include <sys/scsi.h>
+#include <scsiDevice.h>
+#include <devDiskLabel.h>
+#include <devDiskStats.h>
+#include <devBlockDevice.h>
+#include <stdlib.h>
+#include <bstring.h>
+#include <dev/scsi.h>
+#include <dbg.h>
+#include <fsdm.h>
 
 typedef struct DiskMap {
     int	 firstSector;
@@ -55,6 +55,8 @@ typedef struct ScsiDisk {
     DiskMap map[DEV_NUM_DISK_PARTS];	/* The partition map */
     int type;		/* Type of the drive, needed for error checking */
     DevDiskStats *diskStatsPtr;	/* Area for disk stats. */	
+    int retries;		/* Number of times current command has been
+				 * retried. */
 } ScsiDisk;
 
 typedef struct ScsiDiskCmd {
@@ -68,8 +70,14 @@ typedef struct ScsiDiskCmd {
 #define	RequestDone(requestPtr,status,byteCount) \
 	((requestPtr)->doneProc)((requestPtr),(status),(byteCount))
 
-static ReturnStatus DiskError();
-static Boolean	ScsiDiskIdleCheck();
+static ReturnStatus DiskError _ARGS_((ScsiDevice *devPtr,
+			    ScsiCmd *scsiCmdPtr));
+static Boolean	ScsiDiskIdleCheck _ARGS_((ClientData clientData,
+			    DevDiskStats *diskStatsPtr));
+static int DiskDoneProc _ARGS_((struct ScsiCmd *scsiCmdPtr, 
+			    ReturnStatus status, int statusByte, 
+			    int byteCount, int senseLength, 
+			    Address senseDataPtr));
 
 
 /*
@@ -99,9 +107,6 @@ FillInLabel(devPtr,diskPtr)
     Dec_DiskLabel		*decLabelPtr;
     Fsdm_DiskHeader		*diskHdrPtr;
     char			labelBuffer[SCSI_DISK_SECTOR_SIZE];
-    unsigned char		statusByte;
-    int				senseLength;
-    char			senseBuffer[SCSI_MAX_SENSE_LEN];
     int				byteCount;
     int				part;
     Boolean			printLabel = FALSE;
@@ -118,12 +123,8 @@ FillInLabel(devPtr,diskPtr)
     labelReadCmd.buffer = labelBuffer;
     labelReadCmd.dataToDevice = FALSE;
     labelReadCmd.bufferLen = SCSI_DISK_SECTOR_SIZE;
-    senseLength = SCSI_MAX_SENSE_LEN;
-    status = DevScsiSendCmdSync(devPtr,&labelReadCmd,&statusByte,&byteCount,
-				&senseLength, senseBuffer);
-    if (status == SUCCESS) {
-	status = DiskError(diskPtr,statusByte, senseLength, senseBuffer);
-    }
+    diskPtr->retries = 0;
+    status = DevScsiSendCmdSync(devPtr,&labelReadCmd, &byteCount);
     if ((status == SUCCESS) && (byteCount < sizeof(Sun_DiskLabel))) {
 	status = DEV_EARLY_CMD_COMPLETION;
     }
@@ -206,12 +207,8 @@ FillInLabel(devPtr,diskPtr)
     labelReadCmd.buffer = labelBuffer;
     labelReadCmd.dataToDevice = FALSE;
     labelReadCmd.bufferLen = SCSI_DISK_SECTOR_SIZE;
-    senseLength = SCSI_MAX_SENSE_LEN;
-    status = DevScsiSendCmdSync(devPtr,&labelReadCmd,&statusByte,&byteCount,
-				&senseLength, senseBuffer);
-    if (status == SUCCESS) {
-	status = DiskError(diskPtr,statusByte, senseLength, senseBuffer);
-    }
+    diskPtr->retries = 0;
+    status = DevScsiSendCmdSync(devPtr,&labelReadCmd, &byteCount);
     if ((status == SUCCESS) && (byteCount < sizeof(Dec_DiskLabel))) {
 	status = DEV_EARLY_CMD_COMPLETION;
     }
@@ -383,7 +380,7 @@ InitDisk(devPtr,readLabel)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static int
 DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength, 
 	     senseDataPtr)
@@ -422,8 +419,32 @@ DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
     /*
      * Otherwise we have a SCSI command that returned an error. 
      */
-    status = DiskError(diskPtr, statusByte, senseLength, senseDataPtr);
-    RequestDone(requestPtr,status,byteCount);
+    status = DiskError(diskPtr->devPtr, scsiCmdPtr);
+    /*
+     * If the device was reset then retry the command.  This isn't quite
+     * correct, but works in the majority of cases because most of the
+     * time the scsi bus is reset by the device driver.  In reality the
+     * bus could be reset because someone replaced one drive with another.
+     * If you really want to handle that situation then you have to pass
+     * the status up to the higher level code and let it decide what to do.
+     * Of course that means you have to handle it in many different places,
+     * whereas this solution only requires modification to this routine.
+     * Also note that it is possible to go into an infinite loop if the
+     * device always returns unit attention.
+     * JHH 6/7/91
+     */
+    if (status == DEV_RESET) {
+	if ((diskPtr->retries > 0) && (diskPtr->retries % 10 == 0)) {
+	    printf("WARNING: device %s always returns unit attention?\n",
+		diskPtr->devPtr->locationName);
+	    diskPtr->retries = 0;
+	}
+	scsiCmdPtr->senseLen = sizeof(scsiCmdPtr->senseBuffer);
+	DevScsiSendCmd(diskPtr->devPtr, scsiCmdPtr);
+	diskPtr->retries++;
+    } else {
+	RequestDone(requestPtr,status,byteCount);
+    }
     return 0;
 
 }
@@ -496,12 +517,14 @@ SendCmdToDevice(diskPtr, requestPtr, firstSector, lengthInSectors)
     diskCmdPtr->scsiCmd.dataToDevice = (requestPtr->operation == FS_WRITE);
     diskCmdPtr->scsiCmd.doneProc = DiskDoneProc;
     diskCmdPtr->scsiCmd.clientData = (ClientData) requestPtr;
+    diskCmdPtr->scsiCmd.senseLen = sizeof(diskCmdPtr->scsiCmd.senseBuffer);
     diskCmdPtr->diskPtr = diskPtr;
 
     MASTER_LOCK(&(diskPtr->diskStatsPtr->mutex));
     diskPtr->diskStatsPtr->busy++;
     MASTER_UNLOCK(&(diskPtr->diskStatsPtr->mutex));
 
+    diskPtr->retries = 0;
     DevScsiSendCmd(diskPtr->devPtr,&(diskCmdPtr->scsiCmd));
     return SUCCESS;
 }
@@ -524,16 +547,16 @@ SendCmdToDevice(diskPtr, requestPtr, firstSector, lengthInSectors)
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-DiskError(diskPtr, statusByte, senseLength, senseDataPtr)
-    ScsiDisk	 *diskPtr;	/* SCSI disk that's complaining. */
-    unsigned char statusByte;	/* The status byte of the command. */
-    int		 senseLength;	/* Length of SCSI sense data in bytes. */
-    char	 *senseDataPtr;	/* Sense data. */
+DiskError(devPtr, scsiCmdPtr)
+    ScsiDevice	 *devPtr;	/* SCSI device that's complaining. */
+    ScsiCmd	*scsiCmdPtr;	/* SCSI command that had the problem. */
 {
+    unsigned char statusByte = scsiCmdPtr->statusByte;
     ReturnStatus status;
     ScsiStatus *statusPtr = (ScsiStatus *) &statusByte;
-    ScsiClass0Sense *sensePtr = (ScsiClass0Sense *) senseDataPtr;
-    char	*name = diskPtr->devPtr->locationName;
+    ScsiClass0Sense *sensePtr = (ScsiClass0Sense *) scsiCmdPtr->senseBuffer;
+    int	senseLength = scsiCmdPtr->senseLen;
+    char	*name = devPtr->locationName;
     char	errorString[MAX_SCSI_ERROR_STRING];
 
     /*
@@ -556,7 +579,8 @@ DiskError(diskPtr, statusByte, senseLength, senseDataPtr)
 	 printf("Warning: SCSI Disk %s error: no sense data\n", name);
 	 return DEV_NO_SENSE;
     }
-    if (DevScsiMapClass7Sense(senseLength, senseDataPtr,&status, errorString)) {
+    if (DevScsiMapClass7Sense(senseLength, scsiCmdPtr->senseBuffer,
+	    &status, errorString)) {
 	if (errorString[0]) {
 	     printf("Warning: SCSI Disk %s error: %s\n", name, errorString);
 	}
@@ -761,14 +785,15 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	        scsiCmds[i].dataToDevice = cmds[i].writeOperation;
 		scsiCmds[i].clientData = (ClientData) &errorStatus;
 	        scsiCmds[i].doneProc = DiskHBATestDoneProc;
+	        scsiCmds[i].senseLen = sizeof(scsiCmds[i].senseBuffer);
 		if (i < count - 1) {
+		    diskPtr->retries = 0;
 		    DevScsiSendCmd(diskPtr->devPtr, &(scsiCmds[i]));
 		} else {
-		    unsigned char statusByte;
 		    int	byteCount;
+		    diskPtr->retries = 0;
 		    status = DevScsiSendCmdSync(diskPtr->devPtr,
-			    &(scsiCmds[i]),&statusByte,&byteCount,
-				 (int *) NIL, (char *) NIL);
+			    &(scsiCmds[i]),&byteCount);
 		}
 	   }
 	   referCount--;
@@ -807,14 +832,15 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	        scsiCmds[i].dataToDevice = 0;
 		scsiCmds[i].clientData = (ClientData) &errorStatus;
 	        scsiCmds[i].doneProc = DiskHBATestDoneProc;
+	        scsiCmds[i].senseLen = sizeof(scsiCmds[i].senseBuffer);
 		if (i < count - 1) {
+		    diskPtr->retries = 0;
 		    DevScsiSendCmd(diskPtr->devPtr, &(scsiCmds[i]));
 		} else {
-		    unsigned char statusByte;
 		    int	byteCount;
+		    diskPtr->retries = 0;
 		    status = DevScsiSendCmdSync(diskPtr->devPtr,
-			    &(scsiCmds[i]),&statusByte,&byteCount,
-				 (int *) NIL, (char *) NIL);
+			    &(scsiCmds[i]), &byteCount);
 		}
 	   }
 	   free((char *) scsiCmds);
@@ -971,6 +997,7 @@ DevScsiDiskAttach(devicePtr)
 	(void) DevScsiReleaseDevice(devPtr);
 	return (DevBlockDeviceHandle *) NIL;
     }
+    devPtr->errorProc = DiskError;
     /*
      * Initialize the ScsiDisk structure. We don't need to read the label
      * if the user is opening the device in raw (non partitioned) mode.
