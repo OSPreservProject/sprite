@@ -1,4 +1,4 @@
-/*
+/* 
  * raidExt.h --
  *
  * Copyright 1989 Regents of the University of California
@@ -22,6 +22,6 @@ DevBlockDeviceHandle	*DevRaidAttach();
 
 #ifndef DevDebugAttach
 DevBlockDeviceHandle	*DevDebugAttach();
-#endif /*  DevDebugAttach */
+#endif  DevDebugAttach
 
-#endif /* _RAIDEXT */
+#endif _RAIDEXT

@@ -1,4 +1,4 @@
-/*
+/* 
  * devRaid.h --
  *
  *	Declarations for RAID device drivers.
@@ -25,11 +25,11 @@
 
 #ifndef MIN
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
-#endif /*  MIN */
+#endif  MIN
 
 #ifndef MAX
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
-#endif /*  MAX */
+#endif  MAX
 
 /*
  * Data structure for each disk used by raid device.
@@ -177,4 +177,4 @@ typedef struct RaidReconstructionControl {
     char		*readBuf;
 } RaidReconstructionControl;
 
-#endif /* _DEVRAID */
+#endif _DEVRAID
