@@ -1325,12 +1325,12 @@ exit:
 #define INTP(x)		((int *)(x))
 #define	ISSTRZ(x)	(INT(x)==0 || ISSTR(x))
 #define ISALIGN(x)	(ISADDR(x) && (INT(x)&3)==0)
-#define ISALIGNZ(x)	(INT(x)==0 || ISALIGN(x))
+#define ISALIGNZ(x)	(INT(x)==0 || INT(x)==NIL || ISALIGN(x))
 /* sun3 test-and-set sets to 0x80000000, sun4 to 0xff000000 */
 #define ISBOOL(x)	(INT(x)==0||INT(x)==1||INT(x)==0x80000000||\
 			INT(x)==0xff000000)
 #define ISSMALL(x)	(INT(x)>=0&&INT(x)<20)
-#define ISPCBZ(x)	(INT(x)==0||ISPCB(x))
+#define ISPCBZ(x)	(INT(x)==0||INT(x)==NIL||ISPCB(x))
 #define OFF(type,field) (INTP(&(((type *)0)->field))-INTP(0))
 #define READIN(type,src,dst) (READIN_INT(sizeof(type),(Address)(src),\
 		(Address)(dst)))
