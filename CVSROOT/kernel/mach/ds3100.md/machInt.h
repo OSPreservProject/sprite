@@ -60,7 +60,6 @@ extern ReturnStatus 		MachFetch5Args _ARGS_((void));
 extern ReturnStatus 		MachFetch6Args _ARGS_((void));
 
 extern void		MachSysCall _ARGS_((void));
-extern void		MachProbeAddrEnd _ARGS_((void));
 extern unsigned *MachEmulateBranch _ARGS_((unsigned *regsPtr, Address instPC, unsigned fpcCSR, Boolean allowNonBranch));
 
 
@@ -69,6 +68,6 @@ extern void Mach_SendSignal _ARGS_((int sigType));
 extern ReturnStatus CvtSpriteToUnixAtts _ARGS_((register Fs_Attributes *spriteAttsPtr, register struct stat *unixAttsPtr));
 extern Boolean MachUserExceptionHandler _ARGS_((unsigned statusReg, unsigned causeReg, Address badVaddr, Address pc));
 extern int MachKernelExceptionHandler _ARGS_((unsigned statusReg, unsigned causeReg, Address badVaddr, Address pc));
-
+extern void		MachProbeEnd _ARGS_((void));
 
 #endif /* _MACHINT */

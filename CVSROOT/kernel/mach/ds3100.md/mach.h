@@ -143,9 +143,10 @@ extern int Mach_GetMachineType _ARGS_((void));
 extern Address Mach_GetStackPointer _ARGS_((Proc_ControlBlock *procPtr));
 extern void Mach_CheckSpecialHandling _ARGS_((int pnum));
 extern int Mach_GetBootArgs _ARGS_((int argc, int bufferSize, char **argv, char *buffer));
+extern  ReturnStatus	Mach_Probe _ARGS_((int size, Address srcAddress,
+					Address, destAddress));
 extern  ReturnStatus	Mach_ProbeAddr _ARGS_((int numArgs));
 extern void Mach_FlushCode _ARGS_((Address addr, unsigned len));
-
 
 /*
  * Machine dependent variables.

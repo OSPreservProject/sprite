@@ -1882,30 +1882,105 @@ MachFetch6Args:
     .globl MachFetchArgsEnd
 MachFetchArgsEnd:
 
-/*----------------------------------------------------------------------------
+/*
+ * Beginning of area where the kernel should be able to handle a bus error
+ * (which includes size errors) while in kernel mode.
+ */
+
+/*
+ *----------------------------------------------------------------------
  *
- * MachProbeAddr --
+ * Mach_Probe --
  *
- *	Fetch the given number of arguments from the user's stack and put
- *	them onto the kernel's stack.  The user's stack pointer is in t2.
+ *	Copy a block of memory from one virtual address to another handling
+ *	bus errors that may occur. This	routine is intended to be used to 
+ *	probe for memory mapped devices.
+ *
+ * NOTE: This trap handlers force this routine to return SYS_NO_ACCESS if an
+ *	 bus error occurs.
+ *
+ * Calling sequences:
+ *
+ * ReturnStatus
+ * Mach_Probe(size, srcAddress, destAddress)
+ *    int		size;	 Size in bytes of the read to do. Must
+ *				  1, 2, 4, or 8  
+ *  Address	srcAddress;	 Address to read from. 
+ *  Address	destAddress;	 Address to store the read value. 
+ *	
  *
  * Results:
- *     	None.
+ *	SUCCESS if the copy worked and  SYS_NO_ACCESS otherwise
  *
  * Side effects:
  *	None.
- *
- *----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
-    .globl Mach_ProbeAddr
-Mach_ProbeAddr:
 .set noreorder
-    sw		zero, 0(a0)
-    lw		t0, 0(a0)
-    nop
-    j		ra
-    add		v0, zero, zero
+	.globl Mach_Probe
+	.ent Mach_Probe, 0
+Mach_Probe:
+	/* a0 is the number of bytes
+	 * a1 is the src address
+	 * a2 is the dest address
+	 */
+	bne 	a0,1, Read2Bytes
+	nop
+	lbu 	t0, 0(a1)
+	nop
+	sb	t0, 0(a2)
+	j	ra
+	add	v0, zero, zero
+Read2Bytes:
+	bne 	a0, 2, Read4Bytes
+	nop
+	and	t0, a1, 0x1
+	bne	t0, zero, BadRead
+	nop
+	and	t0, a2, 0x1
+	bne	t0, zero, BadRead
+	nop
+	lhu	t0, 0(a1)
+	nop
+	sh	t0, 0(a2)
+	j	ra
+	add	v0, zero, zero
+Read4Bytes:
+	bne 	a0, 4, Read8Bytes
+	nop
+	and	t0, a1, 0x3
+	bne	t0, zero, BadRead
+	nop
+	and	t0, a2, 0x3
+	bne	t0, zero, BadRead
+	nop
+	lw	t0, 0(a1)
+	nop
+	sw	t0, 0(a2)
+	j	ra
+	add	v0, zero, zero
+Read8Bytes:
+	bne 	a0, 8, BadRead
+	nop
+	and	t0, a1, 0x7
+	bne	t0, zero, BadRead
+	nop
+	and	t0, a2, 0x7
+	bne	t0, zero, BadRead
+	nop
+	lw	t0, 0(a1)
+	nop
+	sw	t0, 0(a2)
+	lw	t0, 4(a1)
+	nop	
+	sw	t0, 4(a1)
+	j	ra
+	add	v0, zero, zero
+BadRead:
+	j	ra
+	add	v0, zero, 1
 .set reorder
 
-    .globl MachProbeAddrEnd
-MachProbeAddrEnd:
+	.globl	MachProbeEnd
+MachProbeEnd:
+.end
