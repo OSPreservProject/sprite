@@ -208,6 +208,7 @@ static CallBack callBackVector[] = {
     { RpcProcFork,			RSNIL }, /* SYS_PROC_VFORK 106 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_GET_ROUTES 107 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_DELETE_ROUTE 108 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_ZSS_CMD 109 */
 };
 
 
