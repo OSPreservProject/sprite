@@ -19,12 +19,11 @@
 #ifdef KERNEL
 #include <trace.h>
 #include <proc.h>
-#include <recovBox.h>
 #else
 #include <kernel/trace.h>
 #include <kernel/proc.h>
-#include <kernel/recovBox.h>
 #endif
+#include <recovBox.h>
 
 /*
  * External view of the state kept about each host.
