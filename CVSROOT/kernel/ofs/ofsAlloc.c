@@ -112,6 +112,20 @@ static unsigned char bitMasks[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
 int	fsdmPercentFree = 10;
 
 /*
+ * Block allocation style (settable with FS_SET_ALLOC_GAP Fs_Command)
+ *	CONTIGUOUS	Blocks are allocated coniguously, beginning at the
+ *			beginning of the cylinder.
+ *	SKIP_ONE	Blocks are allocated with one free block between
+ *			each allocated block.  The extra block gives the
+ *			software time to generate a new disk request
+ *			before the next allocated block rotates past the head.
+ */
+#define CONTIGUOUS	0
+#define SKIP_ONE	1
+
+int fsdm_AllocGap = SKIP_ONE;
+
+/*
  * Flag to determine whether to keep track of file deletions and read/writes
  * by file type, and deletions by size/age/type.
  */
@@ -1019,7 +1033,7 @@ INTERNAL static void
 FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr, 
 	     bitmapPtrPtr)
     int			hashSeed;	/* Seed for cylinder hash. */
-    register Fsdm_Domain 	*domainPtr; 	/* Domain to allocate blocks in. */
+    register Fsdm_Domain  *domainPtr; 	/* Domain to allocate blocks in. */
     int			nearBlock;  	/* Block number where this block should
 					 * be near. */
     Boolean		allocate;   	/* TRUE if allocating full block, FALSE
@@ -1028,41 +1042,102 @@ FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr,
     unsigned char	**bitmapPtrPtr;	/* Bit map entry that corresponds to
 					 * the block. */
 {
-    register unsigned char *bitmapPtr;
-    register int	   blockNum;
+    unsigned char *bitmapPtr;
+    int	   blockNum;
+    int	   block;
+    int	   startingBlockOffset;
+    int			   blocksPerCylinder;
     int			   mask;
     int			   cylinderNum;
 
+    blocksPerCylinder = domainPtr->headerPtr->geometry.blocksPerCylinder;
     if (nearBlock != -1) {
-	cylinderNum = ((unsigned int) nearBlock) / 
-			    domainPtr->headerPtr->geometry.blocksPerCylinder;
+	cylinderNum = ((unsigned int) nearBlock) / blocksPerCylinder;
+	startingBlockOffset = ((unsigned int) nearBlock) % blocksPerCylinder;
     } else {
 	cylinderNum = -1;
+	startingBlockOffset = -1;
     }
     cylinderNum = SelectCylinderInt(hashSeed, domainPtr, cylinderNum);
     if (cylinderNum == -1) {
 	*blockNumPtr = -1;
 	return;
     }
-    
-    bitmapPtr = 
-      &(domainPtr->dataBlockBitmap[cylinderNum * domainPtr->bytesPerCylinder]);
-    blockNum = cylinderNum * domainPtr->headerPtr->geometry.blocksPerCylinder;
-    while (TRUE) {
-	fs_Stats.alloc.cylBitmapSearches++;
-	if (UpperBlockFree(*bitmapPtr)) {
-	    mask = 0xf0;
-	    break;
+    if (fsdm_AllocGap == 0) {
+	/*
+	 * CONTIGUOUS allocation.
+	 * This is the original code that simply starts at the beginning
+	 * of the cylinder and stops when it finds a free block.
+	 */
+	bitmapPtr = 
+	  &(domainPtr->dataBlockBitmap[cylinderNum * domainPtr->bytesPerCylinder]);
+	blockNum = cylinderNum * blocksPerCylinder;
+	while (TRUE) {
+	    fs_Stats.alloc.cylBitmapSearches++;
+	    if (UpperBlockFree(*bitmapPtr)) {
+		mask = 0xf0;
+		break;
+	    }
+	    if (LowerBlockFree(*bitmapPtr)) {
+		mask = 0x0f;
+		blockNum++;
+		break;
+	    }
+	    bitmapPtr++;
+	    blockNum += 2;
 	}
-	if (LowerBlockFree(*bitmapPtr)) {
-	    mask = 0x0f;
-	    blockNum++;
-	    break;
+    } else {
+	/*
+	 * SKIP BLOCK allocation.
+	 * startingBlockOffset is the offset of the last allocated block, or -1
+	 * Set block to be ahead of the startingBlockOffset,
+	 * and set the bitmapPtr to the corresponding spot in the bitmap.
+	 */
+	if (startingBlockOffset >= 0) {
+	    startingBlockOffset += 1;
+	    block = startingBlockOffset + fsdm_AllocGap;
+	} else {
+	    block = 0;
+	    startingBlockOffset = blocksPerCylinder;
 	}
-	bitmapPtr++;
-	blockNum += 2;
-    }
+	bitmapPtr =
+	    &(domainPtr->dataBlockBitmap[cylinderNum * domainPtr->bytesPerCylinder
+					 + block / 2]);
+	 /*
+	 * Walk through the bitmap.  We are guaranteed from SelectCylinder that
+	 * there is a free block in this cylinder.
+	 * Each byte in the bitmap covers two 4K blocks.
+	 * The 'UpperBlock' covered by the byte is an even numbered block,
+	 * and the 'LowerBlock' is odd.
+	 */
+	for ( ; block != startingBlockOffset; block++) {
+	    fs_Stats.alloc.cylBitmapSearches++;
+	    if (block >= blocksPerCylinder) {
+		 /*
+		  * Wrap back to the beginning of the cylinder
+		  */
+		 block -= blocksPerCylinder;
+		 bitmapPtr -= domainPtr->bytesPerCylinder;
+	    }
+	    if ((block & 0x1) == 0 && UpperBlockFree(*bitmapPtr)) {
+		mask = 0xf0;
+		goto haveFreeBlock;
+	    }
+	    if ((block & 0x1) != 0 && LowerBlockFree(*bitmapPtr)) {
+		mask = 0x0f;
+		goto haveFreeBlock;
+	    }
+	    if (block & 0x1) {
+		bitmapPtr++;
+	    }
+	}
+	panic("FindBlockInt: no block\n");
+	*blockNumPtr = -1;
+	return;
 
+haveFreeBlock:
+	blockNum = cylinderNum * blocksPerCylinder + block;
+    }
     if (allocate) {
 	if (*bitmapPtr & mask) {
 	    printf("bitmap = <%x>, checkMask = <%x>\n",
