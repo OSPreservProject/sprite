@@ -329,7 +329,6 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
-    Boolean reboot = FALSE;	/* Used to control print statements at reboot */
     register state;
 
     LOCK_MONITOR;
@@ -372,7 +371,6 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
     if (hostPtr->bootID != bootID) {
 	if (hostPtr->bootID != 0) {
 	    Sys_HostPrint(spriteID, "rebooted\n");
-	    reboot = TRUE;
 	} else {
 	    /*
 	     * We initialized state before talking to the host the first time.
@@ -461,9 +459,6 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    /*
 	     * See if the host is newly booting or back from a net partition.
 	     */
-	    if ( !reboot ) {
-		Sys_HostPrint(spriteID, "is back again\n");
-	    }
 	    if (rpcNotActive) {
 		state |= RECOV_HOST_BOOTING;
 	    } else {
