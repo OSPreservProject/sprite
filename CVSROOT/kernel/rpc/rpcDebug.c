@@ -30,7 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include <fsio.h>
 
-Boolean		rpc_SanityCheck = TRUE;
+Boolean		rpc_SanityCheck = FALSE;
 
 
 
