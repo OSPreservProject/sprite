@@ -31,6 +31,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Sync_Semaphore trace_Mutex = Sync_SemInitStatic("Utils:trace_Mutex");
 
+/*
+ * Global tracing inhibit flag so it is easy to turn off all system tracing.
+ */
+Boolean trace_Disable = FALSE;
+
 
 /*
  *----------------------------------------------------------------------
@@ -113,7 +118,10 @@ Trace_Insert(traceHdrPtr, event, data)
     Trace_Record *recordPtr;
     int size;
     Timer_Ticks ticks;
-    
+
+    if (trace_Disable) {
+	return;
+    }
     MASTER_LOCK(&trace_Mutex);
     Sync_SemRegister(&trace_Mutex);
     if (traceHdrPtr == (Trace_Header *)NIL ||
@@ -180,6 +188,12 @@ Trace_Dump(traceHdrPtr, numRecs, addr)
 
     if (traceHdrPtr == (Trace_Header *) NIL) {
 	printf("Trace_Dump: trace buffer not initialized.\n");
+	numRecs = 0;
+	status = Vm_CopyOut(sizeof(int), (Address) &numRecs, addr);
+	return(status);
+    }
+    if (trace_Disable) {
+	printf("Trace_Dump: all tracing disabled.\n");
 	numRecs = 0;
 	status = Vm_CopyOut(sizeof(int), (Address) &numRecs, addr);
 	return(status);
@@ -310,6 +324,12 @@ Trace_Print(traceHdrPtr, numRecs, printProc)
     Time deltaTime;		/* Time difference between trace records */
     Time baseTime;		/* Used to calculate deltaTime */
     Trace_Record *recordPtr;
+
+    if (trace_Disable) {
+	(*printProc)((ClientData *)NIL, TRUE);
+	printf("All Tracing Disabled.\n");
+	return SUCCESS;
+    }
 
     MASTER_LOCK(&trace_Mutex);
     traceHdrPtr->flags |= TRACE_INHIBIT;
