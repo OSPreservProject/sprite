@@ -33,6 +33,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <vm.h>
 #include <dbg.h>
+#include <fsrecov.h>
+#include <recov.h>
 
 int FsrmtRpcCacheUnlockBlock _ARGS_((ClientData clientData));
 
@@ -216,6 +218,8 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
     int			(*callBack) _ARGS_((ClientData));
 				/* Call back to clean up after RPC */
     ClientData		clientData;	/* Client data for callBack */
+    FsioStreamClient	*clientPtr;
+    Fsrecov_HandleState	recovInfo;
 
     callBack = (int(*)()) NIL;
     clientData = (ClientData) NIL;
@@ -293,6 +297,32 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	}
 	if (streamPtr != (Fs_Stream *)NIL) {
 	    streamPtr->offset = paramsPtr->io.offset + lengthRead;
+	    /*
+	     * Update shared offset for stream in recov box, for each
+	     * client's copy, if it's there.
+	     */
+	    if (recov_Transparent && streamPtr->flags & FS_RMT_SHARED) {
+		LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
+		    if (fsrecov_DebugLevel >= 2) {
+			printf("Fsrmt_RpcRead: attempting to update shared ");
+			printf("offset for stream %d.%d.%d.%d, client %d\n",
+				paramsPtr->streamID.type,
+				paramsPtr->streamID.serverID,
+				paramsPtr->streamID.major,
+				paramsPtr->streamID.minor, clientPtr->clientID);
+		    }
+		    if (Fsrecov_GetHandle(paramsPtr->streamID,
+			    clientPtr->clientID,
+			    &recovInfo, FALSE) == SUCCESS) {
+			recovInfo.clientData = streamPtr->offset;
+			if (Fsrecov_UpdateHandle(paramsPtr->streamID,
+				clientPtr->clientID, &recovInfo) != SUCCESS) {
+			    panic(
+			"Fsrmt_RpcRead: couldn't update recov shared offset");
+			}
+		    }
+		}
+	    }
 	    Fsutil_HandleLock(streamPtr);
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	}
@@ -315,6 +345,32 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	    status = (fsio_StreamOpTable[hdrPtr->fileID.type].read)(streamPtr,
 			    &paramsPtr->io, &paramsPtr->waiter, replyPtr);
 	    streamPtr->offset = paramsPtr->io.offset + replyPtr->length;
+	    /*
+	     * Update shared offset for stream in recov box, for each
+	     * client's copy, if it's there.
+	     */
+	    if (recov_Transparent && streamPtr->flags & FS_RMT_SHARED) {
+		LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
+		    if (fsrecov_DebugLevel >= 2) {
+			printf("Fsrmt_RpcRead: attempting to update shared ");
+			printf("offset for stream %d.%d.%d.%d, client %d\n",
+				paramsPtr->streamID.type,
+				paramsPtr->streamID.serverID,
+				paramsPtr->streamID.major,
+				paramsPtr->streamID.minor, clientPtr->clientID);
+		    }
+		    if (Fsrecov_GetHandle(paramsPtr->streamID,
+			    clientPtr->clientID,
+			    &recovInfo, FALSE) == SUCCESS) {
+			recovInfo.clientData = streamPtr->offset;
+			if (Fsrecov_UpdateHandle(paramsPtr->streamID,
+				clientPtr->clientID, &recovInfo) != SUCCESS) {
+			    panic(
+			"Fsrmt_RpcRead: couldn't update recov shared offset");
+			}
+		    }
+		}
+	    }
 	    Fsutil_HandleLock(streamPtr);
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	}

@@ -369,7 +369,7 @@ Fsrmt_IOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     }
     return(status);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -405,8 +405,12 @@ FsrmtDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
      * Set up reopen parameters.  fileID must be first in order
      * to use the generic FsrmtReopen/Fsrmt_RpcReopen stubs.
      */
+    if (handlePtr->recovery.use.ref == 0) {
+	return SUCCESS;
+    }
     reopenParams.fileID = handlePtr->hdr.fileID;
     reopenParams.use = handlePtr->recovery.use;
+
 
     outSize = 0;
     status = FsrmtReopen(hdrPtr, sizeof(reopenParams),

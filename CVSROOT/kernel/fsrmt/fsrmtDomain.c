@@ -1,5 +1,5 @@
 /* 
- * fsSpriteDomain.c --
+ * fsrmtDomain.c --
  *
  *	This has the stubs for remote naming operations in a Sprite domain.
  *	These routines are presented in pairs, the client stub followed
@@ -266,8 +266,9 @@ FsrmtOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     char 	  *relativeName;	/* The name of the file to open. */
     Address 	  argsPtr;		/* Ref. to Fs_OpenArgs */
     Address 	  resultsPtr;		/* Ref. to Fs_OpenResults */
-    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
-					 * its domain during the lookup. */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* We return this if
+						 * the server leaves 
+						 * its domain during lookup. */
 {
     ReturnStatus	status;
     Fs_OpenResults	*openResultsPtr = (Fs_OpenResults *)resultsPtr;
@@ -784,6 +785,10 @@ Fsrmt_RpcClose(srvToken, clientID, command, storagePtr)
 	}
     }
 exit:
+    /* XXX
+     * For transparent recovery, maybe we should do something here to make
+     * sure server and client agree on state?
+     */
     /*
      * Send back the reply.
      */
@@ -1504,4 +1509,3 @@ FsrmtHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 		     	    prefixHandle2, relativeName2, lookupArgsPtr, 
 			    newNameInfoPtrPtr, name1ErrorPtr));
 }
-
