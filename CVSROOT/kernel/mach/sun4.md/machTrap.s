@@ -72,12 +72,7 @@ MachWindowOverflow:
 	restore				/* move back to trap window */
 	mov	%l3, %g3		/* restore global registers */
 	mov	%l4, %g4
-#ifdef NOTDEF
-	/* clear used locals and outs? */
-	MACH_CLEAR_WINDOW()
-#endif /* NOTDEF */
 	/* jump to return from trap routine */
-	/* Phooey - use up a clean register */
 	set	_MachReturnFromTrap, %l3
 	jmp	%l3
 	nop
@@ -135,15 +130,8 @@ MachWindowUnderflow:
 	MACH_RESTORE_WINDOW_FROM_STACK()
 	/* Move back to trap window with 2 saves.  Clear registers too??? */
 	save
-#ifdef NOTDEF
-	MACH_CLEAR_WINDOW()
-#endif /* NOTDEF */
 	save
-#ifdef NOTDEF
-	MACH_CLEAR_WINDOW()
-#endif /* NOTDEF */
 	/* jump to return from trap routine */
-	/* Phooey - use a clean register */
 	set	_MachReturnFromTrap, %l3
 	jmp	%l3
 	nop
@@ -210,9 +198,6 @@ _MachTrap:
 .globl	_MachReturnFromTrap
 _MachReturnFromTrap:
 	/* restore psr and re-enable traps. */
-#ifdef NOTDEF
-	or	%l0, MACH_ENABLE_TRAP_BIT, %l0
-#endif /* NOTDEF */
 	mov	%l0, %psr
 	jmp	%l1
 	rett	%l2
