@@ -515,7 +515,7 @@ FsLocalRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 ReturnStatus
 FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
-			lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr)
+	    lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
     FsHandleHeader	*prefixHandle1;	/* Token from the prefix table */
     char		*relativeName1;	/* The new name of the file. */
     FsHandleHeader	*prefixHandle2;	/* Token from the prefix table */
@@ -525,13 +525,16 @@ FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 						 * leaves its domain during
 						 * lookup. */
     Boolean		*name1redirectPtr;	/* TRUE if newNameInfoPtr is
-						 * for first name */
+						 * for the first name */
+    Boolean		*name1StalePtr;		/* TRUE if stale handle error
+						 * is for the first name */
 {
     ReturnStatus status;
 
     lookupArgsPtr->useFlags = FS_LINK | FS_RENAME;
     status = FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2,
-	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr);
+	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr,
+	    name1StalePtr);
     if (status == SUCCESS) {
 	lookupArgsPtr->useFlags = FS_DELETE | FS_RENAME;
 	status = FsLocalRemove(prefixHandle1, relativeName1, 
@@ -557,7 +560,7 @@ FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
  */
 ReturnStatus
 FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
-			lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr)
+	    lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
     FsHandleHeader	*prefixHandle1;	/* Token from the prefix table */
     char		*relativeName1;	/* The new name of the file. */
     FsHandleHeader	*prefixHandle2;	/* Token from the prefix table */
@@ -568,13 +571,20 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 						 * lookup. */
     Boolean		*name1redirectPtr;	/* TRUE if newNameInfoPtr is
 						 * for first name */
+    Boolean		*name1StalePtr;		/* TRUE if prefixHandle1
+						 * is stale, else second
+						 * prefix is stale. */
 {
     ReturnStatus status;
     FsLocalFileIOHandle *handle1Ptr;
     FsLocalFileIOHandle *handle2Ptr;
 
     *name1redirectPtr = FALSE;
+    *name1StalePtr = FALSE;
 
+    /*
+     * This lookup gets a locked handle on the (presumably) existing file.
+     */
     status = FsLocalLookup(prefixHandle1, relativeName1,
 	   lookupArgsPtr->useFlags & FS_FOLLOW, FS_FILE,
 	   lookupArgsPtr->clientID, &lookupArgsPtr->id,
@@ -582,23 +592,35 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     if (status != SUCCESS) {
 	if (status == FS_LOOKUP_REDIRECT) {
 	    *name1redirectPtr = TRUE;
+	} else if (status = FS_STALE_HANDLE) {
+	    *name1StalePtr = TRUE;
 	}
 	return(status);
     }
     FsHandleUnlock(handle1Ptr);
-    /*
-     * This lookup does the linking.  If our caller has set FS_RENAME in
-     * lookupArgsPtr->useFlags then directories can be linked.  Handle1
-     * is unlocked because the linking will end up locking it again.
-     * The result of a successful return from this call is that
-     * both handle1 and handle2 reference the same handle, and that
-     * handle is locked.
-     */
-    status = FsLocalLookup(prefixHandle2, relativeName2,
-	    lookupArgsPtr->useFlags, handle1Ptr->descPtr->fileType,
-	    lookupArgsPtr->clientID,
-	    &lookupArgsPtr->id, 0, handle1Ptr->hdr.fileID.minor,
-	    (FsLocalFileIOHandle **)&handle2Ptr, newNameInfoPtrPtr);
+    if (prefixHandle2 == (FsHandleHeader *)NIL ||
+	prefixHandle2->fileID.major != prefixHandle1->fileID.major) {
+	/*
+	 * The second pathname which isn't in our domain.  We have
+	 * been called in this case to see if the first pathname would
+	 * redirect away from us, but it didn't.
+	 */
+	status = FS_CROSS_DOMAIN_OPERATION;
+    } else {
+	/*
+	 * This lookup does the linking.  If our caller has set FS_RENAME in
+	 * lookupArgsPtr->useFlags then directories can be linked.  Handle1
+	 * is unlocked because the linking will end up locking it again.
+	 * The result of a successful return from this call is that
+	 * both handle1 and handle2 reference the same handle, and that
+	 * handle is locked.
+	 */
+	status = FsLocalLookup(prefixHandle2, relativeName2,
+		lookupArgsPtr->useFlags, handle1Ptr->descPtr->fileType,
+		lookupArgsPtr->clientID,
+		&lookupArgsPtr->id, 0, handle1Ptr->hdr.fileID.minor,
+		(FsLocalFileIOHandle **)&handle2Ptr, newNameInfoPtrPtr);
+    }
     if (status == SUCCESS) {
 	FsHandleRelease(handle2Ptr, TRUE);
 	FsDomainRelease(handle2Ptr->hdr.fileID.major);
