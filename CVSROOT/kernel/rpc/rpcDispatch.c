@@ -132,9 +132,11 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 		    rpcHdrPtr->clientID,
 		    "I'll report no more version mismatches for a while.");
 		mismatchErrors++;
+		printf("Resetting network interface\n");
+		Net_Reset();
 	    } else {
 		mismatchErrors++;
-		if (mismatchErrors > 5000) {
+		if (mismatchErrors > 100) {
 		    mismatchErrors = 0;
 		}
 	    }
@@ -150,20 +152,23 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 				  packetLength, expectedLength);
 	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
 		    rpcHdrPtr->clientID, rpcHdrPtr->command);
-	badErrors++;
-	if (badErrors > 4) {
-	    printf("Resetting network interface\n");
-	    badErrors = 0;
-	    Net_Reset();
-	}
+	printf("Resetting network interface\n");
+	Net_Reset();
 	return;
     } else if (packetLength > expectedLength &&
 	       packetLength > (NET_ETHER_MIN_BYTES)) {
 	/*
 	 * Short messages (like acks and null replies)
-	 * get padded to minimum ethernet length.
+	 * get padded to minimum ethernet length.  Other messages
+	 * get padded to 4 byte alignments.
 	 */
 	rpcCltStat.longs++;
+	if (packetLength > NET_ETHER_MAX_BYTES) {
+	    printf("Received oversized packet\n");
+	    printf("Resetting network interface\n");
+	    Net_Reset();
+	    return;
+	}
     }
 
     RPC_TRACE(rpcHdrPtr, RPC_INPUT, "Input");
@@ -195,13 +200,9 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 		printf("Rpc_Dispatch: junk serverID %d from client %d\n",
 			    rpcHdrPtr->serverID,
 			    rpcHdrPtr->clientID);
-		badErrors++;
-		if (badErrors > 4) {
-		    printf("Resetting network interface\n");
-		    badErrors = 0;
-		    Net_Reset();
-		}
 	    }
+	    printf("Resetting network interface\n");
+	    Net_Reset();
 	    return;
 	}
 
@@ -240,12 +241,8 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	    rpcCltStat.badChannel++;
 	    printf("Rpc_Dispatch: bad channel %d from clt %d rpc %d",
 	       rpcHdrPtr->channel, rpcHdrPtr->clientID, rpcHdrPtr->command);
-	    badErrors++;
-	    if (badErrors > 4) {
-		printf("Resetting network interface\n");
-		badErrors = 0;
-		Net_Reset();
-	    }
+	    printf("Resetting network interface\n");
+	    Net_Reset();
 	} else {
 	    /*
 	     * Save sender's requested interfragment delay,
