@@ -424,4 +424,129 @@ Fixed a bug in Fs_ReadLinkStub that was a result of a previous bug fix...
 Temporary paranoia checks for Proc_StringNCopy.
 increased size of kernel heap
 
+
+1.096	Sat Jun 29 19:30:04 PDT 1991
+dbg:
+Took out the disk sync code for panics, since it wasn't working and was
+causing the machine to pop out of the debugger.
+
+devSCSIDisk.c:
+Converted Sys_DiskStats to be sector rather than request count.
+
+devSCSITape.c:
+Removed bogus ifdef GOOD line that limited transfer sizes to 1k.
+
+devScsiTapeConfig.c:
+Added DevExabyteAttach and DevEmulexAttach.
+
+devTtyAttach.c:
+added Dean Long's patch to support new prom on sun4c when determining
+console type
+
+fsCommand.c:
+Added DO_L1_COMMAND support
+Fixed infinite recovery loop due to stale prefixes.
+
+fsInit.c:
+Fixed infinite recovery loop due to stale prefixes.
+
+fsPageOps.c:
+Added new counters.
+
+fsStreamOps.c:
+Added new counters.
+Allow execution of PFS files
+
+fsSysCall.c:
+Fixed a bug in Fs_ReadLinkStub for accesing user buffer.
+
+fscacheBlocks.c:
+Patch code we unmounts of LFS work.
+
+fslclLookup.c:
+Patch incorrect block offset for dir change log.
+
+1) Added code to delete the hash table entry for a directory when the
+    name is deleted.  Previous, the code deleted the entry when the
+    inode for the directory was delete. This left garbage in the
+    hash table for directories that were delete while open.
+2) Added code to FindComponent to handle the case when ".." of a directory
+    has been deleted.
+
+fspdevOps.c, fspdevPfs.c, fspdevSetup.c, fspdevSrv.c:
+Allow execution of PFS files
+
+fsprefixOps.c:
+Fixed infinite recovery loop due to stale prefixes.
+
+fsrmtDomain.c:
+Fixed infinite recovery loop due to stale prefixes.
+
+fsrmtFile.c:
+More counters.
+
+lfsBlockIO.c:
+Added code to stall allocates until enough clean segments are available.
+
+lfsDesc.c:
+Added code to synchronize truncate with write back. This is needed because
+both modified the file index and one is trying to remove it from
+the cache.
+
+lfsFileLayout.c:
+Added code to update the segments timeOfLastWrite we files are added.
+
+lfsMain.c:
+Added count of number of dirty block in file cache.
+
+lfsSeg.c, lfsSegUsage.c:
+Added new interface between SegUsage and Seg to handle sorting of
+segments to clean.  Added code to wait for enough clean segments
+before allocate.
+
+procMach.c:
+Added check so profiled sun4 code gets counted as sprite, not unix.
+
+procMigrate.c:
+When deencapsulating process state, check whether the process is
+marked as unmigratable.  Proc_IsMigratedProc renamed to
+Proc_IsEvictable.
+
+procRemote.c:
+Add debugging check at exit time for foreign processes that are marked
+as unmigratable.
+
+procRpc.c:
+Temporary paranoia checks for Proc_StringNCopy.
+Proc_IsMigratedProcess renamed to Proc_UseRpcBuffer.  Change
+Proc_StringNCopy so that it checks Proc_UseRpcBuffer and calls
+Vm_StringNCopy if necessary.  Some tweaks to comments.
+
+procTable.c:
+Add comment that ProcGetUnusedPCB returns a locked PCB.
+
+profSubr.c:
+Proc_StringNCopy now checks Proc_IsMigratedProcess and calls
+Vm_StringNCopy if necessary.
+
+sysCalls.c:
+New return code for different-sized stats.
+Fixed GetDiskStats not to use Vm_CopyOut so we wont get page faults
+while under MASTER_LOCKS().
+
+vmSeg.c:
+Use Proc_GetCurrentProc() instead of referring directly to
+proc_RunningProcesses.
+
+vmSun.c:
+Fixing a problem where we try to map pages for too many pmegs.
+
+Changed kernel size for sun4 and sun4c - It's now 40 Meg!
+
+vmSysCall.c:
+tried to fix it so that the hole in the ds vm wasn't included in the
+count of kernel pages
+
+ds5000.md/mainInit.c:
+Fixed initialization of variables.
     New files linked in from the net library.
