@@ -22,102 +22,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "stdio.h"
-#include "dev.h"
-#include "scsi.h"
-#include "scsiTape.h"
-#include "scsiDevice.h"
-#include "stdlib.h"
-#include "fs.h"
-#include "exabyteTape.h"
-#include "string.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <dev.h>
+#include <sys/scsi.h>
+#include <scsiTape.h>
+#include <scsiDevice.h>
+#include <stdlib.h>
+#include <fs.h>
+#include <exabyteTape.h>
+#include <string.h>
+#include <dev/exabyte.h>
 
 /*
  * The Exabyte drives have 1K blocks.
  */
 #define EXABYTE_BLOCK_SIZE	1024
-
-/*
- * Sense data returned from the Exabyte tape controller.
- */
-#define EXABYTE_SENSE_BYTES	26
-typedef struct {
-    ScsiClass7Sense	extSense;	/* 8 Bytes */
-    unsigned char pad8;			/* Reserved */
-    unsigned char pad;			/* Reserved */
-    unsigned char pad10;		/* Reserved */
-    unsigned char pad11;		/* Reserved */
-    /*
-     * SCSI 2 support.
-     */
-    unsigned char senseCode;		/* 0x4 if sense key is NOT_READY */
-    unsigned char senseCodeQualifier;	/* 00 - volume not mounted.
-					 * 01 - rewinding or loading */
-    unsigned char pad14;		/* Reserved */
-    unsigned char pad15;		/* Reserved */
-    unsigned char highErrorCnt;		/* High byte of error count */
-    unsigned char midErrorCnt;		/* Middle byte of error count */
-    unsigned char lowErrorCnt;		/* Low byte of error count */
-    /*
-     * Error bits that are command dependent.  0 is ok, 1 means error.
-     * These are defined on pages 37-38 of the User Manual, Rev.03
-     */
-#if BYTE_ORDER == BIG_ENDIAN
-    unsigned char PF		:1;	/* Power failure */
-    unsigned char BPE		:1;	/* SCSI Bus Parity Error */
-    unsigned char FPE		:1;	/* Formatted buffer parity error */
-    unsigned char ME		:1;	/* Media error */
-    unsigned char ECO		:1;	/* Error counter overflow */
-    unsigned char TME		:1;	/* Tape motion error */
-    unsigned char TNP		:1;	/* Tape not present */
-    unsigned char BOT		:1;	/* Set when tape is at BOT */
-
-    unsigned char XFR		:1;	/* Transfer Abort Error */
-    unsigned char TMD		:1;	/* Tape Mark Detect Error */
-    unsigned char WP		:1;	/* Write Protect */
-    unsigned char FMKE		:1;	/* File Mark Error */
-    unsigned char URE		:1;	/* Data flow underrun. Media error. */
-    unsigned char WE1		:1;	/* Max write retries attempted */
-    unsigned char SSE		:1;	/* Servo System error.  Catastrophic */
-    unsigned char FE		:1;	/* Formatter error.  Catastrophic */
-
-    unsigned char pad21		:6;	/* Reserved */
-    unsigned char WSEB		:1;	/* Write Splice Error, hit blank tape */
-    unsigned char WSEO		:1;	/* Write Splice Error, overshoot */
-#else /* BYTE_ORDER == LITTLE_ENDIAN */
-
-    unsigned char BOT		:1;	/* Set when tape is at BOT */
-    unsigned char TNP		:1;	/* Tape not present */
-    unsigned char TME		:1;	/* Tape motion error */
-    unsigned char ECO		:1;	/* Error counter overflow */
-    unsigned char ME		:1;	/* Media error */
-    unsigned char FPE		:1;	/* Formatted buffer parity error */
-    unsigned char BPE		:1;	/* SCSI Bus Parity Error */
-    unsigned char PF		:1;	/* Power failure */
-
-    unsigned char FE		:1;	/* Formatter error.  Catastrophic */
-    unsigned char SSE		:1;	/* Servo System error.  Catastrophic */
-    unsigned char WE1		:1;	/* Max write retries attempted */
-    unsigned char URE		:1;	/* Data flow underrun. Media error. */
-    unsigned char FMKE		:1;	/* File Mark Error */
-    unsigned char WP		:1;	/* Write Protect */
-    unsigned char TMD		:1;	/* Tape Mark Detect Error */
-    unsigned char XFR		:1;	/* Transfer Abort Error */
-
-    unsigned char WSEO		:1;	/* Write Splice Error, overshoot */
-    unsigned char WSEB		:1;	/* Write Splice Error, hit blank tape */
-    unsigned char pad21		:6;	/* Reserved */
-
-#endif /* BYTE_ORDER */
-
-    unsigned char pad22;		/* Reserved */
-    unsigned char highRemainingTape;	/* High byte of remaining tape len */
-    unsigned char midRemainingTape;	/* Middle byte of remaining tape len */
-    unsigned char lowRemainingTape;	/* Low byte of remaining tape len */
-
-} ExabyteSense;				/* Known to be 26 Bytes big (for
-					 * Drives made in/after 1988) */
 
 
 /*
@@ -189,8 +109,58 @@ typedef struct ExabyteModeSelParams {
 					 * SCSI bus. */
 } ModeSelParams;
 
-static ReturnStatus ExabyteError _ARGS_((ScsiTape *tapePtr, 
-	unsigned int statusByte, int senseLength, char *senseDataPtr));
+
+/*
+ * Parameter list header returned by mode sense.
+ */
+
+typedef struct {
+#if BYTE_ORDER == BIG_ENDIAN
+    unsigned char modeDataLen;		/* Size of mode parameter data. */
+    unsigned char mediumType;		/* Type of medium. */
+    unsigned char writeProtect  :1; 	/* Write protect. */
+    unsigned char bufferedMode  :3;   	/* Buffered mode. */
+    unsigned char speed		:4;	/* Speed. */
+    unsigned char blockDescLen;		/* Block descriptor length. */
+#else
+    unsigned char modeDataLen;		/* Size of mode parameter data. */
+    unsigned char mediumType;		/* Type of medium. */
+    unsigned char speed		:4;	/* Speed. */
+    unsigned char bufferedMode  :3;   	/* Buffered mode. */
+    unsigned char writeProtect  :1; 	/* Write protect. */
+    unsigned char blockDescLen;		/* Block descriptor length. */
+#endif
+} ParamListHeader;
+
+/*
+ * Block descriptor returned by mode sense.
+ */
+
+typedef struct {
+    unsigned char	density;	/* Density code. */
+    unsigned char	num2;		/* MSB of number of blocks. */
+    unsigned char	num1;		/* ... */
+    unsigned char	num0;		/* LSB of number of blocks. */
+    unsigned char	pad0;		/* Reserved. */
+    unsigned char	len2;		/* MSB of block length. */
+    unsigned char	len1;		/* ... */
+    unsigned char	len0;		/* LSB of block length. */
+} BlockDesc;
+
+/*
+ * Exabyte 8500 Inquiry data.
+ */
+
+typedef struct {
+    ScsiInquiryData	stdData;
+    char		padding[52];
+    char		serial[10];
+} Exb8500Inquiry;
+
+static ReturnStatus ExabyteError _ARGS_((ScsiDevice *devPtr,
+	ScsiCmd *scsiCmdPtr));
+ReturnStatus DevExabyteStatus _ARGS_((ScsiTape *tapePtr, 
+	Dev_TapeStatus *statusPtr));
 
 
 /*
@@ -231,14 +201,17 @@ DevExabyteAttach(devicePtr, devPtr, tapePtr)
      * vendor unique bits on error.
      */
     tapePtr->blockSize = EXABYTE_BLOCK_SIZE;
-    tapePtr->errorProc = ExabyteError;
-    if (!(strncmp((char *)(inquiryPtr->productID), "EXB-8200",8))) {
+    devPtr->errorProc = ExabyteError;
+    if (!(strncmp((char *) inquiryPtr->productID, "EXB-8200",8))) {
 	tapePtr->name = "Exabyte 8200";
-    } else if (!(strncmp((char *)(inquiryPtr->productID), "EXB-8500",8))) {
+	tapePtr->type = DEV_TAPE_EXB8200;
+    } else if (!(strncmp((char *) inquiryPtr->productID, "EXB-8500",8))) {
 	tapePtr->name = "Exabyte 8500";
+	tapePtr->type = DEV_TAPE_EXB8500;
     } else {
 	tapePtr->name = "Exabyte UNKNOWN";
     }
+    tapePtr->statusProc = DevExabyteStatus;
     return SUCCESS;
 }
 
@@ -258,17 +231,16 @@ DevExabyteAttach(devicePtr, devPtr, tapePtr)
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-ExabyteError(tapePtr, statusByte, senseLength, senseDataPtr)
-    ScsiTape	 *tapePtr;	/* SCSI Tape that's complaining. */
-    unsigned int statusByte;	/* The status byte of the command. */
-    int		 senseLength;	/* Length of SCSI sense data in bytes. */
-    char	 *senseDataPtr;	/* Sense data. */
+ExabyteError(devPtr, scsiCmdPtr)
+    ScsiDevice	 *devPtr;	/* SCSI device that's complaining. */
+    ScsiCmd	*scsiCmdPtr;	/* SCSI command that had the problem. */
 {
     ReturnStatus status;
-    register volatile ExabyteSense *exabyteSensePtr =
-        (volatile ExabyteSense *)senseDataPtr;
+    register volatile Exb8200Sense *exabyteSensePtr =
+        (volatile Exb8200Sense *) scsiCmdPtr->senseBuffer;
+    Exb8500Sense *newSensePtr;
 
-    status = DevSCSITapeError(tapePtr, statusByte, senseLength, senseDataPtr);
+    status = DevSCSITapeError(devPtr, scsiCmdPtr);
     if (status == SUCCESS) {
 	return status;
     }
@@ -323,5 +295,116 @@ ExabyteError(tapePtr, statusByte, senseLength, senseDataPtr)
     if (exabyteSensePtr->FE) {
 	printf("Warning: Exabyte Formatter error, catastrophic failure!\n");
     }
+    if (scsiCmdPtr->senseLen == sizeof(Exb8500Sense)) {
+	newSensePtr = (Exb8500Sense *) exabyteSensePtr;
+	printf("EXB8500 Fault Symptom Code = 0x%x\n", newSensePtr->faultCode);
+    }
     return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevExabyteStatus --
+ *
+ *	Fill in some of the fields in the status structure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Some scsi commands are sent to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+DevExabyteStatus(tapePtr, statusPtr)
+    ScsiTape	 *tapePtr;		/* SCSI Tape */
+    Dev_TapeStatus	*statusPtr;	/* Status to fill in. */
+{
+    ReturnStatus	status = SUCCESS;
+    int			size;
+    union {
+	Exb8200Sense	sense8200;
+	Exb8500Sense	sense8500;
+    } sense;
+
+    size = sizeof(sense);
+    bzero((char *) &sense, size);
+    status = DevScsiRequestSense(tapePtr->devPtr, 0, 0, &size, 
+	    (char *) &sense);
+    if (status != SUCCESS) {
+	goto done;
+    }
+    if (tapePtr->type == DEV_TAPE_EXB8200) {
+	Exb8200Sense	*sensePtr;
+	int		bufSize;
+	ParamListHeader	header;
+	BlockDesc	desc;
+	char		buffer[16];
+	if (size != sizeof(Exb8200Sense)) {
+	    status = FAILURE;
+	    goto done;
+	}
+	sensePtr = &sense.sense8200;
+	statusPtr->remaining = 
+		(sensePtr->highRemainingTape << 16) |
+		(sensePtr->midRemainingTape << 8) |
+		(sensePtr->lowRemainingTape);
+	statusPtr->dataError = 
+		(sensePtr->highErrorCnt << 16) |
+		(sensePtr->midErrorCnt << 8) |
+		(sensePtr->lowErrorCnt);
+	bufSize = sizeof(buffer);
+	status = DevScsiModeSense(tapePtr->devPtr, 0, 0, 0, 0, &bufSize, 
+			buffer);
+	if (status != SUCCESS) {
+	    goto done;
+	}
+	bcopy((char *) buffer, (char *) &header, sizeof(header));
+	bcopy((char *) buffer + sizeof(header), (char *) &desc, sizeof(desc));
+	statusPtr->writeProtect = (header.writeProtect) ? TRUE : FALSE;
+	statusPtr->bufferedMode = header.bufferedMode;
+	statusPtr->serial[0] = '\0';
+    } else if (tapePtr->type == DEV_TAPE_EXB8500) {
+	Exb8500Sense	*sensePtr;
+	int		bufSize;
+	ParamListHeader	header;
+	BlockDesc	desc;
+	Exb8500Inquiry	*inqPtr;
+	char		buffer[sizeof(ParamListHeader) + sizeof(BlockDesc)];
+	if (size != sizeof(Exb8500Sense)) {
+	    status = FAILURE;
+	    goto done;
+	}
+	sensePtr = &sense.sense8500;
+	statusPtr->remaining = 
+		(sensePtr->highRemainingTape << 16) |
+		(sensePtr->midRemainingTape << 8) |
+		(sensePtr->lowRemainingTape);
+	statusPtr->dataError = 
+		(sensePtr->highErrorCnt << 16) |
+		(sensePtr->midErrorCnt << 8) |
+		(sensePtr->lowErrorCnt);
+	statusPtr->readWriteRetry = sensePtr->readWriteRetry;
+	statusPtr->trackingRetry = sensePtr->trackingRetry;
+	bufSize = sizeof(buffer);
+	status = DevScsiModeSense(tapePtr->devPtr, 0, 0, 0, 0, &bufSize, 
+			buffer);
+	if (status != SUCCESS) {
+	    goto done;
+	}
+	bcopy((char *) buffer, (char *) &header, sizeof(header));
+	bcopy((char *) buffer + sizeof(header), (char *) &desc, sizeof(desc));
+	statusPtr->writeProtect = (header.writeProtect) ? TRUE : FALSE;
+	statusPtr->bufferedMode = header.bufferedMode;
+	statusPtr->speed = header.speed;
+	statusPtr->density = desc.density;
+	inqPtr = (Exb8500Inquiry *) tapePtr->devPtr->inquiryDataPtr;
+	bcopy(inqPtr->serial, statusPtr->serial, sizeof(statusPtr->serial));
+	statusPtr->serial[10] = '\0';
+    }
+done:
+    return status;
 }
