@@ -875,11 +875,17 @@ PrefixUpdate(prefixPtr, serverID, hdrPtr, domainType, flags)
     } else {
 	prefixPtr->serverID	= serverID;
     }
-    prefixPtr->hdrPtr		= hdrPtr;
-    prefixPtr->domainType	= domainType;
-    prefixPtr->flags		= flags;
-    prefixPtr->delayOpens	= FALSE;
-    prefixPtr->activeOpens	= 0;
+    if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
+	(hdrPtr == (FsHandleHeader *)NIL)) {
+	printf("PrefixUpdate: \"%s\" almost lost its handle\n",
+	    prefixPtr->prefix);
+    } else {
+	prefixPtr->hdrPtr	= hdrPtr;
+	prefixPtr->domainType	= domainType;
+	prefixPtr->flags	= flags;
+	prefixPtr->delayOpens	= FALSE;
+	prefixPtr->activeOpens	= 0;
+    }
     return;
 }
 
@@ -1300,6 +1306,7 @@ FsPrefixHandleCloseInt(prefixPtr, flags)
 		    prefixPtr->prefix);
 	    return;
 	}
+	printf("FsPrefixHandleClose nuking \"%s\"\n", prefixPtr->prefix);
 	hdrPtr = prefixPtr->hdrPtr;
 	prefixPtr->hdrPtr = (FsHandleHeader *)NIL;
 	FsHandleLock(hdrPtr);
