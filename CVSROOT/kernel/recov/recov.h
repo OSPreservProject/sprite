@@ -209,6 +209,13 @@ extern Recov_Stats recov_Stats;
  * TRUE if we're using transparent server recovery.
  */
 extern	Boolean		recov_Transparent;
+/*
+ * TRUE if we want a client to ignore the fact that a server can do transparent
+ * recovery.  If the client ignores this, this means it sends reopen requests
+ * even though it doesn't have to.  (In this case, the server will check
+ * the client's info against what it has stored in its recovery box.)
+ */
+extern	Boolean		recov_ClientIgnoreTransparent;
 
 extern void 	Recov_Init _ARGS_((void));
 extern void 	Recov_CrashRegister _ARGS_((void (*crashCallBackProc)(), ClientData crashData));
