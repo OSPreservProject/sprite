@@ -96,20 +96,20 @@
 	\
 	clrl	_mach_AtInterruptLevel ; \
 	tstl	_mach_KernelMode; \
-	bne	1$; \
+	bne	1f; \
 	\
 	movl	_proc_RunningProcesses, a0; \
 	movl	a0@, a1; \
 	movl	_machSpecialHandlingOffset, d1;\
 	tstl	a1@(0,d1:l); \
-	beq	1$; \
+	beq	1f; \
 	\
 	clrl	a1@(0,d1:l); \
 	movw	sp@(INTR_SR_OFFSET), d0; \
 	orw	#MACH_SR_TRACEMODE, d0; \
 	movw	d0, sp@(INTR_SR_OFFSET); \
 	\
-1$:	moveml	sp@+, #0x0303; \
+1:	moveml	sp@+, #0x0303; \
     	rte ;
 
 /*
@@ -143,8 +143,30 @@
 
 #ifdef sun3
 #define BUS_ERROR_MOVS movsb
+#define SAVE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET) \
+        tstw        fpu_present; \
+	beq         1f; \
+	fsave       a0@(FP_STATE_OFFSET); \
+	tstb        a0@(FP_STATE_OFFSET); \
+	beq         1f; \
+	fmovem      #0xff, a0@(FP_REGS_OFFSET); \
+	fmovem      fpc/fps/fpi, a0@(FP_CTRL_REGS_OFFSET); \
+1:
+
+#define RESTORE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)\
+        tstw        fpu_present; \
+	beq         2f; \
+	frestore    a0@(FP_STATE_OFFSET); \
+	tstb        a0@(FP_STATE_OFFSET); \
+	beq         2f; \
+	fmovem      a0@(FP_REGS_OFFSET), #0xff; \
+	fmovem      a0@(FP_CTRL_REGS_OFFSET), fpc/fps/fpi; \
+2:
+
 #else 
 #define BUS_ERROR_MOVS movsw
+#define SAVE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)
+#define RESTORE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)
 #endif
 
 #define CallTrapHandler(type) \
@@ -152,7 +174,7 @@
 	movl	d0, sp@-; \
 	movw	sp@(4), d0; \
 	andl	#MACH_SR_SUPSTATE, d0; \
-	beq	9$; \
+	beq	9f; \
 	movl	sp@+, d0; \
 	moveml	#0xC0C0, sp@-; \
 	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG, d0; \
@@ -161,9 +183,9 @@
         jsr 	_MachTrap; \
 	jra	MachReturnFromKernTrap; \
 	\
-9$:   movl	sp@+, d0; \
+9:   movl	sp@+, d0; \
 	cmpl	#0xffffffff, _machCurStatePtr; \
-	bne	8$; \
+	bne	8f; \
 	\
 	subl	#16, sp; \
 	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
@@ -171,9 +193,11 @@
 	movl	#type, sp@-; \
 	jra	_Dbg_Trap; \
 	\
-8$:	movl	a0, sp@-; \
+8:	movl	a0, sp@-; \
 	movl	_machCurStatePtr, a0; \
 	moveml	#0x7fff, a0@(MACH_TRAP_REGS_OFFSET); \
+	SAVE_FP_STATE(MACH_TRAP_FP_STATE_OFFSET, \
+	    MACH_TRAP_FP_REGS_OFFSET, MACH_TRAP_FP_CTRL_REGS_OFFSET) \
 	movl	sp@+, a0@(MACH_TRAP_REGS_OFFSET + 32); \
 	movl	sp, a0@(MACH_TRAP_REGS_OFFSET + 60); \
 	movc	usp, a1; \
@@ -186,4 +210,4 @@
         jsr 	_MachTrap; \
 	jra	MachReturnFromUserTrap;
 
-#endif _MACHASMDEFS
+#endif /* _MACHASMDEFS */

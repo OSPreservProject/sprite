@@ -363,7 +363,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 			             MACH_KERN_STACK_SIZE - 
 				     sizeof(KernelStack));
 #ifdef sun3
-    statePtr->fpuState[0] = 0;      /* set fpu to null state */
+    statePtr->switchFpuState[0] = 0;      /* set fpu to null state */
 #endif
 
     /*
@@ -695,10 +695,11 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 	panic("out-of-order kernel call initialization");
     }
     if (machMaxSysCall >= MAXCALLS) {
-	panic("too many kernel calls");
+	panic("Mach_InitSyscall: too many (%d) kernel calls", machMaxSysCall);
     }
     if (numArgs > MAXARGS) {
-	panic("too many arguments to kernel call");
+	panic("Mach_InitSyscall: too many arguments (%d) to kernel call <%d>",
+		numArgs, callNum);
     }
     machArgOffsets[machMaxSysCall] = 8 + numArgs*4;
     machArgDispatch[machMaxSysCall] = 

@@ -133,21 +133,10 @@ _Mach_ContextSwitch:
     movl	d0, a0			| a0 = pointer to mach struct
     movl	a0@, a0
 
-#ifdef sun3
-    tstw        fpu_present             | See if the fpu is installed.
-    beq         1f                      |
-                                        | Save the internal state of the fpu.
-    fsave       a0@(MACH_FP_STATE_OFFSET)
-	                                | If the state is null the registers
-					|  don't need to be saved.
-    tstb        a0@(MACH_FP_STATE_OFFSET)
-    beq         1f
-                                        | Save the floating point registers
-    fmovem      #0xff, a0@(MACH_SWITCH_FP_REGS_OFFSET)
-	                                | Save the fpu control registers
-    fmovem      fpc/fps/fpi, a0@(MACH_SWITCH_FP_CTRL_REGS_OFFSET)
-1:
-#endif
+                                        | Save the floating point state.
+    SAVE_FP_STATE(MACH_SWITCH_FP_STATE_OFFSET, \
+	MACH_SWITCH_FP_REGS_OFFSET, MACH_SWITCH_FP_CTRL_REGS_OFFSET)
+
 					| Save registers for process being
 					|     switched from
     moveml	#0xffff, a0@(MACH_SWITCH_REGS_OFFSET)
@@ -157,21 +146,10 @@ _Mach_ContextSwitch:
     movl	d0, a0			| a0 = pointer to mach struct
     movl	a0@, a0
 
-#ifdef sun3
-    tstw        fpu_present             | See if the fpu is installed.
-    beq         2f
-                                        | Restore the internal state of the fpu.
-    frestore    a0@(MACH_FP_STATE_OFFSET)
-	                                | If the state is null the registers
-					|  don't need to be restored.
-    tstb        a0@(MACH_FP_STATE_OFFSET)
-    beq         2f
-                                        | Restore the floating point registers.
-    fmovem      a0@(MACH_SWITCH_FP_REGS_OFFSET), #0xff
-	                                | Restore the fpu control registers.
-    fmovem      a0@(MACH_SWITCH_FP_CTRL_REGS_OFFSET), fpc/fps/fpi
-2:
-#endif
+                                        | Restore the floating point state.
+    RESTORE_FP_STATE(MACH_SWITCH_FP_STATE_OFFSET, \
+	MACH_SWITCH_FP_REGS_OFFSET, MACH_SWITCH_FP_CTRL_REGS_OFFSET)
+
 					| Restore registers for process being
 					|     switched to
     moveml	a0@(MACH_SWITCH_REGS_OFFSET), #0xffff

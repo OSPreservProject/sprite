@@ -276,6 +276,11 @@ typedef struct {
     int			trapRegs[MACH_NUM_GPRS];/* General purpose registers.*/
     Mach_ExcStack	*excStackPtr;		/* The exception stack */
     int			lastSysCall;		/* Last system call. */
+#ifdef sun3
+    long    trapFpRegs[MACH_NUM_FPRS][3];       /* Floating point registers */
+    long    trapFpCtrlRegs[3];                  /* fpu control registers */
+    long    trapFpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
+#endif
 } Mach_UserState;
 
 /*
@@ -294,11 +299,11 @@ typedef struct Mach_State {
 						 * stack on return from signal
 						 * handler.*/
 #ifdef sun3
-    long        switchFpRegs[MACH_NUM_FPRS][3]; /* Where fpu registers are
+    long  switchFpRegs[MACH_NUM_FPRS][3];       /* Where fpu registers are
                                                  * saved and restored to/from
 						 * during context switches. */
-    long        switchFpCtrlRegs[3];            /* fpu control registers */
-    long        fpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
+    long  switchFpCtrlRegs[3];                  /* fpu control registers */
+    long  switchFpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
 #endif
 } Mach_State;
 
