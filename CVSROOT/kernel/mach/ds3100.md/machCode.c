@@ -152,6 +152,7 @@ int machStatePtrOffset;			/* Byte offset of the machStatePtr
 					 * field in a Proc_ControlBlock. */
 int machSpecialHandlingOffset;		/* Byte offset of the specialHandling
 					 * field in a Proc_ControlBlock. */
+MachStringTable	machMonBootParam;	/* Parameters from boot line. */
 /* 
  * Pointer to the state structure for the current process and the
  * current owner of the floating point unit.
@@ -269,9 +270,13 @@ Address		machBadVaddr = (Address) NIL;
  * ----------------------------------------------------------------------------
  */
 void
-Mach_Init()
+Mach_Init(boot_argc,boot_argv)
+int	boot_argc;	/* Argc from boot sequence. */
+MachStringTable	*boot_argv;	/* Boot sequence strings. */
 {
     extern char end[], edata[];
+    int offset, i;
+    char buf[256];
 
     /*
      * Zero out the bss segment.
@@ -291,20 +296,19 @@ Mach_Init()
     mach_MaxUserStackAddr = (Address)MACH_MAX_USER_STACK_ADDR;
     mach_LastUserStackPage = (MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE;
 
-#ifdef notdef
     /*
      * Copy the boot parameter structure. The original location will get
      * unmapped during vm initialization so we need to get our own copy.
+     * Depending on how the machine was booted, the boot arguments 
+     * may or may not be parsed.  So we'll glob them all together and
+     * then parse them.
      */
-    machMonBootParam = **(romVectorPtr->bootParam);
-    offset = (int) *(romVectorPtr->bootParam) - (int) &(machMonBootParam);
-    for (i = 0; i < 8; i++) {
-	if (machMonBootParam.argPtr[i] != (char *) 0 &&
-	 machMonBootParam.argPtr[i] != (char *) NIL) {
-	    machMonBootParam.argPtr[i] -= (char *) offset;
-	}
+    buf[0] = '\0';
+    for (i = 0; i < boot_argc; i++) {
+	strcat(buf,boot_argv->argPtr[i]);
+	strcat(buf," ");
     }
-#endif
+    Mach_ArgParse(buf,&machMonBootParam);
 
     /*
      * Initialize some of the dispatching information.  The rest is
@@ -839,7 +843,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
     procPtr = Proc_GetActualProc();
     switch (cause) {
 	case MACH_EXC_INT:
-	    status = Interrupt(statusReg, causeReg);
+	    status = Interrupt(statusReg, causeReg, pc);
 	    if (status != MACH_OK) {
 		panic("MachUserExceptionHandler: nested interrupts.\n");
 	    }
@@ -1003,7 +1007,7 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
     procPtr = Proc_GetActualProc();
     switch (cause) {
 	case MACH_EXC_INT:
-	    status = Interrupt(statusReg, causeReg);
+	    status = Interrupt(statusReg, causeReg, pc);
 	    return(status);
 	case MACH_EXC_TLB_LD_MISS:
 	case MACH_EXC_TLB_ST_MISS:
@@ -1112,9 +1116,10 @@ static int lastInterruptCalled = -1;
 
 
 static ReturnStatus
-Interrupt(statusReg, causeReg)
+Interrupt(statusReg, causeReg, pc)
     unsigned	statusReg;
     unsigned	causeReg;
+    Address	pc;
 {
     int		n;
     unsigned	mask;
@@ -1144,7 +1149,17 @@ Interrupt(statusReg, causeReg)
 	    }
 	    lastInterruptCalled = n;
 #endif /* DEBUG_INTR */
-	    interruptHandlers[n]();
+/*
+ * Interrupt 5, the FPU interrupt, requires the status, cause, and pc.
+ * These values may have changed in the registers, during a call to
+ * another interrupt handler, so we have to hand the routine the original
+ * values.
+ */
+	    if (n==5) {
+		interruptHandlers[n](statusReg, causeReg, pc);
+	    } else {
+		interruptHandlers[n]();
+	    }
 	}
 	mask >>= 1;
 	n++;
@@ -1575,23 +1590,17 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 	char	**argv;			/* Ptr to array of arg pointers */
 	char	*buffer;		/* Storage for arguments */
 {
-#ifdef notdef
     int		i;
     int		offset;
 
     bcopy(machMonBootParam.strings, buffer, 
-	  (bufferSize < 100) ? bufferSize : 100);
+	  (bufferSize < 256) ? bufferSize : 256);
     offset = (int) machMonBootParam.strings - (int) buffer;
     for(i = 0; i < argc; i++) {
-	if (machMonBootParam.argPtr[i] == (char *) 0 ||
-	    machMonBootParam.argPtr[i] == (char *) NIL) {
-	    break;
-	}
+	if (machMonBootParam.argPtr[i] == (char *)NULL) break;
 	argv[i] = (char *) (machMonBootParam.argPtr[i] - (char *) offset);
     }
     return i;
-#endif
-    return 0;
 }
 
 
