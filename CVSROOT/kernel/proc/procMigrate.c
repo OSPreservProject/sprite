@@ -1337,6 +1337,10 @@ Proc_DestroyMigratedProc(pidData)
 	    printf("Warning: Proc_DestroyMigratedProc: process %x not found.\n",
 		      (int) pid);
 	}
+	/*
+	 * Make sure the dependency on this process goes away.
+	 */
+	Proc_RemoveMigDependency(pid);
 	return;
     }
     if ((procPtr->state != PROC_MIGRATED) &&
@@ -1346,6 +1350,10 @@ Proc_DestroyMigratedProc(pidData)
 		      "Warning:", (int) pid);
 	}
 	Proc_Unlock(procPtr);
+	/*
+	 * Make sure the dependency on this process goes away.
+	 */
+	Proc_RemoveMigDependency(pid);
 	return;
     }
 #ifdef notdef
