@@ -140,8 +140,8 @@ DevClientStateOpen(devicePtr, useFlags, data, flagsPtr)
 	UNLOCK_MONITOR;
 	return GEN_INVALID_ARG;
     }
-    statePtr = (DeviceState *) (devicePtr->data) =
-	    (DeviceState *) malloc(sizeof (DeviceState));
+    statePtr = (DeviceState *) malloc(sizeof (DeviceState));
+    devicePtr->data = (ClientData) statePtr;
     statePtr->userUnreadIndex = 0;
     statePtr->userUnusedIndex = 0;
     statePtr->dataReadyToken = data;
