@@ -57,7 +57,6 @@ RpcByteSwapBuffer(bufferPtr, numInts)
     int	offendingInt;
     int	fixedInt;
     int	shiftInt;
-    int	*toSwap;
 #   define	LOW_BYTE_MASK		0x000000ff
 #   define	MIDDLE_LOW_BYTE_MASK	0x0000ff00
 #   define	MIDDLE_HIGH_BYTE_MASK	0x00ff0000

@@ -176,6 +176,7 @@ Rpc_FreeMem(replyMemPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 RpcNull(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
@@ -211,6 +212,7 @@ RpcNull(srvToken, clientID, command, storagePtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 int
 RpcEcho(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
@@ -241,39 +243,6 @@ RpcEcho(srvToken, clientID, command, storagePtr)
 	 */
     }
     Rpc_Reply(srvToken, SUCCESS, storagePtr, NIL, NIL);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * RpcFsUnixPrefix --
- *
- *	This is the broadcast made by the Unix Server and to which
- *	we don't reply.
- *
- * Results:
- *	RPC_NO_REPLY
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-ReturnStatus
-RpcFsUnixPrefix(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* Command identifier */
-    Rpc_Storage *storagePtr;	/* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    return(RPC_NO_REPLY);
 }
 
 
