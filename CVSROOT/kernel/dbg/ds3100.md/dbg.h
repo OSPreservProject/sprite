@@ -62,6 +62,52 @@ extern	Boolean	dbg_UsingSyslog;
 #define DBG_UDP_PORT 	0x7563
 
 /*
+ * Request and reply buffer headers. 
+ */
+
+typedef struct {
+    int		num;
+    int		request;
+    unsigned	addr;
+    int		data;
+} Dbg_Request;
+
+typedef struct {
+    int		num;
+    int		status;
+    int		data;
+} Dbg_Reply;
+
+/*
+ * Values for the request field of a Dbg_Request.
+ */
+
+#define DBG_UREAD   3       /* read from process's user structure */
+#define DBG_UWRITE  6       /* write to process's user structure */
+#define DBG_IREAD   1       /* read from process's instruction space */
+#define DBG_IWRITE  4       /* write to process's instruction space */
+#define DBG_DREAD   2       /* read from process's data space */
+#define DBG_DWRITE  5       /* write to process's data space */
+#define DBG_CONTP   7       /* continue stopped process */
+#define DBG_SSTEP   9       /* continue for approximately one instruction */
+#define DBG_PKILL   8       /* terminate the process */
+#define DBG_DBREAD  14      /* read in bytes */
+#define DBG_DBWRITE 15      /* write in bytes */
+#define DBG_DHREAD  16      /* read in halfwords */
+#define DBG_DHWRITE 17      /* write in halfwords */
+#define DBG_QUERY   18      /* query returns flags about target environment */
+#define DBG_BEGINCALL 19
+#define DBG_ENDCALL   20
+#define DBG_DETACH    21
+#define DBG_GETMAXSTACK 22
+#define DBG_GETSTATUS 23
+/*
+ * These ones are used by kmsg.
+ */
+#define DBG_GET_VERSION_STRING	100
+#define DBG_REBOOT		101
+
+/*
  * Variable that is set to true when we are called through the DBG_CALL macro.
  */
 extern	Boolean	dbgPanic;

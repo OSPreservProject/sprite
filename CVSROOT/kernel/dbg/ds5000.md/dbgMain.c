@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dev.h>
 #include <sys.h>
 #include <sync.h>
+#include <main.h>
 
 unsigned sstepInst;				/* The instruction that was
 						 * replaced when we tried to
@@ -76,27 +77,16 @@ Net_Interface		*dbgInterPtr = (Net_Interface *) NIL;
  * Size of debugging packet header and data.
  */
 #define	PACKET_HDR_SIZE (sizeof(Net_EtherHdr) + Dbg_PacketHdrSize())
-#define PACKET_DATA_SIZE (DBG_MAX_REPLY_SIZE - PACKET_HDR_SIZE - sizeof(Reply))
+#define PACKET_DATA_SIZE \
+    (DBG_MAX_REPLY_SIZE - PACKET_HDR_SIZE - sizeof(Dbg_Reply) + 4)
 
 /*
  * Message buffers.
  */
-typedef struct Request {
-    int		num;
-    int		request;
-    unsigned	addr;
-    int		data;
-} Request;
 
-typedef struct {
-    int		num;
-    int		status;
-    int		data;
-} Reply;
-
-Request	*requestPtr;
-Reply	*replyPtr;
-char	*dataPtr;
+Dbg_Request	*requestPtr;
+Dbg_Reply	*replyPtr;
+char		*dataPtr;
 
 /*
  * Strings which describe each of the opcodes that kdbx can send us.
@@ -303,8 +293,8 @@ Dbg_Init()
     dbgPanic = FALSE;
     dbg_BeingDebugged = FALSE;
     dbgMaxStackAddr = (int)mach_StackBottom + mach_KernStackSize;
-    replyPtr = (Reply *)(replyBufPtr + PACKET_HDR_SIZE);
-    dataPtr = replyBufPtr + PACKET_HDR_SIZE + sizeof(Reply);
+    replyPtr = (Dbg_Reply *)(replyBufPtr + PACKET_HDR_SIZE);
+    dataPtr = replyBufPtr + PACKET_HDR_SIZE + sizeof(Dbg_Reply) - 4;
 }
 
 char	pingBuffer[DBG_MAX_REQUEST_SIZE + 2];
@@ -479,7 +469,7 @@ ReadRequest(timeout)
 	}
     } while(!gotPacket && timeOutCounter != 0);
     if (gotPacket) {
-	requestPtr = (Request *)requestBuffer;
+	requestPtr = (Dbg_Request *)requestBuffer;
 	if (dbgTraceLevel >= 4) {
 	    printf("MsgNum = %d\n", requestPtr->num);
 	}
@@ -520,11 +510,11 @@ SendReply(dataSize)
     etherHdrPtr->destination = dbgEtherHdr.source;
     etherHdrPtr->type = dbgEtherHdr.type;
     dbgGather.bufAddr = replyBufPtr + sizeof(Net_EtherHdr);
-    dbgGather.length = PACKET_HDR_SIZE + sizeof(Reply) + dataSize - 
+    dbgGather.length = PACKET_HDR_SIZE + sizeof(Dbg_Reply) + dataSize - 
 		       sizeof(Net_EtherHdr);
     dbgGather.mutexPtr = (Sync_Semaphore *) NIL;
     Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
-		     dataSize + sizeof(Reply),
+		     dataSize + sizeof(Dbg_Reply),
 		     replyBufPtr + sizeof(Net_EtherHdr));
     Net_RawOutput(dbgInterPtr, etherHdrPtr, &dbgGather, 1);
     if (dbgTraceLevel >= 4) {
@@ -538,26 +528,6 @@ SendReply(dataSize)
 static Boolean	syslogDiverted = FALSE;
 
 extern Mach_DebugState	mach_DebugState;
-
-#define UREAD   3       /* read from process's user structure */
-#define UWRITE  6       /* write to process's user structure */
-#define IREAD   1       /* read from process's instruction space */
-#define IWRITE  4       /* write to process's instruction space */
-#define DREAD   2       /* read from process's data space */
-#define DWRITE  5       /* write to process's data space */
-#define CONTP   7       /* continue stopped process */
-#define SSTEP   9       /* continue for approximately one instruction */
-#define PKILL   8       /* terminate the process */
-#define DBREAD  14      /* read in bytes */
-#define DBWRITE 15      /* write in bytes */
-#define DHREAD  16      /* read in halfwords */
-#define DHWRITE 17      /* write in halfwords */
-#define QUERY   18      /* query returns flags about target environment */
-#define BEGINCALL 19
-#define ENDCALL   20
-#define DETACH    21
-#define GETMAXSTACK 22
-#define GETSTATUS 23
 
 /*
  * Place where the TLB is dumped when the kernel enters the debugger.
@@ -735,7 +705,7 @@ Dbg_Main()
 	SendReply(0);
 	do {
 	    if (ReadRequest(TRUE)) {
-		if (requestPtr->request == GETSTATUS) {
+		if (requestPtr->request == DBG_GETSTATUS) {
 		    break;
 		}
 	    }
@@ -762,7 +732,7 @@ Dbg_Main()
 			TranslateOpcode(request), requestPtr->addr);
 	}
 	switch (request) {
-            case UREAD:
+            case DBG_UREAD:
 		if (requestPtr->addr > sizeof(mach_DebugState) / 4) {
 		    printf("Bogus UREAD addr %x\n", requestPtr->addr);
 		    replyPtr->status = 0;
@@ -770,7 +740,7 @@ Dbg_Main()
 		    replyPtr->data = *((int *)debugStatePtr + requestPtr->addr);
 		}
 		break;
-            case UWRITE: {
+            case DBG_UWRITE: {
 		extern void Mach_SwitchPoint();	/* XXX - should go elsewhere */
 
 		if (requestPtr->addr == (unsigned)-1) {
@@ -811,15 +781,15 @@ Dbg_Main()
 		}
 		break;
 	    }
-            case IREAD:
-            case DREAD:
+            case DBG_IREAD:
+            case DBG_DREAD:
 		if (Dbg_InRange(requestPtr->addr, 4, FALSE)) {
 		    replyPtr->data = *(int *)requestPtr->addr;
 		} else {
 		    replyPtr->status = 0;
 		}
 		break;
-            case IWRITE:
+            case DBG_IWRITE:
 		if (Dbg_InRange(requestPtr->addr, 4, TRUE)) {
 		    replyPtr->data = *(int *)requestPtr->addr;
 		    Mach_FlushCode((Address)requestPtr->addr, 4);
@@ -829,7 +799,7 @@ Dbg_Main()
 		    replyPtr->status = 0;
 		}
 		break;
-            case DWRITE:
+            case DBG_DWRITE:
 		if (Dbg_InRange(requestPtr->addr, 4, TRUE)) {
 		    replyPtr->data = *(int *)requestPtr->addr;
 		    *(int *)requestPtr->addr = requestPtr->data;
@@ -837,11 +807,11 @@ Dbg_Main()
 		    replyPtr->status = 0;
 		}
 		break;
-            case CONTP: 
+            case DBG_CONTP: 
 		dbg_BeingDebugged = TRUE;
 		done = TRUE;
 		break;
-            case SSTEP: {
+            case DBG_SSTEP: {
 		unsigned		*pc;
 
 		pc = DbgGetDestPC((Address)(debugStatePtr->excPC));
@@ -861,16 +831,16 @@ Dbg_Main()
 		done = TRUE;
 		break;
 	    }
-            case PKILL:
+            case DBG_PKILL:
 		break;
-            case DBREAD: 
+            case DBG_DBREAD: 
 		if (Dbg_InRange(requestPtr->addr, 1, FALSE)) {
 		    replyPtr->data = *(char *)requestPtr->addr;
 		} else {
 		    replyPtr->status = 0;
 		}
 		break;
-            case DBWRITE:
+            case DBG_DBWRITE:
 		if (Dbg_InRange(requestPtr->addr, 1, TRUE)) {
 		    replyPtr->data = *(char *)requestPtr->addr;
 		    *(char *)requestPtr->addr = requestPtr->data;
@@ -878,14 +848,14 @@ Dbg_Main()
 		    replyPtr->status = 0;
 		}
 		break;
-            case DHREAD:
+            case DBG_DHREAD:
 		if (Dbg_InRange(requestPtr->addr, 2, FALSE)) {
 		    replyPtr->data = *(short *)requestPtr->addr;
 		} else {
 		    replyPtr->status = 0;
 		}
 		break;
-            case DHWRITE:
+            case DBG_DHWRITE:
 		if (Dbg_InRange(requestPtr->addr, 2, TRUE)) {
 		    replyPtr->data = *(short *)requestPtr->addr;
 		    *(short *)requestPtr->addr = requestPtr->data;
@@ -893,23 +863,36 @@ Dbg_Main()
 		    replyPtr->status = 0;
 		}
 		break;
-            case QUERY:
+            case DBG_QUERY:
 		break;
-            case BEGINCALL:
+            case DBG_BEGINCALL:
 		break;
-            case ENDCALL:
+            case DBG_ENDCALL:
 		break;
-            case DETACH:
+            case DBG_DETACH:
 		dbg_BeingDebugged = FALSE;
 		done = TRUE;
 		printf("Sprite is now detached from the debugger\r\n");
 		break;
-            case GETMAXSTACK:
+            case DBG_GETMAXSTACK:
 		replyPtr->data = dbgMaxStackAddr;
 		break;
-            case GETSTATUS:
+            case DBG_GETSTATUS:
 		replyPtr->data = 0177 | (signal << 8);
 		break;
+	    case DBG_GET_VERSION_STRING: {
+		char *version;
+		version = SpriteVersion();
+		strncpy(dataPtr, version, PACKET_DATA_SIZE);
+		dataSize = strlen(version) + 1 - 4;
+		break;
+	    }
+	    case DBG_REBOOT: {
+		char	*reboot;
+		reboot = (char *) &requestPtr->data;
+		Mach_MonReboot(reboot);
+		break;
+	    }
 	}
 	SendReply(dataSize);
 	if (!done) {
