@@ -1708,24 +1708,34 @@ DevGraphicsSelect(devicePtr, readPtr, writePtr, exceptPtr)
  *
  * Dev_VidEnable --
  *
- *	Dummy routine for the old method of using the graphics device.
+ *	Enables or disables the video display.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Turns video on or off.
  *
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Dev_VidEnable()
+Dev_VidEnable(onOff)
+Boolean onOff;		/* TRUE if video is to be on. */
 {
-    if (!isMono) {
-	RestoreCursorColor();
+    if (onOff) {
+	if (!isMono) {
+	    RestoreCursorColor();
+	}
+	curReg |= (DEV_CURSOR_ENPA);
+	curReg &= ~(DEV_CURSOR_FOPB);
+	pccPtr->cmdReg = curReg;
+    } else {
+	if (!isMono) {
+	    VDACInit();
+	}
+	curReg |= DEV_CURSOR_FOPB;
+	curReg &= ~(DEV_CURSOR_ENPA);
+	pccPtr->cmdReg = curReg;
     }
-    curReg |= (DEV_CURSOR_ENPA);
-    curReg &= ~(DEV_CURSOR_FOPB);
-    pccPtr->cmdReg = curReg;
     return(SUCCESS);
 }
