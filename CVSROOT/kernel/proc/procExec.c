@@ -36,8 +36,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 static ReturnStatus	DoExec();
 
-static	char execFileName[FS_MAX_PATH_NAME_LENGTH];
-
 #define NEWEXEC
 /*
  * This will go away when libc is changed.
@@ -125,6 +123,8 @@ Proc_ExecEnv(fileName, argPtrArray, envPtrArray, debugMe)
     int			strLength;
     int			accessLength;
     ReturnStatus	status;
+    char 		execFileName[FS_MAX_PATH_NAME_LENGTH];
+
 
     /*
      * Make the file name accessible. 
@@ -454,10 +454,10 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	if ((argNumber > 0 || argPtrArray == (char **) NIL) && extraArgs > 0) {
 	    if (extraArgs == 2) {
 		stringPtr = shellArgPtr;
-		realLength = String_Length(shellArgPtr);
+		realLength = String_Length(shellArgPtr) + 1;
 	    } else {
 		stringPtr = fileName;
-		realLength = fileNameLength;
+		realLength = fileNameLength + 1;
 	    }
 	    extraArgs--;
 	} else {
