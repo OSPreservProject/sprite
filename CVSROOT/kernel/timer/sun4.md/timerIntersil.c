@@ -61,8 +61,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 /* For profiling call */
 #include "prof.h"
-/* For CallBack call */
-#include "timer.h"
 
 static TimerDevice *timerRegsPtr = (TimerDevice *) DEV_TIMER_ADDR;
 
@@ -107,6 +105,7 @@ static    IntersilCounters	initialCounter = {
  */
 
 static void CountersToTime();
+void Timer_TimerServiceInterrupt();
 
 /*
  * Constants used to convert the contents of the free-running counters
@@ -157,7 +156,6 @@ static int accumSecsPerMonthLeap[13] = {
     335 * SECS_PER_DAY,		/* Dec */
 };
 
-
 
 
 /*
@@ -188,6 +186,11 @@ Timer_TimerInit(timer)
 
     if (!init) {
 	init = TRUE;
+	/*
+	 * Register our call back function.
+	 */
+	Mach_SetHandler(10, Timer_TimerServiceInterrupt, (ClientData) 0);
+	Mach_SetHandler(14, Timer_TimerServiceInterrupt, (ClientData) 0);
 
 	/*
 	 * Tell the chip to prevent interrupts.
@@ -330,12 +333,10 @@ Timer_TimerGetStatus()
 
     *Mach_InterruptReg &= ~(MACH_ENABLE_TIMER_INTR_LEVEL | 
 				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
-
     statusReg = timerRegsPtr->interruptReg;
 
     *Mach_InterruptReg |= (MACH_ENABLE_TIMER_INTR_LEVEL | 
 				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
-
     /*
      * Read the chip again in case an obscure race condition occurs.
      * (This is how Sun handles it.)
@@ -429,7 +430,9 @@ int	testCounter = 0;
  */
 
 void
-Timer_TimerServiceInterrupt()
+Timer_TimerServiceInterrupt(dummy, pc)
+    int			dummy;		/* unused clientData */
+    unsigned int	pc;		/* Only for sun4 version. */
 { 
     /*
      *  Determine if the callback and profile timers have expired.
@@ -445,9 +448,7 @@ Timer_TimerServiceInterrupt()
     Boolean spurious;
 
     if (Timer_TimerExamineStatus(timerStatus, TIMER_PROFILE_TIMER, &spurious)) {
-#ifdef NOTDEF
-        TIMER_PROFILE_ROUTINE(&stack);
-#endif NOTDEF
+        TIMER_PROFILE_ROUTINE(pc);
         profiled = TRUE;
 #       ifdef GATHER_STAT
         timer_Statistics.profile++;
@@ -502,7 +503,18 @@ void
 Timer_CounterInit()
 {
     timerRegsPtr->commandReg = IntersilCommand(STOP, timerIntrState);
+#ifdef sun4
+    timerRegsPtr->counter.hundredths = initialCounter.hundredths;
+    timerRegsPtr->counter.hours = initialCounter.hours;
+    timerRegsPtr->counter.minutes = initialCounter.minutes;
+    timerRegsPtr->counter.seconds = initialCounter.seconds;
+    timerRegsPtr->counter.month = initialCounter.month;
+    timerRegsPtr->counter.day = initialCounter.day;
+    timerRegsPtr->counter.year = initialCounter.year;
+    timerRegsPtr->counter.dayOfWeek = initialCounter.dayOfWeek;
+#else
     timerRegsPtr->counter = initialCounter;
+#endif
     timerRegsPtr->commandReg = IntersilCommand(RUN, timerIntrState);
 }
 
@@ -510,7 +522,7 @@ Timer_CounterInit()
 /*
  *----------------------------------------------------------------------
  *
- * Timer_CounterRead --
+ * Timer_GetCurrentTicks --
  *
  *	Read the contents of the counters. Interrupts are assumed
  *	to be disabled to assure that the counters are read atomically.
@@ -534,7 +546,18 @@ Timer_GetCurrentTicks(timePtr)
      * Read the chip's counters.
      */
 
+#ifdef sun4
+    counter.hundredths = timerRegsPtr->counter.hundredths;
+    counter.hours = timerRegsPtr->counter.hours;
+    counter.minutes = timerRegsPtr->counter.minutes;
+    counter.seconds = timerRegsPtr->counter.seconds;
+    counter.month = timerRegsPtr->counter.month;
+    counter.day = timerRegsPtr->counter.day;
+    counter.year = timerRegsPtr->counter.year;
+    counter.dayOfWeek = timerRegsPtr->counter.dayOfWeek;
+#else
     counter = timerRegsPtr->counter;
+#endif
     CountersToTime(&counter, timePtr);
 }
 
