@@ -29,6 +29,13 @@ extern TraceLog_Header *SOSP91TracePtr;
 #endif
 
 /*
+ * Letters to keep track of trace versions.
+ */
+#define VERSION1	'A'
+
+#define VERSIONLETTER	VERSION1
+
+/*
  * Definitions for the types of log records.  These are the events being
  * traced.
  */
@@ -93,8 +100,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[17] = fileSize;\
 	sospBuffer[18] = modify;\
 	sospBuffer[19] = type;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(20 * sizeof (int)), SOSP_OPEN);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(19 * sizeof (int)), SOSP_OPEN);\
 }
 
 /*
@@ -118,8 +125,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[7] = modify;\
 	sospBuffer[8] = create;\
 	sospBuffer[9] = fileSize;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(10 * sizeof (int)), SOSP_DELETE);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(9 * sizeof (int)), SOSP_DELETE);\
 }
 	
 /*
@@ -137,8 +144,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(7 * sizeof (int)), SOSP_DELETE);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(6 * sizeof (int)), SOSP_DELETE);\
 }
 
 /*
@@ -156,8 +163,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(7 * sizeof (int)), SOSP_MKLINK);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(6 * sizeof (int)), SOSP_MKLINK);\
 }
 
 
@@ -176,8 +183,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(7 * sizeof (int)), SOSP_SET_ATTR);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(6 * sizeof (int)), SOSP_SET_ATTR);\
 }
 
 
@@ -196,8 +203,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(7 * sizeof (int)), SOSP_GET_ATTR);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(6 * sizeof (int)), SOSP_GET_ATTR);\
 }
 
 /*
@@ -217,8 +224,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[5] = oldOffset;\
 	sospBuffer[6] = newOffset;\
 	sospBuffer[7] = flags;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(8 * sizeof (int)),SOSP_LSEEK);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)),SOSP_LSEEK);\
 }
 
 /*
@@ -243,8 +250,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[7] = flags;\
 	sospBuffer[8] = rwflags;\
 	sospBuffer[9] = refCount;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(10 * sizeof (int)),SOSP_CLOSE);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(9 * sizeof (int)),SOSP_CLOSE);\
 }
 
 /*
@@ -264,8 +271,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[2] = toHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = streamID;\
 	sospBuffer[7] = currentOffset;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-	(8 * sizeof (int)),SOSP_MIGRATE);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+	(7 * sizeof (int)),SOSP_MIGRATE);\
 }
 
 /*
@@ -287,8 +294,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[6] = newLength;\
 	sospBuffer[7] = modify;\
 	sospBuffer[8] = create;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(9 * sizeof (int)),SOSP_TRUNCATE);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(8 * sizeof (int)),SOSP_TRUNCATE);\
 }
 
 /*
@@ -310,8 +317,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	*((Fs_FileID *) &(sospBuffer[2])) = fileID;\
 	sospBuffer[6] = operation;\
 	sospBuffer[7] = writeOp;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(8 * sizeof (int)),SOSP_CONSIST_CHANGE);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)),SOSP_CONSIST_CHANGE);\
 }
 
 
@@ -337,8 +344,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[2] = affectedHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
 	sospBuffer[7] = action;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(8 * sizeof (int)),SOSP_CONSIST_ACTION);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)),SOSP_CONSIST_ACTION);\
 }
 
 /*
@@ -361,8 +368,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[6] = readIt;\
 	sospBuffer[7] = offset;\
 	sospBuffer[8] = numBytes;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(9 * sizeof (int)),SOSP_READ);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(8 * sizeof (int)),SOSP_READ);\
 }
 
 /*
@@ -408,8 +415,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[0] = SOSP_PREFIX;\
 	sospBuffer[1] = clientID;\
 	sospBuffer[2] = rpcID;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(3 * sizeof(int)), SOSP_PREFIX);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(2 * sizeof(int)), SOSP_PREFIX);\
 }
 
 #define SOSP_REMEMBERED_CLIENT  (Proc_GetCurrentProc()->extraField[2])
@@ -438,8 +445,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[1] = hostID;\
 	sospBuffer[2] = op;\
 	sospBuffer[3] = len;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		SOSP_LOOKUP_OP_OFFSET + len, SOSP_LOOKUP_OP);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		SOSP_LOOKUP_OP_OFFSET -sizeof(int) + len, SOSP_LOOKUP_OP);\
 }
 
 /*
@@ -459,8 +466,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[5] = modify;\
 	sospBuffer[6] = create;\
 	sospBuffer[7] = size;\
-	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(8 * sizeof (int)),SOSP_DELETE_DESC);\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)),SOSP_DELETE_DESC);\
 }
 
 
