@@ -1671,6 +1671,7 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
 			lastBlock, flags, &blocksSkipped);
 	    }
+	    break;
 	}
 	default:
 	    status = GEN_INVALID_ARG;
