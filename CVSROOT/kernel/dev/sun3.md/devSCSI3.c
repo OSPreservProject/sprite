@@ -39,7 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *	4 - one print per command in the normal case
  *	5 - traces interrupts
  */
-int devSCSI3Debug = 4;
+int devSCSI3Debug = 2;
 
 /*
  * Number of times to try things like target selection.
@@ -1470,7 +1470,8 @@ DevSCSI3Intr(scsiPtr)
 	return(TRUE);
     }
     /*
-     * SBC_BSR_EDMA may be set to indicate that DMA has completed.
+     * SBC_BSR_EDMA may be set to indicate that DMA has completed,
+     * or the SBC_BSR_PMTCH bit is 0 (this has been verified).
      * We fall through and test the REQ line to see if the target
      * is trying to send additional data bytes, or we are just
      * getting a standard phase change interrupt.
@@ -1495,11 +1496,6 @@ DevSCSI3Intr(scsiPtr)
 	}
 	return(TRUE);
     }
-    if ((regsPtr->sbc.read.status & SBC_BSR_PMTCH) == 0) {
-	printf("DevSCSI3Intr: trgtCmd phase mis-match\n");
-	return(TRUE);
-    }
-
     phase = regsPtr->sbc.read.curStatus & CBSR_PHASE_BITS;
     switch (phase) {
 	case PHASE_DATA_IN:
