@@ -52,6 +52,15 @@ static Timer_QueueElement queueEntry;
 static int daemonState = DAEMON_DEAD;
 
 /*
+ * The server dispatcher signals its distress at not being able to dispatch
+ * a message because there are no server processes by incrementing this
+ * counter.  Rpc_Deamon notices this and creates more server processes.
+ * After max number of server processes have been created this is set
+ * to a negative number to prevent creating any more server processes.
+ */
+int		 rpcNoServers = 0;
+
+/*
  * Forward declarations.
  */
 void RpcReclaimServers();
@@ -101,9 +110,13 @@ Rpc_Daemon()
 	     * The dispatcher has received requests that it couldn't handle
 	     * because there were no available server processes.
 	     */
-	     Rpc_CreateServer(&pid);
-	     Sys_Printf("RPC srvr\n");
-	     RpcResetNoServers(0);
+	     if (Rpc_CreateServer(&pid) == SUCCESS) {
+		 Sys_Printf("RPC srvr\n");
+		 RpcResetNoServers(0);
+	     } else {
+		 Sys_Panic(SYS_WARNING, "Rpc_Daemon: no more RPC servers\n");
+		 RpcResetNoServers(-1);
+	     }
 	}
 	RpcReclaimServers();
     }
@@ -223,14 +236,13 @@ RpcServerAlloc(rpcHdrPtr)
 	srvPtr->state &= ~SRV_FREE;
 	srvPtr->clientID = rpcHdrPtr->clientID;
 	srvPtr->channel = rpcHdrPtr->channel;
-    } else {
+    } else if (rpcNoServers >= 0) {
 	/*
 	 * No available server process yet.  Poke the Rpc_Daemon process
 	 * so it will create us one.  The client's request gets discarded
 	 * and it has to re-try.
 	 */
 	srvPtr = (RpcServerState *)NIL;
-/*	Sys_Printf("No free servers! <%d>\n", daemonState);	*/
 	rpcNoServers++;
 	if (daemonState & DAEMON_TIMEOUT) {
 	    Timer_DescheduleRoutine(&queueEntry);
