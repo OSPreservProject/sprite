@@ -86,6 +86,7 @@ typedef struct LfsSeg {
     int	    numBlocks;        /* Number of blocks in segment. */
     int	    startBlockOffset; /* Starting block offset of this segment. */
     int	    activeBytes;      /* Number of active bytes in segment. */
+    int	    timeOfLastWrite;  /* Time of create of youngest block in seg. */
 	/*
 	 * Some operations of segments require scanning thru the summary 
 	 * and SegElements.  The following fields keep the start require
