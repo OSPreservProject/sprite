@@ -115,6 +115,12 @@ int	vmCurPenalty;
 int	vmBoundary;
 Boolean	vmCORReadOnly = FALSE;
 
+/*
+ * Limit to put on the number of pages the machine can have.  Used for
+ * benchmarking purposes only.
+ */
+int	vmPhysPageLimit = -1;
+
 void		PageOut();
 void		PutOnReserveList();
 void		PutOnFreeList();
@@ -137,6 +143,9 @@ void		PutOnFreeList();
 void
 VmCoreMapAlloc()
 {
+    if (vmPhysPageLimit > 0 && vmPhysPageLimit < vmStat.numPhysPages) {
+	vmStat.numPhysPages = vmPhysPageLimit;
+    }
     Sys_Printf("Available memory %d\n", vmStat.numPhysPages * vm_PageSize);
     coreMap = (VmCore *) Vm_BootAlloc(sizeof(VmCore) * vmStat.numPhysPages);
 }
