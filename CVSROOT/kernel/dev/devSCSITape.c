@@ -226,11 +226,14 @@ InitTapeDevice(devicePtr, devPtr)
      * Allocate and return the ScsiTape structure in the data field of the
      * Fs_Device.
      */
-    if ((status == SUCCESS) && devicePtr->data == (ClientData) NIL) { 
+    if ((status == SUCCESS) && (devicePtr->data == (ClientData) NIL)) { 
 	tapePtr = (ScsiTape *) malloc(sizeof(ScsiTape));
 	*tapePtr = tapeData;
         devicePtr->data = (ClientData)tapePtr;
 	devPtr->clientData = (ClientData) tapePtr;
+	if (devPtr->errorProc == InitError) {
+	    devPtr->errorProc = DevSCSITapeError;
+	}
     }
     return(status);
 }
@@ -514,7 +517,7 @@ DevSCSITapeVariableIO(tapePtr,command, buffer, countPtr)
     /* 
      * Setup the command, a code value of zero means variable block.
      */
-    SetupCommand(tapePtr->devPtr, command, 0,  (unsigned)*countPtr, 
+    SetupCommand(tapePtr->devPtr, command, 0,  (unsigned)*countPtr & 0xffff, 
 		&scsiTapeCmd);
     scsiTapeCmd.buffer = buffer;
     scsiTapeCmd.bufferLen = *countPtr;
