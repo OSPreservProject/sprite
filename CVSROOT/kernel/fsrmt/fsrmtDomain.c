@@ -59,7 +59,10 @@ typedef	struct	FsOpenReplyParam {
  *	Get a handle for a prefix.  This conducts an RPC_FS_PREFIX
  *	to see if there is a server for the prefix.  If there is one this
  *	routine installs a handle for it.  The pointer to the handle
- *	is returned.
+ *	is returned. The serverId is used to find the server of a prefix.
+ *	A serverID of RPC_BROADCAST_SERVER_ID will broadcast for the
+ *	server. Any other value will case an rpc to be done to that
+ *	particular host.
  *
  * Results:
  *	FAILURE or RPC_TIMEOUT if we couldn't find a server for the prefix.
@@ -75,8 +78,9 @@ typedef	struct	FsOpenReplyParam {
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteImport(prefix, idPtr, domainTypePtr, hdrPtrPtr)
+FsSpriteImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
     char	*prefix;		/* Prefix for which to find a server. */
+    int		serverID;		/* Server id of prefix
     Fs_UserIDs	*idPtr;			/* IGNORED */
     int		*domainTypePtr;		/* Return - FS_REMOTE_SPRITE_DOMAIN or
 					 *          FS_REMOTE_PSEUDO_DOMAIN */
@@ -103,7 +107,7 @@ FsSpriteImport(prefix, idPtr, domainTypePtr, hdrPtrPtr)
     storage.replyDataSize = 0;
     fileIDPtr = &(openReplyParam.fileID);
 
-    status = Rpc_Call(RPC_BROADCAST_SERVER_ID, RPC_FS_PREFIX, &storage);
+    status = Rpc_Call(serverID, RPC_FS_PREFIX, &storage);
     /*
      * It is necessary to allocate and copy over the stream data, since
      * the cltOpen proc frees this space.
@@ -172,10 +176,12 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
     int					domainType;
     ReturnStatus			status;
     FsOpenReplyParam			*openReplyPtr;
+    int					serverID;
 
     status = FsPrefixLookup((char *) storagePtr->requestDataPtr,
 			FS_EXPORTED_PREFIX | FS_EXACT_PREFIX, clientID,
-			&hdrPtr, &rootID, &lookupName, &domainType, &prefixPtr);
+			&hdrPtr, &rootID, &lookupName, &serverID, &domainType, 
+			&prefixPtr);
     if (status == SUCCESS) {
 	register Rpc_ReplyMem		*replyMemPtr;
 	ClientData			streamData;
