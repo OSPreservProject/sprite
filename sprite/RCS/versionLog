@@ -47,4 +47,7 @@ Bogus version due to error while making kernel.
 1.049	Sat Dec 30 15:29:44 PST 1989
 New sun4 kernel linked from the fixed fsio module that Brent installed to
 fix the problem with data not being written back to disk.
+
+1.051	Sat Jan  6 13:48:22 PST 1990
+Added some hooks for gathering further recovery information on the servers.
     New files linked in from the net library.
