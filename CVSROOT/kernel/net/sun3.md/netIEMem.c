@@ -57,12 +57,12 @@ NetIEMemInit()
 	netIEState.memBase = (int) Vm_RawAlloc(NET_IE_MEM_SIZE);
 #endif
 #ifdef sun4
-	netIEState.memBase = (int) Vm_RawAlloc(NET_IE_MEM_SIZE);
+	netIEState.memBase = (int) VmMach_NetMemAlloc(NET_IE_MEM_SIZE);
 #endif
 #ifdef sun3
 	netIEState.memBase = (int) VmMach_NetMemAlloc(NET_IE_MEM_SIZE);
 #endif
-	printf("Initializing Intel memory.\n");
+	printf("Initializing Intel memory at 0x%x.\n",netIEState.memBase);
     }
     memAddr = (Address) netIEState.memBase;
 }

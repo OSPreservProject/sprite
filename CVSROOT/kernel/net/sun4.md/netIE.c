@@ -91,7 +91,7 @@ NetIEInit(name, number, ctrlAddr)
     allocFunc = VmMach_NetMemAlloc;
 #endif
 #ifdef sun4
-    allocFunc = Vm_RawAlloc;
+    allocFunc = VmMach_NetMemAlloc;
 #endif
 
     DISABLE_INTR();

@@ -97,13 +97,13 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 #define VECTOR_LENGTH	20
     int					borrowedBytes[VECTOR_LENGTH];
     int					*borrowedBytesPtr;
-#ifdef sun3
+#if defined(sun3) || defined(sun4) 
     Net_ScatterGather			newScatGathArr[NET_IE_NUM_XMIT_BUFFERS];
 #endif
 
     netIEState.transmitting = TRUE;
     curScatGathPtr = scatterGatherPtr;
-#ifdef sun3
+#if defined(sun3) || defined(sun4) 
     /*
      * Remap the packet into network addressible memory.
      */
@@ -371,7 +371,12 @@ NetIEXmitDone()
      * wrong.
      */
     if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+#ifndef sun4
+	/*
+	 * Need to fix this for the sun4.
+	 */
 	printf( "NetIEXmitDone: No current packet\n.");
+#endif
 	return;
     }
 
