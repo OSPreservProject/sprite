@@ -72,7 +72,11 @@ typedef struct Fs_BlockCacheStats {
      */
     unsigned int readAccesses;		/* Read fetches on the cache. */
     unsigned int bytesRead;		/* Total bytes read from the cache
-					 * including misses read into cache */
+					 * including misses read into cache
+					 * This doesn't include bytes read
+					 * after a failed swap page cache
+					 * access, since those bytes aren't
+					 * read into the cache. */
     unsigned int bytesReadOverflow;	/* Extra */
     unsigned int readHitsOnDirtyBlock;	/* Fetches that hit on a block that had
 				 	 * dirty data in it. */
@@ -383,13 +387,51 @@ typedef struct Fs_RemoteIOStats {
     int sharedStreamBytesRead;	/* Bytes read from shared uncacheable streams */
     int sharedStreamBytesWritten;/* Bytes written to shared uncached streams */
     int hitsOnVMBlock;		/* Code and Heap pages found in the cache */
-    int missesOnVMBlock;	/* Code and Heap pages not found in the cache */
+    int missesOnVMBlock;	/* This shoudl be code and heap pages not found
+				 * in the cache, but it includes the misses
+				 * due to stupid swap page cache accesses.  We
+				 * will almost never find those, unless they
+				 * are due to a shared page.  So subtract the
+				 * number of swap page misses from this to get
+				 * a more reasonable value. */
+/* We really need a counter for shared page accesses and hits. */
     int bytesReadForVM;		/* Bytes read in RmtFilePageRead */
     int bytesWrittenForVM;	/* Bytes written in RmtFilePageWrite */
-    int	hitsOnHeapBlock;	/* Block in cache? */
-    int	missesOnHeapBlock;	/* Block not in cache? */
+    int	hitsOnHeapBlock;	/* Block in cache. */
+    int	missesOnHeapBlock;	/* Block not in cache. */
+    int	hitsOnCodePage;		/* Block in cache. */
+    int	missesOnCodePage;	/* Block not in cache. */
+    int	hitsOnSwapPage;		/* Block in cache.  This should be very rare
+				 * since it would only be if the "swap" page
+				 * is actually a shared page. */
+    int	missesOnSwapPage;	/* Block not in cache.  This will be the norn.
+				 * Subtract this value from missesOnVMBlock in
+				 * order to get the reasonable number of vm
+				 * cache misses.  We look in the cache for
+				 * all swap pages, and will only find shared
+				 * pages. */
     int	bytesReadForHeap;		/* Heap bytes read into cache */
-    int	bytesReadForHeapUncached;	/* Unached heap bytes read */
+    int	bytesReadForHeapUncached;	/* Uncached heap bytes read.  This
+					 * should almost always be zero, since
+					 * it's only upon an error that
+					 * heap blocks can't be read into
+					 * the cache. */
+    int	uncacheableDirBytesRead;	/* Directory bytes remotely read are
+					 * not cacheable. */
+    int	remoteDevicishBytesRead;	/* Device-like bytes read remotely.
+					 * This includes devices, pipes,
+					 * pseudo devices, pseudo file systems
+					 * and their control streams.  It
+					 * only includes successful bytes
+					 * read. */
+    int	remoteDevicishBytesWritten;	/* Devicish bytes written remotely.
+					 * This includes devices, pipes,
+					 * pseudo devices, pseudo file systems
+					 * and their control streams.  It
+					 * only includes successful bytes
+					 * written. */
+				    
+
 } Fs_RemoteIOStats;
 
 /*
