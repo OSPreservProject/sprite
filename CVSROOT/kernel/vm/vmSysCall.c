@@ -217,6 +217,38 @@ Vm_Cmd(command, arg)
 		status = SYS_ARG_NOACCESS;
 	    }
 	    break;
+	case VM_FLUSH_SEGMENT: {
+	    extern int	vmNumSegments;
+	    int		intArr[3];
+	    Vm_Segment	*segPtr;
+	    int		lowPage;
+	    int		highPage;
+
+	    status = Vm_CopyIn(3 * sizeof(int), (Address)arg, 
+				(Address)intArr);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    if (intArr[0] <= 0 || intArr[0] >= vmNumSegments) {
+		status = SYS_INVALID_ARG;
+		break;
+	    }
+	    segPtr = VmGetSegPtr(intArr[0]);
+	    if (segPtr->type == VM_STACK) {
+		lowPage = mach_LastUserStackPage - segPtr->numPages + 1;
+		highPage = mach_LastUserStackPage;
+	    } else {
+		lowPage = segPtr->offset;
+		highPage = segPtr->offset + segPtr->numPages - 1;
+	    }
+	    if (intArr[1] >= lowPage && intArr[1] <= highPage) {
+		lowPage = intArr[1];
+	    }
+	    if (intArr[2] >= lowPage && intArr[2] <= highPage) {
+		highPage = intArr[2];
+	    }
+	    VmFlushSegment(segPtr, lowPage, highPage);
+	}
 	case VM_SET_FREE_WHEN_CLEAN:
 	    vmFreeWhenClean = (Boolean)arg;
 	    break;

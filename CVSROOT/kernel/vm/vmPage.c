@@ -2082,6 +2082,73 @@ VmCountDirtyPages()
     return(numDirtyPages);
 }
 
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmFlushSegment --
+ *
+ *	Flush the given range of pages in the segment to swap space and take
+ *	them out of memory.  It is assumed that the processes that own this
+ *	segment are frozen.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *     	All memory in the given range is forced out to swap and freed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+VmFlushSegment(segPtr, firstPage, lastPage)
+    Vm_Segment	*segPtr;
+    int		firstPage;
+    int		lastPage;
+{
+    register	Vm_PTE		*ptePtr;
+    register	VmCore		*corePtr;
+    unsigned int		pfNum;
+    Boolean			referenced;
+    Boolean			modified;
+    Vm_VirtAddr			virtAddr;
+
+    LOCK_MONITOR;
+
+    if (segPtr->ptPtr == (Vm_PTE *)NIL) {
+	UNLOCK_MONITOR;
+	return;
+    }
+    virtAddr.segPtr = segPtr;
+    virtAddr.page = firstPage;
+    for (ptePtr = VmGetPTEPtr(segPtr, firstPage);
+         virtAddr.page <= lastPage;
+	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	    continue;
+	}
+	pfNum = Vm_GetPageFrame(*ptePtr);
+	corePtr = &coreMap[pfNum];
+	if (corePtr->lockCount > 0) {
+	    continue;
+	}
+	if (corePtr->flags & VM_DIRTY_PAGE) {
+	    corePtr->flags |= VM_DONT_FREE_UNTIL_CLEAN;
+	} else {
+	    VmMach_GetRefModBits(&virtAddr, Vm_GetPageFrame(*ptePtr),
+				 &referenced, &modified);
+	    if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
+		TakeOffAllocList(corePtr);
+		PutOnDirtyList(corePtr);
+		corePtr->flags |= VM_DONT_FREE_UNTIL_CLEAN;
+	    }
+	}
+	VmPageFreeInt(pfNum);
+	VmPageInvalidateInt(&virtAddr, ptePtr);
+    }
+
+    UNLOCK_MONITOR;
+}
+
 
 /*
  *----------------------------------------------------------------------
