@@ -317,12 +317,12 @@ sigReturn:
 	movl	a0@(MACH_TRAP_REGS_OFFSET + 60), sp
 	movl	sp, a0@(MACH_EXC_STACK_PTR_OFFSET)	
 |*
-|* Call Byte_Copy(sizeof(excStack), (Address)excStack, (Address)sp);
+|* Call bcopy((Address)excStack, (Address)sp, sizeof(excStack));
 |*
+	movl	a0@(MACH_SIG_EXC_STACK_SIZE_OFFSET), sp@-
 	movl	sp, sp@-
 	pea	a0@(MACH_SIG_EXC_STACK_OFFSET)
-	movl	a0@(MACH_SIG_EXC_STACK_SIZE_OFFSET), sp@-
-	jsr	_Byte_Copy
+	jsr	_bcopy
 	addl	#12, sp
 |*
 |* Call the normal return from trap return MachUserReturn(procPtr, &excStack)
