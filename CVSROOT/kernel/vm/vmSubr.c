@@ -1555,3 +1555,48 @@ Vm_CleanupSharedFile(procPtr,streamPtr)
     }
     UNLOCK_SHM_MONITOR;
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_CopySharedMem --
+ *
+ *     Copies shared memory data structures to handle a fork.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The new process gets a copy of the shared memory structures.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Vm_CopySharedMem(parentProcPtr, childProcPtr)
+    Proc_ControlBlock	*parentProcPtr;	/* Parent process. */
+    Proc_ControlBlock	*childProcPtr;	/* Child process. */
+{
+    Vm_Segment *segPtr;
+    Vm_SegProcList *sharedSeg;
+    Vm_SegProcList *parentSeg;
+    LOCK_SHM_MONITOR;
+    if (parentProcPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+	childProcPtr->vmPtr->sharedSegs = (List_Links *)
+		malloc(sizeof(Vm_SegProcList));
+	List_Init((List_Links *)childProcPtr->vmPtr->sharedSegs);
+	LIST_FORALL(parentProcPtr->vmPtr->sharedSegs,
+		(List_Links *)parentSeg) {
+	    sharedSeg = (Vm_SegProcList *)malloc(sizeof(Vm_SegProcList));
+	    bcopy(parentSeg, sharedSeg, sizeof(Vm_SegProcList));
+	    segPtr = sharedSeg->segTabPtr->segPtr;
+	    if(!VmCheckSharedSegment(childProcPtr, segPtr)) {
+		Vm_SegmentIncRef(segPtr, childProcPtr);
+	    }
+	    segPtr->refCount++;
+	    List_Insert((List_Links *)sharedSeg,
+		    LIST_ATREAR((List_Links *)childProcPtr->vmPtr->sharedSegs));
+	}
+	VmMach_CopySharedMem(parentProcPtr, childProcPtr);
+    }
+    UNLOCK_SHM_MONITOR;
+}
