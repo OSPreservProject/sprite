@@ -3,7 +3,7 @@
  *
  *	Routines for process migration recovery.
  *
- * Copyright 1988 Regents of the University of California.
+ * Copyright 1988, 1989, 1990 Regents of the University of California.
  * All rights reserved.
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
@@ -28,8 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "hash.h"
 #include "stdlib.h"
 
-static void MigrateCrash();
-static void MigHostIsUp();
+static void HostChanged();
 
 static Sync_Lock recovLock;
 static Sync_Condition recovCondition = {0};
@@ -38,9 +37,26 @@ static Sync_Condition recovCondition = {0};
 typedef struct DependInfo {
     Proc_PID	processID;	/* the process ID on our host, and the
 				 * key into the hash table */
+    Proc_PID	peerProcessID;	/* the process ID on the other host. */
     int		hostID;		/* the other host for the process
 				 * (home or remote) */
+    int		flags;		/* Flags (see below) */
 } DependInfo;
+
+/*
+ * Define constants for use with migration-recovery interaction.
+ *
+ *	DEPEND_UNREACHABLE	- host was unable to receive death notice.
+ */
+#define DEPEND_UNREACHABLE 1
+
+/*
+ * Flags for HostChanged.
+ *	HOST_CRASHED 	- a host is down, or rebooted.
+ *	HOST_UP		- host is reachable.
+ */
+#define HOST_CRASHED 0
+#define HOST_UP 1
 
 /*
  * Hash tables for dependency information.
@@ -48,6 +64,16 @@ typedef struct DependInfo {
 
 Hash_Table	dependHashTableStruct;
 Hash_Table	*dependHashTable = &dependHashTableStruct;
+
+/*
+ * Define a structure for keeping track of dependencies while doing
+ * a hash search -- we store the key in a list and do individual hash
+ * lookups once the search is over.
+ */
+typedef struct {
+    List_Links links;		/* Pointers within list. */
+    Proc_PID processID;		/* Key. */
+} DependChain;
 
 #define KERNEL_HASH
 
@@ -72,46 +98,18 @@ void
 ProcRecovInit()
 {
     Hash_Init(dependHashTable, 0, HASH_ONE_WORD_KEYS);
-    Recov_CrashRegister(MigrateCrash, (ClientData) NIL);
+    Recov_CrashRegister(HostChanged, (ClientData) HOST_CRASHED);
     Sync_LockInitDynamic(&recovLock, "Proc:recovLock");
 }
 
 
 /*
- *----------------------------------------------------------------------------
- *
- * MigHostIsUp --
- *
- *	Wakeup processes waiting for a host to come back or reboot.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Processes waiting for process migration dependencies on any host
- *	are awakened. 
- *
- *----------------------------------------------------------------------------
- *
- */
-/* ARGSUSED */
-static ENTRY void
-MigHostIsUp(hostID, data)
-    int hostID;
-    ClientData data;
-{
-    LOCK_MONITOR;
-    Sync_Broadcast(&recovCondition);
-    UNLOCK_MONITOR;
-}
-
-/*
  *----------------------------------------------------------------------
  *
- * MigrateCrash --
+ * HostChanged --
  *
  *	Kill off any migrated processes associated with a host that has
- *	crashed.
+ *	crashed.  Notify anyone waiting for a change in host.
  *
  * Results:
  *	None.
@@ -121,27 +119,81 @@ MigHostIsUp(hostID, data)
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
 static ENTRY void
-MigrateCrash(hostID, clientData)
+HostChanged(hostID, clientData)
     int hostID;		/* Host that has rebooted */
-    ClientData clientData;	/* IGNORED */
+    ClientData clientData;	/* Whether the host crashed. */
 {
     Hash_Search			hashSearch;
     register Hash_Entry		*hashEntryPtr;
     DependInfo			*dependPtr;
+    List_Links			dependList;
+    DependChain			*chainPtr;
+    Boolean			crashed;
 
     LOCK_MONITOR;
+
+    crashed = ((int) clientData) == HOST_CRASHED;
+    
     Sync_Broadcast(&recovCondition);
     Hash_StartSearch(&hashSearch);
+    List_Init(&dependList);
     for (hashEntryPtr = Hash_Next(dependHashTable, &hashSearch);
          hashEntryPtr != (Hash_Entry *) NIL;  
 	 hashEntryPtr = Hash_Next(dependHashTable, &hashSearch)) {
 	dependPtr = (DependInfo *) Hash_GetValue(hashEntryPtr);
 	if (dependPtr->hostID == hostID) {
-	    Proc_CallFunc(Proc_DestroyMigratedProc,
-			  (ClientData) dependPtr->processID, 0);
+	    if (crashed && !(dependPtr->flags & DEPEND_UNREACHABLE)) {
+		/*
+		 * This process still exists on our host.
+		 */
+		Proc_CallFunc(Proc_DestroyMigratedProc,
+			      (ClientData) dependPtr->processID, 0);
+	    } else if (crashed || (dependPtr->flags & DEPEND_UNREACHABLE)){
+		/*
+		 * Either the host crashed but we already killed the
+		 * process and just want to get rid of the hash entry,
+		 * or it has come back and we want to notify it about
+		 * a dead process.
+		 */
+		chainPtr = (DependChain *) malloc(sizeof(DependChain));
+		chainPtr->processID = dependPtr->processID;
+		List_InitElement(&chainPtr->links);
+		List_Insert(&chainPtr->links, LIST_ATREAR(&dependList));
+		if (!crashed) {
+		    Proc_CallFunc(ProcMigKillRemoteCopy,
+				  (ClientData) dependPtr->peerProcessID, 0);
+		}
+		    
+	    }  
 	}
+    }
+    /*
+     * Now clean up the list of dependencies to do Hash_Deletes.
+     */
+    while (!List_IsEmpty(&dependList)) {
+	chainPtr = (DependChain *) List_First(&dependList);
+	List_Remove((List_Links *) chainPtr);
+#ifdef KERNEL_HASH
+	hashEntryPtr = Hash_LookOnly(dependHashTable,
+				     (Address) chainPtr->processID);
+	if (hashEntryPtr != (Hash_Entry *) NIL) {
+#else KERNEL_HASH
+        hashEntryPtr = Hash_FindEntry(dependHashTable,
+				      (Address) chainPtr->processID);
+	if (hashEntryPtr != (Hash_Entry *) NULL) {
+#endif				/* KERNEL_HASH */
+	    dependPtr = (DependInfo *) Hash_GetValue(hashEntryPtr);
+#ifdef KERNEL_HASH
+	    Hash_Delete(dependHashTable, hashEntryPtr);
+#else KERNEL_HASH
+	    Hash_DeleteEntry(dependHashTable, hashEntryPtr);
+#endif				/* KERNEL_HASH */
+	    Recov_RebootUnRegister(dependPtr->hostID, HostChanged,
+				   clientData);
+	    free ((Address) dependPtr);
+	}
+	free((char *) chainPtr);
     }
     UNLOCK_MONITOR;
 }
@@ -150,7 +202,7 @@ MigrateCrash(hostID, clientData)
 /*
  *----------------------------------------------------------------------
  *
- * Proc_AddMigDependency --
+ * ProcMigAddDependency --
  *
  *	Note a dependency of a process on a remote machine.
  *
@@ -163,9 +215,9 @@ MigrateCrash(hostID, clientData)
  *----------------------------------------------------------------------
  */
 ENTRY void
-Proc_AddMigDependency(processID, hostID)
+ProcMigAddDependency(processID, peerProcessID)
     Proc_PID processID;		/* process that depends on the host */
-    int hostID;			/* host to watch */
+    Proc_PID peerProcessID;	/* process on the other host */
 {
     DependInfo *dependPtr;
     Hash_Entry *hashEntryPtr;
@@ -177,7 +229,9 @@ Proc_AddMigDependency(processID, hostID)
     dependPtr = (DependInfo *) malloc(sizeof (DependInfo));
 
     dependPtr->processID = processID;
-    dependPtr->hostID = hostID;
+    dependPtr->peerProcessID = peerProcessID;
+    dependPtr->hostID = Proc_GetHostID(peerProcessID);
+    dependPtr->flags = 0;
 #ifdef KERNEL_HASH
     hashEntryPtr = Hash_Find(dependHashTable, (Address) processID);
     new = (hashEntryPtr->value == (Address) NIL);
@@ -187,11 +241,11 @@ Proc_AddMigDependency(processID, hostID)
     if (!new) {
 	if (proc_MigDebugLevel > 0) {
 	    if (proc_MigDebugLevel > 4) {
-		panic("Proc_AddMigDependency: process %x already registered.\n",
+		panic("ProcMigAddDependency: process %x already registered.\n",
 		      processID);
 	    } else {
 		printf(
-		"%s Proc_AddMigDependency: process %x already registered.\n",
+		"%s ProcMigAddDependency: process %x already registered.\n",
 		      "Warning:", processID);
 	    }
 	}
@@ -199,7 +253,7 @@ Proc_AddMigDependency(processID, hostID)
 	return;
     }
     Hash_SetValue(hashEntryPtr, (ClientData) dependPtr);
-    Recov_RebootRegister(hostID, MigHostIsUp, (ClientData) NIL);
+    Recov_RebootRegister(dependPtr->hostID, HostChanged, (ClientData) HOST_UP);
     UNLOCK_MONITOR;
 }
 
@@ -208,22 +262,29 @@ Proc_AddMigDependency(processID, hostID)
 /*
  *----------------------------------------------------------------------
  *
- * Proc_RemoveMigDependency --
+ * ProcMigRemoveDependency --
  *
  *	Remove a process from the table of dependencies on remote machines.
+ *	If the other host wasn't notified, defer the removal until the other
+ * 	host is known to be down or rebooted, and notify the other host
+ *	of the death of the process if it should come back.  After this
+ *	routine is called, the routines in this file are responsible for
+ *	eventually getting rid of the dependency (e.g., the caller
+ * 	won't call again).
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	The corresponding entry for the process is removed from the
- *	hash table and freed.
+ *	hash table and freed, or flagged for future removal.
  *
  *----------------------------------------------------------------------
  */
 ENTRY void
-Proc_RemoveMigDependency(processID)
+ProcMigRemoveDependency(processID, notified)
     Proc_PID processID;		/* process to remove */
+    Boolean notified;		/* Whether other host was notified of death. */
 {
     DependInfo *dependPtr;
     Hash_Entry *hashEntryPtr;
@@ -245,11 +306,11 @@ Proc_RemoveMigDependency(processID)
 	 */
 	if (proc_MigDebugLevel > 0) {
 	    if (proc_MigDebugLevel > 4) {
-		panic("Proc_RemoveMigDependency: process %x not registered.\n",
+		panic("ProcMigRemoveDependency: process %x not registered.\n",
 		      processID);
 	    } else {
 		printf(
-		    "%s Proc_RemoveMigDependency: process %x not registered.\n",
+		    "%s ProcMigRemoveDependency: process %x not registered.\n",
 		    "Warning:", processID);
 	    }
 	}
@@ -258,12 +319,18 @@ Proc_RemoveMigDependency(processID)
 	return;
     }
     dependPtr = (DependInfo *) Hash_GetValue(hashEntryPtr);
+    if (!notified) {
+	dependPtr->flags |= DEPEND_UNREACHABLE;
+	UNLOCK_MONITOR;
+	return;
+    }
 #ifdef KERNEL_HASH
     Hash_Delete(dependHashTable, hashEntryPtr);
 #else KERNEL_HASH
     Hash_DeleteEntry(dependHashTable, hashEntryPtr);
 #endif /* KERNEL_HASH */
-    Recov_RebootUnRegister(dependPtr->hostID, MigHostIsUp, (ClientData) NIL);
+    Recov_RebootUnRegister(dependPtr->hostID, HostChanged,
+			   (ClientData) HOST_UP);
     free ((Address) dependPtr);
     UNLOCK_MONITOR;
 }
