@@ -44,5 +44,6 @@ extern int Sys_GetrlimitStub _ARGS_((int resource, struct rlimit *rlp));
 extern int Sys_SetrlimitStub _ARGS_((void));
 extern int Sys_GetsysinfoStub _ARGS_((unsigned op, char *buffer,
 	unsigned nbytes, int *start, char *arg));
+extern int Sys_NopStub _ARGS_((void));
 
 #endif /* _SYSINT */
