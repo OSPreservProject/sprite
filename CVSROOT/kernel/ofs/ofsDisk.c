@@ -250,7 +250,13 @@ FsAttachDisk(devicePtr, localName, flags)
 	    }
 	}
     }
-    domainPtr->headerPtr->device = *devicePtr;
+    /*
+     * Fix up the device information in the domain header
+     * as this is used by the block I/O routines.
+     */
+    domainPtr->headerPtr->device.unit = devicePtr->unit;
+    domainPtr->headerPtr->device.type = devicePtr->type;
+    domainPtr->headerPtr->device.data = devicePtr->data;
 
     /*
      * After reading the low level header information from the disk we
@@ -964,5 +970,77 @@ Fs_SectorsToRawDiskAddr(sector, numSectors, numHeads, diskAddrPtr)
     sector			-= diskAddrPtr->cylinder * sectorsPerCyl;
     diskAddrPtr->head		= sector / numSectors;
     diskAddrPtr->sector		= sector - numSectors * diskAddrPtr->head;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsRereadSummaryInfo --
+ *
+ *	Reread the summary sector associated with the prefix and update
+ *	the domain information. This should be called if the summary
+ *	sector on the disk has been changed since the domain was attached.
+ *
+ * Results:
+ *	SUCCESS if the summary sector was read correctly and the 
+ *	information was updated
+ *
+ * Side effects:
+ *	The summary sector information associated with the domain is
+ *	updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FsRereadSummaryInfo(prefixName)
+   char	*prefixName;	/* Name that the disk is attached under. */
+{
+    FsHandleHeader	*hdrPtr;
+    char		*lookupName;
+    int			domainType;
+    FsPrefix		*prefixPtr;
+    Fs_FileID		rootID;
+    int			domain;
+    register FsDomain	*domainPtr;
+    ReturnStatus	status;
+    char		buffer[DEV_BYTES_PER_SECTOR];
+    int			amountRead;
+    Fs_Device		*devicePtr;
+
+    /*
+     * Find the correct domain.
+     */
+    status = FsPrefixLookup(prefixName, 
+		   FS_EXACT_PREFIX | FS_EXPORTED_PREFIX | FS_LOCAL_PREFIX,
+		   rpc_SpriteID, &hdrPtr, &rootID, &lookupName, &domainType,
+		   &prefixPtr);
+    if (status != SUCCESS) {
+	return(status);
+    } else if (hdrPtr->fileID.type != FS_LCL_FILE_STREAM) {
+	return(GEN_INVALID_ARG);
+    }
+    domain = hdrPtr->fileID.major;
+    domainPtr = FsDomainFetch(domain, FALSE);
+    if (domainPtr == (FsDomain *)NIL) {
+	return(FS_DOMAIN_UNAVAILABLE);
+    }
+    /*
+     * Read the summary sector.
+     */
+    devicePtr = &(domainPtr->headerPtr->device);
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)
+		(devicePtr, domainPtr->summarySector * DEV_BYTES_PER_SECTOR,
+		    DEV_BYTES_PER_SECTOR,
+		    buffer, &amountRead); 
+    if (status != SUCCESS) {
+	return(status);
+    }
+    /*
+     * Copy information from the buffer.
+     */
+    bcopy(buffer, domainPtr->summaryInfoPtr, amountRead);
+    return SUCCESS;
 }
 
