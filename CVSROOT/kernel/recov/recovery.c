@@ -206,6 +206,7 @@ Boolean recovTracing = TRUE;
 /*
  * Forward declarations.
  */
+void Recov_PrintState();
 void RecovRebootCallBacks();
 void RecovCrashCallBacks();
 void RecovDelayedCrashCallBacks();
@@ -215,6 +216,7 @@ void MarkHostDead();
 int  GetHostState();
 void GetRebootList();
 void CheckHost();
+char *RecovState();
 
 
 /*
@@ -1240,31 +1242,7 @@ Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
 	} else {
 	    Sys_Printf("%10s ", name);
 	}
-	switch(recPtr->state &
-		    ~(RECOV_CRASH_CALLBACKS|RECOV_PINGING_HOST|
-		      RECOV_REBOOT_CALLBACKS|RECOV_WANT_RECOVERY)) {
-	    case RECOV_STATE_UNKNOWN:
-		Sys_Printf("%-8s", "Unknown");
-		break;
-	    case RECOV_HOST_ALIVE:
-		Sys_Printf("%-8s ", "Alive");
-		break;
-	    case RECOV_HOST_DYING:
-		Sys_Printf("%-8s ", "Dying");
-		break;
-	    case RECOV_HOST_DEAD:
-		Sys_Printf("%-8s ", "Dead");
-		break;
-	    case RECOV_WAITING:
-		Sys_Printf("%-8s ", "Waiting");
-		break;
-	    case RECOV_CRASH:
-		Sys_Printf("%-8s ", "Crash callbacks");
-		break;
-	    case RECOV_REBOOT:
-		Sys_Printf("%-8s ", "Reboot callbacks");
-		break;
-	}
+	Sys_Printf("%-8s", RecovState(recPtr->state));
 	Sys_Printf("%3s", (recPtr->state & RECOV_CRASH_CALLBACKS) ?
 			    " C " : "   ");
 	Sys_Printf("%3s", (recPtr->state & RECOV_PINGING_HOST) ?
@@ -1329,9 +1307,90 @@ void
 Recov_PrintTrace(numRecs)
     int numRecs;
 {
+    Recov_PrintState();
     if (numRecs <= 0 || numRecs > recovTraceLength) {
 	numRecs = recovTraceLength;
     }
     Sys_Printf("RECOVERY TRACE\n");
     (void)Trace_Print(recovTraceHdrPtr, numRecs, Recov_PrintTraceRecord);
+    Recov_PrintState();
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_PrintState --
+ *
+ *	Dump out the recovery state.  Called via a console L1 keystroke.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints to the console.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Recov_PrintState()
+{
+    Hash_Search			hashSearch;
+    register Hash_Entry		*hashEntryPtr;
+    register RecovHostState	*hostPtr;
+    char			*hostName;
+
+    Sys_Printf("RECOVERY STATE\n");
+    Hash_StartSearch(&hashSearch);
+    for (hashEntryPtr = Hash_Next(recovHashTable, &hashSearch);
+	 hashEntryPtr != (Hash_Entry *)NIL;
+	 hashEntryPtr = Hash_Next(recovHashTable, &hashSearch)) {
+	hostPtr = (RecovHostState *)hashEntryPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    Net_SpriteIDToName(hostPtr->spriteID, &hostName);
+	    Sys_Printf("%-14s %-8s", hostName, RecovState(hostPtr->state));
+	    Sys_Printf(" clt bits 0x%x\n", hostPtr->clientState);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovState --
+ *
+ *	Return a printable string for the host's state.
+ *
+ * Results:
+ *	A pointer to a string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+RecovState(state)
+    int state;
+{
+    switch(state & ~(RECOV_CRASH_CALLBACKS|RECOV_PINGING_HOST|
+		     RECOV_REBOOT_CALLBACKS|RECOV_WANT_RECOVERY)) {
+	default:
+	case RECOV_STATE_UNKNOWN:
+	    return("Unknown");
+	case RECOV_HOST_ALIVE:
+	    return("Alive");
+	case RECOV_HOST_DYING:
+	    return("Dying");
+	case RECOV_HOST_DEAD:
+	    return("Dead");
+	case RECOV_WAITING:
+	    return("Waiting");
+	case RECOV_CRASH:
+	    return("Crash callbacks");
+	case RECOV_REBOOT:
+	    return("Reboot callbacks");
+    }
+}
+
