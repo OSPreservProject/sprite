@@ -24,7 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmMachInt.h"
 #include "sig.h"
-#include "sigSpur.h"
+#include "sigMach.h"
 #include "mem.h"
 
 /*
@@ -865,7 +865,7 @@ MachInterrupt(intrStatusReg, kpsw)
  *
  * ----------------------------------------------------------------------------
  */
-void
+int
 MachUserError(errorType)
     int	errorType;
 {
@@ -909,6 +909,7 @@ MachUserError(errorType)
 	    Sys_Panic(SYS_FATAL, "MachUserError: Unknown user error %d\n",
 				 errorType);
     }
+    return(MACH_NORM_RETURN);
 }
 
 
@@ -962,6 +963,7 @@ MachVMDataFault(faultType, PC, destAddr, kpsw)
 	if (Vm_PageIn(destAddr, faultType & MACH_VM_FAULT_PROTECTION) !=
 								SUCCESS) {
 	    if (kpsw & MACH_KPSW_PREV_MODE) {
+		procPtr->machStatePtr->userState.faultAddr = destAddr;
 		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
 			       procPtr->processID, FALSE);
 	    } else {
@@ -1025,6 +1027,7 @@ MachVMPCFault(faultType, PC, kpsw)
 	     */
 	    if (Vm_PageIn(PC, FALSE) != SUCCESS) {
 		procPtr = Proc_GetCurrentProc();
+		procPtr->machStatePtr->userState.faultAddr = PC;
 		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
 			       procPtr->processID, FALSE);
 		return(MACH_USER_ACCESS_VIOL);
@@ -1061,6 +1064,7 @@ MachUserAction()
     Sig_Stack				sigStack;
     Sig_Context				sigContext;
     Address				pc;
+    Address				usp;
 
     procPtr = Proc_GetCurrentProc();
     procPtr->specialHandling = 0;
@@ -1076,14 +1080,25 @@ MachUserAction()
 	statePtr->userState.newCurPC = pc;
 	statePtr->userState.sigNum = sigStack.sigNum;
 	statePtr->userState.sigCode = sigStack.sigCode;
-	/*
-	 * Store the signal context onto the user's spill stack.
-	 */
 	statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0] -=
 							sizeof(sigContext);
-	if (Vm_CopyOut(sizeof(sigContext), (Address)&sigContext,
-	   (Address)statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0]) !=
-								SUCCESS) {
+	usp = (Address)statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0];
+	sigContext.machContext.faultAddr = statePtr->userState.faultAddr;
+	/*
+	 * Copy out the signal context stuff minus the trap state.
+	 */
+	if (Vm_CopyOut(sizeof(sigContext) - sizeof(Mach_RegState),
+		       (Address)&sigContext, usp) != SUCCESS) {
+	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+	}
+	/*
+	 * Copy out the trap register state.
+	 */
+	usp += (unsigned)&sigContext.machContext.regState -
+	       (unsigned)&sigContext;
+	if (Vm_CopyOut(sizeof(Mach_RegState),
+		       (Address)&statePtr->userState.trapRegState,
+		       usp) != SUCCESS) {
 	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 	}
 	return(TRUE);
@@ -1189,16 +1204,32 @@ MachSigReturn()
     Sig_Stack		sigStack;
     Sig_Context		sigContext;
     Proc_ControlBlock	*procPtr;
+    Address		usp;
+    int			savedKPSW;
 
     procPtr = Proc_GetCurrentProc();
     statePtr = procPtr->machStatePtr;
-    if (Vm_CopyIn(sizeof(sigContext), 
-	    (Address)statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0],
+    usp = (Address)statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0];
+    /*
+     * Copy in the normal context stuff.
+     */
+    if (Vm_CopyIn(sizeof(sigContext) - sizeof(Mach_RegState), usp,
 	    (Address)&sigContext) != SUCCESS) {
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+    }
+    /*
+     * Now copy in the register state.
+     */
+    savedKPSW = statePtr->userState.trapRegState.kpsw;
+    usp += (unsigned)&sigContext.machContext.regState -
+	   (unsigned)&sigContext;
+    if (Vm_CopyIn(sizeof(Mach_RegState), usp,
+	          (Address)&statePtr->userState.trapRegState) != SUCCESS) {
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
     statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0] +=
 							sizeof(sigContext);
+    statePtr->userState.trapRegState.kpsw = savedKPSW;
     sigStack.contextPtr = &sigContext;
     Sig_Return(Proc_GetCurrentProc(), &sigStack);
     return(MACH_NORM_RETURN);

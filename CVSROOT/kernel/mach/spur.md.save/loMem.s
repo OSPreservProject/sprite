@@ -1131,7 +1131,7 @@ VMFault:
 	 * Check kernel or user mode.
 	 */
 	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
-	cmp_br_delayed	eq, VOL_TEMP1, $0, vmFault_PC
+	cmp_br_delayed	eq, VOL_TEMP1, $0, vmFault_KernMode
 	Nop
 	/*
 	 * Make sure that the saved window stack is OK.
@@ -1143,6 +1143,23 @@ VMFault:
 vmFault_GoodSWP:
 	SAVE_USER_STATE()
 	SWITCH_TO_KERNEL_STACKS()
+	jump		vmFault_PC
+	nop
+
+vmFault_KernMode:
+	/*
+	 * Save all globals on the spill stack in case they get
+	 * trashed.
+	 */
+	sub		SPILL_SP, SPILL_SP, $32
+	st_32		r1, SPILL_SP, $0
+	st_32		r2, SPILL_SP, $4
+	st_32		r3, SPILL_SP, $8
+	st_32		r5, SPILL_SP, $12
+	st_32		r6, SPILL_SP, $16
+	st_32		r7, SPILL_SP, $20
+	st_32		r8, SPILL_SP, $24
+	st_32		r9, SPILL_SP, $28
 
 vmFault_PC:
 	/*
@@ -1174,7 +1191,7 @@ vmFault_PC:
 	cmp_br_delayed	eq, RETURN_VAL_REG, $MACH_KERN_ACCESS_VIOL, 1f
 	nop
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
-1:	jump		ReturnTrap
+1:	jump		vmFault_Return
 	nop
 
 vmFault_GetDataAddr:
@@ -1192,7 +1209,7 @@ vmFault_GetDataAddr:
 	add_nt		VOL_TEMP2, r0, $0x30
 	cmp_br_delayed	lt, VOL_TEMP1, VOL_TEMP2, vmFault_IsData
 	Nop
-	jump		ReturnTrap
+	jump		vmFault_Return
 	nop
 vmFault_IsData:
 	/*
@@ -1238,6 +1255,19 @@ vmFault_IsData:
 	nop
 
 vmFault_KernParse:
+	/*
+	 * Restore globals since they could have gotten trashed while we
+	 * called the C routines.
+	 */
+	ld_32		r1, SPILL_SP, $0
+	ld_32		r2, SPILL_SP, $4
+	ld_32		r3, SPILL_SP, $8
+	ld_32		r5, SPILL_SP, $12
+	ld_32		r6, SPILL_SP, $16
+	ld_32		r7, SPILL_SP, $20
+	ld_32		r8, SPILL_SP, $24
+	ld_32		r9, SPILL_SP, $28
+
 	rd_special	VOL_TEMP1, pc
 	add_nt		VOL_TEMP1, VOL_TEMP1, $16
 	jump		ParseInstruction
@@ -1260,6 +1290,24 @@ vmFault_CallDataFault:
 	Nop
 	wr_insert	VOL_TEMP1
 
+vmFault_Return:
+	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	ne, VOL_TEMP1, r0, 1f
+	nop
+	/*
+	 * Restore the globals and the spill sp.
+	 */
+	ld_32		r1, SPILL_SP, $0
+	ld_32		r2, SPILL_SP, $4
+	ld_32		r3, SPILL_SP, $8
+	ld_32		r5, SPILL_SP, $12
+	ld_32		r6, SPILL_SP, $16
+	ld_32		r7, SPILL_SP, $20
+	ld_32		r8, SPILL_SP, $24
+	ld_32		r9, SPILL_SP, $28
+	nop
+	add_nt		SPILL_SP, SPILL_SP, $32
+1:
 	jump		ReturnTrap
 	Nop
 
@@ -1564,7 +1612,6 @@ SysCallTrap:
 	add_nt		OUTPUT_REG1, r0, $MACH_BAD_SYS_CALL
 	call		_MachUserError
 	Nop
-	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
 	jump		ReturnTrap
 	Nop
 
@@ -1750,6 +1797,10 @@ SysCall_Return:
 UserErrorTrap:
 	add_nt		CUR_PC_REG, NON_INTR_TEMP1, $0
 	add_nt		NEXT_PC_REG, NON_INTR_TEMP2, $0
+	ld_32           VOL_TEMP1, r0, $_machCurStatePtr
+        Nop
+	st_32		CUR_PC_REG, VOL_TEMP1, $MACH_TRAP_CUR_PC_OFFSET
+	st_32		NEXT_PC_REG, VOL_TEMP1, $MACH_TRAP_NEXT_PC_OFFSET
 	/*
 	 * Enable all traps.
 	 */
@@ -1784,35 +1835,15 @@ sigReturnTrap_Const1:
 	.long MACH_KPSW_USE_CUR_PC
 SigReturnTrap:
 	/*
-	 * Enable traps.
+	 * Switch over to the kernel stacks after saving the user's spill sp
+	 * and the kpsw.  We don't need to save any other state because we
+	 * will restore it from off of the user's spill stack.  We save the
+	 * kpsw because we can't trust the kpsw on the user's stack.
 	 */
-	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1, $0
-	/*
-	 * Go back to the previous window.  Note that the previous window
-	 * contains the saved values of the current PC, the next PC and
-	 * the kpsw.
-	 */
-	rd_special	VOL_TEMP1, pc
-	return		VOL_TEMP1, $12
-	Nop
-	/*
-	 * The saved KPSW tells us where to continue when we return from the
-	 * trap.  Extract out this info and disable traps.  Note that we don't
-	 * just use the KPSW directly because the user could have screwed 
-	 * it up.  The only part that we are interested in is whether to 
-	 * return to the current PC or the next PC.
-	 */
-	LD_PC_RELATIVE(SAFE_TEMP1, sigReturnTrap_Const1)
-	and		VOL_TEMP1, KPSW_REG, SAFE_TEMP1
-	rd_kpsw		VOL_TEMP2
-	and		VOL_TEMP2, VOL_TEMP2, $~MACH_KPSW_ALL_TRAPS_ENA
-	or		KPSW_REG, VOL_TEMP1, VOL_TEMP2
-	wr_kpsw		KPSW_REG, $0
-	/*
-	 * Switch over to the kernel stacks and save the user state.
-	 */
-	SAVE_USER_STATE()
+	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
+	nop
+	st_32		SPILL_SP, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * 4)
+	st_32		KPSW_REG, VOL_TEMP1, $MACH_TRAP_KPSW_OFFSET
 	SWITCH_TO_KERNEL_STACKS()
 	/*
 	 * Reenable traps and call the routine to handle returns from 
@@ -1820,10 +1851,8 @@ SigReturnTrap:
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
-	rd_insert	VOL_TEMP1
 	call		_MachSigReturn
 	Nop
-	wr_insert	VOL_TEMP1
 
 	jump		ReturnTrap
 	Nop
@@ -2065,10 +2094,8 @@ returnTrap_SpecialAction:
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
-	rd_insert	VOL_TEMP1
 	call		_MachUserAction
 	Nop
-	wr_insert	VOL_TEMP1
 	/*
 	 * The user action routine will return TRUE (1) if we should call
 	 * a signal handler or FALSE (0) otherwise.
@@ -2082,62 +2109,49 @@ returnTrap_SpecialAction:
 /*
  * returnTrap_CallSigHandler --
  *
- *	Need to start the process off calling a signal handler.
+ *	Need to start the process off calling a signal handler.  When we
+ *	are called all traps have already been enabled.
  */
 returnTrap_CallSigHandler:
+	/*
+	 * See if we have to allocate more memory on the saved window
+	 * stack.
+	 */
+	ld_32		SAFE_TEMP1, r0, $_machCurStatePtr
+        Nop
+        ld_32           VOL_TEMP1, SAFE_TEMP1, $MACH_MAX_SWP_OFFSET
+	ld_32		VOL_TEMP2, SAFE_TEMP1, $MACH_TRAP_SWP_OFFSET
+        sub             VOL_TEMP1, VOL_TEMP1, $(2 * MACH_SAVED_REG_SET_SIZE)
+        cmp_br_delayed  ule, VOL_TEMP2, VOL_TEMP1, 1f
+        Nop
+        /*
+         * Allocate more memory.
+         */
+	call		_MachGetWinMem
+	nop
+1:
+	/*
+	 * Disable all traps and restore the user's state.
+	 */
 	wr_kpsw		KPSW_REG, $0
 	RESTORE_USER_STATE()
-	/*
-	 * Grab the current state pointer in OUTPUT_REG5 so that we can use
-	 * it after we shift the window.
-	 */
-	ld_32		OUTPUT_REG5, r0, $_machCurStatePtr
 	/*
 	 * Pass the correct args to the signal handler:
 	 *
 	 *	Handler(sigNum, sigCode, contextPtr)
 	 */
-	ld_32		OUTPUT_REG1, OUTPUT_REG5, $MACH_SIG_NUM_OFFSET
-	ld_32		OUTPUT_REG2, OUTPUT_REG5, $MACH_SIG_CODE_OFFSET
-	add_nt		OUTPUT_REG3, SPILL_SP, $0
-	Nop
-	/*
-	 * Enable traps so that we can safely advance the window.
-	 */
-	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1, $0
-	/*
-	 * Advance to the window where the signal handler will execute.
-	 */
-	call		1f
-	Nop
-1:
-	/*
-	 * Put the pc to execute in VOL_TEMP1.  Note that INPUT_REG5 contains
-	 * the pointer to the machine struct that was in OUTPUT_REG5 before
-	 * we shifted the window.
-	 */
-	ld_32		VOL_TEMP1, INPUT_REG5, $MACH_NEW_CUR_PC_OFFSET
-	/*
-	 * See if we have enough window memory.
-	 */
-	ld_32		VOL_TEMP2, INPUT_REG5, $MACH_MAX_SWP_OFFSET
-	rd_special	VOL_TEMP3, swp
-	sub		VOL_TEMP2, VOL_TEMP2, $(2 * MACH_SAVED_REG_SET_SIZE)
-	cmp_br_delayed	ule, VOL_TEMP3, VOL_TEMP2, 1f
-	nop
-	call		_MachGetWinMem
-	nop
-1:
+	ld_32		INPUT_REG1, SAFE_TEMP1, $MACH_SIG_NUM_OFFSET
+	ld_32		INPUT_REG2, SAFE_TEMP1, $MACH_SIG_CODE_OFFSET
+	add_nt		INPUT_REG3, SPILL_SP, $0
 	/*
 	 * Set the signal handler executing in user mode.
 	 * Assume that the user's signal handler will do a "return r10,r0,8".
 	 */
+	ld_32		VOL_TEMP1, SAFE_TEMP1, $MACH_NEW_CUR_PC_OFFSET
 	add_nt		RETURN_ADDR_REG, r0, $(SigReturnAddr-8)
-	rd_kpsw		VOL_TEMP2
-	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_CUR_MODE
+	or		KPSW_REG, KPSW_REG, $(MACH_KPSW_CUR_MODE|MACH_KPSW_ALL_TRAPS_ENA)
 	jump_reg	VOL_TEMP1, $0
-	wr_kpsw		VOL_TEMP2, $0
+	wr_kpsw		KPSW_REG, $0
 
 /*
  *----------------------------------------------------------------------------

@@ -100,6 +100,8 @@ typedef struct {
     int			sigCode;	/* Signal code to pass to signal
 					 * handler. */
     int			oldHoldMask;	/* The saved hold mask. */
+    Address		faultAddr;	/* The fault address if a signal
+					 * is to be sent because of a fault. */
 } Mach_UserState;
 
 /*
@@ -118,7 +120,12 @@ typedef struct Mach_State {
 /*
  * Machine dependent signal context.
  */
-typedef int	Mach_SigContext;
+typedef struct	Mach_SigContext {
+    Address		faultAddr;	/* The fault address if the signal
+					 * was sent because of a fault. */
+    Mach_RegState	regState;	/* Register state at the time of the
+					 * trap that caused the signal. */
+} Mach_SigContext;
 
 /*
  * Macro to get processor number
