@@ -405,7 +405,7 @@ Timer_ScheduleRoutine(newElementPtr, interval)
  *	to remove it.
  *
  * Results:
- *	None.
+ *	TRUE if the element was removed, FALSE if it was already gone.
  *
  * Side effects:
  *	The timer queue structure is updated. 
@@ -413,7 +413,7 @@ Timer_ScheduleRoutine(newElementPtr, interval)
  *----------------------------------------------------------------------
  */
 
-void
+Boolean
 Timer_DescheduleRoutine(elementPtr)
     register Timer_QueueElement *elementPtr;	/* routine to be removed */
 {
@@ -422,6 +422,7 @@ Timer_DescheduleRoutine(elementPtr)
 #ifdef GATHER_STAT
     timer_Statistics.desched++;
 #endif
+    Boolean foundIt = FALSE;
 
     /*
      *  Go through the timer queue and remove the routine.  
@@ -433,11 +434,13 @@ Timer_DescheduleRoutine(elementPtr)
 
 	if ((List_Links *) elementPtr == itemPtr) {
 	    List_Remove(itemPtr);
+	    foundIt = TRUE;
 	    break;
 	}
     }
 
-    MASTER_UNLOCK(&timerMutex); 
+    MASTER_UNLOCK(&timerMutex);
+    return(foundIt);
 }
 
 /*
