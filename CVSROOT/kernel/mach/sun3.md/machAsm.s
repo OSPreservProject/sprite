@@ -1,4 +1,4 @@
-|* sunSubr.s --
+|* machAsm.s --
 |*
 |*     Contains misc. assembler routines for the SUN.
 |*
@@ -8,10 +8,33 @@
 |* rcs = $Header$ SPRITE (Berkeley)
 |*
 
-#include "sunSR.h"
-#include "vmSunConst.h"
-#include "machineConst.h"
+#include "machConst.h"
 #include "asmDefs.h"
+
+|*----------------------------------------------------------------------------
+|*
+|* MachRunUserProc -
+|*
+|*	void	MachRunUserProc()
+|*
+|* Results:
+|*     	Restore registers and return to user space.  Our caller has set
+|*	up our exception stack for us.
+|*
+|* Side effects:
+|*	Registers restored.
+|*
+|*----------------------------------------------------------------------------
+
+    .text
+    .globl	_MachRunUserProc
+_MachRunUserProc:
+    movl	_machCurStatePtr, a0			| a0 = ptr to user 
+							|      state struct
+    movl	a0@(MACH_USER_SP_OFFSET), a1		| Restore user stack
+    movc	a1, usp					|      pointer
+    moveml	a0@(MACH_TRAP_REGS_OFFSET), #0xffff	| Restore all regs
+    rte							| Return to user space
 
 |*---------------------------------------------------------------------
 |*
@@ -51,14 +74,13 @@ etherloop:
 
 |*---------------------------------------------------------------------
 |*
-|* MachContextSwitch -
+|* Mach_ContextSwitch -
 |*
-|*	Mach_ContextSwitch(switchToRegs, switchFromRegs)
+|*	Mach_ContextSwitch(fromProcPtr, toProcPtr)
 |*
 |*	Switch the thread of execution to a new processes.  This routine
-|*	is passed a pointer to the saved registers of the process that is
-|*      begin switched to and a pointer to the saved registers of the process
-|*      that is being switched from.  It goes through the following steps:
+|*	is passed a pointer to the process to switch from and a pointer to
+|*	the process to switch to.  It goes through the following steps:
 |*
 |*	1) Change to the new context.
 |*	2) Push the status register and the
@@ -83,31 +105,45 @@ etherloop:
 |*
 |*---------------------------------------------------------------------
 
-    .globl _MachContextSwitch
-_MachContextSwitch:
-    movl	sp, a1
+    .globl _Mach_ContextSwitch
+_Mach_ContextSwitch:
 |*
-|* Set the hardware context register for the destination process.
+|* Setup up the hardware context register for the destination process.
+|* VmMach_SetupContext(toProcPtr) returns the context register value.
 |*
-    movl	a1@(12),d0		| Get context value to set into a 
-					|     register
+    movl	sp@(8), sp@-
+    jsr		_VmMach_SetupContext
+    addql	#4, sp
 #ifdef SUN3
     movsb	d0, VMMACH_CONTEXT_OFF
 #else 
     movsb	d0,VMMACH_USER_CONTEXT_OFF:w 
     movsb	d0,VMMACH_KERN_CONTEXT_OFF:w
 #endif
-
+    movl	sp, a1			| Save the stack pointer value in a1
     movw	sr, sp@-		| Save the current value of the status
 					|     register on the stack.
-    movw	#SUN_SR_HIGHPRIO, sr	| Lock out interrupts.
+    movw	#MACH_SR_HIGHPRIO, sr	| Lock out interrupts.
     movl	usp, a0  		| Push the user stack pointer onto 
     movl	a0, sp@-		|     the stack.
     movl	#MAGIC, sp@-		| Put the magic number on the stack.
-    movl	a1@(4), a0		| Save all of the registers for the 
-    moveml	#0xffff, a0@		|    process being switched from.
-    movl	a1@(8), a0		| Restore all of the registers for the
-    moveml	a0@, #0xffff		|    process being switched to.
+
+    movl	a1@(4), d0		| d0 = fromProcPtr
+    addl	_machStatePtrOffset, d0 
+    movl	d0, a0			| a0 = pointer to mach struct
+    movl	a0@, a0
+					| Save registers for process being
+					|     switched from
+    moveml	#0xffff, a0@(MACH_SWITCH_REGS_OFFSET)
+
+    movl	a1@(8), d0		| d0 = toProcPtr
+    addl	_machStatePtrOffset, d0 
+    movl	d0, a0			| a0 = pointer to mach struct
+    movl	a0@, a0
+					| Restore registers for process being
+					|     switched to
+    moveml	a0@(MACH_SWITCH_REGS_OFFSET), #0xffff
+
     movl	#MAGIC, d0		| Check against the magic number
     cmpl	sp@, d0			|
     beq		1$			|
@@ -118,6 +154,24 @@ _MachContextSwitch:
     movl	sp@+, a0		| Restore the user stack pointer.
     movl	a0, usp
     movw	sp@+, sr		| Restore the status register.
+
+|*
+|* Get a pointer to the current machine state struct.
+|*
+    .globl	_proc_RunningProcesses, _machCurStatePtr, _machStatePtrOffset
+    movl	_proc_RunningProcesses, a0
+    movl	a0@, d0
+    addl	_machStatePtrOffset, d0
+    movl	d0, a0
+    movl	a0@, a0
+    movl	a0, _machCurStatePtr
+|*
+|* Set the end of the kernel stack marker for kdbx.
+|*
+    .globl	_dbgMaxStackAddr
+    movl	a0@(MACH_KERN_STACK_START_OFFSET), d0
+    addl	#MACH_KERN_STACK_SIZE, d0
+    movl	d0, _dbgMaxStackAddr
 
     rts
 
@@ -256,12 +310,12 @@ _Mon_Trap:
 |*
 |* ----------------------------------------------------------------------
 |*
-|* ExcSetVBR --
+|* MachSetVBR --
 |*
 |*	Set the value of the vector base register to that value that is 
 |*	passed in on the stack.
 |*
-|*	ExcSetVBR(vectorBaseAddr)
+|*	MachSetVBR(vectorBaseAddr)
 |*	    Address	vectorBaseAddr;
 |*	
 |* Results:
@@ -273,8 +327,8 @@ _Mon_Trap:
 |* ----------------------------------------------------------------------
 |*
 
-	.globl	_ExcSetVBR
-_ExcSetVBR:
+	.globl	_MachSetVBR
+_MachSetVBR:
 	movl	sp@(4),d0		| Get vector base address.
 	movc	d0, vbr			| Load vector base register.
 	rts	
@@ -282,11 +336,11 @@ _ExcSetVBR:
 |*
 |* ----------------------------------------------------------------------
 |*
-|* ExcGetVBR --
+|* MachGetVBR --
 |*
 |*	Get the value of the vector base register.
 |*
-|*	int	ExcGetVBR()
+|*	int	MachGetVBR()
 |*	
 |* Results:
 |*	The value of the vector base register.
@@ -297,8 +351,8 @@ _ExcSetVBR:
 |* ----------------------------------------------------------------------
 |*
 
-	.globl	_ExcGetVBR
-_ExcGetVBR:
+	.globl	_MachGetVBR
+_MachGetVBR:
 	movc	vbr, d0			| Get vector base register.
 	rts
 

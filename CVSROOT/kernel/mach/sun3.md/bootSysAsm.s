@@ -11,8 +11,7 @@
 .even
 .text
 
-#include "excAsm.h"
-#include "machineConst.h"
+#include "machConst.h"
 
 |
 | "Start" is used for the -e option to the loader.  "SpriteStart" is
@@ -25,7 +24,7 @@
 	.globl	_spriteStart
 start:
 _spriteStart:
-	movw	#SUN_SR_HIGHPRIO,sr		| lock out interrupts
+	movw	#MACH_SR_HIGHPRIO,sr		| lock out interrupts
 |
 | The function codes are only used to get to and from MMU space so set them
 | permanently here.
@@ -79,7 +78,7 @@ loopStart:
 | Enable the floating point processor.
 |
 	movsb VMMACH_SYSTEM_ENABLE_REG, d0
-	orb   #SUN_ENABLE_FPP, d0
+	orb   #MACH_ENABLE_FPP, d0
 	movsb d0, VMMACH_SYSTEM_ENABLE_REG
 #endif
 #endif

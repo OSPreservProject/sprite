@@ -14,9 +14,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "sunMon.h"
 #include "sys.h"
-#include "machine.h"
-#include "machineConst.h"
-#include "exc.h"
+#include "machConst.h"
+#include "machInt.h"
 #include "devTimer.h"
 #include "char.h"
 #include "vmMachInt.h"
@@ -179,11 +178,11 @@ Mon_StartNmi()
     if (stoppedNMI) {
 #ifdef SUN2
 	if (savedNmiVec != 0) {
-	    exc_VectorTablePtr->autoVec[6] = savedNmiVec;
+	    machVectorTablePtr->autoVec[6] = savedNmiVec;
 	}
 #endif
 #ifdef SUN3
-	*SunInterruptReg |= SUN_ENABLE_LEVEL7_INTR;
+	*SunInterruptReg |= MACH_ENABLE_LEVEL7_INTR;
 #endif
 	stoppedNMI = FALSE;
     }
@@ -226,11 +225,11 @@ Mon_StopNmi()
     if (!main_AllowNMI) {
 	stoppedNMI = TRUE;
 #ifdef SUN2
-	savedNmiVec = exc_VectorTablePtr->autoVec[6];
-	exc_VectorTablePtr->autoVec[6] = MonNmiNop;
+	savedNmiVec = machVectorTablePtr->autoVec[6];
+	machVectorTablePtr->autoVec[6] = MonNmiNop;
 #endif SUN2
 #ifdef SUN3
-	*SunInterruptReg &= ~SUN_ENABLE_LEVEL7_INTR;
+	*SunInterruptReg &= ~MACH_ENABLE_LEVEL7_INTR;
 #endif SUN3
     }
 }

@@ -1,8 +1,7 @@
 /* 
- * excCode.c --
+ * machCode.c --
  *
- *     Contains actual declarations for some global variables, the 
- *     exception vector initialization routines, and the trap handler.
+ *     C code for the mach module.
  *
  * Copyright (C) 1985 Regents of the University of California
  * All rights reserved.
@@ -13,11 +12,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "exc.h"
-#include "excInt.h"
+#include "machConst.h"
+#include "machInt.h"
+#include "mach.h"
 #include "sys.h"
 #include "sync.h"
-#include "machine.h"
 #include "dbg.h"
 #include "proc.h"
 #include "procMigrate.h"
@@ -25,57 +24,99 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmMachInt.h"
 #include "sig.h"
-#include "sunSR.h"
 #include "mem.h"
 #include "sunMon.h"
 
 /*
- * Declare global variables.
+ * The format that the kernel stack has to be in to start a process off.
  */
+typedef struct {
+    int		magicNumber;		/* Magic number used to determine if
+					   the stack has been corrupted. */
+    Address	userStackPtr;		/* The user's stack pointer. */
+    short	statusReg;		/* The status register. */
+    void	(*startFunc)();		/* Function to call when process
+					   first starts executing. */
+    int		retPC;			/* Return PC that will be sitting on the
+    					 * stack when startFunc is called. */
+    Address	startPC;		/* PC to start executing at.  Is passed
+					 * as an argument to startFunc. */
+    int		fill1;			/* Filler for the debugger. */
+    int		fill2;			/* Filler for the debugger. */
+} KernelStack;
 
-int	exc_Type;
+/*
+ * The format of a signal stack that is pushed onto a user's stack when
+ * a signal is handled.
+ */
+typedef struct {
+    Address	retAddr;
+    Sig_Stack	sigStack;
+} SignalStack;
 
-extern	int ExcGetVBR();
-Exc_VectorTable	*exc_VectorTablePtr;
+/*
+ * Machine dependent variables.
+ */
+Address	mach_KernStart;
+Address	mach_CodeStart;
+Address	mach_StackBottom;
+int	mach_KernStackSize;
+Address	mach_KernEnd;
+Address	mach_FirstUserAddr;
+Address	mach_LastUserAddr;
+Address	mach_MaxUserStackAddr;
+int	mach_LastUserStackPage;
+
+extern	int		MachGetVBR();
+MachVectorTable		*machVectorTablePtr;
 
 /*
  * The variables and tables below are used by the assembler routine
- * in excTrap.s that dispatches kernel calls.  All of this information
- * is shared with excTrap.s;  if you change any of this, be sure to
+ * in machTrap.s that dispatches kernel calls.  All of this information
+ * is shared with machTrap.s;  if you change any of this, be sure to
  * change the assembler to match.
  */
 
 #define MAXCALLS 120
 #define MAXARGS  16
 
-int excMaxSysCall;			/* Highest defined system call. */
-int excArgOffsets[MAXCALLS];		/* For each system call, tells how much
+int machMaxSysCall;			/* Highest defined system call. */
+int machArgOffsets[MAXCALLS];		/* For each system call, tells how much
 					 * to add to the sp at the time of the
 					 * call to get to the highest argument
 					 * on the stack. */
-Address excArgDispatch[MAXCALLS];	/* For each system call, gives an
+Address machArgDispatch[MAXCALLS];	/* For each system call, gives an
 					 * address to branch to, in the middle
-					 * of ExcFetchArgs, to copy the right
+					 * of MachFetchArgs, to copy the right
 					 * # of args from user space to the
 					 * kernel's stack. */
-ReturnStatus (*(exc_NormalHandlers[MAXCALLS]))();
+ReturnStatus (*(mach_NormalHandlers[MAXCALLS]))();
 					/* For each system call, gives the
 					 * address of the routine to handle
 					 * the call for non-migrated processes.
 					 */
-ReturnStatus (*(exc_MigratedHandlers[MAXCALLS]))();
+ReturnStatus (*(mach_MigratedHandlers[MAXCALLS]))();
 					/* For each system call, gives the
 					 * address of the routine to handle
 					 * the call for migrated processes. */
-int excKcallTableOffset;		/* Byte offset of the kcallTable field
+int machKcallTableOffset;		/* Byte offset of the kcallTable field
 					 * in a Proc_ControlBlock. */
-int excStateOffset;			/* Byte offset of the genRegs field
-					 * in a Proc_ControlBlock. */
+int machStatePtrOffset;			/* Byte offset of the machStatePtr
+					 * field in a Proc_ControlBlock. */
+/* 
+ * Pointer to the state structure for the current process.
+ */
+Mach_State	*machCurStatePtr = (Mach_State *)NIL;
+
+void	SetupSigHandler();
+void	ReturnFromSigHandler();
+void	MachUserReturn();
+
 
 /*
  * ----------------------------------------------------------------------------
  *
- * Exc_Init --
+ * Mach_Init --
  *
  *	Initialize the exception vector table and some of the dispatching
  *	tables.
@@ -88,18 +129,34 @@ int excStateOffset;			/* Byte offset of the genRegs field
  *
  * ----------------------------------------------------------------------------
  */
-
 void
-Exc_Init()
+Mach_Init()
 {
     int	*vecTablePtr;
     int	*protoVecTablePtr;
     int	i;
+    KernelStack	stack;
 
-    vecTablePtr = (int *) ExcGetVBR();
-    exc_VectorTablePtr = (Exc_VectorTable *) vecTablePtr;
-    protoVecTablePtr = (int *) &exc_ProtoVectorTable;
-    for (i = 0; i < EXC_NUM_EXCEPTIONS; i++) {
+    /*
+     * Set exported machine dependent variables.
+     */
+    mach_KernStart = (Address)MACH_KERN_START;
+    mach_KernEnd = (Address)MACH_KERN_END;
+    mach_CodeStart = (Address)MACH_CODE_START;
+    mach_StackBottom = (Address)MACH_STACK_BOTTOM;
+    mach_KernStackSize = MACH_KERN_STACK_SIZE;
+    mach_FirstUserAddr = (Address)MACH_FIRST_USER_ADDR;
+    mach_LastUserAddr = (Address)MACH_LAST_USER_ADDR;
+    mach_MaxUserStackAddr = (Address)MACH_MAX_USER_STACK_ADDR;
+    mach_LastUserStackPage = (MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE;
+
+    /*
+     * Initialize the vector table.
+     */
+    vecTablePtr = (int *) MachGetVBR();
+    machVectorTablePtr = (MachVectorTable *) vecTablePtr;
+    protoVecTablePtr = (int *) &machProtoVectorTable;
+    for (i = 0; i < MACH_NUM_EXCEPTIONS; i++) {
 	if (*protoVecTablePtr != 0) {
 	     *vecTablePtr = *protoVecTablePtr;
 	}
@@ -112,10 +169,10 @@ Exc_Init()
     /*
      * Initialize the autovector interrupt slots.
      */
-    for (i = EXC_NUM_EXCEPTIONS ; i<256 ; i++) {
-	extern int Exc_BrkptTrap();
+    for (i = MACH_NUM_EXCEPTIONS ; i<256 ; i++) {
+	extern int Mach_BrkptTrap();
 
-	*vecTablePtr = (int)Exc_BrkptTrap;
+	*vecTablePtr = (int)Mach_BrkptTrap;
 	vecTablePtr++;
     }
 #endif SUN3
@@ -127,24 +184,362 @@ Exc_Init()
      * vector table is at, points to the same physical page as virtual address 
      * mach_KernStart.
      */
-    ExcSetVBR(mach_KernStart);
-    exc_VectorTablePtr = (Exc_VectorTable *) mach_KernStart;
+    MachSetVBR(mach_KernStart);
+    machVectorTablePtr = (MachVectorTable *) mach_KernStart;
 #endif
 
     /*
      * Initialize some of the dispatching information.  The rest is
-     * initialized by Exc_InitSysCall below.
+     * initialized by Mach_InitSysCall below.
      */
-
-    excMaxSysCall = -1;
-    excKcallTableOffset = (int) &((Proc_ControlBlock *) 0)->kcallTable;
-    excStateOffset = (int) ((Proc_ControlBlock *) 0)->genRegs;
+    machMaxSysCall = -1;
+    machKcallTableOffset = (int) &((Proc_ControlBlock *) 0)->kcallTable;
+    machStatePtrOffset = (int) &((Proc_ControlBlock *) 0)->machStatePtr;
 }
+
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Exc_InitSyscall --
+ * Mach_InitFirstProc --
+ *
+ *	Initialize the machine state struct for the very first process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Machine info allocated and stack start set up.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Mach_InitFirstProc(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    procPtr->machStatePtr = (struct Mach_State *)Mem_Alloc(sizeof(Mach_State));
+    procPtr->machStatePtr->kernStackStart = mach_StackBottom;
+    machCurStatePtr = procPtr->machStatePtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SetupNewState --
+ *
+ *	Initialize the machine state for this process.  This includes 
+ *	allocating and initializing a kernel stack.  Assumed that will
+ *	be called when starting a process after a fork or restarting a
+ *	process after a migration.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Machine state in the destination process control block is overwritten.
+ *
+ *----------------------------------------------------------------------
+ */ 
+ReturnStatus
+Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
+    Proc_ControlBlock	*procPtr;	/* Pointer to process control block
+					 * to initialize state for. */
+    Mach_State		*parStatePtr;	/* State of parent on fork or from other
+					 * machine on migration to copy to
+					 * new state. */
+    void		(*startFunc)();	/* Function to call when process first
+					 * starts executing. */
+    Address		startPC;	/* Address pass as argument to 
+					 * startFunc.  If NIL then the address
+					 * is taken from *parStatePtr's 
+					 * exception stack. */
+{
+    register	KernelStack	*stackPtr;
+    register	Mach_State	*statePtr;
+
+    if (procPtr->machStatePtr == (Mach_State *)NIL) {
+	procPtr->machStatePtr = (Mach_State *)Mem_Alloc(sizeof(Mach_State));
+    }
+
+    statePtr = procPtr->machStatePtr;
+    /*
+     * Allocate a kernel stack for this process.
+     */
+    statePtr->kernStackStart = Vm_GetKernelStack();
+    if (statePtr->kernStackStart == (Address)NIL) {
+	return(PROC_NO_STACKS);
+    }
+
+    statePtr->switchRegs[SP] = (int)(statePtr->kernStackStart + 
+			             MACH_KERN_STACK_SIZE - 
+				     sizeof(KernelStack));
+    /*
+     * Initialize the stack so that it looks like it is in the middle of
+     * Mach_ContextSwitch.
+     */
+    stackPtr = (KernelStack *)(statePtr->switchRegs[SP]);
+    stackPtr->magicNumber = MAGIC;
+    stackPtr->userStackPtr = mach_MaxUserStackAddr;
+    stackPtr->statusReg = MACH_SR_HIGHPRIO;
+    stackPtr->startFunc =  startFunc;
+    stackPtr->fill1 = 0;
+    stackPtr->fill2 = 0;
+    /* 
+     * Set up the state of the process.  User processes inherit from their
+     * parent and kernel processes start executing at clientData.
+     */
+    if (startPC == (Address)NIL) {
+	statePtr->userState.userStackPtr = parStatePtr->userState.userStackPtr;
+	Byte_Copy(sizeof(statePtr->userState.trapRegs),
+		  (Address)parStatePtr->userState.trapRegs,
+		  (Address)statePtr->userState.trapRegs);
+	stackPtr->startPC = (Address)parStatePtr->userState.excStackPtr->pc;
+    } else {
+	stackPtr->startPC = startPC;
+    }
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SetReturnVal --
+ *
+ *	Set the return value for a process from a system call.  Intended to
+ *	be called by the routine that starts a user process after a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Register D0 is set in the user registers.
+ *
+ *----------------------------------------------------------------------
+ */ 
+void
+Mach_SetReturnVal(procPtr, retVal)
+    Proc_ControlBlock	*procPtr;	/* Process to set return value for. */
+    int			retVal;		/* Value for process to return. */
+{
+    procPtr->machStatePtr->userState.trapRegs[D0] = retVal;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_StartUserProc --
+ *
+ *	Start a user process executing for the first time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stack pointer and the program counter set for the process and
+ *	the current process's image is replaced.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Mach_StartUserProc(procPtr, entryPoint)
+    Proc_ControlBlock	*procPtr;	/* Process control block for process
+					 * to start. */
+    Address		entryPoint;	/* Where process is to start
+					 * executing. */
+{
+    register	Mach_State	*statePtr;
+    register	Mach_ExcStack	*excStackPtr;
+
+    statePtr = procPtr->machStatePtr;
+    excStackPtr = (Mach_ExcStack *)
+        (statePtr->kernStackStart + MACH_BARE_STACK_OFFSET - MACH_SHORT_SIZE);
+    statePtr->userState.excStackPtr = excStackPtr;
+    statePtr->userState.trapRegs[SP] = (int)excStackPtr;
+    excStackPtr->statusReg = 0;
+    excStackPtr->pc = (int)entryPoint;
+    excStackPtr->vor.stackFormat = MACH_SHORT;
+    MachUserReturn(procPtr);
+    MachRunUserProc();
+    /* THIS DOES NOT RETURN */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_ExecUserProc --
+ *
+ *	Replace the calling user process's image with a new one.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stack pointer and set for the process.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
+    Proc_ControlBlock	*procPtr;		/* Process control block for
+						 * process to exec. */
+    Address		userStackPtr;	/* Stack pointer for when the
+						 * user process resumes 
+						 * execution. */
+    Address		entryPoint;		/* Where the user process is
+						 * to resume execution. */
+{
+    procPtr->machStatePtr->userState.userStackPtr = userStackPtr;
+    Mach_StartUserProc(procPtr, entryPoint);
+    /* THIS DOES NOT RETURN */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_FreeState --
+ *
+ *	Free up the machine state for the given process control block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Free up the kernel stack.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Mach_FreeState(procPtr)
+    Proc_ControlBlock	*procPtr;	/* Process control block to free
+					 * machine state for. */
+{
+    if (procPtr->machStatePtr->kernStackStart != (Address)NIL) {
+	Vm_FreeKernelStack(procPtr->machStatePtr->kernStackStart);
+	procPtr->machStatePtr->kernStackStart = (Address)NIL;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_CopyState --
+ *
+ *	Copy the state from the given state structure to the machine
+ *	state structure for the destination process control block.  Intended
+ *	to be used by the debugger to modify the state.The only fields
+ *	that can be modified are the following:
+ *
+ *	    1) user stack pointer
+ *	    2) all trap registers except for the stack pointer because the
+ *	       stack pointer in the trap registers is the kernel stack pointer.
+ *	    3) the PC, VOR and status register in the exception stack.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Machine state in the destination process control block is overwritten.
+ *
+ *----------------------------------------------------------------------
+ */ 
+void
+Mach_CopyState(statePtr, destProcPtr)
+    Mach_State		*statePtr;	/* Pointer to state to copy from. */
+    Proc_ControlBlock	*destProcPtr;	/* Process control block to copy
+					 * state to. */
+{
+    register	Mach_State	*destStatePtr;
+
+    destStatePtr = destProcPtr->machStatePtr;
+    destStatePtr->userState.userStackPtr =
+				statePtr->userState.userStackPtr;
+    Byte_Copy(sizeof(int) * (MACH_NUM_GPRS - 1),
+	      statePtr->userState.trapRegs,
+	      destStatePtr->userState.trapRegs);
+    destStatePtr->userState.excStackPtr->pc = 
+				    statePtr->userState.excStackPtr->pc;
+    destStatePtr->userState.excStackPtr->statusReg = 
+				statePtr->userState.excStackPtr->statusReg;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetDebugState --
+ *
+ *	Extract the appropriate fields from the machine state struct
+ *	and store them into the debug struct.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Debug struct filled in from machine state struct.
+ *
+ *----------------------------------------------------------------------
+ */ 
+void
+Mach_GetDebugState(procPtr, debugStatePtr)
+    Proc_ControlBlock	*procPtr;
+    Proc_DebugState	*debugStatePtr;
+{
+    int				i;
+    register	Mach_State	*machStatePtr;
+
+    machStatePtr = procPtr->machStatePtr;
+    Byte_Copy(sizeof(machStatePtr->userState.trapRegs),
+	      (Address)machStatePtr->userState.trapRegs,
+	      (Address)debugStatePtr->genRegs);
+    debugStatePtr->genRegs[SP] = (int)machStatePtr->userState.userStackPtr;
+    debugStatePtr->progCounter = machStatePtr->userState.excStackPtr->pc;
+    debugStatePtr->statusReg   = machStatePtr->userState.excStackPtr->statusReg;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SetDebugState --
+ *
+ *	Extract the appropriate fields from the debug struct
+ *	and store them into the machine state struct.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Machine state struct filled in from the debug state struct.
+ *
+ *----------------------------------------------------------------------
+ */ 
+void
+Mach_SetDebugState(procPtr, debugStatePtr)
+    Proc_ControlBlock	*procPtr;
+    Proc_DebugState	*debugStatePtr;
+{
+    int				i;
+    register	Mach_State	*machStatePtr;
+
+    machStatePtr = procPtr->machStatePtr;
+    Byte_Copy(sizeof(machStatePtr->userState.trapRegs) - sizeof(int),
+	      (Address)debugStatePtr->genRegs,
+	      (Address)machStatePtr->userState.trapRegs);
+    machStatePtr->userState.userStackPtr = (Address)debugStatePtr->genRegs[SP];
+    machStatePtr->userState.excStackPtr->pc = debugStatePtr->progCounter;
+    machStatePtr->userState.excStackPtr->statusReg = debugStatePtr->statusReg;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_InitSyscall --
  *
  *	During initialization, this procedure is called once for each
  *	kernel call, in order to set up information used to dispatch
@@ -159,9 +554,8 @@ Exc_Init()
  *
  *----------------------------------------------------------------------
  */
-
 void
-Exc_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
+Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
     int callNum;			/* Number of the system call. */
     int numArgs;			/* Number of one-word arguments passed
 					 * into call on stack. */
@@ -170,26 +564,26 @@ Exc_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
     ReturnStatus (*migratedHandler)();	/* Procedure to process kernel call
 					 * for migrated processes. */
 {
-    excMaxSysCall++;
-    if (excMaxSysCall != callNum) {
+    machMaxSysCall++;
+    if (machMaxSysCall != callNum) {
 	Sys_Panic(SYS_FATAL, "out-of-order kernel call initialization");
     }
-    if (excMaxSysCall >= MAXCALLS) {
+    if (machMaxSysCall >= MAXCALLS) {
 	Sys_Panic(SYS_FATAL, "too many kernel calls");
     }
     if (numArgs > MAXARGS) {
 	Sys_Panic(SYS_FATAL, "too many arguments to kernel call");
     }
-    excArgOffsets[excMaxSysCall] = 8 + numArgs*4;
-    excArgDispatch[excMaxSysCall] = (16-numArgs)*2 + (Address) ExcFetchArgs;
-    exc_NormalHandlers[excMaxSysCall] = normalHandler;
-    exc_MigratedHandlers[excMaxSysCall] = migratedHandler;
+    machArgOffsets[machMaxSysCall] = 8 + numArgs*4;
+    machArgDispatch[machMaxSysCall] = (16-numArgs)*2 + (Address) MachFetchArgs;
+    mach_NormalHandlers[machMaxSysCall] = normalHandler;
+    mach_MigratedHandlers[machMaxSysCall] = migratedHandler;
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * Exc_SetHandler --
+ * Mach_SetHandler --
  *
  *	Put a device driver interrupt handling routine into the autovector.
  *
@@ -203,7 +597,7 @@ Exc_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
  */
 
 void
-Exc_SetHandler(vectorNumber, handler)
+Mach_SetHandler(vectorNumber, handler)
     int vectorNumber;	/* Vector number that the device generates */
     int (*handler)();	/* Interrupt handling procedure */
 {
@@ -213,7 +607,7 @@ Exc_SetHandler(vectorNumber, handler)
 	Sys_Printf("%d: ", vectorNumber);
 	Sys_Panic(SYS_WARNING, "Bad vector number\n");
     } else {
-	vecTablePtr = (int *) ExcGetVBR();
+	vecTablePtr = (int *) MachGetVBR();
 	vecTablePtr[vectorNumber] = (int)handler;
     }
 }
@@ -222,7 +616,7 @@ Exc_SetHandler(vectorNumber, handler)
 /*
  * ----------------------------------------------------------------------------
  *
- * Exc_Trap --
+ * MachTrap --
  *
  *      The trap handler routine.  This deals with supervisor mode and 
  *	non-supervisor mode traps differently.  The only allowed supervisor
@@ -234,32 +628,29 @@ Exc_SetHandler(vectorNumber, handler)
  *	needed at the end of the call.
  *
  * Results:
- *      EXC_KERN_ERROR if the debugger should be called after this routine 
- *	returns, EXC_USER_ERROR if a copy to/from user space caused an 
- *	unrecoverable bus error, and EXC_OK if everything worked out ok.
+ *      MACH_KERN_ERROR if the debugger should be called after this routine 
+ *	returns, MACH_USER_ERROR if a copy to/from user space caused an 
+ *	unrecoverable bus error, and MACH_OK if everything worked out ok.
  *
  * Side effects:
  *      None.
  *
  * ----------------------------------------------------------------------------
  */
-
 int
-Exc_Trap(trapStack)
-    Exc_TrapStack	trapStack;
+MachTrap(trapStack)
+    Mach_TrapStack	trapStack;	/* The stack at the time of the trap.*/
 {
     register	Proc_ControlBlock	*procPtr;
     ReturnStatus			status;
 
     procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
-
     /*
      * Process kernel traps.
      */
-
-    if (trapStack.excStack.statusReg & SUN_SR_SUPSTATE) {
+    if (trapStack.excStack.statusReg & MACH_SR_SUPSTATE) {
 	switch (trapStack.trapType) {
-	    case EXC_TRACE_TRAP:
+	    case MACH_TRACE_TRAP:
 		/*
 		 * If the trace trap occured on a user trap instruction, then
 		 * the trace trap will be taken on the first instruction of 
@@ -270,23 +661,23 @@ Exc_Trap(trapStack)
 		 * In this case we just ignore the trace trap because it 
 		 * will reoccur when the user process continues.
 		 */
-		if (!(trapStack.excStack.statusReg & SUN_SR_TRACEMODE)) {
-		    return(EXC_OK);
+		if (!(trapStack.excStack.statusReg & MACH_SR_TRACEMODE)) {
+		    return(MACH_OK);
 		}
 
 		/*
 		 * In the normal case enter the debugger with a breakpoint
 		 * trap.
 		 */
-		return(EXC_KERN_ERROR);
+		return(MACH_KERN_ERROR);
 
-	    case EXC_BUS_ERROR:
+	    case MACH_BUS_ERROR:
 
 		if (trapStack.busErrorReg.timeOut) {
 		    /*
 		     * Allow for refresh memory time just like Unix.
 		     */
-		    DELAY(2000);
+		    MACH_DELAY(2000);
 		}
 
 		/*
@@ -294,27 +685,20 @@ Exc_Trap(trapStack)
 		 */
 
 #ifndef SUN3
-		if (trapStack.busErrorReg.parErrU ||
-		    trapStack.busErrorReg.parErrL) {
+		if (trapStack.busErrorReg.parErrU || trapStack.busErrorReg.parErrL) {
 		    Sys_Panic(SYS_FATAL, "Parity error!!!\n");
-		    return(EXC_KERN_ERROR);
+		    return(MACH_KERN_ERROR);
 		}
 
 		if (trapStack.busErrorReg.busErr) {
 		    Sys_Panic(SYS_FATAL, "System bus error\n");
-		    return(EXC_KERN_ERROR);
+		    return(MACH_KERN_ERROR);
 		}
 #endif
 
-		/*
-		 * Mousetrap.
-		 */
-		if (procPtr == (Proc_ControlBlock *) NIL) {
-		    Mon_Printf("Exc_Trap: PC = %x, addr = %x BR Reg %x\n",
-			    trapStack.excStack.pc,
-			    trapStack.excStack.tail.addrBusErr.faultAddr,
-			    *(short *) &trapStack.busErrorReg);
-		    Sys_Panic(SYS_FATAL, "Exc_Trap: current process is nil.\n");
+		if (procPtr == (Proc_ControlBlock *)NIL) {
+		    Sys_Panic(SYS_FATAL, 
+			      "MachTrap: Current process is NIL!!\n");
 		}
 
 		if (procPtr->genFlags & PROC_USER) {
@@ -332,22 +716,19 @@ Exc_Trap(trapStack)
 		     * to access a user process.
 		     */
 
-		    if ((((unsigned) trapStack.excStack.pc)
-				>= (unsigned) Vm_CopyIn)
+		    if ((((unsigned) trapStack.excStack.pc) >= (unsigned) Vm_CopyIn)
 			    && (((unsigned) trapStack.excStack.pc)
 				< (unsigned) VmMachCopyEnd)) {
 			copyInProgress = TRUE;
-		    } else if (procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) {
-			copyInProgress = TRUE;
 		    } else if ((((unsigned) trapStack.excStack.pc)
-				>= (unsigned) ExcFetchArgs)
+				>= (unsigned) MachFetchArgs)
 			    && (((unsigned) trapStack.excStack.pc)
-				<= (unsigned) ExcFetchArgsEnd)) {
+				<= (unsigned) MachFetchArgsEnd)) {
 			copyInProgress = TRUE;
 		    } else if ((procPtr->vmPtr->numMakeAcc == 0)
 			&& (procPtr->setJumpStatePtr
 			== (Sys_SetJumpState *) NIL)) {
-			return(EXC_KERN_ERROR);
+			return(MACH_KERN_ERROR);
 		    }
 
 		    protError = 
@@ -364,30 +745,7 @@ Exc_Trap(trapStack)
 				  protError);
 		    if (status != SUCCESS) {
 			if (copyInProgress) {
-			    /*
-			     * Info was being copied to/from user space.
-			     * Return an error to the copying process.  The
-			     * size of the trap stack is put into saved reg
-			     * D0 so the trap handler knows how much stack
-			     to blow away.
-			     */
-			    switch (trapStack.excStack.vor.stackFormat) {
-				case EXC_MC68010_BUS_FAULT:
-				    trapStack.genRegs[D0] = 
-				    		EXC_MC68010_BUS_FAULT_SIZE;
-				    break;
-				case EXC_SHORT_BUS_FAULT:
-				    trapStack.genRegs[D0] = 
-						EXC_SHORT_BUS_FAULT_SIZE;
-				    break;
-				case EXC_LONG_BUS_FAULT:
-				    trapStack.genRegs[D0] = 
-						EXC_LONG_BUS_FAULT_SIZE;
-				    break;
-				default:
-				    Sys_Panic(SYS_FATAL, "Exc_Trap: Bad stack format.\n");
-			    }
-			    return(EXC_USER_ERROR);
+			    return(MACH_USER_ERROR);
 			} else {
 			    /*
 			     * Real kernel error.  Take a long jump if
@@ -397,10 +755,10 @@ Exc_Trap(trapStack)
 						(Sys_SetJumpState *) NIL) {
 				Sys_LongJump(procPtr->setJumpStatePtr);
 			    }
-			    return(EXC_KERN_ERROR);
+			    return(MACH_KERN_ERROR);
 			}
 		    } else {
-			return(EXC_OK);
+			return(MACH_OK);
 		    }
 		} else {
 		    /*
@@ -410,19 +768,19 @@ Exc_Trap(trapStack)
 		    if (procPtr->setJumpStatePtr != (Sys_SetJumpState *) NIL) {
 			Sys_LongJump(procPtr->setJumpStatePtr);
 		    }
-		    return(EXC_KERN_ERROR);
+		    return(MACH_KERN_ERROR);
 		}
-	    case EXC_SPURIOUS_INT:
+	    case MACH_SPURIOUS_INT:
 		/*
 		 * Ignore this for now because otherwise we can't debug mint
 		 */
 		if (!dbg_BeingDebugged) {
-		    Sys_Printf("Exc_Trap: Spurious interrupt\n");
+		    Sys_Printf("MachTrap: Spurious interrupt\n");
 		}
-		return(EXC_OK);
+		return(MACH_OK);
 
 	    default:
-		return(EXC_KERN_ERROR);
+		return(MACH_KERN_ERROR);
 	}
     } 
 
@@ -443,17 +801,17 @@ Exc_Trap(trapStack)
      * the instruction that we are trying to trace such that the trace trap bit
      * is set but we didn't get a trace trap exception.
      */
-    trapStack.excStack.statusReg &= ~SUN_SR_TRACEMODE;
+    trapStack.excStack.statusReg &= ~MACH_SR_TRACEMODE;
 
     switch (trapStack.trapType) {
-	case EXC_BUS_ERROR: {
+	case MACH_BUS_ERROR: {
 	    Boolean	protError;
 	    if (trapStack.busErrorReg.timeOut) {
 		/*
 		 * Allow for refresh memory time just like Unix.
 		 */
 
-		DELAY(2000);
+		MACH_DELAY(2000);
 	    }
 
 	    /*
@@ -461,10 +819,9 @@ Exc_Trap(trapStack)
 	     */
 
 #ifndef SUN3
-	    if (trapStack.busErrorReg.parErrU ||
-	        trapStack.busErrorReg.parErrL) {
+	    if (trapStack.busErrorReg.parErrU || trapStack.busErrorReg.parErrL) {
 		Sys_Panic(SYS_FATAL, "Parity error!!!\n");
-		return(EXC_KERN_ERROR);
+		return(MACH_KERN_ERROR);
 	    }
 #endif
 
@@ -482,17 +839,17 @@ Exc_Trap(trapStack)
 	if (Vm_PageIn((Address)trapStack.excStack.tail.addrBusErr.faultAddr, 
 		      protError) != SUCCESS) {
 		Sys_Printf(
-		    "Exc_Trap: Bus error in user proc %X, PC = %x, addr = %x BR Reg %x\n",
+		    "MachTrap: Bus error in user proc %X, PC = %x, addr = %x BR Reg %x\n",
 			    procPtr->processID, 
 			    trapStack.excStack.pc,
 			    trapStack.excStack.tail.addrBusErr.faultAddr,
-			    *(short *) &trapStack.busErrorReg);
+			    *(short *)&trapStack.busErrorReg);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
 				procPtr->processID, FALSE);
 	    }
 	    break;
 	}
-	case EXC_SYSCALL_TRAP:
+	case MACH_SYSCALL_TRAP:
 	    /*
 	     * It used to be that all system calls passed through here, but
 	     * the code was optimized to avoid calling either this procedure
@@ -501,12 +858,12 @@ Exc_Trap(trapStack)
 	     * special action must be taken.  The call has already been
 	     * executed by the time things arrive here.  This code does
 	     * nothing... the action will all be taken by the call to
-	     * ExcUserReturn below.
+	     * MachUserReturn below.
 	     */
 
 	    break;
 		
-	case EXC_BRKPT_TRAP:
+	case MACH_BRKPT_TRAP:
 	    Proc_Lock(procPtr);
 	    if (procPtr->genFlags & PROC_DEBUG_ON_EXEC) {
 	    	procPtr->genFlags &= ~PROC_DEBUG_ON_EXEC;
@@ -517,74 +874,39 @@ Exc_Trap(trapStack)
 	    Proc_Unlock(procPtr);
 	    break;
 
-	case EXC_SIG_RET_TRAP: {
+	case MACH_SIG_RET_TRAP: {
 	    /*
-	     * We got a return from signal trap.  The old exception stack
-	     * that caused the signal in the first place is retrieved from
-	     * the user stack.  Then the stack pointer (SP) and two
-	     * registers a0 and d0 are set up so that the trap handler
-	     * code can restore the old exception stack.
+	     * We got a return from signal trap.
 	     */
-
-	    Address		oldStackAddr;
-	    Exc_TrapStack	*oldStackPtr;
-	    int			curSize;
-	    int			oldSize;
-
-	    Sig_Return(procPtr, &trapStack, &oldStackAddr);
-
-	    oldStackPtr = (Exc_TrapStack *) Mem_Alloc(sizeof(Exc_TrapStack));
-	    if (Vm_CopyIn(sizeof(Exc_TrapStack), oldStackAddr,
-			  (Address) oldStackPtr) != SUCCESS) {
-		Sys_Printf("Sig_Return: Bad signal stack.\n");
-		Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-	    }
-
-	    curSize = Exc_GetTrapStackSize(&trapStack);
-	    oldSize = Exc_GetTrapStackSize(oldStackPtr);
-	    if (oldSize == -1) {
-		Sys_Printf("Exc_Code: Bad signal stack type.\n");
-		Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-	    }
-	    /*
-	     * Make sure that the user didn't set the supervisor bit in
-	     * the status register.
-	     */
-	    if (trapStack.excStack.statusReg & SUN_SR_SUPSTATE) {
-		Sys_Printf("Exc_Code: User set kernel bit on signal stack\n");
-		Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-	    }
-	    trapStack.genRegs[A1] = (int)&trapStack + curSize - oldSize;
-	    trapStack.genRegs[D0] = oldSize;
-	    trapStack.genRegs[A0] = (int) oldStackPtr;
-	    return(EXC_SIG_RETURN);
+	    ReturnFromSigHandler(procPtr);
+	    return(MACH_SIG_RETURN);
 	}
 
-	case EXC_ADDRESS_ERROR:
+	case MACH_ADDRESS_ERROR:
 	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR,
 			    procPtr->processID, FALSE);
 	    break;
-	case EXC_ILLEGAL_INST:
+	case MACH_ILLEGAL_INST:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
 			    procPtr->processID, FALSE);
 	    break;
-	case EXC_ZERO_DIV:
+	case MACH_ZERO_DIV:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_ZERO_DIV,
 			    procPtr->processID, FALSE);
 	    break;
-	case EXC_CHK_INST:
+	case MACH_CHK_INST:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_CHK,
 			    procPtr->processID, FALSE);
 	    break;
-	case EXC_TRAPV:
+	case MACH_TRAPV:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_TRAPV,
 			    procPtr->processID, FALSE);
 	    break;
-	case EXC_PRIV_VIOLATION:
+	case MACH_PRIV_VIOLATION:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST,
 			    procPtr->processID, FALSE);
 	    break;
-	case EXC_TRACE_TRAP: 
+	case MACH_TRACE_TRAP: 
 	    /*
 	     * Involuntary context switch trace traps have already been taken
 	     * care of above.  Here the only time we pay attention to a
@@ -598,31 +920,32 @@ Exc_Trap(trapStack)
 	    }
 	    break;
 
-	case EXC_EMU1010:
+	case MACH_EMU1010:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_EMU1010,
 			    procPtr->processID, FALSE);
 	    break;
-	case EXC_EMU1111:
+	case MACH_EMU1111:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_EMU1111,
 			    procPtr->processID, FALSE);
 	    break;
-	case EXC_BAD_TRAP:
+	case MACH_BAD_TRAP:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
 			    procPtr->processID, FALSE);
 
 	    break;
 	default:
-	    return(EXC_KERN_ERROR);
+	    return(MACH_KERN_ERROR);
     } 
 
-    return(ExcUserReturn(procPtr, &trapStack));
+    MachUserReturn(procPtr);
+    return(MACH_OK);
 }
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * ExcUserReturn --
+ * MachUserReturn --
  *
  *      Take the proper action to return from a user exception.
  *
@@ -634,14 +957,12 @@ Exc_Trap(trapStack)
  *
  * ----------------------------------------------------------------------------
  */
-
-int
-ExcUserReturn(procPtr, trapStackPtr)
+void
+MachUserReturn(procPtr)
     register	Proc_ControlBlock	*procPtr;
-    register	Exc_TrapStack		*trapStackPtr;
 {
-    register	Boolean	gotSig = FALSE;
-    int			newPC;
+    SignalStack			sigStack;
+    Address			pc;
 
     /* 
      * Take a context switch if one is pending for this process.
@@ -661,14 +982,18 @@ ExcUserReturn(procPtr, trapStackPtr)
 	 * because it increments the nesting depth of interrupts which we don't
 	 * want because there is an implicit enable interrupts on rte.
 	 */
-	Sys_DisableIntr();
-	if (!Sig_Pending(procPtr) || gotSig) {
+	Mach_DisableIntr();
+	if (!Sig_Pending(procPtr)) {
 	    break;
 	}
-	Sys_EnableIntr();
-	gotSig = Sig_Handle(trapStackPtr, &newPC);
+	Mach_EnableIntr();
+	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
+	    SetupSigHandler(procPtr, &sigStack, pc);
+	    Mach_DisableIntr();
+	    break;
+	}
     }
-    
+
     if ((procPtr->genFlags & PROC_SINGLE_STEP_FLAG) ||
 	(procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING)) {
 	/*
@@ -677,25 +1002,8 @@ ExcUserReturn(procPtr, trapStackPtr)
 	 * switch pending here even though we just checked above just in
 	 * case we got preempted while dealing with signals.
 	 */
-	trapStackPtr->excStack.statusReg |= SUN_SR_TRACEMODE;
-    }
-
-    if (gotSig) {
-	/*
-	 * We need to create a simple stack so that the rte will return
-	 * to the user program correctly.  The current stack may be
-	 * from an address error and hence too big.  newSP is set so
-	 * that it is at the bottom of the current trap stack.
-	 */
-	int	newSP;
-
-	trapStackPtr->excStack.pc = newPC;
-	newSP = (int)trapStackPtr + Exc_GetTrapStackSize(trapStackPtr) -
-		EXC_SHORT_STACK;
-	trapStackPtr->genRegs[SP] = newSP;
-	return(newSP);
-    } else {
-	return(EXC_OK);
+	procPtr->machStatePtr->userState.excStackPtr->statusReg |= 
+							MACH_SR_TRACEMODE;
     }
 }
 
@@ -703,42 +1011,211 @@ ExcUserReturn(procPtr, trapStackPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * ExcSigReturn --
+ * Routines to set up and return from signal handlers.
  *
- *      We are returning from a signal handler.  The trap stack has been
- *	restored so all that we have to do is to do normal user return
- *	time processing.
+ * In to call a handler four things must be done:
  *
+ *	1) The current state of the process must be saved so that when
+ *	   the handler returns the normal return to user space can occur.
+ *	2) The user stack must be set up so that the signal number and the
+ *	   the signal code are passed to the handler.
+ *	3) Things must be set up so that when the handler returns it returns
+ *	   back into the kernel so that state can be cleaned up.
+ *	4) The trap stack that was created when the kernel was entered and is
+ *	   used to return a process to user space must be modified so that
+ *	   the signal handler is called instead of executing the
+ *	   normal return.
+ *
+ * The last one is done by simply changing the program counter where the
+ * user process will execute on return to be the address of the signal
+ * handler and the user stack pointer to point to the proper place on
+ * the user stack.  The first three of these are accomplished by 
+ * setting up the user stack properly.  When a handler is called the 
+ * user stack looks like the following:
+ *
+ *     		-----------------------
+ *     		| Address of trap inst |<----- New user stack pointer.
+ *     		-----------------------
+ *     		| Signal number       |
+ *     		-----------------------
+ *     		| Signal code         |
+ *     		-----------------------
+ *     		| Trap stack          |
+ *     		-----------------------
+ *     		| Old hold mask       |
+ *     		-----------------------
+ *     		| trap instruction    |
+ *     		-----------------------
+ *     		| Original user stack |<----- Old user stack pointer
+ *     		|                     |
+ *
+ *
+ * Thus the top entry on the stack is the return address where the handler
+ * will start executing upon return.  But this is just the address of a
+ * trap instruction that is stored on the stack below.  Thus when
+ * a handler returns it will execute a trap instruction and drop back
+ * into the kernel.  Following the return address are the signal number and
+ * signal code which are the arguments to the handler.  Following this is
+ * the saved state of the process which is the trap stack and the old mask
+ * of held signals.
+ */
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SetupSigHandler --
+ *
+ *      Save machine state on the users stack and set up the exception stack
+ *	so that the user will call the signal handler on return. In order to
  * Results:
- *      Code to return to the trap handler.
+ *      None.
  *
  * Side effects:
- *      Signal stack freed from proc table.
+ *      Signal stack set up and saved.
  *
  * ----------------------------------------------------------------------------
  */
-
-int
-ExcSigReturn(sigStackPtr, trapStack)
-    Address		sigStackPtr;
-    Exc_TrapStack	trapStack;
+void
+SetupSigHandler(procPtr, sigStackPtr, pc)
+    register	Proc_ControlBlock	*procPtr;
+    register	SignalStack		*sigStackPtr;
+    Address				pc;
 {
+    register	Mach_State	*statePtr;
+    Address			usp;
+    int				excStackSize;
+    Mach_ExcStack		*excStackPtr;
+
+    statePtr = procPtr->machStatePtr;
+    usp = statePtr->userState.userStackPtr - sizeof(SignalStack);
+    sigStackPtr->sigStack.trapInst = 0x4e424e42;
+    sigStackPtr->retAddr =
+	    usp + ((int)(&sigStackPtr->sigStack.trapInst) - (int)sigStackPtr);
     /*
-     * Turn interrupts back on since they were disabled.
+     * Copy the exception stack onto the signal stack.
      */
-    Sys_EnableIntr();
-
-    Mem_Free(sigStackPtr);
-
-    return(ExcUserReturn(Proc_GetActualProc(Sys_GetProcessorNumber()), 
-	   &trapStack));
+    excStackSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
+    Byte_Copy(excStackSize, (Address)statePtr->userState.excStackPtr,
+	      (Address)&(sigStackPtr->sigStack.excStack));
+    /*
+     * Copy the user state onto the signal stack.
+     */
+    Byte_Copy(sizeof(Mach_UserState), (Address)&statePtr->userState,
+	      (Address)&(sigStackPtr->sigStack.userState));
+    /*
+     * Copy the stack out to user space.
+     */
+    if (Vm_CopyOut(sizeof(SignalStack), (Address)sigStackPtr, 
+			(Address)usp) != SUCCESS) {
+        Sys_Panic(SYS_WARNING,
+                  "HandleSig: No room on stack for signal, PID=%x.\n",
+                  procPtr->processID);
+        Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+    }
+    /*
+     * We need to make a short stack to allow the process to start executing.
+     * The current exception stack is at least as big, maybe bigger than we
+     * need.  Since we saved the true exception stack above, we can just
+     * overwrite the current stack with a short stack and point the stack
+     * pointer at it.
+     */
+    if (statePtr->userState.excStackPtr !=
+			(Mach_ExcStack *)statePtr->userState.trapRegs[SP]) {
+	Sys_Panic(SYS_FATAL, "Mach_HandleSig: SP != excStackPtr\n");
+    }
+    statePtr->userState.userStackPtr = usp;
+    excStackPtr = (Mach_ExcStack *) ((Address)statePtr->userState.excStackPtr + 
+				     excStackSize - MACH_SHORT_SIZE);
+    statePtr->userState.trapRegs[SP] = (int)excStackPtr;
+    excStackPtr->statusReg = 0;
+    excStackPtr->vor.stackFormat = MACH_SHORT;
+    excStackPtr->pc = (int)pc;
 }
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * Exc_GetTrapStackSize --
+ * ReturnFromSigHandler --
+ *
+ *      Process a return from a signal handler.
+ *	
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Signal stack struct and size filled in the machine struct for the
+ *	given process.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+ReturnFromSigHandler(procPtr)
+    register	Proc_ControlBlock	*procPtr;
+{
+    register	Mach_State	*statePtr;
+    int				curSize;
+    int				oldSize;
+    SignalStack			sigStack;
+
+    statePtr = procPtr->machStatePtr;
+    /*
+     * Copy the signal stack in.
+     */
+    if (Vm_CopyIn(sizeof(Sig_Stack),
+		  (Address) (statePtr->userState.userStackPtr), 
+		  (Address) &sigStack.sigStack) != SUCCESS) {
+	Sys_Panic(SYS_WARNING,
+	  "Mach_Code: Stack too small to extract trap info, PID=%x.\n",
+	  procPtr->processID);
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+    }
+    /*
+     * Take the proper action on return from a signal.
+     */
+    Sig_Return(procPtr, &sigStack.sigStack);
+    /*
+     * Restore user state.  Be careful not to clobber the stack
+     * pointer.
+     */
+    statePtr->userState.userStackPtr = 
+			sigStack.sigStack.userState.userStackPtr;
+    Byte_Copy(sizeof(int) * (MACH_NUM_GPRS - 1),
+	      (Address)sigStack.sigStack.userState.trapRegs,
+	      (Address)statePtr->userState.trapRegs);
+
+    /*
+     * Verify that the exception stack is OK.
+     */
+    curSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
+    oldSize = Mach_GetExcStackSize(&sigStack.sigStack.excStack);
+    if (oldSize == -1) {
+	Sys_Printf("Mach_Code: Bad signal stack type.\n");
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+    }
+    if (sigStack.sigStack.excStack.statusReg & MACH_SR_SUPSTATE) {
+	Sys_Printf("Mach_Code: User set kernel bit on signal stack\n");
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+    }
+    /*
+     * Copy the exception stack in.
+     */
+    Byte_Copy(oldSize, (Address)&sigStack.sigStack.excStack,
+	      (Address)&statePtr->sigExcStack);
+    statePtr->sigExcStackSize = oldSize;
+    /*
+     * Set the restored stack pointer to point to where the
+     * old exception stack is to be restored to.
+     */
+    statePtr->userState.trapRegs[SP] += curSize - oldSize;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_GetExcStackSize --
  *
  *      Return the size of the trap stack.  This can vary depending on whether
  *	are on a Sun-3 or a Sun-2.
@@ -751,30 +1228,27 @@ ExcSigReturn(sigStackPtr, trapStack)
  *
  * ----------------------------------------------------------------------------
  */
-
-#define	BASE_SIZE	(sizeof(Exc_TrapStack) - sizeof(Exc_ExcStack))
-
 int
-Exc_GetTrapStackSize(trapStackPtr)
-    Exc_TrapStack	*trapStackPtr;
+Mach_GetExcStackSize(excStackPtr)
+    Mach_ExcStack	*excStackPtr;
 {
-    switch (trapStackPtr->excStack.vor.stackFormat) {
-	case EXC_SHORT:
-	    return(BASE_SIZE + EXC_SHORT_SIZE);
-	case EXC_THROWAWAY:
-	    return(BASE_SIZE + EXC_THROWAWAY_SIZE);
-	case EXC_INST_EXCEPT:
-	    return(BASE_SIZE + EXC_INST_EXCEPT_SIZE);
-	case EXC_MC68010_BUS_FAULT:
-	    return(BASE_SIZE + EXC_MC68010_BUS_FAULT_SIZE);
-	case EXC_COPROC_MID_INSTR:
-	    return(BASE_SIZE + EXC_COPROC_MID_INSTR_SIZE);
-	case EXC_SHORT_BUS_FAULT:
-	    return(BASE_SIZE + EXC_SHORT_BUS_FAULT_SIZE);
-	case EXC_LONG_BUS_FAULT:
-	    return(BASE_SIZE + EXC_LONG_BUS_FAULT_SIZE);
+    switch (excStackPtr->vor.stackFormat) {
+	case MACH_SHORT:
+	    return(MACH_SHORT_SIZE);
+	case MACH_THROWAWAY:
+	    return(MACH_THROWAWAY_SIZE);
+	case MACH_INST_EXCEPT:
+	    return(MACH_INST_EXCEPT_SIZE);
+	case MACH_MC68010_BUS_FAULT:
+	    return(MACH_MC68010_BUS_FAULT_SIZE);
+	case MACH_COPROC_MID_INSTR:
+	    return(MACH_COPROC_MID_INSTR_SIZE);
+	case MACH_SHORT_BUS_FAULT:
+	    return(MACH_SHORT_BUS_FAULT_SIZE);
+	case MACH_LONG_BUS_FAULT:
+	    return(MACH_LONG_BUS_FAULT_SIZE);
 	default:
-	    Sys_Panic(SYS_WARNING, "Exc_GetTrapStackSize: Bad stack format.\n");
+	    Sys_Panic(SYS_WARNING, "Mach_GetTrapStackSize: Bad stack format.\n");
 	    return(-1);
     }
 }

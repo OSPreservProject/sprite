@@ -13,8 +13,7 @@
 #ifndef _ASMDEFS
 #define _ASMDEFS
 
-#include "vmSunConst.h"
-#include "sunSR.h"
+#include "machConst.h"
 
 /*
  * ----------------------------------------------------------------------------
@@ -57,64 +56,15 @@
 /*
  * ----------------------------------------------------------------------------
  *
- * SaveRegs --
- *
- *      Save all general purpose registers and the user stack pointer on the
- *	stack.
- *
- * ----------------------------------------------------------------------------
- */
-
-#define SaveRegs() \
-	moveml 	#0xFFFF, sp@- ; \
-	movc	usp, d0; \
-	movl	d0, sp@- ;
-
-/*
- * ----------------------------------------------------------------------------
- *
- * RestoreRegs --
- *
- *      Restore the user stack pointer and the general purpose registers from
- *	of the stack.  To be used in conjuction with SaveRegs.
- *
- * ----------------------------------------------------------------------------
- */
-
-#define RestoreRegs() \
-	movl	sp@+, d0 ; \
-	movc	d0, usp ; \
-	moveml 	sp@+, #0xFFFF ;
-
-/*
- * ----------------------------------------------------------------------------
- *
- * RestoreTrapRegs --
- *
- *      Restore the user stack pointer and the general purpose registers from
- *	the stack after a call to the C trap routine.  6 is added to the stack
- *      pointer first to get past the trap code and bus error register which
- *	were pushed onto the stack by CallTrapHandler.
- *
- * ----------------------------------------------------------------------------
- */
-
-#define RestoreTrapRegs() \
-	addl	#6, sp ; \
-	RestoreRegs();
-
-/*
- * ----------------------------------------------------------------------------
- *
  * Call Interrupt Handler --
  *
- *      Call an interrupt handler.  The registers are saved first, 
- *	interrupts are disabled and a "At Interrupt Level" flag is set so 
- *	the handler can determine that it is running at interrupt level. 
- *	The registers are restored at the end.
+ *      Call an interrupt handler.  The temporary registers d0, d1, a0 and a1
+ *	are saved first, then interrupts are disabled and an "At Interrupt 
+ *	Level" flag is set so the handler can determine that it is running a
+ *	interrupt level.  The registers are restored at the end.
  *
  *  Algorithm:
- *	Save registers
+ *	Save temporary registers
  *	Determine if interrupt occured while in kernel mode or user mode
  *	Call routine
  *	If a context switch is wanted then
@@ -127,14 +77,13 @@
  * ----------------------------------------------------------------------------
  */
 
-#define	INTR_SR_OFFSET	68
+#define	INTR_SR_OFFSET	16
 
 #define CallInterruptHandler(routine) \
-	SaveRegs(); \
-	\
-	movw	#SUN_SR_HIGHPRIO, sr ; \
+	moveml	#0xC0C0, sp@-; \
+	movw	#MACH_SR_HIGHPRIO, sr ; \
 	movw	sp@(INTR_SR_OFFSET), d0; \
-	andl	#SUN_SR_SUPSTATE, d0; \
+	andl	#MACH_SR_SUPSTATE, d0; \
 	movl	d0, _sys_KernelMode; \
 	movl	#1, _sys_AtInterruptLevel ; \
 	\
@@ -146,10 +95,10 @@
 	\
 	clrl	_sched_DoContextSwitch; \
 	movw	sp@(INTR_SR_OFFSET), d0; \
-	orw	#SUN_SR_TRACEMODE, d0; \
+	orw	#MACH_SR_TRACEMODE, d0; \
 	movw	d0, sp@(INTR_SR_OFFSET); \
 	\
-1$:	RestoreRegs(); \
+1$:	moveml	sp@+, #0x0303; \
     	rte ;
 
 /*
@@ -159,12 +108,24 @@
  *
  * Go through the following steps:
  * 
- *   1) Save the normal registers (a0-a7,d0-d7 and usp) on the stack.
- *   2) Save the bus error register on the stack.
- *   3) Push the trap type on the stack.
- *   4) Call the trap handler.
- *   5) Return from the trap handler.
- *   6) Call routine to handle return from trap.
+ *   1) Determine if are in kernel or user mode.  If kernel mode then just
+ *	put d0, d1, a0, a1, bus error reg and trap type onto stack and
+ *	call trap handler.
+ *
+ *   Otherwise:
+ *
+ *   1) Grab a pointer to the current processes state structure.
+ *	If the state structure does not exist then call the debugger directly.
+ *      Since it requires a temporary register to get a pointer to the
+ *	state structure a0 is saved on the stack.
+ *   2) Save the normal registers (a0-a7,d0-d6) into the state struct.
+ *   3) Copy the saved value of a0 from the stack into the state struct.
+ *   4) Copy the true value of the stack pointer into the state struct.
+ *   5) Make room on the stack for the registers that would have been saved
+ *	(a0, a1, d0, and d1) if we had been in kernel mode.
+ *   6) Save the bus error register on the stack.
+ *   7) Push the trap type on the stack.
+ *   8) Call the trap handler.
  *
  *----------------------------------------------------------------------
  */
@@ -176,20 +137,42 @@
 #endif
 
 #define CallTrapHandler(type) \
-        SaveRegs(); \
-        movc    sfc, a0; \
-        BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
-        movw    d0, sp@-; \
+	.globl	_proc_RunningProcesses, _machStatePtrOffset; \
+	movl	d0, sp@-; \
+	movw	sp@(4), d0; \
+	andl	#MACH_SR_SUPSTATE, d0; \
+	beq	101$; \
+	movl	sp@+, d0; \
+	moveml	#0xC0C0, sp@-; \
+	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG, d0; \
+        movl    d0, sp@-; \
 	movl	#type, sp@-; \
-        jsr 	_Exc_Trap; \
-	jra	ExcReturnFromTrap;
- 
-#define SysCallHandler() \
-        SaveRegs(); \
-	clrw	sp@-; \
-	movl	#EXC_SYSCALL_TRAP, sp@-; \
-        jsr 	_Sys_SysCall; \
-	RestoreTrapRegs(); \
-        rte
- 
+        jsr 	_MachTrap; \
+	jra	MachReturnFromKernTrap; \
+	\
+101$:   movl	sp@+, d0; \
+	cmpl	#0xffffffff, _machCurStatePtr; \
+	bne	100$; \
+	\
+	subl	#16, sp; \
+	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
+        movl	d0, sp@-; \
+	movl	#type, sp@-; \
+	jra	_Dbg_Trap; \
+	\
+100$:	movl	a0, sp@-; \
+	movl	_machCurStatePtr, a0; \
+	moveml	#0x7fff, a0@(MACH_TRAP_REGS_OFFSET); \
+	movl	sp@+, a0@(MACH_TRAP_REGS_OFFSET + 32); \
+	movl	sp, a0@(MACH_TRAP_REGS_OFFSET + 60); \
+	movc	usp, a1; \
+	movl	a1, a0@(MACH_USER_SP_OFFSET); \
+	movl	sp, a0@(MACH_EXC_STACK_PTR_OFFSET); \
+	subl	#16, sp; \
+	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
+        movl    d0, sp@-; \
+	movl	#type, sp@-; \
+        jsr 	_MachTrap; \
+	jra	MachReturnFromUserTrap;
+
 #endif _ASMDEFS
