@@ -173,3 +173,27 @@ Mach_CanMigrate(procPtr)
 {
     return(FALSE);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetLastSyscall --
+ *
+ *	Return the number of the last system call performed for the current
+ *	process.
+ *
+ * Results:
+ *	The system call number is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Mach_GetLastSyscall()
+{
+    return 0;
+}
+
