@@ -42,16 +42,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Parameters for RPC_FS_DEV_OPEN remote procedure call.
  * The return value from this call is a new I/O fileID.
  */
-typedef struct FsDeviceRemoteOpenPrm {
+typedef struct FsDeviceRemoteOpenParam {
     Fs_FileID	fileID;		/* I/O fileID from name server. */
     int		useFlags;	/* FS_READ | FS_WRITE ... */
     int		dataSize;	/* size of openData */
-    FsrmtUnionData	openData;	/* Fsio_FileState, Fsio_DeviceState or PdevState.
+    FsrmtUnionData	openData;	/* Fsio_DeviceState or Fspdev_State.
 				 * NOTE. be careful when assigning this.
 				 * bcopy() of the whole union can cause
 				 * bus errors if really only a small object
 				 * exists and it's at the end of a page. */
-} FsDeviceRemoteOpenPrm;
+} FsDeviceRemoteOpenParam;
 
 
 
@@ -141,6 +141,13 @@ Fsrmt_IOHandleInit(ioFileIDPtr, useFlags, name, newHandlePtrPtr)
     if (!found) {
 	Fsutil_RecoveryInit(recovPtr);
 	fs_Stats.object.remote++;
+	/*
+	 * Register a callback with the recovery module.  This ensures that
+	 * someone is paying attention to the I/O server and the filesystem
+	 * will get called back when the I/O server reboots.
+	 */
+	Recov_RebootRegister(ioFileIDPtr->serverID, Fsutil_Reopen,
+			    (ClientData)NIL);
     }
     recovPtr->use.ref++;
     if (useFlags & FS_WRITE) {
@@ -157,7 +164,7 @@ Fsrmt_IOHandleInit(ioFileIDPtr, useFlags, name, newHandlePtrPtr)
  *	or remote pseudo stream.  Uses the RPC_FS_DEV_OPEN remote
  *	procedure call to invoke the pipe, device, or pseudo device
  *	open routine on the I/O server.  We are given an ioFileID from
- *	the name server, although we just use the sererID part here.
+ *	the name server, although we just use the serverID part here.
  *	The I/O server returns a new fileID that connects to the device.
  *
  * Results:
@@ -181,7 +188,7 @@ Fsrmt_DeviceOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
 {
     ReturnStatus	status;		/* Return code from RPC */
     Rpc_Storage		storage;	/* Specifies inputs/outputs to RPC */
-    FsDeviceRemoteOpenPrm param;
+    FsDeviceRemoteOpenParam param;
 
     param.fileID = *ioFileIDPtr;
     param.useFlags = useFlags;
@@ -190,7 +197,7 @@ Fsrmt_DeviceOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
 	bcopy((Address)inBuffer, (Address)&param.openData, inSize);
     }
     storage.requestParamPtr = (Address) &param;
-    storage.requestParamSize = sizeof(FsDeviceRemoteOpenPrm);
+    storage.requestParamSize = sizeof(FsDeviceRemoteOpenParam);
     storage.requestDataPtr = (Address) NIL;
     storage.requestDataSize = 0;
     storage.replyParamPtr = (Address) ioFileIDPtr;
@@ -200,14 +207,6 @@ Fsrmt_DeviceOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
 
     status = Rpc_Call(ioFileIDPtr->serverID, RPC_FS_DEV_OPEN, &storage);
 
-    if (status == SUCCESS) {
-	/*
-	 * Register a callback with the recovery module.  This ensures that
-	 * someone is paying attention to the I/O server and the filesystem
-	 * will get called back when the I/O server reboots.
-	 */
-	Recov_RebootRegister(ioFileIDPtr->serverID, Fsutil_Reopen, (ClientData)NIL);
-    }
     return(status);
 }
 
@@ -251,7 +250,7 @@ Fsrmt_RpcDevOpen(srvToken, clientID, command, storagePtr)
     Fs_HandleHeader	*hdrPtr;	/* I/O handle created by type-specific
 					 * open routine. */
     ReturnStatus	status;
-    FsDeviceRemoteOpenPrm *paramPtr;
+    FsDeviceRemoteOpenParam *paramPtr;
     register int	dataSize;
     ClientData		streamData;
 
@@ -262,7 +261,7 @@ Fsrmt_RpcDevOpen(srvToken, clientID, command, storagePtr)
      * data so the CltOpen routine can free it, as it expects to do.
      * NAME note: we don't have a name for the device here.
      */
-    paramPtr = (FsDeviceRemoteOpenPrm *) storagePtr->requestParamPtr;
+    paramPtr = (FsDeviceRemoteOpenParam *) storagePtr->requestParamPtr;
     dataSize = paramPtr->dataSize;
     if (dataSize > 0) {
 	streamData = (ClientData)malloc(dataSize);
@@ -354,6 +353,12 @@ Fsrmt_IOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
      * on the I/O server.
      */
     if (status == SUCCESS && rmtHandlePtr->recovery.use.ref == 0) {
+	/*
+	 * Undo the callback we registered when we created the remote handle.
+	 * Then nuke the handle itself.
+	 */
+	Recov_RebootUnRegister(rmtHandlePtr->hdr.fileID.serverID, Fsutil_Reopen,
+			    (ClientData)NIL);
 	Fsutil_RecoverySyncLockCleanup(&rmtHandlePtr->recovery);
 	Fsutil_HandleRelease(rmtHandlePtr, TRUE);
 	Fsutil_HandleRemove(rmtHandlePtr);
