@@ -329,7 +329,7 @@ UpdateTimeOfDay()
 	 * Timer_GetRealTimeOfDay gets it for us.
 	 */
     Timer_GetRealTimeOfDay(&timerTimeOfDay, (int *) NIL, (int *) NIL);
-    Timer_RescheduleRoutine(&updateElement, TRUE);
+    Timer_ScheduleRoutine(&updateElement, TRUE);
 }
 
 

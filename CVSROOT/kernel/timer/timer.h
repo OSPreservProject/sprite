@@ -236,7 +236,6 @@ typedef struct {
 extern Timer_Statistics	timer_Statistics;
 
 extern void Timer_ScheduleRoutine();
-extern void Timer_RescheduleRoutine();
 extern void Timer_DescheduleRoutine();
 
 extern void Timer_GetTimeOfDay();

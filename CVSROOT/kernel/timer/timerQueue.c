@@ -157,7 +157,6 @@ Timer_Init()
 void
 Timer_CallBack()
 {
-	register List_Links	*itemPtr;	/* Used to examine TQE's. */
 	register List_Links	*readyPtr;	/* Ptr to TQE that's ready
 						 * to be called. */
 	Time			timeOfDay;	/* Best guess at tod. */
@@ -175,7 +174,6 @@ Timer_CallBack()
 	timer_Statistics.callback++;
 #endif
 
-	MASTER_LOCK(&timerMutex);
 
 	MASTER_LOCK(&timerClockMutex);
 	Time_Add(timerTimeOfDay, todUpdate, &timerTimeOfDay);
@@ -188,13 +186,12 @@ Timer_CallBack()
 	Sched_GatherProcessInfo();
 	Dev_GatherDiskStats();
 
+	MASTER_LOCK(&timerMutex);
 	if (!List_IsEmpty(timerQueueList)) {
-
 	    Timer_GetCurrentTicks(&currentTime);
-
-	    itemPtr = List_First(timerQueueList); 
-	    while (!List_IsAtEnd((timerQueueList), itemPtr)) {
-		if(Timer_TickGT(((Timer_QueueElement *)itemPtr)->time, 
+	    while (!List_IsEmpty(timerQueueList)) {
+		readyPtr = List_First(timerQueueList); 
+		if(Timer_TickGT(((Timer_QueueElement *)readyPtr)->time, 
 		  		  currentTime)) {
 		    break;
 		} else {
@@ -206,8 +203,6 @@ Timer_CallBack()
 		     *  queue.
 		     */
 
-		    readyPtr = itemPtr;
-		    itemPtr  = List_Next(itemPtr);
 		    List_Remove(readyPtr);
 
 		    /*
@@ -215,6 +210,10 @@ Timer_CallBack()
 		     *  the routine must do as little as possible.  The 
 		     *  routine is passed the time it was scheduled to 
 		     *  be called at and a client-specified argument.
+		     * 
+		     *  We release the timerMutex during the call backs to
+		     *	prevent the many deadlocks that can occur on a 
+		     *	multiprocessor.
 		     */
 
 #define  ELEMENTPTR ((Timer_QueueElement *) readyPtr)
@@ -222,9 +221,17 @@ Timer_CallBack()
 		    if (ELEMENTPTR->routine == 0) {
 			panic("Timer_ServiceInterrupt: t.q.e. routine == 0\n");
 		    } else {
+			void        (*routine)();
+			Timer_Ticks time;
+			ClientData  clientData;
+
 			ELEMENTPTR->processed = TRUE;
-			(ELEMENTPTR->routine) 
-				(ELEMENTPTR->time,ELEMENTPTR->clientData);
+			routine = ELEMENTPTR->routine;
+			time = ELEMENTPTR->time;
+			clientData = ELEMENTPTR->clientData;
+			MASTER_UNLOCK(&timerMutex);
+			(routine) (time,clientData);
+			MASTER_LOCK(&timerMutex);
 		    }
 		}
 	    }
@@ -274,11 +281,9 @@ Timer_CallBack()
  *	will be called at the interval + the current time.
  *
  *      Once ExampleRoutine is called, it can schedule itself to be
- *      called again using Timer_RescheduleRoutine().  Timer_ScheduleRoutine 
- *	must not be used because it can't be called by routines that 
- *	are called from the timer queue.
+ *      called again using Timer_ScheduleRoutine().   
  *
- *	    Timer_RescheduleRoutine(&element, TRUE);
+ *	    Timer_ScheduleRoutine(&element, TRUE);
  *
  *	The 2nd argument again means schedule the routine relative to the
  *	current time. Since we still want ExampleRoutine to be called in
@@ -311,49 +316,10 @@ Timer_ScheduleRoutine(newElementPtr, interval)
     register	Timer_QueueElement *newElementPtr; /* routine to be added */
     Boolean	interval;	/* TRUE if schedule relative to current time. */
 {
-#ifdef GATHER_STAT
-    timer_Statistics.schedule++;
-#endif
-
-    MASTER_LOCK(&timerMutex); 
-    Timer_RescheduleRoutine(newElementPtr, interval);
-    MASTER_UNLOCK(&timerMutex); 
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Timer_RescheduleRoutine --
- *
- *	Places a routine on the timer queue so it will be called 
- *	at a specific time.
- *
- *	This routine assumes the timer mutex is held. Therefore
- *	it can be used by routines that are called from the timer queue.
- *	Timer_ScheduleRoutine calls this routine once it obtains the
- *	timer mutex.
- *
- *	Most of the prefatory comments of Timer_ScheduleRoutine are 
- *	appropriate for	this routine. 
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The timer queue is extended. 
- *
- *----------------------------------------------------------------------
- */
-
-void
-Timer_RescheduleRoutine(newElementPtr, interval)
-    register	Timer_QueueElement *newElementPtr; /* routine to be added */
-    Boolean	interval;	/* TRUE if schedule relative to current time. */
-{
     register List_Links	 *itemPtr;
     Boolean inserted;		/* TRUE if added to Q in FORALL loop. */
 
+    MASTER_LOCK(&timerMutex); 
     /*
      *  Go through the timer queue and insert the new routine.  The queue
      *  is ordered by the time field in the element.  The sooner the
@@ -367,14 +333,14 @@ Timer_RescheduleRoutine(newElementPtr, interval)
     inserted = FALSE;  /* assume new element not inserted inside FOR loop.*/
 
 #ifdef GATHER_STAT
-    timer_Statistics.resched++;
+    timer_Statistics.schedule++;
 #endif
 
     /*
      * Safety check.
      */
     if (newElementPtr->routine == 0) {
-	panic("Timer_RescheduleRoutine: bad address for t.q.e. routine.\n");
+	panic("Timer_ScheduleRoutine: bad address for t.q.e. routine.\n");
     }
 
     /* 
@@ -411,6 +377,7 @@ Timer_RescheduleRoutine(newElementPtr, interval)
     if (!inserted) {
 	List_Insert((List_Links *) newElementPtr, LIST_ATREAR(timerQueueList));
     }
+    MASTER_UNLOCK(&timerMutex); 
 }
 
 
