@@ -716,6 +716,8 @@ FetchBlock(canWait)
 	     */
 	    PutBlockOnDirtyList(blockPtr, FALSE);
 	    blockPtr->flags |= FS_MOVE_TO_FRONT;
+	} else if (blockPtr->flags & FS_BLOCK_DELETED) {
+	    Sys_Panic(SYS_WARNING, "FetchBlock: deleted block in LRU list\n");
 	} else {
 	    /*
 	     * This block is clean and unlocked.  Delete it from the
@@ -964,6 +966,7 @@ again:
 	     * Wait until becomes unlocked.  Start over when wakeup 
 	     * because the block could go away while we are waiting.
 	     */
+	    FS_TRACE_BLOCK(FS_TRACE_BLOCK_WAIT, blockPtr);
 	    (void)Sync_Wait(&blockPtr->ioDone, FALSE);
 	    goto again;
 	}
@@ -971,6 +974,7 @@ again:
 	if (flags & FS_IO_IN_PROGRESS) {
 	    blockPtr->flags |= FS_IO_IN_PROGRESS;
 	}
+	FS_TRACE_BLOCK(FS_TRACE_BLOCK_HIT, blockPtr);
 	*foundPtr = TRUE;
 	*blockPtrPtr = blockPtr;
 	UNLOCK_MONITOR;
@@ -1065,6 +1069,7 @@ again:
     blockPtr->blockSize = -1;
     blockPtr->timeDirtied = 0;
     *blockPtrPtr = blockPtr;
+    FS_TRACE_BLOCK(FS_TRACE_NO_BLOCK, blockPtr);
     Hash_SetValue(hashEntryPtr, blockPtr);
     List_Insert((List_Links *) blockPtr, LIST_ATREAR(lruList));
     List_InitElement(&blockPtr->fileLinks);
@@ -1378,6 +1383,7 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 	    cacheInfoPtr->blocksInCache--;
 	    List_Remove(&blockPtr->fileLinks);
 	    Hash_Delete(blockHashTable, hashEntryPtr);
+	    FS_TRACE_BLOCK(FS_TRACE_DEL_BLOCK, blockPtr);
     
 	    /*
 	     * Invalidate the block, including removing it from dirty list
@@ -1615,6 +1621,7 @@ again:
 		Hash_Delete(blockHashTable, hashEntryPtr);
 		List_Remove((List_Links *) blockPtr);
 		blockPtr->flags |= FS_BLOCK_DELETED;
+		FS_TRACE_BLOCK(FS_TRACE_DEL_BLOCK, blockPtr);
 	    }
 	} else if (blockPtr->refCount > 0) {
 	    /* 
@@ -2105,6 +2112,7 @@ FsCleanBlocks(data, callInfoPtr)
 		status = FAILURE;
 		break;
 	    }
+	    FS_TRACE_BLOCK(FS_TRACE_BLOCK_WRITE, blockPtr);
 	    status = (*fsStreamOpTable[cacheInfoPtr->hdrPtr->fileID.type].blockWrite)
 		    (cacheInfoPtr->hdrPtr, blockPtr->diskBlock,
 		     blockPtr->blockSize, blockPtr->blockAddr, lastDirtyBlock);
@@ -2597,6 +2605,7 @@ FinishRealloc(blockPtr, diskBlock)
  *
  * Results:
  *	The number of dirty blocks in the cache for this file.
+ *	-1 is returned if the file is not cacheable.
  *
  * Side effects:
  *	FS_CLOSE_IN_PROGRESS flags set in the cacheInfo for this file.
@@ -2616,7 +2625,11 @@ FsPreventWriteBacks(cacheInfoPtr)
     while (cacheInfoPtr->flags & FS_FILE_BEING_WRITTEN) {
 	(void)Sync_Wait(&closeCondition, FALSE);
     }
-    numDirtyBlocks = cacheInfoPtr->numDirtyBlocks;
+    if (cacheInfoPtr->flags & FS_FILE_NOT_CACHEABLE) {
+	numDirtyBlocks = -1;
+    } else {
+	numDirtyBlocks = cacheInfoPtr->numDirtyBlocks;
+    }
 
     UNLOCK_MONITOR;
 
@@ -2796,6 +2809,7 @@ DeleteBlock(blockPtr)
 	Sys_Panic(SYS_FATAL,
 	    "DeleteBlock: Block in LRU list is not in the hash table.\n");
     }
+    FS_TRACE_BLOCK(FS_TRACE_DEL_BLOCK, blockPtr);
     Hash_Delete(blockHashTable, hashEntryPtr);
     blockPtr->cacheInfoPtr->blocksInCache--;
     List_Remove(&blockPtr->fileLinks);
