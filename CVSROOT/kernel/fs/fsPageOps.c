@@ -73,10 +73,8 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
     reply.signal = 0;
     reply.code = 0;
     /*
-     * Tell the page routine if the file is not cacheable on clients.
-     * We currently don't tell it if there is a HEAP or CODE page,
-     * although we used to use this information to copy initialized
-     * HEAP pages into the cache, even on clients.  However, for non-SWAP
+     * We currently copy initialized
+     * HEAP pages into the cache.  Also, for non-SWAP
      * pages a client should still check its cache to make sure it
      * didn't just generate the data.
      */
