@@ -28,16 +28,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsconsist.h"
-#include "fsio.h"
-#include "fsStat.h"
-#include "stdlib.h"
-#include "rpc.h"
-#include "sync.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fsStat.h>
+#include <stdlib.h>
+#include <rpc.h>
 
+#include <stdio.h>
 /*
  * A master list of clients of this host.  This is maintained here and
  * consulted periodically in order to be able to clean up after dead clients.
@@ -156,7 +156,7 @@ Boolean
 Fsconsist_IOClientReopen(clientList, clientID, usePtr)
     List_Links	*clientList;	/* List of clients for the I/O handle. */
     int		clientID;	/* The client who is opening the file. */
-    Fsutil_UseCounts	*usePtr;	/* In - Client's usage of the object.
+    Fsio_UseCounts	*usePtr;	/* In - Client's usage of the object.
 				 * Out - difference between old client useage.
 				 *  This means that the summary use counts
 				 *  can be updated by adding the use counts
@@ -430,7 +430,7 @@ void
 Fsconsist_IOClientStatus(clientList, clientID, clientUsePtr)
     List_Links *clientList;	/* List of clients to a file. */
     int		clientID;	/* Client to check. */
-    Fsutil_UseCounts	*clientUsePtr;	/* Client's version of the usage */
+    Fsio_UseCounts	*clientUsePtr;	/* Client's version of the usage */
 {
     register Fsconsist_ClientInfo 	*clientPtr;
 
