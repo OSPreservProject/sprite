@@ -28,6 +28,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 int	rpc_NativeVersion = RPC_NATIVE_VERSION;
 int	rpc_SwappedVersion = RPC_SWAPPED_VERSION;
 
+/*
+ * Constant parameters for the protocol.  The RpcConst structure keeps
+ * the complete set of constants.  Two sets of constants are defined,
+ * one that is appropriate for a local ethernet, one that has longer
+ * timeouts and is better for talking across gateways.
+ */
+RpcConst rpcEtherConst;
+RpcConst rpcInetConst;
+int	rpcMaxTries = 8;	/* Number of times to re-send before aborting.
+				 * If the initial timeout is .1 sec, and it
+				 * doubles until 1 sec, 8 retries means a
+				 * total timeout period of about 6 seconds. */
+int	rpcMaxAcks = 10;	/* Watchdog against lots of acks from a server.
+				 * This limit causes a warning message to be
+				 * printed every rpcMaxAcks, and if the RPC
+				 * is a broadcast it gets aborted. */
 
 
 /*
@@ -61,17 +77,47 @@ Rpc_Init()
     int	     maxHdrSize;
 
     /*
-     * Initialize some time parameters.  The 'rpc' structure is used in
-     * the RpcDoCall code.  The variables are used here for initialization
+     * Initialize sets of time parameters.  These structures are used in
+     * the RpcDoCall code.  This is much too hard coded, and someone
+     * should figure out how to dynamically determine these parameters.
+     *
+     * Ethernet - retry after 0.1 seconds, .5 seconds if fragmenting.
+     *	Double this until the retry interval is 1 second.
+     *	Retry at most 8 times, for a total timeout period of
+     *		.1 + .2 + .4 + .8 + 1.0 + 1.0 + 1.0 + 1.0 = 5.5
+     *		.5 + 1.0 + 1.0 + 1.0 + 1.0 + 1.0 + 1.0 + 1.0 = 7.5 (frag)
+     *	If we are recieving acks, then back off and probe every 5 seconds.
+     *	If we get acked 10 times then give a warning.
      */
-    rpc.retryMsec = rpcRetryMsec;
-    rpc.retryWait = rpcRetryMsec * timer_IntOneMillisecond;
-    rpc.maxAckMsec = rpcMaxAckMsec;
-    rpc.maxAckWait = rpcMaxAckMsec * timer_IntOneMillisecond;
-    rpc.maxTimeoutMsec = rpcMaxTimeoutMsec;
-    rpc.maxTimeoutWait = rpcMaxTimeoutMsec * timer_IntOneMillisecond;
-    rpc.maxTries = rpcMaxTries;
-    rpc.maxAcks = rpcMaxAcks;
+    rpcEtherConst.retryMsec = 100;
+    rpcEtherConst.retryWait = 100 * timer_IntOneMillisecond;
+    rpcEtherConst.fragRetryMsec = 500;
+    rpcEtherConst.fragRetryWait = 500 * timer_IntOneMillisecond;
+    rpcEtherConst.maxAckMsec = 5000;
+    rpcEtherConst.maxAckWait = 5000 * timer_IntOneMillisecond;
+    rpcEtherConst.maxTimeoutMsec = 1000;
+    rpcEtherConst.maxTimeoutWait = 1000 * timer_IntOneMillisecond;
+    rpcEtherConst.maxTries = 8;
+    rpcEtherConst.maxAcks = 10;
+    /*
+     * Internet (IP) - retry after 0.5 seconds, 1.0 if fragmenting.
+     *	Double this until the retry interval is 4 seconds.
+     *	Retry at most 8 times, for a total timeout period of
+     *		.5 + 1.0 + 2.0 + 4.0 + 4.0 + 4.0 + 4.0 + 4.0 = 23.5
+     *		1.0 + 2.0 + 4.0 + 4.0 + 4.0 + 4.0 + 4.0 + 4.0 = 27.0 (frag)
+     *	If we are recieving acks, then back off and probe every 5 seconds.
+     *	If we get acked 10 times then give a warning.
+     */
+    rpcInetConst.retryMsec = 500;
+    rpcInetConst.retryWait = 500 * timer_IntOneMillisecond;
+    rpcInetConst.fragRetryMsec = 1000;
+    rpcInetConst.fragRetryWait = 1000 * timer_IntOneMillisecond;
+    rpcInetConst.maxAckMsec = 5000;
+    rpcInetConst.maxAckWait = 5000 * timer_IntOneMillisecond;
+    rpcInetConst.maxTimeoutMsec = 4000;
+    rpcInetConst.maxTimeoutWait = 4000 * timer_IntOneMillisecond;
+    rpcInetConst.maxTries = 8;
+    rpcInetConst.maxAcks = 10;
 
     Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr), 0);
 
