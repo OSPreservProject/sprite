@@ -113,6 +113,10 @@ static Timer_QueueElement forgetUsageElement;
  */
 Sched_Instrument sched_Instrument;
 
+/*
+ * Status of each processor.
+ */
+Sched_ProcessorStatus	sched_ProcessorStatus[MACH_MAX_NUM_PROCESSORS];
 
 /*
  * Forward Declarations.
@@ -142,6 +146,12 @@ static void RememberUsage();
 void
 Sched_Init()
 {
+    int	cpu;
+
+    sched_ProcessorStatus[0] = SCHED_PROCESSOR_ACTIVE;
+    for(cpu = 1; cpu < MACH_MAX_NUM_PROCESSORS; cpu++) {
+	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_NOT_STARTED;
+    }
     quantumInterval = QUANTUM * timer_IntOneMillisecond;
 #ifdef TESTING
     quantumInterval = timer_IntOneSecond;
@@ -359,7 +369,6 @@ Sched_ContextSwitchInt(state)
      * Adjust scheduling priorities.
      */
     RememberUsage(curProcPtr);
-
     if (state == PROC_READY) {
 	/*
 	 * If the current process is PROC_READY, add it to the ready queue and
@@ -396,7 +405,6 @@ Sched_ContextSwitchInt(state)
 	 */
 	newProcPtr = IdleLoop();
     }
-
 
     /*
      * Set the state of the new process.  
@@ -529,6 +537,7 @@ IdleLoop()
     register int cpu;
     register List_Links		*queuePtr;
     register Boolean		foundOne;
+    Proc_ControlBlock		*lastProcPtr = Proc_GetCurrentProc();
 
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
@@ -538,7 +547,9 @@ IdleLoop()
 	/*
 	 * Wait for a process to become runnable.  
 	 */
-	if (List_IsEmpty(queuePtr) == FALSE) {
+	if ((List_IsEmpty(queuePtr) == FALSE) &&
+	    ((sched_ProcessorStatus[cpu] != SCHED_PROCESSOR_IDLE) ||
+	     (lastProcPtr->state == PROC_READY))) {
 	    /*
 	     * Looks like there might be something in the queue. We don't
 	     * have sched_Mutex down at this point, so this is only a hint.
@@ -628,13 +639,17 @@ Sched_TimeTicks()
     Time time;
 
     cpu = Mach_GetProcessorNumber(); 
+    if (cpu != 0) {
+	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_IDLE;
+    }
     Time_Multiply(time_OneSecond, 5, &time);
-    printf("Idling for 5 seconds...");
+    printf("Idling processor %d for 5 seconds...",cpu);
     lowTicks = sched_Instrument.processor[cpu].idleTicksLow;
     (void) Sync_WaitTime(time);
     lowTicks = sched_Instrument.processor[cpu].idleTicksLow - lowTicks;
     printf(" %d ticks\n", lowTicks);
-    sched_Instrument.idleTicksPerSecond = lowTicks / 5;
+    sched_Instrument.processor[cpu].idleTicksPerSecond = lowTicks / 5;
+    sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_ACTIVE;
 }
 
 
@@ -867,6 +882,208 @@ Sched_StartUserProc(pc)
      * Start the process running.  This does not return.
      */
     Mach_StartUserProc(procPtr, pc);
+}
+#if (MACH_MAX_NUM_PROCESSORS != 1)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcessorStartProcess --
+ *
+ *	The initial process of a processor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+static 
+void ProcessorStartProcess()
+{
+       /*
+         * Detach from parent so that cleanup will occur when the
+         * processor exits with this process. Also set the SCHED_STACK_IN_USE
+         * flag so that cleanup wont happen too early.
+         */
+        Proc_Detach(SUCCESS);
+        Sched_ContextSwitch(PROC_WAITING);
+	Proc_Exit(0);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartProcessor --
+ *
+ *	Start up a processor..
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+StartProcessor(pnum)
+    int		pnum;		/* Processor number to start. */
+{
+    Proc_PID    pid;
+    Proc_ControlBlock *procPtr;
+    char        procName[128];
+    ReturnStatus status;
+
+    /*
+     * Startup an initial process for the processor pnum.  
+     */
+    sprintf(procName,"Processor%dStart",pnum);
+    Proc_NewProc((Address)ProcessorStartProcess, PROC_KERNEL, FALSE, &pid,
+				    procName);
+    procPtr = Proc_GetPCB(pid);
+    /*
+     * Wait for this processor to go into the WAIT state.
+     */
+    while (procPtr->state != PROC_WAITING) {
+	(void) Sync_WaitTimeInterval(10 * timer_IntOneMillisecond);
+    }
+
+    /*
+     * Wait for its stack to become free .
+     */
+    while (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+	(void) Sync_WaitTimeInterval(10 * timer_IntOneMillisecond);
+    }
+    Sched_ContextSwitch(PROC_READY);
+    printf("Starting processor %d with pid 0x%x\n",pnum,pid);
+    status = Mach_SpinUpProcessor(pnum,procPtr);
+    if (status != SUCCESS) {
+	printf("Warning: Processor %d not started.\n",pnum);
+    }
+    return (status);
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_StartProcessor --
+ *
+ *	Start a processor running processes.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	A processor maybe started.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Sched_StartProcessor(pnum)
+    int		pnum;	/* Processor number to start. */
+{
+    ReturnStatus	status;
+    /*
+     * Insure that processor number is in range.   
+     * 
+     */
+    if (pnum >= MACH_MAX_NUM_PROCESSORS) {
+	return (GEN_INVALID_ARG);
+    }
+    MASTER_LOCK(sched_MutexPtr);
+    switch (sched_ProcessorStatus[pnum]) { 
+	case SCHED_PROCESSOR_IDLE: {
+	    sched_ProcessorStatus[pnum] = SCHED_PROCESSOR_ACTIVE;
+	    /*
+	     * Fall thru .
+	     */
+	}
+	case SCHED_PROCESSOR_STARTING:
+	case SCHED_PROCESSOR_ACTIVE: {
+		status = SUCCESS;
+		break;
+	}
+	case SCHED_PROCESSOR_NOT_STARTED: {
+#if (MACH_MAX_NUM_PROCESSORS != 1)
+	    sched_ProcessorStatus[pnum] == SCHED_PROCESSOR_STARTING;
+	    MASTER_UNLOCK(sched_MutexPtr);
+	    status = StartProcessor(pnum);
+	    return (status);
+#endif
+	} 
+	default: {
+	    printf("Warning: Unknown processor state %d for processor %d\n",
+		    (int) sched_ProcessorStatus[pnum], pnum);
+	    status = FAILURE;
+	}
+    }
+    MASTER_UNLOCK(sched_MutexPtr);
+    return (status);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_IdleProcessor --
+ *
+ *	Put a processor into the idle state so it wont be scheduled for
+ *	anymore processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A processor will be idled started.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Sched_IdleProcessor(pnum)
+    int		pnum;	/* Processor number to start. */
+{
+    ReturnStatus	status;
+    /*
+     * Insure that processor number is in range.   
+     * 
+     */
+    if (pnum >= MACH_MAX_NUM_PROCESSORS) {
+	return (GEN_INVALID_ARG);
+    }
+    MASTER_LOCK(sched_MutexPtr);
+    switch (sched_ProcessorStatus[pnum]) { 
+	case SCHED_PROCESSOR_ACTIVE: 
+	    sched_ProcessorStatus[pnum] = SCHED_PROCESSOR_IDLE;
+	    /*
+	     * Fall thru.
+	     */
+	case SCHED_PROCESSOR_IDLE: {
+		status = SUCCESS;
+		break;
+	}
+	case SCHED_PROCESSOR_NOT_STARTED: 
+	case SCHED_PROCESSOR_STARTING: {
+		status = GEN_INVALID_ARG;
+		break;
+	}
+	default: {
+	    printf("Warning: Unknown processor state %d for processor %d\n",
+		    (int) sched_ProcessorStatus[pnum], pnum);
+	    status = FAILURE;
+	}
+    }
+    MASTER_UNLOCK(sched_MutexPtr);
+    return (status);
 }
 
 
