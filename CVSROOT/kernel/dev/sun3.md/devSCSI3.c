@@ -2139,9 +2139,11 @@ DevSCSI3Intr(clientDataArg)
      * Jump here to return an error and reset the HBA.
      */
 rtnHardErrorAndGetNext:
-    printf("Warning: %s reset and current command terminated.\n",
-	   devPtr->handle.locationName);
-    RequestDone(devPtr,ctrlPtr->scsiCmdPtr,status,0,residual);
+    if (ctrlPtr->scsiCmdPtr != (ScsiCmd *) NIL) { 
+	printf("Warning: %s reset and current command terminated.\n",
+	       devPtr->handle.locationName);
+	RequestDone(devPtr,ctrlPtr->scsiCmdPtr,status,0,residual);
+    }
     Reset(ctrlPtr);
     /*
      * Use the queue entryAvailProc to start the next request for this device.
