@@ -503,39 +503,6 @@ SyncEventWakeupInt(event)
 
 
 /*
- *----------------------------------------------------------------------
- *
- * Sync_EventWakeup --
- *
- *	Perform a broadcast to wake up a process awaiting an arbitrary
- *	event.  Obtain the master lock, then call the internal Wakeup
- *	routine.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Make any processes waiting on this event runnable.
- *
- *----------------------------------------------------------------------
- */
-
-ENTRY void
-Sync_EventWakeup(event)
-    unsigned int event;	/* arbitrary integer */
-{
-    MASTER_LOCK(sched_MutexPtr);
-    SyncEventWakeupInt(event);
-#ifdef spur
-    if (Mach_InstCountIsOn(1)) {
-	panic("About to unlock sched_Mutex with inst count on.\n");
-    }
-#endif
-    MASTER_UNLOCK(sched_MutexPtr);
-}
-
-
-/*
  *----------------------------------------------------------------------------
  *
  * Sync_WakeWaitingProcess --
@@ -674,42 +641,6 @@ SyncEventWaitInt(event, wakeIfSignal)
     procPtr->event = event;
     Sched_ContextSwitchInt(PROC_WAITING);
     return(FALSE);
-}
-
-
-/*
- *----------------------------------------------------------------------------
- *
- * Sync_EventWait --
- *
- *	Make a process sleep waiting for an event.  This is an external
- *	version of the routine which is to be called without the sched_MutexPtr
- *	master lock held.
- *
- * Results:
- *	TRUE if woke up because of a signal, FALSE otherwise.
- *
- * Side effects:
- *	The sched_MutexPtr master lock is set, then the "internal" version
- * 	of the EventWait routine is called.
- *
- *----------------------------------------------------------------------------
- */
-
-ENTRY Boolean
-Sync_EventWait(event, wakeIfSignal)
-    unsigned 	int 	event;		/* Event to wait on. */
-    Boolean		wakeIfSignal;	/* TRUE => wait if signal. */
-{
-    Boolean	sigPending;
-
-    MASTER_LOCK(sched_MutexPtr);
-    sigPending = SyncEventWaitInt(event, wakeIfSignal);
-#ifdef spur
-    Mach_InstCountEnd(1);
-#endif
-    MASTER_UNLOCK(sched_MutexPtr);
-    return(sigPending);
 }
 
 

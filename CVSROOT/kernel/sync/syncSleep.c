@@ -245,5 +245,7 @@ Sync_WakeupProcess(time, procAddress)
     Timer_Ticks time;		/* passed by Timer module but ignored */
     ClientData procAddress;	/* address of PCB of process to wake up */
 {
-    Sync_EventWakeup((unsigned int) procAddress);
+    MASTER_LOCK(sched_MutexPtr);
+    SyncEventWakeupInt((unsigned int) procAddress);
+    MASTER_UNLOCK(sched_MutexPtr);
 }

@@ -88,11 +88,9 @@ extern ReturnStatus Sync_SlowBroadcast _ARGS_((unsigned int event,
 extern Boolean Sync_SlowMasterWait _ARGS_((unsigned int event,
 			Sync_Semaphore *mutexPtr, Boolean wakeIfSignal));
 extern void Sync_UnlockAndSwitch _ARGS_((Sync_Lock *lockPtr, Proc_State state));
-extern void Sync_EventWakeup _ARGS_((unsigned int event));
 extern void Sync_WakeWaitingProcess _ARGS_((register Proc_ControlBlock *procPtr));
 extern void Sync_WakeupProcess _ARGS_((Timer_Ticks time, ClientData procAddress));
 
-extern Boolean Sync_EventWait _ARGS_((unsigned int event, Boolean wakeIfSignal));
 extern void Sync_GetWaitToken _ARGS_((Proc_PID *pidPtr, int *tokenPtr));
 extern void Sync_SetWaitToken _ARGS_((Proc_ControlBlock *procPtr, int waitToken));
 
