@@ -30,6 +30,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "dbg.h"
 
+#include "netInet.h"
+
 Net_EtherStats	net_EtherStats;
 NetEtherFuncs	netEtherFuncs;
 static	Sync_Semaphore	outputMutex;
@@ -208,7 +210,11 @@ ReturnStatus
 Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
     int spriteID;			/* Host to which to send the packet */
     Net_ScatterGather *gatherPtr;	/* Specifies buffers containing the
-					 * pieces of the packet */
+					 * pieces of the packet The first
+					 * element of gatherPtr is assumed to 
+					 * be a buffer large enought to 
+					 * format any protocol headers
+					 * we need. */
     int gatherLength;			/* Number of elements in gatherPtr[] */
     Sync_Semaphore *mutexPtr;		/* Mutex that is released during the
 					 * ARP transaction (if needed).  This
@@ -240,12 +246,83 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		 * Still need to decide which interface to use on a 
 		 * machine with more than one...
 		 */
-
+		/*
+		 * The first gather buffer contains the protocol header for
+		 * which we have none for NET_ROUTE_ETHER.
+		 */
+		gatherPtr->length = 0; 	
 		INC_BYTES_SENT(gatherPtr, gatherLength);
 		gatherPtr->done = FALSE;
 		gatherPtr->mutexPtr = mutexPtr;
 		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
 					    gatherPtr, gatherLength);
+		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
+		    Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+		}
+		return(SUCCESS);
+	    }
+	case NET_ROUTE_INET: {
+		/*
+		 * For the INET routes we must fill in the ipHeader in the 
+		 * first buffer of the gather array. 
+		 */
+		register Net_IPHeader		*ipHeaderPtr;
+		register unsigned int length;
+		register Net_ScatterGather	*gathPtr;
+		register int	 i; 
+
+		/*
+		 * Compute the legnth of the gather vector. We can skip
+		 * vector zero because we know its size will be 
+		 * sizeof(Net_IPHeader).
+		 */
+		length = sizeof(Net_IPHeader);
+		gathPtr = gatherPtr + 1;
+		for (i = 1; i < gatherLength;  i++, gathPtr++){
+		    length += gathPtr->length; 
+		}
+
+		/* 
+		 * IP packets must be a multiple of 4 bytes in length. We
+		 * grow the last gather element to accomblish this. Thie could
+		 * cause a bus error if adding 1 to 3 bytes causes the
+		 * packet to grow into an invalid page. This restriction
+		 * should probably be passed up to the RPC system.
+		 */
+		if (length & 0x3) { 
+		    int	grow = 0x4 - (length & 0x3);
+		    gatherPtr[gatherLength-1].length += grow;
+		    length += grow;
+		}
+
+		net_EtherStats.bytesSent += length + sizeof(Net_EtherHdr);
+		/*
+		 * Fill the  ipHeader into the first element of the 
+		 * scatter/gather from the template stored in the route
+		 * data.
+		 */
+		gatherPtr->length = sizeof(Net_IPHeader);
+		ipHeaderPtr = (Net_IPHeader *) gatherPtr->bufAddr;
+		gatherPtr->done = FALSE;
+		gatherPtr->mutexPtr = mutexPtr;
+
+		*ipHeaderPtr = *(Net_IPHeader *) 
+			    (((char *)routePtr->data)+sizeof(Net_EtherHdr));
+		/*
+		 * Update length and checksum. The template 
+		 * ipHeaderPtr->checksum should contain the 16 bit sum of 
+		 * the IP header with totalLen set to zero. We add the
+		 * new total length and convert into one-complement.
+		 * See Net_InetChecksum().
+		 */
+		length = length/4;
+		ipHeaderPtr->totalLen = length;
+
+		length = ipHeaderPtr->checksum + length;
+		ipHeaderPtr->checksum = ~(length + (length >> 16));
+
+		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
+						gatherPtr, gatherLength);
 		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
 		    Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
 		}
@@ -338,7 +415,6 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
 					 * pieces of the packet */
     int 		gatherLength;	/* Number of elements in gatherPtr[] */
 {
-    Sync_Condition	condition;
 
     gatherPtr->mutexPtr = &outputMutex;
     gatherPtr->done = FALSE;
@@ -447,26 +523,81 @@ Net_Input(packetPtr, packetLength)
     register Net_EtherHdr *etherHdrPtr;
     int		type;
 
-    if (dbg_UsingNetwork) {
-	Dbg_InputPacket(packetPtr, packetLength);
-	return;
-    }
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
     type = Net_NetToHostShort(NET_ETHER_HDR_TYPE(*etherHdrPtr));
+
+    if (dbg_UsingNetwork) {
+	/*
+	 * If the kernel debugger is running it gets all the packets. We
+	 * process ARP requests to allow hosts to talk to the debugger.
+	 */
+	if (type == NET_ETHER_ARP) {
+            NetArpInput(packetPtr, packetLength);
+	} else { 
+	    Dbg_InputPacket(packetPtr, packetLength);
+	}
+	return;
+    }
     switch(type) {
         case NET_ETHER_SPRITE:
 	    net_EtherStats.bytesReceived += packetLength;
-            Rpc_Dispatch(packetPtr, packetLength);
+            Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
+			packetPtr + sizeof(Net_EtherHdr), 
+			packetLength - sizeof(Net_EtherHdr));
             break;
 
-        case NET_ETHER_SPRITE_ARP:
+        case NET_ETHER_ARP:
+	case NET_ETHER_REVARP:
+	    /*
+	     * The kernel gets first shot at ARP packets and then they are
+	     * forward to tbe /dev/net device.
+	     */
             NetArpInput(packetPtr, packetLength);
+	    DevNetEtherHandler(packetPtr, packetLength);
             break;
 
         case NET_ETHER_SPRITE_DEBUG:
             EnterDebugger(packetPtr, packetLength);
             break;
 
+	case NET_ETHER_IP: {
+	    register Net_IPHeader *ipHeaderPtr = 
+			(Net_IPHeader *) (packetPtr + sizeof(Net_EtherHdr));
+	    /*
+	     * The kernel steals IP packets with the Sprite RPC protocol number.
+	     */
+	    if ( (packetLength > sizeof(Net_IPHeader)+sizeof(Net_EtherHdr)) && 
+	         (ipHeaderPtr->protocol == NET_IP_PROTOCOL_SPRITE)) {
+		int    headerLenInBytes;
+		int    totalLenInBytes;
+		headerLenInBytes = ipHeaderPtr->headerLen * 4;
+		totalLenInBytes = ipHeaderPtr->totalLen*4;
+		/*
+		 * Validate the packet. We toss out the following cases:
+		 * 1) Runt packets.
+		 * 2) Bad checksums.
+		 * 3) Fragments.
+		 * Since we sent the packets with dont fragment set we 
+		 * shouldn't get any fragments.
+		 */
+		 if ((headerLenInBytes >= sizeof(Net_IPHeader)) &&
+		     (totalLenInBytes > ipHeaderPtr->headerLen) &&
+		     (totalLenInBytes <= (packetLength-sizeof(Net_EtherHdr))) &&
+		     (Net_InetChecksum(headerLenInBytes, (Address)ipHeaderPtr)
+		                        == 0)	&&
+		     !(ipHeaderPtr->flags & NET_IP_MORE_FRAGS) &&
+		      (ipHeaderPtr->fragOffset == 0)) {
+			net_EtherStats.bytesReceived += packetLength;
+			Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
+				     ((char *) ipHeaderPtr) + headerLenInBytes, 
+				     totalLenInBytes-headerLenInBytes);
+		 }
+
+	    } else {
+		DevNetEtherHandler(packetPtr, packetLength);
+	    }
+	    break;
+	}
 	default:
 	    DevNetEtherHandler(packetPtr, packetLength);
 	    break;

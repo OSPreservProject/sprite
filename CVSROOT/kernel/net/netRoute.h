@@ -22,9 +22,7 @@
 #ifndef _NETROUTE
 #define _NETROUTE
 
-#ifdef INET
-#include "user/netInet.h"
-#endif
+#include "netInet.h"
 /*
  * A Route: A mapping between a physical address and a Sprite Host ID.
  * The supported address type is just ethernet. Net_Routes are manipulated
@@ -54,8 +52,9 @@ typedef struct Net_Route {
  * NET_ROUTE_ETHER	The route contains an ethernet address.  In this
  *			case the data of the Net_Route is a pointer to
  *			a Net_EtherHdr.
- * NET_ROUTE_INET	The route contains an Internet address.  The data of
- *			the route table entry references Net_InetRoute.
+ * NET_ROUTE_INET	The route contains an Internet address.  In this
+ *			case the data of the Net_Route is a pointer to 
+ *			a Net_EtherHdr + Net_IPHeader.
  */
 #define		NET_ROUTE_UNUSED	0x00
 #define		NET_ROUTE_GENERIC	0x01
@@ -79,22 +78,15 @@ typedef struct Net_Route {
  */
 extern Net_Route *netRouteArray[];
 
-#ifdef INET
 /*
  * The routing information for an Internet route is the Internet
- * address and a pre-formatted ethernet header.
+ * address and the ethernet address of the gateway machine.
  */
 typedef struct NetInetRoute {
     Net_InetAddress inetAddr;
-    Net_EtherHdr etherHdr;
+    Net_EtherAddress gatewayAddress;
 } NetInetRoute;
-/*
- * NET_GATEWAY - route.c in the ipServer code defines NET_GATEWAY.
- */
-#ifndef NET_GATEWAY
-#define NET_GATEWAY	0x2
-#endif
-#endif /* INET */
+
 /*
  * Sprite Address Resolution Protocol packet format.  These are used to
  * find out Sprite IDs for physical addresses and vice versa.  The ARP
@@ -106,23 +98,40 @@ typedef struct NetInetRoute {
  * Sprite ID. 
  *
  * NOTE: This packet appears on the wire in network byte ordering.
+ *
  */
+
+#define	NUM_ARP_DATA_BYTES (2 * (sizeof(Net_EtherAddress) + sizeof(int)))
+
 typedef struct NetSpriteArp {
-    int			flags;
-    int			spriteHostID;
-    Net_EtherAddress	etherAddr;
+    Net_ArpHeader arpHeader;	/* RFC826 standard header. The hardware addr
+				 * space should be NET_ARP_TYPE_ETHER.  */
+    unsigned char arpData[NUM_ARP_DATA_BYTES];
 } NetSpriteArp;
 
-#define NET_SPRITE_ARP_REQUEST		0x1
-#define NET_SPRITE_ARP_REPLY		0x2
-#define NET_SPRITE_REV_ARP_REQUEST	0x4
-#define NET_SPRITE_REV_ARP_REPLY	0x8
+/*
+ * Macros for indexing into the arpData field.
+ * ARP_SRC_ETHER_ADDR() - The address of the sender's ethernet address.
+ * ARP_SRC_PROTO_ADDR() - The address of the sender's protocol address.
+ * ARP_TARGET_ETHER_ADDR() - The address of the target's ethernet address.
+ * ARP_TARGET_PROTO_ADDR() - The address of the target's protocol address.
+ */
+
+#define ARP_SRC_ETHER_ADDR(ap) (&((ap)->arpData[0]))
+#define ARP_SRC_PROTO_ADDR(ap) \
+			(&((ap)->arpData[(ap)->arpHeader.hardwareAddrLen]))
+#define	ARP_TARGET_ETHER_ADDR(ap) \
+			(&((ap)->arpData[(ap)->arpHeader.hardwareAddrLen + \
+					 (ap)->arpHeader.protocolAddrLen]))
+#define	ARP_TARGET_PROTO_ADDR(ap) \
+			(&((ap)->arpData[2*(ap)->arpHeader.hardwareAddrLen + \
+					 (ap)->arpHeader.protocolAddrLen]))
+
 
 /*
  * Forward declarations.
  */
 
-ReturnStatus	 NetRouteMessage();
 int		 NetArpInput();
 
 #endif _NETROUTE
