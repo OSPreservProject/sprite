@@ -101,7 +101,7 @@ FsIocLock(lockPtr, command, byteOrder, inBufPtr, streamIDPtr)
     Fs_FileID	*streamIDPtr;		/* ID of stream associated with lock */
 {
     register Ioc_LockArgs *lockArgsPtr;
-    register ReturnStatus status;
+    register ReturnStatus status = SUCCESS;
     Ioc_LockArgs lockArgs;
 
     if (byteOrder != mach_ByteOrder) {
