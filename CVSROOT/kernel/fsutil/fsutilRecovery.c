@@ -169,7 +169,7 @@ FsReopen(serverID, clientData)
  *----------------------------------------------------------------------------
  */
 
-void
+static void
 ReopenHandles(serverID)
     int		serverID;	/* The to re-establish contact with. */
 {
@@ -616,7 +616,7 @@ RecoveryComplete(recovPtr, status)
  *----------------------------------------------------------------------------
  *
  */
-ENTRY void
+ENTRY static void
 RecoveryNotify(recovPtr)
     register FsRecoveryInfo *recovPtr;
 {
@@ -674,7 +674,7 @@ FsRecoveryNeeded(recovPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY Boolean
+ENTRY static Boolean
 RecoveryFailed(recovPtr)
     FsRecoveryInfo *recovPtr;
 {
@@ -880,7 +880,7 @@ FsRecoveryStarting(serverID)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+ENTRY static void
 RecoveryDone(serverID)
     int serverID;		/* Server we are recovering with */
 {
