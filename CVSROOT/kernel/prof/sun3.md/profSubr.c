@@ -17,7 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "profInt.h"
 #include "dbg.h"
 #include "sys.h"
-#include "devTimer.h"
+#include "timer.h"
 #include "mach.h"
 #include "fs.h"
 #include "byte.h"
@@ -138,7 +138,8 @@ Prof_Init()
  *	This clears the PC sample counters, the call graph arc counters,
  *	and the index into the list of call graph arc counters.
  *
- *	The interval between profile timer interrupts is defined in devTimer.c.
+ *	The interval between profile timer interrupts is defined in the
+ *	timer module.
  *
  * Results:
  *	Return status.
@@ -180,8 +181,8 @@ Prof_Start()
     profArcListEndPtr = &profArcList[profArcListSize-1];
 
     profEnabled = TRUE;
-    Dev_TimerInit(DEV_PROFILE_TIMER);
-    Dev_TimerStart(DEV_PROFILE_TIMER);
+    Timer_TimerInit(TIMER_PROFILE_TIMER);
+    Timer_TimerStart(TIMER_PROFILE_TIMER);
 
     return(SUCCESS);
 }
@@ -252,10 +253,10 @@ Prof_CollectInfo(stackPtr)
 ReturnStatus
 Prof_End()
 {
-    Dev_TimerInactivate(DEV_PROFILE_TIMER);
+    Timer_TimerInactivate(TIMER_PROFILE_TIMER);
     profEnabled = FALSE;
     return(SUCCESS);
-}
+}	
 
 /*
  *----------------------------------------------------------------------
