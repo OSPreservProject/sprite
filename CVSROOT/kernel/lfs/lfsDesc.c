@@ -102,8 +102,16 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     }
     descPtr = (LfsFileDescriptor *) (blockPtr->blockAddr);
     for (i = 0; i < lfsPtr->fileLayout.params.descPerBlock; i++) {
-	if (!(descPtr->common.flags & FSDM_FD_ALLOC)) {
+	/*
+	 * The descriptor block is terminated by an inode
+	 * with a zero magic number.
+	 */
+	if (descPtr->common.magic == 0) {
 	    break;
+	}
+	if (descPtr->common.magic != FSDM_FD_MAGIC) {
+	    LfsError(lfsPtr, FAILURE, "Bad descriptor magic number.\n");
+	    continue;
 	}
 	if (descPtr->fileNumber == fileNumber) {
 	     LFS_STATS_INC(lfsPtr->stats.desc.goodFetch);
@@ -121,8 +129,9 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
 	descPtr++;
     }
     Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
-    panic("Descriptor map foulup, can't find file %d at %d\n", fileNumber,
+    printf("Descriptor map foulup, can't find file %d at %d\n", fileNumber,
 			LfsDiskAddrToOffset(diskAddr));
+    LfsError(lfsPtr, FS_FILE_NOT_FOUND, "Descriptor map foulup.");
     return FS_FILE_NOT_FOUND;
 
 }
