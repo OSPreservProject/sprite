@@ -143,7 +143,11 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
 		firstBufferPtr);
 	    descPtr->bufferSize = -totalLength;
 	} else {
-	    panic("OutputPacket: packet too large (%d)\n", totalLength);
+	    printf("OutputPacket: packet too large (%d)\n", totalLength);
+	    for (i = 0; i < scatterGatherLength; i++) {
+		printf("\t Buffer %d: %d\n", i, scatterGatherPtr[i].length);
+	    }
+	    return FAILURE;
 	}
     } else {
 
