@@ -567,7 +567,7 @@ nextBlock:
 
 	status = FsGetNextIndex(handlePtr, &indexInfo, dirty);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "FsFileTrunc: Could not truncate file.\n");
+	    Sys_Panic(SYS_WARNING, "FsDescTrunc: Could not truncate file.\n");
 	    FsEndIndex(handlePtr, &indexInfo, FALSE);
 	    goto exit;
 	}
@@ -580,6 +580,22 @@ nextBlock:
     descPtr->flags |= FS_FD_DIRTY;
 
 exit:
+    /*
+     * Make sure we really deleted the file if size is zero.
+     */
+    if (size == 0) {
+	register int index;
+	for (index=0 ; index < FS_NUM_DIRECT_BLOCKS ; index++) {
+	    if (descPtr->direct[index] != FS_NIL_INDEX) {
+		Sys_Panic(SYS_FATAL, "FsDescTrunc, direct block left over\n");
+	    }
+	}
+	if ((descPtr->indirect[0] != FS_NIL_INDEX) ||
+	    (descPtr->indirect[1] != FS_NIL_INDEX) ||
+	    (descPtr->indirect[2] != FS_NIL_INDEX)) {
+		Sys_Panic(SYS_FATAL, "FsDescTrunc, indirect block left over\n");
+	}
+    }
     FsDomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
