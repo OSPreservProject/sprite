@@ -976,10 +976,6 @@ Fsutil_GetNextHandle(hashSearchPtr)
 	 * Skip locked handles to avoid hanging the system on locked handle. 
 	 */
 	if (hdrPtr->flags & FS_HANDLE_LOCKED) {
-	    printf("GetNextHandle skipping %s <%d,%d> \"%s\"\n",
-		Fsutil_FileTypeToString(hdrPtr->fileID.type),
-		hdrPtr->fileID.major, hdrPtr->fileID.minor,
-		HDR_FILE_NAME(hdrPtr));
 	    continue;
 	}
 	if (hdrPtr->flags & (FS_HANDLE_INVALID|FS_HANDLE_REMOVED)) {
