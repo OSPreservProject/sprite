@@ -257,12 +257,13 @@ Fs_ProcInit()
 	    FsHandleHeader *hdrPtr;
 	    char *lookupName;
 	    int domainType;
+	    FsFileID rootID;
 	    FsPrefix *prefixPtr;
 	    ReturnStatus status2;
     
 	    status2 = FsPrefixLookup(LOCAL_DISK_NAME,
 				FS_LOCAL_PREFIX | FS_EXACT_PREFIX, 
-				FS_LOCALHOST_ID, &hdrPtr, &lookupName,
+				FS_LOCALHOST_ID, &hdrPtr, &rootID, &lookupName,
 				&domainType, &prefixPtr);
 	    if (status2 == SUCCESS) {
 		Sys_Printf("Exporting \"%s\" as root\n", LOCAL_DISK_NAME);
