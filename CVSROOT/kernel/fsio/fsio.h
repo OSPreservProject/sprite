@@ -132,7 +132,7 @@ extern int fsio_RmtToLclType[];
  */
 
 typedef struct Fsio_StreamTypeOps {
-    int		type;			/* Stream types defined in fs.h */
+    int		type;			/* Stream types defined above */
     /*
      **************** Setup operation for clients. *************************
      *	This routine sets up an I/O handle for a stream.  It uses streamData
