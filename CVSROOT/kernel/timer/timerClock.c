@@ -1,21 +1,22 @@
 /*
  * timerClock.c --
  *
- *	Kernel utility procedures to manipulate clocks and time values.
+ *	Kernel utility procedures to manipulate clocks values.
  *
- *  The routines in this module manipulate time values that are
- *  represented in the Timer_Ticks format.  The Timer_Ticks format is used
+ *  The routines in this module provide the interface between routines in 
+ *  the human oriented time and the machine dependent representation of 
+ *  time, the Timer_Ticks format. The Timer_Ticks format is used
  *  for a specific purpose: to make the operations associated with the
  *  callback timer and timer queue run fast. These operations include
  *  starting the timer, scheduling a routine and calling a routine at its
  *  scheduled time.  Unlike the Time format, which represents time in
  *  seconds and microseconds, the Timer_Ticks format represents time in a
- *  machine-dependent way. On the Sun-2, Timer_Ticks is a value based on
- *  the hardware's free-running counter and the number of times it has
- *  wrapped around.  The overhead in using Timer_Ticks is much smaller
- *  than using the Time format.  On the Sun-3, the hardware free-running
- *  counter format is easily converted to the Time format, so no
- *  distinction is made between Time and Timer_Ticks.
+ *  machine-dependent way. Timer_Ticks are defined in timerTicks.h in the 
+ *  machine-dependent directorys. Example Timer_Ticks format are as follows:
+ *  Sun-2: Timer_Ticks is a value based on the hardware's free-running 
+ *  counter and the number of times it has wrapped around. 
+ *  Sun-3: the hardware free-running counter format is easily converted
+ *  to the Time format, so no distinction is made between Time and Timer_Ticks.
  *
  *  A time value in the Timer_Ticks format is a hardware-dependent 64-bit
  *  number that represents a specific or absolute point in time since some
@@ -47,318 +48,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTimer.h"
 #include "sys.h"
 #include "byte.h"
-
-/*
- *  Definition of the maximum number of seconds and microseconds that the
- *  hardware free-running counter can count to.  To make intervals fit in
- *  a 32-bit integer, they are constrained to be less than or equal to
- *  timer_MaxIntervalTime.seconds. To use intervals greater than this
- *  value, one must use the Time_ module arithmetic routines.
- */
-
-Time timer_MaxIntervalTime;
-
-/*
- * Some commonly used values for intervals.
- */
-
-Timer_Ticks	timer_TicksZeroSeconds;
-unsigned int    timer_IntZeroSeconds;
-unsigned int    timer_IntOneSecond;
-unsigned int    timer_IntOneMillisecond;
-unsigned int    timer_IntOneMinute;
-unsigned int    timer_IntOneHour;
-
-
-/*
- *----------------------------------------------------------------------
- *
- * TimerTicksInit --
- *
- *	Initializes the various tick and interval values.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TimerTicksInit()
-{
-    Time tmp;
-
-    Dev_CounterIntToTime((unsigned int) 0xFFFFFFFF, &timer_MaxIntervalTime);
-
-    tmp.seconds = 1;
-    tmp.microseconds = 0;
-    Dev_CounterTimeToInt(tmp, &timer_IntOneSecond);
-
-    tmp.seconds = 0;
-    tmp.microseconds = 1000;
-    Dev_CounterTimeToInt(tmp, &timer_IntOneMillisecond);
-
-    timer_IntZeroSeconds	= 0;
-    timer_IntOneMinute		= timer_IntOneSecond * 60;
-    timer_IntOneHour		= timer_IntOneSecond * 3600;
-
-    Byte_Zero(sizeof(timer_TicksZeroSeconds), (Address)&timer_TicksZeroSeconds);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Timer_AddTicks --
- *
- * 	Adds two tick values together.
- *	For the Sun-3, this routine is #defined to be Time_Add().
- *
- *
- *  Results:
- *	A time in ticks.
- *
- *  Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef SUN2
-
-void
-Timer_AddTicks(a, b, resultPtr)
-    Timer_Ticks		a;		/* Addend 1 */
-    Timer_Ticks		b;		/* Addend 2 */
-    Timer_Ticks		*resultPtr;	/* Sum */
-{
-    resultPtr->low	= a.low  + b.low;
-    resultPtr->high	= a.high + b.high;
-
-    if (resultPtr->low < b.low) {
-	resultPtr->high++;
-    }
-
-}
-#endif SUN2
-
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Timer_SubtractTicks --
- *
- * 	Subtracts the second parameter from the first parameter. 
- *	The second parameter must be less than the first, otherwise 
- *	a zero tick value is returned.
- *	For the Sun-3, this routine is #defined to be Time_Subtract().
- *
- *  Results:
- *	An absolute time in ticks.
- *
- *  Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef SUN2
-
-void
-Timer_SubtractTicks(a, b, resultPtr)
-    Timer_Ticks		a;		/* Minuhend */
-    Timer_Ticks		b;		/* Subtrahend */
-    Timer_Ticks		*resultPtr;	/* Difference */
-{
-    if (Timer_TickLE(a, b)) {
-	*resultPtr = timer_TicksZeroSeconds;
-    } else {
-	resultPtr->low = a.low - b.low;
-
-	/*
-	 * See if a borrow is necessary from the high-order part.
-	 */
-	if (a.low < b.low) {
-	    resultPtr->high = a.high - b.high - 1;
-	} else {
-	    resultPtr->high = a.high - b.high;
-	}
-    }
-}
-#endif SUN2
-
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Timer_AddIntervalToTicks --
- *
- * 	Adds an interval (32-bit value) to an absolute time (64-bit value).
- *
- *  Results:
- *	An absolute time in ticks.
- *
- *  Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Timer_AddIntervalToTicks(absolute, interval, resultPtr)
-    Timer_Ticks		absolute;	/* Addend 1 */
-    unsigned int	interval;	/* Addend 2 */
-    Timer_Ticks		*resultPtr;	/* Sum */
-{
-#ifdef SUN2
-    resultPtr->low = absolute.low + interval;
-
-    if (resultPtr->low < interval) {
-	resultPtr->high = absolute.high + 1;
-    } else {
-	resultPtr->high = absolute.high;
-    }
-#endif SUN2
-
-#ifdef SUN3
-    Time	tmp;
-
-    Dev_CounterIntToTime(interval, &tmp);
-    Time_Add(absolute, tmp, resultPtr);
-#endif SUN3
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Timer_GetCurrentTicks --
- *
- *  	Computes the number of ticks since the system was booted
- *	by reading the free-running counter.
- *
- *
- *  Results:
- *	The system up-time in ticks.
- *
- *  Side effects:
- *	The value of counter and the number of counter cycles are updated.
- *
- *----------------------------------------------------------------------
- */
-
-
-void
-Timer_GetCurrentTicks(ticksPtr)
-    Timer_Ticks	*ticksPtr;	/* Buffer to place current time. */
-{
-#ifdef SUN2
-    unsigned int	counter;
-    static Timer_Ticks 		previousTime = {0,0}; 
-
-    DISABLE_INTR();
-
-    Dev_CounterRead(&counter);
-
-    /*
-     *	See if the counter has wrapped around since the last reading.
-     *  This assumes that we read the counter at least once per
-     *  counter cycle.
-     */
-
-    if (counter < previousTime.low) {
-	previousTime.high++;
-    }
-    previousTime.low	= counter;
-    *ticksPtr 		= previousTime;
-
-    ENABLE_INTR();
-#endif SUN2
-
-#ifdef SUN3
-    DISABLE_INTR();
-    Dev_CounterRead(ticksPtr);
-    ENABLE_INTR();
-#endif SUN3
-}
-
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Timer_TicksToTime --
- *
- *  	Converts a Timer_Ticks value into a Time value.
- *	For the Sun-3, this routine is #defined to be *timePtr = tick;
- *
- *  Results:
- *	A time value in Time format.
- *
- *  Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef SUN2
-
-void
-Timer_TicksToTime(tick, timePtr)
-    Timer_Ticks	tick;		/* Value to be converted. */
-    Time	*timePtr;	/* Buffer to hold converted value. */
-{
-    Time  tmp;
-    Dev_CounterIntToTime(tick.low, timePtr);
-    Time_Multiply(timer_MaxIntervalTime, (int) tick.high, &tmp);
-    Time_Add(*timePtr, tmp, timePtr);
-}
-#endif SUN2
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Timer_TimeToTicks --
- *
- *  	Converts a Time value into a Timer_Ticks value.
- *
- *	For the Sun-3, this routine is #defined to be *ticksPtr = time;
- *
- *  Results:
- *	A time value in ticks.
- *
- *  Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef SUN2
-
-void
-Timer_TimeToTicks(time, ticksPtr)
-    Time	time;		/* Value to be converted. */
-    Timer_Ticks	*ticksPtr;	/* Buffer to hold converted value. */
-{
-    ticksPtr->high = 0;
-    while (TRUE) {
-	if (Time_LE(time, timer_MaxIntervalTime)) {
-	    Dev_CounterTimeToInt(time, &(ticksPtr->low));
-	    break;
-	} else {
-	    Time_Subtract(time, timer_MaxIntervalTime, &time);
-	    ticksPtr->high++;
-	}
-    }
-}
-#endif SUN2
-
 
 /*
  *  The time of day (abbreviated TOD, also called Universal Time
@@ -449,15 +138,15 @@ Timer_GetRealTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
      *  of the stored time of day to get the current T.O.D.
      */
 
+    /* 
+     * I don't think that we need DISABLE_INTR because Timer_GetCurrentTicks
+     * already does a DISABLE_INTR before reading the counter.  On the other
+     * hand the timer module works fine with the DISABLE_INTR. 
+     */
+
     DISABLE_INTR();
 
-#ifdef SUN2
     Timer_GetCurrentTicks(&curTime);
-#endif SUN2
-
-#ifdef SUN3
-    Dev_CounterRead(&curTime);
-#endif SUN3
 
     Timer_SubtractTicks(curTime, timeWhenTODSet, &diff);
     Timer_AddTicks(diff, timeOfDay, &diff);
@@ -557,15 +246,8 @@ Timer_SetTimeOfDay(newTOD, newLocalOffset, newDSTAllowed)
 
     timerTimeOfDay = newTOD;
 
-#ifdef SUN2
     Timer_GetCurrentTicks(&timeWhenTODSet);
     Timer_TimeToTicks(newTOD, &timeOfDay);
-#endif SUN2
-
-#ifdef SUN3
-    Dev_CounterRead(&timeWhenTODSet);
-    timeOfDay = newTOD;
-#endif SUN3
 
     ENABLE_INTR();
 
