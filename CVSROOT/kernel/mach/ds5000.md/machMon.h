@@ -272,7 +272,7 @@ extern void Mach_MonReboot _ARGS_((char *rebootString));
 #define Mach_MonClose(fd)		(mach_MonFuncs.close)(fd)
 #define Mach_MonLseek(fd,offset,mode)	(mach_MonFuncs.lseek)(fd,offset,mode)
 #define Mach_MonGetenv(name)		(mach_MonFuncs.getenv2)(name)
-#define Mach_MonSetenv(name, value)	(mach_MonFuncs.getenv2)(name, value)
+#define Mach_MonSetenv(name, value)	(mach_MonFuncs.setenv2)(name, value)
 
 #ifdef ds5000
 #define Mach_MonHalt(addr, wordCnt)	(mach_MonFuncs.halt)(addr, wordCnt)
