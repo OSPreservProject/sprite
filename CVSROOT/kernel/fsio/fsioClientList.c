@@ -308,7 +308,7 @@ FsStreamClientClose(clientList, clientID)
     List_Links		*clientList;	/* List of clients for I/O handle */
     int			clientID;	/* Host ID of client that had it open */
 {
-    register	FsClientInfo	*clientPtr;
+    register	FsStreamClientInfo	*clientPtr;
 
     LIST_FORALL(clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == clientID) {
@@ -350,27 +350,6 @@ FsClientScavenge()
 	if (listPtr->clientID != rpc_SpriteID && 
 	    Recov_IsHostDown(listPtr->clientID) == FAILURE) {
 	    FsRemoveClient(listPtr->clientID);
-#ifdef we_ever_have_to_be_more_careful
-	    /*
-	     * We know the client is down.  Spin through the existing
-	     * dead client list to prevent duplicates.
-	     */
-	    found = FALSE;
-	    LIST_FORALL(deadClientList, (List_Links *)deadClientPtr) {
-		if (deadClientPtr->clientID == clientID) {
-		    found = TRUE;
-		    break;
-		}
-	    }
-	    if (!found) {
-		deadClientPtr =
-		    (FsDeadClient *)Mem_Alloc(sizeof(FsDeadClient));
-		deadClientPtr->clientID = clientID;
-		List_InitElement((List_Links *)deadClientPtr);
-		List_Insert((List_Links *)deadClientPtr,
-			    LIST_ATREAR(deadClientList));
-	    }
-#endif
 	}
     }
 
