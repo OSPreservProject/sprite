@@ -42,7 +42,7 @@ extern FsCacheConsistStats fsConsistStats;
  */
 extern void		FsConsistInit();
 extern ReturnStatus	FsFileConsistency();
-extern void		FsReopenHandle();
+extern void		FsReopenClient();
 extern ReturnStatus	FsReopenConsistency();
 extern ReturnStatus	FsMigrateConsistency();
 extern void		FsGetClientAttrs();
