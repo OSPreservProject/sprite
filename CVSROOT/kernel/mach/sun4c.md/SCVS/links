@@ -31,3 +31,4 @@ sys                      ../sun4.md/sys
 unpack.c                 ../sun4.md/unpack.c
 utility.c                ../sun4.md/utility.c
 uword.c                  ../sun4.md/uword.c
+fastBootAsm.s            ../sun4.md/fastBootAsm.s
