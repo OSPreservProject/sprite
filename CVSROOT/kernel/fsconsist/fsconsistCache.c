@@ -1269,84 +1269,6 @@ exit:
     return(numClients);
 }
 
-/* This routine can be removed after sosp.  -Mary 10/1/91 */
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Fsconsist_MGBNumClients --
- *
- *	Returns the number of clients in the client list for a file.
- *	Called to see if it's ok to scavenge the file handle.
- *
- * Results:
- *	The number of clients in the client list.
- *
- * Side effects:
- *	Unused client list entries are cleaned up.  We only need to remember
- *	clients that are actively using the file or who have dirty blocks
- *	because they are the last writer.
- *
- * ----------------------------------------------------------------------------
- *
- */
-
-ENTRY int
-Fsconsist_MGBNumClients(consistPtr, numReadPtr, numWritePtr)
-    register Fsconsist_Info *consistPtr;    /* Handle of file being closed */
-    int	*numReadPtr;		/* Number of clients reading the file. */
-    int	*numWritePtr;		/* Number of clients writing the file. */
-{
-    register int numClients = 0;
-    register Fsconsist_ClientInfo *clientPtr;
-    register Fsconsist_ClientInfo *nextClientPtr;
-    int		numWrite = 0;
-    int		numRead = 0;
-
-    LOCK_MONITOR;
-
-    if (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
-	/*
-	 * Not safe to mess with list during consistency.
-	 */
-	numClients = 1;
-	goto exit;
-    }
-    nextClientPtr = (Fsconsist_ClientInfo *)List_First(&consistPtr->clientList);
-    while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
-	clientPtr = nextClientPtr;
-	nextClientPtr = (Fsconsist_ClientInfo *)List_Next((List_Links *)clientPtr);
-	/*
-	 * Nuke the client list entry if the client isn't using the file now,
-	 * and it isn't a remote client holding dirty blocks,
-	 * and this element isn't locked by another process doing consistency.
-	 */
-	if (clientPtr->use.ref == 0 &&
-	    ((clientPtr->clientID == rpc_SpriteID) || 
-	     (clientPtr->clientID != consistPtr->lastWriter)) &&
-	    !clientPtr->locked) {
-	    REMOVE_CLIENT(clientPtr);
-	} else {
-	    numClients++;
-	    if (clientPtr->use.write > 0) {
-		numWrite++;
-	    }
-	    if (clientPtr->use.ref - clientPtr->use.write > 0) {
-		numRead++;
-	    }
-	}
-    }
-exit:
-    if (numWritePtr != (int *) NIL) {
-	*numWritePtr = numWrite;
-    }
-    if (numReadPtr != (int *) NIL) {
-	*numReadPtr = numRead;
-    }
-    UNLOCK_MONITOR;
-    return(numClients);
-}
-
 
 /*
  * ----------------------------------------------------------------------------
