@@ -1074,10 +1074,31 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     }
     /*
      * If we're doing the initial part of a remote exec, time to
-     * return to our caller.
+     * return to our caller.  Free up whatever virtual memory resources
+     * we had set up.
      */
     encapPtr = (ExecEncapState *) argBuffer;
     if (exporting) {
+	if (filePtr != (Fs_Stream *) NIL) {
+	    if (codeSegPtr != (Vm_Segment *) NIL) {
+		Vm_SegmentDelete(codeSegPtr, procPtr);
+		if (!usedFile) {
+		    /*
+		     * If usedFile is TRUE then the file has already been closed
+		     * by Vm_SegmentDelete.
+		     */
+		    (void) Fs_Close(filePtr);
+		}
+	    } else {
+		/*
+		 * We're not setting up the segment after all, so let vm
+		 * clean up state and wake up anyone waiting for us to
+		 * set up the segment.
+		 */
+		Vm_InitCode(filePtr, (Vm_Segment *) NIL, (Vm_ExecInfo *) NIL);
+		(void) Fs_Close(filePtr);
+	    }
+	}
 	*encapPtrPtr = encapPtr;
 	encapPtr->hdr.fileName = fileName;
 	encapPtr->hdr.argString = argString;
@@ -1189,7 +1210,7 @@ execError:
     if (argString != (Address) NIL) {
 	free(argString);
     }
-    if (!importing && (fileName != (char *) NIL)) {
+    if (!importing && (fileName != (char *) NIL) && userArgsPtr->userMode) {
 	free(fileName);
 	fileName = (char *) NIL;
     }
