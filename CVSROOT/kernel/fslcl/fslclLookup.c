@@ -39,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsTrace.h"
 #include "fsStat.h"
 #include "rpc.h"
+#include "net.h"
 #include "vm.h"
 #include "string.h"
 #include "proc.h"
@@ -220,7 +221,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 		     */
 		    machType = mach_MachineType;
 		} else {
-		    machType = (char *)Net_SpriteIDToMachType(clientID);
+		    machType = Net_SpriteIDToMachType(clientID);
 		    if (machType == (char *)NIL) {
 			Sys_Panic(SYS_WARNING,
 			 "FsLocalLookup, no machine type for client %d\n",
@@ -282,8 +283,8 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 		*newNameInfoPtrPtr = 
 			(FsRedirectInfo *) Mem_Alloc(sizeof(FsRedirectInfo));
 		(*newNameInfoPtrPtr)->prefixLength = 0;
-		String_Copy("../", (*newNameInfoPtrPtr)->fileName);
-		String_Cat(curCharPtr, (*newNameInfoPtrPtr)->fileName);
+		(void)String_Copy("../", (*newNameInfoPtrPtr)->fileName);
+		(void)String_Cat(curCharPtr, (*newNameInfoPtrPtr)->fileName);
 		status = FS_LOOKUP_REDIRECT;
 	    } else {
 		/*
@@ -371,7 +372,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 		if (*curCharPtr == '/') {
 		    *newNameInfoPtrPtr = 
 			(FsRedirectInfo *) Mem_Alloc(sizeof(FsRedirectInfo));
-		    String_Copy(curCharPtr, (*newNameInfoPtrPtr)->fileName);
+		    (void)String_Copy(curCharPtr, (*newNameInfoPtrPtr)->fileName);
 		    status = FS_LOOKUP_REDIRECT;
 		    /*
 		     * Return the length of the prefix indicated by
@@ -938,7 +939,7 @@ haveASlot:
     }
     dirEntryPtr->fileNumber = fileNumber;
     dirEntryPtr->nameLength = compLen;
-    String_Copy(component, dirEntryPtr->fileName);
+    (void)String_Copy(component, dirEntryPtr->fileName);
 
     status = CacheDirBlockWrite(curHandlePtr,cacheBlockPtr,dirBlockNum,length);
     return(status);
@@ -1806,6 +1807,12 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	     * mark the handle as deleted and FsFileClose will take care of it.
 	     */
 	    curHandlePtr->flags |= FS_FILE_DELETED;
+	    if (type == FS_DIRECTORY) {
+		/*
+		 * Remove .. from name cache so we don't ascend to old parent.
+		 */
+		FS_HASH_DELETE(fsNameTablePtr, "..", curHandlePtr);
+	    }
 	    if (curHandlePtr->use.ref == 0) {
 		/*
 		 * Tell other clients (only the last writer) that the
