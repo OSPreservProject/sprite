@@ -790,7 +790,8 @@ MachTrap(trapStack)
 
 		if (procPtr == (Proc_ControlBlock *)NIL) {
 		    Sys_Panic(SYS_FATAL, 
-			      "MachTrap: Current process is NIL!!\n");
+			   "MachTrap: Current process is NIL!! Trap PC 0x%x\n",
+			   (unsigned) trapStack.excStack.pc);
 		}
 
 		if (procPtr->genFlags & PROC_USER) {
