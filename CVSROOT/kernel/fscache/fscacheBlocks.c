@@ -3067,6 +3067,21 @@ Fs_DumpCacheStats()
 		block->minCacheBlocks, block->numCacheBlocks,
 		block->maxCacheBlocks, block->maxNumBlocks,
 		block->numFreeBlocks, block->blocksPitched);
+
+    printf("OBJECTS lruScan %d stream %d stmClient %d file %d rmtFile %d\n",
+	    fsStats.object.lruScans, fsStats.object.streams,
+	    fsStats.object.streamClients, fsStats.object.files,
+	    fsStats.object.rmtFiles);
+    printf("OBJECTS    pipe %d dev %d control %d pdev %d remote %d\n",
+	    fsStats.object.pipes, fsStats.object.devices,
+	    fsStats.object.controls, fsStats.object.pseudoStreams,
+	    fsStats.object.remote);
+    printf("HANDLES exist %d objects %d\n",
+	    fsStats.handle.exists,
+	    fsStats.object.streams + fsStats.object.files +
+	    fsStats.object.rmtFiles + fsStats.object.pipes +
+	    fsStats.object.devices + fsStats.object.controls +
+	    2 * fsStats.object.pseudoStreams + fsStats.object.remote);
 }
 
 
