@@ -425,7 +425,8 @@ Vm_MakeUnaccessible(addr, numBytes)
     segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
     procPtr->vmPtr->numMakeAcc--;
 
-    if (((unsigned int) (addr) >> vmPageShift) >= segPtr->offset) {
+    if (((unsigned int) (addr) >> vmPageShift) >= segPtr->offset &&
+	    ((unsigned int)(addr)>>vmPageShift) <= mach_LastUserStackPage) {
 	/*
 	 * This address falls into a stack or heap segment.  The heap segment
 	 * was prevented from being expanded by Vm_MakeAccessible so we have
