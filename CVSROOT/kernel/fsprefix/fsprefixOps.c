@@ -1370,7 +1370,8 @@ FsprefixHandleCloseInt(prefixPtr, flags)
 	dummy.hdr.fileID.type = -1;
 #ifdef SOSP91
 	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
-		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL, (int *) NIL);
+		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL, (int *) NIL,
+		    (int *) NIL);
 #else
 	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
 		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL);
