@@ -78,7 +78,7 @@ static void Deactivate();
  */
 /*ARGSUSED*/
 void
-RecovPingInterval(timer, clientData)
+RecovPingInterval(time, clientData)
     Timer_Ticks	time;
     ClientData	clientData;
 {
