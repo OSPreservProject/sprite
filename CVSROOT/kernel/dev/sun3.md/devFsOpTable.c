@@ -45,7 +45,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mouse.h"
 
 
-static ReturnStatus NullSelectProc();
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
 
@@ -88,33 +87,33 @@ DevFsTypeOps devFsOpTable[] = {
      * The following device number is unused.
      */
     {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullSelectProc,
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
 		    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * New SCSI Disk interface.
      */
     {DEV_SCSI_DISK, DevRawBlockDevOpen, DevRawBlockDevRead,
 		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
-		    DevRawBlockDevClose, NullSelectProc, DevScsiDiskAttach,
+		    DevRawBlockDevClose, Dev_NullSelect, DevScsiDiskAttach,
 		    DevRawBlockDevReopen},
     /*
      * SCSI Tape interface.
      */
     {DEV_SCSI_TAPE, DevSCSITapeOpen, DevSCSITapeRead, DevSCSITapeWrite,
-		    DevSCSITapeIOControl, DevSCSITapeClose, NullSelectProc,
+		    DevSCSITapeIOControl, DevSCSITapeClose, Dev_NullSelect,
 		    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * /dev/null
      */
     {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
-		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC,
-		    NullProc},
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, NullProc},
     /*
      * Xylogics 450 disk controller.
      */
     {DEV_XYLOGICS, DevRawBlockDevOpen, DevRawBlockDevRead,
 		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
-		    DevRawBlockDevClose, NullSelectProc,
+		    DevRawBlockDevClose, Dev_NullSelect,
 		    DevXylogics450DiskAttach, DevRawBlockDevReopen},
     /*
      * Network devices.  The unit number specifies the ethernet protocol number.
@@ -126,7 +125,7 @@ DevFsTypeOps devFsOpTable[] = {
      * Raw SCSI HBA interface.
      */
     {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
-		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
+		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, Dev_NullSelect,
 		    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * RAID device.
@@ -165,20 +164,3 @@ NoDevice()
 {
     return(FS_INVALID_ARG);
 }
-
-
-/*ARGSUSED*/
-static ReturnStatus
-NullSelectProc(devicePtr, readPtr, writePtr, exceptPtr)
-    Fs_Device	*devicePtr;	/* Ignored. */
-    int *readPtr;		/* Read bit */
-    int *writePtr;		/* Write bit */
-    int *exceptPtr;		/* Exception bit */
-{
-    /*
-     * Leave the read and write bits on.  This is used with /dev/null.
-     */
-    *exceptPtr = 0;
-    return(SUCCESS);
-}
-

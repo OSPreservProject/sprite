@@ -40,7 +40,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "tty.h"
 #include "graphics.h"
 
-static ReturnStatus NullSelectProc();
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
 
@@ -93,26 +92,26 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_SCSI_DISK, DevRawBlockDevOpen, DevRawBlockDevRead,
 		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
-		    DevRawBlockDevClose, NullSelectProc, DevScsiDiskAttach,
+		    DevRawBlockDevClose, Dev_NullSelect, DevScsiDiskAttach,
 		    DevRawBlockDevReopen},
     /*
      * SCSI Tape interface.
      */
     {DEV_SCSI_TAPE, DevSCSITapeOpen, DevSCSITapeRead, DevSCSITapeWrite,
-		    DevSCSITapeIOControl, DevSCSITapeClose, NullSelectProc,
+		    DevSCSITapeIOControl, DevSCSITapeClose, Dev_NullSelect,
 		    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * /dev/null
      */
     {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
-		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC,
-		    NullProc},
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, NullProc},
     /*
      * Xylogics 450 disk controller.
      */
     {DEV_XYLOGICS, NullProc, Dev_NullRead, 
-		   Dev_NullWrite, NullProc, 
-		   NullProc, NullSelectProc, 
+		   Dev_NullWrite, Dev_NullIOControl, 
+		   NullProc, Dev_NullSelect, 
 		   DEV_NO_ATTACH_PROC, NullProc},
     /*
      * Network devices.  The unit number specifies the ethernet protocol number.
@@ -124,22 +123,22 @@ DevFsTypeOps devFsOpTable[] = {
      * Raw SCSI HBA interface.
      */
     {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
-                    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
+                    DevSCSIDeviceIOControl, DevSCSIDeviceClose, Dev_NullSelect,
                     DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * RAID device.
      */
     {DEV_RAID, NullProc, Dev_NullRead,
-	       Dev_NullWrite, NullProc,
-	       NullProc, NullSelectProc,
+	       Dev_NullWrite, Dev_NullIOControl,
+	       NullProc, Dev_NullSelect,
 	       DEV_NO_ATTACH_PROC, NullProc},
 
     /*
      * Debug device. (useful for debugging RAID device)
      */
     {DEV_DEBUG, NullProc, Dev_NullRead,
-	       Dev_NullWrite, NullProc,
-	       NullProc, NullSelectProc,
+	       Dev_NullWrite, Dev_NullIOControl,
+	       NullProc, Dev_NullSelect,
 	       DEV_NO_ATTACH_PROC, NullProc},
 
     /*
@@ -166,16 +165,3 @@ NoDevice()
 {
     return(FS_INVALID_ARG);
 }
-
-
-/*ARGSUSED*/
-static ReturnStatus
-NullSelectProc(devicePtr, inFlags, outFlagsPtr)
-    Fs_Device	*devicePtr;	/* Ignored. */
-    int		inFlags;	/* FS_READBLE, FS_WRITABLE, FS_EXCEPTION. */
-    int		*outFlagsPtr;	/* Copy of inFlags. */
-{
-    *outFlagsPtr = inFlags;
-    return(SUCCESS);
-}
-

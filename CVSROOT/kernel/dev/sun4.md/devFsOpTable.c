@@ -43,7 +43,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mouse.h"
 #include "devTMR.h"
 
-static ReturnStatus NullSelectProc();
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
 
@@ -86,7 +85,8 @@ DevFsTypeOps devFsOpTable[] = {
      * The following device number is unused.
      */
     {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice},
+		    Dev_NullIOControl, NullProc, NullProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * New SCSI Disk interface.
      */
@@ -104,8 +104,8 @@ DevFsTypeOps devFsOpTable[] = {
      * /dev/null
      */
     {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
-		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC,
-		    NullProc},
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, NullProc},
     /*
      * Xylogics 450 disk controller.
      */
@@ -123,7 +123,7 @@ DevFsTypeOps devFsOpTable[] = {
      * Raw SCSI HBA interface.
      */
     {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
-		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
+		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, Dev_NullSelect,
 		    DEV_NO_ATTACH_PROC, NoDevice},
     /*  
      * RAID device.
@@ -161,19 +161,4 @@ static ReturnStatus
 NoDevice()
 {
     return(FS_INVALID_ARG);
-}
-
-/*ARGSUSED*/
-static ReturnStatus
-NullSelectProc(devicePtr, readPtr, writePtr, exceptPtr)
-    Fs_Device	*devicePtr;	/* Ignored. */
-    int *readPtr;		/* Read bit */
-    int *writePtr;		/* Write bit */
-    int *exceptPtr;		/* Exception bit */
-{
-    /*
-     * Leave the read and write bits on.  This is used with /dev/null.
-     */
-    *exceptPtr = 0;
-    return(SUCCESS);
 }
