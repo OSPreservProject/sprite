@@ -558,9 +558,9 @@ Sys_StatsStub(command, option, argPtr)
 		break;
 		case SYS_PROC_MIG_SET_DEBUG: {
 		    int arg;
-		    status = Vm_CopyIn(sizeof(int), (Address)&arg, argPtr);
+		    status = Vm_CopyIn(sizeof(int), argPtr, (Address)&arg);
 		    if (status == SUCCESS && arg >= 0) {
-			proc_MigDebugLevel = option;
+			proc_MigDebugLevel = arg;
 		    } else if (status == SUCCESS) {
 			status = GEN_INVALID_ARG;
 		    }
