@@ -151,8 +151,6 @@ char	*s;
 void
 MachHandleTestCounter()
 {
-#ifdef NOTDEF
     Mach_MonPrintf("timer reached 1000\n");
-#endif NOTDEF
     return;
 }

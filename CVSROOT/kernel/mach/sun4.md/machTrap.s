@@ -264,6 +264,7 @@ UnderflowOkay:
 	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;	/* take only its cwp */
 	or	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;	/* put cwp on old psr */
 	mov	%VOL_TEMP2, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
 	jmp	%CUR_PC_REG
 	rett	%NEXT_PC_REG
 	nop

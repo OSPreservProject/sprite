@@ -13,6 +13,7 @@
 .seg	"text"
 
 #include "machConst.h"
+#include "machAsmDefs.h"
 
 /*
  * "Start" is used for the -e option to the loader.  "SpriteStart" is
@@ -148,6 +149,15 @@ copyingTable:
 	add	%g2, %l1, %g2				/* add size of table */
 	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
 	mov	%g2, %tbr				/* switch in mine */
+	MACH_WAIT_FOR_STATE_REGISTER()			/* let it settle for
+							 * the necessary
+							 * amount of time.  Note
+							 * that during this
+							 * wait period, we
+							 * may get an interrupt
+							 * to the old tbr if
+							 * interrupts are
+							 * disabled.  */
 	call	_main
 	nop
 .align 8

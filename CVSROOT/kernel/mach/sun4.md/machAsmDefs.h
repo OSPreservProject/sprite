@@ -22,6 +22,14 @@
 #endif
 
 /*
+ * Wait the 3 instructions necessary to allow a newly-written state register
+ * to settle.
+ */
+#define	MACH_WAIT_FOR_STATE_REGISTER()			\
+	nop;						\
+	nop;						\
+	nop
+/*
  * Bump the invalid window forward one.  This is done by changing the
  * invalid window mask.  We shift the invalid window bit left by 1,
  * but modulo the number of implemented windows.
@@ -33,7 +41,8 @@
 	or	REG1, REG2, REG1;			\
 	set	MACH_VALID_WIM_BITS, REG2;		\
 	and	REG1, REG2, REG1;			\
-	mov	REG1, %wim
+	mov	REG1, %wim;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
  * Move the invalid window backwards one.  This is done by changing the
@@ -49,7 +58,8 @@
 	nop;						\
 	mov	0x1, REG1;				\
 happyWindowLabel:					\
-	mov	REG1, %wim
+	mov	REG1, %wim;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
  * Test whether we're in an invalid window.  If we are in an invalid window,
@@ -220,7 +230,8 @@ testWimOkay:							\
 	set	_stateHolder, %VOL_TEMP1;			\
 	add	%VOL_TEMP1, MACH_TBR_OFFSET, %VOL_TEMP1;	\
 	ld	[%VOL_TEMP1], %VOL_TEMP2;			\
-	mov	%VOL_TEMP2, %tbr
+	mov	%VOL_TEMP2, %tbr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
 
 
 /*
@@ -277,7 +288,8 @@ testWimOkay:							\
 #define	MACH_ENABLE_TRAPS()					\
 	mov	%psr, %VOL_TEMP1;				\
 	or	%VOL_TEMP1, MACH_ENABLE_TRAP_BIT, %VOL_TEMP1;	\
-	mov	%VOL_TEMP1, %psr
+	mov	%VOL_TEMP1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
  * Should I use xor here and MACH_ENABLE_TRAP_BIT?
@@ -286,30 +298,40 @@ testWimOkay:							\
 	mov	%psr, %VOL_TEMP1;				\
 	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP2;		\
 	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
-	mov	%VOL_TEMP1, %psr
+	mov	%VOL_TEMP1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
  * Run at high priority: supervisor mode, interrupts disabled, traps enabled.
+ * This must be done in 2 steps - 1) leaving traps off, if they were off,
+ * set new interrupt level.  2) Enable traps.  This keeps us from getting
+ * an interrupt at the old level rather than the new right after enabling
+ * traps.  
  */
 #define	MACH_SR_HIGHPRIO()					\
 	mov	%psr, %VOL_TEMP1;				\
-	set	(MACH_DISABLE_INTR | MACH_SUPER_BIT | MACH_ENABLE_TRAP_BIT), \
-			%VOL_TEMP2;				\
+	set	(MACH_DISABLE_INTR | MACH_SUPER_BIT), %VOL_TEMP2;	\
 	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
-	mov	%VOL_TEMP1, %psr
-
+	mov	%VOL_TEMP1, %psr;				\
+	or	%VOL_TEMP1, MACH_ENABLE_TRAP_BIT, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
  * Run at low supervisor priority: supervisor mode, interrupts enabled, traps
- * enabled.
+ * enabled.  As described above for MACH_SR_HIGHPRIO, we must do this in
+ * 2 steps.
  */
 #define	MACH_SR_LOWPRIO()					\
 	mov	%psr, %VOL_TEMP1;				\
-	set	(MACH_SUPER_BIT | MACH_ENABLE_TRAP_BIT), %VOL_TEMP2;	\
+	set	MACH_SUPER_BIT, %VOL_TEMP2;			\
 	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
 	set	MACH_ENABLE_INTR, %VOL_TEMP2;			\
 	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
-	mov	%VOL_TEMP1, %psr
+	mov	%VOL_TEMP1, %psr;				\
+	or	%VOL_TEMP1, MACH_ENABLE_TRAP_BIT, %VOL_TEMP2;	\
+	mov	%VOL_TEMP1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
 /*
  * Run at user priority: user mode, traps on.
  */
@@ -319,5 +341,6 @@ testWimOkay:							\
 	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
 	set	(~MACH_SUPER_BIT), %VOL_TEMP2;			\
 	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
-	mov	%VOL_TEMP1, %psr
+	mov	%VOL_TEMP1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
 #endif /* _MACHASMDEFS */
