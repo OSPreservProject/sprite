@@ -127,7 +127,7 @@ InitiateReconstructionFailure(reconstructionControlPtr)
 {
     int	         stripeID = reconstructionControlPtr->stripeID;
 
-    UnlockStripe(stripeID);
+    XUnlockStripe(reconstructionControlPtr->raidPtr, stripeID);
     ReportReconstructionFailure(reconstructionControlPtr->col,
     	    reconstructionControlPtr->row);
     reconstructionDoneProc(reconstructionControlPtr);
@@ -285,7 +285,7 @@ reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
 		diskPtr->device.type, diskPtr->device.unit,
 		diskPtr->state, diskPtr->numValidSector);
 	LogEntry(raidPtr, buf);
-	UnlockStripe(stripeID);
+	XUnlockStripe(raidPtr, stripeID);
 	InitiateStripeReconstruction(reconstructionControlPtr);
     }
 }
