@@ -169,6 +169,7 @@ can change back to the old way if you want to for some weird reason.
 Mach: (sun4 and sun4c)
 If a process is suspended for debug due to a bad stack pointer in the window
 underflow trap, you can now kill it, because it checks for KILL signals now.
+(ds3100): added Unix compatibility code for semget, semop, semctl, mmap.
 -------------------------------------------------------------------------
 Sig:
 Added a new routine, Sig_CheckForKill() that lets you check for a kill
@@ -191,5 +192,9 @@ with the process on the remote host.
 Fs: 
 Reading a symbolic link now does not include the null byte in the count
 of characters read (for unix compatibility).
+-------------------------------------------------------------------------
+Sync:
+Added syncSysV.c, which supports semget, semop, semctl System V semaphore
+functions.
 -------------------------------------------------------------------------
     New files linked in from the net library.
