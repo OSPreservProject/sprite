@@ -716,18 +716,20 @@ static ReturnStatus
 WriteSegmentFinish(segPtr) 
     LfsSeg	*segPtr;	/* Segment to wait for. */
 {
+    ReturnStatus status;
     Lfs	*lfsPtr = segPtr->lfsPtr;
     MASTER_LOCK((&segPtr->ioMutex));
     while (segPtr->ioDone == FALSE) { 
 	Sync_MasterWait((&segPtr->ioDoneWait),(&segPtr->ioMutex),FALSE);
     }
+    status = segPtr->ioReturnStatus;
     MASTER_UNLOCK((&segPtr->ioMutex));
 
     LOCK_MONITOR;
     lfsPtr->activeFlags &= ~LFS_WRITE_ACTIVE;
     Sync_Broadcast(&lfsPtr->writeWait);
     UNLOCK_MONITOR;
-    return SUCCESS;
+    return status;
 }
 
 
