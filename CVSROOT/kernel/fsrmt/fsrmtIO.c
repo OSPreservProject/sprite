@@ -575,6 +575,21 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	Fsutil_HandleLock(streamPtr);
 	Fsutil_HandleRelease(streamPtr, TRUE);
     }
+    if (status == SUCCESS && (paramsPtr->io.flags & FS_LAST_DIRTY_BLOCK)) {
+        /*
+         * This is done here because the regular file write routine doesn't
+         * know what client is doing the write.
+         */
+        if (hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
+            printf("Fsrmt_RpcWrite, lastDirtyBlock flag on bad stream type (%d)\
+n",
+                    hdrPtr->fileID.type);
+        } else {
+            Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
+            FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_DEL_LAST_WR, hdrPtr);
+            Fsconsist_DeleteLastWriter(&handlePtr->consist, clientID);
+	}
+    }
 exit:
     Fsutil_HandleRelease(hdrPtr, FALSE);
 
