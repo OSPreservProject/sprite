@@ -93,7 +93,8 @@ FillInLabel(devPtr,diskPtr)
 {
     register ReturnStatus	status;
     ScsiCmd			labelReadCmd;
-    Sun_DiskLabel		*diskLabelPtr;
+    Sun_DiskLabel		*sunLabelPtr;
+    Dec_DiskLabel		*decLabelPtr;
     Fsdm_DiskHeader		*diskHdrPtr;
     char			labelBuffer[SCSI_DISK_SECTOR_SIZE];
     unsigned char		statusByte;
@@ -106,9 +107,11 @@ FillInLabel(devPtr,diskPtr)
 #ifdef DEBUG
     printLabel = TRUE;
 #endif
+    printLabel = TRUE;
+    printf("Getting a label\n");
 
     /*
-     * The label of a SCSI command resides in the first sector. Format
+     * The label of a SCSI disk normally resides in the first sector. Format
      * and send a SCSI READ command to fetch the sector.
      */
     DevScsiGroup0Cmd(devPtr, SCSI_READ, 0, 1,&labelReadCmd);
@@ -125,27 +128,28 @@ FillInLabel(devPtr,diskPtr)
 	status = DEV_EARLY_CMD_COMPLETION;
     }
     if (status != SUCCESS) {
+	printf("Disk: error: %x\n",status);
 	return(status);
     }
-    diskLabelPtr = (Sun_DiskLabel *) labelBuffer;
-    if (diskLabelPtr->magic == SUN_DISK_MAGIC) {
+    sunLabelPtr = (Sun_DiskLabel *) labelBuffer;
+    if (sunLabelPtr->magic == SUN_DISK_MAGIC) {
 	/*
 	 * XXX - Should really check if label is valid.
 	 */
 	if (printLabel) {
-	    printf("%s: %s\n", devPtr->locationName, diskLabelPtr->asciiLabel);
+	    printf("%s: %s\n", devPtr->locationName, sunLabelPtr->asciiLabel);
 	}
 
-	diskPtr->sizeInSectors = diskLabelPtr->numSectors * 
-			    diskLabelPtr->numHeads * diskLabelPtr->numCylinders;
+	diskPtr->sizeInSectors = sunLabelPtr->numSectors * 
+			    sunLabelPtr->numHeads * sunLabelPtr->numCylinders;
     
 	if (printLabel) printf(" Partitions ");
 	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
-	    diskPtr->map[part].firstSector = diskLabelPtr->map[part].cylinder *
-					     diskLabelPtr->numHeads * 
-					     diskLabelPtr->numSectors;
+	    diskPtr->map[part].firstSector = sunLabelPtr->map[part].cylinder *
+					     sunLabelPtr->numHeads * 
+					     sunLabelPtr->numSectors;
 	    diskPtr->map[part].sizeInSectors =
-					diskLabelPtr->map[part].numBlocks;
+					sunLabelPtr->map[part].numBlocks;
 	    if (printLabel) {
 		printf(" (%d,%d)", diskPtr->map[part].firstSector,
 				       diskPtr->map[part].sizeInSectors);
@@ -185,6 +189,61 @@ FillInLabel(devPtr,diskPtr)
 	    }
 	}
 	if (printLabel) printf("\n");
+	return(SUCCESS);
+    }
+    /*
+     * The disk isn't in SUN or Sprite format so try Dec format.
+     * We have to read the right sector first.
+     */
+    DevScsiGroup0Cmd(devPtr, SCSI_READ, DEC_LABEL_SECTOR, 1,&labelReadCmd);
+    labelReadCmd.buffer = labelBuffer;
+    labelReadCmd.dataToDevice = FALSE;
+    labelReadCmd.bufferLen = SCSI_DISK_SECTOR_SIZE;
+    senseLength = SCSI_MAX_SENSE_LEN;
+    status = DevScsiSendCmdSync(devPtr,&labelReadCmd,&statusByte,&byteCount,
+				&senseLength, senseBuffer);
+    if (status == SUCCESS) {
+	status = DiskError(diskPtr,statusByte, senseLength, senseBuffer);
+    }
+    if ((status == SUCCESS) && (byteCount < sizeof(Dec_DiskLabel))) {
+	status = DEV_EARLY_CMD_COMPLETION;
+    }
+    if (status != SUCCESS) {
+	printf("Disk: error: %x\n",status);
+	return(status);
+    }
+    decLabelPtr = (Dec_DiskLabel *) labelBuffer;
+    if (decLabelPtr->magic == DEC_LABEL_MAGIC) {
+	/*
+	 * XXX - Should really check if label is valid.
+	 */
+	if (decLabelPtr->spriteMagic != FSDM_DISK_MAGIC) {
+	    printf("Disk needs Sprite-modified Dec label\n");
+	}
+	if (decLabelPtr->version != DEC_LABEL_VERSION) {
+	    printf("Disk label version mismatch: %x vs %x\n",
+		    decLabelPtr->version, DEC_LABEL_VERSION);
+	}
+	if (printLabel) {
+	    printf("%s: %s\n", devPtr->locationName, decLabelPtr->asciiLabel);
+	}
+
+	diskPtr->sizeInSectors = decLabelPtr->numSectors * 
+			    decLabelPtr->numHeads * decLabelPtr->numCylinders;
+    
+	if (printLabel) printf(" Partitions ");
+	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
+	    diskPtr->map[part].firstSector =
+		    decLabelPtr->map[part].offsetBytes / DEV_BYTES_PER_SECTOR;
+	    diskPtr->map[part].sizeInSectors =
+		    decLabelPtr->map[part].numBytes / DEV_BYTES_PER_SECTOR;
+	    if (printLabel) {
+		printf(" (%d,%d)", diskPtr->map[part].firstSector,
+				       diskPtr->map[part].sizeInSectors);
+	    }
+	}
+	if (printLabel)	printf("\n");
+
 	return(SUCCESS);
     }
     return(FAILURE);
@@ -244,15 +303,46 @@ InitDisk(devPtr,readLabel)
 {
     ScsiDisk	disk, *diskPtr;
     ReturnStatus status;
+    int		retry = 3;
     bzero((char *) &disk, sizeof(ScsiDisk));
     /*
-     * Check that the disk is on-line.  This means we won't find a disk
-     * if its powered down.
+     * Check that the disk is on-line.  
+     * We do this check twice because it appears that dec rz55 
+     * drives always indicate that they are ready after powerup,
+     * even if their not.
      */
     status = DevScsiTestReady(devPtr);
+    status = DevScsiTestReady(devPtr);
     if (status != SUCCESS) {
-	return((ScsiDisk *) NIL);
+	if (status != DEV_OFFLINE) {
+	    return((ScsiDisk *) NIL);
+	}
+	/*
+	 * Do this loop a few times because Quantum drives appear to respond
+	 * to the first start request before they are actually on-line.
+	 */
+	while (retry > 0) {
+	    printf("Device is not ready.\n");
+	    /*
+	     * Try and start the unit.
+	     */
+	    status = DevScsiStartStopUnit(devPtr, TRUE);
+	    if (status != SUCCESS) {
+		printf("Attempt to start unit failed.\n");
+		return((ScsiDisk *) NIL);
+	    }
+	    /*
+	     * Make sure the unit is ready.
+	     */
+	    printf("Attempt to start unit succeeded.\n");
+	    status = DevScsiTestReady(devPtr);
+	    if (status == SUCCESS) {
+		break;
+	    }
+	    retry--;
+	}
     }
+    printf("Device is ready\n");
     disk.devPtr = devPtr;
     if (readLabel) {
 	status = FillInLabel(devPtr,&disk);
