@@ -141,7 +141,7 @@ void		Rpc_StampTest();
 
 void		Rpc_HostNotify();
 int		Rpc_WaitForHost();
-Boolean		Rpc_HostIsDown();
+ReturnStatus	Rpc_HostIsDown();
 void		Rpc_HostPrint();
 void		Rpc_HostTrace();
 void		Rpc_HostSetState();
