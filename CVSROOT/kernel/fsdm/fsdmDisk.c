@@ -934,10 +934,15 @@ IsDecLabel(buffer)
 
     decLabelPtr = (Dec_DiskLabel *)buffer;
     if (decLabelPtr->magic == DEC_LABEL_MAGIC) {
-	return(TRUE);
-    } else {
-	return(FALSE);
+	if (decLabelPtr->spriteMagic == FSDM_DISK_MAGIC &&
+		decLabelPtr->version == DEC_LABEL_VERSION) {
+	    return TRUE;
+	} else {
+	    printf("Dec label version mismatch: %x vs %x\n",
+		    decLabelPtr->version, DEC_LABEL_VERSION);
+	}
     }
+    return(FALSE);
 }
 
 /*
