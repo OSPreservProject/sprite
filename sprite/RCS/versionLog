@@ -556,4 +556,6 @@ Added Unix compatibility code.
 1.098	Mon Aug 12 10:57:50 PDT 1991
 Made some fixes to Unix compatibility.
 There is a fix in the dev module for a SCSI problem.
+
+1.099	Fri Aug 23 14:57:27 PDT 1991
     New files linked in from the net library.
