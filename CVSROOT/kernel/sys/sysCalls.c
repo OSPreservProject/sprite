@@ -552,6 +552,8 @@ Sys_StatsStub(command, option, argPtr)
 		    schedOverallPtr == (Sys_SchedOverallTimes *)0 ||
 		    schedOverallPtr == (Sys_SchedOverallTimes *)USER_NIL) {
 		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Sys_SchedOverallTimes)) {
+		status = GEN_INVALID_ARG;
 	    } else {
 		Timer_TicksToTime(sched_OverallTimesPerProcessor[0].kernelTime,
 		    &schedOverall.kernelTime);
@@ -562,6 +564,20 @@ Sys_StatsStub(command, option, argPtr)
 			&schedOverall.userTimeMigrated);
 		status = Vm_CopyOut(sizeof(Sys_SchedOverallTimes),
 			(Address)&schedOverall, argPtr);
+	    }
+	    break;
+	}
+	case SYS_FS_SOSP_MIG_STATS: {
+	    statsPtr = (Fs_SospMigStats *) argPtr;
+	    if (statsPtr == (Fs_SospMigStats *)NIL ||
+		    statsPtr == (Fs_SospMigStats *) 0 ||
+		    statsPtr == (Fs_SospMigStats *) USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Fs_SospMigStats) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		status = Vm_CopyOut(sizeof (Fs_SospMigStats),
+			(Address) &fs_SospMigStats, argPtr);
 	    }
 	    break;
 	}
