@@ -176,9 +176,9 @@ extern ReturnStatus Fs_RpcGetAttrPath();	/*  FS_GET_ATTR_PATH */
 extern ReturnStatus Fs_RpcSetAttrPath();	/*  FS_SET_ATTR_PATH */
 extern ReturnStatus Fs_RpcGetIOAttr();		/*  FS_GET_IO_ATTR */
 extern ReturnStatus Fs_RpcSetIOAttr();		/*  FS_SET_IO_ATTR */
-extern ReturnStatus RpcProcMigInit();		/*  PROC_MIG_INIT */
-extern ReturnStatus RpcProcMigInfo();		/*  PROC_MIG_INFO */
-extern ReturnStatus RpcProcRemoteCall();	/*  PROC_REMOTE_CALL */
+extern ReturnStatus Proc_RpcMigInit();		/*  PROC_MIG_INIT */
+extern ReturnStatus Proc_RpcMigInfo();		/*  PROC_MIG_INFO */
+extern ReturnStatus Proc_RpcRemoteCall();	/*  PROC_REMOTE_CALL */
 extern ReturnStatus Fs_RpcStartMigration();	/*  FS_MIGRATE */
 extern ReturnStatus Fs_RpcConsist();		/*  FS_CONSIST */
 extern ReturnStatus Fs_RpcDevOpen();		/*  FS_DEV_OPEN */

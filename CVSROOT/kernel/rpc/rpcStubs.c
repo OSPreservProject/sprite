@@ -19,7 +19,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpcInt.h"
 #include "rpcServer.h"
 #include "fsRpcStubs.h"
-#include "procMigrate.h"
 #include "fs.h"
 #include "timer.h"
 #include "sync.h"
@@ -51,9 +50,9 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcSetAttrPath, "setAttrPath",	/* 19 - FS_SET_ATTR_PATH */
 	Fs_RpcGetIOAttr, "getIOAttr",		/* 20 - FS_GET_IO_ATTR */
 	Fs_RpcSetIOAttr, "setIOAttr",		/* 21 - FS_SET_IO_ATTR */
-	RpcProcMigInit, "mig init",		/* 22 - PROC_MIG_INIT */
-	RpcProcMigInfo, "mig info",		/* 23 - PROC_MIG_INFO */
-	RpcProcRemoteCall, "rmt call",		/* 24 - PROC_REMOTE_CALL */
+	Proc_RpcMigInit, "mig init",		/* 22 - PROC_MIG_INIT */
+	Proc_RpcMigInfo, "mig info",		/* 23 - PROC_MIG_INFO */
+	Proc_RpcRemoteCall, "rmt call",		/* 24 - PROC_REMOTE_CALL */
 	Fs_RpcStartMigration, "migrate",	/* 25 - FS_MIGRATE */
 	Fs_RpcConsist, "consist",		/* 26 - FS_CONSIST */
 	Fs_RpcDevOpen, "dev open",		/* 27 - FS_DEV_OPEN */
@@ -245,146 +244,3 @@ RpcGetTime(srvToken, clientID, command, storagePtr)
     return(SUCCESS);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * RpcProcMigInit --
- *
- *	Handle a request to start process migration.
- *
- * Results:
- *	A return status.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-RpcProcMigInit(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* Command identifier */
-    Rpc_Storage *storagePtr;	/* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    ReturnStatus status;
-
-    status = Proc_AcceptMigration(clientID);
-    Rpc_Reply(srvToken, status, storagePtr, (int(*)()) NIL, (ClientData) NIL);
-
-    return(status);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RpcProcMigInfo --
- *
- *	Handle a request to transfer information for process migration.
- *
- * Results:
- *	A return status.
- *
- * Side effects:
- *	Process state (process control block, virtual memory, or file state)
- * 	is copied onto the remote workstation (the RPC server).
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-RpcProcMigInfo(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* Command identifier */
-    Rpc_Storage *storagePtr;	/* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    ReturnStatus status;
-    Rpc_ReplyMem	*replyMemPtr;
-    Proc_MigrateReply *returnInfoPtr;
-
-    returnInfoPtr = (Proc_MigrateReply *) malloc(sizeof(Proc_MigrateReply));
-    status = Proc_MigReceiveInfo(clientID,
-            (Proc_MigrateCommand *) storagePtr->requestParamPtr,
-	    storagePtr->requestDataSize,
- 	    storagePtr->requestDataPtr,
-	    returnInfoPtr);
-    if (status == SUCCESS) {
-	storagePtr->replyParamPtr = (Address) returnInfoPtr;
-	storagePtr->replyParamSize = sizeof(Proc_MigrateReply);
-	
-	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-	replyMemPtr->paramPtr = (Address) returnInfoPtr;
-	replyMemPtr->dataPtr = (Address) NIL;
-	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
-		(ClientData) replyMemPtr);
-    }
-
-    return(status);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RpcProcRemoteCall --
- *
- *	Handle a system call for a migrated process.
- *
- * Results:
- *	A return status.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-RpcProcRemoteCall(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* Command identifier */
-    Rpc_Storage *storagePtr;	/* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    Rpc_ReplyMem	*replyMemPtr;
-    Address returnData = (Address) NIL;
-    int returnDataLength = 0;
-    ReturnStatus status;
-
-    status = Proc_RpcRemoteCall((Proc_RemoteCall *)storagePtr->requestParamPtr,
- 	    storagePtr->requestDataPtr, storagePtr->requestDataSize,
- 	    &returnData, &returnDataLength);
-    
-    storagePtr->replyDataPtr = returnData;
-    storagePtr->replyDataSize = returnDataLength;
-
-    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-    replyMemPtr->paramPtr = (Address) NIL;
-    replyMemPtr->dataPtr = returnData;
-    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
-	    (ClientData) replyMemPtr);
-
-    return(status);
-}
