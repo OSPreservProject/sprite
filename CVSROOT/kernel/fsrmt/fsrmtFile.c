@@ -1197,7 +1197,9 @@ FsrmtFileIOControl(streamPtr, ioctlPtr, replyPtr)
 	    status = SUCCESS;
 	    break;
 	case IOC_TRUNCATE:
-	    if (ioctlPtr->inBufSize >= sizeof(int)) {
+	    if ((streamPtr->flags & FS_WRITE) == 0) {
+		status = FS_NO_ACCESS;
+	    } else if (ioctlPtr->inBufSize >= sizeof(int)) {
 		register int length = *(int *)ioctlPtr->inBuffer;
 		Fscache_Trunc(&handlePtr->cacheInfo, length, 0);
 		status = Fsrmt_IOControl(streamPtr, ioctlPtr, replyPtr);
