@@ -493,8 +493,6 @@ Dbg_InputPacket(interPtr, packetPtr, packetLength)
     Net_EtherHdr	*etherHdrPtr;
 
     if (interPtr->netType != NET_NETWORK_ETHER) {
-	printf("Got a debugger packet on non-ethernet interface %s\n",
-	    interPtr->name);
 	return;
     }
     etherHdrPtr = (Net_EtherHdr *)packetPtr;

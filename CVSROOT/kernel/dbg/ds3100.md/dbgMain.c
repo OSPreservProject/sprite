@@ -316,8 +316,6 @@ Dbg_InputPacket(interPtr, packetPtr, packetLength)
     int			dataLength;
 
     if (interPtr->netType != NET_NETWORK_ETHER) {
-	Mach_MonPrintf("Got a debugger packet on non-ethernet interface %s\n",
-	    interPtr->name);
 	return;
     }
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
