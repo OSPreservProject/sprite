@@ -14,19 +14,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "mach.h"
 #include "dev.h"
 #include "devInt.h"
+#include "scsi.h"
 #include "devSCSI.h"
 #include "devSCSIWorm.h"
-
-#include "multibus.h"
-#include "sunMon.h"
-#include "sunDiskLabel.h"
+#include "devMultibus.h"
+#include "devDiskLabel.h"
 #include "dbg.h"
 #include "vm.h"
 #include "sys.h"
 #include "sync.h"
-#include "proc.h"	/* for Sys_SetJump */
+#include "proc.h"	/* for Mach_SetJump */
 #include "fs.h"
 #include "mem.h"
 #include "user/byte.h"
@@ -62,42 +62,7 @@ DevSCSIDevice *scsiWorm[SCSI_MAX_WORMS];
 /*
  * SetJump stuff needed when probing for the existence of a device.
  */
-static Sys_SetJumpState setJumpState;
-
-/*
- * DevSCSICommand() takes a Boolean that indicates whether it should cause
- * an interupt when the command is complete or whether it should busy wait
- * until the command finishes.  These defines make the calls clearer.
- */
-#define INTERRUPT	TRUE
-#define WAIT		FALSE
-
-/*
- * DevSCSIWait() takes a Boolean that indicates whether it should reset
- * the SCSI bus if the condition being waited on never occurs.
- */
-#define RESET		TRUE
-#define NO_RESET	FALSE
-
-/*
- * SECTORS_PER_BLOCK
- */
-#define SECTORS_PER_BLOCK	(FS_BLOCK_SIZE / DEV_BYTES_PER_SECTOR)
-#define SECTORS_PER_WORM_BLOCK	(FS_BLOCK_SIZE / DEV_BYTES_PER_WORM_SECTOR)
-
-/*
- * Define the maximum number of sectors that may be transferred to the
- * RXT in one shot.  Since we allocate space from the kernel's address
- * space statically, we don't want to make it too much even though
- * the drive can handle 256 blocks in a shot.  Besides, the drive only
- * transfers 32 sectors at a time.
- */
-#define MAX_WORM_SECTORS_IO 32
-
-/*
- * This utility macro should probably be defined in some global header file.
- */
-#define max(a,b) (((a) >= (b)) ? (a) : (b))
+static Mach_SetJumpState setJumpState;
 
 /*
  * The error codes for class 0-6 sense data are class specific.
@@ -178,7 +143,7 @@ extern ReturnStatus DevSCSIWormError();
  *	Initialize an SCSI controller.
  *
  * Results:
- *	None.
+ *	Returns TRUE if the controller is alive.
  *
  * Side effects:
  *	Allocate buffer space associated with the controller.
@@ -208,7 +173,7 @@ Dev_SCSIInitController(cntrlrPtr)
      */
     scsiPtr->regsPtr = (DevSCSIRegs *)cntrlrPtr->address;
     regsPtr = scsiPtr->regsPtr;
-    if (Sys_SetJump(&setJumpState) == SUCCESS) {
+    if (Mach_SetJump(&setJumpState) == SUCCESS) {
 	x = regsPtr->dmaCount;
 	regsPtr->dmaCount = (short)0xBABE;
 	if (regsPtr->dmaCount != (short)0xBABE) {
@@ -216,13 +181,13 @@ Dev_SCSIInitController(cntrlrPtr)
 	    Sys_Printf("SCSI-%d: dmaCount register: wrote %x read back %x\n",
 				 scsiPtr->number, 0xBABE, regsPtr->dmaCount);
 #endif notdef
-	    Sys_UnsetJump();
+	    Mach_UnsetJump();
 	    Mem_Free((Address) scsiPtr);
 	    scsi[cntrlrPtr->controllerID] = (DevSCSIController *)NIL;
 	    return(FALSE);
 	}
     } else {
-	Sys_UnsetJump();
+	Mach_UnsetJump();
 	/*
 	 * Got a bus error. Zap the info about the non-existent controller.
 	 */
@@ -230,7 +195,7 @@ Dev_SCSIInitController(cntrlrPtr)
 	scsi[cntrlrPtr->controllerID] = (DevSCSIController *)NIL;
 	return(FALSE);
     }
-    Sys_UnsetJump();
+    Mach_UnsetJump();
 
     DevSCSIReset(regsPtr);
 
@@ -246,7 +211,8 @@ Dev_SCSIInitController(cntrlrPtr)
      * for reading and writing filesystem blocks.  A physical page is
      * obtained for the sense data and the label.  The general buffer gets
      * mapped just before a read or write.  It has to be twice as large as
-     * a filesystem block so that an unaligned block can be mapped into it.
+     * the maximum transfer size so that an unaligned block can be mapped
+     * into it.
      */
     scsiPtr->senseBuffer =
 	    (DevSCSISense *)VmMach_DevBufferAlloc(&devIOBuffer,
@@ -349,6 +315,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	}
 	diskPtr = (DevSCSIDisk *) Mem_Alloc(sizeof(DevSCSIDisk));
 	devPtr->data = (ClientData)diskPtr;
+	diskPtr->type = SCSI_SHOEBOX_DISK;
 	scsiDisk[scsiDiskIndex] = devPtr;
 	DevSCSIDoLabel(devPtr);
     } else if (devConfPtr->flags == DEV_SCSI_TAPE) {
@@ -422,7 +389,7 @@ DevSCSIReset(regsPtr)
     DevSCSIRegs *regsPtr;
 {
     regsPtr->control = SCSI_RESET;
-    DELAY(100);
+    MACH_DELAY(100);
     regsPtr->control = 0;
 }
 
@@ -1045,7 +1012,7 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
 	if ((regsPtr->control & SCSI_BUSY) == 0) {
 	    break;
 	} else {
-	    DELAY(10);
+	    MACH_DELAY(10);
 	}
     }
     if (i == SCSI_WAIT_LENGTH) {
@@ -1082,7 +1049,7 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
      * increments the dmaCount register until it reaches -1, hence the
      * funny initialization. See page 4 of Sun's SCSI Prog. Manual.
      */
-    regsPtr->dmaAddress = (int)(addr - MULTIBUS_BASE);
+    regsPtr->dmaAddress = (int)(addr - DEV_MULTIBUS_BASE);
     regsPtr->dmaCount = -size - 1;
     bits = SCSI_WORD_MODE | SCSI_DMA_ENABLE;
     if (interrupt == INTERRUPT) {
@@ -1380,7 +1347,7 @@ DevSCSIWait(regsPtr, condition, reset, checkMsg)
 	    status = DEV_DMA_FAULT;
 	    break;
 	}
-	DELAY(10);
+	MACH_DELAY(10);
     }
     if (devSCSIDebug) {
 	Sys_Printf("DevSCSIWait: timed out, control = %x.\n", control);
@@ -1468,7 +1435,7 @@ Dev_SCSIIntr()
 		     * Programmers' Manual.
 		     */
 		    if (scsiPtr->controlBlock.command == SCSI_READ) {
-			*(char *)(MULTIBUS_BASE + regsPtr->dmaAddress) =
+			*(char *)(DEV_MULTIBUS_BASE + regsPtr->dmaAddress) =
 			    regsPtr->data;
 			scsiPtr->residual--;
 		    } else {
@@ -1523,7 +1490,6 @@ DevSCSIWormIO(command, deviceUnit, buffer, firstSector, numSectorsPtr)
     int totalSectors;		/* The total number of sectors to transfer */
     int numSectors;		/* The number of sectors to transfer at
 				 * one time, up to a blocks worth. */
-    int lastSector;	/* Last sector of the partition */
     int totalXfer;	/* The total number of sectors actually transferred */
 
     worm = deviceUnit;
