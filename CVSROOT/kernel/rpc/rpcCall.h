@@ -138,6 +138,11 @@
  *	RPC_FS_REOPEN		Reopen a file.
  *	RPC_FS_DOMAIN_INFO	Return information about the given domain.
  *	RPC_FS_DEV_REOPEN	Reopen a device at the I/O server.
+ *	RPC_FS_RECOVERY		Recovery control message used by clients to
+ *				tell server's they want to re-establish
+ *				its open file handles, and when they are done.
+ *	RPC_FS_REQUEST		Pseudo-device request message.
+ *	RPC_FS_REPLY		Pseudo-device reply message.
  *	
  *
  * These procedure numbers and the service switch should be generated
@@ -193,7 +198,10 @@
 #define	RPC_FS_REOPEN		47
 #define	RPC_FS_DOMAIN_INFO	48
 #define RPC_FS_DEV_REOPEN	49
-#define	RPC_LAST_COMMAND RPC_FS_DEV_REOPEN
+#define RPC_FS_RECOVERY		50
+#define RPC_FS_REQUEST		51
+#define RPC_FS_REPLY		52
+#define	RPC_LAST_COMMAND RPC_FS_REPLY
 
 /*
  * The above constant RPC_LAST_COMMAND is used to declare arrays that
@@ -237,8 +245,12 @@ extern ReturnStatus Fs_RpcMakeDev();		/* 44 - FS_MKDEV */
 extern ReturnStatus Fs_RpcGetAttrPath();	/* 45 - FS_GET_ATTR_PATH */
 extern ReturnStatus Sig_RpcSend();		/* 46 - SIG_SEND */
 extern ReturnStatus Fs_RpcReopen();		/* 47 - FS_RPC_REOPEN */
-extern ReturnStatus Fs_RpcDomainInfo();		/* 48 - FS_RPC_DOMAIN_INFO. */
-extern ReturnStatus Fs_RpcDevReopen();		/* 49 - FS_RPC_DEV_REOPEN. */
+extern ReturnStatus Fs_RpcDomainInfo();		/* 48 - FS_RPC_DOMAIN_INFO */
+extern ReturnStatus Fs_RpcDevReopen();		/* 49 - FS_RPC_DEV_REOPEN */
+extern ReturnStatus Fs_RpcRecovery();		/* 50 - FS_RPC_RECOVERY */
+extern ReturnStatus Fs_RpcRequest();		/* 51 - FS_RPC_REQUEST */
+extern ReturnStatus Fs_RpcReply();		/* 52 - FS_RPC_REPLY */
+
 
 #endif	_RPCCALL
 
