@@ -1,33 +1,7 @@
 # This file is used by scvs and contains symbolic link
 # information.  Each line is of the form "link target"
 # $Header
-addsub.c                 ../sun4.md/addsub.c
-bootSysAsm.s             ../sun4.md/bootSysAsm.s
-compare.c                ../sun4.md/compare.c
-div.c                    ../sun4.md/div.c
-fpu_simulator.c          ../sun4.md/fpu_simulator.c
-fpu_simulator.h          ../sun4.md/fpu_simulator.h
-globals.h                ../sun4.md/globals.h
-ieee.h                   ../sun4.md/ieee.h
-iu_simulator.c           ../sun4.md/iu_simulator.c
-mach.h                   ../sun4.md/mach.h
 machAsm.s.old            ../sun4.md/machAsm.s
-machAsmDefs.h            ../sun4.md/machAsmDefs.h
 machCode.c.old           ../sun4.md/machCode.c
-machConst.h              ../sun4.md/machConst.h
-machFPUGlue.c            ../sun4.md/machFPUGlue.c
-machInt.h                ../sun4.md/machInt.h
 machIntr.s.old           ../sun4.md/machIntr.s
-machMigrate.c            ../sun4.md/machMigrate.c
-machMon.c                ../sun4.md/machMon.c
-machMon.h                ../sun4.md/machMon.h
-machSig.h                ../sun4.md/machSig.h
 machTrap.s.old           ../sun4.md/machTrap.s
-md.mk.sed                ../sun4.md/md.mk.sed
-mul.c                    ../sun4.md/mul.c
-pack.c                   ../sun4.md/pack.c
-sun4                     ../sun4.md/sun4
-sys                      ../sun4.md/sys
-unpack.c                 ../sun4.md/unpack.c
-utility.c                ../sun4.md/utility.c
-uword.c                  ../sun4.md/uword.c
