@@ -235,11 +235,12 @@ DevNetEtherHandler(packetPtr, size)
     }
 
     if (devNetEtherDebug) {
-	Sys_Printf("EtherHandler 0x%x %d\n", etherHdrPtr->type, size);
+	Sys_Printf("EtherHandler 0x%x %d\n", NET_ETHER_HDR_TYPE(*etherHdrPtr),
+			size);
     }
-
     LIST_FORALL(&etherProtos, (List_Links *)protoPtr) {
-	if (etherHdrPtr->type == protoPtr->protocol && protoPtr->open) { 
+	if (NET_ETHER_HDR_TYPE(*etherHdrPtr) == protoPtr->protocol && 
+				protoPtr->open) { 
 	    if (QueueFull(protoPtr->queue)) {
 		protoPtr->stats.drops++;
 	    } else {
@@ -368,7 +369,7 @@ DevNet_FsWrite(devicePtr, offset, bufSize, buffer, lenPtr)
      * Verify the protocol type in the header.  The low level driver
      * will fill in the source address for us.
      */
-    if (etherHdrPtr->type != protoPtr->protocol) {
+    if (NET_ETHER_HDR_TYPE(*etherHdrPtr) != protoPtr->protocol) {
 	return(SYS_INVALID_ARG);
     }
 
