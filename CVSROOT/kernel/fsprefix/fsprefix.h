@@ -148,6 +148,7 @@ extern ReturnStatus Fsprefix_TwoNameOperation _ARGS_((int operation,
 
 extern Boolean Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag));
 extern ReturnStatus Fsprefix_DumpExport _ARGS_((int size, Address buffer));
+extern ReturnStatus Fsprefix_Dump _ARGS_((int index, Address argPtr));
 extern void Fsprefix_Export _ARGS_((char *prefix, int clientID,Boolean delete));
 
 #endif _FSPREFIX
