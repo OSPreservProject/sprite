@@ -256,6 +256,7 @@ extern void Mach_MonReboot _ARGS_((char *rebootString));
 #define Mach_MonRead(fd,buf,len)	(mach_MonFuncs.read)(fd,buf,len)
 #define Mach_MonClose(fd)		(mach_MonFuncs.close)(fd)
 #define Mach_MonLseek(fd,offset,mode)	(mach_MonFuncs.lseek)(fd,offset,mode)
+#define Mach_MonGetenv(name)		(mach_MonFuncs.getenv2)(name)
 
 /*
  * The nonvolatile ram has a flag to indicate it is usable.
