@@ -19,11 +19,12 @@
 #ifndef _FSFILE
 #define _FSFILE
 
-#include "fsio.h"
-#include "fsutil.h"
-#include "fsconsist.h"
-#include "fscache.h"
-#include "fsioLock.h"
+#include <fsio.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fscache.h>
+#include <fsioLock.h>
+#include <fsNameOps.h>
 
 /*
  * When a regular file is opened state is packaged up on the server
@@ -48,7 +49,7 @@ typedef struct Fsio_FileState {
 typedef struct Fsio_FileReopenParams {
     Fs_FileID	fileID;		/* File ID of file to reopen. MUST BE FIRST */
     Fs_FileID	prefixFileID;	/* File ID for the prefix of this file. */
-    Fsutil_UseCounts	use;		/* Reference counts */
+    Fsio_UseCounts	use;		/* Reference counts */
     Boolean	flags;		/* FSIO_HAVE_BLOCKS | FS_SWAP */
     int		version;	/* Expected version number for the file. */
 } Fsio_FileReopenParams;
@@ -76,18 +77,18 @@ typedef struct Fsio_FileIOHandle {
 					 * 'major' field of the fileID
 					 * is the domain number.  The
 					 * 'minor' field is the file num. */
-    Fsutil_UseCounts		use;		/* Open, writer, and exec counts.
+    Fsio_UseCounts		use;	/* Open, writer, and exec counts.
 					 * Used for consistency checks. This
 					 * is a summary of all uses of a file */
     int			flags;		/* FSIO_FILE_NAME_DELETED and
 					 * FSIO_FILE_DESC_DELETED */
-    struct Fsdm_FileDescriptor *descPtr;	/* Reference to disk info, this
+    struct Fsdm_FileDescriptor *descPtr;/* Reference to disk info, this
 					 * has attritutes, plus disk map. */
     Fscache_FileInfo	cacheInfo;	/* Used to access block cache. */
     Fsconsist_Info	consist;	/* Client use info needed to enforce
 					 * network cache consistency */
     Fsio_LockState		lock;		/* User level locking state. */
-    Fscache_ReadAheadInfo	readAhead;	/* Read ahead info used to synchronize
+    Fscache_ReadAheadInfo	readAhead;/* Read ahead info used to synchronize
 					 * with other I/O and closes/deletes. */
     struct Vm_Segment	*segPtr;	/* Reference to code segment needed
 					 * to flush VM cache. */
@@ -104,31 +105,88 @@ typedef struct Fsio_FileIOHandle {
  */
 #define FSIO_FILE_NAME_DELETED		0x1
 #define FSIO_FILE_DESC_DELETED		0x2
+
+
+/*
+ * OPEN SWITCH
+ * The nameOpen procedure is used on the file server when opening streams or
+ * setting up an I/O fileID for a file or device.  It is keyed on
+ * disk file descriptor types( i.e. FS_FILE, FS_DIRECTORY, FS_DEVICE,
+ * FS_PSEUDO_DEVICE).  The nameOpen procedure returns an ioFileID
+ * used for I/O on the file, plus other data needed for the client's
+ * stream.  The streamIDPtr is NIL during set/get attributes, which
+ * indicates that the extra stream information isn't needed.
+ */
+
+typedef struct Fsio_OpenOps {
+    int		type;			/* One of the file descriptor types */
+    /*
+     * The calling sequence for the nameOpen routine is:
+     *	FooNameOpen(handlePtr, openArgsPtr, openResultsPtr);
+     */
+    ReturnStatus (*nameOpen) _ARGS_((Fsio_FileIOHandle *handlePtr, 
+				     Fs_OpenArgs *openArgsPtr,
+				     Fs_OpenResults *openResultsPtr));
+} Fsio_OpenOps;
+
+extern Fsio_OpenOps fsio_OpenOpTable[];
 
 /*
  * Open operations.
  */
-extern ReturnStatus	Fsio_FileNameOpen();
+extern ReturnStatus Fsio_FileNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr, 
+			Fs_OpenArgs *openArgsPtr, 
+			Fs_OpenResults *openResultsPtr));
 
 /*
  * Stream operations.
  */
-extern ReturnStatus	Fsio_FileIoOpen();
-extern ReturnStatus	Fsio_FileRead();
-extern ReturnStatus	Fsio_FileWrite();
-extern ReturnStatus	Fsio_FileIOControl();
-extern ReturnStatus	Fsio_FileSelect();
-extern ReturnStatus	Fsio_FileMigClose();
-extern ReturnStatus	Fsio_FileMigOpen();
-extern ReturnStatus	Fsio_FileMigrate();
-extern ReturnStatus	Fsio_FileReopen();
-extern ReturnStatus	Fsio_FileBlockRead();
-extern ReturnStatus	Fsio_FileBlockWrite();
-extern ReturnStatus	Fsio_FileBlockCopy();
-extern Boolean		Fsio_FileScavenge();
-extern void		Fsio_FileClientKill();
-extern ReturnStatus	Fsio_FileClose();
-extern ReturnStatus	Fsio_FileCloseInt();
+extern ReturnStatus Fsio_FileIoOpen _ARGS_((Fs_FileID *ioFileIDPtr,
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
+extern ReturnStatus Fsio_FileRead _ARGS_((Fs_Stream *streamPtr,
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_FileWrite _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *writePtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_FileIOControl _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_FileSelect _ARGS_((Fs_HandleHeader *hdrPtr, 
+		Sync_RemoteWaiter *waitPtr, int *readPtr, int *writePtr, 
+		int *exceptPtr));
+extern ReturnStatus Fsio_FileMigClose _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int flags));
+extern ReturnStatus Fsio_FileMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr, int size,
+		ClientData data, Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus Fsio_FileMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+		Address *dataPtr));
+extern ReturnStatus Fsio_FileReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
+extern ReturnStatus Fsio_FileBlockCopy _ARGS_((Fs_HandleHeader *srcHdrPtr, 
+		Fs_HandleHeader *dstHdrPtr, int blockNum));
+extern Boolean Fsio_FileScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
+extern ReturnStatus Fsio_FileClose _ARGS_((Fs_Stream *streamPtr, int clientID,
+		Proc_PID procID, int flags, int dataSize,
+		ClientData closeData));
+extern ReturnStatus Fsio_FileCloseInt _ARGS_((Fsio_FileIOHandle *handlePtr,
+		int ref, int write, int exec, int clientID, Boolean callback));
+extern void Fsio_FileClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
 
-extern void		Fsio_FileSyncLockCleanup();
+extern void Fsio_FileSyncLockCleanup _ARGS_((Fsio_FileIOHandle *handlePtr));
+
+extern void Fsio_InstallSrvOpenOp _ARGS_((int fileType, 
+			Fsio_OpenOps *openOpsPtr));
+extern ReturnStatus Fsio_LocalFileHandleInit _ARGS_((Fs_FileID *fileIDPtr,
+		char *name, struct Fsdm_FileDescriptor *descPtr,
+		Boolean cantBlock, Fsio_FileIOHandle **newHandlePtrPtr));
+
+/*
+ * ftrunc() support
+ */
+extern ReturnStatus Fsio_FileTrunc _ARGS_((Fsio_FileIOHandle *handlePtr, 
+			int size, int flags));
+
 #endif _FSFILE
