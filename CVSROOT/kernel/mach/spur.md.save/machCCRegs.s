@@ -19,6 +19,7 @@
  *	UCB/CSD 87/394 for details [Wood87]). 
  * 
  */
+#include "machConst.h"
 
 /*
  * Constant for ld/st_external byte addresses
