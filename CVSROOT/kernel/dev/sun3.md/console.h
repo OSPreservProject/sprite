@@ -19,8 +19,11 @@
 #ifndef _DEVCONSOLE
 #define _DEVCONSOLE
 
-extern int	DevConsoleConvertKeystroke();
-extern void	DevConsoleInputProc();
-extern int	DevConsoleRawProc();
+#include "z8530.h"
+
+extern int DevConsoleConvertKeystroke _ARGS_((int value));
+extern void DevConsoleInputProc _ARGS_((DevTty *ttyPtr, int value));
+extern int DevConsoleRawProc _ARGS_((void *ptr, int operation,
+    int inBufSize, char *inBuffer, int outBufSize, char *outBuffer));
 
 #endif /* _DEVCONSOLE */
