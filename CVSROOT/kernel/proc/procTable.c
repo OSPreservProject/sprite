@@ -97,7 +97,7 @@ ProcInitTable()
     for (i = proc_MaxNumProcesses; i < realMaxProcesses; i++) {
 	proc_PCBTable[i] = (Proc_ControlBlock *) NIL;
     }
-    
+
     for (i = 0; i < maxRunningProcesses; i++) {
         proc_RunningProcesses[i] = (Proc_ControlBlock *) NIL;
     }
@@ -156,7 +156,9 @@ InitPCB(pcbPtr, i)
     pcbPtr->peerHostID = NIL;
     pcbPtr->peerProcessID = (Proc_PID) NIL;
     pcbPtr->argString = (char *) NIL;
+#ifdef LOCKDEP
     pcbPtr->lockStackSize = 0;
+#endif
     pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
     pcbPtr->fsPtr = (Fs_ProcessState *)NIL;
     pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
@@ -167,6 +169,12 @@ InitPCB(pcbPtr, i)
     pcbPtr->kcallTable = mach_NormalHandlers;
     pcbPtr->specialHandling = 0;
     pcbPtr->machStatePtr = (struct Mach_State *)NIL;
+#ifndef CLEAN_LOCK
+    Sync_SemInitDynamic(&pcbPtr->lockInfo, "Proc:perPCBlock");
+#endif
+#ifdef LOCKREG
+    Sync_LockRegister(&pcbPtr->lockInfo);
+#endif
 }
 
 
@@ -315,6 +323,7 @@ Proc_LockPID(pid)
     Proc_PID	pid;
 {
     register	Proc_ControlBlock *procPtr;
+    register	Sync_Semaphore	  *lockPtr;
 
     LOCK_MONITOR;
 
@@ -323,6 +332,9 @@ Proc_LockPID(pid)
 	return((Proc_ControlBlock *) NIL);
     }
     procPtr = proc_PCBTable[Proc_PIDToIndex(pid)];
+#ifndef CLEAN_LOCK
+    lockPtr = &(procPtr->lockInfo);
+#endif
 
     while (TRUE) {
 	if (procPtr->state == PROC_UNUSED || procPtr->state == PROC_DEAD) {
@@ -332,6 +344,7 @@ Proc_LockPID(pid)
 
 	if (procPtr->genFlags & PROC_LOCKED) {
 	    do {
+		SyncRecordMiss(lockPtr);
 		(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
 	    } while (procPtr->genFlags & PROC_LOCKED);
 	} else {
@@ -339,6 +352,9 @@ Proc_LockPID(pid)
 		procPtr = (Proc_ControlBlock *) NIL;
 	    } else {
 		procPtr->genFlags |= PROC_LOCKED;
+		SyncRecordHit(lockPtr);
+		SyncStoreDbgInfo(lockPtr);
+		SyncAddPrior(lockPtr);
 	    }
 	    break;
 	}
@@ -369,12 +385,25 @@ ENTRY void
 Proc_Lock(procPtr)
     register	Proc_ControlBlock *procPtr;
 {
+    register	Sync_Semaphore	  *lockPtr;
+
     LOCK_MONITOR;
 
+#ifndef CLEAN_LOCK
+    lockPtr = &(procPtr->lockInfo);
+#endif
+
     while (procPtr->genFlags & PROC_LOCKED) {
+
+	SyncRecordMiss(lockPtr);
 	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
     }
     procPtr->genFlags |= PROC_LOCKED;
+
+    SyncRecordHit(lockPtr);
+    SyncStoreDbgInfo(lockPtr);
+    SyncAddPrior(lockPtr);
+    SyncAddPrior(lockPtr);
 
     UNLOCK_MONITOR;
 }
@@ -527,14 +556,23 @@ ENTRY void
 ProcFreePCB(procPtr)
     register	Proc_ControlBlock 	*procPtr;
 {
+    register	Sync_Semaphore	  *lockPtr;
+
     LOCK_MONITOR;
 
+#ifndef CLEAN_LOCK
+    lockPtr = &(procPtr->lockInfo);
+#endif
+
     while (procPtr->genFlags & PROC_LOCKED) {
+	SyncRecordMiss(lockPtr);
 	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
     }
     procPtr->state = PROC_UNUSED;
     procPtr->genFlags = 0;
     entriesInUse--;
+
+    SyncRecordHit(lockPtr);
 
     UNLOCK_MONITOR;
 }
