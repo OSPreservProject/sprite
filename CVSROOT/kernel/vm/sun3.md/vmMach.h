@@ -110,6 +110,9 @@ extern void VmMach_UnmapIntelPage _ARGS_((Address virtAddr));
  */
 extern Address VmMach_32BitDMAAlloc _ARGS_((int numBytes, Address srcAddr));
 extern void VmMach_32BitDMAFree _ARGS_((int numBytes, Address mapAddr));
+extern ReturnStatus VmMach_DMAAllocContiguous _ARGS_((
+	Net_ScatterGather *inScatGathPtr, int scatGathLength,
+	Net_ScatterGather *outScatGathPtr));
 
 /*
  * Device mapping.
