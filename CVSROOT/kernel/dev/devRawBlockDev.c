@@ -25,8 +25,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devBlockDevice.h"
 #include "dev.h"
 #include "devInt.h"
-#include "user/fs.h"
 #include "fs.h"
+#include "user/fs.h"
 
 
 /*
@@ -47,10 +47,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 /* ARGSUSED */
 ReturnStatus
-DevRawBlockDevOpen(devicePtr, useFlags, token)
+DevRawBlockDevOpen(devicePtr, useFlags, token, flagsPtr)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
     int useFlags;		/* Flags from the stream being opened */
     Fs_NotifyToken token;	/* Call-back token for input, unused here */
+    int		*flagsPtr;	/* OUT: Device IO flags. */
 {
     DevBlockDeviceHandle *handlePtr;
 
@@ -61,6 +62,10 @@ DevRawBlockDevOpen(devicePtr, useFlags, token)
      */
     handlePtr =  (DevBlockDeviceHandle *) devicePtr->data;
     if (handlePtr != (DevBlockDeviceHandle *) NIL) {
+	/*
+	 * Block devices handle their own locking.
+	 */
+	*flagsPtr |= FS_DEV_DONT_LOCK;
 	/*
 	 * Already attached. 
 	 */
@@ -75,6 +80,10 @@ DevRawBlockDevOpen(devicePtr, useFlags, token)
 	return(DEV_NO_DEVICE);
     }
     devicePtr->data = (ClientData) handlePtr;
+    /*
+     * Block devices handle their own locking.
+     */
+    *flagsPtr |= FS_DEV_DONT_LOCK;
     return(SUCCESS);
 }
 
@@ -96,18 +105,19 @@ DevRawBlockDevOpen(devicePtr, useFlags, token)
  */
 /* ARGSUSED */
 ReturnStatus
-DevRawBlockDevReopen(devicePtr, refs, writers, token)
+DevRawBlockDevReopen(devicePtr, refs, writers, token, flagsPtr)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
     int refs;			/* Number of open streams */
     int writers;		/* Number of writing streams */
     Fs_NotifyToken token;	/* Call-back token for input, unused here */
+    int	*flagsPtr;		/* OUT: Device IO flags. */
 {
     int useFlags = FS_READ;
 
     if (writers) {
 	useFlags |= FS_WRITE;
     }
-    return( DevRawBlockDevOpen(devicePtr, useFlags, token) );
+    return( DevRawBlockDevOpen(devicePtr, useFlags, token, flagsPtr) );
 }
 
 

@@ -442,10 +442,11 @@ DevSCSITapeFixedBlockIO(tapePtr, command, buffer, countPtr)
  */
 /* ARGSUSED */
 ReturnStatus
-DevSCSITapeOpen(devicePtr, useFlags, token)
+DevSCSITapeOpen(devicePtr, useFlags, token, flagsPtr)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
     int useFlags;		/* Flags from the stream being opened */
     Fs_NotifyToken token;	/* Call-back token for input, unused here */
+    int		*flagsPtr;	/* OUT: Device flags. */
 {
     ReturnStatus status;
     ScsiDevice *devPtr;

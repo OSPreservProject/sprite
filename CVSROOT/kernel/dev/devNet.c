@@ -127,10 +127,11 @@ static Sync_Semaphore protoMutex = Sync_SemInitStatic("Dev:protoMutex");
  */
 /*ARGSUSED*/
 ReturnStatus
-DevNet_FsOpen(devicePtr, useFlags, data)
+DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr)
     Fs_Device   *devicePtr;	/* Device info, unit number == protocol */
     int 	useFlags;	/* Flags from the stream being opened */
     Fs_NotifyToken  data;	/* Call-back for input notification */
+    int		*flagsPtr;	/* OUT: Device flags. */
 {
     register ProtocolState *protoPtr;
     register int i;
@@ -252,18 +253,19 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-DevNet_FsReopen(devicePtr, refs, writers, data)
+DevNet_FsReopen(devicePtr, refs, writers, data, flagsPtr)
     Fs_Device   *devicePtr;	/* Device info, unit number == protocol */
     int 	refs;		/* Number of open network streams */
     int		writers;	/* Number that are open for writing */
     Fs_NotifyToken  data;	/* Call-back for input notification */
+    int		*flagsPtr;	/* OUT: Device flags. */
 {
     int useFlags = FS_READ;
 
     if (writers) {
 	useFlags |= FS_WRITE;
     }
-    return( DevNet_FsOpen(devicePtr, useFlags, data) );
+    return( DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr) );
 }
 
 
