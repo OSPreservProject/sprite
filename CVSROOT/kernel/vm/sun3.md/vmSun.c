@@ -3667,9 +3667,6 @@ VmMach_SharedProcStart(procPtr)
     sharedData->allocFirstFree = 0;
     bzero((Address) sharedData->allocVector, VMMACH_SHARED_NUM_BLOCKS*
 	    sizeof(int));
-    procPtr->vmPtr->sharedStart = (Address) VMMACH_SHARED_START_ADDR;
-    procPtr->vmPtr->sharedEnd = (Address) VMMACH_SHARED_START_ADDR +
-	    VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE;
 }
 
 /*
