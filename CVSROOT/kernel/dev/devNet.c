@@ -163,7 +163,7 @@ DevNet_FsOpen(devicePtr, useFlags, data)
      * would be possible to sort the list...
      */
 
-    protoPtr = (ProtocolState *)Mem_Alloc(sizeof(ProtocolState));
+    protoPtr = (ProtocolState *)malloc(sizeof(ProtocolState));
     List_InitElement((List_Links*) protoPtr);
     List_Insert((List_Links *)protoPtr, LIST_ATREAR(&etherProtos));
 
@@ -175,7 +175,7 @@ DevNet_FsOpen(devicePtr, useFlags, data)
      */
 
     for (i=0 ; i< PACKET_QUEUE_LEN ; i++) {
-	protoPtr->queue.packet[i] = (Address) Mem_Alloc(NET_ETHER_MAX_BYTES);
+	protoPtr->queue.packet[i] = (Address) malloc(NET_ETHER_MAX_BYTES);
     }
 
 
