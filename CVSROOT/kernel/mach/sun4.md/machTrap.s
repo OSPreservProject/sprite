@@ -509,6 +509,10 @@ NormalOverflowReturn:
  *	caller's stack frame, so the first (highest in memory) usable word
  *	of a current stack frame is (%fp - 4).
  *
+ *	This code will be called with traps DISABLED, so nothing in this
+ *	code is allowed to cause a trap.  This means no procedure calls are
+ *	allowed.
+ *
  * Results:
  *	Returns to the address in %SAFE_TEMP + 8.
  *
@@ -566,7 +570,61 @@ SaveToInternalBuffer:
 	 * It wasn't resident, so we must save to internal buffer and set
 	 * special handling.
 	 */
-	XXXXX
+
+	/*
+	 * Update the saved mask to show that this window had to be saved
+	 * to the internal buffers.  We do this by or'ing in the value of
+	 * the current window invalid mask, since it's been set to point to
+	 * this window we must save.
+	 */
+	set	_machCurStatePtr, %g3
+	ld	[%g3], %g3
+	add	%g3, MACH_SAVED_MASK_OFFSET, %g3
+	ld	[%g3], %g3
+	mov	%wim, %g4
+	or	%g3, %g4, %g4
+	set	_machCurStatePtr, %g3
+	ld	[%g3], %g3
+	add	%g3, MACH_SAVED_MASK_OFFSET, %g3
+	st	%g4, [%g3]
+
+	/*
+	 * Get and set the special handling flag in the current process state.
+	 */
+	set	_proc_RunningProcesses, %g3
+	ld	[%g3], %g3
+	set	_machSpecialHandlingOffset, %g4
+	ld	[%g4], %g4
+	add	%g3, %g4, %g3
+	set	0x1, %g4
+	st	%g4, [%g3]
+
+	/*
+	 * Save the current user stack pointer for this window.
+	 */
+	set	_machCurStatePtr, %g3
+	ld	[%g3], %g3
+	add	%g3, MACH_SAVED_SPS_OFFSET, %g3
+	mov	%psr, %g4
+	and	%g4, MACH_CWP_BITS, %g4
+	/* Multiply by 4 bytes per int */
+	sll	%g4, 2, %g4
+	add	%g3, %g4, %g3
+	st	%sp, [%g3]
+
+	/*
+	 * Now save to internal buffer.
+	 */
+	set	_machCurStatePtr, %g3
+	ld	[%g3], %g3
+	add	%g3, MACH_SAVED_REGS_OFFSET, %g3
+	/*
+	 * Current window * 4 bytes per reg is still in %g4.  Now we just
+	 * need to multiply it by the number of registers per window.
+	 */
+	sll	%g4, MACH_NUM_REG_SHIFT, %g4
+	add	%g3, %g4, %g3		/* offset to start saving at */
+	MACH_SAVE_WINDOW_TO_BUFFER(%g3)
 	jmp	ReturnFromOverflow
 	nop
 NormalOverflow:
@@ -676,6 +734,7 @@ MachHandleWindowUnderflowTrap:
 MustSaveState:
 	/*
 	 * We need to save state.   We must do this in actual trap window.
+	 * This state-saving enables traps.
 	 */
 	call	_MachTrap
 	nop
@@ -712,9 +771,11 @@ MachReturnToUnderflowWithSavedState:
 	restore		/* back to window to check in, only if branching!! */
 KillTheProc:
 	/* KILL IT - must be in trap window */
-	How???
-	XXX
-
+	set	PROC_TERM_DESTROYED, %o0
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
 CheckNext:
 	add	%fp, MACH_SAVED_WINDOW_SIZE, %o1
 	MACH_CHECK_FOR_FAULT(%o1, %o0)
@@ -749,6 +810,7 @@ NormalUnderflow:
 	nop
 	/*
 	 * We had to save state, so now we have to restore it.
+	 * This state-restoring with disable traps.
 	 */
 	call	_MachReturnFromTrap
 	nop

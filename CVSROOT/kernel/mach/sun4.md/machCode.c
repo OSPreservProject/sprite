@@ -177,6 +177,7 @@ Mach_Init()
     CHECK_SIZE(Mach_RegState, MACH_SAVED_STATE_FRAME);
     CHECK_OFFSETS(trapRegs, MACH_TRAP_REGS_OFFSET);
     CHECK_OFFSETS(switchRegs, MACH_SWITCH_REGS_OFFSET);
+    CHECK_OFFSETS(kernStackStart, MACH_KSP_OFFSET);
     CHECK_TRAP_REG_OFFSETS(curPsr, MACH_LOCALS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(ins, MACH_INS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(globals, MACH_GLOBALS_OFFSET);
@@ -282,7 +283,8 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * to the top of the stack, since the regs are saved there.
      */
     ((Address) statePtr->switchRegs) = (statePtr->kernStackStart) +
-	    MACH_KERN_STACK_SIZE - MACH_FULL_STACK_FRAME - MACH_FULL_TRAP_FRAME;
+	    MACH_KERN_STACK_SIZE - MACH_FULL_STACK_FRAME -
+	    MACH_SAVED_STATE_FRAME;
     (unsigned int) (statePtr->switchRegs) &= ~0x7;/* should be okay already */
     /*
      * Initialize the stack so that it looks like it is in the middle of
@@ -297,7 +299,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * set to the top of this saved window area.
      */
     *((Address *)(((Address)stackPtr) + MACH_FP_OFFSET)) =
-	    ((Address)stackPtr) + MACH_FULL_TRAP_FRAME;
+	    ((Address)stackPtr) + MACH_SAVED_STATE_FRAME;
     /*
      * We are to return to startFunc from Mach_ContextSwitch, but
      * Mach_ContextSwitch will do a return to retPC + 8, so we subtract
@@ -673,7 +675,6 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
     ReturnStatus (*migratedHandler)();	/* Procedure to process kernel call
 					 * for migrated processes. */
 {
-#ifdef NOTDEF
     machMaxSysCall++;
     if (machMaxSysCall != callNum) {
 	panic("out-of-order kernel call initialization");
@@ -684,13 +685,41 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
     if (numArgs > MAXARGS) {
 	panic("too many arguments to kernel call");
     }
-    machArgOffsets[machMaxSysCall] = 8 + numArgs*4;
-    machArgDispatch[machMaxSysCall] = 
-		(16-numArgs)*2 + (Address) ((unsigned int)MachFetchArgs);
+    /*
+     * Offset of beginning of args on stack - offset from frame pointer.
+     * Figure out offset  from fp of params past the sixth.
+     * It copies from last arg to first
+     * arg in that order, so we start offset at bottom of last arg.
+     */
+    /*
+     * TURN THESE INTO PROPER CONSTANTS!
+     */
+    /*
+     * We copy going towards higher addresses, rather than lower, as the sun3
+     * does it.  So our offset is at top of extra parameters to copy, and not
+     * below them (stack-wise speaking, not address-wise speaking).
+     */
+    machArgOffsets[machMaxSysCall] = MACH_SAVED_WINDOW_SIZE +
+	    MACH_ACTUAL_HIDDEN_AND_INPUT_STORAGE;
+	
+    /*
+     * Where to jump to in fetching routine to copy the right amount from
+     * the stack.  The fewer args we have, the farther we jump...  Figure out
+     * how many are in registers, then do rest from stack.  There's instructions
+     * to copy 10 words worth, for now, since 6 words worth of arguments are
+     * in the input registers.  If this number changes, change machTrap.s
+     * and the jump offset below!
+     */
+    if (numArgs <= 6) {
+	machArgDispatch[machMaxSysCall] =  MachFetchArgsEnd;
+    } else {
+	machArgDispatch[machMaxSysCall] = (10 - numArgs - 6)*16 +
+		(Address)((unsigned int)MachFetchArgs);
+    }
     mach_NormalHandlers[machMaxSysCall] = normalHandler;
     mach_MigratedHandlers[machMaxSysCall] = migratedHandler;
-#endif NOTDEF
 }
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1560,4 +1589,177 @@ MachIntrNotHandledYet()
 {
     printf("Received an interrupt I don't handle yet.\n");
     return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachPageFault() -
+ *
+ *	Handle a page fault.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	A page causing a memory access error is made valid.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
+    unsigned	char	busErrorReg;
+    Address		addrErrorReg;
+    unsigned	int	trapPsr;
+    Address		pcValue;
+{
+    Proc_ControlBlock	*procPtr;
+
+    procPtr = Proc_GetActualProc();
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	panic("MachPageFault: Current process is NIL!!  Trap pc is 0x%x\n",
+		(unsigned) pcValue);
+    }
+    /* process kernel page fault */
+    if (trapPsr & MACH_PS_BIT) {		/* kernel mode before trap */
+	if (!(procPtr->genFlags & PROC_USER)) {
+	    /*
+	     * This fault happened inside the kernel and it wasn't on behalf
+	     * of a user process.  This is an error.
+	     */
+	    panic("MachPageFault: page fault in kernel process! pc is 0x%x\n",
+		    (unsigned) pcValue);
+	}
+	/*
+	 * A page fault on a user process while executing in
+	 * the kernel.  This can happen when information is
+	 * being copied back and forth between kernel and user state
+	 * (indicated by particular values of the program counter).
+	 */
+	if ((pcValue >= (Address) Vm_CopyIn) &&
+		(pcValue < (Address) VmMachCopyEnd)) {
+	    copyInProgress = TRUE;
+	} else if ((pcValue >= (Address) MachFetchArgs) &&
+		(pcValue < = MachFetchArgsEnd)) {
+	    copyInProgress = TRUE;
+	} else if (procPtr->vmPtr->numMakeAcc == 0) {
+	    /*
+	     * ERROR: pc faulted in a bad place!
+	     */
+	    panic("MachPageFault: kernel page fault at illegal pc: 0x%x\n",
+		    pcValue);
+	}
+	protError = (busErrorReg & MACH_PROT_ERROR);
+	/*
+	 * Try to fault in the page.
+	 */
+	status = Vm_PageIn(addrErrorReg, protError);
+	if (status != SUCCESS) {
+	    if (copyInProgress) {
+		/* user error */
+		return MACH_USER_ERROR;
+	    } else {
+		/* kernel error */
+		panic(
+	    "MachPageFault: couldn't to page in kernel page at 0x%x, pc 0x%x\n",
+			pcValue, addrErrorReg);
+	    }
+	}
+	return MACH_OK;
+    }
+    /* user page fault */
+    protError = busErrorReg & MACH_PROT_ERROR;
+    if (Vm_PageIn(addrErrorReg, protError) != SUCCESS) {
+	printf(
+    "MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
+		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
+	/* Kill user process */
+#ifdef NOTDEF
+	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
+#endif NOTDEF
+    }
+    return(MACH_OK);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachUserAction() -
+ *
+ *	Check what sort of user-process action is needed.  We already know
+ *	that some sort of action is needed, since the specialHandling flag
+ *	should be checked before calling this routine.  The possible actions
+ *	are to take a context switch, to push saved user windows from the mach
+ *	state structure out to the user stack, or to set things up to handle
+ *	pending signals.  We assume traps are enabled before this routine is
+ *	called.
+ *
+ * Results:
+ *	The return value TRUE indicates we have a pending signal.  FALSE
+ *	indicates that we do not.
+ *
+ * Side effects:
+ *	The mach state structure may change, especially the mask that indicates
+ *	which windows were saved into the internal buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+MachUserAction()
+{
+    Proc_ControlBlock	*procPtr;
+    Mach_State		*machStatePtr;
+    Sig_Stack		sigStack;
+    Sig_Context		sigContext;
+    Address		pc;
+
+    procPtr = Proc_GetCurrentProc();
+    procPtr->specialHandling = 0;
+    /*
+     * Take a context switch if one is pending for this process.
+     * If other stuff, such as flushing the windows to the stack needs to
+     * be done, it will happen when the process is switched back in again.
+     */
+    if (procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING) {
+	Sched_LockAndSwitch();
+    }
+    /*
+     * Should I flush windows to the stack before or after dealing with
+     * a signal?  I'm not sure I understand the choices.  I'll do it first.
+     */
+    machStatePtr = procPtr->machStatePtr;
+    /*
+     * This is a while, since the Vm code may make it necessary to save
+     * further windows that weren't set when we got here.  At least I think
+     * that might happen.  I should test it to see if Vm ever calls that
+     * deeply, but this is safer in case someone changes that code.
+     */
+    while (machStatePtr->savedMask != 0) {
+	int	i;
+
+	for (i = 0; i < MACH_NUM_WINDOWS; i++) {
+	    if ((1 << i) & machStatePtr->savedMask) {
+		/* clear the mask for this window */
+		machStatePtr->savedMask &= ~(1 << i);
+		/*
+		 * Push the window to the stack.  Should I re-verify the stack
+		 * pointer?  I don't think I need to, since it's stored in
+		 * kernel space and I verified it before storing it.
+		 */
+		if (Vm_CopyOut(size, (Address)&(machStatePtr->savedRegs[i]),
+			machStatePtr->savedSps[i]) != SUCCESS
+		    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+		}
+	    }
+	}
+    }
+    /*
+     * Now check for signal stuff.
+     */
+    sigStack.contextPtr = &sigContext;
+    if (Sig_Handle(procPtr, &sigStack, &pc))a {
+	panic("MachUserAction: can't do signal stuff yet!\n");
+    }
+    return FALSE;
 }

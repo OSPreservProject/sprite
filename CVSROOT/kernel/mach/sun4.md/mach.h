@@ -127,7 +127,16 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
 /*
  * The register state of a process: locals, then ins, then globals.
  * The psr, tbr, etc, are saved in locals.  The in registers are the in
- * registers of the window we've trapped into.
+ * registers of the window we've trapped into.  The calleeInputs is the
+ * area that we must save for the C routine we call to save its 6 input
+ * register arguments into if its compiled for debuggin.  The extraParams
+ * area is the place that parameters beyond the sixth go, since only 6 can
+ * be passed via input registers.  We limit this area to the number of extra
+ * arguments in a system call, since only sys-call entries to the kernel
+ * have this many args!  How do we keep it this way?  This is MESSY, since
+ * actually one of the calleeInputs is for a "hidden parameter" for an agregate
+ * return value, and one of them is really the beginning of the extra
+ * params, but I'll fix this up later.
  */
 typedef struct Mach_RegState {
     int		curPsr;				/* locals */
@@ -139,6 +148,8 @@ typedef struct Mach_RegState {
     int		volTemp1;
     int		volTemp2;
     int		ins[MACH_NUM_INS];		/* ins */
+    int		calleeInputs[MACH_NUM_INS];	/* callee saves inputs here */
+    int		extraParams[MACH_NUM_EXTRA_ARGS];	/* args beyond 6 */
     int		globals[MACH_NUM_GLOBALS];	/* globals */
 } Mach_RegState;
 
@@ -151,7 +162,7 @@ typedef	Mach_RegState	Mach_DebugState;
 typedef struct Mach_State {
     Mach_RegState	*trapRegs;		/* User state at trap time. */
     Mach_RegState	*switchRegs;		/* Kernel state, switch time */
-    int			savedRegs[MACH_NUM_WINDOW_REGS][MACH_NUM_WINDOWS];
+    int			savedRegs[MACH_NUM_WINDOWS][MACH_NUM_WINDOW_REGS];
 						/* Where we save all the
 						 * window's registers to if the
 						 * user stack isn't resident.
@@ -166,6 +177,13 @@ typedef struct Mach_State {
 						 * be restored to the stack from
 						 * the above buffer since the
 						 * stack wasn't resident. */
+    int			savedSps[MACH_NUM_WINDOWS];	
+						/* sp for each saved window
+						 * stored here to make it easy
+						 * to copy the stuff back out
+						 * to the user stack in the
+						 * correct place.
+						 */
     Address		kernStackStart;		/* top of kernel stack
 						 * for this process. */
 } Mach_State;
