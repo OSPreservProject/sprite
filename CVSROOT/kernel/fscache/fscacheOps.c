@@ -627,7 +627,8 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 #endif /* lint */
 	    if (status != SUCCESS) {
 		fs_Stats.blockCache.domainReadFails++;
-		Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+		Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
+				    FSCACHE_DELETE_BLOCK);
 		break;
 	    }
         }
@@ -640,7 +641,7 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		          blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
 			  buffer) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
-		Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+		Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
 			FSCACHE_CLEAR_READ_AHEAD);
 		break;
 	    }
@@ -648,7 +649,8 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    bcopy(blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
 		      buffer, toRead);
 	}
-	Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
+			    FSCACHE_CLEAR_READ_AHEAD);
     }
     *lenPtr -= size;
     Fs_StatAdd(*lenPtr, fs_Stats.blockCache.bytesRead,
@@ -705,7 +707,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     int			lastFileBlock;	/* Last block in the file */
     int			blockAddr;	/* For allocating blocks */
     Boolean		newBlock;	/* A brand new block was allocated. */
-    int			modTime;	/* File modify time. */
+    time_t		modTime;	/* File modify time. */
     Boolean		dontBlock;	/* TRUE if lower levels shouldn't block
 					 * because we can block up higher */
 
@@ -820,6 +822,10 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 
 	if (blockAddr == FSDM_NIL_INDEX) {
 	    if (status == SUCCESS) {
+		if ((cacheInfoPtr->flags & FSCACHE_ALLOC_FAILED) == 0) {
+		    printf("%s: allocator returned SUCCESS but no block.\n",
+			   "Fscache_Write"); /* DEBUG */
+		}
 		status = FS_NO_DISK_SPACE;
 	    }
 	    blockPtr = (Fscache_Block *)NIL;
@@ -881,7 +887,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 #endif /* lint */
 		    if (status != SUCCESS) {
 			fs_Stats.blockCache.domainReadFails++;
-			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+			Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
 			    FSCACHE_DELETE_BLOCK);
 			break;
 		    }
@@ -906,7 +912,8 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    if (Vm_CopyIn(toWrite, buffer, blockPtr->blockAddr + 
 				(offset & FS_BLOCK_OFFSET_MASK)) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
-		Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+		Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
+				    FSCACHE_DELETE_BLOCK);
 		break;
 	    }
 	} else {
@@ -935,7 +942,8 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    status = Fsrmt_Write(&dummyStream, &io,
 			 (Sync_RemoteWaiter *)NIL, &reply);
 	    if (status != SUCCESS) {
-		Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+		Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
+				    FSCACHE_DELETE_BLOCK);
 		break;
 	    }
 	    modTime = 0;
@@ -955,7 +963,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	if (blockSize > FS_BLOCK_SIZE) {
 	    blockSize = FS_BLOCK_SIZE;
 	}
-	Fscache_UnlockBlock(blockPtr, (unsigned) modTime, blockAddr,
+	Fscache_UnlockBlock(blockPtr, modTime, blockAddr,
 		blockSize, FSCACHE_CLEAR_READ_AHEAD |
 		((flags&FS_WRITE_TO_DISK) ?
 		    FSCACHE_WRITE_TO_DISK : 0));
@@ -1101,7 +1109,8 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 	    /*
 	     * We hit a disk error or are really past the end-of-file.
 	     */
-	    Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+	    Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0,
+				FSCACHE_DELETE_BLOCK);
 	    *blockPtrPtr = (Fscache_Block *)NIL;
 	}
     } else {
