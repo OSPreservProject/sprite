@@ -173,26 +173,17 @@ argString:
 	nop
 
 /*
- *	callTrap:  jump to system trap table.
+ *	MachTrap:  jump to system trap table.
  *	%l3 is trap type and then place to jump to.
  *	%l4 is address of my trap table to reset %tbr with.
  *	Remember to add trap type back into %tbr after resetting.
  *	Note that this code cannot use l1 or l2 since that's where pc and
  *	npc are written in a trap.
  */
-callTrap:
+MachTrap:
 	/* %g6 is their real tbr */
 	rd	%tbr, %l3
 	and	%l3, MACH_TRAP_TYPE_MASK, %l3		/* get trap type */
-
-	set	reserveSpace, %l4			/* l4 to be trap base */
-	set	(1 + ~MACH_TRAP_ADDR_MASK), %l5		/* size of table */
-	add	%l4, %l5, %l4				/* add size of table */
-	and	%l4, MACH_TRAP_ADDR_MASK, %l4		/* align to 4k bound. */
-
-	add	%l3, %l4, %l4				/* add trap type */
-	mov	%l4, %tbr				/* switch in mine */
-
 	add	%l3, %g6, %l3			/* add t.t. to real tbr */
 	jmp	%l3			/* jmp (non-pc-rel) to real tbr */
 	nop
@@ -208,8 +199,8 @@ callTrap:
  */
 .align	8
 machProtoVectorTable:
-	sethi	%hi(callTrap), %l3		/* "set callTrap, %l3" */
-	or	%l3, %lo(callTrap), %l3
+	sethi	%hi(MachTrap), %l3		/* "set MachTrap, %l3" */
+	or	%l3, %lo(MachTrap), %l3
 	jmp	%l3			/* must use non-pc-relative jump here */
 	nop
 
