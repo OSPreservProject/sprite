@@ -241,6 +241,7 @@ debugSWStackBase:		.long MACH_DEBUG_STACK_BOTTOM
 debugSpillStackEnd:		.long (MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
 ccStatePtr:			.long _machCCState
 feStatusReg:			.long 0
+interruptPC:			.long 0
 
 /*
  * The instruction to execute on return from a signal handler.  Is here
@@ -942,6 +943,30 @@ Interrupt:
 	READ_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
 	and		OUTPUT_REG1, OUTPUT_REG1, SAFE_TEMP3
 	WRITE_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
+
+#ifdef
+	/*
+	 * Check to see if the interrupt happened on a test_and_set 
+	 * instruction.  If so panic because this isn't supposed to
+	 * happen.
+	 */
+	ld_32		VOL_TEMP1, CUR_PC_REG, r0
+	nop
+	extract		VOL_TEMP1, VOL_TEMP1, $3
+	srl		VOL_TEMP1, VOL_TEMP1, $1
+	and		VOL_TEMP1, VOL_TEMP1, $0xf0
+	add_nt		VOL_TEMP2, r0, $0x30
+	cmp_br_delayed	ge, VOL_TEMP1, VOL_TEMP2, interrupt_OK
+	nop
+	st_32		CUR_PC_REG, r0, $interruptPC
+	or		KPSW_REG, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		KPSW_REG, $0
+	cmp_trap	always, r0, r0, $MACH_CALL_DEBUGGER_TRAP
+
+interrupt_OK:
+
+#endif
+
 	/*
 	 * The second argument is the kpsw.
 	 */
@@ -1125,15 +1150,23 @@ vmFault_IsData:
 	/*
 	 * Get the data address by calling ParseInstruction.  We pass the
 	 * address to return to in VOL_TEMP1 and the instruction where we
-	 * faulted at in VOL_TEMP2.
+	 * faulted at in VOL_TEMP2.  Disable interrupts because this routine
+	 * screws around with windows.
 	 */
 	add_nt		VOL_TEMP2, SAFE_TEMP2, $0
 	rd_insert	SAFE_TEMP2
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP3, SAFE_TEMP3, $~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		VOL_TEMP3, $0
+
 	rd_special	VOL_TEMP1, pc
 	add_nt		VOL_TEMP1, VOL_TEMP1, $16
 	jump		ParseInstruction
 	Nop
+
 	wr_insert	SAFE_TEMP2
+	wr_kpsw		SAFE_TEMP3, $0
+
 	/*
 	 * We now have the data address in VOL_TEMP2.  Call
 	 * MachVMDataFault(faultType, PC, dataAddr, kpsw)
@@ -1985,11 +2018,6 @@ returnTrap_CallSigHandler:
  *	window stack.  VOL_TEMP1 contains where to save the state to and 
  *	VOL_TEMP2 contains the return address.  
  *
- *	NOTE: We are called with all traps disabled.  This is important
- *	      because since we are going back to previous windows we can't
- *	      afford to take interrupts because otherwise we would
- *	      trash some windows.
- *
  *----------------------------------------------------------------------------
  */
 SaveState:
@@ -2145,6 +2173,15 @@ saveState_Done:
  */
 RestoreState:
 	/*
+	 * Disable interrupts because we will be screwing around with the
+	 * swp and cwp here.  The kpsw will be restored below when we
+	 * restore the state.
+	 */
+	rd_kpsw		r8
+	and		VOL_TEMP3, r8, $~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		VOL_TEMP3, $0
+	
+	/*
 	 * Restore the cwp and swp.  This is a little tricky because
 	 * the act of restoring them will switch windows so we can't rely
 	 * on anything in our current window.
@@ -2155,6 +2192,7 @@ RestoreState:
 	ld_32		r3, r1, $MACH_REG_STATE_SWP_OFFSET
 	wr_special	cwp, r2, $0
 	wr_special	swp, r3, $0
+
 	/*
 	 * Now we are back in the window that we want to restore since the
 	 * saved cwp points to the window that we saved in the reg state 
@@ -2199,6 +2237,10 @@ RestoreState:
 	ld_32		NEXT_PC_REG, VOL_TEMP1, $MACH_REG_STATE_NEXT_PC_OFFSET
 	wr_special	upsw, r1, $0
 	wr_insert	r2
+	/*
+	 * Restore the kpsw to that which we came in with.
+	 */
+	wr_kpsw		r8, $0
 	/*
 	 * Restore the globals.
 	 */
