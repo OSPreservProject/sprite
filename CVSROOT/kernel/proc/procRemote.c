@@ -182,6 +182,10 @@ ProcMigAcceptMigration(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	outBufPtr->ptr = (Address) pidPtr;
 	outBufPtr->size = sizeof(Proc_PID);
 
+	/*
+	 * Remember the dependency on the other host.
+	 */
+	Proc_AddMigDependency(procPtr->processID, clientID);
     } else {
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    panic("ProcMigAcceptMigration: given null control block for existing process\n");

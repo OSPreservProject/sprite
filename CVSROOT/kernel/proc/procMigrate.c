@@ -1289,10 +1289,6 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
 	 */
 	List_Init((List_Links *) procPtr->childList);
 
-	/*
-	 * Remember the dependency on the other host.
-	 */
-	Proc_AddMigDependency(procPtr->processID, procPtr->peerHostID);
     } else {
 	/*
 	 * Forget the dependency on the other host; we're running
