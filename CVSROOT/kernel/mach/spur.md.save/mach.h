@@ -192,5 +192,13 @@ extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
 
+/*
+ * mach_CycleTime - The cycle time of the machine (and hence the T{0,1,2}
+ * counters in the Cache Controller) in cycles per second.  This number
+ * is intended for use by the devTimer module.
+ */
+
+extern 	double	mach_CycleTime;
+
 
 #endif _MACH
