@@ -327,7 +327,6 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     register	char			**argPtr;
     register	int			argNumber;
     register	char			**envPtr;
-    register	List_Links		*itemPtr;
     ArgListElement			*envListPtr;
     int					envNumber;
     int					origNumArgs;
