@@ -126,7 +126,8 @@
 	.globl _machDebugState
 	.globl _MachInterrupt
 	.globl _MachUserError
-	.globl _MachVMFault 
+	.globl _MachVMPCFault 
+	.globl _MachVMDataFault 
 	.globl _MachSigReturn
 	.globl _MachGetWinMem
 	.globl _MachUserAction
@@ -611,8 +612,8 @@ winOvFlow_SaveWindow:
 	 *	swp > max_swp - 2 * MACH_SAVED_REG_SET_SIZE
 	 */
 	cmp_br_delayed	eq, SAFE_TEMP1, r0, winOvFlow_Return	/* No need to */
-	Nop							/*  check from */
-								/*  kernel mode */
+	Nop							/* check from */
+								/* kernel mode*/
 	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
 	Nop
 	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
@@ -946,14 +947,14 @@ Interrupt:
 	 */
 	add_nt		OUTPUT_REG2, KPSW_REG, r0
 	/*
-	 * Save the insert register in a safe temporary, disable all but
-	 * non-maskable interrupts and then enable all traps.
+	 * Save the insert register in a safe temporary and then
+	 * disable all but non-maskable interrupts.  Don't enable all traps
+	 * until after we have verified that the user's swp isn't bogus.
 	 */
 	rd_insert	SAFE_TEMP1
 	ld_32		SAFE_TEMP2, r0, $_machNonmaskableIntrMask
 	nop
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP2)
-	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	/*
 	 * See if took the interrupt from user mode.
 	 */
@@ -970,6 +971,7 @@ Interrupt:
 	 * process.
 	 */
 	SWITCH_TO_KERNEL_STACKS()
+	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	call		_MachInterrupt
 	Nop
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
@@ -981,6 +983,7 @@ Interrupt:
 interrupt_GoodSWP:
 	SAVE_USER_STATE()
 	SWITCH_TO_KERNEL_STACKS()
+	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	call		_MachInterrupt
 	Nop
 	/*
@@ -996,6 +999,7 @@ interrupt_GoodSWP:
 	Nop
 
 interrupt_KernMode:
+	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	call 		_MachInterrupt
 	Nop
 	/*
@@ -1024,7 +1028,7 @@ VMFault:
 	 * Check kernel or user mode.
 	 */
 	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
-	cmp_br_delayed	eq, VOL_TEMP1, $0, vmFault_GetDataAddr
+	cmp_br_delayed	eq, VOL_TEMP1, $0, vmFault_PC
 	Nop
 	/*
 	 * Make sure that the saved window stack is OK.
@@ -1037,13 +1041,40 @@ vmFault_GoodSWP:
 	SAVE_USER_STATE()
 	SWITCH_TO_KERNEL_STACKS()
 
-vmFault_GetDataAddr:
+vmFault_PC:
 	/*
 	 * Enable all traps.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	cmp_br_delayed	eq, SAFE_TEMP1, $MACH_VM_FAULT_DIRTY_BIT, vmFault_GetDataAddr
+	nop
+	/*
+	 * Handle the fault on the PC first by calling
+	 * MachVMDataFault(faultType, PC, kpsw).
+	 */
+	add_nt		OUTPUT_REG1, SAFE_TEMP1, $0
+	add_nt		OUTPUT_REG2, CUR_PC_REG, $0
+	add_nt		OUTPUT_REG3, KPSW_REG, $0
+	rd_insert	VOL_TEMP1
+	call		_MachVMPCFault
+	nop
+	wr_insert	VOL_TEMP1
+	cmp_br_delayed	eq, RETURN_VAL_REG, $MACH_NORM_RETURN, vmFault_GetDataAddr
+	nop
+	/*
+	 * We got some sort of error.  If it was a user error then make sure
+	 * that we do a normal return from trap so that the signal will
+	 * be taken when it returns.  Otherwise leave the error code
+	 * alone so that the kernel debugger will be called.
+	 */
+	cmp_br_delayed	eq, RETURN_VAL_REG, $MACH_KERN_ACCESS_VIOL, 1f
+	nop
+	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
+1:	jump		ReturnTrap
+	nop
 
+vmFault_GetDataAddr:
 	/*
 	 * See if is a load, store or test-and-set instruction.  These types
 	 * of instructions have opcodes less than 0x30.  If we find one
@@ -1056,8 +1087,11 @@ vmFault_GetDataAddr:
 							#	 <06:00>
 	and		VOL_TEMP1, VOL_TEMP1, $0xf0	/* Get upper 4 bits. */
 	add_nt		VOL_TEMP2, r0, $0x30
-	cmp_br_delayed	ge, VOL_TEMP1, VOL_TEMP2, vmFault_NoData
+	cmp_br_delayed	lt, VOL_TEMP1, VOL_TEMP2, vmFault_IsData
 	Nop
+	jump		ReturnTrap
+	nop
+vmFault_IsData:
 	/*
 	 * Get the data address by calling ParseInstruction.  We pass the
 	 * address to return to in VOL_TEMP1 and the instruction where we
@@ -1071,26 +1105,15 @@ vmFault_GetDataAddr:
 	Nop
 	wr_insert	SAFE_TEMP2
 	/*
-	 * We now have the data address in VOL_TEMP2
+	 * We now have the data address in VOL_TEMP2.  Call
+	 * MachVMDataFault(faultType, PC, dataAddr, kpsw)
 	 */
-	add_nt		OUTPUT_REG3, r0, $1	/* 3rd arg is TRUE to indicate */
-						/*   that there is a data addr */
-	add_nt		OUTPUT_REG4, VOL_TEMP2, $0	/* 4th arg is the data */
-							/*    addr. */
-	cmp_br_delayed	always, r0, r0, vmFault_CallHandler
-	Nop
-vmFault_NoData:
-	add_nt		OUTPUT_REG3, r0, $0		/* 3rd arg is FALSE */
-							/*   (no data addr) */
-vmFault_CallHandler:
-	add_nt		OUTPUT_REG1, SAFE_TEMP1, $0	/* 1st arg is fault type. */
-	add_nt		OUTPUT_REG2, CUR_PC_REG, $0	/* 2nd arg is the  */
-							/*   faulting PC. */
-	add_nt		OUTPUT_REG5, KPSW_REG, $0	/* 5th arg to  */
-							/*   MachVMFault is the */
-							/*   kpsw */
+	add_nt		OUTPUT_REG1, SAFE_TEMP1, $0
+	add_nt		OUTPUT_REG2, CUR_PC_REG, $0
+	add_nt		OUTPUT_REG3, VOL_TEMP2, $0
+	add_nt		OUTPUT_REG4, KPSW_REG, $0
 	rd_insert	VOL_TEMP1
-	call		_MachVMFault
+	call		_MachVMDataFault
 	Nop
 	wr_insert	VOL_TEMP1
 
@@ -1534,8 +1557,8 @@ sysCallTrap_CallRoutine:
 	Nop
 	/*
 	 * Call the routine.  Note that SPUR doesn't have a call_reg 
-	 * instruction.  This forces to advance the window by a call
-	 * and then do a jump_reg.  Unfortunately this means that we can't
+	 * instruction.  This forces us to advance the window by a call
+	 * and then do a jump_reg.  Unfortunately this means that we can't use
 	 * any temporaries in the current window so we have to use a global.
 	 * The global that we use is r9.  However, since we restore user
 	 * state before we return to user mode r9 will get restored.
@@ -1629,10 +1652,11 @@ SigReturnTrap:
 	 * The saved KPSW tells us where to continue when we return from the
 	 * trap.  Extract out this info and disable traps.  Note that we don't
 	 * just use the KPSW directly because the user could have screwed 
-	 * it up.
+	 * it up.  The only part that we are interested in is whether to 
+	 * return to the current PC or the next PC.
 	 */
-	LD_PC_RELATIVE(VOL_TEMP1, sigReturnTrap_Const1)
-	and		VOL_TEMP1, KPSW_REG, VOL_TEMP1
+	LD_PC_RELATIVE(SAFE_TEMP1, sigReturnTrap_Const1)
+	and		VOL_TEMP1, KPSW_REG, SAFE_TEMP1
 	rd_kpsw		VOL_TEMP2
 	and		VOL_TEMP2, VOL_TEMP2, $~MACH_KPSW_ALL_TRAPS_ENA
 	or		KPSW_REG, VOL_TEMP1, VOL_TEMP2
@@ -1643,17 +1667,11 @@ SigReturnTrap:
 	SAVE_USER_STATE()
 	SWITCH_TO_KERNEL_STACKS()
 	/*
-	 * Reenable traps.
+	 * Reenable traps and call the routine to handle returns from 
+	 * signals.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
-	/*
-	 * The old hold mask was stored on the spill stack.  Pass it
-	 * as an arg to the signal return routine and restore the spill
-	 * stack pointer.
-	 */
-	ld_32		OUTPUT_REG1, SPILL_SP, $0
-	add_nt		SPILL_SP, SPILL_SP, $8
 	rd_insert	VOL_TEMP1
 	call		_MachSigReturn
 	Nop
@@ -1897,14 +1915,6 @@ returnTrap_CallSigHandler:
 	 * it after we shift the window.
 	 */
 	ld_32		OUTPUT_REG5, r0, $_machCurStatePtr
-	/* 
-	 * Make room on the spill stack for the signal context stuff 
-	 * (it contains 8 bytes, 4 for the hold mask and 4 for filler) and
-	 * save the old hold mask on the spill stack.
-	 */
-	ld_32		VOL_TEMP1, OUTPUT_REG5, $MACH_OLD_HOLD_MASK_OFFSET
-	sub		SPILL_SP, SPILL_SP, $8
-	st_32		VOL_TEMP1, SPILL_SP, $0
 	/*
 	 * Pass the correct args to the signal handler:
 	 *

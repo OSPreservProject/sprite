@@ -369,10 +369,10 @@
  *	that happened in kernel mode.
  */
 #define	USER_SWP_ERROR() \
+	SWITCH_TO_KERNEL_STACKS(); \
 	rd_kpsw		VOL_TEMP1; \
 	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA; \
 	wr_kpsw		VOL_TEMP1, $0; \
-	SWITCH_TO_KERNEL_STACKS(); \
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP; \
 	call		_MachUserError; \
 	Nop

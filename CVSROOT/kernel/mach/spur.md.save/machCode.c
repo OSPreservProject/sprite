@@ -330,11 +330,15 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
 	bcopy((Address)&parStatePtr->userState.trapRegState,
 	      (Address)&statePtr->userState.trapRegState,
 	      sizeof(statePtr->userState.trapRegState));
+	statePtr->userState.minSWP = 0;
+	statePtr->userState.maxSWP = 0;
     } else {
 	/*
 	 * Kernel processes start executing at startPC.
 	 */
 	statePtr->switchRegState.regs[MACH_INPUT_REG1][0] = (int)startPC;
+	statePtr->userState.minSWP = 0;
+	statePtr->userState.maxSWP = 0;
     }
     return(SUCCESS);
 }
@@ -360,7 +364,7 @@ Mach_SetReturnVal(procPtr, retVal)
     Proc_ControlBlock	*procPtr;	/* Process to set return value for. */
     int			retVal;		/* Value for process to return. */
 {
-    procPtr->machStatePtr->userState.trapRegState.regs[MACH_RETURN_VAL_REG][1] = retVal;
+    procPtr->machStatePtr->userState.trapRegState.regs[MACH_RETURN_VAL_REG][0] = retVal;
 }
 
 
@@ -436,11 +440,22 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     /*
      * Free up the old saved window stack.
      */
-    Vm_UnpinUserMem(statePtr->userState.maxSWP - statePtr->userState.minSWP,
-		 statePtr->userState.minSWP);
+    if (statePtr->userState.maxSWP != 0) {
+	Vm_UnpinUserMem(statePtr->userState.maxSWP - statePtr->userState.minSWP,
+		        statePtr->userState.minSWP);
+    }
+    /*
+     * Allocate a new saved window stack.
+     */
+    statePtr->userState.minSWP = (Address)MACH_SAVED_WINDOW_STACK_BASE;
+    statePtr->userState.maxSWP = (Address)(MACH_SAVED_WINDOW_STACK_BASE + 
+					   VMMACH_PAGE_SIZE);
+    Vm_PinUserMem(VM_READWRITE_ACCESS,
+	       statePtr->userState.maxSWP - statePtr->userState.minSWP, 
+	       statePtr->userState.minSWP);
 
     regStatePtr = &statePtr->userState.trapRegState;
-    regStatePtr->regs[MACH_SPILL_SP][1] = (int)userStackPtr;
+    regStatePtr->regs[MACH_SPILL_SP][0] = (int)userStackPtr;
     regStatePtr->curPC = entryPoint;
     regStatePtr->nextPC = (Address)0;
     regStatePtr->kpsw = (MACH_KPSW_PREFETCH_ENA | 
@@ -593,7 +608,7 @@ Mach_GetStackPointer()
     Proc_ControlBlock	*procPtr;
 
     procPtr = Proc_GetCurrentProc();
-    return((Address)procPtr->machStatePtr->userState.trapRegState.regs[MACH_SPILL_SP][1]);
+    return((Address)procPtr->machStatePtr->userState.trapRegState.regs[MACH_SPILL_SP][0]);
 }
 
 /*
@@ -809,6 +824,9 @@ MachInterrupt(intrStatusReg, kpsw)
     if (intrStatusReg == 0) {
 	return;
     }	
+    if (mach_AtInterruptLevel || mach_NumDisableInterrupts[0] > 0) {
+	Sys_Panic(SYS_FATAL, "Non-maskable interrupt while interrupts disabled\n");
+    }
     mach_AtInterruptLevel = TRUE;
     intrType = 0;
     intrMask = 1;
@@ -890,12 +908,18 @@ MachUserError(errorType)
 /*
  * ----------------------------------------------------------------------------
  *
- * MachVMFault --
+ * MachVMDataFault --
  *
- *      Handle a Virtual memory fault.
+ *      Handle a virtual memory fault on the data of an instruction.
  *
  * Results:
- *      None.
+ *      MACH_NORM_RETURN:	Were able to handle the fault or was a 
+ *				user process
+ *	MACH_FAILED_ARG_FETCH:	Couldn't handle the fault but it occured during
+ *				the argument fetch for a system call.
+ *	MACH_FAILED_COPY:	Couldn't handle the fault but it occured during
+ *				a copy-in or copy-out operation.
+ *	MACH_KERN_ACCESS_VIOL:	Was a kernel access violation.
  *
  * Side effects:
  *      None.
@@ -903,94 +927,35 @@ MachUserError(errorType)
  * ----------------------------------------------------------------------------
  */
 int
-MachVMFault(faultType, PC, isDestAddr, destAddr, kpsw)
+MachVMDataFault(faultType, PC, destAddr, kpsw)
     int		faultType;	/* The type of the VM fault */
-    Address	PC;		/* The address of the instruction that caused
-				 * the fault. */
-    Boolean	isDestAddr;	/* TRUE if faulting instruction was a load or
-				 * a store and thus destAddr has a value. */
+    Address	PC;		/* PC of the fault. */
     Address	destAddr;	/* Value of dest/src of store/load instruction*/
     int		kpsw;		/* The KPSW at the time of the fault. */
 {
     Proc_ControlBlock	*procPtr;
 
-#ifdef spurboot
-    return(MACH_KERN_ACCESS_VIOL);
-#else
     procPtr = Proc_GetCurrentProc();
 
-    if (faultType & MACH_VM_FAULT_REF_BIT) {
-	VmMach_SetRefBit(PC);
-	if (isDestAddr) {
-	    VmMach_SetRefBit(destAddr);
-	}
-    }
-    if (faultType & MACH_VM_FAULT_DIRTY_BIT) {
-	if (!isDestAddr) {
-	    Sys_Panic(SYS_FATAL, "MachVMFault: PC dirty??\n");
-	} else {
-	    VmMach_SetModBit(destAddr);
-	}
-    }
-
-    if (faultType & (MACH_VM_FAULT_PROTECTION | MACH_VM_FAULT_PAGE_FAULT)) {
-	Boolean		userFault;
-	extern unsigned	etext;
-
+    if (procPtr->genFlags & PROC_KERNEL) {
 	return(MACH_KERN_ACCESS_VIOL);
+    }
 
-	userFault = kpsw & MACH_KPSW_PREV_MODE;
+    if (faultType & MACH_VM_FAULT_REF_BIT) {
+	VmMach_SetRefBit(destAddr);
+    } else if (faultType & MACH_VM_FAULT_DIRTY_BIT) {
+	VmMach_SetModBit(destAddr);
+    } else if (faultType & (MACH_VM_FAULT_PROTECTION | 
+			    MACH_VM_FAULT_PAGE_FAULT)) {
 	/*
 	 * We have to handle a protection fault or a page fault.  First try
 	 * the PC.
 	 */
-	if (PC < (Address)VMMACH_SEG_SIZE) {
-	    /*
-	     * The PC falls into the system segment.  If it is above
-	     * the end of the text or if it is inside the text part but 
-	     * it caused a fault (i.e. there is no data address) then this
-	     * is an error.
-	     */
-	    if (PC >= (Address)&etext || !isDestAddr) {
-		if (userFault) {
-		    (void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
-                                   procPtr->processID, FALSE);
-		    return(MACH_NORM_RETURN);
-		} else {
-		    return(MACH_KERN_ACCESS_VIOL);
-		}
-	    }
-	} else {
-	    /*
-	     * The PC falls into one of the user segments.  If this is
-	     * a kernel process then this is in an error.
-	     */
-	    if (!userFault) {
-		return(MACH_KERN_ACCESS_VIOL);
-	    }
-	    /* Take a page fault on this address.  Since all of the user
-	     * segments are readable this can't possibly be a protection
-	     * fault if the page is valid.
-	     */
-	    if (Vm_PageIn(PC, FALSE) != SUCCESS) {
-		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
-			       procPtr->processID, FALSE);
-		return(MACH_NORM_RETURN);
-	    }
-	}
-	/*
-	 * Now we have handled the program counter's page so handle the 
-	 * data address if there is one.
-	 */
-	if (!isDestAddr) {
-	    return(MACH_NORM_RETURN);
-	}
 	if (Vm_PageIn(destAddr, faultType & MACH_VM_FAULT_PROTECTION) !=
 								SUCCESS) {
-	    if (userFault) {
+	    if (kpsw & MACH_KPSW_PREV_MODE) {
 		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
 			       procPtr->processID, FALSE);
-		return(MACH_NORM_RETURN);
 	    } else {
 		if ((unsigned)PC >= (unsigned)MachFetchArgStart &&
 	            (unsigned)PC < (unsigned)MachFetchArgEnd) {
@@ -1004,7 +969,61 @@ MachVMFault(faultType, PC, isDestAddr, destAddr, kpsw)
 	    }
 	}
     }
-#endif
+    return(MACH_NORM_RETURN);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * MachVMPCFault --
+ *
+ *      Handle a Virtual memory fault on the program counter.
+ *
+ * Results:
+ *	MACH_NORM_RETURN:	Handled the fault.
+ *	MACH_KERN_ACCESS_VIOL:	Tried to take the fault from kernel mode.
+ *	MACH_USER_ACCESS_VIOL:	Couldn't handle the fault and came from user
+ *				mode.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+MachVMPCFault(faultType, PC, kpsw)
+    int		faultType;	/* The type of the VM fault */
+    Address	PC;		/* The address of the instruction that caused
+				 * the fault. */
+    int		kpsw;		/* The KPSW at the time of the fault. */
+{
+    Proc_ControlBlock	*procPtr;
+
+    if ((kpsw & MACH_KPSW_PREV_MODE) == 0) {
+	extern int	etext;
+	if (PC > (Address)&etext || PC < (Address)MACH_CODE_START) {
+	    return(MACH_KERN_ACCESS_VIOL);
+	} else {
+	    return(MACH_NORM_RETURN);
+	}
+    }
+    if (faultType & MACH_VM_FAULT_REF_BIT) {
+	VmMach_SetRefBit(PC);
+	return(MACH_NORM_RETURN);
+    } else if (faultType & MACH_VM_FAULT_PAGE_FAULT) {
+	/* 
+	 * Take a page fault on this address.
+	 */
+	if (Vm_PageIn(PC, FALSE) != SUCCESS) {
+	    procPtr = Proc_GetCurrentProc();
+	    (void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
+			   procPtr->processID, FALSE);
+	    return(MACH_USER_ACCESS_VIOL);
+	} else {
+	    return(MACH_NORM_RETURN);
+	}
+    }
 }
 
 
@@ -1046,7 +1065,16 @@ MachUserAction()
 	statePtr->userState.newCurPC = pc;
 	statePtr->userState.sigNum = sigStack.sigNum;
 	statePtr->userState.sigCode = sigStack.sigCode;
-	statePtr->userState.oldHoldMask = sigContext.oldHoldMask;
+	/*
+	 * Store the signal context onto the user's spill stack.
+	 */
+	statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0] -=
+							sizeof(sigContext);
+	if (Vm_CopyOut(sizeof(sigContext), (Address)&sigContext,
+	   (Address)statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0]) !=
+								SUCCESS) {
+	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+	}
 	return(TRUE);
     } else {
 	return(FALSE);
@@ -1144,14 +1172,23 @@ MachGetWinMem()
  * ----------------------------------------------------------------------------
  */
 int
-MachSigReturn(oldHoldMask)
-    unsigned	int	oldHoldMask;
+MachSigReturn()
 {
-    Sig_Stack	sigStack;
-    Sig_Context	sigContext;
+    register Mach_State	*statePtr;
+    Sig_Stack		sigStack;
+    Sig_Context		sigContext;
+    Proc_ControlBlock	*procPtr;
 
+    procPtr = Proc_GetCurrentProc();
+    statePtr = procPtr->machStatePtr;
+    if (Vm_CopyIn(sizeof(sigContext), 
+	    (Address)statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0],
+	    (Address)&sigContext) != SUCCESS) {
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+    }
+    statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0] +=
+							sizeof(sigContext);
     sigStack.contextPtr = &sigContext;
-    sigContext.oldHoldMask = oldHoldMask;
     Sig_Return(Proc_GetCurrentProc(), &sigStack);
     return(MACH_NORM_RETURN);
 }
