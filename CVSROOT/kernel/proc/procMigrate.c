@@ -1659,9 +1659,26 @@ Proc_DestroyMigratedProc(pidData)
 	return;
     }
 
+    if (procPtr->state == PROC_NEW && (procPtr->genFlags & PROC_FOREIGN)) {
+	/*
+	 * The process was only partially migrated.
+	 */
+	if (procPtr->remoteExecBuffer != (Address) NIL) {
+	    free(procPtr->remoteExecBuffer);
+	}
+	procPtr->state = PROC_DEAD;
+	Proc_CallFunc(Proc_Reaper, (ClientData) procPtr, 0);
+	Proc_Unlock(procPtr);
+	/*
+	 * Make sure the dependency on this process goes away.
+	 */
+	Proc_RemoveMigDependency(pid);
+	return;
+    }	
+	
+	
     if (procPtr->state == PROC_MIGRATED ||
-	(procPtr->genFlags & PROC_MIGRATING) ||
-	procPtr->state == PROC_NEW) {
+	(procPtr->genFlags & PROC_MIGRATING)) {
 	/*
 	 * Perform an exit on behalf of the process -- it's not
 	 * in a state where we can signal it.  Unlock the
