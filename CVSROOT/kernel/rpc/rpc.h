@@ -121,7 +121,7 @@ extern void Rpc_Server _ARGS_((void));
 extern void Rpc_Dispatch _ARGS_((Net_Interface *interPtr, int protocol, 
     Address headerPtr, Address rpcHdrAddr, int packetLength));
 extern void Rpc_Timeout _ARGS_((Timer_Ticks time, ClientData data));
-extern void Rpc_PrintTrace _ARGS_((int numRecords));
+extern void Rpc_PrintTrace _ARGS_((ClientData numRecords));
 extern ReturnStatus Rpc_DumpTrace _ARGS_((int firstRec, int lastRec, char *fileName));
 extern void Rpc_StampTest _ARGS_((void));
 extern void Rpc_PrintCallCount _ARGS_((void));
