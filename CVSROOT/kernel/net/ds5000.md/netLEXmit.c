@@ -543,7 +543,12 @@ NetLEXmitDone(statePtr)
 	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
 exit:
-    if (statePtr->resetPending == TRUE) {
+    /*
+     * This assumes that whatever calls us will reset the chip if we return
+     * anything other than SUCCESS.  This way we avoid resetting the chip 
+     * twice in a row.
+     */
+    if ((statePtr->resetPending == TRUE) && (status == SUCCESS)) {
 	statePtr->transmitting = FALSE;
 	NetLEReset(statePtr->interPtr);
     }

@@ -158,7 +158,7 @@ typedef NetLEMach_Reg NetLE_Reg;
     (NET_LE_CSR3_BYTE_SWAP | NET_LE_CSR3_ALE_CONTROL | NET_LE_CSR3_BYTE_CONTROL)
 #else 
 
-#if (defined(ds5000) || defined(sun3))
+#if defined(ds5000)
 #define NET_LE_CSR3_VALUE  0
 #else
 #define NET_LE_CSR3_VALUE NET_LE_CSR3_BYTE_SWAP
@@ -430,9 +430,9 @@ extern	ReturnStatus	NetLEGetStats _ARGS_((Net_Interface *interPtr,
 			    Net_Stats *statPtr));
 extern Address		NetLEMemAlloc _ARGS_((NetLEState *statePtr, 
 			    int numBytes));
+extern	ReturnStatus	NetLEMachInit _ARGS_ ((Net_Interface *interPtr,
+				NetLEState *statePtr));
 
-extern ReturnStatus	NetLEMachInit _ARGS_((Net_Interface *interPtr,
-			    NetLEState *statePtr));
 /*
  * Routines for transmitting.
  */

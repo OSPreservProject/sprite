@@ -35,7 +35,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <machMon.h>
 #include <dbg.h>
 #include <assert.h>
-
 #ifdef sun4c
 #include <devSCSIC90.h>
 #endif
@@ -96,7 +95,6 @@ NetLEInit(interPtr)
     statePtr->xmitFreeList = &statePtr->xmitFreeListHdr;
     List_Init(statePtr->xmitFreeList);
 
-    printf("Initializing transmission list\n");
     for (i = 0; i < NET_LE_NUM_XMIT_ELEMENTS; i++) {
 	itemPtr = (List_Links *) malloc(sizeof(NetXmitElement)), 
 	List_InitElement(itemPtr);
@@ -178,6 +176,7 @@ NetLEReset(interPtr)
      * the middle of a packet.
      */
     if (!(statePtr->resetPending) && (statePtr->transmitting)) {
+	printf("Deferring reset.\n");
 	statePtr->resetPending = TRUE;
 	return;
     }

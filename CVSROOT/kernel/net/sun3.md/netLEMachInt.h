@@ -44,7 +44,7 @@ typedef struct NetLEMach_Reg {
  * and the upper 8 bits.
  */
 #define	NET_LE_FROM_CHIP_ADDR(statePtr, high,low)	\
-		((Address) (0xff000000 + ((high) << 16) + (low)))
+		((Address) (0xf000000 + ((high) << 16) + (low)))
 
 #define	NET_LE_TO_CHIP_ADDR_LOW(a) ( ((unsigned int) (a)) & 0xffff)
 #define	NET_LE_TO_CHIP_ADDR_HIGH(a) ( (((unsigned int) (a)) >> 16) & 0xff)

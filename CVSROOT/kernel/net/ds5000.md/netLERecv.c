@@ -202,11 +202,14 @@ NetLERecvProcess(dropPackets, statePtr)
     descPtr = statePtr->recvDescNextPtr;
 
     if (NetBfByteTest(descPtr->bits, ChipOwned, 1)) {
-	if (statePtr->lastRecvCnt < 2) {
+	if (statePtr->lastRecvCnt == 0) {
 	    printf(
 	"LE ethernet: Bogus receive interrupt. Buffer 0x%x owned by chip.\n",
 		descPtr);
 	    return (FAILURE);
+	} else {
+	    statePtr->lastRecvCnt = 0;
+	    return (SUCCESS);
 	}
     }
     if (NetBfByteTest(descPtr->bits, StartOfPacket, 0)) {
