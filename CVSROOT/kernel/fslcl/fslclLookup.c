@@ -543,6 +543,17 @@ endScan:
 		     */
 		    if ((useFlags & FS_RENAME) &&
 			(curHandlePtr->descPtr->fileType == type)) {
+
+			/*
+			 * Make sure the two files aren't actually the
+			 * same.  If they are then just return SUCCESS,
+			 * otherwise we would deadlock when we try to lock
+			 * both file handles, unaware that they are the
+			 * same handle.
+			 */
+			if (fileNumber == curHandlePtr->hdr.fileID.minor) {
+			    break;
+			}
 			/*
 			 * Try the delete, this fails on non-empty directories.
 			 */
