@@ -68,8 +68,8 @@ int devScsiNumHBATypes = sizeof(devScsiAttachProcs) /
  * SCSI Disk target ID 0 LUN 0 partition 0 on SCSIC90 HBA 0. 
  */
 Fs_Device devFsDefaultDiskPartitions[] = { 
-    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 0),
-          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 0),
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 2),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 2),
 	(ClientData) NIL },
   };
 int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
