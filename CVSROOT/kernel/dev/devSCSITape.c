@@ -275,7 +275,7 @@ DevSCSITapeSetupCommand(command, devPtr, countPtr)
 	 * as we do a REQUEST_SENSE first to detect the drive type.
 	 */
 	(*tapePtr->setupProc)(tapePtr, &command, tapeControlBlockPtr,
-		&dmaCount, &count);
+		&count, &dmaCount);
     }
     tapeControlBlockPtr->command = command & 0xff;
     tapeControlBlockPtr->unitNumber = devPtr->LUN;
@@ -347,7 +347,9 @@ Dev_SCSITapeOpen(devicePtr, useFlags, token)
 	if (status == DEV_OFFLINE) {
 	    break;
 	}
+#ifdef notdef
 	status = DevSCSIRequestSense(devPtr->scsiPtr, devPtr);
+#endif notdef
     } while (status != SUCCESS && ++retries < 3);
     if (status == SUCCESS) {
 	/*
