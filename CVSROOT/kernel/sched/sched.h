@@ -58,7 +58,6 @@ extern int  sched_DoContextSwitch;	/* Flag to force a context switch. */
 
 extern Sched_Instrument sched_Instrument;   /* Counters for instrumentation. */
 
-extern Proc_ControlBlock 	*Sched_GetRunnableProcess();
 extern void			Sched_MakeReady();
 extern void			Sched_StartUserProc();
 extern void 			Sched_ContextSwitch();
@@ -70,6 +69,7 @@ extern void 			Sched_TimeTicks();
 extern void 			Sched_LockAndSwitch();
 extern void 			Sched_MakeReady();
 extern void 			Sched_MoveInQueue();
+extern Proc_ControlBlock	*Sched_InsertInQueue();
 extern void 			Sched_PrintStat();
 extern void 			Sched_StartProcess();
 extern void			Sched_SetClearUsageFlag();
