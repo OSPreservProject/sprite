@@ -390,14 +390,18 @@ FsWantRecovery(hdrPtr)
 				 * start with a FsRemoteHandle struct. */
 {
     register FsRecoveryInfo *recovPtr = &((FsRemoteIOHandle *)hdrPtr)->recovery;
-    LOCK_MONITOR;
-    if (RemoteHandle(hdrPtr)) {
-	recovPtr->flags |= RECOVERY_NEEDED;
-    } else {
-	Sys_Panic(SYS_FATAL, "FsWantRecovery, wrong handle type: %s\n",
+    if (!RemoteHandle(hdrPtr)) {
+	Sys_Panic(SYS_WARNING, "FsWantRecovery: no recovery for %s handles\n",
 		FsFileTypeToString(hdrPtr->fileID.type));
+    } else {
+	/*
+	 * The monitor lock is embedded in RemoteIOHandles so we can
+	 * only lock/unlock with the right kind of handle.
+	 */
+	LOCK_MONITOR;
+	recovPtr->flags |= RECOVERY_NEEDED;
+	UNLOCK_MONITOR;
     }
-    UNLOCK_MONITOR;
 }
 
 /*
@@ -426,9 +430,14 @@ FsWaitForRecovery(hdrPtr, rpcStatus)
     ReturnStatus		status = SUCCESS;
 
     if (!RemoteHandle(hdrPtr)) {
-	Sys_Panic(SYS_FATAL, "FsWaitForRecovery, wrong handle type: %s\n",
-	    FsFileTypeToString(hdrPtr->fileID.type));
-	return(FS_STALE_HANDLE);
+	/*
+	 * We get called on a local naming request-response stream after the
+	 * pseudo-filesystem server crashes.  There is no recovery possible
+	 * so we just return an error and the naming operation fails.
+	 */
+	Sys_Panic(SYS_WARNING, "FsWaitForRecovery, no recovery for type: %s\n",
+		FsFileTypeToString(hdrPtr->fileID.type));
+	return(FAILURE);
     } else if (!FsHandleValid(hdrPtr)) {
 	/*
 	 * Handle has already failed recovery.
