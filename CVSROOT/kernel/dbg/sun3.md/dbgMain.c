@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netEther.h"
 #include "netInet.h"
 #include "dev.h"
+#include "byte.h"
 
 Boolean	dbg_BeingDebugged = FALSE;		/* TRUE if are under control
 						 * of kdbx.*/
@@ -167,6 +168,7 @@ static	Boolean		callInProgress = FALSE;
 
 
 /*
+ * ----------------------------------------------------------------------------
  *
  * DbgCheckNmis --
  *
@@ -635,6 +637,8 @@ PutReplyBytes(numBytes, src)
 static void
 SendReply()
 {
+    void	Dbg_FormatPacket();
+
     if (dbg_Rs232Debug) {
 	WriteBytes(replyOffset, replyBuffer);
     } else {

@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "byte.h"
 #include "rpcHistogram.h"
+#include "mem.h"
 
 #define LOCKPTR (&histPtr->lock)
 

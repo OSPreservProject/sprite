@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 #include "dev.h"
 #include "procMigrate.h"
+#include "string.h"
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
@@ -339,6 +340,8 @@ void
 Sys_SyncDisks(trapType)
     int	trapType;
 {
+    char	*SpriteVersion();
+    
     if (errorSync) {
 	Sys_Printf("Error type %d while syncing disks.\n", trapType);
 	sys_ShouldSyncDisks = FALSE;
