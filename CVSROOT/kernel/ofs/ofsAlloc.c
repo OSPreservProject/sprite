@@ -1595,7 +1595,7 @@ OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset)
 
 static ReturnStatus
 UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag, 
-		dirtiedIndexPtr)
+		dontWriteThru, dirtiedIndexPtr)
     FsLocalFileIOHandle		*handlePtr;	/* File to allocate blocks 
 						 * for. */
     register FsBlockIndexInfo *indexInfoPtr;	/* Index info structure. */
@@ -1603,6 +1603,10 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     int			newLastFrag;		/* New last fragment for this
 						 * file.  Fragments are numbered
 						 * from 0. */
+    Boolean		dontWriteThru;		/* TRUE => make sure that the
+						 * cache block that contains
+						 * upgraded block isn't forced
+						 * through to disk. */
     Boolean		*dirtiedIndexPtr; 	/* TRUE if modified the block 
 						 * pointer in the file index 
 						 * structure. */
@@ -1624,6 +1628,7 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     FsCacheBlock		 *fragCacheBlockPtr;
     Boolean			 found;
     ReturnStatus		 status = SUCCESS;
+    int				 flags;
 
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (FsDomain *)NIL) {
@@ -1722,10 +1727,14 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     descPtr->numKbytes += newLastFrag - curLastFrag;
     *dirtiedIndexPtr = TRUE;
 
+    if (dontWriteThru) {
+	flags = FS_CLEAR_READ_AHEAD | FS_DONT_WRITE_THRU;
+    } else {
+	flags = FS_CLEAR_READ_AHEAD;
+    }
     FsCacheUnlockBlock(fragCacheBlockPtr, (unsigned) fsTimeInSeconds, 
 		       *indexInfoPtr->blockAddrPtr, 
-		       (newLastFrag + 1) * FS_FRAGMENT_SIZE,
-		       FS_CLEAR_READ_AHEAD);
+		       (newLastFrag + 1) * FS_FRAGMENT_SIZE, flags);
     FsFreeFrag(domainPtr, curLastFrag + 1, curFragBlock, curFragOffset);
 
 exit:
@@ -1847,7 +1856,8 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	 * last fragment is large enough.
 	 */   
 	status = UpgradeFragment(handlePtr, indexInfoPtr, 
-				 curLastBlock, newFragIndex, dirtiedIndexPtr);
+				 curLastBlock, newFragIndex, TRUE,
+				 dirtiedIndexPtr);
     }
     FsDomainRelease(handlePtr->hdr.fileID.major);
     return(status);
@@ -1916,7 +1926,7 @@ FragToBlock(handlePtr, blockNum)
      */
 
     status = UpgradeFragment(handlePtr, &indexInfo, blockNum, LAST_FRAG,
-			     &dirtiedIndex);
+			     FALSE, &dirtiedIndex);
     if (status == SUCCESS) {
 	descPtr->lastByte = blockNum * FS_BLOCK_SIZE + FS_BLOCK_SIZE - 1;
 	descPtr->descModifyTime = fsTimeInSeconds;

@@ -1143,7 +1143,7 @@ FsCacheUnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 				   should be the same as blockPtr->blockNum.*/
     int		 blockSize;	/* The number of valid bytes in this block. */
     int		 flags;		/* FS_DELETE_BLOCK | FS_CLEAR_READ_AHEAD |
-				 * FS_BLOCK_UNNEEDED */
+				 * FS_BLOCK_UNNEEDED | FS_DONT_WRITE_THRU */
 {
     LOCK_MONITOR;
 
@@ -1241,7 +1241,8 @@ FsCacheUnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	 * Force the block out if in write-thru or asap mode.
 	 */
 	if ((blockPtr->flags & (FS_BLOCK_DIRTY | FS_BLOCK_BEING_WRITTEN)) &&
-	    (fsWriteThrough || fsWriteBackASAP) &&
+	    ((fsWriteThrough || fsWriteBackASAP) &&
+	     !(flags & FS_DONT_WRITE_THRU)) &&
 	    (!fsDelayTmpFiles ||
 	     FsFindFileType(blockPtr->cacheInfoPtr) != FS_FILE_TYPE_TMP)) {
 	    /*
