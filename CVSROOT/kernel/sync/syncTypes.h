@@ -53,11 +53,13 @@
 #include <procTypes.h>
 #include <syncLock.h>
 #include <machTypes.h>
+#include <user/proc.h>
 #else
 #include <sync.h>
 #include <kernel/procTypes.h>
 #include <kernel/syncLock.h>
 #include <kernel/machTypes.h>
+#include <proc.h>
 #endif /* */
 
 /*
