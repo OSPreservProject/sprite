@@ -33,8 +33,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "trace.h"
 
-extern Boolean rpcNoTimeouts;
-
 /*
  * The state of other hosts is kept in a hash table keyed on SpriteID.
  * This state is maintained by RpcHostAlive and RpcHostDead, which are
@@ -71,6 +69,7 @@ Sync_Lock rpcRecoveryLock;
  *				to block RPC server processes until the
  *				crash recovery actions have completed.
  *	RECOV_HOST_PINGING	Set while there are pinging call-backs scheduled
+ *	RECOV_HOST_BOOTING	Set while there are pinging call-backs scheduled
  *
  *	RECOV_WAITING		artificial state to trace Rpc_WaitForHost
  *	RECOV_CRASH		artificial state to trace RpcCrashCallBacks
@@ -82,6 +81,7 @@ Sync_Lock rpcRecoveryLock;
 
 #define RECOV_CRASH_CALLBACKS	0x0100
 #define RECOV_HOST_PINGING	0x0200
+#define RECOV_HOST_BOOTING	0x0400
 
 #define RECOV_WAITING		0x4
 #define RECOV_CRASH		0x8
@@ -92,6 +92,14 @@ Sync_Lock rpcRecoveryLock;
  * rpcPingSeconds.
  */
 int rpcPingSeconds = 30;
+
+/*
+ * After a host reboots we pause a bit before attempting recovery.  This
+ * allows a host to complete boot-time start up.  If we don't pause the
+ * ping done by the recovery call backs may fail and we may erroneously
+ * think that the other guy crashed right away.
+ */
+int rpcRecoveryPause = 30;	/* Seconds */
 
 /*
  * Other kernel modules can arrange call-backs when a host reboots.
@@ -245,10 +253,15 @@ Rpc_HostNotify(proc, clientData, when)
  *	returns TRUE and makes sure pinging is initiated (if needed).
  *	Otherwise, if there hasn't been recent message traffic 
  *	(within the last 10 seconds) then this will ping the host to find
- *	out if it's still up.
+ *	out if it's still up.  There are two cases then, the host isn't
+ *	up, or it is booting but it's RPC service is not ready yet.
+ *	We return FALSE so that our caller doesn't think the host
+ *	has crashed
  *
  * Results:
- *	TRUE is the host is apparently down.
+ *	SUCCESS if the host is up, FAILURE if it doesn't respond to
+ *	pings or is known to be down, and RPC_SERVICE_DISABLED if
+ *	the host says so.
  *
  * Side effects:
  *	May do a ping.  If the 'ping' parameter is TRUE this will make
@@ -257,37 +270,34 @@ Rpc_HostNotify(proc, clientData, when)
  *----------------------------------------------------------------------
  */
 
-Boolean
+ReturnStatus
 Rpc_HostIsDown(spriteID, ping)
     int spriteID;
     Boolean ping;	/* If TRUE, we make sure the host is being pinged
 			 * if it is down now */
 {
-    register Boolean down = FALSE;
-    register ReturnStatus status;
+    register ReturnStatus status = SUCCESS;
 
     if (spriteID == NET_BROADCAST_HOSTID) {
 	Sys_Panic(SYS_WARNING, "Rpc_HostIsDown, got broadcast address\n");
-	return(FALSE);
+	return(SUCCESS);
     }
     switch (GetHostState(spriteID)) {
 	case RECOV_STATE_UNKNOWN:
 	    RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_PING_ASK);
 	    status = Rpc_Ping(spriteID);
-	    if (status != SUCCESS) {
-		down = TRUE;
-	    }
 	    break;
 	case RECOV_HOST_ALIVE:
+	    status = SUCCESS;
 	    break;
 	case RECOV_HOST_DEAD:
-	    down = TRUE;
+	    status = FAILURE;
 	    break;
     }
-    if (down && ping) {
+    if (status != SUCCESS && ping) {
 	StartPinging(spriteID);
     }
-    return(down);
+    return(status);
 }
 
 /*
@@ -318,7 +328,7 @@ Rpc_WaitForHost(spriteID)
      * the actual waiting.  It will check again to make sure
      * we don't sleep on an alive host.
      */
-    if (Rpc_HostIsDown(spriteID, TRUE)) {
+    if (Rpc_HostIsDown(spriteID, TRUE) == FAILURE) {
 	RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_WAIT);
 	return(RpcWaitForHostInt(spriteID));
     } else {
@@ -663,16 +673,24 @@ RpcHostAlive(spriteID, bootID, asyncRecovery)
 		 */
 		break;
 	    case RECOV_HOST_DEAD: {
+		register int wait;
 		/*
-		 * Notify interested parties that the host is up.
+		 * Notify interested parties that the host is up.  If the host
+		 * has done a full reboot we wait a bit before pounding on
+		 * it with our re-open requests.  This gives it a chance
+		 * to create RPC server processes, etc. so we don't think
+		 * it crashed because we tried to talk to it too soon.
 		 */
 		if ( !reboot ) {
-		    Rpc_HostPrint(spriteID, "is now up");
+		    Rpc_HostPrint(spriteID, "is back again");
+		    wait = 0;
+		} else {
+		    wait = timer_IntOneSecond * rpcRecoveryPause;
 		}
 		hostPtr->state &= ~RECOV_HOST_DEAD;
 		hostPtr->state |= RECOV_HOST_ALIVE;
 		Sync_Broadcast(&hostPtr->alive)
-		Proc_CallFunc(RpcRebootCallBacks, spriteID, 0);
+		Proc_CallFunc(RpcRebootCallBacks, spriteID, wait);
 		break;
 	    default:
 		Sys_Panic(SYS_WARNING, "Unexpected state <%x> for ",
@@ -714,8 +732,7 @@ RpcHostDead(spriteID)
     register RecovHostState *hostPtr;
 
     LOCK_MONITOR;
-    if (spriteID == NET_BROADCAST_HOSTID ||
-	rpcNoTimeouts) {
+    if (spriteID == NET_BROADCAST_HOSTID || rpc_NoTimeouts) {
 	/*
 	 * If rpcNoTimeouts is set the Rpc_Daemon may still call us if
 	 * it can't get an acknowledgment from a host to close down
@@ -758,7 +775,9 @@ RpcHostDead(spriteID)
  *
  *	This calls the call-back procedures installed by other modules
  *	via Rpc_HostNotify.  It is invoked asynchronously from RpcHostAlive
- *	when that procedure detects a reboot.
+ *	when that procedure detects a reboot.  It does an explict ping
+ *	of the other host to make sure it is ready for our recovery actions.
+ *	This will reschedule itself for later if the host isn't ready.
  *
  * Results:
  *	None.
@@ -774,17 +793,31 @@ RpcRebootCallBacks(data, callInfoPtr)
     ClientData data;
     Proc_CallInfo *callInfoPtr;
 {
+    ReturnStatus status;
     register NotifyElement *notifyPtr;
     register int spriteID = (int)data;
 
-    LIST_FORALL(&rpcNotifyList, (List_Links *)notifyPtr) {
-	if (notifyPtr->flags & RPC_WHEN_HOST_REBOOTS) {
-	    (*notifyPtr->proc)(spriteID, notifyPtr->clientData,
-					 RPC_WHEN_HOST_REBOOTS);
-	 }
+    status = Rpc_Ping(spriteID);
+    switch(status) {
+	case RPC_SERVICE_DISABLED:
+	    Rpc_HostPrint(spriteID, "still booting");
+	    callInfoPtr->interval = rpcRecoveryPause * timer_IntOneSecond;
+	    break;
+	case RPC_TIMEOUT:
+	    Rpc_HostPrint(spriteID, "not responding");
+	    callInfoPtr->interval = rpcRecoveryPause * timer_IntOneSecond;
+	    break;
+	case SUCCESS:
+	    LIST_FORALL(&rpcNotifyList, (List_Links *)notifyPtr) {
+		if (notifyPtr->flags & RPC_WHEN_HOST_REBOOTS) {
+		    (*notifyPtr->proc)(spriteID, notifyPtr->clientData,
+						 RPC_WHEN_HOST_REBOOTS);
+		 }
+	    }
+	    RECOV_TRACE(spriteID, RECOV_REBOOT, RECOV_CUZ_DONE);
+	    callInfoPtr->interval = 0;	/* Don't call again */
+	    break;
     }
-    RECOV_TRACE(spriteID, RECOV_REBOOT, RECOV_CUZ_DONE);
-    callInfoPtr->interval = 0;	/* Don't call again */
 }
 
 /*
