@@ -176,14 +176,18 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 		    switch(recPtr->un.requestHdr.operation) {
 			case PDEV_OPEN:
 			    printf(" OPEN"); break;
+#ifdef notdef
 			case PDEV_DUP:
 			    printf(" DUP"); break;
+#endif notdef
 			case PDEV_CLOSE:
 			    printf(" CLOSE"); break;
 			case PDEV_READ:
 			    printf(" READ"); break;
 			case PDEV_WRITE:
 			    printf(" WRITE"); break;
+			case PDEV_WRITE_ASYNC:
+			    printf(" WRITE_ASYNC"); break;
 			case PDEV_IOCTL:
 			    printf(" IOCTL"); break;
 			default:
