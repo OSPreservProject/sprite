@@ -425,7 +425,7 @@ DoneCheck:
  * Some of the constants are defined in machineConst.h.  The address space 
  * looks like the following:
  *
- *	|-------------------------------|	MACH_KERNEL_START
+ *	|-------------------------------|	MACH_KERN_START
  *	| Trap vectors.			|
  *	|-------------------------------|	MACH_STACK_BOTTOM
  *	| Invalid page.			|
@@ -469,7 +469,7 @@ DoneCheck:
  * VMMACH_SHARED_START ADDR is the address at which shared memory starts.
  */
 #define VMMACH_USER_SHARED_PAGES	8192
-#define VMMACH_SHARED_BLOCK_SIZE	0x20000
+#define VMMACH_SHARED_BLOCK_SIZE	VMMACH_SEG_SIZE
 #define VMMACH_SHARED_START_ADDR	(0x20000000 - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
 #define	VMMACH_SHARED_NUM_BLOCKS	(VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE/VMMACH_SHARED_BLOCK_SIZE)
 

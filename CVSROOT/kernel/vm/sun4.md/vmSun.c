@@ -66,6 +66,8 @@ static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
 #define PhysToVirtPage(pfNum) ((pfNum) >> VMMACH_CLUSTER_SHIFT)
 #endif
 
+extern int debugVmStubs; /* Unix compat debug flag. */
+
 /*
  * Convert from page to hardware segment, with correction for
  * any difference between virtAddrPtr offset and segment offset.
@@ -225,15 +227,21 @@ INTERNAL static void Dev32BitDMABufferInit _ARGS_((void));
 }
 #endif
 /*
+ * PMEG segment info list entry.
+ */
+struct PMEGseg {
+    struct PMEGseg	*nextLink;	/* Linked list ptr. */
+    struct Vm_Segment	*segPtr;	/* Software segment. */
+    int			hardSegNum;	/* Hardware segment number. */
+};
+
+/*
  * PMEG table entry structure.
  */
 typedef struct {
     List_Links			links;		/* Links so that the pmeg */
               					/* can be in a list */
-    struct      Vm_Segment      *segPtr;        /* Back pointer to segment that
-                                                   this cluster is in */
-    int				hardSegNum;	/* The hardware segment number
-						   for this pmeg. */
+    struct PMEGseg		segInfo;	/* Info on software segment. */
     int				pageCount;	/* Count of resident pages in
 						 * this pmeg. */
     int				lockCount;	/* The number of times that
@@ -343,7 +351,7 @@ int	vmMachKernMemSize = 2048 * 1024;
 int     vmMachKernMemSize = 8192 * 1024;
 #endif
 #ifdef sun4
-int	vmMachKernMemSize = 40 * 1024 * 1024;
+int	vmMachKernMemSize = 32 * 1024 * 1024;
 #endif
 
 /*
@@ -450,14 +458,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     }
 #endif
     
-    /* 
-     * We used to map pages for vmMachKernMemSize of memory.  But now that
-     * the kernel size is bigger, there may not be enough pmegs for that.
-     * So for now we just map a number of pmegs that is safe and gives us
-     * at least enough for the * code we run on for now.  This amount is
-     * 32 megabytes of pmegs.
-     */
-    kernPages = 32 / VMMACH_PAGE_SIZE_INT;
+    kernPages = vmMachKernMemSize / VMMACH_PAGE_SIZE_INT;
     /*
      * Map all of the kernel memory that we might need one for one.  We know
      * that the monitor maps the first part of memory one for one but for some
@@ -914,8 +915,9 @@ MMUInit(firstFreeSegment)
      */
     bzero((Address)pmegArray, VMMACH_NUM_PMEGS * sizeof(PMEG));
     for (i = 0, pmegPtr = pmegArray; i < VMMACH_NUM_PMEGS; i++, pmegPtr++) {
-	pmegPtr->segPtr = (Vm_Segment *) NIL;
+	pmegPtr->segInfo.segPtr = (Vm_Segment *) NIL;
 	pmegPtr->flags = PMEG_DONT_ALLOC;
+	pmegPtr->segInfo.nextLink = (struct PMEGseg *)NIL;
     }
 
 #ifdef sun2
@@ -969,8 +971,8 @@ MMUInit(firstFreeSegment)
 	 i++, segTablePtr++) {
 	pageCluster = VmMachGetSegMap((Address) (i << VMMACH_SEG_SHIFT));
 	pmegArray[pageCluster].pageCount = VMMACH_NUM_PAGES_PER_SEG;
-	pmegArray[pageCluster].segPtr = vm_SysSegPtr;
-	pmegArray[pageCluster].hardSegNum = i;
+	pmegArray[pageCluster].segInfo.segPtr = vm_SysSegPtr;
+	pmegArray[pageCluster].segInfo.hardSegNum = i;
 	*segTablePtr = pageCluster;
     }
 
@@ -988,7 +990,7 @@ MMUInit(firstFreeSegment)
     /*
      * Mark the invalid pmeg so that it never gets used.
      */
-    pmegArray[VMMACH_INV_PMEG].segPtr = vm_SysSegPtr;
+    pmegArray[VMMACH_INV_PMEG].segInfo.segPtr = vm_SysSegPtr;
     pmegArray[VMMACH_INV_PMEG].flags = PMEG_NEVER_FREE;
 
     /*
@@ -1028,8 +1030,9 @@ MMUInit(firstFreeSegment)
 			 * to zero.
 			 */
 			if (!inusePMEG) {
-			    pmegArray[pageCluster].segPtr = vm_SysSegPtr;
-			    pmegArray[pageCluster].hardSegNum = i;
+			    pmegArray[pageCluster].segInfo.segPtr =
+				    vm_SysSegPtr;
+			    pmegArray[pageCluster].segInfo.hardSegNum = i;
 			    pmegArray[pageCluster].flags = PMEG_NEVER_FREE;
 			    inusePMEG = TRUE;
 			}
@@ -1076,7 +1079,7 @@ MMUInit(firstFreeSegment)
      */
     for (i = 0, pmegPtr = pmegArray; i < VMMACH_NUM_PMEGS; i++, pmegPtr++) {
 
-	if (pmegPtr->segPtr == (Vm_Segment *) NIL 
+	if (pmegPtr->segInfo.segPtr == (Vm_Segment *) NIL 
 #if defined (sun3)
 	    && i != dontUse
 #endif
@@ -1370,6 +1373,9 @@ VmMach_SegDelete(segPtr)
     SegDelete(segPtr);
     free((Address)segPtr->machPtr);
     segPtr->machPtr = (VmMach_SegData *)NIL;
+    if (segPtr->type==VM_SHARED && debugVmStubs) {
+	printf("Done with seg %d\n", segPtr->segNum);
+    }
 }
 
 
@@ -1501,6 +1507,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     Address			virtAddr;
     Boolean			found = FALSE;
     int				numValidPages;
+    struct PMEGseg		*curSeg, *nextSeg;
 
     if (List_IsEmpty(pmegFreeList)) {
 	
@@ -1519,64 +1526,75 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     }
     pmegNum = pmegPtr - pmegArray;
 
-    if (pmegPtr->segPtr != (Vm_Segment *) NIL) {
+    oldContext = VmMachGetContextReg();
+    if (pmegPtr->segInfo.segPtr != (Vm_Segment *) NIL) {
 	/*
 	 * Need to steal the pmeg from its current owner.
 	 */
-	vmStat.machDepStat.stealPmeg++;
-	segPtr = pmegPtr->segPtr;
-	*GetHardSegPtr(segPtr->machPtr, pmegPtr->hardSegNum) = VMMACH_INV_PMEG;
-	virtAddr = (Address) (pmegPtr->hardSegNum << VMMACH_SEG_SHIFT);
-	/*
-	 * Delete the pmeg from all appropriate contexts.
-	 */
-	oldContext = VmMachGetContextReg();
-        if (segPtr->type == VM_SYSTEM) {
+	for (curSeg = &pmegPtr->segInfo; curSeg != (struct PMEGseg *)NIL;) {
+	    vmStat.machDepStat.stealPmeg++;
+	    segPtr = curSeg->segPtr;
+	    *GetHardSegPtr(segPtr->machPtr, curSeg->hardSegNum) =
+		    VMMACH_INV_PMEG;
+	    virtAddr = (Address) (curSeg->hardSegNum << VMMACH_SEG_SHIFT);
 	    /*
-	     * For cache accesses of data with the supervisor tag set,
-	     * the flush only needs to be done in one context.
+	     * Delete the pmeg from all appropriate contexts.
 	     */
-	    numValidPages = GetNumValidPages(virtAddr);
-	    if (numValidPages >
-		    (VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
-		VmMachFlushSegment(virtAddr);
-	    } else {
-		/* flush the pages */
-		FlushValidPages(virtAddr);
-	    }
+	    if (segPtr->type == VM_SYSTEM) {
+		/*
+		 * For cache accesses of data with the supervisor tag set,
+		 * the flush only needs to be done in one context.
+		 */
+		numValidPages = GetNumValidPages(virtAddr);
+		if (numValidPages >
+			(VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
+		    VmMachFlushSegment(virtAddr);
+		} else {
+		    /* flush the pages */
+		    FlushValidPages(virtAddr);
+		}
 
-	    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
-		VmMachSetContextReg(i);
-		VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
-	    }
-        } else {
-	    for (i = 1, contextPtr = &contextArray[1];
-		 i < VMMACH_NUM_CONTEXTS; 
-		 i++, contextPtr++) {
-		if (contextPtr->flags & CONTEXT_IN_USE) {
-		    if (contextPtr->map[pmegPtr->hardSegNum] == pmegNum) {
-			VmMachSetContextReg(i);
-			contextPtr->map[pmegPtr->hardSegNum] = VMMACH_INV_PMEG;
-			numValidPages = GetNumValidPages(virtAddr);
-			if (numValidPages >
-				(VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
-			    VmMachFlushSegment(virtAddr);
-			} else {
-			    /* flush the pages */
-			    FlushValidPages(virtAddr);
+		for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+		    VmMachSetContextReg(i);
+		    VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
+		}
+	    } else {
+		for (i = 1, contextPtr = &contextArray[1];
+		     i < VMMACH_NUM_CONTEXTS; 
+		     i++, contextPtr++) {
+		    if (contextPtr->flags & CONTEXT_IN_USE) {
+			if (contextPtr->map[curSeg->hardSegNum] ==
+				pmegNum) {
+			    VmMachSetContextReg(i);
+			    contextPtr->map[curSeg->hardSegNum] =
+				    VMMACH_INV_PMEG;
+			    numValidPages = GetNumValidPages(virtAddr);
+			    if (numValidPages >
+				    (VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
+				VmMachFlushSegment(virtAddr);
+			    } else {
+				/* flush the pages */
+				FlushValidPages(virtAddr);
+			    }
+			    VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 			}
-			VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
-		    }
-		    if (contextPtr->map[MAP_SEG_NUM] == pmegNum) {
-			VmMachSetContextReg(i);
-			contextPtr->map[MAP_SEG_NUM] = VMMACH_INV_PMEG;
-			VmMachFlushSegment((Address)VMMACH_MAP_SEG_ADDR);
-			VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR,
-					VMMACH_INV_PMEG);
+			if (contextPtr->map[MAP_SEG_NUM] == pmegNum) {
+			    VmMachSetContextReg(i);
+			    contextPtr->map[MAP_SEG_NUM] = VMMACH_INV_PMEG;
+			    VmMachFlushSegment((Address)VMMACH_MAP_SEG_ADDR);
+			    VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR,
+					    VMMACH_INV_PMEG);
+			}
 		    }
 		}
 	    }
-        }
+	    nextSeg = curSeg->nextLink;
+	    if (curSeg != &pmegPtr->segInfo) {
+		free((char *)curSeg);
+	    }
+	    curSeg = nextSeg;
+	}
+	pmegPtr->segInfo.nextLink = (struct PMEGseg *)NIL;
 	VmMachSetContextReg(oldContext);
 	/*
 	 * Read out all reference and modify bits from the pmeg.
@@ -1617,8 +1635,8 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     /* Initialize the pmeg and delete it from the fifo.  If we aren't 
      * supposed to lock this pmeg, then put it at the rear of the list.
      */
-    pmegPtr->segPtr = softSegPtr;
-    pmegPtr->hardSegNum = hardSegNum;
+    pmegPtr->segInfo.segPtr = softSegPtr;
+    pmegPtr->segInfo.hardSegNum = hardSegNum;
     pmegPtr->pageCount = 0;
     List_Remove((List_Links *) pmegPtr);
     if (!(flags & PMEG_DONT_ALLOC)) {
@@ -1715,6 +1733,7 @@ PMEGFree(pmegNum)
     int 	pmegNum;	/* Which pmeg to free */
 {
     register	PMEG	*pmegPtr;
+    struct PMEGseg	*segPtr, *nextPtr;
 
     pmegPtr = &pmegArray[pmegNum];
     /*
@@ -1732,7 +1751,24 @@ PMEGFree(pmegNum)
 	 */
 	VmMachPMEGZero(pmegNum);
     }
-    pmegPtr->segPtr = (Vm_Segment *) NIL;
+    if (pmegPtr->segInfo.segPtr != (Vm_Segment *)NIL) {
+	for (segPtr = &pmegPtr->segInfo; segPtr != (struct PMEGseg *)NIL;) {
+	    if (segPtr->segPtr->machPtr == (VmMach_SegData *)NIL) {
+		printf("PMEGFree(%d): seg %d has no machPtr!\n", pmegNum,
+			segPtr->segPtr->segNum);
+	    } else {
+		*GetHardSegPtr(segPtr->segPtr->machPtr, segPtr->hardSegNum) =
+			VMMACH_INV_PMEG;
+	    }
+	    nextPtr = segPtr->nextLink;
+	    if (segPtr != &pmegPtr->segInfo) {
+		free((char *)segPtr);
+	    }
+	    segPtr = nextPtr;
+	}
+    }
+    pmegPtr->segInfo.nextLink = (struct PMEGseg *) NIL;
+    pmegPtr->segInfo.segPtr = (Vm_Segment *) NIL;
 
     /*
      * I really don't understand the code here.  The original was the second
@@ -2530,10 +2566,17 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	 * The address falls into the special mapping segment.  Translate
 	 * the address back to the segment that it falls into.
 	 */
+	transVirtAddrPtr->segPtr = procPtr->vmPtr->machPtr->mapSegPtr;
 	origVirtAddr = 
 	    (Address)(procPtr->vmPtr->machPtr->mapHardSeg << VMMACH_SEG_SHIFT);
+	transVirtAddrPtr->sharedPtr = procPtr->vmPtr->machPtr->sharedPtr;
+ 	if (transVirtAddrPtr->segPtr->type == VM_SHARED) {
+ 	    origVirtAddr -= ( transVirtAddrPtr->segPtr->offset
+ 		    >>(VMMACH_SEG_SHIFT-VMMACH_PAGE_SHIFT))
+ 		    << VMMACH_SEG_SHIFT;
+	    origVirtAddr += segOffset(transVirtAddrPtr)<<VMMACH_PAGE_SHIFT;
+ 	}
 	origVirtAddr += (unsigned int)virtAddr & (VMMACH_SEG_SIZE - 1);
-	transVirtAddrPtr->segPtr = procPtr->vmPtr->machPtr->mapSegPtr;
 	transVirtAddrPtr->page = (unsigned) (origVirtAddr) >> VMMACH_PAGE_SHIFT;
 	transVirtAddrPtr->offset = (unsigned)virtAddr & VMMACH_OFFSET_MASK;
 	transVirtAddrPtr->flags = USING_MAPPED_SEG;
@@ -2722,6 +2765,20 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
     machPtr = toProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (fromAddr) >> VMMACH_SEG_SHIFT;
+    machPtr->sharedPtr = virtAddrPtr->sharedPtr;
+    if (virtAddrPtr->sharedPtr != (Vm_SegProcList*)NIL) {
+	/*
+	 * Mangle the segment offset so that it matches the offset
+	 * of the mapped segment.
+	 */
+	if (debugVmStubs) {
+	    printf("Copying in shared segment\n");
+	}
+	machPtr->mapHardSeg -= (virtAddrPtr->sharedPtr->offset<<
+		VMMACH_PAGE_SHIFT_INT)>>VMMACH_SEG_SHIFT;
+	machPtr->mapHardSeg += machPtr->mapSegPtr->machPtr->offset;
+    }
+
 #ifdef sun4
     /*
      * Since this is a cross-address-space copy, we must make sure everything
@@ -2848,6 +2905,19 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     machPtr = fromProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (toAddr) >> VMMACH_SEG_SHIFT;
+    machPtr->sharedPtr = virtAddrPtr->sharedPtr;
+    if (virtAddrPtr->sharedPtr != (Vm_SegProcList*)NIL) {
+	/*
+	 * Mangle the segment offset so that it matches the offset
+	 * of the mapped segment.
+	 */
+	if (debugVmStubs) {
+	    printf("Copying out shared segment\n");
+	}
+	machPtr->mapHardSeg -= (virtAddrPtr->sharedPtr->offset<<
+		VMMACH_PAGE_SHIFT_INT)>>VMMACH_SEG_SHIFT;
+	machPtr->mapHardSeg += machPtr->mapSegPtr->machPtr->offset;
+    }
 
 #ifdef sun4
     /*
@@ -3466,10 +3536,12 @@ VmMach_PageValidate(virtAddrPtr, pte)
     register  int		hardSeg;
     register  VmMachPTE		hardPTE;
     register  VmMachPTE		tHardPTE;
+    struct	PMEGseg		*pmegSegPtr;
     Vm_PTE    *ptePtr;
     Address	addr;
     Boolean	reLoadPMEG;  	/* TRUE if we had to reload this PMEG. */
     int		i;
+    int		tmpSegNum;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -3490,7 +3562,41 @@ VmMach_PageValidate(virtAddrPtr, pte)
      */
 
     hardSeg = PageToOffSeg(virtAddrPtr->page, virtAddrPtr);
+
     segTablePtr = (VMMACH_SEG_NUM *) GetHardSegPtr(segPtr->machPtr, hardSeg);
+    pmegPtr = &pmegArray[*segTablePtr]; /* Software seg's pmeg. */
+    tmpSegNum = VmMachGetSegMap(addr);  /* Hardware seg's pmeg. */
+    if (tmpSegNum != VMMACH_INV_PMEG && tmpSegNum != (int)*segTablePtr) {
+	if (!(Proc_GetCurrentProc()->vmPtr->vmFlags & VM_COPY_IN_PROGRESS)) {
+	    if (*segTablePtr != VMMACH_INV_PMEG) {
+		if (debugVmStubs) {
+		    printf("VmMach_PageValidate: multiple pmegs used!\n");
+		    printf(" seg = %d, pmeg %d,%d, proc=%x %s\n",
+			    segPtr->segNum, *segTablePtr, tmpSegNum,
+			    Proc_GetCurrentProc()->processID,
+			    Proc_GetCurrentProc()->argString);
+		    printf("  old seg = %x\n",
+			    pmegArray[tmpSegNum].segInfo.segPtr->segNum);
+		    printf("Freeing pmeg %d\n", *segTablePtr);
+		}
+		PMEGFree(*segTablePtr);
+	    }
+	    if (debugVmStubs) {
+		printf("Multiple segs in hard segment: seg = %d, pmeg %d,%d, proc=%x %s\n",
+		    segPtr->segNum, *segTablePtr, tmpSegNum,
+		    Proc_GetCurrentProc()->processID,
+		    Proc_GetCurrentProc()->argString);
+	    }
+
+	    *segTablePtr = (VMMACH_SEG_NUM) tmpSegNum;
+	    pmegPtr = &pmegArray[*segTablePtr];
+	    pmegSegPtr = (struct PMEGseg *)malloc(sizeof(struct PMEGseg));
+	    pmegSegPtr->nextLink = pmegPtr->segInfo.nextLink;
+	    pmegPtr->segInfo.nextLink = pmegSegPtr;
+	    pmegSegPtr->segPtr = virtAddrPtr->segPtr;
+	    pmegSegPtr->hardSegNum = hardSeg;
+	}
+    }
 
     reLoadPMEG = FALSE;
     if (*segTablePtr == VMMACH_INV_PMEG) {
@@ -3611,6 +3717,9 @@ VmMach_PageValidate(virtAddrPtr, pte)
 			    (VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT);
 	}
     } else {
+	if (*segTablePtr == VMMACH_INV_PMEG) {
+	    panic("Invalid pmeg\n");
+	}
 	pmegArray[*segTablePtr].pageCount++;
     }
     if (vm_Tracing) {
@@ -3648,6 +3757,9 @@ VmMach_PageValidate(virtAddrPtr, pte)
 		pageCount++;
 	     }
 	     a += VMMACH_PAGE_SIZE_INT;
+	}
+	if (pmegPtr-pmegArray == VMMACH_INV_PMEG) {
+	    panic("Invalid pmeg\n");
 	}
 	pmegPtr->pageCount = pageCount;
     }
@@ -4224,7 +4336,7 @@ VmMach_DMAAllocContiguous(inScatGathPtr, scatGathLength, outScatGathPtr)
     register int		scatGathLength;
     register Net_ScatterGather	*outScatGathPtr;
 {
-    Address	beginAddr;
+    Address	beginAddr = 0;
     Address	endAddr;
     int		numPages;
     int		i, j;
@@ -4627,7 +4739,7 @@ VmMach_Trace()
     for (pmegNum = 0, pmegPtr = pmegArray;
 	 pmegNum < VMMACH_NUM_PMEGS;
 	 pmegPtr++, pmegNum++) {
-	segPtr = pmegPtr->segPtr;
+	segPtr = pmegPtr->segInfo.segPtr;
 	if ((pmegPtr->flags & PMEG_NEVER_FREE) ||
 	    segPtr == (Vm_Segment *)NIL ||
 	    segPtr->traceTime < curTraceTime) {
@@ -4668,7 +4780,7 @@ VmMachTracePage(pte, pageNum)
     Vm_TraceSeg			segTrace;
     Vm_TracePage		pageTrace;
     register	PMEG		*pmegPtr;
-    register	Vm_Segment	*segPtr;
+    register	Vm_Segment	*segPtr = (Vm_Segment *)NIL;
 
     refModMap[PhysToVirtPage(pte & VMMACH_PAGE_FRAME_FIELD)] |=
 			pte & (VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT);
@@ -4678,8 +4790,8 @@ VmMachTracePage(pte, pageNum)
 	 */
 	printedSegTrace = TRUE;
 	pmegPtr = tracePMEGPtr;
-	segPtr = pmegPtr->segPtr;
-	segTrace.hardSegNum = pmegPtr->hardSegNum;
+	segPtr = pmegPtr->segInfo.segPtr;
+	segTrace.hardSegNum = pmegPtr->segInfo.hardSegNum;
 	segTrace.softSegNum = segPtr->segNum;
 	segTrace.segType = segPtr->type;
 	segTrace.refCount = segPtr->refCount;
@@ -5188,10 +5300,12 @@ VmMach_32BitDMAFree(numBytes, mapAddr)
 #endif /* not sun4c */
 
 
-#define ALLOC(x,s)	(sharedData->allocVector[(x)]=s)
-#define FREE(x)		(sharedData->allocVector[(x)]=0)
-#define SIZE(x)		(sharedData->allocVector[(x)])
-#define ISFREE(x)	(sharedData->allocVector[(x)]==0)
+#define CHECK(x) (((x)<0||(x)>=VMMACH_SHARED_NUM_BLOCKS)?\
+	panic("Alloc out of bounds"):0)
+#define ALLOC(x,s)	(CHECK(x),sharedData->allocVector[(x)]=s)
+#define FREE(x)		(CHECK(x),sharedData->allocVector[(x)]=0)
+#define SIZE(x)		(CHECK(x),sharedData->allocVector[(x)])
+#define ISFREE(x)	(CHECK(x),sharedData->allocVector[(x)]==0)
 
 
 
@@ -5285,17 +5399,28 @@ VmMach_Unalloc(sharedData, addr)
 {
     int firstBlock = ((int)addr-VMMACH_SHARED_START_ADDR) /
 	    VMMACH_SHARED_BLOCK_SIZE;
-    int numBlocks = SIZE(firstBlock);
+    int numBlocks;
     int i;
 
-    dprintf("VmMach_Unalloc: freeing %d blocks at %x\n",firstBlock,addr);
+    if (firstBlock<0 || firstBlock>=VMMACH_SHARED_NUM_BLOCKS) {
+	if (debugVmStubs) {
+	    printf("VmMach_Unalloc: addr %x out of range\n", addr);
+	}
+	return;
+    }
+
+    numBlocks = SIZE(firstBlock);
+
+    dprintf("VmMach_Unalloc: freeing %d blocks at %x\n",numBlocks,addr);
     if (firstBlock < sharedData->allocFirstFree) {
 	sharedData->allocFirstFree = firstBlock;
     }
     for (i=0;i<numBlocks;i++) {
 	if (ISFREE(i+firstBlock)) {
-	    printf("Freeing free shared address %d %d %d\n",i,i+firstBlock,
-		    (int)addr);
+	    if (debugVmStubs) {
+		printf("Freeing free shared address %d %d %x\n",i,i+firstBlock,
+			(int)addr);
+	    }
 	    return;
 	}
 	FREE(i+firstBlock);
@@ -5354,12 +5479,15 @@ VmMach_SharedProcStart(procPtr)
     }
     sharedData->allocVector =
 	    (int *)malloc(VMMACH_SHARED_NUM_BLOCKS*sizeof(int));
+    if (debugVmStubs) {
+	printf("Initializing allocVector for %x to %x\n", procPtr->processID,
+		sharedData->allocVector);
+    }
     sharedData->allocFirstFree = 0;
     bzero((Address) sharedData->allocVector, VMMACH_SHARED_NUM_BLOCKS*
 	    sizeof(int));
-    procPtr->vmPtr->sharedStart = (Address) VMMACH_SHARED_START_ADDR;
-    procPtr->vmPtr->sharedEnd = (Address) VMMACH_SHARED_START_ADDR +
-	    VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE;
+    procPtr->vmPtr->sharedStart = (Address) 0x00000000;
+    procPtr->vmPtr->sharedEnd = (Address) 0xffff0000;
 }
 
 /*
@@ -5407,6 +5535,10 @@ VmMach_SharedProcFinish(procPtr)
     Proc_ControlBlock	*procPtr;
 {
     dprintf("VmMach_SharedProcFinish: freeing process's allocVector\n");
+    if (debugVmStubs) {
+	printf("VmMach_SharedProcFinish: freeing process's allocVector %x\n",
+		procPtr->vmPtr->machPtr->sharedData.allocVector);
+    }
     free((Address)procPtr->vmPtr->machPtr->sharedData.allocVector);
     procPtr->vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
 }
@@ -5541,6 +5673,9 @@ VmMach_LockCachePage(kernelAddress)
 		hardPTE = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
 				VirtToPhysPage(Vm_GetPageFrame(*ptePtr));
 		SET_ALL_PAGE_MAP(a, hardPTE);
+		if (pmeg==VMMACH_INV_PMEG) {
+		    panic("Invalid pmeg\n");
+		}
 		pmegArray[pmeg].pageCount++;
 	     }
 	     a += VMMACH_PAGE_SIZE_INT;
@@ -5588,6 +5723,3 @@ VmMach_UnlockCachePage(kernelAddress)
     MASTER_UNLOCK(vmMachMutexPtr);
     return;
 }
-
-
-
