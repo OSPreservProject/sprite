@@ -22,7 +22,7 @@
 #include "netIEInt.h"
 
 NetInterface netInterface[] = {
-    {"IE", 0, NET_IE_SLOT_SPACE_ADDR, NetIEInit},
+    {"IE", 0, NET_IE_SLOT_ID, NetIEInit},
 };
 int numNetInterfaces = sizeof(netInterface) / sizeof(NetInterface);
 
