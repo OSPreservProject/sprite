@@ -694,12 +694,21 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	    status = FS_STALE_HANDLE;
 	} else if (streamPtr->ioHandlePtr != hdrPtr) {
 	    Sys_Panic(SYS_WARNING, "Fs_RpcClose: Stream/handle mis-match\n");
-	    Sys_Printf("Stream <%d, %d, %d> => %s I/O <%d, %d, %d>\n",
-		paramsPtr->streamID.serverID, paramsPtr->streamID.major,
-		paramsPtr->streamID.minor,
+	    if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
+		register Fs_FileID *fileIDPtr;
+		fileIDPtr = &streamPtr->ioHandlePtr->fileID;
+		Sys_Printf("My stream <%d> => %s I/O <%d, %d>\n",
+		    paramsPtr->streamID.minor,
+		    FsFileTypeToString(fileIDPtr->type),
+		    fileIDPtr->major, fileIDPtr->minor);
+	    } else {
+		Sys_Printf("My stream <%d> => NIL I/O handle\n",
+		    paramsPtr->streamID.minor);
+	    }
+	    Sys_Printf("His stream => %s I/O <%d, %d>\n",
 		FsFileTypeToString(paramsPtr->fileID.type),
-		paramsPtr->fileID.serverID, paramsPtr->fileID.major,
-		paramsPtr->fileID.minor);
+		paramsPtr->fileID.major, paramsPtr->fileID.minor);
+	    FsHandleRelease(hdrPtr, TRUE);
 	    status = FS_STALE_HANDLE;
 	} else {
 	    /*
