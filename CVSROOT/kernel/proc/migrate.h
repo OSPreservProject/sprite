@@ -92,6 +92,21 @@ typedef struct {
 #define PROC_MAX_RPC_RETRIES 2
 
 /*
+ * Parameter to ProcRecordUsage:
+ * 	PROC_MIG_USAGE_REMOTE_CPU 	- time used by remote processes
+ * 	PROC_MIG_USAGE_TOTAL_CPU	- time used by all processes
+ * 	PROC_MIG_USAGE_POST_EVICTION	- time used subsequent to 1st
+ * 					  eviction.
+ *
+ */
+typedef enum {
+    PROC_MIG_USAGE_REMOTE_CPU, 	
+    PROC_MIG_USAGE_TOTAL_CPU,
+    PROC_MIG_USAGE_POST_EVICTION,
+} ProcRecordUsageType;
+
+
+/*
  * Various proc-internal procedures.
  */
 extern ReturnStatus ProcMigAcceptMigration();
