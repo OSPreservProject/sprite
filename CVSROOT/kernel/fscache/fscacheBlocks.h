@@ -16,7 +16,6 @@
 #include "sync.h"
 #include "list.h"
 #include "fs.h"
-#include "fsInt.h"
 
 /*
  * Values for flags field in the FsCacheFileInfo struct defined in fsInt.h
