@@ -29,22 +29,18 @@
  *
  * MachTrap --
  *
- *	Jump to system trap table or my traps.
- *	NOTE:  This will change when I handle all the traps.  Then window
- *	overflow and underflow will go directly from trap vector to their
- *	routines, and this won't need the first few lines for overflow and
- *	underflow. Also, currently this saves only the psr for window overflow
- *	and underflow traps.  If they end up doing multiplies, I'll need to
- *	save the y register.  I've coded them to avoid globals and in registers,
- *	so I don't need to save that.  This should make overflow and underflow
- *	as fast as possible.  Window overflow and underflow are constrained
- *	to keep traps off the whole time, then.
+ *	All traps except window overflow and window underflow go through
+ *	this trap handler.  This handler is used to save the appropriate
+ *	state, set up the kernel stack, and then jump to the correct
+ *	handler depending on the type of trap.  The handler assumes that
+ *	we have saved the trap %psr into %CUR_PSR_REG before we get here (as
+ *	an instruction in the vector table that made us branch here).
  *
- *	The old system %tbr has been stored in %TBR_REG, a global register,
- *	temporarily for borrowing prom trap routines I haven't written yet..
+ *	Window overflow and underflow jump directly from the vector table
+ *	to their handlers, since in the most common cases they do not need
+ *	to save state and they should be as fast as possible.
  *
- *	The scheme of things (except for overflow, underflow, and other "fast"
- *	stuff):
+ *	The scheme of things:
  *
  *	1) Check to see if we're in an invalid window.  If so, deal first with
  *	window overflow.
@@ -57,22 +53,32 @@
  *	although locals and ins contain trap state (ins are our caller's outs
  *	which we shouldn't mess up, and the psr and other state registers are
  *	in our locals) we need not save them explicitly, since they will be
- *	saved as a part of the normal window overflow and underflow.  If this
- *	is a debugger trap or context switch, then we must make sure they
- *	are saved, however, since they will be needed.  This is done as a
- *	a set of saves and restores across the windows.
- *	4) Re-enable traps, so that if we get another overflow or underflow,
- *	we'll be able to deal with it.  MAYBE THIS IS A BAD IDEA?  Maybe this
- *	should be up to the handlers?  I'll find out soon enough.
+ *	saved as a part of the normal window overflow and underflow.  There
+ *	are exceptions to this, such as context switching or debugger traps,
+ *	where we must explicitly save the window to the stack, but the
+ *	exceptions must take care of this for themselves.
+ *	4) Re-enable traps and disable interrupts.  Traps must be disabled
+ *	so that if we get another window overflow or underflow,
+ *	we'll be able to deal with it.
  *	5) Figure out what handler to call and call it.
  *
- *	The handler must call our return from trap post-amble.
+ *	The handler must call our return-from-trap post-amble, rather than
+ *	return here.
+ *
+ *	If a window underflow or overflow trap discovers that it must do
+ *	something tricky, such as call Vm_PageIn, that requires turning
+ *	on traps and interrupts, then it will call MachTrap to save state
+ *	for it.  This is why there are entries in MachTrap for window
+ *	overflow and underflow.  These are the entries to take care of the
+ *	"slow trap" overflows and underflows.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	We make space on our kernel stack to save this trap window.
+ *	If it is a user process entering the kernel, then we make its trapRegs
+ *	field point to this save-window area on the kernel stack.
  *
  * ----------------------------------------------------------------------
  */
@@ -80,27 +86,25 @@
 _MachTrap:
 	/*
 	 * Save the state registers.  This is safe, since we're saving them
-	 * to local registers.
-	 * The pc and npc were saved into their regs as part of the trap
-	 * instruction.  NOTE that we cannot trash %g1, even after saving
-	 * the global state, since it contains the system call number if this
-	 * trap is due to a syscall.  Or, we could trash it, but we'd have
-	 * to retrieve it from the saved global state in the machState
-	 * structure in that case...
-	 */
-	/*
-	 * The psr was saved into %CUR_PSR_REG in delay slot in trap table.
+	 * to local registers and we can do this even if we've entered
+	 * into an invalid window.
+	 * In the vector table that jumps here, we have already saved
+	 * the %psr into %CUR_PSR_REG.  The trap instruction itself saved
+	 * the trap pc and next pc into local registers %CUR_PC_REG and
+	 * %NEXT_PC_REG.  This means we must save only the %tbr and the %y
+	 * registers.
 	 */
 	mov	%tbr, %CUR_TBR_REG
 	mov	%y, %CUR_Y_REG
 	/*
-	 * Are we in an invalid window? If so, deal with it.
+	 * Are we in an invalid window?
 	 */
 	MACH_INVALID_WINDOW_TEST()
 	be	WindowOkay
 	nop
 	/*
-	 * Deal with window overflow - put return addr in SAFE_TEMP.
+	 * Deal with window overflow - put return addr in SAFE_TEMP since
+	 * the overflow handler will look for the return address there..
 	 * It is okay to do this, even if we got here after due to a slow
 	 * overflow trap due to special action needed, because if we did that,
 	 * then we've already taken care of the overflow problem and so we
@@ -112,20 +116,24 @@ _MachTrap:
 	nop
 WindowOkay:
 	/*
-	 * Now that our out registers are safe to use, update our stack
-	 * pointer.  If coming from user mode, I need to get kernel sp from
-	 * state structure instead.  If we came from kernel
+	 * Now that we know our out registers are safe to use, since we're
+	 * in a valid window, update our stack  pointer.
+	 * If coming from user mode, I need to get kernel sp from
+	 * state structure.  If we came from kernel
 	 * mode, just subtract a stack frame from the current frame pointer and
 	 * continue. To see if we came from user mode, we look at the
 	 * previous state bit (PS) in the processor state register.
 	 * I set up the stack pointer in the delay slot of the branch if I came
 	 * from kernel mode, so it's as fast as possible.  I annul the
 	 * instruction if it turns out to be a user stack.
-	 * We must give the stack a whole full state frame so that routines
-	 * we call will have space to store their arguments.  System calls,
-	 * for example!  NOTE: The amount we bump up the stack by here must
-	 * agree with the test in the window underflow routine, so that bad
-	 * things don't happen as we return from the debugger!!!!!
+	 * We must give the stack a full state frame so that C routines
+	 * we call will have space to store their arguments.  (System calls,
+	 * for example!)
+	 *
+	 * NOTE: The amount we bump up the stack by here must
+	 * agree with the debugger stack test in the window underflow routine,
+	 * so that we don't trash our stack when returning from the
+	 * debugger!!!!!
 	 */
         andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0 		/* previous state? */
         bne,a   DoneWithUserStuff 			/* was kernel mode */
@@ -148,22 +156,26 @@ WindowOkay:
 	st	%sp, [%VOL_TEMP2]
 
 DoneWithUserStuff:
-	andn	%sp, 0x7, %sp	/* double-word aligned - should already be ok */
+	/* Test stack alignment here?? */
 
 	/*
 	 * This only saves the globals to the stack.  The locals
 	 * and ins make it there through normal overflow and underflow.
+	 *
+	 * NOTE that we cannot trash %g1 even after saving the global
+	 * registers, since that is the register that contains the system
+	 * call number for system call traps!
 	 */
 	MACH_SAVE_GLOBAL_STATE()
-
+/* FOR DEBUGGING */
+	set	0x11111111, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap1, %CUR_TBR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap2, %CUR_PC_REG)
+/* END FOR DEBUGGING */
+	
 	/* traps on, maskable interrupts off */
 	MACH_SR_HIGHPRIO()
-/* FOR DEBUGGING */
-	call	_MachFlushWindowsToStack
-	nop
-	MACH_RESTORE_GLOBAL_STATE()
-/* END FOR DEBUGGING */
-
 	/*
 	 * It is tedious to do all these serial comparisons against the
 	 * trap type, so this should be changed to a jump table.  It's this
@@ -342,45 +354,49 @@ DoneWithUserStuff:
  *
  * MachReturnFromTrap --
  *
- *	Go through the inverse of MachTrap.  Handlers cannot return to where
- *	they were called.  They must return here to get trap postamble.
+ *	Go through the inverse of MachTrap.  The trap handlers that MachTrap
+ *	called return to here rather than MachTrap.
  *
- *	1) Disable traps.  This means the handler we've return from mustn't
- *	have them disabled already.
- *	2) Check for window underflow.  Deal with it if necessary.
- *	3) Restore the trap state.
- *	4) Then jump to where we were when we got a trap, re-enabling traps.
- *	NOTE: this restores old psr to what it was, except for its current
- *	window pointer bits.  These we take from the current psr, in case
- *	we're in a different window now (which can happen after context
- *	switches).
+ *	The scheme of things:
+ *
+ *	1) Determine if we are returning to user mode.  If so, then we must
+ *	check the specialHandling flag.  If it is set, then we must call
+ *	MachUserAction.
+ *	2) If we called MachUserAction, then we must check its return value
+ *	to see if we need to deal with any signals.  If we do, then
+ *	we call MachHandleSignal().  It returns to user mode itself via
+ *	a rett instruction, so we don't come back here until the
+ *	return-from-signal trap that the user ends up executing to return to
+ *	the kernel from a signal.
+ *	3) For both returns to user mode and returns to kernel mode, we
+ *	must next check if we would return to an invalid window.  If so,
+ *	we must make it valid or we will get a watchdog reset.  We may
+ *	call the window underflow routine to do this.  But, if we are
+ *	returning to user mode, we must check to make sure the user stack
+ *	is resident, since the underflow routine can't get any page faults.
+ *	If the user stack isn't resident, we page it in.
+ *	4) Finally, we disable traps again (or the rett instruction will
+ *	give us a watchdog reset), restore the global registers, restore
+ *	the %tbr, %y registers, restore the %psr to the trap psr, and rett
+ *	(return from trap) to the saved trap pc and next pc.
  *
  * Results:
  *	None.
- * * Side effects:
- *	None.
+ *
+ * Side effects:
+ *	We jump back to where we came from.  If we came from a system call
+ *	or certain other traps, we'll actually return to where we came from
+ *	plus 8, or else we would re-execute the system call instruction.
+ *	The addition of 8 was done by the individual handlers that know
+ *	whether or not they would need to do this.
+ *
+ *	If a user process has a bad stack pointer, we will kill it here and
+ *	print out a message.
  *
  * ----------------------------------------------------------------------
  */
 .global	_MachReturnFromTrap
 _MachReturnFromTrap:
-	/* Returning to user mode?  If not, goto NormalReturn. */
-	/*
-	 * If returning to user mode, check special handling flags here.
-	 * These may indicate a need to (in some order)
-	 * 1) take a context switch
-	 * 2) copy user window overflow values from where they were saved
-	 * in the process state buffer out to the user stack, because the
-	 * user stack wasn't resident.
-	 * 3) deal with a signal.
-	 * 4) deal with a bad return value from a user trap that involves
-	 * doing something to the user process.
-	 */
-	/* Look at return values */
-	/* Look at context switches */
-	/* Look at signal stuff */
-	/* Look at window overflow stuff */
-
 	/* Are we a user or kernel process? */
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
 	bne	NormalReturn
@@ -421,13 +437,6 @@ NormalReturn:
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
 	bne	CallUnderflow
 	nop
-/* FOR_DEBUGGING */
-#ifdef NOTDEF
-	set	0x30303030, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow1, %fp)
-#endif NOTDEF
-/*END  FOR_DEBUGGING */
 	/*
 	 * It's a user process, so check residence and protection fields of pte.
 	 * Before anything we check stack alignment.
@@ -440,7 +449,7 @@ NormalReturn:
 	nop
 	/*
 	 * Call VM Stuff with the %fp which will be stack pointer in
-	 * the window we restore..
+	 * the window we restore.
 	 */
 	QUICK_ENABLE_INTR()
 /* FOR_DEBUGGING */
@@ -500,15 +509,6 @@ CallUnderflow:
 	nop
 /* FOR DEBUGGING */
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
-	bne	UnderflowOkay
-	nop
-	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-	set	_MachPIDOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
-	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %OUT_TEMP1
-	set	0x4310c, %VOL_TEMP1
-	cmp	%OUT_TEMP1, %VOL_TEMP1
 	bne	UnderflowOkay
 	nop
 	set	0x17171717, %OUT_TEMP1
@@ -834,11 +834,6 @@ ReturnFromOverflow:
 	restore				/* move back to trap window */
 	mov	%VOL_TEMP1, %g3		/* restore global registers */
 	mov	%VOL_TEMP2, %g4
-/* FOR DEBUGGING */
-#ifdef NOTDEF
-	mov	%l3, %g5
-#endif NOTDEF
-/* END FOR DEBUGGING */
 
 	/*
 	 * jump to calling routine - this may be a trap-handler or not.
@@ -1189,6 +1184,18 @@ RegularStack:
 .global	MachHandleDebugTrap
 MachHandleDebugTrap:
 	/*
+	 * If we came from user mode, we do different stuff.
+	 */
+        andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0 		/* previous state? */
+        bne	KernelDebug 				/* was kernel mode */
+	nop
+	call	_MachUserDebug
+	nop
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+KernelDebug:
+	/*
 	 * This points to the top stack frame, which consists of a
 	 * Mach_RegState structure.  This is handed to the debugger.  We
 	 * also use this to restore our stack pointer upon returning from the
@@ -1277,6 +1284,17 @@ MachSyscallTrap:
 	 * return from the system call trap via the return trap procedure,
 	 * we increment the return pc and npc here.
 	 */
+/* FOR_DEBUGGING */
+	set	0x22222222, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall1, %g1)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall2, %OUT_TEMP1)
+/* END FOR_DEBUGGING */
 	mov	%NEXT_PC_REG, %CUR_PC_REG
 	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
 	/*

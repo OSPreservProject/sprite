@@ -169,6 +169,8 @@ copyingTable:
 	std	%g4, [%g2 + 8]
 
 	mov	%g6, %tbr			/* switch in my trap address */
+	set	_machTBRAddr, %g2
+	st	%g6, [%g2]			/* save tbr addr in C var */
 	MACH_WAIT_FOR_STATE_REGISTER()			/* let it settle for
 							 * the necessary
 							 * amount of time.  Note

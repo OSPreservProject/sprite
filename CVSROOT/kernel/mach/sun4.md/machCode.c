@@ -81,6 +81,9 @@ Address	mach_LastUserAddr;
 Address	mach_MaxUserStackAddr;
 int	mach_LastUserStackPage;
 
+Address	machTBRAddr;			/* address of trap table.  The value
+					 * is set up and stored here in
+					 * bootSysAsm.s.*/
 int	machMaxSysCall;			/* Hightest defined system call. */
 int	machArgOffsets[SYS_NUM_SYSCALLS];/* For each system call, tells how
 					 * much to add to the fp at the time
@@ -627,18 +630,12 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
       */
     Mach_DisableIntr();
     machCurStatePtr = procPtr->machStatePtr;
-#ifdef NOTDEF
-    /* A user proc can exec a user proc, so this is a bad test! */
-
-    if (procPtr->machStatePtr->trapRegs != (Mach_RegState *) NIL) {
-	panic("Mach_ExecUserProc: machStatePtr->trapRegs was NOT NIL!\n");
-    }
-#endif NOTDEF
     /*
      * Since we're not returning, we can just use this space on our kernel
-     * stack as trapRegs.  This is safe, since we only fill in the fp, pc, and
-     * nextPc fields (in Mach_StartUserProc()) and these just touch the saved-
-     * window section of our stack and won't mess up any of our arguments.
+     * stack as trapRegs.  This is safe, since we only fill in the fp, tbr,
+     * pc, and nextPc fields (in Mach_StartUserProc()) and these just touch
+     * the saved-window section of our stack and won't mess up any of our
+     * arguments.
      */
     procPtr->machStatePtr->trapRegs = &tmpTrapState;
     /*
@@ -651,6 +648,7 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
 	    userStackPtr - MACH_FULL_STACK_FRAME;
     procPtr->machStatePtr->trapRegs->curPsr = MACH_FIRST_USER_PSR;
     (Address) procPtr->machStatePtr->trapRegs->pc = entryPoint;
+    (Address) procPtr->machStatePtr->trapRegs->tbr = machTBRAddr;
     /*
      * Return value is cleared for exec'ing user process.  This shouldn't
      * matter since a good exec won't return.
@@ -1219,9 +1217,6 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     Boolean		protError;
     Boolean		copyInProgress = FALSE;
     ReturnStatus	status;
-/* FOR DEBUGGING */
-    extern	Boolean	dbgPanic;
-/* END FOR DEBUGGING */
 
     procPtr = Proc_GetActualProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -1284,28 +1279,12 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	}
 	return;
     }
-/* FOR DEBUGGING */
-    DEBUG_ADD(0x77777777);
-    DEBUG_ADD(addrErrorReg);
-    DEBUG_ADD(pcValue);
-    DEBUG_ADD(busErrorReg);
-/* END FOR DEBUGGING */
     /* user page fault */
     protError = busErrorReg & MACH_PROT_ERROR;
     Mach_EnableIntr();
     if (Vm_PageIn(addrErrorReg, protError) != SUCCESS) {
-/* FOR DEBUGGING */
-	DEBUG_ADD(0x77777777);
-	DEBUG_ADD(addrErrorReg);
-	DEBUG_ADD(pcValue);
-	DEBUG_ADD(busErrorReg);
-/* END FOR DEBUGGING */
 	printf("MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
 		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
-/* FOR_DEBUGGING */
-	dbgPanic = TRUE;
-	asm("ta 1");
-/* END FOR_DEBUGGING */
 	/* Kill user process */
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
 	Mach_DisableIntr();
@@ -1559,5 +1538,19 @@ void
 MachFlushWindowsToStack()
 {
     FlushTheWindows(MACH_NUM_WINDOWS - 2);
+    return;
+}
+
+void
+MachUserDebug()
+{
+    Proc_ControlBlock	*procPtr; 
+
+    procPtr = Proc_GetCurrentProc();
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	panic("MachUserDebug: current process was NIL!\n");
+    }
+    Sig_Send(SIG_BREAKPOINT, SIG_NO_CODE, procPtr->processID, FALSE);
+
     return;
 }

@@ -450,6 +450,8 @@ UserStackOkay:
 	ld	[%VOL_TEMP1], %CUR_PC_REG
 	add	%VOL_TEMP1, 4, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %NEXT_PC_REG
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %CUR_TBR_REG
 
 	/*
 	 * Put a return value into the return value register.
