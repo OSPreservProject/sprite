@@ -94,7 +94,7 @@ extern	Boolean		VmMach_VirtAddrParse();
 /*
  * Routines to manage contexts.
  */
-extern	void		VmMach_SetupContext();
+extern	ClientData	VmMach_SetupContext();
 extern	void		VmMach_FreeContext();
 extern	void		VmMach_ReinitContext();
 /*
