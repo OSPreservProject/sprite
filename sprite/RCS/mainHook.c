@@ -12,7 +12,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "mem.h"
 
 /*
  * Flags to modify main's behavior.   Can be changed without recompiling
@@ -28,13 +27,18 @@ char *main_AltInit	= NULL;  /* If non-null then contains name of
 Boolean main_AllowNMI = FALSE;	 /* TRUE -> allow non-maskable intrrupts */
 
 /*
- * These memory tracing sizes are based on a granularity of 8 bytes
- * per bucket in the memory allocator.  This granuarity stems from the
- * use of a double-word for administrative info that is used so that
- * allocated objects on the SPUR machine are all 8 byte aligned.
- * To repeat, these are bucket sizes and reflect the implementation of
- * the memory allocator.
+ * Malloc/Free tracing.  This array defines which object sizes will
+ * be traced by malloc and free.  They'll record the caller's PC and
+ * the number of objects it currently has allocated.  The sizes reflect
+ * the 8 byte granularity of the memory allocator, plus the 16 bytes
+ * of overhead on each bin.
  */
+#include "fs.h"
+#include "../fs/fsInt.h"
+#include "fsPdev.h"
+#include "fsDisk.h"
+#include "fsDevice.h"
+#include "fsFile.h"
 Mem_TraceInfo mainMemTraceInfo[] = {
     { 24, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
     { 32, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
@@ -45,8 +49,16 @@ Mem_TraceInfo mainMemTraceInfo[] = {
     { 72, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
     { 80, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
     { 88, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
-    { 136, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
-    { 288, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 96, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 112, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { sizeof(FsFileDescriptor), (MEM_STORE_TRACE) },
+    { 144, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { sizeof(FsDeviceIOHandle), (MEM_STORE_TRACE) },
+    { sizeof(PdevControlIOHandle), (MEM_STORE_TRACE) },
+    { 216, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { sizeof(PdevServerIOHandle), (MEM_STORE_TRACE) },
+    { sizeof(FsRmtFileIOHandle), (MEM_STORE_TRACE) },
+    { sizeof(FsLocalFileIOHandle), (MEM_STORE_TRACE) },
 };
 
 
