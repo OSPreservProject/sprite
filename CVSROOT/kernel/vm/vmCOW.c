@@ -135,10 +135,10 @@ VmSegFork(srcSegPtr, destSegPtr)
 {
     VmCOWInfo	*cowInfoPtr;
 
-    cowInfoPtr = (VmCOWInfo *)Mem_Alloc(sizeof(VmCOWInfo));
+    cowInfoPtr = (VmCOWInfo *)malloc(sizeof(VmCOWInfo));
     (void)COWStart(srcSegPtr, &cowInfoPtr);
     if (cowInfoPtr != (VmCOWInfo *)NIL) {
-	Mem_Free((Address)cowInfoPtr);
+	free((Address)cowInfoPtr);
     }
     DoFork(srcSegPtr, destSegPtr);
 }
@@ -321,7 +321,7 @@ VmCOWCopySeg(segPtr)
     cowInfoPtr = (VmCOWInfo *)NIL;
     COWEnd(segPtr, &cowInfoPtr);
     if (cowInfoPtr != (VmCOWInfo *)NIL) {
-	Mem_Free((Address)cowInfoPtr);
+	free((Address)cowInfoPtr);
     }
     return(status);
 }
@@ -385,7 +385,7 @@ VmCOWDeleteFromSeg(segPtr, firstPage, lastPage)
 	} else if (*ptePtr & VM_COR_BIT) {
 	    segPtr->numCORPages--;
 	    if (segPtr->numCORPages < 0) {
-		Sys_Panic(SYS_FATAL, "VmCOWDeleteFromSeg: numCORPages < 0\n");
+		panic("VmCOWDeleteFromSeg: numCORPages < 0\n");
 	    }
 	}
     }
@@ -393,7 +393,7 @@ VmCOWDeleteFromSeg(segPtr, firstPage, lastPage)
     cowInfoPtr = (VmCOWInfo *)NIL;
     COWEnd(segPtr, &cowInfoPtr);
     if (cowInfoPtr != (VmCOWInfo *)NIL) {
-	Mem_Free((Address)cowInfoPtr);
+	free((Address)cowInfoPtr);
     }
 }
 
@@ -671,7 +671,7 @@ VmCOR(virtAddrPtr)
     cowInfoPtr = (VmCOWInfo *)NIL;
     COWEnd(virtAddrPtr->segPtr, &cowInfoPtr);
     if (cowInfoPtr != (VmCOWInfo *)NIL) {
-	Mem_Free((Address)cowInfoPtr);
+	free((Address)cowInfoPtr);
     }
 
     return(status);
@@ -725,8 +725,7 @@ COR(virtAddrPtr, ptePtr)
 	virtAddr.flags = 0;
 	status = VmPageServerRead(&virtAddr, virtFrameNum);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "VmCOR: Couldn't read page, status <%x>\n",
-				   status);
+	    printf("Warning: VmCOR: Couldn't read page, status <%x>\n", status);
 	    VmPageFree(virtFrameNum);
 	    return(status);
 	}
@@ -734,7 +733,7 @@ COR(virtAddrPtr, ptePtr)
 
     virtAddrPtr->segPtr->numCORPages--;
     if (virtAddrPtr->segPtr->numCORPages < 0) {
-	Sys_Panic(SYS_FATAL, "COR: numCORPages < 0\n");
+	panic("COR: numCORPages < 0\n");
     }
     if (vmCORReadOnly) {
 	corCheckBit = VM_COR_CHECK_BIT | VM_READ_ONLY_PROT;
@@ -918,7 +917,7 @@ VmCOW(virtAddrPtr)
     cowInfoPtr = (VmCOWInfo *)NIL;
     COWEnd(virtAddrPtr->segPtr, &cowInfoPtr);
     if (cowInfoPtr != (VmCOWInfo *)NIL) {
-	Mem_Free((Address)cowInfoPtr);
+	free((Address)cowInfoPtr);
     }
 }
 
@@ -960,7 +959,7 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
     if (mastSegPtr != (Vm_Segment *)NIL) {
 	mastSegPtr->numCORPages--;
 	if (mastSegPtr->numCORPages < 0) {
-	    Sys_Panic(SYS_FATAL, "COW: numCORPages < 0\n");
+	    panic("COW: numCORPages < 0\n");
 	}
 	if (others) {
 	    mastSegPtr->numCOWPages++;
@@ -1036,7 +1035,7 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
     }
     virtAddrPtr->segPtr->numCOWPages--;
     if (virtAddrPtr->segPtr->numCOWPages < 0) {
-	Sys_Panic(SYS_FATAL, "COW: numCOWPages < 0\n");
+	panic("COW: numCOWPages < 0\n");
     }
 }
 
@@ -1197,7 +1196,7 @@ CopyPage(srcPF, destPF)
 
     srcMappedAddr = VmMapPage(srcPF);
     destMappedAddr = VmMapPage(destPF);
-    Byte_Copy(vm_PageSize, srcMappedAddr, destMappedAddr);
+    bcopy(srcMappedAddr, destMappedAddr, vm_PageSize);
     VmUnmapPage(srcMappedAddr);
     VmUnmapPage(destMappedAddr);
 }

@@ -87,7 +87,7 @@ VmStoreTraceRec(recType, size, traceRecAddr, checkOverflow)
 	shortPtr = (short *)traceRecAddr;
 	*shortPtr = recType;
     }
-    Byte_Copy(size, traceRecAddr, VM_GET_TRACE_BUFFER_PTR(char));
+    bcopy(traceRecAddr, VM_GET_TRACE_BUFFER_PTR(char), size);
     vmTraceNextByte += size;
     if (checkOverflow) {
 	if (vmTraceNextByte - vmTraceFirstByte > VM_TRACE_BUFFER_SIZE / 2 &&
@@ -142,13 +142,12 @@ VmTraceDump(data, callInfoPtr)
 			  vmTraceBuffer + VM_GET_BUFFER_INDEX(vmTraceFirstByte),
 			  vmTraceFirstByte, &length);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING,
-		"VmTraceDaemon: Couldn't write trace file, reason %x\n",
-		status);
+	    printf("%s VmTraceDaemon: Couldn't write trace file, reason %x\n",
+		    "Warning:", status);
 	    break;
 	} else if (length != savedLength) {
-	    Sys_Panic(SYS_WARNING,
-		"VmTraceDaemon: Short write, length = %d\n", length);
+	    printf("Warning: VmTraceDaemon: Short write, length = %d\n",
+		    length);
 	    break;
 	}
 	vmTraceFirstByte += length;
@@ -206,8 +205,8 @@ Vm_StoreTraceTime(timeStamp)
 {
     Vm_TraceTimeStamp	timeStampRec;
 
-    Byte_Copy(sizeof(timeStampRec.time), (Address)&timeStamp, 
-	      (Address)&timeStampRec.time);
+    bcopy((Address)&timeStamp, (Address)&timeStampRec.time,
+	    sizeof(timeStampRec.time));
     VmStoreTraceRec(VM_TRACE_TIME_REC, sizeof(timeStampRec),
 		     (Address)&timeStampRec, TRUE);
 }

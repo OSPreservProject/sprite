@@ -79,14 +79,14 @@ VmSwapFileRemove(swapStreamPtr, swapFileName)
     if (swapFileName != (char *) NIL) {
 	if (vmSwapFileDebug) {
 	    status = SUCCESS;
-	    Sys_Printf("VmSwapFileRemove: not removing swap file %s.\n",
+	    printf("VmSwapFileRemove: not removing swap file %s.\n",
 		       swapFileName);
 	} else {
 	    status = Fs_Remove(swapFileName);
 	}
-	Mem_Free(swapFileName);
+	free(swapFileName);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "VmSwapFileRemove: Fs_Remove(%s) returned %x.\n",
+	    printf("Warning: VmSwapFileRemove: Fs_Remove(%s) returned %x.\n",
 		      swapFileName, status);
 	}
     }
@@ -189,8 +189,7 @@ VmPageServerRead(virtAddrPtr, pageFrame)
 
     segPtr = virtAddrPtr->segPtr;
     if (!(segPtr->flags & VM_SWAP_FILE_OPENED)) {
-	Sys_Panic(SYS_FATAL, 
-	   "VmPageServerRead: Trying to read from non-existent swap file.\n");
+	panic("VmPageServerRead: Trying to read from non-existent swap file.\n");
     }
 
     if (segPtr->type == VM_STACK) {
@@ -239,9 +238,9 @@ Vm_OpenSwapDirectory(data, callInfoPtr)
     char		fileName[FS_MAX_PATH_NAME_LENGTH];
     ReturnStatus	status;
 
-    (void)String_Copy(VM_SWAP_DIR_NAME, fileName);
-    (void)Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
-    (void)String_Cat(number, fileName);
+    (void)strcpy(fileName, VM_SWAP_DIR_NAME);
+    (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
+    (void)strcat(fileName, number);
     status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0, &vmSwapStreamPtr);
     if (status != SUCCESS) {
 	/*
@@ -286,11 +285,11 @@ VmOpenSwapFile(segPtr)
 	 * the file name first.  The file name is the segment number.
 	 */
 	VmMakeSwapName(segPtr->segNum, fileName);
-	segPtr->swapFileName = (char *) Mem_Alloc(String_Length(fileName) + 1);
-	(void) String_Copy(fileName, segPtr->swapFileName);
+	segPtr->swapFileName = (char *) malloc(strlen(fileName) + 1);
+	(void) strcpy(segPtr->swapFileName, fileName);
     }
 #ifdef DEBUG
-    Sys_Printf("Opening swap file %s.\n", segPtr->swapFileName);
+    printf("Opening swap file %s.\n", segPtr->swapFileName);
 #endif DEBUG
     procPtr = Proc_GetEffectiveProc();
     if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
@@ -306,7 +305,7 @@ VmOpenSwapFile(segPtr)
     origCwdPtr = procPtr->fsPtr->cwdPtr;
     if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
 	procPtr->fsPtr->cwdPtr = vmSwapStreamPtr;
-	(void)Cvt_UtoA((unsigned) segPtr->segNum, 10, fileName);
+	(void)sprintf(fileName, "%u", (unsigned) segPtr->segNum);
 	swapFileNamePtr = fileName;
     } else {
 	swapFileNamePtr = segPtr->swapFileName;
@@ -320,9 +319,8 @@ VmOpenSwapFile(segPtr)
     procPtr->fsPtr->cwdPtr = origCwdPtr;
     if (status != SUCCESS) {
 	segPtr->swapFilePtr = (Fs_Stream *)NIL;
-	Sys_Panic(SYS_WARNING, 
-	    "VmOpenSwapFile: Could not open swap file %s, reason 0x%x\n", 
-		segPtr->swapFileName, status);
+	printf("%s VmOpenSwapFile: Could not open swap file %s, reason 0x%x\n", 
+		"Warning:", segPtr->swapFileName, status);
 	return(status);
     }
 
@@ -356,12 +354,12 @@ VmMakeSwapName(segNum, fileName)
 {
     char number[CVT_INT_BUF_SIZE];
 
-    (void)String_Copy(VM_SWAP_DIR_NAME, fileName);
-    (void)Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
-    (void)String_Cat(number, fileName);
-    (void)String_Cat("/", fileName);
-    (void)Cvt_UtoA((unsigned) (segNum), 10, number);
-    (void)String_Cat(number, fileName);
+    (void)strcpy(fileName, VM_SWAP_DIR_NAME);
+    (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
+    (void)strcat(fileName, number);
+    (void)strcat(fileName, "/");
+    (void)sprintf(number, "%u", (unsigned) (segNum));
+    (void)strcat(fileName, number);
 }
 
 
@@ -587,8 +585,8 @@ VmFileServerRead(virtAddrPtr, pageFrame)
     }
     VmUnmapPage((Address) mappedAddr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, 
-	  "VmFileServerRead: Error %x from Fs_Read or Fs_PageRead\n", status);
+	printf("%s VmFileServerRead: Error %x from Fs_Read or Fs_PageRead\n",
+		"Warning:", status);
 	return(status);
     }
 

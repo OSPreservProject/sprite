@@ -344,7 +344,7 @@ Vm_MakeUnaccessible(addr, numBytes)
 	 */
         segPtr->ptUserCount--;
         if (segPtr->ptUserCount < 0) {
-            Sys_Panic(SYS_FATAL, "Vm_MakeUnaccessible: expand count < 0\n");
+            panic("Vm_MakeUnaccessible: expand count < 0\n");
         }
         if (segPtr->ptUserCount == 0) {
             Sync_Broadcast(&segPtr->condition);

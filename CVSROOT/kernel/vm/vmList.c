@@ -29,12 +29,12 @@ VmListInsert(itemPtr, destPtr)
 {
     if (itemPtr->nextPtr != (List_Links *) NIL ||
 	itemPtr->prevPtr != (List_Links *) NIL) {
-	Sys_Panic(SYS_FATAL, "VmListInsert: Inserting element twice.\n");
+	panic("VmListInsert: Inserting element twice.\n");
     }
 
     if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
 	    || !itemPtr || !destPtr || (itemPtr == destPtr)) {
-	Sys_Panic(SYS_FATAL, "VmListInsert: Bad item or dest ptr.\n");
+	panic("VmListInsert: Bad item or dest ptr.\n");
     }
     itemPtr->nextPtr = destPtr->nextPtr;
     itemPtr->prevPtr = destPtr;
@@ -65,11 +65,11 @@ VmListRemove(itemPtr)
 {
     if (itemPtr->nextPtr == (List_Links *) NIL ||
 	itemPtr->prevPtr == (List_Links *) NIL) {
-	Sys_Panic(SYS_FATAL, "VmListRemove: Item not on list.\n");
+	panic("VmListRemove: Item not on list.\n");
     }
     if (itemPtr == (List_Links *) NIL || itemPtr == itemPtr->nextPtr
 	    || !itemPtr) {
-	Sys_Panic(SYS_FATAL, "VmListRemove: Bad itemPtr.\n");
+	panic("VmListRemove: Bad itemPtr.\n");
     }
     itemPtr->prevPtr->nextPtr = itemPtr->nextPtr;
     itemPtr->nextPtr->prevPtr = itemPtr->prevPtr;
@@ -101,7 +101,7 @@ VmListMove(itemPtr, destPtr)
 {
     if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
 	    || !itemPtr || !destPtr) {
-	Sys_Panic(SYS_FATAL, "VmListMove: Bad item or dest ptr.\n");
+	panic("VmListMove: Bad item or dest ptr.\n");
     }
     /*
      * It is conceivable that someone will try to move a list element to

@@ -81,7 +81,7 @@ Vm_FreezeSegments(procPtr, nodeID, procListPtr, numProcsPtr)
     }
 #else
     if (segPtr->refCount > 1) {
-	Sys_Panic(SYS_FATAL, "Can't migrate process sharing heap.\n");
+	panic("Can't migrate process sharing heap.\n");
     }
     *numProcsPtr = 1;
 #endif    
@@ -132,8 +132,7 @@ Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
 	     */
 	    status = VmCOWCopySeg(segPtr);
 	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING, 
-			  "Vm_MigrateSegment: Could not copy segment\n");
+		printf("Warning: Vm_MigrateSegment: Could not copy segment\n");
 		return(status);
 	    }
 	}
@@ -193,17 +192,17 @@ EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr)
     }
 
     bufferSize = NUM_FIELDS * sizeof(int) + varSize + Fs_GetEncapSize();
-    buffer = Mem_Alloc(bufferSize);
+    buffer = malloc(bufferSize);
     ptr = buffer;
-    Byte_Copy(NUM_FIELDS * sizeof(int), (Address) &segPtr->offset, ptr);
+    bcopy((Address) &segPtr->offset, ptr, NUM_FIELDS * sizeof(int));
     ptr += NUM_FIELDS * sizeof(int);
     if (segPtr->type != VM_CODE) {
-	Byte_Copy(varSize, (Address) segPtr->ptPtr, ptr);
+	bcopy((Address) segPtr->ptPtr, ptr, varSize);
 	ptr += varSize;
 	(void)Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
 	status = Fs_EncapStream(segPtr->swapFilePtr, ptr);
     } else {
-	Byte_Copy(varSize, (Address) &segPtr->execInfo, ptr);
+	bcopy((Address) &segPtr->execInfo, ptr, varSize);
 	ptr += varSize;
 	(void)Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
 	status = Fs_EncapStream(segPtr->filePtr, ptr);
@@ -272,14 +271,14 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
 	    status = Fs_DeencapStream(buffer, &filePtr);
 	    buffer += fsInfoSize;
 	    if (status != SUCCESS) {
-		Sys_Printf("Vm_ReceiveSegmentInfo: Fs_DeencapStream returned status %x.\n",
+		printf("Vm_ReceiveSegmentInfo: Fs_DeencapStream returned status %x.\n",
 			   status);
 		return(status);
 	    }
 	    segPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
 	    if (segPtr == (Vm_Segment *) NIL) {
 		if (vmMigLeakDebug) {
-		    Sys_Printf("Calling Vm_SegmentNew for code.\n");
+		    printf("Calling Vm_SegmentNew for code.\n");
 		}
 		segPtr = Vm_SegmentNew(VM_CODE, filePtr, fileAddr,
 				       numPages, offset, procPtr);
@@ -303,19 +302,17 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
 	    (void)Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
 			  &filePtr);
 	    if (filePtr == (Fs_Stream *) NIL) {
-		Sys_Panic(SYS_FATAL,
-			  "Vm_ReceiveSegmentInfo: no code file pointer.\n");
+		panic("Vm_ReceiveSegmentInfo: no code file pointer.\n");
 	    }
 	    break;
 	case VM_STACK:
 	    filePtr = (Fs_Stream *) NIL;
 	    break;
 	default:
-	    Sys_Panic(SYS_FATAL,
-		      "Vm_ReceiveSegmentInfo: unknown segment type.\n");
+	    panic("Vm_ReceiveSegmentInfo: unknown segment type.\n");
     }
     if (vmMigLeakDebug) {
-	Sys_Printf("Calling Vm_SegmentNew for type = %d.\n", type);
+	printf("Calling Vm_SegmentNew for type = %d.\n", type);
     }
     segPtr = Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr);
     if (segPtr == (Vm_Segment *) NIL) {
@@ -328,12 +325,12 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
     buffer += varSize;
     status = Fs_DeencapStream(buffer, &segPtr->swapFilePtr);
     if (status != SUCCESS) {
-	Sys_Printf("Vm_ReceiveSegmentInfo: Fs_DeencapStream on swapFile returned status %x.\n",
+	printf("Vm_ReceiveSegmentInfo: Fs_DeencapStream on swapFile returned status %x.\n",
 		   status);
 	return(status);
     }
     if (segPtr->swapFileName != (char *) NIL) { 
-	Mem_Free(segPtr->swapFileName);
+	free(segPtr->swapFileName);
 	segPtr->swapFileName = (char *) NIL;
     }
     segPtr->flags |= VM_SWAP_FILE_OPENED;
@@ -365,7 +362,7 @@ LoadSegment(length, buffer, segPtr)
 {
     LOCK_MONITOR;
 
-    Byte_Copy(length, buffer, (Address) segPtr->ptPtr);
+    bcopy(buffer, (Address) segPtr->ptPtr, length);
 
     UNLOCK_MONITOR;
 }
@@ -575,7 +572,7 @@ FreeSegment(segPtr)
 				&procLinkPtr, &objStreamPtr, TRUE);
     if (status == VM_DELETE_SEG) {
 	VmMach_SegDelete(segPtr);
-	Mem_Free((Address)segPtr->ptPtr);
+	free((Address)segPtr->ptPtr);
 	segPtr->ptPtr = (Vm_PTE *)NIL;
 	VmPutOnFreeSegList(segPtr);
     }

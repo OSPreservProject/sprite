@@ -81,7 +81,7 @@ VmSegTableAlloc()
 
     segmentTable = 
 	    (Vm_Segment *) Vm_BootAlloc(sizeof(Vm_Segment) * vmNumSegments);
-    Byte_Zero(vmNumSegments * sizeof(Vm_Segment), (Address)segmentTable);
+    bzero((Address)segmentTable, vmNumSegments * sizeof(Vm_Segment));
 
     vm_SysSegPtr = &(segmentTable[VM_SYSTEM_SEGMENT]);
 }
@@ -177,11 +177,11 @@ Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
     register	Vm_Segment	*segPtr;
     register	VmProcLink	*procLinkPtr;
 
-    procLinkPtr = (VmProcLink *) Mem_Alloc(sizeof(VmProcLink));
+    procLinkPtr = (VmProcLink *) malloc(sizeof(VmProcLink));
     procLinkPtr->procPtr = procPtr;
     segPtr = FindCode(filePtr, procLinkPtr, usedFilePtr);
     if (segPtr == (Vm_Segment *) NIL) {
-	Mem_Free((Address) procLinkPtr);
+	free((Address) procLinkPtr);
     } else {
 	*execInfoPtrPtr = &segPtr->execInfo;
     }
@@ -249,7 +249,7 @@ again:
 	segPtr = *segPtrPtr;
 	if (segPtr->flags & VM_SEG_INACTIVE) {
 	    if (segPtr->fileHandle != fileHandle) {
-		Sys_Panic(SYS_FATAL, "FindCode: segFileData != fileHandle\n");
+		panic("FindCode: segFileData != fileHandle\n");
 	    }
 	    /*
 	     * The segment is inactive, so delete it from the inactive
@@ -307,7 +307,7 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 
     segPtrPtr = Fs_GetSegPtr(Fs_GetFileHandle(filePtr));
     if (*segPtrPtr != (Vm_Segment *) 0) {
-	Sys_Panic(SYS_WARNING, "Vm_InitCode: Seg ptr = %x\n", *segPtrPtr);
+	printf("Warning: Vm_InitCode: Seg ptr = %x\n", *segPtrPtr);
     }
     *segPtrPtr = segPtr;
     if (segPtr == (Vm_Segment *) NIL) {
@@ -323,11 +323,11 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 	segPtr->fileHandle = Fs_GetFileHandle(filePtr);
 	fileNamePtr = Fs_GetFileName(filePtr);
 	if (fileNamePtr != (char *)NIL) {
-	    length = String_Length(fileNamePtr);
+	    length = strlen(fileNamePtr);
 	    if (length >= VM_OBJ_FILE_NAME_LENGTH) {
 		length = VM_OBJ_FILE_NAME_LENGTH - 1;
 	    }
-	    (void)String_NCopy(length, fileNamePtr, segPtr->objFileName);
+	    strncpy(segPtr->objFileName, fileNamePtr, length);
 	    segPtr->objFileName[length] = '\0';
 	} else {
 	    segPtr->objFileName[0] = '\0';
@@ -368,7 +368,7 @@ Vm_FileChanged(segPtrPtr)
     segPtr = *segPtrPtr;
     if (segPtr != (Vm_Segment *) NIL) {
 	if (segPtr->refCount != 0) {
-	    Sys_Panic(SYS_FATAL, "Vm_FileChanged: In use code seg modified.\n");
+	    panic("Vm_FileChanged: In use code seg modified.\n");
 	}
 	List_Move((List_Links *) segPtr, LIST_ATREAR(deadSegList));
 	*segPtrPtr = (Vm_Segment *) NIL;
@@ -415,13 +415,13 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
     VmSpace		space;
     Boolean		deleteSeg;
 
-    space.procLinkPtr = (VmProcLink *) Mem_Alloc(sizeof(VmProcLink));
+    space.procLinkPtr = (VmProcLink *) malloc(sizeof(VmProcLink));
     if (type == VM_CODE) {
-	space.ptPtr = (Vm_PTE *) Mem_Alloc(sizeof(Vm_PTE) * numPages);
+	space.ptPtr = (Vm_PTE *) malloc(sizeof(Vm_PTE) * numPages);
 	space.ptSize = numPages;
     } else {
 	space.ptSize = ((numPages - 1) / vmPageTableInc + 1) * vmPageTableInc;
-	space.ptPtr = (Vm_PTE *) Mem_Alloc(sizeof(Vm_PTE) * space.ptSize);
+	space.ptPtr = (Vm_PTE *) malloc(sizeof(Vm_PTE) * space.ptSize);
     }
     segPtr = (Vm_Segment *)NIL;
     GetNewSegment(type, filePtr, fileAddr, numPages, offset,
@@ -438,8 +438,8 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
 	}
 	VmMach_SegInit(segPtr);
     } else {
-	Mem_Free((Address)space.procLinkPtr);
-	Mem_Free((Address)space.ptPtr);
+	free((Address)space.procLinkPtr);
+	free((Address)space.ptPtr);
     }
     return(segPtr);
 }
@@ -542,7 +542,7 @@ GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
 	segPtr->swapFileName = (char *) NIL;
 	segPtr->ptPtr = spacePtr->ptPtr;
 	segPtr->ptSize = spacePtr->ptSize;
-	Byte_Zero(segPtr->ptSize * sizeof(Vm_PTE), (Address)segPtr->ptPtr);
+	bzero((Address)segPtr->ptPtr, segPtr->ptSize * sizeof(Vm_PTE));
 	/*
 	 * If this is a stack segment, the page table grows backwards.  
 	 * Therefore all of the extra page table that we allocated must be
@@ -616,7 +616,7 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
 	        List_First((List_Links *) segPtr->procList);
 	while (procPtr != procLinkPtr->procPtr) {
 	    if (List_IsAtEnd(segPtr->procList, (List_Links *) procLinkPtr)) {
-		Sys_Panic(SYS_FATAL, "%s%s",
+		panic("%s%s",
 	                "VmSegmentDeleteInt: Could not find segment on shared",
 			"segment list.\n");
 	    }
@@ -732,7 +732,7 @@ Vm_SegmentDelete(segPtr, procPtr)
 	(void)Fs_Close(objStreamPtr);
     }
 
-    Mem_Free((Address)procLinkPtr);
+    free((Address)procLinkPtr);
 }
 
 
@@ -763,7 +763,7 @@ DeleteSeg(segPtr)
     CleanSegment(segPtr);
     VmMach_SegDelete(segPtr);
 
-    Mem_Free((Address)segPtr->ptPtr);
+    free((Address)segPtr->ptPtr);
     segPtr->ptPtr = (Vm_PTE *)NIL;
     if (segPtr->filePtr != (Fs_Stream *)NIL) {
 	(void)Fs_Close(segPtr->filePtr);
@@ -1106,7 +1106,7 @@ VmAddToSeg(segPtr, firstPage, lastPage)
     retValue = AddToSeg(segPtr, firstPage, lastPage, newNumPages, 
 			newSpace, &oldSpace);
     if (oldSpace.spaceToFree && oldSpace.ptPtr != (Vm_PTE *)NIL) {
-	Mem_Free((Address)oldSpace.ptPtr);
+	free((Address)oldSpace.ptPtr);
     }
     VmMach_SegExpand(segPtr, firstPage, lastPage);
 
@@ -1213,7 +1213,7 @@ AllocMoreSpace(segPtr, newNumPages, spacePtr)
     if (spacePtr->ptSize <= segPtr->ptSize) {
 	spacePtr->ptPtr = (Vm_PTE *) NIL;
     } else {
-	spacePtr->ptPtr = (Vm_PTE *)Mem_Alloc(sizeof(Vm_PTE) * spacePtr->ptSize);
+	spacePtr->ptPtr = (Vm_PTE *)malloc(sizeof(Vm_PTE) * spacePtr->ptSize);
     }
 }
 
@@ -1281,10 +1281,9 @@ AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
 	     * This isn't a stack segment so just copy the page table 
 	     * into the lower part, and zero the rest.
 	     */
-	    Byte_Copy(copySize, (Address) segPtr->ptPtr, 
-			(Address) newSpace.ptPtr);
-	    Byte_Zero((newSpace.ptSize - segPtr->ptSize)  * sizeof(Vm_PTE),
-		      (Address) ((int) (newSpace.ptPtr) + copySize));
+	    bcopy((Address) segPtr->ptPtr, (Address) newSpace.ptPtr, copySize);
+	    bzero((Address) ((int) (newSpace.ptPtr) + copySize),
+		    (newSpace.ptSize - segPtr->ptSize)  * sizeof(Vm_PTE));
 	} else {
 	    /*
 	     * Make sure that the heap segment isn't too big.  If it is then 
@@ -1303,9 +1302,9 @@ AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
 	     * making the page table bigger than requested.
 	     */
 	    byteOffset = (newSpace.ptSize - segPtr->ptSize) * sizeof(Vm_PTE);
-	    Byte_Copy(copySize, (Address) segPtr->ptPtr, 
-		      (Address) ((int) (newSpace.ptPtr) + byteOffset));
-	    Byte_Zero(byteOffset, (Address) newSpace.ptPtr);
+	    bcopy((Address) segPtr->ptPtr,
+		    (Address) ((int) (newSpace.ptPtr) + byteOffset), copySize);
+	    bzero((Address) newSpace.ptPtr, byteOffset);
 	    segPtr->offset -= newSpace.ptSize - segPtr->ptSize;
 	}
 	oldSpacePtr->ptPtr = segPtr->ptPtr;
@@ -1467,7 +1466,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 		VmRemapPage(srcAddr, Vm_GetPageFrame(*srcPTEPtr));
 		VmRemapPage(destAddr, Vm_GetPageFrame(*destPTEPtr));
 	    }
-	    Byte_Copy(vm_PageSize, srcAddr, destAddr);
+	    bcopy(srcAddr, destAddr, vm_PageSize);
 	    	
 	    VmUnlockPage(Vm_GetPageFrame(*srcPTEPtr));
 	    VmUnlockPage(Vm_GetPageFrame(*destPTEPtr));
@@ -1814,7 +1813,7 @@ Vm_SegmentIncRef(segPtr, procPtr)
 {
     register	VmProcLink	*procLinkPtr;
 
-    procLinkPtr = (VmProcLink *) Mem_Alloc(sizeof(VmProcLink));
+    procLinkPtr = (VmProcLink *) malloc(sizeof(VmProcLink));
     procLinkPtr->procPtr = procPtr;
 
     SegmentIncRef(segPtr, procLinkPtr);

@@ -280,13 +280,13 @@ Vm_Cmd(command, arg)
 	case VM_DO_MAKE_ACCESS_IN:
 	    Vm_MakeAccessible(0, copySize, (Address) arg, &numBytes,
 			      (Address *) &arg);
-	    Byte_Copy(copySize, (Address) arg, buffer);
+	    bcopy((Address) arg, buffer, copySize);
 	    Vm_MakeUnaccessible((Address) arg, numBytes);
 	    break;
 	case VM_DO_MAKE_ACCESS_OUT:
 	    Vm_MakeAccessible(0, copySize, (Address) arg, &numBytes,
 			      (Address *) &arg);
-	    Byte_Copy(copySize, buffer, (Address) arg);
+	    bcopy(buffer, (Address) arg, copySize);
 	    Vm_MakeUnaccessible((Address) arg, numBytes);
 	    break;
 #endif CLEAN
@@ -352,17 +352,17 @@ Vm_Cmd(command, arg)
 	    char		hostNum[CVT_INT_BUF_SIZE];
 
 	    if (vmTraceFilePtr != (Fs_Stream *)NIL) {
-		Sys_Printf("VmCmd: Tracing already running.\n");
+		printf("VmCmd: Tracing already running.\n");
 		break;
 	    }
 	    vmTracesPerClock = arg;
-	    Sys_Printf("Vm_Cmd: Tracing started at %d times per second\n",
+	    printf("Vm_Cmd: Tracing started at %d times per second\n",
 			arg);
 
 	    if (vmTraceBuffer == (char *)NIL) {
-		vmTraceBuffer = (char *)Mem_Alloc(VM_TRACE_BUFFER_SIZE);
+		vmTraceBuffer = (char *)malloc(VM_TRACE_BUFFER_SIZE);
 	    }
-	    Byte_Zero(sizeof(vmTraceStats), (Address)&vmTraceStats);
+	    bzero((Address)&vmTraceStats, sizeof(vmTraceStats));
 
 	    traceStartPtr = (Vm_TraceStart  *)vmTraceBuffer;
 	    traceStartPtr->recType = VM_TRACE_START_REC;
@@ -375,21 +375,20 @@ Vm_Cmd(command, arg)
 	    traceStartPtr->mapStartAddr = vmMapBaseAddr;
 	    traceStartPtr->cacheStartAddr = vmBlockCacheBaseAddr;
 	    traceStartPtr->cacheEndAddr = vmBlockCacheEndAddr;
-	    Byte_Copy(sizeof(Vm_Stat), (Address)&vmStat, 
-		      (Address)&traceStartPtr->startStats);
+	    bcopy((Address)&vmStat, (Address)&traceStartPtr->startStats,
+		    sizeof(Vm_Stat));
 	    traceStartPtr->tracesPerSecond = vmTracesPerClock;
 	    vmTraceFirstByte = 0;
 	    vmTraceNextByte = sizeof(Vm_TraceStart);
 
-	    (void)String_Copy(VM_TRACE_FILE_NAME, fileName);
-	    (void)Cvt_UtoA((unsigned) Sys_GetHostId(), 10, hostNum);
-	    (void)String_Cat(hostNum, fileName);
+	    (void)strcpy(fileName, VM_TRACE_FILE_NAME);
+	    (void)sprintf(hostNum, "%u", (unsigned) Sys_GetHostId());
+	    (void)strcat(fileName, hostNum);
 
 	    status = Fs_Open(fileName, FS_WRITE | FS_CREATE,
 			     FS_FILE, 0660, &vmTraceFilePtr);
 	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING, 
-		    "Vm_Cmd: Couldn't open trace file, reason %x\n", 
+		printf("Warning: Vm_Cmd: Couldn't open trace file, reason %x\n",
 		    status);
 	    } else {
 		vmTraceNeedsInit = TRUE;
@@ -399,10 +398,10 @@ Vm_Cmd(command, arg)
 	case VM_END_TRACING: {
 	    Vm_TraceEnd		traceEnd;
 
-	    Byte_Copy(sizeof(Vm_TraceEnd), (Address)&vmStat,
-		      (Address)&traceEnd.endStats);
-	    Byte_Copy(sizeof(Vm_TraceStats), (Address)&vmTraceStats,
-		      (Address)&traceEnd.traceStats);
+	    bcopy((Address)&vmStat, (Address)&traceEnd.endStats,
+		    sizeof(Vm_TraceEnd));
+	    bcopy((Address)&vmTraceStats, (Address)&traceEnd.traceStats,
+		    sizeof(Vm_TraceStats));
 	    VmStoreTraceRec(VM_TRACE_END_REC, sizeof(Vm_TraceEnd),
 			    (Address)&traceEnd, FALSE);
 
@@ -413,11 +412,11 @@ Vm_Cmd(command, arg)
 		(void)Fs_Close(vmTraceFilePtr);
 		vmTraceFilePtr = (Fs_Stream *)NIL;
 	    }
-	    Sys_Printf("Vm_Cmd: Tracing ended: Traces=%d Drops=%d\n",
+	    printf("Vm_Cmd: Tracing ended: Traces=%d Drops=%d\n",
 			vmTraceTime, vmTraceStats.traceDrops);
-	    Sys_Printf("		       Dumps=%d Bytes=%d.\n",
+	    printf("		       Dumps=%d Bytes=%d.\n",
 			vmTraceStats.traceDumps, vmTraceNextByte);
-	    Sys_Printf("		       PMEGs=%d\n",
+	    printf("		       PMEGs=%d\n",
 			vmTraceStats.machStats.pmegsChecked);
 	    break;
 	}
@@ -458,6 +457,6 @@ SetVal(descript, newVal, valPtr)
     int		newVal;
     int		*valPtr;
 {
-    Sys_Printf("%s val was %d, is %d\n", descript, *valPtr, newVal);
+    printf("%s val was %d, is %d\n", descript, *valPtr, newVal);
     *valPtr = newVal;
 }

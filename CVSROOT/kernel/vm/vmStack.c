@@ -198,7 +198,7 @@ Vm_FreeKernelStack(stackBase)
      * Put the stack back onto the free list.
      */
     if (List_IsEmpty(activeList)) {
-	Sys_Panic(SYS_FATAL, "Vm_FreeKernelStack: active list empty\n");
+	panic("Vm_FreeKernelStack: active list empty\n");
     }
     stackListPtr = (StackList *) List_First(activeList);
     List_Move((List_Links *) stackListPtr, LIST_ATREAR(freeList));

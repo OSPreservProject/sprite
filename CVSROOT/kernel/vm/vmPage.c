@@ -148,7 +148,7 @@ VmCoreMapAlloc()
     if (vmPhysPageLimit > 0 && vmPhysPageLimit < vmStat.numPhysPages) {
 	vmStat.numPhysPages = vmPhysPageLimit;
     }
-    Sys_Printf("Available memory %d\n", vmStat.numPhysPages * vm_PageSize);
+    printf("Available memory %d\n", vmStat.numPhysPages * vm_PageSize);
     coreMap = (VmCore *) Vm_BootAlloc(sizeof(VmCore) * vmStat.numPhysPages);
 }
 
@@ -398,7 +398,7 @@ VmGetReservePage(virtAddrPtr)
     if (List_IsEmpty(reservePageList)) {
 	return(VM_NO_MEM_VAL);
     }
-    Sys_Printf("Taking from reserve list\n");
+    printf("Taking from reserve list\n");
     vmStat.reservePagesUsed++;
     corePtr = (VmCore *) List_First(reservePageList);
     List_Remove((List_Links *) corePtr);
@@ -758,7 +758,7 @@ VmUnlockPage(pfNum)
     LOCK_MONITOR;
     coreMap[pfNum].lockCount--;
     if (coreMap[pfNum].lockCount < 0) {
-	Sys_Panic(SYS_FATAL, "VmUnlockPage: Coremap lock count < 0\n");
+	panic("VmUnlockPage: Coremap lock count < 0\n");
     }
     UNLOCK_MONITOR;
 }
@@ -785,7 +785,7 @@ VmUnlockPageInt(pfNum)
 {
     coreMap[pfNum].lockCount--;
     if (coreMap[pfNum].lockCount < 0) {
-	Sys_Panic(SYS_FATAL, "VmUnlockPage: Coremap lock count < 0\n");
+	panic("VmUnlockPage: Coremap lock count < 0\n");
     }
 }
 
@@ -864,7 +864,7 @@ Vm_GetRefTime()
 	vmStat.haveFreePage++;
 	refTime = 0;
 	if (vmDebug) {
-	    Sys_Printf("Vm_GetRefTime: VM has free page\n");
+	    printf("Vm_GetRefTime: VM has free page\n");
 	}
     } else {
 	refTime = (int) 0x7fffffff;
@@ -879,7 +879,7 @@ Vm_GetRefTime()
 	    }
 	}
 	if (vmDebug) {
-	    Sys_Printf("Vm_GetRefTime: Reftime = %d\n", refTime);
+	    printf("Vm_GetRefTime: Reftime = %d\n", refTime);
 	}
     }
 
@@ -1026,7 +1026,7 @@ VmPageAllocate(virtAddrPtr, flags)
 	    page = tPage;
 	    vmStat.gotPageFromFS++;
 	    if (vmDebug) {
-		Sys_Printf("VmPageAllocate: Took page from FS (refTime = %d)\n",
+		printf("VmPageAllocate: Took page from FS (refTime = %d)\n",
 			    refTime);
 	    }
 	}
@@ -1264,7 +1264,7 @@ VmPageFreeInt(pfNum)
 	 * they are allocated.  Therefore just put it back onto the free list.
 	 */
 	if (corePtr->flags & (VM_DIRTY_PAGE | VM_PAGE_BEING_CLEANED)) {
-	    Sys_Panic(SYS_FATAL, "VmPageFreeInt: Kernel page on dirty list\n");
+	    panic("VmPageFreeInt: Kernel page on dirty list\n");
 	}
 	PutOnFreeList(corePtr);
     } else {
@@ -1478,7 +1478,7 @@ Vm_PageIn(virtAddr, protFault)
 	 */
 	result = PreparePage(&transVirtAddr, protFault, ptePtr);
 	if (!vm_CanCOW && (result == IS_COR || result == IS_COW)) {
-	    Sys_Panic(SYS_FATAL, "Vm_PageIn: Bogus COW or COR\n");
+	    panic("Vm_PageIn: Bogus COW or COR\n");
 	}
 	if (result == IS_COR) {
 	    status = VmCOR(&transVirtAddr);
@@ -2186,7 +2186,7 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 	numPageOutProcs--;
 
 	if (numPageOutProcs == 0 && vmStat.numDirtyPages != 0) {
-	    Sys_Panic(SYS_FATAL, "PageOutPutAndGet: Dirty pages but no pageout procs\n");
+	    panic("PageOutPutAndGet: Dirty pages but no pageout procs\n");
 	}
     }
 
@@ -2242,7 +2242,7 @@ PutOnFront(corePtr)
 				 corePtr->virtPage.page);
 	    if (!(*ptePtr & VM_REFERENCED_BIT)) {
 		if (!(*ptePtr & VM_PHYS_RES_BIT)) {
-		    Sys_Panic(SYS_FATAL, "PutOnFront: Resident bit not set\n");
+		    panic("PutOnFront: Resident bit not set\n");
 		}
 		corePtr->virtPage.segPtr->resPages--;
 		*ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);

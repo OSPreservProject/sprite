@@ -44,7 +44,7 @@ Vm_BootInit()
 {
     extern unsigned int end;
 
-    Byte_Zero(sizeof(vmStat), (Address) &vmStat);
+    bzero((Address) &vmStat, sizeof(vmStat)) &vmStat);
     vmNoBootAlloc = FALSE;
     vmMemEnd = (Address) &end;
     /*
@@ -79,7 +79,7 @@ Vm_BootAlloc(numBytes)
     Address	addr;
 
     if (vmNoBootAlloc) {
-	Sys_Panic(SYS_FATAL, "Trying to use Vm_BootAlloc either before calling Vm_BootAllocInit\r\nor after calling Vm_Init\r\n");
+	panic("Trying to use Vm_BootAlloc either before calling Vm_BootAllocInit\r\nor after calling Vm_Init\r\n");
 	addr = 0;
 	return(addr);
     }

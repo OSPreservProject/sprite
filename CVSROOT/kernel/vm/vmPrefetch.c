@@ -80,7 +80,7 @@ VmPrefetch(virtAddrPtr, ptePtr)
 	 !StartPrefetch(segPtr, ptePtr)) {
 	return;
     }
-    prefetchInfoPtr = (PrefetchInfo *)Mem_Alloc(sizeof(PrefetchInfo));
+    prefetchInfoPtr = (PrefetchInfo *)malloc(sizeof(PrefetchInfo));
     prefetchInfoPtr->virtAddr.segPtr = segPtr;
     prefetchInfoPtr->virtAddr.page = virtAddrPtr->page + 1;
     prefetchInfoPtr->virtAddr.flags = 0;
@@ -194,7 +194,7 @@ DoPrefetch(data, callInfoPtr)
     }
 exit:
     VmDecPTUserCount(prefetchInfoPtr->virtAddr.segPtr);
-    Mem_Free((Address)data);
+    free((Address)data);
 }
 
 

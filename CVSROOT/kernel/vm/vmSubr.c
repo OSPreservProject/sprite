@@ -102,8 +102,9 @@ Vm_Init()
     vm_SysSegPtr->ptSize = (mach_KernEnd - mach_KernStart) / vm_PageSize;
     vm_SysSegPtr->ptPtr =
 		(Vm_PTE *)Vm_BootAlloc(sizeof(Vm_PTE) * vm_SysSegPtr->ptSize);
-    Byte_Zero(sizeof(Vm_PTE) * vm_SysSegPtr->ptSize,
-	      (Address)vm_SysSegPtr->ptPtr);
+
+    bzero((Address)vm_SysSegPtr->ptPtr, sizeof(Vm_PTE) * vm_SysSegPtr->ptSize);
+
     /*
      * Can no longer use Vm_BootAlloc
      */
@@ -162,7 +163,7 @@ Vm_ProcInit(procPtr)
     register	Vm_ProcInfo	*vmPtr;
 
     if (procPtr->vmPtr == (Vm_ProcInfo *)NIL) {
-	vmPtr = (Vm_ProcInfo *)Mem_Alloc(sizeof(Vm_ProcInfo));
+	vmPtr = (Vm_ProcInfo *)malloc(sizeof(Vm_ProcInfo));
 	vmPtr->machPtr = (VmMach_ProcData *)NIL;
 	procPtr->vmPtr = vmPtr;
     } else {
@@ -208,8 +209,8 @@ Vm_RawAlloc(numBytes)
      * We return the current end of memory as our new address.
      */
     if (numBytes > 100 * 1024) {
-	Sys_Printf("\nvmMemEnd = 0x%x - ", vmMemEnd);
-	Sys_Panic(SYS_WARNING, "VmRawAlloc asked for >100K\n");
+	printf("\nvmMemEnd = 0x%x - ", vmMemEnd);
+	printf("Warning: VmRawAlloc asked for >100K\n");
 	if (vmDebugLargeAllocs) {
 	    Sig_SendProc(Proc_GetEffectiveProc(), SIG_DEBUG, 0);
 	}
@@ -231,8 +232,8 @@ Vm_RawAlloc(numBytes)
      * Panic if we just ran off the end of memory.
      */
     if (vmMemEnd > (Address) ( mach_KernStart + vmKernMemSize)) {
-	Sys_Printf("vmMemEnd = 0x%x - ", vmMemEnd);
-	Sys_Panic(SYS_FATAL, "Vm_RawAlloc: Out of memory.\n");
+	printf("vmMemEnd = 0x%x - ", vmMemEnd);
+	panic("Vm_RawAlloc: Out of memory.\n");
     }
 
     segPtr = vm_SysSegPtr;
@@ -263,7 +264,7 @@ Vm_RawAlloc(numBytes)
 	     */
 	    page = VmGetReservePage(&virtAddr);
 	    if (page == VM_NO_MEM_VAL) {
-		Sys_Panic(SYS_FATAL, "VmRawAlloc: No memory available\n");
+		panic("VmRawAlloc: No memory available\n");
 	    }
 	}
 	*ptePtr |= page;
@@ -535,7 +536,8 @@ VmZeroPage(pfNum)
     register	int	mappedAddr;
 
     mappedAddr = (int) VmMapPage(pfNum);
-    Byte_Zero(vm_PageSize, (Address) mappedAddr);
+
+    bzero((Address) mappedAddr, vm_PageSize);
     VmUnmapPage((Address) mappedAddr);
 }
 
@@ -751,7 +753,7 @@ Vm_CopyInProc(numBytes, fromProcPtr, fromAddr, toAddr, toKernel)
     if (toProcPtr->genFlags & PROC_KERNEL) {
 #ifdef notdef
 	if (!toKernel) {
-	    Sys_Panic(SYS_FATAL, "Vm_CopyInProc: Kernel process not copying to kernel\n");
+	    panic("Vm_CopyInProc: Kernel process not copying to kernel\n");
 	}
 #endif
 
@@ -885,7 +887,7 @@ Vm_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr)
     if (fromProcPtr->genFlags & PROC_KERNEL) {
 #ifdef notdef
 	if (!fromKernel) {
-	    Sys_Panic(SYS_FATAL, "Vm_CopyOutProc: Kernel process not copying from kernel\n");
+	    panic("Vm_CopyOutProc: Kernel process not copying from kernel\n");
 	}
 #endif
 
