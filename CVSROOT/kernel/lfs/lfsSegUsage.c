@@ -601,6 +601,7 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
 				 * segments to clean. */
 {
     int	numberSegs, segNum, numBlocks, blockSize;
+    Boolean fullClean;
     int i, j;
     LfsSegUsageEntry *s;
     LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
@@ -629,7 +630,7 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
 	     * Find the proper position in the list for this segment.
 	     */
 	    s = (LfsSegUsageEntry *)LfsStableMemEntryAddr(&smemEntry);
-    
+
 	    if (s->flags & LFS_SEG_USAGE_DIRTY) {
 		for (i = numberSegs-1; i >= 0; i--) {
 		    if (segArrayPtr[i].activeBytes < s->activeBytes) {
@@ -653,7 +654,18 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
    }
    LfsStableMemRelease(&(usagePtr->stableMem), &smemEntry, FALSE);
    numBlocks = 0;
-    for (i = 0; i < numberSegs; i++) {
+   fullClean = ((lfsPtr->controlFlags & LFS_CONTROL_CLEANALL) != 0);
+   for (i = 0; i < numberSegs; i++) {
+       /*
+        * If we aren't doing a full clean and the segment is not empty, 
+	* we stop cleaning early if an enough segments are clean.
+	*/
+	if (!fullClean && (segArrayPtr[i].activeBytes > 0) &&
+	    (usagePtr->checkPoint.numClean+i >
+		   usagePtr->params.minNumClean + 
+		       usagePtr->params.numSegsToClean)) {
+	    return i;
+	}
 	numBlocks +=  LfsBytesToBlocks(lfsPtr, segArrayPtr[i].activeBytes);
 	if (numBlocks > maxBlocks) {
 	    return i;

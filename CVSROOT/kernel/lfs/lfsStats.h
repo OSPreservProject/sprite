@@ -27,8 +27,8 @@ typedef struct LfsStatsCounter {
 	unsigned int low;	/* Low 32 bits. */
 } LfsStatsCounter; 
 
-#define LFS_STATS_MAX_SIZE	2048
-
+#define LFS_STATS_MAX_SIZE	4096
+#define	LFS_STATS_CDIST_BUCKETS	64
 #ifdef LFS_STATS_COLLECT
 #define	LFS_STATS_INC(counter)	((++(counter).low == 0) ? (counter).high++ : 0)
 #define	LFS_STATS_ADD(counter, count)	\
@@ -211,9 +211,9 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT dataBlockWritten;
 	LFSCOUNT blockWritten;
 	LFSCOUNT bytesWritten;
-	LFSCOUNT padding[16];
+	LFSCOUNT padding[2];
     } dirlog;
-    LFSCOUNT padding[18];
+    unsigned int cleaningDist[LFS_STATS_CDIST_BUCKETS];
 } Lfs_StatsVersion1;
 #undef LFSCOUNT
 

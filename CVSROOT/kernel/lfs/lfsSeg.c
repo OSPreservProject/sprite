@@ -1248,10 +1248,7 @@ SegmentCleanProc(clientData, callInfoPtr)
 	for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
 	    clientDataArray[i] = (ClientData) NIL;
 	}
-	numSegsToClean = lfsPtr->superBlock.usageArray.numSegsToClean;
-	if (numSegsToClean > MAX_NUM_TO_CLEAN) {
-	    numSegsToClean = MAX_NUM_TO_CLEAN;
-	}
+	numSegsToClean = MAX_NUM_TO_CLEAN;
 	numSegsToClean = LfsGetSegsToClean(lfsPtr, 
 			 cacheBlocksReserved, numSegsToClean, segs);
 
@@ -1260,9 +1257,8 @@ SegmentCleanProc(clientData, callInfoPtr)
 	}
 	LFS_STATS_INC(lfsPtr->stats.cleaning.getSegsRequests);
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.segsToClean, numSegsToClean);
-	if (lfsSegWriteDebug || TRUE) { 
-	    printf("Cleaning started - %d segs\n", numSegsToClean);
-	}
+	printf("%s: Cleaning started - %d segs\n", lfsPtr->name, 
+				numSegsToClean);
 	/*
 	 * Reading in segments to clean.
 	 */
@@ -1288,6 +1284,8 @@ SegmentCleanProc(clientData, callInfoPtr)
 	    } else { 
 		if (size == 0) {
 		    LFS_STATS_INC(lfsPtr->stats.cleaning.readEmpty);
+		} else {
+		    lfsPtr->stats.cleaningDist[size/LFS_STATS_CDIST_BUCKETS]++;
 		}
 		numCleaned++;
 	    }
@@ -1301,7 +1299,6 @@ SegmentCleanProc(clientData, callInfoPtr)
 	/*
 	 * Write out segments cleaned.
 	 */
-
 	numWritten = 0;
 	if (totalSize > 0) { 
 	    full = TRUE;
@@ -1349,11 +1346,9 @@ SegmentCleanProc(clientData, callInfoPtr)
 	    Sync_Broadcast(&lfsPtr->cleanSegmentsWait);
 	    UNLOCK_MONITOR;
 	}
-	if (lfsSegWriteDebug || TRUE) { 
-	    printf("Cleaned %d segments in %d segments\n", numCleaned, 
-			numWritten);
-	}
-    } while (numCleaned > 2);
+	printf("%s: Cleaned %d segments in %d segments\n", 
+		    lfsPtr->name, numCleaned, numWritten);
+    } while (numSegsToClean > 2);
     lfsPtr->segCache.valid = FALSE;
     LfsMemRelease(lfsPtr, cacheBlocksReserved, memPtr);
     LOCK_MONITOR;
