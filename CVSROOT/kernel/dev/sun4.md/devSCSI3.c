@@ -312,7 +312,7 @@ typedef struct UDCDMAtable {
 
 #define	MAX_ONBOARD_TRANSFER_SIZE	(64*1024)
 
-#define	MAX_VME_TRANSFER_SIZE		(64*1024)
+#define	MAX_VME_TRANSFER_SIZE		(128*1024)
 
 /* 
  * Register layout for the SCSI control logic interface.
@@ -362,6 +362,7 @@ typedef struct CtrlRegs {
  * READ_DMA_ADDR()	- Read the DMA address register.
  */
 #ifdef bigio_works
+
 #define	SET_FIFO_COUNT(regsPtr, value)	{\
 	    (regsPtr)->fifoCountLow = ((unsigned) (value) & 0xffff);	      \
 	    (regsPtr)->fifoCountHigh = (((unsigned)(value) >> 16) & 0xff);    \
@@ -376,19 +377,20 @@ typedef struct CtrlRegs {
 #define	READ_DMA_COUNT(regsPtr)	\
 	    ((((regsPtr)->dmaCountHigh&0xff) << 16) | ((regsPtr)->dmaCountLow))
 #else
+static int countHighMask = 0;
 #define	SET_FIFO_COUNT(regsPtr, value)	{\
 	    (regsPtr)->fifoCountLow = ((unsigned) (value) & 0xffff);	      \
-	    (regsPtr)->fifoCountHigh = (((unsigned)(value) >> 16) & 0x0);    \
+	    (regsPtr)->fifoCountHigh = (((unsigned)(value) >> 16) & countHighMask);    \
 	}
 #define	READ_FIFO_COUNT(regsPtr)	\
-	   ((((regsPtr)->fifoCountHigh&0x0) << 16) | ((regsPtr)->fifoCountLow))
+	   ((((regsPtr)->fifoCountHigh&countHighMask) << 16) | ((regsPtr)->fifoCountLow))
 
 #define	SET_DMA_COUNT(regsPtr, value)	{\
 	    (regsPtr)->dmaCountLow = ((unsigned) (value) & 0xffff);	      \
-	    (regsPtr)->dmaCountHigh = (((unsigned)(value) >> 16) & 0x0);    \
+	    (regsPtr)->dmaCountHigh = (((unsigned)(value) >> 16) & countHighMask);    \
 	    }
 #define	READ_DMA_COUNT(regsPtr)	\
-	    ((((regsPtr)->dmaCountHigh&0x0) << 16) | ((regsPtr)->dmaCountLow))
+	    ((((regsPtr)->dmaCountHigh&countHighMask) << 16) | ((regsPtr)->dmaCountLow))
 #endif
 #define	SET_DMA_ADDR(regsPtr, value)	{\
 	    (regsPtr)->dmaAddressLow = ((unsigned) (value) & 0xffff);	      \
@@ -2352,7 +2354,9 @@ DevSCSI3AttachDevice(devicePtr, insertProc)
     devPtr->handle.maxTransferSize = (ctrlPtr->onBoard) ? 
 					MAX_ONBOARD_TRANSFER_SIZE :
 					MAX_VME_TRANSFER_SIZE;
-
+    if (!ctrlPtr->onBoard) {
+	countHighMask = 0xff;
+    }
     devPtr->targetID = targetID;
     devPtr->ctrlPtr = ctrlPtr;
     MASTER_LOCK(&(ctrlPtr->mutex));
