@@ -8,7 +8,11 @@
 #
 # Optimization breaks the sun4 net modules currently.
 #
-#if !empty(TM:Msun4) || !empty(TM:Mds3100) || !empty(TM:Mcleands3100) || !empty(TM:Mjhh) 
+#if !empty(TM:Msun4)
+CFLAGS	+= -Dvolatile= -B/sprite/cmds/1.34/
+NOOPTIMIZATION	= no -O please
+#elif !empty(TM:Mds3100) || !empty(TM:Mcleands3100) || !empty(TM:Mjhh)
+CFLAGS	+= -Dvolatile= 
 NOOPTIMIZATION	= no -O please
 #endif
 
