@@ -88,11 +88,17 @@ typedef struct FsPrefixExport {
  *					allows lstat() to get the remote link,
  *					regardless if there is a corresponding
  *					prefix installed.
- *	FS_PREFIX_OPEN_LOCK		Used to lock out a domain as part
- *					of bringing it offline.
  *	FS_PREFIX_LOCKED		The prefix cannot be deleted while
  *					this flag is set.  The iteration
  *					procedure uses this flag.
+ *	FS_REMOTE_PREFIX		This is set when a prefix is loaded
+ *					under a specific serverID.  This
+ *					action ties the prefix to this server
+ *					forever and causes prefix requests
+ *					to be issued directly to the server
+ *					instead of using broadcast.
+ *	FS_PREFIX_OPEN_LOCK		Used to lock out a domain as part
+ *					of bringing it offline.
  */
 
 #define	FS_EXPORTED_PREFIX		0x1
@@ -102,6 +108,7 @@ typedef struct FsPrefixExport {
 #define	FS_OVERRIDE_PREFIX		0x10
 #define FS_LINK_NOT_PREFIX		0x20
 #define FS_PREFIX_LOCKED		0x40
+#define FS_REMOTE_PREFIX		0x80
 #define FS_PREFIX_OPEN_LOCK		0x100
 
 /*
