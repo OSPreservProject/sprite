@@ -4,6 +4,10 @@
  *	file.  Access to the proc table is synchronized by locking the PCB
  *	when modifying the genFlags field.
  *
+ *	NOTE: this is temporarily coexisting with the original procExec.c.
+ *	This file contains a version of Proc_Exec that takes the environment
+ *	as an argument.
+ *
  * Copyright (C) 1985 Regents of the University of California
  * All rights reserved.
  */
@@ -31,9 +35,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "byte.h"
 #include "string.h"
 
-extern	ReturnStatus	DoExec();
+static ReturnStatus	DoExec();
 
 static	char execFileName[FS_MAX_PATH_NAME_LENGTH];
+
+#define NEWEXEC
+/*
+ * This will go away when libc is changed.
+ */
+#ifndef PROC_MAX_ENVIRON_LENGTH
+#define PROC_MAX_ENVIRON_LENGTH (PROC_MAX_ENVIRON_NAME_LENGTH + \
+				 PROC_MAX_ENVIRON_VALUE_LENGTH)
+#endif  PROC_MAX_ENVIRON_LENGTH
 
 
 /*
@@ -41,7 +54,10 @@ static	char execFileName[FS_MAX_PATH_NAME_LENGTH];
  *
  * Proc_Exec --
  *
- *	Process the Exec system call.
+ *	Process the Exec system call.  This just calls Proc_ExecEnv
+ *	with a NULL environment.  This should simulate past behavior,
+ *	in which all processes were set up by unixCrt0.s with a NULL
+ *	environment on their stack.
  *
  * Results:
  *	This process will not return unless an error occurs in which case it
@@ -62,8 +78,44 @@ Proc_Exec(fileName, argPtrArray, debugMe)
 				 * to be sent a SIG_DEBUG signal before
     				 * executing its first instruction. */
 {
+    int status;			/* status in case Proc_ExecEnv returns */
+    status = Proc_ExecEnv(fileName, argPtrArray, (char **) USER_NIL, debugMe);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ExecEnv --
+ *
+ *	Process the Exec system call.
+ *
+ * Results:
+ *	This process will not return unless an error occurs in which case it
+ *	returns the error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Proc_ExecEnv(fileName, argPtrArray, envPtrArray, debugMe)
+    char	*fileName;	/* The name of the file to exec. */
+    char	**argPtrArray;	/* The array of arguments to the exec'd 
+				 * program. */
+    char	**envPtrArray;	/* The array of environment variables
+				 * of the form NAME=VALUE. */ 
+    Boolean	debugMe;	/* TRUE means that the process is 
+				 * to be sent a SIG_DEBUG signal before
+    				 * executing its first instruction. */
+{
     char		**newArgPtrArray;
     int			newArgPtrArrayLength;
+    char		**newEnvPtrArray;
+    int			newEnvPtrArrayLength;
     int			strLength;
     int			accessLength;
     ReturnStatus	status;
@@ -98,13 +150,33 @@ Proc_Exec(fileName, argPtrArray, debugMe)
 	newArgPtrArrayLength = 0;
     }
 
+    /*
+     * Make the environments array accessible.
+     */
+
+    if (envPtrArray != (char **) USER_NIL) {
+	Vm_MakeAccessible(VM_READONLY_ACCESS,
+			  (PROC_MAX_ENVIRON_SIZE + 1) * sizeof(Address),
+			  (Address) envPtrArray, 
+		          &newEnvPtrArrayLength, (Address *) &newEnvPtrArray);
+	if (newEnvPtrArrayLength == 0) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    } else {
+	newEnvPtrArray = (char **) NIL;
+	newEnvPtrArrayLength = 0;
+    }
     status = DoExec(execFileName, strLength, newArgPtrArray, 
-			   newArgPtrArrayLength / 4, TRUE, debugMe);
+			   newArgPtrArrayLength / 4, newEnvPtrArray, 
+			   newEnvPtrArrayLength / 4, TRUE, debugMe);
     if (status == SUCCESS) {
-	Sys_Panic(SYS_FATAL, "Proc_Exec: DoExec returned SUCCESS!!!\n");
+	Sys_Panic(SYS_FATAL, "Proc_ExecEnv: DoExec returned SUCCESS!!!\n");
     }
     if (newArgPtrArray != (char **) NIL) {
 	Vm_MakeUnaccessible((Address) newArgPtrArray, newArgPtrArrayLength);
+    }
+    if (newEnvPtrArray != (char **) NIL) {
+	Vm_MakeUnaccessible((Address) newEnvPtrArray, newEnvPtrArrayLength);
     }
 
     return(status);
@@ -128,6 +200,9 @@ Proc_Exec(fileName, argPtrArray, debugMe)
  *----------------------------------------------------------------------
  */
 
+/* 
+ * Use the old Proc_KernExec until this gets installed as the sole procExec.c.
+ */
 int
 Proc_KernExec(fileName, argPtrArray)
     char *fileName;
@@ -177,7 +252,8 @@ Proc_KernExec(fileName, argPtrArray)
     VmMach_SetupContext(procPtr);
 
     status = DoExec(fileName, String_Length(fileName),
-			argPtrArray, PROC_MAX_EXEC_ARGS, FALSE, FALSE);
+		    argPtrArray, PROC_MAX_EXEC_ARGS, (char **) NIL, 0,
+		    FALSE, FALSE);
 
     /*
      * If the exec failed, then delete the extra segments and fix up the
@@ -216,6 +292,10 @@ Boolean		CopyInArgs();
  *	Exec a new program.  The current process image is overlayed by the 
  *	newly exec'd program.
  *
+ *	Note: environments are now being added; after they work, I can
+ *	think about coalescing some of the code rather than duplicating
+ *	it.
+ *
  * Results:
  *	This routine does not return unless an error occurs in which case the
  *	error code is returned.
@@ -227,11 +307,14 @@ Boolean		CopyInArgs();
  */
 
 static ReturnStatus
-DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
+DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
+       userProc, debugMe)
     char	fileName[];	/* The name of the file that is to be exec'd */
     int		fileNameLength;	/* The length of the file name. */
     char	**argPtrArray;	/* The array of argument pointers. */
     int		numArgs;	/* The number of arguments in the argArray. */
+    char	**envPtrArray;	/* The array of environment pointers. */
+    int		numEnvs;	/* The number of arguments in the envArray. */
     Boolean	userProc;	/* Set if the calling process is a user 
 				 * process. */
     Boolean	debugMe;	/* TRUE means that the process is to be 
@@ -243,12 +326,18 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     register	Proc_AOUT		*aoutPtr;
     register	char			**argPtr;
     register	int			argNumber;
+    register	char			**envPtr;
+    ArgListElement			*envListPtr;
+    int					envNumber;
     int					origNumArgs;
+    int					origNumEnvs;
     Vm_ExecInfo				*execInfoPtr;
     char				**newArgPtrArray;
+    char				**newEnvPtrArray;
     int					tArgNumber;
     Proc_AOUT				aout;
     List_Links				argList;
+    List_Links				envList;
     Vm_Segment				*codeSegPtr = (Vm_Segment *) NIL;
     char				*copyAddr;
     int					copyLength;
@@ -264,11 +353,17 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     Boolean				usedFile;
     int					uid = -1;
     int					gid = -1;
+    char				*stringPtr;
+    int					stringLength;
+    int					realLength;
+    Boolean 				accessible;
 
     origNumArgs = numArgs;
+    origNumEnvs = numEnvs;
 
     procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
     List_Init(&argList);
+    List_Init(&envList);
 
     /*
      * Open the file that is to be exec'd.
@@ -349,10 +444,6 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     for (argNumber = 0, argPtr = argPtrArray; 
 	 argNumber < numArgs;
 	 argNumber++) {
-	char	*stringPtr;
-	int	stringLength;
-        int	realLength;
-	Boolean accessible;
 
 	accessible = FALSE;
 
@@ -430,6 +521,76 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     }
 
     /*
+     * Copy in the environment.
+     */
+    for (envNumber = 0, envPtr = envPtrArray; 
+	 envNumber < numEnvs;
+	 envNumber++) {
+
+	accessible = FALSE;
+
+	if (!userProc) {
+	    if (*envPtr == (char *) NIL) {
+		break;
+	    }
+	    stringPtr = *envPtr;
+	    stringLength = PROC_MAX_ENVIRON_LENGTH;
+	} else {
+	    if (*envPtr == (char *) USER_NIL) {
+		break;
+	    }
+	    Vm_MakeAccessible(VM_READONLY_ACCESS,
+			      PROC_MAX_ENVIRON_LENGTH + 1, 
+			      (Address) *envPtr, 
+			      &stringLength,
+			      (Address *) &stringPtr);
+	    if (stringLength == 0) {
+		status = SYS_ARG_NOACCESS;
+		goto execError;
+	    }
+	    accessible = TRUE;
+	}
+	/*
+	 * Find out the length of the environment variable.
+	 */
+	realLength = String_NLength(stringLength, stringPtr);
+	/*
+	 * Move to the next environment variable.
+	 */
+	envPtr++;
+
+	/*
+	 * Put this string onto the environment variable list.
+	 */
+	envListPtr = (ArgListElement *) Mem_Alloc(sizeof(ArgListElement));
+	envListPtr->stringPtr = (char *) Mem_Alloc(realLength);
+	envListPtr->stringLen = realLength;
+	List_InitElement((List_Links *) envListPtr);
+	List_Insert((List_Links *) envListPtr, LIST_ATREAR(&envList));
+	/*
+	 * Make room on the stack for this string.  Make it 4 byte aligned.
+	 */
+	userStackPointer -= ((realLength + 1) + 3) & ~3;
+	/*
+	 * Copy over the environment variable.
+	 */
+	Byte_Copy(realLength, (Address) stringPtr, 
+		  (Address) envListPtr->stringPtr);
+	/*
+	 * Clean up 
+	 */
+	if (accessible) {
+	    Vm_MakeUnaccessible((Address) stringPtr, stringLength);
+	}
+    }
+
+    /*
+     * We no longer need access to the old environment variables. 
+     */
+    if (userProc && envPtrArray != (char **) NIL) {
+	Vm_MakeUnaccessible((Address) envPtrArray, origNumEnvs * 4);
+    }
+    /*
      * Set up virtual memory for the new image.
      */
     if (!SetupVM(procPtr, aoutPtr, filePtr, usedFile, &codeSegPtr, 
@@ -444,7 +605,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     }
 
     /*
-     * Now copy all of the arguments onto the stack.
+     * Now copy all of the arguments and environment variables onto the stack.
      */
     argBytes = mach_MaxUserStackAddr - userStackPointer;
     (void) Vm_MakeAccessible(VM_READWRITE_ACCESS,
@@ -456,7 +617,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     while (!List_IsEmpty(&argList)) {
 	argListPtr = (ArgListElement *) List_First(&argList);
 	/*
-	 * Copy over the argument.
+	 * Copy over the environment variable.
 	 */
 	Byte_Copy(argListPtr->stringLen, 
 		  (Address) argListPtr->stringPtr, 
@@ -473,23 +634,52 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
 	Mem_Free((Address) argListPtr);
 	argNumber++;
     }
+    newEnvPtrArray = (char **) Mem_Alloc((envNumber + 1) * sizeof(Address));
+    envNumber = 0;
+    while (!List_IsEmpty(&envList)) {
+	envListPtr = (ArgListElement *) List_First(&envList);
+	/*
+	 * Copy over the environment variable.
+	 */
+	Byte_Copy(envListPtr->stringLen, 
+		  (Address) envListPtr->stringPtr, 
+		  (Address) copyAddr);
+	copyAddr[envListPtr->stringLen] = '\0';
+	newEnvPtrArray[envNumber] = (char *) usp;
+	copyAddr += ((envListPtr->stringLen + 1) + 3) & ~3;
+	usp += ((envListPtr->stringLen + 1) + 3) & ~3;
+	/*
+	 * Clean up 
+	 */
+	List_Remove((List_Links *) envListPtr);
+	Mem_Free((Address) envListPtr->stringPtr);
+	Mem_Free((Address) envListPtr);
+	envNumber++;
+    }
     Vm_MakeUnaccessible(copyAddr - argBytes, argBytes);
     /*
-     * Now copy the array of arguments plus argc and the address of argv 
-     * onto the stack.
+     * Now copy the array of arguments plus argc, the address of argv, and
+     * the address of envp onto the stack.
      */
-    copyLength = (argNumber + 1) * sizeof(Address) + sizeof(int);
+    copyLength = (argNumber + envNumber + 2) * sizeof(Address) + sizeof(int);
     newArgPtrArray[argNumber] = (char *) USER_NIL;
+    newEnvPtrArray[envNumber] = (char *) USER_NIL;
     userStackPointer -= copyLength;
     tArgNumber = argNumber;
     (void) Vm_CopyOut(sizeof(int), (Address) &tArgNumber,
 		      userStackPointer);
-    (void) Vm_CopyOut(copyLength - sizeof(int), (Address) newArgPtrArray,
+    (void) Vm_CopyOut((argNumber + 1) * sizeof(Address),
+		      (Address) newArgPtrArray,
 		      userStackPointer + sizeof(int));
+    (void) Vm_CopyOut((envNumber + 1) * sizeof(Address),
+		      (Address) newEnvPtrArray,
+		      userStackPointer + sizeof(int) +
+		      (argNumber + 1) * sizeof(Address));
     /*
-     * Free the array of arguments.
+     * Free the arrays of arguments and environment variables.
      */
     Mem_Free((Address) newArgPtrArray);
+    Mem_Free((Address) newEnvPtrArray);
     
     /*
      * Finally we are actually ready to start the new process.
@@ -544,7 +734,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
 execError:
     /*
      * The exec failed after or while copying in the arguments.  Free any
-     * virtual memory allocated and free the arguments that were copied in.
+     * virtual memory allocated and free any arguments or environment
+     * variables that were copied in.
      */
     if (filePtr != (Fs_Stream *) NIL) {
 	if (codeSegPtr != (Vm_Segment *) NIL) {
@@ -559,6 +750,12 @@ execError:
 	List_Remove((List_Links *) argListPtr);
 	Mem_Free((Address) argListPtr->stringPtr);
 	Mem_Free((Address) argListPtr);
+    }
+    while (!List_IsEmpty(&envList)) {
+	envListPtr = (ArgListElement *) List_First(&envList);
+	List_Remove((List_Links *) envListPtr);
+	Mem_Free((Address) envListPtr->stringPtr);
+	Mem_Free((Address) envListPtr);
     }
     return(status);
 }
