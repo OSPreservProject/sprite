@@ -403,9 +403,11 @@ DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
     MASTER_LOCK(&(diskPtr->diskStatsPtr->mutex));
     diskPtr->diskStatsPtr->busy--;
     if (requestPtr->operation == FS_READ) {
-	diskPtr->diskStatsPtr->diskStats.diskReads++;
+	diskPtr->diskStatsPtr->diskStats.diskReads += 
+				byteCount/DEV_BYTES_PER_SECTOR;
     } else {
-	diskPtr->diskStatsPtr->diskStats.diskWrites++;
+	diskPtr->diskStatsPtr->diskStats.diskWrites += 
+				byteCount/DEV_BYTES_PER_SECTOR;
     }
     MASTER_UNLOCK(&(diskPtr->diskStatsPtr->mutex));
 

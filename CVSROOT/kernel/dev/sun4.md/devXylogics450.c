@@ -1601,9 +1601,9 @@ RequestDone(diskPtr, requestPtr, status, numSectors)
 {
     if (numSectors > 0) {
 	if (requestPtr->requestPtr->operation == FS_READ) {
-	    diskPtr->diskStatsPtr->diskStats.diskReads++;
+	    diskPtr->diskStatsPtr->diskStats.diskReads += numSectors;
 	} else {
-	    diskPtr->diskStatsPtr->diskStats.diskWrites++;
+	    diskPtr->diskStatsPtr->diskStats.diskWrites += numSectors;
 	}
     }
     MASTER_UNLOCK(&diskPtr->xyPtr->mutex);
