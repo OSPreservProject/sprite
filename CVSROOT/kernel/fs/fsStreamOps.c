@@ -31,7 +31,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsTrace.h"
 #include "fsStat.h"
 #include "fsDisk.h"
-#include "mem.h"
 #include "rpc.h"
 #include "vm.h"
 
@@ -327,7 +326,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 		    FsCacheFetchBlock(&handlePtr->cacheInfo, i,
 			    FS_DATA_CACHE_BLOCK, &blockPtr, &found);
 		    if (found) {
-			Byte_Copy(FS_BLOCK_SIZE, blockPtr->blockAddr, pageAddr);
+			bcopy(blockPtr->blockAddr, pageAddr, FS_BLOCK_SIZE);
 			if (blockPtr->flags & FS_READ_AHEAD_BLOCK) {
 			    fsStats.blockCache.readAheadHits++;
 			}
@@ -362,7 +361,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			if (status == SUCCESS) {
 			    retry = TRUE;
 			} else {
-			    Sys_Panic(SYS_WARNING,
+			    printf(
 				"Fs_PageRead recovery failed <%x>\n", status);
 			    if (blockPtr != (FsCacheBlock *)NIL) {
 				FsCacheUnlockBlock(blockPtr, 0, -1, 0,
@@ -371,7 +370,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			    return(status);
 			}
 		    } else if (status != SUCCESS) {
-			    Sys_Panic(SYS_WARNING,
+			    printf(
 				"Fs_PageRead: Read failed <%x>\n", status);
 			    if (blockPtr != (FsCacheBlock *)NIL) {
 				FsCacheUnlockBlock(blockPtr, 0, -1, 0,
@@ -380,7 +379,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			    return(status);
 		    }
 		} else if (bytesRead != FS_BLOCK_SIZE) {
-		    Sys_Panic(SYS_WARNING,
+		    printf(
 			    "FsPageRead: Short read of length %d\n", bytesRead);
 		    if (blockPtr != (FsCacheBlock *)NIL) {
 			FsCacheUnlockBlock(blockPtr, 0, -1, 0,
@@ -396,7 +395,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			 * We read the data into the page, now copy it into the
 			 * cache since initialized heap pages live in the cache.
 			 */
-			Byte_Copy(FS_BLOCK_SIZE, pageAddr, blockPtr->blockAddr);
+			bcopy(pageAddr, blockPtr->blockAddr, FS_BLOCK_SIZE);
 			FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
 		    }
 		    blockPtr = (FsCacheBlock *)NIL;
@@ -466,7 +465,7 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
 	    (*fsStreamOpTable[streamType].allocate)(streamPtr->ioHandlePtr,
 		    offset, FS_BLOCK_SIZE, &blockAddr, &newBlock);
 	    if (blockAddr == FS_NIL_INDEX) {
-		Sys_Panic(SYS_WARNING, "Fs_PageWrite: Block Alloc failed\n");
+		printf( "Fs_PageWrite: Block Alloc failed\n");
 		status = FS_NO_DISK_SPACE;
 		break;
 	    }
@@ -474,7 +473,7 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
 		    (streamPtr->ioHandlePtr, blockAddr, FS_BLOCK_SIZE,
 			    pageAddr, 0);
 	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING, "Fs_PageWrite: Write failed\n");
+		printf( "Fs_PageWrite: Write failed\n");
 		break;
 	    }
 	    pageAddr += FS_BLOCK_SIZE;
@@ -541,12 +540,12 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
 		    if (status == SUCCESS) {
 			retry = TRUE;
 		    } else {
-			Sys_Panic(SYS_WARNING,
+			printf(
 			    "Fs_PageCopy, recovery failed <%x>\n", status);
 			return(status);
 		    }
 		} else {
-		    Sys_Panic(SYS_WARNING,
+		    printf(
 			    "Fs_PageCopy: Copy failed <%x>\n", status);
 		    return(status);
 		}
@@ -828,7 +827,7 @@ Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
  *
  * Side effects:
  *      If the ref count is zero after the decrement,  the reference to
- *      the file is released and the input parameter is Mem_Free'd.
+ *      the file is released and the input parameter is free'd.
  *
  *----------------------------------------------------------------------
  */
