@@ -19,7 +19,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devSCSI.h"
 #include "devSCSITape.h"
 #include "devSCSISysgen.h"
-#include "dev/tape.h"
 
 void SysgenSetup();
 void SysgenStatus();
@@ -49,7 +48,7 @@ DevSysgenInit(tapePtr)
     tapePtr->setupProc = SysgenSetup;
     tapePtr->statusProc = SysgenStatus;
     tapePtr->errorProc = SysgenError;
-
+}
 
 /*
  *----------------------------------------------------------------------

@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devInt.h"
 #include "devSCSI.h"
 #include "devSCSIDisk.h"
+#include "devDiskLabel.h"
 
 #include "dbg.h"
 static int SCSIdebug = FALSE;
@@ -38,7 +39,7 @@ static int SCSIdebug = FALSE;
  */
 
 DevSCSIDevice *scsiDisk[SCSI_MAX_DISKS];
-static int scsiDiskIndex = -1;
+int scsiDiskIndex = -1;
 
 
 /*
@@ -62,11 +63,11 @@ static int scsiDiskIndex = -1;
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSIDiskInit(scsiPtr, devPtr)
-    DevSCSIController *scsiPtr;		/* Controller state */
+DevSCSIDiskInit(devPtr)
     DevSCSIDevice *devPtr;		/* Device state to complete */
 {
     register DevSCSIDisk *diskPtr;
+    ReturnStatus status;
     /*
      * Check that the disk is on-line.  This means we won't find a disk
      * if its powered down upon boot.
@@ -74,8 +75,12 @@ DevSCSIDiskInit(scsiPtr, devPtr)
     devPtr->type = SCSI_DISK;
     devPtr->errorProc = DevSCSIDiskError;
     devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
+    diskPtr = (DevSCSIDisk *) malloc(sizeof(DevSCSIDisk));
+    devPtr->data = (ClientData)diskPtr;
+    diskPtr->type = SCSI_SHOEBOX_DISK;
     status = DevSCSITest(devPtr);
     if (status != SUCCESS) {
+	free((char *)diskPtr);
 	return(status);
     }
     /*
@@ -86,12 +91,10 @@ DevSCSIDiskInit(scsiPtr, devPtr)
      */
     if (scsiDiskIndex >= SCSI_MAX_DISKS) {
 	printf("SCSIDiskInit: Too many disks configured\n");
+	free((char *)diskPtr);
 	return(FAILURE);
     }
-    diskPtr = (DevSCSIDisk *) malloc(sizeof(DevSCSIDisk));
-    devPtr->data = (ClientData)diskPtr;
-    diskPtr->type = SCSI_SHOEBOX_DISK;
-    status = DevSCSIDoLabel(devPtr);
+     status = DevSCSIDoLabel(devPtr);
     if (status != SUCCESS) {
 	free((char *)diskPtr);
 	return(status);
@@ -128,16 +131,16 @@ DevSCSIDoLabel(devPtr)
 
     DevSCSISetupCommand(SCSI_READ, devPtr, 0, 1);
 
-    status = DevSCSICommand(devPtr->slaveID, scsiPtr, DEV_BYTES_PER_SECTOR,
-			    scsiPtr->labelBuffer, WAIT);
+    status = (*scsiPtr->commandProc)(devPtr->targetID, scsiPtr,
+		    DEV_BYTES_PER_SECTOR, scsiPtr->labelBuffer, WAIT);
     if (status != SUCCESS) {
-	printf("SCSI-%d: couldn't read the disk%d label\n",
-			     scsiPtr->number, devPtr->slaveID);
+	printf("SCSI-%d: couldn't read the disk%d-%d label\n",
+			     scsiPtr->number, devPtr->targetID, devPtr->LUN);
 	return(status);
     }
     diskLabelPtr = (Sun_DiskLabel *)scsiPtr->labelBuffer;
-    printf("SCSI-%d disk%d: %s\n", scsiPtr->number, devPtr->slaveID,
-			diskLabelPtr->asciiLabel);
+    printf("SCSI-%d disk%d-%d: %s\n", scsiPtr->number, devPtr->targetID,
+			devPtr->LUN, diskLabelPtr->asciiLabel);
 
     diskPtr = (DevSCSIDisk *)devPtr->data;
     diskPtr->numCylinders = diskLabelPtr->numCylinders;
@@ -155,6 +158,7 @@ DevSCSIDoLabel(devPtr)
 				   diskPtr->map[part].numCylinders);
     }
     printf("\n");
+    return(SUCCESS);
 }
 
 /*
@@ -295,7 +299,7 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
      * FIX HERE TO ENQUEUE REQUESTS - GOES WITH CONNECT/DIS-CONNECT
      */
     scsiPtr = devPtr->scsiPtr;
-    MASTER_LOCK(scsiPtr->mutex);
+    MASTER_LOCK(&scsiPtr->mutex);
     if (command == SCSI_READ) {
 	scsiPtr->configPtr->diskReads++;
     } else {
@@ -331,7 +335,7 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
 
 	scsiPtr->flags &= ~SCSI_IO_COMPLETE;
 	DevSCSISetupCommand(command, devPtr, firstSector, *numSectorsPtr);
-	status = (*scsiPtr->commandProc)(devPtr->slaveID, scsiPtr,
+	status = (*scsiPtr->commandProc)(devPtr->targetID, scsiPtr,
 				 *numSectorsPtr * devPtr->sectorSize,
 				 buffer, INTERRUPT);
 	/*
@@ -357,7 +361,7 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
     *numSectorsPtr -= (scsiPtr->residual / devPtr->sectorSize);
     scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
     Sync_MasterBroadcast(&scsiPtr->readyForIO);
-    MASTER_UNLOCK(scsiPtr->mutex);
+    MASTER_UNLOCK(&scsiPtr->mutex);
     /*
      * Voluntarily give up the CPU in case anyone else wants to use the
      * disk.  The combination of the readyForIO and ioComplete 
@@ -653,48 +657,42 @@ DevSCSIDiskError(devPtr, sensePtr)
 	}
 	/*
 	 * The SCSIBOX Emulex drives will transfer in extended sense format.
-	 * Note: "gs/emulux/emulex/" will follow.
 	 *
 	 * Unit attention, at least in one case, is potentially ignorable.
 	 * Also, the Emulex SCSIBOX drive doesn't set an extra error code,
 	 * it just sets the key to SCSI_UNIT_ATTN_KEY.
-	 *
-	 * FIXME: the relationship between SCSI and SBC is pretty confused.
 	 */
 	case SCSI_EMULEX_DISK: {
-	    register DevSBCSense *sbcSensePtr;
 	    register DevSCSIExtendedSense *extSensePtr;
-	    extern Boolean devSBCDebug;
-	    DevSBCDevice *sbcDevPtr;
-	    DevSBCController *sbcPtr;
+	    extern Boolean devSCSIDebug;
+	    DevSCSIController *scsiPtr;
 
-	    sbcSensePtr = (DevSBCSense *)sensePtr;
 	    extSensePtr = (DevSCSIExtendedSense *)sensePtr;
-	    sbcDevPtr = (DevSBCDevice *) devPtr;
-	    sbcPtr = sbcDevPtr->sbcPtr;
+	    scsiPtr = devPtr->scsiPtr;
 	    
 	    switch (extSensePtr->key) {
 		case SCSI_NO_SENSE:
-		    if (devSBCDebug) {
-			printf("Warning: SCSI-%d drive %d, no sense?\n",
-				  devPtr->scsiPtr->number, devPtr->slaveID);
+		    if (devSCSIDebug) {
+			printf("Warning: SCSI-%d drive %d-%d, no sense?\n",
+				  scsiPtr->number, devPtr->targetID,
+				  devPtr->LUN);
 		    }
 		    break;
 		case SCSI_RECOVERABLE:
 		    /*
 		     * The drive recovered from an error.
 		     */
-		    if (devSBCDebug > 2) {
-			printf("Warning: SCSI-%d drive %d, recoverable error, code %x\n",
-				  devPtr->scsiPtr->number, devPtr->slaveID,
-				  sbcSensePtr->code2);
+		    if (devSCSIDebug > 2) {
+			printf("Warning: SCSI-%d drive %d-%d, recoverable error\n",
+				  scsiPtr->number, devPtr->targetID,
+				  devPtr->LUN);
 			printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 				   extSensePtr->info1 & 0xff,
 				   extSensePtr->info2 & 0xff,
 				   extSensePtr->info3 & 0xff,
 				   extSensePtr->info4 & 0xff);
 		    }
-		    sbcPtr->stats.numRecoverableErrors++;
+		    scsiPtr->numRecoverableErrors++;
 		    status = DEV_RETRY_ERROR;
 		    break;
 		case SCSI_NOT_READY_KEY:
@@ -704,21 +702,21 @@ DevSCSIDiskError(devPtr, sensePtr)
 		    /*
 		     * Probably a programming error.
 		     */
-		    printf("Warning: SCSI-%d drive %d, illegal request %d\n",
-				devPtr->scsiPtr->number, devPtr->slaveID,
-				command);
+		    printf("SCSI-%d drive %d-%d, illegal request %d\n",
+				scsiPtr->number, devPtr->targetID,
+				devPtr->LUN,command);
 		    status = DEV_INVALID_ARG;
 		    break;
 		case SCSI_MEDIA_ERROR:
 		case SCSI_HARDWARE_ERROR:
-		    if (devSBCDebug > 2) {
-			panic("SCSI-%d drive %d, hard class7 error %x code %x\n",
-			      devPtr->scsiPtr->number, devPtr->slaveID,
-			      extSensePtr->key, sbcSensePtr->code2);
+		    if (devSCSIDebug > 2) {
+			panic("SCSI-%d drive %d-%d, hard class7 key %x\n",
+			      scsiPtr->number, devPtr->targetID,
+			      devPtr->LUN,extSensePtr->key);
 		    } else {
-			printf("Warning: SCSI-%d drive %d, hard class7 error %x code %x\n",
-			      devPtr->scsiPtr->number, devPtr->slaveID,
-			      extSensePtr->key, sbcSensePtr->code2);
+			printf("SCSI-%d drive %d-%d, hard class7 key %x\n",
+			      scsiPtr->number, devPtr->targetID, devPtr->LUN,
+			      extSensePtr->key);
 		    }
 		    printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 			extSensePtr->info1 & 0xff,
@@ -726,16 +724,14 @@ DevSCSIDiskError(devPtr, sensePtr)
 			extSensePtr->info3 & 0xff,
 			extSensePtr->info4 & 0xff);
 		    status = DEV_HARD_ERROR;
-		    sbcPtr->stats.numHardErrors++;
+		    scsiPtr->numHardErrors++;
 		    break;
 		case SCSI_UNIT_ATTN_KEY:
 		    /*
 		     * This is an error that occurs after the drive is reset.
 		     * It can probably be ignored.
 		     */
-		    printf("Warning: SCSI-%d drive %d, unit attention\n",
-			    devPtr->scsiPtr->number, devPtr->slaveID);
-		    sbcPtr->stats.numUnitAttns++;
+		    scsiPtr->numUnitAttns++;
 		    break;
 		case SCSI_WRITE_PROTECT_KEY:
 		    if (command == SCSI_WRITE ||
@@ -745,8 +741,8 @@ DevSCSIDiskError(devPtr, sensePtr)
 		    }
 		    break;
 		case SCSI_BLANK_CHECK:
-		    printf("SCSI-%d drive %d, \"blank check\"\n",
-			devPtr->scsiPtr->number, devPtr->slaveID);
+		    printf("SCSI-%d drive %d-%d, \"blank check\"\n",
+			scsiPtr->number, devPtr->targetID, devPtr->LUN);
 		    printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 			extSensePtr->info1 & 0xff,
 			extSensePtr->info2 & 0xff,
@@ -755,67 +751,21 @@ DevSCSIDiskError(devPtr, sensePtr)
 		    break;
 		case SCSI_VENDOR:
 		case SCSI_POWER_UP_FAILURE:
-		case SCSI_ABORT:
+		case SCSI_ABORT_KEY:
 		case SCSI_EQUAL:
 		case SCSI_OVERFLOW:
-		    printf("Warning: SCSI-%d drive %d, unsupported class7 error %d\n",
-			devPtr->scsiPtr->number, devPtr->slaveID,
+		    printf("Warning: SCSI-%d drive %d-%d, unsupported class7 error %d\n",
+			scsiPtr->number, devPtr->targetID, devPtr->LUN,
 			extSensePtr->key);
 		    status = DEV_HARD_ERROR;
 		    break;
 		default:
-		    printf("Warning: SCSI-%d drive %d, can't handle error %d\n",
-			devPtr->scsiPtr->number, devPtr->slaveID,
+		    printf("Warning: SCSI-%d drive %d-%d, can't handle error %d\n",
+			scsiPtr->number, devPtr->targetID, devPtr->LUN,
 			extSensePtr->key);
 		    status = DEV_HARD_ERROR;
 		    break;
 	    }
-#ifdef notdef
-	    if (emuluxSensePtr->extSense.key != SCSI_UNIT_ATTN_KEY) {
-		switch (emuluxSensePtr->error) {
-		    case SCSI_NOT_READY:
-			status = DEV_OFFLINE;
-			break;
-		    case SCSI_INSUF_CAPACITY:
-			printf("Warning: Emulex: Insufficient disk capacity");
-			/* fall thru */
-		    case SCSI_END_OF_MEDIA:
-			status = DEV_END_OF_TAPE;  /* ??? */
-			break;
-		    case SCSI_HARD_DATA_ERROR:
-			status = DEV_HARD_ERROR;
-			break;
-		    case SCSI_WRITE_PROTECT:
-			if (command == SCSI_WRITE) {
-			    status = FS_NO_ACCESS;
-			}
-			break;
-		    case SCSI_CORRECTABLE_ERROR:
-			printf("Warning: SCSI-%d drive %d, correctable error",
-				devPtr->scsiPtr->number, devPtr->slaveID);
-			break;
-		    case SCSI_INVALID_COMMAND:
-			printf("Warning: SCSI-%d drive %d, invalid command 0x%x",
-				devPtr->scsiPtr->number, devPtr->slaveID,
-				command);
-			break;
-
-		    default:
-			panic("SCSI-%d drive %d, unknown error %x\n",
-				  devPtr->scsiPtr->number, devPtr->slaveID,
-				  emuluxSensePtr->error);
-			status = DEV_NO_MEDIA;
-			break;
-		}
-	    } else {
-	      /*
-	       * The drive has been reset sinse the last command.
-	       * Looks like we get this at startup.
-	       */
-		printf("Warning: SCSI-%d drive %d, unit attention\n",
-			devPtr->scsiPtr->number, devPtr->slaveID);
-	    }
-#endif notdef
 	    break;
 	}
     }

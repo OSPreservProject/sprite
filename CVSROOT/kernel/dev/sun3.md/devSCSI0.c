@@ -34,9 +34,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"	/* for Mach_SetJump */
 #include "sched.h"
 
-void DevSCSI0Reset();
-void DevSCSI0Command();
-void DevSCSI0Intr();
+void		DevSCSI0Reset();
+ReturnStatus	DevSCSI0Command();
+Boolean		DevSCSI0Intr();
 
 
 /*
@@ -59,17 +59,17 @@ void DevSCSI0Intr();
  */
 Boolean
 DevSCSI0Probe(address, scsiPtr)
-    Address address;	/* Alledged controller address */
+    int address;			/* Alledged controller address */
     register DevSCSIController *scsiPtr;	/* Controller state */
 {
-    volatile DevSCSIRegs *regsPtr = (DevSCSIRegs *)address;
+    volatile DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)address;
 
-    if (Mach_SetJump(&setJumpState) == SUCCESS) {
+    if (Mach_SetJump(&scsiSetJumpState) == SUCCESS) {
 	/*
 	 * Touch the device. If it exists it occupies 4K.
 	 */
 	regsPtr->dmaCount = 0x4BCC;
-	regsPtr = (DevSCSIRegs *)((int)address + 0x800);
+	regsPtr = (DevSCSI0Regs *)((int)address + 0x800);
 	regsPtr->dmaCount = 0x5BCC;
     } else {
 	/*
@@ -108,7 +108,7 @@ void
 DevSCSI0Reset(scsiPtr)
     DevSCSIController *scsiPtr;
 {
-    volatile DevSCSIRegs *regsPtr = (DevSCSIRegs *)scsiPtr->regsPtr;
+    volatile DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
 
     regsPtr->control = SCSI_RESET;
     MACH_DELAY(100);
@@ -140,8 +140,8 @@ DevSCSI0Reset(scsiPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSI0Command(slaveID, scsiPtr, size, addr, interrupt)
-    int slaveID;			/* Id of the SCSI device to select */
+DevSCSI0Command(targetID, scsiPtr, size, addr, interrupt)
+    int targetID;			/* Id of the SCSI device to select */
     DevSCSIController *scsiPtr;		/* The SCSI controller that will be
 					 * doing the command. The control block
 					 * within this specifies the unit
@@ -158,7 +158,7 @@ DevSCSI0Command(slaveID, scsiPtr, size, addr, interrupt)
 					 * until the command completes. */
 {
     register ReturnStatus status;
-    register DevSCSIRegs *regsPtr;	/* Host Adaptor registers */
+    register DevSCSI0Regs *regsPtr;	/* Host Adaptor registers */
     char *charPtr;			/* Used to put the control block
 					 * into the commandStatus register */
     int i;
@@ -171,7 +171,7 @@ DevSCSI0Command(slaveID, scsiPtr, size, addr, interrupt)
      */
     scsiPtr->command = scsiPtr->controlBlock.command;
 
-    regsPtr = scsiPtr->regsPtr;
+    regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
     /*
      * Check against a continuously busy bus.  This stupid condition would
      * fool the code below that tries to select a device.
@@ -184,7 +184,7 @@ DevSCSI0Command(slaveID, scsiPtr, size, addr, interrupt)
 	}
     }
     if (i == SCSI_WAIT_LENGTH) {
-	DevSCSIReset(regsPtr);
+	DevSCSI0Reset(scsiPtr);
 	printf("SCSI bus stuck busy\n");
 	return(FAILURE);
     }
@@ -198,15 +198,15 @@ DevSCSI0Command(slaveID, scsiPtr, size, addr, interrupt)
      * put in the data word because of problems with Sun's Host Adaptor.
      */
     regsPtr->control = 0;
-    regsPtr->data = (1 << slaveID);
+    regsPtr->data = (1 << targetID);
     regsPtr->control = SCSI_SELECT;
-    status = DevSCSI0Wait(regsPtr, SCSI_BUSY, NO_RESET, FALSE);
+    status = DevSCSI0Wait(scsiPtr, SCSI_BUSY, NO_RESET, FALSE);
     if (status != SUCCESS) {
 	regsPtr->data = 0;
 	regsPtr->control = 0;
 	if (scsiPtr->controlBlock.command != SCSI_TEST_UNIT_READY) {
 	    printf("SCSI-%d: can't select slave %d\n", 
-				 scsiPtr->number, slaveID);
+				 scsiPtr->number, targetID);
 	}
 	return(status);
     }
@@ -237,7 +237,7 @@ DevSCSI0Command(slaveID, scsiPtr, size, addr, interrupt)
 	checkMsg = TRUE;
     }
     for (i=0 ; i<sizeof(DevSCSIControlBlock) ; i++) {
-	status = DevSCSI0Wait(regsPtr, SCSI_REQUEST, RESET, checkMsg);
+	status = DevSCSI0Wait(scsiPtr, SCSI_REQUEST, RESET, checkMsg);
 /*
  * This is just a guess.
  */
@@ -254,7 +254,7 @@ DevSCSI0Command(slaveID, scsiPtr, size, addr, interrupt)
 	 * is accepting control block bytes.
 	 */
 	if ((regsPtr->control & SCSI_COMMAND) == 0) {
-	    DevSCSIReset(regsPtr);
+	    DevSCSI0Reset(scsiPtr);
 	    printf("SCSI-%d: device dropped command line\n",
 				 scsiPtr->number);
 	    return(DEV_HANDSHAKE_ERROR);
@@ -266,10 +266,10 @@ DevSCSI0Command(slaveID, scsiPtr, size, addr, interrupt)
 	/*
 	 * A synchronous command.  Wait here for the command to complete.
 	 */
-	status = DevSCSI0Wait(regsPtr, SCSI_INTERRUPT_REQUEST, RESET, FALSE);
+	status = DevSCSI0Wait(scsiPtr, SCSI_INTERRUPT_REQUEST, RESET, FALSE);
 	if (status == SUCCESS) {
 	    scsiPtr->residual = -regsPtr->dmaCount -1;
-	    status = DevSCSIStatus(scsiPtr);
+	    status = DevSCSI0Status(scsiPtr);
 	} else {
 	    printf("SCSI-%d: couldn't wait for command to complete\n",
 				 scsiPtr->number);
@@ -305,13 +305,13 @@ DevSCSI0Status(scsiPtr)
     DevSCSIController *scsiPtr;
 {
     register ReturnStatus status;
-    register DevSCSIRegs *regsPtr;
+    register DevSCSI0Regs *regsPtr;
     short message;
     char statusByte;
     char *statusBytePtr;
     int numStatusBytes = 0;
 
-    regsPtr = scsiPtr->regsPtr;
+    regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
     statusBytePtr = (char *)&scsiPtr->statusBlock;
     bzero((Address)statusBytePtr, sizeof(DevSCSIStatusBlock));
     for ( ; ; ) {
@@ -323,7 +323,7 @@ DevSCSI0Status(scsiPtr)
 	 * status bytes have been received and that the byte in the
 	 * commandStatus register is the message byte.
 	 */
-	status = DevSCSI0Wait(regsPtr, SCSI_REQUEST, RESET, FALSE);
+	status = DevSCSI0Wait(scsiPtr, SCSI_REQUEST, RESET, FALSE);
 	if (status != SUCCESS) {
 	    printf("SCSI-%d: wait error after %d status bytes\n",
 				 scsiPtr->number, numStatusBytes);
@@ -384,12 +384,13 @@ DevSCSI0Status(scsiPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSI0Wait(regsPtr, condition, reset, checkMsg)
-    DevSCSIRegs *regsPtr;
+DevSCSI0Wait(scsiPtr, condition, reset, checkMsg)
+    DevSCSIController *scsiPtr;
     int condition;
     Boolean reset;
     Boolean checkMsg;
 {
+    volatile DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
     register int i;
     ReturnStatus status = DEV_TIMEOUT;
     register int control;
@@ -439,7 +440,7 @@ DevSCSI0Wait(regsPtr, condition, reset, checkMsg)
 	printf("DevSCSI0Wait: timed out, control = %x.\n", control);
     }
     if (reset) {
-	DevSCSIReset(regsPtr);
+	DevSCSI0Reset(scsiPtr);
     }
     return(status);
 }
@@ -468,7 +469,7 @@ Boolean
 DevSCSI0Intr(scsiPtr)
     register DevSCSIController *scsiPtr;
 {
-    volatile DevSCSIRegs *regsPtr = (DevSCSIRegs *)scsiPtr->regsPtr;
+    volatile DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
 
     if (regsPtr->control & SCSI_INTERRUPT_REQUEST) {
 	if (regsPtr->control & SCSI_BUS_ERROR) {
@@ -493,7 +494,7 @@ DevSCSI0Intr(scsiPtr)
 	     * The board needs to be reset to clear the Bus Error
 	     * condition so no status bytes are grabbed.
 	     */
-	    DevSCSIReset(scsiPtr->regsPtr);
+	    DevSCSI0Reset(scsiPtr);
 	    scsiPtr->status = DEV_DMA_FAULT;
 	    Sync_MasterBroadcast(&scsiPtr->IOComplete);
 	    return(TRUE);
@@ -521,7 +522,7 @@ DevSCSI0Intr(scsiPtr)
 		    scsiPtr->residual++;
 		}
 	    }
-	    scsiPtr->status = DevSCSIStatus(scsiPtr);
+	    scsiPtr->status = DevSCSI0Status(scsiPtr);
 	    scsiPtr->flags |= SCSI_IO_COMPLETE;
 	    Sync_MasterBroadcast(&scsiPtr->IOComplete);
 	    return(TRUE);

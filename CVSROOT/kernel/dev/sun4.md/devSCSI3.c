@@ -33,7 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"	/* for Mach_SetJump */
 #include "sched.h"
 
-int devSCSI3Debug = 2;
+int devSCSI3Debug = 5;
 
 /*
  * Number of times to try things like target selection.
@@ -77,17 +77,6 @@ static ReturnStatus GetByte();
 static void 	PrintRegs();
 static void 	StartDMA();
 
-/*
- * The DMA state of a command is used to determine the direction of DMA
- * (for the SEND bit in the control register) as well as to determine
- * whether DMA is occurring at all.  Most operations don't require DMA,
- * and apparently only one operation (WRITE) does DMA toward the device.
- */
-#define DMAState(command) \
-    (((command == SCSI_READ) || (command == SCSI_REQUEST_SENSE) || \
-      (command == SCSI_INQUIRY)) ? SBC_DMA_RECEIVE : \
-     ((command == SCSI_WRITE) ? SBC_DMA_SEND : SBC_DMA_INACTIVE))
-
 
 /*
  *----------------------------------------------------------------------
@@ -106,13 +95,13 @@ static void 	StartDMA();
  */
 Boolean
 DevSCSI3ProbeOnBoard(address, scsiPtr)
-    Address address;			/* Alledged controller address */
+    int address;			/* Alledged controller address */
     register DevSCSIController *scsiPtr;	/* Controller state */
 {
     register DevSCSI3Regs *regsPtr = (DevSCSI3Regs *)address;
     int x;
 
-    if (Mach_SetJump(&setJumpState) == SUCCESS) {
+    if (Mach_SetJump(&scsiSetJumpState) == SUCCESS) {
 	/*
 	 * Touch the device's UDC read data register.
 	 */
@@ -134,6 +123,9 @@ DevSCSI3ProbeOnBoard(address, scsiPtr)
     scsiPtr->resetProc = DevSCSI3Reset;
     scsiPtr->commandProc = DevSCSI3Command;
     scsiPtr->intrProc = DevSCSI3Intr;
+    if (devSCSI3Debug > 4) {
+	printf("Onboard SCSI3 found\n");
+    }
     return(TRUE);
 }
 
@@ -156,14 +148,14 @@ DevSCSI3ProbeOnBoard(address, scsiPtr)
  */
 Boolean
 DevSCSI3ProbeVME(address, scsiPtr, vector)
-    Address address;			/* Alledged controller address */
+    int address;			/* Alledged controller address */
     register DevSCSIController *scsiPtr;	/* Controller state */
     int vector;		/* Vector number for VME vectored interrupts */
 {
     volatile DevSCSI3Regs *regsPtr = (DevSCSI3Regs *)address;
-    found = FALSE;
+    Boolean found = FALSE;
 
-    if (Mach_SetJump(&setJumpState) == SUCCESS) {
+    if (Mach_SetJump(&scsiSetJumpState) == SUCCESS) {
 	/*
 	 * Touch the device. The dmaCount register should hold more
 	 * than 16 bits, which is all the old host adaptor's dmaCount can hold.
@@ -182,9 +174,12 @@ DevSCSI3ProbeVME(address, scsiPtr, vector)
 	    scsiPtr->type = SCSI3;
 	    scsiPtr->onBoard = FALSE;
 	    scsiPtr->udcDmaTable = (DevUDCDMAtable *)NIL;
-	    scsiPtr->resetProc = DevSCSI3Reset();
-	    scsiPtr->commandProc = DevSCSI3Command();
-	    scsiPtr->intrProc = DevSCSI3Reset();
+	    scsiPtr->resetProc = DevSCSI3Reset;
+	    scsiPtr->commandProc = DevSCSI3Command;
+	    scsiPtr->intrProc = DevSCSI3Intr;
+	    if (devSCSI3Debug > 4) {
+		printf("VME SCSI3 found\n");
+	    }
 	}
     }
     Mach_UnsetJump();
@@ -258,8 +253,8 @@ DevSCSI3Reset(scsiPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
-    int slaveID;			/* Id of the SCSI device to select */
+DevSCSI3Command(targetID, scsiPtr, size, addr, interrupt)
+    int targetID;			/* Id of the SCSI device to select */
     DevSCSIController *scsiPtr;		/* The SCSI controller that will be
 					 * doing the command. The control block
 					 * within this specifies the unit
@@ -295,12 +290,41 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
     command = scsiPtr->controlBlock.command;
     scsiPtr->command = command;
 
+    switch(command) {
+	case SCSI_READ:
+	case SCSI_REQUEST_SENSE:
+	case SCSI_INQUIRY:
+	case SCSI_MODE_SENSE:
+	case SCSI_READ_BLOCK_LIMITS:
+	case SCSI_READ_CAPACITY:
+	    scsiPtr->devPtr->dmaState = SBC_DMA_RECEIVE;
+	    break;
+	case SCSI_WRITE:
+	case SCSI_MODE_SELECT:
+	case SCSI_SEND_DIAGNOSTIC:
+	    scsiPtr->devPtr->dmaState = SBC_DMA_SEND;
+	    break;
+	default:
+	    scsiPtr->devPtr->dmaState = SBC_DMA_INACTIVE;
+	    break;
+    }
+    if (devSCSI3Debug > 3) {
+	printf("SCSI3Command 0x%x targetID %d addr %x size %d dma %s\n",
+	    command, targetID, addr, size,
+	    (scsiPtr->devPtr->dmaState == SBC_DMA_INACTIVE) ? "not active" :
+		((scsiPtr->devPtr->dmaState == SBC_DMA_SEND) ? "send" :
+							      "receive"));
+    }
+
     regsPtr = (DevSCSI3Regs *)scsiPtr->regsPtr;
     initCmdPtr = &regsPtr->sbc.write.initCmd;
     modePtr = &regsPtr->sbc.write.mode;
     if (!scsiPtr->onBoard) {
+	/*
+	 * For VME interface dis-allow DMA interrupts from reconnect attempts.
+	 */
 	regsPtr->control &= ~SI_CSR_DMA_EN;
-	regsPtr->control |= SI_CSR_BPCON;
+	regsPtr->control |= SI_CSR_BPCON;	/* word byte packing */
     }
     regsPtr->sbc.write.select = 0;
     regsPtr->sbc.write.trgtCmd = 0;
@@ -362,7 +386,7 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
 	    regsPtr->sbc.write.data = 0;
 	    if (command != SCSI_TEST_UNIT_READY) {
 		printf("SCSI-%d: can't select slave %d\n", 
-				     scsiPtr->number, slaveID);
+				     scsiPtr->number, targetID);
 	    }
 	    return(status);
 	}
@@ -387,7 +411,7 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
     }
     if (i == SBC_NUM_RETRIES) {
 	DevSCSI3Reset(scsiPtr);
-	printf("SCSI-%d: unable to select slave\n", slaveID);
+	printf("SCSI-%d: unable to select slave\n", targetID);
 	return(FAILURE);	
     }
 
@@ -395,7 +419,7 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
      * Select the target by putting its ID plus our own on the bus
      * and waiting for the busy signal.
      */
-    regsPtr->sbc.write.data = (1 << scsiPtr->number) | SI_HOST_ID;
+    regsPtr->sbc.write.data = (1 << targetID) | SI_HOST_ID;
     initCmd = regsPtr->sbc.read.initCmd   & ~SBC_ICR_AIP;
     MACH_DELAY(1);
     regsPtr->sbc.write.initCmd = initCmd | SBC_ICR_DATA | SBC_ICR_BUSY;
@@ -412,7 +436,7 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
     if (status != SUCCESS) {
 	if (command != SCSI_TEST_UNIT_READY) {
 	    printf("SCSI3Comand can't select slave %d on SCSI bus %d\n", 
-				 slaveID, scsiPtr->number);
+				 targetID, scsiPtr->number);
 	}
 	regsPtr->sbc.write.data = 0;
 	return(status);
@@ -442,7 +466,7 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
 	return(status);
     }
 
-    regsPtr->sbc.write.data = SCSI_IDENTIFY | slaveID;
+    regsPtr->sbc.write.data = SCSI_IDENTIFY | scsiPtr->devPtr->LUN;
     regsPtr->sbc.write.initCmd = SBC_ICR_DATA;
     regsPtr->sbc.write.initCmd |= SBC_ICR_ACK;
     status =  DevSCSI3WaitReg(regsPtr, (Address) &regsPtr->sbc.read.curStatus,
@@ -493,7 +517,7 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
 #endif
 	if (scsiPtr->onBoard) {
 	    register DevUDCDMAtable *udct = scsiPtr->udcDmaTable;
-	    if (devSBCDebug > 5) {
+	    if (devSCSI3Debug > 4) {
 		printf("SCSI DMA addr = 0x%x size = %d\n",addr,size);
 	    }
 	    regsPtr->fifoCount = size;
@@ -631,11 +655,12 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
 	}
     }
 
+    i = regsPtr->sbc.read.clear;
     if (interrupt == INTERRUPT) {
 	regsPtr->sbc.write.select = SI_HOST_ID;
 	regsPtr->sbc.write.trgtCmd = TCR_UNSPECIFIED;
-	regsPtr->sbc.write.initCmd = 0;
 	*modePtr |= SBC_MR_DMA;
+	regsPtr->sbc.write.initCmd = 0;
 	if (!scsiPtr->onBoard) {
 	    regsPtr->control |= SI_CSR_DMA_EN;
 	}
@@ -671,7 +696,11 @@ DevSCSI3Command(slaveID, scsiPtr, size, addr, interrupt)
 
 	status = DevSCSI3CommandWait(scsiPtr);
 	if (status == SUCCESS) {
-	    scsiPtr->residual = regsPtr->dmaCount;
+	    if (scsiPtr->onBoard) {
+		scsiPtr->residual = regsPtr->fifoCount;
+	    } else {
+		scsiPtr->residual = regsPtr->dmaCount;
+	    }
 	    status = DevSCSI3Status(scsiPtr);
 	} else {
 	    printf("SCSI3Command bus-%d: couldn't wait for command\n",
@@ -711,7 +740,10 @@ StartDMA(scsiPtr)
     unsigned char junk;
 
     if (devSCSI3Debug > 4) {
-	printf("SCSI3: StartDMA called.\n");
+	printf("SCSI3: StartDMA %s called.\n",
+	    (scsiPtr->devPtr->dmaState == SBC_DMA_RECEIVE) ? "receive" :
+		((scsiPtr->devPtr->dmaState == SBC_DMA_SEND) ? "send" :
+							"not-active!"));
     }
     regsPtr = (DevSCSI3Regs *)scsiPtr->regsPtr;
     if (scsiPtr->onBoard) {
@@ -721,7 +753,7 @@ StartDMA(scsiPtr)
         regsPtr->dmaCount = scsiPtr->residual;
     }
 
-    if (sbcPtr->devPtr->dmaState == SBC_DMA_RECEIVE) {
+    if (scsiPtr->devPtr->dmaState == SBC_DMA_RECEIVE) {
 	regsPtr->sbc.write.trgtCmd = TCR_DATA_IN;
 	junk = regsPtr->sbc.read.clear;
 	regsPtr->sbc.write.mode |= SBC_MR_DMA;
@@ -729,6 +761,9 @@ StartDMA(scsiPtr)
     } else {
 	regsPtr->sbc.write.trgtCmd = TCR_DATA_OUT;
 	junk = regsPtr->sbc.read.clear;
+#ifdef lint
+	regsPtr->sbc.read.clear = junk;
+#endif
 	regsPtr->sbc.write.initCmd = SBC_ICR_DATA;
 	regsPtr->sbc.write.mode |= SBC_MR_DMA;
 	regsPtr->sbc.write.send = 0;
@@ -792,10 +827,6 @@ DevSCSI3Status(scsiPtr)
 	return(status);
     }
     for ( ; ; ) {
-	if (devSCSI3Debug > 4) {
-	    printf("SCSI3: DevSCSI3Status: getting byte #%d.\n",
-		       numStatusBytes);
-	}
 	status = GetByte(scsiPtr, PHASE_STATUS, &statusByte);
 	if (status != SUCCESS) {
 	    if (devSCSI3Debug > 4) {
@@ -878,7 +909,8 @@ DevSCSI3CommandWait(scsiPtr)
     int foo;
 
     if (devSCSI3Debug > 4) {
-	printf("DevSCSI3CommandWait: waiting for command to complete.\n");
+	printf("DevSCSI3CommandWait: waiting for command 0x%x to complete.\n",
+	    scsiPtr->command);
     }
     if (scsiPtr->devPtr->dmaState == SBC_DMA_INACTIVE) {
 	return(SUCCESS);
@@ -917,9 +949,9 @@ DevSCSI3CommandWait(scsiPtr)
 	}
 	if (regsPtr->control & SI_CSR_DMA_BUS_ERR) {
 	    if (devSCSI3Debug > 0) {
-		panic("SCSI3: bus error\n");
+		panic("SCSI3CommandWait: bus error\n");
 	    } else {
-		printf("SCSI3: bus error\n");
+		printf("SCSI3CommandWait: bus error\n");
 	    }
 	    status = DEV_DMA_FAULT;
 	} else if (regsPtr->control & SI_CSR_DMA_CONFLICT) {
@@ -941,7 +973,7 @@ DevSCSI3CommandWait(scsiPtr)
 	return(status);
     }
 #endif
-    if (scsiPtr->devPtr->dmaState == SBC_DMA_RECEIVE) 
+    if (scsiPtr->devPtr->dmaState == SBC_DMA_RECEIVE) {
 	if (!scsiPtr->onBoard) { 
 	    if ((regsPtr->control & SI_CSR_LOB) != 0) {
 	    /*
@@ -973,8 +1005,9 @@ DevSCSI3CommandWait(scsiPtr)
 	     * The bcr + 1 above wards against 5380 prefetch.
 	     */
 	    if ((regsPtr->fifoCount == size)  ||
-		(regsPtr->fifoCount + 1 == size)
+		(regsPtr->fifoCount + 1 == size) {
 		    goto out;
+	    }
 	    /* handle odd byte */
 	    offset = regsPtr->dmaAddress + (size - regsPtr->fifoCount);
 	    if ((size - regsPtr->fifoCount) & 1) {
@@ -986,11 +1019,11 @@ DevSCSI3CommandWait(scsiPtr)
 	     * off the udc at the end of the dma operation.
 	     */
 	    } else if (((regsPtr->udcRdata*2) - regsPtr->fifoCount) == 2) {
-	     if (((regsPtr->udcRdata*2) - regsPtr->fifoCount) == 2) {
 		    DVMA[offset - 2] = (regsPtr->fifoData & 0xff00) >> 8;
 		    DVMA[offset - 1] = regsPtr->fifoData & 0x00ff;
 	    }
 #endif
+	}
     }
     /*
      * Reset the state of the transfer.  This can (and should) be put in
@@ -1102,9 +1135,9 @@ DevSCSI3WaitReg(regsPtr, thisRegPtr, type, conditions, reset, bitSel)
 	} 
 	if (regsPtr->control & SI_CSR_DMA_BUS_ERR) {
 	    if (devSCSI3Debug > 0) {
-	        panic("SCSI3: bus error\n");
+	        panic("SCSI3Wait: bus error\n");
 	    } else {
-		printf("SCSI3: bus error\n");
+		printf("SCSI3Wait: bus error\n");
 	    }
 	    status = DEV_DMA_FAULT;
 	    break;
@@ -1194,9 +1227,9 @@ DevSCSI3WaitPhase(regsPtr, phase, reset)
 	}
 	if (regsPtr->control & SI_CSR_DMA_BUS_ERR) {
 	    if (devSCSI3Debug > 0) {
-	        panic("SCSI3: bus error\n");
+	        panic("SCSI3WaitPhase: bus error\n");
 	    } else {
-		printf("SCSI3: bus error\n");
+		printf("SCSI3WaitPhase: bus error\n");
 	    }
 	    status = DEV_DMA_FAULT;
 	    break;
@@ -1356,7 +1389,6 @@ Boolean
 DevSCSI3Intr(scsiPtr)
     DevSCSIController *scsiPtr;
 {
-    int index;
     volatile DevSCSI3Regs *regsPtr = (DevSCSI3Regs *)scsiPtr->regsPtr;
     ReturnStatus status;
     int byteCount;
@@ -1365,7 +1397,7 @@ DevSCSI3Intr(scsiPtr)
     unsigned char message;
 
     if (devSCSI3Debug > 6) {
-	panic("Entering DevSCSI3Intr.\n");
+	printf("Entering DevSCSI3Intr.\n");
     }
     
     /*
@@ -1410,6 +1442,9 @@ DevSCSI3Intr(scsiPtr)
 	    Sync_MasterBroadcast(&scsiPtr->IOComplete);
 	    return(TRUE);
 	} else if (regsPtr->control & SI_CSR_DMA_IP) {
+	    if (devSCSI3Debug > 4) {
+		printf("DevSCSI3Intr: DMA Interrupt\n");
+	    }
 	    foo = regsPtr->sbc.read.clear;
 	    scsiPtr->residual = regsPtr->dmaCount;
 	    if (scsiPtr->devPtr->dmaState == SBC_DMA_RECEIVE &&
@@ -1445,6 +1480,9 @@ DevSCSI3Intr(scsiPtr)
 	    switch (phase) {
 		case PHASE_DATA_IN:
 		case PHASE_DATA_OUT: {
+		    if (devSCSI3Debug > 4) {
+			printf("DevSCSI3Intr: Data Phase Interrupt\n");
+		    }
 		    regsPtr->sbc.write.mode &= ~SBC_MR_DMA;
 		    StartDMA(scsiPtr);
 		    return(TRUE);
@@ -1476,10 +1514,10 @@ DevSCSI3Intr(scsiPtr)
 		    return(TRUE);
 		}
 		case PHASE_STATUS: {
-		    if (sbcPtr->onBoard) {
-			sbcPtr->residual = 0;
+		    if (scsiPtr->onBoard) {
+			scsiPtr->residual = regsPtr->fifoCount;
 		    } else {
-			sbcPtr->residual = regsPtr->dmaCount;
+			scsiPtr->residual = regsPtr->dmaCount;
 		    }
 		    if (scsiPtr->devPtr->dmaState == SBC_DMA_RECEIVE) {
 			if (!scsiPtr->onBoard) { 

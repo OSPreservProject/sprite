@@ -26,7 +26,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devSCSI.h"
 #include "devSCSITape.h"
 #include "devSCSIEmulex.h"
-#include "dev/tape.h"
 
 void EmulexSetup();
 void EmulexStatus();
@@ -56,7 +55,7 @@ DevEmulexInit(tapePtr)
     tapePtr->setupProc = EmulexSetup;
     tapePtr->statusProc = EmulexStatus;
     tapePtr->errorProc = EmulexError;
-
+}
 
 /*
  *----------------------------------------------------------------------
@@ -161,9 +160,6 @@ EmulexStatus(devPtr, statusPtr)
     DevSCSIDevice *devPtr;
     Dev_TapeStatus *statusPtr;
 {
-    unsigned char *senseBytes;
-
-    statusPtr->type = DEV_TAPE_EMULEX;
     /*
      * Return byte2 from the class 7 extended sense plus
      * the standard SCSI error byte.  Byte2 of Extended Sense
@@ -258,7 +254,7 @@ EmulexError(devPtr, sensePtr)
 	case SCSI_MEDIA_CHANGE:
 	case SCSI_VENDOR:
 	case SCSI_POWER_UP_FAILURE:
-	case SCSI_ABORT:
+	case SCSI_ABORT_KEY:
 	case SCSI_EQUAL:
 	case SCSI_OVERFLOW:
 	    printf("Warning: SCSI-%d drive %d, unsupported class7 error %d\n",
@@ -268,7 +264,7 @@ EmulexError(devPtr, sensePtr)
 	    break;
     }
 #endif notdef
-    switch (emuluxSensePtr->error) {
+    switch (emulexSensePtr->error) {
 	case SCSI_NOT_READY:
 	    status = DEV_OFFLINE;
 	    break;
@@ -284,19 +280,21 @@ EmulexError(devPtr, sensePtr)
 	case SCSI_HARD_DATA_ERROR:
 	    status = DEV_HARD_ERROR;
 	    break;
-	case SCSI_WRITE_PROTECT:
+	case SCSI_WRITE_PROTECT: {
+	    register int command = devPtr->scsiPtr->command;
 	    if (command == SCSI_WRITE ||
 		command == SCSI_ERASE_TAPE ||
 		command == SCSI_WRITE_EOF) {
 		status = FS_NO_ACCESS;
 	    }
 	    break;
+	}
 	case SCSI_CORRECTABLE_ERROR:
 	    printf("Warning: SCSI-%d drive %d, correctable error",
-		    devPtr->scsiPtr->number, devPtr->slaveID);
+		    devPtr->scsiPtr->number, devPtr->targetID);
 	    break;
 	case SCSI_FILE_MARK:
-	    if (command == SCSI_READ) {
+	    if (devPtr->scsiPtr->command == SCSI_READ) {
 		/*
 		 * Hit the file mark after reading good data.
 		 * Setting this bit causes the next read to
@@ -307,8 +305,8 @@ EmulexError(devPtr, sensePtr)
 	    break;
 	case SCSI_INVALID_COMMAND:
 	    printf("Warning: SCSI-%d drive %d, invalid command 0x%x",
-		    devPtr->scsiPtr->number, devPtr->slaveID,
-		    command);
+		    devPtr->scsiPtr->number, devPtr->targetID,
+		    devPtr->scsiPtr->command);
 	    break;
 
 	case SCSI_UNIT_ATTENTION:

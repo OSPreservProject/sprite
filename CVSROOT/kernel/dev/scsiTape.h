@@ -22,6 +22,8 @@
 #ifndef _DEVSCSITAPE
 #define _DEVSCSITAPE
 
+#include "dev/tape.h"
+
 /*
  * State info for an SCSI tape drive.  This is used to map from a device
  * unit number back to the SCSI controller for the drive.
@@ -31,11 +33,13 @@ typedef struct DevSCSITape {
 				 * it it really exists, etc. */
     int type;			/* Type of the drive */
     void (*setupProc)();	/* Procedure to customize command block */
-    void (*statusProc();	/* Procedure to fill in Dev_TapeStatus */
-    returnStatus (*errorProc)();/* Procedure to handle sense data */
+    void (*statusProc)();	/* Procedure to fill in Dev_TapeStatus */
+    ReturnStatus (*errorProc)();/* Procedure to handle sense data */
 } DevSCSITape;
 
 extern DevSCSIDevice *scsiTape[];
+extern int scsiTapeIndex;
+
 /*
  * SCSI_MAX_TAPES the maximum number of tape devices that can be hung
  *	off ALL the SCSI controllers together.
@@ -91,6 +95,23 @@ typedef struct DevSCSITapeControlBlock {
 } DevSCSITapeControlBlock;
 
 /*
+ * The MODE_SELECT command takes a standard 4 byte header and is
+ * followed by zero or more BlockDescriptors and zero or more Vendor
+ * Unique Parameter bytes.  The total length of the header, block
+ * descriptors, and parameter bytes is put in the count field
+ * of the command block.
+ */
+typedef struct DevSCSIModeSelectHdr {
+    unsigned char pad1;			/* Reserved */
+    unsigned char pad2;			/* Reserved */
+    unsigned char		:1;	/* Reserved */
+    unsigned char bufMode	:3;	/* == 1 means buffered, the default */
+    unsigned char speed		:4;	/* == 0 means default speed */
+    unsigned char blockLength;		/* Length of block descriptors that
+					 * follow the header */
+} DevSCSIModeSelectHdr;
+
+/*
  * Forward Declarations.
  */
 ReturnStatus Dev_SCSITapeOpen();
@@ -102,6 +123,10 @@ ReturnStatus Dev_SCSITapeClose();
 ReturnStatus Dev_SCSITapeBlockIOInit();
 ReturnStatus Dev_SCSITapeBlockIO();
 
-ReturnStatus DevSCSITapeError();
+ReturnStatus	DevSCSITapeInit();
+int		DevSCSITapeType();
+ReturnStatus	DevSCSITapeIO();
+void		DevSCSITapeSetupCommand();
+ReturnStatus	DevSCSITapeError();
 
 #endif _DEVSCSITAPE

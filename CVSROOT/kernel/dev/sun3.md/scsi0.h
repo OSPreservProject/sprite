@@ -30,7 +30,7 @@
  * which command blocks and status blocks are transmitted.  This format
  * is defined on Page 10. of Sun's SCSI Programmers' Manual.
  */
-typedef struct DevSCSIRegs {
+typedef struct DevSCSI0Regs {
     unsigned char data;		/* Data register.  Contains the ID of the
 				 * SCSI "target", or controller, for the 
 				 * SELECT phase. Also, leftover odd bytes
@@ -52,7 +52,7 @@ typedef struct DevSCSIRegs {
 				 * a DMA overrun. */
     unsigned char pad4;
     unsigned char intrVector;	/* For VME, Index into autovector */
-} DevSCSIRegs;
+} DevSCSI0Regs;
 
 /*
  * Control bits in the SCSI Host Interface control register.

@@ -26,7 +26,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devInt.h"
 #include "devSCSI.h"
 #include "devSCSITape.h"
-#include "dev/tape.h"
+#include "devSCSISysgen.h"
+#include "devSCSIEmulex.h"
+#include "devSCSIExabyte.h"
 #include "byte.h"
 
 #include "dbg.h"
@@ -36,7 +38,7 @@ int SCSITapeDebug = FALSE;
  * State for each SCSI tape drive.  This used to map from unit numbers
  * back to the controller for the drive.
  */
-static int scsiTapeIndex = -1;
+int scsiTapeIndex = -1;
 DevSCSIDevice *scsiTape[SCSI_MAX_TAPES];
 
 
@@ -61,8 +63,7 @@ DevSCSIDevice *scsiTape[SCSI_MAX_TAPES];
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSITapeInit(scsiPtr, devPtr)
-    DevSCSIController *scsiPtr;		/* Controller state */
+DevSCSITapeInit(devPtr)
     DevSCSIDevice *devPtr;		/* Device state to complete */
 {
     register DevSCSITape *tapePtr;
@@ -84,8 +85,58 @@ DevSCSITapeInit(scsiPtr, devPtr)
     tapePtr->type = SCSI_UNKNOWN;
     scsiTape[scsiTapeIndex] = devPtr;
     printf("SCSI-%d tape %d at slave %d\n",
-		scsiPtr->number, scsiTapeIndex, devPtr->slaveID);
+		devPtr->scsiPtr->number, scsiTapeIndex, devPtr->targetID);
     return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSITapeType --
+ *
+ *	This determines the type of the tape drive depending on
+ *	the amount of sense data returned from the drive and initializes
+ *	the tapePtr structure.. 
+ *
+ * Results:
+ *	SUCCESS.  Because tape drives take up to several seconds to
+ *	initialize themselves we always assume one is out there.
+ *
+ * Side effects:
+ *	A DevSCSITape structure is allocated and referneced by the private
+ *	data pointer in	the generic DevSCSIDevice structure.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+DevSCSITapeType(senseSize, tapePtr)
+    int senseSize;			/* Amount of sense data in bytes */
+    DevSCSITape *tapePtr;
+{
+
+    printf("SCSITape, %d sense bytes => ", senseSize);
+    switch(senseSize) {
+	case sizeof(DevQICIISense):
+	    DevSysgenInit(tapePtr);
+	    printf("Sysgen\n");
+	    break;
+	case sizeof(DevEmulexTapeSense):
+	case sizeof(DevEmulexTapeSense)-1: /* The sense size of the Emulex 
+					    * drive is 11 bytes but the
+					    * C compiler rounds all structures
+					    * to even byte size.
+					    */
+	    DevEmulexInit(tapePtr);
+	    printf("Emulex\n");
+	    break;
+	case sizeof(DevExabyteSense):
+	    DevExabyteInit(tapePtr);
+	    printf("Exabyte\n");
+	    break;
+	default:
+	    printf("Unknown sense size\n");
+    }
+    return(tapePtr->type);
 }
 
 /*
@@ -128,7 +179,7 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
      * processes that are trying to initiate I/O with this controller.
      */
     scsiPtr = devPtr->scsiPtr;
-    MASTER_LOCK(scsiPtr->mutex);
+    MASTER_LOCK(&scsiPtr->mutex);
 
     /*
      * Here we are using a condition variable and the scheduler to
@@ -152,8 +203,8 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
 	buffer = VmMach_DevBufferMap(*countPtr * DEV_BYTES_PER_SECTOR,
 				 buffer, scsiPtr->IOBuffer);
     }
-    DevSCSISetupTapeCommand(command, devPtr, countPtr);
-    status = (*scsiPtr->commandProc)(devPtr->slaveID, scsiPtr, *countPtr,
+    DevSCSITapeSetupCommand(command, devPtr, countPtr);
+    status = (*scsiPtr->commandProc)(devPtr->targetID, scsiPtr, *countPtr,
 				     buffer, INTERRUPT);
     /*
      * Wait for the command to complete.  The interrupt handler checks
@@ -175,14 +226,14 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
     }
     scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
     Sync_MasterBroadcast(&scsiPtr->readyForIO);
-    MASTER_UNLOCK(scsiPtr->mutex);
+    MASTER_UNLOCK(&scsiPtr->mutex);
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSISetupTapeCommand --
+ * DevSCSITapeSetupCommand --
  *
  *	A variation on DevSCSISetupCommand that creates a control block
  *	designed for tape drives.  SCSI tape drives read from the current
@@ -200,7 +251,7 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
  *----------------------------------------------------------------------
  */
 void
-DevSCSISetupTapeCommand(command, devPtr, countPtr)
+DevSCSITapeSetupCommand(command, devPtr, countPtr)
     int command;		/* One of SCSI_* commands */
     DevSCSIDevice *devPtr;	/* Device state */
     int *countPtr;		/* In - Transfer count, blocks or bytes!
@@ -216,7 +267,7 @@ DevSCSISetupTapeCommand(command, devPtr, countPtr)
 	    (DevSCSITapeControlBlock *)&devPtr->scsiPtr->controlBlock;
     bzero((Address)tapeControlBlockPtr,sizeof(DevSCSITapeControlBlock));
     tapePtr = (DevSCSITape *)devPtr->data;
-    if ((unsigned int)tapePtr->setupProc != NIL) {
+    if ((int)tapePtr->setupProc != NIL) {
 	/*
 	 * If the drive type is known we have to customize the control
 	 * block with various vendor-specific bits.  This means that
@@ -227,8 +278,7 @@ DevSCSISetupTapeCommand(command, devPtr, countPtr)
 		&dmaCount, &count);
     }
     tapeControlBlockPtr->command = command & 0xff;
-    tapeControlBlockPtr->code = code;
-    tapeControlBlockPtr->unitNumber = devPtr->subUnitID;
+    tapeControlBlockPtr->unitNumber = devPtr->LUN;
     tapeControlBlockPtr->highCount = (count & 0x1f0000) >> 16;
     tapeControlBlockPtr->midCount =  (count & 0x00ff00) >> 8;
     tapeControlBlockPtr->lowCount =  (count & 0x0000ff);
@@ -294,17 +344,17 @@ Dev_SCSITapeOpen(devicePtr, useFlags, token)
     devPtr->scsiPtr->command = SCSI_OPENING;
     do {
 	status = DevSCSITest(devPtr);
-	if (status == DEV_TIMEOUT) {
+	if (status == DEV_OFFLINE) {
 	    break;
 	}
 	status = DevSCSIRequestSense(devPtr->scsiPtr, devPtr);
     } while (status != SUCCESS && ++retries < 3);
     if (status == SUCCESS) {
 	/*
-	 * Check for EMULUX controller, because it comes up in the
+	 * Check for EMULEX controller, because it comes up in the
 	 * wrong mode (QIC_24) and needs to be reset to use QIC 2 format.
 	 */
-	if (tapePtr->type == SCSI_EMULUX) {
+	if (tapePtr->type == SCSI_EMULEX) {
 	    status = DevSCSITapeModeSelect(devPtr, SCSI_MODE_QIC_02);
 	}
 	if (status == SUCCESS) {
@@ -370,7 +420,7 @@ Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
     numSectors = bufSize / DEV_BYTES_PER_SECTOR;
     error = DevSCSITapeIO(SCSI_READ, devPtr, buffer, &numSectors);
     /*
-     * Special check against funky end-of-file situations.  The Emulux tape
+     * Special check against funky end-of-file situations.  The Emulex tape
      * doesn't compute a correct residual when it hits the file mark
      * on the tape.
      */
@@ -577,15 +627,22 @@ rewind:		    /*
 	    break;
 	}
 	case IOC_TAPE_STATUS: {
+	    DevSCSIController *scsiPtr = devPtr->scsiPtr;
 	    Dev_TapeStatus *statusPtr = (Dev_TapeStatus *)outBuffer;
 	    if (outBufSize < sizeof(Dev_TapeStatus)) {
 		return(DEV_INVALID_ARG);
 	    }
 	    status = DevSCSIRequestSense(devPtr->scsiPtr, devPtr);
-	    
-	    statusPtr->statusReg = devPtr->scsiPtr->regsPtr->control;
+
+	    if (scsiPtr->type == SCSI0) {
+		DevSCSI0Regs *regsPtr = (DevSCSI0Regs *)scsiPtr->regsPtr;
+		statusPtr->statusReg = regsPtr->control;
+	    } else if (scsiPtr->type == SCSI3) {
+		DevSCSI3Regs *regsPtr = (DevSCSI3Regs *)scsiPtr->regsPtr;
+		statusPtr->statusReg = regsPtr->control;
+	    }
 	    (*tapePtr->statusProc)(devPtr, statusPtr);
-	    statusPtr->residual = devPtr->scsiPtr->residual;
+	    statusPtr->residual = scsiPtr->residual;
 	    statusPtr->fileNumber = 0;
 	    statusPtr->blockNumber = 0;
 	    break;
@@ -705,25 +762,25 @@ DevSCSITapeModeSelect(devPtr, modeCommand)
     ReturnStatus status;
     DevSCSIController *scsiPtr = devPtr->scsiPtr;
     DevSCSITape *tapePtr = (DevSCSITape *)devPtr->data;
-    register DevEmuluxModeSelParams *modeParamsPtr;
+    register DevEmulexModeSelParams *modeParamsPtr;
     int count;
 
     if (modeCommand == SCSI_MODE_QIC_24) {
 	printf("Warning: SCSI Mode select won't do QIC 24 format");
 	return(DEV_INVALID_ARG);
-    } else if (tapePtr->type != SCSI_EMULUX) {
+    } else if (tapePtr->type != SCSI_EMULEX) {
 	printf("Warning: SCSI Mode select won't do Sysgen drives");
 	return(DEV_INVALID_ARG);
     }
-    modeParamsPtr = (DevEmuluxModeSelParams *)scsiPtr->labelBuffer;
-    bzero((Address)modeParamsPtr, sizeof(DevEmuluxModeSelParams));
+    modeParamsPtr = (DevEmulexModeSelParams *)scsiPtr->labelBuffer;
+    bzero((Address)modeParamsPtr, sizeof(DevEmulexModeSelParams));
     modeParamsPtr->header.bufMode = 1;
-    modeParamsPtr->header.blockLength = sizeof(DevEmuluxModeSelBlock);
-    modeParamsPtr->block.density = SCSI_EMULUX_QIC_02;
+    modeParamsPtr->header.blockLength = sizeof(DevEmulexModeSelBlock);
+    modeParamsPtr->block.density = SCSI_EMULEX_QIC_02;
     /*
      * The rest of the fields in the select params can be left zero.
      */
-    count = sizeof(DevEmuluxModeSelParams);
+    count = sizeof(DevEmulexModeSelParams);
     status = DevSCSITapeIO(SCSI_MODE_SELECT, devPtr, (Address)modeParamsPtr,
 			    &count);
     return(status);
@@ -754,7 +811,6 @@ DevSCSITapeError(devPtr, sensePtr)
 {
     register ReturnStatus status = SUCCESS;
     DevSCSITape *tapePtr = (DevSCSITape *)devPtr->data;
-    int command = devPtr->scsiPtr->command;
 
     if (tapePtr->type == SCSI_UNKNOWN) {
 	printf("DevSCSITapeError: Unknown tape drive type");

@@ -36,6 +36,7 @@ typedef struct DevSCSIDisk {
  * from unitNumber to the correct SCSI disk and partition.
  */
 extern DevSCSIDevice *scsiDisk[];
+extern int scsiDiskIndex;
 
 /*
  * SCSI_MAX_DISKS the maximum number of disk devices that can be hung

@@ -27,18 +27,18 @@
  */
 typedef struct {
     DevSCSIExtendedSense	extSense;	/* 8 Bytes */
-    unsigned char pad8			/* Reserved */
-    unsigned char pad9			/* Reserved */
-    unsigned char pad10			/* Reserved */
-    unsigned char pad11			/* Reserved */
+    unsigned char pad8;			/* Reserved */
+    unsigned char pad;			/* Reserved */
+    unsigned char pad10;		/* Reserved */
+    unsigned char pad11;		/* Reserved */
     /*
      * SCSI 2 support.
      */
     unsigned char senseCode;		/* 0x4 if sense key is NOT_READY */
     unsigned char senseCodeQualifier;	/* 00 - volume not mounted.
 					 * 01 - rewinding or loading */
-    unsigned char pad14			/* Reserved */
-    unsigned char pad15			/* Reserved */
+    unsigned char pad14;		/* Reserved */
+    unsigned char pad15;		/* Reserved */
     unsigned char highErrorCnt;		/* High byte of error count */
     unsigned char midErrorCnt;		/* Middle byte of error count */
     unsigned char lowErrorCnt;		/* Low byte of error count */
@@ -76,62 +76,59 @@ typedef struct {
 } DevExabyteSense;			/* Known to be 26 Bytes big (for
 					 * Drives made in/after 1988) */
 
-/*
- * Sense data returned from the Emulex disk drive in the scsibox.  There's
- * some more information available past the additional sense code, but we don't
- * use it (at least for now).
- */
-typedef struct {
-    DevSCSIExtendedSense	extSense;
-    unsigned char pad1;		/* reserved */
-    unsigned char pad2;		/* reserved */
-    unsigned char pad3;		/* reserved */
-    unsigned char pad4;		/* reserved */
-    unsigned char code2;	/* additional sense code */
-}  DevEmulexDiskSense;
-
 
 /*
- * Definitions for the mode select command.  This is specific to the
- * Emulux controller.  The mode select command is used to change from
- * QIC_24 format (one standard, not the one we use) to QIC_02 format
- * (the more common, older, standard that we do use).
+ * Definitions for the mode select command.  The MODE_SELECT data
+ * consists of a 4 byte header, zero or one 8 byte block descriptors,
+ * and finally from zero to 4 bytes of Vendor Unique Parameters.
+ * For simplicity we'll always send 1 block descriptor and 4 parameter bytes.
  */
-typedef struct DevEmuluxModeSelHdr {
+
+typedef struct DevExabyteModeSelBlock {
+    unsigned char density;		/* Density code == 0.  Only one dens. */
+    unsigned char highCount;		/* == 0 */
+    unsigned char midCount;		/* == 0 */
+    unsigned char lowCount;		/* == 0 */
     unsigned char pad1;			/* Reserved */
-    unsigned char pad2;			/* Reserved */
-    unsigned char		:1;	/* Reserved */
-    unsigned char bufMode	:3;	/* == 1 */
-    unsigned char speed		:4;	/* == 0 */
-    unsigned char blockLength;		/* Length of block descriptors that
-					 * follow the header */
-} DevEmuluxModeSelHdr;
+    unsigned char highLength;		/* Length of the blocks on tape */
+    unsigned char midLength;		/*	0 means variable length */
+    unsigned char lowLength;		/*	Default is 1024 bytes */
+} DevExabyteModeSelBlock;		/* 8 Bytes */
 
-typedef struct DevEmuluxModeSelBlock {
-    unsigned char density;		/* Density code */
-    unsigned char highCount;		/* Count of blocks at this density */
-    unsigned char midCount;		/*	middle byte of above */
-    unsigned char lowCount;		/*	low byte */
-    unsigned char pad1;			/* Reserved */
-    unsigned char highLength;		/* Length of the blocks */
-    unsigned char midLength;		/*	middle byte of above */
-    unsigned char lowLength;		/*	low byte */
-} DevEmuluxModeSelBlock;
 
-/*
- * Density values for the mode select block.
- */
-#define SCSI_EMULUX_QIC_24	0x05
-#define SCSI_EMULUX_QIC_02	0x84
-
-typedef struct DevEmuluxModeSelParams {
-    DevEmuluxModeSelHdr		header;
-    DevEmuluxModeSelBlock	block;
-    unsigned char		:5;	/* Reserved */
-    unsigned char disableErase	:1;	/* disable erase ahead */
-    unsigned char autoLoadInhibit :1;
-    unsigned char softErrorCount  :1;
-} DevEmuluxModeSelParams;
+typedef struct DevExabyteModeSelParams {
+    DevSCSIModeSelectHdr	header;
+    DevExabyteModeSelBlock	block;
+    unsigned char cartidgeType	:1;	/* 1 == p5 European.
+					 * 0 == P6 Domestic */
+    unsigned char		:3;	/* Reserved */
+    unsigned char noBusyEnable	:1;	/* 0 == Report Busy Status (default)
+					 * 1 == No Busy Enable, cmd queued */
+    unsigned char evenByteDscnct :1;	/* 0 == Even or Odd byte disconnect
+					 * 1 == Even Byte disconnect */
+    unsigned char parityEnable	:1;	/* 0 == Parity disabled (default) */
+    unsigned char noAutoLoad	:1;	/* 0 == Auto load enabled (default) */
+    unsigned char pad1;			/* RESERVED */
+    /*
+     * The Motion threashold must exceed the Reconnect threshold.
+     * Values represent 1K byte increments.
+     * Motion - default 0xF0, valid range 0x01 -> 0xF7
+     * Reconnect - default 0x40, valid range 0x01 to 0xF7
+     * WRITE - lower motion threshold for faster transfer.
+     * READ - raise reconnect threshold for faster transfer.
+     *	Basically these control the amount of data kept in the buffer
+     *	and hence the latency.
+     */
+    unsigned char motion;		/* Defines how many Kbytes are buffered
+					 * before writing to the tape begins,
+					 * or when reconnecting on a read */
+    unsigned char reconnect;		/* Defines how many Kbytes are left
+					 * in the buffer when the drive
+					 * begins filling it again, either
+					 * by reading the tape or reconnecting
+					 * and getting more data from the 
+					 * SCSI bus. */
+} DevModeSelParams;
 
 
 

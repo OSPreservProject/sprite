@@ -48,7 +48,7 @@ static DevSCSIController *scsi[SCSI_MAX_CONTROLLERS];
 /*
  * SetJump stuff needed when probing for the existence of a device.
  */
-static Mach_SetJumpState setJumpState;
+Mach_SetJumpState scsiSetJumpState;
 
 /*
  * The error codes for class 0-6 sense data are class specific.
@@ -94,7 +94,7 @@ int scsiNumErrors[] = {
     sizeof(scsiClass0Errors) / sizeof (char *),
     sizeof(scsiClass1Errors) / sizeof (char *),
     sizeof(scsiClass2Errors) / sizeof (char *),
-    0, 0, 0, 0,
+    0, 0, 0, 0, 0,
 };
 char **scsiErrors[] = {
     scsiClass0Errors,
@@ -136,8 +136,8 @@ Dev_SCSIInitController(cntrlrPtr)
     DevConfigController *cntrlrPtr;	/* Config info for the controller */
 {
     DevSCSIController *scsiPtr;		/* SCSI specific state */
-    register DevSCSIRegs *regsPtr;	/* Control registers for SCSI */
-    int x;				/* Used when probing the controller */
+    static Sync_Semaphore mutexInit	/* Used to initialize mutex field */
+	= SYNC_SEMAPHORE_INIT("scsiPtr->mutex");
 
     /*
      * Allocate space for SCSI specific state and
@@ -157,7 +157,7 @@ Dev_SCSIInitController(cntrlrPtr)
     }
     scsi[cntrlrPtr->controllerID] = scsiPtr;
     scsiPtr->number = cntrlrPtr->controllerID;
-    scsiPtr->regsPtr = cntrlrPtr->address;
+    scsiPtr->regsPtr = (Address)cntrlrPtr->address;
 
     (*scsiPtr->resetProc)(scsiPtr);
 
@@ -188,7 +188,7 @@ Dev_SCSIInitController(cntrlrPtr)
      * state to alive and not busy.
      */
     scsiPtr->flags = SCSI_CNTRLR_ALIVE;
-    scsiPtr->mutex = 0;
+    scsiPtr->mutex = mutexInit;
     scsiPtr->IOComplete.waiting = 0;
     scsiPtr->readyForIO.waiting = 0;
     scsiPtr->configPtr = cntrlrPtr;
@@ -270,12 +270,20 @@ Dev_SCSIInitDevice(devConfPtr)
      * numbers of devices on the second to change if the first controller
      * isn't powered up.
      */
-    if (devConfPtr->flags == DEV_SCSI_DISK) {
-	scsiDiskIndex++;
-    } else if (devConfPtr->flags == DEV_SCSI_TAPE) {
-	scsiTapeIndex++;
-    } else if (devConfPtr->flags == DEV_SCSI_WORM) {
-	scsiWormIndex++;
+    switch(devConfPtr->flags & SCSI_TYPE_MASK) {
+	case SCSI_DISK:
+	    scsiDiskIndex++;
+	    break;
+	case SCSI_TAPE:
+	    scsiTapeIndex++;
+	    break;
+	case SCSI_WORM: 
+	    scsiWormIndex++;
+	    break;
+	default:
+	    printf("Dev_SCSIInitDevice, unknown SCSI device type <%x>\n",
+		devConfPtr->flags);
+	    return(FAILURE);
     }
 
     scsiPtr = scsi[devConfPtr->controllerID];
@@ -286,18 +294,18 @@ Dev_SCSIInitDevice(devConfPtr)
 
     devPtr = (DevSCSIDevice *)malloc(sizeof(DevSCSIDevice));
     devPtr->scsiPtr = scsiPtr;
-    devPtr->subUnitID = 0;
-    devPtr->slaveID = devConfPtr->slaveID;
-    if (devConfPtr->flags == DEV_SCSI_DISK) {
-	status = DevSCSIDiskInit(scsiPtr, devPtr);
-    } else if (devConfPtr->flags == DEV_SCSI_TAPE) {
-	status = DevSCSITapeInit(scsiPtr, devPtr);
-    } else if (devConfPtr->flags == DEV_SCSI_WORM) {
-	status = DevSCSIWormInit(scsiPtr, devPtr);
-    } else {
-	printf("Dev_SCSIInitDevice, unknown SCSI device type <%x>\n",
-	    devConfPtr->flags);
-	status = FAILURE;
+    devPtr->targetID = devConfPtr->slaveID;
+    devPtr->LUN = devConfPtr->flags & SCSI_LUN_MASK;
+    switch(devConfPtr->flags & SCSI_TYPE_MASK) {
+	case SCSI_DISK:
+	    status = DevSCSIDiskInit(devPtr);
+	    break;
+	case SCSI_TAPE:
+	    status = DevSCSITapeInit(devPtr);
+	    break;
+	case SCSI_WORM: 
+	    status = DevSCSIWormInit(devPtr);
+	    break;
     }
     if (status != SUCCESS) {
 	free((Address)devPtr);
@@ -329,7 +337,7 @@ DevSCSITest(devPtr)
 
     DevSCSISetupCommand(SCSI_TEST_UNIT_READY, devPtr, 0, 0);
 
-    status = (*devPtr->scsiPtr->commandProc)(devPtr->slaveID, devPtr->scsiPtr,
+    status = (*devPtr->scsiPtr->commandProc)(devPtr->targetID, devPtr->scsiPtr,
 		    0, (Address)0, WAIT);
     if (status == DEV_TIMEOUT) {
 	status = DEV_OFFLINE;
@@ -368,7 +376,7 @@ DevSCSISetupCommand(command, devPtr, blockNumber, numSectors)
     controlBlockPtr = &devPtr->scsiPtr->controlBlock;
     bzero((Address)controlBlockPtr,sizeof(DevSCSIControlBlock));
     controlBlockPtr->command = command;
-    controlBlockPtr->unitNumber = devPtr->subUnitID;
+    controlBlockPtr->unitNumber = devPtr->LUN;
     controlBlockPtr->highAddr = (blockNumber & 0x1f0000) >> 16;
     controlBlockPtr->midAddr =  (blockNumber & 0x00ff00) >> 8;
     controlBlockPtr->lowAddr =  (blockNumber & 0x0000ff);
@@ -403,44 +411,31 @@ DevSCSIRequestSense(scsiPtr, devPtr)
     ReturnStatus status = SUCCESS;
     register DevSCSISense *sensePtr = scsiPtr->senseBuffer;
     int command;
-    int senseSize;
 
     if (scsiPtr->flags & SCSI_GETTING_STATUS) {
 	printf("Warning: DevSCSIRequestSense recursed");
     } else {
 	/*
 	 * The regular SetupCommand procedure is used, although the
-	 * "numSectors" parameter needs to be a byte count...
+	 * "numSectors" parameter needs to be a byte count indicating
+	 * the size of the sense data buffer.
 	 */
 	bzero((Address)sensePtr, sizeof(DevSCSISense));
 	scsiPtr->flags |= SCSI_GETTING_STATUS;
 	command = scsiPtr->command;
 	DevSCSISetupCommand(SCSI_REQUEST_SENSE, devPtr, 0,sizeof(DevSCSISense));
-	status = (*scsiPtr->commandProc)(devPtr->slaveID, scsiPtr,
+	status = (*scsiPtr->commandProc)(devPtr->targetID, scsiPtr,
 			    sizeof(DevSCSISense), (Address)sensePtr, WAIT);
 	scsiPtr->command = command;
 	scsiPtr->flags &= ~SCSI_GETTING_STATUS;
 	if (devPtr->type == SCSI_TAPE &&
 	    ((DevSCSITape *)devPtr->data)->type == SCSI_UNKNOWN) {
 	    /*
-	     * Heuristically determine the drive type...  We ask for the max
-	     * possible sense bytes, and this gets returned by the sysgen
-	     * controller.  The emulux controller returns less.  We might
-	     * also be able to depend on the class7 sense class below...
+	     * Heuristically determine the drive type by examining the
+	     * amount of data returned.
 	     */
-	    senseSize = sizeof(DevSCSISense) - scsiPtr->residual;
-	    printf("RequestSense, sense size %d\n", senseSize);
-	    switch(senseSize) {
-		case sizeof(DevQICIISense):
-		    ((DevSCSITape *)devPtr->data)->type = SCSI_SYSGEN;
-		    break;
-		case sizeof(DevEmulexTapeSense):
-		    ((DevSCSITape *)devPtr->data)->type = SCSI_EMULUX;
-		    break;
-		case sizeof(DevExabyteSense):
-		    ((DevSCSITape *)devPtr->data)->type = SCSI_EXABYTE;
-		    break;
-	    }
+	    DevSCSITapeType(sizeof(DevSCSISense) - scsiPtr->residual,
+			((DevSCSITape *)devPtr->data));
 	}
 	status = (*devPtr->errorProc)(devPtr, sensePtr);
     }
