@@ -160,8 +160,9 @@
 #define RPC_NUM_COMMANDS	(RPC_LAST_COMMAND+1)
 
 /*
- * RPC_LAST_COMMAND is used to declare the rpc procedure switch
- * and arrays of counters for each rpc.
+ * RPC_NUM_COMMANDS is used to declare the rpc procedure switch and
+ * arrays of counters for each rpc.  (RPC_LAST_COMMAND used to be
+ * used, but it was too easy to get the declaration wrong.)
  */
 
 /*
