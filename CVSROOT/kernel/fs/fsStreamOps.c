@@ -124,6 +124,13 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	status = Fsrmt_Read(streamPtr, ioPtr, &remoteWaiter, &reply);
 #endif
 	if (status == SUCCESS) {
+	    if (streamType == FSIO_RMT_DEVICE_STREAM ||
+		    streamType == FSIO_RMT_PIPE_STREAM ||
+		    streamType == FSIO_RMT_PSEUDO_STREAM ||
+		    streamType == FSIO_RMT_PFS_STREAM ||
+		    streamType == FSIO_RMT_CONTROL_STREAM) {
+		fs_Stats.rmtIO.remoteDevicishBytesRead += reply.length;
+	    }
 	    break;
 	} else if (status == FS_WOULD_BLOCK && 
 	    (streamPtr->flags & FS_NON_BLOCKING) == 0) {
@@ -281,6 +288,13 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	ioPtr->offset = offset + amountWritten;
 	ioPtr->length = toWrite;
 	if (status == SUCCESS) {
+	    if (streamType == FSIO_RMT_DEVICE_STREAM ||
+		    streamType == FSIO_RMT_PIPE_STREAM ||
+		    streamType == FSIO_RMT_PSEUDO_STREAM ||
+		    streamType == FSIO_RMT_PFS_STREAM ||
+		    streamType == FSIO_RMT_CONTROL_STREAM) {
+		fs_Stats.rmtIO.remoteDevicishBytesWritten += reply.length;
+	    }
 	    break;
 	} else if (status == FS_WOULD_BLOCK) {
 	    if ((streamPtr->flags & FS_NON_BLOCKING) == 0) {
