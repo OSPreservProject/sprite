@@ -50,18 +50,17 @@ main()
     Mach_MonPrintf("After\n");
 #ifdef NOTDEF
     Net_Init();
-#endif /* NOTDEF */
 
+    Timer_TimerInit();
+    Timer_TimerStart();
+#endif /* NOTDEF */
+    ENABLE_INTR();
     DBG_CALL;
     Mach_MonPrintf("Debugger returned\n");
     Mach_MonPrintf("Trying it again\n");
     DBG_CALL;
     Mach_MonPrintf("Debugger returned again\n");
-#ifdef NOTDEF
-    Timer_TimerInit();
-    Timer_TimerStart();
-    Mach_EnableIntr();		/* Should be ENABLE_INTR when I'm ready. */
-#endif NOTDEF
+
     for ( ; ; ) {
 	;
     }

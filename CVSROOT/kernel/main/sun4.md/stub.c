@@ -144,3 +144,7 @@ Vm_BootInit()
     vmMemEnd = (Address) (((int) vmMemEnd + 7) & ~7);
     return;
 }
+
+Mem_Bin()
+{
+}
