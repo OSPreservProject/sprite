@@ -292,6 +292,7 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
 	if (streamPtr == (Fs_Stream *)NIL) {
 	    status = FS_STALE_HANDLE;
 	} else {
+	    FsHandleUnlock(streamPtr);
 	    if (paramsPtr->flags & FS_RMT_SHARED) {
 		offsetPtr = &streamPtr->offset;
 	    } else {
@@ -535,6 +536,9 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
     if (streamPtr == (Fs_Stream *)NIL) {
 	status = FS_STALE_HANDLE;
     } else {
+	if (streamPtr != &dummyStream) {
+	    FsHandleUnlock(streamPtr);
+	}
 	FS_TRACE_HANDLE(FS_TRACE_WRITE, hdrPtr);
 	if (paramsPtr->flags & FS_RMT_SHARED) {
 	    offsetPtr = &streamPtr->offset;
