@@ -1624,8 +1624,8 @@ MachUNIXGetDirEntries(fd, buf, nbytes, basep)
      * All other values fall outside the range 8-512 when byteswapped.
      */
     dirPtr = (FslclDirEntry *)addr;
-    if (dirPtr->recLength > FS_DIR_BLOCK_SIZE ||
-	dirPtr->recLenght < offsetof(struct direct, d_name[0]) {
+    if (dirPtr->recordLength > FSLCL_DIR_BLOCK_SIZE ||
+	dirPtr->recordLength < 2 * sizeof(int)) {
 	i = bytesAcc;
 	while (i > 0) {
 	    union {
