@@ -70,41 +70,66 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 				   and is filled with number of bytes read. */
 {
     register ReturnStatus 	status = SUCCESS;
-    Sync_RemoteWaiter	remoteWaiter;
-    int			savedLength;
-    int			streamType;
-    register	int	size;
+    Sync_RemoteWaiter		remoteWaiter;
+    Fs_IOParam			io;
+    register Fs_IOParam 	*ioPtr = &io;
+    Fs_IOReply			reply;
+    int				streamType;
+    register int		toRead;
 
-    size = *lenPtr;
+    toRead = *lenPtr;
+    *lenPtr = 0;
     if (sys_ShuttingDown) {
 	return(FAILURE);
     } else if ((streamPtr->flags & FS_READ) == 0) {
 	return(FS_NO_ACCESS);
-    } else if (size == 0) {
+    } else if (toRead == 0) {
 	return(SUCCESS);
-    } else if ((size < 0) || (offset < 0)) {
+    } else if ((toRead < 0) || (offset < 0)) {
 	return(GEN_INVALID_ARG);
     } else if (!FsHandleValid(streamPtr->ioHandlePtr)) {
 	return(FS_STALE_HANDLE);
     }
     streamType = streamPtr->ioHandlePtr->fileID.type;
 
+    FsSetIOParam(ioPtr, buffer, toRead, offset, streamPtr->flags);
+    reply.length = 0;
+    reply.flags = 0;
+    reply.signal = 0;
+
     /*
      * Outer loop to attempt the read and then block if no data is ready.
+     * The loop terminates upon error or if any data is transferred.
      */
     remoteWaiter.hostID = rpc_SpriteID;
     while (TRUE) {
 	Sync_GetWaitToken(&remoteWaiter.pid, &remoteWaiter.waitToken);
 
-	savedLength = size;
 	status = (fsStreamOpTable[streamType].read) (streamPtr,
-		    streamPtr->flags, buffer, &offset, lenPtr, &remoteWaiter);
+		    ioPtr, &remoteWaiter, &reply);
+#ifdef lint
+	status = FsFileRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsRmtFileRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsDeviceRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsPipeRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsControlRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsServerStreamRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsPseudoStreamRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsRemoteRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+#endif
 
 	if (status == SUCCESS) {
 	    break;
 	} else if (status == FS_WOULD_BLOCK && 
 	    (streamPtr->flags & FS_NON_BLOCKING) == 0) {
-	    if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
+	    if (reply.length > 0) {
+		/*
+		 * Stream routine ought not do return FS_WOULD_BLOCK
+		 * in this case, but we cover for it here.
+		 */
+		status = SUCCESS;
+		break;
+	    } else if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
 		status = GEN_ABORTED_BY_SIGNAL;
 		break;
 	    }
@@ -115,7 +140,7 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 		break;
 	    }
 	} else {
-	    if (status == FS_WOULD_BLOCK && *lenPtr > 0) {
+	    if (status == FS_WOULD_BLOCK && reply.length > 0) {
 		/*
 		 * Cannot return FS_WOULD_BLOCK if some data was read.
 		 */
@@ -124,18 +149,21 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	    break;
 	}
 	/*
-	 * Restore the length parameter because it was set to
+	 * Restore the length parameter because it may have been set to
 	 * zero when the read blocked.
 	 */
-	*lenPtr = size = savedLength;
+	ioPtr->length = toRead;
     }
     /*
      * Cache the file offset for sequential access.
      */
-    streamPtr->offset = offset;
+    streamPtr->offset += reply.length;
+    *lenPtr = reply.length;
 
     if (status == FS_BROKEN_PIPE) {
 	Sig_Send(SIG_PIPE, 0, PROC_MY_PID, FALSE);
+    } else if (reply.signal != 0) {
+	Sig_Send(reply.signal, reply.code, PROC_MY_PID, FALSE);
     }
     return(status);
 }
@@ -173,31 +201,40 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 {
     register ReturnStatus 	status = SUCCESS;	/* I/O return status */
     Sync_RemoteWaiter	remoteWaiter;		/* Process info for waiting */
-    register Address	bufPtr;			/* Pointer into buffer */
-    int			toWrite;		/* Amount to write.  This is
-						 * needed because of writes
-						 * that block after partial
-						 * completion */
-    register int	size;			/* Original value of *lenPtr */
+    Fs_IOParam		io;			/* Write parameter block */
+    register Fs_IOParam *ioPtr = &io;
+    Fs_IOReply		reply;			/* Return length, signal */
+    int			toWrite;		/* Amount remaining to write.
+						 * Keep our own copy because
+						 * lower-levels may modify
+						 * ioPtr->length */
+    register int	amountWritten;		/* Amount transferred */
     int			streamType;		/* Type from I/O handle */
 
-    size = *lenPtr;
+    toWrite = *lenPtr;
+    amountWritten = 0;
+    *lenPtr = 0;
     if (sys_ShuttingDown) {
 	return(FAILURE);
     } else if ((streamPtr->flags & FS_WRITE) == 0) {
 	return(FS_NO_ACCESS);
-    } else if (size == 0) {
+    } else if (toWrite == 0) {
 	return(SUCCESS);
-    } else if ((size < 0) || (offset < 0)) {
+    } else if ((toWrite < 0) || (offset < 0)) {
 	return(GEN_INVALID_ARG);
     } else if (!FsHandleValid(streamPtr->ioHandlePtr)) {
 	return(FS_STALE_HANDLE);
     }
     streamType = streamPtr->ioHandlePtr->fileID.type;
 
+    FsSetIOParam(ioPtr, buffer, toWrite, offset, streamPtr->flags);
+    reply.length = 0;
+    reply.flags = 0;
+    reply.signal = 0;
+
     remoteWaiter.hostID = rpc_SpriteID;
 
-    FS_TRACE_IO(FS_TRACE_WRITE, streamPtr->ioHandlePtr->fileID, offset, *lenPtr);
+    FS_TRACE_IO(FS_TRACE_WRITE, streamPtr->ioHandlePtr->fileID, offset,toWrite);
     /*
      * Main write loop.  This handles partial writes, non-blocking streams,
      * and crash recovery.  This loop expects the stream write procedure to
@@ -209,20 +246,30 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
      * This loop ensures that a non-blocking stream returns SUCCESS if some
      * data is transferred, and FS_WOULD_BLOCK if none can be transferred now.
      */
-    bufPtr = buffer;
     while (TRUE) {
 	Sync_GetWaitToken(&remoteWaiter.pid, &remoteWaiter.waitToken);
 
-	toWrite = size;
-	status = (fsStreamOpTable[streamType].write) (streamPtr,
-		    streamPtr->flags, bufPtr, &offset, &toWrite, &remoteWaiter);
-
-	bufPtr += toWrite;
-	size -= toWrite;
+	status = (fsStreamOpTable[streamType].write) (streamPtr, ioPtr,
+						      &remoteWaiter, &reply);
+#ifdef lint
+	status = FsFileWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsRmtFileWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsDeviceWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsPipeWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsPseudoStreamWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsRemoteWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+#endif
+	toWrite -= reply.length;
+	amountWritten += reply.length;
+	/*
+	 * Reset pointers because stream-specific routine may have
+	 * modified them arbitrarily.
+	 */
+	ioPtr->buffer = buffer + amountWritten;
+	ioPtr->offset = offset + amountWritten;
+	ioPtr->length = toWrite;
 	if (status == SUCCESS) {
-	    if ((size > 0) && ((streamPtr->flags & FS_NON_BLOCKING) == 0)) {
-		continue;		/* partial write */
-	    } else {
+	    if ((toWrite == 0) || (streamPtr->flags & FS_NON_BLOCKING)) {
 		break;
 	    }
 	} else if (status == FS_WOULD_BLOCK) {
@@ -232,7 +279,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 		    break;
 		}
 	    } else {
-		if (size < *lenPtr) {
+		if (amountWritten > 0) {
 		    status = SUCCESS;	/* non-blocking partial write */
 		}
 		break;
@@ -247,13 +294,15 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	    break;			/* stream error */
 	}
     }
-    *lenPtr -= size;
     /*
-     * Cache the file offset for sequential access.
+     * Return info about the transfer.
      */
-    streamPtr->offset = offset;
+    *lenPtr = amountWritten;
+    streamPtr->offset += amountWritten;
     if (status == FS_BROKEN_PIPE) {
 	Sig_Send(SIG_PIPE, 0, PROC_MY_PID, FALSE);
+    } else if (reply.signal != 0) {
+	Sig_Send(reply.signal, reply.code, PROC_MY_PID, FALSE);
     }
 
     return(status);
