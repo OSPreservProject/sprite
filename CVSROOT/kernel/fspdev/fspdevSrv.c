@@ -1304,9 +1304,9 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 
     pdevHandlePtr->flags &= ~FS_USER;
     status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
-		    &requestPtr->hdr, argSize, argsPtr,
-		    *resultsSizePtr, (Address)&redirectInfo, resultsSizePtr,
-		    (Sync_RemoteWaiter *)NIL);
+		&requestPtr->hdr, argSize, argsPtr, sizeof(FsRedirectInfo),
+		(Address)&redirectInfo, resultsSizePtr,
+		(Sync_RemoteWaiter *)NIL);
     if (status == FS_LOOKUP_REDIRECT) {
 	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
@@ -1316,6 +1316,86 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 	if (*resultsSizePtr > 0) {
 	    Byte_Copy(*resultsSizePtr, (Address)&redirectInfo, resultsPtr);
 	}
+    }
+
+exit:
+    if (status == DEV_OFFLINE) {
+	/*
+	 * Return stale handle so remote clients know to nuke
+	 * their prefix table entry.
+	 */
+	status = FS_STALE_HANDLE;
+    }
+    pdevHandlePtr->flags &= ~PDEV_BUSY;
+    Sync_Broadcast(&pdevHandlePtr->access);
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPseudoStream2Path --
+ *
+ *	Do a rename/link request-response to a pseudo-filesystem server over
+ *	the naming request-response stream that is hooked to the prefix table.
+ *	If a pathname redirection occurs this allocates a buffer for the
+ *	returned pathname.  Otherwise this is a stub that passes its arguments
+ *	up to the user level pseudo-filesystem server via request-response.
+ *
+ * Results:
+ *	A status and some bundled results that aren't interpreted by us.
+ *	If status is FS_REDIRECT then *newNameInfoPtrPtr has been allocated
+ *	and contains the returned pathname.
+ *
+ * Side effects:
+ *	The effect of the naming operation in the pseudo-filesystem is
+ *	up to the pseudo-filesystem server.  Upon FS_REDIRECT this
+ *	allocates the *newNameInfoPtrPtr buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+FsPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
+		    newNameInfoPtrPtr)
+    register PdevServerIOHandle *pdevHandlePtr;	/* Pdev connection state */
+    Pfs_Request		*requestPtr;	/* Semi-initialized request header */
+    Fs2PathData		*dataPtr;	/* 2 pathnames */
+    Boolean		*name1ErrorPtr;	/* TRUE if error applies to first path*/
+    FsRedirectInfo	**newNameInfoPtrPtr;/* Set if server returns name */
+{
+    register ReturnStatus 	status;
+    int resultSize;
+    Fs2PathRedirectInfo		redirectInfo;
+
+    LOCK_MONITOR;
+
+    while (pdevHandlePtr->flags & PDEV_BUSY) {
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
+	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
+	    status = FS_STALE_HANDLE;
+	    goto exit;
+	}
+    }
+    pdevHandlePtr->flags |= PDEV_BUSY;
+
+    pdevHandlePtr->flags &= ~FS_USER;
+    status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
+		&requestPtr->hdr, sizeof(Fs2PathData), (Address)dataPtr,
+		sizeof(Fs2PathRedirectInfo), (Address)&redirectInfo,
+		&resultSize, (Sync_RemoteWaiter *)NIL);
+    if (status == FS_LOOKUP_REDIRECT) {
+	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
+	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
+	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+    }
+    if (status != SUCCESS) {
+	*name1ErrorPtr = redirectInfo.name1ErrorP;
+    } else {
+	*name1ErrorPtr = FALSE;
     }
 
 exit:
@@ -1579,11 +1659,12 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	    pdevHandlePtr->flags |= PDEV_READ_PTRS_CHANGED;
 	    FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 	}
-    } else {
+    } else if (pdevHandlePtr->selectBits & FS_READABLE) {
 	Proc_ControlBlock	*procPtr;
 
 	/*
-	 * No read ahead buffer. Set up and do the request-response exchange.
+	 * No read ahead buffer and the state is readable.
+	 * Set up and do the request-response exchange.
 	 */
 	procPtr = Proc_GetEffectiveProc();
 	request.hdr.operation		= PDEV_READ;
@@ -1594,6 +1675,13 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	pdevHandlePtr->flags |= (flags & FS_USER);
 	status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
 	    &request.hdr, 0, (Address) NIL, *lenPtr, buffer, lenPtr, waitPtr);
+    } else {
+	/*
+	 * The pseudo-device is not readable now.
+	 */
+	FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList, waitPtr);
+	*lenPtr = 0;
+	status = FS_WOULD_BLOCK;
     }
     *offsetPtr += *lenPtr;
 exit:
@@ -1673,6 +1761,15 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     }
     pdevHandlePtr->flags |= (PDEV_BUSY|(flags & FS_USER));
 
+    /*
+     * Allow flow control by checking the select bits and only trying
+     * the operation if the state allows it.
+     */
+    if ((pdevHandlePtr->selectBits & FS_WRITABLE) == 0) {
+	*lenPtr = 0;
+	FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, waitPtr);
+	goto exit;
+    }
     /*
      * The write request parameters are the offset and flags parameters.
      * The buffer contains the data to write.
