@@ -116,9 +116,10 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
 	changed = TRUE;
     }
     if (cacheInfoPtr->flags & FS_FILE_GONE) {
-	if (!outOfDate) {
-	    panic( "Removed file not out-of-date\n");
-	}
+	/*
+	 * Reset the deleted bit.  By this time any deletion
+	 * actions will have completed.
+	 */
 	cacheInfoPtr->flags &= ~FS_FILE_GONE;
     }
 
@@ -174,6 +175,8 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
  * 	This is used on the server to update the attributes of a handle
  *	that has been cached on a client.  Called at close time with
  *	the attributes the client sends over with the close RPC.
+ *	The client's times are checked against the servers to ensure
+ *	that they only increase and never move backwards.
  *
  * Results:
  *	None.
@@ -192,7 +195,10 @@ FsUpdateAttrFromClient(clientID, cacheInfoPtr, attrPtr)
     register FsCachedAttributes	*attrPtr;	/* Attributes from client */
 {
     LOCK_MONITOR;
-    cacheInfoPtr->attr.modifyTime = attrPtr->modifyTime;
+
+    if (attrPtr->modifyTime > cacheInfoPtr->attr.modifyTime) {
+	cacheInfoPtr->attr.modifyTime = attrPtr->modifyTime;
+    }
     if (attrPtr->accessTime > cacheInfoPtr->attr.accessTime) {
 	cacheInfoPtr->attr.accessTime = attrPtr->accessTime;
     }
