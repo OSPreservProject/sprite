@@ -355,7 +355,8 @@ ds5000: ${OBJS} .PRECIOUS .NOEXPORT
 	nm -n ds5000 > ds5000.nm
 	#rcp /sprite/src/kernel/sprite/ds5000 ginger:/home/ginger/sprite/kernels/ds5000
 	#rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds5000)"
-	-Save ds5000
+	update -f $@ /lustA/new
+	-Save $@
 
 # profile2: ${PROFOBJS} Makefile .PRECIOUS
 #	sed 's/MACHINE/$@/g' version.h.template > version.h
