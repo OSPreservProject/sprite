@@ -792,6 +792,10 @@ Sys_StatsStub(command, option, argPtr)
 #endif
 	    break;
 	}
+	case SYS_RECOV_STATS: {
+	    status = Recov_GetStats(option, argPtr);
+	    break;
+	}
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
