@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sig.h"
 #include "sigMach.h"
 #include "mem.h"
+#include "byte.h"
 
 /*
  *  Number of processors in the system.
@@ -187,8 +188,8 @@ Mach_Init()
     /*
      * Clear the interrupt mask register and any pending interrupts.
      */
-    Mach_Write32bitCCReg(MACH_INTR_MASK_0,0);
-    Mach_Write32bitCCReg(MACH_INTR_STATUS_0,-1);
+    Mach_Write32bitCCReg((unsigned int)MACH_INTR_MASK_0,(unsigned int)0);
+    Mach_Write32bitCCReg((unsigned int)MACH_INTR_STATUS_0,(unsigned int)-1);
 
     /*
      * Start the refresh timer.
@@ -394,6 +395,7 @@ Mach_SetReturnVal(procPtr, retVal)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 Mach_StartUserProc(procPtr, entryPoint)
     Proc_ControlBlock	*procPtr;	/* Process control block for process
@@ -410,8 +412,8 @@ Mach_StartUserProc(procPtr, entryPoint)
     /*
      * Allocate memory for the saved window stack.
      */
-    Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
-	          MACH_SAVED_WINDOW_STACK_BASE);
+    (void)Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
+	          (Address)MACH_SAVED_WINDOW_STACK_BASE);
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -450,8 +452,9 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      * Free up the old saved window stack.
      */
     if (statePtr->userState.maxSWP != 0) {
-	Vm_UnpinUserMem(statePtr->userState.maxSWP - statePtr->userState.minSWP,
-		        statePtr->userState.minSWP);
+	(void)Vm_UnpinUserMem(statePtr->userState.maxSWP - 
+					statePtr->userState.minSWP,
+		              statePtr->userState.minSWP);
     }
     /*
      * Allocate a new saved window stack.
@@ -459,7 +462,7 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     statePtr->userState.minSWP = (Address)MACH_SAVED_WINDOW_STACK_BASE;
     statePtr->userState.maxSWP = (Address)(MACH_SAVED_WINDOW_STACK_BASE + 
 					   VMMACH_PAGE_SIZE);
-    Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
+    (void)Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
 	          (Address)MACH_SAVED_WINDOW_STACK_BASE);
 
     regStatePtr = &statePtr->userState.trapRegState;
@@ -733,7 +736,7 @@ Mach_SetHandler(intrMask, handler)
  */
 ReturnStatus
 Mach_AllocExtIntrNumber(handler,intrNumberPtr)
-    int          	(*handler)();  	/* Interrupt handling procedure */
+    void          	(*handler)();  	/* Interrupt handling procedure */
     unsigned int	*intrNumberPtr;	/* IN/OUT - Desired interrupt number
 					 * and return value location.
 					 */
@@ -1152,10 +1155,10 @@ MachGetWinMem()
 	     * full pages at once.
 	     */
 	    statePtr->userState.maxSWP -= VMMACH_PAGE_SIZE;
-	    Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.maxSWP);
+	    (void)Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.maxSWP);
 	}
 	statePtr->userState.minSWP -= VMMACH_PAGE_SIZE;
-	Vm_PinUserMem(VM_READWRITE_ACCESS,
+	(void)Vm_PinUserMem(VM_READWRITE_ACCESS,
 		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
 		   statePtr->userState.minSWP);
     } else if (swp >= statePtr->userState.maxSWP - 2 * MACH_SAVED_REG_SET_SIZE) {
@@ -1171,11 +1174,11 @@ MachGetWinMem()
 	     * Free the lowest page because we never want more than two
 	     * full pages at once.
 	     */
-	    Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.minSWP);
+	    (void)Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.minSWP);
 	    statePtr->userState.minSWP += VMMACH_PAGE_SIZE;
 	}
 	statePtr->userState.maxSWP += VMMACH_PAGE_SIZE;
-	Vm_PinUserMem(VM_READWRITE_ACCESS,
+	(void)Vm_PinUserMem(VM_READWRITE_ACCESS,
 		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
 		   statePtr->userState.minSWP);
     }

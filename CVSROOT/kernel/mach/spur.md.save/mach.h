@@ -186,6 +186,9 @@ extern	void	Mach_DisableIntr();
 extern	void	Mach_EnableIntr();
 extern	unsigned int Mach_GetSlotId();
 extern  ReturnStatus Mach_AllocExtIntrNumber();
+extern	void	Mach_RefreshStart();
+extern	void	Mach_RefreshInterrupt();
+extern	void	Mach_SetNonmaskableIntr();
 
 /*
  * Routines to read and write physical memory.
