@@ -529,11 +529,7 @@ DevSCSITapeRead(devicePtr, readPtr, replyPtr)
      * Break up the IO into piece the device/HBA can handle.
      */
     error = SUCCESS;
-#ifdef GOOD
     maxXfer = tapePtr->devPtr->maxTransferSize;
-#else
-    maxXfer = 1024;
-#endif
     totalTransfer = 0;
     while((readPtr->length > 0) && (error == SUCCESS)) {  
 	int	byteCount;
