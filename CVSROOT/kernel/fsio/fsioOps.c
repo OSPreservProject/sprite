@@ -111,7 +111,7 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
 		Fsio_DeviceGetIOAttr, Fsio_DeviceSetIOAttr,
 		Fsio_NoHandle,				/* clientVerify */
 		Fsio_DeviceMigClose, Fsio_DeviceMigOpen, Fsio_DeviceMigrate,
-		Fsrmt_DeviceReopen,
+		Fsio_DeviceReopen,
 		Fsio_DeviceScavenge, Fsio_DeviceClientKill, Fsio_DeviceClose},
     /*
      * Local anonymous pipe stream.  
