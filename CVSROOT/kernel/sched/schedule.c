@@ -275,8 +275,8 @@ Sched_GatherProcessInfo()
 	 * charge the usage to a particular process but keep track of it.
 	 */
 	if (curProcPtr == (Proc_ControlBlock *) NIL) {
-	    Time_Add(sched_Instrument.noProcessRunning, gatherTicks,
-		     &(sched_Instrument.noProcessRunning));
+	    Timer_AddTicks(sched_Instrument.noProcessRunning, gatherTicks,
+		           &(sched_Instrument.noProcessRunning));
 	    continue;
 	}
 
@@ -286,11 +286,11 @@ Sched_GatherProcessInfo()
 	 *  calling a machine-dependent routine.
 	 */
 	if (Mach_ProcessorState(cpu) == MACH_KERNEL) {
-	    Time_Add(curProcPtr->kernelCpuUsage, gatherTicks,
-		     &(curProcPtr->kernelCpuUsage));
+	    Timer_AddTicks(curProcPtr->kernelCpuUsage.ticks, gatherTicks,
+		           &(curProcPtr->kernelCpuUsage.ticks));
 	} else {
-	    Time_Add(curProcPtr->userCpuUsage, gatherTicks,
-		     &(curProcPtr->userCpuUsage));
+	    Timer_AddTicks(curProcPtr->userCpuUsage.ticks, gatherTicks,
+		           &(curProcPtr->userCpuUsage.ticks));
 	}
 
 	/*

@@ -391,8 +391,8 @@ DumpPCB(procPtr)
     /*
      * A header describing the fields has already been printed.
      */
-    Timer_TicksToTime(procPtr->userCpuUsage, &userTime);
-    Timer_TicksToTime(procPtr->kernelCpuUsage, &kernelTime);
+    Timer_TicksToTime(procPtr->userCpuUsage.ticks, &userTime);
+    Timer_TicksToTime(procPtr->kernelCpuUsage.ticks, &kernelTime);
     Sys_Printf(
 	       " %6x %6x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
 	       procPtr, 
