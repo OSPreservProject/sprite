@@ -69,49 +69,3 @@ Dev_Config()
 {
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Dev_GatherDiskStats --
- *
- *	Determine which disks are idle.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-Dev_GatherDiskStats()
-{
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Dev_GetDiskStats --
- *
- *	Return statistics about the different disks.
- *
- * Results:
- *	Number of statistics entries returned.
- *
- * Side effects:
- *	Entries in *diskStatPtr filled in.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-int
-Dev_GetDiskStats(diskStatArr, numEntries)
-    register Sys_DiskStats *diskStatArr;	/* Where to store the disk 
-						 * stats. */
-    int			   numEntries;		/* The number of elements in 
-						 * diskStatArr. */
-{
-}
