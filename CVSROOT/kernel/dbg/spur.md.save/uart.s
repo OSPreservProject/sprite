@@ -24,7 +24,7 @@ _uart_init:
 
 	rd_kpsw VOL_TEMP1                     /* Go to physical mode to talk */
 	add_nt  KPSW_REG,VOL_TEMP1,r0
-	and	VOL_TEMP1,VOL_TEMP1,$~MACH_KPSW_VIRT_DFETCH_ENA
+	and	VOL_TEMP1,VOL_TEMP1,$~(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw VOL_TEMP1,r0
 
 	add_nt  VOL_TEMP1,r0,$UART_BASE          /* Start of the UART registers*/
@@ -129,7 +129,7 @@ _write_physical_word:
 
 	rd_kpsw VOL_TEMP1                    /* Go to physical mode to talk */
 	add_nt  KPSW_REG,VOL_TEMP1,r0
-	and	VOL_TEMP1,VOL_TEMP1,$~MACH_KPSW_VIRT_DFETCH_ENA
+	and	VOL_TEMP1,VOL_TEMP1,$~(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw VOL_TEMP1,r0
 
 	st_32   r12,r11,$0                /* Write the data */
@@ -149,7 +149,7 @@ _read_physical_word:
 
 	rd_kpsw VOL_TEMP1                     /* Go to physical mode to talk */
 	add_nt  KPSW_REG,VOL_TEMP1,r0
-	and	VOL_TEMP1,VOL_TEMP1,$~MACH_KPSW_VIRT_DFETCH_ENA
+	and	VOL_TEMP1,VOL_TEMP1,$~(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw VOL_TEMP1,r0
 
 	ld_32   r11,r11,$0                /* Read the data */
