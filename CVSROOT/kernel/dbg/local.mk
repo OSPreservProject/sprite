@@ -5,5 +5,6 @@
 # that must be included to set up various compilation stuff.
 #
 
-CFLAGS		= -g
+NOOPTIMIZATION	= no -O please
+
 #include	<$(SYSMAKEFILE)>
