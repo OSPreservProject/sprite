@@ -1277,7 +1277,7 @@ CheckPidArray(curProcPtr, returnSuspend, numPids,  pidArray, procPtrPtr)
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    return(PROC_INVALID_PID);
 	}
-	if (Proc_ComparePIDs(procPtr->parentID, curProcPtr->processID)) {
+	if (!Proc_ComparePIDs(procPtr->parentID, curProcPtr->processID)) {
 	    Proc_Unlock(procPtr);
 	    return(PROC_INVALID_PID);
 	}
