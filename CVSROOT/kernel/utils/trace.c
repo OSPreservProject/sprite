@@ -96,10 +96,10 @@ Trace_Init(traceHdrPtr, numRecords, size, flags)
  *----------------------------------------------------------------------
  */
 void
-Trace_Insert(traceHdrPtr, event, dataPtr)
+Trace_Insert(traceHdrPtr, event, data)
     Trace_Header *traceHdrPtr;
     int event;
-    ClientData *dataPtr;
+    ClientData data;
 {
     Trace_Record *recordPtr;
     int size;
@@ -116,8 +116,8 @@ Trace_Insert(traceHdrPtr, event, dataPtr)
 	Timer_TicksToTime(ticks, &(recordPtr->time));
     }
     size = traceHdrPtr->dataSize;
-    if ((size > 0) && (dataPtr != (ClientData *) NIL)) {
-	Byte_Copy(size, (Address) dataPtr, (Address) recordPtr->traceData);
+    if ((size > 0) && (data != (ClientData) NIL)) {
+	Byte_Copy(size, (Address) data, (Address) recordPtr->traceData);
 	recordPtr->flags = TRACE_DATA_VALID;
     } else {
 	if (recordPtr->traceData != (ClientData *) NIL) {
