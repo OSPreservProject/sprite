@@ -273,9 +273,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	ioPtr->offset = offset + amountWritten;
 	ioPtr->length = toWrite;
 	if (status == SUCCESS) {
-	    if ((toWrite == 0) || (streamPtr->flags & FS_NON_BLOCKING)) {
-		break;
-	    }
+	    break;
 	} else if (status == FS_WOULD_BLOCK) {
 	    if ((streamPtr->flags & FS_NON_BLOCKING) == 0) {
 		if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
