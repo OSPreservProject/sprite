@@ -250,7 +250,7 @@ extern  Boolean fsInitialized;
  */
 
 #define	Fs_StringNCopy(numBytes, srcStr, destStr, strLengthPtr) \
-    (Proc_IsMigratedProcess(Sys_GetProcessorNumber()) ? \
+    (Proc_IsMigratedProcess() ? \
 	    Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr) : \
 	    Vm_StringNCopy(numBytes, srcStr, destStr, strLengthPtr))
 
