@@ -540,11 +540,4 @@ extern  void		Fs_CheckSetID();
 extern  ClientData      Fs_GetFileHandle();
 extern struct Vm_Segment **Fs_GetSegPtr();
 
-/*
- * Backward compatiblity stuff. 
- */
-extern void Fs_Sync();
-extern void Fs_SyncProc();
-extern void Fs_SyncStub();
-
 #endif /* _FS */
