@@ -149,7 +149,8 @@ Net_RouteInit()
  *
  *	System call stub for Net_InstallRoute. The Net_RouteInfoOld
  *	stuff is for backwards compatibility and can be removed
- *	once the NEW_NET stuff is gone from /sprite/lib/include/net.h.
+ *	once netroute is updated to use Net_UserRoute instead of
+ *	Net_RouteInfo.
  *
  * Results:
  *	A return status.

@@ -7,6 +7,8 @@
 
 NAME = net
 
+CFLAGS += -DNET_DF_USE_UNCACHED_MEM
+
 #
 # Optimization breaks the ds3100.
 #

@@ -67,13 +67,8 @@ extern void Net_GatherCopy _ARGS_((register Net_ScatterGather *scatterGatherPtr,
 extern void Net_SetPacketHandler _ARGS_((Net_Interface *interPtr, 
 			void (*handler)()));
 extern void Net_RemovePacketHandler _ARGS_((Net_Interface *interPtr));
-#ifdef NEW_NET
 extern ReturnStatus Net_InstallRouteStub _ARGS_((int size, 
 			Net_UserRoute *userRoutePtr));
-#else
-extern ReturnStatus Net_InstallRouteStub _ARGS_((int size, 
-			Net_RouteInfo *userRoutePtr));
-#endif
 extern ReturnStatus Net_GetRoutes _ARGS_((int firstID, int lastID, 
 			int infoSize, Address bufferPtr, int *buffersUsedPtr));
 
