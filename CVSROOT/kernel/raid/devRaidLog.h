@@ -16,8 +16,9 @@
 #ifndef _DEV_RAID_LOG
 #define _DEV_RAID_LOG
 
-#include "fs.h"
 #include "sync.h"
+#include "bitvec.h"
+#include "devRaid.h"
 
 #define RAID_LOG_BUF_SIZE	1000
 
@@ -25,19 +26,17 @@ typedef struct {
     Sync_Semaphore	 mutex;
     int			 enabled;
     int			 busy;
-    Sync_Condition       notBusy;
-    Fs_Stream		*streamPtr;
-    char		*curBufPtr;
-    char		*curBuf;
-    char		 buf1[RAID_LOG_BUF_SIZE];
-    char		 buf2[RAID_LOG_BUF_SIZE];
-    Sync_Condition	*curBufFlushedPtr;
+    DevBlockDeviceHandle *logHandlePtr;
+    int			 logDevOffset;
+    int			 diskLockVecNum;
+    int			 diskLockVecSize;
+    BitVec		 diskLockVec;
+    int			 minLogElem;
+    int			 maxLogElem;
+    Sync_Condition	*waitCurBufPtr;
+    Sync_Condition	*waitNextBufPtr;
     Sync_Condition       flushed1;
     Sync_Condition       flushed2;
 } RaidLog;
-
-extern void EnableLog();
-extern void DisableLog();
-extern void LogEntry();
 
 #endif _DEV_RAID_LOG

@@ -22,7 +22,6 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include <stdio.h>
 #include <string.h>
 #include "sync.h"
 #include "sprite.h"
@@ -35,18 +34,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devBlockDevice.h"
 #include "devRaid.h"
 #include "devRaidUtil.h"
-#include "devRaidInitiate.h"
-#include "devRaidReconstruct.h"
-#include "devRaidHardInit.h"
-#include "devRaidParityCheck.h"
 #include "dev/raid.h"
-#include "devRaidIOC.h"
 #include "devRaidLock.h"
 #include "devRaidLog.h"
 #include "stdlib.h"
 #include "dbg.h"
-#include "strUtil.h"
-#include "debugMem.h"
+#include "devRaidProto.h"
 
 static ReturnStatus StripeBlockIOProc();
 static ReturnStatus RaidBlockIOProc();
@@ -116,21 +109,27 @@ DevRaidAttach(devicePtr)
     RaidHandle	*handlePtr;
     Raid	*raidPtr;
 
-    raidPtr = &raidArray[devicePtr->unit];
-    InitStripeLocks();
-    InitDebugMem();
     if ( devicePtr->unit >= numRaid ) {
         return (DevBlockDeviceHandle *) NIL;
     }
-    raidPtr->devicePtr = devicePtr;
+    raidPtr = &raidArray[devicePtr->unit];
+    MASTER_LOCK(&raidPtr->mutex);
     if ( raidPtr->state == RAID_INVALID ) {
-	if (RestoreRaidState(raidPtr) != SUCCESS) {
-        	return (DevBlockDeviceHandle *) NIL;
-	}
+	raidPtr->state = RAID_ATTACHED;
+	MASTER_UNLOCK(&raidPtr->mutex);
+#ifdef TESTING
+	Sync_CondInit(&raidPtr->waitExclusive);
+	Sync_CondInit(&raidPtr->waitNonExclusive);
+#endif TESTING
+	InitStripeLocks();
+	InitDebugMem();
+	raidPtr->devicePtr = devicePtr;
+	LockRaid(raidPtr);
+    } else {
+	MASTER_UNLOCK(&raidPtr->mutex);
     }
 
     handlePtr = (RaidHandle *) malloc(sizeof(RaidHandle));
-
     /*
      * 'S' means data striping only, no parity.
      * We use a different blockIOproc to support this function.
@@ -196,12 +195,14 @@ ReleaseProc(handlePtr)
  *----------------------------------------------------------------------
  */
 
-void initHardDoneProc()
+static void
+initHardDoneProc()
 {
     printf("RAID:MSG:Initialization completed.\n");
 }
 
-void initParityCheckDoneProc()
+static void
+initParityCheckDoneProc()
 {
     printf("RAID:MSG:Paritycheck completed.\n");
 }
@@ -237,15 +238,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	PrintRaid(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_RECONFIG:
-	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-		raidPtr->devicePtr->unit, ".config");
-	status = RaidConfigure(raidPtr, fileName);
-	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-		raidPtr->devicePtr->unit, ".state");
-	unlink(fileName);
-	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-		raidPtr->devicePtr->unit, ".log");
-	unlink(fileName);
+	status = RaidConfigure(raidPtr, raidIOCParamPtr->buf);
 	return status;
     case IOC_DEV_RAID_HARDINIT:
 	InitiateHardInit(raidPtr,
@@ -302,7 +295,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	return SUCCESS;
     case IOC_DEV_RAID_SAVE_STATE:
 	status = SaveRaidState(raidPtr);
-	if (status == FAILURE) {
+	if (status != SUCCESS) {
 	    printf("RAID:MSG:Could not checkpoint state.\n");
 	}
 	return status;
@@ -312,6 +305,24 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
     case IOC_DEV_RAID_DISABLE_LOG:
 	DisableLog(raidPtr);
 	return SUCCESS;
+    case IOC_DEV_RAID_RESTORE_STATE:
+	raidPtr->logDev.type = raidIOCParamPtr->type;
+	raidPtr->logDev.unit = raidIOCParamPtr->unit;
+	raidPtr->logDevOffset = raidIOCParamPtr->startStripe;
+	/*
+	 * Attach log device.
+	 */
+	raidPtr->logHandlePtr = Dev_BlockDeviceAttach(&raidPtr->logDev);
+	if (raidPtr->logHandlePtr == (DevBlockDeviceHandle *) NIL) {
+	    printf("RAID:ERR:Could not attach log device %d %d\n",
+		    raidPtr->logDev.type, raidPtr->logDev.unit);
+	    return FAILURE;
+	}
+	status = RestoreRaidState(raidPtr);
+	if (status != SUCCESS) {
+	    printf("RAID:MSG:Could not checkpoint state.\n");
+	}
+	return status;
     default:
 	return SUCCESS;
     }

@@ -18,6 +18,32 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "devRaid.h"
+#include "devRaidProto.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReportRaidDiskAtachError --
+ *
+ *	This procedure is called when a device specified in a RAID
+ *	configuration file can not be attached.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ReportRaidDiskAttachError(type, unit)
+    int		type, unit;
+{
+    printf("RAID:ATTACH_ERR:dev %d %d:Could not attach device.\n", type, unit);
+}
 
 
 /*
@@ -37,19 +63,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 RaidDisk *
-MakeRaidDisk(col, row, type, unit, numSector)
+MakeRaidDisk(col, row, type, unit, version, numSector)
     int 	 col, row;
-    int 	 type, unit;
+    int 	 type, unit, version;
     int		 numSector;
 {
     RaidDisk	*diskPtr;
 
     diskPtr = (RaidDisk *) malloc(sizeof(RaidDisk));
-    Sync_SemInitDynamic(&diskPtr->mutex, "RaidDisk Mutex");
+    InitSema(&diskPtr->lock, "RaidDisk Mutex", 1);
     diskPtr->row = row;
     diskPtr->col = col;
-    diskPtr->version = 1;
-    diskPtr->useCount = 1;
+    diskPtr->version = version;
     diskPtr->device.type = type;
     diskPtr->device.unit = unit;
     diskPtr->handlePtr = Dev_BlockDeviceAttach(&diskPtr->device);
@@ -84,36 +109,10 @@ MakeRaidDisk(col, row, type, unit, numSector)
 void FreeRaidDisk(diskPtr)
     RaidDisk	*diskPtr;
 {
-    Sync_LockClear(&diskPtr->mutex);
     if (diskPtr->handlePtr != (DevBlockDeviceHandle *) NIL) {
         (void) Dev_BlockDeviceRelease(diskPtr->handlePtr);
     }
     free((char *) diskPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ReportRaidDiskAtachError --
- *
- *	This procedure is called when a device specified in a RAID
- *	configuration file can not be attached.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Prints an error message.
- *
- *----------------------------------------------------------------------
- */
-
-void
-ReportRaidDiskAttachError(type, unit)
-    int		type, unit;
-{
-    printf("RAID:ATTACH_ERR:dev %d %d:Could not attach device.\n", type, unit);
 }
 
 
@@ -139,25 +138,21 @@ FailRaidDisk(raidPtr, col, row, version)
     int		 col, row;
     int		 version;
 {
-    RaidDisk	*diskPtr = raidPtr->disk[col][row];
-    char	buf[120];
+    RaidDisk	*diskPtr;
 
-    MASTER_LOCK(&diskPtr->mutex);
-    if (version == diskPtr->version &&
-	    (diskPtr->state == RAID_DISK_READY || 
-		    diskPtr->state == RAID_DISK_RECONSTRUCT) ){
+    LockSema(&raidPtr->disk[col][row]->lock);
+    diskPtr = raidPtr->disk[col][row];
+    if (version == diskPtr->version && diskPtr->state == RAID_DISK_READY) {
 	diskPtr->state = RAID_DISK_FAILED;
-	diskPtr->numValidSector = 0;
-        MASTER_UNLOCK(&diskPtr->mutex);
 	printf("RAID:DISK_FAILED:raid %d %d:pos %d %d %d:dev %d %d\n",
 	        raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
 		row, col, version,
 		diskPtr->device.type, diskPtr->device.unit);
-        sprintf(buf, "F %d %d %d\n", row, col, diskPtr->version);
-	LogEntry(raidPtr, buf);
-    } else {
-        MASTER_UNLOCK(&diskPtr->mutex);
+	SaveDiskState(raidPtr, col, row,
+		diskPtr->device.type, diskPtr->device.unit, diskPtr->version,0);
+	diskPtr->numValidSector = 0;
     }
+    UnlockSema(&diskPtr->lock);
 }
 
 
@@ -189,36 +184,31 @@ ReplaceRaidDisk(raidPtr, col, row, version, type, unit, numValidSector)
     RaidDisk	*newDiskPtr;
     char	 buf[120];
 
+    LockSema(&raidPtr->disk[col][row]->lock);
     diskPtr = raidPtr->disk[col][row];
-    MASTER_LOCK(&diskPtr->mutex);
     if (diskPtr->version != version) {
-        MASTER_UNLOCK(&diskPtr->mutex);
 	printf("RAID:VERSION_MISMATCH:curVersion %d:spcifiedVersion %d\n",
 		diskPtr->version, version);
+	UnlockSema(&diskPtr->lock);
 	return;
     }
     if (diskPtr->state != RAID_DISK_FAILED) {
-        MASTER_UNLOCK(&diskPtr->mutex);
 	printf("RAID:MSG:Attempted to replace non-failed disk.\n");
+	UnlockSema(&diskPtr->lock);
 	return;
     }
-    /*
-     * Currently, the useCount is not updated, therefore we do not know
-     * whether the old disk structure is still in use, therfore, we
-     * can not deallocate it.  (i.e. it will stay around forever)
-     */
-    newDiskPtr = MakeRaidDisk(col, row, type, unit, numValidSector);
     diskPtr->state = RAID_DISK_REPLACED;
     diskPtr->version = -version;
+    newDiskPtr = MakeRaidDisk(col, row, type, unit, 1, numValidSector);
     newDiskPtr->version = version + 1;
-    raidPtr->disk[col][row] = newDiskPtr;
-    MASTER_UNLOCK(&diskPtr->mutex);
+    SaveDiskState(raidPtr, col, row,
+	    newDiskPtr->device.type, newDiskPtr->device.unit,
+	    newDiskPtr->version, newDiskPtr->numValidSector);
 printf("RAID:DISK_REPLACED:raid %d %d:pos %d %d %d:oldDev %d %d:newDev %d %d\n",
 	    raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
 	    row, col, version,
 	    diskPtr->device.type, diskPtr->device.unit,
 	    newDiskPtr->device.type, newDiskPtr->device.unit);
-    sprintf(buf, "R %d %d %d  %d %d\n", row, col, diskPtr->version,
-		diskPtr->device.type, diskPtr->device.unit);
-    LogEntry(raidPtr, buf);
+    raidPtr->disk[col][row] = newDiskPtr;
+    UnlockSema(&diskPtr->lock);
 }

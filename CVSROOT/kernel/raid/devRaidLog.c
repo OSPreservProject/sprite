@@ -18,23 +18,30 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sync.h"
-#include <sys/file.h>
-#include <stdio.h>
 #include "sprite.h"
 #include "devRaid.h"
 #include "devRaidDisk.h"
 #include "devRaidLog.h"
 #include "bitvec.h"
+#include "devRaidLock.h"
+#include "devRaidProto.h"
 
-/*
-static int
-fsync(fd)
-    int fd;
-{
-    return 0;
-}
-*/
+#define ConfigLoc(raidPtr) ((int)(raidPtr)->logDevOffset)
 
+#define DiskLoc(raidPtr, col, row)	\
+    ((int)(raidPtr->logDevOffset+((raidPtr)->logHandlePtr->minTransferUnit*((col)*(raidPtr)->numRow+(row)+1))))
+
+#define VecOffset(raidPtr, bit)	\
+	((int)((((bit)/8)/(raidPtr)->log.logHandlePtr->minTransferUnit) \
+		*(raidPtr)->log.logHandlePtr->minTransferUnit))
+
+#define VecLoc(raidPtr, bit)	\
+	((int)((raidPtr)->log.logDevOffset + VecOffset(raidPtr, bit)))
+
+#define VecNextLoc(raidPtr, bit)	\
+	((int)((raidPtr)->log.logDevOffset +		\
+		(((bit)/8)/(raidPtr)->log.logHandlePtr->minTransferUnit + 1) \
+		*(raidPtr)->log.logHandlePtr->minTransferUnit))
 
 /*
  *----------------------------------------------------------------------
@@ -47,31 +54,28 @@ fsync(fd)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+void
 InitRaidLog(raidPtr)
     Raid *raidPtr;
 {
-    char fileName[80];
-
+    Sync_SemInitDynamic(&raidPtr->log.mutex, "RAID log mutex");
     raidPtr->log.enabled = 0;
     raidPtr->log.busy = 0;
-#ifdef TESTING
-    Sync_CondInit(&raidPtr->log.notBusy);
-#endif TESTING
-    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".log");
-    if ((raidPtr->log.streamPtr = (Fs_Stream *) open(fileName,
-	    O_WRONLY | O_APPEND | O_CREAT, 0666)) == (Fs_Stream *) -1) {
-	return FAILURE;
-    }
-    raidPtr->log.curBufPtr = raidPtr->log.buf1;
-    raidPtr->log.curBuf = raidPtr->log.buf1;
-    raidPtr->log.curBufFlushedPtr = &raidPtr->log.flushed1;
+    raidPtr->log.logHandlePtr = raidPtr->logHandlePtr;
+    raidPtr->log.logDevOffset =
+	    DiskLoc(raidPtr, raidPtr->numCol, raidPtr->numRow);
+    raidPtr->log.diskLockVecNum = raidPtr->numStripe;
+    raidPtr->log.diskLockVecSize = VecSize(raidPtr->log.diskLockVecNum);
+    raidPtr->log.diskLockVec = MakeBitVec(8 *
+	(VecNextLoc(raidPtr,raidPtr->log.diskLockVecNum) - VecLoc(raidPtr, 0)));
+    raidPtr->log.minLogElem = raidPtr->log.diskLockVecNum;
+    raidPtr->log.maxLogElem = 0;
+    raidPtr->log.waitCurBufPtr = &raidPtr->log.flushed1;
+    raidPtr->log.waitNextBufPtr = &raidPtr->log.flushed2;
 #ifdef TESTING
     Sync_CondInit(&raidPtr->log.flushed1);
     Sync_CondInit(&raidPtr->log.flushed2);
 #endif TESTING
-    return SUCCESS;
 }
 
 
@@ -116,7 +120,7 @@ DisableLog(raidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * ApplyRaidLog --
+ * ProcessRaidLog --
  *
  * Results:
  *
@@ -130,97 +134,31 @@ typedef struct {
                                    * function. */
     Sync_Condition wait;          /* Condition valued used to wait for
                                    * callback. */
-    int       numIO;           /* Is the operation finished or not? */
+    int            numIO;         /* Is the operation finished or not? */
+    ReturnStatus   status;
 } InitControlBlock;
 
 static void initDoneProc();
 
-ReturnStatus
-ApplyRaidLog(raidPtr, fileName)
-    Raid *raidPtr;
-    char *fileName;
+static ReturnStatus
+ProcessRaidLog(raidPtr)
+    Raid	*raidPtr;
 {
-#   define 	 CHAR_BUF_LEN	120
-    char	 buf[CHAR_BUF_LEN];
-    RaidDisk    *diskPtr;
-    int		 row, col, version, type, unit, numValidSector;
-    RaidDiskState state;
-    int		 stripeID;
-    FILE *fp;
-    BitVec	 lockedVec = MakeBitVec(raidPtr->numStripe);
     InitControlBlock controlBlock;
-    char        *statusBuf = "ssssssssssssssssssssssssssssssssssssssssssssssss";
-    char       **ctrlData = &statusBuf;
-
-    if ((fp = fopen(fileName, "r")) == NULL) {
-	free(lockedVec);
-	return FAILURE;
-    }
-    while (fgets(buf, 120, fp) != NULL) {
-	switch (buf[0]) {
-	case 'D':
-	    if (sscanf(buf, "%*c %d %d %d  %d %d  %d %d\n",&row, &col, &version,
-		    &type, &unit, &state, &numValidSector) != 7) {
-		free(lockedVec);
-		return FAILURE;    
-	    }
-	    diskPtr = raidPtr->disk[col][row];
-	    diskPtr->version = version;
-	    diskPtr->numValidSector = numValidSector;
-	    if (diskPtr->state != RAID_DISK_INVALID) {
-		diskPtr->state = state;
-	    }
-	    break;
-	case 'F':
-	    if (sscanf(buf, "%*c %d %d %d\n", &row, &col, &version) != 3) {
-		free(lockedVec);
-		return FAILURE;    
-	    }
-	    FailRaidDisk(raidPtr, col, row, version);
-	    break;
-	case 'R':
-	    if (sscanf(buf, "%*c %d %d %d  %d %d\n", &row, &col, &version,
-		    &type, &unit) != 5) {
-		free(lockedVec);
-		return FAILURE;    
-	    }
-	    ReplaceRaidDisk(raidPtr, col, row, version, type, unit, 0);
-	    break;
-	case 'L':
-	    if (sscanf(buf, "%*c %d\n", &stripeID) != 1) {
-		free(lockedVec);
-		return FAILURE;    
-	    }
-	    SetBit(lockedVec, stripeID);
-	    break;
-	case 'U':
-	    if (sscanf(buf, "%*c %d\n", &stripeID) != 1) {
-		free(lockedVec);
-		return FAILURE;    
-	    }
-	    ClrBit(lockedVec, stripeID);
-	    break;
-	case '#': case ' ': case '\t': case '\n': /* comment */
-	    break;
-	default:
-	    printf("RAID:MSG:Unknown log entry '%s'.\n", buf);
-	    break;
-	}
-    }
-    fclose(fp);
+    int		 stripeID;
+    char	*statusCtrl = "sssssssssssssssssssssssssssssssssssssssssssss";
 
 #ifdef TESTING
     Sync_CondInit(&controlBlock.wait);
 #endif TESTING
     controlBlock.numIO = 0;
     controlBlock.numIO++;
-    FOR_ALL_VEC(lockedVec, stripeID, raidPtr->numStripe) {
+    FOR_ALL_VEC(raidPtr->log.diskLockVec, stripeID, raidPtr->numStripe) {
 	MASTER_LOCK(&controlBlock.mutex);
 	controlBlock.numIO++;
 	MASTER_UNLOCK(&controlBlock.mutex);
-	InitiateHardInit(raidPtr, stripeID, 1, initDoneProc,
-		(ClientData) &controlBlock,
-	   (int) ctrlData);
+	InitiateHardInit(raidPtr, stripeID, 1,
+		initDoneProc, (ClientData) &controlBlock, &statusCtrl);
     }
     MASTER_LOCK(&controlBlock.mutex);
     controlBlock.numIO--;
@@ -230,8 +168,7 @@ ApplyRaidLog(raidPtr, fileName)
 	Sync_MasterWait(&controlBlock.wait, &controlBlock.mutex, FALSE);
         MASTER_UNLOCK(&controlBlock.mutex);
     }
-    free(lockedVec);
-    return SUCCESS;
+    return controlBlock.status;
 }
 
 
@@ -250,9 +187,11 @@ ApplyRaidLog(raidPtr, fileName)
  *----------------------------------------------------------------------
  */
 static void
-initDoneProc(controlBlockPtr)
-    InitControlBlock         *controlBlockPtr;
+initDoneProc(controlBlockPtr, status)
+    InitControlBlock	*controlBlockPtr;
+    ReturnStatus	 status;
 {
+    controlBlockPtr->status = status;
     MASTER_LOCK(&controlBlockPtr->mutex); 
     controlBlockPtr->numIO--; 
     if (controlBlockPtr->numIO == 0) { 
@@ -267,9 +206,7 @@ initDoneProc(controlBlockPtr)
 /*
  *----------------------------------------------------------------------
  *
- * SyncFile --
- *	
- *	Fsync file.
+ * ApplyRaidLog --
  *
  * Results:
  *
@@ -278,23 +215,147 @@ initDoneProc(controlBlockPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-SyncFile(fileName)
-    char	*fileName;
+ApplyRaidLog(raidPtr)
+    Raid *raidPtr;
 {
-    Fs_Stream	*streamPtr;
+    int				xferAmt;
+    DevBlockDeviceRequest	req;
+    ReturnStatus		status;
 
-    if ((streamPtr = (Fs_Stream *) open(fileName, O_RDONLY, 0666)) == 
-	    (Fs_Stream *)-1) {
-	return FAILURE;
+    req.operation	= FS_READ;
+    req.startAddress	= VecLoc(raidPtr, 0);
+    req.startAddrHigh	= 0;
+    req.bufferLen	=
+	VecNextLoc(raidPtr, raidPtr->log.diskLockVecNum) - VecLoc(raidPtr, 0);
+    req.buffer		= (char *) raidPtr->log.diskLockVec;
+    status = Dev_BlockDeviceIOSync(raidPtr->log.logHandlePtr, &req, &xferAmt);
+    if (status != SUCCESS) {
+	return status;
     }
-    while(fsync(streamPtr) != 0) {
-	Time time;
-	perror("Error writing log");
-	time.seconds = 10;
-	time.microseconds = 0;
-	Sync_WaitTime(time);
+    status = ProcessRaidLog(raidPtr);
+    if (status != SUCCESS) {
+	return status;
     }
-    close(streamPtr);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SaveDiskState --
+ *	
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+SaveDiskState(raidPtr, col, row, type, unit, version, numValidSector)
+    Raid	*raidPtr;
+    int		 col, row;
+    int		 type, unit, version;
+    int		 numValidSector;
+    
+{
+    DevBlockDeviceRequest req;
+    int xferAmt;
+    int *iBuf = (int *) malloc(raidPtr->logHandlePtr->minTransferUnit);
+    ReturnStatus	status;
+
+    req.operation	= FS_WRITE;
+    req.startAddress    = DiskLoc(raidPtr, col, row);
+    req.startAddrHigh	= 0;
+    req.buffer		= (char *) iBuf;
+    req.bufferLen	= raidPtr->logHandlePtr->minTransferUnit;
+
+    iBuf[0] = type;
+    iBuf[1] = unit;
+    iBuf[2] = version;
+    iBuf[3] = numValidSector;
+    status = Dev_BlockDeviceIOSync(raidPtr->logHandlePtr, &req, &xferAmt);
+    if (status != SUCCESS) {
+	return status;
+    }
+    free(iBuf);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SaveRaidParam --
+ *	
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+SaveRaidParam(raidPtr)
+    Raid	*raidPtr;
+{
+    DevBlockDeviceRequest req;
+    int xferAmt;
+    int *iBuf = (int *) malloc(raidPtr->logHandlePtr->minTransferUnit);
+    ReturnStatus	status;
+
+    req.operation	= FS_WRITE;
+    req.startAddress	= ConfigLoc(raidPtr);
+    req.startAddrHigh	= 0;
+    req.bufferLen	= raidPtr->logHandlePtr->minTransferUnit;
+    req.buffer		= (char *) iBuf;
+    MASTER_LOCK(&raidPtr->mutex);
+    iBuf[0] = raidPtr->numRow;
+    iBuf[1] = raidPtr->numCol;
+    iBuf[2] = raidPtr->logBytesPerSector;
+    iBuf[3] = raidPtr->sectorsPerStripeUnit;
+    iBuf[4] = raidPtr->stripeUnitsPerDisk;
+    iBuf[5] = raidPtr->rowsPerGroup;
+    iBuf[6] = raidPtr->parityConfig;
+    MASTER_UNLOCK(&raidPtr->mutex);
+    status = Dev_BlockDeviceIOSync(raidPtr->logHandlePtr, &req, &xferAmt);
+    if (status != SUCCESS) {
+	return status;
+    }
+    free(iBuf);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SaveRaidLog --
+ *	
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+SaveRaidLog(raidPtr)
+    Raid	*raidPtr;
+{
+    DevBlockDeviceRequest	req;
+    int xferAmt;
+    ReturnStatus	status;
+
+    req.operation       = FS_WRITE;
+    req.startAddress    = VecLoc(raidPtr, 0);
+    req.startAddrHigh   = 0;
+    req.bufferLen       =
+	VecNextLoc(raidPtr, raidPtr->log.diskLockVecNum) - VecLoc(raidPtr, 0);
+    req.buffer          = (char *) raidPtr->log.diskLockVec;
+
+    status = Dev_BlockDeviceIOSync(raidPtr->logHandlePtr, &req, &xferAmt);
+    if (status != SUCCESS) {
+	return status;
+    }
     return SUCCESS;
 }
 
@@ -305,7 +366,7 @@ SyncFile(fileName)
  * SaveRaidState --
  *	
  *	Perform a consistent checkpoint of the raid state.
- *      System must first be quiesced.  (lock-raid)
+ *      System must be queiesced.
  *
  * Results:
  *
@@ -317,417 +378,55 @@ ReturnStatus
 SaveRaidState(raidPtr)
     Raid *raidPtr;
 {
-    char fileName[80], fileName2[80];
-    RaidDisk *diskPtr;
-    FILE *fp;
-    Fs_Stream *streamPtr;
-    int col, row;
+    int		col, row;
+    ReturnStatus status;
+    RaidDisk	*diskPtr;
 
-    /*
-     * Clear cache of locked stripes.
-     */
-    ClearBitVec(raidPtr->lockedVec, raidPtr->numStripe);
-    /*
-     * Save configuration.
-     */
-    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".new.state");
-    if ((fp = fopen(fileName, "w")) == NULL) {
-	return FAILURE;
-    }
-    if (fprintf(fp, "%s\n",
-	    "#row col logSectSize sectPerSU SUPerDisk rowsPerGroup pConfig") ==
-	    -1) {
-	fclose(fp);
-	return FAILURE;
-    }
-    if (fprintf(fp, "%d %d %d %d %d %d %c\n",
- 			raidPtr->numRow,
-			raidPtr->numCol,
-			raidPtr->logBytesPerSector,
-			raidPtr->sectorsPerStripeUnit,
-			raidPtr->stripeUnitsPerDisk,
-			raidPtr->rowsPerGroup,
-			raidPtr->parityConfig) == -1) {
-	fclose(fp);
-	return FAILURE;
+    status = SaveRaidParam(raidPtr);
+    if (status != SUCCESS) {
+	return status;
     }
     for ( row = 0; row < raidPtr->numRow; row++ ) {
-	for ( col = 0; col < raidPtr->numCol; col++ ) {
+        for ( col = 0; col < raidPtr->numCol; col++ ) {
+	    LockSema(&raidPtr->disk[col][row]->lock);
 	    diskPtr = raidPtr->disk[col][row];
-	    if (fprintf(fp, "%d %d	",
-		    diskPtr->device.type,
-		    diskPtr->device.unit) == -1) {
-		fclose(fp);
-		return FAILURE;
-	    }
-	}
-	if (fprintf(fp, "\n") == -1) {
-	    fclose(fp);
-	    return FAILURE;
-	}
-    }
-    if (fclose(fp) == EOF) {
-	return FAILURE;
-    }
-    if (SyncFile(fileName) == FAILURE) {
-	return FAILURE;
-    }
-
-    /*
-     * Rename file.
-     */
-    sprintf(fileName2, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".state");
-    if (rename(fileName, fileName2) == -1) {
-	return FAILURE;
-    }
-
-    /*
-     * Save rest of state in log.
-     */
-    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".new.log");
-    if ((fp = fopen(fileName, "w")) == NULL) {
-	return FAILURE;
-    }
-    for ( col = 0; col < raidPtr->numCol; col++ ) {
-	for ( row = 0; row < raidPtr->numRow; row++ ) {
-	    diskPtr = raidPtr->disk[col][row];
-	    if (fprintf(fp, "D %d %d %d  %d %d  %d %d\n", row, col,
-		    diskPtr->version,
-		    diskPtr->device.type, diskPtr->device.unit,
-		    diskPtr->state, diskPtr->numValidSector) == -1) {
-		fclose(fp);
-		return FAILURE;
+	    status = SaveDiskState(raidPtr, col, row, diskPtr->device.type,
+		    diskPtr->device.unit, diskPtr->version,
+		    diskPtr->numValidSector);
+	    UnlockSema(&diskPtr->lock);
+	    if (status != SUCCESS) {
+		return status;
 	    }
 	}
     }
-    if (fclose(fp) == EOF) {
-	return FAILURE;
-    }
-    if (SyncFile(fileName) == FAILURE) {
-	return FAILURE;
-    }
-
-    /*
-     * Open new log and rename to current log.
-     */
-    if ((streamPtr = (Fs_Stream *) open(fileName, O_WRONLY | O_APPEND, 0666))== 
-	    (Fs_Stream *)-1) {
-	return FAILURE;
-    }
-    sprintf(fileName2, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".log");
-    if (rename(fileName, fileName2) == -1) {
-	close(streamPtr);
-	return FAILURE;
-    }
-    close(raidPtr->log.streamPtr);
-    raidPtr->log.streamPtr = streamPtr;
-    return SUCCESS;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RestoreRaidState --
- *
- *	May only be called from devRaidAttach.
- *	Restore state of raid device by looking for a state file and applying
- *	appropriate logs.
- *	If no state files exist, read config file, lock-raid and exit; if
- *	you are creating a new raid device, you should then perform the
- *	following sequence:  disable-log, hard-init, enable-log, save-state,
- *	unlock-raid.
- *
- * Results:
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-RestoreRaidState(raidPtr)
-    Raid *raidPtr;
-{
-    char fileName[80];
-    ReturnStatus status;
-
-    DisableLog(raidPtr);
-    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".state");
-    if (RaidConfigure(raidPtr, fileName) == SUCCESS) {
-	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-		raidPtr->devicePtr->unit, ".log");
-	printf("RAID:MSG:State restored, applying log.\n");
-	if (ApplyRaidLog(raidPtr, fileName) == FAILURE) {
-	    printf("RAID:MSG:Log failed.\n");
-	    return FAILURE;
-	}
-	printf("RAID:MSG:Log applied.\n");
-	if (InitRaidLog(raidPtr) == FAILURE) {
-	    printf("RAID:MSG:Could not open log.\n");
-	    return FAILURE;
-	}
 #ifndef TESTING
-	/*
-	 * Save new state.
-	 */
-/* LOGOFF
-        if (SaveRaidState(raidPtr) == FAILURE) {
-            printf("RAID:MSG:Could not checkpoint state.\n");
-        }
-*/
-#endif
-/* LOGOFF
-	EnableLog(raidPtr);
-*/
-	return SUCCESS;
-    }
-    printf("RAID:MSG:Invalid state, reading configuration.\n");
-    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".config");
-    if (RaidConfigure(raidPtr, fileName) == FAILURE) {
-	printf("RAID:MSG:Raid configuration failed.\n");
-	return FAILURE;
-    }
-    printf("RAID:MSG:Configuration completed.\n");
-    if (InitRaidLog(raidPtr) == FAILURE) {
-	printf("RAID:MSG:Could not open log.\n");
-	return FAILURE;
-    }
-    if (raidPtr->parityConfig != 'S') {
-	LockRaid(raidPtr);
-    }
-/* LOGOFF
-    EnableLog(raidPtr);
-*/
-    return SUCCESS;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * MasterFlushLog --
- *
- *	Flush log to disk.
- *
- * Results:
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-
-void
-MasterFlushLog(raidPtr)
-    Raid *raidPtr;
-{
-    if (raidPtr->log.busy) {
-	Sync_MasterWait(raidPtr->log.curBufFlushedPtr, &raidPtr->log.mutex,
-		FALSE);
-	return;
-    }
-    raidPtr->log.busy = 1;
-    do {
-	char *buf = raidPtr->log.curBuf;
-	int   size = raidPtr->log.curBufPtr - raidPtr->log.curBuf;
-	Sync_Condition *flushed = raidPtr->log.curBufFlushedPtr;
-
-	if (raidPtr->log.curBuf == raidPtr->log.buf1) {
-	    raidPtr->log.curBuf = raidPtr->log.buf2;
-	    raidPtr->log.curBufPtr = raidPtr->log.buf2;
-	    raidPtr->log.curBufFlushedPtr = &raidPtr->log.flushed2;
-	} else {
-	    raidPtr->log.curBuf = raidPtr->log.buf1;
-	    raidPtr->log.curBufPtr = raidPtr->log.buf1;
-	    raidPtr->log.curBufFlushedPtr = &raidPtr->log.flushed1;
-	}
-	MASTER_UNLOCK(&raidPtr->log.mutex);
-	while (write(raidPtr->log.streamPtr, buf, size) == -1) {
-	    Time time;
-	    perror("Error writing log");
-	    time.seconds = 10;
-	    time.microseconds = 0;
-	    Sync_WaitTime(time);
-	}
-	while(fsync(raidPtr->log.streamPtr) != 0) {
-	    Time time;
-	    perror("Error writing log");
-	    time.seconds = 10;
-	    time.microseconds = 0;
-	    Sync_WaitTime(time);
-	}
-	MASTER_LOCK(&raidPtr->log.mutex);
-	Sync_MasterBroadcast(flushed);
-    } while (raidPtr->log.curBufPtr != raidPtr->log.curBuf);
-    raidPtr->log.busy = 0;
-    Sync_MasterBroadcast(&raidPtr->log.notBusy);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * LogEntry --
- *
- *	Make an entry in the specified log.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-void
-LogEntry(raidPtr, msg)
-    Raid *raidPtr;
-    char *msg;
-{
-    int n = strlen(msg);
-    int i;
-
-    MASTER_LOCK(&raidPtr->log.mutex);
-    if (!raidPtr->log.enabled) {
-	MASTER_UNLOCK(&raidPtr->log.mutex);
-	return;
-    }
-    while (raidPtr->log.curBufPtr+n > raidPtr->log.curBuf + RAID_LOG_BUF_SIZE) {
-	MasterFlushLog(raidPtr);
-    }
-    for (i = 0; i < n; i++) {
-	*raidPtr->log.curBufPtr = msg[i];
-	raidPtr->log.curBufPtr++;
-    }
-    /* Don't have to wait for log if *unlocking* a stripe. */
-    if (msg[0] == 'U') {
-	MASTER_UNLOCK(&raidPtr->log.mutex);
-	return;
-    }
-    MasterFlushLog(raidPtr);
-    MASTER_UNLOCK(&raidPtr->log.mutex);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RaidDeallocate --
- *
- *	Deallocate data structures associated with the specified raid device.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Deallocates data structures.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-RaidDeallocate(raidPtr)
-    Raid	*raidPtr;
-{
-    int		 col, row;
-
-    if (raidPtr->state == RAID_VALID) {
-	free((char *) raidPtr->lockedVec);
-	for ( col = 0; col < raidPtr->numCol; col++ ) {
-	    for ( row = 0; row < raidPtr->numRow; row++ ) {
-		if (raidPtr->disk[col][row] != NULL) {
-		    FreeRaidDisk(raidPtr->disk[col][row]);
-		}
-	    }
-	}
-	for ( col = 0; col < raidPtr->numCol; col++ ) {
-	    free((char *) raidPtr->disk[col]);
-	}
-	free((char *) raidPtr->disk);
-    }
-    raidPtr->state = RAID_INVALID;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RaidConfigure --
- *
- *	Configure raid device by reading the appropriate configuration file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Allocates and initializes data structures for raid device.
- *
- *----------------------------------------------------------------------
- */
-
-/* static */ ReturnStatus
-RaidConfigure(raidPtr, fileName)
-    Raid	*raidPtr;
-    char	*fileName;
-{
-#   define 	 CHAR_BUF_LEN	120
-    char	 charBuf[CHAR_BUF_LEN];
-    int		 col, row;
-    int		 type, unit;
-    int		 numScanned;
-    RaidDisk    *raidDiskPtr;
-    FILE	*fp;
-
-
-    /*
-     * If RAID device is already configured, deallocate it first.
-     */
-    RaidDeallocate(raidPtr);
-
-    raidPtr->numReqInSys = 0;
-    raidPtr->numStripeLocked = 0;
-#ifdef TESTING
-    Sync_CondInit(&raidPtr->waitExclusive);
-    Sync_CondInit(&raidPtr->waitNonExclusive);
+    ClearBitVec(raidPtr->log.diskLockVec, raidPtr->log.diskLockVecNum);
 #endif TESTING
-
-    if ((fp = fopen(fileName, "r")) == NULL) {
-	return FAILURE;
+    status = SaveRaidLog(raidPtr);
+    if (status != SUCCESS) {
+	return status;
     }
+    return status;
+}
 
-    /*
-     * Skip comments.
-     */
-    for (;;) {
-        if (fgets(charBuf, CHAR_BUF_LEN, fp) == NULL) {
-	    fclose(fp);
-	    return FAILURE;
-        }
-        if (charBuf[0] != '#') {
-            break;
-        }
-    }
-
-    /*
-     * Read dimensions of raid device.
-     */
-    numScanned = sscanf(charBuf, "%d %d %d %d %d %d %c",
- 			&raidPtr->numRow,
-			&raidPtr->numCol,
-			&raidPtr->logBytesPerSector,
-			&raidPtr->sectorsPerStripeUnit,
-			&raidPtr->stripeUnitsPerDisk,
-			&raidPtr->rowsPerGroup,
-			&raidPtr->parityConfig);
-    if (numScanned != 7) {
-	fclose(fp);
-	return FAILURE;
-    }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ComputeRaidParam --
+ *
+ *	Compute redundant but convenient information.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ComputeRaidParam(raidPtr)
+    Raid	*raidPtr;
+{
     /*
      * Compute redundant but convenient information.
      */
@@ -760,6 +459,77 @@ RaidConfigure(raidPtr, fileName)
 	    raidPtr->logBytesPerSector;
     raidPtr->dataBytesPerStripe = raidPtr->dataSectorsPerStripe <<
 	    raidPtr->logBytesPerSector;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RaidConfigure --
+ *
+ *	Configure raid device by reading the appropriate configuration file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates and initializes data structures for raid device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* static */ ReturnStatus
+RaidConfigure(raidPtr, charBuf)
+    Raid	*raidPtr;
+    char	*charBuf;
+{
+    char	*charBufPtr;
+    int		 col, row;
+    int		 type, unit;
+    int		 numScanned;
+    RaidDisk    *diskPtr;
+
+    charBufPtr = charBuf;
+    /*
+     * Skip comments.
+     */
+    for (;;) {
+        if (!ScanLine(&charBufPtr, charBuf)) {
+	    return FAILURE;
+        }
+        if (charBuf[0] != '#') {
+            break;
+        }
+    }
+
+    /*
+     * Read dimensions of raid device.
+     */
+    numScanned = sscanf(charBuf, "%d %d %d %d %d %d %c %d %d %d",
+ 			&raidPtr->numRow,
+			&raidPtr->numCol,
+			&raidPtr->logBytesPerSector,
+			&raidPtr->sectorsPerStripeUnit,
+			&raidPtr->stripeUnitsPerDisk,
+			&raidPtr->rowsPerGroup,
+			&raidPtr->parityConfig,
+			&raidPtr->logDev.type,
+			&raidPtr->logDev.unit,
+			&raidPtr->logDevOffset);
+    if (numScanned != 10) {
+	return FAILURE;
+    }
+    ComputeRaidParam(raidPtr);
+
+    /*
+     * Attach log device.
+     */
+    raidPtr->logHandlePtr = Dev_BlockDeviceAttach(&raidPtr->logDev);
+    if (raidPtr->logHandlePtr == (DevBlockDeviceHandle *) NIL) {
+	printf("RAID:ERR:Could not attach log device %d %d\n",
+		raidPtr->logDev.type, raidPtr->logDev.unit);
+	return FAILURE;
+    }
 
     /*
      * Allocate RaidDisk structures; one for each logical disk.
@@ -777,21 +547,205 @@ RaidConfigure(raidPtr, fileName)
      */
     for ( row = 0; row < raidPtr->numRow; row++ ) {
         for ( col = 0; col < raidPtr->numCol; col++ ) {
-	    if (fscanf(fp, "%d %d", &type, &unit) != 2) {
-		fclose(fp);
+	    if (!ScanWord(&charBufPtr, charBuf)) {
 		return FAILURE;
 	    }
-	    raidDiskPtr = MakeRaidDisk(col, row, type, unit,
+	    type = atoi(charBuf);
+	    if (!ScanWord(&charBufPtr, charBuf)) {
+		return FAILURE;
+	    }
+	    unit = atoi(charBuf);
+	    diskPtr = MakeRaidDisk(col, row, type, unit, 1,
 		    raidPtr->sectorsPerDisk);
-	    if (raidDiskPtr == (RaidDisk *) NIL) {
-		RaidDeallocate(raidPtr);
-		fclose(fp);
+	    if (diskPtr == (RaidDisk *) NIL) {
+		printf("Could not attach disk %d %d\n", type, unit);
 		return FAILURE;
 	    }
-	    raidPtr->disk[col][row] = raidDiskPtr;
+	    raidPtr->disk[col][row] = diskPtr;
 	}
     }
+
+    InitRaidLog(raidPtr);
+
     raidPtr->state = RAID_VALID;
-    raidPtr->lockedVec = MakeBitVec(raidPtr->numStripe);
     return SUCCESS;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RestoreRaidState --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+RestoreRaidState(raidPtr)
+    Raid *raidPtr;
+{
+    DevBlockDeviceRequest	req;
+    int *iBuf = (int *) malloc(raidPtr->logHandlePtr->minTransferUnit);
+    int xferAmt;
+    ReturnStatus	status;
+    int	col, row;
+    RaidDisk		*diskPtr;
+
+    req.operation	= FS_READ;
+    req.startAddress	= ConfigLoc(raidPtr);
+    req.startAddrHigh	= 0;
+    req.bufferLen	= raidPtr->logHandlePtr->minTransferUnit;
+    req.buffer		= (char *) iBuf;
+    status = Dev_BlockDeviceIOSync(raidPtr->logHandlePtr, &req, &xferAmt);
+    if (status != SUCCESS) {
+	return FAILURE;
+    }
+    raidPtr->numRow			= iBuf[0];
+    raidPtr->numCol			= iBuf[1];
+    raidPtr->logBytesPerSector		= iBuf[2];
+    raidPtr->sectorsPerStripeUnit	= iBuf[3];
+    raidPtr->stripeUnitsPerDisk		= iBuf[4];
+    raidPtr->rowsPerGroup		= iBuf[5];
+    raidPtr->parityConfig		= iBuf[6];
+    ComputeRaidParam(raidPtr);
+
+    /*
+     * Allocate RaidDisk structures; one for each logical disk.
+     */
+    raidPtr->disk = (RaidDisk ***)
+		malloc((unsigned)raidPtr->numCol * sizeof(RaidDisk **));
+    for ( col = 0; col < raidPtr->numCol; col++ ) {
+	raidPtr->disk[col] = (RaidDisk **)
+		malloc((unsigned)raidPtr->numRow * sizeof(RaidDisk *));
+	bzero((char*)raidPtr->disk[col],raidPtr->numRow*sizeof(RaidDisk *));
+    }
+
+    /*
+     * Initialize RaidDisk structures.
+     */
+    req.operation	= FS_READ;
+    req.startAddrHigh	= 0;
+    req.buffer		= (char *) iBuf;
+    req.bufferLen	= raidPtr->logHandlePtr->minTransferUnit;
+    for ( row = 0; row < raidPtr->numRow; row++ ) {
+        for ( col = 0; col < raidPtr->numCol; col++ ) {
+	req.startAddress = DiskLoc(raidPtr, col, row);
+	status = Dev_BlockDeviceIOSync(raidPtr->logHandlePtr, &req, &xferAmt);
+	if (status != SUCCESS) {
+	    return FAILURE;
+	}
+	diskPtr = MakeRaidDisk(col,row, iBuf[0], iBuf[1], iBuf[2], iBuf[3]);
+	if (diskPtr == (RaidDisk *) NIL) {
+	    return FAILURE;
+	}
+	raidPtr->disk[col][row] = diskPtr;
+	}
+    }
+
+    InitRaidLog(raidPtr);
+    if (ApplyRaidLog(raidPtr) != SUCCESS) {
+	return FAILURE;
+    }
+    raidPtr->state = RAID_VALID;
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MasterFlushLog --
+ *
+ *	Flush log to disk.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MasterFlushLog(raidPtr)
+    Raid *raidPtr;
+{
+    if (raidPtr->log.busy) {
+	Sync_MasterWait(raidPtr->log.waitNextBufPtr, &raidPtr->log.mutex,FALSE);
+	return;
+    }
+    raidPtr->log.busy = 1;
+    
+    do {
+	DevBlockDeviceRequest	req;
+	Sync_Condition		*flushedPtr;
+	int xferAmt;
+
+	req.operation       = FS_WRITE;
+	req.startAddress    =
+		 VecLoc(raidPtr, raidPtr->log.minLogElem);
+	req.startAddrHigh   = 0;
+	req.bufferLen       = VecNextLoc(raidPtr, raidPtr->log.maxLogElem) - 
+		VecLoc(raidPtr, raidPtr->log.minLogElem);
+	req.buffer          = (char *) raidPtr->log.diskLockVec +
+		VecOffset(raidPtr, raidPtr->log.minLogElem);
+
+	flushedPtr = raidPtr->log.waitNextBufPtr;
+	raidPtr->log.waitNextBufPtr = raidPtr->log.waitCurBufPtr;
+	raidPtr->log.waitCurBufPtr = flushedPtr;
+	raidPtr->log.minLogElem = raidPtr->log.diskLockVecNum;
+	raidPtr->log.maxLogElem = 0;
+
+	MASTER_UNLOCK(&raidPtr->log.mutex);
+	while(Dev_BlockDeviceIOSync(raidPtr->logHandlePtr, &req, &xferAmt) !=
+		SUCCESS) {
+	    Time time;
+	    perror("Error writing log");
+	    time.seconds = 10;
+	    time.microseconds = 0;
+	    Sync_WaitTime(time);
+	}
+	MASTER_LOCK(&raidPtr->log.mutex);
+	Sync_MasterBroadcast(raidPtr->log.waitCurBufPtr);
+    } while (raidPtr->log.minLogElem != raidPtr->log.diskLockVecNum);
+    raidPtr->log.busy = 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogStripe --
+ *
+ *	Make an entry in the specified log.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void
+LogStripe(raidPtr, stripeID)
+    Raid *raidPtr;
+    int	  stripeID;
+{
+    MASTER_LOCK(&raidPtr->log.mutex);
+    if (!raidPtr->log.enabled) {
+	MASTER_UNLOCK(&raidPtr->log.mutex);
+	return;
+    }
+    SetBit(raidPtr->log.diskLockVec, stripeID);
+    if (stripeID < raidPtr->log.minLogElem) {
+	raidPtr->log.minLogElem = stripeID;
+    }
+    if (stripeID > raidPtr->log.maxLogElem) {
+	raidPtr->log.maxLogElem = stripeID;
+    }
+    MasterFlushLog(raidPtr);
+    MASTER_UNLOCK(&raidPtr->log.mutex);
+}
+

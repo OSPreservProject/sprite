@@ -46,22 +46,29 @@
  * Data structure each RAID device.
  *
  * RAID_INVALID	==> Array has not been configured.
+ * RAID_ATTACHED==> Array attached but not configured.
  * RAID_VALID	==> Array is configured and ready to service requests.
  */
-typedef enum { RAID_INVALID, RAID_VALID } RaidState;
+typedef enum { RAID_INVALID, RAID_ATTACHED, RAID_VALID } RaidState;
 
 typedef struct Raid {
-    RaidState		 state;
-    Sync_Semaphore	 mutex;
+    RaidState		 state;		/* must be first field */
+    Sync_Semaphore	 mutex;		/* must be second field */
     Sync_Condition	 waitExclusive;
     Sync_Condition	 waitNonExclusive;
     int			 numReqInSys; /* -1 => exclusive access */
+    int			 numWaitExclusive; /* number waiting for */
+					  /* exclusive access. */
     int			 numStripeLocked;
+
     Fs_Device		*devicePtr; /* Device corresponding to this raid. */
-    int			 numRow;
     int			 numCol;
+    int			 numRow;
     RaidDisk	      ***disk;	    /* 2D array of disks (column major) */
-    BitVec		 lockedVec;
+
+    DevBlockDeviceHandle *logHandlePtr;
+    Fs_Device		 logDev;
+    int			 logDevOffset;
     RaidLog		 log;
 
     unsigned		 numSector;
@@ -165,6 +172,7 @@ typedef struct RaidReconstructionControl {
     ClientData		 clientData;
     int			 ctrlData;
     RaidRequestControl	*reqControlPtr;
+    ReturnStatus	 status;
     char		*parityBuf;
     char		*readBuf;
 } RaidReconstructionControl;
