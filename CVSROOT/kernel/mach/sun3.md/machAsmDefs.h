@@ -96,16 +96,15 @@
 	\
 	clrl	_mach_AtInterruptLevel ; \
 	tstl	_mach_KernelMode; \
-	bne 	1$; \
-	\
-	movl	_proc_RunningProcesses, a0; \
-	movl	a0@, d1; \
-	addl	_machSpecialHandlingOffset, d1;\
-	movl	d1, a1; \
-	tstl	a1@; \
 	bne	1$; \
 	\
-	clrl	a1@; \
+	movl	_proc_RunningProcesses, a0; \
+	movl	a0@, a1; \
+	movl	_machSpecialHandlingOffset, d1;\
+	tstl	a1@(0,d1:l); \
+	beq	1$; \
+	\
+	clrl	a1@(0,d1:l); \
 	movw	sp@(INTR_SR_OFFSET), d0; \
 	orw	#MACH_SR_TRACEMODE, d0; \
 	movw	d0, sp@(INTR_SR_OFFSET); \
