@@ -2953,7 +2953,7 @@ static	Boolean	dmaPageBitMap[VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
  *----------------------------------------------------------------------
  */
 Address
-VMMach_DMAAlloc(numBytes, srcAddr)
+VmMach_DMAAlloc(numBytes, srcAddr)
     int		numBytes;		/* Number of bytes to map in. */
     Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
 {
