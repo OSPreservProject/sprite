@@ -43,6 +43,7 @@ DevConfigController devCntrlr[] = {
     { "SCSI3",  0x200000, DEV_VME_D16A24, 0, DevSCSI3Init, 64, DevSCSI3Intr },
     { "SCSI3#1",  0x210000, DEV_VME_D16A24, 1, DevSCSI3Init, 65, DevSCSI3Intr },
     { "SCSI3#2",  0x220000, DEV_VME_D16A24, 2, DevSCSI3Init, 66, DevSCSI3Intr },
+    { "SCSI3#3",  0x230000, DEV_VME_D16A24, 3, DevSCSI3Init, 67, DevSCSI3Intr },
     { "Xylogics450", 0xee40, DEV_VME_D16A16,	 0, DevXylogics450Init,
 				    72, DevXylogics450Intr},
     { "Jaguar0", 0x8800, DEV_VME_D16A16, 0, DevJaguarInit, 211, DevJaguarIntr},
