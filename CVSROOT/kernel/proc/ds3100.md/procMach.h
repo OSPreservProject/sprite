@@ -27,7 +27,10 @@
 /*
  * A.out header magic number.
  */
+#define	PROC_OMAGIC	0407		/* Impure format */
+#define	PROC_NMAGIC	0410		/* Shared text format */
 #define	PROC_ZMAGIC	0413		/* Demand load format */
+#define	PROC_LIBMAGIC	0443		/* Share library format */
 
 /*
  * Description of the file.
@@ -61,11 +64,32 @@ typedef struct {
 } ProcAOUTHeader;
 
 /*
+ * Section header.
+ */
+typedef struct {
+    char		name[8];	/* Section name. */
+    long		physAddr;	/* Section physical address. */
+    long		virtAddr;	/* Section virtual address. */
+    long		size;		/* Section size. */
+    long		sectionPtr;	/* File pointer to section data.  */
+    long		relocPtr;	/* File pointer to relocation data.  */
+    long		lnnoPtr;	/* File pointer to gp tables. */
+    unsigned short	numReloc;	/* Number of relocation entries. */
+    unsigned short	numLnno;	/* Numberof gp tables. */
+    long		flags;		/* Section flags. */
+} ProcSectionHeader;
+
+/*
  * The header at the beginning of each file.
  */
 typedef struct {
     ProcFileHeader	fileHeader;
     ProcAOUTHeader	aoutHeader;
 } ProcExecHeader;
+
+/*
+ * Default place for a text segment.
+ */
+#define DEFAULT_TEXT	0x00400000
 
 #endif /* _PROCMACH */

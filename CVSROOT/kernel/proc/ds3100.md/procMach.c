@@ -44,19 +44,48 @@ ProcGetObjInfo(execPtr, objInfoPtr)
     ProcExecHeader	*execPtr;
     ProcObjInfo		*objInfoPtr;
 {
-    if (execPtr->fileHeader.magic != PROC_OBJ_MAGIC ||
-        execPtr->aoutHeader.magic != PROC_ZMAGIC) {
+    if (execPtr->fileHeader.magic != PROC_OBJ_MAGIC) {
 	return(PROC_BAD_AOUT_FORMAT);
     }
-    objInfoPtr->codeLoadAddr = execPtr->aoutHeader.codeStart;
-    objInfoPtr->codeFileOffset = 0;
-    objInfoPtr->codeSize = execPtr->aoutHeader.codeSize;
-    objInfoPtr->heapLoadAddr = execPtr->aoutHeader.heapStart;
-    objInfoPtr->heapFileOffset = execPtr->aoutHeader.codeSize;
-    objInfoPtr->heapSize = execPtr->aoutHeader.heapSize;
-    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;
-    objInfoPtr->bssSize = execPtr->aoutHeader.bssSize;
-    objInfoPtr->entry = execPtr->aoutHeader.entry;
-
+    switch (execPtr->aoutHeader.magic) {
+	case PROC_ZMAGIC:
+	    objInfoPtr->codeLoadAddr = execPtr->aoutHeader.codeStart;
+	    objInfoPtr->codeFileOffset = 0;
+	    objInfoPtr->codeSize = execPtr->aoutHeader.codeSize;
+	    objInfoPtr->heapLoadAddr = execPtr->aoutHeader.heapStart;
+	    objInfoPtr->heapFileOffset = execPtr->aoutHeader.codeSize;
+	    objInfoPtr->heapSize = execPtr->aoutHeader.heapSize;
+	    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;
+	    objInfoPtr->bssSize = execPtr->aoutHeader.bssSize;
+	    objInfoPtr->entry = execPtr->aoutHeader.entry;
+	    break;
+	case PROC_OMAGIC:
+	    if (execPtr->aoutHeader.codeStart+execPtr->aoutHeader.codeSize !=
+		    execPtr->aoutHeader.heapStart) {
+		printf("OMAGIC output file must have data segment %s\n",
+			"immediately following text segment.");
+		return(PROC_BAD_AOUT_FORMAT);
+	    }
+	    if (execPtr->aoutHeader.codeStart <= (Address)DEFAULT_TEXT) {
+		printf("OMAGIC text segment is going to collide with %s\n",
+			"header segment.");
+		return(PROC_BAD_AOUT_FORMAT);
+	    }
+	    objInfoPtr->codeLoadAddr = (Address)DEFAULT_TEXT;
+	    objInfoPtr->codeFileOffset = 0;
+	    objInfoPtr->codeSize = 8192;
+	    objInfoPtr->heapLoadAddr = execPtr->aoutHeader.codeStart;
+	    objInfoPtr->heapFileOffset = (sizeof(ProcExecHeader) +
+		execPtr->fileHeader.numSections * sizeof(ProcSectionHeader) +
+		15) & ~15;
+	    objInfoPtr->heapSize = execPtr->aoutHeader.codeSize +
+		execPtr->aoutHeader.heapSize;
+	    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;
+	    objInfoPtr->bssSize = execPtr->aoutHeader.bssSize;
+	    objInfoPtr->entry = execPtr->aoutHeader.entry;
+	    break;
+	default:
+	    return(PROC_BAD_AOUT_FORMAT);
+    }
     return(SUCCESS);
 }
