@@ -16,7 +16,12 @@
  * machTypes.
  */
 
+#ifdef KERNEL
 #include "machTypes.h"
+#else
+#include <kernel/machTypes.h>
+#endif
+
 #ifndef _SIGTYPES
 #define _SIGTYPES
 
