@@ -185,7 +185,7 @@ void	SetVal();
  * on the current sun4 compiler/preprocessor set up.  This will change when
  * it's handled correctly.
  */
-#ifndef sun4
+#if !defined(sun4) && !defined(mips)
 #define SETVAR(var, val) SetVal(#var, val, (int *)&(var))
 #else
 #define	SETVAR(var, val) SetVal("var val", val, (int *)&(var))
