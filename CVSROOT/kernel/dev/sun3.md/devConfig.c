@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 #include "devSCSI.h"
 #include "devXylogics.h"
+#include "devSBC.h"
 
 /*
  * The controller configuration table.
@@ -32,6 +33,8 @@ DevConfigController devCntrlr[] = {
 /*  { "SCSI", 0x84000, DEV_MULTIBUS,	1, Dev_SCSIInitController, 0, 0}, */
     { "SCSI", 0x200000, DEV_VME_D16A24, 0, Dev_SCSIInitController, 64,
 					   Dev_SCSIIntrStub},
+    { "SBC", 0x200000, DEV_VME_D16A24, 0, Dev_SBCInitController, 64,
+					   Dev_SBCIntrStub},
     { "Xylogics", 0xee40, DEV_VME_D16A16,	 0, Dev_XylogicsInitController,
 						72, Dev_XylogicsIntrStub},
     { "Xylogics", 0xee48, DEV_VME_D16A16,	 1, Dev_XylogicsInitController,
@@ -58,6 +61,9 @@ DevConfigDevice devDevice[] = {
     { 0, 3, DEV_SCSI_WORM, Dev_SCSIInitDevice},
     { 0, 4, DEV_SCSI_TAPE, Dev_SCSIInitDevice},
     { 0, 5, DEV_SCSI_WORM, Dev_SCSIInitDevice},
+
+    { 0, 0, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 0-7 */
+    { 0, 1, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 8-13 */
 
 /*  { 1, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 8-15 */
 /*  { 1, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 16-23 */
