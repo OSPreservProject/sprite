@@ -153,7 +153,7 @@ Rpc_Server()
 	 */
 #ifndef NO_RECOVERY
 	Recov_HostAlive(srvPtr->clientID, rpcHdrPtr->bootID,
-			FALSE, rpcHdrPtr->flags & RPC_NOT_ACTIVE);
+			FALSE, (Boolean) (rpcHdrPtr->flags & RPC_NOT_ACTIVE));
 #endif
 	/*
 	 * Before branching to the service procedure we check that the

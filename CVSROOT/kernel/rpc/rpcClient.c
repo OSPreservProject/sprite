@@ -110,7 +110,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     register RpcClientChannel *chanPtr;	/* The channel for the RPC */
     Rpc_Storage *storagePtr;	/* Pointers to caller's buffers */
     int command;		/* Only used to filter trace records */
-    int *srvBootIDPtr;		/* Return, boot time stamp of server. */
+    unsigned	int *srvBootIDPtr;	/* Return, boot time stamp of server. */
     int *notActivePtr;		/* Return, RPC_NOT_ACTIVE flag from server.
 				 * These last two return parameters are later
 				 * passed to the recovery module. */
