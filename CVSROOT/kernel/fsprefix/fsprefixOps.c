@@ -244,7 +244,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
 			 * used to get to the server and try again in case
 			 * the prefix is served elsewhere.
 			 */
-			FsPrefixHandleClose(prefixPtr);
+			FsPrefixHandleClose(prefixPtr, FS_IMPORTED_PREFIX);
 			status = FS_LOOKUP_REDIRECT;
 		    }
 		    break;
@@ -376,10 +376,10 @@ retry:
 		 * prefix used to get to the server and try again.
 		 */
 		if ((srcNameError) && (srcName[0] == '/')) {
-		    FsPrefixHandleClose(srcPrefixPtr);
+		    FsPrefixHandleClose(srcPrefixPtr, FS_IMPORTED_PREFIX);
 		    status = FS_LOOKUP_REDIRECT;
 		} else if ((!srcNameError) && (dstName[0] == '/')) {
-		    FsPrefixHandleClose(dstPrefixPtr);
+		    FsPrefixHandleClose(dstPrefixPtr, FS_IMPORTED_PREFIX);
 		    status = FS_LOOKUP_REDIRECT;
 		}
 	    }
@@ -485,7 +485,7 @@ getAttr:
 		    if (status2 == SUCCESS) {
 			goto getAttr;
 		    } else if (dstName[0] == '/') {
-			FsPrefixHandleClose(dstPrefixPtr);
+			FsPrefixHandleClose(dstPrefixPtr, FS_IMPORTED_PREFIX);
 			status = FS_LOOKUP_REDIRECT;
 			srcNameError = FALSE;
 		    }
@@ -1142,35 +1142,93 @@ Fs_PrefixClear(prefix, deleteFlag)
 				 * information is cleared. */
 {
     register FsPrefix *prefixPtr;
+    FsPrefix *targetPrefixPtr = (FsPrefix *)NIL;
+    Fs_FileID prefixID;
+    Boolean okToNuke = TRUE;
 
     LOCK_MONITOR;
 
+    /*
+     * First pass to scan the table for the prefix and get the
+     * flags and fileID associated with the prefix table entry.
+     */
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
 	if (strcmp(prefixPtr->prefix, prefix) == 0) {
-	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
-		FsPrefixHandleCloseInt(prefixPtr);
-	    }
-	    prefixPtr->serverID = RPC_BROADCAST_SERVER_ID;
-	    prefixPtr->flags &= ~FS_EXPORTED_PREFIX;
-	    if (deleteFlag && prefixPtr->prefixLength != 1) {
-		free((Address) prefixPtr->prefix);
-		while (! List_IsEmpty(&prefixPtr->exportList)) {
-		    register FsPrefixExport *exportPtr;
-		    exportPtr =
-			(FsPrefixExport *)List_First(&prefixPtr->exportList);
-		    List_Remove((List_Links *)exportPtr);
-		    free((Address)exportPtr);
+	    if (prefixPtr->flags & (FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX)) {
+		/*
+		 * We export the prefix and have to be careful about
+		 * deleting the prefix table entry for it.  Only if
+		 * there is another prefix corresponding to the same
+		 * domain can we delete this one.  This situation occurs
+		 * during bootstrap where "/bootTmp" is aliased to "/"
+		 * but eventually we want to nuke the local "/" so
+		 * we can hook up to the network "/".
+		 */
+		if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+		    prefixID = prefixPtr->hdrPtr->fileID;
+		    okToNuke = FALSE;
 		}
-
-		List_Remove((List_Links *)prefixPtr);
-		free((Address) prefixPtr);
 	    }
-	    UNLOCK_MONITOR;
-	    return(SUCCESS);
+	    targetPrefixPtr = prefixPtr;
+	    break;
 	}
     }
-    UNLOCK_MONITOR;
-    return(FAILURE);
+    /*
+     * Second pass to look for an alias prefix.
+     */
+    if (!okToNuke) {
+	LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	    if (strcmp(prefixPtr->prefix, prefix) != 0) {
+		if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+		    register FsHandleHeader *hdrPtr = prefixPtr->hdrPtr;
+		    if (prefixID.type != hdrPtr->fileID.type ||
+			prefixID.serverID != hdrPtr->fileID.serverID ||
+			prefixID.major != hdrPtr->fileID.major ||
+			prefixID.minor != hdrPtr->fileID.minor) {
+			continue;
+		    }
+		    /*
+		     * Found an alias.
+		     */
+		    goto nukeIt;
+		}
+	    }
+	}
+	/*
+	 * No other alias
+	 */
+	UNLOCK_MONITOR;
+	return(FAILURE);
+    }
+nukeIt:
+    if (targetPrefixPtr == (FsPrefix *)NIL) {
+	/*
+	 * No prefix match.
+	 */
+	UNLOCK_MONITOR;
+	return(FAILURE);
+    } else {
+	if (targetPrefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+	    FsPrefixHandleCloseInt(targetPrefixPtr, FS_ANY_PREFIX);
+	}
+	targetPrefixPtr->serverID = RPC_BROADCAST_SERVER_ID;
+	targetPrefixPtr->flags &= ~(FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX);
+	if (deleteFlag && targetPrefixPtr->prefixLength != 1) {
+	    free((Address) targetPrefixPtr->prefix);
+	    while (! List_IsEmpty(&targetPrefixPtr->exportList)) {
+		register FsPrefixExport *exportPtr;
+		exportPtr =
+		    (FsPrefixExport *)List_First(&targetPrefixPtr->exportList);
+		List_Remove((List_Links *)exportPtr);
+		free((Address)exportPtr);
+	    }
+    
+	    List_Remove((List_Links *)targetPrefixPtr);
+	    free((Address) targetPrefixPtr);
+	}
+	UNLOCK_MONITOR;
+	return(SUCCESS);
+    }
 }
 
 /*
@@ -1179,7 +1237,9 @@ Fs_PrefixClear(prefix, deleteFlag)
  * FsPrefixHandleClose --
  *
  *	Close the handle associated with a prefix.  This is called when
- *	cleaning up a prefix table entry.
+ *	cleaning up a prefix table entry.  The flags argument indicates
+ *	what sort of prefix we export to nuke, and this is used for
+ *	consistency checking.
  *
  * Results:
  *	None.
@@ -1190,14 +1250,15 @@ Fs_PrefixClear(prefix, deleteFlag)
  *----------------------------------------------------------------------
  */
 void
-FsPrefixHandleClose(prefixPtr)
+FsPrefixHandleClose(prefixPtr, flags)
     FsPrefix *prefixPtr;
+    int flags;			/* FS_ANY_PREFIX, FS_EXPORTED_PREFIX */
 {
     register FsHandleHeader *hdrPtr;
     Fs_Stream dummy;
 
     LOCK_MONITOR;
-    FsPrefixHandleCloseInt(prefixPtr);
+    FsPrefixHandleCloseInt(prefixPtr, flags);
     UNLOCK_MONITOR;
 }
 
@@ -1220,13 +1281,25 @@ FsPrefixHandleClose(prefixPtr)
  *----------------------------------------------------------------------
  */
 void
-FsPrefixHandleCloseInt(prefixPtr)
+FsPrefixHandleCloseInt(prefixPtr, flags)
     FsPrefix *prefixPtr;
+    int flags;
 {
     register FsHandleHeader *hdrPtr;
     Fs_Stream dummy;
 
     if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+	if ((flags & FS_IMPORTED_PREFIX) &&
+		(prefixPtr->flags & (FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX))) {
+	    printf("FsPrefixHandleClose: \"%s\" is exported (mounted)\n",
+		    prefixPtr->prefix);
+	    return;
+	} else if ((flags & FS_EXPORTED_PREFIX) &&
+		(prefixPtr->flags & (FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX) == 0)){
+	    printf("FsPrefixHandleClose: \"%s\" is not exported (mounted)\n",
+		    prefixPtr->prefix);
+	    return;
+	}
 	hdrPtr = prefixPtr->hdrPtr;
 	prefixPtr->hdrPtr = (FsHandleHeader *)NIL;
 	FsHandleLock(hdrPtr);
