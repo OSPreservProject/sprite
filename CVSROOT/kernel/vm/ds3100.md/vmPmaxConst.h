@@ -47,6 +47,11 @@
 #define VMMACH_TLB_INDEX_SHIFT		8
 
 /*
+ * The cache block size.
+ */
+#define VMMACH_CACHE_BLOCK_SIZE		32
+
+/*
  * Hardware dependent constants for pages and segments:
  *
  * VMMACH_CLUSTER_SIZE		The number of hardware pages per virtual page.
