@@ -115,11 +115,11 @@ Sync_Init()
  *----------------------------------------------------------------------
  */
 
-#ifndef spur
 ReturnStatus
 Sync_GetLock(lockPtr)
    Sync_Lock *lockPtr;
 {
+    Sync_LockRegister(lockPtr);
     if (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	Sync_SlowLock(lockPtr); 
     } else {
@@ -133,7 +133,6 @@ Sync_GetLock(lockPtr)
 #endif
     }
 }
-#endif
 
 
 /*
