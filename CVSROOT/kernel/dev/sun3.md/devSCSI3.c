@@ -30,7 +30,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "scsiHBA.h"
 #include "scsiDevice.h"
 #include "sync.h"
+#include "stdio.h"
 #include "stdlib.h"
+#include "string.h"
+#include "bstring.h"
 
 #include "dbg.h"
 
@@ -575,16 +578,25 @@ static int numSCSI3Controllers = 0;
  * Forward declarations.  
  */
 
-static void		Reset();
-static ReturnStatus	SendCommand();
-static ReturnStatus	GetStatusByte();
-static ReturnStatus	WaitPhase();
-static ReturnStatus	WaitReg();
-static ReturnStatus GetByte();
-static ReturnStatus PutByte();
-static void 	PrintRegs();
-static void 	StartDMA();
-
+static Boolean          ProbeOnBoard _ARGS_ ((int address));
+static void             Reset _ARGS_ ((Controller *ctrlPtr));
+static ReturnStatus     SendCommand _ARGS_ ((Device *devPtr,
+                                             ScsiCmd *scsiCmdPtr));
+static ReturnStatus     GetStatusByte _ARGS_ ((Controller *ctrlPtr,
+                                               unsigned char *statusBytePtr));
+static ReturnStatus     WaitPhase _ARGS_ ((Controller *ctrlPtr,
+                                           unsigned int phase, Boolean reset));
+static ReturnStatus     WaitReg _ARGS_ ((Controller *ctrlPtr,
+                                         Address thisRegPtr, RegType type,
+					 unsigned int conditions,
+					 Boolean reset, BitSelection bitSel));
+static ReturnStatus     GetByte _ARGS_ ((Controller *ctrlPtr,
+                                         unsigned int phase, char *charPtr));
+#ifdef reselection
+static ReturnStatus     PutByte _ARGS_ ((Controller *ctrlPtr, char *dataPtr));
+#endif
+static void             PrintRegs _ARGS_((volatile CtrlRegs *regsPtr));
+static void             StartDMA _ARGS_ ((Controller *ctrlPtr));
 
 
 /*
@@ -602,8 +614,8 @@ static void 	StartDMA();
  *
  *----------------------------------------------------------------------
  */
-Boolean
-static ProbeOnBoard(address)
+static Boolean
+ProbeOnBoard(address)
     int address;			/* Alledged controller address */
 {
     ReturnStatus	status;
@@ -1369,6 +1381,7 @@ WaitReg(ctrlPtr, thisRegPtr, type, conditions, reset, bitSel)
 	    }
 	    default: {
 		panic("SCSI3: GetByte: unknown type.\n");
+		thisReg = 0;
 		break;
 	    }
 	}
@@ -1482,7 +1495,7 @@ WaitReg(ctrlPtr, thisRegPtr, type, conditions, reset, bitSel)
 static ReturnStatus
 WaitPhase(ctrlPtr, phase, reset)
     Controller *ctrlPtr;	/* Controller state */
-    unsigned char phase;	/* phase to check */
+    unsigned int phase;     	/* phase to check */
     Boolean reset;		/* whether to reset the bus on error */
 {
     volatile register CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
@@ -1531,6 +1544,7 @@ WaitPhase(ctrlPtr, phase, reset)
     return(status);
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1549,6 +1563,7 @@ WaitPhase(ctrlPtr, phase, reset)
  *----------------------------------------------------------------------
  */
 
+#ifdef reselection
 static ReturnStatus
 PutByte(ctrlPtr, dataPtr)
     Controller *ctrlPtr;
@@ -1596,6 +1611,7 @@ PutByte(ctrlPtr, dataPtr)
     regsPtr->sbc.write.initCmd = 0;
     return(SUCCESS);
 }
+#endif
 
 
 /*
@@ -1619,7 +1635,7 @@ PutByte(ctrlPtr, dataPtr)
 static ReturnStatus
 GetByte(ctrlPtr, phase, charPtr)
     Controller *ctrlPtr;
-    unsigned short phase;
+    unsigned int phase;
     char *charPtr;    
 {
     register volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
@@ -1720,6 +1736,7 @@ PrintRegs(regsPtr)
 static int
 SpecialSenseProc()
 {
+    return 0;
 }
 
 
@@ -1928,7 +1945,7 @@ DevSCSI3Intr(clientDataArg)
     ReturnStatus status;
     int byteCount;
     int amountToDma;
-    int offset;
+    char *offset;
     register int i;
     unsigned char phase;
     unsigned char foo;
@@ -1954,8 +1971,10 @@ DevSCSI3Intr(clientDataArg)
     MASTER_LOCK(&(ctrlPtr->mutex));
     if (ctrlPtr->scsiCmdPtr != (ScsiCmd *) NIL) {
 	residual = ctrlPtr->scsiCmdPtr->bufferLen;
+    } else {
+	residual = 0;
     }
-   /*
+    /*
      * First, disable DMA or else we'll get register conflicts.
      */
     if (!ctrlPtr->onBoard) {
@@ -2132,13 +2151,10 @@ DevSCSI3Intr(clientDataArg)
 		    offset = ctrlPtr->scsiCmdPtr->buffer +
 				amountToDma - byteCount;
 		    if ((amountToDma - byteCount) & 1) {
-			*(char *)(offset - 1) =
-			    (regsPtr->fifoData & 0xff00) >> 8;
+			offset[-1] = (regsPtr->fifoData & 0xff00) >> 8;
 		    } else if (((regsPtr->udcRdata*2) - byteCount) == 2) {
-			*(char *)(offset - 2) =
-				(regsPtr->fifoData & 0xff00) >> 8;
-			*(char *)(offset - 1) =
-				(regsPtr->fifoData & 0xff);
+			offset[-2] = (regsPtr->fifoData & 0xff00) >> 8;
+			offset[-1] = (regsPtr->fifoData & 0xff);
 		    }
 		}
 	    }

@@ -27,9 +27,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "scsi.h"
 #include "scsiHBA.h"
 #include "scsiDevice.h"
-#include "sync.h"
-#include "stdlib.h"
 #include "vmMach.h"
+#include "sync.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "bstring.h"
 
 /*
  * WARNING -- WARNING --- WARNING --- WARNING
@@ -1759,7 +1762,9 @@ DevJaguarInit(ctrlLocPtr)
 ScsiDevice   *
 DevJaguarAttachDevice(devicePtr, insertProc)
     Fs_Device	*devicePtr;	 /* Device to attach. */
-    void	(*insertProc)(); /* Queue insert procedure. */
+    void (*insertProc) _ARGS_ ((List_Links *elementPtr,
+                                List_Links *elementListHdrPtr));
+                                 /* Queue insert procedure. */
 {
     Device *devPtr;
     Controller	*ctrlPtr;

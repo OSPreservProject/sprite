@@ -109,11 +109,16 @@ extern volatile DevTimerChip *dev_TimerAddr;
 #ifdef KERNEL
 extern int devTimerJunkVar;    /* unused variable */
 
-extern void Dev_TimerReadReg();
-extern ClientData Dev_TimerProbe();
-extern ReturnStatus Dev_TimerOpen();
-extern ReturnStatus Dev_TimerRead();
-extern ReturnStatus Dev_TimerIOControl();
+extern ClientData Dev_TimerProbe _ARGS_((DevConfigController *ctrlLocPtr));
+extern ReturnStatus Dev_TimerIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_TimerRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern void Dev_TimerReadReg _ARGS_((register unsigned char *cntrs,
+    register int cnt));
+extern ReturnStatus Dev_TimerOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+    Fs_NotifyToken notifyToken, int *flagsPtr));
+
 #endif
 
 #endif /* _devTMR */

@@ -33,7 +33,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "scsiDevice.h"
 #include "devMultibus.h"
 #include "sync.h"
+#include "stdio.h"
 #include "stdlib.h"
+#include "bstring.h"
+#include "string.h"
 
 /*
  * The device registers for the original Sun SCSI Host Adaptor.
@@ -215,8 +218,11 @@ static int numSCSI0Controllers = 0;
 
 int devSCSI0Debug = 0;
 
-static void RequestDone();
-static ReturnStatus Wait();
+static void RequestDone _ARGS_ ((Device *devPtr, ScsiCmd *scsiCmdPtr,
+    ReturnStatus status, unsigned int scsiStatusByte, int amountTransferred));
+static ReturnStatus Wait _ARGS_ ((Controller *ctrlPtr,
+    int condition, Boolean reset));
+static int SpecialSenseProc _ARGS_ ((void));
 
 
 /*
@@ -519,7 +525,7 @@ Wait(ctrlPtr, condition, reset)
     volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
     register int i;
     ReturnStatus status = DEV_TIMEOUT;
-    register int control;
+    register int control = 0;
 
     for (i=0 ; i < SCSI_WAIT_LENGTH ; i++) {
 	control = regsPtr->control;
@@ -636,6 +642,7 @@ again:
 static int
 SpecialSenseProc()
 {
+    return 0;
 }
 
 
@@ -663,7 +670,7 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
     Device	*devPtr;	/* Device for request. */
     ScsiCmd	*scsiCmdPtr;	/* Request that finished. */
     ReturnStatus status;	/* Status returned. */
-    unsigned char scsiStatusByte;	/* SCSI Status Byte. */
+    unsigned int scsiStatusByte;	/* SCSI Status Byte. */
     int		amountTransferred; /* Amount transferred by command. */
 {
     ReturnStatus	senseStatus;
@@ -758,16 +765,17 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
  *
  *----------------------------------------------------------------------
  */
+/* ARGSUSED */ 
 Boolean
-DevSCSI0Intr(clientDataArg)
+DevSCSI0Intr(clientDataArg, newRequestPtr)
     ClientData	clientDataArg;
+    List_Links *newRequestPtr;
 {
     register Controller *ctrlPtr;
     Device	*devPtr;
     volatile CtrlRegs *regsPtr;
     int		residual;
     ReturnStatus	status;
-    List_Links	*newRequestPtr;
     unsigned char statusByte;
     ClientData	clientData;
 
@@ -783,6 +791,7 @@ DevSCSI0Intr(clientDataArg)
 		 * happen while reading a large tape block.  Consider
 		 * the I/O complete with no residual bytes
 		 * un-transferred.
+		 */
 		residual = 0;
 	    } else {
 		/*
@@ -965,7 +974,9 @@ DevSCSI0Init(ctrlLocPtr)
 ScsiDevice   *
 DevSCSI0AttachDevice(devicePtr, insertProc)
     Fs_Device	*devicePtr;	 /* Device to attach. */
-    void	(*insertProc)(); /* Queue insert procedure. */
+    void	(*insertProc) _ARGS_ ((List_Links *elementPtr,
+                                       List_Links *elementListHdrPtr));
+                                 /* Queue insert procedure. */
 {
     Device *devPtr;
     Controller	*ctrlPtr;

@@ -33,6 +33,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "tty.h"
 #include "ttyAttach.h"
 #include "z8530.h"
+#include "console.h"
+#include "user/bstring.h"
 
 /*
  * For synchronization, use devTty's monitor lock (this module is
@@ -97,10 +99,11 @@ static DevZ8530 *keyboardPtr;		/* Information about the keyboard's
  * Forward declarations to procedures declared later in this file:
  */
 
-static void	MouseDelayedClose();
-static int	MouseOutputProc();
-static void	KbdInputProc();
-static void	MouseInputProc();
+static void MouseDelayedClose _ARGS_((void));
+static void MouseInputProc _ARGS_((ClientData dummy, int value));
+static void KbdInputProc _ARGS_((ClientData dummy, int value));
+static int MouseOutputProc _ARGS_((void));
+
 
 /*
  *----------------------------------------------------------------------
@@ -147,7 +150,7 @@ DevMouseInit()
 
 /* ARGSUSED */
 ENTRY ReturnStatus
-DevMouseOpen(devicePtr, useFlags, notifyToken)
+DevMouseOpen(devicePtr, useFlags, notifyToken, flagsPtr)
     Fs_Device *devicePtr;	/* Information about device (e.g. type
 				 * and unit number). */
     int useFlags;		/* Flags for the stream being opened:
@@ -155,6 +158,7 @@ DevMouseOpen(devicePtr, useFlags, notifyToken)
 				 * FS_WRITE. */
     Fs_NotifyToken notifyToken;	/* Used for Fs call-back to notify waiting
 				 * processes that the terminal is ready. */
+    int *flagsPtr;	        /* OUT: Device IO flags */
 {
     if (devicePtr->unit != 0) {
 	return Compat_MapToSprite(ENXIO);
