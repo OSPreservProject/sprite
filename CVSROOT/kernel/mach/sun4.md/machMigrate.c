@@ -75,9 +75,18 @@ Mach_EncapState(procPtr, hostID, infoPtr, buffer)
 
     if (machStatePtr->fpuStatus & MACH_FPU_ACTIVE) {
 	if (proc_MigDebugLevel > 2) {
-	    printf("Mach_EncapState: FPU was active, dumping state.\n");
+	    printf("Mach_EncapState: FPU was active (fsr %x), dumping state.\n",
+		   procPtr->machStatePtr->fpuStatus);
 	}
 	MachFPUDumpState(machStatePtr->trapRegs);
+	if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
+	    procPtr->machStatePtr->fpuStatus |= (machStatePtr->trapRegs->fsr &
+						 MACH_FSR_TRAP_TYPE_MASK);
+	}
+	if (proc_MigDebugLevel > 2) {
+	    printf("Mach_EncapState: FPU fsr now %x.\n",
+		   procPtr->machStatePtr->fpuStatus);
+	}
     }
     bcopy((Address) machStatePtr, (Address) &migPtr->state,
 	    sizeof (Mach_State));

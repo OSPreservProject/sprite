@@ -158,6 +158,8 @@ Proc_ControlBlock *machFPUSaveProcPtr;	/* Set to the Proc_ControlBlock of the
 					 * state for in Mach_Context switch. */
 int		machFPUSyncInst();     /* PC of stfsr instruction in 
 					* context switch. */
+int		machFPUDumpSyncInst(); /* PC of stfsr instruction in 
+					* MachDumpFPUState. */
 /*
  * Pointer to the state structure for the current process.
  */
@@ -1469,12 +1471,13 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
     Proc_ControlBlock	*procPtr;
 
     /*
-     * Find the current process.  If we took a MACH_FP_EXCEP at machFPUSyncInst
-     * we used the process saved in machFPUSaveProcPtr.
+     * Find the current process.  If we took a MACH_FP_EXCEP at one of the
+     * marked FPU sync instructions, then we use the process saved
+     * in machFPUSaveProcPtr.
      */
     procPtr = ((trapType == MACH_FP_EXCEP) && 
-	       (pcValue == (Address) &machFPUSyncInst)) ? machFPUSaveProcPtr :
-							  Proc_GetCurrentProc();
+	       (pcValue == (Address) &machFPUSyncInst)) ?
+		   machFPUSaveProcPtr : Proc_GetCurrentProc();
     if ((procPtr == (Proc_ControlBlock *) NIL)) {
 	    printf("%s: pc = 0x%x, trapType = %d\n",
 		"MachHandleWeirdoInstruction", pcValue, trapType);
@@ -1504,22 +1507,30 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 	case MACH_FP_EXCEP: {
 	    unsigned int fsr;
 	    /*
-	     * We got a FP execption will running in kernel mode. This is
-	     * exception occured at machFPUSyncInst we clear the
+	     * We got a FP execption while running in kernel mode. If this
+	     * exception occured at a known location we clear the
 	     * exception and mark the Mach_State.
 	     */
+	    if (pcValue == (Address) &machFPUDumpSyncInst) {
+		/*
+		 * Already doing a MachFPUDumpState.  Whoever's doing the
+		 * dump should check the pending flag and set fpuStatus if
+		 * it's set.
+		 */
+		procPtr->machStatePtr->fpuStatus |=
+		    MACH_FPU_EXCEPTION_PENDING;
+		return;
+	    }
 	    if (pcValue == (Address) &machFPUSyncInst) {
 		  MachFPUDumpState(procPtr->machStatePtr->trapRegs);
-		  fsr = procPtr->machStatePtr->trapRegs->fsr;
 		  procPtr->machStatePtr->fpuStatus |= 
-				(fsr & MACH_FSR_TRAP_TYPE_MASK) |
-					     MACH_FPU_EXCEPTION_PENDING;
+		      (fsr & MACH_FSR_TRAP_TYPE_MASK) |
+			  MACH_FPU_EXCEPTION_PENDING;
 		  procPtr->specialHandling = 1;
 		  return;
-	    } else {
-		   printf("%s. ",
+	    } 
+	    printf("%s. ",
 	"MachHandleWeirdoInstruction: FPU exception from kernel process.");
-	    }
 	    break;
 	}
 	case MACH_FP_DISABLED:
@@ -1565,8 +1576,8 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 		 printf(
 "FPU exception from process without MACH_FPU_ACTIVE, fsr = 0x%x\n",fsr);
 	 }
-	 procPtr->machStatePtr->fpuStatus |= (fsr & MACH_FSR_TRAP_TYPE_MASK) |
-					    MACH_FPU_EXCEPTION_PENDING;
+ 	 procPtr->machStatePtr->fpuStatus |= (fsr & MACH_FSR_TRAP_TYPE_MASK) |
+ 					    MACH_FPU_EXCEPTION_PENDING;
 	 procPtr->specialHandling = 1;
 	 break;
 	}

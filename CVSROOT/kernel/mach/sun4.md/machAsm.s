@@ -1284,6 +1284,28 @@ _MachFPUDumpState:
 	set     MACH_FSR_QUEUE_NOT_EMPTY, %o3
 	add	%o0, MACH_FPU_QUEUE_OFFSET, %o4
 	mov	0, %o5
+
+	/*
+	 * We have to do the same trick here as in Mach_ContextSwitch,
+	 * flagging the instruction that waits for the FPU to finish
+	 * and checking for exceptions.  We have a different label this
+	 * time, of course.  The trap handler knows that if the trap
+	 * occurred at this label then we were already dumping the state
+	 * and it shouldn't call us recursively.
+	 * Note that the fsr is read again in the loop, and the purpose
+	 * of this extra read is to have a separate label for the first
+	 * read -- traps on subsequent reads of fsr would be an error.
+	 */
+.global _machFPUDumpSyncInst
+_machFPUDumpSyncInst: 
+	st	%fsr, [%o0 + MACH_FPU_FSR_OFFSET]
+        /*
+	 * The following symbol is include to make the following code 
+	 * be attributed to the routine MachFPUDumpState2 and not
+	 * _machFPUDumpSyncInst.
+	 */
+.globl	MachFPUDumpState2
+MachFPUDumpState2:
 	/*
 	 * While MACH_FSR_QUEUE_NOT_EMPTY set in the FSR, save
 	 * the entry in the %fq register.
