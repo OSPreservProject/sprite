@@ -1331,7 +1331,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 		procPtr->processID);
 	usp = (Address)statePtr->userState.userStackPtr -
 		sizeof(UnixSignalStack);
-	if (Compat_SpriteSigToUnix(sigStackPtr->sigStack.sigNum, &unixSignal)
+	if (Compat_SpriteSignalToUnix(sigStackPtr->sigStack.sigNum, &unixSignal)
 		!= SUCCESS) {
 	    printf("Signal %d invalid in SetupSigHandler\n",
 		    sigStackPtr->sigStack.sigNum);
@@ -1345,10 +1345,12 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 	unixSigStack.sigContext.sc_mask = 0;
 	unixSigStack.sigContext.sc_sp = (int) statePtr->userState.userStackPtr;
 	unixSigStack.sigContext.sc_pc = (int) pc;
-	unixSigStack.sigContext.sc_ps = 0;
-	printf("sp = %x, pc = %x, len = %d to %x\n",
+	unixSigStack.sigContext.sc_ps =
+		(int) statePtr->userState.excStackPtr->statusReg;
+	printf("sp = %x, pc = %x, ps = %x, len = %d to %x\n",
 		statePtr->userState.userStackPtr, pc,
-		sizeof(UnixSignalStack), (Address)usp);
+		unixSigStack.sigContext.sc_ps, sizeof(UnixSignalStack),
+		(Address)usp);
 	/*
 	 * Copy the stack out to user space.
 	 */
@@ -1368,7 +1370,9 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 	    (Sig_Context *)(usp + (unsigned int)(&sigStackPtr->sigContext) -
 				  (unsigned int)sigStackPtr);
 	/*
-	 * Instruction = TRAP 2 ; TRAP 2 (?)
+	 * We put the instruction TRAP 2 in trapInst, and then set
+	 * the return address to point to that instruction.
+	 * TRAP 2 does a ReturnFromSigHandler.
 	 */
 	sigStackPtr->sigContext.machContext.trapInst = 0x4e424e42;
 	sigStackPtr->retAddr =
@@ -1717,12 +1721,12 @@ Mach_SigreturnStub()
     Proc_ControlBlock *procPtr = Proc_GetActualProc();
     Mach_ExcStack *excStackPtr;
     int excStackSize;
-    int bufVals[4];
+    int bufVals[5];
     int *jmpBuf;
 
     Vm_CopyIn(sizeof(int), procPtr->machStatePtr->userState.userStackPtr,
 	    (Address)&jmpBuf);
-    if (Vm_CopyIn(4*sizeof(int), (Address)jmpBuf, (Address)bufVals) !=
+    if (Vm_CopyIn(5*sizeof(int), (Address)jmpBuf, (Address)bufVals) !=
 	    SUCCESS) {
 	printf("JmpBuf copy in failure\n");
 	return -1;
@@ -1732,6 +1736,10 @@ Mach_SigreturnStub()
     }
     procPtr->machStatePtr->userState.userStackPtr = (Address)bufVals[2];
     procPtr->specialHandling = 1;
+    printf("Mach_SigreturnStub(%x from %x): %x, %x, %x, %x, %x\n", jmpBuf,
+	    procPtr->machStatePtr->userState.userStackPtr,
+	    bufVals[0], bufVals[1],
+	    bufVals[2], bufVals[3], bufVals[4]);
 
     /*
      * We need to make a short stack to allow the process to start executing.
@@ -1745,7 +1753,7 @@ Mach_SigreturnStub()
     excStackPtr = (Mach_ExcStack *) ((Address)procPtr->machStatePtr
 	    ->userState.excStackPtr + excStackSize - MACH_SHORT_SIZE);
     procPtr->machStatePtr->userState.trapRegs[SP] = (int)excStackPtr;
-    excStackPtr->statusReg = 0;
+    excStackPtr->statusReg = bufVals[4]&0xf;
     excStackPtr->vor.stackFormat = MACH_SHORT;
     excStackPtr->pc = (int)bufVals[3];
     return procPtr->machStatePtr->userState.trapRegs[D0];
