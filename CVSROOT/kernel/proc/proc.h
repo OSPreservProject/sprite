@@ -435,7 +435,11 @@ typedef struct Proc_ControlBlock {
      * a world recompile.
      */
     Address	remoteExecBuffer;	 /* Buffer to store info for remote
-					  * exec prior to migration */
+					  * exec prior to migration. */
+    Address	migCmdBuffer;		 /* Buffer to store multi-part
+					  * migration command. */
+    int		migCmdBufSize;		 /* Size of migCmdBuffer, for
+					  * sanity checks. */
 
 } Proc_ControlBlock;
 
