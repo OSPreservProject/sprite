@@ -72,23 +72,13 @@ writeProc(stream, flush)
 {
     int		count;
     int		written;
-    Boolean	status;
 
 
     count = stream->lastAccess + 1 - stream->buffer;
 
     if (count > 0) { 
-	status = Dev_SyslogWrite((Fs_Device *) NIL, 0, count, 
+	(void)Dev_SyslogWrite((Fs_Device *) NIL, 0, count, 
 				    (char *) stream->buffer, &written);
-#ifdef NOTDEF
-	/*
-	 * What to do here?  This would cause deadlock and probably won't
-	 * succeed anyway!
-	 */
-	if (status != SUCCESS) {
-	    printf("sys printf: Dev_SyslogWrite failed\n");
-	}
-#endif /* NOTDEF */
 	stream->lastAccess = stream->buffer - 1;
 	stream->writeCount = stream->bufSize;
 	bytesWritten += written;
@@ -128,7 +118,7 @@ vprintf(format, args)
 					 * fails, etc.  */
 
     if (recursiveCallP != 0) {
-	return;
+	return 0;
     }
     recursiveCallP = 1;
     MASTER_LOCK(&sysPrintMutex);
