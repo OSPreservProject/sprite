@@ -99,9 +99,61 @@ int fsio_LclToRmtType[FSIO_NUM_STREAM_TYPES] = {
     FSIO_UDP_STREAM,		/* FSIO_UDP_STREAM */
     FSIO_TCP_STREAM,		/* FSIO_TCP_STREAM */
 #endif /* INET */
-
 };
 
+
+/*
+ * This array contains type-specific functions for the recovery test
+ * statistics syscall.
+ */
+extern	int	Fsrmt_FileRecovTestNumCacheBlocks();
+extern	int	Fsrmt_FileRecovTestNumDirtyCacheBlocks();
+Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[FSIO_NUM_STREAM_TYPES] = {
+    /* FSIO_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_LCL_FILE_STREAM */
+    { Fsio_FileRecovTestUseCount, Fsio_FileRecovTestNumCacheBlocks,
+      Fsio_FileRecovTestNumDirtyCacheBlocks },
+    /* FSIO_RMT_FILE_STREAM */
+    { (int (*)()) NIL, Fsrmt_FileRecovTestNumCacheBlocks,
+      Fsrmt_FileRecovTestNumDirtyCacheBlocks},
+    /* FSIO_LCL_DEVICE_STREAM */
+    { Fsio_DeviceRecovTestUseCount, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_RMT_DEVICE_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_LCL_PIPE_STREAM */
+    { Fsio_PipeRecovTestUseCount, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_RMT_PIPE_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_CONTROL_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_SERVER_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_LCL_PSEUDO_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_RMT_PSEUDO_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_PFS_CONTROL_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_PFS_NAMING_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_LCL_PFS_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_RMT_PFS_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_RMT_CONTROL_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_PASSING_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+#ifdef INET
+    /* FSIO_RAW_IP_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_UDP_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    /* FSIO_TCP_STREAM */
+    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+#endif /* INET */
+};
 
 /*
  *----------------------------------------------------------------------

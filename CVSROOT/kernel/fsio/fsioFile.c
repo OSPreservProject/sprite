@@ -1624,3 +1624,74 @@ IncVersionNumber(handlePtr)
     }
     Vm_FileChanged(&handlePtr->segPtr);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_FileRecovTestUseCount --
+ *
+ *	For recovery testing, return the use count on the file's io handle.
+ *
+ * Results:
+ *	Use count.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fsio_FileRecovTestUseCount(handlePtr)
+    Fsio_FileIOHandle	*handlePtr;
+{
+    return handlePtr->use.ref;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_FileRecovTestNumCacheBlocks --
+ *
+ *	For recovery testing, return the number of blocks in the cache
+ *	for this file.
+ *
+ * Results:
+ *	Number of blocks.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fsio_FileRecovTestNumCacheBlocks(handlePtr)
+    Fsio_FileIOHandle	*handlePtr;
+{
+    return handlePtr->cacheInfo.blocksInCache;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_FileRecovTestNumDirtyCacheBlocks --
+ *
+ *	For recovery testing, return the number of dirty blocks in the cache
+ *	for this file.
+ *
+ * Results:
+ *	Number of dirty blocks.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fsio_FileRecovTestNumDirtyCacheBlocks(handlePtr)
+    Fsio_FileIOHandle	*handlePtr;
+{
+    return handlePtr->cacheInfo.numDirtyBlocks;
+}

@@ -68,23 +68,15 @@ typedef struct Fsutil_RecoveryInfo {
 /*
  * Statistics for testing recovery.
  */
-typedef	struct	FsutilTypeStats {
-    int		num;
-    int		refCount;
-} FsutilTypeStats;
-
-typedef	struct	Fsutil_FsRecovStats {
-    int			recovWanted;
-    int			existingHandles;
-    int			numHandles;
-    int			numHandleRefCounts;
-    int			numRead;
-    int			numWrite;
-    int			numExecute;
-    int			numAppend;
-    FsutilTypeStats	typeInfo[FSIO_NUM_STREAM_TYPES];
-} Fsutil_FsRecovStats;
-
+typedef	struct	Fsutil_FsRecovNamedStats {
+    Fs_FileID		fileID;
+    int			mode;
+    int			refCount;
+    int			streamRefCount;
+    int			numBlocks;
+    int			numDirtyBlocks;
+    char		name[50];
+} Fsutil_FsRecovNamedStats;
 
 
 /*

@@ -95,4 +95,10 @@ extern ReturnStatus	Fsrmt_NotifyOfMigration();
 extern void	Fsrmt_InitializeOps();
 extern void	Fsrmt_Bin();
 
+/*
+ * Recovery testing operations.
+ */
+extern	int	Fsrmt_FileRecovTestNumCacheBlocks();
+extern	int	Fsrmt_FileRecovTestNumDirtyCacheBlocks();
+
 #endif _FSRMT

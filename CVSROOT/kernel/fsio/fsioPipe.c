@@ -1094,3 +1094,25 @@ Fsio_PipeScavenge(hdrPtr)
     return(FALSE);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_PipeRecovTestUseCount --
+ *
+ *	For recovery testing, return the use count on the io handle.
+ *
+ * Results:
+ *      The use count.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fsio_PipeRecovTestUseCount(handlePtr)
+    Fsio_PipeIOHandle *handlePtr;
+{
+    return handlePtr->use.ref;
+}

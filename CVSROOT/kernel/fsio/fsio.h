@@ -379,6 +379,26 @@ typedef struct Fsutil_UseCounts {
 
 
 /*
+ * Recovery testing switch table.
+ */
+typedef struct Fsio_RecovTestInfo {
+    int		(*refFunc)();		/* number of references */
+    int		(*numBlocksFunc)();	/* number of blocks in the cache */
+    int		(*numDirtyBlocksFunc)();/* number of dirty blocks in cache */
+} Fsio_RecovTestInfo;
+
+extern	Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[];
+
+/*
+ * Recovery testing operations.
+ */
+extern	int	Fsio_FileRecovTestUseCount();
+extern	int	Fsio_FileRecovTestNumCacheBlocks();
+extern	int	Fsio_FileRecovTestNumDirtyCacheBlocks();
+extern	int	Fsio_DeviceRecovTestUseCount();
+extern	int	Fsio_PipeRecovTestUseCount();
+
+/*
  * Initialization
  */
 extern void Fsio_InstallStreamOps();

@@ -1294,3 +1294,25 @@ Fsio_DeviceBlockIO(readWriteFlag, devicePtr, fragNumber, numFrags, buffer)
     return(status);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_DeviceRecovTestUseCount --
+ *
+ *	For recovery testing, return the use count of the io handle.	
+ *
+ * Results:
+ *	The use count.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fsio_DeviceRecovTestUseCount(handlePtr)
+    Fsio_DeviceIOHandle *handlePtr;
+{
+    return handlePtr->use.ref;
+}
