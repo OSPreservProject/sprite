@@ -149,6 +149,7 @@ Sys_SetTimeOfDay(timePtr, localOffset, DST)
 ReturnStatus
 Sys_DoNothing()
 {
+    Sched_ContextSwitch(PROC_READY);
     return(SUCCESS);
 }
 
@@ -448,7 +449,7 @@ Sys_StatsStub(command, option, argPtr)
 	    register int length;
 	    register char *version;
 	    version = (char *)SpriteVersion();
-	    length = String_Length(version);
+	    length = String_Length(version) + 1;
 	    if (option <= 0) {
 		status = GEN_INVALID_ARG;
 		break;
