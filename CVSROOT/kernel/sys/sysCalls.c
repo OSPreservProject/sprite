@@ -895,6 +895,63 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    break;
 	}
+	case SYS_RPC_SERVER_TRACE:
+	    if (option == TRUE) {
+		Rpc_OkayToTrace(TRUE);
+	    } else  {
+		Rpc_OkayToTrace(FALSE);
+	    }
+	    status = SUCCESS;
+		
+	    break;
+	case SYS_RPC_SERVER_FREE:
+	    Rpc_FreeTraces();
+	    status = SUCCESS;
+
+	    break;
+	case SYS_RPC_SERVER_INFO: {
+	    int		length;
+	    Address	resultPtr;
+	    int		lengthNeeded;
+
+	    resultPtr = argPtr;
+	    /* option is actually an in/out param */
+	    status = Vm_CopyIn(sizeof (int), (Address) option,
+		    (Address) &length);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    if (length != 0 && (resultPtr == (Address) NIL || resultPtr ==
+		    (Address) 0 || resultPtr == (Address) USER_NIL)) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (length > 0) {
+		resultPtr = (Address) malloc(length);
+	    } else {
+		resultPtr = (Address) NIL;
+	    }
+	    status = Rpc_DumpServerTraces(length, resultPtr, &lengthNeeded);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(length, resultPtr, argPtr);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(sizeof (int), (Address) &lengthNeeded,
+		    (Address) option);
+	    if (resultPtr != (Address) NIL) {
+		free(resultPtr);
+	    }
+	    break;
+	}
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
