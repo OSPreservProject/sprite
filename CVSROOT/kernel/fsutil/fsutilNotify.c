@@ -82,6 +82,56 @@ FsWaitListInsert(list, waitPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * FsFastWaitListInsert --
+ *
+ *	An un-monitored version of FsWaitListInsert that depends
+ *	on handle locking, or something, by higher levels for
+ *	synchronization.  Note: the Mem_Alloc is needed because
+ *	of select.  Regular read and write use a Sync_RemoteWaiter
+ *	struct declared in Fs_Read or Fs_Write, and it won't go
+ *	away while the pipe reader or writer waits.  However, with
+ *	select the waiter might go away before we notify it, so
+ *	we have to malloc and copy the wait structure.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Calls Mem_Alloc and adds to the list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+FsFastWaitListInsert(list, waitPtr)
+    List_Links *list;		/* List to add waiter to */
+    Sync_RemoteWaiter *waitPtr;	/* Info about process for remote waiting */
+{
+    register Sync_RemoteWaiter *myWaitPtr;
+
+    LIST_FORALL(list, (List_Links *) myWaitPtr) {
+	/*
+	 * If already on list then update wait token.
+	 */
+	if (myWaitPtr->pid == waitPtr->pid &&
+	    myWaitPtr->hostID == waitPtr->hostID) {
+	    myWaitPtr->waitToken = waitPtr->waitToken;
+	    return;
+	}
+    }
+
+    /*
+     * Not on the list so put it there.
+     */
+
+    myWaitPtr = (Sync_RemoteWaiter *) Mem_Alloc(sizeof(Sync_RemoteWaiter));
+    *myWaitPtr = *waitPtr;
+    List_Insert((List_Links *)myWaitPtr, LIST_ATREAR(list));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FsWaitListNotify --
  *
  *      Notify all the processes in a wait-list.  If the process is on a
@@ -100,9 +150,9 @@ FsWaitListInsert(list, waitPtr)
 
 ENTRY void
 FsWaitListNotify(list)
-    List_Links *list;		/* List of waiting processes to notify */
+    register List_Links *list;	/* List of waiting processes to notify */
 {
-    Sync_RemoteWaiter *waitPtr;
+    register Sync_RemoteWaiter *waitPtr;
 
     LOCK_MONITOR;
     while ( ! List_IsEmpty(list)) {
@@ -122,6 +172,49 @@ FsWaitListNotify(list)
 	Mem_Free((Address)waitPtr);
     }
     UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsFastWaitListNotify --
+ *
+ *      A faster version of FsWaitListNotify that depends on higher
+ *	level synchronization like handle locking.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *      This results in a call to Sync_ProcWakeup on the host of the
+ *      waiting process.  The list is emptied with each item being freed
+ *      with Mem_Free.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+FsFastWaitListNotify(list)
+    register List_Links *list;	/* List of waiting processes to notify */
+{
+    register Sync_RemoteWaiter *waitPtr;
+
+    while ( ! List_IsEmpty(list)) {
+	waitPtr = (Sync_RemoteWaiter *)List_First(list);
+	if (waitPtr->hostID != rpc_SpriteID) {
+	    /*
+	     * Contact the remote host and get it to notify the waiter.
+	     */
+	    (void)Sync_RemoteNotify(waitPtr);
+	} else {
+	    /*
+	     * Mark the local process as runable.
+	     */
+	    Sync_ProcWakeup(waitPtr->pid, waitPtr->waitToken);
+	}
+	List_Remove((List_Links *)waitPtr);
+	Mem_Free((Address)waitPtr);
+    }
 }
 
 
