@@ -397,7 +397,7 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
     /*
      * Make sure a name hash table exists now that we have a disk attached.
      */
-    FslclNameHashInit();
+    Fslcl_NameHashInit();
     return(SUCCESS);
 }
 

@@ -473,7 +473,7 @@ Fsdm_FileDescTrunc(handlePtr, size)
 
 #ifndef CLEAN
     if (bytesToFree > 0) {
-	FsdmRecordDeletionStats(&handlePtr->cacheInfo, bytesToFree);
+	Fsdm_RecordDeletionStats(&handlePtr->cacheInfo, bytesToFree);
     }
 #endif CLEAN
 
@@ -632,19 +632,21 @@ exit:
 
 	for (index=0 ; index < FSDM_NUM_DIRECT_BLOCKS ; index++) {
 	    if (descPtr->direct[index] != FSDM_NIL_INDEX) {
-		printf("Fsdm_FileDescTrunc abandoning (direct) block %d in <%d,%d> \"%s\"\n",
+		printf("Fsdm_FileDescTrunc abandoning (direct) block %d in <%d,%d> \"%s\" savedLastByte %d\n",
 		    descPtr->direct[index],
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		    Fsutil_HandleName((Fs_HandleHeader *)handlePtr));
+		    Fsutil_HandleName((Fs_HandleHeader *)handlePtr),
+		    savedLastByte);
 		descPtr->direct[index] = FSDM_NIL_INDEX;
 	    }
 	}
 	for (index = 0 ; index <= 2 ; index++) {
 	    if (descPtr->indirect[index] != FSDM_NIL_INDEX) {
-		printf("Fsdm_FileDescTrunc abandoning (indirect) block %d in <%d,%d> \"%s\"\n\n",
+		printf("Fsdm_FileDescTrunc abandoning (indirect) block %d in <%d,%d> \"%s\" savedLastByte %d\n",
 		    descPtr->indirect[index], 
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		    Fsutil_HandleName((Fs_HandleHeader *)handlePtr));
+		    Fsutil_HandleName((Fs_HandleHeader *)handlePtr),
+		    savedLastByte);
 		descPtr->indirect[index] = FSDM_NIL_INDEX;
 	    }
 	}
@@ -657,7 +659,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * FsdmRecordDeletionStats --
+ * Fsdm_RecordDeletionStats --
  *
  *	Record information about bytes deleted from a file.  This can
  *	be a result of truncation or overwriting.
@@ -673,7 +675,7 @@ exit:
  */
 
 void
-FsdmRecordDeletionStats(cacheInfoPtr, bytesToFree)
+Fsdm_RecordDeletionStats(cacheInfoPtr, bytesToFree)
     Fscache_FileInfo *cacheInfoPtr;
     int bytesToFree;
 {
