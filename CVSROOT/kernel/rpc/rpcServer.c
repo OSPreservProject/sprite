@@ -124,7 +124,7 @@ Rpc_Server()
 	    if (sys_ShuttingDown) {
 		srvPtr->state = SRV_NOTREADY;
 		MASTER_UNLOCK(srvPtr->mutex);
-		Sys_Printf("Server exiting\n");
+		Sys_Printf("Rpc_Server exiting\n");
 		Proc_Exit(0);
 	    }
 	}
