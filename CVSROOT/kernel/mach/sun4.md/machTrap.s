@@ -789,6 +789,13 @@ ReturnFromOverflow:
  *	and the SAFE_TEMP register is already used to mark whether we saved
  *	state).
  *
+ *	NOTE:  In the case where we must save state by calling MachTrap,
+ *	a lot of the underflow code is duplicated in MachReturnFromTrap,
+ *	which we also end up calling.  The reason I cannot simply call
+ *	MachReturnFrom trap then to do all that work, is that I must do the
+ *	work in one window away in the case of a real underflow trap.  There
+ *	may be a way to deal with this, but I haven't done it yet.
+ *
  * Results:
  *	None.
  *
@@ -799,7 +806,17 @@ ReturnFromOverflow:
  */
 .global	MachHandleWindowUnderflowTrap
 MachHandleWindowUnderflowTrap:
-	clr	%SAFE_TEMP	/* used to mark whether we saved state */
+	/*
+	 * We need a global to mark further actions, and a global to save
+	 * the fp in if we find it needs to be page faulted.  We can save one
+	 * global in SAFE_TEMP since it's only whacked by MachTrap, which is
+	 * the only thing that might whack it, in case MachTrap gets an
+	 * overflow.  But we won't get one since this is an underflow trap.
+	 * %o5 also appears to be safe here.
+	 */
+	mov	%g3, %SAFE_TEMP
+	mov	%g4, %o5
+
 	/* Test if we came from user mode. */
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
 	bne	NormalUnderflow
@@ -816,61 +833,55 @@ MachHandleWindowUnderflowTrap:
 	 * We must be back in the trap window to do that.
 	 */
 	andcc	%fp, 0x7, %g0
-	bne,a	KillTheProc
+	be,a	CheckForFaults
+	clr	%g3			/* g3 clear for no problem yet */
+	set	0x1, %g3		/* Mark why we will save state */
+	bne,a	MustSaveState
 	save		/* back to trap window, in annulled delay slot */
 
-	MACH_CHECK_FOR_FAULT(%fp, %o0)
-	bne,a	MustSaveState
-	save			/* back to trap window - only if branching!! */
-
-	/* Check other extreme of addresses we'd touch */
-	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o1
-	MACH_CHECK_FOR_FAULT(%o1, %o0)
-	save					/* back to trap window */
+CheckForFaults:
+	/*
+	 * %g3 will have have a record of what faults would occur.
+	 */
+	MACH_CHECK_STACK_FAULT(%fp, %o0, %g3, %o1, UndflFault1, UndflFault2)
+	mov	%fp, %g4		/* in case we need to fault it */
 	be	NormalUnderflow
-	nop
+	save				/* back to trap window */
 
 MustSaveState:
 	/*
 	 * We need to save state.   We must do this in actual trap window.
-	 * This state-saving enables traps.
+	 * This state-saving enables traps.  We will return to
+	 * MachReturnToUnderflowWithSavedState
 	 */
 	call	_MachTrap
 	nop
 MachReturnToUnderflowWithSavedState:
 	/*
-	 * We came back from saving state.  Mark the fact we had to so we can
-	 * restore state and then handle underflow.
+	 * We had to save state for some reason.  %g3 contains the reason
+	 * why.
 	 */
-	set	0x11111111, %SAFE_TEMP
-	/*
-	 * Call	Vm_PageIn stuff and deal with faulting starting at this window.
-	 * We can't do it from actual underflow routine, since that's in the
-	 * wrong window and calls to the vm stuff would overwrite this window
-	 * where we had to save stuff so that MachReturnFromTrap could restore
-	 * stuff correctly and return from the correct window.  So we move
-	 * back a window, check if first address faulted.  If so, get its
-	 * value and move here again and page it it.  Then move back again and
-	 * check second address.  If it is still bad, we move here again and
-	 * page it in.  Otherwise, we just move here again.
-	 */
-	restore
-	MACH_CHECK_FOR_FAULT(%fp, %o0)
-	be	CheckNextUnderflow		/* this one okay, goto next */
+	cmp	%g3, 0x1
+	be	KillTheProc
 	nop
-	mov	%fp, %o0			/* do the page in for first */
-	save					/* back to trap window */
+	and	%g3, 0x2, %g0
+	be	CheckNextUnderflow	/* It wasn't first possible fault */
+	nop
+
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
-		/* Address that would fault is in %i0 now. */
-	mov	%i0, %o0
+	/* Address that would fault is in %g4. */
+	mov	%g4, %o0
 	clr	%o1			/* also check protection???? */
 	call	_Vm_PageIn, 2
 	nop
 	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	tst	%RETURN_VAL_REG
-	be,a	CheckNextUnderflow		/* succeeded, try next */
-	restore		/* back to window to check in, only if branching!! */
+	be	CheckNextUnderflow		/* succeeded, try next */
+	nop
+	/* Otherwise, bad return, fall through to kill process. */
 KillTheProc:
+	mov	%SAFE_TEMP, %g3		/* Need I restore these really? */
+	mov	%o5, %g4
 	/* KILL IT - must be in trap window */
 	MACH_SR_HIGHPRIO()	/* traps back on for overflow from printf */
 	set	_MachHandleWindowUnderflowDeathString, %o0
@@ -903,14 +914,12 @@ KeepFromContinuing:
 	nop
 
 CheckNextUnderflow:
-	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o1
-	MACH_CHECK_FOR_FAULT(%o1, %o0)
-	save					/* back to trap window */
-	be	NormalUnderflow			/* we were okay here */
+	and	%g3, 0x4, %g0		/* See if second address would fault */
+	be	BackAgain
 	nop
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
-	/* Address that would fault is in %i1 now. */
-	mov	%i1, %o0
+	/* old %fp is in %g4 */
+	add	%g4, (MACH_SAVED_WINDOW_SIZE - 4), %o0
 	clr	%o1			/* also check protection???? */
 	call	_Vm_PageIn, 2
 	nop
@@ -918,10 +927,19 @@ CheckNextUnderflow:
 	tst	%RETURN_VAL_REG
 	bne	KillTheProc
 	nop
+BackAgain:
+	/*
+	 * Don't deal with underflow itself.  Just pretend this was only
+	 * a stack page fault.  User's restore instruction will get
+	 * re-executed and will cause a further underflow trap.  This time,
+	 * the page should be there.
+	 */
+	mov	%SAFE_TEMP, %g3			/* restore globals */
+	mov	%o5, %g4
+	call	_MachReturnFromTrap
+	nop
 
 NormalUnderflow:
-	mov	%g3, %VOL_TEMP1			/* clear out globals */
-	mov	%g4, %VOL_TEMP2
 	restore					/* retreat a window */
 	mov	%RETURN_ADDR_REG, %g3		/* save reg in global */
 	set	MachWindowUnderflow, %g4	/* put address in global */
@@ -929,20 +947,9 @@ NormalUnderflow:
 	nop
 	mov	%g3, %RETURN_ADDR_REG		/* restore ret_addr */
 	save					/* back to trap window */
-	mov	%VOL_TEMP1, %g3			/* restore globals */
-	mov	%VOL_TEMP2, %g4
+	mov	%SAFE_TEMP, %g3			/* restore globals */
+	mov	%o5, %g4
 
-	set	0x11111111, %VOL_TEMP1
-	cmp	%SAFE_TEMP, %VOL_TEMP1		/* did we have to save state? */
-	bne	NormalUnderflowReturn		/* we were okay */
-	nop
-	/*
-	 * We had to save state, so now we have to restore it.
-	 * This state-restoring with disable traps.
-	 */
-	call	_MachReturnFromTrap
-	nop
-NormalUnderflowReturn:
 	MACH_RESTORE_PSR()			/* restore psr */
 	jmp	%CUR_PC_REG			/* return from trap */
 	rett	%NEXT_PC_REG

@@ -135,37 +135,12 @@ moduloOkay:							\
  * be saved on normal save-window operations.  Note that this means the
  * stack pointer and MACH_GLOBALS_OFFSET must be double-word aligned.
  */
-#ifdef FP_ENABLED
-#define	MACH_SAVE_GLOBAL_STATE()				\
-	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
-	std	%g0, [%VOL_TEMP1];				\
-	std	%g2, [%VOL_TEMP1 + 8];				\
-	std	%g4, [%VOL_TEMP1 + 16];				\
-	std	%g6, [%VOL_TEMP1 + 24];				\
-	std	%f0, [%VOL_TEMP1 + 32];				\
-	std	%f2, [%VOL_TEMP1 + 40];				\
-	std	%f4, [%VOL_TEMP1 + 48];				\
-	std	%f6, [%VOL_TEMP1 + 56];				\
-	std	%f8, [%VOL_TEMP1 + 64];				\
-	std	%f10, [%VOL_TEMP1 + 72];			\
-	std	%f12, [%VOL_TEMP1 + 80];			\
-	std	%f14, [%VOL_TEMP1 + 88];			\
-	std	%f16, [%VOL_TEMP1 + 96];			\
-	std	%f18, [%VOL_TEMP1 + 104];			\
-	std	%f20, [%VOL_TEMP1 + 112];			\
-	std	%f22, [%VOL_TEMP1 + 120];			\
-	std	%f24, [%VOL_TEMP1 + 128];			\
-	std	%f26, [%VOL_TEMP1 + 136];			\
-	std	%f28, [%VOL_TEMP1 + 144];			\
-	std	%f30, [%VOL_TEMP1 + 152]
-#else
 #define	MACH_SAVE_GLOBAL_STATE()				\
 	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
 	std	%g0, [%VOL_TEMP1];				\
 	std	%g2, [%VOL_TEMP1 + 8];				\
 	std	%g4, [%VOL_TEMP1 + 16];				\
 	std	%g6, [%VOL_TEMP1 + 24]
-#endif /* FP_ENABLED */
 
 /*
  * Restore the global registers.  We do load doubles here for speed
@@ -174,37 +149,12 @@ moduloOkay:							\
  * normal restore window operations.  Note that this means the stack pointer
  * and MACH_GLOBALS_OFFSET must be double-word aligned.
  */
-#ifdef FP_ENABLED
-#define	MACH_RESTORE_GLOBAL_STATE()				\
-	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
-	ldd	[%VOL_TEMP1], %g0;				\
-	ldd	[%VOL_TEMP1 + 8], %g2;				\
-	ldd	[%VOL_TEMP1 + 16], %g4;				\
-	ldd	[%VOL_TEMP1 + 24], %g6;				\
-	ldd	[%VOL_TEMP1 + 32], %f0;				\
-	ldd	[%VOL_TEMP1 + 40], %f2;				\
-	ldd	[%VOL_TEMP1 + 48], %f4;				\
-	ldd	[%VOL_TEMP1 + 56], %f6;				\
-	ldd	[%VOL_TEMP1 + 64], %f8;				\
-	ldd	[%VOL_TEMP1 + 72], %f10;			\
-	ldd	[%VOL_TEMP1 + 80], %f12;			\
-	ldd	[%VOL_TEMP1 + 88], %f14;			\
-	ldd	[%VOL_TEMP1 + 96], %f16;			\
-	ldd	[%VOL_TEMP1 + 104], %f18;			\
-	ldd	[%VOL_TEMP1 + 112], %f20;			\
-	ldd	[%VOL_TEMP1 + 120], %f22;			\
-	ldd	[%VOL_TEMP1 + 128], %f24;			\
-	ldd	[%VOL_TEMP1 + 136], %f26;			\
-	ldd	[%VOL_TEMP1 + 144], %f28;			\
-	ldd	[%VOL_TEMP1 + 152], %f30
-#else
 #define	MACH_RESTORE_GLOBAL_STATE()				\
 	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
 	ldd	[%VOL_TEMP1], %g0;				\
 	ldd	[%VOL_TEMP1 + 8], %g2;				\
 	ldd	[%VOL_TEMP1 + 16], %g4;				\
 	ldd	[%VOL_TEMP1 + 24], %g6
-#endif /* FP_ENABLED */
 
 /*
  * Save r16 to r23 (locals) and r24 to r31 (ins) to 16 words at
@@ -458,6 +408,37 @@ NoMoreLabel:					\
 	lda	[reg1] VMMACH_PAGE_MAP_SPACE, reg1;	\
 	srl	reg1, VMMACH_PAGE_PROT_SHIFT, reg1;	\
 	cmp	reg1, VMMACH_PTE_OKAY_VALUE
+
+/*
+ * This is similar to the above macro, except that it is intended for checking
+ * stack pointers to see if a restore of a window would page fault.  We check
+ * the value of the stack pointer, and the offset of the window size.
+ */
+#define MACH_CHECK_STACK_FAULT(checkReg, reg1, ansReg, reg2, TestAgainLabel, LastOKLabel)	\
+	clr	ansReg;					\
+	set	VMMACH_PAGE_MAP_MASK, reg1;		\
+	and	checkReg, reg1, reg1;			\
+	lda	[reg1] VMMACH_PAGE_MAP_SPACE, reg1;	\
+	srl	reg1, VMMACH_PAGE_PROT_SHIFT, reg1;	\
+	cmp	reg1, VMMACH_PTE_OKAY_VALUE;		\
+	be	TestAgainLabel;				\
+	nop;						\
+	set	0x2, ansReg;				\
+TestAgainLabel:						\
+	set	VMMACH_PAGE_MAP_MASK, reg1;		\
+	add	checkReg, (MACH_SAVED_WINDOW_SIZE - 4), reg2;	\
+	and	reg2, reg1, reg1;			\
+	lda	[reg1] VMMACH_PAGE_MAP_SPACE, reg1;	\
+	srl	reg1, VMMACH_PAGE_PROT_SHIFT, reg1;	\
+	cmp	reg1, VMMACH_PTE_OKAY_VALUE;		\
+	be	LastOKLabel;				\
+	nop;						\
+	or	0x4, ansReg, ansReg;			\
+LastOKLabel:						\
+	tst	ansReg
+	
+	
+
 
 /*
  * Get a ptr to the pcb structure of the current process.
