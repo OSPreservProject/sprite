@@ -64,6 +64,9 @@ extern	Address	vmStackEndAddr;
 
 static void SegDelete();
 static void WriteHardMapSeg();
+#ifdef sun4c
+static	void	MapColorMapAndIdRomAddr();
+#endif
 
 /*----------------------------------------------------------------------
  * 
@@ -624,6 +627,9 @@ VmMach_Init(firstFreePage)
     Address			virtAddr;
     Address			lastCodeAddr;
     extern	int		etext;
+#ifdef sun4c
+    VMMACH_SEG_NUM		pmeg;
+#endif sun4c
 
     /*
      * Initialize the kernel's hardware segment table.
@@ -776,6 +782,9 @@ VmMach_Init(firstFreePage)
 	copyMap[i] = VMMACH_INV_PMEG;
     }
 #endif NOTDEF
+#ifdef sun4c
+    MapColorMapAndIdRomAddr();
+#endif
 
 }
 
@@ -1004,6 +1013,96 @@ MMUInit(firstFreeSegment)
 	}
     }
 }
+
+#ifdef sun4c
+static char	colorArray[3 * 0x1000];
+#ifdef ID
+static char	idArray[2 * 0x1000];
+#endif NOTDEF
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * MapColorMapAndIdRomAddr --
+ *
+ *      Get the physical address of the color map for a sparc station and map
+ *	it to a virtual address.  Also map the id words for the video
+ *	subsystem.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Page maps are altered.  Several pages of physical memory are wasted.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+MapColorMapAndIdRomAddr()
+{
+    VmMachPTE		colorPte;
+    VmMachPTE		idPte;
+    unsigned int	otherbits;
+    Address		colorVirtAddr;
+    Address		idVirtAddr;
+
+    colorPte = VmMachGetPageMap(DEV_FRAME_BUF_ADDR);
+    otherbits = colorPte &(~VMMACH_PAGE_FRAME_FIELD);
+    colorPte &= VMMACH_PAGE_FRAME_FIELD;
+    if ((colorPte & 0xfff) != 0x800) {
+	panic("MapColorMapAndIdRomAddr: frame buffer addr is weird: 0x%x\n",
+		colorPte);
+    }
+    /* Change last bits to color map offset and id rom offset */
+    colorPte &= 0xfffff000;
+#ifdef ID
+    idPte = colorPte;
+#endif
+    colorPte |= 0x400;
+    colorPte |= otherbits;
+#ifdef ID
+    idPte |= otherbits;		/* 0 offset */
+#endif
+
+    /* allocate 2 pages on a page boundary */
+#ifdef NOTDEF
+    colorVirtAddr = (Address) malloc(3 * 0x1000);
+#else
+    colorVirtAddr = colorArray;
+#endif
+    ((unsigned int)colorVirtAddr) &= 0xfffff000;
+
+    /* and another 2 pages */
+#ifdef NOTDEF
+    idVirtAddr = (Address) malloc(3 * 0x1000);
+#else
+#ifdef ID
+    idVirtAddr = idArray;
+#endif
+#endif
+#ifdef ID
+    ((unsigned int)idVirtAddr) &= 0xfffff000;
+#endif
+
+    /* This wastes 3 pages of physical memory.  That's a shame. */
+    VmMachSetPageMap(colorVirtAddr, colorPte);
+    VmMachSetPageMap(colorVirtAddr + 0x1000, colorPte + 1);
+
+#ifdef ID
+    /* This wastes 3 pages of physical memory again. */
+    VmMachSetPageMap(idVirtAddr, idPte);
+    VmMachSetPageMap(idVirtAddr + 0x1000, idPte + 1);
+    printf("colorPte 0x%x, idPte 0x%x, colorVA 0x%x, idVA 0x%x\n",
+	colorPte, idPte, colorVirtAddr, idVirtAddr);
+#else
+    printf("colorPte 0x%x, colorVA 0x%x\n",
+	colorPte, colorVirtAddr);
+#endif
+
+    return;
+}
+#endif sun4c
+
 
 
 /*
