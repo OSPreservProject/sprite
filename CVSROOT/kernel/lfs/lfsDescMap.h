@@ -33,8 +33,7 @@
 typedef struct LfsDescMapParams {
     unsigned int version;  	/* Version number describing the format of
 				 * this structure and the descriptor map. */
-    unsigned int maxDesc;	/* The maximum size in descriptor map in
-				 * descriptor. */
+    int maxDesc;	/* The maximum size in descriptor map in descriptor. */
     char     padding[LFS_DESC_MAP_PARAM_SIZE - sizeof(LfsStableMemParams)-8];	
 				/* Enought padding to make this structure 32
 				 * bytes. */
@@ -75,7 +74,7 @@ typedef struct LfsDescMapEntry {
 				     * length zero.  See the cleaning code
 				     * for its use. */
     unsigned short  flags;  	    /* See flags definition below. */
-    unsigned int  accessTime;       /* The access time of the file as 
+    int  accessTime;      	    /* The access time of the file as 
 				     * return by the stat() system call. */
 } LfsDescMapEntry;
 
@@ -94,6 +93,11 @@ typedef struct LfsDescMapEntry {
 #define	LFS_DESC_MAP_ALLOCED	0x0001
 #define	LFS_DESC_MAP_UNLINKED	0x0002
 
+
+extern ReturnStatus LfsDescMapAttach();
+extern Boolean	    LfsDescMapClean();
+extern Boolean 	    LfsDescMapCheckpoint();
+extern void	    LfsDescMapWriteDone();
 
 #endif /* _LFSDESCMAP */
 

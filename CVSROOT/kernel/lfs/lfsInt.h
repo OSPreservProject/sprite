@@ -49,13 +49,23 @@ typedef struct Lfs {
 				 * bytes and back. */
     char	  *name;	/* Name used for error messages. */
     Fsdm_Domain	  *domainPtr;	/* Domain this file system belongs. */
-    int		  domainNumber; /* Local domain number of file system. */
     Boolean   	  readOnly;	/* TRUE if the file system is readonly. */
     Boolean	  dirty;	/* TRUE if the file system has been modified
 				 * since the last checkpoint. */
+    Sync_Lock      lfsLock;	/* Lock for file system. */
+    Sync_Condition lfsUnlock;	/* Condition to wait for unlock on */
+    Sync_Condition cleanSegments; /* Condition to wait for clean
+				   * segments to be generated. */
+    Boolean	   locked;	/* File system is locked. */
     int	      blockSizeShift;   /* Log base 2 of blockSize. */
-    Boolean	writeActive;	/* TRUE if an write is active on this
+    Boolean	writeBackActive; /* TRUE if an writeback process active on this
+				  * file system. */
+    Boolean  	checkForMoreWork; /* TRUE if writeback should check for more
+				   * file to be written before exiting. 
+				   */
+    Boolean	cleanActive;	/* TRUE if an cleaner is active on this
 				 * file system. */
+    int		cleanBlocks;	/* Maximum number of blocks to clean. */
     Fsio_FileIOHandle descCacheHandle; /* File handle use to cache descriptor
 					* block under. */
     char	  *segMemoryPtr; /* Memory to be used for segment writing. */
@@ -79,7 +89,7 @@ typedef struct Lfs {
 #define	LfsBlocksToBytes(lfsPtr, blocks) ((blocks)<<(lfsPtr)->blockSizeShift)
 
 #define LfsSegNumToDiskAddress(lfsPtr, segNum) \
-		((lfsPtr)->superBlock.hdr.logStartOffset + \
+		((int)(lfsPtr)->superBlock.hdr.logStartOffset + \
  (LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize) * (segNum)))
 
 #define LfsBlockToSegmentNum(lfsPtr, blockNum) \
@@ -89,6 +99,15 @@ typedef struct Lfs {
 
 #define	LfsGetCurrentTimestamp(lfsPtr)	(++((lfsPtr)->checkPoint.timestamp))
 
-#define	LfsFromDomainPtr(domainPtr) ((Lfs *) ((domainPtr)->dataBlockBitmap))
+#define	LfsFromDomainPtr(domainPtr) ((Lfs *) ((domainPtr)->clientData))
+
+extern void LfsError();
+extern void LfsSegCleanStart();
+
+extern void LfsDescCacheInit();
+extern void LfsDescMapInit();
+extern void LfsSegUsageInit();
+extern void LfsFileLayoutInit();
+
 #endif /* _LFSINT */
 

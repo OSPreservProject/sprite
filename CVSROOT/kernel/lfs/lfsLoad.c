@@ -21,6 +21,38 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "lfsInt.h"
 #include "stdlib.h"
+#include "rpc.h"	/* For rpc_SpriteID. */
+
+#include "string.h"
+#include "lfs.h"
+
+static Fsdm_DomainOps lfsDomainOps = {
+	Lfs_AttachDisk,
+	Lfs_DetachDisk,
+	Lfs_DomainWriteBack,
+	Lfs_RereadSummaryInfo,
+	Lfs_DomainInfo,
+	Lfs_BlockAllocate,
+	Lfs_GetNewFileNumber,
+	Lfs_FreeFileNumber,
+	Lfs_FileDescInit,
+	Lfs_FileDescFetch,
+	Lfs_FileDescStore,
+	Lfs_FileBlockRead,
+	Lfs_FileBlockWrite,
+	Lfs_FileTrunc
+
+};
+
+
+static Fscache_BackendRoutines  lfsBackendRoutines = {
+	    Fsdm_BlockAllocate,
+	    Fsdm_FileBlockRead,
+	    Fsdm_FileBlockWrite,
+	    Lfs_ReallocBlock,
+	    Lfs_StartWriteBack,
+
+};
 
 
 /*
@@ -50,7 +82,6 @@ LfsLoadFileSystem(lfsPtr)
     int			choosenOne, maxSize;
     char		*checkPointPtr;
     int			checkPointSize;
-    LfsCheckPointRegion *regionPtr;
 
     /*
      * Examine the two checkpoint areas to locate the checkpoint area with the
@@ -101,19 +132,18 @@ LfsLoadFileSystem(lfsPtr)
     /*
      * Install the domain if we can. 
      */
-     lfsPtr->domainNumber = FsdmInstallLocalDomain(lfsPtr->domainPtr, 
-					   checkPointHdrPtr->domainNumber);
-     if (lfsPtr->domainNumber == -1) {
+    status = Fsdm_InstallDomain(checkPointHdrPtr->domainNumber, 
+				checkPointHdrPtr->serverID, lfsPtr->name, 
+				&(lfsPtr->domainPtr));
+    if (status != SUCCESS) {
 	free((char *) checkPointHdrPtr);
-	printf("LfsLoadFileSystem: domain %d already attached?\n",
-			checkPointHdrPtr->domainNumber);
-	return (FS_DOMAIN_UNAVAILABLE);
-     }
-    if ((checkPointHdrPtr->domainNumber != -1) &&
-	(strcmp(lfsPtr->name, checkPointHdrPtr->domainPrefix) != 0)) {
-	printf("LfsLoadFileSystem: Warning prefix %s being mounted on %s.\n",
-		checkPointHdrPtr->domainPrefix, lfsPtr->name);
+	return (status);
     }
+    lfsPtr->domainPtr->backendPtr = 
+	Fscache_RegisterBackend(&lfsBackendRoutines,(ClientData) lfsPtr, 0);
+    lfsPtr->domainPtr->domainOpsPtr = &lfsDomainOps;
+    lfsPtr->domainPtr->clientData = (ClientData) lfsPtr;
+
     checkPointPtr = checkPointPtr + sizeof(LfsCheckPointHdr);
     checkPointSize =  ((char *)trailerPtr) - checkPointPtr;
     /*
@@ -133,9 +163,9 @@ LfsLoadFileSystem(lfsPtr)
      * the buffer we allocated and set the nextRegion to be the one we
      * didn't load from. Also set the timestamp into the future.
      */
-    lfsPtr->checkPoint.buffer = checkPointPtr;
-    lfsPtr->checkPoint.nextArea = !choosenOne;
     lfsPtr->checkPoint.timestamp = checkPointHdrPtr->timestamp+1;
+    lfsPtr->checkPoint.buffer = (char *) checkPointHdrPtr;
+    lfsPtr->checkPoint.nextArea = !choosenOne;
 
     /*
      * Fill in the checkPointHdrPtr will the fields that don't change
@@ -146,11 +176,12 @@ LfsLoadFileSystem(lfsPtr)
     checkPointHdrPtr->version = 1;
     bzero(checkPointHdrPtr->domainPrefix,
 		sizeof(checkPointHdrPtr->domainPrefix));
-    strcpy(checkPointHdrPtr->domainPrefix, lfsPtr->name);
-    checkPointHdrPtr->domainNumber = lfsPtr->domainNumber;
+    (void)strncpy(checkPointHdrPtr->domainPrefix, lfsPtr->name, 
+			sizeof(checkPointHdrPtr->domainPrefix)-1);
+    checkPointHdrPtr->domainNumber = lfsPtr->domainPtr->domainNumber;
     checkPointHdrPtr->attachSeconds = fsutil_TimeInSeconds;
     checkPointHdrPtr->detachSeconds = fsutil_TimeInSeconds;
-    checkPointHdrPtr->version = 1;
+    checkPointHdrPtr->serverID = rpc_SpriteID;
 
     return status;
 }
@@ -175,7 +206,7 @@ LfsLoadFileSystem(lfsPtr)
 ReturnStatus
 LfsCheckPointFileSystem(lfsPtr, flags)
     Lfs		*lfsPtr;	/* File system to be checkpointed. */
-    unsigned int flags;		/* Flags for checkpoint. */
+    int flags;		/* Flags for checkpoint. */
 {
     LfsCheckPointHdr	*checkPointHdrPtr;
     int			size, blocks;

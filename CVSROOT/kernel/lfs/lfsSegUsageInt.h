@@ -35,5 +35,9 @@ typedef struct LfsSegUsage {
 
 extern void LfsSetSegUsage();
 
+extern ReturnStatus LfsSegUsageAttach();
+extern Boolean	LfsSegUsageClean(), LfsSegUsageCheckpoint(), LfsSegUsageLayout();
+extern void LfsSegUsageWriteDone();
+
 #endif /* _LFSSEGUSAGEINT */
 

@@ -122,21 +122,20 @@ typedef struct LfsSegIoInterface {
 
     Boolean (*layout)();   
 	/* Segment layout routine. Calling sequence:
-	 * layout(segPtr)
+	 * layout(segPtr, cleaning)
 	 *     LfsSeg *segPtr; -- Segment to fill in.
+	 *     Boolean cleaning; -- TRUE if for cleaning.
 	 * The module should place all the dirty blocks it can into the log.
 	 * The routine returns TRUE if the module has more data that needs to
 	 * be written to the log. 
 	 */
 
-    Boolean (*clean)();  
+    Boolean  (*clean)();  
 	/* Segment cleaning routine. Calling sequence:
-	 * clean(segToCleanPtr, segPtr)
+	 * clean(segToCleanPtr, sizePtr)
 	 *     LfsSeg *segToCleanPtr;  -- Segment to clean.
-	 *     LfsSeg *segPtr; -- Segment to fill in.
-	 * Copy the alive blocks from the segToClean into segPtr. 
-	 * The routine returns TRUE if the module has more data that needs to
-	 * be written to the log. 
+	 *     int    *sizePtr;	       -- Size in blocks to data to clean.
+	 * Copy the alive blocks from the segToClean into the cache.
 	 */
     Boolean (*checkpoint)();
 	/* Segment checkpoint routine. Calling sequence:
@@ -258,10 +257,10 @@ extern void LfsSegIoRegister();
 extern void LfsSegWriteStart();
 extern char *LfsSegSlowGrowSummary();
 extern LfsSegElement *LfsSegSlowAddDataBuffer();
-extern unsigned int LfsSegSlowDiskAddress();
+extern int LfsSegSlowDiskAddress();
 extern int   LfsSegSlowBlocksLeft();
 extern Boolean LfsSegNullLayout();
-
+extern void LfsDescMapInit();
 
 #endif /* _LFSSEG */
 

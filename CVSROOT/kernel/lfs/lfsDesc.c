@@ -40,65 +40,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  *----------------------------------------------------------------------
  *
- * Lfs_GetNewFileNumber --
- *
- *	Allocate an used file number for a newly created file or directory.
- *
- * Results:
- *	An error if could not find a free file descriptor.
- *
- * Side effects:
- *	fileNumberPtr is set to the number of the file descriptor allocated
- *	and the descriptor map entry *fileNumberPtr is mark as allcoated.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-Lfs_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
-    Fsdm_Domain 	*domainPtr;	/* Domain to allocate the file 
-					 * descriptor out of. */
-    int			dirFileNum;	/* File number of the directory that
-					   the file is in.  -1 means that
-					   this file descriptor is being
-					   allocated for a directory. */
-    int			*fileNumberPtr; /* Place to return the number of
-					   the file descriptor allocated. */
-
-{
-    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
-    return LfsDescMapAllocFileNum(lfsPtr, dirFileNum, fileNumberPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Lfs_FreeFileNumber() --
- *
- *	Mark a file number as unused and make it available for re-allocation.
- *
- * Results:
- *	SUCCESS.
- *
- * Side effects:
- *	Descriptor map entry is modified for the file.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-Lfs_FreeFileNumber(domainPtr, fileNumber)
-     Fsdm_Domain 	*domainPtr;	/* Domain of the file descriptor. */
-     int		fileNumber; 	/* Number of file descriptor to free.*/
-{
-     Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
-    return LfsDescMapFreeFileNum(lfsPtr, fileNumber);
-
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Lfs_FileDescFetch() --
  *
  *	Fetch the specified file descriptor from the file system and 
@@ -124,7 +65,7 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     LfsFileDescriptor	*descPtr;
     Fscache_Block	    *blockPtr;
     ReturnStatus	status;
-    unsigned int diskAddr;
+    int diskAddr;
     int		i;
     Boolean	found;
 
@@ -178,7 +119,8 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
  *----------------------------------------------------------------------
  *
  * Lfs_FileDescStore() --
- *
+ *	Store the given file descriptor back into the file system block
+ *	where it came from.  
  *
  * Results:
  *	An error if could not read the file descriptor from disk or is not
@@ -190,38 +132,41 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
  *----------------------------------------------------------------------
  */
 
-Boolean
-Lfs_FileDescStore(handlePtr)
+ReturnStatus
+Lfs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr, forceOut)
+    register Fsdm_Domain *domainPtr;	/* Domain to store the file 
+					 * descriptor into. */
     Fsio_FileIOHandle	*handlePtr;
+    int			fileNumber; 	/* Number of file descriptor to 
+					   store.*/
+    Fsdm_FileDescriptor	*fileDescPtr;	 /* File descriptor to store. */
+    Boolean		forceOut;  /* Force the change to disk. */
 {
-     Fsdm_Domain 	*domainPtr;	/* Domain to store file descriptor. */
-     int		fileNumber; 	/* Number of file descriptor to store.*/
-     Fsdm_FileDescriptor *fileDescPtr;	/* File descriptor structure to store.*/
-     ReturnStatus	status;
-     Lfs		*lfsPtr;
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
+    ReturnStatus	status = SUCCESS;
 
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-        return TRUE;
+    if (fileDescPtr->flags & FSDM_FD_FREE) {
+	return SUCCESS;
     }
-    lfsPtr = LfsFromDomainPtr(domainPtr);
-    fileDescPtr = handlePtr->descPtr;
     if (fileDescPtr->flags & FSDM_FD_ACCESSTIME_DIRTY) {
-	 status = LfsDescMapSetAccessTime(lfsPtr, handlePtr->hdr.fileID.minor, 
-			    fileDescPtr->accessTime);
+	 status = LfsDescMapSetAccessTime(lfsPtr, fileNumber, 
+			     fileDescPtr->accessTime);
 	  if (status != SUCCESS) {
 		  LfsError(lfsPtr, status, "Can't update descriptor map.\n");
           }
 	  fileDescPtr->flags &= ~FSDM_FD_ACCESSTIME_DIRTY;
     }
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    return ((fileDescPtr->flags & FSDM_FD_DIRTY) != 0);
+    if (fileDescPtr->flags & FSDM_FD_DIRTY) {
+	Fscache_PutFileOnDirtyList(&handlePtr->cacheInfo, 
+				FSCACHE_FILE_DESC_DIRTY);
+    }
+    return status;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Lfs_FileDescTrunc --
+ * Lfs_FileTrunc --
  *
  *      Shorten a file to length bytes.  This updates the descriptor
  *      and may free blocks and indirect blocks from the end of the file.
@@ -231,20 +176,21 @@ Lfs_FileDescStore(handlePtr)
  *
  * Side effects:
  *      May modify the truncateVersion number.
+ *	Any allocated blocks after the given size are deleted.
  *
  *----------------------------------------------------------------------
  */
 
 ReturnStatus
-Lfs_FileDescTrunc(handlePtr, size, delete)
+Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
+    Fsdm_Domain		*domainPtr;
     Fsio_FileIOHandle   *handlePtr;     /* File to truncate. */
     int                 size;           /* Size to truncate the file to. */
-    Boolean		delete;
+    Boolean		delete;		/* TRUE if Truncate for delete. */
 {
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
     Fsdm_FileDescriptor	*descPtr;
-    Fsdm_Domain		*domainPtr;
     ReturnStatus	status = SUCCESS;
-    Lfs		    	*lfsPtr;
     int			newLastByte;
     int		blocks;
 
@@ -252,12 +198,7 @@ Lfs_FileDescTrunc(handlePtr, size, delete)
 	return(GEN_INVALID_ARG);
     }
 
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
     descPtr = handlePtr->descPtr;
-    lfsPtr = LfsFromDomainPtr(domainPtr);
 
     newLastByte = size - 1;
     if (descPtr->lastByte <= newLastByte) {
@@ -281,13 +222,13 @@ Lfs_FileDescTrunc(handlePtr, size, delete)
 exit:
     if (delete) { 
 	descPtr->flags &= ~FSDM_FD_DIRTY;
-	status = Fscache_InvalidateDesc(handlePtr);
+	status = Fscache_RemoveFileFromDirtyList(&handlePtr->cacheInfo);
     } else {
 	if (descPtr->flags & FSDM_FD_DIRTY) {
-	    status = Fscache_FileDescStore(handlePtr);
+	    status = Fscache_PutFileOnDirtyList(&handlePtr->cacheInfo, 
+				FSCACHE_FILE_DESC_DIRTY);
 	}
     }
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return status;
 }
 
@@ -306,7 +247,7 @@ exit:
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 Lfs_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr)
     Fsdm_Domain 	*domainPtr;	/* Domain of the file */
@@ -318,8 +259,7 @@ Lfs_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr
     Fsdm_FileDescriptor	*fileDescPtr;	/* File descriptor structure to
 					   initialize. */
 {
-    ReturnStatus status;
-    int index;
+    register int index;
 
     fileDescPtr->magic = FSDM_FD_MAGIC;
     fileDescPtr->flags = FSDM_FD_ALLOC|FSDM_FD_DIRTY;
@@ -391,8 +331,8 @@ LfsDescCacheInit(lfsPtr)
 
     bzero((Address)&attr, sizeof(attr));
     attr.lastByte = 0x7fffffff;
-    Fscache_InfoInit(&lfsPtr->descCacheHandle.cacheInfo,
+    Fscache_FileInfoInit(&lfsPtr->descCacheHandle.cacheInfo,
 		    (Fs_HandleHeader *) &lfsPtr->descCacheHandle,
-		    0, TRUE, &attr, (Fscache_IOProcs *) NIL);
+		    0, TRUE, &attr, lfsPtr->domainPtr->backendPtr);
 
 }

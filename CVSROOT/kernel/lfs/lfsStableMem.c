@@ -79,7 +79,7 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
      */
     bufferSize = (smemParamsPtr->maxNumBlocks * sizeof(int)) + 
 			(smemParamsPtr->maxNumBlocks + 7)/8;
-    smemPtr->blockIndexPtr = (int *) malloc(bufferSize);
+    smemPtr->blockIndexPtr = (unsigned int *) malloc(bufferSize);
     bcopy(checkPointPtr + sizeof(LfsStableMemCheckPoint), 
 		 (char *) smemPtr->blockIndexPtr, 
 		 cpPtr->numBlocks * sizeof(int));
@@ -93,7 +93,8 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
      */
     smemPtr->dirtyBlocksBitMapPtr = (char *)(smemPtr->blockIndexPtr) +
 				     smemParamsPtr->maxNumBlocks * sizeof(int);
-    bzero(smemPtr->dirtyBlocksBitMapPtr, (smemParamsPtr->maxNumBlocks+ 7)/8);
+    bzero(smemPtr->dirtyBlocksBitMapPtr,
+		(int)(smemParamsPtr->maxNumBlocks+ 7)/8);
 
     smemPtr->blockSizeShift = LfsLogBase2(smemParamsPtr->blockSize);
 
@@ -109,12 +110,12 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
      */
     dataPtr = smemPtr->dataPtr;
     for (blockNum = 0; blockNum < cpPtr->numBlocks; blockNum++) {
-	unsigned int blockIndex = smemPtr->blockIndexPtr[blockNum];
+	int blockIndex = smemPtr->blockIndexPtr[blockNum];
 	if (blockIndex == FSDM_NIL_INDEX) {
-	    bzero(dataPtr, smemParamsPtr->blockSize);
+	    bzero(dataPtr,  (smemParamsPtr->blockSize));
 	} else {
 	    status = LfsReadBytes(lfsPtr, blockIndex, 
-				  smemParamsPtr->blockSize, dataPtr);
+				  (smemParamsPtr->blockSize), dataPtr);
 	    if (status != SUCCESS) {
 		    break;
 	    }
@@ -124,11 +125,11 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
     /*
      * Zero out the rest of the buffer.
      */
-    bzero(dataPtr, (smemParamsPtr->maxNumBlocks - cpPtr->numBlocks) * 
-			smemParamsPtr->blockSize);
+    bzero(dataPtr, (int)((smemParamsPtr->maxNumBlocks - cpPtr->numBlocks) * 
+			smemParamsPtr->blockSize));
     if (status != SUCCESS) {
 	free((char *) smemPtr->blockIndexPtr);
-	smemPtr->blockIndexPtr = (int *) NIL;
+	smemPtr->blockIndexPtr = (unsigned int *) NIL;
 	free((char *) smemPtr->dataPtr);
 	smemPtr->dataPtr = (char *) NIL;
     }
@@ -155,38 +156,38 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
  */
 
 Boolean
-LfsStableMemClean(segToCleanPtr, segPtr, smemPtr)
-    LfsSeg *segToCleanPtr;	/* Segment containing data to clean. */
-    LfsSeg *segPtr;		/* Segment to place data blocks in. */
+LfsStableMemClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr, smemPtr)
+    LfsSeg *segPtr;	/* Segment containing data to clean. */
+    int *sizePtr;
+    int *numCacheBlocksPtr;
+    ClientData *clientDataPtr;
     LfsStableMem *smemPtr;	/* Index pointer. */
 {
     char *summaryPtr;
     int	 *blockPtr;
     int	 numBlocks, block, blockOffset;
     unsigned int blockAddress;
-    Boolean	full;
 
-    full = FALSE;
-    summaryPtr = LfsSegGetSummaryPtr(segToCleanPtr);
-    numBlocks = LfsSegSummaryBytesLeft(segToCleanPtr) / sizeof(int);
+    summaryPtr = LfsSegGetSummaryPtr(segPtr);
+    numBlocks = LfsSegSummaryBytesLeft(segPtr) / sizeof(int);
     blockPtr = (int *) summaryPtr;
-    blockAddress = LfsSegDiskAddress(segToCleanPtr, 
-					LfsSegGetBufferPtr(segToCleanPtr));
+    blockAddress = LfsSegDiskAddress(segPtr, LfsSegGetBufferPtr(segPtr));
     blockOffset = 0;
     for (block = 0; block < numBlocks; block++) { 
 	if (smemPtr->blockIndexPtr[blockPtr[block]] == 
 			    (blockAddress + blockOffset)) {
-	    full = AddBlockToSegment(smemPtr, block, segPtr);
-	    if (full) {
-		break;
-	    }
+	    char *startPtr = smemPtr->dataPtr + 
+			(blockPtr[block] << smemPtr->blockSizeShift);
+	    LfsStableMemMarkDirty(smemPtr, startPtr,  
+			(smemPtr->params.blockSize));
+	    *sizePtr += smemPtr->params.blockSize;
 	 }
 	 blockOffset += LfsBytesToBlocks(segPtr->lfsPtr, 
 					smemPtr->params.blockSize);
     }
-    LfsSegSetSummaryPtr(segToCleanPtr, (char *) (blockPtr + block));
-    LfsSegSetCurBlockOffset(segToCleanPtr, blockOffset);
-    return full;
+    LfsSegSetSummaryPtr(segPtr, (char *) (blockPtr + block));
+    LfsSegSetCurBlockOffset(segPtr, blockOffset);
+    return FALSE;
 }
 
 
@@ -208,11 +209,13 @@ LfsStableMemClean(segToCleanPtr, segPtr, smemPtr)
  */
 
 Boolean
-LfsStableMemCheckpoint(segPtr, checkPointPtr, flags, checkPointSizePtr,smemPtr)
+LfsStableMemCheckpoint(segPtr, checkPointPtr, flags, checkPointSizePtr,
+			clientDataPtr, smemPtr)
     LfsSeg *segPtr;		/* Segment containing data for checkpoint. */
     char   *checkPointPtr;      /* Buffer to write checkpoint data. */
     int	   flags;		/* Flags. */
     int	   *checkPointSizePtr;  /* Bytes added to the checkpoint area.*/
+    ClientData *clientDataPtr;
     LfsStableMem *smemPtr;	/* Stable memory description. */
 {
     register char *dirtyBitsPtr;
@@ -295,9 +298,10 @@ LfsStableMemCheckpoint(segPtr, checkPointPtr, flags, checkPointSizePtr,smemPtr)
  */
 
 void
-LfsStableMemWriteDone(segPtr, flags, smemPtr)
+LfsStableMemWriteDone(segPtr, flags, clientDataPtr, smemPtr)
     LfsSeg *segPtr;	/* Segment whose write finishes. */
     int	    flags;	/* Write done flags. */
+    ClientData *clientDataPtr;
     LfsStableMem *smemPtr;	/* Index description. */
 {
     /*
@@ -305,7 +309,7 @@ LfsStableMemWriteDone(segPtr, flags, smemPtr)
      */
     if (LFS_DETACH & flags) {
 	free((char *)smemPtr->blockIndexPtr);
-	smemPtr->blockIndexPtr = (int *) NIL;
+	smemPtr->blockIndexPtr = (unsigned int *) NIL;
 	free((char *) smemPtr->dataPtr);
 	smemPtr->dataPtr = (char *) NIL;
     }
@@ -382,7 +386,7 @@ AddBlockToSegment(smemPtr, blockNum, segPtr)
 	 (ClientData) blockNum);
     *(int *)summaryPtr = blockNum;
     LfsSegSetSummaryPtr(segPtr,summaryPtr + sizeof(int));
-    LfsSegUsageFreeBlocks(segPtr->lfsPtr, smemPtr->params.blockSize, 1, 
+    LfsSegUsageFreeBlocks(segPtr->lfsPtr, (int)(smemPtr->params.blockSize), 1, 
 		smemPtr->blockIndexPtr + blockNum);
     smemPtr->blockIndexPtr[blockNum] = LfsSegDiskAddress(segPtr, bufferPtr);
     return FALSE;

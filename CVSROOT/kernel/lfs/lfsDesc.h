@@ -27,10 +27,9 @@
  */
 typedef struct LfsFileDescriptor {
     Fsdm_FileDescriptor	  common;
-    unsigned int	  fileNumber;	/* File number that is descriptor 
-					 * belongs too. */
-    unsigned int	  prevBlockLoc; /* The previous disk block address of
-					 * this file descriptors. */
+    int	  fileNumber;	/* File number that is descriptor  belongs too. */
+    int	  prevBlockLoc; /* The previous disk block address of
+			 * this file descriptors. */
 } LfsFileDescriptor;
 
 #define	LFS_FILE_DESC_SIZE	128

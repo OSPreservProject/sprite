@@ -21,8 +21,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "lfs.h"
 #include "lfsInt.h"
 #include "stdlib.h"
-
+#include "fsioDevice.h"
 #include "fsdm.h"
+
 
 
 /*
@@ -40,12 +41,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  *----------------------------------------------------------------------
  */
-static void
-Init() 
+void
+Lfs_Init() 
 {
     LfsFileLayoutInit();
     LfsDescMapInit();
     LfsSegUsageInit();
+
+    Fsdm_RegisterDiskManager("LFS", Lfs_AttachDisk);
 }
 
 /*
@@ -65,24 +68,15 @@ Init()
  */
 
 ReturnStatus
-Lfs_AttachDomain(devicePtr, name, flags, domainPtr)
-     Fs_Device *devicePtr;	/* Device containing file system. */
-     char      *name;		/* Prefix we are trying to attach. */
-     int 	flags;		/* FS_ATTACH_READ_ONLY or FS_ATTACH_LOCAL */
-     Fsdm_Domain *domainPtr;	/* Domain structure for file system being 
-				 * attached. */
-
+Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
+    Fs_Device	*devicePtr;	/* Device containing file system. */
+    char *localName;		/* The local prefix for the domain */
+    int  flags;			/* Attach flags. */
+    int *domainNumPtr;		/* OUT: Domain number allocated. */
 {
     Lfs			*lfsPtr;
     ReturnStatus	status;
-    static Boolean initialized = FALSE;   
 
-    /*
-     * If this is the first time we are called initialize everything.
-     */
-    if (!initialized) {
-	Init();
-    }
     /*
      * Allocate space for the Lfs data structure fill in the fields need
      * by the rest of the Lfs module to perform initialization correctly.
@@ -90,11 +84,12 @@ Lfs_AttachDomain(devicePtr, name, flags, domainPtr)
     lfsPtr = (Lfs *) malloc(sizeof(*lfsPtr));
     bzero((char *)lfsPtr, sizeof(*lfsPtr));
     lfsPtr->devicePtr = devicePtr;
-    lfsPtr->name = name;
-    lfsPtr->domainPtr = domainPtr;
+    lfsPtr->name = localName;
     lfsPtr->readOnly = ((flags & FS_ATTACH_READ_ONLY) != 0);
     lfsPtr->dirty = FALSE;
 
+    Sync_LockInitDynamic(&(lfsPtr->lfsLock), "LfsLock");
+    lfsPtr->locked = FALSE;
     /*
      * Read the super block of the file system. Put a lot of trust in the
      * magic number. 
@@ -114,14 +109,23 @@ Lfs_AttachDomain(devicePtr, name, flags, domainPtr)
 	free((char *) lfsPtr);
 	return FAILURE;
     }
-    lfsPtr->blockSizeShift = LfsLogBase2(lfsPtr->superBlock.hdr.blockSize);
-    lfsPtr->writeActive = FALSE;
+    lfsPtr->blockSizeShift = 
+		LfsLogBase2((unsigned)lfsPtr->superBlock.hdr.blockSize);
+    lfsPtr->writeBackActive = FALSE;
+    lfsPtr->checkForMoreWork = FALSE;
+    lfsPtr->cleanActive = FALSE;
     status = LfsLoadFileSystem(lfsPtr); 
-    if (status != SUCCESS) {
+    if (status != SUCCESS) { 
 	free((char *)lfsPtr);
-    } else {
-	((Lfs *) ((domainPtr)->dataBlockBitmap)) = lfsPtr;
+	return status;
     }
+    lfsPtr->cleanBlocks =   Fscache_ReserveBlocks(
+			        lfsPtr->domainPtr->backendPtr, 
+				lfsPtr->superBlock.hdr.maxNumCacheBlocks +
+	LfsBytesToBlocks(lfsPtr, lfsPtr->usageArray.params.segmentSize),
+	2*LfsBytesToBlocks(lfsPtr, lfsPtr->usageArray.params.segmentSize)
+		);
+    *domainNumPtr = lfsPtr->domainPtr->domainNumber;
     return status;
 }
 
@@ -164,17 +168,14 @@ Lfs_DetachDisk(domainPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Lfs_DomainWriteBack(domainPtr, shutdown, detach)
+Lfs_DomainWriteBack(domainPtr, shutdown)
     Fsdm_Domain	*domainPtr;	/* Domain to be written back. */
     Boolean	shutdown;	/* TRUE if are syncing to shutdown the system.*/
-    Boolean	detach;		/* TRUE if are writing back as part of 
-				 * detaching the domain.  */
 {
-    Lfs	*lfsPtr;
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
     int	flags;
     ReturnStatus status = SUCCESS;
 
-    lfsPtr = LfsFromDomainPtr(domainPtr);
     flags = 0;
     if (shutdown) {
 	flags |= LFS_DETACH;
@@ -182,34 +183,12 @@ Lfs_DomainWriteBack(domainPtr, shutdown, detach)
     if (lfsPtr->dirty) { 
 	status = LfsCheckPointFileSystem(lfsPtr, flags);
     }
+#ifdef notdef
     if (!shutdown && (lfsPtr->usageArray.checkPoint.numDirty > 10)) {
 	LfsSegCleanStart(lfsPtr);
     }
+#endif
     return status;
-
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Lfs_DomainStartWrite --
- *
- *	Start a write..
- *
- * Results:
- *	Error code if the write failed.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-Lfs_DomainStartWrite(domainPtr)
-    Fsdm_Domain	*domainPtr;	/* Domain to be written back. */
-{
-    LfsSegWriteStart(LfsFromDomainPtr(domainPtr));
-    return;
 
 }
 
@@ -268,7 +247,8 @@ void
 LfsError(lfsPtr, status, message)
     Lfs	*lfsPtr;
     ReturnStatus status;
+    char *message;
 {
-    panic("LfsError: 0x%x, %s\n", status, message);
+    panic("LfsError: on %s status 0x%x, %s\n", lfsPtr->name, status, message);
 }
 

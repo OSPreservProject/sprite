@@ -38,20 +38,19 @@ typedef struct LfsSuperBlockHdr {
     unsigned int magic;		/* Better be LFS_SUPER_BLOCK_MAGIC. */
     unsigned int version;  	/* Version number describing the format used
 				 * for this LFS.  */
-    unsigned int blockSize;	/* The block size of this file system. Should
+    int blockSize;		/* The block size of this file system. Should
 				 * be set to the minumum addressable unit. */
 	/*
 	 * File system layout. 
 	 */
-    unsigned int maxCheckPointBlocks;  /* Maximum size of checkpoint region in
-				      * blocks. */
-    unsigned int checkPointOffset[2];/* The block offset into the device of the
-				      * two checkpoint areas. Two areas are
-				      * used so we never update in place. The
-				      * format the segment is defined below. */
-    unsigned int logStartOffset;     /* The block offset starting the segmented
-				      * log. */
-    char padding[LFS_SUPER_BLOCK_HDR_SIZE-28];
+    int maxCheckPointBlocks;  /* Maximum size of checkpoint region in blocks. */
+    int checkPointOffset[2];/* The block offset into the device of the
+			  * two checkpoint areas. Two areas are
+			  * used so we never update in place. The
+			  * format the segment is defined below. */
+    int logStartOffset;     /* The block offset starting the segmented log. */
+    int maxNumCacheBlocks;  /* Maximum number of blocks to clean at a time. */
+    char padding[LFS_SUPER_BLOCK_HDR_SIZE-32];
 
 } LfsSuperBlockHdr;
 
@@ -87,6 +86,7 @@ typedef struct LfsCheckPointHdr {
     int	 domainNumber;		/* Last domain we ran under. */
     int	 attachSeconds;		/* Time the disk was attached */
     int	 detachSeconds;		/* Time the disk was off-lined. */
+    int	 serverID;		/* Sprite ID of server. */
 } LfsCheckPointHdr;
 
 typedef struct LfsCheckPointRegion {

@@ -33,18 +33,16 @@ typedef struct FileSegLayout {
     int	 numDescSlotsLeft;	/* Number of slots left in descriptor block. */
     LfsFileDescriptor *descBlockPtr;		
 				/* Pointer to next slot in descriptor block. */
-    unsigned int descDiskAddr;  /* Disk address of descriptor block. */
+    int descDiskAddr;  /* Disk address of descriptor block. */
 } FileSegLayout;
 
 static Boolean PlaceFileInSegment();
 
-static ReturnStatus FileLayoutAttach();
-static Boolean	FileLayout(), FileLayoutClean(), FileLayoutCheckpoint();
-static void FileLayoutWriteDone();
+static Boolean FileMatch(), BlockMatch();
 
 static LfsSegIoInterface layoutIoInterface = 
-	{ FileLayoutAttach, FileLayout, FileLayoutClean,
-	  FileLayoutCheckpoint, FileLayoutWriteDone,  0};
+	{ LfsFileLayoutAttach, LfsFileLayoutProc, LfsFileLayoutClean,
+	  LfsFileLayoutCheckpoint, LfsFileLayoutWriteDone,  0};
 
 
 /*
@@ -85,9 +83,9 @@ LfsFileLayoutInit()
  *
  *----------------------------------------------------------------------
  */
-
-static ReturnStatus
-FileLayoutAttach(lfsPtr, checkPointSize, checkPointPtr)
+/*ARGSUSED*/
+ReturnStatus
+LfsFileLayoutAttach(lfsPtr, checkPointSize, checkPointPtr)
     Lfs   *lfsPtr;	     /* File system for attach. */
     int   checkPointSize;    /* Size of checkpoint data. */
     char  *checkPointPtr;     /* Data from last checkpoint before shutdown. */
@@ -108,7 +106,7 @@ FileLayoutAttach(lfsPtr, checkPointSize, checkPointPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FileLayout --
+ * LfsFileLayoutProc --
  *
  *	Routine to handle layout of file block in segments.
  *
@@ -122,14 +120,16 @@ FileLayoutAttach(lfsPtr, checkPointSize, checkPointPtr)
  *----------------------------------------------------------------------
  */
 
-static Boolean
-FileLayout(segPtr)
+Boolean
+LfsFileLayoutProc(segPtr, cleaning, clientDataPtr)
     LfsSeg *segPtr;		/* Segment to place data blocks in. */
+    Boolean cleaning;		/* TRUE if cleaning. */
+    ClientData	*clientDataPtr;
 {
     Lfs		    *lfsPtr =   segPtr->lfsPtr;
     LfsFileLayout    *layoutPtr = &(lfsPtr->fileLayout);
     Fscache_FileInfo	*cacheInfoPtr;
-    Boolean	    full;
+    Boolean	    full, fsyncOnly;
     FileSegLayout  segLayoutData;
 
      /*
@@ -137,15 +137,18 @@ FileLayout(segPtr)
       */
 
      full = FALSE;
+     fsyncOnly = !cleaning;
      bzero((char *) &segLayoutData, sizeof(segLayoutData));
-     LfsGetDirtyFile(&cacheInfoPtr);
+     (void) Fscache_GetDirtyFiles(lfsPtr->domainPtr->backendPtr, fsyncOnly,
+			 FileMatch, (ClientData) cleaning, 1, &cacheInfoPtr);
      while (!full && (cacheInfoPtr != (Fscache_FileInfo *) NIL)) {
 	   full = PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr,
-			&segLayoutData);
+			cleaning, &segLayoutData);
 	   if (full) {
 	       break;
 	   }
-	   LfsGetDirtyFile(&cacheInfoPtr);
+	 (void) Fscache_GetDirtyFiles(lfsPtr->domainPtr->backendPtr, FALSE,
+			 FileMatch, (ClientData) cleaning, 1, &cacheInfoPtr);
      }
      return full;
 
@@ -169,13 +172,15 @@ FileLayout(segPtr)
  *
  *----------------------------------------------------------------------
  */
-
-static Boolean
-FileLayoutCheckpoint(segPtr, flags, checkPointPtr,  checkPointSizePtr)
+/*ARGSUSED*/
+Boolean
+LfsFileLayoutCheckpoint(segPtr, flags, checkPointPtr,  checkPointSizePtr,
+			clientDataPtr)
     LfsSeg *segPtr;		/* Segment containing data for checkpoint. */
-    int	   flags;		/* Flags. 
+    int	   flags;		/* Flags. */
     char   *checkPointPtr;      /* Buffer to write checkpoint data. */
     int	   *checkPointSizePtr;  /* Bytes added to the checkpoint area.*/
+    ClientData *clientDataPtr;
 {
     LfsFileLayout  *layoutPtr = &(segPtr->lfsPtr->fileLayout);
     Boolean full;
@@ -184,7 +189,7 @@ FileLayoutCheckpoint(segPtr, flags, checkPointPtr,  checkPointSizePtr)
      * Write-back everything that is dirty.
      */
     layoutPtr->writeBackEverything = TRUE;
-    full = FileLayout(segPtr);
+    full = LfsFileLayoutProc(segPtr, FALSE, clientDataPtr);
     if (!full) {
 	layoutPtr->writeBackEverything = FALSE;
     }
@@ -207,14 +212,14 @@ FileLayoutCheckpoint(segPtr, flags, checkPointPtr,  checkPointSizePtr)
  *
  *----------------------------------------------------------------------
  */
-
-static void
-FileLayoutWriteDone(segPtr, flags)
+/*ARGSUSED*/
+void
+LfsFileLayoutWriteDone(segPtr, flags, clientDataPtr)
     LfsSeg *segPtr;		/* Segment containing data for checkpoint. */
     int	   flags;		/* Flags for checkpoint */
+    ClientData *clientDataPtr;
 {
     Lfs		  *lfsPtr = segPtr->lfsPtr;
-    LfsFileLayout	      *layoutPtr = &(lfsPtr->fileLayout);
     LfsSegElement *bufferPtr = LfsSegGetBufferPtr(segPtr);
     char	 *summaryPtr =  LfsSegGetSummaryPtr(segPtr);
     char	 *limitPtr;
@@ -252,11 +257,11 @@ FileLayoutWriteDone(segPtr, flags)
 	    fileSumPtr = (LfsFileLayoutSummary *) summaryPtr;
 	    for (block = 0; block < fileSumPtr->numDataBlocks; block++) {
 		blockPtr = (Fscache_Block *) bufferPtr->clientData;
-		LfsProcessCleanBlock(blockPtr->cacheInfoPtr,blockPtr,SUCCESS);
+		FscacheReturnDirtyBlocks(1,&blockPtr,SUCCESS);
 		bufferPtr++;
 	    }
 	    if (fileSumPtr->numDataBlocks > 0) {
-		LfsReturnDirtyFile(blockPtr->cacheInfoPtr);
+		FscacheReturnDirtyFiles(1, &(blockPtr->cacheInfoPtr), TRUE);
 	    }
 	    summaryPtr += (sizeof(LfsFileLayoutSummary) + 
 			   fileSumPtr->numDataBlocks * sizeof(int));
@@ -301,113 +306,111 @@ FileLayoutWriteDone(segPtr, flags)
  *----------------------------------------------------------------------
  */
 
-static Boolean
-FileLayoutClean(segToCleanPtr, segPtr)
-    LfsSeg *segToCleanPtr;	/* Segment containing data to clean. */
-    LfsSeg *segPtr;		/* Segment to place data blocks in. */
+Boolean
+LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
+    LfsSeg *segPtr;	/* Segment containing data to clean. */
+    int	   *sizePtr;
+    int    *numCacheBlocksPtr;
+    ClientData *clientDataPtr;
 {
-    Lfs		   *lfsPtr = segToCleanPtr->lfsPtr;
+    Lfs		   *lfsPtr = segPtr->lfsPtr;
     LfsFileLayout  *layoutPtr = &(lfsPtr->fileLayout);
-    LfsSegSummaryHdr	*summaryHdrPtr;
     LfsFileLayoutSummary  *fileSumPtr;
     char	*summaryPtr, *limitPtr;
-    unsigned int address, blockOffset;
+    int address, blockOffset;
     Fscache_FileInfo	*cacheInfoPtr;
     ReturnStatus	status;
     Boolean	full;
-    static FileSegLayout	cleaningLayoutData; /* Only works with one
-							 file system. */
 
      full = FALSE;
-     LfsGetDirtyFileToClean(&cacheInfoPtr);
-
-     if (cacheInfoPtr != (Fscache_FileInfo *) NIL) {
-	 /*
-	  * Since we read all the active parts of the segment into the
-	  * cache on the initial pass we just need to complete the 
-	  * layout.
-	  */
-	 while (!full && (cacheInfoPtr != (Fscache_FileInfo *) NIL)) {
-	       full = PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr,
-				layoutPtr, &cleaningLayoutData);
-	     if (full) {
-		   cleaningLayoutData.numDescSlotsLeft = 0;
-		   break;
-	     }
-	     LfsGetDirtyFileToClean(&cacheInfoPtr);
-	 }
-	 return full;
-     }
-
-     summaryPtr =  LfsSegGetSummaryPtr(segToCleanPtr);
-     limitPtr = summaryPtr + LfsSegSummaryBytesLeft(segToCleanPtr);
-     address = LfsSegDiskAddress(segToCleanPtr, 
-			LfsSegGetBufferPtr(segToCleanPtr));
+     summaryPtr =  LfsSegGetSummaryPtr(segPtr);
+     limitPtr = summaryPtr + LfsSegSummaryBytesLeft(segPtr);
+     address = LfsSegDiskAddress(segPtr, LfsSegGetBufferPtr(segPtr));
      blockOffset = 0;
+
      while (summaryPtr < limitPtr) { 
 	switch (*(unsigned short *) summaryPtr) {
 	case LFS_FILE_LAYOUT_DESC: {
-	    unsigned int diskAddr;
+	    int diskAddr;
 	    int		fileNumber;
 	    int		slot;
 	    LfsFileDescriptor	*descPtr;
 	    char		*blockStartPtr;
-	    Fscache_Block *blockPtr = (Fscache_Block *) NIL;
+	    Fscache_Block *descCacheblockPtr = (Fscache_Block *) NIL;
 	    /*
 	     * A block of descriptors.  For each descriptor that is live
 	     * (being pointed to by the descriptor map) we bring it into
-	     * the system and mark it as dirty. We must be sure there is
-	     * enought room in the output segment. 
+	     * the system and mark it as dirty. 
 	     */
-	    descPtr = (LfsFileDescriptor *)
-		blockStartPtr = LfsSegFetchBytes(segToCleanPtr, blockOffset, 
-				layoutPtr->params.descPerBlock * 
-				 sizeof(LfsFileDescriptor));
+	    blockStartPtr = LfsSegFetchBytes(segPtr, blockOffset, 
+			    layoutPtr->params.descPerBlock * 
+				sizeof(LfsFileDescriptor));
+	    descPtr = (LfsFileDescriptor *)blockStartPtr;
 	    for (slot = 0; slot < layoutPtr->params.descPerBlock; slot++) {
+		Fs_FileID fileID;
+		Fsio_FileIOHandle *newHandlePtr;
+		Boolean	found;
+		/*
+		 * The descriptor block is terminated by an unallocated
+		 * descriptor.
+		 */
 		if (!(descPtr[slot].common.flags & FSDM_FD_ALLOC)) {
 		    break;
 		}
 		fileNumber = descPtr[slot].fileNumber;
 		status = LfsDescMapGetDiskAddr(lfsPtr, fileNumber, &diskAddr);
-		if (status != SUCCESS) {
+		/*
+		 * If the file is not allocated or this descriptor is not
+		 * the most current copy, skip it.
+		 */
+		if ((status == FS_FILE_NOT_FOUND) ||
+		    ((status == SUCCESS) && 
+				(diskAddr != address + blockOffset))) {
 		    continue;
 		}
-	        if (diskAddr == address + blockOffset) {
-		    Fs_FileID fileID;
-		    Fsio_FileIOHandle *newHandlePtr;
-		    Boolean	found;
-		    if (blockPtr == (Fscache_Block *) NIL) {
-			/*
-			 * We get to read it into the cache if its not already
-			 * there. 
-			 */
-			Fscache_FetchBlock(&lfsPtr->descCacheHandle.cacheInfo,
-					diskAddr, FSCACHE_DESC_BLOCK, 
-					&blockPtr, &found);
-			if (!found) {
-			    bcopy(blockStartPtr, blockPtr->blockAddr,
-				   lfsPtr->fileLayout.params.descPerBlock * 
-					 sizeof(*descPtr));
-			    Fscache_IODone(blockPtr);
-			}
-			Fscache_UnlockBlock(blockPtr, 0, -1, FS_BLOCK_SIZE, 0);
-		    }
-
-		    fileID.type = FSIO_LCL_FILE_STREAM;
-		    fileID.serverID = rpc_SpriteID;
-		    fileID.major = lfsPtr->domainPtr->domainNumber;
-		    fileID.minor = fileNumber;
-		    status = Fsio_LocalFileHandleInit(&fileID, (char *) NIL, 
-					(Fsdm_FileDescriptor *) NIL, 
-					&newHandlePtr);
-		    if (status != SUCCESS) {
-			LfsError(lfsPtr, status,
-				"Can't get handle to clean file\n");
-		    }
-		    Fscache_MarkToClean(newHandlePtr, 0,
-					 0, (char *) NIL);
-		    Fsutil_HandleRelease(newHandlePtr, TRUE);
+		if (status != SUCCESS) {
+		    LfsError(lfsPtr, status, 
+			"Bad file number in descriptor block.\n");
+		    continue;
 		}
+		if (descCacheblockPtr == (Fscache_Block *) NIL) {
+		    /*
+		     * We get to read it into the cache if its not already
+		     * there. 
+		     */
+		    Fscache_FetchBlock(&lfsPtr->descCacheHandle.cacheInfo,
+			    diskAddr, (FSCACHE_DESC_BLOCK|FSCACHE_CANT_BLOCK),
+				    &descCacheblockPtr, &found);
+		    if (!found) {
+			bcopy(blockStartPtr, descCacheblockPtr->blockAddr,
+			       lfsPtr->fileLayout.params.descPerBlock * 
+				     sizeof(*descPtr));
+			Fscache_IODone(descCacheblockPtr);
+		    }
+		}
+		/*
+		 * Grab a handle for this file.
+		 */
+		fileID.type = FSIO_LCL_FILE_STREAM;
+		fileID.serverID = rpc_SpriteID;
+		fileID.major = lfsPtr->domainPtr->domainNumber;
+		fileID.minor = fileNumber;
+		status = Fsio_LocalFileHandleInit(&fileID, (char *) NIL, 
+				    (Fsdm_FileDescriptor *) NIL, 
+				    &newHandlePtr);
+		if (status != SUCCESS) {
+		    LfsError(lfsPtr, status, 
+				"Can't get handle to clean file\n");
+		}
+		*sizePtr += sizeof(LfsFileDescriptor);
+		Fscache_PutFileOnDirtyList(&newHandlePtr->cacheInfo, 
+				    (int)(FSCACHE_FILE_BEING_CLEANED |
+				    FSCACHE_FILE_DESC_DIRTY));
+		Fsutil_HandleRelease(newHandlePtr, TRUE);
+	    }
+	    if (descCacheblockPtr != (Fscache_Block *) NIL) {
+		Fscache_UnlockBlock(descCacheblockPtr,(unsigned)0, -1, 
+					FS_BLOCK_SIZE, 0);
 	    }
 	    /*
 	     * Skip over the summary bytes describing this block. 
@@ -418,8 +421,7 @@ FileLayoutClean(segToCleanPtr, segPtr)
 	    break;
 	}
 	case LFS_FILE_LAYOUT_DATA: {
-	    LfsFileLayoutSummary *fileLayoutPtr;
-	    unsigned int	*blockArray, diskAddress;
+	    int	*blockArray, diskAddress;
 	    int			 startBlockOffset, i;
 	    unsigned short	curTruncVersion;
 	    /*
@@ -427,14 +429,24 @@ FileLayoutClean(segToCleanPtr, segPtr)
 	     * the cache. 
 	     */
 	     fileSumPtr = (LfsFileLayoutSummary *) summaryPtr;
-	    startBlockOffset = blockOffset;
+	     startBlockOffset = blockOffset;
+	     /*
+	      * Liveness check.   First see if the version number is
+	      * the same and the file is still allocated.
+	      */
 	     status = LfsDescMapGetVersion(lfsPtr, 
-			fileSumPtr->fileNumber, &curTruncVersion);
+			(int)fileSumPtr->fileNumber, &curTruncVersion);
 	     if ((status == SUCCESS) && 
 		 (curTruncVersion == fileSumPtr->truncVersion)) {
 		Fs_FileID fileID;
 		Fsio_FileIOHandle *newHandlePtr;
 
+		/*
+		 * So far so good.  File is allocated and version number 
+		 * says it hasn't been deleted or truncated. Grap a 
+		 * handle for the file a check to see if the blocks 
+		 * are still a member of the file.
+		 */
 		fileID.type = FSIO_LCL_FILE_STREAM;
 		fileID.serverID = rpc_SpriteID;
 		fileID.major = lfsPtr->domainPtr->domainNumber;
@@ -446,75 +458,88 @@ FileLayoutClean(segToCleanPtr, segPtr)
 		    LfsError(lfsPtr, status,
 			    "Can't get handle to clean file\n");
 		}
-		 blockArray = (unsigned int *) (
-				summaryPtr + sizeof(LfsFileLayoutSummary));
+		/*
+		 * For each block ... 
+		 */
+		blockArray = (int *)(summaryPtr + sizeof(LfsFileLayoutSummary));
 		for (i = 0; i < fileSumPtr->numDataBlocks; i++) {
 		    status = LfsFile_GetIndex(newHandlePtr, blockArray[i],
-					      &diskAddress);
+						TRUE, &diskAddress);
 		    if ((status == SUCCESS) &&
 			(diskAddress == address + blockOffset)) { 
-			int	blockSize, blocksLeft, bytesLeft;
-			blockSize = FS_BLOCK_SIZE;
+			int	blockSize, bytesLeft, flags, blocksLeft;
+			Boolean	 found;
+			Fscache_Block *blockPtr;
+			/*
+			 * The block exists and is at the location we are
+			 * cleaning, bring it into the cache. Be a little
+			 * careful about short blocks.
+			 */
 			blocksLeft = (fileSumPtr->numBlocks - 
-					(blockOffset - startBlockOffset));
-			bytesLeft = LfsBlocksToBytes(lfsPtr, blocksLeft);
-			if (blockSize > bytesLeft) { 
-			    blockSize = bytesLeft;
+					  (blockOffset - startBlockOffset));
+		        bytesLeft = LfsBlocksToBytes(lfsPtr, blocksLeft);
+			blockSize = (bytesLeft < FS_BLOCK_SIZE) ? bytesLeft :
+								  FS_BLOCK_SIZE;
+			flags = (FSCACHE_IO_IN_PROGRESS | FSCACHE_CANT_BLOCK |
+			          ((blockArray[i] >= 0) ? FSCACHE_DATA_BLOCK :
+							  FSCACHE_IND_BLOCK));
+
+		        Fscache_FetchBlock(&newHandlePtr->cacheInfo,
+				      blockArray[i], flags, &blockPtr, &found);
+			if (!found) {
+			    int offset;
+			    char *dPtr;
+			    offset = blockArray[i] * FS_BLOCK_SIZE;
+			    /*
+			     * Its not in the cache already, copy it in.
+			     * Handle the cache that it in a short fragment.
+			     */
+			    if (offset + blockSize - 1 > 
+					newHandlePtr->descPtr->lastByte) {
+				blockSize = newHandlePtr->descPtr->lastByte
+						- offset + 1;
+			    }
+			    dPtr = LfsSegFetchBytes(segPtr, blockOffset, 
+					blockSize);
+			    bcopy(dPtr, blockPtr->blockAddr, blockSize);
+
 			}
-			Fscache_MarkToClean(newHandlePtr, 
-					blockArray[i], blockSize, 
-				    LfsSegFetchBytes(segToCleanPtr, 
-					  blockOffset, blockSize));
+			Fscache_UnlockBlock(blockPtr, fsutil_TimeInSeconds,
+						-1, blockSize, 
+						FSCACHE_FILE_BEING_CLEANED);
+			*sizePtr += blockSize;
+			*numCacheBlocksPtr++;
 		    }
 		    blockOffset += LfsBytesToBlocks(lfsPtr, FS_BLOCK_SIZE);
 		}
 		Fsutil_HandleRelease(newHandlePtr, TRUE);
-	     }
+	    }
 	    blockOffset = startBlockOffset + fileSumPtr->numBlocks;
 	    summaryPtr += sizeof(LfsFileLayoutSummary) + 
 				fileSumPtr->numDataBlocks * sizeof(int); 
 	    break;
 	  }
 
-	    case LFS_FILE_LAYOUT_DIR_LOG: {
-		LfsFileLayoutLog	*logSumPtr;
-		/* 
-		 * Directory log info is not needed during clean so we 
-		 * just skip over it.
-		 */
-		 logSumPtr = (LfsFileLayoutLog *) summaryPtr;
-		 summaryPtr = summaryPtr + logSumPtr->numBytes;
-		 break;
-	    }
-	    case LFS_FILE_LAYOUT_DBL_INDIRECT: 
-	    case LFS_FILE_LAYOUT_INDIRECT: 
-	    default: {
-		panic("Unknown type");
-	    }
-	 }
+	case LFS_FILE_LAYOUT_DIR_LOG: {
+	    LfsFileLayoutLog	*logSumPtr;
+	    /* 
+	     * Directory log info is not needed during clean so we 
+	     * just skip over it.
+	     */
+	     logSumPtr = (LfsFileLayoutLog *) summaryPtr;
+	     summaryPtr = summaryPtr + logSumPtr->numBytes;
+	     break;
+	}
+	case LFS_FILE_LAYOUT_DBL_INDIRECT: 
+	case LFS_FILE_LAYOUT_INDIRECT: 
+	default: {
+	    panic("Unknown type");
+	}
+      }
     }
-    LfsSegSetSummaryPtr(segToCleanPtr, summaryPtr);
-    LfsSegSetCurBlockOffset(segToCleanPtr,blockOffset);
-    bzero(&cleaningLayoutData,sizeof(cleaningLayoutData));
+    LfsSegSetSummaryPtr(segPtr, summaryPtr);
+    LfsSegSetCurBlockOffset(segPtr,blockOffset);
 
-    LfsGetDirtyFileToClean(&cacheInfoPtr);
-
-    if (cacheInfoPtr != (Fscache_FileInfo *) NIL) {
-	 /*
-	  * Since we read all the active parts of the segment into the
-	  * cache on the initial pass we just need to complete the 
-	  * layout.
-	  */
-	 while (!full && (cacheInfoPtr != (Fscache_FileInfo *) NIL)) {
-	       full = PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr,
-				layoutPtr, &cleaningLayoutData);
-	     if (full) {
-		   cleaningLayoutData.numDescSlotsLeft = 0;
-		   break;
-	     }
-	     LfsGetDirtyFileToClean(&cacheInfoPtr);
-	 }
-    }
     return full;
 
 }
@@ -536,14 +561,15 @@ FileLayoutClean(segToCleanPtr, segPtr)
  *----------------------------------------------------------------------
  */
 static Boolean 
-PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
+PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, cleaning,
+		segLayoutDataPtr)
     Lfs		*lfsPtr;	/* File system. */
     LfsSeg	*segPtr;	/* Segment to place data. */
     Fscache_FileInfo *cacheInfoPtr;	/* File to place in segment. */
     LfsFileLayout     *layoutPtr;   /* File layout info. */
+    Boolean	     cleaning;	    /* TRUE if cleaning. */
     FileSegLayout  *segLayoutDataPtr; /* Current layout data for segment. */
 {
-    LfsFileDescriptor	*descBlockPtr;
     LfsFileLayoutDesc	*descSumPtr;
     LfsFileLayoutSummary *fileSumPtr;
     Boolean	full = FALSE;
@@ -553,6 +579,7 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
     ReturnStatus	status;
     Fscache_Block	*blockPtr;
     Boolean		fileNotUsed = TRUE;
+    int			lastDirtyBlock;
 
     if (cacheInfoPtr == (Fscache_FileInfo *) NIL) {
 	return FALSE;
@@ -577,7 +604,7 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
 		 * summary block describing it. 
 		 */
 		descBufferPtr = LfsSegAddDataBuffer(segPtr, descBlocks,
-					    NIL,  NIL);
+					   (char *)NIL, (ClientData) NIL);
 		descSumPtr = (LfsFileLayoutDesc *) summaryPtr;
     
 		descSumPtr->blockType = LFS_FILE_LAYOUT_DESC;
@@ -612,7 +639,7 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
 	   fileSumPtr->blockType = LFS_FILE_LAYOUT_DATA;
 	   fileSumPtr->numBlocks = 0; /* Filled in later. */
 	   fileSumPtr->fileNumber = cacheInfoPtr->hdrPtr->fileID.minor;
-	   status = LfsDescMapGetVersion(lfsPtr, fileSumPtr->fileNumber,
+	   status = LfsDescMapGetVersion(lfsPtr, (int)fileSumPtr->fileNumber,
 					    &fileSumPtr->truncVersion);
 	   if (status != SUCCESS) {
 	       LfsError(lfsPtr, status, "Can't get truncate version number\n");
@@ -630,8 +657,10 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
 		while (!full) {
 		     LfsSegElement *bufferPtr;
 		     int blocks;
-		     LfsGetDirtyBlock(cacheInfoPtr, blockType, &blockPtr);
-		     if (blockPtr == (Fscache_Block *) NIL) {
+		     blocks = FscacheGetDirtyBlocks(cacheInfoPtr, BlockMatch,
+				(ClientData) blockType, 1, 
+				&blockPtr, &lastDirtyBlock);
+		     if (blocks == 0) {
 			break;
 		     }
 		     /*
@@ -646,7 +675,7 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
 		      */
 		     summaryPtr = LfsSegGrowSummary(segPtr, blocks,sizeof(int));
 		     if (summaryPtr == (char *) NIL) {
-			 LfsReturnDirtyBlock(blockPtr);
+			 FscacheReturnDirtyBlocks(1,&blockPtr, GEN_EINTR);
 			 full = TRUE;
 			 break;
 		     }
@@ -655,8 +684,9 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
 		     summaryPtr += sizeof(int);
 		     bufferPtr = LfsSegAddDataBuffer(segPtr, blocks, 
 				    blockPtr->blockAddr, (ClientData) blockPtr);
-		     status = LfsFile_SetIndex(cacheInfoPtr->hdrPtr, 
-					       blockPtr->blockNum,
+		     status = LfsFile_SetIndex(
+				(Fsio_FileIOHandle *)(cacheInfoPtr->hdrPtr), 
+					       blockPtr->blockNum, TRUE,
 				         LfsSegDiskAddress(segPtr, bufferPtr));
 		     if (status != SUCCESS) {
 			 LfsError(lfsPtr, status, "Can't update file index");
@@ -687,18 +717,21 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
 	      /*
 	       * XXX - need to do this under lock. 
 	       */
+	      cacheInfoPtr->flags &= ~FSCACHE_FILE_DESC_DIRTY;
 	      descPtr->flags &= ~FSDM_FD_DIRTY;	
 	      bcopy((char *) descPtr, &(segLayoutDataPtr->descBlockPtr->common),
-		    sizeof(*descPtr));
+		    (int)sizeof(*descPtr));
 	      segLayoutDataPtr->descBlockPtr->fileNumber = 
 			      cacheInfoPtr->hdrPtr->fileID.minor;
 	      status = LfsDescMapSetDiskAddr(lfsPtr, 
-			    segLayoutDataPtr->descBlockPtr->fileNumber, 
+			    (int)segLayoutDataPtr->descBlockPtr->fileNumber, 
 			    segLayoutDataPtr->descDiskAddr);
 	      if (status != SUCCESS) {
 		  LfsError(lfsPtr, status, "Can't update descriptor map.\n");
 	      }
+#ifdef notdef
 	      LfsProcessCleanBlock(cacheInfoPtr,(Fscache_Block *) NIL,SUCCESS);
+#endif
 	      segLayoutDataPtr->descBlockPtr++;
 	      segLayoutDataPtr->numDescSlotsLeft--;
 	     if (lfsFileLayoutDebug ) { 
@@ -716,8 +749,83 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, segLayoutDataPtr)
 	  * If we didn't use any of the blocks for this file return 
 	  * it to the dirty list.
 	  */
-	 LfsReturnDirtyFile(cacheInfoPtr);
+	 FscacheReturnDirtyFiles(1,&cacheInfoPtr,TRUE);
      }
      return full;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * BlockMatch --
+ *
+ * 	Cache backend block type match.  
+ *
+ * Results:
+ *	TRUE.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static Boolean
+BlockMatch(blockPtr, clientData)
+    Fscache_Block *blockPtr;
+    ClientData	   clientData;
+{
+    int blockLevel = (int) clientData;
+
+    /*
+     * The match fails if:
+     * a) We want a data block and the block is an indirect block.
+     *  	or
+     * b) We want an indirect block and the blocks is a data or
+     *	  double indirect block.
+     *		or
+     * c) We want a double indirect block and don't get it.
+     */
+    if ( ((blockLevel == LFS_FILE_LAYOUT_DATA) && (blockPtr->blockNum < 0)) ||
+	 ((blockLevel == LFS_FILE_LAYOUT_INDIRECT) && 
+		((blockPtr->blockNum >= 0) || (blockPtr->blockNum == -2))) || 
+	 ((blockLevel == LFS_FILE_LAYOUT_DBL_INDIRECT) && 
+		 (blockPtr->blockNum != -2))) { 
+	return FALSE;
+    } 
+
+    return TRUE;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FileMatch --
+ *
+ * 	Cache backend file match for LFS.
+ *
+ * Results:
+ *	TRUE.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static Boolean
+FileMatch(cacheInfoPtr, clientData)
+    Fscache_FileInfo *cacheInfoPtr;
+    ClientData	clientData;
+{
+    Boolean	cleaning = (Boolean) clientData;
+    Boolean 	retVal;
+
+    if (cleaning) {
+	retVal = ((cacheInfoPtr->flags & FSCACHE_FILE_BEING_CLEANED) != 0);
+    } else {
+	retVal = ((cacheInfoPtr->flags & FSCACHE_FILE_BEING_CLEANED) == 0);
+    }
+    return retVal;
 }
 

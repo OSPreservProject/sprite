@@ -22,7 +22,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "lfsInt.h"
 #include "dev.h"
 #include "fs.h"
-#include "dev.h"
 #include "devFsOpTable.h"
 
 
@@ -45,7 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 ReturnStatus
 LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     Lfs		*lfsPtr;	/* Target file system. */
-    unsigned int diskAddress;	/* Disk address to read from. */
+    int diskAddress;	/* Disk address to read from. */
     int		numBytes;	/* Number of bytes to read. */
     char	*bufferPtr;	/* Buffer to read into. */
 {
@@ -102,7 +101,7 @@ LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
 ReturnStatus
 LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     Lfs		*lfsPtr;	/* Target file system. */
-    unsigned int diskAddress;	/* Disk address to send data. */
+    int diskAddress;	/* Disk address to send data. */
     int		numBytes;	/* Number of bytes to write. */
     char	*bufferPtr;	/* Buffer to write into. */
 {
@@ -139,3 +138,53 @@ LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     return status;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_RereadSummaryInfo --
+ *
+ *	Reread the summary sector associated with the prefix and update
+ *	the domain information. This should be called if the summary
+ *	sector on the disk has been changed since the domain was attached.
+ *
+ * Results:
+ *	SUCCESS 
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Lfs_RereadSummaryInfo(domainPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain to reread summary for. */
+{
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_ReallocBlock --
+ *
+ *	Allocate a new block on disk to replace the given block.  This is
+ *	intended to be used by the cache when it can't write out a block
+ *	because of a disk error.
+ *
+ * Results:
+ * 	None
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Lfs_ReallocBlock(data, callInfoPtr)
+    ClientData		data;			/* Block to move */
+    Proc_CallInfo	*callInfoPtr;	
+{
+    panic("Lfs_ReallocBlock called.\n");
+}

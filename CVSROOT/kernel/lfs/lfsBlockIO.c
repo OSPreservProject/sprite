@@ -57,23 +57,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 /*ARGSUSED*/
 ReturnStatus
-Lfs_FileBlockRead(hdrPtr, blockPtr, remoteWaitPtr)
-    Fs_HandleHeader     *hdrPtr;        /* Handle on a local file. */
+Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain of file. */
+    register Fsio_FileIOHandle *handlePtr;	/* Handle on a local file. */
     Fscache_Block       *blockPtr;      /* Cache block to read in.  This assumes
                                          * the blockNum, blockAddr (buffer area)
                                          * and blockSize are set.  This modifies
                                          * blockSize if less bytes were read
                                          * because of EOF. */
-    Sync_RemoteWaiter *remoteWaitPtr;   /* NOTUSED */
-
 {
-    register Fsio_FileIOHandle *handlePtr =
-	    (Fsio_FileIOHandle *)hdrPtr;
-    register	Fsdm_Domain	 *domainPtr;
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
     register	Fsdm_FileDescriptor *descPtr;
     register			 offset;
     register int		 numBytes;
-    unsigned int		diskAddress;
+    int				diskAddress;
     ReturnStatus		 status;
 
     status = SUCCESS;
@@ -81,10 +78,6 @@ Lfs_FileBlockRead(hdrPtr, blockPtr, remoteWaitPtr)
     numBytes = FS_BLOCK_SIZE;
     offset = blockPtr->blockNum * FS_BLOCK_SIZE;
 
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
-    if (domainPtr == (Fsdm_Domain *) NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
     /*
      * Is a logical file read. Round the size down to the actual
      * last byte in the file.
@@ -97,7 +90,7 @@ Lfs_FileBlockRead(hdrPtr, blockPtr, remoteWaitPtr)
 	numBytes = descPtr->lastByte - offset + 1;
     }
 
-    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, 
+    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, FALSE,
 			     &diskAddress);
     if (status != SUCCESS) {
 	printf("Lfs_FileBlockRead: Could not setup indexing\n");
@@ -110,7 +103,7 @@ Lfs_FileBlockRead(hdrPtr, blockPtr, remoteWaitPtr)
 	 * the number of fragments, and the memory buffer.
 	 */
 	int	numFrag = (numBytes - 1) / FS_FRAGMENT_SIZE + 1;
-	status = LfsReadBytes(LfsFromDomainPtr(domainPtr), diskAddress, 
+	status = LfsReadBytes(lfsPtr, diskAddress, 
 			numFrag * FS_FRAGMENT_SIZE,  blockPtr->blockAddr);
     } else {
 	/*
@@ -139,7 +132,6 @@ exit:
 	bzero(blockPtr->blockAddr + blockPtr->blockSize,
 		FS_BLOCK_SIZE - blockPtr->blockSize);
     }
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
@@ -167,10 +159,10 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-Lfs_FileBlockWrite(hdrPtr, blockPtr, flags)
-    Fs_HandleHeader *hdrPtr;    /* I/O handle for the file. */
-    Fscache_Block *blockPtr;    /* Cache block to write out. */
-    int         flags;          /* IGNORED */
+Lfs_FileBlockWrite(domainPtr, handlePtr, blockPtr)
+    Fsdm_Domain	 *domainPtr;
+    Fsio_FileIOHandle *handlePtr;	/* I/O handle for the file. */
+    Fscache_Block *blockPtr;	/* Cache block to write out. */
 {
     panic("Lfs_FileBlockWrite called\n");
 }
@@ -179,7 +171,7 @@ Lfs_FileBlockWrite(hdrPtr, blockPtr, flags)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_BlockAllocate --
+ * Lfs_BlockAllocate --
  *
  *      Allocate disk space for the given file.  This routine only allocates
  *      one block beginning at offset and going for numBytes.   If
@@ -194,23 +186,29 @@ Lfs_FileBlockWrite(hdrPtr, blockPtr, flags)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-Lfs_FileBlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
-    Fs_HandleHeader     *hdrPtr;        /* Local file handle. */
-    int                 offset;         /* Offset to allocate at. */
-    int                 numBytes;       /* Number of bytes to allocate. */
-    int                 flags;          /* FSCACHE_DONT_BLOCK */
-    int                 *blockAddrPtr;  /* Disk address of block allocated. */
-    Boolean             *newBlockPtr;   /* TRUE if there was no block allocated
-                                         * before. */
+Lfs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
+		newBlockPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain of file. */
+    register Fsio_FileIOHandle *handlePtr;	/* Local file handle. */
+    int 		offset;		/* Offset to allocate at. */
+    int 		numBytes;	/* Number of bytes to allocate. */
+    int			flags;		/* FSCACHE_DONT_BLOCK */
+    int			*blockAddrPtr; 	/* Disk address of block allocated. */
+    Boolean		*newBlockPtr;	/* TRUE if there was no block allocated
+					 * before. */
 {
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
     int	newLastByte;
     ReturnStatus status;
     Boolean	dirty = FALSE;
-    register Fsio_FileIOHandle *handlePtr =
-	    (Fsio_FileIOHandle *)hdrPtr;
     register	Fsdm_FileDescriptor *descPtr;
 
+    status = LfsSegUsageAllocateBytes(lfsPtr, numBytes);
+    if (status != SUCCESS) {
+	*blockAddrPtr = FSDM_NIL_INDEX;
+	return status;
+    }
+    status = SUCCESS;
     descPtr = handlePtr->descPtr;
     newLastByte = offset + numBytes - 1; 
     *newBlockPtr = FALSE;
@@ -229,9 +227,6 @@ Lfs_FileBlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr
     if (dirty) { 
 	descPtr->descModifyTime = fsutil_TimeInSeconds;
 	descPtr->flags |= FSDM_FD_SIZE_DIRTY;
-	status = Fscache_FileDescStore(hdrPtr);
-    } else {
-	status = SUCCESS;
-    }
+    } 
     return(status);
 }

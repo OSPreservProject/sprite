@@ -64,15 +64,15 @@ static ReturnStatus	AccessBlock();
  */
 
 ReturnStatus
-LfsFile_GetIndex(handlePtr, blockNum, diskAddressPtr)
-    Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
+LfsFile_GetIndex(handlePtr, blockNum, cantBlock, diskAddressPtr)
+    Fsio_FileIOHandle	*handlePtr;   /* Handle for file that are 
 					      * interest in. */
-    int			      blockNum;      /* Block number of interest. */
-    unsigned int *diskAddressPtr; 		     /* Disk address returned. */
+    int		        blockNum;    /* Block number of interest. */
+    Boolean	cantBlock;	     /* TRUE if we can't block. */
+    int *diskAddressPtr; 	     /* Disk address returned. */
 {
     Lfs				*lfsPtr;
     Fsdm_Domain			*domainPtr;
-    int			      	indirectBlock;
     ReturnStatus		status;
 
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
@@ -80,7 +80,8 @@ LfsFile_GetIndex(handlePtr, blockNum, diskAddressPtr)
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     lfsPtr = LfsFromDomainPtr(domainPtr);
-    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, blockNum, diskAddressPtr);
+    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, blockNum, cantBlock,
+				diskAddressPtr);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return status;
 }
@@ -100,15 +101,15 @@ LfsFile_GetIndex(handlePtr, blockNum, diskAddressPtr)
  */
 
 ReturnStatus
-LfsFile_SetIndex(handlePtr, blockNum, diskAddress)
+LfsFile_SetIndex(handlePtr, blockNum, cantBlock, diskAddress)
     Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
 					      * interest in. */
-    int			      blockNum;      /* Block number of interest. */
-    unsigned int diskAddress; 		     /* Disk address of block. */
+    int		    blockNum; 		     /* Block number of interest. */
+    Boolean	cantBlock;	     /* TRUE if we can't block. */
+    int		 diskAddress; 		     /* Disk address of block. */
 {
     Lfs		    	*lfsPtr;
     Fsdm_Domain			*domainPtr;
-    int			      	indirectBlock;
     ReturnStatus		status;
 
 
@@ -117,7 +118,8 @@ LfsFile_SetIndex(handlePtr, blockNum, diskAddress)
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     lfsPtr = LfsFromDomainPtr(domainPtr);
-    status = AccessBlock(SET_ADDR, lfsPtr, handlePtr, blockNum, &diskAddress);
+    status = AccessBlock(SET_ADDR, lfsPtr, handlePtr, blockNum, cantBlock,
+		&diskAddress);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return status;
 }
@@ -140,7 +142,7 @@ LfsFile_SetIndex(handlePtr, blockNum, diskAddress)
  */
 
 static ReturnStatus
-AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
+AccessBlock(op, lfsPtr, handlePtr, blockNum, cantBlock, diskAddressPtr)
     enum IndexOp 	      op;	     /* Operation to be performed. 
 					      * Must be GET_ADDR or 
 					      * SET_ADDR. */
@@ -148,7 +150,8 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
 					      * interest in. */
     Lfs		*lfsPtr;		     /* File system of file. */
     int		blockNum;		     /* Block number of file. */
-    unsigned int *diskAddressPtr;	   /* Disk address in/out. */
+    Boolean	cantBlock;	     /* TRUE if we can't block. */
+    int *diskAddressPtr;	  	    /* Disk address in/out. */
 {
     int parentIndex, parentBlockNum, parentDiskAddress;
     Fsdm_FileDescriptor 	*descPtr;
@@ -172,12 +175,11 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
 	    if (op == GET_ADDR) { 
 		*diskAddressPtr = (descPtr->indirect[(-blockNum)-1]);
 	    } else {
-		unsigned int *addrPtr = 
-			(unsigned int *) (descPtr->indirect + ((-blockNum)-1));
+		int *addrPtr = (descPtr->indirect + ((-blockNum)-1));
 		LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
 		*addrPtr = *diskAddressPtr;
 		descPtr->flags |= FSDM_FD_INDEX_DIRTY;
-		(void) Fscache_FileDescStore(handlePtr);
+		(void) Fsdm_FileDescStore(handlePtr, FALSE);
 	    }
 	    return(SUCCESS);
 	 }
@@ -198,12 +200,11 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
 	    if (op == GET_ADDR) { 
 		*diskAddressPtr = (descPtr->direct[blockNum]);
 	    } else {
-		unsigned int *addrPtr = 
-				(unsigned int *) (descPtr->direct + blockNum);
+		int *addrPtr = (descPtr->direct + blockNum);
 		LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
 		*addrPtr = *diskAddressPtr;
 		descPtr->flags |= FSDM_FD_INDEX_DIRTY;
-		(void) Fscache_FileDescStore(handlePtr);
+		(void) Fsdm_FileDescStore(handlePtr, FALSE);
 	    }
 	    return(SUCCESS);
 	}
@@ -228,7 +229,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
     cacheFlags = (op == GET_ADDR) ? FSCACHE_IND_BLOCK :
 		   (FSCACHE_IND_BLOCK|FSCACHE_IO_IN_PROGRESS);
 
-    if (lfsPtr->writeActive) {
+    if (cantBlock) {
 	cacheFlags |= (FSCACHE_CANT_BLOCK|FSCACHE_DONT_BLOCK);
     }
 
@@ -242,8 +243,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
 	    *diskAddressPtr =  ((int *)parentblockPtr->blockAddr)[parentIndex];
 	    modTime = 0;
 	 } else  { /* SET_ADDR */
-	    unsigned int *addrPtr = 
-		((unsigned int *)parentblockPtr->blockAddr) + 	parentIndex; 
+	    int *addrPtr = ((int *)parentblockPtr->blockAddr) + parentIndex; 
 	    LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
 	    *addrPtr = *diskAddressPtr;
 	    modTime = fsutil_TimeInSeconds;
@@ -256,8 +256,8 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
      * Not found in cache. Try to read it in. First we need to find the
      * address of the block.
      */
-    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, parentBlockNum, 
-				&parentDiskAddress);
+    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, parentBlockNum, cantBlock,
+				(int *) &parentDiskAddress);
     if (parentDiskAddress == FSDM_NIL_INDEX) {
 	if (op == GET_ADDR) {
 	    *diskAddressPtr = FSDM_NIL_INDEX;
@@ -278,8 +278,8 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
 	return SUCCESS;
      }
 
-     status = LfsReadBytes(lfsPtr, parentDiskAddress, FS_BLOCK_SIZE, 
-		       parentblockPtr->blockAddr);
+     status = LfsReadBytes(lfsPtr, ( int)parentDiskAddress, 
+		FS_BLOCK_SIZE,  parentblockPtr->blockAddr);
      if (status != SUCCESS) {
 	 LfsError(lfsPtr, status, "Can't read indirect block.\n");
 	 return status;
@@ -288,7 +288,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, diskAddressPtr)
         *diskAddressPtr =  ((int *)parentblockPtr->blockAddr)[parentIndex];
 	modTime = 0;
      } else {
-	unsigned int *addrPtr = ((unsigned int *)parentblockPtr->blockAddr) + 
+	int *addrPtr = ((int *)parentblockPtr->blockAddr) + 
 					parentIndex; 
          LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
 	*addrPtr = *diskAddressPtr;
@@ -336,13 +336,13 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
     Boolean		found;
     ReturnStatus	status = SUCCESS;
     int			startElement, cstep, childBlockNum, i;
-    int			*blockArray;
+    int	*blockArray;
     /*
      * If this index block hasn't been allocated yet and not in the  
      * cache we don't need to free anything.
      */
     Fscache_FetchBlock(&handlePtr->cacheInfo, virtualBlockNum,
-	 FSCACHE_IO_IN_PROGRESS|FSCACHE_IND_BLOCK, &cacheBlockPtr, &found);
+       (int)(FSCACHE_IO_IN_PROGRESS|FSCACHE_IND_BLOCK), &cacheBlockPtr,&found);
     if (!found && (diskAddr == FSDM_NIL_INDEX)) {
 	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
 			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
@@ -383,7 +383,27 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
 	    childBlockNum--;
 	}
     }
-    blockArray = ((int *) cacheBlockPtr->blockAddr) + startElement;
+    blockArray =  (int *) cacheBlockPtr->blockAddr + startElement;
+    if (step == 1) {
+	int lastByteBlock;
+	/*
+	 * Free the last block in the file handling the case that it
+	 * is a fragment.
+	 */
+	lastByteBlock = handlePtr->descPtr->lastByte/FS_BLOCK_SIZE;
+	if ((lastByteBlock >= startBlockNum) && 
+	    (lastByteBlock < startBlockNum + FSDM_INDICES_PER_BLOCK) &&
+	    (lastByteBlock >= lastBlockNum)) {
+	    int fragSize;
+	    fragSize = handlePtr->descPtr->lastByte - 
+				(lastByteBlock * FS_BLOCK_SIZE);
+	    fragSize = LfsBlocksToBytes(lfsPtr, 
+			fragSize + lfsPtr->superBlock.hdr.blockSize - 1);
+
+	    (void) LfsSegUsageFreeBlocks(lfsPtr, fragSize, 1,
+			blockArray + (lastByteBlock - startBlockNum));
+	}
+    }
     (void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 
 			FSDM_INDICES_PER_BLOCK - startElement, blockArray);
     /*
@@ -392,7 +412,8 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
     if (startElement == 0) {
 	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
 			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
-	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, &diskAddr);
+	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, 
+			( int *) &diskAddr);
     } else {
 	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )fsutil_TimeInSeconds, 
 			virtualBlockNum, FS_BLOCK_SIZE, 0);
@@ -426,6 +447,7 @@ LfsFile_TruncIndex(lfsPtr, handlePtr, numBlocks)
 {
     Fsdm_FileDescriptor	*descPtr;
     ReturnStatus	status = SUCCESS;
+    int			lastByteBlock, fragSize;
 
 
     descPtr = handlePtr->descPtr;
@@ -451,6 +473,22 @@ LfsFile_TruncIndex(lfsPtr, handlePtr, numBlocks)
      * Finally the DIRECT blocks.
      */
     if (numBlocks < FSDM_NUM_DIRECT_BLOCKS) {
+	/*
+	 * The last block in the file may be a fragement. Free it first.
+	 */
+	lastByteBlock = descPtr->lastByte/FS_BLOCK_SIZE;
+	if ((lastByteBlock < FSDM_NUM_DIRECT_BLOCKS) && 
+	    (lastByteBlock >= numBlocks)) {
+	    /*
+	     * Compute the size of the fragment and round it into lfs
+	     * blocks.
+	     */
+	    fragSize = descPtr->lastByte - (lastByteBlock * FS_BLOCK_SIZE);
+	    fragSize = LfsBlocksToBytes(lfsPtr, 
+			fragSize + lfsPtr->superBlock.hdr.blockSize - 1);
+	    (void) LfsSegUsageFreeBlocks(lfsPtr, fragSize, 1, 
+		    descPtr->direct + lastByteBlock);
+	}
 	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 
 		    FSDM_NUM_DIRECT_BLOCKS - numBlocks,	
 		    descPtr->direct + numBlocks);

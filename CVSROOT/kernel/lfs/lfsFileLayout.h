@@ -29,7 +29,7 @@ typedef struct LfsFileLayoutSummary {
     unsigned short	blockType;     /* Type of data block. See below. */
     unsigned short	numBlocks;     /* Number of file system blocks covered
 					* by this summary. */
-    unsigned int	fileNumber;    /* File number of block(s) owner. */
+    int	fileNumber;  		       /* File number of block(s) owner. */
     unsigned short 	truncVersion;  /* Truncate version number used for
 					* cleaning files. */
     unsigned short      numDataBlocks; /* Number of file block ranges after 
@@ -59,7 +59,7 @@ typedef struct LfsFileLayoutLog {
  * descriptor blocks. */
 typedef struct LfsFileLayoutDesc {
     unsigned short	blockType;     /* Type of data block. See below. */
-    unsigned short	numBlocks;     /* Number of file system blocks covered
+    unsigned short	numBlocks;    /* Number of file system blocks covered
 				       * by this summary. */
 } LfsFileLayoutDesc;
 
@@ -80,6 +80,15 @@ typedef struct LfsFileLayoutParams {
     char pad[LFS_FILE_LAYOUT_PARAMS_SIZE - 4];
 
 } LfsFileLayoutParams;
+
+/*
+ * Routines for lint purposes only.
+ */
+
+extern ReturnStatus LfsFileLayoutAttach();
+extern Boolean	LfsFileLayoutProc(), LfsFileLayoutClean();
+extern Boolean LfsFileLayoutCheckpoint();
+extern void LfsFileLayoutWriteDone();
 
 #endif /* _LFSFILELAYOUT */
 

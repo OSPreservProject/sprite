@@ -31,20 +31,30 @@ extern ReturnStatus Lfs_GetNewFileNumber();
 extern ReturnStatus Lfs_FreeFileNumber();
 extern Boolean Lfs_FileDescStore();
 extern ReturnStatus Lfs_FileDescFetch();
-extern ReturnStatus Lfs_FileDescTrunc();
+extern ReturnStatus Lfs_FileDescInit();
 /*
  * Startup and shutdown routines. 
  */
 extern ReturnStatus Lfs_AttachDisk();
 extern ReturnStatus Lfs_DetachDisk();
+extern ReturnStatus Lfs_DomainWriteBack();
+extern ReturnStatus Lfs_RereadSummaryInfo();
+extern ReturnStatus Lfs_DomainInfo();
 /*
  * File I/O and allocate routines. 
  */
 extern ReturnStatus Lfs_FileBlockRead();
 extern ReturnStatus Lfs_FileBlockWrite();
-extern ReturnStatus Lfs_FileBlockAllocate();
+extern ReturnStatus Lfs_BlockAllocate();
+extern ReturnStatus Lfs_FileTrunc();
+/*
+ * Cache routines. 
+ */
+extern void    Lfs_ReallocBlock();
+extern Boolean Lfs_StartWriteBack();
 
 
+extern void Lfs_Init();
 
 #endif /* _LFS */
 

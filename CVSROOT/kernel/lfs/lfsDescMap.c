@@ -39,7 +39,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  * Results:
  *	SUCCESS if the entry is resident in the descriptor map.
- *	FAILURE if the fileNumber is not available in the map.
+ *	FS_FILE_NOT_FOUND if the file is not allocated.
+ *	GEN_INVALID_ARG if the fileNumber is not available in the map.
  *	
  * Side effects:
  *	None.
@@ -60,13 +61,13 @@ LfsDescMapGetVersion(lfsPtr, fileNumber, versionNumPtr)
      * Do some error checking.
      */
     if ((fileNumber < 0) || (fileNumber >= mapPtr->params.maxDesc)) {
-	return FAILURE;
+	return GEN_INVALID_ARG;
     }
 
     entryPtr = ((LfsDescMapEntry *) mapPtr->stableMem.dataPtr) + fileNumber;
 
     if (!(entryPtr->flags & LFS_DESC_MAP_ALLOCED)) {
-	return FAILURE;
+	return FS_FILE_NOT_FOUND;
     }
     *versionNumPtr = entryPtr->truncVersion;
     return SUCCESS;
@@ -83,7 +84,7 @@ LfsDescMapGetVersion(lfsPtr, fileNumber, versionNumPtr)
  *
  * Results:
  *	SUCCESS if the entry is resident in the descriptor map.
- *	FAILURE if the fileNumber is not available in the map.
+ *	GEN_INVALID_ARG if the fileNumber is not available in the map.
  *	
  * Side effects:
  *	Version number of entry increment.
@@ -104,7 +105,7 @@ LfsDescMapIncVersion(lfsPtr, fileNumber, versionPtr)
      * Do some error checking.
      */
     if ((fileNumber < 0) || (fileNumber >= mapPtr->params.maxDesc)) {
-	return FAILURE;
+	return GEN_INVALID_ARG;
     }
     lfsPtr->dirty = TRUE;
     entryPtr = ((LfsDescMapEntry *) mapPtr->stableMem.dataPtr) + fileNumber;
@@ -123,7 +124,8 @@ LfsDescMapIncVersion(lfsPtr, fileNumber, versionPtr)
  *
  * Results:
  *	SUCCESS if the entry is resident in the descriptor map.
- *	FAILURE if the fileNumber is not available in the map.
+ *	FS_FILE_NOT_FOUND if the file is not allocated.
+ *	GEN_INVALID_ARG if the fileNumber is not available in the map.
  *	
  * Side effects:
  *	None.
@@ -135,7 +137,7 @@ ReturnStatus
 LfsDescMapGetDiskAddr(lfsPtr, fileNumber, diskAddrPtr)
     Lfs	  *lfsPtr;	/* File system of descriptor. */
     int	  fileNumber;   /* File number of descriptor. */ 
-    unsigned int  *diskAddrPtr; /* Current disk address.*/
+    int  *diskAddrPtr; /* Current disk address.*/
 {
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
     LfsDescMapEntry   *entryPtr;
@@ -144,13 +146,13 @@ LfsDescMapGetDiskAddr(lfsPtr, fileNumber, diskAddrPtr)
      * Do some error checking.
      */
     if ((fileNumber < 0) || (fileNumber >= mapPtr->params.maxDesc)) {
-	return FAILURE;
+	return GEN_INVALID_ARG;
     }
 
     entryPtr = ((LfsDescMapEntry *) mapPtr->stableMem.dataPtr) + fileNumber;
 
     if (!(entryPtr->flags & LFS_DESC_MAP_ALLOCED)) {
-	return FAILURE;
+	return FS_FILE_NOT_FOUND;
     }
     *diskAddrPtr = entryPtr->blockAddress;
     return SUCCESS;
@@ -178,7 +180,7 @@ ReturnStatus
 LfsDescMapSetDiskAddr(lfsPtr, fileNumber, diskAddr)
     Lfs	  *lfsPtr;	/* File system of descriptor. */
     int	  fileNumber;   /* File number of descriptor. */ 
-    unsigned int  diskAddr; /* New disk address.*/
+    int  diskAddr; /* New disk address.*/
 {
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
     LfsDescMapEntry   *entryPtr;
@@ -195,9 +197,12 @@ LfsDescMapSetDiskAddr(lfsPtr, fileNumber, diskAddr)
     if (!(entryPtr->flags & LFS_DESC_MAP_ALLOCED)) {
 	return FAILURE;
     }
-    LfsStableMemMarkDirty(&(mapPtr->stableMem),(char *)entryPtr, sizeof(*entryPtr));
-    LfsSegUsageFreeBlocks(lfsPtr, sizeof(LfsFileDescriptor), 1, 
-			  &entryPtr->blockAddress);
+    LfsStableMemMarkDirty(&(mapPtr->stableMem),(char *)entryPtr, 
+			   sizeof(*entryPtr));
+    if (entryPtr->blockAddress != 0) { 
+	LfsSegUsageFreeBlocks(lfsPtr, sizeof(LfsFileDescriptor), 1, 
+			  (int *)&entryPtr->blockAddress);
+    }
     entryPtr->blockAddress = diskAddr;
     return SUCCESS;
 
@@ -225,7 +230,7 @@ ReturnStatus
 LfsDescMapGetAccessTime(lfsPtr, fileNumber, accessTimePtr)
     Lfs	  *lfsPtr;	/* File system of descriptor. */
     int	  fileNumber;   /* File number of descriptor. */ 
-    unsigned int  *accessTimePtr; /* Current access time.*/
+    int  *accessTimePtr; /* Current access time.*/
 {
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
     LfsDescMapEntry   *entryPtr;
@@ -268,7 +273,7 @@ ReturnStatus
 LfsDescMapSetAccessTime(lfsPtr, fileNumber, accessTime)
     Lfs	  *lfsPtr;	/* File system of descriptor. */
     int	  fileNumber;   /* File number of descriptor. */ 
-    unsigned int  accessTime; /* New current access time.*/
+    int  accessTime; /* New current access time.*/
 {
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
     LfsDescMapEntry   *entryPtr;
@@ -295,12 +300,12 @@ LfsDescMapSetAccessTime(lfsPtr, fileNumber, accessTime)
 /*
  *----------------------------------------------------------------------
  *
- * LfsDescMapAllocFileNum --
+ * Lfs_GetNewFileNumber --
  *
- *	Allocate an unused file number for a newly created file
- *	or directory.
+ *	Allocate an used file number for a newly created file or directory.
  *
  * Results:
+ *	An error if could not find a free file descriptor.
  *	SUCCESS if a file number can be allocate.
  *	FAILURE if all available file numbers are taken.
  *	
@@ -311,14 +316,16 @@ LfsDescMapSetAccessTime(lfsPtr, fileNumber, accessTime)
  */
 
 ReturnStatus
-LfsDescMapAllocFileNum(lfsPtr, dirFileNum, fileNumberPtr)
-    Lfs	  *lfsPtr;	/* File system of descriptor. */
+Lfs_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
+    Fsdm_Domain 	*domainPtr;	/* Domain to allocate the file 
+					 * descriptor out of. */
     int	 dirFileNum;	/* File number of the directory that
 			 * the file is in.  -1 means that
 			 * this file descriptor is being
 			 * allocated for a directory. */
     int	*fileNumberPtr; /* Place to return the file number allocated. */
 {
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
     register LfsDescMapEntry   *entryPtr;
     register int maxNumDesc, startDesc, i;
@@ -371,25 +378,26 @@ LfsDescMapAllocFileNum(lfsPtr, dirFileNum, fileNumberPtr)
 /*
  *----------------------------------------------------------------------
  *
- * LfsDescMapFreeFileNum --
+ * Lfs_FreeFileNumber() --
  *
- *	Mark a file number as unused.
+ *	Mark a file number as unused and make it available for re-allocation.
  *
  * Results:
  *	SUCCESS if a file number was not allocated.
  *	FAILURE if all available file numbers are taken.
  *	
  * Side effects:
- *	None.
+ *	Descriptor map entry is modified for the file.
  *
  *----------------------------------------------------------------------
  */
 
 ReturnStatus
-LfsDescMapFreeFileNum(lfsPtr, fileNumber)
-    Lfs	  *lfsPtr;	/* File system of descriptor. */
+Lfs_FreeFileNumber(domainPtr, fileNumber)
+    Fsdm_Domain 	*domainPtr;	/* Domain of the file descriptor. */
     int	  fileNumber;   /* File number to free. */
 {
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
     LfsDescMapEntry   *entryPtr;
     /*
@@ -407,18 +415,17 @@ LfsDescMapFreeFileNum(lfsPtr, fileNumber)
     LfsStableMemMarkDirty(&(mapPtr->stableMem),(char *)entryPtr,
 			sizeof(*entryPtr));
     entryPtr->flags &= ~LFS_DESC_MAP_ALLOCED;
+    LfsSegUsageFreeBlocks(lfsPtr, sizeof(LfsFileDescriptor), 1, 
+			  (int *)&entryPtr->blockAddress);
+    entryPtr->blockAddress = FSDM_NIL_INDEX;
     mapPtr->checkPoint.numAllocDesc--;
     return SUCCESS;
 }
 
-static ReturnStatus DescMapAttach();
-static Boolean	    DescMapClean();
-static Boolean 	    DescMapCheckpoint();
-static void	    DescMapWriteDone();
 
 static LfsSegIoInterface descMapIoInterface = 
-	{ DescMapAttach, LfsSegNullLayout, DescMapClean,
-	  DescMapCheckpoint, DescMapWriteDone,  0};
+	{ LfsDescMapAttach, LfsSegNullLayout, LfsDescMapClean,
+	  LfsDescMapCheckpoint, LfsDescMapWriteDone,  0};
 
 
 /*
@@ -460,13 +467,12 @@ LfsDescMapInit()
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
-DescMapAttach(lfsPtr, checkPointSize, checkPointPtr)
+ReturnStatus
+LfsDescMapAttach(lfsPtr, checkPointSize, checkPointPtr)
     Lfs   *lfsPtr;	     /* File system for attach. */
     int   checkPointSize;    /* Size of checkpoint data. */
     char  *checkPointPtr;     /* Data from last checkpoint before shutdown. */
 {
-    LfsDescMapParams  *paramPtr;
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
     LfsDescMapCheckPoint *cp = (LfsDescMapCheckPoint *) checkPointPtr;
     ReturnStatus	status;
@@ -481,12 +487,12 @@ DescMapAttach(lfsPtr, checkPointSize, checkPointPtr)
      * Load the index and buffer using the LfsStableMem routines.
      */
     size = sizeof(LfsDescMapCheckPoint);
-    status = LfsStableMemLoad(lfsPtr, &(paramPtr->stableMem), 
+    status = LfsStableMemLoad(lfsPtr, &(mapPtr->params.stableMem), 
 			checkPointSize - size,
 			checkPointPtr + size,
 			&(mapPtr->stableMem));
     if (status != SUCCESS) {
-	LfsError(status, lfsPtr,"Can't loading descriptor map index\n");
+	LfsError(lfsPtr, status, "Can't loading descriptor map index\n");
 	return status;
     }
 
@@ -512,12 +518,14 @@ DescMapAttach(lfsPtr, checkPointSize, checkPointPtr)
  *----------------------------------------------------------------------
  */
 
-static Boolean
-DescMapCheckpoint(segPtr, flags, checkPointPtr, checkPointSizePtr)
+Boolean
+LfsDescMapCheckpoint(segPtr, flags, checkPointPtr, checkPointSizePtr, 
+			clientDataPtr)
     LfsSeg *segPtr;		/* Segment containing data for checkpoint. */
     int	   flags;		/* Flags for shutdown */
     char   *checkPointPtr;      /* Buffer to write checkpoint data. */
     int	   *checkPointSizePtr;  /* Bytes added to the checkpoint area.*/
+    ClientData *clientDataPtr;	
 {
     Lfs		      *lfsPtr = segPtr->lfsPtr;
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
@@ -528,7 +536,7 @@ DescMapCheckpoint(segPtr, flags, checkPointPtr, checkPointSizePtr)
     *cp = mapPtr->checkPoint;
     size = sizeof(LfsDescMapCheckPoint);
     full = LfsStableMemCheckpoint(segPtr, checkPointPtr + size, flags,
-				checkPointSizePtr, &(mapPtr->stableMem));
+			checkPointSizePtr, clientDataPtr, &(mapPtr->stableMem));
     (*checkPointSizePtr) = (*checkPointSizePtr) + size;
     return full;
 
@@ -550,15 +558,16 @@ DescMapCheckpoint(segPtr, flags, checkPointPtr, checkPointSizePtr)
  *----------------------------------------------------------------------
  */
 
-static void
-DescMapWriteDone(segPtr, flags)
+void
+LfsDescMapWriteDone(segPtr, flags, clientDataPtr)
     LfsSeg *segPtr;		/* Segment containing data for checkpoint. */
     int	   flags;		/* Flags for checkpoint */
+    ClientData *clientDataPtr;
 {
     Lfs		      *lfsPtr = segPtr->lfsPtr;
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
 
-    LfsStableMemWriteDone(segPtr, flags, &(mapPtr->stableMem));
+    LfsStableMemWriteDone(segPtr, flags, clientDataPtr, &(mapPtr->stableMem));
     return;
 
 }
@@ -581,15 +590,18 @@ DescMapWriteDone(segPtr, flags)
  *----------------------------------------------------------------------
  */
 
-static Boolean
-DescMapClean(segToCleanPtr, segPtr)
-    LfsSeg *segToCleanPtr;	/* Segment containing data to clean. */
-    LfsSeg *segPtr;		/* Segment to place data blocks in. */
+Boolean
+LfsDescMapClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
+    LfsSeg *segPtr;	/* Segment containing data to clean. */
+    int	   *sizePtr;		/* Segment to place data blocks in. */
+    int *numCacheBlocksPtr;
+    ClientData *clientDataPtr;
 {
     Lfs		      *lfsPtr = segPtr->lfsPtr;
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
 
-    return LfsStableMemClean(segToCleanPtr, segPtr, &(mapPtr->stableMem));
+    return LfsStableMemClean(segPtr, sizePtr, numCacheBlocksPtr, 
+		clientDataPtr, &(mapPtr->stableMem));
 
 }
 
