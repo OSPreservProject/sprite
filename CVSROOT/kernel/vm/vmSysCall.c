@@ -1254,9 +1254,12 @@ Vm_Mprotect(startAddr, length, prot)
     for (i=lastPage-firstPage, ptePtr =
 	    VmGetAddrPTEPtr(&virtAddr, virtAddr.page);i>=0;
 	    i--, VmIncPTEPtr(ptePtr,1), virtAddr.page++) {
-	if (lastPage >= segOffset(&virtAddr) + virtAddr.segPtr->ptSize) {
-	    printf("Page out of range\n");
-	    return SYS_INVALID_ARG; /* ENOMEM */
+	if (virtAddr.page >= segOffset(&virtAddr) + virtAddr.segPtr->ptSize) {
+	    printf("Page %d out of range\n",virtAddr.page);
+	    printf("Addr = %x, segOffset=%d, ptSize=%d, segType %d\n", startAddr,
+		    segOffset(&virtAddr), virtAddr.segPtr->ptSize,
+		    virtAddr.segPtr->type);
+	    break;
 	}
 	if (prot & PROT_WRITE) {
 	    *ptePtr &= ~VM_READ_ONLY_PROT;
