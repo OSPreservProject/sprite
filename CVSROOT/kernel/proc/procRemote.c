@@ -37,6 +37,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "migrate.h"
 #include "fs.h"
 #include "stdlib.h"
+#include "string.h"
 #include "sig.h"
 #include "spriteTime.h"
 #include "list.h"
@@ -1116,7 +1117,7 @@ ProcRemoteExec(procPtr, uid)
 
     ptr = buffer;
     Byte_FillBuffer(ptr, int,  uid);
-    strcpy(ptr,  procPtr->argString);
+    (void) strcpy(ptr,  procPtr->argString);
 
 
     /*

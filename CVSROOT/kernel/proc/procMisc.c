@@ -175,15 +175,15 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
 	if (!remote) {
 	    bcopy((Address)procPtr, (Address)&pcbEntry,
 		    sizeof (Proc_ControlBlock));
+	    TICKS_TO_TIME(pcbEntry);
+	    FillPCBInfo(&pcbEntry, &statusInfo);
 	} else {
-	    status = GetRemotePCB(hostID, processID, &pcbEntry,
+	    status = GetRemotePCB(hostID, processID, &statusInfo,
 				       argString);
 	    if (status != SUCCESS) {
 		return(status);
 	    }
 	}
-	TICKS_TO_TIME(pcbEntry);
-	FillPCBInfo(&pcbEntry, &statusInfo);
 	if (Proc_ByteCopy(FALSE, bytesToCopy,
 		(Address)&statusInfo, (Address) bufferPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
@@ -253,8 +253,8 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
 	    if (argsPtr != (Proc_PCBArgString *) USER_NIL) {
 		if (!remote) {
 		    if (procPtr->argString != (Address) NIL) {
-			strncpy(argString, procPtr->argString,
-				PROC_PCB_ARG_LENGTH - 1);
+			(void) strncpy(argString, procPtr->argString,
+				       PROC_PCB_ARG_LENGTH - 1);
 			argString[PROC_PCB_ARG_LENGTH - 1] = '\0';
 		    } else {
 			argString[0] = '\0';
@@ -514,7 +514,7 @@ Proc_RpcGetPCB(srvToken, clientID, command, storagePtr)
 	if (procPtr->argString != (Address) NIL) {
 	    storagePtr->replyDataSize = strlen(procPtr->argString) + 1;
 	    storagePtr->replyDataPtr = (Address) malloc(storagePtr->replyDataSize);
-	    strcpy(storagePtr->replyDataPtr, procPtr->argString);
+	    (void) strcpy(storagePtr->replyDataPtr, procPtr->argString);
 	} else {
 	    storagePtr->replyDataSize = 0;
 	    storagePtr->replyDataPtr = (Address) NIL;
@@ -813,7 +813,7 @@ Proc_Dump()
  *	Prints out the contents of a PCB for debugging purposes.
  *
  * Results:
- *	SUCCESS/FAILURE
+ *	None.
  *
  * Side effects:
  *	Prints stuff to the screen.
@@ -821,7 +821,7 @@ Proc_Dump()
  *----------------------------------------------------------------------
  */
 
-ReturnStatus
+void
 Proc_DumpPCB(procPtr)
     Proc_ControlBlock *procPtr;
 {
@@ -866,7 +866,7 @@ Proc_DumpPCB(procPtr)
 	default:
 	    printf("Warning: Proc_DumpPCB: process %x has invalid process state: %x.\n",
 		   procPtr->processID, state);
-	    return (FAILURE);
+	    return;
     }
     /*
      * A header describing the fields has already been printed.
@@ -895,7 +895,6 @@ Proc_DumpPCB(procPtr)
     } else {
 	printf("\n");
     }
-    return (SUCCESS);
 }
 
 /*
