@@ -20,8 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "trace.h"
 #include "timer.h"
-#include "mem.h"
-#include "byte.h"
+#include "stdlib.h"
 #include "sys.h"
 #include "sync.h"
 
@@ -67,11 +66,12 @@ Trace_Init(traceHdrPtr, numRecords, size, flags)
     traceHdrPtr->flags = flags & ~TRACE_INHIBIT;
     traceHdrPtr->dataSize = size;
 
-    recordPtr = (Trace_Record *) Mem_Alloc(numRecords * sizeof(Trace_Record));
+    recordPtr = (Trace_Record *) malloc((unsigned) (numRecords
+	    * sizeof(Trace_Record)));
     traceHdrPtr->recordArray = recordPtr;
 
     if (size > 0) {
-	clientPtr = Mem_Alloc(numRecords * size);
+	clientPtr = malloc((unsigned) (numRecords * size));
     }
     for (i = 0; i < numRecords; i++) {
 	recordPtr[i].flags = TRACE_UNUSED;

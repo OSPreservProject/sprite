@@ -18,9 +18,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "hash.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "string.h"
-#include "byte.h"
 #include "list.h"
 #include "sys.h"
 
@@ -89,7 +88,7 @@ Hash_Init(table, numBuckets, ptrKeys)
 	table->downShift--;
     }
 
-    table->table = (Hash_Bucket *) Mem_Alloc(sizeof(Hash_Bucket) * table->size);
+    table->table = (Hash_Bucket *) malloc(sizeof(Hash_Bucket) * table->size);
     for (i=0, tablePtr = table->table; i < table->size; i++, tablePtr++) {
 	List_Init(&(tablePtr->list));
 	tablePtr->version = 0;
@@ -304,17 +303,18 @@ Hash_Find(table, key)
 
     switch (table->ptrKeys) {
 	case 0:
-	    hashEntryPtr = (Hash_Entry *) Mem_Alloc(sizeof(Hash_Entry) + 
-				strlen((Address) keyPtr) - 3);
+	    hashEntryPtr = (Hash_Entry *) malloc((unsigned)
+		    (sizeof(Hash_Entry) + strlen((Address) keyPtr) - 3));
 	    (void)strcpy((char *) hashEntryPtr->key.name, (char *) keyPtr);
 	    break;
 	case 1:
-	    hashEntryPtr = (Hash_Entry *) Mem_Alloc(sizeof(Hash_Entry));
+	    hashEntryPtr = (Hash_Entry *) malloc(sizeof(Hash_Entry));
 	    hashEntryPtr->key.ptr = (Address) keyPtr;
 	    break;
 	case 2:
 	    hashEntryPtr = 
-		(Hash_Entry *) Mem_Alloc(sizeof(Hash_Entry) + sizeof(unsigned));
+		(Hash_Entry *) malloc((unsigned) (sizeof(Hash_Entry)
+			+ sizeof(unsigned)));
 	    hashKeyPtr = hashEntryPtr->key.words;
 	    *hashKeyPtr++ = *keyPtr++;
 	    *hashKeyPtr = *keyPtr;
@@ -324,7 +324,8 @@ Hash_Find(table, key)
 
 	    n = table->ptrKeys;
 	    hashEntryPtr = (Hash_Entry *) 
-		    Mem_Alloc(sizeof(Hash_Entry) + (n - 1) * sizeof(unsigned));
+		    malloc((unsigned) (sizeof(Hash_Entry)
+			    + (n - 1) * sizeof(unsigned)));
 	    hashKeyPtr = hashEntryPtr->key.words;
 	    do { 
 		*hashKeyPtr++ = *keyPtr++; 
@@ -368,7 +369,7 @@ Hash_Delete(table, hashEntryPtr)
     if (hashEntryPtr != (Hash_Entry *) NIL) {
 	List_Remove(hashEntryPtr);
 	hashEntryPtr->bucketPtr->version++;
-	Mem_Free(hashEntryPtr);
+	free((char *) hashEntryPtr);
 	table->numEntries--;
     }
 }
@@ -437,7 +438,7 @@ RebuildTable(table)
 	}
     }
 
-    Mem_Free((Address) saveTable);
+    free((char *) saveTable);
 }
 
 
@@ -620,10 +621,10 @@ Hash_Kill(table)
 	while (!List_IsEmpty(&(tablePtr->list))) {
 	    hashEntryPtr = (Hash_Entry *) List_First(&(tablePtr->list));
 	    List_Remove((List_Links *) hashEntryPtr);
-	    Mem_Free((Address) hashEntryPtr);
+	    free((char *) hashEntryPtr);
 	}
     }
-    Mem_Free((Address) table->table);
+    free((char *) table->table);
 
     /*
      * Set up the hash table to cause memory faults on any future
