@@ -73,8 +73,12 @@
 #endif /* sun4 */
 
 #define	NET_IE_CHUNK_SIZE		32
-#define	NET_IE_MEM_SIZE			2048
+#define	NET_IE_MEM_SIZE			3072
+#ifdef sun4
+#define	NET_IE_NUM_RECV_BUFFERS		32
+#else
 #define	NET_IE_NUM_RECV_BUFFERS		18
+#endif
 #define	NET_IE_NUM_XMIT_BUFFERS		20
 #define	NET_IE_RECV_BUFFER_SIZE		NET_ETHER_MAX_BYTES
 #define	NET_IE_MIN_DMA_SIZE		12
