@@ -166,7 +166,7 @@ typedef struct PdevServerIOHandle {
 				 * this buffer isn't used. */
     Pdev_Op operation;		/* Current operation.  Checked when handling
 				 * the reply. */
-    Pdev_NewReply reply;	/* The current reply header is stuck here */
+    Pdev_Reply reply;	/* The current reply header is stuck here */
     Address replyBuf;		/* Pointer to reply data buffer.  This is in
 				 * the client's address space unless the
 				 * FS_USER flag is set */
@@ -878,7 +878,7 @@ ENTRY static void
 PseudoStreamCloseInt(pdevHandlePtr)
     register PdevServerIOHandle *pdevHandlePtr;
 {
-    Pdev_NewRequest	request;
+    Pdev_Request	request;
 
     LOCK_MONITOR;
 
@@ -1515,7 +1515,7 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
 	replyBuf, replySizePtr, waitPtr)
     register PdevServerIOHandle *pdevHandlePtr;	/* Caller should lock this
 						 * with the monitor lock. */
-    register Pdev_NewRequest	*requestPtr;	/* The caller should fill in the
+    register Pdev_Request	*requestPtr;	/* The caller should fill in the
 					 * command and parameter parts. The
 					 * sizes are filled in here. */
     int			inputSize;	/* Size of input buffer. */
@@ -1573,7 +1573,7 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
     requestPtr->magic = PDEV_REQUEST_MAGIC;
     requestPtr->requestSize = inputSize;
     requestPtr->replySize = replySize;
-    requestPtr->messageSize = sizeof(Pdev_NewRequest) +
+    requestPtr->messageSize = sizeof(Pdev_Request) +
 		((inputSize + sizeof(int) - 1) / sizeof(int)) * sizeof(int);
     if (pdevHandlePtr->requestBuf.size < requestPtr->messageSize) {
 	Sys_Panic(SYS_WARNING, "RequestResponse request too large\n");
@@ -1648,10 +1648,10 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
 	status = DEV_OFFLINE;
 	goto failure;
     }
-    status = Vm_CopyOutProc(sizeof(Pdev_NewRequest), (Address)requestPtr, TRUE,
+    status = Vm_CopyOutProc(sizeof(Pdev_Request), (Address)requestPtr, TRUE,
 	    serverProcPtr, (Address)&pdevHandlePtr->requestBuf.data[firstByte]);
     if (status == SUCCESS) {
-	firstByte += sizeof(Pdev_NewRequest);
+	firstByte += sizeof(Pdev_Request);
 	if (inputSize > 0) {
 	    status = Vm_CopyOutProc(inputSize, inputBuf, 
 			(pdevHandlePtr->flags & FS_USER) == 0, serverProcPtr,
@@ -1744,7 +1744,7 @@ PseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     int		userID;		/* User ID of the client process */
 {
     register ReturnStatus 	status;
-    Pdev_NewRequest		request;
+    Pdev_Request		request;
 
     LOCK_MONITOR;
 
@@ -1771,7 +1771,6 @@ PseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     request.operation		= PDEV_OPEN;
     request.param.open.flags	= flags;
     request.param.open.pid	= procID;
-    request.param.open.clientID	= 0;		/* XXX */
     request.param.open.hostID	= clientID;
     request.param.open.uid	= userID;
 
@@ -1822,7 +1821,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     register PdevClientIOHandle *cltHandlePtr =
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
-    Pdev_NewRequest	request;
+    Pdev_Request	request;
 
     LOCK_MONITOR;
     /*
@@ -1974,7 +1973,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     ReturnStatus 	status = SUCCESS;
-    Pdev_NewRequest	request;
+    Pdev_Request	request;
     register int	toWrite;
     int			amountWritten;
     register int	length;
@@ -2007,7 +2006,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 
     toWrite = *lenPtr;
     amountWritten = 0;
-    maxRequestSize = pdevHandlePtr->requestBuf.size - sizeof(Pdev_NewRequest);
+    maxRequestSize = pdevHandlePtr->requestBuf.size - sizeof(Pdev_Request);
     if (toWrite > maxRequestSize &&
 	(pdevHandlePtr->flags & PDEV_NO_BIG_WRITES)) {
 	Sys_Panic(SYS_WARNING,
@@ -2086,7 +2085,7 @@ FsPseudoStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
     Address	outBuffer;	/* Data to be obtained from the slave/master.*/
 {
     ReturnStatus 	status;
-    Pdev_NewRequest	request;
+    Pdev_Request	request;
     register Proc_ControlBlock *procPtr;
     register PdevClientIOHandle *cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
@@ -2602,7 +2601,7 @@ FsServerStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
 	     *		Notify the replyReady condition, and lastly
 	     *		notify waiting clients about new select state.
 	     */
-	    register Pdev_NewReply *srvReplyPtr = (Pdev_NewReply *)inBuffer;
+	    register Pdev_Reply *srvReplyPtr = (Pdev_Reply *)inBuffer;
 
 	    pdevHandlePtr->reply = *srvReplyPtr;
 	    if (srvReplyPtr->replySize > 0) {
