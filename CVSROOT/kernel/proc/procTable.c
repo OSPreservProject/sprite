@@ -324,7 +324,9 @@ Proc_LockPID(pid)
     Proc_PID	pid;
 {
     register	Proc_ControlBlock *procPtr;
+#ifndef CLEAN_LOCK
     register	Sync_Semaphore	  *lockPtr;
+#endif
 
     LOCK_MONITOR;
 
@@ -345,7 +347,9 @@ Proc_LockPID(pid)
 
 	if (procPtr->genFlags & PROC_LOCKED) {
 	    do {
-		SyncRecordMiss(lockPtr);
+#ifndef CLEAN_LOCK
+		Sync_RecordMiss(lockPtr);
+#endif
 		(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
 	    } while (procPtr->genFlags & PROC_LOCKED);
 	} else {
@@ -353,9 +357,11 @@ Proc_LockPID(pid)
 		procPtr = (Proc_ControlBlock *) NIL;
 	    } else {
 		procPtr->genFlags |= PROC_LOCKED;
-		SyncRecordHit(lockPtr);
-		SyncStoreDbgInfo(lockPtr);
-		SyncAddPrior(lockPtr);
+#ifndef CLEAN_LOCK
+		Sync_RecordHit(lockPtr);
+		Sync_StoreDbgInfo(lockPtr);
+		Sync_AddPrior(lockPtr);
+#endif
 	    }
 	    break;
 	}
@@ -386,7 +392,9 @@ ENTRY void
 Proc_Lock(procPtr)
     register	Proc_ControlBlock *procPtr;
 {
+#ifndef CLEAN_LOCK
     register	Sync_Semaphore	  *lockPtr;
+#endif
 
     LOCK_MONITOR;
 
@@ -396,15 +404,19 @@ Proc_Lock(procPtr)
 
     while (procPtr->genFlags & PROC_LOCKED) {
 
-	SyncRecordMiss(lockPtr);
+#ifndef CLEAN_LOCK
+	Sync_RecordMiss(lockPtr);
+#endif
 	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
     }
     procPtr->genFlags |= PROC_LOCKED;
 
-    SyncRecordHit(lockPtr);
-    SyncStoreDbgInfo(lockPtr);
-    SyncAddPrior(lockPtr);
-    SyncAddPrior(lockPtr);
+#ifndef CLEAN_LOCK
+    Sync_RecordHit(lockPtr);
+    Sync_StoreDbgInfo(lockPtr);
+    Sync_AddPrior(lockPtr);
+    Sync_AddPrior(lockPtr);
+#endif
 
     UNLOCK_MONITOR;
 }
@@ -557,7 +569,9 @@ ENTRY void
 ProcFreePCB(procPtr)
     register	Proc_ControlBlock 	*procPtr;
 {
+#ifdef LOCKREG
     register	Sync_Semaphore	  *lockPtr;
+#endif
 
     LOCK_MONITOR;
 
@@ -566,14 +580,18 @@ ProcFreePCB(procPtr)
 #endif
 
     while (procPtr->genFlags & PROC_LOCKED) {
-	SyncRecordMiss(lockPtr);
+#ifdef LOCKREG
+	Sync_RecordMiss(lockPtr);
+#endif
 	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
     }
     procPtr->state = PROC_UNUSED;
     procPtr->genFlags = 0;
     entriesInUse--;
 
-    SyncRecordHit(lockPtr);
+#ifdef LOCKREG
+    Sync_RecordHit(lockPtr);
+#endif
 
     UNLOCK_MONITOR;
 }
