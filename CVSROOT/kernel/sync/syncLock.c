@@ -127,10 +127,12 @@ Sync_SlowLock(lockPtr)
     while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	lockPtr->waiting = TRUE;
 	(void) SyncEventWaitInt((unsigned int)lockPtr, FALSE);
+	MASTER_UNLOCK(sched_Mutex);
+	VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
+	MASTER_LOCK(sched_Mutex);
     }
 
     MASTER_UNLOCK(sched_Mutex);
-    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
     return(SUCCESS);
 }
 

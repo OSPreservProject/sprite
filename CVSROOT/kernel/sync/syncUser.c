@@ -69,6 +69,9 @@ Sync_SlowLockStub(lockPtr)
 	while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	    lockPtr->waiting = TRUE;
 	    (void) SyncEventWaitInt((unsigned int)lockPtr, TRUE);
+	    MASTER_UNLOCK(sched_Mutex);
+	    VmMach_SetupContext(procPtr);
+	    MASTER_LOCK(sched_Mutex);
 	    if (Sig_Pending(procPtr)) {
 		status = GEN_ABORTED_BY_SIGNAL;
 		break;
@@ -78,7 +81,6 @@ Sync_SlowLockStub(lockPtr)
 	status = SYS_ARG_NOACCESS;
     }
     MASTER_UNLOCK(sched_Mutex);
-    VmMach_SetupContext(procPtr);
     Sys_UnsetJump();
     return(status);
 }
