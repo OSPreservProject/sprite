@@ -18,13 +18,13 @@
 #ifndef _TIMER
 #define _TIMER
 
-#include "list.h"
+#include <list.h>
 
 #ifdef KERNEL
-#include "spriteTime.h"
-#include "timerTick.h"
-#include "timerMach.h"
-#include "syncLock.h"
+#include <spriteTime.h>
+#include <timerTick.h>
+#include <timerMach.h>
+#include <syncLock.h>
 #else
 #include <spriteTime.h>
 #include <kernel/timerTick.h>
