@@ -323,7 +323,7 @@ typedef struct Mach_State {
     Mach_ExcStack   sigExcStack;		/* Place to store sig exception 
 						 * stack on return from signal
 						 * handler.*/
-#ifdef 0
+#if 0
     long  switchFpRegs[MACH_NUM_FPRS][3];       /* Where fpu registers are
                                                  * saved and restored to/from
 						 * during context switches. */
