@@ -1465,7 +1465,7 @@ DeleteBlockFromDirtyList(blockPtr)
  *
  * Fs_FileWriteBackStub --
  *
- *      This is the stub for the FsCacheFileWriteBack system call.
+ *      This is the stub for the Fs_WriteBackID system call.
  *	The byte arguments are rounded to blocks, and the range of
  *	blocks that covers the byte range is written back out of the cache.
  *
