@@ -110,8 +110,9 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
     FsHandleHeader 	*hdrPtr;	/* Set from the prefix table lookup */
     char 		*lookupName;	/* Returned from the prefix table 
 					 * lookup */
-    FsRedirectInfo 	*newNameInfoPtr;/* Returned from servers if their lookup
-			 		 * leaves their domain */
+    FsRedirectInfo 	*redirectInfoPtr;/* Returned from servers if their lookup
+					 * leaves their domain */
+    FsFileID		rootID;		/* ID of domain root */
     FsRedirectInfo 	*oldInfoPtr;	/* Needed to free up the new name
 					 * buffer allocated by the domain
 					 * lookup routine. */
@@ -125,7 +126,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 					   * and had to broadcast to find
 					   * a different server */
 
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
+    redirectInfoPtr = (FsRedirectInfo *) NIL;
 
     if (sys_ShuttingDown) {
 	/*
@@ -137,8 +138,8 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	DBG_CALL;
     }
     do {
-	status = GetPrefix(fileName, &hdrPtr, &lookupName, &domainType,
-				       &prefixPtr);
+	status = GetPrefix(fileName, &hdrPtr, &rootID, &lookupName,
+			    &domainType, &prefixPtr);
 	if (status == SUCCESS) {
 	    /*
 	     * Prefix match, fork out to the domain lookup operation.
@@ -153,6 +154,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	    if (operation != FS_DOMAIN_PREFIX) {
 		register FsLookupArgs *lookupArgsPtr = (FsLookupArgs *)argsPtr;
 		lookupArgsPtr->prefixID = hdrPtr->fileID;
+		lookupArgsPtr->rootID = rootID;
 	    }
 	    /*
 	     * The domain lookup routine may allocate a buffer for a re-directed
@@ -160,10 +162,11 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	     * buffer allocated the last time through this loop. We are
 	     * careful and free the buffer after there is no more use for it.
 	     */
-	    oldInfoPtr = newNameInfoPtr;
-	    newNameInfoPtr = (FsRedirectInfo *)NIL;
+	    oldInfoPtr = redirectInfoPtr;
+	    redirectInfoPtr = (FsRedirectInfo *)NIL;
 	    status = (*fsDomainLookup[domainType][operation])
-	       (hdrPtr, lookupName, argsPtr, resultsPtr, &newNameInfoPtr);
+	       (hdrPtr, lookupName, argsPtr, resultsPtr, nameInfoPtr,
+		       &redirectInfoPtr);
 	    if (fsFileNameTrace) {
 		Sys_Printf("\treturns <%x>\n", status);
 	    }
@@ -180,7 +183,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 			status = FS_NAME_LOOP;
 			fsStats.prefix.loops++;
 		    } else {
-			status = FsLookupRedirect(newNameInfoPtr, prefixPtr,
+			status = FsLookupRedirect(redirectInfoPtr, prefixPtr,
 								  &fileName);
 		    }
 		    break;
@@ -190,13 +193,17 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 			/*
 			 * Set up the name info for the file.  The back pointer
 			 * to the prefix table is used by us later to handle
-			 * re-directs.  The fileID is set up later by the
-			 * client open routine and used by the attributes
-			 * routines to get to the name server.  Finally, the
+			 * re-directs.  The rootID is noted here and passed
+			 * to the server during relative lookups to trap
+			 * ascending off the root of a domain via "..".
+			 * The fileID is used by the attributes routines to get
+			 * to the name server for open streams.  Finally, the
 			 * name is kept as a convenience for error reporting.
 			 */
-/*			nameInfoPtr->fileID    gets set later */
-			nameInfoPtr->nameDomain = domainType;
+			nameInfoPtr->fileID =
+				((FsOpenResults *)resultsPtr)->nameID;
+			nameInfoPtr->rootID = rootID;
+			nameInfoPtr->domainType = domainType;
 			nameInfoPtr->prefixPtr = prefixPtr;
 			nameInfoPtr->name = (char *)Mem_Alloc(
 				  String_Length(prefixPtr->prefix) +
@@ -272,8 +279,8 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	    }
 	}
     } while (status == FS_LOOKUP_REDIRECT);
-    if (newNameInfoPtr != (FsRedirectInfo *)NIL) {
-	Mem_Free((Address) newNameInfoPtr);
+    if (redirectInfoPtr != (FsRedirectInfo *)NIL) {
+	Mem_Free((Address) redirectInfoPtr);
     }
 
     return(status);
@@ -315,11 +322,12 @@ FsTwoNameOperation(operation, fileName1, fileName2, lookupArgsPtr)
     FsHandleHeader 	*hdr2Ptr;
     char 		*lookupName2;
     FsPrefix 		*prefix2Ptr;
-    FsRedirectInfo	*newNameInfoPtr;/* Returned from the server about
+    FsFileID		rootID1, rootID2;
+    FsRedirectInfo	*redirectInfoPtr;/* Returned from the server about
 					 * fileName1 only */
     Boolean		name1redirect;	/* TRUE if redirect info for name 1 */
 
-    newNameInfoPtr = (FsRedirectInfo *) NIL;
+    redirectInfoPtr = (FsRedirectInfo *) NIL;
     if (sys_ShuttingDown) {
 	/*
 	 * Lock processes out of the filesystem during a shutdown.
@@ -334,12 +342,12 @@ FsTwoNameOperation(operation, fileName1, fileName2, lookupArgsPtr)
 	DBG_CALL;
     }
     do {
-	status = GetPrefix(fileName1, &hdr1Ptr, &lookupName1, &domainType1,
-					&prefix1Ptr);
+	status = GetPrefix(fileName1, &hdr1Ptr, &rootID1, &lookupName1,
+					&domainType1, &prefix1Ptr);
 	if (status != SUCCESS) {
 	    continue;
 	}
-	status = GetPrefix(fileName2, &hdr2Ptr, &lookupName2,
+	status = GetPrefix(fileName2, &hdr2Ptr, &rootID2, &lookupName2,
 					&domainType2, &prefix2Ptr);
 	if (status != SUCCESS) {
 	    continue;
@@ -357,9 +365,11 @@ FsTwoNameOperation(operation, fileName1, fileName2, lookupArgsPtr)
 	    status = FS_CROSS_DOMAIN_OPERATION;
 	    break;
 	}
+	lookupArgsPtr->prefixID = hdr1Ptr->fileID;
+	lookupArgsPtr->rootID = rootID1;
 	status = (*fsDomainLookup[domainType1][operation])
 	   (hdr1Ptr, lookupName1, hdr2Ptr, lookupName2, lookupArgsPtr,
-			&newNameInfoPtr, &name1redirect);
+			&redirectInfoPtr, &name1redirect);
 	if (fsFileNameTrace) {
 	    Sys_Printf("\treturns <%x>\n", status);
 	}
@@ -371,8 +381,8 @@ FsTwoNameOperation(operation, fileName1, fileName2, lookupArgsPtr)
 	}
     } while (status == FS_LOOKUP_REDIRECT);
 
-    if (newNameInfoPtr != (FsRedirectInfo *) NIL) {
-	Mem_Free((Address) newNameInfoPtr);
+    if (redirectInfoPtr != (FsRedirectInfo *) NIL) {
+	Mem_Free((Address) redirectInfoPtr);
     }
     return(status);
 }
@@ -397,45 +407,45 @@ FsTwoNameOperation(operation, fileName1, fileName2, lookupArgsPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLookupRedirect(newNameInfoPtr, prefixPtr, fileNamePtr)
-    FsRedirectInfo	*newNameInfoPtr;/* New name and prefix from server */
+FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
+    FsRedirectInfo	*redirectInfoPtr;/* New name and prefix from server */
     FsPrefix		*prefixPtr;	/* Prefix table entry used to select
 					 * the server. */
     char **fileNamePtr;			/* Return, new name to lookup. This is a
 					 * pointer into the fileName buffer of
-					 * *newNameInfoPtr.  This means that the
+					 * *redirectInfoPtr.  This means that the
 					 * caller has to be careful and not
 					 * reference *fileNamePtr after it calls
 					 * the domain lookup routine which will
-					 * overwrite *newNameInfoPtr */
+					 * overwrite *redirectInfoPtr */
 {
     register char *prefix;
 
     if (fsFileNameTrace) {
-	Sys_Printf("FsRedirect: \"%s\" (%d)\n", newNameInfoPtr->fileName,
-				newNameInfoPtr->prefixLength);
+	Sys_Printf("FsRedirect: \"%s\" (%d)\n", redirectInfoPtr->fileName,
+				redirectInfoPtr->prefixLength);
     }
-    if (newNameInfoPtr->prefixLength > 0) {
+    if (redirectInfoPtr->prefixLength > 0) {
 	/*
 	 * We are being told about a new prefix after the server
 	 * hit a remote link.  The prefix is embedded in the
 	 * beginning of the returned complete pathname.
 	 */
-	prefix = (char *)Mem_Alloc(newNameInfoPtr->prefixLength + 1);
-	String_NCopy(newNameInfoPtr->prefixLength,
-		     newNameInfoPtr->fileName, prefix);
-	prefix[newNameInfoPtr->prefixLength] = '\0';
+	prefix = (char *)Mem_Alloc(redirectInfoPtr->prefixLength + 1);
+	String_NCopy(redirectInfoPtr->prefixLength,
+		     redirectInfoPtr->fileName, prefix);
+	prefix[redirectInfoPtr->prefixLength] = '\0';
 	Fs_PrefixLoad(prefix, FS_IMPORTED_PREFIX);
 	Mem_Free((Address) prefix);
     }
-    if (String_NCompare(2, "..", newNameInfoPtr->fileName) == 0) {
+    if (String_NCompare(2, "..", redirectInfoPtr->fileName) == 0) {
 	register int i;
 	register int preLen;
 	register char *fileName;
 	/*
 	 * The server ran off the top of its domain.  Compute a new name
 	 * from the prefix for the domain and the relative name returned.
-	 * Again, we use the newNameInfoPtr buffer to construct the new
+	 * Again, we use the redirectInfoPtr buffer to construct the new
 	 * name so we have to be careful not to use fileName after the
 	 * domain lookup routine returns.  At this point
 	 * prefix = "/pre/fix"
@@ -444,7 +454,7 @@ FsLookupRedirect(newNameInfoPtr, prefixPtr, fileNamePtr)
 	 * fileName = "/pre/rest/of/path"
 	 */
 	prefix = prefixPtr->prefix;
-	fileName = newNameInfoPtr->fileName;
+	fileName = redirectInfoPtr->fileName;
 	preLen = String_Length(prefix);
 	/*
 	 * Scan the prefix from the right end for the first '/'
@@ -482,12 +492,12 @@ FsLookupRedirect(newNameInfoPtr, prefixPtr, fileNamePtr)
 	    fileName[i] = prefix[i];
 	}
     }
-    if (newNameInfoPtr->fileName[0] == '/') {
+    if (redirectInfoPtr->fileName[0] == '/') {
 	/*
 	 * Either just computed a new pathname or the server returned
 	 * an absolute name to us.
 	 */
-	*fileNamePtr = newNameInfoPtr->fileName;
+	*fileNamePtr = redirectInfoPtr->fileName;
 	return(FS_LOOKUP_REDIRECT);
     } else {
 	Sys_Panic(SYS_WARNING,
@@ -707,7 +717,7 @@ PrefixUpdate(prefixPtr, hdrPtr, domainType, flags)
  *----------------------------------------------------------------------
  */
 ENTRY ReturnStatus
-FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, lookupNamePtr, 
+FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr, 
 		domainTypePtr, prefixPtrPtr)
     register char *fileName;	/* File name to match against */
     int 	flags;		/* FS_IMPORTED_PREFIX | FS_EXACT_PREFIX and
@@ -715,6 +725,7 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, lookupNamePtr,
     int		clientID;	/* Use to check export list */
     FsHandleHeader **hdrPtrPtr;	/* Return, the handle for the prefix.  This is
 				 * NOT LOCKED and has no extra references. */
+    FsFileID	*rootIDPtr;	/* Return, ID of the root of the domain */
     char 	**lookupNamePtr;/* Return, If FS_NO_HANDLE this is the prefix
 				 * itself.  If SUCCESS, this is the relative
 				 * name after the prefix */
@@ -725,6 +736,7 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, lookupNamePtr,
 						     * return working dir.*/
     register FsPrefix 		*longestPrefixPtr;  /* Longest match */
     register FsPrefix		*prefixPtr;	    /* Pointer to table entry */
+    register FsNameInfo		*nameInfoPtr;	    /* Name info for prefix */
     ReturnStatus		status = SUCCESS;   /* Return value */
     Boolean			exactMatch;	    /* TRUE the fileName has
 						     * to match the prefix in 
@@ -744,9 +756,11 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, lookupNamePtr,
 	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
 	if (procPtr->cwdPtr != (Fs_Stream *)NIL) {
 	    *hdrPtrPtr = procPtr->cwdPtr->ioHandlePtr;
+	    nameInfoPtr = procPtr->cwdPtr->nameInfoPtr;
+	    *rootIDPtr = nameInfoPtr->rootID;
 	    *lookupNamePtr = fileName;
-	    *domainTypePtr = procPtr->cwdPtr->nameInfoPtr->nameDomain;
-	    *prefixPtrPtr = procPtr->cwdPtr->nameInfoPtr->prefixPtr;
+	    *domainTypePtr = nameInfoPtr->domainType;
+	    *prefixPtrPtr = nameInfoPtr->prefixPtr;
 	} else {
 	    status = FS_FILE_NOT_FOUND;
 	}
@@ -804,7 +818,7 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, lookupNamePtr,
 		*domainTypePtr = longestPrefixPtr->domainType;
 		if (*hdrPtrPtr == (FsHandleHeader *)NIL) {
 		    /*
-		     * Return the caller the prefix instead of a relative name
+		     * Return our caller the prefix instead of a relative name
 		     * so it can broadcast to get the prefix's handle.
 		     */
 		    *lookupNamePtr = longestPrefixPtr->prefix;
@@ -812,11 +826,12 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, lookupNamePtr,
 		    status = FS_NO_HANDLE;
 		} else {
 		    /*
-		     * All set, return the caller the name after the prefix.
+		     * All set, return our caller the name after the prefix.
 		     * A name not starting with a slash is returned as the
-		     * relative name.  This is because of the Unix domain which
-		     * thinks that a name starting with a slash is absolute.
+		     * relative name.  This is because of domains that
+		     * think that a name starting with a slash is absolute.
 		     */
+		    *rootIDPtr = (*hdrPtrPtr)->fileID;
 		    *lookupNamePtr = &fileName[longestPrefixPtr->prefixLength];
 		    while (**lookupNamePtr == '/') {
 			(*lookupNamePtr)++;
@@ -1025,7 +1040,8 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
 	for (domainType = 0; domainType < FS_NUM_DOMAINS; domainType++) {
 	    status = (*fsDomainLookup[domainType][FS_DOMAIN_PREFIX])
 			((ClientData)NIL, fileName, (Address)&ids,
-			 (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
+			 (Address)hdrPtrPtr, (FsNameInfo *)NIL,
+			 (FsRedirectInfo **)NIL);
 	    if (status == SUCCESS) {
 		break;
 	    }
@@ -1036,7 +1052,8 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
 	 */
 	status = (*fsDomainLookup[domainType][FS_DOMAIN_PREFIX])
 		    ((ClientData)NIL, fileName, (Address)&ids,
-		     (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
+		     (Address)hdrPtrPtr, (FsNameInfo *)NIL,
+		     (FsRedirectInfo **)NIL);
     }
     if (status == SUCCESS) {
 	*domainTypePtr = domainType;
@@ -1063,10 +1080,11 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-GetPrefix(fileName, hdrPtrPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr)
+GetPrefix(fileName, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr)
     char 	*fileName;		/* File name that needs to be 
 					 * operated on */
     FsHandleHeader **hdrPtrPtr;		/* Result, handle for the prefix */
+    FsFileID	*rootIDPtr;		/* Result, ID of domain root */
     char 	**lookupNamePtr;	/* Result, remaining pathname to 
 					 * lookup */
     int 	*domainTypePtr;		/* Result, domain type of the prefix */
@@ -1078,7 +1096,7 @@ GetPrefix(fileName, hdrPtrPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr)
 	    Sys_Printf("Lookup: %s,", fileName);
 	}
 	status = FsPrefixLookup(fileName, FS_IMPORTED_PREFIX,
-				FS_LOCALHOST_ID, hdrPtrPtr, 
+				FS_LOCALHOST_ID, hdrPtrPtr, rootIDPtr,
 				lookupNamePtr, domainTypePtr, prefixPtrPtr);
 	if (status == FS_NO_HANDLE) {
 	    /*
