@@ -3,7 +3,7 @@
  *
  *	Declarations for file migration routines.
  *
- * Copyright 1987 Regents of the University of California
+ * Copyright 1987, 1988 Regents of the University of California
  * All rights reserved.
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
@@ -31,8 +31,9 @@ typedef struct FsMigInfo {
     int		srcClientID;	/* Client transfering from. */
     int         offset;     	/* File access position. */
     int         flags;      	/* Usage flags from the stream. */
-    char	data[32];	/* Should be a union! Do we even need it! */
 } FsMigInfo;
+
+extern Boolean fsMigDebug;	/* enable migration debugging statements? */
 
 /*
  * File migration routines.
