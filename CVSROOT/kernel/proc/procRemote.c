@@ -473,12 +473,17 @@ Proc_ResumeMigProc(pc)
      * Start the process running.  This does not return.  
      */
 
+/*
+ **** temporary kludge since Mary wants proc to herself!  FIXME!
+ */
+#if defined(SUN2) || defined(SUN3)
     if (proc_MigDebugLevel > 5) {
 	Sys_Printf("Calling Mach_StartUserProc(%x, %x). D0 = %x, SP = %x.\n",
 		   (Address) procPtr, pc,
 		   procPtr->machStatePtr->userState.trapRegs[D0],
 		   procPtr->machStatePtr->userState.trapRegs[SP]);
     }
+#endif
     Mach_StartUserProc(procPtr, pc);
     Sys_Panic(SYS_FATAL, "ProcResumeMigProc: Mach_StartUserProc returned.\n");
 }
