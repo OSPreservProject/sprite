@@ -75,5 +75,7 @@ extern	void		Sig_Exec();
 extern	void		Sig_ChangeState();
 extern	Boolean		Sig_Handle();
 extern	void		Sig_Return();
+extern	void		Sig_AllowMigration();
 
 #endif _SIG
+
