@@ -319,15 +319,12 @@ start:
 	LD_CONSTANT(r4, 1 << VMMACH_PAGE_FRAME_SHIFT)
 
 1:
-	cmp_br_delayed	eq, r2, $0, 2f
-	Nop
 	st_32		r3, r1, $0
 	add_nt		r1, r1, $4
 	add_nt		r3, r3, r4
 	sub		r2, r2, $1
-	cmp_br_delayed	always, r0, r0, 1b
+	cmp_br_delayed	gt, r2, $0, 1b
 	Nop
-2:
 
 /*
  * Next initialize the kernel page table to point to 4 Mbytes of mapped
@@ -338,15 +335,12 @@ start:
 	LD_CONSTANT(r3, MEM_SLOT_MASK | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
 
 1:
-	cmp_br_delayed	eq, r2, $0, 2f
-	Nop
 	st_32		r3, r1, $0
 	add_nt		r1, r1, $4
 	add_nt		r3, r3, r4
 	sub		r2, r2, $1
-	cmp_br_delayed	always, r0, r0, 1b
+	cmp_br_delayed	gt, r2, $0, 1b
 	Nop
-2:
 
 /*
  * Initialize the PTEVA.

@@ -592,7 +592,7 @@ Mach_SetHandler(intrMask, handler)
 				 * a bit is set then handler will be called
 				 * when the interrupt status register has the
 				 * corresponding bit set. */
-    int		 (*handler)();	/* Interrupt handling procedure */
+    void	 (*handler)();	/* Interrupt handling procedure */
 {
     int			intrType;
     unsigned	int	mask;
