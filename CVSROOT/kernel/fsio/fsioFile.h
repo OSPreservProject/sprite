@@ -141,7 +141,7 @@ extern ReturnStatus	FsFileBlockAllocate();
 extern ReturnStatus	FsFileBlockRead();
 extern ReturnStatus	FsFileBlockWrite();
 extern ReturnStatus	FsFileBlockCopy();
-extern void		FsFileScavenge();
+extern Boolean		FsFileScavenge();
 extern void		FsFileClientKill();
 extern ReturnStatus	FsFileClose();
 
@@ -161,7 +161,7 @@ extern ReturnStatus	FsRmtFileAllocate();
 extern ReturnStatus	FsRmtFileBlockRead();
 extern ReturnStatus	FsRmtFileBlockWrite();
 extern ReturnStatus	FsRmtFileBlockCopy();
-extern void		FsRmtFileScavenge();
+extern Boolean		FsRmtFileScavenge();
 extern ReturnStatus	FsRmtFileClose();
 
 #endif _FSFILE

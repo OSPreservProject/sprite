@@ -730,7 +730,7 @@ FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  *	
  *
  * Results:
- *	SUCCESS.
+ *	TRUE if the handle was removed.
  *
  * Side effects:
  *	Removes the handle if it isn't referenced anymore and there
@@ -739,7 +739,7 @@ FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  * ----------------------------------------------------------------------------
  *
  */
-void
+Boolean
 FsDeviceScavenge(hdrPtr)
     FsHandleHeader	*hdrPtr;	/* File to clean up */
 {
@@ -753,8 +753,10 @@ FsDeviceScavenge(hdrPtr)
 	FsWaitListDelete(&handlePtr->writeWaitList);
 	FsWaitListDelete(&handlePtr->exceptWaitList);
 	FsHandleRemove(handlePtr);
+	return(TRUE);
     } else {
         FsHandleUnlock(handlePtr);
+	return(FALSE);
     }
 }
 

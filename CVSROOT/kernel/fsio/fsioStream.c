@@ -650,7 +650,7 @@ FsStreamDispose(streamPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+Boolean
 FsStreamScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;
 {
@@ -662,8 +662,10 @@ FsStreamScavenge(hdrPtr)
 		streamPtr->hdr.fileID.serverID,
 		streamPtr->hdr.fileID.minor);
 	FsHandleRemove((FsHandleHeader *)streamPtr);
+	return(TRUE);
     } else {
 	FsHandleUnlock((FsHandleHeader *)streamPtr);
+	return(FALSE);
     }
 }
 

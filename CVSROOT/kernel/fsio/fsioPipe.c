@@ -1147,14 +1147,14 @@ FsPipeClientKill(hdrPtr, clientID)
  *	client's have crashed.
  *
  * Results:
- *      SUCCESS.
+ *      TRUE if the handle was removed.
  *
  * Side effects:
  *      Unlocks the pipe's handle.
  *
  *----------------------------------------------------------------------
  */
-void
+Boolean
 FsPipeScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;     /* Handle about to be deleted */
 {

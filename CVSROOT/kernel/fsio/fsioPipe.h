@@ -63,7 +63,7 @@ extern ReturnStatus FsPipeRelease();
 extern ReturnStatus FsPipeMigEnd();
 extern ReturnStatus FsPipeMigrate();
 extern ReturnStatus FsPipeReopen();
-extern void	    FsPipeScavenge();
+extern Boolean	    FsPipeScavenge();
 extern void	    FsPipeClientKill();
 extern ReturnStatus FsPipeClose();
 

@@ -670,7 +670,7 @@ FsFileClientKill(hdrPtr, clientID)
  *	
  *
  * Results:
- *	SUCCESS.
+ *	TRUE if it removed the handle.
  *
  * Side effects:
  *	Removes the handle if their are no references to it and no
@@ -681,7 +681,7 @@ FsFileClientKill(hdrPtr, clientID)
  *
  */
 /*ARGSUSED*/
-void
+Boolean
 FsFileScavenge(hdrPtr)
     FsHandleHeader	*hdrPtr;	/* File to clean up */
 {
@@ -697,15 +697,13 @@ FsFileScavenge(hdrPtr)
 	descPtr->flags &= ~FS_FD_DIRTY;
 	domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
 	if (domainPtr == (FsDomain *)NIL ){
-	    panic(
-		"FsFileScavenge: Dirty descriptor in detached domain.\n");
+	    panic("FsFileScavenge: Dirty descriptor in detached domain.\n");
 	} else {
 	    status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, 
 				      descPtr);
 	    FsDomainRelease(handlePtr->hdr.fileID.major);
 	    if (status != SUCCESS) {
-		printf(
-		"FsFileScavenge: Could not store file desc <%x>\n",
+		printf("FsFileScavenge: Could not store file desc <%x>\n",
 			status);
 	    }
 	}
@@ -731,8 +729,10 @@ FsFileScavenge(hdrPtr)
 	 */
 	Vm_FileChanged(&handlePtr->segPtr);
 	FsHandleAttemptRemove(handlePtr);
+	return(TRUE);
     } else {
 	FsHandleUnlock(hdrPtr);
+	return(FALSE);
     }
 }
 

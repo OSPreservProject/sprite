@@ -327,7 +327,7 @@ typedef struct FsStreamTypeOps {
      *************** Clean up operations. **********************************
      * 'scavenge' is called periodically to clean up unneeded handles.
      *		Important: the scavenge procedure must either remove or
-     *		unlock the handle it is passed.
+     *		unlock the handle it is still in use.
      * 'clientKill' is called to clean up after dead clients.  This is
      *		called before the scavenge routine if a periodic check
      *		on the client fails, or called independently if some other
@@ -349,7 +349,7 @@ typedef struct FsStreamTypeOps {
      *		int		size;			(Size of data)
      *		ClientData	data;			(Extra close data)
      */
-    void	 (*scavenge)();
+    Boolean	 (*scavenge)();
     void	 (*clientKill)();
     ReturnStatus (*close)();
 } FsStreamTypeOps;

@@ -109,21 +109,16 @@ extern ReturnStatus FsDeviceSetIOAttr();
 extern ReturnStatus FsDeviceRelease();
 extern ReturnStatus FsDeviceMigEnd();
 extern ReturnStatus FsDeviceMigrate();
-extern void	    FsDeviceScavenge();
+extern Boolean	    FsDeviceScavenge();
 extern void	    FsDeviceClientKill();
 extern ReturnStatus FsDeviceClose();
 
 extern ReturnStatus FsRmtDeviceCltOpen();
 extern FsHandleHeader *FsRmtDeviceVerify();
-extern ReturnStatus FsRmtDeviceRead();
-extern ReturnStatus FsRmtDeviceWrite();
-extern ReturnStatus FsRmtDeviceIOControl();
-extern ReturnStatus FsRmtDeviceSelect();
 extern ReturnStatus FsRemoteIORelease();
 extern ReturnStatus FsRemoteIOMigEnd();
 extern ReturnStatus FsRmtDeviceMigrate();
 extern ReturnStatus FsRmtDeviceReopen();
-extern void	    FsRmtDeviceScavenge();
 extern ReturnStatus FsRemoteIOClose();
 
 #endif _FSDEVICE

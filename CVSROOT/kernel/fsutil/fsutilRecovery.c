@@ -646,7 +646,7 @@ RecoveryFailed(recovPtr)
  *	it and it doesn't need recovery.
  *
  * Results:
- *	None.
+ *	TRUE if the handle was removed.
  *
  * Side effects:
  *	Either removes or unlocks the handle.
@@ -654,14 +654,16 @@ RecoveryFailed(recovPtr)
  *----------------------------------------------------------------------------
  *
  */
-void
+Boolean
 FsRemoteHandleScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;
 {
     if (OkToScavenge(&((FsRemoteIOHandle *)hdrPtr)->recovery)) {
 	FsHandleRemove(hdrPtr);
+	return(TRUE);
     } else {
 	FsHandleUnlock(hdrPtr);
+	return(FALSE);
     }
 }
 

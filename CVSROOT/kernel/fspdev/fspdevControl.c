@@ -631,15 +631,14 @@ FsControlClientKill(hdrPtr, clientID)
  *	See if this control stream handle is still needed.
  *
  * Results:
- *	None.
+ *	TRUE if the handle was removed.
  *
  * Side effects:
- *	None.
+ *	Will remove the handle if there is no server.
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
-void
+Boolean
 FsControlScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
 {

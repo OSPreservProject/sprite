@@ -368,7 +368,7 @@ extern	void	 	FsHandleInvalidate();
 extern	Boolean		FsHandleValid();
 extern	void		FsHandleIncRefCount();
 extern	void		FsHandleDecRefCount();
-extern	void 	 	FsHandleUnlockHdr();
+extern	Boolean	 	FsHandleUnlockHdr();
 extern	void 	 	FsHandleReleaseHdr();
 extern	void 	 	FsHandleRemoveHdr();
 extern	void 	 	FsHandleAttemptRemove();
@@ -387,7 +387,7 @@ extern	void 	 	FsHandleRemoveInt();
     FsHandleLockHdr((FsHandleHeader *)handlePtr)
 
 #define FsHandleUnlock(handlePtr) \
-    FsHandleUnlockHdr((FsHandleHeader *)handlePtr)
+    (void)FsHandleUnlockHdr((FsHandleHeader *)handlePtr)
 
 #define FsHandleRelease(handlePtr, locked) \
     FsHandleReleaseHdr((FsHandleHeader *)handlePtr, locked)
