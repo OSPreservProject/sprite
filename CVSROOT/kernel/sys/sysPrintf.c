@@ -52,7 +52,7 @@ static void writeProc _ARGS_((FILE *stream, Boolean flush));
  * vprintf buffer.
  */
 #define	STREAM_BUFFER_SIZE	512
-static char streamBuffer[STREAM_BUFFER_SIZE];
+static unsigned char streamBuffer[STREAM_BUFFER_SIZE];
 
 
 /*
