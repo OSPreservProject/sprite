@@ -25,21 +25,23 @@
  * The number of the first page frame in physical memory that is not owned 
  * by the kernel.
  */
-
 extern	int	vmFirstFreePage;
 
 /*
  * The pointer to memory allocated at boot time.
  */
-
 extern	Address	vmMemEnd;
 
 /*
  * Flag that is set once we can no longer allocate memory using the boot
  * allocation routine.
  */
-
 extern	Boolean	vmNoBootAlloc;
+
+/*
+ * A stream to the swap directory. 
+ */
+extern	Fs_Stream	*vmSwapStreamPtr;
 
 /*
  * Structure to represent a translated virtual address
@@ -216,12 +218,16 @@ typedef struct VmCore {
  * VM_DONT_FREE_UNTIL_CLEAN	This page cannot be freed until it has
  *				been written out.
  */
-
 #define VM_FREE_PAGE 			0x01
 #define VM_DIRTY_PAGE 			0x02
 #define VM_SEG_PAGEOUT_WAIT 		0x04
 #define VM_PAGE_BEING_CLEANED		0x08
 #define	VM_DONT_FREE_UNTIL_CLEAN	0x10
+
+/*
+ * The name of the swap directory.
+ */
+#define	VM_SWAP_DIR_NAME	"/swap/"
 
 
 /*----------------------------------------------------------------------------*/
