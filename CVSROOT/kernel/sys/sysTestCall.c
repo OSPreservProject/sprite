@@ -25,6 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 #ifndef sun4
+#ifndef sun4c
 int 
 Test_PrintOut(args)
     struct {
@@ -95,8 +96,10 @@ Test_PrintOut(args)
 Test_PrintOut()
 {
 }
+#endif sun4c
 #endif sun4
 
+#ifndef sun4c
 int 
 Test_GetLine(string, length)
     char	*string;
@@ -144,3 +147,4 @@ Test_GetChar(charPtr)
 
     return(SUCCESS);
 }
+#endif sun4c
