@@ -43,9 +43,11 @@
  */
 .globl	MachHandleInterrupt
 MachHandleInterrupt:
+#ifdef NOTDEF
 	set	_Timer_TimerServiceInterrupt, %VOL_TEMP1
 	call	%VOL_TEMP1
 	nop
+#endif /* NOTDEF */
 
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1

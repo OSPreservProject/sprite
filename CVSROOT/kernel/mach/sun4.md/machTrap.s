@@ -103,6 +103,9 @@ _MachTrap:
 	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
 	be	WeHandleIt
 	nop
+	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
+	be	WeHandleIt
+	nop
 							/* no - their stuff */
 	add	%VOL_TEMP1, %TBR_REG, %VOL_TEMP1 /* add t.t. to real tbr */
 	jmp	%VOL_TEMP1		/* jmp (non-pc-rel) to real tbr */
@@ -159,6 +162,10 @@ WindowOkay:
 	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
 	be	MachHandleInterrupt
 	nop
+	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
+	be	MachHandleInterrupt
+	nop
+
 
 
 

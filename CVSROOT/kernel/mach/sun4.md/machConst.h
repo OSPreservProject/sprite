@@ -147,10 +147,10 @@
  *			a context switch.  Used to verify that the stack 
  *			doesn't get trashed.
  */
-#define	MACH_KERN_START		0xe000000
-#define	MACH_STACK_START	0xe004000
-#define	MACH_CODE_START		0xe004020
-#define	MACH_STACK_BOTTOM	0xe000000
+#define	MACH_KERN_START		0xff000000
+#define	MACH_STACK_START	0xff004000
+#define	MACH_CODE_START		0xff004020
+#define	MACH_STACK_BOTTOM	0xff000000
 #define MACH_KERN_END		VMMACH_DEV_START_ADDR
 #define	MACH_KERN_STACK_SIZE	(MACH_STACK_START - MACH_STACK_BOTTOM)
 #define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
