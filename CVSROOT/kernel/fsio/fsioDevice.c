@@ -609,26 +609,12 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
 	return(FS_STALE_HANDLE);
     }
     /*
-     * Decrement use counts.
+     * Clean up locks, then
+     * clean up summary use counts and call driver's close routine.
      */
     FsLockClose(&devHandlePtr->lock, &streamPtr->hdr.fileID);
 
-    devHandlePtr->use.ref--;
-    if (flags & FS_WRITE) {
-	devHandlePtr->use.write--;
-    }
-    /*
-     * Call the driver's close routine to clean up.
-     */
-    status = (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].close)
-		(&devHandlePtr->device, flags, devHandlePtr->use.ref,
-			devHandlePtr->use.write);
-
-    if (devHandlePtr->use.ref < 0 || devHandlePtr->use.write < 0) {
-	panic("FsDeviceClose <%d,%d> ref %d, write %d\n",
-	    devHandlePtr->hdr.fileID.major, devHandlePtr->hdr.fileID.minor,
-	    devHandlePtr->use.ref, devHandlePtr->use.write);
-    }
+    status = FsDeviceCloseInt(devHandlePtr, 1, (flags & FS_WRITE) != 0);
     /*
      * We don't bother to remove the handle here if the device isn't
      * being used.  Instead we let the handle get scavenged.
@@ -636,6 +622,53 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
     FsHandleRelease(devHandlePtr, TRUE);
 
     return(status);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsDeviceClientKill --
+ *
+ *	Called when a client is assumed down.  This cleans up the
+ *	references due to the client.
+ *	
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Removes the client list entry for the client and adjusts the
+ *	use counts on the file.  This unlocks the handle.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+FsDeviceCloseInt(devHandlePtr, refs, writes)
+    FsDeviceIOHandle *devHandlePtr;	/* Device handle */
+    int refs;				/* Number of refs to close */
+    int writes;				/* Number of these that were writing */
+{
+    int useFlags = 0;
+
+    if (refs > 0) {
+	useFlags |= FS_READ;
+	devHandlePtr->use.ref -= refs;
+    }
+    if (writes > 0) {
+	useFlags |= FS_WRITE;
+	devHandlePtr->use.write -= writes;
+    }
+
+    if (devHandlePtr->use.ref < 0 || devHandlePtr->use.write < 0) {
+	panic("FsDeviceCloseInt <%d,%d> ref %d, write %d\n",
+	    devHandlePtr->hdr.fileID.major, devHandlePtr->hdr.fileID.minor,
+	    devHandlePtr->use.ref, devHandlePtr->use.write);
+    }
+
+    return (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].close)
+	    (&devHandlePtr->device, useFlags, devHandlePtr->use.ref,
+		devHandlePtr->use.write);
 }
 
 /*
@@ -675,29 +708,7 @@ FsDeviceClientKill(hdrPtr, clientID)
     FsLockClientKill(&devHandlePtr->lock, clientID);
 
     if (refs > 0) {
-	/*
-	 * Set up flags to emulate a close by the client.
-	 */
-	flags = FS_READ;
-	if (writes) {
-	    flags |= FS_WRITE;
-	}
-	/*
-	 * Decrement use counts and call the driver close routine.
-	 */
-	devHandlePtr->use.ref -= refs;
-	if (flags & FS_WRITE) {
-	    devHandlePtr->use.write -= writes;
-	}
-	(void)(*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].close)
-		(&devHandlePtr->device, flags, devHandlePtr->use.ref,
-		    devHandlePtr->use.write);
-    
-	if (devHandlePtr->use.ref < 0 || devHandlePtr->use.write < 0) {
-	    panic( "FsDeviceClose <%d,%d> ref %d, write %d\n",
-		hdrPtr->fileID.major, hdrPtr->fileID.minor,
-		devHandlePtr->use.ref, devHandlePtr->use.write);
-	}
+	(void)FsDeviceCloseInt(devHandlePtr, refs, writes);
     }
     FsHandleUnlock(devHandlePtr);
 }
@@ -759,7 +770,12 @@ FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     }
     /*
      * Check the number of users with the handle still locked, then
-     * remove the handle if we aren't using it anymore.
+     * remove the handle if we aren't using it anymore.  Note that if
+     * we get an RPC timeout we hold onto the handle and will do a
+     * reopen later to reconcile the server with our state.  A transient
+     * communication failure, for example, would otherwise cause a close
+     * to be dropped and leave lingering references to the device
+     * on the I/O server.
      */
     if (status == SUCCESS && rmtHandlePtr->recovery.use.ref == 0) {
 	FsRecoverySyncLockCleanup(&rmtHandlePtr->recovery);
@@ -908,27 +924,35 @@ FsDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	status = FS_DEVICE_OP_INVALID;
     } else {
 	/*
-	 * First check to see if we already know about the client.  If
-	 * so, avoid the device driver re-open to avoid having transient
-	 * communication failures wipe out connections to devices.
+	 * Compute the difference between the client's and our version
+	 * of the client's use state, and then call the device driver
+	 * with that information.  We may have missed opens (across a
+	 * reboot) or closes (during transient communication failures)
+	 * so the net difference may be positive or negative.
 	 */
-	FsIOClientStatus(&devHandlePtr->clientList, clientID, &oldUse);
-	if (found &&
-	    oldUse.ref == paramPtr->use.ref &&
-	    oldUse.write == paramPtr->use.write) {
-	    status == SUCCESS;
-	} else {
+	FsIOClientStatus(&devHandlePtr->clientList, clientID, &paramPtr->use);
+	if (paramPtr->use.ref == 0) {
+	    status = SUCCESS;	/* No change visible to driver */
+	} else if (paramPtr->use.ref > 0) {
+	    /*
+	     * Reestablish open connections.
+	     */
 	    status = (*devFsOpTable[devIndex].reopen)(&devHandlePtr->device,
-		    paramPtr->use.ref, paramPtr->use.write,
-		    (Fs_NotifyToken)devHandlePtr);
+				    paramPtr->use.ref, paramPtr->use.write,
+				    (Fs_NotifyToken)devHandlePtr);
 	    if (status == SUCCESS) {
-		/*
-		 * Update client use state to reflect the reopen.
-		 */
 		(void)FsIOClientReopen(&devHandlePtr->clientList, clientID,
 					 &paramPtr->use);
+		devHandlePtr->use.ref += paramPtr->use.ref;
+		devHandlePtr->use.write += paramPtr->use.write;
 	    }
-	}
+	} else {
+	    /*
+	     * Clean up closed connections.
+	     */
+	    status = FsDeviceCloseInt(devHandlePtr, paramPtr->use.ref,
+						    paramPtr->use.write);
+	 }
     }
     FsHandleRelease(devHandlePtr, TRUE);
     return(status);
