@@ -345,6 +345,8 @@ typedef enum {
  *				deleted.
  *   VM_PT_EXCL_ACC		Someone has grabbed exclusive access to the
  *				the page tables.
+ *   VM_DEBUGGED_SEG		This is a special code segment that is being
+ *				written by the debugger.
  */
 
 #define	VM_SEG_FREE			0x01
@@ -353,6 +355,7 @@ typedef enum {
 #define	VM_SWAP_FILE_LOCKED		0x08
 #define	VM_SEG_DEAD			0x10
 #define	VM_PT_EXCL_ACC			0x20
+#define	VM_DEBUGGED_SEG			0x40
 
 
 /*---------------------------------------------------------------------------*/
