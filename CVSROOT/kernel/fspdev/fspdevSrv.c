@@ -2152,8 +2152,6 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
 	     */
 	    numBytes = request.param.write.length;
 	} else if (replyPtr->length != sizeof(int)) {
-	    printf("Pdev_Write, no return amtWritten (%s)\n",
-		    FsHandleName(pdevHandlePtr));
 	    numBytes = 0;
 	}
 	amountWritten += numBytes;
