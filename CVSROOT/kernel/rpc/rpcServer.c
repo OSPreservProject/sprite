@@ -663,8 +663,13 @@ Rpc_ErrorReply(srvToken, error)
 	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
 	MASTER_UNLOCK(mutex);
     }
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, NIL, &srvPtr->reply,
+					 (RpcBufferSet *)NIL, NIL, 0, (int *)NIL);
+#else RPC_TEST_BYTE_SWAP
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
+#endif RPC_TEST_BYTE_SWAP
 }
 
 
@@ -778,8 +783,13 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
 	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
 	MASTER_UNLOCK(mutex);
     }
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, NIL, &srvPtr->reply, NIL,
+					 srvPtr->fragment, 0, (int *)NIL);
+#else RPC_TEST_BYTE_SWAP
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 srvPtr->fragment, 0, (int *)NIL);
+#endif RPC_TEST_BYTE_SWAP
 }
 
 
@@ -821,8 +831,13 @@ RpcAck(srvPtr, flags)
      * Note, can't try ARP here because of it's synchronization with
      * a master lock and because we are called at interrupt time.
      */
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, NIL, &srvPtr->ack, NIL,
+					 (RpcBufferSet *)NIL, 0, (int *)NIL);
+#else RPC_TEST_BYTE_SWAP
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
+#endif RPC_TEST_BYTE_SWAP
 }
 
 /*
@@ -848,9 +863,15 @@ RpcResend(srvPtr)
      * Note, can't try ARP here because of it's synchronization with
      * a master lock and because we are called at interrupt time.
      */
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr, NIL,
+		       &srvPtr->reply, NIL, srvPtr->fragment,
+		       srvPtr->fragsDelivered, (int *)NIL);
+#else RPC_TEST_BYTE_SWAP
     (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr,
 		       &srvPtr->reply, srvPtr->fragment,
 		       srvPtr->fragsDelivered, (int *)NIL);
+#endif RPC_TEST_BYTE_SWAP
 }
 
 /*
@@ -882,7 +903,13 @@ RpcProbe(srvPtr)
     ackHdrPtr->flags = RPC_ACK | RPC_CLOSE;
     RpcSrvInitHdr(srvPtr, ackHdrPtr, requestHdrPtr);
 
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, NIL, &srvPtr->ack, NIL,
+					 (RpcBufferSet *)NIL, 0,
+					 &srvPtr->mutex);
+#else RPC_TEST_BYTE_SWAP
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0,
 					 &srvPtr->mutex);
+#endif RPC_TEST_BYTE_SWAP
 }

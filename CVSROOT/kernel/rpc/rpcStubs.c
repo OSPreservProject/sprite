@@ -91,7 +91,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
         RpcNull, "unix chmod",			/* 16 - CHMOD */
         RpcNull, "unix chown",			/* 17 - CHOWN */
         Fs_Rpc2Path, "hard link",		/* 18 - LINK */
-        RpcFsUnixPrefix, "unix prefix",		/* 19 - FS_UNIX_PREFIX */
+        RpcNull, "unix prefix",			/* 19 - FS_UNIX_PREFIX */
         RpcNull, "old, pull-in",		/* 20 - PULLIN old */
         RpcNull, "unix updat",			/* 21 - UPDAT unix */
         RpcGetTime, "get time",			/* 22 - GETTIME */
@@ -112,7 +112,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	RpcNull, "old, lock",			/* 37 - FS_LOCK  old */
 	Proc_RpcRemoteWait, "remote wait",	/* 38 - PROC_REMOTE_WAIT */
 	Fs_RpcSelectStub, "select",		/* 39 - FS_SELECT */
-	Fs_RpcFinishMigration, "end mig",	/* 40 - FS_START_MIGRATION */
+	RpcNull, "end mig",			/* 40 - FS_START_MIGRATION */
 	Fs_RpcIOControl, "io control",		/* 41 - FS_RPC_IO_CONTROL */
 	Fs_RpcConsistReply, "consist done",	/* 42 - FS_RPC_CONSIST_REPLY */
 	Fs_RpcBlockCopy, "copy block",		/* 43 - FS_COPY_BLOCK */
@@ -123,8 +123,8 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcDomainInfo, "domain info",	/* 48 - FS_DOMAIN_INFO */
 	Fs_RpcDevReopen, "dev reopen",		/* 49 - FS_DEV_REOPEN */
 	Fs_RpcRecovery, "recover",		/* 50 - FS_RECOVERY */
-	Fs_RpcRequest, "request", 		/* 51 - FS_REQUEST */
-	Fs_RpcReply, "reply", 			/* 52 - FS_REPLY */
+	RpcNull, "request", 			/* 51 - FS_REQUEST */
+	RpcNull, "reply", 			/* 52 - FS_REPLY */
 	Fs_RpcSetAttrPath, "setAttrPath",	/* 53 - FS_GET_ATTR_PATH */
 	Fs_RpcGetIOAttr, "getIOAttr",		/* 54 - FS_GET_IO_ATTR */
 	Fs_RpcSetIOAttr, "setIOAttr",		/* 55 - FS_SET_IO_ATTR */

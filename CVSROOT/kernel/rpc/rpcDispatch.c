@@ -39,7 +39,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  * Important: servers won't respond to requests until their rpc_SpriteID is set.
  */
-int rpc_SpriteID = 0;
+int	rpc_SpriteID = 0;
+/*
+ * Set to FALSE for debugging a few isolated machines without tons of msgs.
+ */
+Boolean	rpc_PrintMismatch = FALSE;
 
 /*
  * The packet as it looks sitting in the ethernet buffers.
@@ -74,6 +78,11 @@ unsigned int rpcCompleteMask[17] = {
 void RpcScatter();
 int  RpcValidateClient();
 
+/*
+ * Rpc debug variable.
+ */
+Boolean rpcPrintDebug = FALSE;
+
 
 /*
  *----------------------------------------------------------------------
@@ -106,18 +115,46 @@ Rpc_Dispatch(packetPtr, packetLength)
     rpcHdrPtr = &rawPacketPtr->rpcHdr;
 
     if (rpcHdrPtr->version == RPC_SWAPPED_VERSION) {
+	if (rpcTestByteSwap) {
+	    if (rpcPrintDebug) {
+		Sys_Printf("%s %s\n", "Rpc_Dispatch - hdr coming in",
+			"needs byte-swapping:");
+		RpcPrintHdr(rpcHdrPtr);
+	    }
+	}
 	/*
 	 * Byte swap the packet header and the parameter block.
 	 */
-	if (!RpcByteSwap(rpcHdrPtr)) {
+	if (!RpcByteSwapInComing(rpcHdrPtr)) {
+	    Sys_Panic(SYS_WARNING, "Rpc_Dispatch failed byte-swap.");
 	    return;
 	}
-    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION) {
+	if (rpcTestByteSwap) {
+	    if (rpcPrintDebug) {
+		Sys_Printf("Rpc_Dispatch - after byte-swapping:\n");
+		RpcPrintHdr(rpcHdrPtr);
+	    }
+	}
+#ifdef NOTDEF
+    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION && rpc_PrintMismatch) {
 	Sys_Panic(SYS_WARNING,
 	    "Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
 	    rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
 	return;
     }
+#else NOTDEF
+    } else if (rpcTestByteSwap && rpcPrintDebug &&
+	    rpcHdrPtr->version != RPC_NATIVE_VERSION &&
+	    rpcHdrPtr->version != RPC_NATIVE_VERSION - 1) {
+	Sys_Printf(
+		"Rpc_Dispatch - hdr coming in is bad, can't byte-swap:\n");
+	RpcPrintHdr(rpcHdrPtr);
+    } else if (rpcTestByteSwap && rpcPrintDebug &&
+	    rpcHdrPtr->version != RPC_NATIVE_VERSION - 1) {
+	Sys_Printf("Rpc_Dispatch - hdr coming in is ok - no byte-swapping:\n");
+	RpcPrintHdr(rpcHdrPtr);
+    }
+#endif NOTDEF
     expectedLength = sizeof(Net_EtherHdr) +
 		     sizeof(RpcHdr) +
 		     rpcHdrPtr->paramSize +
@@ -241,34 +278,7 @@ Rpc_Dispatch(packetPtr, packetLength)
 	}
     }
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * RpcByteSwap --
- *
- *	Byte swap the rpc packet header and the following parameter block.
- *	The data block is not byte swapped.  It knows the RPC packet format:
- *	  The Rpc header, which includes the sizes of the next two parts.
- *	  The parameter area.
- *	  The data area.
- *
- * Results:
- *	FALSE if it could not byte swap.
- *
- * Side effects:
- *	The byte swapping.
- *
- *----------------------------------------------------------------------
- */
-Boolean
-RpcByteSwap(rpcHdrPtr)
-    register RpcHdr *rpcHdrPtr;		/* The Rpc Header as it sits in the
-					 * network's buffer.  The data follows
-					 * the header directly. */
-{
-    return(FALSE);
-}
+
 
 /*
  *----------------------------------------------------------------------

@@ -78,7 +78,7 @@ int	rpcMaxAcks = 10;	/* Watchdog against lots of acks from a server.
  * For debugging servers.  We allow client's to retry forever instead
  * of timing out.  This is exported and settable via Fs_Command
  */
-Boolean rpc_NoTimeouts = FALSE;
+Boolean rpc_NoTimeouts = TRUE;
 
 /*
  * A histogram is kept of the elapsed time of each different kind of RPC.
@@ -147,9 +147,17 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     rpcCltStat.requests++;
     chanPtr->requestRpcHdr.serverHint =
 	chanPtr->replyRpcHdr.serverHint;
+#ifdef RPC_TEST_BYTE_SWAP
+    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
+		      &chanPtr->swapRequestRpcHdr,
+		      &chanPtr->request, &chanPtr->swapRequest,
+		      chanPtr->fragment,
+		      chanPtr->fragsDelivered, &chanPtr->mutex);
+#else RPC_TEST_BYTE_SWAP
     error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 		      &chanPtr->request, chanPtr->fragment,
 		      chanPtr->fragsDelivered, &chanPtr->mutex);
+#endif RPC_TEST_BYTE_SWAP
     /*
      * Set up the initial wait interval.  The wait could depend on
      * characteristics of the RPC, or of the other host.
@@ -335,9 +343,18 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    (rpc_NoTimeouts && serverID != RPC_BROADCAST_SERVER_ID)) {
 		    rpcCltStat.resends++;
 		    chanPtr->requestRpcHdr.flags |= RPC_PLSACK;
+#ifdef RPC_TEST_BYTE_SWAP
+		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
+				      &chanPtr->swapRequestRpcHdr,
+				      &chanPtr->request,
+				      &chanPtr->swapRequest,
+				      chanPtr->fragment,
+				      chanPtr->fragsDelivered, &chanPtr->mutex);
+#else RPC_TEST_BYTE_SWAP
 		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 				      &chanPtr->request, chanPtr->fragment,
 				      chanPtr->fragsDelivered, &chanPtr->mutex);
+#endif RPC_TEST_BYTE_SWAP
 		} else {
 		    rpcCltStat.aborts++;
 		    error = RPC_TIMEOUT;
@@ -365,10 +382,19 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 						    RPC_LASTFRAG;
 		    chanPtr->requestRpcHdr.fragMask = chanPtr->fragsReceived;
 		    rpcCltStat.sentPartial++;
+#ifdef RPC_TEST_BYTE_SWAP
+		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
+				      &chanPtr->swapRequestRpcHdr,
+				      &chanPtr->request, &chanPtr->swapRequest,
+				      chanPtr->fragment,
+				      chanPtr->fragsDelivered,
+				      &chanPtr->mutex);
+#else RPC_TEST_BYTE_SWAP
 		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 				      &chanPtr->request, chanPtr->fragment,
 				      chanPtr->fragsDelivered,
 				      &chanPtr->mutex);
+#endif RPC_TEST_BYTE_SWAP
 		}
 	    }
 	}
@@ -475,10 +501,23 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 	    chanPtr->request.paramBuffer.length = 0;
 	    chanPtr->request.dataBuffer.bufAddr = (Address)NIL;
 	    chanPtr->request.dataBuffer.length = 0;
+#ifdef RPC_TEST_BYTE_SWAP
+	    chanPtr->swapRequest.paramBuffer.bufAddr = (Address)NIL;
+	    chanPtr->swapRequest.paramBuffer.length = 0;
+	    chanPtr->swapRequest.dataBuffer.bufAddr = (Address)NIL;
+	    chanPtr->swapRequest.dataBuffer.length = 0;
+	    (void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->requestRpcHdr,
+						 &chanPtr->swapRequestRpcHdr,
+						 &chanPtr->request,
+						 &chanPtr->swapRequest,
+						 (RpcBufferSet *)NIL, 0,
+						 (int *)NIL);
+#else RPC_TEST_BYTE_SWAP
 	    (void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->requestRpcHdr,
 						 &chanPtr->request,
 						 (RpcBufferSet *)NIL, 0,
 						 (int *)NIL);
+#endif RPC_TEST_BYTE_SWAP
 
 	    chanPtr->state &= ~CHAN_BUSY;
 	}

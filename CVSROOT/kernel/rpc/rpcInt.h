@@ -55,4 +55,12 @@ typedef struct RpcBufferSet {
 extern unsigned int rpcCompleteMask[];
 
 extern	void	RpcScatter();
+
+/*
+ * Byte-swap routines.
+ */
+extern	Boolean	rpcTestByteSwap;
+extern	Boolean	RpcByteSwapInComing();
+extern	void	RpcPrintHdr();
+extern	void	RpcByteSwapBuffer();
 #endif _RPCINT
