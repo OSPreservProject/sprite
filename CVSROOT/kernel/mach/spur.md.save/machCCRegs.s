@@ -139,6 +139,12 @@ _Mach_Write32bitCCReg:
 	 * Set the cacheSubOp to read.
 	 */
 	or		ADDR, ADDR, $WRREG
+	/*
+	 * Disable interrupts so the st_external wont store garbage.
+	 */
+	rd_kpsw		r14
+	and		r15,r14,$~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		r15, $0
 	st_external	VALUE, ADDR, $BYTE7_0
 	extract		TEMP, VALUE, $1
 	st_external	TEMP, ADDR, $BYTE15_8
@@ -146,6 +152,7 @@ _Mach_Write32bitCCReg:
 	st_external	TEMP, ADDR, $BYTE23_16
 	extract		TEMP, VALUE, $3
 	st_external	TEMP, ADDR,  $BYTE31_24
+	wr_kpsw		r14,$0
 	return		r10,$8
 	nop
 
@@ -242,7 +249,14 @@ _Mach_Write8bitCCReg:
 	 * Set the cacheSubOp to read.
 	 */
 	or		ADDR, ADDR, $WRREG
+	/*
+	 * Disable interrupts so the st_external wont store garbage.
+	 */
+	rd_kpsw		r14
+	and		r15,r14,$~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		r15, $0
 	st_external	VALUE, ADDR, $BYTE7_0
+	wr_kpsw		r14,$0
 	return		r10,$8
 	nop
 #undef ADDR

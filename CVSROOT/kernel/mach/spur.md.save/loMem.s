@@ -1102,11 +1102,14 @@ interrupt_GoodSWP:
 	/*
 	 * Restore the insert register and the kpsw, enable interrupts and 
 	 * then do a normal return from trap in case the user process needs to
-	 * take some action.
+	 * take some action. Insure that WRITE_STATUS_REGS is called with
+	 * interrupts disabled.
 	 */
 	wr_insert	SAFE_TEMP1
-	wr_kpsw		KPSW_REG, $0
+	and		VOL_TEMP1, KPSW_REG, $~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		VOL_TEMP1, $0
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
+	wr_kpsw		KPSW_REG, $0
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
 	jump		ReturnTrap
 	Nop
@@ -1149,6 +1152,8 @@ interrupt_KernMode:
 	 * Restore insert register and kpsw, enable interrupts and return.
 	 */
 	wr_insert	SAFE_TEMP1
+	and		VOL_TEMP1, KPSW_REG, $~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		VOL_TEMP1, $0
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
 	or		KPSW_REG, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		KPSW_REG, $0
@@ -2969,13 +2974,15 @@ _Mach_DisableNonmaskableIntr:
  */
 	.globl	_Mach_EnableNonmaskableIntr
 _Mach_EnableNonmaskableIntr:
+	rd_kpsw		SAFE_TEMP2
+	and		VOL_TEMP1, SAFE_TEMP2, $~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		VOL_TEMP1, $0
 	READ_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	ld_32		VOL_TEMP1, r0, $_machNonmaskableIntrMask
 	nop
 	or		SAFE_TEMP1, SAFE_TEMP1, VOL_TEMP1
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
-	rd_kpsw		VOL_TEMP1
-	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_INTR_TRAP_ENA
+	or		VOL_TEMP1, SAFE_TEMP2, $MACH_KPSW_INTR_TRAP_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	return		RETURN_ADDR_REG, $8
 	Nop

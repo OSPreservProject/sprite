@@ -61,7 +61,11 @@ _VmMachReadAnyways:
  */
 	.globl _VmMachFlushBlock
 _VmMachFlushBlock:
+	rd_kpsw		SAFE_TEMP1
+	and		VOL_TEMP2, SAFE_TEMP1, $~(MACH_KPSW_INTR_TRAP_ENA);
+	wr_kpsw		VOL_TEMP2, $0
 	st_external	VOL_TEMP1, INPUT_REG1, $MACH_CO_FLUSH
+	wr_kpsw		SAFE_TEMP1, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -91,6 +95,8 @@ _VmMachFlushCache:
 	add_nt		SAFE_TEMP1, SAFE_TEMP1, $VMMACH_CACHE_BLOCK_SIZE
 	cmp_br_delayed	lt, SAFE_TEMP1, SAFE_TEMP2, 1b
 	Nop
+	return		RETURN_ADDR_REG, $8
+	Nop
 
 
 /*
@@ -114,6 +120,9 @@ _VmMachFlushCache:
  */
 	.globl _VmMachSetSegRegisters
 _VmMachSetSegRegisters:
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+	wr_kpsw		VOL_TEMP2, $0
 #ifdef set_kern_rptm
 	ld_32		SAFE_TEMP1, INPUT_REG1, $0
 	ld_32		SAFE_TEMP2, INPUT_REG2, $0
@@ -133,6 +142,7 @@ _VmMachSetSegRegisters:
 	ST_GSN(SAFE_TEMP1, MACH_GSN_3)
 	ST_RPTM_PAGE(SAFE_TEMP2, MACH_RPTM_3)
 
+	wr_kpsw		SAFE_TEMP3, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -158,10 +168,14 @@ _VmMachSetSegRegisters:
  */
 	.globl _VmMachSetSegReg1
 _VmMachSetSegReg1:
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+	wr_kpsw		VOL_TEMP2, $0
 	LD_GSN(SAFE_TEMP1, MACH_GSN_1)
 	ST_GSN(INPUT_REG1, MACH_GSN_1)
 	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_1)
 	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	wr_kpsw		SAFE_TEMP3, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -187,10 +201,14 @@ _VmMachSetSegReg1:
  */
 	.globl _VmMachSetSegReg2
 _VmMachSetSegReg2:
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+	wr_kpsw		VOL_TEMP2, $0
 	LD_GSN(SAFE_TEMP1, MACH_GSN_2)
 	ST_GSN(INPUT_REG1, MACH_GSN_2)
 	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_2)
 	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	wr_kpsw		SAFE_TEMP3, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -216,10 +234,14 @@ _VmMachSetSegReg2:
  */
 	.globl _VmMachSetSegReg3
 _VmMachSetSegReg3:
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+	wr_kpsw		VOL_TEMP2, $0
 	LD_GSN(SAFE_TEMP1, MACH_GSN_3)
 	ST_GSN(INPUT_REG1, MACH_GSN_3)
 	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_3)
 	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	wr_kpsw		SAFE_TEMP3, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 

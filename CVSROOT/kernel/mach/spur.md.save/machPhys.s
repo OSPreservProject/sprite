@@ -67,7 +67,7 @@ _Mach_ReadPhysicalWord:
 	 */
 	rd_kpsw TEMP                     
 	add_nt  KPSW_REG,TEMP,r0
-	and	TEMP,TEMP,$~MACH_KPSW_VIRT_DFETCH_ENA
+	and	TEMP,TEMP,$~(MACH_KPSW_VIRT_DFETCH_ENA|MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw TEMP,r0
 
  	/*
@@ -129,7 +129,7 @@ _Mach_WritePhysicalWord:
 	 */
 	rd_kpsw TEMP                     
 	add_nt  KPSW_REG,TEMP,r0
-	and	TEMP,TEMP,$~MACH_KPSW_VIRT_DFETCH_ENA
+	and	TEMP,TEMP,$~(MACH_KPSW_VIRT_DFETCH_ENA|MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw TEMP,r0
 
  	/*
