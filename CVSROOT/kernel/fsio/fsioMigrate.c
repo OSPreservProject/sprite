@@ -368,7 +368,14 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
 	*offsetPtr = migReplyPtr->offset;
     }
     if (migParam.dataSize > 0) {
-	Byte_Copy(migParam.dataSize, &(migParam.data), outData);
+	if (outSize < migParam.dataSize) {
+	    Sys_Panic(SYS_WARNING,
+		"FsNotifyOfMigration: too much data returned %d not %d\n",
+		migParam.dataSize, outSize);
+	    status = FAILURE;
+	} else {
+	    Byte_Copy(migParam.dataSize, &(migParam.data), outData);
+	}
     }
     return(status);
 }
