@@ -25,6 +25,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #define	LOCKPTR	&lfsPtr->lock
 
+int	lfsMinNumberToClean = 10;
+
 Boolean	lfsSegWriteDebug = FALSE;
 
 #define	MIN_SUMMARY_REGION_SIZE	16
@@ -491,14 +493,6 @@ CopySegToBuffer( segPtr, maxSize, bufferPtr, lenPtr)
     }
 }
 
-/*
- * By defining SUN4DMAHACK, LFS copies data to block already allocated
- * in DMA space.  This saves DMA allocation and free in the device
- * driver.
- */
-#ifdef notdef
-#define	SUN4DMAHACK
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -547,11 +541,6 @@ SegIoDoneProc(requestPtr, status, amountTransferred)
     segPtr->nextDiskAddress += requestPtr->bufferLen/DEV_BYTES_PER_SECTOR;
     if (requestPtr->bufferLen == 0) { 
 	segPtr->requestActive--;
-#ifdef SUN4DMAHACK
-	    if (segPtr->numElements >= 8) {
-		VmMach_DMAFree(handlePtr->maxTransferSize, requestPtr->buffer);
-	    }
-#endif
 	if (segPtr->requestActive == 0) {
 	    segPtr->ioDone = TRUE;
 	    Sync_MasterBroadcast(&segPtr->ioDoneWait);
@@ -647,16 +636,7 @@ WriteSegmentStart(segPtr)
     requestPtr = segPtr->bioreq+0;
     requestPtr->startAddress = DEV_BYTES_PER_SECTOR * 
 				LfsDiskAddrToOffset(segPtr->nextDiskAddress);
-#ifdef SUN4DMAHACK
-    if (segPtr->numElements >= 8) {
-	requestPtr->buffer = VmMach_DMAAlloc(handlePtr->maxTransferSize,
-					     lfsPtr->writeBuffers[0]);
-    } else {
-	requestPtr->buffer = lfsPtr->writeBuffers[0];
-    }
-#else
     requestPtr->buffer = lfsPtr->writeBuffers[0];
-#endif
     requestPtr->bufferLen = 0;
     CopySegToBuffer(segPtr, handlePtr->maxTransferSize, requestPtr->buffer,
 		&requestPtr->bufferLen);
@@ -669,16 +649,7 @@ WriteSegmentStart(segPtr)
     requestPtr = segPtr->bioreq+1;
     requestPtr->startAddress = DEV_BYTES_PER_SECTOR * 
 				LfsDiskAddrToOffset(segPtr->nextDiskAddress);
-#ifdef SUN4DMAHACK
-    if (segPtr->numElements >= 8) {
-	requestPtr->buffer = VmMach_DMAAlloc(handlePtr->maxTransferSize,
-					     lfsPtr->writeBuffers[1]);
-    } else {
-	requestPtr->buffer = lfsPtr->writeBuffers[1];
-    }
-#else
     requestPtr->buffer = lfsPtr->writeBuffers[1];
-#endif 
     requestPtr->bufferLen = 0;
     CopySegToBuffer(segPtr, handlePtr->maxTransferSize, requestPtr->buffer,
 			&requestPtr->bufferLen);
@@ -802,6 +773,7 @@ CreateSegmentToWrite(lfsPtr, dontBlock)
 	status = LfsGetLogTail(lfsPtr, dontBlock, &segLogRange, &startBlock);
 	if ((status == FS_WOULD_BLOCK) && !dontBlock) {
 	    LFS_STATS_INC(lfsPtr->stats.log.cleanSegWait);
+	    lfsPtr->activeFlags |= LFS_CLEANSEGWAIT_ACTIVE;
 	    Sync_Wait(&lfsPtr->cleanSegmentsWait, FALSE);
 	} 
     } while ((status == FS_WOULD_BLOCK) && !dontBlock);
@@ -1251,6 +1223,7 @@ SegmentCleanProc(clientData, callInfoPtr)
     int			minNeededToClean, totalNumWritten, maxAvailToWrite;
     int			totalNumCleaned;
     Boolean		error;
+    Boolean		checkPoint;
     char		*memPtr;
 
 #define	MAX_CLEANING_PASSES	5
@@ -1278,6 +1251,9 @@ SegmentCleanProc(clientData, callInfoPtr)
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.segsToClean, numSegsToClean);
 	    printf("%s: Cleaning started - deficit %d segs\n", lfsPtr->name,
 			minNeededToClean);
+	if (minNeededToClean < lfsMinNumberToClean) {
+	    minNeededToClean = lfsMinNumberToClean;
+	}
 	segNo = 0;
 	segsGen = 0;
 	do {
@@ -1292,16 +1268,23 @@ SegmentCleanProc(clientData, callInfoPtr)
 	    cacheBlocksInUse = 0; /* Number of cache blocks in use. */
 	    numCleaned = 0;
 	    for (; segNo < numSegsToClean; segNo++) {
-		int size, numCacheBlocksUsed;
+		int size, numCacheBlocksUsed, bytesGenerated;
 		/*
 		 * If this segment will no fit in the space reserved in the
 		 * cache then end cleaning. Also end cleaning if we 
-		 * used up all the segments that we can write.
+		 * used up all the segments that we can write. Also end
+		 * cleaning if we have someone waiting for us and 
+		 * we have generated enough to let them proceed.
 		 */
+		bytesGenerated = numCleaned * LfsSegSize(lfsPtr) - totalSize;
 		if ((cacheBlocksInUse + segs[segNo].activeBytes/FS_BLOCK_SIZE >
 						    cacheBlocksReserved) ||
 		   ((totalSize + segs[segNo].activeBytes) > 
-				LfsSegSize(lfsPtr)*maxAvailToWrite)) {
+				LfsSegSize(lfsPtr)*maxAvailToWrite) ||
+		   (((lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) ||
+		     lfsPtr->writeBackActive) &&
+		    (bytesGenerated > LfsSegSize(lfsPtr)*minNeededToClean))
+		      ) {
 		    break;
 		}
 		size = 0;
@@ -1385,13 +1368,21 @@ SegmentCleanProc(clientData, callInfoPtr)
 	    /*
 	     * We keep cleaning segments until we have generated
 	     * enough segments to get us above a certain threashold.
-	     * Becareful not to use all available segments.
+	     * Becareful not to use all available segments. In more
+	     * detail, loop while:
+	     * 1) We haven't generated enough segments already.
+	     * 2) We haven't cleaned all the segments we are given.
+	     * 3) We haven't written out as many segments as possible.
+	     * 4) If someone is waiting for us we have cleaned the 
+	     *    minimum possible to allow them to proceed.
 	     */
 	    segsGen += (numCleaned - numWritten);
 	    totalNumWritten += numWritten;
 	    totalNumCleaned += numCleaned;
 	} while ((segsGen <= minNeededToClean) && (segNo < numSegsToClean) &&
-		 (totalNumWritten < maxAvailToWrite));
+		 (totalNumWritten < maxAvailToWrite) &&
+		  !((lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) &&
+		    (segsGen >= lfsMinNumberToClean)));
 
 	status = LfsCheckPointFileSystem(lfsPtr, 
 			LFS_CHECKPOINT_NOSEG_WAIT|LFS_CHECKPOINT_CLEANER);
@@ -1402,6 +1393,7 @@ SegmentCleanProc(clientData, callInfoPtr)
 	    lfsPtr->segCache.valid = FALSE;
 	    LfsMarkSegsClean(lfsPtr, numSegsCleaned, segs);
 	    LOCK_MONITOR;
+	    lfsPtr->activeFlags &= ~LFS_CLEANSEGWAIT_ACTIVE;
 	    Sync_Broadcast(&lfsPtr->cleanSegmentsWait);
 	    UNLOCK_MONITOR;
 	}
@@ -1416,21 +1408,21 @@ SegmentCleanProc(clientData, callInfoPtr)
     free((char *)segs);
     lfsPtr->segCache.valid = FALSE;
     LfsMemRelease(lfsPtr, cacheBlocksReserved, memPtr);
+
     LOCK_MONITOR;
+    /*  
+     * Release the flags that mark us as an active cleaner process for
+     * this file system.
+     * If someone is waiting for us to checkpoint.
+     */
     lfsPtr->activeFlags &= ~LFS_CLEANER_ACTIVE;
     lfsPtr->cleanerProcPtr = (Proc_ControlBlock *) NIL;
-    /* 
-     * If someone is waiting for us to checkpoint or
-     * we didn't do anywork, do a checkpoint.
-     */
-    if ((lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) ||
-	(totalNumCleaned == 0)) {
-	UNLOCK_MONITOR;
-	status = LfsCheckPointFileSystem(lfsPtr, 0);
-    } else {
-	UNLOCK_MONITOR;
-    }
+    checkPoint = (lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE);
+    UNLOCK_MONITOR;
 
+    if (checkPoint) { 
+	(void) LfsCheckPointFileSystem(lfsPtr, 0);
+    }
 
 }
 
@@ -1747,7 +1739,8 @@ LfsSegCheckPointDone(lfsPtr, flags)
 #endif
     if (flags & LFS_CHECKPOINT_CLEANER) {
 	lfsPtr->activeFlags &= 
-		~(LFS_CLEANER_CHECKPOINT_ACTIVE|LFS_CHECKPOINTWAIT_ACTIVE);
+		~(LFS_CLEANER_CHECKPOINT_ACTIVE|LFS_CHECKPOINTWAIT_ACTIVE|
+		  LFS_CLEANSEGWAIT_ACTIVE);
 	Sync_Broadcast(&lfsPtr->cleanSegmentsWait)
     } else { 
 	lfsPtr->activeFlags &= 
@@ -1778,8 +1771,21 @@ LfsSegDetach(lfsPtr)
     Lfs	  	    *lfsPtr;		/* File system to checkpoint. */
 {
 
+    int	moduleType;
+    LfsSegIoInterface	*segIoPtr;
+    ReturnStatus status = SUCCESS;
+
+    for (moduleType = 0; moduleType < LFS_MAX_NUM_MODS; moduleType++) {
+	segIoPtr = lfsSegIoInterfacePtrs[moduleType];
+	status = segIoPtr->detach(lfsPtr);
+#ifdef lint
+	status = LfsDescMapDetach(lfsPtr);
+	status = LfsFileLayoutDetach(lfsPtr);
+	status = LfsSegUsageDetach(lfsPtr);
+#endif 
+    }
     FreeSegmentMem(lfsPtr);
-    return SUCCESS;
+    return status;
 
 }
 
@@ -1837,6 +1843,9 @@ LfsWaitForCleanSegments(lfsPtr)
     while ((lfsPtr->activeFlags & LFS_CHECKPOINT_ACTIVE) ||
 		!LfsSegUsageEnoughClean(lfsPtr, 
 			lfsPtr->numDirtyBlocks * FS_BLOCK_SIZE)) {
+	if (!(lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE)) {
+	    lfsPtr->activeFlags |= LFS_CHECKPOINTWAIT_ACTIVE;
+	}
 	Sync_Wait(&lfsPtr->checkPointWait, FALSE);
     }
     UNLOCK_MONITOR;
