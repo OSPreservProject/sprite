@@ -109,13 +109,15 @@ extern Boolean proc_RefuseMigrations;
 #define Proc_SetCurrentProc(processPtr)	Proc_SetActualProc(processPtr)
 
 /*
- * Various routines use Proc_IsMigratedProcess to decide whether the
- * effective process is different from the actual process (i.e.,
- * migrated).  This macro bypasses the procedure call, since
+ * Various routines use Proc_UseRpcBuffer to decide whether to copy 
+ * to/from user address space or kernel address space.  A common 
+ * example of using a kernel (RPC) buffer is when a migrated process 
+ * invokes a system call that is forwarded home.
+ * This macro bypasses Proc_GetEffectiveProc, since
  * proc_RunningProcesses[processor] must be non-NIL.
  */
 
-#define	Proc_IsMigratedProcess() \
+#define	Proc_UseRpcBuffer() \
     (proc_RunningProcesses[Mach_GetProcessorNumber()]->rpcClientProcess != \
 		((Proc_ControlBlock *) NIL))
 
@@ -206,8 +208,7 @@ extern void 		Proc_Init _ARGS_((void));
 extern	void		Proc_InitMainEnviron _ARGS_((
 				Proc_ControlBlock *procPtr));
 extern void 		Proc_InitMainProc _ARGS_((void));
-extern	Boolean		Proc_IsMigratedProc _ARGS_((
-				Proc_ControlBlock *procPtr));
+extern	Boolean		Proc_IsEvictable _ARGS_((Proc_ControlBlock *procPtr));
 extern	int		Proc_KillAllProcesses _ARGS_((Boolean userProcsOnly));
 extern	void		Proc_KDump _ARGS_((ClientData dummy));
 extern	void		Proc_Lock _ARGS_((Proc_ControlBlock *procPtr));
