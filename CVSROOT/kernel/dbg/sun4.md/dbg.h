@@ -1,6 +1,6 @@
 /*
  * dbg.h --
- * 
+ *
  *     Exported types and procedure headers for the debugger module.
  *
  * Copyright 1989 Regents of the University of California
@@ -59,7 +59,7 @@ typedef enum {
     DBG_INST_WRITE,		/* Write an instruction */
     DBG_DATA_READ,		/* Read data */
     DBG_DATA_WRITE,		/* Write data */
-    DBG_SET_PID,		/* Set the process for which the stack 
+    DBG_SET_PID,		/* Set the process for which the stack
 				 * back trace is to be done. */
     DBG_GET_STOP_INFO,		/* Get all info needed by dbx after it stops. */
     DBG_GET_VERSION_STRING,	/* Return the version string. */
@@ -149,7 +149,7 @@ typedef struct {
 #define DBG_UDP_PORT 	0x7563
 
 /*
- * The different statuses that we send kgdb after we stop. 
+ * The different statuses that we send kgdb after we stop.
  */
 
 #define	DBG_RESET		0
@@ -169,7 +169,7 @@ typedef struct {
 #define	DBG_UNKNOWN_TRAP14	14
 #define	DBG_UNKNOWN_TRAP15	15
 
-#define	DBG_INTERRUPT		16	
+#define	DBG_INTERRUPT		16
 #define	DBG_LEVEL1_INT		17
 #define	DBG_LEVEL2_INT		18
 #define	DBG_LEVEL3_INT		19
@@ -243,7 +243,7 @@ typedef struct {
  */
 extern	Boolean	dbgPanic;
 
-/* 
+/*
  * Macro to call the debugger from kernel code.
  */
 #define DBG_CALL	dbgPanic = TRUE; asm("ta 1");
@@ -262,4 +262,4 @@ typedef struct {
 extern	void	Dbg_Init();
 extern	void	Dbg_InputPacket();
 
-#endif _DBG
+#endif /* _DBG */

@@ -23,11 +23,11 @@
 
 
 /*
- * The following are the registers that are saved when the debugger is 
+ * The following are the registers that are saved when the debugger is
  * called.
  */
 
-extern	int		dbgTermReason;		/* Reason why debugger was 
+extern	int		dbgTermReason;		/* Reason why debugger was
 						   called */
 extern	int		dbgSfcReg;		/* Source function code reg */
 extern	int		dbgDfcReg;		/* Dest function code reg */
@@ -38,17 +38,17 @@ extern	Boolean	dbgTracing;		/* Flag to say whether we are being
 					   traced by the debugger. */
 			
 /*
- * Entry point into the debugger from the monitor.  If want to enter the 
+ * Entry point into the debugger from the monitor.  If want to enter the
  * debugger from the monitor should continue execution at this location.
  */
 
 extern	int	dbgMonPC;
 
 
-extern	int	dbgInDebugger; 		/* How many levels deep we are in 
+extern	int	dbgInDebugger; 		/* How many levels deep we are in
 					   the debugger. */
 
 extern	int	dbgTraceLevel; 		/* Our trace level. */
 
 
-#endif _DBGINT
+#endif /* _DBGINT */

@@ -25,11 +25,11 @@
 #define	NUMGENERALREGISTERS	16
 
 /*
- * The following are the registers that are saved when the debugger is 
+ * The following are the registers that are saved when the debugger is
  * called.
  */
 
-extern	int		dbgTermReason;		/* Reason why debugger was 
+extern	int		dbgTermReason;		/* Reason why debugger was
 						   called */
 extern	int		dbgSfcReg;		/* Source function code reg */
 extern	int		dbgDfcReg;		/* Dest function code reg */
@@ -40,7 +40,7 @@ extern	Boolean	dbgTracing;		/* Flag to say whether we are being
 					   traced by the debugger. */
 			
 /*
- * Entry point into the debugger from the monitor.  If want to enter the 
+ * Entry point into the debugger from the monitor.  If want to enter the
  * debugger from the monitor should continue execution at this location.
  */
 
@@ -49,17 +49,17 @@ extern	int	dbgMonPC;
 
 extern	int	dbgTermReason;		/* Why the debugger was entered. */
 
-extern	int	dbgInDebugger; 		/* How many levels deep we are in 
+extern	int	dbgInDebugger; 		/* How many levels deep we are in
 					   the debugger. */
 
 extern	int	dbgTraceLevel; 		/* Our trace level. */
 
-extern 	int	dbgIntPending; 		/* Whether there is an interrupt 
+extern 	int	dbgIntPending; 		/* Whether there is an interrupt
 					   pending for the debugger. */
-extern	int	dbgExcType;		/* The exception type when an 
+extern	int	dbgExcType;		/* The exception type when an
 					   interrupt was blocked */
 extern	int	dbgSavedSP;		/* Contains the true kernel stack
-					   pointer after return from 
+					   pointer after return from
 					   the call to Dbg_Main */
 
-#endif _DBGINT
+#endif /* _DBGINT */
