@@ -154,6 +154,9 @@ Rpc_Server()
     register ReturnStatus error;	/* Return error code */
     Rpc_Storage storage;		/* Specifies storage of request and
 					 * reply buffers passed into the stubs*/
+    Proc_ControlBlock *procPtr;		/* our process information */
+
+    procPtr = Proc_GetCurrentProc();
 
     srvPtr = RpcServerInstall();
     if (srvPtr == (RpcServerState *)NIL) {
@@ -241,6 +244,10 @@ Rpc_Server()
 
 	    rpcServiceCount[command]++;
 
+	    if (procPtr->locksHeld != 0) {
+		panic("Starting RPC with locks held.\n");
+	    }
+
 	    RPC_SERVICE_TIMING_START(command, &histTime);
 
 	    storage.requestParamPtr	= srvPtr->request.paramBuffer.bufAddr;
@@ -254,6 +261,10 @@ Rpc_Server()
 	    error = (rpcService[command].serviceProc)((ClientData)srvPtr,
 				  srvPtr->clientID, command, &storage);
 	    RPC_SERVICE_TIMING_END(command, &histTime);
+
+	    if (procPtr->locksHeld != 0) {
+		panic("Finished RPC with locks held.\n");
+	    }
 	}
 	/*
 	 * Return an error reply for the stubs.  Note: We could send all
