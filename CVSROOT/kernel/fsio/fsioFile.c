@@ -546,6 +546,25 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     /*
      * Update the client state to reflect the close by the client.
      */
+#if 1
+    /*
+     * This code is to track down a problem with mustard killing the
+     * server on close.  Ken Shirriff 7/24/90
+     */
+     {
+	 List_Links *clientList = &(handlePtr->consist.clientList);
+	 Fsconsist_ClientInfo *clientPtr;
+	 LIST_FORALL(clientList, (List_Links *)clientPtr) {
+	     if (clientPtr->clientID == clientID) {
+		 if ((flags & FS_EXECUTE) && (clientPtr->use.exec==0)) {
+		     panic("Client %d: bad close on %s (continuable panic )\n",
+			     clientID, Fsutil_HandleName(handlePtr));
+		    return(FAILURE);
+		 }
+	     }
+	 }
+     }
+#endif
     if (!Fsconsist_Close(&handlePtr->consist, clientID, flags, &wasCached)) {
 	printf("Fsio_FileClose, client %d pid %x unknown for file <%d,%d>\n",
 		  clientID, procID, handlePtr->hdr.fileID.major,
