@@ -992,8 +992,7 @@ static void
 CheckUnlock(lockPtr)
     Sync_Lock	*lockPtr;
 {
-    int			locksHeld; /* 
-    int			locksHeld;  * locks held by current process */
+    int			locksHeld; /* locks held by current process */
     Proc_ControlBlock	*procPtr;
 
     procPtr = Proc_GetCurrentProc();
