@@ -28,7 +28,7 @@
 #include <kernel/sys.h>
 #include <kernel/proc.h>
 #include <kernel/mach.h>
-#endif
+#endif /* */
 
 /*
  * Flags for syncFlags field in the proc table:
@@ -295,4 +295,4 @@ extern 	void 		Sync_PrintStat();
 
 #define UNLOCK_MONITOR_AND_SWITCH(state) Sync_UnlockAndSwitch(LOCKPTR, state)
 
-#endif _SYNC
+#endif /* _SYNC */
