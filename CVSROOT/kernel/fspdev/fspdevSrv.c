@@ -1563,6 +1563,12 @@ FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
 			0, (Address) NIL,
 			sizeof(Fs_Attributes), (Address)attrPtr,
 			(int *)NIL, (Sync_RemoteWaiter *)NIL);
+    /*
+     * Patch the serverID in the attributes so it matches the serverID
+     * given in the prefix table.  This is needed to make getwd() work.
+     */
+    attrPtr->serverID = rpc_SpriteID;
+
     pdevHandlePtr->flags &= ~PDEV_BUSY;
 exit:
     Sync_Broadcast(&pdevHandlePtr->access);
