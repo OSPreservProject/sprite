@@ -29,7 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsInt.h"
 #include "fsNameOps.h"
 #include "fsPrefix.h"
-#include "fsUnixDomain.h"
 #include "fsSpriteDomain.h"
 #include "fsLocalDomain.h"
 #include "fsOpTable.h"
@@ -179,7 +178,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 	fileIDPtr = Mem_New(FsFileID);
 	FsHandleLock(handlePtr);
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
-		    (handlePtr, clientID, 0, (FsFileID *)NIL, fileIDPtr,
+		    (handlePtr, clientID, 0, fileIDPtr, (FsFileID *)NIL,
 		     &dataSize, &streamData);
 	FsHandleUnlock(handlePtr);
 

@@ -165,7 +165,7 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 	 */
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
 		(handlePtr, openArgsPtr->clientID, openArgsPtr->useFlags,
-		 &openResultsPtr->streamID, &openResultsPtr->ioFileID,
+		 &openResultsPtr->ioFileID, &openResultsPtr->streamID,
 		 &openResultsPtr->dataSize, &openResultsPtr->streamData);
 	FsHandleRelease(handlePtr, TRUE);
 	FsDomainRelease(handlePtr->hdr.fileID.major);
@@ -228,8 +228,8 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      * Get the I/O fileID so our client can contact the I/O server.
      */
     status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
-	    (handlePtr, openArgsPtr->clientID, 0, (FsFileID *)NIL,
-	     attrResultsPtr->fileIDPtr, (int *)NIL, (ClientData *)NIL);
+	    (handlePtr, openArgsPtr->clientID, 0, attrResultsPtr->fileIDPtr,
+	     (FsFileID *)NIL, (int *)NIL, (ClientData *)NIL);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING,
 	    "FsLocalGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
@@ -298,8 +298,8 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      */
     if (status == SUCCESS) {
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
-		(handlePtr, openArgsPtr->clientID, 0, (FsFileID *)NIL,
-		 fileIDPtr, (int *)NIL, (ClientData *)NIL);
+		(handlePtr, openArgsPtr->clientID, 0, fileIDPtr,
+		 (FsFileID *)NIL, (int *)NIL, (ClientData *)NIL);
 	if (status != SUCCESS) {
 	    Sys_Panic(SYS_WARNING,
 		"FsLocalSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
