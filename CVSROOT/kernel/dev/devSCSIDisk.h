@@ -46,11 +46,13 @@ extern int scsiDiskIndex;
 
 /*
  * Disk drive types:
- *	SCSI_SHOEBOX_DISK	??? 
- *	SCSI_EMULEX_DISK	The Emulex drives are found in the SCSIBOX.
+ *	SCSI_GENERIC_DISK	Old style (non-extended sense) disks.  This
+ *				is found in 2/120's.
+ *	SCSI_CLASS7_DISK	A new style disk returning Class 7 extended
+ *				sense data.
  */
-#define SCSI_SHOEBOX_DISK	0
-#define SCSI_EMULEX_DISK	1
+#define SCSI_GENERIC_DISK	0
+#define SCSI_CLASS7_DISK	1
 
 /*
  * Forward Declarations.
