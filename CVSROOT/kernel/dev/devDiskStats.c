@@ -70,23 +70,23 @@ Dev_GatherDiskStats()
 {
     register Device *devicePtr;
 
-    MASTER_LOCK(&deviceListMutex);
-
     /*
      * If any device has been registered do an idle check on all 
-     * registers devices. 
+     * registered devices. 
      */
     if (initialized) {
+	MASTER_LOCK(&deviceListMutex);
+
 	LIST_FORALL(&deviceListHdr, (List_Links *) devicePtr) {
 	    register Sys_DiskStats *stats = &(devicePtr->diskStats);
-
+    
 	    stats->numSamples++;
 	    if ((devicePtr->idleCheck)(devicePtr->clientData)) {
 		stats->idleCount++;
 	    }
 	}
+	MASTER_UNLOCK(&deviceListMutex);
     }
-    MASTER_UNLOCK(&deviceListMutex);
 
 }
 
