@@ -56,8 +56,9 @@ typedef struct {
  * Procedures internal to the proc module.
  */
 
-extern void ProcRemoteExit();
-extern void ProcExitProcess();
+extern 	void 			ProcRemoteExit();
+extern 	void 			ProcRemoteSuspend();
+extern 	void			ProcExitProcess();
 
 extern	void			ProcFamilyHashInit();
 extern	void			ProcDebugInit();
@@ -72,6 +73,9 @@ extern	Proc_ControlBlock	*ProcGetUnusedPCB();
 extern	void			ProcFamilyRemove();
 extern	ReturnStatus		ProcFamilyInsert();
 
+extern	ReturnStatus		ProcChangeTimer();
+extern	void			ProcDeleteTimers();
+
 extern	int			ProcTableMatch();
 extern	void			ProcAddToGroupList();
 
@@ -79,5 +83,6 @@ extern	ReturnStatus		ProcExecGetEncapSize();
 extern	ReturnStatus		ProcExecEncapState();
 extern	ReturnStatus		ProcExecDeencapState();
 extern	ReturnStatus		ProcExecFinishMigration();
+extern	void			ProcDoRemoteExec();
 	  
 #endif /* _PROCINT */
