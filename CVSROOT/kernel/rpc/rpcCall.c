@@ -2,7 +2,7 @@
  * rpcCall.c --
  *
  *      These are the top-level routines for the client side of Remote
- *      Procedure Call.  The routines do overhead tasks like setting up a
+ *      Procedure Call - the routines do overhead tasks like setting up a
  *      message, and managing client channels.  The network protocol for
  *      the client side is in rpcClient.c.
  *
@@ -26,12 +26,23 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 /*
  * The client channel table is kept as an array of pointers to channels.
- * rpcClient.h describes the contents of a ClientChannel.
+ * rpcClient.h describes the contents of a ClientChannel.  The number
+ * of channels limits the parallelism available on the client.  During
+ * system shutdown, for example, there may be many processes doing
+ * remote operations (removing swap files) at the same time.
  */
 
 RpcClientChannel **rpcChannelPtrPtr = (RpcClientChannel **)NIL;
-int		   rpcNumChannels = 16;
-int		   numFreeChannels = 16;
+int		   rpcNumChannels = 8;
+int		   numFreeChannels = 8;
+
+/*
+ * The allocation and freeing of channels is monitored.
+ * A process might have to wait for a free RPC channel.
+ */
+Sync_Condition freeChannels;
+Sync_Lock rpcLock;
+#define LOCKPTR (&rpcLock)
 
 /*
  * There is sequence of rpc transaction ids that increases over time.
@@ -53,14 +64,6 @@ unsigned int rpcBootID = 0;
  * RPCs with unknown RPC numbers - RPC number 0 is unused.
  */
 int rpcClientCalls[RPC_LAST_COMMAND+1];
-
-/*
- * The allocation and freeing of channels is monitored.
- * A process might have to wait for a free RPC channel.
- */
-Sync_Condition freeChannels;
-Sync_Lock rpcLock;
-#define LOCKPTR (&rpcLock)
 
 
 /*
@@ -104,8 +107,10 @@ Rpc_Call(serverID, command, storagePtr)
 				 * reply messages. */
 {
     register RpcClientChannel *chanPtr;	/* Handle for communication channel */
-    register ReturnStatus error;/* General error return status */
-    Time histTime;
+    register ReturnStatus error;	/* General error return status */
+    Time histTime;			/* Time for histogram taking */
+    int srvBootID;			/* Boot time stamp from server, used to
+					 * track server reboots */
 
     if (serverID < 0) {
 	Sys_Panic(SYS_FATAL, "Rpc_Call, bad serverID");
@@ -154,7 +159,7 @@ Rpc_Call(serverID, command, storagePtr)
      * Call RpcDoCall, which synchronizes with RpcClientDispatch,
      * to do the send-receive-timeout loop for the RPC.
      */
-    error = RpcDoCall(serverID, chanPtr, storagePtr, command);
+    error = RpcDoCall(serverID, chanPtr, storagePtr, command, &srvBootID);
     RpcChanFree(chanPtr);
     
 #ifdef TIMESTAMP
@@ -165,7 +170,7 @@ Rpc_Call(serverID, command, storagePtr)
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
 	RpcHostDead(serverID);
     } else {
-	RpcHostAlive(serverID);
+	RpcHostAlive(serverID, srvBootID, TRUE);
     }
     return(error);
 }
