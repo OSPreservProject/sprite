@@ -798,6 +798,7 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     Address	*dataPtr;	/* Return - pointer to FsDeviceState */
 {
     FsPipeIOHandle			*handlePtr;
+    Boolean				closeSrcClient;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -814,17 +815,18 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr);
+    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr,
+		    &closeSrcClient);
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
-    FsMigrateUseCounts(migInfoPtr->flags, &handlePtr->use);
+    FsMigrateUseCounts(migInfoPtr->flags, closeSrcClient, &handlePtr->use);
 
     /*
      * Move the client at the I/O handle level.
      */
     FsIOClientMigrate(&handlePtr->clientList, migInfoPtr->srcClientID,
-			dstClientID, migInfoPtr->flags);
+			dstClientID, migInfoPtr->flags, closeSrcClient);
 
     *sizePtr = 0;
     *dataPtr = (Address)NIL;

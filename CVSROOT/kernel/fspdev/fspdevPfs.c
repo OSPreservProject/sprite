@@ -314,6 +314,10 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     }
     ctrlHandlePtr->prefixPtr = FsPrefixInstall(name,
 		(FsHandleHeader *)cltHandlePtr, FS_PSEUDO_DOMAIN, prefixFlags);
+    /*
+     * No migration of pseudo-filesystem servers.
+     */
+    Proc_NeverMigrate(Proc_GetCurrentProc());
     FsHandleUnlock(cltHandlePtr);
 cleanup:
     if (status != SUCCESS) {

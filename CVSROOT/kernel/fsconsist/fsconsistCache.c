@@ -745,7 +745,7 @@ FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampP
  */
 
 ENTRY ReturnStatus
-FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
+FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags, closeSrc,
 	cacheablePtr, openTimeStampPtr)
     FsLocalFileIOHandle	*handlePtr;	/* Needs to be UNLOCKED  */
     int			srcClientID;	/* ID of client using the file */
@@ -754,6 +754,8 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 					 * FS_RMT_SHARED if shared now.
 					 * FS_NEW_STREAM if dstClientID is
 					 * getting stream for first time. */
+    Boolean		closeSrc;	/* TRUE if should close source client.
+					 * This is set by FsStreamMigClient */
     Boolean		*cacheablePtr;	/* Return - Cachability of file */
     int			*openTimeStampPtr;/* Generated for the client so it can
 					 * catch races between the return from
@@ -766,7 +768,7 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
     LOCK_MONITOR;
 
     cache = (srcClientID == consistPtr->lastWriter);
-    if ((useFlags & FS_RMT_SHARED) == 0) {
+    if (closeSrc) {
 	/*
 	 * Remove references due to the original client so it doesn't confuse
 	 * the regular cache consistency algorithm.  Note that this call doesn't
@@ -781,15 +783,6 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 		FsFileTypeToString(handlePtr->hdr.fileID.type),
 		FsHandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
-	}
-    } else if (useFlags & FS_LAST_WRITER) {
-	Boolean found;
-	
-	found = FsIOClientRemoveWriter(&consistPtr->clientList, srcClientID);
-	if (!found) {
-	    printf(
-		"FsMigrateConsistency, IO Client %d not found\n",
-		srcClientID);
 	}
     }
     /*

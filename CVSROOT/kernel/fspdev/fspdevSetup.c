@@ -603,6 +603,7 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
     Address	*dataPtr;	/* Return - pointer to FsPdevState */
 {
     PdevClientIOHandle			*cltHandlePtr;
+    Boolean				closeSrcClient;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -629,13 +630,14 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)cltHandlePtr);
+    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)cltHandlePtr,
+			&closeSrcClient);
 
     /*
      * Move the client at the I/O handle level.
      */
     FsIOClientMigrate(&cltHandlePtr->clientList, migInfoPtr->srcClientID,
-			dstClientID, migInfoPtr->flags);
+			dstClientID, migInfoPtr->flags, closeSrcClient);
 
     *sizePtr = 0;
     *dataPtr = (Address)NIL;

@@ -82,6 +82,7 @@ FsControlHandleInit(fileIDPtr, name)
  *
  * Side effects:
  *	Installs the Control I/O handle and keeps a reference to it.
+ *	Marks the process as not suitable for migration.
  *
  *----------------------------------------------------------------------
  */
@@ -105,6 +106,10 @@ FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     }
     ctrlHandlePtr->serverID = clientID;
     *ioHandlePtrPtr = (FsHandleHeader *)ctrlHandlePtr;
+    /*
+     * Can't migrate pseudo-device servers.
+     */
+    Proc_NeverMigrate(Proc_GetCurrentProc());
     FsHandleUnlock(ctrlHandlePtr);
     return(SUCCESS);
 }

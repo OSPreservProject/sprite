@@ -218,10 +218,12 @@ FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
  *----------------------------------------------------------------------
  */
 ENTRY void
-FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr)
+FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
     FsMigInfo		*migInfoPtr;	/* Encapsulated stream */
     int			dstClientID;	/* New client of the stream */
     FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
+    Boolean		*closeSrcClientPtr;	/* Return - TRUE if the src
+					 * client stopped using stream */
 {
     register Boolean found;
     register Fs_Stream *streamPtr;
@@ -274,8 +276,11 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr)
 	 * The client doesn't perceive sharing of the stream so
 	 * it must be its last reference so we do an I/O close.
 	 */
+	*closeSrcClientPtr = TRUE;
 	(void)FsStreamClientClose(&streamPtr->clientList,
 				  migInfoPtr->srcClientID);
+    } else {
+	*closeSrcClientPtr = FALSE;
     }
     /*
      * Mark (unmark) the stream if it is being shared.  This is checked
@@ -356,17 +361,16 @@ StreamMigCallback(migInfoPtr, sharedPtr)
  *
  * FsStreamMigrate --
  *
- *	This is called from the stub for RPC_FS_MIGRATE on a host that
- *	is the source of a migration.  At this point this host can
- *	release its reference on a stream that migrated.  We are told
- *	by the I/O server during the I/O migrate call in order
- *	to properly synchronize with closes to the stream.  For example,
- *	a stream often gets duped, then one refernce migrates and the olther
- *	reference gets closed.
+ *	This is called to release a reference to a stream at the source
+ *	of a migration.  We are told to release the reference by the
+ *	I/O server during its FsStreamMigClient call.  The timing of our
+ *	call ensures that a simultaneous Fs_Close on the stream will be
+ *	properly synchronized - the I/O server has to know how many
+ *	stream references we, the source of a migration, really have.
  *
- *	Note.  This is wedged into the mold of an I/O handle migrate routine
- *	because the RPC system is in flux and it isn't convenient to add
- *	a new RPC.
+ *	FIXME: this uses FS_RPC_MIGRATE instead of a new RPC.  This requires
+ *	a patch in the RPC stub for FS_RPC_MIGRATE, and a patch here because
+ *	there are more references to the stream that originally thought.
  *
  * Results:
  *	SUCCESS unless the stream isn't even found.  This sets the FS_RMT_SHARED
@@ -374,7 +378,8 @@ StreamMigCallback(migInfoPtr, sharedPtr)
  *	otherwise it clears this flag.
  *
  * Side effects:
- *	Does an RPC to the source client and logs a message if that fails.
+ *	This releases one reference to the stream.  If it is the last
+ *	reference then this propogates the close down to the I/O handle.
  *
  * ----------------------------------------------------------------------------
  *
@@ -413,8 +418,13 @@ FsStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     /*
      * If this is the last refernece then call down to the I/O handle
      * so it can decrement use counts that come from the stream.
+     * (The funky check against 2 is because there have been two fetches
+     * of the stream.  One by Fs_RpcStartMigration, and one by use.  We
+     * decrement our reference above, but there is still an extra from
+     * Fs_RpcStartMigration.  Plus there is the original ref from the
+     * stream that has migrated.  Thus 2 is the minimum.)
      */
-    if (streamPtr->hdr.refCount <= 1) {
+    if (streamPtr->hdr.refCount <= 2) {
 	(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
 		(streamPtr->ioHandlePtr, streamPtr->flags);
 	if (FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {

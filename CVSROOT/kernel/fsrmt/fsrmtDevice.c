@@ -954,6 +954,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     Address	*dataPtr;	/* Return - pointer to FsDeviceState */
 {
     FsDeviceIOHandle			*devHandlePtr;
+    Boolean				closeSrcClient;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -974,17 +975,18 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)devHandlePtr);
+    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)devHandlePtr,
+		    &closeSrcClient);
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
-    FsMigrateUseCounts(migInfoPtr->flags, &devHandlePtr->use);
+    FsMigrateUseCounts(migInfoPtr->flags, closeSrcClient, &devHandlePtr->use);
 
     /*
      * Move the client at the I/O handle level.
      */
     FsIOClientMigrate(&devHandlePtr->clientList, migInfoPtr->srcClientID,
-			dstClientID, migInfoPtr->flags);
+			dstClientID, migInfoPtr->flags, closeSrcClient);
 
     *sizePtr = 0;
     *dataPtr = (Address)NIL;
@@ -1568,12 +1570,12 @@ Fs_NotifyReader(data)
 {
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
+    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
+	panic( "Fs_NotifyReader, bad data\n");
+    }
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
 	(devHandlePtr->readNotifyScheduled)) {
 	return;
-    }
-    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	panic( "Fs_NotifyReader, bad data\n");
     }
     devHandlePtr->readNotifyScheduled = TRUE;
     Proc_CallFunc(ReadNotify, (ClientData) devHandlePtr, 0);
@@ -1620,12 +1622,12 @@ Fs_NotifyWriter(data)
 {
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
+    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
+	panic( "Fs_NotifyWriter, bad data\n");
+    }
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
 	(devHandlePtr->writeNotifyScheduled)) {
 	return;
-    }
-    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	panic( "Fs_NotifyWriter, bad data\n");
     }
     devHandlePtr->writeNotifyScheduled = TRUE;
     Proc_CallFunc(WriteNotify, (ClientData) devHandlePtr, 0);

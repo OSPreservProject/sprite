@@ -859,6 +859,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     register FsLocalFileIOHandle	*handlePtr;
     register FsFileState		*fileStatePtr;
     register ReturnStatus		status;
+    Boolean				closeSrcClient;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -881,12 +882,13 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * We only close the orignial client if the stream is unshared,
 	 * i.e. there are no references left there.
 	 */
-	FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr);
+	FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr,
+			&closeSrcClient);
 
 	/*
 	 * Adjust use counts on the I/O handle to reflect any new sharing.
 	 */
-	FsMigrateUseCounts(migInfoPtr->flags, &handlePtr->use);
+	FsMigrateUseCounts(migInfoPtr->flags, closeSrcClient, &handlePtr->use);
 
 	/*
 	 * Update the client list, and take any required cache consistency
@@ -895,7 +897,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	fileStatePtr = mnew(FsFileState);
 	FsHandleUnlock(handlePtr);
 	status = FsMigrateConsistency(handlePtr, migInfoPtr->srcClientID,
-		dstClientID, migInfoPtr->flags,
+		dstClientID, migInfoPtr->flags, closeSrcClient,
 		&fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
 	if (status == SUCCESS) {
 	    FsGetCachedAttr(&handlePtr->cacheInfo, &fileStatePtr->version,
