@@ -15,12 +15,18 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-extern void InitStripeLocks();
-extern void SLockStripe();
-extern void XLockStripe();
-extern void SUnlockRaid();
-extern void XUnlockRaid();
-extern void BeginRaidUse();
-extern void EndRaidUse();
-extern void LockRaid();
-extern void UnlockRaid();
+#ifndef _DEVRAIDLOCK
+#define _DEVRAIDLOCK
+
+#include "devRaid.h"
+
+typedef struct {
+    Sync_Semaphore	mutex;
+    int			val;
+    Sync_Condition	wait;
+} Sema;
+
+#define LockSema(sema) (DownSema(sema))
+#define UnlockSema(sema) (UpSema(sema))
+
+#endif /* _DEVRAIDLOCK */
