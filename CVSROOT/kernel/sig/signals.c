@@ -1062,18 +1062,17 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 	    return(FALSE);
 
 	case SIG_MIGRATE_ACTION:
-#ifdef notdef
 	    /*
-	     * If the process was just created, don't migrate it yet.
-	     * Just reissue the signal.
-	     * .. FIXME -- this shouldn't be necessary.
+	     * If the process was in the middle of a page fault,
+	     * its PC in the trap stack is not useable.
+	     * Reset the pending condition but hold it until we get out of
+	     * the kernel.
 	     */
-	    if (procPtr->genFlags & PROC_DONT_MIGRATE) {
-		procPtr->genFlags &= ~PROC_DONT_MIGRATE;
+	    if (!Mach_CanMigrate(procPtr)) {
 		LocalSend(procPtr, sigNum, procPtr->sigCodes[sigNum]);
+		procPtr->sigHoldMask |= SigGetBitMask(SIG_MIGRATE_TRAP);
 		return(FALSE);
 	    }
-#endif notdef
 		
 	    if (procPtr->peerHostID != NIL) {
 		if (proc_MigDebugLevel > 6) {
