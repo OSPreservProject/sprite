@@ -120,6 +120,14 @@ MachBrkptTrap:
 MachSyscallTrap:
 
 	|*
+	|* Always save the user stack pointer because it can be needed
+	|* while processing the system call.
+	|*
+	movl	_machCurStatePtr, a0
+	movc	usp, a1
+	movl	a1, a0@(MACH_USER_SP_OFFSET)
+
+	|*
 	|* If this is a fork kernel call, save the registers in the PCB.
 	|* This is a hack, and should eventually go away by adding another
 	|* parameter to fork, which gives the address of an area of
@@ -128,10 +136,7 @@ MachSyscallTrap:
 
 	tstl	d0
 	jne	1$
-	movl	_machCurStatePtr, a0
 	moveml	#0xffff, a0@(MACH_TRAP_REGS_OFFSET)
-	movc	usp, a1
-	movl	a1, a0@(MACH_USER_SP_OFFSET)
 	movl	sp, a0@(MACH_EXC_STACK_PTR_OFFSET)
 
 	|*

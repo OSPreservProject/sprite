@@ -335,6 +335,7 @@ extern	void		Mach_FreeState();
 extern	void		Mach_CopyState();
 extern	void		Mach_GetDebugState();
 extern	void		Mach_SetDebugState();
+extern	Address		Mach_GetUserStackPtr();
 
 /*
  * Migration routines.

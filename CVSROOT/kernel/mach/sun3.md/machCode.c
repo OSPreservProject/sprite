@@ -584,6 +584,31 @@ Mach_SetDebugState(procPtr, debugStatePtr)
     machStatePtr->userState.excStackPtr->statusReg = debugStatePtr->statusReg;
 }
 
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_GetUserStackPtr --
+ *
+ *	Return the user stack pointer from the machine state struct for the
+ *	given process.
+ *
+ * Results:
+ *	The value of the user stack pointer when the process trapped.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Address
+Mach_GetUserStackPtr(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    return(procPtr->machStatePtr->userState.userStackPtr);
+}
+
 
 /*
  *----------------------------------------------------------------------
