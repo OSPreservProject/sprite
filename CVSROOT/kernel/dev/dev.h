@@ -46,6 +46,7 @@ typedef struct Dev_DiskAddr {
 
 extern Time	dev_LastConsoleInput;
 
+extern void	Dev_ConsoleReset();
 extern void	Dev_Init();
 extern void	Dev_Config();
 extern void	Dev_GatherDiskStats();
