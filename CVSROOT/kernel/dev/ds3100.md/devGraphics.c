@@ -247,7 +247,7 @@ DevGraphicsInit()
     scrInfo.eventQueue.tcs = tcs;
     scrInfo.bitmap = (char *)MACH_UNCACHED_FRAME_BUFFER_ADDR;
     scrInfo.cursorBits = (short *)(cursorBits);
-    Timer_GetCurrentTicks(&time);
+    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     scrInfo.eventQueue.timestampMS = TO_MS(time);
     scrInfo.eventQueue.eSize = DEV_MAXEVQ;
     scrInfo.eventQueue.eHead = scrInfo.eventQueue.eTail = 0;
@@ -770,11 +770,11 @@ DevGraphicsKbdIntr(ch)
     eventPtr->device = DEV_KEYBOARD_DEVICE;
     eventPtr->x = scrInfo.mouse.x;
     eventPtr->y = scrInfo.mouse.y;
-    Timer_GetCurrentTicks(&time);
+    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     eventPtr->time = TO_MS(time);
     eventPtr->key = ch;
     scrInfo.eventQueue.eTail = i;
-    Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL, (Boolean *) NIL);
+    dev_LastConsoleInput = time;
     Fsio_DevNotifyReader(notifyToken);
 }
 
@@ -856,8 +856,7 @@ MouseEvent(newRepPtr)
     int		i;
     DevEvent	*eventPtr;
 
-    Timer_GetCurrentTicks(&time);
-
+    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     milliSec = TO_MS(time);
 
     /*
@@ -950,6 +949,7 @@ MouseEvent(newRepPtr)
     eventPtr->y = scrInfo.mouse.y;
     eventPtr->device = DEV_MOUSE_DEVICE;
     scrInfo.eventQueue.eTail = DEV_EVROUND(scrInfo.eventQueue.eTail + 1);
+    dev_LastConsoleInput = time;
     if (devGraphicsOpen) {
 	Fsio_DevNotifyReader(notifyToken);
     }
@@ -1021,7 +1021,7 @@ MouseButtons(newRepPtr)
 	    }
 	    eventPtr->device = DEV_MOUSE_DEVICE;
 
-	    Timer_GetCurrentTicks(&time);
+	    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
 	    eventPtr->time = TO_MS(time);
 	    eventPtr->x = scrInfo.mouse.x;
 	    eventPtr->y = scrInfo.mouse.y;
@@ -1378,7 +1378,7 @@ DevGraphicsOpen(devicePtr, useFlags, inNotifyToken, flagsPtr)
 	scrInfo.eventQueue.eHead = scrInfo.eventQueue.eTail = 0;
 	scrInfo.eventQueue.tcSize = MOTION_BUFFER_SIZE;
 	scrInfo.eventQueue.tcNext = 0;
-	Timer_GetCurrentTicks(&time);
+	Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
 	scrInfo.eventQueue.timestampMS = TO_MS(time);
     }
     MASTER_UNLOCK(&graphicsMutex);

@@ -501,7 +501,6 @@ MouseInputProc(dummy, value)
     int value;			/* Character that arrived from UART. */
 {
     char c;
-    Timer_Ticks ticks;
     Time time;
     Event *eventPtr;
 
@@ -557,15 +556,13 @@ MouseInputProc(dummy, value)
 	case WAIT_DELTA_Y2:
 	    event.deltaY += (int) c;
 	    event.flags = MOUSE_EVENT;
-	    Timer_GetCurrentTicks(&ticks);
-	    Timer_TicksToTime(ticks, &time);
+	    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
 	    event.time = (time.seconds*1000) + (time.microseconds/1000);
 	    eventPtr = (Event *) malloc(sizeof(Event));
 	    List_InitElement(&eventPtr->links);
 	    eventPtr->event = event;
 	    List_Insert(&eventPtr->links, LIST_ATREAR(&eventList));
-	    Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL,
-		    (Boolean *) NIL);
+	    dev_LastConsoleInput = time;
 	    Fsio_DevNotifyReader(token);
 	    break;
     }
@@ -604,7 +601,6 @@ KbdInputProc(dummy, value)
 				 * or down transition. */
 {
     register Event *eventPtr;
-    Timer_Ticks ticks;
     Time time;
 
     /*
@@ -628,11 +624,10 @@ KbdInputProc(dummy, value)
     eventPtr->event.key = value & 0x7f;
     eventPtr->event.deltaX = 0;
     eventPtr->event.deltaY = 0;
-    Timer_GetCurrentTicks(&ticks);
-    Timer_TicksToTime(ticks, &time);
+    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     eventPtr->event.time = (time.seconds*1000) + (time.microseconds/1000);
     List_Insert(&eventPtr->links, LIST_ATREAR(&eventList));
-    Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL, (Boolean *) NIL);
+    dev_LastConsoleInput = time;
     Fsio_DevNotifyReader(token);
 }
 
