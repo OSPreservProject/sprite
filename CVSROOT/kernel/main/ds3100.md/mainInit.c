@@ -21,7 +21,6 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "sprite.h"
 #include "dbg.h"
 #include "dev.h"
-#include "mem.h"
 #include "net.h"
 #include "proc.h"
 #include "prof.h"
