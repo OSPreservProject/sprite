@@ -619,6 +619,7 @@ extern	void			Proc_ServerProc();
 extern	int			proc_NumServers;
 
 extern  ReturnStatus		Proc_Dump();
+extern  ReturnStatus		Proc_DumpPCB();
 
 /*
  * The following are kernel stubs corresponding to system calls.  They
