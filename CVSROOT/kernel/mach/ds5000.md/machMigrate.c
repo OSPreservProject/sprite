@@ -33,7 +33,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 typedef struct {
     Mach_UserState userState;		/* the contiguous machine-dependent
 					 * user state. */
-    int	pc;				/* PC at which to resume execution. */
 } MigratedState;
 
 
@@ -48,6 +47,7 @@ typedef struct {
  *	another procedure.  
  *
  * Results:
+ *  	SUCCESS.
  *	The buffer is filled with the user state and PC of the process.
  *
  * Side effects:
@@ -55,16 +55,21 @@ typedef struct {
  *
  * ----------------------------------------------------------------------------
  */
-void
-Mach_EncapState(procPtr, buffer)
-    Proc_ControlBlock *procPtr;		/* pointer to process to encapsulate */
-    Address buffer;			/* area in which to encapsulate it */
+/* ARGSUSED */
+ReturnStatus
+Mach_EncapState(procPtr, hostID, infoPtr, buffer)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address buffer;			   /* Pointer to allocated buffer */
 {
     Mach_State *machStatePtr = procPtr->machStatePtr;
     MigratedState *migPtr = (MigratedState *) buffer;
     
     bcopy((Address) &machStatePtr->userState, (Address) &migPtr->userState,
 	    sizeof(Mach_UserState));
+    return(SUCCESS);
 }    
     
 
@@ -82,17 +87,19 @@ Mach_EncapState(procPtr, buffer)
  *	The user state and PC of the process are initialized from the
  *	encapsulated information, and the other standard process
  *	initialization operations are performed (by the general initialization
- *	procedure).
+ *	procedure).  The status from that procedure is returned.
  *
  * Side effects:
  *	None.
  *
  * ----------------------------------------------------------------------------
  */
+/* ARGSUSED */
 ReturnStatus
-Mach_DeencapState(procPtr, buffer)
-    Proc_ControlBlock *procPtr;		/* pointer to process to initialize */
-    Address buffer;			/* area from which to get state */
+Mach_DeencapState(procPtr, infoPtr, buffer)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address buffer;			  /* buffer containing data */
 {
     MigratedState *migPtr = (MigratedState *) buffer;
     ReturnStatus status;
@@ -112,7 +119,9 @@ Mach_DeencapState(procPtr, buffer)
      */
 
     status = Mach_SetupNewState(procPtr, (Mach_State *) &migPtr->userState,
-				Proc_ResumeMigProc, (Address)migPtr->pc, TRUE);
+				Proc_ResumeMigProc,
+				migPtr->userState.regState.pc,
+				TRUE);
     return(status);
 }    
     
@@ -126,7 +135,8 @@ Mach_DeencapState(procPtr, buffer)
  *	Return the size of the encapsulated machine-dependent data.
  *
  * Results:
- *	The size of the migration information structure.
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
  *
  * Side effects:
  *	None.
@@ -135,10 +145,16 @@ Mach_DeencapState(procPtr, buffer)
  *
  */
 
-int
-Mach_GetEncapSize()
+/* ARGSUSED */
+ReturnStatus
+Mach_GetEncapSize(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
 {
-    return(sizeof(MigratedState));
+    infoPtr->size = sizeof(MigratedState);
+    return(SUCCESS);
 }
 
 
@@ -166,3 +182,30 @@ Mach_CanMigrate(procPtr)
     return(TRUE);
 }    
     
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetLastSyscall --
+ *
+ *	Return the number of the last system call performed for the current
+ *	process.
+ *
+ * Results:
+ *	The system call number is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Mach_GetLastSyscall()
+{
+    Proc_ControlBlock *procPtr;		/* pointer to process to check */
+
+    procPtr = Proc_GetCurrentProc();
+    return(procPtr->machStatePtr->userState.regState.regs[T0]);
+}
