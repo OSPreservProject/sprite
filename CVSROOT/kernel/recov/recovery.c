@@ -69,27 +69,11 @@ static List_Links	crashCallBackList;
 unsigned int recov_CrashDelay;
 
 /*
- * recov_PrintLevel defines how noisey we are about other hosts.
- *	Values for the print level should be defined in increasing order.
- */
-#define RECOV_PRINT_NONE	0
-#define RECOV_PRINT_REBOOT	1
-#define RECOV_PRINT_IF_UP	2
-#define RECOV_PRINT_CRASH	2
-#define RECOV_PRINT_ALL		10
-
-int recov_PrintLevel = RECOV_PRINT_REBOOT;
-
-#define RecovHostPrint(level, spriteID, message) \
-	if (recov_PrintLevel >= level) { \
-	    Sys_HostPrint(spriteID, message); \
-	}
-
-/*
  * Statistics about the recovery module.
  */
 Recov_Stats recov_Stats;
 
+
 /*
  * The state of other hosts is kept in a hash table keyed on SpriteID.
  * This state is maintained by Recov_HostAlive and Recov_HostDead, which are
@@ -126,7 +110,17 @@ typedef struct RecovHostState {
 static Sync_Lock recovLock;
 #define LOCKPTR (&recovLock)
 
-
+
+/*
+ * recov_PrintLevel defines how noisey we are about other hosts.
+ *	Values for the print level should be defined in increasing order.
+ */
+int recov_PrintLevel = RECOV_PRINT_REBOOT;
+
+#define RecovHostPrint(level, spriteID, message) \
+	if (recov_PrintLevel >= level) { \
+	    Sys_HostPrint(spriteID, message); \
+	}
 
 Trace_Header recovTraceHdr;
 Trace_Header *recovTraceHdrPtr = &recovTraceHdr;
@@ -497,7 +491,6 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	while (hostPtr->state & RECOV_CRASH_CALLBACKS) {
 	    (void)Sync_Wait(&hostPtr->recovery, FALSE);
 	    if (sys_ShuttingDown) {
-		printf("Rpc_Server exiting in Recov_HostAlive\n");
 		UNLOCK_MONITOR;
 		Proc_Exit(1);
 	    }
@@ -1318,7 +1311,8 @@ CallBacksDone(spriteID)
  *
  * Recov_GetStats --
  *
- *	Return the Recov_Stats to user-level.
+ *	Return the Recov_Stats to user-level, and perhaps more information
+ *	about our internal opinion of other hosts.
  *
  * Results:
  *	None.
@@ -1334,16 +1328,142 @@ Recov_GetStats(size, userAddr)
     Address userAddr;
 {
     ReturnStatus status;
+    int extraSpace = -1;
 
     if (size <= 0) {
 	return(GEN_INVALID_ARG);
     }
+    /*
+     * See if the caller wants more than just statistics.
+     */
     if (size > sizeof(Recov_Stats)) {
+	extraSpace = size - sizeof(Recov_Stats);
 	size = sizeof(Recov_Stats);
     }
     status = Vm_CopyOut(size, (Address)&recov_Stats, userAddr);
+
+#ifdef notdef
+    if (extraSpace > sizeof(int)) {
+	/*
+	 * Fill the user-space buffer with a count of hosts,
+	 * and then information about each host.
+	 */
+	userAddr += sizeof(Recov_Stats);
+	status = Recov_DumpState(extraSpace, userAddr);
+    }
+#endif notdef
     return(status);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_DumpState --
+ *
+ *	Dump internal state to user-level.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Copies data out to user-space.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Recov_DumpState(size, userAddr)
+    int size;
+    Address userAddr;
+{
+    ReturnStatus status;
+    int numHosts, maxHosts;
+    int *countPtr;
+    int spriteID;
+    Recov_State recovState;
+
+    /*
+     * We return a count, plus count number of Recov_State structures.
+     */
+    maxHosts = (size - sizeof(int)) / sizeof(Recov_State);
+    countPtr = (int *)userAddr;
+    if ((maxHosts == 0) && (size > sizeof(int))) {
+	status = Vm_CopyOut(sizeof(int), (Address)&maxHosts, countPtr);
+	return(status);
+    }
+     userAddr += sizeof(int);
+    /*
+     * Brute force.  Run through til MAX_HOSTS and try to grab
+     * the state from the hash table.
+     */
+    numHosts = 0;
+    for (spriteID = 1 ; spriteID < NET_NUM_SPRITE_HOSTS ; spriteID++) {
+	if (Recov_GetHostInfo(spriteID, &recovState)) {
+	    status = Vm_CopyOut(sizeof(recovState), (Address)&recovState,
+			    userAddr);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	    userAddr += sizeof(recovState);
+	    numHosts++;
+	    if (numHosts >= maxHosts) {
+		break;
+	    }
+	}
+    }
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_GetHostInfo --
+ *
+ *	Get the internal state about a host.
+ *
+ * Results:
+ *	Fills in a Recov_State structure and returns TRUE,
+ *	otherwise, if we don't know about the host, returns FALSE
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY Boolean
+Recov_GetHostInfo(spriteID, recovStatePtr)
+    int spriteID;
+    Recov_State *recovStatePtr;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    register NotifyElement *notifyPtr;
+    Boolean found = FALSE;
+
+    LOCK_MONITOR;
+
+    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
+	goto exit;
+    } else {
+	hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+	if (hashPtr == (Hash_Entry *)NULL || hashPtr->value == (Address)NIL) {
+	    goto exit;
+	} else {
+	    hostPtr = (RecovHostState *)hashPtr->value;
+	}
+	recovStatePtr->spriteID = spriteID;
+	recovStatePtr->state = hostPtr->state;
+	recovStatePtr->clientState = hostPtr->clientState;
+	recovStatePtr->bootID = hostPtr->bootID;
+	recovStatePtr->time = hostPtr->time;
+	found = TRUE;
+    }
+exit:
+    UNLOCK_MONITOR;
+    return(found);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1447,7 +1567,6 @@ void
 Recov_PrintTrace(numRecs)
     int numRecs;
 {
-    Recov_PrintState();
     if (numRecs <= 0 || numRecs > recovTraceLength) {
 	numRecs = recovTraceLength;
     }
@@ -1480,6 +1599,7 @@ Recov_PrintState()
     register Hash_Entry		*hashEntryPtr;
     register RecovHostState	*hostPtr;
     char			*hostName;
+    Time_Parts			timeParts;
 
     printf("RECOVERY STATE\n");
     Hash_StartSearch(&hashSearch);
@@ -1488,9 +1608,18 @@ Recov_PrintState()
 	 hashEntryPtr = Hash_Next(recovHashTable, &hashSearch)) {
 	hostPtr = (RecovHostState *)hashEntryPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
+
 	    Net_SpriteIDToName(hostPtr->spriteID, &hostName);
 	    printf("%-14s %-8s", hostName, RecovState(hostPtr->state));
-	    printf(" clt bits 0x%x\n", hostPtr->clientState);
+	    printf(" bootID 0x%8x", hostPtr->bootID);
+
+	    Time_ToParts(hostPtr->bootID, FALSE, &timeParts);
+	    timeParts.month++;	/* So Jan is 1, not 0 */
+	    printf(" %d/%d/%d %d:%02d:%02d ", timeParts.month,
+		    timeParts.dayOfMonth,
+		    timeParts.year, timeParts.hours, timeParts.minutes,
+		    timeParts.seconds);
+	    printf("\n");
 	}
     }
     return;
@@ -1527,8 +1656,6 @@ RecovState(state)
 	    return("Dying");
 	case RECOV_HOST_DEAD:
 	    return("Dead");
-	case RECOV_WAITING:
-	    return("Waiting");
 	case RECOV_CRASH:
 	    return("Crash callbacks");
 	case RECOV_REBOOT:
