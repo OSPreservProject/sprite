@@ -862,7 +862,7 @@ FspdevRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
     }
     if (!found) {
 	printf(
-	    "FsRmtPseudoDeviceVerify, client %d not known for %s <%x,%x>\n",
+	    "FspdevRmtPseudoStreamVerify, client %d not known for %s <%x,%x>\n",
 	    clientID, Fsutil_FileTypeToString(fileIDPtr->type),
 	    fileIDPtr->major, fileIDPtr->minor);
     }
