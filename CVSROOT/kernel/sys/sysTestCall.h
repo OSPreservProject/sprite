@@ -16,11 +16,9 @@
 #include <sprite.h>
 #include <sys.h>
 
-struct test_args {
-    int argArray[SYS_MAX_ARGS];
-};
-
-extern	int	Test_PrintOut _ARGS_((struct test_args args));
+extern	int 	Test_PrintOut _ARGS_((int arg0, int arg1, int arg2, int arg3, 
+				      int arg4, int arg5, int arg6, int arg7, 
+				      int arg8, int arg9));
 extern	int	Test_GetLine _ARGS_((char *string, int length));
 extern	int	Test_GetChar _ARGS_((char *charPtr));
 

@@ -22,13 +22,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <machMon.h>
 #include <stdio.h>
 
-/*
- * All the routines in this file have no comments.  What are they for?  I'll
- * put in comments for them as soon as I figure out their true purpose, but
- * passing structs this way sure won't work on the sun4.
- */
+struct test_args {
+    int argArray[SYS_MAX_ARGS];
+};
 
-#if !defined(sun4) && !defined(sun4c)
 
 /*
  * ----------------------------------------------------------------------------
@@ -49,9 +46,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 int 
-Test_PrintOut(args)
-    struct test_args args;
+Test_PrintOut(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+    int arg0; 
+    int arg1; 
+    int arg2; 
+    int arg3; 
+    int arg4; 
+    int arg5; 
+    int arg6;
+    int arg7; 
+    int arg8; 
+    int arg9;
 {
+    struct test_args args;
     struct {
 	int 	arg;
 	int 	mapped;
@@ -60,6 +67,17 @@ Test_PrintOut(args)
     int		len;
     int		i;
     char	*string;
+
+    args.argArray[0] = arg0;
+    args.argArray[1] = arg1;
+    args.argArray[2] = arg2;
+    args.argArray[3] = arg3;
+    args.argArray[4] = arg4;
+    args.argArray[5] = arg5;
+    args.argArray[6] = arg6;
+    args.argArray[7] = arg7;
+    args.argArray[8] = arg8;
+    args.argArray[9] = arg9;
 
     Vm_MakeAccessible(VM_READONLY_ACCESS, 1024, (Address) (args.argArray[0]), 
 					  &len, (Address *) &(nargs[0].arg));
@@ -112,17 +130,7 @@ Test_PrintOut(args)
     }
     return(0);
 }
-#else
-/*ARGSUSED*/
-int 
-Test_PrintOut(args)
-    struct test_args args;
-{
-    return 0;
-}
-#endif 
 
-#ifndef sun4c
 /*
  * ----------------------------------------------------------------------------
  *
@@ -143,9 +151,14 @@ Test_GetLine(string, length)
     char	*string;
     int		length;
 {
+#ifdef sun4c
+    printf("Test_GetLine() doesn`t work on sun4c\n");
+    return (FAILURE);
+#else
     int		i, numBytes;
     char 	*realString;
 
+    printf("Obsolete Test_GetLine() called\n");
     Vm_MakeAccessible(VM_OVERWRITE_ACCESS, length, (Address) string,
 		      &numBytes, (Address *) &realString);
 
@@ -161,6 +174,7 @@ Test_GetLine(string, length)
     Vm_MakeUnaccessible((Address) realString, numBytes);
 
     return(SUCCESS);
+#endif
 }
 
 /*
@@ -182,11 +196,14 @@ int
 Test_GetChar(charPtr)
     char	*charPtr;
 {
+#ifdef sun4c
+    printf("Test_GetChar() doesn`t work on sun4c\n");
+    return (FAILURE);
+#else
     char 	*realCharPtr;
     int		numBytes;
 
     printf("Obsolete Test_GetChar() called\n");
-
     Vm_MakeAccessible(VM_OVERWRITE_ACCESS, 1, (Address) charPtr,
 		      &numBytes, (Address *) &realCharPtr);
     if (numBytes == 0) {
@@ -197,23 +214,6 @@ Test_GetChar(charPtr)
     printf("%c", *realCharPtr);
 
     Vm_MakeUnaccessible((Address) realCharPtr, numBytes);
-
     return(SUCCESS);
+#endif
 }
-#else
-/*ARGSUSED*/
-int 
-Test_GetLine(string, length)
-    char	*string;
-    int		length;
-{
-    return 0;
-}
-/*ARGSUSED*/
-int
-Test_GetChar(charPtr)
-    char	*charPtr;
-{
-    return 0;
-}
-#endif sun4c
