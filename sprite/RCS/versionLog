@@ -561,4 +561,10 @@ There is a fix in the dev module for a SCSI problem.
 
 1.100	Tue Sep 24 23:59:45 PDT 1991
 Removed a lot of tracing and debugging code.
+
+1.101	Thu Oct 10 21:43:33 PDT 1991
+Fix to sun4 compatibility code deadlock.
+Fix to disappearing disk space with mapped files.
+Select is changed back to old style.
+
     New files linked in from the net library.
