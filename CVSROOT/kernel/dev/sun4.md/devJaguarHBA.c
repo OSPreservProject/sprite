@@ -18,21 +18,21 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "mach.h"
-#include "jaguar.h"
-#include "jaguarDefs.h"
-#include "dev.h"
-#include "devInt.h"
-#include "scsi.h"
-#include "scsiHBA.h"
-#include "scsiDevice.h"
-#include "vmMach.h"
-#include "sync.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <mach.h>
+#include <jaguar.h>
+#include <jaguarDefs.h>
+#include <dev.h>
+#include <devInt.h>
+#include <scsi.h>
+#include <scsiHBA.h>
+#include <scsiDevice.h>
+#include <vmMach.h>
+#include <sync.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <bstring.h>
 
 /*
  * WARNING -- WARNING --- WARNING --- WARNING
