@@ -465,8 +465,8 @@ Sync_GetLockStats(size, argPtr)
 	}
     }
     Vm_CopyOut(sizeof(Sync_LockStat) * size, (Address)statArray, argPtr);
-    free((Address) statArray);
     MASTER_UNLOCK(regMutexPtr);
+    free((Address) statArray);
     return (SUCCESS);
 #else  /* LOCKREG */
     return (FAILURE);
@@ -519,6 +519,7 @@ Sync_ResetLockStats()
 	for (j = 0; j < syncTypeCount+1; j++) {
 	    sync_Instrument[i].spinCount[j] = 0;
 	}
+	sync_Instrument[i].sched_MutexMiss = 0;
     }
     MASTER_UNLOCK(regMutexPtr);
     return SUCCESS;

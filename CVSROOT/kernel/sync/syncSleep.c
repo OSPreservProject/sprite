@@ -190,6 +190,9 @@ WaitTimeSubr(wakeupTime)
     } while (Timer_TickLT(currentTime, wakeupTime) && !sigPending);
 
     Timer_DescheduleRoutine(&wakeupElement);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 
     return(sigPending);

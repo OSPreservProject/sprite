@@ -66,6 +66,9 @@ Sync_SlowLockStub(lockPtr)
     while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	lockPtr->waiting = TRUE;
 	(void) SyncEventWaitInt((unsigned int)lockPtr, TRUE);
+#ifdef spur
+	Mach_InstCountEnd(1);
+#endif
 	MASTER_UNLOCK(sched_MutexPtr);
 	MASTER_LOCK(sched_MutexPtr);
 	if (Sig_Pending(procPtr)) {
@@ -73,6 +76,11 @@ Sync_SlowLockStub(lockPtr)
 	    break;
 	}
     }
+#ifdef spur
+    if (Mach_InstCountIsOn(1)) {
+	panic("About to unlock sched_Mutex with inst count on.\n");
+    }
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 
     (void)Vm_UnpinUserMem(sizeof(*lockPtr), (Address)lockPtr);
@@ -129,6 +137,9 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     } else {
 	status = SUCCESS;
     }
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 
     (void)Vm_UnpinUserMem(sizeof(*lockPtr), (Address)lockPtr);
@@ -175,6 +186,11 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
     *waitFlagPtr = FALSE;
     SyncEventWakeupInt(event);
 
+#ifdef spur
+    if (Mach_InstCountIsOn(1)) {
+	panic("About to unlock sched_Mutex with inst count on.\n");
+    }
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 
     (void)Vm_UnpinUserMem(sizeof(*waitFlagPtr), (Address)waitFlagPtr);

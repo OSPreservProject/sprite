@@ -194,6 +194,10 @@ Sync_SlowLock(lockPtr)
 {
     MASTER_LOCK(sched_MutexPtr);
 
+#ifdef spur
+    Mach_InstCountStart(0);
+#endif
+
     while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	lockPtr->waiting = TRUE;
 	/*
@@ -207,12 +211,24 @@ Sync_SlowLock(lockPtr)
 	}
 	(void) SyncEventWaitInt((unsigned int)lockPtr, FALSE);
 	SyncRecordMiss(lockPtr);
+#ifdef spur
+	Mach_InstCountEnd(1);
+#endif
 	MASTER_UNLOCK(sched_MutexPtr);
 	MASTER_LOCK(sched_MutexPtr);
+#ifdef spur
+	Mach_InstCountStart(0);
+#endif
     }
     SyncRecordHit(lockPtr);
     SyncStoreDbgInfo(lockPtr);
     SyncAddPrior(lockPtr);
+#ifdef spur
+    Mach_InstCountOff(0);
+    if (Mach_InstCountIsOn(1)) {
+	panic("About to unlock sched_Mutex with inst count on.\n");
+    }
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
     return(SUCCESS);
 }
@@ -260,6 +276,9 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
     SyncDeleteCurrent(lockPtr);
     SyncEventWakeupInt((unsigned int)lockPtr);
     sigPending = SyncEventWaitInt((unsigned int) conditionPtr, wakeIfSignal);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 
     Sync_GetLock(lockPtr);
@@ -297,6 +316,11 @@ Sync_SlowBroadcast(event, waitFlagPtr)
 
     *waitFlagPtr = FALSE;
     SyncEventWakeupInt(event);
+#ifdef spur
+    if (Mach_InstCountIsOn(1)) {
+	panic("About to unlock sched_Mutex with inst count on.\n");
+    }
+#endif
 
     MASTER_UNLOCK(sched_MutexPtr);
     return(SUCCESS);
@@ -357,6 +381,10 @@ Sync_SlowMasterWait(event, mutexPtr, wakeIfSignal)
     MACH_DEBUG_ADD(0x66666666);
 #endif
 
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
+
     MASTER_UNLOCK(sched_MutexPtr);
 #ifdef sun4
     MACH_DEBUG_ADD(0x77777777);
@@ -410,7 +438,9 @@ Sync_UnlockAndSwitch(lockPtr, state)
     SyncDeleteCurrent(lockPtr);
     SyncEventWakeupInt((unsigned int)lockPtr);
     Sched_ContextSwitchInt(state);
-
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 }
 
@@ -518,6 +548,11 @@ Sync_EventWakeup(event)
 {
     MASTER_LOCK(sched_MutexPtr);
     SyncEventWakeupInt(event);
+#ifdef spur
+    if (Mach_InstCountIsOn(1)) {
+	panic("About to unlock sched_Mutex with inst count on.\n");
+    }
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 }
 
@@ -573,6 +608,11 @@ Sync_WakeWaitingProcess(procPtr)
 	       procPtr->processor != Mach_GetProcessorNumber()) {
 	Mach_CheckSpecialHandling(procPtr->processor);
     }
+#ifdef spur
+    if (Mach_InstCountIsOn(1)) {
+	panic("About to unlock sched_Mutex with inst count on.\n");
+    }
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 }
 
@@ -687,6 +727,9 @@ Sync_EventWait(event, wakeIfSignal)
 
     MASTER_LOCK(sched_MutexPtr);
     sigPending = SyncEventWaitInt(event, wakeIfSignal);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
     return(sigPending);
 }
@@ -832,6 +875,9 @@ Sync_ProcWait(lockPtr, wakeIfSignal)
      */
     procPtr->waitToken++;
     procPtr->syncFlags &= ~(SYNC_WAIT_COMPLETE | SYNC_WAIT_REMOTE);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
     if (releasedLock) {
 	Sync_GetLock(lockPtr);
