@@ -159,6 +159,9 @@
 	.globl _machMapSlotIdToPnum
 	.globl _machMasterProcessor
 	.globl _machFirstProcState
+	.globl _machRefreshCount
+	.globl _machLEDValues
+	.globl _machIdleCountPtr
 /*
  * The KPSW value to set and 
 /*
@@ -272,14 +275,13 @@ _machMapSlotIdToPnum: 		.long 0; .long 0; .long 0; .long 0;
 				.long 0; .long 0; .long 0; .long 0;
 				.long 0; .long 0; .long 0; .long 0;
 				.long 0; .long 0; .long 0; .long 0;
+refreshCountLeds:		.long 0x1000; .long 0x7000; .long 0x1000;
+				.long 0x7000
+idleCountLeds:			.long 0xe00; .long 0xd00; .long 0xb00; 
+				.long 0x700; .long 0xb00; .long 0xd00;
+				.long 0xe00; .long 0xf00
+ledAddrs:			.long 0x20000
 runningProcesses: 		.long _proc_RunningProcesses
-				.long _proc_RunningProcesses+4
-				.long _proc_RunningProcesses+8
-				.long _proc_RunningProcesses+12
-				.long _proc_RunningProcesses+16
-				.long _proc_RunningProcesses+20
-				.long _proc_RunningProcesses+24
-				.long _proc_RunningProcesses+28
 firstProcStatePtr:		.long _machFirstProcState
 numArgsPtr:			.long _machNumArgs
 _machStatePtrOffset:		.long 0
@@ -290,9 +292,17 @@ _machTrapTableOffset:		.long 0
 _machDbgInterruptMask:		.long 0
 _machIntrMask:			.long 0
 _machNonmaskableIntrMask:	.long 0
-_machInterruptAddr:		.long 0
 _machMasterProcessor:		.long 0
+_machRefreshTimerValue:		.long -40000
+_machRefreshIntrMask:		.long MACH_TIMER_T2_INTR
 feStatusReg:			.long 0
+_machInterruptAddr:		.long 0
+_machIdleCountPtr:		.long 0; .long 0; .long 0; .long 0;
+				.long 0; .long 0; .long 0; .long 0
+_machLEDValues:			.long 0; .long 0; .long 0; .long 0;
+				.long 0; .long 0; .long 0; .long 0
+_machRefreshCount:		.long 0; .long 0; .long 0; .long 0;
+				.long 0; .long 0; .long 0; .long 0
 
 /*
  * The instruction to execute on return from a signal handler.  Is here
@@ -473,7 +483,6 @@ start:
 	LD_CONSTANT(r1, KERN_PT_BASE)
 	add_nt		r2, r0, $KERN_NUM_PAGES
 	LD_CONSTANT(r3, MACH_MEM_SLOT_MASK | (MACH_FIRST_PHYS_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
-
 1:
 	st_32		r3, r1, $0
 	add_nt		r1, r1, $4
@@ -937,7 +946,7 @@ faultIntr_NormFault:
 	 */
 	cmp_br_delayed	ne, SAFE_TEMP1, r0, noInterrupt
 	Nop
-	jump 	Interrupt
+	jump 	 Interrupt
 	Nop
 noInterrupt:
 	/*
@@ -1000,7 +1009,107 @@ noFault:
 	 * Can't handle any of these types of faults.
 	 */
 	SWITCH_TO_KERNEL_STACKS()
+
 	CALL_DEBUGGER(r0, MACH_BAD_FAULT)
+#ifdef FAST_REFRESH
+/*
+ * Perform a fast refresh.
+ */
+fastRefresh:
+	/*
+	 * Refresh the dynamic registers by reading and writting them.
+	 */
+	rd_special	VOL_TEMP1, upsw
+	rd_special	VOL_TEMP2, swp
+	wr_special	upsw, VOL_TEMP1, $0
+	wr_special	swp, VOL_TEMP2, $0
+	rd_insert	VOL_TEMP1 
+	wr_insert	VOL_TEMP1
+	/*
+	 * Increment the refresh count levaing the count in VOL_TEMP3 and
+	 * the processor number (pnum*4) in OUTPUT_REG2.
+	 */
+	extract		VOL_TEMP1,KPSW_REG,$3
+	sll		OUTPUT_REG2,VOL_TEMP1,$2
+	ld_32_ro	VOL_TEMP3,OUTPUT_REG2,$_machRefreshCount
+	add_nt		VOL_TEMP3,VOL_TEMP3,$1
+	st_32		VOL_TEMP3,OUTPUT_REG2,$_machRefreshCount 
+	ld_32		VOL_TEMP2,r0,$_machRefreshTimerValue
+	/*
+	 * Reload the counter.
+	 */
+        st_external     VOL_TEMP2, r0, $MACH_T_20|MACH_CO_WR_REG
+        extract         VOL_TEMP1, VOL_TEMP2, $1
+        st_external     VOL_TEMP1, r0, $MACH_T_21|MACH_CO_WR_REG
+        extract         VOL_TEMP1, VOL_TEMP2, $2
+        st_external     VOL_TEMP1, r0, $MACH_T_22|MACH_CO_WR_REG
+        extract         VOL_TEMP1, VOL_TEMP2, $3
+        st_external     VOL_TEMP1, r0, $MACH_T_23|MACH_CO_WR_REG
+	/*
+	 * Start the counter.
+	 */
+	ld_external	VOL_TEMP1, r0, $MACH_MODE_REG|MACH_CO_RD_REG
+	nop
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_MODE_T2_ENABLE
+	st_external	VOL_TEMP1, r0, $MACH_MODE_REG|MACH_CO_WR_REG
+	/*
+	 * Compute the new values for leds. This new value is equal to 
+	 *	machLEDValues | idleCountLeds[(*machIdleCountPtr>>6)&0x3] |
+	 *	refreshCountLeds[refreshCount>>6)&0x3]
+	 */
+	ld_32		VOL_TEMP2,OUTPUT_REG2,$_machLEDValues
+	ld_32		VOL_TEMP1,OUTPUT_REG2,$_machIdleCountPtr
+	extract		VOL_TEMP3,VOL_TEMP3,$1
+	sll		VOL_TEMP3,VOL_TEMP3,$2
+	ld_32		VOL_TEMP1,VOL_TEMP1,$0
+	and		VOL_TEMP3,VOL_TEMP3,$(0x3<<2)
+	ld_32		VOL_TEMP3,VOL_TEMP3,$refreshCountLeds
+	extract		VOL_TEMP1,VOL_TEMP1,$1
+	srl		VOL_TEMP1,VOL_TEMP1,$1
+	and		VOL_TEMP1,VOL_TEMP1,$(0x7<<2)
+	ld_32		VOL_TEMP1,VOL_TEMP1,$idleCountLeds
+	or		VOL_TEMP2,VOL_TEMP2,VOL_TEMP3
+	or		VOL_TEMP1,VOL_TEMP2,VOL_TEMP1
+	/*
+	 * Go into physical data fetch with the address of the LEDs in
+	 * VOL_TEMP3 and the new value in VOL_TEMP1.  We read the contents
+	 * of the DIP switches into VOL_TEMP1 upon exit of phsyical mode.
+	 */
+	and		VOL_TEMP2,KPSW_REG, $~MACH_KPSW_VIRT_DFETCH_ENA
+	ld_32		VOL_TEMP3,r0,$ledAddrs
+	wr_kpsw		VOL_TEMP2, $0
+	/*
+	 * Store into LEDS.
+	 */
+	st_32		VOL_TEMP1,VOL_TEMP3,$0
+	/*
+	 * Read from DIP switches at address twice the address of the LEDs
+	 */
+	ld_32		VOL_TEMP1,VOL_TEMP3,VOL_TEMP3
+	/*
+	 * If switch 0x4 is set continue with full interrupt sequence.
+	 */
+	and		VOL_TEMP1,VOL_TEMP1,$0x4
+	cmp_br_delayed	ne,r0,VOL_TEMP1,intrCont
+	wr_kpsw		KPSW_REG, $0
+	/*
+	 * If there are any more interrupt to process continue with full
+	 * interrupt sequence.
+	 */
+	cmp_br_delayed	ne,r0,OUTPUT_REG1,intrCont
+	/*
+	 * Return from interupt.  Move the MACH_KPSW_PREV_MODE of the KPSW 
+	 * into the MACH_KPSW_CUR_MODE.
+	 */
+	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, r0, fastRefreshReturn
+	Nop
+	or		KPSW_REG, KPSW_REG, $MACH_KPSW_CUR_MODE
+	wr_kpsw		KPSW_REG, $0
+fastRefreshReturn:
+	jump_reg	CUR_PC_REG,$0
+	return_trap	NEXT_PC_REG, $0
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1022,7 +1131,14 @@ Interrupt:
 	and		OUTPUT_REG1, OUTPUT_REG1, SAFE_TEMP3
 	WRITE_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
 
-
+#ifdef FAST_REFRESH
+	ld_32		VOL_TEMP1,r0,$_machRefreshIntrMask
+	nop
+	and		VOL_TEMP1,VOL_TEMP1,OUTPUT_REG1
+	cmp_br_delayed	ne,VOL_TEMP1,r0,fastRefresh
+	xor		OUTPUT_REG1,OUTPUT_REG1,VOL_TEMP1
+intrCont:
+#endif 
 #ifdef notdef
 	/*
 	 * Check to see if the interrupt happened on a test_and_set 
@@ -1604,13 +1720,12 @@ cmpTrap_RefreshTrap:
 	nop
 	nop
 	wr_insert	VOL_TEMP1
-
 		/*
 		 * Little hack to see if pnum in kpsw is bad. 
 		 */
 		extract	VOL_TEMP1,KPSW_REG,$3
-		cmp_trap  ne,r0,VOL_TEMP1,$2
-
+		GET_PNUM_FROM_BOARD(VOL_TEMP2)
+		cmp_trap  ne,VOL_TEMP2,VOL_TEMP1,$2
 	wr_kpsw		KPSW_REG, $0
 	return_trap	NEXT_PC_REG, $0
 	Nop
@@ -1908,9 +2023,9 @@ sysCallTrap_CallRoutine:
 	 */
 
 	/* 
-	 * VOL_TEMP1 <= proc_RunningProccesses[pnum]
+	 * VOL_TEMP3 <= proc_RunningProccesses[pnum]
 	 */
-	LD_CURRENT_PCB_PTR(VOL_TEMP1)
+	LD_CURRENT_PCB_PTR(VOL_TEMP3)
 	/*
 	 * VOL_TEMP2 <= offset of kcall table pointer in PCB
 	 */
@@ -1919,8 +2034,8 @@ sysCallTrap_CallRoutine:
 	/*
 	 * VOL_TEMP2 <= pointer to Oth entry in kcall table
 	 */
-	add_nt		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
-	ld_32		VOL_TEMP2, VOL_TEMP1, $0
+	add_nt		VOL_TEMP3, VOL_TEMP3, VOL_TEMP2
+	ld_32		VOL_TEMP2, VOL_TEMP3, $0
 	Nop
 	/*
 	 * Call the routine.  Note that SPUR doesn't have a call_reg 
@@ -2016,6 +2131,7 @@ SigReturnTrap:
 	Nop
 	st_32		SPILL_SP, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + (8 * 4))
 	st_32		KPSW_REG, VOL_TEMP1, $MACH_TRAP_KPSW_OFFSET
+	wr_special	upsw, r0, $0
 	SWITCH_TO_KERNEL_STACKS()
 	/*
 	 * Reenable traps and call the routine to handle returns from 
@@ -2368,8 +2484,13 @@ returnTrap_Const1:
 
 ReturnTrap:
 	/*
-	 * Restore the kpsw to that which we trapped with.
+	 * Restore the kpsw to that which we trapped with. Insure that the
+	 * processor number field is correct.
 	 */
+	rd_kpsw		VOL_TEMP1
+	extract		VOL_TEMP1,VOL_TEMP1,$3
+	wr_insert	$3
+	insert		KPSW_REG,KPSW_REG,VOL_TEMP1
 	wr_kpsw		KPSW_REG, $0
 
 	/*
@@ -2395,13 +2516,13 @@ returnTrap_NormReturn:
 	 * This is determined by looking at 
 	 * proc_RunningProcesses[pnum]->specialHandling.
 	 */
-	LD_CURRENT_PCB_PTR(VOL_TEMP1)
+	LD_CURRENT_PCB_PTR(VOL_TEMP3)
 	ld_32		VOL_TEMP2, r0, $_machSpecialHandlingOffset
 	Nop
-	add_nt		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
-	ld_32		VOL_TEMP1, VOL_TEMP1, $0
+	add_nt		VOL_TEMP3, VOL_TEMP3, VOL_TEMP2
+	ld_32		VOL_TEMP3, VOL_TEMP3, $0
 	Nop
-	cmp_br_delayed	ne, VOL_TEMP1, $0, returnTrap_SpecialAction
+	cmp_br_delayed	ne, VOL_TEMP3, $0, returnTrap_SpecialAction
 	Nop
 	/*
 	 * See if we have to allocate more memory on the saved window
@@ -2575,6 +2696,14 @@ returnTrap_SpecialAction:
  *	are called all traps have already been enabled.
  */
 returnTrap_CallSigHandler:
+	/*
+ 	 * Insure that KPSW_REG has the correct processor number in it
+	 * by reading it from the current kpsw.
+	 */
+	rd_kpsw		VOL_TEMP1
+	extract		VOL_TEMP1,VOL_TEMP1,$3
+	wr_insert	$3
+	insert		KPSW_REG,KPSW_REG,VOL_TEMP1
 	/*
 	 * See if we have to allocate more memory on the saved window
 	 * stack.
@@ -3524,6 +3653,12 @@ slaveStart:
  */
 	LD_CONSTANT(r1, KERN_PT2_BASE)
 	ST_RPTM(r1, MACH_RPTM_0)
+#ifdef notdef
+	/*
+ 	 * Do not touch the snoop tags on the slave processor while the
+	 * master or any other processor is doing virtual translation.
+	 * Bad things will happen.
+	 */
 /*
  * Clear out the cache.
  */
@@ -3547,6 +3682,7 @@ slaveStart:
 	cmp_br_delayed	lt, r1, r2, 1b
 	Nop
 
+#endif
 /*
  * Clear out the upsw.
  */
@@ -3575,10 +3711,11 @@ slaveStart:
 	wr_kpsw		r0, $0
 	invalidate_ib
 	add_nt		r1, r0, $(DEFAULT_KPSW)
-	LD_PC_RELATIVE(r2,slaveMain)
+	LD_PC_RELATIVE(r2,slaveMainAddr)
 	jump_reg	r2, $0
 	wr_kpsw		r1, $0
-
+	Nop
+slaveMainAddr:	.long slaveMain
 
 slaveMain:
 /*
