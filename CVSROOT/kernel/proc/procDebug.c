@@ -350,7 +350,7 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
 
     if (debug &&
 	(procPtr->genFlags & PROC_FOREIGN) && (proc_MigDebugLevel > 4)) {
-	Sys_Panic(SYS_WARNING,
+	Sys_Panic(SYS_FATAL,
 		"Migrated process being placed on debug list.\n");
     }
 
