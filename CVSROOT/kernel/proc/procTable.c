@@ -171,7 +171,7 @@ Proc_InitMainProc()
     procPtr->cwdPtr		= (Fs_Stream *) NIL;
     procPtr->setJumpStatePtr	= (Sys_SetJumpState *) NIL;
 
-    procPtr->stackStart 	= MACH_STACK_BOTTOM;
+    procPtr->stackStart 	= (int)mach_StackBottom;
 
     procPtr->familyID 		= PROC_NO_FAMILY;	/* not in a family */
     

@@ -134,9 +134,9 @@ _Dbg_Trap:
 
 | Save user and kernel context registers
 
-        jsr 	_Vm_GetUserContext
+        jsr 	_VmMachGetUserContext
 	movl	d0, _dbgUserContext
-        jsr 	_Vm_GetKernelContext
+        jsr 	_VmMachGetKernelContext
 	movl	d0, _dbgKernelContext
 
 | Call the debugger routine

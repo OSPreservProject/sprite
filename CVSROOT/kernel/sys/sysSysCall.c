@@ -233,7 +233,7 @@ static SysCallEntry sysCalls[] = {
     Fs_SymLinkStub,		Fs_SymLinkStub,    TRUE,	3,   NILPARM,
     Fs_ReadLinkStub,		Fs_ReadLinkStub,   TRUE,	4,   NILPARM,
     Fs_CreatePipeStub,		Fs_CreatePipeStub, TRUE,	2,   NILPARM,
-    Vm_MapKernelIntoUser,	Proc_DoRemoteCall, FALSE,	4,   NILPARM,
+    VmMach_MapKernelIntoUser,	Proc_DoRemoteCall, FALSE,	4,   NILPARM,
     Fs_AttachDiskStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
     Fs_SelectStub,		Fs_SelectStub, 	   TRUE,	6,   NILPARM,
     Sys_Shutdown,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,

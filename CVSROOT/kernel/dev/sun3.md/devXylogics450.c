@@ -28,6 +28,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "mem.h"
 #include "user/byte.h"
+#include "machineConst.h"
+#include "vmMach.h"
 
 /*
  * State for each Xylogics controller.
@@ -165,15 +167,15 @@ Dev_XylogicsInitController(cntrlrPtr)
      * that it has to be twice as large as a filesystem block so that an
      * unaligned block can be mapped into it.
      */
-    xyPtr->IOPBPtr = (DevXylogicsIOPB *)Vm_DevBufferAlloc(&devIOBuffer,
+    xyPtr->IOPBPtr = (DevXylogicsIOPB *)VmMach_DevBufferAlloc(&devIOBuffer,
 					       sizeof(DevXylogicsIOPB));
-    Vm_GetDevicePage((int)xyPtr->IOPBPtr);
+    VmMach_GetDevicePage((int)xyPtr->IOPBPtr);
 
-    xyPtr->labelBuffer = Vm_DevBufferAlloc(&devIOBuffer,
+    xyPtr->labelBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
 					     DEV_BYTES_PER_SECTOR + 8);
-    Vm_GetDevicePage((int)xyPtr->labelBuffer);
+    VmMach_GetDevicePage((int)xyPtr->labelBuffer);
 
-    xyPtr->IOBuffer = Vm_DevBufferAlloc(&devIOBuffer,
+    xyPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
 					  2 * FS_BLOCK_SIZE);
     
     /*
@@ -671,7 +673,7 @@ DevXylogicsSectorIO(command, diskPtr, diskAddrPtr, numSectorsPtr, buffer)
      * Map the buffer into the special area of multibus memory that
      * the device can DMA into.
      */
-    buffer = Vm_DevBufferMap(*numSectorsPtr * DEV_BYTES_PER_SECTOR,
+    buffer = VmMach_DevBufferMap(*numSectorsPtr * DEV_BYTES_PER_SECTOR,
 			     buffer, xyPtr->IOBuffer);
 retry:
     error = DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr,
@@ -773,11 +775,11 @@ DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
     IOPBPtr->numSectLow		= (numSectors & 0x00ff);
 
     if ((int)address != 0 && (int)address != NIL) {
-	if ((unsigned)address < VM_DMA_START_ADDR) {
+	if ((unsigned)address < VMMACH_DMA_START_ADDR) {
 	    Sys_Printf("%x: ", address);
 	    Sys_Panic(SYS_FATAL, "Xylogics data address not in DMA space\n");
 	}
-	(int)address = (int)address - VM_DMA_START_ADDR;
+	(int)address = (int)address - VMMACH_DMA_START_ADDR;
 	IOPBPtr->relocHigh	= ((int)address & 0xff000000) >> 24;
 	IOPBPtr->relocLow	= ((int)address & 0x00ff0000) >> 16;
 	IOPBPtr->dataAddrHigh	= ((int)address & 0x0000ff00) >> 8;
@@ -840,12 +842,12 @@ DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr, numSectors, address,
      * the level of indirection means the system can use any physical page
      * for an I/O buffer.)
      */
-    if ((int)xyPtr->IOPBPtr < VM_DMA_START_ADDR) {
+    if ((int)xyPtr->IOPBPtr < VMMACH_DMA_START_ADDR) {
 	Sys_Printf("%x: ", xyPtr->IOPBPtr);
 	Sys_Panic(SYS_WARNING, "Xylogics IOPB not in DMA space\n");
 	return(FAILURE);
     }
-    IOPBAddr = (int)xyPtr->IOPBPtr - VM_DMA_START_ADDR;
+    IOPBAddr = (int)xyPtr->IOPBPtr - VMMACH_DMA_START_ADDR;
     regsPtr->relocHigh = (IOPBAddr & 0xFF000000) >> 24;
     regsPtr->relocLow  = (IOPBAddr & 0x00FF0000) >> 16;
     regsPtr->addrHigh  = (IOPBAddr & 0x0000FF00) >>  8;

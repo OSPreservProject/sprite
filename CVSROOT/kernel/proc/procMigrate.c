@@ -320,7 +320,7 @@ Proc_MigrateTrap(procPtr, trapStackPtr)
     }
 
     if (foreign) {
-	ProcExitProcess(procPtr, NIL, NIL, NIL, TRUE);
+	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
     } else {
 	Sched_ContextSwitch(PROC_MIGRATED);
     }

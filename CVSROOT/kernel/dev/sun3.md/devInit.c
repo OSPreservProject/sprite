@@ -26,15 +26,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devKeyboard.h"
 #include "multibus.h"
 #include "vm.h"
-#include "vmMachInt.h"
+#include "vmMach.h"
 #include "dbg.h"
 #include "exc.h"
+#include "machineConst.h"
 
 /*
  * This holds the state of the simple allocate for multibus memory.
  */
 
-Vm_DevBuffer devIOBuffer;
+VmMach_DevBuffer devIOBuffer;
 
 int devConfigDebug = FALSE;
 
@@ -68,7 +69,7 @@ Dev_Init()
     /*
      * Initialize a simple allocator for Device DMA Space.
      */
-    Vm_DevBufferInit(&devIOBuffer, VM_DMA_START_ADDR, VM_DMA_SIZE);
+    VmMach_DevBufferInit(&devIOBuffer, VMMACH_DMA_START_ADDR, VMMACH_DMA_SIZE);
 }
 
 /*
@@ -212,7 +213,7 @@ Dev_Config()
 	}
 	if (mapItIn) {
 	    cntrlrPtr->address =
-		(int)Vm_MapInDevice(cntrlrPtr->address, memoryType);
+		(int)VmMach_MapInDevice(cntrlrPtr->address, memoryType);
 	}
 	if (cntrlrPtr->address != NIL) {
 	    exists = (*cntrlrPtr->initProc)(cntrlrPtr);

@@ -18,6 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbgInt.h"
 #include "machine.h"
 #include "proc.h"
+#include "vmMachInt.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "sunMon.h"
@@ -186,11 +187,11 @@ DbgCheckNmis()
 {
 #ifdef SUN2
     int	oldContext;
-    oldContext = Vm_GetKernelContext(); 
-    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    oldContext = VmMachGetKernelContext(); 
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
     Mon_StartNmi();
     Mon_StopNmi();
-    Vm_SetKernelContext(oldContext);
+    VmMachSetKernelContext(oldContext);
 #endif
 }
 
@@ -216,25 +217,34 @@ static Boolean InRange(addr, numBytes)
     unsigned 	int addr; 
     int		numBytes; 
 {
-    Vm_PTE		pte;
+    VmMachPTE		pte;
     int			i;
     unsigned	int	protection;
     int			firstPage;
     int			lastPage;
+    unsigned	int	maxAddr;
 
+#ifdef SUN2
+    maxAddr = 0x1000000;
+#else
+    maxAddr = 0x10000000;
+#endif
+    if (addr > maxAddr || (addr + numBytes - 1) > maxAddr) {
+	return(FALSE);
+    }
     if ((int) (addr) & 0x1) {
 	Sys_Printf("Dbg: odd address: %x\n", addr);
 	return(FALSE);
     }
 
-    firstPage = ((unsigned int) addr) >> VM_PAGE_SHIFT;
-    lastPage = (((unsigned int) addr) + numBytes - 1) >> VM_PAGE_SHIFT;
+    firstPage = ((unsigned int) addr) >> VMMACH_PAGE_SHIFT;
+    lastPage = (((unsigned int) addr) + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     for (i = firstPage; i <= lastPage; i++) {
-	VM_PTE_TO_INT(pte) = Vm_GetPageMap(i << VM_PAGE_SHIFT);
-	protection = pte.protection;
-	if (!pte.resident || 
-	    (protection != VM_KR_PROT && protection != VM_KRW_PROT &&
-	     protection != VM_UR_PROT && protection != VM_URW_PROT)) {
+	pte = VmMachGetPageMap((Address)(i << VMMACH_PAGE_SHIFT));
+	protection = pte & VMMACH_PROTECTION_FIELD;
+	if (!(pte & VMMACH_RESIDENT_BIT) || 
+	    (protection != VMMACH_KR_PROT && protection != VMMACH_KRW_PROT &&
+	     protection != VMMACH_UR_PROT && protection != VMMACH_URW_PROT)) {
 	    return(FALSE);
 	}
     }
@@ -724,8 +734,8 @@ Dbg_Main(stackHole, trapStack)
     /*
      * Switch to kernel context so that we can access the monitor.
      */
-    oldContext = Vm_GetKernelContext();
-    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    oldContext = VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 
     /*
      * Put us at interrupt level so that Sys_Printf won't accidently enable
@@ -778,7 +788,7 @@ Dbg_Main(stackHole, trapStack)
 
     Byte_Copy(trapStackLength, (Address) &trapStack, (Address) &dbgTrapStack);
 
-    dbgTrapStack.genRegs[MACH_STACK_PTR] += excStackLength + STACK_INC;
+    dbgTrapStack.genRegs[mach_SP] += excStackLength + STACK_INC;
 
     /*
      * Clear the trace bit from the status register.
@@ -892,10 +902,10 @@ Dbg_Main(stackHole, trapStack)
 
 	    case DBG_GET_STOP_INFO: {
 		StopInfo	stopInfo;
-		stopInfo.codeStart = MACH_CODE_START;
+		stopInfo.codeStart = (int)mach_CodeStart;
 		if (procPtr != (Proc_ControlBlock *) NIL) {
-		    stopInfo.maxStackAddr = procPtr->stackStart + 
-					MACH_NUM_STACK_PAGES*VM_PAGE_SIZE;
+		    stopInfo.maxStackAddr = 
+		    		procPtr->stackStart + mach_KernStackSize;
 		    Byte_Copy(sizeof(procPtr->saveRegs),
 			    (Address) procPtr->saveRegs,
 			    (Address) stopInfo.genRegs);
@@ -947,7 +957,7 @@ Dbg_Main(stackHole, trapStack)
 				readMem.address, readMem.numBytes);
 		}
 
-		Vm_SetKernelContext(oldContext);
+		VmMachSetKernelContext(oldContext);
 		if (InRange((unsigned int) readMem.address, readMem.numBytes)) {
 		    status = 1;
 		    PutReplyBytes(sizeof(status), (Address)&status);
@@ -959,7 +969,7 @@ Dbg_Main(stackHole, trapStack)
 		    status = 0;
 		    PutReplyBytes(sizeof(status), (Address)&status);
 		}
-		Vm_SetKernelContext(VM_KERN_CONTEXT);
+		VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 		SendReply();
 		break;
 	    }
@@ -1031,7 +1041,7 @@ Dbg_Main(stackHole, trapStack)
 				writeMem.address, writeMem.numBytes);
 		}
 
-		Vm_SetKernelContext(oldContext);
+		VmMachSetKernelContext(oldContext);
 		if (InRange((unsigned int) writeMem.address,
 			    writeMem.numBytes)) {
 		    GetRequestBytes(writeMem.numBytes,
@@ -1047,7 +1057,7 @@ Dbg_Main(stackHole, trapStack)
 		    GetRequestBytes(writeMem.numBytes, buf);
 		    ch = 0;
 		}
-		Vm_SetKernelContext(VM_KERN_CONTEXT);
+		VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 
 		PutReplyBytes(1, (char *) &ch);
 		SendReply();
@@ -1257,11 +1267,11 @@ Dbg_Main(stackHole, trapStack)
      * exception stuff on the stack.
      */
 
-    dbgSavedSP = dbgTrapStack.genRegs[MACH_STACK_PTR] - trapStackLength;
-    dbgTrapStack.genRegs[MACH_STACK_PTR] -= excStackLength + STACK_INC;
+    dbgSavedSP = dbgTrapStack.genRegs[mach_SP] - trapStackLength;
+    dbgTrapStack.genRegs[mach_SP] -= excStackLength + STACK_INC;
     Byte_Copy(trapStackLength, (Address) &dbgTrapStack, (Address) dbgSavedSP);
 
-    Vm_SetKernelContext(oldContext);
+    VmMachSetKernelContext(oldContext);
     sys_AtInterruptLevel = atInterruptLevel;
     dbg_UsingNetwork = FALSE;
 

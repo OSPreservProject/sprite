@@ -252,8 +252,8 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
      * Set up the stack and frame pointers.
 
      * Set up the environment of the process.
-   procPtr->saveRegs[MACH_STACK_PTR] = MACH_DUMMY_SP_OFFSET + procPtr->stackStart;
-   procPtr->saveRegs[MACH_FRAME_PTR] = MACH_DUMMY_FP_OFFSET + procPtr->stackStart;
+   procPtr->saveRegs[mach_SP] = mach_DummySPOffset + procPtr->stackStart;
+   procPtr->saveRegs[mach_FP] = mach_DummyFPOffset + procPtr->stackStart;
 
      */
 

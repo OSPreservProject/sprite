@@ -188,6 +188,7 @@ Sys_Shutdown(flags, rebootString)
     int			accLength;
     int			strLength;
     ReturnStatus	status;
+    Proc_ControlBlock	*procPtr;
 
 
     if (flags & SYS_REBOOT) {
@@ -209,6 +210,17 @@ Sys_Shutdown(flags, rebootString)
     }
 
     if (flags & SYS_KILL_PROCESSES) {
+	/*
+	 * Turn ourselves into a kernel process since we no longer need
+	 * user process resources.
+	 */
+	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+	Proc_Lock(procPtr);
+	procPtr->genFlags &= ~PROC_USER;
+	procPtr->genFlags |= PROC_KERNEL;
+	Proc_Unlock(procPtr);
+	VmMach_ReinitContext(procPtr);
+
 	waitTime.seconds = 5;
 	waitTime.microseconds = 0;
 	while (TRUE) {
@@ -232,7 +244,6 @@ Sys_Shutdown(flags, rebootString)
 		if (shutdownDebug) {
 		    DBG_CALL;
 		}
-		Vm_SetKernelContext(VM_KERN_CONTEXT);
 		(void) Sync_WaitTime(waitTime);
 	    }
 	    if (userDead) {
@@ -268,7 +279,7 @@ Sys_Shutdown(flags, rebootString)
     return(SUCCESS);
 }
 
-Boolean	sys_ShouldSyncDisks = TRUE;
+Boolean	sys_ShouldSyncDisks = FALSE;
 
 /*
  *----------------------------------------------------------------------

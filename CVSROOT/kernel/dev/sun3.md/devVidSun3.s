@@ -46,9 +46,9 @@
 _Dev_VidEnable:
     movl	d2,sp@-			| save d2
     movc	sfc,d1			| Save source function code
-    movl	#VM_MMU_SPACE,d0	| Put code for MMU space into d0
+    movl	#VMMACH_MMU_SPACE,d0	| Put code for MMU space into d0
     movc	d0,sfc			| Set source function code 
-    movsb	VM_SYSTEM_ENABLE_REG,d2	| d2 = copy of system enable reg
+    movsb	VMMACH_SYSTEM_ENABLE_REG,d2	| d2 = copy of system enable reg
 
     tstl	sp@(8)			| is arg TRUE or FALSE?
     jeq		off
@@ -60,10 +60,10 @@ done:
     movc	d1,sfc			| Restore prev. source function code
 
     movc	dfc,d1			| Save dest. function code
-    movl	#VM_MMU_SPACE,d0	| Put code for MMU space into d0
+    movl	#VMMACH_MMU_SPACE,d0	| Put code for MMU space into d0
     movc	d0,dfc			| Set dest. function code 
 
-    movsb	d2, VM_SYSTEM_ENABLE_REG 
+    movsb	d2, VMMACH_SYSTEM_ENABLE_REG 
 
     movc	d1,dfc			| Restore prev. dest. function code
 

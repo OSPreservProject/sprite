@@ -96,7 +96,6 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 {
     register Proc_ControlBlock 	*procPtr;
     Proc_DebugState		debugState;
-    Address			bufferPtr;
     int				i;
     ReturnStatus		status = SUCCESS;
 
@@ -273,7 +272,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    /*
 	     * Make sure that the range of bytes is writable.
 	     */
-	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_URW_PROT);
+	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, TRUE);
 	    /*
 	     * Write from the debugger to the debuggee.
 	     */
@@ -282,7 +281,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    /*
 	     * Change the protection back.
 	     */
-	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_UR_PROT);
+	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, FALSE);
 
 	    break;
 

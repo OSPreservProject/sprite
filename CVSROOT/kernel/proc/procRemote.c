@@ -337,10 +337,8 @@ GetProcessState(buffer, hostID)
      * Set up the stack and frame pointers.
      */
 
-    procPtr->saveRegs[MACH_STACK_PTR] = MACH_DUMMY_SP_OFFSET +
-	    procPtr->stackStart;
-    procPtr->saveRegs[MACH_FRAME_PTR] = MACH_DUMMY_FP_OFFSET +
-	    procPtr->stackStart;
+    procPtr->saveRegs[mach_SP] = mach_DummySPOffset + procPtr->stackStart;
+    procPtr->saveRegs[mach_FP] = mach_DummyFPOffset + procPtr->stackStart;
 
     procPtr->state 		= PROC_READY;
 
@@ -617,7 +615,7 @@ ProcResumeMigProc()
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
     Proc_Lock(procPtr);
     procPtr->genFlags &= ~PROC_NO_VM;
-    Vm_SetupContext(procPtr);
+    VmMach_SetupContext(procPtr);
     Proc_Unlock(procPtr);
 
     /*

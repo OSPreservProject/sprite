@@ -18,7 +18,7 @@
  * This keeps the state of the memory allocator for the kernel
  * virtual address range reserved for DMA.
  */
-extern Vm_DevBuffer devIOBuffer;
+extern VmMach_DevBuffer devIOBuffer;
 
 /*
  * Disks contain a map that defines the way the disk is partitioned.

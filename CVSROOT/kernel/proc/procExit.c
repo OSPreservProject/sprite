@@ -432,7 +432,6 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
 	for (i = VM_CODE; i <= VM_STACK; i++) {
 	    Vm_SegmentDelete(exitProcPtr->vmPtr->segPtrArray[i], exitProcPtr);
 	}
-	Vm_MachExit(exitProcPtr);
     }
 
     if (!migrated) {
@@ -489,7 +488,7 @@ Proc_Reaper(procPtr, callInfoPtr)
     if (procPtr->stackStart != NIL) {
 	Vm_FreeKernelStack(procPtr->stackStart);
     }
-    Vm_ContextFree(procPtr);
+    VmMach_FreeContext(procPtr);
 
     ProcFreePCB(procPtr);
 

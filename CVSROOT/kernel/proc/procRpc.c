@@ -393,7 +393,6 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     int *replyDataLengthPtr;
 {
     Proc_ControlBlock 	*childProcPtr;	/* The new process being created */
-    int i;
 
     if (proc_MigDebugLevel > 3) {
 	Sys_Printf("RpcProcFork called.\n");

@@ -30,7 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "list.h"
 #include "vm.h"
-#include "vmSun.h"
+#include "vmMach.h"
 #include "netIE.h"
 #include "net.h"
 #include "netInt.h"
@@ -357,7 +357,7 @@ NetIEInit()
      * Allocate space for the System Configuration Pointer.
      */
 
-    Vm_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    VmMach_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
     netIEState.sysConfPtr = (NetIESysConfPtr *) NET_IE_SYS_CONF_PTR_ADDR;
 
     /*
@@ -378,7 +378,7 @@ NetIEInit()
      * Unmap the extra page.
      */
 
-    Vm_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    VmMach_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
 
     /*
      * Now we are running.
@@ -417,7 +417,7 @@ NetIERestart()
     /*
      * Allocate space for the System Configuration Pointer.
      */
-    Vm_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    VmMach_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
 
     /*
      * Reset the world.
@@ -427,7 +427,7 @@ NetIERestart()
     /*
      * Unmap the extra page.
      */
-    Vm_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    VmMach_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
 
     /*
      * Restart transmission of packets.

@@ -148,8 +148,6 @@ Proc_KernExec(fileName, argPtrArray)
     if (procPtr->vmPtr->segPtrArray[VM_CODE] == (Vm_Segment *) NIL) {
 	return(PROC_NO_SEGMENTS);
     }
-    Vm_InitPageTable(procPtr->vmPtr->segPtrArray[VM_CODE], (Vm_PTE *) NIL, 
-		     0, -1, FALSE);
 
     procPtr->vmPtr->segPtrArray[VM_HEAP] =
 		    Vm_SegmentNew(VM_HEAP, (Fs_Stream *) NIL, 0, 1, 1, procPtr);
@@ -160,7 +158,7 @@ Proc_KernExec(fileName, argPtrArray)
 
     procPtr->vmPtr->segPtrArray[VM_STACK] =
 		    Vm_SegmentNew(VM_STACK, (Fs_Stream *) NIL, 
-				   0 , 1, MACH_LAST_USER_STACK_PAGE, procPtr);
+				   0 , 1, mach_LastUserStackPage, procPtr);
     if (procPtr->vmPtr->segPtrArray[VM_STACK] == (Vm_Segment *) NIL) {
 	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
 	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
@@ -176,7 +174,7 @@ Proc_KernExec(fileName, argPtrArray)
     procPtr->genFlags |= PROC_USER;
     Proc_Unlock(procPtr);
 
-    Vm_SetupContext(procPtr);
+    VmMach_SetupContext(procPtr);
 
     status = DoExec(fileName, String_Length(fileName),
 			argPtrArray, PROC_MAX_EXEC_ARGS, FALSE, FALSE);
@@ -191,7 +189,7 @@ Proc_KernExec(fileName, argPtrArray)
     procPtr->genFlags |= PROC_KERNEL;
     Proc_Unlock(procPtr);
 
-    Vm_ReinitContext(procPtr);
+    VmMach_ReinitContext(procPtr);
 
     Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
     Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
@@ -260,7 +258,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     int					extraArgs = 0;
     char				*shellArgPtr;
     int					argBytes;
-    int					userStackPointer;
+    Address				userStackPointer;
     int					usp;
     int					entry;
     Boolean				usedFile;
@@ -347,7 +345,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
      *	   depending if there were interpreter arguments from step 2.
      *  3) Original arguments arg[1] through arg[n] are shifted over.
      */
-    userStackPointer = MACH_MAX_USER_STACK_ADDR;
+    userStackPointer = mach_MaxUserStackAddr;
     for (argNumber = 0, argPtr = argPtrArray; 
 	 argNumber < numArgs;
 	 argNumber++) {
@@ -448,13 +446,13 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     /*
      * Now copy all of the arguments onto the stack.
      */
-    argBytes = MACH_MAX_USER_STACK_ADDR - userStackPointer;
+    argBytes = mach_MaxUserStackAddr - userStackPointer;
     (void) Vm_MakeAccessible(VM_READWRITE_ACCESS,
-			  argBytes, (Address) userStackPointer,
+			  argBytes, userStackPointer,
 			  &copyLength, (Address *) &copyAddr);
     newArgPtrArray = (char **) Mem_Alloc((argNumber + 1) * sizeof(Address));
     argNumber = 0;
-    usp = userStackPointer;
+    usp = (int)userStackPointer;
     while (!List_IsEmpty(&argList)) {
 	argListPtr = (ArgListElement *) List_First(&argList);
 	/*
@@ -485,9 +483,9 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     userStackPointer -= copyLength;
     tArgNumber = argNumber;
     (void) Vm_CopyOut(sizeof(int), (Address) &tArgNumber,
-		      (Address) userStackPointer);
+		      userStackPointer);
     (void) Vm_CopyOut(copyLength - sizeof(int), (Address) newArgPtrArray,
-	      (Address) (userStackPointer + sizeof(int)));
+		      userStackPointer + sizeof(int));
     /*
      * Free the array of arguments.
      */
@@ -496,7 +494,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
     /*
      * Finally we are actually ready to start the new process.
      */
-    procPtr->genRegs[SP] = userStackPointer;
+    procPtr->genRegs[SP] = (int)userStackPointer;
     procPtr->genFlags |= PROC_DONT_MIGRATE;
     if (debugMe) {
 	procPtr->progCounter = entry - 2;
@@ -540,7 +538,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, userProc, debugMe)
      */
     Sys_DisableIntr();
     Proc_RunUserProc(procPtr->genRegs, procPtr->progCounter, Proc_Exit,
-		    procPtr->stackStart + MACH_EXEC_STACK_OFFSET);
+		    procPtr->stackStart + mach_ExecStackOffset);
     Sys_Panic(SYS_FATAL, "DoExec: Proc_RunUserProc returned.\n");
 
 execError:
@@ -703,7 +701,6 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     int					*entryPtr;
 {
     register	Vm_Segment	*segPtr;
-    Vm_PTE			pte;
     int				numPages;
     int				fileOffset;
     int				pageOffset;
@@ -712,38 +709,35 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     Vm_ExecInfo			execInfo;
     Fs_Stream			*heapFilePtr;
 
-    pte = vm_ZeroPTE;
-    pte.validPage = 1;
-    pte.zeroFill = 0;
     if (*codeSegPtrPtr == (Vm_Segment *) NIL) {
 	execInfoPtr = &execInfo;
 	execInfoPtr->entry = aoutPtr->entry;
 	if (aoutPtr->data != 0) {
-	    execInfoPtr->heapPages = (aoutPtr->data - 1) / VM_PAGE_SIZE + 1;
+	    execInfoPtr->heapPages = (aoutPtr->data - 1) / vm_PageSize + 1;
 	} else { 
 	    execInfoPtr->heapPages = 0;
 	}
 	if (aoutPtr->bss != 0) {
-	    execInfoPtr->heapPages += (aoutPtr->bss - 1) / VM_PAGE_SIZE + 1;
+	    execInfoPtr->heapPages += (aoutPtr->bss - 1) / vm_PageSize + 1;
 	}
 	execInfoPtr->heapPageOffset = 
-			PROC_DATA_LOAD_ADDR(*aoutPtr) / VM_PAGE_SIZE;
+			PROC_DATA_LOAD_ADDR(*aoutPtr) / vm_PageSize;
 	execInfoPtr->heapFileOffset = 
 			(int) PROC_DATA_FILE_OFFSET(*aoutPtr);
 	execInfoPtr->bssFirstPage = 
-			PROC_BSS_LOAD_ADDR(*aoutPtr) / VM_PAGE_SIZE;
+			PROC_BSS_LOAD_ADDR(*aoutPtr) / vm_PageSize;
 	if (aoutPtr->bss > 0) {
 	    execInfoPtr->bssLastPage = (int) (execInfoPtr->bssFirstPage + 
-				       (aoutPtr->bss - 1) / VM_PAGE_SIZE);
+				       (aoutPtr->bss - 1) / vm_PageSize);
 	} else {
 	    execInfoPtr->bssLastPage = 0;
 	}
 	/* 
 	 * Set up the code image.
 	 */
-	numPages = (aoutPtr->code - 1) / VM_PAGE_SIZE + 1;
+	numPages = (aoutPtr->code - 1) / vm_PageSize + 1;
 	fileOffset = PROC_CODE_FILE_OFFSET(*aoutPtr);
-	pageOffset = PROC_CODE_LOAD_ADDR(*aoutPtr) / VM_PAGE_SIZE;
+	pageOffset = PROC_CODE_LOAD_ADDR(*aoutPtr) / vm_PageSize;
 	segPtr = Vm_SegmentNew(VM_CODE, codeFilePtr, fileOffset,
 			       numPages, pageOffset, procPtr);
 	if (segPtr == (Vm_Segment *) NIL) {
@@ -751,9 +745,8 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
 	    Fs_Close(codeFilePtr);
 	    return(FALSE);
 	}
-	pte.protection = VM_UR_PROT;
-	Vm_InitPageTable(segPtr, &pte, pageOffset,
-			 pageOffset + numPages - 1, TRUE);
+	Vm_ValidatePages(segPtr, pageOffset, pageOffset + numPages - 1,
+			 FALSE, TRUE);
 	Vm_InitCode(codeFilePtr, segPtr, execInfoPtr);
 	*codeSegPtrPtr = segPtr;
 	notFound = TRUE;
@@ -777,27 +770,25 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
 	Fs_Close(heapFilePtr);
 	return(FALSE);
     }
-    pte.protection = VM_URW_PROT;
-    Vm_InitPageTable(segPtr, &pte, execInfoPtr->heapPageOffset,
-		     execInfoPtr->bssFirstPage - 1, TRUE);
-    pte.zeroFill = 1;
+    Vm_ValidatePages(segPtr, execInfoPtr->heapPageOffset,
+		     execInfoPtr->bssFirstPage - 1, FALSE, TRUE);
     if (execInfoPtr->bssLastPage > 0) {
-	Vm_InitPageTable(segPtr, &pte, execInfoPtr->bssFirstPage,
-			 execInfoPtr->bssLastPage, TRUE);
+	Vm_ValidatePages(segPtr, execInfoPtr->bssFirstPage,
+			 execInfoPtr->bssLastPage, TRUE, TRUE);
     }
     heapSegPtr = segPtr;
     /*
      * Set up a new stack.
      */
     segPtr = Vm_SegmentNew(VM_STACK, (Fs_Stream *) NIL, 0, 
-			   1, MACH_LAST_USER_STACK_PAGE, procPtr);
+			   1, mach_LastUserStackPage, procPtr);
     if (segPtr == (Vm_Segment *) NIL) {
 	Vm_SegmentDelete(*codeSegPtrPtr, procPtr);
 	Vm_SegmentDelete(heapSegPtr, procPtr);
 	return(FALSE);
     }
-    Vm_InitPageTable(segPtr, &pte, MACH_LAST_USER_STACK_PAGE, 
-		     MACH_LAST_USER_STACK_PAGE, TRUE);
+    Vm_ValidatePages(segPtr, mach_LastUserStackPage, 
+		    mach_LastUserStackPage, TRUE, TRUE);
 
     Proc_Lock(procPtr);
     procPtr->genFlags |= PROC_NO_VM;
@@ -808,7 +799,7 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     procPtr->vmPtr->segPtrArray[VM_HEAP] = heapSegPtr;
     procPtr->vmPtr->segPtrArray[VM_STACK] = segPtr;
     procPtr->genFlags &= ~PROC_NO_VM;
-    Vm_ReinitContext(procPtr);
+    VmMach_ReinitContext(procPtr);
 
     *entryPtr = execInfoPtr->entry;
 
