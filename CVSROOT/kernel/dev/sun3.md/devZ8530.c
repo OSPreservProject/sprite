@@ -25,6 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
 #include "sprite.h"
+#include "stdio.h"
 #include "mach.h"
 #include "sync.h"
 #include "z8530.h"
