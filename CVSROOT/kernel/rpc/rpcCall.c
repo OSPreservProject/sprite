@@ -252,6 +252,19 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
     rpcHdrPtr->command = command;
 
     /*
+     * Setup the timeout parameters depending on the route to the server.
+     * This is rather simple minded.
+     */
+    if (chanPtr->constPtr == (RpcConst *)NIL) {
+	Net_Route *routePtr = Net_IDToRoute(serverID);
+	if (routePtr != (Net_Route *)NIL &&
+	    routePtr->type == NET_ROUTE_INET) {
+	    chanPtr->constPtr = &rpcInetConst;
+	} else {
+	    chanPtr->constPtr = &rpcEtherConst;
+	}
+    }
+    /*
      * Copy buffer pointers into the state of the channel.
      */
     bufferPtr		= &chanPtr->request.paramBuffer;
@@ -364,6 +377,8 @@ RpcChanAlloc(serverID)
 	panic("Rpc_ChanAlloc can't find the free channel.\n");
     }
     chanPtr->serverID = serverID;
+    chanPtr->constPtr = (RpcConst *)NIL;	/* Set in RpcSetup */
+
 found:
     chanPtr->state = CHAN_BUSY;
     numFreeChannels--;
