@@ -367,15 +367,7 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
     cacheable = fsconsist_ClientCachingEnabled;
     if (useFlags & FS_MIGRATING) {
 	countMigration = 1;
-#ifdef 0
-	/*
-	 * We can't give this flag to other machines until they can handle
-	 * it.
-	 */
 	writebackFlags = FSCONSIST_MIGRATION;
-#else
-	writebackFlags = 0;
-#endif
     } else {
 	countMigration = 0;
 	writebackFlags = 0;
