@@ -1687,8 +1687,9 @@ VmMach_MakeDebugAccessible(addr)
 
     if (addr < (unsigned)VMMACH_VIRT_CACHED_START) {
 	if (addr < (unsigned)VMMACH_PHYS_UNCACHED_START) {
-	    if (addr < (unsigned)VMMACH_PHYS_CACHED_START + 
-			vm_NumPhysPages * VMMACH_PAGE_SIZE) {
+	    if ((addr < (unsigned)VMMACH_PHYS_CACHED_START + 
+			vm_NumPhysPages * VMMACH_PAGE_SIZE) &&
+		(addr >= (unsigned)VMMACH_PHYS_CACHED_START)) {
 		return TRUE;
 	    } else {
 		return FALSE;
