@@ -55,12 +55,16 @@ Added some hooks for gathering further recovery information on the servers.
 
 Dev module includes fix for /dev/null ioctl's that were messing up tx stty's.
 
-1.051	Tue Jan 30 18:03:15 PST 1990
+1.053	Tue Jan 30 18:03:15 PST 1990
 The ds3100 boot routines were modified so that shutdown and rebooting
 single user work.  The ds3100 interrupt routines were modified to
 prevent bogus FPU in kernel errors.  UpdateFragment was fixed to check
 in a cache block under the new disk block number correctly.  Fsrmt_Select
 was fixed to mask RPC_TIMEOUT errors.  Net_InetHdrChecksum was backed
 out to a previous version to fix ftp/rcp problems.  The MachWindowUnderflow
-problem on the sun4 was fixed.
+problem on the sun4 was fixed. 
+Sun - LE net driver was optimized to avoid mapping very small packets.
+Sun - SCSI3 target select bug was fixed and timeout value reduced. 
+Bug is raw scsi device access patched.  Scsi INQUIRE command fixed to 
+handle UNIT_ATTENTION errors.
     New files linked in from the net library.
