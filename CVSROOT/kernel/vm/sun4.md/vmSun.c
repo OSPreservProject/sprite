@@ -164,13 +164,18 @@ static void WriteHardMapSeg();
 /*
  * Macro to set all page map entries for the given virtual address.
  */
+#if (VMMACH_CLUSTER_SIZE == 1) 
+#define	SET_ALL_PAGE_MAP(virtAddr, pte) { \
+	VmMachSetPageMap((virtAddr), (pte)); \
+}
+#else
 #define	SET_ALL_PAGE_MAP(virtAddr, pte) { \
     int	__i; \
     for (__i = 0; __i < VMMACH_CLUSTER_SIZE; __i++) { \
 	VmMachSetPageMap((virtAddr) + __i * VMMACH_PAGE_SIZE_INT, (pte) + __i); \
     } \
 }
-
+#endif
 /*
  * PMEG table entry structure.
  */
@@ -3755,8 +3760,8 @@ VmMach_DMAAlloc(numBytes, srcAddr)
     int		i, j;
     VmMachPTE	pte;
     Boolean	foundIt = FALSE;
-    int		virtPage;
     static initialized = FALSE;
+    Address	newAddr;
  
     MASTER_LOCK(vmMachMutexPtr);
     if (!initialized) {
@@ -3768,7 +3773,7 @@ VmMach_DMAAlloc(numBytes, srcAddr)
     /* calculate number of pages needed */
 						/* beginning of first page */
     beginAddr = (Address) (((unsigned int)(srcAddr)) & ~VMMACH_OFFSET_MASK_INT);
-						/* begging of last page */
+						/* beginning of last page */
     endAddr = (Address) ((((unsigned int) srcAddr) + numBytes) &
 	    ~VMMACH_OFFSET_MASK_INT);
     numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
@@ -3777,6 +3782,15 @@ VmMach_DMAAlloc(numBytes, srcAddr)
     /* see if request can be satisfied */
     for (i = 0; i < (VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT); i++) {
 	if (dmaPageBitMap[i] == 1) {
+	    continue;
+	}
+	/*
+	 * Must be aligned in the cache to avoid write-backs of stale data
+	 * from other references to stuff on this page.
+	 */
+	newAddr = (Address)(VMMACH_DMA_START_ADDR + (i * VMMACH_PAGE_SIZE_INT));
+	if (((unsigned int) newAddr & (VMMACH_CACHE_SIZE - 1)) !=
+		((unsigned int) beginAddr & (VMMACH_CACHE_SIZE - 1))) {
 	    continue;
 	}
 	for (j = 1; j < numPages; j++) {
@@ -3794,11 +3808,9 @@ VmMach_DMAAlloc(numBytes, srcAddr)
 	return (Address) NIL;
     }
     for (j = 0; j < numPages; j++) {
-	VmMachFlushPage(srcAddr);
 	dmaPageBitMap[i + j] = 1;	/* allocate page */
-	virtPage = ((unsigned int) srcAddr) >> VMMACH_PAGE_SHIFT;
-	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT |
-	      VirtToPhysPage(Vm_GetKernPageFrame(virtPage));
+	pte = VmMachGetPageMap(srcAddr);
+	pte |= VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT;
 	SET_ALL_PAGE_MAP(((i + j) * VMMACH_PAGE_SIZE_INT) +
 		VMMACH_DMA_START_ADDR, pte);
 	srcAddr += VMMACH_PAGE_SIZE;
@@ -3852,7 +3864,7 @@ VmMach_DMAFree(numBytes, mapAddr)
     for (j = 0; j < numPages; j++) {
 	dmaPageBitMap[i + j] = 0;	/* free page */
 	VmMachFlushPage(mapAddr);
-	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) VirtToPhysPage(0));
+	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) 0);
 	(unsigned int) mapAddr += VMMACH_PAGE_SIZE_INT;
     }
     MASTER_UNLOCK(vmMachMutexPtr);
