@@ -207,12 +207,12 @@ static SysCallEntry sysCalls[] = {
     Prof_Start,		       Proc_DoRemoteCall,  TRUE,	0,   NILPARM,
     Prof_End,		       Proc_DoRemoteCall,  TRUE,	0,   NILPARM,
     Prof_DumpStub,	       Proc_DoRemoteCall,  FALSE,	1,   NILPARM,
-    Vm_Cmd,		       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Vm_Cmd,		       Vm_Cmd,  	   TRUE,	2,   NILPARM,
     Sys_GetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_SetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_DoNothing,	       Sys_DoNothing,      TRUE,	0,   NILPARM,
     Proc_GetPCBInfo,	       Proc_GetPCBInfo,    TRUE,	6,   NILPARM,
-    Vm_GetSegInfo,	       Proc_RemoteDummy,   TRUE,	3,   NILPARM,
+    Vm_GetSegInfo,	       Vm_GetSegInfo,      TRUE,	3,   NILPARM,
     Proc_GetResUsage,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_GetPriority,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     CAST Proc_SetPriority,     Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
@@ -364,8 +364,7 @@ static Sys_CallParam paramsArray[] = {
     /* no args */			     	/* SYS_PROF_START	31 */
     /* no args */			     	/* SYS_PROF_END		32 */
     SYS_PARAM_FS_NAME,	      PARM_IA,		/* SYS_PROF_DUMP	33 */
-    SYS_PARAM_VM_CMD,	      PARM_I,		/* SYS_VM_CMD		34 */
-    SYS_PARAM_INT,	      PARM_I,
+    /* local */					/* SYS_VM_CMD		34 */
     SYS_PARAM_TIMEPTR,	      PARM_OC,		/* SYS_SYS_GETTIMEOFDAY 35 */
     SYS_PARAM_INT,	      PARM_OC,
     SYS_PARAM_INT,	      PARM_OC,
@@ -374,7 +373,7 @@ static Sys_CallParam paramsArray[] = {
     SYS_PARAM_INT,	      PARM_I,
     /* local */				     	/* SYS_SYS_DONOTHING	37 */
     /* local */				     	/* SYS_PROC_GETPCBINFO	38 */
-    /* special (don't migrate?) */		/* SYS_VM_GETSEGINFO	39 */
+    /* local */					/* SYS_VM_GETSEGINFO	39 */
     SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETRESUSAGE 40 */
     SYS_PARAM_PROC_RES,	      PARM_OC,
     SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETPRIORITY 41 */
