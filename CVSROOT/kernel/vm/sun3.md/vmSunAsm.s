@@ -236,11 +236,11 @@ _VmMachPMEGZero:
 					| d1 <= Ending address
     addl	#(VMMACH_SEG_SIZE + VMMACH_PAGE_MAP_OFF), d1	
     clrl	d0			| Clear out d0.
-1$:
+1:
     movsl	d0,a0@			| Write page map entry
     addl	#VMMACH_PAGE_SIZE_INT, a0 | Go to next address.
     cmpl	a0, d1			| See if have initialized all 
-    bgt		1$			|     ptes.
+    bgt		1b			|     ptes.
 
     rts					| Return
 
@@ -277,14 +277,14 @@ _VmMachReadAndZeroPMEG:
 | Subtract off seg map offset and add page map offset into a0.
     addl	#(VMMACH_PAGE_MAP_OFF - VMMACH_SEG_MAP_OFF), a0
     movl	#VMMACH_NUM_PAGES_PER_SEG_INT, d1	| d1 <= Pmegs per seg.
-1$:
+1:
     movsl	a0@, d0				| Read out the pte
     movl	d0, a1@+			| a1 <= the pte
     clrl	d0
     movsl	d0, a0@				| Clear out the pte.
     addl	#VMMACH_PAGE_SIZE_INT, a0	| Go to next address.
     subql	#1, d1
-    bgt		1$			
+    bgt		1b			
 
     rts			
 
@@ -323,7 +323,7 @@ _VmMachTracePMEG:
 | Subtract off seg map offset and add page map offset into a2.
     addl	#(VMMACH_PAGE_MAP_OFF - VMMACH_SEG_MAP_OFF), a2
     movl	#VMMACH_NUM_PAGES_PER_SEG_INT, d3	| d3 <= Pmegs per seg.
-1$:
+1:
     movsl	a2@, d2				| Read out the pte
 
 |*
@@ -333,9 +333,9 @@ _VmMachTracePMEG:
 
     movl	d2, d0
     andl	#PTE_MASK, d0
-    beq		2$
+    beq		2f
     cmpl	#VMMACH_RESIDENT_BIT, d0
-    beq		2$
+    beq		2f
     movl	d3, sp@-			| Push page num onto stack.
     movl	d2, sp@-			| Push pte onto stack.
 						| Clear the ref and mod bits.
@@ -344,13 +344,13 @@ _VmMachTracePMEG:
     jsr		_VmMachTracePage		| VmMachTrace(pte, pageNum)
     addql	#8, sp
 
-2$:
+2:
 |* 
 |* Go to the next page.
 |*
     addl	#VMMACH_PAGE_SIZE_INT, a2	| Go to next address.
     subql	#1, d3
-    bgt		1$			
+    bgt		1b			
 
     moveml	sp@+, #0x040c			| Restore a2, d3 and d2
 
@@ -421,13 +421,13 @@ _VmMachSegMapCopy:
     movl	d1, a1
     movl	sp@(12),d1		| Get end address in a register.
     addl	#VMMACH_SEG_MAP_OFF, d1	| Add in offset.
-1$:
+1:
     movb	a0@,d0			| Get segment map entry to write.
     movsb	d0,a1@			| Write segment map entry
     addql	#1, a0			| Increment the address to copy from.
     addl	#VMMACH_SEG_SIZE, a1	| Increment the address to copy to.
     cmpl	a1, d1			| See if hit upper bound.  If not 	
-    bgt		1$			| continue.
+    bgt		1b			| continue.
 
     rts
 /*
@@ -657,15 +657,15 @@ gotArgs:
     movl    	a0,d0
     orl		sp@(12),d0
     andl	#1,d0
-    jne		3$
+    jne		3f
 
 |*
 |* Do as many 64-byte copies as possible.
 |*
 
-1$:
+1:
     cmpl    	#64,d1
-    jlt     	2$
+    jlt     	2f
     movl   	a0@+, a1@+
     movl   	a0@+, a1@+
     movl   	a0@+, a1@+
@@ -683,14 +683,14 @@ gotArgs:
     movl   	a0@+, a1@+
     movl   	a0@+, a1@+
     subl   	#64,d1
-    jra     	1$
+    jra     	1b
 
 |*
 |* Copy up to 64 bytes of remainder, in 4-byte chunks.  Do this quickly
 |* by dispatching into the middle of a sequence of move instructions.
 |*
 
-2$:
+2:
     movl	d1,d0
     andl	#3,d1
     subl	d1,d0
@@ -718,18 +718,18 @@ gotArgs:
 |* Do one byte copies until done.
 |*
 
-3$:
+3:
     tstl    	d1
-    jle     	4$
+    jle     	4f
     movb   	a0@+,a1@+
     subql   	#1,d1
-    jra     	3$
+    jra     	3b
 
 |* 
 |* Return.
 |*
 
-4$: 
+4: 
     clrl	d0
     rts
 
@@ -744,11 +744,11 @@ _Vm_CopyOut:
     movl    	sp@(8),a0			| Get source and dest addresses
     movl    	sp@(12),a1			|     into a register.
     cmpl	_mach_FirstUserAddr,a1
-    jcs		5$
+    jcs		5f
     movl	a1,d0
     subql	#1,d0
     addl	d1,d0
-    jcs		5$
+    jcs		5f
     cmpl	_mach_LastUserAddr,d0
     jls		gotArgs
 
@@ -756,12 +756,12 @@ _Vm_CopyOut:
 |* returning an error, though;  there appear to be kernel routines
 |* that call Vm_CopyOut with a zero count but bogus other arguments.
 
-5$:
+5:
     tstl	d1
-    jne		6$
+    jne		6f
     clrl	d0
     rts
-6$:
+6:
     movl	#0x20000,d0
     rts
 
@@ -804,14 +804,14 @@ _Vm_StringNCopy:
     movl    	sp@(8),a0			| Get source and dest addresses
     movl    	sp@(12),a1			|     into a register.
 
-1$: 
+1: 
     movb	a0@, a1@+			| Copy the character.
     cmpb	#0, a0@+			| See if hit null in string.
-    beq		2$
+    beq		2f
     subl	#1, d1				| Decrement the byte counter.
-    bne		1$				| Copy more chars if haven't
+    bne		1b				| Copy more chars if haven't
 						|     reached the limit.
-2$: 
+2: 
     movl	sp@(4), d0			| Compute the number of bytes
     subl	d1, d0				|     copied and store the
     movl	sp@(16), a0			|     result.
@@ -856,15 +856,15 @@ _Vm_TouchPages:
     asll	d1, d0		| d0 <= d0 << VMMACH_PAGE_SIZE
     movl	d0, a0		| a0 <= Starting address	
     movl	sp@(8), d0	| d0 <= numPages
-1$:
+1:
     tstl	d0		| Quit when d0 == 0
-    jeq		2$
+    jeq		2f
     movl	a0@, d1		| Touch the page at the address in a0
     subql	#1, d0		| Go back around to touch the next page.
     addl	#VMMACH_PAGE_SIZE, a0
-    jra		1$
+    jra		1b
 
-2$:
+2:
     rts
 
 |*
