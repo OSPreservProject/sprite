@@ -546,20 +546,6 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
     }
-    /*
-     * Force the file to disk if we are told to do so by a client.
-     */
-    if (flags & FS_WB_ON_LDB) {
-	int blocksSkipped;
-	/*
-	 * Force this files blocks to disk.
-	 */
-	(void)FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
-				FS_LAST_BLOCK,
-				FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT,
-				&blocksSkipped);
-	FsWriteBackDesc(handlePtr, TRUE);
-    }
 
     /*
      * Handle pending deletes
@@ -578,6 +564,20 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    status = FS_FILE_REMOVED;
 	}
     } else {
+	/*
+	 * Force the file to disk if we are told to do so by a client.
+	 */
+	if (flags & FS_WB_ON_LDB) {
+	    int blocksSkipped;
+	    /*
+	     * Force this files blocks to disk.
+	     */
+	    (void)FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
+				    FS_LAST_BLOCK,
+				    FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT,
+				    &blocksSkipped);
+	    FsWriteBackDesc(handlePtr, TRUE);
+	}
 	FsHandleRelease(handlePtr, TRUE);
 	status = SUCCESS;
     }
