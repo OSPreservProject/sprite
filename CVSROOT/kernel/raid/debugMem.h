@@ -13,9 +13,6 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#include "sync.h"
-#include "hash.h"
-
 extern void InitDebugMem();
 extern char *Malloc();
 extern void Free();
