@@ -417,12 +417,6 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
     migrated = (exitProcPtr->genFlags & PROC_FOREIGN);
 
     /*
-     * Clean up the filesystem state of the exiting process.
-     */
-
-    Fs_CloseState(exitProcPtr);
-
-    /*
      * Decrement the reference count on the environmenet.
      */
 
@@ -448,6 +442,12 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
 	    Vm_SegmentDelete(exitProcPtr->vmPtr->segPtrArray[i], exitProcPtr);
 	}
     }
+    /*
+     * Clean up the filesystem state of the exiting process.
+     * Do this after deleting VM segments so we can remove swap files.
+     */
+
+    Fs_CloseState(exitProcPtr);
 
     if (!migrated) {
 	ProcFamilyRemove(exitProcPtr);
