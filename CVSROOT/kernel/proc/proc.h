@@ -618,6 +618,8 @@ extern	ClientData		Proc_CallFuncAbsTime();
 extern	void			Proc_ServerProc();
 extern	int			proc_NumServers;
 
+extern  ReturnStatus		Proc_Dump();
+
 /*
  * The following are kernel stubs corresponding to system calls.  They
  * used to be known by the same name as the system call, but the C library
