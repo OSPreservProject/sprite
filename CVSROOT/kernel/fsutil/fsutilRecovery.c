@@ -39,12 +39,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "vm.h"
 
-void	ReopenHandles();
-void	RecoveryDone();
-Boolean	RecoveryFailed();
-void	RecoveryNotify();
-void	RecoveryComplete();
-Boolean	OkToScavenge();
+static void		ReopenHandles();
+static void		RecoveryDone();
+static Boolean		RecoveryFailed();
+static void		RecoveryNotify();
+static void		RecoveryComplete();
+static Boolean		OkToScavenge();
 
 /*
  * The recovery state for each file is monitored.
@@ -356,7 +356,6 @@ RemoteHandle(hdrPtr)
 	case FS_RMT_FILE_STREAM:
 	case FS_RMT_DEVICE_STREAM:
 	case FS_RMT_PIPE_STREAM:
-	case FS_RMT_NAMED_PIPE_STREAM:
 	case FS_RMT_PSEUDO_STREAM:
 	case FS_PFS_NAMING_STREAM:
 	case FS_RMT_PFS_STREAM:

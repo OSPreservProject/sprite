@@ -214,23 +214,23 @@ static	Boolean	cacheDebug = FALSE;
 /*
  * Internal functions.
  */
-void		PutOnFreeList();
-void		PutFileOnDirtyList();
-void		PutBlockOnDirtyList();
-Boolean		CreateBlock();
-Boolean		DestroyBlock();
-FsCacheBlock	*FetchBlock();
-void		CacheFileInvalidate();
-void		CacheWriteBack();
-void		StartBlockCleaner();
-void		GetDirtyFile();
-void		GetDirtyBlock();
-void		GetDirtyBlockInt();
-void		ProcessCleanBlock();
-void		ReallocBlock();
-void		FinishRealloc();
-Hash_Entry	*GetUnlockedBlock();
-void		DeleteBlock();
+static void		PutOnFreeList();
+static void		PutFileOnDirtyList();
+static void		PutBlockOnDirtyList();
+static Boolean		CreateBlock();
+static Boolean		DestroyBlock();
+static FsCacheBlock	*FetchBlock();
+static void		CacheFileInvalidate();
+static void		CacheWriteBack();
+static void		StartBlockCleaner();
+static void		GetDirtyFile();
+static void		GetDirtyBlock();
+static void		GetDirtyBlockInt();
+static void		ProcessCleanBlock();
+static void		ReallocBlock();
+static void		FinishRealloc();
+static Hash_Entry	*GetUnlockedBlock();
+static void		DeleteBlock();
 
 
 /*
@@ -1412,7 +1412,7 @@ FsCacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
     UNLOCK_MONITOR;
 }
 
-void	DeleteBlockFromDirtyList();
+static void	DeleteBlockFromDirtyList();
 
 
 /*

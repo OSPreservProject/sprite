@@ -61,13 +61,12 @@ Boolean fsFileNameTrace = FALSE;
  * Forward references.
  */
 ReturnStatus FsLookupRedirect();
-ReturnStatus LocatePrefix();
-ReturnStatus GetPrefix();
-void PrefixUpdate();
-FsPrefix *PrefixInsert();
-void GetNilPrefixes();
-void DoReopen();
-char *NameOp();
+static ReturnStatus LocatePrefix();
+static ReturnStatus GetPrefix();
+static void PrefixUpdate();
+static FsPrefix *PrefixInsert();
+static void GetNilPrefixes();
+static char *NameOp();
 
 
 /*
@@ -850,7 +849,7 @@ Fs_PrefixLoad(prefix, flags)
  *
  *----------------------------------------------------------------------
  */
-INTERNAL FsPrefix *
+static INTERNAL FsPrefix *
 PrefixInsert(prefix, hdrPtr, domainType, flags)
     char		*prefix;	/* The prefix itself */
     FsHandleHeader	*hdrPtr;	/* Handle for the prefix from server */
@@ -897,7 +896,7 @@ PrefixInsert(prefix, hdrPtr, domainType, flags)
  *
  *----------------------------------------------------------------------
  */
-INTERNAL void
+static INTERNAL void
 PrefixUpdate(prefixPtr, hdrPtr, domainType, flags)
     FsPrefix		*prefixPtr;	/* Table entry to update */
     FsHandleHeader	*hdrPtr;	/* Handle for the prefix from server */
@@ -1252,7 +1251,7 @@ FsPrefixHandleClose(prefixPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+static ReturnStatus
 LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
     char	*fileName;	/* The prefix to find the server of */
     int		*domainTypePtr;	/* In/Out the type of the domain.  If -1 on
