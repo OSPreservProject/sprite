@@ -419,6 +419,7 @@ Dev_SyslogSelect(devicePtr, inFlags, outFlagsPtr)
 }
 
 static	Boolean	savedDeviceOpen;
+static	int	syslogDebugCount = 0;
 
 
 /*
@@ -427,9 +428,9 @@ static	Boolean	savedDeviceOpen;
  * Dev_SyslogDebug --
  *
  *	Start or stop redirecting output to the log buffer.  This is intended
- *	to be called by Dbg_Main when entering and leaving the debugger so
- *	that debugger output will go on the console since no process can
- *	run to flush the buffer.
+ *	to be called by Dbg_Main when entering and leaving the debugger and
+ *	Sys_Panic on a FATAL panic so that debugger output will go on the
+ *	console since no process can run to flush the buffer.
  *
  * Results:
  *	None.
@@ -445,9 +446,15 @@ Dev_SyslogDebug(stopLog)
 				 *         buffer. */
 {
     if (stopLog) {
-	savedDeviceOpen = deviceOpen;
-	deviceOpen = FALSE;
+	if (syslogDebugCount == 0) {
+	    savedDeviceOpen = deviceOpen;
+	    deviceOpen = FALSE;
+	}
+	syslogDebugCount++;
     } else {
-	deviceOpen = savedDeviceOpen;
+	syslogDebugCount--;
+	if (syslogDebugCount == 0) {
+	    deviceOpen = savedDeviceOpen;
+	}
     }
 }
