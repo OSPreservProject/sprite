@@ -9,6 +9,12 @@
  *	    2) PROC_DEBUGGED, PROC_SINGLE_STEP_FLAG, and PROC_DEBUG_WAIT
  *	       can be set in the genFlags field.
  *
+ *	The PROC_DEBUGGED flag is set when a process is being actively debugged
+ *	by a debugger.  When this flag is set, the process is removed from
+ *	the debug queue.  Thus when a process is in the state PROC_DEBUGABLE
+ *	it is on the debug list iff the PROC_DEBUGGED flag isn't set in the
+ *	genFlags field.
+ *
  * Copyright 1986 Regents of the University of California
  * All rights reserved.
  */
@@ -204,7 +210,6 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    
 	case PROC_CONTINUE:
 	    procPtr->genFlags 	&= ~PROC_DEBUGGED;
-	    List_Remove((List_Links *) procPtr);
 	    Sched_MakeReady(procPtr);
 	    break;
 
@@ -356,7 +361,9 @@ Proc_PutOnDebugList(procPtr, sigNum, statusReg)
  * Proc_TakeOffDebugList --
  *
  *	This routine removes the given process from the debug list and makes
- *	the process runnable.
+ *	the process runnable.  It is assumed that the process table entry
+ *	for the process that we are removing from the debug list is locked
+ *	down.
  *
  * Results:
  *	None.
@@ -375,7 +382,19 @@ Proc_TakeOffDebugList(procPtr)
     LOCK_MONITOR;
 
     if (procPtr->state == PROC_DEBUGABLE) {
-	List_Remove((List_Links *) procPtr);
+	if (procPtr->genFlags & PROC_DEBUGGED) {
+	    /*
+	     * If the process is being actively debugged, then it is not
+	     * on the debug list so don't remove it.
+	     */
+	    procPtr->genFlags &= ~PROC_DEBUGGED;
+	} else {
+	    /*
+	     * The process is not being debugged so remove it from the
+	     * debug list.
+	     */
+	    List_Remove((List_Links *) procPtr);
+	}
 	Sched_MakeReady(procPtr);
 	Sync_Broadcast(&debugListCondition);
     }
