@@ -81,10 +81,14 @@ extern TraceLog_Header *SOSP91TracePtr;
  * create		The create time for the file
  * fileSize		Size in bytes of the file
  * modify		The modify time for the file.
+ * type			Whether it's an FS_FILE, FS_DIRECTORY, etc.
+ * consist		Whether a consistency update was performed due to open
  */
-#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, create, fileSize, modify, type) \
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID,\
+realID, mode, numNowReading, numNowWriting, create, fileSize, modify, type,\
+consist) \
 {\
-	unsigned int	sospBuffer[20];\
+	unsigned int	sospBuffer[21];\
 \
 	sospBuffer[0] = SOSP_OPEN;\
 	sospBuffer[1] = currentHostID;\
@@ -100,8 +104,9 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[17] = fileSize;\
 	sospBuffer[18] = modify;\
 	sospBuffer[19] = type;\
+	sospBuffer[20] = consist;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
-		(19 * sizeof (int)), SOSP_OPEN);\
+		(20 * sizeof (int)), SOSP_OPEN);\
 }
 
 /*
@@ -238,10 +243,12 @@ extern TraceLog_Header *SOSP91TracePtr;
  * rwflags		The RW flags from the streamPtr->hdr.flags.
  * refCount		Number of references to stream.  Only valid if
  *			FS_RMT_SHARED is set in the flags.
+ * consist		Whether a consistency update was done due to close
  */ 
-#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags, refCount) \
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags,\
+refCount, consist) \
 {\
-	unsigned int	sospBuffer[10];\
+	unsigned int	sospBuffer[11];\
 \
 	sospBuffer[0] = SOSP_CLOSE;\
 	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
@@ -250,8 +257,9 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[7] = flags;\
 	sospBuffer[8] = rwflags;\
 	sospBuffer[9] = refCount;\
+	sospBuffer[10] = consist;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
-		(9 * sizeof (int)),SOSP_CLOSE);\
+		(10 * sizeof (int)),SOSP_CLOSE);\
 }
 
 /*
@@ -299,11 +307,12 @@ extern TraceLog_Header *SOSP91TracePtr;
 }
 
 /*
- * Trace a consistency change operation.  The fields are
+ * Trace a consistency change operation.  This trace is only a result
+ * of consistency updates due to a migrate call. The fields are
  * 
  * hostID:		ID of host causing the consistency change
  * fileID		file ID of file causing the fuss
- * operation		Is change due to an open or a close or what?
+ * operation		Is change due to opening or closing the reference?
  *			This uses SOSP_OPEN, etc, defines.
  * writeOp		Whether the open/etc operation is for writing (TRUE)
  *			or reading (FALSE).
@@ -352,24 +361,31 @@ extern TraceLog_Header *SOSP91TracePtr;
  * Trace a read operation on a write-shared file.  The fields are
  * 
  * hostID:		ID of host causing the consistency change
+ * fileID		ID of file causing the fuss
  * streamID		Stream ID of file causing the fuss
  * readIt		Whether the request is to read the file (TRUE) or
  *			to write the file (FALSE)
  * offset		Offset in the file at which to start operation
  * numBytes		Number of bytes to read or write
+ * numNowReading	Number of clients with file open for reading
+ * numNowWriting	Number of clients with file open for writing
  */ 
-#define	SOSP_ADD_READ_TRACE(hostID, streamID, readIt, offset, numBytes)\
+#define	SOSP_ADD_READ_TRACE(hostID, fileID, streamID, readIt, offset, numBytes,\
+numNowReading, numNowWriting)\
 {\
-	unsigned int	sospBuffer[9];\
+	unsigned int	sospBuffer[15];\
 \
 	sospBuffer[0] = SOSP_READ;\
 	sospBuffer[1] = hostID;\
-	*((Fs_FileID *) &(sospBuffer[2])) = streamID;\
-	sospBuffer[6] = readIt;\
-	sospBuffer[7] = offset;\
-	sospBuffer[8] = numBytes;\
+	*((Fs_FileID *) &(sospBuffer[2])) = fileID;\
+	*((Fs_FileID *) &(sospBuffer[6])) = streamID;\
+	sospBuffer[10] = readIt;\
+	sospBuffer[11] = offset;\
+	sospBuffer[12] = numBytes;\
+	sospBuffer[13] = numNowReading;\
+	sospBuffer[14] = numNowWriting;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
-		(8 * sizeof (int)),SOSP_READ);\
+		(14 * sizeof (int)),SOSP_READ);\
 }
 
 /*

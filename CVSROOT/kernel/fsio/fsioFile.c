@@ -1122,6 +1122,7 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     Fsconsist_Info *consistPtr = &handlePtr->consist;
     Fsconsist_ClientInfo	*clientPtr;
     Boolean			maybeShared = FALSE;
+    int				numReading, numWriting;
 
     if ((handlePtr->descPtr != (Fsdm_FileDescriptor *) NIL) &&
 	    (handlePtr->descPtr->fileType == FS_FILE)) {
@@ -1143,9 +1144,11 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 	}
     }
     if (maybeShared) {
+	(void) Fsconsist_NumClients(consistPtr, &numReading, &numWriting);
 	SOSP_ADD_READ_TRACE(readPtr->reserved, 
-		streamPtr->hdr.fileID, TRUE, readPtr->offset, 
-		readPtr->length);
+		handlePtr->hdr.fileID, streamPtr->hdr.fileID, TRUE,
+		readPtr->offset, readPtr->length, numReading, numWriting);
+
     }
 #endif SOSP91
 
@@ -1206,6 +1209,7 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     Fsconsist_Info *consistPtr = &handlePtr->consist;
     Fsconsist_ClientInfo	*clientPtr;
     Boolean			maybeShared = FALSE;
+    int				numReading, numWriting;
 
     if ((handlePtr->descPtr != (Fsdm_FileDescriptor *) NIL) &&
 	    (handlePtr->descPtr->fileType == FS_FILE)) {
@@ -1227,9 +1231,10 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	}
     }
     if (maybeShared) {
-	SOSP_ADD_READ_TRACE(writePtr->reserved, 
+	(void) Fsconsist_NumClients(consistPtr, &numReading, &numWriting);
+	SOSP_ADD_READ_TRACE(writePtr->reserved, handlePtr->hdr.fileID,
 		streamPtr->hdr.fileID, FALSE, writePtr->offset, 
-		writePtr->length);
+		writePtr->length, numReading, numWriting);
     }
 
 #endif SOSP91
