@@ -39,10 +39,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devNet.h"
 #include "devTMR.h"
 #include "devBlockDevice.h"
+#include "devfb.h"
 #include "scsiHBADevice.h"
 #include "raidExt.h"
 #include "tty.h"
 #include "mouse.h"
+
 
 static ReturnStatus nullOpenProc _ARGS_ ((Fs_Device *devicePtr,
     int flags, Fs_NotifyToken notifyToken, int *flagsPtr));
@@ -165,6 +167,12 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_MOUSE,    DevMouseOpen, DevMouseRead, DevMouseWrite,
 		   DevMouseIOControl, DevMouseClose, DevMouseSelect,
 		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * Frame buffer device.
+     */
+    {DEV_GRAPHICS, DevFBOpen, nullReadProc, nullWriteProc,
+                   DevFBIOControl, DevFBClose, nullSelectProc,
+                   DEV_NO_ATTACH_PROC, noReopenProc, DevFBMMap},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
