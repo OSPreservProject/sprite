@@ -58,7 +58,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 
 static ReturnStatus NullProc();
-static void	    VoidProc();
+static void	    NullClientKill();
 static ReturnStatus NoProc();
 static ReturnStatus NoDevice();
 static FsHandleHeader *NoHandle();
@@ -181,7 +181,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc, NoProc,		/* migStart, migEnd, migrate */
 		FsStreamReopen,	NoProc,		/* reopen, blockAlloc */
 		NoProc, NoProc,	NoProc,		/* blkRead, blkWrite, blkCopy */
-		FsStreamScavenge, VoidProc,	/* scavenge, kill */
+		FsStreamScavenge, NullClientKill,/* scavenge, kill */
 		NoProc},			/* close */
     /*
      * Local file stream.  The file is on a local disk and blocks are
@@ -206,7 +206,8 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRmtFileVerify, FsRmtFileMigStart, FsRmtFileMigEnd,
 		FsRmtFileMigrate, FsRmtFileReopen,
 		FsRmtFileAllocate, FsRmtFileBlockRead, FsRmtFileBlockWrite,
-		FsSpriteBlockCopy, FsRmtFileScavenge, VoidProc, FsRmtFileClose},
+		FsSpriteBlockCopy, FsRmtFileScavenge,
+		NullClientKill, FsRmtFileClose},
     /*
      * Local device stream.  These routines branch to the device driver
      * for the particular device type.
@@ -228,7 +229,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRmtDeviceVerify, FsRemoteIOMigStart, FsRemoteIOMigEnd,
 		FsRmtDeviceMigrate, FsRmtDeviceReopen,
 		NoProc, NoProc, NoProc, NoProc,
-		FsRemoteHandleScavenge, VoidProc, FsRemoteIOClose},
+		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose},
     /*
      * Local anonymous pipe stream.  
      */
@@ -249,7 +250,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRmtPipeVerify, FsRemoteIOMigStart, FsRemoteIOMigEnd,
 		FsRmtPipeMigrate, FsRmtPipeReopen,
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
-		FsRemoteHandleScavenge, VoidProc, FsRemoteIOClose},
+		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose},
 #ifdef not_done_yet
     /*
      * Locally cached named pipe stream.  
@@ -440,6 +441,15 @@ static ReturnStatus
 NoDevice()
 {
     return(FS_INVALID_ARG);
+}
+
+/*ARGSUSED*/
+static void
+NullClientKill(hdrPtr, clientID)
+    FsHandleHeader *hdrPtr;
+    int clientID;
+{
+    FsHandleUnlock(hdrPtr);
 }
 
 static FsHandleHeader *
