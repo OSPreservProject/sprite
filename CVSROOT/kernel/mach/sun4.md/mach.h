@@ -87,13 +87,11 @@ extern	void	Mach_EnableIntr();
  */
 #define	Mach_InterruptReg	((unsigned char *) DEV_INTERRUPT_REG_ADDR)
 
-#ifdef NOTDEF
 /*
  * Dispatch tables for kernel calls.
  */
 extern ReturnStatus (*(mach_NormalHandlers[]))();
 extern ReturnStatus (*(mach_MigratedHandlers[]))();
-#endif NOTDEF
 
 /*
  * State for each process.
@@ -182,8 +180,10 @@ typedef struct Mach_State {
 						 * be restored to the stack from
 						 * the above buffer since the
 						 * stack wasn't resident. */
-    int			kernelStack;		/* pointer to the kernel
+    Address		kernelStack;		/* pointer to the kernel
 						 * stack for this process. */
+    Address		kernStackStart;		/* beginning of kernel stack
+						 * for this process. */
 } Mach_State;
 
 /*
@@ -212,7 +212,7 @@ extern	char	*mach_MachineType;
  * mach_ByteOrder defines a byte ordering/structure alignment type
  * used when servicing IOControls.  The input and output buffers for
  * IOControls have to be made right by the server.
- *
+ */
 extern	int	mach_ByteOrder;
 
 /*
