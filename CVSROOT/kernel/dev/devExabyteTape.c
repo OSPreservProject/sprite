@@ -295,6 +295,9 @@ ExabyteError(devPtr, scsiCmdPtr)
     if (exabyteSensePtr->FE) {
 	printf("Warning: Exabyte Formatter error, catastrophic failure!\n");
     }
+    printf("Additional Sense Code: 0x%x\n", exabyteSensePtr->senseCode);
+    printf("Additional Sense Code Qualifier: 0x%x\n", 
+	exabyteSensePtr->senseCodeQualifier);
     if (scsiCmdPtr->senseLen == sizeof(Exb8500Sense)) {
 	newSensePtr = (Exb8500Sense *) exabyteSensePtr;
 	printf("EXB8500 Fault Symptom Code = 0x%x\n", newSensePtr->faultCode);
