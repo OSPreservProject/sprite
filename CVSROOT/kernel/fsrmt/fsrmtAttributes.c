@@ -744,6 +744,7 @@ Fsrmt_RpcSetAttr(srvToken, clientID, command, storagePtr)
 #else
     status = (*fs_AttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
 						&paramPtr->ids,paramPtr->flags);
+#endif
 #ifdef lint
     status = FslclSetAttr(fileIDPtr, attrPtr, &paramPtr->ids,paramPtr->flags);
     status = FspdevPseudoSetAttr(fileIDPtr,attrPtr, &paramPtr->ids,paramPtr->flags);
