@@ -482,9 +482,17 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 		accessible = TRUE;
 	    }
 	    /*
-	     * Find out the length of the argument.
+	     * Find out the length of the argument.  Because of accessibility
+	     * limitations the whole string may not be available.
 	     */
-	    realLength = String_NLength(stringLength, stringPtr) + 1;
+	    {
+		register char *charPtr;
+		for (charPtr = stringPtr, realLength = 0;
+		     (realLength < stringLength) && (*charPtr != '\0');
+		     charPtr++, realLength++) {
+		}
+		realLength++;
+	    }
 	    /*
 	     * Move to the next argument.
 	     */
@@ -507,9 +515,10 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	userStackPointer -= ((realLength) + 3) & ~3;
 	argStringLength += realLength;
 	/*
-	 * Copy over the argument.
+	 * Copy over the argument and ensure null termination.
 	 */
 	bcopy((Address) stringPtr, (Address) argListPtr->stringPtr, realLength);
+	argListPtr->stringPtr[realLength-1] = '\0';
 	/*
 	 * Clean up 
 	 */
@@ -549,9 +558,17 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	    accessible = TRUE;
 	}
 	/*
-	 * Find out the length of the environment variable.
+	 * Find out the length of the environment variable.  Because of
+	 * accessibility limits the whole string may not be available.
 	 */
-	realLength = String_NLength(stringLength, stringPtr) + 1;
+	{
+	    register char *charPtr;
+	    for (charPtr = stringPtr, realLength = 0;
+		 (realLength < stringLength) && (*charPtr != '\0');
+		 charPtr++, realLength++) {
+	    }
+	    realLength++;
+	}
 	/*
 	 * Move to the next environment variable.
 	 */
@@ -571,9 +588,10 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	 */
 	userStackPointer -= ((realLength) + 3) & ~3;
 	/*
-	 * Copy over the environment variable.
+	 * Copy over the environment variable and ensure null termination.
 	 */
 	bcopy((Address) stringPtr, (Address) envListPtr->stringPtr, realLength);
+	envListPtr->stringPtr[realLength-1] = '\0';
 	/*
 	 * Clean up 
 	 */
