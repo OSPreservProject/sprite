@@ -342,14 +342,14 @@ extern TraceLog_Header *SOSP91TracePtr;
 /*
  * Trace a lookup operation.  The fields are
  * 
- * hostID:		ID of host causing the consistency change
+ * hostID:		ID of host.
  * streamID		Resulting stream ID of file.
  * numIDs		Number of id's we got.
  * status		Status of the lookup.
  * IDs			The ids we looked up (The caller stores these.)
  */ 
-#define SOSP_LOOKUP_OFFSET 7*sizeof(int)
-#define	SOSP_ADD_LOOKUP(hostID, streamID, status, numIDs)\
+#define SOSP_LOOKUP_OFFSET 8*sizeof(int)
+#define	SOSP_ADD_LOOKUP(sospBuffer, hostID, streamID, status, numIDs)\
 {\
 \
 	sospBuffer[0] = SOSP_LOOKUP;\
@@ -358,7 +358,7 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[6] = status;\
 	sospBuffer[7] = numIDs;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(7 * sizeof (int)+ numIDs*sizeof(Fs_FileID)),SOSP_LOOKUP);\
+		(SOSP_LOOKUP_OFFSET + numIDs*sizeof(Fs_FileID)),SOSP_LOOKUP);\
 }
 
 #endif /* KERNEL */
