@@ -181,7 +181,7 @@ Sys_Shutdown(flags, rebootString)
 {
     Time		waitTime;
     int			alive;
-    int			timesWaited = 0;
+    int			timesWaited;
     Boolean		userDead = FALSE;
     char		string[100];
     int			accLength;
@@ -208,12 +208,13 @@ Sys_Shutdown(flags, rebootString)
     }
 
     if (flags & SYS_KILL_PROCESSES) {
-	waitTime.seconds = 2;
+	waitTime.seconds = 5;
 	waitTime.microseconds = 0;
 	while (TRUE) {
 	    if (userDead) {
 		sys_ShuttingDown = TRUE;
 	    }
+	    timesWaited = 0;
 	    while (TRUE) {
 		alive = Proc_KillAllProcesses(!userDead);
 		if (alive == 0) {
