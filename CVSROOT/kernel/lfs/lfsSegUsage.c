@@ -164,7 +164,7 @@ LfsCheckRead(lfsPtr,diskAddress, numBytes)
 	panic("LfsOkToRead bad segment number %d\n", segNo);
 	return;
     }
-    status = LfsStableMemFetch(&(usagePtr->stableMem),segNo,FALSE,&smemEntry);
+    status = LfsStableMemFetch(&(usagePtr->stableMem),segNo,0,&smemEntry);
     if (status != SUCCESS) {
 	panic("LfsOkToRead can't fetch usage array block.\n");
     }
@@ -238,7 +238,7 @@ LfsSetSegUsage(lfsPtr, segNumber, activeBytes)
 	return;
     }
     status = LfsStableMemFetch(&(usagePtr->stableMem), segNumber, 
-				FALSE, &smemEntry);
+				LFS_STABLE_MEM_MAY_DIRTY, &smemEntry);
     if (status != SUCCESS) {
 	panic("LfsSetSegUsage can't fetch usage array block.\n");
 	return;
@@ -321,7 +321,8 @@ LfsMarkSegClean(lfsPtr, segNumber)
 	return;
     }
 
-    status = LfsStableMemFetch(&(usagePtr->stableMem), segNumber, FALSE, 
+    status = LfsStableMemFetch(&(usagePtr->stableMem), segNumber, 
+			LFS_STABLE_MEM_MAY_DIRTY, 
 			&smemEntry);
     if (status != SUCCESS) {
 	panic("LfsMarkSegClean can't fetch usage array.");
@@ -379,7 +380,10 @@ LfsSetDirtyLevel(lfsPtr, dirtyActiveBytes)
     cp->dirtyActiveBytes = dirtyActiveBytes;
     for (segNum = 0; segNum < usagePtr->params.numberSegments; segNum++) {
 	status = LfsStableMemFetch(&(usagePtr->stableMem), segNum,
-			(segNum > 0),  &smemEntry);
+			LFS_STABLE_MEM_MAY_DIRTY| 
+			  ((segNum > 0) ? LFS_STABLE_MEM_REL_ENTRY : 0), 
+			  &smemEntry);
+
 	if (status != SUCCESS) {
 	    panic("LfsSetDirtyLevel can't fetch usage array block.\n");
 	}
@@ -498,7 +502,7 @@ LfsGetLogTail(lfsPtr, cantWait, logRangePtr, startBlockPtr)
      * Update the active bytes of the current segment the usage array.
      */
     status = LfsStableMemFetch(&(usagePtr->stableMem), cp->currentSegment, 
-			FALSE, 	&smemEntry);
+			LFS_STABLE_MEM_MAY_DIRTY, &smemEntry);
     if (status == SUCCESS) {
 	s = (LfsSegUsageEntry *) LfsStableMemEntryAddr(&smemEntry);
 	s->activeBytes = cp->curSegActiveBytes;
@@ -513,8 +517,9 @@ LfsGetLogTail(lfsPtr, cantWait, logRangePtr, startBlockPtr)
     }
 
     segNumber = cp->cleanSegList;
-    status = LfsStableMemFetch(&(usagePtr->stableMem), segNumber, TRUE, 
-		&smemEntry);
+    status = LfsStableMemFetch(&(usagePtr->stableMem), segNumber, 
+			(LFS_STABLE_MEM_MAY_DIRTY| 
+			 LFS_STABLE_MEM_REL_ENTRY), &smemEntry);
     if (status != SUCCESS) {
 	panic("LfsGetCleanSeg can't fetch usage array.");
 	return status;
@@ -608,7 +613,9 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
      * For each  segment.
      */
    for (segNum = 0; segNum < usagePtr->params.numberSegments; segNum++) {
-	status = LfsStableMemFetch(&(usagePtr->stableMem), segNum, (segNum > 0),
+	status = LfsStableMemFetch(&(usagePtr->stableMem), segNum, 
+			     LFS_STABLE_MEM_MAY_DIRTY| 
+			  ((segNum > 0) ? LFS_STABLE_MEM_REL_ENTRY : 0), 
 			    &smemEntry);
 	if (status != SUCCESS) {
 	    panic("LfsSetDirtyLevel can't fetch usage array block.\n");
@@ -725,6 +732,7 @@ LfsSegUsageAttach(lfsPtr, checkPointSize, checkPointPtr)
     /*
      * Allocate and fill in memory data structure for descriptor map.
      */
+    usagePtr->cpLocPtr = (LfsSegUsageCheckPoint *) NIL;
     usagePtr->params = lfsPtr->superBlock.usageArray;
     usagePtr->checkPoint = *cp;
     /*
@@ -782,6 +790,7 @@ LfsSegUsageCheckpoint(segPtr, flags,checkPointPtr, checkPointSizePtr,
 		checkPointSizePtr, clientDataPtr,&(usagePtr->stableMem));
     if (!full) { 
 	*checkPointSizePtr = (*checkPointSizePtr) + size;
+	usagePtr->cpLocPtr = cp;
     }
     return full;
 
@@ -811,6 +820,10 @@ LfsSegUsageWriteDone(segPtr, flags, clientDataPtr)
 {
     LfsSegUsage	      *usagePtr = &(segPtr->lfsPtr->usageArray);
 
+    if (usagePtr->cpLocPtr != (LfsSegUsageCheckPoint *) NIL) {
+	*(usagePtr->cpLocPtr) = usagePtr->checkPoint;
+	usagePtr->cpLocPtr = (LfsSegUsageCheckPoint *) NIL;
+    }
     LFS_STATS_ADD(segPtr->lfsPtr->stats.segusage.blocksWritten, 
 		(LfsSegSummaryBytesLeft(segPtr) / sizeof(int)));
     LfsStableMemWriteDone(segPtr, flags, clientDataPtr, &(usagePtr->stableMem));
@@ -881,6 +894,7 @@ LfsSegUsageLayout(segPtr, flags, clientDataPtr)
 {
     LfsSegUsage	      *usagePtr = &(segPtr->lfsPtr->usageArray);
 
+    usagePtr->cpLocPtr = (LfsSegUsageCheckPoint *) NIL;
     if ((flags & LFS_CLEANING_LAYOUT) != 0) {
 	return FALSE;
     }

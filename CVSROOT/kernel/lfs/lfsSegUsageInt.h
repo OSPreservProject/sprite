@@ -29,6 +29,8 @@ typedef struct LfsSegUsage {
     int	waitCheckpointList;        /* First segments in clean list that is
 				    * waiting to become clean after a 
 				    * checkpoint. */
+    LfsSegUsageCheckPoint *cpLocPtr; /* Location in cp buffer of last 
+				      * checkpoint. */
     LfsStableMem	stableMem;/* Stable memory supporting the map. */
     LfsSegUsageParams	params;	  /* Map parameters taken from super block. */
     LfsSegUsageCheckPoint checkPoint; /* Desc map data written at checkpoint. */
