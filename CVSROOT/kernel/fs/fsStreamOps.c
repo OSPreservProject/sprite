@@ -96,6 +96,7 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     reply.length = 0;
     reply.flags = 0;
     reply.signal = 0;
+    reply.code = 0;
 
     /*
      * Outer loop to attempt the read and then block if no data is ready.
@@ -231,6 +232,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
     reply.length = 0;
     reply.flags = 0;
     reply.signal = 0;
+    reply.code = 0;
 
     remoteWaiter.hostID = rpc_SpriteID;
 
