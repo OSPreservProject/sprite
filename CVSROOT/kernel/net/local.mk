@@ -5,11 +5,13 @@
 # that must be included to set up various compilation stuff.
 #
 
+NAME = net
+
 #
 # Optimization breaks the ds3100.
 #
 
-#if !empty(TM:Mds3100)
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
 NOOPTIMIZATION	= no -O please
 #endif
 
