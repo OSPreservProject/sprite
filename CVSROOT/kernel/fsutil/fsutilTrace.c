@@ -110,6 +110,9 @@ FsTracePrintTable fsTracePrintTable[] = {
     /* TRACE_RA_END */		FST_RA,	 	"Read ahead completed",
     /* TRACE_DEL_BLOCK */	FST_BLOCK, 	"Delete block",
     /* TRACE_BLOCK_WRITE */	FST_BLOCK,	"Block write",
+    /* TRACE_GET_NEXT_FREE */	FST_HANDLE,	"get next free",
+    /* TRACE_LRU_FREE */	FST_HANDLE,	"lru free",
+    /* TRACE_LRU_DONE_FREE */	FST_HANDLE,	"lru done free",
 };
 static int numTraceTypes = sizeof(fsTracePrintTable)/sizeof(FsTracePrintTable);
 
