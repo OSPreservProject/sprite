@@ -175,6 +175,7 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes, toDisk)
 
     return(status);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -206,6 +207,8 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
     ReturnStatus		status = SUCCESS;
     int				i;
     Boolean			retry;
+    Address			swapPageCopy = (Address) NIL;
+    Boolean			swapPageAllocated = FALSE;
 
     srcHdrPtr = srcStreamPtr->ioHandlePtr;
     destHdrPtr = destStreamPtr->ioHandlePtr;
@@ -217,14 +220,36 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
     for (i = (unsigned int) offset / FS_BLOCK_SIZE; i <= lastBlock; i++) {
 	do {
 	    retry = FALSE;
-	    status = (fsio_StreamOpTable[srcHdrPtr->fileID.type].blockCopy)
-	    				(srcHdrPtr, destHdrPtr, i);
+	    if (srcHdrPtr->fileID.serverID != destHdrPtr->fileID.serverID) {
+		/*
+		 * The swap files are on different machines, so we need to read
+		 * from one and write to the other.
+		 */
+		if (!swapPageAllocated) {
+		    swapPageCopy = (Address) malloc(Vm_GetPageSize());
+		}
+		swapPageAllocated = TRUE;
+		status =
+			Fs_PageRead(srcStreamPtr, swapPageCopy, offset,
+			numBytes, FS_SWAP_PAGE);
+		if (status != SUCCESS) {
+		    /* Fs_PageRead handles recovery itself, so we don't here. */
+		    break;
+		}
+		status =
+			Fs_PageWrite(destStreamPtr, swapPageCopy, offset,
+			numBytes, TRUE);
+	    } else {
+		status = (fsio_StreamOpTable[srcHdrPtr->fileID.type].blockCopy)
+			(srcHdrPtr, destHdrPtr, i);
 #ifdef lint
-	    status = Fsio_FileBlockCopy(srcHdrPtr, destHdrPtr, i);
-	    status = Fsrmt_BlockCopy(srcHdrPtr, destHdrPtr, i);
+		status = Fsio_FileBlockCopy(srcHdrPtr, destHdrPtr, i);
+		status = Fsrmt_BlockCopy(srcHdrPtr, destHdrPtr, i);
 #endif /* lint */
+	    }
 	    if (status != SUCCESS) {
-		if (status == RPC_TIMEOUT || status == RPC_SERVICE_DISABLED) {
+		if (status == RPC_TIMEOUT || status == RPC_SERVICE_DISABLED ||
+			status == FS_STALE_HANDLE) {
 		    /*
 		     * The server is down so we wait for it.  This just blocks
 		     * the user process doing the page fault.
@@ -237,16 +262,24 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
 			retry = TRUE;
 		    } else {
 			printf("Fs_PageCopy, recovery failed <%x>\n", status);
+			if (swapPageAllocated) {
+			    free(swapPageCopy);
+			}
 			return(status);
 		    }
 		} else {
 		    printf("Fs_PageCopy: Copy failed <%x>\n", status);
+		    if (swapPageAllocated) {
+			free(swapPageCopy);
+		    }
 		    return(status);
 		}
 	    }
 	} while (retry);
+
+    }
+    if (swapPageAllocated) {
+	free(swapPageCopy);
     }
     return(status);
 }
-
-
