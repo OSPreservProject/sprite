@@ -47,7 +47,7 @@ Fs_RpcRequest()
 /*
  * Monitor for OkToScavenge and DoneScavenge
  */
-static Sync_Lock scavengeLock = SYNC_LOCK_INIT_STATIC();
+static Sync_Lock scavengeLock = Sync_LockInitStatic("Fs:scavengeLock");
 #define LOCKPTR (&scavengeLock)
 
 Boolean OkToScavenge();
@@ -160,6 +160,8 @@ FsTraceInit()
 
     Time_Subtract(lastPtr->time, firstPtr->time, &fsTraceTime);
     Time_Divide(fsTraceTime, 9, &fsTraceTime);
+
+    Sync_LockRegister(&scavengeLock);
 }
 
 /*
@@ -689,7 +691,12 @@ Fs_HandleScavenge(data, callInfoPtr)
     for (hdrPtr = FsGetNextHandle(&hashSearch);
 	 hdrPtr != (FsHandleHeader *) NIL;
          hdrPtr = FsGetNextHandle(&hashSearch)) {
-	 (*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr);
+	 if (fsStreamOpTable[hdrPtr->fileID.type].scavenge !=
+		 (Boolean (*)())NIL) {
+	     (*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr);
+	 } else {
+	     FsHandleUnlock(hdrPtr);
+	 }
     }
     /*
      * We are called in two cases.  A regular call background call is indicated
