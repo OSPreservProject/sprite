@@ -22,8 +22,8 @@ world		-a .
 #modules		-i /local/cmds/mkmodules CVSROOT.adm modules
 #loginfo		-i /local/cmds/mkmodules CVSROOT.adm loginfo
 
-modules		CVSROOT.adm/modules
-loginfo		CVSROOT.adm/loginfo
+modules		CVSROOT.adm modules
+loginfo		CVSROOT.adm loginfo
 
 mach		kernel/mach
 dbg		kernel/dbg
@@ -54,7 +54,7 @@ sched		kernel/sched
 sig		kernel/sig
 sync		kernel/sync
 sys		kernel/sys
-timer		-i /sprite/lib/scvs/updateInstalled kernel/timer
+timer		kernel/timer
 utils		kernel/utils
 vm		kernel/vm
 
