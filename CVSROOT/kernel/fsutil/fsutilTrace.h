@@ -18,7 +18,7 @@
 #ifndef _FSTRACE
 #define _FSTRACE
 
-#include "trace.h"
+#include <trace.h>
 
 #define FSUTIL_TRACE_0		0
 #define FSUTIL_TRACE_OPEN_START	1
