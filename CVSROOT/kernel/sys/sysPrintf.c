@@ -157,6 +157,11 @@ vprintf(format, args)
  *----------------------------------------------------------------------
  */
 
+/*
+ * panic, printf, and fprintf are only defined when not using lint.
+ * For lint, use the libc versions to avoid conflicts.
+ */
+#ifndef lint
 /* VARARGS0 */
 void
 panic(va_alist)
@@ -248,3 +253,4 @@ fprintf(va_alist)
     va_end(args);
     return result;
 }
+#endif /* lint */
