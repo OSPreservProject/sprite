@@ -19,23 +19,23 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include <sprite.h>
-#include "dev.h"
-#include "devAddrs.h"
+#include <dev.h>
+#include <devAddrs.h>
 #include <dev/mouse.h>
 #include <errno.h>
-#include "mouse.h"
+#include <mouse.h>
 #include <fs.h>
 #include <fsio.h>
 #include <list.h>
 #include <status.h>
 #include <stdlib.h>
-#include "timer.h"
-#include "tty.h"
-#include "ttyAttach.h"
-#include "z8530.h"
-#include "console.h"
-#include "user/bstring.h"
-
+#include <timer.h>
+#include <tty.h>
+#include <ttyAttach.h>
+#include <z8530.h>
+#include <console.h>
+#include <user/bstring.h>
+#include <fsioDevice.h>
 /*
  * For synchronization, use devTty's monitor lock (this module is
  * so closely intertwined with devTty.c that this is the only logical
