@@ -52,7 +52,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "timerInt.h"
 #include "time.h"
-#include "devTimer.h"
+#include "timerTick.h"
 #include "sys.h"
 #include "byte.h"
 

@@ -18,8 +18,11 @@
 #ifndef _TIMERTICK
 #define _TIMERTICK
 
+#ifdef NEWLIB
+#include "spriteTime.h"
+#else
 #include "time.h"
-
+#endif
 
 /* DATA STRUCTURES: */
 

@@ -1,5 +1,5 @@
 /*
- * devTimerSun3.c --
+ * timerSun3.c --
  *
  *	This file contains routines that manipulate the Intersil
  *	ICM7170 real-time clock chip for the SUN-3.
@@ -33,7 +33,7 @@
  *	The counter is used here to keep track of the amount of time
  *	since the system was booted.
  *
- *	Additional Dev_Counter routines are provided to convert from/to
+ *	Additional Timer_Counter routines are provided to convert from/to
  *	32-bit interval values (described in timerClock.c) to/from time.
  *	The interval represents an machine-dependent format for small 
  *	time values. For the Sun-3, an interval is a fraction of second
@@ -54,9 +54,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mach.h"
 #include "machConst.h"
 #include "devAddrs.h"
-#include "devTimer.h"
-#include "devTimerSun3Int.h"
+#include "timer.h"
+#include "timerInt.h"
+#include "timerSun3Int.h"
+#ifdef NEWLIB
+#include "spriteTime.h"
+#else
 #include "time.h"
+#endif
 
 
 /* For profiling call */
@@ -99,23 +104,6 @@ static    IntersilCounters	initialCounter = {
     0,	/* dayOfWeek */
 };
 
-/*
- * The interval value to represent one second. It must be at least 1000
- * so that one milliscond can be be represented in an interval.
- */
-
-#define ONE_SEC_INTERVAL	1000
-
-
-/*
- * The maximum amount of time that an interval can represent.
- */
-
-#define MAXINT ((unsigned int) 0xFFFFFFFF)
-static Time maxIntervalTime = {
-    MAXINT / ONE_SEC_INTERVAL,
-    ((MAXINT % ONE_SEC_INTERVAL) * ONE_SECOND) / ONE_SEC_INTERVAL,
-};
 
 /*
  * Routine to calculate a time value from the values in the free-running
@@ -179,11 +167,11 @@ static int accumSecsPerMonthLeap[13] = {
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerInit --
+ * Timer_TimerInit --
  *
  *	Initialize the ICM7170 chip.
  *
- *	N.B. This routine must be called before Dev_TimerStart.
+ *	N.B. This routine must be called before Timer_TimerStart.
  *
  * Results:
  *	None.
@@ -196,7 +184,7 @@ static int accumSecsPerMonthLeap[13] = {
 
 /*ARGSUSED*/
 void
-Dev_TimerInit(timer)
+Timer_TimerInit(timer)
     unsigned short 	timer;		/* Ignored for Sun-3 version. */
 {
     static Boolean init = FALSE;
@@ -230,10 +218,10 @@ Dev_TimerInit(timer)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerStart --
+ * Timer_TimerStart --
  *
  *	Start the timer so it will cause periodic interrupts.
- *	N.B. The timer must have been initialized with Dev_TimerInit
+ *	N.B. The timer must have been initialized with Timer_TimerInit
  *	before this routine is called.
  *
  * Results:
@@ -246,15 +234,15 @@ Dev_TimerInit(timer)
  */
 
 void
-Dev_TimerStart(timer)
+Timer_TimerStart(timer)
     unsigned short timer;
 {
-    if (timer == DEV_CALLBACK_TIMER) {
+    if (timer == TIMER_CALLBACK_TIMER) {
 	callbackIntrsWanted = TRUE;
-    } else if (timer == DEV_PROFILE_TIMER) {
+    } else if (timer == TIMER_PROFILE_TIMER) {
 	profileIntrsWanted = TRUE;
     } else {
-	Sys_Panic(SYS_FATAL,"Dev_TimerStart: unknown timer %d\n", timer);
+	Sys_Panic(SYS_FATAL,"Timer_TimerStart: unknown timer %d\n", timer);
     }
 
     /*
@@ -274,7 +262,7 @@ Dev_TimerStart(timer)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerInactivate --
+ * Timer_TimerInactivate --
  *
  *	Stops the timer so that it will not cause interrupts.
  *
@@ -288,15 +276,15 @@ Dev_TimerStart(timer)
  */
 
 void
-Dev_TimerInactivate(timer)
+Timer_TimerInactivate(timer)
     register unsigned short timer;
 {
-    if (timer == DEV_CALLBACK_TIMER) {
+    if (timer == TIMER_CALLBACK_TIMER) {
 	callbackIntrsWanted = FALSE;
-    } else if (timer == DEV_PROFILE_TIMER) {
+    } else if (timer == TIMER_PROFILE_TIMER) {
 	profileIntrsWanted = FALSE;
     } else {
-	Sys_Panic(SYS_FATAL,"Dev_TimerInactivate: unknown timer %d\n", timer);
+	Sys_Panic(SYS_FATAL,"Timer_TimerInactivate: unknown timer %d\n", timer);
     }
 
     /*
@@ -314,7 +302,7 @@ Dev_TimerInactivate(timer)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerGetStatus --
+ * Timer_TimerGetStatus --
  *
  *	Clears the interrupt pending bit in the interrupt register
  *	and reads the interrupt status register (ISR) of the chip.
@@ -334,7 +322,7 @@ Dev_TimerInactivate(timer)
  */
 
 static unsigned short
-Dev_TimerGetStatus()
+Timer_TimerGetStatus()
 {
     unsigned char statusReg;
     unsigned char intrReg;
@@ -362,7 +350,7 @@ Dev_TimerGetStatus()
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerExamineStatus --
+ * Timer_TimerExamineStatus --
  *
  *	Assuming the interrupt is valid, return TRUE or FALSE if 
  *	the interrupt is or is not allowed for the specified timer.
@@ -385,7 +373,7 @@ Dev_TimerGetStatus()
 
 /*ARGSUSED*/
 static Boolean
-Dev_TimerExamineStatus(statusReg, timer, spuriousPtr)
+Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
     unsigned char statusReg;	/* Ignored because it is always 0. */
     unsigned int timer;		/* Virtual Timer # */
     Boolean *spuriousPtr;	/* Always set FALSE. */
@@ -398,20 +386,20 @@ Dev_TimerExamineStatus(statusReg, timer, spuriousPtr)
      */
     *spuriousPtr = FALSE;
 
-    if (timer == DEV_CALLBACK_TIMER) {
+    if (timer == TIMER_CALLBACK_TIMER) {
 	/*
 	 * Cut the timer's frequency in half.
 	 */
 	callbackTimerToggle = !callbackTimerToggle;
 	return(callbackTimerToggle);
-    } else if (timer == DEV_PROFILE_TIMER) {
+    } else if (timer == TIMER_PROFILE_TIMER) {
 	if (profileIntrsWanted) {
 	    return(TRUE);
 	} else {
 	    return(FALSE);
 	}
     } else {
-	Sys_Panic(SYS_WARNING,"Dev_TimerExamineStatus: unknown timer %d\n", 
+	Sys_Panic(SYS_WARNING,"Timer_TimerExamineStatus: unknown timer %d\n", 
 				timer);
 	return(FALSE);
     }
@@ -420,7 +408,7 @@ Dev_TimerExamineStatus(statusReg, timer, spuriousPtr)
 /*
  *----------------------------------------------------------------------
  *
- *  Dev_TimerServiceInterrupt --
+ *  Timer_TimerServiceInterrupt --
  *
  *      This routine is called at every timer interrupt. 
  *      It calls the timer callback queue handling if the callback timer 
@@ -439,12 +427,12 @@ Dev_TimerExamineStatus(statusReg, timer, spuriousPtr)
  */
 
 void
-Dev_TimerServiceInterrupt(stack)
+Timer_TimerServiceInterrupt(stack)
     Mach_IntrStack stack;
 { 
     /*
      *  Determine if the callback and profile timers have expired.
-     *  Dev_TimerExamineStatus has the side effect of clearing the timer's
+     *  Timer_TimerExamineStatus has the side effect of clearing the timer's
      *  "cause interrupt" bit if it was set. 
      *
      *  The profile timer is checked first because routines on the callback
@@ -452,10 +440,10 @@ Dev_TimerServiceInterrupt(stack)
      */
 
     int profiled = FALSE;
-    unsigned short timerStatus =  Dev_TimerGetStatus();
+    unsigned short timerStatus =  Timer_TimerGetStatus();
     Boolean spurious;
 
-    if (Dev_TimerExamineStatus(timerStatus, DEV_PROFILE_TIMER, &spurious)) {
+    if (Timer_TimerExamineStatus(timerStatus, TIMER_PROFILE_TIMER, &spurious)) {
 	Prof_CollectInfo(&stack);
 	profiled = TRUE;
 #	ifdef GATHER_STAT
@@ -463,7 +451,7 @@ Dev_TimerServiceInterrupt(stack)
 #	endif
     } 
 
-    if (Dev_TimerExamineStatus(timerStatus, DEV_CALLBACK_TIMER, &spurious)) {
+    if (Timer_TimerExamineStatus(timerStatus, TIMER_CALLBACK_TIMER, &spurious)) {
 	Timer_CallBack();
     } else {
 	if (!profiled) {
@@ -491,7 +479,7 @@ Dev_TimerServiceInterrupt(stack)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_CounterInit --
+ * Timer_CounterInit --
  *
  *	Initializes the chip's free-running counters.
  *	The STOP command stops the counter and the RUN command turns
@@ -507,7 +495,7 @@ Dev_TimerServiceInterrupt(stack)
  */
 
 void
-Dev_CounterInit()
+Timer_CounterInit()
 {
     timerRegsPtr->commandReg = IntersilCommand(STOP, timerIntrState);
     timerRegsPtr->counter = initialCounter;
@@ -518,7 +506,7 @@ Dev_CounterInit()
 /*
  *----------------------------------------------------------------------
  *
- * Dev_CounterRead --
+ * Timer_CounterRead --
  *
  *	Read the contents of the counters. Interrupts are assumed
  *	to be disabled to assure that the counters are read atomically.
@@ -533,8 +521,8 @@ Dev_CounterInit()
  */
 
 void
-Dev_CounterRead(timePtr)
-    DevCounter	*timePtr;	/* Time from the counters. */
+Timer_GetCurrentTicks(timePtr)
+    Timer_Ticks	*timePtr;	/* Time from the counters. */
 {
     IntersilCounters	counter;
 
@@ -597,167 +585,12 @@ CountersToTime(counterPtr, timePtr)
 
 
 
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterIntToTime --
- *
- *      Converts a 32-bit interval value into a standard time value.
- *
- *  Results:
- *	A time value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterIntToTime(counter, resultPtr)
-    unsigned int counter;
-    Time *resultPtr;
-{
-    resultPtr->seconds = counter / ONE_SEC_INTERVAL;
-    resultPtr->microseconds = (counter % ONE_SEC_INTERVAL) * 
-				(ONE_SECOND/ONE_SEC_INTERVAL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterCountToTime --
- *
- *      Converts a DevCounter value into a standard time value.
- *
- *	This routine is meant for use by the Timer module only.
- *
- *  Results:
- *	A time value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterCountToTime(count, resultPtr)
-    DevCounter count;
-    Time *resultPtr;
-{
-	/* 
-	 * DevCounter's and Timer's are the same for the Sun3.
-	 */
-
-	*resultPtr = count;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterTimeToInt --
- *
- *      Converts a standard time value into a 32-bit interval value.
- *
- *  Results:
- *	An interval value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterTimeToInt(time, resultPtr)
-    Time time;
-    unsigned int *resultPtr;
-{
-    if (Time_LE(time, maxIntervalTime)) {
-	*resultPtr = (time.seconds * ONE_SEC_INTERVAL) + 
-		 ((time.microseconds * ONE_SEC_INTERVAL) / ONE_SECOND);
-    } else {
-	Sys_Panic(SYS_WARNING, "Dev_CounterTimeToInt: time value too large\n");
-	*resultPtr = 0xFFFFFFFF;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterTimeToCounter --
- *
- *      Converts a standard time value into a DevCounter value.
- *
- *  Results:
- *	A DevCounter value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterTimeToCount(time, resultPtr)
-    Time time;
-    DevCounter *resultPtr;
-{
-	/*
-	 * On the Sun3, the DevCounter is the same as a time value.
-	 */
-	*resultPtr = time;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterAddIntToCount --
- *
- *      Add an interval value to a DevCounter value returning a
- *	DevCounter value Int time units in the future. Signal overflow
- *	if the value will not fit.
- *	This routine is meant for use by the Timer module only.
- *
- *  Results:
- *	A counter interval value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterAddIntToCount(count, interval, resultPtr, overflowPtr)
-    DevCounter	count;		/* Counter to add to */
-    unsigned int	interval;	/* Interval to add */	
-    DevCounter	*resultPtr;	/* Buffer to place the results */
-    unsigned int	*overflowPtr;	/* Overflow count */
-{
-    Time	tmp;
-    /*
-     * Since DevCounter is a time value, convert the interval to a time
-     * and use Timer_Add. It can't overflow.
-     */
-     
-    *overflowPtr = 0;	
-    Dev_CounterIntToTime(interval, &tmp);
-    Time_Add(count, tmp, resultPtr);
-
-}
-
-
 /*  @#@#@#@#@#@#@#@#@#@#@    DEBUGGING CODE    @#@#@#@#@#@#@#@#@#@#@  */
 
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerGetInfo --
+ * Timer_TimerGetInfo --
  *
  *	Debugging routine to print the contents of the free-running
  *	counters.
@@ -773,7 +606,7 @@ Dev_CounterAddIntToCount(count, interval, resultPtr, overflowPtr)
 
 /*ARGSUSED*/
 void
-Dev_TimerGetInfo(data)
+Timer_TimerGetInfo(data)
     ClientData	data;		/* Ignored. */
 {
     IntersilCounters  counter;

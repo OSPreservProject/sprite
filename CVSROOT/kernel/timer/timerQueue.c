@@ -31,7 +31,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "timer.h"
 #include "timerInt.h"
-#include "devTimer.h"
 #include "sys.h"
 #include "sync.h"
 #include "sched.h"
@@ -39,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "dbg.h"
 #include "byte.h"
+#include "dev.h"
 
 
 
@@ -68,7 +68,7 @@ int timerMutex = 0;
  */
 
 static Time todUpdate = {
-    0, DEV_CALLBACK_INTERVAL * (ONE_SECOND/ONE_MILLISECOND)
+    0, TIMER_CALLBACK_INTERVAL * (ONE_SECOND/ONE_MILLISECOND)
 };
 
 /*
@@ -116,6 +116,8 @@ Timer_Statistics timer_Statistics;
 void
 Timer_Init()
 {
+    Timer_CounterInit();
+    Timer_TimerInit(TIMER_CALLBACK_TIMER);
     TimerTicksInit();
 
     Byte_Zero(sizeof(timer_Statistics), (Address) &timer_Statistics);
@@ -131,6 +133,7 @@ Timer_Init()
     updateElement.routine = UpdateTimeOfDay;
     updateElement.interval = 10 * timer_IntOneSecond;
     Timer_ScheduleRoutine(&updateElement, TRUE);
+    Timer_TimerStart(TIMER_CALLBACK_TIMER);
 }
 
 

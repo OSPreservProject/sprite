@@ -21,12 +21,45 @@
 #include "list.h"
 
 #ifdef KERNEL
+#ifdef NEWLIB
+#include "spriteTime.h"
+#else
 #include "time.h"
+#endif
 #include "timerTick.h"
 #else
 #include <spriteTime.h>
 #include <kernel/timerTick.h>
 #endif
+
+
+/*
+ * Interval Timers:
+ *  The systems should provide two interval timers capable of interrupting 
+ *  the CPU after a specified interval, calling the correct routine, and
+ *  reseting themselves to interrupt again. 
+ * The timers are:
+ *  TIMER_CALLBACK_TIMER is the timer used to determine when
+ *  	the first routine on the timer queue should be called.
+ *  TIMER_PROFILE_TIMER is the timer used to determine when
+ *  	the profile routine should be called.
+ */
+
+#define TIMER_CALLBACK_TIMER	2
+#define	TIMER_CALLBACK_ROUTINE	Timer_CallBack
+
+#define TIMER_PROFILE_TIMER	3
+#define	TIMER_PROFILE_ROUTINE	Prof_CollectInfo
+
+/*
+ * The number of milliseconds between interrupts from the timers. This probably
+ * should be moved into the device dependent headers because longer or 
+ * shorter intervals may be necessary or desirable on different speed machines.
+ */
+
+#define TIMER_CALLBACK_INTERVAL	20
+#define TIMER_PROFILE_INTERVAL	10
+
 
 /*
  * timerTick.h should define the following types/structures/routine/macros for 
@@ -206,7 +239,6 @@ typedef struct {
 
 extern Timer_Statistics	timer_Statistics;
 
-extern void Timer_CallBack();
 extern void Timer_ScheduleRoutine();
 extern void Timer_RescheduleRoutine();
 extern void Timer_DescheduleRoutine();
@@ -214,5 +246,26 @@ extern void Timer_DescheduleRoutine();
 extern void Timer_GetTimeOfDay();
 extern void Timer_GetRealTimeOfDay();
 extern void Timer_SetTimeOfDay();
+
+
+/*
+ * Exported procedures. The arguments and function of this interface are be
+ * found in any of the machine dependent implementations.
+ */
+
+extern void 	Timer_TimerInit();
+extern void 	Timer_TimerStart();
+extern void	Timer_TimerInactivate();
+
+/*
+ * This routine should only be called by the mach module and then only
+ * at interrupt level. 
+ */
+extern	void	Timer_TimerServiceInterrupts();
+
+/*
+ * Used by the dump routines in the utils module for debugging.
+ */
+extern void 	Timer_TimerGetInfo();
 
 #endif _TIMER

@@ -19,11 +19,18 @@
 #ifndef _TIMERINT
 #define _TIMERINT
 
+#ifdef NEWLIB
+#include "spriteTime.h"
+#else
 #include "time.h"
+#endif
+
 
 extern int 	timerMutex;
 extern Time 	timerTimeOfDay;
 
+extern void	Timer_CallBack();
 extern void 	TimerTicksInit();
+extern void 	Timer_CounterInit();
 
 #endif _TIMERINT

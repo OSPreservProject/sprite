@@ -39,8 +39,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "mach.h"
 #include "timerTick.h"
+#ifdef NEWLIB
+#include "spriteTime.h"
+#else
 #include "time.h"
-#include "devTimer.h"
+#endif
+#include "timerSun3Int.h"
 #include "sys.h"
 #include "byte.h"
 
@@ -66,6 +70,32 @@ unsigned int    timer_IntOneMillisecond;
 unsigned int    timer_IntOneMinute;
 unsigned int    timer_IntOneHour;
 
+
+/*
+ * The interval value to represent one second. It must be at least 1000
+ * so that one milliscond can be be represented in an interval.
+ */
+
+#define ONE_SEC_INTERVAL	1000
+
+
+/*
+ * The maximum amount of time that an interval can represent.
+ */
+
+#define MAXINT ((unsigned int) 0xFFFFFFFF)
+static Time maxIntervalTime = {
+    MAXINT / ONE_SEC_INTERVAL,
+    ((MAXINT % ONE_SEC_INTERVAL) * ONE_SECOND) / ONE_SEC_INTERVAL,
+};
+
+
+/*
+ * Forward declaration of routines.
+ */
+static void ConvertTimeToInt();
+static void ConvertIntToTime();
+
 
 /*
  *----------------------------------------------------------------------
@@ -88,15 +118,15 @@ TimerTicksInit()
 {
     Time tmp;
 
-    Dev_CounterIntToTime((unsigned int) 0xFFFFFFFF, &timer_MaxIntervalTime);
+    ConvertIntToTime((unsigned int) 0xFFFFFFFF, &timer_MaxIntervalTime);
 
     tmp.seconds = 1;
     tmp.microseconds = 0;
-    Dev_CounterTimeToInt(tmp, &timer_IntOneSecond);
+    ConvertTimeToInt(tmp, &timer_IntOneSecond);
 
     tmp.seconds = 0;
     tmp.microseconds = 1000;
-    Dev_CounterTimeToInt(tmp, &timer_IntOneMillisecond);
+    ConvertTimeToInt(tmp, &timer_IntOneMillisecond);
 
     timer_IntZeroSeconds	= 0;
     timer_IntOneMinute		= timer_IntOneSecond * 60;
@@ -171,41 +201,16 @@ Timer_AddIntervalToTicks(absolute, interval, resultPtr)
     unsigned int	interval;	/* Addend 2 */
     Timer_Ticks		*resultPtr;	/* Sum */
 {
-    unsigned int	overflow;
-    
-    Dev_CounterAddIntToCount(absolute,interval,resultPtr,&overflow);
+    Time	tmp;
+    /*
+     * Since Timer_Ticks is a time value, convert the interval to a time
+     * and use Timer_Add. .
+     */
+
+    ConvertIntToTime(interval, &tmp);
+    Time_Add(absolute, tmp, resultPtr);
 
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Timer_GetCurrentTicks --
- *
- *  	Computes the number of ticks since the system was booted
- *	by reading the free-running counter.
- *
- *
- *  Results:
- *	The system up-time in ticks.
- *
- *  Side effects:
- *	Node
- *
- *----------------------------------------------------------------------
- */
-
-
-void
-Timer_GetCurrentTicks(ticksPtr)
-    Timer_Ticks	*ticksPtr;	/* Buffer to place current time. */
-{
-    DISABLE_INTR();
-    Dev_CounterRead(ticksPtr);
-    ENABLE_INTR();
-}
-
 
 
 /*
@@ -247,4 +252,63 @@ Timer_GetCurrentTicks(ticksPtr)
  *
  *----------------------------------------------------------------------
  */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  ConvertTimeToInt --
+ *
+ *      Converts a standard time value into a 32-bit interval value.
+ *
+ *  Results:
+ *	An interval value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConvertTimeToInt(time, resultPtr)
+    Time time;
+    unsigned int *resultPtr;
+{
+    if (Time_LE(time, maxIntervalTime)) {
+	*resultPtr = (time.seconds * ONE_SEC_INTERVAL) + 
+		 ((time.microseconds * ONE_SEC_INTERVAL) / ONE_SECOND);
+    } else {
+	Sys_Panic(SYS_WARNING, "ConvertTimeToInt: time value too large\n");
+	*resultPtr = 0xFFFFFFFF;
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  ConvertIntToTime --
+ *
+ *      Converts a 32-bit interval value into a standard time value.
+ *
+ *  Results:
+ *	A time value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConvertIntToTime(counter, resultPtr)
+    unsigned int counter;
+    Time *resultPtr;
+{
+    resultPtr->seconds = counter / ONE_SEC_INTERVAL;
+    resultPtr->microseconds = (counter % ONE_SEC_INTERVAL) * 
+				(ONE_SECOND/ONE_SEC_INTERVAL);
+}
 
