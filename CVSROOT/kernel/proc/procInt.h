@@ -54,6 +54,7 @@ typedef struct {
     Address	bssLoadAddr;	/* Address in user memory to load bss. */
     unsigned	bssSize;	/* Size of bss segment. */
     Address	entry;		/* Entry point to start execution. */
+    Boolean	unixCompat;	/* True if running unix compat. mode */
 } ProcObjInfo;
 
 /*
@@ -170,6 +171,7 @@ extern	int		ProcTableMatch _ARGS_((int maxPids,
 				Boolean (*booleanFuncPtr)
 					(Proc_ControlBlock *pcbPtr),
 				Proc_PID *pidArray));
-extern 	int		ProcGetObjInfo _ARGS_((ProcExecHeader *execPtr,
+extern 	int		ProcGetObjInfo _ARGS_((Fs_Stream *filePtr,
+				ProcExecHeader *execPtr,
 				ProcObjInfo *objInfoPtr));
 #endif /* _PROCINT */
