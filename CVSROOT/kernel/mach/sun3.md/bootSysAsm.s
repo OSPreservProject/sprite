@@ -32,7 +32,7 @@ _spriteStart:
 	movl	#VMMACH_MMU_SPACE, d0
 	movc	d0, dfc
 	movc	d0, sfc
-#ifdef SUN2
+#ifdef sun2
 |
 | The kernel has been loaded into the wrong location.  We copy it to the right
 | location by copying up 4 Meg worth of pmegs starting at address 10M.
@@ -48,7 +48,7 @@ loopStart:
 
 #endif
 
-#ifdef SUN3
+#ifdef sun3
 |
 | The kernel has been loaded into the wrong location.  We copy it to the right
 | location by copying up 8 Meg worth of pmegs.  This is done in all contexts.

@@ -114,7 +114,7 @@ _Mach_ContextSwitch:
     movl	sp@(8), sp@-
     jsr		_VmMach_SetupContext
     addql	#4, sp
-#ifdef SUN3
+#ifdef sun3
     movsb	d0, VMMACH_CONTEXT_OFF
 #else 
     movsb	d0,VMMACH_USER_CONTEXT_OFF:w 
@@ -261,7 +261,7 @@ _Mach_GetMachineType:
 _MachMonNmiNop:
         moveml  #0xC0C0,sp@-            | Save d0,d1,a0,a1
 
-#ifdef SUN2
+#ifdef sun2
         movw    #0xFFE1, AMD9513_CSR	| Clear the output of timer #1 
 					| on the AMD timer chip to clear
 					| the current interrupt.
@@ -272,7 +272,7 @@ _MachMonNmiNop:
         eorb    #0xFF,d0		| Exclusive or the bits.
         movsb   d0,0xB                  | Move it to the leds.
 
-#endif SUN2
+#endif /* sun2 */
         moveml  sp@+,#0x0303            | restore regs
         rte
 
