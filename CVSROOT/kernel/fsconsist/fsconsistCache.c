@@ -1236,8 +1236,7 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
 	     * do anything because he can have more dirty blocks anyway.
 	     */
 	} else {
-	    ReturnStatus	status;
-	    register int	flags = FS_WRITE_BACK_BLOCKS;
+	    register int flags = FS_WRITE_BACK_BLOCKS;
 	    if (invalidate) {
 		flags |= FS_INVALIDATE_BLOCKS;
 	    }
