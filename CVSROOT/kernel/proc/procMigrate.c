@@ -1139,6 +1139,10 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
     ReturnStatus status;
     Proc_TimerInterval timer;
 
+    if (procPtr->locksHeld != 0) {
+	panic("Migrating a process that's holding a lock.\n");
+    }
+
     COPY_STATE(procPtr, encapPtr, migFlags);
     COPY_STATE(procPtr, encapPtr, parentID);
     COPY_STATE(procPtr, encapPtr, familyID);
