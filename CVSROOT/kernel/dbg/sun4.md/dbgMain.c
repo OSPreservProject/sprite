@@ -50,6 +50,12 @@ int	dbgMonPC;				/* Place to get the PC from
 						 * if trap via the monitor.*/
 int	dbgTraceLevel;				/* The debugger tracing
 						 * level. */
+Boolean	dbg_Rs232Debug = FALSE;			/* TRUE if we are using the
+						 * RS@#@ line to debug.  FALSE
+						 * if we are using the network.
+						 * On the sun4, we have only
+						 * used the network.
+						 */
 
 /*
  * Number of times to poll before timing out and resending (about 2 seconds).
@@ -184,11 +190,7 @@ static Boolean InRange(addr, numBytes, writeable)
     maxAddr = 0x10000000;
 #endif
 #ifdef sun4
-    maxAddr = 0xffff0000;
-    if (addr > maxAddr || (addr + numBytes - 1) > maxAddr ||
-	(addr < 0xff000000)) {
-	return (FALSE);
-    }	
+    maxAddr = 0xffffffff;
 #endif
     if (addr > maxAddr || (addr + numBytes - 1) > maxAddr) {
 	return(FALSE);
@@ -301,7 +303,7 @@ void
 Dbg_Init()
 {
     dbgMonPC = 0;
-    dbgTraceLevel = 20;
+    dbgTraceLevel = 2;
     dbgInDebugger = 0;
     dbgIntPending = 0;
     dbgPanic = FALSE;
@@ -508,7 +510,7 @@ SendReply()
 	etherHdrPtr->type = dbgEtherHdr.type;
 	dbgGather.bufAddr = replyBuffer + sizeof(Net_EtherHdr)+2;
 	dbgGather.length = replyOffset - sizeof(Net_EtherHdr)-2;
-	dbgGather.conditionPtr = (Sync_Condition *) NIL;
+	dbgGather.mutexPtr = (Sync_Semaphore *) NIL;
 	bcopy(&curMsgNum,(char *)(replyBuffer + PACKET_HDR_SIZE - 4),4);
 	Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
 		     replyOffset - sizeof(Net_EtherHdr) - Dbg_PacketHdrSize()-2,
@@ -683,7 +685,7 @@ Dbg_Main(trapType, trapStatePtr)
 		stopInfo.codeStart = (int)mach_CodeStart;
 		if (procPtr != (Proc_ControlBlock *) NIL &&
 		    procPtr->machStatePtr != (Mach_State *)NIL) {
-		    stopInfo.regs = procPtr->machStatePtr->switchRegs;
+		    stopInfo.regs = *(procPtr->machStatePtr->switchRegs);
 		} else {
 		    stopInfo.regs = *trapStatePtr;
 		}
@@ -696,8 +698,8 @@ Dbg_Main(trapType, trapStatePtr)
 
 		if (procPtr != (Proc_ControlBlock *) NIL &&
 		    procPtr->machStatePtr != (Mach_State *)NIL) {
-		    PutReplyBytes(sizeof(procPtr->machStatePtr->switchRegs),
-			       (Address) &(procPtr->machStatePtr->switchRegs));
+		    PutReplyBytes(sizeof(*(procPtr->machStatePtr->switchRegs)),
+			       (Address) (procPtr->machStatePtr->switchRegs));
 		} else {
 		    PutReplyBytes(sizeof(*trapStatePtr),
 			         (Address) trapStatePtr);
@@ -914,7 +916,7 @@ Dbg_Main(trapType, trapStatePtr)
 		 */
 		Dev_SyslogReturnBuffer(&buffer, &firstIndexPtr,
 				       &lastIndexPtr, &bufSize);
-#ifndef FIRST_RUN
+#ifdef GOOD_SYSLOG
 		if (*firstIndexPtr == -1) {
 		    length = 0;
 		    PutReplyBytes(4, (Address) &length);
@@ -945,9 +947,9 @@ Dbg_Main(trapType, trapStatePtr)
 		    }
 		}
 #else
-		    length = 0;
-		    PutReplyBytes(4, (Address) &length);
-		    dbg_UsingSyslog = FALSE;
+		length = 0;
+		PutReplyBytes(4, (Address) &length);
+		dbg_UsingSyslog = FALSE;
 #endif
 		SendReply();
 		break;
