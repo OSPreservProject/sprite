@@ -81,6 +81,9 @@ Fs_Device devFsDefaultDiskPartitions[] = {
     { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 1, 0, 0, 0),
 	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI3_HBA, 1, 0, 0, 0),
 		(ClientData) NIL }, 
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 1, 4, 0, 0),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI3_HBA, 1, 4, 0, 0),
+		(ClientData) NIL }, 
     };
 int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
 			  sizeof(Fs_Device);
