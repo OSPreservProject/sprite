@@ -76,22 +76,18 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcMakeDev, "make dev",		/* 44 - FS_MKDEV */
 	Fs_RpcGetAttrPath, "stat",		/* 45 - FS_GET_ATTR_PATH */
 	Sig_RpcSend, "send signal",		/* 46 - SIG_SEND */
-	Fs_RpcReopen, "reopen",			/* 47 - FS_RPC_REOPEN */
-	Fs_RpcDomainInfo, "domain info",	/* 48 - FS_RPC_DOMAIN_INFO */
-	Fs_RpcDevReopen, "dev reopen",		/* 49 - FS_RPC_DEV_REOPEN */
-	Fs_RpcRecovery, "recover",		/* 50 - FS_RPC_RECOVERY */
-	Fs_RpcRequest, "request", 		/* 51 - FS_RPC_REQUEST */
-	Fs_RpcReply, "reply", 			/* 52 - FS_RPC_REPLY */
+	Fs_RpcReopen, "reopen",			/* 47 - FS_REOPEN */
+	Fs_RpcDomainInfo, "domain info",	/* 48 - FS_DOMAIN_INFO */
+	Fs_RpcDevReopen, "dev reopen",		/* 49 - FS_DEV_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 50 - FS_RECOVERY */
+	Fs_RpcRequest, "request", 		/* 51 - FS_REQUEST */
+	Fs_RpcReply, "reply", 			/* 52 - FS_REPLY */
+	Fs_RpcSetAttrPath, "setAttrPath",	/* 53 - FS_GET_ATTR_PATH */
+	Fs_RpcGetIOAttr, "getIOAttr",		/* 54 - FS_GET_IO_ATTR */
+	Fs_RpcSetIOAttr, "setIOAttr",		/* 55 - FS_SET_IO_ATTR */
+
 };
 
-Fs_RpcRequest()
-{
-    return(RPC_INVALID_ARG);
-}
-Fs_RpcReply()
-{
-    return(RPC_INVALID_ARG);
-}
 
 /*
  *----------------------------------------------------------------------
