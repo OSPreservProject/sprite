@@ -30,16 +30,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 static struct {
-    void (*proc) ();		/* Procedure to invoke. */
-    ClientData clientData;	/* Argument to pass to proc. */
+    void (*proc) _ARGS_ ((ClientData clientData));   /* Procedure to invoke. */
+    ClientData clientData;                      /* Argument to pass to proc. */
 } commands[256];
 
 /*
  * Forward declarations for procedures defined later in this file:
  */
 
-static void Abort _ARGS_((void));
-static void Debug _ARGS_((void));
+static void Abort _ARGS_((ClientData clientData));
+static void Debug _ARGS_((ClientData clientData));
 
 
 /*
@@ -77,7 +77,8 @@ static void Debug _ARGS_((void));
 void
 Dev_RegisterConsoleCmd(commandChar, proc, clientData)
     int commandChar;		/* ASCII character associated with command. */
-    void (*proc)();		/* Procedure to call when command is
+    void (*proc) _ARGS_ ((ClientData clientData));
+                                /* Procedure to call when command is
 				 * invoked. */
     ClientData clientData;	/* Arbitrary one-word value to pass to
 				 * command. */
@@ -156,7 +157,8 @@ Dev_InvokeConsoleCmd(commandChar)
  */
 
 static void
-Abort()
+Abort(clientData)
+    ClientData clientData;
 {
     int			i;
     Net_Interface	*interPtr;
@@ -171,7 +173,8 @@ Abort()
 }
 
 static void
-Debug()
+Debug(clientData)
+    ClientData clientData;
 {
 
     DBG_CALL;
@@ -198,7 +201,7 @@ Debug()
 int
 Dev_KbdQueueAttachProc(character, proc, clientData)
     int character;
-    void (*proc)();
+    void (*proc) _ARGS_ ((ClientData clientData));
     ClientData clientData;
 {
     Dev_RegisterConsoleCmd(character, proc, clientData);
