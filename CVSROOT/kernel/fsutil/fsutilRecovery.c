@@ -1016,7 +1016,7 @@ Fsutil_RpcRecovery(srvToken, clientID, command, storagePtr)
 ReturnStatus
 Fsutil_FsRecovInfo(length, resultPtr)
     int				length;		/* size of data buffer */
-    Fsutil_FsRecovStats		*resultPtr;		/* data buffer */
+    Fsutil_FsRecovStats		*resultPtr;	/* data buffer */
 {
     Hash_Search			hashSearch;
     Fs_HandleHeader		*hdrPtr;
@@ -1074,12 +1074,130 @@ Fsutil_FsRecovInfo(length, resultPtr)
 	    }
 	    if (streamPtr->ioHandlePtr != (Fs_HandleHeader *) NIL) {
 		resultPtr->typeInfo[streamPtr->ioHandlePtr->fileID.type].num++;
-	    resultPtr->typeInfo[streamPtr->ioHandlePtr->fileID.type].refCount
-		    += streamPtr->ioHandlePtr->refCount;
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].refFunc !=
+			(int ((*)())) NIL) {
+		    resultPtr->typeInfo
+			    [streamPtr->ioHandlePtr->fileID.type].refCount
+			    += (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).refFunc)
+			    (streamPtr->ioHandlePtr);
+		}
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].numBlocksFunc !=
+			(int ((*)())) NIL) {
+		    resultPtr->typeInfo
+			    [streamPtr->ioHandlePtr->fileID.type].numBlocks
+			    += (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).numBlocksFunc)
+			    (streamPtr->ioHandlePtr);
+		}
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].numDirtyBlocksFunc
+			!= (int ((*)())) NIL) {
+		    resultPtr->typeInfo
+			    [streamPtr->ioHandlePtr->fileID.type].numDirtyBlocks
+			    += (*(fsio_StreamRecovTestFuncs[
+		    streamPtr->ioHandlePtr->fileID.type]).numDirtyBlocksFunc)
+			    (streamPtr->ioHandlePtr);
+		}
 	    }
 	}
 	Fsutil_HandleUnlock(hdrPtr);
     }
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_FsRecovNamedInfo --
+ *
+ *	Info, including file names, about recovery and file status for testing.
+ *
+ * Results:
+ *	SUCCESS or not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsutil_FsRecovNamedInfo(length, resultPtr, lengthNeededPtr)
+    int				length;		/* size of data buffer */
+    Fsutil_FsRecovNamedStats	*resultPtr;	/* data buffer */
+    int				*lengthNeededPtr;
+{
+    Hash_Search			hashSearch;
+    Fs_HandleHeader		*hdrPtr;
+    Fsutil_FsRecovNamedStats	*infoPtr;
+    int				numNeeded;
+    int				numAvail;
+
+    bzero(resultPtr, length);
+    numNeeded = 0;
+    numAvail = length / sizeof (Fsutil_FsRecovNamedStats);
+
+    infoPtr = (Fsutil_FsRecovNamedStats *) resultPtr;
+
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+
+	if (hdrPtr->fileID.type == FSIO_STREAM) {
+	    Fs_Stream	*streamPtr;
+
+	    numNeeded++;
+	    if (numNeeded > numAvail) {
+		continue;
+	    }
+	    streamPtr = (Fs_Stream *) hdrPtr;
+
+	    infoPtr->streamRefCount = hdrPtr->refCount;
+	    infoPtr->mode = streamPtr->flags;
+
+	    if (streamPtr->ioHandlePtr != (Fs_HandleHeader *) NIL) {
+		infoPtr->type = streamPtr->ioHandlePtr->fileID.type;
+
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].refFunc !=
+			(int ((*)())) NIL) {
+		    infoPtr->refCount =
+			    (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).refFunc)
+			    (streamPtr->ioHandlePtr);
+		    }
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].numBlocksFunc !=
+			(int ((*)())) NIL) {
+		    infoPtr->numBlocks =
+			    (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).numBlocksFunc)
+			    (streamPtr->ioHandlePtr);
+		}
+		if (fsio_StreamRecovTestFuncs[
+			streamPtr->ioHandlePtr->fileID.type].numDirtyBlocksFunc
+			!= (int ((*)())) NIL) {
+		    infoPtr->numDirtyBlocks =
+			    (*(fsio_StreamRecovTestFuncs[
+			    streamPtr->ioHandlePtr->fileID.type]).
+			    numDirtyBlocksFunc) (streamPtr->ioHandlePtr);
+		}
+		/*
+		 * For devices, I'll want name info from name server instead?
+		 */
+		strncpy(infoPtr->name,
+			Fsutil_HandleName(streamPtr->ioHandlePtr), 49);
+	    }
+	    infoPtr++;
+	}
+	Fsutil_HandleUnlock(hdrPtr);
+    }
+    *lengthNeededPtr = numNeeded * sizeof (Fsutil_FsRecovNamedStats);
 
     return SUCCESS;
 }
