@@ -627,6 +627,9 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 		FALSE,TRUE);
 	List_Insert((List_Links *)segTabPtr,
 		LIST_ATFRONT((List_Links *)&sharedSegTable));
+	dprintf("Calling Fs_FileBeingMapped(1)\n");
+	Fs_FileBeingMapped(filePtr,1);
+	dprintf("Done Fs_FileBeingMapped(1)\n");
     } else {
 	int i;
 	/*
@@ -872,6 +875,108 @@ VmMunmapInt(startAddr, length, noError)
     PrintSharedSegs(procPtr);
     dprintf("Vm_Munmap: done\n");
     return status ;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_Msync --
+ *
+ *	Sync pages to disk.
+ *	startAddr and length must be divisible by the page size.
+ *
+ * Results:
+ *	Status from the sync.
+ *
+ * Side effects:
+ *	Page goes to disk.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY ReturnStatus
+Vm_Msync(startAddr, length)
+    Address	startAddr;	/* Requested starting virt-addr. */
+    int		length;		/* Length of region to page out. */
+{
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_Mlock --
+ *
+ *	Locks a page into memory.  Page is paged in if necessary.
+ *
+ * Results:
+ *	Fails if unable to lock page.
+ *
+ * Side effects:
+ *	Locks the page.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY ReturnStatus
+Vm_Mlock(startAddr, length)
+    Address	startAddr;	/* Requested starting virt-addr. */
+    int		length;		/* Length of region to lock. */
+{
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_Munlock --
+ *
+ *	Unlocks a page.
+ *	startAddr and length must be divisible by the page size.
+ *
+ * Results:
+ *	Status from the unlock.
+ *
+ * Side effects:
+ *	Unlocks the page.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY ReturnStatus
+Vm_Munlock(startAddr, length)
+    Address	startAddr;	/* Requested starting virt-addr. */
+    int		length;		/* Length of region to unlock. */
+{
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_Mincore --
+ *
+ *	Returns residency vector.
+ *	startAddr and length must be divisible by the page size.
+ *
+ * Results:
+ *	The values of vec are 0 if the page is not virtually resident,
+ *	1 if the page is paged out, 2 if the page is clean, and
+ *	3 if the page is dirty.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY ReturnStatus
+Vm_Mincore(startAddr, length, retVec)
+    Address	startAddr;	/* Requested starting virt-addr. */
+    int		length;		/* Length of region. */
+    char *	retVec;		/* Return vector. */
+{
+    return SUCCESS;
 }
 
 /*
