@@ -22,6 +22,8 @@
 #include "status.h"
 #include "devTimer.h"
 #include "devSyslog.h"
+#include "devConsole.h"
+#include "devKeyboard.h"
 /* 
  * Machine dependent exported definitions.
  */
