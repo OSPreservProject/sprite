@@ -129,6 +129,12 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     char	*procName;	/* Name for process control block */
     Boolean     vforkFlag;      /* Added for vfork */
 {
+    ReturnStatus	status;
+    procPtr->Prof_Buffer        = parentProcPtr->Prof_Buffer;
+    procPtr->Prof_BufferSize    = parentProcPtr->Prof_BufferSize;
+    procPtr->Prof_Offset        = parentProcPtr->Prof_Offset;
+    procPtr->Prof_Scale         = parentProcPtr->Prof_Scale;
+    procPtr->Prof_PC            = 0;
 
 
     if (parentProcPtr->genFlags & PROC_FOREIGN) {

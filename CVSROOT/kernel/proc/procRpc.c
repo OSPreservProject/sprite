@@ -504,6 +504,13 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
 	printf("RpcProcFork called.\n");
     }
     childProcPtr = ProcGetUnusedPCB();
+
+    childProcPtr->Prof_Buffer           = parentProcPtr->Prof_Buffer;
+    childProcPtr->Prof_BufferSize       = parentProcPtr->Prof_BufferSize;
+    childProcPtr->Prof_Offset           = parentProcPtr->Prof_Offset;
+    childProcPtr->Prof_Scale            = parentProcPtr->Prof_Scale;
+    childProcPtr->Prof_PC               = 0;
+
     childProcPtr->state 		= PROC_MIGRATED;
     childProcPtr->genFlags 		= PROC_USER | PROC_NO_VM;
     childProcPtr->syncFlags		= 0;
