@@ -31,6 +31,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "varargs.h"
 
+/*
+** Current Counter Mode
+*/
+int dev_CurrentCounterMode = MODE_PERF_COUNTER_OFF;
+
 
 /*
  * Forward routines. 
@@ -284,6 +289,7 @@ Dev_CCIOControl(devicePtr, ioctlPtr, replyPtr)
 		return (GEN_INVALID_ARG);
 	    } 
 	    newMode = *(unsigned char *) ioctlPtr->inBuffer;
+	    dev_CurrentCounterMode = newMode;
 	    if (pnum == Mach_GetProcessorNumber()) { 
 		    Mach_DisableNonmaskableIntr();
 		    oldMode = Mach_Read8bitCCReg(MACH_MODE_REG);

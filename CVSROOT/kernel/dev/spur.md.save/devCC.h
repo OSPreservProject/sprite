@@ -20,6 +20,12 @@
 #define _DEVCC
 
 /*
+** Current Counter Mode
+*/
+extern int dev_CurrentCounterMode;
+
+
+/*
  * Forward Declarations.
  */
 extern ReturnStatus Dev_CCOpen();
