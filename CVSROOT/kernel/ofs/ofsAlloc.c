@@ -466,7 +466,7 @@ FsDescTrunc(handlePtr, size)
 
 #ifndef CLEAN
     if (bytesToFree > 0) {
-	FsRecordDeletionStats(handlePtr, bytesToFree);
+	FsRecordDeletionStats(&handlePtr->cacheInfo, bytesToFree);
     }
 #endif CLEAN
 	
