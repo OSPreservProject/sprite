@@ -186,6 +186,11 @@ Mach_Init()
      */
     Mach_Write32bitCCReg(MACH_INTR_MASK_0,0);
     Mach_Write32bitCCReg(MACH_INTR_STATUS_0,-1);
+
+    /*
+     * Start the refresh timer.
+     */
+    Mach_RefreshStart();
 }
 
 
@@ -400,9 +405,8 @@ Mach_StartUserProc(procPtr, entryPoint)
     /*
      * Allocate memory for the saved window stack.
      */
-    Vm_PinUserMem(VM_READWRITE_ACCESS,
-	       statePtr->userState.maxSWP - statePtr->userState.minSWP, 
-	       statePtr->userState.minSWP);
+    Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
+	          MACH_SAVED_WINDOW_STACK_BASE);
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -450,9 +454,8 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     statePtr->userState.minSWP = (Address)MACH_SAVED_WINDOW_STACK_BASE;
     statePtr->userState.maxSWP = (Address)(MACH_SAVED_WINDOW_STACK_BASE + 
 					   VMMACH_PAGE_SIZE);
-    Vm_PinUserMem(VM_READWRITE_ACCESS,
-	       statePtr->userState.maxSWP - statePtr->userState.minSWP, 
-	       statePtr->userState.minSWP);
+    Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
+	          (Address)MACH_SAVED_WINDOW_STACK_BASE);
 
     regStatePtr = &statePtr->userState.trapRegState;
     regStatePtr->regs[MACH_SPILL_SP][0] = (int)userStackPtr;
@@ -474,7 +477,7 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      * minSWP + 2 we know that if the swp == minSWP + 1 that there is in 
      * fact another page of windows below the swp.  
      */
-    regStatePtr->cwp = 4;
+    regStatePtr->cwp = 4 << 2;
     regStatePtr->swp = (Address)(MACH_SAVED_WINDOW_STACK_BASE + 
 				 2 * MACH_SAVED_WINDOW_SIZE);
     MachRunUserProc();
@@ -769,6 +772,7 @@ Mach_SetNonmaskableIntr(mask)
     unsigned 	int	mask;
 {
     machNonmaskableIntrMask = mask;
+    machIntrMask |= mask;
 }
 
 static unsigned int globStatusReg;
@@ -801,25 +805,11 @@ MachInterrupt(intrStatusReg, kpsw)
     mach_KernelMode = !(kpsw & MACH_KPSW_PREV_MODE);
 
     /*
-     * Do any nonmaskable interrupts first being careful to restore 
-     * mach_AtInterruptLevel to original value when done.
-    */ 
+     * Do any nonmaskable interrupts first.
+     */ 
     if (intrStatusReg & machNonmaskableIntrMask) { 
-         int 	old_AtInterruptLevel = mach_AtInterruptLevel;
-         mach_AtInterruptLevel = TRUE;
-         intrType = 0;
-         intrMask = 1;
-         statusReg = intrStatusReg & machNonmaskableIntrMask;
-         while (statusReg != 0) {
-	     if (statusReg & intrMask) {
-	         (interruptHandlers[intrType])(&statusReg);
-	         statusReg &= ~intrMask;
-	      }
-	      intrMask = intrMask << 1;
-	      intrType++;
-          }
-          mach_AtInterruptLevel = old_AtInterruptLevel;
-          intrStatusReg &= ~machNonmaskableIntrMask;
+	Mach_RefreshInterrupt();
+	intrStatusReg &= ~machNonmaskableIntrMask;
     }
     if (intrStatusReg == 0) {
 	return;
@@ -937,7 +927,8 @@ MachVMDataFault(faultType, PC, destAddr, kpsw)
 
     procPtr = Proc_GetCurrentProc();
 
-    if (procPtr->genFlags & PROC_KERNEL) {
+    if (procPtr == (Proc_ControlBlock *)NIL ||
+	procPtr->genFlags & PROC_KERNEL) {
 	return(MACH_KERN_ACCESS_VIOL);
     }
 
