@@ -152,9 +152,9 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/boot/$@.sprite.new
-	cp /sprite/boot/$@.sprite.new /vmsprite.new
-	rcp /sprite/boot/$@.sprite.new ${GINGER}:/sprite3/$@.new
+	update -f -s $@ /sprite/boot/$@.md/sprite.new
+	cp /sprite/boot/$@.md/sprite.new /vmsprite.new
+	rcp /sprite/boot/$@.md/sprite.new ${GINGER}:/sprite3/$@.new
 	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
 	rcp $@ rosemary:/tmp/sprite/$@.sprite
 	nm $@ | sort > $@.nm
@@ -169,10 +169,7 @@ sun4: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	    -L/sprite/lib/${TM}.md ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/boot/$@.new
-#	rcp /sprite/boot/$@.new ${GINGER}:/sprite3/$@.new
-#	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
-#	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	update -f -s $@ /sprite/boot/$@.md/sprite.new
 	nm $@ | sort > $@.nm
 
 sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
@@ -185,10 +182,7 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	    -L/sprite/lib/${TM}.md ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/boot/$@.new
-#	rcp /sprite/boot/$@.new ${GINGER}:/sprite3/$@.new
-#	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
-#	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	update -f -s $@ /sprite/boot/$@.md/sprite.new
 	nm $@ | sort > $@.nm
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
