@@ -821,6 +821,15 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     }
 
     /*
+     * If we were told the process no longer exists on the home node,
+     * then blow it away.
+     */
+    if (remoteCallStatus == PROC_NO_PEER) {
+	status = PROC_NO_PEER;
+	(void) Sig_Send(SIG_KILL, PROC_NO_PEER, procPtr->processID, FALSE); 
+	goto failure;
+    }
+    /*
      * Step through the reply data buffer and copy out any arguments that
      * were output parameters.
      */
