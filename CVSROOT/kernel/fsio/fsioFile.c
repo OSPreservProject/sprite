@@ -1401,7 +1401,11 @@ FsFileIOControl(streamPtr, ioctlPtr, replyPtr)
 		length = *(int *)ioctlPtr->inBuffer;
 	    }
 	    if (status == SUCCESS) {
-		status = FsFileTrunc(handlePtr, length, 0);
+		if (length < 0) {
+		    status = GEN_INVALID_ARG;
+		} else {
+		    status = FsFileTrunc(handlePtr, length, 0);
+		}
 	    }
 	    break;
 	}
