@@ -16,8 +16,11 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _PREFIX
-#define _PREFIX
+#ifndef _FSPREFIXINT
+#define _FSPREFIXINT
+
+#include <stdio.h>
+#include <fsprefix.h>
 
 /* constants */
 
@@ -33,9 +36,9 @@ typedef struct FsprefixExport {
 
 /* procedures */
 
-extern void FsprefixDone();
-extern void FsprefixHandleCloseInt();
-extern void FsprefixIterate();
+extern void FsprefixDone _ARGS_((Fsprefix *prefixPtr));
+extern void FsprefixHandleCloseInt _ARGS_((Fsprefix *prefixPtr, int flags));
+extern void FsprefixIterate _ARGS_((Fsprefix **prefixPtrPtr));
 
-#endif /* _PREFIX */
+#endif /* _FSPREFIXINT */
 
