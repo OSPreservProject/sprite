@@ -1436,9 +1436,14 @@ FspdevPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     /*
      * Wait for the server to set up the request buffer.  The state starts
      * out PDEV_BUSY to eliminate an explicit check for PDEV_SETUP in all
-     * the routines that call RequestResponse.  PDEV_BUSY is cleared after
-     * the server initializes the request buffer with IOC_PDEV_SETUP.
+     * the routines that call RequestResponse.  But, for opening the pdev,
+     * if the stream isn't set up yet, we should just fail rather than
+     * hanging indefinitely.
      */
+    if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
+	status = DEV_OFFLINE;
+	goto exit;
+    }
     while (pdevHandlePtr->flags & PDEV_BUSY) { 
 	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
 	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
