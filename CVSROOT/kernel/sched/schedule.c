@@ -649,9 +649,9 @@ IdleLoop()
 		     */
 		     onReadyQueue = TRUE;
 		     foundInQueue[cpu]++;
-    #ifdef spur
+#ifdef spur
 		    Mach_InstCountOff(2);
-    #endif
+#endif
 		    break;
 		}
 	    }
@@ -739,13 +739,17 @@ Sched_TimeTicks()
     register int cpu;
     Time time;
     int i;
+    Boolean	wasIdled[MACH_MAX_NUM_PROCESSORS];
 
     cpu = Mach_GetProcessorNumber(); 
     if (cpu != 0) {
 	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_COUNTING_TICKS;
 	for (i = 0; i < mach_NumProcessors; i++) {
 	     if (sched_ProcessorStatus[i] == SCHED_PROCESSOR_ACTIVE) {
-		 Sched_IdleProcessor(i);
+		 (void) Sched_IdleProcessor(i);
+		 wasIdled[i] = TRUE;
+	     } else {
+		 wasIdled[i] = FALSE;
 	     }
 	 }
     }
@@ -759,8 +763,8 @@ Sched_TimeTicks()
     sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_ACTIVE;
     if (cpu != 0) {
 	for (i = 0; i < mach_NumProcessors; i++) {
-	     if (sched_ProcessorStatus[i] == SCHED_PROCESSOR_IDLE) {
-		 Sched_StartProcessor(i);
+	     if (wasIdled[i]) {
+		 (void) Sched_StartProcessor(i);
 	     }
 	 }
      }
