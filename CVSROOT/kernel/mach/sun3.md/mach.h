@@ -35,7 +35,7 @@ typedef struct Mach_SetJumpState {
  * Macro to perform a set jump.
  */
 #define	Mach_SetJump(setJumpPtr) \
-    MachSetJump((Proc_GetCurrentProc(0))->machStatePtr->setJumpStatePtr = setJumpPtr)
+    MachSetJump((Proc_GetCurrentProc())->machStatePtr->setJumpStatePtr = setJumpPtr)
 
 /*
  * Macros to disable and enable interrupts.
