@@ -176,6 +176,12 @@
 	jump CmpTrap		# Compare trap instruction
 	Nop
 
+#ifdef BARB
+	.org 0x10b0
+	jump CmpTrap		# Hack for BARB
+	Nop
+#endif
+
 	.org 0x1100
 /*
  ****************************************************************************
@@ -200,12 +206,7 @@
  * However if we put _machCurStatePtr in low memory then we can get to
  * it directly.
  *
- * The other way to do it is
- *
- *	LD_CONSTANT(rt1, _machCurStatePtr)
- *	ld_32	rt1, rt1, $0
- *
- * which is a several instruction sequence.
+ * Other options are LD_PC_RELATIVE or LD_CONSTANT.
  */
 runningProcesses: 		.long _proc_RunningProcesses
 _machCurStatePtr: 		.long 0
@@ -275,6 +276,7 @@ OpRecov:
 .org	0x2000
 	.globl start
 start:
+#ifndef BARB
 /*
  * The initial boot code.  This is where we start executing in physical mode
  * after we are down loaded.  Our job is to:
@@ -290,24 +292,20 @@ start:
  *
  *	KERN_PT_FIRST_PAGE	The physical page where the page tables start.
  *	KERN_NUM_PAGES		The number of physical pages in the kernel.
- *	KERN_PT_VIRT_BASE	The virtual address of the kernel's page tables.
- *	KERN_PT_PHYS_BASE	The physical address of the kernel's page tables
- *	KERN_PT2_VIRT_BASE	The virtual address of the 2nd level kernel
- *				page tables.
- *	KERN_PT2_PHYS_BASE	The physical address of the 2nd level kernel
+ *	KERN_PT_BASE		The address of the kernel's page tables.
+ *	KERN_PT2_BASE		The address of the 2nd level kernel
  *				page tables.
  */
+#define	MEM_SLOT_MASK		0xff000000
 #define	KERN_PT_FIRST_PAGE	1024
 #define	KERN_NUM_PAGES		1024
-#define	KERN_PT_VIRT_BASE	(KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE)
-#define	KERN_PT_PHYS_BASE	(0xff000000 + KERN_PT_VIRT_BASE)
-#define	KERN_PT2_VIRT_BASE	(KERN_PT_VIRT_BASE + VMMACH_SEG_PT_SIZE / 4 * VMMACH_KERN_PT_QUAD)
-#define	KERN_PT2_PHYS_BASE	(0xff000000 + KERN_PT2_VIRT_BASE)
+#define	KERN_PT_BASE	(MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE))
+#define	KERN_PT2_BASE	(KERN_PT_BASE + VMMACH_SEG_PT_SIZE / 4 * VMMACH_KERN_PT_QUAD)
 
 /*
  * In this code registers have the following meaning:
  *
- *	r1:	The base address of the page tables.
+ *	r1:	The base address of the second-level page tables.
  *	r2:	The number of page table pages.
  *	r3:	The page table entry.
  *	r4:	The page table increment.
@@ -315,9 +313,9 @@ start:
  * First initialize the second level page tables so that they map
  * all of the kernel page tables.
  */
-	LD_CONSTANT(r1, KERN_PT2_PHYS_BASE)
+	LD_CONSTANT(r1, KERN_PT2_BASE)
 	add_nt		r2, r0, $VMMACH_NUM_PT_PAGES
-	LD_CONSTANT(r3, (KERN_PT_FIRST_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT)
+	LD_CONSTANT(r3, MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
 	LD_CONSTANT(r4, 1 << VMMACH_PAGE_FRAME_SHIFT)
 
 1:
@@ -335,9 +333,9 @@ start:
  * Next initialize the kernel page table to point to 4 Mbytes of mapped
  * code.
  */
-	LD_CONSTANT(r1, KERN_NUM_PAGES)
-	add_nt		r2, r0, $KERN_PT_FIRST_PAGE
-	LD_CONSTANT(r3, VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT)
+	LD_CONSTANT(r1, KERN_PT_BASE)
+	add_nt		r2, r0, $KERN_NUM_PAGES
+	LD_CONSTANT(r3, MEM_SLOT_MASK | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
 
 1:
 	cmp_br_delayed	eq, r2, $0, 2f
@@ -366,12 +364,12 @@ start:
 /*
  * Initialize the RPTM register.
  */
-	LD_CONSTANT(r1, KERN_PT2_PHYS_BASE)
+	LD_CONSTANT(r1, KERN_PT2_BASE)
 	ST_RPTM(r1, MACH_RPTM_0)
 /*
  * Clear out the cache.
  */
-	LD_CONSTANT(r1, 0x3000000)
+	LD_CONSTANT(r1, 0x03000000)
 	LD_CONSTANT(r2, VMMACH_CACHE_SIZE)
 1:
 	st_32		r0, r1, $0
@@ -380,12 +378,31 @@ start:
 	Nop
 
 /*
+ * Clear snoop tags.
+ */
+	LD_CONSTANT(r1, 0x04000000)
+	LD_CONSTANT(r2, VMMACH_CACHE_SIZE)
+1:
+	st_32		r0, r1, $0
+	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
+	cmp_br_delayed	lt, r1, r2, 1b
+	Nop
+#endif
+
+/*
  * Initialize the cwp, swp and SPILL_SP to their proper values.
  */
-	wr_special	cwp, r0, $1
+	wr_special	cwp, r0, $4
 	LD_CONSTANT(r1, MACH_STACK_BOTTOM)
 	wr_special	swp, r1, $0
 	LD_CONSTANT(SPILL_SP, MACH_CODE_START)
+
+#ifndef BARB
+/*
+ * Clear the fe status register.
+ */
+	add_nt		r1, r0, $-1
+	WRITE_STATUS_REGS(MACH_FE_STATUS_0, r1)
 
 /*
  * Now jump to virtual mode through the following sequence:
@@ -402,6 +419,10 @@ start:
 	wr_kpsw		r1, $0
 	jump		ErrorTrap
 	Nop
+#else
+	call		_main
+	Nop
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -678,18 +699,26 @@ ErrorTrap:
  *
  *---------------------------------------------------------------------------
  */
+faultIntr_Const1:
+	.long	MACH_KPSW_USE_CUR_PC
 FaultIntr:
 	/*
 	 * On this type of trap we are supposed to return to the current 
 	 * PC.
 	 */
 	rd_kpsw		KPSW_REG
-	LD_CONSTANT(SAFE_TEMP1, MACH_KPSW_USE_CUR_PC)
+	LD_PC_RELATIVE(SAFE_TEMP1, faultIntr_Const1)
 	or		KPSW_REG, KPSW_REG, SAFE_TEMP1
 	/*
 	 * Read the fault/error status register.
 	 */
 	READ_STATUS_REGS(MACH_FE_STATUS_0, VOL_TEMP1)
+#ifdef BARB
+	/*
+	 * Simulate a virtual memory fault.
+	 */
+	LD_CONSTANT(r18, 0x10000)
+#endif
 	/*
 	 * If no bits are set then it must be an interrupt.
 	 */
@@ -779,7 +808,8 @@ interrupt_GoodSWP:
 	 * from trap in case the user process needs to take some action.
 	 */
 	wr_insert	SAFE_TEMP1
-	jump		returnTrap_NormReturn
+	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
+	jump		ReturnTrap
 	Nop
 
 interrupt_KernMode:
@@ -834,8 +864,8 @@ vmFault_GetDataAddr:
 	 * of instructions have opcodes less than 0x30.  If we find one
 	 * of these then we have to extract the data address.
 	 */
-	FETCH_CUR_INSTRUCTION(VOL_TEMP1)
-	extract		VOL_TEMP1, VOL_TEMP1, $3  	# Opcode <31:25> -> 
+	FETCH_CUR_INSTRUCTION(SAFE_TEMP2)
+	extract		VOL_TEMP1, SAFE_TEMP2, $3  	# Opcode <31:25> -> 
 							#	 <07:01>
 	srl		VOL_TEMP1, VOL_TEMP1, $1	# Opcode <07:01> ->
 							#	 <06:00>
@@ -845,9 +875,10 @@ vmFault_GetDataAddr:
 	Nop
 	/*
 	 * Get the data address by calling ParseInstruction.  We pass the
-	 * address to return to in VOL_TEMP1 and the PC of the faulting 
-	 * instruction is already in CUR_PC_REG.
+	 * address to return to in VOL_TEMP1 and the instruction where we
+	 * faulted at in VOL_TEMP2.
 	 */
+	add_nt		VOL_TEMP2, SAFE_TEMP2, $0
 	rd_insert	SAFE_TEMP2
 	rd_special	VOL_TEMP1, pc
 	add_nt		VOL_TEMP1, VOL_TEMP1, $16
@@ -895,20 +926,22 @@ vmFault_CallHandler:
  *
  *--------------------------------------------------------------------------
  */
+cmpTrap_Const1:
+	.long	~MACH_KPSW_USE_CUR_PC
 CmpTrap:
 	/*
 	 * On this type of trap we are supposed to return to next PC instead
 	 * or cur PC.
 	 */
 	rd_kpsw		KPSW_REG
-	LD_CONSTANT(SAFE_TEMP1, MACH_KPSW_USE_NEXT_PC)
-	or		KPSW_REG, KPSW_REG, SAFE_TEMP1
+	LD_PC_RELATIVE(SAFE_TEMP1, cmpTrap_Const1)
+	and		KPSW_REG, KPSW_REG, SAFE_TEMP1
 
 	/*
 	 * Get the trap number.
 	 */
-	FETCH_CUR_INSTRUCTION(r17)
-	and		SAFE_TEMP1, r17, $0x1ff 
+	FETCH_CUR_INSTRUCTION(SAFE_TEMP1)
+	and		SAFE_TEMP1, SAFE_TEMP1, $0x1ff 
 	/* 
 	 * See if are coming from kernel mode or not.
 	 */
@@ -936,16 +969,16 @@ cmpTrap_CallFunc:
 	sll		VOL_TEMP1, SAFE_TEMP1, $3	# Multiple by 8 to
 							#   get offset
 	rd_special	VOL_TEMP2, pc
-	add_nt		VOL_TEMP2, VOL_TEMP1, $16
-	jump_reg	VOL_TEMP2, $0
+	add_nt		VOL_TEMP2, VOL_TEMP2, $16
+	jump_reg	VOL_TEMP2, VOL_TEMP1
+	Nop
+	jump		BreakpointTrap
 	Nop
 	jump		SysCallTrap	
 	Nop
 	jump		SigReturnTrap
 	Nop
 	jump		GetWinMemTrap
-	Nop
-	jump		BreakpointTrap
 	Nop
 	jump		cmpTrap_FPUTrap
 	Nop
@@ -956,6 +989,14 @@ cmpTrap_CallFunc:
 	jump		cmpTrap_OverflowTrap
 	Nop
 	jump		cmpTrap_BadSWPTrap
+	Nop
+	jump		cmpTrap_TestFaultTrap
+	Nop
+
+cmpTrap_TestFaultTrap:
+	add_nt		CUR_PC_REG, CUR_PC_REG, $8
+	add_nt		NEXT_PC_REG, r0, $0
+	jump		FaultIntr
 	Nop
 
 cmpTrap_FPUTrap:
@@ -1107,6 +1148,7 @@ sysCallTrap_FetchArgs:
 	 *	SAFE_TEMP2:	sysCallType
 	 *	SAFE_TEMP3:	numArgs
 	 *	VOL_TEMP1:	user stack pointer
+	 *	VOL_TEMP2:	sysCallType * 4
 	 */
 	ld_32		VOL_TEMP3, r0, $numArgsPtr
 	Nop
@@ -1126,8 +1168,8 @@ sysCallTrap_FetchArgs:
 	 */
 	ld_32		VOL_TEMP1, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * MACH_SPILL_SP)
 	Nop
-	sll		VOL_TEMP3, SAFE_TEMP3, $2
-	add_nt		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
+	sll		VOL_TEMP3, SAFE_TEMP3, $3
+	add_nt		VOL_TEMP1, VOL_TEMP1, VOL_TEMP3
 	/*
 	 * Now fetch the args.  This code fetches up to 7 more args by jumping
 	 * into the right spot in the sequence.  The spot to jump is 
@@ -1152,33 +1194,33 @@ sysCallTrap_FetchArgs:
 	Nop
 	.globl	_MachFetchArgStart
 _MachFetchArgStart:
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-28	# 7 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-56	# 7 args
 	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-28
+	st_32		VOL_TEMP2, SPILL_SP, $-56
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-24	# 6 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-48	# 6 args
+	Nop
+	st_32		VOL_TEMP2, SPILL_SP, $-48
+	Nop
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-40	# 5 args
+	Nop
+	st_32		VOL_TEMP2, SPILL_SP, $-40
+	Nop
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-32	# 4 args
+	Nop
+	st_32		VOL_TEMP2, SPILL_SP, $-32
+	Nop
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-24	# 3 args
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-24
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-20	# 5 args
-	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-20
-	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-16	# 4 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-16	# 2 args
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-16
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-12	# 3 args
-	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-12
-	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-8	# 2 args
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-8	# 1 args
 	Nop
 	st_32		VOL_TEMP2, SPILL_SP, $-8
-	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-4	# 1 args
-	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-4
 	Nop
 	.globl _MachFetchArgEnd
 _MachFetchArgEnd:
@@ -1290,6 +1332,8 @@ UserErrorTrap:
  *
  *----------------------------------------------------------------------------
  */
+sigReturnTrap_Const1:
+	.long MACH_KPSW_USE_CUR_PC
 SigReturnTrap:
 	/*
 	 * Enable traps.
@@ -1310,7 +1354,7 @@ SigReturnTrap:
 	 * just use the KPSW directly because the user could have screwed 
 	 * it up.
 	 */
-	LD_CONSTANT(VOL_TEMP1, (MACH_KPSW_USE_CUR_PC | MACH_KPSW_USE_NEXT_PC))
+	LD_PC_RELATIVE(VOL_TEMP1, sigReturnTrap_Const1)
 	and		VOL_TEMP1, KPSW_REG, VOL_TEMP1
 	rd_kpsw		VOL_TEMP2
 	and		VOL_TEMP2, VOL_TEMP2, $~MACH_KPSW_ALL_TRAPS_ENA
@@ -1395,6 +1439,9 @@ getWinMemTrap_GoodSWP:
  *
  *----------------------------------------------------------------------------
  */
+returnTrap_Const1:
+	.long	MACH_KPSW_USE_CUR_PC
+
 ReturnTrap:
 	/*
 	 * Restore the kpsw to that which we trapped with.
@@ -1451,7 +1498,7 @@ returnTrap_Return:
 	 * PC to the next PC and clear the next PC so that the return
 	 * happens correctly.
 	 */
-	LD_CONSTANT(VOL_TEMP2, MACH_KPSW_USE_CUR_PC)
+	LD_PC_RELATIVE(VOL_TEMP2, returnTrap_Const1)
 	and		VOL_TEMP1, KPSW_REG, VOL_TEMP2
 	cmp_br_delayed	eq, VOL_TEMP1, VOL_TEMP2, 1f
 	Nop
@@ -1707,14 +1754,14 @@ SaveState:
 	 * swp shifted over to align with the cwp.
 	 */
 	rd_special	r1, swp
-	and		r1, r1, $0x380
 	rd_special	r2, cwp
 	and		r2, r2, $0x1c
 	/*
 	 * Set r3 to the swp aligned with the cwp so that we can use it for
 	 * comparisons.
 	 */
-	srl		r3, r1, $1	# Read the swp and then shift it so
+	and		r3, r1, $0x380
+	srl		r3, r3, $1	# Read the swp and then shift it so
 	srl		r3, r3, $1	#    it aligns with the cwp.  That is
 	srl		r3, r3, $1	#    swp<9:7> -> swp<4:2>
 	srl		r3, r3, $1
@@ -1762,7 +1809,6 @@ saveState_Done:
 	wr_kpsw		r5, $0
 	jump_reg	VOL_TEMP2, $0
 	Nop
-
 
 /*
  *----------------------------------------------------------------------------
@@ -2029,9 +2075,9 @@ _Mach_TestAndSet:
  *	SRC2_REG:	r15 -- src2 register or immediate.
  *	SRC2_VAL:	r15 -- Value of src2 register or immediate.
  *	PREV_SRC2_REG:	r31 -- src2 register in previous window.
- *	RET_ADDR:	r18 (VOL_TEMP1)  -- Address to return to when done.
- *	DATA_VAL_REG:	r19 (VOL_TEMP2) -- Data address from instruction.
- *	TRAP_INST:	r19 (VOL_TEMP2) -- Trapping instruction.
+ *	RET_ADDR:	r18 (VOL_TEMP1) -- Input: Address to return to.
+ *	TRAP_INST:	r19 (VOL_TEMP2) -- Input: Trapping instruction.
+ *	DATA_VAL_REG:	r19 (VOL_TEMP2) -- Output: Data address
  *	OPCODE:		r20 (VOL_TEMP3) -- Opcode.
  *	CALLER_TEMP1	r21 (SAFE_TEMP1) -- Temporary reserved for caller.
  *	CALLER_TEMP2	r22 (SAFE_TEMP2) -- Temporary reserved for caller.
@@ -2060,7 +2106,6 @@ _Mach_TestAndSet:
 #define	SAVED_R15		r29
 
 ParseInstruction:
-	FETCH_CUR_INSTRUCTION(TRAP_INST)
 	add_nt		SAVED_R10, r10, $0	# Save "return" address
 	add_nt		SAVED_R14, r14, $0	# Save r14 and r15 because
 	add_nt		SAVED_R15, r15, $0	#  these will be used to 

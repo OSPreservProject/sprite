@@ -18,6 +18,11 @@
 #include "vmSpurConst.h"
 
 /*
+ * Define to make the sys module happy (sun backward compatible).
+ */
+#define	MACH_BRKPT_TRAP MACH_BREAKPOINT
+
+/*
  * The compare trap types.  
  *
  * IMPORTANT: If the value of MACH_BREAKPOINT_TRAP is changed then
@@ -32,7 +37,8 @@
 #define	MACH_USER_FIXNUM_TRAP		6
 #define	MACH_USER_OVERFLOW_TRAP		7
 #define	MACH_USER_BAD_SWP_TRAP		8
-#define	MACH_MAX_TRAP_TYPE		8
+#define	MACH_TEST_FAULT_TRAP		9
+#define	MACH_MAX_TRAP_TYPE		9
 
 /*
  * The return codes from the C trap handler routine:
@@ -196,7 +202,6 @@
  * Sprite defined bits in the kpsw.
  */
 #define	MACH_KPSW_USE_CUR_PC		0x10000
-#define	MACH_KPSW_USE_NEXT_PC		0x20000
 
 /*
  * Bits in UPSW (see SPUR-ISA page 36).

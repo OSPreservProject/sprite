@@ -231,13 +231,13 @@
  *	fe status registers.
  */
 #define WRITE_STATUS_REGS(baseVal, reg) \
-	st_external	reg, r0, $baseVal|MACH_CO_RD_REG; \
+	st_external	reg, r0, $baseVal|MACH_CO_WR_REG; \
 	extract		VOL_TEMP1, reg, $1; \
-	st_external	VOL_TEMP1, r0, $baseVal|0x20|MACH_CO_RD_REG; \
+	st_external	VOL_TEMP1, r0, $baseVal|0x20|MACH_CO_WR_REG; \
 	extract		VOL_TEMP1, reg, $2; \
-	st_external	VOL_TEMP1, r0, $baseVal|0x40|MACH_CO_RD_REG; \
+	st_external	VOL_TEMP1, r0, $baseVal|0x40|MACH_CO_WR_REG; \
 	extract		VOL_TEMP1, reg, $3; \
-	st_external	VOL_TEMP1, r0, $baseVal|0x60|MACH_CO_RD_REG
+	st_external	VOL_TEMP1, r0, $baseVal|0x60|MACH_CO_WR_REG
 
 /*
  * VERIFY_SWP(label, underFlowBytes) -- 
@@ -428,7 +428,8 @@
 	jump		RestoreState; \
 	Nop; \
 	\
-	jump		returnTrap_NormReturn; \
+	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN; \
+	jump		ReturnTrap; \
 	Nop
 
 /*
@@ -440,20 +441,20 @@
  */
 #ifdef BARB 
 #define FETCH_CUR_INSTRUCTION(destReg) \
-        LD_CONSTANT(VOL_TEMP1, 0x20000); \
-        LD_CONSTANT(VOL_TEMP2, 0x40000000); \
-        cmp_br_delayed  lt, CUR_PC_REG, VOL_TEMP1, 1f; \
+        LD_CONSTANT(VOL_TEMP2, 0x20000); \
+        LD_CONSTANT(VOL_TEMP3, 0x40000000); \
+        cmp_br_delayed  lt, CUR_PC_REG, VOL_TEMP2, 1f; \
         nop; \
-        cmp_br_delayed  ge, CUR_PC_REG, VOL_TEMP2, 1f; \
+        cmp_br_delayed  ge, CUR_PC_REG, VOL_TEMP3, 1f; \
         nop; \
-        sub             VOL_TEMP1, CUR_PC_REG, VOL_TEMP1; \
-        add             VOL_TEMP1, VOL_TEMP1, VOL_TEMP2; \
-        cmp_br_delayed	always, 2f; \
+        sub             VOL_TEMP2, CUR_PC_REG, VOL_TEMP2; \
+        add             VOL_TEMP2, VOL_TEMP2, VOL_TEMP3; \
+        cmp_br_delayed	always, r0, r0, 2f; \
         nop; \
 1: \
-        add_nt          VOL_TEMP1, CUR_PC_REG, $0; \
+        add_nt          VOL_TEMP2, CUR_PC_REG, $0; \
 2: \
-        ld_32           destReg, VOL_TEMP1, $0
+        ld_32           destReg, VOL_TEMP2, $0
 #else
 #define FETCH_CUR_INSTRUCTION(destReg) \
         ld_32           destReg, CUR_PC_REG, $0
