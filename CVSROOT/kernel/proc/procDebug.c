@@ -109,7 +109,9 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
     if (request != PROC_GET_NEXT_DEBUG && request != PROC_GET_THIS_DEBUG) {
 	procPtr = Proc_LockPID(pid);
 	if (procPtr == (Proc_ControlBlock *) NIL || 
-		!(procPtr->genFlags & PROC_DEBUGGED)) {
+	    !(procPtr->genFlags & PROC_DEBUGGED) ||
+	    (procPtr->state != PROC_SUSPENDED && 
+	     procPtr->state != PROC_DEBUGABLE)) {
 	    if (procPtr != (Proc_ControlBlock *) NIL) {
 		Proc_Unlock(procPtr);
 	    }
