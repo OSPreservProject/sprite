@@ -4,7 +4,7 @@
  *	This file manages the configuration of Z8530 chips on Sun-3
  *	and Sun-4 workstations, and provides glue to attach the device
  *	drivers for those chips to standard Sprite devices like
- *	/dev/console, /dev/serialA, and /dev/Xevent.
+ *	/dev/console and /dev/serialA.
  *
  * Copyright 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
