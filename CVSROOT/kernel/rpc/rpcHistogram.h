@@ -23,10 +23,12 @@
 /*
  * An empirical time distribution is kept in the following structure.
  * This includes the average, plus an array of calls vs. microseconds
- * with some granularity on the time for each bucket.
+ * with some granularity on the time for each bucket.  We explicitly 
+ * specify a kernel lock, so that we can copyout this struct to a user
+ * program and have the user program understand what it's getting.
  */
 typedef struct Rpc_Histogram {
-    Sync_Lock lock;		/* Used to monitor access to histogram */
+    Sync_KernelLock lock;	/* Used to monitor access to histogram */
     int numCalls;		/* The total number of calls */
     Time aveTimePerCall;	/* The average interval duration */
     Time totalTime;		/* The total time spent in the calls */
