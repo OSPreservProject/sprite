@@ -428,4 +428,10 @@
  */
 #define	MACH_SAVED_WINDOW_STACK_BASE	MACH_MAX_USER_STACK_ADDR
 
+/*
+ * Default machine cycle time in cycles per second.  
+ * 	Currently == 150ns
+ */
+#define	MACH_CYCLE_TIME		(1.0/(150e-9))
+
 #endif _MACHCONST
