@@ -1,0 +1,308 @@
+/* 
+ * signals.c --
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * This contains routines that deal with Sprite signals.  See the man pages
+ * on signals for an explanation of the Sprite signaling facilities.  The
+ * only thing that is explained in these comments is the implementation of
+ * these facilities.
+ *
+ * A signal handler is called right before a process is to return to 
+ * user space.  In order to call the handler three things must be done:
+ *
+ *	1) The current state of the process must be saved so that when
+ *	   the handler returns the normal return to user space can occur.
+ *	2) The user stack must be set up so that the signal number and the
+ *	   the signal code are passed to the handler.
+ *	3) Things must be set up so that when the handler returns it returns
+ *	   back into the kernel so that state can be cleaned up.
+ *	4) The trap stack that was created when the kernel was entered and is
+ *	   used to return a process to user space must be modified so that
+ *	   the signal handler is called instead of executing the
+ *	   normal return.
+ *
+ * The last one is done by simply changing the program counter where the
+ * user process will execute on return to be the address of the signal
+ * handler and the user stack pointer to point to the proper place on
+ * the user stack.  The first three of these are accomplished by 
+ * setting up the user stack properly.  When a handler is called the 
+ * user stack looks like the following:
+ *
+ *     -----------------------
+ *     | Address of trap #2  |<----- New user stack pointer.
+ *     -----------------------
+ *     | Signal number       |
+ *     -----------------------
+ *     | Signal code         |
+ *     -----------------------
+ *     | Trap stack          |
+ *     -----------------------
+ *     | Old hold mask       |
+ *     -----------------------
+ *     | trap #2 instruction |
+ *     ----------------------
+ *     | Original user stack |<----- Old user stack pointer.
+ *     |                     |
+ *
+ *
+ * Thus the top entry on the stack is the return address where the handler
+ * will start executing upon return.  But this is just the address of the 
+ * "trap #2" instruction that is stored on the stack below.  Thus when
+ * a handler returns it will execute a "trap #2" instruction and drop back
+ * into the kernel.  Following the return address are the signal number and
+ * signal code which are the arguments to the handler.  Following this is
+ * the saved state of the process which is the trap stack and the old mask
+ * of held signals.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header$ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "sig.h"
+#include "sync.h"
+#include "dbg.h"
+#include "exc.h"
+#include "list.h"
+#include "proc.h"
+#include "procMigrate.h"
+#include "status.h"
+#include "byte.h"
+#include "machine.h"
+#include "sync.h"
+#include "sched.h"
+#include "sigInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Handle --
+ *
+ *	Set things up so that the signal handler is called for one of the
+ *	signals that are pending for the current process.  This is done
+ *	by saving the old trap stack and modifying the current one.
+ *
+ * Results:
+ *	Return TRUE if a signal is setup to be handled by the user.
+ *
+ * Side effects:
+ *	*trapStackPtr is modified and also the user stack is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean		
+Sig_Handle(trapStackPtr, pcPtr)
+    Exc_TrapStack	*trapStackPtr;	/* The trap stack that was created
+					   when the user process entered the
+					   kernel. */
+    int			*pcPtr;		/* Program counter of where to start
+					 * executing the signal handler. */
+{
+    register	Proc_ControlBlock	*procPtr;
+    int					sigs;
+    int					sigNum;
+    unsigned	int			*bitMaskPtr;
+    int					usp;
+    SigStack				sigStack;
+    int					oldSp;
+    int					sigBitMask;
+    short				trapInst;
+
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+
+    /*
+     * Find out which signals are pending.
+     */
+    sigs = procPtr->sigPendingMask & ~procPtr->sigHoldMask;
+    if (sigs == 0) {
+	return(FALSE);
+    }
+
+    /*
+     * Check for the signal SIG_KILL.  This is processed specially because
+     * it is how processes that have some problem such as being unable
+     * to write to swap space on the file server are destroyed.
+     */
+    if (sigs & sigBitMasks[SIG_KILL]) {
+	if (procPtr->sigCodes[SIG_KILL] != SIG_NO_CODE) {
+	    Proc_ExitInt(PROC_TERM_DESTROYED, 
+			procPtr->sigCodes[SIG_KILL], 0);
+	} else {
+	    Proc_ExitInt(PROC_TERM_SIGNALED, SIG_KILL, 0);
+	}
+    }
+
+    for (sigNum = SIG_MIN_SIGNAL, bitMaskPtr = &sigBitMasks[SIG_MIN_SIGNAL];
+	 !(sigs & *bitMaskPtr);
+	 sigNum++, bitMaskPtr++) {
+    }
+
+    SigClearPendingMask(procPtr, sigNum);
+
+    /*
+     * Process the signal.
+     */
+    switch (procPtr->sigActions[sigNum]) {
+	case SIG_IGNORE_ACTION:
+	    Sys_Panic(SYS_WARNING, 
+	    "Sig_Handle:  An ignored signal was in a signal pending mask.\n");
+	    return(FALSE);
+
+	case SIG_KILL_ACTION:
+	    Proc_ExitInt(PROC_TERM_SIGNALED, sigNum, procPtr->sigCodes[sigNum]);
+	    Sys_Panic(SYS_FATAL, "Sig_Handle: Proc_Exit returned!\n");
+
+	case SIG_SUSPEND_ACTION:
+	    Proc_Lock(procPtr);
+	    if (!(procPtr->genFlags & PROC_DEBUG_WAIT)) {
+		Proc_Unlock(procPtr);
+		Proc_Suspend(sigNum);
+		return(FALSE);
+	    }
+	    Proc_Unlock(procPtr);
+	    /*
+	     * Fall through and take a debug action on this process.
+	     */
+	case SIG_DEBUG_ACTION:
+	    /*
+	     * Save the state of the process and put it onto the debug list.
+	     */
+	    Byte_Copy(sizeof(procPtr->genRegs), 
+		     (Address) trapStackPtr->genRegs,
+		     (Address) procPtr->genRegs);
+	    procPtr->genRegs[SP] = trapStackPtr->userStackPtr;
+	    procPtr->progCounter = trapStackPtr->excStack.pc;
+
+	    Proc_PutOnDebugList(procPtr, sigNum, 
+				trapStackPtr->excStack.statusReg);
+
+	    /*
+	     * Set the state to that given by the debugger and return.
+	     */
+	    trapStackPtr->excStack.pc = procPtr->progCounter;
+	    oldSp = trapStackPtr->genRegs[SP];
+	    Byte_Copy(sizeof(procPtr->genRegs), 
+		     (Address) procPtr->genRegs,
+		     (Address) trapStackPtr->genRegs);
+	    trapStackPtr->genRegs[SP] = oldSp;
+	    trapStackPtr->userStackPtr = procPtr->genRegs[SP];
+
+	    return(FALSE);
+
+	case SIG_MIGRATE_ACTION:
+	    if (procPtr->peerHostID != NIL) {
+		if (proc_MigDebugLevel > 6) {
+		    Sys_Printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
+			       procPtr->processID);
+		}
+		Proc_MigrateTrap(procPtr, trapStackPtr);
+	    }
+	    return(FALSE);
+
+	case SIG_DEFAULT_ACTION:
+	    Sys_Panic(SYS_FATAL, 
+		 "Sig_Handle: SIG_DEFAULT_ACTION found in array of actions?\n");
+    }
+
+    /*
+     * If got this far then we must call a users signal handler.  What must
+     * be done is to set up the user stack and modify the trap stack.
+     */
+    usp = trapStackPtr->userStackPtr - sizeof(SigStack);
+
+    sigStack.retAddr = (Address) (usp + (int) &(sigStack.sigStack.trapInst) - 
+				      (int) &(sigStack));
+    sigStack.sigStack.sigNum = sigNum;
+    sigStack.sigStack.sigCode = procPtr->sigCodes[sigNum];
+    Byte_Copy(Exc_GetTrapStackSize(trapStackPtr), (Address) trapStackPtr, 
+				   (Address) &(sigStack.sigStack.trapStack));
+
+    /*
+     * If this signal handler is being called after a call to Sig_Pause then
+     * the real signal hold mask has to be restored after the handler returns.
+     * This is assured by pushing the real hold mask which is stored in 
+     * the proc table onto the stack.
+     */
+    if (procPtr->sigFlags & SIG_PAUSE_IN_PROGRESS) {
+	procPtr->sigFlags &= ~SIG_PAUSE_IN_PROGRESS;
+	sigStack.sigStack.oldHoldMask = procPtr->oldSigHoldMask;
+    } else {
+	sigStack.sigStack.oldHoldMask = procPtr->sigHoldMask;
+    }
+    trapInst = 0x4e42;
+    Byte_Copy(sizeof(trapInst), (Address)&trapInst, 
+		(Address)&(sigStack.sigStack.trapInst));
+
+    if (Vm_CopyOut(sizeof(SigStack), 
+		   (Address) &sigStack, (Address) usp) != SUCCESS) {
+	Sys_Panic(SYS_WARNING, "Sig_Handle: No room on stack for signal.\n");
+	return(TRUE);
+    }
+
+    /*
+     * Return the program counter of where to start executing, set the new
+     * user stack pointer, and block this signal.
+     */
+    *pcPtr = procPtr->sigActions[sigNum];
+    trapStackPtr->userStackPtr = usp;
+    procPtr->sigHoldMask |= procPtr->sigMasks[sigNum];
+    sigBitMask = sigBitMasks[sigNum];
+    if (sigBitMask & ~sigCanHoldMask) {
+	/*
+	 * If this is a non-blockable signal then add it to the hold mask
+	 * so that if we get it again we know that it can't be handled.
+	 */
+	procPtr->sigHoldMask |= sigBitMask;
+    }
+
+    return(TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Return --
+ *
+ *	Process a return from signal.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The trap stack is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void		
+Sig_Return(procPtr, trapStackPtr, oldStackAddrPtr)
+    Proc_ControlBlock	*procPtr;	/* Process that is returning from
+					 * a signal. */
+    Exc_TrapStack	*trapStackPtr;	/* The trap stack that was created
+					   when the user process entered the
+					   kernel. */
+					/* Location of stack before the user
+					 * took this signal. */
+    Address		*oldStackAddrPtr;
+{
+    SigStack	sigStack;
+    int		sigStackSize;
+
+    sigStackSize = sizeof(SigStack) - sizeof(Exc_TrapStack);
+    if (Vm_CopyIn(sigStackSize,
+		  (Address) (trapStackPtr->userStackPtr - 4), 
+	          (Address) &sigStack) != SUCCESS) {
+	Sys_Printf("Sig_Return: Stack too small to extract trap info.\n");
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+    }
+
+    *oldStackAddrPtr = (Address)(trapStackPtr->userStackPtr - 4 + sigStackSize);
+    procPtr->sigHoldMask = sigStack.sigStack.oldHoldMask;
+}

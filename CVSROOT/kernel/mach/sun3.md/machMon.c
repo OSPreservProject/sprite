@@ -1,0 +1,233 @@
+/* 
+ * mon.c --
+ *
+ *     Routines to access the sun prom monitor.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header$ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "sunMon.h"
+#include "sys.h"
+#include "machine.h"
+#include "exc.h"
+#include "devTimer.h"
+#include "char.h"
+
+static	int (*savedNmiVec)() = (int (*)()) 0;
+extern	int MonNmiNop();
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mon_PutChar --
+ *
+ *     Call the monitor put character routine
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mon_PutChar(ch)
+    int		ch;
+{
+    int		oldContext;
+
+    if (!Char_IsAscii(ch)) {
+	return;
+    }
+    DISABLE_INTR();
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    romVectorPtr->putChar(ch);
+    Vm_SetKernelContext(oldContext);
+    ENABLE_INTR();
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mon_MayPut --
+ *
+ *     	Call the monitor put may put character routine.  This will return
+ *	-1 if it couldn't put out the character.
+ *
+ * Results:
+ *     -1 if couldn't emit the character.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+int
+Mon_MayPut(ch)
+    int		ch;
+{
+    int		oldContext;
+    int		retValue;
+
+    DISABLE_INTR();
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    retValue = romVectorPtr->mayPut(ch);
+    Vm_SetKernelContext(oldContext);
+    ENABLE_INTR();
+    return(retValue);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mon_Abort --
+ *
+ *     	Abort to the monitor.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mon_Abort()
+{
+    int	oldContext;
+
+    DISABLE_INTR();
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    Mon_Trap(romVectorPtr->abortEntry);
+    Vm_SetKernelContext(oldContext);
+    ENABLE_INTR();
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mon_Reboot --
+ *
+ *     	Reboot the system.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     System rebooted.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mon_Reboot(rebootString)
+    char	*rebootString;
+{
+    int	oldContext;
+
+    DISABLE_INTR();
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    Mon_StartNmi();
+    romVectorPtr->reBoot(rebootString);
+    /*
+     * If we reach this far something went wrong.
+     */
+    Sys_Panic(SYS_FATAL, "Mon_Reboot: Reboot failed (I'm still alive aren't I?)\n");
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mon_StartNmi --
+ *
+ *	Allow the non-maskable (level 7) interrupts from the clock chip
+ *	so the monitor can read the keyboard.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *	Non-maskable interrupts are allowed. On the Sun-2, the 
+ *	trap vector is modified. 
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mon_StartNmi()
+{
+#ifdef SUN2
+    if (savedNmiVec != 0) {
+	exc_VectorTablePtr->autoVec[6] = savedNmiVec;
+    }
+#endif
+
+#ifdef SUN3
+    *SunInterruptReg |= SUN_ENABLE_LEVEL7_INTR;
+#endif
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mon_StopNmi --
+ *
+ * 	Disallow the non-maskable (level 7) interrupts.  
+ *	On the Sun-2, this entails redirecting the interrupt. 
+ *	On the Sun-3, the bit in the interrupt register for nmi's is 
+ *	turned off.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *	Non-maskable interrupts are disallowed. On the Sun-2, the trap 
+ *	vector is modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mon_StopNmi()
+{
+    extern Boolean main_AllowNMI;
+
+#ifdef SUN2
+    savedNmiVec = exc_VectorTablePtr->autoVec[6];
+    exc_VectorTablePtr->autoVec[6] = MonNmiNop;
+#endif SUN2
+
+#ifdef SUN3
+    /*
+     * For debugging purposes, NMI's must be enabled.
+     * If NMI's are disabled and the kernel goes into an infinite loop, 
+     * then getting back to the monitor via L1-A is impossible 
+     * However, if NMI's are enabled, level-7 interrupts are caused 
+     * and it is possible that characters may be stolen by the monitor.
+     * Also, spurious exceptions may occur.
+     */
+    if (!main_AllowNMI) {
+	*SunInterruptReg &= ~SUN_ENABLE_LEVEL7_INTR;
+    }
+#endif SUN3
+}
