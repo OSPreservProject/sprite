@@ -935,7 +935,7 @@ Vm_Msync(startAddr, length)
 
     dprintf("msync( %x, %d)\n", startAddr, length);
     if (BADALIGN(startAddr) || BADALIGN(length)) {
-	printf("Vm_Munmap: Invalid start or offset\n");
+	printf("Vm_Msync: Invalid start or offset\n");
 	return VM_WRONG_SEG_TYPE;
     }
     LOCK_SHM_MONITOR;
@@ -979,7 +979,7 @@ Vm_Mlock(startAddr, length)
 
     dprintf("mlock( %x, %d)\n", startAddr, length);
     if (BADALIGN(startAddr) || BADALIGN(length)) {
-	printf("Vm_Munmap: Invalid start or offset\n");
+	printf("Vm_Mlock: Invalid start or offset\n");
 	return VM_WRONG_SEG_TYPE;
     }
     procPtr = Proc_GetCurrentProc();
@@ -1023,7 +1023,7 @@ Vm_Munlock(startAddr, length)
 
     dprintf("munlock( %x, %d)\n", startAddr, length);
     if (BADALIGN(startAddr) || BADALIGN(length)) {
-	printf("Vm_Munmap: Invalid start or offset\n");
+	printf("Vm_Munlock: Invalid start or offset\n");
 	return VM_WRONG_SEG_TYPE;
     }
     procPtr = Proc_GetCurrentProc();
@@ -1074,7 +1074,7 @@ Vm_Mincore(startAddr, length, retVec)
 
     dprintf("mincore( %x, %d, %x)\n", startAddr, length, retVec);
     if (BADALIGN(startAddr) || BADALIGN(length)) {
-	printf("Vm_Munmap: Invalid start or offset\n");
+	printf("Vm_Mincore: Invalid start or offset\n");
 	return VM_WRONG_SEG_TYPE;
     }
     procPtr = Proc_GetCurrentProc();
