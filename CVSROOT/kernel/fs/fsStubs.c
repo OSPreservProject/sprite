@@ -1033,7 +1033,6 @@ Fs_ReadvStub(streamID, iov, iovcnt)
     int totalRead = 0;          /* place to hold total # of bytes read */
     int i;
     struct iovec iovCopy[MAX_IOV];      /* Kernel copy of iov */
-    ReturnStatus status;
 
     if (debugFsStubs) {
         printf("Fs_ReadvStub\n");
@@ -1084,7 +1083,6 @@ Fs_WritevStub(streamID, iov, iovcnt)
     int totalWritten = 0;       /* place to hold total # of bytes written */
     int i;
     struct iovec iovCopy[MAX_IOV];      /* Kernel copy of iov */
-    ReturnStatus status;
 
     if (debugFsStubs) {
         printf("Fs_WritevStub\n");
@@ -3965,8 +3963,8 @@ Fs_GetdentsStub(fd, buf, nbytes)
     ReturnStatus 	status;
     int			bytesRead;
     int			bytesStored, bytesUsed;
-    char		kBuf[DIR_BUF];
-    char		kBuf2[DIR_BUF];
+    char		*kBuf;
+    char		*kBuf2;
     Address		directPtr, directPtr2;
     long		offset;
     int			dirsiz;
@@ -3985,6 +3983,9 @@ Fs_GetdentsStub(fd, buf, nbytes)
 	nbytes = DIR_BUF;
     }
 
+    kBuf = (char *)malloc(DIR_BUF);
+    kBuf2 = (char *)malloc(DIR_BUF);
+
     bytesStored = 0;
     while (bytesStored==0) {
 	bytesRead = Fs_GetdirInt(fd, nbytes, kBuf, &offset);
@@ -3994,6 +3995,8 @@ Fs_GetdentsStub(fd, buf, nbytes)
 		    bytesRead);
 	}
 	if (bytesRead <=0) {
+	    free((Address)kBuf);
+	    free((Address)kBuf2);
 	    return bytesRead;
 	}
 
@@ -4026,6 +4029,8 @@ Fs_GetdentsStub(fd, buf, nbytes)
 		printf("Fs_Getdirentries: Directory record too long!\n");
 		printf("dirsiz = %d, reclen = %d\n", dirsiz,
 			((struct direct *)directPtr)->d_reclen);
+		free((Address)kBuf);
+		free((Address)kBuf2);
 		Mach_SetErrno(EINVAL);
 		return -1;
 	    }
@@ -4045,6 +4050,8 @@ Fs_GetdentsStub(fd, buf, nbytes)
 	    if (bytesStored > nbytes) {
 		printf("Overflow! %d vs %d, %d vs %d\n", bytesUsed, bytesRead,
 			bytesStored, nbytes);
+		free((Address)kBuf);
+		free((Address)kBuf2);
 		Mach_SetErrno(EINVAL);
 		return -1;
 	    }
@@ -4061,6 +4068,8 @@ Fs_GetdentsStub(fd, buf, nbytes)
 	    status = Fs_LseekStub(fd, offset+bytesUsed, L_SET);
 	    if (status < 0) {
 		printf("Lseek to %d failed in getdents!\n", offset+bytesUsed);
+		free((Address)kBuf);
+		free((Address)kBuf2);
 		return -1;
 	    }
 	}
@@ -4073,9 +4082,13 @@ Fs_GetdentsStub(fd, buf, nbytes)
     status = Vm_CopyOut(bytesStored, kBuf2, buf);
     if (status != SUCCESS) {
 	Mach_SetErrno(EFAULT);
+	free((Address)kBuf);
+	free((Address)kBuf2);
 	return -1;
     }
 
+    free((Address)kBuf);
+    free((Address)kBuf2);
     return bytesStored;
 }
 /*
@@ -4105,8 +4118,8 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
     ReturnStatus 	status;
     int			bytesRead;
     int			bytesStored, bytesUsed;
-    char		kBuf[DIR_BUF];
-    char		kBuf2[DIR_BUF];
+    char		*kBuf;
+    char		*kBuf2;
     Address		directPtr, directPtr2;
     long		offset;
     int			dirsiz;
@@ -4119,6 +4132,9 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
 	nbytes = DIR_BUF;
     }
 
+    kBuf = (char *)malloc(DIR_BUF);
+    kBuf2 = (char *)malloc(DIR_BUF);
+
     bytesStored = 0;
     while (bytesStored==0) {
 	bytesRead = Fs_GetdirInt(fd, nbytes, kBuf, &offset);
@@ -4128,6 +4144,8 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
 		    bytesRead);
 	}
 	if (bytesRead <=0) {
+	    free((Address)kBuf);
+	    free((Address)kBuf2);
 	    return bytesRead;
 	}
 
@@ -4151,6 +4169,8 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
 		    directPtr)->d_reclen > FSLCL_DIR_BLOCK_SIZE) {
 		printf("Fs_Getdirentries: Directory record too long!\n");
 		Mach_SetErrno(EINVAL);
+		free((Address)kBuf);
+		free((Address)kBuf2);
 		return -1;
 	    }
 	    if (((struct direct *)directPtr)->d_ino != 0) {
@@ -4168,6 +4188,8 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
 		printf("Overflow! %d vs %d, %d vs %d\n", bytesUsed, bytesRead,
 			bytesStored, nbytes);
 		Mach_SetErrno(EINVAL);
+		free((Address)kBuf);
+		free((Address)kBuf2);
 		return -1;
 	    }
 	}
@@ -4179,6 +4201,8 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
 	    status = Fs_LseekStub(fd, offset+bytesUsed, L_SET);
 	    if (status < 0) {
 		printf("Lseek to %d failed in getdents!\n", offset+bytesUsed);
+		free((Address)kBuf);
+		free((Address)kBuf2);
 		return -1;
 	    }
 	}
@@ -4191,13 +4215,19 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
     status = Vm_CopyOut(sizeof(long), (Address)&offset, (Address)basep);
     if (status != SUCCESS) {
 	Mach_SetErrno(EFAULT);
+	free((Address)kBuf);
+	free((Address)kBuf2);
 	return -1;
     }
     status = Vm_CopyOut(bytesStored, kBuf2, buf);
     if (status != SUCCESS) {
 	Mach_SetErrno(EFAULT);
+	free((Address)kBuf);
+	free((Address)kBuf2);
 	return -1;
     }
 
+    free((Address)kBuf);
+    free((Address)kBuf2);
     return bytesStored;
 }
