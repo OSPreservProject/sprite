@@ -17,6 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
+#include "net.h"
 #include "sprite.h"
 #include "mach.h"
 #include "dump.h"
@@ -31,7 +32,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsutil.h"
 #include "fscache.h"
 #include "fspdev.h"
-#include "net.h"
 #include "recov.h"
 #include "string.h"
 #include "sched.h"
@@ -45,6 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static void	PrintL1Menu _ARGS_((ClientData));
 static void	PrintTOD _ARGS_((ClientData));
 static void	PrintVersion _ARGS_((ClientData));
+static void	ResetNetworks _ARGS_((ClientData));
 
 /*
  * Table of routines and their arguments to be called on dump events.
@@ -65,7 +66,7 @@ static EventTableType eventTable[] = {
     {'i', (void (*)()) Proc_KDump, (ClientData) 0,"Info on waiting processes"},
     {'j', Dev_SyslogDisable, (ClientData) 0,"Disable/enable syslog"},
     {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
-    {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
+    {'n', ResetNetworks, (ClientData)0,"Reset the network interfaces"},
     {'o', (void (*)()) Dev_VidEnable, (ClientData) 1,"Turn video on"},
     {'p', (void (*)()) Proc_Dump, (ClientData) 0,"Dump process table"},
     {'r', Sched_DumpReadyQueue,  (ClientData) 0,"Dump ready queue"},
@@ -211,3 +212,36 @@ PrintVersion(arg)
     v = SpriteVersion();
     printf("%s\n",v);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ResetNetworks --
+ *
+ *	Reset all network interfaces.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The network interfaces are reset.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ResetNetworks(arg)
+    ClientData arg;		/* unused */
+{
+    int			i;
+    Net_Interface	*interPtr;
+
+    i = 0; 
+    interPtr = Net_NextInterface(FALSE, &i);
+    while (interPtr != (Net_Interface *) NIL) {
+	Net_Reset(interPtr);
+	i++;
+	interPtr = Net_NextInterface(FALSE, &i);
+    }
+}
+
