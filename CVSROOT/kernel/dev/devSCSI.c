@@ -211,9 +211,11 @@ Dev_SCSIInitController(cntrlrPtr)
     if (Sys_SetJump(&setJumpState) == SUCCESS) {
 	x = regsPtr->dmaCount;
 	regsPtr->dmaCount = (short)0xBABE;
-	if (regsPtr->dmaCount != (short)0xBABE) {
-	    Sys_Printf("SCSI-%d: control register read-back problem\n",
-				 scsiPtr->number);
+	if (regsPtr->dmaCount != (short)0xABE) {
+#ifdef notdef
+	    Sys_Printf("SCSI-%d: dmaCount register: wrote %x read back %x\n",
+				 scsiPtr->number, 0xBABE, regsPtr->dmaCount);
+#endif notdef
 	    Sys_UnsetJump();
 	    return(FALSE);
 	}
@@ -1045,8 +1047,8 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
 	}
     }
     if (i == SCSI_WAIT_LENGTH) {
-	Sys_Printf("SCSI bus stuck busy\n");
 	DevSCSIReset(regsPtr);
+	Sys_Printf("SCSI bus stuck busy\n");
 	return(FAILURE);
     }
     /*
