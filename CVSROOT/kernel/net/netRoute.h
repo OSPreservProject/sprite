@@ -48,18 +48,23 @@ typedef struct Net_Route {
  * Types for the address union in the above struct.
  * NET_ROUTE_UNUSED	The route is empty or unitialized.
  * NET_ROUTE_GENERIC	The route contents are uninterpreted, (not implemented)
- * NET_ROUTE_ETHER	The route contains and ethernet address.  In this
+ * NET_ROUTE_ETHER	The route contains an ethernet address.  In this
  *			case the data of the Net_Route is a pointer to
  *			a Net_EtherHdr.
+ * NET_ROUTE_INET	The route contains an Internet address.  The data of
+ *			the route table entry references Net_InetRoute.
  */
 #define		NET_ROUTE_UNUSED	0x00
 #define		NET_ROUTE_GENERIC	0x01
 #define		NET_ROUTE_ETHER		0x02
+#define		NET_ROUTE_INET		0x04
+
 /*
  * Flags for the Route structure.
  * NET_ROUTE_BROAD	Using the route will result in a broadcast.
  */
 #define		NET_ROUTE_BROAD		0x01
+#define		NET_ROUTE_GATEWAY	0x02
 
 /*
  * Define the special Sprite ID used for broadcasting.
@@ -70,6 +75,15 @@ typedef struct Net_Route {
  * The routing table
  */
 extern Net_Route *netRouteArray[];
+
+/*
+ * The routing information for an Internet route is the Internet
+ * address and a pre-formatted ethernet header.
+ */
+typedef struct NetInetRoute {
+    Net_InetAddress inetAddr;
+    Net_EtherHdr etherHdr;
+} NetInetRoute;
 
 /*
  * Sprite Address Resolution Protocol packet format.  These are used to
