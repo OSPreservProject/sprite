@@ -1878,6 +1878,12 @@ ProcIsObj(streamPtr, doErr)
 		    case 0413:
 			printf("ZMAGIC");
 			break;
+		    case 0414:
+			printf("SPRITE_ZMAGIC");
+			break;
+		    case 0415:
+			printf("UNIX_ZMAGIC");
+			break;
 		    case 0443:
 			printf("LIBMAGIC");
 			break;

@@ -911,7 +911,7 @@ static ReturnStatus 	CheckPidArray _ARGS_((Proc_ControlBlock *curProcPtr,
 static ReturnStatus 	LookForAnyChild _ARGS_((Proc_ControlBlock *curProcPtr,
 				Boolean returnSuspend, 
 				Proc_ControlBlock **procPtrPtr));
-static ReturnStatus 	DoWait _ARGS_((Proc_ControlBlock *curProcPtr,
+extern ReturnStatus 	DoWait _ARGS_((Proc_ControlBlock *curProcPtr,
 			    int	flags, int numPids, Proc_PID *newPidArray,
 			    ProcChildInfo *childInfoPtr));
 
@@ -1091,7 +1091,7 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
  *----------------------------------------------------------------------
  */
 
-ENTRY static ReturnStatus 
+ENTRY ReturnStatus 
 DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
     register	Proc_ControlBlock	*curProcPtr;	/* Parent process. */
 			/* PROC_WAIT_BLOCK => wait if no children have changed
