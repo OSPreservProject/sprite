@@ -42,6 +42,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsutil.h>
 #include <bstring.h>
 #include <stdio.h>
+#ifdef NOTDEF		/* Wait for future install to get this stuff working. */
+#include <devClientDev.h>
+#endif /* NOTDEF */
+#include <hostd.h>
 
 /*
  * Other kernel modules arrange call-backs when a host crashes or reboots.
@@ -183,6 +187,11 @@ Boolean	recov_Transparent = FALSE;
 #endif /* RECOV_TRANSPARENT */
 
 /*
+ * True if we should batch together multiple reopens in an rpc.
+ */
+Boolean	recov_BulkHandles = TRUE;
+
+/*
  * TRUE if the clients should ignore the fact that a server is able to
  * do transparent recovery.  This will be FALSE except for some testing.
  */
@@ -197,6 +206,20 @@ Boolean	recov_DoInitDataCopy = FALSE;
 #else
 Boolean	recov_DoInitDataCopy = TRUE;
 #endif /* RECOV_NOCOPY */
+
+/*
+ * Don't bother to reopen files that only have clean blocks in the cache.
+ * Invalidate their clean cache blocks and scavenge the handles.
+ * This variable and recov_SkipCleanFiles should never both be set true!
+ */
+Boolean	recov_IgnoreCleanFiles = FALSE;
+
+/*
+ * Don't bother to reopen files that only have clean blocks in the cache.
+ * Just leave alone their cache blocks and handles.
+ * This variable and recov_IgnoreCleanFiles should never both be set true!
+ */
+Boolean	recov_SkipCleanFiles = TRUE;
 
 /*
  * Forward declarations.
@@ -491,8 +514,9 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
     Boolean fastBoot;		/* Whether the host that's alive went through
 				 * a fast boot or not. */
 {
-    register Hash_Entry *hashPtr;
-    register RecovHostState *hostPtr;
+    register	Hash_Entry *hashPtr;
+    register	RecovHostState *hostPtr;
+    int		hostState = -1;
 
     LOCK_MONITOR;
     if (spriteID == NET_BROADCAST_HOSTID || bootID == 0 || sys_ShuttingDown) {
@@ -520,6 +544,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
 
 	RecovHostPrint(RECOV_PRINT_IF_UP, spriteID, "is up\n");
 	RECOV_TRACE(spriteID, RECOV_HOST_ALIVE, RECOV_CUZ_INIT);
+	hostState = DEV_CLIENT_STATE_NEW_HOST;
     } else {
 	hostPtr = (RecovHostState *)hashPtr->value;
     }
@@ -604,6 +629,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
 		hostPtr->state |= RECOV_HOST_BOOTING;
 	    } else {
 		hostPtr->state |= RECOV_HOST_ALIVE;
+		hostState = DEV_CLIENT_STATE_NEW_HOST;
 	    }
 	    break;
 	case RECOV_HOST_ALIVE:
@@ -621,6 +647,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
 	    if (! rpcNotActive) {
 		hostPtr->state &= ~RECOV_HOST_BOOTING;
 		hostPtr->state |= RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY;
+		hostState = DEV_CLIENT_STATE_NEW_HOST;
 		RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_WAS_BOOTING);
 		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
 			"Booting, set alive, recov.\n");
@@ -637,6 +664,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
 			"Dead or dying, set booting.\n");
 	    } else {
 		hostPtr->state |= (RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY);
+		hostState = DEV_CLIENT_STATE_NEW_HOST;
 		RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_WAS_DEAD);
 		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
 			"Dead, dying, set want recov.\n");
@@ -676,6 +704,14 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
 	Proc_CallFunc(RecovRebootCallBacks, (ClientData)spriteID, 0);
     }
 exit:
+    if (hostState == DEV_CLIENT_STATE_NEW_HOST) {
+#ifdef NOTDEF
+	/*
+	 * Wait for future install to get this stuff working.
+	 */
+	Dev_ClientHostUp(spriteID);
+#endif /* NOTDEF */
+    }
     UNLOCK_MONITOR;
     return;
 }
@@ -704,8 +740,9 @@ ENTRY void
 Recov_HostDead(spriteID)
     int spriteID;
 {
-    register Hash_Entry *hashPtr;
-    register RecovHostState *hostPtr;
+    register	Hash_Entry *hashPtr;
+    register	RecovHostState *hostPtr;
+    int		hostState = -1;
 
     LOCK_MONITOR;
     if (spriteID == NET_BROADCAST_HOSTID || rpc_NoTimeouts) {
@@ -726,6 +763,7 @@ Recov_HostDead(spriteID)
 	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_HOST_DEAD, 0);
 	hashPtr->value = (Address)hostPtr;
 	RECOV_TRACE(spriteID, RECOV_HOST_DEAD, RECOV_CUZ_INIT);
+	hostState = DEV_CLIENT_STATE_DEAD_HOST;
     } else {
 	hostPtr = (RecovHostState *)hashPtr->value;
     }
@@ -739,6 +777,7 @@ Recov_HostDead(spriteID)
 	case RECOV_STATE_UNKNOWN:
 	case RECOV_HOST_BOOTING:
 	case RECOV_HOST_ALIVE:
+	    hostState = DEV_CLIENT_STATE_DEAD_HOST;
 	    hostPtr->state &=
 		~(RECOV_HOST_ALIVE|RECOV_HOST_BOOTING);
 	    /*
@@ -758,6 +797,14 @@ Recov_HostDead(spriteID)
 	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH);
 	    Proc_CallFunc(CrashCallBacks, (ClientData)spriteID, 0);
 	    break;
+    }
+    if (hostState == DEV_CLIENT_STATE_DEAD_HOST) {
+#ifdef NOTDEF
+	/*
+	 * Wait for future install to get this stuff working.
+	 */
+	Dev_ClientHostDown(spriteID);
+#endif /* NOTDEF */
     }
     UNLOCK_MONITOR;
     return;

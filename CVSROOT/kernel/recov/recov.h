@@ -198,6 +198,22 @@ typedef struct RecovTraceRecord {
 
 #endif /* not CLEAN */
 
+/*
+ * More parameters for controlling recovery.  The first of these
+ * (0 to 99) are for the use of the recovery box and are defined in
+ * /usr/include/recovBox.h.
+ */
+#define	RECOV_BULK_REOPEN	100	/* Do bulk reopen rpcs. */
+#define	RECOV_SINGLE_REOPEN	101	/* Do normal reopen rpcs. */
+#define	RECOV_IGNORE_CLEAN	102	/* Don't reopen files that have only
+					 * clean blocks in the cache. */
+#define	RECOV_REOPEN_CLEAN	103	/* Do reopen files that have only
+					 * clean blocks in the cache. */
+#define	RECOV_SKIP_CLEAN	104	/* Skip the reopen of files that have
+					 * only clean blocks in the cache.
+					 * But don't invalidate them as is
+					 * done for IGNORE_CLEAN. */
+
 extern Trace_Header *recovTraceHdrPtr;
 extern Boolean recovTracing;
 /*
@@ -234,6 +250,23 @@ extern	Boolean		recov_ClientIgnoreTransparent;
  * be true usually.)
  */
 extern	Boolean		recov_DoInitDataCopy;
+
+/*
+ * Do batching of reopen rpc's.
+ */
+extern	Boolean		recov_BulkHandles;
+
+/*
+ * Don't bother to reopen files that have only clean blocks in the cache.
+ */
+extern	Boolean		recov_IgnoreCleanFiles;
+
+/*
+ * Skip reopening this file.  It may have clean blocks in the cache, but
+ * it has no current streams.  The server will be contacted by reguar means
+ * the next time somebody opens the file.
+ */
+extern	Boolean		recov_SkipCleanFiles;
 
 extern void 	Recov_Init _ARGS_((void));
 extern void 	Recov_CrashRegister _ARGS_((void (*crashCallBackProc)(), ClientData crashData));

@@ -113,6 +113,10 @@ Recov_InitRecovBox()
     if (recov_RestartDebug) {
 	printf("mach_RestartTablePtr is at 0x%x\n");
     }
+    if (restartTablePtr == (RestartHeader *) NIL ||
+	    restartTablePtr == (RestartHeader *) NULL) {
+	panic("Recov_InitRecovBox called with no restart table available.");
+    }
     if ((Mach_GetRestartTableSize() & (VMMACH_PAGE_SIZE -1)) != 0) {
 	panic(
 	"Recov_Init_RecovBox: restart table not multiple of page size.\n");
@@ -180,6 +184,10 @@ Recov_ToggleChecksum(typeID)
 {
     unsigned	short	(*save)();
 
+    if (!recov_Transparent) {
+	printf("Recov_ToggleChecksum: no transparent recovery.\n");
+	return;
+    }
     save = restartTablePtr->contents[typeID].Checksum;
     restartTablePtr->contents[typeID].Checksum =
 	    (unsigned short (*)()) checksumList[typeID];
@@ -216,6 +224,9 @@ GetFreeIndex(typeID)
     unsigned short	freeIndex;
     RestartTypeInfo	*typeInfoPtr;
 
+    if (!recov_Transparent) {
+	panic("GetFreeIndex: no transparent recovery.");
+    }
     typeInfoPtr = &(restartTablePtr->contents[typeID]);
     freeIndex = typeInfoPtr->firstFree;
     typeInfoPtr->firstFree = typeInfoPtr->objInfoAddr[freeIndex].info.nextFree;
@@ -246,6 +257,9 @@ AddFreeIndex(typeID, objNum)
 {
     RestartTypeInfo	*typeInfoPtr;
 
+    if (!recov_Transparent) {
+	panic("AddFreeIndex: no transparent recovery.");
+    }
     typeInfoPtr = &(restartTablePtr->contents[typeID]);
     typeInfoPtr->objInfoAddr[objNum].info.nextFree = typeInfoPtr->firstFree;
     typeInfoPtr->firstFree = objNum;
@@ -280,6 +294,10 @@ Recov_MaxNumObjects(objectSize, restart)
     int		spaceLeft;
     int		maxNumObjects;
 
+    if (!recov_Transparent) {
+	printf("Recov_MaxNumObjects: no transparent recovery.\n");
+	return 0;
+    }
     if (!restartTablePtr->initialized) {
 	panic("Recov_MaxNumObjects called before Recov_InitRecovBox.");
     }
@@ -326,6 +344,10 @@ Recov_PrintSpace(objectSize)
     int		spaceLeft;
     int		maxNumObjects;
 
+    if (!recov_Transparent) {
+	printf("Recov_PrintSpace: no transparent recovery.\n");
+	return;
+    }
     if (!restartTablePtr->initialized) {
 	panic("Recov_PrintSpace called before Recov_InitRecovBox.");
     }
@@ -392,6 +414,12 @@ Checksum)
     if (recov_RestartDebug) {
 	printf("Recov_InitType: objectSize: %d, maxNumObjects: %d\n",
 		objectSize, maxNumObjects);
+    }
+
+    if (!recov_Transparent) {
+	printf("Recov_InitType: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
     }
 	
     if (objectSize <= 0) {
@@ -517,6 +545,11 @@ Recov_GetObjectSize(typeID)
     int		objectSize;
 
     LOCK_MONITOR;
+    if (!recov_Transparent) {
+	printf("Recov_GetObjectSize: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return -1;
+    }
     if (typeID < 0 || typeID >= restartTablePtr->nextTypeID) {
 	UNLOCK_MONITOR;
 	return -1;
@@ -564,6 +597,11 @@ Recov_InsertObject(typeID, objectPtr, applicationObjectNum, objectIDPtr)
     objectIDPtr->typeID = -1;
     objectIDPtr->objectNumber = -1;
 
+    if (!recov_Transparent) {
+	printf("Recov_InsertObject: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
     if (typeID < 0 || typeID >= restartTablePtr->nextTypeID) {
 	printf("Recov_InsertObject: No such fast restart object type.\n");
 	UNLOCK_MONITOR;
@@ -658,6 +696,12 @@ Recov_InsertObjects(typeID, numObjs, obuffer, objNumBuffer, objIDBuffer)
     char		*objectPtr;
 
     LOCK_MONITOR;
+
+    if (!recov_Transparent) {
+	printf("Recov_InsertObjects: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
 
     /* Should I bother to do this? */
     for (i = 0; i < numObjs; i++) {
@@ -757,6 +801,11 @@ Recov_DeleteObject(objectID)
 
     LOCK_MONITOR;
 
+    if (!recov_Transparent) {
+	printf("Recov_DeleteObject: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
     restartTypeInfoPtr =
 	    &(restartTablePtr->contents[objectID.typeID]);
     if (objectID.typeID < 0 || objectID.typeID >= restartTablePtr->nextTypeID) {
@@ -826,6 +875,11 @@ Recov_UpdateObject(objectPtr, objectID)
 
     LOCK_MONITOR;
 
+    if (!recov_Transparent) {
+	printf("Recov_UpdateObject: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
     restartTypeInfoPtr =
 	    &(restartTablePtr->contents[objectID.typeID]);
     if (objectID.typeID < 0 || objectID.typeID >= restartTablePtr->nextTypeID) {
@@ -897,6 +951,11 @@ Recov_ReturnObject(objectPtr, objectID, checksum)
 
     LOCK_MONITOR;
 
+    if (!recov_Transparent) {
+	printf("Recov_ReturnObject: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
     restartTypeInfoPtr =
 	    &(restartTablePtr->contents[objectID.typeID]);
     if (objectID.typeID < 0 || objectID.typeID >= restartTablePtr->nextTypeID) {
@@ -983,6 +1042,11 @@ Recov_ReturnObjects(typeID, olengthPtr, obuffer, ilengthPtr, ibuffer,
 
     LOCK_MONITOR;
 
+    if (!recov_Transparent) {
+	printf("Recov_ReturnObjects: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
     restartTypeInfoPtr =
 	    &(restartTablePtr->contents[typeID]);
     if (typeID < 0 || typeID >= restartTablePtr->nextTypeID) {
@@ -1101,6 +1165,11 @@ Recov_ReturnContents(lengthPtr, buffer)
 
     LOCK_MONITOR;
 
+    if (!recov_Transparent) {
+	printf("Recov_ReturnContents: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
     for (i = 0; i < NUM_RESTART_TYPES; i++) {
 	if (restartTablePtr->contents[i].objectSize <= 0) {
 	    break;
@@ -1156,6 +1225,11 @@ Recov_NumObjects(typeID)
 {
     LOCK_MONITOR;
 
+    if (!recov_Transparent) {
+	printf("Recov_NumObjects: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return -1;
+    }
     if (typeID < 0 || typeID >= restartTablePtr->nextTypeID) {
 	return -1;
     }
@@ -1190,6 +1264,11 @@ Recov_MapType(applicationTypeID, typeIDPtr)
     int		i;
 
     LOCK_MONITOR;
+    if (!recov_Transparent) {
+	printf("Recov_MapType: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
     for (i = 0; i < restartTablePtr->nextTypeID; i++) {
 	if (restartTablePtr->contents[i].applicationTypeID ==
 		applicationTypeID) {
@@ -1230,6 +1309,11 @@ Recov_MapObjectNum(typeID, applicationObjectNum, objectNumPtr)
     ObjInfo	*objInfoAddr;
     int		i;
 
+    if (!recov_Transparent) {
+	printf("Recov_MapObjectNum: no transparent recovery.\n");
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
     if (typeID < 0 || typeID >= restartTablePtr->nextTypeID) {
 	*objectNumPtr = -1;
 	return FAILURE;
@@ -1392,7 +1476,8 @@ Recov_Cmd(option, argPtr)
     ReturnStatus		status = SUCCESS;
 
     if (option != RECOV_TOGGLE_CHECKSUM &&
-	    option != RECOV_PRINT_REBOOT_TIMES &&
+	    option != RECOV_PRINT_REBOOT_TIMES && option != RECOV_BULK_REOPEN
+	    && option != RECOV_SINGLE_REOPEN &&
 	    (argPtr == (Address) NIL || argPtr == (Address) 0 ||
 	    argPtr == (Address) USER_NIL)) {
 	return GEN_INVALID_ARG;
@@ -1852,6 +1937,42 @@ Recov_Cmd(option, argPtr)
     case RECOV_TOGGLE_CHECKSUM: {
 	Recov_ToggleChecksum((int) argPtr);
 	status = SUCCESS;
+	break;
+    }
+    case RECOV_BULK_REOPEN: {
+	recov_BulkHandles = TRUE;
+	status = SUCCESS;
+	break;
+    }
+    case RECOV_SINGLE_REOPEN: {
+	recov_BulkHandles = FALSE;
+	status = SUCCESS;
+	break;
+    }
+    case RECOV_IGNORE_CLEAN: {
+	if (recov_SkipCleanFiles) {
+	    printf("Cannot both skip and ignore reopening clean files.\n");
+	    status = FAILURE;
+	} else {
+	    recov_IgnoreCleanFiles = TRUE;
+	    status = SUCCESS;
+	}
+	break;
+    }
+    case RECOV_REOPEN_CLEAN: {
+	recov_IgnoreCleanFiles = FALSE;
+	recov_SkipCleanFiles = FALSE;
+	status = SUCCESS;
+	break;
+    }
+    case RECOV_SKIP_CLEAN: {
+	if (recov_IgnoreCleanFiles) {
+	    printf("Cannot both skip and ignore reopening clean files.\n");
+	    status = FAILURE;
+	} else {
+	    recov_SkipCleanFiles = TRUE;
+	    status = SUCCESS;
+	}
 	break;
     }
     case RECOV_PRINT_SIZE: {
