@@ -773,7 +773,7 @@ _Vm_CopyOut:
 |*	Copy the NULL terminated string from *sourcePtr to *destPtr up
 |*	numBytes worth of bytes.
 |*
-|*	void
+|*	ReturnStatus
 |*	Vm_StringNCopy(numBytes, sourcePtr, destPtr, bytesCopiedPtr)
 |*	    register int numBytes;      /* The number of bytes to copy */
 |*	    Address sourcePtr;          /* Where to copy from. */
