@@ -167,7 +167,7 @@ sigReturn:
 	addl	#12, sp
 	jsr	_ExcSigReturn 	|* Call ExcSigReturn(a0, trapStack)
 	addql	#4, sp
-	jra	normReturn	|* Do a normal return from signal.
+	jra	ExcReturnFromTrap	|* Do a normal return from trap.
 
 userError:
 |*
