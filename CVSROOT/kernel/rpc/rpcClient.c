@@ -99,14 +99,16 @@ Boolean rpcCallTiming = FALSE;
  *----------------------------------------------------------------------
  */
 ReturnStatus
-RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
+RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     int serverID;		/* The Sprite host that will execute the
 				 * service procedure */
     register RpcClientChannel *chanPtr;	/* The channel for the RPC */
     Rpc_Storage *storagePtr;	/* Pointers to caller's buffers */
     int command;		/* Only used to filter trace records */
-    int *srvBootIDPtr;		/* Return, boot time stamp of server.  Used
-				 * to trigger recovery actions by our caller */
+    int *srvBootIDPtr;		/* Return, boot time stamp of server. */
+    int *notActivePtr;		/* Return, RPC_NOT_ACTIVE flag from server.
+				 * These last two return parameters are later
+				 * passed to the recovery module. */
 {
     register RpcHdr *rpcHdrPtr;	/* Pointer to received message header */
     register ReturnStatus error;/* General error return status */
@@ -200,8 +202,14 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 	     * mechanism to queue messages.
 	     */
 	    chanPtr->state &= ~CHAN_INPUT;
-
 	    rpcHdrPtr = &chanPtr->replyRpcHdr;
+
+	    /*
+	     * Pick off the boot timestamp and active state of the server so
+	     * the recovery module can pay attention to traffic.
+	     */
+	    *notActivePtr = rpcHdrPtr->flags & RPC_NOT_ACTIVE;
+	    *srvBootIDPtr = rpcHdrPtr->bootID;
 #ifdef TIMESTAMP
 	    RPC_TRACE(rpcHdrPtr, RPC_CLIENT_D, "input");
 #endif TIMESTAMP
@@ -216,7 +224,6 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 		 * receive loop.  The command field is overloaded with the
 		 * return error code.
 		 */
-		*srvBootIDPtr = rpcHdrPtr->bootID;
 		if (rpcHdrPtr->flags & RPC_ERROR) {
 		    error = (ReturnStatus)rpcHdrPtr->command;
 		    if (error == 0) {
@@ -238,7 +245,6 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 	    } else if (rpcHdrPtr->flags & RPC_ACK) {
 		numAcks++;
 		rpcCltStat.acks++;
-		*srvBootIDPtr = rpcHdrPtr->bootID;
 		if (numAcks <= rpcMaxAcks) {
 		    /*
 		     * An ack from the server indicating that a server
