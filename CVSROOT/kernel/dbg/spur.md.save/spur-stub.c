@@ -323,8 +323,7 @@ kdb (sig,state)
 	  break;
 	}
 	/* Modify memory command */
-      case 'M':	  
-	{
+      case 'M': {
 	  int addr = 0;
 	  int count = 0;
 	  int length = 0;
@@ -332,27 +331,27 @@ kdb (sig,state)
 	  char *b = &buffer[1];
 	  led_display(PUT_MEM_COMMAND,LED_OK,FALSE);
 	  /* Get the memory address */
-	  for(;*b != ',' && *b != 0;)
+	  for(;*b != ',' && *b != 0;) {
 	    addr = (addr << 4) + fromhex(*b++);
-	  
-	  
+	  }
 	  
 	  /* Get data count (bytes) */
 	  *b++;
-	  for(length = 0;(*b != ':' && *b != 0); length++)
+	  for(length = 0;(*b != ':' && *b != 0); length++) {
 	    count = (count << 4) + fromhex(*b++);
+	  }
 	  
-	  
-
 	  /* If bad address, return error */
-	  if(!Vm_ValidateRange(addr,count))
-	    {
+	  if(!Vm_ValidateRange(addr,count)) {
 	      error = ERROR_BAD_ADDRESS;
-	    }
-	  else 
-	    /* Because of the byte swap problem,
-	       we only handle lengths we know how
-	       to swap.  Change chars one at a time.*/
+          } else  {
+	    /*
+	     * Because of the byte swap problem,
+	     * we only handle lengths we know how
+	     * to swap.  Change chars one at a time.
+	     */
+
+	    VmMach_SetProtForDbg(TRUE, count, addr);
 
 	    *b++;	    
 	    switch (count) {
@@ -378,17 +377,17 @@ kdb (sig,state)
 	      error = ERROR_BAD_LENGTH;
 	      break;
 	    }
+	  }
 	  
-	  if (error)
-	    {
+	  if (error) {
 	      b = buffer;
 	      *b++ = 'E';
 	      STUFF_BYTE(error,b);
 	      *b = 0;			
 	      putpkt(buffer);
-	    }
-	  else
+	  } else {
 	    putpkt("OK");
+          }
 	  break;
 	}
 	
@@ -506,6 +505,7 @@ kdb (sig,state)
 	    /* current pc. */
 	    addr = (!(state->kpsw & MACH_KPSW_USE_CUR_PC)
 		    ? (int)state->nextPC : (int)state->curPC + 4);
+	    VmMach_SetProtForDbg(TRUE, 4, addr);
 	    old_step_contents = *(int *) addr;  /* Remember old instruction */
 	    *(int *) addr = SINGLE_STEP_TRAP;   /* Put step trap in instead */
 	    step_addr = addr;		        /* Remember where we put it. */

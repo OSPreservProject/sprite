@@ -13,21 +13,22 @@
 #include "machConst.h"
 #include "reg.h"
 
-	.asmreg    VOL_TEMP3
-
 
 /* initialize the uart.  This must be called at power up.
 ** (void) init_uart();
 */
+UART_BASE_C:	.long 		UART_BASE
 	.globl _uart_init
 _uart_init:
+0:
+	rd_special		r24,pc
+	
+	ld_32  VOL_TEMP1, r24,$(UART_BASE_C-0b)          /* Start of the UART registers*/
+	rd_kpsw VOL_TEMP3                     /* Go to physical mode to talk */
+	add_nt  KPSW_REG,VOL_TEMP3,r0
+	and	VOL_TEMP3,VOL_TEMP3,$~(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw VOL_TEMP3,r0
 
-	rd_kpsw VOL_TEMP1                     /* Go to physical mode to talk */
-	add_nt  KPSW_REG,VOL_TEMP1,r0
-	and	VOL_TEMP1,VOL_TEMP1,$~(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_INTR_TRAP_ENA)
-	wr_kpsw VOL_TEMP1,r0
-
-	add_nt  VOL_TEMP1,r0,$UART_BASE          /* Start of the UART registers*/
 	st_uart	($(TX_OFF|RX_OFF|RESET_RX), COMMAND)/* reset receive */
 	st_uart	($(TX_OFF|RX_OFF|RESET_TX), COMMAND) /* reset transmit */
 	st_uart	($(TX_OFF|RX_OFF|RESET_MR1), COMMAND)/* reset mode pointer */
@@ -54,10 +55,13 @@ _uart_init:
 
 	.globl 	_readchar
 _readchar:
-	add_nt  VOL_TEMP1,r0,$UART_BASE        /* Start of the UART registers*/
+0:
+	rd_special		r24,pc
+	
+	ld_32  VOL_TEMP1, r24,$(UART_BASE_C-0b)          /* Start of the UART registers*/
 
 @wait:                   /* wait for a character  */
-	call	_MachRefreshCCWells	
+	cmp_trap     always,r0,r0,$3
 	nop
 	add_nt  OUTPUT_REG1,VOL_TEMP1,$XFER_STATUS
 	call   _read_physical_word
@@ -83,8 +87,10 @@ _readchar:
 	Nop
 				/*  Need to do something better here.  */
 @error:
-	jump		.
+	call		_uart_init
 	Nop					
+	jump		@waitb
+	Nop
 
 
 
@@ -95,10 +101,14 @@ _readchar:
 	.globl  _writechar
 _writechar:	
 			    /* Start of the UART registers*/
-	add_nt  VOL_TEMP1,r0,$UART_BASE   
+0:
+	rd_special		r24,pc
+	
+	ld_32  VOL_TEMP1, r24,$(UART_BASE_C-0b)          /* Start of the UART registers*/
+
  
 @wait:			    /* Wait until there is space in the FIFO */
-	call	_MachRefreshCCWells	
+	cmp_trap     always,r0,r0,$3
 	nop
 	add_nt  OUTPUT_REG1,VOL_TEMP1,$XFER_STATUS
 	call   _read_physical_word
