@@ -1889,16 +1889,24 @@ FsDeleteFileDesc(handlePtr)
     if (domainPtr == (FsDomain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
+    /*
+     * The ordering of the deletion is as follows:
+     * 1. Mark the descriptor on disk as free so if we crash the
+     *		disk scavenger will free the blocks for us.
+     * 2. Truncate the blocks out of the cache and from the descriptor.
+     * 3. Mark the file descriptor as available in the bitmask.
+     */
     FS_TRACE_HANDLE(FS_TRACE_DELETE, ((FsHandleHeader *)handlePtr));
-    status = FsFileTrunc(handlePtr, 0, FS_TRUNC_DELETE);
+    handlePtr->descPtr->flags = FS_FD_FREE | FS_FD_DIRTY;
+    status = FsWriteBackDesc(handlePtr, TRUE);
     if (status != SUCCESS) {
-	printf( "FsDeleteFileDesc: Can't truncate file\n");
+	printf("FsDeleteFileDesc: Can't mark descriptor as free\n");
     } else {
-	handlePtr->descPtr->flags = FS_FD_FREE;
-	status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
-					    handlePtr->descPtr);
+	status = FsFileTrunc(handlePtr, 0, FS_TRUNC_DELETE);
 	if (status != SUCCESS) {
-	    printf( "FsDeleteFileDesc: Can't free descriptor\n");
+	    printf("FsDeleteFileDesc: Can't truncate file <%d,%d> \"%s\"\n",
+		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		    FsHandleName(handlePtr));
 	} else {
 	    FsFreeFileNumber(domainPtr, handlePtr->hdr.fileID.minor);
 	}
