@@ -193,6 +193,7 @@ DoneWithUserStuff:
 	nop
 
 NotAnInterrupt:
+
 	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
 	be	MachSyscallTrap
 	nop
@@ -211,6 +212,10 @@ NotAnInterrupt:
 
 	cmp	%VOL_TEMP1, MACH_TRAP_FLUSH_WINDOWS	/* flush window trap */
 	be	MachFlushWindowsToStackTrap
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TRAP_UNIX_SYSCALL	/* unix syscall */
+	be	MachUnixSyscallTrap
 	nop
 
 	/*
@@ -1347,6 +1352,148 @@ ReturnFromSyscall:
 	jmp	%VOL_TEMP1
 	nop
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachUnixSyscallTrap --
+ *
+ *	This is the code to handle unix system call traps.  The number of the
+ *	system call is in %g1.
+ *
+ * Results:
+ *	Returns a status to the caller in the caller's %o0 (or %i0).
+ *
+ * Side effects:
+ *	Depends on the kernel call.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachUnixSyscallTrap
+MachUnixSyscallTrap:
+	/*
+	 * So that we don't re-execute the trap instruction when we
+	 * return from the system call trap via the return trap procedure,
+	 * we increment the return pc and npc here.
+	 */
+	mov	%NEXT_PC_REG, %CUR_PC_REG
+	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
+	/*
+	 * Make sure user stack pointer is written into state structure so that
+	 * it can be used while processing the system call.  (Who uses it??)
+	 * This means saving the frame pointer (previous user stack pointer).
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+#ifdef NOTDEF
+	set	_machCurStatePtr, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+#endif NOTDEF
+	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	add	%VOL_TEMP1, MACH_FP_OFFSET, %VOL_TEMP1
+	st	%fp, [%VOL_TEMP1]
+	nop
+	/* If fork call, save registers and invalidate trapRegs stuff????? */
+	/*
+	 * Check number of kernel call for validity.  This was stored in %g1.
+	 * We must be careful not to have trashed it.  But if we end up
+	 * trashing it, we could instead pull it out of the saved globals state
+	 * in the mach state structure since it got saved there.
+	 */
+	set	_sysUnixNumSyscalls, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	cmp	%VOL_TEMP1, %g1
+	bgeu	GoodUnixSysCall
+	nop
+	/*
+	 * If bad, (take user error? - on spur) then do normal return from trap.
+	 * Is this magic number a return value?  It's in the sun3 code.
+	 */
+	set	-1, %RETURN_VAL_REG
+	set	ReturnFromUnixSyscall, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+GoodUnixSysCall:
+	/*
+	 * Save sys call number into lastSysCall field in process state so
+	 * that migration can figure out what it was supposed to be.
+	 * %g1 must still contain syscall number.
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	set	_machLastSysCallOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	st	%g1, [%VOL_TEMP1]
+	/*
+	 * Fetch args.  Copy them from user space if they aren't all in
+	 * the input registers.  For now I copy all the input registers,
+	 * since there isn't a table giving the actual number of args?
+	 * For args beyond the number of words that can fit in the input
+	 * registers, I get the offset to copy to and the pc to jump to inside
+	 * the copying from tables set up in Mach_SyscallInit.  If there
+	 * are no args to copy, then the pc gets set to jump to
+	 * MachFetchArgsEnd.
+	 */
+	mov	%i5, %o5
+	mov	%i4, %o4
+	mov	%i3, %o3
+	mov	%i2, %o2
+	mov	%i1, %o1
+	mov	%i0, %o0
+
+	sll	%g1, 3, %g1
+	set	_sysUnixSysCallTable, %VOL_TEMP2
+	add	%g1, %VOL_TEMP2, %VOL_TEMP2		/* index to kcall */
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* got addr */
+	/* enable interrupts */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	/* go do it */
+	call	%VOL_TEMP2
+	nop
+ReturnFromUnixSyscall:
+	/* Disable interrupts. */
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	/*
+	 * Move return value to caller's return val register.
+	 */
+
+	/*
+	 * Check if error.
+	 */
+	cmp	%RETURN_VAL_REG, -1
+	bne	UnixOk
+	nop
+
+	/*
+	 * Get the errno from the pcb and use it as the return value.
+	 */
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)		/* into %VOL_TEMP1 */
+	set	MACH_UNIX_ERRNO_OFFSET, %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	mov	%VOL_TEMP1, %RETURN_VAL_REG_CHILD
+
+	/*
+	 * Set the carry to indicate an error.
+	 */
+	mov	%CUR_PSR_REG, %VOL_TEMP2
+	set	MACH_CARRY_BIT, %VOL_TEMP1
+	or	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	mov	%VOL_TEMP2, %CUR_PSR_REG
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+UnixOk:
+	mov	%RETURN_VAL_REG, %RETURN_VAL_REG_CHILD
+	mov	%o1, %i1
+	mov	%CUR_PSR_REG, %VOL_TEMP2
+	set	MACH_CARRY_BITMASK, %VOL_TEMP1
+	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	mov	%VOL_TEMP2, %CUR_PSR_REG
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+	
 
 /*
  * ----------------------------------------------------------------------
