@@ -68,22 +68,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  */
 ReturnStatus
-FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
-	dataSizePtr, clientDataPtr)
+FsPseudoDevSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
      register FsLocalFileIOHandle *handlePtr;	/* A handle from FsLocalLookup.
 					 * Should be LOCKED upon entry,
 					 * unlocked upon exit. */
-     int		clientID;	/* Host ID of client doing the open */
-     register int	useFlags;	/* FS_MASTER, plus
-					 * FS_READ | FS_WRITE | FS_EXECUTE*/
-     register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
-     Fs_FileID		*streamIDPtr;	/* Return - stream ID. 
-					 * NIL during set/get attributes */
-     int		*dataSizePtr;	/* Return - sizeof(FsPdevState) */
-     ClientData		*clientDataPtr;	/* Return - a reference to FsPdevState.
-					 * Nothing is returned during set/get
-					 * attributes */
-
+     FsOpenArgs		*openArgsPtr;	/* Standard open arguments */
+     FsOpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
+					 * and FsDeviceState */
 {
     register	ReturnStatus status = SUCCESS;
     Fs_FileID	ioFileID;
@@ -105,7 +96,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 		    (handlePtr->descPtr->version << 16);
     ctrlHandlePtr = FsControlHandleInit(&ioFileID, handlePtr->hdr.name);
 
-    if (useFlags & FS_PDEV_MASTER) {
+    if (openArgsPtr->useFlags & FS_PDEV_MASTER) {
 	/*
 	 * When a server opens we ensure there is only one.
 	 */
@@ -115,7 +106,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    /*
 	     * Note which host is running the pseudo-device server.
 	     */
-	    ctrlHandlePtr->serverID = clientID;
+	    ctrlHandlePtr->serverID = openArgsPtr->clientID;
 	    /*
 	     * Note our hostID is still in the hdr.serverID field of the
 	     * control handle being returned to the opening process. This is
@@ -124,17 +115,17 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * a shadow stream here, which has us as the server so
 	     * recovery and closing work right.
 	     */
-	    *ioFileIDPtr = ioFileID;
-	    *clientDataPtr = (ClientData)NIL;
-	    *dataSizePtr = 0;
-	    streamPtr = FsStreamNewClient(rpc_SpriteID, clientID,
-				    (FsHandleHeader *)ctrlHandlePtr, useFlags,
-				    handlePtr->hdr.name);
-	    *streamIDPtr = streamPtr->hdr.fileID;
+	    openResultsPtr->ioFileID = ioFileID;
+	    openResultsPtr->streamData = (ClientData)NIL;
+	    openResultsPtr->dataSize = 0;
+	    streamPtr = FsStreamNewClient(rpc_SpriteID, openArgsPtr->clientID,
+				    (FsHandleHeader *)ctrlHandlePtr,
+				    openArgsPtr->useFlags, handlePtr->hdr.name);
+	    openResultsPtr->streamID = streamPtr->hdr.fileID;
 	    FsHandleRelease(streamPtr, TRUE);
 	}
     } else {
-	if (streamIDPtr == (Fs_FileID *)NIL) {
+	if (openArgsPtr->useFlags == 0) {
 	    /*
 	     * Set up for get/set attributes.  We point the client
 	     * at the name of the pseudo-device if it is not active,
@@ -142,10 +133,10 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * has the current access and modify times.
 	     */
 	    if (ctrlHandlePtr->serverID == NIL) {
-		*ioFileIDPtr = handlePtr->hdr.fileID;
+		openResultsPtr->ioFileID = handlePtr->hdr.fileID;
 	    } else {
-		*ioFileIDPtr = ctrlHandlePtr->rmt.hdr.fileID;
-		if (clientID != ctrlHandlePtr->serverID) {
+		openResultsPtr->ioFileID = ctrlHandlePtr->rmt.hdr.fileID;
+		if (openArgsPtr->clientID != ctrlHandlePtr->serverID) {
 		    /*
 		     * The requesting client is different than the pdev
 		     * server host.  Unfortunately the serverID in the
@@ -156,8 +147,8 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 		     * using the Fs_Attributes.serverID, which is us,
 		     * so that the correct control handle is found.
 		     */
-		    ioFileIDPtr->type = FS_RMT_CONTROL_STREAM;
-		    ioFileIDPtr->serverID = ctrlHandlePtr->serverID;
+		    openResultsPtr->ioFileID.type = FS_RMT_CONTROL_STREAM;
+		    openResultsPtr->ioFileID.serverID = ctrlHandlePtr->serverID;
 		}
 	    }
 	} else if (ctrlHandlePtr->serverID == NIL) {
@@ -173,17 +164,19 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * pseudo-devices) and a clone seed (to avoid conflict with
 	     * other clients of this pseudo-device).
 	     */
-	    if (ctrlHandlePtr->serverID == clientID) {
-		ioFileIDPtr->type = FS_LCL_PSEUDO_STREAM;
+	    if (ctrlHandlePtr->serverID == openArgsPtr->clientID) {
+		openResultsPtr->ioFileID.type = FS_LCL_PSEUDO_STREAM;
 	    } else {
-		ioFileIDPtr->type = FS_RMT_PSEUDO_STREAM;
+		openResultsPtr->ioFileID.type = FS_RMT_PSEUDO_STREAM;
 	    }
-	    ioFileIDPtr->serverID = ctrlHandlePtr->serverID;
-	    ioFileIDPtr->major = (handlePtr->hdr.fileID.serverID << 16) |
-				  handlePtr->hdr.fileID.major;
+	    openResultsPtr->ioFileID.serverID = ctrlHandlePtr->serverID;
+	    openResultsPtr->ioFileID.major =
+				(handlePtr->hdr.fileID.serverID << 16) |
+				 handlePtr->hdr.fileID.major;
 	    ctrlHandlePtr->seed++;
-	    ioFileIDPtr->minor = ((handlePtr->descPtr->version << 24) ^
-				  (handlePtr->hdr.fileID.minor << 12)) |
+	    openResultsPtr->ioFileID.minor =
+				((handlePtr->descPtr->version << 24) ^
+				 (handlePtr->hdr.fileID.minor << 12)) |
 				 ctrlHandlePtr->seed;
 	    /*
 	     * Return the control stream file ID so it can be found again
@@ -195,15 +188,15 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    pdevStatePtr->ctrlFileID = ctrlHandlePtr->rmt.hdr.fileID;
 	    pdevStatePtr->procID = (Proc_PID)NIL;
 	    pdevStatePtr->uid = NIL;
-	    *clientDataPtr = (ClientData)pdevStatePtr ;
-	    *dataSizePtr = sizeof(FsPdevState);
+	    openResultsPtr->streamData = (ClientData)pdevStatePtr ;
+	    openResultsPtr->dataSize = sizeof(FsPdevState);
 	    /*
 	     * Create a streamID for the opening process.  No shadow
 	     * stream is kept here.  Instead, the streamID is returned to
 	     * the pdev server who sets up the shadow stream.
 	     */
-	    FsStreamNewID(ctrlHandlePtr->serverID, streamIDPtr);
-	    pdevStatePtr->streamID = *streamIDPtr;
+	    FsStreamNewID(ctrlHandlePtr->serverID, &openResultsPtr->streamID);
+	    pdevStatePtr->streamID = openResultsPtr->streamID;
 	}
     }
     FsHandleRelease(ctrlHandlePtr, TRUE);
