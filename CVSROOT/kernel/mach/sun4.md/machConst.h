@@ -15,8 +15,7 @@
 
 #ifdef KERNEL
 #include "sprite.h"
-/* ***TEMP*** */
-#include "/sprite/src/kernel/vm.ken/sun4.md/vmSunConst.h"
+#include "vmSunConst.h"
 #include "sysSysCall.h"
 #include "sys.h"
 #include "status.h"
