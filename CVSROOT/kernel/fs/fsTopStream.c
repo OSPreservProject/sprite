@@ -45,7 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Monitor to synchronize access to the streamCount variable.
  */
-static	Sync_Lock	streamLock = SYNC_LOCK_INIT_STATIC();
+static	Sync_Lock	streamLock = Sync_LockInitStatic("Fs:streamLock");
 #define LOCKPTR (&streamLock)
 
 static int	streamCount;	/* Used to generate fileIDs for streams*/
@@ -93,6 +93,7 @@ FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
     Fs_FileID fileID;
 
     LOCK_MONITOR;
+    Sync_LockRegister(&streamLock);
 
     /*
      * The streamID is uniquified by using our own host ID for the major
@@ -650,6 +651,7 @@ FsStreamDispose(streamPtr)
  *
  *----------------------------------------------------------------------
  */
+#ifdef notdef
 Boolean
 FsStreamScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;
@@ -669,6 +671,7 @@ FsStreamScavenge(hdrPtr)
 	return(FALSE);
     }
 }
+#endif notdef
 
 
 typedef struct StreamReopenParams {

@@ -23,7 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "sys.h"
 
-static	Sync_Lock nameHashLock = SYNC_LOCK_INIT_STATIC();
+static	Sync_Lock nameHashLock = Sync_LockInitStatic("Fs:nameHashLock");
 #define	LOCKPTR	&nameHashLock
 
 
@@ -72,6 +72,7 @@ FsNameHashInit(table, numBuckets)
     }
 
     fsStats.nameCache.size = table->size;
+    Sync_LockRegister(&nameHashLock);
 
     List_Init(&(table->lruList));
     table->table =

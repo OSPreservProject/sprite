@@ -52,7 +52,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 FsDomain *fsDomainTable[FS_MAX_LOCAL_DOMAINS];
 static int domainTableIndex = 0;
 
-Sync_Lock	domainTableLock = SYNC_LOCK_INIT_STATIC();
+Sync_Lock	domainTableLock = Sync_LockInitStatic("Fs:domainTableLock");
 #define LOCKPTR (&domainTableLock)
 /*
  * Forward declarations.
@@ -471,6 +471,8 @@ FsDetachDisk(prefixName)
     /*
      * Free up resources for the domain.
      */
+    Sync_LockClear(&domainPtr->dataBlockLock);
+    Sync_LockClear(&domainPtr->fileDescLock);
     free((Address)domainPtr->headerPtr);
     free((Address)domainPtr->summaryInfoPtr);
     free((Address)domainPtr->dataBlockBitmap);
@@ -579,6 +581,8 @@ InstallLocalDomain(domainPtr)
     int domainNumber;
 
     LOCK_MONITOR;
+
+    Sync_LockRegister(&domainTableLock);
 
     if (domainPtr->summaryInfoPtr->domainNumber == -1) {
 	while (fsDomainTable[domainTableIndex] != (FsDomain *)NIL) {

@@ -51,7 +51,7 @@ typedef struct {
     int		clientID;
 } ClientItem;
 
-static Sync_Lock clientLock = SYNC_LOCK_INIT_STATIC();
+static Sync_Lock clientLock;
 #define LOCKPTR (&clientLock)
 void ClientOpenInt();
 
@@ -75,6 +75,7 @@ void ClientOpenInt();
 void
 FsClientInit()
 {
+    Sync_LockInitDynamic(&clientLock, "Fs:clientLock");
     List_Init(&masterClientListHdr);
     masterClientList = &masterClientListHdr;
 }
@@ -115,6 +116,7 @@ FsIOClientOpen(clientList, clientID, useFlags, cached)
 	    goto found;
 	}
     }
+    fsStats.object.fileClients++;
     clientPtr = mnew(FsClientInfo);
     clientPtr->clientID = clientID;
     clientPtr->use.ref = 0;
@@ -201,6 +203,7 @@ FsIOClientClose(clientList, clientID, flags, cachePtr)
 		printf("FsIOClientClose: locked client %d\n",
 		    clientPtr->clientID);
 	    } else {
+		fsStats.object.fileClients--;
 		List_Remove((List_Links *) clientPtr);
 		free((Address) clientPtr);
 	    }
@@ -505,6 +508,7 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
 		clientPtr->use.write = 0;
 		clientPtr->use.exec = 0;
 	    } else {
+		fsStats.object.fileClients--;
 		List_Remove((List_Links *) clientPtr);
 		free((Address) clientPtr);
 	    }

@@ -27,7 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "net.h"
 
-static Sync_Lock notifyLock = SYNC_LOCK_INIT_STATIC();
+static Sync_Lock notifyLock = Sync_LockInitStatic("Fs:notifyLock");
 #define LOCKPTR (&notifyLock)
 
 
@@ -56,6 +56,7 @@ FsWaitListInsert(list, waitPtr)
     register Sync_RemoteWaiter *myWaitPtr;
 
     LOCK_MONITOR;
+    Sync_LockRegister(&notifyLock);
 
     LIST_FORALL(list, (List_Links *) myWaitPtr) {
 	/*
