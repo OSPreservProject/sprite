@@ -155,7 +155,7 @@ Timer_CallBack(interval, time)
 	register List_Links	*readyPtr;	/* Ptr to TQE that's ready
 						 * to be called. */
 	Time			timeOfDay;	/* Best guess at tod. */
-	Timer_Ticks		currentTime;
+	Timer_Ticks		currentSystemTimeTk;
 	Time			intervalTime;
 
 	/*
@@ -170,10 +170,10 @@ Timer_CallBack(interval, time)
 	timer_Statistics.callback++;
 #endif
 
-	MASTER_LOCK(&timerClockMutex);
-	Time_Add(timerTimeOfDay, time, &timerTimeOfDay);
-	timeOfDay = timerTimeOfDay;
-	MASTER_UNLOCK(&timerClockMutex);
+	MASTER_LOCK(&timer_ClockMutex);
+	Time_Add(timer_UniversalApprox, time, &timer_UniversalApprox);
+	timeOfDay = timer_UniversalApprox;
+	MASTER_UNLOCK(&timer_ClockMutex);
 
 	if (vm_Tracing) {
 	    Vm_StoreTraceTime(timeOfDay);
@@ -183,11 +183,11 @@ Timer_CallBack(interval, time)
 
 	MASTER_LOCK(&timerMutex);
 	if (!List_IsEmpty(timerQueueList)) {
-	    Timer_GetCurrentTicks(&currentTime);
+	    Timer_GetCurrentTicks(&currentSystemTimeTk);
 	    while (!List_IsEmpty(timerQueueList)) {
 		readyPtr = List_First(timerQueueList); 
 		if(Timer_TickGT(((Timer_QueueElement *)readyPtr)->time, 
-		  		  currentTime)) {
+				  currentSystemTimeTk)) {
 		    break;
 		} else {
 
@@ -217,15 +217,15 @@ Timer_CallBack(interval, time)
 			panic("Timer_ServiceInterrupt: t.q.e. routine == 0\n");
 		    } else {
 			void        (*routine)();
-			Timer_Ticks time;
+			Timer_Ticks timeTk;
 			ClientData  clientData;
 
 			ELEMENTPTR->processed = TRUE;
 			routine = ELEMENTPTR->routine;
-			time = ELEMENTPTR->time;
+			timeTk = ELEMENTPTR->time;
 			clientData = ELEMENTPTR->clientData;
 			MASTER_UNLOCK(&timerMutex);
-			(routine) (time, clientData);
+			(routine) (timeTk, clientData);
 			MASTER_LOCK(&timerMutex);
 		    }
 		}

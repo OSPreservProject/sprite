@@ -53,21 +53,27 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timerInt.h"
 #include "spriteTime.h"
 #include "timerTick.h"
+#include "machMon.h"
 
 /*
- *  The time of day (abbreviated TOD, also called Universal Time
- *  or Greenwich Time) is the number of seconds since 1/1/1970.
- *  It is updated whenever Timer_{S,G}etTimeOfDay is called.
+ *  Universal Time is the number of seconds since 1/1/1970, Greenwich Time.
+ *  The time of day is kept in Universal Time. We use the terms "time of
+ *  day" and "universal time" interchangably, although the latter is
+ *  probably more descriptive. Universal time is mainly used by user-level
+ *  programs. "System time" is what the kernel typically uses to measure
+ *  time.  System time is the amount of time that the machine has been up.
+ *  It is usually maintained by a free-running counter and expressed in
+ *  units of ticks. System time is a more useful abstraction since it
+ *  is not reset, whereas universal time can be adjusted by a system call.
  *
- *  The TOD time is maintained for human consumption; it is not used by
- *  the kernel for internal time.  Two values are maintained because the TOD
- *  is obtained by an RPC call to the file server. The RPC module relies on
- *  the Sync and Sched modules, which rely on the Timer module.  If the
- *  current time is changed to TOD once the timer queue has been
- *  initialized, then RPCs will hang for a very long time (i.e.  
- *  1986 - 1970 = 16 years).
- *  
- *  Two TOD values are available. The value returned by
+ *  The term "time" is very overloaded in both the comments and the code.
+ *  I've tried to make it as clear as possible which format a particular
+ *  time variable is stored in.  Time variables with standard names are
+ *  of type "Time".  Time variables with "Tk" appended to their names
+ *  are of type "Timer_Ticks".  There may be exceptions to this naming
+ *  scheme.
+ *
+ *  Universal time can be obtained through one of two routines.
  *  Timer_GetRealTimeOfDay is quite accurate but the routine is slow due
  *  to the conversion from internal Timer_Ticks format to Time format.
  *  The other value is timerTimeOfDay and is returned by
@@ -77,49 +83,51 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *  time between interrupts. However, the value is not always accurate
  *  because a timer interrupt can be delayed, therefore it is a close
  *  approximation to the real time of day.  To keep the value roughly
- *  accurate, every 10 seconds timerTimeOfDay is updated to the real
+ *  accurate, every 10 seconds timer_UniversalApprox is updated to the real
  *  time of day by a routine called from the timer queue.  The value
- *  of timerTimeOfDay is guaranteed to be monotonically increasing
+ *  of timer_UniversalApprox is guaranteed to be monotonically increasing
  *  between calls to Timer_SetTimeOfDay.
  *
- *  When the time of day is initially set with Timer_SetTimeOfDay, the
- *  current system up-time is recorded (in timeWhenTODSet) along with 
- *  the new value for the time of day (in timeOfDay).  When 
- *  Timer_GetTimeOfDay is called, the current TOD is calculated by 
- *  reading the current system up-time and subtracting from it the time 
+ *  When the universal time is initially set with Timer_SetTimeOfDay, the
+ *  current system time is recorded (in systemWhenUniversalSetTk) along with 
+ *  the new value for the universal time (in universalWhenSetTk).
+ *  This value for universal time is not incremented. When 
+ *  Timer_GetTimeOfDay is called, the current universal time is calculated by 
+ *  reading the current system time and subtracting from it the system time 
  *  when Timer_SetTimeOfDay was called. This difference is added to the 
- *  recorded TOD to give the current TOD.
+ *  recorded universal time to give the current universal time.
  *  
- *  LocalOffset is used to convert timeOfDay from Universal Time
- *  to local time. It is the number of minutes to add to Universal Time
- *  to compute the local time. For example, localOffset for the Pacific time 
- *  zone is -540 minutes. The local time of day is computed by multiplying
- *  localOffset by 60 and adding the result added to timeOfDay.
+ *  timerUniversalToLocalOffset is used to convert from universal time
+ *  to local time. It is the number of minutes to add to universal time
+ *  to compute the local time. For example, timerLocalOffset for the 
+ *  Pacific time zone is -540 minutes. The local time of day is computed 
+ *  by multiplying timerUniversalToLocalOffset by 60 and adding the result 
+ *  to the universal time.
  *
- *  DSTAllowed is a flag to indicate if Daylight Savings Time is allowed.
+ *  timerDSTAllowed is a flag to indicate if Daylight Savings Time is allowed.
  *  A few states, such as Arizona, do not have DST.
  *  (TRUE == DST is allowed, FALSE == DST is not allowed).
  */
 
-static Timer_Ticks timeWhenTODSet	= { 0, 0 };
-static Timer_Ticks timeOfDay		= { 0, 0 };
+static Timer_Ticks systemWhenUniversalSetTk;
+static Timer_Ticks universalWhenSetTk;
 
-Time   timerTimeOfDay			= { 0, 0 };
-static int localOffset			= 0;
-static Boolean DSTAllowed		= TRUE;
+Time   		timer_UniversalApprox;
+int 		timerUniversalToLocalOffset;
+Boolean 	timerDSTAllowed;
 
 /*
  * Semaphore protecting the above time of day variables.
  */
 
-Sync_Semaphore	timerClockMutex;
+Sync_Semaphore	timer_ClockMutex;
 
 
 /*
  * UpdateTimeOfDay() adjusts timerTimeOfDay to the real time of day.
  */
 
-static void UpdateTimeOfDay();
+static void UpdateUniversalTimeApprox();
 static Timer_QueueElement      updateElement;
 
 
@@ -145,16 +153,26 @@ void
 TimerClock_Init()
 {
 
-    Sync_SemInitDynamic(&timerClockMutex,"Timer:timerClockMutex");
+    char	buffer[100];
+    Time	universal;
+    int		offset;
+    Boolean	DST;
+
+    Sync_SemInitDynamic(&timer_ClockMutex,"Timer:timer_ClockMutex");
 
     Timer_CounterInit();
-
+    universal.seconds = 0;
+    universal.microseconds = 0;
+    offset = 0;
+    DST = TRUE;
+    TimerHardwareUniversalTimeInit(&universal, &offset, &DST);
+    TimerSetSoftwareUniversalTime(&universal, offset, DST);
     /*
      * Add the routine to fix the time of day to the timer queue.
      * The routine is called every 10 seconds.
      */
 
-    updateElement.routine = UpdateTimeOfDay;
+    updateElement.routine = UpdateUniversalTimeApprox;
     updateElement.interval = 10 * timer_IntOneSecond;
     Timer_ScheduleRoutine(&updateElement, TRUE);
 }
@@ -180,36 +198,35 @@ TimerClock_Init()
  */
 
 void
-Timer_GetRealTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
+Timer_GetRealTimeOfDay(timePtr, timerLocalOffsetPtr, DSTPtr)
     Time *timePtr;		/* Buffer to hold TOD. */
-    int  *localOffsetPtr;	/* Optional buffer to hold local offset. */
+    int  *timerLocalOffsetPtr;	/* Optional buffer to hold local offset. */
     Boolean *DSTPtr;		/* Optional buffer to hold DST allowed flag. */
 {
-    Timer_Ticks	curTime;
-    Timer_Ticks	diff;
+    Timer_Ticks	curSystemTk;	/* current system time */
+    Timer_Ticks	diffTk;
 
     /*
-     *  Get the current uptime time and subtract from it the uptime when the
-     *	the time of day was last set. Add this difference to the value
-     *  of the stored time of day to get the current T.O.D.
+     *  Get the current system time and subtract from it the system time
+     *  when the universal time was last set. Add this difference to the value
+     *  of the stored universal time to get the current universal time.
      */
 
-    MASTER_LOCK(&timerClockMutex);
+    MASTER_LOCK(&timer_ClockMutex);
 
+    Timer_GetCurrentTicks(&curSystemTk);
 
-    Timer_GetCurrentTicks(&curTime);
+    Timer_SubtractTicks(curSystemTk, systemWhenUniversalSetTk, &diffTk);
+    Timer_AddTicks(diffTk, universalWhenSetTk, &diffTk);
+    Timer_TicksToTime(diffTk, timePtr);
 
-    Timer_SubtractTicks(curTime, timeWhenTODSet, &diff);
-    Timer_AddTicks(diff, timeOfDay, &diff);
-    Timer_TicksToTime(diff, timePtr);
-
-    if (localOffsetPtr != (int *) NIL) {
-	*localOffsetPtr = localOffset;
+    if (timerLocalOffsetPtr != (int *) NIL) {
+	*timerLocalOffsetPtr = timerUniversalToLocalOffset;
     }
     if (DSTPtr != (Boolean *) NIL) {
-	*DSTPtr = DSTAllowed;
+	*DSTPtr = timerDSTAllowed;
     }
-    MASTER_UNLOCK(&timerClockMutex);
+    MASTER_UNLOCK(&timer_ClockMutex);
 
 }
 
@@ -217,9 +234,9 @@ Timer_GetRealTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
 /*
  *----------------------------------------------------------------------
  *
- *  Timer_GetTimeOfDay --
+ *  Timer_GetTimeOfDay--
  *
- *	Retrieves an approximate value for the time of day. 
+ *	Retrieves an approximate universal time. 
  *	The value is approximate because it is updated at every
  *	timer interrupt and timer interrupts may be delayed or dropped.
  *	For an accurate value, use Timer_GetRealTimeOfDay.
@@ -238,24 +255,26 @@ Timer_GetRealTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
  */
 
 void
-Timer_GetTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
+Timer_GetTimeOfDay(timePtr, timerLocalOffsetPtr, DSTPtr)
     Time *timePtr;		/* Buffer to hold TOD. */
-    int  *localOffsetPtr;	/* Optional buffer to hold local offset. */
+    int  *timerLocalOffsetPtr;	/* Optional buffer to hold local offset. */
     Boolean *DSTPtr;		/* Optional buffer to hold DST allowed flag. */
 {
 
-    MASTER_LOCK(&timerClockMutex);
 
-    *timePtr = timerTimeOfDay;
+    MASTER_LOCK(&timer_ClockMutex);
 
-    if (localOffsetPtr != (int *) NIL) {
-	*localOffsetPtr = localOffset;
+    *timePtr = timer_UniversalApprox;
+
+    if (timerLocalOffsetPtr != (int *) NIL) {
+	*timerLocalOffsetPtr = timerUniversalToLocalOffset;
     }
     if (DSTPtr != (Boolean *) NIL) {
-	*DSTPtr = DSTAllowed;
+	*DSTPtr = timerDSTAllowed;
     }
 
-    MASTER_UNLOCK(&timerClockMutex);
+
+    MASTER_UNLOCK(&timer_ClockMutex);
 
 }
 
@@ -265,72 +284,107 @@ Timer_GetTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
  *
  *  Timer_SetTimeOfDay --
  *
- *	Changes the time of day to a new value.
+ *	Changes the universal time to a new value. This is done in
+ *	both the software and hardware clocks (if the machine has one).
+ *	IMPORTANT: we don't set the hardware clock because it will won't
+ *	work on a ds3100. See the comment in TimerSetHardwareUniversalTime.
  *
  *  Results:
  *	None.
  *
  *  Side Effects:
- *	Updates the global variables that stores the TOD and the time
- *	it was set.
+ *	Universal time is changed.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Timer_SetTimeOfDay(newTOD, newLocalOffset, newDSTAllowed)
-    Time newTOD;		/* New value for time of day. */
+Timer_SetTimeOfDay(newUniversal, newLocalOffset, newDSTAllowed)
+    Time newUniversal;		/* New value for time of day. */
+    int  newLocalOffset;	/* New value for local offset. */
+    Boolean newDSTAllowed;	/* New value for DST allowed flag. */
+{
+    MASTER_LOCK(&timer_ClockMutex);
+    TimerSetSoftwareUniversalTime(&newUniversal, 
+	newLocalOffset, newDSTAllowed);
+#ifdef NOTDEF
+    TimerSetHardwareUniversalTime(&newUniversal, newLocalOffset, 
+	newDSTAllowed);
+#endif
+    MASTER_UNLOCK(&timer_ClockMutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  TimerSetSoftwareUniversalTime --
+ *
+ *	Changes the universal time to a new value.
+ *
+ *  Results:
+ *	None.
+ *
+ *  Side Effects:
+ *	Updates the global variables that stores the universal time and the 
+ *	system time when it was set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TimerSetSoftwareUniversalTime(newUniversal, newLocalOffset, newDSTAllowed)
+    Time *newUniversal;		/* New value for time of day. */
     int  newLocalOffset;	/* New value for local offset. */
     Boolean newDSTAllowed;	/* New value for DST allowed flag. */
 {
 
     /*
-     *  Record when the T.O.D was changed by saving the current time.
-     *  Also store the new T.O.D (it has to be converted to ticks),
+     *  Record when the universal time was changed by saving the current 
+     *  system time.
+     *  Also store the new universal time (it has to be converted to ticks),
      *  the new local offset and the DST flag.
      */
 
-    MASTER_LOCK(&timerClockMutex);
 
 
-    timerTimeOfDay = newTOD;
+    timer_UniversalApprox = *newUniversal;
 
-    Timer_GetCurrentTicks(&timeWhenTODSet);
-    Timer_TimeToTicks(newTOD, &timeOfDay);
+    Timer_GetCurrentTicks(&systemWhenUniversalSetTk);
+    Timer_TimeToTicks(*newUniversal, &universalWhenSetTk);
 
 
-    localOffset 	= newLocalOffset;
-    DSTAllowed 		= newDSTAllowed;
+    timerUniversalToLocalOffset = newLocalOffset;
+    timerDSTAllowed = newDSTAllowed;
 
-    MASTER_UNLOCK(&timerClockMutex);
 
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * UpdateTimeOfDay --
+ * UpdateUniversalTimeApprox --
  *
- *	Called from the timer queue to make timerTimeOfDay close
- *	to the real current time as calculated by Timer_GetTimeOfDay.
+ *	Called from the timer queue to make timer_UniversalApprox close
+ *	to the real current time..
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	timerTimeOfDay is updated.
+ *	timerUTApprox is updated.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-UpdateTimeOfDay()
+UpdateUniversalTimeApprox()
 {
 	/* 
 	 * No need to get the timerClock Mutex lock because 
 	 * Timer_GetRealTimeOfDay gets it for us.
 	 */
-    Timer_GetRealTimeOfDay(&timerTimeOfDay, (int *) NIL, (int *) NIL);
+    Timer_GetRealTimeOfDay(&timer_UniversalApprox, (int *) NIL, (int *) NIL);
     Timer_ScheduleRoutine(&updateElement, TRUE);
 }
 
