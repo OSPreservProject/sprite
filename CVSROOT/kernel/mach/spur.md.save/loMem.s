@@ -463,6 +463,7 @@ start:
 	Nop
 #endif
 
+#ifdef refresh_CC_wells
 refreshWell:
 	LD_CONSTANT(r1, MACH_CC_FAULT_ADDR)
 	LD_CONSTANT(r2, MACH_KPSW_CC_REFRESH)
@@ -481,6 +482,7 @@ refreshWell:
 	jump		ErrorTrap
 	nop
 	wr_kpsw		r3, $0
+#endif
 
 /*
  * Initialize the cwp, swp and SPILL_SP to their proper values.
@@ -506,8 +508,6 @@ refreshWell:
  */
 	add_nt		r1, r0, $-1
 	WRITE_STATUS_REGS(MACH_FE_STATUS_0, r1)
-
-	SAVE_CC_STATE()
 
 /*
  * Now jump to virtual mode through the following sequence:
@@ -1154,7 +1154,7 @@ vmFault_PC:
 	nop
 	/*
 	 * Handle the fault on the PC first by calling
-	 * MachVMDataFault(faultType, PC, kpsw).
+	 * MachVMPCFault(faultType, PC, kpsw).
 	 */
 	add_nt		OUTPUT_REG1, SAFE_TEMP1, $0
 	add_nt		OUTPUT_REG2, CUR_PC_REG, $0
@@ -1206,12 +1206,44 @@ vmFault_IsData:
 	rd_kpsw		SAFE_TEMP3
 	and		VOL_TEMP3, SAFE_TEMP3, $~MACH_KPSW_INTR_TRAP_ENA
 	wr_kpsw		VOL_TEMP3, $0
+	/*
+ 	 * Restore the globals if we are coming from user mode.
+	 */
+	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, r0, vmFault_KernParse
+	nop
+	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
+	Nop
+	ld_32		r1, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8)
+	ld_32		r2, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 16)
+	ld_32		r3, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 24)
+	ld_32		r4, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 32)
+	ld_32		r5, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 40)
+	ld_32		r6, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 48)
+	ld_32		r7, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 56)
+	ld_32		r8, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 64)
+	ld_32		r9, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 72)
+	nop
 
 	rd_special	VOL_TEMP1, pc
 	add_nt		VOL_TEMP1, VOL_TEMP1, $16
 	jump		ParseInstruction
 	Nop
 
+	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
+	Nop
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END_OFFSET
+
+	jump		vmFault_CallDataFault
+	nop
+
+vmFault_KernParse:
+	rd_special	VOL_TEMP1, pc
+	add_nt		VOL_TEMP1, VOL_TEMP1, $16
+	jump		ParseInstruction
+	Nop
+
+vmFault_CallDataFault:
 	wr_insert	SAFE_TEMP2
 	wr_kpsw		SAFE_TEMP3, $0
 
