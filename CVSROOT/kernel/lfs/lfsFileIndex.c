@@ -221,7 +221,7 @@ GrowBlock(lfsPtr, handlePtr, blockNum, growthSize, diskAddr, cacheFlags)
 	 * because the file system controls writes to directory blocks.
 	 */
 	Fscache_FetchBlock(&handlePtr->cacheInfo, blockNum,
-		    cacheFlags, &blockPtr, &found);
+		    cacheFlags|FSCACHE_DATA_BLOCK, &blockPtr, &found);
 	if (!found) {
 	    if (blockPtr == (Fscache_Block *) NIL) {
 		status = FS_WOULD_BLOCK;
