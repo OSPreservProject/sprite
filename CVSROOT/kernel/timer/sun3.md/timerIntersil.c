@@ -108,6 +108,7 @@ static    IntersilCounters	initialCounter = {
  */
 
 static void CountersToTime();
+void Timer_TimerServiceInterrupt();
 
 /*
  * Constants used to convert the contents of the free-running counters
@@ -189,7 +190,10 @@ Timer_TimerInit(timer)
 
     if (!init) {
 	init = TRUE;
-
+	/*
+	 * Register our call back function.
+	 */
+	 Mach_SetHandler(29, Timer_TimerServiceInterrupt, (ClientData) 0); 
 	/*
 	 * Tell the chip to prevent interrupts.
 	 */
@@ -427,7 +431,8 @@ Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
  */
 
 void
-Timer_TimerServiceInterrupt(stack)
+Timer_TimerServiceInterrupt(clientData, stack)
+    ClientData	    clientData;
     Mach_IntrStack stack;
 { 
     /*
