@@ -25,12 +25,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 
 #include "fs.h"
-#include "fsInt.h"
-#include "fsTrace.h"
-#include "fsOpTable.h"
-#include "fsDevice.h"
+#include "fsutil.h"
+#include "fsutilTrace.h"
 #include "fsNameOps.h"
-
+#include "fsio.h"
+#include "fslcl.h"
 #include "vm.h"
 #include "proc.h"
 
@@ -42,7 +41,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  *	Stub for the Fs_AttachDisk system call.  This gets ahold of
  *	the filename arguments, opens the disk to be attached, and
- *	calls FsAttachDisk to do the work.
+ *	calls Fsdm_AttachDisk to do the work.
  *
  * Results:
  *	SUCCESS, or an error code from finding junk on the disk.
@@ -69,7 +68,7 @@ Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
 
     if (userLocalName != (char *)NIL && userLocalName != (char *)0) {
 	localName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
-	if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userLocalName, localName,
+	if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userLocalName, localName,
 			   &localNameLength) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
@@ -78,7 +77,7 @@ Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
     }
     if (userDeviceName != (char *)NIL && userDeviceName != (char *)0) {
 	deviceName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
-	if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userDeviceName, deviceName,
+	if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userDeviceName, deviceName,
 			   &deviceNameLength) != SUCCESS) {
 	    if (localName != (char *)NIL) {
 		free(localName);
@@ -93,7 +92,7 @@ Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
 	 * Flush data associated with the domain and remove the domain
 	 * from the prefix table.
 	 */
-	status = FsDetachDisk(localName);
+	status = Fsdm_DetachDisk(localName);
     } else {
 	/*
 	 * Attach a local domain into the prefix table.
@@ -109,9 +108,8 @@ Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
 	    }
 	    status = Fs_Open(deviceName, useFlags, FS_DEVICE, 0, &streamPtr);
 	    if (status == SUCCESS) {
-		FsDeviceIOHandle *devHandlePtr =
-			(FsDeviceIOHandle *)streamPtr->ioHandlePtr;
-		status = FsAttachDisk(&devHandlePtr->device, localName, flags);
+		status = Fsdm_AttachDiskByHandle(streamPtr->ioHandlePtr, 
+					     localName, flags);
 	    }
 	}
     }
@@ -161,12 +159,12 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
     int			pathNameLength;
     char		newName[FS_MAX_PATH_NAME_LENGTH];
 
-    FS_TRACE(FS_TRACE_OPEN);
+    FSUTIL_TRACE(FSUTIL_TRACE_OPEN);
 
     /*
      * Copy the name in from user space to the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -179,14 +177,14 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
      */
     usageFlags &= ~FS_KERNEL_FLAGS;
     usageFlags |= (FS_USER | FS_FOLLOW);
-    if (fsTracing) {
-	usageFlags |= FS_TRACE_FLAG;
+    if (fsutil_Tracing) {
+	usageFlags |= FSUTIL_TRACE_FLAG;
     }
 
     status = Fs_Open(newName, usageFlags, FS_FILE,
 		     permissions & 0777, &streamPtr);
     
-    FS_TRACE_NAME(FS_TRACE_OPEN_DONE_2, pathName);
+    FSUTIL_TRACE_NAME(FSUTIL_TRACE_OPEN_DONE_2, pathName);
 
     if (status != SUCCESS) {
 	return(status);
@@ -197,7 +195,7 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
      * Its index in the list is the "Stream ID".
      */
 
-    status = FsGetStreamID(streamPtr, &streamID);
+    status = Fs_GetStreamID(streamPtr, &streamID);
     if (status != SUCCESS) {
 	(void) Fs_Close(streamPtr);
 	return(status);
@@ -205,11 +203,11 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
 
     if (Vm_CopyOut(sizeof(int), (Address) &streamID, 
 		   (Address) streamIDPtr) == SUCCESS) {
-	FS_TRACE(FS_TRACE_OPEN_DONE_3);
+	FSUTIL_TRACE(FSUTIL_TRACE_OPEN_DONE_3);
 	return(SUCCESS);
     } 
     status = SYS_ARG_NOACCESS;
-    FsClearStreamID(streamID, (Proc_ControlBlock *)NIL);
+    Fs_ClearStreamID(streamID, (Proc_ControlBlock *)NIL);
     (void) Fs_UserClose(streamID);
     return(status);
 }
@@ -247,7 +245,7 @@ Fs_UserClose(streamID)
      */
 
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -258,7 +256,7 @@ Fs_UserClose(streamID)
      * clear our stream id regardless of the error from Fs_Close.
      */
 
-    FsClearStreamID(streamID, procPtr);
+    Fs_ClearStreamID(streamID, procPtr);
     status = Fs_Close(streamPtr);
 
     return(status);
@@ -303,7 +301,7 @@ Fs_ReadStub(streamID, amountRead, buffer, amountReadPtr)
      */
 
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	status = Fs_Read(streamPtr, buffer, streamPtr->offset, &amountRead);
     } else {
@@ -359,7 +357,7 @@ Fs_UserRead(streamID, amountRead, buffer, amountReadPtr)
      */
 
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	*amountReadPtr = amountRead;
 	status = Fs_Read(streamPtr, buffer, streamPtr->offset, amountReadPtr);
@@ -472,7 +470,7 @@ Fs_UserReadVector(streamID, numVectors, vectorPtr, amountReadPtr)
      */
 
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
 
     if (status == SUCCESS) {
 	/*
@@ -533,7 +531,7 @@ Fs_WriteStub(streamID, writeLength, buffer, writeLengthPtr)
      * Fs_Write takes care of making the user's buffer accessible.
      */
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	status = Fs_Write(streamPtr, buffer, streamPtr->offset, &writeLength);
     } else {
@@ -584,7 +582,7 @@ Fs_UserWrite(streamID, writeLength, buffer, writeLengthPtr)
      * Fs_Write takes care of making the user's buffer accessible.
      */
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	*writeLengthPtr = writeLength;
 	status = Fs_Write(streamPtr, buffer, streamPtr->offset, writeLengthPtr);
@@ -695,7 +693,7 @@ Fs_UserWriteVector(streamID, numVectors, vectorPtr, amountWrittenPtr)
      */
 
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
 
     if (status == SUCCESS) {
 	/*
@@ -796,7 +794,7 @@ Fs_MakeDeviceStub(pathName, devicePtr, permissions)
     /*
      * Copy the device name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -839,7 +837,7 @@ Fs_MakeDirStub(pathName, permissions)
      * Copy the name in from user space to the kernel stack.
      */
 
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -877,7 +875,7 @@ Fs_RemoveStub(pathName)
      * Copy the name in from user space to the kernel stack.
      */
 
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -914,7 +912,7 @@ Fs_RemoveDirStub(pathName)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -953,7 +951,7 @@ Fs_ChangeDirStub(pathName)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1035,7 +1033,7 @@ Fs_GetAttributesStub(pathName, fileOrLink, attrPtr)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1092,7 +1090,7 @@ Fs_CheckAccess(pathName, perm, useRealID)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1178,7 +1176,7 @@ Fs_GetAttributesIDStub(streamID, attrPtr)
     Fs_Stream			*streamPtr;
     Fs_Attributes 		attributes;
 
-    status = FsGetStreamPtr(Proc_GetEffectiveProc(), streamID, &streamPtr);
+    status = Fs_GetStreamPtr(Proc_GetEffectiveProc(), streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -1229,7 +1227,7 @@ Fs_SetAttributesStub(pathName, fileOrLink, attrPtr)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1275,7 +1273,7 @@ Fs_SetAttrStub(pathName, fileOrLink, attrPtr, flags)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1321,9 +1319,9 @@ Fs_SetAttributesIDStub(streamID, attrPtr)
      * Map from stream ID to file pointer and get the attributes.
      */
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
-	FsSetIDs(procPtr, &ids);
+	Fs_SetIDs(procPtr, &ids);
 	status = Fs_SetAttrStream(streamPtr, &attr, &ids, FS_SET_ALL_ATTRS);
     }
     return(status);
@@ -1366,9 +1364,9 @@ Fs_SetAttrIDStub(streamID, attrPtr, flags)
      * Map from stream ID to file pointer and get the attributes.
      */
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
-	FsSetIDs(procPtr, &ids);
+	Fs_SetIDs(procPtr, &ids);
 	status = Fs_SetAttrStream(streamPtr, &attr, &ids, flags);
     }
     return(status);
@@ -1445,7 +1443,7 @@ Fs_HardLinkStub(fileName, linkName)
     /*
      * Copy the filename in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, fileName, newFileName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, fileName, newFileName,
 		       &fileNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1459,7 +1457,7 @@ Fs_HardLinkStub(fileName, linkName)
      * Should just make the stack bigger I suppose ...
      */
     newLinkName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
 		       &linkNameLength) == SUCCESS) {
 	if (linkNameLength == FS_MAX_PATH_NAME_LENGTH) {
 	    status = FS_INVALID_ARG;
@@ -1505,7 +1503,7 @@ Fs_RenameStub(pathName, newName)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newPathName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newPathName,
 		       &pathNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1519,7 +1517,7 @@ Fs_RenameStub(pathName, newName)
      * Should just make the stack bigger I suppose ...
      */
     newNewName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, newName, newNewName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, newName, newNewName,
 		       &newNameLength) == SUCCESS) {
 	if (newNameLength == FS_MAX_PATH_NAME_LENGTH) {
 	    status = FS_INVALID_ARG;
@@ -1566,7 +1564,7 @@ Fs_SymLinkStub(targetName, linkName, remoteFlag)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, targetName, newTargetName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, targetName, newTargetName,
 		       &targetNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1580,7 +1578,7 @@ Fs_SymLinkStub(targetName, linkName, remoteFlag)
      * Should just make the stack bigger I suppose ...
      */
     newLinkName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
 		       &linkNameLength) == SUCCESS) {
 	if (linkNameLength == FS_MAX_PATH_NAME_LENGTH) {
 	    status = FS_INVALID_ARG;
@@ -1629,7 +1627,7 @@ Fs_ReadLinkStub(linkName, bufSize, buffer, linkSizePtr)
     /*
      * Copy the name in from user space onto the kernel stack.
      */
-    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
 		       &linkNameLength) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
     }
@@ -1695,12 +1693,12 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
      * Get a stream pointer.
      */
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
 
-    if (!FsHandleValid(streamPtr->ioHandlePtr)) {
+    if (!Fsutil_HandleValid(streamPtr->ioHandlePtr)) {
 	return(FS_STALE_HANDLE);
     }
 
@@ -1717,7 +1715,7 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
      * We also skip the check against large parameter blocks so arbitrary
      * amounts of data can be fed to and from a pseudo-device.
      */
-    if ((streamPtr->ioHandlePtr->fileID.type == FS_LCL_PSEUDO_STREAM) &&
+    if ((streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM) &&
 	(command > IOC_GENERIC_LIMIT)) {
 	ioctl.inBufSize = inBufSize;
 	ioctl.inBuffer = inBuffer;
@@ -1815,9 +1813,9 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
  *
  * Fs_CreatePipeStub --
  *
- *      This is the stub for the Fs_CreatePipe system call.  This routine sets
+ *      This is the stub for the Fsio_CreatePipe system call.  This routine sets
  *      up stream IDs for the two Fs_Stream objects returned by (the internal)
- *      Fs_CreatePipe: one for reading the pipe and one for writing to it.
+ *      Fsio_CreatePipe: one for reading the pipe and one for writing to it.
  *
  * Results:
  *	A retrun status or SUCCESS if successful.
@@ -1845,7 +1843,7 @@ Fs_CreatePipeStub(inStreamIDPtr, outStreamIDPtr)
     /*
      * Call the internal routine to create the pipe.
      */
-    status = Fs_CreatePipe(&inStreamPtr, &outStreamPtr);
+    status = Fsio_CreatePipe(&inStreamPtr, &outStreamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -1856,15 +1854,15 @@ Fs_CreatePipeStub(inStreamIDPtr, outStreamIDPtr)
      * Get stream ids for the two streams.
      */
 
-    status = FsGetStreamID(inStreamPtr, &inStreamID);
+    status = Fs_GetStreamID(inStreamPtr, &inStreamID);
     if (status != SUCCESS) {
 	(void) Fs_Close(inStreamPtr);
 	(void) Fs_Close(outStreamPtr);
 	return(status);
     }
-    status = FsGetStreamID(outStreamPtr, &outStreamID);
+    status = Fs_GetStreamID(outStreamPtr, &outStreamID);
     if (status != SUCCESS) {
-	FsClearStreamID(inStreamID, (Proc_ControlBlock *)NIL);
+	Fs_ClearStreamID(inStreamID, (Proc_ControlBlock *)NIL);
 	(void) Fs_Close(inStreamPtr);
 	(void) Fs_Close(outStreamPtr);
 	return(status);
@@ -1885,8 +1883,8 @@ Fs_CreatePipeStub(inStreamIDPtr, outStreamIDPtr)
      * If couldn't copy out then clean up state and return an error.
      */
 
-    FsClearStreamID(inStreamID, (Proc_ControlBlock *)NIL);
-    FsClearStreamID(outStreamID, (Proc_ControlBlock *)NIL);
+    Fs_ClearStreamID(inStreamID, (Proc_ControlBlock *)NIL);
+    Fs_ClearStreamID(outStreamID, (Proc_ControlBlock *)NIL);
     (void) Fs_Close(inStreamPtr);
     (void) Fs_Close(outStreamPtr);
 

@@ -19,7 +19,7 @@
 /*
  * Note, both client and server Naming operations are kept.
  */
-typedef struct FsNameOpStats {
+typedef struct Fs_NameOpStats {
     unsigned int numReadOpens;		/* open(O_RDONLY) on client.  Count
 					 * of all server open calls */
     unsigned int numWriteOpens;		/* open(O_WRONLY) */
@@ -38,9 +38,9 @@ typedef struct FsNameOpStats {
     unsigned int setAttrIDs;		/* Number get attrs from open stream */
     unsigned int getIOAttrs;		/* Number get attr from I/O server */
     unsigned int setIOAttrs;		/* Number set attr to I/O server */
-} FsNameOpStats;
+} Fs_NameOpStats;
 
-typedef struct FsGeneralStats {
+typedef struct Fs_GeneralStats {
     unsigned int physBytesRead;		/* Number of physical (ie descriptors)
 				 	 * disk bytes read. */
     unsigned int fileBytesRead;		/* Number of file bytes read from the
@@ -63,12 +63,12 @@ typedef struct FsGeneralStats {
     unsigned int fileBytesDeleted;	/* Number of file bytes deleted
 					 * (total) */
     unsigned int fileDeleteOverflow;	/* Extra */
-} FsGeneralStats;
+} Fs_GeneralStats;
 
 /*
  * Cache statistics.
  */
-typedef struct FsBlockCacheStats {
+typedef struct Fs_BlockCacheStats {
     /*
      * Read statistics.
      */
@@ -83,15 +83,15 @@ typedef struct FsBlockCacheStats {
 					 * because read did not fill the
 					 * whole block. */
     unsigned int domainReadFails;	/* Number of domain reads from
-					 * FsCacheWrite and FsCacheRead that
+					 * Fscache_Write and Fscache_Read that
 					 * were unsuccessful. */
     unsigned int readAheads;		/* Number of read ahead processes
 					 * that were started up. */
     unsigned int readAheadHits;		/* Number of reads that hit on a
 					 * block that was read ahead. */
-    unsigned int allInCacheCalls;	/* Number of time FsAllInCache routine
+    unsigned int allInCacheCalls;	/* Number of time FscacheAllBlocksInCache routine
 					 * was called. */
-    unsigned int allInCacheTrue;        /* Number of times that FsAllInCache
+    unsigned int allInCacheTrue;        /* Number of times that FscacheAllBlocksInCache
 					 * returned TRUE. */
     /*
      * Write statistics.
@@ -192,12 +192,12 @@ typedef struct FsBlockCacheStats {
     unsigned int blocksPitched;		/* The number of blocks that were
 					 * thrown out at the command of
 					 * virtual memory. */
-} FsBlockCacheStats;
+} Fs_BlockCacheStats;
 
 /*
  * Block allocation statistics.
  */
-typedef struct FsAllocStats {
+typedef struct Fs_AllocStats {
     unsigned int blocksAllocated;	/* Full blocks allocated. */
     unsigned int blocksFreed;		/* Full blocks freed. */
     unsigned int cylsSearched;		/* Cylinders searched to find a good
@@ -218,30 +218,30 @@ typedef struct FsAllocStats {
 					 * desired size.*/
     unsigned int fullBlockFrags;	/* Full blocks that had to
 					 * be fragmented. */
-} FsAllocStats;
+} Fs_AllocStats;
 
 /*
  * Name cache statistics.
  */
-typedef struct FsNameCacheStats {
+typedef struct Fs_NameCacheStats {
     unsigned int accesses;		/* Number of times something was
 					 * looked for */
     unsigned int hits;			/* Number of times it was found */
     unsigned int replacements;		/* Number of entries recycled via LRU */
     unsigned int size;			/* Number of entries total */
-} FsNameCacheStats;
+} Fs_NameCacheStats;
 
 /*
  * Handle statistics.
  */
-typedef struct FsHandleStats {
+typedef struct Fs_HandleStats {
     unsigned int maxNumber;	/* Current limit on table size. */
     unsigned int exists;	/* Number of handles currently in existence. */
-    unsigned int installCalls;	/* Calls to FsHandleInstall. */
+    unsigned int installCalls;	/* Calls to Fsutil_HandleInstall. */
     unsigned int installHits;	/* installs in which handle was found. */
-    unsigned int fetchCalls;	/* Calls to FsHandleFetch. */
+    unsigned int fetchCalls;	/* Calls to Fsutil_HandleFetch. */
     unsigned int fetchHits;	/* fetches in which handle was found. */
-    unsigned int release;	/* Calls to FsHandleRelease. */
+    unsigned int release;	/* Calls to Fsutil_HandleRelease. */
     unsigned int locks;		/* Number of times a handle was locked. */
     unsigned int lockWaits;	/* Number of times had to wait on a lock */
     unsigned int unlocks;	/* Number of times a handle was unlocked. */
@@ -261,12 +261,12 @@ typedef struct FsHandleStats {
 				  * already a segment with the code file. */
     unsigned int segmentHits;	/* Segment fetches that return non-nil
 				 * segment. */
-} FsHandleStats;
+} Fs_HandleStats;
 
 /*
  * Prefix table statistics.  These are client-side statistics
  */
-typedef struct FsPrefixStats {
+typedef struct Fs_PrefixStats {
     unsigned int relative;	/* Number of relative names encountered */
     unsigned int absolute;	/* Number of absolute names subject to prefix
 				 * lookup */
@@ -276,12 +276,12 @@ typedef struct FsPrefixStats {
     unsigned int stale;		/* Number of times server server rejected a
 				 * handle */
     unsigned int found;		/* Number of times found a new prefix */
-} FsPrefixStats;
+} Fs_PrefixStats;
 
 /*
  * Name lookup statistics.  These are server-side statistics.
  */
-typedef struct FsLookupStats {
+typedef struct Fs_LookupStats {
     unsigned int number;	/* Number of pathname lookups */
     unsigned int numComponents;	/* Number of pathname components parsed */
     unsigned int numSpecial;	/* Number of $MACHINE names encounted */
@@ -294,12 +294,12 @@ typedef struct FsLookupStats {
     unsigned int remote;	/* Number of redirects due to remote links */
     unsigned int parent;	/* Number of redirects due to ".." */
     unsigned int notFound;	/* Number of FILE_NOT_FOUND lookups */
-} FsLookupStats;
+} Fs_LookupStats;
 
 /*
  * Counts of various file system objects.
  */
-typedef struct FsObjectStats {
+typedef struct Fs_ObjectStats {
     int streams;
     int streamClients;		/* Equal to streams, except during migration */
     int files;			/* Local files, not including directories */
@@ -313,14 +313,14 @@ typedef struct FsObjectStats {
     int dirFlushed;		/* Directories that were flushed */
     int fileClients;		/* Number of consist.clientList entries */
     int other;			/* For unknown objects */
-} FsObjectStats;
+} Fs_ObjectStats;
 
 /*
  * File system recovery statistics.
  */
-typedef struct FsRecoveryStats {
+typedef struct Fs_RecoveryStats {
     int number;			/* Number of reopens by this client */
-    int wants;			/* Calls to FsWantRecovery */
+    int wants;			/* Calls to Fsutil_WantRecovery */
     int waitOK;			/* Successful RecoveryWaits */
     int waitFailed;		/* Unnsuccessful RecoveryWaits */
     int waitAbort;		/* Interrupted RecoveryWaits */
@@ -331,24 +331,24 @@ typedef struct FsRecoveryStats {
     int succeeded;		/* Re-open's that worked */
     int clientCrashed;		/* Number of clients that crashed */
     int clientRecovered;	/* Number of clients that re-opened files */
-} FsRecoveryStats;
+} Fs_RecoveryStats;
 
 /*
  * File system statistics.
  */
-typedef struct FsStats {
-    FsNameOpStats	cltName;	/* Client-side naming operations */
-    FsNameOpStats	srvName;	/* Server-side naming operations */
-    FsGeneralStats	gen;		/* General I/O operations */
-    FsBlockCacheStats	blockCache;	/* Block cache operations */
-    FsAllocStats	alloc;		/* Disk allocation */
-    FsHandleStats	handle;		/* Handle management */
-    FsPrefixStats	prefix;		/* Client-side prefix operations */
-    FsLookupStats	lookup;		/* Server-side lookup operations */
-    FsNameCacheStats	nameCache;	/* Server name cache */
-    FsObjectStats	object;		/* Counts of various objects */
-    FsRecoveryStats	recovery;	/* Crash recovery and reopening */
-} FsStats;
+typedef struct Fs_Stats {
+    Fs_NameOpStats	cltName;	/* Client-side naming operations */
+    Fs_NameOpStats	srvName;	/* Server-side naming operations */
+    Fs_GeneralStats	gen;		/* General I/O operations */
+    Fs_BlockCacheStats	blockCache;	/* Block cache operations */
+    Fs_AllocStats	alloc;		/* Disk allocation */
+    Fs_HandleStats	handle;		/* Handle management */
+    Fs_PrefixStats	prefix;		/* Client-side prefix operations */
+    Fs_LookupStats	lookup;		/* Server-side lookup operations */
+    Fs_NameCacheStats	nameCache;	/* Server name cache */
+    Fs_ObjectStats	object;		/* Counts of various objects */
+    Fs_RecoveryStats	recovery;	/* Crash recovery and reopening */
+} Fs_Stats;
 
 /*
  * Keep a histogram of file lifetimes in a three-dimensional matrix,
@@ -375,10 +375,10 @@ typedef struct FsStats {
  */
 #define FS_HIST_SIZE_BUCKETS 	33
 
-typedef struct FsHistGroupInfo {
+typedef struct Fs_HistGroupInfo {
     unsigned int secondsPerBucket;
     unsigned int bucketsPerGroup;
-} FsHistGroupInfo;
+} Fs_HistGroupInfo;
 
 
 #define FS_HIST_SECONDS		10
@@ -418,7 +418,7 @@ typedef struct FsHistGroupInfo {
 #define FS_STAT_READ 0
 #define FS_STAT_WRITE 1
 
-typedef struct FsTypeStats {
+typedef struct Fs_TypeStats {
     unsigned int diskBytes[2][FS_STAT_NUM_TYPES];
     				/* Number of bytes read/written from/to
 				 * different types of files on disk */
@@ -430,9 +430,9 @@ typedef struct FsTypeStats {
 				 * to truncation or removal */
     unsigned int deleteHist	/* Histogram of deletions, by type */
 	    [FS_HIST_TIME_BUCKETS] [FS_HIST_SIZE_BUCKETS] [FS_STAT_NUM_TYPES];
-} FsTypeStats;
+} Fs_TypeStats;
 
-FsTypeStats fsTypeStats;
+Fs_TypeStats fs_TypeStats;
 
 /*
  * Macro to add to a counter, watching for overflow.  We use unsigned
@@ -441,14 +441,14 @@ FsTypeStats fsTypeStats;
  * relatively small (so we can't miss the overflow bit).
  */
 
-#define FSSTAT_OVERFLOW (1 << (sizeof(unsigned int) * 8 - 1))
-#define FsStat_Add(thisCount, counter, overflow) \
+#define FS_STAT_OVERFLOW (1 << (sizeof(unsigned int) * 8 - 1))
+#define Fs_StatAdd(thisCount, counter, overflow) \
     counter += thisCount; \
-    if (counter & FSSTAT_OVERFLOW) { \
+    if (counter & FS_STAT_OVERFLOW) { \
         overflow += 1; \
-        counter &= ~FSSTAT_OVERFLOW; \
+        counter &= ~FS_STAT_OVERFLOW; \
     }
 
-extern	FsStats	fsStats;
+extern	Fs_Stats	fs_Stats;
 
-#endif /* _FSSTAT */
+#endif _FSSTAT

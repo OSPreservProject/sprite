@@ -3,7 +3,7 @@
  *
  *	This has procedures for the operations done on file names
  *	like open and remove.  The name lookups are done via
- *	FsLookupOperation which uses the prefix table to choose the server.
+ *	Fsprefix_LookupOperation which uses the prefix table to choose the server.
  *
  * Copyright (C) 1987 Regents of the University of California
  * All rights reserved.
@@ -23,11 +23,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsOpTable.h"
+#include "fsutil.h"
 #include "fsNameOps.h"
-#include "fsTrace.h"
-#include "fsStream.h"
+#include "fsutilTrace.h"
+#include "fsio.h"
 #include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
@@ -71,10 +70,10 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 {
     register Fs_Stream 	*streamPtr;	/* Local copy of stream pointer */
     ReturnStatus 	status;		/* Return error code from RPC */
-    FsOpenArgs 		openArgs;	/* Packaged up parameters */
-    FsOpenResults 	openResults;	/* Packaged up results */
+    Fs_OpenArgs 		openArgs;	/* Packaged up parameters */
+    Fs_OpenResults 	openResults;	/* Packaged up results */
     Proc_ControlBlock	*procPtr;	/* Used to get process IDs */
-    FsNameInfo		*nameInfoPtr;	/* Used to track name and prefix */
+    Fs_NameInfo		*nameInfoPtr;	/* Used to track name and prefix */
 
     *streamPtrPtr = (Fs_Stream *)NIL;
 
@@ -105,7 +104,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
      * Set up arguments to the Domain specific open routine.  The domain
      * open routine returns streamData used to set up the I/O handle
      * by the client open routine called below.  The stream's nameInfo is
-     * set up as a side effect of going through FsLookupOperation.
+     * set up as a side effect of going through Fsprefix_LookupOperation.
      */
     procPtr = Proc_GetEffectiveProc();
     if (type != FS_SYMBOLIC_LINK && type != FS_REMOTE_LINK) {
@@ -122,25 +121,25 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	openArgs.migClientID	= rpc_SpriteID;
     }
     openResults.streamData	= (ClientData) NIL;
-    FsSetIDs(procPtr, &openArgs.id);
+    Fs_SetIDs(procPtr, &openArgs.id);
 
-    nameInfoPtr = mnew(FsNameInfo);
+    nameInfoPtr = mnew(Fs_NameInfo);
 
-    FS_TRACE_NAME(FS_TRACE_OPEN_START, name);
-    status = FsLookupOperation(name, FS_DOMAIN_OPEN, useFlags & FS_FOLLOW,
+    FSUTIL_TRACE_NAME(FSUTIL_TRACE_OPEN_START, name);
+    status = Fsprefix_LookupOperation(name, FS_DOMAIN_OPEN, useFlags & FS_FOLLOW,
 		    (Address)&openArgs, (Address)&openResults, nameInfoPtr);
-    FS_TRACE_NAME(FS_TRACE_OPEN_DONE, name);
+    FSUTIL_TRACE_NAME(FSUTIL_TRACE_OPEN_DONE, name);
     if (status == SUCCESS) {
 	/*
 	 * Install the stream and then call the client open procedure
 	 * to complete the setup of the stream's I/O handle
 	 */
-	streamPtr = FsStreamAddClient(&openResults.streamID, rpc_SpriteID,
-			     (FsHandleHeader *)NIL,
+	streamPtr = Fsio_StreamAddClient(&openResults.streamID, rpc_SpriteID,
+			     (Fs_HandleHeader *)NIL,
 			     useFlags, name, (Boolean *)NIL, (Boolean *)NIL);
 	streamPtr->nameInfoPtr = nameInfoPtr;
-	FsHandleUnlock(streamPtr);
-	status = (*fsStreamOpTable[openResults.ioFileID.type].cltOpen)
+	Fsutil_HandleUnlock(streamPtr);
+	status = (*fsio_StreamOpTable[openResults.ioFileID.type].cltOpen)
 		    (&openResults.ioFileID, &streamPtr->flags, rpc_SpriteID,
 		     openResults.streamData, name, &streamPtr->ioHandlePtr);
 	if (status == SUCCESS) {
@@ -150,13 +149,13 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	    *streamPtrPtr = streamPtr;
 	    switch (useFlags & (FS_READ | FS_WRITE)) {
 		case FS_READ:
-		    fsStats.cltName.numReadOpens ++;
+		    fs_Stats.cltName.numReadOpens ++;
 		    break;
 		case FS_WRITE:
-		    fsStats.cltName.numWriteOpens ++;
+		    fs_Stats.cltName.numWriteOpens ++;
 		    break;
 		case (FS_READ | FS_WRITE):
-		    fsStats.cltName.numReadWriteOpens ++;
+		    fs_Stats.cltName.numReadWriteOpens ++;
 		    break;
 		default:
 		    break;
@@ -165,9 +164,9 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	    /*
 	     * Client open procedure failed.  Clean up the stream.
 	     */
-	    FsHandleLock(streamPtr);
-	    (void)FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID);
-	    FsStreamDispose(streamPtr);
+	    Fsutil_HandleLock(streamPtr);
+	    (void)Fsio_StreamClientClose(&streamPtr->clientList, rpc_SpriteID);
+	    Fsio_StreamDestroy(streamPtr);
 	}
     } else {
 	free((Address)nameInfoPtr);
@@ -178,7 +177,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSetIDs --
+ * Fs_SetIDs --
  *
  *	Get user ID and group IDs from the proc table.  The FsUserID
  *	struct includes storage for the list of groups.  Alternatively,
@@ -199,7 +198,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
  *----------------------------------------------------------------------
  */
 void
-FsSetIDs(procPtr, idPtr)
+Fs_SetIDs(procPtr, idPtr)
     Proc_ControlBlock 		*procPtr;
     Fs_UserIDs			*idPtr;
 {
@@ -263,20 +262,20 @@ Fs_Remove(name)
     char *name;		/* The name of the file to remove */
 {
     ReturnStatus status;
-    FsLookupArgs lookupArgs;
+    Fs_LookupArgs lookupArgs;
     Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
 
     lookupArgs.useFlags = FS_DELETE;
-    FsSetIDs(procPtr, &lookupArgs.id);
+    Fs_SetIDs(procPtr, &lookupArgs.id);
     lookupArgs.clientID = rpc_SpriteID;
     if (procPtr->genFlags & PROC_FOREIGN) {
 	lookupArgs.migClientID	= procPtr->peerHostID;
     } else {
 	lookupArgs.migClientID	= rpc_SpriteID;
     }
-    fsStats.cltName.removes++;
-    status = FsLookupOperation(name, FS_DOMAIN_REMOVE, 0,
-		     (Address)&lookupArgs, (Address)NIL, (FsNameInfo *)NIL);
+    fs_Stats.cltName.removes++;
+    status = Fsprefix_LookupOperation(name, FS_DOMAIN_REMOVE, 0,
+		     (Address)&lookupArgs, (Address)NIL, (Fs_NameInfo *)NIL);
     return(status);
 }
 
@@ -301,20 +300,20 @@ Fs_RemoveDir(name)
     char *name;		/* The name of the directory to remove */
 {
     ReturnStatus status;
-    FsLookupArgs lookupArgs;
+    Fs_LookupArgs lookupArgs;
     Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
 
     lookupArgs.useFlags = FS_DELETE;
-    FsSetIDs(procPtr, &lookupArgs.id);
+    Fs_SetIDs(procPtr, &lookupArgs.id);
     lookupArgs.clientID = rpc_SpriteID;
     if (procPtr->genFlags & PROC_FOREIGN) {
 	lookupArgs.migClientID	= procPtr->peerHostID;
     } else {
 	lookupArgs.migClientID	= rpc_SpriteID;
     }
-    fsStats.cltName.removeDirs++;
-    status = FsLookupOperation(name, FS_DOMAIN_REMOVE_DIR, 0,
-			 (Address)&lookupArgs, (Address)NIL, (FsNameInfo *)NIL);
+    fs_Stats.cltName.removeDirs++;
+    status = Fsprefix_LookupOperation(name, FS_DOMAIN_REMOVE_DIR, 0,
+			 (Address)&lookupArgs, (Address)NIL, (Fs_NameInfo *)NIL);
     return(status);
 }
 
@@ -341,7 +340,7 @@ Fs_MakeDevice(name, devicePtr, permissions)
     int permissions;		/* The permissions for the new directory */
 {
     ReturnStatus status;	/* Return error code */
-    FsMakeDeviceArgs makeDevArgs;/* Packaged up parameters */
+    Fs_MakeDeviceArgs makeDevArgs;/* Packaged up parameters */
     Proc_ControlBlock *procPtr;	/* Used to get process IDs */
 
     if (((devicePtr->serverID != FS_LOCALHOST_ID) &&
@@ -353,7 +352,7 @@ Fs_MakeDevice(name, devicePtr, permissions)
     procPtr = Proc_GetEffectiveProc();
     makeDevArgs.device 		= *devicePtr;
     makeDevArgs.open.permissions= permissions & procPtr->fsPtr->filePermissions;
-    FsSetIDs(procPtr, &makeDevArgs.open.id);
+    Fs_SetIDs(procPtr, &makeDevArgs.open.id);
     makeDevArgs.open.clientID	= rpc_SpriteID;
     if (procPtr->genFlags & PROC_FOREIGN) {
 	makeDevArgs.open.migClientID	= procPtr->peerHostID;
@@ -361,9 +360,9 @@ Fs_MakeDevice(name, devicePtr, permissions)
 	makeDevArgs.open.migClientID	= rpc_SpriteID;
     }
 
-    fsStats.cltName.makeDevices++;
-    status = FsLookupOperation(name, FS_DOMAIN_MAKE_DEVICE, 0,
-		     (Address)&makeDevArgs, (Address)NIL, (FsNameInfo *)NIL);
+    fs_Stats.cltName.makeDevices++;
+    status = Fsprefix_LookupOperation(name, FS_DOMAIN_MAKE_DEVICE, 0,
+		     (Address)&makeDevArgs, (Address)NIL, (Fs_NameInfo *)NIL);
     return(status);
 }
 
@@ -389,23 +388,23 @@ Fs_MakeDir(name, permissions)
     int permissions;	/* The permissions for the new directory */
 {
     ReturnStatus status;	/* Return error code from RPC */
-    FsOpenArgs openArgs;	/* Packaged up parameters */
+    Fs_OpenArgs openArgs;	/* Packaged up parameters */
     Proc_ControlBlock *procPtr;	/* Used to get process IDs */
 
     procPtr = Proc_GetEffectiveProc();
     openArgs.useFlags = FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW ;
     openArgs.permissions = permissions & procPtr->fsPtr->filePermissions;
     openArgs.type = FS_DIRECTORY;
-    FsSetIDs(procPtr, &openArgs.id);
+    Fs_SetIDs(procPtr, &openArgs.id);
     openArgs.clientID = rpc_SpriteID;
     if (procPtr->genFlags & PROC_FOREIGN) {
 	openArgs.migClientID	= procPtr->peerHostID;
     } else {
 	openArgs.migClientID	= rpc_SpriteID;
     }
-    fsStats.cltName.makeDirs++;
-    status = FsLookupOperation(name, FS_DOMAIN_MAKE_DIR, FS_FOLLOW,
-		    (Address)&openArgs, (Address)NIL, (FsNameInfo *)NIL);
+    fs_Stats.cltName.makeDirs++;
+    status = Fsprefix_LookupOperation(name, FS_DOMAIN_MAKE_DIR, FS_FOLLOW,
+		    (Address)&openArgs, (Address)NIL, (Fs_NameInfo *)NIL);
     return(status);
 }
 
@@ -442,7 +441,7 @@ Fs_ChangeDir(pathName)
      * FS_EXECUTE permission needed to change to a directory.
      */
     newCwdPtr = (Fs_Stream *)NIL;
-    fsStats.cltName.chdirs++;
+    fs_Stats.cltName.chdirs++;
     status = Fs_Open(pathName, FS_EXECUTE | FS_FOLLOW, FS_DIRECTORY, 0,
 				  &newCwdPtr);
     if (status) {
@@ -557,9 +556,9 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
     Fs_Attributes *attrPtr;
 {
     ReturnStatus status;
-    FsOpenArgs openArgs;
+    Fs_OpenArgs openArgs;
     Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
-    FsGetAttrResults getAttrResults;	/* References attrPtr and ioFileID */
+    Fs_GetAttrResults getAttrResults;	/* References attrPtr and ioFileID */
     Fs_FileID ioFileID;			/* Returned from name server, indicates
 					 * who the I/O server is. */
 
@@ -567,7 +566,7 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
     openArgs.permissions = 0;
     openArgs.type = FS_FILE;
     openArgs.clientID = rpc_SpriteID;
-    FsSetIDs(procPtr, &openArgs.id);
+    Fs_SetIDs(procPtr, &openArgs.id);
     if (procPtr->genFlags & PROC_FOREIGN) {
 	openArgs.migClientID	= procPtr->peerHostID;
     } else {
@@ -580,24 +579,24 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
     /*
      * Get an initial version of the attributes from the name server.
      */
-    fsStats.cltName.getAttrs++;
-    status = FsLookupOperation(pathName, FS_DOMAIN_GET_ATTR, openArgs.useFlags,
+    fs_Stats.cltName.getAttrs++;
+    status = Fsprefix_LookupOperation(pathName, FS_DOMAIN_GET_ATTR, openArgs.useFlags,
 		 (Address)&openArgs, (Address)&getAttrResults,
-		 (FsNameInfo *)NIL);
+		 (Fs_NameInfo *)NIL);
     if ((status == SUCCESS) &&
-	(ioFileID.type > 0 && ioFileID.type <= FS_NUM_STREAM_TYPES)) {
+	(ioFileID.type > 0 && ioFileID.type <= FSIO_NUM_STREAM_TYPES)) {
 	/*
 	 * Update those with attributes cached at the I/O server.
 	 * This is suppressed by setting the ioFileID.type < 0
 	 */
-	fsStats.cltName.getIOAttrs++;
-	status = (*fsStreamOpTable[ioFileID.type].getIOAttr)
+	fs_Stats.cltName.getIOAttrs++;
+	status = (*fsio_StreamOpTable[ioFileID.type].getIOAttr)
 			(&ioFileID, rpc_SpriteID, attrPtr);
 #ifdef lint
-	status = FsRemoteGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
-	status = FsRmtFileGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
-	status = FsDeviceGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
-	status = FsPipeGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
+	status = Fsrmt_GetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
+	status = FsrmtFileGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
+	status = Fsio_DeviceGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
+	status = Fsio_PipeGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
 #endif lint
     }
     return(status);
@@ -634,8 +633,8 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr, flags)
 {
     register ReturnStatus status;
     Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
-    FsSetAttrArgs setAttrArgs;		/* Bundled openArgs and attributes */
-    FsOpenArgs *openArgsPtr;		/* Pointer into setAttrArgs */
+    Fs_SetAttrArgs setAttrArgs;		/* Bundled openArgs and attributes */
+    Fs_OpenArgs *openArgsPtr;		/* Pointer into setAttrArgs */
     Fs_FileID ioFileID;			/* Used to get to I/O server */
 
     openArgsPtr = &setAttrArgs.openArgs;
@@ -646,7 +645,7 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr, flags)
     openArgsPtr->permissions = 0;
     openArgsPtr->type = FS_FILE;
     openArgsPtr->clientID = rpc_SpriteID;
-    FsSetIDs(procPtr, &openArgsPtr->id);
+    Fs_SetIDs(procPtr, &openArgsPtr->id);
     if (procPtr->genFlags & PROC_FOREIGN) {
 	openArgsPtr->migClientID = procPtr->peerHostID;
     } else {
@@ -663,23 +662,23 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr, flags)
      * Set the attributes at the name server.  We get in return a fileID
      * for the actual device which specifies a serverID.
      */
-    fsStats.cltName.setAttrs++;
-    status = FsLookupOperation(pathName, FS_DOMAIN_SET_ATTR, 0,
+    fs_Stats.cltName.setAttrs++;
+    status = Fsprefix_LookupOperation(pathName, FS_DOMAIN_SET_ATTR, 0,
 		     (Address)&setAttrArgs, (Address)&ioFileID,
-		     (FsNameInfo *)NIL);
+		     (Fs_NameInfo *)NIL);
     if ((status == SUCCESS) &&
-	(ioFileID.type > 0 && ioFileID.type <= FS_NUM_STREAM_TYPES)) {
+	(ioFileID.type > 0 && ioFileID.type <= FSIO_NUM_STREAM_TYPES)) {
 	/*
 	 * Set the attributes at the I/O server.
 	 */
-	fsStats.cltName.setIOAttrs++;
-	status = (*fsStreamOpTable[ioFileID.type].setIOAttr)
+	fs_Stats.cltName.setIOAttrs++;
+	status = (*fsio_StreamOpTable[ioFileID.type].setIOAttr)
 			(&ioFileID, attrPtr, flags);
 #ifdef lint
-	status = FsRemoteSetIOAttr(&ioFileID, attrPtr, flags);
-	status = FsRmtFileSetIOAttr(&ioFileID, attrPtr, flags);
-	status = FsDeviceSetIOAttr(&ioFileID, attrPtr, flags);
-	status = FsPipeSetIOAttr(&ioFileID, attrPtr, flags);
+	status = Fsrmt_SetIOAttr(&ioFileID, attrPtr, flags);
+	status = FsrmtFileSetIOAttr(&ioFileID, attrPtr, flags);
+	status = Fsio_DeviceSetIOAttr(&ioFileID, attrPtr, flags);
+	status = Fsio_PipeSetIOAttr(&ioFileID, attrPtr, flags);
 #endif lint
     }
     return(status);
@@ -710,19 +709,19 @@ Fs_HardLink(pathName, linkName)
 			 * the existing file */
 {
     ReturnStatus status;
-    FsLookupArgs lookupArgs;
+    Fs_LookupArgs lookupArgs;
     Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
 
     lookupArgs.useFlags = FS_LINK;
-    FsSetIDs(procPtr, &lookupArgs.id);
+    Fs_SetIDs(procPtr, &lookupArgs.id);
     lookupArgs.clientID = rpc_SpriteID;
     if (procPtr->genFlags & PROC_FOREIGN) {
 	lookupArgs.migClientID	= procPtr->peerHostID;
     } else {
 	lookupArgs.migClientID	= rpc_SpriteID;
     }
-    fsStats.cltName.hardLinks++;
-    status = FsTwoNameOperation(FS_DOMAIN_HARD_LINK, pathName, linkName,
+    fs_Stats.cltName.hardLinks++;
+    status = Fsprefix_TwoNameOperation(FS_DOMAIN_HARD_LINK, pathName, linkName,
 						     &lookupArgs);
     return(status);
 }
@@ -749,19 +748,19 @@ Fs_Rename(pathName, newName)
     char *newName;	/* The new pathname for the file */
 {
     ReturnStatus status;
-    FsLookupArgs lookupArgs;
+    Fs_LookupArgs lookupArgs;
     Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
 
     lookupArgs.useFlags = FS_LINK | FS_RENAME;
-    FsSetIDs(procPtr, &lookupArgs.id);
+    Fs_SetIDs(procPtr, &lookupArgs.id);
     lookupArgs.clientID = rpc_SpriteID;
     if (procPtr->genFlags & PROC_FOREIGN) {
 	lookupArgs.migClientID	= procPtr->peerHostID;
     } else {
 	lookupArgs.migClientID	= rpc_SpriteID;
     }
-    fsStats.cltName.renames++;
-    status = FsTwoNameOperation(FS_DOMAIN_RENAME, pathName, newName,
+    fs_Stats.cltName.renames++;
+    status = Fsprefix_TwoNameOperation(FS_DOMAIN_RENAME, pathName, newName,
 						  &lookupArgs);
     return(status);
 }
@@ -805,7 +804,7 @@ Fs_SymLink(targetName, linkName, remoteFlag)
 	    return(FS_INVALID_ARG);
 	}
     }
-    fsStats.cltName.symLinks++;
+    fs_Stats.cltName.symLinks++;
     status = Fs_Open(linkName, FS_CREATE | FS_WRITE | FS_EXCLUSIVE,
 		        (remoteFlag ? FS_REMOTE_LINK : FS_SYMBOLIC_LINK),
 		        0777, &streamPtr);

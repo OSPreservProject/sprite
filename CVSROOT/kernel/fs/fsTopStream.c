@@ -1,16 +1,7 @@
 /* 
  * fsStream.c --
  *
- *	There are two sets of procedures here.  The first manage the stream
- *	as it relates to the handle table; streams are installed in this
- *	table so that handle synchronization primitives can be used, and
- *	so that streams can be found after migration.  The golden rule is
- *	that the stream's refCount reflects local use, and its client list
- *	is used to reflect remote use of a stream.  Thus I/O server's
- *	don't keep references, only client list entries, unless there is
- *	a local user.
- *
- *	The second set of procedures handle the mapping from streams to
+ *	The  procedures handle the mapping from streams to
  *	user-level stream IDs,	which are indexes into a per-process array
  *	of stream pointers.
  *
@@ -32,791 +23,26 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsStream.h"
-#include "fsOpTable.h"
-#include "fsClient.h"
-#include "fsMigrate.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsNameOps.h"
+#include "fsconsist.h"
 #include "fsStat.h"
 #include "proc.h"
 #include "sync.h"
 #include "rpc.h"
 
-/*
- * Monitor to synchronize access to the streamCount variable.
- */
-static	Sync_Lock	streamLock = Sync_LockInitStatic("Fs:streamLock");
-#define LOCKPTR (&streamLock)
-
-static int	streamCount;	/* Used to generate fileIDs for streams*/
 
 /*
  * Forward declarations. 
  */
-static ReturnStatus StreamMigCallback();
 static ReturnStatus GrowStreamList();
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FsStreamNewClient --
- *
- *	Create a new stream for a client.  This chooses a unique minor number
- *	for the	fileID of the stream, installs it in the handle table,
- *	and initializes the client list to contain the client.  This is
- *	used on the file server to remember clients of regular files, and
- *	when creating pipe streams which need client info for migration.
- *
- * Results:
- *	A pointer to a locked stream with 1 reference and one client entry.
- *
- * Side effects:
- *	Install the new stream into the handle table and increment the global
- *	streamCount used to generate IDs.  The stream is returned locked and
- *	with one reference.  Our caller should release this reference if
- *	this is just a shadow stream.
- *
- *----------------------------------------------------------------------
- */
-ENTRY Fs_Stream *
-FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
-    int			serverID;	/* I/O server for stream */
-    int			clientID;	/* Client of the stream */
-    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
-    int			useFlags;	/* Usage flags from Fs_Open call */
-    char		*name;		/* Name for error messages */
-{
-    register Boolean found;
-    register Fs_Stream *streamPtr;
-    Fs_Stream *newStreamPtr;
-    Fs_FileID fileID;
-
-    LOCK_MONITOR;
-
-    /*
-     * The streamID is uniquified by using our own host ID for the major
-     * field (for network uniqueness), and then choosing minor
-     * numbers until we don't have a local conflict.
-     */
-    fileID.type = FS_STREAM;
-    fileID.serverID = serverID;
-    fileID.major = rpc_SpriteID;
-
-    do {
-	fileID.minor = ++streamCount;
-	found = FsHandleInstall(&fileID, sizeof(Fs_Stream), name,
-				(FsHandleHeader **)&newStreamPtr);
-	if (found) {
-	    /*
-	     * Don't want to conflict with existing streams.
-	     */
-	    FsHandleRelease(newStreamPtr, TRUE);
-	}
-    } while (found);
-
-    streamPtr = newStreamPtr;
-    streamPtr->offset = 0;
-    streamPtr->flags = useFlags;
-    streamPtr->ioHandlePtr = ioHandlePtr;
-    streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
-    List_Init(&streamPtr->clientList);
-    fsStats.object.streams++;
-
-    (void)FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags,
-	    (Boolean *)NIL);
-
-    UNLOCK_MONITOR;
-    return(streamPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamAddClient --
- *
- *	Find a stream and add another client to its client list.
- *
- * Results:
- *	A pointer to a locked stream with 1 reference and one client entry.
- *	Our call should release this reference if this is just a shadow stream.
- *
- * Side effects:
- *	Install the new stream into the handle table and increment the global
- *	streamCount used to generate IDs.
- *
- *----------------------------------------------------------------------
- */
-ENTRY Fs_Stream *
-FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
-	    foundClientPtr, foundStreamPtr)
-    Fs_FileID		*streamIDPtr;	/* File ID for stream */
-    int			clientID;	/* Client of the stream */
-    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
-    int			useFlags;	/* Usage flags from Fs_Open call */
-    char		*name;		/* Name for error messages */
-    /*
-     * These two boolean pointers may be NIL if their info is not needed.
-     */
-    Boolean		*foundClientPtr;/* True if Client already existed */
-    Boolean		*foundStreamPtr;/* True if stream already existed */
-{
-    register Boolean found;
-    register Fs_Stream *streamPtr;
-    Fs_Stream *newStreamPtr;
-
-    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
-			    (FsHandleHeader **)&newStreamPtr);
-    streamPtr = newStreamPtr;
-    if (!found) {
-	streamPtr->offset = 0;
-	streamPtr->flags = useFlags;
-	streamPtr->ioHandlePtr = ioHandlePtr;
-	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
-	List_Init(&streamPtr->clientList);
-	fsStats.object.streams++;
-    } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
-	streamPtr->ioHandlePtr = ioHandlePtr;
-    }
-    (void)FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags,
-	    foundClientPtr);
-    if (foundStreamPtr != (Boolean *)NIL) {
-	*foundStreamPtr = found;
-    }
-    UNLOCK_MONITOR;
-    return(streamPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamMigClient --
- *
- *	This is called on the I/O server for to move client streams refs.
- *	This makes a callback to the source client to release the reference
- *	to the stream which has (now) moved away.
- *	Note:  this operation locks the stream in order to serialize
- *	with a close comming in from a remote client who has dup'ed the
- *	stream, migrated one refernece, and closed the other reference.
- *	Also, on the client the callback and the regular close will both
- *	try to lock the stream in order to release a reference.  Deadlock
- *	cannot occur because if the close happens first there will be two
- *	references at the client.  The close at the client will release
- *	one reference and not try to contact us.  If the callback occurs
- *	first then the close will come through to us, but it will have
- *	to wait until we are done with this migration.
- *
- * Results:
- *	TRUE if the stream is shared across the network after migration.
- *
- * Side effects:
- *	Shifts the client list entry from one host to another.  This does
- *	not add/subtract any references to the stream here on this host.
- *	However, the call-back releases a reference at the source client.
- *
- *----------------------------------------------------------------------
- */
-ENTRY void
-FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
-    FsMigInfo		*migInfoPtr;	/* Encapsulated stream */
-    int			dstClientID;	/* New client of the stream */
-    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
-    Boolean		*closeSrcClientPtr;	/* Return - TRUE if the src
-					 * client stopped using stream */
-{
-    register Boolean found;
-    register Fs_Stream *streamPtr;
-    Fs_Stream *newStreamPtr;
-    int newClientStream = migInfoPtr->flags & FS_NEW_STREAM;
-    ReturnStatus status;
-    Boolean shared;
-
-    /*
-     * Get the stream and synchronize with closes from the client.
-     * The I/O handle has to be unlocked while the stream is locked
-     * in order to prevent deadlock with un-related open/close activity.
-     */
-    FsHandleUnlock(ioHandlePtr);
-    found = FsHandleInstall(&migInfoPtr->streamID, sizeof(Fs_Stream),
-			    (char *)NIL, (FsHandleHeader **)&newStreamPtr);
-    streamPtr = newStreamPtr;
-    if (!found) {
-	streamPtr->offset = migInfoPtr->offset;
-	streamPtr->flags = migInfoPtr->flags & ~FS_NEW_STREAM;
-	streamPtr->ioHandlePtr = ioHandlePtr;
-	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
-	List_Init(&streamPtr->clientList);
-	fsStats.object.streams++;
-    } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
-	streamPtr->ioHandlePtr = ioHandlePtr;
-    }
-    if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
-	/*
-	 * We don't think the stream is being shared so we
-	 * grab the offset from the client.
-	 */
-	streamPtr->offset = migInfoPtr->offset;
-    }
-    if (migInfoPtr->srcClientID != rpc_SpriteID) {
-	/*
-	 * Call back to the client to tell it to release its reference
-	 * on the stream.  We can't hold the I/O handle locked because
-	 * an unrelated close from the source client might have the
-	 * I/O handle locked over there.  By unlocking this I/O handle
-	 * we allow unrelated closes to complete, while the stream
-	 * lock prevents closes of other references to this stream
-	 * from comming in and changing the state.
-	 */
-	status = StreamMigCallback(migInfoPtr, &shared);
-    } else {
-	/*
-	 * The stream has been migrated away from us, the I/O server.
-	 * Decrement the stream ref count.  The I/O handle references
-	 * are left alone here on the I/O server.
-	 */
-	FsHandleDecRefCount((FsHandleHeader *)streamPtr);
-	shared = (streamPtr->hdr.refCount > 1);
-	status = SUCCESS;
-    }
-
-    if (status != SUCCESS || !shared) {
-	/*
-	 * The client doesn't perceive sharing of the stream so
-	 * it must be its last reference so we indicate an I/O close is needed.
-	 */
-	*closeSrcClientPtr = TRUE;
-	(void)FsStreamClientClose(&streamPtr->clientList,
-				  migInfoPtr->srcClientID);
-    } else {
-	*closeSrcClientPtr = FALSE;
-    }
-    /*
-     * Mark (unmark) the stream if it is being shared.  This is checked
-     * in the read and write RPC stubs in order to know what offset to use,
-     * the one here in the shadow stream, or the one from the client.
-     */
-    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
-			    migInfoPtr->flags, (Boolean *)NIL)) {
-	streamPtr->flags |= FS_RMT_SHARED;
-    } else {
-	streamPtr->flags &= ~FS_RMT_SHARED;
-    }
-    migInfoPtr->flags = streamPtr->flags | newClientStream;
-    migInfoPtr->offset = streamPtr->offset;
-    FsHandleRelease(streamPtr, TRUE);
-    FsHandleLock(ioHandlePtr);
-}
-
-/*
- * Parameters and results for RPC_FS_RELEASE that is called
- * to release a reference to a stream on the source of a migration.
- */
-typedef struct {
-    Fs_FileID streamID;		/* Stream from which to release a reference */
-} FsStreamReleaseParam;
-
-typedef struct {
-    Boolean	inUse;		/* TRUE if stream still in use after release */
-} FsStreamReleaseReply;
-
-/*
- *----------------------------------------------------------------------
- *
- * StreamMigCallback --
- *
- *	Call back to the source client of a migration and tell it to
- *	release its stream.  This invokes FsStreamMigrate on the
- *	remote client
- *
- * Results:
- *	A return status.
- *
- * Side effects:
- *      None.
- *	
- *----------------------------------------------------------------------
- */
-static ReturnStatus
-StreamMigCallback(migInfoPtr, sharedPtr)
-    FsMigInfo	*migInfoPtr;	/* Encapsulated information */
-    Boolean	*sharedPtr;	/* TRUE if stream still used on client */
-{
-    register ReturnStatus	status;
-    Rpc_Storage 		storage;
-    FsStreamReleaseParam	param;
-    FsStreamReleaseReply	reply;
-
-    param.streamID = migInfoPtr->streamID;
-    storage.requestParamPtr = (Address) &param;
-    storage.requestParamSize = sizeof(param);
-    storage.requestDataPtr = (Address)NIL;
-    storage.requestDataSize = 0;
-
-    reply.inUse = FALSE;
-    storage.replyParamPtr = (Address)&reply;
-    storage.replyParamSize = sizeof(reply);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-    status = Rpc_Call(migInfoPtr->srcClientID, RPC_FS_RELEASE, &storage);
-
-    *sharedPtr = reply.inUse;
-    if (status != SUCCESS && fsMigDebug) {
-	printf("StreamMigCallback: status %x from RPC.\n", status);
-    }
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcReleaseStream --
- *
- *	The service stub for FsStreamMigCallback.
- *	This invokes the StreamMigrate routine that releases a reference
- *	to a stream on this host.  Our reply message indicates if
- *	the stream is still in use on this host.
- *
- * Results:
- *	FS_STALE_HANDLE if handle that if client that is migrating the file
- *	doesn't have the file opened on this machine.  Otherwise return
- *	SUCCESS.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcReleaseStream(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* Command identifier */
-    Rpc_Storage *storagePtr;    /* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    register FsStreamReleaseParam	*paramPtr;
-    register Fs_Stream			*streamPtr;
-    register ReturnStatus		status;
-    register FsStreamReleaseReply	*replyPtr;
-    register Rpc_ReplyMem		*replyMemPtr;
-
-    paramPtr = (FsStreamReleaseParam *) storagePtr->requestParamPtr;
-
-    streamPtr = FsStreamClientVerify(&paramPtr->streamID, rpc_SpriteID);
-    if (streamPtr == (Fs_Stream *) NIL) {
-	printf("Fs_RpcReleaseStream, unknown stream <%d>, client %d\n",
-	    paramPtr->streamID.major, clientID);
-	return(FS_STALE_HANDLE);
-    }
-    replyPtr = mnew(FsStreamReleaseReply);
-    storagePtr->replyParamPtr = (Address)replyPtr;
-    storagePtr->replyParamSize = sizeof(FsStreamReleaseReply);
-    storagePtr->replyDataPtr = (Address)NIL;
-    storagePtr->replyDataSize = 0;
-
-    status = FsStreamRelease(streamPtr, &replyPtr->inUse);
-
-    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
-    replyMemPtr->dataPtr = (Address) NIL;
-    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
-		(ClientData)replyMemPtr);
-    return(SUCCESS);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * FsStreamRelease --
- *
- *	This is called to release a reference to a stream at the source
- *	of a migration.  We are told to release the reference by the
- *	I/O server during its FsStreamMigClient call.  The timing of our
- *	call ensures that a simultaneous Fs_Close on the stream will be
- *	properly synchronized - the I/O server has to know how many
- *	stream references we, the source of a migration, really have.
- *
- * Results:
- *	SUCCESS unless the stream isn't even found.  This sets the FS_RMT_SHARED
- *	flag in the *flagsPtr field if the stream is still in use here,
- *	otherwise it clears this flag.
- *
- * Side effects:
- *	This releases one reference to the stream.  If it is the last
- *	reference then this propogates the close down to the I/O handle
- *	by calling the stream-specific release procedure.
- *
- * ----------------------------------------------------------------------------
- *
- */
-/*ARGSUSED*/
-ReturnStatus
-FsStreamRelease(streamPtr, inUsePtr)
-    Fs_Stream *streamPtr;	/* Stream to release, should be locked */
-    Boolean *inUsePtr;		/* TRUE if still in use after release */
-{
-    /*
-     * Release the refernece that has now migrated away.
-     */
-    FsHandleDecRefCount((FsHandleHeader *)streamPtr);
-    /*
-     * If this is the last refernece then call down to the I/O handle
-     * so it can decrement use counts that come from the stream.
-     * (Remember there is still one reference from Fs_RpcReleaseStream)
-     */
-    if (streamPtr->hdr.refCount <= 1) {
-	(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
-		(streamPtr->ioHandlePtr, streamPtr->flags);
-	if (FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
-	    /*
-	     * No references, no other clients, nuke it.
-	     */
-	    *inUsePtr = FALSE;
-	    FsStreamDispose(streamPtr);
-	    return(SUCCESS);
-	}
-    }
-    *inUsePtr = TRUE;
-    FsHandleRelease(streamPtr, TRUE);
-    return(SUCCESS);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamNewID --
- *
- *	Generate a new streamID for a client.  This chooses a unique minor
- *	number for the	fileID of the stream and returns the fileID.  This
- *	is used on the file server to generate IDs for remote device streams.
- *	This ID will be used to create matching streams on the device I/O server
- *	and on the client's machine.
- *
- * Results:
- *	A unique fileID for a stream to the given I/O server.
- *
- * Side effects:
- *	Increment the global streamCount used to generate IDs.
- *
- *----------------------------------------------------------------------
- */
-ENTRY void
-FsStreamNewID(serverID, streamIDPtr)
-    int			serverID;	/* I/O server for stream */
-    Fs_FileID		*streamIDPtr;	/* Return - FileID for the stream */
-{
-    register Boolean found;
-    Fs_Stream *newStreamPtr;
-    Fs_FileID fileID;
-
-    LOCK_MONITOR;
-
-    /*
-     * The streamID is uniquified by using our own host ID for the major
-     * field (for network uniqueness), and then choosing minor
-     * numbers until we don't have a local conflict.
-     */
-    fileID.type = FS_STREAM;
-    fileID.serverID = serverID;
-    fileID.major = rpc_SpriteID;
-
-    do {
-	fileID.minor = ++streamCount;
-	found = FsHandleInstall(&fileID, sizeof(Fs_Stream), (char *)NIL,
-				(FsHandleHeader **)&newStreamPtr);
-	if (found) {
-	    /*
-	     * Don't want to conflict with existing streams.
-	     */
-	    FsHandleRelease(newStreamPtr, TRUE);
-	}
-    } while (found);
-    *streamIDPtr = newStreamPtr->hdr.fileID;
-    FsHandleRelease(newStreamPtr, TRUE);
-    FsHandleRemove(newStreamPtr);
-    UNLOCK_MONITOR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_StreamCopy --
- *
- *	Duplicate a stream.  This ups the reference count on the stream
- *	so that it won't go away until its last user closes it.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The reference count on the stream is incremented.
- *
- *----------------------------------------------------------------------
- */
-ENTRY void
-Fs_StreamCopy(oldStreamPtr, newStreamPtrPtr)
-    Fs_Stream *oldStreamPtr;
-    Fs_Stream **newStreamPtrPtr;
-{
-    *newStreamPtrPtr = FsHandleDupType(Fs_Stream, oldStreamPtr);
-    FsHandleUnlock(oldStreamPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamClientVerify --
- *
- *	Verify that the remote client is known for the stream, and return
- *	a locked pointer to the stream's handle.
- *
- * Results:
- *	A pointer to the handle for the stream, or NIL if
- *	the client is bad.
- *
- * Side effects:
- *	The handle is returned locked and with its refCount incremented.
- *	It should be released with FsHandleRelease(..., TRUE)
- *
- *----------------------------------------------------------------------
- */
-
-Fs_Stream *
-FsStreamClientVerify(streamIDPtr, clientID)
-    Fs_FileID	*streamIDPtr;	/* Client's stream ID */
-    int		clientID;	/* Host ID of the client */
-{
-    register FsStreamClientInfo *clientPtr;
-    register Fs_Stream *streamPtr;
-    Boolean found = FALSE;
-
-    streamPtr = FsHandleFetchType(Fs_Stream, streamIDPtr);
-    if (streamPtr != (Fs_Stream *)NIL) {
-	LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
-	    if (clientPtr->clientID == clientID) {
-		found = TRUE;
-		break;
-	    }
-	}
-	if (!found) {
-	    register FsHandleHeader *tHdrPtr = streamPtr->ioHandlePtr;
-	    printf("FsStreamClientVerify, unknown client %d for stream <%d>\n",
-		clientID, tHdrPtr->fileID.minor);
-	    FsHandleRelease(streamPtr, TRUE);
-	    streamPtr = (Fs_Stream *)NIL;
-	}
-    } else {
-	printf("No stream <%d> for client %d\n", streamIDPtr->minor, clientID);
-    }
-    return(streamPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamDispose --
- *
- *	Discard a stream.  This call removes the stream from the handle
- *	table and frees associated storage.  The I/O handle pointer part
- *	should have already been cleaned up by its handler.
- *
- *	If the stream still has associated clients, release the reference
- *	to the stream but don't get rid of the stream, since it is a shadow
- *	stream.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Remove the stream handle from the handle table.
- *
- *----------------------------------------------------------------------
- */
-
-Boolean fsStreamDisposeDebug = TRUE;
-
-ENTRY void
-FsStreamDispose(streamPtr)
-    register Fs_Stream *streamPtr;
-{
-    Boolean noClients = TRUE;
-    
-    if (!List_IsEmpty(&streamPtr->clientList)) {
-	noClients = FALSE;
-	if (fsStreamDisposeDebug) {
-	    register FsStreamClientInfo *clientPtr;
-
-	    LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
-
-		printf("FsStreamDispose, client %d still in list for stream <%d,%d>, refCount %d\n",
-			  clientPtr->clientID, streamPtr->hdr.fileID.major,
-			  streamPtr->hdr.fileID.minor, streamPtr->hdr.refCount);
-		if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
-		    printf("\tI/O handle: %s <%d,%d>, refCount %d\n",
-			       FsFileTypeToString(streamPtr->ioHandlePtr->fileID.type),
-			       streamPtr->ioHandlePtr->fileID.major,
-			       streamPtr->ioHandlePtr->fileID.minor,
-			       streamPtr->ioHandlePtr->refCount);
-		}
-	    }
-	}
-    } 
-
-    FsHandleRelease(streamPtr, TRUE);
-    if (noClients) {
-	if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
-	    free((Address)streamPtr->nameInfoPtr);
-	}
-	FsHandleRemove(streamPtr);
-	fsStats.object.streams--;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamScavenge --
- *
- *	Scavenge a stream.  Servers may have no references to a stream handle,
- *	but still have some things on its client list.  Clients have
- *	references, but no client list.  A stream with neither references
- *	or a client list is scavengable.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Removes the stream handle if it has no references and no clients.
- *
- *----------------------------------------------------------------------
- */
-#ifdef notdef
-Boolean
-FsStreamScavenge(hdrPtr)
-    FsHandleHeader *hdrPtr;
-{
-    register Fs_Stream *streamPtr = (Fs_Stream *)hdrPtr;
-
-    if (streamPtr->hdr.refCount == 0 &&
-	List_IsEmpty(&streamPtr->clientList)) {
-	printf( "FsStreamScavenge, removing stream <%d,%d>\n",
-		streamPtr->hdr.fileID.serverID,
-		streamPtr->hdr.fileID.minor);
-	FsHandleRemove((FsHandleHeader *)streamPtr);
-	fsStats.object.streams--;
-	return(TRUE);
-    } else {
-	FsHandleUnlock((FsHandleHeader *)streamPtr);
-	return(FALSE);
-    }
-}
-#endif notdef
-
-
-typedef struct StreamReopenParams {
-    Fs_FileID	streamID;
-    Fs_FileID	ioFileID;
-    int		useFlags;
-    int		offset;
-} StreamReopenParams;
-
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamReopen --
- *
- *	This is called initially on the client side from FsHandleReopen.
- *	That instance then does an RPC to the server, which again invokes
- *	this routine.  On the client side we don't do much except pass
- *	over the streamID and the ioHandle fileID so the server can
- *	re-create state.  On the server we have to re-setup the stream,
- *	which is sort of a pain because it must reference the correct
- *	I/O handle.
- *
- * Results:
- *	SUCCESS if the stream was reopened.
- *
- * Side effects:
- *	On the client, do an RPC to the server.
- *	On the server, re-create the stream.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ENTRY ReturnStatus
-FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
-    FsHandleHeader	*hdrPtr;	/* Stream's handle header */
-    int			clientID;
-    ClientData		inData;		/* Non-NIL on the server */
-    int			*outSizePtr;	/* Non-NIL on the server */
-    ClientData		*outDataPtr;	/* Non-NIL on the server */
-{
-    register Fs_Stream	*streamPtr = (Fs_Stream *)hdrPtr;
-    ReturnStatus status;
-
-    if (inData == (ClientData)NIL) {
-	/*
-	 * Called on the client side.  We contact the server to invoke
-	 * this procedure there with some input parameters.
-	 */
-	StreamReopenParams reopenParams;
-	int outSize = 0;
-
-	reopenParams.streamID = hdrPtr->fileID;
-	reopenParams.ioFileID = streamPtr->ioHandlePtr->fileID;
-	reopenParams.useFlags = streamPtr->flags;
-	reopenParams.offset   = streamPtr->offset;
-	status = FsSpriteReopen(hdrPtr, sizeof(reopenParams),
-		    (Address)&reopenParams, &outSize, (Address)NIL);
-    } else {
-	/*
-	 * Called on the server side.  We need to first make sure there
-	 * is a corresponding I/O handle for the stream, and then we
-	 * can set up the stream.
-	 */
-	StreamReopenParams	*reopenParamsPtr;
-	register Fs_FileID	*fileIDPtr;
-	FsHandleHeader		*ioHandlePtr;
-
-	reopenParamsPtr = (StreamReopenParams *)inData;
-	fileIDPtr = &reopenParamsPtr->ioFileID;
-	ioHandlePtr = (*fsStreamOpTable[fileIDPtr->type].clientVerify)
-			(fileIDPtr, clientID, (int *)NIL);
-	if (ioHandlePtr != (FsHandleHeader *)NIL) {
-	    streamPtr = FsStreamAddClient(&reopenParamsPtr->streamID, clientID,
-		    ioHandlePtr, reopenParamsPtr->useFlags, ioHandlePtr->name,
-		    (Boolean *)NIL, (Boolean *)NIL);
-	    /*
-	     * BRENT Have to worry about the shared offset here.
-	     */
-	    streamPtr->offset = reopenParamsPtr->offset;
-
-	    FsHandleRelease(ioHandlePtr, TRUE);
-	    FsHandleRelease(streamPtr, TRUE);
-	    status = SUCCESS;
-	} else {
-	    printf(
-		"FsStreamReopen, %s I/O handle <%d,%d> not found\n",
-		FsFileTypeToString(fileIDPtr->type),
-		fileIDPtr->major, fileIDPtr->minor);
-	    status = FAILURE;
-	}
-    }
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsGetStreamID --
+ * Fs_GetStreamID --
  *
  *	Save the stream pointer in the process's list of stream pointers
  *	and return its index in that list.  The index is used as
@@ -835,7 +61,7 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsGetStreamID(streamPtr, streamIDPtr)
+Fs_GetStreamID(streamPtr, streamIDPtr)
     Fs_Stream	*streamPtr;	/* A reference to an open file */
     int		*streamIDPtr;	/* Return value, the index of the file pointer
 				 * in the process's list of open files */
@@ -893,7 +119,7 @@ FsGetStreamID(streamPtr, streamIDPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsClearStreamID --
+ * Fs_ClearStreamID --
  *
  *	This invalidates a stream ID.  This is called in conjuction
  *	with Fs_Close to close a stream.  The open stream is identified
@@ -908,7 +134,7 @@ FsGetStreamID(streamPtr, streamIDPtr)
  *----------------------------------------------------------------------
  */
 void
-FsClearStreamID(streamID, procPtr)
+Fs_ClearStreamID(streamID, procPtr)
     int streamID;		/* Stream ID to invalidate */
     Proc_ControlBlock *procPtr;	/* (Optional) process pointer */
 {
@@ -984,7 +210,7 @@ GrowStreamList(fsPtr, newLength)
 /*
  *----------------------------------------------------------------------
  *
- * FsGetStreamPtr --
+ * Fs_GetStreamPtr --
  *
  *	This converts a users stream id into a pointer to the
  *	stream structure for the open stream.  The stream id is
@@ -1004,7 +230,7 @@ GrowStreamList(fsPtr, newLength)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsGetStreamPtr(procPtr, streamID, streamPtrPtr)
+Fs_GetStreamPtr(procPtr, streamID, streamPtrPtr)
     Proc_ControlBlock	*procPtr;	/* The owner of an open file list */
     int			streamID;	/* A possible index into the list */
     Fs_Stream		**streamPtrPtr;	/* The pointer from the list*/
@@ -1077,7 +303,7 @@ Fs_GetNewID(streamID, newStreamIDPtr)
 	return(FS_INVALID_ARG);
     }
     procPtr = Proc_GetEffectiveProc();
-    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -1085,8 +311,8 @@ Fs_GetNewID(streamID, newStreamIDPtr)
     if (*newStreamIDPtr == FS_ANYID) {
 	Fs_Stream		*newStreamPtr;
 
-	Fs_StreamCopy(streamPtr, &newStreamPtr);
-	status = FsGetStreamID(newStreamPtr, newStreamIDPtr);
+	Fsio_StreamCopy(streamPtr, &newStreamPtr);
+	status = Fs_GetStreamID(newStreamPtr, newStreamIDPtr);
 	if (status != SUCCESS) {
 	    (void)Fs_Close(newStreamPtr);
 	}
@@ -1136,7 +362,7 @@ Fs_GetNewID(streamID, newStreamIDPtr)
 		    (void)Fs_Close(oldFilePtr);
 		}
 	    }
-	    Fs_StreamCopy(streamPtr, &fsPtr->streamList[newStreamID]);
+	    Fsio_StreamCopy(streamPtr, &fsPtr->streamList[newStreamID]);
 	    return(SUCCESS);
 	}
     }

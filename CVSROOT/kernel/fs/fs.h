@@ -34,7 +34,7 @@
 #include "sync.h"
 #include "proc.h"
 #include "user/fs.h"
-#include "user/fmt.h"
+#include <fmt.h>
 #else
 #include <kernel/sys.h>
 #include <kernel/sync.h>
@@ -42,6 +42,16 @@
 #include <fs.h>
 #include <fmt.h>
 #endif
+
+/*
+ * Fragment stuff that is dependent on the filesystem block size
+ * defined in user/fs.h.  Actually, the fragmenting code is specific
+ * to a 4K block size and a 1K fragment size.
+ */
+
+#define	FS_BLOCK_OFFSET_MASK	(FS_BLOCK_SIZE - 1)
+#define	FS_FRAGMENT_SIZE	1024
+#define	FS_FRAGMENTS_PER_BLOCK	4
 
 
 /*
@@ -80,13 +90,13 @@ typedef struct Fs_ProcessState {
  * term for each structure is "handle".  The following structure defines a 
  * common structure needed in the beginning of each handle.  Note, most of
  * these fields are private to the FsHandle* routines that do generic
- * operations on handles.  One exception is that the refCount on FS_STREAM
+ * operations on handles.  One exception is that the refCount on FSIO_STREAM
  * handles is manipulated by the stream routines.  The handle must be
  * locked when examining the refCount, and it should only be changed
  * under the handle monitor lock by the FsHandle* routines.
  */
 
-typedef struct FsHandleHeader {
+typedef struct Fs_HandleHeader {
     Fs_FileID		fileID;		/* Used as the hash key. */
     int			flags;		/* Defined in fsHandle.c. */
     Sync_Condition	unlocked;	/* Notified when handle is unlocked. */
@@ -96,11 +106,13 @@ typedef struct FsHandleHeader {
 #ifndef CLEAN
     int			lockProcID;	/* Process ID of locker */
 #endif
-} FsHandleHeader;
+} Fs_HandleHeader;
 
 #define LRU_LINKS_TO_HANDLE(listPtr) \
-	( (FsHandleHeader *)((int)(listPtr) - sizeof(Fs_FileID) \
+	( (Fs_HandleHeader *)((int)(listPtr) - sizeof(Fs_FileID) \
 		- 2 * sizeof(int) - sizeof(char *) - sizeof(Sync_Condition)) )
+
+
 
 /*
  * The following name-related information is referenced by each stream.
@@ -110,16 +122,16 @@ typedef struct FsHandleHeader {
  * fileID is used as the starting point for relative lookups.
  */
 
-typedef struct FsNameInfo {
+typedef struct Fs_NameInfo {
     Fs_FileID		fileID;		/* Identifies file and name server. */
     Fs_FileID		rootID;		/* ID of file system root.  Passed
 					 * to name server to prevent ascending
 					 * past the root of a domain with ".."*/
     int			domainType;	/* Name domain type */
-    struct FsPrefix	*prefixPtr;	/* Back pointer to prefix table entry.
+    struct Fsprefix	*prefixPtr;	/* Back pointer to prefix table entry.
 					 * This is kept for efficient handling
 					 * of lookup redirects. */
-} FsNameInfo;
+} Fs_NameInfo;
 
 /*
  * Fs_Stream - A clients handle on an open file is defined by the Fs_Stream
@@ -146,15 +158,15 @@ typedef struct FsNameInfo {
  */
 
 typedef struct Fs_Stream {
-    FsHandleHeader	hdr;		/* Global stream identifier.  This
+    Fs_HandleHeader	hdr;		/* Global stream identifier.  This
 					 * includes a reference count which
 					 * is incremented on fork/dup */
     int			offset;		/* File access position */
     int			flags;		/* Flags defined below */
-    FsHandleHeader	*ioHandlePtr;	/* Stream specific data used for I/O.
+    Fs_HandleHeader	*ioHandlePtr;	/* Stream specific data used for I/O.
 					 * This really references a somewhat
 					 * larger object, see fsInt.h */
-    FsNameInfo	 	*nameInfoPtr;	/* Used to contact the name server */
+    Fs_NameInfo	 	*nameInfoPtr;	/* Used to contact the name server */
     List_Links		clientList;	/* Needed for recovery and sharing
 					 * detection */
 } Fs_Stream;
@@ -193,8 +205,8 @@ typedef struct Fs_Stream {
  *		used for setting attributes.
  *	FS_DELETE - Open a file for deletion.  Write permission is needed
  *		in the parent directory for this to succeed.
- *	FS_LINK - This is used by FsLocalLookup to make hard links.  Instead
- *		of creating a new file, FsLocalLookup makes another directory
+ *	FS_LINK - This is used by FslclLookup to make hard links.  Instead
+ *		of creating a new file, FslclLookup makes another directory
  *		reference (hard link) to an existing file.
  *	FS_RENAME - This goes with FS_LINK if the link is being made in
  *		preparation for a rename operation.  This allows the link,
@@ -212,7 +224,7 @@ typedef struct Fs_Stream {
  *		usually the case for named pipes, although when the ioServer
  *		is writing back blocks from its cache to the file server
  *		this flag is not set.
- *	FS_TRACE_FLAG - This is used to enable the taking of trace records
+ *	FSUTIL_TRACE_FLAG - This is used to enable the taking of trace records
  *		by low level routines.  This means that the tracing can
  *		be confined to particular operations, like open, while
  *		other operations, like remove, don't pollute the trace.
@@ -242,7 +254,7 @@ typedef struct Fs_Stream {
 #define FS_RENAME		0x00080000
 #define FS_CLIENT_CACHE_WRITE	0x00100000
 #define FS_CONSUME		0x00200000
-#define FS_TRACE_FLAG		0x00400000
+#define FSUTIL_TRACE_FLAG		0x00400000
 #define FS_USER_OUT		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
 #define	FS_LAST_DIRTY_BLOCK	0x02000000
@@ -325,7 +337,7 @@ typedef struct Fs_IOCParam {
     int		inBufSize;	/* Size of input params to iocontrol. */
     Address	outBuffer;	/* Output buffer */
     int		outBufSize;	/* Size of results from iocontrol. */
-    Fmt_Format	format;		/* Defines client's byte order/alignment 
+    Fmt_Format	format;		/* Defines client's byte order/alignment
 				 * format. */
     Proc_PID	procID;		/* ID of invoking process */
     Proc_PID	familyID;	/* Family of invoking process */
@@ -334,16 +346,6 @@ typedef struct Fs_IOCParam {
 				 * input and output buffers are in user space,
 				 * respectively */
 } Fs_IOCParam;
-
-/*
- * Fragment stuff that is dependent on the filesystem block size
- * defined in user/fs.h.  Actually, the fragmenting code is specific
- * to a 4K block size and a 1K fragment size.
- */
-
-#define	FS_BLOCK_OFFSET_MASK	(FS_BLOCK_SIZE - 1)
-#define	FS_FRAGMENT_SIZE	1024
-#define	FS_FRAGMENTS_PER_BLOCK	4
 
 /*
  * FS_MAX_LINKS	- the limit on the number of symbolic links that can be
@@ -361,17 +363,6 @@ typedef enum {
     FS_SWAP_PAGE
 } Fs_PageType;
 
-#ifdef notdef
-/*
- * Buffer type that includes size, location, and kernel space flag.
- * This is passed into Fs_IOControl to specify the input/output buffers.
- */
-typedef struct Fs_Buffer {
-    Address addr;
-    int size;
-    int flags;		/* 0 or FS_USER */
-} Fs_Buffer;
-#endif
 
 /*
  * Device drivers use Fs_NotifyReader and Fs_NotifyWriter to indicate
@@ -398,29 +389,44 @@ typedef Address Fs_NotifyToken;
 
 #define	FS_DEV_DONT_LOCK	0x1
 #define	FS_DEV_DONT_COPY	0x2
+
+/*
+ * TRUE once the file system has been initialized, so we
+ * know we can sync the disks safely.
+ */
+extern  Boolean fsutil_Initialized;	
+
+/*
+ * These record the maximum transfer size supported by the RPC system.
+ */
+extern int fsMaxRpcDataSize;
+extern int fsMaxRpcParamSize;
+
+/*
+ * The directory that temporary files will live in.
+ */
+extern	int	fsutil_TmpDirNum;
+
+/*
+ * Writing policies.
+ */
+extern	Boolean	fsutil_DelayTmpFiles;
+extern	Boolean	fsutil_WriteThrough;
+extern	Boolean	fsutil_WriteBackASAP;
+extern	Boolean	fsutil_WriteBackOnClose;
+extern	Boolean	fsutil_WBOnLastDirtyBlock;
+
+
+
 /*
  * Filesystem initialization calls.
  */
 extern	void	Fs_Init();
 extern	void	Fs_ProcInit();
-extern	void	Fs_SetupStream();
 extern	void	Fs_InheritState();
 extern	void	Fs_CloseState();
 
-/*
- * Prefix Table routines.
- */
-extern	void	Fs_PrefixLoad();
-extern	void	Fs_PrefixExport();
 
-/*
- * Filesystem processes.
- */
-
-extern	void	Fs_SyncProc();
-extern	void	Fs_Sync();
-extern	void	Fs_BlockCleaner();
-extern	void	Fs_ConsistProc();
 /*
  * Filesystem system calls.
  */
@@ -471,19 +477,16 @@ extern	ReturnStatus	Fs_UserWriteVector();
 extern	ReturnStatus	Fs_ChangeDir();
 extern	ReturnStatus	Fs_Close();
 extern	ReturnStatus	Fs_Command();
-extern	ReturnStatus	Fs_CreatePipe();
 extern	ReturnStatus	Fs_CheckAccess();
 extern	ReturnStatus	Fs_GetAttributes();
 extern	ReturnStatus	Fs_GetAttributesID();
 extern	ReturnStatus	Fs_GetNewID();
 extern	ReturnStatus	Fs_HardLink();
 extern	ReturnStatus	Fs_IOControl();
-extern	ReturnStatus	Fs_Lock();
 extern	ReturnStatus	Fs_MakeDevice();
 extern	ReturnStatus	Fs_MakeDir();
 extern	ReturnStatus	Fs_Open();
 extern	ReturnStatus	Fs_Read();
-extern	ReturnStatus	Fs_ReadLink();
 extern	ReturnStatus	Fs_Remove();
 extern	ReturnStatus	Fs_RemoveDir();
 extern	ReturnStatus	Fs_Rename();
@@ -492,49 +495,27 @@ extern	ReturnStatus	Fs_SetAttributesID();
 extern	ReturnStatus	Fs_SetDefPerm();
 extern	ReturnStatus	Fs_SymLink();
 extern	ReturnStatus	Fs_Trunc();
-extern	ReturnStatus	Fs_TruncFile();
-extern	ReturnStatus	Fs_TruncID();
+extern	ReturnStatus	Fs_TruncStream();
 extern	ReturnStatus	Fs_Write();
 
 /*
  * Filesystem utility routines.
  */
-extern	Boolean		Fs_SameFile();
 extern	int		Fs_Cat();
 extern	int		Fs_Copy();
-extern	void		Fs_HandleScavenge();
-extern	void		Fs_PrintTrace();
-extern  void		Fs_BlocksToDiskAddr();
 extern  void		Fs_CheckSetID();
 extern  void		Fs_CloseOnExec();
-extern	char *		Fs_GetFileName();
 
-/*
- * Routines called via the L1 key bindings.
- */
-extern	void		Fs_HandleScavengeStub();
-extern	void		Fs_PdevPrintTrace();
-extern	void		Fs_DumpCacheStats();
-extern	void		Fs_NameHashStats();
 
 /*
  * Routines to support process migration: encapsulate and deencapsulate
  * streams and other file state, and clear file state after migration.
  */
-extern	ReturnStatus	Fs_EncapStream();
-extern	ReturnStatus	Fs_DeencapStream();
 extern	int		Fs_GetEncapSize();
 extern	ReturnStatus	Fs_InitiateMigration();
-extern	void		Fs_StreamCopy();
 extern  ReturnStatus    Fs_EncapFileState();
 extern  ReturnStatus    Fs_DeencapFileState();
 
-/*
- * Routines to wakeup readers and writers.
- */
-extern	void		Fs_NotifyReader();
-extern	void		Fs_NotifyWriter();
-extern	void		Fs_WakeupProc();
 
 /*
  * Routines for virtual memory.
@@ -542,9 +523,20 @@ extern	void		Fs_WakeupProc();
 extern	ReturnStatus	Fs_PageRead();
 extern	ReturnStatus	Fs_PageWrite();
 extern	ReturnStatus	Fs_PageCopy();
-extern	void		Fs_CacheBlocksUnneeded();
-extern	void		Fs_GetPageFromFS();
-extern	ClientData	Fs_GetFileHandle();
+
+/*
+ * Routines that map to/from user-level streamIDs.
+ */
+extern ReturnStatus	Fs_GetStreamID();
+extern void		Fs_ClearStreamID();
+extern ReturnStatus	Fs_GetStreamPtr();
+
+extern  void		Fs_Bin();
+extern ReturnStatus	Fs_GetAttrStream();
+extern  void 		Fs_InstallDomainLookupOps();
+extern  void		Fs_CheckSetID();
+
+extern  ClientData      Fs_GetFileHandle();
 extern struct Vm_Segment **Fs_GetSegPtr();
 
 #endif /* _FS */

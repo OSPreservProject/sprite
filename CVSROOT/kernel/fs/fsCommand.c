@@ -15,20 +15,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsOpTable.h"
-#include "fsPrefix.h"
-#include "fsTrace.h"
-#include "fsMigrate.h"
-#include "fsNameHash.h"
-#include "fsBlockCache.h"
-#include "fsPdev.h"
-#include "fsDebug.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "fsprefix.h"
+#include "fsutilTrace.h"
+#include "fslcl.h"
+#include "fscache.h"
+#include "fspdev.h"
 #include "fsStat.h"
 #include "timer.h"
 #include "user/fsCmd.h"
 #include "rpc.h"
 #include "sched.h"
+#include "fsrmt.h"
+#include <stdlib.h>
 
 
 #define SWAP_TO_BUFFER(int1, buffer) \
@@ -60,9 +60,9 @@ Fs_Command(command, bufSize, buffer)
     Address buffer;
 {
     ReturnStatus 	status = SUCCESS;
-    extern	int	fsMaxBlockCleaners;
-    extern	int	fsReadAheadBlocks;
-    extern	Boolean	fsClientCaching;
+    extern	int	fscache_MaxBlockCleaners;
+    extern	int	fscache_NumReadAheadBlocks;
+    extern	Boolean	fsconsist_ClientCachingEnabled;
 
     switch(command) {
 	case FS_PREFIX_LOAD: {
@@ -76,12 +76,12 @@ Fs_Command(command, bufSize, buffer)
 		argPtr->serverID >= NET_NUM_SPRITE_HOSTS)) {
 		status = FS_INVALID_ARG;
 	    } else {
-		int prefixFlags = FS_IMPORTED_PREFIX;
+		int prefixFlags = FSPREFIX_IMPORTED;
 
 		if (argPtr->serverID != RPC_BROADCAST_SERVER_ID) {
-		    prefixFlags |= FS_REMOTE_PREFIX;
+		    prefixFlags |= FSPREFIX_REMOTE;
 		}
-		Fs_PrefixLoad(argPtr->prefix, argPtr->serverID, prefixFlags);
+		Fsprefix_Load(argPtr->prefix, argPtr->serverID, prefixFlags);
 		status = SUCCESS;
 	    }
 	    break;
@@ -104,16 +104,16 @@ Fs_Command(command, bufSize, buffer)
 						FS_DIRECTORY, 0, &streamPtr);
 		    if (status == SUCCESS) {
 			if (streamPtr->ioHandlePtr->fileID.type !=
-				FS_LCL_FILE_STREAM) {
+				FSIO_LCL_FILE_STREAM) {
 			    printf(
 		    "Tried to export non-local file \"%s\" as prefix \"%s\"\n",
 				localPath, prefix);
 			    (void)Fs_Close(streamPtr);
 			    status = FS_NO_ACCESS;
 			} else {
-			    (void)FsPrefixInstall(prefix,streamPtr->ioHandlePtr,
+			    (void)Fsprefix_Install(prefix,streamPtr->ioHandlePtr,
 						    FS_LOCAL_DOMAIN,
-		    FS_EXPORTED_PREFIX|FS_IMPORTED_PREFIX|FS_OVERRIDE_PREFIX);
+		    FSPREFIX_EXPORTED|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
 			}
 		    }
 		}
@@ -126,14 +126,14 @@ Fs_Command(command, bufSize, buffer)
 	    /*
 	     * Clear the handle information about a prefix.
 	     */
-	    status = Fs_PrefixClear(buffer, FALSE);
+	    status = Fsprefix_Clear(buffer, FALSE);
 	    break;
 	}
 	case FS_PREFIX_DELETE: {
 	    /*
 	     * Remote a prefix table entry all-together.
 	     */
-	    status = Fs_PrefixClear(buffer, TRUE);
+	    status = Fsprefix_Clear(buffer, TRUE);
 	    break;
 	}
 	case FS_PREFIX_CONTROL: {
@@ -145,7 +145,7 @@ Fs_Command(command, bufSize, buffer)
 	    if (bufSize < sizeof(Fs_PrefixControl)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		Fs_PrefixExport(controlPtr->prefix, controlPtr->clientID,
+		Fsprefix_Export(controlPtr->prefix, controlPtr->clientID,
 				controlPtr->delete);
 		status = SUCCESS;
 	    }
@@ -156,7 +156,7 @@ Fs_Command(command, bufSize, buffer)
 	     * Make the minimum size of the file system block cache larger.
 	     */
 	    if (buffer != (Address)NIL && buffer != (Address)0) {
-		FsSetMinSize(*(int *) buffer);
+		Fscache_SetMinSize(*(int *) buffer);
 	    }
 	    break;
 	}
@@ -165,7 +165,7 @@ Fs_Command(command, bufSize, buffer)
 	     * Make the minimum size of the file system block cache larger.
 	     */
 	    if (buffer != (Address)NIL && buffer != (Address)0) {
-		FsSetMaxSize(*(int *) buffer);
+		Fscache_SetMaxSize(*(int *) buffer);
 	    }
 	    break;
 	}
@@ -173,7 +173,7 @@ Fs_Command(command, bufSize, buffer)
 	    /*
 	     * Turn on or off automatic flushing of the cache.
 	     */
-	    SWAP_TO_BUFFER(fsShouldSyncDisks, buffer);
+	    SWAP_TO_BUFFER(fsutil_ShouldSyncDisks, buffer);
 	    break;
 	}
 	/*
@@ -184,35 +184,38 @@ Fs_Command(command, bufSize, buffer)
 	    /*
 	     * Set the file system tracing flag.
 	     */
-	    SWAP_TO_BUFFER(fsTracing, buffer);
+	    SWAP_TO_BUFFER(fsutil_Tracing, buffer);
 	    break;
 	}
 	case FS_SET_CACHE_DEBUG: {
 	    /*
 	     * Set the cache debug flag.
 	     */
-	    SWAP_TO_BUFFER(fsCacheDebug, buffer);
+	    extern int fsconsist_Debug;
+	    SWAP_TO_BUFFER(fsconsist_Debug, buffer);
 	    break;
 	}
 	case FS_SET_MIG_DEBUG: {
 	    /*
 	     * Set the migration debug flag.
 	     */
-	    SWAP_TO_BUFFER(fsMigDebug, buffer);
+	    extern int fsio_MigDebug;
+	    SWAP_TO_BUFFER(fsio_MigDebug, buffer);
 	    break;
 	}
 	case FS_SET_PDEV_DEBUG: {
 	    /*
 	     * Set the pseudo-device debug flag.
 	     */
-	    SWAP_TO_BUFFER(fsPdevDebug, buffer);
+	    extern Boolean  fspdev_Debug;
+	    SWAP_TO_BUFFER(fspdev_Debug, buffer);
 	    break;
 	}
 	case FS_SET_RPC_DEBUG: {
 	    /*
 	     * Set the rpc debug flag.
 	     */
-	    SWAP_TO_BUFFER(fsRpcDebug, buffer);
+	    SWAP_TO_BUFFER(fsrmt_RpcDebug, buffer);
 	    break;
 	}
 	case FS_SET_RPC_TRACING: {
@@ -233,14 +236,15 @@ Fs_Command(command, bufSize, buffer)
 	    /*
 	     * Set the rpc tracing flag.
 	     */
-	    SWAP_TO_BUFFER(fsNameCaching, buffer);
+	    extern int fslclNameCaching;
+	    SWAP_TO_BUFFER(fslclNameCaching, buffer);
 	    break;
 	}
 	case FS_SET_CLIENT_CACHING: {
 	    /*
 	     * Set the rpc tracing flag.
 	     */
-	    SWAP_TO_BUFFER(fsClientCaching, buffer);
+	    SWAP_TO_BUFFER(fsconsist_ClientCachingEnabled, buffer);
 	    break;
 	}
 	case FS_SET_RPC_CLIENT_HIST: {
@@ -279,67 +283,67 @@ Fs_Command(command, bufSize, buffer)
 	case FS_EMPTY_CACHE: {
 	    int *numLockedBlocksPtr = (int *)buffer;
 
-	    Fs_CacheEmpty(numLockedBlocksPtr);
+	    Fscache_Empty(numLockedBlocksPtr);
 	    break;
 	}
 	case FS_SET_WRITE_THROUGH: {
 	    /*
 	     * Set the file system write-through flag.
 	     */
-	    SWAP_TO_BUFFER(fsWriteThrough, buffer);
+	    SWAP_TO_BUFFER(fsutil_WriteThrough, buffer);
 	    break;
 	}
 	case FS_SET_WRITE_BACK_ON_CLOSE: {
 	    /*
 	     * Set the file system write-back-on-close flag.
 	     */
-	    SWAP_TO_BUFFER(fsWriteBackOnClose, buffer);
+	    SWAP_TO_BUFFER(fsutil_WriteBackOnClose, buffer);
 	    break;
 	}
 	case FS_SET_DELAY_TMP_FILES: {
 	    /*
 	     * Set the flag that delays writes on temporary files.
 	     */
-	    SWAP_TO_BUFFER(fsDelayTmpFiles, buffer);
+	    SWAP_TO_BUFFER(fsutil_DelayTmpFiles, buffer);
 	    break;
 	}
 	case FS_SET_TMP_DIR_NUM: {
 	    /*
 	     * Set the directory that contains /tmp.
 	     */
-	    SWAP_TO_BUFFER(fsTmpDirNum, buffer);
+	    SWAP_TO_BUFFER(fsutil_TmpDirNum, buffer);
 	    break;
 	}
 	case FS_SET_WRITE_BACK_ASAP: {
 	    /*
 	     * Set the file system write-back as soon as possible flag.
 	     */
-	    SWAP_TO_BUFFER(fsWriteBackASAP, buffer);
+	    SWAP_TO_BUFFER(fsutil_WriteBackASAP, buffer);
 	    break;
 	}
 	case FS_SET_WB_ON_LAST_DIRTY_BLOCK: {
 	    /*
 	     * Set the file system write-back as soon as possible flag.
 	     */
-	    SWAP_TO_BUFFER(fsWBOnLastDirtyBlock, buffer);
+	    SWAP_TO_BUFFER(fsutil_WBOnLastDirtyBlock, buffer);
 	    break;
 	}
 	case FS_ZERO_STATS: {
 	    /*
-	     * Zero out the counters in the fsStats struct.  Unfortunately,
+	     * Zero out the counters in the fs_Stats struct.  Unfortunately,
 	     * some values in the structure can't be zeroed out, so this
 	     * must be changed to zero out only some portions.
 	     */
-	    bzero((Address) &fsStats, sizeof(FsStats));
+	    bzero((Address) &fs_Stats, sizeof(Fs_Stats));
 	    status = SUCCESS;
 	    break;
 	}
 	case FS_RETURN_STATS: {
 	    if (bufSize > 0) {
-		if (bufSize > sizeof(FsStats)) {
-		    bufSize = sizeof(FsStats);
+		if (bufSize > sizeof(Fs_Stats)) {
+		    bufSize = sizeof(Fs_Stats);
 		}
-		bcopy((Address) &fsStats, buffer, bufSize);
+		bcopy((Address) &fs_Stats, buffer, bufSize);
 		status = SUCCESS;
 	    } else {
 		status = FS_INVALID_ARG;
@@ -347,8 +351,8 @@ Fs_Command(command, bufSize, buffer)
 	    break;
 	}
 	case FS_RETURN_LIFE_TIMES: {
-	    if (bufSize >= sizeof(FsTypeStats)) {
-		bcopy((Address)&fsTypeStats, buffer, sizeof(FsTypeStats));
+	    if (bufSize >= sizeof(Fs_TypeStats)) {
+		bcopy((Address)&fs_TypeStats, buffer, sizeof(Fs_TypeStats));
 		status = SUCCESS;
 	    } else {
 		status = FS_INVALID_ARG;
@@ -358,20 +362,20 @@ Fs_Command(command, bufSize, buffer)
 	case FS_GET_FRAG_INFO: {
 	    int	*arrPtr = (int *)buffer;
 
-	    Fs_CheckFragmentation(arrPtr, arrPtr + 1, arrPtr + 2);
+	    Fscache_CheckFragmentation(arrPtr, arrPtr + 1, arrPtr + 2);
 	    break;
 	}
 	case FS_SET_CLEANER_PROCS:
-	    SWAP_TO_BUFFER(fsMaxBlockCleaners, buffer);
+	    SWAP_TO_BUFFER(fscache_MaxBlockCleaners, buffer);
 	    break;
 	case FS_SET_READ_AHEAD:
-	    SWAP_TO_BUFFER(fsReadAheadBlocks, buffer);
+	    SWAP_TO_BUFFER(fscache_NumReadAheadBlocks, buffer);
 	    break;
 	case FS_SET_RA_TRACING:
-	    SWAP_TO_BUFFER(fsRATracing, buffer);
+	    SWAP_TO_BUFFER(fscache_RATracing, buffer);
 	    break;
 	case FS_REREAD_SUMMARY_INFO:
-	    status = FsRereadSummaryInfo(buffer);
+	    status = Fsdm_RereadSummaryInfo(buffer);
 	    break;
 	default:
 	    status = FS_INVALID_ARG;

@@ -24,27 +24,36 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 
 #include "fs.h"
-#include "fsInt.h"
-#include "fsOpTable.h"
-#include "fsDevice.h"
-#include "fsPrefix.h"
-#include "fsLocalDomain.h"
-#include "fsNameHash.h"
-#include "fsRecovery.h"
-#include "fsPdev.h"
-#include "fsTrace.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "fsio.h"
+#include "fsprefix.h"
+#include "fslcl.h"
+#include "devFsOpTable.h"
+#include "fspdev.h"
+#include "fsutilTrace.h"
 #include "fsStat.h"
-#include "fsClient.h"
+#include "fsconsist.h"
 #include "proc.h"
 #include "rpc.h"
 #include "recov.h"
 #include "timer.h"
 #include "trace.h"
+#include "fsdm.h"
+#include "fsrmt.h"
+
 /*
  * The prefix under which the local disk is attached.  
  */
 #define LOCAL_DISK_NAME		"/bootTmp"
 int fsDefaultDomainNumber = 0;
+
+Boolean	fsutil_WriteThrough = FALSE;	
+Boolean	fsutil_WriteBackOnClose  = FALSE;
+Boolean	fsutil_DelayTmpFiles = FALSE;
+int	fsutil_TmpDirNum = -1;	
+Boolean	fsutil_WriteBackASAP = FALSE;
+Boolean fsutil_WBOnLastDirtyBlock = FALSE;
 
 /*
  * We record the maximum transfer size supported by the RPC system
@@ -59,19 +68,19 @@ int fsMaxRpcParamSize = 0;	/* Used to be 1024 */
 /*
  * Statistics structure.
  */
-FsStats	fsStats;
+Fs_Stats	fs_Stats;
 
 /*
  * Timer queue element for updating time of day.
  */
 
-Timer_QueueElement	fsTimeOfDayElement;
+Timer_QueueElement	fsutil_TimeOfDayElement;
 
 /* 
  * Flag to make sure we only do certain things, such as syncing the disks,
  * after the file system has been initialized.
  */
-Boolean fsInitialized = FALSE;
+Boolean fsutil_Initialized = FALSE;
 
 /*
  * Flag to indicate whether we have attached a disk or not.  We can use
@@ -111,49 +120,57 @@ Fs_Init()
     int	i;
     Fs_Device defaultDisk;
 
-    bzero((Address) &fsStats, sizeof(FsStats));
+    /*
+     * Initialized the known domains. Local, Remote, and Pfs.
+     */
+    Fslcl_NameInitializeOps();
+    Fsio_InitializeOps();
+    Fsrmt_InitializeOps();
+    Fspdev_InitializeOps();
+
+    bzero((Address) &fs_Stats, sizeof(Fs_Stats));
     /*
      * The handle cache and the block cache start out with a hash table of
      * a given size which grows on demand.  Thus the numbers passed to
      * the next two routines are not crucial.
      */
-    FsHandleInit(64);
-    FsBlockCacheInit(64);
+    Fsutil_HandleInit(64);
+    Fscache_Init(64);
 
-    FsPrefixInit();
+    Fsprefix_Init();
 
-    FsClientInit();
+    Fsconsist_ClientInit();
 
-    FsLocalDomainInit();
+    Fslcl_DomainInit();
 
-    FsTraceInit();
-    FsPdevTraceInit();
+    Fsutil_TraceInit();
+    Fspdev_TraceInit();
 
     /*
      * Put the routine on the timeout queue that keeps the time in
      * seconds up to date.  WHY NOT USE Timer_GetTimeOfDay?
      */
 
-    fsTimeOfDayElement.routine = FsUpdateTimeOfDay;
-    fsTimeOfDayElement.clientData = 0;
-    fsTimeOfDayElement.interval = timer_IntOneSecond;
-    Timer_ScheduleRoutine(&fsTimeOfDayElement, TRUE);
+    fsutil_TimeOfDayElement.routine = Fsutil_UpdateTimeOfDay;
+    fsutil_TimeOfDayElement.clientData = 0;
+    fsutil_TimeOfDayElement.interval = timer_IntOneSecond;
+    Timer_ScheduleRoutine(&fsutil_TimeOfDayElement, TRUE);
     Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
-    fsTimeInSeconds = time.seconds;
+    fsutil_TimeInSeconds = time.seconds;
 
     /*
      * Install a crash callback with the recovery module.  (A reboot
      * callback is installed later only if we have to recover with a host.)
      */
 
-    Recov_CrashRegister(FsClientCrashed, (ClientData) NIL);
+    Recov_CrashRegister(Fsutil_ClientCrashed, (ClientData) NIL);
 
     /*
      * This is the initial step in boot-strapping the name space.  Place
      * an entry for "/" in the prefix table.  The NIL token will cause a
      * broadcast to get a valid token the first time the prefix is used.
      */
-    (void)FsPrefixInstall("/", (FsHandleHeader *)NIL, -1, FS_IMPORTED_PREFIX); 
+    (void)Fsprefix_Install("/", (Fs_HandleHeader *)NIL, -1, FSPREFIX_IMPORTED); 
 
     for (i=0 ; i<devNumDefaultDiskPartitions; i++) {
 	/*
@@ -163,7 +180,7 @@ Fs_Init()
 	 */
 	defaultDisk = devFsDefaultDiskPartitions[i];
 
-	status = FsAttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
+	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
 	if (status == SUCCESS) {
 	    printf("Attached disk type %d unit %d to \"%s\"\n",
 		     defaultDisk.type, defaultDisk.unit, LOCAL_DISK_NAME);
@@ -171,7 +188,7 @@ Fs_Init()
 	    break;
 	}
     }
-    fsInitialized = TRUE;
+    fsutil_Initialized = TRUE;
 }
 
 
@@ -193,11 +210,9 @@ Fs_Init()
 void
 Fs_Bin()
 {
-    Mem_Bin(sizeof(FsLocalFileIOHandle));
-    Mem_Bin(sizeof(FsRmtFileIOHandle));
-    Mem_Bin(sizeof(FsFileDescriptor));
-    Mem_Bin(sizeof(PdevServerIOHandle));
-    Mem_Bin(sizeof(PdevControlIOHandle));
+    Fsio_Bin();
+    Fspdev_Bin();
+    Fsrmt_Bin();
 #ifdef INET
     FsSocketBin();
 #endif
@@ -292,9 +307,9 @@ Fs_ProcInit()
 	    if (status != SUCCESS) {
 		panic("Fs_ProcInit: Unable to open local disk prefix!");
 	    } else {
-		FsPrefixInstall(rootPrefix, streamPtr->ioHandlePtr, 
+		Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
 			FS_LOCAL_DOMAIN, 
-			FS_LOCAL_PREFIX|FS_IMPORTED_PREFIX|FS_OVERRIDE_PREFIX);
+			FSPREFIX_LOCAL|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
 	    }
 	}
     }
@@ -389,7 +404,7 @@ Fs_InheritState(parentProcPtr, newProcPtr)
      * Current working directory.
      */
     if (parFsPtr->cwdPtr != (Fs_Stream *)NIL) {
-	Fs_StreamCopy(parFsPtr->cwdPtr, &newFsPtr->cwdPtr);
+	Fsio_StreamCopy(parFsPtr->cwdPtr, &newFsPtr->cwdPtr);
     } else {
 	newFsPtr->cwdPtr = (Fs_Stream *)NIL;
     }
@@ -407,7 +422,7 @@ Fs_InheritState(parentProcPtr, newProcPtr)
 	     i < len;
 	     i++, parStreamPtrPtr++, newStreamPtrPtr++) {
 	    if (*parStreamPtrPtr != (Fs_Stream *) NIL) {
-		Fs_StreamCopy(*parStreamPtrPtr, newStreamPtrPtr);
+		Fsio_StreamCopy(*parStreamPtrPtr, newStreamPtrPtr);
 		newFsPtr->streamFlags[i] = parFsPtr->streamFlags[i];
 	    } else {
 		*newStreamPtrPtr = (Fs_Stream *) NIL;

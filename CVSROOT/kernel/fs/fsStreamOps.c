@@ -23,19 +23,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsFile.h"
-#include "fsStream.h"
-#include "fsOpTable.h"
-#include "fsBlockCache.h"
-#include "fsTrace.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsNameOps.h"
+#include "fscache.h"
+#include "fsutilTrace.h"
 #include "fsStat.h"
-#include "fsDisk.h"
-#include "fsPrefix.h"
+#include "fsdm.h"
+#include "fsprefix.h"
 #include "rpc.h"
 #include "vm.h"
+#include "fsrmt.h"
+#include "fslcl.h"
 
-extern Boolean fsClientCaching;
+extern Boolean fsconsist_ClientCachingEnabled;
 
 
 /*
@@ -88,7 +89,7 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	return(SUCCESS);
     } else if ((toRead < 0) || (offset < 0)) {
 	return(GEN_INVALID_ARG);
-    } else if (!FsHandleValid(streamPtr->ioHandlePtr)) {
+    } else if (!Fsutil_HandleValid(streamPtr->ioHandlePtr)) {
 	return(FS_STALE_HANDLE);
     }
     streamType = streamPtr->ioHandlePtr->fileID.type;
@@ -107,17 +108,17 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     while (TRUE) {
 	Sync_GetWaitToken(&remoteWaiter.pid, &remoteWaiter.waitToken);
 
-	status = (fsStreamOpTable[streamType].read) (streamPtr,
+	status = (fsio_StreamOpTable[streamType].read) (streamPtr,
 		    ioPtr, &remoteWaiter, &reply);
 #ifdef lint
-	status = FsFileRead(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsRmtFileRead(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsDeviceRead(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsPipeRead(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsControlRead(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsServerStreamRead(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsPseudoStreamRead(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsRemoteRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = Fsio_FileRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsrmtFileRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = Fsio_DeviceRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = Fsio_PipeRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FspdevControlRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FspdevServerStreamRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FspdevPseudoStreamRead(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = Fsrmt_Read(streamPtr, ioPtr, &remoteWaiter, &reply);
 #endif
 
 	if (status == SUCCESS) {
@@ -137,7 +138,7 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	    }
 	} else if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	           status == RPC_SERVICE_DISABLED)  {
-	    status = FsWaitForRecovery(streamPtr->ioHandlePtr, status);
+	    status = Fsutil_WaitForRecovery(streamPtr->ioHandlePtr, status);
 	    if (status != SUCCESS) {
 		break;
 	    }
@@ -224,7 +225,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	return(SUCCESS);
     } else if ((toWrite < 0) || (offset < 0)) {
 	return(GEN_INVALID_ARG);
-    } else if (!FsHandleValid(streamPtr->ioHandlePtr)) {
+    } else if (!Fsutil_HandleValid(streamPtr->ioHandlePtr)) {
 	return(FS_STALE_HANDLE);
     }
     streamType = streamPtr->ioHandlePtr->fileID.type;
@@ -237,7 +238,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 
     remoteWaiter.hostID = rpc_SpriteID;
 
-    FS_TRACE_IO(FS_TRACE_WRITE, streamPtr->ioHandlePtr->fileID, offset,toWrite);
+    FSUTIL_TRACE_IO(FSUTIL_TRACE_WRITE, streamPtr->ioHandlePtr->fileID, offset,toWrite);
     /*
      * Main write loop.  This handles partial writes, non-blocking streams,
      * and crash recovery.  This loop expects the stream write procedure to
@@ -252,15 +253,15 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
     while (TRUE) {
 	Sync_GetWaitToken(&remoteWaiter.pid, &remoteWaiter.waitToken);
 
-	status = (fsStreamOpTable[streamType].write) (streamPtr, ioPtr,
+	status = (fsio_StreamOpTable[streamType].write) (streamPtr, ioPtr,
 						      &remoteWaiter, &reply);
 #ifdef lint
-	status = FsFileWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsRmtFileWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsDeviceWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsPipeWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsPseudoStreamWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
-	status = FsRemoteWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = Fsio_FileWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FsrmtFileWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = Fsio_DeviceWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = Fsio_PipeWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = FspdevPseudoStreamWrite(streamPtr, ioPtr, &remoteWaiter, &reply);
+	status = Fsrmt_Write(streamPtr, ioPtr, &remoteWaiter, &reply);
 #endif
 	toWrite -= reply.length;
 	amountWritten += reply.length;
@@ -289,7 +290,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	    }
 	} else if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	           status == RPC_SERVICE_DISABLED)  {
-	    status = FsWaitForRecovery(streamPtr->ioHandlePtr, status);
+	    status = Fsutil_WaitForRecovery(streamPtr->ioHandlePtr, status);
 	    if (status != SUCCESS) {
 		break;
 	    }
@@ -336,7 +337,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 {
     ReturnStatus		status = SUCCESS;
 
-    if (streamPtr->ioHandlePtr->fileID.type == FS_LCL_FILE_STREAM) {
+    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_FILE_STREAM) {
 	/*
 	 * Swap file pages live in the cache on the server so that swap
 	 * file copies and writes won't have to access the disk.
@@ -344,60 +345,59 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 	 * assured of getting written to disk the next time that a file system 
 	 * block is needed.
 	 */
-	register FsLocalFileIOHandle *handlePtr = 
-		(FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
+	register Fsio_FileIOHandle *handlePtr = 
+		(Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
 	int tmpNumBytes = numBytes;
 
-	status = FsCacheRead(&handlePtr->cacheInfo, 0, pageAddr, offset, 
+	status = Fscache_Read(&handlePtr->cacheInfo, 0, pageAddr, offset, 
 			     &tmpNumBytes, (Sync_RemoteWaiter *) NIL);
 	if (status == SUCCESS) {
-	    Fs_CacheBlocksUnneeded(streamPtr, offset, numBytes, FALSE);
+	    Fscache_BlocksUnneeded(streamPtr, offset, numBytes, FALSE);
 	}
     } else {
 	int	lastBlock;
 	int	bytesRead;
 	int	i, cacheFlags;
-	int	streamType = streamPtr->ioHandlePtr->fileID.type;
-	register FsRmtFileIOHandle *handlePtr = 
-		(FsRmtFileIOHandle *)streamPtr->ioHandlePtr;
+	register Fsrmt_FileIOHandle *handlePtr = 
+		(Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
 	Boolean retry;
-	FsCacheBlock *blockPtr;
+	Fscache_Block *blockPtr;
 	Boolean found;
 
 	lastBlock = (unsigned int) (offset + numBytes - 1) / FS_BLOCK_SIZE;
 
 	if (pageType == FS_CODE_PAGE) {
-	    cacheFlags = FS_CLEAR_READ_AHEAD | FS_BLOCK_UNNEEDED;
+	    cacheFlags = FSCACHE_CLEAR_READ_AHEAD | FSCACHE_BLOCK_UNNEEDED;
 	} else {
-	    cacheFlags = FS_CLEAR_READ_AHEAD;
+	    cacheFlags = FSCACHE_CLEAR_READ_AHEAD;
 	}
-	blockPtr = (FsCacheBlock *)NIL;
+	blockPtr = (Fscache_Block *)NIL;
 	for (i = (unsigned int) offset / FS_BLOCK_SIZE; i <= lastBlock; i++) {
 	    do {
-		if (!(streamPtr->flags & FS_SWAP) && fsClientCaching) {
-		    FsCacheFetchBlock(&handlePtr->cacheInfo, i,
-			    FS_DATA_CACHE_BLOCK, &blockPtr, &found);
+		if (!(streamPtr->flags & FS_SWAP) && fsconsist_ClientCachingEnabled) {
+		    Fscache_FetchBlock(&handlePtr->cacheInfo, i,
+			    FSCACHE_DATA_BLOCK, &blockPtr, &found);
 		    if (found) {
 			bcopy(blockPtr->blockAddr, pageAddr, FS_BLOCK_SIZE);
-			if (blockPtr->flags & FS_READ_AHEAD_BLOCK) {
-			    fsStats.blockCache.readAheadHits++;
+			if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
+			    fs_Stats.blockCache.readAheadHits++;
 			}
-			FsCacheUnlockBlock(blockPtr, 0, -1, 0, cacheFlags);
-			blockPtr = (FsCacheBlock *)NIL;
+			Fscache_UnlockBlock(blockPtr, 0, -1, 0, cacheFlags);
+			blockPtr = (Fscache_Block *)NIL;
 			offset += FS_BLOCK_SIZE;
 			break;	/* do-while, go to next for loop iteration */
 		    } else if (pageType == FS_CODE_PAGE) {
-			FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
-			blockPtr = (FsCacheBlock *)NIL;
+			Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+			blockPtr = (Fscache_Block *)NIL;
 		    }
 		}
 
 		retry = FALSE;
 		bytesRead = FS_BLOCK_SIZE;
-		status = (*fsStreamOpTable[streamType].blockRead)
+		status = (handlePtr->cacheInfo.ioProcsPtr->blockRead)
 			(streamPtr->ioHandlePtr, 0, pageAddr, &offset,
 			 &bytesRead, (Sync_RemoteWaiter *)NIL);
-		FS_TRACE_IO(FS_TRACE_READ, streamPtr->ioHandlePtr->fileID,
+		FSUTIL_TRACE_IO(FSUTIL_TRACE_READ, streamPtr->ioHandlePtr->fileID,
 			    offset, bytesRead);
 		if (status != SUCCESS) {
 		    if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
@@ -408,49 +408,49 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			 */
 			Net_HostPrint(streamPtr->ioHandlePtr->fileID.serverID,
 				"Fs_PageRead waiting\n");
-			status = FsWaitForRecovery(streamPtr->ioHandlePtr, 
+			status = Fsutil_WaitForRecovery(streamPtr->ioHandlePtr, 
 				    status);
 			if (status == SUCCESS) {
 			    retry = TRUE;
 			} else {
 			    printf(
 				"Fs_PageRead recovery failed <%x>\n", status);
-			    if (blockPtr != (FsCacheBlock *)NIL) {
-				FsCacheUnlockBlock(blockPtr, 0, -1, 0,
-						   FS_DELETE_BLOCK);
+			    if (blockPtr != (Fscache_Block *)NIL) {
+				Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+						   FSCACHE_DELETE_BLOCK);
 			    }
 			    return(status);
 			}
 		    } else if (status != SUCCESS) {
 			    printf(
 				"Fs_PageRead: Read failed <%x>\n", status);
-			    if (blockPtr != (FsCacheBlock *)NIL) {
-				FsCacheUnlockBlock(blockPtr, 0, -1, 0,
-						   FS_DELETE_BLOCK);
+			    if (blockPtr != (Fscache_Block *)NIL) {
+				Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+						   FSCACHE_DELETE_BLOCK);
 			    }
 			    return(status);
 		    }
 		} else if (bytesRead != FS_BLOCK_SIZE) {
 		    printf(
 			    "FsPageRead: Short read of length %d\n", bytesRead);
-		    if (blockPtr != (FsCacheBlock *)NIL) {
-			FsCacheUnlockBlock(blockPtr, 0, -1, 0,
-					   FS_DELETE_BLOCK);
+		    if (blockPtr != (Fscache_Block *)NIL) {
+			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+					   FSCACHE_DELETE_BLOCK);
 		    }
 		    return(VM_SHORT_READ);
 		}
-		if (blockPtr != (FsCacheBlock *)NIL) {
+		if (blockPtr != (Fscache_Block *)NIL) {
 		    if (retry) {
-			FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
+			Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
 		    } else {
 			/*
 			 * We read the data into the page, now copy it into the
 			 * cache since initialized heap pages live in the cache.
 			 */
 			bcopy(pageAddr, blockPtr->blockAddr, FS_BLOCK_SIZE);
-			FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
+			Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
 		    }
-		    blockPtr = (FsCacheBlock *)NIL;
+		    blockPtr = (Fscache_Block *)NIL;
 		}
 	    } while (retry);
 	    pageAddr += FS_BLOCK_SIZE;
@@ -485,7 +485,7 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
 {
     ReturnStatus		status = SUCCESS;
 
-    if (streamPtr->ioHandlePtr->fileID.type == FS_LCL_FILE_STREAM) {
+    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_FILE_STREAM) {
 	/*
 	 * Swap file pages live in the cache on the server so that swap file
 	 * copies and writes won't have to always access the disk directly.
@@ -493,14 +493,14 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
 	 * assured of getting written to disk the next time that a file system 
 	 * block is needed.
 	 */
-	register FsLocalFileIOHandle *handlePtr = 
-		(FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
+	register Fsio_FileIOHandle *handlePtr = 
+		(Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
 	int tmpNumBytes = numBytes;
 
-	status = FsCacheWrite(&handlePtr->cacheInfo, 0, pageAddr, offset, 
+	status = Fscache_Write(&handlePtr->cacheInfo, 0, pageAddr, offset, 
 			     &tmpNumBytes, (Sync_RemoteWaiter *) NIL);
 	if (status == SUCCESS) {
-	    Fs_CacheBlocksUnneeded(streamPtr, offset, numBytes, FALSE);
+	    Fscache_BlocksUnneeded(streamPtr, offset, numBytes, FALSE);
 	}
     } else {
 	/*
@@ -510,18 +510,19 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
 	int		blockAddr;
 	Boolean		newBlock;
 	int		i;
-	int		streamType = streamPtr->ioHandlePtr->fileID.type;
+	register Fsrmt_FileIOHandle *handlePtr = 
+		(Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
 
 	lastBlock = (unsigned int) (offset + numBytes - 1) / FS_BLOCK_SIZE;
 	for (i = (unsigned int) offset / FS_BLOCK_SIZE; i <= lastBlock; i++) {
-	    (*fsStreamOpTable[streamType].allocate)(streamPtr->ioHandlePtr,
+	    (handlePtr->cacheInfo.ioProcsPtr->allocate)(streamPtr->ioHandlePtr,
 		    offset, FS_BLOCK_SIZE, &blockAddr, &newBlock);
-	    if (blockAddr == FS_NIL_INDEX) {
+	    if (blockAddr == FSDM_NIL_INDEX) {
 		printf( "Fs_PageWrite: Block Alloc failed\n");
 		status = FS_NO_DISK_SPACE;
 		break;
 	    }
-	    status = (*fsStreamOpTable[streamType].blockWrite)
+	    status = (handlePtr->cacheInfo.ioProcsPtr->blockWrite)
 		    (streamPtr->ioHandlePtr, blockAddr, FS_BLOCK_SIZE,
 			    pageAddr, 0);
 	    if (status != SUCCESS) {
@@ -560,15 +561,19 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
     int		numBytes;	/* Number of bytes in page. */
 {
     int				lastBlock;
-    register	FsHandleHeader	*srcHdrPtr;
-    register	FsHandleHeader	*destHdrPtr;
+    register	Fs_HandleHeader	*srcHdrPtr;
+    register	Fs_HandleHeader	*destHdrPtr;
     ReturnStatus		status;
     int				i;
     Boolean			retry;
+    Fscache_IOProcs	        *ioProcsPtr;
 
     srcHdrPtr = srcStreamPtr->ioHandlePtr;
     destHdrPtr = destStreamPtr->ioHandlePtr;
     lastBlock = (unsigned int) (offset + numBytes - 1) / FS_BLOCK_SIZE;
+    ioProcsPtr = (srcHdrPtr->fileID.type == FSIO_LCL_FILE_STREAM) ? 
+		((Fsio_FileIOHandle *) srcHdrPtr)->cacheInfo.ioProcsPtr :
+		((Fsrmt_FileIOHandle *) srcHdrPtr)->cacheInfo.ioProcsPtr;
 
     /*
      * Copy all blocks in the page.
@@ -576,8 +581,7 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
     for (i = (unsigned int) offset / FS_BLOCK_SIZE; i <= lastBlock; i++) {
 	do {
 	    retry = FALSE;
-	    status = (*fsStreamOpTable[srcHdrPtr->fileID.type].blockCopy)
-				    (srcHdrPtr, destHdrPtr, i);
+	    status = (ioProcsPtr->blockCopy) (srcHdrPtr, destHdrPtr, i);
 	    if (status != SUCCESS) {
 		if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 		    status == RPC_SERVICE_DISABLED) {
@@ -587,7 +591,7 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
 		     */
 		    Net_HostPrint(srcHdrPtr->fileID.serverID,
 			    "Fs_PageCopy, waiting for server %d\n");
-		    status = FsWaitForRecovery(srcStreamPtr->ioHandlePtr,
+		    status = Fsutil_WaitForRecovery(srcStreamPtr->ioHandlePtr,
 				status);
 		    if (status == SUCCESS) {
 			retry = TRUE;
@@ -677,9 +681,9 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	    lockArgsPtr->hostID = rpc_SpriteID;
 	    Sync_GetWaitToken(&lockArgsPtr->pid, &lockArgsPtr->token);
 	} else if (command == IOC_PREFIX) {
-	    FsPrefix	*prefixPtr;
-	    if ((streamPtr->nameInfoPtr == (FsNameInfo *) NIL) ||
-		(streamPtr->nameInfoPtr->prefixPtr == (FsPrefix *)NIL)) {
+	    Fsprefix	*prefixPtr;
+	    if ((streamPtr->nameInfoPtr == (Fs_NameInfo *) NIL) ||
+		(streamPtr->nameInfoPtr->prefixPtr == (Fsprefix *)NIL)) {
 		status = GEN_INVALID_ARG;
 	    } else {
 		prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
@@ -694,17 +698,17 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	    return(status);	/* Do not pass down IOC_PREFIX */
 	}
 
-	status = (*fsStreamOpTable[streamType].ioControl)
+	status = (*fsio_StreamOpTable[streamType].ioControl)
 			(streamPtr, ioctlPtr, replyPtr);
 #ifdef lint
-	status = FsFileIOControl(streamPtr, ioctlPtr, replyPtr);
-	status = FsRmtFileIOControl(streamPtr, ioctlPtr, replyPtr);
-	status = FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr);
-	status = FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr);
-	status = FsPipeIOControl(streamPtr, ioctlPtr, replyPtr);
-	status = FsControlIOControl(streamPtr, ioctlPtr, replyPtr);
-	status = FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr);
-	status = FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FsrmtFileIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = Fsio_DeviceIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = Fsrmt_IOControl(streamPtr, ioctlPtr, replyPtr);
+	status = Fsio_PipeIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FspdevControlIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FspdevServerStreamIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FspdevPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr);
 #endif /* lint */
 
 	switch(status) {
@@ -713,7 +717,7 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	    case RPC_TIMEOUT:
 	    case RPC_SERVICE_DISABLED:
 	    case FS_STALE_HANDLE:
-		status = FsWaitForRecovery(streamPtr->ioHandlePtr, status);
+		status = Fsutil_WaitForRecovery(streamPtr->ioHandlePtr, status);
 		if (status == SUCCESS) {
 		    retry = TRUE;
 		    break;
@@ -914,13 +918,13 @@ Fs_Close(streamPtr)
 	 */
 	return(FS_INVALID_ARG);
     }
-    FsHandleLock(streamPtr);
+    Fsutil_HandleLock(streamPtr);
     if (streamPtr->hdr.refCount > 1) {
 	/*
 	 * There are other copies of the stream (due to fork/dup) so
 	 * we don't close the I/O handle yet.
 	 */
-	FsHandleRelease(streamPtr, TRUE);
+	Fsutil_HandleRelease(streamPtr, TRUE);
 	status = SUCCESS;
     } else {
 	/*
@@ -928,34 +932,227 @@ Fs_Close(streamPtr)
 	 * to the I/O handle.
 	 */
 	procPtr = Proc_GetEffectiveProc();
-	FsHandleLock(streamPtr->ioHandlePtr);
-	status = (fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
+	Fsutil_HandleLock(streamPtr->ioHandlePtr);
+	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
 		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
 		0, (ClientData)NIL);
 #ifdef lint
-	status = FsFileClose(streamPtr, rpc_SpriteID, procPtr->processID,
+	status = Fsio_FileClose(streamPtr, rpc_SpriteID, procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
-	status = FsRmtFileClose(streamPtr, rpc_SpriteID, procPtr->processID,
+	status = FsrmtFileClose(streamPtr, rpc_SpriteID, procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
-	status = FsPipeClose(streamPtr, rpc_SpriteID, procPtr->processID,
+	status = Fsio_PipeClose(streamPtr, rpc_SpriteID, procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
-	status = FsDeviceClose(streamPtr, rpc_SpriteID, procPtr->processID,
+	status = Fsio_DeviceClose(streamPtr, rpc_SpriteID, procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
-	status = FsRemoteIOClose(streamPtr, rpc_SpriteID, procPtr->processID,
+	status = Fsrmt_IOClose(streamPtr, rpc_SpriteID, procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
-	status = FsControlClose(streamPtr, rpc_SpriteID, procPtr->processID,
+	status = FspdevControlClose(streamPtr, rpc_SpriteID, procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
-	status = FsPseudoStreamClose(streamPtr, rpc_SpriteID,procPtr->processID,
+	status = FspdevPseudoStreamClose(streamPtr, rpc_SpriteID,procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
-	status = FsServerStreamClose(streamPtr, rpc_SpriteID,procPtr->processID,
+	status = FspdevServerStreamClose(streamPtr, rpc_SpriteID,procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
 #endif /* lint */
-	if (FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
-	    FsStreamDispose(streamPtr);
+	if (Fsio_StreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	    Fsio_StreamDestroy(streamPtr);
 	} else {
-	    FsHandleRelease(streamPtr, TRUE);
+	    Fsutil_HandleRelease(streamPtr, TRUE);
 	}
     }
     return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CheckSetID --
+ *
+ *	Determine if the given stream has the set uid or set gid bits set.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	*uidPtr and *gidPtr set to -1 if the respective bit isn't set and set
+ *	to the uid and/or gid of the file otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_CheckSetID(streamPtr, uidPtr, gidPtr)
+    Fs_Stream	*streamPtr;
+    int		*uidPtr;
+    int		*gidPtr;
+{
+    register	Fscache_Attributes	*cachedAttrPtr;
+
+    switch (streamPtr->ioHandlePtr->fileID.type) {
+	case FSIO_LCL_FILE_STREAM:
+	    cachedAttrPtr =
+	       &((Fsio_FileIOHandle *)streamPtr->ioHandlePtr)->cacheInfo.attr;
+	    break;
+	case FSIO_RMT_FILE_STREAM:
+	    cachedAttrPtr =
+	       &((Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr)->cacheInfo.attr;
+	    break;
+	default:
+	    panic( "Fs_CheckSetID, wrong stream type\n",
+		streamPtr->ioHandlePtr->fileID.type);
+	    return;
+    }
+    if (cachedAttrPtr->permissions & FS_SET_UID) {
+	*uidPtr = cachedAttrPtr->uid;
+    } else {
+	*uidPtr = -1;
+    }
+    if (cachedAttrPtr->permissions & FS_SET_GID) {
+	*gidPtr = cachedAttrPtr->gid;
+    } else {
+	*gidPtr = -1;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FileWriteBackStub --
+ *
+ *      This is the stub for the Fs_WriteBackID system call.
+ *	The byte arguments are rounded to blocks, and the range of
+ *	blocks that covers the byte range is written back out of the cache.
+ *
+ * Results:
+ *	A return status or SUCCESS if successful.
+ *
+ * Side effects:
+ *	Write out the range of blocks in the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
+    int		streamID;	/* Stream ID of file to write back. */
+    int		firstByte;	/* First byte to write back. */
+    int		lastByte;	/* Last byte to write back. */
+    Boolean	shouldBlock;	/* TRUE if should wait for the blocks to go
+				 * to disk. */
+{
+    ReturnStatus	status;
+    Fs_Stream		*streamPtr;
+    Fscache_FileInfo	*cacheInfoPtr;
+    register int	firstBlock;
+    register int	lastBlock;
+    register int	flags;
+    int			blocksSkipped;
+
+    status = Fs_GetStreamPtr(Proc_GetEffectiveProc(), 
+			    streamID, &streamPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    switch(streamPtr->ioHandlePtr->fileID.type) {
+	case FSIO_LCL_FILE_STREAM: {
+	    register Fsio_FileIOHandle *localHandlePtr;
+	    localHandlePtr = (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
+	    cacheInfoPtr = &localHandlePtr->cacheInfo;
+	    break;
+	}
+	case FSIO_RMT_FILE_STREAM: {
+	    register Fsrmt_FileIOHandle *rmtHandlePtr;
+	    rmtHandlePtr = (Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
+	    cacheInfoPtr = &rmtHandlePtr->cacheInfo;
+	    break;
+	}
+	default:
+	    return(FS_WRONG_TYPE);
+    }
+    flags = 0;
+    if (shouldBlock) {
+	flags |= FSCACHE_FILE_WB_WAIT;
+    }
+    if (firstByte > 0) {
+	firstBlock = firstByte / FS_BLOCK_SIZE;
+    } else {
+	firstBlock = 0;
+    }
+    if (lastByte > 0) {
+	lastBlock = lastByte / FS_BLOCK_SIZE;
+    } else {
+	lastBlock = FSCACHE_LAST_BLOCK;
+    }
+    cacheInfoPtr->flags |= FSCACHE_WB_ON_LDB;
+    status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock, lastBlock,
+		    flags, &blocksSkipped);
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fs_GetFileHandle --
+ *
+ *	Return an opaque handle for a file, really a pointer to its I/O handle.
+ *	This is used for a subsequent call to Fs_GetSegPtr.
+ *
+ * Results:
+ *	A pointer to the I/O handle of the file.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+
+ClientData
+Fs_GetFileHandle(streamPtr)
+    Fs_Stream *streamPtr;
+{
+    return((ClientData)streamPtr->ioHandlePtr);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fs_GetSegPtr --
+ *
+ *	Return a pointer to a pointer to the segment associated with this
+ *	file.
+ *
+ * Results:
+ *	A pointer to the segment associated with this file.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+
+Vm_Segment **
+Fs_GetSegPtr(fileHandle)
+    ClientData fileHandle;
+{
+    Fs_HandleHeader *hdrPtr = (Fs_HandleHeader *)fileHandle;
+    Vm_Segment	**segPtrPtr;
+
+    switch (hdrPtr->fileID.type) {
+	case FSIO_LCL_FILE_STREAM:
+	    segPtrPtr = &(((Fsio_FileIOHandle *)hdrPtr)->segPtr);
+	    break;
+	case FSIO_RMT_FILE_STREAM:
+	    segPtrPtr = &(((Fsrmt_FileIOHandle *)hdrPtr)->segPtr);
+	    break;
+	default:
+	    panic( "Fs_RetSegPtr, bad stream type %d\n",
+		    hdrPtr->fileID.type);
+    }
+    fs_Stats.handle.segmentFetches++;
+    if (*segPtrPtr != (Vm_Segment *) NIL) {
+	fs_Stats.handle.segmentHits++;
+    }
+    return(segPtrPtr);
 }
 
