@@ -34,10 +34,13 @@ extern ReturnStatus Prof_Profil(short *buffer,
 extern void Prof_Tick(Timer_Ticks time, 
     ClientData clientData);
 extern void Prof_Disable(Proc_ControlBlock *procPtr);
+extern void Prof_Enable(Proc_ControlBlock *procPtr, short *buffer, int bufSize,
+    int offset, int scale);
 #else
 extern ReturnStatus Prof_Profil();
 extern void Prof_Tick();
 extern void Prof_Disable();
+extern void Prof_Enable();
 #endif
 
 /*
@@ -63,7 +66,7 @@ Timer_QueueElement profTimer_QueueElement = {
 /*
  * Count of the number of processes being profiled.
  */
-int profCount = 0;
+static int profCount = 0;
 
 
 /*
@@ -77,7 +80,7 @@ int profCount = 0;
  *      Always returns success.
  *
  * Side effects:
- *	None.
+ *	Same as Prof_Enable.
  *
  *----------------------------------------------------------------------
  */
@@ -89,38 +92,69 @@ Prof_Profil(buffer, bufSize, offset, scale)
     int offset;
     int scale;
 {
-#ifdef NOTDEF
-    Proc_ControlBlock *curProcPtr;
+#if 0
+    Prof_Enable(Proc_GetCurrentProc(), buffer, bufSize, offset, scale);
+#endif
+    return SUCCESS;
+}
 
-    curProcPtr = Proc_GetCurrentProc();
-    assert(curProcPtr != (Proc_ControlBlock *) NIL);
-    /*
-     * If the profile routine has not already been scheduled for invocation
-     * by the call back timer, then schedule it.
-     */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_Enable --
+ *
+ *      Enables or disables the profiling of a process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      Changes the Profiling fields in the Proc_ControlBlock, increments
+ *      or decrements ProfCount, and schedules or deschedules Prof_Tick
+ *      in the call back queue.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_Enable(procPtr, buffer, bufSize, offset, scale)
+    Proc_ControlBlock *procPtr;
+    short *buffer;
+    int bufSize;
+    int offset;
+    int scale;
+{
+#if 0
+    assert(procPtr != (Proc_ControlBlock *) NIL);
     LOCK_MONITOR;
-    if (scale != 0 && curProcPtr->Prof_Scale == 0) {
+    if (scale != 0 && procPtr->Prof_Scale == 0) {
+	/*
+	* If the profile routine has not already been scheduled for invocation
+	* by the call back timer, then schedule it.
+	*/
 	if (profCount++ == 0) {
 	    profTimer_QueueElement.interval = 20 * timer_IntOneMillisecond;
 	    Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
 	}
-    } else if (scale == 0 && curProcPtr->Prof_Scale != 0) {
+    } else if (scale == 0 && procPtr->Prof_Scale != 0) {
 	assert(profCount > 0);
+	/*
+	 * Disable profiling.  If there are no other processes being profiled,
+	 * then remove Prof_Tick from the call back queue.
+	 */
 	if (--profCount == 0) {
 	    Timer_DescheduleRoutine(&profTimer_QueueElement);
 	}
-    } else {
-	goto exit;
     }
-    curProcPtr->Prof_Buffer = buffer;
-    curProcPtr->Prof_BufferSize = bufSize;
-    curProcPtr->Prof_Offset = offset;
-    curProcPtr->Prof_Scale = scale;
-    curProcPtr->Prof_PC = 0;
-exit:
+    procPtr->Prof_Buffer = buffer;
+    procPtr->Prof_BufferSize = bufSize;
+    procPtr->Prof_Offset = offset;
+    procPtr->Prof_Scale = scale;
+    procPtr->Prof_PC = 0;
     UNLOCK_MONITOR;
 #endif
-    return SUCCESS;
+    return;
 }
 
 /*
@@ -149,7 +183,7 @@ Prof_Tick(time, clientData)
     ClientData clientData;
 {
     Proc_ControlBlock *curProcPtr;
-
+#if 0
     assert(clientData == profTimer_QueueElement.clientData);
     if (!mach_KernelMode) {
 	curProcPtr = Proc_GetCurrentProc();
@@ -160,6 +194,7 @@ Prof_Tick(time, clientData)
 	}
     }
     Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
+#endif
     return;
 }
 
@@ -188,7 +223,8 @@ Prof_RecordPC(procPtr)
 	short shrt;
 	char c[2];
     } u;
-
+#if 0
+    assert(procPtr->Prof_Scale);
     ptr = &procPtr->Prof_Buffer[(((procPtr->Prof_PC -
         procPtr->Prof_Offset) * procPtr->Prof_Scale) >> 16) / sizeof(*ptr)];
     /*
@@ -212,6 +248,7 @@ Prof_RecordPC(procPtr)
 	return;
     }
     procPtr->Prof_PC = 0;
+#endif
     return;
 }
 
@@ -238,20 +275,122 @@ void
 Prof_Disable(procPtr)
     Proc_ControlBlock *procPtr;
 {
-#ifdef NOTDEF
+#if 0
     LOCK_MONITOR;
-    if (procPtr->Prof_Scale == 0) {
-	goto exit;
+    if (procPtr->Prof_Scale != 0) {
+	assert(profCount > 0);
+	procPtr->Prof_Scale = 0;
+	procPtr->Prof_PC = 0;
+	if (--profCount == 0) {
+	    Timer_DescheduleRoutine(&profTimer_QueueElement);
+	}
     }
-    assert(profCount > 0);
-    procPtr->Prof_Scale = 0;
-    procPtr->Prof_PC = 0;
-    if (--profCount == 0) {
-	Timer_DescheduleRoutine(&profTimer_QueueElement);
-    }
-exit:
     UNLOCK_MONITOR;
 #endif
     return;
 }
+
+
+
+#if 0
+struct profEncapsulation {
+    short *Prof_Buffer;
+    int Prof_BufferSize;
+    int Prof_Offset;
+    int Prof_Scale;
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_GetEncapSize --
+ *
+ *	Returns the size of the storage area used to record profiling
+ *      information that is sent with a migrated process.
+ *
+ * Results:
+ *	Returns the size of a struct profEncapsulation.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Prof_GetEncapSize()
+{
+    return sizeof(struct profEncapsulation);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_EncapState --
+ *
+ *	Encapsulate the profiling information to be sent with
+ *      a migrated process.  If the processes is being profiled,
+ *      then turn if off.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Disables profiling of the process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_EncapState(procPtr, ptr)
+    Proc_ControlBlock *procPtr;
+    Address ptr;
+{
+    struct profEncapsulation *encap;
+
+    encap = (struct profEncapsulation *) ptr;
+    encap->Prof_Buffer = procPtr->Prof_Buffer;
+    encap->Prof_BufferSize = procPtr->Prof_BufferSize;
+    encap->Prof_Offset = procPtr->Prof_Offset;
+    encap->Prof_Scale = procPtr->Prof_Scale;
+    if (procPtr->Prof_Scale)
+	Prof_Disable(procPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_DeencapState
+ *
+ *	De-encapsulate information that arrived with a migrated process.
+ *      If the process was being profiled at home, then turn profiling
+ *      on here.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May enable profiling of the process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_DeencapState(procPtr, ptr)
+    Proc_ControlBlock *procPtr;
+    Address ptr;
+{
+    struct profEncapsulation *encap;
+
+    encap = (struct profEncapsulation *) ptr;
+    procPtr->Prof_Scale = 0;
+    Prof_Enable(procPtr, encap->Prof_Buffer, encap->Prof_BufferSize,
+	encap->Prof_Offset, encap->Prof_Scale);
+    return;
+}
+
+#endif
 

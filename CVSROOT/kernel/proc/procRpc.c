@@ -505,11 +505,10 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     }
     childProcPtr = ProcGetUnusedPCB();
 
-    childProcPtr->Prof_Buffer           = parentProcPtr->Prof_Buffer;
-    childProcPtr->Prof_BufferSize       = parentProcPtr->Prof_BufferSize;
-    childProcPtr->Prof_Offset           = parentProcPtr->Prof_Offset;
-    childProcPtr->Prof_Scale            = parentProcPtr->Prof_Scale;
-    childProcPtr->Prof_PC               = 0;
+    childProcPtr->Prof_Scale = 0;
+    Prof_Enable(childProcPtr, parentProcPtr->Prof_Buffer, 
+        parentProcPtr->Prof_BufferSize, parentProcPtr->Prof_Offset,
+	parentProcPtr->Prof_Scale);
 
     childProcPtr->state 		= PROC_MIGRATED;
     childProcPtr->genFlags 		= PROC_USER | PROC_NO_VM;

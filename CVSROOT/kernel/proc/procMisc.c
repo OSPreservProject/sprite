@@ -679,6 +679,35 @@ Proc_SetPriority(pid, priority, useFamily)
 /*
  *----------------------------------------------------------------------
  *
+ * Proc_Profile --
+ *
+ *	Starts profiling the memory accesses of the current process.
+ *
+ * Results:
+ *	SUCCESS		-	always returned for now.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+ReturnStatus
+Proc_Profile(shiftSize, lowPC, highPC, interval, counterArray)
+    int shiftSize;	/* # of bits to shift the PC to the right. */
+    int lowPC;		/* The lowest PC to profile. */
+    int highPC;		/* The highest PC to profile. */
+    Time interval;	/* The time interval at which the PC is sampled. */
+    int counterArray[];	/* Counters used to count instruction executions. */
+{
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Proc_Dump --
  *
  *	Prints out an abbreviated proc table for debugging purposes.
@@ -1082,9 +1111,11 @@ Proc_PushLockStack(pcbPtr, type, lockPtr)
 {
     static Boolean	firstOverflow = TRUE;
 
-    if (pcbPtr->lockStackSize >= PROC_LOCKSTACK_SIZE && firstOverflow) {
-	printf("Proc_PushLockStack: stack overflow in pcb 0x%x.\n",pcbPtr);
-	firstOverflow = FALSE;
+    if (pcbPtr->lockStackSize >= PROC_LOCKSTACK_SIZE) {
+	if (firstOverflow) {
+	    printf("Proc_PushLockStack: stack overflow in pcb 0x%x.\n",pcbPtr);
+	    firstOverflow = FALSE;
+	}
 	return;
     }
     if (pcbPtr->lockStackSize < 0 ) {
@@ -1149,7 +1180,7 @@ Proc_RemoveFromLockStack(pcbPtr, lockPtr)
     pcbPtr->lockStackSize = i + 1;
     if (pcbPtr->lockStackSize < 0) {
 	printf("lockStackSize %d\n",pcbPtr->lockStackSize);
-	panic("Lock stack underflow (2).\n");
     }
+    pcbPtr->lockStackSize = 0;
 }
 

@@ -124,17 +124,16 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     Address 	PC;		/* The program counter where to start. */
     int		procType;	/* One of PROC_KERNEL or PROC_USER. */
     Boolean	shareHeap;	/* TRUE if share heap, FALSE if not. */
-    
+    Proc_PID	*pidPtr;	/* A pointer to where to return the process
 				   ID in. */
     char	*procName;	/* Name for process control block */
     Boolean     vforkFlag;      /* Added for vfork */
 {
     ReturnStatus	status;
-    procPtr->Prof_Buffer        = parentProcPtr->Prof_Buffer;
-    procPtr->Prof_BufferSize    = parentProcPtr->Prof_BufferSize;
-    procPtr->Prof_Offset        = parentProcPtr->Prof_Offset;
-    procPtr->Prof_Scale         = parentProcPtr->Prof_Scale;
-    procPtr->Prof_PC            = 0;
+    Proc_ControlBlock 	*procPtr;	/* The new process being created */
+    Proc_ControlBlock 	*parentProcPtr;	/* The parent of the new process,
+					 * the one that is making this call */
+    Boolean		migrated = FALSE;
 
 
     if (parentProcPtr->genFlags & PROC_FOREIGN) {
@@ -143,9 +142,9 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 	*pidPtr		= procPtr->processID;
     }
 
-	procPtr->parentID 		= parentProcPtr->processID;
+    procPtr->Prof_Scale = 0;
     Prof_Enable(procPtr, parentProcPtr->Prof_Buffer, 
-	procPtr->parentID 		= parentProcPtr->peerProcessID;
+        parentProcPtr->Prof_BufferSize, parentProcPtr->Prof_Offset,
 	parentProcPtr->Prof_Scale);
 
     procPtr->processor		= parentProcPtr->processor;
