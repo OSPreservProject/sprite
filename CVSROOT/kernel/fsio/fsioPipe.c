@@ -37,8 +37,9 @@ static	Sync_Lock	pipeLock = Sync_LockInitStatic("Fs:pipeLock");
 /*
  * Forward references.
  */
-void GetFileID();
+static void GetFileID();
 Fsio_PipeIOHandle *Fsio_PipeHandleInit();
+static ReturnStatus PipeCloseInt();
 
 /*
  * Migration debugging.
@@ -175,7 +176,7 @@ Fsio_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
  *----------------------------------------------------------------------
  */
 
-ENTRY void
+static ENTRY void
 GetFileID(fileIDPtr)
     Fs_FileID	*fileIDPtr;
 {
@@ -272,48 +273,86 @@ Fsio_PipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     register Fsio_PipeIOHandle *handlePtr = 
 	    (Fsio_PipeIOHandle *)streamPtr->ioHandlePtr;
     Boolean cache = FALSE;
+    ReturnStatus status;
 
     if (!Fsconsist_IOClientClose(&handlePtr->clientList, clientID, flags, &cache)) {
 	printf( "Fsio_PipeClose, unknown client %d\n", clientID);
 	Fsutil_HandleUnlock(handlePtr);
     } else {
-	/*
-	 * Update the global/summary use counts for the file.
-	 */
-	handlePtr->use.ref--;
-	if (flags & FS_WRITE) {
-	    handlePtr->use.write--;
-	}
-	if (handlePtr->use.ref < 0 || handlePtr->use.write < 0) {
-	    panic("Fsio_PipeClose <%d,%d> use %d, write %d\n",
-		      handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		      handlePtr->use.ref, handlePtr->use.write);
-	}
-	if ((flags & FS_WRITE) && handlePtr->use.write == 0) {
-	    /*
-	     * Notify reader that the writer has closed.
-	     */
-	    handlePtr->flags |= FSIO_PIPE_WRITER_GONE;
-	    Fsutil_FastWaitListNotify(&handlePtr->readWaitList);
-	} else if ((flags & FS_READ) &&
-		    handlePtr->use.ref == handlePtr->use.write) {
-	    /*
-	     * Update state and notify any blocked writers.  Their write
-	     * will fail with no remaining readers.
-	     */
-	    handlePtr->flags |= FSIO_PIPE_READER_GONE;
-	    Fsutil_FastWaitListNotify(&handlePtr->writeWaitList);
-	}
 	PIPE_CLOSE(streamPtr, handlePtr);
-	Fsutil_HandleRelease(handlePtr, TRUE);
-	if (handlePtr->flags == (FSIO_PIPE_WRITER_GONE|FSIO_PIPE_READER_GONE)) {
-	    free(handlePtr->buffer);
-	    Fsutil_WaitListDelete(&handlePtr->readWaitList);
-	    Fsutil_WaitListDelete(&handlePtr->writeWaitList);
-	    Fsutil_HandleRemove(handlePtr);
-	    fs_Stats.object.pipes--;
+	status = PipeCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
+			      (flags & FS_EXECUTE) != 0, TRUE);
+	if (status != FS_FILE_REMOVED) {
+	    Fsutil_HandleRelease(handlePtr, TRUE);
 	}
     }
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PipeCloseInt --
+ *
+ *      Do the real work of closing a pipe, given a variable number
+ *	of references. 
+ *
+ * Results:
+ *      SUCCESS or FS_FILE_REMOVED, which indicates that the pipe has been
+ * 	freed up.
+ *
+ * Side effects:
+ *      Unblock local waiting reader (or writer) waiting on the pipe.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static ReturnStatus
+PipeCloseInt(handlePtr, ref, write, release)
+    Fsio_PipeIOHandle *handlePtr;	/* Pipe to clean up */
+    int ref;				/* Number of uses to remove */
+    int write;				/* Number of writers to remove */
+    Boolean release;			/* Whether to release handle to
+					   remove it. */
+{
+    /*
+     * Update the global/summary use counts for the file.
+     */
+    handlePtr->use.ref -= ref;
+    handlePtr->use.write -= write;
+    if (handlePtr->use.ref < 0 || handlePtr->use.write < 0) {
+	panic("PipeCloseInt <%d,%d> use %d, write %d\n",
+	      handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+	      handlePtr->use.ref, handlePtr->use.write);
+    }
+    if (write && handlePtr->use.write == 0) {
+	/*
+	 * Notify reader that the writer has closed.
+	 */
+	handlePtr->flags |= FSIO_PIPE_WRITER_GONE;
+	Fsutil_FastWaitListNotify(&handlePtr->readWaitList);
+    } else if (ref && handlePtr->use.ref == handlePtr->use.write) {
+	/*
+	 * Update state and notify any blocked writers.  Their write
+	 * will fail with no remaining readers.
+	 */
+	handlePtr->flags |= FSIO_PIPE_READER_GONE;
+	Fsutil_FastWaitListNotify(&handlePtr->writeWaitList);
+    }
+    if (handlePtr->flags == (FSIO_PIPE_WRITER_GONE|FSIO_PIPE_READER_GONE)) {
+	free(handlePtr->buffer);
+	Fsutil_WaitListDelete(&handlePtr->readWaitList);
+	Fsutil_WaitListDelete(&handlePtr->writeWaitList);
+	if (release) {
+	    Fsutil_HandleRelease(handlePtr, TRUE);
+	}
+	Fsutil_HandleRemove(handlePtr);
+	fs_Stats.object.pipes--;
+	return (FS_FILE_REMOVED);
+    }
+    /*
+     * Handle will be released or unlocked by caller as appropriate.
+     */
     return(SUCCESS);
 }
 
@@ -1032,16 +1071,13 @@ Fsio_PipeClientKill(hdrPtr, clientID)
 {
     register Fsio_PipeIOHandle *handlePtr = (Fsio_PipeIOHandle *)hdrPtr;
     int refs, writes, execs;
+    register ReturnStatus status;
 
     Fsconsist_IOClientKill(&handlePtr->clientList, clientID, &refs, &writes, &execs);
-    if (refs > 0) {
-	if (writes) {
-	    handlePtr->flags |= FSIO_PIPE_WRITER_GONE;
-	} else {
-	    handlePtr->flags |= FSIO_PIPE_READER_GONE;
-	}
+    status = PipeCloseInt(handlePtr, refs, writes, FALSE);
+    if (status != FS_FILE_REMOVED) {
+	Fsutil_HandleUnlock(handlePtr);
     }
-    Fsutil_HandleUnlock(handlePtr);
 }
 
 
