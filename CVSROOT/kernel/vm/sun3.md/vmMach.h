@@ -14,7 +14,11 @@
 #ifndef _VMMACH
 #define _VMMACH
 
+#ifdef KERNEL
 #include "vmSunConst.h"
+#else
+#include <kernel/vmSunConst.h>
+#endif
 
 /*
  * Machine dependent data for each software segment.  The data for each 
