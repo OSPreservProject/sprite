@@ -20,7 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include <sys/file.h>
 #include <stdio.h>
-#include "userIO.h"
 #include "sprite.h"
 #include "devRaid.h"
 #include "devRaidDisk.h"
@@ -34,8 +33,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * InitRaidLog --
  *
  * Results:
- *
- *	Returns 1 if initialization succeeds, 0 otherwise.
  *
  * Side effects:
  *
@@ -54,8 +51,8 @@ InitRaidLog(raidPtr)
 #endif TESTING
     sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
 	    raidPtr->devicePtr->unit, ".log");
-    if ((raidPtr->log.streamPtr = open(fileName, O_WRONLY | O_APPEND | O_CREAT, 0666)) ==
-	    (Fs_Stream *) -1) {
+    if ((raidPtr->log.streamPtr = (Fs_Stream *) open(fileName,
+	    O_WRONLY | O_APPEND | O_CREAT, 0666)) == (Fs_Stream *) -1) {
 	return FAILURE;
     }
     raidPtr->log.curBufPtr = raidPtr->log.buf1;
@@ -255,66 +252,6 @@ initDoneProc(controlBlockPtr)
 /*
  *----------------------------------------------------------------------
  *
- * RestoreRaidState --
- *
- *	May only be called from devRaidAttach.
- *	Restore state of raid device by looking for a state file and applying
- *	appropriate logs.
- *	If no state files exist, read config file, lock-raid and exit; if
- *	you are creating a new raid device, you should then perform the
- *	following sequence:  disable-log, hard-init, enable-log, save-state,
- *	unlock-raid.
- *
- * Results:
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-RestoreRaidState(raidPtr)
-    Raid *raidPtr;
-{
-    char fileName[80];
-    ReturnStatus status;
-
-    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".state");
-    if (RaidConfigure(raidPtr, fileName) == SUCCESS) {
-	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-		raidPtr->devicePtr->unit, ".log");
-	printf("RAID:MSG:State restored, applying log.\n");
-	status = ApplyRaidLog(raidPtr, fileName);
-	if (status == SUCCESS) {
-	    printf("RAID:MSG:Log applied.\n");
-	} else {
-	    printf("RAID:MSG:Log failed.\n");
-	}
-	return status;
-    }
-    printf("RAID:MSG:Invalid state, reading configuration.\n");
-    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
-	    raidPtr->devicePtr->unit, ".config");
-    if (RaidConfigure(raidPtr, fileName) == FAILURE) {
-	printf("RAID:MSG:Raid configuration failed.\n");
-	return FAILURE;
-    }
-    printf("RAID:MSG:Configuration completed.\n");
-    if (InitRaidLog(raidPtr) == FAILURE) {
-	printf("RAID:MSG:Could not open log.\n");
-	return FAILURE;
-    }
-    if (raidPtr->parityConfig != 'S') {
-	LockRaid(raidPtr);
-    }
-    return SUCCESS;
-}
-
-
-
-/*
- *----------------------------------------------------------------------
- *
  * SaveRaidState --
  *	
  *	Perform a consistent checkpoint of the raid state.
@@ -405,7 +342,7 @@ SaveRaidState(raidPtr)
     if (fclose(fp) == EOF) {
 	return FAILURE;
     }
-    if ((streamPtr = open(fileName, O_WRONLY | O_APPEND, 0666)) == 
+    if ((streamPtr = (Fs_Stream *) open(fileName, O_WRONLY | O_APPEND, 0666))== 
 	    (Fs_Stream *)-1) {
 	return FAILURE;
     }
@@ -417,6 +354,76 @@ SaveRaidState(raidPtr)
     }
     close(raidPtr->log.streamPtr);
     raidPtr->log.streamPtr = streamPtr;
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RestoreRaidState --
+ *
+ *	May only be called from devRaidAttach.
+ *	Restore state of raid device by looking for a state file and applying
+ *	appropriate logs.
+ *	If no state files exist, read config file, lock-raid and exit; if
+ *	you are creating a new raid device, you should then perform the
+ *	following sequence:  disable-log, hard-init, enable-log, save-state,
+ *	unlock-raid.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+RestoreRaidState(raidPtr)
+    Raid *raidPtr;
+{
+    char fileName[80];
+    ReturnStatus status;
+
+    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+	    raidPtr->devicePtr->unit, ".state");
+    if (RaidConfigure(raidPtr, fileName) == SUCCESS) {
+	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+		raidPtr->devicePtr->unit, ".log");
+	printf("RAID:MSG:State restored, applying log.\n");
+	if (ApplyRaidLog(raidPtr, fileName) == FAILURE) {
+	    printf("RAID:MSG:Log failed.\n");
+	    return FAILURE;
+	}
+	printf("RAID:MSG:Log applied.\n");
+	if (InitRaidLog(raidPtr) == FAILURE) {
+	    printf("RAID:MSG:Could not open log.\n");
+	    return FAILURE;
+	}
+#ifndef TESTING
+	/*
+	 * Save new state.
+	 */
+        if (SaveRaidState(raidPtr) == FAILURE) {
+            printf("RAID:MSG:Could not checkpoint state.\n");
+        }
+#endif
+	return SUCCESS;
+    }
+    printf("RAID:MSG:Invalid state, reading configuration.\n");
+    sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+	    raidPtr->devicePtr->unit, ".config");
+    if (RaidConfigure(raidPtr, fileName) == FAILURE) {
+	printf("RAID:MSG:Raid configuration failed.\n");
+	return FAILURE;
+    }
+    printf("RAID:MSG:Configuration completed.\n");
+    if (InitRaidLog(raidPtr) == FAILURE) {
+	printf("RAID:MSG:Could not open log.\n");
+	return FAILURE;
+    }
+    if (raidPtr->parityConfig != 'S') {
+	LockRaid(raidPtr);
+    }
     return SUCCESS;
 }
 
@@ -696,6 +703,5 @@ RaidConfigure(raidPtr, fileName)
 	}
     }
     raidPtr->state = RAID_VALID;
-    UnlockRaid(raidPtr);
     return SUCCESS;
 }
