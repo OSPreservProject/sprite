@@ -257,7 +257,7 @@ BlockIOProc(handlePtr, requestPtr)
     }
     (void) printf("status: %d\n", status);
 
-    if (Spawn() == 0) {
+    if (Spawn("disk") == 0) {
 	Delay(10.0);
         localRequestPtr->doneProc(localRequestPtr,
 		status, localRequestPtr->bufferLen);
@@ -375,7 +375,7 @@ BlockIOProc1(handlePtr, requestPtr)
     /*
      * Simulate request queueing.
      */
-    if (Spawn()) {
+    if (Spawn("disk")) {
 	return SUCCESS;
     } else {
         /*
