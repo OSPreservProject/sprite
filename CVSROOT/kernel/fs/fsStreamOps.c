@@ -128,7 +128,13 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	    break;
 	} else if (status == FS_WOULD_BLOCK && 
 	    (streamPtr->flags & FS_NON_BLOCKING) == 0) {
-	    if (reply.length > 0) {
+	    /*
+	     * File streams will return FS_WOULD_BLOCK when waiting for a
+	     * cache block, but stuff has already been returned.  We want
+	     * to wait instead of returning.
+	     */
+	    if (reply.length > 0 && (streamType != FSIO_LCL_FILE_STREAM) &&
+		(streamType != FSIO_RMT_FILE_STREAM)) {
 		/*
 		 * Stream routine ought not do return FS_WOULD_BLOCK
 		 * in this case, but we cover for it here.
@@ -247,7 +253,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
      * and crash recovery.  This loop expects the stream write procedure to
      * return FS_WOULD_BLOCK if it transfers no data, and lets it return
      * either SUCCESS or FS_WOULD_BLOCK on partial writes.  SUCCESS with a
-     * partial write makes this loop attempt another write immediately.
+     * partial write makes this loop return.
      * If a stream write procedure returns FS_WOULD_BLOCK is is required to
      * have put the remoteWaiter information on an appropriate wait list.
      * This loop ensures that a non-blocking stream returns SUCCESS if some
