@@ -38,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <net.h>
 #include <stdio.h>
 #include <bstring.h>
+#include <recov.h>
 
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
 #undef MASTER_LOCK
@@ -883,7 +884,11 @@ VmMach_Init(firstFreePage)
 	    }
 	}
 
-	if (virtAddr >= (Address)MACH_CODE_START && 
+	if (recov_Transparent && virtAddr >= (Address) mach_RestartTablePtr &&
+		virtAddr <
+		((Address) mach_RestartTablePtr + Mach_GetRestartTableSize())) {
+	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | physPage;
+	} else if (virtAddr >= (Address)MACH_CODE_START &&
 	    virtAddr <= lastCodeAddr) {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KR_PROT | physPage;
 	} else {

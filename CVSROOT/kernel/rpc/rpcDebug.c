@@ -29,6 +29,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <user/sysStats.h>
 
 #include <fsio.h>
+#include <fsrecov.h>
+#include <recov.h>
 
 
 
@@ -168,6 +170,10 @@ Rpc_GetStats(command, option, argPtr)
 	     * to clients.
 	     */
 	    if (option) {
+		if (recov_Transparent) {
+		    Fsrecov_ProcessLog();
+		    Fsrecov_SetupHandles();
+		}
 		if (rpcSendNegAcks) {
 		    RpcSetNackBufs();
 		}

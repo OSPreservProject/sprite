@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sched.h>
 #include <dev.h>
 #include <recov.h>
+#include <recovBox.h>
 #include <procMigrate.h>
 #include <string.h>
 #include <stdio.h>
@@ -42,6 +43,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <devSCSIC90.h>
 #endif /* sun4c */
 #include <user/sys/param.h>
+#include <fsrecov.h>
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
@@ -1082,6 +1084,21 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 #ifdef sun4c
+	case SYS_FAST_RESTART: {
+	    if (option == -1) {
+		/* Do a fast reboot -- Turn off interrupts. */
+		DISABLE_INTR();
+		/* restart */
+		Mach_FastBoot();
+	    } else {
+		/* Set debug level. */
+		printf("Setting fsrecov_DebugLevel to %d, was %d.\n",
+			option, fsrecov_DebugLevel);
+		fsrecov_DebugLevel = option;
+		status = SUCCESS;
+	    }
+	    break;
+	}
         case SYS_DEV_CHANGE_SCSI_DEBUG: {
 	    Dev_ChangeScsiDebugLevel(option);
 	    status = SUCCESS;
@@ -1101,6 +1118,20 @@ Sys_StatsStub(command, option, argPtr)
 		numCreated = Proc_ServerProcCreate(option);
 		printf("Adding %d Proc_Servers to kernel\n", numCreated);
 		status = SUCCESS;
+	    }
+	    break;
+	}
+	case SYS_RECOV_BOX: {
+	    switch(option) {
+	    case RECOV_PRINT_REBOOT_TIMES:
+	    case RECOV_TEST_ADD_DELETE:
+	    case RECOV_TEST_ADD: {
+		status = Fsrecov_TestCmd(option, argPtr);
+		break;
+	    }
+	    default:
+		status = Recov_Cmd(option, argPtr);
+		break;
 	    }
 	    break;
 	}

@@ -23,6 +23,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sync.h>
 #include <status.h>
 #include <dbg.h>
+#include <fsio.h>
+#include <fsrecov.h>
+#include <stdio.h>
+#include <recov.h>
 
 /*
  * A delay variable that represents our preferred inter-fragment delay.
@@ -131,6 +135,10 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
      */
     if (!rpcServiceEnabled) {
 	rpcHdrPtr->flags |= RPC_NOT_ACTIVE;
+    }
+    /* We're doing transparent server recovery. */
+    if (recov_Transparent && fsrecov_AlreadyInit) {
+	rpcHdrPtr->flags |= RPC_FAST;
     }
     /* 
      * Find a route to the host. 

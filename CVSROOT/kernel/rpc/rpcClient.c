@@ -98,7 +98,8 @@ Boolean	rpcChannelNegAcks = FALSE;
  *----------------------------------------------------------------------
  */
 ReturnStatus
-RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
+RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr,
+	fastBootPtr)
     int serverID;		/* The Sprite host that will execute the
 				 * service procedure */
     register RpcClientChannel *chanPtr;	/* The channel for the RPC */
@@ -108,6 +109,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     int *notActivePtr;		/* Return, RPC_NOT_ACTIVE flag from server.
 				 * These last two return parameters are later
 				 * passed to the recovery module. */
+    Boolean	*fastBootPtr;	/* Wether rpc packet comes from fast booted
+				 * server. */
 {
     register RpcHdr *rpcHdrPtr;	/* Pointer to received message header */
     register RpcConst *constPtr;/* Timeout parameter block */
@@ -205,6 +208,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	     */
 	    chanPtr->state &= ~CHAN_INPUT;
 	    rpcHdrPtr = &chanPtr->replyRpcHdr;
+	    *fastBootPtr = rpcHdrPtr->flags & RPC_FAST;
 
 	    /*
 	     * Pick off the boot timestamp and active state of the server so
@@ -222,14 +226,6 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		rpcCltStat.oldInputs++;
 
 	    } else if (rpcHdrPtr->flags & RPC_NACK) {
-		/*
-		 * NOTE: for now we must handle a NACK before an ACK because
-		 * I'm OR'ing in an ACK with the NACK so that old kernels on
-		 * clients won't freak if they receive a NACK.  This backwards
-		 * compatibility should be removed later.  The changes that go
-		 * with it are setting the serverHint in RpcSrvInitHdr() and
-		 * the OR'ing itself of the ACK with the NACK in rpcServer.c.
-		 */
 		rpcCltStat.nacks++;
 		/*
 		 * Try out different nack-handling policies.  

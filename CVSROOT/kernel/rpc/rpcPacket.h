@@ -146,6 +146,10 @@ extern int	rpc_SwappedVersion;
  *	RPC_NOT_ACTIVE means that the originating host is not fully alive.
  *	This means the packet is ignored by the recovery module, but still good.
  *
+ *	RPC_FAST means this rpc packet comes from a server than was rebooted
+ *	with a "fast boot" and therefor no recovery is necessary if we
+ *	thought it was dead.
+ *
  * Flags only valid in trace records:
  *	RPC_SERVER the packet is bound for the server side of the rpc system.
  *
@@ -161,6 +165,7 @@ extern int	rpc_SwappedVersion;
 #define RPC_SERVER	0x0010
 #define RPC_LAST_REC	0x0020
 #define RPC_NOT_ACTIVE	0x0040
+#define	RPC_FAST	0x0080
 
 #define RPC_TYPE	0xff00
 #define RPC_REQUEST	0x0100
