@@ -222,13 +222,20 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	    /*
 	     * Loop (again) to output the fragments.  Fragments are not output
 	     * if their bit is set in the dontSendMask.  If dontSentMask
-	     * would suppress all fragments we just send the last one
-	     * as a keep-alive.
+	     * would suppress all fragments, i.e. this is a keep-alive resend,
+	     * we just send the last fragment.  Also, if this is a resend
+	     * by the client and we haven't recieved a partial acknowledgment
+	     * from the server we only resend the last fragment as a probe.
+	     * This is for the case of large writes where the initial
+	     * timeout period is too short.  We don't want to resend the
+	     * whole packet unless we have to.
 	     */
-	    if (dontSendMask == rpcCompleteMask[nfrags]) {
-		dontSendMask &= ~(1 << (nfrags - 1));
+	    if ((dontSendMask == rpcCompleteMask[nfrags]) ||
+		((rpcHdrPtr->flags & RPC_PLSACK) && (dontSendMask == 0))) {
+		sendFragMask = (1 << (nfrags - 1));
+	    } else {
+		sendFragMask = ~dontSendMask;
 	    }
-	    sendFragMask = ~dontSendMask;
 	    for (fragID = 1, frag = 0;
 		 frag < nfrags;
 		 fragID <<= 1, frag++) {
