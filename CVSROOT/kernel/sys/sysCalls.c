@@ -268,7 +268,7 @@ Sys_Shutdown(flags, rebootString)
      */
     if (flags & SYS_WRITE_BACK) {
 	printf("Syncing disks\n");
-	Fs_Sync(-1, flags & SYS_KILL_PROCESSES);
+	Fsutil_Sync(-1, flags & SYS_KILL_PROCESSES);
     }
 
     if (flags & SYS_HALT) {
@@ -357,7 +357,7 @@ Sys_SyncDisks(trapType)
         !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	printf("Syncing disks.  Version: %s\n", SpriteVersion());
 	errorSync = TRUE;
-	Fs_Sync(-1, TRUE);
+	Fsutil_Sync(-1, TRUE);
 	errorSync = FALSE;
     }
 }
@@ -733,11 +733,11 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 	case SYS_FS_PREFIX_STATS: {
-	    status = Fs_PrefixDump(option, argPtr);
+	    status = Fsprefix_Dump(option, argPtr);
 	    break;
 	}
 	case SYS_FS_PREFIX_EXPORT: {
-	    status = Fs_PrefixDumpExport(option, argPtr);
+	    status = Fsprefix_DumpExport(option, argPtr);
 	    break;
 	}
 	case SYS_SYS_CALL_STATS: {
