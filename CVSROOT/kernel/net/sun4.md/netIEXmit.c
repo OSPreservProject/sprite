@@ -106,7 +106,6 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     xmitCBPtr = netIEState.xmitCBPtr;
     xmitBufDescPtr = xmitBufAddr;
 
-    bufCount = 0;
     totalLength = sizeof(Net_EtherHdr);
 
     /*
@@ -114,16 +113,16 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * buffers.
      */
 
-    while (bufCount < scatterGatherLength) {
+    for (bufCount = 0 ; bufCount < scatterGatherLength ;
+	 bufCount++, scatterGatherPtr++) {
 
 	/*
-	 * If is an empty buffer then skip it.
+	 * If is an empty buffer then skip it.  Length might even be negative
+	 * if we have borrowed bytes from it to pad out to NET_IE_MIN_DMA_SIZE.
 	 */
 
 	length = scatterGatherPtr->length;
-	if (length == 0) {
-	    bufCount++;
-	    scatterGatherPtr++;
+	if (length <= 0) {
 	    continue;
 	}
 
@@ -146,6 +145,32 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	    }
 	    Byte_Copy(length, scatterGatherPtr->bufAddr, xmitTempBuffer);
 	    if (length < NET_IE_MIN_DMA_SIZE) {
+		/*
+		 * This element of the scatter/gather vector is too small;
+		 * the controller DMA has to copy a minimum number of bytes.
+		 * We take some bytes from the next non-zero sized element(s)
+		 * to pad this one out.
+		 */
+		register int numBorrowedBytes;
+		while (bufCount < scatterGatherLength - 1) {
+		    numBorrowedBytes = NET_IE_MIN_DMA_SIZE - length;
+		    if (numBorrowedBytes > scatterGatherPtr[1].length) {
+			numBorrowedBytes = scatterGatherPtr[1].length;
+		    }
+		    if (numBorrowedBytes > 0) {
+			Byte_Copy(numBorrowedBytes, scatterGatherPtr[1].bufAddr,
+				    xmitTempBuffer[length]);
+			scatterGatherPtr[1].length -= numBorrowedBytes;
+			scatterGatherPtr[1].bufAddr += numBorrowedBytes;
+			length += numBorrowedBytes;
+		    }
+		    if (length == NET_IE_MIN_DMA_SIZE) {
+			break;
+		    } else {
+			bufCount++;
+			scatterGatherPtr++;
+		    }
+		}
 		length = NET_IE_MIN_DMA_SIZE;
 	    }
 
@@ -163,8 +188,6 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	xmitBufDescPtr->countHigh = length >> 8;
 
 	totalLength += length;
-	bufCount++;
-	scatterGatherPtr++;
 	xmitBufDescPtr = 
 	 (NetIETransmitBufDesc *) ((int) xmitBufDescPtr + NET_IE_CHUNK_SIZE);
     }
