@@ -269,7 +269,6 @@ DevZ8530RawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
  *	a channel of a Z5830 chip.
  *
  * Results:
- *	None.
  *
  * Side effects:
  *	Input characters may be received, output characters may be
@@ -279,9 +278,10 @@ DevZ8530RawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
  */
 
 void
-DevZ8530Interrupt(zPtr)
-    register DevZ8530 *zPtr;		/* Information about the device. */
+DevZ8530Interrupt(clientData)
+    ClientData	clientData; /* Information about the device. */
 {
+    register DevZ8530 *zPtr = (DevZ8530 *) clientData;	
     int rr0, rr1, c;
     int first = 1;
 

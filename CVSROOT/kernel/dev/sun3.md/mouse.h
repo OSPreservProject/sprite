@@ -19,13 +19,19 @@
 #ifndef _DEVMOUSE
 #define _DEVMOUSE
 
-extern ReturnStatus	DevMouseClose();
-extern void		DevMouseInit();
-extern void		DevMouseInterrupt();
-extern ReturnStatus	DevMouseIOControl();
-extern ReturnStatus	DevMouseOpen();
-extern ReturnStatus	DevMouseRead();
-extern ReturnStatus	DevMouseSelect();
-extern ReturnStatus	DevMouseWrite();
+extern ReturnStatus	DevMouseClose _ARGS_((Fs_Device *devicePtr,
+    int useFlags, int openCount, int writerCount));
+extern void		DevMouseInit _ARGS_((void));
+extern void		DevMouseInterrupt _ARGS_((void));
+extern ReturnStatus	DevMouseIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus	DevMouseOpen _ARGS_((Fs_Device *devicePtr,
+    int useFlags, Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus	DevMouseRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus	DevMouseSelect _ARGS_((Fs_Device *devicePtr, 
+    int *readPtr, int *writePtr, int *exceptPtr));
+extern ReturnStatus	DevMouseWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
 
 #endif /* _DEVMOUSE */

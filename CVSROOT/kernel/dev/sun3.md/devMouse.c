@@ -99,7 +99,8 @@ static DevZ8530 *keyboardPtr;		/* Information about the keyboard's
  * Forward declarations to procedures declared later in this file:
  */
 
-static void MouseDelayedClose _ARGS_((void));
+static void MouseDelayedClose _ARGS_((ClientData clientData,
+                                     Proc_CallInfo *callInfoPtr));
 static void MouseInputProc _ARGS_((ClientData dummy, int value));
 static void KbdInputProc _ARGS_((ClientData dummy, int value));
 static int MouseOutputProc _ARGS_((void));
@@ -444,7 +445,9 @@ DevMouseClose(devicePtr, useFlags, openCount, writerCount)
  */
 
 static void
-MouseDelayedClose()
+MouseDelayedClose(clientData, callInfoPtr)
+    ClientData     clientData;		/* Not used. */
+    Proc_CallInfo *callInfoPtr;         /* Not used. */
 {
     LOCK_MONITOR;
     if (mouseTty.openCount == 0) {
@@ -476,7 +479,7 @@ MouseDelayedClose()
 void
 DevMouseInterrupt()
 {
-    DevZ8530Interrupt(&mouse);
+    DevZ8530Interrupt((ClientData)&mouse);
 }
 
 /*

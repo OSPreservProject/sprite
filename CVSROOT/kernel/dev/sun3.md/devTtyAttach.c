@@ -362,9 +362,9 @@ DevReleaseKeyboard()
 static int
 TtyInterrupt()
 {
-    DevZ8530Interrupt(&keyboard);
-    DevZ8530Interrupt(&serialA);
-    DevZ8530Interrupt(&serialB);
+    DevZ8530Interrupt((ClientData)&keyboard);
+    DevZ8530Interrupt((ClientData)&serialA);
+    DevZ8530Interrupt((ClientData)&serialB);
     DevMouseInterrupt();
     return 0;
 }

@@ -35,9 +35,11 @@ typedef struct DevConfigController {
 			 * Sun2's have Multibus memory mapped into a
 			 * particular range of kernel virtual addresses. */
     int controllerID;	/* Controller number: 0, 1, 2... */
-    ClientData (*initProc)();	/* Initialization procedure */
+    ClientData (*initProc) _ARGS_((struct DevConfigController *ctrlLocPtr));
+			/* Initialization procedure */
     int vectorNumber;	/* Vector number for autovectored architectures */
-    int (*intrProc)();	/* Interrupt handler called from autovector */
+    Boolean (*intrProc) _ARGS_((ClientData  clientData));
+			/* Interrupt handler called from autovector */
 } DevConfigController;
 
 /*
