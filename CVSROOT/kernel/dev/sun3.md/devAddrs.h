@@ -19,4 +19,4 @@
 #define	DEV_INTERRUPT_REG_ADDR		0xfe0a000
 #define DEV_VIDEO_MEM_ADDR		0xfe20000
 
-#endif _DEVADDRS
+#endif /* _DEVADDRS */
