@@ -77,7 +77,7 @@ int sched_Mutex = 0;
  * GATHER_INTERVAL is the amount of time in milliseconds between calls to
  * Sched_GatherProcInfo when it is called by the timer module. 
  */
-#define GATHER_INTERVAL 	DEV_CALLBACK_INTERVAL
+#define GATHER_INTERVAL 	TIMER_CALLBACK_INTERVAL
 static unsigned int gatherInterval;
 
 /*
