@@ -24,7 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev.h"
 #include "tty.h"
 #include "z8530.h"
-
+#include "machMon.h"
 /*
  * Two tables are used for mapping keystrokes to ASCII characters.  One
  * identifies the ASCII character associated with an unshifted key, and
@@ -145,14 +145,15 @@ static Boolean	consoleCmdDown	= FALSE;
 
 /* ARGSUSED */
 int
-DevConsoleRawProc(zPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
-    register DevZ8530 *zPtr;	/* Information about keyboard device. */
+DevConsoleRawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
+    void *ptr;
     int operation;		/* What to do:  TD_RAW_OUTPUT_READY etc. */
     int inBufSize;		/* Size of input buffer for operation. */
     char *inBuffer;		/* Input buffer. */
     int outBufSize;		/* Size of output buffer for operation. */
     char *outBuffer;		/* Output buffer. */
 {
+    register DevZ8530 *zPtr = ptr; /* Information about keyboard device. */
     int c;
 
     if (operation != TD_RAW_OUTPUT_READY) {
