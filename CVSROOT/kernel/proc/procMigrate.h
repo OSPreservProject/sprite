@@ -19,10 +19,11 @@
 #ifndef _PROCMIGRATE
 #define _PROCMIGRATE
 
-#include "proc.h"
+#include "user/proc.h"
+#include "procTypes.h"
 #include "trace.h"
 #include "sys.h"
-#include "net.h"
+#include "netTypes.h"
 
 /*
  * Flags for the migFlags field in a PCB.

@@ -26,8 +26,8 @@
 #include "syncLock.h"
 #include "list.h"
 #include "timer.h"
-#include "sig.h"
-#include "mach.h"
+#include "sigTypes.h"
+#include "machTypes.h"
 #include "sysSysCallParam.h"
 #else
 #include <proc.h>
@@ -35,8 +35,8 @@
 #include <kernel/syncLock.h>
 #include <list.h>
 #include <kernel/timer.h>
-#include <kernel/sig.h>
-#include <kernel/mach.h>
+#include <kernel/sigTypes.h>
+#include <kernel/machTypes.h>
 #endif /* */
 
 /*

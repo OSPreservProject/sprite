@@ -18,6 +18,7 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
+#include "./sync.h"
 #include "sprite.h"
 #include "mach.h"
 #include "list.h"
@@ -132,7 +133,7 @@ Sync_GetLock(lockPtr)
 	status = Sync_SlowLock(lockPtr); 
     } else {
 	Sync_RecordHit(lockPtr);
-	Sync_StoreDbgInfo(lockPtr);
+	Sync_StoreDbgInfo(lockPtr, FALSE);
 	Sync_AddPrior(lockPtr);
     }
     return status;
@@ -226,7 +227,7 @@ Sync_SlowLock(lockPtr)
 #endif
     }
     Sync_RecordHit(lockPtr);
-    Sync_StoreDbgInfo(lockPtr);
+    Sync_StoreDbgInfo(lockPtr, FALSE);
     Sync_AddPrior(lockPtr);
 #ifdef spur
     Mach_InstCountOff(0);

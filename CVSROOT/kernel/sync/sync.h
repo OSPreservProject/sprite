@@ -1,7 +1,7 @@
 /*
  * sync.h --
  *
- * 	Definitions of the synchronization module.
+ * 	Definitions of routines for the synchronization module.
  * 	The synchronization module provides locks and condition
  * 	variables to other modules, plus a low level binary semaphore 
  *	needed to synchronize with interrupt handlers.
@@ -52,107 +52,14 @@
 #include "list.h"
 
 #ifdef KERNEL
-#include "user/sync.h"
-#include "proc.h"
-#include "syncLock.h"
-#include "sys.h"
+#include "syncTypes.h"
 #include "mach.h"
+#include "proc.h"
 #else
-#include <sync.h>
-#include <kernel/proc.h>
-#include <kernel/syncLock.h>
-#include <kernel/sys.h>
+#include <syncTypes.h>
 #include <kernel/mach.h>
+#include <kernel/proc.h>
 #endif /* */
-
-/*
- * If CLEAN_LOCK is defined then don't register locks and don't keep track
- * of lock dependency pairs.
- */
-#ifdef CLEAN_LOCK
-#undef LOCKREG
-#undef LOCKDEP
-#endif
-
-/*
- * If LOCKDEP is  defined then we need to register locks.
- */
-#ifdef LOCKDEP
-#define LOCKREG
-#endif
-
-/*
- * Flags for syncFlags field in the proc table:
- *
- *  SYNC_WAIT_REMOTE            - The process is on a wait list somewhere on
- *                                some host and will block until it gets a
- *                                wakeup message.
- *  SYNC_WAIT_COMPLETE          - The process was doing a remote wait and
- *                                it has received a wakeup message.
- */
-
-#define	SYNC_WAIT_COMPLETE	0x1
-#define	SYNC_WAIT_REMOTE	0x2
-
-/*
- * Definitions of variables for instrumentation.
- */
-
-typedef struct Sync_Instrument {
-    int numWakeups;		/* number of wakeups performed */
-    int numWakeupCalls;		/* number of calls to wakeup */
-    int numSpuriousWakeups;	/* number of incorrectly awakened sleeps */
-    int numLocks;		/* number of calls to MASTER_LOCK */
-    int numUnlocks;		/* number of calls to MASTER_UNLOCK */
-    int spinCount[SYNC_MAX_LOCK_TYPES+1]; /* spin count per lock type */
-    int sched_MutexMiss;	/* number of times we missed sched_Mutex
-				 * in the idle loop. */
-#if VMMACH_CACHE_LINE_SIZE != 0
-    char pad[VMMACH_CACHE_LINE_SIZE];
-#endif
-} Sync_Instrument;
-
-/*
- * Structure used to keep track of lock statistics and registration. 
- * One of these exists for each type of lock, and the active locks of the type
- * is linked to the activeLocks field. 
- */
-typedef struct Sync_RegElement {
-    List_Links 		links;			/* used to link into lists */
-    int			hit;			/* number of hits on type */
-    int			miss;			/* number of misses on type */
-    int			type;			/* type of lock */
-    char		*name;			/* name of type */
-    Sync_LockClass	class;			/* either semaphore or lock */
-    int			priorCount;		/* count of prior types */
-    int			priorTypes[SYNC_MAX_PRIOR]; /* prior types */
-    int			activeLockCount;	/* # active locks of type */
-    List_Links		activeLocks;		/* list of active locks */
-    int			deadLockCount;		/* # deactivated locks */
-} Sync_RegElement;
-
-/*
- * Structure for System V semaphores.
- */
-typedef struct semid_ds Sync_SysVSem;
-
-
-/*
- * Define a structure to keep track of waiting processes on remote machines.
- */
-
-typedef struct {
-    List_Links	links;		/* Link info about related waiting processes */
-    int		hostID;		/* Host ID of waiting process */
-    Proc_PID	pid;		/* ID of waiting process */
-    int		waitToken;	/* Local time stamp used to catch races */
-} Sync_RemoteWaiter;
-
-/*
- * Wait token value used to wakeup a process regardless of its value of
- * the wait token.
- */
-#define	SYNC_BROADCAST_TOKEN	-1
 
 /*
  * Exported procedures and variables of the sync module.
@@ -253,7 +160,7 @@ extern Sync_RegElement  *regQueuePtr;
 	    (semaphore)->value++;\
 	    Sync_SemRegister(semaphore); \
 	    Sync_RecordHit(semaphore); \
-	    Sync_StoreDbgInfo(semaphore); \
+	    Sync_StoreDbgInfo(semaphore, TRUE); \
 	    Sync_AddPrior(semaphore); \
 	}\
     }
@@ -292,7 +199,7 @@ extern Sync_RegElement  *regQueuePtr;
 	} \
 	Sync_SemRegister(semaphore); \
 	Sync_RecordHit(semaphore) ; \
-	Sync_StoreDbgInfo(semaphore); \
+	Sync_StoreDbgInfo(semaphore, TRUE); \
 	Sync_AddPrior(semaphore);	\
     }
 
@@ -863,7 +770,6 @@ extern Sync_RegElement  *regQueuePtr;
 
 #endif /* LOCKDEP */
 
-#endif /* _SYNC */
 
 /*
  *----------------------------------------------------------------------
@@ -971,14 +877,19 @@ extern Sync_RegElement  *regQueuePtr;
  */
 #ifdef CLEAN_LOCK
 
-#define Sync_StoreDbgInfo(semaphore) {}
+#define Sync_StoreDbgInfo(semaphore, macro) {}
 
 #else /* CLEAN_LOCK */
 
-#define Sync_StoreDbgInfo(semaphore) { \
-	    (semaphore)->holderPC = Mach_GetPC(); \
-	    (semaphore)->holderPCBPtr = (Address) Proc_GetCurrentProc(); \
+#define Sync_StoreDbgInfo(semaphore, macro) { 				\
+    if ((macro) == TRUE) {						\
+	(semaphore)->holderPC = (Address) Mach_GetPC(); 	\
+    } else {								\
+	(semaphore)->holderPC = (Address) Mach_GetCallerPC(); \
+    }									\
+	(semaphore)->holderPCBPtr = (Address) Proc_GetCurrentProc(); 	\
 }
 
 #endif /* CLEAN_LOCK */
+#endif /* _SYNC */
 
