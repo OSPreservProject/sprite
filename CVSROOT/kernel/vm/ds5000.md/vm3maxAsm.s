@@ -801,7 +801,7 @@ SlowUTLBFault:
  *----------------------------------------------------------------------------
  */
 str:
-    .asciiz	"Error on stack @ 0x%x\n"
+    .asciiz	"Error on stack @ 0x%x, pc=0x%x\n"
     .globl VmMach_KernTLBException
     .ent VmMach_KernTLBException, 0
 VmMach_KernTLBException:
@@ -823,6 +823,9 @@ VmMach_KernTLBException:
     la		a0, str
     addu	a1, sp, zero
     li		sp, MACH_CODE_START - START_FRAME
+    mfc0	k1, MACH_COP_0_EXC_PC		# Get the exception PC
+    nop
+    addu	a2, k1, zero
     jal		panic
     nop
 
