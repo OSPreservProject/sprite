@@ -2241,37 +2241,33 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
     register Address	endAddr;
     int			segNum;
     int			pageNum = 0;
-#ifdef NOTDEF
+#ifdef sun4c
     /*
-     * I need to test out the other code to see if it works on the sun4c, so
-     * for the mean-time use the old code for the sun4c.
+     * The network driver on the sparcstation never accesses the data
+     * through the cache, so there should be no need to flush it.
      */
     for (mapAddr = (Address)VMMACH_NET_MAP_START;
          scatGathLength > 0;
-	 scatGathLength--, inScatGathPtr++, outScatGathPtr++) {
-	outScatGathPtr->length = inScatGathPtr->length;
-	if (inScatGathPtr->length == 0) {
-	    continue;
-	}
-	/*
-	 * Map the piece of the packet in.  Note that we know that a packet
-	 * piece is no longer than 1536 bytes so we know that we will need
-	 * at most two page table entries to map a piece in.
-	 */
-	VmMachFlushPage(inScatGathPtr->bufAddr);
-	VmMachFlushPage(mapAddr);
-	VmMachSetPageMap(mapAddr, VmMachGetPageMap(inScatGathPtr->bufAddr));
-	outScatGathPtr->bufAddr = 
-	    mapAddr + ((unsigned)inScatGathPtr->bufAddr & VMMACH_OFFSET_MASK);
-	mapAddr += VMMACH_PAGE_SIZE_INT;
-	endAddr = inScatGathPtr->bufAddr + inScatGathPtr->length - 1;
-	if (((unsigned)inScatGathPtr->bufAddr & ~VMMACH_OFFSET_MASK_INT) !=
-	    ((unsigned)endAddr & ~VMMACH_OFFSET_MASK_INT)) {
-	    VmMachFlushPage(endAddr);
-	    VmMachFlushPage(mapAddr);
-	    VmMachSetPageMap(mapAddr, VmMachGetPageMap(endAddr));
-	    mapAddr += VMMACH_PAGE_SIZE_INT;
-	}
+         scatGathLength--, inScatGathPtr++, outScatGathPtr++) {
+        outScatGathPtr->length = inScatGathPtr->length;
+        if (inScatGathPtr->length == 0) {
+            continue;
+        }
+        /*
+         * Map the piece of the packet in.  Note that we know that a packet
+         * piece is no longer than 1536 bytes so we know that we will need
+         * at most two page table entries to map a piece in.
+         */
+        VmMachSetPageMap(mapAddr, VmMachGetPageMap(inScatGathPtr->bufAddr));
+        outScatGathPtr->bufAddr =
+            mapAddr + ((unsigned)inScatGathPtr->bufAddr & VMMACH_OFFSET_MASK);
+        mapAddr += VMMACH_PAGE_SIZE_INT;
+        endAddr = inScatGathPtr->bufAddr + inScatGathPtr->length - 1;
+        if (((unsigned)inScatGathPtr->bufAddr & ~VMMACH_OFFSET_MASK_INT) !=
+            ((unsigned)endAddr & ~VMMACH_OFFSET_MASK_INT)) {
+            VmMachSetPageMap(mapAddr, VmMachGetPageMap(endAddr));
+            mapAddr += VMMACH_PAGE_SIZE_INT;
+        }
     }
 #else
     for (segNum = 0 ; scatGathLength > 0;
@@ -2334,7 +2330,7 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 	    printf("MapPacket: segNum is %d, pageNum is %d\n", segNum, pageNum);
 	}
     }
-#endif /* NOTDEF */
+#endif /* sun4c */
 }
 
 
@@ -3994,7 +3990,7 @@ VmMach_DMAAlloc(numBytes, srcAddr)
 						/* beginning of first page */
     beginAddr = (Address) (((unsigned int)(srcAddr)) & ~VMMACH_OFFSET_MASK_INT);
 						/* beginning of last page */
-    endAddr = (Address) ((((unsigned int) srcAddr) + numBytes) &
+    endAddr = (Address) ((((unsigned int) srcAddr) + numBytes - 1) &
 	    ~VMMACH_OFFSET_MASK_INT);
     numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
 	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
@@ -4081,7 +4077,7 @@ VmMach_DMAFree(numBytes, mapAddr)
 						/* beginning of first page */
     beginAddr = (Address) (((unsigned int) mapAddr) & ~VMMACH_OFFSET_MASK_INT);
 						/* beginning of last page */
-    endAddr = (Address) ((((unsigned int) mapAddr) + numBytes) &
+    endAddr = (Address) ((((unsigned int) mapAddr) + numBytes - 1) &
 	    ~VMMACH_OFFSET_MASK_INT);
     numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
 	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
@@ -4722,7 +4718,7 @@ VmMach_32BitDMAAlloc(numBytes, srcAddr)
 						/* beginning of first page */
     beginAddr = (Address) (((unsigned int)(srcAddr)) & ~VMMACH_OFFSET_MASK_INT);
 						/* beginning of last page */
-    endAddr = (Address) ((((unsigned int) srcAddr) + numBytes) &
+    endAddr = (Address) ((((unsigned int) srcAddr) + numBytes - 1) &
 	    ~VMMACH_OFFSET_MASK_INT);
     numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
 	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
@@ -4822,7 +4818,7 @@ VmMach_32BitDMAFree(numBytes, mapAddr)
 						/* beginning of first page */
     beginAddr = (Address) (((unsigned int) mapAddr) & ~VMMACH_OFFSET_MASK_INT);
 						/* beginning of last page */
-    endAddr = (Address) ((((unsigned int) mapAddr) + numBytes) &
+    endAddr = (Address) ((((unsigned int) mapAddr) + numBytes - 1) &
 	    ~VMMACH_OFFSET_MASK_INT);
     numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
 	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
