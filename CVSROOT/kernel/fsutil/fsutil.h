@@ -170,6 +170,7 @@ extern	void 	 	Fsutil_HandleRemoveInt();
  * Miscellaneous.
  */
 extern	void		Fsutil_FileError();
+extern	void		Fsutil_PrintStatus();
 extern	void		Fsutil_UpdateTimeOfDay();
 extern	void		Fs_ClearStreamID();
 extern  int	 	Fsdm_FindFileType();
