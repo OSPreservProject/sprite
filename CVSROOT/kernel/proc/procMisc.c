@@ -27,6 +27,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "string.h"
 #include "byte.h"
+#include "procInt.h"
+
+/*
+ * Procedures internal to this file
+ */
+
+static Boolean CheckIfUsed();
+static ReturnStatus ProcDumpPCB();
 
 
 /*
@@ -403,12 +411,13 @@ Proc_Profile(shiftSize, lowPC, highPC, interval, counterArray)
 /*
  *----------------------------------------------------------------------
  *
- * Proc_Dump --
+ * CheckIfUsed --
  *
- *	Prints out an abbreviated proc table for debugging purposes.
+ *	Returns TRUE if process is in use. (this function is used for 
+ *	dumping out the process table).
  *
  * Results:
- *	None.
+ *	FALSE if process state is NOT_USED, TRUE otherwise
  *
  * Side effects:
  *	None.
@@ -416,71 +425,132 @@ Proc_Profile(shiftSize, lowPC, highPC, interval, counterArray)
  *----------------------------------------------------------------------
  */
 
+static Boolean
+CheckIfUsed(procPtr)
+    register Proc_ControlBlock *procPtr;
+{
+	if (procPtr->state == PROC_UNUSED) {
+	    return FALSE;
+	}
+	return TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Dump --
+ *
+ *	Prints out an abbreviated proc table for debugging purposes.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Prints stuff to screen.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
 ReturnStatus
 Proc_Dump()
 {
-    register int i;
-    register Proc_ControlBlock *pcbPtr;
-
-    Sys_Printf("%8s: %11s %8s %s\n", "PID:", "state ", "event ",
-		     "program");
-    for (i = 0; i < proc_MaxNumProcesses; i++) {
-	pcbPtr = proc_PCBTable[i];
-	if (pcbPtr->state == PROC_UNUSED) {
-	    continue;
-	}
-	Sys_Printf("%8x:", pcbPtr->processID);
-	switch(pcbPtr->state) {
-	    case PROC_RUNNING:
-		Sys_Printf(" running   ");
-		break;
-	    case PROC_READY:
-		Sys_Printf(" ready     ");
-		break;
-	    case PROC_WAITING:
-		Sys_Printf(" waiting   ");
-		break;
-	    case PROC_EXITING:
-		Sys_Printf(" exiting   ");
-		break;
-	    case PROC_DEAD:
-		Sys_Printf(" dead      ");
-		break;
-	    case PROC_MIGRATED:
-		Sys_Printf(" migrated  ");
-		break;
-	    case PROC_NEW:
-		Sys_Printf(" new       ");
-		break;
-	    case PROC_SUSPENDED:
-		if (pcbPtr->genFlags & (PROC_DEBUGGED | PROC_ON_DEBUG_LIST)) {
-		    Sys_Printf(" debug     ");
-		} else {
-		    Sys_Printf(" suspended ");
-		}
-		break;
-	    default:
-		Sys_Printf(" ?%x?", (int) pcbPtr->state);
-		break;
-	}
-	Sys_Printf(" %8x", pcbPtr->event);
-	if (pcbPtr->argString != (Address) NIL) {
-	    char cmd[30];
-	    char *space;
-
-	    (void) String_NCopy(30, pcbPtr->argString, cmd);
-	    space = String_FindChar(cmd, ' ');
-	    if (space != (char *) NULL) {
-		*space = '\0';
-	    }
-	    Sys_Printf(" %s\n", cmd);
-	} else {
-	    Sys_Printf("\n");
-	}
-    }
+    Sys_Printf("%8s %5s %10s %10s %8s %8s   %s\n",
+	"ID", "wtd", "user", "kernel", "event", "state", "name");
+    Proc_DoForEveryProc(CheckIfUsed, ProcDumpPCB, TRUE);
     return(SUCCESS);
 }
+
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcDumpPCB --
+ *
+ *	Prints out the contents of a PCB for debugging purposes.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	Prints stuff to the screen.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProcDumpPCB(procPtr)
+    Proc_ControlBlock *procPtr;
+{
+
+    Time	kernelTime, userTime;
+
+    static char *states[] = {
+	"unused",
+	"running",
+	"ready",
+	"waiting",
+	"exiting",
+	"dead",
+	"migrated",
+	"new",
+	"suspended",
+	"debug",
+    };
+    Proc_State state;
+
+    state = procPtr->state;
+    switch (state) {
+	case PROC_UNUSED:
+	case PROC_RUNNING:
+	case PROC_READY:
+	case PROC_WAITING:
+	case PROC_EXITING:
+	case PROC_DEAD:
+	case PROC_MIGRATED:
+	case PROC_NEW:
+	    break;
+	case PROC_SUSPENDED:
+	    /* If process is suspended for debugging print "debug" for its
+	     * state.
+	     */
+	    if (procPtr->genFlags & (PROC_DEBUGGED | PROC_ON_DEBUG_LIST)) {
+		((int) state)++;
+	    }
+	    break;
+	default:
+	    Sys_Panic(SYS_FATAL, 
+		      "DumpPCB: invalid process state: %x.\n", state);
+    }
+    /*
+     * A header describing the fields has already been printed.
+     */
+    Timer_TicksToTime(procPtr->userCpuUsage.ticks, &userTime);
+    Timer_TicksToTime(procPtr->kernelCpuUsage.ticks, &kernelTime);
+    Sys_Printf("%8x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
+	       procPtr->processID, 
+	       procPtr->weightedUsage, 
+	       userTime.seconds,
+	       userTime.microseconds,
+	       kernelTime.seconds, 
+	       kernelTime.microseconds,
+	       procPtr->event,
+	       states[(int) state]);
+    if (procPtr->argString != (Address) NIL) {
+	char cmd[30];
+	char *space;
+
+	(void) strncpy(cmd, procPtr->argString, 30);
+	space = strchr(cmd, ' ');
+	if (space != (char *) NULL) {
+	    *space = '\0';
+	}
+	Sys_Printf(" %s\n", cmd);
+    } else {
+	Sys_Printf("\n");
+    }
+    return (SUCCESS);
+}
 
 /*
  *----------------------------------------------------------------------
