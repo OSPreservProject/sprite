@@ -1236,6 +1236,13 @@ FsCacheUnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	    blockPtr->diskBlock = diskBlock;
 	    blockPtr->blockSize = blockSize;
 	}
+    } else if (blockPtr->blockSize == -1 && blockSize > 0) {
+	/*
+	 * Patch up the block size so our internal fragmentation
+	 * calculation is correct.  The size of a read-only block
+	 * is not used for anything else.
+	 */
+	blockPtr->blockSize = blockSize;
     }
 
     blockPtr->refCount--;
@@ -3117,8 +3124,8 @@ Fs_DumpCacheStats()
 	    2 * fsStats.object.pseudoStreams + fsStats.object.remote);
     printf("HANDLES max %d exist %d. In %d scans replaced %d of %d (dirs %d)\n",
 	    fsStats.handle.maxNumber, fsStats.handle.exists,
-	    fsStats.handle.lruScans, fsStats.handle.lruChecks,
-	    fsStats.handle.lruHits, fsStats.object.dirFlushed);
+	    fsStats.handle.lruScans, fsStats.handle.lruHits,
+	    fsStats.handle.lruChecks, fsStats.object.dirFlushed);
 }
 
 
@@ -3159,7 +3166,7 @@ Fs_CheckFragmentation(numBlocksPtr, totalBytesWastedPtr, fragBytesWastedPtr)
 
     listPtr = lruList;
     LIST_FORALL(listPtr, (List_Links *) blockPtr) {
-	if (blockPtr->refCount > 0) {
+	if ((blockPtr->refCount > 0) || (blockPtr->blockSize < 0)) {
 	    /* 
 	     * Skip locked blocks because they might be in the process of
 	     * being modified.
