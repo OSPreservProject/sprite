@@ -171,9 +171,11 @@ static void SoftFPReturn _ARGS_((void));
 static void MemErrorInterrupt _ARGS_((void));
 
 /*
- * The interrupt handler table.
+ * The interrupt handler table. This originally was static, hence the
+ * initialization here.  It is now possible to set the entries
+ * via Mach_SetHandler().
  */
-void (*interruptHandlers[MACH_NUM_HARD_INTERRUPTS])() = {
+void (*machInterruptRoutines[MACH_NUM_HARD_INTERRUPTS])() = {
     (void (*)())Dev_SIIIntr,
     (void (*)())Net_Intr,
     Dev_DC7085Interrupt,
@@ -181,6 +183,8 @@ void (*interruptHandlers[MACH_NUM_HARD_INTERRUPTS])() = {
     MemErrorInterrupt,
     MachFPInterrupt,
 };
+
+ClientData	machInterruptArgs[MACH_NUM_HARD_INTERRUPTS];
 
 extern void Mach_KernGenException();
 extern void Mach_UserGenException();
@@ -352,10 +356,43 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     MachFlushCache();
 }
 
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_SetHandler --
+ *
+ *	Put a interrupt handling routine into the table.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The interrupt handling table is modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mach_SetHandler(interruptNumber, handler, clientData)
+    int interruptNumber;	/* Interrupt number to set */
+    void (*handler)();	/* Interrupt handling procedure */
+    ClientData	clientData; /* ClientData for interrupt callback routine. */
+{
+    /*
+     * Check that it is valid.  Can't override FPU interrupt because it
+     * takes special parameters.
+     */
+    if ((interruptNumber < 0) || (interruptNumber >= MACH_NUM_HARD_INTERRUPTS)){
+	panic("Warning: Bad interrupt number %d\n",interruptNumber);
+    } else {
+	machInterruptRoutines[interruptNumber] = handler;
+	machInterruptArgs[interruptNumber] = clientData;
+    }
+}
+
 static Vm_ProcInfo	mainProcInfo;
 static Mach_State	mainMachState;
 static VmMach_ProcData	mainProcData;
-
 
 /*
  *----------------------------------------------------------------------
@@ -1075,8 +1112,8 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    printf("MachKernelExceptionHandler:  Bus error on ifetch\n");
 	    return(MACH_KERN_ERROR);
 	case MACH_EXC_BUS_ERR_LD_ST:
-	    if (pc >= F_TO_A Mach_ProbeAddr &&
-	        pc <= F_TO_A MachProbeAddrEnd) {
+	    if (pc >= F_TO_A Mach_Probe &&
+	        pc <= F_TO_A MachProbeEnd) {
 		return(MACH_USER_ERROR);
 	    }
 	    printf("MachKernelExceptionHandler:  Bus error on load or store\n");
@@ -1158,13 +1195,17 @@ Interrupt(statusReg, causeReg, pc)
 	    }
 	    lastInterruptCalled = n;
 #endif /* DEBUG_INTR */
-/*
- * Interrupt 5, the FPU interrupt, requires the status, cause, and pc.
- * These values may have changed in the registers, during a call to
- * another interrupt handler, so we have to hand the routine the original
- * values.
- */
-            interruptHandlers[n](statusReg, causeReg, pc);
+    /*
+     * Interrupt 5, the FPU interrupt, requires the status, cause, and pc.
+     * These values may have changed in the registers, during a call to
+     * another interrupt handler, so we have to hand the routine the original
+     * values.
+     */
+	    if (n==5) {
+		machInterruptRoutines[n](statusReg, causeReg, pc);
+	    } else {
+		machInterruptRoutines[n](machInterruptArgs[n]);
+	    }
 	}
 	mask >>= 1;
 	n++;
