@@ -313,11 +313,12 @@
 	rd_special	VOL_TEMP2, swp; \
 	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MIN_SWP_OFFSET; \
 	Nop; \
-	cmp_br_delayed	lt, VOL_TEMP2, VOL_TEMP3, 1f; \
+	cmp_br_delayed	ult, VOL_TEMP2, VOL_TEMP3, 1f; \
 	Nop; \
 	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MAX_SWP_OFFSET; \
+	Nop; \
 	sub		VOL_TEMP3, VOL_TEMP3, $MACH_SAVED_REG_SET_SIZE; \
-	cmp_br_delayed	le, VOL_TEMP2, VOL_TEMP3, label; \
+	cmp_br_delayed	ule, VOL_TEMP2, VOL_TEMP3, label; \
 	Nop; \
 1:
 
