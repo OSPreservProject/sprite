@@ -19,11 +19,12 @@
 #define _TIMER
 
 #include "list.h"
-#include "time.h"
 
 #ifdef KERNEL
+#include "time.h"
 #include "timerTick.h"
 #else
+#include <user/spriteTime.h>
 #include <kernel/timerTick.h>
 #endif
 
