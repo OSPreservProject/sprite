@@ -22,9 +22,11 @@
 #ifdef KERNEL
 #include <net.h>
 #include <sys.h>
+#include <rpcTypes.h>
 #else
 #include <kernel/net.h>
 #include <kernel/sys.h>
+#include <kernel/rpcTypes.h>
 #endif /* KERNEL */
 
 
@@ -129,6 +131,10 @@ extern void Rpc_PrintServiceCount _ARGS_((void));
 extern ReturnStatus Rpc_GetStats _ARGS_((int command, int option, Address argPtr));
 extern ReturnStatus Rpc_SendTest _ARGS_((int serverId, int numSends, int size, Address inputPtr, Time *deltaTimePtr));
 extern ReturnStatus Rpc_Send _ARGS_((int serverId, Address inputPtr, int size));
+extern ENTRY void	Rpc_OkayToTrace _ARGS_((Boolean okay));
+extern ENTRY void	Rpc_FreeTraces _ARGS_((void));
+extern ENTRY ReturnStatus	Rpc_DumpServerTraces _ARGS_((int length,
+	RpcServerUserStateInfo *resultPtr, int *lengthNeededPtr));
 
 
 #endif /* _RPC */
