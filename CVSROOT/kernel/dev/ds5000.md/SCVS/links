@@ -1,0 +1,14 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+console.h                ../ds3100.md/console.h
+dc7085.h                 ../ds3100.md/dc7085.h
+devConsole.c             ../ds3100.md/devConsole.c
+devDependent.h           ../ds3100.md/devDependent.h
+devScsiTapeConfig.c      ../ds3100.md/devScsiTapeConfig.c
+devTtyAttach.c           ../ds3100.md/devTtyAttach.c
+font.c                   ../ds3100.md/font.c
+graphics.h               ../ds3100.md/graphics.h
+scsiC90.h                ../sun4c.md/scsiC90.h
+sii.h                    ../ds3100.md/sii.h
+ttyAttach.h              ../ds3100.md/ttyAttach.h

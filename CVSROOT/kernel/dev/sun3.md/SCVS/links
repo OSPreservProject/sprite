@@ -1,0 +1,5 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+devGraphics.c            ../sun4.md/devGraphics.c
+devfb.h.old              ../sun4.md/devfb.h
