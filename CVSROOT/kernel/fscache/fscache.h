@@ -264,10 +264,13 @@ typedef struct Fscache_Block {
  *    FSCACHE_FILE_WB_WAIT		Wait for blocks to be written back.
  *    FSCACHE_WRITE_BACK_INDIRECT	Write back indirect blocks.
  *    FSCACHE_WRITE_BACK_AND_INVALIDATE	Invalidate after writing back.
+ *    FSCACHE_WB_MIGRATION		Invalidation due to migration (for
+ *					statistics purposes only).
  */
 #define FSCACHE_FILE_WB_WAIT		0x1
 #define	FSCACHE_WRITE_BACK_INDIRECT	0x2
 #define	FSCACHE_WRITE_BACK_AND_INVALIDATE	0x4
+#define	FSCACHE_WB_MIGRATION	0x8
 
 /*
  * Constants to pass as flags to FsUnlockCacheBlock.
