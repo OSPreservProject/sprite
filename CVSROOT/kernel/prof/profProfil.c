@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$";
 #include "proc.h"
 #include "prof.h"
 #include "sync.h"
+#include "vm.h"
 
 /*
  * Program counter recorded by the interrupt handler.
