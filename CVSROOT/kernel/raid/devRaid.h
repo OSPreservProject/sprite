@@ -24,7 +24,6 @@
 #include "devBlockDevice.h"
 #include "devRaidDisk.h"
 #include "devRaidLog.h"
-#include "bitvec.h"
 
 #ifndef MIN
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
@@ -59,16 +58,12 @@ typedef struct Raid {
     int			 numReqInSys; /* -1 => exclusive access */
     int			 numWaitExclusive; /* number waiting for */
 					  /* exclusive access. */
-    int			 numStripeLocked;
 
     Fs_Device		*devicePtr; /* Device corresponding to this raid. */
     int			 numCol;
     int			 numRow;
     RaidDisk	      ***disk;	    /* 2D array of disks (column major) */
 
-    DevBlockDeviceHandle *logHandlePtr;
-    Fs_Device		 logDev;
-    int			 logDevOffset;
     RaidLog		 log;
 
     unsigned		 numSector;
@@ -81,6 +76,7 @@ typedef struct Raid {
 
     int		 	 numDataCol;
     int		 	 logBytesPerSector;
+    int		 	 bytesPerSector;
     int		 	 sectorsPerStripeUnit;
     int		 	 rowsPerGroup;
     int		 	 stripeUnitsPerDisk;

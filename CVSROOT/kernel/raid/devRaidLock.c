@@ -132,6 +132,9 @@ Raid_XLockStripe(raidPtr, stripe)
 {
     Raid_SLockStripe(raidPtr, stripe);
     Raid_LogStripe(raidPtr, stripe);
+#ifdef TESTING
+    CheckStripeLog(raidPtr, stripe); 
+#endif /* TESTING */
 }
 
 
@@ -190,7 +193,76 @@ Raid_XUnlockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
+#ifdef TESTING
+    CheckStripeLog(raidPtr, stripe); 
+#endif /* TESTING */
+    Raid_UnlogStripe(raidPtr, stripe);
     Raid_SUnlockStripe(raidPtr, stripe);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_Disable --
+ *
+ * Results:
+ *	Disable non-exclusive access.
+ *
+ * Side effects:
+ *	Gains exclusive access to specified RAID device.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Raid_Disable(raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numWaitExclusive++;
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_Enable --
+ *
+ * Results:
+ *	Locks a disabled RAID.
+ *
+ * Side effects:
+ *	Gains exclusive access to specified RAID device.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Raid_Enable(raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numWaitExclusive--;
+    Sync_MasterBroadcast(&raidPtr->waitExclusive);
+    Sync_MasterBroadcast(&raidPtr->waitNonExclusive);
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_IsLocked --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Raid_IsLocked(raidPtr)
+    Raid *raidPtr;
+{
+    return raidPtr->numReqInSys == -1;
 }
 
 /*

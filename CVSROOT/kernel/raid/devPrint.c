@@ -21,10 +21,86 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include <sprite.h>
 #include <stdio.h>
+#include <assert.h>
 #include "fs.h"
 #include "devBlockDevice.h"
 #include "devRaid.h"
+#include "devRaidUtil.h"
 #include "schedule.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRequests --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define MAX_ROW		2
+#define MAX_COL		4
+#define MAX_SECTORS	4
+
+
+void
+NPrint(string, n)
+    char	*string;
+    int		n;
+{
+    int		i;
+    for (i = 0; i < n; i++) {
+	printf("%s", string);
+    }
+}
+
+#ifdef TESTING
+void
+PrintRequests(reqControlPtr)
+    RaidRequestControl  *reqControlPtr;
+{
+    RaidBlockRequest    *reqPtr;
+    int			col, row, sector;
+    int			i, j;
+    extern Raid		*raidPtr;
+    static char		outputBuf[MAX_COL][MAX_ROW][MAX_SECTORS];			
+
+    assert(raidPtr->numCol <= MAX_COL && raidPtr->numRow <= MAX_ROW &&
+	    raidPtr->sectorsPerDisk <= MAX_SECTORS);
+
+    bzero((char *) outputBuf, sizeof(outputBuf));
+    for ( i = 0; i < reqControlPtr->numReq; i++ ) {
+	reqPtr = &reqControlPtr->reqPtr[i];
+	if (reqPtr->state == REQ_READY) {
+	    int		startSector, numSector;
+	    startSector = ByteToSector(raidPtr, reqPtr->devReq.startAddress);
+	    numSector   = ByteToSector(raidPtr, reqPtr->devReq.bufferLen);
+	    for (j = 0; j < numSector; j++) {
+		outputBuf[reqPtr->col][reqPtr->row][startSector+j] =
+			(reqPtr->devReq.operation == FS_READ ? 'r' : 'w');
+	    }
+	}
+    }
+    for (row = 0; row < raidPtr->numRow; row++) {
+	printf("+");
+	NPrint("-", raidPtr->numCol);
+	printf("+\n");
+	for (sector = 0; sector < raidPtr->sectorsPerDisk; sector++) {
+	    printf("%c", '|');
+	    for (col = 0; col < raidPtr->numCol; col++) {
+		printf("%c", (outputBuf[col][row][sector] ?
+			outputBuf[col][row][sector] : ' '));
+	    }
+	    printf("%c\n", '|');
+	}
+    }
+}
+#endif TESTING
 
 
 /*
@@ -47,7 +123,6 @@ void
 PrintHandle(handlePtr)
     DevBlockDeviceHandle  *handlePtr; /* Handle pointer of device. */
 {
-/*
     printf("DevBlockDeviceHandle %x:\n", handlePtr);
     printf("    blockIOProc  : %x\n", handlePtr->blockIOProc);
     printf("    IOControlProc: %x\n", handlePtr->IOControlProc);
@@ -55,7 +130,6 @@ PrintHandle(handlePtr)
     printf("    minTransferUnit: %x\n", handlePtr->minTransferUnit);
     printf("    maxTransferSize: %x\n", handlePtr->maxTransferSize);
     printf("    clientData: %x\n", handlePtr->clientData);
-*/
 }
 
 
@@ -156,6 +230,7 @@ PrintRaid(raidPtr)
     printf("    numRow %d\n", raidPtr->numRow);
     printf("    numCol %d\n", raidPtr->numCol);
     printf("    numSector %u\n", raidPtr->numSector);
+    printf("    numStripe %u\n", raidPtr->numStripe);
     printf("    dataSectorsPerStripe %u\n",raidPtr->dataSectorsPerStripe);
     printf("    sectorsPerDisk %u\n",raidPtr->sectorsPerDisk);
     printf("    bytesPerStripeUnit %u\n",raidPtr->bytesPerStripeUnit);
@@ -180,8 +255,9 @@ PrintRaid(raidPtr)
 	    }
 	}
     }
-    printf("LogDisk: offset=%d\n", raidPtr->logDevOffset);
-    PrintDevice(&raidPtr->logDev);
+    printf("LogDisk: offset=%d\n", raidPtr->log.logDevOffset);
+    printf("LogDisk: endOffset=%d\n", raidPtr->log.logDevEndOffset);
+    PrintDevice(&raidPtr->log.logDev);
     printf("=====================================================\n");
 }
 

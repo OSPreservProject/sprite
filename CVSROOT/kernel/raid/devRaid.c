@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <stdio.h>
 #include <string.h>
+#include <dev/raid.h>
 #include "fs.h"
 #include "dev.h"
 /*
@@ -35,7 +36,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devBlockDevice.h"
 #include "devRaid.h"
 #include "devRaidUtil.h"
-#include "dev/raid.h"
 #include "semaphore.h"
 #include "devRaidLog.h"
 #include "stdlib.h"
@@ -109,11 +109,13 @@ DevRaidAttach(devicePtr)
 {
     RaidHandle	*handlePtr;
     Raid	*raidPtr;
+    int		raidIndex;
 
-    if ( devicePtr->unit >= numRaid ) {
+    raidIndex = devicePtr->unit >> 4;
+    if ( raidIndex >= numRaid ) {
         return (DevBlockDeviceHandle *) NIL;
     }
-    raidPtr = &raidArray[devicePtr->unit];
+    raidPtr = &raidArray[raidIndex];
     MASTER_LOCK(&raidPtr->mutex);
     if ( raidPtr->state == RAID_INVALID ) {
 	raidPtr->state = RAID_ATTACHED;
@@ -135,17 +137,25 @@ DevRaidAttach(devicePtr)
      * 'S' means data striping only, no parity.
      * We use a different blockIOproc to support this function.
      */
-    if (raidPtr->parityConfig == 'S') {
-	handlePtr->blockHandle.blockIOProc = StripeBlockIOProc;
-    } else {
-	handlePtr->blockHandle.blockIOProc = RaidBlockIOProc;
-    }
+    handlePtr->blockHandle.blockIOProc = RaidBlockIOProc;
     handlePtr->blockHandle.releaseProc = ReleaseProc;
     handlePtr->blockHandle.IOControlProc = IOControlProc;
+    /*
+     * The problem is that we don't know the actual minTransferUnit when the
+     * RAID device is attached but only when the RAID_CONFIGURE IOC is
+     * performed after it's attached.
+     */
+/*
     handlePtr->blockHandle.minTransferUnit = 1 << raidPtr->logBytesPerSector;
+*/
+#ifdef TESTING
+    handlePtr->blockHandle.minTransferUnit = 4;
+#else
+    handlePtr->blockHandle.minTransferUnit = 512;
+#endif /* TESTING */
     handlePtr->blockHandle.maxTransferSize = RAID_MAX_XFER_SIZE;
     handlePtr->devPtr = devicePtr;
-    handlePtr->raidPtr = &raidArray[devicePtr->unit];
+    handlePtr->raidPtr = raidPtr;
 
     return (DevBlockDeviceHandle *) handlePtr;
 }
@@ -335,7 +345,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	}
 	status = Raid_SaveState(raidPtr);
 	if (status != SUCCESS) {
-	    printf("RAID:MSG:Could not checkpoint state.\n");
+	    printf("RAID:MSG:Could not save state.\n");
 	}
 	return status;
     case IOC_DEV_RAID_ENABLE_LOG:
@@ -345,23 +355,18 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	Raid_DisableLog(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_RESTORE_STATE:
-	raidPtr->logDev.type = raidIOCParamPtr->type;
-	raidPtr->logDev.unit = raidIOCParamPtr->unit;
-	raidPtr->logDevOffset = raidIOCParamPtr->startStripe;
-	/*
-	 * Attach log device.
-	 */
-	raidPtr->logHandlePtr = Dev_BlockDeviceAttach(&raidPtr->logDev);
-	if (raidPtr->logHandlePtr == (DevBlockDeviceHandle *) NIL) {
-	    printf("RAID:ERR:Could not attach log device %d %d\n",
-		    raidPtr->logDev.type, raidPtr->logDev.unit);
-	    return FAILURE;
-	}
-	status = Raid_RestoreState(raidPtr);
+	status = Raid_RestoreState(raidPtr, raidIOCParamPtr->type,
+		raidIOCParamPtr->unit, raidIOCParamPtr->startStripe);
 	if (status != SUCCESS) {
 	    printf("RAID:MSG:Could not restore state.\n");
 	}
 	return status;
+    case IOC_DEV_RAID_DISABLE:
+	Raid_Disable(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_ENABLE:
+	Raid_Enable(raidPtr);
+	return SUCCESS;
     default:
 	return SUCCESS;
     }
@@ -468,6 +473,12 @@ RaidBlockIOProc(handlePtr, requestPtr)
     raidHandlePtr = (RaidHandle *) handlePtr;
     raidPtr	  = raidHandlePtr->raidPtr;
 
+    /*
+     * If striping only (no parity) use the the simpler routine.
+     */
+    if (raidPtr->parityConfig == 'S') {
+	return StripeBlockIOProc(handlePtr, requestPtr);
+    }
     /*
      * Check if operation valid.
      */

@@ -64,6 +64,9 @@ Raid_InitiateIORequests(reqControlPtr, doneProc, clientData)
     /*
      * Initiate IO's.
      */
+#ifdef TESTING
+    PrintRequests(reqControlPtr);
+#endif TESTING
     IOControlPtr = Raid_MakeIOControl(doneProc, clientData);
     IOControlPtr->numIO++;
     for ( i = 0; i < reqControlPtr->numReq; i++ ) {
@@ -124,11 +127,13 @@ blockIODoneProc(reqPtr, status, amountTransferred)
     /*
      * Check to see if disk has failed since request was initiated.
      */
+/*
     if (!IsValid(reqPtr->diskPtr,
 	    ByteToSector(reqPtr->raidPtr, reqPtr->devReq.startAddress),
 	    ByteToSector(reqPtr->raidPtr, reqPtr->devReq.bufferLen))) {
 	status = FAILURE;
     }
+*/
 
     reqPtr->status = status;
     if (status != SUCCESS) {
@@ -264,12 +269,12 @@ InitiateStripeWrite(stripeIOControlPtr)
     RaidRequestControl	*reqControlPtr = stripeIOControlPtr->reqControlPtr;
     char		*parityBuf     = stripeIOControlPtr->parityBuf;
 
-    reqControlPtr->numReq = reqControlPtr->numFailed = 0;
-    AddRaidParityRequest(reqControlPtr, raidPtr, FS_READ,
-	    firstSector, parityBuf, ctrlData);
     /*
      * Check to see if parity disk has failed.
      */
+    reqControlPtr->numReq = reqControlPtr->numFailed = 0;
+    AddRaidParityRequest(reqControlPtr, raidPtr, FS_READ,
+	    firstSector, parityBuf, ctrlData);
     if (reqControlPtr->numFailed > 0) {
 	/*
 	 * If parity disk has failed, just write the data.
@@ -283,7 +288,7 @@ InitiateStripeWrite(stripeIOControlPtr)
 	} else {
 	    InitiateStripeIOFailure(stripeIOControlPtr);
 	}
-    } else if (raidPtr->dataSectorsPerStripe/(nthSector-firstSector) > 2) {
+    } else if (nthSector-firstSector < raidPtr->dataSectorsPerStripe/2) {
 	/*
 	 * If less than half of the stripe is being written, do a
 	 * read modify write.
@@ -334,33 +339,26 @@ InitiateSplitStripeWrite(stripeIOControlPtr)
     RaidRequestControl	*reqControlPtr = stripeIOControlPtr->reqControlPtr;
     char		*parityBuf     = stripeIOControlPtr->parityBuf;
     char		*readBuf       = stripeIOControlPtr->readBuf;
-    int			 failedAddr    = (int)
-    	   stripeIOControlPtr->reqControlPtr->failedReqPtr->devReq.startAddress;
+    int			 failedOff     = (int) StripeUnitOffset(raidPtr,
+    	  stripeIOControlPtr->reqControlPtr->failedReqPtr->devReq.startAddress);
     int			 failedLen     =
     	   stripeIOControlPtr->reqControlPtr->failedReqPtr->devReq.bufferLen;
     int			 rangeOff;
     int			 rangeLen;
 
+#ifdef TESTING
+    printf("InitiateSplitStripeWrite\n");
+#endif TESTING
     /*
      * 'Deduce' data part of failed request.
      */
     if (stripeIOControlPtr->recoverProc == (void(*)())InitiateReadModifyWrite) {
-	if (StripeUnitOffset(raidPtr, failedAddr) == 0) {
-	    failedAddr = failedAddr + failedLen;
-	    failedLen = raidPtr->bytesPerStripeUnit - failedLen;
-	} else {
-	    failedAddr = failedAddr - StripeUnitOffset(raidPtr, failedAddr);
-	    failedLen = raidPtr->bytesPerStripeUnit - failedLen;
-	}
+	failedOff = StripeUnitOffset(raidPtr, failedOff + failedLen);
+	failedLen = raidPtr->bytesPerStripeUnit - failedLen;
     }
-    if (StripeUnitOffset(raidPtr, failedAddr) == 0) {
-	rangeOff = failedLen;
-	rangeLen = raidPtr->bytesPerStripeUnit -
-		StripeUnitOffset(raidPtr, rangeOff);
-    } else {
-	rangeOff = 0;
-	rangeLen = StripeUnitOffset(raidPtr, failedAddr);
-    }
+    rangeOff = StripeUnitOffset(raidPtr, failedOff + failedLen);
+    rangeLen = raidPtr->bytesPerStripeUnit - failedLen;
+
     stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
     stripeIOControlPtr->rangeOff = 0;
     stripeIOControlPtr->rangeLen = raidPtr->bytesPerStripeUnit;
@@ -371,12 +369,12 @@ InitiateSplitStripeWrite(stripeIOControlPtr)
     Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    FirstSectorOfStripe(raidPtr, firstSector), firstSector,
 	    readBuf, ctrlData,
-	    failedAddr, failedLen);
+	    failedOff, failedLen);
     Raid_AddDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
 	    nthSector, NthSectorOfStripe(raidPtr, firstSector),
 	    readBuf + SectorToByte(raidPtr,
 	    	    firstSector - FirstSectorOfStripe(raidPtr, firstSector)),
-	    ctrlData, failedAddr, failedLen);
+	    ctrlData, failedOff, failedLen);
     /*
      * RMW strip
      */
@@ -431,6 +429,9 @@ InitiateReadModifyWrite(stripeIOControlPtr)
     char		*readBuf       = stripeIOControlPtr->readBuf;
     void	       (*recoverProc)()= stripeIOControlPtr->recoverProc;
 
+#ifdef TESTING
+    printf("InitiateReadModifyWrite\n");
+#endif TESTING
     reqControlPtr->numReq = reqControlPtr->numFailed = 0;
     AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, nthSector, readBuf, ctrlData);
@@ -508,6 +509,9 @@ InitiateReconstructWrite(stripeIOControlPtr)
     /*
      * If writing only one stripe unit, range restrict the write.
      */
+#ifdef TESTING
+    printf("InitiateReconstructWrite\n");
+#endif TESTING
     if (SectorToStripeUnitID(raidPtr, firstSector) ==
 	    SectorToStripeUnitID(raidPtr, nthSector-1)) {
 	stripeIOControlPtr->rangeOff = SectorToByte(raidPtr, firstSector);
@@ -576,7 +580,8 @@ oldInfoReadDoneProc(stripeIOControlPtr, numFailed, failedReqPtr)
     int		 	 numFailed;
     RaidBlockRequest	*failedReqPtr;
 {
-    Raid	*raidPtr = stripeIOControlPtr->raidPtr;
+    Raid		*raidPtr	= stripeIOControlPtr->raidPtr;
+    RaidRequestControl	*reqControlPtr	= stripeIOControlPtr->reqControlPtr;
 
     if (numFailed == 0) {
 	char			*parityBuf;
@@ -586,35 +591,42 @@ oldInfoReadDoneProc(stripeIOControlPtr, numFailed, failedReqPtr)
 	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
 #endif
 
-	Raid_XorRangeRequests(stripeIOControlPtr->reqControlPtr,
+	Raid_XorRangeRequests(reqControlPtr,
 		raidPtr, parityBuf,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
-        stripeIOControlPtr->reqControlPtr->numReq = 0;
-        stripeIOControlPtr->reqControlPtr->numFailed = 0;
-        Raid_AddDataRangeRequests(stripeIOControlPtr->reqControlPtr,
+        reqControlPtr->numReq = 0;
+        reqControlPtr->numFailed = 0;
+        Raid_AddDataRangeRequests(reqControlPtr,
 		raidPtr, FS_WRITE,
 		stripeIOControlPtr->firstSector, stripeIOControlPtr->nthSector,
                 stripeIOControlPtr->buffer, stripeIOControlPtr->ctrlData,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
-	Raid_XorRangeRequests(stripeIOControlPtr->reqControlPtr,
+	/*
+	 * Raid_XorRangeRequests will not xor failed requests so we have
+	 * to change its state to REQ_COMPLETED to make it xor the new data.
+	 */
+	if (reqControlPtr->numFailed > 0) {
+	    reqControlPtr->failedReqPtr->state = REQ_COMPLETED;
+	}
+	Raid_XorRangeRequests(reqControlPtr,
 		raidPtr, parityBuf,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
 #ifndef NODATA
 	Free(stripeIOControlPtr->parityBuf);
 #endif
 	stripeIOControlPtr->parityBuf = parityBuf;
-        Raid_AddParityRangeRequest(stripeIOControlPtr->reqControlPtr,
+        Raid_AddParityRangeRequest(reqControlPtr,
 		raidPtr, FS_WRITE,
 	        stripeIOControlPtr->firstSector, stripeIOControlPtr->parityBuf,
 		stripeIOControlPtr->ctrlData,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
-	switch (stripeIOControlPtr->reqControlPtr->numFailed) {
+	switch (reqControlPtr->numFailed) {
 	case 0:
-            Raid_InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+            Raid_InitiateIORequests(reqControlPtr,
 		    stripeWriteDoneProc, (ClientData) stripeIOControlPtr);
 	    break;
 	case 1:
-            Raid_InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+            Raid_InitiateIORequests(reqControlPtr,
 		    stripeIODoneProc, (ClientData) stripeIOControlPtr);
 	    break;
 	default:
@@ -623,7 +635,7 @@ oldInfoReadDoneProc(stripeIOControlPtr, numFailed, failedReqPtr)
 	}
     } else {
         void       (*recoverProc)() = stripeIOControlPtr->recoverProc;
-	stripeIOControlPtr->reqControlPtr->failedReqPtr = failedReqPtr;
+	reqControlPtr->failedReqPtr = failedReqPtr;
 	/*
 	 * If the request covers multiple stripe units and is not stripe unit
 	 * aligned, check to see if the failed request is a partial

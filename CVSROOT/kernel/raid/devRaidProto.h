@@ -77,6 +77,8 @@ extern void Raid_CheckPoint _ARGS_((Raid *raidPtr));
 extern void Raid_XLockStripe _ARGS_((Raid *raidPtr, int stripe));
 extern void Raid_SUnlockStripe _ARGS_((Raid *raidPtr, int stripe));
 extern void Raid_XUnlockStripe _ARGS_((Raid *raidPtr, int stripe));
+extern void Raid_Disable _ARGS_((Raid *raidPtr));
+extern void Raid_Enable _ARGS_((Raid *raidPtr));
 extern void Raid_Lock _ARGS_((Raid *raidPtr));
 extern void Raid_Unlock _ARGS_((Raid *raidPtr));
 extern void Raid_BeginUse _ARGS_((Raid *raidPtr));
@@ -90,18 +92,20 @@ extern void UpSema _ARGS_((Sema *semaPtr));
  * devRaidLog.c
  */
 #ifdef _DEVRAID
+extern ReturnStatus Raid_AttachLogDev _ARGS_((Raid *raidPtr, int type, int unit, int offset));
 extern void Raid_InitLog _ARGS_((Raid *raidPtr));
 extern void Raid_EnableLog _ARGS_((Raid *raidPtr));
 extern void Raid_DisableLog _ARGS_((Raid *raidPtr));
 extern ReturnStatus Raid_ApplyLog _ARGS_((Raid *raidPtr));
-extern ReturnStatus Raid_SaveDiskState _ARGS_((Raid *raidPtr, int col, int row, int type, int unit, int version, int numValidSector));
+extern ReturnStatus Raid_SaveDisk _ARGS_((Raid *raidPtr, int col, int row, int type, int unit, int version, int numValidSector));
 extern ReturnStatus Raid_SaveParam _ARGS_((Raid *raidPtr));
 extern ReturnStatus Raid_SaveLog _ARGS_((Raid *raidPtr));
 extern ReturnStatus Raid_SaveState _ARGS_((Raid *raidPtr));
 extern ReturnStatus Raid_Configure _ARGS_((Raid *raidPtr, char *charBuf));
-extern ReturnStatus Raid_RestoreState _ARGS_((Raid *raidPtr));
+extern ReturnStatus Raid_RestoreState _ARGS_((Raid *raidPtr, int type, int unit, int offset));
 extern void Raid_MasterFlushLog _ARGS_((Raid *raidPtr));
 extern void Raid_LogStripe _ARGS_((Raid *raidPtr, int stripeID));
+extern void Raid_UnlogStripe _ARGS_((Raid *raidPtr, int stripeID));
 #endif
 
 /*

@@ -299,9 +299,13 @@ reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
 	    printf("RAID:RECON:%d %d %d\n",
 		    diskPtr->device.type, diskPtr->device.unit,
 		    SectorToStripeUnitID(raidPtr, diskPtr->numValidSector-1));
-	    Raid_SaveDiskState(raidPtr, diskPtr->col, diskPtr->row,
+	    Raid_SaveDisk(raidPtr, diskPtr->col, diskPtr->row,
 		    diskPtr->device.type, diskPtr->device.unit,
 		    diskPtr->version, diskPtr->numValidSector);
+#ifdef TESTING
+	    CheckDiskLog(raidPtr, diskPtr->col, diskPtr->row,
+		    diskPtr->numValidSector);
+#endif TESTING
 	}
 	UnlockSema(&diskPtr->lock);
 	Raid_XUnlockStripe(raidPtr, stripeID);

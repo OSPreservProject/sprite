@@ -148,7 +148,7 @@ Raid_FreeBlockDeviceRequest(requestPtr)
 /*
  *----------------------------------------------------------------------
  *
- * MakeRaidIOControl --
+ * Raid_MakeIOControl --
  *
  *	Allocate and initialize RaidIOControl.
  *
@@ -210,7 +210,7 @@ Raid_FreeIOControl(IOControlPtr)
 /*
  *----------------------------------------------------------------------
  *
- * MakeRaidRequestControl --
+ * Raid_MakeRequestControl --
  *
  *	Allocate and initialize RaidRequestControl.
  *
@@ -358,7 +358,7 @@ Raid_FreeStripeIOControl(stripeIOControlPtr)
 /*
  *----------------------------------------------------------------------
  *
- * MakeRaidReconstructionControl --
+ * Raid_MakeReconstructionControl --
  *
  *	Allocate and initialize RaidReconstructionControl.
  *

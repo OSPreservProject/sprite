@@ -66,7 +66,7 @@ Raid_InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlD
 		    (RaidDisk *) NIL, doneProc, clientData, ctrlData);
     reconstructionControlPtr->stripeID = startStripe;
     reconstructionControlPtr->numStripe = numStripe;
-    printf("RAID:MSG:Initiating reconstruction %d %d.\n",startStripe,numStripe);
+    printf("RAID:MSG:Initiating HardInit %d %d.\n",startStripe,numStripe);
     InitiateStripeHardInit(reconstructionControlPtr);
 }
 
