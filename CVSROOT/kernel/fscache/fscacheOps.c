@@ -471,6 +471,7 @@ FsCacheConsist(cacheInfoPtr, flags, cachedAttrPtr)
 	    cacheInfoPtr->flags |= FS_FILE_NOT_CACHEABLE;
 	    break;
 	case FS_DELETE_FILE:
+	    cacheInfoPtr->flags |= FS_FILE_GONE;
 	    FsCacheFileInvalidate(cacheInfoPtr, firstBlock, FS_LAST_BLOCK);
 	    cacheInfoPtr->flags |= FS_FILE_NOT_CACHEABLE;
 	    break;
