@@ -813,6 +813,11 @@ Sys_StatsStub(command, option, argPtr)
 	    status = Recov_GetStats(option, argPtr);
 	    break;
 	}
+	case SYS_RECOV_PRINT: {
+	    Recov_ChangePrintLevel(option);
+	    status = SUCCESS;
+	    break;
+	}
 	case SYS_RECOV_ABS_PINGS: {
 	    recov_AbsoluteIntervals = option;
 	    status = SUCCESS;

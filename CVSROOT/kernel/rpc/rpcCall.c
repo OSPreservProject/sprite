@@ -24,6 +24,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "timerTick.h"
 #include "timer.h"
+/* Not needed if recov tracing is removed. */
+#include "recov.h"
 
 /*
  * So we can print out rpc names we include the rpcServer definitions.
@@ -190,6 +192,10 @@ allocAgain:
      * Call RpcDoCall, which synchronizes with RpcClientDispatch,
      * to do the send-receive-timeout loop for the RPC.
      */
+/* Remove this debugging print stuff soon. */
+    if (command == RPC_ECHO_2 && recov_PrintLevel >= RECOV_PRINT_ALL) {
+	Sys_HostPrint(serverID, "Pinging server\n");
+    }
     error = RpcDoCall(serverID, chanPtr, storagePtr, command,
 		      &srvBootID, &notActive);
     RpcChanFree(chanPtr);
@@ -199,6 +205,18 @@ allocAgain:
 #endif /* TIMESTAMP */
 
     RPC_CALL_TIMING_END(command, &histTime);
+/* This slow printing stuff should be removed soon. It's for debugging. */
+    if (command == RPC_ECHO_2 && recov_PrintLevel >= RECOV_PRINT_ALL) {
+	if (error == RPC_NACK_ERROR) {
+	    Sys_HostPrint(serverID,
+		    "Ping result bad: Nack error from server\n");
+	} else if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
+	    Sys_HostPrint(serverID, "Ping result bad: server is dead.\n");
+	}
+	if (error == SUCCESS) {
+	    Sys_HostPrint(serverID, "Pinged serverID successfully.\n");
+	}
+    }
     if (error == RPC_NACK_ERROR) {
 	/*
 	 * This error is only returned if the client policy for handling
