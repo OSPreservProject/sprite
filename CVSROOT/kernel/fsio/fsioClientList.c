@@ -120,6 +120,7 @@ FsIOClientOpen(clientList, clientID, useFlags, cached)
     clientPtr->use.write = 0;
     clientPtr->use.exec = 0;
     clientPtr->openTimeStamp = 0;
+    clientPtr->locked = FALSE;
     List_InitElement((List_Links *)clientPtr);
     List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
 found:
@@ -194,8 +195,13 @@ FsIOClientClose(clientList, clientID, flags, cachePtr)
 	}
 	if ((!(*cachePtr) || !clientPtr->cached) &&
 	    (clientPtr->use.ref == 0)) {
-	    List_Remove((List_Links *) clientPtr);
-	    free((Address) clientPtr);
+	    if (clientPtr->locked) {
+		printf("FsIOClientClose: locked client %d\n",
+		    clientPtr->clientID);
+	    } else {
+		List_Remove((List_Links *) clientPtr);
+		free((Address) clientPtr);
+	    }
 	    *cachePtr = FALSE;
 	} else {
 	    *cachePtr = clientPtr->cached;
@@ -490,8 +496,15 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
 	    *refPtr += clientPtr->use.ref;
 	    *writePtr += clientPtr->use.write;
 	    *execPtr += clientPtr->use.exec;
-	    List_Remove((List_Links *) clientPtr);
-	    free((Address) clientPtr);
+	    if (clientPtr->locked) {
+		printf("FsIOClientKill, client %d locked\n", clientID);
+		clientPtr->use.ref = 0;
+		clientPtr->use.write = 0;
+		clientPtr->use.exec = 0;
+	    } else {
+		List_Remove((List_Links *) clientPtr);
+		free((Address) clientPtr);
+	    }
 	    break;
 	}
     }
