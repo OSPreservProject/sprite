@@ -16,7 +16,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "fsutil.h"
 #include "fsio.h"
-#include "fsReadAheadInt.h"
 #include "fsStat.h"
 #include "fscache.h"
 #include "fsNameOps.h"
@@ -38,8 +37,8 @@ typedef struct {
     int			blockNum;
 } ReadAheadCallBackData;
 
-static void	FsIncReadAheadCount();
-static void	FsDecReadAheadCount();
+static void	IncReadAheadCount();
+static void	DecReadAheadCount();
 static void	DoReadAhead();
 
 
@@ -162,7 +161,7 @@ FscacheReadAhead(cacheInfoPtr, blockNum)
 	}
 
 	fs_Stats.blockCache.readAheads++;
-	FsIncReadAheadCount(readAheadPtr);
+	IncReadAheadCount(readAheadPtr);
 	callBackData = mnew(ReadAheadCallBackData);
 	callBackData->cacheInfoPtr = cacheInfoPtr;
 	callBackData->readAheadPtr = readAheadPtr;
@@ -226,7 +225,7 @@ DoReadAhead(data, callInfoPtr)
 	}
 	Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
     }
-    FsDecReadAheadCount(callBackData->readAheadPtr);
+    DecReadAheadCount(callBackData->readAheadPtr);
     free((Address) callBackData);
     callInfoPtr->interval = 0;	/* don't call us again */
 }
@@ -234,7 +233,7 @@ DoReadAhead(data, callInfoPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FscacheWaitForReadAhead --
+ * Fscache_WaitForReadAhead --
  *
  *	Block the caller until the read ahead count on this handle goes to
  *	zero.  Called before a write.
@@ -249,7 +248,7 @@ DoReadAhead(data, callInfoPtr)
  *
  */
 ENTRY void
-FscacheWaitForReadAhead(readAheadPtr)
+Fscache_WaitForReadAhead(readAheadPtr)
     Fscache_ReadAheadInfo *readAheadPtr;
 {
     LOCK_MONITOR;
@@ -265,7 +264,7 @@ FscacheWaitForReadAhead(readAheadPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FscacheAllowReadAhead --
+ * Fscache_AllowReadAhead --
  *
  *	Indicate that it is ok to initiate read ahead.  Called when a
  *	write completes.
@@ -280,7 +279,7 @@ FscacheWaitForReadAhead(readAheadPtr)
  *
  */
 ENTRY void
-FscacheAllowReadAhead(readAheadPtr)
+Fscache_AllowReadAhead(readAheadPtr)
     Fscache_ReadAheadInfo *readAheadPtr;
 {
     LOCK_MONITOR;
@@ -294,7 +293,7 @@ FscacheAllowReadAhead(readAheadPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FsIncReadAheadCount --
+ * IncReadAheadCount --
  *
  *	Increment the number of read aheads on this file.  This will block
  *	if read aheads are blocked because of a write.
@@ -309,7 +308,7 @@ FscacheAllowReadAhead(readAheadPtr)
  *
  */
 static void
-FsIncReadAheadCount(readAheadPtr)
+IncReadAheadCount(readAheadPtr)
     Fscache_ReadAheadInfo *readAheadPtr;
 {
     LOCK_MONITOR;
@@ -325,7 +324,7 @@ FsIncReadAheadCount(readAheadPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FsDecReadAheadCount --
+ * DecReadAheadCount --
  *
  *	Decrement the number of read aheads on this file.
  *
@@ -340,7 +339,7 @@ FsIncReadAheadCount(readAheadPtr)
  *
  */
 static void
-FsDecReadAheadCount(readAheadPtr)
+DecReadAheadCount(readAheadPtr)
     Fscache_ReadAheadInfo *readAheadPtr;
 {
     LOCK_MONITOR;
