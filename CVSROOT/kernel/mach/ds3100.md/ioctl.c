@@ -457,8 +457,8 @@ MachUNIXIoctl(fd, request, buf)
 		p->default_pa[3] = p->current_pa[3] = 0x10;
 		p->default_pa[4] = p->current_pa[4] = 0x75;
 		p->default_pa[5] = p->current_pa[5] = 0x24;
-		status = SUCCESS;
 #endif
+		status = SUCCESS;
 
 	    }
 	    break;
