@@ -37,73 +37,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsdmInt.h"
 
 /*
- * The following stuff is for logging all disk block allocations
- * and frees.
- */
-
-typedef struct {
-    int time;			/* Time, in universal seconds. */
-    int fileId;			/* I-number of file. */
-    int blockNum;		/* Disk block number allocated or freed 
-				 * (measured in 4k units). */
-    unsigned char fragNum;	/* Index of fragment within block. */
-    unsigned char numFrags;	/* How many frags allocated or freed. */
-    unsigned char changedAt;	/* Exactly where in the code the change
-				 * was made. */
-    unsigned char caller;	/* Information about relevant caller. */
-} LogEntry;
-
-static LogEntry logs[2][256];
-static int curWrite = 0;
-static int curRead = 0;
-static int ready[2];
-static LogEntry *curPtr = &logs[0][0];
-static int logCount = 256;
-static int logLost = 0;		/* Counts entries that couldn't be logged
-				 * because there was no space. */
-static int logEnabled = 0;	/* Zero means no-one has turned on logging
-				 * yet, or it was turned off because of
-				 * buffer overflow. */
-static int logCaller = 0;	/* Identifies higher-level caller involved
-				 * in change. */
-Fsdm_Domain *logDomainPtr = NULL;
-				/* Which domain to log. */
-int logFileId = 0;		/* Identifier of file currently being
-				 * manipulated. */
-static void Log();
-
-/*
- * Defines for "changedAt" and "caller" fields:
- */
-
-#define FIND_BLOCK_INT		1
-#define FSDM_BLOCK_FREE		2
-#define FSDM_FRAG_FIND_1	3
-#define FSDM_FRAG_FIND_2	4
-#define FSDM_FRAG_FIND_3	5
-#define FSDM_FRAG_FREE		6
-#define ONLY_FRAG		7
-#define LOST_RECORDS		8
-
-
-#define UPGRADE_FRAGMENT_1	20
-#define UPGRADE_FRAGMENT_2	21
-#define UPGRADE_FRAGMENT_3	22
-#define UPGRADE_FRAGMENT_4	23
-#define ALLOCATE_BLOCK_1	24
-#define ALLOCATE_BLOCK_2	25
-#define FSDM_BLOCK_REALLOC_1	26
-#define FSDM_BLOCK_REALLOC_2	27
-#define TRUNC_1			28
-#define TRUNC_2			29
-#define TRUNC_3			30
-#define TRUNC_4			31
-#define TRUNC_5			32
-
-static Sync_Semaphore logLock = Sync_SemInitStatic("logLock");
-static Sync_Condition logReady;
-
-/*
  * Each domain, which is a separate piece of disk, is locked
  * during allocation.
  */
@@ -396,7 +329,6 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
     Boolean			dirtiedIndex = FALSE;
     ReturnStatus		status;
 
-    logFileId = hdrPtr->fileID.minor;
     descPtr = handlePtr->descPtr;
 
     *blockAddrPtr = FSDM_NIL_INDEX;
@@ -544,7 +476,6 @@ Fsdm_FileDescTrunc(handlePtr, size)
     if (size < 0) {
 	return(GEN_INVALID_ARG);
     }
-    logFileId = handlePtr->hdr.fileID.minor;
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
@@ -635,13 +566,11 @@ Fsdm_FileDescTrunc(handlePtr, size)
 	     * The file is being made empty.
 	     */
 	    if (indexInfo.blockNum == lastBlock && lastFrag < LAST_FRAG) {
-		logCaller = TRUNC_1;
 		FsdmFragFree(domainPtr, lastFrag + 1, 
 		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
 		    *indexInfo.blockAddrPtr & FRAG_OFFSET_MASK);
 		descPtr->numKbytes -= lastFrag + 1;
 	    } else {
-		logCaller = TRUNC_2;
 		FsdmBlockFree(domainPtr, 
 		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK));
 		descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
@@ -661,17 +590,18 @@ Fsdm_FileDescTrunc(handlePtr, size)
 	    } else {
 		fragsToFree = lastFrag - firstFrag;
 	    }
-	    logCaller = TRUNC_3;
-	    FsdmFragFree(domainPtr, fragsToFree,
-		  (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
-			firstFrag + 1);
-	    descPtr->numKbytes -= fragsToFree;
+	    if (fragsToFree > 0) {
+		FsdmFragFree(domainPtr, fragsToFree,
+		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
+		    (indexInfo.blockAddrPtr & FRAG_OFFSET_MASK)
+		     + firstFrag + 1);
+		descPtr->numKbytes -= fragsToFree;
+	    }
 	} else if (indexInfo.blockNum >= FSDM_NUM_DIRECT_BLOCKS || 
 	           indexInfo.blockNum < lastBlock || lastFrag == LAST_FRAG) {
 	    /*
 	     * This is a full block so delete it.
 	     */
-	    logCaller = TRUNC_4;
 	    FsdmBlockFree(domainPtr, 
 		 (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK));
 	    descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
@@ -681,7 +611,6 @@ Fsdm_FileDescTrunc(handlePtr, size)
 	     * Delete a fragment.  Only get here if are on the last block in 
 	     * the file.
 	     */
-	    logCaller = TRUNC_5;
 	    FsdmFragFree(domainPtr, lastFrag + 1, 
 	      (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
 	        *indexInfo.blockAddrPtr & FRAG_OFFSET_MASK);
@@ -1224,7 +1153,6 @@ haveFreeBlock:
 	    return;
 	}
 	*bitmapPtr |= mask;
-	Log(domainPtr, blockNum, 0, 4, FIND_BLOCK_INT);
     }
 
     *bitmapPtrPtr = bitmapPtr;
@@ -1328,7 +1256,6 @@ FsdmBlockFree(domainPtr, blockNum)
 	return;
     } else {
 	*bitmapPtr &= mask;
-	Log(domainPtr, blockNum, 0, 4, FSDM_BLOCK_FREE);
     }
 
     UNLOCK_MONITOR;
@@ -1429,8 +1356,6 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 		break;
 	    }
 	    fragMask |= bitMasks[i];
-	    Log(domainPtr, blockNum, fragOffset+lastFragSize, numFrags,
-		    FSDM_FRAG_FIND_1);
 	}
     }
 
@@ -1466,8 +1391,6 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 		     * There is a fragment of this size so use this block.
 		     */
 		    blockNum = fragBlock;
-		    Log(domainPtr, blockNum, fragOffset, numFrags,
-			    FSDM_FRAG_FIND_2);
 		    break;
 		} else {
 		    fs_Stats.alloc.badFragList++;
@@ -1490,7 +1413,6 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 	    }
 	    bitmapPtr = tBitmapPtr;
 	    fragOffset = 0;
-	    Log(domainPtr, blockNum, fragOffset, numFrags, FSDM_FRAG_FIND_3);
 	}
 	/*
 	 * See if the block number corresponds to the high or low
@@ -1637,7 +1559,6 @@ FsdmFragFree(domainPtr, numFrags, fragBlock, fragOffset)
 	return;
     } else {
 	*bitmapPtr &= ~mask;
-	Log(domainPtr, fragBlock, fragOffset, numFrags, FSDM_FRAG_FREE);
     }
 
     /*
@@ -1756,7 +1677,6 @@ OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset)
      * bad block file.
      */
     *bitmapPtr |= blockMask;
-    Log(domainPtr, fragBlock, 0, 4, ONLY_FRAG);
     domainPtr->summaryInfoPtr->numFreeKbytes -= 
 					FS_FRAGMENTS_PER_BLOCK - numFrags;
 
@@ -1845,7 +1765,6 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	 * numbered from zero so that the fragment number + 1 is equal to the
 	 * number of fragments in the block.
 	 */
-	logCaller = UPGRADE_FRAGMENT_1;
 	FsdmFragFind(handlePtr->hdr.fileID.minor, domainPtr, newLastFrag + 1, 
 		    curFragBlock, curFragOffset, curLastFrag + 1,
 		    &newFragBlock, &newFragOffset);
@@ -1864,7 +1783,6 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	/*
 	 * Allocate a full block.
 	 */
-	logCaller = UPGRADE_FRAGMENT_2;
 	FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr,
 		    indexInfoPtr->lastDiskBlock,
 		    TRUE, &newFragBlock, &bitmapPtr);
@@ -1900,7 +1818,6 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 		   curLastFrag + 1, fragCacheBlockPtr->blockAddr);
 	if (status != SUCCESS) {
 	    Fscache_UnlockBlock(fragCacheBlockPtr, 0, -1, 0, 0);
-	    logCaller = UPGRADE_FRAGMENT_3;
 	    FsdmFragFree(domainPtr, newLastFrag + 1, 
 		       newFragBlock, newFragOffset);
 	    goto exit;
@@ -1947,7 +1864,6 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     descPtr->flags |= FSDM_FD_DIRTY;
     *dirtiedIndexPtr = TRUE;
 
-    logCaller = UPGRADE_FRAGMENT_4;
     FsdmFragFree(domainPtr, curLastFrag + 1, curFragBlock, curFragOffset);
 
 exit:
@@ -2029,8 +1945,6 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	    /*
 	     * Fragment the last block.
 	     */
-
-	    logCaller = ALLOCATE_BLOCK_1;
 	    FsdmFragFind(handlePtr->hdr.fileID.minor, domainPtr,
 			newFragIndex + 1, -1, -1, -1,
 			&blockNum, &newFragOffset);
@@ -2047,7 +1961,6 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	     * Allocate a full block if one isn't there already.
 	     */
 	    if (blockAddr == FSDM_NIL_INDEX) {
-		logCaller = ALLOCATE_BLOCK_2;
 		FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr,
 			    indexInfoPtr->lastDiskBlock, 
 			    TRUE, &blockNum, &bitmapPtr);
@@ -2406,8 +2319,6 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	    /* 
 	     * Have a full block.
 	     */
-
-	    logCaller = FSDM_BLOCK_REALLOC_1;
 	    FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr,
 			physBlockNum / FS_FRAGMENTS_PER_BLOCK, TRUE,
 			&newBlockNum, &bitmapPtr);
@@ -2427,7 +2338,6 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	     * Have a fragment.
 	     */
 	    numFrags = (bytesInBlock - 1) / FS_FRAGMENT_SIZE + 1;
-	    logCaller = FSDM_BLOCK_REALLOC_2;
 	    FsdmFragFind(handlePtr->hdr.fileID.minor, domainPtr, numFrags,
 			-1, -1, -1, &newBlockNum, &newFragOffset);
 	    if (newBlockNum == -1) {
@@ -2602,129 +2512,4 @@ PutInBadBlockFile(handlePtr, domainPtr, blockNum)
     }
 
     Fsutil_HandleUnlock((Fs_HandleHeader *)badBlockHandlePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Log --
- *
- *	Procedure to log information about block allocation and
- *	freeing.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Information gets added to the log.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-Log(domainPtr, blockNum, frag, numFrags, location)
-    Fsdm_Domain *domainPtr;	/* Domain in which operation is occurring. */
-    int blockNum;		/* 4-kbyte block in which change was made. */
-    int frag;			/* Starting fragment of change. */
-    int numFrags;		/* Number of fragments allocated or freed. */
-    int location;		/* Constant identifying where change was
-				 * made. */
-{
-    register LogEntry *logPtr;
-
-    if (domainPtr != logDomainPtr) {
-	return;
-    }
-    if (!logEnabled) {
-	logLost++;
-	return;
-    }
-    logPtr = curPtr;
-    if ((logLost != 0) && (logCount >= 2)) {
-	logPtr->time = fsutil_TimeInSeconds;
-	logPtr->fileId = 0;
-	logPtr->blockNum = logLost;
-	logLost = 0;
-	logPtr->changedAt = LOST_RECORDS;
-	logPtr->fragNum = logPtr->numFrags = logPtr->caller = 0;
-	logPtr++;
-	logCount--;
-    }
-    logPtr->time = fsutil_TimeInSeconds;
-    logPtr->fileId = logFileId;
-    logPtr->blockNum = blockNum;
-    logPtr->fragNum = frag;
-    logPtr->numFrags = numFrags;
-    logPtr->changedAt = location;
-    logPtr->caller = logCaller;
-    curPtr = logPtr+1;
-    logCaller = 0;
-    logCount--;
-    if (logCount > 0) {
-	return;
-    }
-
-    /*
-     * Current log is full.  Switch to the other one, if it's
-     * available.  If not available, then disable logging.
-     */
-
-    MASTER_LOCK(&logLock);
-    ready[curWrite] = 1;
-    curWrite ^= 1;
-    Sync_MasterBroadcast(&logReady);
-    curPtr = &logs[curWrite][0];
-    logCount = 256;
-    if (ready[curWrite]) {
-	logEnabled = 0;
-    }
-    MASTER_UNLOCK(&logLock);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * GetLogBuffer --
- *
- *	This procedure is called from outside to (a) enable logging (if
- *	it wasn't already enabled), (b) wait for a log buffer to fill,
- *	and (c) return the full log buffer.
- *
- * Results:
- *	The return value is a count of the number of bytes stored at
- *	dest, or 0 if the operation was interrupted by a signal.
- *
- * Side effects:
- *	The log is enabled, if it wasn't previously.
- *
- *----------------------------------------------------------------------
- */
-
-int
-GetLogBuffer(handlePtr, dest)
-    Fsio_FileIOHandle *handlePtr;	/* File handle identifying domain. */
-    char *dest;				/* Where to store log bytes. */
-{
-    logDomainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-
-    /*
-     * Advance to the next read buffer, and wait for it to fill up.
-     */
-
-    MASTER_LOCK(&logLock);
-    if (!ready[curRead]) {
-	logEnabled = 1;
-	Sync_MasterWait(&logReady, &logLock, TRUE);
-    }
-    MASTER_UNLOCK(&logLock);
-    if (!ready[curRead]) {
-	return 0;
-    }
-    bcopy((char *) logs[curRead], dest, 4096);
-    ready[curRead] = 0;
-    logEnabled = 1;
-    curRead ^= 1;
-
-    return 4096;
 }
