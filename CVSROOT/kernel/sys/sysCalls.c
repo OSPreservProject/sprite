@@ -19,7 +19,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "time.h"
 #include "timer.h"
 #include "vm.h"
-#include "vmSunConst.h"
 #include "machMon.h"
 #include "proc.h"
 #include "dbg.h"
@@ -385,18 +384,7 @@ Sys_GetMachineInfo(archPtr, typePtr, clientIDPtr)
 {
 
     if (archPtr != (int *) USER_NIL) {
-#       ifdef SUN2
-	int arch = SYS_SUN2;
-#       endif SUN2
-
-#       ifdef SUN3
-	int arch = SYS_SUN3;
-#       endif SUN3
-
-#       ifdef SPUR
-	int arch = SYS_SPUR;
-#       endif SPUR
-
+	int arch = Mach_GetMachineArch();
 
 	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &arch, 
 				(Address) archPtr) != SUCCESS) {
@@ -406,11 +394,7 @@ Sys_GetMachineInfo(archPtr, typePtr, clientIDPtr)
 
     if (typePtr != (int *) USER_NIL) {
 
-#if defined(SUN2) || defined(SUN3)
 	int type = Mach_GetMachineType();
-#else
-	int type = 0;
-#endif
 
 	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &type, 
 				(Address) typePtr) != SUCCESS) {
