@@ -815,7 +815,7 @@ Fsio_PipeGetIOAttr(fileIDPtr, clientID, attrPtr)
 	attrPtr->type		= FS_LOCAL_PIPE;
 	attrPtr->size		= handlePtr->lastByte - handlePtr->firstByte +1;
 	attrPtr->devServerID	= fileIDPtr->serverID;
-	Fsutil_HandleUnlock(handlePtr);
+	Fsutil_HandleRelease(handlePtr, TRUE);
     }
     return(SUCCESS);
 }
