@@ -724,6 +724,16 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 	panic("Mach_InitSyscall: too many arguments (%d) to kernel call <%d>",
 		numArgs, callNum);
     }
+
+    /*
+     * MachArgOffsets and machArgDispatch below are used in MachSyscallTrap
+     * to do a very quick dispatch to copy arguments from the user stack
+     * to the kernel stack.  machArgOffsets is used to locate the first
+     * argument on the user's stack, and machArgDispatch is used to branch
+     * into the middle of an unwound loop to do the copy.  See the
+     * argument-copying code in MachSyscallTrap for more details.
+     */
+
     machArgOffsets[machMaxSysCall] = 8 + numArgs*4;
     machArgDispatch[machMaxSysCall] = 
 		(16-numArgs)*2 + (Address) ((unsigned int)MachFetchArgs);

@@ -203,7 +203,7 @@ MachSyscallTrap:
 	|*
 	|* Copy the arguments from user space and push them onto the
 	|* stack.  Note:  this code interacts heavily with the C code
-	|* in Mach_SyscallInit().  If you change one, be sure to change
+	|* in Mach_InitSyscall().  If you change one, be sure to change
 	|* the other.
 	|*
 
