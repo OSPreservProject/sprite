@@ -120,6 +120,7 @@ static ENTRY void    AddMigrateTime();
 static ENTRY void    AccessStats();
 static ENTRY Boolean EvictionStarted();
 static ENTRY void    WaitForEviction();
+static ENTRY ReturnStatus WaitForMigration();
 
 
 #ifdef DEBUG
@@ -1968,7 +1969,8 @@ ProcMigCommand(host, cmdPtr, inPtr, outPtr)
  *
  * Proc_WaitForMigration --
  *
- *	Monitored procedure to wait for a process to migrate.
+ *	Wait for a process to migrate.  Locks the process and
+ *	then calls a monitored procedure.
  *
  * Results:
  *	None.
@@ -1979,18 +1981,15 @@ ProcMigCommand(host, cmdPtr, inPtr, outPtr)
  *----------------------------------------------------------------------
  */
 
-ENTRY ReturnStatus
+ReturnStatus
 Proc_WaitForMigration(processID)
     Proc_PID processID;
 {
     Proc_ControlBlock *procPtr;
     ReturnStatus status;
 
-    LOCK_MONITOR;
-
     procPtr = Proc_LockPID(processID);
     if (procPtr == NULL) {
-	UNLOCK_MONITOR;
 	return(PROC_INVALID_PID);
     }
     /*
@@ -2001,9 +2000,9 @@ Proc_WaitForMigration(processID)
      */
     while (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
 	Proc_Unlock(procPtr);
-	if (Sync_Wait(&migrateCondition, TRUE)) {
-	    UNLOCK_MONITOR;
-	    return(GEN_ABORTED_BY_SIGNAL);
+        status = WaitForMigration();
+	if (status != SUCCESS) {
+	    return(status);
 	}
 	Proc_Lock(procPtr);
 	if (procPtr->processID != processID) {
@@ -2018,6 +2017,38 @@ Proc_WaitForMigration(processID)
     }
     Proc_Unlock(procPtr);
     
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitForMigration --
+ *
+ *	Monitored procedure to wait for a migration condition to be
+ *	signalled.  Higher-level locking actually guarantees that
+ *	a process has actually migrated.
+ *
+ * Results:
+ *	SUCCESS, or GEN_ABORTED_BY_SIGNAL.	
+ *
+ * Side effects:
+ *	Puts current process to sleep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ENTRY ReturnStatus
+WaitForMigration()
+{
+    ReturnStatus status;
+    LOCK_MONITOR;
+	if (Sync_Wait(&migrateCondition, TRUE)) {
+	    status = GEN_ABORTED_BY_SIGNAL;
+	} else {
+	    status = SUCCESS;
+	}
     UNLOCK_MONITOR;
     return(status);
 }
