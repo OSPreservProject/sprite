@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "vmMach.h"
+#include "mach.h"
 #include "netIE.h"
 #include "net.h"
 #include "netInt.h"
@@ -48,6 +49,136 @@ Address		netIERecvBuffers[NET_IE_NUM_RECV_BUFFERS];
 
 static 	List_Links	xmitListHdr;
 static 	List_Links	xmitFreeListHdr;
+
+/*
+ * Setup state for probing the existence of the device
+ */
+static Mach_SetJumpState setJumpState;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEInit --
+ *
+ *	Initialize the Intel Ethernet chip.
+ *
+ * Results:
+ *	TRUE if the Intel controller was found and initialized,
+ *	FALSE otherwise.
+ *
+ * Side effects:
+ *	Initializes the netEtherFuncs record, as well as the chip.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+NetIEInit(name, number, ctrlAddr)
+    char *name;
+    int number;
+    unsigned int ctrlAddr;
+{
+    int 	i;
+    List_Links	*itemPtr;
+
+    DISABLE_INTR();
+
+    netIEState.running = FALSE;
+
+    /*
+     * The onboard control register is at a pre-defined kernel virtual
+     * address.  The virtual mapping is set up by the sun PROM monitor
+     * and passed to us from the netInterface table.
+     */
+
+    netIEState.controlReg = (NetIEControlRegister *) ctrlAddr;
+
+    if (Mach_SetJump(&setJumpState) == SUCCESS) {
+	/*
+	 * Poke the controller by resetting it.
+	 */
+	*(char *)netIEState.controlReg = 0;
+    } else {
+	/*
+	 * Got a bus error.
+	 */
+	Mach_UnsetJump();
+	ENABLE_INTR();
+	return(FALSE);
+    }
+    Mach_UnsetJump();
+
+    /*
+     * Initialize the transmission list.  
+     */
+
+    netIEState.xmitList = &xmitListHdr;
+    List_Init(netIEState.xmitList);
+
+    netIEState.xmitFreeList = &xmitFreeListHdr;
+    List_Init(netIEState.xmitFreeList);
+
+    for (i = 0; i < NET_IE_NUM_XMIT_ELEMENTS; i++) {
+	itemPtr = (List_Links *) Vm_RawAlloc(sizeof(NetXmitElement)), 
+	List_InitElement(itemPtr);
+	List_Insert(itemPtr, LIST_ATREAR(netIEState.xmitFreeList));
+    }
+
+    /*
+     * Get ethernet address out of the rom.  It is stored in a normal order
+     * even though the chip is wired backwards because fortunately the chip
+     * stores the ethernet address backwards from how we store it.  Therefore
+     * two backwards makes one forwards, right?
+     */
+
+    Mach_GetEtherAddress(&netIEState.etherAddress);
+    Sys_Printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
+	      netIEState.etherAddress.byte1 & 0xff,
+	      netIEState.etherAddress.byte2 & 0xff,
+	      netIEState.etherAddress.byte3 & 0xff,
+	      netIEState.etherAddress.byte4 & 0xff,
+	      netIEState.etherAddress.byte5 & 0xff,
+	      netIEState.etherAddress.byte6 & 0xff);
+    /*
+     * Allocate space for the System Configuration Pointer.
+     */
+
+    VmMach_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    netIEState.sysConfPtr = (NetIESysConfPtr *) NET_IE_SYS_CONF_PTR_ADDR;
+
+    /*
+     * Allocate space for all of the receive buffers.
+     */
+
+    for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
+	netIERecvBuffers[i] = Vm_RawAlloc(NET_IE_RECV_BUFFER_SIZE);
+    }
+
+    /*
+     * Reset the world.
+     */
+
+    NetIEReset();
+
+    /*
+     * Unmap the extra page.
+     */
+
+    VmMach_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+
+    /*
+     * Now we are running.
+     */
+
+    netIEState.running = TRUE;
+    netEtherFuncs.init	 = NetIEInit;
+    netEtherFuncs.output = NetIEOutput;
+    netEtherFuncs.intr   = NetIEIntr;
+    netEtherFuncs.reset  = NetIERestart;
+
+    ENABLE_INTR();
+}
 
 
 /*
@@ -285,107 +416,6 @@ NetIEReset()
      */
 
     NetIEXmitInit();
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NetIEInit --
- *
- *	Initialize the Intel Ethernet chip.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NetIEInit()
-{
-    int 	i;
-    List_Links	*itemPtr;
-
-    DISABLE_INTR();
-
-    netIEState.running = FALSE;
-
-    /*
-     * Initialize the transmission list.  
-     */
-
-    netIEState.xmitList = &xmitListHdr;
-    List_Init(netIEState.xmitList);
-
-    netIEState.xmitFreeList = &xmitFreeListHdr;
-    List_Init(netIEState.xmitFreeList);
-
-    for (i = 0; i < NET_IE_NUM_XMIT_ELEMENTS; i++) {
-	itemPtr = (List_Links *) Vm_RawAlloc(sizeof(NetXmitElement)), 
-	List_InitElement(itemPtr);
-	List_Insert(itemPtr, LIST_ATREAR(netIEState.xmitFreeList));
-    }
-
-    /*
-     * The onboard control register is at this magic address.  This is set up
-     * by the monitor.
-     */
-
-    netIEState.controlReg = (NetIEControlRegister *) NET_IE_CONTROL_REG_ADDR;
-
-    /*
-     * Get ethernet address out of the rom.  It is stored in a normal order
-     * even though the chip is wired backwards because fortunately the chip
-     * stores the ethernet address backwards from how we store it.  Therefore
-     * two backwards makes one forwards, right?
-     */
-
-    Mach_GetEtherAddress(&netIEState.etherAddress);
-    Sys_Printf("Ethernet address %x:%x:%x:%x:%x:%x\n",
-	      netIEState.etherAddress.byte1 & 0xff,
-	      netIEState.etherAddress.byte2 & 0xff,
-	      netIEState.etherAddress.byte3 & 0xff,
-	      netIEState.etherAddress.byte4 & 0xff,
-	      netIEState.etherAddress.byte5 & 0xff,
-	      netIEState.etherAddress.byte6 & 0xff);
-    /*
-     * Allocate space for the System Configuration Pointer.
-     */
-
-    VmMach_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
-    netIEState.sysConfPtr = (NetIESysConfPtr *) NET_IE_SYS_CONF_PTR_ADDR;
-
-    /*
-     * Allocate space for all of the receive buffers.
-     */
-
-    for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
-	netIERecvBuffers[i] = Vm_RawAlloc(NET_IE_RECV_BUFFER_SIZE);
-    }
-
-    /*
-     * Reset the world.
-     */
-
-    NetIEReset();
-
-    /*
-     * Unmap the extra page.
-     */
-
-    VmMach_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
-
-    /*
-     * Now we are running.
-     */
-
-    netIEState.running = TRUE;
-
-    ENABLE_INTR();
 }
 
 
