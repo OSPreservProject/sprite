@@ -38,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <machparam.h>
 #include <string.h>
 #include <fspdev.h>
+#include <recov.h>
 
 extern Boolean fsconsist_ClientCachingEnabled;
 
