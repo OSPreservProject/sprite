@@ -86,11 +86,12 @@ Boolean traceLog_Disable = TRUE;
  */
 
 void
-TraceLog_Init(tracePtr, numBuffers, size, flags)
+TraceLog_Init(tracePtr, numBuffers, size, flags, version)
     register TraceLog_Header *tracePtr;	/* pointer to tracing info */
     int numBuffers;			/* number of buffers to allocate */
     int size;				/* size of each buffer area */
     int flags;				/* TRACELOG_NO_TIMES */
+    char version;
 {
     int i;
     Time time;
@@ -109,7 +110,9 @@ TraceLog_Init(tracePtr, numBuffers, size, flags)
     tracePtr->totalLostRecords = 0;
     tracePtr->hdr.machineID = rpc_SpriteID;
     strncpy(tracePtr->hdr.machineType, mach_MachineType, SYS_TRACELOG_TYPELEN);
-    strncpy(tracePtr->hdr.kernel, SpriteVersion(), SYS_TRACELOG_KERNELLEN);
+    tracePtr->hdr.kernel[0] = version;
+    tracePtr->hdr.kernel[1] = '/';
+    strncpy(tracePtr->hdr.kernel+2, SpriteVersion(), SYS_TRACELOG_KERNELLEN-2);
     Timer_GetRealTimeOfDay(&time, (int *)NIL, (Boolean *)NIL);
     Timer_GetCurrentTicks(&ticks);
     Timer_SubtractTicks(*(Time *)&time, *(Time *)&ticks,

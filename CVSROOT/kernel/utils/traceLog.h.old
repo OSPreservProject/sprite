@@ -64,7 +64,7 @@ typedef struct TraceLog_Buffer {
 
 extern void		TraceLog_Init _ARGS_((TraceLog_Header *traceLogHdrPtr,
 					   int numBuffers, int size,
-					   int flags));
+					   int flags, char version));
 extern void		TraceLog_Insert _ARGS_((TraceLog_Header *traceHdrPtr,
 					     Address dataPtr, int size,
 					     int flags));
