@@ -152,4 +152,4 @@ extern	Address	VmMach_NetMemAlloc();
 extern	void	VmMach_NetMapPacket();
 #endif
 
-#endif _VMMACH
+#endif /* _VMMACH */

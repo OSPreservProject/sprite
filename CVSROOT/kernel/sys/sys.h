@@ -56,4 +56,4 @@ extern	ReturnStatus	Sys_DoNothing();
 extern	ReturnStatus	Sys_Shutdown();
 extern	ReturnStatus	Sys_GetMachineInfo();
 
-#endif _SYS
+#endif /* _SYS */

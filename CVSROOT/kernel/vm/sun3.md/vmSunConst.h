@@ -253,4 +253,4 @@
  */
 #define	VMMACH_MAP_SEG_ADDR		(0xE000000 - VMMACH_SEG_SIZE)
 
-#endif _VMSUN3CONST
+#endif /* _VMSUN3CONST */
