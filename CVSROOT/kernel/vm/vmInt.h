@@ -444,11 +444,6 @@ typedef struct VmCore {
 #define	VM_DONT_FREE_UNTIL_CLEAN	0x10
 
 /*
- * The name of the swap directory.
- */
-#define	VM_SWAP_DIR_NAME	"/swap/"
-
-/*
  * Copy-on-write info struct.
  */
 typedef struct VmCOWInfo {
