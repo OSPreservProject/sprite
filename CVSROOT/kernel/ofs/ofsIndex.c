@@ -76,7 +76,8 @@ Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
     register Fsdm_BlockIndexInfo *indexInfoPtr; /* Index structure to initialize.*/
     int			      flags;	     /* FSDM_ALLOC_INDIRECT_BLOCKS,
 						FSDM_DELETE_INDIRECT_BLOCKS,
-						FSDM_DELETE_EVERYTHING */
+						FSDM_DELETE_EVERYTHING,
+						FSCACHE_DONT_BLOCK */
 {
     register Fsdm_FileDescriptor 	*descPtr;
     int			      	indirectBlock;
@@ -468,6 +469,9 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
     ReturnStatus		status = SUCCESS;
     register Fsdm_IndirectInfo	*indInfoPtr;
     register int		*intPtr;
+    Boolean			dontBlock;
+
+    dontBlock = indexInfoPtr->flags & FSCACHE_DONT_BLOCK;
 
     indInfoPtr = &(indexInfoPtr->indInfo[indBlockNum]);
     if (indInfoPtr->blockPtr == (Fscache_Block *) NIL) {
@@ -481,7 +485,10 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 	    *blockAddrPtr = blockNum * FS_FRAGMENTS_PER_BLOCK;
 	    handlePtr->descPtr->numKbytes += FS_FRAGMENTS_PER_BLOCK;
 	    Fscache_FetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
-			FSCACHE_IND_BLOCK, &(indInfoPtr->blockPtr), &found);
+		FSCACHE_IND_BLOCK|dontBlock, &(indInfoPtr->blockPtr), &found);
+	    if (indInfoPtr->blockPtr == (Fscache_Block *)NIL) {
+		return(FS_WOULD_BLOCK);
+	    }
 	    if (found) {
 		/*
 		 * The block should not be in the cache since we are just
@@ -500,7 +507,10 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 	} else {
 	    fs_Stats.blockCache.indBlockAccesses++;
 	    Fscache_FetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
-			FSCACHE_IND_BLOCK, &(indInfoPtr->blockPtr), &found);
+		FSCACHE_IND_BLOCK|dontBlock, &(indInfoPtr->blockPtr), &found);
+	    if (indInfoPtr->blockPtr == (Fscache_Block *)NIL) {
+		return(FS_WOULD_BLOCK);
+	    }
 	    if (!found) {
 		status = Fsio_DeviceBlockIO(FS_READ,
 			&(indexInfoPtr->domainPtr->headerPtr->device), 
