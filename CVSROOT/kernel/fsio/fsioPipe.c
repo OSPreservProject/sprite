@@ -280,8 +280,7 @@ Fsio_PipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	Fsutil_HandleUnlock(handlePtr);
     } else {
 	PIPE_CLOSE(streamPtr, handlePtr);
-	status = PipeCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
-			      (flags & FS_EXECUTE) != 0, TRUE);
+	status = PipeCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0, TRUE);
 	if (status != FS_FILE_REMOVED) {
 	    Fsutil_HandleRelease(handlePtr, TRUE);
 	}
