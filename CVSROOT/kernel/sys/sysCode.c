@@ -11,11 +11,11 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-
 #include "sprite.h"
 #include "dbg.h"
 #include "machine.h"
 #include "sys.h"
+#include "rpc.h"
 #include "sync.h"
 #include "sched.h"
 #include "proc.h"
@@ -115,7 +115,7 @@ Sys_Init()
 int
 Sys_GetHostId()
 {
-    return(Rpc_GetClientId());
+    return(rpc_SpriteID);
 }
 
 
