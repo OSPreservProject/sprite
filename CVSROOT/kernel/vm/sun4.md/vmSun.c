@@ -1,4 +1,5 @@
-/* vmSunMach.c -
+/*
+ * vmSun.c -
  *
  *     	This file contains all hardware-dependent vm C routines for Sun2's, 3's 
  *	and 4's.  I will not attempt to explain the Sun mapping hardware in 
@@ -46,19 +47,17 @@ static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
 
 #endif
 
+#ifndef sun4c
 /*
- * For debugging stuff, put values into a circular buffer.  After each value,
- * stamp a special mark, which gets overwritten by next value, so we
- * always know where the end of the list is.
+ * Macros to translate from a virtual page to a physical page and back.
+ * For the sun4c, these are no longer macros, since they are much more
+ * complicated due to physical memory no longer being contiguous.  For
+ * speed perhaps someday they should be converted to complicated macros
+ * instead of functions.
  */
-extern	int	debugCounter;
-extern	int	debugSpace[];
-#define DEBUG_ADD(thing)        \
-    debugSpace[debugCounter++] = (int)(thing);  \
-    if (debugCounter >= 500) {  \
-        debugCounter = 0;       \
-    }                           \
-    debugSpace[debugCounter] = (int)(0x11100111);
+#define VirtToPhysPage(pfNum) ((pfNum) << VMMACH_CLUSTER_SHIFT)
+#define PhysToVirtPage(pfNum) ((pfNum) >> VMMACH_CLUSTER_SHIFT)
+#endif
 
 extern	Address	vmStackEndAddr;
 
@@ -247,26 +246,21 @@ static	List_Links   	*contextList = &contextListHeader;
 static	VmMachPTE		*refModMap;
 
 /*
- * Macros to translate from a virtual page to a physical page and back.
- */
-#define	VirtToPhysPage(pfNum) ((pfNum) << VMMACH_CLUSTER_SHIFT)
-#define	PhysToVirtPage(pfNum) ((pfNum) >> VMMACH_CLUSTER_SHIFT)
-
-/*
  * Macro to get a pointer into a software segment's hardware segment table.
  */
 #define GetHardSegPtr(machPtr, segNum) \
     ((machPtr)->segTablePtr + (segNum) - (machPtr)->offset)
 
 /*
- * The maximum amount of kernel code + data available.
- * Mike, where did you get these magic numbers???
+ * The maximum amount of kernel code + data available.  This is set to however
+ * big you want it to be to make sure that the kernel heap has enough memory
+ * for all the file handles, etc.
  */
 #ifdef sun2
 int	vmMachKernMemSize = 2048 * 1024;
 #endif
 #ifdef sun3
-int	vmMachKernMemSize = 8192 * 1024;
+int     vmMachKernMemSize = 8192 * 1024;
 #endif
 #ifdef sun4
 int	vmMachKernMemSize = 32 * 1024 * 1024;
@@ -293,6 +287,32 @@ Address			vmMachPMEGSegAddr;
 
 static	Boolean		printedSegTrace;
 static	PMEG		*tracePMEGPtr;
+
+#ifdef sun4c
+/*
+ * Structure for mapping virtual page frame numbers to physical page frame
+ * numbers and back for each memory board.
+ */
+typedef struct	{
+    unsigned int	endVirPfNum;	/* Ending virtual page frame nmber
+					 * on board. */
+    unsigned int	startVirPfNum;	/* Starting virtual page frame number
+					 * on board. */
+    unsigned int	physStartAddr;	/* Physical address of page frame. */
+    unsigned int	physEndAddr;	/* End physical address of page frame.*/
+} Memory_Board;
+
+/*
+ * Pointer to board after last configured Memory board structure.
+ */
+static	Memory_Board	*lastMemBoard;
+
+/*
+ * Memory_Board structures for each board in the system.  This array is sorted
+ * by endVirPfNum.
+ */
+static	Memory_Board	Mboards[6];
+#endif /* sun4c */
 
 
 /*
@@ -326,11 +346,39 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     register int	i;
     int			kernPages;
     int			numPages;
+#ifdef sun4c
+    Mach_MemList	*memPtr;
+    int			nextVframeNum, numFrames;
+#endif
 
 #ifdef multiprocessor
     Sync_SemInitDynamic(&vmMachMutex, "Vm:vmMachMutex");
 #endif
 
+#ifdef sun4c
+    /*
+     * Initialize the physical to virtual page mappings, since memory isn't
+     * contiguous.
+     */
+    lastMemBoard = Mboards;
+    nextVframeNum = 0;
+    for (memPtr = *(romVectorPtr->availMemory); memPtr != (Mach_MemList *) 0;
+	    memPtr = memPtr->next) {
+	if (memPtr->size != 0) {
+	    numFrames = memPtr->size / VMMACH_PAGE_SIZE;
+	    lastMemBoard->startVirPfNum = nextVframeNum;
+	    lastMemBoard->endVirPfNum = nextVframeNum + numFrames;
+	    nextVframeNum += numFrames;
+	    lastMemBoard->physStartAddr = memPtr->address >> VMMACH_PAGE_SHIFT;
+	    lastMemBoard->physEndAddr = lastMemBoard->physStartAddr + numFrames;
+	    lastMemBoard++;
+	}
+    }
+    if (lastMemBoard == Mboards) {
+	panic("No memory boards in system configuration.");
+    }
+#endif
+    
     kernPages = vmMachKernMemSize / VMMACH_PAGE_SIZE_INT;
     /*
      * Map all of the kernel memory that we might need one for one.  We know
@@ -382,9 +430,11 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
  * GetNumPages --
  *
  *     Determine how many pages of physical memory there are.
+ *     For the sun4c, this determines how many physical pages of memory
+ *     are available after the prom has grabbed some.
  *
  * Results:
- *     The number of physical pages.
+ *     The number of physical pages available.
  *
  * Side effects:
  *     None.
@@ -394,12 +444,115 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
 int
 GetNumPages()
 {
-#ifdef sun2
-    return(*romVectorPtr->memorySize / VMMACH_PAGE_SIZE);
+#ifdef sun4c
+    int	memory = 0;
+    Mach_MemList	*memPtr;
+
+    for (memPtr = *(romVectorPtr->availMemory); memPtr != (Mach_MemList *) 0;
+	    memPtr = memPtr->next) {
+	memory += memPtr->size;
+    }
+    return (memory / VMMACH_PAGE_SIZE);
 #else
-    return(*romVectorPtr->memoryAvail / VMMACH_PAGE_SIZE);
+    return (*romVectorPtr->memoryAvail / VMMACH_PAGE_SIZE);
 #endif
 }
+
+#ifdef sun4c
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VirtToPhysPage --
+ *
+ *     Translate from a virtual page to a physical page.
+ *     This was a macro on the other suns, but for the sun4c, physical
+ *     memory isn't contiguous.
+ *
+ * Results:
+ *     An address.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+VirtToPhysPage(pfNum)
+    int		pfNum;
+{
+    register	Memory_Board	*mb;
+
+    for (mb = Mboards; mb < lastMemBoard; mb++) {
+	if (pfNum < mb->endVirPfNum) {
+	    break;
+	}
+    }
+    return (mb->physStartAddr + pfNum - mb->startVirPfNum);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PhysToVirtPage --
+ *
+ *     Translate from a physical page to a virtual page.
+ *     This was a macro on the other suns, but for the sun4c, physical
+ *     memory isn't contiguous.
+ *
+ * Results:
+ *     An address.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+PhysToVirtPage(pfNum)
+    int		pfNum;
+{
+    register	Memory_Board	*mb;
+
+    for (mb = Mboards; mb < lastMemBoard; mb++) {
+	if (pfNum >= mb->physStartAddr && pfNum < mb->physEndAddr) {
+	    break;
+	}
+    }
+    return (pfNum - mb->physStartAddr + mb->startVirPfNum);
+}
+#endif /* sun4c */
+
+#ifdef sun4c
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMachSetSegMapInContext --
+ *
+ *	Set the segment map in a context that may not yet be mapped without
+ *	causing a fault.  So far, this is only useful on the sun4c.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The segment map in another context is modified..
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMachSetSegMapInContext(context, addr, pmeg)
+    unsigned	char	context;
+    Address		addr;
+    unsigned	char	pmeg;
+{
+    romVectorPtr->SetSegInContext(context, addr, pmeg);
+    return;
+}
+#endif /* sun4c */
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -511,10 +664,10 @@ VmMach_Init(firstFreePage)
 #else
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
 #endif NOTDEF
-			  i * VMMACH_CLUSTER_SIZE;
+			  VirtToPhysPage(i) * VMMACH_CLUSTER_SIZE;
 	} else {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
-			  i * VMMACH_CLUSTER_SIZE;
+			  VirtToPhysPage(i) * VMMACH_CLUSTER_SIZE;
 #ifdef sun4
 	    if (virtAddr >= vmStackEndAddr) {
 		pte |= VMMACH_DONT_CACHE_BIT;
@@ -527,14 +680,14 @@ VmMach_Init(firstFreePage)
     /*
      * Protect the bottom of the kernel stack.
      */
-    SET_ALL_PAGE_MAP((Address)mach_StackBottom, (VmMachPTE)0);
+    SET_ALL_PAGE_MAP((Address)mach_StackBottom, (VmMachPTE)VirtToPhysPage(0));
 
     /*
      * Invalid until the end of the last segment
      */
     for (;virtAddr < (Address) (firstFreeSegment << VMMACH_SEG_SHIFT);
 	 virtAddr += VMMACH_PAGE_SIZE) {
-	SET_ALL_PAGE_MAP(virtAddr, (VmMachPTE)0);
+	SET_ALL_PAGE_MAP(virtAddr, (VmMachPTE)VirtToPhysPage(0));
     }
 
     /* 
@@ -547,20 +700,44 @@ VmMach_Init(firstFreePage)
      * Finally copy the kernel's context to each of the other contexts.
      */
     for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+	int	segNum;
+	unsigned short	pmeg;
+
 	if (i == VMMACH_KERN_CONTEXT) {
 	    continue;
 	}
+#ifndef sun4c
 	VmMachSetUserContext(i);
-	for (virtAddr = (Address)mach_KernStart,
+	for (segNum = ((unsigned int) mach_KernStart) / VMMACH_SEG_SIZE,
 		 segTablePtr = vm_SysSegPtr->machPtr->segTablePtr;
-	     virtAddr < (Address)(VMMACH_NUM_SEGS_PER_CONTEXT*VMMACH_SEG_SIZE);
-	     virtAddr += VMMACH_SEG_SIZE, segTablePtr++) {
+		 segNum < VMMACH_NUM_SEGS_PER_CONTEXT;
+		 segNum++, segTablePtr++) {
+
+	    virtAddr = (Address) (segNum * VMMACH_SEG_SIZE);
 	    /*
 	     * No need to flush stuff since the other contexts haven't
 	     * been used yet.
 	     */
 	    VmMachSetSegMap(virtAddr, *segTablePtr);
 	}
+#else
+	/*
+	 * For the sun4c, there is currently a problem just copying things
+	 * out of the segTable, so do it from the real hardware.  I need to
+	 * figure out what's wrong.
+	 */
+	for (segNum = ((unsigned int) mach_KernStart) / VMMACH_SEG_SIZE;
+		 segNum < VMMACH_NUM_SEGS_PER_CONTEXT; segNum++) {
+
+	    virtAddr = (Address) (segNum * VMMACH_SEG_SIZE);
+	    if (virtAddr >= (Address) VMMACH_BOTTOM_OF_HOLE && 
+		    virtAddr <= (Address) VMMACH_TOP_OF_HOLE) {
+		continue;
+	    }
+	    pmeg = VmMachGetSegMap(virtAddr);
+	    VmMachSetSegMapInContext((unsigned char) i, virtAddr, pmeg);
+	}
+#endif
     }
     VmMachSetUserContext(VMMACH_KERN_CONTEXT);
     if (Mach_GetMachineType() == SYS_SUN_3_50) {
@@ -586,7 +763,9 @@ VmMach_Init(firstFreePage)
      * Turn on caching.
      */
     VmMachClearCacheTags();
+#ifndef sun4c
     VmMachInitAddrErrorControlReg();
+#endif
     VmMachInitSystemEnableReg();
 }
 
@@ -676,10 +855,22 @@ MMUInit(firstFreeSegment)
 	for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
 	    Address	addr;
 
+#ifndef sun4c
 	    VmMachSetUserContext(j);
+#endif
 	    addr = (Address) (i << VMMACH_SEG_SHIFT);
 	    /* Yes, do this here since user stuff would be double mapped. */
+#ifndef sun4c
 	    VmMachSetSegMap(addr, VMMACH_INV_PMEG);
+#else
+#ifdef NOTDEF
+	    /*
+	     * Why is this notdef'd?  I must invalidate the stuff sometime!
+	     */
+	    VmMachSetSegMapInContext((unsigned char) j, addr,
+		    (unsigned char) VMMACH_INV_PMEG);
+#endif
+#endif
 	}
     }
     VmMachSetUserContext(VMMACH_KERN_CONTEXT);
@@ -1048,8 +1239,7 @@ SegDelete(segPtr)
 /*
  *----------------------------------------------------------------------
  *
- * VmMach_GetC
- ontext --
+ * VmMach_GetContext --
  *
  *	Return the context for a process, given its pcb.
  *
@@ -1911,10 +2101,18 @@ VmMach_NetMemAlloc(numBytes)
 	netLastPage++;
 	virtAddr = (Address) (netLastPage << VMMACH_PAGE_SHIFT);
 	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT |
+#ifdef sun4c
+	      /*
+	       * SunOS doesn't allow the network pages to be cached for the
+	       * sun4c.  I should check if this is really a problem or not.
+	       */
+	      VMMACH_DONT_CACHE_BIT | 
+#endif
 	      VirtToPhysPage(Vm_KernPageAllocate());
 	SET_ALL_PAGE_MAP(virtAddr, pte);
     }
 
+    bzero(retAddr, numBytes);
     return(retAddr);
 }
 
@@ -2101,18 +2299,12 @@ VmMachTestCacheFlush()
     /* first addr's pte */
     pte1 = VmMachGetPageMap(virtAddr1);
     pte2 = VmMachGetPageMap(virtAddr1 + 254);
-    DEBUG_ADD(0x11111111);
-    DEBUG_ADD(virtAddr1);
-    DEBUG_ADD(pte1);
-    DEBUG_ADD(pte2);
 
     /* second addr at second page */
     virtAddr2 = (Address) (bigBuf + VMMACH_PAGE_SIZE_INT);
     /* save second addr's pte */
     savePte1 = VmMachGetPageMap(virtAddr2);
     savePte2 = VmMachGetPageMap(virtAddr2 + 254);
-    DEBUG_ADD(virtAddr2);
-    DEBUG_ADD(savePte2);
 
     /* flush second page's virtAddrs out of cache */
     VmMachFlushPage(virtAddr2);
@@ -2124,13 +2316,10 @@ VmMachTestCacheFlush()
     /* get current virtAddr1 value */
     saveValue11 = *virtAddr1;
     endSave11 = *(virtAddr1 + 254);
-    DEBUG_ADD(saveValue11);
-    DEBUG_ADD(endSave11);
 
     /* get current virtAddr2 value - after flush, so really from memory */
     saveValue21 = *virtAddr2;
     endSave21 = *(virtAddr2 + 254);
-    DEBUG_ADD(endSave21);
 
     /* flush virtAddr2 from memory again */
     VmMachFlushPage(virtAddr2);
@@ -2139,14 +2328,10 @@ VmMachTestCacheFlush()
     /* is something weird?  saveValue12 should equal saveValue11 */
     saveValue12 = *virtAddr1;
     endSave12 = *(virtAddr1 + 254);
-    DEBUG_ADD(saveValue12);
-    DEBUG_ADD(endSave12);
 
     /* give virtAddr1 new value */
     *virtAddr1 = ~saveValue11;
     *(virtAddr1 + 254) = ~endSave11;
-    DEBUG_ADD(*virtAddr1);
-    DEBUG_ADD(*(virtAddr1 + 254));
 
     /* should only be in cache */
     saveValue3 = *virtAddr2;
@@ -2167,8 +2352,6 @@ VmMachTestCacheFlush()
     /* Did it get to memory? */
     saveValue22 = *virtAddr2;
     endSave22 = *(virtAddr2 + 254);
-    DEBUG_ADD(saveValue22);
-    DEBUG_ADD(endSave22);
 
     /* restore pte of second addr */
     VmMachSetPageMap(virtAddr2, savePte1);
@@ -2228,8 +2411,14 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (fromAddr) >> VMMACH_SEG_SHIFT;
 #ifdef sun4
+    /*
+     * Since this is a cross-address-space copy, we must make sure everything
+     * has been flushed to the stack from our windows so that we don't
+     * allow windows to be flushed after the copy and overwrite stuff?
+     */
     MachFlushWindowsToStack();
 #endif
+
     /*
      * Do a hardware segments worth at a time until done.
      */
@@ -2326,9 +2515,6 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     machPtr = fromProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (toAddr) >> VMMACH_SEG_SHIFT;
-#ifdef sun4
-    MachFlushWindowsToStack();
-#endif
     /*
      * Do a hardware segments worth at a time until done.
      */
@@ -3541,7 +3727,7 @@ VmMach_DMAFree(numBytes, mapAddr)
     for (j = 0; j < numPages; j++) {
 	dmaPageBitMap[i + j] = 0;	/* free page */
 	VmMachFlushPage(mapAddr);
-	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) 0);
+	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) VirtToPhysPage(0));
 	(unsigned int) mapAddr += VMMACH_PAGE_SIZE_INT;
     }
     return;
@@ -3610,13 +3796,13 @@ ReturnStatus
 VmMach_MapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr,
 			 realVirtAddrPtr) 
     unsigned int	kernelVirtAddr;		/* Kernel virtual address
-						 * to map in. */
+					 	 * to map in. */
     int	numBytes;				/* Number of bytes to map. */
-    unsigned int	userVirtAddr;		/* User virtual address to
-						 * attempt to start mapping
+    unsigned int	userVirtAddr; 		/* User virtual address to
+					 	 * attempt to start mapping
 						 * in at. */
     unsigned int	*realVirtAddrPtr;	/* Where we were able to start
-						 * mapping at. */
+					 	 * mapping at. */
 {
     int				numSegs;
     int				firstPage;
@@ -3671,11 +3857,12 @@ VmMach_MapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr,
 		(unsigned int)userVirtAddr >> VMMACH_SEG_SHIFT),
 		numSegs * sizeof (short));
     for (i = 0; i < numSegs * VMMACH_NUM_PAGES_PER_SEG_INT; i++) {
-        pte = VmMachGetPageMap(kernelVirtAddr + (i * VMMACH_PAGE_SIZE_INT));
-        pte &= ~VMMACH_KR_PROT;
-        pte |= VMMACH_URW_PROT;
-        VmMachSetPageMap(kernelVirtAddr + (i * VMMACH_PAGE_SIZE_INT), pte);
+	pte = VmMachGetPageMap(kernelVirtAddr + (i * VMMACH_PAGE_SIZE_INT));
+	pte &= ~VMMACH_KR_PROT;
+	pte |= VMMACH_URW_PROT;
+	VmMachSetPageMap(kernelVirtAddr + (i * VMMACH_PAGE_SIZE_INT), pte);
     }
+
     /*
      * Make sure this process never migrates.
      */

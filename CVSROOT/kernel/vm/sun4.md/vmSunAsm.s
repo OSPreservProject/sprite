@@ -45,7 +45,11 @@ _VmMachReadPTE:
      */
     set		_vmMachPTESegAddr, %OUT_TEMP1	/* Get access address */
     ld		[%OUT_TEMP1], %OUT_TEMP1
+#ifdef sun4c
+    stba	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE /* Write seg map entry */
+#else
     stha	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE /* Write seg map entry */
+#endif
 
     /*
      * Get the page map entry.
@@ -84,7 +88,11 @@ _VmMachWritePTE:
      */
     set		_vmMachPTESegAddr, %OUT_TEMP1	/* Get access address */
     ld		[%OUT_TEMP1], %OUT_TEMP1
+#ifdef sun4c
+    stba	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE /* Write seg map entry */
+#else
     stha	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE /* Write seg map entry */
+#endif
 
     /*
      * Set the page map entry.
@@ -151,7 +159,11 @@ _VmMachGetSegMap:
     set		VMMACH_SEG_MAP_MASK, %OUT_TEMP1
     and		%o0, %OUT_TEMP1, %o0	/* Get relevant bits. */
 /* Is this necessary? */
+#ifdef sun4c
+    lduba	[%o0] VMMACH_SEG_MAP_SPACE, %RETURN_VAL_REG	/* read it */
+#else
     lduha	[%o0] VMMACH_SEG_MAP_SPACE, %RETURN_VAL_REG	/* read it */
+#endif
 
     retl		/* Return from leaf routine */
     nop
@@ -212,7 +224,11 @@ _VmMachPMEGZero:
     /* Write segment map entry */
     set		_vmMachPMEGSegAddr, %OUT_TEMP1
     ld		[%OUT_TEMP1], %OUT_TEMP1
+#ifdef sun4c
+    stba	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE
+#else
     stha	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE
+#endif
 
     /*
      * Now zero out all page table entries.  %OUT_TEMP1 is starting address
@@ -267,7 +283,11 @@ _VmMachReadAndZeroPMEG:
      */
     set		_vmMachPMEGSegAddr, %OUT_TEMP1
     ld		[%OUT_TEMP1], %OUT_TEMP1
+#ifdef sun4c
+    stba	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE	/* Write PMEG */
+#else
     stha	%o0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE	/* Write PMEG */
+#endif
 
     set		VMMACH_NUM_PAGES_PER_SEG_INT, %OUT_TEMP2
 KeepZeroing2:
@@ -318,7 +338,11 @@ _VmMachTracePMEG:
     /* OUT_TEMP1 is addr */
     set		_vmMachPMEGSegAddr, %OUT_TEMP1
     ld		[%OUT_TEMP1], %OUT_TEMP1
+#ifdef sun4c
+    stba	%i0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE	/* Write pmeg */
+#else
     stha	%i0, [%OUT_TEMP1] VMMACH_SEG_MAP_SPACE	/* Write pmeg */
+#endif
 
     /* o1 is counter = second param */
     set		VMMACH_NUM_PAGES_PER_SEG_INT, %o1
@@ -380,11 +404,11 @@ SkipPage:
  */
 .globl	_VmMachSetSegMap
 _VmMachSetSegMap:
-#ifdef NOTDEF
-    set		VMMACH_SEG_MAP_MASK, %OUT_TEMP1
-    and		%o0, %OUT_TEMP1,  %o0	/* mask out low bits of addr */
-#endif NOTDEF
+#ifdef sun4c
+    stba	%o1, [%o0] VMMACH_SEG_MAP_SPACE		/* write value to map */
+#else
     stha	%o1, [%o0] VMMACH_SEG_MAP_SPACE		/* write value to map */
+#endif
 
     retl	/* return from leaf routine */
     nop
@@ -440,7 +464,11 @@ copyLoop:
     call	_panic, 1
     nop
 GoAheadAndCopy:
+#ifdef sun4c
+    stba	%OUT_TEMP1, [%o1] VMMACH_SEG_MAP_SPACE
+#else
     stha	%OUT_TEMP1, [%o1] VMMACH_SEG_MAP_SPACE
+#endif
 SkipStore:
     add		%o0, 2, %o0		/* increment address to copy from */
     set		VMMACH_SEG_SIZE, %OUT_TEMP2
@@ -611,12 +639,6 @@ _VmMachSetKernelContext:
     retl			/* Return from leaf routine */
     nop
 
-#ifdef sun4c
-.globl	_VmMachInitSystemEnableReg
-_VmMachInitSystemEnableReg:
-    retl			/* Return from leaf routine */
-    nop
-#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -638,18 +660,17 @@ _VmMachInitSystemEnableReg:
 _VmMachInitSystemEnableReg:
     set		VMMACH_SYSTEM_ENABLE_REG, %OUT_TEMP1
     lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %o0
-    or		%o0, VMMACH_ENABLE_CACHE_BIT, %o0
+#ifdef sun4c
+    or		%o0, VMMACH_ENABLE_CACHE_BIT | VMMACH_ENABLE_DVMA_BIT, %o0
+#else
+    or          %o0, VMMACH_ENABLE_CACHE_BIT, %o0
+#endif
     stba	%o0, [%OUT_TEMP1] VMMACH_CONTROL_SPACE
     retl			/* Return from leaf routine */
     nop
-#endif
 
-#ifdef sun4c
-.globl	_VmMachInitAddrErrorControlReg
-_VmMachInitAddrErrorControlReg:
-    retl
-    nop
-#else
+#ifndef sun4c
+/* Not used in sun4c */
 /*
  * ----------------------------------------------------------------------------
  *
@@ -680,12 +701,6 @@ _VmMachInitAddrErrorControlReg:
 
 
 
-#ifdef sun4c
-.globl	_VmMachClearCacheTags
-_VmMachClearCacheTags:
-    retl
-    nop
-#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -715,14 +730,7 @@ ClearTags:
 
     retl
     nop
-#endif
 
-#ifdef sun4c
-.globl	_VmMachFlushCurrentContext
-_VmMachFlushCurrentContext:
-    retl
-    nop
-#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -752,14 +760,7 @@ FlushingContext:
 
     retl
     nop
-#endif
 
-#ifdef sun4c
-.globl	_VmMachFlushSegment
-_VmMachFlushSegment:
-    retl
-    nop
-#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -792,14 +793,7 @@ FlushingSegment:
 
     retl
     nop
-#endif
 
-#ifdef sun4c
-.globl	_VmMachFlushPage
-_VmMachFlushPage:
-    retl
-    nop
-#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -832,7 +826,6 @@ FlushingPage:
 
     retl
     nop
-#endif
 
 
 /*
