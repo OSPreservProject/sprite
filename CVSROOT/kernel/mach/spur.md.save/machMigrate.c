@@ -55,19 +55,16 @@ typedef struct {
  *
  * ----------------------------------------------------------------------------
  */
-void
-Mach_EncapState(procPtr, buffer)
-    Proc_ControlBlock *procPtr;		/* pointer to process to encapsulate */
-    Address buffer;			/* area in which to encapsulate it */
+/* ARGSUSED */
+ReturnStatus
+Mach_EncapState(procPtr, hostID, infoPtr, buffer)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address buffer;			   /* Pointer to allocated buffer */
 {
-    Mach_State *machStatePtr = procPtr->machStatePtr;
-    MigratedState *migPtr = (MigratedState *) buffer;
-    
-    bcopy( (Address) &machStatePtr->userState,
-	      (Address) &migPtr->userState, sizeof(Mach_UserState));
-#ifdef notdef
-    migPtr->pc = machStatePtr->userState.excStackPtr->pc;
-#endif
+    return(GEN_NOT_IMPLEMENTED);
 }    
     
 
@@ -92,35 +89,14 @@ Mach_EncapState(procPtr, buffer)
  *
  * ----------------------------------------------------------------------------
  */
-/*ARGSUSED*/
+/* ARGSUSED */
 ReturnStatus
-Mach_DeencapState(procPtr, buffer)
-    Proc_ControlBlock *procPtr;		/* pointer to process to initialize */
-    Address buffer;			/* area from which to get state */
+Mach_DeencapState(procPtr, infoPtr, buffer)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address buffer;			  /* buffer containing data */
 {
-#ifdef notdef
-    MigratedState *migPtr = (MigratedState *) buffer;
-    ReturnStatus status;
-#endif
-
-    /*
-     * This procedure relies on the fact that Mach_SetupNewState
-     * only looks at the Mach_UserState part of the Mach_State structure
-     * it is given.  Therefore, we can coerce the pointer to a Mach_State
-     * pointer and give it to Mach_UserState to get registers & such.
-     */
-
-#ifdef notdef
-    status = Mach_SetupNewState(procPtr, (Mach_State *) &migPtr->userState,
-				Proc_ResumeMigProc, migPtr->pc, TRUE);
-    return(status);
-#else notdef
-#ifdef lint
-    procPtr = procPtr;
-#endif lint    
-    return(FAILURE);
-#endif notdef
-
+    return(GEN_NOT_IMPLEMENTED);
 }    
     
 
