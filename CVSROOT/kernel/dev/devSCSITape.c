@@ -82,6 +82,8 @@ DevSCSITapeInit(devPtr)
     devPtr->data = (ClientData)tapePtr;
     tapePtr->state = SCSI_TAPE_CLOSED;
     tapePtr->type = SCSI_UNKNOWN;
+    tapePtr->setupProc = (void (*)())NIL;
+    tapePtr->statusProc = (void (*)())NIL;
     scsiTape[scsiTapeIndex] = devPtr;
     printf("SCSI-%d tape %d at slave %d\n",
 		devPtr->scsiPtr->number, scsiTapeIndex, devPtr->targetID);
@@ -620,7 +622,9 @@ rewind:		    /*
 		DevSCSI3Regs *regsPtr = (DevSCSI3Regs *)scsiPtr->regsPtr;
 		statusPtr->statusReg = regsPtr->control;
 	    }
-	    (*tapePtr->statusProc)(devPtr, statusPtr);
+	    if (tapePtr->statusProc != (void (*)())NIL) {
+		(*tapePtr->statusProc)(devPtr, statusPtr);
+	    }
 	    statusPtr->residual = scsiPtr->residual;
 	    statusPtr->fileNumber = 0;
 	    statusPtr->blockNumber = 0;
@@ -666,7 +670,9 @@ rewind:		    /*
  *
  * Dev_SCSITapeClose --
  *
- *	Close a raw SCSI tape file.  This rewinds the tape.
+ *	Close a raw SCSI tape file.  This checks the unit number to
+ *	determine if the tape should be rewound.  Units 0 and 8
+ *	are rewind always, units 1 and 9 are no-rewind..
  *
  * Results:
  *	None.
@@ -706,9 +712,12 @@ Dev_SCSITapeClose(devicePtr, useFlags, openCount, writerCount)
 			(char *)0, &count);
     }
     /*
-     * For now, always rewind the tape upon close.
+     * Use the unit number to indicate rewind or no-rewind.  An
+     * ``even'' number (0 and 8) means rewind.
      */
-    status = DevSCSITapeIO(SCSI_REWIND, devPtr, (char *)0, &count);
+    if ((devicePtr->unit % DEV_TAPES_PER_CNTRLR) == 0) {
+	status = DevSCSITapeIO(SCSI_REWIND, devPtr, (char *)0, &count);
+    }
     tapePtr->state = SCSI_TAPE_CLOSED;
     return(status);
 }
