@@ -2007,7 +2007,7 @@ Proc_WaitForMigration(processID)
     ReturnStatus status;
 
     procPtr = Proc_LockPID(processID);
-    if (procPtr == NULL) {
+    if (procPtr == (Proc_ControlBlock *) NIL) {
 	return(PROC_INVALID_PID);
     }
     /*
