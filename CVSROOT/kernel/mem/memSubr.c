@@ -110,8 +110,8 @@ MemChunkAlloc(size, addressPtr)
  *
  *----------------------------------------------------------------------
  */
-static	int	smallMinNum = 50;
-static	int	largeMinNum = 10;
+static	int	smallMinNum = 1;
+static	int	largeMinNum = 1;
 static	int	largeMaxSize = 10000;
 
 void
@@ -119,6 +119,7 @@ Mem_DumpStats()
 {
     Mem_PrintStatsSubrInt(PrintProc, (ClientData) 0, smallMinNum, largeMinNum,
 	    largeMaxSize);
+    Mem_DumpTrace(-1);
 }
 
 

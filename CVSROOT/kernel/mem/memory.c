@@ -151,6 +151,8 @@ void Mem_PrintConfigSubr();
  *		including admin. word) to satisfy a user request in bytes.
  *	BLOCKSIZE_TO_INDEX: which free list to use for blocks of a given
  *		size (total including administrative word).
+ *	INDEX_TO_BLOCKSIZE: the (maximum) size corresponding to a bucket.
+ *		This will include the size of the administrative word.
  *	BLOCKS_AT_ONCE: when allocating a new region to hold blocks of
  *		a given size, how many blocks worth should be allocated
  *		at once.
@@ -164,15 +166,20 @@ void Mem_PrintConfigSubr();
 #define BIN_BUCKETS 2100
 #define BYTES_TO_BLOCKSIZE(bytes) ((bytes+7+sizeof(AdminInfo)) & (~7))
 #define BLOCKSIZE_TO_INDEX(size) ((size)>>3)
+#define INDEX_TO_BLOCKSIZE(index) ((index)<<3)
 #define BLOCKS_AT_ONCE 16
 
 /*
  * The following array holds pointers to the first free blocks of each size.
- * Bucket i holds blocks whose total length is 4*i bytes (including the
- * administrative info).  Blocks from bucket i are used to satisfy user
- * requests ranging from (4*i)-sizeof(AdminInfo) bytes up to (4*i)-1 bytes.
+ * Bucket i holds blocks whose total length is INDEX_TO_BLOCKSIZE(i) bytes
+ * (including the administrative info).  Blocks from bucket i are used to
+ * satisfy user requests ranging from INDEX_TO_BLOCKSIZE(i)-sizeof(AdminInfo)
+ * bytes up to INDEX_TO_BLOCKSIZE(i)-1 bytes.
  * Buckets 0 and 1 are never used, since they correspond to blocks too small
  * to hold any information for the user.
+ * NOTE: the above setup was a bit cleaner with single-word administrative
+ * info.  The BLOCKSIZE_TO_INDEX shift was 2 (divide by 4), now it is 3
+ * so the granularity of the buckets is bigger.
  */
 
 static Address freeLists[BIN_BUCKETS];
@@ -264,8 +271,8 @@ static int	initialized = FALSE;
  * Mem_SetTraceSizes(). PrintTrace calls a default printing routine; it can
  * be changed with Mem_SetPrintProc().
  */
-#define MAX_NUM_TRACE_SIZES	8
-#define	MAX_CALLERS_TO_TRACE	16
+#define MAX_NUM_TRACE_SIZES	12
+#define	MAX_CALLERS_TO_TRACE	20
 static	struct TraceElement {
     Mem_TraceInfo	traceInfo;
     struct {
@@ -385,7 +392,7 @@ Mem_Bin(numBytes)
 /*
  * ----------------------------------------------------------------------------
  *
- * Mem_Alloc --
+ * malloc --
  *
  *	This procedure allocates a chunk of memory.
  *
@@ -398,13 +405,13 @@ Mem_Bin(numBytes)
  * Side effects:
  *	The returned block is marked as allocated and will not be
  *	allocated to anyone else until it is returned with a call
- *	to Mem_Free.
+ *	to free().
  *
  * ----------------------------------------------------------------------------
  */
 
 ENTRY Address
-Mem_Alloc(numBytes)
+malloc(numBytes)
     register int numBytes;	/* How many bytes to allocate.  Must be > 0 */
 {
     register int size, admin;
@@ -496,9 +503,9 @@ Mem_Alloc(numBytes)
      * with the following pattern:
      *
      *  while (TRUE) {
-     *	    addr = Mem_Alloc(4096);
-     *      Mem_Free(addr);
-     *      Mem_Alloc(248);
+     *	    addr = malloc(4096);
+     *      free(addr);
+     *      malloc(248);
      *  }
      *
      * This pattern causes memory to get heavily fragmented.
@@ -621,7 +628,7 @@ Mem_Alloc(numBytes)
 /*
  * ----------------------------------------------------------------------------
  *
- * Mem_Free --
+ * free --
  *
  *      Return a previously-allocated block of storage to the free pool.
  *
@@ -639,8 +646,8 @@ Mem_Alloc(numBytes)
  * ----------------------------------------------------------------------------
  */
 
-ENTRY void
-Mem_Free(blockPtr)
+ENTRY int
+free(blockPtr)
     register Address blockPtr;	/* Pointer to storage to be freed.  Must
 				 * have been the return value from Mem_Alloc
 				 * at some previous time.  */
@@ -655,7 +662,7 @@ Mem_Free(blockPtr)
 
     if (!initialized) {
         MemPanic("Mem_Free: allocator not initialized!\n");
-	return;		/* should never get here */
+	return 0;		/* should never get here */
     }
 
     /*
@@ -674,7 +681,7 @@ Mem_Free(blockPtr)
 	    MemPanic("Mem_Free: storage block is corrupted\n");
 	}
 	UNLOCK_MONITOR;
-	return;			/* (should never get here) */
+	return 0;			/* (should never get here) */
     }
 
     /* This procedure is easier for large blocks than for small ones.
@@ -704,6 +711,7 @@ Mem_Free(blockPtr)
 #endif /* MEM_TRACE */
 
     UNLOCK_MONITOR;
+    return 0;
 }
 
 /*
@@ -937,12 +945,12 @@ Mem_PrintStatsSubrInt(PrintProc, clientData, smallMinNum, largeMinNum,
 	if (numBlocks[i] <= 0) {
 	    continue;
 	}
-	allocBytes += numBlocks[i] * 4 * i;
+	allocBytes += numBlocks[i] * INDEX_TO_BLOCKSIZE(i);
 	for (ptr = freeLists[i];
 	     ptr != (Address) NIL;
 	     ptr = (Address) GET_ADMIN(ptr)) {
 
-	    freeBytes += 4 * i;
+	    freeBytes += INDEX_TO_BLOCKSIZE(i);
 	    numFree += 1;
 	}
 	if (numBlocks[i] >= smallMinNum) {
@@ -951,7 +959,8 @@ Mem_PrintStatsSubrInt(PrintProc, clientData, smallMinNum, largeMinNum,
 				"    Size     Total    Allocs    In Use\n");
 		firstTime = FALSE;
 	    }
-	    (*PrintProc)(clientData, "%8d%10d%10d%10d\n", 4*i, numBlocks[i],
+	    (*PrintProc)(clientData, "%8d%10d%10d%10d\n",
+			INDEX_TO_BLOCKSIZE(i), numBlocks[i],
 			numAllocs[i], numBlocks[i] - numFree);
 	}
 	totalBlocks += numBlocks[i];
@@ -1469,18 +1478,4 @@ Mem_DumpTrace(blockSize)
     }
 #endif
 }
-
-Address malloc(size)
- int size;
-{
-	return Mem_Alloc(size);
-}
-
-int free(p)
-  Address	p;
-{
-	Mem_Free(p);
-	return(0);
-}
-
 
