@@ -97,13 +97,14 @@ FsAttachDisk(devicePtr, localName, flags)
     int numHeaderSectors;		/* Number of sectors in domain header */
     int summarySector;			/* Sector of summary information. */
     FsSummaryInfo *summaryInfoPtr;	/* Pointer to summary info. */
-    int amountRead;			/* Returned from read call */
     register FsDomain *domainPtr;	/* Top level info for the domain stored
 					 * on the device */
     FsLocalFileIOHandle	*handlePtr;	/* Reference to file handle for root */
     Fs_FileID	fileID;			/* ID for root directory of domain */
     int		prefixFlags;		/* For installing the prefix */
     int		partition;		/* Partition number from the disk. */
+    Fs_IOParam	io;			/* I/O Parameter block */
+    Fs_IOReply	reply;			/* Results of I/O */
 
     /*
      * Open the raw disk device so we can grub around in the header info.
@@ -112,15 +113,20 @@ FsAttachDisk(devicePtr, localName, flags)
     if (status != SUCCESS) {
 	return(status);
     }
-    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR);
 
+    bzero((Address)&io, sizeof(io));
+    bzero((Address)&reply, sizeof(reply));
     /*
      * Read the zero'th sector of the partition.  It has a copy of the
      * zero'th sector of the whole disk which describes how the rest of the
      * domain's zero'th cylinder is layed out.
      */
+    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR);
+    io.buffer = buffer;
+    io.length = DEV_BYTES_PER_SECTOR;
+    io.offset = 0;
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)(devicePtr,
-		0, DEV_BYTES_PER_SECTOR, buffer, &amountRead);
+		&io, &reply);
     if (status != SUCCESS) {
 	free(buffer);
 	return(status);
@@ -144,17 +150,17 @@ FsAttachDisk(devicePtr, localName, flags)
 	numHeaderSectors = diskHeaderPtr->numDomainSectors;
 	summarySector = diskHeaderPtr->summarySector;
     } else {
-	printf("No disk header\n");
+	printf("FsAttachDisk: No disk header\n");
 	free(buffer);
 	return(FAILURE);
     }
     /*
      * Read in summary information.
      */
+    io.length = DEV_BYTES_PER_SECTOR;
+    io.offset = summarySector * DEV_BYTES_PER_SECTOR;
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)
-		(devicePtr, summarySector * DEV_BYTES_PER_SECTOR,
-		    DEV_BYTES_PER_SECTOR,
-		    buffer, &amountRead); 
+		(devicePtr, &io, &reply); 
     if (status != SUCCESS) {
 	free(buffer);
 	return(status);
@@ -166,15 +172,16 @@ FsAttachDisk(devicePtr, localName, flags)
      * Read the domain header and save it with the domain state.
      */
     buffer = (Address)malloc(DEV_BYTES_PER_SECTOR * numHeaderSectors);
+    io.buffer = buffer;
+    io.length = numHeaderSectors * DEV_BYTES_PER_SECTOR;
+    io.offset = headerSector * DEV_BYTES_PER_SECTOR;
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)(devicePtr,
-		headerSector * DEV_BYTES_PER_SECTOR,
-		numHeaderSectors * DEV_BYTES_PER_SECTOR,
-		buffer, &amountRead);
+		&io, &reply);
     if (status != SUCCESS) {
 	free(buffer);
 	return(status);
     } else if (((FsDomainHeader *)buffer)->magic != FS_DOMAIN_MAGIC) {
-	printf("FsDiskAttach: Bad magic # on partition header <%x>\n",
+	printf("FsAttachDisk: Bad magic # on partition header <%x>\n",
 				  ((FsDomainHeader *)buffer)->magic);
 	free(buffer);
 	return(FAILURE);
@@ -189,6 +196,7 @@ FsAttachDisk(devicePtr, localName, flags)
 	domainPtr = fsDomainTable[summaryInfoPtr->domainNumber];
 	if (domainPtr != (FsDomain *)NIL) {
 	    if (!(domainPtr->flags & FS_DOMAIN_DOWN)) {
+		printf("FsAttachDisk: domain already attached?\n");
 		free(buffer);
 		return(FS_DOMAIN_UNAVAILABLE);
 	    }
@@ -213,10 +221,10 @@ FsAttachDisk(devicePtr, localName, flags)
 	 * no other Sprite hosts running on the network , however,
 	 * then this code will execute.
 	 */
-	printf("Setting rpc_SpriteID to 0x%x from disk header\n",
+	printf("FsAttachDisk: setting rpc_SpriteID to 0x%x from disk header\n",
 		    domainPtr->headerPtr->device.serverID);
 	if (domainPtr->headerPtr->device.serverID <= 0) {
-	    panic( "Bad sprite ID\n");
+	    panic("Bad sprite ID\n");
 	}
 	rpc_SpriteID = domainPtr->headerPtr->device.serverID;
     }
@@ -242,8 +250,7 @@ FsAttachDisk(devicePtr, localName, flags)
 		/*
 		 * Only allow automatic corrections with partition 'a' -> 'c'.
 		 */
-		printf(
-		    "FsAttachDisk: partition mis-match, arg %d disk %d\n",
+		printf("FsAttachDisk: partition mis-match, arg %d disk %d\n",
 			  devicePtr->unit, partition);
 	    } else {
 		devicePtr->unit += partition;
@@ -1007,9 +1014,10 @@ FsRereadSummaryInfo(prefixName)
     int			domain;
     register FsDomain	*domainPtr;
     ReturnStatus	status;
-    char		buffer[DEV_BYTES_PER_SECTOR];
-    int			amountRead;
     Fs_Device		*devicePtr;
+    Fs_IOParam		io;
+    Fs_IOReply		reply;
+    char		buffer[DEV_BYTES_PER_SECTOR];
 
     /*
      * Find the correct domain.
@@ -1031,18 +1039,21 @@ FsRereadSummaryInfo(prefixName)
     /*
      * Read the summary sector.
      */
+    bzero((Address)&io, sizeof(io));
+    bzero((Address)&reply, sizeof(reply));
     devicePtr = &(domainPtr->headerPtr->device);
+    io.buffer = buffer;
+    io.length = DEV_BYTES_PER_SECTOR;
+    io.offset = domainPtr->summarySector * DEV_BYTES_PER_SECTOR;
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)
-		(devicePtr, domainPtr->summarySector * DEV_BYTES_PER_SECTOR,
-		    DEV_BYTES_PER_SECTOR,
-		    buffer, &amountRead); 
+		(devicePtr, &io, &reply); 
     if (status != SUCCESS) {
 	return(status);
     }
     /*
      * Copy information from the buffer.
      */
-    bcopy(buffer, domainPtr->summaryInfoPtr, amountRead);
+    bcopy(buffer, domainPtr->summaryInfoPtr, reply.length);
     return SUCCESS;
 }
 
