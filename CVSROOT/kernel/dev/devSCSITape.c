@@ -415,7 +415,6 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
 	count = 0;
 	break;
     case IOC_TAPE_WEOF:
-	printf("Writing file mark\n");
 	scsiCmd = SCSI_WRITE_EOF;
 	break;
     case IOC_TAPE_ERASE:
