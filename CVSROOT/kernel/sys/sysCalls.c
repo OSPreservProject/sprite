@@ -42,6 +42,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #ifdef sun4c
 #include <devSCSIC90.h>
 #endif sun4c
+#ifdef SOSP91
+#include <fsStat.h>
+#endif SOSP91
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
@@ -568,12 +571,14 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 	case SYS_FS_SOSP_MIG_STATS: {
+	    Fs_SospMigStats	*statsPtr;
+
 	    statsPtr = (Fs_SospMigStats *) argPtr;
 	    if (statsPtr == (Fs_SospMigStats *)NIL ||
 		    statsPtr == (Fs_SospMigStats *) 0 ||
 		    statsPtr == (Fs_SospMigStats *) USER_NIL) {
 		status = GEN_INVALID_ARG;
-	    } else if (option < sizeof (Fs_SospMigStats) {
+	    } else if (option < sizeof (Fs_SospMigStats)) {
 		status = GEN_INVALID_ARG;
 	    } else {
 		status = Vm_CopyOut(sizeof (Fs_SospMigStats),
