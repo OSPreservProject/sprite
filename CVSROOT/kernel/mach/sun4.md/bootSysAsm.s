@@ -115,50 +115,23 @@ doneZeroing:
 	 * the double-word copy, %l1 is for holding the size of the table,
 	 * and %l2 contains the number of bytes to copy.
 	 */
-	mov	0x1, %g6
 	set	machProtoVectorTable, %g1		/* g1 contains src */
-#ifdef NOTDEF
-	mov	%g1, %o0
-	call	_printArg
-	nop
-#endif NOTDEF
-	mov	0x2, %g6
-#ifdef NOTDEF
-	set	reserveSpace, %o0
-	call	_printArg
-	nop
-#endif NOTDEF
 	set	reserveSpace, %g2			/* g2 to contain dest */
 	set	(1 + ~MACH_TRAP_ADDR_MASK), %l1
 	set	((1 + ~MACH_TRAP_ADDR_MASK) / 8), %l2	/* # bytes to copy */
 	add	%g2, %l1, %g2				/* add size of table */
 	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
-#ifdef NOTDEF
-	mov	%g2, %o0
-	call	_printArg
-	nop
-#endif NOTDEF
 	clr	%g3					/* clear counter */
-	mov	0x3, %g6
 copyingTable:
-#ifdef NOTDEF
-	ldda	[%g1] VMMACH_KERN_PROGRAM_SPACE, %g4	/* %g4 and %g5 in */
-	mov	0x4, %g6
-	stda	%g4, [%g2] VMMACH_KERN_PROGRAM_SPACE	/* %g4 and %g5 out */
-#else /* NOTDEF */
-	mov	0x4, %g6
-	ldd	[%g1], %g4				/* %g4 and %g5 in */
-	std	%g4, [%g2] 				/* %g4 and %g5 out */
-	ldd	[%g1 + 8], %g4
+	ldd	[%g1], %g4				/* copy first 2 words */
+	std	%g4, [%g2]
+	ldd	[%g1 + 8], %g4				/* next 2 words */
 	std	%g4, [%g2 + 8]
-#endif /* NOTDEF */
-	mov	0x5, %g6
 	add	%g2, 16, %g2				/* incr. destination */
 	add	%g3, 2, %g3				/* incr. counter */
 	cmp	%g3, %l2				/* how many copies */
 	bne	copyingTable
 	nop
-	mov	0x6, %g6
 	mov	%g3, %o0
 	mov	%g2, %l5
 	call	_printArg				/* print counter */
@@ -166,10 +139,12 @@ copyingTable:
 	mov	%l5, %o0
 	call	_printArg				/* print after dest */
 	nop
-	mov	0x7, %g6
+	mov	%tbr, %g6				/* save real tbr */
+	and	%g6, MACH_TRAP_ADDR_MASK, %g6		/* mask off trap type */
 	set	reserveSpace, %g2			/* g2 to be trap base */
 	add	%g2, %l1, %g2				/* add size of table */
 	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
+	mov	%g2, %tbr				/* switch in mine */
 	call	_main
 	nop
 .align 8
@@ -196,18 +171,47 @@ argString:
 	mov	%l3, %o7
 	retl
 	nop
+
+/*
+ *	callTrap:  jump to system trap table.
+ *	%l3 is trap type and then place to jump to.
+ *	%l4 is address of my trap table to reset %tbr with.
+ *	Remember to add trap type back into %tbr after resetting.
+ *	Note that this code cannot use l1 or l2 since that's where pc and
+ *	npc are written in a trap.
+ */
+callTrap:
+	/* %g6 is their real tbr */
+	rd	%tbr, %l3
+	and	%l3, MACH_TRAP_TYPE_MASK, %l3		/* get trap type */
+
+	set	reserveSpace, %l4			/* l4 to be trap base */
+	set	(1 + ~MACH_TRAP_ADDR_MASK), %l5		/* size of table */
+	add	%l4, %l5, %l4				/* add size of table */
+	and	%l4, MACH_TRAP_ADDR_MASK, %l4		/* align to 4k bound. */
+
+	add	%l3, %l4, %l4				/* add trap type */
+	mov	%l4, %tbr				/* switch in mine */
+
+	add	%l3, %g6, %l3			/* add t.t. to real tbr */
+	jmp	%l3			/* jmp (non-pc-rel) to real tbr */
+	nop
+
 /*
  * Reserve twice the amount of space we need for the trap table.
  * Then copy machProtoVectorTable into it repeatedly, starting at
  * a 4k-byte alignment.  This is dumb, but the assembler doesn't allow
  * me to do much else.
+ *
+ * Note that this filler cannot use l1 or l2 since that's where pc and npc
+ * are written in a trap.
  */
 .align	8
 machProtoVectorTable:
-	rd	%tbr, %g1
-	and	%g1, 0xff0, %g1
-	add	%g1, %g4, %g1
-	jmp	%g1
-	nop				/* nop isn't copied, but quiets AS */
+	sethi	%hi(callTrap), %l3		/* "set callTrap, %l3" */
+	or	%l3, %lo(callTrap), %l3
+	jmp	%l3			/* must use non-pc-relative jump here */
+	nop
+
 .align	8
 reserveSpace:	.skip	0x2000
