@@ -20,6 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "rpcInt.h"
 #include "rpcClient.h"
+#include "rpcServer.h"
 #include "rpcTrace.h"
 #include "dbg.h"
 #include "mem.h"
@@ -279,29 +280,25 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    if (serverID == RPC_BROADCAST_SERVER_ID) {
 			Net_SpriteIDToName(rpcHdrPtr->serverID, &name);
 			if (name == (char *)NIL) {
-			    printf(
-			    "Warning: RpcDoCall: <%d> hanging my broadcast\n",
+			    printf("RpcDoCall: <%d> hanging my broadcast\n",
 				    rpcHdrPtr->serverID);
 			} else {
-			    printf(
-			    "Warning: RpcDoCall: %s hanging my broadcast\n",
+			    printf("RpcDoCall: %s hanging my broadcast\n",
 				name);
 			}
 			error = RPC_TIMEOUT;
-		    } else {
+		    } else if (!seemsHung) {
 			Net_SpriteIDToName(serverID, &name);
 			if (name == (char *)NIL) {
-			    printf(
-			    "Warning: RpcDoCall: <%d> seems hung, RPC %d\n",
-				serverID, command);
+			    printf("RpcDoCall: <%s> RPC to host <%d> is hung\n",
+				rpcService[command].name, serverID);
 			} else {
-			    printf(
-				"Warning: RpcDoCall: %s seems hung, RPC %d\n",
-				name, command);
+			    printf("RpcDoCall: <%s> RPC to %s is hung\n",
+				rpcService[command].name, name);
 			}
 			seemsHung = TRUE;
-			numAcks = 0;
 		    }
+		    numAcks = 0;
 		}
 	    } else {
 		/*
@@ -379,9 +376,9 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     chanPtr->state &= ~CHAN_WAITING;
     if (seemsHung) {
 	if (error == SUCCESS) {
-	    printf("RPC %d ok\n", command);
+	    printf("<%s> RPC ok\n", rpcService[command].name);
 	} else {
-	    printf("RPC %d exit 0x%x\n", command, error);
+	    printf("<%s> RPC exit 0x%x\n", rpcService[command].name, error);
 	}
     }
     MASTER_UNLOCK(chanPtr->mutex);
