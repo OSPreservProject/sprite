@@ -4,8 +4,15 @@
  * of the memory lies in one big block.  This block is divided up into equal
  * sized chunks and each chunk is allocated sequentially.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
  */
 
 #ifndef lint
@@ -13,7 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "netIE.h"
+#include "netIEInt.h"
 #include "net.h"
 #include "netInt.h"
 #include "sys.h"

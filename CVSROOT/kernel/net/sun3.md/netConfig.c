@@ -4,7 +4,6 @@
  *	Machine-type dependent initialization of the network interfaces.
  *
  * Copyright (C) 1987 Regents of the University of California
- * All rights reserved.
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright

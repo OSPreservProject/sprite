@@ -3,8 +3,15 @@
  *
  *	Routines to transmit packets on the Intel interface.
  *
- * Copyright 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
  */
 
 #ifndef lint
@@ -12,7 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "netIE.h"
+#include "netIEInt.h"
 #include "net.h"
 #include "netInt.h"
 #include "sys.h"
@@ -24,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Pointer to scatter gather element for current packet being sent.
  */
-Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
+static Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
 
 /*
  * The address of the array of buffer descriptor headers.
@@ -248,6 +255,10 @@ NetIEXmitInit()
     /*
      * Now link in all of the buffer headers.
      */
+
+#ifdef	lint
+    xmitBufDescPtr = (NetIETransmitBufDesc *) NIL;
+#endif
 
     for (i = 0; i < NET_IE_NUM_XMIT_BUFFERS; i++) {
 	newXmitBufDescPtr = (NetIETransmitBufDesc *) NetIEMemAlloc();

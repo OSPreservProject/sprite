@@ -9,8 +9,15 @@
  *	 it that because of bugs in the chip it can get stuck at any time for
  *	 no particular reason.
  *
- * Copyright 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
  */
 
 #ifndef lint
@@ -23,7 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmMach.h"
 #include "mach.h"
-#include "netLE.h"
+#include "netLEInt.h"
 #include "net.h"
 #include "netInt.h"
 #include "byte.h"
@@ -66,9 +73,9 @@ static Mach_SetJumpState setJumpState;
 
 Boolean
 NetLEInit(name, number, ctrlAddr)
-    char *name;
-    int number;
-    unsigned int ctrlAddr;
+    char 	*name;		/* Sprite name for controller. */	
+    int 	number;		/* Unit number of device (not used). */
+    unsigned int ctrlAddr;	/* Kernel virtual address of controller. */
 {
     int 	i;
     List_Links	*itemPtr;
@@ -130,7 +137,7 @@ NetLEInit(name, number, ctrlAddr)
 	      netLEState.etherAddress.byte6 & 0xff);
 
     /*
-     * Generate a backward copy of it.
+     * Generate a byte-swapped copy of it.
      */
     netLEState.etherAddressBackward.byte2 = netLEState.etherAddress.byte1;
     netLEState.etherAddressBackward.byte1 = netLEState.etherAddress.byte2;
@@ -312,12 +319,8 @@ NetLEReset()
 void
 NetLERestart()
 {
-    int 		i;
-    List_Links		*itemPtr;
-    NetXmitElement	*xmitElemPtr;
 
     DISABLE_INTR();
-
 
     /*
      * Reset the world.

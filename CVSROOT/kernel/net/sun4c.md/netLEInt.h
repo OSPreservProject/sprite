@@ -1,19 +1,24 @@
 /*
- * netLE.h --
+ * netLEInt.h --
  *
  *	External definitions for the Am7990 (LANCE) ethernet controller.
  * The description of the definitions here come from AMD Am7990 LANCE
  * data sheet (Publication 05698 Rev B) and the Am7990 Techincal Manual.
 
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
- *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _NETLE
-#define _NETLE
+#ifndef _NETLEINT
+#define _NETLEINT
 
 #include "netEther.h"
 #include "net.h"
@@ -35,14 +40,14 @@
  *				128 and	be a power of TWO.
  * NET_LE_NUM_XMIT_BUFFERS_LOG2	log base 2 of NET_LE_NUM_XMIT_BUFFERS.
  * NET_LE_RECV_BUFFER_SIZE  	The size of each receive buffer. We make the
- *				buffer big enought to hold the maximum size
- *				ethernet packet + it's ethernet header +
- *				CRC check + some slop for dma overruns.
+ *				buffer big enough to hold the maximum size
+ *				ethernet packet + CRC check. This is 1514 +
+ *				4 = 1518 bytes. We round it to the nears 1/2 K
+ *				boundry to get 1536.
  *			
- * NET_LE_MIN_FIRST_BUFFER_SIZE	The smallest buffer that can be use for the
+ * NET_LE_MIN_FIRST_BUFFER_SIZE	The smallest buffer that can be used for the
  *				first element of a chain transmission.
- *				If a piece of a message is smaller than this
- *				then it gets copied to other storage and
+ *				If the first piece of a message is smaller than  *				this then it gets copied to other storage and
  *				made the minimum size.
  * NET_LE_NUM_XMIT_ELEMENTS 	The number of elements to preallocate for the 
  *			   	retransmission queue.
@@ -56,7 +61,8 @@
 #define	NET_LE_NUM_XMIT_BUFFERS_LOG2	5
 #define	NET_LE_NUM_XMIT_BUFFERS		(1 << NET_LE_NUM_XMIT_BUFFERS_LOG2)
 
-#define	NET_LE_RECV_BUFFER_SIZE		1600
+
+#define	NET_LE_RECV_BUFFER_SIZE		1536
 #define NET_LE_MIN_FIRST_BUFFER_SIZE	100
 
 #define	NET_LE_NUM_XMIT_ELEMENTS	32
@@ -73,10 +79,10 @@
 #define	NET_LE_SUN_TO_CHIP_ADDR_HIGH(a) ( (((unsigned int) (a)) >> 16) & 0xff)
 #define	NET_LE_SUN_TO_CHIP_ADDR_LOW(a) ( ((unsigned int) (a)) & 0xffff)
 /*
- * The LANCE chip has four control and status registers that are selected a
+ * The LANCE chip has four control and status registers that are selected by a
  * register address port (RAP) register. The top 14 bits of RAP are reserved
- * and read as zeros. The contents of register data port (RDP) are selected
- * by the RAP. (page 15)
+ * and read as zeros. The register accessable in the register data port (RDP)
+ * is selected by the value of the RAP. (page 15)
  */
 
 typedef struct NetLE_Reg {
@@ -138,14 +144,14 @@ typedef struct NetLE_Reg {
 
 /*
  * Control and status register 1 (CSR1) (page 18)
- * CSR1 is the low order 16 bits of the first word of the Initialization block.
- * Not that the LSB must be zero.
+ * CSR1 is the low order 16 bits of the address of the Initialization block.
+ * Note that the LSB must be zero.
  */
 
 /*
  * Control and status register (CSR2) (page 18)
- * CSR2 is the high order 16 bits of the first word of the Initialization block.
- * Not that the top 8 bits are reserved and must be zero.
+ * CSR2 is the high order 16 bits of address of the Initialization block.
+ * Note that the top 8 bits are reserved and must be zero.
  */
 
 /*
@@ -162,10 +168,6 @@ typedef struct NetLE_Reg {
 
 typedef struct NetLEModeReg {
     int			promiscuous	:1;	/* Read all incoing packets. */
-    /*
-     * WARRNING - the Sun header file only has 7 reserved bits but the 
-     * documentation (and common sense) has says it should have 8.
-     */
     int					:8;	/* Reserved */
     int			internalLoop	:1;	/* Internal if lookBack. */
     int			disableRetry	:1;	/* Disable collision retry. */
@@ -197,7 +199,7 @@ typedef struct NetLEInitBlock {
     NetLEModeReg	mode;			/* Mode register */
     /*
      * It looks like the ethernet address needs to be byte swapped.
-     * Also, lowest order bit must be zero.
+     * Also, lowest-order bit must be zero.
      */
     Net_EtherAddress	etherAddress;		/* The ethernet address. */
     unsigned short	multiCastFilter[4];	/* Logical address filter. */
@@ -213,7 +215,7 @@ typedef struct NetLERecvMsgDesc {
     unsigned short	bufAddrLow;	/* Low order 16 addr bits of buffer. */
     int		chipOwned	:1;	/* Buffer is owned by LANCE. */
     int		error		:1;	/* Error summary */
-    int		frammingError	:1;	/* Framming Error occured.  */
+    int		frammingError	:1;	/* Framing Error occured.  */
     int		overflowError	:1;	/* Packet overflowed. */
     int		crcError	:1;	/* CRC error. */
     int		bufferError	:1;	/* Buffer error. */
@@ -298,10 +300,6 @@ typedef struct {
   
 extern	NetLEState	netLEState;
 
-/*
- * Pointer to scatter gather element for current packet being sent.
- */
-extern Net_ScatterGather *curScatGathPtr;
 
 /*
  * General routines.
@@ -326,12 +324,12 @@ extern	void	NetLEXmitRestart();
  * Routines for the receive unit.
  */
 
-extern	void	NetLERecvUnitInit();
+extern	void	NetLERecvInit();
 extern	ReturnStatus	NetLERecvProcess();
 
 
 
-#endif _NETLE
+#endif _NETLEINT
 
 
 

@@ -1,5 +1,5 @@
 /*
- * netIE.h --
+ * netIEInt.h --
  *
  *	External definitions for the Intel on-board Ethernet controller.  See
  *      the Intel "LAN Components User's Manual" from 1984 for a 
@@ -7,15 +7,21 @@
  *	is wired in byte swapped order.  Therefore all definitions in here are 
  *	byte swapped from the ones in the user's manual.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  *
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _NETIE
-#define _NETIE
+#ifndef _NETIEINT
+#define _NETIEINT
 
 #include "netEther.h"
 #include "net.h"
@@ -554,11 +560,6 @@ extern	NetIEState	netIEState;
 extern	Address	netIERecvBuffers[];
 
 /*
- * Pointer to scatter gather element for current packet being sent.
- */
-extern Net_ScatterGather *curScatGathPtr;
-
-/*
  * General routines.
  */
 
@@ -609,4 +610,4 @@ extern	int	NetIEOffsetFrom68000Addr();
 extern	int	NetIEOffsetTo68000Addr();
 extern	int	NetIEShortSwap();
 
-#endif _NETIE
+#endif _NETIEINT

@@ -2,8 +2,15 @@
  *
  * Routines to manage the receive unit of the AMD LANCE ethernet chip.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
  */
 
 #ifndef lint
@@ -11,7 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "netLE.h"
+#include "netLEInt.h"
 #include "net.h"
 #include "netInt.h"
 #include "sys.h"
@@ -60,12 +67,12 @@ AllocateRecvMem()
 
     /*
      * Allocate the ring of receive buffer descriptors.  The ring must start
-     * on 8 byte boundry.  
+     * on 8-byte boundary.  
      */
     memBase = (unsigned int) Vm_RawAlloc(
 		(NET_LE_NUM_RECV_BUFFERS * sizeof(NetLERecvMsgDesc)) + 8);
     /*
-     * Insure ring starts on 8 byte boundry.
+     * Insure ring starts on 8-byte boundary.
      */
     if (memBase & 0x7) {
 	memBase = (memBase + 8) & ~0x7;
@@ -105,7 +112,6 @@ NetLERecvInit()
 {
     int 	bufNum;
     NetLERecvMsgDesc	*descPtr;
-    unsigned	int	addr;
 
     if (!recvMemAllocated) {
 	AllocateRecvMem();

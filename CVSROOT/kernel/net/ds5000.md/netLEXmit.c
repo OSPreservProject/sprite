@@ -3,8 +3,15 @@
  *
  *	Routines to transmit packets on the LANCE interface.
  *
- * Copyright 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
  */
 
 #ifndef lint
@@ -12,7 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "netLE.h"
+#include "netLEInt.h"
 #include "net.h"
 #include "netInt.h"
 #include "sys.h"
@@ -70,9 +77,12 @@ static char		firstDataBuffer[NET_LE_MIN_FIRST_BUFFER_SIZE];
 
 static ReturnStatus
 OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
-    Net_EtherHdr			*etherHdrPtr;
-    register	Net_ScatterGather   	*scatterGatherPtr;
-    int					scatterGatherLength;
+    Net_EtherHdr		*etherHdrPtr;	/* Ethernet header of packet.*/
+    register	Net_ScatterGather   	*scatterGatherPtr; /* Data portion of
+							    * packet. */
+
+    int			scatterGatherLength;	/* Length of data portion 
+						 * gather array. */
 {
     register	NetLEXmitMsgDesc	*descPtr;
     NetLEState				*netLEStatePtr;
@@ -132,7 +142,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     firstBufferPtr += sizeof(Net_EtherHdr);
 
     /*
-     * Then copy enought data to bring buffer up to size.
+     * Then copy enough data to bring buffer up to size.
      */
 
     totalLength = sizeof(Net_EtherHdr);
@@ -239,7 +249,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     /*
      * Change the ownership to the chip. Avoid race conditions by doing it
-     * backwards.
+     * with the last buffer first.
      */
 
     while (TRUE) {
@@ -292,12 +302,12 @@ AllocateXmitMem()
 
     /*
      * Allocate the ring of transmission buffer descriptors.  
-     * The ring must starton 8 byte boundry.  
+     * The ring must start on 8-byte boundary.  
      */
     memBase = (unsigned int) Vm_RawAlloc(
 		(NET_LE_NUM_XMIT_BUFFERS * sizeof(NetLEXmitMsgDesc)) + 8);
     /*
-     * Insure ring starts on 8 byte boundry.
+     * Insure ring starts on 8-byte boundary.
      */
     if (memBase & 0x7) {
 	memBase = (memBase + 8) & ~0x7;
@@ -327,10 +337,8 @@ AllocateXmitMem()
 void
 NetLEXmitInit()
 {
-    NetXmitElement      *xmitElementPtr;
     int 		bufNum;
     NetLEXmitMsgDesc	*descPtr;
-    unsigned	int	addr;
 
 
     if (!xmitMemAllocated) {
@@ -558,9 +566,11 @@ NetLEXmitDone()
 
 void
 NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
-    Net_EtherHdr			*etherHdrPtr;
-    register	Net_ScatterGather	*scatterGatherPtr;
-    int					scatterGatherLength;
+    Net_EtherHdr	*etherHdrPtr;	/* Ethernet header for the packet. */
+    register	Net_ScatterGather	*scatterGatherPtr; /* Data portion of 
+							    * the packet. */
+    int			scatterGatherLength;	/* Length of data portion gather
+						 * array. */
 {
     register	NetXmitElement		*xmitPtr;
     ReturnStatus			status;
