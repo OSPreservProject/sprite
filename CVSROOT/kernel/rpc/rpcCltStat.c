@@ -13,9 +13,6 @@
  *      forces a printout of the statistics... If one process messes up
  *      and doesn't leave then the stats won't get printed.)
  *
- *	Also, there is one special tracing hook used internally by the RPC
- *	system to trace unusual events.
- *
  * Copyright (C) 1985 Regents of the University of California
  * All rights reserved.
  */
@@ -58,10 +55,6 @@ static int numRpcProcesses;
 static Sync_Lock rpcTraceLock = Sync_LockInitStatic("Rpc:rpcTraceLock");
 #define LOCKPTR (&rpcTraceLock)
 #endif /* notdef */
-
-static void SpecialStat _ARGS_((int packetLength, int expectedLength));
-static void SpecialStatReset _ARGS_((void));
-static void SpecialStatPrint _ARGS_((void));
 
 
 
@@ -142,8 +135,6 @@ RpcResetCltStat()
         deltaIntPtr++;
     }
     bzero((Address)&rpcCltStat, sizeof(Rpc_CltStat));
-
-    SpecialStatReset();
 }
 
 /*
@@ -245,8 +236,6 @@ Rpc_PrintCltStat()
     printf("shorts      = %4d ", rpcCltStat.shorts);
     printf("longs       = %4d ", rpcCltStat.longs);
     printf("\n");
-
-    SpecialStatPrint();
 }
 
 /*
@@ -272,69 +261,5 @@ Rpc_PrintCallCount()
     printf("Rpc Client Calls\n");
     for (call=0 ; call<=RPC_LAST_COMMAND ; call++) {
 	printf("%-15s %8d\n", rpcService[call].name, rpcClientCalls[call]);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SpecialStat --
- *
- *	Generic tracing hook.  This procedure gets changed to trace
- *	different events.  This hides the details of the statistics
- *	taking from the caller.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	rpcCltStat.longs is getting incremented.  This is a trace of
- *	the expected packet size and the actual packet size to
- *	try and see what is happening.
- *
- *----------------------------------------------------------------------
- */
-
-static struct {
-    int		hits;
-    int		sumLength;
-    int		lastLength;
-    int		sumExpLength;
-    int		lastExpLength;
-} specialStat;
-
-static void
-SpecialStat(packetLength, expectedLength)
-    int packetLength, expectedLength;
-{
-    specialStat.hits++;
-    specialStat.sumLength += packetLength;
-    specialStat.lastLength = packetLength;
-    specialStat.sumExpLength += expectedLength;
-    specialStat.lastExpLength = expectedLength;
-}
-
-static void
-SpecialStatReset()
-{
-    specialStat.hits = 0;
-    specialStat.sumLength = 0;
-    specialStat.lastLength = 0;
-    specialStat.sumExpLength = 0;
-    specialStat.lastExpLength = 0;
-}
-
-static void
-SpecialStatPrint()
-{
-    if (specialStat.hits) {
-	printf("Number of Special Stats: %d\n", specialStat.hits);
-
-	printf("Last packet length (%d), last expected length (%d)\n",
-			     specialStat.lastLength, specialStat.lastExpLength);
-
-	printf("Ave packet length (%d), ave expected length (%d)\n",
-	    (specialStat.sumLength / specialStat.hits),
-	    (specialStat.sumExpLength / specialStat.hits));
     }
 }
