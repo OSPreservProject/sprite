@@ -339,14 +339,27 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
  *
  *	Set the attributes of a local file given its fileID.  This is
  *	called from Fs_SetAttrStream to set the attributes at the name server.
+ *	The flags argument defines which attributes are updated.
  *	This updates the disk descriptor and copies the new information
  * 	into the cache.  It will go to disk on the next sync.
  *
+ *	Various constraints are implemented here.
+ *	1) You must be super-user or own the file to succeed at all.
+ *	2) You must be super-user to change the owner of a file.
+ *	3) You must be super-user or a member of the new group
+ *		to change the group of a file.  The SETGID bit is
+ *		cleared if a non-super-user changes the group.
+ *	4) You must be super-user or a member of the file's group
+ *		to set the SETGID bit of the file.
+ *	5) If you've made it this far you can set the access time,
+ *		modify time, and user-defined file type.
+ *
  * Results:
- *	An error code.
+ *	FS_NOT_OWNER if you don't own the file
+ *	FS_NO_ACCESS if you violate one of the above constraints.
  *
  * Side effects:
- *	None.
+ *	Sets the attributes of the file, subject to the above constraints.
  *
  *----------------------------------------------------------------------
  */
@@ -355,7 +368,7 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     FsFileID			*fileIDPtr;	/* Target file. */
     register Fs_Attributes	*attrPtr;	/* New attributes */
     register FsUserIDs		*idPtr;		/* Process's owner/group */
-    int				flags;		/* What attrs to set */
+    register int		flags;		/* What attrs to set */
 {
     register ReturnStatus	status = SUCCESS;
     FsLocalFileIOHandle		*handlePtr;
@@ -375,7 +388,7 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 	status = FAILURE;
 	goto exit;
     }
-    if (!FsOwner(idPtr, descPtr)) {
+    if ((idPtr->user != 0) && (idPtr->user != descPtr->uid)) {
 	status = FS_NOT_OWNER;
 	goto exit;
     }
@@ -386,30 +399,53 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 		 * Don't let ordinary people give away ownership.
 		 */
 		status = FS_NO_ACCESS;
-#ifdef not_yet
 		goto exit;
-#endif
 	    } else {
 		descPtr->uid = attrPtr->uid;
 	    }
 	}
 	if (attrPtr->gid >= 0 && descPtr->gid != attrPtr->gid) {
 	    register int g;
+	    /*
+	     * Can only set to a group you belong to.  The set-gid
+	     * bit is also reset as an extra precaution.
+	     */
 	    for (g=0 ; g < idPtr->numGroupIDs; g++) {
 		if (attrPtr->gid == idPtr->group[g] || idPtr->user == 0) {
 		    descPtr->gid = attrPtr->gid;
+		    if (idPtr->user != 0) {
+			descPtr->permissions &= ~FS_SET_GID;
+		    }
 		    break;
 		}
 	    }
 	    if (g >= idPtr->numGroupIDs) {
 		status = FS_NO_ACCESS;
-#ifdef not_yet
 		goto exit;
-#endif
 	    }
 	}
     }
     if (flags & FS_SET_MODE) {
+	if (attrPtr->permissions & FS_SET_GID) {
+	    /*
+	     * Have to verify that the process belongs to the
+	     * new group of the file.  We have already verified that
+	     * the process's user ID matches the file's owner.
+	     */
+	    register int g;
+	    for (g=0 ; g < idPtr->numGroupIDs; g++) {
+		if (attrPtr->gid == idPtr->group[g] || idPtr->user == 0) {
+#ifndef lint
+		    goto setMode;
+#endif not lint
+		}
+	    }
+	    status = FS_NO_ACCESS;
+	    goto exit;		/* Note: can't have changed *descPtr by now. */
+	}
+#ifndef lint
+setMode:
+#endif not lint
 	descPtr->permissions = attrPtr->permissions;
     }
     if (flags & FS_SET_DEVICE) {
@@ -424,7 +460,7 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 	descPtr->accessTime       = attrPtr->accessTime.seconds;
 	descPtr->dataModifyTime   = attrPtr->dataModifyTime.seconds;
 	/*
-	 * Patch this because it gets copied by FsUpdateCachedAttr.
+	 * Patch this because it gets copied below by FsUpdateCachedAttr.
 	 */
 	attrPtr->createTime.seconds = descPtr->createTime;
     }
@@ -451,43 +487,6 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 exit:
     FsHandleRelease(handlePtr, TRUE);
     return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsOwner --
- *
- *	Determine if the process owns the file.
- *
- * Results:
- *	TRUE if the owner ID or group owner ID of the process
- *	match with that of the file.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-Boolean
-FsOwner(idPtr, descPtr)
-    FsUserIDs *idPtr;
-    FsFileDescriptor *descPtr;
-{
-    register int index;
-
-    if (idPtr->user == 0) {
-	return(TRUE);
-    }
-    if (idPtr->user == descPtr->uid) {
-	return(TRUE);
-    }
-    for (index=0 ; index < idPtr->numGroupIDs ; index++) {
-	if (idPtr->group[index] == descPtr->gid) {
-	    return(TRUE);
-	}
-    }
-    return(FALSE);
 }
 
 /*
