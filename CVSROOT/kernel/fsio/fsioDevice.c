@@ -1367,11 +1367,12 @@ Fsio_BootTimeTtyOpen()
     if (DEV_TYPE_INDEX(devHandlePtr->device.type) >= devNumDevices) {
 	status = FS_DEVICE_OP_INVALID;
     } else {
+	  int flags;
 /* XXX */ printf("Fsio_BootTimeTtyOpen: spriteID %d devHandle <%x>\n",
 			rpc_SpriteID, devHandlePtr);
 	status = (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].open)
 		    (&devHandlePtr->device, FS_READ|FS_WRITE, 
-		     (Fs_NotifyToken)devHandlePtr);
+		     (Fs_NotifyToken)devHandlePtr, &flags);
     }
     /*
      * Unlock the handle.  This leaves an extra reference just
