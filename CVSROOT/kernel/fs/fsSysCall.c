@@ -1198,13 +1198,15 @@ Fs_GetAttributesIDStub(streamID, attrPtr)
  *
  * Fs_SetAttributesStub --
  *
- *	Stub for Fs_SetAttributes system call.
+ *	Stub for Fs_SetAttributes system call.  This is a general
+ *	routine that sets ownership, access & modify times, permissions,
+ *	and user-defined file type.  The calling process must own the file.	
  *
  * Results:
  *	A return status.
  *
  * Side effects:
- *	None.
+ *	None here in this stub.
  *
  *----------------------------------------------------------------------
  */
@@ -1233,7 +1235,53 @@ Fs_SetAttributesStub(pathName, fileOrLink, attrPtr)
 	return(FS_INVALID_ARG);
     }
 
-    return(Fs_SetAttributes(newName, fileOrLink, &attr));
+    return(Fs_SetAttributes(newName, fileOrLink, &attr, FS_SET_ALL_ATTRS));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetAttrStub --
+ *
+ *	Stub for Fs_SetAttr system call.  Like the old Fs_SetAttributes
+ *	but with an additional flag specifying exactly which attributes
+ *	to update.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_SetAttrStub(pathName, fileOrLink, attrPtr, flags)
+    char *pathName;		/* Name of file to manipulate */
+    int fileOrLink;		/* Whether or not to follow symbolic links */
+    Fs_Attributes *attrPtr;	/* New values for attributes */
+    int flags;			/* What attributes to set */
+{
+    int				pathNameLength;
+    Fs_Attributes		attr;
+    char			newName[FS_MAX_PATH_NAME_LENGTH];
+
+    if (Vm_CopyIn(sizeof(attr), (Address) attrPtr, 
+		  (Address) &attr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    return(Fs_SetAttributes(newName, fileOrLink, &attr, flags));
 }
 
 /*
@@ -1274,7 +1322,52 @@ Fs_SetAttributesIDStub(streamID, attrPtr)
     status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
 	FsSetIDs(procPtr, &ids);
-	status = Fs_SetAttrStream(streamPtr, &attr, &ids);
+	status = Fs_SetAttrStream(streamPtr, &attr, &ids, FS_SET_ALL_ATTRS);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetAttrIDStub --
+ *
+ *	Stub for Fs_SetAttrID system call.  Like Fs_SetAttributesID
+ *	but has a flag parameter that specifies what attrs to set.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_SetAttrIDStub(streamID, attrPtr, flags)
+    int streamID;		/* References file to manipulate */
+    Fs_Attributes *attrPtr;	/* New attributes for the file */
+    int flags;			/* What attributes to set */
+{
+    register 	ReturnStatus 	status;
+    Fs_Stream			*streamPtr;
+    Fs_Attributes		attr;
+    FsUserIDs			ids;
+    Proc_ControlBlock		*procPtr;
+
+    if (Vm_CopyIn(sizeof(attr), (Address) attrPtr, 
+		  (Address) &attr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+
+    /*
+     * Map from stream ID to file pointer and get the attributes.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status == SUCCESS) {
+	FsSetIDs(procPtr, &ids);
+	status = Fs_SetAttrStream(streamPtr, &attr, &ids, flags);
     }
     return(status);
 }
