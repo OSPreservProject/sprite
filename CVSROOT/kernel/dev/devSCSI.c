@@ -375,7 +375,6 @@ Dev_SCSIInitDevice(devConfPtr)
 	}
 	wormPtr = (DevSCSIWorm *) Mem_Alloc(sizeof(DevSCSIWorm));
 	wormPtr->state = SCSI_WORM_CLOSED;
-	wormPtr->type = SCSI_RXT;
 	devPtr->data = (ClientData)wormPtr;
 	scsiWorm[scsiWormIndex] = devPtr;
 	Sys_Printf("SCSI-%d worm %d at slave %d\n",
@@ -1323,7 +1322,7 @@ DevSCSIWait(regsPtr, condition, reset, checkMsg)
     ReturnStatus status = DEV_TIMEOUT;
     register int control;
 
-    if (checkMsg) {
+    if (devSCSIDebug && checkMsg) {
 	Sys_Printf("DevSCSIWait: checking for message.\n");
     }
     for (i=0 ; i<SCSI_WAIT_LENGTH ; i++) {
@@ -1516,10 +1515,14 @@ DevSCSIWormIO(command, deviceUnit, buffer, firstSector, numSectorsPtr)
     /*
      * Chop up the IO into blocksize pieces.  For now, let's try ignoring
      * the FS blocksize and just do a single worm block at a time.
+     *
+     * Flag the stored sense as invalid just before sending the command to
+     * the drive.
      */
     totalXfer = 0;
     do {
 	numSectors = 1;
+	wormPtr->state &= ~SCSI_WORM_VALID_SENSE;
 	status = DevSCSISectorIO(command, devPtr, firstSector, &numSectors, buffer);
 	if (status == SUCCESS) {
 	    firstSector += numSectors;
