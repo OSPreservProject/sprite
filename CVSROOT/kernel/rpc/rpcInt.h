@@ -18,9 +18,9 @@
 #include "rpcPacket.h"
 
 /*
- * The sprite id of this hosts as maintained by the Rpc system.
+ * A general On/Off switch set via the Sys_Stats SYS_RPC_ENABLE_SERVICE command.
  */
-extern int rpcSpriteID;
+extern Boolean rpcServiceEnabled;
 
 /*
  * A boot ID for this host.  This is initialized one time when we boot.
