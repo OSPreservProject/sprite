@@ -1093,17 +1093,17 @@ Recov_DumpClientRecovInfo(length, resultPtr, lengthNeededPtr)
 	    infoPtr->spriteID = hostPtr->spriteID;
 	    infoPtr->numTries = hostPtr->numTries;
 	    Timer_GetRealTimeFromTicks(hostPtr->start,
-		    &(infoPtr->start), NIL, NIL);
+		    &(infoPtr->start), (int *) NIL, (Boolean *) NIL);
 	    Timer_GetRealTimeFromTicks(hostPtr->finished,
-		    &(infoPtr->finished), NIL, NIL);
+		    &(infoPtr->finished), (int *)NIL, (Boolean *) NIL);
 	    infoPtr->numHandles = hostPtr->numHandles;
 	    infoPtr->numSuccessful = hostPtr->numSuccessful;
 	    LIST_FORALL(&hostPtr->timeStampList, (List_Links *) stampPtr) {
 		infoPtr++;
 		Timer_GetRealTimeFromTicks(stampPtr->start,
-			&infoPtr->start, NIL, NIL);
+			&infoPtr->start, (int *) NIL, (Boolean *) NIL);
 		Timer_GetRealTimeFromTicks(stampPtr->finished,
-			&infoPtr->finished, NIL, NIL);
+			&infoPtr->finished, (int *) NIL, (Boolean *) NIL);
 		infoPtr->numHandles = stampPtr->numHandles;
 		infoPtr->numSuccessful = stampPtr->numSuccessful;
 	    }
@@ -1894,7 +1894,7 @@ Recov_PrintState()
 	    /*
 	     * Print out boot time in our timezone.
 	     */
-	    Timer_GetTimeOfDay(&currentTime, &localOffset, NIL);
+	    Timer_GetTimeOfDay(&currentTime, &localOffset, (Boolean *) NIL);
 	    bootTime.seconds = hostPtr->bootID;
 	    bootTime.microseconds = 0;
 	    bootTime.seconds += (localOffset * 60);
