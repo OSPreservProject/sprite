@@ -19,6 +19,8 @@
 #ifndef _MACHINT
 #define _MACHINT
 
+#include "machMon.h"
+
 /*
  * The bounds of the code that copies arguments from the user stack to
  * the kernel stack.
@@ -69,6 +71,11 @@ extern	MachVectorTable		*machVectorTablePtr;
  * the vector table.
  */
 extern	MachVectorTable 	machProtoVectorTable;
+
+/*
+ * Copy of the boot parameter structure.
+ */
+extern 	MachMonBootParam	machMonBootParam;
 
 /*
  * Internal functions.
