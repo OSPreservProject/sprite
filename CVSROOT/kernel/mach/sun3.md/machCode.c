@@ -27,6 +27,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "machMon.h"
 
+int	machLastSP, machPOP;
+
 /*
  *  Number of processors in the system.
  */
@@ -34,13 +36,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define NUM_PROCESSORS 1
 #endif NUM_PROCESSORS
 
+int mach_NumProcessors = NUM_PROCESSORS;
+
 /*
  * TRUE if cpu was in kernel mode before the interrupt, FALSE if was in 
  * user mode.
  */
 Boolean	mach_KernelMode;
-
-int mach_NumProcessors = NUM_PROCESSORS;
 
 /*
  *  Flag used by routines to determine if they are running at
@@ -339,11 +341,11 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * from the parent as well.
      */
     if (user) {
-	statePtr->userState.userStackPtr =
-		fromStatePtr->userState.userStackPtr;
-	Byte_Copy(sizeof(statePtr->userState.trapRegs),
-		  (Address)fromStatePtr->userState.trapRegs,
-		  (Address)statePtr->userState.trapRegs);
+	statePtr->userState.regState.userStackPtr =
+		fromStatePtr->userState.regState.userStackPtr;
+	Byte_Copy(sizeof(statePtr->userState.regState.trapRegs),
+		  (Address)fromStatePtr->userState.regState.trapRegs,
+		  (Address)statePtr->userState.regState.trapRegs);
     }
     if (startPC == (Address)NIL) {
 	stackPtr->startPC = (Address)fromStatePtr->userState.excStackPtr->pc;
@@ -374,7 +376,7 @@ Mach_SetReturnVal(procPtr, retVal)
     Proc_ControlBlock	*procPtr;	/* Process to set return value for. */
     int			retVal;		/* Value for process to return. */
 {
-    procPtr->machStatePtr->userState.trapRegs[D0] = retVal;
+    procPtr->machStatePtr->userState.regState.trapRegs[D0] = retVal;
 }
 
 
@@ -408,7 +410,7 @@ Mach_StartUserProc(procPtr, entryPoint)
     excStackPtr = (Mach_ExcStack *)
         (statePtr->kernStackStart + MACH_BARE_STACK_OFFSET - MACH_SHORT_SIZE);
     statePtr->userState.excStackPtr = excStackPtr;
-    statePtr->userState.trapRegs[SP] = (int)excStackPtr;
+    statePtr->userState.regState.trapRegs[SP] = (int)excStackPtr;
     excStackPtr->statusReg = 0;
     excStackPtr->pc = (int)entryPoint;
     excStackPtr->vor.stackFormat = MACH_SHORT;
@@ -444,7 +446,7 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     Address		entryPoint;		/* Where the user process is
 						 * to resume execution. */
 {
-    procPtr->machStatePtr->userState.userStackPtr = userStackPtr;
+    procPtr->machStatePtr->userState.regState.userStackPtr = userStackPtr;
     Mach_StartUserProc(procPtr, entryPoint);
     /* THIS DOES NOT RETURN */
 }
@@ -508,11 +510,11 @@ Mach_CopyState(statePtr, destProcPtr)
     register	Mach_State	*destStatePtr;
 
     destStatePtr = destProcPtr->machStatePtr;
-    destStatePtr->userState.userStackPtr =
-				statePtr->userState.userStackPtr;
+    destStatePtr->userState.regState.userStackPtr =
+				statePtr->userState.regState.userStackPtr;
     Byte_Copy(sizeof(int) * (MACH_NUM_GPRS - 1),
-	      statePtr->userState.trapRegs,
-	      destStatePtr->userState.trapRegs);
+	      statePtr->userState.regState.trapRegs,
+	      destStatePtr->userState.regState.trapRegs);
     destStatePtr->userState.excStackPtr->pc = 
 				    statePtr->userState.excStackPtr->pc;
     destStatePtr->userState.excStackPtr->statusReg = 
@@ -544,10 +546,10 @@ Mach_GetDebugState(procPtr, debugStatePtr)
     register	Mach_State	*machStatePtr;
 
     machStatePtr = procPtr->machStatePtr;
-    Byte_Copy(sizeof(machStatePtr->userState.trapRegs),
-	      (Address)machStatePtr->userState.trapRegs,
+    Byte_Copy(sizeof(machStatePtr->userState.regState.trapRegs),
+	      (Address)machStatePtr->userState.regState.trapRegs,
 	      (Address)debugStatePtr->genRegs);
-    debugStatePtr->genRegs[SP] = (int)machStatePtr->userState.userStackPtr;
+    debugStatePtr->genRegs[SP] = (int)machStatePtr->userState.regState.userStackPtr;
     debugStatePtr->progCounter = machStatePtr->userState.excStackPtr->pc;
     debugStatePtr->statusReg   = machStatePtr->userState.excStackPtr->statusReg;
 }
@@ -577,10 +579,10 @@ Mach_SetDebugState(procPtr, debugStatePtr)
     register	Mach_State	*machStatePtr;
 
     machStatePtr = procPtr->machStatePtr;
-    Byte_Copy(sizeof(machStatePtr->userState.trapRegs) - sizeof(int),
+    Byte_Copy(sizeof(machStatePtr->userState.regState.trapRegs) - sizeof(int),
 	      (Address)debugStatePtr->genRegs,
-	      (Address)machStatePtr->userState.trapRegs);
-    machStatePtr->userState.userStackPtr = (Address)debugStatePtr->genRegs[SP];
+	      (Address)machStatePtr->userState.regState.trapRegs);
+    machStatePtr->userState.regState.userStackPtr = (Address)debugStatePtr->genRegs[SP];
     machStatePtr->userState.excStackPtr->pc = debugStatePtr->progCounter;
     machStatePtr->userState.excStackPtr->statusReg = debugStatePtr->statusReg;
 }
@@ -607,7 +609,7 @@ Address
 Mach_GetUserStackPtr(procPtr)
     Proc_ControlBlock	*procPtr;
 {
-    return(procPtr->machStatePtr->userState.userStackPtr);
+    return(procPtr->machStatePtr->userState.regState.userStackPtr);
 }
 
 
@@ -1152,7 +1154,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
     Mach_ExcStack		*excStackPtr;
 
     statePtr = procPtr->machStatePtr;
-    usp = statePtr->userState.userStackPtr - sizeof(SignalStack);
+    usp = statePtr->userState.regState.userStackPtr - sizeof(SignalStack);
     sigStackPtr->sigStack.contextPtr =
 	(Sig_Context *)(usp + (unsigned int)(&sigStackPtr->sigContext) -
 			      (unsigned int)sigStackPtr);
@@ -1189,13 +1191,13 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
      * pointer at it.
      */
     if (statePtr->userState.excStackPtr !=
-			(Mach_ExcStack *)statePtr->userState.trapRegs[SP]) {
+			(Mach_ExcStack *)statePtr->userState.regState.trapRegs[SP]) {
 	Sys_Panic(SYS_FATAL, "Mach_HandleSig: SP != excStackPtr\n");
     }
-    statePtr->userState.userStackPtr = usp;
+    statePtr->userState.regState.userStackPtr = usp;
     excStackPtr = (Mach_ExcStack *) ((Address)statePtr->userState.excStackPtr + 
 				     excStackSize - MACH_SHORT_SIZE);
-    statePtr->userState.trapRegs[SP] = (int)excStackPtr;
+    statePtr->userState.regState.trapRegs[SP] = (int)excStackPtr;
     excStackPtr->statusReg = 0;
     excStackPtr->vor.stackFormat = MACH_SHORT;
     excStackPtr->pc = (int)pc;
@@ -1232,7 +1234,7 @@ ReturnFromSigHandler(procPtr)
      * Copy the signal stack in.
      */
     if (Vm_CopyIn(sizeof(Sig_Stack) + sizeof(Sig_Context),
-		  (Address) (statePtr->userState.userStackPtr), 
+		  (Address) (statePtr->userState.regState.userStackPtr), 
 		  (Address) &sigStack.sigStack) != SUCCESS) {
 	Sys_Panic(SYS_WARNING,
 	  "Mach_Code: Stack too small to extract trap info, PID=%x.\n",
@@ -1248,11 +1250,11 @@ ReturnFromSigHandler(procPtr)
      * Restore user state.  Be careful not to clobber the stack
      * pointer.
      */
-    statePtr->userState.userStackPtr = 
-		    sigStack.sigContext.machContext.userState.userStackPtr;
+    statePtr->userState.regState.userStackPtr = 
+		    sigStack.sigContext.machContext.userState.regState.userStackPtr;
     Byte_Copy(sizeof(int) * (MACH_NUM_GPRS - 1),
-	      (Address)sigStack.sigContext.machContext.userState.trapRegs,
-	      (Address)statePtr->userState.trapRegs);
+	      (Address)sigStack.sigContext.machContext.userState.regState.trapRegs,
+	      (Address)statePtr->userState.regState.trapRegs);
 
     /*
      * Verify that the exception stack is OK.
@@ -1277,7 +1279,7 @@ ReturnFromSigHandler(procPtr)
      * Set the restored stack pointer to point to where the
      * old exception stack is to be restored to.
      */
-    statePtr->userState.trapRegs[SP] += curSize - oldSize;
+    statePtr->userState.regState.trapRegs[SP] += curSize - oldSize;
 }
 
 
