@@ -1373,22 +1373,11 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
 	/*
 	 * Don't want Vm_SegmentDelete to destroy swap file unless we're
 	 * through with it.
+	 * Now I think that Vm_SegmentDelete will do the right thing even
+	 * without this, but I'm leaving it in just in case - Ken 10/91.
 	 */
-	segPtr->flags &= ~VM_SWAP_FILE_OPENED;
-	if (segPtr->filePtr != (Fs_Stream *)NIL) {
-	    if (((Fs_HandleHeader *)segPtr->filePtr)->refCount==0) {
-		printf("Vm_DeleteSharedSegment: not closing %x; ref=0\n",
-			segPtr->filePtr);
-	    } else {
-		(void)Fs_Close(segPtr->filePtr);
-	    }
-	} else {
-	    if (((Fs_HandleHeader *)segPtr->swapFilePtr)->refCount==0) {
-		printf("Vm_DeleteSharedSegment: not closing %x; ref=0\n",
-			segPtr->swapFilePtr);
-	    } else {
-		(void)Fs_Close(segPtr->swapFilePtr);
-	    }
+	if (!done) {
+	    segPtr->flags &= ~VM_SWAP_FILE_OPENED;
 	}
 	Vm_SegmentDelete(segPtr,procPtr);
 	if (!done) {
