@@ -82,7 +82,6 @@ static ReturnStatus ResumeExecution();
 static ReturnStatus InitiateMigration();
 static void	    LockAndSwitch();
 static ENTRY void   WakeupCallers();
-static ENTRY ReturnStatus   WaitForMigration();
 
 /*
  * External procedures.
@@ -257,7 +256,7 @@ Proc_Migrate(pid, nodeID)
      * If migrating another process, wait for it to migrate.
      */
     if (!migrateSelf) {
-	status = WaitForMigration(procPtr);
+	status = Proc_WaitForMigration(procPtr);
     } else {
 	status = SUCCESS;
     }
@@ -299,7 +298,7 @@ void
 Proc_MigrateTrap(procPtr)
     register Proc_ControlBlock 	*procPtr; /* The process being migrated */
 {
-    int nodeID;				  /* node to which it migrates */
+    int nodeID;			/* node to which it migrates */
     Proc_PCBLink *procLinkPtr;
     register Proc_ControlBlock *procItemPtr;
     List_Links *sharersPtr;
@@ -327,7 +326,7 @@ Proc_MigrateTrap(procPtr)
     }
    
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIG_PENDING) |
-	    PROC_MIGRATING;
+	PROC_MIGRATING;
     
     nodeID = procPtr->peerHostID;
     (void) Vm_FreezeSegments(procPtr, nodeID, &sharersPtr, &numSharers);
@@ -343,42 +342,55 @@ Proc_MigrateTrap(procPtr)
 	printf("Warning: Proc_MigrateTrap: cannot handle shared heaps.\n");
 	return;
     }
+#ifdef notdef
     LIST_FORALL(sharersPtr, itemPtr) {
 	procLinkPtr = (Proc_PCBLink *) itemPtr;
 	procItemPtr = procLinkPtr->procPtr;
-	if (proc_MigDebugLevel > 7) {
-	    printf("Proc_Migrate: Sending process state.\n");
-	}
-	status = SendProcessState(procItemPtr, nodeID, foreign);
-	if (status != SUCCESS) {
-	    printf("Warning: Error %x returned by SendProcessState.\n",
-		      status);
-	    goto failure;
-	}
-
 	/*
-	 * Send the virtual memory, and set up the process so the kernel
-	 * knows the process has no VM on this machine.
+	 * Tell the others to migrate here...
 	 */
-	
-	procItemPtr->genFlags |= PROC_NO_VM;
-	if (proc_MigDebugLevel > 7) {
-	    printf("Proc_Migrate: Sending code.\n");
-	} 
-	status = SendSegment(procItemPtr, VM_CODE, nodeID, foreign);
-	if (status != SUCCESS) {
-	    printf("Warning: Error %x returned by SendSegment on code.\n",
-		      status);
-	    goto failure;
-	}
     }
+#endif
+    if (proc_MigDebugLevel > 7) {
+	printf("Proc_Migrate: Sending process state.\n");
+    }
+    status = SendProcessState(procPtr, nodeID, foreign);
+    if (status != SUCCESS) {
+	printf("Warning: Error %x returned by SendProcessState.\n",
+	       status);
+	goto failure;
+    }
+
+    /*
+     * Send the virtual memory, and set up the process so the kernel
+     * knows the process has no VM on this machine.
+     */
+	
+    procPtr->genFlags |= PROC_NO_VM;
+    if (proc_MigDebugLevel > 7) {
+	printf("Proc_Migrate: Sending code.\n");
+    } 
+    status = SendSegment(procPtr, VM_CODE, nodeID, foreign);
+    if (status != SUCCESS) {
+	printf("Warning: Error returned by SendSegment on code: %s.\n",
+	       Stat_GetMsg(status));
+	goto failure;
+    }
+    /*
+     * The process doesn't need to be locked while we're flushing its
+     * address space, and in fact, we want it not to be locked so that
+     * an error while writing its pages to disk won't cause the pageout
+     * daemon to block trying to signal the proces.
+     */
+    Proc_Unlock(procPtr);
     if (proc_MigDebugLevel > 7) {
 	printf("Proc_Migrate: Sending stack.\n");
     }
-    status = SendSegment(procItemPtr, VM_STACK, nodeID, foreign);
+    status = SendSegment(procPtr, VM_STACK, nodeID, foreign);
     if (status != SUCCESS) {
-	printf("Warning: Error %x returned by SendSegment on stack.\n",
-		  status);
+	printf("Warning: Error returned by SendSegment on stack: %s.\n",
+	       Stat_GetMsg(status));
+        Proc_Lock(procPtr);
 	goto failure;
     }
     if (proc_MigDebugLevel > 7) {
@@ -389,12 +401,18 @@ Proc_MigrateTrap(procPtr)
 			       foreign);
 #else SHARED
     status = SendSegment(procPtr, VM_HEAP, nodeID, foreign);
-#endif /* SHARED */
+#endif				/* SHARED */
+    /*
+     * Lock the process again now that we're done flushing.
+     */
+    Proc_Lock(procPtr);
     if (status != SUCCESS) {
-	printf("Warning: Error %x returned by SendSegment on heap.\n",
-		  status);
+	printf("Warning: Error returned by SendSegment on heap: %s.\n",
+	       Stat_GetMsg(status));
 	goto failure;
     }
+
+
 
     status = SendFileState(procPtr, nodeID, foreign);
     if (status != SUCCESS) {
@@ -407,16 +425,16 @@ Proc_MigrateTrap(procPtr)
     }
     status = ResumeExecution(procPtr, nodeID, foreign);
     if (status != SUCCESS) {
-	printf("Warning: Error %x returned by ResumeExecution.\n",
-		  status);
+	printf("Warning: Error returned by ResumeExecution: %s.\n",
+	       Stat_GetMsg(status));
 #ifdef KILL_IT
 	goto failure;
 #else
 	printf("Warning: not killing migrating process.\n");
-#endif /* */
+#endif				/* */
     }
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIGRATING) |
-	    PROC_MIGRATION_DONE;
+	PROC_MIGRATION_DONE;
     Proc_Unlock(procPtr);
 
     /*
@@ -449,9 +467,8 @@ Proc_MigrateTrap(procPtr)
     panic("Proc_MigrateTrap: returned from context switch.\n");
     return;
 
-failure:
+ failure:
     procPtr->genFlags &= ~PROC_MIGRATING;
-    Sig_SendProc(procPtr, SIG_KILL, status);
     Proc_Unlock(procPtr);
     WakeupCallers();
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
@@ -461,6 +478,7 @@ failure:
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
 		     (ClientData) &record);
     }
+    Sig_SendProc(procPtr, SIG_KILL, status);
 
 }
 
@@ -1226,7 +1244,7 @@ Proc_MigSendUserInfo(procPtr)
 /*
  *----------------------------------------------------------------------
  *
- * WaitForMigration --
+ * Proc_WaitForMigration --
  *
  *	Monitored procedure to wait for a process to migrate.
  *
@@ -1239,8 +1257,8 @@ Proc_MigSendUserInfo(procPtr)
  *----------------------------------------------------------------------
  */
 
-static ENTRY ReturnStatus
-WaitForMigration(procPtr)
+ENTRY ReturnStatus
+Proc_WaitForMigration(procPtr)
     Proc_ControlBlock *procPtr;
 {
     ReturnStatus status;
