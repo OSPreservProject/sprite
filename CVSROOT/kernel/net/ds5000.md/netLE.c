@@ -246,12 +246,14 @@ NetLEReset(interPtr)
 
     /*
      * Reject all multicast addresses.
+     * Except we want boot multicasts.
+     * These are address ab-00-00-01-00-00 = hash bit 31, maybe?
      */
 
-    initPtr->multiCastFilter[0] = 0;
-    initPtr->multiCastFilter[1] = 0;
-    initPtr->multiCastFilter[2] = 0;
-    initPtr->multiCastFilter[3] = 0;
+    initPtr->multiCastFilter[0] = 0x8000; /* Bit 31 apparently. */
+    initPtr->multiCastFilter[1] = 0x0;
+    initPtr->multiCastFilter[2] = 0x0;
+    initPtr->multiCastFilter[3] = 0x0;
 
     /*
      * Set up the ring pointers.
