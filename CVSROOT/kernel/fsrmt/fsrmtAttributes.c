@@ -31,18 +31,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fslcl.h"
-#include "fsNameOps.h"
-#include "fsconsist.h"
-#include "fscache.h"
-#include "fsdm.h"
-#include "fsStat.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fsconsist.h>
+#include <fscache.h>
+#include <fsdm.h>
+#include <fsStat.h>
+#include <recov.h>
+#include <rpc.h>
 
-Fs_HandleHeader *VerifyIOHandle();
+#include <string.h>
+#include <stdio.h>
+
+static Fs_HandleHeader *VerifyIOHandle _ARGS_((Fs_FileID *fileIDPtr));
 
 
 /*
@@ -508,6 +512,7 @@ Fsrmt_RpcGetAttr(srvToken, clientID, command, storagePtr)
 	domainType = FS_PSEUDO_DOMAIN;
     } else if (hdrPtr == (Fs_HandleHeader *)NIL) {
 	status = Fsio_LocalFileHandleInit(fileIDPtr, (char *)NIL,
+			(Fsdm_FileDescriptor *) NIL, FALSE, 
 			(Fsio_FileIOHandle **)&tHdrPtr);
 	if (status != SUCCESS) {
 	    return(status);
@@ -654,6 +659,7 @@ Fsrmt_RpcSetAttr(srvToken, clientID, command, storagePtr)
 	domainType = FS_PSEUDO_DOMAIN;
     } else if (hdrPtr == (Fs_HandleHeader *)NIL) {
 	status = Fsio_LocalFileHandleInit(fileIDPtr, (char *)NIL,
+		        (Fsdm_FileDescriptor *) NIL, FALSE, 
 			(Fsio_FileIOHandle **)&hdrPtr);
 	if (status != SUCCESS) {
 	    return(status);
@@ -996,7 +1002,7 @@ Fsrmt_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
  *
  *----------------------------------------------------------------------
  */
-Fs_HandleHeader *
+static Fs_HandleHeader *
 VerifyIOHandle(fileIDPtr)
     Fs_FileID *fileIDPtr;
 {
