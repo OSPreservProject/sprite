@@ -64,6 +64,7 @@ Proc_GetIDs(procIDPtr, parentIDPtr, userIDPtr, effUserIDPtr)
     int 	*effUserIDPtr;	/* Where to return effective user id. */
 {
     register Proc_ControlBlock 	*procPtr;
+    Proc_PID myPID;
 
     procPtr = Proc_GetEffectiveProc();
 
@@ -72,8 +73,17 @@ Proc_GetIDs(procIDPtr, parentIDPtr, userIDPtr, effUserIDPtr)
      */
 
     if (procIDPtr != USER_NIL) {
+	/*
+	 * Return the process ID this process thinks it is, not necessarily
+	 * the one in the PCB.
+	 */
+	if (procPtr->genFlags & PROC_FOREIGN) {
+	    myPID = procPtr->peerProcessID;
+	} else {
+	    myPID = procPtr->processID;
+	}
 	if (Proc_ByteCopy(FALSE, sizeof(Proc_PID), 
-	    (Address) &(procPtr->processID), (Address) procIDPtr) != SUCCESS){
+	    (Address) &myPID, (Address) procIDPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
     }
