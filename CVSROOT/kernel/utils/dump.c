@@ -58,8 +58,62 @@ static void	PrintVersion();
 static void	PrintTOD();
 extern	void	Fs_DumpCacheStats();
 extern	void	Fs_PdevPrintTrace();
+extern	void	Rpc_PrintRecovTrace();
 extern	void	Fs_HandleScavengeStub();
 extern	void	Mem_DumpStats();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintL1Menu --
+ *
+ *	Dump out a list of the L1-key magic commands.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PrintL1Menu()
+{
+    Sys_Printf("/ - Print this menu\n");
+    /*
+     * MAKE SURE THIS AGREES WITH Dump_Init() !!
+     */
+    Sys_Printf("a - Abort to PROM monitor\n");
+    Sys_Printf("b - Put machine into (old) serial line debugger\n");
+    Sys_Printf("c - Dump cache stats\n");
+    Sys_Printf("d - Put machine into the kernel debugger\n");
+    Sys_Printf("e - Dump timer stats\n");
+    Sys_Printf("f - Dump filesystem trace\n");
+    Sys_Printf("h - Dump name hash statistics\n");
+    Sys_Printf("k - Reset console to keyboard mode\n");
+    Sys_Printf("l - Reset console to raw mode (for X)\n");
+    Sys_Printf("m - Dump memory stats\n");
+    Sys_Printf("n - Reset the network interface\n");
+    Sys_Printf("p - Dump process table\n");
+    Sys_Printf("r - Dump ready queue\n");
+    Sys_Printf("q - Dump pseudo-device trace\n");
+    Sys_Printf("s - Reset timer stats\n");
+    Sys_Printf("t - Dump the timer queue\n");
+    Sys_Printf("v - Print version string of the kernel\n");
+    Sys_Printf("x - Scavenge filesystem handles\n");
+    Sys_Printf("y - Dump RPC recovery trace\n");
+    Sys_Printf("z - Dump RPC packet trace\n");
+
+    Sys_Printf("1 - Dump info for timer counter 1\n");
+    Sys_Printf("2 - Dump info for timer counter 2\n");
+    Sys_Printf("3 - Dump info for timer counter 3\n");
+    Sys_Printf("4 - Dump info for timer counter 4\n");
+    Sys_Printf("5 - Dump info for timer counter 5\n");
+    Sys_Printf("6 - Print time of day counters\n");
+}
 
 
 /*
@@ -82,7 +136,14 @@ extern	void	Mem_DumpStats();
 void
 Dump_Init()
 {
+    Dev_KbdQueueAttachProc('/', PrintL1Menu, (ClientData)0);
+    /*
+     * BE SURE TO UPDATE PrintL1Menu() !!
+     */
+    /* 'a' is reserved for aborting a machine to the monitor */
+    /* 'b' is reserved for putting a machine into serial line debugger */
     Dev_KbdQueueAttachProc('c', Fs_DumpCacheStats, (ClientData)0);
+    /* 'd' is reserved for putting a machine into the debugger */
     Dev_KbdQueueAttachProc('e', DumpTimerStats,   (ClientData) 'e');
     Dev_KbdQueueAttachProc('f', Fs_PrintTrace,   (ClientData) 50);
     Dev_KbdQueueAttachProc('h', Fs_NameHashStats, (ClientData)fsNameTablePtr);
@@ -97,6 +158,7 @@ Dump_Init()
     Dev_KbdQueueAttachProc('t', Dump_TimerQueue,  (ClientData) 0);
     Dev_KbdQueueAttachProc('v', PrintVersion, (ClientData) 0);
     Dev_KbdQueueAttachProc('x', Fs_HandleScavengeStub, (ClientData) 0);
+    Dev_KbdQueueAttachProc('y', Rpc_PrintRecovTrace, (ClientData) 50);
     Dev_KbdQueueAttachProc('z', Rpc_PrintTrace, (ClientData) 50);
 
     Dev_KbdQueueAttachProc('1', Dev_TimerGetInfo, (ClientData) 1);
