@@ -39,9 +39,11 @@ static	int	firstIndex = -1;
 static	int	lastIndex = -1;
 
 static	Boolean	openForReading = FALSE;	/* TRUE if the device is open for
-					 * reading. */
-static	ClientData notifyToken;	/* Used for Fs call-back to notify waiting
-				 * processes that the syslog device is ready.*/
+					 * reading.  Only one process can
+					 * be reading syslog at a time. */
+static	Fs_NotifyToken notifyToken;	/* Used for Fs call-back to notify
+					 * waiting processes that the syslog
+					 * device is ready.*/
 static	Boolean	   overflow = FALSE;
 
 
@@ -54,7 +56,7 @@ static	Boolean	   overflow = FALSE;
  *
  * Results:
  *	SUCCESS		- the device was opened.
- *	FAILURE		- the event device is already opened.
+ *	FAILURE		- some other reader is already reading the syslog.
  *
  * Side effects:
  *	The system log is "opened" and static variables are initialized.
@@ -67,7 +69,7 @@ Dev_SyslogOpen(devicePtr, useFlags, token)
     Fs_Device *devicePtr;	/* Specifies type and unit number. */
     int useFlags;		/* Flags from the stream.  We only allow
 				 * a single reader at one time. */
-    ClientData token;		/* Used for Fs call-back to notify waiting
+    Fs_NotifyToken token;	/* Used for Fs call-back to notify waiting
 				 * processes that the syslog device is ready.*/
 {
     MASTER_LOCK(&syslogMutex);
@@ -82,6 +84,40 @@ Dev_SyslogOpen(devicePtr, useFlags, token)
     notifyToken = token;
     MASTER_UNLOCK(&syslogMutex);
     return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogReopen --
+ *
+ *	Reopen the system log device.  This uses Dev_SyslogOpen to
+ *	do all the work.
+ *
+ * Results:
+ *	SUCCESS		- the device was opened.
+ *	FAILURE		- some other reader is already reading the syslog.
+ *
+ * Side effects:
+ *	See Dev_SyslogOpen.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Dev_SyslogReopen(devicePtr, refs, writers, token)
+    Fs_Device *devicePtr;	/* Specifies type and unit number. */
+    int refs;			/* Number of existing opens */
+    int writers;		/* Number of existing writers */
+    Fs_NotifyToken token;	/* Used for Fs call-back to notify waiting
+				 * processes that the console device is ready.*/
+{
+    int useFlags = FS_READ;
+
+    if (writers) {
+	useFlags |= FS_WRITE;
+    }
+    return( Dev_SyslogOpen(devicePtr, useFlags, token) );
 }
 
 
@@ -102,26 +138,22 @@ Dev_SyslogOpen(devicePtr, useFlags, token)
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
+Dev_SyslogRead(devicePtr, readPtr, replyPtr)
     Fs_Device	*devicePtr;
-    int		offset;	  	/* Ignored. */
-    int		bufSize;	/* Size of buffer. */
-    Address	bufPtr;		/* Place to store data. */
-    register int *lenPtr;  	/* Maximum number of chars to read 
-				 * before returning. */ 
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
     int		toRead;
-    int		origSize;
     int		bytesLeft;
     Address	copyAddr;
+    Address	bufPtr = readPtr->buffer;
 
-    origSize = *lenPtr;
-    bytesLeft = *lenPtr;
+    bytesLeft = readPtr->length;
 
     MASTER_LOCK(&syslogMutex);
     overflow = FALSE;
     if (firstIndex == -1) {
-	*lenPtr = 0;
+	replyPtr->length = 0;
 	MASTER_UNLOCK(&syslogMutex);
 	return(FS_WOULD_BLOCK);
     }
@@ -152,7 +184,7 @@ Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
 	bytesLeft -= toRead;
     }
     MASTER_UNLOCK(&syslogMutex);
-    *lenPtr = origSize - bytesLeft;
+    replyPtr->length = readPtr->length - bytesLeft;
     return(SUCCESS);
 }
 
@@ -164,7 +196,8 @@ Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
  *
  *	Write characters to the system log.  If the device isn't open
  *	then Mach_MonPutChar is used to output directly to the screen.  
- *	Otherwise data is output to a buffer.
+ *	Otherwise data is output to a buffer that is emptied by
+ *	reading the syslog device.
  *
  * Results:
  *	SUCCESS.
@@ -176,45 +209,43 @@ Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
+Dev_SyslogWrite(devicePtr, writePtr, replyPtr)
     Fs_Device     *devicePtr;		/* Ignored. */
-    int		 offset;		/* Ignored. */
-    int		 bufSize;		/* Number of bytes to write. */
-    register char *bufPtr;		/* Place to find data */
-    int 	 *bytesWrittenPtr;	/* Number of chars written */ 
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
-    int	origSize;
     int	i;
     int	toWrite;
+    int origSize = writePtr->length;
+    Address bufPtr = writePtr->buffer;
 
 
     if (!dbg_UsingSyslog) {
 	if (!openForReading) {
-	    for (i = 0; i < bufSize; i++, bufPtr++) {
+	    for (i = 0; i < writePtr->length; i++, bufPtr++) {
 		Mach_MonPutChar(*bufPtr);
 	    }
-	    *bytesWrittenPtr = bufSize;
+	    replyPtr->length = writePtr->length;
 	    return(SUCCESS);
 	}
 	MASTER_LOCK(&syslogMutex);
     }
 
-    origSize = bufSize;
     if (firstIndex != -1 && firstIndex <= lastIndex) {
 	/*
 	 * Fill up until the end of the buffer or until run out of
 	 * bytes, whichever comes first.
 	 */
 	toWrite = SYSLOG_BUF_SIZE - (lastIndex + 1);
-	if (toWrite > bufSize) {
-	    toWrite = bufSize;
+	if (toWrite > writePtr->length) {
+	    toWrite = writePtr->length;
 	}
 	bcopy(bufPtr, &syslogBuffer[lastIndex + 1], toWrite);
-	bufSize -= toWrite;
+	writePtr->length -= toWrite;
 	bufPtr += toWrite;
 	lastIndex += toWrite;
     }
-    if (bufSize > 0) {
+    if (writePtr->length > 0) {
 	int	nextIndex;
 
 	nextIndex = lastIndex + 1;
@@ -226,10 +257,10 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
 	     * Buffer overflow
 	     */
 	    if (!overflow) {
-		Mach_MonPrintf("Dev_SyslogWrite: Buffer overflow, dumping overflow ...\n");
+		Mach_MonPrintf("Dev_SyslogWrite: Buffer overflow ...\n");
 		overflow = TRUE;
 	    }
-	    for (i = 0; i < bufSize; i++, bufPtr++) {
+	    for (i = 0; i < writePtr->length; i++, bufPtr++) {
 		Mach_MonPutChar(*bufPtr);
 	    }
 	} else {
@@ -239,19 +270,19 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
 	    } else {
 		toWrite = firstIndex - nextIndex;
 	    }
-	    if (toWrite > bufSize) {
-		toWrite = bufSize;
+	    if (toWrite > writePtr->length) {
+		toWrite = writePtr->length;
 	    }
 	    bcopy(bufPtr, syslogBuffer, toWrite);
 	    lastIndex = nextIndex + toWrite - 1;
-	    bufSize -= toWrite;
+	    writePtr->length -= toWrite;
 	}
     }
     if (!dbg_UsingSyslog) {
-	Fs_NotifyReader(notifyToken);
+	Fs_DevNotifyReader(notifyToken);
 	MASTER_UNLOCK(&syslogMutex);
     }
-    *bytesWrittenPtr = origSize - bufSize;
+    replyPtr->length = origSize - writePtr->length;
     return(SUCCESS);
 }
 
@@ -277,9 +308,16 @@ void
 Dev_SyslogPutChar(ch)
     char	ch;
 {
-    int	bytesWritten;
+    Fs_IOParam io;
+    Fs_IOReply reply;
 
-    (void) Dev_SyslogWrite((Fs_Device *) NIL, 0, 1, &ch, &bytesWritten);
+    io.buffer = &ch;
+    io.length = 1;
+    io.offset = 0;
+    io.flags = 0;
+    reply.signal = 0;
+
+    (void) Dev_SyslogWrite((Fs_Device *) NIL, &io, &reply);
 }
 
 
@@ -349,10 +387,11 @@ Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
  */
 /* ARGSUSED */
 ReturnStatus
-Dev_SyslogIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
+Dev_SyslogIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
 		     outBuffer)
     Fs_Device	        *devicePtr;
     int			command;
+    int			byteOrder;
     int			inBufSize;
     Address		inBuffer;
     int			outBufSize;
@@ -405,22 +444,24 @@ Dev_SyslogIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SyslogSelect(devicePtr, inFlags, outFlagsPtr)
+Dev_SyslogSelect(devicePtr, readPtr, writePtr, exceptPtr)
     Fs_Device	        *devicePtr;
-    int			inFlags;
-    int			*outFlagsPtr;
+    int			*readPtr;
+    int			*writePtr;
+    int			*exceptPtr;
 {
     MASTER_LOCK(&syslogMutex);
-    if (inFlags & FS_READABLE) {
-	if (lastIndex != -1) {
-	    *outFlagsPtr |= FS_READABLE;
+    if (*readPtr) {
+	if (lastIndex == -1) {
+	    *readPtr = 0;
 	}
     }
-    if (inFlags & FS_WRITABLE) {
-	if (firstIndex != lastIndex + 1) {
-	    *outFlagsPtr |= FS_WRITABLE;
+    if (*writePtr) {
+	if (firstIndex == lastIndex + 1) {
+	    *writePtr = 0;
 	}
     }
+    *exceptPtr = 0;
     MASTER_UNLOCK(&syslogMutex);
     return(SUCCESS);
 }

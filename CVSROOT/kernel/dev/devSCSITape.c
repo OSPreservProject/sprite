@@ -445,7 +445,7 @@ ReturnStatus
 DevSCSITapeOpen(devicePtr, useFlags, token)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
     int useFlags;		/* Flags from the stream being opened */
-    ClientData token;		/* Call-back token for input, unused here */
+    Fs_NotifyToken token;	/* Call-back token for input, unused here */
 {
     ReturnStatus status;
     ScsiDevice *devPtr;
@@ -491,13 +491,10 @@ DevSCSITapeOpen(devicePtr, useFlags, token)
 
 /*ARGSUSED*/
 ReturnStatus
-DevSCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
+DevSCSITapeRead(devicePtr, readPtr, replyPtr)
     Fs_Device *devicePtr;	/* Handle for raw SCSI tape device */
-    int offset;			/* IGNORED for tape. */
-    int bufSize;		/* Number of bytes to read,  this gets rounded
-				 * down to a multiple of the sector size */
-    char *buffer;		/* Buffer for the read */
-    int *lenPtr;		/* How many bytes actually read */
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
     ReturnStatus error;	
     ScsiTape *tapePtr;
@@ -511,42 +508,42 @@ DevSCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
 	 * Force the use of the SKIP_FILES control to get past the end of
 	 * the file on tape.
 	 */
-	*lenPtr = 0;
+	replyPtr->length = 0;
 	return(SUCCESS);
     }
     /*
      * Break up the IO into piece the device/HBA can handle.
      */
-    totalTransfer = 0;
     error = SUCCESS;
 #ifdef GOOD
     maxXfer = tapePtr->devPtr->maxTransferSize;
 #else
     maxXfer = 1024;
 #endif
-    while((*lenPtr > 0) && (error == SUCCESS)) {  
+    totalTransfer = 0;
+    while((readPtr->length > 0) && (error == SUCCESS)) {  
 	int	byteCount;
-	transferSize = (*lenPtr > maxXfer) ? maxXfer : *lenPtr;
+	transferSize = (readPtr->length > maxXfer) ? maxXfer : readPtr->length;
 	byteCount = transferSize;
-	error = (tapePtr->tapeIOProc)(tapePtr, SCSI_READ, buffer,&byteCount);
+	error = (tapePtr->tapeIOProc)(tapePtr, SCSI_READ,
+				  readPtr->buffer + totalTransfer, &byteCount);
 	/*
 	 * A short read implies we hit end of file or end of tape. 
 	 */
 	totalTransfer += byteCount;
+	readPtr->length -= byteCount;
 	if (byteCount < transferSize) {
 	    break;
 	}
-	buffer += transferSize;
-	*lenPtr -= transferSize;
     }
-    *lenPtr = totalTransfer;
+    replyPtr->length = totalTransfer;
     /*
      * Special check against funky end-of-file situations.  The Emulex tape
      * doesn't compute a correct residual when it hits the file mark
      * on the tape.
      */
     if (error == DEV_END_OF_TAPE) {
-	*lenPtr = 0;
+	replyPtr->length = 0;
 	error = SUCCESS;
     }
     return(error);
@@ -570,12 +567,10 @@ DevSCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-DevSCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
+DevSCSITapeWrite(devicePtr, writePtr, replyPtr)
     Fs_Device *devicePtr;	/* Handle of raw tape device */
-    int offset;			/* IGNORED for tape. */
-    int bufSize;		/* Number of bytes to write.  */
-    char *buffer;		/* Write buffer */
-    int *lenPtr;		/* How much was actually written */
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
     ReturnStatus error;	
     ScsiTape *tapePtr;
@@ -587,25 +582,25 @@ DevSCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
     /*
      * Break up the IO into piece the device/HBA can handle.
      */
-    totalTransfer = 0;
     error = SUCCESS;
     maxXfer = tapePtr->devPtr->maxTransferSize;
-    while((*lenPtr > 0) && (error == SUCCESS)) {  
+    totalTransfer = 0;
+    while((writePtr->length > 0) && (error == SUCCESS)) {  
 	int	byteCount;
-	transferSize = (*lenPtr > maxXfer) ? maxXfer : *lenPtr;
+	transferSize = (writePtr->length > maxXfer) ? maxXfer : writePtr->length;
 	byteCount = transferSize;
-	error = (tapePtr->tapeIOProc)(tapePtr,SCSI_WRITE, buffer,&byteCount);
+	error = (tapePtr->tapeIOProc)(tapePtr, SCSI_WRITE,
+			      writePtr->buffer + totalTransfer, &byteCount);
 	/*
 	 * A short write implies we hit end of tape. 
 	 */
 	totalTransfer += byteCount;
+	writePtr->length -= transferSize;
 	if (byteCount < transferSize) {
 	    break;
 	}
-	buffer += transferSize;
-	*lenPtr -= transferSize;
     }
-    *lenPtr = totalTransfer;
+    writePtr->length = totalTransfer;
     if (error == SUCCESS) {
 	tapePtr->state |= SCSI_TAPE_WRITTEN;
     }
@@ -629,10 +624,11 @@ DevSCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-DevSCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
+DevSCSITapeIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer,
 				 outBufSize, outBuffer)
     Fs_Device *devicePtr;
     int command;
+    int byteOrder;
     int inBufSize;
     char *inBuffer;
     int outBufSize;
@@ -643,8 +639,8 @@ DevSCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
 
     tapePtr = (ScsiTape *)(devicePtr->data);
      if ((command&~0xffff) == IOC_SCSI) {
-	 status = DevScsiIOControl(tapePtr->devPtr, command, inBufSize,
-				inBuffer, outBufSize, outBuffer);
+	 status = DevScsiIOControl(tapePtr->devPtr, command, byteOrder,
+			 inBufSize, inBuffer, outBufSize, outBuffer);
 	 return status;
 
      }

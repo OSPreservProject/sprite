@@ -35,14 +35,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_NullRead(devicePtr, offset, bufSize, buffer, lenPtr)
+Dev_NullRead(devicePtr, readPtr, replyPtr)
     Fs_Device *devicePtr;
-    int offset;
-    int bufSize;
-    char *buffer;
-    int *lenPtr;
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
-    *lenPtr = 0;
+    replyPtr->length = 0;
     return(SUCCESS);
 }
 
@@ -63,12 +61,11 @@ Dev_NullRead(devicePtr, offset, bufSize, buffer, lenPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_NullWrite(devicePtr, offset, bufSize, buffer, lenPtr)
+Dev_NullWrite(devicePtr, writePtr, replyPtr)
     Fs_Device *devicePtr;
-    int offset;
-    int bufSize;
-    char *buffer;
-    int *lenPtr;
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
+    replyPtr->length = writePtr->length;
     return(SUCCESS);
 }

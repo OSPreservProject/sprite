@@ -412,10 +412,11 @@ DiskError(diskPtr, statusByte, senseLength, senseDataPtr)
 
 /*ARGSUSED*/
 static ReturnStatus
-IOControlProc(handlePtr, command, inBufSize, inBuffer,
+IOControlProc(handlePtr, command, byteOrder, inBufSize, inBuffer,
                                  outBufSize, outBuffer)
     DevBlockDeviceHandle	*handlePtr; /* Handle pointer of device. */
     int command;
+    int byteOrder;
     int inBufSize;
     char *inBuffer;
     int outBufSize;
@@ -425,8 +426,8 @@ IOControlProc(handlePtr, command, inBufSize, inBuffer,
      ReturnStatus	status;
 
      if ((command&~0xffff) == IOC_SCSI) {
-	 status = DevScsiIOControl(diskPtr->devPtr, command, inBufSize,
-				inBuffer, outBufSize, outBuffer);
+	 status = DevScsiIOControl(diskPtr->devPtr, command, byteOrder,
+			 inBufSize, inBuffer, outBufSize, outBuffer);
 	 return status;
 
      }

@@ -50,10 +50,9 @@ ReturnStatus
 DevRawBlockDevOpen(devicePtr, useFlags, token)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
     int useFlags;		/* Flags from the stream being opened */
-    ClientData token;		/* Call-back token for input, unused here */
+    Fs_NotifyToken token;	/* Call-back token for input, unused here */
 {
     DevBlockDeviceHandle *handlePtr;
-
 
     /*
      * See if the device was already open by someone else. NOTE: The 
@@ -82,6 +81,39 @@ DevRawBlockDevOpen(devicePtr, useFlags, token)
 /*
  *----------------------------------------------------------------------
  *
+ * DevRawBlockDevReopen --
+ *
+ *	Reopen a Block Device as a file for reads and writes.
+ *	This calls the regular open procedure to do all the work.
+ *
+ * Results:
+ *	SUCCESS if the device is successfully attached.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+DevRawBlockDevReopen(devicePtr, refs, writers, token)
+    Fs_Device *devicePtr;	/* Device info, unit number etc. */
+    int refs;			/* Number of open streams */
+    int writers;		/* Number of writing streams */
+    Fs_NotifyToken token;	/* Call-back token for input, unused here */
+{
+    int useFlags = FS_READ;
+
+    if (writers) {
+	useFlags |= FS_WRITE;
+    }
+    return( DevRawBlockDevOpen(devicePtr, useFlags, token) );
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DevRawBlockDevRead --
  *
  *	Read from a raw Block Device. 
@@ -95,17 +127,16 @@ DevRawBlockDevOpen(devicePtr, useFlags, token)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevRawBlockDevRead(devicePtr, offset, bufSize, buffer, lenPtr)
+DevRawBlockDevRead(devicePtr, readPtr, replyPtr)
     Fs_Device *devicePtr;	/* Handle for raw Block device */
-    int offset;			/* Indicates starting point for read.  */
-    int bufSize;		/* Number of bytes to read. */
-    char *buffer;		/* Buffer for the read */
-    int *lenPtr;		/* How many bytes actually read */
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
     ReturnStatus error;
     DevBlockDeviceRequest	request;
     DevBlockDeviceHandle	*handlePtr;
-    int				transferLen;
+    int				amountRead;
+    int				toRead;
 
     /*
      * Extract the BlockDeviceHandle from the Fs_Device and sent a 
@@ -115,35 +146,37 @@ DevRawBlockDevRead(devicePtr, offset, bufSize, buffer, lenPtr)
      * blocksize.
      */
     handlePtr = (DevBlockDeviceHandle *) (devicePtr->data);
-    if ((offset % (handlePtr->minTransferUnit)) || 
-	(bufSize % (handlePtr->minTransferUnit))) {
-	*lenPtr = 0;
+    if ((readPtr->offset % (handlePtr->minTransferUnit)) || 
+	(readPtr->length % (handlePtr->minTransferUnit))) {
+	replyPtr->length = 0;
+	printf("DevRawBlockDevRead: Non-aligned read, %d bytes at %d\n",
+		readPtr->length, readPtr->offset);
 	return DEV_INVALID_ARG;
     }
-    transferLen = 0;
-    while (bufSize > handlePtr->maxTransferSize) {
+
+    amountRead = 0;
+    while (readPtr->length > 0) {
+	/*
+	 * Reinitialize everything each loop because lower-levels
+	 * might trash operation or startAddrHigh for their own reasons.
+	 */
 	request.operation = FS_READ;
-	request.startAddress = offset;
 	request.startAddrHigh = 0;
-	request.bufferLen = handlePtr->maxTransferSize;
-	request.buffer = buffer;
-	error = Dev_BlockDeviceIOSync(handlePtr, &request, lenPtr);
-	if ((error != SUCCESS) || (*lenPtr != handlePtr->maxTransferSize)) {
-	    transferLen += *lenPtr;
+	request.startAddress = readPtr->offset + amountRead;
+	request.buffer = readPtr->buffer + amountRead;
+	toRead = (readPtr->length > handlePtr->maxTransferSize) ?
+		  handlePtr->maxTransferSize : readPtr->length;
+	request.bufferLen = toRead;
+	error = Dev_BlockDeviceIOSync(handlePtr, &request, &replyPtr->length);
+	amountRead += replyPtr->length;
+	readPtr->length -= replyPtr->length;
+	if ((error != SUCCESS) || (replyPtr->length != toRead)) {
+	    printf("DevRawBlockDevRead: error 0x%x short length %d\n",
+		    error, replyPtr->length);
 	    return error;
 	}
-	transferLen += handlePtr->maxTransferSize;
-	buffer += handlePtr->maxTransferSize;
-	bufSize -= handlePtr->maxTransferSize;
-	offset += handlePtr->maxTransferSize;
     }
-    request.operation = FS_READ;
-    request.startAddress = offset;
-    request.startAddrHigh = 0;
-    request.bufferLen = bufSize;
-    request.buffer = buffer;
-    error = Dev_BlockDeviceIOSync(handlePtr, &request, lenPtr);
-    *lenPtr += transferLen;
+    replyPtr->length = amountRead;
     return(error);
 }
 
@@ -163,18 +196,16 @@ DevRawBlockDevRead(devicePtr, offset, bufSize, buffer, lenPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevRawBlockDevWrite(devicePtr, offset, bufSize, buffer, lenPtr)
+DevRawBlockDevWrite(devicePtr, writePtr, replyPtr)
     Fs_Device *devicePtr;	/* Handle of raw disk device */
-    int offset;			/* Indicates the starting point of the write.
-				 */
-    int bufSize;		/* Number of bytes to write.  */
-    char *buffer;		/* Write buffer */
-    int *lenPtr;		/* How much was actually written */
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
     ReturnStatus 		error;	
     DevBlockDeviceRequest	request;
     DevBlockDeviceHandle	*handlePtr;
-    int				transferLen;
+    int				amountWritten;
+    int				toWrite;
     /*
      * Extract the BlockDeviceHandle from the Fs_Device and sent a 
      * BlockDeviceRequest WRITE request using the synchronous
@@ -182,35 +213,32 @@ DevRawBlockDevWrite(devicePtr, offset, bufSize, buffer, lenPtr)
      */
 
     handlePtr = (DevBlockDeviceHandle *) (devicePtr->data);
-    if ((offset % (handlePtr->minTransferUnit)) || 
-	(bufSize % (handlePtr->minTransferUnit))) {
-	*lenPtr = 0;
+    if ((writePtr->offset % (handlePtr->minTransferUnit)) || 
+	(writePtr->length % (handlePtr->minTransferUnit))) {
+	replyPtr->length = 0;
 	return DEV_INVALID_ARG;
     }
-    transferLen = 0;
-    while (bufSize > handlePtr->maxTransferSize) {
+    amountWritten = 0;
+    while (writePtr->length > 0) {
+	/*
+	 * Reinitialize everything each loop because lower-levels
+	 * might trash operation or startAddrHigh for their own reasons.
+	 */
 	request.operation = FS_WRITE;
-	request.startAddress = offset;
 	request.startAddrHigh = 0;
-	request.bufferLen = handlePtr->maxTransferSize;
-	request.buffer = buffer;
-	error = Dev_BlockDeviceIOSync(handlePtr, &request, lenPtr);
-	if ((error != SUCCESS) || (*lenPtr != handlePtr->maxTransferSize)) {
-	    transferLen += *lenPtr;
+	request.startAddress = writePtr->offset + amountWritten;
+	request.buffer = writePtr->buffer + amountWritten;
+	toWrite = (writePtr->length > handlePtr->maxTransferSize) ?
+		   handlePtr->maxTransferSize : writePtr->length;
+	request.bufferLen = toWrite;
+	error = Dev_BlockDeviceIOSync(handlePtr, &request, &replyPtr->length);
+	amountWritten += replyPtr->length;
+	writePtr->length -= replyPtr->length;
+	if ((error != SUCCESS) || (replyPtr->length != toWrite)) {
 	    return error;
 	}
-	transferLen += handlePtr->maxTransferSize;
-	buffer += handlePtr->maxTransferSize;
-	bufSize -= handlePtr->maxTransferSize;
-	offset += handlePtr->maxTransferSize;
     }
-    request.operation = FS_WRITE;
-    request.startAddress = offset;
-    request.startAddrHigh = 0;
-    request.bufferLen = bufSize;
-    request.buffer = buffer;
-    error = Dev_BlockDeviceIOSync(handlePtr, &request, lenPtr);
-    *lenPtr += transferLen;
+    replyPtr->length = amountWritten;
     return(error);
 }
 
@@ -232,17 +260,18 @@ DevRawBlockDevWrite(devicePtr, offset, bufSize, buffer, lenPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-DevRawBlockDevIOControl(devicePtr, command, inBufSize, inBuffer,
+DevRawBlockDevIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer,
 				 outBufSize, outBuffer)
     Fs_Device *devicePtr;	/* Device pointer to operate of. */
     int command;		/* IO Control to be performed. */
+    int byteOrder;		/* Caller's byte ordering */
     int inBufSize;		/* Size of inBuffer in bytes. */
     char *inBuffer;		/* Input data to command. */
     int outBufSize;		/* Size of inBuffer in bytes. */
     char *outBuffer;		/* Output data from command. */
 {
     return Dev_BlockDeviceIOControl((DevBlockDeviceHandle *) (devicePtr->data),
-			command, inBufSize, inBuffer, outBufSize, outBuffer);
+		command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
 }
 
 /*

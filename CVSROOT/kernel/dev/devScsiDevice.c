@@ -366,9 +366,10 @@ DevScsiTestReady(scsiDevicePtr)
  */
 
 ReturnStatus
-DevScsiIOControl(devPtr,command, inBufSize, inBuffer, outBufSize, outBuffer)
+DevScsiIOControl(devPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
     ScsiDevice	*devPtr;	/* SCSI Handle for device. */
     int command;		/* IO Control Command. */
+    int byteOrder;		/* Caller's byte ordering */
     int inBufSize;		/* Input buffer size. */
     char *inBuffer;		/* IO Control input buffer. */
     int outBufSize;		/* Output buffer size. */
