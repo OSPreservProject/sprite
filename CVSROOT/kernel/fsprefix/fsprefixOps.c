@@ -79,7 +79,7 @@ extern void FsPrefixHandleCloseInt();
  *	a pathname lookup operation.  This is called by the routines in
  *	fsNameOps.c to do opens, removes, mkdir, rmdir, etc. etc.  The
  *	domain-type name lookup routines may return pathnames instead of
- *	results	if the pathname left the domain of the server orignially
+ *	results	if the pathname left the domain of the server originally
  *	chosen by the prefix table.  This routine handles these "re-directed"
  *	pathnames and hides the iteration between the prefix table and
  *	the various servers.
@@ -100,7 +100,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
 				 * means we won't indirect via a prefix which
 				 * matches the name exactly. */
     Address 	argsPtr;	/* Operation specific arguments.  NOTE: it
-				 * is assummed that the first thing in the
+				 * is assumed that the first thing in the
 				 * arguments is a prefix file ID, except on
 				 * the IMPORT/EXPORT operations.  We set the
 				 * prefix fileID here as a convenience to
@@ -989,7 +989,7 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
 			   (lastChar == '\0') || (lastChar == '/')) {
 		    /*
 		     * The prefix is "/", or the prefix matches up through
-		     * a complete pathname component.  This implis that
+		     * a complete pathname component.  This implies that
 		     * /spur is not a valid prefix of /spurios.
 		     */
 		    if (longestPrefixPtr == (FsPrefix *)NIL) {
@@ -1461,7 +1461,7 @@ GetNilPrefixes(listPtr)
  *
  * FsPrefixOpenCheck --
  *
- *	This is called to indicate that an open is occuring in
+ *	This is called to indicate that an open is occurring in
  *	this domain.  This will fail if recovery is in progress
  *	with the server.
  *
