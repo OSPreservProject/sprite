@@ -485,6 +485,11 @@ extern Proc_ControlBlock **proc_PCBTable;
 extern int proc_MaxNumProcesses;
 
 /*
+ * set to TRUE to disallow all migrations to this machine.
+ */
+extern Boolean proc_RefuseMigrations;
+
+/*
  *  Macros to manipulate process IDs.
  */
 
