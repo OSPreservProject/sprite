@@ -1279,7 +1279,7 @@ MachUserReturn(procPtr)
 		    printf("No signal action, so we restarted call\n");
 		}
 		procPtr->unixProgress = PROC_PROGRESS_UNIX;
-	    } else if (restarted) {
+	    } else if (restarted && debugProcStubs) {
 		printf("No signal, yet we restarted system call!\n");
 	    }
 	}
