@@ -1124,6 +1124,7 @@ FsRemoteDomainInfo(fileIDPtr, domainInfoPtr)
     FsDomainInfoResults		results;
     Rpc_Storage			storage;
 
+retry:
     storage.requestParamPtr = (Address)fileIDPtr;
     storage.requestParamSize = sizeof(Fs_FileID);
     storage.requestDataPtr = (Address) NIL;
@@ -1135,8 +1136,36 @@ FsRemoteDomainInfo(fileIDPtr, domainInfoPtr)
 
     status = Rpc_Call(fileIDPtr->serverID, RPC_FS_DOMAIN_INFO, &storage);
 
-    *domainInfoPtr = results.domain;
-    *fileIDPtr = results.fileID;
+    if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
+	status == RPC_SERVICE_DISABLED) {
+	/*
+	 * Wait for recovery here, instead of higher up in FsDomainInfo.
+	 * This is because the server-side stub can't check against
+	 * stale handle conditions, so it always calls FsDomainInfo.
+	 * We don't want to ever wait for recovery on the server,
+	 * so we do it here where we know we are a client.
+	 */
+	FsHandleHeader *hdrPtr;
+	hdrPtr = FsHandleFetch(fileIDPtr);
+	if (hdrPtr == (FsHandleHeader *)NIL) {
+	    printf("FsRemoteDomainInfo: Can't fetch <%d,%d,%d,%d>\n",
+		    fileIDPtr->type, fileIDPtr->serverID,
+		    fileIDPtr->major, fileIDPtr->minor);
+	} else {
+	    FsHandleUnlock(hdrPtr);
+	    FsWantRecovery(hdrPtr);
+	    printf("FsRemoteDomainInfo: waiting for recovery <%d,%d> server %d\n",
+		    fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
+	    status = FsWaitForRecovery(hdrPtr, status);
+	    if (status == SUCCESS) {
+		goto retry;
+	    }
+	}
+    }
+    if (status == SUCCESS) {
+	*domainInfoPtr = results.domain;
+	*fileIDPtr = results.fileID;
+    }
 
     return(status);
 }
@@ -1176,6 +1205,7 @@ Fs_RpcDomainInfo(srvToken, clientID, command, storagePtr)
     ReturnStatus	status;
     Fs_FileID		*fileIDPtr;
     FsDomainInfoResults	*resultsPtr;
+    Rpc_ReplyMem	*replyMemPtr;
 
     fileIDPtr = (Fs_FileID *)storagePtr->requestParamPtr;
     resultsPtr = mnew(FsDomainInfoResults);
@@ -1183,19 +1213,14 @@ Fs_RpcDomainInfo(srvToken, clientID, command, storagePtr)
     resultsPtr->fileID = *fileIDPtr;
 
     status = FsDomainInfo(&resultsPtr->fileID, &resultsPtr->domain);
-    if (status != SUCCESS) {
-	free((Address)resultsPtr);
-    } else {
-	Rpc_ReplyMem	*replyMemPtr;
 
-	storagePtr->replyParamPtr = (Address) resultsPtr;
-	storagePtr->replyParamSize = sizeof(FsDomainInfoResults);
-	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-	replyMemPtr->paramPtr = (Address) resultsPtr;
-	replyMemPtr->dataPtr = (Address) NIL;
-	Rpc_Reply(srvToken, SUCCESS, storagePtr, 
-		  (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);
-    }
+    storagePtr->replyParamPtr = (Address) resultsPtr;
+    storagePtr->replyParamSize = sizeof(FsDomainInfoResults);
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = (Address) resultsPtr;
+    replyMemPtr->dataPtr = (Address) NIL;
+    Rpc_Reply(srvToken, status, storagePtr, 
+	      (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);
 
-    return(SUCCESS);
+    return(SUCCESS);	/* Because we've already replied */
 }
