@@ -363,6 +363,9 @@ extern	void 	 	FsHandleRemoveInt();
 #define FsHandleRemove(handlePtr) \
     FsHandleRemoveHdr((FsHandleHeader *)handlePtr)
 
+#define FsHandleName(handlePtr) \
+    ((((FsHandleHeader *)(handlePtr))->name == (char *)NIL) ? "(no name)" :
+	((FsHandleHeader *)(handlePtr)->name))
 /*
  * Routines for use by the name component hash table.  They increment the
  * low-level reference count on a handle when it is in the cache.
