@@ -40,6 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devNet.h"
 #include "devTMR.h"
 #include "devBlockDevice.h"
+#include "scsiHBADevice.h"
 
 
 static ReturnStatus NullSelectProc();
@@ -129,6 +130,12 @@ DevFsTypeOps devFsOpTable[] = {
 		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect, 
 		   DEV_NO_ATTACH_PROC, DevNet_FsReopen},
 
+    /*
+     * SCSI Tape interface.
+     */
+    {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
+		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
 #ifdef SERIALB_DEBUG
     {DEV_SERIALB_OUT_QUEUE, NullProc, Dev_serialBOutTrace, NullProc,
                   NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC,
