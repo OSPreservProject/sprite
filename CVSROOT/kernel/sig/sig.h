@@ -45,6 +45,7 @@ typedef struct {
     int		sigCode;    	/* The code of this signal. */
     Sig_Context	*contextPtr;	/* Pointer to structure used to restore the
 				 * state before the signal. */
+    int		sigAddr;
 } Sig_Stack;
 
 /*
