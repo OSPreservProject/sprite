@@ -361,6 +361,12 @@ ContextRestoreSomeMore:
  *	trap.
  *	Interrupts must be disabled coming into this.
  *
+ *	For now I pass in some things as parameters, instead of in trap
+ *	structure.
+ *
+ *	MachRunUserProc(entryPoint, userStackPtr);
+ *	The parameters are in out registers, since this is a leaf routine.
+ *
  * Results:
  *	Restore registers and return to user space.
  *
@@ -373,11 +379,12 @@ ContextRestoreSomeMore:
 _MachRunUserProc:
 	/*
 	 * Get values to restore registers to from the state structure.
+	 * We set up %VOL_TEMP2 to point to trapRegs structure and restore
+	 * from there.
 	 */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
 	set	_machCurStatePtr, %VOL_TEMP2
 	st	%VOL_TEMP1, [%VOL_TEMP2]
-#ifdef NOTDEF
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP2	/* machStatePtr->trapRegs */
 	/*
@@ -386,11 +393,6 @@ _MachRunUserProc:
 	 */
 	add	%VOL_TEMP2, MACH_FP_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %fp		/* set %fp - user sp */
-#else
-	mov	%o0, %CUR_PC_REG
-	add	%o0, 4, %NEXT_PC_REG
-	mov	%o1, %fp
-#endif NOTDEF
 	andcc	%fp, 0x7, %g0
 	be	UserStackOkay
 	nop
@@ -404,20 +406,26 @@ _MachRunUserProc:
 	nop
 UserStackOkay:
 	/*
-	 * So that user stack has space for saved window area and storage
-	 * of callee's input registers.
-	 */
-	add	%fp, -MACH_FULL_STACK_FRAME, %fp
-
-#ifdef NOTDEF
-	/*
 	 * Set return from trap pc and next pc.
 	 */
-	add	%VOL_TEMP2, MACH_RETPC_OFFSET, %VOL_TEMP1
+	add	%VOL_TEMP2, MACH_TRAP_PC_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %CUR_PC_REG
 	add	%VOL_TEMP1, 4, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %NEXT_PC_REG
-#endif NOTDEF
+
+	/*
+	 * Put a return value into the return value register.
+	 */
+	add	%VOL_TEMP2, MACH_ARG0_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i0
+
+	/*
+	 * Get new psr value.
+	 */
+	add	%VOL_TEMP2, MACH_PSR_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %CUR_PSR_REG
+
+#ifdef NOTDEF
 	/*
 	 * Make sure traps are disabled before setting up next psr value.
 	 * Next psr value will have all interrupts enabled, so we make sure
@@ -429,13 +437,6 @@ UserStackOkay:
 	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
 	mov	%VOL_TEMP2, %psr
 	MACH_WAIT_FOR_STATE_REGISTER()
-	set	MACH_FIRST_USER_PSR, %CUR_PSR_REG
-
-	/*
-	 * Put a happy return value into the return value register.  This
-	 * probably doesn't matter at all.
-	 */
-	clr	%i0
 
 	/*
 	 * Make sure invalid window is 1 in front of the window we'll return to.
@@ -455,6 +456,14 @@ UserStackOkay:
 	jmp	%CUR_PC_REG
 	rett	%NEXT_PC_REG
 	nop
+#else
+	/*
+	 * Now go through regular return from trap code.
+	 */
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+#endif NOTDEF
 
 /*
  *---------------------------------------------------------------------
@@ -804,4 +813,44 @@ CopiedInSigStack:
 	 * Now go through the regular return from trap code.
 	 */
 	call	_MachReturnFromTrap
+	nop
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachFlushWindowsToStack -
+ *
+ *	void MachFlushWindowsToStack()
+ *
+ *	Flush all the register windows to the stack.
+ 	Interrupts must be off when we're called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachFlushWindowsToStack
+_MachFlushWindowsToStack:
+	mov	%g3, %o0
+	set	(MACH_NUM_WINDOWS - 1), %g3
+SaveTheWindow:
+	save
+	subcc	%g3, 1, %g3
+	bne	SaveTheWindow
+	nop
+	set	(MACH_NUM_WINDOWS - 1), %g3
+RestoreTheWindow:
+	restore
+	subcc	%g3, 1, %g3
+	bne	RestoreTheWindow
+	nop
+
+	mov	%o0, %g3
+
+	retl
 	nop

@@ -368,6 +368,14 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     register	Mach_RegState	*stackPtr;
     register	Mach_State	*statePtr;
 
+    /*
+     * If it's a user process forking, we must make sure all its windows have
+     * been saved to the stack so that when the register state and the stack
+     * are copied to the new process, it will get the real stuff.
+     */
+    if (user) {
+	MachFlushWindowsToStack();
+    }
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
 #ifdef NOTDEF
@@ -388,10 +396,18 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     /*
      * Pointer to context switch register's save area is also a pointer
      * to the top of the stack, since the regs are saved there.
+     * If this is a kernel process, we only need space MACH_SAVED_STATE_FRAME
+     * + MACH_FULL_STACK_FRAME, but if it's a user process we need more:
+     * (2 * MACH_SAVED_STATE_FRAME).  Both types of processes need the
+     * first MACH_SAVED_STATE_FRAME for their context switch regs area.  A
+     * kernel process then only needs space under that on its stack for its
+     * first routine to store its arguments in its "caller's" stack frame, so
+     * this extra space just fakes a caller's stack frame.  But for a user
+     * process, we have trap regs.  And these trapRegs get stored under
+     * the context switch regs on the kernel stack.
      */
     ((Address) statePtr->switchRegs) = (statePtr->kernStackStart) +
-	    MACH_KERN_STACK_SIZE - MACH_FULL_STACK_FRAME -
-	    MACH_SAVED_STATE_FRAME;
+	    MACH_KERN_STACK_SIZE - (2 * MACH_SAVED_STATE_FRAME);
     (unsigned int) (statePtr->switchRegs) &= ~0x7;/* should be okay already */
     /*
      * Initialize the stack so that it looks like it is in the middle of
@@ -425,11 +441,36 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * from the parent as well.
      */
     if (user) {
+	Proc_ControlBlock	*curProcPtr;	/* Pointer to current proc */
+
 	/*
 	 * Trap state regs are the same for child process.
 	 */
+	(Address) (statePtr->trapRegs) =
+		((Address) stackPtr) - MACH_SAVED_STATE_FRAME;
 	bcopy((Address)fromStatePtr->trapRegs, (Address)statePtr->trapRegs,
 		sizeof (Mach_RegState));
+	/*
+	 * Check to see if any register windows were saved to internal buffer
+	 * in MachFlushWindowsToStack(), above.  If so, copy the buffer state
+	 * to the new process, so that when it returns from the fork trap, it
+	 * will copy out the saved windows to its stack.
+	 */
+	curProcPtr = Proc_GetCurrentProc();
+	if (curProcPtr->machStatePtr != fromStatePtr) {
+	    panic("%s %s\n", "Mach_SetupNewState: Forking process must",
+		    "be current process!");
+	}
+	if (fromStatePtr->savedMask != 0) {
+	    procPtr->specialHandling = 1;
+	    statePtr->savedMask = fromStatePtr->savedMask;
+	    bcopy((Address) fromStatePtr->savedRegs,
+		    (Address) statePtr->savedRegs,
+		    sizeof (fromStatePtr->savedRegs));
+	    bcopy((Address) fromStatePtr->savedSps,
+		    (Address) statePtr->savedSps,
+		    sizeof (fromStatePtr->savedSps));
+	}
     }
     if (startPC == (Address)NIL) {
 	*((Address *)(((Address)stackPtr) + MACH_ARG0_OFFSET)) =
@@ -509,30 +550,21 @@ Mach_StartUserProc(procPtr, entryPoint)
 
     statePtr = procPtr->machStatePtr;
     /*
-     * Fake set of trap regs on top of the stack and call MachReturnFromTrap
-     * from MachRunUserProc?  Or set them specially in MachRunUserProc and
-     * just call rett?  I think I'll assume the latter.  That way I just
-     * put the values I want in the state register and store them directly
-     * into real registers in MachRunUserProc().
+     * MachRunUserProc will put the values from our trap regs into the actual
+     * registers so that we'll be in shape to rett back to user mode.
      */
 
     /*
      * Return from trap pc.
      */
     (Address) statePtr->trapRegs->pc = (Address)entryPoint;
-    (Address) statePtr->trapRegs->nextPc = (Address)entryPoint + 4;	/* correct? */
-#ifdef NOTDEF
-    MachUserReturn(procPtr);
-#endif NOTDEF
+    (Address) statePtr->trapRegs->nextPc = (Address)entryPoint + 4;
 
     Mach_MonPrintf("Mach_StartUserProc, entryPoint is 0x%x\n", entryPoint);
     Mach_MonPrintf("fp arg is 0x%x\n", procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]);
     Mach_MonPrintf("Mach_StartUserProc calling MachRunUserProc\n");
-#ifdef NOTDEF
+ 
     MachRunUserProc();
-#else
-    MachRunUserProc(entryPoint, procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]);
-#endif NOTDEF
     /* THIS DOES NOT RETURN */
 }
 
@@ -583,16 +615,30 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     if (procPtr->machStatePtr->trapRegs != (Mach_RegState *) NIL) {
 	panic("Mach_ExecUserProc: machStatePtr->trapRegs was NOT NIL!\n");
     }
-    procPtr->machStatePtr->trapRegs = &tmpTrapState;
-    Mach_MonPrintf("Current sp, new trapRegs is 0x%x\n", procPtr->machStatePtr->trapRegs);
     /*
-     * Since we're not returning, we can just user the space on our kernel
+     * Since we're not returning, we can just use this space on our kernel
      * stack as trapRegs.  This is safe, since we only fill in the fp, pc, and
      * nextPc fields (in Mach_StartUserProc()) and these just touch the saved-
      * window section of our stack and won't mess up any of our arguments.
      */
-    (Address) procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG] = userStackPtr;
+    procPtr->machStatePtr->trapRegs = &tmpTrapState;
+    Mach_MonPrintf("Current sp, new trapRegs is 0x%x\n", procPtr->machStatePtr->trapRegs);
+    /*
+     * The user stack pointer gets MACH_FULL_STACK_FRAME subtracted from it
+     * so that the user stack has space for its first routine to store its
+     * arguments in its caller's stack frame.  (So we create a fake caller's
+     * stack frame this way.)
+     */
+    (Address) procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG] =
+	    userStackPtr - MACH_FULL_STACK_FRAME;
     Mach_MonPrintf("fp stored at 0x%x\n", &(procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]));
+    procPtr->machStatePtr->trapRegs->curPsr = MACH_FIRST_USER_PSR;
+    (Address) procPtr->machStatePtr->trapRegs->pc = entryPoint;
+    /*
+     * Return value is cleared for exec'ing user process.  This shouldn't
+     * matter since a good exec won't return.
+     */
+    (Address) procPtr->machStatePtr->trapRegs->ins[0] = 0;
     Mach_MonPrintf("procPtr is 0x%x\n", procPtr);
     Mach_MonPrintf("procPtr->machStatePtr is 0x%x\n", procPtr->machStatePtr);
     Mach_StartUserProc(procPtr, entryPoint);

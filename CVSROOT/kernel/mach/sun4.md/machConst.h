@@ -356,6 +356,18 @@
 #define	MACH_RETPC_OFFSET	(MACH_NUM_LOCALS * 4 + 7 * 4)
 
 /*
+ * Constant for offset of return from trap pc reg in saved window area.
+ * RetFromTrap pc is %l1.
+ */
+#define	MACH_TRAP_PC_OFFSET	(4)
+
+/*
+ * Constant for offset of saved psr in trap regs in saved window area.
+ * CurPsr is %l0.
+ */
+#define	MACH_PSR_OFFSET		(0)
+
+/*
  * Number of parameters beyond the sixth that are allowed on trap entry (for
  * system calls.
  */
