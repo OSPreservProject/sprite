@@ -37,6 +37,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <bstring.h>
 #include <string.h>
 #include <dump.h>
+#include <fsrecov.h>
 
 static void Init _ARGS_((void));
 
@@ -267,6 +268,27 @@ main()
     if (main_Debug) {
 	DBG_CALL;
     }
+
+    /*
+     * Initialize the fs recovery stuff.
+     */
+    if (main_PrintInitRoutines && recov_Transparent) {
+        Mach_MonPrintf("Calling Fsrecov_InitState.\n");
+    }
+    if (recov_Transparent) {
+	Fsrecov_InitState();
+    }
+
+    /*
+     * Initialize dir op log recovery stuff.
+     */
+    if (main_PrintInitRoutines && recov_Transparent) {
+        Mach_MonPrintf("Calling Fsrecov_DirOpInit.\n");
+    }
+    if (recov_Transparent) {
+	Fsrecov_DirOpInit();
+    }
+
 
     /*
      * Sleep for a few seconds to calibrate the idle time ticks.

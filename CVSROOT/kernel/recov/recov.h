@@ -19,9 +19,11 @@
 #ifdef KERNEL
 #include <trace.h>
 #include <proc.h>
+#include <recovBox.h>
 #else
 #include <kernel/trace.h>
 #include <kernel/proc.h>
+#include <kernel/recovBox.h>
 #endif
 
 /*
@@ -62,6 +64,7 @@ extern int recov_PrintLevel;
  *	RECOV_WANT_RECOVERY	Set if another module wants a callback at reboot
  *	RECOV_PINGING_HOST	Set for hosts we ping to see when it reboots.
  *	RECOV_REBOOT_CALLBACKS	Set while reboot callbacks are pending.
+ *	RECOV_FAST_BOOT		Set if the server went through a fast boot.
  *	RECOV_FAILURE		Set if a communication failure occurs during
  *				the reboot callbacks.  This triggers another
  *				invokation of the reboot callbacks so that
@@ -84,6 +87,15 @@ extern int recov_PrintLevel;
 #define RECOV_WANT_RECOVERY	0x0200
 #define RECOV_PINGING_HOST	0x0400
 #define RECOV_REBOOT_CALLBACKS	0x0800
+
+#define	RECOV_FAST_BOOT		0x1000
+
+/*
+ * If dying_state is not defined then crash callbacks are made
+ * immidiately after a timeout.  Otherwise the host lingers in
+ * the RECOV_HOST_DYING state for recov_CrashDelay seconds.
+ */
+#undef dying_state
 
 /*
  * Host state flags for use by Recov clients.  These flags are set
@@ -204,6 +216,7 @@ typedef struct Recov_Stats {
 } Recov_Stats;
 
 extern Recov_Stats recov_Stats;
+extern	Boolean	recov_RestartDebug;
 
 /*
  * TRUE if we're using transparent server recovery.
@@ -216,12 +229,17 @@ extern	Boolean		recov_Transparent;
  * the client's info against what it has stored in its recovery box.)
  */
 extern	Boolean		recov_ClientIgnoreTransparent;
+/*
+ * TRUE if we're avoiding downloading text and initialized data.  (Should
+ * be true usually.)
+ */
+extern	Boolean		recov_DoInitDataCopy;
 
 extern void 	Recov_Init _ARGS_((void));
 extern void 	Recov_CrashRegister _ARGS_((void (*crashCallBackProc)(), ClientData crashData));
 extern void 	Recov_RebootRegister _ARGS_((int spriteID, void (*rebootCallBackProc)(), ClientData rebootData));
 extern void 	Recov_RebootUnRegister _ARGS_((int spriteID, void (*rebootCallBackProc)(), ClientData rebootData));
-extern void 	Recov_HostAlive _ARGS_((int spriteID, unsigned int bootID, Boolean asyncRecovery, Boolean rpcNotActive));
+extern void 	Recov_HostAlive _ARGS_((int spriteID, unsigned int bootID, Boolean asyncRecovery, Boolean rpcNotActive, Boolean fastBoot));
 extern void 	Recov_HostDead _ARGS_((int spriteID));
 extern int 	Recov_GetHostState _ARGS_((int spriteID));
 extern int 	Recov_GetHostOldState _ARGS_((int spriteID));
@@ -247,6 +265,24 @@ extern void 		Recov_Proc _ARGS_((void));
 extern void 		RecovAddHostToPing _ARGS_((int spriteID));
 extern int 		RecovCheckHost _ARGS_((int spriteID));
 extern int 		RecovGetLastHostState _ARGS_((int spriteID));
+extern Boolean		Recov_InitRecovBox _ARGS_((void));
+extern ReturnStatus	Recov_InitType _ARGS_((int objectSize, int maxNumObjects, int applicationTypeID, int *objectTypePtr, unsigned short (*Checksum)()));
+extern ReturnStatus	Recov_InsertObject _ARGS_((int typeID, ClientData objectPtr, int applicationObjectNum, Recov_ObjectID *objectIDPtr));
+extern ReturnStatus	Recov_InsertObjects _ARGS_((int typeID, int numObjs, char *obuffer, int *objNumBuffer, Recov_ObjectID *objIDBuffer));
+extern ReturnStatus	Recov_DeleteObject _ARGS_((Recov_ObjectID objectID));
+extern ReturnStatus	Recov_UpdateObject _ARGS_((ClientData objectPtr, Recov_ObjectID objectID));
+extern ReturnStatus	Recov_ReturnObject _ARGS_((ClientData objectPtr, Recov_ObjectID objectID, Boolean checksum));
+extern ReturnStatus	Recov_ReturnObjects _ARGS_((int typeID, int *olengthPtr, char *obuffer, int *ilengthPtr, char *ibuffer, int *alengthPtr, char *abuffer));
+extern ReturnStatus	Recov_ReturnContents _ARGS_((int *lengthPtr, char *buffer));
+extern int		Recov_MaxNumObjects _ARGS_((int objectSize, Boolean restart));
+extern	void		Recov_PrintSpace _ARGS_((int objectSize));
+extern	void		Recov_ToggleChecksum _ARGS_((int typeID));
+extern	int		Recov_NumObjects _ARGS_((int typeID));
+extern	int		Recov_GetObjectSize _ARGS_((int typeID));
+extern ReturnStatus	Recov_MapType _ARGS_((int applicationTypeID, int *typeIDPtr));
+extern ReturnStatus	Recov_MapObjectNum _ARGS_((int typeID, int applicationObjectNum, int *objectNumPtr));
+extern unsigned short	Recov_Checksum _ARGS_((int len, Address bufPtr));
+extern	ReturnStatus	Recov_Cmd _ARGS_((int option, Address argPtr));
 
 
 #endif /* _RECOV */

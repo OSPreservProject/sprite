@@ -174,15 +174,29 @@ int recovTraceLength = 200;
 Boolean recovTracing = TRUE;
 
 /*
- * TRUE if we're using transparent server recovery.
+ * TRUE if we're using transparent server recovery (using recovery box).
  */
+#ifdef RECOV_TRANSPARENT
+Boolean	recov_Transparent = TRUE;
+#else
 Boolean	recov_Transparent = FALSE;
+#endif /* RECOV_TRANSPARENT */
 
 /*
  * TRUE if the clients should ignore the fact that a server is able to
  * do transparent recovery.  This will be FALSE except for some testing.
  */
 Boolean recov_ClientIgnoreTransparent = FALSE;
+/*
+ * This one should usually be true: okay to do fast reboot as far as
+ * reusing text and initialized heap, but this doesn't have to include
+ * using the recovery box.
+ */
+#ifdef RECOV_NOCOPY
+Boolean	recov_DoInitDataCopy = FALSE;
+#else
+Boolean	recov_DoInitDataCopy = TRUE;
+#endif /* RECOV_NOCOPY */
 
 /*
  * Forward declarations.
@@ -463,7 +477,7 @@ Recov_RebootUnRegister(spriteID, rebootCallBackProc, rebootData)
  */
 
 ENTRY void
-Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
+Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
     int spriteID;		/* Host ID of the message sender */
     unsigned int bootID;	/* Boot time stamp from message header */
     Boolean asyncRecovery;	/* TRUE means do recovery call-backs in
@@ -474,6 +488,8 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 				 * system on the remote host isn't fully
 				 * turned on.  Reboot recovery is delayed
 				 * until this changes. */
+    Boolean fastBoot;		/* Whether the host that's alive went through
+				 * a fast boot or not. */
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
@@ -631,6 +647,19 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    printf("Unexpected recovery state <%x> for ", hostPtr->state);
 	    Sys_HostPrint(spriteID, "\n");
 	    break;
+    }
+    if (fastBoot) {
+	if (!(hostPtr->state & RECOV_FAST_BOOT)) {
+	    printf("Recov_HostAlive: setting state for host %d to FAST_BOOT\n",
+		    spriteID);
+	}
+	hostPtr->state |= RECOV_FAST_BOOT;
+    } else {
+	if ((hostPtr->state & RECOV_FAST_BOOT)) {
+	    printf("Recov_HostAlive: removing FAST_BOOT state for host %d\n",
+		    spriteID);
+	}
+	hostPtr->state &= ~RECOV_FAST_BOOT;
     }
     /*
      * After a host comes up enough to support RPC service, we

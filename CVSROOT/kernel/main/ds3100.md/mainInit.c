@@ -282,6 +282,27 @@ MachStringTable *argv;
     }
 
     /*
+     * Initialize the fs recovery stuff.
+     */
+    if (main_PrintInitRoutines && recov_Transparent) {
+        Mach_MonPrintf("Calling Fsrecov_InitState.\n");
+    }
+    if (recov_Transparent) {
+        Fsrecov_InitState();
+    }
+
+    /*
+     * Initialize dir op log recovery stuff.
+     */
+    if (main_PrintInitRoutines && recov_Transparent) {
+        Mach_MonPrintf("Calling Fsrecov_DirOpInit.\n");
+    }
+    if (recov_Transparent) {
+        Fsrecov_DirOpInit();
+    }
+
+
+    /*
      * Sleep for a few seconds to calibrate the idle time ticks.
      */
     Sched_TimeTicks();

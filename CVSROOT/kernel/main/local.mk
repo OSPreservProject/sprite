@@ -11,3 +11,4 @@ XCFLAGS += -Wall
 
 
 #include	<$(SYSMAKEFILE)>
+.PATH.h:	/sprite/src/kernel/mgbaker/hdrs
