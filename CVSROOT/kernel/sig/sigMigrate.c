@@ -102,11 +102,13 @@ SigMigSend(procPtr, sigNum, code)
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING,
 		  "SigMigSend:Error %x returned by Rpc_Call.\n", status);
-	if (status == RPC_TIMEOUT) {
-	    Sys_Printf("Killing local copy of process %x.\n",
-		       procPtr->processID);
-	    Proc_DestroyMigratedProc(PROC_TERM_DESTROYED, 
-				     status, 0);
+	if (status == RPC_TIMEOUT && sigNum == SIG_KILL) {
+	    if (proc_MigDebugLevel > 0) {
+		Sys_Printf("SigMigSend: killing local copy of process %x.\n",
+			   procPtr->processID);
+	    }
+	    Proc_CallFunc(Proc_DestroyMigratedProc,
+			  (ClientData) procPtr->processID, 0);
 	}
 
     }
