@@ -60,16 +60,14 @@ _MachRunUserProc:
     .globl	_Mach_GetEtherAddress
 _Mach_GetEtherAddress:
     movl	sp@(4),a0		| Get pointer to target ethernet address
-    movl	#6,d0			| loop counter
+    movl	#(6 - 1),d0		| loop counter
     movl	#VMMACH_ETHER_ADDR,a1	| The Prom address of the ethernet addr
 etherloop:
     movsb	a1@,d1			| Copy one byte of the ethernet address
     movb	d1,a0@			|   from prom to the target address.
     addql	#1,a0			| bump target pointer
     addl	#VMMACH_IDPROM_INC,a1	| bump prom address, as per sec 4.8
-    subl	#1,d0			| decrement loop counter
-    bne		etherloop		| loop 6 times
-
+    dbra        d0, etherloop		| loop 6 times
     rts					| Return
 
 |*---------------------------------------------------------------------
@@ -128,9 +126,8 @@ _Mach_ContextSwitch:
     movl	a0, sp@-		|     the stack.
     movl	#MAGIC, sp@-		| Put the magic number on the stack.
 
-    movl	a1@(4), d0		| d0 = fromProcPtr
-    addl	_machStatePtrOffset, d0 
-    movl	d0, a0			| a0 = pointer to mach struct
+    movl	a1@(4), a0		| d0 = fromProcPtr
+    addl	_machStatePtrOffset, a0	| a0 = pointer to mach struct
     movl	a0@, a0
 
                                         | Save the floating point state.
@@ -141,9 +138,8 @@ _Mach_ContextSwitch:
 					|     switched from
     moveml	#0xffff, a0@(MACH_SWITCH_REGS_OFFSET)
 
-    movl	a1@(8), d0		| d0 = toProcPtr
-    addl	_machStatePtrOffset, d0 
-    movl	d0, a0			| a0 = pointer to mach struct
+    movl	a1@(8), a0		| a0 = toProcPtr
+    addl	_machStatePtrOffset, a0 | a0 = pointer to mach struct
     movl	a0@, a0
 
                                         | Restore the floating point state.
@@ -170,9 +166,8 @@ _Mach_ContextSwitch:
 |*
     .globl	_proc_RunningProcesses, _machCurStatePtr, _machStatePtrOffset
     movl	_proc_RunningProcesses, a0
-    movl	a0@, d0
-    addl	_machStatePtrOffset, d0
-    movl	d0, a0
+    movl	a0@, a0
+    addl	_machStatePtrOffset, a0
     movl	a0@, a0
     movl	a0, _machCurStatePtr
 |*
@@ -206,15 +201,12 @@ _Mach_ContextSwitch:
     .globl _Mach_TestAndSet
 _Mach_TestAndSet:
     clrl	d0		| Set the return register to 0.
-
     movl	sp@(4), a0	| Move the address of the operand to a0.
     tas		a0@		| Test and set the operand.
-
-    beq		1$		| If it wasn't set then just return 0.
-
+    beq		1f		| If it wasn't set then just return 0.
     moveq	#1, d0		| Otherwise return 1.
-
-1$: rts
+1:
+    rts
 
 |*---------------------------------------------------------------------
 |*
@@ -235,10 +227,10 @@ _Mach_TestAndSet:
     .text
     .globl	_Mach_GetMachineType
 _Mach_GetMachineType:
-    clrl	d0			| Clear the return register
-    movl	#VMMACH_MACH_TYPE_ADDR, a0 | Get the address of the machine type
+    clrl    d0			        | Clear the return register
+    movl    #VMMACH_MACH_TYPE_ADDR, a0  | Get the address of the machine type
 					|     in a register.
-    movsb	a0@,d0			| Store the machine type in the return
+    movsb   a0@,d0			| Store the machine type in the return
 					|     register.
     rts
 
@@ -269,9 +261,8 @@ _Mach_GetMachineType:
 
     .globl _MachMonNmiNop
 _MachMonNmiNop:
-        moveml  #0xC0C0,sp@-            | Save d0,d1,a0,a1
-
 #ifdef sun2
+        moveml  #0xC0C0,sp@-            | Save d0,d1,a0,a1
         movw    #0xFFE1, AMD9513_CSR	| Clear the output of timer #1 
 					| on the AMD timer chip to clear
 					| the current interrupt.
@@ -281,9 +272,8 @@ _MachMonNmiNop:
         movb    sp@(16),d0		| Move the upper half of the sr to d0
         eorb    #0xFF,d0		| Exclusive or the bits.
         movsb   d0,0xB                  | Move it to the leds.
-
+	moveml  sp@+,#0x0303            | restore regs
 #endif /* sun2 */
-        moveml  sp@+,#0x0303            | restore regs
         rte
 
 
@@ -311,10 +301,10 @@ _Mach_MonTrap:
 	jsr	_Mach_MonStartNmi	| Restart non-maskable interrupts.
 	movl	sp@(4), a0		| Address to trap to.
 	clrw	sp@-			| Put on a dummy vector offset register.
-	movl	#1$, sp@-		| Put the return address onto the stack.
+	movl	#1f, sp@-		| Put the return address onto the stack.
 	movw	sr, sp@-		| Push the current status register.
 	jra	a0@			| Trap
-1$:	jsr	_Mach_MonStopNmi	| Stop non-maskable interrupts.
+1:	jsr	_Mach_MonStopNmi	| Stop non-maskable interrupts.
 	rts
 
 |*
@@ -441,19 +431,19 @@ _Mach_Probe:
 	cmpl d1,d0
 	jhi bad
 	asll #1,d0
-1$:
-	movew pc@(2$-1$-2:b,d0:l),d1
+1:
+	movew pc@(2f-1b-2:b,d0:l),d1
 	clrl d0
 	jmp pc@(2,d1:w)
-2$:
-	.word oneByte-2$
-	.word twoByte-2$
-	.word bad-2$
-	.word fourByte-2$
-	.word bad-2$
-	.word bad-2$
-	.word bad-2$
-	.word eightByte-2$
+2:
+	.word oneByte-2b
+	.word twoByte-2b
+	.word bad-2b
+	.word fourByte-2b
+	.word bad-2b
+	.word bad-2b
+	.word bad-2b
+	.word eightByte-2b
 oneByte:
 	moveb a1@,a0@
 	rts
