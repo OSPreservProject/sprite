@@ -215,14 +215,17 @@ extern	void		Mach_CopyState();
 extern	void		Mach_GetDebugState();
 extern	void		Mach_SetDebugState();
 extern	Address		Mach_GetUserStackPtr();
+#endif NOTDEF
 
 /*
  * Migration routines.
  */
-extern void			Mach_EncapState();
+extern ReturnStatus		Mach_EncapState();
 extern ReturnStatus		Mach_DeencapState();
-extern int			Mach_GetEncapSize();
+extern ReturnStatus		Mach_GetEncapSize();
+extern Boolean			Mach_CanMigrate();			
 
+#ifdef NOTDEF
 /*
  * Other routines.
  */

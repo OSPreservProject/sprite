@@ -76,7 +76,7 @@
  *
  * ----------------------------------------------------------------------
  */
-.globl	_MachTrap
+.global	_MachTrap
 _MachTrap:
 	/*
 	 * Save the state registers.  This is safe, since we're saving them
@@ -259,6 +259,10 @@ DoneWithUserStuff:
 	be	_MachReturnFromSignal
 	nop
 
+	cmp	%VOL_TEMP1, MACH_TRAP_FLUSH_WINDOWS	/* flush window trap */
+	be	MachFlushWindowsToStackTrap
+	nop
+
 	/*
 	 * These next few are handled by C routines, and we want them to
 	 * return to MachReturnFromTrap, so set that address as the return pc.
@@ -344,7 +348,7 @@ DoneWithUserStuff:
  *
  * ----------------------------------------------------------------------
  */
-.globl	_MachReturnFromTrap
+.global	_MachReturnFromTrap
 _MachReturnFromTrap:
 	/* Returning to user mode?  If not, goto NormalReturn. */
 	/*
@@ -485,7 +489,7 @@ UnderflowOkay:
  *
  * ----------------------------------------------------------------------
  */
-.globl	MachHandleWindowOverflowTrap
+.global	MachHandleWindowOverflowTrap
 MachHandleWindowOverflowTrap:
 	set	MachWindowOverflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %SAFE_TEMP
@@ -574,7 +578,7 @@ NormalOverflowReturn:
  *
  * ----------------------------------------------------------------------
  */
-.globl	MachWindowOverflow
+.global	MachWindowOverflow
 MachWindowOverflow:
 	/*
 	 * We enter inside of an invalid window, so we can't use in registers,
@@ -793,7 +797,7 @@ ReturnFromOverflow:
  *
  * ----------------------------------------------------------------------
  */
-.globl	MachHandleWindowUnderflowTrap
+.global	MachHandleWindowUnderflowTrap
 MachHandleWindowUnderflowTrap:
 	clr	%SAFE_TEMP	/* used to mark whether we saved state */
 	/* Test if we came from user mode. */
@@ -962,7 +966,7 @@ NormalUnderflowReturn:
  *
  * ----------------------------------------------------------------------
  */
-.globl	MachWindowUnderflow
+.global	MachWindowUnderflow
 MachWindowUnderflow:
 	/*
 	 * Check to see if we're about to return to the trap window from
@@ -1034,7 +1038,7 @@ RegularStack:
  *
  * ----------------------------------------------------------------------
  */
-.globl	MachHandleDebugTrap
+.global	MachHandleDebugTrap
 MachHandleDebugTrap:
 	/*
 	 * This points to the top stack frame, which consists of a
@@ -1118,8 +1122,21 @@ RestoreSomeMore:
  *
  * ----------------------------------------------------------------------
  */
-.globl	MachSyscallTrap
+.global	MachSyscallTrap
 MachSyscallTrap:
+	/*
+	 * So that we don't re-execute the trap instruction when we
+	 * return from the system call trap via the return trap procedure,
+	 * we increment the return pc and npc here.
+	 */
+	mov	%NEXT_PC_REG, %CUR_PC_REG
+	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
+/* FOR DEBUGGING */
+	set	0x11111111, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff1, %CUR_PC_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff2, %g1)
+/* END FOR DEBUGGING */
 
 	/*
 	 * Make sure user stack pointer is written into state structure so that
@@ -1263,13 +1280,6 @@ ReturnFromSyscall:
 	mov	%VOL_TEMP1, %psr
 	MACH_WAIT_FOR_STATE_REGISTER()
 	/*
-	 * So that we don't re-execute the trap instruction when we
-	 * return from the system call trap via the return trap procedure,
-	 * we increment the return pc and npc here.
-	 */
-	add	%CUR_PC_REG, 0x4, %CUR_PC_REG
-	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
-	/*
 	 * Move return value to caller's return val register.
 	 */
 	mov	%RETURN_VAL_REG, %RETURN_VAL_REG_CHILD
@@ -1330,6 +1340,35 @@ MachHandlePageFault:
 	mov	%CUR_PC_REG, %o1
 AddressValueOkay:
 	call	_MachPageFault, 4
+	nop
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachFlushWindowsToStackTrap --
+ *
+ *	A trap requesting that all our windows be flushed to the stack has
+ *	occured.  Bump up our return pc, since we don't want to re-execute
+ *	the trap, and then call the appropriate routine.
+ *
+ * Results:
+ *	Returns to MachReturnFromTrap, rather than our caller.
+ *
+ * Side effects:
+ *	Register windows will be flushed to the stack and the invalid
+ *	window mask will be set to point to the window before us.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachFlushWindowsToStackTrap
+MachFlushWindowsToStackTrap:
+	mov	%NEXT_PC_REG, %CUR_PC_REG
+	add	%NEXT_PC_REG, 4, %NEXT_PC_REG
+	call	_MachFlushWindowsToStack
 	nop
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1

@@ -447,7 +447,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 	 * Trap state regs are the same for child process.
 	 */
 	(Address) (statePtr->trapRegs) =
-		((Address) stackPtr) - MACH_SAVED_STATE_FRAME;
+		((Address) stackPtr) + MACH_SAVED_STATE_FRAME;
 	bcopy((Address)fromStatePtr->trapRegs, (Address)statePtr->trapRegs,
 		sizeof (Mach_RegState));
 	/*
@@ -560,9 +560,7 @@ Mach_StartUserProc(procPtr, entryPoint)
     (Address) statePtr->trapRegs->pc = (Address)entryPoint;
     (Address) statePtr->trapRegs->nextPc = (Address)entryPoint + 4;
 
-    Mach_MonPrintf("Mach_StartUserProc, entryPoint is 0x%x\n", entryPoint);
-    Mach_MonPrintf("fp arg is 0x%x\n", procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]);
-    Mach_MonPrintf("Mach_StartUserProc calling MachRunUserProc\n");
+    Mach_MonPrintf("Mach_StartUserProc: calling MachRunUserProc - procPtr 0x%x, entryPoint = 0x%x\n", procPtr, entryPoint);
  
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
@@ -611,10 +609,13 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
       */
     Mach_DisableIntr();
     machCurStatePtr = procPtr->machStatePtr;
-    Mach_MonPrintf("Mach_ExecUserProc called with userStackPtr 0x%x\n", userStackPtr);
+#ifdef NOTDEF
+    /* A user proc can exec a user proc, so this is a bad test! */
+
     if (procPtr->machStatePtr->trapRegs != (Mach_RegState *) NIL) {
 	panic("Mach_ExecUserProc: machStatePtr->trapRegs was NOT NIL!\n");
     }
+#endif NOTDEF
     /*
      * Since we're not returning, we can just use this space on our kernel
      * stack as trapRegs.  This is safe, since we only fill in the fp, pc, and
@@ -622,7 +623,6 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      * window section of our stack and won't mess up any of our arguments.
      */
     procPtr->machStatePtr->trapRegs = &tmpTrapState;
-    Mach_MonPrintf("Current sp, new trapRegs is 0x%x\n", procPtr->machStatePtr->trapRegs);
     /*
      * The user stack pointer gets MACH_FULL_STACK_FRAME subtracted from it
      * so that the user stack has space for its first routine to store its
@@ -631,7 +631,6 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      */
     (Address) procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG] =
 	    userStackPtr - MACH_FULL_STACK_FRAME;
-    Mach_MonPrintf("fp stored at 0x%x\n", &(procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]));
     procPtr->machStatePtr->trapRegs->curPsr = MACH_FIRST_USER_PSR;
     (Address) procPtr->machStatePtr->trapRegs->pc = entryPoint;
     /*
@@ -639,8 +638,7 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      * matter since a good exec won't return.
      */
     (Address) procPtr->machStatePtr->trapRegs->ins[0] = 0;
-    Mach_MonPrintf("procPtr is 0x%x\n", procPtr);
-    Mach_MonPrintf("procPtr->machStatePtr is 0x%x\n", procPtr->machStatePtr);
+    Mach_MonPrintf("Mach_ExecUserProc: calling Mach_StartUserProc - userStackPointer 0x%x\n", userStackPtr);
     Mach_StartUserProc(procPtr, entryPoint);
     /* THIS DOES NOT RETURN */
 }
@@ -665,6 +663,7 @@ Mach_FreeState(procPtr)
     Proc_ControlBlock	*procPtr;	/* Process control block to free
 					 * machine state for. */
 {
+
     if (procPtr->machStatePtr->kernStackStart != (Address)NIL) {
 	Vm_FreeKernelStack(procPtr->machStatePtr->kernStackStart);
 	procPtr->machStatePtr->kernStackStart = (Address)NIL;
@@ -896,7 +895,7 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
     if (numArgs <= 6) {
 	machArgDispatch[machMaxSysCall] =  (Address) MachFetchArgsEnd;
     } else {
-	machArgDispatch[machMaxSysCall] = (10 - numArgs - 6)*16 +
+	machArgDispatch[machMaxSysCall] = (10 - (numArgs - 6))*16 +
 		((Address)MachFetchArgs);
     }
     mach_NormalHandlers[machMaxSysCall] = normalHandler;
@@ -1284,20 +1283,6 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	return;
     }
     /* user page fault */
-    printf("Page fault in user process, pc 0x%x, addr 0x%x, busError 0x%x\n",
-	    pcValue, addrErrorReg, (short) busErrorReg);
-    {
-	unsigned	int	pte;
-	unsigned	int	context;
-	unsigned	int	the_seg;
-
-	pte = VmMachGetPageMap(addrErrorReg);
-	printf("pte is at first 0x%x\n", pte);
-	context = VmMachGetContextReg();
-	printf("context is at first 0x%x\n", context);
-	the_seg = VmMachGetSegMap(addrErrorReg);
-	printf("the_seg is at first 0x%x\n", the_seg);
-    }
     protError = busErrorReg & MACH_PROT_ERROR;
     if (Vm_PageIn(addrErrorReg, protError) != SUCCESS) {
 	printf(
@@ -1305,18 +1290,6 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
 	/* Kill user process */
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
-    }
-    {
-	unsigned	int	pte;
-	unsigned	int	context;
-	unsigned	int	the_seg;
-
-	pte = VmMachGetPageMap(addrErrorReg);
-	printf("Returning okay, pte = 0x%x.\n", pte);
-	context = VmMachGetContextReg();
-	printf("context is now 0x%x\n", context);
-	the_seg = VmMachGetSegMap(addrErrorReg);
-	printf("the_seg is now 0x%x\n", the_seg);
     }
     return;
 }

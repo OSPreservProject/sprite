@@ -361,11 +361,7 @@ ContextRestoreSomeMore:
  *	trap.
  *	Interrupts must be disabled coming into this.
  *
- *	For now I pass in some things as parameters, instead of in trap
- *	structure.
- *
- *	MachRunUserProc(entryPoint, userStackPtr);
- *	The parameters are in out registers, since this is a leaf routine.
+ *	MachRunUserProc();
  *
  * Results:
  *	Restore registers and return to user space.
@@ -402,7 +398,8 @@ _MachRunUserProc:
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
-	call	_Proc_ExitInt, 3
+	set	_Proc_ExitInt, %VOL_TEMP1
+	call	%VOL_TEMP1, 3
 	nop
 UserStackOkay:
 	/*
@@ -418,52 +415,35 @@ UserStackOkay:
 	 */
 	add	%VOL_TEMP2, MACH_ARG0_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %i0
+	/*
+	 * Restore the other in registers, which were trapper's out regs.
+	 * We've already restored fp = i6, so skip it.
+	 */
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i1
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i2
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i3
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i4
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i5
 
+	add	%VOL_TEMP1, 8, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i7
 	/*
 	 * Get new psr value.
 	 */
 	add	%VOL_TEMP2, MACH_PSR_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %CUR_PSR_REG
 
-#ifdef NOTDEF
-	/*
-	 * Make sure traps are disabled before setting up next psr value.
-	 * Next psr value will have all interrupts enabled, so we make sure
-	 * traps are disabled here so we don't get one of those interrupts
-	 * before returning to user space.
-	 */
-	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP1
-	mov	%psr, %VOL_TEMP2
-	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
-	mov	%VOL_TEMP2, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
-
-	/*
-	 * Make sure invalid window is 1 in front of the window we'll return to.
-	 * This makes sure we don't get a watchdog reset returning from the
-	 * trap window, because we'll be sure the window we return to is valid.
-	 * Making the window before that be the invalid window means that we'll
-	 * be able to start out life for a while without a window overflow
-	 * trap.
-	 */
-	MACH_SET_WIM_TO_CWP()
-	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, FirstRetreat)
-	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, SecondRetreat)
-	/*
-	 * Restore psr
-	 */
-	MACH_RESTORE_PSR()
-	jmp	%CUR_PC_REG
-	rett	%NEXT_PC_REG
-	nop
-#else
 	/*
 	 * Now go through regular return from trap code.
 	 */
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop
-#endif NOTDEF
 
 /*
  *---------------------------------------------------------------------
@@ -521,11 +501,6 @@ _MachHandleSignal:
 	set	_machSignalStackSizeOnStack, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1	/* size MachSignalStack */
 	sub	%fp, %VOL_TEMP1, %SAFE_TEMP		/* new sp in safetemp */
-/* FOR DEBUGGING */
-	set	0x11111111, %o0
-	MACH_DEBUG_BUF(%o1, %o2, DoSignalThing0, %o0)
-	MACH_DEBUG_BUF(%o1, %o2, DoSignalThing1, %SAFE_TEMP)
-/* END FOR DEBUGGING */
 
 	/* Copy out sig stack from state structure to user stack */
 	set	_machSigStackOffsetOnStack, %VOL_TEMP1
@@ -591,11 +566,6 @@ CopiedOutSigStack:
 	add	%SAFE_TEMP, %VOL_TEMP2, %RETURN_ADDR_REG	/* addr */
 	/* ret from proc instr jumps to (ret addr + 8), so subtract 8 here */
 	sub	%RETURN_ADDR_REG, 0x8, %RETURN_ADDR_REG
-/* FOR DEBUGGING */
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SigStuff2, %RETURN_ADDR_REG)
-	set	0x22222222, %g3
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SigStuff3, %g3)
-/* END FOR DEBUGGING */
 
 	/*
 	 * Set return from trap pc and next pc in the next window to the
@@ -713,11 +683,6 @@ _MachReturnFromSignal:
 	/* get our kernel stack pointer into global regs (which get restored
 	 * in MachReturnFromTrap) so we can keep it across windows.
 	 */
-/* FOR DEBUGGING */
-	set	0x66666666, %g3
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, ReturnedFromASig0, %g3)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, ReturnedFromASig1, %sp)
-/* END FOR DEBUGGING */
 	mov	%sp, %g3
 	restore		/* no underflow since we just came from here */
 	/*
@@ -824,7 +789,7 @@ CopiedInSigStack:
  *	void MachFlushWindowsToStack()
  *
  *	Flush all the register windows to the stack.
- 	Interrupts must be off when we're called.
+ * 	Interrupts must be off when we're called.
  *
  * Results:
  *	None.
