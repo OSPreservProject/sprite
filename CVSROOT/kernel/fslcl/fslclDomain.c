@@ -329,8 +329,15 @@ FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      * Set the attributes on the disk descriptor.
      */
     Fsutil_HandleUnlock(handlePtr);
+#ifdef SOSP91
+    status = FslclSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
+			    &openArgsPtr->id, setAttrArgsPtr->flags,
+			    openArgsPtr->clientID, openArgsPtr->migClientID,
+			    -1);
+#else
     status = FslclSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
 			    &openArgsPtr->id, setAttrArgsPtr->flags);
+#endif
     /*
      * Get the I/O handle so our client can contact the I/O server.
      */
