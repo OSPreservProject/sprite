@@ -554,15 +554,19 @@ Recov_HostDead(spriteID)
 	    hostPtr->state &=
 		~(RECOV_HOST_ALIVE|RECOV_HOST_BOOTING);
 	    hostPtr->state |= RECOV_HOST_DYING;
-	    Sys_HostPrint(spriteID, "is apparently down\n");
+	    /*
+	     * No printf because RPC is noisey about time-ed out calls.
+	     *
+	     * Sys_HostPrint(spriteID, "is apparently down\n")
+	     */
 	    Proc_CallFunc(RecovDelayedCrashCallBacks, (ClientData)spriteID,
 			    recov_CrashDelay);
-#ifdef the_old_way
+#ifdef no_grace_period
 	    hostPtr->state |= RECOV_HOST_DEAD|RECOV_CRASH_CALLBACKS;
 	    Sys_HostPrint(spriteID, "is down\n");
 	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH);
 	    Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
-#endif the_old_way
+#endif
 	    break;
     }
     UNLOCK_MONITOR;
