@@ -720,7 +720,7 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 		    status = GEN_INVALID_ARG;
 		} else {
 		    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
-		    replyPtr->length = prefixPtr->prefixLength;
+		    replyPtr->length = prefixPtr->prefixLength + 1;
 		    status = SUCCESS;
 		}
 	    }
