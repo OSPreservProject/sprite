@@ -19,6 +19,10 @@ MTFLAGS = -msun3
 RTM = ds3100
 MTFLAGS =
 #endif
+#ifmake ds5000
+RTM = ds5000
+MTFLAGS =
+#endif
 #ifmake sun4
 RTM = sun4
 MTFLAGS = -msun4
@@ -312,6 +316,25 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	update -f ds3100 /assaultA/new
 	strip /assaultA/new
 	-Save ds3100
+
+ds5000: ${OBJS} .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
+	-Save $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	@cc -c ${CFLAGS} version.c
+	${LD} -N -o ds5000 -e start -T 80030000 ${OBJS} version.o \
+		-L/sprite/lib/${RTM}.md
+	@ls -l $@
+	@size $@
+	update -f ds5000 /sprite/boot/ds5000.md/new
+	strip /sprite/boot/ds5000.md/new
+	rm -f ds5000.nm
+	nm -n ds5000 > ds5000.nm
+	rcp /sprite/src/kernel/sprite/ds5000 ginger:/home/ginger/sprite/kernels/ds5000
+	rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds5000)"
+	-Save ds5000
 
 # profile2: ${PROFOBJS} Makefile .PRECIOUS
 #	sed 's/MACHINE/$@/g' version.h.template > version.h
