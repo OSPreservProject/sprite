@@ -49,5 +49,6 @@ extern	Sync_Lock	sigLock;
 #define LOCKPTR &sigLock
 
 extern	void	SigClearPendingMask();
+extern	ReturnStatus SigSendRemoteSignal();
 
 #endif _SIGINT
