@@ -726,17 +726,20 @@ VmCheckBounds(virtAddrPtr)
  */
 ReturnStatus
 Vm_CopyInProc(numBytes, fromProcPtr, fromAddr, toAddr, toKernel)
-    int 	numBytes;		/* The maximum number of bytes to 
-					   copy in. */
-    Proc_ControlBlock	*fromProcPtr;	/* Which process to copy from.*/
-    Address	fromAddr;		/* The address to copy from */
-    Address	toAddr;			/* The address to copy to */
-    Boolean	toKernel;		/* This copy is happening to the
-					 * kernel's address space. */
+    int				numBytes;	/* The maximum number of bytes
+						 * to copy in. */
+    register Proc_ControlBlock	*fromProcPtr;	/* Which process to copy from.*/
+    Address			fromAddr;	/* The address to copy from */
+    Address			toAddr;		/* The address to copy to */
+    Boolean			toKernel;	/* This copy is happening to 
+						 * the kernel's address space.*/
 {
     ReturnStatus		status = SUCCESS;
     Vm_VirtAddr			transVirtAddr;
     int				lastPage;
+    register Proc_ControlBlock	*toProcPtr;
+    register Vm_Segment		**toSegPtrArr;
+    register int		genFlags;
 
     if (fromProcPtr->genFlags & PROC_NO_VM) {
 	/*
@@ -744,6 +747,48 @@ Vm_CopyInProc(numBytes, fromProcPtr, fromAddr, toAddr, toKernel)
 	 */
 	return(SYS_ARG_NOACCESS);
     }
+    toProcPtr = Proc_GetCurrentProc();
+    if (toProcPtr->genFlags & PROC_KERNEL) {
+#ifdef notdef
+	if (!toKernel) {
+	    Sys_Panic(SYS_FATAL, "Vm_CopyInProc: Kernel process not copying to kernel\n");
+	}
+#endif
+
+	/*
+	 * We are copying to a kernel process (an rpc server process
+	 * hopefully).  Since we know that the process that we are copying
+	 * from can't exit until we finish this copy we can borrow
+	 * its address space and then just do a normal copy in.
+	 */
+	toSegPtrArr = toProcPtr->vmPtr->segPtrArray;
+	toSegPtrArr[VM_CODE] = fromProcPtr->vmPtr->segPtrArray[VM_CODE];
+	toSegPtrArr[VM_HEAP] = fromProcPtr->vmPtr->segPtrArray[VM_HEAP];
+	toSegPtrArr[VM_STACK] = fromProcPtr->vmPtr->segPtrArray[VM_STACK];
+	Proc_Lock(toProcPtr);
+	genFlags = toProcPtr->genFlags;
+	genFlags &= ~PROC_KERNEL;
+	genFlags |= PROC_USER;
+	toProcPtr->genFlags = genFlags;
+	Proc_Unlock(toProcPtr);
+	VmMach_ReinitContext(toProcPtr);
+	status = Vm_CopyIn(numBytes, fromAddr, toAddr);
+	/*
+	 * Change back into a kernel process.
+	 */
+	Proc_Lock(toProcPtr);
+	genFlags = toProcPtr->genFlags;
+	genFlags &= ~PROC_USER;
+	genFlags |= PROC_KERNEL;
+	toProcPtr->genFlags = genFlags;
+	Proc_Unlock(toProcPtr);
+	toSegPtrArr[VM_CODE] = (Vm_Segment *)NIL;
+	toSegPtrArr[VM_HEAP] = (Vm_Segment *)NIL;
+	toSegPtrArr[VM_STACK] = (Vm_Segment *)NIL;
+	VmMach_ReinitContext(toProcPtr);
+	return(status);
+    }
+
     if (!toKernel && (toAddr < mach_FirstUserAddr ||
                       toAddr > mach_LastUserAddr ||
 		      toAddr + numBytes - 1 > mach_LastUserAddr)) {
@@ -814,24 +859,68 @@ exit:
  */
 ReturnStatus
 Vm_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr)
-    int 	numBytes;		/* The maximum number of bytes to 
-					 * copy in. */
-    Address	fromAddr;		/* The address to copy from */
-    Boolean	fromKernel;		/* This copy is happening to the
-					 * kernel's address space. */
-    Proc_ControlBlock	*toProcPtr;	/* Which process to copy from.*/
-    Address	toAddr;			/* The address to copy to */
+    int				numBytes;	/* The maximum number of bytes
+						 * to copy in. */
+    Address			fromAddr;	/* The address to copy from */
+    Boolean			fromKernel;	/* This copy is happening to
+						 * the kernel's address space.*/
+    register Proc_ControlBlock	*toProcPtr;	/* Which process to copy from.*/
+    Address			toAddr;		/* The address to copy to */
 {
     ReturnStatus		status = SUCCESS;
     Vm_VirtAddr			transVirtAddr;
     int				lastPage;
-    register	Vm_Segment	*segPtr;
+    register Vm_Segment		*segPtr;
+    register Proc_ControlBlock	*fromProcPtr;
+    register Vm_Segment		**fromSegPtrArr;
+    register int		genFlags;
 
     if (toProcPtr->genFlags & PROC_NO_VM) {
 	/*
 	 * The process that we are copying from has already deleted its VM.
 	 */
 	return(SYS_ARG_NOACCESS);
+    }
+    fromProcPtr = Proc_GetCurrentProc();
+    if (fromProcPtr->genFlags & PROC_KERNEL) {
+#ifdef notdef
+	if (!fromKernel) {
+	    Sys_Panic(SYS_FATAL, "Vm_CopyOutProc: Kernel process not copying from kernel\n");
+	}
+#endif
+
+	/*
+	 * We are copying to a kernel process (an rpc server process
+	 * hopefully).  Since we know that the process that we are copying
+	 * from can't exit until we finish this copy we can borrow
+	 * its address space and then just do a normal copy in.
+	 */
+	fromSegPtrArr = fromProcPtr->vmPtr->segPtrArray;
+	fromSegPtrArr[VM_CODE] = toProcPtr->vmPtr->segPtrArray[VM_CODE];
+	fromSegPtrArr[VM_HEAP] = toProcPtr->vmPtr->segPtrArray[VM_HEAP];
+	fromSegPtrArr[VM_STACK] = toProcPtr->vmPtr->segPtrArray[VM_STACK];
+	Proc_Lock(fromProcPtr);
+	genFlags = fromProcPtr->genFlags;
+	genFlags &= ~PROC_KERNEL;
+	genFlags |= PROC_USER;
+	fromProcPtr->genFlags = genFlags;
+	Proc_Unlock(fromProcPtr);
+	VmMach_ReinitContext(fromProcPtr);
+	status = Vm_CopyOut(numBytes, fromAddr, toAddr);
+	/*
+	 * Change back into a kernel process.
+	 */
+	Proc_Lock(fromProcPtr);
+	genFlags = fromProcPtr->genFlags;
+	genFlags &= ~PROC_USER;
+	genFlags |= PROC_KERNEL;
+	fromProcPtr->genFlags = genFlags;
+	Proc_Unlock(fromProcPtr);
+	fromSegPtrArr[VM_CODE] = (Vm_Segment *)NIL;
+	fromSegPtrArr[VM_HEAP] = (Vm_Segment *)NIL;
+	fromSegPtrArr[VM_STACK] = (Vm_Segment *)NIL;
+	VmMach_ReinitContext(fromProcPtr);
+	return(status);
     }
 
     /*
