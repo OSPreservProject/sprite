@@ -276,6 +276,7 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
     Boolean		*cacheablePtr;	/* Return, TRUE if client can cache */
 {
     register FsClientInfo *clientPtr;
+    register FsClientInfo *nextClientPtr;
     register FsCacheConsistStats *statPtr = &fsConsistStats;
     register int openForWriting = useFlags & FS_WRITE;
     register ReturnStatus status;
@@ -326,11 +327,17 @@ done:
      * by other clients, perhaps sending them cache consistency
      * messages.  For each message we send out (the client replies
      * right-away without actually doing anything yet) ClientCommand
-     * adds an entry to the consistInfo's message list.
+     * adds an entry to the consistInfo's message list.  Note also that
+     * client list entries can get removed as side effects of call-backs
+     * so we can't use a simple LIST_FOR_ALL here.
      */
     statPtr->numConsistChecks++;
     status = SUCCESS;
-    LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
+    nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
+    while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
+	clientPtr = nextClientPtr;
+	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+
 	statPtr->numClients++;
 	if (!clientPtr->cached) {
 	    /*
@@ -788,6 +795,7 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
     register Boolean		isExeced = FALSE;
     register FsConsistInfo	*consistPtr = &handlePtr->consist;
     register FsClientInfo	*clientPtr;
+    register FsClientInfo	*nextClientPtr;
 
     LOCK_MONITOR;
 
@@ -817,7 +825,11 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
      * Go through the set of clients using the file and see if they
      * are caching attributes.
      */
-    LIST_FORALL(&(consistPtr->clientList), (List_Links *) clientPtr) {
+    nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
+    while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
+	clientPtr = nextClientPtr;
+	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+
 	if (clientPtr->use.exec > 0) {
 	    isExeced = TRUE;
 	}
@@ -910,7 +922,9 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
  *	The number of clients in the client list.
  *
  * Side effects:
- *	Unused client list entries are cleaned up.
+ *	Unused client list entries are cleaned up.  We only need to remember
+ *	clients that are actively using the file or who have dirty blocks
+ *	because they are the last writer.
  *
  * ----------------------------------------------------------------------------
  *
@@ -926,10 +940,12 @@ FsConsistClients(consistPtr)
     LOCK_MONITOR;
 
     nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
-    while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)) {
+    while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
 	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
-	if (clientPtr->use.ref == 0 && !clientPtr->cached) {
+
+	if (clientPtr->use.ref == 0 &&
+	    clientPtr->clientID != consistPtr->lastWriter) {
 	    List_Remove((List_Links *) clientPtr);
 	    Mem_Free((Address) clientPtr);
 	} else {
@@ -946,13 +962,16 @@ FsConsistClients(consistPtr)
  *
  * FsDeleteLastWriter --
  *
- *	Remove the last writer from the consistency list.
+ *	Remove the last writer from the consistency list.  This is called
+ *	from the write rpc stub when the last block of a file comes
+ *	in from a remote client.
  *
  * Results:
- *	TRUE if file open, FALSE if closed.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	Removes the client list entry for the last writer if the last
+ *	writer is no longer using the file.
  *
  * ----------------------------------------------------------------------------
  *
@@ -972,6 +991,7 @@ FsDeleteLastWriter(consistPtr, clientID)
 		consistPtr->lastWriter == clientID) {
 		List_Remove((List_Links  *) clientPtr);
 		Mem_Free((Address) clientPtr);
+		break;
 	    }
 	}
     }
@@ -1171,6 +1191,7 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
 				 * after writing back the blocks */
 {
     register	FsClientInfo	*clientPtr;
+    register	FsClientInfo	*nextClientPtr;
 
     LOCK_MONITOR;
     FsHandleUnlock(consistPtr->hdrPtr);
@@ -1198,7 +1219,11 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
      * the client that is the last writer because we know the domain for
      * the file is in-active.
      */
-    LIST_FORALL(&consistPtr->clientList, (List_Links *)clientPtr) {
+    nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
+    while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
+	clientPtr = nextClientPtr;
+	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+
 	if (clientPtr->clientID != consistPtr->lastWriter) {
 	    FsHandleLock(consistPtr->hdrPtr);
 	    consistPtr->flags = 0;
@@ -1653,7 +1678,10 @@ Fs_RpcConsistReply(srvToken, clientID, command, storagePtr)
  * Side effects:
  *	Element deleted from the list of outstanding client consist 
  *	messages.  Also if the message was for invalidation then the
- *	client list entry is marked as non-cacheable.
+ *	client list entry is marked as non-cacheable.  IMPORTANT:
+ *	client list entry may be REMOVED here which prevents safe
+ *	use of LIST_FORALL iteration over the client list by any
+ *	routine that calls ClientCommand (which eventually gets us called)
  *
  *----------------------------------------------------------------------
  */
