@@ -32,6 +32,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 int recovPingSeconds = 30;
 /*
+ * Whether or not to ping at absolute intervals instead of 30 after the last
+ * ping finished.  This is used for testing the affects of the synchronization
+ * of client pinging on the servers.
+ */
+Boolean			recov_AbsoluteIntervals = FALSE;
+Timer_QueueElement	recovIntervalElement;
+unsigned int		recovPingEvent;
+/*
  * A list of hosts to ping is used by Recov_Proc.
  */
 typedef struct RecovPing {
@@ -51,6 +59,32 @@ static Sync_Lock recovPingLock;
 static RecovPing *FirstHostToCheck();
 static RecovPing *NextHostToCheck();
 static void Deactivate();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovPingInterval --
+ *
+ *	Set up the callback routine used for recov pinging.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RecovPingInterval()
+{
+    Sync_EventWakeup(recovPingEvent);
+    Timer_ScheduleRoutine(&recovIntervalElement);
+
+    return;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -73,8 +107,16 @@ RecovPingInit()
 {
     Sync_LockInitDynamic(&recovPingLock, "Recov:pingListLock");
     List_Init(recovPingList);
+    if (recov_AbsoluteIntervals) {
+	recovIntervalElement.routine = RecovPingInterval;
+	recovIntervalElement.clientData = 0;
+	recovIntervalElement.interval =
+		timer_IntOneSecond * recovPingSeconds;
+	Timer_ScheduleRoutine(&recovIntervalElement, TRUE);
+    }
     return;
 }
+
 
 
 /*
@@ -107,8 +149,12 @@ Recov_Proc()
 	 * Calculate wait period inside loop so we can change it
 	 * on the fly.
 	 */
-	Time_Multiply(time_OneSecond, recovPingSeconds, &wait);
-	Sync_WaitTime(wait);
+	if (!recov_AbsoluteIntervals) {
+	    Time_Multiply(time_OneSecond, recovPingSeconds, &wait);
+	    Sync_WaitTime(wait);
+	} else {
+	    (void) Sync_EventWait(recovPingEvent, FALSE);
+	}
 	if (sys_ShuttingDown) {
 	    printf("Recov_Proc exiting.\n");
 	    break;
