@@ -1,5 +1,5 @@
 /*
- * fsMigrate.c --
+ * fsioMigrate.c --
  *
  * Procedures to handle migrating open files between machines.  The basic
  * strategy is to first do some local book-keeping on the client we are
@@ -25,18 +25,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsconsist.h"
-#include "fspdev.h"
-#include "fsprefix.h"
-#include "fsNameOps.h"
-#include "fsStat.h"
-#include "byte.h"
-#include "rpc.h"
-#include "procMigrate.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fspdev.h>
+#include <fsprefix.h>
+#include <fsNameOps.h>
+#include <fsStat.h>
+#include <byte.h>
+#include <rpc.h>
+#include <procMigrate.h>
+
+#include <stdio.h>
 
 Boolean fsio_MigDebug = FALSE;
 #define DEBUG( format ) \
@@ -73,7 +75,7 @@ Fsio_EncapStream(streamPtr, bufPtr)
     Fs_Stream	*streamPtr;	/* Stream to be migrated */
     Address	bufPtr;		/* Buffer to hold encapsulated stream */
 {
-    register	FsMigInfo	*migInfoPtr;
+    register	Fsio_MigInfo	*migInfoPtr;
     register Fs_HandleHeader	*ioHandlePtr;
 
     /*
@@ -86,7 +88,7 @@ Fsio_EncapStream(streamPtr, bufPtr)
      * the I/O server, the useFlags of the stream, and our SpriteID so
      * the target of migration and the server can do the right thing later. 
      */
-    migInfoPtr = (FsMigInfo *) bufPtr;
+    migInfoPtr = (Fsio_MigInfo *) bufPtr;
     ioHandlePtr = streamPtr->ioHandlePtr;
     migInfoPtr->streamID = streamPtr->hdr.fileID;
     migInfoPtr->ioFileID = ioHandlePtr->fileID;
@@ -104,7 +106,7 @@ Fsio_EncapStream(streamPtr, bufPtr)
      * new RPCs in place.
      */
     migInfoPtr->offset = streamPtr->offset;
-    
+
     migInfoPtr->srcClientID = rpc_SpriteID;
     migInfoPtr->flags = streamPtr->flags | FS_MIGRATED_FILE;
 
@@ -146,7 +148,7 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
     Fs_Stream	**streamPtrPtr;	/* Where to return pointer to the new stream */
 {
     register	Fs_Stream	*streamPtr;
-    register	FsMigInfo	*migInfoPtr;
+    register	Fsio_MigInfo	*migInfoPtr;
     register	Fs_NameInfo	*nameInfoPtr;
     ReturnStatus		status = SUCCESS;
     Boolean			foundClient;
@@ -155,7 +157,7 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
     int				size;
     ClientData			data;
 
-    migInfoPtr = (FsMigInfo *) bufPtr;
+    migInfoPtr = (Fsio_MigInfo *) bufPtr;
 
     if (migInfoPtr->srcClientID == rpc_SpriteID) {
 	/*
@@ -177,8 +179,8 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
      */
     streamPtr = Fsio_StreamAddClient(&migInfoPtr->streamID, rpc_SpriteID,
 			     (Fs_HandleHeader *)NIL,
-			     migInfoPtr->flags & ~FS_NEW_STREAM, (char *)NIL,
-			     &foundClient, &foundStream);
+			     (int) (migInfoPtr->flags & ~FS_NEW_STREAM), 
+			     (char *)NIL, &foundClient, &foundStream);
     savedOffset = migInfoPtr->offset;
     if (!foundClient) {
 	migInfoPtr->flags |= FS_NEW_STREAM;
@@ -247,7 +249,7 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
     Fsutil_HandleUnlock(streamPtr);
     status = (*fsio_StreamOpTable[migInfoPtr->ioFileID.type].migrate)
 		(migInfoPtr, rpc_SpriteID, &streamPtr->flags,
-		 &streamPtr->offset, &size, &data);
+		 &streamPtr->offset, &size, (Address *) &data);
     streamPtr->flags &= ~FS_NEW_STREAM;
 
     DEBUG( (" Type %d <%d,%d> offset %d, ", migInfoPtr->ioFileID.type,
@@ -268,7 +270,7 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
 	DEBUG( ("migrate status %x\n", status) );
     }
     if (streamPtr->offset != savedOffset) {
-	DEBUG( ("Fsio_DeencapStream \"%s\" srcClientOffset %d ioSrvrOffset %d\n",
+	DEBUG(("Fsio_DeencapStream \"%s\" srcClientOffset %d ioSrvrOffset %d\n",
 	    Fsutil_HandleName(streamPtr->ioHandlePtr),
 	    savedOffset, streamPtr->offset) );
     }
@@ -314,11 +316,11 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
  * ----------------------------------------------------------------------------
  *
  */
-ReturnStatus
+void
 Fsio_MigrateUseCounts(flags, closeSrcClient, usePtr)
     register int	 flags;		/* Flags from the stream */
     Boolean		closeSrcClient;	/* TRUE if I/O close was done at src */
-    register Fsutil_UseCounts *usePtr;	/* Use counts from the I/O handle */
+    register Fsio_UseCounts *usePtr;	/* Use counts from the I/O handle */
 {
     if ((flags & FS_NEW_STREAM) && !closeSrcClient) {
 	/*
