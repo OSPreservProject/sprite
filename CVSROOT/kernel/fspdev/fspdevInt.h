@@ -157,6 +157,7 @@ typedef struct FspdevServerIOHandle {
     Address replyBuf;		/* Pointer to reply data buffer.  This is in
 				 * the client's address space if the
 				 * FS_USER flag is set */
+    int replySize;		/* Amount of data the client expects returned */
     Sync_Condition setup;	/* This is notified after the server has set
 				 * up buffer space for us.  A pseudo stream
 				 * can't be used until this is done. */
