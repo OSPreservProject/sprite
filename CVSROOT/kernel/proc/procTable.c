@@ -261,6 +261,12 @@ Proc_InitMainProc()
     procPtr->numQuantumEnds 	= 0;
     procPtr->numWaitEvents 	= 0;
 
+    procPtr->Prof_Buffer        = (short *) NIL;
+    procPtr->Prof_BufferSize    = 0;
+    procPtr->Prof_Offset        = 0;
+    procPtr->Prof_Scale         = 0;
+    procPtr->Prof_PC            = 0;
+
     Mach_InitFirstProc(procPtr);
 
     procPtr->familyID 		= PROC_NO_FAMILY;	/* not in a family */
