@@ -129,7 +129,8 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	if (procPtr == (Proc_ControlBlock *) NIL || 
 	    !(procPtr->genFlags & PROC_DEBUGGED) ||
 	    (procPtr->genFlags & PROC_ON_DEBUG_LIST) ||
-	    procPtr->state != PROC_SUSPENDED) {
+	    procPtr->state != PROC_SUSPENDED ||
+	    ((procPtr->genFlags & PROC_KILLING) && request==PROC_CONTINUE)) {
 	    if (procPtr != (Proc_ControlBlock *) NIL) {
 		Proc_Unlock(procPtr);
 	    }
@@ -366,6 +367,9 @@ Proc_ResumeProcess(procPtr, killingProc)
 	 * killed or aren't being actively debugged can be resumed.
 	 */
 	RemoveFromDebugList(procPtr);
+	if (procPtr->genFlags & PROC_DEBUGGED) {
+	    procPtr->genFlags |= PROC_KILLING;
+	}
 	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
 	    ProcDebugWakeup();
 	}
