@@ -37,12 +37,6 @@ extern	int	debugSpace[];
 extern	Address	theAddrOfVmPtr;
 extern	Address	theAddrOfMachPtr;
 
-#define	DEBUG_ADD(thing)	\
-    if (debugCounter >= 500) {	\
-	debugCounter = 0;	\
-    }				\
-    debugSpace[debugCounter++] = (int)(thing);
-
 #ifndef multiprocessor
 
 #undef MASTER_LOCK
@@ -1356,21 +1350,12 @@ VmMach_SetupContext(procPtr)
 
     MASTER_LOCK(vmMachMutexPtr);
 
-    DEBUG_ADD(0x999);
-    DEBUG_ADD(procPtr);
     while (TRUE) {
 	contextPtr = procPtr->vmPtr->machPtr->contextPtr;
 	theAddrOfVmPtr = (Address)(&(procPtr->vmPtr));
-	DEBUG_ADD(theAddrOfVmPtr);
-	DEBUG_ADD(procPtr->vmPtr);
 	theAddrOfMachPtr = (Address)(&(procPtr->vmPtr->machPtr));
-	DEBUG_ADD(theAddrOfMachPtr);
-	DEBUG_ADD(procPtr->vmPtr->machPtr);
-	DEBUG_ADD(contextPtr);
 	if (contextPtr != (VmMach_Context *)NIL) {
-		DEBUG_ADD(0x10101);
 	    if (contextPtr != &contextArray[VMMACH_KERN_CONTEXT]) {
-		DEBUG_ADD(0x12121);
 		if (vm_Tracing) {
 		    Vm_ProcInfo	*vmPtr;
 
@@ -1419,25 +1404,20 @@ SetupContext(procPtr)
     register	VmMach_SegData	*segDataPtr;
     register	Vm_ProcInfo	*vmPtr;
 
-    DEBUG_ADD(0x4444);
     vmPtr = procPtr->vmPtr;
     contextPtr = vmPtr->machPtr->contextPtr;
-    DEBUG_ADD(contextPtr);
 
     if (procPtr->genFlags & (PROC_KERNEL | PROC_NO_VM)) {
-	DEBUG_ADD(0x1);
 	/*
 	 * This is a kernel process or a process that is exiting.
 	 * Set the context to kernel and return.
 	 */
 	VmMachSetContextReg(VMMACH_KERN_CONTEXT);
 	vmPtr->machPtr->contextPtr = &contextArray[VMMACH_KERN_CONTEXT];
-	DEBUG_ADD(vmPtr->machPtr->contextPtr);
 	return;
     }
 
     if (contextPtr == (VmMach_Context *)NIL) {
-	DEBUG_ADD(0x555);
 	/*
 	 * In this case there is no context setup for this process.  Therefore
 	 * we have to find a context, initialize the context table entry and 
@@ -1460,7 +1440,6 @@ SetupContext(procPtr)
 	 */
 	contextPtr->flags = CONTEXT_IN_USE;
 	contextPtr->procPtr = procPtr;
-	DEBUG_ADD(contextPtr);
 	vmPtr->machPtr->contextPtr = contextPtr;
 	VmMachSetContextReg(contextPtr->context);
 	/*
@@ -1550,10 +1529,8 @@ VmMach_FreeContext(procPtr)
 
     MASTER_LOCK(vmMachMutexPtr);
 
-    DEBUG_ADD(0x555555);
     machPtr = procPtr->vmPtr->machPtr;
     contextPtr = machPtr->contextPtr;
-    DEBUG_ADD(contextPtr);
     if (contextPtr == (VmMach_Context *)NIL ||
         contextPtr->context == VMMACH_KERN_CONTEXT) {
 	MASTER_UNLOCK(vmMachMutexPtr);
@@ -1588,7 +1565,6 @@ void
 VmMach_ReinitContext(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
-    DEBUG_ADD(0x666666);
     VmMach_FreeContext(procPtr);
     MASTER_LOCK(vmMachMutexPtr);
     procPtr->vmPtr->machPtr->contextPtr = (VmMach_Context *)NIL;

@@ -23,7 +23,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #ifdef sun4
 #include "machMon.h"
 #endif sun4
-
 /*
  * Declarations of external variables
  */
@@ -541,8 +540,8 @@ VmZeroPage(pfNum)
 {
     register	int	mappedAddr;
 
+	
     mappedAddr = (int) VmMapPage(pfNum);
-
     bzero((Address) mappedAddr, vm_PageSize);
     VmUnmapPage((Address) mappedAddr);
 }
