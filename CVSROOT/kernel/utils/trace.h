@@ -13,7 +13,7 @@
 #ifndef _TRACE
 #define _TRACE
 
-#include "time.h"
+#include "spriteTime.h"
 
 /*
  * Information applicable to an entire circular buffer.
