@@ -11,7 +11,7 @@
  *	and pseudo-devices have many handles associated with one name.
  *	Each handle is identfied by a unique Fs_FileID, and has a standard
  *	header for manipulation by generic routines.
- *	Note: FsHandleHeader is defined here because it is
+ *	Note: FsHandleHeader is defined in fs.h because it is
  *	embedded in the Fs_Stream type which is exported.
  *
  * Copyright 1987 Regents of the University of California
@@ -48,28 +48,27 @@
  *	FS_RMT_DEVICE_STREAM	For a remote device.
  *	FS_LCL_PIPE_STREAM	For an anonymous pipe buffered on this host.
  *	FS_RMT_PIPE_STREAM	For an anonymous pipe bufferd on a remote host.
- *	FS_LCL_NAMED_PIPE_STREAM	For a named pipe cached on this host.
- *	FS_RMT_NAMED_PIPE_STREAM	For a named pipe cached elsewhere.
+ *				This type arises from process migration.
  *	FS_CONTROL_STREAM	This is the stream used by the server for
- *		a pseudo device to listen for new client arrivals and the
- *		departure of old clients.
- *	FS_SERVER_STREAM	This is the stream used by the server for
- *		the request/reponse channel to a particular client.
- *	FS_LCL_PSEUDO_STREAM	This is the client's end of the stream
- *		between it and the server process for the pseudo device.
- *	FS_RMT_PSEUDO_STREAM	As above, but when the server is remote.
+ *				a pseudo device to listen for new clients.
+ *	FS_SERVER_STREAM	The main state for a pdev request-response
+ *				connection.  Refereneced by the server's stream.
+ *	FS_LCL_PSEUDO_STREAM	A client's handle on a request-response
+ *				connection to a local pdev server.
+ *	FS_RMT_PSEUDO_STREAM	As above, but when the pdev server is remote.
  *	FS_PFS_CONTROL_STREAM	Control stream for pseudo-filesystems.
  *	FS_PFS_NAMING_STREAM	The request-response stream used for naming
- *				operations in a pseudo-filesystem.
- *	FS_LCL_PFS_STREAM	A pseudo-stream to a pseudo-filesystem.  This
- *		differs only in what happens at open time.  I/O is the same.
- *	FS_RMT_PFS_STREAM	As above, but when the server is remote.
+ *				operations in a pseudo-filesystem.  This
+ *				I/O handle is hung off the prefix table.
+ *	FS_LCL_PFS_STREAM	A clients' handle on a request-response
+ *				connection to a local pfs server.
+ *	FS_RMT_PFS_STREAM	As above, but when the pfs server is remote.
  *	FS_RMT_CONTROL_STREAM	Needed only during get/set I/O attributes of
  *				a pseudo-device whose server is remote.
  *
  * The following streams are not implemented
- *	FS_REMOTE_NFS_STREAM	NFS access implemented in kernel.
- *	FS_REMOTE_UNIX_STREAM	For files on the old hybrid unix/sprite server.
+ *	FS_RMT_NFS_STREAM	NFS access implemented in kernel.
+ *	FS_RMT_UNIX_STREAM	For files on the old hybrid unix/sprite server.
  *	FS_LCL_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
  *				is on the local host.
  *	FS_RMT_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
@@ -150,7 +149,7 @@ typedef struct FsRecoveryInfo {
     int			flags;		/* defined in fsRecovery.c */
     ReturnStatus	status;		/* Recovery status */
     FsUseCounts		use;		/* Client's copy of use state */
-} FsRecoveryInfo;			/* 32 BYTES */
+} FsRecoveryInfo;			/* 32 BYTES (48 with traced locks) */
 
 
 /*
@@ -198,7 +197,7 @@ typedef struct FsCacheFileInfo {
     int		   lastTimeTried;  /* Time that last tried to see if disk was
 				    * available for this block. */
     FsCachedAttributes attr;	   /* Local version of descriptor attributes. */
-} FsCacheFileInfo;		   /* 108 BYTES */
+} FsCacheFileInfo;		   /* 108 BYTES  (124 with traced locks)*/
 
 
 /*
@@ -233,8 +232,7 @@ typedef struct FsConsistInfo {
     Sync_Condition repliesIn;	/* This condition is notified after
 				 * all the clients told to take
 				 * consistency actions have replied. */
-    List_Links migList;		/* List header for clients migrating the file */
-} FsConsistInfo;		/* 56 BYTES */
+} FsConsistInfo;		/* 48 BYTES (64 with traced locks) */
 
 /* 
  * The I/O descriptor for remote streams.  This is all that is needed for
@@ -243,7 +241,8 @@ typedef struct FsConsistInfo {
  *	I/O descriptor for remote files.  These stream types share some
  *	common remote procedure stubs, and this structure provides
  *	a common interface.
- *	FS_RMT_DEVICE_STREAM, FS_RMT_PIPE_STREAM, FS_RMT_NAMED_PIPE_STREAM.
+ *	FS_RMT_DEVICE_STREAM, FS_RMT_PIPE_STREAM, FS_RMT_NAMED_PIPE_STREAM,
+ *	FS_RMT_PSEUDO_STREAM, FS_RMT_PFS_STREAM
  */
 
 typedef struct FsRemoteIOHandle {
@@ -251,7 +250,7 @@ typedef struct FsRemoteIOHandle {
 					 * ID field in the hdr is used to
 					 * forward the I/O operation. */
     FsRecoveryInfo	recovery;	/* For I/O server recovery */
-} FsRemoteIOHandle;			/* 64 BYTES */
+} FsRemoteIOHandle;			/* 72 BYTES (88 with traced locks) */
 
 extern void FsRemoteIOHandleInit();
 
