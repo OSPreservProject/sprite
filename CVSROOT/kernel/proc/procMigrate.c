@@ -2023,7 +2023,8 @@ Proc_WaitForMigration(processID)
 	    return(PROC_INVALID_PID);
 	}
     }
-    if (procPtr->genFlags & PROC_MIGRATION_DONE) {
+    if ((procPtr->genFlags & PROC_MIGRATION_DONE) &&
+	(procPtr->state == PROC_MIGRATED)) {
 	status = SUCCESS;
     } else {
 	status = FAILURE;
