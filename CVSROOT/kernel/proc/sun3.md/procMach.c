@@ -44,9 +44,7 @@ ProcGetObjInfo(execPtr, objInfoPtr)
     ProcExecHeader	*execPtr;
     ProcObjInfo		*objInfoPtr;
 {
-    if (execPtr->magic != PROC_ZMAGIC) {
-	return(PROC_BAD_AOUT_FORMAT);
-    }
+
 #ifdef sun2
     if (execPtr->machineType != PROC_MC68010) {
 	return(PROC_BAD_AOUT_FORMAT);
@@ -68,15 +66,34 @@ ProcGetObjInfo(execPtr, objInfoPtr)
 	return(PROC_BAD_AOUT_FORMAT);
     }
 #endif
-    objInfoPtr->codeLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
-    objInfoPtr->codeFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
-    objInfoPtr->codeSize = execPtr->code;
-    objInfoPtr->heapLoadAddr = (Address)PROC_DATA_LOAD_ADDR(*execPtr);
-    objInfoPtr->heapFileOffset = PROC_DATA_FILE_OFFSET(*execPtr);
-    objInfoPtr->heapSize = execPtr->data;
-    objInfoPtr->bssLoadAddr = (Address)PROC_BSS_LOAD_ADDR(*execPtr);
-    objInfoPtr->bssSize = execPtr->bss;
-    objInfoPtr->entry = (Address)execPtr->entry;
+    switch (execPtr->magic) {
 
+    case PROC_ZMAGIC:
+	objInfoPtr->codeLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
+	objInfoPtr->codeFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
+	objInfoPtr->codeSize = execPtr->code;
+	objInfoPtr->heapLoadAddr = (Address)PROC_DATA_LOAD_ADDR(*execPtr);
+	objInfoPtr->heapFileOffset = PROC_DATA_FILE_OFFSET(*execPtr);
+	objInfoPtr->heapSize = execPtr->data;
+	objInfoPtr->bssLoadAddr = (Address)PROC_BSS_LOAD_ADDR(*execPtr);
+	objInfoPtr->bssSize = execPtr->bss;
+	objInfoPtr->entry = (Address)execPtr->entry;
+	break;
+
+    case PROC_OMAGIC:
+	objInfoPtr->codeLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
+	objInfoPtr->codeFileOffset = 0;
+	objInfoPtr->codeSize = 0;
+	objInfoPtr->heapLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
+	objInfoPtr->heapFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
+	objInfoPtr->heapSize = execPtr->data + execPtr->code;
+	objInfoPtr->bssLoadAddr = (Address)PROC_BSS_LOAD_ADDR(*execPtr);
+	objInfoPtr->bssSize = execPtr->bss;
+	objInfoPtr->entry = (Address)execPtr->entry;
+	break;
+
+    default:
+	return(PROC_BAD_AOUT_FORMAT);
+    }
     return(SUCCESS);
 }
