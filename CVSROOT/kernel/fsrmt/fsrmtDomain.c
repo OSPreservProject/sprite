@@ -45,10 +45,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Used to contain fileID and stream data results from open calls.
  */
-typedef	struct	FsOpenReplyParam {
+typedef	struct	FsPrefixReplyParam {
     FsrmtUnionData	openData;
     Fs_FileID	fileID;
-} FsOpenReplyParam;
+} FsPrefixReplyParam;
 
 
 /*
@@ -91,7 +91,7 @@ FsrmtImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
     Fs_FileID		*fileIDPtr;	/* Returned from server */
     ClientData		streamData;	/* Returned from server */
     int			flags = FS_PREFIX;
-    FsOpenReplyParam	openReplyParam;
+    FsPrefixReplyParam	prefixReplyParam;
 
     *hdrPtrPtr = (Fs_HandleHeader *)NIL;
     *domainTypePtr = -1;
@@ -101,11 +101,11 @@ FsrmtImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
     storage.requestDataPtr = (Address)prefix;
     storage.requestDataSize = strlen(prefix)+1;
 
-    storage.replyParamPtr = (Address)&openReplyParam;
-    storage.replyParamSize = sizeof(FsOpenReplyParam);
+    storage.replyParamPtr = (Address)&prefixReplyParam;
+    storage.replyParamSize = sizeof(FsPrefixReplyParam);
     storage.replyDataPtr = (Address)NIL;
     storage.replyDataSize = 0;
-    fileIDPtr = &(openReplyParam.fileID);
+    fileIDPtr = &(prefixReplyParam.fileID);
 
     status = Rpc_Call(serverID, RPC_FS_PREFIX, &storage);
     /*
@@ -113,7 +113,7 @@ FsrmtImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
      * the cltOpen proc frees this space.
      */
     streamData = (ClientData)malloc(sizeof(FsrmtUnionData));
-    *((FsrmtUnionData *) streamData) = openReplyParam.openData;
+    *((FsrmtUnionData *) streamData) = prefixReplyParam.openData;
 
     if (status == SUCCESS) {
 	/*
@@ -176,7 +176,7 @@ Fsrmt_RpcPrefix(srvToken, clientID, command, storagePtr)
     int					domainType;
     int					serverID;
     ReturnStatus			status;
-    FsOpenReplyParam			*openReplyPtr;
+    FsPrefixReplyParam			*prefixReplyPtr;
 
     status = Fsprefix_Lookup((char *) storagePtr->requestDataPtr,
 		FSPREFIX_EXPORTED | FSPREFIX_EXACT, clientID, &hdrPtr,
@@ -186,16 +186,17 @@ Fsrmt_RpcPrefix(srvToken, clientID, command, storagePtr)
 	ClientData			streamData;
 	int				dataSize;
 
-	openReplyPtr = mnew(FsOpenReplyParam);
+	prefixReplyPtr = mnew(FsPrefixReplyParam);
 	status = (*fs_DomainLookup[domainType][FS_DOMAIN_EXPORT])(hdrPtr,
-		    clientID, &openReplyPtr->fileID, &dataSize, &streamData);
+		    clientID, &prefixReplyPtr->fileID, &dataSize, &streamData);
 	if (status == SUCCESS) {
 	    if (dataSize > 0) {
-		bcopy((Address)streamData, (Address)&openReplyPtr->openData, dataSize);
+		bcopy((Address)streamData, (Address)&prefixReplyPtr->openData,
+			dataSize);
 		free((Address)streamData);
 	    }
-	    storagePtr->replyParamPtr = (Address) (openReplyPtr);
-	    storagePtr->replyParamSize = sizeof(FsOpenReplyParam);
+	    storagePtr->replyParamPtr = (Address) (prefixReplyPtr);
+	    storagePtr->replyParamSize = sizeof(FsPrefixReplyParam);
 	    storagePtr->replyDataPtr = (Address)NIL;
 	    storagePtr->replyDataSize = 0;
 
@@ -206,7 +207,7 @@ Fsrmt_RpcPrefix(srvToken, clientID, command, storagePtr)
 		    (ClientData)replyMemPtr);
 	    return(SUCCESS);
 	} else {
-	    free((Address)openReplyPtr);
+	    free((Address)prefixReplyPtr);
 	    printf( "Fsrmt_RpcPrefix, export \"%s\" failed %x\n",
 		    storagePtr->requestDataPtr, status);
 	    Fsprefix_HandleClose(prefixPtr, FSPREFIX_ANY);
