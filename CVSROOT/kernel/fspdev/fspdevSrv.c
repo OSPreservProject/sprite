@@ -357,10 +357,14 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
      * file with type CONTROL.  The minor field has the disk decriptor version
      * number xor'ed into it to avoid conflict when you delete the
      * pdev file and recreate one with the same file number (minor field).
+     * Note, if this mapping is changed here on the file server, then
+     * regular control stream recovery by clients won't work.  They will
+     * recover their control handles, but we will map to a different handle
+     * and thus think there is no server process.
      */
     ioFileID = handlePtr->hdr.fileID;
     ioFileID.type = FS_CONTROL_STREAM;
-    ioFileID.minor ^= (handlePtr->descPtr->version << 24);
+    ioFileID.minor ^= (handlePtr->descPtr->version << 16);
     ctrlHandlePtr = FsControlHandleInit(&ioFileID, handlePtr->hdr.name, &found);
 
     if (useFlags & (FS_MASTER|FS_NEW_MASTER)) {
@@ -371,14 +375,17 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    status = FS_FILE_BUSY;
 	} else {
 	    /*
-	     * Return to the pseudo-device server a ControlIOHandle that
-	     * has us, the name server, in the serverID field.  This is
+	     * Note which host is running the pseudo-device server.
+	     */
+	    ctrlHandlePtr->serverID = clientID;
+	    /*
+	     * Note our hostID is still in the hdr.serverID field of the
+	     * control handle being returned to the opening process. This is
 	     * used when closing the control stream to get back to us
 	     * so we can clear the serverID field here.  We also set up
 	     * a shadow stream here, which has us as the server so
 	     * recovery and closing work right.
 	     */
-	    ctrlHandlePtr->serverID = clientID;
 	    *ioFileIDPtr = ioFileID;
 	    *clientDataPtr = (ClientData)NIL;
 	    *dataSizePtr = 0;
@@ -417,8 +424,9 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    ioFileIDPtr->major = (handlePtr->hdr.fileID.serverID << 16) |
 				  handlePtr->hdr.fileID.major;
 	    ctrlHandlePtr->seed++;
-	    ioFileIDPtr->minor = handlePtr->hdr.fileID.minor ^
-				  (ctrlHandlePtr->seed << 16);
+	    ioFileIDPtr->minor = ((handlePtr->descPtr->version << 24) ^
+				  (handlePtr->hdr.fileID.minor << 12)) |
+				 ctrlHandlePtr->seed;
 	    /*
 	     * Return the control stream file ID so it can be found again
 	     * later when setting up the client's stream and the
@@ -432,9 +440,9 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    *clientDataPtr = (ClientData)pdevStatePtr ;
 	    *dataSizePtr = sizeof(FsPdevState);
 	    /*
-	     * Set up a top level stream for the opening process.  No shadow
+	     * Create a streamID for the opening process.  No shadow
 	     * stream is kept here.  Instead, the streamID is returned to
-	     * the pdev server who sets up a shadow stream.
+	     * the pdev server who sets up the shadow stream.
 	     */
 	    streamPtr = FsStreamNew(ctrlHandlePtr->serverID,
 			(FsHandleHeader *)NIL, useFlags, handlePtr->hdr.name);
@@ -559,7 +567,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
      * This done in case of recovery when we'll need to reset the
      * seed kept on the file server.
      */
-    ctrlHandlePtr->seed = ioFileIDPtr->minor & 0xFFFF;
+    ctrlHandlePtr->seed = ioFileIDPtr->minor & 0x0FFF;
 
     found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle), name,
 			    ioHandlePtrPtr);
