@@ -6,4 +6,3 @@
 #
 
 #include	<$(SYSMAKEFILE)>
-.PATH.h:	/sprite/src/kernel/mgbaker/hdrs
