@@ -231,8 +231,7 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
     /*
      * Initialize the RPC header for the request message.  A couple fields
      * are set up elsewhere.  The server hint is left over from previous
-     * RPCs.  The channel ID and the transport ID (which should go away
-     * but the UNIX RPC implementation depends on it) are set up at
+     * RPCs.  The channel ID and the version number are set up at
      * boot time by Rpc_Init.
      */
     rpcHdrPtr = &chanPtr->requestRpcHdr;
@@ -243,12 +242,12 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
     }
     rpcHdrPtr->flags |= RPC_SERVER;
 
-    rpcHdrPtr->delay = rpcMyDelay;
     rpcHdrPtr->clientID = rpc_SpriteID;
     rpcHdrPtr->serverID = serverID;
-    rpcHdrPtr->ID = rpcID++;
-    rpcHdrPtr->command = command;
     rpcHdrPtr->bootID = rpcBootID;
+    rpcHdrPtr->ID = rpcID++;
+    rpcHdrPtr->delay = rpcMyDelay;
+    rpcHdrPtr->command = command;
 
     /*
      * Copy buffer pointers into the state of the channel.
