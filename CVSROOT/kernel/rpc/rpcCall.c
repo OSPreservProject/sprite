@@ -553,13 +553,38 @@ RpcChanAlloc(serverID)
     int firstFree = -1;			/* The first chan used but now free */
     Timer_Ticks	time;			/* When server channel state set. */
     Timer_Ticks	currentTime;		/* Current ticks. */
-    Boolean	result;			/* Result of function call. */
+    Boolean	srvCongested;		/* Server is marked as congested. */
+    Boolean	haddaWait = FALSE; /* DEBUG: had to wait for free channel */
+    static int numWaits = 0;	/* DEBUG: number of calls that had to wait */
+    static int freeChanThreshold = 4; /* DEBUG: this many channels free 
+				       * means it's okay to complain again */
 
     MASTER_LOCK(&rpcMutex);
+
+    /* 
+     * Quick debugging hack: if RPCs were delayed because there were no 
+     * channels, see if the load has slacked back enough that it's okay to 
+     * complain about it.  It should be okay to do this here (rather than 
+     * in the code that frees channels) because there should at least be 
+     * some sort of regular heartbeat RPC.
+     */
+    if (numWaits > 0 && numFreeChannels >= freeChanThreshold) {
+	printf("RpcChanAlloc: %d RPCs were delayed due to lack of channels.\n",
+	       numWaits);
+	numWaits = 0;
+    }
 
     while (numFreeChannels < 1) {
 	rpcCltStat.chanWaits++;
 waitForBusyChannel:
+	if (!haddaWait) {
+	    haddaWait = TRUE;
+	    ++numWaits;
+	    if (numWaits == 1) {
+		printf("%s: RPC to host %d delayed: no channels available.\n", 
+		       "RpcChanAlloc", serverID);
+	    }
+	}
 	Sync_MasterWait(&freeChannels, &rpcMutex, FALSE);
     }
     firstUnused = -1;
@@ -567,12 +592,12 @@ waitForBusyChannel:
     firstFreeMatch = -1;
     firstFree = -1;
 
-    result = GetChannelAllocState(serverID, &time);
-    if (result) {
+    srvCongested = GetChannelAllocState(serverID, &time);
+    if (srvCongested) {
 	Timer_AddIntervalToTicks(time, channelStateInterval, &time);
 	Timer_GetCurrentTicks(&currentTime);
     }
-    if (result && (Timer_TickGE(time, currentTime))) {
+    if (srvCongested && (Timer_TickGE(time, currentTime))) {
 	/*
 	 * Server is congested, so ramp down use of channels.
 	 * If there's a channel, free or busy, for our server, use the
@@ -632,7 +657,7 @@ waitForBusyChannel:
 	 * Server is not congested.  Make sure it's marked okay, and allocate
 	 * a channel in the regular fasion.
 	 */
-	if (result) {
+	if (srvCongested) {
 	    /* Mark server as okay now. */
 	    SetChannelAllocStateInt(serverID, FALSE);
 	}
