@@ -1865,6 +1865,14 @@ Proc_KDumpInt(data, callInfoPtr)
 		    if (PRINTLFS(lfsPtr, "cleanSegmentsWait")) {
 			match++;
 		    }
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, cacheBackendLock));
+		    if (PRINTLFS(lfsPtr, "cacheBackendLock")) {
+			match++;
+		    }
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, lock));
+		    if (PRINTLFS(lfsPtr, "Lfs master lock")) {
+			match++;
+		    }
 		    lfsPtr = (Lfs *)(event-OFF(Lfs, checkPointWait));
 		    if (PRINTLFS(lfsPtr, "checkPointWait")) {
 			match++;
