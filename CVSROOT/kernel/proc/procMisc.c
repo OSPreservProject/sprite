@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "string.h"
 #include "byte.h"
 #include "procInt.h"
+#include "rpc.h"
 
 /*
  * Procedures internal to this file
@@ -35,6 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 static Boolean CheckIfUsed();
 static ReturnStatus ProcDumpPCB();
+static ReturnStatus GetRemotePCB();
 
 
 /*
@@ -42,17 +44,21 @@ static ReturnStatus ProcDumpPCB();
  *
  * Proc_GetPCBInfo --
  *
- *	Returns the process control block.  If firstPid is equal to  
- *	PROC_MY_PID then the PCB for the current process is returned.
- *	Otherwise PCBs for all processes in the range firstPid to lastPid
- *	are returned.  trueNumBuffers is set to be the actual number of
- *	PCBs returned which can be less than the number requested if firstPid
- *	of lastPid are greater than the maximum PCB available.
+ *	Returns the process control blocks for the specified processes
+ *	on the specified host.  If firstPid is equal to PROC_MY_PID
+ *	and the hostID is PROC_MY_HOSTID, then the PCB for the current
+ *	process is returned.  Otherwise PCBs for all processes in the
+ *	range firstPid to lastPid on host hostID are returned.  Only
+ *	the index portions of the processIDs for firstPid and lastPid
+ *	are relevant. 
  *
  * Results:
  *	SYS_INVALID_ARG - 	firstPid was < 0, firstPid > lastPid
  *	SYS_ARG_NOACCESS - 	The buffers to store the pcbs in were not
  *				accessible.
+ *      *trueNumBuffers is set to be the actual number of
+ *	PCBs returned which can be less than the number requested if
+ *	lastPid - firstPid is greater than the maximum PCBs available.
  *
  * Side effects:
  *	None.
@@ -61,33 +67,67 @@ static ReturnStatus ProcDumpPCB();
  */
 
 ReturnStatus
-Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
+Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
+		trueNumBuffersPtr)
     Proc_PID 		firstPid;	     /* First pid to get info for. */
     Proc_PID		lastPid;	     /* Last pid to get info for. */
+    int			hostID;		     /* Host ID to get info for. */
     Proc_ControlBlock 	*bufferPtr;	     /* Pointer to buffers. */
     Proc_PCBArgString	*argsPtr;	     /* Pointer to argument strings. */
     int 		*trueNumBuffersPtr;  /* The actual number of buffers 
 						used.*/
 {
     register Proc_ControlBlock 	*procPtr;
-    int				i, j, len;
-    char 			buf[PROC_PCB_ARG_LENGTH];
+    int				i, j;
+    char 			argString[PROC_PCB_ARG_LENGTH];
     Proc_ControlBlock		pcbEntry;
+    Boolean			remote = FALSE;
+    Proc_PID			processID;
+    ReturnStatus		status = SUCCESS;
 
-    if ((firstPid != PROC_MY_PID) && (firstPid > lastPid)) {
-	return(SYS_INVALID_ARG);
+    if (firstPid != PROC_MY_PID) {
+	firstPid &= PROC_INDEX_MASK;
+	lastPid &= PROC_INDEX_MASK;
+	if ((firstPid > lastPid) ||
+	    ((firstPid == PROC_MY_PID) && hostID != PROC_MY_HOSTID)) {
+	    return(GEN_INVALID_ARG);
+	}
     } else if (bufferPtr == USER_NIL) {
 	return (SYS_ARG_NOACCESS);
+    }
+
+    /*
+     * Determine whether to get process table entries for this machine.
+     */
+
+    if (hostID == PROC_MY_HOSTID) {
+	procPtr = Proc_GetCurrentProc();
+	Proc_Lock(procPtr);
+	if (procPtr->genFlags & PROC_FOREIGN) {
+	    hostID = procPtr->peerHostID;
+	    processID = procPtr->peerHostID;
+	    remote = TRUE;
+	} 
+	Proc_Unlock(procPtr);
+    } else if (hostID != rpc_SpriteID) {
+	remote = TRUE;
     }
 
     if (firstPid == PROC_MY_PID) {
 	/*
 	 *  Return PCB for the current process.
 	 */
-
-	procPtr = Proc_GetEffectiveProc();
-	Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
-		  (Address)&pcbEntry);
+	procPtr = Proc_GetCurrentProc();
+	if (!remote) {
+	    Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
+		      (Address)&pcbEntry);
+	} else {
+	    status = GetRemotePCB(hostID, processID, &pcbEntry,
+				       argString);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	}
 	Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks, 
 			  &pcbEntry.kernelCpuUsage.time);
 	Timer_TicksToTime(pcbEntry.userCpuUsage.ticks, 
@@ -102,35 +142,48 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 	    return(SYS_ARG_NOACCESS);
 	}
 	if (argsPtr != (Proc_PCBArgString *) NIL) {
-	    if (procPtr->argString != (Address) NIL) {
-		(void) Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
-					procPtr->argString,
-				 buf, &len);
-		buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
-	    } else {
-		buf[0] = '\0';
+	    if (!remote) {
+		if (procPtr->argString != (Address) NIL) {
+		    (void) String_NCopy(PROC_PCB_ARG_LENGTH - 1,
+					procPtr->argString, argString);
+		    argString[PROC_PCB_ARG_LENGTH - 1] = '\0';
+		} else {
+		    argString[0] = '\0';
+		}
 	    }
-	    if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, buf,
+	    if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, argString,
 			      (Address) argsPtr) != SUCCESS) {
 		return(SYS_ARG_NOACCESS);
 	    }
 	}
     } else {
-
+	
 	/*
 	 * Return PCB for all processes or enough to fill all of
 	 * the buffers, whichever comes first.
 	 */
 
-	for (i = firstPid, j = 0; 
-	     i < proc_MaxNumProcesses && i <= lastPid; 
-	     i++, j++) {
-	    procPtr = Proc_GetPCB(i);
-	    if (procPtr == (Proc_ControlBlock *) NIL) {
-		Sys_Panic(SYS_FATAL, "Proc_GetInfo: procPtr == NIL!");
+	
+	for (i = firstPid, j = 0; i <= lastPid; i++, j++) {
+	    if (!remote) {
+		if (i >= proc_MaxNumProcesses) {
+		    break;
+		}
+		procPtr = Proc_GetPCB(i);
+		if (procPtr == (Proc_ControlBlock *) NIL) {
+		    Sys_Panic(SYS_FATAL, "Proc_GetInfo: procPtr == NIL!\n");
+		    status = FAILURE;
+		    break;
+		}
+		Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
+			  (Address)&pcbEntry);
+	    } else {
+		status = GetRemotePCB(hostID, (Proc_PID) i, &pcbEntry,
+					   argString);
+		if (status != SUCCESS) {
+		    break;
+		}
 	    }
-	    Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
-		      (Address)&pcbEntry);
 	    Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks, 
 			      &pcbEntry.kernelCpuUsage.time);
 	    Timer_TicksToTime(pcbEntry.userCpuUsage.ticks, 
@@ -144,14 +197,16 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 		return(SYS_ARG_NOACCESS);
 	    }
 	    if (argsPtr != (Proc_PCBArgString *) NIL) {
-		if (procPtr->argString != (Address) NIL) {
-		    (void) Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
-				     procPtr->argString, buf, &len);
-		    buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
-		} else {
-		    buf[0] = '\0';
+		if (!remote) {
+		    if (procPtr->argString != (Address) NIL) {
+			(void) String_NCopy(PROC_PCB_ARG_LENGTH - 1,
+					    procPtr->argString, argString);
+			argString[PROC_PCB_ARG_LENGTH - 1] = '\0';
+		    } else {
+			argString[0] = '\0';
+		    }
 		}
-		if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, buf,
+		if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, argString,
 				  (Address) &(argsPtr[j])) != SUCCESS) {
 		    return(SYS_ARG_NOACCESS);
 		}
@@ -166,10 +221,135 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 	}
     }
 
-    return(SUCCESS);
+    return(status);
 }
+
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetRemotePCB --
+ *
+ *	Perform an RPC to get a process control block from another host.
+ *
+ * Results:
+ *	The return status from the RPC is returned.  
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus	
+GetRemotePCB(hostID, pid, pcbPtr, argString)
+    int		hostID;		/* Host to send RPC to. */
+    Proc_PID	pid;		/* index of PCB to obtain. */
+    Proc_ControlBlock *pcbPtr;	/* Place to return PCB data. */
+    char	*argString;	/* Place to return argument string. */
+{
+    Rpc_Storage		storage;
+    ReturnStatus 	status;
+
+    storage.requestParamPtr = (Address)&pid;
+    storage.requestParamSize = sizeof(Proc_PID);
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+    storage.replyParamPtr = (Address)pcbPtr;
+    storage.replyParamSize = sizeof(Proc_ControlBlock);
+    storage.replyDataPtr = (Address)argString;
+    storage.replyDataSize = PROC_PCB_ARG_LENGTH;
+
+    status = Rpc_Call(hostID, RPC_PROC_GETPCB, &storage);
+    if (status == SUCCESS && storage.replyDataSize == 0) {
+	argString[0] = '\0';
+    }
+    return(status);
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcGetPCB --
+ *
+ *	Stub to handle a remote request for a PCB.
+ *
+ * Results:
+ *	Status of reply:
+ *	GEN_INVALID_ARG - index into table of process control blocks is
+ *			  invalid.
+ *	SUCCESS 	- information is returned.
+ *
+ *	SUCCESS is passed to the caller on this machine.
+ *
+ * Side effects:
+ *	Reply is sent.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus	
+Proc_RpcGetPCB(srvToken, clientID, command, storagePtr)
+    ClientData 		 srvToken;	/* Handle on server process passed to
+				 	 * Rpc_Reply */
+    int 		 clientID;	/* Sprite ID of client host */
+    int 		 command;	/* Command identifier */
+    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
+					 * request buffers and also indicate 
+					 * the exact amount of data in the 
+					 * request buffers.  The reply fields 
+					 * are initialized to NIL for the
+				 	 * pointers and 0 for the lengths.  
+					 * This can be passed to Rpc_Reply */
+{
+    ReturnStatus	status = SUCCESS;
+    Proc_PID		*pidPtr;
+    Rpc_ReplyMem	*replyMemPtr;
+    Proc_ControlBlock   *pcbPtr;
+    Proc_ControlBlock   *procPtr;
+
+    pidPtr = (Proc_PID *) storagePtr->requestParamPtr;
+    if (*pidPtr >= proc_MaxNumProcesses) {
+	status = GEN_INVALID_ARG;
+    } else {
+	procPtr = Proc_GetPCB(*pidPtr);
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    Sys_Panic(SYS_FATAL, "Proc_RpcGetPCB: found nil PCB!");
+	    status = FAILURE;
+	}
+    }
+    if (status != SUCCESS) {
+    	Rpc_Reply(srvToken, status, storagePtr,
+		  (int(*)())NIL, (ClientData)NIL);
+	return(SUCCESS);
+    }
+
+    pcbPtr = Mem_New(Proc_ControlBlock);
+    storagePtr->replyParamPtr = (Address) pcbPtr;
+    storagePtr->replyParamSize = sizeof(Proc_ControlBlock);
+    Byte_Copy(sizeof(Proc_ControlBlock), (Address) procPtr, (Address) pcbPtr);
+    
+    if (procPtr->argString != (Address) NIL) {
+	storagePtr->replyDataSize = String_Length(procPtr->argString + 1);
+	storagePtr->replyDataPtr = Mem_Alloc(storagePtr->replyDataSize);
+	String_Copy(procPtr->argString, storagePtr->replyDataPtr);
+    } else {
+	storagePtr->replyDataSize = 0;
+	storagePtr->replyDataPtr = (Address) NIL;
+    }
+    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = storagePtr->replyDataPtr;
+
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
+    return(SUCCESS);
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
