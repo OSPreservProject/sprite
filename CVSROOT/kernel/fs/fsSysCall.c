@@ -207,8 +207,7 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
 	return(SUCCESS);
     } 
     status = SYS_ARG_NOACCESS;
-    Fs_ClearStreamID(streamID, (Proc_ControlBlock *)NIL);
-    (void) Fs_UserClose(streamID);
+    (void) Fs_UserClose(streamID);	/* This clears the streamID, too */
     return(status);
 }
 
@@ -251,9 +250,7 @@ Fs_UserClose(streamID)
     }
 
     /*
-     * Currently, Fs_Close frees the file object regardless of
-     * the error return from the file server, so we go ahead an
-     * clear our stream id regardless of the error from Fs_Close.
+     * Clear the user-level streamID and then close the underlying stream.
      */
 
     Fs_ClearStreamID(streamID, procPtr);
