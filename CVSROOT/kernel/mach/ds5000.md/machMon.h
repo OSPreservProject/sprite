@@ -38,7 +38,7 @@ MachStringTable	MachMonBootParam;	/* Boot command line. */
 /*
  * Default reboot string.
  */
-#define DEFAULT_REBOOT	"tftp()ds3100"
+#define DEFAULT_REBOOT	"tftp()ds5000"
 
 /*
  * The jump table.
@@ -250,7 +250,7 @@ extern void Mach_MonReboot _ARGS_((char *rebootString));
 #define Mach_MonGetChar			(mach_MonFuncs.mgetchar)
 #define Mach_MonGetNextChar		(mach_MonFuncs.mgetchar)
 #define Mach_MonGetLine			(mach_MonFuncs.gets)
-#define Mach_ArgParse(string,table)	(mach_MonFuncs.argparse)(string,table)
+#define Mach_ArgParse(string,table)	Mach_ArgParseCode(string,table)
 #define Mach_MonPrintf			(mach_MonFuncs.printf)
 #define Mach_MonOpen(name,flags)	(mach_MonFuncs.open)(name,flags)
 #define Mach_MonRead(fd,buf,len)	(mach_MonFuncs.read)(fd,buf,len)
