@@ -17,10 +17,18 @@
  *
  * SYNCHRONIZATION
  *
- * Whenever the signal state of a process is modified a monitor lock is
- * grabbed.  When the signal state is looked at no locking is done. 
- * It is assumed that there are two ways that the signal state will be
- * looked at:
+ * Whenever the signal state of a process is modified, the sig monitor lock
+ * is usually grabbed, and the process is usually locked (e.g., LocalSend).
+ * Code that doesn't obtain the sig monitor lock is in migration and
+ * signals initialization (e.g., fork & exec); the process is locked in
+ * these cases.  Currently (18-Dec-1991) code that doesn't lock the process
+ * (e.g., some calls to SigClearPendingMask) only works on the current
+ * process (i.e., a process is changing its own pending signals list), and
+ * is therefore unlikely to interfere with the code that didn't obtain the
+ * sig monitor lock.  (XXX This really ought to get cleaned up.)
+ * 
+ * When the signal state is looked at no locking is done.  It is assumed
+ * that there are two ways that the signal state will be looked at:
  *
  *      1) A process in the middle of executing a system call
  *         will check to see if any signals are pending before waiting for
@@ -75,8 +83,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <bstring.h>
 #include <stdio.h>
 
-#define	SigGetBitMask(sig) (1 << (sig - 1))
-
 unsigned int 	sigBitMasks[SIG_NUM_SIGNALS];
 int		sigDefActions[SIG_NUM_SIGNALS];
 int		sigCanHoldMask;
@@ -112,7 +118,7 @@ Sig_Init()
     Sync_LockInitDynamic(&sigLock, "Sig:sigLock");
 
     for (i = SIG_MIN_SIGNAL; i < SIG_NUM_SIGNALS; i++) {
-	sigBitMasks[i] = SigGetBitMask(i);
+	sigBitMasks[i] = Sig_NumberToMask(i);
 	sigDefActions[i] = SIG_IGNORE_ACTION;
     }
 
@@ -200,7 +206,7 @@ Sig_Fork(parProcPtr, childProcPtr)
      * signals are processed, migration will be reenabled.
      */
     childProcPtr->sigHoldMask = parProcPtr->sigHoldMask |
-	    SigGetBitMask(SIG_MIGRATE_TRAP);
+	    Sig_NumberToMask(SIG_MIGRATE_TRAP);
     childProcPtr->sigPendingMask = 0;
     bcopy((Address)parProcPtr->sigActions, 
 	  (Address)childProcPtr->sigActions,
@@ -260,13 +266,14 @@ Sig_Exec(procPtr)
  *
  *	Set the entire signal state of the process to that given.  When
  *	setting the state verify that improper signals are not blocked or
- *	ignored.
+ *	ignored.  The process is assumed to be locked.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The signal actions and hold mask will be set for the process.
+ *	The signal actions and hold mask will be set for the process.  
+ *	Might change the suspend/resume flags in the PCB.
  *
  *----------------------------------------------------------------------
  */
@@ -313,6 +320,17 @@ Sig_ChangeState(procPtr, actions, sigMasks, pendingMask, sigCodes, holdMask)
     }
 
     procPtr->sigPendingMask = pendingMask;
+    
+    /* 
+     * Make sure the suspend/resume flags are consistent with the pending 
+     * signals mask.
+     */
+    procPtr->genFlags &= ~PROC_RESUME_PROCESS;
+    if (pendingMask & Sig_NumberToMask(SIG_SUSPEND)) {
+	procPtr->genFlags |= PROC_PENDING_SUSPEND;
+    } else {
+	procPtr->genFlags &= ~PROC_PENDING_SUSPEND;
+    }
 
     procPtr->sigHoldMask = holdMask & sigCanHoldMask;
     bcopy((Address) sigCodes, (Address) procPtr->sigCodes,
@@ -363,7 +381,8 @@ Sig_UserSend(sigNum, pid, familyID)
  *	None.
  *
  * Side effects:
- *	Signal pending mask and code modified.
+ *	Signal pending mask and code modified.  The process's suspend and 
+ *	resume flags might also get changed.
  *
  *----------------------------------------------------------------------
  */
@@ -413,6 +432,7 @@ LocalSend(procPtr, sigNum, code, addr)
      */
     if ((procPtr->sigActions[sigNum] != SIG_IGNORE_ACTION) &&
 	!((sigNum == SIG_MIGRATE_HOME) && (procPtr->peerHostID == NIL))) {
+
 	if (sigNum == SIG_RESUME) {
 	    /* 
 	     * Resume the suspended process.
@@ -445,6 +465,16 @@ LocalSend(procPtr, sigNum, code, addr)
 	    procPtr->sigPendingMask |= sigBitMask;
 	    procPtr->sigCodes[sigNum] = code;
 	    procPtr->sigAddr = (int)addr;
+	    if (sigNum == SIG_SUSPEND) {
+		/* 
+		 * Set the "pending suspend" flag in case the process is 
+		 * resumed before it actually suspends.  Clear the "resume" 
+		 * flag in case the process is resumed and then suspended 
+		 * again before the first suspend is processed.
+		 */
+		procPtr->genFlags |= PROC_PENDING_SUSPEND;
+		procPtr->genFlags &= ~PROC_RESUME_PROCESS;
+	    }
 	    if (procPtr->sigHoldMask & sigBitMask & ~sigCanHoldMask) {
 		/*
 		 * We received a signal that was blocked but can't be blocked
@@ -968,7 +998,13 @@ Sig_SetAction(sigNum, newActionPtr, oldActionPtr)
 
 	if (sigBitMasks[sigNum] & sigCanHoldMask) {
 	    procPtr->sigActions[sigNum] = SIG_IGNORE_ACTION;
+	    Proc_Lock(procPtr);
 	    SigClearPendingMask(procPtr, sigNum);
+	    if (sigNum == SIG_SUSPEND) {
+		procPtr->genFlags &= ~(PROC_PENDING_SUSPEND |
+				       PROC_RESUME_PROCESS);
+	    }
+	    Proc_Unlock(procPtr);
 	} else {
 	    return(SIG_INVALID_SIGNAL);
 	}
@@ -1038,8 +1074,8 @@ Sig_Pause(sigHoldMask)
      */
     (void) Sync_Wait(&signalCondition, TRUE);
 
-    migMask = (SigGetBitMask(SIG_MIGRATE_TRAP)) |
-	(SigGetBitMask(SIG_MIGRATE_HOME));
+    migMask = (Sig_NumberToMask(SIG_MIGRATE_TRAP)) |
+	(Sig_NumberToMask(SIG_MIGRATE_HOME));
     if ((! (procPtr->sigPendingMask & ~migMask)) &&
 	(procPtr->sigPendingMask & migMask)) {
 	status = GEN_ABORTED_BY_SIGNAL;
@@ -1199,7 +1235,7 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 	    if (!Mach_CanMigrate(procPtr)) {
 		LocalSend(procPtr, sigNum, procPtr->sigCodes[sigNum],
 		    (Address)procPtr->sigAddr);
-		procPtr->sigHoldMask |= SigGetBitMask(SIG_MIGRATE_TRAP);
+		procPtr->sigHoldMask |= Sig_NumberToMask(SIG_MIGRATE_TRAP);
 		return(FALSE);
 	    }
 
