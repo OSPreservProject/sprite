@@ -324,6 +324,8 @@ extern	ReturnStatus	Fs_RenameStub();
 extern	ReturnStatus	Fs_SelectStub();
 extern	ReturnStatus	Fs_SetAttributesIDStub();
 extern	ReturnStatus	Fs_SetAttributesStub();
+extern	ReturnStatus	Fs_SetAttrIDStub();
+extern	ReturnStatus	Fs_SetAttrStub();
 extern	ReturnStatus	Fs_SetDefPermStub();
 extern	ReturnStatus	Fs_SymLinkStub();
 extern	ReturnStatus	Fs_TruncateIDStub();
