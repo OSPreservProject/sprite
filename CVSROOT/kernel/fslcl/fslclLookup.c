@@ -1431,7 +1431,9 @@ CreateFile(domainPtr, parentHandlePtr, component, compLen, fileNumber, type,
 		 * Unwind by marking the file descriptor as free and
 		 * releasing the handle we've created.
 		 */
-		printf( "CreateFile: unwinding\n");
+		printf("CreateFile: aborting create of %d (%s) in %d\n",
+			fileNumber, component, 
+			parentHandlePtr->hdr.fileID.minor);
 		newDescPtr->flags = FSDM_FD_FREE;
 		Fsutil_HandleRelease(*curHandlePtrPtr, TRUE);
 		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
