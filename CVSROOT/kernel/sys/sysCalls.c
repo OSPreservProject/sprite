@@ -613,6 +613,13 @@ Sys_StatsStub(command, option, argPtr)
 	    } else {
 		status = Vm_CopyOut(sizeof (Fs_NewStats),
 			(Address) &fs_MoreStats, argPtr);
+		/*
+		 * This is a hack so that the getcounters program will
+		 * be able to tell the difference in kernel versions.
+		 */
+		if (status == SUCCESS) {
+		    status = sizeof (fs_MoreStats);
+		}
 	    }
 	    break;
 	}
