@@ -147,10 +147,10 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     }
     procPtr->syncFlags		= 0;
     procPtr->schedFlags		= 0;
-    procPtr->kernelCpuUsage 	= timer_TicksZeroSeconds;
-    procPtr->userCpuUsage 	= timer_TicksZeroSeconds;
-    procPtr->childKernelCpuUsage = timer_TicksZeroSeconds;
-    procPtr->childUserCpuUsage 	= timer_TicksZeroSeconds;
+    procPtr->exitFlags		= 0;
+
+    if (!migrated) {
+	procPtr->parentID 	= parentProcPtr->processID;
     } else {
 	procPtr->parentID 	= parentProcPtr->peerProcessID;
     }

@@ -293,18 +293,18 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 	register Proc_ControlBlock 	*parentProcPtr;
 
 	parentProcPtr = Proc_GetPCB(exitProcPtr->parentID);
-	Timer_AddTicks(exitProcPtr->kernelCpuUsage, 
-		parentProcPtr->childKernelCpuUsage, 
-		&(parentProcPtr->childKernelCpuUsage));
-	Timer_AddTicks(exitProcPtr->childKernelCpuUsage, 
-		parentProcPtr->childKernelCpuUsage, 
-		&(parentProcPtr->childKernelCpuUsage));
-	Timer_AddTicks(exitProcPtr->userCpuUsage, 
-		parentProcPtr->childUserCpuUsage, 
-		&(parentProcPtr->childUserCpuUsage));
-	Timer_AddTicks(exitProcPtr->childUserCpuUsage, 
-		parentProcPtr->childUserCpuUsage, 
-		&(parentProcPtr->childUserCpuUsage));
+	Timer_AddTicks(exitProcPtr->kernelCpuUsage.ticks, 
+		parentProcPtr->childKernelCpuUsage.ticks, 
+		&(parentProcPtr->childKernelCpuUsage.ticks));
+	Timer_AddTicks(exitProcPtr->childKernelCpuUsage.ticks, 
+		parentProcPtr->childKernelCpuUsage.ticks, 
+		&(parentProcPtr->childKernelCpuUsage.ticks));
+	Timer_AddTicks(exitProcPtr->userCpuUsage.ticks, 
+		parentProcPtr->childUserCpuUsage.ticks, 
+		&(parentProcPtr->childUserCpuUsage.ticks));
+	Timer_AddTicks(exitProcPtr->childUserCpuUsage.ticks, 
+		parentProcPtr->childUserCpuUsage.ticks, 
+		&(parentProcPtr->childUserCpuUsage.ticks));
     }
     /*
      *  Go through the list of children of the current process to 
@@ -1222,10 +1222,10 @@ FindExitingChild(parentProcPtr, returnSuspend, numPids, pidArray, infoPtr)
 	infoPtr->processID		= procPtr->processID;
 	infoPtr->termStatus		= procPtr->termStatus;
 	infoPtr->termCode		= procPtr->termCode;
-	infoPtr->kernelCpuUsage		= procPtr->kernelCpuUsage;
-	infoPtr->userCpuUsage		= procPtr->userCpuUsage;
-	infoPtr->childKernelCpuUsage	= procPtr->childKernelCpuUsage;
-	infoPtr->childUserCpuUsage 	= procPtr->childUserCpuUsage;
+	infoPtr->kernelCpuUsage		= procPtr->kernelCpuUsage.ticks;
+	infoPtr->userCpuUsage		= procPtr->userCpuUsage.ticks;
+	infoPtr->childKernelCpuUsage	= procPtr->childKernelCpuUsage.ticks;
+	infoPtr->childUserCpuUsage 	= procPtr->childUserCpuUsage.ticks;
 	infoPtr->numQuantumEnds		= procPtr->numQuantumEnds;
 	infoPtr->numWaitEvents		= procPtr->numWaitEvents;
 

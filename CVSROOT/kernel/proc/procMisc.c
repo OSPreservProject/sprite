@@ -63,6 +63,7 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
     register Proc_ControlBlock 	*procPtr;
     int				i, j, len;
     char 			buf[PROC_PCB_ARG_LENGTH];
+    Proc_ControlBlock		pcbEntry;
 
     if ((firstPid != PROC_MY_PID) && (firstPid > lastPid)) {
 	return(SYS_INVALID_ARG);
@@ -71,14 +72,24 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
     }
 
     if (firstPid == PROC_MY_PID) {
-
 	/*
 	 *  Return PCB for the current process.
 	 */
 
 	procPtr = Proc_GetEffectiveProc();
+	Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
+		  (Address)&pcbEntry);
+	Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks, 
+			  &pcbEntry.kernelCpuUsage.time);
+	Timer_TicksToTime(pcbEntry.userCpuUsage.ticks, 
+			  &pcbEntry.userCpuUsage.time);
+	Timer_TicksToTime(pcbEntry.childKernelCpuUsage.ticks, 
+			  &pcbEntry.childKernelCpuUsage.time);
+	Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks, 
+			  &pcbEntry.childUserCpuUsage.time);
+
 	if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
-		(Address) procPtr, (Address) bufferPtr) != SUCCESS) {
+		(Address)&pcbEntry, (Address) bufferPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
 	if (argsPtr != (Proc_PCBArgString *) NIL) {
@@ -109,8 +120,18 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 	    if (procPtr == (Proc_ControlBlock *) NIL) {
 		Sys_Panic(SYS_FATAL, "Proc_GetInfo: procPtr == NIL!");
 	    }
+	    Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
+		      (Address)&pcbEntry);
+	    Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks, 
+			      &pcbEntry.kernelCpuUsage.time);
+	    Timer_TicksToTime(pcbEntry.userCpuUsage.ticks, 
+			      &pcbEntry.userCpuUsage.time);
+	    Timer_TicksToTime(pcbEntry.childKernelCpuUsage.ticks, 
+			      &pcbEntry.childKernelCpuUsage.time);
+	    Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks, 
+			      &pcbEntry.childUserCpuUsage.time);
 	    if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
-		(Address) procPtr, (Address) &(bufferPtr[j])) != SUCCESS) {
+		(Address)&pcbEntry, (Address) &(bufferPtr[j])) != SUCCESS) {
 		return(SYS_ARG_NOACCESS);
 	    }
 	    if (argsPtr != (Proc_PCBArgString *) NIL) {
@@ -189,11 +210,12 @@ Proc_GetResUsage(pid, bufferPtr)
     if (bufferPtr == USER_NIL) {
 	status = SYS_INVALID_ARG;
     } else {
-	Timer_TicksToTime(procPtr->kernelCpuUsage, &resUsage.kernelCpuUsage);
-	Timer_TicksToTime(procPtr->userCpuUsage, &resUsage.userCpuUsage);
-	Timer_TicksToTime(procPtr->childKernelCpuUsage, 
+	Timer_TicksToTime(procPtr->kernelCpuUsage.ticks,
+			  &resUsage.kernelCpuUsage);
+	Timer_TicksToTime(procPtr->userCpuUsage.ticks, &resUsage.userCpuUsage);
+	Timer_TicksToTime(procPtr->childKernelCpuUsage.ticks, 
 				&resUsage.childKernelCpuUsage);
-	Timer_TicksToTime(procPtr->childUserCpuUsage,
+	Timer_TicksToTime(procPtr->childUserCpuUsage.ticks,
 				&resUsage.childUserCpuUsage);
 	resUsage.numQuantumEnds = procPtr->numQuantumEnds;
 	resUsage.numWaitEvents 	= procPtr->numWaitEvents;

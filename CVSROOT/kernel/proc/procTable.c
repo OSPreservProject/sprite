@@ -255,10 +255,10 @@ Proc_InitMainProc()
     procPtr->recentUsage 	= 0;
     procPtr->weightedUsage 	= 0;
     procPtr->unweightedUsage 	= 0;
-    procPtr->kernelCpuUsage     = timer_TicksZeroSeconds;
-    procPtr->userCpuUsage       = timer_TicksZeroSeconds;
-    procPtr->childKernelCpuUsage = timer_TicksZeroSeconds;
-    procPtr->childUserCpuUsage  = timer_TicksZeroSeconds;
+    procPtr->kernelCpuUsage.ticks     = timer_TicksZeroSeconds;
+    procPtr->userCpuUsage.ticks       = timer_TicksZeroSeconds;
+    procPtr->childKernelCpuUsage.ticks = timer_TicksZeroSeconds;
+    procPtr->childUserCpuUsage.ticks  = timer_TicksZeroSeconds;
     procPtr->numQuantumEnds 	= 0;
     procPtr->numWaitEvents 	= 0;
 

@@ -424,10 +424,10 @@ failure:
  * |	unsigned int 	recentUsage
  * |	unsigned int 	weightedUsage
  * |	unsigned int 	unweightedUsage
- * |    Timer_Ticks 	kernelCpuUsage
- * |    Timer_Ticks 	userCpuUsage
- * | 	Timer_Ticks 	childKernelCpuUsage
- * |    Timer_Ticks 	childUserCpuUsage
+ * |    Timer_Ticks 	kernelCpuUsage.ticks
+ * |    Timer_Ticks 	userCpuUsage.ticks
+ * | 	Timer_Ticks 	childKernelCpuUsage.ticks
+ * |    Timer_Ticks 	childUserCpuUsage.ticks
  * |    int 		numQuantumEnds
  * |    int		numWaitEvents
  * |    unsigned int 	schedQuantumTicks

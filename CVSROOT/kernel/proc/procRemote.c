@@ -1127,8 +1127,8 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     buffer = Mem_Alloc(bufferSize);
 
     ptr = buffer;
-    Byte_FillBuffer(ptr, Timer_Ticks,  procPtr->kernelCpuUsage);
-    Byte_FillBuffer(ptr, Timer_Ticks,  procPtr->userCpuUsage);
+    Byte_FillBuffer(ptr, Timer_Ticks,  procPtr->kernelCpuUsage.ticks);
+    Byte_FillBuffer(ptr, Timer_Ticks,  procPtr->userCpuUsage.ticks);
     Byte_FillBuffer(ptr, int,  procPtr->numQuantumEnds);
     Byte_FillBuffer(ptr, int,  procPtr->numWaitEvents);
     Byte_FillBuffer(ptr, int, reason);

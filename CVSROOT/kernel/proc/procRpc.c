@@ -358,9 +358,11 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
 
     Proc_Lock(procPtr);
     Byte_EmptyBuffer(dataPtr, Timer_Ticks,  ticks);
-    Timer_AddTicks(procPtr->kernelCpuUsage, ticks, &procPtr->kernelCpuUsage); 
+    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks, 
+		   &procPtr->kernelCpuUsage.ticks); 
     Byte_EmptyBuffer(dataPtr, Timer_Ticks,  ticks);
-    Timer_AddTicks(procPtr->kernelCpuUsage, ticks, &procPtr->userCpuUsage); 
+    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks,
+		   &procPtr->userCpuUsage.ticks); 
     Byte_EmptyBuffer(dataPtr, int,  count);
     procPtr->numQuantumEnds += count;
     Byte_EmptyBuffer(dataPtr, int, count);
@@ -433,10 +435,10 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     childProcPtr->weightedUsage 	= 0;
     childProcPtr->unweightedUsage 	= 0;
 
-    childProcPtr->kernelCpuUsage 	= timer_TicksZeroSeconds;
-    childProcPtr->userCpuUsage 		= timer_TicksZeroSeconds;
-    childProcPtr->childKernelCpuUsage 	= timer_TicksZeroSeconds;
-    childProcPtr->childUserCpuUsage 	= timer_TicksZeroSeconds;
+    childProcPtr->kernelCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    childProcPtr->userCpuUsage.ticks 		= timer_TicksZeroSeconds;
+    childProcPtr->childKernelCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    childProcPtr->childUserCpuUsage.ticks 	= timer_TicksZeroSeconds;
     childProcPtr->numQuantumEnds	= 0;
     childProcPtr->numWaitEvents	= 0;
 
