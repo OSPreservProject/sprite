@@ -424,6 +424,8 @@ extern	ReturnStatus	NetLEOutput _ARGS_((Net_Interface *interPtr,
 			    ReturnStatus *statusPtr));
 extern	void		NetLEIntr _ARGS_((Net_Interface *interPtr, 
 			    Boolean polling));
+extern ReturnStatus 	NetLEIOControl _ARGS_((Net_Interface *interPtr, 
+			    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
 extern	void		NetLERestart _ARGS_((Net_Interface *interPtr));
 extern	void		NetLEReset _ARGS_((Net_Interface *interPtr));
 extern	ReturnStatus	NetLEGetStats _ARGS_((Net_Interface *interPtr, 

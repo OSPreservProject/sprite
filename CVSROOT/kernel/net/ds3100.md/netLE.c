@@ -130,6 +130,7 @@ NetLEInit(interPtr)
     interPtr->init	= NetLEInit;
     interPtr->output 	= NetLEOutput;
     interPtr->intr	= NetLEIntr;
+    interPtr->ioctl	= NetLEIOControl;
     interPtr->reset 	= NetLERestart;
     interPtr->getStats	= NetLEGetStats;
     interPtr->netType	= NET_NETWORK_ETHER;
@@ -572,5 +573,31 @@ NetLEGetStats(interPtr, statPtr)
     statPtr->ether = statePtr->stats;
     ENABLE_INTR();
     return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLEIOControl --
+ *
+ *	Perform ioctls for the adapter.  Right now we don't support any.
+ *
+ * Results:
+ *	DEV_INVALID_ARG
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+ReturnStatus
+NetLEIOControl(interPtr, ioctlPtr, replyPtr)
+    Net_Interface *interPtr;	/* Interface on which to perform ioctl. */
+    Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
+    Fs_IOReply *replyPtr;	/* Size of outBuffer and returned signal */
+{
+    return DEV_INVALID_ARG;
 }
 

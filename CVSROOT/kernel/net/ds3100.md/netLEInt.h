@@ -308,6 +308,8 @@ extern	void		NetLEReset _ARGS_((Net_Interface *interPtr));
 extern	void		NetLERestart _ARGS_((Net_Interface *interPtr));
 extern	void		NetLEIntr _ARGS_((Net_Interface *interPtr, 
 					Boolean polling));
+extern ReturnStatus 	NetLEIOControl _ARGS_((Net_Interface *interPtr, 
+				Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
 extern	Address		NetLEMemAlloc _ARGS_((unsigned int numBytes, 
 					Boolean wordAlign));
 
