@@ -15,6 +15,9 @@
  * $Header$ SPRITE (Berkeley)
  */
 
+#include "devBlockDevice.h"
+#include "devRaid.h"
+
 /*
  * Is specified range of disk sectors "valid" on specified disk? 
  */
