@@ -104,18 +104,18 @@ extern	ReturnStatus	VmMach_CopyInProc();
 extern	ReturnStatus	VmMach_CopyOutProc();
 extern	ReturnStatus	VmMach_StringNCopy();
 /*
- * Routines for the INTEL device driver.
- */
-extern	void		VmMach_MapIntelPage();
-extern	void		VmMach_UnmapIntelPage();
-/*
  * Device mapping.
  */
 extern	Address		VmMach_MapInDevice();
-extern	void		VmMach_DevBufferInit();
-extern	Address		VmMach_DevBufferAlloc();
-extern	Address		VmMach_DevBufferMap();
-extern	void		VmMach_GetDevicePage();
 extern	ReturnStatus	VmMach_MapKernelIntoUser();
+/*
+ * Tracing.
+ */
+extern	void		VmMach_Trace();
+/*
+ * Pinning and unpinning user memory pages.
+ */
+extern	void		VmMach_PinUserPage();
+extern	void		VmMach_UnpinUserPage();
 
 #endif _VMMACH
