@@ -57,13 +57,15 @@ extern int debugVmStubs;	/* Unix compatibility flag. */
  * real big because of the current configuration of SPUR.  This can be made
  * smaller once the exec stuff has changed.  Things are worse for the sun4
  * due to the order in which user processes try to flush their register
- * windows to a stack which hasn't been validated yet.
+ * windows to a stack which hasn't been validated yet. 
+ *
+ * 12/19/1991
+ * Turns out things are bad all over because programs are getting more
+ * sloppy about their memory usage. Make the max growth size the same
+ * for all machines (8MB).  That should hold us for a few more years.
+ *
  */
-#ifndef sun4
-#define	MAX_STACK_GROWTH_SIZE	(1024 * 1024 * 2)
-#else
 #define	MAX_STACK_GROWTH_SIZE	(1024 * 1024 * 8)
-#endif /* not sun4 */
 int		vmMaxStackPagesGrowth;
 
 /*
