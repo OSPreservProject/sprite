@@ -33,7 +33,7 @@
 #include "netEther.h"
 #include "net.h"
 #include "netInt.h"
-
+#include "sync.h"
 /*
  * Defined constants:
  *
@@ -109,6 +109,16 @@
 	    (*netIEState.channelAttnReg) = 1; \
 	}
 
+#ifdef DOWNLOADER
+#define NET_IE_DELAY(condition) \
+	{ \
+	    register int i = (400000); \
+	    while (i > 0 && !(condition)) { \
+		    i--; \
+		    asm("cmp_trap always,r0,r0,$3"); \
+	    } \
+	}
+#else
 #define NET_IE_DELAY(condition) \
 	{ \
 	    register int i = (400000); \
@@ -116,7 +126,7 @@
 		    i--; \
 	    } \
 	}
-
+#endif
 #define	NET_IE_CHECK_SCB_CMD_ACCEPT(scbPtr) \
     if (*(((short *) scbPtr)+1) != 0) { \
 	NetIECheckSCBCmdAccept(scbPtr); \
@@ -585,7 +595,7 @@ extern Net_ScatterGather *curScatGathPtr;
 /*
  * Semaphore protecting chip and driver.
  */
-extern int	netIEMutex;
+extern Sync_Semaphore	netIEMutex;
 
 /*
  * NuBus ethernet controller board configuration ROM. All location are
