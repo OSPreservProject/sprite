@@ -112,7 +112,7 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
     Proc_PID		lastPid;	     /* Last pid to get info for. */
     int			hostID;		     /* Host ID to get info for. */
     int			infoSize;   	     /* Size of structure */
-    Proc_PCBInfo 	*bufferPtr;	     /* Pointer to buffers. */
+    Address	 	bufferPtr;	     /* Pointer to buffers. */
     Proc_PCBArgString	*argsPtr;	     /* Pointer to argument strings. */
     int 		*trueNumBuffersPtr;  /* The actual number of buffers 
 						used.*/
@@ -828,6 +828,8 @@ Proc_DumpPCB(procPtr)
 
     Time	kernelTime, userTime;
 
+#define DEBUG_INDEX	0x9
+
     static char *states[] = {
 	"unused",
 	"running",
@@ -858,7 +860,7 @@ Proc_DumpPCB(procPtr)
 	     * state.
 	     */
 	    if (procPtr->genFlags & (PROC_DEBUGGED | PROC_ON_DEBUG_LIST)) {
-		((int) state)++;
+		state = (Proc_State)DEBUG_INDEX;
 	    }
 	    break;
 	default:
