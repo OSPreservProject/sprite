@@ -284,7 +284,7 @@ Proc_ExitInt(reason, status, code)
  *	None.
  *
  * Side effects:
- *	None.
+ *	If the process doesn't context switch, it is left locked.
  *
  *----------------------------------------------------------------------
  */
