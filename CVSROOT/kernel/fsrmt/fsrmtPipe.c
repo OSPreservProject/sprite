@@ -1085,6 +1085,7 @@ FsPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     } else {
 	(void)FsIOClientReopen(&handlePtr->clientList, clientID,
 				 &reopenParamsPtr->use);
+	FsHandleRelease(handlePtr, TRUE);
 	status = SUCCESS;
     }
     *outSizePtr = 0;

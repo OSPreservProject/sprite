@@ -930,6 +930,7 @@ FsDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	    }
 	}
     }
+    FsHandleRelease(devHandlePtr, TRUE);
     return(status);
 }
 
