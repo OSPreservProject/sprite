@@ -14,37 +14,39 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsFile.h"
-#include "fsReadAhead.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsReadAheadInt.h"
 #include "fsStat.h"
-#include "fsBlockCache.h"
-#include "fsOpTable.h"
+#include "fscache.h"
+#include "fsNameOps.h"
+#include "fsdm.h"
+#include "fsrmt.h"
 
 /* 
  * Number of blocks to read ahead.  Zero turns off read ahead.
  */
-Boolean	fsReadAheadBlocks = 0;
-Boolean	fsRATracing = TRUE;
+Boolean	fscache_NumReadAheadBlocks = 0;
+Boolean	fscache_RATracing = TRUE;
 
 
 #define	LOCKPTR	(&readAheadPtr->lock)
 typedef struct {
-    FsCacheFileInfo	*cacheInfoPtr;
-    FsReadAheadInfo	*readAheadPtr;
-    FsCacheBlock	*blockPtr;
+    Fscache_FileInfo	*cacheInfoPtr;
+    Fscache_ReadAheadInfo	*readAheadPtr;
+    Fscache_Block	*blockPtr;
     int			blockNum;
 } ReadAheadCallBackData;
 
-void	FsIncReadAheadCount();
-void	FsDecReadAheadCount();
-void	DoReadAhead();
+static void	FsIncReadAheadCount();
+static void	FsDecReadAheadCount();
+static void	DoReadAhead();
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FsReadAheadInit --
+ * Fscache_ReadAheadInit --
  *
  *	Read ahead the next block in the cache
  *
@@ -57,17 +59,17 @@ void	DoReadAhead();
  *----------------------------------------------------------------------
  */
 void
-FsReadAheadInit(readAheadPtr)
-    register	FsReadAheadInfo *readAheadPtr;
+Fscache_ReadAheadInit(readAheadPtr)
+    register	Fscache_ReadAheadInfo *readAheadPtr;
 {
-    bzero((Address) readAheadPtr, sizeof(FsReadAheadInfo));
+    bzero((Address) readAheadPtr, sizeof(Fscache_ReadAheadInfo));
     Sync_LockInitDynamic(&readAheadPtr->lock, "Fs:readAheadLock");
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * FsReadAheadSyncLockCleanup --
+ * Fscache_ReadAheadSyncLockCleanup --
  *
  *	Clean up the Sync_Lock tracing info for the read ahead lock.
  *
@@ -80,8 +82,8 @@ FsReadAheadInit(readAheadPtr)
  *----------------------------------------------------------------------
  */
 void
-FsReadAheadSyncLockCleanup(readAheadPtr)
-    register	FsReadAheadInfo *readAheadPtr;
+Fscache_ReadAheadSyncLockCleanup(readAheadPtr)
+    register	Fscache_ReadAheadInfo *readAheadPtr;
 {
     Sync_LockClear(&readAheadPtr->lock);
 }
@@ -89,7 +91,7 @@ FsReadAheadSyncLockCleanup(readAheadPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsReadAhead --
+ * FscacheReadAhead --
  *
  *	Read ahead the next block in the cache
  *
@@ -102,40 +104,40 @@ FsReadAheadSyncLockCleanup(readAheadPtr)
  *----------------------------------------------------------------------
  */
 void
-FsReadAhead(cacheInfoPtr, blockNum)
-    register	FsCacheFileInfo *cacheInfoPtr;
+FscacheReadAhead(cacheInfoPtr, blockNum)
+    register	Fscache_FileInfo *cacheInfoPtr;
     int				blockNum;
 {
     int				i;
     ReadAheadCallBackData	*callBackData;
-    FsReadAheadInfo		*readAheadPtr;
+    Fscache_ReadAheadInfo		*readAheadPtr;
     Boolean			openForWriting;
-    FsCacheBlock		*blockPtr;
+    Fscache_Block		*blockPtr;
     Boolean			found;
 
     switch (cacheInfoPtr->hdrPtr->fileID.type) {
-	case FS_LCL_FILE_STREAM: {
-	    register FsLocalFileIOHandle *handlePtr =
-		    (FsLocalFileIOHandle *)cacheInfoPtr->hdrPtr;
+	case FSIO_LCL_FILE_STREAM: {
+	    register Fsio_FileIOHandle *handlePtr =
+		    (Fsio_FileIOHandle *)cacheInfoPtr->hdrPtr;
 	    openForWriting = (handlePtr->use.write > 0);
 	    readAheadPtr = &handlePtr->readAhead;
 	    break;
 	}
-	case FS_RMT_FILE_STREAM: {
-	    register FsRmtFileIOHandle *rmtHandlePtr =
-		    (FsRmtFileIOHandle *)cacheInfoPtr->hdrPtr;
+	case FSIO_RMT_FILE_STREAM: {
+	    register Fsrmt_FileIOHandle *rmtHandlePtr =
+		    (Fsrmt_FileIOHandle *)cacheInfoPtr->hdrPtr;
 	    openForWriting = (rmtHandlePtr->rmt.recovery.use.write > 0);
 	    readAheadPtr = &rmtHandlePtr->readAhead;
 	    break;
 	}
 	default:
-	    panic("FsReadAhead, bad stream type <%d>\n",
+	    panic("FscacheReadAhead, bad stream type <%d>\n",
 		cacheInfoPtr->hdrPtr->fileID.type);
 	    return;
     }
 
-    if (fsReadAheadBlocks == 0 || openForWriting > 0 ||
-        FsAllInCache(cacheInfoPtr)) {
+    if (fscache_NumReadAheadBlocks == 0 || openForWriting > 0 ||
+        FscacheAllBlocksInCache(cacheInfoPtr)) {
 	/*
 	 * Don't do read ahead if there is no read ahead, the file is
 	 * open for writing, or all the blocks are already in the cache.
@@ -145,21 +147,21 @@ FsReadAhead(cacheInfoPtr, blockNum)
 	 */
 	return;
     }
-    for (i = blockNum; i < blockNum + fsReadAheadBlocks; i++) {
+    for (i = blockNum; i < blockNum + fscache_NumReadAheadBlocks; i++) {
 	if (i * FS_BLOCK_SIZE > cacheInfoPtr->attr.lastByte) {
 	    return;
 	}
-	FsCacheFetchBlock(cacheInfoPtr, i,
-	      FS_DATA_CACHE_BLOCK | FS_CACHE_DONT_BLOCK | FS_READ_AHEAD_BLOCK,
+	Fscache_FetchBlock(cacheInfoPtr, i,
+	      FSCACHE_DATA_BLOCK | FSCACHE_DONT_BLOCK | FSCACHE_READ_AHEAD_BLOCK,
 	      &blockPtr, &found);
 	if (found) {
-	    if (blockPtr != (FsCacheBlock *) NIL) {
-		FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
+	    if (blockPtr != (Fscache_Block *) NIL) {
+		Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
 	    }
 	    continue;
 	}
 
-	fsStats.blockCache.readAheads++;
+	fs_Stats.blockCache.readAheads++;
 	FsIncReadAheadCount(readAheadPtr);
 	callBackData = mnew(ReadAheadCallBackData);
 	callBackData->cacheInfoPtr = cacheInfoPtr;
@@ -185,14 +187,14 @@ FsReadAhead(cacheInfoPtr, blockNum)
  *
  *----------------------------------------------------------------------
  */
-void
+static void
 DoReadAhead(data, callInfoPtr)
     ClientData		data;
     Proc_CallInfo	*callInfoPtr;
 {
-    register	FsCacheFileInfo *cacheInfoPtr;
+    register	Fscache_FileInfo *cacheInfoPtr;
     register	ReadAheadCallBackData *callBackData;
-    register	FsCacheBlock	*blockPtr;
+    register	Fscache_Block	*blockPtr;
     int				amountRead;
     int				blockOffset;
     ReturnStatus		status;
@@ -206,12 +208,12 @@ DoReadAhead(data, callInfoPtr)
     blockOffset = blockNum * FS_BLOCK_SIZE;
     amountRead = FS_BLOCK_SIZE;
 
-    status = (*fsStreamOpTable[cacheInfoPtr->hdrPtr->fileID.type].blockRead)
+    status = (cacheInfoPtr->ioProcsPtr->blockRead)
 		(cacheInfoPtr->hdrPtr, 0, blockPtr->blockAddr, &blockOffset,
 		&amountRead, (Sync_RemoteWaiter *)NIL);
     if (status != SUCCESS) {
-	fsStats.blockCache.domainReadFails++;
-	FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
+	fs_Stats.blockCache.domainReadFails++;
+	Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
     } else {
 	if (amountRead < FS_BLOCK_SIZE) {
 	    /*
@@ -219,10 +221,10 @@ DoReadAhead(data, callInfoPtr)
 	     * with zeroes.  Since we didn't read a full block zero fill
 	     * the rest.
 	     */
-	    fsStats.blockCache.readZeroFills++;
+	    fs_Stats.blockCache.readZeroFills++;
 	    bzero(blockPtr->blockAddr + amountRead, FS_BLOCK_SIZE - amountRead);
 	}
-	FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
+	Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
     }
     FsDecReadAheadCount(callBackData->readAheadPtr);
     free((Address) callBackData);
@@ -232,7 +234,7 @@ DoReadAhead(data, callInfoPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FsWaitForReadAhead --
+ * FscacheWaitForReadAhead --
  *
  *	Block the caller until the read ahead count on this handle goes to
  *	zero.  Called before a write.
@@ -241,14 +243,14 @@ DoReadAhead(data, callInfoPtr)
  *	None.
  *
  * Side effects:
- *	Blocks read-ahead until FsAllowReadAhead is called.
+ *	Blocks read-ahead until FscacheAllowReadAhead is called.
  *
  *----------------------------------------------------------------------------
  *
  */
 ENTRY void
-FsWaitForReadAhead(readAheadPtr)
-    FsReadAheadInfo *readAheadPtr;
+FscacheWaitForReadAhead(readAheadPtr)
+    Fscache_ReadAheadInfo *readAheadPtr;
 {
     LOCK_MONITOR;
 
@@ -263,7 +265,7 @@ FsWaitForReadAhead(readAheadPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FsAllowReadAhead --
+ * FscacheAllowReadAhead --
  *
  *	Indicate that it is ok to initiate read ahead.  Called when a
  *	write completes.
@@ -278,8 +280,8 @@ FsWaitForReadAhead(readAheadPtr)
  *
  */
 ENTRY void
-FsAllowReadAhead(readAheadPtr)
-    FsReadAheadInfo *readAheadPtr;
+FscacheAllowReadAhead(readAheadPtr)
+    Fscache_ReadAheadInfo *readAheadPtr;
 {
     LOCK_MONITOR;
 
@@ -306,9 +308,9 @@ FsAllowReadAhead(readAheadPtr)
  *----------------------------------------------------------------------------
  *
  */
-ENTRY void
+static void
 FsIncReadAheadCount(readAheadPtr)
-    FsReadAheadInfo *readAheadPtr;
+    Fscache_ReadAheadInfo *readAheadPtr;
 {
     LOCK_MONITOR;
 
@@ -337,9 +339,9 @@ FsIncReadAheadCount(readAheadPtr)
  *----------------------------------------------------------------------------
  *
  */
-ENTRY void
+static void
 FsDecReadAheadCount(readAheadPtr)
-    FsReadAheadInfo *readAheadPtr;
+    Fscache_ReadAheadInfo *readAheadPtr;
 {
     LOCK_MONITOR;
 
