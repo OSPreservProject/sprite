@@ -211,7 +211,7 @@ Dev_SCSIInitController(cntrlrPtr)
     if (Sys_SetJump(&setJumpState) == SUCCESS) {
 	x = regsPtr->dmaCount;
 	regsPtr->dmaCount = (short)0xBABE;
-	if (regsPtr->dmaCount != (short)0xABE) {
+	if (regsPtr->dmaCount != (short)0xBABE) {
 #ifdef notdef
 	    Sys_Printf("SCSI-%d: dmaCount register: wrote %x read back %x\n",
 				 scsiPtr->number, 0xBABE, regsPtr->dmaCount);
