@@ -1258,7 +1258,7 @@ FspdevSignalOwner(ctrlHandlePtr, ioctlPtr)
 	savedEuid = procPtr->effectiveUserID;
 	procPtr->effectiveUserID = 0;
 	status = Sig_Send(sigPtr->signal, sigPtr->code, ownerPtr->id,
-		 (ownerPtr->procOrFamily == IOC_OWNER_FAMILY));
+		 (ownerPtr->procOrFamily == IOC_OWNER_FAMILY), (Address)0);
 	procPtr->effectiveUserID = savedEuid;
     }
     return(status);
@@ -1436,14 +1436,9 @@ FspdevPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     /*
      * Wait for the server to set up the request buffer.  The state starts
      * out PDEV_BUSY to eliminate an explicit check for PDEV_SETUP in all
-     * the routines that call RequestResponse.  But, for opening the pdev,
-     * if the stream isn't set up yet, we should just fail rather than
-     * hanging indefinitely.
+     * the routines that call RequestResponse.  PDEV_BUSY is cleared after
+     * the server initializes the request buffer with IOC_PDEV_SETUP.
      */
-    if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
-	status = DEV_OFFLINE;
-	goto exit;
-    }
     while (pdevHandlePtr->flags & PDEV_BUSY) { 
 	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
 	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
