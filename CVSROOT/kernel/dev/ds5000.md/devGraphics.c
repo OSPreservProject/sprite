@@ -247,7 +247,7 @@ typedef struct ramdac {
 
 static Ramdac 	ramdac;
 static int 	planeMask;
-static int	displayType = -1;
+static int	displayType = UNKNOWN;
 
 
 /*
@@ -287,23 +287,26 @@ DevGraphicsInit()
 		if ((!strcmp(slotInfo.vendor, displayInfoPtr->vendor)) && 
 		    (!strcmp(slotInfo.module, displayInfoPtr->module))) {
 		    displayType = displayInfoPtr->type;
-		    Mach_MonPrintf("%s display in slot %d, (%s %s %s %s)\n",
-			slotInfo.module, slot, slotInfo.module, slotInfo.vendor,
-			slotInfo.revision, slotInfo.type);
 		    break;
 		}
 	    }
 	}
-	if (displayType != -1) {
+	if (displayType != UNKNOWN) {
 	    break;
 	}
     }
-    if (displayType == -1) {
-	Mach_MonPrintf(
-	    "Assuming you have one of those fancy graphics displays.\n");
-	displayType = PMAGDA;
+    switch (displayType) {
+	case UNKNOWN :
+	    Mach_MonPrintf(
+		"Assuming you have one of those fancy graphics displays.\n");
+	    displayType = PMAGDA;
+	    break;
+	case PMAGBA:
+	    Mach_MonPrintf("Color frame buffer in slot %d, (%s %s %s %s)\n",
+			slot, slotInfo.module, slotInfo.vendor,
+			slotInfo.revision, slotInfo.type);
+	    break;
     }
-
     if (displayType == PMAGBA) {
 	ramdac.addrLowPtr = (unsigned char *) (slotAddr + PMAGBA_RAMDAC_OFFSET);
 	ramdac.addrHighPtr = (unsigned char *) 
@@ -900,9 +903,6 @@ DevGraphicsKbdIntr(ch)
     Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     eventPtr->time = TO_MS(time);
     eventPtr->key = ch;
-#if 0
-    printf("kbd 0x%x %d\n", eventPtr, ch);
-#endif
     scrInfoPtr->eventQueue.eTail = i;
     dev_LastConsoleInput = time;
     Fsio_DevNotifyReader(notifyToken);
@@ -1080,10 +1080,6 @@ MouseEvent(newRepPtr)
 	    eventPtr->y = scrInfoPtr->mouse.y;
 	    eventPtr->time = milliSec;
 	    eventPtr->device = DEV_MOUSE_DEVICE;
-#if 0
-	    printf("Update 0x%x %d %d\n", eventPtr, scrInfoPtr->mouse.x, 
-		scrInfoPtr->mouse.y);
-#endif
 	    return;
 	}
     } 
@@ -1100,10 +1096,6 @@ MouseEvent(newRepPtr)
     eventPtr->y = scrInfoPtr->mouse.y;
     eventPtr->device = DEV_MOUSE_DEVICE;
     scrInfoPtr->eventQueue.eTail = DEV_EVROUND(scrInfoPtr->eventQueue.eTail + 1);
-#if 0
-    printf("Add 0x%x %d %d\n", eventPtr, scrInfoPtr->mouse.x, 
-	scrInfoPtr->mouse.y);
-#endif
     dev_LastConsoleInput = time;
     if (devGraphicsOpen) {
 	Fsio_DevNotifyReader(notifyToken);
@@ -1182,9 +1174,6 @@ MouseButtons(newRepPtr)
 	    eventPtr->time = TO_MS(time);
 	    eventPtr->x = scrInfoPtr->mouse.x;
 	    eventPtr->y = scrInfoPtr->mouse.y;
-#if 0
-	    printf("Button: 0x%x %d %d\n", eventPtr, key, type);
-#endif
 	}
 	scrInfoPtr->eventQueue.eTail = i;
 	if (devGraphicsOpen) {
@@ -1672,7 +1661,6 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 	    if (status != SUCCESS) {
 		goto mapError;
 	    }
-	    printf("DevScreenInfo = 0x%x\n", addr);
 	    bcopy((char *)&addr, ioctlPtr->outBuffer, sizeof(addr));
 	    /*
 	     * Map the events into the user's address space.
@@ -1682,7 +1670,6 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 	    if (status != SUCCESS) {
 		goto mapError;
 	    }
-	    printf("events = 0x%x\n", addr);
 	    scrInfoPtr->eventQueue.events = (DevEvent *)addr;
 	    /*
 	     * Map the tcs into the user's address space.
@@ -1692,7 +1679,6 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 	    if (status != SUCCESS) {
 		goto mapError;
 	    }
-	    printf("tcs = 0x%x\n", addr);
 	    scrInfoPtr->eventQueue.tcs = (DevTimeCoord *)addr;
 	    /*
 	     * Map the plane mask into the user's address space.
@@ -1703,7 +1689,6 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 		goto mapError;
 	    }
 	    scrInfoPtr->planeMask = (char *)addr;
-	    printf("planeMask = 0x%x\n", addr);
 	    /*
 	     * Map the bitmap into the user's address space.
 	     */
@@ -1713,7 +1698,6 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 		goto mapError;
 	    }
 	    scrInfoPtr->bitmap = (char *)addr;
-	    printf("bitmap = 0x%x\n", addr);
 	    break;
 mapError:	
 	    VmMach_UserUnmap((Address) NIL);
