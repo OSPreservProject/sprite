@@ -296,6 +296,8 @@ PutOnAllocList(virtAddrPtr, page)
     register	VmCore	*corePtr; 
     Time		curTime;
 
+    LOCK_MONITOR;
+
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
     corePtr = &coreMap[page];
@@ -313,6 +315,8 @@ PutOnAllocList(virtAddrPtr, page)
     corePtr->flags = 0;
     corePtr->lockCount = 1;
     corePtr->lastRef = curTime.seconds;
+
+    UNLOCK_MONITOR;
 }
 
 
