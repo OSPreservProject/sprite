@@ -18,10 +18,27 @@
 #define _MACHMON
 
 /*
+ * The prom routines use the following structure to hold strings.
+ */
+typedef struct {
+	char	*argPtr[16];	/* Pointers to the strings. */
+	char	strings[256];		/* Buffer for the strings. */
+	char	*end;		/* Pointer to end of used buf. */
+	int 	num;		/* Number of strings used. */
+} MachStringTable;
+
+MachStringTable	MachMonBootParam;	/* Boot command line. */
+
+/*
  * The prom has a jump table at the beginning of it to get to its
  * functions.
  */
 #define MACH_MON_JUMP_TABLE_ADDR	0xBFC00000
+
+/*
+ * Default reboot string.
+ */
+#define DEFAULT_REBOOT	"tftp()ds3100"
 
 /*
  * The jump table.
@@ -50,16 +67,16 @@ typedef struct Mach_MonFuncs {
     int		(*save_regs)();
     int		(*load_regs)();
     int		(*jump_s8)();
-    int		(*getenv2)();
+    char *	(*getenv2)();
     int		(*setenv2)();
     int		(*atonum)();
     int		(*strcmp)();
     int		(*strlen)();
-    int		(*strcpy)();
-    int		(*strcat)();
+    char *	(*strcpy)();
+    char *	(*strcat)();
     int		(*get_cmd)();
     int		(*get_nums)();
-    int		(*argparse)();
+    int 	(*argparse)();
     int		(*help)();
     int		(*dump)();
     int		(*setenv)();
