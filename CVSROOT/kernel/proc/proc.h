@@ -21,7 +21,7 @@
 #define _PROC
 
 #include "user/proc.h"
-#include "syncMonitor.h"
+#include "user/sync.h"
 #include "list.h"
 #include "timer.h"
 #include "sig.h"

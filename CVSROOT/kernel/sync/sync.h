@@ -16,7 +16,7 @@
 #define _SYNC
 
 #include "sprite.h"
-#include "syncMonitor.h"
+#include "user/sync.h"
 #include "sys.h"
 #include "proc.h"
 #include "mach.h"
