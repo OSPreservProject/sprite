@@ -62,8 +62,11 @@ DevConfigDevice devDevice[] = {
     { 0, 4, DEV_SCSI_TAPE, Dev_SCSIInitDevice},
     { 0, 5, DEV_SCSI_WORM, Dev_SCSIInitDevice},
 
-    { 0, 0, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 0-7 */
+/*
+ * Trying these in reverse order to see how that affects initialization.
+ */
     { 0, 1, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 8-13 */
+    { 0, 0, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 0-7 */
 
 /*  { 1, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 8-15 */
 /*  { 1, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 16-23 */
