@@ -51,6 +51,7 @@ extern	Boolean	sys_ErrorSync;		/* Set while syncing disks */
 extern	Boolean sys_CallProfiling;	/* Set if timing system calls */
 extern	int	sys_NumCalls[];
 extern	char	sys_HostName[];		/* The name of this host. */
+extern	Boolean	sys_DontPrint;		/* Turn off printing to console. */
 
 extern void	Sys_Init _ARGS_((void));
 extern void	Sys_SyncDisks _ARGS_((int trapType));

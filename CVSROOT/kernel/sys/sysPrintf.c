@@ -43,6 +43,11 @@ Sync_Semaphore	sysPrintMutex = Sync_SemInitStatic("sysPrintMutex");
 Boolean	sysPanicing = FALSE;
 
 /*
+ * To turn off all printfs during booting.
+ */
+Boolean sys_DontPrint = FALSE;
+
+/*
  * Used to keep track of bytes written.
  */
 static int bytesWritten;
@@ -158,7 +163,9 @@ vprintf(format, args)
     }
 
     bytesWritten = 0;
-    vfprintf(&stream, format, args);
+    if (!sys_DontPrint) {
+	vfprintf(&stream, format, args);
+    }
     fflush(&stream);
     MASTER_UNLOCK(&sysPrintMutex);
     recursiveCallP = 0;

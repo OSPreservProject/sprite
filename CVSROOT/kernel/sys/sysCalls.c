@@ -1104,9 +1104,20 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    break;
 	}
-	default:
-	    status = GEN_INVALID_ARG;
-	    break;
+        case SYS_DONT_PRINT: {
+            if (option != 0) {
+                /* Make it so we can't print. */
+                sys_DontPrint = TRUE;
+            } else {
+                sys_DontPrint = FALSE;
+            }
+            status = SUCCESS;
+            break;
+        }
+        default:
+            status = GEN_INVALID_ARG;
+            break;
     }
+
     return(status);
 }
