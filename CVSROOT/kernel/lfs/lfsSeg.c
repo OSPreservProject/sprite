@@ -46,6 +46,7 @@ static void AddNewSummaryBlock _ARGS_((LfsSeg *segPtr));
 static Boolean DoOutCallBacks _ARGS_((enum CallBackType type, LfsSeg *segPtr, int flags, char *checkPointPtr, int *sizePtr, ClientData *clientDataPtr));
 static ReturnStatus WriteSegmentStart _ARGS_((LfsSeg *segPtr));
 static ReturnStatus WriteSegmentFinish _ARGS_((LfsSeg *segPtr));
+static void WriteDoneNotify _ARGS_((Lfs *lfsPtr));
 static void RewindCurPtrs _ARGS_((LfsSeg *segPtr));
 static Boolean DoInCallBacks _ARGS_((enum CallBackType type, LfsSeg *segPtr, int flags, int *sizePtr, int *numCacheBlocksPtr, ClientData *clientDataPtr));
 static void DestorySegStruct _ARGS_((LfsSeg *segPtr));
@@ -133,6 +134,7 @@ LfsSegmentWriteProc(clientData, callInfoPtr)
 	    RewindCurPtrs(segPtr);
 	    (void) DoInCallBacks(SEG_WRITEDONE, segPtr, 0,
 				    (int *) NIL, (int *) NIL, clientDataArray);
+	    WriteDoneNotify(lfsPtr);
 	    DestorySegStruct(segPtr);
 	}
 	moreWork = LfsMoreToWriteBack(lfsPtr);
@@ -717,7 +719,6 @@ WriteSegmentFinish(segPtr)
     LfsSeg	*segPtr;	/* Segment to wait for. */
 {
     ReturnStatus status;
-    Lfs	*lfsPtr = segPtr->lfsPtr;
     MASTER_LOCK((&segPtr->ioMutex));
     while (segPtr->ioDone == FALSE) { 
 	Sync_MasterWait((&segPtr->ioDoneWait),(&segPtr->ioMutex),FALSE);
@@ -725,13 +726,36 @@ WriteSegmentFinish(segPtr)
     status = segPtr->ioReturnStatus;
     MASTER_UNLOCK((&segPtr->ioMutex));
 
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteDoneNotify --
+ *
+ *	Notify others that a log write has finished and another may be
+ *	started.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+WriteDoneNotify(lfsPtr)
+	Lfs	*lfsPtr;
+{
     LOCK_MONITOR;
     lfsPtr->activeFlags &= ~LFS_WRITE_ACTIVE;
     Sync_Broadcast(&lfsPtr->writeWait);
     UNLOCK_MONITOR;
-    return status;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1052,8 +1076,10 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
     Boolean full;
     char	*summaryPtr, *endSummaryPtr;
     int		newStartBlockOffset;
+    LfsCheckPointRegion	*segUsageCheckpointRegionPtr;
 
     full = FALSE;
+    segUsageCheckpointRegionPtr = (LfsCheckPointRegion *) NIL;
     for(moduleType = 0; moduleType < LFS_MAX_NUM_MODS; ) {
 	LfsSegIoInterface *intPtr = lfsSegIoInterfacePtrs[moduleType];
 	/*
@@ -1096,6 +1122,9 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
 				clientDataPtr + moduleType);
 #endif /* lint */
 	    if (size > 0) {
+		if (moduleType == LFS_SEG_USAGE_MOD) {
+			segUsageCheckpointRegionPtr = regionPtr;
+		}
 		regionPtr->type = moduleType;
 		regionPtr->size = size + sizeof(LfsCheckPointRegion);
 		*sizePtr += regionPtr->size;
@@ -1160,7 +1189,14 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
    }
    LfsSetLogTail(segPtr->lfsPtr, &segPtr->logRange, newStartBlockOffset, 
 					segPtr->activeBytes);  
-   return full;
+   if (segUsageCheckpointRegionPtr != (LfsCheckPointRegion *) NIL) {
+       LfsSegUsageCheckpointUpdate(segPtr->lfsPtr, 
+			(char *) (segUsageCheckpointRegionPtr + 1),
+			segUsageCheckpointRegionPtr->size - 
+					sizeof(segUsageCheckpointRegionPtr));
+    }
+
+    return full;
 }
 
 
@@ -1237,7 +1273,7 @@ SegmentCleanProc(clientData, callInfoPtr)
 	    error = DoInCallBacks(SEG_CLEAN_IN, segPtr, 0, &size,
 			    &numCacheBlocksUsed, clientDataArray);
 	    if (!error && (segs[i].activeBytes == 0) && (size != 0)) {
-		panic("Warning: Segment %d cleaned found wrong active bytes %d != %d\n", segs[i].segNumber, size, segs[i].activeBytes);
+		printf("Warning: Segment %d cleaned found wrong active bytes %d != %d\n", segs[i].segNumber, size, segs[i].activeBytes);
 	    }
 
 	    DestorySegStruct(segPtr);
@@ -1266,6 +1302,9 @@ SegmentCleanProc(clientData, callInfoPtr)
 	    full = TRUE;
 	    while (full) {
 		segPtr = CreateSegmentToWrite(lfsPtr, TRUE);
+		if (segPtr == (LfsSeg *) NIL) {
+		    LfsError(lfsPtr, FAILURE, "Ran out of clean segments during cleaning.\n");
+		}
 		full = DoOutCallBacks(SEG_CLEAN_OUT, segPtr, 
 				LFS_CLEANING_LAYOUT, (char *) NIL,
 				(int *) NIL, clientDataArray);
@@ -1280,6 +1319,7 @@ SegmentCleanProc(clientData, callInfoPtr)
 		RewindCurPtrs(segPtr);
 		(void) DoInCallBacks(SEG_WRITEDONE, segPtr, LFS_CLEANING_LAYOUT,
 				(int *) NIL, (int *) NIL,  clientDataArray);
+		WriteDoneNotify(lfsPtr);
 		numWritten++;
 		LFS_STATS_ADD(lfsPtr->stats.cleaning.blocksWritten, 
 				segPtr->numBlocks);
@@ -1289,7 +1329,8 @@ SegmentCleanProc(clientData, callInfoPtr)
 		DestorySegStruct(segPtr);
 	    }
 	}
-	status = LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_NOSEG_WAIT);
+	status = LfsCheckPointFileSystem(lfsPtr, 
+			LFS_CHECKPOINT_NOSEG_WAIT|LFS_CHECKPOINT_CLEANER);
 	if (status != SUCCESS) {
 		LfsError(lfsPtr, status, "Can't checkpoint after cleaning.\n");
 	}
@@ -1492,23 +1533,52 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
     LOCK_MONITOR;
 
     /*
-     * If a checkpoint is already active (or cleaner active) and its a 
-     * writeback or timer checkpoint we exit with GEN_EINTR. For 
-     * writeback checkpoints we wait for them to finish.
+     * Wait for the cleaner not to be active unless we are called from the 
+     * cleaner, the detach code, or the timer callback.
      */
-    if ((lfsPtr->activeFlags & (LFS_CLEANER_ACTIVE|LFS_CHECKPOINT_ACTIVE)) &&
-        (flags & (LFS_CHECKPOINT_WRITEBACK|LFS_CHECKPOINT_TIMER))) {
-	if (flags & LFS_CHECKPOINT_WRITEBACK) {
-	    lfsPtr->activeFlags |= LFS_CHECKPOINTWAIT_ACTIVE;
-	    while (lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) {
+    if (lfsPtr->activeFlags & LFS_CLEANER_ACTIVE) {
+	if (flags & LFS_CHECKPOINT_TIMER) {
+	    /*
+	     * Since the cleaner does checkpoints frequently, we can safely
+	     * ignore TIMER checkpoints.
+	     */
+	    UNLOCK_MONITOR;
+	    return GEN_EINTR;
+        }
+	if (!(flags & (LFS_CHECKPOINT_DETACH|LFS_CHECKPOINT_CLEANER))) {
+	    /*
+	     * Unless the checkpoint is from the cleaner or the detach 
+	     * code we simply wait for a checkpoint to complete and 
+	     * return.
+	     */
+	    if (!(lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE)) {
+		lfsPtr->activeFlags |= LFS_CHECKPOINTWAIT_ACTIVE;
+	    }
+	    while (lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) { 
 		Sync_Wait(&lfsPtr->checkPointWait, FALSE);
 	    }
+	    UNLOCK_MONITOR;
+	    return SUCCESS;
+	} 
+    }
+    /*
+     * Wait for any currently running checkpoint to finish.
+     * TIMER checkpoints again can be ignored and cleaner checkpoint can
+     * run in parallel.
+     */
+    if (!(flags & LFS_CHECKPOINT_CLEANER)) { 
+	while (lfsPtr->activeFlags & LFS_CHECKPOINT_ACTIVE) {
+	    if (flags & LFS_CHECKPOINT_TIMER) {
+		UNLOCK_MONITOR;
+		return GEN_EINTR;
+	    }
+	    Sync_Wait(&lfsPtr->checkPointWait, FALSE);
 	}
-	UNLOCK_MONITOR;
-	return GEN_EINTR;
+	lfsPtr->activeFlags |= LFS_SYNC_CHECKPOINT_ACTIVE;
+    } else {
+	lfsPtr->activeFlags |= LFS_CLEANER_CHECKPOINT_ACTIVE;
     }
 
-    lfsPtr->activeFlags |= LFS_CHECKPOINT_ACTIVE;
     /*
      * Wait for any directory log operations to finish.
      */
@@ -1540,6 +1610,9 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
     while (full) {
 	segPtr = CreateSegmentToWrite(lfsPtr, 
 			((flags & LFS_CHECKPOINT_NOSEG_WAIT) != 0));
+	if (segPtr == (LfsSeg *) NIL) {
+	    LfsError(lfsPtr, FAILURE, "Ran out of clean segments during cleaner checkpoint.\n");
+	}
 	*checkPointSizePtr = 0;
 	full = DoOutCallBacks(SEG_CHECKPOINT, segPtr, flags,
 			    checkPointPtr, checkPointSizePtr, clientDataArray);
@@ -1558,8 +1631,34 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
 	RewindCurPtrs(segPtr);
 	(void) DoInCallBacks(SEG_WRITEDONE, segPtr, flags, (int *) NIL, (int *) NIL,
 				clientDataArray);
+	WriteDoneNotify(lfsPtr);
         DestorySegStruct(segPtr);
     }
+    return status;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsSegCheckPointDone --
+ *
+ *	Mark a checkpoint as done.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+LfsSegCheckPointDone(lfsPtr, flags)
+    Lfs	*lfsPtr;
+    int	flags;
+{
     LOCK_MONITOR;
 #ifdef ERROR_CHECK
     { 
@@ -1571,11 +1670,15 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
 	}
     }
 #endif
-    lfsPtr->activeFlags &= ~(LFS_CHECKPOINT_ACTIVE|LFS_CHECKPOINTWAIT_ACTIVE);
+    if (flags & LFS_CHECKPOINT_CLEANER) {
+	lfsPtr->activeFlags &= 
+		~(LFS_CLEANER_CHECKPOINT_ACTIVE|LFS_CHECKPOINTWAIT_ACTIVE);
+    } else { 
+	lfsPtr->activeFlags &= 
+		~(LFS_SYNC_CHECKPOINT_ACTIVE|LFS_CHECKPOINTWAIT_ACTIVE);
+    }
     Sync_Broadcast(&lfsPtr->checkPointWait);
     UNLOCK_MONITOR;
-    return status;
-
 }
 
 /*

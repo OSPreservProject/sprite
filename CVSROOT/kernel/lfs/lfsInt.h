@@ -52,12 +52,14 @@
  * LFS_CHECKPOINT_WRITEBACK - This checkpoint is being done for a domain
  *			      writeback operation.
  * LFS_CHECKPOINT_TIMER - This checkpoint is part of the regular callback.
+ * LFS_CHECKPOINT_CLEANER - This checkpoint is part of the cleaner.
  * 
  */
 #define	LFS_CHECKPOINT_DETACH		 0x1
 #define	LFS_CHECKPOINT_NOSEG_WAIT	 0x2
 #define	LFS_CHECKPOINT_WRITEBACK	 0x4
 #define	LFS_CHECKPOINT_TIMER		 0x8
+#define	LFS_CHECKPOINT_CLEANER		 0x10
 /* data structures */
 
 /*
@@ -69,6 +71,7 @@ typedef struct LfsCheckPoint {
     int	  timestamp;	/* Current file system timestamp. */
     int	  nextArea;	/* Next checkpoint area to write. Must be 0 or 1. */
     char  *buffer;	/* Memory buffer to place checkpoint. */
+    int	  maxSize;	/* Maximum size of the buffer. */
 } LfsCheckPoint;
 
 /*
@@ -163,13 +166,17 @@ typedef struct Lfs {
  * LFS_SHUTDOWN_ACTIVE    - The file system is about to be shutdown.
  * LFS_CHECKPOINTWAIT_ACTIVE - Someone is waiting for a checkpoint to be
  *			       performed.
+ * LFS_CLEANER_CHECKPOINT_ACTIVE - A segment cleaner is doing a checkpoint.
+ * LFS_SYNC_CHECKPOINT_ACTIVE - A segment cleaner is doing a checkpoint.
  */
 
 #define	LFS_WRITE_ACTIVE	  0x1
 #define	LFS_CLEANER_ACTIVE	 0x10
-#define LFS_CHECKPOINT_ACTIVE	 0x20
 #define	LFS_SHUTDOWN_ACTIVE	 0x40
 #define	LFS_CHECKPOINTWAIT_ACTIVE 0x80
+#define	LFS_SYNC_CHECKPOINT_ACTIVE 0x100
+#define	LFS_CLEANER_CHECKPOINT_ACTIVE 0x200
+#define	LFS_CHECKPOINT_ACTIVE 0x300
 /* Useful macros for LFS.
  *
  * LfsFromDomainPtr(domainPtr) - Return the Lfs data stucture for a Fsdm_domain.

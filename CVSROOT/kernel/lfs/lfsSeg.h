@@ -301,6 +301,8 @@ extern ReturnStatus LfsSegAttach _ARGS_((struct Lfs *lfsPtr,
 extern ReturnStatus LfsSegCheckPoint _ARGS_((struct Lfs *lfsPtr, 
 			int flags, char *checkPointPtr, 
 			int *checkPointSizePtr));
+extern void LfsSegCheckPointDone _ARGS_((struct Lfs *lfsPtr, 
+			int flags));
 extern ReturnStatus LfsSegDetach _ARGS_((struct Lfs *lfsPtr));
 
 #endif /* _LFSSEG */

@@ -662,6 +662,41 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
    return numberSegs;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsSegUsageCheckpointUpdate --
+ *
+ *	This routine is used to update fields of the seg usage 
+ *	checkpoint that change when the checkpoint itself is 
+ *	written to the log.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+LfsSegUsageCheckpointUpdate(lfsPtr, checkPointPtr, size)
+    Lfs	 *lfsPtr;	 /* File system being checkpointed. */
+    char *checkPointPtr; /* Checkpoint region for SegUsage. */
+    int	 size;		 /* Size of checkpoint region. */
+{
+    LfsSegUsage	      *usagePtr = &(lfsPtr->usageArray);
+
+    if (size < sizeof(LfsSegUsageCheckPoint)) {
+	panic("LfsSegUsageCheckpointUpdate bad checkpoint size.\n");
+    }
+    (*(LfsSegUsageCheckPoint *) checkPointPtr) = usagePtr->checkPoint;
+    return;
+}
+
+
 extern ReturnStatus LfsSegUsageAttach _ARGS_((Lfs *lfsPtr, 
 			int checkPointSize, char *checkPointPtr));
 extern Boolean LfsSegUsageCheckpoint _ARGS_((LfsSeg *segPtr, int flags, 
@@ -732,7 +767,6 @@ LfsSegUsageAttach(lfsPtr, checkPointSize, checkPointPtr)
     /*
      * Allocate and fill in memory data structure for descriptor map.
      */
-    usagePtr->cpLocPtr = (LfsSegUsageCheckPoint *) NIL;
     usagePtr->params = lfsPtr->superBlock.usageArray;
     usagePtr->checkPoint = *cp;
     /*
@@ -746,8 +780,9 @@ LfsSegUsageAttach(lfsPtr, checkPointSize, checkPointPtr)
 	LfsError(lfsPtr, status,"Can't loading descriptor map stableMem\n");
 	return status;
     }
-    printf("LfsSegUsageAttach - logEnd %d numClean %d numDirty %d numFull %d\n",
-		cp->currentSegment, cp->numClean, cp->numDirty,
+    printf("LfsSegUsageAttach - logEnd <%d,%d>, numClean %d numDirty %d numFull %d\n",
+		cp->currentSegment, cp->currentBlockOffset,
+		cp->numClean, cp->numDirty,
 		usagePtr->params.numberSegments - cp->numClean - cp->numDirty);
     return status;
 }
@@ -787,10 +822,10 @@ LfsSegUsageCheckpoint(segPtr, flags,checkPointPtr, checkPointSizePtr,
     size = sizeof(LfsSegUsageCheckPoint);
 
     full = LfsStableMemCheckpoint(segPtr, checkPointPtr + size, flags,
-		checkPointSizePtr, clientDataPtr,&(usagePtr->stableMem));
+		checkPointSizePtr, clientDataPtr,
+		&(usagePtr->stableMem));
     if (!full) { 
 	*checkPointSizePtr = (*checkPointSizePtr) + size;
-	usagePtr->cpLocPtr = cp;
     }
     return full;
 
@@ -820,13 +855,10 @@ LfsSegUsageWriteDone(segPtr, flags, clientDataPtr)
 {
     LfsSegUsage	      *usagePtr = &(segPtr->lfsPtr->usageArray);
 
-    if (usagePtr->cpLocPtr != (LfsSegUsageCheckPoint *) NIL) {
-	*(usagePtr->cpLocPtr) = usagePtr->checkPoint;
-	usagePtr->cpLocPtr = (LfsSegUsageCheckPoint *) NIL;
-    }
     LFS_STATS_ADD(segPtr->lfsPtr->stats.segusage.blocksWritten, 
 		(LfsSegSummaryBytesLeft(segPtr) / sizeof(int)));
-    LfsStableMemWriteDone(segPtr, flags, clientDataPtr, &(usagePtr->stableMem));
+    LfsStableMemWriteDone(segPtr, flags, clientDataPtr, 
+			  &(usagePtr->stableMem));
     return;
 
 }
@@ -861,6 +893,7 @@ LfsSegUsageClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 
     full =  LfsStableMemClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr,
 			&(usagePtr->stableMem));
+
     LFS_STATS_ADD(segPtr->lfsPtr->stats.segusage.blocksCleaned, 
 		*sizePtr/usagePtr->stableMem.params.blockSize);
     return full;
@@ -894,11 +927,10 @@ LfsSegUsageLayout(segPtr, flags, clientDataPtr)
 {
     LfsSegUsage	      *usagePtr = &(segPtr->lfsPtr->usageArray);
 
-    usagePtr->cpLocPtr = (LfsSegUsageCheckPoint *) NIL;
     if ((flags & LFS_CLEANING_LAYOUT) != 0) {
 	return FALSE;
     }
-    return LfsStableMemLayout(segPtr, flags, 
+    return  LfsStableMemLayout(segPtr, flags, 
 				clientDataPtr, &(usagePtr->stableMem));
 }
 

@@ -176,6 +176,7 @@ LfsLoadFileSystem(lfsPtr, flags)
     lfsPtr->checkPoint.timestamp = checkPointHdrPtr->timestamp+1;
     lfsPtr->checkPoint.nextArea = !choosenOne;
     lfsPtr->checkPoint.buffer = (char *) checkPointHdrPtr;
+    lfsPtr->checkPoint.maxSize = maxSize;
 
     /*
      * Fill in the checkPointHdrPtr will the fields that don't change
@@ -228,8 +229,8 @@ LfsDetachFileSystem(lfsPtr)
     free(lfsPtr->checkPoint.buffer);
     return status;
 }
-
 #define	LOCKPTR &lfsPtr->checkPointLock
+
 
 /*
  *----------------------------------------------------------------------
@@ -258,15 +259,29 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     LfsCheckPointTrailer *trailerPtr;
     LfsDiskAddr		diskAddr;
     ReturnStatus	status;
+    char		*bufferPtr;
 
-    checkPointHdrPtr = (LfsCheckPointHdr *) lfsPtr->checkPoint.buffer;
+    bufferPtr = lfsPtr->checkPoint.buffer;
+    checkPointHdrPtr = (LfsCheckPointHdr *) bufferPtr;
+    if (flags & LFS_CHECKPOINT_CLEANER) { 
+	/* 
+	 * The cleaner uses it own checkpoint buffer. Allocate it 
+	 * and initialized the LfsCheckPointHdr with the values that
+	 * don't change. 
+	 */
+	bufferPtr = malloc(lfsPtr->checkPoint.maxSize);
+	bcopy((char *) checkPointHdrPtr, bufferPtr, 
+		sizeof(LfsCheckPointHdr));
+	checkPointHdrPtr = (LfsCheckPointHdr *) bufferPtr;
 
-    status = LfsSegCheckPoint(lfsPtr, flags, 
-			(char *)(checkPointHdrPtr+1), &size);
+    }  
+
+
+    status = LfsSegCheckPoint(lfsPtr, flags, (char *)(checkPointHdrPtr+1),
+				&size);
     if (status != SUCCESS) {
-	if ((flags & (LFS_CHECKPOINT_WRITEBACK|LFS_CHECKPOINT_TIMER)) && 
-	    (status == GEN_EINTR)) {
-	    status = SUCCESS;
+	if (bufferPtr != lfsPtr->checkPoint.buffer) {
+	    free(bufferPtr);
 	}
 	return status;
     }
@@ -280,7 +295,7 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     checkPointHdrPtr->version = 1;
     checkPointHdrPtr->detachSeconds = Fsutil_TimeInSeconds();
     trailerPtr = (LfsCheckPointTrailer *) 
-		(lfsPtr->checkPoint.buffer + size + sizeof(LfsCheckPointHdr));
+		(bufferPtr + size + sizeof(LfsCheckPointHdr));
     trailerPtr->timestamp = checkPointHdrPtr->timestamp;
     trailerPtr->checkSum = 0;
 
@@ -299,18 +314,21 @@ LfsCheckPointFileSystem(lfsPtr, flags)
 		&diskAddr);
     status = LfsWriteBytes(lfsPtr, diskAddr, 
 	LfsBlocksToBytes(lfsPtr, blocks), (char *) checkPointHdrPtr);
-    if (status != SUCCESS) {
+    if (status == SUCCESS) {
+	/*
+	 * Set the file system up to use the other checkpoint buffer next time.
+	 */
+	lfsPtr->checkPoint.nextArea = !lfsPtr->checkPoint.nextArea;
+    } else {
 	UNLOCK_MONITOR;
-	return status;
+	LfsError(lfsPtr, status, "Can't write checkpoint region\n");
+	LOCK_MONITOR;
     }
-    /*
-     * Set the file system up to use the other checkpoint buffer next time.
-     */
-    lfsPtr->checkPoint.nextArea = !lfsPtr->checkPoint.nextArea;
     UNLOCK_MONITOR;
-#ifdef notdef
-    printf("Lfs %s checkpointed at %d\n", lfsPtr->name, 
-		    checkPointHdrPtr->detachSeconds);
-#endif
-    return SUCCESS;
+    LfsSegCheckPointDone(lfsPtr, flags);
+    if (bufferPtr != lfsPtr->checkPoint.buffer) {
+	free(bufferPtr);
+    }
+    return status;
 }
+
