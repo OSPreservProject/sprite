@@ -296,12 +296,12 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 				     newHdrPtr, &found);
 	if (!tableFull) {
 	    /*
-	     * Got the handle.  'found' indicates if the handle is new or not.
+	     * Installed the handle, may or may not have been already there.
 	     */
 	    hdrPtr = newHdrPtr;
 	} else {
 	    /*
-	     * Limit would be exceeded, recycle some handles.
+	     * Size limit would be exceeded.  Recycle some handles.
 	     */
 	    numScavenged = 0;
 	    fsStats.handle.lruScans++;
@@ -382,12 +382,16 @@ HandleInstallInt(fileIDPtr, handleLimit, hdrPtr, foundPtr)
 
     LOCK_MONITOR;
 again:
-    hashEntryPtr = Hash_Find(fileHashTable, (Address) fileIDPtr);
-    if (hashEntryPtr->value == (Address) NIL) {
-	found = FALSE;
-	if (fsStats.handle.exists >= handleLimit) {
+    if (fsStats.handle.exists >= handleLimit) {
+	/*
+	 * Creating a handle will push us past the soft limit on handles.
+	 * We just look into the hash table, but do not create a new
+	 * entry if the handle isn't found.
+	 */
+	hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) fileIDPtr);
+	if (hashEntryPtr == (Hash_Entry *)NIL) {
 	    /*
-	     * Creating a handle would push us over the limit.
+	     * Table is full so our caller has to do LRU replacement.
 	     * If LRU is already in progress we wait so there is only
 	     * one process scanning the table at a time.
 	     */
@@ -399,13 +403,25 @@ again:
 	    } else {
 		lruInProgress = TRUE;
 		lruHandlesChecked = 0;
+		found = FALSE;
 		tableFull = TRUE;
 		goto exit;
 	    }
 	}
+    } else {
 	/*
-	 * Initialize the new file handle.
+	 * Lookup the handle.  If a hash table entry doesn't exist
+	 * it will be created by Hash_Find.
 	 */
+	hashEntryPtr = Hash_Find(fileHashTable, (Address) fileIDPtr);
+    }
+    if (hashEntryPtr->value == (Address) NIL) {
+	/*
+	 * Initialize the newly created file handle.  Our caller has
+	 * allocated the space for the new handle.
+	 */
+	Hash_SetValue(hashEntryPtr, hdrPtr);
+	found = FALSE;
 	fsStats.handle.created++;
 	fsStats.handle.exists++;
 
@@ -426,10 +442,8 @@ again:
 	    hdrPtr->lruLinks.nextPtr = (List_Links *)NIL;
 	    hdrPtr->lruLinks.prevPtr = (List_Links *)NIL;
 	}
-	Hash_SetValue(hashEntryPtr, hdrPtr);
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_NEW, hdrPtr);
     } else {
-	found = TRUE;
 	hdrPtr = (FsHandleHeader *) Hash_GetValue(hashEntryPtr);
 	if (hdrPtr->flags & FS_HANDLE_LOCKED) {
 	    /*
@@ -441,6 +455,7 @@ again:
 	    fsStats.handle.lockWaits++;
 	    goto again;
 	}
+	found = TRUE;
 	hdrPtr->refCount++;
 	MOVE_HANDLE(hdrPtr);
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_HIT, hdrPtr);
