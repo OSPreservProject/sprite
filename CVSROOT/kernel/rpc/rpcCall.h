@@ -79,9 +79,7 @@
  *	RPC_FS_SET_ATTR_PATH	Set attributes given a pathname.
  *	RPC_FS_GET_IO_ATTR	Get attributes cached at the I/O server.
  *	RPC_FS_SET_IO_ATTR	Set attributes cached at the I/O server.
- *	RPC_PROC_MIG_INIT Initiate process migration by confirming that
- *			foreign processes will be accepted.
- *	RPC_PROC_MIG_INFO Transfer information about a process that is being
+ *	RPC_PROC_MIG_COMMAND Transfer information about a process that is being
  *			migrated.
  *	RPC_PROC_REMOTE_CALL Perform a system call for a migrated process.
  *	RPC_FS_MIGRATE 		Start the migration of a file handle.
@@ -130,8 +128,10 @@
 #define RPC_FS_SET_ATTR_PATH	19
 #define RPC_FS_GET_IO_ATTR	20
 #define RPC_FS_SET_IO_ATTR	21
+#ifdef notdef
 #define	RPC_PROC_MIG_INIT 	22
-#define	RPC_PROC_MIG_INFO 	23
+#endif
+#define	RPC_PROC_MIG_COMMAND 	23
 #define	RPC_PROC_REMOTE_CALL 	24
 #define	RPC_FS_MIGRATE 		25
 #define	RPC_FS_CONSIST 		26
@@ -176,8 +176,10 @@ extern ReturnStatus Fs_RpcGetAttrPath();	/*  FS_GET_ATTR_PATH */
 extern ReturnStatus Fs_RpcSetAttrPath();	/*  FS_SET_ATTR_PATH */
 extern ReturnStatus Fs_RpcGetIOAttr();		/*  FS_GET_IO_ATTR */
 extern ReturnStatus Fs_RpcSetIOAttr();		/*  FS_SET_IO_ATTR */
+#ifdef notdef
 extern ReturnStatus Proc_RpcMigInit();		/*  PROC_MIG_INIT */
-extern ReturnStatus Proc_RpcMigInfo();		/*  PROC_MIG_INFO */
+#endif /* notdef */
+extern ReturnStatus Proc_RpcMigCommand();	/*  PROC_MIG_COMMAND */
 extern ReturnStatus Proc_RpcRemoteCall();	/*  PROC_REMOTE_CALL */
 extern ReturnStatus Fs_RpcStartMigration();	/*  FS_MIGRATE */
 extern ReturnStatus Fs_RpcConsist();		/*  FS_CONSIST */
