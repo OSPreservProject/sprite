@@ -59,9 +59,15 @@
  *		the request/reponse channel to a particular client.
  *	FS_LCL_PSEUDO_STREAM	This is the client's end of the stream
  *		between it and the server process for the pseudo device.
- *	FS_RMT_PSUEDO_STREAM	As above, but when the server is remote.
+ *	FS_RMT_PSEUDO_STREAM	As above, but when the server is remote.
+ *	FS_PFS_CONTROL_STREAM	Control stream for pseudo-filesystems.
+ * The following streams are not implemented
+ *	FS_REMOTE_NFS_STREAM	NFS access implemented in kernel.
  *	FS_REMOTE_UNIX_STREAM	For files on the old hybrid unix/sprite server.
- *	FS_REMOTE_NFS_STREAM	(unimplemented) For NFS access.
+ *	FS_LCL_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
+ *				is on the local host.
+ *	FS_RMT_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
+ *				is remote. 
  */
 #define FS_STREAM			0
 #define FS_LCL_FILE_STREAM		1
@@ -74,10 +80,12 @@
 #define FS_SERVER_STREAM		8
 #define FS_LCL_PSEUDO_STREAM		9
 #define FS_RMT_PSEUDO_STREAM		10
-#define FS_LCL_NAMED_PIPE_STREAM	11
-#define FS_RMT_NAMED_PIPE_STREAM	12
-#define FS_RMT_UNIX_STREAM		13
-#define FS_RMT_NFS_STREAM		14
+#define FS_PFS_CONTROL_STREAM		11
+
+#define FS_RMT_NFS_STREAM		12
+#define FS_LCL_NAMED_PIPE_STREAM	13
+#define FS_RMT_NAMED_PIPE_STREAM	14
+#define FS_RMT_UNIX_STREAM		15
 
 
 /*
