@@ -33,7 +33,7 @@ Boolean fspdev_Debug = FALSE;		/* Turns on print statements */
 Trace_Header fspdevTraceHdr;
 Trace_Header *fspdevTraceHdrPtr = &fspdevTraceHdr;
 int fspdevTraceLength = 50;
-Boolean fspdevTracing = TRUE;		/* Turns on circular trace */
+Boolean fspdevTracing = FALSE;		/* Turns on circular trace */
 int fspdevMaxTraceDataSize;
 int fspdevTraceIndex = 0;
 
