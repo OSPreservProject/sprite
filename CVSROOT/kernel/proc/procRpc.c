@@ -131,12 +131,12 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_DEF_PERM	  52 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_IO_CONTROL	  53 */
     { Dev_VidEnable,			RSNIL }, /* SYS_SYS_ENABLEDISPLAY 54 */
-    { Proc_SetEnvironStub,		RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
-    { Proc_UnsetEnvironStub,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
-    { Proc_GetEnvironVarStub,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
-    { RSNIL /* Proc_GetEnvironRangeStub */, RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
-    { RSNIL /* Proc_InstallEnvironStub */,  RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
-    { Proc_CopyEnvironStub,		RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
+    { RSNIL /* obsolete */,  		RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWLOCK 	  61 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWWAIT     62 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWBROADCAST 63 */
@@ -149,7 +149,7 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_MAPKERNELINTOUSER 70 */
     { Fs_AttachDiskStub ,		RSNIL }, /* SYS_FS_ATTACH_DISK    71 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SELECT         72 */
-    { Sys_Shutdown,			RSNIL }, /* SYS_SYS_SHUTDOWN	  73 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYS_SHUTDOWN	  73 */
     { Proc_Migrate,			RSNIL }, /* SYS_PROC_MIGRATE	  74 */
     { Fs_MakeDeviceStub,		RSNIL }, /* SYS_FS_MAKE_DEVICE    75 */
     { Fs_CommandStub,			RSNIL }, /* SYS_FS_COMMAND        76 */
