@@ -470,6 +470,9 @@ FsPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     request.hdr.operation = PFS_OPEN;
     pdevHandlePtr = PfsGetUserLevelIDs(cltHandlePtr->pdevHandlePtr,
 			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
+    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	return(FS_FILE_NOT_FOUND);
+    }
     request.param.open = *openArgsPtr;
 
     resultSize = sizeof(FsOpenResults);
@@ -518,9 +521,12 @@ PfsGetUserLevelIDs(pdevHandlePtr, prefixIDPtr, rootIDPtr)
     *prefixIDPtr = pdevHandlePtr->userLevelID;
     rootIDPtr->type = fsRmtToLclType[rootIDPtr->type];
     cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, rootIDPtr);
-    FsHandleRelease(cltHandlePtr, TRUE);
-
-    return(cltHandlePtr->pdevHandlePtr);
+    if (cltHandlePtr != (PdevClientIOHandle *)NIL) {
+	FsHandleRelease(cltHandlePtr, TRUE);
+	return(cltHandlePtr->pdevHandlePtr);
+    } else {
+	return((PdevServerIOHandle *)NIL);
+    }
 }
 
 /*
@@ -743,6 +749,9 @@ FsPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     request.hdr.operation = PFS_GET_ATTR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
+    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	return(FS_FILE_NOT_FOUND);
+    }
     request.param.open = *(FsOpenArgs *)argsPtr;
 
     getAttrResultsPtr = (FsGetAttrResults *)resultsPtr;
@@ -802,6 +811,9 @@ FsPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &setAttrArgsPtr->openArgs.prefixID,
 			    &setAttrArgsPtr->openArgs.rootID);
+    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	return(FS_FILE_NOT_FOUND);
+    }
     request.param.open = setAttrArgsPtr->openArgs;
 
     /*
@@ -867,6 +879,9 @@ FsPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     request.hdr.operation = PFS_MAKE_DIR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
+    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	return(FS_FILE_NOT_FOUND);
+    }
     request.param.lookup = *lookupArgsPtr;
 
     resultSize = 0;
@@ -915,6 +930,9 @@ FsPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     request.hdr.operation = PFS_MAKE_DEVICE;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &makeDevArgsPtr->prefixID, &makeDevArgsPtr->rootID);
+    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	return(FS_FILE_NOT_FOUND);
+    }
     request.param.makeDevice = *makeDevArgsPtr;
 
     resultSize = 0;
@@ -963,6 +981,9 @@ FsPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     request.hdr.operation = PFS_REMOVE;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
+    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	return(FS_FILE_NOT_FOUND);
+    }
     request.param.lookup = *lookupArgsPtr;
 
     resultSize = 0;
@@ -1011,6 +1032,9 @@ FsPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     request.hdr.operation = PFS_REMOVE_DIR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
 			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
+    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	return(FS_FILE_NOT_FOUND);
+    }
     request.param.lookup = *lookupArgsPtr;
 
     resultSize = 0;
