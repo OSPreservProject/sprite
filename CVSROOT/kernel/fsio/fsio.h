@@ -33,14 +33,15 @@
  *
  *	FS_LOCAL_DOMAIN		The file is stored locally.
  *	FS_REMOTE_SPRITE_DOMAIN	The file is stored on a Sprite server.
- *	FS_REMOTE_UNIX_DOMAIN	The file is stored on a Unix server.
+ *	FS_PSEUDO_DOMAIN	The file system is implemented by
+ *				a user-level server process
  *	FS_NFS_DOMAIN		The file is stored on an NFS server.
  *
  */
 
 #define FS_LOCAL_DOMAIN			0
 #define FS_REMOTE_SPRITE_DOMAIN		1
-#define FS_REMOTE_UNIX_DOMAIN		2
+#define FS_PSEUDO_DOMAIN		2
 #define FS_NFS_DOMAIN			3
 
 #define FS_NUM_DOMAINS			4
@@ -135,12 +136,11 @@ typedef struct FsStreamTypeOps {
      *  when getting/setting attributes.
      *  BRENT - why can't nameFileID be set by the server?
      *
-     *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, nameInfoPtr, hdrPtrPtr)
+     *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, hdrPtrPtr)
      *		FsFileID	*fileIDPtr;	(indicates file)
      *		int		*flagsPtr;	(from the stream)
      *		int		clientID;	(who's opening it)
      *		ClientData	data;		(stream data from srvOpen)
-     *		FsNameInfo	*nameInfoPtr;	(fill in fileID part) XXX
      *		FsHandleHeader	**hdrPtrPtr;	(Returned I/O handle)
      */
     ReturnStatus (*cltOpen)();
@@ -207,10 +207,11 @@ typedef struct FsStreamTypeOps {
      *  ones cached on the I/O server, or to update the ones cached there.
      *
      *	FooGetIOAttr(fileIDPtr, clientID, attrPtr)
-     *	FooSetIOAttr(fileIDPtr, attrPtr)
+     *	FooSetIOAttr(fileIDPtr, attrPtr, flags)
      *		FsFileID		*fileIDPtr;	(Identfies file)
      *		int			clientID;	(Client getting attrs)
      *		Fs_Attributes		*attrPtr;	(Attrs to set/update)
+     *		int			flags;		(which attrs to set)
      */
     ReturnStatus (*getIOAttr)();
     ReturnStatus (*setIOAttr)();
@@ -262,10 +263,11 @@ typedef struct FsStreamTypeOps {
      *		int		size;			(size of data)
      *		ClientData	data;			(data from migrate)
      *		FsHandleHeader	**hdrPtrPtr;		(Returned handle)
-     *	FooSrvMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
+     *	FooSrvMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr sizePtr, dataPtr)
      *    	FsMigInfo	*migInfoPtr;		(Migration state)
      *		int		dstClientID;		(ID of target client)
      *		int		*flagsPtr;		(In/Out Stream flags)
+     *		int		*offsetPtr;		(Return - new offset)
      *		int		*sizePtr;		(Return - size of data)
      *		Address		*dataPtr;		(Return data)
      */
