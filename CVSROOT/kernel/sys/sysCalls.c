@@ -493,6 +493,7 @@ Sys_StatsStub(command, option, argPtr)
 	case SYS_RPC_CLIENT_HIST:
 	case SYS_RPC_SRV_STATE:
 	case SYS_RPC_CLT_STATE:
+	case SYS_RPC_ENABLE_SERVICE:
 	    status = Rpc_GetStats(command, option, argPtr);
 	    break;
 
