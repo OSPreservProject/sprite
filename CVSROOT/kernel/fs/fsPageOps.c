@@ -144,18 +144,20 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
+Fs_PageWrite(streamPtr, pageAddr, offset, numBytes, toDisk)
     Fs_Stream	*streamPtr;	/* Swap file stream. */
     Address	pageAddr;	/* Pointer to page. */
     int		offset;		/* Offset in file. */
     int		numBytes;	/* Number of bytes in page. */
+    Boolean	toDisk;		/* TRUE to write through to disk. */
 {
     ReturnStatus		status = SUCCESS;
     Fs_IOParam			io;	/* Write parameter block */
     register Fs_IOParam		*ioPtr = &io;
     Fs_IOReply			reply;	/* Return length, signal */
 
-    FsSetIOParam(ioPtr, pageAddr, numBytes, offset, FS_SWAP);
+    FsSetIOParam(ioPtr, pageAddr, numBytes, offset, FS_SWAP |
+	    (toDisk? FS_WRITE_TO_DISK : 0));
     reply.length = 0;
     reply.flags = 0;
     reply.signal = 0;
