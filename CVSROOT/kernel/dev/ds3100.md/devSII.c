@@ -154,7 +154,7 @@ static Controller *controllers[MAX_SII_CTRLS];
  */
 static int numSIIControllers = 0;
 
-int devSIIDebug = 1;
+int devSIIDebug = 6;
 
 /*
  * Forward declarations.  
@@ -285,6 +285,9 @@ SelectTarget(devPtr)
     if (devSIIDebug > 0) {
 	printf("SelectTarget: Couldn't select target %d\n", devPtr->targetID);
     }
+    if (devSIIDebug > 4) {
+	printf("Cstat = 0x%x\n", regsPtr->cstat);
+    }
     regsPtr->cstat = SII_SCH;
     regsPtr->comm = SII_DISCON;
     Mach_EmptyWriteBuffer();
@@ -385,6 +388,10 @@ SendCommand(devPtr, scsiCmdPtr)
     }
     tmpPhase = regsPtr->dstat & SII_PHA_MSK;
     tmpState = regsPtr->cstat & SII_STATE_MSK;
+    if (devSIIDebug > 5) {
+	printf("SendCommand: tmpPhase is 0x%x.\n", tmpPhase);
+	printf("SendCommand: tmpState is 0x%x.\n", tmpState);
+    }
     regsPtr->comm = tmpState | tmpPhase;
     charPtr = scsiCmdPtr->commandBlock;
 
@@ -400,6 +407,11 @@ SendCommand(devPtr, scsiCmdPtr)
     Mach_EmptyWriteBuffer();
     regsPtr->dmlotc = scsiCmdPtr->commandBlockLen;
     regsPtr->comm = SII_DMA | SII_INXFER | tmpState | tmpPhase;
+    if (devSIIDebug > 5) {
+	printf("SendCommand: cstat is 0x%x.\n", regsPtr->cstat);
+	printf("SendCommand: dstat is 0x%x.\n", regsPtr->dstat);
+	printf("SendCommand: setting comm reg to 0x%x.\n", regsPtr->comm);
+    }
     Mach_EmptyWriteBuffer();
 
     /* 
@@ -619,8 +631,9 @@ WaitPhase(ctrlPtr, phase, reset)
     if (devSIIDebug > 5) {
 	printf("WaitPhase: timed out.\n");
 	PrintRegs(regsPtr);
-	printf("WaitPhase: was checking for phase %x.\n",
+	printf("WaitPhase: was checking for phase 0x%x.\n",
 		   (int) phase);
+	printf("WaitPhase: dstat is 0x%x.\n", dstatReg);
     }
     if (reset) {
 	Reset(ctrlPtr);
@@ -871,6 +884,17 @@ entryAvailProc(clientData, newRequestPtr)
     register ScsiCmd	*scsiCmdPtr;
     ReturnStatus	status;
 
+    static Address	notifications[100];
+    static Address	sent[100];
+    static Address	bailed[100];
+    static Address	cause[100];
+    static Address	failed[100];
+    static int		nctr = 0;
+    static int		sctr = 0;
+    static int		bctr = 0;
+    static int		fctr = 0;
+#define INC(a) { (a) = ((a) + 1) % 100; }
+
     devPtr = (Device *) clientData;
     ctrlPtr = devPtr->ctrlPtr;
     /*
@@ -878,17 +902,26 @@ entryAvailProc(clientData, newRequestPtr)
      * start the request.
      */
 
+    notifications[nctr] = (Address) newRequestPtr;
+    INC(nctr);
     if (ctrlPtr->scsiCmdPtr != (ScsiCmd *) NIL) {
+	bailed[bctr] = (Address) newRequestPtr;
+	cause[bctr] = (Address) ctrlPtr->scsiCmdPtr;
+	INC(bctr);
 	return FALSE;
     }
 again:
     scsiCmdPtr = (ScsiCmd *) newRequestPtr;
     devPtr = (Device *) clientData;
+    sent[sctr] = (Address) scsiCmdPtr;
+    INC(sctr);
     status = SendCommand((Device *) devPtr, scsiCmdPtr);
     /*	
      * If the command couldn't be started do the callback function.
      */
     if (status != SUCCESS) {
+	failed[fctr] = (Address) scsiCmdPtr;
+	INC(fctr);
 	 MASTER_UNLOCK(&(ctrlPtr->mutex));
 	 RequestDone(devPtr,scsiCmdPtr,status,0,0);
 	 MASTER_LOCK(&(ctrlPtr->mutex));
@@ -1103,7 +1136,9 @@ Dev_SIIIntr()
 rtnHardErrorAndGetNext:
     printf("Warning: %s reset and current command terminated.\n",
 	   devPtr->handle.locationName);
-    RequestDone(devPtr,ctrlPtr->scsiCmdPtr,status,0,0);
+    if (ctrlPtr->scsiCmdPtr != (ScsiCmd *) NIL) {
+	RequestDone(devPtr,ctrlPtr->scsiCmdPtr,status,0,0);
+    }
     Reset(ctrlPtr);
     /*
      * Use the queue entryAvailProc to start the next request for this device.
@@ -1280,27 +1315,43 @@ DevSIIAttachDevice(devicePtr, insertProc)
     scsiCmd.bufferLen = sizeof(ScsiInquiryData);
     scsiCmd.buffer = (Address)&inqData;
     scsiCmd.doneProc = (int (*)()) NIL;
+    if (devSIIDebug > 5) {
+	printf("DevSIIAttachDevice: %s sending inquiry.\n",
+	    devPtr->handle.locationName);
+    }
     status = SendCommand(devPtr, &scsiCmd);
     if (status != SUCCESS) {
 	printf("DevSIIAttachDevice: Couldn't send inquiry command\n");
-	MASTER_UNLOCK(&(ctrlPtr->mutex));
-	free((char *)devPtr);
-	return((ScsiDevice *) NIL);
+	goto error;
+    }
+    if (devSIIDebug > 5) {
+	printf("DevSIIAttachDevice: %s waiting for data in phase.\n",
+	    devPtr->handle.locationName);
     }
     status = WaitPhase(ctrlPtr, DATA_IN_PHASE, RESET);
+#if 0
     if (status != SUCCESS) {
 	printf("DevSIIAttachDevice: Wait on DATA_IN_PHASE failed\n");
-	MASTER_UNLOCK(&(ctrlPtr->mutex));
-	free((char *)devPtr);
-	return((ScsiDevice *) NIL);
+	goto error;
     }
     StartDMA(ctrlPtr, TRUE);
+#endif
+/******/
+    if (status != SUCCESS) {
+	printf("DevSIIAttachDevice: Wait on DATA_IN_PHASE failed\n");
+	status = GetStatusByte(ctrlPtr, &statusByte);
+	if (status != SUCCESS) {
+	    printf("DevSIIAttachDevice: Couldn't get status\n");
+	}
+	goto error;
+    }
+    StartDMA(ctrlPtr, TRUE);
+/*****/
+
     status = GetStatusByte(ctrlPtr, &statusByte);
     if (status != SUCCESS) {
 	printf("DevSIIAttachDevice: Couldn't get status\n");
-	MASTER_UNLOCK(&(ctrlPtr->mutex));
-	free((char *)devPtr);
-	return((ScsiDevice *) NIL);
+	goto error;
     }
     ctrlPtr->devPtr = (Device *)NIL;
     ctrlPtr->scsiCmdPtr = (ScsiCmd *)NIL;
@@ -1323,6 +1374,12 @@ DevSIIAttachDevice(devicePtr, insertProc)
 
     MASTER_UNLOCK(&(ctrlPtr->mutex));
     return (ScsiDevice *) devPtr;
+
+error:
+    ctrlPtr->scsiCmdPtr = (ScsiCmd *) NIL;
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+    free((char *)devPtr);
+    return((ScsiDevice *) NIL);
 }
 
 
