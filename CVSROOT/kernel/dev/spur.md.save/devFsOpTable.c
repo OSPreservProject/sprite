@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "dev.h"
 #include "fs.h"
+#include "rawBlockDev.h"
 #include "devFsOpTable.h"
 #include "devTypesInt.h"
 
@@ -34,6 +35,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devSyslog.h"
 #include "devNet.h"
 #include "devCC.h"
+#include "devBlockDevice.h"
 
 
 static ReturnStatus NullSelectProc();
@@ -55,7 +57,7 @@ static ReturnStatus NullProc();
  * the array.  The FILLER macro is used to fill in the gaps.
  */
 
-#define	FILLER(num)	{num,NoDevice,NullProc,NullProc,NullProc,NullProc,NullProc},
+#define	FILLER(num)	{num,NoDevice,NullProc,NullProc,NullProc,NullProc,NullProc, DEV_NO_ATTACH_PROC},
 
 
 DevFsTypeOps devFsOpTable[] = {
@@ -63,13 +65,15 @@ DevFsTypeOps devFsOpTable[] = {
      * The console.  The workstation's display and keyboard.
      */
     {DEV_CONSOLE,    Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
-		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect},
+		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect,
+		     DEV_NO_ATTACH_PROC},
     /*
      * The system error log.  If this is not open then error messages go
      * to the console.
      */
     {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
-		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect},
+		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect,
+		    DEV_NO_ATTACH_PROC},
     FILLER(2)
     FILLER(3)
     FILLER(4)
@@ -78,40 +82,29 @@ DevFsTypeOps devFsOpTable[] = {
      * /dev/null
      */
     {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
-		    NullProc, NullProc, NullSelectProc},
+		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC},
     FILLER(7)
     /*
      * Network devices.  The unit number specifies the ethernet protocol number.
      */
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
-		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect},
+		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect,
+		   DEV_NO_ATTACH_PROC},
     /*
      * Cache controler device.
      */
     {DEV_CC,   	 Dev_CCOpen, Dev_CCRead, Dev_CCWrite,
-		     Dev_CCIOControl, Dev_CCClose, Dev_CCSelect},
+		     Dev_CCIOControl, Dev_CCClose, Dev_CCSelect,
+		     DEV_NO_ATTACH_PROC},
     /*
      * processed cache controler device.
      */
     {DEV_PCC,       Dev_PCCOpen, Dev_PCCRead, Dev_PCCWrite,
-		    Dev_PCCIOControl, Dev_PCCClose, Dev_PCCSelect},
+		    Dev_PCCIOControl, Dev_PCCClose, Dev_PCCSelect,
+		    DEV_NO_ATTACH_PROC},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
-
-
-/*
- * Device Block I/O operation table.  This table is sparse because not
- * all devices support block I/O.
- *	FsBlockIOInit
- *	FsBlockIO
- */
-DevFsBlockOps devFsBlockOpTable[] = {
-    { DEV_CONSOLE, 0 },
-    { DEV_SYSLOG, 0 },
-    { DEV_MEMORY, 0 },
-    { DEV_NET, 0 },
-};
 
 /*
  * A list of disk device types that is used when probing for a disk.
