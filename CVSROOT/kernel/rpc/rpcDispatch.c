@@ -105,6 +105,19 @@ Rpc_Dispatch(packetPtr, packetLength)
     rawPacketPtr = (RpcRawPacket *)packetPtr;
     rpcHdrPtr = &rawPacketPtr->rpcHdr;
 
+    if (rpcHdrPtr->version == RPC_SWAPPED_VERSION) {
+	/*
+	 * Byte swap the packet header and the parameter block.
+	 */
+	if (!RpcByteSwap(rpcHdrPtr)) {
+	    return;
+	}
+    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION) {
+	Sys_Panic(SYS_WARNING,
+	    "Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
+	    rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
+	return;
+    }
     expectedLength = sizeof(Net_EtherHdr) +
 		     sizeof(RpcHdr) +
 		     rpcHdrPtr->paramSize +
@@ -177,8 +190,7 @@ Rpc_Dispatch(packetPtr, packetLength)
 	/*
 	 * Verify or initialize the sprite host id for the client 
 	 * (clientID) from the transport level source address.
-	 * THIS IS OLD and should be already be replaced by the
-	 * clients responsible use of reverse arp.
+	 * This doesn't usually kick in unless the client can't do reverse arp.
 	 */
 	if ( ! RpcValidateClient(rawPacketPtr)) {
 	    rpcSrvStat.invClient++;
@@ -228,6 +240,34 @@ Rpc_Dispatch(packetPtr, packetLength)
 	    RpcClientDispatch(chanPtr, rpcHdrPtr);
 	}
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcByteSwap --
+ *
+ *	Byte swap the rpc packet header and the following parameter block.
+ *	The data block is not byte swapped.  It knows the RPC packet format:
+ *	  The Rpc header, which includes the sizes of the next two parts.
+ *	  The parameter area.
+ *	  The data area.
+ *
+ * Results:
+ *	FALSE if it could not byte swap.
+ *
+ * Side effects:
+ *	The byte swapping.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+RpcByteSwap(rpcHdrPtr)
+    register RpcHdr *rpcHdrPtr;		/* The Rpc Header as it sits in the
+					 * network's buffer.  The data follows
+					 * the header directly. */
+{
+    return(FALSE);
 }
 
 /*

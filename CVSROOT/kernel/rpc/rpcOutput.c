@@ -233,7 +233,6 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		    fragRpcHdrPtr =
 			    (RpcHdr *)fragment[frag].rpcHdrBuffer.bufAddr;
 
-		    fragRpcHdrPtr->flags =	rpcHdrPtr->flags;
 		    sendFragMask &= ~fragID;
 		    /*
 		     * Mark the last fragment of the batch so the receiver
@@ -242,17 +241,18 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		    if (sendFragMask == 0) {
 			fragRpcHdrPtr->flags |= RPC_LASTFRAG;
 		    }
-		    fragRpcHdrPtr->delay =	rpcMyDelay;
+		    fragRpcHdrPtr->version =	RPC_NATIVE_VERSION;
+		    fragRpcHdrPtr->flags =	rpcHdrPtr->flags;
 		    fragRpcHdrPtr->clientID =	rpcHdrPtr->clientID;
 		    fragRpcHdrPtr->serverID =	rpcHdrPtr->serverID;
 		    fragRpcHdrPtr->channel =	rpcHdrPtr->channel;
 		    fragRpcHdrPtr->serverHint =	rpcHdrPtr->serverHint;
+		    fragRpcHdrPtr->bootID =	rpcHdrPtr->bootID;
 		    fragRpcHdrPtr->ID =		rpcHdrPtr->ID;
-		    fragRpcHdrPtr->transport =	rpcHdrPtr->transport;
+		    fragRpcHdrPtr->delay =	rpcMyDelay;
 		    fragRpcHdrPtr->numFrags =	nfrags;
 		    fragRpcHdrPtr->fragMask =	fragID;
 		    fragRpcHdrPtr->command =	rpcHdrPtr->command;
-		    fragRpcHdrPtr->bootID =	rpcHdrPtr->bootID;
 
 		    /*
 		     * The network routines expect an array of scatter/gather
