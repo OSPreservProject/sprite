@@ -194,6 +194,9 @@ Fs_Bin()
     Mem_Bin(sizeof(FsFileDescriptor));
     Mem_Bin(sizeof(PdevServerIOHandle));
     Mem_Bin(sizeof(PdevControlIOHandle));
+#ifdef INET
+    FsSocketBin();
+#endif
 }
 
 
