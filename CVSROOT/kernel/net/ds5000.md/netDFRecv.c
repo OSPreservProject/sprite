@@ -503,8 +503,6 @@ CheckRmcRcvDesc(statePtr, descPtr)
 	    }
 	    break;
 	default:
-	    printf("DEC FDDI: Hmmm....don't know this packet type: ");
-	    printf("%x\n", frameControl);
 	    break;
 	}
 	DFprintf("DEC FDDI: Frame Control %d\tPBC = %d\n", frameControl, pbc);
