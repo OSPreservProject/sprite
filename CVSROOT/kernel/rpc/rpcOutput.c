@@ -34,6 +34,10 @@ short rpcOutputRate;
 short rpcDelay[NET_NUM_SPRITE_HOSTS];
 
 short rpcLastDelay;
+
+#ifdef PRINT_PACKETS
+Boolean rpcDumpPackets = FALSE;
+#endif PRINT_PACKETS
 
 /*
  *----------------------------------------------------------------------
