@@ -27,12 +27,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 #define USE_CHAN_A
 
+/*
+ * Struct to access channel A control register
+ */
+static volatile Dev_ZilogDevice *zilogAddrA;
 
-static Dev_ZilogDevice *zilogAddrA;	/* Struct to access channel A control
-					   register */
-
-static Dev_ZilogDevice *zilogAddrB;	/* Struct to access channel B control
-					   register */
+/*
+ * Struct to access channel B control register
+ */
+static Dev_ZilogDevice *zilogAddrB;
 
 
 /*
@@ -62,7 +65,7 @@ DbgRs232Init()
 #endif USE_CHAN_A
 
 #ifdef USE_CHAN_B
-    zilogAddrB = (Dev_ZilogDevice *) DEV_ZILOG_SERIAL_ADDR;
+    zilogAddrB = (volatile Dev_ZilogDevice *) DEV_ZILOG_SERIAL_ADDR;
 #endif USE_CHAN_B
 
     /*
