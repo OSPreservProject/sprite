@@ -645,6 +645,15 @@ endScan:
 				curHandlePtr, component, compLen,
 				(int) (useFlags & FS_RENAME), idPtr, logOp);
 			if (status == SUCCESS) {
+#ifdef SOSP91
+			SOSP_ADD_DELETE_TRACE(clientID, 
+			    SOSP_REMEMBERED_MIG,  
+			    curHandlePtr->hdr.fileID,
+			    curHandlePtr->cacheInfo.attr.modifyTime,
+			    curHandlePtr->cacheInfo.attr.createTime,
+			    curHandlePtr->cacheInfo.attr.lastByte + 1);
+#endif
+
 			    CloseDeletedFile(&parentHandlePtr,
 					&curHandlePtr);
 			}
