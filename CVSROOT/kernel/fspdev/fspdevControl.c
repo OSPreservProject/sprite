@@ -62,6 +62,7 @@ FsControlHandleInit(fileIDPtr, name)
 	List_Init(&ctrlHandlePtr->readWaitList);
 	FsLockInit(&ctrlHandlePtr->lock);
 	FsRecoveryInit(&ctrlHandlePtr->rmt.recovery);
+	ctrlHandlePtr->prefixPtr = (FsPrefix *)NIL;
     }
     return(ctrlHandlePtr);
 }
