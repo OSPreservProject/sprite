@@ -7,11 +7,12 @@
  *	adds handles to the table.  Fsutil_HandleFetch returns a locked handle.
  *	Fsutil_HandleLock locks a handle that you already have.
  *	Installing initializes the refCount to 1, and Fetching increments it.
- *	Use Fsutil_HandleUnlock and Fsutil_HandleReleaseHdr to unlock and decrement the
- *	reference count, respectively.  The macros Fsutil_HandleFetchType and
- *	Fsutil_HandleRelease do type casting and are defined in fsInt.h
- *	Fsutil_HandleRemove deletes a handle from the table, and Fsutil_GetNextHandle
- *	is used to iterate through the whole hash table.
+ *	Use Fsutil_HandleUnlock and Fsutil_HandleReleaseHdr to unlock and
+ *	decrement the reference count, respectively.  The macros
+ *	Fsutil_HandleFetchType and Fsutil_HandleRelease do type casting and
+ *	are defined in fsInt.h.  Fsutil_HandleRemove deletes a handle from
+ *	the table, and Fsutil_GetNextHandle is used to iterate through the
+ *	whole hash table.
  *
  * Copyright 1986 Regents of the University of California.
  * All rights reserved.
@@ -262,9 +263,10 @@ Fsutil_HandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 {
     Boolean found;
     Boolean tableFull;
-    register int numScavenged;
-    register Fs_HandleHeader *hdrPtr;
-    register Fs_HandleHeader *newHdrPtr = (Fs_HandleHeader *)NIL;
+    int numScavenged;
+    Fs_HandleHeader *hdrPtr;
+    Fs_HandleHeader *newHdrPtr = (Fs_HandleHeader *)NIL;
+    Boolean returnLocked = TRUE;	/* For now, always return locked */
 
     fs_Stats.handle.installCalls++;
     do {
@@ -292,16 +294,13 @@ Fsutil_HandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 		newHdrPtr->name = (char *)NIL;
 	    }
 	}
+	hdrPtr = newHdrPtr;
 	tableFull = HandleInstallInt(fileIDPtr, fs_Stats.handle.maxNumber,
-				     newHdrPtr, &found);
-	if (!tableFull) {
+				     &hdrPtr, &found, returnLocked);
+	if (tableFull) {
 	    /*
-	     * Installed the handle, may or may not have been already there.
-	     */
-	    hdrPtr = newHdrPtr;
-	} else {
-	    /*
-	     * Size limit would be exceeded.  Recycle some handles.
+	     * Size limit would be exceeded.  Recycle some handles.  The
+	     * new handle has not been installed into the hash table yet.
 	     */
 	    numScavenged = 0;
 	    fs_Stats.handle.lruScans++;
@@ -319,7 +318,8 @@ Fsutil_HandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 		}
 	    }
 	    /*
-	     * Finish LRU and grow the table if needed.
+	     * Finish LRU, grow the table if needed, and then
+	     * loop back and try to fetch or install the handle again.
 	     */
 	    DoneLRU(numScavenged);
 	    hdrPtr = (Fs_HandleHeader *)NIL;
@@ -369,14 +369,20 @@ Fsutil_HandleInstall(fileIDPtr, size, name, hdrPtrPtr)
  *
  */
 ENTRY Boolean
-HandleInstallInt(fileIDPtr, handleLimit, hdrPtr, foundPtr)
+HandleInstallInt(fileIDPtr, handleLimit, hdrPtrPtr, foundPtr, returnLocked)
     register Fs_FileID	*fileIDPtr;	/* Identfies handle to install. */
     unsigned int	handleLimit;	/* Determines how many handles can
 					 * exist before we return NULL */
-    Fs_HandleHeader	*hdrPtr;	/* Handle to install into table. */    
+    Fs_HandleHeader	**hdrPtrPtr;	/* In - handle to install into table
+					 * Out - handle found in table. */    
     Boolean		*foundPtr;	/* TRUE upon return if handle found */
+    Boolean		returnLocked;	/* TRUE the handle is locked upon
+					 * return.  Otherwise it is not
+					 * locked, but its reference count
+					 * is up so it won't go away. */
 {
     register	Hash_Entry	*hashEntryPtr;
+    register	Fs_HandleHeader	*hdrPtr;
     Boolean			tableFull = FALSE;
     Boolean			found;
 
@@ -420,6 +426,7 @@ again:
 	 * Initialize the newly created file handle.  Our caller has
 	 * allocated the space for the new handle.
 	 */
+	hdrPtr = *hdrPtrPtr;
 	Hash_SetValue(hashEntryPtr, hdrPtr);
 	found = FALSE;
 	fs_Stats.handle.created++;
@@ -448,8 +455,8 @@ again:
 	if (hdrPtr->flags & FS_HANDLE_LOCKED) {
 	    /*
 	     * Wait for it to become unlocked.  We can't increment the
-	     * the reference count until we lock it, so we have to
-	     * jump back and rehash as the handle may have been deleted.
+	     * the reference count until it is unlocked because it
+	     * may be getting deleted.  If its locked we wait and retry.
 	     */
 	    (void) Sync_Wait(&hdrPtr->unlocked, FALSE);
 	    fs_Stats.handle.lockWaits++;
@@ -459,8 +466,11 @@ again:
 	hdrPtr->refCount++;
 	MOVE_HANDLE(hdrPtr);
 	FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_INSTALL_HIT, hdrPtr);
+	*hdrPtrPtr = hdrPtr;
     }
-    LOCK_HANDLE(hdrPtr);
+    if (returnLocked) {
+	LOCK_HANDLE(hdrPtr);
+    }
 exit:
     *foundPtr = found;
     UNLOCK_MONITOR;
