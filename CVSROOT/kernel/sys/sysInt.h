@@ -29,7 +29,7 @@ extern ReturnStatus Sys_StatsStub _ARGS_((int command, int option,
 		Address argPtr));
 extern void SysInitSysCall _ARGS_((void));
 extern ReturnStatus Sys_OutputNumCalls _ARGS_((int numToCopy,
-		Address buffer));
+		Address buffer, Boolean doTimes));
 extern int Sys_RebootStub _ARGS_((int howto));
 extern int Sys_GethostnameStub _ARGS_((char *name, int namelen));
 extern int Sys_SethostnameStub _ARGS_((char *name, int namelen));

@@ -48,6 +48,7 @@
 extern	Boolean	sys_ShuttingDown;	/* Set when halting */
 extern	Boolean	sys_ErrorShutdown;	/* Set after a bad trap or error */
 extern	Boolean	sys_ErrorSync;		/* Set while syncing disks */
+extern	Boolean sys_CallProfiling;	/* Set if timing system calls */
 extern	int	sys_NumCalls[];
 
 extern void	Sys_Init _ARGS_((void));
@@ -58,6 +59,8 @@ extern ReturnStatus Sys_GetTimeOfDay _ARGS_((Time *timePtr,
 		    int *localOffsetPtr, Boolean *DSTPtr));
 extern ReturnStatus Sys_SetTimeOfDay _ARGS_((Time *timePtr, int localOffset,
 		    Boolean DST));
+extern void	Sys_RecordCallStart _ARGS_((void));
+extern void	Sys_RecordCallFinish _ARGS_((int callNum));
 
 extern int	vprintf _ARGS_(());
 extern void	panic _ARGS_(());

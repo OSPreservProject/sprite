@@ -756,8 +756,19 @@ Sys_StatsStub(command, option, argPtr)
 	    status = Fsprefix_DumpExport(option, argPtr);
 	    break;
 	}
+	case SYS_SYS_CALL_STATS_ENABLE: {
+	    printf ("%s system call profiling; was %s.\n",
+		    option ? "Enabling" : "Disabling",
+		    sys_CallProfiling ? "enabled" : "disabled");
+	    sys_CallProfiling = option;
+	    break;
+	}
+	case SYS_SYS_CALL_TIMES: {
+	    status = Sys_OutputNumCalls(option, argPtr, TRUE);
+	    break;
+	}
 	case SYS_SYS_CALL_STATS: {
-	    status = Sys_OutputNumCalls(option, argPtr);
+	    status = Sys_OutputNumCalls(option, argPtr, FALSE);
 	    break;
 	}
 	case SYS_NET_GET_ROUTE: {

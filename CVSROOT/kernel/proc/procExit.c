@@ -138,6 +138,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include <vmMach.h>
 #include <recov.h>
+#include <sysSysCall.h>
 
 static	Sync_Lock	exitLock = Sync_LockInitStatic("Proc:exitLock"); 
 #define	LOCKPTR &exitLock
@@ -366,6 +367,14 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 #endif /* CLEAN */
     }
 
+    /* 
+     * If the process is voluntarily exiting and system call profiling is 
+     * enabled, update the time for Proc_Exit.
+     */
+    if (contextSwitch && exitProcPtr->termReason == PROC_TERM_EXITED &&
+	sys_CallProfiling) {
+	Sys_RecordCallFinish(SYS_PROC_EXIT);
+    }
     
     /*
      * Make sure there are no lingering interval timer callbacks associated

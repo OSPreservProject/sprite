@@ -73,6 +73,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 static int ErrorProc _ARGS_((void));
+static ReturnStatus OutputCallTimes _ARGS_((int numToCopy,
+					    Address buffer));
 static ReturnStatus SysMigCall _ARGS_((Sys_ArgArray args));
 
 #define TMP_EXTERN
@@ -499,6 +501,15 @@ int sys_NumCalls[SYS_NUM_SYSCALLS];
 #define RESET_NUMCALLS() bzero((Address) sys_NumCalls, \
 				SYS_NUM_SYSCALLS * sizeof(int));
 
+/* 
+ * Define an array of ticks, to keep track of the total time spent in each 
+ * system call.  sys_CallProfiling indicates whether to maintain the array 
+ * or not.
+ */
+
+Boolean sys_CallProfiling = FALSE;
+Timer_Ticks sys_CallTimes[SYS_NUM_SYSCALLS];
+
 
 /*
  *----------------------------------------------------------------------
@@ -611,20 +622,127 @@ SysMigCall(args)
  */
 
 ReturnStatus
-Sys_OutputNumCalls(numToCopy, buffer)
-    int numToCopy;	/* number of system calls statistics to copy */
-    Address buffer;
+Sys_OutputNumCalls(requestedCount, buffer, doTimes)
+    int requestedCount;	/* number of system calls statistics to copy */
+    Address buffer;		/* start address of user's buffer */
+    Boolean doTimes;		/* copy per-call times as well */
 {
     ReturnStatus status = SUCCESS;
+    int numToCopy;		/* number of calls actually copied out */
 
-    if (numToCopy == 0) {
+    if (requestedCount == 0) {
 	RESET_NUMCALLS();
+	bzero(sys_CallTimes, SYS_NUM_SYSCALLS * sizeof(Timer_Ticks));
     } else {
-	/*
-	 * Are arrays stored in row-major or column-major order???
+	/* 
+	 * If the user wants the per-call times as well, put them after the 
+	 * per-call counts.  If there are fewer calls than the user 
+	 * requested, there will be a gap.  (Otherwise, how would the user 
+	 * know where to find the times?)
 	 */
+	numToCopy = (requestedCount > SYS_NUM_SYSCALLS
+		     ? SYS_NUM_SYSCALLS
+		     : requestedCount);
 	status = Vm_CopyOut(numToCopy * sizeof(int), (Address) sys_NumCalls,
 			    buffer);
+	if (doTimes && status == SUCCESS) {
+	    status = OutputCallTimes(numToCopy,
+				     buffer + requestedCount * sizeof(int));
+	}
     }
     return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OutputCallTimes --
+ *
+ *	Copy the per-call times to a user buffer.
+ *
+ * Results:
+ *	Returns the usual Sprite status code.
+ *
+ * Side effects:
+ *	The current cumulative times for the system calls are converted 
+ *	from Ticks to Time's and then copied out.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+OutputCallTimes(numToCopy, buffer)
+    int numToCopy;		/* number of calls to copy; already 
+				 * truncated if necessary*/
+    Address buffer;		/* where to put the times */
+{
+    Time times[SYS_NUM_SYSCALLS];
+    int index;
+
+    for (index = 0; index < SYS_NUM_SYSCALLS; ++index) {
+	Timer_TicksToTime(sys_CallTimes[index], &times[index]);
+    }
+
+    return Vm_CopyOut(numToCopy * sizeof(Time), (Address)times,
+		      buffer);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_RecordCallStart --
+ *
+ *	Record the current time in the PCB.  Called at the start of a 
+ *	system call.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sys_RecordCallStart()
+{
+    Proc_ControlBlock *procPtr = Proc_GetCurrentProc();
+
+    Timer_GetCurrentTicks(&procPtr->syscallStartTime);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_RecordCallFinish --
+ *
+ *	Update the time spent for a particular system call.  Called after 
+ *	the call has been handled.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates the appropriate tick count in sys_CallTimes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sys_RecordCallFinish(callNum)
+    int callNum;		/* system call number */
+{
+    Timer_Ticks totalTime;
+    Timer_Ticks now;
+    Proc_ControlBlock *procPtr;
+
+    procPtr = Proc_GetCurrentProc();
+    Timer_GetCurrentTicks(&now);
+    Timer_SubtractTicks(now, procPtr->syscallStartTime, &totalTime);
+    Timer_AddTicks(sys_CallTimes[callNum], totalTime,
+		   &sys_CallTimes[callNum]);
 }

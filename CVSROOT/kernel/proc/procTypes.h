@@ -465,6 +465,12 @@ typedef struct Proc_ControlBlock {
     int         unixProgress;            /* Progress indicator for restarting
                                             unix system calls. */
 
+    /* 
+     * Instrumentation.
+     */
+    Timer_Ticks syscallStartTime; 	/* start time for the current 
+					 * system call */
+
     /*
      *---------------------------------------------------------------------
      *
@@ -474,7 +480,7 @@ typedef struct Proc_ControlBlock {
      *---------------------------------------------------------------------
      */
 
-    int		extraField[10];		/* Extra fields for later use. */
+    int		extraField[8];		/* Extra fields for later use. */
 
 } Proc_ControlBlock;
 
