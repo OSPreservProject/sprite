@@ -265,8 +265,8 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
  *
  * Proc_SuspendProcess --
  *
- *	Put the process into the suspended state.  If the process is
- *	entering the suspended state because of a bug and no process is 
+ *	Put the (current) process into the suspended state.  If the process
+ *	is entering the suspended state because of a bug and no process is
  *	debugging it then put it onto the debug list.
  *
  * Results:
@@ -294,6 +294,18 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
     Boolean foreign = (procPtr->genFlags & PROC_FOREIGN);
 
     Proc_Lock(procPtr);
+    procPtr->genFlags &= ~PROC_PENDING_SUSPEND;
+
+    /* 
+     * Check whether we lost a race with Proc_ResumeProcess.  If that 
+     * happened, just bail out now.
+     */
+    if (procPtr->genFlags & PROC_RESUME_PROCESS) {
+	procPtr->genFlags &= ~PROC_RESUME_PROCESS;
+	Proc_Unlock(procPtr);
+	return;
+    }
+
     procPtr->termReason	= termReason;
     procPtr->termStatus	= termStatus;
     procPtr->termCode	= termCode;
@@ -333,8 +345,7 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
     if (foreign) {
 	ProcRemoteSuspend(procPtr, PROC_SUSPEND_STATUS);
     }
-    Proc_Unlock(procPtr);
-    Sched_ContextSwitch(PROC_SUSPENDED);
+    Proc_UnlockAndSwitch(procPtr, PROC_SUSPENDED);
 }
 
 
@@ -363,12 +374,22 @@ Proc_ResumeProcess(procPtr, killingProc)
 							 * the purpose of 
 							 * killing it. */
 {
-    if (procPtr->state == PROC_SUSPENDED &&
+    /*
+     * Only processes that are currently suspended and either are being
+     * killed or aren't being actively debugged can be resumed.  If the
+     * process has a pending suspend, set a flag in the PCB, which will
+     * short-circuit Proc_SuspendProcess.
+     * Note: we handle pending suspends this way, rather than simply
+     * clearing the pending signal, because the current structure of the
+     * sig module doesn't provide strong enough locking using the signals
+     * monitor lock.
+     */
+    
+    if (procPtr->state != PROC_SUSPENDED &&
+		(procPtr->genFlags & PROC_PENDING_SUSPEND) != 0) {
+	procPtr->genFlags |= PROC_RESUME_PROCESS;
+    } else if (procPtr->state == PROC_SUSPENDED &&
         (killingProc || !(procPtr->genFlags & PROC_DEBUGGED))) {
-	/*
-	 * Only processes that are currently suspended and are either being
-	 * killed or aren't being actively debugged can be resumed.
-	 */
 	RemoveFromDebugList(procPtr);
 	if (procPtr->genFlags & PROC_DEBUGGED) {
 	    procPtr->genFlags |= PROC_KILLING;
@@ -510,7 +531,9 @@ exit:
  *	    signal
  *
  * Side effects:
- *	Process is removed from list, process id is copied to user variable
+ *	Process is removed from list, process id is copied to user 
+ *	variable.  Process is locked unless GEN_ABORTED_BY_SIGNAL is 
+ *	returned.
  *
  *----------------------------------------------------------------------
  */
