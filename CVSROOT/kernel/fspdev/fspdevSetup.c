@@ -24,18 +24,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fsconsist.h"
-#include "fsdm.h"
-#include "fsioLock.h"
-#include "proc.h"
-#include "rpc.h"
-#include "fspdevInt.h"
-#include "fspdev.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fsdm.h>
+#include <fsioLock.h>
+#include <proc.h>
+#include <rpc.h>
+#include <fspdevInt.h>
+#include <fspdev.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -285,6 +285,7 @@ FspdevPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 
     cltHandlePtr = FspdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, 0);
     if (cltHandlePtr == (FspdevClientIOHandle *)NIL) {
+	status = DEV_OFFLINE;
 	goto exit;
     }
     /*
@@ -399,7 +400,7 @@ FspdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, naming)
     register FspdevClientIOHandle	*cltHandlePtr;
 
     found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(FspdevClientIOHandle),
-		ctrlHandlePtr->rmt.hdr.name, &hdrPtr);
+		ctrlHandlePtr->rmt.hdr.name, FALSE, &hdrPtr);
     cltHandlePtr = (FspdevClientIOHandle *)hdrPtr;
     if (found) {
 	if ((cltHandlePtr->pdevHandlePtr != (FspdevServerIOHandle *)NIL) &&
@@ -417,7 +418,7 @@ FspdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, naming)
 	Fsutil_HandleRelease(cltHandlePtr, TRUE);
 
 	found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(FspdevClientIOHandle),
-			ctrlHandlePtr->rmt.hdr.name, &hdrPtr);
+			ctrlHandlePtr->rmt.hdr.name, FALSE, &hdrPtr);
 	cltHandlePtr = (FspdevClientIOHandle *)hdrPtr;
 	if (found) {
 	    panic( "FspdevConnect handle still there\n");
@@ -627,7 +628,7 @@ FspdevPseudoStreamMigClose(hdrPtr, flags)
 ReturnStatus
 FspdevPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
 		      dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - new stream offset */
@@ -674,7 +675,7 @@ FspdevPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
      * itself.
      */
     Fsio_MigrateClient(&cltHandlePtr->clientList, migInfoPtr->srcClientID,
-		      dstClientID, migInfoPtr->flags & FS_NEW_STREAM,
+		      dstClientID, (int)(migInfoPtr->flags & FS_NEW_STREAM),
 		      closeSrcClient);
 
     *sizePtr = 0;
@@ -714,7 +715,7 @@ FspdevPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
 ReturnStatus
 FspdevRmtPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
 			 sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - the new stream offset */
@@ -774,7 +775,7 @@ FspdevRmtPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
 /*ARGSUSED*/
 ReturnStatus
 FspdevPseudoStreamMigOpen(migInfoPtr, size, data, hdrPtrPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		size;		/* Zero */
     ClientData	data;		/* NIL */
     Fs_HandleHeader **hdrPtrPtr;	/* Return - handle for the file */
