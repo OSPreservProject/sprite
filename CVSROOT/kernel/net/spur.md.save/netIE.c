@@ -68,7 +68,7 @@ static 	List_Links	xmitFreeListHdr;
  * Semaphore protecting the chip and driver's data structures.
  */
 
-int netIEMutex	= 0;
+Sync_Semaphore netIEMutex	= SYNC_SEM_INIT_STATIC("netIEMutex"); 
 
 /*
  * Macro to fetch a byte from the board's ROM at a 
@@ -232,7 +232,7 @@ NetIEInit(name, number, slotId)
 	return (FALSE);
     }
 
-    MASTER_LOCK(netIEMutex);
+    MASTER_LOCK(&netIEMutex);
     /*
      * Initialize the transmission list.  
      */
@@ -277,7 +277,7 @@ NetIEInit(name, number, slotId)
     netEtherFuncs.intr   = NetIEIntr;
     netEtherFuncs.reset  = NetIERestart;
 
-    MASTER_UNLOCK(netIEMutex);
+    MASTER_UNLOCK(&netIEMutex);
     return (TRUE);
 }
 
@@ -560,7 +560,7 @@ void
 NetIERestart()
 {
 
-    MASTER_LOCK(netIEMutex);
+    MASTER_LOCK(&netIEMutex);
 
     /*
      * Reset the world.
@@ -572,7 +572,7 @@ NetIERestart()
      */
     NetIEXmitRestart();
 
-    MASTER_UNLOCK(netIEMutex);
+    MASTER_UNLOCK(&netIEMutex);
 }
 
 
@@ -602,10 +602,10 @@ NetIEIntr(polling)
     scbPtr = netIEState.scbPtr;
 
 
-    MASTER_LOCK(netIEMutex);
+    MASTER_LOCK(&netIEMutex);
     status = NET_IE_CHECK_STATUS(scbPtr);
     if (status == 0) {
-	MASTER_UNLOCK(netIEMutex);
+	MASTER_UNLOCK(&netIEMutex);
 	return;
     }
 
@@ -616,7 +616,7 @@ NetIEIntr(polling)
     NET_IE_ACK(scbPtr, status);
     NET_IE_CHANNEL_ATTENTION;
 
-    MASTER_UNLOCK(netIEMutex);
+    MASTER_UNLOCK(&netIEMutex);
 
     /*
      * If we got a packet, then process it.

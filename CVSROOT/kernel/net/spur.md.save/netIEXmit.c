@@ -236,7 +236,7 @@ NetIEXmitDone()
     register	NetIETransmitCB	*cmdPtr;
 
     /*
-     * It is assumed that the called has a MASTER_LOCK on netIEMutex.
+     * It is assumed that the called has a MASTER_LOCK on &netIEMutex.
      */
 
     /*
@@ -317,7 +317,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     register	NetXmitElement		*xmitPtr;
 
 
-    MASTER_LOCK(netIEMutex);
+    MASTER_LOCK(&netIEMutex);
 
     net_EtherStats.packetsOutput++;
 
@@ -350,7 +350,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
         scatterGatherPtr->done = TRUE;
 
-	MASTER_UNLOCK(netIEMutex);
+	MASTER_UNLOCK(&netIEMutex);
 	return;
     }
 
@@ -360,7 +360,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     if (!netIEState.transmitting) {
 	OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength);
-	MASTER_UNLOCK(netIEMutex);
+	MASTER_UNLOCK(&netIEMutex);
 	return;
     }
 
@@ -372,7 +372,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     if (List_IsEmpty(netIEState.xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
-	MASTER_UNLOCK(netIEMutex);
+	MASTER_UNLOCK(&netIEMutex);
 	return;
     }
 
@@ -394,7 +394,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netIEState.xmitList)); 
 
-    MASTER_UNLOCK(netIEMutex);
+    MASTER_UNLOCK(&netIEMutex);
 }
 
 
@@ -420,7 +420,7 @@ NetIEXmitRestart()
     NetXmitElement	*xmitElementPtr;
 
     /*
-     * Assume that MASTER_LOCK on netIEMutex is held by caller.
+     * Assume that MASTER_LOCK on &netIEMutex is held by caller.
      */
 
     /*

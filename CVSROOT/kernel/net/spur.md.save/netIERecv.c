@@ -324,7 +324,7 @@ NetIERecvProcess(dropPackets)
      */
 
     printf("Reinit recv unit\n");
-    MASTER_LOCK(netIEMutex);
+    MASTER_LOCK(&netIEMutex);
     netIEStatePtr->recvFrDscHeadPtr->recvBufferDesc = 
 	NetIEOffsetFromSPURAddr((Address) netIEStatePtr->recvBufDscHeadPtr);
     netIEStatePtr->scbPtr->recvFrameAreaOffset =
@@ -332,5 +332,5 @@ NetIERecvProcess(dropPackets)
     NET_IE_CHECK_SCB_CMD_ACCEPT(netIEStatePtr->scbPtr);
     netIEStatePtr->scbPtr->recvUnitCmd = NET_IE_RUC_START;
     NET_IE_CHANNEL_ATTENTION;
-    MASTER_UNLOCK(netIEMutex);
+    MASTER_UNLOCK(&netIEMutex);
 }
