@@ -142,11 +142,12 @@ typedef struct {
 /*
  *  This may actually be old boot params, depending on this #define:
  *  #ifdef SAIO_COMPAT
- *  struct bootparam	**v_bootparam;
+ *  MachMonBootParam	**bootParam;
  * 			boot parameters and `old' style device access
- *  The fill int is the else part of the ifdef:
+ *  Otherwise, it's just an int-size padding.
+ *  int			pad;
  */
-    int			v_fill0;
+    MachMonBootParam	**bootParam;
 
     unsigned int	(*v_mac_address)(/* int fd; caddr_t buf */);
 					    /* Copyout ether address */
