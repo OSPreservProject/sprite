@@ -136,10 +136,17 @@ typedef struct Fsdm_SummaryInfo {
  *		disk marked 'safe'
  *	FSDM_DOMAIN_TIMES_VALID	If set then the attach/detachSeconds fields
  *		are valid.
+ *	FSDM_DOMAIN_JUST_CHECKED Set if the disk was just checked by fscheck
+ *		and doesn't need to be rechecked upon reboot.  This is only
+ *		useful for the root partition, since that is the only one
+ *		that requires a reboot.  In theory only the 
+ *		FSDM_DOMAIN_NOT_SAFE should be needed, but we don't yet
+ *		trust the filesystem to shut down cleanly.
  */
 #define	FSDM_DOMAIN_NOT_SAFE		0x1
 #define FSDM_DOMAIN_ATTACHED_CLEAN	0x2
 #define	FSDM_DOMAIN_TIMES_VALID		0x4
+#define FSDM_DOMAIN_JUST_CHECKED	0x8
 
 
 /*
