@@ -52,8 +52,6 @@ Boolean fsMigDebug = TRUE;
 typedef struct MigrateReply {
     int flags;		/* New stream flags, the FS_RMT_SHARED bit is modified*/
     int offset;		/* New stream offset */
-    int pad;		/* filler because this structure confuses RPC if too
-			   small */
 } MigrateReply;
 
 /*
@@ -412,6 +410,8 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
     register MigrateReply	*migReplyPtr;
     register FsMigParam		*migParamPtr;
     register Rpc_ReplyMem	*replyMemPtr;
+    Address    			dataPtr;
+    int				dataSize;
 
     migInfoPtr = (FsMigInfo *) storagePtr->requestParamPtr;
 
@@ -429,13 +429,28 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
     migReplyPtr->flags = migInfoPtr->flags;
     storagePtr->replyParamPtr = (Address)migParamPtr;
     storagePtr->replyParamSize = sizeof(FsMigParam);
+    storagePtr->replyDataPtr = (Address)NIL;
+    storagePtr->replyDataSize = 0;
     status = (*fsStreamOpTable[hdrPtr->fileID.type].migrate) (migInfoPtr,
 		clientID, &migReplyPtr->flags, &migReplyPtr->offset,
-		&migParamPtr->dataSize, &migParamPtr->data);
+		&dataSize, &dataPtr);
+    migParamPtr->dataSize = dataSize;
+    if (dataSize > 0) {
+	if (dataSize <= sizeof(migParamPtr->data)) {
+	    Byte_Copy(dataSize, dataPtr, (Address) &migParamPtr->data);
+	    Mem_Free(dataPtr);
+	} else {
+	    Sys_Panic(SYS_FATAL,
+		      "Fs_RpcStartMigration: migrate routine returned oversized data buffer.\n");
+	    return(FAILURE);
+	}
+    } 
+	
     FsHandleRelease(hdrPtr, FALSE);
 
     replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = (Address) NIL;
     Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
 		(ClientData)replyMemPtr);
     return(SUCCESS);
@@ -710,13 +725,17 @@ Fs_DeencapFileState(procPtr, buffer)
 	if (index != NIL) {
 	    status = Fs_DeencapStream(buffer, &fsPtr->streamList[index]);
 	    if (status != SUCCESS) {
+#ifdef notdef
 		if (status != FAILURE) {
+#endif
 		    Sys_Panic(SYS_WARNING,
       "Fs_DeencapFileState: Fs_DeencapStream for file id %d returned %x.\n",
 			      index, status);
 		    return(status);
+#ifdef notdef
 		}
 		fsPtr->streamList[index] = (Fs_Stream *) NIL;
+#endif
 	    }
 	} else {
 	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
