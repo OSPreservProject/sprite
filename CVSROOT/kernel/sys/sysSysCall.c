@@ -64,6 +64,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sysTestCall.h"
 
 extern	ReturnStatus	Sys_StatsStub();
+/*
+ * The following is a temporary replacement for the Proc_Exec system call.
+ */
+extern	ReturnStatus	Proc_ExecEnv();
 
 #ifndef CLEAN
 Boolean sysTraceSysCalls = FALSE;
@@ -249,6 +253,7 @@ static SysCallEntry sysCalls[] = {
     Proc_GetIntervalTimer,	Proc_GetIntervalTimer, 	TRUE,	2,   NILPARM,
     Proc_SetIntervalTimer,	Proc_SetIntervalTimer, 	TRUE,	3,   NILPARM,
     Fs_FileWriteBackStub,	Fs_FileWriteBackStub, TRUE, 4,  NILPARM,
+    Proc_ExecEnv,		Proc_ExecEnv,	   TRUE,	4,   NILPARM,
 };
 
 
@@ -431,7 +436,8 @@ static Sys_CallParam paramsArray[] = {
     /* local */				/* SYS_PROC_GETINTERVALTIMER	83 */
     /* local */				/* SYS_PROC_SETINTERVALTIMER	84 */
     /* local */				/* SYS_FS_WRITEBACKID		85 */
-    /*
+    /* special */			     	/* SYS_PROC_EXEC_ENV	86 */
+   /*
      * Insert new system call information above this line.
      */
     NIL,		      NIL		/* array compatibility check */
