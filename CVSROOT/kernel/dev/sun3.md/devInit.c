@@ -179,6 +179,9 @@ Dev_Config()
 	    case DEV_VME_D32A32:
 		mapItIn = TRUE;
 		break;
+	    case DEV_OBIO:
+		mapItIn = FALSE;
+		break;
 	}
 	/*
 	 * Each different Sun architecture arranges pieces of memory into
@@ -206,6 +209,9 @@ Dev_Config()
 	    case DEV_VME_D32A24:
 	    case DEV_VME_D32A32:
 		memoryType = 3;
+		break;
+	    case DEV_OBIO:
+		memoryType = 1;
 		break;
 	}
 	if (mapItIn) {
