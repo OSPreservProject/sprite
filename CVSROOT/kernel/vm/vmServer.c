@@ -82,6 +82,18 @@ VmSwapFileRemove(swapStreamPtr, swapFileName)
 	if (status != SUCCESS) {
 	    printf("Warning: VmSwapFileRemove: Fs_Remove(%s) returned %x.\n",
 		      swapFileName, status);
+	    if (status == FS_FILE_NOT_FOUND &&
+		vmSwapStreamPtr != (Fs_Stream *) NIL) {
+		/*
+		 * This can happen if the swap file itself is removed,
+		 * or if the directory gets changed.  Reopen the directory
+		 * to make sure.
+		 */
+		(void) Fs_Close(vmSwapStreamPtr);
+		vmSwapStreamPtr = (Fs_Stream *) NIL;
+		printf("Reopening swap directory.\n");
+		Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, 0);
+	    }
 	}
 	free(swapFileName);
     }
@@ -283,9 +295,9 @@ VmOpenSwapFile(segPtr)
 	segPtr->swapFileName = (char *) malloc(strlen(fileName) + 1);
 	(void) strcpy(segPtr->swapFileName, fileName);
     }
-#ifdef DEBUG
+#ifdef SWAP_FILE_DEBUG
     printf("Opening swap file %s.\n", segPtr->swapFileName);
-#endif DEBUG
+#endif /* SWAP_FILE_DEBUG */
     procPtr = Proc_GetEffectiveProc();
     if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
 	origID = procPtr->effectiveUserID;
