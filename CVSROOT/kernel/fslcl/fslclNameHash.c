@@ -451,6 +451,9 @@ FslclNameHashStats()
     FslclHashEntry 	*hashEntryPtr;
     List_Links	*hashList;
 
+    if (table == (FslclHashTable *)NULL || table = (FslclHashTable *)NIL) {
+	return;
+    }
     for (i=0; i<10; i++) {
 	count[i] = 0;
     }
