@@ -55,7 +55,8 @@ static List_Links eventChainHeaders[PROC_HASHBUCKETS];
  * and to record how many processes were woken up.
  */
 
-Sync_Instrument sync_Instrument;
+Sync_Instrument sync_Instrument[MACH_MAX_NUM_PROCESSORS];
+Sync_Instrument *sync_InstrumentPtr[MACH_MAX_NUM_PROCESSORS];
 
 /*
  * Statistics related to remote waiting.
@@ -92,7 +93,10 @@ Sync_Init()
     for (i=0 ; i<PROC_HASHBUCKETS ; i++) {
 	List_Init(&eventChainHeaders[i]);
     }
-    bzero((Address) &sync_Instrument,sizeof(sync_Instrument));
+    bzero((Address) &sync_Instrument, sizeof(sync_Instrument));
+    for (i=0; i < MACH_MAX_NUM_PROCESSORS; i++) {
+	sync_InstrumentPtr[i] = &sync_Instrument[i];
+    }
 }
 
 
@@ -326,20 +330,48 @@ Sync_SlowMasterWait(event, mutexPtr, wakeIfSignal)
 {
     Boolean	sigPending;
 
+#ifdef sun4
+    Proc_ControlBlock	*curProcPtr;
+
+    curProcPtr = Proc_GetCurrentProc();
+    MACH_DEBUG_ADD(0x88888888);
+    MACH_DEBUG_ADD(curProcPtr);
+    MACH_DEBUG_ADD(mutexPtr);
+#endif
     MASTER_LOCK(sched_MutexPtr);
 
     /*
      * release the master lock and wait on the condition
      */
     MASTER_UNLOCK(mutexPtr);
+#ifdef sun4
+    MACH_DEBUG_ADD(curProcPtr);
+    MACH_DEBUG_ADD(mutexPtr);
+#endif
 
     sigPending = SyncEventWaitInt(event, wakeIfSignal);
+#ifdef sun4
+    MACH_DEBUG_ADD(0x61616161);
+    MACH_DEBUG_ADD(curProcPtr);
+    MACH_DEBUG_ADD(mutexPtr);
+    MACH_DEBUG_ADD(0x66666666);
+#endif
 
     MASTER_UNLOCK(sched_MutexPtr);
+#ifdef sun4
+    MACH_DEBUG_ADD(0x77777777);
+    MACH_DEBUG_ADD(curProcPtr);
+    MACH_DEBUG_ADD(mutexPtr);
+#endif
     /*
      * re-acquire master lock before proceeding
      */
     MASTER_LOCK(mutexPtr);
+#ifdef sun4
+    MACH_DEBUG_ADD(curProcPtr);
+    MACH_DEBUG_ADD(mutexPtr);
+    MACH_DEBUG_ADD(0x99999999);
+#endif
 
     return(sigPending);
 }
@@ -412,12 +444,14 @@ SyncEventWakeupInt(event)
     register	Proc_PCBLink 		*hashChainItemPtr;
     register	List_Links 		*chainHeader;
     register	List_Links		*itemPtr;
+    int		pnum;
 
     if (!sched_MutexPtr->value) {
 	panic("SyncEventWakeupInt: master lock not held.\n");
     }
+    pnum = Mach_GetProcessorNumber();
     
-    sync_Instrument.numWakeupCalls++;
+    sync_Instrument[pnum].numWakeupCalls++;
     chainHeader = &eventChainHeaders[event % PROC_HASHBUCKETS];
 
     itemPtr = List_First(chainHeader);
@@ -449,7 +483,7 @@ SyncEventWakeupInt(event)
 
 	}
 
-	sync_Instrument.numWakeups++;
+	sync_Instrument[pnum].numWakeups++;
 	List_Remove((List_Links *) hashChainItemPtr);
 	procPtr->event = NIL;
 	if (procPtr->state == PROC_WAITING) {

@@ -34,11 +34,33 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void
 Sync_PrintStat()
 {
+    int 	i;
+    int		total;
+
     printf("Sync Statistics\n");
-    printf("numWakeups = %d ", sync_Instrument.numWakeups);
-    printf("numWakeupCalls = %d ", sync_Instrument.numWakeupCalls);
-    printf("numSpuriousWakeups = %d ", sync_Instrument.numSpuriousWakeups);
-    printf("numLocks = %d ", sync_Instrument.numLocks);
-    printf("numUnlocks = %d ", sync_Instrument.numUnlocks);
-    printf("\n");
+    total = 0;
+    for (i = 0; i < mach_NumProcessors; i++) {
+	total += sync_Instrument[i].numWakeups;
+    }
+    printf("numWakeups = %d\n", total);
+    total = 0;
+    for (i = 0; i < mach_NumProcessors; i++) {
+	total += sync_Instrument[i].numWakeupCalls;
+    }
+    printf("numWakeupCalls = %d\n", total);
+    total = 0;
+    for (i = 0; i < mach_NumProcessors; i++) {
+	total += sync_Instrument[i].numSpuriousWakeups;
+    }
+    printf("numSpuriousWakeups = %d\n", total);
+    total = 0;
+    for (i = 0; i < mach_NumProcessors; i++) {
+	total += sync_Instrument[i].numLocks;
+    }
+    printf("numLocks = %d\n", total);
+    total = 0;
+    for (i = 0; i < mach_NumProcessors; i++) {
+	total += sync_Instrument[i].numUnlocks;
+    }
+    printf("numUnlocks = %d\n", total);
 }

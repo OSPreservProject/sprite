@@ -154,9 +154,11 @@ WaitTimeSubr(wakeupTime)
     Boolean 		wokeUp = FALSE;
     Timer_Ticks		currentTime;		
     Boolean		sigPending;
+    int			pnum;
 
     
     procPtr = Proc_GetCurrentProc();
+    pnum = Mach_GetProcessorNumber();
     wakeupElement.routine    = Sync_WakeupProcess; 
     wakeupElement.clientData = (ClientData) procPtr;
     wakeupElement.time       = wakeupTime;
@@ -177,7 +179,7 @@ WaitTimeSubr(wakeupTime)
 
     do {
 	if (wokeUp) {
-	    sync_Instrument.numSpuriousWakeups++;
+	    sync_Instrument[pnum].numSpuriousWakeups++;
 #ifdef DEBUG
 	    printf("Sync_WaitTime: woke up for wrong reason.\n");
 #endif /* DEBUG */

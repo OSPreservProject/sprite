@@ -31,12 +31,16 @@ Sync_Semaphore *regMutexPtr = &regMutex;
 /*
  * Number of types registered.
  */
+#ifndef lint
 static 	int	syncTypeCount = 0;
+#endif
 
 /*
  * Information on each type of lock registered.
  */
+#ifndef lint
 static  Sync_RegElement		regInfo[SYNC_MAX_LOCK_TYPES];
+#endif
 static 	Boolean	initialized = FALSE;
 
 /*
@@ -258,7 +262,7 @@ SyncMergePriorInt(priorCount, priorTypes, regPtr)
  *----------------------------------------------------------------------
  */
 
-#ifdef LOCKREG
+#ifndef LOCKREG
 /* ARGSUSED */
 #endif
 
@@ -315,7 +319,7 @@ Sync_RegisterInt(lock)
 	syncTypeCount++;
     }
     lockQueuePtr = (List_Links *) &(regPtr->activeLocks);
-    if (listInfoPtr == lockQueuePtr->prevPtr) {
+    if (listInfoPtr == (Sync_ListInfo *) lockQueuePtr->prevPtr) {
 	panic("Trying to reregister a lock.\n");
     }
     regPtr->class = ((Sync_Lock *) lock)->class;
@@ -350,7 +354,7 @@ exit:
  *----------------------------------------------------------------------
  */
 
-#ifdef LOCKREG
+#ifndef LOCKREG
 /*ARGSUSED*/
 #endif
 
@@ -405,6 +409,10 @@ exit:
  *----------------------------------------------------------------------
  */
 
+#ifndef LOCKREG
+/*ARGSUSED*/
+#endif
+
 ReturnStatus
 Sync_GetLockStats(size, argPtr)
     int	 	size;
@@ -412,6 +420,7 @@ Sync_GetLockStats(size, argPtr)
 
 {
 
+#ifdef LOCKREG
     List_Links		*lockQueuePtr;
     List_Links		*itemPtr;
     Sync_RegElement	*regPtr;
@@ -422,17 +431,14 @@ Sync_GetLockStats(size, argPtr)
     int			index;
     ReturnStatus	status;
 
-#ifdef LOCKREG
-    MASTER_LOCK(regMutexPtr);
     if (size <= 0) {
-	status = SUCCESS;
-	goto exit;
+	return SUCCESS;
     }
     if (size < syncTypeCount) {
-	status = FAILURE;
-	goto exit;
+	return FAILURE;
     }
     statArray = (Sync_LockStat *) malloc(size * sizeof(Sync_LockStat));
+    MASTER_LOCK(regMutexPtr);
     bzero((char *) statArray, size * sizeof(Sync_LockStat));
     for (i = 0; i < syncTypeCount; i++) {
 	regPtr = &regInfo[i];
@@ -454,13 +460,14 @@ Sync_GetLockStats(size, argPtr)
 	for (j = 0; j < tempReg.priorCount; j++) {
 	    statArray[index].priorTypes[j] = tempReg.priorTypes[j];
 	}
+	for (j = 0; j < mach_NumProcessors; j++) {
+	    statArray[index].spinCount += sync_Instrument[j].spinCount[index+1];
+	}
     }
     Vm_CopyOut(sizeof(Sync_LockStat) * size, (Address)statArray, argPtr);
     free((Address) statArray);
-    status = SUCCESS;
-exit:
     MASTER_UNLOCK(regMutexPtr);
-    return (status);
+    return (SUCCESS);
 #else  /* LOCKREG */
     return (FAILURE);
 #endif /* LOCKREG */
@@ -488,6 +495,7 @@ Sync_ResetLockStats()
 {
 #ifdef LOCKREG
     int 		i;
+    int			j;
     List_Links		*lockQueuePtr;
     List_Links		*itemPtr;
     Sync_RegElement	*regPtr;
@@ -506,6 +514,11 @@ Sync_ResetLockStats()
 	regPtr->hit = 0;
 	regPtr->miss = 0;
 	regPtr->priorCount = 0;
+    }
+    for (i = 0; i < mach_NumProcessors; i++) {
+	for (j = 0; j < syncTypeCount+1; j++) {
+	    sync_Instrument[i].spinCount[j] = 0;
+	}
     }
     MASTER_UNLOCK(regMutexPtr);
     return SUCCESS;

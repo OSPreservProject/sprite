@@ -26,7 +26,9 @@
  *			 and misses on each lock is kept. Lock registration
  *			 must be done when the lock is created and destroyed.
  *			 The locking operation is slower due to the hit/miss
- *			 counters.
+ *			 counters.  A count is kept for each spin lock that
+ *			 records the number of times a processor spun waiting
+ *			 for the lock.
  *
  *	    LOCKDEP    - Each lock keeps a list of locks that were held when
  *			 it was locked in addition to the information kept
@@ -102,6 +104,8 @@ typedef struct Sync_Instrument {
     int numSpuriousWakeups;	/* number of incorrectly awakened sleeps */
     int numLocks;		/* number of calls to MASTER_LOCK */
     int numUnlocks;		/* number of calls to MASTER_UNLOCK */
+    int spinCount[SYNC_MAX_LOCK_TYPES+1]; /* spin count per lock type */
+    char pad[VMMACH_CACHE_LINE_SIZE];
 } Sync_Instrument;
 
 /*
@@ -144,7 +148,8 @@ typedef struct {
  * Exported procedures and variables of the sync module.
  */
     
-extern Sync_Instrument 	sync_Instrument;
+extern Sync_Instrument 	sync_Instrument[MACH_MAX_NUM_PROCESSORS];
+extern Sync_Instrument	*sync_InstrumentPtr[MACH_MAX_NUM_PROCESSORS];
 extern int sync_BusyWaits;
 
 extern 	void 		Sync_Init();
@@ -226,7 +231,7 @@ extern Sync_RegElement  *regQueuePtr;
 
 #define MASTER_LOCK(semaphore) \
     { \
-        sync_Instrument.numLocks++; \
+        sync_Instrument[Mach_GetProcessorNumber()].numLocks++; \
 	DISABLE_INTR(); \
 	if ((semaphore)->value == 1) { \
 	    SyncDeadlockPanic((semaphore)); \
@@ -245,7 +250,9 @@ extern Sync_RegElement  *regQueuePtr;
 #define MASTER_LOCK(semaphore) \
     { \
 	int missFlag = 0;\
-        sync_Instrument.numLocks++; \
+	int pnum = Mach_GetProcessorNumber();\
+	int type = ((semaphore)->type > 0) ? (semaphore)->type : 0;\
+        sync_InstrumentPtr[pnum]->numLocks++; \
 	DISABLE_INTR(); \
 	for(;;) { \
 	    /* \
@@ -256,12 +263,14 @@ extern Sync_RegElement  *regQueuePtr;
 		if (missFlag == 0) { \
 		    missFlag = 1; \
 		} \
+		sync_InstrumentPtr[pnum]->spinCount[type]++;\
 	    } \
 	    if(Mach_TestAndSet(&((semaphore)->value)) == 0) { \
 		break; \
 	    } else if (missFlag == 0) { \
 		missFlag = 1; \
 	    } \
+	    sync_InstrumentPtr[pnum]->spinCount[type]++;\
 	} \
 	if(missFlag == 1) { \
 	    SyncRecordMiss(semaphore); \
@@ -275,7 +284,7 @@ extern Sync_RegElement  *regQueuePtr;
 
 #define MASTER_LOCK(semaphore) \
     { \
-        sync_Instrument.numLocks++; \
+        sync_InstrumentPtr[Mach_GetProcessorNumber()]->numLocks++; \
 	DISABLE_INTR(); \
 	for(;;) { \
 	    /* \
@@ -316,12 +325,13 @@ extern Sync_RegElement  *regQueuePtr;
 
 #define MASTER_UNLOCK(semaphore) \
     { \
-        sync_Instrument.numUnlocks++; \
+	int pnum = Mach_GetProcessorNumber();\
+        sync_InstrumentPtr[pnum]->numUnlocks++; \
 	(semaphore)->value = 0; \
 	SyncDeleteCurrent(semaphore); \
 	if (!Mach_AtInterruptLevel()) { \
-	    --mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]; \
-	    if (mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()] == 0) { \
+	    --mach_NumDisableIntrsPtr[pnum]; \
+	    if (mach_NumDisableIntrsPtr[pnum] == 0) { \
 		Mach_EnableIntr(); \
 	    } \
 	} \
