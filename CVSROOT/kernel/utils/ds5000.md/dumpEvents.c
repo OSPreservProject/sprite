@@ -13,8 +13,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
-#include "devKeyboard.h"
-#include "devConsole.h"
 #include "dumpInt.h"
 
 
@@ -68,4 +66,3 @@ void
 Dump_Show_Local_Menu()
 {
 }
-
