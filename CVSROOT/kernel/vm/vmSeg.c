@@ -1359,7 +1359,7 @@ AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
 	     * Make sure that the heap segment isn't too big.  If it is then 
 	     * abort.
 	     */
-	    otherSegPtr = proc_RunningProcesses[Mach_GetProcessorNumber()]->vmPtr->segPtrArray[VM_HEAP];
+	    otherSegPtr = Proc_GetCurrentProc()->vmPtr->segPtrArray[VM_HEAP];
 	    if (otherSegPtr->offset + otherSegPtr->ptSize >= 
 		mach_LastUserStackPage - newSpace.ptSize + 1) {
 		UNLOCK_MONITOR;
