@@ -758,9 +758,14 @@ FsPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     /*
      * The pseudo-filesystem server has given us all the attributes.  There
      * is no reason to do a getIOAttr so we inhibit that with a special
-     * ioFileID type.
+     * ioFileID type.  However, because FsDomainInfo calls this routine
+     * to fill in the file ID for the user-visible prefix table entry
+     * we set up the rest of the fields to match the return of a stat() call.
      */
     getAttrResultsPtr->fileIDPtr->type = -1;
+    getAttrResultsPtr->fileIDPtr->serverID = getAttrResultsPtr->attrPtr->serverID;
+    getAttrResultsPtr->fileIDPtr->major = getAttrResultsPtr->attrPtr->domain;
+    getAttrResultsPtr->fileIDPtr->minor = getAttrResultsPtr->attrPtr->fileNumber;
     return(status);
 }
 

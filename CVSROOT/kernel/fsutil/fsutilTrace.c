@@ -561,7 +561,6 @@ FsDomainInfo(fileIDPtr, domainInfoPtr)
 	     */
 	    FsOpenArgs openArgs;
 	    FsGetAttrResults getAttrResults;
-	    Fs_FileID ioFileID;
 	    FsRedirectInfo *redirectPtr;
 	    register FsHandleHeader *hdrPtr;
 
@@ -590,10 +589,7 @@ FsDomainInfo(fileIDPtr, domainInfoPtr)
 		status = FsRemoteGetAttrPath(hdrPtr, ".", &openArgs,
 			    &getAttrResults, &redirectPtr);
 	    }
-	    if (status == SUCCESS) {
-		fileIDPtr->major = attr.domain;
-		fileIDPtr->minor = attr.fileNumber;
-	    } else if (status == FS_LOOKUP_REDIRECT) {
+	    if (status == FS_LOOKUP_REDIRECT) {
 		free(redirectPtr);
 	    }
 	    break;
