@@ -539,6 +539,7 @@ FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
     register Fspdev_ClientIOHandle *cltHandlePtr =
 	    (Fspdev_ClientIOHandle *)streamPtr->ioHandlePtr;
     Boolean cache = FALSE;
+    Vm_Segment *segPtr = cltHandlePtr->segPtr;
 
     DBG_PRINT( ("Client closing pdev %x,%x\n", 
 		cltHandlePtr->hdr.fileID.major,
@@ -565,12 +566,76 @@ FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
 	 * Note we unlock the client handle before the request response
 	 * in case the server process is buggy and hangs us.
 	 */
+	if ((segPtr != (struct Vm_Segment *)NIL) &&
+	    (segPtr->type == VM_CODE)) {
+	    Vm_FileChanged(&segPtr);
+	}
 	Fsutil_HandleUnlock(cltHandlePtr);
 	FspdevPseudoStreamCloseInt(cltHandlePtr->pdevHandlePtr);
 	Fsutil_HandleRelease(cltHandlePtr->pdevHandlePtr, FALSE);
 	Fsutil_HandleRelease(cltHandlePtr, FALSE);
 	Fsutil_HandleRemove(cltHandlePtr);
     }
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevRmtPseudoStreamClose --
+ *
+ *	Close a pseudo stream that's been used by a client to talk to a server.
+ *	This issues a close message to the server and then tears down the
+ *	state used to implement the pseudo stream connection.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Other than the request-response to the server, this releases the
+ *	pseudo stream's reference to the handle.  This may also have
+ *	to contact a remote host to clean up references there, too.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+#ifndef SOSP91
+ReturnStatus
+FspdevRmtPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
+#else
+ReturnStatus
+FspdevRmtPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
+    offsetPtr, rwFlagsPtr)
+#endif
+    Fs_Stream		*streamPtr;	/* Client pseudo-stream to close */
+    int			clientID;	/* HostID of client closing */
+    Proc_PID		procID;		/* ID of closing process, IGNORED */
+    int			flags;		/* IGNORED */
+    int			size;		/* Should be zero */
+    ClientData		data;		/* IGNORED */
+#ifdef SOSP91
+    int			*offsetPtr;
+    int			*rwFlagsPtr;
+#endif
+{
+    register Fspdev_ClientIOHandle *cltHandlePtr =
+	    (Fspdev_ClientIOHandle *)streamPtr->ioHandlePtr;
+    Vm_Segment *segPtr = cltHandlePtr->segPtr;
+
+    DBG_PRINT( ("Client closing rmt pdev %x,%x\n", 
+		cltHandlePtr->hdr.fileID.major,
+		cltHandlePtr->hdr.fileID.minor) );
+
+    if ((segPtr != (struct Vm_Segment *)NIL) &&
+	(segPtr->type == VM_CODE)) {
+	Vm_FileChanged(&segPtr);
+    }
+#ifndef SOSP91
+    Fsrmt_IOClose(streamPtr, clientID, procID, flags, size, data);
+#else
+    Fsrmt_IOClose(streamPtr, clientID, procID, flags, size, data, offsetPtr, rwflagsPtr);
+#endif
+    
     return(SUCCESS);
 }
 

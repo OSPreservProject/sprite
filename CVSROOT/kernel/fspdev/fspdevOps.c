@@ -124,7 +124,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
 		FspdevRmtPseudoStreamMigrate,
 		Fsio_NoProc,				/* reopen */
 		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill,
-		Fsrmt_IOClose },
+		FspdevRmtPseudoStreamClose },
     /*
      * A control stream used to mark the existence of a pseudo-filesystem.
      * The server doesn't do I/O to this stream; it is only used at
@@ -195,7 +195,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
 		FspdevRmtPseudoStreamMigrate,
 		Fsio_NoProc,					/* reopen */
 		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill,
-		Fsrmt_IOClose },
+		FspdevRmtPseudoStreamClose },
     /*
      * This stream type is only used during get/set I/O attributes when
      * the pseudo-device server is remote.  No handles of this type are

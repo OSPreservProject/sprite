@@ -334,6 +334,15 @@ extern Fs_HandleHeader *FspdevRmtPseudoStreamVerify _ARGS_((
 extern ReturnStatus FspdevRmtPseudoStreamMigrate _ARGS_((
 		Fsio_MigInfo *migInfoPtr, int dstClientID, int *flagsPtr,
 		int *offsetPtr, int *sizePtr, Address *dataPtr));
+#ifdef SOSP91
+extern ReturnStatus FspdevRmtPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
+		int clientID, Proc_PID procID, int flags, int size,
+		ClientData data, int *offsetPtr, int *rwFlagsPtr));
+#else
+extern ReturnStatus FspdevRmtPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
+		int clientID, Proc_PID procID, int flags, int size,
+		ClientData data));
+#endif
 /*
  * Local and remote pseudo-device streams to pseudo-file-systems
  */
