@@ -328,6 +328,28 @@ Ofs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
      */
     summaryInfoPtr->domainNumber = domainPtr->domainNumber;
     *domainNumPtr = domainPtr->domainNumber;
+
+    /*
+     * Finally mark the domain to indicate that if we go down hard,
+     * clean recovery of this domain is impossible.
+     */
+    if ((summaryInfoPtr->flags & OFS_DOMAIN_NOT_SAFE) == 0) {
+	summaryInfoPtr->flags |= OFS_DOMAIN_ATTACHED_CLEAN;
+    } else {
+	summaryInfoPtr->flags &= ~OFS_DOMAIN_ATTACHED_CLEAN;
+    }
+    summaryInfoPtr->flags |= OFS_DOMAIN_NOT_SAFE |
+					OFS_DOMAIN_TIMES_VALID;
+    if (!(flags & FS_DEFAULT_DOMAIN)) {
+	summaryInfoPtr->flags &= ~OFS_DOMAIN_JUST_CHECKED;
+    }
+    summaryInfoPtr->attachSeconds = Fsutil_TimeInSeconds();
+    if ((flags & FS_ATTACH_READ_ONLY) == 0) {
+	status = OfsWriteBackSummaryInfo(ofsPtr);
+	if (status != SUCCESS) {
+	    panic( "Ofs_AttachDisk: Summary write failed, status %x\n", status);
+	}
+    } 
     return status;
 
 }
