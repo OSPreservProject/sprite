@@ -152,8 +152,12 @@ typedef struct {
 			     	   	   to this host, running elsewhere */
     int			exports;	/* Number of times we have exported
 			     		   processes */
+    int			execs;		/* Number of times these were remote
+			     	   	   execs */
     int			imports;	/* Number of times we have imported
 			     	   	   processes */
+    int			errors;		/* Number of times migration has
+					   failed */
     int			evictions;	/* Number of times we have evicted
 				     	   processes from this host */
     int			returns;	/* Number of times we have had our own

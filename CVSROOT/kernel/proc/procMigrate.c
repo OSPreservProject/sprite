@@ -98,9 +98,8 @@ static ENTRY void   WakeupCallers();
 /*
  * Procedures for statistics gathering
  */
-#ifndef CLEAN
 static ENTRY void   AddMigrateTime();
-#endif /* CLEAN */
+static ENTRY void   AccessStats();
 
 #ifdef DEBUG
 int proc_MemDebug = 0;
@@ -351,7 +350,7 @@ Proc_Migrate(pid, hostID)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_BEGIN_MIG,
 		     (ClientData) &record);
     }
-#endif /* CLEAN */   
+#endif /* CLEAN */
    
     /*
      * Contact the remote workstation to establish communication and
@@ -363,15 +362,12 @@ Proc_Migrate(pid, hostID)
 
     if (status != SUCCESS) {
 	Proc_Unlock(procPtr);
+#ifndef CLEAN
+	proc_MigStats.errors++;
+#endif /* CLEAN */
 	return(status);
     }
 
-#ifndef CLEAN
-    if (proc_MigDoStats) {
-	proc_MigStats.hostCounts[hostID]++;
-	proc_MigStats.exports++;
-    }
-#endif /* CLEAN */
     
     Proc_FlagMigration(procPtr, hostID, FALSE);
 
@@ -444,7 +440,7 @@ Proc_MigrateTrap(procPtr)
 #endif /* CLEAN */
     int maxSize;
     int whenNeeded;
-
+    Boolean exec;
 
     Proc_Lock(procPtr);
 
@@ -453,8 +449,10 @@ Proc_MigrateTrap(procPtr)
     }
     if (procPtr->genFlags & PROC_REMOTE_EXEC_PENDING) {
 	whenNeeded = MIG_ENCAP_EXEC;
+	exec = TRUE;
     } else {
 	whenNeeded = MIG_ENCAP_MIGRATE;
+	exec = FALSE;
     }
 #ifndef CLEAN
     if (proc_MigDoStats) {
@@ -589,6 +587,9 @@ Proc_MigrateTrap(procPtr)
 	cmd.remotePid = procPtr->peerProcessID;
 	inBuf.size = bufSize;
 	inBuf.ptr = buffer;
+#ifndef CLEAN
+	proc_MigStats.rpcKbytes += (bufSize + 1023) / 1024;
+#endif /* CLEAN */
 
 	if (proc_MigDebugLevel > 5) {
 	    printf("Sending encapsulated state.\n");
@@ -687,7 +688,7 @@ Proc_MigrateTrap(procPtr)
 #ifndef CLEAN
     if (proc_MigDoStats) {
 	Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
-	Time_Subtract(startTime, endTime, &timeDiff);
+	Time_Subtract(endTime, startTime, &timeDiff);
 	if (foreign) {
 	    timePtr = &proc_MigStats.timeToEvict;
 	} else if (whenNeeded == MIG_ENCAP_MIGRATE) {
@@ -707,8 +708,24 @@ Proc_MigrateTrap(procPtr)
 #endif /* CLEAN */   
    
     if (foreign) {
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    proc_MigStats.foreign--;
+	    proc_MigStats.evictions++;
+	}
+#endif /* CLEAN */
 	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
     } else {
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    proc_MigStats.remote++;
+	    proc_MigStats.exports++;
+	    if (exec) {
+		proc_MigStats.execs++;
+	    }
+	    proc_MigStats.hostCounts[hostID]++;
+	}
+#endif /* CLEAN */
 	Sched_ContextSwitch(PROC_MIGRATED);
     }
     panic("Proc_MigrateTrap: returned from context switch.\n");
@@ -726,7 +743,9 @@ Proc_MigrateTrap(procPtr)
 		     (ClientData) &record);
     }
     Sig_SendProc(procPtr, SIG_KILL, (int) status);
-
+#ifndef CLEAN
+    proc_MigStats.errors++;
+#endif /* CLEAN */
 }
 
 /*
@@ -764,6 +783,18 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
 
     Proc_Lock(procPtr);
 
+    /*
+     * Update statistics.
+     */
+#ifndef CLEAN
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	proc_MigStats.foreign++;
+	proc_MigStats.imports++;
+    } else {
+	proc_MigStats.returns++;
+	proc_MigStats.remote--;
+    }
+#endif /* CLEAN */   
     /*
      * Go through the list of callbacks to generate the size of the buffer
      * we'll need.  In unusual circumstances, a caller may return a status
@@ -1511,7 +1542,6 @@ Proc_WaitForMigration(processID)
 }
 
 
-#ifndef CLEAN
 /*
  *----------------------------------------------------------------------
  *
@@ -1540,7 +1570,97 @@ AddMigrateTime(time, totalPtr)
 
     UNLOCK_MONITOR;
 }
-#endif /* CLEAN */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AccessStats --
+ *
+ *	Access the migration statistics structure atomically.  Individual
+ *	fields may be incremented or decremented outside the lock, but
+ *	looking at the whole structure synchronizes with actions that
+ *	operate on double words, as does resetting it to 0.
+ *
+ *	If copyPtr is NIL, then reset the stats, else copy them.
+ *
+ * Results:
+ *	If requested, a copy of the statistics structure is returned to
+ *	the caller.
+ *
+ * Side effects:
+ *	If requested, the statistics structure is zeroed.
+ *
+ *----------------------------------------------------------------------
+ */
+static ENTRY void
+AccessStats(copyPtr)
+    Proc_MigStats *copyPtr;  /* pointer to area to copy stats into, or NIL */
+{	
+
+    LOCK_MONITOR;
+
+    if (copyPtr != (Proc_MigStats *) NIL) {
+	bcopy((Address) &proc_MigStats, (Address) copyPtr,
+	      sizeof(Proc_MigStats));
+    } else {
+	bzero((Address) &proc_MigStats, sizeof(Proc_MigStats));
+    }
+	
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_MigGetStats --
+ *
+ *	Return migration statistics to the user.
+ *
+ * Results:
+ *	SUCCESS, unless there's a problem copying to user space.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Proc_MigGetStats(addr)
+    Address addr;
+{
+    Proc_MigStats copy;
+    ReturnStatus status;
+
+    AccessStats(&copy);
+
+    status = Vm_CopyOut(sizeof(Proc_MigStats),
+			(Address)&copy,
+			addr);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_MigResetStats --
+ *
+ *	Zero the migration statistics structure.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Proc_MigResetStats()
+{
+
+    AccessStats((Proc_MigStats *) NIL);
+    return(SUCCESS);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1687,6 +1807,13 @@ Proc_DestroyMigratedProc(pidData)
 	ProcExitProcess(procPtr, PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0,
 			FALSE);
 	Proc_RemoveMigDependency(pid);
+	/*
+	 * Update statistics.
+	 */
+#ifndef CLEAN
+	proc_MigStats.remote--;
+#endif /* CLEAN */   
+
     } else {
 	/*
 	 * Let it get killed the normal way, and let the exit routines

@@ -590,6 +590,8 @@ extern void			Proc_MakeUnaccessible();
 extern void			Proc_MigrateStartTracing();
 extern void			Proc_DestroyMigratedProc();
 extern void			Proc_NeverMigrate();
+extern ReturnStatus		Proc_MigGetStats();
+extern ReturnStatus		Proc_MigZeroStats();
 
 extern void			ProcInitMainEnviron();
 extern void			ProcSetupEnviron();

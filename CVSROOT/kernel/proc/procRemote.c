@@ -898,6 +898,13 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
      */
     Proc_AddMigDependency(childProcPtr->processID, childProcPtr->peerHostID);
 
+    /*
+     * Update statistics.
+     */
+#ifndef CLEAN
+    proc_MigStats.foreign++;
+#endif /* CLEAN */   
+
     if (proc_MigDebugLevel > 3) {
 	printf("ProcRemoteFork returning status %x.\n", status);
     }
@@ -947,6 +954,13 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
      * Remove the dependency on the other host.
      */
     Proc_RemoveMigDependency(procPtr->processID);
+    /*
+     * Update statistics.
+     */
+#ifndef CLEAN
+    proc_MigStats.foreign--;
+#endif /* CLEAN */   
+
 
     status = Recov_IsHostDown(procPtr->peerHostID);
     if (status != SUCCESS) {

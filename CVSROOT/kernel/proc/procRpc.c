@@ -256,8 +256,7 @@ RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
      */
     procPtr = Proc_LockPID(callPtr->processID);
     if (procPtr == (Proc_ControlBlock *) NIL
-	|| ( ((procPtr->state != PROC_MIGRATED) &&
-	      !(procPtr->genFlags & PROC_MIGRATION_DONE)) &&
+	|| ((procPtr->state != PROC_MIGRATED) &&
 	    !((procPtr->state == PROC_NEW) &&
 	      (callPtr->callNumber == SYS_PROC_EXIT)))) {
  	printf("Warning: Proc_RpcRemoteCall: invalid pid: %x.\n",
@@ -429,6 +428,13 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
      * Remove the dependency on the other host.
      */
     Proc_RemoveMigDependency(pid);
+
+    /*
+     * Update statistics.
+     */
+#ifndef CLEAN
+    proc_MigStats.remote--;
+#endif /* CLEAN */   
 
     if (proc_MigDebugLevel > 4) {
 	printf("RpcProcExit returning SUCCESS.\n");
@@ -610,6 +616,13 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
      * Note the dependency of the new process on the other host.
      */
     Proc_AddMigDependency(childProcPtr->processID, childProcPtr->peerHostID);
+
+    /*
+     * Update statistics.
+     */
+#ifndef CLEAN
+    proc_MigStats.remote++;
+#endif /* CLEAN */   
 
     /*
      * Send back the child's process ID in the replyData buffer.
