@@ -73,6 +73,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 extern	ReturnStatus	SysMigCall();
 extern	ReturnStatus	Sys_StatsStub();
 
+extern	ReturnStatus	Vm_Mmap(), Vm_Munmap();
+
 #define TMP_EXTERN
 #ifdef TMP_EXTERN
 extern	int Proc_RemoteExec();
@@ -279,6 +281,8 @@ static SysCallEntry sysCalls[] = {
     Prof_Profil,                Prof_Profil,            TRUE,   4,   NILPARM,
     Proc_RemoteExec,		Proc_RemoteExec,   TRUE,	4,   NILPARM,
     Sys_GetMachineInfoNew,	Sys_GetMachineInfoNew,   TRUE,	2,   NILPARM,
+    Vm_Mmap,			Vm_Mmap,		TRUE,	7,   NILPARM,
+    Vm_Munmap,			Vm_Munmap,		TRUE,	3,   NILPARM,
 };
 
 
