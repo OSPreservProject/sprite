@@ -40,7 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "vm.h"
 
-static Sync_Condition	debugListCondition;	/* Condition to sleep on when
+Sync_Condition	debugListCondition;	/* Condition to sleep on when
 						 * waiting for a process to go
 						 * onto the debug list. */
 static Sync_Lock debugLock; 			/* Monitor lock. */
