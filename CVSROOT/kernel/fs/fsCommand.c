@@ -353,7 +353,9 @@ Fs_Command(command, bufSize, buffer)
 	    SWAP_TO_BUFFER(ofs_AllocGap, buffer);
 	    break;
 	}
-
+	case FS_DO_L1_COMMAND:
+	    Dev_InvokeConsoleCmd(*(int *)buffer);
+	    break;
 	default:
 	    if ((command >= FS_FIRST_LFS_COMMAND) &&
 	        (command <= FS_LAST_LFS_COMMAND)) {
