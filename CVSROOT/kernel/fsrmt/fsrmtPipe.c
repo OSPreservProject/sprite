@@ -43,6 +43,59 @@ static	Sync_Lock	pipeLock = Sync_LockInitStatic("Fs:pipeLock");
 void GetFileID();
 FsPipeIOHandle *FsPipeHandleInit();
 
+/*
+ * Migration debugging.
+ */
+#ifdef MIG_DEBUG
+
+#define PIPE_CREATED(inStreamPtr, outStreamPtr) \
+    { \
+	printf("Create Pipe: Srvr %d Read <%d> Write <%d> I/O %d <%d,%d>\n", \
+		(inStreamPtr)->hdr.fileID.serverID, \
+		(inStreamPtr)->hdr.fileID.minor, \
+		(outStreamPtr)->hdr.fileID.minor, \
+		(inStreamPtr)->ioHandlePtr->fileID.serverID, \
+		(inStreamPtr)->ioHandlePtr->fileID.major, \
+		(inStreamPtr)->ioHandlePtr->fileID.minor); \
+    }
+
+#define PIPE_CLOSE(streamPtr, handlePtr) \
+	printf("Pipe Close: Stream %s <%d> I/O <%d,%d> ref %d write %d flags %x\n", \
+		((streamPtr)->flags & FS_READ) ? "Read" : "Write", \
+		(streamPtr)->hdr.fileID.minor, \
+		(handlePtr)->hdr.fileID.major, (handlePtr)->hdr.fileID.minor, \
+		(handlePtr)->use.ref, (handlePtr)->use.write, \
+		(handlePtr)->flags)
+
+#define PIPE_MIG_1(migInfoPtr, dstClientID) \
+	printf("Pipe Migrate: %d => %d Stream %d <%d> I/O <%d,%d> migFlags %x ", \
+	    (migInfoPtr)->srcClientID, dstClientID, \
+	    (migInfoPtr)->streamID.serverID, (migInfoPtr)->streamID.minor, \
+	    (migInfoPtr)->ioFileID.major, (migInfoPtr)->ioFileID.minor, \
+	    (migInfoPtr)->flags);
+
+#define PIPE_MIG_2(migInfoPtr, closeSrcClient, handlePtr) \
+	printf("=> %x\n    closeSrc %d (ref %d write %d", (migInfoPtr)->flags, \
+		closeSrcClient, (handlePtr)->use.ref, (handlePtr)->use.write);
+
+#define PIPE_MIG_3(handlePtr) \
+	printf(" | ref %d write %d)\n", \
+		(handlePtr)->use.ref, (handlePtr)->use.write);
+
+#define PIPE_MIG_END(handlePtr) \
+	printf("PipeMigEnd: I/O <%d,%d> ref %d write %d\n", \
+	    (handlePtr)->hdr.fileID.major, (handlePtr)->hdr.fileID.minor, \
+	    (handlePtr)->use.ref, (handlePtr)->use.write)
+#else
+
+#define PIPE_CREATED(inStreamPtr, outStreamPtr)
+#define PIPE_CLOSE(streamPtr, handlePtr)
+#define PIPE_MIG_1(migInfoPtr, dstClientID)
+#define PIPE_MIG_2(migInfoPtr, closeSrcClient, handlePtr)
+#define PIPE_MIG_3(handlePtr)
+#define PIPE_MIG_END(handlePtr)
+
+#endif /* MIG_DEBUG */
 
 /*
  *----------------------------------------------------------------------
@@ -101,6 +154,8 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
     FsHandleUnlock(handlePtr);
     FsHandleUnlock(streamPtr);
     *outStreamPtrPtr = streamPtr;
+
+    PIPE_CREATED(*inStreamPtrPtr, *outStreamPtrPtr);
 
     return(SUCCESS);
 }
@@ -233,8 +288,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    handlePtr->use.write--;
 	}
 	if (handlePtr->use.ref < 0 || handlePtr->use.write < 0) {
-	    panic(
-		      "FsPipeClose <%d,%d> use %d, write %d\n",
+	    panic("FsPipeClose <%d,%d> use %d, write %d\n",
 		      handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		      handlePtr->use.ref, handlePtr->use.write);
 	}
@@ -253,6 +307,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    handlePtr->flags |= PIPE_READER_GONE;
 	    FsFastWaitListNotify(&handlePtr->writeWaitList);
 	}
+	PIPE_CLOSE(streamPtr, handlePtr);
 	FsHandleRelease(handlePtr, TRUE);
 	if (handlePtr->flags == (PIPE_WRITER_GONE|PIPE_READER_GONE)) {
 	    free(handlePtr->buffer);
@@ -772,7 +827,7 @@ FsPipeRelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being released */
     int flags;			/* Use flags from the stream */
 {
-    panic( "FsPipeRelease called\n");
+    panic("FsPipeRelease called\n");
     FsHandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
@@ -823,16 +878,20 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     migInfoPtr->ioFileID.type = FS_LCL_PIPE_STREAM;
     handlePtr = FsPipeHandleInit(&migInfoPtr->ioFileID, TRUE);
 
+    PIPE_MIG_1(migInfoPtr, dstClientID);
     /*
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
     FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr,
 		    &closeSrcClient);
+    PIPE_MIG_2(migInfoPtr, closeSrcClient, handlePtr);
+
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
     FsMigrateUseCounts(migInfoPtr->flags, closeSrcClient, &handlePtr->use);
+    PIPE_MIG_3(handlePtr);
 
     /*
      * Move the client at the I/O handle level.
@@ -943,6 +1002,7 @@ FsPipeMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 	panic( "FsPipeMigEnd, no handle\n");
 	return(FAILURE);
     } else {
+	PIPE_MIG_END(handlePtr);
 	FsHandleUnlock(handlePtr);
 	*hdrPtrPtr = (FsHandleHeader *)handlePtr;
 	return(SUCCESS);
