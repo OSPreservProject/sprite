@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "proc.h"
+#include "procInt.h"
 #include "procMigrate.h"
 #include "status.h"
 #include "sync.h"
@@ -286,13 +287,14 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
     int					termStatus;	/* Termination status.*/
     int					termCode;	/* Termination code. */
 {
+    Boolean foreign = (procPtr->genFlags & PROC_FOREIGN);
 
     Proc_Lock(procPtr);
     procPtr->termReason	= termReason;
     procPtr->termStatus	= termStatus;
     procPtr->termCode	= termCode;
 
-    if (debug && (procPtr->genFlags & PROC_FOREIGN) &&
+    if (debug &&  foreign &&
 	proc_KillMigratedDebugs) {
 	if (proc_MigDebugLevel > 0) {
 	    panic("Migrated process being placed on debug list.\n");
@@ -323,6 +325,9 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
 	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
 	    ProcDebugWakeup();
 	}
+    }
+    if (foreign) {
+	ProcRemoteSuspend(procPtr, PROC_SUSPEND_STATUS);
     }
     Proc_Unlock(procPtr);
     Sched_ContextSwitch(PROC_SUSPENDED);
@@ -374,8 +379,14 @@ Proc_ResumeProcess(procPtr, killingProc)
 	     * The parent is notified in background because we are called
 	     * by the signal code as part of the act of sending a signal
 	     * and if a SIG_CHILD happens now we will have deadlock.
+	     * If the process is remote, send the term flags over and
+	     * let the home node handle signalling the parent.
 	     */
-	    Proc_InformParent(procPtr, PROC_RESUME_STATUS, TRUE);
+	    if (procPtr->genFlags & PROC_FOREIGN) {
+		ProcRemoteSuspend(procPtr, PROC_RESUME_STATUS);
+	    } else {
+		Proc_InformParent(procPtr, PROC_RESUME_STATUS, TRUE);
+	    }
 	}
     }
 

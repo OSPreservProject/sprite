@@ -43,6 +43,7 @@ typedef struct {
  * PROC_MIGRATE_CMD_DESTROY	- Destroy a migrated process due to an error
  *				  during migration.
  * PROC_MIGRATE_CMD_RESUME	- Resume a migrated process after transfer.
+ * PROC_MIGRATE_CMD_SUSPEND	- Remote process has suspended or continued.
  */
 
 #define PROC_MIGRATE_CMD_INIT		0
@@ -51,8 +52,9 @@ typedef struct {
 #define PROC_MIGRATE_CMD_CALLBACK	3
 #define PROC_MIGRATE_CMD_DESTROY	4
 #define PROC_MIGRATE_CMD_RESUME		5
+#define PROC_MIGRATE_CMD_SUSPEND	6
 
-#define PROC_MIGRATE_CMD_NUM_TYPES	5
+#define PROC_MIGRATE_CMD_NUM_TYPES	7
     
 /* 
  * Data sent to the other host related to migration.  This is done
@@ -97,5 +99,6 @@ extern ReturnStatus ProcMigEncapCallback();
 extern ReturnStatus ProcMigDestroyCmd();
 extern ReturnStatus ProcMigCommand();
 extern ReturnStatus ProcMigContinueProcess();
+extern ReturnStatus ProcMigGetSuspend();
 
 #endif /* _MIGRATE */
