@@ -777,7 +777,7 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_SCSITapeClose --
+ * DevSCSITapeClose --
  *
  *	Close a raw SCSI tape file.  This checks the unit number to
  *	determine if the tape should be rewound.  Units 0 and 8
