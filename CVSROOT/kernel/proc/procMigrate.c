@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "migVersion.h"
 #include "fs.h"
 #include "stdlib.h"
+#include "string.h"
 #include "sig.h"
 #include "spriteTime.h"
 #include "trace.h"
@@ -1141,7 +1142,7 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
     bufPtr += sizeof(EncapState);
     argStringLength = Byte_AlignAddr(strlen(procPtr->argString) + 1);
     encapPtr->argStringLength = argStringLength;
-    strncpy(bufPtr, procPtr->argString, argStringLength);
+    (void) strncpy(bufPtr, procPtr->argString, argStringLength);
 
 
     /*
@@ -1535,7 +1536,7 @@ ProcMigGetSuspend(cmdPtr, procPtr, inBufPtr, outBufPtr)
     COPY_STATE(infoPtr, procPtr, termStatus);
     COPY_STATE(infoPtr, procPtr, termCode);
 
-    Proc_InformParent(procPtr, infoPtr->flags, TRUE);
+    Proc_InformParent(procPtr, infoPtr->flags);
     Proc_Unlock(procPtr);
     return(SUCCESS);
 
