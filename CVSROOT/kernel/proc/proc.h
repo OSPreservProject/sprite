@@ -521,7 +521,7 @@ extern Boolean proc_RefuseMigrations;
  */
 #define Proc_GetCurrentLock(pcbPtr, typePtr, lockPtrPtr) \
     { \
-	if ((pcbPtr)->lockStackSize == 0) { \
+	if ((pcbPtr)->lockStackSize <= 0) { \
 	    *(typePtr) = -1; \
 	    *(lockPtrPtr) = (Address) NIL; \
 	} else { \
