@@ -1247,11 +1247,16 @@ END(MachGetCurFPState)
  *----------------------------------------------------------------------------
  */
 NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
+/*
+ *	unsigned statusReg;	(in a0)
+ *	unsigned causeReg;	(in a1)
+ *	Address EXC_pc;		(in a2)
+ */
 	subu	sp, sp, STAND_FRAME_SIZE
 	sw	ra, STAND_RA_OFFSET(sp)
+        sw	a2, STAND_FRAME_SIZE + 8(sp)
 
-	mfc0	t0, MACH_COP_0_STATUS_REG
-	and	t1, t0, MACH_SR_KU_PREV
+	and	t1, a0, MACH_SR_KU_PREV
 	bne	t1, zero, 1f
 	/*
 	 * We got an FPU interrupt in kernel mode.
@@ -1264,6 +1269,7 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	/*
 	 * Turn on the floating point coprocessor.
 	 */
+	mfc0	t0, MACH_COP_0_STATUS_REG
 	or	t1, t0, MACH_SR_COP_1_BIT
 	mtc0	t1, MACH_COP_0_STATUS_REG
 	/*
@@ -1285,6 +1291,7 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	/*
 	 * Turn on the floating point coprocessor.
 	 */
+	mfc0	t0, MACH_COP_0_STATUS_REG
 	or	t1, t0, MACH_SR_COP_1_BIT
 	mtc0	t1, MACH_COP_0_STATUS_REG
 	/* 
@@ -1304,15 +1311,14 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	/*
 	 * Fetch the instruction.
 	 */
-	mfc0	a3, MACH_COP_0_EXC_PC
-	mfc0	v0, MACH_COP_0_CAUSE_REG
+	add	v0, a1, 0
 	bltz	v0, 3f				# Check the branch delay bit.
 	/*
 	 * This is not in the branch delay slot so calculate the resulting
 	 * PC (epc + 4) into v0 and continue to softfp().
 	 */
-	lw	a1, 0(a3)
-	addu	v0, a3, 4
+	lw	a1, 0(a2)
+	addu	v0, a2, 4
 	lw	t0, machCurStatePtr
 	sw	v0, MACH_USER_PC_OFFSET(t0)
 	b	4f
@@ -1323,7 +1329,7 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	 */
 	lw	a0, machCurStatePtr
 	add	a0, a0, MACH_TRAP_REGS_OFFSET
-	add	a1, a3, zero
+	add	a1, a2, zero
 	cfc1	a2, MACH_FPC_CSR
 	add	a3, zero, zero
 	jal	MachEmulateBranch	# MachEmulateBranch(regsPtr,instPC,csr,
@@ -1334,8 +1340,8 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	 * Now load the floating-point instruction in the branch delay slot
 	 * to be emulated by softfp().
 	 */
-	mfc0	a3, MACH_COP_0_EXC_PC
-	lw	a1, 4(a3)
+	lw	a2, STAND_FRAME_SIZE + 8(sp)	#EXC pc
+	lw	a1, 4(a2)
 4:
 	/*
 	 * Check to see if the instruction to be emulated is a floating-point
