@@ -119,7 +119,7 @@ NetIEInit(name, number, ctrlAddr)
 	char zero = 0;
 	ReturnStatus status;
 	status = Mach_Probe(sizeof(char), &zero,
-	    (volatile char *)netIEState.controlReg);
+	    (char *)netIEState.controlReg);
 	if (status != SUCCESS) {
 	    /*
 	     * Got a bus error.
@@ -333,7 +333,7 @@ NetIEReset()
 	bzero((Address) netIEState.intSysConfPtr, sizeof(NetIEIntSysConfPtr));
 	netIEState.intSysConfPtr->busy = 1;
 	netIEState.intSysConfPtr->base = 
-			    NetIEAddrFromSUNAddr(netIEState.memBase);
+			    NetIEAddrFromSUNAddr((int) netIEState.memBase);
 	netIEState.intSysConfPtr->scbOffset = 
 			    NetIEOffsetFromSUNAddr((int) netIEState.scbPtr);
 

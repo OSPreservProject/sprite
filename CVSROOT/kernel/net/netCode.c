@@ -57,14 +57,14 @@ extern int		numNetInterfaces;
  * Macro to swap the fragOffset field.
  */
 #define SWAP_FRAG_OFFSET_HOST_TO_NET(ptr) { \
-    short	*shortPtr; \
-    shortPtr = ((short *)&ptr->ident) + 1; \
+    unsigned short	*shortPtr; \
+    shortPtr = ((unsigned short *)&ptr->ident) + 1; \
     *shortPtr = Net_HostToNetShort(*shortPtr); \
 } 
 
 #define SWAP_FRAG_OFFSET_NET_TO_HOST(ptr) { \
-    short	*shortPtr; \
-    shortPtr = ((short *)&ptr->ident) + 1; \
+    unsigned short	*shortPtr; \
+    shortPtr = ((unsigned short *)&ptr->ident) + 1; \
     *shortPtr = Net_NetToHostShort(*shortPtr); \
 } 
 
@@ -270,7 +270,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
 					    gatherPtr, gatherLength);
 		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
-		    Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
 		}
 		return(SUCCESS);
 	    }
@@ -325,7 +325,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
 						gatherPtr, gatherLength);
 		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
-		    Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
 		}
 		return(SUCCESS);
 	    }
@@ -425,7 +425,8 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
     INC_BYTES_SENT(gatherPtr, gatherLength);
     netEtherFuncs.output(etherHdrPtr, gatherPtr, gatherLength);
     while (!gatherPtr->done) {
-	Sync_SlowMasterWait(&outputMutex, &outputMutex, FALSE);
+	(void) Sync_SlowMasterWait((unsigned int)&outputMutex, 
+					&outputMutex, FALSE);
     }
 
     MASTER_UNLOCK(&outputMutex);
@@ -461,7 +462,7 @@ NetOutputWakeup(mutexPtr)
     }
 
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
-    Sync_SlowBroadcast((unsigned int)mutexPtr, &waiting);
+    (void) Sync_SlowBroadcast((unsigned int)mutexPtr, &waiting);
 #else 	/* Mutiprocessor implementation */
    /*
     * Because the packet sent interrupt may come in before Net_Output
@@ -470,7 +471,7 @@ NetOutputWakeup(mutexPtr)
     * by obtaining the master lock.
     */
     MASTER_LOCK(mutexPtr);
-    Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
+    (void) Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
     MASTER_UNLOCK(mutexPtr);
 #endif
 }
@@ -496,10 +497,11 @@ NetOutputWakeup(mutexPtr)
  *----------------------------------------------------------------------
  */
 
-void
+int
 Net_Intr()
 {
     (netEtherFuncs.intr)(FALSE);
+    return 1;
 }
 
 /*
@@ -530,7 +532,7 @@ Net_Input(packetPtr, packetLength)
     int		type;
 
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
-    type = Net_NetToHostShort(NET_ETHER_HDR_TYPE(*etherHdrPtr));
+    type = Net_NetToHostShort((unsigned short)NET_ETHER_HDR_TYPE(*etherHdrPtr));
 
     if (dbg_UsingNetwork) {
 	/*
@@ -548,7 +550,7 @@ Net_Input(packetPtr, packetLength)
         case NET_ETHER_SPRITE:
 	    net_EtherStats.bytesReceived += packetLength;
             Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
-			packetPtr + sizeof(Net_EtherHdr), 
+			 (packetPtr + sizeof(Net_EtherHdr)), 
 			packetLength - sizeof(Net_EtherHdr));
             break;
 
@@ -597,7 +599,7 @@ Net_Input(packetPtr, packetLength)
 		      (ipHeaderPtr->fragOffset == 0)) {
 			net_EtherStats.bytesReceived += packetLength;
 			Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
-				     ((char *) ipHeaderPtr) + headerLenInBytes, 
+		          (((char *) ipHeaderPtr) + headerLenInBytes),
 				     totalLenInBytes-headerLenInBytes);
 		     }
 		}
@@ -641,7 +643,7 @@ EnterDebugger(packetPtr, packetLength)
     int packetLength;
 {
     char *name;
-    int  len;
+    unsigned int  len;
 
     /*
      * Skip over the Ethernet header.

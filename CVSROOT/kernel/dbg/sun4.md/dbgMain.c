@@ -558,8 +558,6 @@ Dbg_Main(trapType, trapStatePtr)
     int			trapType;	/* The reason we were called. */
     Mach_RegState	*trapStatePtr;	/* The CPU's state at the trap. */
 {
-    int			trapCode;	/* Reason that we trapped that is sent
-					 * to kgdb. */
     Boolean	  	done;		/* Boolean to tell us whether to leave
 					 * the main debugger loop */
     Dbg_Opcode	  	opcode;	        /* The operation that was requested */
@@ -988,7 +986,7 @@ Dbg_Main(trapType, trapStatePtr)
 		    if (dbgTraceLevel >= 2) {
 			printf("FAILURE ");
 		    }
-		    GetRequestBytes(callFunc.numBytes,argBuf);
+		    GetRequestBytes(callFunc.numBytes,(Address)argBuf);
 		    returnVal = -1;
 		}
 		VmMachSetKernelContext(VMMACH_KERN_CONTEXT);

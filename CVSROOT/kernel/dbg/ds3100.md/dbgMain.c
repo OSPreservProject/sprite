@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netEther.h"
 #include "netInet.h"
 #include "dev.h"
+#include "sys.h"
 #include "sync.h"
 
 unsigned sstepInst;				/* The instruction that was
@@ -162,11 +163,6 @@ Boolean		dbg_UsingSyslog = FALSE;
 Boolean		dbgCanUseSyslog = TRUE;
 
 /*
- * True when a call is occuring.
- */
-static	Boolean		callInProgress = FALSE;
-
-/*
  * Trap causes (same numbering as in ptrace.h).
  */
 #define CAUSE_SINGLE	4
@@ -199,6 +195,7 @@ unsigned *DbgGetDestPC();
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 static Boolean InRange(addr, numBytes, writeable) 
     unsigned 	int addr; 	/* Beginning address to check. */
     int		numBytes; 	/* Number of bytes to check. */
@@ -408,8 +405,9 @@ Dbg_InputPacket(packetPtr, packetLength)
 	    icmpPtr->type = 0;
 	    icmpPtr->checksum = 0;
 	    icmpPtr->checksum = 
-		Net_InetChecksum(Net_NetToHostShort(ipPtr->totalLen) - ipPtr->headerLen * 4,
-				 icmpPtr);
+		Net_InetChecksum(
+		(int)(Net_NetToHostShort(ipPtr->totalLen)-ipPtr->headerLen*4),
+		(Address)icmpPtr);
 	    dbgGather.length = packetLength - sizeof(Net_EtherHdr);
 	    dbgGather.bufAddr = pingBufPtr + sizeof(Net_EtherHdr);
 	    Net_OutputRawEther(etherHdrPtr, &dbgGather, 1);
@@ -575,6 +573,7 @@ Dbg_Main()
 	 */
 	if (mach_NumDisableIntrsPtr[0] == 0 &&
 	    !mach_AtInterruptLevel) {
+	    void Sys_SyncDisks();
 	    Mach_EnableIntr();
 	    Sys_SyncDisks(MACH_OTHER_TRAP_TYPE);
 	    Mach_DisableIntr();
@@ -630,9 +629,9 @@ Dbg_Main()
 
     if (dbgTraceLevel >= 1 || !dbg_BeingDebugged || 
         cause != MACH_EXC_BREAK) {
-	Dev_VidEnable();	/* unblank the screen */
+	(void)Dev_VidEnable();	/* unblank the screen */
 	printf("Entering debugger with a %s exception at PC 0x%x\r\n",
-		   TranslateException(cause),
+		   TranslateException((int)cause),
 		   mach_DebugState.excPC);
     }
 
@@ -676,7 +675,7 @@ Dbg_Main()
 		if (dbgTraceLevel >= 1) {
 		    printf("sstep (%x) = %x\n", pc, sstepInst);
 		}
-		Mach_FlushCode(pc, 4);
+		Mach_FlushCode((Address)pc, 4);
 		*pc = sstepInst;
 		Mach_EmptyWriteBuffer();
 	    } else {
@@ -761,13 +760,13 @@ Dbg_Main()
 			}
 		    }
 		    debugStatePtr = &tmpDebugState;
-		    bcopy(procPtr->machStatePtr->switchRegState.regs,
-			  tmpDebugState.regs, 32 * sizeof(int));
+		    bcopy((char *) procPtr->machStatePtr->switchRegState.regs,
+			  (char *) tmpDebugState.regs, 32 * sizeof(int));
 		    tmpDebugState.excPC = (unsigned)(Address)Mach_SwitchPoint;
 		    dbgMaxStackAddr = (int)procPtr->machStatePtr->kernStackEnd;
 		    signal = 2;
 		} else if (requestPtr->addr == (unsigned)-2) {
-		    Proc_Dump();
+		    (void)Proc_Dump();
 		} else {
 		    if (requestPtr->addr > sizeof(mach_DebugState) / 4) {
 			printf("Bogus UWRITE addr %x\n", requestPtr->addr);
@@ -792,7 +791,7 @@ Dbg_Main()
             case IWRITE:
 		if (InRange(requestPtr->addr, 4, TRUE)) {
 		    replyPtr->data = *(int *)requestPtr->addr;
-		    Mach_FlushCode(requestPtr->addr, 4);
+		    Mach_FlushCode((Address)requestPtr->addr, 4);
 		    *(int *)requestPtr->addr = requestPtr->data;
 		    Mach_EmptyWriteBuffer();
 		} else {
@@ -814,17 +813,17 @@ Dbg_Main()
             case SSTEP: {
 		unsigned		*pc;
 
-		pc = DbgGetDestPC(debugStatePtr->excPC);
+		pc = DbgGetDestPC((Address)(debugStatePtr->excPC));
 		if (dbgTraceLevel >= 1) {
 		    printf("Single-step PC=%x\n", pc);
 		}
-		if (!InRange(pc, 4, TRUE)) {
+		if (!InRange((unsigned int)pc, 4, TRUE)) {
 		    printf("Bad SSTEP PC\n");
 		    replyPtr->status = 0;
 		    break;
 		}
 		sstepInst = *pc;
-		Mach_FlushCode(pc, 4);
+		Mach_FlushCode((Address)pc, 4);
 		*pc = SSTEP_INST;
 		Mach_EmptyWriteBuffer();
 		dbg_BeingDebugged = TRUE;

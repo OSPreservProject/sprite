@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "mach.h"
 #include "dbgInt.h"
+#include "sys.h"
 
 extern Mach_DebugState	mach_DebugState;
 

@@ -150,8 +150,10 @@ Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr,
 	 * recalculate the value, we don't zero the field so the computed 
 	 * value should be zero if the packet didn't get garbled.
 	 */
-	bcopy(&ipPtr->source, &pseudoHdr.source, sizeof(pseudoHdr.source));
-	bcopy(&ipPtr->dest, &pseudoHdr.dest, sizeof(pseudoHdr.dest));
+	bcopy((char*)&ipPtr->source, (char*)&pseudoHdr.source, 
+			sizeof(pseudoHdr.source));
+	bcopy((char*)&ipPtr->dest, (char*)&pseudoHdr.dest, 
+		sizeof(pseudoHdr.dest));
 	pseudoHdr.zero		= 0;
 	pseudoHdr.protocol	= ipPtr->protocol;
 	pseudoHdr.len		= udpPtr->len;
@@ -168,9 +170,9 @@ Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr,
 
     *lenPtr	   = Net_NetToHostShort(udpPtr->len) - sizeof(Net_UDPHeader);
     *dataPtrPtr	   = ((Address) udpPtr) + sizeof(Net_UDPHeader);
-    bcopy(&ipPtr->dest, &tmp, sizeof(int));
+    bcopy((char*)&ipPtr->dest, (char*)&tmp, sizeof(int));
     *destIPAddrPtr = Net_NetToHostInt(tmp);
-    bcopy(&ipPtr->source, &tmp, sizeof(int));
+    bcopy((char*)&ipPtr->source, (char*)&tmp, sizeof(int));
     *srcIPAddrPtr  = Net_NetToHostInt(tmp);
     *srcPortPtr	   = Net_NetToHostShort(udpPtr->srcPort);
 
@@ -232,15 +234,16 @@ Dbg_FormatPacket(srcIPAddress, destIPAddress, destPort, dataSize, dataPtr)
     ipPtr->timeToLive	= NET_IP_MAX_TTL;
     ipPtr->protocol	= NET_IP_PROTOCOL_UDP;
     tmp = Net_HostToNetInt(srcIPAddress);
-    bcopy(&tmp, &ipPtr->source, sizeof(int));
+    bcopy((char*)&tmp, (char*)&ipPtr->source, sizeof(int));
     tmp = Net_HostToNetInt(destIPAddress);
-    bcopy(&tmp, &ipPtr->dest, sizeof(int));
+    bcopy((char*)&tmp, (char*)&ipPtr->dest, sizeof(int));
     ipPtr->checksum	= 0;
     ipPtr->checksum	= Net_InetChecksum(sizeof(Net_IPHeader),(Address)ipPtr);
 
-    udpPtr->srcPort	= Net_HostToNetShort(DBG_UDP_PORT);
-    udpPtr->destPort	= Net_HostToNetShort(destPort);
-    udpPtr->len		= Net_HostToNetShort(sizeof(Net_UDPHeader) + dataSize);
+    udpPtr->srcPort	= Net_HostToNetShort((short)DBG_UDP_PORT);
+    udpPtr->destPort	= Net_HostToNetShort((short)destPort);
+    udpPtr->len		= 
+		Net_HostToNetShort((short)(sizeof(Net_UDPHeader) + dataSize));
     udpPtr->checksum	= 0;
 }
 

@@ -48,6 +48,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "rpc.h"
 #include "netInet.h"
+#include "string.h"
 
 /*
  * A broadcast address that will be put into a broadcast route.
@@ -146,8 +147,8 @@ Sync_Semaphore arpInputMutex;
  * Macro to swap the fragOffset field.
  */
 #define SWAP_FRAG_OFFSET_HOST_TO_NET(ptr) { \
-    short	*shortPtr; \
-    shortPtr = ((short *)&ptr->ident) + 1; \
+    unsigned short	*shortPtr; \
+    shortPtr = ((unsigned short *)&ptr->ident) + 1; \
     *shortPtr = Net_HostToNetShort(*shortPtr); \
 } 
 
@@ -795,9 +796,9 @@ Net_HdrDestString(headerType, headerPtr, bufferLen, buffer)
 	Net_InetAddrToString(dest, tmpBuffer);
     } else {
 	printf("Unknown header type %d in Net_HdrDestString\n", headerType);
-	strcpy(tmpBuffer, "UNKNOWN");
+	(void) strcpy(tmpBuffer, "UNKNOWN");
     }
-    strncpy(buffer, tmpBuffer, bufferLen-1);
+    (void) strncpy(buffer, tmpBuffer, bufferLen-1);
     return;
 }
 
@@ -1140,7 +1141,7 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
     if (command == NET_ARP_REQUEST) {
 	int spriteID;
 	bcopy(ARP_TARGET_PROTO_ADDR(requestPtr),(char *) &spriteID,4);
-	arp.id =  (ClientData) Net_NetToHostInt(spriteID);
+	arp.id =  (ClientData) Net_NetToHostInt((unsigned int)spriteID);
 	listPtr = &arpList;
     } else {
 	arp.id = (ClientData) ARP_TARGET_ETHER_ADDR(requestPtr);
@@ -1434,13 +1435,15 @@ NetArpHandler(data, callInfoPtr)
 	    etherAddress);
 	if (type == NET_ETHER_SPRITE) {
 	    int	spriteID;
-	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), &spriteID, sizeof(int));
+	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr),(char*)&spriteID,sizeof(int));
+
 	    NetFillInArpRequest(NET_ARP_REPLY, NET_ROUTE_ETHER, 
 		(ClientData) spriteID, (ClientData) rpc_SpriteID, 
 		&etherAddress, &myEtherAddr, &request);
 	} else {
 	    Net_InetAddress inetAddr;
-	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), &inetAddr, sizeof(inetAddr));
+	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), (char *)&inetAddr, 
+			sizeof(inetAddr));
 
 	    NetFillInArpRequest(NET_ARP_REPLY, NET_ROUTE_INET, 
 		(ClientData) inetAddr, (ClientData)  net_InetAddress, 
@@ -1515,14 +1518,15 @@ NetArpOutput(destEtherAddrPtr, etherType, requestPtr)
 
     NET_ETHER_ADDR_COPY(*destEtherAddrPtr, 
 			NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
-    NET_ETHER_HDR_TYPE(*etherHdrPtr) = Net_HostToNetShort(etherType);
+    NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+		Net_HostToNetShort((unsigned short)etherType);
 #ifdef sun4
     /*
      * Gcc for the sun4 currently allows these structures to be on unaligned
      * boudaries and then generates loads and stores as if they were aligned,
      * so I have to copy them byte by byte.
      */
-     bcopy(requestPtr, packetPtr, sizeof (NetSpriteArp));
+     bcopy((char *)requestPtr, (char *)packetPtr, sizeof (NetSpriteArp));
 #else
     *packetPtr = *requestPtr;
 #endif sun4
@@ -1603,7 +1607,7 @@ NetFillInArpRequest(command, type, targetId, senderId, targetEtherAddrPtr,
 
     requestPtr->arpHeader.hardwareType = Net_HostToNetShort(NET_ARP_TYPE_ETHER);
     requestPtr->arpHeader.hardwareAddrLen = sizeof(Net_EtherAddress);
-    requestPtr->arpHeader.opcode = Net_HostToNetShort(command);
+    requestPtr->arpHeader.opcode = Net_HostToNetShort((unsigned short)command);
 
     switch(type) {
 	case NET_ROUTE_ETHER: {

@@ -117,14 +117,14 @@ typedef struct NetSpriteArp {
  * ARP_TARGET_PROTO_ADDR() - The address of the target's protocol address.
  */
 
-#define ARP_SRC_ETHER_ADDR(ap) (&((ap)->arpData[0]))
+#define ARP_SRC_ETHER_ADDR(ap) ((char *) &((ap)->arpData[0]))
 #define ARP_SRC_PROTO_ADDR(ap) \
-			(&((ap)->arpData[(ap)->arpHeader.hardwareAddrLen]))
+		((char *) &((ap)->arpData[(ap)->arpHeader.hardwareAddrLen]))
 #define	ARP_TARGET_ETHER_ADDR(ap) \
-			(&((ap)->arpData[(ap)->arpHeader.hardwareAddrLen + \
+		((char *) &((ap)->arpData[(ap)->arpHeader.hardwareAddrLen + \
 					 (ap)->arpHeader.protocolAddrLen]))
 #define	ARP_TARGET_PROTO_ADDR(ap) \
-			(&((ap)->arpData[2*(ap)->arpHeader.hardwareAddrLen + \
+		((char *) &((ap)->arpData[2*(ap)->arpHeader.hardwareAddrLen + \
 					 (ap)->arpHeader.protocolAddrLen]))
 
 

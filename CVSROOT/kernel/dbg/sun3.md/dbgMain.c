@@ -1153,7 +1153,7 @@ Dbg_Main(stackHole, dbgStack)
 		    if (dbgTraceLevel >= 2) {
 			printf("FAILURE ");
 		    }
-		    GetRequestBytes(callFunc.numBytes,argBuf);
+		    GetRequestBytes(callFunc.numBytes,(Address)argBuf);
 		    returnVal = -1;
 		}
 		PutReplyBytes(4, (char *) &returnVal);
