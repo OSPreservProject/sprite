@@ -131,8 +131,8 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	 * to complete the setup of the stream's I/O handle
 	 */
 	streamPtr = FsStreamAddClient(&openResults.streamID, rpc_SpriteID,
-				 (FsHandleHeader *)NIL,
-				 useFlags, name, (Boolean *)NIL);
+			     (FsHandleHeader *)NIL,
+			     useFlags, name, (Boolean *)NIL, (Boolean *)NIL);
 	streamPtr->nameInfoPtr = nameInfoPtr;
 	FsHandleUnlock(streamPtr);
 	status = (*fsStreamOpTable[openResults.ioFileID.type].cltOpen)
