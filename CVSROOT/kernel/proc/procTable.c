@@ -39,7 +39,6 @@ Proc_ControlBlock  **proc_RunningProcesses = (Proc_ControlBlock **)NIL;
 #define PROC_MAX_PROCESSES 256
 #define PROC_PCB_NUM_ALLOC 16
 int proc_MaxNumProcesses;
-int proc_MaxRunningProcesses;
 
 int procLastSlot = 0;	/* Circular index into proctable for choosing slots */
 static int realMaxProcesses;	/* The absolute number of process table
@@ -73,8 +72,9 @@ Proc_InitTable()
 {
     register	int 		  i;
     register	Proc_ControlBlock *pcbPtr;
+    int 	maxRunningProcesses;
 
-    proc_MaxRunningProcesses = mach_NumProcessors;
+    maxRunningProcesses = MACH_MAX_NUM_PROCESSORS;
     proc_MaxNumProcesses     = PROC_PCB_NUM_ALLOC;
     realMaxProcesses         = PROC_MAX_PROCESSES;
 
@@ -97,9 +97,9 @@ Proc_InitTable()
     }
     
     proc_RunningProcesses = (Proc_ControlBlock **)
-        Vm_BootAlloc(proc_MaxRunningProcesses * sizeof(pcbPtr));
+        Vm_BootAlloc(maxRunningProcesses * sizeof(pcbPtr));
 
-    for (i = 0; i < proc_MaxRunningProcesses; i++) {
+    for (i = 0; i < maxRunningProcesses; i++) {
         proc_RunningProcesses[i] = (Proc_ControlBlock *) NIL;
     }
 
