@@ -1382,6 +1382,32 @@ VmMach_FlushPage(virtAddrPtr, invalidate)
 /*
  *----------------------------------------------------------------------
  *
+ * VmMach_HandleSegMigration --
+ *
+ *	Handle machine-dependent aspects of segment preparation for migration.
+ *	There's nothing to do on this machine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+VmMach_HandleSegMigration(segPtr)
+    Vm_Segment	*segPtr;
+{
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * VmMach_Cmd --
  *
  *	Machine dependent vm commands.
