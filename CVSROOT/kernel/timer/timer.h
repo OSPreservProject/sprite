@@ -230,8 +230,14 @@ typedef struct {
 } Timer_Statistics;
 
 extern Timer_Statistics	timer_Statistics;
-extern	Time		timer_UniversalApprox;
+extern Time		timer_UniversalApprox;
 extern Sync_Semaphore 	timer_ClockMutex;
+
+#ifdef ADJTIME
+extern Time		timer_AdjustDelta;
+extern unsigned		timer_TickAdjust;
+extern int		timer_TickDelta;
+#endif
 
 /*
  * Used to get the current seconds value of the universal time. This is
@@ -254,6 +260,11 @@ extern void Timer_GetRealTimeFromTicks _ARGS_((Timer_Ticks ticks,
 			Boolean *DSTPtr));
 extern void Timer_SetTimeOfDay _ARGS_((Time newUniversal, int newLocalOffset, 
 			Boolean newDSTAllowed));
+#ifdef ADJTIME
+extern ReturnStatus Timer_AdjustTime _ARGS_((Time *newDelta, Time *oldDelta));
+extern ReturnStatus Timer_GetParams _ARGS_((unsigned *tickadj));
+extern ReturnStatus Timer_SetParams _ARGS_((unsigned tickadj));
+#endif
 
 
 /*

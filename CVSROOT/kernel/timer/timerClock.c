@@ -117,6 +117,12 @@ Time   		timer_UniversalApprox;
 int 		timerUniversalToLocalOffset;
 Boolean 	timerDSTAllowed;
 
+#ifdef ADJTIME
+Time		timer_AdjustDelta;
+unsigned	timer_TickAdjust;
+int		timer_TickDelta;
+#endif
+
 /*
  * Semaphore protecting the above time of day variables.
  */
@@ -162,6 +168,11 @@ TimerClock_Init()
     Sync_SemInitDynamic(&timer_ClockMutex,"Timer:timer_ClockMutex");
 
     Timer_CounterInit();
+#ifdef ADJTIME
+    timer_AdjustDelta.seconds = timer_AdjustDelta.microseconds = 0;
+    timer_TickAdjust = 10;
+    timer_TickDelta = 0;
+#endif
     universal.seconds = 0;
     universal.microseconds = 0;
     offset = 0;
@@ -445,4 +456,135 @@ UpdateUniversalTimeApprox(timeTicks, clientData)
     Timer_ScheduleRoutine(&updateElement, TRUE);
 }
 
+#ifdef ADJTIME
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_AdjustTime --
+ *
+ *	Set a new time delta for adjusting the time, and return
+ *	the old one.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	timer_AdjustDelta and timer_TickDelta are updated.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Timer_AdjustTime(newDelta, oldDelta)
+    Time	*newDelta;
+    Time	*oldDelta;
+{
+    int negative;
 
+    MASTER_LOCK(&timer_ClockMutex);
+    if (oldDelta != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(Time),
+		(Address) &timer_AdjustDelta, (Address) oldDelta) != SUCCESS) {
+	    MASTER_UNLOCK(&timer_ClockMutex);
+	    return SYS_ARG_NOACCESS;
+	}
+    }
+    if (newDelta == USER_NIL) {
+	MASTER_UNLOCK(&timer_ClockMutex);
+	return oldDelta == USER_NIL ? SYS_ARG_NOACCESS : SUCCESS;
+    } else if (Proc_ByteCopy(TRUE, sizeof(Time),
+	    (Address) newDelta, (Address) &timer_AdjustDelta) != SUCCESS) {
+	MASTER_UNLOCK(&timer_ClockMutex);
+	return SYS_ARG_NOACCESS;
+    }
+    /* normalize */
+    timer_AdjustDelta.seconds += timer_AdjustDelta.microseconds / ONE_SECOND;
+    timer_AdjustDelta.microseconds %= ONE_SECOND;
+    negative = timer_AdjustDelta.seconds < 0 ||
+	(timer_AdjustDelta.seconds == 0 && timer_AdjustDelta.microseconds < 0);
+    if (negative && (timer_AdjustDelta.microseconds > 0)) {
+	timer_AdjustDelta.microseconds -= ONE_SECOND;
+	++timer_AdjustDelta.seconds;
+    }
+    if (!negative && (timer_AdjustDelta.microseconds < 0)) {
+	timer_AdjustDelta.microseconds += ONE_SECOND;
+	--timer_AdjustDelta.seconds;
+    }
+    if (negative) {
+	timer_TickDelta = -timer_TickAdjust;
+    } else {
+	timer_TickDelta = timer_TickAdjust;
+    }
+    MASTER_UNLOCK(&timer_ClockMutex);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_GetParams --
+ *
+ *	Return the current tick adjustment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Timer_GetParams(tickadj)
+    unsigned	*tickadj;
+{
+    MASTER_LOCK(&timer_ClockMutex);
+    if (tickadj == USER_NIL || Proc_ByteCopy(FALSE, sizeof(unsigned),
+	    (Address) &timer_TickAdjust, (Address) tickadj) != SUCCESS) {
+	MASTER_UNLOCK(&timer_ClockMutex);
+	return(SYS_ARG_NOACCESS);
+    }
+    MASTER_UNLOCK(&timer_ClockMutex);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_SetParams --
+ *
+ *	Set the tick adjustment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	timer_TickAdjust and timer_TickDelta are updated.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Timer_SetParams(tickadj)
+    unsigned	tickadj;
+{
+    MASTER_LOCK(&timer_ClockMutex);
+    if (tickadj < TIMER_CALLBACK_INTERVAL_APPROX &&
+	    tickadj > 0 && (ONE_SECOND % tickadj) == 0) {
+	timer_TickAdjust = tickadj;
+	if (timer_AdjustDelta.seconds < 0
+	    || (timer_AdjustDelta.seconds == 0
+		&& timer_AdjustDelta.microseconds < 0)) {
+	    timer_TickDelta = -timer_TickAdjust;
+	} else {
+	    timer_TickDelta = timer_TickAdjust;
+	}
+	MASTER_UNLOCK(&timer_ClockMutex);
+	return SUCCESS;
+    } else {
+	MASTER_UNLOCK(&timer_ClockMutex);
+	return GEN_INVALID_ARG;
+    }
+}
+#endif
