@@ -18,20 +18,24 @@
 #include "mach.h"
 
 /*
+ * The signal context that is used to restore the state after a signal.
+ */
+typedef struct {
+    int			oldHoldMask;	/* The signal hold mask that was in
+					 * existence before this signal
+					 * handler was called.  */
+    Mach_SigContext	machContext;	/* The machine dependent context
+					 * to restore the process from. */
+} Sig_Context;
+
+/*
  * Structure that user sees on stack when a signal is taken.
  */
 typedef struct {
-    int		  sigNum;	/* The number of this signal. */
-    int		  sigCode;    	/* The code of this signal. */
-    int		  oldHoldMask;	/* The signal hold mask that was in existence
-				   before this signal handler was called.  */
-    int		  trapInst;	/* The trap instruction that is executed upon
-				   return. */
-    Mach_UserState userState;	/* The user process machine state info. */
-    Mach_ExcStack excStack;	/* The exception stack that would have been
-				 * restored if this signal were not taken.
-				 * This must be last because it can vary in 
-				 * size depending on the architecture. */
+    int		sigNum;		/* The number of this signal. */
+    int		sigCode;    	/* The code of this signal. */
+    Sig_Context	*contextPtr;	/* Pointer to structure used to restore the
+				 * state before the signal. */
 } Sig_Stack;
 
 /*
