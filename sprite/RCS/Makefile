@@ -112,10 +112,7 @@ sun2: ${OBJS} ${ENDOBJ} Makefile
 	@ls -l $@
 	@size $@
 	cpstrip $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.fred ${ENVY}:/bnf2/sprite/sun2
-#	rcp /sprite/kernels/$@.sprite ginger:/pub.MC68010/sprite/$@
-#	rcp /sprite/kernels/$@.sprite allspice:/pub.MC68010/sprite/$@
-#	rcp /sprite/kernels/$@.sprite envy-150:/pub.MC68010/sprite/$@
+	rcp /sprite/kernels/$@.sprite ${ENVY}:/bnf2/sprite/sun2
 	nm $@ | sort > $@.nm
 
 sun3: ${OBJS} ${ENDOBJ} Makefile
@@ -139,9 +136,7 @@ profile2: ${PROFOBJS} ${ENDOBJ} Makefile
 	@ls -l $@
 	@size $@
 	cpstrip $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite ginger:/pub.MC68010/sprite/$@
-	rcp /sprite/kernels/$@.sprite allspice:/pub.MC68010/sprite/$@
-	rcp /sprite/kernels/$@.sprite envy-150:/pub.MC68010/sprite/$@
+	rcp /sprite/kernels/$@.sprite ${ENVY}:/bnf2/sprite/sun2
 	nm $@ | sort > $@.nm
 
 profile3: ${PROFOBJS} ${ENDOBJ} Makefile
