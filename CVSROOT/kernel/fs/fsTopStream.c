@@ -21,22 +21,23 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fsconsist.h"
-#include "fsStat.h"
-#include "proc.h"
-#include "sync.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fsconsist.h>
+#include <fsStat.h>
+#include <proc.h>
+#include <sync.h>
+#include <rpc.h>
 
 
 /*
  * Forward declarations. 
  */
-static ReturnStatus GrowStreamList();
+static ReturnStatus GrowStreamList _ARGS_((Fs_ProcessState *fsPtr, 
+					int newLength));
 
 
 /*
