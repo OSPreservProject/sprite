@@ -396,7 +396,7 @@ typedef struct Proc_ControlBlock {
  *  PROC_DEBUG_ON_EXEC		- The process will start in debugged mode.
  *  PROC_DEBUG_WAIT		- A debugger is waiting for this process to go
  *				  onto the debug list.
- *  PROC_SINGLE_STEP		- The process will have the trace bit set
+ *  PROC_SINGLE_STEP_FLAG	- The process will have the trace bit set
  *				  before it runs.
  *  PROC_MIG_PENDING		- The process will be migrated when it
  *				  completes its next trap.
@@ -421,7 +421,7 @@ typedef struct Proc_ControlBlock {
 #define PROC_USER			0x00002
 #define PROC_DEBUGGED			0x00004
 #define PROC_DEBUG_ON_EXEC		0x00008
-#define PROC_SINGLE_STEP		0x00010
+#define PROC_SINGLE_STEP_FLAG		0x00010
 #define PROC_DEBUG_WAIT			0x00020
 #define PROC_MIG_PENDING		0x00040
 #define PROC_DONT_MIGRATE		0x00080
