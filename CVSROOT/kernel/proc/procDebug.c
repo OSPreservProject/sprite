@@ -450,7 +450,7 @@ ProcGetThisDebug(pid, procPtrPtr)
     while (TRUE) {
 	procPtr = Proc_LockPID(pid);
 	if (procPtr == (Proc_ControlBlock *) NIL ||
-	    (procPtr->genFlags & PROC_DIEING)) {
+	    (procPtr->genFlags & PROC_DYING)) {
 	    /*
 	     * The pid they gave us either doesn't exist or the
 	     * corresponding process is exiting.

@@ -19,7 +19,7 @@
  *	Proc table fields managed by this monitor:
  *
  *	    1) exitFlags is managed solely by this monitor.
- *	    2) When a process is about to exit the PROC_DIEING flag is set
+ *	    2) When a process is about to exit the PROC_DYING flag is set
  *	       in the genFlags field.  Also PROC_NO_VM flag set before
  *	       freeing VM segments.
  *	    3) The only way a process can go to the exiting and dead states 
@@ -290,7 +290,7 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 
     Proc_Lock(exitProcPtr);
 
-    exitProcPtr->genFlags |= PROC_DIEING;
+    exitProcPtr->genFlags |= PROC_DYING;
 
     /*
      *  If the parent is still around, add the user and kernel cpu usage
