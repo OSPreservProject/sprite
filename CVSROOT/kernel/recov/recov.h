@@ -81,6 +81,22 @@
  */
 #define RECOV_TRACE_FS_STALE	0x1000
 
+/*
+ * Statistics about the recovery module.
+ */
+typedef struct Recov_Stats {
+    int packets;	/* Number of packets examined */
+    int	pings;		/* Number of pings made to check on other hosts */
+    int pingsSuppressed;/* Number of pings that were suppressed due to
+			 * recent message traffic */
+    int timeouts;	/* The number of timeout's detected */
+    int crashes;	/* The number of times crash call-backs were called */
+    int nonCrashes;	/* The number of times crash call-backs were avoided */
+    int reboots;	/* The number of times reboot call-backs were called */
+} Recov_Stats;
+
+extern Recov_Stats recov_Stats;
+
 extern void             Recov_Init();
 extern void		Recov_CrashRegister();
 extern void		Recov_RebootRegister();
@@ -92,6 +108,7 @@ extern void		Recov_HostTrace();
 extern int		Recov_SetClientState();
 extern int		Recov_GetClientState();
 extern void		Recov_ClearClientState();
+extern void		Recov_GetStats();
 
 extern void		Recov_HostTrace();
 extern void		Recov_PrintTrace();
