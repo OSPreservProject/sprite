@@ -352,7 +352,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_HOST_ALIVE, bootID);
 	hashPtr->value = (Address)hostPtr;
 
-	Net_HostPrint(spriteID, "is up");
+	Net_HostPrint(spriteID, "is up\n");
 	RECOV_TRACE(spriteID, RECOV_HOST_ALIVE, RECOV_CUZ_INIT);
     } else {
 	hostPtr = (RecovHostState *)hashPtr->value;
@@ -368,7 +368,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
      */
     if (hostPtr->bootID != bootID) {
 	if (hostPtr->bootID != 0) {
-	    Net_HostPrint(spriteID, "rebooted");
+	    Net_HostPrint(spriteID, "rebooted\n");
 	    reboot = TRUE;
 	} else {
 	    /*
@@ -432,7 +432,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    /*
 	     * We have uninitialized state for the host, mark it alive.
 	     */
-	    Net_HostPrint(spriteID, "is up");
+	    Net_HostPrint(spriteID, "is up\n");
 	    if (rpcNotActive) {
 		state |= RECOV_HOST_BOOTING;
 	    } else {
@@ -459,7 +459,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     * See if the host is newly booting or back from a net partition.
 	     */
 	    if ( !reboot ) {
-		Net_HostPrint(spriteID, "is back again");
+		Net_HostPrint(spriteID, "is back again\n");
 	    }
 	    if (rpcNotActive) {
 		state |= RECOV_HOST_BOOTING;
@@ -474,7 +474,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	default:
 	    Sys_Panic(SYS_WARNING, "Unexpected recovery state <%x> for ",
 		    state);
-	    Net_HostPrint(spriteID, "");
+	    Net_HostPrint(spriteID, "\n");
 	    break;
     }
     /*
@@ -553,12 +553,12 @@ Recov_HostDead(spriteID)
 	    hostPtr->state &=
 		~(RECOV_HOST_ALIVE|RECOV_HOST_BOOTING);
 	    hostPtr->state |= RECOV_HOST_DYING;
-	    Net_HostPrint(spriteID, "is apparently down");
+	    Net_HostPrint(spriteID, "is apparently down\n");
 	    Proc_CallFunc(RecovDelayedCrashCallBacks, spriteID,
 			    recov_CrashDelay);
 #ifdef the_old_way
 	    hostPtr->state |= RECOV_HOST_DEAD|RECOV_CRASH_CALLBACKS;
-	    Net_HostPrint(spriteID, "is down");
+	    Net_HostPrint(spriteID, "is down\n");
 	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH);
 	    Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
 #endif the_old_way
@@ -940,7 +940,7 @@ RecovDelayedCrashCallBacks(data, callInfoPtr)
 
     state = GetHostState(spriteID);
     if (state & RECOV_HOST_DYING) {
-	Net_HostPrint(spriteID, "considered dead");
+	Net_HostPrint(spriteID, "considered dead\n");
 	MarkHostDead(spriteID);
 	LIST_FORALL(&crashCallBackList, (List_Links *)notifyPtr) {
 	    if (notifyPtr->proc != (void (*)())NIL) {
