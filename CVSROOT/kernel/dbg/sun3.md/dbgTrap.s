@@ -14,7 +14,7 @@
 
 #include "machConst.h"
 #include "dbgAsm.h"
-#include "asmDefs.h"
+#include "machAsmDefs.h"
 
 | ***********************************************************************
 |
