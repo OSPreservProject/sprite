@@ -2039,6 +2039,10 @@ GetWinMemTrap:
  */
 
 SpecialUserTraps:
+	/*
+	 * The trap to return from a user trap hander is handled differently
+	 * then the other special user traps.
+	 */
 	cmp_br_delayed	eq, SAFE_TEMP1, $MACH_USER_RET_TRAP_TRAP, UserRetTrapTrap
 	nop
 	/*
@@ -2059,6 +2063,10 @@ SpecialUserTraps:
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	ld_32		OUTPUT_REG2, CUR_PC_REG, $0
+	/*
+	 * Leave all traps enabled but disable interrupts because are going
+	 * to be mucking register windows in UserOperandRecov.
+	 */
 	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_INTR_TRAP_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	/*
@@ -2068,9 +2076,6 @@ SpecialUserTraps:
 	 * in OUTPUT_REG4, the first operand in OUTPUT_REG2, and 
 	 * the second operand in OUTPUT_REG5.
 	 */
-	and		VOL_TEMP1, KPSW_REG, $~MACH_KPSW_INTR_TRAP_ENA
-	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1, $0
 	rd_special	OUTPUT_REG1, pc
 	add_nt		OUTPUT_REG1, OUTPUT_REG1, $16
 	jump		UserOperandRecov
