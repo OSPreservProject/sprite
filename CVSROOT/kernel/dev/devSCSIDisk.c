@@ -322,19 +322,16 @@ InitDisk(devPtr,readLabel)
 	 * to the first start request before they are actually on-line.
 	 */
 	while (retry > 0) {
-	    printf("Device is not ready.\n");
 	    /*
 	     * Try and start the unit.
 	     */
 	    status = DevScsiStartStopUnit(devPtr, TRUE);
 	    if (status != SUCCESS) {
-		printf("Attempt to start unit failed.\n");
 		return((ScsiDisk *) NIL);
 	    }
 	    /*
 	     * Make sure the unit is ready.
 	     */
-	    printf("Attempt to start unit succeeded.\n");
 	    status = DevScsiTestReady(devPtr);
 	    if (status == SUCCESS) {
 		break;
@@ -342,7 +339,6 @@ InitDisk(devPtr,readLabel)
 	    retry--;
 	}
     }
-    printf("Device is ready\n");
     disk.devPtr = devPtr;
     if (readLabel) {
 	status = FillInLabel(devPtr,&disk);
