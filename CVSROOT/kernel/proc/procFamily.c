@@ -415,6 +415,11 @@ Proc_SetFamilyID(pid, familyID)
     } else {
 	procPtr->familyID = PROC_NO_FAMILY;
     }
+
+    if (procPtr->state == PROC_MIGRATED) {
+	status = Proc_MigSendUserInfo(procPtr);
+    }
+
     Proc_Unlock(procPtr);
 
     return(status);
