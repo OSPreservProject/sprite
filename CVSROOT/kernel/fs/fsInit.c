@@ -570,6 +570,10 @@ Fs_CloseOnExec(procPtr)
  *	This is called when a process dies to clean up its filesystem state
  *	by closing its open files and its current directory.
  *
+ *	Note: to avoid problems when destroying a process, we have two
+ *	phases of removing file system state.  Phase 0 will just close
+ *	streams.  Phase 1 closes down everything.  (Phase 0 is optional.)
+ *
  * Results:
  *	None.
  *
@@ -579,14 +583,17 @@ Fs_CloseOnExec(procPtr)
  *----------------------------------------------------------------------
  */
 void
-Fs_CloseState(procPtr)
+Fs_CloseState(procPtr, phase)
     Proc_ControlBlock *procPtr;		/* An exiting process to clean up */
+    int phase;				/* 0 for start, 1 for total. */
 {
     register int i;
     register Fs_ProcessState *fsPtr = procPtr->fsPtr;
 
-    if (fsPtr->cwdPtr != (Fs_Stream *) NIL) {
-	(void)Fs_Close(fsPtr->cwdPtr);
+    if (phase>0) {
+	if (fsPtr->cwdPtr != (Fs_Stream *) NIL) {
+	    (void)Fs_Close(fsPtr->cwdPtr);
+	}
     }
 
     if (fsPtr->streamList != (Fs_Stream **)NIL) {
@@ -603,11 +610,13 @@ Fs_CloseState(procPtr)
 	fsPtr->streamList = (Fs_Stream **)NIL;
     }
 
-    if (fsPtr->groupIDs != (int *) NIL) {
-	free((Address) fsPtr->groupIDs);
-	fsPtr->groupIDs = (int *) NIL;
-	fsPtr->numGroupIDs = 0;
+    if (phase>0) {
+	if (fsPtr->groupIDs != (int *) NIL) {
+	    free((Address) fsPtr->groupIDs);
+	    fsPtr->groupIDs = (int *) NIL;
+	    fsPtr->numGroupIDs = 0;
+	}
+	free((Address)fsPtr);
+	procPtr->fsPtr = (Fs_ProcessState *)NIL;
     }
-    free((Address)fsPtr);
-    procPtr->fsPtr = (Fs_ProcessState *)NIL;
 }
