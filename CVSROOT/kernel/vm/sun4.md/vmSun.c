@@ -102,7 +102,12 @@ ENTRY static Boolean PMEGLock _ARGS_ ((register VmMach_SegData *machPtr,
 INTERNAL static void SetupContext _ARGS_((register Proc_ControlBlock
 	*procPtr));
 static void InitNetMem _ARGS_((void));
+/*
+ * FlushWholeCache seems to be dead code.
+ */
+#if 0
 static void FlushWholeCache _ARGS_((void));
+#endif
 ENTRY static void WriteHardMapSeg _ARGS_((VmMach_ProcData *machPtr));
 static void PageInvalidate _ARGS_((register Vm_VirtAddr *virtAddrPtr,
 	unsigned int virtPage, Boolean segDeletion));
@@ -1594,8 +1599,6 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	 * Read out all reference and modify bits from the pmeg.
 	 */
 	if (pmegPtr->pageCount > 0) {
-	    Boolean	printedStealPMEG = FALSE;
-
 	    ptePtr = pteArray;
 	    VmMachReadAndZeroPMEG(pmegNum, ptePtr);
 	    for (i = 0;
@@ -2453,7 +2456,7 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 	    mapAddr += ((unsigned int)inScatGathPtr->bufAddr &
 		    (VMMACH_CACHE_SIZE - 1));
 	    /* set addr to beginning of page */
-	    (unsigned int) mapAddr &= ~VMMACH_OFFSET_MASK;
+	    mapAddr = (Address)((unsigned int) mapAddr & ~VMMACH_OFFSET_MASK);
 	    VmMachFlushPage(mapAddr);
 	    VmMachSetPageMap(mapAddr, VmMachGetPageMap(inScatGathPtr->bufAddr));
 	    outScatGathPtr->bufAddr = (Address) ((unsigned)mapAddr +
@@ -2559,6 +2562,10 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 }
 
 /*
+ * FlushWholeCache seems to be dead code.
+ */
+#if 0
+/*
  * We use this array to flush the cache by touching entries at the correct
  * offsets to clear the corresponding parts of the direct-mapped cache.
  */
@@ -2595,6 +2602,7 @@ FlushWholeCache()
     }
     return;
 }
+#endif
 
 #if 0 /* dead code shirriff 9/90 */
 char	bigBuf[VMMACH_PAGE_SIZE_INT * 2];
@@ -5007,7 +5015,7 @@ VmMach_32BitDMAAlloc(numBytes, srcAddr)
 	    (((unsigned int) srcAddr) & VMMACH_OFFSET_MASK));
 
     /* set high VME addr bit */
-    (unsigned) beginAddr |= VMMACH_VME_ADDR_BIT;
+    beginAddr = (Address)((unsigned) beginAddr | VMMACH_VME_ADDR_BIT);
     MASTER_UNLOCK(vmMachMutexPtr);
     return (Address) beginAddr;
 }
@@ -5060,7 +5068,7 @@ VmMach_32BitDMAFree(numBytes, mapAddr)
 	userdmaPageBitMap[i + j] = 0;	/* free page */
 	VmMachFlushPage(mapAddr);
 	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) 0);
-	(unsigned int) mapAddr += VMMACH_PAGE_SIZE_INT;
+	mapAddr = (Address)((unsigned int) mapAddr + VMMACH_PAGE_SIZE_INT);
     }
     VmMachSetContextReg(oldContext);
     MASTER_UNLOCK(vmMachMutexPtr);
