@@ -264,7 +264,12 @@ static SysCallEntry sysCalls[] = {
     Proc_GetHostIDs,		Proc_GetHostIDs,   TRUE,	2,   NILPARM,
     Sched_IdleProcessor,	Sched_IdleProcessor,  TRUE,	1,   NILPARM,
     Sched_StartProcessor,	Sched_StartProcessor,   TRUE,	1,   NILPARM,
+#if 0
     Mach_GetNumProcessors,	Mach_GetNumProcessors,   TRUE,	1,   NILPARM,
+#else
+    0,                          0,                      TRUE,   1,   NILPARM,
+#endif
+    Prof_Profil,                Prof_Profil,            TRUE,   4,   NILPARM,
 };
 
 
@@ -450,6 +455,8 @@ static Sys_CallParam paramsArray[] = {
     /* local */ 			/* SYS_SCHED_IDLE_PROCESSOR	90 */
     /* local */ 			/* SYS_SCHED_START_PROCESSOR	91 */
     /* local */ 			/* SYS_MACH_NUM_PROCESSORS	92 */
+    /* local */                         /* SYS_PROF_PROFIL              93 */
+
     /*
      * Insert new system call information above this line.
      */
