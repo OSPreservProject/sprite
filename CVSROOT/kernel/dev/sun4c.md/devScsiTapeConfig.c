@@ -21,12 +21,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include  "scsiTape.h"
+#include "exabyteTape.h"
+#include "emulexTape.h"
 
 ReturnStatus ((*devSCSITapeAttachProcs[])()) = {
+    DevExabyteAttach,
+    DevEmulexAttach,
  };
-#ifdef notdef
 
 int devNumSCSITapeTypes = sizeof(devSCSITapeAttachProcs) / 
 				sizeof(devSCSITapeAttachProcs[0]);
-#endif
-int devNumSCSITapeTypes = 0;
+
