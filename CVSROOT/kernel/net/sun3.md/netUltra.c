@@ -122,6 +122,8 @@ static void		SourceDone _ARGS_((Net_Interface *interPtr,
 static ReturnStatus	NetUltraSource _ARGS_((Net_Interface *interPtr,
 				Net_Address *netAddressPtr, int count,
 				int bufSize, Address buffer, Time *timePtr));
+static void		NetUltraResetCallback _ARGS_((ClientData data,
+				Proc_CallInfo *infoPtr));
 
 /*
  * Macros for mapping between kernel, DVMA and VME addresses.
@@ -204,6 +206,7 @@ NetUltraInit(interPtr)
     assert(sizeof(NetUltraExtDiagCommand) == 24);
     assert(sizeof(NetUltraLoadCommand) == 24);
     assert(sizeof(NetUltraGoCommand) == 12);
+    assert(sizeof(Net_UltraHeader) == sizeof(NetUltraDatagramRequest));
 
     ctrlAddr = (unsigned int) interPtr->ctrlAddr;
     /*
@@ -679,6 +682,7 @@ NetUltraStop(statePtr)
 	    printf("NetUltraStop: hdrPtr->status = %d : %s\n",
 		hdrPtr->status, GetStatusString(hdrPtr->status));
 	}
+	statePtr->flags &= ~NET_ULTRA_STATE_START;
     } else {
 	printf("NetUltraStop: stop command failed <0x%x> : %s\n",
 	    hdrPtr->status, GetStatusString(hdrPtr->status));
@@ -749,8 +753,43 @@ Net_UltraReset(interPtr)
     Net_Interface	*interPtr;	/* Interface to reset. */
 {
     MASTER_LOCK(&interPtr->mutex);
-    (void) NetUltraReset(interPtr);
+    /*
+     * If we are at interrupt level we have to do a callback to reset
+     * the adapter since we can't wait for the response from
+     * the adapter (there may not be a current process and we can't
+     * get the interrupt).
+     */
+    if (Mach_AtInterruptLevel()) {
+	Proc_CallFunc(NetUltraResetCallback, (ClientData) interPtr, 0);
+    } else {
+	(void) NetUltraReset(interPtr);
+    }
     MASTER_UNLOCK(&interPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetUltraResetCallback --
+ *
+ *	This routine is called by the Proc_ServerProc during the
+ *	callback to reset the adapter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The adapter is reset.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NetUltraResetCallback(data, infoPtr)
+    ClientData		data;		/* Ptr to the interface to reset. */
+    Proc_CallInfo	*infoPtr;	/* Unused. */
+{
+    Net_UltraReset((Net_Interface *) data);
 }
 
 
@@ -2283,7 +2322,8 @@ InitQueues(statePtr)
     bzero((char *) statePtr->firstToHostPtr, size);
     size = sizeof(NetUltraXRB) * NET_ULTRA_NUM_TO_ADAPTER;
     bzero((char *) statePtr->firstToAdapterPtr, size);
-    LIST_FORALL(statePtr->pendingXRBInfoList, itemPtr) {
+    while (!List_IsEmpty(statePtr->pendingXRBInfoList)) {
+	itemPtr = List_First(statePtr->pendingXRBInfoList);
 	List_Remove(itemPtr);
 	List_Insert(itemPtr, LIST_ATREAR(statePtr->freeXRBInfoList));
     }
@@ -2731,19 +2771,33 @@ DgramSendDone(interPtr, infoPtr)
  *----------------------------------------------------------------------
  */
 
-void
-NetUltraOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
+ReturnStatus
+NetUltraOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
+	    statusPtr)
     Net_Interface		*interPtr;	/* The interface to use. */
     Address			hdrPtr;		/* Packet header. */
     Net_ScatterGather		*scatterGatherPtr; /* Scatter/gather elements.*/
     int				scatterGatherLength; /* Number of elements in
 						      * scatter/gather list. */
+    Boolean			rpc;		/* Is this an RPC packet? */
+    ReturnStatus		*statusPtr;	/* Place to store status. */
 {
     NetUltraState		*statePtr;
     ReturnStatus		status = SUCCESS;
     Net_UltraHeader		*ultraHdrPtr = (Net_UltraHeader *) hdrPtr;
 
     statePtr = (NetUltraState *) interPtr->interfaceData;
+    if ((ultraHdrPtr->cmd != NET_ULTRA_DGRAM_SEND_REQ) && 
+	(ultraHdrPtr->cmd != 0)) {
+	printf("Invalid header to NetUltraOutput.\n");
+	return FAILURE;
+    }
+    /*
+     * If the cmd is 0 then the packet is from the network device.
+     */
+    if (ultraHdrPtr->cmd == 0) {
+	ultraHdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
+    }
     MASTER_LOCK(&interPtr->mutex);
     if (netUltraDebug) {
 	char	address[100];
@@ -2754,13 +2808,14 @@ NetUltraOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
 	printf("NetUltraOutput: sending to %s\n", address);
     }
     status = NetUltraSendReq(statePtr, OutputDone, 
-		(ClientData) NIL, TRUE, scatterGatherLength, scatterGatherPtr, 
-		sizeof(Net_UltraHeader), 
+		(ClientData) statusPtr, rpc, scatterGatherLength, 
+		scatterGatherPtr, sizeof(Net_UltraHeader), 
 		(NetUltraRequest *) ultraHdrPtr);
     if (status != SUCCESS) {
 	printf("NetUltraOutput: packet not sent\n");
     }
     MASTER_UNLOCK(&interPtr->mutex);
+    return status;
 }
 
 /*
@@ -2788,29 +2843,38 @@ OutputDone(interPtr, infoPtr)
 {
     NetUltraRequestHdr		*hdrPtr;
     NetUltraState		*statePtr;
+    ReturnStatus		*statusPtr;
+    ReturnStatus		status = SUCCESS;
 
     hdrPtr = &(infoPtr->xrbPtr->request.dgram.hdr);
+    statusPtr = (ReturnStatus *) infoPtr->doneData;
 
     statePtr = (NetUltraState *) interPtr->interfaceData;
     if (!(hdrPtr->status & NET_ULTRA_STATUS_OK)) {
-	panic("OutputDone: write failed 0x%x (continuable)\n", hdrPtr->status);
-    } else {
+	printf("Warning: OutputDone: write failed 0x%x\n", hdrPtr->status);
+	status = FAILURE;
+    } 
 #ifndef CLEAN
-	if (netUltraDebug) {
-	    printf("OutputDone: packet sent\n");
-	}
+    if (netUltraDebug) {
+	printf("OutputDone: packet sent\n");
+    }
 #endif
-	statePtr->numWritePending--;
-	if (statePtr->numWritePending < 0) {
-	    panic("OutputDone: number of pending writes < 0.\n");
-	}
-	/*
-	 * Wakeup any process waiting for the packet to be sent.
-	 */
-	infoPtr->scatterPtr->done = TRUE;
-	if (infoPtr->scatterPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	    NetOutputWakeup(infoPtr->scatterPtr->mutexPtr);
-	}
+    statePtr->numWritePending--;
+    if (statePtr->numWritePending < 0) {
+	panic("OutputDone: number of pending writes < 0.\n");
+    }
+    /*
+     * Return status to the waiting process.
+     */
+    if (statusPtr != (ReturnStatus *) NIL) {
+	*statusPtr = status;
+    }
+    /*
+     * Wakeup any process waiting for the packet to be sent.
+     */
+    infoPtr->scatterPtr->done = TRUE;
+    if (infoPtr->scatterPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(infoPtr->scatterPtr->mutexPtr);
     }
 }
 
