@@ -279,7 +279,7 @@ Sys_Shutdown(flags, rebootString)
     return(SUCCESS);
 }
 
-Boolean	sys_ShouldSyncDisks = FALSE;
+Boolean	sys_ShouldSyncDisks = TRUE;
 
 /*
  *----------------------------------------------------------------------
