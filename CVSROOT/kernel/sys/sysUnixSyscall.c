@@ -76,7 +76,6 @@ extern int Fs_AcceptStub();
 extern int Proc_GetpriorityStub();
 extern int Fs_SendStub();
 extern int Fs_RecvStub();
-extern int Sig_SigreturnStub();
 extern int Fs_BindStub();
 extern int Fs_SetsockoptStub();
 extern int Fs_ListenStub();
@@ -129,17 +128,30 @@ extern int Vm_MunmapStub();
 extern int Vm_MincoreStub();
 static int Sys_UnixError();
 static int Sys_TestStub();
+extern int Mach_SigreturnStub();
+
+#if defined(ds3100) || defined(ds5000)
+#else
+extern int Fs_GetdentsStub();
+#endif
 
 #define SYS_UNIX_ERROR  Sys_UnixError
 
 /*
  * The system call table.
+ * Note: from call #150 on, the calls are different between mips and sunOS.
+ */
+
+/*
+ * Warning: if a system call with more than 6 arguments is added,
+ * sun4.md/machTrap.s will have to be modified to fetch the arguments,
+ * since only 6 arguments are passed in registers.
  */
 
 struct {
     int  (*func)();
     int	 numArgs;
-} sysUnixSysCallTable[] = {
+} sysUnixSysCallTable[258] = {
     {  SYS_UNIX_ERROR,        0  },      /* indir  */
     { Proc_ExitStub,          1  },      /* exit  */
     { Proc_ForkStub,          0  },      /* fork  */
@@ -243,7 +255,11 @@ struct {
     { Proc_GetpriorityStub,   2  },      /* getpriority  */
     { Fs_SendStub,            4  },      /* send  */
     { Fs_RecvStub,            4  },      /* recv  */
-    { Sig_SigreturnStub,      1  },      /* sigreturn  */
+#if defined(ds3100) || defined(ds5000)
+    { Mach_SigreturnStub,      1  },      /* sigreturn */
+#else
+    { SYS_UNIX_ERROR,         0  },      /* old socketaddr (103) */
+#endif
     { Fs_BindStub,            3  },      /* bind  */
     { Fs_SetsockoptStub,      5  },      /* setsockopt  */
     { Fs_ListenStub,          2  },      /* listen  */
@@ -279,19 +295,24 @@ struct {
     { Fs_MkdirStub,           2  },      /* mkdir  */
     { Fs_RmdirStub,           1  },      /* rmdir  */
     { Fs_UtimesStub,          2  },      /* utimes  */
-    { SYS_UNIX_ERROR,         1  },      /* sigreturn(ljmp)  */
+#if defined(ds3100) || defined(ds5000)
+    { SYS_UNIX_ERROR,         1  },      /*   */
+#else
+    { Mach_SigreturnStub,      1  },      /* sigreturn (from longjmp) */
+#endif
     { Timer_AdjtimeStub,      2  },      /* adjtime  */
     { Sys_GetpeernameStub,    3  },      /* getpeername  */
     { Sys_GethostidStub,      2  },      /* gethostid  */
     { Sys_SethostidStub,      2  },      /* sethostid  */
     { Sys_GetrlimitStub,      2  },      /* getrlimit  */
     { Sys_SetrlimitStub,      2  },      /* setrlimit  */
-    { Sig_KillpgStub,        2  },      /* killpg  */
+    { Sig_KillpgStub,         2  },      /* killpg  */
     { SYS_UNIX_ERROR,         0  },      /* #147  */
     { SYS_UNIX_ERROR,         0  },      /* setquota  */
     { SYS_UNIX_ERROR,         0  },      /* quota  */
     { Fs_GetsocknameStub,     3  },      /* getsockname  */	
-    { SYS_UNIX_ERROR,         0  },      /* sysmips  */
+#if defined(ds3100) || defined(ds5000)
+    { SYS_UNIX_ERROR,         0  },      /* sysmips #151 */
     { SYS_UNIX_ERROR,         0  },      /* cacheflush  */
     { SYS_UNIX_ERROR,         0  },      /* cachectl  */
     { SYS_UNIX_ERROR,         0  },      /* debug  */
@@ -299,14 +320,14 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* #156  */
     { SYS_UNIX_ERROR,         0  },      /* #157  */
     { SYS_UNIX_ERROR,         0  },      /* nfs_svc  */
-    { Fs_GetdirentriesStub,   4  },      /* getdirentries  */
-    { SYS_UNIX_ERROR,         0  },      /* #160  */
-    { SYS_UNIX_ERROR,         0  },      /* #161  */
+    { SYS_UNIX_ERROR,         0  },      /* getdirentries  */
+    { SYS_UNIX_ERROR,         0  },      /* statfs  */
+    { SYS_UNIX_ERROR,         0  },      /* fstatfs  */
     { SYS_UNIX_ERROR,         0  },      /* #162  */
-    { SYS_UNIX_ERROR,         0  },      /* nfs_biod  */
-    { SYS_UNIX_ERROR,         0  },      /* nfs_getfh  */
-    { Sys_GetdomainnameStub,  2  },      /* getdomainname  */
-    { Sys_SetdomainnameStub,  2  },      /* setdomainname  */
+    { SYS_UNIX_ERROR,         0  },      /* #163  */
+    { SYS_UNIX_ERROR,         0  },      /* #164  */
+    { SYS_UNIX_ERROR,         0  },      /* getdomainname  */
+    { SYS_UNIX_ERROR,         0  },      /* setdomainname  */
     { SYS_UNIX_ERROR,         0  },      /* #167  */
     { SYS_UNIX_ERROR,         0  },      /* #168  */
     { SYS_UNIX_ERROR,         0  },      /* exportfs  */
@@ -316,9 +337,9 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* msgget  */
     { SYS_UNIX_ERROR,         0  },      /* msgrcv  */
     { SYS_UNIX_ERROR,         0  },      /* msgsnd  */
-    { Vm_SemctlStub,          4  },      /* semctl  */
-    { Vm_SemgetStub,          3  },      /* semget  */
-    { Vm_SemopStub,           3  },      /* semop  */
+    { SYS_UNIX_ERROR,         0  },      /* semctl  */
+    { SYS_UNIX_ERROR,         0  },      /* semget  */
+    { SYS_UNIX_ERROR,         0  },      /* semop  */
     { SYS_UNIX_ERROR,         0  },      /* uname  */
     { SYS_UNIX_ERROR,         0  },      /* shmsys  */
     { SYS_UNIX_ERROR,         0  },      /* plock  */
@@ -328,8 +349,49 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* mount  */
     { SYS_UNIX_ERROR,         0  },      /* umount  */
     { SYS_UNIX_ERROR,         0  },      /* sigpending  */
-    { SYS_UNIX_ERROR,         0  },      /* #188  */
-    { SYS_UNIX_ERROR,         0  },      /* #189  */
+    { SYS_UNIX_ERROR,         0  },      /* setsid  */
+    { SYS_UNIX_ERROR,         0  },      /* waitpid  */
+#else
+    { SYS_UNIX_ERROR,         0  },      /* getmsg  */
+    { SYS_UNIX_ERROR,         0  },      /* putmsg  */
+    { SYS_UNIX_ERROR,         0  },      /* poll  */
+    { SYS_UNIX_ERROR,         0  },      /* #154  */
+    { SYS_UNIX_ERROR,         0  },      /* nfs_svc  */
+    { Fs_GetdirentriesStub,   4  },      /* getdirentries  */
+    { SYS_UNIX_ERROR,         0  },      /* statfs  */
+    { SYS_UNIX_ERROR,         0  },      /* fstatfs  */
+    { SYS_UNIX_ERROR,         0  },      /* unmount  */
+    { SYS_UNIX_ERROR,         0  },      /* async_daemon  */
+    { SYS_UNIX_ERROR,         0  },      /* getfh  */
+    { SYS_UNIX_ERROR,         0  },      /* getdomainname  */
+    { SYS_UNIX_ERROR,         0  },      /* setdomainname  */
+    { SYS_UNIX_ERROR,         0  },      /* #164  */
+    { SYS_UNIX_ERROR,         0  },      /* quotactl  */
+    { SYS_UNIX_ERROR,         0  },      /* exportfs  */
+    { SYS_UNIX_ERROR,         0  },      /* mount  */
+    { SYS_UNIX_ERROR,         0  },      /* ustat  */
+    { SYS_UNIX_ERROR,         0  },      /* semsys  */
+    { SYS_UNIX_ERROR,         0  },      /* msgsys  */
+    { SYS_UNIX_ERROR,         0  },      /* shmsys  */
+    { SYS_UNIX_ERROR,         0  },      /* auditsys  */
+    { SYS_UNIX_ERROR,         0  },      /* rfssys  */
+    { Fs_GetdentsStub,        3  },      /* getdents  */
+    { SYS_UNIX_ERROR,         0  },      /* setsid  */
+    { SYS_UNIX_ERROR,         0  },      /* fchdir  */
+    { SYS_UNIX_ERROR,         0  },      /* fchroot  */
+    { SYS_UNIX_ERROR,         0  },      /* vpixsys  */
+    { SYS_UNIX_ERROR,         0  },      /* aioread  */
+    { SYS_UNIX_ERROR,         0  },      /* aiowrite  */
+    { SYS_UNIX_ERROR,         0  },      /* aiowait  */
+    { SYS_UNIX_ERROR,         0  },      /* aiocancel  */
+    { SYS_UNIX_ERROR,         0  },      /* sigpending  */
+    { SYS_UNIX_ERROR,         0  },      /* #184  */
+    { SYS_UNIX_ERROR,         0  },      /* setpgid  */
+    { SYS_UNIX_ERROR,         0  },      /* pathconf  */
+    { SYS_UNIX_ERROR,         0  },      /* fpathconf  */
+    { SYS_UNIX_ERROR,         0  },      /* sysconf  */
+    { SYS_UNIX_ERROR,         0  },      /* uname  */
+#endif
     { SYS_UNIX_ERROR,         0  },      /* #190  */
     { SYS_UNIX_ERROR,         0  },      /* #191  */
     { SYS_UNIX_ERROR,         0  },      /* #192  */
