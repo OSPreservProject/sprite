@@ -44,7 +44,7 @@ Vm_BootInit()
 {
     extern unsigned int end;
 
-    bzero((Address) &vmStat, sizeof(vmStat)) &vmStat);
+    bzero((Address) &vmStat, sizeof(vmStat));
     vmNoBootAlloc = FALSE;
     vmMemEnd = (Address) &end;
     /*

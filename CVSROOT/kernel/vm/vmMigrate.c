@@ -192,7 +192,7 @@ EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr)
     }
 
     bufferSize = NUM_FIELDS * sizeof(int) + varSize + Fs_GetEncapSize();
-    buffer = malloc(bufferSize);
+    buffer = (Address) malloc(bufferSize);
     ptr = buffer;
     bcopy((Address) &segPtr->offset, ptr, NUM_FIELDS * sizeof(int));
     ptr += NUM_FIELDS * sizeof(int);
