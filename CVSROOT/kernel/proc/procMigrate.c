@@ -355,6 +355,8 @@ failure:
  *   |	int		syncFlags
  *   |	int		schedFlags
  *   |	int		exitFlags
+ *    | Proc_PID	parentID
+ *    | int		familyID
  *    | int		userID
  *    |	int		effectiveUserID
  *    |	int		numGroupIDs
@@ -363,6 +365,13 @@ failure:
  * |	unsigned int 	recentUsage
  * |	unsigned int 	weightedUsage
  * |	unsigned int 	unweightedUsage
+ * |    Timer_Ticks 	kernelCpuUsage
+ * |    Timer_Ticks 	userCpuUsage
+ * | 	Timer_Ticks 	childKernelCpuUsage
+ * |    Timer_Ticks 	childUserCpuUsage
+ * |    int 		numQuantumEnds
+ * |    int		numWaitEvents
+ * |    unsigned int 	schedQuantumTicks
  *  |	int		sigHoldMask
  *  |	int		sigPendingMask
  *  |	int		sigActions[SIG_NUM_SIGNALS]
@@ -449,7 +458,7 @@ SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
     ptr += PROC_NUM_FLAGS * sizeof(int);
 
     Byte_Copy(PROC_NUM_ID_FIELDS * sizeof(int),
-	      (Address) &procPtr->userID, ptr);
+	      (Address) &procPtr->parentID, ptr);
     ptr += PROC_NUM_ID_FIELDS * sizeof(int);
     if (procPtr->numGroupIDs > 0) {
 	Byte_Copy(procPtr->numGroupIDs * sizeof(int),

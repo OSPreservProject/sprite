@@ -15,13 +15,14 @@
 #define _MIGRATE
 
 /*
- * Define the number of fields transferred in a shot when updating user
- * information.
+ * Define the number of 4-byte fields transferred in a shot when updating user
+ * information.  Note: Timer_Ticks count as multiple fields.  See the
+ * comments in SendProcessState for a list of fields that are transferred.
  */
 
 #define PROC_NUM_FLAGS 4
-#define PROC_NUM_ID_FIELDS 4
-#define PROC_NUM_BILLING_FIELDS 4
+#define PROC_NUM_ID_FIELDS 5
+#define PROC_NUM_BILLING_FIELDS (7 + 4 * (sizeof(Timer_Ticks) / sizeof(int)))
 #define PROC_NUM_USER_INFO_FIELDS 3
 
 /*
