@@ -207,6 +207,46 @@ extern	int	vmMapEndPage;		/* Last page to use for mapping. */
 extern	Address	vmBlockCacheBaseAddr;	/* Base of the file system cache. */
 extern	Address	vmBlockCacheEndAddr;	/* End of the file system cache. */
 
+extern	Boolean	vmFreeWhenClean;	/* TRUE if pages should be freed after 
+					 * they have been cleaned. */
+extern	Boolean	vmAlwaysRefuse;		/* TRUE if VM should always refuse the
+					 * file systems requests for memory. */
+extern	Boolean	vmAlwaysSayYes;		/* TRUE if VM should always satisfy 
+					 * file system requests for memory. */
+extern	int	vmMaxDirtyPages;	/* Maximum number of dirty pages
+					 * before waiting for a page to be
+					 * cleaned. */
+extern	int		vmPagesToCheck;	/* Number of pages to check each time
+					 * that the clock is run. */
+extern	unsigned int	vmClockSleep;	/* Number of seconds to sleep between
+					 * iterations of the clock. */
+extern	int		vmMaxPageOutProcs; /* Maximum number of page out procs
+					    * at any given time. */
+
+/*
+ * Variables to control negotiations between the file system and the virtual
+ * memory system.  Each time that FS asks for a page its reference time is 
+ * penalized depending on how many pages that it has allocated to it.  The
+ * penalty is enforced by subtracting vmCurPenalty seconds from its access time 
+ * or adding vmCurPenalty to the VM access time.  This is done in the 
+ * following way.  Let vmPagesPerGroup = total-available-pages / 
+ * vmNumPageGroups,  vmCurPenalty = 0 and vmBoundary = vmPagesPerGroup. 
+ * Whenever the number of pages allocated to FS exceeds vmBoundary, vmBoundary
+ * is incremented by vmPagesPerGroup and vmCurPenalty is incremented by 
+ * vmFSPenalty.  Whenever the number of pages allocated to FS goes under
+ * vmBoundary, vmBoundary is decremented by vmPagesPerGroup and vmCurPenalty is
+ * decremented by vmFSPenalty.  
+ */
+int	vmFSPenalty;		/* Number of seconds FS is penalized when it
+				 * asks for page. */
+int	vmNumPageGroups;	/* The number of groups to divide memory up
+				 * into. */
+int	vmPagesPerGroup;	/* The number of pages in each group. */
+int	vmCurPenalty;		/* The number of seconds that FS is currently
+				 * penalized by. */
+int	vmBoundary;		/* The current number of pages that must be
+				 * exceeded or gone under before changing the
+				 * penalty. */
 
 /*---------------------------------------------------------------------------*/
 
