@@ -554,7 +554,7 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
     /*
      * Decrement use counts.
      */
-    FsLockClose(&devHandlePtr->lock, procID, &streamPtr->hdr.fileID);
+    FsLockClose(&devHandlePtr->lock, &streamPtr->hdr.fileID);
 
     devHandlePtr->use.ref--;
     if (flags & FS_WRITE) {
