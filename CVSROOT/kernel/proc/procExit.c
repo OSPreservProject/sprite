@@ -430,7 +430,7 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
 
     if ((exitProcPtr->genFlags & PROC_USER) && !noVm) {
 	for (i = VM_CODE; i <= VM_STACK; i++) {
-	    Vm_SegmentDelete(exitProcPtr->segPtrArray[i], exitProcPtr);
+	    Vm_SegmentDelete(exitProcPtr->vmPtr->segPtrArray[i], exitProcPtr);
 	}
 	Vm_MachExit(exitProcPtr);
     }

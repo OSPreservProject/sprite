@@ -103,6 +103,7 @@ Proc_InitTable()
 	pcbPtr->peerHostID = NIL;
 	pcbPtr->peerProcessID = (Proc_PID) NIL;
 	pcbPtr->codeFileName[0] = '\0';
+	pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
 	pcbPtr->trapStackPtr = (Exc_TrapStack *) NIL;
 	pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
 
@@ -150,12 +151,10 @@ Proc_InitMainProc()
     /*
      *  Initialize the main process.
      */
-
     procPtr->state		= PROC_RUNNING;
     procPtr->genFlags		= PROC_KERNEL;
     procPtr->syncFlags		= 0;
     procPtr->schedFlags		= 0;
-    procPtr->vmFlags            = 0;
     procPtr->processID	 	= MAIN_PID | (1 << PROC_GEN_NUM_SHIFT) | 
 					(rpc_SpriteID << PROC_ID_NUM_SHIFT);
     procPtr->parentID		= procPtr->processID;
@@ -184,6 +183,7 @@ Proc_InitMainProc()
     procPtr->groupIDs 		= (int *) Mem_Alloc(1 * sizeof(int));
     procPtr->groupIDs[0]	= 0;
 
+    Vm_ProcInit(procPtr);
     Sig_ProcInit(procPtr);
 
     Proc_SetCurrentProc(Sys_GetProcessorNumber(), procPtr);

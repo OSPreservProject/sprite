@@ -126,7 +126,6 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 
 
     procPtr->genFlags 		= procType | PROC_DONT_MIGRATE;
-    procPtr->vmFlags		= 0;
     procPtr = ProcGetUnusedPCB();
     if (pidPtr != (Proc_PID *) NIL) {
 	*pidPtr		= procPtr->processID;
@@ -154,7 +153,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     } else {
 	String_Copy(procName, procPtr->codeFileName);
 	free((Address) procPtr->argString);
-    
+	procPtr->argString = (Address) NIL;
     }
 
 	    Sys_Panic(SYS_FATAL, "Proc_NewProc: ProcFamilyInsert failed\n");
@@ -175,6 +174,8 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 
     Sig_ProcInit(procPtr);
 	if (ProcFamilyInsert(procPtr, procPtr->familyID) != SUCCESS) {
+	    panic("Proc_NewProc: ProcFamilyInsert failed\n");
+	}
     }
 
     /*
@@ -208,7 +209,6 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 	}
 
 	/*
-	procPtr->context = VM_KERN_CONTEXT;
 	procPtr->stackStart = Vm_GetKernelStack((int) PC, Sched_StartProcess);
 	if (procPtr->stackStart == -1) {
 	if (pidPtr != (Proc_PID *) NIL) {
@@ -292,8 +292,6 @@ InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
  *	None.
  *
 
-    procPtr->context = VM_INV_CONTEXT;
-
     /*
      * Child inherits the parents signal stuff.
      */
@@ -322,30 +320,32 @@ InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
     ReturnStatus	status;
 
     /*
-    procPtr->segPtrArray[VM_SYSTEM] = (Vm_Segment *) NIL;
+     * Set up a kernel stack for the process.
      */
-    status = Vm_SegmentDup(parentProcPtr->segPtrArray[VM_STACK], procPtr, 
-			&(procPtr->segPtrArray[VM_STACK]));
+    status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_STACK],
+    /*
     if (status != SUCCESS) {
 	Vm_FreeKernelStack(procPtr->stackStart);
 	return(status);
      * or the same as the parent depending on the share heap flag.
      */
     if (shareHeap) {
-	Vm_SegmentIncRef(parentProcPtr->segPtrArray[VM_HEAP], procPtr);
-	procPtr->segPtrArray[VM_HEAP] = parentProcPtr->segPtrArray[VM_HEAP];
+    procPtr->vmPtr->segPtrArray[VM_SYSTEM] = (Vm_Segment *) NIL;
+
+    if (vforkFlag) {
 	Vm_SegmentIncRef(parentProcPtr->vmPtr->segPtrArray[VM_STACK], procPtr);
-	status = Vm_SegmentDup(parentProcPtr->segPtrArray[VM_HEAP], procPtr, 
-			&(procPtr->segPtrArray[VM_HEAP]));
+	procPtr->vmPtr->segPtrArray[VM_STACK] = 
+				parentProcPtr->vmPtr->segPtrArray[VM_STACK];
     } else {
-	    Vm_SegmentDelete(procPtr->segPtrArray[VM_STACK], procPtr);
+	status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_STACK],
 	    Vm_FreeKernelStack(procPtr->stackStart);
 	if (status != SUCCESS) {
 	    Mach_FreeState(procPtr);
     if (shareHeap || vforkFlag) {
 	Vm_SegmentIncRef(parentProcPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
-    Vm_SegmentIncRef(parentProcPtr->segPtrArray[VM_CODE], procPtr);
-    procPtr->segPtrArray[VM_CODE] = parentProcPtr->segPtrArray[VM_CODE];
+	procPtr->vmPtr->segPtrArray[VM_HEAP] = 
+				parentProcPtr->vmPtr->segPtrArray[VM_HEAP];
+    } else {
 	status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_HEAP],
     /*
      * Now copy over all of the internal state of the user process so that

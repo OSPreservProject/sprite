@@ -142,34 +142,34 @@ Proc_KernExec(fileName, argPtrArray)
      * Set up dummy segments so that DoExec can work properly.
      */
 
-    procPtr->segPtrArray[VM_CODE] = Vm_SegmentNew(VM_CODE, (Fs_Stream *) NIL, 0,
+    procPtr->vmPtr->segPtrArray[VM_CODE] = 
+				Vm_SegmentNew(VM_CODE, (Fs_Stream *) NIL, 0,
 					          1, 0, procPtr);
-    if (procPtr->segPtrArray[VM_CODE] == (Vm_Segment *) NIL) {
+    if (procPtr->vmPtr->segPtrArray[VM_CODE] == (Vm_Segment *) NIL) {
 	return(PROC_NO_SEGMENTS);
     }
-    Vm_InitPageTable(procPtr->segPtrArray[VM_CODE], (Vm_PTE *) NIL, 
+    Vm_InitPageTable(procPtr->vmPtr->segPtrArray[VM_CODE], (Vm_PTE *) NIL, 
 		     0, -1, FALSE);
 
-    procPtr->segPtrArray[VM_HEAP] = Vm_SegmentNew(VM_HEAP, (Fs_Stream *) NIL, 
-					          0, 1, 1, procPtr);
-    if (procPtr->segPtrArray[VM_HEAP] == (Vm_Segment *) NIL) {
-	Vm_SegmentDelete(procPtr->segPtrArray[VM_CODE], procPtr);
+    procPtr->vmPtr->segPtrArray[VM_HEAP] =
+		    Vm_SegmentNew(VM_HEAP, (Fs_Stream *) NIL, 0, 1, 1, procPtr);
+    if (procPtr->vmPtr->segPtrArray[VM_HEAP] == (Vm_Segment *) NIL) {
+	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
 	return(PROC_NO_SEGMENTS);
     }
 
-    procPtr->segPtrArray[VM_STACK] = Vm_SegmentNew(VM_STACK, (Fs_Stream *) NIL, 
+    procPtr->vmPtr->segPtrArray[VM_STACK] =
+		    Vm_SegmentNew(VM_STACK, (Fs_Stream *) NIL, 
 				   0 , 1, MACH_LAST_USER_STACK_PAGE, procPtr);
-    if (procPtr->segPtrArray[VM_STACK] == (Vm_Segment *) NIL) {
-	Vm_SegmentDelete(procPtr->segPtrArray[VM_CODE], procPtr);
-	Vm_SegmentDelete(procPtr->segPtrArray[VM_HEAP], procPtr);
+    if (procPtr->vmPtr->segPtrArray[VM_STACK] == (Vm_Segment *) NIL) {
+	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
+	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
 	return(PROC_NO_SEGMENTS);
     }
 
     /*
      * Change this process to a user process.
      */
-
-    procPtr->context = VM_INV_CONTEXT;
 
     Proc_Lock(procPtr);
     procPtr->genFlags &= ~PROC_KERNEL;
@@ -193,9 +193,9 @@ Proc_KernExec(fileName, argPtrArray)
 
     Vm_ReinitContext(procPtr);
 
-    Vm_SegmentDelete(procPtr->segPtrArray[VM_CODE], procPtr);
-    Vm_SegmentDelete(procPtr->segPtrArray[VM_HEAP], procPtr);
-    Vm_SegmentDelete(procPtr->segPtrArray[VM_STACK], procPtr);
+    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
+    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
+    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_STACK], procPtr);
 
     return(status);
 }
@@ -801,12 +801,12 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
 
     Proc_Lock(procPtr);
     procPtr->genFlags |= PROC_NO_VM;
-    Vm_SegmentDelete(procPtr->segPtrArray[VM_CODE], procPtr);
-    Vm_SegmentDelete(procPtr->segPtrArray[VM_HEAP], procPtr);
-    Vm_SegmentDelete(procPtr->segPtrArray[VM_STACK], procPtr);
-    procPtr->segPtrArray[VM_CODE] = *codeSegPtrPtr;
-    procPtr->segPtrArray[VM_HEAP] = heapSegPtr;
-    procPtr->segPtrArray[VM_STACK] = segPtr;
+    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
+    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
+    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_STACK], procPtr);
+    procPtr->vmPtr->segPtrArray[VM_CODE] = *codeSegPtrPtr;
+    procPtr->vmPtr->segPtrArray[VM_HEAP] = heapSegPtr;
+    procPtr->vmPtr->segPtrArray[VM_STACK] = segPtr;
     procPtr->genFlags &= ~PROC_NO_VM;
     Vm_ReinitContext(procPtr);
 

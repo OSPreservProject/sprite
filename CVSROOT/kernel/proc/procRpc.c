@@ -401,7 +401,6 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     childProcPtr = ProcGetUnusedPCB();
     childProcPtr->state 		= PROC_MIGRATED;
     childProcPtr->genFlags 		= PROC_USER | PROC_NO_VM;
-    childProcPtr->vmFlags		= 0;
     childProcPtr->syncFlags		= 0;
     childProcPtr->schedFlags		= 0;
     childProcPtr->exitFlags		= 0;
@@ -425,10 +424,8 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
 
     childProcPtr->stackStart 		= NIL;
 
-    for (i = 0; i <= VM_STACK; i++) {
-	childProcPtr->segPtrArray[i] = (Vm_Segment *) NIL;
-    }
-    
+    Vm_ProcInit(childProcPtr);
+
     if (ProcFamilyInsert(childProcPtr, childProcPtr->familyID) != SUCCESS) {
 	Sys_Panic(SYS_FATAL, "RpcProcFork: ProcFamilyInsert failed\n");
     }

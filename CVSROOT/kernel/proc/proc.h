@@ -238,14 +238,7 @@ typedef struct Proc_ControlBlock {
      *
      *-----------------------------------------------------------------
      */
-
-    Vm_Segment	*segPtrArray[4];	/* The four segments for this process.*/
-    int		context;		/* Which context this process is
-					   executing in. */
-    int		contextReg;		/* The value of the context register
-					   when this process was context 
-					   switched. */
-    int		vmFlags;		/* Flags used by VM module (see vm.h) */
+    Vm_ProcInfo	*vmPtr;
 
     /*
      *-----------------------------------------------------------------
@@ -314,7 +307,6 @@ typedef struct Proc_ControlBlock {
      * the struct. This information is used to deliver the SIG_TIMER signal
      * to the process.
      */
-
     struct ProcIntTimerInfo	*timerArray;
 
     /*
@@ -324,7 +316,6 @@ typedef struct Proc_ControlBlock {
      *
      *---------------------------------------------------------------------
      */
-
     int			peerHostID;	/* If on home node, ID of remote node.
 					 * If on remote node, ID of home node.
 					 * If not migrated, undefined. */
@@ -361,13 +352,10 @@ typedef struct Proc_ControlBlock {
     /*
      * Name of the exec'd file. At end because is so big.
      */
-
     char		codeFileName[FS_MAX_NAME_LENGTH];
-
 } Proc_ControlBlock;
 
 
-
 /*
  * Process attributes flags:
  *

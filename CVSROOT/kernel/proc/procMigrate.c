@@ -566,7 +566,7 @@ SendSegment(procPtr, type, nodeID, foreign)
 		     (ClientData *) &record);
     }
    
-    status = Vm_MigrateSegment(procPtr->segPtrArray[type], &segBuffer,
+    status = Vm_MigrateSegment(procPtr->vmPtr->segPtrArray[type], &segBuffer,
             &segBufferSize, &numPages);
 
     if (proc_MigDebugLevel > 5) {
@@ -600,7 +600,7 @@ SendSegment(procPtr, type, nodeID, foreign)
     /*
      * Free up the segment on the home node.
      */
-    Vm_SegmentDelete(procPtr->segPtrArray[type], procPtr);
+    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[type], procPtr);
     
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);

@@ -343,7 +343,8 @@ GetProcessState(buffer, hostID)
 	    procPtr->stackStart;
 
     procPtr->state 		= PROC_READY;
-    procPtr->context		= VM_INV_CONTEXT;
+
+    Vm_ProcInit(procPtr);
 
     /*
      * CHANGE this to inherit statistics!
