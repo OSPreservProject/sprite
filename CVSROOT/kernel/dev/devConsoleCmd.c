@@ -30,7 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 static struct {
-    void (*proc)();		/* Procedure to invoke. */
+    void (*proc) ();		/* Procedure to invoke. */
     ClientData clientData;	/* Argument to pass to proc. */
 } commands[256];
 
@@ -76,7 +76,7 @@ static void Debug _ARGS_((void));
 
 void
 Dev_RegisterConsoleCmd(commandChar, proc, clientData)
-    char commandChar;		/* ASCII character associated with command. */
+    int commandChar;		/* ASCII character associated with command. */
     void (*proc)();		/* Procedure to call when command is
 				 * invoked. */
     ClientData clientData;	/* Arbitrary one-word value to pass to
@@ -189,7 +189,7 @@ Debug()
 
 int
 Dev_KbdQueueAttachProc(character, proc, clientData)
-    char character;
+    int character;
     void (*proc)();
     ClientData clientData;
 {
