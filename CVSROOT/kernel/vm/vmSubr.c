@@ -594,17 +594,15 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
      * in use count on the page table.
      */
     if (page > seg1Ptr->ptSize + seg1Ptr->offset) {
-	if (page < mach_LastUserStackPage - seg2Ptr->numPages + 1) {
+	if (page < seg2Ptr->offset) {
 	    int	newPTSize;
 	    newPTSize = ((mach_LastUserStackPage - page)/vmPageTableInc + 1) * 
 							    vmPageTableInc;
 	    /* 
 	     * We are going to have to grow the stack to cover this so
-	     * make sure that this address is not below the current stack
-	     * pointer and the heap and the stack don't overlap.
+	     * make sure that the heap and stack segments don't overlap.
 	     */
-	    if (virtAddr < Mach_GetUserStackPtr(procPtr) ||
-	        seg1Ptr->offset + seg1Ptr->ptSize >=
+	    if (seg1Ptr->offset + seg1Ptr->ptSize >=
 		     mach_LastUserStackPage - newPTSize + 1) {
 		transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
 		UNLOCK_MONITOR;
