@@ -18,11 +18,11 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _FSDEVICE
-#define _FSDEVICE
+#ifndef _FSIODEVICE
+#define _FSIODEVICE
 
-#include "fsio.h"
-#include "fsioLock.h"
+#include <fsio.h>
+#include <fsioLock.h>
 
 /*
  * The I/O descriptor for a local device: FSIO_LCL_DEVICE_STREAM
@@ -34,7 +34,7 @@ typedef struct Fsio_DeviceIOHandle {
 					 * the device type.  The 'minor'
 					 * field is the unit number. */
     List_Links		clientList;	/* List of clients of the device. */
-    Fsutil_UseCounts		use;		/* Summary reference counts. */
+    Fsio_UseCounts		use;		/* Summary reference counts. */
     Fs_Device		device;		/* Device info passed to drivers.
 					 * This includes a clientData field. */
     int			flags;		/* Flags returned by the device open.*/
@@ -66,30 +66,59 @@ typedef struct Fsio_DeviceState {
 } Fsio_DeviceState;
 
 /*
+ * Device support
+ */
+extern void Fsio_DevNotifyException _ARGS_((Fs_NotifyToken notifyToken));
+extern void Fsio_DevNotifyWriter _ARGS_((Fs_NotifyToken notifyToken));
+extern void Fsio_DevNotifyReader _ARGS_((Fs_NotifyToken notifyToken));
+extern ReturnStatus Fsio_VanillaDevReopen _ARGS_((Fs_Device *devicePtr, 
+			int refs, int writes, Fs_NotifyToken notifyToken));
+
+/*
  * Open operations.
  */
-extern ReturnStatus	Fsio_DeviceNameOpen();
-extern ReturnStatus	Fsio_DeviceClose();
-extern ReturnStatus	FsDeviceDelete();
+extern ReturnStatus Fsio_DeviceNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr, 
+				Fs_OpenArgs *openArgsPtr, 
+				Fs_OpenResults *openResultsPtr));
+extern ReturnStatus Fsio_DeviceClose _ARGS_((Fs_Stream *streamPtr, 
+				int clientID, Proc_PID procID, int flags, 
+				int size, ClientData data));
 
 /*
  * Stream operations.
  */
-extern ReturnStatus Fsio_DeviceIoOpen();
-extern ReturnStatus Fsio_DeviceRead();
-extern ReturnStatus Fsio_DeviceWrite();
-extern ReturnStatus Fsio_DeviceIOControl();
-extern ReturnStatus Fsio_DeviceSelect();
-extern ReturnStatus Fsio_DeviceGetIOAttr();
-extern ReturnStatus Fsio_DeviceSetIOAttr();
-extern ReturnStatus Fsio_DeviceMigClose();
-extern ReturnStatus Fsio_DeviceMigOpen();
-extern ReturnStatus Fsio_DeviceMigrate();
-extern Boolean	    Fsio_DeviceScavenge();
-extern void	    Fsio_DeviceClientKill();
-extern ReturnStatus Fsio_DeviceClose();
+extern ReturnStatus Fsio_DeviceIoOpen _ARGS_((Fs_FileID *ioFileIDPtr,
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
+extern ReturnStatus Fsio_DeviceRead _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_DeviceWrite _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *writePtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_DeviceSelect _ARGS_((Fs_HandleHeader *hdrPtr, 
+		Sync_RemoteWaiter *waitPtr, int *readPtr, int *writePtr, 
+		int *exceptPtr));
+extern ReturnStatus Fsio_DeviceIOControl _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fsio_DeviceGetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, register Fs_Attributes *attrPtr));
+extern ReturnStatus Fsio_DeviceSetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fsio_DeviceMigClose _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int flags));
+extern ReturnStatus Fsio_DeviceMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr,
+		Address *dataPtr));
+extern ReturnStatus Fsio_DeviceMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr, int size,
+		ClientData data, Fs_HandleHeader **hdrPtrPtr));
+extern Boolean Fsio_DeviceScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
+extern void Fsio_DeviceClientKill _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int clientID));
+extern Boolean FsioDeviceHandleInit _ARGS_((Fs_FileID *fileIDPtr, 
+		char *name, Fsio_DeviceIOHandle **newHandlePtrPtr));
+extern ReturnStatus FsioDeviceCloseInt _ARGS_((
+		Fsio_DeviceIOHandle *devHandlePtr, int useFlags, int refs,
+		int writes));
 
-
-extern ReturnStatus Fsio_DeviceBlockIO();
-
-#endif _FSDEVICE
+#endif /* _FSIODEVICE */
