@@ -572,14 +572,25 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    /*
 	     * Force this files blocks to disk.
 	     */
-	    (void)FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
+	    status = FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
 				    FS_LAST_BLOCK,
 				    FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT,
 				    &blocksSkipped);
-	    FsWriteBackDesc(handlePtr, TRUE);
+	    if (status != SUCCESS) {
+		printf("FsFileClose: write back <%d,%d> \"%s\" err <%x>\n",
+		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		    FsHandleName(handlePtr), status);
+	    }
+	    status = FsWriteBackDesc(handlePtr, TRUE);
+	    if (status != SUCCESS) {
+		printf("FsFileClose: desc write <%d,%d> \"%s\" err <%x>\n",
+		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		    FsHandleName(handlePtr), status);
+	    }
+	} else {
+	    status = SUCCESS;
 	}
 	FsHandleRelease(handlePtr, TRUE);
-	status = SUCCESS;
     }
 
     return(status);
@@ -980,7 +991,7 @@ FsFileWrite(streamPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	 * When in write-through or asap mode we have to force the descriptor
 	 * to disk on every write.
 	 */
-	FsWriteBackDesc(handlePtr, FALSE);
+	status = FsWriteBackDesc(handlePtr, FALSE);
     }
 
     *offsetPtr += *lenPtr;

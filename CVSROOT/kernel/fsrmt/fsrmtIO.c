@@ -585,11 +585,23 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 		 * Force out all data, indirect and descriptor blocks
 		 * for this file.
 		 */
-		(void)FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
+		status = FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
 					FS_LAST_BLOCK,
 					FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT,
 				        &blocksSkipped);
-		FsWriteBackDesc(handlePtr, TRUE);
+		if (status != SUCCESS) {
+		    printf("Fs_RpcWrite: write back <%d,%d> \"%s\" err <%x>\n",
+			handlePtr->hdr.fileID.major,
+			handlePtr->hdr.fileID.minor,
+			FsHandleName(handlePtr), status);
+		}
+		status = FsWriteBackDesc(handlePtr, TRUE);
+		if (status != SUCCESS) {
+		    printf("Fs_RpcWrite: desc write <%d,%d> \"%s\" err <%x>\n",
+			handlePtr->hdr.fileID.major,
+			handlePtr->hdr.fileID.minor,
+			FsHandleName(handlePtr), status);
+		}
 	    }
 	}
     }
