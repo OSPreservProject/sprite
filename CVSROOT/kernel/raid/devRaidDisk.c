@@ -37,7 +37,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 RaidDisk *
-MakeRaidDisk(type, unit, numSector)
+MakeRaidDisk(col, row, type, unit, numSector)
+    int 	 col, row;
     int 	 type, unit;
     int		 numSector;
 {
@@ -45,6 +46,8 @@ MakeRaidDisk(type, unit, numSector)
 
     diskPtr = (RaidDisk *) malloc(sizeof(RaidDisk));
     Sync_SemInitDynamic(&diskPtr->mutex, "RaidDisk Mutex");
+    diskPtr->row = row;
+    diskPtr->col = col;
     diskPtr->version = 1;
     diskPtr->useCount = 1;
     diskPtr->device.type = type;
@@ -137,6 +140,7 @@ FailRaidDisk(raidPtr, col, row, version)
     int		 version;
 {
     RaidDisk	*diskPtr = raidPtr->disk[col][row];
+    char	buf[120];
 
     MASTER_LOCK(&diskPtr->mutex);
     if (version == diskPtr->version &&
@@ -149,6 +153,8 @@ FailRaidDisk(raidPtr, col, row, version)
 	        raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
 		row, col, version,
 		diskPtr->device.type, diskPtr->device.unit);
+        sprintf(buf, "F %d %d %d\n", row, col, diskPtr->version);
+	LogEntry(raidPtr, buf);
     } else {
         MASTER_UNLOCK(&diskPtr->mutex);
     }
@@ -181,6 +187,7 @@ ReplaceRaidDisk(raidPtr, col, row, version, type, unit, numValidSector)
 {
     RaidDisk	*diskPtr    = raidPtr->disk[col][row];
     RaidDisk	*newDiskPtr;
+    char	 buf[120];
 
     diskPtr = raidPtr->disk[col][row];
     MASTER_LOCK(&diskPtr->mutex);
@@ -200,15 +207,18 @@ ReplaceRaidDisk(raidPtr, col, row, version, type, unit, numValidSector)
      * whether the old disk structure is still in use, therfore, we
      * can not deallocate it.  (i.e. it will stay around forever)
      */
-    newDiskPtr = MakeRaidDisk(type, unit, numValidSector);
+    newDiskPtr = MakeRaidDisk(col, row, type, unit, numValidSector);
     diskPtr->state = RAID_DISK_REPLACED;
     diskPtr->version = -version;
     newDiskPtr->version = version + 1;
     raidPtr->disk[col][row] = newDiskPtr;
     MASTER_UNLOCK(&diskPtr->mutex);
-    printf("RAID:DISK_REPLACED:raid %d %d:pos %d %d %d:oldDev %d %d:newDev %d %d\n",
+printf("RAID:DISK_REPLACED:raid %d %d:pos %d %d %d:oldDev %d %d:newDev %d %d\n",
 	    raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
 	    row, col, version,
 	    diskPtr->device.type, diskPtr->device.unit,
 	    newDiskPtr->device.type, newDiskPtr->device.unit);
+    sprintf(buf, "R %d %d %d  %d %d\n", row, col, diskPtr->version,
+		diskPtr->device.type, diskPtr->device.unit);
+    LogEntry(raidPtr, buf);
 }

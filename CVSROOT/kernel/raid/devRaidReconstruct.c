@@ -21,14 +21,10 @@
 #include "sprite.h"
 #include "fs.h"
 #include "dev.h"
-/* #include "devInt.h" */
-#include "devDiskLabel.h"
-#include "devDiskStats.h"
 #include "devBlockDevice.h"
 #include "devRaid.h"
 #include "devRaidLock.h"
 #include "stdlib.h"
-#include "dbg.h"
 #include "devRaidUtil.h"
 #include "devRaidIOC.h"
 #include "debugMem.h"
@@ -72,8 +68,8 @@ InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, ctrlData)
         MASTER_UNLOCK(&diskPtr->mutex);
 	return;
     }
-    reconstructionControlPtr =
-	    MakeReconstructionControl(raidPtr, col, row, diskPtr, ctrlData);
+    reconstructionControlPtr = MakeReconstructionControl(raidPtr,
+	    col, row, diskPtr, (void(*)()) NIL, (ClientData) NIL, ctrlData);
     InitiateStripeReconstruction(reconstructionControlPtr);
 }
 
@@ -187,7 +183,7 @@ InitiateStripeReconstruction(reconstructionControlPtr)
     reconstructionControlPtr->stripeID = stripeID;
     firstSector = StripeIDToSector(raidPtr, stripeID);
     nthSector   = NthSectorOfStripe(raidPtr, firstSector);
-    LockStripe(stripeID);
+    XLockStripe(raidPtr, stripeID);
     reqControlPtr->numReq = reqControlPtr->numFailed = 0;
     AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, nthSector, readBuf, ctrlData);
@@ -280,9 +276,15 @@ reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
         diskPtr->numValidSector -= raidPtr->sectorsPerStripeUnit;
 	InitiateReconstructionFailure(reconstructionControlPtr);
     } else {
+	char buf[120];
 	printf("RAID:RECON:%d %d %d\n",
 		diskPtr->device.type, diskPtr->device.unit,
 		SectorToStripeUnitID(raidPtr, diskPtr->numValidSector));
+	sprintf(buf, "D %d %d %d  %d %d  %d %d\n", diskPtr->row, diskPtr->col,
+		diskPtr->version,
+		diskPtr->device.type, diskPtr->device.unit,
+		diskPtr->state, diskPtr->numValidSector);
+	LogEntry(raidPtr, buf);
 	UnlockStripe(stripeID);
 	InitiateStripeReconstruction(reconstructionControlPtr);
     }

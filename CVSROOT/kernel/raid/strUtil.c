@@ -24,71 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  *----------------------------------------------------------------------
  *
- * ReadFile --
- *
- *	Reads upto bufLen characters from fileName into fileBuf.
- *
- * Results:
- *	fileBuf contains contents of fileName.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef TESTING
-#include <sys/file.h>
-
-ReturnStatus
-ReadFile(fileName, bufLen, fileBuf)
-    char *fileName;
-    int   bufLen;
-    char *fileBuf;
-{
-    int fd;
-
-    fd = open(fileName, O_RDONLY, 0);
-    if (fd < 0) {
-        return FAILURE;
-    }
-    bufLen = read(fd, fileBuf, bufLen);
-    if (bufLen < 0) {
-        return FAILURE;
-    }
-    fileBuf[bufLen] = '\0';
-    close(fd);
-    return SUCCESS;
-}
-#else
-ReturnStatus
-ReadFile(fileName, bufLen, fileBuf)
-    char *fileName;
-    int   bufLen;
-    char *fileBuf;
-{
-    ReturnStatus status;
-    Fs_Stream *streamPtr;
-
-    status = Fs_Open(fileName, FS_READ | FS_FOLLOW, FS_FILE, 0, &streamPtr);
-    if (status != SUCCESS) {
-        return status;
-    }
-    status = Fs_Read(streamPtr, (Address) fileBuf, 0, &bufLen);
-    if (status != SUCCESS) {
-        return status;
-    }
-    fileBuf[bufLen] = '\0';
-    (void)Fs_Close(streamPtr);
-    return SUCCESS;
-}
-#endif TESTING
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ReadFile --
+ * ScanLine --
  *
  *	Copy first line in ps1 to s2 replacing \n with \0.
  *	Change ps1 to point to the 1st character of second line.
@@ -125,7 +61,7 @@ ScanLine(ps1, s2)
 /*
  *----------------------------------------------------------------------
  *
- * ReadFile --
+ * ScanWord --
  *
  *	Copy first word in *ps1 to s2 (words are delimited by white space).
  *	Change ps1 to point to the 2nd character after the first word

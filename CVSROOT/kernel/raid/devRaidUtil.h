@@ -81,7 +81,6 @@
 	    0, raidPtr->bytesPerStripeUnit))
 
 extern DevBlockDeviceRequest *MakeBlockDeviceRequest();
-extern RaidDisk *MakeRaidDisk();
 extern RaidIOControl *MakeIOControl();
 extern RaidRequestControl *MakeRequestControl();
 extern RaidStripeIOControl *MakeStripeIOControl();

@@ -378,11 +378,14 @@ FreeStripeIOControl(stripeIOControlPtr)
  */
 
 RaidReconstructionControl *
-MakeReconstructionControl(raidPtr, col, row, diskPtr, ctrlData)
+MakeReconstructionControl(raidPtr, col, row, diskPtr, doneProc, clientData,
+	ctrlData)
     Raid        *raidPtr;
     int		 col;
     int		 row;
     RaidDisk	*diskPtr;
+    void       (*doneProc)();
+    ClientData   clientData;
     int		 ctrlData;
 {
     RaidReconstructionControl *reconstructionControlPtr;
@@ -395,6 +398,8 @@ MakeReconstructionControl(raidPtr, col, row, diskPtr, ctrlData)
     reconstructionControlPtr->diskPtr       = diskPtr;
     reconstructionControlPtr->stripeID      = 0;
     reconstructionControlPtr->numStripe     = 0;
+    reconstructionControlPtr->doneProc      = doneProc;
+    reconstructionControlPtr->clientData    = clientData;
     reconstructionControlPtr->ctrlData      = ctrlData;
     reconstructionControlPtr->reqControlPtr = MakeRequestControl(raidPtr);
     reconstructionControlPtr->parityBuf     =

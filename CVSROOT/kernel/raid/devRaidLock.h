@@ -16,7 +16,8 @@
  */
 
 extern void InitStripeLocks();
-extern void LockStripe();
+extern void SLockStripe();
+extern void XLockStripe();
 extern void UnlockStripe();
 extern int  LockRaid();
 extern void UnlockRaid();

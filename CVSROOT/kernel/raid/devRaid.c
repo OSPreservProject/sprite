@@ -36,22 +36,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devRaid.h"
 #include "devRaidUtil.h"
 #include "devRaidInitiate.h"
+#include "devRaidReconstruct.h"
 #include "dev/raid.h"
 #include "devRaidIOC.h"
 #include "devRaidLock.h"
+#include "devRaidLog.h"
 #include "stdlib.h"
 #include "dbg.h"
 #include "strUtil.h"
 #include "debugMem.h"
-
-#define BITS_PER_ADDR			32
-#define RAID_MAX_XFER_SIZE		(1<<30)
-#ifdef TESTING
-#define RAID_ROOT_CONFIG_FILE_NAME	"RAID"
-#else
-#define RAID_ROOT_CONFIG_FILE_NAME	"/sprite/users/eklee/RAIDconfig/RAID"
-#endif TESTING
-#define RAID_CONFIG_FILE_SUFFIX		".config"
 
 static ReturnStatus StripeBlockIOProc();
 static ReturnStatus RaidBlockIOProc();
@@ -101,231 +94,6 @@ int numRaid = sizeof(raidArray)/sizeof(Raid);
 /*
  *----------------------------------------------------------------------
  *
- * RaidDeallocate --
- *
- *	Deallocate data structures associated with the specified raid device.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Deallocates data structures.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-RaidDeallocate(raidPtr)
-    Raid	*raidPtr;
-{
-    int		 col, row;
-
-    MASTER_LOCK(&raidPtr->mutex);
-    if (raidPtr->state != RAID_VALID) {
-        MASTER_UNLOCK(&raidPtr->mutex);
-	return;
-    } else {
-        raidPtr->state = RAID_BUSY;
-        MASTER_UNLOCK(&raidPtr->mutex);
-    }
-    for ( col = 0; col < raidPtr->numCol; col++ ) {
-        for ( row = 0; row < raidPtr->numRow; row++ ) {
-	    if (raidPtr->disk[col][row] != NULL) {
-		FreeRaidDisk(raidPtr->disk[col][row]);
-	    }
-	}
-    }
-    for ( col = 0; col < raidPtr->numCol; col++ ) {
-	free((char *) raidPtr->disk[col]);
-    }
-    free((char *) raidPtr->disk);
-    raidPtr->state = RAID_INVALID;
-    return;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RaidConfigure --
- *
- *	Configure raid device by reading the appropriate configuration file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Allocates and initializes data structures for raid device.
- *
- *----------------------------------------------------------------------
- */
-
-/* static */ ReturnStatus
-RaidConfigure(raidPtr, devicePtr)
-    Raid	*raidPtr;
-    Fs_Device   *devicePtr;
-{
-#   define 	 CHAR_BUF_LEN	80
-#   define 	 FILE_BUF_LEN	2000
-    char	 fileName[CHAR_BUF_LEN], charBuf[CHAR_BUF_LEN];
-    char	 fileBuf[FILE_BUF_LEN];
-    char        *fileBufPtr;
-    int		 col, row;
-    int		 type, unit;
-    int		 numScanned;
-    RaidDisk    *raidDiskPtr;
-    ReturnStatus status;
-
-    InitStripeLocks();
-    InitDebugMem();
-
-    /*
-     * If RAID device is already configured, deallocate it first.
-     */
-    RaidDeallocate(raidPtr);
-
-    MASTER_LOCK(&raidPtr->mutex);
-    if (raidPtr->state != RAID_INVALID) {
-        MASTER_UNLOCK(&raidPtr->mutex);
-	return FAILURE;
-    } else {
-        raidPtr->state = RAID_BUSY;
-        MASTER_UNLOCK(&raidPtr->mutex);
-    }
-
-    raidPtr->numReqInSys = 0;
-#ifdef TESTING
-    Sync_CondInit(&raidPtr->waitExclusive);
-    Sync_CondInit(&raidPtr->waitNonExclusive);
-#endif TESTING
-
-    /*
-     * Create name of RAID configuration file.
-     */
-    sprintf(charBuf, "%d", devicePtr->unit);
-    strcpy(fileName, RAID_ROOT_CONFIG_FILE_NAME);
-    strcat(fileName, charBuf);
-    strcat(fileName, RAID_CONFIG_FILE_SUFFIX);
-
-    /*
-     * Open and read configuration file into buffer.
-     */
-    status = ReadFile(fileName, FILE_BUF_LEN, fileBuf);
-    if (status != SUCCESS) {
-        raidPtr->state = RAID_INVALID;
-	return status;
-    }
-
-    /*
-     * Skip comments.
-     */
-    fileBufPtr = fileBuf;
-    for (;;) {
-        if (ScanLine(&fileBufPtr, charBuf) == (char *) NIL) {
-    	    raidPtr->state = RAID_INVALID;
-            return FAILURE;
-        }
-        if (charBuf[0] != '#') {
-            break;
-        }
-    }
-
-    /*
-     * Read dimensions of raid device.
-     */
-    numScanned = sscanf(charBuf, "%d %d %d %d %d %d %c",
- 			&raidPtr->numRow,
-			&raidPtr->numCol,
-			&raidPtr->logBytesPerSector,
-			&raidPtr->sectorsPerStripeUnit,
-			&raidPtr->stripeUnitsPerDisk,
-			&raidPtr->rowsPerGroup,
-			&raidPtr->parityConfig);
-    if (numScanned != 7) {
-    	raidPtr->state = RAID_INVALID;
-	return FAILURE;
-    }
-
-    /*
-     * Redundant but useful information.
-     */
-    if (raidPtr->parityConfig == 'S') {
-	raidPtr->numDataCol = raidPtr->numCol;
-    } else {
-	raidPtr->numDataCol = raidPtr->numCol - 1;
-    }
-    switch (raidPtr->parityConfig) {
-    case 'X': case 'x': case 'f':
-	raidPtr->stripeUnitsPerDisk -=
-		raidPtr->stripeUnitsPerDisk % raidPtr->numCol;
-        raidPtr->dataStripeUnitsPerDisk =
-                (raidPtr->stripeUnitsPerDisk * raidPtr->numDataCol) /
-		raidPtr->numCol;
-	break;
-    default:
-	raidPtr->dataStripeUnitsPerDisk = raidPtr->stripeUnitsPerDisk;
-	break;
-    }
-    raidPtr->groupsPerArray = raidPtr->numRow / raidPtr->rowsPerGroup;
-    raidPtr->numSector  = (unsigned) raidPtr->numRow * raidPtr->numDataCol
-	    * raidPtr->sectorsPerStripeUnit * raidPtr->stripeUnitsPerDisk;
-    raidPtr->numStripe  = raidPtr->stripeUnitsPerDisk * raidPtr->numRow;
-    raidPtr->dataSectorsPerStripe =
-	    raidPtr->numDataCol * raidPtr->sectorsPerStripeUnit;
-    raidPtr->sectorsPerDisk =
-	    raidPtr->stripeUnitsPerDisk * raidPtr->sectorsPerStripeUnit;
-    raidPtr->bytesPerStripeUnit = raidPtr->sectorsPerStripeUnit <<
-	    raidPtr->logBytesPerSector;
-    raidPtr->dataBytesPerStripe = raidPtr->dataSectorsPerStripe <<
-	    raidPtr->logBytesPerSector;
-
-    /*
-     * Allocate RaidDisk structures; one for each logical disk.
-     */
-    raidPtr->disk = (RaidDisk ***)
-		malloc((unsigned)raidPtr->numCol * sizeof(RaidDisk **));
-    for ( col = 0; col < raidPtr->numCol; col++ ) {
-	raidPtr->disk[col] = (RaidDisk **)
-		malloc((unsigned)raidPtr->numRow * sizeof(RaidDisk *));
-	bzero((char*)raidPtr->disk[col],raidPtr->numRow*sizeof(RaidDisk *));
-    }
-
-    /*
-     * Initialize RaidDisk structures.
-     */
-    for ( row = 0; row < raidPtr->numRow; row++ ) {
-        for ( col = 0; col < raidPtr->numCol; col++ ) {
-	    if (ScanWord(&fileBufPtr, charBuf) == (char *)NIL) {
-    		raidPtr->state = RAID_VALID;
-		RaidDeallocate(raidPtr);
-		return FAILURE;
-	    }
-	    type = atoi(charBuf);
-	    if (ScanWord(&fileBufPtr, charBuf) == (char *)NIL) {
-    		raidPtr->state = RAID_VALID;
-		RaidDeallocate(raidPtr);
-		return FAILURE;
-	    }
-	    unit = atoi(charBuf);
-
-	    raidDiskPtr = MakeRaidDisk(type, unit, raidPtr->sectorsPerDisk);
-	    if (raidDiskPtr == (RaidDisk *) NIL) {
-    		raidPtr->state = RAID_VALID;
-		RaidDeallocate(raidPtr);
-		return FAILURE;
-	    }
-	    raidPtr->disk[col][row] = raidDiskPtr;
-	}
-    }
-    raidPtr->devicePtr = devicePtr;
-    raidPtr->state = RAID_VALID;
-    return SUCCESS;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * DevRaidAttach --
  *
  *	Attach a RAID logical device.
@@ -346,12 +114,15 @@ DevRaidAttach(devicePtr)
     RaidHandle	*handlePtr;
     Raid	*raidPtr;
 
+    InitStripeLocks();
+    InitDebugMem();
     if ( devicePtr->unit >= numRaid ) {
         return (DevBlockDeviceHandle *) NIL;
     }
     raidPtr = &raidArray[devicePtr->unit];
+    raidPtr->devicePtr = devicePtr;
     if ( raidPtr->state == RAID_INVALID ) {
-	if (RaidConfigure(raidPtr, devicePtr) != SUCCESS) {
+	if (RestoreRaidState(raidPtr) != SUCCESS) {
         	return (DevBlockDeviceHandle *) NIL;
 	}
     }
@@ -422,6 +193,11 @@ ReleaseProc(handlePtr)
  *----------------------------------------------------------------------
  */
 
+void initHardDoneProc()
+{
+    printf("RAID:MSG:Initialization completed.\n");
+}
+
 static ReturnStatus
 IOControlProc(handlePtr, ioctlPtr, replyPtr) 
     DevBlockDeviceHandle	*handlePtr;
@@ -436,9 +212,11 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    (DevBlockDeviceRequest *) ioctlPtr->inBuffer;
     int		  col;
     int		  row;
+    char	  fileName[80];
+    ReturnStatus  status;
 
     if (raidIOCParamPtr == (RaidIOCParam *) NIL) {
-	printf("Error:Raid:IOControlProc IOC == NIL\n");
+	printf("RAID:MSG:IOControlProc IOC == NIL\n");
 	return FAILURE;
     }
     col = raidIOCParamPtr->col;
@@ -451,30 +229,39 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	PrintRaid(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_RECONFIG:
-	return RaidConfigure(raidPtr, raidPtr->devicePtr);
+	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+		raidPtr->devicePtr->unit, ".config");
+	status = RaidConfigure(raidPtr, fileName);
+	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+		raidPtr->devicePtr->unit, ".state");
+	unlink(fileName);
+	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+		raidPtr->devicePtr->unit, ".log");
+	unlink(fileName);
+	return status;
     case IOC_DEV_RAID_HARDINIT:
 	InitiateHardInit(raidPtr,
 		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
-		raidIOCParamPtr->ctrlData);
+		initHardDoneProc, (ClientData) NIL, raidIOCParamPtr->ctrlData);
 	return SUCCESS;
     case IOC_DEV_RAID_FAIL:
 	if (row < 0 || row >= raidPtr->numRow) {
-	    printf("RAID:ERRMSG:row=%d out of range on ioctl call", row);
+	    printf("RAID:MSG:row=%d out of range on ioctl call", row);
 	    return FAILURE;
 	}
 	if (col < 0 || col >= raidPtr->numCol) {
-	    printf("RAID:ERRMSG:col=%d out of range on ioctl call", col);
+	    printf("RAID:MSG:col=%d out of range on ioctl call", col);
 	    return FAILURE;
 	}
 	FailRaidDisk(raidPtr, col, row, raidPtr->disk[col][row]->version);
 	return SUCCESS;
     case IOC_DEV_RAID_REPLACE:
 	if (row < 0 || row >= raidPtr->numRow) {
-	    printf("RAID:ERRMSG:row=%d out of range on ioctl call", row);
+	    printf("RAID:MSG:row=%d out of range on ioctl call", row);
 	    return FAILURE;
 	}
 	if (col < 0 || col >= raidPtr->numCol) {
-	    printf("RAID:ERRMSG:col=%d out of range on ioctl call", col);
+	    printf("RAID:MSG:col=%d out of range on ioctl call", col);
 	    return FAILURE;
 	}
 	ReplaceRaidDisk(raidPtr, col, row, raidPtr->disk[col][row]->version,
@@ -491,12 +278,25 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    IObuf = (char *) malloc(1024*1024);
 	}
 	requestPtr->buffer = IObuf;
-	return Dev_BlockDeviceIOSync(handlePtr, requestPtr,ioctlPtr->outBuffer);
+	return Dev_BlockDeviceIOSync(handlePtr, requestPtr,
+		(int *)ioctlPtr->outBuffer);
     case IOC_DEV_RAID_LOCK:
 	LockRaid(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_UNLOCK:
 	UnlockRaid(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_SAVE_STATE:
+	status = SaveRaidState(raidPtr);
+	if (status == FAILURE) {
+	    printf("RAID:MSG:Could not checkpoint state.\n");
+	}
+	return status;
+    case IOC_DEV_RAID_ENABLE_LOG:
+	EnableLog(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_DISABLE_LOG:
+	DisableLog(raidPtr);
 	return SUCCESS;
     default:
 	return SUCCESS;

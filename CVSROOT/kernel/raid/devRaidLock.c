@@ -74,19 +74,20 @@ InitStripeLocks()
 /*
  *----------------------------------------------------------------------
  *
- * LockStripe --
+ * SLockStripe --
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Locks requested stripe.
+ *	Share lock requested stripe.
  *
  *----------------------------------------------------------------------
  */
 
 void
-LockStripe(stripe)
+SLockStripe(raidPtr, stripe)
+    Raid *raidPtr;
     int stripe;
 {
     Hash_Entry		*hashEntryPtr;
@@ -105,6 +106,33 @@ LockStripe(stripe)
 #endif TESTING
     Hash_SetValue(hashEntryPtr, condPtr);
     MASTER_UNLOCK(&mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * XLockStripe --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Exclusively lock requested stripe.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+XLockStripe(raidPtr, stripe)
+    Raid *raidPtr;
+    int stripe;
+{
+    char buf[120];
+
+    SLockStripe(raidPtr, stripe);
+    sprintf(buf, "L %d\n", stripe);
+    LogEntry(raidPtr, buf);
 }
 
 
@@ -165,17 +193,11 @@ LockRaid (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);
-    if (raidPtr->state != RAID_VALID) {
-	MASTER_UNLOCK(&raidPtr->mutex);
-	return 0;
-    } else {
-	raidPtr->state = RAID_EXCLUSIVE;
-	if (raidPtr->numReqInSys != 0) {
-	    Sync_MasterWait(&raidPtr->waitExclusive, &raidPtr->mutex, FALSE);
-	}
-	MASTER_UNLOCK(&raidPtr->mutex);
-	return 1;
+    while (raidPtr->numReqInSys != 0) {
+	Sync_MasterWait(&raidPtr->waitExclusive, &raidPtr->mutex, FALSE);
     }
+    raidPtr->numReqInSys = -1;
+    MASTER_UNLOCK(&raidPtr->mutex);
 }
 
 
@@ -198,7 +220,8 @@ UnlockRaid (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);
-    raidPtr->state = RAID_VALID;
+    raidPtr->numReqInSys = 0;
+    Sync_MasterBroadcast(&raidPtr->waitExclusive);
     Sync_MasterBroadcast(&raidPtr->waitNonExclusive);
     MASTER_UNLOCK(&raidPtr->mutex);
 }
@@ -222,7 +245,7 @@ BeginRaidUse (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);
-    if (raidPtr->state == RAID_EXCLUSIVE) {
+    while (raidPtr->numReqInSys == -1) {
 	Sync_MasterWait(&raidPtr->waitNonExclusive, &raidPtr->mutex, FALSE);
     }
     raidPtr->numReqInSys++;
@@ -249,7 +272,7 @@ EndRaidUse (raidPtr)
 {
     MASTER_LOCK(&raidPtr->mutex);
     raidPtr->numReqInSys--;
-    if (raidPtr->state == RAID_EXCLUSIVE && raidPtr->numReqInSys == 0) {
+    if (raidPtr->numReqInSys == 0) {
 	Sync_MasterBroadcast(&raidPtr->waitExclusive);
     }
     MASTER_UNLOCK(&raidPtr->mutex);

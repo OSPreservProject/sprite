@@ -23,6 +23,7 @@
 #include "fs.h"
 #include "devBlockDevice.h"
 #include "devRaidDisk.h"
+#include "devRaidLog.h"
 
 #ifndef MIN
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
@@ -32,27 +33,33 @@
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #endif  MAX
 
+#define BITS_PER_ADDR			32
+#define RAID_MAX_XFER_SIZE		(1<<30)
+#ifdef TESTING
+#define RAID_ROOT_CONFIG_FILE_NAME	"RAID"
+#else
+#define RAID_ROOT_CONFIG_FILE_NAME	"/sprite/admin/raid/RAID"
+#endif TESTING
+
 /*
  * Data structure each RAID device.
  *
- * RAID_INVALID	==> array has not been configured
- * RAID_BUSY	==> the configuration of the array is currently being changed
- *			(used to ensure only one configuration process per
- *			 array is ever active)
- * RAID_VALID	==> array is configured
+ * RAID_INVALID	==> Array has not been configured.
+ * RAID_VALID	==> Array is configured and ready to service requests.
  */
-typedef enum { RAID_INVALID, RAID_BUSY, RAID_VALID, RAID_EXCLUSIVE } RaidState;
+typedef enum { RAID_INVALID, RAID_VALID } RaidState;
 
 typedef struct Raid {
     RaidState		 state;
     Sync_Semaphore	 mutex;
     Sync_Condition	 waitExclusive;
     Sync_Condition	 waitNonExclusive;
-    int			 numReqInSys;
+    int			 numReqInSys; /* -1 => exclusive access */
     Fs_Device		*devicePtr; /* Device corresponding to this raid. */
     int			 numRow;
     int			 numCol;
     RaidDisk	      ***disk;	    /* 2D array of disks (column major) */
+    RaidLog		 log;
 
     unsigned		 numSector;
     int		 	 numStripe;
@@ -151,6 +158,8 @@ typedef struct RaidReconstructionControl {
     RaidDisk		*diskPtr;
     int			 stripeID;
     int			 numStripe;
+    void	       (*doneProc)();
+    ClientData		 clientData;
     int			 ctrlData;
     RaidRequestControl	*reqControlPtr;
     char		*parityBuf;

@@ -21,15 +21,12 @@
 #include "sprite.h"
 #include "fs.h"
 #include "dev.h"
-/* #include "devInt.h" */
-#include "devDiskLabel.h"
-#include "devDiskStats.h"
 #include "devBlockDevice.h"
 #include "devRaid.h"
 #include "devRaidLock.h"
 #include "stdlib.h"
-#include "dbg.h"
 #include "devRaidUtil.h"
+#include "devRaidMap.h"
 #include "devRaidIOC.h"
 #include "debugMem.h"
 #include "schedule.h"
@@ -67,7 +64,7 @@ InitiateIORequests(reqControlPtr, doneProc, clientData)
     int			 i;
 
     /*
-     * Inititate IO's.
+     * Initiate IO's.
      */
     IOControlPtr = MakeIOControl(doneProc, clientData);
     IOControlPtr->numIO++;
@@ -916,12 +913,15 @@ InitiateSingleStripeIO(raidPtr, operation, firstSector, nthSector,
     stripeIOControlPtr = MakeStripeIOControl(raidPtr, operation,
 	    firstSector, nthSector, buffer, doneProc, clientData, ctrlData);
 
-    LockStripe(SectorToStripeID(raidPtr, stripeIOControlPtr->firstSector));
     switch (stripeIOControlPtr->operation) {
     case FS_READ:
+	SLockStripe(raidPtr,
+		SectorToStripeID(raidPtr, stripeIOControlPtr->firstSector));
 	InitiateStripeRead(stripeIOControlPtr);
 	break;
     case FS_WRITE:
+	XLockStripe(raidPtr,
+		SectorToStripeID(raidPtr, stripeIOControlPtr->firstSector));
 	InitiateStripeWrite(stripeIOControlPtr);
 	break;
     }
@@ -949,8 +949,16 @@ stripeIODoneProc(stripeIOControlPtr, numFailed)
     RaidStripeIOControl	*stripeIOControlPtr;
     int			 numFailed;
 {
+    char	buf[120];
+
     UnlockStripe(SectorToStripeID(stripeIOControlPtr->raidPtr,
 	    stripeIOControlPtr->firstSector));
+    if (stripeIOControlPtr->operation == FS_WRITE) {
+	sprintf(buf, "U %d\n",
+		 SectorToStripeID(stripeIOControlPtr->raidPtr,
+			stripeIOControlPtr->firstSector));
+	LogEntry(stripeIOControlPtr->raidPtr, buf);
+    }
     if (numFailed == 0) {
     	stripeIOControlPtr->doneProc(stripeIOControlPtr->clientData, SUCCESS, 
 		SectorToByte(stripeIOControlPtr->raidPtr,
@@ -1109,19 +1117,21 @@ static void hardInitReadDoneProc();
 static void hardInitWriteDoneProc();
 
 void
-InitiateHardInit(raidPtr, startStripe, numStripe, ctrlData)
+InitiateHardInit(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
     Raid	*raidPtr;
     int		 startStripe;
     int		 numStripe;
+    void       (*doneProc)();
+    ClientData   clientData;
     int		 ctrlData;
 {
     RaidReconstructionControl	*reconstructionControlPtr;
     reconstructionControlPtr =
 	    MakeReconstructionControl(raidPtr, (int) NIL, (int) NIL,
-		    (RaidDisk *) NIL, ctrlData);
+		    (RaidDisk *) NIL, doneProc, clientData, ctrlData);
     reconstructionControlPtr->stripeID = startStripe;
     reconstructionControlPtr->numStripe = numStripe;
-    printf("RAID:MSG:Initiating reconstruction\n");
+    printf("RAID:MSG:Initiating reconstruction.\n");
     InitiateStripeHardInit(reconstructionControlPtr);
 }
 
@@ -1145,7 +1155,7 @@ InitiateHardInit(raidPtr, startStripe, numStripe, ctrlData)
 hardInitDoneProc(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {
-    printf("RAID:MSG:Initialization completed.\n");
+    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData);
     FreeReconstructionControl(reconstructionControlPtr);
 }
 
@@ -1213,7 +1223,7 @@ InitiateStripeHardInit(reconstructionControlPtr)
 	hardInitDoneProc(reconstructionControlPtr);
 	return;
     }
-    LockStripe(stripeID);
+    XLockStripe(raidPtr, stripeID);
     reqControlPtr->numReq = reqControlPtr->numFailed = 0;
     AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, nthSector, readBuf, ctrlData);
@@ -1298,7 +1308,7 @@ hardInitWriteDoneProc(reconstructionControlPtr, numFailed)
 	ReportHardInitFailure(reconstructionControlPtr->stripeID);
     }
     if (reconstructionControlPtr->stripeID % 100 == 0) {
-	printf("RAID:MSG: %d", reconstructionControlPtr->stripeID);
+	printf("RAID:MSG:%d", reconstructionControlPtr->stripeID);
     }
     UnlockStripe(reconstructionControlPtr->stripeID);
     reconstructionControlPtr->stripeID++;

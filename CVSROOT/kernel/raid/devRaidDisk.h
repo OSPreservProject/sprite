@@ -38,6 +38,8 @@ typedef struct RaidDisk {
     Sync_Semaphore	  mutex;
     RaidDiskState	  state;
     unsigned		  numValidSector; /* Used during reconstruction. */
+    int			  row;
+    int			  col;
     int			  version;
     int			  useCount;
     Fs_Device	          device;
@@ -50,6 +52,7 @@ typedef struct RaidDisk {
 #define IsValid(diskPtr, startSector, numSector) 	\
     ((startSector) + (numSector) <= (diskPtr)->numValidSector)
 
+extern RaidDisk *MakeRaidDisk();
 extern void ReportRaidDiskAttachError();
 extern void FailRaidDisk();
 extern void ReplaceRaidDisk();
