@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsNameHash.h"
 #include "net.h"
 #include "mem.h"
+#include "recov.h"
 
 /*
  * Define constants, which are used instead of enumerated types to allow
@@ -59,7 +60,6 @@ static void	PrintVersion();
 static void	PrintTOD();
 extern	void	Fs_DumpCacheStats();
 extern	void	Fs_PdevPrintTrace();
-extern	void	Rpc_PrintRecovTrace();
 extern	void	Fs_HandleScavengeStub();
 extern	void	Mem_DumpStats();
 
@@ -83,7 +83,8 @@ extern	void	Mem_DumpStats();
 void
 PrintL1Menu()
 {
-    Sys_Printf("/ - Print this menu\n");
+    Sys_Printf("Pressing the L1 key and a letter causes the following...\n");
+    Sys_Printf("\ or ? - Print this menu\n");
     /*
      * MAKE SURE THIS AGREES WITH Dump_Init() !!
      */
@@ -161,7 +162,7 @@ Dump_Init()
     Dev_KbdQueueAttachProc('v', PrintVersion, (ClientData) 0);
     Dev_KbdQueueAttachProc('w', Mem_DumpTrace, (ClientData) -1);
     Dev_KbdQueueAttachProc('x', Fs_HandleScavengeStub, (ClientData) 0);
-    Dev_KbdQueueAttachProc('y', Rpc_PrintRecovTrace, (ClientData) 50);
+    Dev_KbdQueueAttachProc('y', Recov_PrintTrace, (ClientData) 50);
     Dev_KbdQueueAttachProc('z', Rpc_PrintTrace, (ClientData) 50);
 
     Dev_KbdQueueAttachProc('1', Dev_TimerGetInfo, (ClientData) 1);
