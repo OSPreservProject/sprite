@@ -394,6 +394,7 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     int reason;	/* Why the process is dying: EXITED, SIGNALED, DESTROYED  */
     int	status;	/* Exit status or signal # or destroy status */
     int code;	/* Signal sub-status */
+    Proc_PID pid;
 
     if (proc_MigDebugLevel > 4) {
 	printf("RpcProcExit called.\n");
@@ -415,14 +416,19 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     Byte_EmptyBuffer(dataPtr, int, status);
     Byte_EmptyBuffer(dataPtr, int, code);
 
-    Proc_Unlock(procPtr);
+
+    pid = procPtr->processID;
+
+    /*
+     * Perform an exit on behalf of the process.  The process is
+     * unlocked as a side effect.
+     */
+    ProcExitProcess(procPtr, reason, status, code, FALSE);
 
     /*
      * Remove the dependency on the other host.
      */
-    Proc_RemoveMigDependency(procPtr->processID);
-
-    ProcExitProcess(procPtr, reason, status, code, FALSE);
+    Proc_RemoveMigDependency(pid);
 
     if (proc_MigDebugLevel > 4) {
 	printf("RpcProcExit returning SUCCESS.\n");
