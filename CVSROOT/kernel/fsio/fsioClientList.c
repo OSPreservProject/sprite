@@ -166,10 +166,16 @@ Boolean
 FsIOClientReopen(clientList, clientID, usePtr)
     List_Links	*clientList;	/* List of clients for the I/O handle. */
     int		clientID;	/* The client who is opening the file. */
-    FsUseCounts	*usePtr;	/* Client's usage of the object */
+    FsUseCounts	*usePtr;	/* In - Client's usage of the object.
+				 * Out - difference between old client useage.
+				 *  This means that the summary use counts
+				 *  can be updated by adding the use counts
+				 *  left over in this structure after the
+				 *  reconciliation with the old state. */
 {
     register FsClientInfo *clientPtr;
     register Boolean found = FALSE;
+    register int diff;
 
     LIST_FORALL(clientList, (List_Links *)clientPtr) {
 	if (clientPtr->clientID == clientID) {
@@ -574,16 +580,16 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
  *
  * FsIOClientStatus --
  *
- *	This returns  information similar to that of FsIOClientKill, but it
- *	does not remove the client from the list.  It is used for determining
- *	reference counts for process migration.
+ *	This computes the difference between a client's version of its
+ *	state and our version of the client's usage state.  This is called
+ *	during a device reopen to see how the client's state is different.
  *
  * Results:
- *	If non-NIL, *inUsePtr set to the number of times the client
- *	has the file open, *writingPtr set to the number of times the
- *	client has the file open for writing, and *executingPtr set to
- *	the number of times the client has the file open for
- *	execution.
+ *	The client's version of the use state is modified to reflect
+ *	the difference between our previous notion of the state and
+ *	the client's notion of the state.  This means that the ref, write,
+ *	and exec fields can be positive or negative after this call.
+ *	If they are zero then the client's state matches ours.
  *	
  * Side effects:
  *	None.
@@ -592,25 +598,21 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
  *
  */
 void
-FsIOClientStatus(clientList, clientID, usePtr)
+FsIOClientStatus(clientList, clientID, clientUsePtr)
     List_Links *clientList;	/* List of clients to a file. */
     int		clientID;	/* Client to check. */
-    FsUseCounts	*usePtr;	/* Useage to return */
+    FsUseCounts	*clientUsePtr;	/* Client's version of the usage */
 {
     register FsClientInfo 	*clientPtr;
 
-    /*
-     * Count references for the client using the file.
-     */
     LIST_FORALL(clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == clientID) {
-	    *usePtr = clientPtr->use;
+	    clientUsePtr->ref -= clientPtr->use.ref;
+	    clientUsePtr->write -= clientPtr->use.write;
+	    clientUsePtr->exec -= clientPtr->use.exec;
 	    return;
 	}
     }
-    usePtr->ref = 0;
-    usePtr->write = 0;
-    usePtr->exec = 0;
 }
 
 
