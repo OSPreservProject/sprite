@@ -35,8 +35,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devBlockDevice.h"
 #include "xylogics450.h"
 #include "devDiskStats.h"
+#include "stdio.h"
 #include "stdlib.h"
-
+#include "bstring.h"
 /*
  * RANDOM NOTES:
  *
@@ -993,6 +994,8 @@ ReadDiskLabel(xyPtr, diskPtr)
     return(error);
 }
 
+
+#if 0
 /*
  *----------------------------------------------------------------------
  *
@@ -1017,7 +1020,6 @@ VerifySectorHeader(diskAddrPtr, buffer)
 {
     Dev_DiskAddr checkAddr;
     XylogicsSectorHeader *headerPtr;
-    int part;
 
     headerPtr = (XylogicsSectorHeader *)buffer;
     checkAddr.cylinder = (headerPtr->cylHigh << 8) | headerPtr->cylLow ;
@@ -1034,11 +1036,13 @@ VerifySectorHeader(diskAddrPtr, buffer)
 		 diskAddrPtr->cylinder,
 		 diskAddrPtr->head,
 		 diskAddrPtr->sector);
-	return(0);
+	return 0;
     } else {
-	return(1);
+	return 1;
     }
 }
+#endif
+
 
 /*
  *----------------------------------------------------------------------
