@@ -223,6 +223,15 @@ Proc_ExitInt(reason, status, code)
     if (curProcPtr->genFlags & PROC_FOREIGN) {
 	ProcRemoteExit(curProcPtr, reason, status, code);
     }
+    if (curProcPtr->genFlags & PROC_DEBUGGED) {
+	/*
+	 * If a process is being debugged then force it onto the debug
+	 * list before allowing it to exit.  NOTE: Need to get at the 
+	 * machine state (registers and PC).
+	 */
+	Proc_PutOnDebugList(curProcPtr, reason, status, code, 0);
+    }
+
     if (sys_ErrorShutdown) {
 	/*
 	 * Are shutting down the system because of an error.  In this case
