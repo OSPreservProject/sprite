@@ -119,6 +119,13 @@ char **scsiErrors[] = {
 int devSCSIDebug = FALSE;
 
 /*
+ * Variable shared between the SCSI and SBC drivers to indicate that a
+ * SCSI device has been successfully located.
+ */
+	
+Boolean devSCSIFound = FALSE;
+
+/*
  * Forward declarations.
  */
 
@@ -236,6 +243,12 @@ Dev_SCSIInitController(cntrlrPtr)
     scsiPtr->readyForIO.waiting = 0;
     scsiPtr->flags = SCSI_CNTRLR_ALIVE;
 
+    /*
+     * This is used for communication between the SCSI and SBC drivers
+     * since they apparently can't find out a priori.
+     */
+    devSCSIFound = TRUE;
+    
     return(TRUE);
 }
 
