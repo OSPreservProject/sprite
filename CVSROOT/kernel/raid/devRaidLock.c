@@ -125,52 +125,13 @@ Raid_SLockStripe(raidPtr, stripe)
  *
  *----------------------------------------------------------------------
  */
-
-void
-Raid_CheckPoint(raidPtr)
-    Raid	*raidPtr;
-{
-    MASTER_LOCK(&raidPtr->log.mutex);
-    if (!raidPtr->log.enabled) {
-	MASTER_UNLOCK(&raidPtr->log.mutex);
-	return;
-    }
-    MASTER_UNLOCK(&raidPtr->log.mutex);
-    printf("RAID:MSG:Checkpointing RAID\n");
-    Raid_Lock(raidPtr);
-#ifndef TESTING
-    ClearBitVec(raidPtr->log.diskLockVec, raidPtr->log.diskLockVecNum);
-#endif TESTING
-    Raid_SaveLog(raidPtr);
-    Raid_Unlock(raidPtr);
-    printf("RAID:MSG:Checkpoint Complete\n");
-}
-
-#ifdef TESTING
-#define NUM_LOG_STRIPE 2
-#else
-#define NUM_LOG_STRIPE 100
-#endif
-
 void
 Raid_XLockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
     Raid_SLockStripe(raidPtr, stripe);
-    if (!IsSet(raidPtr->log.diskLockVec, stripe)) {
-	MASTER_LOCK(&raidPtr->mutex);
-	raidPtr->numStripeLocked++;
-	if (raidPtr->numStripeLocked % NUM_LOG_STRIPE == 0) {
-	    MASTER_UNLOCK(&raidPtr->mutex);
-	    Proc_CallFunc((void (*)
-		    _ARGS_((ClientData clientData, Proc_CallInfo *callInfoPtr)))
-		    Raid_CheckPoint, (ClientData) raidPtr, 0);
-	} else {
-	    MASTER_UNLOCK(&raidPtr->mutex);
-	}
-	Raid_LogStripe(raidPtr, stripe);
-    }
+    Raid_LogStripe(raidPtr, stripe);
 }
 
 
@@ -198,15 +159,12 @@ Raid_SUnlockStripe(raidPtr, stripe)
 
     MASTER_LOCK(&mutex);
     hashEntryPtr = Hash_Find(&lockTable, (Address) stripe);
-    MASTER_UNLOCK(&mutex);
-#ifdef TESTING
     if ( Hash_GetValue(hashEntryPtr) == (char *) NIL ) {
-	printf("Error: UnlockStripe: Attempt to unlock unlocked stripe.\n");
+	MASTER_UNLOCK(&mutex);
+	panic("Error: UnlockStripe: Attempt to unlock unlocked stripe.");
     }
-#endif TESTING
     condPtr = (Sync_Condition *) Hash_GetValue(hashEntryPtr);
     Sync_MasterBroadcast(condPtr);
-    MASTER_LOCK(&mutex);
     Hash_Delete(&lockTable, hashEntryPtr);
     MASTER_UNLOCK(&mutex);
     Free((char *) condPtr);
