@@ -405,16 +405,18 @@ ReturnStatus
 Prof_DumpStub(pathName)
     char *pathName;		/* The name of the file to write. */
 {
-    ReturnStatus status;	/* General status return code. */
-    int		 numBytes;	/* Number of accessible bytes. */
+    char	newName[FS_MAX_PATH_NAME_LENGTH];
+    int		pathNameLength;
 
     /*
-     * Make the file name accessible. 
+     * Copy the name in from user space to the kernel stack.
      */
-    status = Fs_MakeNameAccessible(&pathName, &numBytes);
-    if (status == SUCCESS) {
-	status = Prof_Dump(pathName);
-	Vm_MakeUnaccessible(pathName, numBytes);
+    if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
     }
-    return(status);
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+    return(Prof_Dump(pathName));
 }
