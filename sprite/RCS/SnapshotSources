@@ -11,7 +11,7 @@ if (-e $insDir/$version) then
 endif
 
 mkdir $insDir/$version
-foreach i (`cat /sprite/src/kernel/Modules`)
+foreach i (`cat /sprite/src/kernel/Modules` raid.null)
     mkdir $insDir/$version/$i
     switch ($i)
         #
