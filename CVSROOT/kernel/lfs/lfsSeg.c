@@ -31,9 +31,13 @@ Boolean	lfsSegWriteDebug = FALSE;
 
 #define	MIN_SUMMARY_REGION_SIZE	16
 
-
+#ifndef VERIFY_CLEAN
 enum CallBackType { SEG_LAYOUT, SEG_CLEAN_IN, SEG_CLEAN_OUT, SEG_CHECKPOINT, 
 		   SEG_WRITEDONE};
+#else
+enum CallBackType { SEG_LAYOUT, SEG_CLEAN_IN, SEG_CLEAN_OUT, SEG_CHECKPOINT, 
+		   SEG_WRITEDONE, SEG_CLEAN_VERIFY};
+#endif
 
 LfsSegIoInterface *lfsSegIoInterfacePtrs[LFS_MAX_NUM_MODS];
 
@@ -1009,6 +1013,16 @@ DoInCallBacks(type, segPtr, flags, sizePtr, numCacheBlocksPtr, clientDataPtr)
 #endif /* lint */
 		break;
 	     }
+#ifdef VERIFY_CLEAN
+	     case SEG_CLEAN_VERIFY: {
+		 extern Boolean LfsFileLayoutCleanVerify 
+		     _ARGS_((LfsSeg *segPtr));
+		 if (moduleType == LFS_FILE_LAYOUT_MOD) {
+		     (void) LfsFileLayoutCleanVerify(segPtr);
+		 }
+		 break;
+	     }
+#endif
 	     default:
 		 panic("lfsSeg.c: Bad case statement\n");
 	     }
@@ -1301,6 +1315,8 @@ SegmentCleanProc(clientData, callInfoPtr)
 #define	MAX_CLEANING_PASSES	5
 #define	MAX_NUM_SEGS_TO_CLEAN	2048
 
+
+
     lfsPtr->cleanerProcPtr = Proc_GetCurrentProc();
     maxNumSegsToClean = lfsPtr->usageArray.checkPoint.numDirty;
     if (maxNumSegsToClean > MAX_NUM_SEGS_TO_CLEAN) {
@@ -1373,7 +1389,6 @@ SegmentCleanProc(clientData, callInfoPtr)
 		    if (!error && (segs[segNo].activeBytes == 0) && (size != 0)) {
 			printf("Warning: Segment %d cleaned found wrong active bytes %d != %d\n", segs[segNo].segNumber, size, segs[segNo].activeBytes);
 		    }
-	
 		    DestorySegStruct(segPtr);
 		} else {
 		    error = FALSE;
@@ -1463,6 +1478,26 @@ SegmentCleanProc(clientData, callInfoPtr)
 	}
 	if (numSegsCleaned > 0) { 
 	    lfsPtr->segCache.valid = FALSE;
+#ifdef VERIFY_CLEAN
+	    { 
+		int i;
+		for (i = 0; i < numSegsToClean; i++) {
+		    int size, numCacheBlocksUsed;
+		    /*
+		     * If a segment couldn't be cleaned then its segment
+		     * number is set to -1. Just skip these.
+		     */
+		    if (segs[i].segNumber == -1) {
+			continue;
+		    }
+		    segPtr = CreateSegmentToClean(lfsPtr, segs[i].segNumber,
+				memPtr);
+		    error = DoInCallBacks(SEG_CLEAN_VERIFY, segPtr, 0, &size,
+				    &numCacheBlocksUsed, clientDataArray);
+		    DestorySegStruct(segPtr);
+		}
+	    }
+#endif
 	    LfsMarkSegsClean(lfsPtr, numSegsCleaned, segs);
 	    LOCK_MONITOR;
 	    lfsPtr->activeFlags &= ~LFS_CLEANSEGWAIT_ACTIVE;

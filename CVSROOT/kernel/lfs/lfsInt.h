@@ -158,7 +158,12 @@ typedef struct Lfs {
      * preallocated: one for writing, one for cleaning, and one for the
      * checkpoint processes.
      */
+#ifdef VERIFY_CLEAN
+#define	LFS_NUM_PREALLOC_SEGS	1024
+#else
 #define	LFS_NUM_PREALLOC_SEGS	3
+#endif
+
     int		segsInUse;
     struct LfsSeg *segs;
     char   *writeBuffers[2];    /* Buffers used to speed segment writes. */

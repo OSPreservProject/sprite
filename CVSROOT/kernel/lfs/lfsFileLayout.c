@@ -841,6 +841,234 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
     return error;
 
 }
+#ifdef VERIFY_CLEAN
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileLayoutVerifyClean --
+ *
+ *	After a segment is cleaned this routine is used to verify that
+ *	it really is clean. 
+ *
+ * Results:
+ *	TRUE if the segment is clean, FALSE otherwise.
+ *
+ * Side effects:
+ *	panicks if the segmetn isn't clean
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+LfsFileLayoutCleanVerify(segPtr)
+    LfsSeg *segPtr;	/* Segment to verify clean. */
+{
+    Lfs		   *lfsPtr = segPtr->lfsPtr;
+    LfsFileLayout  *layoutPtr = &(lfsPtr->fileLayout);
+    LfsFileLayoutSummary  *fileSumPtr;
+    char	*summaryPtr, *limitPtr;
+    int  blockOffset, fsBlocks;
+    LfsDiskAddr address;
+    ReturnStatus	status;
+    Boolean	error;
+
+     error = FALSE;
+     fsBlocks = LfsBytesToBlocks(lfsPtr, FS_BLOCK_SIZE);
+     summaryPtr =  LfsSegGetSummaryPtr(segPtr);
+     limitPtr = summaryPtr + LfsSegSummaryBytesLeft(segPtr);
+     blockOffset = 0;
+     while ((summaryPtr < limitPtr) && !error) { 
+	switch (*(unsigned short *) summaryPtr) {
+	case LFS_FILE_LAYOUT_DESC: {
+	    LfsDiskAddr diskAddr;
+	    int		fileNumber;
+	    int		slot, size;
+	    LfsFileDescriptor	*descPtr;
+	    char		*blockStartPtr;
+	    ClientData descCachePtr = (ClientData) NIL;
+	    /*
+	     * A block of descriptors.  For each descriptor that is live
+	     * (being pointed to by the descriptor map) we bring it into
+	     * the system and mark it as dirty. 
+	     */
+	    size = layoutPtr->params.descPerBlock * sizeof(LfsFileDescriptor);
+	    blockOffset += LfsBytesToBlocks(lfsPtr, size);
+	    blockStartPtr = LfsSegFetchBytes(segPtr, 
+				segPtr->curBlockOffset + blockOffset, size);
+	    descPtr = (LfsFileDescriptor *)blockStartPtr;
+	    for (slot = 0; slot < layoutPtr->params.descPerBlock; slot++) {
+		LfsDiskAddr newDiskAddr;
+		/*
+		 * The descriptor block is terminated by an inode
+		 * with a zero magic number.
+		 */
+		if (descPtr[slot].common.magic == 0) {
+		    break;
+		}
+		if (descPtr[slot].common.magic != FSDM_FD_MAGIC) {
+		    LfsError(lfsPtr, FAILURE, "Bad descriptor magic number.\n");
+		    continue;
+		}
+		if (!(descPtr[slot].common.flags & FSDM_FD_ALLOC)) {
+		    /*
+		     * Skip over any FREE inodes.
+		     */
+		    continue;
+		}
+		fileNumber = descPtr[slot].fileNumber;
+		status = LfsDescMapGetDiskAddr(lfsPtr, fileNumber, &diskAddr);
+		/*
+		 * If the file is not allocated or this descriptor is not
+		 * the most current copy, skip it.
+		 */
+		LfsDiskAddrPlusOffset(address,-blockOffset, &newDiskAddr);
+		if ((status == FS_FILE_NOT_FOUND) || 
+		    ((status == SUCCESS) && 
+		      !LfsSameDiskAddr(diskAddr, newDiskAddr))) {
+		    continue;
+		}
+		if (status != SUCCESS) {
+		    LfsError(lfsPtr, status, 
+			"Bad file number in descriptor block.\n");
+		    continue;
+		}
+		panic("\"Clean\" segment contains active descriptor\n");
+	    }
+	    if (descCachePtr != (ClientData) NIL) {
+		LfsDescCacheBlockRelease(lfsPtr, descCachePtr, TRUE);
+	    }
+	    /*
+	     * Skip over the summary bytes describing this block. 
+	     */
+	    summaryPtr += sizeof(LfsFileLayoutDesc);
+	    break;
+	}
+	case LFS_FILE_LAYOUT_DATA: {
+	    LfsDiskAddr diskAddress;
+	    int		*blockArray;
+	    int			 startBlockOffset, i;
+	    unsigned short	curTruncVersion;
+	    /*
+	     * We ran into a data block. If it is still alive bring it into
+	     * the cache. 
+	     */
+	     fileSumPtr = (LfsFileLayoutSummary *) summaryPtr;
+	     startBlockOffset = blockOffset;
+	     /*
+	      * Liveness check.   First see if the version number is
+	      * the same and the file is still allocated.
+	      */
+	      LFS_STATS_INC(lfsPtr->stats.layout.fileCleaned);
+	     status = LfsDescMapGetVersion(lfsPtr, 
+			(int)fileSumPtr->fileNumber, &curTruncVersion);
+	     if ((status == SUCCESS) && 
+		 (curTruncVersion == fileSumPtr->truncVersion)) {
+		Fs_FileID fileID;
+		int	  numBlocks;
+		Fsio_FileIOHandle *newHandlePtr;
+
+	        LFS_STATS_INC(lfsPtr->stats.layout.fileVersionOk);
+		/*
+		 * So far so good.  File is allocated and version number 
+		 * says it hasn't been deleted or truncated. Grap a 
+		 * handle for the file a check to see if the blocks 
+		 * are still a member of the file.
+		 */
+		fileID.type = FSIO_LCL_FILE_STREAM;
+		fileID.serverID = rpc_SpriteID;
+		fileID.major = lfsPtr->domainPtr->domainNumber;
+		fileID.minor = fileSumPtr->fileNumber;
+		status = Fsio_LocalFileHandleInit(&fileID, (char *) NIL, 
+				    (Fsdm_FileDescriptor *) NIL, TRUE, 
+				    &newHandlePtr);
+		if (status == FS_WOULD_BLOCK) {
+		    printf("Can't fetch handle for file %d for cleaning\n",
+				fileSumPtr->fileNumber);
+
+		    LFS_STATS_INC(lfsPtr->stats.layout.cleanLockedHandle);
+		    error = TRUE;
+		    break;
+		}
+		if (status != SUCCESS) {
+		    if (status == FS_FILE_NOT_FOUND) {
+			/*
+			 * Someone just deleted the file out from under us.
+			 */
+			LFS_STATS_INC(lfsPtr->stats.layout.cleanNoHandle);
+			goto noHandle;
+		    }
+		    LfsError(lfsPtr, status,
+			    "Can't get handle to clean file\n");
+		}
+		/*
+		 * For each block ... 
+		 */
+		blockArray = (int *)
+			(summaryPtr + sizeof(LfsFileLayoutSummary));
+		/*
+		 * Careful with the first block because it could be a 
+		 * fragment.
+		 */
+		numBlocks = fileSumPtr->numBlocks - 
+				(fileSumPtr->numDataBlocks-1) * fsBlocks;
+	        LFS_STATS_ADD(lfsPtr->stats.layout.blocksCleaned,
+					fileSumPtr->numBlocks);
+		for (i = 0; i < fileSumPtr->numDataBlocks; i++) {
+		    LfsDiskAddr newDiskAddr;
+		    blockOffset += numBlocks;
+		    status = LfsFile_GetIndex(newHandlePtr, blockArray[i],
+				FSCACHE_CANT_BLOCK|FSCACHE_DONT_BLOCK,
+				&diskAddress);
+		    LfsDiskAddrPlusOffset(address, -blockOffset, &newDiskAddr);
+		    if ((status == SUCCESS) && 
+			  LfsSameDiskAddr(diskAddress, newDiskAddr)) { 
+			panic("\"Clean\" segment contains live block\n");
+		    } else if (status != SUCCESS) {
+			printf("Can't fetch index for cleaning <%d,%d>\n",
+					fileSumPtr->fileNumber, blockArray[i]);
+			error = TRUE;
+			break;
+		    }
+		    /*
+		     * All the blocks after the first one must be FS_BLOCK_SIZE.
+		     */
+		    numBlocks = fsBlocks;
+		}
+		Fsutil_HandleRelease(newHandlePtr, TRUE);
+	    } else {
+	    }
+	 noHandle:
+	    blockOffset = startBlockOffset + fileSumPtr->numBlocks;
+	    summaryPtr += sizeof(LfsFileLayoutSummary) + 
+				fileSumPtr->numDataBlocks * sizeof(int); 
+	    break;
+	  }
+
+	case LFS_FILE_LAYOUT_DIR_LOG: {
+	    LfsFileLayoutLog	*logSumPtr;
+	    /* 
+	     * Directory log info is not needed during clean so we 
+	     * just skip over it.
+	     */
+	     logSumPtr = (LfsFileLayoutLog *) summaryPtr;
+	     summaryPtr += sizeof(LfsFileLayoutLog);
+	     blockOffset += logSumPtr->numBlocks;
+	     break;
+	}
+	case LFS_FILE_LAYOUT_DBL_INDIRECT: 
+	case LFS_FILE_LAYOUT_INDIRECT: 
+	default: {
+	    panic("Unknown type");
+	}
+      }
+    }
+
+    return error;
+
+}
+#endif /* VERIFY_CLEAN */
 
 /*
  *----------------------------------------------------------------------
