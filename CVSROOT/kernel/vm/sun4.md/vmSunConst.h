@@ -231,6 +231,14 @@ DoneCheck:
  * Cache tag address increment.
  */
 #define	VMMACH_CACHE_TAG_INCR		0x10
+/*
+ * Cache line size in bytes.
+ */
+#define	VMMACH_CACHE_LINE_SIZE		0x10
+/*
+ * Number of lines in cache.  8K * 16 = 128K cache size in bytes.
+ */
+#define	VMMACH_NUM_CACHE_LINES		0x2000
 
 /*
  * The highest virtual address useable by the kernel for both machine type

@@ -656,16 +656,113 @@ _VmMachInitSystemEnableReg:
  */
 .globl	_VmMachClearCacheTags
 _VmMachClearCacheTags:
-    set		VMMACH_NUM_CACHE_TAGS, %OUT_TEMP1
-    set		VMMACH_CACHE_TAGS_ADDR, %OUT_TEMP2
+    set		VMMACH_CACHE_TAGS_ADDR, %OUT_TEMP1
+    set		VMMACH_NUM_CACHE_TAGS, %OUT_TEMP2
 ClearTags:
-    sta		%g0, [%OUT_TEMP2] VMMACH_CONTROL_SPACE		/* clear tag */
-    add		%OUT_TEMP2, VMMACH_CACHE_TAG_INCR, %OUT_TEMP2	/* dec cntr */
-    subcc	%OUT_TEMP1, 1, %OUT_TEMP1			/* inc addr */
-    bg		ClearTags
-    nop
+    sta		%g0, [%OUT_TEMP1] VMMACH_CONTROL_SPACE		/* clear tag */
+    subcc	%OUT_TEMP2, 1, %OUT_TEMP2			/* dec cntr */
+    bne		ClearTags
+    add		%OUT_TEMP1, VMMACH_CACHE_TAG_INCR, %OUT_TEMP1	/* delay slot */
+
     retl
     nop
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMachFlushCurrentContext --
+ *
+ *     	Flush the current context from the cache.
+ *
+ *	void VmMachFlushContext()
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     All data cached from the current context is flushed from the cache.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_VmMachFlushCurrentContext
+_VmMachFlushCurrentContext:
+    clr		%OUT_TEMP1			/* start at first address = 0 */
+    set		VMMACH_NUM_CACHE_LINES, %OUT_TEMP2
+FlushingContext:
+    sta		%g0, [%OUT_TEMP1] VMMACH_FLUSH_CONTEXT_SPACE
+    subcc	%OUT_TEMP2, 1, %OUT_TEMP2	/* decrement loop */
+    bne		FlushingContext
+    add		%OUT_TEMP1, VMMACH_CACHE_LINE_SIZE, %OUT_TEMP1	/* delay slot */
+
+    retl
+    nop
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMachFlushSegment --
+ *
+ *     	Flush a segment from the cache.
+ *
+ *	void VmMachFlushSegment(segVirtAddr)
+ *	Address	segVirtAddr;	(Address of segment)
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     All data cached from the segment is flushed from the cache.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_VmMachFlushSegment
+_VmMachFlushSegment:
+    mov		%o0, %OUT_TEMP1				/* seg addr */
+    set		VMMACH_SEG_MAP_MASK, %OUT_TEMP2
+    and		%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1	/* beginning of seg */
+    set		VMMACH_NUM_CACHE_LINES, %OUT_TEMP2
+FlushingSegment:
+    sta		%g0, [%OUT_TEMP1] VMMACH_FLUSH_SEG_SPACE
+    subcc	%OUT_TEMP2, 1, %OUT_TEMP2		/* decrement loop */
+    bne		FlushingSegment
+    add		%OUT_TEMP1, VMMACH_CACHE_LINE_SIZE, %OUT_TEMP1	/* delay slot */
+
+    retl
+    nop
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMachFlushPage --
+ *
+ *     	Flush a page from the cache.
+ *
+ *	void VmMachFlushPage(pageVirtAddr)
+ *	Address	pageVirtAddr;	(Address of page)
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     All data cached from the page is flushed from the cache.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_VmMachFlushPage
+_VmMachFlushPage:
+    mov		%o0, %OUT_TEMP1				/* page addr */
+    set		VMMACH_PAGE_MASK, %OUT_TEMP2
+    and		%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1	/* beginning of page */
+    set		(VMMACH_PAGE_SIZE_INT / VMMACH_CACHE_LINE_SIZE), %OUT_TEMP2
+FlushingPage:
+    sta		%g0, [%OUT_TEMP1] VMMACH_FLUSH_PAGE_SPACE
+    subcc	%OUT_TEMP2, 1, %OUT_TEMP2		/* decrement loop */
+    bne		FlushingPage
+    add		%OUT_TEMP1, VMMACH_CACHE_LINE_SIZE, %OUT_TEMP1	/* delay slot */
+
+    retl
+    nop
+
 
 /*
  * ----------------------------------------------------------------------
