@@ -1033,11 +1033,30 @@ ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
     ProcRemoteWaitCmd cmd;
     Rpc_Storage storage;
     ReturnStatus status;
+    int numTries;
 
     if (proc_MigDebugLevel > 3) {
 	printf("ProcRemoteWait(%x, ...) called.\n", procPtr->processID);
     }
 
+    /*
+     * Check to make sure the home node is up, and kill the process if
+     * it isn't.  The call to exit never returns.
+     */
+    status = Recov_IsHostDown(procPtr->peerHostID);
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_DoRemoteCall: host %d is down; killing process %x.\n",
+		       procPtr->peerHostID, procPtr->processID);
+	}
+	Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
+	/*
+	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
+	 * directive causes a complaint when there's code after it.
+	 */
+	panic("ProcRemoteWait: Proc_ExitInt returned.\n");
+	return(PROC_NO_PEER);
+    }
     /*
      * Set up the invariant fields of the rpc call, since we may make
      * multiple calls after waiting.
@@ -1068,8 +1087,17 @@ ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
 	 * Set up for the RPC.
 	 */
     
-	status = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_WAIT,
-			  &storage);
+	for (numTries = 0; numTries < PROC_MAX_RPC_RETRIES; numTries++) {
+	    status = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_WAIT,
+			      &storage);
+	    if (status != RPC_TIMEOUT) {
+		break;
+	    }
+	    status = Proc_WaitForHost(procPtr->peerHostID);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	}
 
 	/*
 	 * If the status is FAILURE, no children have exited so far.  In
