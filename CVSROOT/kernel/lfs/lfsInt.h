@@ -176,6 +176,8 @@ typedef struct Lfs {
  *			       performed.
  * LFS_CLEANER_CHECKPOINT_ACTIVE - A segment cleaner is doing a checkpoint.
  * LFS_SYNC_CHECKPOINT_ACTIVE - A segment cleaner is doing a checkpoint.
+ * LFS_CLEANSEGWAIT_ACTIVE - Someone is waiting for clean segments to be
+ *			     generated.
  */
 
 #define	LFS_WRITE_ACTIVE	  0x1
@@ -185,6 +187,10 @@ typedef struct Lfs {
 #define	LFS_SYNC_CHECKPOINT_ACTIVE 0x100
 #define	LFS_CLEANER_CHECKPOINT_ACTIVE 0x200
 #define	LFS_CHECKPOINT_ACTIVE 0x300
+#define	LFS_CLEANSEGWAIT_ACTIVE	0x400
+
+extern int lfsMinNumberToClean;
+
 /* Useful macros for LFS.
  *
  * LfsFromDomainPtr(domainPtr) - Return the Lfs data stucture for a Fsdm_domain.
