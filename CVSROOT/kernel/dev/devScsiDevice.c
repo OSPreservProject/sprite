@@ -478,6 +478,7 @@ DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
 	bcopy(ioctlPtr->inBuffer+sizeof(Dev_ScsiCommand), scsiCmd.commandBlock,
 	      scsiCmd.commandBlockLen);
 	statusPtr = (Dev_ScsiStatus *) ioctlPtr->outBuffer;
+	senseDataLen = DEV_MAX_SENSE_BYTES;
 	status = DevScsiSendCmdSync(devPtr, &scsiCmd, &statusByte,
 		&(statusPtr->amountTransferred), &senseDataLen, senseData);
 	statusPtr->statusByte = statusByte;
