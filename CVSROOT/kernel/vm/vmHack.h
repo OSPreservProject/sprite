@@ -18,6 +18,7 @@
 #ifndef _VMHACK
 #define _VMHACK
 
+/* this is a test */
 #include <cfuncproto.h>
 #include <sprite.h>
 
