@@ -134,7 +134,7 @@ callHandler:
 |* space is to be put.  We set up a short exception stack, restore
 |* registers, make SP point to the short stack and then do an rte.
 |*
-	movl	sp, a0; 		|* Put the return PC into d1
+	movl	sp, a0	 		|* Put the return PC into d1
 	addl	#EXC_TRAP_STACK_SIZE, a0|*
 	movl	a0@(EXC_PC_OFFSET), d1	|*
 	movl	d0, a0 			|* Set up the exception stack.
@@ -173,9 +173,10 @@ userError:
 |*
 |* Got an error on a copy in from user space.  Blow away the
 |* exception stack and return to the function doing the copy.
+|* The size of the exception stack has been put into the saved D0.
 |*
 	RestoreTrapRegs()
-	addl	#EXC_LONG_STACK, sp
+	addl	d0, sp
 	movl	#1, d0
 	rts
 

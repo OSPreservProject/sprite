@@ -249,8 +249,26 @@ Exc_Trap(trapStack)
 			if (procPtr->vmFlags & VM_COPY_IN_PROGRESS) {
 			    /*
 			     * A Vm_Copy{In,Out} is in progress so return
-			     * an error to the copying process.
+			     * an error to the copying process.  The size of the
+			     * trap stack is put into saved reg D0 so the trap
+			     * handler knows how much stack to blow away.
 			     */
+			    switch (trapStack.excStack.vor.stackFormat) {
+				case EXC_MC68010_BUS_FAULT:
+				    trapStack.genRegs[D0] = 
+				    		EXC_MC68010_BUS_FAULT_SIZE;
+				    break;
+				case EXC_SHORT_BUS_FAULT:
+				    trapStack.genRegs[D0] = 
+						EXC_SHORT_BUS_FAULT_SIZE;
+				    break;
+				case EXC_LONG_BUS_FAULT:
+				    trapStack.genRegs[D0] = 
+						EXC_LONG_BUS_FAULT_SIZE;
+				    break;
+				default:
+				    Sys_Panic(SYS_FATAL, "Exc_Trap: Bad stack format.\n");
+			    }
 			    return(EXC_USER_ERROR);
 			} else {
 			    /*
@@ -606,19 +624,19 @@ Exc_GetTrapStackSize(trapStackPtr)
 {
     switch (trapStackPtr->excStack.vor.stackFormat) {
 	case EXC_SHORT:
-	    return(BASE_SIZE + 8);
+	    return(BASE_SIZE + EXC_SHORT_SIZE);
 	case EXC_THROWAWAY:
-	    return(BASE_SIZE + 8);
+	    return(BASE_SIZE + EXC_THROWAWAY_SIZE);
 	case EXC_INST_EXCEPT:
-	    return(BASE_SIZE + 12);
+	    return(BASE_SIZE + EXC_INST_EXCEPT_SIZE);
 	case EXC_MC68010_BUS_FAULT:
-	    return(BASE_SIZE + 58);
+	    return(BASE_SIZE + EXC_MC68010_BUS_FAULT_SIZE);
 	case EXC_COPROC_MID_INSTR:
-	    return(BASE_SIZE + 20);
+	    return(BASE_SIZE + EXC_COPROC_MID_INSTR_SIZE);
 	case EXC_SHORT_BUS_FAULT:
-	    return(BASE_SIZE + 32);
+	    return(BASE_SIZE + EXC_SHORT_BUS_FAULT_SIZE);
 	case EXC_LONG_BUS_FAULT:
-	    return(BASE_SIZE + 92);
+	    return(BASE_SIZE + EXC_LONG_BUS_FAULT_SIZE);
 	default:
 	    Sys_Panic(SYS_WARNING, "Exc_GetTrapStackSize: Bad stack format.\n");
 	    return(-1);
