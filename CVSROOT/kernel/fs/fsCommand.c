@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include <sprite.h>
+#include <bstring.h>
 #include <fs.h>
 #include <fsutil.h>
 #include <fsNameOps.h>
@@ -45,6 +46,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 	register int tmp;						\
 	tmp = int1 ; int1 = *(int *)buffer ; *(int *)buffer = tmp;	\
     }
+
+/* Forward references: */
+
+static void ZeroFsStats _ARGS_((void));
+
 
 /*
  *----------------------------------------------------------------------
@@ -281,12 +287,7 @@ Fs_Command(command, bufSize, buffer)
 	    break;
 	}
 	case FS_ZERO_STATS: {
-	    /*
-	     * Zero out the counters in the fs_Stats struct.  Unfortunately,
-	     * some values in the structure can't be zeroed out, so this
-	     * must be changed to zero out only some portions.
-	     */
-	    bzero((Address) &fs_Stats, sizeof(Fs_Stats));
+	    ZeroFsStats();
 	    status = SUCCESS;
 	    break;
 	}
@@ -477,3 +478,43 @@ Fs_Copy(srcFileName, dstFileName)
     return(error);
 }
 #endif /* notdef */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZeroFsStats --
+ *
+ *	Reset counters in the Fs_Stats structure, leaving state information 
+ *	alone.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ZeroFsStats()
+{
+    bzero(&fs_Stats.cltName, sizeof(fs_Stats.cltName));
+    bzero(&fs_Stats.srvName, sizeof(fs_Stats.srvName));
+    bzero(&fs_Stats.gen, sizeof(fs_Stats.gen));
+    Fscache_ZeroStats();
+    bzero(&fs_Stats.alloc, sizeof(fs_Stats.alloc));
+    Fsutil_ZeroHandleStats();
+    bzero(&fs_Stats.prefix, sizeof(fs_Stats.prefix));
+    bzero(&fs_Stats.lookup, sizeof(fs_Stats.lookup));
+    fs_Stats.nameCache.accesses = 0;
+    fs_Stats.nameCache.hits = 0;
+    fs_Stats.nameCache.replacements = 0;
+    fs_Stats.object.dirFlushed = 0;
+    bzero(&fs_Stats.recovery, sizeof(fs_Stats.recovery));
+    bzero(&fs_Stats.consist, sizeof(fs_Stats.consist));
+    bzero(&fs_Stats.writeBack, sizeof(fs_Stats.writeBack));
+    bzero(&fs_Stats.rmtIO, sizeof(fs_Stats.rmtIO));
+    bzero(&fs_Stats.mig, sizeof(fs_Stats.mig));
+}
