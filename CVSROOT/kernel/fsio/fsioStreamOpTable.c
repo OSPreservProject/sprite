@@ -167,9 +167,8 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc,			/* iocontrol, select */
 		NoProc, NoProc,			/* getIOAttr, setIOAttr */
 		NoHandle,			/* clientVerify */
-		NoProc, NoProc,			/* migStart, migEnd */
-		FsStreamMigrate,		/* Used to tell source of mig.
-						 * to release stream */
+		NoProc, NoProc,			/* release, migEnd */
+		NoProc,				/* migrate */
 		FsStreamReopen,	NoProc,		/* reopen, blockAlloc */
 		NoProc, NoProc,	NoProc,		/* blkRead, blkWrite, blkCopy */
 		(Boolean (*)())NIL, NullClientKill,/* scavenge, kill */
