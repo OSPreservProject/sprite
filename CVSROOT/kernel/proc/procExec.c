@@ -845,6 +845,10 @@ GrabArgArray(maxLength, userProc, extraArgArray, argPtrArray, numArgsPtr,
 	if (accessible) {
 	    Vm_MakeUnaccessible((Address) stringPtr, stringLength);
 	}
+	if (realLength > maxLength+1) {
+	    status = GEN_E2BIG;
+	    goto execError;
+	}
     }
     if (realLengthPtr != (int *) NIL) {
 	if (totalLength > *realLengthPtr) {
