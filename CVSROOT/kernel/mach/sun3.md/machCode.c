@@ -32,6 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "prof.h"
 #include "sched.h"
 #include "vm.h"
+#include "vmMach.h"
 #include "sig.h"
 #include "swapBuffer.h"
 #include "user/sigMach.h"
@@ -1023,7 +1024,7 @@ MachTrap(trapStack)
 			    *(int *)&trapStack.busErrorReg);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
 				procPtr->processID, FALSE,
-				trapStack.excStack.tail.addrBusErr.faultAddr);
+			(Address)trapStack.excStack.tail.addrBusErr.faultAddr);
 	    }
 	    break;
 	}
@@ -1065,32 +1066,32 @@ MachTrap(trapStack)
 	case MACH_ADDRESS_ERROR:
 	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.tail.addrBusErr.faultAddr);
+			 (Address)trapStack.excStack.tail.addrBusErr.faultAddr);
 	    break;
 	case MACH_ILLEGAL_INST:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			   (Address)trapStack.excStack.pc);
 	    break;
 	case MACH_ZERO_DIV:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_ZERO_DIV,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	    break;
 	case MACH_CHK_INST:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_CHK,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	    break;
 	case MACH_TRAPV:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_TRAPV,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	    break;
 	case MACH_PRIV_VIOLATION:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	    break;
 	case MACH_TRACE_TRAP: 
 	    /*
@@ -1103,54 +1104,54 @@ MachTrap(trapStack)
 		procPtr->genFlags &= ~PROC_SINGLE_STEP_FLAG;
 		(void) Sig_Send(SIG_TRACE_TRAP, SIG_NO_CODE,
 				procPtr->processID, FALSE,
-				trapStack.excStack.pc);
+				 (Address)trapStack.excStack.pc);
 	    }
 	    break;
 
 	case MACH_EMU1010:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_EMU1010,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	    break;
 	case MACH_EMU1111:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_EMU1111,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	    break;
 	case MACH_BAD_TRAP:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	    break;
 #ifdef sun3
 	case MACH_FP_UNORDERED_COND:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_UNORDERED_COND,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	case MACH_FP_INEXACT_RESULT:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_INEXACT_RESULT,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	case MACH_FP_ZERO_DIV:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_ZERO_DIV,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	case MACH_FP_UNDERFLOW:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_UNDERFLOW,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	case MACH_FP_OPERAND_ERROR:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_OPERAND_ERROR,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	case MACH_FP_OVERFLOW:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_OVERFLOW,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 	case MACH_FP_NAN:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_NAN,
 			    procPtr->processID, FALSE,
-			    trapStack.excStack.pc);
+			     (Address)trapStack.excStack.pc);
 #endif
 	default:
 	    return(MACH_KERN_ERROR);
