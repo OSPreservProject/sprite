@@ -257,8 +257,15 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 		     */
 		    rpcCltStat.tooManyAcks++;
 		    if (serverID == RPC_BROADCAST_SERVER_ID) {
-			Sys_Panic(SYS_WARNING,
-			    "RpcDoCall: lots of acks to a Broadcast\n");
+			Net_SpriteIDToName(rpcHdrPtr->serverID, &name);
+			if (name == (char *)NIL) {
+			    Sys_Panic(SYS_WARNING, 
+				"RpcDoCall: <%d> hanging my broadcast\n",
+				    rpcHdrPtr->serverID);
+			} else {
+			    Sys_Panic(SYS_WARNING, 
+				"RpcDoCall: %s hanging my broadcast\n", name);
+			}
 			error = RPC_TIMEOUT;
 		    } else {
 			Net_SpriteIDToName(serverID, &name);
