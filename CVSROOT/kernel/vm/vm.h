@@ -269,6 +269,7 @@ extern	void	Vm_Init();
 extern	void 	 	Vm_SegmentIncRef();
 extern	Vm_Segment	*Vm_FindCode();
 extern	void		Vm_InitCode();
+extern	void		Vm_FlushCode();
 extern	Vm_Segment  	*Vm_SegmentNew();
 extern	ReturnStatus 	Vm_SegmentDup();
 extern	void		Vm_SegmentDelete();
