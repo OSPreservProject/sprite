@@ -400,3 +400,86 @@ AgainFirstTimeDontPrint:
 
 	ret
 	restore
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachRunUserProc -
+ *
+ *	void	MachRunUserProc(procPtr)
+ *
+ *	Make the first user process start off by returning it from a kernel
+ *	trap.
+ *	Interrupts must be disabled coming into this.
+ *
+ * Results:
+ *	Restore registers and return to user space.
+ *
+ * Side effects:
+ *	Registers restored.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachRunUserProc
+_MachRunUserProc:
+	/*
+	 * Get values to restore registers to from the state structure.
+	 */
+	set	_machCurStatePtr, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* machStatePtr */
+	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2	/* machStatePtr->trapRegs */
+
+	/*
+	 * Restore %fp.  This will be the user's %sp when we return from
+	 * the trap window.
+	 */
+	add	%VOL_TEMP2, MACH_FP_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %fp		/* set %fp - user sp */
+
+	/*
+	 * Set return from trap pc and next pc.
+	 */
+	add	%VOL_TEMP2, MACH_RETPC_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %CUR_PC_REG
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %NEXT_PC_REG
+	/*
+	 * Make sure traps are disabled before setting up next psr value.
+	 * Next psr value will have all interrupts enabled, so we make sure
+	 * traps are disabled here so we don't get one of those interrupts
+	 * before returning to user space.
+	 */
+	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP1
+	mov	%psr, %VOL_TEMP2
+	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	mov	%VOL_TEMP2, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+	set	MACH_FIRST_USER_PSR, %CUR_PSR_REG
+
+	/*
+	 * Put a happy return value into the return value register.  This
+	 * probably doesn't matter at all.
+	 */
+	clr	%i0
+
+	/*
+	 * Make sure invalid window is 1 in front of the window we'll return to.
+	 * This makes sure we don't get a watchdog reset returning from the
+	 * trap window, because we'll be sure the window we return to is valid.
+	 * Making the window before that be the invalid window means that we'll
+	 * be able to start out life for a while without a window overflow
+	 * trap.
+	 */
+	MACH_SET_WIM_TO_CWP()
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, FirstRetreat)
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, SecondRetreat)
+
+	/*
+	 * Restore psr
+	 */
+	MACH_RESTORE_PSR()
+	jmp	%CUR_PC_REG
+	rett	%NEXT_PC_REG
+	nop

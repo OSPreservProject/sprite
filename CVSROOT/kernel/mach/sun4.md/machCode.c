@@ -349,22 +349,15 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * from the parent as well.
      */
     if (user) {
-#ifdef NOTDEF
-	statePtr->userState.userStackPtr =
-		fromStatePtr->userState.userStackPtr;
-	bcopy((Address)fromStatePtr->userState.trapRegs,
-		  (Address)statePtr->userState.trapRegs,
-		  sizeof(statePtr->userState.trapRegs));
-#else
-	panic("Tried to start a user process.  We're not ready yet!\n");
-#endif /* NOTDEF */
+	/*
+	 * Trap state regs are the same for child process.
+	 */
+	bcopy((Address)fromStatePtr->trapRegs, (Address)statePtr->trapRegs,
+		sizeof (Mach_RegState));
     }
     if (startPC == (Address)NIL) {
-#ifdef NOTDEF
-	stackPtr->startPC = (Address)fromStatePtr->userState.excStackPtr->pc;
-#else
-	panic("In Mach_SetupNewState, startPC was NIL.\n");
-#endif /* NOTDEF */
+	*((Address *)(((Address)stackPtr) + MACH_ARG0_OFFSET)) =
+		fromStatePtr->trapRegs->pc;
     } else {
 	/*
 	 * The first argument to startFunc is supposed to be startPC.  But that
@@ -387,6 +380,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
  *
  *	Set the return value for a process from a system call.  Intended to
  *	be called by the routine that starts a user process after a fork.
+ *	Interrupts must be off here!
  *
  * Results:
  *	None.
@@ -416,6 +410,7 @@ Mach_SetReturnVal(procPtr, retVal)
  * Mach_StartUserProc --
  *
  *	Start a user process executing for the first time.
+ *	Interrupts must be off here!
  *
  * Results:
  *	None.
@@ -434,16 +429,21 @@ Mach_StartUserProc(procPtr, entryPoint)
 					 * executing. */
 {
     register	Mach_State	*statePtr;
-    register	Mach_ExcStack	*excStackPtr;
 
     statePtr = procPtr->machStatePtr;
-    excStackPtr = (Mach_ExcStack *)
-        (statePtr->kernStackStart + MACH_BARE_STACK_OFFSET - MACH_SHORT_SIZE);
-    statePtr->userState.excStackPtr = excStackPtr;
-    statePtr->userState.trapRegs[SP] = (int)excStackPtr;
-    excStackPtr->statusReg = 0;
-    excStackPtr->pc = (int)entryPoint;
-    excStackPtr->vor.stackFormat = MACH_SHORT;
+    /*
+     * Fake set of trap regs on top of the stack and call MachReturnFromTrap
+     * from MachRunUserProc?  Or set them specially in MachRunUserProc and
+     * just call rett?  I think I'll assume the latter.  That way I just
+     * put the values I want in the state register and store them directly
+     * into real registers in MachRunUserProc().
+     */
+
+    /*
+     * Return from trap pc.
+     */
+    statePtr->trapRegs->pc = (Address)entryPoint;
+    statePtr->trapRegs->npc = (Address)entryPoint + 4;	/* correct? */
     MachUserReturn(procPtr);
 
     MachRunUserProc();
@@ -470,19 +470,24 @@ void
 Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     Proc_ControlBlock	*procPtr;		/* Process control block for
 						 * process to exec. */
-    Address		userStackPtr;	/* Stack pointer for when the
+    Address		userStackPtr;		/* Stack pointer for when the
 						 * user process resumes 
 						 * execution. */
     Address		entryPoint;		/* Where the user process is
 						 * to resume execution. */
 {
-#ifdef NOTDEF
-    procPtr->machStatePtr->userState.userStackPtr = userStackPtr;
+    /*
+     * Ugh.  They set this to a different register set in the sun3 and
+     * then set this reg differently in Mach_StartUserProc.  What should I
+     * be doing?
+     */
+    /*
+     * EEK -- Make sure there's enough space here for thing to have
+     * stored its 6 input reg args in a caller's stack frame.
+     */
+    procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG] = userStackPtr;
     Mach_StartUserProc(procPtr, entryPoint);
     /* THIS DOES NOT RETURN */
-#else
-    panic("Mach_ExecUserProc called\n");
-#endif NOTDEF
 }
 
 /*

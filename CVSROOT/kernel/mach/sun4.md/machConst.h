@@ -137,6 +137,9 @@
 #define	MACH_DISABLE_TRAP_BIT		0xFFFFFFDF	/* and with %psr */
 #define	MACH_SUPER_BIT			0x80
 #define	MACH_PS_BIT			0x40	/* and with psr - prev. state */
+#define	MACH_FIRST_USER_PSR		0x080	/* traps off, interrupts on,
+						 * previous mode not supervisor,
+						 * current mode supervisor. */
 
 /*
  * psr value for interrupts disabled, traps enabled and window 0.
@@ -307,6 +310,7 @@
  * Constant for offset of fp in saved window area.  Fp is %i6.
  */
 #define	MACH_FP_OFFSET		(MACH_NUM_LOCALS * 4 + 6 * 4)
+#define	MACH_FP_REG		6
 
 /*
  * Constant for offset of return pc in saved window area.  RetPC is %i7.
