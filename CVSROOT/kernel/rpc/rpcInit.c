@@ -183,8 +183,12 @@ Rpc_Init()
      */
     Sync_SemInitDynamic(&rpcNack.mutex,"Rpc:RpcNackData.mutex");
     Sync_SemRegister(&rpcNack.mutex);
-    rpcNack.busy = FALSE;
-    RpcBufferInit(&(rpcNack.rpcHdr), &(rpcNack.bufferSet), -1, -1);
+    rpcNack.numFree = sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr);
+    for (i = 0; i < sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr); i++) {
+	rpcNack.hdrState[i] = RPC_NACK_FREE;
+	RpcBufferInit(&(rpcNack.rpcHdrArray[i]),
+		&(rpcNack.bufferSet[i]), -1, -1);
+    }
 
     /*
      * Initialize client's table on whether servers are sending negatvie

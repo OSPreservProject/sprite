@@ -373,6 +373,66 @@ RpcReclaimServers(serversMaxed)
 	}
     }
 }
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NegAckFunc --
+ *
+ *	Call-back to send a negative acknowledgement so that we won't be at
+ *	interrupt level while doing this.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A negative ack is output.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NegAckFunc(clientData, callInfoPtr)
+    ClientData		clientData;
+    Proc_CallInfo	*callInfoPtr;
+{
+    int			i;
+
+    MASTER_LOCK(&(rpcNack.mutex));
+    /*
+     * We may handle more than one request here.
+     */
+    for (i = 0; i < (sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr)); i++) {
+	if (rpcNack.hdrState[i] == RPC_NACK_WAITING) {
+	    rpcNack.hdrState[i] = RPC_NACK_XMITTING;
+	    rpcNack.rpcHdrArray[i].flags = RPC_NACK | RPC_ACK;
+	    /*
+	     * Already did an RpcSrvInitHdr from incoming rpcHdrPtr to our
+	     * outgoing * buffer in RpcServerDispatch.
+	     */
+	    /*
+	     * This should be okay to do under a masterlock since RpcAck
+	     * also calls it and it's under a masterlock.
+	     */
+	    RpcAddServerTrace(NIL, &(rpcNack.rpcHdrArray[i]), TRUE, 19);
+	    rpcSrvStat.nacks++;
+	    /*
+	     * Because we pass it the mutex, it will return only when the xmit
+	     * is done.
+	     */
+	    (void) RpcOutput(rpcNack.rpcHdrArray[i].clientID,
+		    &(rpcNack.rpcHdrArray[i]), &(rpcNack.bufferSet[i]),
+		    (RpcBufferSet *) NIL, 0,
+		    (Sync_Semaphore *) &(rpcNack.mutex));
+	    rpcNack.hdrState[i] = RPC_NACK_FREE;
+	    rpcNack.numFree++;
+	}
+    }
+    MASTER_UNLOCK(&(rpcNack.mutex));
+    return;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -404,6 +464,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 					 * in the hardware buffers */
 {
     register int size;		/* The amount of the data in the message */
+    int		i;
 
 
     /*
@@ -412,35 +473,29 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
      */
     if (srvPtr == (RpcServerState *) NIL) {
 	MASTER_LOCK(&(rpcNack.mutex));
-	if (rpcNack.busy) {
-	    /*
-	     * Just drop the nack for now.  We can't sleep at interrupt
-	     * level for it to be free, and this is no worse than our
-	     * dropping the request entirely if there were no servers
-	     * available which is what we did before...
-	     */
+	if (rpcNack.numFree <= 0) {
+	    /* Drop the negative ack. */
 	    MASTER_UNLOCK(&(rpcNack.mutex));
 	    return;
 	}
-
-	rpcNack.busy = TRUE;
-	rpcNack.rpcHdr.flags = RPC_NACK | RPC_ACK;
-	/* RpcSrvInitHdr takes srvrPtr as first arg and ignores it. */
-	RpcSrvInitHdr(NIL, &(rpcNack.rpcHdr), rpcHdrPtr);
 	/*
-	 * This should be okay to do under a masterlock since RpcAck below
-	 * also calls it and it's under a masterlock.
+	 * Copy rpc header info to safe place that won't be freed when
+	 * we return.
 	 */
-/* This is identical to one printed elsewhere? */
-	RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 19);
-	rpcSrvStat.nacks++;
-	(void) RpcOutput(rpcHdrPtr->clientID, &(rpcNack.rpcHdr),
-		&(rpcNack.bufferSet),
-		(RpcBufferSet *) NIL, 0, (Sync_Semaphore *) NIL);
-	rpcNack.busy = FALSE;
+	for (i = 0; i < (sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr)); i++) {
+	    if (rpcNack.hdrState[i] == RPC_NACK_FREE) {
+		rpcNack.numFree--;
+		rpcNack.hdrState[i] = RPC_NACK_WAITING;
+		RpcSrvInitHdr(NIL, &(rpcNack.rpcHdrArray[i]), rpcHdrPtr);
+		Proc_CallFunc(NegAckFunc, (ClientData) NIL, 0);
+		MASTER_UNLOCK(&(rpcNack.mutex));
+		return;
+	    }
+	}
 	MASTER_UNLOCK(&(rpcNack.mutex));
-	return;
+	panic("RpcServerDispatch: couldn't find free rpcHdr.\n");
     }
+
     /*
      * Acquire the server's mutex for multiprocessor synchronization.  We
      * synchronize with each server process with a mutex that is part of
