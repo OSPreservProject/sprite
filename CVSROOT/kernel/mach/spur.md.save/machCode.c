@@ -70,9 +70,8 @@ char *mach_MachineType = "spur";
 
 /*
  * The byte ordering/alignment type used by Fmt_Convert for I/O control data.
- * For compatablity we set this to the old Swap_Buffer constant.
  */
-Fmt_Format mach_Format = SWAP_SPUR_TYPE;
+Fmt_Format mach_Format = FMT_SPUR_FORMAT;
 
 
 /* 

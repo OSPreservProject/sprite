@@ -69,7 +69,7 @@ char *mach_MachineType = "ds3100";
 /*
  * The byte ordering/alignment type used with Fmt_Convert and I/O control data
  */
-Fmt_Format mach_Format = SWAP_VAX_TYPE;
+Fmt_Format mach_Format = FMT_MIPS_FORMAT;
 
 /*
  *  Count of number of ``calls'' to enable interrupts minus number of calls
@@ -904,6 +904,10 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    if (Vm_CopyIn(sizeof(int), pc, (Address)&inst) != SUCCESS) {
 		panic("MachExceptionHandler: Couldn't fetch break inst.");
 	    }
+#if 0
+	    printf("Pc = 0x%x, Instruction = 0x%x\n", pc, inst);
+	    printf("Cause register = 0x%x\n", causeReg);
+#endif
 	    switch ((int)(inst & MACH_BREAK_CODE_FIELD)) {
 		case MACH_BREAKPOINT_VAL:
 		    Proc_Lock(procPtr);
