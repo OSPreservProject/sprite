@@ -77,13 +77,13 @@ typedef struct Sun_DiskLabel {
 /*
  * Macro's to compute partition numbers from Fs_Device structures. Devices
  * may be treated as non-partitioned.  In non-partitioned device the entire
- * disk is treated as one partition. 
+ * disk is treated as one partition.
  * Disk device encode the Fs_Device unit number as follows:
  *	bit 3	  = if 1 treat disk as a raw disk with no partition. if 0
  *		    treat as partition disk.
  *	bit 0 - 2 = if partitioned disk, bits 0 - 2 are the partition number.
- * 
- * DISK_PARTITION() - Compute the partition number from the Fs_Device 
+ *
+ * DISK_PARTITION() - Compute the partition number from the Fs_Device
  *		      structure.
  * DISK_IS_PARTITIONED() - Return TRUE if a Fs_Device structure specifies a
  *			   non partitioned disk.
@@ -112,4 +112,4 @@ typedef struct DevDiskMap {
 
 
 
-#endif _DEVDISKLABEL
+#endif /* _DEVDISKLABEL */

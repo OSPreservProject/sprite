@@ -1,7 +1,7 @@
 /*
  * devNet.h --
  *
- *	This defines the interface to the file system net device. 
+ *	This defines the interface to the file system net device.
  *
  * Copyright 1985, 1988 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -22,7 +22,7 @@
 #include "sprite.h"
 
 /*
- * Forward routines. 
+ * Forward routines.
  */
 
 
@@ -36,5 +36,5 @@ extern	ReturnStatus	DevNet_FsSelect();
 
 extern	void	DevNetEtherHandler();
 
-#endif _DEVNET
+#endif /* _DEVNET */
 
