@@ -496,17 +496,26 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
     }
 
     /*
-     * Filter out partial acks here. Rpc_Call could process them, but that
-     * might result in a lot of retransmissions - one for every partial
-     * ack that a server sends us.  It sends us one everytime it gets a
-     * duplicate fragment, for example.  Instead we just update
-     * fragsDelivered so the next resend is smarter.
+     * Filter out partial acks.
      */
-    if ((rpcHdrPtr->fragMask != 0) && 
-	(rpcHdrPtr->flags & RPC_ACK)) { 
-	chanPtr->fragsDelivered = rpcHdrPtr->fragMask;
-	rpcCltStat.recvPartial++;
-	goto unlock;
+    if ((rpcHdrPtr->fragMask != 0) && (rpcHdrPtr->flags & RPC_ACK)) {
+	if (chanPtr->fragsDelivered != rpcHdrPtr->fragMask) {
+	    /*
+	     * Because we may get several partial acks, we just update
+	     * fragsDelivered so the next resend is smarter.  Eventually
+	     * we'll get all the fragments delivered and then these
+	     * acks will get passed up to RpcDoCall().
+	     */
+	    chanPtr->fragsDelivered = rpcHdrPtr->fragMask;
+	    rpcCltStat.recvPartial++;
+	    goto unlock;
+	}
+	/*
+	 * Apparently we've gotten everything through to the
+	 * server.  Our last transmission was a keep-alive
+	 * of just the last fragment.  We FALL THROUGH to
+	 * pass the server's ack up to the process level, RpcDoCall();
+	 */
     }
 
     /*

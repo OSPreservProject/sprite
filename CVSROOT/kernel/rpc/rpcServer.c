@@ -371,7 +371,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
      * message.
      */
     if (rpcHdrPtr->ID != srvPtr->replyRpcHdr.ID) {
-	
+
 	rpcSrvStat.requests++;
 	if (srvPtr->state & SRV_WAITING) {
 	    /*
@@ -439,6 +439,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	     * The message is complete, ie. not fragmented.
 	     * Return ack if needed and notify the server process.
 	     */
+	    srvPtr->fragsReceived = 0;
 	    if (rpcHdrPtr->flags & RPC_PLSACK) {
 		rpcSrvStat.handoffAcks++;
 		RpcAck(srvPtr, 0);
@@ -822,14 +823,11 @@ RpcAck(srvPtr, flags)
 
     ackHdrPtr->flags = flags | RPC_ACK;
     RpcSrvInitHdr(srvPtr, ackHdrPtr, requestHdrPtr);
-
-    if (flags & RPC_LASTFRAG) {
-	/*
-	 * This is a partial ack indicating which fragments the
-	 * server has received.
-	 */
-	ackHdrPtr->fragMask = srvPtr->fragsReceived;
-    }
+    /*
+     * Let the client know what fragments we have received
+     * so it can optimize retransmission.
+     */
+    ackHdrPtr->fragMask = srvPtr->fragsReceived;
     /*
      * Note, can't try ARP here because of it's synchronization with
      * a master lock and because we are called at interrupt time.

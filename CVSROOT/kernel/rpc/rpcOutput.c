@@ -14,6 +14,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "mach.h"
 #include "rpc.h"
 #include "rpcInt.h"
 #include "rpcTrace.h"
@@ -21,7 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "status.h"
 #include "dbg.h"
-#include "machine.h"
+#include "mach.h"
 
 /*
  * A delay variable that represents our preferred inter-fragment delay.
@@ -207,14 +208,21 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	    }
 
 	    /*
-	     * Loop again to output the fragments.  Fragments are not output
-	     * if their bit is set in the dontSendMask.  An inter-fragment
-	     * delay is setup if we are going to a slower machine.
+	     * An inter-fragment delay is setup when going to a slower machine.
 	     */
 	    if (rpcDelay[spriteID] > rpcOutputRate) {
 		delay = rpcDelay[spriteID] - rpcOutputRate;
 	    } else {
 		delay = 0;
+	    }
+	    /*
+	     * Loop (again) to output the fragments.  Fragments are not output
+	     * if their bit is set in the dontSendMask.  If dontSentMask
+	     * would suppress all fragments we just send the last one
+	     * as a keep-alive.
+	     */
+	    if (dontSendMask == rpcCompleteMask[nfrags]) {
+		dontSendMask &= ~(1 << (nfrags - 1));
 	    }
 	    sendFragMask = ~dontSendMask;
 	    for (fragID = 1, frag = 0;
@@ -263,7 +271,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		     */
 		    RPC_TRACE(fragRpcHdrPtr, RPC_OUTPUT, "Fragout");
 		    if (mutexPtr != (int *)NIL) {
-			if (sys_AtInterruptLevel) {
+			if (mach_AtInterruptLevel) {
 			    Sys_Panic(SYS_FATAL,
 			      "RpcOutput, unlocking mutex at interrupt level");
 			} else {
@@ -273,7 +281,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		    rpcLastDelay = delay;
 		    if (delay &&
 			((fragRpcHdrPtr->flags & RPC_LASTFRAG) == 0)) {
-			DELAY(delay);
+			MACH_DELAY(delay);
 		    }
 		    if (mutexPtr != (int *)NIL) {
 			MASTER_LOCK((*mutexPtr));
