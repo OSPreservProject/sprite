@@ -70,6 +70,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 #include "sigInt.h"
 #include "rpc.h"
+#include "net.h"
 
 #define	SigGetBitMask(sig) (1 << (sig - 1))
 
@@ -538,7 +539,8 @@ Sig_Send(sigNum, code, id, familyID)
 	    /*
 	     * Send a remote signal.
 	     */
-	    if (hostID == NET_BROADCAST_HOSTID) {
+	    if (hostID == NET_BROADCAST_HOSTID ||
+		hostID >  NET_NUM_SPRITE_HOSTS || hostID < 0) {
 		return(PROC_INVALID_PID);
 	    } else {
 		return(SendRemoteSignal(hostID, sigNum, code, id, familyID));
