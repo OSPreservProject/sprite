@@ -73,6 +73,7 @@ SigMigSend(procPtr, sigNum, code)
 		   sigNum, code);
     }
 
+again:
     processID = procPtr->processID;
     if (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
 	/*
@@ -136,13 +137,30 @@ SigMigSend(procPtr, sigNum, code)
 		 */
 		goto done;
 	    }
+	    locked = TRUE;
+	    if (procPtr != newProcPtr) {
+		panic("SigMigSend: locked wrong process (continuable).\n");
+		goto done;
+	    }
 	    /*
 	     * Same process.
 	     */
-	    if (procPtr != newProcPtr) {
-		panic("SigMigSend: locked wrong process.\n");
+	    if (procPtr->state == PROC_MIGRATED &&
+		procPtr->peerHostID != remoteHostID) {
+		if (proc_MigDebugLevel > 1) {
+		    printf("SigMigSend: process %x changed hosts during signal; retrying.\n",
+			       processID);
+		}
+	    
+		goto again;
 	    }
-	    locked = TRUE;
+	    if (procPtr->state != PROC_MIGRATED) {
+		if (proc_MigDebugLevel > 1) {
+		    printf("SigMigSend: process %x no longer migrated.\n",
+			       processID);
+		}
+		goto done;
+	    }
 	}	    
 	    
 	    
