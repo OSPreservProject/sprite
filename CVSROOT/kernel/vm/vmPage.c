@@ -1343,7 +1343,7 @@ Vm_ReservePage(pfNum)
 
     if (pfNum < vmStat.numPhysPages) {
 	corePtr = &coreMap[pfNum];
-	TakeOffAllocList(corePtr);
+	TakeOffFreeList(corePtr);
 	corePtr->virtPage.segPtr = vm_SysSegPtr;
 	corePtr->flags = 0;
 	corePtr->lockCount = 1;
