@@ -217,6 +217,8 @@ Dev_SCSIInitController(cntrlrPtr)
 				 scsiPtr->number, 0xBABE, regsPtr->dmaCount);
 #endif notdef
 	    Sys_UnsetJump();
+	    Mem_Free((Address) scsiPtr);
+	    scsi[cntrlrPtr->controllerID] = (DevSCSIController *)NIL;
 	    return(FALSE);
 	}
     } else {
