@@ -81,6 +81,9 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "fs.h"
 #include "fsdm.h"
 #include "fslcl.h"	/* Directory format */
+#include "sys/types.h"
+#include "sys/ipc.h"
+#include "sys/sem.h"
 
 /*
  * System call entry structure.  Note that this is different than the one
@@ -208,6 +211,12 @@ extern ReturnStatus MachUNIXGetDirEntries();
 extern ReturnStatus MachUNIXGetDomainName();
 extern ReturnStatus MachUNIXSetDomainName();
 extern ReturnStatus MachUNIXGetSysInfo();
+extern ReturnStatus MachUNIXSemctl();
+extern ReturnStatus MachUNIXSemop();
+extern ReturnStatus MachUNIXSemget();
+extern ReturnStatus MachUNIXMmap();
+extern ReturnStatus MachUNIXMunmap();
+extern ReturnStatus MachUNIXMincore();
 extern ReturnStatus MachUNIXError();
 
 /*
@@ -285,14 +294,14 @@ SyscallInfo machUNIXSysCallTable[] = {
 	"old vwrite", 		0, 	MachUNIXError,
 	"new sbrk",		1, 	MachUNIXError,
 	"sstk",			1, 	MachUNIXError,
-	"mmap", 		6, 	MachUNIXError,
+	"mmap", 		6, 	MachUNIXMmap,
 	"old vadvise", 		1, 	MachUNIXError,
-	"munmap", 		2, 	MachUNIXError,
+	"munmap", 		2, 	MachUNIXMunmap,
 	"mprotect", 		3, 	MachUNIXError,
 	"madvise", 		3, 	MachUNIXError,
 	"vhangup", 		1, 	MachUNIXError,
 	"old vlimit", 		2, 	MachUNIXError,
-	"mincore", 		3, 	MachUNIXError,
+	"mincore", 		3, 	MachUNIXMincore,
 	"getgroups", 		2, 	MachUNIXGetGroups,
 	"setgroups", 		2, 	MachUNIXSetGroups,
 	"getpgrp", 		1, 	MachUNIXGetPGrp,
@@ -390,9 +399,9 @@ SyscallInfo machUNIXSysCallTable[] = {
 	"msgget",		0, 	MachUNIXError,
 	"msgrcv",		0, 	MachUNIXError,
 	"msgsnd",		0, 	MachUNIXError,
-	"semctl",		0, 	MachUNIXError,
-	"semget",		0, 	MachUNIXError,
-	"semop",		0, 	MachUNIXError,
+	"semctl",		4, 	MachUNIXSemctl,
+	"semget",		3, 	MachUNIXSemget,
+	"semop",		3, 	MachUNIXSemop,
 	"uname",		0,	MachUNIXError,
 	"shmsys",		0, 	MachUNIXError,
 	"plock",		0, 	MachUNIXError,
@@ -1363,7 +1372,7 @@ ReturnStatus MachUNIXWait(statusPtr, options, unixRusagePtr)
     int *pidPtr;
     int reason;			/* reason child exited */
     int *reasonPtr;
-    int childStatus;		/* returnStatus of child */
+    int childStatus;		/* ReturnStatus of child */
     int *childStatusPtr;
     int	flags = 0;
     Address usp;
@@ -2139,6 +2148,110 @@ MachUNIXGetSysInfo(op, buffer, nbytes, start, arg)
      */
     machCurStatePtr->userState.unixRetVal = 0;
     return(SUCCESS);
+}
+
+ReturnStatus
+MachUNIXSemctl(semid, semnum, cmd, arg)
+int semid, semnum, cmd;
+union semun arg;
+{
+    ReturnStatus	status;
+    Address		usp;
+
+    usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
+    status = Sync_SemctlStub(semid, semnum, cmd, arg, usp);
+    if (status == SUCCESS) {
+        (void)Vm_CopyIn(sizeof(int), usp,
+                        (Address)&machCurStatePtr->userState.unixRetVal);
+    }
+    return(status);
+}
+
+ReturnStatus
+MachUNIXSemop(semid, sops, nsops)
+int semid, nsops;
+struct sembuf *sops;
+{
+    ReturnStatus	status;
+    Address		usp;
+
+    usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
+    status = Sync_SemopStub(semid, sops, nsops, usp);
+    if (status == SUCCESS) {
+        (void)Vm_CopyIn(sizeof(int), usp,
+                        (Address)&machCurStatePtr->userState.unixRetVal);
+    }
+    return(status);
+}
+
+ReturnStatus
+MachUNIXSemget(key, nsems, semflg)
+key_t key;
+int nsems, semflg;
+{
+    ReturnStatus	status;
+    Address		usp;
+
+    usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
+    status = Sync_SemgetStub(key, nsems, semflg, usp);
+    if (status == SUCCESS) {
+        (void)Vm_CopyIn(sizeof(int), usp,
+                        (Address)&machCurStatePtr->userState.unixRetVal);
+    }
+    return(status);
+}
+
+ReturnStatus
+MachUNIXMmap(addr, len, prot, share, fd, pos)
+caddr_t	addr;
+int	len, prot, share, fd;
+off_t	pos;
+{
+    ReturnStatus	status;
+    Address		usp;
+
+    usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
+    status = Vm_Mmap(addr, len, prot, share, fd, pos, usp);
+    if (status == SUCCESS) {
+        (void)Vm_CopyIn(sizeof(int), usp,
+                        (Address)&machCurStatePtr->userState.unixRetVal);
+    }
+    return(status);
+}
+
+ReturnStatus
+MachUNIXMunmap(addr, len)
+caddr_t	addr;
+int	len;
+{
+    ReturnStatus	status;
+    Address		usp;
+
+    usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
+    status = Vm_Munmap(addr, len, usp);
+    if (status == SUCCESS) {
+        (void)Vm_CopyIn(sizeof(int), usp,
+                        (Address)&machCurStatePtr->userState.unixRetVal);
+    }
+    return(status);
+}
+
+ReturnStatus
+MachUNIXMincore(addr, len, vec)
+caddr_t	addr;
+int len;
+char vec[];
+{
+    ReturnStatus	status;
+    Address		usp;
+
+    usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
+    status = Vm_Mincore(addr, len, vec, usp);
+    if (status == SUCCESS) {
+        (void)Vm_CopyIn(sizeof(int), usp,
+                        (Address)&machCurStatePtr->userState.unixRetVal);
+    }
+    return(status);
 }
 
 /************************ Begin Unimplemented calls **********************/
