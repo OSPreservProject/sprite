@@ -1245,29 +1245,29 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
 						 * if that applies to the first
 						 * pathname or the second */
 {
-    FsSprite2PathParams	params;
-    FsSprite2PathData	*requestDataPtr;	/* too big for stack */
-    FsSprite2PathReplyParams	replyParams;
+    Fs2PathParams	params;
+    Fs2PathData		*requestDataPtr;	/* too big for stack */
+    Fs2PathReply	replyParams;
     Rpc_Storage		storage;
     ReturnStatus	status;
     FsRedirectInfo	redirectInfo;
 
-    requestDataPtr = Mem_New(FsSprite2PathData);
+    requestDataPtr = Mem_New(Fs2PathData);
 
-    params.lookupArgs = *lookupArgsPtr;
-    params.lookupArgs.prefixID = prefixHandle1->fileID;
+    params.lookup = *lookupArgsPtr;
+    params.lookup.prefixID = prefixHandle1->fileID;
     params.prefixID2 = prefixHandle2->fileID;
 
     (void)String_Copy(relativeName1, requestDataPtr->path1);
     (void)String_Copy(relativeName2, requestDataPtr->path2);
 
     storage.requestParamPtr = (Address) &params;
-    storage.requestParamSize = sizeof (FsSprite2PathParams);
+    storage.requestParamSize = sizeof (Fs2PathParams);
     storage.requestDataPtr = (Address) requestDataPtr;
-    storage.requestDataSize = sizeof (FsSprite2PathData);
+    storage.requestDataSize = sizeof (Fs2PathData);
 
     storage.replyParamPtr = (Address) &replyParams;
-    storage.replyParamSize = sizeof (FsSprite2PathReplyParams);
+    storage.replyParamSize = sizeof (Fs2PathReply);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -1314,21 +1314,21 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-    register	FsSprite2PathParams	*paramsPtr;
+    register	Fs2PathParams		*paramsPtr;
     register	FsLookupArgs		*lookupArgsPtr;
     register	FsHandleHeader		*prefixHandle1Ptr;
     register	FsHandleHeader		*prefixHandle2Ptr;
     register	Rpc_ReplyMem		*replyMemPtr;
     FsRedirectInfo			*newNameInfoPtr;
     Boolean				name1Error = FALSE;
-    FsSprite2PathReplyParams		*replyParamsPtr;
-    FsSprite2PathData			*pathDataPtr;
+    Fs2PathReply			*replyParamsPtr;
+    Fs2PathData				*pathDataPtr;
     ReturnStatus			status = SUCCESS;
     int					domainType;
 
-    paramsPtr = (FsSprite2PathParams *)storagePtr->requestParamPtr;
-    pathDataPtr = (FsSprite2PathData *)storagePtr->requestDataPtr;
-    lookupArgsPtr = &paramsPtr->lookupArgs;
+    paramsPtr = (Fs2PathParams *)storagePtr->requestParamPtr;
+    pathDataPtr = (Fs2PathData *)storagePtr->requestDataPtr;
+    lookupArgsPtr = &paramsPtr->lookup;
     prefixHandle1Ptr =
 	(*fsStreamOpTable[lookupArgsPtr->prefixID.type].clientVerify)
 	    (&lookupArgsPtr->prefixID, clientID, &domainType);
@@ -1379,11 +1379,10 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 	FsHandleRelease(prefixHandle2Ptr, FALSE);
     }
 exit:
-    replyParamsPtr = (FsSprite2PathReplyParams *)
-	    Mem_Alloc(sizeof (FsSprite2PathReplyParams));
+    replyParamsPtr = (Fs2PathReply *) Mem_Alloc(sizeof (Fs2PathReply));
     replyParamsPtr->name1ErrorP = name1Error;
     storagePtr->replyParamPtr = (Address) replyParamsPtr;
-    storagePtr->replyParamSize = sizeof (FsSprite2PathReplyParams);
+    storagePtr->replyParamSize = sizeof (Fs2PathReply);
     if (status == FS_LOOKUP_REDIRECT) {
 	replyParamsPtr->prefixLength = newNameInfoPtr->prefixLength;
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
