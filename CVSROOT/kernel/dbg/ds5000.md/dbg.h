@@ -18,7 +18,7 @@
 #define _DBG
 
 #ifndef _SPRITE
-#include "sprite.h"
+#include <sprite.h>
 #endif
 
 /*
@@ -69,7 +69,7 @@ extern	Boolean	dbgPanic;
 /*
  * Macro to call the debugger from kernel code.
  */
-extern	void Dbg_Call();
+extern	void Dbg_Call _ARGS_((void));
 #define DBG_CALL	dbgPanic = TRUE; Dbg_Call();
 
 /*
@@ -78,8 +78,23 @@ extern	void Dbg_Call();
  */
 #define DBG_ACK_SIZE	256
 
-extern	void	Dbg_Init();
-extern	void	Dbg_InputPacket();
-extern	Boolean	Dbg_InRange();
+extern	void	Dbg_Init _ARGS_((void));
+extern	void	Dbg_InputPacket _ARGS_((Address packetPtr, int packetLength));
+extern	Boolean	Dbg_InRange _ARGS_((unsigned int addr, int numBytes,
+				    Boolean writeable));
+extern	unsigned	Dbg_Main _ARGS_((void));
+
+extern Boolean
+    Dbg_ValidatePacket _ARGS_((int size, Net_IPHeader *ipPtr, int *lenPtr,
+			       Address *dataPtrPtr,
+			       Net_InetAddress *destIPAddrPtr,
+			       Net_InetAddress *srcIPAddrPtr,
+			       unsigned int *srcPortPtr));
+extern void
+    Dbg_FormatPacket _ARGS_((Net_InetAddress srcIPAddress,
+			     Net_InetAddress destIPAddress,
+			     unsigned int destPort, int dataSize,
+			     Address dataPtr));
+extern int	Dbg_PacketHdrSize _ARGS_((void));
 
 #endif /* _DBG */

@@ -20,4 +20,7 @@
 
 extern	int	dbgTraceLevel; 		/* Our trace level. */
 
+extern unsigned int *
+		DbgGetDestPC _ARGS_((Address instPC));
+
 #endif /* _DBGINT */

@@ -16,10 +16,10 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "mach.h"
-#include "dbgInt.h"
-#include "sys.h"
+#include <sprite.h>
+#include <mach.h>
+#include <dbgInt.h>
+#include <sys.h>
 
 extern Mach_DebugState	mach_DebugState;
 
@@ -73,7 +73,11 @@ typedef struct {
 #define OP_BLTZAL	0x10
 #define OP_BGEZAL	0x11
 
-unsigned *GetBranchDest();
+/* 
+ * Forward references:
+ */
+
+static unsigned int *GetBranchDest _ARGS_((ITypeFmt *iInstPtr));
 
 
 /*

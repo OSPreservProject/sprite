@@ -15,20 +15,21 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "dbg.h"
-#include "dbgInt.h"
-#include "mach.h"
-#include "machConst.h"
-#include "proc.h"
-#include "vm.h"
-#include "machMon.h"
-#include "net.h"
-#include "netEther.h"
-#include "netInet.h"
-#include "dev.h"
-#include "sys.h"
-#include "sync.h"
+#include <sprite.h>
+#include <dbg.h>
+#include <dbgInt.h>
+#include <mach.h>
+#include <machConst.h>
+#include <proc.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <machMon.h>
+#include <net.h>
+#include <netEther.h>
+#include <netInet.h>
+#include <dev.h>
+#include <sys.h>
+#include <sync.h>
 
 unsigned sstepInst;				/* The instruction that was
 						 * replaced when we tried to
@@ -174,7 +175,14 @@ Boolean		dbgCanUseSyslog = TRUE;
 
 Boolean	dbg_OthersCanUseNetwork = TRUE;
 
-unsigned *DbgGetDestPC();
+/* 
+ * Forward declarations:
+ */
+
+static char *	TranslateOpcode _ARGS_((int opcode));
+static char *	TranslateException _ARGS_((int exception));
+static Boolean	ReadRequest _ARGS_((Boolean timeout));
+static void	SendReply _ARGS_((int dataSize));
 
 
 /*
@@ -202,7 +210,6 @@ Boolean Dbg_InRange(addr, numBytes, writeable)
 {
     int			firstPage;
     int			lastPage;
-    extern Boolean	VmMach_MakeDebugAccessible();
 
     firstPage = addr >> VMMACH_PAGE_SHIFT;
     lastPage = (addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
@@ -229,7 +236,7 @@ Boolean Dbg_InRange(addr, numBytes, writeable)
  *
  * ----------------------------------------------------------------------------
  */
-char *
+static char *
 TranslateOpcode(opcode)
     int opcode;		/* The opcode which is to be translated. */
 {
@@ -259,7 +266,7 @@ TranslateOpcode(opcode)
  *
  * ----------------------------------------------------------------------------
  */
-char *
+static char *
 TranslateException(exception)
     int exception;		/* The exception which is to be translated. */
 {
@@ -430,7 +437,7 @@ Dbg_InputPacket(packetPtr, packetLength)
  *
  * ----------------------------------------------------------------------------
  */
-Boolean
+static Boolean
 ReadRequest(timeout)
     Boolean	timeout;	/* TRUE if should timeout after waiting a 
 				 * while. */
@@ -475,7 +482,6 @@ static void
 SendReply(dataSize)
     int	dataSize;
 {
-    void	Dbg_FormatPacket();
     Net_EtherHdr		*etherHdrPtr;
 
     if (dbgTraceLevel >= 4) {
@@ -572,7 +578,6 @@ Dbg_Main()
 	 */
 	if (mach_NumDisableIntrsPtr[0] == 0 &&
 	    !mach_AtInterruptLevel) {
-	    void Sys_SyncDisks();
 	    Mach_EnableIntr();
 	    Sys_SyncDisks(MACH_OTHER_TRAP_TYPE);
 	    Mach_DisableIntr();
@@ -628,7 +633,7 @@ Dbg_Main()
 
     if (dbgTraceLevel >= 1 || !dbg_BeingDebugged || 
         cause != MACH_EXC_BREAK) {
-	(void)Dev_VidEnable();	/* unblank the screen */
+	(void)Dev_VidEnable(TRUE); /* unblank the screen */
 	printf("Entering debugger with a %s exception at PC 0x%x\r\n",
 		   TranslateException((int)cause),
 		   mach_DebugState.excPC);
@@ -739,7 +744,7 @@ Dbg_Main()
 		}
 		break;
             case UWRITE: {
-		extern void Mach_SwitchPoint();
+		extern void Mach_SwitchPoint();	/* XXX - should go elsewhere */
 
 		if (requestPtr->addr == (unsigned)-1) {
 		    Proc_ControlBlock	*procPtr;
