@@ -54,6 +54,7 @@ static char rcsid[] = "$Header$";
 #include <fsutilTrace.h>
 #include <fsio.h>
 #include <fslcl.h>
+#include <user/inet.h>
 
 char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 	"ENXIO", "E2BIG", "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM",
@@ -73,6 +74,8 @@ char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 #define Mach_SetErrno(err) printf("Error %d (%s) at %d in %s\n", err,\
 	err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
 	__LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
+
+extern char sysHostName[];
 
 /*
  * The following defines are flags that are defined differently in
@@ -99,6 +102,13 @@ char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 #define I_TOSTOP	0x00400000
 #define T_FLUSHO	0x00002000
 #define I_FLUSHO	0x00800000
+
+/*
+ * Select defines from mach/ds3100.md/socket.h
+ */
+#define MAX_NUM_STREAMS		1024
+#define BITS_PER_ROW		32
+#define MAX_NUM_ROWS		(MAX_NUM_STREAMS/BITS_PER_ROW)
 
 #ifndef Mach_SetErrno
 #define Mach_SetErrno(err)
@@ -625,7 +635,7 @@ Fs_NewReadStub(streamID, buffer, numBytes)
     }
     for (;;) {
 	amountRead = numBytes - totalAmountRead;
-	printf("Fs_Read(%x, %x, %x, %x(%d)\n", streamPtr, buffer,
+	printf("Fs_Read(%x, %x, %x, %x(%d))\n", streamPtr, buffer,
 		streamPtr->offset, &amountRead, amountRead);
 	status = Fs_Read(streamPtr, buffer, streamPtr->offset, &amountRead);
 	totalAmountRead += amountRead;
@@ -642,6 +652,7 @@ Fs_NewReadStub(streamID, buffer, numBytes)
 		continue;
 	    }
 #endif	    
+	    printf("Fs_Read aborted by signal\n");
 	    Mach_SetErrno(Compat_MapCode(status));
 	    return -1;
 	}
@@ -703,6 +714,7 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
 		continue;
 	    }
 #endif	    
+	    printf("Fs_Write aborted by signal\n");
 	    Mach_SetErrno(Compat_MapCode(status));
 	    return -1;
 	}
@@ -713,9 +725,9 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_NewOpenStub --
+ * Fs_NewOpenStubInt --
  *
- *	The stub for the "open" Unix system call.
+ *	The code for the "open" Unix system call.
  *
  * Results:
  *	Returns -1 on failure.
@@ -726,25 +738,23 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
  *
  *----------------------------------------------------------------------
  */
-int
-Fs_NewOpenStub(pathName, unixFlags, permissions)
-    char	*pathName;	/* The name of the file to open */
+static int
+Fs_NewOpenStubInt(pathName, unixFlags, permissions)
     int		unixFlags;	/* O_RDONLY O_WRONLY O_RDWR O_NDELAY
 				 * O_APPEND O_CREAT O_TRUNC O_EXCL */
     int		permissions;	/* Permission mask to use on creation */
+    char	*pathName;	/* The name of the file to open */
 {
     ReturnStatus status;	/* result returned by Fs_Open */
     register int useFlags;	/* Sprite version of flags */
-    int			pathNameLength;
     int streamID;
     Fs_Stream	 	*streamPtr;
-    char		newName[FS_MAX_PATH_NAME_LENGTH];
 
     /*
      * Convert unixFlags to FS_READ, etc.
      */
     if (debugFsStubs) {
-	printf("Fs_NewOpenStub(%s, 0x%x, 0x%x)\n",
+	printf("Fs_NewOpenStubInt(%s, 0x%x, 0x%x)\n",
 	    copyin(pathName), unixFlags, permissions);
     }
 
@@ -783,29 +793,14 @@ Fs_NewOpenStub(pathName, unixFlags, permissions)
     }
 
     /*
-     * Copy the name in from user space to the kernel stack.
-     */
-    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
-		       &pathNameLength) != SUCCESS) {
-	Mach_SetErrno(EACCES);
-	printf("Errno: %x = %d\n", &Proc_GetActualProc()->unixErrno,
-		Proc_GetActualProc()->unixErrno);
-	return -1;
-    }
-    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
-	Mach_SetErrno(ENAMETOOLONG);
-	return -1;
-    }
-
-    /*
      * Open the file and get a stream descriptor for it.
      */
     useFlags &= ~FS_KERNEL_FLAGS;
     useFlags |= (FS_USER | FS_FOLLOW);
 
-    printf("Fs_NewOpen: Fs_Open(%s, %x, %x, %x, %x\n", newName, useFlags,
+    printf("Fs_NewOpen: Fs_Open(%s, %x, %x, %x, %x)\n", pathName, useFlags,
 	    FS_FILE, permissions&0777, &streamPtr);
-    status = Fs_Open(newName, useFlags, FS_FILE,
+    status = Fs_Open(pathName, useFlags, FS_FILE,
 	permissions & 0777, &streamPtr);
 
     if (status != SUCCESS) {
@@ -827,6 +822,51 @@ Fs_NewOpenStub(pathName, unixFlags, permissions)
     }
     return streamID;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_NewOpenStub --
+ *
+ *	The stub for the "open" Unix system call.
+ *	This routine copies in the pathname and then calls Fs_NewOpenStubInt.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fs_NewOpenStub(pathName, unixFlags, permissions)
+    char	*pathName;	/* The name of the file to open */
+    int		unixFlags;	/* O_RDONLY O_WRONLY O_RDWR O_NDELAY
+				 * O_APPEND O_CREAT O_TRUNC O_EXCL */
+    int		permissions;	/* Permission mask to use on creation */
+{
+    int			pathNameLength;
+    char		newName[FS_MAX_PATH_NAME_LENGTH];
+    /*
+     * Copy the name in from user space to the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	Mach_SetErrno(EACCES);
+	printf("Errno: %x = %d\n", &Proc_GetActualProc()->unixErrno,
+		Proc_GetActualProc()->unixErrno);
+	return -1;
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	Mach_SetErrno(ENAMETOOLONG);
+	return -1;
+    }
+    return Fs_NewOpenStubInt(newName, unixFlags, permissions);
+
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1332,6 +1372,63 @@ Fs_FchownStub(fd, owner, group)
 /*
  *----------------------------------------------------------------------
  *
+ * Fs_IoctlInt --
+ *
+ *	Do an ioctl.  This routine does shared setup stuff.
+ *	User must initialize ioctl.command, inBuffer, inBufSize, outBuffer,
+ *	outBufSize.
+ *
+ * Results:
+ *	Returns -1 on failure.  Sets errno on failure.  Also returns error
+ *	through err.
+ *
+ * Side effects:
+ *	Side effects associated with the ioctl.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+Fs_IoctlInt(streamID, command, inBuf, inBufSize, outBuf, outBufSize,
+	reply, err)
+    int			streamID;
+    int			command;
+    Address		inBuf, outBuf;
+    int			inBufSize, outBufSize;
+    Fs_IOReply          *reply;
+    int			*err;
+{
+    Fs_IOCParam         ioctl;
+    Proc_ControlBlock *procPtr;
+    ReturnStatus status;
+    Fs_Stream *streamPtr;
+
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status == SUCCESS) {
+	ioctl.command = command;
+	ioctl.inBuffer = inBuf;
+	ioctl.inBufSize = inBufSize;
+	ioctl.outBuffer = outBuf;
+	ioctl.outBufSize = outBufSize;
+	ioctl.format = mach_Format;
+	ioctl.procID = procPtr->processID;
+	ioctl.familyID = procPtr->familyID;
+	ioctl.uid = procPtr->effectiveUserID;
+	ioctl.flags = 0;
+	status = Fs_IOControl(streamPtr, &ioctl, reply);
+    }
+    if (status != SUCCESS) {
+	*err= Compat_MapCode(status);
+	Mach_SetErrno(*err);
+	return -1;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Fs_LseekStub --
  *
  *	The stub for the "lseek" Unix system call.
@@ -1351,13 +1448,11 @@ Fs_LseekStub(streamID, offset, whence)
     long offset;
     int whence;
 {
-    ReturnStatus	status;
+    int	status;
     Ioc_RepositionArgs  inArgs;
     long                retVal;
-    Fs_IOCParam         ioctl;
+    int			err;
     Fs_IOReply          reply;
-    Proc_ControlBlock	*procPtr;
-    Fs_Stream		*streamPtr;
 
     if (debugFsStubs) {
 	printf("Fs_LseekStub(%d, 0x%x, %d)\n", streamID, offset, whence);
@@ -1380,27 +1475,15 @@ Fs_LseekStub(streamID, offset, whence)
 	    Mach_SetErrno(EINVAL);
 	    return -1;
     }
-    procPtr = Proc_GetEffectiveProc();
-    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
-    if (status == SUCCESS) {
-	inArgs.offset = offset;
-	ioctl.command = IOC_REPOSITION;
-	ioctl.format = mach_Format;
-	ioctl.procID = procPtr->processID;
-	ioctl.familyID = procPtr->familyID;
-	ioctl.uid = procPtr->effectiveUserID;
-	ioctl.flags = 0;
-	ioctl.inBuffer = (Address) &inArgs;
-	ioctl.inBufSize = sizeof(Ioc_RepositionArgs);
-	ioctl.outBuffer = (Address) &retVal;
-	ioctl.outBufSize = sizeof(retVal);
-	status = Fs_IOControl(streamPtr, &ioctl, &reply);
-    }
-    if (status != SUCCESS) {
-	Mach_SetErrno(Compat_MapCode(status));
+    inArgs.offset = offset;
+    status = Fs_IoctlInt(streamID, IOC_REPOSITION, (Address)&inArgs,
+	    sizeof(Ioc_RepositionArgs), (Address)&retVal, sizeof(retVal),
+	    &reply, &err);
+    if (status < 0) {
 	return -1;
+    } else {
+	return retVal;
     }
-    return retVal;
 }
 
 /*
@@ -3477,15 +3560,169 @@ int fd, cmd, arg;
  *
  *----------------------------------------------------------------------
  */
+static char streamDevice[276]; /* Max host name + extra format */
+static char dgramDevice[276];
+static char rawDevice[276];
+static Boolean gotHostName = FALSE;
 int
-Fs_SocketStub()
+Fs_SocketStub(domain, type, protocol)
+    int domain;         /* Type of communications domain */
+    int type;           /* Type of socket: SOCK_STREAM, SOCK_DGRAM, SOCK_RAW. */
+    int protocol;       /* Specific protocol to use. */
 {
+    int        		status = 0;
+    int                 streamID;
+    int			err;
+    Fs_IOReply          reply;
 
-    printf("socket is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
+    if (debugFsStubs) {
+	printf("Fs_SocketStub(%d, %d, %d)\n",domain, type, protocol);
+    }
+    if (domain != PF_INET) {
+	Mach_SetErrno(EINVAL);
+	return -1;
+    }
+
+    if (!gotHostName) {
+        gotHostName = TRUE;
+	printf("sysHostName = %s\n", sysHostName);
+        sprintf(streamDevice, INET_STREAM_NAME_FORMAT, sysHostName);
+        sprintf(dgramDevice, INET_DGRAM_NAME_FORMAT, sysHostName);
+        sprintf(rawDevice, INET_RAW_NAME_FORMAT, sysHostName);
+    }
+
+    if (type == SOCK_STREAM) {
+        streamID = Fs_NewOpenStubInt(streamDevice, FS_READ|FS_WRITE, 0666);
+    } else if (type == SOCK_DGRAM) {
+        streamID = Fs_NewOpenStubInt(dgramDevice, FS_READ|FS_WRITE, 0666);
+    } else if (type == SOCK_RAW) {
+        streamID = Fs_NewOpenStubInt(rawDevice, FS_READ|FS_WRITE, 0666);
+    } else {
+	Mach_SetErrno(EINVAL);
+        return(SYS_INVALID_ARG);
+    }
+    if (streamID<0) {
+	printf("Fs_SocketStub: open failure\n");
+	return streamID;
+    }
+
+    if (protocol != 0) {
+        status = Fs_IoctlInt(streamID, IOC_NET_SET_PROTOCOL,
+		(Address)&protocol, sizeof(int), NULL, 0, &reply, &err);
+    }
+
+    if (status < 0) {
+	printf("Fs_SocketStub: ioctl failure\n");
+    }
+    return status;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Wait --
+ *
+ *	Wait for the Inet server to indicate that a socket is ready for
+ *	some action.
+ *
+ * Results:
+ *	SUCCESS, or FS_TIMEOUT if a timeout occurred.
+ *
+ * Side effects:
+ *	None. effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+#if 0
+static ReturnStatus
+Wait(socketID, readSelect, timeOutPtr)
+    int         socketID;       /* Socket to wait on. */
+    Boolean     readSelect;     /* If TRUE, select for reading, else select for
+                                 *  writing. */
+    Time        *timeOutPtr;    /* Timeout to use for select. */
+{
+    ReturnStatus        status;
+    int                 numReady;
+    Address             usp;
+    int                 *numReadyPtr;
+    int                 *userMaskPtr;
+    int			doTimeout;
+    int			inReadMasks[MAX_NUM_ROWS];
+    int			inWriteMasks[MAX_NUM_ROWS];
+    int			inExceptMasks[MAX_NUM_ROWS];
+    int			outReadMasks[MAX_NUM_ROWS];
+    int			outWriteMasks[MAX_NUM_ROWS];
+    int			outExceptMasks[MAX_NUM_ROWS];
+
+    usp = (Address)machCurStatePtr->userState.regState.regs[SP];
+    usp -= sizeof(int);
+    numReadyPtr = (int *)usp;
+
+    /*
+     * Wait until the Inet server indicates the socket is ready.
+     */
+
+    if (socketID < 32) {
+        int     mask;
+
+        usp -= sizeof(int);
+        userMaskPtr = (int *)usp;
+        mask = 1 << socketID;
+        status = Vm_CopyOut(sizeof(int), (Address)&mask, (Address)userMaskPtr);
+        if (status != SUCCESS) {
+            return(status);
+        }
+        if (readSelect) {
+	    status = Fs_Select(socketID, timeOutPtr, inReadMasks,
+		    outReadMasks, (int *)NIL, (int *)NIL, (int *)NIL,
+		    (int *)NIL, numReadyPtr, &doTimeout);
+            status = Fs_SelectStub(socketID, userTimeOutPtr, userMaskPtr,
+                                (int *) NULL, (int *) NULL, numReadyPtr);
+        } else {
+            status = Fs_SelectStub(socketID, userTimeOutPtr, (int *) NULL,
+                                userMaskPtr, (int *) NULL, numReadyPtr);
+        }
+    } else {
+        int     *maskPtr;
+        int     numBytes;
+
+        Bit_Alloc(socketID, maskPtr);
+        Bit_Set(socketID, maskPtr);
+        numBytes = Bit_NumBytes(socketID);
+        usp -= numBytes;
+        userMaskPtr = (int *)usp;
+        status = Vm_CopyOut(numBytes, (Address)maskPtr, (Address)userMaskPtr);
+        if (status != SUCCESS) {
+            return(status);
+        }
+
+        if (readSelect) {
+            status = Fs_SelectStub(socketID, userTimeOutPtr, userMaskPtr,
+                                (int *) NULL, (int *) NULL, numReadyPtr);
+        } else {
+            status = Fs_SelectStub(socketID, userTimeOutPtr, (int *) NULL,
+                                userMaskPtr, (int *) NULL, numReadyPtr);
+        }
+        free((char *) maskPtr);
+    }
+
+    if (status == FS_TIMEOUT) {
+        return(status);
+    } else if (status != SUCCESS) {
+        printf("Wait (socket.c): Fs_Select failed.\n");
+    }
+
+    (void)Vm_CopyIn(sizeof(int), (Address)numReadyPtr, (Address)&numReady);
+    if (numReady != 1) {
+        printf("Wait (socket.c): Fs_Select returned %d ready\n",
+                            numReady);
+    }
+
+    return(SUCCESS);
+}
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3503,12 +3740,85 @@ Fs_SocketStub()
  *----------------------------------------------------------------------
  */
 int
-Fs_ConnectStub()
+Fs_ConnectStub(socketID, namePtr, nameLen)
+    int                 socketID;       /* Stream ID of socket. */
+    struct sockaddr     *namePtr;       /* Remote address,port to connect to.*/
+    int                 nameLen;        /* Size of *namePtr. */
 {
+#if 0
+    int 	        status;
+    Fs_IOCParam         ioctl;
+    Fs_IOReply          reply;
+    int			err;
+    struct sockaddr_in	kernName;
+    ReturnStatus	returnStatus;
 
-    printf("connect is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
+    if (debugFsStubs) {
+	printf("Fs_ConnectStub(%d, %x, %d)\n", socketID, namePtr, nameLen);
+    }
+    if (nameLen != sizeof(struct sockaddr_in)) {
+	Mach_SetErrno(EINVAL);
+	return -1;
+    } else {
+	if (Vm_CopyIn(nameLen, (Address)namePtr, (Address)&kernName) !=
+		SUCCESS) {
+	    Mach_SetErrno(EFAULT);
+	    return -1;
+	}
+    }
+
+    status = Fs_IoctlInt(socketID, IOC_NET_CONNECT, (Address)&kernName,
+	    nameLen, (Address)NULL, 0, &reply, &err);
+
+    if (status == -1 && err == EWOULDBLOCK) {
+        int flags = 0;
+        int optionsArray[2];
+
+	printf("Fs_ConnectStub: waiting for block\n");
+        /*
+         * The connection didn't immediately complete, so wait if
+         * we're blocking or return EWOULDBLOCK if we're non-blocking.
+         */
+	status = Fs_IoctlInt(socketID, IOC_GET_FLAGS, (Address)NULL, 0,
+		(Address)&flags, sizeof(flags), &reply, &err);
+        if (status == -1) {
+	    return -1;
+	}
+
+        if (flags & IOC_NON_BLOCKING) {
+            Mach_SetErrno(EWOULDBLOCK);
+	    return -1;
+        }
+
+        status = Wait(socketID, FALSE, &time_OneMinute);
+
+        if (status == FS_TIMEOUT) {
+	    Mach_SetErrno(ETIMEDOUT);
+	    return -1;
+        }
+
+        /*
+         * See if the connection successfully completed.
+         */
+        optionsArray[0] = SOL_SOCKET;
+        optionsArray[1] = SO_ERROR;
+        status = Fs_IoctlInt(socketID, IOC_NET_GET_OPTION,
+                        (Address)&optionsArray, sizeof(optionsArray),
+			(Address)&flags, sizeof(int), &reply, &err);
+	status = Fs_IoctlInt(socketID, IOC_NET_GET_OPTION, (Address)NULL, 0,
+		(Address)&returnStatus, sizeof(int), &reply, &err);
+        if (status == -1) {
+	    return -1;
+	}
+	if (returnStatus != SUCCESS) {
+	    Mach_SetErrno(Compat_MapCode(returnStatus));
+	    return -1;
+	}
+    } else if (status == -1) {
+	return -1;
+    }
+#endif
+    return 0;
 }
 
 /*
@@ -3878,7 +4188,8 @@ Fs_GetdirInt(streamPtr, inDir, oldOff, newOff, kernDir)
 		&amountRead);
 	if (status != SUCCESS) {
 	    printf("Fs_GetdirInt: Read failed: %x\n", status);
-	    return Compat_MapCode(status);
+	    Mach_SetErrno(Compat_MapCode(status));
+	    return -1;
 	}
 	if (amountRead < HDR_SIZE) {
 	    return EISDIR;
