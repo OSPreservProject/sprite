@@ -231,6 +231,7 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
     register FsHandleHeader *hdrPtr;
     List_Links *listPtr;
 
+    fsStats.handle.installCalls++;
     do {
 	found = FsHandleInstallInt(fileIDPtr, size, name,
 		    fsStats.handle.maxNumber, hdrPtrPtr);
@@ -251,7 +252,7 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 		if ((*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr)) {
 		    numScavenged++;
 		    fsStats.object.scavenges++;
-		    if (numScavenged > handleScavengeThreashold) {
+		    if (numScavenged >= handleScavengeThreashold) {
 			break;
 		    }
 		}
@@ -310,12 +311,11 @@ FsHandleInstallInt(fileIDPtr, size, name, handleLimit, hdrPtrPtr)
     Boolean			found;
 
     LOCK_MONITOR;
-    fsStats.handle.installCalls++;
 again:
     hashEntryPtr = Hash_Find(fileHashTable, (Address) fileIDPtr);
     if (hashEntryPtr->value == (Address) NIL) {
 	found = FALSE;
-	if (fsStats.handle.exists > handleLimit) {
+	if (fsStats.handle.exists >= handleLimit) {
 	    hdrPtr = (FsHandleHeader *)NIL;
 	    goto exit;
 	}
