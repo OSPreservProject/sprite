@@ -18,18 +18,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fslcl.h"
-#include "fslclInt.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fslcl.h>
+#include <fslclInt.h>
 
 /*
  * fs_DomainLookup for FS_REMOTE_SPRITE_DOMAIN type.
  */
 
-static ReturnStatus (*lclDomainLookup[FS_NUM_NAME_OPS])() = {
+static Fs_DomainLookupOps lclDomainLookup = {
      Fsio_NoProc, FslclExport, FslclOpen, FslclGetAttrPath,
      FslclSetAttrPath, FslclMakeDevice, FslclMakeDir,
      FslclRemove, FslclRemoveDir, FslclRename, FslclHardLink,
@@ -59,7 +59,7 @@ void
 Fslcl_NameInitializeOps()
 {
 
-    Fs_InstallDomainLookupOps(FS_LOCAL_DOMAIN, lclDomainLookup, 
+    Fs_InstallDomainLookupOps(FS_LOCAL_DOMAIN, &lclDomainLookup, 
 			&lclAttrOpTable);
 }
 
