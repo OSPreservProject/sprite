@@ -334,8 +334,8 @@ DevXylogicsTest(xyPtr, diskPtr)
     if (xyPtr->IOPBPtr->numSectLow == 0) {
 	return(SUCCESS);
     } else if (xyPtr->IOPBPtr->numSectLow == 0x20) {
-	Sys_Printf("Xylogics-%d disk %d: ", xyPtr->number, diskPtr->slaveID);
-	Sys_Panic(SYS_WARNING, "Write protected\n");
+	Sys_Panic(SYS_WARNING, "Xylogics-%d disk %d write protected\n",
+				xyPtr->number, diskPtr->slaveID);
 	return(SUCCESS);
     } else {
 	return(DEV_OFFLINE);
@@ -522,7 +522,8 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
 	 * The offset is past the end of the partition.
 	 */
 	*numSectorsPtr = 0;
-	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: Past end of partition\n");
+	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: Past end of partition %d\n",
+				part);
 	return(SUCCESS);
     } else if ((startSector + totalSectors - 1) > lastSector) {
 	/*
@@ -530,7 +531,8 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
 	 * sector count so there is no overrun.
 	 */
 	totalSectors = lastSector - startSector + 1;
-	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: Overrun end of partition\n");
+	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: Overrun partition %d\n",
+				part);
     }
     /*
      * Relocate the disk address to be relative to this partition.
@@ -686,15 +688,18 @@ retry:
     if (xyPtr->flags & XYLOGICS_RETRY) {
 	retries++;
 	xyPtr->flags &= ~(XYLOGICS_RETRY|XYLOGICS_IO_COMPLETE);
+	Sys_Panic(SYS_WARNING, "Xylogics retry at <%d,%d,%d> ",
+		diskAddrPtr->cylinder, diskAddrPtr->head, diskAddrPtr->sector);
+	if (command == XY_READ || command == XY_WRITE) {
+	    Sys_Printf("(%s)", (command == XY_READ) ? "Read" : "Write");
+	} else {
+	    Sys_Printf("(%d)", command);
+	}
 	if (retries < 3) {
-	    Sys_Panic(SYS_WARNING, "Xylogics retrying cmd %d at <%d,%d,%d>",
-				command, diskAddrPtr->cylinder,
-				diskAddrPtr->head, diskAddrPtr->sector);
+	    Sys_Printf("\n");
 	    goto retry;
 	} else {
-	    Sys_Panic(SYS_WARNING, "Xylogics retry cmd %d FAILED at <%d,%d,%d>",
-				command, diskAddrPtr->cylinder,
-				diskAddrPtr->head, diskAddrPtr->sector);
+	    Sys_Printf(" FAILED\n");
 	    error = DEV_RETRY_ERROR;
 	}
     }
@@ -821,7 +826,7 @@ DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr, numSectors, address,
 
     /*
      * Without chaining the controller should always be idle at this
-     * point.
+     * point.  (Raw device access can conflict.  IMPLEMENT QUEUEING!)
      */
     regsPtr = xyPtr->regsPtr;
     if (regsPtr->status & XY_GO_BUSY) {
@@ -956,8 +961,8 @@ DevXylogicsStatus(xyPtr)
 		case XY_FORMAT_ERR_RUNT:
 		case XY_FORMAT_ERR_BAD_SIZE:
 		case XY_SOFT_ECC:
-		    Sys_Printf("*** %x *** ", IOPBPtr->errorCode);
-		    Sys_Panic(SYS_FATAL, "Stupid Xylogics error\n");
+		    Sys_Panic(SYS_FATAL, "Stupid Xylogics error: 0x%x\n",
+					    IOPBPtr->errorCode);
 		    error = DEV_HARD_ERROR;
 		    break;
 		case  XY_SOFT_ERR_TIME_OUT:
@@ -968,7 +973,7 @@ DevXylogicsStatus(xyPtr)
 		case  XY_SOFT_ERR_FAULT:
 		case  XY_SOFT_ERR_SEEK:
 		    error = DEV_RETRY_ERROR;
-		    Sys_Panic(SYS_WARNING, "Retryable Xylogics error: %x\n",
+		    Sys_Panic(SYS_WARNING, "Retryable Xylogics error: 0x%x\n",
 				IOPBPtr->errorCode);
 		    break;
 		case XY_WRITE_PROTECT_ON:
