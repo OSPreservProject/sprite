@@ -56,7 +56,7 @@
  *  to register a lock. Hence we can't register the registration lock.
  */
 
-#define SYNC_MAX_LOCK_TYPES 50
+#define SYNC_MAX_LOCK_TYPES 60
 
 /*
  * This is used inside the Sync_Semaphore and Sync_Lock structures to allow
