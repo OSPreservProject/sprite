@@ -20,11 +20,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "stdlib.h"
-#include "mach.h"
-#include "fs.h"
 #include "proc.h"
 #include "procInt.h"
 #include "procMigrate.h"
+#include "mach.h"
+#include "fs.h"
 #include "migrate.h"
 #include "byte.h"
 #include "sig.h"
@@ -984,11 +984,21 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
     Proc_MigBuffer	inBuf;
     Proc_MigBuffer	outBuf;
     Proc_ControlBlock *procPtr;
+    int requestSize;
 
     if (proc_MigDebugLevel > 5) {
-	printf("Proc_RpcMigCommand: called from host %d with command %d.\n",
-	       hostID, command);
+	printf("Proc_RpcMigCommand: called from host %d with command %d commandPtr %x.\n",
+	       hostID, command, (int) commandPtr);
     }
+    if (storagePtr->requestParamSize != sizeof(ProcMigCmd)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_RpcMigCommand: called from host %d with invalid input buffer size (%d instead of %d).\n",
+	       hostID, storagePtr->requestParamSize, sizeof(ProcMigCmd));
+	}
+	status = GEN_INVALID_ARG;
+	goto done;
+    }
+    
     if (commandPtr->remotePid != (Proc_PID) NIL) {
 	PROC_GET_VALID_PCB(commandPtr->remotePid, procPtr);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -996,7 +1006,7 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
 		panic("Proc_RpcMigCommand: Invalid pid: %x.\n", commandPtr->remotePid);
 	    }
 	    status = PROC_NO_PEER;
-	    goto failure;
+	    goto done;
 	}
     } else {
 	procPtr = (Proc_ControlBlock *) NIL;
@@ -1009,10 +1019,65 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
 		   commandPtr->command);
 	}
 	status = GEN_INVALID_ARG;
-	goto failure;
+	goto done;
     }
-    inBuf.size = storagePtr->requestDataSize;
-    inBuf.ptr = storagePtr->requestDataPtr;
+    requestSize = storagePtr->requestDataSize;
+    /*
+     * Normally we just pass the buffer as it's given to us, but
+     * it might be a piece of a larger buffer that we malloc and free.
+     * In that case, do some sanity checking and then copy in the buffer.
+     */
+    if (commandPtr->totalSize == requestSize) {
+	inBuf.size = requestSize;
+	inBuf.ptr = storagePtr->requestDataPtr;
+    } else {
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    if (proc_MigDebugLevel > 0) {
+		printf("Proc_RpcMigCommand: partial buffer not allowed before process set up.\n");
+		status = PROC_NO_PEER;
+		goto done;
+	    }
+	}
+	if (commandPtr->offset == 0) {
+	    if (procPtr->migCmdBuffer != (Address) NIL) {
+		if (proc_MigDebugLevel > 0) {
+		    printf("Proc_RpcMigCommand: buffer already established for process %x.\n",
+			   procPtr->processID);
+		}
+		free(procPtr->migCmdBuffer);
+	    }
+	    procPtr->migCmdBuffer = malloc(commandPtr->totalSize);
+	    procPtr->migCmdBufSize = commandPtr->totalSize;
+	} else {
+	    if (procPtr->migCmdBuffer == (Address) NIL) {
+		if (proc_MigDebugLevel > 0) {
+		    printf("Proc_RpcMigCommand: no buffer established for process %x.\n",
+			   procPtr->processID);
+		}
+		status = GEN_INVALID_ARG;
+		goto done;
+	    }
+	    if (commandPtr->totalSize != procPtr->migCmdBufSize ||
+		commandPtr->offset + requestSize > commandPtr->totalSize) {
+		if (proc_MigDebugLevel > 0) {
+		    printf("Proc_RpcMigCommand: mismatch in buffer size for process %x.\n",
+			   procPtr->processID);
+		}
+		status = GEN_INVALID_ARG;
+		goto done;
+	    }
+	}
+	bcopy(storagePtr->requestDataPtr,
+	      procPtr->migCmdBuffer + commandPtr->offset,
+	      requestSize);
+	if (commandPtr->offset + requestSize < commandPtr->totalSize) {
+	    status = SUCCESS;
+	    goto done;
+	}
+	inBuf.size = commandPtr->totalSize;
+	inBuf.ptr = procPtr->migCmdBuffer;
+    }
+	
     outBuf.size = 0;
     outBuf.ptr = (Address) NIL;
 
@@ -1025,6 +1090,14 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
     status = ProcMigEncapCallback(commandPtr, procPtr, &inBuf, &outBuf);
     status = ProcMigDestroyCmd(commandPtr, procPtr, &inBuf, &outBuf);
 #endif /* lint */
+    /*
+     * Free the malloc'ed buffer if it exists.
+     */
+    if ((procPtr != (Proc_ControlBlock *) NIL) &&
+	(procPtr->migCmdBuffer != (Address) NIL)) {
+	free(procPtr->migCmdBuffer);
+	procPtr->migCmdBuffer = (Address) NIL;
+    }
     if (status == SUCCESS && outBuf.size > 0) {
 	storagePtr->replyDataPtr = outBuf.ptr;
 	storagePtr->replyDataSize = outBuf.size;
@@ -1038,7 +1111,7 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
 	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
 		(ClientData) replyMemPtr);
     } else {
-failure:
+done:
 	if (proc_MigDebugLevel > 2) {
 	    printf("Proc_RpcMigCommand: returning status %x.\n", status);
 	}
