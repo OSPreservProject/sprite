@@ -51,4 +51,4 @@ extern	Sync_Lock	sigLock;
 extern	void	SigClearPendingMask();
 extern	ReturnStatus SigSendRemoteSignal();
 
-#endif _SIGINT
+#endif /* _SIGINT */

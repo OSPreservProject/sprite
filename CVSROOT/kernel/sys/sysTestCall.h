@@ -17,4 +17,4 @@ extern	int	Test_PrintOut();
 extern	int	Test_GetLine();
 extern	int	Test_GetChar();
 
-#endif _SYSTESTCALL
+#endif /* _SYSTESTCALL */

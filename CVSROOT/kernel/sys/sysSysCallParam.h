@@ -120,4 +120,4 @@ typedef struct {
 
 extern int *sys_ParamSizes;
 
-#endif _SYSSYSCALLPARAM
+#endif /* _SYSSYSCALLPARAM */
