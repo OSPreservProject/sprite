@@ -104,12 +104,6 @@ static int quantumTicks;
 static Boolean init = FALSE;
 
 /*
- * Sched_DoContextSwitch is set to force an involuntary context switch.
- * The context switch occurs the next time the process traps.
- */
-int sched_DoContextSwitch = 0;
-
-/*
  * Global variable for the timer queue for Sched_ForgetUsage.
  */
 static Timer_QueueElement forgetUsageElement;
@@ -644,14 +638,6 @@ QuantumEnd(procPtr)
 {
     procPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
     procPtr->specialHandling = 1;
-    if (!mach_KernelMode) {
-	/*
-	 * FIX ME - either get rid of this flag, or have one per processor.
-	 * The spur port doesn't even use this thing, so maybe it can go 
-	 * away.
-	 */
-	sched_DoContextSwitch = TRUE;
-    }
     if (procPtr->processor != Mach_GetProcessorNumber()) {
 	/* 
 	 * If the process whose quantum has ended is running on a different

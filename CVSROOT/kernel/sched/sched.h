@@ -89,8 +89,6 @@ typedef struct Sched_Instrument {
     
 extern int  sched_Mutex;		/* Mutual exclusion in scheduler */
 
-extern int  sched_DoContextSwitch;	/* Flag to force a context switch. */
-
 extern Sched_Instrument sched_Instrument;   /* Counters for instrumentation. */
 
 extern void			Sched_MakeReady();

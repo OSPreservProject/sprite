@@ -95,22 +95,18 @@ Sched_MoveInQueue(procPtr)
     /*
      * Compare the process's weighted usage to the usage of the currently
      * running process.  If the new process has higher priority (lower
-     * usage), then force the current process to context switch.  There
-     * are two cases:
-     *	(1) We are being called at interrupt level, in which case if the
-     *      current process was in user mode it is safe (and necessary)
-     *	    to set sched_DoContextSwitch directly.  This is because
-     *	    the interrupt handler doesn't deal with the schedFlags.
-     *  (2) Otherwise, the best thing we can do is to make sure the
-     *      current process switches the next time it comes into the
-     *      trap handler.
+     * usage), then force the current process to context switch. 
+     * The context switch will occur in one of two places. 
+     * 1) If we are being called at interrupt level, and the interrupt occurred
+     *    in user mode, then the context switch will occur prior to returning 
+     *	  to user mode. (the CallInterruptHandler macro checks the 
+     *    specialHandling flag)
+     * 2) The next time the current process enters a trap handler.
+     *
      */
     curProcPtr = Proc_GetCurrentProc();
     if ((curProcPtr != (Proc_ControlBlock *) NIL) &&
 	    (procPtr->weightedUsage < curProcPtr->weightedUsage)) {
-	if (Mach_AtInterruptLevel() && !Mach_KernelMode()) {
-	    sched_DoContextSwitch = TRUE;
-	} 
 	curProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
 	curProcPtr->specialHandling = 1;
     }
@@ -229,22 +225,18 @@ Sched_InsertInQueue(procPtr, returnProc)
     /*
      * Compare the process's weighted usage to the usage of the currently
      * running process.  If the new process has higher priority (lower
-     * usage), then force the current process to context switch.  There
-     * are two cases:
-     *	(1) We are being called at interrupt level, in which case if the
-     *      current process was in user mode it is safe (and necessary)
-     *	    to set sched_DoContextSwitch directly.  This is because
-     *	    the interrupt handler doesn't deal with the schedFlags.
-     *  (2) Otherwise, the best thing we can do is to make sure the
-     *      current process switches the next time it comes into the
-     *      trap handler.
+     * usage), then force the current process to context switch.  
+     * The context switch will occur in one of two places. 
+     * 1) If we are being called at interrupt level, and the interrupt occurred
+     *    in user mode, then the context switch will occur prior to returning 
+     *	  to user mode. (the CallInterruptHandler macro checks the 
+     *    specialHandling flag)
+     * 2) The next time the current process enters a trap handler.
+     *
      */
     itemProcPtr = Proc_GetCurrentProc();
     if ((itemProcPtr != (Proc_ControlBlock *) NIL) &&
 	    (procPtr->weightedUsage < itemProcPtr->weightedUsage)) {
-	if (Mach_AtInterruptLevel() && !Mach_KernelMode()) {
-	    sched_DoContextSwitch = TRUE;
-	} 
 	itemProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
 	itemProcPtr->specialHandling = 1;
     }
