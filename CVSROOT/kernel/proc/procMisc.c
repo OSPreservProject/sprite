@@ -1625,7 +1625,8 @@ char *text;
 	    PRINTLOCK(&lfs.cacheBackendLock,0) &&
 	    ISBOOL(lfs.writeBackMoreWork) && ISBOOL(lfs.shutDownActive) &&
 	    PRINTLOCK(&lfs.lock,0)) {
-	printf("Lfs: %s on %s\n", text, strbuf);
+	(void) ISSTR(lfs.name);
+	printf("Lfs: %s on %s", text, strbuf);
 	return TRUE;
     }
     return FALSE;
