@@ -958,7 +958,7 @@ DevJaguarIntr(clientData)
      */
     if (actionPtr->dmaBufferLen > 0) {
 	if (((unsigned)actionPtr->dmaBuffer) & 0x80000000) { 
-	    VmMach_UserDMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
+	    VmMach_32BitDMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
 	} else {
 	    VmMach_DMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
 	}
@@ -1402,7 +1402,7 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
 	 * the interrupt handler not to free it.
 	 */
 	if (((unsigned) scsiCmdPtr->buffer) < (unsigned)VMMACH_DMA_START_ADDR) {
-	    addr = (Address) VmMach_UserDMAAlloc(scsiCmdPtr->bufferLen, 
+	    addr = (Address) VmMach_32BitDMAAlloc(scsiCmdPtr->bufferLen, 
 					 scsiCmdPtr->buffer);
 	} else {
 	    addr = (Address) (((unsigned) scsiCmdPtr->buffer) | 1);
