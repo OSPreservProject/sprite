@@ -95,7 +95,7 @@ extern	ReturnStatus	Net_Output();
 extern	void	Net_OutputRawEther();
 extern	void	Net_RecvPoll();
 extern	void	Net_EtherOutputSync();
-extern	void	Net_Intr();
+extern	int	Net_Intr();
 extern	void	Net_GatherCopy();
 
 extern	ReturnStatus Net_InstallRouteStub();
@@ -117,5 +117,7 @@ extern Net_Route *Net_Arp();
 extern int	Net_RevArp();
 
 extern void	Net_HostPrint();	/* Moved to Sys_HostPrint */
+
+extern void	Net_HdrDestString();
 
 #endif /* _NET */
