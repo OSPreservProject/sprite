@@ -14,8 +14,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
-
+#endif
 
 #include "sprite.h"
 #include "prof.h"
@@ -36,8 +35,9 @@ static Boolean inMcount = FALSE;
  * There is a critical section when mcount does a pseudo-alloc
  * of the storage for its arcs.
  */
-
+#ifndef lint
 static Sync_Semaphore	mcountMutex = Sync_SemInitStatic("mcountMutex");
+#endif
 
 
 /*
@@ -62,9 +62,10 @@ static Sync_Semaphore	mcountMutex = Sync_SemInitStatic("mcountMutex");
  *
  *----------------------------------------------------------------------
  */
-
+void
 mcount()
 {
+#ifdef MCOUNT
     register unsigned int calleePC;	/* PC of instr. that called mcount */
     register unsigned int callerPC;	/* PC of instr. that called mcount's 
 					 * caller */
@@ -75,7 +76,6 @@ mcount()
 	return;
     }
 
-#ifdef MCOUNT
     if (inMcount) {
 	return;
     } else {
