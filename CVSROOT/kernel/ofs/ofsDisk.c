@@ -200,6 +200,10 @@ Ofs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
 	    headerSector = decLabelPtr->domainSector;
 	    numHeaderSectors = decLabelPtr->numDomainSectors;
 	    summarySector = decLabelPtr->summarySector;
+	    if (summarySector < 0) {
+		free(buffer);
+		return(FAILURE);
+	    }
 	} else {
 	    printf("Ofs_AttachDisk: No disk header\n");
 	    free(buffer);
