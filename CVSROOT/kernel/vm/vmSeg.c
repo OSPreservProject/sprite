@@ -55,7 +55,7 @@ static  void	    CleanSegment();
 static 	void	    FillSegmentInfo();
 static ReturnStatus AddToSeg();
 static ReturnStatus GetRemoteSegInfo();
-void		    Fs_StreamCopy();
+void		    Fsio_StreamCopy();
 
 int	vmNumSegments = 256;
 
@@ -324,11 +324,11 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 	 */
 	Sync_Broadcast(&codeSegCondition);
     } else {
-	extern	char	*Fs_GetFileName();
+	extern	char	*Fsutil_GetFileName();
 	
 	segPtr->execInfo = *execInfoPtr;
 	segPtr->fileHandle = Fs_GetFileHandle(filePtr);
-	fileNamePtr = Fs_GetFileName(filePtr);
+	fileNamePtr = Fsutil_GetFileName(filePtr);
 	if (fileNamePtr != (char *)NIL) {
 	    length = strlen(fileNamePtr);
 	    if (length >= VM_OBJ_FILE_NAME_LENGTH) {
@@ -1416,7 +1416,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {
-	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr);
+	Fsio_StreamCopy(srcSegPtr->filePtr, &newFilePtr);
     } else {
 	newFilePtr = (Fs_Stream *) NIL;
     }

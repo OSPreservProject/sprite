@@ -124,7 +124,7 @@ int	vmPhysPageLimit = -1;
 static void	PageOut();
 static void	PutOnReserveList();
 static void	PutOnFreeList();
-void		Fs_GetPageFromFS();
+void		Fscache_GetPageFromFS();
 
 
 /*
@@ -1016,7 +1016,7 @@ VmPageAllocate(virtAddrPtr, flags)
 
     GetRefTime(&refTime, &page);
     if (page == VM_NO_MEM_VAL) {
-	Fs_GetPageFromFS(refTime + vmCurPenalty, &tPage);
+	Fscache_GetPageFromFS(refTime + vmCurPenalty, &tPage);
 	if (tPage == -1) {
 	    vmStat.pageAllocs++;
 	    return(DoPageAllocate(virtAddrPtr, flags));
@@ -2082,7 +2082,7 @@ PageOut(data, callInfoPtr)
     while (TRUE) {
 	PageOutPutAndGet(&corePtr, status, &recStreamPtr);
 	if (recStreamPtr != (Fs_Stream  *)NIL) {
-	    (void) Fs_WaitForHost(recStreamPtr, FS_NON_BLOCKING, status);
+	    (void) Fsutil_WaitForHost(recStreamPtr, FS_NON_BLOCKING, status);
 	}
 
 	if (corePtr == (VmCore *) NIL) {
@@ -2781,7 +2781,7 @@ Vm_FsCacheSize(startAddrPtr, endAddrPtr)
  *	 is set to TRUE which prohibits all further actions that would dirty
  *	 physical memory pages (e.g. page faults) and prohibits dirty pages
  *	 from being written to swap.
- *    3) Next the routine Fs_WaitForHost is called to asynchronously wait
+ *    3) Next the routine Fsutil_WaitForHost is called to asynchronously wait
  *	 for the server to come up.  When it detects that the server is
  *	 in fact up and the file system is alive, it calls Vm_Recovery.
  *    4) Vm_Recovery when called will set swapDown to FALSE and start cleaning

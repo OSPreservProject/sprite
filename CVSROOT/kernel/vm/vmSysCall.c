@@ -28,7 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 static ReturnStatus	VmMunmapInt();
 extern Vm_SharedSegTable sharedSegTable;
-void		Fs_StreamCopy();
+void		Fsio_StreamCopy();
 
 int vmShmDebug = 0;	/* Shared memory debugging flag. */
 
@@ -541,7 +541,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	printf("Vm_Mmap: Fs_GetStreamPtr failure\n");
 	return status;
     }
-    Fs_StreamCopy(streamPtr,&filePtr);
+    Fsio_StreamCopy(streamPtr,&filePtr);
 
     status = Fs_GetAttrStream(filePtr,&attr);
     if (status != SUCCESS) {

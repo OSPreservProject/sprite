@@ -244,10 +244,10 @@ Vm_DeencapState(procPtr, infoPtr, buffer)
 		varSize = sizeof(Vm_ExecInfo);
 		oldExecInfoPtr = (Vm_ExecInfo *) buffer;
 		buffer += varSize;
-		status = Fs_DeencapStream(buffer, &filePtr);
+		status = Fsio_DeencapStream(buffer, &filePtr);
 		buffer += fsInfoSize;
 		if (status != SUCCESS) {
-		    printf("Vm_DeencapState: Fs_DeencapStream returned status %x.\n",
+		    printf("Vm_DeencapState: Fsio_DeencapStream returned status %x.\n",
 			   status);
 		    return(status);
 		}
@@ -273,7 +273,7 @@ Vm_DeencapState(procPtr, infoPtr, buffer)
 		break;
 	    }
 	    case VM_HEAP: {
-		Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+		Fsio_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
 				    &filePtr);
 		if (filePtr == (Fs_Stream *) NIL) {
 		    panic("Vm_DeencapState: no code file pointer.\n");
@@ -302,10 +302,10 @@ Vm_DeencapState(procPtr, infoPtr, buffer)
 	    if (proc_MigDebugLevel > 4) {
 		printf("Deencapsulating swap file for segment %d.\n", type);
 	    }
-	    status = Fs_DeencapStream(buffer, &segPtr->swapFilePtr);
+	    status = Fsio_DeencapStream(buffer, &segPtr->swapFilePtr);
 	    buffer += fsInfoSize;
 	    if (status != SUCCESS) {
-		printf("Vm_DeencapState: Fs_DeencapStream on swapFile returned status %x.\n",
+		printf("Vm_DeencapState: Fsio_DeencapStream on swapFile returned status %x.\n",
 		       status);
 		return(status);
 	    }
@@ -379,7 +379,7 @@ Vm_FinishMigration(procPtr, hostID, infoPtr, bufferPtr, failure)
  * 	Copy the information from a Vm_Segment into a buffer, ready to
  *	be transferred to another node.  We have to duplicate the
  *	stream to the swap or code file for the segment because
- *	Fs_EncapStream effectively closes the stream.  By dup'ing the
+ *	Fsio_EncapStream effectively closes the stream.  By dup'ing the
  *	stream we can later call Vm_SegmentDelete which will close the
  *	stream (again).
  *
@@ -417,13 +417,13 @@ EncapSegment(segPtr, procPtr, bufPtrPtr)
     if (segPtr->type != VM_CODE) {
 	bcopy((Address) segPtr->ptPtr, ptr, varSize);
 	ptr += varSize;
-	Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
-	status = Fs_EncapStream(segPtr->swapFilePtr, ptr);
+	Fsio_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
+	status = Fsio_EncapStream(segPtr->swapFilePtr, ptr);
     } else {
 	bcopy((Address) &segPtr->execInfo, ptr, varSize);
 	ptr += varSize;
-	Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
-	status = Fs_EncapStream(segPtr->filePtr, ptr);
+	Fsio_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
+	status = Fsio_EncapStream(segPtr->filePtr, ptr);
     }
     if (status != SUCCESS) {
 	return(status);
