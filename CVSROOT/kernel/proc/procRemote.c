@@ -481,7 +481,7 @@ Proc_ResumeMigProc(pc)
 #if defined(SUN2) || defined(SUN3)
     if (proc_MigDebugLevel > 5) {
 	Sys_Printf("Calling Mach_StartUserProc(%x, %x). D0 = %x, SP = %x.\n",
-		   (Address) procPtr, pc,
+		   (Address) procPtr, (Address) pc,
 		   procPtr->machStatePtr->userState.trapRegs[D0],
 		   procPtr->machStatePtr->userState.trapRegs[SP]);
     }
@@ -575,7 +575,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	    Sys_Printf("Proc_DoRemoteCall: host %d is down; killing process %x.\n",
 		       procPtr->peerHostID, procPtr->processID);
 	}
-	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_NO_PEER, 0);
+	Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
 	/*
 	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
 	 * directive causes a complaint when there's code after it.
@@ -987,7 +987,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
 	    Sys_Printf("ProcRemoteFork: host %d is down; killing process %x.\n",
 		       parentProcPtr->peerHostID, parentProcPtr->processID);
 	}
-	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_NO_PEER, 0);
+	Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
 	/*
 	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
 	 * directive causes a complaint when there's code after it.

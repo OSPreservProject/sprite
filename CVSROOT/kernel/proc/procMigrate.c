@@ -1249,12 +1249,13 @@ Proc_MigrateStartTracing()
  */
 
 void 
-Proc_DestroyMigratedProc(pid) 
-    ClientData pid;		/* the process ID, as a ClientData */
+Proc_DestroyMigratedProc(pidData) 
+    ClientData pidData;		/* the process ID, as a ClientData */
 {
     Proc_ControlBlock 		*procPtr; /* Process to kill. */
+    Proc_PID pid = (Proc_PID) pidData;
 
-    procPtr = Proc_LockPID((Proc_PID) pid);
+    procPtr = Proc_LockPID(pid);
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	if (proc_MigDebugLevel > 0) {
 	    Sys_Panic(SYS_WARNING,

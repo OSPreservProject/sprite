@@ -83,7 +83,8 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 	}
 	if (argsPtr != (Proc_PCBArgString *) NIL) {
 	    if (procPtr->argString != (Address) NIL) {
-		Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1, procPtr->argString,
+		(void) Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
+					procPtr->argString,
 				 buf, &len);
 		buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
 	    } else {
@@ -114,7 +115,7 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 	    }
 	    if (argsPtr != (Proc_PCBArgString *) NIL) {
 		if (procPtr->argString != (Address) NIL) {
-		    Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
+		    (void) Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
 				     procPtr->argString, buf, &len);
 		    buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
 		} else {
@@ -444,7 +445,7 @@ Proc_Dump()
 	    char cmd[30];
 	    char *space;
 
-	    String_NCopy(30, pcbPtr->argString, cmd);
+	    (void) String_NCopy(30, pcbPtr->argString, cmd);
 	    space = String_FindChar(cmd, ' ');
 	    if (space != (char *) NULL) {
 		*space = '\0';
