@@ -24,7 +24,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "sig.h"
 #include "mem.h"
-#include "devTimer.h"
 
 /*
  * Information about the state of an interval timer for a process.
@@ -270,12 +269,12 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 	    return(GEN_INVALID_ARG);
 	}
 	if ((newTimer.curValue.seconds == 0) && 
-	    (newTimer.curValue.microseconds < DEV_CALLBACK_INTERVAL)) {
-	    newTimer.curValue.microseconds = DEV_CALLBACK_INTERVAL;
+	    (newTimer.curValue.microseconds < TIMER_CALLBACK_INTERVAL)) {
+	    newTimer.curValue.microseconds = TIMER_CALLBACK_INTERVAL;
 	}
 	if ((newTimer.interval.seconds == 0) && 
-	    (newTimer.interval.microseconds < DEV_CALLBACK_INTERVAL)) {
-	    newTimer.interval.microseconds = DEV_CALLBACK_INTERVAL;
+	    (newTimer.interval.microseconds < TIMER_CALLBACK_INTERVAL)) {
+	    newTimer.interval.microseconds = TIMER_CALLBACK_INTERVAL;
 	}
 
 	Timer_TimeToTicks(newTimer.interval, &timerPtr->interval);
