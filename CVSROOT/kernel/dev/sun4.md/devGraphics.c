@@ -605,10 +605,9 @@ DevFBClose(devicePtr, useFlags, openCount, writerCount)
     int         writerCount;		/* # of times this particular stream
 					 * is still open for writing. */
 {
-    /*
-     * Check a ref count?
-     */
-    free((Address) devicePtr->data);
+    if ((openCount == 0) && (devicePtr->data != (ClientData) NIL)) { 
+	free((Address) devicePtr->data);
+    }
 
     return SUCCESS;
 }
