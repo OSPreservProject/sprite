@@ -203,8 +203,9 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 	    return(SUCCESS);
 	} else {
 	    Mem_Free((Address)openReplyPtr);
-	    Sys_Panic(SYS_WARNING, "Fs_RpcPrefix, srvOpen \"%s\" failed %x\n",
+	    Sys_Panic(SYS_WARNING, "Fs_RpcPrefix, export \"%s\" failed %x\n",
 		    storagePtr->requestDataPtr, status);
+	    FsPrefixHandleClose(prefixPtr);
 	}
     }
     return(RPC_NO_REPLY);
