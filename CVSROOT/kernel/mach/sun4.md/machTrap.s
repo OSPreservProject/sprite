@@ -189,11 +189,14 @@ DoneWithUserStuff:
 	/*
 	 * It's an interrupt.
 	 */
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
 	b	MachHandleInterrupt
 	nop
 
 NotAnInterrupt:
-#ifdef NOTDEF
 #ifdef sun4c
 	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
 	bne	GoOn
@@ -201,7 +204,6 @@ NotAnInterrupt:
 	call	_MachFlushWindowsToStack
 	nop
 #endif /* sun4c */
-#endif NOTDEF
 	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
 	be	MachSyscallTrap
 	nop
@@ -402,6 +404,10 @@ NormalReturn:
 	 * Call VM Stuff with the %fp which will be stack pointer in
 	 * the window we restore.
 	 */
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	mov	%fp, %o0
 	clr	%o1		/* also check for protection????? */
@@ -417,6 +423,10 @@ CheckNextFault:
 	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
 	be	CallUnderflow
 	nop
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	clr	%o1
 	call	_Vm_PageIn, 2
@@ -433,11 +443,22 @@ KillUserProc:
 	set	_MachReturnFromTrapDeathString, %o0
 	call	_printf, 1
 	nop
+#ifdef NOTDEF
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
 	call	_Proc_ExitInt, 3
 	nop
+#else
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	set	TRUE, %o1			/* debug TRUE */
+	set	PROC_TERM_DESTROYED, %o2
+	set	PROC_BAD_STACK, %o3
+	clr	%o4
+	call	_Proc_SuspendProcess, 5
+	nop
+#endif /* NOTDEF */
+
 CallUnderflow:
 	set	MachWindowUnderflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %RETURN_ADDR_REG
@@ -849,6 +870,10 @@ MachReturnToUnderflowWithSavedState:
 	nop
 	mov	%fp, %o0			/* do the page in for first */
 	save					/* back to trap window */
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 		/* Address that would fault is in %i0 now. */
 	mov	%i0, %o0
@@ -865,17 +890,31 @@ KillTheProc:
 	set	_MachHandleWindowUnderflowDeathString, %o0
 	call	_printf, 1
 	nop
+#ifdef NOTDEF
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
 	call	_Proc_ExitInt, 3
 	nop
+#else
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	set	TRUE, %o1			/* debug TRUE */
+	set	PROC_TERM_DESTROYED, %o2
+	set	PROC_BAD_STACK, %o3
+	clr	%o4
+	call	_Proc_SuspendProcess, 5
+	nop
+#endif /* NOTDEF */
 CheckNextUnderflow:
 	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o1
 	MACH_CHECK_FOR_FAULT(%o1, %o0)
 	save					/* back to trap window */
 	be	NormalUnderflow			/* we were okay here */
 	nop
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	/* Address that would fault is in %i1 now. */
 	mov	%i1, %o0
