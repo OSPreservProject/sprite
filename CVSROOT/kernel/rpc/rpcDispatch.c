@@ -307,8 +307,9 @@ RpcScatter(rpcHdrPtr, bufferPtr)
 	destLength = bufferPtr->paramBuffer.length;
 	if (length + rpcHdrPtr->paramOffset > destLength) {
 	    rpcCltStat.paramOverrun++;
-	    Sys_Printf("RpcScatter: parameter size + off (%d + %d) > (%d)\n",
-			   length, rpcHdrPtr->paramOffset, destLength);
+	    Sys_Printf("RpcScatter: rpc %d param size + off (%d + %d) > (%d)\n",
+			   rpcHdrPtr->command, length, rpcHdrPtr->paramOffset,
+			   destLength);
 	    if (rpcHdrPtr->paramOffset < destLength) {
 		length = destLength - rpcHdrPtr->paramOffset;
 	    } else {
