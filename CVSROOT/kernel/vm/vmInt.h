@@ -348,16 +348,21 @@ typedef enum {
  *   VM_DEBUGGED_SEG		This is a special code segment that is being
  *				written by the debugger.
  *   VM_SEG_CREATE_TRACED	The segment creation has been traced already.
+ *   VM_SEG_CANT_COW		This segment cannot be forked copy-on-write.
+ *   VM_SEG_COW_IN_PROGRESS	This segment is being actively copied at
+ *				fork time.
  */
 
-#define	VM_SEG_FREE			0x01
-#define	VM_SEG_INACTIVE			0x02
-#define	VM_SWAP_FILE_OPENED		0x04
-#define	VM_SWAP_FILE_LOCKED		0x08
-#define	VM_SEG_DEAD			0x10
-#define	VM_PT_EXCL_ACC			0x20
-#define	VM_DEBUGGED_SEG			0x40
-#define	VM_SEG_CREATE_TRACED		0x80
+#define	VM_SEG_FREE			0x001
+#define	VM_SEG_INACTIVE			0x002
+#define	VM_SWAP_FILE_OPENED		0x004
+#define	VM_SWAP_FILE_LOCKED		0x008
+#define	VM_SEG_DEAD			0x010
+#define	VM_PT_EXCL_ACC			0x020
+#define	VM_DEBUGGED_SEG			0x040
+#define	VM_SEG_CREATE_TRACED		0x080
+#define	VM_SEG_CANT_COW			0x100
+#define	VM_SEG_COW_IN_PROGRESS		0x200
 
 
 /*---------------------------------------------------------------------------*/
@@ -386,6 +391,8 @@ typedef struct VmCore {
     List_Links	links;		/* Links for allocate, free, dirty and reserver
 				 * lists */
     Vm_VirtAddr	virtPage;	/* The virtual page information for this page */
+    int		wireCount;	/* The number of times that the page has bee
+				 * wired down by users. */
     int		lockCount;	/* The number of times that this page has been
 				   locked down (i.e. made unpageable). */
     int 	flags;		/* Flags that indicate the state of the page 
@@ -404,14 +411,12 @@ typedef struct VmCore {
  * VM_PAGE_BEING_CLEANED	The page is actually being cleaned.
  * VM_DONT_FREE_UNTIL_CLEAN	This page cannot be freed until it has
  *				been written out.
- * VM_USER_WIRED_PAGE		The user wired this page down.
  */
 #define VM_FREE_PAGE 			0x01
 #define VM_DIRTY_PAGE 			0x02
 #define VM_SEG_PAGEOUT_WAIT 		0x04
 #define VM_PAGE_BEING_CLEANED		0x08
 #define	VM_DONT_FREE_UNTIL_CLEAN	0x10
-#define	VM_USER_WIRED_PAGE		0x20
 
 /*
  * The name of the swap directory.
@@ -507,6 +512,9 @@ extern	void		VmListInsert();
 /*
  * Routines for copy-on-write and copy-on-reference.
  */
+extern	Boolean		VmSegCanCOW();
+extern	void		VmSegCantCOW();
+extern	void		VmSegCOWDone();
 extern	void		VmSegFork();
 extern	void		VmCOWDeleteFromSeg();
 extern	ReturnStatus	VmCOR();

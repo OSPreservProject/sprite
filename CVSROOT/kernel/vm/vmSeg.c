@@ -1390,25 +1390,32 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     destSegPtr->flags |= VM_SEG_CREATE_TRACED;
 
     if (vm_CanCOW) {
-	if (vm_Tracing) {
-	    Vm_TraceSegCreate	segCreate;
+	if (VmSegCanCOW(srcSegPtr)) {
+	    /*
+	     * We are allowed to make this segment copy-on-write so do it.
+	     */
+	    if (vm_Tracing) {
+		Vm_TraceSegCreate	segCreate;
+    
+		segCreate.segNum = destSegPtr->segNum;
+		segCreate.parSegNum = srcSegPtr->segNum;
+		segCreate.segType = destSegPtr->type;
+		segCreate.cor = TRUE;
+		VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
+				&segCreate, TRUE);
+	    }
+	    /*
+	     * We are allowing copy-on-write.  Make a copy-on-ref image of the
+	     * src segment in the dest segment.
+	     */
+	    VmSegFork(srcSegPtr, destSegPtr);
+	    VmDecPTUserCount(srcSegPtr);
+	    *destSegPtrPtr = destSegPtr;
 
-	    segCreate.segNum = destSegPtr->segNum;
-	    segCreate.parSegNum = srcSegPtr->segNum;
-	    segCreate.segType = destSegPtr->type;
-	    segCreate.cor = TRUE;
-	    VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
-			    &segCreate, TRUE);
+	    VmSegCOWDone(srcSegPtr, FALSE);
+
+	    return(SUCCESS);
 	}
-	/*
-	 * We are allowing copy-on-write.  Make a copy-on-ref image of the
-	 * src segment in the dest segment.
-	 */
-	VmSegFork(srcSegPtr, destSegPtr);
-	VmDecPTUserCount(srcSegPtr);
-	*destSegPtrPtr = destSegPtr;
-
-	return(SUCCESS);
     }
     if (vm_Tracing) {
 	Vm_TraceSegCreate	segCreate;
@@ -1505,6 +1512,108 @@ IncPTUserCount(segPtr)
 	(void)Sync_Wait(&segPtr->condition, FALSE);
     }
     segPtr->ptUserCount++;
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmSegCanCOW --
+ *
+ *     	Return TRUE if can fork this segment copy-on-write.  If the 
+ *	VM_SEG_COW_IN_PROGRESS flag is set then wait until it s cleared
+ *	before making the decision about whether this segment can
+ *	be forked copy-on-write.
+ *
+ * Results:
+ *	TRUE if can fork this segment copy-on-write.
+ *
+ * Side effects:
+ *	VM_SEG_COW_IN_PROGRESS flag set if the can be made copy-on-write.
+ *     
+ * ----------------------------------------------------------------------------
+ */
+ENTRY Boolean
+VmSegCanCOW(segPtr)
+    Vm_Segment	*segPtr;
+{
+    Boolean	retVal;
+
+    LOCK_MONITOR;
+
+    while (segPtr->flags & VM_SEG_COW_IN_PROGRESS) {
+	(void)Sync_Wait(&segPtr->condition, FALSE);
+    }
+    if (segPtr->flags & VM_SEG_CANT_COW) {
+	retVal = FALSE;
+    } else {
+	retVal = TRUE;
+	segPtr->flags |= VM_SEG_COW_IN_PROGRESS;
+    }
+
+    UNLOCK_MONITOR;
+
+    return(retVal);
+}
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmSegCantCOW --
+ *
+ *     	Mark this segment such that it can no longer be made copy-on-write.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	VM_SEG_CANT_COW flag set.
+ *     
+ * ----------------------------------------------------------------------------
+ */
+void
+VmSegCantCOW(segPtr)
+    Vm_Segment	*segPtr;
+{
+    if (!VmSegCanCOW(segPtr)) {
+	return;
+    }
+    VmCOWCopySeg(segPtr);
+    VmSegCOWDone(segPtr, TRUE);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmSegCOWDone --
+ *
+ *     	A copy-on-fork operation has completed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	VM_SEG_COW_IN_PROGRESS flag cleared.
+ *     
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+VmSegCOWDone(segPtr, cantCOW)
+    Vm_Segment	*segPtr;
+    Boolean	cantCOW;
+{
+    LOCK_MONITOR;
+
+    if (cantCOW) {
+	segPtr->flags |= VM_SEG_CANT_COW;
+    }
+    segPtr->flags &= ~VM_SEG_COW_IN_PROGRESS;
+    Sync_Broadcast(&segPtr->condition);
 
     UNLOCK_MONITOR;
 }
