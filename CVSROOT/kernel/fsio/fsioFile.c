@@ -1350,7 +1350,7 @@ ReturnStatus
 FsioVerifyBlockWrite(blockPtr)
     Fscache_Block *blockPtr;		/* Block about to be written out */
 {
-    ReturnStatus status;
+    ReturnStatus status = SUCCESS;
     Fs_HandleHeader *hdrPtr = blockPtr->cacheInfoPtr->hdrPtr;
     Fsdm_BlockIndexInfo		 indexInfo;
 
@@ -1392,6 +1392,7 @@ FsioVerifyBlockWrite(blockPtr)
 
 exit:
     Fsdm_EndIndex(hdrPtr, &indexInfo, FALSE);
+    return(status);
 }
 
 /*
