@@ -29,6 +29,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 int	rpc_NativeVersion = RPC_NATIVE_VERSION;
 int	rpc_SwappedVersion = RPC_SWAPPED_VERSION;
+int	rpc_NativeVersionNew = RPC_NATIVE_VERSION_NEW;
+int	rpc_SwappedVersionNew = RPC_SWAPPED_VERSION_NEW;
 
 /*
  * Constant parameters for the protocol.  The RpcConst structure keeps
@@ -66,9 +68,8 @@ void RpcBufferInit();
 void
 Rpc_Init()
 {
-    register int i;
+    int i;
     register int frag;
-    Net_EtherAddress etherAddress;
     extern void	RpcInitServerTraces();
 
     /*
@@ -166,7 +167,7 @@ Rpc_Init()
 	 * of packet (request, reply ack), plus an array of these
 	 * things used for fragmenting our request.
 	 */
-	RpcBufferInit(&chanPtr->requestRpcHdr, &chanPtr->request,
+	RpcBufferInit((RpcHdr *) &chanPtr->requestRpcHdr, &chanPtr->request,
 			chanPtr->index, -1);
 	RpcBufferInit(&chanPtr->replyRpcHdr, &chanPtr->reply,
 			chanPtr->index, -1);
@@ -221,9 +222,20 @@ Rpc_Init()
      * existing (compiled in) addresses or Reverse ARP.  If we can't
      * figure out our ID we use zero and rely on the RPC server to
      * propogate our Sprite ID back in the first RPC reply message.
+     * We try all the interfaces until we get one that works.
      */
-    Mach_GetEtherAddress(&etherAddress);
-    rpc_SpriteID = Net_AddrToID(0, NET_ROUTE_ETHER, (ClientData)&etherAddress);
+    for (i = 0; ; i++) {
+	Net_Interface	*interPtr;
+	interPtr = Net_NextInterface(TRUE, &i);
+	if (interPtr == (Net_Interface *) NIL) {
+	    break;
+	}
+	rpc_SpriteID = Net_AddrToID(interPtr->netType, NET_PROTO_RAW,
+				&interPtr->netAddress[NET_PROTO_RAW]);
+	if (rpc_SpriteID > 0) {
+	    break;
+	}
+    }
     if (rpc_SpriteID < 0) {
 	rpc_SpriteID = 0;
     }
@@ -265,7 +277,7 @@ RpcBufferInit(rpcHdrPtr, bufferSetPtr, channel, serverHint)
     int channel;		/* chanPtr->index */
     int serverHint;		/* srvPtr->index */
 {
-    int maxHdrSize = Net_MaxProtoHdrSize();
+    int maxHdrSize = NET_MAX_HEADER_SIZE;
 
     bufferSetPtr->protoHdrBuffer.length = maxHdrSize;
     bufferSetPtr->protoHdrBuffer.bufAddr = Vm_RawAlloc(maxHdrSize);
@@ -398,27 +410,46 @@ RpcInitServerState(index)
 void
 Rpc_Start()
 {
-    Time bootTime;	/* Time returned from the default server */
-    int tzMinutes;	/* Minutes west of Greenwich */
-    int tzDST;		/* Daylight savings flag */
+    Time 	bootTime;	/* Time returned from the default server */
+    int 	tzMinutes;	/* Minutes west of Greenwich */
+    int 	tzDST;		/* Daylight savings flag */
     ReturnStatus status;	/* Status code from the RPC */
-    char dateString[40];/* To hold a printable version of the time */
-    Net_EtherAddress etherAddr;
-    int seconds;
-    int spriteID;
+    char 	dateString[40];/* To hold a printable version of the time */
+    int 	seconds;
+    int 	spriteID;
+    Net_Route		*routePtr;
+    Sync_Semaphore	tmpMutex;
+    int			i;
 
     /*
      * Do a Sprite reverse Arp to discover our Sprite ID.  If it's still
      * zero after this that inhibits the RPC system.  In that case we'd
      * better be a diskfull machine so we find out our SpriteID by
      * the user program that installs routes.  See Net_InstallRoute.
+     *
+     * We do a reverse arp on all the broadcast routes until one
+     * works.
      */
-    
-    Mach_GetEtherAddress(&etherAddr);
-    spriteID = Net_RevArp(NET_ROUTE_ETHER, &etherAddr);
-    if (spriteID > 0) {
-	rpc_SpriteID = spriteID;
-	printf("Reverse Arp, setting Sprite ID to %d\n", spriteID);
+    spriteID = -1;
+    i = 0;
+    Sync_SemInitDynamic(&tmpMutex, "Rpc_Start:tmpMutex");
+    while (1) {
+	routePtr = Net_IDToRoute(NET_BROADCAST_HOSTID, i, FALSE, 
+			(Sync_Semaphore *) NIL, 0);
+	if (routePtr == (Net_Route *) NIL) {
+	    break;
+	}
+	MASTER_LOCK(&tmpMutex);
+	spriteID = Net_RevArp(routePtr, NET_PROTO_RAW,  
+			(Net_Address *) NIL, &tmpMutex); 
+	MASTER_UNLOCK(&tmpMutex);
+	Net_ReleaseRoute(routePtr);
+	if (spriteID > 0) {
+	    rpc_SpriteID = spriteID;
+	    printf("Reverse Arp, setting Sprite ID to %d\n", spriteID);
+	    break;
+	}
+	i++;
     }
 
     Rpc_StampTest();

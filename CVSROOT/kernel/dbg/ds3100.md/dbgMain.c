@@ -70,6 +70,7 @@ Net_InetAddress		dbgSrcIPAddr;
 Net_InetAddress		dbgSrcPort;
 Net_EtherHdr		dbgEtherHdr;
 Net_ScatterGather	dbgGather;
+Net_Interface		*dbgInterPtr = (Net_Interface *) NIL;
 
 /*
  * Size of debugging packet header and data.
@@ -326,15 +327,21 @@ char	*pingBufPtr = pingBuffer + 2;
  * ----------------------------------------------------------------------------
  */
 void
-Dbg_InputPacket(packetPtr, packetLength)
-    Address	packetPtr;
-    int		packetLength;
+Dbg_InputPacket(interPtr, packetPtr, packetLength)
+    Net_Interface	*interPtr;
+    Address		packetPtr;
+    int			packetLength;
 {
     Net_EtherHdr	*etherHdrPtr;
     Net_IPHeader	*ipPtr;
     Address		dataPtr;
     int			dataLength;
 
+    if (interPtr->netType != NET_NETWORK_ETHER) {
+	printf("Got a debugger packet on non-ethernet interface %s\n",
+	    interPtr->name);
+	return;
+    }
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
 
     if (dbgTraceLevel >= 5) {
@@ -381,6 +388,10 @@ Dbg_InputPacket(packetPtr, packetLength)
 		sizeof(Net_EtherHdr));
 	gotPacket = TRUE;
 	bcopy(dataPtr, requestBuffer, dataLength);
+	/*
+	 * Set the interface we are using. 
+	 */
+	dbgInterPtr = interPtr;
 	return;
     }
 
@@ -416,7 +427,7 @@ Dbg_InputPacket(packetPtr, packetLength)
 		(Address)icmpPtr);
 	    dbgGather.length = packetLength - sizeof(Net_EtherHdr);
 	    dbgGather.bufAddr = pingBufPtr + sizeof(Net_EtherHdr);
-	    Net_OutputRawEther(etherHdrPtr, &dbgGather, 1);
+	    Net_RawOutput(dbgInterPtr, etherHdrPtr, &dbgGather, 1);
 	}
     }
 }
@@ -442,12 +453,27 @@ ReadRequest(timeout)
     Boolean	timeout;	/* TRUE if should timeout after waiting a 
 				 * while. */
 {
-    int	timeOutCounter;
+    int			timeOutCounter;
+    Net_Interface	*interPtr;
+    int			i;
 
     gotPacket = FALSE;
     timeOutCounter = dbgTimeout;
     do {
-	Net_RecvPoll();
+	/*
+	 * Listen on all the interfaces. The debugger is relatively
+	 * stateless so its easiest to just listen on them all.
+	 */
+	for (i = 0; ; i++) {
+	    interPtr = Net_NextInterface(TRUE, &i);
+	    if (interPtr == (Net_Interface *) NIL) {
+		break;
+	    }
+	    Net_RecvPoll(interPtr);
+	    if (gotPacket) {
+		break;
+	    }
+	}
 	if (timeout) {
 	    timeOutCounter--;
 	}
@@ -500,7 +526,7 @@ SendReply(dataSize)
     Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
 		     dataSize + sizeof(Reply),
 		     replyBufPtr + sizeof(Net_EtherHdr));
-    Net_OutputRawEther(etherHdrPtr, &dbgGather, 1);
+    Net_RawOutput(dbgInterPtr, etherHdrPtr, &dbgGather, 1);
     if (dbgTraceLevel >= 4) {
 	printf("Sent reply\n");
     }
@@ -713,7 +739,8 @@ Dbg_Main()
 		    break;
 		}
 	    }
-	    Net_OutputRawEther((Net_EtherHdr *)replyBufPtr, &dbgGather, 1);
+	    Net_RawOutput(dbgInterPtr, (Net_EtherHdr *)replyBuffer, 
+		    &dbgGather, 1);
 	    printf("TI: %d ", requestPtr->request);
 	} while (TRUE);
     } else {

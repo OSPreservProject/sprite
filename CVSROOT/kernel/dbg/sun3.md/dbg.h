@@ -18,8 +18,10 @@
 #endif
 #ifdef KERNEL
 #include <user/netInet.h>
+#include <netTypes.h>
 #else
 #include <netInet.h>
+#include <kernel/netTypes.h>
 #endif
 
 
@@ -241,7 +243,8 @@ typedef struct {
 } StopInfo;
 
 extern	void	Dbg_Init _ARGS_((void));
-extern	void	Dbg_InputPacket _ARGS_((Address packetPtr, int packetLength));
+extern	void	Dbg_InputPacket _ARGS_((Net_Interface *interPtr,
+				    Address packetPtr, int packetLength));
 extern	Boolean	Dbg_InRange _ARGS_((unsigned int addr, int numBytes,
 				    Boolean writeable));
 extern Boolean

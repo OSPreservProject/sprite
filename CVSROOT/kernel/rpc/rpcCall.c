@@ -282,7 +282,7 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
      * RPCs.  The channel ID and the version number are set up at
      * boot time by Rpc_Init.
      */
-    rpcHdrPtr = &chanPtr->requestRpcHdr;
+    rpcHdrPtr = (RpcHdr *) &chanPtr->requestRpcHdr;
     if(command == RPC_ECHO_1) {
 	rpcHdrPtr->flags = RPC_ECHO;
     } else {
@@ -301,12 +301,16 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
      * This is rather simple minded.
      */
     if (chanPtr->constPtr == (RpcConst *)NIL) {
-	Net_Route *routePtr = Net_IDToRoute(serverID);
+	Net_Route *routePtr = Net_IDToRoute(serverID, 0, FALSE, 
+				(Sync_Semaphore *) NIL, 0);
 	if (routePtr != (Net_Route *)NIL &&
-	    routePtr->type == NET_ROUTE_INET) {
+	    routePtr->protocol == NET_PROTO_INET) {
 	    chanPtr->constPtr = &rpcInetConst;
 	} else {
 	    chanPtr->constPtr = &rpcEtherConst;
+	}
+	if (routePtr != (Net_Route *)NIL) {
+	    Net_ReleaseRoute(routePtr);
 	}
     }
     /*

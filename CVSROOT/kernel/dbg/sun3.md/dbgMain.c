@@ -69,6 +69,7 @@ Net_InetAddress		dbgSrcIPAddr;
 Net_InetAddress		dbgSrcPort;
 Net_EtherHdr		dbgEtherHdr;
 Net_ScatterGather	dbgGather;
+Net_Interface		*dbgInterPtr = (Net_Interface *) NIL;
 
 /*
  * Size of debugging packet header and data.
@@ -293,10 +294,20 @@ Boolean Dbg_InRange(addr, numBytes, writeable)
 #ifdef sun2
     maxAddr = 0x1000000;
 #else
+    /*
+     * Don't look at anything in device space. 
+     */
     maxAddr = 0x10000000;
 #endif
     if (addr > maxAddr || (addr + numBytes - 1) > maxAddr) {
 	return(FALSE);
+    }
+    /*
+     * Don't look at anything in device space. 
+     */
+    if (!(((addr + numBytes - 1) < VMMACH_DEV_START_ADDR) ||
+	 (addr >= VMMACH_DMA_START_ADDR))) {
+	return FALSE;
     }
     if ((int) (addr) & 0x1) {
 	printf("Dbg: odd address: %x\n", addr);
@@ -430,7 +441,7 @@ void
 Dbg_Init()
 {
     dbgMonPC = 0;
-    dbgTraceLevel = 0;
+    dbgTraceLevel = 6;
     dbgInDebugger = 0;
     dbgIntPending = 0;
     dbgPanic = FALSE;
@@ -445,7 +456,9 @@ Dbg_Init()
  *
  * Dbg_InputPacket --
  *
- *     See if the current packet is for us.
+ *     See if the current packet is for us.  At the moment this only 
+ *	handles ethernet packets.
+ *
  *
  * Results:
  *     None.
@@ -456,14 +469,20 @@ Dbg_Init()
  * ----------------------------------------------------------------------------
  */
 void
-Dbg_InputPacket(packetPtr, packetLength)
-    Address	packetPtr;
-    int		packetLength;
+Dbg_InputPacket(interPtr, packetPtr, packetLength)
+    Net_Interface	*interPtr;
+    Address		packetPtr;
+    int			packetLength;
 {
     Address	dataPtr;
     int		dataLength;
     Net_EtherHdr	*etherHdrPtr;
 
+    if (interPtr->netType != NET_NETWORK_ETHER) {
+	printf("Got a debugger packet on non-ethernet interface %s\n",
+	    interPtr->name);
+	return;
+    }
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
     if (etherHdrPtr->type != NET_ETHER_IP) {
 	if (dbgTraceLevel >= 5) {
@@ -472,6 +491,9 @@ Dbg_InputPacket(packetPtr, packetLength)
 	return;
     }
     if (gotPacket) {
+	if (dbgTraceLeve >= 4) {
+	    printf("Already have a packet.\n");
+	}
 	return;
     }
     if (dbgTraceLevel >= 4) {
@@ -488,6 +510,10 @@ Dbg_InputPacket(packetPtr, packetLength)
 		sizeof(Net_EtherHdr));
 	gotPacket = TRUE;
 	bcopy(dataPtr, requestBuffer, dataLength);
+	/*
+	 * Set the interface we are using. 
+	 */
+	dbgInterPtr = interPtr;
     }
 }
 
@@ -513,12 +539,28 @@ ReadRequest(timeout)
 				 * while. */
 {
 	int	timeOutCounter;
+	Net_Interface	*interPtr;
+	int		i;
 
 	gotPacket = FALSE;
 	timeOutCounter = dbgTimeout;
 	do {
 	    DbgCheckNmis();
-	    Net_RecvPoll();
+	    /*
+	     * Listen on all the interfaces. The debugger is relatively
+	     * stateless so its easiest to just listen on them all.
+	     */
+	    for (i = 0; ; i++) {
+		interPtr = Net_NextInterface(TRUE, &i);
+		printf("i = %d, interPtr = 0x%x\n", i, interPtr);
+		if (interPtr == (Net_Interface *) NIL) {
+		    break;
+		}
+		Net_RecvPoll(interPtr);
+		if (gotPacket) {
+		    break;
+		}
+	    }
 	    if (timeout) {
 		timeOutCounter--;
 	    }
@@ -624,7 +666,7 @@ SendReply()
 	Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
 		     replyOffset - sizeof(Net_EtherHdr) - Dbg_PacketHdrSize(),
 		     replyBuffer + sizeof(Net_EtherHdr));
-	Net_OutputRawEther(etherHdrPtr, &dbgGather, 1);
+	Net_RawOutput(dbgInterPtr, (Address) etherHdrPtr, &dbgGather, 1);
 	if (dbgTraceLevel >= 4) {
 	    printf("Sent reply\n");
 	}
@@ -803,7 +845,8 @@ Dbg_Main(stackHole, dbgStack)
 	    /*
 	     * We can only timeout if we are using network debugging.
 	     */
-	    Net_OutputRawEther((Net_EtherHdr *)replyBuffer, &dbgGather, 1);
+	    Net_RawOutput(dbgInterPtr, (Address) replyBuffer, 
+		    &dbgGather, 1);
 	    if (dbgTraceLevel >= 5) {
 		printf("DBG: Timeout\n");
 	    }

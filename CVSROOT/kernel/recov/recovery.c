@@ -31,16 +31,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "recov.h"
-#include "sync.h"
-#include "net.h"
-#include "rpc.h"
-#include "hash.h"
-#include "stdlib.h"
-#include "trace.h"
-#include "fsutil.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <recov.h>
+#include <sync.h>
+#include <net.h>
+#include <rpc.h>
+#include <hash.h>
+#include <stdlib.h>
+#include <trace.h>
+#include <fsutil.h>
+#include <bstring.h>
 
 /*
  * Other kernel modules arrange call-backs when a host crashes or reboots.
@@ -1751,14 +1751,14 @@ exit:
  *
  *----------------------------------------------------------------------
  */
-void
+int
 Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
     ClientData clientData;	/* Client data in the trace record */
     int event;			/* Type, or event, from the trace record */
     Boolean printHeaderFlag;	/* If TRUE, a header line is printed */
 {
     RecovTraceRecord *recPtr = (RecovTraceRecord *)clientData;
-    char *name;
+    char name[128];
     if (printHeaderFlag) {
 	/*
 	 * Print column headers and a newline.
@@ -1766,8 +1766,8 @@ Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
 	printf("%10s %10s %17s\n", "Host", "State", "Event ");
     }
     if (clientData != (ClientData)NIL) {
-	Net_SpriteIDToName(recPtr->spriteID, &name);
-	if (name == (char *)NIL) {
+	Net_SpriteIDToName(recPtr->spriteID, 128, name);
+	if (*name == '\0') {
 	    printf("%10d ", recPtr->spriteID);
 	} else {
 	    printf("%10s ", name);
@@ -1818,7 +1818,7 @@ Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
 	}
 	/* Our caller prints a newline */
     }
-    return;
+    return 0;
 }
 
 /*
@@ -1873,7 +1873,7 @@ Recov_PrintState()
     Hash_Search			hashSearch;
     register Hash_Entry		*hashEntryPtr;
     register RecovHostState	*hostPtr;
-    char			*hostName;
+    char			hostName[128];
     Time_Parts			timeParts;
     Time			bootTime;
     int				localOffset; /* minute offset for our tz */
@@ -1887,7 +1887,7 @@ Recov_PrintState()
 	hostPtr = (RecovHostState *)hashEntryPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
 
-	    Net_SpriteIDToName(hostPtr->spriteID, &hostName);
+	    Net_SpriteIDToName(hostPtr->spriteID, 128, hostName);
 	    printf("%-14s %-8s", hostName, GetState(hostPtr->state));
 	    printf(" bootID 0x%8x", hostPtr->bootID);
 

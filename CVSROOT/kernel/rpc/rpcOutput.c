@@ -98,9 +98,9 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 					 * interrupt after they output a packet.
 					 */
 {
-    int		maxPacketSize;	/* Maximum packet size supported by
-				 * the network module for a packet 
-				 * destine for Sprite host spriteID */
+    Net_Route		*routePtr;
+    ReturnStatus	status;
+    Boolean		newVersion = FALSE;
 #ifdef PRINT_PACKETS
     if (rpcDumpPackets) {
 	register unsigned short *shortPtr;
@@ -133,18 +133,23 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
     if (!rpcServiceEnabled) {
 	rpcHdrPtr->flags |= RPC_NOT_ACTIVE;
     }
-    /*
-     * Query the net module of the maximum transfer size of the route 
-     * to Sprite host spriteID.
+    /* 
+     * Find a route to the host. 
      */
-    maxPacketSize = Net_RouteMTU(spriteID);
+    routePtr = Net_IDToRoute(spriteID, 0, TRUE, mutexPtr, 0);
+    if (routePtr == (Net_Route *) NIL) {
+	return RPC_INTERNAL_ERROR;
+    }
+    if (routePtr->interPtr->netType == NET_NETWORK_ULTRA) {
+	newVersion = TRUE;
+    }
     /*
      * Check to see if we have to fragment.   Note that we pack the first
      * fragment as full as possible so that it might contain more than
      * 1K of data.  If we fragment, however, we break things on 1K boundaries.
      */
     if (rpcHdrPtr->paramSize + rpcHdrPtr->dataSize >
-	maxPacketSize - sizeof(RpcHdr)) {
+	routePtr->maxBytes - sizeof(RpcHdr)) {
 	if (rpcHdrPtr->paramSize > RPC_MAX_PARAMSIZE) {
 	    return(RPC_PARAMS_TOOBIG);
 	} else if (rpcHdrPtr->dataSize > RPC_MAX_DATASIZE) {
@@ -186,14 +191,14 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		 * for best throughput.
 		 */
 		if (paramSize) {
-		    plen = (maxPacketSize - sizeof(RpcHdr));
+		    plen = (routePtr->maxBytes - sizeof(RpcHdr));
 		    plen = (plen > paramSize ? paramSize : plen);
 		    paramSize -= plen;
 		} else {
 		    plen = 0;
 		}
 		if (dataSize) {
-		    dlen = (maxPacketSize - sizeof(RpcHdr) - plen);
+		    dlen = (routePtr->maxBytes - sizeof(RpcHdr) - plen);
 		    dlen = (dlen > dataSize ? dataSize : dlen);
 		    dataSize -= dlen;
 		} else {
@@ -286,11 +291,14 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		     * otherwise we might time out and retransmit before
 		     * the packet is even on the wire.
 		     */
-		    (void) Net_Output(spriteID,
+		    status = Net_Output(spriteID,
 				(Net_ScatterGather *)&fragment[frag], 4,
 				((fragRpcHdrPtr->flags & RPC_LASTFRAG) ?
-				 mutexPtr : (Sync_Semaphore *)NIL ) );
-
+				 mutexPtr : (Sync_Semaphore *)NIL ),
+				 routePtr);
+		    if (status != SUCCESS) {
+			panic("RpcOutput: Net_Output failed.\n");
+		    }
 		    /*
 		     * Insert a delay after all but the last fragment.
 		     * The master lock is released here to enable
@@ -318,13 +326,26 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	    }
 	}
     } else {
+	RpcHdrNew		*newHdrPtr;
 	/*
 	 * No fragmenting.
 	 */
 	rpcHdrPtr->numFrags = 0;
 	rpcHdrPtr->paramOffset = 0;
 	rpcHdrPtr->dataOffset = 0;
-
+	if (newVersion) {
+	    newHdrPtr = (RpcHdrNew *) rpcHdrPtr;
+	    newHdrPtr->paramStart = sizeof(RpcHdrNew);
+	    newHdrPtr->dataStart = sizeof(RpcHdrNew) + newHdrPtr->paramSize;
+	    newHdrPtr->version = rpc_NativeVersionNew;
+	    message->rpcHdrBuffer.length = sizeof(RpcHdrNew);
+	} else {
+	    /*
+	     * Delete this once we get rid of newVersion.
+	     */
+	    rpcHdrPtr->version = rpc_NativeVersion;
+	    message->rpcHdrBuffer.length = sizeof(RpcHdr);
+	}
 	if ((rpcHdrPtr->flags & RPC_TYPE) == RPC_ACK) {
 	    /*
 	     * Don't disturb the fragment mask.
@@ -335,9 +356,13 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 #ifdef TIMESTAMP
 	RPC_NIL_TRACE(RPC_ETHER_OUT, "Ether output");
 #endif /* TIMESTAMP */
-	(void) Net_Output(spriteID, (Net_ScatterGather *)message, 4, mutexPtr);
-
+	status = Net_Output(spriteID, (Net_ScatterGather *)message, 4, mutexPtr,
+	    routePtr);
+	if (status != SUCCESS) {
+	    panic("RpcOutput: Net_Output failed.\n");
+	}
 	RPC_TRACE(rpcHdrPtr, RPC_OUTPUT, "Output");
     }
+    Net_ReleaseRoute(routePtr);
     return(SUCCESS);
 }

@@ -147,7 +147,7 @@ typedef struct RpcClientChannel {
     /*
      * The header and buffer specifications for the request message.
      */
-    RpcHdr		requestRpcHdr;
+    RpcHdrNew		requestRpcHdr;
     RpcBufferSet	request;
     /*
      * An array of RPC headers and buffer sets that are used when fragmenting

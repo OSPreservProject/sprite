@@ -142,7 +142,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     rpcCltStat.requests++;
     chanPtr->requestRpcHdr.serverHint =	chanPtr->replyRpcHdr.serverHint;
     chanPtr->state |= CHAN_WAITING;
-    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
+    error = RpcOutput(serverID, (RpcHdr *) &chanPtr->requestRpcHdr,
 		      &chanPtr->request, chanPtr->fragment,
 		      (unsigned int) (chanPtr->fragsDelivered),
 		      &chanPtr->mutex);
@@ -305,7 +305,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 			}
 		    }
 		} else {
-		    char *name;
+		    char name[100];
 		    /*
 		     * Too many acks.  It is very likely that the server
 		     * process is hung on some lock.  We hang too in
@@ -315,8 +315,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		     */
 		    rpcCltStat.tooManyAcks++;
 		    if (serverID == RPC_BROADCAST_SERVER_ID) {
-			Net_SpriteIDToName(rpcHdrPtr->serverID, &name);
-			if (name == (char *)NIL) {
+			Net_SpriteIDToName(rpcHdrPtr->serverID, 100, name);
+			if (*name == '\0') {
 			    printf("RpcDoCall: <%d> hanging my broadcast\n",
 				    rpcHdrPtr->serverID);
 			} else {
@@ -325,7 +325,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 			}
 			error = RPC_TIMEOUT;
 		    } else if (!seemsHung) {
-			Net_SpriteIDToName(serverID, &name);
+			Net_SpriteIDToName(serverID, 100, name);
 			if (name == (char *)NIL) {
 			    printf("RpcDoCall: <%s> RPC to host <%d> is hung\n",
 				rpcService[command].name, serverID);
@@ -371,7 +371,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    (rpc_NoTimeouts && serverID != RPC_BROADCAST_SERVER_ID)) {
 		    rpcCltStat.resends++;
 		    chanPtr->requestRpcHdr.flags |= RPC_PLSACK;
-		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
+		    error = RpcOutput(serverID, 
+				      (RpcHdr *) &chanPtr->requestRpcHdr,
 				      &chanPtr->request, chanPtr->fragment,
 				      (unsigned int) (chanPtr->fragsDelivered),
 				      &chanPtr->mutex);
@@ -402,7 +403,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 						    RPC_LASTFRAG;
 		    chanPtr->requestRpcHdr.fragMask = chanPtr->fragsReceived;
 		    rpcCltStat.sentPartial++;
-		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
+		    error = RpcOutput(serverID, 
+				      (RpcHdr *) &chanPtr->requestRpcHdr,
 				      &chanPtr->request, chanPtr->fragment,
 				      (unsigned int) (chanPtr->fragsDelivered),
 				      &chanPtr->mutex);

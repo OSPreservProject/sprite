@@ -28,20 +28,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "stdio.h"
-#include "net.h"
-#include "devNet.h"
-#include "user/netInet.h"
-#include "stdlib.h"
-#include "sync.h"
-#include "fs.h"
-#include "vm.h"
-#include "fsio.h"
-#include "user/net.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <net.h>
+#include <devNet.h>
+#include <user/netInet.h>
+#include <stdlib.h>
+#include <sync.h>
+#include <fs.h>
+#include <vm.h>
+#include <fsio.h>
+#include <user/net.h>
+#include <bstring.h>
 
-Boolean devNetEtherDebug = FALSE;
+Boolean devNetDebug = FALSE;
 
 /*
  * The  packets are kept in a circular queue whose length is a power of 2.
@@ -69,45 +69,49 @@ typedef struct {
 #define QueueEmpty(queue)       ((queue).tail == (queue).head)
 
 /*
- * Event counters kept on a per-protocol basis.
+ * Event counters kept on a per-device basis.
  */
-typedef struct ProtoStats {
+typedef struct DeviceStats {
     int		shorts;		/* Number of short packets received */
     int		drops;		/* Number of packets dropped when queue full */
-} ProtoStats;
+} DeviceStats;
 
 /*
- * State for the protocols.  They are linked together and scanned when
+ * State for the devices.  They are linked together and scanned when
  * a packet is received.  Packets with protocols that don't match any
  * of the protocols in this list will be dropped.
  */
 
-typedef struct ProtocolState {
+typedef struct DeviceState {
     List_Links		links;
-    int			protocol;	/* Ethernet protocol number */
-    Boolean		open;		/* TRUE is the device is open.  Packets
-					 * are only queued if it is open. */
+    Net_Interface 	*interPtr;	/* Interface associated with the 
+					 * device; */
+    int			protocol;	/* Protocol associated with device. */
     Boolean		kernel;		/* TRUE if kernel is using this proto */
     PacketQueue		queue;		/* Queue of received packets */
-    ProtoStats		stats;		/* Event counters */
+    DeviceStats		stats;		/* Event counters */
     Fs_NotifyToken	fsReadyToken;	/* Used for filesystem callback that
 					 * notifies waiting processes that
 					 * packets are here */
     int			(*inputProc)();	/* Used when the kernel is using the
 					 * protocol. */
-} ProtocolState;
+} DeviceState;
+
 
 /*
- * The header for the list of protocols.
+ * Queue of all devices associated with an interface. 
  */
-List_Links etherProtos;
-static Boolean initList = FALSE;
 
-/*
- * A master lock is used to synchronize access to the list of protocols.
- */
-static Sync_Semaphore protoMutex = Sync_SemInitStatic("Dev:protoMutex");
+typedef struct DeviceQueueState {
+    List_Links		links;		/* Queue of DeviceState structures
+					 * for this interface. */
+    Sync_Semaphore	mutex;		/* Synchronizes access to the queue. */
+} DeviceQueueState;
 
+extern void		DevNetHandler();
+static ReturnStatus	ProtocolFromPacket();
+static ReturnStatus	ProtocolFromDevice();
+static DeviceQueueState *QueueFromInterface();
 
 /*
  *----------------------------------------------------------------------
@@ -124,8 +128,7 @@ static Sync_Semaphore protoMutex = Sync_SemInitStatic("Dev:protoMutex");
  *
  * Side effects:
  *	Storage for the protocol state is allocated and linked into
- *	the list of active protocols.  If this has already been done,
- *	then the protocol is simply marked as open.
+ *	the list of active protocols.  
  *
  *----------------------------------------------------------------------
  */
@@ -137,64 +140,92 @@ DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr)
     Fs_NotifyToken  data;	/* Call-back for input notification */
     int		*flagsPtr;	/* OUT: Device flags. */
 {
-    register ProtocolState *protoPtr;
     register int i;
-    register unsigned int protocol;
+    unsigned int protocol;
     ReturnStatus status = SUCCESS;
-    ProtocolState *newProtoPtr;	
+    DeviceState		*statePtr;
+    DeviceQueueState *deviceQueuePtr;
+    Boolean		newFormat = FALSE;
+    Net_NetworkType	netType;
+    int			interface;
+    int			unitProto = 0;
+    Net_Interface	*interPtr;
+    DeviceState		*itemPtr;
 
-    /*
-     * Allocate a new protocol state structure before we grap a master lock.
-     * This is only needed if this protocol is being opened for this 
-     * first time. 
-     */
-    newProtoPtr = (ProtocolState *)malloc(sizeof(ProtocolState));
-    MASTER_LOCK(&protoMutex);
-    if (!initList) {
-	List_Init(&etherProtos);
-	Sync_SemRegister(&protoMutex);
-	initList = TRUE;
+    if (devNetDebug) {
+	printf("DevNet_FsOpen: opening device 0x%x 0x%x\n",
+	    devicePtr->type, devicePtr->unit);
     }
-    /*
-     * We keep the protocol number in network byte order so as to match
-     * the values coming off the net.
-     */
-    protocol = (unsigned int) 
-		Net_HostToNetShort((unsigned short) (devicePtr->unit));  
-    LIST_FORALL(&etherProtos, (List_Links *)protoPtr) {
-	if (protoPtr->protocol == protocol) {
-	    if (protoPtr->open) {
-		printf("Warning: DevNet_FsOpen: Extra open of net device");
-		status = FS_FILE_BUSY;
-		goto exit;
+    statePtr = (DeviceState *) (devicePtr->data);
+    if (statePtr == (DeviceState *) NIL) {
+	statePtr = (DeviceState *) malloc(sizeof(DeviceState));
+	bzero((char *) statePtr, sizeof(DeviceState));
+	List_InitElement((List_Links *) statePtr);
+    } else {
+	/*
+	 * If the device has a state structure then it must be in use.
+	 */
+	if (devNetDebug) {
+	    printf("Extra open\n");
+	}
+	return FS_FILE_BUSY;
+    }
+    if (!(devicePtr->unit & DEV_NET_COMPAT_BIT)) {
+	interface = 0;
+	netType = NET_NETWORK_ETHER;
+	protocol = devicePtr->unit;
+	if (devNetDebug) {
+	    printf("Device has old unit number\n");
+	}
+    } else {
+	int	tmp = (devicePtr->unit & ~DEV_NET_COMPAT_BIT);
+	netType = DEV_NET_NETTYPE_FROM_UNIT(tmp);
+	interface = DEV_NET_NUMBER_FROM_UNIT(tmp);
+	unitProto = DEV_NET_PROTO_FROM_UNIT(tmp);
+	if (devNetDebug) {
+	    printf("Device has new unit number\n");
+	}
+	newFormat = TRUE;
+    }
+    interPtr = Net_GetInterface(netType, interface);
+    if (interPtr == (Net_Interface *) NIL) {
+	if (devNetDebug) {
+	    printf("No interface.\n");
+	}
+	free((char *) statePtr);
+	return DEV_NO_DEVICE;
+    }
+    statePtr->interPtr = interPtr;
+    if (newFormat) {
+	status = ProtocolFromDevice(unitProto, interPtr, &protocol);
+	if (status != SUCCESS) {
+	    if (devNetDebug) {
+		printf("No such protocol %d\n", protocol);
 	    }
-	    goto found;
+	    free((char *) statePtr);
+	    return DEV_NO_DEVICE;
 	}
     }
-
-    /*
-     * Protocol not in the list.  Just stick it at the end, although it
-     * would be possible to sort the list...
-     */
-
-    protoPtr = newProtoPtr;
-    newProtoPtr = (ProtocolState *) NIL;
-    List_InitElement((List_Links*) protoPtr);
-    List_Insert((List_Links *)protoPtr, LIST_ATREAR(&etherProtos));
-
-    protoPtr->protocol = protocol;
-    bzero((Address)&protoPtr->stats,sizeof(ProtoStats));
+    deviceQueuePtr = QueueFromInterface(interPtr);
+    switch(netType) {
+	case NET_NETWORK_ETHER: 
+	    /*
+	     * We keep the protocol number in network byte order so as to match
+	     * the values coming off the net.
+	     */
+	    protocol = (unsigned int) 
+			    Net_HostToNetShort((unsigned short) protocol);
+	    break;
+    }
+    statePtr->protocol = protocol;
     /*
      * Pre-allocate buffer space for the input queue.
-     * Vm_RawAlloc is used because this queue space is never recycled.
+     * This is probably a bad idea for anything but an ethernet since
+     * packet sizes may get large.
      */
-
     for (i=0 ; i< PACKET_QUEUE_LEN ; i++) {
-	protoPtr->queue.packet[i] = (Address) Vm_RawAlloc(NET_ETHER_MAX_BYTES);
+	statePtr->queue.packet[i] = (Address) malloc (NET_ETHER_MAX_BYTES);
     }
-
-
-found:
 
     /*
      * Differentiate between user-level reads and the kernel.
@@ -203,37 +234,30 @@ found:
      * it calls the kernel protocol handler.
      */
     if (useFlags & FS_USER) {
-	protoPtr->kernel = FALSE;
-	protoPtr->fsReadyToken = data;
+	statePtr->kernel = FALSE;
+	statePtr->fsReadyToken = data;
     } else {
-	protoPtr->kernel = TRUE;
+	statePtr->kernel = TRUE;
 #ifndef lint
-	protoPtr->inputProc = (int(*)())data;
+	statePtr->inputProc = (int(*)())data;
 #endif /* lint */
     }
-    protoPtr->open = TRUE;
-    protoPtr->queue.head = 0;
-    protoPtr->queue.tail = 0;
-
-    /*
-     * These client data fields are set up for call backs to the filesystem
-     * and so we can quickly get to the protocol state on read/write etc.
-     */
-    devicePtr->data = (ClientData) protoPtr;
-
-exit:
-
-    if (devNetEtherDebug) {
-	printf("DevNet_FsOpen: Open proto 0x%x status 0x%x\n", 
-			devicePtr->unit, status);
+    statePtr->queue.head = 0;
+    statePtr->queue.tail = 0;
+    devicePtr->data = (ClientData) statePtr;
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+    LIST_FORALL((List_Links *) deviceQueuePtr, (List_Links *) itemPtr) {
+	if (itemPtr->protocol == protocol) {
+	    panic("DevNet_FsOpen: found protocol already in use.\n");
+	}
     }
-
-    MASTER_UNLOCK(&protoMutex);
-    /*
-     * Free the potocol state pointer if we didn't need it.
-     */
-    if (newProtoPtr != (ProtocolState *) NIL) {
-	free((char *) newProtoPtr);
+    List_Insert((List_Links *)statePtr, 
+	LIST_ATREAR((List_Links *) deviceQueuePtr));
+    Net_SetPacketHandler(interPtr, DevNetHandler);
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
+    if (devNetDebug) {
+	printf("DevNet_FsOpen: Open proto 0x%x status 0x%x\n", 
+			protocol, status);
     }
     return(status);
 }
@@ -252,8 +276,7 @@ exit:
  *
  * Side effects:
  *	Storage for the protocol state is allocated and linked into
- *	the list of active protocols.  If this has already been done,
- *	then the protocol is simply marked as open.
+ *	the list of active protocols.  
  *
  *----------------------------------------------------------------------
  */
@@ -278,13 +301,13 @@ DevNet_FsReopen(devicePtr, refs, writers, data, flagsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * DevNetEtherHandler --
+ * DevNetHandler --
  *
- *	Dispatcher for ethernet packets.  The list of active protocols
+ *	Dispatcher for packets.  The list of active protocols
  *	is scanned for a matching protocol.  If found, the packet is
  *	enqueued for the protocol.
  *
- *	Note: This routine is called from the ethernet interrupt routine.
+ *	Note: This routine is called from the network interrupt routine.
  *
  * Results:
  *	None.
@@ -296,53 +319,66 @@ DevNet_FsReopen(devicePtr, refs, writers, data, flagsPtr)
  *----------------------------------------------------------------------
  */
 
+/*ARGSUSED*/
 void
-DevNetEtherHandler(packetPtr, size)
-    Address	packetPtr;	/* Pointer to the packet in the hardware
-				 * receive buffer. */
-    int		size;		/* Size of the packet. */
+DevNetHandler(interPtr, size, packetPtr)
+    Net_Interface	*interPtr; 	/* Network interface. */
+    int			size;		/* Size of the packet. */
+    Address		packetPtr;	/* Pointer to the packet in the hardware
+					 * receive buffer. */
 {
-    register ProtocolState *protoPtr;
-    register Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)packetPtr;
+    register DeviceQueueState *deviceQueuePtr;
+    int	protocol;
+    DeviceState		*statePtr;
+    ReturnStatus	status;
 
-    MASTER_LOCK(&protoMutex);
-    if (!initList) {
-	List_Init(&etherProtos);
-	initList = TRUE;
-    }
 
-    if (devNetEtherDebug) {
-	printf("EtherHandler 0x%x %d\n", NET_ETHER_HDR_TYPE(*etherHdrPtr),
-			size);
+    deviceQueuePtr = (DeviceQueueState *) interPtr->devNetData;
+    if (deviceQueuePtr == (DeviceQueueState *) NIL) {
+	return;
     }
-    LIST_FORALL(&etherProtos, (List_Links *)protoPtr) {
-	if (NET_ETHER_HDR_TYPE(*etherHdrPtr) == protoPtr->protocol && 
-				protoPtr->open) { 
-	    if (QueueFull(protoPtr->queue)) {
-		protoPtr->stats.drops++;
+    switch(interPtr->netType) {
+	case NET_NETWORK_ETHER: 
+	    protocol = NET_ETHER_HDR_TYPE(*(Net_EtherHdr *)packetPtr);
+	    break;
+	default:
+	    return;
+    }
+    status = ProtocolFromPacket(packetPtr, interPtr->netType, &protocol);
+    if (status != SUCCESS) {
+	printf("DevNetHandler: couldn't get protocol from packet.\n");
+	return;
+    }
+    if (devNetDebug) {
+	printf("DevNetHandler %d:%d 0x%x %d\n", interPtr->netType, 
+		interPtr->number, protocol, size);
+    }
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+    LIST_FORALL((List_Links *) deviceQueuePtr, (List_Links *)statePtr) {
+	if (protocol == statePtr->protocol) {
+	    if (QueueFull(statePtr->queue)) {
+		statePtr->stats.drops++;
 	    } else {
-		bcopy(packetPtr,protoPtr->queue.packet[protoPtr->queue.tail],
+		bcopy(packetPtr,statePtr->queue.packet[statePtr->queue.tail],
 		      size);
-		protoPtr->queue.size[protoPtr->queue.tail] = size;
-		protoPtr->queue.tail = NextTail(protoPtr->queue);
-		if (protoPtr->kernel) {
+		statePtr->queue.size[statePtr->queue.tail] = size;
+		statePtr->queue.tail = NextTail(statePtr->queue);
+		if (statePtr->kernel) {
 		    /*
 		     * Indirect to a process to pull the packet off of
 		     * the input queue.  We can't call the protocol handlers
-		     * directly because they use malloc and free.  Note
-		     * that we pass the protoPtr to the packet handler
-		     * so it can call DevNet_FsRead to get the packet.
+		     * directly because they use malloc and free. 
 		     */
-		    Proc_CallFunc((void (*)()) protoPtr->inputProc,
-			(ClientData)protoPtr, 0);
+		    Proc_CallFunc((void (*)())statePtr->inputProc, 
+			(ClientData)statePtr, 0);
 		} else {
-		    Fsio_DevNotifyReader(protoPtr->fsReadyToken);
+		    Fsio_DevNotifyReader(statePtr->fsReadyToken);
 		}
 	    }
 	    break;
 	}
     }
-    MASTER_UNLOCK(&protoMutex);
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
 }
 
 /*
@@ -350,8 +386,8 @@ DevNetEtherHandler(packetPtr, size)
  *
  * DevNet_FsRead --
  *
- *	Read a packet for an ethernet protocol.  This returns the first
- *	packet from the protocol's input queue, if any.  This returns
+ *	Read a packet from a network device. This returns the first
+ *	packet from the device's input queue, if any.  This returns
  *	data from at most 1 network packet.  If the caller's buffer is
  *	too short, the packet is truncated.
  *
@@ -374,25 +410,29 @@ DevNet_FsRead(devicePtr, readPtr, replyPtr)
     Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
     ReturnStatus status;
-    register ProtocolState *protoPtr;
+    register DeviceState *statePtr;
     register Address packetPtr;
     register int size;
+    DeviceQueueState	*deviceQueuePtr;
 
-    protoPtr = (ProtocolState *)devicePtr->data;
+    statePtr = (DeviceState *) devicePtr->data;
+    deviceQueuePtr = (DeviceQueueState *) statePtr->interPtr->devNetData;
 
-    MASTER_LOCK(&protoMutex);
-    if (QueueEmpty(protoPtr->queue)) {
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+    if (QueueEmpty(statePtr->queue)) {
 	size = 0;
 	status = FS_WOULD_BLOCK;
-	if (devNetEtherDebug) {
-	    printf("DevNet_FsRead: empty queue, proto 0x%x\n",
-				protoPtr->protocol);
+	if (devNetDebug) {
+	    printf("DevNet_FsRead: empty queue, %d:%d proto 0x%x\n",
+				statePtr->interPtr->netType,
+				statePtr->interPtr->number,
+				statePtr->protocol);
 	}
     } else {
-	packetPtr = protoPtr->queue.packet[protoPtr->queue.head];
-	size = protoPtr->queue.size[protoPtr->queue.head];
+	packetPtr = statePtr->queue.packet[statePtr->queue.head];
+	size = statePtr->queue.size[statePtr->queue.head];
 
-	protoPtr->queue.head = NextHead(protoPtr->queue);
+	statePtr->queue.head = NextHead(statePtr->queue);
 
 	if (size > readPtr->length) {
 	    size = readPtr->length;
@@ -400,14 +440,16 @@ DevNet_FsRead(devicePtr, readPtr, replyPtr)
 	bcopy(packetPtr, readPtr->buffer, size);
 
 	status = SUCCESS;
-	if (devNetEtherDebug) {
-	    printf("DevNet_FsRead: Found packet proto 0x%x, size %d\n",
-				protoPtr->protocol, size);
+	if (devNetDebug) {
+	    printf("DevNet_FsRead: Found packet %d:%d proto 0x%x, size %d\n",
+				statePtr->interPtr->netType,
+				statePtr->interPtr->number,
+				statePtr->protocol, size);
 	}
     }
 
     replyPtr->length = size;
-    MASTER_UNLOCK(&protoMutex);
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
     return(status);
 }
 
@@ -440,30 +482,47 @@ DevNet_FsWrite(devicePtr, writePtr, replyPtr)
     Fs_IOParam	*writePtr;	/* Standard write parameter block */
     Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
-    register Net_EtherHdr *etherHdrPtr;
-    register ProtocolState *protoPtr;
+    register DeviceState *statePtr;
     Net_ScatterGather ioVector;
+    Net_Interface	*interPtr;
+    int			dataSize;
+    int			protocol;
+    ReturnStatus	status;
 
-    if (writePtr->length < sizeof(Net_EtherHdr) ||
-	writePtr->length > NET_ETHER_MAX_BYTES) {
+    statePtr = (DeviceState *) devicePtr->data;
+    interPtr = statePtr->interPtr;
+    dataSize = writePtr->length - net_NetworkHeaderSize[interPtr->netType];
+    if (devNetDebug) {
+	printf(
+    "DevNet_FsWrite: Writing packet %d:%d proto 0x%x, size %d (%d)\n",
+	    statePtr->interPtr->netType, statePtr->interPtr->number,
+	    statePtr->protocol, writePtr->length, dataSize);
+    }
+    if (dataSize < interPtr->minBytes ||
+	dataSize >  interPtr->maxBytes) {
+	if (devNetDebug) {
+	    printf("DevNet_FsWrite: bad dataSize %d, maxBytes %d, minBytes\n",
+		dataSize, interPtr->maxBytes, interPtr->minBytes);
+	}
 	return(SYS_INVALID_ARG);
     }
-    protoPtr = (ProtocolState *)devicePtr->data;
-    etherHdrPtr = (Net_EtherHdr *)writePtr->buffer;
-
-    /*
-     * Verify the protocol type in the header.  The low level driver
-     * will fill in the source address for us.
-     */
-    if (NET_ETHER_HDR_TYPE(*etherHdrPtr) != protoPtr->protocol) {
+    status = ProtocolFromPacket((Address) writePtr->buffer, 
+		    interPtr->netType, &protocol);
+    if (status != SUCCESS) {
+	printf("DevNet_FsWrite: can't get protocol from packet\n");
+	return SYS_INVALID_ARG;
+    }
+    if (protocol != statePtr->protocol) {
+	if (devNetDebug) {
+	    printf("DevNet_FsWrite: packet protocol %d != device protocol %d\n",
+		protocol, statePtr->protocol);
+	}
 	return(SYS_INVALID_ARG);
     }
-
-    ioVector.bufAddr = (Address)((int)writePtr->buffer + sizeof(Net_EtherHdr));
-    ioVector.length  = writePtr->length - sizeof(Net_EtherHdr);
-
-    Net_EtherOutputSync(etherHdrPtr, &ioVector, 1);
-
+    ioVector.bufAddr = (Address)((int)writePtr->buffer + 
+	net_NetworkHeaderSize[interPtr->netType]);
+    ioVector.length  = dataSize;
+    Net_RawOutputSync(interPtr, writePtr->buffer, &ioVector, 1);
     replyPtr->length = writePtr->length;
     return(SUCCESS);
 }
@@ -490,21 +549,27 @@ ReturnStatus
 DevNet_FsClose(devicePtr, useFlags, openCount, writerCount)
     Fs_Device	*devicePtr;	/* Device info. */
     int		useFlags;	/* FS_READ | FS_WRITE */
-    int		openCount;	/* Number of times device still open. */
+    int		openCount;
+    /* Number of times device still open. */
     int		writerCount;	/* Number of writers still on the device. */
 {
-    ProtocolState *protoPtr;
+    DeviceState		*statePtr;
+    DeviceQueueState 	*deviceQueuePtr;
+    int			i;
 
-    MASTER_LOCK(&protoMutex);
-
-    protoPtr = (ProtocolState *)devicePtr->data;
-    protoPtr->open = FALSE;
-    protoPtr->fsReadyToken = (Fs_NotifyToken)NIL;
-    /*
-     * Nuke the queue here?
-     */
-
-    MASTER_UNLOCK(&protoMutex);
+    statePtr = (DeviceState *) (devicePtr->data);
+    deviceQueuePtr = (DeviceQueueState *) statePtr->interPtr->devNetData;
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+    List_Remove((List_Links *) statePtr);
+    if (List_IsEmpty((List_Links *) deviceQueuePtr)) {
+	Net_RemovePacketHandler(statePtr->interPtr);
+    }
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
+    for (i=0 ; i< PACKET_QUEUE_LEN ; i++) {
+	free ((char *) statePtr->queue.packet[i]);
+    }
+    free((char *) statePtr);
+    devicePtr->data = (ClientData) NIL;
     return(SUCCESS);
 }
 
@@ -535,18 +600,21 @@ DevNet_FsSelect(devicePtr, readPtr, writePtr, exceptPtr)
     int			*writePtr;
     int			*exceptPtr;
 {
-    register ProtocolState *protoPtr;
+    DeviceState		*statePtr;
+    DeviceQueueState 	*deviceQueuePtr;
 
-    MASTER_LOCK(&protoMutex);
-    protoPtr = (ProtocolState *)devicePtr->data;
+    statePtr = (DeviceState *) (devicePtr->data);
+    deviceQueuePtr = (DeviceQueueState *) statePtr->interPtr->devNetData;
+
+    MASTER_LOCK(&deviceQueuePtr->mutex);
 
     if (*readPtr) {
-	if (QueueEmpty(protoPtr->queue)) {
+	if (QueueEmpty(statePtr->queue)) {
 	    *readPtr = 0;
 	}
     }
     *exceptPtr = 0;
-    MASTER_UNLOCK(&protoMutex);
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
     return(SUCCESS);
 }
 
@@ -574,6 +642,155 @@ DevNet_FsIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device	*devicePtr;
     Fs_IOCParam *ioctlPtr;
     Fs_IOReply *replyPtr;
+
 {
-    return(FAILURE);
+    DeviceState		*statePtr;
+    Net_Interface	*interPtr;
+    ReturnStatus	status = SUCCESS;
+
+    statePtr = (DeviceState *) (devicePtr->data);
+    interPtr = statePtr->interPtr;
+
+    /*
+     * Call the ioctl routine specific to the interface.
+     */
+    status = (interPtr->ioctl)(interPtr, ioctlPtr, replyPtr);
+
+    /*
+     * Here should be the handling of any ioctls that are specific to
+     * the protocol or network devices in general.
+     */
+
+    return status;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProtocolFromPacket --
+ *
+ *	Retrieves the protocol from a packet.  For the Ethernet
+ *	the protocol is the type field in the header.  In general
+ *	the protocol can be an arbitrary characteristic of the
+ *	packet.  
+ *
+ * Results:
+ *	The protocol associated with the packet.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProtocolFromPacket(packetPtr, netType, protoPtr)
+    Address		packetPtr;	/* Network-specific packet. */
+    Net_NetworkType	netType;	/* Type of network. */
+    int			*protoPtr;	/* Place to return protocol. */
+{
+    int			protocol = 0;
+    ReturnStatus	status = SUCCESS;
+
+    switch(netType) {
+	case NET_NETWORK_ETHER:
+	    protocol = NET_ETHER_HDR_TYPE(*(Net_EtherHdr *)packetPtr);
+	    break;
+	default:
+	    status = FAILURE;
+    }
+    if (status == SUCCESS) {
+	*protoPtr = protocol;
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProtocolFromDevice--
+ *
+ *	Determine the protocol number from the protocol field in the
+ *	device unit number.  This is also a function of the network
+ *	type.
+ *
+ * Results:
+ *	SUCCESS if the protocol was found, FAILURE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProtocolFromDevice(unitProto, interPtr, protoPtr)
+    int			unitProto;	/* Value of proto field in unit. */
+    Net_Interface 	*interPtr;	/* Network interface. */
+    int			*protoPtr;	/* Place to return protocol. */
+{
+    static int	mapping[NET_NUM_NETWORK_TYPES][DEV_NET_NUM_PROTO] = {
+
+	/* NET_NETWORK_ETHER */ 
+	    {0, /* Doesn't match any. */
+	     NET_ETHER_ARP, 
+	     NET_ETHER_REVARP,
+	     NET_ETHER_IP, 
+	     NET_ETHER_SPRITE_DEBUG},
+	/* NET_NETWORK_ULTRA */
+	    {0, /* Doesn't match any. */
+	     0,
+	     0,
+	     0}
+     };
+
+    if (unitProto < 0 || unitProto >= DEV_NET_NUM_PROTO) {
+	return FAILURE;
+    }
+    *protoPtr = mapping[interPtr->netType][unitProto];
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * QueueFromInterface --
+ *
+ *	This routine gets the queue structure from the interface if
+ *	one exists, or allocates one otherwise.  We need to have 
+ *	this separate routine because many devices share the same
+ *	queue structure of an interface and we have to avoid race
+ *	conditions when two devices are opened.
+ *
+ * Results:
+ *	Pointer to the queue structure.
+ *
+ * Side effects:
+ *	The queue structure is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static DeviceQueueState *
+QueueFromInterface(interPtr)
+    Net_Interface	*interPtr;  /* The network interface. */
+{
+    static Sync_Lock  lock = Sync_LockInitStatic("QueueFromInterface:lock");
+#define LOCKPTR (&lock)
+
+    DeviceQueueState *deviceQueuePtr;
+
+    LOCK_MONITOR;
+    deviceQueuePtr = (DeviceQueueState *) interPtr->devNetData;
+    if (deviceQueuePtr == (DeviceQueueState *) NIL) {
+	deviceQueuePtr = (DeviceQueueState *) 
+				malloc(sizeof(DeviceQueueState));
+	List_Init((List_Links *) deviceQueuePtr);
+	Sync_SemInitDynamic(&deviceQueuePtr->mutex, 
+	    "Dev:queueStateMutex");
+	interPtr->devNetData = (ClientData) deviceQueuePtr;
+    }
+    UNLOCK_MONITOR;
+    return deviceQueuePtr;
+}
+

@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <string.h>
 #include <stdio.h>
 #include <main.h>
+#include <net.h>
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
@@ -742,13 +743,16 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 	case SYS_NET_GET_ROUTE: {
-	    status = Net_IDToRouteStub(option, argPtr);
+	    status = Net_IDToRouteStub(option, sizeof(Net_RouteInfo), argPtr);
 	    break;
 	}
-	case SYS_NET_ETHER_STATS:
+	case SYS_NET_ETHER_STATS: {
+	    Net_Stats	stats;
+	    status = Net_GetStats(NET_NETWORK_ETHER, &stats);
 	    status = Vm_CopyOut(sizeof(Net_EtherStats),
-				(Address)&net_EtherStats, (Address)argPtr);
+				(Address)&stats.ether, (Address)argPtr);
 	    break;
+	}
 	case SYS_DISK_STATS: {
 	    int			bytesAcc;
 	    Sys_DiskStats	*statArrPtr;

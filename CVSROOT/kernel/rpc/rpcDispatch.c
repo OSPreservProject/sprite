@@ -70,9 +70,10 @@ unsigned int rpcCompleteMask[17] = {
 /*
  * Forward declarations.
  */
-void RpcScatter();
-static Boolean ValidateClient _ARGS_((int headerType, Address headerPtr, RpcHdr *rpcHdrPtr));
-static void VersionMismatch _ARGS_((int headerType, Address headerPtr, RpcHdr *rpcHdrPtr, int packetLength));
+static Boolean ValidateClient _ARGS_((Net_Interface *interPtr, int protocol,
+		Address headerPtr, RpcHdr *rpcHdrPtr));
+static void VersionMismatch _ARGS_((Net_Interface *interPtr, int protocol,
+		Address headerPtr, RpcHdr *rpcHdrPtr, int packetLength));
 
 
 
@@ -86,6 +87,8 @@ static void VersionMismatch _ARGS_((int headerType, Address headerPtr, RpcHdr *r
  *      protocol state for the packet (either client or server) and then
  *      calls either the server or client dispatch routine.
  *
+ *	This still has a few ethernet specfich things that should be fixed.
+ *
  * Results:
  *	None.
  *
@@ -95,17 +98,24 @@ static void VersionMismatch _ARGS_((int headerType, Address headerPtr, RpcHdr *r
  *----------------------------------------------------------------------
  */
 void
-Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
-    int		headerType;	/* Type of transport header. */
+Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
+    Net_Interface *interPtr;	/* Network interface where we got the packet. */
+    int		protocol;	/* Network protocol of packet. */
     Address	headerPtr;	/* Pointer to transport header. */
     Address 	rpcHdrAddr;    /* RPC header of packet. */
     int		packetLength;	    /* Size of RPC packet. */
 {
     register RpcHdr	*rpcHdrPtr; /* RPC header of packet. */
     register int expectedLength;
+    extern int ultra;
 
+
+    if (ultra) {
+	printf("In Rpc_Dispatch\n");
+    }
     rpcHdrPtr = (RpcHdr *) rpcHdrAddr;
-    if (rpcHdrPtr->version == rpc_SwappedVersion) {
+    if (rpcHdrPtr->version == rpc_SwappedVersion ||
+	rpcHdrPtr->version == rpc_SwappedVersionNew) {
 	/*
 	 * Byte swap the packet header and the parameter block.
 	 */
@@ -113,13 +123,14 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	    printf("Warning: Rpc_Dispatch failed byte-swap.");
 	    return;
 	}
-    } else if (rpcHdrPtr->version != rpc_NativeVersion) {
+    } else if (rpcHdrPtr->version != rpc_NativeVersion &&
+		rpcHdrPtr->version != rpc_NativeVersionNew) {
 	/*
 	 * Keep a short list of hosts that aren't talking the
 	 * right version of RPC.  Attempt to print out one message
 	 * about this per host, and then keep quiet.
 	 */
-	VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength);
+	VersionMismatch(interPtr, protocol, headerPtr, rpcHdrPtr, packetLength);
 	return;
     }
     expectedLength =  sizeof(RpcHdr) +
@@ -131,21 +142,22 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 				  packetLength, expectedLength);
 	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
 		    rpcHdrPtr->clientID, rpcHdrPtr->command);
-	printf("Resetting network interface\n");
-	Net_Reset();
+	printf("Resetting network interface %s\n",
+	    interPtr->name);
+	Net_Reset(interPtr);
 	return;
     } else if (packetLength > expectedLength &&
-	       packetLength > (NET_ETHER_MIN_BYTES)) {
+	       packetLength > interPtr->minBytes) {
 	/*
 	 * Short messages (like acks and null replies)
-	 * get padded to minimum ethernet length.  Other messages
+	 * get padded to minimum  packet length.  Other messages
 	 * get padded to 4 byte alignments.
 	 */
 	rpcCltStat.longs++;
-	if (packetLength > NET_ETHER_MAX_BYTES) {
+	if (packetLength > interPtr->maxBytes) {
 	    printf("Received oversized packet\n");
 	    printf("Resetting network interface\n");
-	    Net_Reset();
+	    Net_Reset(interPtr);
 	    return;
 	}
     }
@@ -167,12 +179,13 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	if (rpcHdrPtr->serverID != RPC_BROADCAST_SERVER_ID &&
 	    rpcHdrPtr->serverID != rpc_SpriteID) {
 	    /*
-	     * A bug, or the Intel chip is wack-o
+	     * A bug, or the Intel chip is wack-o.
 	     */
 	    if (rpcHdrPtr->serverID > 0 &&
 		rpcHdrPtr->serverID < NET_NUM_SPRITE_HOSTS) {
 		char	addrBuffer[128];
-		Net_HdrDestString(headerType, headerPtr, 128, addrBuffer);
+		Net_HdrDestString(interPtr->netType, protocol,headerPtr, 128, 
+			addrBuffer);
 		printf("Warning: Rpc_Dispatch, wrong server ID %d\n",
 			rpcHdrPtr->serverID);
 		printf("\tRPC %d flags %x Client %d at address: %s\n",
@@ -184,8 +197,8 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 			    rpcHdrPtr->serverID,
 			    rpcHdrPtr->clientID);
 	    }
-	    printf("Resetting network interface\n");
-	    Net_Reset();
+	    printf("Resetting network interface %s\n", interPtr->name);
+	    Net_Reset(interPtr);
 	    return;
 	}
 
@@ -195,7 +208,7 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	 * (clientID) from the transport level source address.
 	 * This doesn't usually kick in unless the client can't do reverse arp.
 	 */
-	if ( ! ValidateClient(headerType, headerPtr, rpcHdrPtr)) {
+	if ( ! ValidateClient(interPtr, protocol, headerPtr, rpcHdrPtr)) {
 	    rpcSrvStat.invClient++;
 	    return;
 	}
@@ -232,8 +245,8 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	    rpcCltStat.badChannel++;
 	    printf("Rpc_Dispatch: bad channel %d from clt %d rpc %d",
 	       rpcHdrPtr->channel, rpcHdrPtr->clientID, rpcHdrPtr->command);
-	    printf("Resetting network interface\n");
-	    Net_Reset();
+	    printf("Resetting network interface %s\n", interPtr->name);
+	    Net_Reset(interPtr);
 	} else {
 	    /*
 	     * Save sender's requested interfragment delay,
@@ -244,6 +257,9 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 		rpcDelay[rpcHdrPtr->serverID] = rpcHdrPtr->delay;
 	    }
 	    chanPtr = rpcChannelPtrPtr[rpcHdrPtr->channel];
+	    if (ultra) {
+		printf("Calling RpcClientDispatch\n");
+	    }
 	    RpcClientDispatch(chanPtr, rpcHdrPtr);
 	}
     }
@@ -285,7 +301,12 @@ RpcScatter(rpcHdrPtr, bufferPtr)
     register Address netBufPtr;		/* A pointer in to network buffer */
     register int length;		/* Copying length */
     int destLength;			/* length of destination buffers */
+    Boolean	newVersion = FALSE;
+    RpcHdrNew	*newHdrPtr = (RpcHdrNew *) rpcHdrPtr;
 
+    if (rpcHdrPtr->version == rpc_NativeVersionNew) {
+	newVersion = TRUE;
+    }
     netBufPtr = (Address)rpcHdrPtr;
 
     /*
@@ -293,8 +314,11 @@ RpcScatter(rpcHdrPtr, bufferPtr)
      */
     length = bufferPtr->rpcHdrBuffer.length;
     bcopy(netBufPtr, bufferPtr->rpcHdrBuffer.bufAddr, length);
-    netBufPtr += length;
-
+    if (newVersion) {
+	netBufPtr = ((Address) rpcHdrPtr) + newHdrPtr->paramStart;
+    } else {
+	netBufPtr += length;
+    }
     /*
      * Copy the parameter and data areas.  Their sizes are in
      * the RPC header.  Complain if either area is too large.
@@ -315,9 +339,13 @@ RpcScatter(rpcHdrPtr, bufferPtr)
 	}
 	bcopy(netBufPtr, bufferPtr->paramBuffer.bufAddr +
 				     rpcHdrPtr->paramOffset, length);
-	netBufPtr += rpcHdrPtr->paramSize;
+	if (!newVersion) {
+	    netBufPtr += rpcHdrPtr->paramSize;
+	}
     }
-
+    if (newVersion) {
+	netBufPtr = ((Address) rpcHdrPtr) + newHdrPtr->dataStart;
+    }
     length = rpcHdrPtr->dataSize;
     if (length != 0) {
 	destLength = bufferPtr->dataBuffer.length;
@@ -365,8 +393,9 @@ RpcScatter(rpcHdrPtr, bufferPtr)
  *----------------------------------------------------------------------
  */
 static Boolean
-ValidateClient(headerType, headerPtr, rpcHdrPtr)
-    int		headerType;	/* Type of transport header. */
+ValidateClient(interPtr, protocol, headerPtr, rpcHdrPtr)
+    Net_Interface *interPtr;	/* Network interface. */
+    int		protocol;	/* Network protocol of packet. */
     Address	headerPtr;	/* Transport header. */
     RpcHdr 	 *rpcHdrPtr;
 {
@@ -386,14 +415,15 @@ ValidateClient(headerType, headerPtr, rpcHdrPtr)
 	/*
 	 * Look client's transport address up in our in core host table.
 	 */
-	clientID = Net_HdrToID(headerType, headerPtr);
-        printf("Warning: ValidateClient had to set clientID %d\n", clientID);
+	clientID = Net_HdrToID(interPtr->netType, protocol, headerPtr);
+        printf("Warning: RpcValidateClient had to set clientID %d\n", clientID);
 	if (clientID < 0) {
 	    char	addrBuffer[128];
 	    /*
 	     * Should invoke Reverse ARP to find out the Sprite ID.
 	     */
-	    Net_HdrDestString(headerType, headerPtr, 128, addrBuffer);
+	    Net_HdrDestString(interPtr->netType, protocol, headerPtr, 128, 
+		addrBuffer);
 	    printf("Client at unknown address: %s\n", addrBuffer);
 	    result = FALSE;
 	} else {
@@ -428,7 +458,8 @@ static int numVersions = 0;
 
 #define ADDR_LEN	40
 typedef struct {
-    int headerType;			/* Type of transport header. */
+    Net_Interface	*interPtr;	/* Network interface. */
+    int protocol;			/* The packet protocol. */
     int count;				/* Count of mismatches */
     char sourceAddr[ADDR_LEN];		/* Storage for source addr string */
 } VersionRecord;
@@ -437,8 +468,9 @@ typedef struct {
 static VersionRecord versionList[NUM_VERSIONS];
 
 static void
-VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength)
-    int		headerType;	/* Type of transport header. */
+VersionMismatch(interPtr, protocol, headerPtr, rpcHdrPtr, packetLength)
+    Net_Interface *interPtr;	/* Network interface. */
+    int		protocol;	/* Network protocol of packet. */
     Address	headerPtr;	/* Pointer to transport header. */
     RpcHdr	*rpcHdrPtr;	/* RPC header of packet. */
     int		packetLength;	/* Size of RPC packet. */
@@ -446,12 +478,14 @@ VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength)
     char addrBuffer[ADDR_LEN];
     int i;
     char *type;
+    char *proto;
 
     /*
      * Get a string value for the sender of the packet and see if
      * we've already gotten a bad packet from this host.
      */
-    Net_HdrDestString(headerType, headerPtr, ADDR_LEN, addrBuffer);
+    Net_HdrDestString(interPtr->netType, protocol, headerPtr, ADDR_LEN, 
+	    addrBuffer);
 
     for (i=0 ; i<numVersions ; i++) {
 	if (strcmp(versionList[i].sourceAddr, addrBuffer) == 0) {
@@ -467,22 +501,35 @@ VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength)
 	return;
     }
 
-    if (headerType == NET_ROUTE_ETHER) {
-	type = "ether";
-    } else if (headerType == NET_ROUTE_INET) {
-	type = "inet";
-    } else {
-	type = "unknown addr type";
+    switch(interPtr->netType) {
+	case NET_NETWORK_ETHER: 
+	    type = "ether";
+	    break;
+	default:
+	    type = "unknown network type";
+	    break;
     }
-    printf("RPC Version mismatch: %x not %x from %s %s",
-	rpcHdrPtr->version, rpc_NativeVersion, type, addrBuffer);
+    switch(protocol) {
+	case NET_PROTO_RAW:
+	    proto = "raw";
+	    break;
+	case NET_PROTO_INET:
+	    proto = "inet";
+	    break;
+	default:
+	    proto = "unknown network protocol";
+	    break;
+    }
+    printf("RPC Version mismatch: %x not %x from %s %s %s",
+	rpcHdrPtr->version, rpc_NativeVersion, type, proto, addrBuffer);
     if (rpcHdrPtr->clientID > 0 && rpcHdrPtr->clientID < NET_NUM_SPRITE_HOSTS) {
 	printf(" clientID %d\n", rpcHdrPtr->clientID);
     } else {
 	printf("\n");
     }
     versionList[numVersions].count = 1;
-    versionList[numVersions].headerType = headerType;
+    versionList[numVersions].protocol = protocol;
+    versionList[numVersions].interPtr = interPtr;
     strncpy(versionList[numVersions].sourceAddr, addrBuffer, ADDR_LEN);
     numVersions++;
 

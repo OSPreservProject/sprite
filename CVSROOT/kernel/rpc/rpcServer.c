@@ -893,18 +893,6 @@ Rpc_ErrorReply(srvToken, error)
     srvPtr->reply.paramBuffer.length = 0;
     srvPtr->reply.dataBuffer.length = 0;
 
-    if (Net_IDToRoute(rpcHdrPtr->clientID) == (Net_Route *)NIL) {
-	/*
-	 * Make sure we have a good route back to the client.
-	 */
-	static Sync_Semaphore mutex = 
-	    Sync_SemInitStatic("Rpc_ErrorReply.mutex");
-
-	Sync_SemRegister(&mutex);
-	MASTER_LOCK(&mutex);
-	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
-	MASTER_UNLOCK(&mutex);
-    }
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 			 (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
 }
@@ -1020,18 +1008,6 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
     srvPtr->reply.dataBuffer.length = storagePtr->replyDataSize;
     srvPtr->reply.dataBuffer.bufAddr = storagePtr->replyDataPtr;
 
-    if (Net_IDToRoute(rpcHdrPtr->clientID) == (Net_Route *)NIL) {
-	/*
-	 * Make sure we have a good route back to the client.
-	 */
-	static Sync_Semaphore mutex = 
-	    Sync_SemInitStatic("Rpc:Rpc_Reply.mutex");
-
-	Sync_SemRegister(&mutex);
-	MASTER_LOCK(&mutex);
-	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
-	MASTER_UNLOCK(&mutex);
-    }
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 			 srvPtr->fragment, 0, (Sync_Semaphore *)NIL);
 }
@@ -1111,10 +1087,6 @@ RpcResend(srvPtr)
 	    srvPtr->requestRpcHdr.ID);
 	return;
     }
-    /*
-     * Note, can't try ARP here because of it's synchronization with
-     * a master lock and because we are called at interrupt time.
-     */
     (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr,
 		       &srvPtr->reply, srvPtr->fragment,
 		       srvPtr->fragsDelivered, (Sync_Semaphore *)NIL);
@@ -1315,7 +1287,7 @@ Rpc_DumpServerTraces(length, resultPtr, lengthNeededPtr)
 	return FAILURE;
     }
     if (resultPtr != (RpcServerUserStateInfo *) NIL) {
-	bzero(resultPtr, length);
+	bzero((char *) resultPtr, length);
     }
     numNeeded = 0;
     numAvail = length / sizeof (RpcServerUserStateInfo);

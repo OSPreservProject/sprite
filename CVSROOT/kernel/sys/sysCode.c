@@ -22,6 +22,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <net.h>
 #include <stdio.h>
 
+/*
+ * Should be in some header file?
+ */
+extern	void	SysInitSysCall();
+
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -103,7 +109,7 @@ Sys_HostPrint(spriteID, string)
     int spriteID;
     char *string;
 {
-    char *hostName;
+    char hostName[128];
     Time time;
     int offset;
     int seconds;
@@ -138,8 +144,8 @@ Sys_HostPrint(spriteID, string)
 	    timeParts.year, timeParts.hours, timeParts.minutes,
 	    timeParts.seconds);
 
-    Net_SpriteIDToName(spriteID, &hostName);
-    if ((hostName == (char *)NIL) || (hostName == (char *)NULL)) {
+    Net_SpriteIDToName(spriteID, 128, hostName);
+    if (*hostName == '\0') {
 	printf("Sprite Host <%d> %s", spriteID, string);
     } else {
 	printf("%s (%d) %s", hostName, spriteID, string);
