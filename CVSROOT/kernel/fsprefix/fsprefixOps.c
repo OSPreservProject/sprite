@@ -187,7 +187,7 @@ Fsprefix_LookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameI
 		     * the prefix table lookup.  We are careful to save a
 		     * pointer to the redirect info because it contains the
 		     * current pathname.  We also free any redirect info
-		     * from previous iterations to prevent a core leak.
+		     * from previous iteTrations to prevent a core leak.
 		     */
 		    fs_Stats.prefix.redirects++; numRedirects++;
 		    if (numRedirects > FS_MAX_LINKS) {
@@ -245,7 +245,8 @@ Fsprefix_LookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameI
 			 * loop again.
 			 */
 			status = FS_LOOKUP_REDIRECT;
-		    } else if (fileName[0] == '/') {
+		    } else if ((status != GEN_ABORTED_BY_SIGNAL) &&
+		               (fileName[0] == '/')) {
 			/*
 			 * Recovery failed, so we clear handle of the prefix
 			 * used to get to the server and try again in case
@@ -377,7 +378,7 @@ retry:
 	    status = Fsutil_WaitForRecovery(staleHdrPtr, status);
 	    if (status == SUCCESS) {
 		goto retry;
-	    } else {
+	    } else if (status != GEN_ABORTED_BY_SIGNAL) {
 		/*
 		 * Recovery failed.  On absolute paths clear handle of the
 		 * prefix used to get to the server and try again.
@@ -491,7 +492,8 @@ getAttr:
 		    status2 = Fsutil_WaitForRecovery(dstHdrPtr, status2);
 		    if (status2 == SUCCESS) {
 			goto getAttr;
-		    } else if (dstName[0] == '/') {
+		    } else if ((status != GEN_ABORTED_BY_SIGNAL) &&
+		               (dstName[0] == '/')) {
 			Fsprefix_HandleClose(dstPrefixPtr, FSPREFIX_IMPORTED);
 			status = FS_LOOKUP_REDIRECT;
 			srcNameError = FALSE;
@@ -1355,7 +1357,7 @@ FsprefixHandleCloseInt(prefixPtr, flags)
 	    return;
 	}
 	if (prefixPtr->prefix != (char *) NIL) {
-	    printf("Fsprefix_HandleClose nuking \"%s\"\n", prefixPtr->prefix);
+	    printf("Fsprefix_HandleClose deleting \"%s\"\n", prefixPtr->prefix);
 	}
 	hdrPtr = prefixPtr->hdrPtr;
 	prefixPtr->hdrPtr = (Fs_HandleHeader *)NIL;
