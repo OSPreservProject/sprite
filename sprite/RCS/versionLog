@@ -208,4 +208,10 @@ problems in the neg ack stuff.
 I've added print statements to the rpc and recovery modules to trace the
 state of the recovery module.  There's a new hook in Sys_Stats to
 turn on the printing of these trace statements from the recovcmd.
+
+1.065	Wed May 16 12:31:27 PDT 1990
+Device module additions:  changes to allow idle/busy statistics for scsi disks.
+Recovery module additions: mouse trap for bad unregister of reboot callback.
+Fs* module additions: part of above mouse trap for unregister of reboot funcs.
+Sys module additions: removed recursive panic.
     New files linked in from the net library.
