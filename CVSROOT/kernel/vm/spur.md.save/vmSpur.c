@@ -174,13 +174,14 @@ static Boolean ownStackAndHeap = TRUE;
  */
 void
 VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
-		numKernPagesPtr, maxSegsPtr)
+		numKernPagesPtr, maxSegsPtr, maxProcessesPtr)
     int	*pageSizePtr;
     int	*pageShiftPtr;
     int	*pageTableIncPtr;
     int	*kernMemSizePtr;
     int	*numKernPagesPtr;
     int	*maxSegsPtr;
+    int *maxProcessesPtr;
 {
     ReturnStatus	status;
     int			boardNum;
@@ -220,6 +221,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     *pageShiftPtr = VMMACH_PAGE_SHIFT;
     *pageTableIncPtr = VMMACH_PAGE_TABLE_INCREMENT;
     *kernMemSizePtr = vmMachKernMemSize;
+    *maxProcessesPtr = 128;
     *numKernPagesPtr = GetNumPages();
     /*
      * The number of useable segments by our caller is the maximum minus 1
@@ -1429,7 +1431,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
     *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
-	      VMMACH_REFERENCED_BIT |
+	     VMMACH_REFERENCED_BIT |
               SetPageFrame(VirtToPhysPage(Vm_GetPageFrame(pte)));
     if (virtAddrPtr->segPtr == vm_SysSegPtr) {
 	*ptePtr |= VMMACH_KRW_URO_PROT | VMMACH_MODIFIED_BIT;
