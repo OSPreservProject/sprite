@@ -1171,6 +1171,27 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	MachHandleBadProbe();
 	Mach_EnableIntr();
     }
+#ifndef sun4c
+    /*
+     * On the sun4/200 with the Jaguar HBA we get VME timeout errors from 
+     * the board. This code retries the error up to 10 times before droping
+     * into the code below which panics. 
+     */
+    {
+	static timeoutRetryCount = 0;
+	if ((trapPsr & MACH_PS_BIT) && (busErrorReg == MACH_TIMEOUT_ERROR)) {
+	    if (timeoutRetryCount < 10) {
+		timeoutRetryCount++;
+		Mach_MonPrintf(
+"MachPageFault: Bus timeout error retry %d at pc:0x%x, addr:0x%x\n",
+		    timeoutRetryCount, pcValue, addrErrorReg);
+		return;
+	    }
+	}
+	timeoutRetryCount = 0;
+    }
+#endif /* sun4 */
+
     procPtr = Proc_GetActualProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	panic(
