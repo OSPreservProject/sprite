@@ -462,6 +462,7 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
     ReturnStatus status;
     int firstBlock;
     int numSkipped;
+    int mig;
 
     LOCK_MONITOR;
 
@@ -471,20 +472,25 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
 	firstBlock = cacheInfoPtr->attr.firstByte / FS_BLOCK_SIZE;
     }
     status = SUCCESS;
-    switch (flags & ~FSCONSIST_DEBUG) {
+    mig = (flags & FSCONSIST_MIGRATION) ? FSCACHE_WB_MIGRATION : 0;
+    switch (flags & ~(FSCONSIST_DEBUG|FSCONSIST_MIGRATION)) {
 	case FSCONSIST_WRITE_BACK_BLOCKS:
 	    status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
-			FSCACHE_LAST_BLOCK, FSCACHE_FILE_WB_WAIT, &numSkipped);
+			FSCACHE_LAST_BLOCK, FSCACHE_FILE_WB_WAIT | mig,
+					   &numSkipped);
 	    break;
 	case FSCONSIST_CANT_CACHE_NAMED_PIPE:
 	case FSCONSIST_INVALIDATE_BLOCKS:
-	    Fscache_FileInvalidate(cacheInfoPtr, firstBlock, FSCACHE_LAST_BLOCK);
+	    Fscache_FileInvalidate(cacheInfoPtr, firstBlock,
+				   FSCACHE_LAST_BLOCK);
 	    cacheInfoPtr->flags |= FSCACHE_FILE_NOT_CACHEABLE;
 	    break;
 	case FSCONSIST_INVALIDATE_BLOCKS | FSCONSIST_WRITE_BACK_BLOCKS:
 	    status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
-			FSCACHE_LAST_BLOCK, FSCACHE_WRITE_BACK_AND_INVALIDATE | FSCACHE_FILE_WB_WAIT,
-			&numSkipped);
+					   FSCACHE_LAST_BLOCK,
+					   FSCACHE_WRITE_BACK_AND_INVALIDATE |
+					   FSCACHE_FILE_WB_WAIT | mig,
+					   &numSkipped);
 	    cacheInfoPtr->flags |= FSCACHE_FILE_NOT_CACHEABLE;
 	    break;
 	case FSCONSIST_DELETE_FILE:
