@@ -199,12 +199,12 @@ panic(va_alist)
 
     Dev_VidEnable(TRUE);	/* unblank the screen */
     Dev_SyslogDebug(TRUE);	/* divert /dev/syslog output to the screen */
-    printf("Fatal Error: ");
-    (void) vprintf(format, args);
-    va_end(args);
-    MASTER_LOCK(&sysPrintMutex);
+    if (!sysPanicing) {
+	printf("Fatal Error: ");
+	(void) vprintf(format, args);
+	va_end(args);
+    }
     sysPanicing = TRUE;
-    MASTER_UNLOCK(&sysPrintMutex);
     DBG_CALL;
     Dev_SyslogDebug(FALSE);
 }
