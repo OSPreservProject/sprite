@@ -114,7 +114,7 @@ typedef struct Fsdm_DiskHeader {
 typedef struct Fsdm_FileDescriptor {
     unsigned short magic;/* FSDM_FD_MAGIC, for disk consistency check */
     short flags;	/* FSDM_FD_FREE, FSDM_FD_ALLOC, FSDM_FD_RESERVED */
-    short fileType;	/* FS_REGULAR, FS_DIRECTORY, FS_PIPE, FS_DEVICE,
+    short fileType;	/* FS_FILE, FS_DIRECTORY, FS_PIPE, FS_DEVICE,
 			 * FS_SYMLINK, FS_RMTLINK */
     short permissions;	/* 9 permission bits plus flags for set user ID
 			 * upon execution */
