@@ -721,7 +721,7 @@ Fs_NewReadStub(streamID, buffer, numBytes)
         }
         if (totalAmountRead==0) {
             procPtr->unixProgress = PROC_PROGRESS_RESTART;
-            return 1122334455; /* Bogus return value */
+            return -1; /* This return value should not get to the user. */
         }
     } else if (status != SUCCESS) {
         Mach_SetErrno(Compat_MapCode(status));
@@ -775,7 +775,7 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
         }
         if (totalAmountWritten==0) {
             Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_RESTART;
-            return 1122334455; /* Bogus return value */
+            return -1; /* This should not get to the user */
         }
     } else if (status != SUCCESS) {
         Mach_SetErrno(Compat_MapCode(status));
@@ -1032,6 +1032,7 @@ Fs_ReadvStub(streamID, iov, iovcnt)
     int i;
     int status = SUCCESS;
     struct iovec iovCopy[MAX_IOV];      /* Kernel copy of iov */
+    Proc_ControlBlock	*procPtr = Proc_GetEffectiveProc();
 
     if (debugFsStubs) {
         printf("Fs_ReadvStub\n");
@@ -1075,6 +1076,10 @@ Fs_ReadvStub(streamID, iov, iovcnt)
 	if (debugFsStubs) {
 	    printf("Readv: returns %d\n", totalRead);
 	}
+	/*
+	 * read may say restart, but if we wrote anything, we don't restart.
+	 */
+	procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	return totalRead;
     }
 }
@@ -1106,6 +1111,7 @@ Fs_WritevStub(streamID, iov, iovcnt)
     int i;
     int status = SUCCESS;
     struct iovec iovCopy[MAX_IOV];      /* Kernel copy of iov */
+    Proc_ControlBlock	*procPtr = Proc_GetEffectiveProc();
 
     if (debugFsStubs) {
         printf("Fs_WritevStub\n");
@@ -1146,6 +1152,10 @@ Fs_WritevStub(streamID, iov, iovcnt)
 	}
 	return -1;
     } else {
+	/*
+	 * write may say restart, but if we wrote anything, we don't restart.
+	 */
+	procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	if (debugFsStubs) {
 	    printf("Writev: returns %d\n", totalWritten);
 	}
@@ -4054,14 +4064,6 @@ Fs_GetdentsStub(fd, buf, nbytes)
 	while (bytesUsed+sizeof(u_long)+2*sizeof(u_short) <= bytesRead &&
 		bytesStored < nbytes) {
 	    dirsiz = DIRSIZ((struct direct *)directPtr);
-	    if (debugFsStubs) {
-		printf("dirsiz = %d\n", dirsiz);
-		printf("bytes = %x %x %x\n", ((int *)directPtr)[0],
-			((int *)directPtr)[1], ((int *)directPtr)[2]);
-		printf("d_reclen %d, d_namlen %d\n", ((struct direct *)
-			directPtr)->d_reclen,
-			((struct direct *)directPtr)->d_namlen);
-	    }
 	    if (dirsiz > sizeof(struct direct) || ((struct direct *)
 		    directPtr)->d_reclen > FSLCL_DIR_BLOCK_SIZE) {
 		printf("Fs_Getdirentries: Directory record too long!\n");
