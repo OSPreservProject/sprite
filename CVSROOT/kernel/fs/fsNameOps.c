@@ -481,7 +481,7 @@ Fs_Trunc(pathName, length)
     if (status != SUCCESS) {
 	return(status);
     }
-    Fs_TruncStream(streamPtr, length);
+    status = Fs_TruncStream(streamPtr, length);
     (void)Fs_Close(streamPtr);
     return(status);
 }
