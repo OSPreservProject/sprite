@@ -21,13 +21,11 @@
 
 #include "status.h"
 #ifdef KERNEL
-#include "vm.h"
 #include "devSyslog.h"
 #include "devConsole.h"
 #include "devKeyboard.h"
 #include "devDependent.h"
 #else
-#include <kernel/vm.h>
 #include <kernel/devSyslog.h>
 #include <kernel/devConsole.h>
 #include <kernel/devKeyboard.h>
@@ -49,18 +47,6 @@ typedef struct Dev_DiskAddr {
  *	DEV_BYTES_PER_SECTOR the common size for disk sectors.
  */
 #define DEV_BYTES_PER_SECTOR	512
-
-/*
- *	DEV_MAX_TRANSFER_SIZE the maximum size of a device read or write.
- *		This limit stems from the memory maps used in VM.  This
- *		is one hardware pagesize less than the max range that
- *		each controller reserves for mapping.
- *	DEV_MAX_IO_BUF_SIZE the size of the virtual memory range that
- *		has to be reserved by a device controller for mapping.
- *		(FIX TO DEPEND ON A VM_ CONSTANT)
- */
-#define DEV_MAX_IO_BUF_SIZE	(128 * 1024)
-#define DEV_MAX_TRANSFER_SIZE	(DEV_MAX_IO_BUF_SIZE - VMMACH_PAGE_SIZE_INT)
 
 extern void Dev_Init();
 extern void Dev_Config();
