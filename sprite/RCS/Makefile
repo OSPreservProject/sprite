@@ -184,19 +184,13 @@ UNINSTALLED_OBJS =	\
 	${UTILS}/utils.o \
 	${VM}/vm.o
 
-# sun4 should use the raid module.  Others should use raid.null.
+# Everybody uses the raid module now.
 
 OBJS =	${INSTALLED_OBJS} \
-	${LIB}/raid.null.o
-
-#OBJS =	${UNINSTALLED_OBJS} \
-#	${RAIDNULL}/raid.null.o
-
-OBJS_SUN4 =	${INSTALLED_OBJS} \
 	${LIB}/raid.o
 
-#OBJS_SUN4 =	${UNINSTALLED_OBJS} \
-#	${RAID}/raid.o
+OBJS_SUN4 =	${OBJS}
+
 
 #
 # Profiled (perhaps) object files	####################################
@@ -275,10 +269,9 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o
 	@ls -l $@
 	@size $@
-	update -f -s sun4 /sprite/boot/sun4.md/${KERNELNAME}
+	update -f -s $@ /sprite/boot/sun4.md/${KERNELNAME}
 	rcp /sprite/boot/sun4.md/${KERNELNAME} ${GINGER}:/tftpboot/sun4.md/${KERNELNAME}
-	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
-	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
+	rcp $@ ginger:/home/ginger/sprite/kernels/$@.`Version $@`
 	nm -n sun4 > sun4.nm
 	update -f sun4 /allspiceA/${KERNELNAME}
 	strip /allspiceA/${KERNELNAME}
@@ -295,8 +288,6 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s sun4c /sprite/boot/sun4c.md/${KERNELNAME}
-	#rcp sun4c ginger:/home/ginger/sprite/kernels/sun4c.sprite
-	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c.sprite)"
 	nm -n sun4c > sun4c.nm
 	-Save sun4c
 
@@ -314,10 +305,6 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	strip /sprite/boot/ds3100.md/${KERNELNAME}
 	rm -f ds3100.nm
 	nm -n ds3100 > ds3100.nm
-	#rcp /sprite/src/kernel/sprite/ds3100 ginger:/home/ginger/sprite/kernels/ds3100
-	#rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds3100)"
-	update -f ds3100 /assaultA/${KERNELNAME}
-	strip /assaultA/${KERNELNAME}
 	-Save ds3100
 
 ds5000: ${OBJS} .PRECIOUS .NOEXPORT
@@ -332,10 +319,9 @@ ds5000: ${OBJS} .PRECIOUS .NOEXPORT
 	@size $@
 	update -f ds5000 /sprite/boot/ds5000.md/${KERNELNAME}
 	strip /sprite/boot/ds5000.md/${KERNELNAME}
-	rm -f ds5000.nm
-	nm -n ds5000 > ds5000.nm
-	#rcp /sprite/src/kernel/sprite/ds5000 ginger:/home/ginger/sprite/kernels/ds5000
-	#rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds5000)"
+	rcp $@ ginger:/home/ginger/sprite/kernels/$@.`Version $@`
+	rm -f $@.nm
+	nm -n $@ > $@.nm
 	update -f $@ /lustA/${KERNELNAME}
 	strip /lustA/${KERNELNAME}
 	-Save $@
