@@ -436,7 +436,7 @@ LEAF(MachRunUserProc)
     li		t0, (MACH_KERN_INT_MASK|MACH_SR_KU_PREV|MACH_SR_INT_ENA_PREV)
     mtc0	t0, MACH_COP_0_STATUS_REG
     lw		k0, machCurStatePtr
-    add		k1, a0, zero
+    addu	k1, a0, zero
 .set noat
     RESTORE_REGS(k0, MACH_TRAP_REGS_OFFSET)
 .set at
@@ -500,7 +500,7 @@ MachKernException:
     mfc0	k0, MACH_COP_0_CAUSE_REG	# Get the cause register value.
     la		k1, machKernExcTable		# Load base of the func table.
     and		k0, k0, MACH_CR_EXC_CODE	# Mask out the cause bits. 
-    add		k0, k0, k1			# Get the address of the
+    addu	k0, k0, k1			# Get the address of the
 						#    function entry.  Note that
 						#    the cause is already 
 						#    shifted left by 2 bits so
@@ -699,7 +699,7 @@ NON_LEAF(Mach_KernGenException,KERN_EXC_FRAME_SIZE,ra)
 /*
  * The debugger returns the PC to continue at.
  */
-    add		k1, v0, 0
+    addu	k1, v0, 0
     lw		k0, machDebugStatePtr
     nop
 
@@ -777,7 +777,7 @@ MachUserException:
     mfc0	k0, MACH_COP_0_CAUSE_REG	# Get the cause register value.
     la		k1, machUserExcTable		# Load base of the func table.
     and		k0, k0, MACH_CR_EXC_CODE	# Mask out the cause bits. 
-    add		k0, k0, k1			# Get the address of the
+    addu	k0, k0, k1			# Get the address of the
 						#    function entry.  Note that
 						#    the cause is already 
 						#    shifted left by 2 bits so
@@ -816,7 +816,7 @@ NON_LEAF(Mach_UserGenException,USER_EXC_FRAME_SIZE,ra)
 /*
  * First of all switch over to the kernel gp.
  */
-    add		k1, gp, zero
+    addu	k1, gp, zero
     la		gp, _gp
     lw		k0, machCurStatePtr
     nop
@@ -968,7 +968,7 @@ NON_LEAF(Mach_ContextSwitch,STAND_FRAME_SIZE + 8,ra)
 /*
  * Set up this processes context.
  */
-    add		a0, a1, zero
+    addu	a0, a1, zero
     jal		VmMach_SetupContext
     nop
 /*
@@ -993,7 +993,7 @@ NON_LEAF(Mach_ContextSwitch,STAND_FRAME_SIZE + 8,ra)
  */
     lw		t0, machCurStatePtr
     nop
-    add		t0, t0, MACH_SWITCH_REGS_OFFSET
+    addu	t0, t0, MACH_SWITCH_REGS_OFFSET
     sw		a0, A0 * 4(t0)
     sw		s0, S0 * 4(t0)
     sw		s1, S1 * 4(t0)
@@ -1014,11 +1014,11 @@ Mach_SwitchPoint:
  */
     lw		t0, machStatePtrOffset
     nop
-    add		t0, a1, t0
+    addu	t0, a1, t0
     lw		t0, 0(t0)
     nop
     sw		t0, machCurStatePtr
-    add		t1, t0, MACH_SWITCH_REGS_OFFSET
+    addu	t1, t0, MACH_SWITCH_REGS_OFFSET
     lw		a0, A0 * 4(t1)
     lw		s0, S0 * 4(t1)
     lw		s1, S1 * 4(t1)
@@ -1098,7 +1098,7 @@ Mach_SwitchPoint:
     lw		t0, 4(sp)
     nop
     mtc0	t0, MACH_COP_0_STATUS_REG
-    add		sp, sp, STAND_FRAME_SIZE + 8
+    addu	sp, sp, STAND_FRAME_SIZE + 8
 /*
  * Return 
  */
@@ -1124,7 +1124,7 @@ END(Mach_ContextSwitch)
  */
     .globl Mach_GetPC
 Mach_GetPC:
-    add		v0, ra, zero
+    addu	v0, ra, zero
     j		ra
 
 /*----------------------------------------------------------------------------
@@ -1143,7 +1143,7 @@ Mach_GetPC:
  */
     .globl Mach_GetCallerPC
 Mach_GetCallerPC:
-    add		v0, zero, zero
+    addu	v0, zero, zero
     j		ra
 
 /*----------------------------------------------------------------------------
@@ -1229,7 +1229,7 @@ LEAF(MachSwitchFPState)
 	li	t0, MACH_SR_COP_1_BIT		#    enable the coprocessor
 	mtc0	t0, MACH_COP_0_STATUS_REG
 
-	add	t0, a0, 1	# If fromFPStatePtr is NIL then it will equal
+	addu	t0, a0, 1	# If fromFPStatePtr is NIL then it will equal
 	beq	t0, zero, 1f	#    zero if we add one to it.
 
 .set noreorder
@@ -1414,7 +1414,7 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	/*
 	 * Fetch the instruction.
 	 */
-	add	v0, a1, 0
+	addu	v0, a1, 0
 	bltz	v0, 3f				# Check the branch delay bit.
 	/*
 	 * This is not in the branch delay slot so calculate the resulting
@@ -1431,10 +1431,10 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	 * be emulated to get the resulting PC.
 	 */
 	lw	a0, machCurStatePtr
-	add	a0, a0, MACH_TRAP_REGS_OFFSET
-	add	a1, a2, zero
+	addu	a0, a0, MACH_TRAP_REGS_OFFSET
+	addu	a1, a2, zero
 	cfc1	a2, MACH_FPC_CSR
-	add	a3, zero, zero
+	addu	a3, zero, zero
 	jal	MachEmulateBranch	# MachEmulateBranch(regsPtr,instPC,csr,
 					#		    FALSE)
 	lw	t0, machCurStatePtr
@@ -1509,14 +1509,14 @@ MachSysCall:
     bne		t1, k0, UNIXSyscall
     nop
 1:
-    add		t7, gp, zero			# Save the user's gp in t7
+    addu	t7, gp, zero			# Save the user's gp in t7
     la		gp, _gp				# Switch to the kernel's gp
 /*
  * See if this system call is valid.
  */
     lw		t2, machMaxSysCall		# t2 <= Maximum sys call value.
     nop
-    add		t2, t2, 1			
+    addu	t2, t2, 1			
     sltu	t2, t0, t2			# Is t0 < t2 ?	
     bne		t2, zero, 1f			# If so then continue on.
     nop
@@ -1525,9 +1525,9 @@ MachSysCall:
  * the user.
  */
     mfc0	t3, MACH_COP_0_EXC_PC
-    add		gp, t7, zero
+    addu	gp, t7, zero
     li		v0, 0x20002
-    add		t3, t3, 4
+    addu	t3, t3, 4
     j		t3
     rfe
 /* 
@@ -1536,7 +1536,7 @@ MachSysCall:
  */
 1:
     lw		t1, machCurStatePtr
-    add		t2, sp, zero
+    addu	t2, sp, zero
     mfc0	t3, MACH_COP_0_EXC_PC
     sw		sp, MACH_TRAP_REGS_OFFSET + (SP * 4)(t1)
     sw		t7, MACH_TRAP_REGS_OFFSET + (GP * 4)(t1)
@@ -1572,13 +1572,13 @@ MachSysCall:
  */
     sll		t0, t0, 2
     la		t3, machArgDispatch
-    add		t3, t0, t3
+    addu	t3, t0, t3
     lw		t3, 0(t3)
     nop
     jal		t3
-    add		v0, zero, zero
+    addu	v0, zero, zero
     bne		v0, zero, sysCallReturn
-    add		s0, t1, zero			# Save pointer to current state
+    addu	s0, t1, zero			# Save pointer to current state
 						#    in s0
 /* 
  * We got the args now call the routine.
@@ -1589,15 +1589,15 @@ MachSysCall:
 						#       in proc table entry.
     lw		s2, 0(s2)			# s2 <= pointer to currently
     nop						#       running process
-    add		s3, s2, s1			# s3 <= pointer to kcall table
+    addu	s3, s2, s1			# s3 <= pointer to kcall table
 						#       pointer for currently
 						#       running	process
-    add		s1, s3, 4			# Special handling flag follows
+    addu	s1, s3, 4			# Special handling flag follows
 						# kcallTable field.  Save a 
 						# pointer to it in s1.
     lw		s3, 0(s3)			# s3 <= pointer to kcall table
     nop
-    add		s3, s3, t0			# s3 <= pointer to pointer to
+    addu	s3, s3, t0			# s3 <= pointer to pointer to
 						#       function to call.
     lw		s3, 0(s3)			# s3 <= pointer to function.
     nop
@@ -1623,14 +1623,14 @@ sysCallReturn:
  */
     lw		t1, MACH_USER_PC_OFFSET(s0)	# Fetch return PC.
     or		t0, s8, MACH_SR_INT_ENA_CUR	# Prepare to enable interrupts.
-    add		t1, t1, 4			# Increment return PC by 4 to
+    addu	t1, t1, 4			# Increment return PC by 4 to
 						#    get past the syscall inst.
     sw		t1, MACH_USER_PC_OFFSET(s0)	# Write back the return PC.
 
     mtc0	t0, MACH_COP_0_STATUS_REG	# Enable interrupts.
     sw		v0, MACH_TRAP_REGS_OFFSET + (V0 * 4)(s0)
 
-    add		a0, s2, zero
+    addu	a0, s2, zero
     jal		MachUserReturn			# Call MachUserReturn(procPtr)
     nop
 /*
@@ -1656,7 +1656,7 @@ sysCallReturn:
 checkFP:
     lw		k0, MACH_USER_PC_OFFSET(s0)
     lw		t0, machFPCurStatePtr
-    add		k0, k0, 4
+    addu	k0, k0, 4
     bne		t0, s0, sysCallRestore
     nop
     or		s8, s8, MACH_SR_COP_1_BIT
@@ -1728,14 +1728,14 @@ UNIXSyscall:
     bne		k0, zero, Mach_UserGenException
     nop
 
-    add		t7, gp, zero			# Save the user's gp in t7
+    addu	t7, gp, zero			# Save the user's gp in t7
     la		gp, _gp				# Switch to the kernel's gp
 /*
  * See if this system call is valid.
  */
     lw		t0, machNumUNIXSyscalls		# t0 <= Maximum sys call value.
     nop
-    add		t0, t0, 1			
+    addu	t0, t0, 1			
     sltu	t0, v0, t0			# Is v0 < t0 ?
     bne		t0, zero, 1f			# If so then continue on.
     nop
@@ -1753,9 +1753,9 @@ UNIXSyscall:
 1:
     sll		t0, v0, 2	# t0 <= v0 * 4
     sll		t3, v0, 3	# t3 <= v0 * 8
-    add		t0, t0, t3	# t0 <= v0 * 12
+    addu	t0, t0, t3	# t0 <= v0 * 12
     la		t3, machUNIXSysCallTable
-    add		t0, t0, t3
+    addu	t0, t0, t3
     lw		t3, 4(t0)	# t3 <= number of arguments.
     nop
     bltz	t3, doNewSysCall
@@ -1763,7 +1763,7 @@ UNIXSyscall:
 
 
     lw		t1, machCurStatePtr
-    add		t2, sp, zero
+    addu	t2, sp, zero
     mfc0	t3, MACH_COP_0_EXC_PC
     sw		sp, MACH_TRAP_REGS_OFFSET + (SP * 4)(t1)
     sw		t7, MACH_TRAP_REGS_OFFSET + (GP * 4)(t1)
@@ -1797,20 +1797,20 @@ UNIXSyscall:
  */
     sll		t0, v0, 2	# t0 <= v0 * 4
     sll		t3, v0, 3	# t3 <= v0 * 8
-    add		t0, t0, t3	# t0 <= v0 * 12
+    addu	t0, t0, t3	# t0 <= v0 * 12
     la		t3, machUNIXSysCallTable
-    add		t0, t0, t3
+    addu	t0, t0, t3
     lw		t3, 4(t0)	# t3 <= number of arguments.
-    add		s3, v0, zero	# Save syscall type in s3.
+    addu	s3, v0, zero	# Save syscall type in s3.
     sll		t3, t3, 2
     la		t4, machArgDispatchTable
-    add		t3, t3, t4
+    addu	t3, t3, t4
     lw		t3, 0(t3)	# t3 <= pointer to arg fetch routine.
     nop
     jal		t3
-    add		v0, zero, zero
+    addu	v0, zero, zero
     bne		v0, zero, unixSyscallReturn
-    add		s0, t1, zero			# Save pointer to current state
+    addu	s0, t1, zero			# Save pointer to current state
 						#    in s0
 
 /* 
@@ -1834,9 +1834,9 @@ unixSyscallReturn:
 						#       in proc table entry.
     lw		s2, 0(s2)			# s2 <= pointer to currently
 						#       running process
-    add		s1, s1, 4			# Special handling flag follows
+    addu	s1, s1, 4			# Special handling flag follows
 						# kcallTable field. 
-    add		s1, s2, s1			# s1 <= pointer to special
+    addu	s1, s2, s1			# s1 <= pointer to special
 						#       handling flag.
 /*
  * We now have the following saved information:
@@ -1862,14 +1862,14 @@ unixSyscallReturn:
     lw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(s0)
     lw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(s0)
     lw		a2, MACH_TRAP_REGS_OFFSET + (A2 * 4)(s0)
-    add		a3, zero, zero
+    addu	a3, zero, zero
     sw		v0, MACH_TRAP_REGS_OFFSET + (V0 * 4)(s0)
     sw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(s0)
     j		sysCallReturn
     nop
 1:
     jal		Compat_MapCode
-    add		a0, v0, zero
+    addu	a0, v0, zero
     sw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET(s0)
     lw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
     lw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(s0)
@@ -1898,7 +1898,7 @@ unixSyscallReturn:
  */
 
 newUNIXSyscall:
-    add		t7, gp, zero			# Save the user's gp in t7
+    addu	t7, gp, zero			# Save the user's gp in t7
     la		gp, _gp				# Switch to the kernel's gp
 /*
  * If we are tracing system calls or we have a signal or long jump return
@@ -1922,7 +1922,7 @@ doNewSysCall:
  * won't get modified unless a value is returned in v1.
  */
     lw		t1, machCurStatePtr
-    add		t2, sp, zero
+    addu	t2, sp, zero
     mfc0	t3, MACH_COP_0_EXC_PC
     sw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET+4(t1)
     sw		a3, MACH_TRAP_UNIX_RET_VAL_OFFSET+8(t1)
@@ -1959,7 +1959,7 @@ doNewSysCall:
     sltu	t0, v0, MACH_MAX_UNIX_SYSCALL	# t0 <= Maximum sys call value
     bne		t0,zero, 1f			# If so then continue on
     nop
-    add		v0, zero, zero
+    addu	v0, zero, zero
 /*
  * Now fetch the args.  The user's stack pointer is in t2 and the 
  * current state pointer in t1.
@@ -1967,18 +1967,18 @@ doNewSysCall:
 1:
     sll		t0, v0, 3	# t0 <= v0 * 8
     la		t3, sysUnixSysCallTable
-    add		t0, t0, t3
+    addu	t0, t0, t3
     lw		t3, 4(t0)	# t3 <= number of arguments.
-    add		s3, v0, zero	# Save syscall type in s3.
+    addu	s3, v0, zero	# Save syscall type in s3.
     sll		t3, t3, 2
     la		t4, machArgDispatchTable
-    add		t3, t3, t4
+    addu	t3, t3, t4
     lw		t3, 0(t3)	# t3 <= pointer to arg fetch routine.
     nop
     jal		t3
-    add		v0, zero, zero
+    addu	v0, zero, zero
     bne		v0, zero, unixNewSyscallReturn
-    add		s0, t1, zero			# Save pointer to current state
+    addu	s0, t1, zero			# Save pointer to current state
 						#    in s0
 
 /* 
@@ -2002,9 +2002,9 @@ unixNewSyscallReturn:
 						#       in proc table entry.
     lw		s2, 0(s2)			# s2 <= pointer to currently
 						#       running process
-    add		s1, s1, 4			# Special handling flag follows
+    addu	s1, s1, 4			# Special handling flag follows
 						# kcallTable field. 
-    add		s1, s2, s1			# s1 <= pointer to special
+    addu	s1, s2, s1			# s1 <= pointer to special
 						#       handling flag.
 /*
  * We now have the following saved information:
@@ -2024,7 +2024,7 @@ unixNewSyscallReturn:
  */
 1:
     bltz	v0, 3f
-    add		a3, zero, zero
+    addu	a3, zero, zero
 2:
     lw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(s0)
     lw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(s0)
@@ -2210,9 +2210,9 @@ LEAF(Mach_Probe)
 	beq	t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR, 1f
 	nop
 	j	ra
-	add	v0, zero, 1
+	addu	v0, zero, 1
 1:
-	add	t0, zero, 1
+	addu	v0, zero, 1
 	sw	t0, machInProbe
 	/* a0 is the number of bytes
 	 * a1 is the src address
@@ -2272,11 +2272,11 @@ Read8Bytes:
 	nop
 BadRead:
 	j	ra
-	add	v0, zero, 1
+	addu	v0, zero, 1
 Done:
 	sw	zero, machInProbe
 	j	ra
-	add	v0, zero, zero
+	addu	v0, zero, zero
 .set reorder
 END(Mach_Probe)
 

@@ -31,5 +31,5 @@ eprol:
     sw		zero, START_FRAME - 4(sp)	# Zero out old ra for debugger
     sw		zero, START_FRAME - 8(sp)	# Zero out old fp for debugger
     jal		main				# main(argc, argv, envp)
-    add		a0, zero, zero			
+    addu	a0, zero, zero			
     jal		Proc_Exit			# Proc_Exit(0)

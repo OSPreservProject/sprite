@@ -31,5 +31,5 @@
 
     .globl Mem_CallerPC
 Mem_CallerPC:
-    add		v0, zero, zero
+    addu	v0, zero, zero
     j		ra

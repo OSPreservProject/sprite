@@ -333,7 +333,7 @@ LEAF(VmMachFlushGlobalPageFromTLB)
 
     sll		t1, a0, VMMACH_TLB_VIRT_PAGE_SHIFT	# Align virt page
 
-    add		t2, zero, zero
+    addu	t2, zero, zero
     li		t3, VMMACH_NUM_TLB_ENTRIES << VMMACH_TLB_INDEX_SHIFT
     li		v0, 0x80000000
 
@@ -346,14 +346,14 @@ LEAF(VmMachFlushGlobalPageFromTLB)
     bne		t4, t1, 2f				# test for pid/vpn match
     nop
 
-    add		v0, t2, zero
+    addu	v0, t2, zero
     li		t4, VMMACH_PHYS_CACHED_START
     mtc0	t4, VMMACH_TLB_HI			# Prepare index hi
     mtc0	zero, VMMACH_TLB_LOW			# Prepare index lo
     nop
     tlbwi						# Invalidate entry
 2:
-    add		t2, t2, 1 << VMMACH_TLB_INDEX_SHIFT
+    addu	t2, t2, 1 << VMMACH_TLB_INDEX_SHIFT
     bne		t2, t3, 6b
     nop
 
@@ -406,7 +406,7 @@ LEAF(Vm_MachDumpTLB)
     mfc0	t5, VMMACH_TLB_HI
     sw		t4, 0(a0)
     sw		t5, 4(a0)
-    add		a0, a0, 8
+    addu	a0, a0, 8
     bne		t1, t3, 1b
     nop
 
@@ -498,7 +498,7 @@ gotArgs:
  */
 
 1:
-    sub		t0, a0, 64
+    subu	t0, a0, 64
     bltz	t0, 2f
     lw		t0, 0(a1)
     lw		t1, 4(a1)
@@ -532,22 +532,22 @@ gotArgs:
     lw		t1, 60(a1)
     sw		t0, 56(a2)
     sw		t1, 60(a2)
-    sub		a0, a0, 64
-    add		a1, a1, 64
-    add		a2, a2, 64
+    subu	a0, a0, 64
+    addu	a1, a1, 64
+    addu	a2, a2, 64
     j		1b
 
 /*
  * Do 4 byte copies.
  */
 2:
-    sub		t0, a0, 4
+    subu	t0, a0, 4
     bltz	t0, 3f
     lw		t0, 0(a1)
     sw		t0, 0(a2)
-    sub		a0, a0, 4
-    add		a1, a1, 4
-    add		a2, a2, 4
+    subu	a0, a0, 4
+    addu	a1, a1, 4
+    addu	a2, a2, 4
     j		2b
 
 /*
@@ -558,9 +558,9 @@ gotArgs:
     beq		a0, zero, 4f
     lb		t0, 0(a1)
     sb		t0, 0(a2)
-    sub		a0, a0, 1
-    add		a1, a1, 1
-    add		a2, a2, 1
+    subu	a0, a0, 1
+    addu	a1, a1, 1
+    addu	a2, a2, 1
     j		3b
 
 /* 
@@ -635,17 +635,17 @@ Vm_CopyOut:
  */
     .globl  Vm_StringNCopy
 Vm_StringNCopy:
-    add		t2, a0, 0		# Save the number of bytes
+    addu	t2, a0, 0		# Save the number of bytes
 1:
     lb		t0, 0(a1)
     sb		t0, 0(a2)
     beq		t0, zero, 2f
-    add		a1, a1, 1
-    add		a2, a2, 1
-    sub		a0, a0, 1
+    addu	a1, a1, 1
+    addu	a2, a2, 1
+    subu	a0, a0, 1
     bne		a0, zero, 1b
 2: 
-    sub		a0, t2, a0
+    subu	a0, t2, a0
     sw		a0, 0(a3)
     li		v0, 0
     j		ra
@@ -684,8 +684,8 @@ Vm_TouchPages:
 1:
     beq		a1, zero, 2f
     lw		t0, 0(a0)
-    sub		a1, a1, 1
-    add		a0, a0, VMMACH_PAGE_SIZE
+    subu	a1, a1, 1
+    addu	a0, a0, VMMACH_PAGE_SIZE
     j		1b
 2:
     j		ra
@@ -736,7 +736,7 @@ VmMach_UTLBMiss:
  * Load the hash table key.
  */
     la		AT, vmMachTLBHashTable
-    add		AT, k1, AT
+    addu	AT, k1, AT
     lw		k1, VMMACH_HASH_KEY_OFFSET(AT)
     nop
 
@@ -808,7 +808,7 @@ VmMach_KernTLBException:
 .set noreorder
 .set noat
     mfc0	k0, MACH_COP_0_BAD_VADDR	# Get the faulting address
-    add		k1, sp, zero
+    addu	k1, sp, zero
     srl		k1, k1, VMMACH_PAGE_SHIFT
     srl		k0, k0, VMMACH_PAGE_SHIFT
     bne		k0, k1, 1f
@@ -821,7 +821,7 @@ VmMach_KernTLBException:
 #define	START_FRAME   ((4*4) + 4 + 4)
 
     la		a0, str
-    add		a1, sp, zero
+    addu	a1, sp, zero
     li		sp, MACH_CODE_START - START_FRAME
     jal		panic
     nop
@@ -834,15 +834,15 @@ VmMach_KernTLBException:
     nop						#    if we are lower
     li		k1, MACH_KERN_END		# Get the upper bound
     sltu	k1, k0, k1			# Compare to the upper bound
-    beq		k1, zero, KernGenException	#    and take a normal exception
-						#    if we are higher.
+    beq		k1, zero, KernGenException	#    and take a normal 
+						#    exception if we are higher.
     srl		k0, VMMACH_PAGE_SHIFT		# Get the virtual page number.
     li		k1, VMMACH_VIRT_CACHED_START_PAGE
     subu	k0, k0, k1
     lw		k1, vmMach_KernelTLBMap		# Get to map that contains
 						#     the TLB entry.
     sll		k0, k0, 2			# Each entry is four bytes
-    add		k0, k0, k1			# Get pointer to entry.
+    addu	k0, k0, k1			# Get pointer to entry.
     lw		k0, 0(k0)			# Get entry
     nop
     beq		k0, zero, KernGenException	# If entry is zero then take
@@ -903,7 +903,7 @@ VmMach_TLBModException:
  * Load the hash table key.
  */
     la		AT, vmMachTLBHashTable
-    add		AT, k1, AT
+    addu	AT, k1, AT
     lw		k1, VMMACH_HASH_KEY_OFFSET(AT)
     nop
 
@@ -954,7 +954,7 @@ VmMach_TLBModException:
     lw		k0, vmMachPhysPageArr
     srl		k1, k1, VMMACH_TLB_PHYS_PAGE_SHIFT
     sll		k1, k1, 2
-    add		k0, k0, k1
+    addu	k0, k0, k1
     lw		k1, 0(k0)
     nop
     or		k1, k1, 4
