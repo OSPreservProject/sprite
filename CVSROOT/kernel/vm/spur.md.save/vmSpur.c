@@ -366,8 +366,8 @@ VmMach_Init(firstFreePage)
     for (; i < VMMACH_NUM_PT_PAGES; ptePtr++, i++) {
 	*ptePtr = (VmMachPTE)0;
     }
-    Byte_Zero((VMMACH_NUM_SEGMENTS - 1) * VMMACH_SEG_PT2_SIZE,
-	      ((Address)kernPT2Ptr) + VMMACH_SEG_PT2_SIZE);
+    bzero(((Address)kernPT2Ptr) + VMMACH_SEG_PT2_SIZE,
+	    (VMMACH_NUM_SEGMENTS - 1) * VMMACH_SEG_PT2_SIZE);
 
     /*
      * Write protect the kernel code.
@@ -471,7 +471,7 @@ AllocPageTable(segPtr, offset, numPages)
 	              VMMACH_KRW_UNA_PROT | VMMACH_REFERENCED_BIT |
 		      VMMACH_MODIFIED_BIT |
 		      SetPageFrame(VirtToPhysPage(Vm_KernPageAllocate()));
-	    Byte_Zero(VMMACH_PAGE_SIZE, ptAddr);
+	    bzero(ptAddr, VMMACH_PAGE_SIZE);
 	}
      }
 }
@@ -503,7 +503,7 @@ VmMach_SegInit(segPtr)
     segPtr->minAddr = (Address)(segPtr->type * VMMACH_SEG_SIZE);
     segPtr->maxAddr = (Address)(segPtr->minAddr + (VMMACH_SEG_SIZE - 1));
     if (segPtr->machPtr == (VmMach_SegData *) NIL) {
-	segDataPtr = (VmMach_SegData *)Mem_Alloc(sizeof(VmMach_SegData));
+	segDataPtr = (VmMach_SegData *)malloc(sizeof(VmMach_SegData));
 	segPtr->machPtr = segDataPtr;
 	segDataPtr->ptBasePtr = 
 		    basePTPtr + segPtr->segNum * (VMMACH_SEG_PT_SIZE / 4);
@@ -688,7 +688,7 @@ VmMach_ProcInit(vmPtr)
     register	VmMach_ProcData	*machPtr;
 
     if (vmPtr->machPtr == (VmMach_ProcData *)NIL) {
-	vmPtr->machPtr = (VmMach_ProcData *)Mem_Alloc(sizeof(VmMach_ProcData));
+	vmPtr->machPtr = (VmMach_ProcData *)malloc(sizeof(VmMach_ProcData));
     }
     machPtr = vmPtr->machPtr;
     machPtr->segNums[VM_SYSTEM] = VM_SYSTEM_SEGMENT;
@@ -1610,7 +1610,7 @@ VmMach_MapInDevice(devPhysAddr, numBytes)
 		      VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT |
 		      VMMACH_MODIFIED_BIT |
 		      SetPageFrame(VirtToPhysPage(Vm_KernPageAllocate()));
-	    Byte_Zero(VMMACH_PAGE_SIZE, (Address)ptAddr);
+	    bzero((Address)ptAddr, VMMACH_PAGE_SIZE);
 	}
     }
     /*
@@ -2462,22 +2462,22 @@ VmMach_Cmd(command, arg)
 {
     switch (command) {
 	case VM_SET_FLUSH_ON_REF_BIT_CLEAR:
-	    Sys_Printf("flushOnRefBitClear val was %d, is %d\n",
+	    printf("flushOnRefBitClear val was %d, is %d\n",
 		        flushOnRefBitClear, arg);
 	    flushOnRefBitClear = arg;
 	    return(SUCCESS);
 	case VM_SET_USE_HARD_REF_BIT:
-	    Sys_Printf("useHardRefBit val was %d, is %d\n",
+	    printf("useHardRefBit val was %d, is %d\n",
 		        useHardRefBit, arg);
 	    useHardRefBit = arg;
 	    return(SUCCESS);
 	case VM_SET_COHERENCY_BIT:
-	    Sys_Printf("ownStackAndHeap val was %d, is %d\n",
+	    printf("ownStackAndHeap val was %d, is %d\n",
 		        ownStackAndHeap, arg);
 	    ownStackAndHeap = (Boolean) arg;
 	    return(SUCCESS);
 	default:
-	    Sys_Panic(SYS_WARNING, "VmMach_Cmd: Unknown command %d\n", command);
+	    printf("Warning: VmMach_Cmd: Unknown command %d\n", command);
 	    return(GEN_INVALID_ARG);
     }
 }
