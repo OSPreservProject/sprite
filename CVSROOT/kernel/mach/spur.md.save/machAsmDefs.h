@@ -214,9 +214,11 @@
  *	rx --	register containing the global segment number
  *	gsn --	specific GSN register (e.g., GSN0)
  *
- * gsn<7:0> <= rx<7:0>
+ * gsn<7:0> => rx<31:0>
  */
-#define LD_GSN(rx,gsn) ld_external	rx, r0, $gsn|MACH_CO_RD_REG
+#define LD_GSN(rx,gsn) \
+		ld_external	rx, r0, $gsn|MACH_CO_RD_REG ;\
+		and		rx, rx, $0xff
 
 /*
  * ST_PT_BASE(rx) --
