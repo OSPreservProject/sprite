@@ -1136,13 +1136,11 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
  * Fs_FileBeingMapped --
  *
  *      This is called by VM when a file is being mapped into
- *	a user's virtual address (yuck, blech).  This does a
+ *	a user's virtual address (yuck, blech), or is being
+ *	unmapped from the address space.  This does a
  *	write-back/invalidate so that the file is not cached
  *	by FS any longer.  This ensures that paging traffic
  *	wont get stale data.
- *
- *	Eventually this should talk to the file server so it
- *	knows whats going on.
  *
  * Results:
  *	A return status or SUCCESS if successful.
@@ -1153,39 +1151,60 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fs_FileBeingMapped(streamPtr)
+Fs_FileBeingMapped(streamPtr, isMapped)
     Fs_Stream *streamPtr;	/* Open stream being mapped in */
+    int		isMapped;	/* 1 if file is being mapped. */
 {
-    ReturnStatus status;
+    ReturnStatus status = SUCCESS;
     Fscache_FileInfo	*cacheInfoPtr;
     Fscache_Attributes dummyCachedAttr;
+    Fs_IOCParam	ioctl;
+    Fs_IOReply	reply;
 
-    switch(streamPtr->ioHandlePtr->fileID.type) {
-	case FSIO_LCL_FILE_STREAM: {
-	    register Fsio_FileIOHandle *localHandlePtr;
-	    localHandlePtr = (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
-	    cacheInfoPtr = &localHandlePtr->cacheInfo;
-	    break;
+    if (isMapped) {
+	switch(streamPtr->ioHandlePtr->fileID.type) {
+	    case FSIO_LCL_FILE_STREAM: {
+		register Fsio_FileIOHandle *localHandlePtr;
+		localHandlePtr = (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
+		cacheInfoPtr = &localHandlePtr->cacheInfo;
+		break;
+	    }
+	    case FSIO_RMT_FILE_STREAM: {
+		register Fsrmt_FileIOHandle *rmtHandlePtr;
+		rmtHandlePtr = (Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
+		cacheInfoPtr = &rmtHandlePtr->cacheInfo;
+		break;
+	    }
+	    default:
+		return(FS_WRONG_TYPE);
 	}
-	case FSIO_RMT_FILE_STREAM: {
-	    register Fsrmt_FileIOHandle *rmtHandlePtr;
-	    rmtHandlePtr = (Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
-	    cacheInfoPtr = &rmtHandlePtr->cacheInfo;
-	    break;
-	}
-	default:
-	    return(FS_WRONG_TYPE);
+	/*
+	 * Make the file look like a swap file so the local cache
+	 * is bypassed.  Also flush back any modified data so
+	 * page-ins get good stuff.
+	 */
+	streamPtr->flags |= FS_SWAP;
+	status = Fscache_Consist(cacheInfoPtr,
+		    FSCONSIST_INVALIDATE_BLOCKS|FSCONSIST_WRITE_BACK_BLOCKS,
+		    &dummyCachedAttr);
     }
     /*
-     * Make the file look like a swap file so the local cache
-     * is bypassed.  Also flush back any modified data so
-     * page-ins get good stuff.
+     * Tell the file server what's going on.
      */
-    streamPtr->flags |= FS_SWAP;
-    status = Fscache_Consist(cacheInfoPtr,
-		FSCONSIST_INVALIDATE_BLOCKS|FSCONSIST_WRITE_BACK_BLOCKS,
-		&dummyCachedAttr);
-
+    if (status == SUCCESS) {
+	Proc_ControlBlock	*procPtr = Proc_GetEffectiveProc();
+	ioctl.command = IOC_MAP;
+	ioctl.inBuffer = (Address)&isMapped;
+	ioctl.inBufSize = sizeof(int);
+	ioctl.outBuffer = (Address) NIL;
+	ioctl.outBufSize = 0;
+	ioctl.format = mach_Format;
+	ioctl.procID = procPtr->processID;
+	ioctl.familyID = procPtr->familyID;
+	ioctl.uid = procPtr->effectiveUserID;
+	ioctl.flags = 0;
+	status = Fs_IOControl(streamPtr, &ioctl, &reply);
+    }
     return(status);
 }
 
