@@ -42,6 +42,7 @@ int	replyOffset = 0;			/* Offset in buffer where next
 						 * bytes in reply should go. */
 int	curMsgNum;				/* The current message that
 						 * is being processed. */
+
 /*
  * Number of times to poll before timing out and resending (about 2 seconds).
  */
@@ -63,9 +64,10 @@ Net_EtherHdr		dbgEtherHdr;
 Net_ScatterGather	dbgGather;
 
 /*
- * Size of debugging packet header.
+ * Size of debugging packet header and data.
  */
 #define	PACKET_HDR_SIZE (sizeof(Net_EtherHdr) + Dbg_PacketHdrSize() + 4)
+#define PACKET_DATA_SIZE (DBG_MAX_REPLY_SIZE - PACKET_HDR_SIZE)
 
 /*
  * Strings which describe each of the opcodes that kdbx can send us.
@@ -85,6 +87,8 @@ static char *opcodeNames[] =  {
 	"Return version string",
 	"Divert syslog to the console",
 	"Reboot the machine",
+	"Set up things to start a call command",
+	"Clean up things after a call command has executed",
 	"UNKNOWN OPCODE"
 };
 
@@ -148,7 +152,16 @@ int		dbgExcType;
 Boolean		dbgPanic;
 int		dbgSavedSP;
 int		dbgMaxStackAddr;
+Boolean		dbg_UsingSyslog = FALSE;
 static	   int	oldContext;
+
+/*
+ * Saved exception stack stuff.
+ */
+static	int		savedTrapStackLength;
+static	int		savedExcStackLength;
+static	Exc_TrapStack	savedTrapStack;
+static	Boolean		callInProgress = FALSE;
 
 
 /*
@@ -584,6 +597,10 @@ PutReplyBytes(numBytes, src)
     int		numBytes;
     Address	src;
 {
+    if (replyOffset + numBytes > DBG_MAX_REPLY_SIZE) {
+	Sys_Printf("PutReplyBytes: Buffer overflow\n");
+	numBytes = DBG_MAX_REPLY_SIZE - replyOffset;
+    }
     Byte_Copy(numBytes, src, &replyBuffer[replyOffset]);
     replyOffset += numBytes;
 }
@@ -1059,7 +1076,7 @@ Dbg_Main(stackHole, trapStack)
 		break;
 	    }
 
-	    case DBG_DIVERT_SYSLOG:
+	    case DBG_DIVERT_SYSLOG: 
 		GetRequestBytes(sizeof(Boolean), (Address)&syslogDiverted);
 		if (!dbg_Rs232Debug) {
 		    int	dummy;
@@ -1069,6 +1086,88 @@ Dbg_Main(stackHole, trapStack)
 		}
 		break;
 
+	    case DBG_BEGIN_CALL:
+		/*
+		 * We are beginning a call command.  Fix up the stack
+		 * so that we will be able to continue.  We will put
+		 * it back when we are done.
+		 */
+		savedTrapStackLength = trapStackLength;
+		savedExcStackLength = excStackLength;
+		Byte_Copy(trapStackLength, &dbgTrapStack, &savedTrapStack);
+
+		dbgTrapStack.excStack.vor.stackFormat = EXC_SHORT;
+		trapStackLength = Exc_GetTrapStackSize(&dbgTrapStack);
+		excStackLength = trapStackLength - 
+		    (sizeof(Exc_TrapStack) - sizeof(Exc_ExcStack));
+
+		callInProgress = TRUE;
+		dbg_UsingSyslog = TRUE;
+		if (!dbg_Rs232Debug) {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+
+		break;
+	    case DBG_END_CALL: {
+		char	*buffer;
+		int	*firstIndexPtr;
+		int	*lastIndexPtr;
+		int	bufSize;
+		int	length;
+		if (callInProgress) {
+		    /*
+		     * Restore the state to the state before the
+		     * call was begun.  Note that the DBG_END_CALL command will
+		     * be executed until the sys log buffer is empty so only
+		     * need to restore our state if the callInProgress flag is
+		     * set.
+		     */
+		    trapStackLength = savedTrapStackLength;
+		    excStackLength = savedExcStackLength;
+		    Byte_Copy(sizeof(dbgTrapStack), &savedTrapStack,
+			      &dbgTrapStack);
+		    callInProgress = FALSE;
+		}
+		/*
+		 * Dump the syslog buffer.
+		 */
+		Dev_SyslogReturnBuffer(&buffer, &firstIndexPtr,
+				       &lastIndexPtr, &bufSize);
+		if (*firstIndexPtr == -1) {
+		    length = 0;
+		    PutReplyBytes(4, (Address) &length);
+		    dbg_UsingSyslog = FALSE;
+		} else if (*firstIndexPtr <= *lastIndexPtr) {
+		    length = *lastIndexPtr - *firstIndexPtr + 1;
+		    if (length + 4 > PACKET_DATA_SIZE) {
+			length = PACKET_DATA_SIZE - 4;
+		    }
+		    PutReplyBytes(4, (Address) &length);
+		    PutReplyBytes(length,
+				  (Address)&buffer[*firstIndexPtr]);
+		    *firstIndexPtr += length;
+		    if (*firstIndexPtr > *lastIndexPtr) {
+			*firstIndexPtr = *lastIndexPtr = -1;
+		    }
+		} else {
+		    length = bufSize - *firstIndexPtr;
+		    if (length + 4 > PACKET_DATA_SIZE) {
+			length = PACKET_DATA_SIZE - 4;
+		    }
+		    PutReplyBytes(4, (Address) &length);
+		    PutReplyBytes(length,
+				  (Address)buffer[*firstIndexPtr]);
+		    *firstIndexPtr += length;
+		    if (*firstIndexPtr == bufSize) {
+			*firstIndexPtr = 0;
+		    }
+		}
+		SendReply();
+		break;
+	    }
 	    case DBG_CONTINUE: 
 		/*
 		 * The client wants to continue execution.

@@ -35,6 +35,11 @@ extern	Boolean	dbg_BeingDebugged;
 extern	int	dbgMaxStackAddr;
 
 /*
+ * Debugger using syslog to dump output of call command or not.
+ */
+extern	Boolean	dbg_UsingSyslog;
+
+/*
  * The different opcodes that kdbx can send us.
  */
 
@@ -56,6 +61,8 @@ typedef enum {
     DBG_GET_VERSION_STRING,	/* Return the version string. */
     DBG_DIVERT_SYSLOG,		/* Divert syslog output to the console. */
     DBG_REBOOT,			/* Call the reboot routine. */
+    DBG_BEGIN_CALL,		/* Start a call. */
+    DBG_END_CALL, 		/* Clean up after a call completes. */
     DBG_UNKNOWN			/* Used for error checking */
 } Dbg_Opcode;
 
@@ -80,6 +87,11 @@ typedef struct {
     char	string[100];
 } Dbg_Reboot;
 
+typedef enum {
+    DBG_SYSLOG_TO_ORIG,
+    DBG_SYSLOG_TO_CONSOLE,
+} Dbg_SyslogCmd;
+
 /*
  * Message format.
  */
@@ -91,7 +103,7 @@ typedef struct {
 	Dbg_WriteMem	writeMem;
 	Dbg_ReadMem	readMem;
 	int		pc;
-	int		divertSyslog;
+	Dbg_SyslogCmd	syslogCmd;
 	Dbg_Reboot	reboot;
     } data;
 } Dbg_Msg;
