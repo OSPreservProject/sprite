@@ -152,6 +152,7 @@ DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr)
     int			unitProto = 0;
     Net_Interface	*interPtr;
     DeviceState		*itemPtr;
+    int			maxSize;
 
     if (devNetDebug) {
 	printf("DevNet_FsOpen: opening device 0x%x 0x%x\n",
@@ -224,8 +225,16 @@ DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr)
      * This is probably a bad idea for anything but an ethernet since
      * packet sizes may get large.
      */
+    switch(netType) {
+	case NET_NETWORK_ETHER:
+	    maxSize = NET_ETHER_MAX_BYTES;
+	    break;
+	case NET_NETWORK_ULTRA:
+	    maxSize = NET_ULTRA_MAX_BYTES;
+	    break;
+    }
     for (i=0 ; i< PACKET_QUEUE_LEN ; i++) {
-	statePtr->queue.packet[i] = (Address) malloc (NET_ETHER_MAX_BYTES);
+	statePtr->queue.packet[i] = (Address) malloc (maxSize);
     }
 
     /*
@@ -337,13 +346,6 @@ DevNetHandler(interPtr, size, packetPtr)
     deviceQueuePtr = (DeviceQueueState *) interPtr->devNetData;
     if (deviceQueuePtr == (DeviceQueueState *) NIL) {
 	return;
-    }
-    switch(interPtr->netType) {
-	case NET_NETWORK_ETHER: 
-	    protocol = NET_ETHER_HDR_TYPE(*(Net_EtherHdr *)packetPtr);
-	    break;
-	default:
-	    return;
     }
     status = ProtocolFromPacket(packetPtr, interPtr->netType, &protocol);
     if (status != SUCCESS) {
@@ -523,9 +525,9 @@ DevNet_FsWrite(devicePtr, writePtr, replyPtr)
     ioVector.bufAddr = (Address)((int)writePtr->buffer + 
 	net_NetworkHeaderSize[interPtr->netType]);
     ioVector.length  = dataSize;
-    Net_RawOutputSync(interPtr, writePtr->buffer, &ioVector, 1);
+    status = Net_RawOutputSync(interPtr, writePtr->buffer, &ioVector, 1);
     replyPtr->length = writePtr->length;
-    return(SUCCESS);
+    return(status);
 }
 
 
@@ -696,6 +698,9 @@ ProtocolFromPacket(packetPtr, netType, protoPtr)
     switch(netType) {
 	case NET_NETWORK_ETHER:
 	    protocol = NET_ETHER_HDR_TYPE(*(Net_EtherHdr *)packetPtr);
+	    break;
+	case NET_NETWORK_ULTRA:
+	    protocol = 0;
 	    break;
 	default:
 	    status = FAILURE;
