@@ -1243,8 +1243,10 @@ Sched_IdleProcessor(pnum)
  *----------------------------------------------------------------------
  */
 
+/* ARGSUSED */
 void
-Sched_DumpReadyQueue()
+Sched_DumpReadyQueue(dummy)
+    ClientData dummy;
 {
     List_Links *itemPtr;
     Proc_ControlBlock *snapshot[SCHED_MAX_DUMP_SIZE];

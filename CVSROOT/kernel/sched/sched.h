@@ -139,7 +139,7 @@ extern void Sched_InsertInQueue _ARGS_((Proc_ControlBlock *procPtr,
 					Proc_ControlBlock **runPtrPtr));
 extern void Sched_PrintStat _ARGS_((void));
 extern void Sched_SetClearUsageFlag _ARGS_((void));
-extern void Sched_DumpReadyQueue _ARGS_((void));
+extern void Sched_DumpReadyQueue _ARGS_((ClientData dummy));
 extern void Sched_StartSchedStats _ARGS_((void));
 extern void Sched_StopSchedStats _ARGS_((void));
 
