@@ -152,35 +152,35 @@
 
 	.org 0x1020
 	jump WinOvFlow		/* Window overflow */
-	Nop
+	invalidate_ib
 
 	.org 0x1030
 	jump WinUnFlow		/* Window underflow */
-	Nop
+	invalidate_ib
 
 	.org 0x1040
 	jump FaultIntr		/* Fault or interrupt */
-	Nop
+	invalidate_ib
 
 	.org 0x1050
 	jump FPUExcept		/* FPU Exception */
-	Nop
+	invalidate_ib
 
 	.org 0x1060
 	jump Illegal		/* Illegal op, kernel mode access violation */
-	Nop
+	invalidate_ib
 
 	.org 0x1070
 	jump Fixnum		/* Fixnum, fixnum_or_char, generation */
-	Nop
+	invalidate_ib
 
 	.org 0x1080
 	jump Overflow		/* Integer overflow */
-	Nop
+	invalidate_ib
 
 	.org 0x1090
 	jump CmpTrap		/* Compare trap instruction */
-	Nop
+	invalidate_ib
 
 #ifdef BARB
 	.org 0x10b0
@@ -222,9 +222,11 @@ _debugger_active_address:
  *
  * Other options are LD_PC_RELATIVE or LD_CONSTANT.
  */
+#ifdef ovflow_tracing
 traceStartAddr:			.long 0x100000
 traceEndAddr:			.long 0x400000
 traceOvFlowBit:			.long 0x10000000
+#endif
 runningProcesses: 		.long _proc_RunningProcesses
 _machCurStatePtr: 		.long 0
 _machStatePtrOffset:		.long 0
@@ -234,17 +236,20 @@ _machKcallTableOffset:		.long 0
 _machTrapTableOffset:		.long 0
 _machIntrMask:			.long 0
 _machNonmaskableIntrMask:	.long 0
+#ifdef PROF
 _machInterruptAddr:		.long 0
+#endif
+#ifdef ovflow_tracing
 _machNumOvFlow:			.long 0
+interruptPC:			.long 0
 _machNumUnderFlow:		.long 0
-
+#endif
 numArgsPtr:			.long _machNumArgs
 debugStatePtr:			.long _machDebugState
 debugSWStackBase:		.long MACH_DEBUG_STACK_BOTTOM
 debugSpillStackEnd:		.long (MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
 ccStatePtr:			.long _machCCState
 feStatusReg:			.long 0
-interruptPC:			.long 0
 
 /*
  * The instruction to execute on return from a signal handler.  Is here
@@ -1034,6 +1039,7 @@ Interrupt:
 	and		OUTPUT_REG1, OUTPUT_REG1, SAFE_TEMP3
 	WRITE_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
 
+
 #ifdef
 	/*
 	 * Check to see if the interrupt happened on a test_and_set 
@@ -1056,10 +1062,13 @@ Interrupt:
 interrupt_OK:
 
 #endif
+
+#ifdef PROF
 	/* 
 	 * Save the address of the interrupt for profiling. 
 	 */
-	st_32		CUR_PC_REG, r0, $_machInterruptAddr
+	st_32		CUR_PC_REG, r0, $_machInterruptAddr 
+#endif
 
 	/*
 	 * The second argument is the kpsw.
@@ -2586,6 +2595,11 @@ SaveState:
 	st_32		VOL_TEMP3, VOL_TEMP1, $MACH_REG_STATE_INSERT_OFFSET
 
 	/*
+	 * Clear the upsw so that kernel wont get lisp traps.
+	 */
+	wr_special	upsw, r0, $0
+
+	/*
 	 * Save all of the globals.
 	 */
 
@@ -2779,15 +2793,15 @@ RestoreState:
 	add_nt		VOL_TEMP1, r1, $0
 	add_nt		VOL_TEMP2, r9, $0
 	/*
-	 * Restore the current PC, next PC, insert register, kpsw and the upsw.
+	 * Restore the current PC, next PC, insert register, kpsw.
 	 */
 	ld_32		KPSW_REG, VOL_TEMP1, $MACH_REG_STATE_KPSW_OFFSET
 	ld_32		r1, VOL_TEMP1, $MACH_REG_STATE_UPSW_OFFSET
 	ld_32		r2, VOL_TEMP1, $MACH_REG_STATE_INSERT_OFFSET
 	ld_32		CUR_PC_REG, VOL_TEMP1, $MACH_REG_STATE_CUR_PC_OFFSET
 	ld_32		NEXT_PC_REG, VOL_TEMP1, $MACH_REG_STATE_NEXT_PC_OFFSET
-	wr_special	upsw, r1, $0
 	wr_insert	r2
+	wr_special	upsw,r1,$0
 	/*
 	 * Restore the kpsw to that which we came in with.
 	 */
@@ -2804,6 +2818,7 @@ RestoreState:
 	ld_40		r7, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+56
 	ld_40		r8, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+64
 	ld_40		r9, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+72
+
 	/*
 	 * Return to our caller.
 	 */
@@ -3093,11 +3108,19 @@ _Mach_EnableIntr:
 _Mach_TestAndSet:
 	rd_kpsw		SAFE_TEMP1
 	and		VOL_TEMP1, SAFE_TEMP1, $(~MACH_KPSW_INTR_TRAP_ENA)
+	jump		1f
 	wr_kpsw		VOL_TEMP1, $0
-
+	.align		5	/* 32 byte alignment puts us at the head of
+				 * a block. This should fix a bug with 
+				 * test_and_set and prefeching. 
+				 */
+1:
 	test_and_set	VOL_TEMP1, INPUT_REG1, $0
 	nop
-
+	nop
+	nop
+	nop
+	nop
 	wr_kpsw		SAFE_TEMP1, $0
 
 	add_nt		RETURN_VAL_REG_CHILD, VOL_TEMP1, $0
