@@ -445,12 +445,18 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
     /*
      * Clean up the filesystem state of the exiting process.
      * Do this after deleting VM segments so we can remove swap files.
-     * Remove the process from its process family.  In each case,
-     * migrated processes have already been handled so don't do them again.
+     * If the process is the home "surrogate" process for a migrated
+     * process, don't clean up its state -- the state is on the foreign
+     * node, not this one.
+     *
+     * Remove the process from its process family.  (Note, 
+     * migrated processes have family information on the home node.)
      */
 
-    if (!migrated) {
+    if (exitProcPtr->state != PROC_MIGRATED) {
 	Fs_CloseState(exitProcPtr);
+    }
+    if (!migrated) {
 	ProcFamilyRemove(exitProcPtr);
     }
 
@@ -829,25 +835,25 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
 		status = SYS_ARG_NOACCESS;
 	    }
 	}
-	if (status == SUCCESS && reasonPtr != USER_NIL) {
+	if (reasonPtr != USER_NIL) {
 	    if (Vm_CopyOut(sizeof(int), (Address) &childInfo.termReason, 
 		(Address) reasonPtr) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
 	}
-	if (status == SUCCESS && statusPtr != USER_NIL) {
+	if (statusPtr != USER_NIL) {
 	    if (Vm_CopyOut(sizeof(int), (Address) &childInfo.termStatus, 
 		(Address) statusPtr) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
 	}
-	if (status == SUCCESS && subStatusPtr != USER_NIL) {
+	if (subStatusPtr != USER_NIL) {
 	    if (Vm_CopyOut(sizeof(int), (Address) &childInfo.termCode, 
 		(Address) subStatusPtr) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
 	}
-	if (status == SUCCESS && usagePtr != USER_NIL) {
+	if (usagePtr != USER_NIL) {
 	    /*
 	     * Convert the usages from the internal Timer_Ticks format
 	     * into the external Time format.
