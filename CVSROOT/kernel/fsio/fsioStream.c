@@ -617,9 +617,8 @@ Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
 		Fsutil_HandleName((Fs_HandleHeader *)streamPtr));
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    streamPtr = (Fs_Stream *)NIL;
-	}
-	if (ioHandlePtr != (Fs_HandleHeader *)NIL &&
-	    streamPtr->ioHandlePtr != ioHandlePtr) {
+	} else if (ioHandlePtr != (Fs_HandleHeader *)NIL &&
+		    streamPtr->ioHandlePtr != ioHandlePtr) {
 	    printf("Fsio_StreamClientVerify ioHandle mismatch client ID %d:\n",
 			clientID);
 	    printf("\tStream <%d> my handle %s \"%s\" <%d,%d>\n",
