@@ -275,7 +275,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
     { FS_LCL_PSEUDO_STREAM, FsPseudoStreamCltOpen, FsPseudoStreamRead,
 		FsPseudoStreamWrite, FsPseudoStreamIOControl,
 		FsPseudoStreamSelect,
-		NullProc, NullProc,		/* Get/Set IO Attr */
+		FsPseudoStreamGetIOAttr, FsPseudoStreamSetIOAttr,
 		NoHandle, FsPseudoStreamRelease, FsPseudoStreamMigEnd,
 		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
@@ -335,7 +335,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
     { FS_LCL_PFS_STREAM, FsPfsStreamCltOpen, FsPseudoStreamRead,
 		FsPseudoStreamWrite, FsPseudoStreamIOControl,
 		FsPseudoStreamSelect,
-		NullProc, NullProc,			/* Get/Set IO Attr */
+		FsPseudoStreamGetIOAttr, FsPseudoStreamSetIOAttr,
 		NoHandle, FsPseudoStreamRelease, FsPseudoStreamMigEnd,
 		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
