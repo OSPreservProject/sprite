@@ -316,7 +316,6 @@ Timer_TimerServiceInterrupt()
     static int		callCount = 0;
     int			seconds;
     int			diff;
-    Boolean		correctedCounter;
     static Boolean	initialized = FALSE;
 
     static	int	eventDebug[1000];
@@ -324,50 +323,8 @@ Timer_TimerServiceInterrupt()
 #define INC(a) { (a) = ((a) + 1) % 1000; }
 
     timerStatus = *regCPtr;
-    correctedCounter = FALSE;
     eventDebug[dbgCtr] = 0;
     if (timerStatus & REGC_PER_INT_PENDING) {
-	/*
-	 * Interval timer interrupt.
-	 */
-	eventDebug[dbgCtr] |= 0x1;
-	callCount++;
-	if (callCount >= SANITY_CHECK_INTERVAL) {
-	    if ((*regAPtr & REGA_UIP) == 0) {
-		currentTODParts.seconds = *secPtr;
-		currentTODParts.minutes = *minPtr;
-		currentTODParts.hours = *hourPtr;
-		currentTODParts.dayOfMonth = *dayPtr;
-		currentTODParts.dayOfYear = -1;
-		currentTODParts.month = *monPtr-1;
-		currentTODParts.year = *yearPtr;
-		Time_FromParts(&currentTODParts, FALSE, &hardSeconds);
-		softSeconds = counter.seconds;
-		diff = hardSeconds - previousHardSeconds;
-		eventDebug[dbgCtr] |= 0x2;
-		if (softSeconds - previousSoftSeconds != diff && initialized) {
-		    /*
-		     * Note that the software counter cannot be ahead of
-		     * the hardware counter. We are only looking at the
-		     * seconds, and the seconds are only incremented 
-		     * during an interrupt. We only get one interrupt
-		     * a second so we may be behind but not ahead.
-		     */
-		    if (softSeconds - previousSoftSeconds > diff) {
-			panic("Software time is ahead of hardware!\n");
-		    }
-		    counter.seconds = previousSoftSeconds + diff;
-		    softSeconds = counter.seconds;
-		    timerCorrectedClock++;
-		    correctedCounter = TRUE;
-		    eventDebug[dbgCtr] |= 0x4;
-		}
-		previousHardSeconds = hardSeconds;
-		previousSoftSeconds = softSeconds;
-		callCount = 0;
-		initialized = TRUE;
-	    }
-	}
 	/*
 	 * Increment the counter.
 	 */
@@ -388,13 +345,54 @@ Timer_TimerServiceInterrupt()
 	    counter.microseconds = ONE_MILLION - 1;
 	}
     }
-    if ((timerStatus & REGC_UPDATE_INT_PENDING) && (!correctedCounter)) {
+    if ((timerStatus & REGC_UPDATE_INT_PENDING)) {
 	/*
 	 * RTC interrupt.
 	 */
 	counter.seconds++;
 	counter.microseconds = 0;
-	eventDebug[dbgCtr] |= 0x8;
+	eventDebug[dbgCtr] |= 0x1;
+    } else if (timerStatus & REGC_PER_INT_PENDING) {
+	/*
+	 * Interval timer interrupt.
+	 */
+	eventDebug[dbgCtr] |= 0x2;
+	callCount++;
+	if (callCount >= SANITY_CHECK_INTERVAL) {
+	    if ((*regAPtr & REGA_UIP) == 0) {
+		currentTODParts.seconds = *secPtr;
+		currentTODParts.minutes = *minPtr;
+		currentTODParts.hours = *hourPtr;
+		currentTODParts.dayOfMonth = *dayPtr;
+		currentTODParts.dayOfYear = -1;
+		currentTODParts.month = *monPtr-1;
+		currentTODParts.year = *yearPtr;
+		Time_FromParts(&currentTODParts, FALSE, &hardSeconds);
+		softSeconds = counter.seconds;
+		diff = hardSeconds - previousHardSeconds;
+		eventDebug[dbgCtr] |= 0x4;
+		if (softSeconds - previousSoftSeconds != diff && initialized) {
+		    /*
+		     * Note that the software counter cannot be ahead of
+		     * the hardware counter. We are only looking at the
+		     * seconds, and the seconds are only incremented 
+		     * during an interrupt. We only get one interrupt
+		     * a second so we may be behind but not ahead.
+		     */
+		    if (softSeconds - previousSoftSeconds > diff) {
+			panic("Software time is ahead of hardware!\n");
+		    }
+		    counter.seconds = previousSoftSeconds + diff;
+		    softSeconds = counter.seconds;
+		    timerCorrectedClock++;
+		    eventDebug[dbgCtr] |= 0x8;
+		}
+		previousHardSeconds = hardSeconds;
+		previousSoftSeconds = softSeconds;
+		callCount = 0;
+		initialized = TRUE;
+	    }
+	}
     }
     if (timerStatus & REGC_PER_INT_PENDING) {
 	/*
