@@ -22,7 +22,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "sched.h"
 #include "vm.h"
-#include "vmMachInt.h"
 
 /*
  *  Number of processors in the system.
@@ -1262,7 +1261,8 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
 #endif
 	/* Kill user process */
-	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
+	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE,
+	       addrErrReg);
 	return;
     }
     return;
@@ -1555,14 +1555,15 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
     switch (trapType) {
     case MACH_ILLEGAL_INSTR:
 	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, procPtr->processID,
-		FALSE);
+		FALSE, pcValue);
 	break;
     case MACH_PRIV_INSTR:
-	(void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST, procPtr->processID, FALSE);
+	(void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST, procPtr->processID,
+		FALSE, pcValue);
 	break;
     case MACH_MEM_ADDR_ALIGN:
 	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, procPtr->processID,
-		FALSE);
+		FALSE, busErrReg);
 	break;
     case MACH_FP_EXCEP: {
          unsigned int fsr;
@@ -1794,7 +1795,8 @@ MachUserDebug()
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	panic("MachUserDebug: current process was NIL!\n");
     }
-    Sig_Send(SIG_BREAKPOINT, SIG_NO_CODE, procPtr->processID, FALSE);
+    Sig_Send(SIG_BREAKPOINT, SIG_NO_CODE, procPtr->processID, FALSE,
+	    (Address)0);
     return;
 }
 

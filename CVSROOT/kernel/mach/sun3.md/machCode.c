@@ -32,7 +32,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "prof.h"
 #include "sched.h"
 #include "vm.h"
-#include "vmMachInt.h"
 #include "sig.h"
 #include "swapBuffer.h"
 #include "user/sigMach.h"
@@ -1023,7 +1022,8 @@ MachTrap(trapStack)
 			    trapStack.excStack.tail.addrBusErr.faultAddr,
 			    *(int *)&trapStack.busErrorReg);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
-				procPtr->processID, FALSE);
+				procPtr->processID, FALSE,
+				trapStack.execStack.tail.addrBusErr.faultAddr);
 	    }
 	    break;
 	}
@@ -1045,9 +1045,11 @@ MachTrap(trapStack)
 	    Proc_Lock(procPtr);
 	    if (procPtr->genFlags & PROC_DEBUG_ON_EXEC) {
 	    	procPtr->genFlags &= ~PROC_DEBUG_ON_EXEC;
-		(void) Sig_SendProc(procPtr, SIG_DEBUG, SIG_NO_CODE);
+		(void) Sig_SendProc(procPtr, SIG_DEBUG, SIG_NO_CODE,
+			(Address)0);
 	    } else {
-		(void) Sig_SendProc(procPtr, SIG_BREAKPOINT, SIG_NO_CODE);
+		(void) Sig_SendProc(procPtr, SIG_BREAKPOINT, SIG_NO_CODE,
+			(Address)0);
 	    }
 	    Proc_Unlock(procPtr);
 	    break;
@@ -1062,27 +1064,33 @@ MachTrap(trapStack)
 
 	case MACH_ADDRESS_ERROR:
 	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.execStack.tail.addrBusErr.faultAddr);
 	    break;
 	case MACH_ILLEGAL_INST:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	    break;
 	case MACH_ZERO_DIV:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_ZERO_DIV,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	    break;
 	case MACH_CHK_INST:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_CHK,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	    break;
 	case MACH_TRAPV:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_TRAPV,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	    break;
 	case MACH_PRIV_VIOLATION:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	    break;
 	case MACH_TRACE_TRAP: 
 	    /*
@@ -1094,44 +1102,55 @@ MachTrap(trapStack)
 	    if (procPtr->genFlags & PROC_SINGLE_STEP_FLAG) {
 		procPtr->genFlags &= ~PROC_SINGLE_STEP_FLAG;
 		(void) Sig_Send(SIG_TRACE_TRAP, SIG_NO_CODE,
-				procPtr->processID, FALSE);
+				procPtr->processID, FALSE,
+				trapStack.excStack.pc);
 	    }
 	    break;
 
 	case MACH_EMU1010:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_EMU1010,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	    break;
 	case MACH_EMU1111:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_EMU1111,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	    break;
 	case MACH_BAD_TRAP:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	    break;
 #ifdef sun3
 	case MACH_FP_UNORDERED_COND:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_UNORDERED_COND,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	case MACH_FP_INEXACT_RESULT:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_INEXACT_RESULT,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	case MACH_FP_ZERO_DIV:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_ZERO_DIV,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	case MACH_FP_UNDERFLOW:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_UNDERFLOW,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	case MACH_FP_OPERAND_ERROR:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_OPERAND_ERROR,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	case MACH_FP_OVERFLOW:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_OVERFLOW,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 	case MACH_FP_NAN:
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_NAN,
-		            procPtr->processID, FALSE);
+			    procPtr->processID, FALSE,
+			    trapStack.excStack.pc);
 #endif
 	default:
 	    return(MACH_KERN_ERROR);
