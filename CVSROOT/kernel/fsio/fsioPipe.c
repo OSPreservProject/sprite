@@ -1169,16 +1169,22 @@ FsPipeScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;     /* Handle about to be deleted */
 {
     register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
+#ifdef notdef
     if (List_IsEmpty(&handlePtr->clientList) &&
 	(handlePtr->flags == (PIPE_WRITER_GONE|PIPE_READER_GONE))) {
+	/*
+	 * Never scavenge pipe handles.  Regular recovery cleanup
+	 * should invoke the pipe close routines and do proper cleanup.
+	 */
+	free(handlePtr->buffer);
 	FsWaitListDelete(&handlePtr->readWaitList);
 	FsWaitListDelete(&handlePtr->writeWaitList);
 	FsHandleRemove(hdrPtr);
 	fsStats.object.pipes--;
 	return(TRUE);
-    } else {
-	FsHandleUnlock(hdrPtr);
-	return(FALSE);
     }
+#endif notdef
+    FsHandleUnlock(hdrPtr);
+    return(FALSE);
 }
 
