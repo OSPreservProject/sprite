@@ -124,7 +124,7 @@ sun3: ${OBJS} ${ENDOBJ} Makefile
 	@ls -l $@
 	@size $@
 	cpstrip $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite allspice:/sprite/$@
+	rcp /sprite/kernels/$@.sprite allspice:/sprite/tmp/$@
 	nm $@ | sort > $@.nm
 
 profile2: ${PROFOBJS} ${ENDOBJ} Makefile
