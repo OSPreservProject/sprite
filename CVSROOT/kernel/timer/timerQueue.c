@@ -37,7 +37,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "dev.h"
-
 
 
 /* DATA STRUCTURES */
@@ -115,7 +114,6 @@ Timer_Init()
     }
     initialized = TRUE;
 
-    Timer_TimerInit(TIMER_CALLBACK_TIMER);
     TimerTicksInit();
 
     bzero((Address) &timer_Statistics, sizeof(timer_Statistics));
@@ -127,6 +125,7 @@ Timer_Init()
      * Initialized the time of day clock.
      */
     TimerClock_Init();
+    Timer_TimerInit(TIMER_CALLBACK_TIMER);
     Timer_TimerStart(TIMER_CALLBACK_TIMER);
 }
 
