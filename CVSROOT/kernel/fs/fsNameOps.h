@@ -109,7 +109,7 @@ typedef struct FsMakeDeviceArgs {
  * FS_DOMAIN_RENAME and FS_DOMAIN_HARD_LINK
  */
 typedef struct Fs2PathParams {
-    FsLookupArgs	lookupArgs;
+    FsLookupArgs	lookup;
     Fs_FileID		prefixID2;
 } Fs2PathParams;
 
