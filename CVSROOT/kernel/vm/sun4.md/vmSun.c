@@ -749,54 +749,63 @@ MMUInit(firstFreeSegment)
 	Boolean		inusePMEG;
 
 	virtAddr = (Address) (i << VMMACH_SEG_SHIFT);
-	pageCluster = VmMachGetSegMap(virtAddr);
-	if (pageCluster != VMMACH_INV_PMEG) {
-	    inusePMEG = FALSE;
-	    for (j = 0; 
-	         j < VMMACH_NUM_PAGES_PER_SEG_INT; 
-		 j++, virtAddr += VMMACH_PAGE_SIZE_INT) {
-		pte = VmMachGetPageMap(virtAddr);
-		if ((pte & VMMACH_RESIDENT_BIT) &&
-		    (pte & (VMMACH_TYPE_FIELD|VMMACH_PAGE_FRAME_FIELD)) != 0) {
-		    /*
-		     * A PMEG contains a valid mapping if the resident
-		     * bit is set and the page frame and type field
-		     * are non-zero.  On Sun 2/50's the PROM sets
-		     * the resident bit but leaves the page frame equal
-		     * to zero.
-		     */
-		    if (!inusePMEG) {
-			pmegArray[pageCluster].segPtr = vm_SysSegPtr;
-			pmegArray[pageCluster].hardSegNum = i;
-			pmegArray[pageCluster].flags = PMEG_NEVER_FREE;
-			inusePMEG = TRUE;
-		    }
-		} else {
+        if ((virtAddr >= (Address)VMMACH_DMA_START_ADDR) &&
+	    (virtAddr < (Address)(VMMACH_DMA_START_ADDR+VMMACH_DMA_SIZE))) {
+	    /*
+	     * Blow away anything in DMA space. 
+	     */
+	    pageCluster = VMMACH_INV_PMEG;
+	    VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
+	} else {
+	    pageCluster = VmMachGetSegMap(virtAddr);
+	    if (pageCluster != VMMACH_INV_PMEG) {
+		inusePMEG = FALSE;
+		for (j = 0; 
+		     j < VMMACH_NUM_PAGES_PER_SEG_INT; 
+		     j++, virtAddr += VMMACH_PAGE_SIZE_INT) {
+		    pte = VmMachGetPageMap(virtAddr);
+		    if ((pte & VMMACH_RESIDENT_BIT) &&
+			(pte & (VMMACH_TYPE_FIELD|VMMACH_PAGE_FRAME_FIELD)) != 0) {
+			/*
+			 * A PMEG contains a valid mapping if the resident
+			 * bit is set and the page frame and type field
+			 * are non-zero.  On Sun 2/50's the PROM sets
+			 * the resident bit but leaves the page frame equal
+			 * to zero.
+			 */
+			if (!inusePMEG) {
+			    pmegArray[pageCluster].segPtr = vm_SysSegPtr;
+			    pmegArray[pageCluster].hardSegNum = i;
+			    pmegArray[pageCluster].flags = PMEG_NEVER_FREE;
+			    inusePMEG = TRUE;
+			}
+		    } else {
 #ifdef NOTDEF
-		    VmMachFlushPage(virtAddr);
+			VmMachFlushPage(virtAddr);
 #endif NOTDEF
-		    VmMachSetPageMap(virtAddr, (VmMachPTE)0);
+			VmMachSetPageMap(virtAddr, (VmMachPTE)0);
+		    }
 		}
-	    }
-	    virtAddr -= VMMACH_SEG_SIZE;
-	    if (!inusePMEG ||
-	        (virtAddr >= (Address)VMMACH_DMA_START_ADDR &&
-		 virtAddr < (Address)(VMMACH_DMA_START_ADDR+VMMACH_DMA_SIZE))) {
+		virtAddr -= VMMACH_SEG_SIZE;
+		if (!inusePMEG ||
+		    (virtAddr >= (Address)VMMACH_DMA_START_ADDR &&
+		     virtAddr < (Address)(VMMACH_DMA_START_ADDR+VMMACH_DMA_SIZE))) {
 #ifdef PRINT_ZAP
-		int z;
-		/* 
-		 * We didn't find any valid mappings in the PMEG or the PMEG
-		 * is in DMA space so delete it.
-		 */
-		printf("Zapping segment at virtAddr %x\n", virtAddr);
-		for (z = 0; z < 100000; z++) {
-		}
+		    int z;
+		    /* 
+		     * We didn't find any valid mappings in the PMEG or the PMEG
+		     * is in DMA space so delete it.
+		     */
+		    printf("Zapping segment at virtAddr %x\n", virtAddr);
+		    for (z = 0; z < 100000; z++) {
+		    }
 #endif
 #ifdef NOTDEF
-		VmMachFlushSegment(virtAddr);
+		    VmMachFlushSegment(virtAddr);
 #endif NOTDEF
-		VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
-		pageCluster = VMMACH_INV_PMEG;
+		    VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
+		    pageCluster = VMMACH_INV_PMEG;
+		}
 	    }
 	}
 	*segTablePtr = pageCluster;
@@ -1068,7 +1077,8 @@ SegDelete(segPtr)
 /*
  *----------------------------------------------------------------------
  *
- * VmMach_GetContext --
+ * VmMach_GetC
+ ontext --
  *
  *	Return the context for a process, given its pcb.
  *
@@ -3329,7 +3339,8 @@ DevBufferInit()
      */
     for (virtAddr = baseAddr; virtAddr < endAddr; ) {
 	if (VmMachGetSegMap(virtAddr) != VMMACH_INV_PMEG) {
-	    panic("DevBufferInit: DMA space already valid\n");
+	    printf("DevBufferInit: DMA space already valid at 0x%x\n",
+		   (unsigned int) virtAddr);
 	}
 	/* 
 	 * Need to allocate a PMEG.
@@ -3349,105 +3360,6 @@ DevBufferInit()
     MASTER_UNLOCK(vmMachMutexPtr);
 }
 
-
-/*
- ----------------------------------------------------------------------
- *
- * VmMach_DevBufferAlloc --
- *
- *	Allocate the amount of memory requested out of the range of kernel 
- *	virtual addresses given in *vmDevBufPtr.  The request is rounded up
- *	to the next page boundary.
- *
- * Results:
- *	Pointer into kernel virtual address space of where to access the
- *	memory.  NIL is returned if there is not enough memory.
- *
- * Side effects:
- *	The range struct is updated to reflect the current amount of memory 
- *	left.
- *
- *----------------------------------------------------------------------
- */
-Address
-VmMach_DevBufferAlloc(vmDevBufPtr, numBytes)
-    VmMach_DevBuffer	*vmDevBufPtr;	/* Where to allocate the memory from. */
-    int			numBytes;	/* Number of bytes to allocate. */
-{
-#ifdef NOTDEF
-    Address		retAddr;
-    static initialized = FALSE;
-
-    if (!initialized) {
-	DevBufferInit(vmDevBufPtr);
-	initialized = TRUE;
-    }
-
-    retAddr = vmDevBufPtr->baseAddr;
-    vmDevBufPtr->baseAddr += numBytes;
-
-    if (vmDevBufPtr->baseAddr > vmDevBufPtr->endAddr) {
-	return((Address) NIL);
-    }
-
-    /*
-     * Round up to next page boundary.
-     */
-
-    vmDevBufPtr->baseAddr = 
-(Address) (((int) vmDevBufPtr->baseAddr - 1 + VMMACH_PAGE_SIZE) & ~VMMACH_OFFSET_MASK);
-    return(retAddr);
-#endif NOTDEF
-}
-
-
-/*
- ----------------------------------------------------------------------
- *
- * VmMach_DevBufferMap --
- *
- *	Map the given range of kernel virtual addresses into the kernel's
- *	VAS starting at the given kernel virtual address.  It is assumed
- *	that there are already PMEGS allocated for these pages.
- *	
- *	IMPORTANT: The kernel VAS where to map into must be an address 
- *		   returned from VmMach_DevBufferAlloc.
- *
- * Results:
- *	Pointer into kernel virtual address space of where to access the
- *	memory.
- *
- * Side effects:
- *	The hardware page table is modified.
- *
- *----------------------------------------------------------------------
- */
-Address
-VmMach_DevBufferMap(numBytes, startAddr, mapAddr)
-    int		numBytes;	/* Number of bytes to map in. */
-    Address	startAddr;	/* Kernel virtual address to start mapping in.*/
-    Address	mapAddr;	/* Where to map bytes in. */
-{
-#ifdef NOTDEF
-    Address 		virtAddr;
-    VmMachPTE		pte;
-    int			numPages;
-    int			virtPage;
-
-    numPages = (((int) startAddr & (VMMACH_PAGE_SIZE - 1)) + numBytes - 1) / 
-			VMMACH_PAGE_SIZE + 1;
-    for (virtAddr = mapAddr, 
-	     virtPage = (unsigned int) (startAddr) >> VMMACH_PAGE_SHIFT;
-	 numPages > 0;
-	 virtAddr += VMMACH_PAGE_SIZE, virtPage++, numPages--) {
-	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT |
-	      VirtToPhysPage(Vm_GetKernPageFrame(virtPage));
-	SET_ALL_PAGE_MAP(virtAddr, pte);
-    }
-
-    return(mapAddr + ((int) (startAddr) & VMMACH_OFFSET_MASK));
-#endif NOTDEF
-}
 
 static	Boolean	dmaPageBitMap[VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
 
