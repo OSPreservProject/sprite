@@ -685,7 +685,7 @@ retry:
     }
     if (xyPtr->flags & XYLOGICS_RETRY) {
 	retries++;
-	xyPtr->flags &= ~XYLOGICS_RETRY;
+	xyPtr->flags &= ~(XYLOGICS_RETRY|XYLOGICS_IO_COMPLETE);
 	if (retries < 3) {
 	    Sys_Panic(SYS_WARNING, "Xylogics retrying cmd %d at <%d,%d,%d>",
 				command, diskAddrPtr->cylinder,
