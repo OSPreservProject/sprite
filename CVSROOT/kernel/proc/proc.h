@@ -20,7 +20,7 @@
 #include "timer.h"
 #include "machine.h"
 #include "sig.h"
-#include "fs.h"
+#include "sys.h"
 #include "exc.h"
 
 /*
@@ -278,14 +278,14 @@ typedef struct Proc_ControlBlock {
      *-----------------------------------------------------------------
      */
 
-    Fs_Stream	  *cwdPtr;		/* The current working directory. */
+    struct Fs_Stream	  *cwdPtr;	/* The current working directory. */
     unsigned int   filePermissions;	/* The bits in this mask correspond
 					 * to the permissions mask of a file.
 					 * If one of these bits is set it
 					 * TURNS OFF the corresponding
 					 * permission when a file is created. */
     int		   numStreams;		/* Size of streamList array. */
-    Fs_Stream	   **streamList;	/* Array of pointers to open files.
+    struct Fs_Stream   **streamList;	/* Array of pointers to open files.
 					 * This list is indexed by an integer
 					 * known as a streamID. */
 
