@@ -188,7 +188,7 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
 		(Address)&statusInfo, (Address) bufferPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
-	if (argsPtr != (Proc_PCBArgString *) NIL) {
+	if (argsPtr != (Proc_PCBArgString *) USER_NIL) {
 	    if (!remote) {
 		if (procPtr->argString != (Address) NIL) {
 		    (void) strncpy(argString, procPtr->argString,
