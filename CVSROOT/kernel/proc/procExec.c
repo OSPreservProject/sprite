@@ -104,15 +104,18 @@ typedef struct {
  * Define a structure to hold all the information about arguments
  * and environment variables (pointer and length).  This makes it easier
  * to pass a NIL pointer for the whole thing, and to keep them in one
- * place.
+ * place.  The number of arguments/environment pointers includes the 
+ * null pointer at the end of the array.
  */
 
 typedef struct {
     Boolean	userMode;	/* TRUE if the arguments are in user space */
     char	**argPtrArray;	/* The array of argument pointers. */
     int		numArgs;	/* The number of arguments in the argArray. */
+    int		argLength;	/* actual size of argArray */
     char	**envPtrArray;	/* The array of environment pointers. */
     int		numEnvs;	/* The number of arguments in the envArray. */
+    int		envLength;	/* actual size of envArray */
 } UserArgs;
 
 /*
@@ -356,8 +359,10 @@ Proc_Exec(fileName, argPtrArray, envPtrArray, debugMe, host)
     userArgs.userMode = TRUE;
     userArgs.argPtrArray = newArgPtrArray;
     userArgs.numArgs = newArgPtrArrayLength / sizeof(Address);
+    userArgs.argLength = newArgPtrArrayLength;
     userArgs.envPtrArray = newEnvPtrArray;
     userArgs.numEnvs = newEnvPtrArrayLength / sizeof(Address);
+    userArgs.envLength = newEnvPtrArrayLength;
 
     /*
      * Check for explicit remote exec onto this host, in which case it's
@@ -468,8 +473,10 @@ Proc_KernExec(fileName, argPtrArray)
     userArgs.userMode = FALSE;
     userArgs.argPtrArray = argPtrArray;
     userArgs.numArgs = PROC_MAX_EXEC_ARGS;
+    userArgs.argLength = PROC_MAX_EXEC_ARGS * sizeof(Address);
     userArgs.envPtrArray = (char **) NIL;
     userArgs.numEnvs = 0;
+    userArgs.envLength = 0;
     status = DoExec(fileName, &userArgs, (ExecEncapState **) NIL, FALSE);
     /*
      * If the exec failed, then delete the extra segments and fix up the
@@ -1081,13 +1088,15 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	if (userArgsPtr->userMode) {
 	    if (userArgsPtr->argPtrArray != (char **) NIL) {
 		Vm_MakeUnaccessible((Address) userArgsPtr->argPtrArray,
-				    userArgsPtr->numArgs * 4);
+				    userArgsPtr->argLength);
 		userArgsPtr->argPtrArray = (char **)NIL;
+		userArgsPtr->argLength = 0;
 	    }
 	    if (userArgsPtr->envPtrArray != (char **) NIL) {
 		Vm_MakeUnaccessible((Address) userArgsPtr->envPtrArray,
-				    userArgsPtr->numEnvs * 4);
+				    userArgsPtr->envLength);
 		userArgsPtr->envPtrArray = (char **)NIL;
+		userArgsPtr->envLength = 0;
 	    }
 	}
 
@@ -1257,13 +1266,15 @@ execError:
     if (userArgsPtr != (UserArgs *) NIL && userArgsPtr->userMode) {
 	if (userArgsPtr->argPtrArray != (char **) NIL) {
 	    Vm_MakeUnaccessible((Address) userArgsPtr->argPtrArray,
-				userArgsPtr->numArgs * 4);
+				userArgsPtr->argLength);
 	    userArgsPtr->argPtrArray = (char **)NIL;
+	    userArgsPtr->argLength = 0;
 	}
 	if (userArgsPtr->envPtrArray != (char **) NIL) {
 	    Vm_MakeUnaccessible((Address) userArgsPtr->envPtrArray,
-				userArgsPtr->numEnvs * 4);
+				userArgsPtr->envLength);
 	    userArgsPtr->envPtrArray = (char **)NIL;
+	    userArgsPtr->envLength = 0;
 	}
     }
     if (argBuffer != (Address) NIL) {
