@@ -1930,9 +1930,9 @@ char * (*machType[]) _ARGS_((int bufferSize, char *buffer, int *magic,
 	int *syms, char **other)) =  {
     machType68k,
     machTypeSparc,
-    machTypeSpur,
+/*  machTypeSpur,   -- No longer supported */
     machTypeMips,
-    machTypeSymm,
+/*  machTypeSymm,   -- No longer supported */
 };
 /*
  *----------------------------------------------------------------------
