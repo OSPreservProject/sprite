@@ -197,4 +197,10 @@ Sync:
 Added syncSysV.c, which supports semget, semop, semctl System V semaphore
 functions.
 -------------------------------------------------------------------------
+
+1.063	Wed Apr  4 15:13:55 PDT 1990
+Changes on the server side of the new rpc negative acknowledgement stuff so that
+neg acks will be backwards-compatible on client machines running old kernels.
+I now OR in an RPC_ACK with the RPC_NACK.  I've also fixed some synchronization
+problems in the neg ack stuff.
     New files linked in from the net library.
