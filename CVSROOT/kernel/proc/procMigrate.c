@@ -104,7 +104,8 @@ Proc_Migrate(pid, nodeID)
     }
     
     /*
-     * Currently not allowed to migrate yourself.
+     * Currently not allowed to migrate yourself.   (Worth trying sometime,
+     * though.)
      */
     
     if (Proc_ComparePIDs(pid, PROC_MY_PID)) {
