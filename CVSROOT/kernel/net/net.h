@@ -82,6 +82,7 @@ typedef struct {
 extern	Net_EtherStats	net_EtherStats;
 
 extern	void	Net_Init();
+extern	void	Net_Reset();
 extern	void	Net_Input();
 extern	ReturnStatus	Net_Output();
 extern	void	Net_EtherOutputSync();

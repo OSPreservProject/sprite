@@ -37,6 +37,7 @@ typedef struct {
     void (*init)();
     void (*output)();
     void (*intr)();
+    void (*reset)();
 } NetEtherFuncs;
 extern	NetEtherFuncs	netEtherFuncs;
 
@@ -47,6 +48,7 @@ extern	NetEtherFuncs	netEtherFuncs;
 extern	void	Net3CInit();
 extern	void	Net3COutput();
 extern	void	Net3CIntr();
+extern	void	Net3CRestart();
 
 /*
  * Procedures for the Intel driver.
@@ -55,6 +57,7 @@ extern	void	Net3CIntr();
 extern	void	NetIEInit();
 extern	void	NetIEOutput();
 extern	void	NetIEIntr();
+extern	void	NetIERestart();
 
 /*
  * Procedures for the internet packet handler.

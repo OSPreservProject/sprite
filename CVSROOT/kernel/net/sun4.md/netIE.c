@@ -417,17 +417,6 @@ NetIERestart()
     DISABLE_INTR();
 
     /*
-     * Drop the current outgoing packet.
-     */    
-    if (netIECurScatGathPtr != (Net_ScatterGather *) NIL) {
-	netIECurScatGathPtr->done = TRUE;
-	if (netIECurScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
-	    NetOutputWakeup(netIECurScatGathPtr->conditionPtr);
-	}
-	netIECurScatGathPtr = (Net_ScatterGather *) NIL;
-    }
-
-    /*
      * Allocate space for the System Configuration Pointer.
      */
     Vm_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
@@ -441,6 +430,11 @@ NetIERestart()
      * Unmap the extra page.
      */
     Vm_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+
+    /*
+     * Restart transmission of packets.
+     */
+    NetIEXmitRestart();
 
     ENABLE_INTR();
 }
@@ -461,7 +455,6 @@ NetIERestart()
  *
  *----------------------------------------------------------------------
  */
-
 void
 NetIEIntr(polling)
     Boolean	polling;	/* TRUE if are being polled instead of

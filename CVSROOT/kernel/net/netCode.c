@@ -73,6 +73,7 @@ Net_GatherCopy(scatterGatherPtr, scatterGatherLength, destAddr)
 	soFar += scatterGatherPtr->length;
     }
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -98,20 +99,19 @@ Net_Init()
     /*
      * Zero out the statistics struct.
      */
-
     Byte_Zero(sizeof(net_EtherStats), (Address) &net_EtherStats);
 
     /*
      * Set up the struct of functions to be called depending on the 
      * machine type.
      */
-
     machineType = Mach_GetMachineType();
     switch(machineType) {
 	case SYS_SUN_2_120:
 	    netEtherFuncs.init   = Net3CInit;
 	    netEtherFuncs.output = Net3COutput;
 	    netEtherFuncs.intr   = Net3CIntr;
+	    netEtherFuncs.reset  = Net3CRestart;
 	    break;
 
 	case SYS_SUN_2_50: /* SYS_SUN_2_160 has the same value */
@@ -119,6 +119,7 @@ Net_Init()
 	    netEtherFuncs.init   = NetIEInit;
 	    netEtherFuncs.output = NetIEOutput;
 	    netEtherFuncs.intr   = NetIEIntr;
+	    netEtherFuncs.reset  = NetIERestart;
 	    break;
 
 	default:
@@ -130,13 +131,34 @@ Net_Init()
     /*
      * Call the initialization routine.
      */
-
     (netEtherFuncs.init)();
 
     /*
      * Pre-load some addresses, including the broadcast address.
      */
     Net_RouteInit();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Reset --
+ *
+ *	Reset the network controllers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reinitializes the the ethernet chips.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Net_Reset()
+{
+    netEtherFuncs.reset();
 }
 
 

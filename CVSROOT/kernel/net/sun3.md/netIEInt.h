@@ -550,7 +550,7 @@ extern	Address	netIERecvBuffers[];
 /*
  * Pointer to scatter gather element for current packet being sent.
  */
-extern Net_ScatterGather *netIECurScatGathPtr;
+extern Net_ScatterGather *curScatGathPtr;
 
 /*
  * General routines.
@@ -564,6 +564,7 @@ extern	void	NetIEReset();
 
 extern	void	NetIEXmitInit();
 extern	void	NetIEXmitDone();
+extern	void	NetIEXmitRestart();
 
 /*
  * Routines for the command unit.

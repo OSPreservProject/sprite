@@ -25,7 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Pointer to scatter gather element for current packet being sent.
  */
-Net_ScatterGather *netIECurScatGathPtr = (Net_ScatterGather *) NIL;
+Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
 
 /*
  * The address of the array of buffer descriptor headers.
@@ -90,7 +90,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     int					length;
 
     netIEState.transmitting = TRUE;
-    netIECurScatGathPtr = scatterGatherPtr;
+    curScatGathPtr = scatterGatherPtr;
 
     /*
      * There is already a prelinked command list.  A pointer to the list
@@ -282,7 +282,7 @@ NetIEXmitInit()
 		  LIST_ATREAR(netIEState.xmitFreeList));
     } else {
 	netIEState.transmitting = FALSE;
-	netIECurScatGathPtr = (Net_ScatterGather *) NIL;
+	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
 }
 
@@ -315,8 +315,7 @@ NetIEXmitDone()
      * If there is nothing that is currently being sent then something is
      * wrong.
      */
-
-    if (netIECurScatGathPtr == (Net_ScatterGather *) NIL) {
+    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
 	Sys_Panic(SYS_WARNING, "NetIEXmitDone: No current packet\n.");
 	return;
     }
@@ -326,16 +325,14 @@ NetIEXmitDone()
     /*
      * Mark the packet as done.
      */
-
-    netIECurScatGathPtr->done = TRUE;
-    if (netIECurScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
-	NetOutputWakeup(netIECurScatGathPtr->conditionPtr);
+    curScatGathPtr->done = TRUE;
+    if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	NetOutputWakeup(curScatGathPtr->conditionPtr);
     }
 
     /*
      * Record statistics about the packet.
      */
-
     cmdPtr = netIEState.xmitCBPtr;
     if (cmdPtr->tooManyCollisions) {
 	net_EtherStats.xmitCollisionDrop++;
@@ -352,7 +349,6 @@ NetIEXmitDone()
      * If there are more packets to send then send the first one on
      * the queue.  Otherwise there is nothing being transmitted.
      */
-
     if (!List_IsEmpty(netIEState.xmitList)) {
 	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
 	OutputPacket(xmitElementPtr->etherHdrPtr,
@@ -362,7 +358,7 @@ NetIEXmitDone()
 		  LIST_ATREAR(netIEState.xmitFreeList));
     } else {
 	netIEState.transmitting = FALSE;
-	netIECurScatGathPtr = (Net_ScatterGather *) NIL;
+	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
 }
 
@@ -536,4 +532,52 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netIEState.xmitList)); 
 
     ENABLE_INTR();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEXmitRestart --
+ *
+ *	Restart transmission of packets after a chip reset.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Current scatter gather pointer is reset and new packets may be
+ *	sent out.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetIEXmitRestart()
+{
+    NetXmitElement	*xmitElementPtr;
+
+    /*
+     * Drop the current outgoing packet.
+     */    
+    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
+	curScatGathPtr->done = TRUE;
+	if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->conditionPtr);
+	}
+    }
+
+    /*
+     * Start output if there are any packets queued up.
+     */
+    if (!List_IsEmpty(netIEState.xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
+	OutputPacket(xmitElementPtr->etherHdrPtr,
+		     xmitElementPtr->scatterGatherPtr,
+		     xmitElementPtr->scatterGatherLength);
+	List_Move((List_Links *) xmitElementPtr, 
+		  LIST_ATREAR(netIEState.xmitFreeList));
+    } else {
+	netIEState.transmitting = FALSE;
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
 }
