@@ -878,7 +878,7 @@ VmMach_FlushCode(procPtr, virtAddrPtr, virtPage, numBytes)
     unsigned		virtPage;
     int			numBytes;
 {
-    Mach_FlushCode((virtPage << VMMACH_PAGE_SHIFT) + virtAddrPtr->offset, 
+    Mach_FlushCode((virtPage << VMMACH_PAGE_SHIFT) + segOffset(virtAddrPtr),
 		   numBytes);
 }
 
@@ -1164,7 +1164,8 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	lowEntry = ((pte & VM_PAGE_FRAME_FIELD) << 
 				VMMACH_TLB_PHYS_PAGE_SHIFT) | 
 			VMMACH_TLB_VALID_BIT;
-	if (!(pte & (VM_COW_BIT | VM_READ_ONLY_PROT))) {
+	if (!(pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) && !(virtAddrPtr->flags
+		& VM_READONLY_SEG)) {
 	    lowEntry |= VMMACH_TLB_ENTRY_WRITEABLE;
 	}
 	if (virtAddrPtr->flags & USING_MAPPED_SEG) {
@@ -1868,3 +1869,26 @@ VmMach_UserUnmap()
     }
 }
 
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedStart --
+ *
+ *      Determine the starting address for a shared segment.
+ *
+ * Results:
+ *      Returns the proper start address for the segment.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Address
+VmMach_SharedStart(reqAddr,size)
+Address         reqAddr;        /* Requested start address. */
+int             size;           /* Length of shared segment. */
+{
+    return reqAddr;
+}

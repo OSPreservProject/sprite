@@ -18,6 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machMon.h"
 #include "vmMachInt.h"
 #include "vm.h"
+#include "vmInt.h"
 #include "vmTrace.h"
 #include "list.h"
 #include "mach.h"
@@ -1342,6 +1343,15 @@ SetupContext(procPtr)
 	bcopy((Address)segDataPtr->segTablePtr, 
 		(Address) (contextPtr->map + segDataPtr->offset),
 		segDataPtr->numSegs);
+	if (vmPtr->sharedSegs != (List_Links *)NULL) {
+	    Vm_SegProcList *segList;
+	    LIST_FORALL(vmPtr->sharedSegs,(List_Links *)segList) {
+		segDataPtr = segList->segTabPtr->segPtr->machPtr;
+		bcopy((Address)segDataPtr->segTablePtr, 
+			(Address) (contextPtr->map+PageToSeg(segList->offset)),
+			segDataPtr->numSegs);
+	    }
+	}
 	if (vmPtr->machPtr->mapSegPtr != (struct Vm_Segment *)NIL) {
 	    contextPtr->map[MAP_SEG_NUM] = vmPtr->machPtr->mapHardSeg;
 	} else {
@@ -2473,7 +2483,8 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	VmMachSetSegMap(addr, *segTablePtr);
 	procPtr = Proc_GetCurrentProc();
 	procPtr->vmPtr->machPtr->contextPtr->map[hardSeg] = *segTablePtr;
-	if (pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) {
+	if ((pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) ||
+		(virtAddrPtr->flags & VM_READONLY_SEG)) {
 	    hardPTE |= VMMACH_UR_PROT;
 	} else {
 	    hardPTE |= VMMACH_URW_PROT;
@@ -3466,4 +3477,26 @@ ByteFill(fillByte, numBytes, destPtr)
 	numBytes--;
     }
 }
-
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedStart --
+ *
+ *      Determine the starting address for a shared segment.
+ *
+ * Results:
+ *      Returns the proper start address for the segment.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Address
+VmMach_SharedStart(reqAddr,size)
+Address		reqAddr;	/* Requested start address. */
+int		size;		/* Length of shared segment. */
+{
+    return reqAddr;
+}
