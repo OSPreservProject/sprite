@@ -26,23 +26,26 @@
 #include "vm.h"
 #else
 #include <kernel/vm.h>
-#endif
+#endif /* */
 
 #define	NEW_PAGE_SIZE		0x1000
 #define	NEW_SEG_SIZE		0x20000
 
 /*
- * Header prepended to each a.out file. Taken from sys/exec.h
+ * Header prepended to each a.out file. Taken from sys/exec.h.  
+ *
+ * NOTE: sdata and data and sbss and bss are switched for now until
+ *       the loader works correctly.
  */
 
 typedef struct {
     unsigned long 	magic;		/* magic number */
     unsigned long	bytord;		/* byte order indicator. */
     unsigned long	code;		/* Size of code segment */
-    unsigned long	data;		/* Size of initialized data */
     unsigned long	sdata;		/* Size of shared initialized data */
-    unsigned long	bss;		/* Size of uninitialized data */
+    unsigned long	data;		/* Size of initialized data */
     unsigned long	sbss;		/* Size of shared uninitialized data */
+    unsigned long	bss;		/* Size of uninitialized data */
     unsigned long	syms;		/* Size of symbol table */
     unsigned long	entry;		/* Entry point */
     unsigned long	rsize;		/* Size of relocation area */
@@ -72,7 +75,7 @@ typedef struct {
 #define PROC_CODE_LOAD_ADDR(x) 0x40000000
 #define PROC_DATA_LOAD_ADDR(x) \
 	(((x).magic==PROC_OMAGIC)? (PROC_CODE_LOAD_ADDR(x)+(x).code) \
-	: (0xc0000000))
+	: (0x80000000))
 #define PROC_BSS_LOAD_ADDR(x)  (PROC_DATA_LOAD_ADDR(x)+(x).data)
 
-#endif _PROCAOUT
+#endif /* _PROCAOUT */
