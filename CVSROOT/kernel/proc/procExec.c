@@ -39,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "byte.h"
 #include "rpc.h"
 #include "prof.h"
+#include "file.h"
 #ifdef notdef
 #include "dbg.h"
 #endif
@@ -996,7 +997,11 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	} else {
 	    if (sizeRead < sizeof(ProcExecHeader) ||
 		ProcGetObjInfo((ProcExecHeader *)buffer, &objInfo) != SUCCESS) {
-		status = PROC_BAD_AOUT_FORMAT;
+		    if(ProcIsObj(filePtr,1)==SUCCESS) {
+			status = FS_NO_ACCESS;
+		    } else {
+			status = PROC_BAD_AOUT_FORMAT;
+		    }
 		goto execError;
 	    }
 	}
@@ -1338,6 +1343,11 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
 	status = ProcGetObjInfo(&execHeader, objInfoPtr);
     }
     if (status != SUCCESS) {
+	if(ProcIsObj(*filePtrPtr,1)==SUCCESS) {
+	    status = FS_NO_ACCESS;
+	} else {
+	    status = PROC_BAD_AOUT_FORMAT;
+	}
 	(void) Fs_Close(*filePtrPtr);
     }
     return(status);
@@ -1378,6 +1388,8 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     Boolean			notFound;
     Vm_Segment			*heapSegPtr;
     Fs_Stream			*heapFilePtr;
+    ReturnStatus		status;
+    Address			heapEnd;
 
     if (*codeSegPtrPtr == (Vm_Segment *) NIL) {
 	execInfoPtr->entry = (int)objInfoPtr->entry;
@@ -1394,8 +1406,16 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
 	execInfoPtr->heapPageOffset = 
 			(unsigned)objInfoPtr->heapLoadAddr / vm_PageSize;
 	execInfoPtr->heapFileOffset = objInfoPtr->heapFileOffset;
+	heapEnd = objInfoPtr->heapLoadAddr + objInfoPtr->heapSize;
 	execInfoPtr->bssFirstPage = 
 			(unsigned)objInfoPtr->bssLoadAddr / vm_PageSize;
+	if ((unsigned)(heapEnd-1) / vm_PageSize >= execInfoPtr->bssFirstPage) {
+	    /*
+	     * End of heap, start of bss in same page, so move bss.
+	     */
+	    execInfoPtr->bssFirstPage = (unsigned)(heapEnd-1)/vm_PageSize + 1;
+	}
+
 	if (objInfoPtr->bssSize != 0) {
 	    execInfoPtr->bssLastPage = (int) (execInfoPtr->bssFirstPage + 
 				   (objInfoPtr->bssSize - 1) / vm_PageSize);
@@ -1474,6 +1494,14 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     procPtr->vmPtr->segPtrArray[VM_STACK] = segPtr;
     procPtr->genFlags &= ~PROC_NO_VM;
     VmMach_ReinitContext(procPtr);
+
+    /*
+     * If heap does not match page boundary, prefetch the partial page.
+     */
+    if (((unsigned)heapEnd & (vm_PageSize-1)) != 0 && notFound) {
+	Vm_PageIn(heapEnd, FALSE, procPtr);
+	return status;
+    }
 
     return(TRUE);
 }
@@ -1722,3 +1750,63 @@ ProcDoRemoteExec(procPtr)
      */
 }
 
+
+#define MACHINECOUNT 4
+int	hostFmt = HOST_FMT;
+char *(*(machType[])) () =  {
+    machType68k,
+    machTypeSparc,
+    machTypeSpur,
+    machTypeMips,
+};
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcIsObj -
+ *
+ *	Check if the process is an a.out file.  If doErr is set, an
+ *	error message will be printed if the file is an a.out file.
+ *	This routine is to be called if the file cannot be execed, to
+ *	see if it's the wrong a.out type.
+ *	This code is based on the Sprite a.out checking routines for
+ *	the file program.
+ *
+ * Results:
+ *	SUCCESS if the file is an a.out file.
+ *	FAILURE if the file is not an a.out file.
+ *
+ * Side effects:
+ *	An error may printed in the syslog if doErr is set.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+ProcIsObj(streamPtr, doErr)
+    Fs_Stream	*streamPtr;	/* Stream pointer for obj file. */
+    int		doErr;		/* 1 if want error messages. */
+{
+    ReturnStatus	status;
+    char		*buffer;
+    int			hdrSize = BUFSIZ;
+    int			i;
+    int			magic;
+    char		*name;
+    int			syms;
+
+    buffer = (char *)malloc(hdrSize);
+    status = Fs_Read(streamPtr, (Address)buffer, 0, &hdrSize);
+    if (status != SUCCESS) {
+	return FAILURE;
+    }
+    for (i=0;i<MACHINECOUNT;i++) {
+	name = machType[i](hdrSize, buffer, &magic, &syms);
+	if (name != NULL) {
+	    if (doErr) {
+		printf("Proc_Exec: can't run %s (0%03o) a.out file on %s\n",
+		    name, magic, mach_MachineType);
+	    }
+	    return SUCCESS;
+	}
+    }
+    return FAILURE;
+}
