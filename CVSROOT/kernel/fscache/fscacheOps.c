@@ -716,7 +716,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 
 	fsStats.blockCache.writeAccesses++;
 	FsCacheFetchBlock(cacheInfoPtr, blockNum, 
-			  FS_IO_IN_PROGRESS | FS_DATA_CACHE_BLOCK, 
+			  (int)(FS_IO_IN_PROGRESS | FS_DATA_CACHE_BLOCK), 
 			  &blockPtr, &found);
 	if (toWrite == FS_BLOCK_SIZE) {
 	    if (found) {

@@ -271,7 +271,7 @@ Fs_ProcInit()
 		    Sys_Panic(SYS_FATAL,
 			      "Fs_ProcInit: Can't open local root <0x%x>\n",
 			      status);
-		    Fs_PrefixClear("/", FALSE);
+		    (void)Fs_PrefixClear("/", FALSE);
 		}
 	    } else {
 		/*
@@ -279,7 +279,7 @@ Fs_ProcInit()
 		 */
 		Sys_Panic(SYS_WARNING,
 			"Can't find server for \"/\", waiting 1 min.\n");
-		Sync_WaitTime(time_OneMinute);
+		(void)Sync_WaitTime(time_OneMinute);
 	    }
 	} 
     } while (status != SUCCESS);

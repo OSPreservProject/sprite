@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "user/fsCmd.h"
 #include "rpc.h"
+#include "sched.h"
 
 
 #define SWAP_TO_BUFFER(int1, buffer) \
@@ -102,7 +103,7 @@ Fs_Command(command, bufSize, buffer)
 			    Sys_Panic(SYS_WARNING,
 		    "Tried to export non-local file \"%s\" as prefix \"%s\"\n",
 				localPath, prefix);
-			    Fs_Close(streamPtr);
+			    (void)Fs_Close(streamPtr);
 			} else {
 			    FsPrefixInstall(prefix, streamPtr->ioHandlePtr,
 						    FS_LOCAL_DOMAIN,

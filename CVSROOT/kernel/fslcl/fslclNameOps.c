@@ -3,11 +3,10 @@
  *
  *	The operation tables for the file system.  They are encountered
  *	by the system in roughly the order they are presented here.  First
- *	the Domain Lookup routines are used for name operations.  The
+ *	the Domain Lookup routines are used for name operations.  They
  *	are used by FsLookupOperation and FsTwoNameOperation which use
  *	the prefix table to choose a server.  If a stream is to be made
- *	the the Open operations are used.  Next comes the Stream operations,
- *	and lastly come the Device operations (WHICH HAVE BEEN MOVE TO dev.o).
+ *	then the Open operations are used.  Next comes the Stream operations.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -54,7 +53,9 @@ static ReturnStatus NoProc();
 static FsHandleHeader *NoHandle();
 
 /*
- * Domain specific routine table for lookup operations:
+ * Domain specific routine table for lookup operations.
+ * The following operate on a single pathname.  They are called via
+ *	FsLookupOperation with arguments described in fsOpTable.h
  *	DomainPrefix
  *	DomainOpen
  *	DomainGetAttrPath
@@ -63,6 +64,7 @@ static FsHandleHeader *NoHandle();
  *	DomainMakeDir
  *	DomainRemove
  *	DomainRemoveDir
+ * The following operate on two pathnames.
  *	DomainRename
  *	DomainHardLink
  */
@@ -79,15 +81,9 @@ ReturnStatus (*fsDomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])() = {
     {FsSpritePrefix, FsSpriteOpen, FsSpriteGetAttrPath, FsSpriteSetAttrPath,
      FsSpriteMakeDevice, FsSpriteMakeDir, 
      FsSpriteRemove, FsSpriteRemoveDir, FsSpriteRename, FsSpriteHardLink},
-/* FS_REMOTE_UNIX_DOMAIN */
-#ifdef unix_domain
-    {FsUnixPrefix, FsUnixOpen, FsUnixGetAttrPath, FsUnixSetAttrPath,
-     FsUnixMakeDevice, FsUnixMakeDir, 
-     FsUnixRemove, FsUnixRemoveDir, FsUnixRename, FsUnixHardLink},
-#else
+/* FS_PSEUDO_DOMAIN */
     {NoProc, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc,
      NullProc, NullProc, NullProc},
-#endif
 /* FS_NFS_DOMAIN */
     {NoProc, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc,
      NullProc, NullProc, NullProc},
@@ -140,7 +136,7 @@ FsAttrOps fsAttrOpTable[FS_NUM_DOMAINS] = {
     { FsLocalGetAttr, FsLocalSetAttr },
 /* FS_REMOTE_SPRITE_DOMAIN */
     { FsSpriteGetAttr, FsSpriteSetAttr },
-/* FS_REMOTE_UNIX_DOMAIN */
+/* FS_PSEUDO_DOMAIN */
     { NoProc, NoProc },
 /* FS_NFS_DOMAIN */
     { NoProc, NoProc },

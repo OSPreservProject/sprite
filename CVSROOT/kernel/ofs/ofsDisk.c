@@ -160,7 +160,7 @@ FsAttachDisk(devicePtr, localName, flags)
 	return(status);
     }
     summaryInfoPtr = (FsSummaryInfo *) buffer;
-    String_Copy(localName, summaryInfoPtr->domainPrefix);
+    (void)String_Copy(localName, summaryInfoPtr->domainPrefix);
 
     /*
      * Read the domain header and save it with the domain state.

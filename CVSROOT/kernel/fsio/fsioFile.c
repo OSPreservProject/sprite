@@ -273,7 +273,8 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 
 		streamPtr = FsStreamNew(rpc_SpriteID,
 			(FsHandleHeader *)handlePtr, useFlags);
-		FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags);
+		(void)FsStreamClientOpen(&streamPtr->clientList, clientID,
+					 useFlags);
 		*streamIDPtr = streamPtr->hdr.fileID;
 		FsHandleRelease(streamPtr, TRUE);
 	    }
@@ -1454,7 +1455,7 @@ IncVersionNumber(handlePtr)
     if (domainPtr == (FsDomain *)NIL) {
 	Sys_Panic(SYS_WARNING, "FsIncVersionNumber: Domain gone.\n");
     } else {
-	FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
+	(void)FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
 			descPtr);
 	FsDomainRelease(handlePtr->hdr.fileID.major);
     }

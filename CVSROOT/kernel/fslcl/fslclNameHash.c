@@ -268,7 +268,7 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
 
     hashEntryPtr = (FsHashEntry *) Mem_Alloc(sizeof(FsHashEntry) + 
 			String_Length(string) - 3);
-    String_Copy(string, hashEntryPtr->keyName);
+    (void)String_Copy(string, hashEntryPtr->keyName);
     hashEntryPtr->keyHdrPtr = keyHdrPtr;
     hashEntryPtr->hdrPtr = hdrPtr;
     hashEntryPtr->bucketPtr = bucketPtr;

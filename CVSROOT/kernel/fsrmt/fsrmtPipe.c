@@ -74,15 +74,15 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
 
     GetFileID(&fileID);
     handlePtr = FsPipeHandleInit(&fileID, FALSE);
-    FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_READ, FALSE);
-    FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_WRITE, FALSE);
+    (void)FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_READ, FALSE);
+    (void)FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_WRITE, FALSE);
 
     /*
      * Allocate and initialize the read, or "in", end of the stream.
      */
     streamPtr = FsStreamNew(rpc_SpriteID, (FsHandleHeader *)handlePtr,
 			    FS_READ | FS_CONSUME | FS_USER);
-    FsStreamClientOpen(&streamPtr->clientList, rpc_SpriteID, FS_READ);
+    (void)FsStreamClientOpen(&streamPtr->clientList, rpc_SpriteID, FS_READ);
     FsHandleUnlock(streamPtr);
     *inStreamPtrPtr = streamPtr;
 
@@ -94,7 +94,7 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
     (void)FsHandleDup((FsHandleHeader *)handlePtr);
     streamPtr = FsStreamNew(rpc_SpriteID, (FsHandleHeader *)handlePtr,
 			FS_WRITE | FS_APPEND | FS_USER);
-    FsStreamClientOpen(&streamPtr->clientList, rpc_SpriteID, FS_WRITE);
+    (void)FsStreamClientOpen(&streamPtr->clientList, rpc_SpriteID, FS_WRITE);
     FsHandleUnlock(handlePtr);
     FsHandleUnlock(streamPtr);
     *outStreamPtrPtr = streamPtr;

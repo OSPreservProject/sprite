@@ -265,7 +265,7 @@ Fs_PrintTrace(numRecs)
 	numRecs = fsTraceLength;
     }
     Sys_Printf("FS TRACE\n");
-    Trace_Print(fsTraceHdrPtr, numRecs, Fs_PrintTraceRecord);
+    (void)Trace_Print(fsTraceHdrPtr, numRecs, Fs_PrintTraceRecord);
 }
 
 

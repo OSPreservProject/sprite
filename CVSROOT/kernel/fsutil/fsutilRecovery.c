@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "recov.h"
 #include "hash.h"
 #include "rpc.h"
+#include "vm.h"
 
 void FsRecoveryDone();
 void FsHandleReopen();
@@ -476,7 +477,8 @@ FsRemoteHandleScavenge(hdrPtr)
 	(recovPtr->flags & FS_WANT_RECOVERY) == 0) {
 	/*
 	 * This strange unlocking sequence is because the unlock monitor
-	 * references data inside the handle.
+	 * references the recovery structure inside the handle, and it
+	 * wouldn't be safe to touch that after the handle is deallocated.
 	 */
 	UNLOCK_MONITOR;
 	FsHandleRemove(hdrPtr);

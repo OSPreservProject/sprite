@@ -174,14 +174,13 @@ FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, foundPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY ReturnStatus
+ENTRY void
 Fs_StreamCopy(oldStreamPtr, newStreamPtrPtr)
     Fs_Stream *oldStreamPtr;
     Fs_Stream **newStreamPtrPtr;
 {
     *newStreamPtrPtr = FsHandleDupType(Fs_Stream, oldStreamPtr);
     FsHandleUnlock(oldStreamPtr);
-    return(SUCCESS);
 }
 
 /*
@@ -415,7 +414,7 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	     */
 	    streamPtr->offset = reopenParamsPtr->offset;
 
-	    FsStreamClientOpen(&streamPtr->clientList, clientID,
+	    (void)FsStreamClientOpen(&streamPtr->clientList, clientID,
 			reopenParamsPtr->useFlags);
 
 	    if (!found) {
@@ -711,12 +710,10 @@ Fs_GetNewID(streamID, newStreamIDPtr)
     if (*newStreamIDPtr == FS_ANYID) {
 	Fs_Stream		*newStreamPtr;
 
-	status = Fs_StreamCopy(streamPtr, &newStreamPtr);
-	if (status == SUCCESS) {
-	    status = FsGetStreamID(newStreamPtr, newStreamIDPtr);
-	    if (status != SUCCESS) {
-		Fs_Close(newStreamPtr);
-	    }
+	Fs_StreamCopy(streamPtr, &newStreamPtr);
+	status = FsGetStreamID(newStreamPtr, newStreamIDPtr);
+	if (status != SUCCESS) {
+	    (void)Fs_Close(newStreamPtr);
 	}
 	return(status);
     } else {
@@ -764,9 +761,8 @@ Fs_GetNewID(streamID, newStreamIDPtr)
 		    (void)Fs_Close(oldFilePtr);
 		}
 	    }
-	    status =
-		Fs_StreamCopy(streamPtr, &fsPtr->streamList[newStreamID]);
-	    return(status);
+	    Fs_StreamCopy(streamPtr, &fsPtr->streamList[newStreamID]);
+	    return(SUCCESS);
 	}
     }
 }

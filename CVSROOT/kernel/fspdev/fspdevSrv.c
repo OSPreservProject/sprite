@@ -380,9 +380,10 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    *ioFileIDPtr = ioFileID;
 	    *clientDataPtr = (ClientData)NIL;
 	    *dataSizePtr = 0;
-	    streamPtr = FsStreamNew(rpc_SpriteID, ctrlHandlePtr, useFlags);
+	    streamPtr = FsStreamNew(rpc_SpriteID,
+				    (FsHandleHeader *)ctrlHandlePtr, useFlags);
 	    *streamIDPtr = streamPtr->hdr.fileID;
-	    FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags);
+	    (void)FsStreamClientOpen(&streamPtr->clientList, clientID,useFlags);
 	    FsHandleRelease(streamPtr, TRUE);
 	}
     } else {
@@ -569,7 +570,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 	 * Invalidate this lingering handle.  The client process is hung
 	 * or suspended and hasn't closed its end of the pdev connection.
 	 */
-	FsHandleInvalidate(cltHandlePtr);
+	FsHandleInvalidate((FsHandleHeader *)cltHandlePtr);
 	FsHandleRelease(cltHandlePtr, TRUE);
 
 	found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle),
@@ -598,7 +599,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 	uid = pdevStatePtr->uid;
 
 	cltStreamPtr = FsStreamFind(&pdevStatePtr->streamID,
-			    cltHandlePtr, *flagsPtr, &found);
+			    (FsHandleHeader *)cltHandlePtr, *flagsPtr, &found);
 	(void)FsStreamClientOpen(&cltStreamPtr->clientList,
 				clientID, *flagsPtr);
 	FsHandleUnlock(cltStreamPtr);
@@ -609,14 +610,14 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
     cltHandlePtr->pdevHandlePtr = ServerStreamCreate(ctrlHandlePtr,
 						     ioFileIDPtr, clientID);
     List_Init(&cltHandlePtr->clientList);
-    FsIOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
+    (void)FsIOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
     FsHandleRelease(ctrlHandlePtr, TRUE);
     /*
      * Grab an extra reference to the server's handle so the
      * server close routine can remove the handle and it won't
      * go away until the client also closes.
      */
-    FsHandleDup((FsHandleHeader *)cltHandlePtr->pdevHandlePtr);
+    (void)FsHandleDup((FsHandleHeader *)cltHandlePtr->pdevHandlePtr);
     FsHandleUnlock(cltHandlePtr->pdevHandlePtr);
     /*
      * Now that the request response stream is set up we do
@@ -851,7 +852,7 @@ FsPseudoStreamClose(streamPtr, clientID, flags, size, data)
      * of our reference to the server's handle and nuke our own.
      */
     PseudoStreamCloseInt(cltHandlePtr->pdevHandlePtr);
-    FsIOClientClose(&cltHandlePtr->clientList, clientID, 0, &cache);
+    (void)FsIOClientClose(&cltHandlePtr->clientList, clientID, 0, &cache);
     FsHandleRelease(cltHandlePtr->pdevHandlePtr, FALSE);
     FsHandleRelease(cltHandlePtr, TRUE);
     FsHandleRemove(cltHandlePtr);
@@ -1408,7 +1409,7 @@ FsControlClose(streamPtr, clientID, flags, size, data)
 	notifyPtr = (PdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
 	List_Remove((List_Links *)notifyPtr);
 	extra++;
-	Fs_Close(notifyPtr->streamPtr);
+	(void)Fs_Close(notifyPtr->streamPtr);
 	Mem_Free((Address)notifyPtr);
     }
     if (extra) {
@@ -1696,7 +1697,7 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
 	}
 	pdevHandlePtr->flags &= ~PDEV_REPLY_READY;
 	while ((pdevHandlePtr->flags & PDEV_REPLY_READY) == 0) {
-	    Sync_Wait(&pdevHandlePtr->replyReady, FALSE);
+	    (void)Sync_Wait(&pdevHandlePtr->replyReady, FALSE);
 	    if (pdevHandlePtr->flags & (PDEV_REPLY_FAILED|PDEV_SERVER_GONE)) {
 		status = DEV_OFFLINE;
 		goto failure;
@@ -3190,5 +3191,5 @@ Fs_PdevPrintTrace(numRecs)
 	numRecs = pdevTraceLength;
     }
     Sys_Printf("PDEV TRACE\n");
-    Trace_Print(pdevTraceHdrPtr, numRecs, Fs_PdevPrintRec);
+    (void)Trace_Print(pdevTraceHdrPtr, numRecs, Fs_PdevPrintRec);
 }

@@ -70,12 +70,12 @@ FsLocalDomainInit()
     dirEntryPtr->fileNumber = FS_ROOT_FILE_NUMBER;
     dirEntryPtr->nameLength = String_Length(".");
     dirEntryPtr->recordLength = FsDirRecLength(dirEntryPtr->nameLength);
-    String_Copy(".", dirEntryPtr->fileName);
+    (void)String_Copy(".", dirEntryPtr->fileName);
     dirEntryPtr = (FsDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
     dirEntryPtr->fileNumber = FS_ROOT_FILE_NUMBER;
     dirEntryPtr->nameLength = String_Length("..");
     dirEntryPtr->recordLength = FS_DIR_BLOCK_SIZE - FsDirRecLength(1);
-    String_Copy("..", dirEntryPtr->fileName);
+    (void)String_Copy("..", dirEntryPtr->fileName);
 }
 
 /*

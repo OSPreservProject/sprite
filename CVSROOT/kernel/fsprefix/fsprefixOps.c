@@ -214,10 +214,10 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 				      String_Length(lookupName) +
 				      sizeof("{} ") + 1
 				);
-			String_Copy("{", nameInfoPtr->name);
-			String_Cat(prefixPtr->prefix, nameInfoPtr->name);
-			String_Cat("} ", nameInfoPtr->name);
-			String_Cat(lookupName, nameInfoPtr->name);
+			(void)String_Copy("{", nameInfoPtr->name);
+			(void)String_Cat(prefixPtr->prefix, nameInfoPtr->name);
+			(void)String_Cat("} ", nameInfoPtr->name);
+			(void)String_Cat(lookupName, nameInfoPtr->name);
 		    }
 		    break;
 		}
@@ -436,7 +436,7 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 	 * beginning of the returned complete pathname.
 	 */
 	prefix = (char *)Mem_Alloc(redirectInfoPtr->prefixLength + 1);
-	String_NCopy(redirectInfoPtr->prefixLength,
+	(void)String_NCopy(redirectInfoPtr->prefixLength,
 		     redirectInfoPtr->fileName, prefix);
 	prefix[redirectInfoPtr->prefixLength] = '\0';
 	Fs_PrefixLoad(prefix, FS_IMPORTED_PREFIX);
@@ -654,7 +654,7 @@ PrefixInsert(prefix, hdrPtr, domainType, flags)
     }
     prefixPtr->prefixLength	= String_Length(prefix);
     prefixCopy			= (char *)Mem_Alloc(prefixPtr->prefixLength+1);
-    String_Copy(prefix, prefixCopy);
+    (void)String_Copy(prefix, prefixCopy);
     prefixPtr->prefix		= prefixCopy;
     prefixPtr->hdrPtr		= hdrPtr;
     prefixPtr->domainType	= domainType;
@@ -1205,7 +1205,7 @@ GetNilPrefixes(listPtr)
 	    newPrefixPtr = Mem_New(FsPrefix);
 	    *newPrefixPtr = *prefixPtr;
 	    newPrefixPtr->prefix = Mem_Alloc(newPrefixPtr->prefixLength + 1);
-	    String_Copy(prefixPtr->prefix, newPrefixPtr->prefix);
+	    (void)String_Copy(prefixPtr->prefix, newPrefixPtr->prefix);
 	    List_Insert((List_Links *)newPrefixPtr, LIST_ATREAR(listPtr));
 	}
     }
@@ -1572,7 +1572,7 @@ Fs_PrefixDump(index, argPtr)
 				(Address)userPrefix.prefix);
 		userPrefix.prefix[FS_USER_PREFIX_LENGTH-1] = '\0';
 	    } else {
-		String_Copy(prefixPtr->prefix, userPrefix.prefix);
+		(void)String_Copy(prefixPtr->prefix, userPrefix.prefix);
 	    }
 	    Vm_CopyOut(sizeof(Fs_Prefix), (Address)&userPrefix, argPtr);
 	    foundPrefix = TRUE;

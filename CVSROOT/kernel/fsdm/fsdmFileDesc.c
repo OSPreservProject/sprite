@@ -457,7 +457,7 @@ FsStoreFileDesc(domainPtr, fileNumber, fileDescPtr)
 
     fsStats.blockCache.fileDescWrites++;
     FsCacheFetchBlock(&domainPtr->physHandle.cacheInfo, blockNum, 
-		      FS_IO_IN_PROGRESS | FS_DESC_CACHE_BLOCK,
+		      (int)(FS_IO_IN_PROGRESS | FS_DESC_CACHE_BLOCK),
 		      &blockPtr, &found);
     if (!found) {
 	status = FsDeviceBlockIO(FS_READ, &headerPtr->device, 

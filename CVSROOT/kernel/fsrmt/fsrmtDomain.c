@@ -104,11 +104,7 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
     storage.replyDataSize = 0;
     fileIDPtr = &(openReplyParam.fileID);
 
-#ifndef OLD_RPC_NUMBERS
     status = Rpc_Call(RPC_BROADCAST_SERVER_ID, RPC_FS_PREFIX, &storage);
-#else OLD_RPC_NUMBERS
-    status = Rpc_Call(RPC_BROADCAST_SERVER_ID, RPC_FS_SPRITE_PREFIX, &storage);
-#endif OLD_RPC_NUMBERS
     /*
      * It is necessary to allocate and copy over the stream data, since
      * the cltOpen proc frees this space.
@@ -205,7 +201,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 	if (status == SUCCESS) {
 	    /* copy open data */
 	    openReplyParamPtr->openData = *((FsUnionData *) streamData);
-	    Mem_Free(streamData);
+	    Mem_Free((Address)streamData);
 	    /* do I need to include dataSize in openReplyParamPtr? */
 	    storagePtr->replyParamPtr = (Address) (openReplyParamPtr);
 	    storagePtr->replyParamSize = sizeof(FsOpenReplyParam);
@@ -219,7 +215,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 		    (ClientData)replyMemPtr);
 	    return(SUCCESS);
 	} else {
-	    Mem_Free(openReplyParamPtr);
+	    Mem_Free((Address)openReplyParamPtr);
 	    Sys_Panic(SYS_WARNING, "Fs_RpcPrefix, srvOpen \"%s\" failed %x\n",
 		    storagePtr->requestDataPtr, status);
 	}
@@ -296,12 +292,7 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     storage.replyDataPtr = (Address) replyName;
     storage.replyDataSize = FS_MAX_PATH_NAME_LENGTH;
 
-#ifndef OLD_RPC_NUMBERS
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_OPEN, &storage);
-#else OLD_RPC_NUMBERS
-    status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_SPRITE_OPEN,
-		      &storage);
-#endif OLD_RPC_NUMBERS
     if (status == SUCCESS) {
 	/*
 	 * Allocate space for the stream data returned by the server.
@@ -328,7 +319,7 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
 	redirectSize = sizeof(int) + String_Length(replyName)+1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
 	(*newNameInfoPtrPtr)->prefixLength = openResultsParam.prefixLength;
-	String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
+	(void)String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
     }
     FsPrefixOpenDone(prefixHandle);
     return(status);
@@ -423,7 +414,7 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 		((Address)openResultsPtr->streamData) != (Address)NIL) {
 	    openResultsParamPtr->openData = *((FsUnionData *)
 		    openResultsPtr->streamData);
-	    Mem_Free(openResultsPtr->streamData);
+	    Mem_Free((Address)openResultsPtr->streamData);
 	    storagePtr->replyDataPtr = (Address)NIL;
 	    storagePtr->replyDataSize = 0;
 	}
@@ -434,10 +425,10 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 	storagePtr->replyParamPtr = (Address)openResultsParamPtr;
 	storagePtr->replyParamSize = sizeof(FsOpenResultsParam);
 	openResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
-	storagePtr->replyDataPtr = (Address)
-		String_Copy(newNameInfoPtr->fileName, NULL);
 	storagePtr->replyDataSize = String_Length(newNameInfoPtr->fileName) + 1;
-	Mem_Free(newNameInfoPtr);
+	storagePtr->replyDataPtr = Mem_Alloc(storagePtr->replyDataSize);
+	(void)String_Copy(newNameInfoPtr->fileName, storagePtr->replyDataPtr);
+	Mem_Free((Address)newNameInfoPtr);
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
@@ -805,7 +796,7 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
-	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
 }
@@ -860,7 +851,7 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
-	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
 }
@@ -1004,7 +995,7 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
-	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
 }
@@ -1138,7 +1129,7 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
 	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
-	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
 }
@@ -1284,9 +1275,9 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
 	*name1RedirectPtr = replyParams.name1RedirectP;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
 	(*newNameInfoPtrPtr)->prefixLength = replyParams.prefixLength;
-	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
-    Mem_Free(requestDataPtr);
+    Mem_Free((Address)requestDataPtr);
 
     return(status);
 }

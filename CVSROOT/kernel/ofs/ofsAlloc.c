@@ -534,7 +534,7 @@ FsDescTrunc(handlePtr, size)
     }
     while (TRUE) {
 	if (indexInfo.blockAddrPtr == (int *) NIL ||
-	    *(indexInfo.blockAddrPtr) == FS_NIL_INDEX) {
+	    *indexInfo.blockAddrPtr == FS_NIL_INDEX) {
 	    goto nextBlock;
 	}
 
@@ -546,15 +546,15 @@ FsDescTrunc(handlePtr, size)
 	     */
 	    if (indexInfo.blockNum == lastBlock && lastFrag < LAST_FRAG) {
 		FsFreeFrag(domainPtr, lastFrag + 1, 
-	    (unsigned int) *(indexInfo.blockAddrPtr) / FS_FRAGMENTS_PER_BLOCK,
-			*(indexInfo.blockAddrPtr) & FRAG_OFFSET_MASK);
+		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
+		    *indexInfo.blockAddrPtr & FRAG_OFFSET_MASK);
 		descPtr->numKbytes -= lastFrag + 1;
 	    } else {
 		FsFreeBlock(domainPtr, 
-	    (unsigned int) *(indexInfo.blockAddrPtr) / FS_FRAGMENTS_PER_BLOCK);
+		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK));
 		descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
 	    }
-	    *(indexInfo.blockAddrPtr) = FS_NIL_INDEX;
+	    *indexInfo.blockAddrPtr = FS_NIL_INDEX;
 	} else if (indexInfo.blockNum == firstBlock) {
 	    /*
 	     * The first block that we truncate becomes the last block in
@@ -570,7 +570,7 @@ FsDescTrunc(handlePtr, size)
 		fragsToFree = lastFrag - firstFrag;
 	    }
 	    FsFreeFrag(domainPtr, fragsToFree,
-	      (unsigned int) *(indexInfo.blockAddrPtr) / FS_FRAGMENTS_PER_BLOCK,
+		  (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
 			firstFrag + 1);
 	    descPtr->numKbytes -= fragsToFree;
 	} else if (indexInfo.blockNum >= FS_NUM_DIRECT_BLOCKS || 
@@ -579,19 +579,19 @@ FsDescTrunc(handlePtr, size)
 	     * This is a full block so delete it.
 	     */
 	    FsFreeBlock(domainPtr, 
-	     (unsigned int) *(indexInfo.blockAddrPtr) / FS_FRAGMENTS_PER_BLOCK);
+		 (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK));
 	    descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
-	    *(indexInfo.blockAddrPtr) = FS_NIL_INDEX;
+	    *indexInfo.blockAddrPtr = FS_NIL_INDEX;
 	} else {
 	    /*
 	     * Delete a fragment.  Only get here if are on the last block in 
 	     * the file.
 	     */
 	    FsFreeFrag(domainPtr, lastFrag + 1, 
-	      (unsigned int) *(indexInfo.blockAddrPtr) / FS_FRAGMENTS_PER_BLOCK,
-	        *(indexInfo.blockAddrPtr) & FRAG_OFFSET_MASK);
+	      (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
+	        *indexInfo.blockAddrPtr & FRAG_OFFSET_MASK);
 	    descPtr->numKbytes -= lastFrag + 1;
-	    *(indexInfo.blockAddrPtr) = FS_NIL_INDEX;
+	    *indexInfo.blockAddrPtr = FS_NIL_INDEX;
 	}
 
 	dirty = TRUE;
@@ -2014,11 +2014,10 @@ FsNamedPipeTrunc(handlePtr, length)
 	while (TRUE) {
 	    dirty = FALSE;
 	    if (indexInfo.blockAddrPtr != (int *) NIL &&
-		*(indexInfo.blockAddrPtr) != FS_NIL_INDEX) {
+		*indexInfo.blockAddrPtr != FS_NIL_INDEX) {
 		FsFreeBlock(domainPtr,
-			    (unsigned int) *(indexInfo.blockAddrPtr) / 
-				    FS_FRAGMENTS_PER_BLOCK);
-		*(indexInfo.blockAddrPtr) = FS_NIL_INDEX;
+		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK));
+		*indexInfo.blockAddrPtr = FS_NIL_INDEX;
 		descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
 		dirty = TRUE;
 	    }

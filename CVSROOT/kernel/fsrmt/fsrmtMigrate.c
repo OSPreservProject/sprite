@@ -353,12 +353,7 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
     storage.replyDataPtr = (Address) NIL;
     storage.replyDataSize = 0;
 
-#ifndef OLD_RPC_NUMBERS
     status = Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_MIGRATE, &storage);
-#else OLD_RPC_NUMBERS
-    status = Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_START_MIGRATION,
-		&storage);
-#endif OLD_RPC_NUMBERS
 
     if (status == SUCCESS) {
 	MigrateReply	*migReplyPtr;
@@ -374,7 +369,7 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
 		migParam.dataSize, outSize);
 	    status = FAILURE;
 	} else {
-	    Byte_Copy(migParam.dataSize, &(migParam.data), outData);
+	    Byte_Copy(migParam.dataSize, (Address)&migParam.data, outData);
 	}
     }
     return(status);

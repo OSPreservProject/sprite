@@ -270,8 +270,8 @@ FsBlockCacheInit(blockHashSize)
     /*
      * Allocate space for the cache block list.
      */
-    listStart = 
-	Vm_RawAlloc(fsStats.blockCache.maxNumBlocks * sizeof(FsCacheBlock));
+    listStart = Vm_RawAlloc((int)fsStats.blockCache.maxNumBlocks *
+			    sizeof(FsCacheBlock));
     blockPtr = (FsCacheBlock *) listStart;
 
     /*
@@ -774,8 +774,9 @@ DestroyBlock(retOnePage, pageNumPtr)
 	DEBUG_PRINT( ("DestroyBlock: Using tot free block to lower size\n") );
 	blockPtr = (FsCacheBlock *) List_First(totFreeList);
 	fsStats.blockCache.numCacheBlocks -= 
-		    Vm_UnmapBlock(blockPtr->blockAddr, 
-				    retOnePage, pageNumPtr) * blocksPerPage;
+		    Vm_UnmapBlock(blockPtr->blockAddr, retOnePage,
+				  (unsigned int *)pageNumPtr)
+		    * blocksPerPage;
 	blockPtr->flags = FS_NOT_MAPPED;
 	List_Move((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
 	fsStats.blockCache.numFreeBlocks--;
@@ -829,7 +830,8 @@ DestroyBlock(retOnePage, pageNumPtr)
 	List_Insert((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
 	fsStats.blockCache.numCacheBlocks -= 
 		    Vm_UnmapBlock(blockPtr->blockAddr, 
-				retOnePage, pageNumPtr) * blocksPerPage;
+				retOnePage, (unsigned int *)pageNumPtr)
+		    * blocksPerPage;
 	return(TRUE);
     }
 }

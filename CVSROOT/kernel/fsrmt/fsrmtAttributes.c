@@ -38,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsLocalDomain.h"
 #include "fsNameOps.h"
 #include "fsConsist.h"
+#include "fsCacheOps.h"
 #include "fsRecovery.h"
 #include "fsDisk.h"
 #include "fsStat.h"
@@ -477,13 +478,16 @@ setMode:
     if (domainPtr == (FsDomain *)NIL) {
 	status = FS_DOMAIN_UNAVAILABLE;
     } else {
-	FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, descPtr);
+	status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
+		 descPtr);
 	FsDomainRelease(handlePtr->hdr.fileID.major);
     }
-    /*
-     * Update the attributes cached in the file handle.
-     */
-    FsUpdateCachedAttr(&handlePtr->cacheInfo, attrPtr, flags);
+    if (status == SUCCESS) {
+	/*
+	 * Update the attributes cached in the file handle.
+	 */
+	FsUpdateCachedAttr(&handlePtr->cacheInfo, attrPtr, flags);
+    }
 exit:
     FsHandleRelease(handlePtr, TRUE);
     return(status);
@@ -570,7 +574,7 @@ FsSpriteGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 	redirectSize = sizeof(int) + String_Length(replyName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
 	(*newNameInfoPtrPtr)->prefixLength = getAttrResultsParam.prefixLength;
-	String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
+	(void)String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
 	return(FS_LOOKUP_REDIRECT);
     }
 
@@ -664,8 +668,9 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
 	storagePtr->replyDataSize = String_Length(newNameInfoPtr->fileName) + 1;
 	storagePtr->replyDataPtr =
 		(Address) Mem_Alloc(storagePtr->replyDataSize);
-	String_Copy(newNameInfoPtr->fileName, (char *) storagePtr->replyDataPtr);
-	Mem_Free(newNameInfoPtr);
+	(void)String_Copy(newNameInfoPtr->fileName,
+			  (char *) storagePtr->replyDataPtr);
+	Mem_Free((Address)newNameInfoPtr);
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
@@ -745,7 +750,7 @@ FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 	redirectSize = sizeof(int) + String_Length(replyName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
 	(*newNameInfoPtrPtr)->prefixLength = getAttrResultsParam.prefixLength;
-	String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
+	(void)String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
     }
 
     return(status);
@@ -826,9 +831,9 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 	storagePtr->replyDataSize = String_Length(newNameInfoPtr->fileName) + 1;
 	storagePtr->replyDataPtr =
 		(Address) Mem_Alloc(storagePtr->replyDataSize);
-	String_Copy(newNameInfoPtr->fileName,
+	(void)String_Copy(newNameInfoPtr->fileName,
 		(char *) storagePtr->replyDataPtr);
-	Mem_Free(newNameInfoPtr);
+	Mem_Free((Address)newNameInfoPtr);
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
@@ -840,7 +845,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 		(ClientData)replyMemPtr);
         return(SUCCESS);
     } else {
-	Mem_Free(getAttrResultsParamPtr);
+	Mem_Free((Address)getAttrResultsParamPtr);
         return(status);
     }
 }

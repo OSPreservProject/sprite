@@ -264,11 +264,11 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
 	 * The client is recorded at the stream level to support migration,
 	 * and at the I/O handle level for regular I/O.
 	 */
-	FsIOClientOpen(&devHandlePtr->clientList, clientID, flags, FALSE);
+	(void)FsIOClientOpen(&devHandlePtr->clientList, clientID, flags, FALSE);
 
 	streamPtr = FsStreamFind(&deviceDataPtr->streamID,
 			(FsHandleHeader *)devHandlePtr, flags, (Boolean *)NIL);
-	FsStreamClientOpen(&streamPtr->clientList, clientID, flags);
+	(void)FsStreamClientOpen(&streamPtr->clientList, clientID, flags);
 	FsHandleRelease(streamPtr, TRUE);
 
 	devHandlePtr->use.ref++;
@@ -474,7 +474,7 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
     dataSize = paramPtr->dataSize;
     if (dataSize > 0) {
 	streamData = (ClientData)Mem_Alloc(dataSize);
-	Byte_Copy(dataSize, &(paramPtr->openData), (Address)streamData);
+	Byte_Copy(dataSize, (Address)&paramPtr->openData, (Address)streamData);
     } else {
 	streamData = (ClientData)NIL;
     }
