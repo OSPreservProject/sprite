@@ -134,6 +134,7 @@
 	.globl _machNonmaskableIntrMask
 	.globl _machIntrMask 
 	.globl _machTrapTableOffset
+	.globl _machInterruptAddr
 
 /*
  * The KPSW value to set and 
@@ -233,7 +234,7 @@ _machKcallTableOffset:		.long 0
 _machTrapTableOffset:		.long 0
 _machIntrMask:			.long 0
 _machNonmaskableIntrMask:	.long 0
-
+_machInterruptAddr:		.long 0
 _machNumOvFlow:			.long 0
 _machNumUnderFlow:		.long 0
 
@@ -497,6 +498,7 @@ refreshWell:
  * Initialize the cwp, swp and SPILL_SP to their proper values.
  */
 	wr_special	cwp, r0, $4
+	Nop
 	LD_CONSTANT(r1, MACH_STACK_BOTTOM)
 	wr_special	swp, r1, $0
 	LD_CONSTANT(SPILL_SP, MACH_CODE_START)
@@ -924,6 +926,8 @@ faultIntr_Const2:
 	.long	MACH_KPSW_CC_REFRESH
 faultIntr_Const3:
 	.long	MACH_FAULT_TRY_AGAIN
+faultIntr_Const4:
+	.long	MACH_FAULT_ILL_CACHE_OP
 FaultIntr:
 	LD_PC_RELATIVE(SAFE_TEMP1, faultIntr_Const2)
 	rd_kpsw		VOL_TEMP1
@@ -972,8 +976,7 @@ mark:
 	Nop
 
 	/*
-	 * The only other type of fault that we can handle is a bus
-	 * retry error.
+	 * Handle the bus retry error.
 	 */
 	LD_PC_RELATIVE(SAFE_TEMP2, faultIntr_Const3)
 	and		VOL_TEMP1, SAFE_TEMP1, SAFE_TEMP2
@@ -983,6 +986,28 @@ mark:
 	return_trap	NEXT_PC_REG, $0
 
 1:
+	/*
+	 * If a user does an illegal cache op on a non-cachable page, we
+	 * get a MACH_FAULT_ILL_CACHE_OP even if the user has no access to 
+	 * the page. 
+	 */
+
+	LD_PC_RELATIVE(SAFE_TEMP2, faultIntr_Const4)
+	and		VOL_TEMP1, SAFE_TEMP1, SAFE_TEMP2
+	cmp_br_delayed	eq, VOL_TEMP1, r0, 2f
+	Nop
+
+	/*
+	 * If the fault came from user mode map it into a protection fault.
+	 */
+	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, $0, 2f
+	Nop
+	add_nt		VOL_TEMP1,r0,$(MACH_FAULT_PROTECTION >> 16)
+	jump		VMFault
+	Nop
+
+2:
 	/*
 	 * Can't handle any of these types of faults.
 	 */
@@ -1031,6 +1056,10 @@ Interrupt:
 interrupt_OK:
 
 #endif
+	/* 
+	 * Save the address of the interrupt for profiling. 
+	 */
+	st_32		CUR_PC_REG, r0, $_machInterruptAddr
 
 	/*
 	 * The second argument is the kpsw.
@@ -1223,6 +1252,7 @@ vmFault_GetDataAddr:
 	 * of these then we have to extract the data address.
 	 */
 	FETCH_CUR_INSTRUCTION(SAFE_TEMP2)
+	Nop
 	extract		VOL_TEMP1, SAFE_TEMP2, $3  	/* Opcode <31:25> ->  */
 							#	 <07:01>
 	srl		VOL_TEMP1, VOL_TEMP1, $1	/* Opcode <07:01> -> */
@@ -1360,6 +1390,7 @@ CmpTrap:
 	 * Get the trap number.
 	 */
 	FETCH_CUR_INSTRUCTION(SAFE_TEMP1)
+	Nop
 	and		SAFE_TEMP1, SAFE_TEMP1, $0x1ff 
 	/*
 	 * If is one of the special user traps then handle these 
@@ -2113,6 +2144,7 @@ SpecialUserTraps:
 	 */
 	sll		SAFE_TEMP1, SAFE_TEMP1, $3
 	ld_32		SAFE_TEMP1, VOL_TEMP1, SAFE_TEMP1
+	Nop
 	cmp_br_delayed	eq, SAFE_TEMP1, $0, specialUserTraps_Error
 	nop
 	/*
