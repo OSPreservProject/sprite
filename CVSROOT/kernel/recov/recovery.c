@@ -385,7 +385,7 @@ Recov_RebootUnRegister(spriteID, rebootCallBackProc, rebootData)
 		/*
 		 * Mousetrap for debugging recovery reference count problem.
 		 */
-		if (notifyPtr->proc == Fsutil_Reopen) {
+		if (notifyPtr->proc == (void((*)())) Fsutil_Reopen) {
 		    extern int	Fsutil_TestForHandles();
 
 		    if (recov_PrintLevel >= RECOV_PRINT_CRASH) {
