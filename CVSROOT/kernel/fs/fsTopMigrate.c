@@ -111,6 +111,7 @@ Fs_EncapStream(streamPtr, bufPtr)
     migInfoPtr->streamID = streamPtr->hdr.fileID;
     migInfoPtr->ioFileID = ioHandlePtr->fileID;
     migInfoPtr->nameID = streamPtr->nameInfoPtr->fileID;
+    migInfoPtr->rootID = streamPtr->nameInfoPtr->rootID;
     migInfoPtr->offset = streamPtr->offset;
     migInfoPtr->srcClientID = rpc_SpriteID;
     migInfoPtr->flags = streamPtr->flags;
@@ -165,6 +166,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 {
     register	Fs_Stream	*streamPtr;
     register	FsMigInfo	*migInfoPtr;
+    register	FsNameInfo	*nameInfoPtr;
     ReturnStatus		status = SUCCESS;
     Boolean			found;
     int				size;
@@ -183,26 +185,39 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 
     if (!found) {
 	migInfoPtr->flags |= FS_NEW_STREAM;
-	DEBUG( ("Deenncap stream %d, offset %d, new",
+	streamPtr->offset = migInfoPtr->offset;
+	DEBUG( ("Deencap NEW stream %d, migOff %d, ",
 		streamPtr->hdr.fileID.minor, migInfoPtr->offset) );
     } else {
 	migInfoPtr->flags &= ~FS_NEW_STREAM;
-	DEBUG( ("Deencap stream %d, offset %d, found %d",
+	DEBUG( ("Deencap OLD stream %d, migOff %d, ",
 		streamPtr->hdr.fileID.minor,
 		migInfoPtr->offset, streamPtr->offset) );
     }
     if (streamPtr->nameInfoPtr == (FsNameInfo *)NIL) {
 	/*
-	 * We are not setting up the nameInfo exactly as it comes out of
-	 * Fs_Open.  The important part is the fileID, which is used
-	 * when getting/setting attributes.  Also, for remote files the
-	 * fileID of the prefix is important, but that is handled by the
-	 * remote-file-specific migStart and migEnd routines.
+	 * Set up the nameInfo.  We sacrifice the name as it is only
+	 * used in error messages.  The fileID is used with get/set attr.
+	 * If this file is the current directory then rootID is passed
+	 * to the server to trap "..", domainType is used to index the
+	 * name lookup operation switch, and prefixPtr is used for
+	 * efficient handling of lookup redirections.
 	 */
-	streamPtr->nameInfoPtr = Mem_New(FsNameInfo);
-	streamPtr->nameInfoPtr->fileID = migInfoPtr->nameID;
-	streamPtr->nameInfoPtr->prefixPtr = (struct FsPrefix *)NIL;
-	streamPtr->nameInfoPtr->name = (char *)NIL;
+	streamPtr->nameInfoPtr = nameInfoPtr = Mem_New(FsNameInfo);
+	nameInfoPtr->fileID = migInfoPtr->nameID;
+	nameInfoPtr->rootID = migInfoPtr->rootID;
+	if (nameInfoPtr->fileID.serverID != rpc_SpriteID) {
+	    nameInfoPtr->domainType = FS_REMOTE_SPRITE_DOMAIN;
+	} else {
+	    nameInfoPtr->domainType = FS_LOCAL_DOMAIN;
+	}
+	nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
+	if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
+	    Sys_Panic(SYS_WARNING, "Didn't find prefix entry for <%d,%d,%d>\n",
+		migInfoPtr->rootID.serverID,
+		migInfoPtr->rootID.major, migInfoPtr->rootID.minor);
+	}
+	nameInfoPtr->name = (char *)NIL;
     }
     /*
      * Contact the I/O server to tell it that the client moved.  The I/O
@@ -210,12 +225,13 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
      * FS_RMT_SHARED flag if it is shared.  It also looks at the
      * FS_NEW_STREAM flag which we've set/unset above.
      */
-    DEBUG( (" Type %d <%d,%d> ", migInfoPtr->ioFileID.type,
-		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor) );
-
     status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migrate)
 		(migInfoPtr, rpc_SpriteID, &streamPtr->flags,
 		 &streamPtr->offset, &size, &data);
+    DEBUG( (" Type %d <%d,%d> offset %d, ", migInfoPtr->ioFileID.type,
+		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
+		streamPtr->offset) );
+
     FsHandleUnlock(streamPtr);
     if (status == SUCCESS && !found) {
 	/*
