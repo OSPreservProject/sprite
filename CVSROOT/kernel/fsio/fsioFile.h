@@ -85,13 +85,8 @@ typedef struct FsLocalFileIOHandle {
  * Flags for local I/O handles.
  *	FS_FILE_DELETED		Set when all names of a file have been
  *				removed.  This marks the handle for removal.
- *	FS_FILE_GONE		Set after the file descriptor has been
- *				marked as deleted.  This is used during
- *				deletion to ignore delayed writes while
- *				making call-backs to other clients.
  */
 #define FS_FILE_DELETED		0x1
-#define FS_FILE_GONE		0x2
 
 /*
  * The I/O descriptor for a remote file.  Used with FS_RMT_FILE_STREAM.
