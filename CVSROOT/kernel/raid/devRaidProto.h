@@ -119,7 +119,7 @@ extern void InitiateParityCheck _ARGS_((Raid *raidPtr, int startStripe, int numS
 /*
  * devRaidReconstruct.c
  */
-extern void InitiateReconstruction _ARGS_((Raid *raidPtr, int col, int row, int version, int numSector, int uSec, int ctrlData));
+extern void InitiateReconstruction _ARGS_((Raid *raidPtr, int col, int row, int version, int numSector, int uSec, void (*doneProc)(), ClientData clientData, int ctrlData));
 
 /*
  * devRaidUtil.c
