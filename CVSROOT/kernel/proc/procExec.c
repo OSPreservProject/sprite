@@ -909,6 +909,7 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     Vm_ExecInfo				execInfo;
     Vm_Segment				*codeSegPtr = (Vm_Segment *) NIL;
     char				*argString = (char *) NIL;
+    char				*argStringSave = (char *) NIL;
     Address				argBuffer = (Address) NIL;
     Fs_Stream				*filePtr;
     ReturnStatus			status;
@@ -1080,11 +1081,8 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     /*
      * Change the argument string.
      */
-    if (procPtr->argString != (char *) NIL) {
-	free(procPtr->argString);
-    }
+    argStringSave = procPtr->argString;
     procPtr->argString = argString;
-
     /*
      * Do set uid here.  This way, the uid will be set before a remote
      * exec.
@@ -1162,6 +1160,14 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     }
 
     /*
+     * Free original argString (kept in argStringSave, in case we
+     * needed it) here, after last chance to goto execError.
+     */
+    if (argStringSave != (char *)NIL) {
+	free(argStringSave);
+    }
+
+    /*
      * Set-gid only needs to be done on the host running the process.
      */
     if (gid != -1) {
@@ -1233,6 +1239,15 @@ execError:
     if (argString != (Address) NIL) {
 	free(argString);
     }
+    /*
+     * Restore original arg string.  If we don't do this, then when
+     * DoFork() tries to free() the arg string (after this process
+     * exits, when some other process gets the then-empty process
+     * slot), free() will panic because the original argString was
+     * just freed above.
+     */
+    procPtr->argString = argStringSave;
+
     if (!importing && (fileName != (char *) NIL) && userArgsPtr->userMode) {
 	free(fileName);
 	fileName = (char *) NIL;
