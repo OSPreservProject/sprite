@@ -36,6 +36,27 @@ _Mach_GetPC:
 
 
 /*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_GetCallerPC --
+ *
+ *	Return the PC of the caller of the routine who called us.
+ *
+ * Results:
+ *	Our caller's caller's pc.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_GetCallerPC
+_Mach_GetCallerPC:
+	retl
+	mov	%RETURN_ADDR_REG_CHILD, %RETURN_VAL_REG
+
+
+/*
  *---------------------------------------------------------------------
  *
  * Mach_TestAndSet --
