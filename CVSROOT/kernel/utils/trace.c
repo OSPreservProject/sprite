@@ -104,7 +104,8 @@ Trace_Insert(traceHdrPtr, event, dataPtr)
     int size;
     Timer_Ticks ticks;
     
-    if (traceHdrPtr->inhibitTracing) {
+    if (traceHdrPtr == (Trace_Header *)NIL ||
+	traceHdrPtr->inhibitTracing) {
 	return;
     }
 
