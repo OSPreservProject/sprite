@@ -26,10 +26,21 @@
 #define	DEV_COUNTER_ADDR		0xffd06000
 #define	DEV_INTERRUPT_REG_ADDR		0xffd0a000
 #define	DEV_FRAME_BUF_ADDR		0xffd80000
+#define	DEV_DMA_ADDR			0xffd14000
 /*
  * Interrupt vector assignments:
  */
-
 #define DEV_UART_VECTOR			30
+
+
+/*
+ * Physical addresses for unmapped devices.
+ */
+#define	DEV_SCSI_ADDR			0xf8800000
+#ifdef NOTDEF
+/* This seems already to be mapped at a virtual address. */
+#define	DEV_DMA_ADDR			0xf8400000
+#endif NOTDEF
+
 
 #endif /* _DEVADDRS */

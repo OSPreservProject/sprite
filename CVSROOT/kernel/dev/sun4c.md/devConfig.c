@@ -23,9 +23,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "devAddrs.h"
 #include "devInt.h"
-#include "scsiHBA.h"
+#include "scsiC90.h"
 #include "devTypes.h"
+#include "scsiHBA.h"
 
 /*
  * Per device include files.
@@ -35,32 +37,40 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 DevConfigController devCntrlr[] = {
    /* Name     Address,  Addr space, ID, InitProc   IntrVector  IntrRoutine. */
-};
-#ifdef notdef
-int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
+#ifdef NOTDEF
+/* This seems already to be mapped at a virtual address. */
+   { "DMA_UNIT", DEV_DMA_ADDR, DEV_SBUS_OB, 0, (ClientData (*)()) NIL, 3,
+	   DevSCSIC90Intr},
 #endif
-int devNumConfigCntrlrs = 0;
+   { "SCSIC90", DEV_SCSI_ADDR, DEV_SBUS_OB, 0, DevSCSIC90Init, 3,
+	   DevSCSIC90Intr},
+};
+/*
+ * We want to treat the dma controller and scsi device as the same device,
+ * but the both must be mapped separately, so we give them separate entries,
+ * but with only one init routine.
+ */
+int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
 /*
  * Table of SCSI HBA types attached to this system.
  */
 
-ScsiDevice *((*devScsiAttachProcs[])()) = {
+ScsiDevice *((*devScsiAttachProcs[]) _ARGS_((Fs_Device *devicePtr,
+		void (*insertProc) (List_Links *elementPtr,
+				    List_Links *elementListHdrPtr)))) = {
+    DevSCSIC90AttachDevice,		/* SCSI Controller type 0. */
 };
-#ifdef notdef
 int devScsiNumHBATypes = sizeof(devScsiAttachProcs) / 
 			 sizeof(devScsiAttachProcs[0]);
-#endif
-int devScsiNumHBATypes = 0;
 /*
  * A list of disk devices that is used when probing for a root partition.
  * The choices are:
- * Drive 0 partition 0 of xylogics 450 controller 0.
- * SCSI Disk target ID 0 LUN 0 partition 0 on SCSI3 HBA 0. 
+ * SCSI Disk target ID 0 LUN 0 partition 0 on SCSIC90 HBA 0. 
  */
 Fs_Device devFsDefaultDiskPartitions[] = { 
-    };
-#ifdef notdef
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 0),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 0),
+	(ClientData) NIL },
+  };
 int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
 			  sizeof(Fs_Device);
-#endif
-int devNumDefaultDiskPartitions = 0;
