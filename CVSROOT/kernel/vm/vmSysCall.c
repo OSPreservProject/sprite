@@ -12,21 +12,21 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "vmTrace.h"
-#include "lock.h"
-#include "user/vm.h"
-#include "sync.h"
-#include "sys.h"
-#include "stdlib.h"
-#include "string.h"
-#include "fs.h"
-#include "fsio.h"
-#include "sys/mman.h"
-#include "stdio.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmTrace.h>
+#include <lock.h>
+#include <user/vm.h>
+#include <sync.h>
+#include <sys.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fs.h>
+#include <fsio.h>
+#include <sys/mman.h>
+#include <stdio.h>
+#include <bstring.h>
 
 extern Vm_SharedSegTable sharedSegTable;
 char	 *sprintf();

@@ -29,15 +29,15 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "fs.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "sync.h"
-#include "vmSwapDir.h"
-#include "stdio.h"
-#include "string.h"
-#include "stdlib.h"
+#include <sprite.h>
+#include <fs.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <sync.h>
+#include <vmSwapDir.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 static Sync_Lock vmSwapDirLock = Sync_LockInitStatic("vmSwapDirLock");
 #define LOCKPTR &vmSwapDirLock

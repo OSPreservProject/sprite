@@ -11,20 +11,20 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "vmSwapDir.h"
-#include "lock.h"
-#include "status.h"
-#include "sched.h"
-#include "sync.h"
-#include "dbg.h"
-#include "list.h"
-#include "string.h"
-#include "stdlib.h"
-#include "proc.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmSwapDir.h>
+#include <lock.h>
+#include <status.h>
+#include <sched.h>
+#include <sync.h>
+#include <dbg.h>
+#include <list.h>
+#include <string.h>
+#include <stdlib.h>
+#include <proc.h>
+#include <stdio.h>
 
 Boolean	vmUseFSReadAhead = TRUE;
 extern	Boolean	vm_NoStickySegments;

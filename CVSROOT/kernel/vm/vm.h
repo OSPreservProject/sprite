@@ -15,19 +15,19 @@
 #ifndef _VM
 #define _VM
 
-#include "list.h"
+#include <list.h>
 
 #ifdef KERNEL
-#include "user/vm.h"
+#include <user/vm.h>
 #if 0
-#include "vmMach.h"
+#include <vmMach.h>
 #endif
-#include "vmStat.h"
-#include "fs.h"
-#include "sync.h"
-#include "proc.h"
-#include "procMigrate.h"
-#include "sprite.h"
+#include <vmStat.h>
+#include <fs.h>
+#include <sync.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <sprite.h>
 #else
 #if 0
 #include <kernel/vmMach.h>

@@ -14,8 +14,8 @@
 #ifndef _VMLOCK
 #define _VMLOCK
 
-#include "sync.h"
-#include "dbg.h"
+#include <sync.h>
+#include <dbg.h>
 
 /*
  * Monitor declarations

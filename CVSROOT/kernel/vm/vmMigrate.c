@@ -12,18 +12,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "lock.h"
-#include "proc.h"
-#include "procMigrate.h"
-#include "fs.h"
-#include "fsio.h"
-#include "stdlib.h"
-#include "byte.h"
-#include "stdio.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <lock.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <fs.h>
+#include <fsio.h>
+#include <stdlib.h>
+#include <byte.h>
+#include <stdio.h>
+#include <bstring.h>
     
 
 static ReturnStatus EncapSegment _ARGS_((Vm_Segment *segPtr,

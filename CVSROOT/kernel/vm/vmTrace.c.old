@@ -10,15 +10,15 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "vmTrace.h"
-#include "mach.h"
-#include "sync.h"
-#include "sys.h"
-#include "stdio.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmTrace.h>
+#include <mach.h>
+#include <sync.h>
+#include <sys.h>
+#include <stdio.h>
+#include <bstring.h>
 
 Sync_Semaphore	traceMutex = Sync_SemInitStatic("Vm:traceMutex");
 

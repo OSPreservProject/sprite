@@ -13,20 +13,20 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "vmTrace.h"
-#include "lock.h"
-#include "sync.h"
-#include "sys.h"
-#include "list.h"
-#include "stdlib.h"
-#include "fs.h"
-#include "status.h"
-#include "string.h"
-#include "stdio.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmTrace.h>
+#include <lock.h>
+#include <sync.h>
+#include <sys.h>
+#include <list.h>
+#include <stdlib.h>
+#include <fs.h>
+#include <status.h>
+#include <string.h>
+#include <stdio.h>
+#include <bstring.h>
 
 Boolean	vm_NoStickySegments = FALSE;		/* TRUE if sticky segments
 						 * are disabled. */

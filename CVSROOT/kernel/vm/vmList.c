@@ -1,8 +1,8 @@
-#include "sprite.h"
-#include "list.h"
-#include "sys.h"
-#include "vm.h"
-#include "vmInt.h"
+#include <sprite.h>
+#include <list.h>
+#include <sys.h>
+#include <vm.h>
+#include <vmInt.h>
 
 
 /*

@@ -11,18 +11,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "vmStat.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "user/vm.h"
-#include "sync.h"
-#include "dbg.h"
-#include "list.h"
-#include "lock.h"
-#include "sys.h"
-#include "stdlib.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <vmStat.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <user/vm.h>
+#include <sync.h>
+#include <dbg.h>
+#include <list.h>
+#include <lock.h>
+#include <sys.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 Boolean	vmPrefetch = FALSE;
 

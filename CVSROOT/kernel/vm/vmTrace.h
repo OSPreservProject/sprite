@@ -14,9 +14,9 @@
 #define _VMTRACE
 
 #ifdef KERNEL
-#include "vmMachTrace.h"
-#include "vmStat.h"
-#include "spriteTime.h"
+#include <vmMachTrace.h>
+#include <vmStat.h>
+#include <spriteTime.h>
 #else
 #include <kernel/vmMachTrace.h>
 #include <vmStat.h>

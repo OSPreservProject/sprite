@@ -11,15 +11,15 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "lock.h"
-#include "list.h"
-#include "proc.h"
-#include "sched.h"
-#include "sync.h"
-#include "sys.h"
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <lock.h>
+#include <list.h>
+#include <proc.h>
+#include <sched.h>
+#include <sync.h>
+#include <sys.h>
 
 
 
