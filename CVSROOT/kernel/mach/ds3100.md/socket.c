@@ -32,7 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 extern Mach_State	*machCurStatePtr;
 
-static ReturnStatus Wait();
+static ReturnStatus Wait _ARGS_((int socketID, Boolean readSelect, Time *timeOutPtr));
 
 #ifdef DEBUG
 #  define	DebugMsg(status, string) 	printf("%x: %s\n", status, string)

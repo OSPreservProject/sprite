@@ -34,7 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mach.h"
 
 #ifdef __STDC__
-static void DecodeRequest(int request);
+static void DecodeRequest _ARGS_((int request));
 #else
 #define const
 static void DecodeRequest();

@@ -241,10 +241,11 @@ extern	Mach_MonFuncs	mach_MonFuncs;
  * Functions and defines to access the monitor.
  */
 
-extern	int 	Mach_MonPutChar ();
+extern void Mach_MonAbort _ARGS_((void));
+extern int Mach_MonPutChar _ARGS_((int ch));
+extern void Mach_MonReboot _ARGS_((char *rebootString));
 #define Mach_MonMayPut Mach_MonPutChar
-extern	void	Mach_MonReboot();
-extern	void	Mach_MonAbort();
+
 
 #define Mach_MonGetChar			(mach_MonFuncs.getchar)
 #define Mach_MonGetNextChar		(mach_MonFuncs.getchar)

@@ -165,7 +165,11 @@ extern void Timer_TimerServiceInterrupt();
 extern void Dev_DC7085Interrupt();
 extern void MachFPInterrupt();
 
-static void MemErrorInterrupt();
+static void PrintError _ARGS_((void));
+static void PrintInst _ARGS_((unsigned pc, unsigned inst));
+static void SoftFPReturn _ARGS_((void));
+static void MemErrorInterrupt _ARGS_((void));
+
 /*
  * The interrupt handler table.
  */
@@ -235,9 +239,11 @@ unsigned	machInstCacheSize;
 Mach_DebugState	mach_DebugState;
 Mach_DebugState *machDebugStatePtr = &mach_DebugState;
 
-static void		SetupSigHandler();
-static void		ReturnFromSigHandler();
-static ReturnStatus 	Interrupt();
+static void SetupSigHandler _ARGS_((register Proc_ControlBlock *procPtr, register SignalStack *sigStackPtr, Address pc));
+static void ReturnFromSigHandler _ARGS_((register Proc_ControlBlock *procPtr));
+static ReturnStatus Interrupt _ARGS_((unsigned statusReg, unsigned causeReg, Address pc));
+
+
 
 /*
  * Preallocate all machine state structs.
@@ -1737,11 +1743,13 @@ Mach_SendSignal(sigType)
     }
 }
 
+static void
 PrintError()
 {
     panic("Error on stack\n");
 }
 
+static void
 PrintInst(pc, inst)
     unsigned pc;
     unsigned inst;
@@ -1749,6 +1757,7 @@ PrintInst(pc, inst)
     printf("Emulating 0x%x: 0x%x\n", pc, inst);
 }
 
+static void
 SoftFPReturn()
 {
     printf("SoftFPReturn\n");

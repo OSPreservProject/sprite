@@ -25,8 +25,8 @@
  * The bounds of the code that copies arguments from the user stack to
  * the kernel stack.
  */
-extern Address MachFetchArgs;
-extern Address MachFetchArgsEnd;
+extern void MachFetchArgs _ARGS_((void));
+extern void MachFetchArgsEnd _ARGS_((void));
 
 #ifdef notdef
 /*
@@ -45,19 +45,22 @@ extern Mach_State *machFPCurStatePtr;
  * Internal functions.
  */
 extern Boolean MachUserReturn _ARGS_((register Proc_ControlBlock *procPtr));
-extern void		MachUTLBMiss();
-extern void		MachEndUTLBMiss();
-extern void 		MachException();
-extern void		MachEndException();
-extern ReturnStatus 	MachFetch0Args();
-extern ReturnStatus 	MachFetch1Arg();
-extern ReturnStatus 	MachFetch2Args();
-extern ReturnStatus 	MachFetch3Args();
-extern ReturnStatus 	MachFetch4Args();
-extern ReturnStatus 	MachFetch5Args();
-extern ReturnStatus 	MachFetch6Args();
-extern void		MachSysCall();
-extern void		MachProbeAddrEnd();
+/*
+ * These sorta take an argument and sorta don't.  The user's stack pointer is
+ * in register t2.
+ */
+extern void 			MachException _ARGS_((void));
+extern void			MachEndException _ARGS_((void));
+extern ReturnStatus 		MachFetch0Args _ARGS_((void));
+extern ReturnStatus 		MachFetch1Arg _ARGS_((void));
+extern ReturnStatus 		MachFetch2Args _ARGS_((void));
+extern ReturnStatus 		MachFetch3Args _ARGS_((void));
+extern ReturnStatus 		MachFetch4Args _ARGS_((void));
+extern ReturnStatus 		MachFetch5Args _ARGS_((void));
+extern ReturnStatus 		MachFetch6Args _ARGS_((void));
+
+extern void		MachSysCall _ARGS_((void));
+extern void		MachProbeAddrEnd _ARGS_((void));
 extern unsigned *MachEmulateBranch _ARGS_((unsigned *regsPtr, Address instPC, unsigned fpcCSR, Boolean allowNonBranch));
 
 

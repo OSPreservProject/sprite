@@ -18,6 +18,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "user/sys/types.h"
 #include "stat.h"
 
+/*
+ * Forward defs.
+ */
+static int CvtSpriteToUnixType _ARGS_((register int spriteFileType));
+
 
 /*
  *----------------------------------------------------------------------

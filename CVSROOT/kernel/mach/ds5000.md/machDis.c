@@ -83,7 +83,7 @@ typedef struct {
  */
 #define OP_COP_1	0x11
 
-unsigned *GetBranchDest();
+static unsigned *GetBranchDest _ARGS_((ITypeFmt *iInstPtr));
 
 unsigned *
 MachEmulateBranch(regsPtr, instPC, fpcCSR, allowNonBranch)
