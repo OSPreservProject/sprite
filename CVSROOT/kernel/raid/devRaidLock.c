@@ -29,7 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include "hash.h"
 #include "devRaid.h"
-#include "devRaidLock.h"
+#include "semaphore.h"
 #include "devRaidProto.h"
 
 extern char *malloc();
@@ -300,79 +300,4 @@ Raid_EndUse (raidPtr)
 	Sync_MasterBroadcast(&raidPtr->waitExclusive);
     }
     MASTER_UNLOCK(&raidPtr->mutex);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * InitSema
- *
- * Results:
- *	None.
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-
-void
-InitSema(semaPtr, name, val)
-    Sema	*semaPtr;
-    char	*name;
-    int		val;
-{
-    Sync_SemInitDynamic(&semaPtr->mutex, name);
-    semaPtr->val = val;
-#ifdef TESTING
-    Sync_CondInit(&semaPtr->wait);
-#endif
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * DownSema
- *
- * Results:
- *	None.
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-void
-DownSema(semaPtr)
-    Sema	*semaPtr;
-{
-    MASTER_LOCK(&semaPtr->mutex);
-    while (semaPtr->val <= 0) {
-	Sync_MasterWait(&semaPtr->wait, &semaPtr->mutex, FALSE);
-    }
-    semaPtr->val--;
-    MASTER_UNLOCK(&semaPtr->mutex);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * UpSema
- *
- * Results:
- *	None.
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-void
-UpSema(semaPtr)
-    Sema	*semaPtr;
-{
-    MASTER_LOCK(&semaPtr->mutex);
-    semaPtr->val++;
-    Sync_MasterBroadcast(&semaPtr->wait);
-    MASTER_UNLOCK(&semaPtr->mutex);
 }

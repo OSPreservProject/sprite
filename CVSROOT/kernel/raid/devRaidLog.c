@@ -25,7 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devRaidDisk.h"
 #include "devRaidLog.h"
 #include "bitvec.h"
-#include "devRaidLock.h"
+#include "semaphore.h"
 #include "devRaidProto.h"
 
 #define ConfigLoc(raidPtr) ((int)(raidPtr)->logDevOffset)

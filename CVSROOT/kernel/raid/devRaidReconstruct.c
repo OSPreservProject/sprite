@@ -23,7 +23,7 @@
 #include "dev.h"
 #include "devBlockDevice.h"
 #include "devRaid.h"
-#include "devRaidLock.h"
+#include "semaphore.h"
 #include "stdlib.h"
 #include "devRaidUtil.h"
 #include "schedule.h"

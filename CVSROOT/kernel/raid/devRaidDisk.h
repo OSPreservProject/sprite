@@ -19,7 +19,7 @@
 #define _DEVRAIDDISK
 
 #include "devRaid.h"
-#include "devRaidLock.h"
+#include "semaphore.h"
 
 /*
  * Data structure for each disk used by raid device.
