@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcDebug.c --
  *
  *	Debugging routines for the Rpc system.  These routines are used
@@ -10,7 +10,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "status.h"

@@ -95,7 +95,7 @@ sizeof(RpcHdr))
     RpcHdr		swapRequestRpcHdr;
     int			swapParamBuffer[RPC_SWAP_PARAM_SIZE / sizeof (int)];
     RpcBufferSet	swapRequest;
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 
     /*
      * An array of RPC headers and buffer sets that are used when fragmenting
@@ -193,4 +193,4 @@ void			 RpcSetup();
 ReturnStatus		 RpcDoCall();
 void			 RpcClientDispatch();
 
-#endif _RPCCLIENT
+#endif /* _RPCCLIENT */

@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcCltStat.c --
  *      Manipulation and printing of the statistics taken on the client
  *      side of the RPC system.  The statistics are kept as simple event
@@ -22,7 +22,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -53,7 +53,7 @@ static int numRpcProcesses;
  */
 static Sync_Lock rpcTraceLock;
 #define LOCKPTR (&rpcTraceLock)
-#endif notdef
+#endif /* notdef */
 
 /*
  *----------------------------------------------------------------------
@@ -90,7 +90,7 @@ Rpc_EnterProcess()
 
     UNLOCK_MONITOR;
 }
-#endif notdef
+#endif /* notdef */
 
 /*
  *----------------------------------------------------------------------
@@ -169,7 +169,7 @@ Rpc_LeaveProcess(pid)
 
     UNLOCK_MONITOR;
 }
-#endif notdef
+#endif /* notdef */
 
 /*
  *----------------------------------------------------------------------

@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcServer.c --
  *
  *      This is the top level code for an RPC server process, plus the
@@ -14,7 +14,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -91,7 +91,7 @@ Rpc_Server()
     register RpcHdr *rpcHdrPtr;		/* Its request message header */
     register int command;		/* Identifies the service procedure */
     register ReturnStatus error;	/* Return error code */
-    Rpc_Storage storage;		/* Specifies storage of request and 
+    Rpc_Storage storage;		/* Specifies storage of request and
 					 * reply buffers passed into the stubs*/
 
     srvPtr = RpcServerInstall();
@@ -134,15 +134,18 @@ Rpc_Server()
 	 * Free up our previous reply.  The freeReplyProc is set by the
 	 * call to Rpc_Reply.
 	 */
+#ifndef LINT
+	/* Won't lint due to cast of function ptr to address. */
 	if ((Address)srvPtr->freeReplyProc != (Address)NIL) {
 	    (void)(*srvPtr->freeReplyProc)(srvPtr->freeReplyData);
 	    srvPtr->freeReplyProc = (int (*)())NIL;
 	}
+#endif /* LINT */
 
 	rpcHdrPtr = &srvPtr->requestRpcHdr;
 #ifdef TIMESTAMP
 	RPC_TRACE(rpcHdrPtr, RPC_SERVER_A, " input");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
 	/*
 	 * Monitor message traffic to keep track of other hosts.  This call
 	 * has a side effect of blocking the server process while any
@@ -198,7 +201,7 @@ Rpc_Server()
 	}
 #ifdef TIMESTAMP
 	RPC_TRACE(rpcHdrPtr, RPC_SERVER_OUT, " done");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
     }
 }
 
@@ -348,7 +351,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
     
 #ifdef TIMESTAMP
     RPC_TRACE(rpcHdrPtr, RPC_SERVER_a, " server");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
     /*
      * Reset aging servers.  This information is maintained by Rpc_Deamon.
      * The reception of a message for the server makes it no longer idle.
@@ -456,7 +459,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	}
 #ifdef TIMESTAMP
 	RPC_TRACE(rpcHdrPtr, RPC_SERVER_b, "handoff");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
     } else {
 	/*
 	 * This is a message concerning a current RPC.
@@ -467,7 +470,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	     * to reply to.  Keep ourselves free - the allocation routine
 	     * has cleared that state bit.
 	     */
-	    srvPtr->state |= SRV_FREE; 
+	    srvPtr->state |= SRV_FREE;
 	    rpcSrvStat.discards++;
 	} else if (rpcHdrPtr->flags & RPC_ACK) {
 	    if (rpcHdrPtr->flags & RPC_CLOSE) {
@@ -513,7 +516,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		    srvPtr->replyRpcHdr.ID = 0;
 		    srvPtr->state = SRV_FREE;
 		    break;
-		case SRV_FREE: 
+		case SRV_FREE:
 		    /*
 		     * This is an extra packet that has arrived after the
 		     * client has explicitly acknowledged its reply.
@@ -546,7 +549,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 			rpcSrvStat.reassembly++;
 			RpcScatter(rpcHdrPtr, &srvPtr->request);
 			/*
-			 * Update actual size information 
+			 * Update actual size information
 			 */
 			size = rpcHdrPtr->paramSize + rpcHdrPtr->paramOffset;
 			if (srvPtr->actualParamSize < size) {
@@ -590,7 +593,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		    rpcSrvStat.busyAcks++;
 		    RpcAck(srvPtr, 0);
 		    break;
-		case SRV_WAITING: 
+		case SRV_WAITING:
 		    /*
 		     * The client has dropped our reply, we resend it.
 		     */
@@ -601,7 +604,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	}
 #ifdef TIMESTAMP
 	RPC_TRACE(rpcHdrPtr, RPC_SERVER_c, "return");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
     }
 unlock:
     MASTER_UNLOCK(srvPtr->mutex);
@@ -666,10 +669,10 @@ Rpc_ErrorReply(srvToken, error)
 #ifdef RPC_TEST_BYTE_SWAP
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, NIL, &srvPtr->reply,
 					 (RpcBufferSet *)NIL, NIL, 0, (int *)NIL);
-#else RPC_TEST_BYTE_SWAP
+#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 }
 
 
@@ -786,10 +789,10 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
 #ifdef RPC_TEST_BYTE_SWAP
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, NIL, &srvPtr->reply, NIL,
 					 srvPtr->fragment, 0, (int *)NIL);
-#else RPC_TEST_BYTE_SWAP
+#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 srvPtr->fragment, 0, (int *)NIL);
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 }
 
 
@@ -834,10 +837,10 @@ RpcAck(srvPtr, flags)
 #ifdef RPC_TEST_BYTE_SWAP
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, NIL, &srvPtr->ack, NIL,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
-#else RPC_TEST_BYTE_SWAP
+#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 }
 
 /*
@@ -867,11 +870,11 @@ RpcResend(srvPtr)
     (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr, NIL,
 		       &srvPtr->reply, NIL, srvPtr->fragment,
 		       srvPtr->fragsDelivered, (int *)NIL);
-#else RPC_TEST_BYTE_SWAP
+#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr,
 		       &srvPtr->reply, srvPtr->fragment,
 		       srvPtr->fragsDelivered, (int *)NIL);
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 }
 
 /*
@@ -907,9 +910,9 @@ RpcProbe(srvPtr)
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, NIL, &srvPtr->ack, NIL,
 					 (RpcBufferSet *)NIL, 0,
 					 &srvPtr->mutex);
-#else RPC_TEST_BYTE_SWAP
+#else /* RPC_TEST_BYTE_SWAP */
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0,
 					 &srvPtr->mutex);
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcTest.c --
  *
  *	These are some utility routines that exercise the RPC system.
@@ -9,7 +9,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "rpc.h"
@@ -89,7 +89,7 @@ Rpc_GetTime(serverId, timePtr, timeZoneMinutesPtr, timeZoneDSTPtr)
 	} else {
 	    *timeZoneMinutesPtr = rpcTimeReturn.timeZoneMinutes;
 	    *timeZoneDSTPtr = rpcTimeReturn.timeZoneDST;
-	} 
+	}
     }
     return(status);
 }
@@ -133,13 +133,13 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
     localOutBuffer = Mem_Alloc(size);
 
 #ifdef notdef
-    /* 
+    /*
      * These statistics, the overall packet loss and retries, is
      * computable by the user program using the Rpc_Stat system call.
      */
     Rpc_StartSrvTrace();
     Rpc_EnterProcess(0);      /* for tracing */
-#endif notdef
+#endif /* notdef */
  
     if (deltaTimePtr == (Time *)NIL) {
 	Sys_Printf("Echoing %d %d-byte messages\n", numEchoes, size);
@@ -176,9 +176,9 @@ Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
     rpcDeltaTime = diff;
 
 #ifdef notdef
-    Rpc_LeaveProcess(0);      /* for tracing */               
+    Rpc_LeaveProcess(0);      /* for tracing */
     Rpc_EndSrvTrace();
-#endif notdef
+#endif /* notdef */
 
     Byte_Copy(size, localOutBuffer, returnPtr);
     Mem_Free(localOutBuffer);
@@ -224,7 +224,7 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
 #ifdef notdef
     Rpc_StartSrvTrace();
     Rpc_EnterProcess(0);      /* for tracing */
-#endif notdef
+#endif /* notdef */
  
     if (deltaTimePtr == (Time *)NIL) {
 	Sys_Printf("Sending %d %d-byte messages\n", numSends, size);
@@ -260,9 +260,9 @@ Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
  */
     rpcDeltaTime = diff;
 #ifdef notdef
-    Rpc_LeaveProcess(0);      /* for tracing */               
+    Rpc_LeaveProcess(0);      /* for tracing */
     Rpc_EndSrvTrace();
-#endif notdef
+#endif /* notdef */
 
     Mem_Free(localInBuffer);
     return(status);
@@ -345,7 +345,7 @@ Rpc_Ping(serverId)
 
     /*
      * This should use RPC_ECHO_1, but it is unimplemented by the server.
-     */         
+     */
     status = Rpc_Call(serverId, RPC_ECHO_2, &storage);
     return(status);
 }

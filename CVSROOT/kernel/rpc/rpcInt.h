@@ -63,4 +63,4 @@ extern	Boolean	rpcTestByteSwap;
 extern	Boolean	RpcByteSwapInComing();
 extern	void	RpcPrintHdr();
 extern	void	RpcByteSwapBuffer();
-#endif _RPCINT
+#endif /* _RPCINT */

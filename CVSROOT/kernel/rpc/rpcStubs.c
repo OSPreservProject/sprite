@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcStubs.c --
  *
  *	The stub procedures for the Rpc service procedures.
@@ -9,7 +9,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -70,7 +70,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcDomainInfo, "domain info",	/* 37 - FS_DOMAIN_INFO */
 	Fs_RpcDevReopen, "dev reopen",		/* 38 - FS_DEV_REOPEN */
 	Fs_RpcRecovery, "recover",		/* 39 - FS_RECOVERY */
-#else OLD_RPC_NUMBERS
+#else /* OLD_RPC_NUMBERS */
         RpcNull, "0",                  		/* 0 - nothing */
         RpcNull, "echo intr",			/* 1 - ECHO, interrupt level */
         RpcEcho, "echo",			/* 2 - ECHO2, server process */
@@ -127,7 +127,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcSetAttrPath, "setAttrPath",	/* 53 - FS_GET_ATTR_PATH */
 	Fs_RpcGetIOAttr, "getIOAttr",		/* 54 - FS_GET_IO_ATTR */
 	Fs_RpcSetIOAttr, "setIOAttr",		/* 55 - FS_SET_IO_ATTR */
-#endif OLD_RPC_NUMBERS
+#endif /* OLD_RPC_NUMBERS */
 };
 
 
@@ -267,6 +267,7 @@ RpcEcho(srvToken, clientID, command, storagePtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 RpcGetTime(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
@@ -318,7 +319,7 @@ RpcGetTime(srvToken, clientID, command, storagePtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 RpcProcMigInit(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
@@ -334,7 +335,7 @@ RpcProcMigInit(srvToken, clientID, command, storagePtr)
 {
     ReturnStatus status;
 
-    status = Proc_AcceptMigration(clientID); 
+    status = Proc_AcceptMigration(clientID);
     Rpc_Reply(srvToken, status, storagePtr, NIL, NIL);
 
     return(status);
@@ -357,7 +358,7 @@ RpcProcMigInit(srvToken, clientID, command, storagePtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 RpcProcMigInfo(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
@@ -380,7 +381,7 @@ RpcProcMigInfo(srvToken, clientID, command, storagePtr)
             (Proc_MigrateCommand *) storagePtr->requestParamPtr,
 	    storagePtr->requestDataSize,
  	    storagePtr->requestDataPtr,
-	    returnInfoPtr);		 
+	    returnInfoPtr);
     if (status == SUCCESS) {
 	storagePtr->replyParamPtr = (Address) returnInfoPtr;
 	storagePtr->replyParamSize = sizeof(Proc_MigrateReply);
@@ -410,7 +411,7 @@ RpcProcMigInfo(srvToken, clientID, command, storagePtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 RpcProcRemoteCall(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to

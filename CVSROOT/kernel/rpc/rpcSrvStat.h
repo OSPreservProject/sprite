@@ -26,4 +26,4 @@ void Rpc_PrintSrvStat();
 void Rpc_StartSrvTrace();
 void Rpc_EndSrvTrace();
 
-#endif _RPCSRVSTAT
+#endif /* _RPCSRVSTAT */

@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcClient.c --
  *
  *      The client side of the RPC protocol.  The routines here are in
@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -152,12 +152,14 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		      &chanPtr->swapRequestRpcHdr,
 		      &chanPtr->request, &chanPtr->swapRequest,
 		      chanPtr->fragment,
-		      chanPtr->fragsDelivered, &chanPtr->mutex);
-#else RPC_TEST_BYTE_SWAP
+		      (unsigned int) (chanPtr->fragsDelivered),
+		      &chanPtr->mutex);
+#else /* RPC_TEST_BYTE_SWAP */
     error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 		      &chanPtr->request, chanPtr->fragment,
-		      chanPtr->fragsDelivered, &chanPtr->mutex);
-#endif RPC_TEST_BYTE_SWAP
+		      (unsigned int) (chanPtr->fragsDelivered),
+		      &chanPtr->mutex);
+#endif /* RPC_TEST_BYTE_SWAP */
     /*
      * Set up the initial wait interval.  The wait could depend on
      * characteristics of the RPC, or of the other host.
@@ -221,7 +223,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	    *srvBootIDPtr = rpcHdrPtr->bootID;
 #ifdef TIMESTAMP
 	    RPC_TRACE(rpcHdrPtr, RPC_CLIENT_D, "input");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
 	    if (rpcHdrPtr->ID != chanPtr->requestRpcHdr.ID) {
 		/*
 		 * Note old message.
@@ -286,22 +288,22 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    if (serverID == RPC_BROADCAST_SERVER_ID) {
 			Net_SpriteIDToName(rpcHdrPtr->serverID, &name);
 			if (name == (char *)NIL) {
-			    Sys_Panic(SYS_WARNING, 
+			    Sys_Panic(SYS_WARNING,
 				"RpcDoCall: <%d> hanging my broadcast\n",
 				    rpcHdrPtr->serverID);
 			} else {
-			    Sys_Panic(SYS_WARNING, 
+			    Sys_Panic(SYS_WARNING,
 				"RpcDoCall: %s hanging my broadcast\n", name);
 			}
 			error = RPC_TIMEOUT;
 		    } else {
 			Net_SpriteIDToName(serverID, &name);
 			if (name == (char *)NIL) {
-			    Sys_Panic(SYS_WARNING, 
+			    Sys_Panic(SYS_WARNING,
 				"RpcDoCall: <%d> seems hung, RPC %d\n",
 				serverID, command);
 			} else {
-			    Sys_Panic(SYS_WARNING, 
+			    Sys_Panic(SYS_WARNING,
 				"RpcDoCall: %s seems hung, RPC %d\n",
 				name, command);
 			}
@@ -349,12 +351,14 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 				      &chanPtr->request,
 				      &chanPtr->swapRequest,
 				      chanPtr->fragment,
-				      chanPtr->fragsDelivered, &chanPtr->mutex);
-#else RPC_TEST_BYTE_SWAP
+				      (unsigned int) (chanPtr->fragsDelivered),
+				      &chanPtr->mutex);
+#else /* RPC_TEST_BYTE_SWAP */
 		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 				      &chanPtr->request, chanPtr->fragment,
-				      chanPtr->fragsDelivered, &chanPtr->mutex);
-#endif RPC_TEST_BYTE_SWAP
+				      (unsigned int) (chanPtr->fragsDelivered),
+				      &chanPtr->mutex);
+#endif /* RPC_TEST_BYTE_SWAP */
 		} else {
 		    rpcCltStat.aborts++;
 		    error = RPC_TIMEOUT;
@@ -387,14 +391,14 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 				      &chanPtr->swapRequestRpcHdr,
 				      &chanPtr->request, &chanPtr->swapRequest,
 				      chanPtr->fragment,
-				      chanPtr->fragsDelivered,
+				      (unsigned int) (chanPtr->fragsDelivered),
 				      &chanPtr->mutex);
-#else RPC_TEST_BYTE_SWAP
+#else /* RPC_TEST_BYTE_SWAP */
 		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 				      &chanPtr->request, chanPtr->fragment,
-				      chanPtr->fragsDelivered,
+				      (unsigned int) (chanPtr->fragsDelivered),
 				      &chanPtr->mutex);
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 		}
 	    }
 	}
@@ -512,12 +516,12 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 						 &chanPtr->swapRequest,
 						 (RpcBufferSet *)NIL, 0,
 						 (int *)NIL);
-#else RPC_TEST_BYTE_SWAP
+#else /* RPC_TEST_BYTE_SWAP */
 	    (void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->requestRpcHdr,
 						 &chanPtr->request,
 						 (RpcBufferSet *)NIL, 0,
 						 (int *)NIL);
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 
 	    chanPtr->state &= ~CHAN_BUSY;
 	}
@@ -603,7 +607,7 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 	       rpcCompleteMask[rpcHdrPtr->numFrags]) {
 		goto unlock;
 	    } else {
-		/* 
+		/*
 		 * Now the packet is complete.
 		 */
 		chanPtr->state &= ~CHAN_FRAGMENTING;
@@ -633,7 +637,7 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 unlock:
 #ifdef TIMESTAMP
     RPC_TRACE(rpcHdrPtr, RPC_CLIENT_a, "client");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
 
     MASTER_UNLOCK(chanPtr->mutex);
 }

@@ -85,7 +85,7 @@ typedef Rpc_TraceHdr2 Rpc_TraceFileHdr;
 #define RPC_TRACE_VERSION	3	/* Nov 19 '86 */
 
 /*
- * Tracing related defines.  These are values for the second 
+ * Tracing related defines.  These are values for the second
  * parameter of RpcTrace.  They get placed in the type field of an
  * Rpc_Trace struct.
  */
@@ -128,4 +128,4 @@ extern Boolean rpc_Tracing;
  */
 extern Time rpcDeltaTime;
 
-#endif _RPCTRACE
+#endif /* _RPCTRACE */

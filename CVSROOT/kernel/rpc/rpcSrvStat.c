@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcSrvStat.c --
  *      Manipulation and printing of the statistics taken on the server
  *      side of the RPC system.  The statistics are kept as simple event
@@ -22,7 +22,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -52,7 +52,7 @@ static int numTracedRpcServers;
  */
 static Sync_Lock rpcSrvTraceLock;
 #define LOCKPTR (&rpcSrvTraceLock)
-#endif notdef
+#endif /* notdef */
 
 /*
  *----------------------------------------------------------------------
@@ -86,7 +86,7 @@ Rpc_StartSrvTrace()
 
     UNLOCK_MONITOR;
 }
-#endif notdef
+#endif /* notdef */
 
 /*
  *----------------------------------------------------------------------
@@ -162,7 +162,7 @@ Rpc_EndSrvTrace(pid)
 
     UNLOCK_MONITOR;
 }
-#endif notdef
+#endif /* notdef */
 /*
  *----------------------------------------------------------------------
  *

@@ -25,18 +25,18 @@
  *
  *	RPC_ECHO_1	Special echo that is handled completely by the
  *			server dispatcher.  The server process is not involved.
- *	RPC_ECHO_2	Echo bytes off the server. The request/reply parameter 
+ *	RPC_ECHO_2	Echo bytes off the server. The request/reply parameter
  *			area is empty.  The request/reply data area contains
  *			the bytes that are echoed.
  *	RPC_SEND	Send bytes to the server.  The request parameter
  *			area is empty.  The request data area has the bytes to
  *			send.  The reply is empty.
  *	RPC_RECEIVE	Unimplemented.
- *	RPC_FS_OPEN	Open a file.  Could create the file, always 
- *				follows symbolic links. The request parameter 
- *				area contains a FsOpenParams, and the request 
- *				data area contains a file name.  The return 
- *				parameter area contains an FsOpenReturn 
+ *	RPC_FS_OPEN	Open a file.  Could create the file, always
+ *				follows symbolic links. The request parameter
+ *				area contains a FsOpenParams, and the request
+ *				data area contains a file name.  The return
+ *				parameter area contains an FsOpenReturn
  *				structure.
  *	RPC_FS_READ	Read from a file.  The request parameter area contains
  *			an FsSpriteReadParams structure, and the request data
@@ -67,7 +67,7 @@
  *			parameter area contains the current time (Time),
  *			the number of minutes west of Greenwich (int), and the
  *			daylights savings flag (int).
- *	RPC_FS_PREFIX	Broadcast a pathname to a server and 
+ *	RPC_FS_PREFIX	Broadcast a pathname to a server and
  *				get a file handle for its prefix.
  *	RPC_FS_GET_ATTR	Get the file header information about a file.  The
  *			request parameter area contains an FsFileID.  The
@@ -150,7 +150,7 @@
 #define RPC_FS_RECOVERY		39
 #define	RPC_LAST_COMMAND	RPC_FS_RECOVERY
 
-#else OLD_RPC_NUMBERS
+#else /* OLD_RPC_NUMBERS */
 
 #define	RPC_BAD_COMMAND		0
 #define	RPC_ECHO_1		1
@@ -210,7 +210,7 @@
 #define RPC_FS_SET_IO_ATTR	55
 #define	RPC_LAST_COMMAND	RPC_FS_SET_IO_ATTR
 
-#endif OLD_RPC_NUMBERS
+#endif /* OLD_RPC_NUMBERS */
 /*
  * RPC_LAST_COMMAND is used to declare the rpc procedure switch
  * and arrays of counters for each rpc.
@@ -255,5 +255,5 @@ extern ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
 extern ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
 extern ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
 
-#endif	_RPCCALL
+#endif /*	_RPCCALL */
 

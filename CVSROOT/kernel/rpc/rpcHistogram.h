@@ -73,4 +73,4 @@ extern void		Rpc_HistEnd();
 extern ReturnStatus	Rpc_HistDump();
 extern void		Rpc_HistPrint();
 
-#endif _RPCHISTOGRAM
+#endif /* _RPCHISTOGRAM */

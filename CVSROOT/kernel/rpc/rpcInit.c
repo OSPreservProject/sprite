@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcInit.c --
  *
  *	Initialize the data structures needed by the RPC system.
@@ -9,7 +9,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "rpc.h"
@@ -120,7 +120,7 @@ Rpc_Init()
 	chanPtr->requestRpcHdr.channel = chanPtr->index;
 	chanPtr->request.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
 	chanPtr->request.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 
 	for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
 

@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcDispatch.c --
  *
  * The top level rpc dispatch routine.  The dispatcher is responsible for
@@ -15,7 +15,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "devTimer.h"
@@ -73,9 +73,9 @@ Boolean	rpc_PrintMismatch = FALSE;
 int mismatchErrors = 0;
 
 /*
- * An array of bitmasks is kept for faster comparisions by the dispatcher. 
- * Indexed by the total number of fragments in the packet, the array   
- * contains a complete bitmask for that many fragments. 
+ * An array of bitmasks is kept for faster comparisions by the dispatcher.
+ * Indexed by the total number of fragments in the packet, the array
+ * contains a complete bitmask for that many fragments.
  */
 unsigned int rpcCompleteMask[17] = {
 	0x0000, 0x0001, 0x0003, 0x0007, 0x000F,
@@ -214,7 +214,7 @@ Rpc_Dispatch(packetPtr, packetLength)
 		       NET_ETHER_ADDR_BYTE6(dest) & 0xff);
 
 	    } else {
-		Sys_Printf("Rpc_Dispatch: junk serverID %d from client %d\n", 
+		Sys_Printf("Rpc_Dispatch: junk serverID %d from client %d\n",
 			    rpcHdrPtr->serverID,
 			    rpcHdrPtr->clientID);
 		badErrors++;
@@ -229,7 +229,7 @@ Rpc_Dispatch(packetPtr, packetLength)
 
 	rpcSrvStat.toServer++;
 	/*
-	 * Verify or initialize the sprite host id for the client 
+	 * Verify or initialize the sprite host id for the client
 	 * (clientID) from the transport level source address.
 	 * This doesn't usually kick in unless the client can't do reverse arp.
 	 */
@@ -426,7 +426,7 @@ RpcValidateClient(etherHdrPtr, rpcHdrPtr)
 	if (clientID < 0) {
 	    /*
 	     * Should invoke Reverse ARP to find out the Sprite ID.
-	     */ 
+	     */
 	    Net_EtherAddress	source;
 	    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr),source);
 	    Sys_Printf("Client at unknown ethernet address %x:%x:%x:%x:%x:%x\n",

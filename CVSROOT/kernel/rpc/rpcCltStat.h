@@ -25,4 +25,4 @@ void Rpc_PrintCltStat();
 void Rpc_EnterProcess();
 void Rpc_LeaveProcess();
 
-#endif _RPCCLTSTAT
+#endif /* _RPCCLTSTAT */

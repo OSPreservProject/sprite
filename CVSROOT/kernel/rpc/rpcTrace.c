@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcTrace.c --
  *
  *	The tracing routines for the Rpc system.  As messages are moved
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -35,7 +35,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Boolean		rpc_Tracing = FALSE;	/* No tracing in clean version  */
 #else
 Boolean		rpc_Tracing = TRUE;	/* flag to turn on tracing */
-#endif not CLEAN
+#endif /* not CLEAN */
 
 Trace_Header	rpcTraceHdr;		/* Trace header info */
 Trace_Header	*rpcTraceHdrPtr = &rpcTraceHdr;
@@ -109,7 +109,7 @@ Rpc_PrintTrace(numRecords)
 	Sys_Printf("%6x ", rpcHdrPtr->ID);
 
 	switch(recordPtr->event) {
-	    default: 
+	    default:
 		Sys_Printf("{%d}", recordPtr->event);
 		break;
 	    case RPC_INPUT:
@@ -221,7 +221,7 @@ Rpc_PrintTrace(numRecords)
     Sys_Printf("Delta time = %6d.%06d\n", rpcDeltaTime.seconds,
 			  rpcDeltaTime.microseconds);
     rpcTraceHdrPtr->flags &= ~TRACE_INHIBIT;
-#endif not CLEAN
+#endif /* not CLEAN */
 }
 
 /*
@@ -311,7 +311,7 @@ Rpc_DumpTrace(firstRec, lastRec, fileName)
 exit:
     rpcTraceHdrPtr->flags &= ~TRACE_INHIBIT;
     return(status);
-#endif not CLEAN
+#endif /* not CLEAN */
 }
 
 /*
@@ -375,5 +375,5 @@ Rpc_StampTest()
 	RpcTrace(&junkRpcHdr, RPC_SERVER_OUT, "full");
 	RpcTrace((RpcHdr *)NIL, RPC_CLIENT_OUT, "empty");
     }
-#endif not CLEAN
+#endif /* not CLEAN */
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcDaemon.c --
  *
  *	The RPC daemon is in charge of reclaiming server processes,
@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -158,10 +158,13 @@ Rpc_CreateServer(pidPtr)
      */
     rpcServerPtrPtr[rpcNumServers] = RpcInitServerState(rpcNumServers);
     rpcNumServers++;
-    status = Proc_NewProc((Address)Rpc_Server, PROC_KERNEL, FALSE, pidPtr,
-			  "Rpc_Server");
+#ifndef LINT
+    /* Won't lint due to cast of function pointer to address. */
+    status = Proc_NewProc((Address)Rpc_Server, PROC_KERNEL, FALSE,
+	    (Proc_PID *) pidPtr, "Rpc_Server");
+#endif /* LINT */
     if (status == SUCCESS) {
-	Proc_SetServerPriority(*pidPtr);
+	Proc_SetServerPriority(*((Proc_PID *) pidPtr));
     }
     return(status);
 }

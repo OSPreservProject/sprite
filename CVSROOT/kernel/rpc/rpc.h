@@ -59,7 +59,7 @@ typedef struct Rpc_Storage {
     int		replyDataSize;
 } Rpc_Storage;
 
-/* 
+/*
  * Structure to use for the simple call back to free up memory.
  * The reply a service stub generates is held onto until the
  * next request from the client arrives.  These pointers are to
@@ -117,4 +117,4 @@ void		Rpc_PrintTrace();
 ReturnStatus	Rpc_DumpTrace();
 void		Rpc_StampTest();
 
-#endif _RPC
+#endif /* _RPC */

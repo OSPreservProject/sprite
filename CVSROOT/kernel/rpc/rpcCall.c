@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcCall.c --
  *
  *      These are the top-level routines for the client side of Remote
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -126,27 +126,27 @@ Rpc_Call(serverID, command, storagePtr)
 	Sys_Panic((command != RPC_ECHO) ? SYS_FATAL : SYS_WARNING,
 		    "Trying to RPC to myself");
 	return(GEN_INVALID_ARG);
-    } else if ((serverID == RPC_BROADCAST_SERVER_ID) && 
+    } else if ((serverID == RPC_BROADCAST_SERVER_ID) &&
 #ifndef OLD_RPC_NUMBERS
 	       ! (command == RPC_FS_PREFIX ||
 		  command == RPC_GETTIME)) {
-#else OLD_RPC_NUMBERS
+#else /* OLD_RPC_NUMBERS */
 	       ! (command == RPC_FS_SPRITE_PREFIX ||
 		  command == RPC_GETTIME)) {
-#endif OLD_RPC_NUMBERS
+#endif /* OLD_RPC_NUMBERS */
 	Sys_Panic(SYS_FATAL, "Trying to broadcast a non-prefix RPC");
 	return(GEN_INVALID_ARG);
     }
 #ifdef TIMESTAMP
     RPC_NIL_TRACE(RPC_CLIENT_A, "Rpc_Call");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
 
     RPC_CALL_TIMING_START(command, &histTime);
     chanPtr = RpcChanAlloc(serverID);
 
 #ifdef TIMESTAMP
     RPC_NIL_TRACE(RPC_CLIENT_B, "alloc");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
     /*
      * Initialize the RPC request message header and put buffer
      * specifications of our caller into the state of the channel.  This
@@ -170,7 +170,7 @@ Rpc_Call(serverID, command, storagePtr)
     }
 #ifdef TIMESTAMP
     RPC_NIL_TRACE(RPC_CLIENT_C, "setup");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
 
     /*
      * Call RpcDoCall, which synchronizes with RpcClientDispatch,
@@ -182,20 +182,20 @@ Rpc_Call(serverID, command, storagePtr)
     
 #ifdef TIMESTAMP
     RPC_NIL_TRACE(RPC_CLIENT_OUT, "return");
-#endif TIMESTAMP
+#endif /* TIMESTAMP */
 
     RPC_CALL_TIMING_END(command, &histTime);
 #ifndef NO_RECOVERY
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
 	if (command != RPC_ECHO_2) {
 	    Sys_Printf("<%s> ", rpcService[command].name);
-	    Net_HostPrint(serverID, "RPC timed-out\n");
+	    Sys_HostPrint(serverID, "RPC timed-out\n");
 	}
 	Recov_HostDead(serverID);
     } else {
 	Recov_HostAlive(serverID, srvBootID, TRUE, notActive);
     }
-#endif NO_RECOVERY
+#endif /* NO_RECOVERY */
     return(error);
 }
 
@@ -270,7 +270,7 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
     /* swapParamBuffer is an array, so this gives its address */
     bufferPtr->bufAddr	= (Address) chanPtr->swapParamBuffer;
     bufferPtr->length	= storagePtr->requestParamSize;
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
 
     bufferPtr		= &chanPtr->request.dataBuffer;
     bufferPtr->bufAddr	= storagePtr->requestDataPtr;
@@ -281,7 +281,7 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
     bufferPtr		= &chanPtr->swapRequest.dataBuffer;
     bufferPtr->bufAddr	= storagePtr->requestDataPtr;
     bufferPtr->length	= storagePtr->requestDataSize;
-#endif RPC_TEST_BYTE_SWAP
+#endif /* RPC_TEST_BYTE_SWAP */
     
 
     bufferPtr		= &chanPtr->reply.paramBuffer;

@@ -180,4 +180,4 @@ void			 RpcResend();
 void			 RpcProbe();
 void			 RpcSrvInitHdr();
 
-#endif _RPCSERVER
+#endif /* _RPCSERVER */

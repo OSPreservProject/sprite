@@ -190,4 +190,4 @@ void RpcTrace();
 
 void RpcGetMachineDelay();
 
-#endif not _RPCPACKET
+#endif /* not _RPCPACKET */

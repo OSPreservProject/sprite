@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcByteSwap.c --
  *
  *	The code to byte swap incoming rcp headers and parameter blocks.
@@ -15,7 +15,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -41,7 +41,7 @@ Boolean	rpcTestByteSwap = FALSE;
  *	turning it into 0x64636261.
  *
  * Results:
- *	None. 
+ *	None.
  *
  * Side effects:
  *	The buffer is byte-swapped.

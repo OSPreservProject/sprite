@@ -1,4 +1,4 @@
-/* 
+/*
  * rpcHistogram.c --
  *
  *      Simple histograms of event durations are maintained by the
@@ -12,7 +12,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
