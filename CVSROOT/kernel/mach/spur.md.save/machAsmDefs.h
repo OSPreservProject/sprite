@@ -394,15 +394,18 @@
  *	
  *	    1) Saves the state into _machDebugState
  *	    2) Switch to the debuggers own spill and saved window stacks.
- *	    3) Call routine _MachCallDebugger(errorType)
- *	    4) Restore state from _machDebugState
- *	    5) Do a normal return from trap.
+ *	    3) Turn off and invalidate the ibuffer.
+ *	    4) Call routine _MachCallDebugger(errorType)
+ *	    5) Restore state from _machDebugState (note that this will 
+ *	       reenable the ibuffer unless the debugger has modified the
+ *	       kpsw to not have it enabled).
+ *	    6) Do a normal return from trap.
  *
  *	regErrorVal -	Register that holds an error value.
  *	constErrorVal -	Constant error value.
  */
 #define	CALL_DEBUGGER(regErrorVal, constErrorVal) \
-	add_nt		VOL_TEMP1, r0, $debugStatePtr; \
+	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
 	rd_special	VOL_TEMP2, pc; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
 	jump		SaveState; \
@@ -410,11 +413,16 @@
 	\
 	SWITCH_TO_DEBUGGER_STACKS(); \
 	\
+	rd_kpsw		VOL_TEMP1; \
+	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_IBUFFER_ENA; \
+	wr_kpsw		VOL_TEMP1, $0; \
+	invalidate_ib; \
+	\
 	add_nt		OUTPUT_REG1, regErrorVal, $constErrorVal; \
 	call		_MachCallDebugger; \
 	Nop; \
 	\
-	add_nt		VOL_TEMP1, r0, $debugStatePtr; \
+	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
 	rd_special	VOL_TEMP2, pc; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
 	jump		RestoreState; \

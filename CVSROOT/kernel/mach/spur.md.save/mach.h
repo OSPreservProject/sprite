@@ -15,8 +15,6 @@
 #include "machConst.h"
 #include "machCCRegs.h"
 
-typedef int	Mach_ExcStack;
-
 /*
  * The state of each processor: user mode or kernel mode.
  */
@@ -85,8 +83,6 @@ typedef struct {
     int		upsw;				/* User psw. */
     Address	curPC;				/* Current program counter. */
     Address	nextPC;				/* Next program counter. */
-    int		trapType;			/* One of MACH_USE_CUR_PC or
-						 * MACH_USE_NEXT_PC. */
     int		insert;				/* The insert register. */
     Address	swp;				/* The saved window pointer. */
     int		cwp;				/* Current window pointer. */
@@ -124,6 +120,11 @@ typedef struct Mach_State {
     Address		kernStackEnd;		/* Address of the end of the
 						 * kernel stack. */
 } Mach_State;
+
+/*
+ * Machine dependent signal context.
+ */
+typedef int	Mach_SigContext;
 
 /*
  * Macro to get processor number

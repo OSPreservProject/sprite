@@ -273,7 +273,8 @@ OpRecov:
  */
 
 .org	0x2000
-Start:
+	.globl start
+start:
 /*
  * The initial boot code.  This is where we start executing in physical mode
  * after we are down loaded.  Our job is to:
@@ -1296,16 +1297,24 @@ SigReturnTrap:
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	/*
-	 * Go back to the previous window.
+	 * Go back to the previous window.  Note that the previous window
+	 * contains the saved values of the current PC, the next PC and
+	 * the kpsw.
 	 */
 	rd_special	VOL_TEMP1, pc
 	return		VOL_TEMP1, $12
 	Nop
 	/*
-	 * Disable traps.  Note that the kpsw that we use now is the one
-	 * that we saved in the previous window when we called the signal
-	 * handler.  It will have all traps disabled.
+	 * The saved KPSW tells us where to continue when we return from the
+	 * trap.  Extract out this info and disable traps.  Note that we don't
+	 * just use the KPSW directly because the user could have screwed 
+	 * it up.
 	 */
+	LD_CONSTANT(VOL_TEMP1, (MACH_KPSW_USE_CUR_PC | MACH_KPSW_USE_NEXT_PC))
+	and		VOL_TEMP1, KPSW_REG, VOL_TEMP1
+	rd_kpsw		VOL_TEMP2
+	and		VOL_TEMP2, VOL_TEMP2, $~MACH_KPSW_ALL_TRAPS_ENA
+	or		KPSW_REG, VOL_TEMP1, VOL_TEMP2
 	wr_kpsw		KPSW_REG, $0
 	/*
 	 * Switch over to the kernel stacks and save the user state.
@@ -1318,11 +1327,12 @@ SigReturnTrap:
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	/*
-	 * The old hold mask was stored in NON_INTR_TEMP1.  Also the first and
-	 * second PCs were saved in CUR_PC_REG and NEXT_PC_REG.  Call
-	 * the signal return handler with the old hold mask as an argument.
+	 * The old hold mask was stored on the spill stack.  Pass it
+	 * as an arg to the signal return routine and restore the spill
+	 * stack pointer.
 	 */
-	add_nt		OUTPUT_REG1, NON_INTR_TEMP1, $0
+	ld_32		OUTPUT_REG1, SPILL_SP, $0
+	add_nt		SPILL_SP, SPILL_SP, $8
 	rd_insert	VOL_TEMP1
 	call		_MachSigReturn
 	Nop
@@ -1557,22 +1567,27 @@ returnTrap_SpecialAction:
 returnTrap_CallSigHandler:
 	wr_kpsw		KPSW_REG, $0
 	RESTORE_USER_STATE()
-	/* 
-	 * Save the old hold mask in the current window.  The PCs
-	 * are already saved in CUR_PC_REG and NEXT_PC_REG.  Note that the
-	 * current state pointer is put in OUTPUT_REG5 so that we can use
+	/*
+	 * Grab the current state pointer in OUTPUT_REG5 so that we can use
 	 * it after we shift the window.
 	 */
 	ld_32		OUTPUT_REG5, r0, $_machCurStatePtr
-	Nop
-	ld_32		NON_INTR_TEMP1, OUTPUT_REG5, $MACH_OLD_HOLD_MASK_OFFSET
-	Nop
+	/* 
+	 * Make room on the spill stack for the signal context stuff 
+	 * (it contains 8 bytes, 4 for the hold mask and 4 for filler) and
+	 * save the old hold mask on the spill stack.
+	 */
+	ld_32		VOL_TEMP1, OUTPUT_REG5, $MACH_OLD_HOLD_MASK_OFFSET
+	sub		SPILL_SP, SPILL_SP, $8
+	st_32		VOL_TEMP1, SPILL_SP, $0
 	/*
-	 * Load in the PC and the arguments to the signal handler.
+	 * Pass the correct args to the signal handler:
+	 *
+	 *	Handler(sigNum, sigCode, contextPtr)
 	 */
 	ld_32		OUTPUT_REG1, OUTPUT_REG5, $MACH_SIG_NUM_OFFSET
 	ld_32		OUTPUT_REG2, OUTPUT_REG5, $MACH_SIG_CODE_OFFSET
-	ld_32		OUTPUT_REG3, OUTPUT_REG5, $MACH_OLD_HOLD_MASK_OFFSET
+	add_nt		OUTPUT_REG3, SPILL_SP, $0
 	Nop
 	/*
 	 * Enable traps so that we can safely advance the window.
@@ -2221,3 +2236,4 @@ parse_end:
  * Leave room for the stacks.
  */
 .org MACH_CODE_START
+codeStart:
