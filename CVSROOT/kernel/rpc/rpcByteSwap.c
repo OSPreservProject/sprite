@@ -29,10 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * it is of the same sort.
  */
 Boolean	rpcTestByteSwap = FALSE;
-/*
- * Should move to rpcInt.h.
- */
-extern	Boolean rpcPrintDebug;
 
 
 /*
@@ -67,16 +63,6 @@ RpcByteSwapBuffer(bufferPtr, numInts)
 #   define	MIDDLE_HIGH_BYTE_MASK	0x00ff0000
 #   define	HIGH_BYTE_MASK		0xff000000
 
-    if (rpcTestByteSwap && rpcPrintDebug) {
-	Sys_Printf("%s %x %s %d\n", "RpcByteSwapBuffer - called with addr(X) =",
-	bufferPtr, "numInts(D) =", numInts);
-    }
-#ifdef NOTDEF
-    if (((int) bufferPtr) % 4 != 0) {
-	Sys_Panic(SYS_WARNING,
-		"RpcByteSwapBuffer: Rpc header not long-word aligned!");
-    }
-#endif NOTDEF
     for (i = 0; i < numInts; i++) {
 	/*
 	 * First move the middle high byte to the middle low byte.
@@ -204,20 +190,6 @@ RpcPrintHdr(rpcHdrPtr)
 }
 
 int
-RpcSetPrintDebug()
-{
-    rpcPrintDebug = 1;
-    return 0;
-}
-
-int
-RpcUnsetPrintDebug()
-{
-    rpcPrintDebug = 0;
-    return 0;
-}
-
-int
 RpcSetTestByteSwap()
 {
     rpcTestByteSwap = 1;
@@ -230,4 +202,3 @@ RpcUnsetTestByteSwap()
     rpcTestByteSwap = 0;
     return 0;
 }
-    

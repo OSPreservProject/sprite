@@ -90,7 +90,6 @@
  *	RPC_FS_CONSIST_REPLY	Reply from the client indicating that
  *				it has completed the cache consistency action.
  *	RPC_FS_DEV_OPEN	Open a connection to the I/O server for a device.
- *	RPC_SIG_MIG_SEND	Send a signal to a migrated process.
  *	RPC_REMOTE_WAKEUP 	Notify a remote process.
  *	RPC_PROC_REMOTE_WAIT	Perform a Proc_Wait for a migrated process.
  *	RPC_FS_SELECT	See if a file is readable or writable.
@@ -107,7 +106,7 @@
  * from another file...
  */
 
-#ifdef NEW_RPC_NUMBERS
+#ifndef OLD_RPC_NUMBERS
 
 #define	RPC_BAD_COMMAND		0
 #define	RPC_ECHO_1		1
@@ -137,22 +136,21 @@
 #define	RPC_FS_MIGRATE 		25
 #define	RPC_FS_CONSIST 		26
 #define	RPC_FS_DEV_OPEN 	27
-#define	RPC_SIG_MIG_SEND 	28
-#define	RPC_REMOTE_WAKEUP 	29
-#define	RPC_PROC_REMOTE_WAIT	30
-#define	RPC_FS_SELECT		31
-#define	RPC_FS_IO_CONTROL	32
-#define	RPC_FS_CONSIST_REPLY	33
-#define	RPC_FS_COPY_BLOCK	34
-#define RPC_FS_MKDEV		35
-#define	RPC_SIG_SEND		36
-#define	RPC_FS_REOPEN		37
-#define	RPC_FS_DOMAIN_INFO	38
-#define RPC_FS_DEV_REOPEN	39
-#define RPC_FS_RECOVERY		40
+#define	RPC_REMOTE_WAKEUP 	28
+#define	RPC_PROC_REMOTE_WAIT	29
+#define	RPC_FS_SELECT		30
+#define	RPC_FS_IO_CONTROL	31
+#define	RPC_FS_CONSIST_REPLY	32
+#define	RPC_FS_COPY_BLOCK	33
+#define RPC_FS_MKDEV		34
+#define	RPC_SIG_SEND		35
+#define	RPC_FS_REOPEN		36
+#define	RPC_FS_DOMAIN_INFO	37
+#define RPC_FS_DEV_REOPEN	38
+#define RPC_FS_RECOVERY		39
 #define	RPC_LAST_COMMAND	RPC_FS_RECOVERY
 
-#else NEW_RPC_NUMBERS
+#else OLD_RPC_NUMBERS
 
 #define	RPC_BAD_COMMAND		0
 #define	RPC_ECHO_1		1
@@ -212,7 +210,7 @@
 #define RPC_FS_SET_IO_ATTR	55
 #define	RPC_LAST_COMMAND	RPC_FS_SET_IO_ATTR
 
-#endif NEW_RPC_NUMBERS
+#endif OLD_RPC_NUMBERS
 /*
  * RPC_LAST_COMMAND is used to declare the rpc procedure switch
  * and arrays of counters for each rpc.
@@ -223,40 +221,39 @@
  */
 extern ReturnStatus RpcNull();
 extern ReturnStatus RpcEcho();
-extern ReturnStatus Fs_RpcOpen();		/* 5 - FS_OPEN */
-extern ReturnStatus Fs_RpcRead();		/* 6 - READ */
-extern ReturnStatus Fs_RpcWrite();		/* 7 - WRITE */
-extern ReturnStatus Fs_RpcClose();		/* 8 - CLOSE */
-extern ReturnStatus Fs_RpcRemove();		/* 9 - UNLINK, 12 - RMDIR */
-extern ReturnStatus Fs_Rpc2Path();		/* 10 - RENAME, 13 - LINK */
-extern ReturnStatus Fs_RpcMakeDir();		/* 11 - MKDIR */
-extern ReturnStatus RpcGetTime();		/* 14 - GETTIME */
-extern ReturnStatus Fs_RpcPrefix();		/* 15 - FS_PREFIX */
-extern ReturnStatus Fs_RpcGetAttr();		/* 16 - FS_GET_ATTR */
-extern ReturnStatus Fs_RpcSetAttr();		/* 17 - FS_SET_ATTR */
-extern ReturnStatus Fs_RpcGetAttrPath();	/* 18 - FS_GET_ATTR_PATH */
-extern ReturnStatus Fs_RpcSetAttrPath();	/* 19 - FS_SET_ATTR_PATH */
-extern ReturnStatus Fs_RpcGetIOAttr();		/* 20 - FS_GET_IO_ATTR */
-extern ReturnStatus Fs_RpcSetIOAttr();		/* 21 - FS_SET_IO_ATTR */
-extern ReturnStatus RpcProcMigInit();		/* 22 - PROC_MIG_INIT */
-extern ReturnStatus RpcProcMigInfo();		/* 23 - PROC_MIG_INFO */
-extern ReturnStatus RpcProcRemoteCall();	/* 24 - PROC_REMOTE_CALL */
-extern ReturnStatus Fs_RpcStartMigration();	/* 25 - FS_MIGRATE */
-extern ReturnStatus Fs_RpcConsist();		/* 26 - FS_CONSIST */
-extern ReturnStatus Fs_RpcDevOpen();		/* 27 - FS_DEV_OPEN */
-extern ReturnStatus RpcSigMigSend();		/* 28 - SIG_MIG_SEND */
-extern ReturnStatus Sync_RemoteNotifyStub();	/* 29 - REMOTE_WAKEUP */
-extern ReturnStatus Proc_RpcRemoteWait();	/* 30 - PROC_REMOTE_WAIT */
-extern ReturnStatus Fs_RpcSelectStub();		/* 31 - FS_SELECT */
-extern ReturnStatus Fs_RpcIOControl();		/* 32 - FS_RPC_IO_CONTROL */
-extern ReturnStatus Fs_RpcConsistReply();	/* 33 - FS_CONSIST_REPLY */
-extern ReturnStatus Fs_RpcBlockCopy();		/* 34 - FS_COPY_BLOCK */
-extern ReturnStatus Fs_RpcMakeDev();		/* 35 - FS_MKDEV */
-extern ReturnStatus Sig_RpcSend();		/* 36 - SIG_SEND */
-extern ReturnStatus Fs_RpcReopen();		/* 37 - FS_REOPEN */
-extern ReturnStatus Fs_RpcDomainInfo();		/* 38 - FS_DOMAIN_INFO */
-extern ReturnStatus Fs_RpcDevReopen();		/* 39 - FS_DEV_REOPEN */
-extern ReturnStatus Fs_RpcRecovery();		/* 40 - FS_RECOVERY */
+extern ReturnStatus Fs_RpcOpen();		/*  FS_OPEN */
+extern ReturnStatus Fs_RpcRead();		/*  READ */
+extern ReturnStatus Fs_RpcWrite();		/*  WRITE */
+extern ReturnStatus Fs_RpcClose();		/*  CLOSE */
+extern ReturnStatus Fs_RpcRemove();		/*  UNLINK, RMDIR */
+extern ReturnStatus Fs_Rpc2Path();		/*  RENAME, LINK */
+extern ReturnStatus Fs_RpcMakeDir();		/*  MKDIR */
+extern ReturnStatus RpcGetTime();		/*  GETTIME */
+extern ReturnStatus Fs_RpcPrefix();		/*  FS_PREFIX */
+extern ReturnStatus Fs_RpcGetAttr();		/*  FS_GET_ATTR */
+extern ReturnStatus Fs_RpcSetAttr();		/*  FS_SET_ATTR */
+extern ReturnStatus Fs_RpcGetAttrPath();	/*  FS_GET_ATTR_PATH */
+extern ReturnStatus Fs_RpcSetAttrPath();	/*  FS_SET_ATTR_PATH */
+extern ReturnStatus Fs_RpcGetIOAttr();		/*  FS_GET_IO_ATTR */
+extern ReturnStatus Fs_RpcSetIOAttr();		/*  FS_SET_IO_ATTR */
+extern ReturnStatus RpcProcMigInit();		/*  PROC_MIG_INIT */
+extern ReturnStatus RpcProcMigInfo();		/*  PROC_MIG_INFO */
+extern ReturnStatus RpcProcRemoteCall();	/*  PROC_REMOTE_CALL */
+extern ReturnStatus Fs_RpcStartMigration();	/*  FS_MIGRATE */
+extern ReturnStatus Fs_RpcConsist();		/*  FS_CONSIST */
+extern ReturnStatus Fs_RpcDevOpen();		/*  FS_DEV_OPEN */
+extern ReturnStatus Sync_RemoteNotifyStub();	/*  REMOTE_WAKEUP */
+extern ReturnStatus Proc_RpcRemoteWait();	/*  PROC_REMOTE_WAIT */
+extern ReturnStatus Fs_RpcSelectStub();		/*  FS_SELECT */
+extern ReturnStatus Fs_RpcIOControl();		/*  FS_RPC_IO_CONTROL */
+extern ReturnStatus Fs_RpcConsistReply();	/*  FS_CONSIST_REPLY */
+extern ReturnStatus Fs_RpcBlockCopy();		/*  FS_COPY_BLOCK */
+extern ReturnStatus Fs_RpcMakeDev();		/*  FS_MKDEV */
+extern ReturnStatus Sig_RpcSend();		/*  SIG_SEND */
+extern ReturnStatus Fs_RpcReopen();		/*  FS_REOPEN */
+extern ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
+extern ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
+extern ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
 
 #endif	_RPCCALL
 

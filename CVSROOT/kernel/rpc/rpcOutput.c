@@ -39,11 +39,6 @@ short rpcLastDelay;
 Boolean rpcDumpPackets = FALSE;
 #endif PRINT_PACKETS
 
-/*
- * Rpc debug variable.  Should move to rpcInt.h.
- */
-extern	Boolean rpcPrintDebug;
-
 
 /*
  *----------------------------------------------------------------------
@@ -275,6 +270,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		    fragRpcHdrPtr->fragMask =	fragID;
 		    fragRpcHdrPtr->command =	rpcHdrPtr->command;
 
+#ifdef RPC_TEST_BYTE_SWAP
 		    /*
 		     * If we're testing byte-swapping, swap the bits here so
 		     * that the receiving machine must unswap them.
@@ -288,14 +284,10 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 			Address	addr;
 			int	length;
 
-			if (rpcPrintDebug) {
-			    Sys_Printf("RpcOutput() - fragmenting message.\n");
-			}
 			/* save these values before byte-swapping */
 			addr = fragment[nfrags].paramBuffer.bufAddr;
 			length = fragment[nfrags].paramBuffer.length;
 
-#ifdef RPC_TEST_BYTE_SWAP
 			if (swapRpcHdrPtr == (RpcHdr *)NIL) {
 			    Sys_Panic(SYS_FATAL, "RpcOutput: NIL rpc header.");
 			}
@@ -310,8 +302,8 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 				swapMessage->paramBuffer.bufAddr);
 			RpcByteSwapBuffer(swapMessage->paramBuffer.bufAddr,
 				length / sizeof (int));
-#endif RPC_TEST_BYTE_SWAP
 		    }
+#endif RPC_TEST_BYTE_SWAP
 
 		    /*
 		     * The network routines expect an array of scatter/gather
@@ -383,25 +375,16 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	 * out-going byte-swapping.  This means that the out-going
 	 * packet must be intended for a server.
 	 */
-	if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
-	    if (rpcPrintDebug && rpcHdrPtr->command != RPC_ECHO_2) {
-		Sys_Printf("%s  %s\n", "RpcOutput - unfragmented.",
-			"Header before byte-swap:");
-		RpcPrintHdr(rpcHdrPtr);
-	    }
 #ifdef RPC_TEST_BYTE_SWAP
+	if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
 	    Byte_Copy(sizeof (RpcHdr), rpcHdrPtr, swapRpcHdrPtr);
 	    RpcByteSwapBuffer(swapRpcHdrPtr, sizeof (RpcHdr) / sizeof (int));
-	    if (rpcPrintDebug && rpcHdrPtr->command != RPC_ECHO_2) {
-		Sys_Printf("RpcOutput - header after byte-swapping:\n");
-		RpcPrintHdr(swapRpcHdrPtr);
-	    }
 	    Byte_Copy(message->paramBuffer.length, message->paramBuffer.bufAddr,
 		    swapMessage->paramBuffer.bufAddr);
 	    RpcByteSwapBuffer(swapMessage->paramBuffer.bufAddr,
 		    message->paramBuffer.length / sizeof (int));
-#endif RPC_TEST_BYTE_SWAP
 	}
+#endif RPC_TEST_BYTE_SWAP
 
 #ifdef TIMESTAMP
 	RPC_NIL_TRACE(RPC_ETHER_OUT, "Ether output");

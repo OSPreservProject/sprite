@@ -29,7 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 RpcService rpcService[RPC_LAST_COMMAND+1] = {
-#ifdef NEW_RPC_NUMBERS
+#ifndef OLD_RPC_NUMBERS
         RpcNull, "0",                  		/* 0 - nothing */
         RpcNull, "echo intr",			/* 1 - ECHO1, interrupt level */
         RpcEcho, "echo",			/* 2 - ECHO2, server process */
@@ -58,20 +58,19 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcStartMigration, "migrate",	/* 25 - FS_MIGRATE */
 	Fs_RpcConsist, "consist",		/* 26 - FS_CONSIST */
 	Fs_RpcDevOpen, "dev open",		/* 27 - FS_DEV_OPEN */
-	RpcSigMigSend, "sig mig send",		/* 28 - SIG_MIG_SEND */
-	Sync_RemoteNotifyStub, "rmt notify",	/* 29 - REMOTE_WAKEUP */
-	Proc_RpcRemoteWait, "remote wait",	/* 30 - PROC_REMOTE_WAIT */
-	Fs_RpcSelectStub, "select",		/* 31 - FS_SELECT */
-	Fs_RpcIOControl, "io control",		/* 32 - FS_RPC_IO_CONTROL */
-	Fs_RpcConsistReply, "consist done",	/* 33 - FS_RPC_CONSIST_REPLY */
-	Fs_RpcBlockCopy, "copy block",		/* 34 - FS_COPY_BLOCK */
-	Fs_RpcMakeDev, "make dev",		/* 35 - FS_MKDEV */
-	Sig_RpcSend, "send signal",		/* 36 - SIG_SEND */
-	Fs_RpcReopen, "reopen",			/* 37 - FS_REOPEN */
-	Fs_RpcDomainInfo, "domain info",	/* 38 - FS_DOMAIN_INFO */
-	Fs_RpcDevReopen, "dev reopen",		/* 39 - FS_DEV_REOPEN */
-	Fs_RpcRecovery, "recover",		/* 40 - FS_RECOVERY */
-#else NEW_RPC_NUMBERS
+	Sync_RemoteNotifyStub, "rmt notify",	/* 28 - REMOTE_WAKEUP */
+	Proc_RpcRemoteWait, "remote wait",	/* 29 - PROC_REMOTE_WAIT */
+	Fs_RpcSelectStub, "select",		/* 30 - FS_SELECT */
+	Fs_RpcIOControl, "io control",		/* 31 - FS_RPC_IO_CONTROL */
+	Fs_RpcConsistReply, "consist done",	/* 32 - FS_RPC_CONSIST_REPLY */
+	Fs_RpcBlockCopy, "copy block",		/* 33 - FS_COPY_BLOCK */
+	Fs_RpcMakeDev, "make dev",		/* 34 - FS_MKDEV */
+	Sig_RpcSend, "send signal",		/* 35 - SIG_SEND */
+	Fs_RpcReopen, "reopen",			/* 36 - FS_REOPEN */
+	Fs_RpcDomainInfo, "domain info",	/* 37 - FS_DOMAIN_INFO */
+	Fs_RpcDevReopen, "dev reopen",		/* 38 - FS_DEV_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 39 - FS_RECOVERY */
+#else OLD_RPC_NUMBERS
         RpcNull, "0",                  		/* 0 - nothing */
         RpcNull, "echo intr",			/* 1 - ECHO, interrupt level */
         RpcEcho, "echo",			/* 2 - ECHO2, server process */
@@ -107,7 +106,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	RpcNull, "old, wakeup",			/* 32 - FS_REMOTE_WAKEUP old */
 	Fs_RpcConsist, "consist",		/* 33 - FS_CONSIST */
 	Fs_RpcDevOpen, "dev open",		/* 34 - FS_DEV_OPEN */
-	RpcSigMigSend, "sig mig send",		/* 35 - SIG_MIG_SEND */
+	RpcNull, "sig mig send",		/* 35 - SIG_MIG_SEND - gone */
 	Sync_RemoteNotifyStub, "rmt notify",	/* 36 - REMOTE_NOTIFY */
 	RpcNull, "old, lock",			/* 37 - FS_LOCK  old */
 	Proc_RpcRemoteWait, "remote wait",	/* 38 - PROC_REMOTE_WAIT */
@@ -128,7 +127,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcSetAttrPath, "setAttrPath",	/* 53 - FS_GET_ATTR_PATH */
 	Fs_RpcGetIOAttr, "getIOAttr",		/* 54 - FS_GET_IO_ATTR */
 	Fs_RpcSetIOAttr, "setIOAttr",		/* 55 - FS_SET_IO_ATTR */
-#endif NEW_RPC_NUMBERS
+#endif OLD_RPC_NUMBERS
 };
 
 
@@ -472,46 +471,6 @@ RpcProcRemoteCall(srvToken, clientID, command, storagePtr)
     replyMemPtr->paramPtr = (Address) NIL;
     replyMemPtr->dataPtr = returnData;
     Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem, replyMemPtr);
-
-    return(status);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * RpcSigMigSend --
- *
- *	Signal a migrated process.
- *
- * Results:
- *	A ReturnStatus.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-/* ARGSUSED */
-ReturnStatus
-RpcSigMigSend(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* Command identifier */
-    Rpc_Storage *storagePtr;	/* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    ReturnStatus status;
-
-    status = Sig_RpcMigSend(storagePtr->requestParamPtr, clientID);
-
-    Rpc_Reply(srvToken, status, storagePtr, NIL, NIL);
 
     return(status);
 }

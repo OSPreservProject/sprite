@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpcServer.h"
 #include "rpcTrace.h"
 
+
 /*
  * Our sprite ID.  It is exported for general use by other modules.
  * This is set by a reverse arp transaction at boot time (see Rpc_Start),
@@ -43,7 +44,7 @@ int	rpc_SpriteID = 0;
 /*
  * Set to FALSE for debugging a few isolated machines without tons of msgs.
  */
-Boolean	rpc_PrintMismatch = FALSE;
+Boolean	rpc_PrintMismatch = TRUE;
 
 /*
  * The packet as it looks sitting in the ethernet buffers.
@@ -78,10 +79,6 @@ unsigned int rpcCompleteMask[17] = {
 void RpcScatter();
 int  RpcValidateClient();
 
-/*
- * Rpc debug variable.
- */
-Boolean rpcPrintDebug = FALSE;
 
 
 /*
@@ -107,21 +104,14 @@ Rpc_Dispatch(packetPtr, packetLength)
 				 * receive buffers */
     int		packetLength;	/* its size */
 {
-    register RpcRawPacket *rawPacketPtr;
     register RpcHdr	*rpcHdrPtr;
     register int expectedLength;
+    Net_EtherHdr	*etherHdrPtr;
 
-    rawPacketPtr = (RpcRawPacket *)packetPtr;
-    rpcHdrPtr = &rawPacketPtr->rpcHdr;
+    etherHdrPtr = (Net_EtherHdr *)packetPtr;
+    rpcHdrPtr = (RpcHdr *) (packetPtr + sizeof(Net_EtherHdr));
 
     if (rpcHdrPtr->version == RPC_SWAPPED_VERSION) {
-	if (rpcTestByteSwap) {
-	    if (rpcPrintDebug) {
-		Sys_Printf("%s %s\n", "Rpc_Dispatch - hdr coming in",
-			"needs byte-swapping:");
-		RpcPrintHdr(rpcHdrPtr);
-	    }
-	}
 	/*
 	 * Byte swap the packet header and the parameter block.
 	 */
@@ -129,32 +119,12 @@ Rpc_Dispatch(packetPtr, packetLength)
 	    Sys_Panic(SYS_WARNING, "Rpc_Dispatch failed byte-swap.");
 	    return;
 	}
-	if (rpcTestByteSwap) {
-	    if (rpcPrintDebug) {
-		Sys_Printf("Rpc_Dispatch - after byte-swapping:\n");
-		RpcPrintHdr(rpcHdrPtr);
-	    }
-	}
-#ifdef NOTDEF
     } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION && rpc_PrintMismatch) {
 	Sys_Panic(SYS_WARNING,
 	    "Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
 	    rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
 	return;
     }
-#else NOTDEF
-    } else if (rpcTestByteSwap && rpcPrintDebug &&
-	    rpcHdrPtr->version != RPC_NATIVE_VERSION &&
-	    rpcHdrPtr->version != RPC_NATIVE_VERSION - 1) {
-	Sys_Printf(
-		"Rpc_Dispatch - hdr coming in is bad, can't byte-swap:\n");
-	RpcPrintHdr(rpcHdrPtr);
-    } else if (rpcTestByteSwap && rpcPrintDebug &&
-	    rpcHdrPtr->version != RPC_NATIVE_VERSION - 1) {
-	Sys_Printf("Rpc_Dispatch - hdr coming in is ok - no byte-swapping:\n");
-	RpcPrintHdr(rpcHdrPtr);
-    }
-#endif NOTDEF
     expectedLength = sizeof(Net_EtherHdr) +
 		     sizeof(RpcHdr) +
 		     rpcHdrPtr->paramSize +
@@ -199,15 +169,18 @@ Rpc_Dispatch(packetPtr, packetLength)
 	     */
 	    if (rpcHdrPtr->serverID > 0 &&
 		rpcHdrPtr->serverID < NET_NUM_SPRITE_HOSTS) {
+		Net_EtherAddress	dest;
+		NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+				    dest);
 		Sys_Panic(SYS_WARNING, "Rpc_Dispatch, wrong server ID %d\n");
 		Sys_Printf("\tClient %d rpc %d ether dest %x:%x:%x:%x:%x:%x\n",
 		       rpcHdrPtr->clientID, rpcHdrPtr->command,
-		       rawPacketPtr->etherHdr.destination.byte1 & 0xff,
-		       rawPacketPtr->etherHdr.destination.byte2 & 0xff,
-		       rawPacketPtr->etherHdr.destination.byte3 & 0xff,
-		       rawPacketPtr->etherHdr.destination.byte4 & 0xff,
-		       rawPacketPtr->etherHdr.destination.byte5 & 0xff,
-		       rawPacketPtr->etherHdr.destination.byte6 & 0xff);
+		       NET_ETHER_ADDR_BYTE1(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE2(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE3(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE4(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE5(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE6(dest) & 0xff);
 
 	    } else {
 		Sys_Printf("Rpc_Dispatch: junk serverID %d from client %d\n", 
@@ -229,7 +202,7 @@ Rpc_Dispatch(packetPtr, packetLength)
 	 * (clientID) from the transport level source address.
 	 * This doesn't usually kick in unless the client can't do reverse arp.
 	 */
-	if ( ! RpcValidateClient(rawPacketPtr)) {
+	if ( ! RpcValidateClient(etherHdrPtr, rpcHdrPtr)) {
 	    rpcSrvStat.invClient++;
 	    return;
 	}
@@ -394,14 +367,13 @@ RpcScatter(rpcHdrPtr, bufferPtr)
  *----------------------------------------------------------------------
  */
 Boolean
-RpcValidateClient(rawPacketPtr)
-    RpcRawPacket *rawPacketPtr;
+RpcValidateClient(etherHdrPtr, rpcHdrPtr)
+    Net_EtherHdr *etherHdrPtr;
+    RpcHdr 	 *rpcHdrPtr;
 {
-    register RpcHdr 		*rpcHdrPtr;
     register int		clientID;
     register Boolean		result = FALSE;
 
-    rpcHdrPtr = &rawPacketPtr->rpcHdr;
     clientID = rpcHdrPtr->clientID;
 
     if (clientID > 0 && clientID < NET_NUM_SPRITE_HOSTS) {
@@ -416,20 +388,22 @@ RpcValidateClient(rawPacketPtr)
 	 * Look client's transport address up in our in core host table.
 	 */
 	clientID = Net_AddrToID(0, NET_ROUTE_ETHER,
-				   (ClientData)&rawPacketPtr->etherHdr.source);
+		 (ClientData)(NET_ETHER_HDR_SOURCE(*etherHdrPtr)));
         Sys_Panic(SYS_WARNING, "RpcValidateClient had to set clientID %d\n",
 				clientID);
 	if (clientID < 0) {
 	    /*
 	     * Should invoke Reverse ARP to find out the Sprite ID.
-	     */
+	     */ 
+	    Net_EtherAddress	source;
+	    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr),source);
 	    Sys_Printf("Client at unknown ethernet address %x:%x:%x:%x:%x:%x\n",
-			       rawPacketPtr->etherHdr.source.byte1 & 0xff,
-			       rawPacketPtr->etherHdr.source.byte2 & 0xff,
-			       rawPacketPtr->etherHdr.source.byte3 & 0xff,
-			       rawPacketPtr->etherHdr.source.byte4 & 0xff,
-			       rawPacketPtr->etherHdr.source.byte5 & 0xff,
-			       rawPacketPtr->etherHdr.source.byte6 & 0xff);
+		       NET_ETHER_ADDR_BYTE1(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE2(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE3(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE4(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE5(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE6(source) & 0xff);
 	    result = FALSE;
 	} else {
 	    rpcHdrPtr->clientID = clientID;

@@ -127,13 +127,13 @@ Rpc_Call(serverID, command, storagePtr)
 		    "Trying to RPC to myself");
 	return(GEN_INVALID_ARG);
     } else if ((serverID == RPC_BROADCAST_SERVER_ID) && 
-#ifdef NEW_RPC_NUMBERS
+#ifndef OLD_RPC_NUMBERS
 	       ! (command == RPC_FS_PREFIX ||
 		  command == RPC_GETTIME)) {
-#else NEW_RPC_NUMBERS
+#else OLD_RPC_NUMBERS
 	       ! (command == RPC_FS_SPRITE_PREFIX ||
 		  command == RPC_GETTIME)) {
-#endif NEW_RPC_NUMBERS
+#endif OLD_RPC_NUMBERS
 	Sys_Panic(SYS_FATAL, "Trying to broadcast a non-prefix RPC");
 	return(GEN_INVALID_ARG);
     }
