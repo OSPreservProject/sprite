@@ -341,7 +341,8 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 			openResultsPtr->streamID, openArgsPtr->id.user,
 			realID, openArgsPtr->useFlags, numReaders, numWriters,
 			fileStatePtr->attr.createTime,
-			fileStatePtr->attr.lastByte + 1);
+			fileStatePtr->attr.lastByte + 1,
+			fileStatePtr->attr.modifyTime);
 	    }
 #endif
 
@@ -1419,7 +1420,9 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 			    status = Fsio_FileTrunc(handlePtr, arg, 0);
 			    SOSP_ADD_TRUNCATE_TRACE(streamPtr->hdr.fileID,
 				oldSize + 1, 
-				handlePtr->cacheInfo.attr.lastByte + 1);
+				handlePtr->cacheInfo.attr.lastByte + 1,
+				handlePtr->cacheInfo.attr.modifyTime,
+				handlePtr->cacheInfo.attr.createTime);
 			}
 #else
 			status = Fsio_FileTrunc(handlePtr, arg, 0);
