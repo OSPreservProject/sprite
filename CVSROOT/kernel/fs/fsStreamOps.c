@@ -670,10 +670,14 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 		    break;
 		}
 	    }
-	    if (outBuffer != (Address)NIL) {
-		*(int *)outBuffer = newOffset;
+	    if (newOffset < 0) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		if (outBuffer != (Address)NIL) {
+		    *(int *)outBuffer = newOffset;
+		}
+		streamPtr->offset = newOffset;
 	    }
-	    streamPtr->offset = newOffset;
 	    break;
 	}
 	/*
