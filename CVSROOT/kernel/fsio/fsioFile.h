@@ -19,13 +19,21 @@
 #ifndef _FSFILE
 #define _FSFILE
 
+#ifdef KERNEL
 #include <fsio.h>
 #include <fsutil.h>
 #include <fsconsist.h>
 #include <fscache.h>
 #include <fsioLock.h>
 #include <fsNameOps.h>
-
+#else
+#include <kernel/fsio.h>
+#include <kernel/fsutil.h>
+#include <kernel/fsconsist.h>
+#include <kernel/fscache.h>
+#include <kernel/fsioLock.h>
+#include <kernel/fsNameOps.h>
+#endif
 /*
  * When a regular file is opened state is packaged up on the server
  * and used on the client to set up the I/O handle for the file.
@@ -183,6 +191,9 @@ extern ReturnStatus Fsio_LocalFileHandleInit _ARGS_((Fs_FileID *fileIDPtr,
 		char *name, struct Fsdm_FileDescriptor *descPtr,
 		Boolean cantBlock, Fsio_FileIOHandle **newHandlePtrPtr));
 
+extern ReturnStatus Fsio_DeviceNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr, 
+				Fs_OpenArgs *openArgsPtr, 
+				Fs_OpenResults *openResultsPtr));
 /*
  * ftrunc() support
  */
