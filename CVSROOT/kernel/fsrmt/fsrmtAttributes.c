@@ -705,6 +705,16 @@ Fsrmt_GetIOAttr(fileIDPtr, clientID, attrPtr)
     Rpc_Storage storage;
     Fs_GetAttrResultsParam	getAttrResultsParam;
 
+    /*
+     * We don't want to do full RPC's to hosts we're pretty sure are down.
+     */
+    if (Recov_IsHostDown(fileIDPtr->serverID) == FAILURE) {
+	printf(
+	    "Fsrmt_GetIOAttr: skipping device <%d,%d> at server %d: host is down.\n",
+	    fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
+	return(SUCCESS);
+    }
+
     getAttrResultsParam.attrResults.fileID = *fileIDPtr;
     getAttrResultsParam.attrResults.attrs = *attrPtr;
     /*
