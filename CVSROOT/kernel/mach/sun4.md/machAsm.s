@@ -322,7 +322,7 @@ _Mach_ContextSwitch:
 	set	_machFPUSaveProcPtr, %VOL_TEMP1
 	st	%i0, [%VOL_TEMP1];
 	/*
-	 * Set %SAFE_TEMP to be machStatePtr.
+	 * Set %SAFE_TEMP to be trapRegsPtr.
 	 */
 	ld	[%SAFE_TEMP + MACH_TRAP_REGS_OFFSET], %SAFE_TEMP
 .global _machFPUSyncInst

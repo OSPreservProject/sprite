@@ -189,25 +189,13 @@ DoneWithUserStuff:
 	/*
 	 * It's an interrupt.
 	 */
-#ifdef sun4c
-	call	_MachFlushWindowsToStack
-	nop
-#endif /* sun4c */
 	b	MachHandleInterrupt
 	nop
 
 NotAnInterrupt:
-#ifdef sun4c
-	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
-	bne	GoOn
-	nop
-	call	_MachFlushWindowsToStack
-	nop
-#endif /* sun4c */
 	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
 	be	MachSyscallTrap
 	nop
-GoOn:
 
 	cmp	%VOL_TEMP1, MACH_INSTR_ACCESS		/* instruction fault */
 	be	MachHandlePageFault
@@ -404,10 +392,6 @@ NormalReturn:
 	 * Call VM Stuff with the %fp which will be stack pointer in
 	 * the window we restore.
 	 */
-#ifdef sun4c
-	call	_MachFlushWindowsToStack
-	nop
-#endif /* sun4c */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	mov	%fp, %o0
 	clr	%o1		/* also check for protection????? */
@@ -423,10 +407,6 @@ CheckNextFault:
 	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
 	be	CallUnderflow
 	nop
-#ifdef sun4c
-	call	_MachFlushWindowsToStack
-	nop
-#endif /* sun4c */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	clr	%o1
 	call	_Vm_PageIn, 2
@@ -870,10 +850,6 @@ MachReturnToUnderflowWithSavedState:
 	nop
 	mov	%fp, %o0			/* do the page in for first */
 	save					/* back to trap window */
-#ifdef sun4c
-	call	_MachFlushWindowsToStack
-	nop
-#endif /* sun4c */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 		/* Address that would fault is in %i0 now. */
 	mov	%i0, %o0
@@ -911,10 +887,6 @@ CheckNextUnderflow:
 	save					/* back to trap window */
 	be	NormalUnderflow			/* we were okay here */
 	nop
-#ifdef sun4c
-	call	_MachFlushWindowsToStack
-	nop
-#endif /* sun4c */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	/* Address that would fault is in %i1 now. */
 	mov	%i1, %o0

@@ -1147,10 +1147,6 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     extern		int	VmMachQuickNDirtyCopy();
     extern		int	VmMachEndQuickCopy();
 
-#ifdef sun4c
-    MachFlushWindowsToStack();
-#endif
-
     /*
      * Are we in quick cross-context copy routine?  If so, we can't page fault
      * in it.
@@ -1338,11 +1334,6 @@ HandleItAgain:
 		/*
 		 * Push the window to the stack.
 		 */ 
-#ifdef sun4c
-		    if (machStatePtr->savedRegs[i][14] < 0x1a000000) {
-			panic("Gotcha PID 0x%x\n",procPtr->processID);
-		    }
-#endif
 		if (Vm_CopyOut(MACH_SAVED_WINDOW_SIZE,
 			(Address)(machStatePtr->savedRegs[i]),
 			machStatePtr->savedSps[i]) != SUCCESS) {
@@ -1351,15 +1342,6 @@ HandleItAgain:
 			    machStatePtr->savedSps[i]);
 		    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 		}
-#ifdef sun4c
-		machStatePtr->savedSps[i] = 0;
-		{ 
-			register int j;
-			for (j = 0; j < 16; j++) {
-			   machStatePtr->savedRegs[i][j] = 1;
-			}
-		}
-#endif
 	    }
 	}
     }
