@@ -26,7 +26,7 @@
 /*
  * Include the device switch declaration from dev.
  */
-#include "../dev.new/devFsOpTable.h"
+#include "devFsOpTable.h"
 
 
 
