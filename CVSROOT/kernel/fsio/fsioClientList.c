@@ -319,7 +319,7 @@ FsStreamClientClose(clientList, clientID)
     }
     return(List_IsEmpty(clientList));
 }
-^L
+
 /*
  * ----------------------------------------------------------------------------
  *
