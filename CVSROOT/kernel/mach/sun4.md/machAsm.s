@@ -1375,4 +1375,22 @@ queueEmpty:
 	retl
 	mov	%o1,%psr
 
-
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_Return2(val)  --
+ *
+ *	Set the second return value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	i1 <- val.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_Return2
+_Mach_Return2:
+	retl
+	mov	%o0, %i1
