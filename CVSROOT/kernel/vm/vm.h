@@ -326,4 +326,10 @@ extern	unsigned int	Vm_KernPageAllocate();
 extern	void		Vm_KernPageFree();
 extern	unsigned int	Vm_GetKernPageFrame();
 
+/*
+ * Virtual memory tracing routines are variables.
+ */
+extern	Boolean		vm_Tracing;
+extern	void		Vm_StoreTraceTime();
+
 #endif _VM

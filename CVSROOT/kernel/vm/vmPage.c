@@ -1391,7 +1391,7 @@ Vm_PageIn(virtAddr, protFault)
 {
     register	Vm_PTE 		*ptePtr;
     register	Vm_Segment	*segPtr;
-    register	unsigned int	page;
+    register	int		page;
     Vm_VirtAddr	 		transVirtAddr;	
     ReturnStatus 		status;
     Proc_ControlBlock		*procPtr;
@@ -1747,7 +1747,7 @@ Vm_UserMap(firstAddr, lastAddr)
 	/*
 	 * Page in all of the pages.
 	 */
-	if (Vm_PageIn(i << vmPageShift, FALSE) != SUCCESS) {
+	if (Vm_PageIn((Address) (i << vmPageShift), FALSE) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
     }
@@ -1769,7 +1769,8 @@ Vm_UserMap(firstAddr, lastAddr)
      */
     for (; virtAddr.page <= lastPage; virtAddr.page++) {
 	while (!PageLocked(&virtAddr)) {
-	    if (Vm_PageIn(virtAddr.page << vmPageShift, FALSE) != SUCCESS) {
+	    if (Vm_PageIn((Address) (virtAddr.page << vmPageShift),
+			  FALSE) != SUCCESS) {
 		return(SYS_ARG_NOACCESS);
 	    }
 	}
@@ -2271,7 +2272,7 @@ Vm_Clock(data, callInfoPtr)
 
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
-    if (vmTracing) {
+    if (vm_Tracing) {
 	VmMach_Trace();
 
 	/*

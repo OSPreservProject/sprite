@@ -347,6 +347,7 @@ typedef enum {
  *				the page tables.
  *   VM_DEBUGGED_SEG		This is a special code segment that is being
  *				written by the debugger.
+ *   VM_SEG_CREATE_TRACED	The segment creation has been traced already.
  */
 
 #define	VM_SEG_FREE			0x01
@@ -356,6 +357,7 @@ typedef enum {
 #define	VM_SEG_DEAD			0x10
 #define	VM_PT_EXCL_ACC			0x20
 #define	VM_DEBUGGED_SEG			0x40
+#define	VM_SEG_CREATE_TRACED		0x80
 
 
 /*---------------------------------------------------------------------------*/
@@ -537,5 +539,9 @@ extern	void		VmRemapPage();
  * Prefetch routine.
  */
 extern	void		VmPrefetch();
+/*
+ * Vm tracing.
+ */
+extern	void		VmClearSegTraceTimes();
 
 #endif _VMINT

@@ -9,7 +9,6 @@
  * All rights reserved.
  */
 
-
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
@@ -17,6 +16,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "vm.h"
 #include "vmInt.h"
+#include "vmTrace.h"
 #include "lock.h"
 #include "sync.h"
 #include "sys.h"
@@ -301,7 +301,7 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 
     segPtrPtr = Fs_GetSegPtr(Fs_GetFileHandle(filePtr));
     if (*segPtrPtr != (Vm_Segment *) 0) {
-	Sys_Panic(SYS_FATAL, "Vm_InitCode: Seg ptr = %x\n", *segPtrPtr);
+	Sys_Panic(SYS_WARNING, "Vm_InitCode: Seg ptr = %x\n", *segPtrPtr);
     }
     *segPtrPtr = segPtr;
     if (segPtr == (Vm_Segment *) NIL) {
@@ -1364,7 +1364,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {
-	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr, procPtr->processID);
+	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr);
     } else {
 	newFilePtr = (Fs_Stream *) NIL;
     }
@@ -1387,8 +1387,19 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	*destSegPtrPtr = (Vm_Segment *) NIL;
 	return(VM_NO_SEGMENTS);
     }
+    destSegPtr->flags |= VM_SEG_CREATE_TRACED;
 
     if (vm_CanCOW) {
+	if (vm_Tracing) {
+	    Vm_TraceSegCreate	segCreate;
+
+	    segCreate.segNum = destSegPtr->segNum;
+	    segCreate.parSegNum = srcSegPtr->segNum;
+	    segCreate.segType = destSegPtr->type;
+	    segCreate.cor = TRUE;
+	    VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
+			    &segCreate, TRUE);
+	}
 	/*
 	 * We are allowing copy-on-write.  Make a copy-on-ref image of the
 	 * src segment in the dest segment.
@@ -1398,6 +1409,16 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	*destSegPtrPtr = destSegPtr;
 
 	return(SUCCESS);
+    }
+    if (vm_Tracing) {
+	Vm_TraceSegCreate	segCreate;
+
+	segCreate.segNum = destSegPtr->segNum;
+	segCreate.parSegNum = srcSegPtr->segNum;
+	segCreate.segType = destSegPtr->type;
+	segCreate.cor = FALSE;
+	VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
+			&segCreate, TRUE);
     }
 
     /*

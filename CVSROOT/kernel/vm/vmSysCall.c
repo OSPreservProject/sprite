@@ -21,6 +21,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "byte.h"
 #include "cvt.h"
+#include "mem.h"
+#include "string.h"
 
 
 /*
@@ -263,7 +265,7 @@ Vm_Cmd(command, arg)
             SETVAR(vmPagesToCheck, arg);
             break;
         case VM_SET_CLOCK_INTERVAL:
-	    SETVAR(vmClockSleep, arg * timer_IntOneSecond);
+	    SETVAR(vmClockSleep, (int) (arg * timer_IntOneSecond));
             break;
 	case VM_SET_COPY_SIZE:
 	    SETVAR(copySize, arg);
@@ -361,7 +363,7 @@ Vm_Cmd(command, arg)
 	    if (vmTraceBuffer == (char *)NIL) {
 		vmTraceBuffer = (char *)Mem_Alloc(VM_TRACE_BUFFER_SIZE);
 	    }
-	    Byte_Zero(sizeof(vmTraceStats), &vmTraceStats);
+	    Byte_Zero(sizeof(vmTraceStats), (Address)&vmTraceStats);
 
 	    traceStartPtr = (Vm_TraceStart  *)vmTraceBuffer;
 	    traceStartPtr->recType = VM_TRACE_START_REC;
@@ -374,8 +376,10 @@ Vm_Cmd(command, arg)
 	    traceStartPtr->mapStartAddr = vmMapBaseAddr;
 	    traceStartPtr->cacheStartAddr = vmBlockCacheBaseAddr;
 	    traceStartPtr->cacheEndAddr = vmBlockCacheEndAddr;
+	    Byte_Copy(sizeof(Vm_Stat), (Address)&vmStat, 
+		      &traceStartPtr->startStats);
 
-	    vmTracing = TRUE;
+	    vm_Tracing = TRUE;
 	    vmTracesPerClock = tracesPerSecond;
 	    vmTracesToGo = vmTracesPerClock;
 	    vmClockSleep = timer_IntOneSecond / tracesPerSecond;
@@ -395,14 +399,23 @@ Vm_Cmd(command, arg)
 		Sys_Panic(SYS_WARNING, 
 		    "Vm_Cmd: Couldn't open trace file, reason %x\n", 
 		    status);
-		vmTracing = FALSE;
+		vm_Tracing = FALSE;
 		vmClockSleep = timer_IntOneSecond;
 		vmTraceFilePtr = (Fs_Stream *)NIL;
 	    }
 	    break;
 	}
-	case VM_END_TRACING:
-	    vmTracing = FALSE;
+	case VM_END_TRACING: {
+	    Vm_TraceEnd		traceEnd;
+
+	    Byte_Copy(sizeof(Vm_TraceEnd), (Address)&vmStat,
+		      (Address)&traceEnd.endStats);
+	    Byte_Copy(sizeof(Vm_TraceStats), (Address)&vmTraceStats,
+		      (Address)&traceEnd.traceStats);
+	    VmStoreTraceRec(VM_TRACE_END_REC, sizeof(Vm_TraceEnd),
+			    (Address)&traceEnd, FALSE);
+
+	    vm_Tracing = FALSE;
 	    vmClockSleep = timer_IntOneSecond;
 	    if (vmTraceFilePtr != (Fs_Stream *)NIL) {
 		VmTraceDump((ClientData)0, (Proc_CallInfo *)NIL);
@@ -416,6 +429,7 @@ Vm_Cmd(command, arg)
 	    Sys_Printf("		       PMEGs=%d\n",
 			vmTraceStats.machStats.pmegsChecked);
 	    break;
+	}
 
         default:
             Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");

@@ -38,17 +38,6 @@ int		vmMaxProcesses = 80;
 Address		vmBlockCacheBaseAddr;
 Address 	vmBlockCacheEndAddr;
 
-Boolean		vmTracing = FALSE;
-int		vmTracesPerClock;
-int		vmTracesToGo;
-char		*vmTraceBuffer = (char *)NIL;
-int		vmTraceFirstByte;
-int		vmTraceNextByte;
-int		vmTraceTime = 0;
-Fs_Stream	*vmTraceFilePtr = (Fs_Stream *)NIL;
-Boolean		vmTraceDumpStarted = FALSE;
-VmTraceStats	vmTraceStats;
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -69,8 +58,10 @@ void
 Vm_Init()
 {
     register	Vm_PTE	*ptePtr;
-    unsigned int	virtPage;
     int			i;
+#ifdef notdef
+    unsigned int	virtPage;
+#endif
 
     /*
      * Partition up the kernel virtual address space.
@@ -307,7 +298,7 @@ Vm_ChangeCodeProt(procPtr, startAddr, numBytes, makeWriteable)
 	 * This process still has a hold of the original shared code 
 	 * segment.  Make a new segment for the process.
 	 */
-	Fs_StreamCopy(segPtr->filePtr, &codeFilePtr, procPtr->processID);
+	Fs_StreamCopy(segPtr->filePtr, &codeFilePtr);
 	newSegPtr = Vm_SegmentNew(VM_CODE, codeFilePtr, segPtr->fileAddr, 
 				  segPtr->numPages, segPtr->offset, procPtr);
 	Vm_ValidatePages(newSegPtr, newSegPtr->offset, 
@@ -472,6 +463,18 @@ VmValidatePagesInt(segPtr,  firstPage, lastPage, zeroFill, clobber)
     register	int	i;
     register	Vm_PTE	pte;
     register	Vm_PTE	*ptePtr;
+
+    if (vm_Tracing && !(segPtr->flags & VM_SEG_CREATE_TRACED)) {
+	Vm_TraceSegCreate	segCreate;
+
+	segCreate.segNum = segPtr->segNum;
+	segCreate.parSegNum = -1;
+	segCreate.segType = segPtr->type;
+	segCreate.cor = FALSE;
+	VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
+			&segCreate, TRUE);
+	segPtr->flags |= VM_SEG_CREATE_TRACED;
+    }
 
     pte = VM_VIRT_RES_BIT;
     if (segPtr->type == VM_CODE) {
@@ -905,60 +908,3 @@ Vm_KernPageFree(pfNum)
 {
     VmPageFree(pfNum);
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * VmTraceDump --
- *
- *	Daemon to dump virtual memory trace records to a file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Page freed.
- *
- *----------------------------------------------------------------------
- */
-void
-VmTraceDump(data, callInfoPtr)
-    ClientData	data;
-    Proc_CallInfo	*callInfoPtr;
-{
-    int			curNextByte;
-    int			length;
-    int			savedLength;
-    ReturnStatus	status;
-
-    vmTraceStats.traceDumps++;
-
-    /*
-     * Dump the trace buffer.
-     */
-    curNextByte = vmTraceNextByte;
-    while (vmTraceFirstByte != curNextByte) {
-	length = VM_TRACE_BUFFER_SIZE - VM_GET_BUFFER_INDEX(vmTraceFirstByte);
-	if (curNextByte - vmTraceFirstByte < length) {
-	    length = curNextByte - vmTraceFirstByte;
-	}
-	savedLength = length;
-	status = Fs_Write(vmTraceFilePtr, 
-			  vmTraceBuffer + VM_GET_BUFFER_INDEX(vmTraceFirstByte),
-			  vmTraceFirstByte, &length);
-	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING,
-		"VmTraceDaemon: Couldn't write trace file, reason %x\n",
-		status);
-	    break;
-	} else if (length != savedLength) {
-	    Sys_Panic(SYS_WARNING,
-		"VmTraceDaemon: Short write, length = %d\n", length);
-	    break;
-	}
-	vmTraceFirstByte += length;
-    }
-    vmTraceDumpStarted = FALSE;
-}
-
