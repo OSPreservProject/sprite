@@ -42,6 +42,7 @@ typedef struct {
 #define	MACH_CONFIG_8_MEG_BOARD		0x30	/* 8 meg memory board. */
 #define	MACH_CONFIG_16_MEG_BOARD	0x40	/* 16 meg memory board. */
 #define	MACH_CONFIG_32_MEG_BOARD	0x50	/* 32 meg memory board. */
+#define	MACH_CONFIG_24_MEG_BOARD	0x60	/* 24 meg memory board. */
 
 /*
  * Board flag values. Valid for all types
@@ -58,6 +59,10 @@ typedef struct {
 						 * initialized. 
 						 */
 #define	MACH_CONFIG_KERNEL_MEM_FLAG	0x200	/* Board containing kernel. */
+
+#define	MACH_CONFIG_MUST_MAP		0x400
+#define	MACH_CONFIG_SPLIT_MEM		0x800
+
 extern ReturnStatus Mach_FindBoardDescription();
 extern int	    Mach_ConfigMemSize();
 extern unsigned int Mach_ConfigInitMem();
