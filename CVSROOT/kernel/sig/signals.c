@@ -528,12 +528,19 @@ Sig_SendProc(procPtr, sigNum, code)
      * if the problem was that the process didn't exist, check
      * to see if it has migrated back to this host (it's no longer MIGRATED).
      * We don't have to check for MIGRATING, since SigMigSend waits for
-     * a migration in progress to complete.
+     * a migration in progress to complete.   Also make sure that while the
+     * signal is sent and the process is unlocked, it processID doesn't change.
      */
     if (procPtr->state == PROC_MIGRATED ||
         (procPtr->genFlags & PROC_MIGRATING)) {
+	Proc_PID processID;
+	processID = procPtr->processID;
 	status = SigMigSend(procPtr, sigNum, code);
-	if (!(status == PROC_INVALID_PID && procPtr->state != PROC_MIGRATED)) {
+	if (processID != procPtr->processID) {
+	    return(status);
+	}
+	if ((status != PROC_INVALID_PID) ||
+	    (procPtr->state == PROC_MIGRATED)) {
 	    return(status);
 	}
     }
