@@ -1131,6 +1131,65 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FileBeingMapped --
+ *
+ *      This is called by VM when a file is being mapped into
+ *	a user's virtual address (yuck, blech).  This does a
+ *	write-back/invalidate so that the file is not cached
+ *	by FS any longer.  This ensures that paging traffic
+ *	wont get stale data.
+ *
+ *	Eventually this should talk to the file server so it
+ *	knows whats going on.
+ *
+ * Results:
+ *	A return status or SUCCESS if successful.
+ *
+ * Side effects:
+ *	Write out the range of blocks in the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_FileBeingMapped(streamPtr)
+    Fs_Stream *streamPtr;	/* Open stream being mapped in */
+{
+    ReturnStatus status;
+    Fscache_FileInfo	*cacheInfoPtr;
+    Fscache_Attributes dummyCachedAttr;
+
+    switch(streamPtr->ioHandlePtr->fileID.type) {
+	case FSIO_LCL_FILE_STREAM: {
+	    register Fsio_FileIOHandle *localHandlePtr;
+	    localHandlePtr = (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
+	    cacheInfoPtr = &localHandlePtr->cacheInfo;
+	    break;
+	}
+	case FSIO_RMT_FILE_STREAM: {
+	    register Fsrmt_FileIOHandle *rmtHandlePtr;
+	    rmtHandlePtr = (Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
+	    cacheInfoPtr = &rmtHandlePtr->cacheInfo;
+	    break;
+	}
+	default:
+	    return(FS_WRONG_TYPE);
+    }
+    /*
+     * Make the file look like a swap file so the local cache
+     * is bypassed.  Also flush back any modified data so
+     * page-ins get good stuff.
+     */
+    streamPtr->flags |= FS_SWAP;
+    status = Fscache_Consist(cacheInfoPtr,
+		FSCONSIST_INVALIDATE_BLOCKS|FSCONSIST_WRITE_BACK_BLOCKS,
+		&dummyCachedAttr);
+
+    return(status);
+}
+
+/*
  *----------------------------------------------------------------------------
  *
  * Fs_GetFileHandle --
