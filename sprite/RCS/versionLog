@@ -14,6 +14,8 @@ Known Major Bugs Left Outstanding:
 
 
 1.044	Thu Nov 30 12:08:38 PST 1989
+I think this version was created only during some testing of the
+Makefile.  - FD
 
 1.045	Thu Nov 30 13:10:22 PST 1989
 The horrible bug that's been causing the sparc stations to be unstable is fixed.
