@@ -271,14 +271,7 @@ Fsio_StreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 	     * We don't think the stream is being shared so we
 	     * grab the offset from the client.
 	     */
-	    if (offset == -1) {
-		/*
-		 * Temporary case for clients who can't return it.
-		 */
-		streamPtr->offset = migInfoPtr->offset;
-	    } else {
-		streamPtr->offset = offset;
-	    }
+	    streamPtr->offset = offset;
 	}
     } else {
 	/*
@@ -329,10 +322,6 @@ typedef struct {
 
 typedef struct {
     Boolean	inUse;		/* TRUE if stream still in use after release */
-} FsStreamReleaseReply;
-
-typedef struct {
-    Boolean	inUse;		/* TRUE if stream still in use after release */
     int		offset;		/* Offset of stream on source of migration. */
 } FsStreamReleaseReplyNew;
 
@@ -362,7 +351,6 @@ StreamMigCallback(migInfoPtr, sharedPtr, offsetPtr)
     register ReturnStatus	status;
     Rpc_Storage 		storage;
     FsStreamReleaseParam	param;
-    FsStreamReleaseReply	reply;
     FsStreamReleaseReplyNew	replyNew;
 
     param.streamID = migInfoPtr->streamID;
@@ -378,99 +366,14 @@ StreamMigCallback(migInfoPtr, sharedPtr, offsetPtr)
     storage.replyDataSize = 0;
 
     status = Rpc_Call(migInfoPtr->srcClientID, RPC_FS_RELEASE_NEW, &storage);
-
-    if (status == RPC_INVALID_RPC) {
-
-	if (proc_MigDebugLevel > 2) {
-	    printf("StreamMigCallback: client %d doesn't support new RPC.\n",
-		   migInfoPtr->srcClientID);
-	}
-	reply.inUse = FALSE;
-	storage.replyParamPtr = (Address)&reply;
-	storage.replyParamSize = sizeof(reply);
-	storage.replyDataPtr = (Address) NIL;
-	storage.replyDataSize = 0;
-
-	status = Rpc_Call(migInfoPtr->srcClientID, RPC_FS_RELEASE, &storage);
-
-	*sharedPtr = reply.inUse;
-	*offsetPtr = -1;
-    } else {
-	*sharedPtr = replyNew.inUse;
-	*offsetPtr = replyNew.offset;
-    }
+    *sharedPtr = replyNew.inUse;
+    *offsetPtr = replyNew.offset;
 #ifdef NOTDEF
     if (status != SUCCESS && fsio_MigDebug) {
 	printf("StreamMigCallback: status %x from RPC.\n", status);
     }
 #endif
     return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsio_RpcStreamMigClose --
- *
- *	The service stub for FsStreamMigCallback.
- *	This invokes the StreamMigrate routine that releases a reference
- *	to a stream on this host.  Our reply message indicates if
- *	the stream is still in use on this host.
- *
- * Results:
- *	FS_STALE_HANDLE if handle that if client that is migrating the file
- *	doesn't have the file opened on this machine.  Otherwise return
- *	SUCCESS.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fsio_RpcStreamMigClose(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* Command identifier */
-    Rpc_Storage *storagePtr;    /* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    register FsStreamReleaseParam	*paramPtr;
-    register Fs_Stream			*streamPtr;
-    register ReturnStatus		status;
-    register FsStreamReleaseReply	*replyPtr;
-    register Rpc_ReplyMem		*replyMemPtr;
-
-    paramPtr = (FsStreamReleaseParam *) storagePtr->requestParamPtr;
-
-    streamPtr = Fsio_StreamClientVerify(&paramPtr->streamID,
-				(Fs_HandleHeader *)NIL, rpc_SpriteID);
-    if (streamPtr == (Fs_Stream *) NIL) {
-	printf("Fsio_RpcStreamMigClose, unknown stream <%d>, client %d\n",
-	    paramPtr->streamID.minor, clientID);
-	return( (paramPtr->streamID.minor < 0) ? GEN_INVALID_ARG
-					       : FS_STALE_HANDLE);
-    }
-    replyPtr = mnew(FsStreamReleaseReply);
-    storagePtr->replyParamPtr = (Address)replyPtr;
-    storagePtr->replyParamSize = sizeof(FsStreamReleaseReply);
-    storagePtr->replyDataPtr = (Address)NIL;
-    storagePtr->replyDataSize = 0;
-
-    status = Fsio_StreamMigClose(streamPtr, &replyPtr->inUse);
-
-    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
-    replyMemPtr->dataPtr = (Address) NIL;
-    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
-		(ClientData)replyMemPtr);
-    return(SUCCESS);
 }
 
 
@@ -519,7 +422,7 @@ Fsio_RpcStreamMigCloseNew(srvToken, clientID, command, storagePtr)
     streamPtr = Fsio_StreamClientVerify(&paramPtr->streamID,
 				(Fs_HandleHeader *)NIL, rpc_SpriteID);
     if (streamPtr == (Fs_Stream *) NIL) {
-	printf("Fsio_RpcStreamMigClose, unknown stream <%d>, client %d\n",
+	printf("Fsio_RpcStreamMigCloseNew, unknown stream <%d>, client %d\n",
 	    paramPtr->streamID.minor, clientID);
 	return( (paramPtr->streamID.minor < 0) ? GEN_INVALID_ARG
 					       : FS_STALE_HANDLE);
@@ -538,64 +441,6 @@ Fsio_RpcStreamMigCloseNew(srvToken, clientID, command, storagePtr)
     replyMemPtr->dataPtr = (Address) NIL;
     Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
 		(ClientData)replyMemPtr);
-    return(SUCCESS);
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Fsio_StreamMigClose --
- *
- *	This is called to release a reference to a stream at the source
- *	of a migration.  We are told to release the reference by the
- *	I/O server during its Fsio_StreamMigClient call.  The timing of our
- *	call ensures that a simultaneous Fs_Close on the stream will be
- *	properly synchronized - the I/O server has to know how many
- *	stream references we, the source of a migration, really have.
- *
- * Results:
- *	SUCCESS unless the stream isn't even found.  This sets the FS_RMT_SHARED
- *	flag in the *flagsPtr field if the stream is still in use here,
- *	otherwise it clears this flag.
- *
- * Side effects:
- *	This releases one reference to the stream.  If it is the last
- *	reference then this propogates the close down to the I/O handle
- *	by calling the stream-specific release procedure.
- *
- * ----------------------------------------------------------------------------
- *
- */
-/*ARGSUSED*/
-ReturnStatus
-Fsio_StreamMigClose(streamPtr, inUsePtr)
-    Fs_Stream *streamPtr;	/* Stream to release, should be locked */
-    Boolean *inUsePtr;		/* TRUE if still in use after release */
-{
-    /*
-     * Release the reference that has now migrated away.
-     */
-    Fsutil_HandleDecRefCount((Fs_HandleHeader *)streamPtr);
-    /*
-     * If this is the last reference then call down to the I/O handle
-     * so it can decrement use counts that come from the stream.
-     * (Remember there is still one reference from Fsio_RpcStreamMigClose)
-     */
-    if (streamPtr->hdr.refCount <= 1) {
-	(*fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
-		(streamPtr->ioHandlePtr, streamPtr->flags);
-	if (Fsio_StreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
-	    /*
-	     * No references, no other clients, nuke it.
-	     */
-	    *inUsePtr = FALSE;
-	    Fsio_StreamDestroy(streamPtr);
-	    return(SUCCESS);
-	}
-    }
-    *inUsePtr = TRUE;
-    streamPtr->flags |= FS_RMT_SHARED;
-    Fsutil_HandleRelease(streamPtr, TRUE);
     return(SUCCESS);
 }
 
@@ -644,7 +489,7 @@ Fsio_StreamMigCloseNew(streamPtr, inUsePtr, offsetPtr)
     /*
      * If this is the last reference then call down to the I/O handle
      * so it can decrement use counts that come from the stream.
-     * (Remember there is still one reference from Fsio_RpcStreamMigClose)
+     * (Remember there is still one reference from Fsio_RpcStreamMigCloseNew)
      */
     if (streamPtr->hdr.refCount <= 1) {
 	(*fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
@@ -795,7 +640,7 @@ Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
 	    /*
 	     * The client's stream doesn't reference the same handle as we do.
 	     * Note that ioHandlePtr is NIL when we are called from
-	     * Fsio_RpcStreamMigClose, so we can't make this check in that case.
+	     * Fsio_RpcStreamMigCloseNew, so we can't make this check in that case.
 	     */
 	    printf("Fsio_StreamClientVerify ioHandle mismatch client ID %d:\n",
 			clientID);
@@ -1125,3 +970,31 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     }
     return(status);
 }
+
+/*
+ * There are stubs for old routines.  When we are sure this has run on clients
+ * and the file server for a while, then we can remove these stubs and
+ * their corresponding declarations in the .h files.  -- 11/5/91 Mary
+ */
+ReturnStatus
+Fsio_StreamMigClose(streamPtr, inUsePtr)
+    Fs_Stream   *streamPtr;
+    Boolean     *inUsePtr;
+{
+    panic("Fsio_StreamMigClose is old and shouldn't be called.");
+
+    return FAILURE;
+}
+
+ReturnStatus
+Fsio_RpcStreamMigClose(srvToken, clientID, command, storagePtr)
+    ClientData  srvToken;
+    int         clientID;
+    int         command;
+    Rpc_Storage *storagePtr;
+{
+    panic("Fsio_RpcStreamMigClose is old and shouldn't be called.");
+
+    return FAILURE;
+}
+
