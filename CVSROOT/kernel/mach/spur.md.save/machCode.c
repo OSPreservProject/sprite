@@ -851,7 +851,6 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 					 * for migrated processes. */
 {
     machMaxSysCall++;
-    machMaxSysCall++;
     if (machMaxSysCall != callNum) {
 	printf("Warning: out-of-order kernel call initialization, call %d\n",
 	       callNum);
