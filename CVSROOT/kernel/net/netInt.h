@@ -16,6 +16,12 @@
 #include "list.h"
 #include "net.h"
 
+typedef struct NetInterface {
+    char	*name;
+    int		 number;
+    unsigned int ctrlAddr;
+    Boolean	(*init)();
+} NetInterface;
 /*
  * A transmission queue element.
  */
@@ -40,24 +46,6 @@ typedef struct {
     void (*reset)();
 } NetEtherFuncs;
 extern	NetEtherFuncs	netEtherFuncs;
-
-/*
- * Procedures for the 3Com driver.
- */
-
-extern	void	Net3CInit();
-extern	void	Net3COutput();
-extern	void	Net3CIntr();
-extern	void	Net3CRestart();
-
-/*
- * Procedures for the Intel driver.
- */
-
-extern	void	NetIEInit();
-extern	void	NetIEOutput();
-extern	void	NetIEIntr();
-extern	void	NetIERestart();
 
 /*
  * Procedures for the internet packet handler.
