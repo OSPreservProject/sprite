@@ -1112,9 +1112,6 @@ Vm_FlushCode(procPtr, addr, numBytes)
 	    numBytes -= toFlush;
 	    virtAddr.offset = 0;
 	}
-    } else {
-	printf("Vm_FlushCode: Bogus code address to flush, addr=%x len=%d\n",
-		addr, numBytes);
     }
 
     UNLOCK_MONITOR;
