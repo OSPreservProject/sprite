@@ -354,7 +354,22 @@ NetOutputWakeup(conditionPtr)
     Sync_Condition	*conditionPtr;		/* not really! */
 {
     int waiting;
+#if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
     Sync_SlowBroadcast((unsigned int)conditionPtr, &waiting);
+#else 	/* Mutiprocessor implementation */
+   /*
+    * Because the packet sent interrupt may come in before Net_Output
+    * has a chance to MasterWait and after Net_Output has checked the
+    * gatherPtr->done flag, the code should syncronize with the caller
+    * by obtaining the master lock.
+    */
+    {
+	Sync_Semaphore *mutexPtr = (Sync_Semaphore *) conditionPtr;
+	MASTER_LOCK(mutexPtr);
+        Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
+	MASTER_UNLOCK(mutexPtr);
+    }
+#endif
 }
 
 
