@@ -1469,6 +1469,24 @@ LookForAnyChild(curProcPtr, returnSuspend, procPtrPtr)
     LIST_FORALL((List_Links *) curProcPtr->childList,
 		(List_Links *) procLinkPtr) {
         procPtr = procLinkPtr->procPtr;
+	/*
+	 *  It may be that one of our children is in the process of exiting.
+	 *  If it is marked as 'dying' but not 'exiting', then it has
+	 *  left the monitor (obvious because we're in the monitor now)
+	 *  but hasn't completed the context switch to the 'exiting' state.
+	 *  This can only happen if the child is on a different processor
+	 *  from ourself.  We'll wait for the child to become exiting since
+	 *  it will take at most the length of a context switch to finish.
+	 *  If we don't wait for this child we will miss the transition
+	 *  and potentially wait forever.
+	 */
+	if (procPtr->genFlags & PROC_DYING) {
+	    while (procPtr->state != PROC_EXITING) {
+		/*
+		 * Wait for the other processor to set the state to exiting.
+		 */
+	    }
+	}
 	if ((procPtr->state == PROC_EXITING) ||
 	    (procPtr->exitFlags & PROC_DETACHED) ||
 	    (returnSuspend && (procPtr->exitFlags & PROC_STATUSES))) {
