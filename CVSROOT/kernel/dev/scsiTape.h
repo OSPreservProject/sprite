@@ -22,9 +22,9 @@
 #ifndef _SCSITAPE
 #define _SCSITAPE
 
-#include "scsi.h"
-#include "scsiDevice.h"
-#include "dev/tape.h"
+#include <sys/scsi.h>
+#include <scsiDevice.h>
+#include <dev/tape.h>
 
 /*
  * State info for an SCSI tape drive.  
@@ -36,19 +36,23 @@
  */
 typedef struct ScsiTape {
     ScsiDevice	*devPtr;        /* SCSI Device we have attached. */
+    int	type;			/* See user/dev/tape.h. */
     int state;			/* State bits used to determine if it's open,
 				 * it it really exists, etc. */
     char *name;			/* Type name of tape device. */
     int blockSize;		/* Native block size of the drive. */
+    int minBlockSize;		/* Minimum block size for variable length
+				 * blocks. */
+    int maxBlockSize;		/* Max block size for variable length
+				 * blocks. */
     ReturnStatus (*tapeIOProc) _ARGS_((struct ScsiTape *tapePtr, int command, 
 	char *buffer, int *countPtr)); /* Procedure to customize tape IO. */
 
     ReturnStatus (*specialCmdProc) _ARGS_((struct ScsiTape *tapePtr,
 		   int command, int count));	/* Procedure to handle special 
 						 * tape cmds. */
-    ReturnStatus (*errorProc) _ARGS_((struct ScsiTape *tapePtr,
-	unsigned int statusByte, int senseLength, char *senseDataPtr));
-				/* Procedure to handle sense data */
+    ReturnStatus (*statusProc) _ARGS_((struct ScsiTape *tapePtr,
+		    Dev_TapeStatus *statusPtr));
 } ScsiTape;
 
 
@@ -80,8 +84,8 @@ extern ReturnStatus ((*devSCSITapeAttachProcs[]) _ARGS_((Fs_Device *devicePtr,
  * Forward Declarations.
  */
 
-extern ReturnStatus DevSCSITapeError _ARGS_((ScsiTape *tapePtr,
-    unsigned int statusByte, int senseLength, char *senseDataPtr));
+extern ReturnStatus DevSCSITapeError _ARGS_((ScsiDevice *devPtr,
+    ScsiCmd *scsiCmdPtr));
 extern ReturnStatus DevSCSITapeSpecialCmd _ARGS_((ScsiTape *tapePtr,
     int command, int count));
 extern ReturnStatus DevSCSITapeVariableIO _ARGS_((register ScsiTape *tapePtr,
