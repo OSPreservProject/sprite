@@ -106,7 +106,7 @@ Rpc_Server()
 	 * Change our state to indicate that we are ready for input.
 	 */
 	MASTER_LOCK(&srvPtr->mutex);
-	srvPtr->state &= ~SRV_BUSY;
+	srvPtr->state &= ~(SRV_BUSY|SRV_STUCK);
 	srvPtr->state |= SRV_WAITING;
 	if (error == RPC_NO_REPLY) {
 	    srvPtr->state |= SRV_NO_REPLY;
@@ -117,7 +117,7 @@ Rpc_Server()
 	    if (sys_ShuttingDown) {
 		srvPtr->state = SRV_NOTREADY;
 		MASTER_UNLOCK(&srvPtr->mutex);
-		printf("Rpc_Server exiting\n");
+		printf("Rpc_Server %d exiting\n", srvPtr->index);
 		Proc_Exit(0);
 	    }
 	}
@@ -670,7 +670,7 @@ Rpc_ErrorReply(srvToken, error)
 	MASTER_UNLOCK(&mutex);
     }
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
-					 (RpcBufferSet *)NIL, 0, (int *)NIL);
+			 (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
 }
 
 
@@ -789,7 +789,7 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
 	MASTER_UNLOCK(&mutex);
     }
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
-					 srvPtr->fragment, 0, (int *)NIL);
+			 srvPtr->fragment, 0, (Sync_Semaphore *)NIL);
 }
 
 
@@ -832,7 +832,7 @@ RpcAck(srvPtr, flags)
      * a master lock and because we are called at interrupt time.
      */
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
-					 (RpcBufferSet *)NIL, 0, (int *)NIL);
+			 (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
 }
 
 /*
@@ -873,7 +873,7 @@ RpcResend(srvPtr)
      */
     (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr,
 		       &srvPtr->reply, srvPtr->fragment,
-		       srvPtr->fragsDelivered, (int *)NIL);
+		       srvPtr->fragsDelivered, (Sync_Semaphore *)NIL);
 }
 
 /*
