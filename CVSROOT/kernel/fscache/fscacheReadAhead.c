@@ -194,35 +194,19 @@ DoReadAhead(data, callInfoPtr)
     register	Fscache_FileInfo *cacheInfoPtr;
     register	ReadAheadCallBackData *callBackData;
     register	Fscache_Block	*blockPtr;
-    int				amountRead;
-    int				blockOffset;
     ReturnStatus		status;
-    int				blockNum;
 
     callBackData = (ReadAheadCallBackData *) data;
 
-    blockNum = callBackData->blockNum;
     cacheInfoPtr = callBackData->cacheInfoPtr;
     blockPtr = callBackData->blockPtr;
-    blockOffset = blockNum * FS_BLOCK_SIZE;
-    amountRead = FS_BLOCK_SIZE;
 
     status = (cacheInfoPtr->ioProcsPtr->blockRead)
-		(cacheInfoPtr->hdrPtr, 0, blockPtr->blockAddr, &blockOffset,
-		&amountRead, (Sync_RemoteWaiter *)NIL);
+		(cacheInfoPtr->hdrPtr, blockPtr, (Sync_RemoteWaiter *)NIL);
     if (status != SUCCESS) {
 	fs_Stats.blockCache.domainReadFails++;
 	Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
     } else {
-	if (amountRead < FS_BLOCK_SIZE) {
-	    /*
-	     * We always must make sure that every cache block is filled
-	     * with zeroes.  Since we didn't read a full block zero fill
-	     * the rest.
-	     */
-	    fs_Stats.blockCache.readZeroFills++;
-	    bzero(blockPtr->blockAddr + amountRead, FS_BLOCK_SIZE - amountRead);
-	}
 	Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
     }
     DecReadAheadCount(callBackData->readAheadPtr);
