@@ -460,6 +460,25 @@ Sched_ContextSwitchInt(state)
      */
     newProcPtr->state = PROC_RUNNING;
     newProcPtr->processor = cpu;
+#ifdef sun4
+    /*
+     * HACK.  The window overflow handler in the sparc mach module spills
+     * windows via the CurrentProc pointer when the user's stack is
+     * not resident. Before changing the CurrentProc pointer besure that
+     * no user windows are active in the register windows.  We need do
+     * this only if CurrentProc is changing.  The mach module should
+     * be fixed not to use CurrentProc anyway.
+     */
+     if (newProcPtr != curProcPtr) {
+	 /*
+	  * This is overkill because we only need flush the user's windows
+	  * and not all (kernel and user) windows. It not real bad because
+	  * we are about to do a Mach_ContextSwitch() which spills all
+	  * windows anyway.
+	  */
+	Mach_FlushWindowsToStack();
+    }
+#endif /* sun4 */
     Proc_SetCurrentProc(newProcPtr);
 
     /*
@@ -622,6 +641,15 @@ IdleLoop()
 	    goto exit;
 	}
     }
+#ifdef sun4
+    /*
+     * HACK.  The window overflow handler in the sparc mach module spills
+     * windows via the CurrentProc pointer when the user's stack is
+     * not resident.  Before nuking the CurrentProc point besure
+     * that no user window is resident. THIS SHOULD BE FIXED.
+     */
+    Mach_FlushWindowsToStack();
+#endif /* sun4 */
     Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
 #ifdef spur
     Mach_InstCountEnd(0);
