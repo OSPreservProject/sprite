@@ -374,12 +374,19 @@ extern	Boolean		Fs_SameFile();
 extern	int		Fs_Cat();
 extern	int		Fs_Copy();
 extern	void		Fs_HandleScavenge();
-extern	void		Fs_HandleScavengeStub();
 extern	void		Fs_PrintTrace();
 extern  void		Fs_BlocksToDiskAddr();
 extern  void		Fs_CheckSetID();
 extern  void		Fs_CloseOnExec();
 extern	char *		Fs_GetFileName();
+
+/*
+ * Routines called via the L1 key bindings.
+ */
+extern	void		Fs_HandleScavengeStub();
+extern	void		Fs_PdevPrintTrace();
+extern	void		Fs_DumpCacheStats();
+extern	void		Fs_NameHashStats();
 
 /*
  * Routines to support process migration: encapsulate and deencapsulate
