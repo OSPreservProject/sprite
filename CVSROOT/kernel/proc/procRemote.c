@@ -54,7 +54,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Procedures internal to this file.
  */
 
-static Proc_PID GetProcessState();
+static ReturnStatus GetProcessState();
 static ReturnStatus GetStream();
 ENTRY static ReturnStatus GetUserInfo();
 static ReturnStatus ContinueMigratedProc();
@@ -105,15 +105,17 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 	if (proc_MigDebugLevel > 5) {
 	    printf("Calling GetProcessState.\n");
 	}
-	pid = GetProcessState(buffer, hostID);
-	if (proc_MigDebugLevel > 5) {
-	    printf("GetProcessState returned pid %x.\n", pid);
-	}
-	if (pid != (Proc_PID) NIL) {
-	    returnInfoPtr->remotePID = pid;
-	    returnInfoPtr->status = SUCCESS;
+	returnInfoPtr->status = GetProcessState(buffer, hostID, &pid);
+	if (returnInfoPtr->status != SUCCESS) {
+	    if (proc_MigDebugLevel > 0) {
+		printf("Error in GetProcessState: %s.\n",
+		       Stat_GetMsg(returnInfoPtr->status));
+	    }
 	} else {
-	    returnInfoPtr->status = FAILURE;
+	    if (proc_MigDebugLevel > 5) {
+		printf("GetProcessState returned pid %x.\n", pid);
+	    }
+	    returnInfoPtr->remotePID = pid;
 	}
     } else {
 	pid = commandPtr->remotePID;
@@ -195,7 +197,10 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
  *	foreign process.
  *
  * Results:
- *	The local process ID of the newly-created process is returned.
+ *	On success, the local process ID of the newly-created process
+ *	is returned, and the value returned by the function is SUCCESS.
+ *	Otherwise, an error such as PROC_NO_PROCESSES or PROC_NO_PEER
+ * 	indicates an error.
  *
  * Side effects:
  *	A dummy local process is created and is initialized to reflect the
@@ -204,10 +209,11 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
  *----------------------------------------------------------------------
  */
 
-static Proc_PID
-GetProcessState(buffer, hostID)
+static ReturnStatus
+GetProcessState(buffer, hostID, pidPtr)
     Address buffer;
     int hostID;
+    Proc_PID *pidPtr;
 {
     Proc_ControlBlock 	*procPtr;	/* The process being migrated */
     Proc_PID		pid;
@@ -225,14 +231,14 @@ GetProcessState(buffer, hostID)
 
 	home = TRUE;
 	procPtr = Proc_LockPID(pid);
-	if (procPtr == (Proc_ControlBlock *) NIL ||
-	        (procPtr->state != PROC_MIGRATED)) {
-	    return((Proc_PID) NIL);
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    return(PROC_NO_PEER);
 	}
 	Byte_EmptyBuffer(buffer, Proc_PID, peerProcessID);
-	if (peerProcessID != procPtr->peerProcessID) {
+	if ((peerProcessID != procPtr->peerProcessID) ||
+	    (procPtr->state != PROC_MIGRATED)) {
 	    Proc_Unlock(procPtr);
-	    return((Proc_PID) NIL);
+	    return(PROC_NO_PEER);
 	}
     }
 
@@ -322,14 +328,14 @@ GetProcessState(buffer, hostID)
 	Proc_RemoveMigDependency(procPtr->processID);
     }
 
-    pid = procPtr->processID;
+    *pidPtr = procPtr->processID;
     Proc_Unlock(procPtr);
 
     if (proc_MigDebugLevel > 4) {
 	printf("Received process state for process %x.\n", procPtr->processID);
     }
 
-    return(pid);
+    return(SUCCESS);
 }
 
 
