@@ -589,12 +589,12 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 void
 NetIEXmitDrop()
 {
-    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
-	return;
-    }
-    curScatGathPtr->done = TRUE;
-    if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	NetOutputWakeup(curScatGathPtr->mutexPtr);
+    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
+	curScatGathPtr->done = TRUE;
+	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+	}
+	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
 }
 
