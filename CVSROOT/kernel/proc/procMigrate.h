@@ -24,6 +24,7 @@
 #include "sys.h"
 
 extern int proc_MigDebugLevel;
+extern int proc_MigrationVersion;
 extern Boolean proc_DoTrace;
 extern Boolean proc_DoCallTrace;
 
