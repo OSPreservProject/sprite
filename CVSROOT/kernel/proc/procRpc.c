@@ -2,7 +2,7 @@
  * procRpc.c --
  *
  *	Procedures to handle remote procedure calls on behalf of migrated
- *	processes.
+ *	processes, and for initial setup of migrated processes.
  *
  * Copyright (C) 1986, 1988 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
+#include "stdlib.h"
 #include "mach.h"
 #include "fs.h"
 #include "proc.h"
@@ -26,7 +27,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "procMigrate.h"
 #include "migrate.h"
 #include "byte.h"
-#include "mem.h"
 #include "sig.h"
 #include "vm.h"
 #include "sys.h"
@@ -42,7 +42,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 static ReturnStatus RpcProcExit();
 static ReturnStatus RpcProcFork();
-static ReturnStatus RpcFsOpenStream();
+static ReturnStatus RpcProcExec();
+static ReturnStatus RpcRemoteCall();
 
 typedef ReturnStatus ((*PRS) ());
 
@@ -76,7 +77,7 @@ static CallBack callBackVector[] = {
  *     callPtr	  (why)		sideEffectsPtr	call number    
  */
     { RpcProcFork,			RSNIL }, /* SYS_PROC_FORK	   0 */
-    { RSNIL /* Proc_Exec */,		RSNIL }, /* SYS_PROC_EXEC	   1 */
+    { RpcProcExec,			RSNIL }, /* SYS_PROC_EXEC	   1 */
     { RpcProcExit,			RSNIL }, /* SYS_PROC_EXIT	   2 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_WAITTIME	   3 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_PRINTOUT	   4 */
@@ -169,7 +170,7 @@ static CallBack callBackVector[] = {
 /*
  *----------------------------------------------------------------------
  *
- * Proc_RpcRemoteCall --
+ * RpcRemoteCall --
  *
  *	Service a system call for a migrated process.  Call the rpc
  *	module to return the results, if any.
@@ -186,8 +187,8 @@ static CallBack callBackVector[] = {
  */
 
 /* ARGSUSED */
-ReturnStatus 
-Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
+static ReturnStatus 
+RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 		   replyDataLengthPtr)
     Proc_RemoteCall *callPtr;
     Address dataPtr;
@@ -390,6 +391,71 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
 /*
  *----------------------------------------------------------------------
  *
+ * RpcProcExec --
+ *
+ *	Perform an exec on the home node of a process. 
+ * 
+ * Results:
+ *	SUCCESS 		- The process is migrated and has been
+ * 				  modified.  
+ *
+ * Side effects:
+ *	the process's argument string and effective userID are modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus 
+RpcProcExec(procPtr, dataPtr, dataLength, replyDataPtr,
+		   replyDataLengthPtr)
+    register Proc_ControlBlock *procPtr;
+    Address dataPtr;
+    int dataLength;
+    Address *replyDataPtr;
+    int *replyDataLengthPtr;
+{
+    int uid;
+    char *argString;
+    
+    if (proc_MigDebugLevel > 4) {
+	printf("RpcProcExec called.\n");
+    }
+
+    Proc_Lock(procPtr);
+    Byte_EmptyBuffer(dataPtr, int, uid);
+    if (uid != -1) {
+	procPtr->effectiveUserID = uid;
+    }
+    /*
+     * The data area contains the uid followed by the argString. Therefore,
+     * we allocate space equal to the data length - 1.  (The null terminator
+     * is included in the string passed over).
+     */
+    argString = malloc(dataLength - 1);
+    if (procPtr->argString != (char *) NIL) {
+	free(procPtr->argString);
+    }
+    procPtr->argString = argString;
+    strcpy(argString, dataPtr);
+
+    if (proc_MigDebugLevel > 6) {
+	printf("RpcProcExec setting argString to '%s'.\n", argString);
+    }
+
+
+    Proc_Unlock(procPtr);
+
+    if (proc_MigDebugLevel > 4) {
+	printf("RpcProcExec returning SUCCESS.\n");
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * RpcProcFork --
  *
  *	Perform a fork on the home node of a process.  This involves allocating
@@ -549,11 +615,8 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
  *
  * Proc_StringNCopy --
  *
- *	Combine the operations of strncpy and String_NLength.  Used
- *	by file system stubs when the file system operation is being done
- *	by an rpc server.  This routine is a parallel routine to 
- *	Vm_StringNCopy which is used for file system operations for 
- *	non-migrated processes.
+ *	Copy a string to a buffer of limited length.  This routine is
+ *	a parallel routine to Vm_StringNCopy.
  * 
  * Results:
  *	SUCCESS 
@@ -566,14 +629,19 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
 
 ReturnStatus
 Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
-    int		numBytes;		/* Maximum number of bytes to copy. */
-    char	*srcStr;		/* String to copy. */
-    char	*destStr;		/* Where to copy string to. */
-    int		*strLengthPtr;		/* Where to return actual length of 
+    register int	numBytes;	/* Maximum number of bytes to copy. */
+    register char	*srcStr;	/* String to copy. */
+    register char	*destStr;	/* Where to copy string to. */
+    int			*strLengthPtr;	/* Where to return actual length of 
 					 * string copied. */
 {
-    *strLengthPtr = String_NLength(numBytes, srcStr);
-    strncpy(destStr, srcStr, numBytes);
+    register int length;
+
+    for (length = 0; (length < numBytes) && (*srcStr != '\0'); length++) {
+	*destStr++ = *srcStr++;
+    }
+    *destStr = '\0';
+    *strLengthPtr = length;
     return(SUCCESS);
 }
 
@@ -613,8 +681,9 @@ Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr,
     int *newLengthPtr;	 /* length of the string that is made accessible */
 {
     int accessLength = maxLength;
-    int realLength;
+    register int realLength;
     Boolean madeAccessible = FALSE;
+    register char *charPtr;
 
     if (!Proc_IsMigratedProcess()) {
 	Vm_MakeAccessible(VM_READONLY_ACCESS, 
@@ -630,8 +699,11 @@ Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr,
      * Do a length check.  If the file name takes up all the addressable
      * space then it isn't null terminated and will cause problems later.
      */
-    realLength = String_NLength(accessLength, *stringPtrPtr);
-    if (realLength == accessLength) {
+    for (charPtr = *stringPtrPtr, realLength = 0;
+	 (realLength < accessLength) && (*charPtr != '\0');
+	 charPtr++, realLength++) {
+     }
+    if (realLength == accessLength && *charPtr != '\0') {
 	if (madeAccessible) {
 	    Vm_MakeUnaccessible((Address) *stringPtrPtr, accessLength);
 	}
@@ -758,5 +830,206 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
     if (proc_MigDebugLevel > 3) {
 	printf("Proc_RpcRemoteWait: returning %x.\n", status);
     }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcMigInit --
+ *
+ *	Handle a request to start process migration.
+ *	This could check things like the number of remote processes,
+ *	load, or whatever. For now, just check against a global flag
+ *	that says whether to refuse migrations, and compare architecture
+ *	types and version numbers.
+ *
+ * Results:
+ *	SUCCESS is returned if permission is granted.
+ *	PROC_MIGRATION_REFUSED is returned if the node is not accepting
+ *		migrated processes, or there is a mismatch.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Proc_RpcMigInit(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    ProcMigInitiateCmd *cmdPtr;
+    char *machType;
+    
+    if (proc_RefuseMigrations) {
+	goto error;
+    }
+    if (storagePtr->requestParamSize != sizeof(ProcMigInitiateCmd)) {
+	/*
+	 * Implicit version mismatch if they're not the same size.  
+	 */
+	if (proc_MigDebugLevel > 0) {
+	    printf("Migration version mismatch: size of initiation request");
+	    printf(" is %d, not %d.\n", storagePtr->requestParamSize,
+	           sizeof(ProcMigInitiateCmd));
+        }
+	goto error;
+    }
+    
+    cmdPtr = (ProcMigInitiateCmd *) storagePtr->requestParamPtr;
+    /*
+     * Note: the processID is ignored, at least for now. But we look
+     * at the version number passed across, plus what we know about this
+     * sprite host.
+     */
+    if (cmdPtr->version != proc_MigrationVersion) {
+	if (proc_MigDebugLevel > 1) {
+	    printf("Migration version mismatch: we are level %d; client %d is level %d.\n",
+		   proc_MigrationVersion, clientID, cmdPtr->version);
+	}
+	goto error;
+    }
+    machType = Net_SpriteIDToMachType(clientID);
+    if (machType == (char *) NIL) {
+	printf("Warning: Proc_RpcMigInit: couldn't get machine type for client %d.\n",
+	       clientID);
+	goto error;
+    }
+    if (strcmp(machType, mach_MachineType)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Warning: Proc_RpcMigInit: client %d (%s) tried to migrate to this machine.\n",
+		   clientID, machType);
+	}
+	goto error;
+    }
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)()) NIL, (ClientData) NIL);
+    return(SUCCESS);
+
+error:
+    Rpc_Reply(srvToken, PROC_MIGRATION_REFUSED,
+	      storagePtr, (int(*)()) NIL, (ClientData) NIL);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcMigInfo --
+ *
+ *	Handle a request to transfer information for process migration.
+ *
+ *	Note: now that this has been moved into the proc module, it
+ *	can be collapsed into the routine it calls....
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Process state (process control block, virtual memory, or file state)
+ * 	is copied onto the remote workstation (the RPC server).
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Proc_RpcMigInfo(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    ReturnStatus status;
+    Rpc_ReplyMem	*replyMemPtr;
+    Proc_MigrateReply *returnInfoPtr;
+
+    returnInfoPtr = (Proc_MigrateReply *) malloc(sizeof(Proc_MigrateReply));
+    status = Proc_MigReceiveInfo(clientID,
+            (Proc_MigrateCommand *) storagePtr->requestParamPtr,
+	    storagePtr->requestDataSize,
+ 	    storagePtr->requestDataPtr,
+	    returnInfoPtr);
+    if (status == SUCCESS) {
+	storagePtr->replyParamPtr = (Address) returnInfoPtr;
+	storagePtr->replyParamSize = sizeof(Proc_MigrateReply);
+	
+	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+	replyMemPtr->paramPtr = (Address) returnInfoPtr;
+	replyMemPtr->dataPtr = (Address) NIL;
+	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
+		(ClientData) replyMemPtr);
+    }
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcRemoteCall --
+ *
+ *	Handle a system call for a migrated process.
+ *
+ *	Note: now that this has been moved into the proc module, it
+ *	can be collapsed into the routine it calls....
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Proc_RpcRemoteCall(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    Rpc_ReplyMem	*replyMemPtr;
+    Address returnData = (Address) NIL;
+    int returnDataLength = 0;
+    ReturnStatus status;
+
+    status = RpcRemoteCall((Proc_RemoteCall *)storagePtr->requestParamPtr,
+ 	    storagePtr->requestDataPtr, storagePtr->requestDataSize,
+ 	    &returnData, &returnDataLength);
+    
+    storagePtr->replyDataPtr = returnData;
+    storagePtr->replyDataSize = returnDataLength;
+
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = (Address) NIL;
+    replyMemPtr->dataPtr = returnData;
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
+
     return(status);
 }
