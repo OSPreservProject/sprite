@@ -63,6 +63,7 @@ static Sync_Semaphore	mcountMutex = Sync_SemInitStatic("mcountMutex");
  *----------------------------------------------------------------------
  */
 
+void
 mcount()
 {
     register unsigned int calleePC;	/* PC of instr. that called mcount */
