@@ -47,6 +47,7 @@ static void	PrintVersion();
 static void	PrintTOD();
 extern	void	Mem_DumpStats();
 extern	void	Timer_TimerGetInfo();
+extern void 	Sched_DumpReadyQueue();
 /*
  * Table of routines and their arguments to be called on dump events.
  * Only machine independent dump events should be added to this table.
