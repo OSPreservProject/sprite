@@ -27,6 +27,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <string.h>
 #include <stdio.h>
 #include <bstring.h>
+#include <assert.h>
+#include <machparam.h>
 
 Boolean	vm_NoStickySegments = FALSE;		/* TRUE if sticky segments
 						 * are disabled. */
@@ -60,7 +62,11 @@ static ReturnStatus AddToSeg _ARGS_((register Vm_Segment *segPtr,
 	VmSpace *oldSpacePtr));
 void		    Fsio_StreamCopy();
 
+#ifdef sequent
+int	vmNumSegments = 512;
+#else /* sequent */
 int	vmNumSegments = 256;
+#endif /* sequent */
 
 
 /*
@@ -240,6 +246,7 @@ FindCode(filePtr, procLinkPtr, usedFilePtr)
     *usedFilePtr = FALSE;
 again:
     fileHandle = Fs_GetFileHandle(filePtr);
+    assert(((unsigned int) fileHandle & WORD_ALIGN_MASK) == 0);
     segPtrPtr = Fs_GetSegPtr(fileHandle);
     if (vm_NoStickySegments || *segPtrPtr == (Vm_Segment *) NIL) {
 	/*
@@ -312,10 +319,13 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
     register	Vm_Segment	**segPtrPtr;
     char			*fileNamePtr;
     int				length;
+    ClientData			fileHandle;
 
     LOCK_MONITOR;
 
-    segPtrPtr = Fs_GetSegPtr(Fs_GetFileHandle(filePtr));
+    fileHandle = Fs_GetFileHandle(filePtr);
+    assert(((unsigned int) fileHandle & WORD_ALIGN_MASK) == 0);
+    segPtrPtr = Fs_GetSegPtr(fileHandle);
     if (*segPtrPtr != (Vm_Segment *) 0) {
 	printf("Warning: Vm_InitCode: Seg ptr = %x\n", *segPtrPtr);
     }
@@ -1417,6 +1427,10 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     int				i;
     Address			srcAddr;
     Address			destAddr = (Address)NIL;
+#ifndef sequent
+    Address			srcAddr;
+    Address			destAddr;
+#endif /* sequent */
     Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {
@@ -1490,7 +1504,9 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
      */
     CopyInfo(srcSegPtr, destSegPtr, &tSrcPTEPtr, &tDestPTEPtr, &srcVirtAddr,
 	     &destVirtAddr);
+#ifndef sequent    
     srcAddr = (Address) NIL;
+#endif
 
     /*
      * Copy over memory.
@@ -1503,6 +1519,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	    *destPTEPtr |= VM_REFERENCED_BIT | VM_MODIFIED_BIT |
 	                   VmPageAllocate(&destVirtAddr, VM_CAN_BLOCK);
 	    destSegPtr->resPages++;
+#ifndef sequent
 	    if (srcAddr == (Address) NIL) {
 		VmMach_FlushPage(&srcVirtAddr, FALSE);
 		srcAddr = VmMapPage(Vm_GetPageFrame(*srcPTEPtr));
@@ -1513,11 +1530,15 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 		VmRemapPage(destAddr, Vm_GetPageFrame(*destPTEPtr));
 	    }
 	    bcopy(srcAddr, destAddr, vm_PageSize);
-	    	
+#else	/* sequent */
+	    VmMachCopyPage(Vm_GetPageFrame(*srcPTEPtr),
+					Vm_GetPageFrame(*destPTEPtr));
+#endif	/* sequent */
 	    VmUnlockPage(Vm_GetPageFrame(*srcPTEPtr));
 	    VmUnlockPage(Vm_GetPageFrame(*destPTEPtr));
 	}
     }
+#ifndef sequent    
     /*
      * Unmap any mapped pages.
      */
@@ -1525,7 +1546,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
         VmUnmapPage(srcAddr);
         VmUnmapPage(destAddr);
     }
-
+#endif
     /*
      * Copy over swap space resources.
      */
