@@ -219,15 +219,7 @@ NetLEReset(interPtr)
     NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
     statePtr->regPortPtr->dataPort = NET_LE_CSR0_STOP; 
 #ifdef sun4c
-    {
-	register volatile int *dmaReg = ((int *) 0xffd14000);
-	*dmaReg = 0x80;
-	MACH_DELAY(200);
-	*dmaReg = *dmaReg & ~(0x80);
-	MACH_DELAY(200);
-	*dmaReg = 0x10;
-	MACH_DELAY(200);
-    }
+    Dev_ScsiResetDMA();
 #endif
 
     /*
@@ -339,6 +331,23 @@ NetLEReset(interPtr)
     interPtr->flags |= NET_IFLAGS_RUNNING;
     return;
 }
+
+#ifdef sun4c
+/*
+ * This is here temporarily while I hack the sparc scsi driver. - Mary 11/9/90
+ */
+void
+Dev_ScsiResetDMA()
+{
+    register volatile int *dmaReg = ((int *) 0xffd14000);
+    *dmaReg = 0x80;
+    MACH_DELAY(200);
+    *dmaReg = *dmaReg & ~(0x80);
+    MACH_DELAY(200);
+    *dmaReg = 0x10;
+    MACH_DELAY(200);
+}
+#endif sun4c
 
 
 /*
