@@ -870,7 +870,7 @@ PrefixInsert(prefix, serverID, hdrPtr, domainType, flags)
  *	a local domain as part of bootstrap, and when setting up the
  *	serverID for domains not reachable by broadcast.  Basically,
  *	if there is no handle associated with the prefix then the
- *	handled that was passed in is installed.  Otherwise, we let
+ *	handle that was passed in is installed.  Otherwise, we let
  *	the flags change in order to export an existing entry, and
  *	we let the serverID field be set in order to by-pass broadcast.
  *
@@ -891,24 +891,35 @@ PrefixUpdate(prefixPtr, serverID, hdrPtr, domainType, flags)
     int			domainType;	/* Domain type of handle */
     int			flags;		/* import, export, etc. */
 {
-    if (hdrPtr != (Fs_HandleHeader *)NIL) {
-	prefixPtr->serverID	= hdrPtr->fileID.serverID;
-    } else {
-	/*
-	 * The serverID field is used when locating the server for
-	 * a prefix.  Here we set this field whether the prefix
-	 * table entry has been established or not.  This lets us
-	 * associate a prefix with a particular remote server,
-	 * i.e. a server that is not contacted via broadcast.
-	 */
-	prefixPtr->serverID	= serverID;
-    }
     if (prefixPtr->hdrPtr == (Fs_HandleHeader *)NIL) {
+	/*
+	 * No handle, we are being updated during a pathname redirection.
+	 */
 	prefixPtr->hdrPtr	= hdrPtr;
 	prefixPtr->domainType	= domainType;
-	prefixPtr->flags	= flags & ~FSPREFIX_OVERRIDE;
 	prefixPtr->delayOpens	= FALSE;
 	prefixPtr->activeOpens	= 0;
+	if (hdrPtr != (Fs_HandleHeader *)NIL) {
+	    prefixPtr->serverID = hdrPtr->fileID.serverID;
+	}
+	if (prefixPtr->flags & FSPREFIX_REMOTE) {
+	    /*
+	     * Save hard-wired information about the server location.
+	     * Can only reset that info via Fsprefix_Clear.
+	     */
+	    flags |= FSPREFIX_REMOTE;
+	} else if ((hdrPtr == (Fs_HandleHeader *)NIL) &&
+		   (prefixPtr->hdrPtr == (Fs_HandleHeader *)NIL)) {
+	    /*
+	     * No handle on prefix, no input handle.  Cache the input
+	     * serverID and we'll contact it to establish
+	     * the prefix handle.  At this point either serverID is the
+	     * broadcast address, or serverID has a specific value and
+	     * the FSREMOTE_PREFIX flag is set.
+	     */
+	    prefixPtr->serverID = serverID;
+	}
+	prefixPtr->flags	= flags & ~FSPREFIX_OVERRIDE;
     } else {
 	/*
 	 * Verify the new flags for the prefix table entry.
