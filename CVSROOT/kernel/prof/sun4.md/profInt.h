@@ -13,6 +13,9 @@
 #ifndef _PROFINT
 #define _PROFINT
 
+/* procedures */
+
+extern void mcount _ARGS_((void));
 
 /*
  * A histogram of PC samples is kept for use by gprof.
