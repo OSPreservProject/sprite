@@ -91,7 +91,7 @@ TraceLog_Init(tracePtr, numBuffers, size, flags, version)
     int numBuffers;			/* number of buffers to allocate */
     int size;				/* size of each buffer area */
     int flags;				/* TRACELOG_NO_TIMES */
-    char version;
+    int version;
 {
     int i;
     Time time;
