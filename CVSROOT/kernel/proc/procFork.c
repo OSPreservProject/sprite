@@ -314,22 +314,6 @@ InitUserProc(procPtr, parentProcPtr, shareHeap)
  *	the segments for the new process.
  *	None.
  *
-
-    /*
-     * Child inherits the parents signal stuff.
-     */
-
-    procPtr->sigHoldMask = parentProcPtr->sigHoldMask;
-    procPtr->sigPendingMask = parentProcPtr->sigPendingMask;
-    if (Sig_Pending(procPtr)) {
-	procPtr->specialHandling = 1;
-    }
-    Byte_Copy(sizeof(procPtr->sigActions), (Address) parentProcPtr->sigActions,
-	      (Address) procPtr->sigActions);
-    Byte_Copy(sizeof(procPtr->sigMasks), (Address) parentProcPtr->sigMasks,
-	      (Address) procPtr->sigMasks);
-    Byte_Copy(sizeof(procPtr->sigCodes), (Address) parentProcPtr->sigCodes,
-	      (Address) procPtr->sigCodes);
  * Side effects:
  *	None.
  *
