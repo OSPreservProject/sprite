@@ -309,12 +309,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
     }
 #endif notdef
 
-    /*
-     * We'll poll all the streams the first time through to optimize
-     * for the case where something is ready.  If the polling fails
-     * we'll iterate again going through all the work associated with waiting.
-     */
-    poll = TRUE;
+    poll = FALSE;
     if (userTimeoutPtr == (Time *) USER_NIL) {
 	doTimeout = FALSE;
     } else {
@@ -500,11 +495,13 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	    if (doTimeout && !wakeupInfo.timeOut) {
 		Timer_DescheduleRoutine(&wakeupElement);
 	    }
+#ifdef notdef
 	    /*
 	     * If we got kicked by a stream notification then go back to
 	     * fast polling mode to find out what's ready.
 	     */
 	    poll = TRUE;
+#endif notdef
 	}
     }
 
