@@ -29,6 +29,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 volatile DevTimerChip *dev_TimerAddr;
 int devTimerJunkVar;
+
+static void TimerInit _ARGS_((register volatile DevTimerChip *tmrp));
+
 
 /*
  *----------------------------------------------------------------------
