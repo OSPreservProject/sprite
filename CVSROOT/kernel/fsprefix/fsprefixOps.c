@@ -31,20 +31,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fsutil.h"
-#include "fs.h"
-#include "fsprefix.h"
-#include "prefixInt.h"
-#include "fsNameOps.h"
-#include "fsutilTrace.h"
-#include "fsStat.h"
-#include "fsio.h"
-#include "vm.h"
-#include "rpc.h"
-#include "proc.h"
-#include "dbg.h"
-#include "string.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsprefix.h>
+#include <fsprefixInt.h>
+#include <fsNameOps.h>
+#include <fsutil.h>
+#include <fsutilTrace.h>
+#include <fsStat.h>
+#include <fsio.h>
+#include <vm.h>
+#include <rpc.h>
+#include <proc.h>
+#include <dbg.h>
+#include <string.h>
 
 static List_Links prefixListHeader;
 static List_Links *prefixList = &prefixListHeader;
@@ -60,15 +60,21 @@ Boolean fsprefix_FileNameTrace = FALSE;
 /*
  * Forward references.
  */
-ReturnStatus FsprefixLookupRedirect();
-static ReturnStatus LocatePrefix();
-static ReturnStatus GetPrefix();
-static void PrefixUpdate();
-static Fsprefix *PrefixInsert();
-static void GetNilPrefixes();
-static char *NameOp();
-extern void FsprefixHandleCloseInt();
-static ReturnStatus DumpExportList();
+static char *NameOp _ARGS_((int lookupOperation));
+static Fsprefix *PrefixInsert _ARGS_((char *prefix, int serverID, 
+		Fs_HandleHeader *hdrPtr, int domainType, int flags));
+static void PrefixUpdate _ARGS_((Fsprefix *prefixPtr, int serverID, 
+		Fs_HandleHeader *hdrPtr, int domainType, int flags));
+static ReturnStatus LocatePrefix _ARGS_((char *fileName, int serverID, 
+		int *domainTypePtr, Fs_HandleHeader **hdrPtrPtr));
+static ReturnStatus GetPrefix _ARGS_((char *fileName, Boolean follow, 
+		Fs_HandleHeader **hdrPtrPtr, Fs_FileID *rootIDPtr,
+		char **lookupNamePtr, int *domainTypePtr,
+		Fsprefix **prefixPtrPtr));
+static void GetNilPrefixes _ARGS_((List_Links *listPtr));
+static ReturnStatus DumpExportList _ARGS_((Fsprefix *prefixPtr, int size, 
+		char *buffer));
+
 
 
 /*
