@@ -53,11 +53,11 @@
  *			   	retransmission queue.
  */
 
-#ifdef SUN3
+#ifdef sun3
 #define NET_IE_CONTROL_REG_ADDR		0xfe0c000
 #define NET_IE_SYS_CONF_PTR_ADDR	0xffffff6
 #endif
-#ifdef SUN2
+#ifdef sun2
 #define NET_IE_CONTROL_REG_ADDR		0xee3000
 #define NET_IE_SYS_CONF_PTR_ADDR	0xfffff6
 #endif
@@ -90,7 +90,7 @@
 	    netIEState.controlReg->channelAttn = 0; \
 	}
 
-#ifdef SUN3
+#ifdef sun3
 #define NET_IE_DELAY(condition) \
 	{ \
 	    register int i = (400000); \
