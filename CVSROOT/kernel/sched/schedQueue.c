@@ -13,13 +13,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "mach.h"
-#include "proc.h"
-#include "list.h"
-#include "sync.h"
-#include "sched.h"
-#include "schedInt.h"
+#include <sprite.h>
+#include <mach.h>
+#include <proc.h>
+#include <list.h>
+#include <sync.h>
+#include <sched.h>
+#include <schedInt.h>
 
 List_Links schedReadyQueueHeader;
 List_Links *schedReadyQueueHdrPtr = &schedReadyQueueHeader;
@@ -130,8 +130,9 @@ Sched_InsertInQueue(procPtr, runPtrPtr)
 	     * If we are supposed to return a runnable process and the process
 	     * we were given last ran on the current processor, then just return
 	     * the process.
+	     */
 	    if ((runPtrPtr != (Proc_ControlBlock **) NIL) && 
-		(processor == Mach_GetProcessorNumber()) {
+		(processor == Mach_GetProcessorNumber())) {
 		*runPtrPtr = procPtr;
 		return;
 	    }
@@ -243,6 +244,7 @@ Sched_InsertInQueue(procPtr, runPtrPtr)
     delete = FALSE;
     foundInsertPoint = FALSE;
     itemProcPtr = (Proc_ControlBlock *) schedReadyQueueHdrPtr;
+    followingItemPtr = (List_Links *) NIL;
     LIST_FORALL(queuePtr, (List_Links *) itemProcPtr) {
 	if (itemProcPtr == procPtr) {
 	    delete = TRUE;
