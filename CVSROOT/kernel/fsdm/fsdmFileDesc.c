@@ -522,11 +522,14 @@ FsWriteBackDesc(handlePtr, doWriteBack)
     register FsDomainHeader	*headerPtr;
     register FsFileDescriptor	*descPtr;
     register FsDomain		*domainPtr;
-    register ReturnStatus     	status;
+    register ReturnStatus     	status = SUCCESS;
     register int 	    	blockNum;
     int				blocksSkipped;
 
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
+    if (domainPtr == (FsDomain *)NIL) {
+	return(FS_DOMAIN_UNAVAILABLE);
+    }
     descPtr = handlePtr->descPtr;
     /*
      * If the handle times differ from the descriptor times then force
@@ -545,20 +548,24 @@ FsWriteBackDesc(handlePtr, doWriteBack)
 	status =  FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, 
 				  descPtr);
 	if (status != SUCCESS) {
-	    printf( "FsWriteBackDesc: Could not store desc\n");
+	    printf("FsWriteBackDesc: Could not put desc <%d,%d> into cache\n",
+		    handlePtr->hdr.fileID.major,
+		    handlePtr->hdr.fileID.minor);
 	}
     }
-    if (doWriteBack) {
+    if (status == SUCCESS && doWriteBack) {
 	headerPtr = domainPtr->headerPtr;
 	blockNum = headerPtr->fileDescOffset + 
 		   handlePtr->hdr.fileID.minor / FS_FILE_DESC_PER_BLOCK;
 	status = FsCacheFileWriteBack(&domainPtr->physHandle.cacheInfo,
 		    blockNum, blockNum, FS_FILE_WB_WAIT, &blocksSkipped);
 	if (status != SUCCESS) {
-	    printf( 
-		    "FsWritebackDesc: Couldn't write back desc.\n");
+	    printf("FsWritebackDesc: Couldn't write back desc <%d,%d>\n",
+		    handlePtr->hdr.fileID.major,
+		    handlePtr->hdr.fileID.minor);
 	}
     }
     FsDomainRelease(handlePtr->hdr.fileID.major);
+    return(status);
 }
 
