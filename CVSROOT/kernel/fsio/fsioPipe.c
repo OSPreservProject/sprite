@@ -541,9 +541,9 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
+FsPipeIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
 	outBuffer)
-    FsHandleHeader *hdrPtr;
+    Fs_Stream *streamPtr;
     int command;
     int byteOrder;
     int inBufSize;
@@ -551,7 +551,8 @@ FsPipeIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
     int outBufSize;
     Address outBuffer;
 {
-    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
+    register FsPipeIOHandle *handlePtr =
+	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
     ReturnStatus status = SUCCESS;
 
     switch(command) {
