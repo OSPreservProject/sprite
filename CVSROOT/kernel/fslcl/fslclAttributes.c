@@ -1,5 +1,5 @@
 /*
- * fsAttributes.c --
+ * fslclAttributes.c --
  *
  *	This has procedures for operations done on file attributes.
  *	The general strategy when getting attributes is to make one call to
@@ -25,16 +25,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fslclInt.h"
-#include "fsconsist.h"
-#include "fscache.h"
-#include "fsdm.h"
-#include "fsStat.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fsNameOps.h>
+#include <fslclInt.h>
+#include <fscache.h>
+#include <fsdm.h>
+#include <fsStat.h>
+#include <rpc.h>
 
 
 /*
@@ -74,7 +74,8 @@ FslclGetAttr(fileIDPtr, clientID, attrPtr)
 
 	handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, fileIDPtr);
 	if (handlePtr == (Fsio_FileIOHandle *)NIL) {
-	    status = Fsio_LocalFileHandleInit(fileIDPtr, (char *)NIL, &handlePtr);
+	    status = Fsio_LocalFileHandleInit(fileIDPtr, (char *)NIL,
+		(Fsdm_FileDescriptor *) NIL,  FALSE, &handlePtr);
 	    if (status != SUCCESS) {
 		bzero((Address)attrPtr, sizeof(Fs_Attributes));
 		return(status);
@@ -163,7 +164,7 @@ FslclAssignAttrs(handlePtr, isExeced, attrPtr)
     attrPtr->dataModifyTime.seconds	= cacheInfoPtr->attr.modifyTime;
     attrPtr->dataModifyTime.microseconds= 0;
     if (isExeced) {
-	attrPtr->accessTime.seconds	= fsutil_TimeInSeconds;
+	attrPtr->accessTime.seconds	= Fsutil_TimeInSeconds();
     } else {
 	attrPtr->accessTime.seconds	= cacheInfoPtr->attr.accessTime;
     }
@@ -225,7 +226,6 @@ FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     register ReturnStatus	status = SUCCESS;
     Fsio_FileIOHandle		*handlePtr;
     register Fsdm_FileDescriptor	*descPtr;
-    Fsdm_Domain			*domainPtr;
 
     handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, fileIDPtr);
     if (handlePtr == (Fsio_FileIOHandle *)NIL) {
@@ -255,6 +255,7 @@ FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 		goto exit;
 	    } else {
 		descPtr->uid = attrPtr->uid;
+		descPtr->flags |= FSDM_FD_OTHERS_DIRTY;
 	    }
 	}
 	if (attrPtr->gid >= 0 && descPtr->gid != attrPtr->gid) {
@@ -266,8 +267,10 @@ FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 	    for (g=0 ; g < idPtr->numGroupIDs; g++) {
 		if (attrPtr->gid == idPtr->group[g] || idPtr->user == 0) {
 		    descPtr->gid = attrPtr->gid;
+		    descPtr->flags |= FSDM_FD_OTHERS_DIRTY;
 		    if (idPtr->user != 0) {
 			descPtr->permissions &= ~FS_SET_GID;
+			descPtr->flags |= FSDM_FD_PERMISSIONS_DIRTY;
 		    }
 		    break;
 		}
@@ -300,6 +303,7 @@ FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 setMode:
 #endif not lint
 	descPtr->permissions = attrPtr->permissions;
+	descPtr->flags |= FSDM_FD_PERMISSIONS_DIRTY;
     }
     if (flags & FS_SET_DEVICE) {
 	if (descPtr->fileType == FS_DEVICE ||
@@ -307,11 +311,13 @@ setMode:
 	      descPtr->devServerID = attrPtr->devServerID;
 	      descPtr->devType = attrPtr->devType;
 	      descPtr->devUnit = attrPtr->devUnit;
+	      descPtr->flags |= FSDM_FD_OTHERS_DIRTY;
 	}
     }
     if (flags & FS_SET_TIMES) {
 	descPtr->accessTime       = attrPtr->accessTime.seconds;
 	descPtr->dataModifyTime   = attrPtr->dataModifyTime.seconds;
+        descPtr->flags |= (FSDM_FD_ACCESSTIME_DIRTY|FSDM_FD_MODTIME_DIRTY);
 	/*
 	 * Patch this because it gets copied below by Fscache_UpdateCachedAttr.
 	 */
@@ -320,20 +326,14 @@ setMode:
 
     if (flags & FS_SET_FILE_TYPE) {
 	descPtr->userType    = attrPtr->userType;
+        descPtr->flags |= FSDM_FD_USERTYPE_DIRTY;
     }
 
     /*
      * Copy this new information into the cache block containing the descriptor.
      */
-    descPtr->descModifyTime   = fsutil_TimeInSeconds;
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	status = FS_DOMAIN_UNAVAILABLE;
-    } else {
-	status = Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor,
-		 descPtr);
-	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    }
+    descPtr->descModifyTime   = Fsutil_TimeInSeconds();
+    status = Fsdm_FileDescStore(handlePtr, FALSE);
     if (status == SUCCESS) {
 	/*
 	 * Update the attributes cached in the file handle.
