@@ -35,13 +35,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "recov.h"
 #include "string.h"
 #include "sched.h"
+#include "devSyslog.h"
+#include "mem.h"
 #include <stdio.h>
-
-/*
- * Forward references that should be in other header files.
- */
-
-void	Mem_DumpStats();
 
 /*
  * Forward references to procedures internal to this file.
@@ -67,6 +63,7 @@ static EventTableType eventTable[] = {
     {'e', Timer_DumpStats, (ClientData) 'e', "Dump timer stats"},
     {'f', Fsutil_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
     {'i', (void (*)()) Proc_KDump, (ClientData) 0,"Info on waiting processes"},
+    {'j', Dev_SyslogDisable, (ClientData) 0,"Disable/enable syslog"},
     {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
     {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
     {'o', (void (*)()) Dev_VidEnable, (ClientData) 1,"Turn video on"},
