@@ -94,6 +94,10 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	     */
 	    status = (*fsAttrOpTable[nameInfoPtr->domainType].getAttr)
 			(&nameInfoPtr->fileID, rpc_SpriteID, attrPtr);
+#ifdef lint
+	    status = FsLocalGetAttr(&nameInfoPtr->fileID, rpc_SpriteID,attrPtr);
+	    status = FsSpriteGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
+#endif lint
 	    if (status != SUCCESS) {
 		Sys_Panic(SYS_WARNING,
 		    "Fs_GetAttrStream: can't get name attributes <%x> for %s\n",
@@ -108,6 +112,12 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	     */
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].getIOAttr)
 			(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+#ifdef lint
+	    status = FsRemoteGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+	    status = FsRmtFileGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+	    status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+	    status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+#endif lint
 	}
     }
     return(status);
@@ -276,10 +286,11 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
  */
 
 ReturnStatus
-Fs_SetAttrStream(streamPtr, attrPtr, idPtr)
-    Fs_Stream *streamPtr;
-    Fs_Attributes *attrPtr;
-    FsUserIDs *idPtr;
+Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
+    Fs_Stream *streamPtr;	/* References file to manipulate. */
+    Fs_Attributes *attrPtr;	/* Attributes to give to the file. */
+    FsUserIDs *idPtr;		/* Owner and groups of calling process */
+    int flags;			/* Specify what attributes to set. */
 {
     register ReturnStatus	status;
     register FsHandleHeader	*hdrPtr = streamPtr->ioHandlePtr;
@@ -293,7 +304,11 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr)
 	     * Set the attributes at the name server.
 	     */
 	    status = (*fsAttrOpTable[nameInfoPtr->domainType].setAttr)
-			(&nameInfoPtr->fileID, attrPtr, idPtr);
+			(&nameInfoPtr->fileID, attrPtr, idPtr, flags);
+#ifdef lint
+	    status = FsLocalSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
+	    status = FsSpriteSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
+#endif lint
 	} else {
 	    status = SUCCESS;
 	}
@@ -302,7 +317,13 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr)
 	     * Set the attributes at the I/O server.
 	     */
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].setIOAttr)
-			(&hdrPtr->fileID, attrPtr);
+			(&hdrPtr->fileID, attrPtr, flags);
+#ifdef lint
+	    status = FsRemoteSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+	    status = FsRmtFileSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+	    status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+	    status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+#endif lint
 	}
 	if (status == SUCCESS) {
 	    fsStats.gen.numSetAttrs ++;
@@ -318,7 +339,8 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr)
  *
  *	Set the attributes of a local file given its fileID.  This is
  *	called from Fs_SetAttrStream to set the attributes at the name server.
- *	This updates the disk descriptor and pushes it to disk.
+ *	This updates the disk descriptor and copies the new information
+ * 	into the cache.  It will go to disk on the next sync.
  *
  * Results:
  *	An error code.
@@ -329,16 +351,16 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
-    register FsFileID		*fileIDPtr;
-    register Fs_Attributes	*attrPtr;
-    FsUserIDs *idPtr;
+FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
+    FsFileID			*fileIDPtr;	/* Target file. */
+    register Fs_Attributes	*attrPtr;	/* New attributes */
+    register FsUserIDs		*idPtr;		/* Process's owner/group */
+    int				flags;		/* What attrs to set */
 {
     register ReturnStatus	status = SUCCESS;
     FsLocalFileIOHandle		*handlePtr;
     register FsFileDescriptor	*descPtr;
     FsDomain			*domainPtr;
-    int				g;
 
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle, fileIDPtr);
     if (handlePtr == (FsLocalFileIOHandle *)NIL) {
@@ -357,53 +379,64 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
 	status = FS_NOT_OWNER;
 	goto exit;
     }
-    descPtr->permissions = attrPtr->permissions;
-       
-    if (descPtr->fileType == FS_DEVICE ||
-              descPtr->fileType == FS_REMOTE_DEVICE) {
-	  descPtr->devServerID = attrPtr->devServerID;
-	  descPtr->devType = attrPtr->devType;
-	  descPtr->devUnit = attrPtr->devUnit;
-    }
-    descPtr->accessTime       = attrPtr->accessTime.seconds;
-    descPtr->dataModifyTime   = attrPtr->dataModifyTime.seconds;
-    descPtr->descModifyTime   = fsTimeInSeconds;
-       
-    descPtr->userType    = attrPtr->userType;
-
-    /*
-     * Set the cached user file type in the handle, unless it's specified
-     * as undefined.
-     */
-    if (attrPtr->userType != FS_USER_TYPE_UNDEFINED) {
-	handlePtr->cacheInfo.attr.userType = attrPtr->userType;
-    }
-
-    if (attrPtr->uid >= 0 && descPtr->uid != attrPtr->uid) {
-	if (idPtr->user != 0) {
-	    /*
-	     * Don't let people give away ownership.
-	     */
-	    status = FS_NO_ACCESS;
-	} else {
-	    descPtr->uid = attrPtr->uid;
-	}
-    }
-    if (attrPtr->gid >= 0 && descPtr->gid != attrPtr->gid) {
-	for (g=0 ; g < idPtr->numGroupIDs; g++) {
-	    if (attrPtr->gid == idPtr->group[g] || idPtr->user == 0) {
-		descPtr->gid = attrPtr->gid;
-		break;
+    if (flags & FS_SET_OWNER) {
+	if (attrPtr->uid >= 0 && descPtr->uid != attrPtr->uid) {
+	    if (idPtr->user != 0) {
+		/*
+		 * Don't let ordinary people give away ownership.
+		 */
+		status = FS_NO_ACCESS;
+#ifdef not_yet
+		goto exit;
+#endif
+	    } else {
+		descPtr->uid = attrPtr->uid;
 	    }
 	}
-	if (g >= idPtr->numGroupIDs) {
-	    status = FS_NO_ACCESS;
+	if (attrPtr->gid >= 0 && descPtr->gid != attrPtr->gid) {
+	    register int g;
+	    for (g=0 ; g < idPtr->numGroupIDs; g++) {
+		if (attrPtr->gid == idPtr->group[g] || idPtr->user == 0) {
+		    descPtr->gid = attrPtr->gid;
+		    break;
+		}
+	    }
+	    if (g >= idPtr->numGroupIDs) {
+		status = FS_NO_ACCESS;
+#ifdef not_yet
+		goto exit;
+#endif
+	    }
 	}
+    }
+    if (flags & FS_SET_MODE) {
+	descPtr->permissions = attrPtr->permissions;
+    }
+    if (flags & FS_SET_DEVICE) {
+	if (descPtr->fileType == FS_DEVICE ||
+		  descPtr->fileType == FS_REMOTE_DEVICE) {
+	      descPtr->devServerID = attrPtr->devServerID;
+	      descPtr->devType = attrPtr->devType;
+	      descPtr->devUnit = attrPtr->devUnit;
+	}
+    }
+    if (flags & FS_SET_TIMES) {
+	descPtr->accessTime       = attrPtr->accessTime.seconds;
+	descPtr->dataModifyTime   = attrPtr->dataModifyTime.seconds;
+	/*
+	 * Patch this because it gets copied by FsUpdateCachedAttr.
+	 */
+	attrPtr->createTime.seconds = descPtr->createTime;
+    }
+
+    if (flags & FS_SET_FILE_TYPE) {
+	descPtr->userType    = attrPtr->userType;
     }
 
     /*
-     * Make sure this new info gets to disk.
+     * Copy this new information into the cache block containing the descriptor.
      */
+    descPtr->descModifyTime   = fsTimeInSeconds;
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (FsDomain *)NIL) {
 	status = FS_DOMAIN_UNAVAILABLE;
@@ -411,6 +444,10 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
 	FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, descPtr);
 	FsDomainRelease(handlePtr->hdr.fileID.major);
     }
+    /*
+     * Update the attributes cached in the file handle.
+     */
+    FsUpdateCachedAttr(&handlePtr->cacheInfo, attrPtr, flags);
 exit:
     FsHandleRelease(handlePtr, TRUE);
     return(status);
@@ -759,12 +796,6 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 
     setAttrArgsPtr = (FsSetAttrArgs *) storagePtr->requestParamPtr;
 
-    if (setAttrArgsPtr->openArgs.prefixID.serverID != rpc_SpriteID) {
-	/*
-	 * Filesystem mis-match.
-	 */
-	return(GEN_INVALID_ARG);
-    }
     prefixHandle =
 	(*fsStreamOpTable[setAttrArgsPtr->openArgs.prefixID.type].clientVerify)
 	    (&setAttrArgsPtr->openArgs.prefixID, clientID);
@@ -947,13 +978,15 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
 }
 
 /*
- * Parameters for RPC_FS_SET_ATTR.
+ * Parameters for RPC_FS_SET_ATTR.  This is a sub-set of FsSetAttrArgs
+ * (which has extra stuff required to handle path name lookup).
  */
 
 typedef struct FsSpriteSetAttrParams {
     FsFileID		fileID;
     FsUserIDs		ids;
     Fs_Attributes	attrs;
+    int			flags;
 } FsSpriteSetAttrParams;
 
 /*
@@ -975,10 +1008,11 @@ typedef struct FsSpriteSetAttrParams {
  */
 
 ReturnStatus
-FsSpriteSetAttr(fileIDPtr, attrPtr, idPtr)
+FsSpriteSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     FsFileID		*fileIDPtr;
     Fs_Attributes	*attrPtr;
     FsUserIDs		 *idPtr;
+    int			flags;
 {
     ReturnStatus status;
     Rpc_Storage storage;
@@ -993,6 +1027,7 @@ FsSpriteSetAttr(fileIDPtr, attrPtr, idPtr)
     params.fileID = *fileIDPtr;
     params.ids = *idPtr;
     params.attrs = *attrPtr;
+    params.flags = flags;
     storage.requestParamPtr = (Address)&params;
     storage.requestParamSize = sizeof(FsSpriteSetAttrParams);
     storage.requestDataPtr = (Address)NIL;;
@@ -1066,7 +1101,7 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
 	}
     }
     FsHandleUnlock(hdrPtr);
-    status = FsLocalSetAttr(fileIDPtr, attrPtr, &paramPtr->ids);
+    status = FsLocalSetAttr(fileIDPtr, attrPtr, &paramPtr->ids,paramPtr->flags);
     FsHandleRelease(hdrPtr, FALSE);
 
     Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL,
@@ -1078,9 +1113,9 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteGetIOAttr --
+ * FsRemoteGetIOAttr --
  *
- *	Get the attributes cached at the I/O server.  This makes the
+ *	Get the attributes cached at a remote I/O server.  This makes the
  *	RPC_FS_GET_IO_ATTR RPC to the I/O server which then calls
  *	stream-type getIOAttrs routine.
  *
@@ -1094,7 +1129,7 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteGetIOAttr(fileIDPtr, clientID, attrPtr)
+FsRemoteGetIOAttr(fileIDPtr, clientID, attrPtr)
     register FsFileID		*fileIDPtr;	/* Remote device/pipe fileID */
     int				clientID;	/* IGNORED, implicitly passed
 						 * by the RPC system. */
@@ -1177,6 +1212,11 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
 
     status = (*fsStreamOpTable[hdrPtr->fileID.type].getIOAttr)
 	    (&hdrPtr->fileID, clientID, attrPtr);
+#ifdef lint
+    status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+    status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+#endif lint
+
     FsHandleRelease(hdrPtr, FALSE);
 
     if (status == SUCCESS) {
@@ -1194,9 +1234,9 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteSetIOAttr --
+ * FsRemoteSetIOAttr --
  *
- *	Set the attributes cached at the I/O server.  This makes the
+ *	Set the attributes cached at a remote I/O server.  This makes the
  *	RPC_FS_SET_IO_ATTR RPC to the I/O server which then calls
  *	stream-type setIOAttrs routine.
  *
@@ -1210,18 +1250,20 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteSetIOAttr(fileIDPtr, attrPtr)
+FsRemoteSetIOAttr(fileIDPtr, attrPtr, flags)
     register FsFileID		*fileIDPtr;	/* Remote device/pipe fileID */
     register Fs_Attributes	*attrPtr;	/* Attributes to copy */
+    int				flags;		/* What attributes to set */
 {
     register ReturnStatus	status;
     Rpc_Storage			storage;
-    FsGetAttrResultsParam	getAttrResultsParam;
+    FsSpriteSetAttrParams	setAttrParam;
 
-    getAttrResultsParam.attrResults.fileID = *fileIDPtr;
-    getAttrResultsParam.attrResults.attrs = *attrPtr;
-    storage.requestParamPtr = (Address) &getAttrResultsParam;
-    storage.requestParamSize = sizeof(FsGetAttrResultsParam);
+    setAttrParam.fileID = *fileIDPtr;
+    setAttrParam.attrs = *attrPtr;
+    setAttrParam.flags = flags;
+    storage.requestParamPtr = (Address) &setAttrParam;
+    storage.requestParamSize = sizeof(FsSpriteSetAttrParams);
     storage.requestDataPtr = (Address) NIL;
     storage.requestDataSize = 0;
 
@@ -1274,12 +1316,12 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
     register FsHandleHeader	*hdrPtr;
     register FsFileID		*fileIDPtr;
     Fs_Attributes		*attrPtr;
-    FsGetAttrResultsParam	*getAttrResultsParamPtr;
+    FsSpriteSetAttrParams	*setAttrParamPtr;
 
-    getAttrResultsParamPtr =
-	    (FsGetAttrResultsParam *) storagePtr->requestParamPtr;
-    fileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
-    attrPtr = &(getAttrResultsParamPtr->attrResults.attrs);
+    setAttrParamPtr =
+	    (FsSpriteSetAttrParams *) storagePtr->requestParamPtr;
+    fileIDPtr = &(setAttrParamPtr->fileID);
+    attrPtr = &(setAttrParamPtr->attrs);
 
     hdrPtr = VerifyIOHandle(fileIDPtr);
     if (hdrPtr == (FsHandleHeader *) NIL) {
@@ -1288,7 +1330,12 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
     FsHandleUnlock(hdrPtr);
 
     status = (*fsStreamOpTable[hdrPtr->fileID.type].setIOAttr)
-	    (&hdrPtr->fileID, attrPtr);
+	    (&hdrPtr->fileID, attrPtr, setAttrParamPtr->flags);
+#ifdef lint
+    status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+    status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+#endif lint
+
     FsHandleRelease(hdrPtr, FALSE);
 
     /*
