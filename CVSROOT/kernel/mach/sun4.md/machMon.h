@@ -294,7 +294,6 @@ extern	int  	Mach_MonMayPut();
 extern	void	Mach_MonAbort();
 extern	void	Mach_MonReboot();
 
-#ifdef NOTDEF
 /*
  * These routines no longer work correctly with new virtual memory.
  * IS THIS TRUE FOR SUN4 TOO?
@@ -306,9 +305,11 @@ extern	void	Mach_MonReboot();
 #define Mach_MonPeekNextChar (romVectorPtr->peekNextChar)
 
 
+#ifdef NOTDEF
 extern	void	Mach_MonTrap();
+#endif NOTDEF
+/* Do these routines work with new virtual memory?  They were claimed not to. */
 extern	void	Mach_MonStopNmi();
 extern	void	Mach_MonStartNmi();
-#endif NOTDEF
 
 #endif _MACHMON

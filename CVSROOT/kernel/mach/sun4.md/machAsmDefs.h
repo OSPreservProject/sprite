@@ -266,4 +266,5 @@ moduloOkay:							\
 	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
 	mov	%VOL_TEMP1, %psr;				\
 	MACH_WAIT_FOR_STATE_REGISTER()
+
 #endif /* _MACHASMDEFS */
