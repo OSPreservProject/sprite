@@ -165,6 +165,7 @@ DevRawBlockDevRead(devicePtr, readPtr, replyPtr)
     }
 
     amountRead = 0;
+    error = FAILURE;
     while (readPtr->length > 0) {
 	/*
 	 * Reinitialize everything each loop because lower-levels
@@ -188,7 +189,7 @@ DevRawBlockDevRead(devicePtr, readPtr, replyPtr)
 	}
     }
     replyPtr->length = amountRead;
-    return(error);
+    return error;
 }
 
 /*
@@ -230,6 +231,7 @@ DevRawBlockDevWrite(devicePtr, writePtr, replyPtr)
 	return DEV_INVALID_ARG;
     }
     amountWritten = 0;
+    error = SUCCESS;
     while (writePtr->length > 0) {
 	/*
 	 * Reinitialize everything each loop because lower-levels
