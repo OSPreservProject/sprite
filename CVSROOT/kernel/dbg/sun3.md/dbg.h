@@ -234,4 +234,4 @@ typedef struct {
 extern	void	Dbg_Init();
 extern	void	Dbg_InputPacket();
 
-#endif _DBG
+#endif /*_DBG */

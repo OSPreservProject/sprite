@@ -26,4 +26,4 @@ extern	void		DbgRs232Init();
 extern	char 		DbgRs232ReadChar();
 extern	void 		DbgRs232WriteChar();
 
-#endif _DBGRS232
+#endif /* _DBGRS232 */
