@@ -73,6 +73,12 @@ Mach_EncapState(procPtr, hostID, infoPtr, buffer)
     Mach_State *machStatePtr = procPtr->machStatePtr;
     MigratedState *migPtr = (MigratedState *) buffer;
 
+    if (machStatePtr->fpuStatus & MACH_FPU_ACTIVE) {
+	if (proc_MigDebugLevel > 2) {
+	    printf("Mach_EncapState: FPU was active, dumping state.\n");
+	}
+	MachFPUDumpState(machStatePtr->trapRegs);
+    }
     bcopy((Address) machStatePtr, (Address) &migPtr->state,
 	    sizeof (Mach_State));
     bcopy((Address) machStatePtr->trapRegs, (Address) &migPtr->trapRegs,
@@ -130,7 +136,6 @@ Mach_DeencapState(procPtr, infoPtr, buffer)
 	return(PROC_MIGRATION_REFUSED);
     }
 
-/* fpu stuff? */
 
     /*
      * Get rid of the process's old machine-dependent state if it exists.
@@ -162,6 +167,22 @@ Mach_DeencapState(procPtr, infoPtr, buffer)
  */
     status = Mach_SetupNewState(procPtr, (Mach_State *) &migPtr->state,
 	    Proc_ResumeMigProc, (Address)NIL, TRUE);
+
+    /*
+     * Mach_SetupNewState thinks that all new processes have a clean FPU
+     * slate, and it zeroes the mach state.  Make sure to keep any
+     * pending exceptions.
+     */
+    if (proc_MigDebugLevel > 2) {
+	printf("Mach_DeencapState: FPU status register was %x.\n",
+	       migPtr->state.fpuStatus);
+    }
+    if (migPtr->state.fpuStatus) {
+	procPtr->machStatePtr->fpuStatus = migPtr->state.fpuStatus;
+	procPtr->specialHandling = 1;
+    }
+	
+	
     return(status);
 }    
     
@@ -204,7 +225,8 @@ Mach_GetEncapSize(procPtr, hostID, infoPtr)
  * Mach_CanMigrate --
  *
  *	Indicate whether a process's trapstack is in a form suitable for
- *	starting a migration.
+ *	starting a migration.  We require that nextPc follow pc -- if
+ * 	we just did a jump, then we defer migration momentarily.
  *
  * Results:
  *	TRUE if we can migrate using this trapstack, FALSE otherwise.
@@ -219,14 +241,18 @@ Mach_CanMigrate(procPtr)
     Proc_ControlBlock *procPtr;		/* pointer to process to check */
 {
     Boolean okay;
-
+    Mach_RegState *regsPtr;
+    
     okay = TRUE;
+    regsPtr = procPtr->machStatePtr->trapRegs;
 
-/* fpu stuff? */
 
+    if (regsPtr->nextPc != regsPtr->pc + 4) {
+	okay = FALSE;
+    }
     if (proc_MigDebugLevel > 4) {
-    printf("Mach_CanMigrate called. PC %x, returning %d.\n",
-	    procPtr->machStatePtr->trapRegs->pc, okay);
+	printf("Mach_CanMigrate called. PC %x, returning %d.\n",
+	       regsPtr->pc, okay);
     }
     return okay;
 }    
