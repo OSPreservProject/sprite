@@ -48,9 +48,14 @@ QueueElement	queue[NUM_QUEUE_ELEMENTS];
 int	frontIndex = -1;
 int	nextIndex = 0;
 
-ServerInfo	*serverInfoTable;
+ServerInfo	*serverInfoTable = (ServerInfo *) NIL;
 
-int	proc_NumServers = PROC_NUM_SERVER_PROCS;
+int	proc_NumServers = 0;
+
+/*
+ * MAX_NUM_SERVER_PROCS - The maximum number of Proc_ServerProcs allowed.
+ */
+#define	MAX_NUM_SERVER_PROCS	32
 
 /* 
  * Mutex to synchronize accesses to the queue of pending requests and
@@ -232,13 +237,64 @@ Proc_ServerInit()
     int		i;
 
     serverInfoTable = 
-	    (ServerInfo *) Vm_RawAlloc(proc_NumServers * sizeof(ServerInfo));
-    for (i = 0; i < proc_NumServers; i++) {
+	 (ServerInfo *) Vm_RawAlloc(MAX_NUM_SERVER_PROCS * sizeof(ServerInfo));
+    for (i = 0; i < MAX_NUM_SERVER_PROCS; i++) {
 	serverInfoTable[i].index = i;
 	serverInfoTable[i].flags = 0;
 	serverInfoTable[i].condition.waiting = 0;
     }
     Sync_SemInitDynamic(&serverMutex, "Proc:serverMutex");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ServerProcCreate --
+ *
+ *	Create the specified number of Proc_Servers. 
+ *
+ * Results:
+ *	The number created.
+ *
+ * Side effects:
+ *	proc_NumServer increased and processes created.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Proc_ServerProcCreate(numToCreate)
+    int	numToCreate;	/* Number of procServer processes to create. */
+{
+    Proc_PID	pid;
+    int		i;
+    Boolean	maxedOut;
+
+    if (serverInfoTable == (ServerInfo *) NIL) {
+	panic("Proc_ServerProcCreate called before Proc_ServerInit\n");
+	return 0;
+    }
+    maxedOut = FALSE;
+    for (i = 0; i < numToCreate; i++) { 
+	/*
+	 * Until proc_NumServers is maxedOut increment it. We grab
+	 * serverMutux to protect others against others doing the
+	 * same.
+	 */
+	MASTER_LOCK(&serverMutex);
+	if (proc_NumServers < MAX_NUM_SERVER_PROCS) {
+	    proc_NumServers++;
+	} else {
+	    maxedOut = TRUE;
+	}
+	MASTER_UNLOCK(&serverMutex);
+	if (maxedOut) {
+	    break;
+	}
+	(void) Proc_NewProc((Address) Proc_ServerProc, PROC_KERNEL, FALSE, 
+			&pid, "Proc_ServerProc");
+    }
+    return i;
 }
 
 
