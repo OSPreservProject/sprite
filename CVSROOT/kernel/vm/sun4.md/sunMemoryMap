@@ -75,7 +75,7 @@ Virtual address space on the sun4:
 	   -	  Invalid page	- 8 Kbytes.
 	0x00000000
 
-New:
+New sun4 mapping:
 	Address
 	0xFFFFFFFF
 	   -	  Net memory allocation area.
