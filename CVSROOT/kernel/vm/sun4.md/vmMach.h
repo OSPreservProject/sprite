@@ -123,5 +123,10 @@ extern	ReturnStatus	VmMach_MapKernelIntoUser();
  * Tracing.
  */
 extern	void		VmMach_Trace();
+/*
+ * Pinning and unpinning user memory pages.
+ */
+extern	void		VmMach_PinUserPage();
+extern	void		VmMach_UnpinUserPage();
 
 #endif _VMMACH
