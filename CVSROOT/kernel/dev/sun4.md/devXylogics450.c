@@ -1355,7 +1355,7 @@ GetStatus(xyPtr)
 		case XY_WRITE_PROTECT_ON:
 		    printf("Xylogics-%d: ", xyPtr->number);
 		    printf("Warning: Write protected\n");
-		    error = DEV_HARD_ERROR;
+		    error = GEN_NO_PERMISSION;
 		    break;
 		case XY_SOFT_ECC_RECOVERED:
 		    printf("Xylogics-%d: ", xyPtr->number);
