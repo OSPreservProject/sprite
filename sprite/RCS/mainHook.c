@@ -26,6 +26,7 @@ char *main_AltInit	= NULL;  /* If non-null then contains name of
 				  * alternate init program to use. */
 Boolean main_AllowNMI = FALSE;	 /* TRUE -> allow non-maskable intrrupts */
 
+#ifdef notdef
 /*
  * Malloc/Free tracing.  This array defines which object sizes will
  * be traced by malloc and free.  They'll record the caller's PC and
@@ -34,7 +35,6 @@ Boolean main_AllowNMI = FALSE;	 /* TRUE -> allow non-maskable intrrupts */
  * of overhead on each bin.
  */
 #include "fs.h"
-#include "../fs/fsInt.h"
 #include "fsPdev.h"
 #include "fsDisk.h"
 #include "fsDevice.h"
@@ -60,7 +60,7 @@ Mem_TraceInfo mainMemTraceInfo[] = {
     { sizeof(FsRmtFileIOHandle), (MEM_STORE_TRACE) },
     { sizeof(FsLocalFileIOHandle), (MEM_STORE_TRACE) },
 };
-
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -82,8 +82,10 @@ Mem_TraceInfo mainMemTraceInfo[] = {
 void
 Main_HookRoutine()
 {
+#ifdef notdef
     Mem_SetTraceSizes(sizeof(mainMemTraceInfo) / sizeof(Mem_TraceInfo),
 			mainMemTraceInfo);
+#endif
 }
 
 
