@@ -292,6 +292,8 @@ static SysCallEntry sysCalls[] = {
     Sync_SemopStub,		Sync_SemopStub,		TRUE,	4,   NILPARM,
     Vm_Mprotect,		Vm_Mprotect,		TRUE,   3,   NILPARM,
     Proc_Vfork,	                Proc_Vfork,	        TRUE,	0,   NILPARM,
+    Net_GetRoutes,		Net_GetRoutes,		TRUE,	5,   NILPARM,
+    Net_DeleteRouteStub,	Net_DeleteRouteStub,	TRUE,	1,   NILPARM,
 };
 
 
@@ -474,6 +476,7 @@ static Sys_CallParam paramsArray[] = {
     /* local */                         /* SYS_SYNC_SEMOP		104 */
     /* local */                         /* VM_MPROTECT			105 */
     /* special */			/* SYS_PROC_VFORK	        106 */
+    /* local */				/* SYS_NET_GET_ROUTES		107 */			
     /*
      * Insert new system call information above this line.
      */

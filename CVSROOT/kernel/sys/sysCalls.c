@@ -761,7 +761,8 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 	case SYS_NET_GET_ROUTE: {
-	    status = Net_IDToRouteStub(option, sizeof(Net_RouteInfo), argPtr);
+	    status = Net_IDToRouteOldStub(option, 
+			    sizeof(Net_RouteInfoOld), argPtr);
 	    break;
 	}
 	case SYS_NET_ETHER_STATS: {
