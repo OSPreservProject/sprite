@@ -1241,7 +1241,6 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
     FsSprite2PathParams	params;
     FsSprite2PathData	*requestDataPtr;	/* too big for stack */
     FsSprite2PathReplyParams	replyParams;
-    int			nameLength;
     Rpc_Storage		storage;
     ReturnStatus	status;
     FsRedirectInfo	redirectInfo;
