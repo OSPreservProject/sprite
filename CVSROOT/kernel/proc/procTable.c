@@ -363,7 +363,7 @@ Proc_LockPID(pid)
 		procPtr->genFlags |= PROC_LOCKED;
 #ifndef CLEAN_LOCK
 		Sync_RecordHit(lockPtr);
-		Sync_StoreDbgInfo(lockPtr);
+		Sync_StoreDbgInfo(lockPtr, FALSE);
 		Sync_AddPrior(lockPtr);
 #endif
 	    }
@@ -417,7 +417,7 @@ Proc_Lock(procPtr)
 
 #ifndef CLEAN_LOCK
     Sync_RecordHit(lockPtr);
-    Sync_StoreDbgInfo(lockPtr);
+    Sync_StoreDbgInfo(lockPtr, FALSE);
     Sync_AddPrior(lockPtr);
     Sync_AddPrior(lockPtr);
 #endif
