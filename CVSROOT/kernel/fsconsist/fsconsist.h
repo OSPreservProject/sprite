@@ -37,6 +37,8 @@
  *				at the same time.
  *	FSCONSIST_WRITE_BACK_ATTRS	Write back the cached attributes.
  *	FSCONSIST_DEBUG	Forces machine into debugger
+ *	FSCONSIST_MIGRATION	Consistency operation is due to migration
+ *				(for statistics purposes).
  */
 
 #define	FSCONSIST_WRITE_BACK_BLOCKS		0x01
@@ -44,7 +46,8 @@
 #define	FSCONSIST_DELETE_FILE			0x04
 #define	FSCONSIST_CANT_CACHE_NAMED_PIPE		0x08
 #define	FSCONSIST_WRITE_BACK_ATTRS		0x10
-#define FSCONSIST_DEBUG		0x100
+#define FSCONSIST_DEBUG				0x100
+#define	FSCONSIST_MIGRATION			0x200
 
 /*
  * The client use state needed to allow remote client access and to
