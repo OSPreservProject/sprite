@@ -392,7 +392,7 @@ typedef struct {
  */
 
 extern void		DevZ8530Activate(void *ptr);
-extern void		DevZ8530Interrupt(ClientData	clientData);
+extern Boolean		DevZ8530Interrupt(ClientData	clientData);
 extern int		DevZ8530RawProc(void *ptr, int operation, 
 				int inBufSize, char *inBuffer, int outBufSize,
 				char *outBuffer);
