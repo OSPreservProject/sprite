@@ -182,7 +182,9 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
 	objInfoPtr->codeSize -= excess;
 	objInfoPtr->bssLoadAddr = objInfoPtr->codeLoadAddr + execPtr->code +
 		execPtr->data;
-	printf("excess = %x\n", excess);
+	if (debugProcStubs) {
+	    printf("excess = %x\n", excess);
+	}
 #endif
 
 	objInfoPtr->bssSize = execPtr->bss;
