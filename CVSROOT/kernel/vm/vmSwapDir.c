@@ -26,9 +26,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
-#include "vmInt.h"
 #include "fs.h"
 #include "sync.h"
+#include "vmSwapDir.h"
 
 static Sync_Lock vmSwapDirLock = Sync_LockInitStatic("vmSwapDirLock");
 #define LOCKPTR &vmSwapDirLock
@@ -56,8 +56,10 @@ static Boolean reopenInProgress = FALSE;
  *
  * Vm_OpenSwapDirectory --
  *
- *	Open the swap directory for this machine.  This is needed for 
- *	recovery.  This is called periodically until it successfully opens
+ *	Open the swap directory for this machine.  This is used to
+ *	optimize naming operations on the swap file, and, more importantly,
+ *	this open directory gives VM a handle on which to wait for recovery.
+ *	This routine will retry periodically until it successfully opens
  *	the swap directory.  This handles multiple invocations, and it
  *	takes care of closing the existing stream to the directory
  *	if needed.
@@ -132,7 +134,7 @@ Vm_OpenSwapDirectory(data, callInfoPtr)
  * ----------------------------------------------------------------------------
  */
 void
-VmRepenSwapDirectory()
+VmReopenSwapDirectory()
 {
     Fs_Stream streamPtr;
     LOCK_MONITOR;
@@ -163,7 +165,7 @@ VmRepenSwapDirectory()
 Fs_Stream *
 VmGetSwapStreamPtr()
 {
-    Fs_Stream streamPtr;
+    Fs_Stream *streamPtr;
     LOCK_MONITOR;
     streamPtr = vmSwapStreamPtr;
     if (streamPtr != (Fs_Stream *)NIL) {
