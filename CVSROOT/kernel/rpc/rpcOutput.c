@@ -100,7 +100,6 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 {
     Net_Route		*routePtr;
     ReturnStatus	status;
-    Boolean		newVersion = FALSE;
 #ifdef PRINT_PACKETS
     if (rpcDumpPackets) {
 	register unsigned short *shortPtr;
@@ -136,12 +135,10 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
     /* 
      * Find a route to the host. 
      */
-    routePtr = Net_IDToRoute(spriteID, 0, TRUE, mutexPtr, 0);
+    routePtr = Net_IDToRoute(spriteID, 0, TRUE, mutexPtr, 
+		    rpcHdrPtr->paramSize + rpcHdrPtr->dataSize);
     if (routePtr == (Net_Route *) NIL) {
 	return RPC_INTERNAL_ERROR;
-    }
-    if (routePtr->interPtr->netType == NET_NETWORK_ULTRA) {
-	newVersion = TRUE;
     }
     /*
      * Check to see if we have to fragment.   Note that we pack the first
@@ -149,7 +146,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
      * 1K of data.  If we fragment, however, we break things on 1K boundaries.
      */
     if (rpcHdrPtr->paramSize + rpcHdrPtr->dataSize >
-	routePtr->maxBytes - sizeof(RpcHdr)) {
+	routePtr->maxPacket - sizeof(RpcHdr)) {
 	if (rpcHdrPtr->paramSize > RPC_MAX_PARAMSIZE) {
 	    return(RPC_PARAMS_TOOBIG);
 	} else if (rpcHdrPtr->dataSize > RPC_MAX_DATASIZE) {
@@ -191,14 +188,14 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		 * for best throughput.
 		 */
 		if (paramSize) {
-		    plen = (routePtr->maxBytes - sizeof(RpcHdr));
+		    plen = (routePtr->maxPacket - sizeof(RpcHdr));
 		    plen = (plen > paramSize ? paramSize : plen);
 		    paramSize -= plen;
 		} else {
 		    plen = 0;
 		}
 		if (dataSize) {
-		    dlen = (routePtr->maxBytes - sizeof(RpcHdr) - plen);
+		    dlen = (routePtr->maxPacket - sizeof(RpcHdr) - plen);
 		    dlen = (dlen > dataSize ? dataSize : dlen);
 		    dataSize -= dlen;
 		} else {
@@ -326,26 +323,14 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	    }
 	}
     } else {
-	RpcHdrNew		*newHdrPtr;
 	/*
 	 * No fragmenting.
 	 */
 	rpcHdrPtr->numFrags = 0;
 	rpcHdrPtr->paramOffset = 0;
 	rpcHdrPtr->dataOffset = 0;
-	if (newVersion) {
-	    newHdrPtr = (RpcHdrNew *) rpcHdrPtr;
-	    newHdrPtr->paramStart = sizeof(RpcHdrNew);
-	    newHdrPtr->dataStart = sizeof(RpcHdrNew) + newHdrPtr->paramSize;
-	    newHdrPtr->version = rpc_NativeVersionNew;
-	    message->rpcHdrBuffer.length = sizeof(RpcHdrNew);
-	} else {
-	    /*
-	     * Delete this once we get rid of newVersion.
-	     */
-	    rpcHdrPtr->version = rpc_NativeVersion;
-	    message->rpcHdrBuffer.length = sizeof(RpcHdr);
-	}
+	rpcHdrPtr->version = rpc_NativeVersion;
+	message->rpcHdrBuffer.length = sizeof(RpcHdr);
 	if ((rpcHdrPtr->flags & RPC_TYPE) == RPC_ACK) {
 	    /*
 	     * Don't disturb the fragment mask.

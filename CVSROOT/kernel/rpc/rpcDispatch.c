@@ -125,8 +125,7 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	Net_Reset(interPtr);
 	return;
     }
-    if (rpcHdrPtr->version == rpc_SwappedVersion ||
-	rpcHdrPtr->version == rpc_SwappedVersionNew) {
+    if (rpcHdrPtr->version == rpc_SwappedVersion) {
 	/*
 	 * Byte swap the packet header and the parameter block.
 	 */
@@ -134,8 +133,7 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	    printf("Warning: Rpc_Dispatch failed byte-swap.\n");
 	    return;
 	}
-    } else if (rpcHdrPtr->version != rpc_NativeVersion &&
-		rpcHdrPtr->version != rpc_NativeVersionNew) {
+    } else if (rpcHdrPtr->version != rpc_NativeVersion) {
 	/*
 	 * Keep a short list of hosts that aren't talking the
 	 * right version of RPC.  Attempt to print out one message
@@ -314,12 +312,7 @@ RpcScatter(rpcHdrPtr, bufferPtr)
     register Address netBufPtr;		/* A pointer in to network buffer */
     register int length;		/* Copying length */
     int destLength;			/* length of destination buffers */
-    Boolean	newVersion = FALSE;
-    RpcHdrNew	*newHdrPtr = (RpcHdrNew *) rpcHdrPtr;
 
-    if (rpcHdrPtr->version == rpc_NativeVersionNew) {
-	newVersion = TRUE;
-    }
     netBufPtr = (Address)rpcHdrPtr;
 
     /*
@@ -327,11 +320,7 @@ RpcScatter(rpcHdrPtr, bufferPtr)
      */
     length = bufferPtr->rpcHdrBuffer.length;
     bcopy(netBufPtr, bufferPtr->rpcHdrBuffer.bufAddr, length);
-    if (newVersion) {
-	netBufPtr = ((Address) rpcHdrPtr) + newHdrPtr->paramStart;
-    } else {
-	netBufPtr += length;
-    }
+    netBufPtr += length;
     /*
      * Copy the parameter and data areas.  Their sizes are in
      * the RPC header.  Complain if either area is too large.
@@ -352,12 +341,7 @@ RpcScatter(rpcHdrPtr, bufferPtr)
 	}
 	bcopy(netBufPtr, bufferPtr->paramBuffer.bufAddr +
 				     rpcHdrPtr->paramOffset, length);
-	if (!newVersion) {
-	    netBufPtr += rpcHdrPtr->paramSize;
-	}
-    }
-    if (newVersion) {
-	netBufPtr = ((Address) rpcHdrPtr) + newHdrPtr->dataStart;
+	netBufPtr += rpcHdrPtr->paramSize;
     }
     length = rpcHdrPtr->dataSize;
     if (length != 0) {

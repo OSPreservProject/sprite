@@ -29,8 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 int	rpc_NativeVersion = RPC_NATIVE_VERSION;
 int	rpc_SwappedVersion = RPC_SWAPPED_VERSION;
-int	rpc_NativeVersionNew = RPC_NATIVE_VERSION_NEW;
-int	rpc_SwappedVersionNew = RPC_SWAPPED_VERSION_NEW;
 
 /*
  * Constant parameters for the protocol.  The RpcConst structure keeps
@@ -230,8 +228,7 @@ Rpc_Init()
 	if (interPtr == (Net_Interface *) NIL) {
 	    break;
 	}
-	rpc_SpriteID = Net_AddrToID(interPtr->netType, NET_PROTO_RAW,
-				&interPtr->netAddress[NET_PROTO_RAW]);
+	rpc_SpriteID = Net_AddrToID(&interPtr->netAddress[NET_PROTO_RAW]);
 	if (rpc_SpriteID > 0) {
 	    break;
 	}

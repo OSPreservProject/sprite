@@ -301,7 +301,7 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
      * This is rather simple minded.
      */
     if (chanPtr->constPtr == (RpcConst *)NIL) {
-	Net_Route *routePtr = Net_IDToRoute(serverID, 0, FALSE, 
+	Net_Route *routePtr = Net_IDToRoute(serverID, -1, FALSE, 
 				(Sync_Semaphore *) NIL, 0);
 	if (routePtr != (Net_Route *)NIL &&
 	    routePtr->protocol == NET_PROTO_INET) {
