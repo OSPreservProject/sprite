@@ -340,7 +340,8 @@ NetDoArp(routePtr, mutexPtr, command, gatherPtr, packetPtr)
 	    }
 	    arpStatistics.numRevArpRequests++;
 	}
-	(interPtr->output)(interPtr, (Address) &etherHdr, gatherPtr, 1);
+	(void) (interPtr->output)(interPtr, (Address) &etherHdr, gatherPtr, 1, 
+		    FALSE, (ReturnStatus *) NIL);
 
 	arp.state |= ARP_IN_TIMEOUT_QUEUE ;
 	arp.timeout.routine = Net_ArpTimeout;
@@ -746,7 +747,8 @@ NetArpOutput(interPtr, destEtherAddrPtr, etherType, requestPtr)
     gatherPtr->mutexPtr = (Sync_Semaphore *) NIL;
 
     arpStatistics.numRevArpReplies++;
-    (interPtr->output)(interPtr, (Address) etherHdrPtr, gatherPtr, 1);
+    (void) (interPtr->output)(interPtr, (Address) etherHdrPtr, gatherPtr, 1, 
+	FALSE, (ReturnStatus *) NIL);
 
     UNLOCK_MONITOR;
     return;
