@@ -61,6 +61,8 @@
  *		between it and the server process for the pseudo device.
  *	FS_RMT_PSEUDO_STREAM	As above, but when the server is remote.
  *	FS_PFS_CONTROL_STREAM	Control stream for pseudo-filesystems.
+ *	FS_PFS_NAMING_STREAM	The request-response stream used for naming
+ *				operations in a pseudo-filesystem.
  * The following streams are not implemented
  *	FS_REMOTE_NFS_STREAM	NFS access implemented in kernel.
  *	FS_REMOTE_UNIX_STREAM	For files on the old hybrid unix/sprite server.
@@ -81,11 +83,12 @@
 #define FS_LCL_PSEUDO_STREAM		9
 #define FS_RMT_PSEUDO_STREAM		10
 #define FS_PFS_CONTROL_STREAM		11
+#define FS_PFS_NAMING_STREAM		12
 
-#define FS_RMT_NFS_STREAM		12
-#define FS_LCL_NAMED_PIPE_STREAM	13
-#define FS_RMT_NAMED_PIPE_STREAM	14
-#define FS_RMT_UNIX_STREAM		15
+#define FS_RMT_NFS_STREAM		13
+#define FS_LCL_NAMED_PIPE_STREAM	14
+#define FS_RMT_NAMED_PIPE_STREAM	15
+#define FS_RMT_UNIX_STREAM		16
 
 
 /*
@@ -263,7 +266,7 @@ extern Boolean fsShouldSyncDisks;
 extern  Boolean fsInitialized;		
 
 /*
- * The directory that temporary file will live in.
+ * The directory that temporary files will live in.
  */
 extern	int	fsTmpDirNum;
 
