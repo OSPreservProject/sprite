@@ -59,23 +59,6 @@ int rpcMaxServerAge = 10;
 Rpc_Histogram *rpcServiceTime[RPC_LAST_COMMAND+1];
 Boolean rpcServiceTiming = TRUE;
 
-/*
- * A boot time stamp is kept for each client to detect reboots.
- */
-int		rpcBootIds[NET_NUM_SPRITE_HOSTS];
-
-/*
- * Struct for list of services to notify that a client has rebooted.
- */
-
-typedef struct {
-    List_Links	links;
-    void	(*proc)();
-    ClientData	clientData;
-} NotifyElement;
-
-List_Links	rpcNotifyList;
-
 
 /*
  *----------------------------------------------------------------------
@@ -107,7 +90,6 @@ Rpc_Server()
     register ReturnStatus error;	/* Return error code */
     Rpc_Storage storage;		/* Specifies storage of request and 
 					 * reply buffers passed into the stubs*/
-    NotifyElement	*notifyPtr;
 
     srvPtr = RpcServerInstall();
     if (srvPtr == (RpcServerState *)NIL) {
@@ -158,37 +140,17 @@ Rpc_Server()
 	/*
 	 * Allow a bootID of zero for stateless boottime RPCs like
 	 * get time of day.  Otherwise check this generation stamp
-	 * to detect reboots by clients.
+	 * to detect reboots by clients.  RpcHostAlive will block
+	 * us until the recovery actions triggered by a reboot are done.
 	 */
 	if (rpcHdrPtr->bootID != 0) {
-	    if (rpcBootIds[rpcHdrPtr->clientID] != rpcHdrPtr->bootID) {
-		/*
-		 * Flick the client's state from dead to alive to
-		 * trigger action by interested services.
-		 */
-		RpcHostDead(srvPtr->clientID);
-		/*
-		 * Until recovery is in place, still use this old
-		 * method to notify all interested services.
-		 */
-/* Sys_Printf("Client %d just rebooted\n", rpcHdrPtr->clientID); */
-		LIST_FORALL(&rpcNotifyList, (List_Links *) notifyPtr) {
-		    (notifyPtr->proc)(rpcHdrPtr->clientID, 
-				      notifyPtr->clientData);
-		}
-		rpcBootIds[rpcHdrPtr->clientID] = rpcHdrPtr->bootID;
-	    }
-	    /*
-	     * Use regular message traffic to note that a host is up.
-	     */
-	    RpcHostAlive(srvPtr->clientID);
+	    RpcHostAlive(srvPtr->clientID, rpcHdrPtr->bootID, FALSE);
 	}
 	/*
 	 * Check the procedure ID and branch to the service routine.
-	 * No MASTER_LOCK is held during the service routine's exectution.
+	 * No locks are held during the service routine's exectution.
 	 */
 	command = rpcHdrPtr->command;
-
 	if (command <= 0 || command > RPC_LAST_COMMAND) {
 	    error = RPC_INVALID_RPC;
 	} else {
@@ -208,8 +170,8 @@ Rpc_Server()
 	    RPC_SERVICE_TIMING_END(command, &histTime);
 	}
 	/*
-	 * Fix this to always return error so that stubs don't have
-	 * to call Rpc_Reply.
+	 * Return an error reply for the stubs.  Note: We could send all
+	 * replies if the stubs were all changed...
 	 */
 	if (error != SUCCESS) {
 	    if (error == RPC_NO_REPLY) {
@@ -718,11 +680,7 @@ RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr)
     rpcHdrPtr->command = requestHdrPtr->command;
     rpcHdrPtr->serverHint = srvPtr->index;
     rpcHdrPtr->ID = requestHdrPtr->ID;
-    /*
-     * Perhaps we should send the client our boot ID...
-     * now we are just bouncing its boot ID back.
-     */
-    rpcHdrPtr->bootID = requestHdrPtr->bootID;
+    rpcHdrPtr->bootID = rpcBootID;
     /*
      * This field should go away, but the UNIX file server depends on it now.
      */
@@ -900,34 +858,4 @@ RpcProbe(srvPtr)
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0,
 					 (int *)NIL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Rpc_RebootNotify --
- *
- *	Add the given function and client data to the list of call backs when
- *	clients reboot.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Entry added to notify list.
- *
- *----------------------------------------------------------------------
- */
-void
-Rpc_RebootNotify(proc, clientData)
-    void	(*proc)();
-    ClientData	clientData;
-{
-    register	NotifyElement	*notifyPtr;
-
-    notifyPtr = (NotifyElement *) Mem_Alloc(sizeof(NotifyElement));
-    notifyPtr->proc = proc;
-    notifyPtr->clientData = clientData;
-    List_InitElement((List_Links *) notifyPtr);
-    List_Insert((List_Links *) notifyPtr, LIST_ATREAR(&rpcNotifyList));
 }
