@@ -440,14 +440,14 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 
 	    ptr = (int *) (ioctlPtr->inBuffer + 
 				    sizeof(Ioc_RepositionArgs));
-	    *ptr = streamPtr->offset;
+	    *ptr++ = streamPtr->offset;
 	    status = Fs_GetAttrStream(streamPtr, &attrs);
 	    if (status == SUCCESS) {
-		*ptr = attrs.size;
+		*ptr++ = attrs.size;
 	    } else {
-		*ptr = -1;
+		*ptr++ = -1;
 	    }
-	    *ptr = ((streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8);
+	    *ptr++ = ((streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8);
 	    streamPtr->hdr.flags &= ~FSUTIL_RW_FLAGS;
 	    ioctlPtr->inBufSize += sizeof(int) * 3;
 #endif

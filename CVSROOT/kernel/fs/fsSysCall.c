@@ -1773,7 +1773,7 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 	 * current offset.
 	 */
 	ioctl.inBuffer  = localInBuffer = (Address) 
-				malloc(inBufSize + sizeof(int));
+				malloc(inBufSize + 3 * sizeof(int));
 #else
 	ioctl.inBuffer  = localInBuffer = (Address) malloc(inBufSize);
 #endif
