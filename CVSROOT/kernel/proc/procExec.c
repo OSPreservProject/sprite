@@ -40,6 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "prof.h"
 #include "file.h"
+#include "fsutil.h"
 #ifdef notdef
 #include "dbg.h"
 #endif
@@ -1513,18 +1514,19 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
      */
     if (notFound && ((unsigned)heapEnd & (vm_PageSize-1)) != 0) {
 	if (realCode) {
-	    printf("SetupVM: Warning: heap is unaligned for ZMAGIC file\n");
-	    printf("Program should be relinked.\n");
-	    printf("heapEnd = %x, bssFirstPage = %x, page size =%x\n",
-		    heapEnd, execInfoPtr->bssFirstPage, vm_PageSize);
-	}
-	status = Vm_PageIn((execInfoPtr->bssFirstPage-1)*vm_PageSize, FALSE);
-	if (status != SUCCESS) {
-	    printf("SetupVM: heap prefetch failure\n");
-	    return FALSE;
-	}
-	bzero((char *)heapEnd,
-		vm_PageSize-((unsigned)heapEnd&(vm_PageSize-1)));
+	    printf("SetupVM: Warning: Program %s has unaligned heap %s\n",
+		    Fsutil_HandleName(&codeFilePtr->hdr),
+		    "and should be relinked");
+	} else {
+	    status = Vm_PageIn((execInfoPtr->bssFirstPage-1)*vm_PageSize,
+		    FALSE);
+	    if (status != SUCCESS) {
+		printf("SetupVM: heap prefetch failure\n");
+		return FALSE;
+	    }
+	    bzero((char *)heapEnd,
+		    vm_PageSize-((unsigned)heapEnd&(vm_PageSize-1)));
+	    }
     }
     return(TRUE);
 }
