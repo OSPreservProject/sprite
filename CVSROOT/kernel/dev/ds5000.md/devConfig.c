@@ -38,7 +38,14 @@ DevConfigController devCntrlr[] = {
    /* Name	Slot	ID	InitProc. */
     {"SCSI#0",   5, 0, DevSCSIC90Init},
     {"SCSI#1", 0, 1, DevSCSIC90Init},
-    {"SCSI#2", 1, 2, DevSCSIC90Init},
+/*
+ * This is commented out because when the device module checks this
+ * slot it makes the FDDI adapter go crazy.  There should be more
+ * interaction among the modules so that when something is installed
+ * in a slot other modules won't bother trying.
+ *
+ *    {"SCSI#2", 1, 2, DevSCSIC90Init},
+ */
     {"SCSI#3", 2, 3, DevSCSIC90Init},
 };
 int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);

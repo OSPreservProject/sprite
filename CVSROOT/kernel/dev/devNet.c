@@ -232,6 +232,9 @@ DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr)
 	case NET_NETWORK_ULTRA:
 	    maxSize = NET_ULTRA_MAX_BYTES;
 	    break;
+	case NET_NETWORK_FDDI:
+	    maxSize = NET_FDDI_MAX_BYTES;
+	    break;
 	default:
 	    printf("DevNet_FsOpen: unknown net type %d\n", netType);
 	    return DEV_NO_DEVICE;
@@ -705,6 +708,9 @@ ProtocolFromPacket(packetPtr, netType, protoPtr)
 	case NET_NETWORK_ULTRA:
 	    protocol = 0;
 	    break;
+	case NET_NETWORK_FDDI:
+	    protocol = 0;  
+	    break;
 	default:
 	    status = FAILURE;
     }
@@ -751,7 +757,14 @@ ProtocolFromDevice(unitProto, interPtr, protoPtr)
 	    {0, /* Doesn't match any. */
 	     0,
 	     0,
-	     0}
+	     0},
+	/* NET_NETWORK_FDDI */
+	    {0, /* Doesn't match any. */
+	     0,
+	     0,
+	     0,
+             0,
+             0}
      };
 
     if (unitProto < 0 || unitProto >= DEV_NET_NUM_PROTO) {
