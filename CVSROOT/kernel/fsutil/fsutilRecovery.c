@@ -525,6 +525,7 @@ OkToScavenge(recovPtr)
 	okToScavenge = TRUE;
     }
     UNLOCK_MONITOR;
+    return(okToScavenge);
 }
 
 /*
