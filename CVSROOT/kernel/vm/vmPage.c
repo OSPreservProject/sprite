@@ -479,7 +479,7 @@ VmPutOnFreePageList(pfNum)
 	/*
 	 * Page frame number 0 is special because a page frame of 0 on a
 	 * user page fault has special meaning.  Thus if the kernel decides
-	 * to free page frame 0 then we can't make this page elgible for user
+	 * to free page frame 0 then we can't make this page eligible for user
 	 * use.  Instead of throwing it away put it onto the reserve list
 	 * because only the kernel uses pages on the reserve list.
 	 */
@@ -1055,7 +1055,7 @@ VmPageAllocate(virtAddrPtr, flags)
  *
  * Side effects:
  *     	The allocate list is modified and the  dirty list may be modified.
- *	In addition the appropriate core map entry is intialized.
+ *	In addition the appropriate core map entry is initialized.
  *
  * ----------------------------------------------------------------------------
  */
@@ -1548,7 +1548,7 @@ Vm_PageIn(virtAddr, protFault)
     FinishPage(&transVirtAddr, ptePtr);
 
     /*
-     * Now check to see if the read suceeded.  If not destroy all processes
+     * Now check to see if the read succeeded.  If not destroy all processes
      * that are sharing the code segment.
      */
     if (status != SUCCESS) {
@@ -2088,7 +2088,7 @@ PageOut(data, callInfoPtr)
  *
  *	This routine does two things.  First it puts the page pointed to by
  *	*corePtrPtr (if any) onto the front of the allocate list and wakes
- *	up any dieing processes waiting for this page to be cleaned.
+ *	up any dying processes waiting for this page to be cleaned.
  *	It then takes the first page off of the dirty list and returns a 
  *	pointer to it.  Before returning the pointer it clears the 
  *      modified bit of the page frame.
@@ -2362,7 +2362,7 @@ Vm_Clock(data, callInfoPtr)
 
 	/*
 	 * Decrement the number of traces per iteration of the clock.  If we
-	 * are at 0 then run the clock for one interation.
+	 * are at 0 then run the clock for one iteration.
 	 */
 	vmTracesToGo--;
 	if (vmTracesToGo > 0) {
