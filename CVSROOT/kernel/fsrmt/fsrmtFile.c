@@ -901,6 +901,15 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 		    / FS_BLOCK_SIZE > blockNum) {
 		toRead = (blockNum + 1) * FS_BLOCK_SIZE - readPtr->offset;
 	    }
+	    /*
+	     * NOTE:  After SOSP stats are taken, fix the bytesRead counter
+	     * to include bytes fetched for VM from this Fscache_FetchBlock
+	     * call.  Update readAccesses, readHits and readMisses accordingly.
+	     * To see how to do this, look at how the counters are updated
+	     * in Fscache_Read after the call to Fscache_FetchBlock.  We can't
+	     * do this before the SOSP stats are done, since the postprocessors
+	     * already know to adjust for this problem.
+	     */
 	    Fscache_FetchBlock(&handlePtr->cacheInfo, blockNum,
 		    FSCACHE_DATA_BLOCK, &blockPtr, &found);
 	    if (found) {
