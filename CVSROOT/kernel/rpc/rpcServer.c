@@ -703,7 +703,8 @@ Rpc_ErrorReply(srvToken, error)
  * RpcSrvInitHdr --
  *
  *	Initialize the header of a server message from fields
- *	in the clients request message.
+ *	in the clients request message.  This relies on initialization
+ *	of unchanging fields inside RpcBufferInit.
  *
  * Results:
  *	None.
@@ -720,14 +721,11 @@ RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr)
     RpcHdr		*rpcHdrPtr;	/* header of outgoing message */
     RpcHdr		*requestHdrPtr;	/* header of client's request */
 {
-    rpcHdrPtr->version = rpc_NativeVersion;
-    rpcHdrPtr->clientID = requestHdrPtr->clientID;
     rpcHdrPtr->serverID = rpc_SpriteID;
+    rpcHdrPtr->clientID = requestHdrPtr->clientID;
     rpcHdrPtr->channel = requestHdrPtr->channel;
-    rpcHdrPtr->serverHint = srvPtr->index;
     rpcHdrPtr->bootID = rpcBootID;
     rpcHdrPtr->ID = requestHdrPtr->ID;
-    rpcHdrPtr->delay = rpcMyDelay;
     rpcHdrPtr->numFrags = 0;
     rpcHdrPtr->fragMask = 0;
     rpcHdrPtr->command = requestHdrPtr->command;
