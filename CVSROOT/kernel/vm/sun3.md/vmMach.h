@@ -140,4 +140,12 @@ extern	void		VmMach_FlushPage();
 
 extern	ReturnStatus	VmMach_Cmd();
 
+#ifdef sun3
+/*
+ * Network mapping routines for the Sun 3.
+ */
+extern	Address	VmMach_NetMemAlloc();
+extern	void	VmMach_NetMapPacket();
+#endif
+
 #endif _VMMACH
