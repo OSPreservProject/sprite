@@ -70,6 +70,15 @@ DevScsiAttachDevice(devicePtr, insertProc)
 	handle = (ScsiDevice *) NIL;
     } else {
 	handle = (devScsiAttachProcs[hbaType])(devicePtr,insertProc);
+	/*
+	 * The attach routines bzero the handle and only fill in some
+	 * of the fields.  The rest of the kernel assumes that errorProc
+	 * is either points to a routine or it is NIL.  Take care of it
+	 * here.
+	 */
+	if (handle->errorProc == (ReturnStatus (*)()) 0) {
+	    handle->errorProc = (ReturnStatus (*)()) NIL;
+	}
     }
     /*
      * If the inquiry data doesn't exists for this device yet send the
