@@ -45,6 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTMR.h"
 #include "devfb.h"
 #include "devVMElink.h"
+#include "atc.h"
 #include "devSmem.h"
 #include "devXbus.h"
 
@@ -157,6 +158,7 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_GRAPHICS, DevFBOpen, NullProc, NullProc,
                    DevFBIOControl, DevFBClose, NullProc,
                    DEV_NO_ATTACH_PROC, NoDevice, DevFBMMap},
+
     /*
      * /dev/smem
      */
@@ -175,18 +177,19 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_VMELINK, DevVMElinkOpen, DevVMElinkRead, DevVMElinkWrite,
 	 	  DevVMElinkIOControl, NullProc, NullProc,
-	 	  DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+	 	  DEV_NO_ATTACH_PROC, NoDevice},
     /*
-     * No such device on the sun4.
+     * These devices don't exist on a sun4.
      */
     {17, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
 		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
     /*
      * The following device number is unused.
      */
-    {DEV_PLACEHOLDER_4, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc, 
-		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    {DEV_ATC, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, NullProc, DevATCDiskAttach,
+                    DevRawBlockDevReopen, NullProc},
     /*
      * The following device number is unused.
      */

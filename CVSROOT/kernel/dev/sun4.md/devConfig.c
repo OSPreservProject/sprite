@@ -35,6 +35,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "jaguar.h"
 #include "devTMR.h"
 #include "devVMElink.h"
+#include "atcreg.h"
 
 /*
  * The controller configuration table.
@@ -53,6 +54,7 @@ DevConfigController devCntrlr[] = {
     { "Jaguar3", 0xc000, DEV_VME_D16A16, 3, DevJaguarInit, 217, DevJaguarIntr},
     { "tmr0", 0xFFD14000, DEV_OBIO, 0, Dev_TimerProbe, 0, ((Boolean (*)())0)},
     { "VMElink", 0x0100, DEV_VME_D16A16, 0,DevVMElinkInit, 218,DevVMElinkIntr},
+    { "ATC1",    0x2040, DEV_VME_D16A16, 1, DevATCInit,    110, DevATCIntr},
 };
 int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
 
