@@ -296,6 +296,12 @@ Proc_ResumeMigProc(pc)
 
     procPtr = Proc_GetCurrentProc();
     Proc_Lock(procPtr);
+    if (procPtr->genFlags & PROC_EVICTING) {
+	/*
+	 * Just to make sure we migrate back home ASAP...
+	 */
+	Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0);
+    }
     if (procPtr->genFlags & PROC_REMOTE_EXEC_PENDING) {
 	ProcDoRemoteExec(procPtr);
 	/*
@@ -902,9 +908,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     /*
      * Update statistics.
      */
-#ifndef CLEAN
-    proc_MigStats.foreign++;
-#endif /* CLEAN */   
+    PROC_MIG_INC_STAT(foreign);
 
     if (proc_MigDebugLevel > 3) {
 	printf("ProcRemoteFork returning status %x.\n", status);
@@ -958,9 +962,10 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     /*
      * Update statistics.
      */
-#ifndef CLEAN
-    proc_MigStats.foreign--;
-#endif /* CLEAN */   
+    PROC_MIG_DEC_STAT(foreign);
+    if (procPtr->genFlags & PROC_EVICTING) {
+	ProcMigEvictionComplete();
+    }
 
 
     status = Recov_IsHostDown(procPtr->peerHostID);

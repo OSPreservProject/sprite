@@ -50,7 +50,6 @@ static	Sync_Condition	migrateCondition;
 static	Sync_Condition	evictCondition;
 static	Sync_Lock	migrateLock = Sync_LockInitStatic("Proc:migrateLock");
 #define	LOCKPTR &migrateLock
-static  Boolean		evictionInProgress = FALSE;
 static  Time		timeEvictionStarted;
 
 int proc_MigDebugLevel = 0;
@@ -118,10 +117,6 @@ static ENTRY void    AddMigrateTime();
 static ENTRY void    AccessStats();
 static ENTRY Boolean EvictionStarted();
 static ENTRY void    WaitForEviction();
-static ENTRY void    EvictionComplete();
-
-#define INC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, 1)
-#define DEC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, -1)
 
 
 #ifdef DEBUG
@@ -397,7 +392,7 @@ Proc_Migrate(pid, hostID)
 	Proc_Unlock(procPtr);
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    INC_STAT(errors);
+	    PROC_MIG_INC_STAT(errors);
 	}
 #endif /* CLEAN */
 	return(status);
@@ -692,9 +687,8 @@ Proc_MigrateTrap(procPtr)
     Proc_Lock(procPtr);
 
     procPtr->genFlags = (procPtr->genFlags &
-			 ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING|
-			   PROC_MIG_ERROR)) |
-			       PROC_MIGRATION_DONE;
+			 ~(PROC_REMOTE_EXEC_PENDING| PROC_MIG_ERROR)) |
+			     PROC_MIGRATION_DONE;
     Proc_Unlock(procPtr);
 
 
@@ -726,7 +720,17 @@ Proc_MigrateTrap(procPtr)
 	Proc_RemoveMigDependency(procPtr->processID);
     }
 
-    
+
+    /*
+     * It's finally safe to indicate that the process isn't in the middle
+     * of migration.  For example, anyone waiting to send a signal to the
+     * process should wait until this point so the process is executing
+     * on the other host.
+     */
+    Proc_Lock(procPtr);
+    procPtr->genFlags = procPtr->genFlags & ~PROC_MIGRATING;
+    Proc_Unlock(procPtr);
+
     ProcMigWakeupWaiters();
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
@@ -766,35 +770,29 @@ Proc_MigrateTrap(procPtr)
     Proc_Unlock(procPtr);
     
     if (foreign) {
-	DEC_STAT(foreign);
+	PROC_MIG_DEC_STAT(foreign);
+	if (evicting) {
+	    ProcMigEvictionComplete();
+	}
+#ifndef CLEAN
 	if (proc_MigDoStats) {
 	    if (evicting) {
-#ifndef CLEAN
-		if (proc_MigDoStats) {
-		    INC_STAT(evictions);
-		}
-#endif /* CLEAN */
-		if (proc_MigStats.foreign == 0) {
-		    EvictionComplete();
-		}
+		PROC_MIG_INC_STAT(evictions);
 	    } else {
-#ifndef CLEAN
-		if (proc_MigDoStats) {
-		    INC_STAT(migrationsHome);
-		}
-#endif /* CLEAN */
+		PROC_MIG_INC_STAT(migrationsHome);
 	    }
 	}
+#endif /* CLEAN */
 	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
     } else {
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    INC_STAT(remote);
-	    INC_STAT(exports);
+	    PROC_MIG_INC_STAT(remote);
+	    PROC_MIG_INC_STAT(exports);
 	    if (exec) {
-		INC_STAT(execs);
+		PROC_MIG_INC_STAT(execs);
 	    }
-	    INC_STAT(hostCounts[hostID]);
+	    PROC_MIG_INC_STAT(hostCounts[hostID]);
 	}
 #endif /* CLEAN */
 	Sched_ContextSwitch(PROC_MIGRATED);
@@ -825,7 +823,7 @@ Proc_MigrateTrap(procPtr)
     Sig_SendProc(procPtr, SIG_KILL, (int) status);
 #ifndef CLEAN
     if (proc_MigDoStats) {
-	INC_STAT(errors);
+	PROC_MIG_INC_STAT(errors);
     }
 #endif /* CLEAN */
     Proc_Unlock(procPtr);
@@ -872,17 +870,17 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
      * Update statistics.
      */
     if (procPtr->genFlags & PROC_FOREIGN) {
-	INC_STAT(foreign);
+	PROC_MIG_INC_STAT(foreign);
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    INC_STAT(imports);
+	    PROC_MIG_INC_STAT(imports);
 	}
 #endif /* CLEAN */
     } else {
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    INC_STAT(returns);
-	    DEC_STAT(remote);
+	    PROC_MIG_INC_STAT(returns);
+	    PROC_MIG_DEC_STAT(remote);
 	}
 #endif /* CLEAN */
     }
@@ -2235,7 +2233,7 @@ Proc_DestroyMigratedProc(pidData)
 	 */
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    DEC_STAT(remote);
+	    PROC_MIG_DEC_STAT(remote);
 	}
 #endif /* CLEAN */   
 
@@ -2273,12 +2271,12 @@ ReturnStatus
 Proc_EvictForeignProcs()
 {
     ReturnStatus status;
-    int numEvicted;
+    int numEvicted;		/*  Not used */
 
 #ifndef CLEAN
-	if (proc_MigDoStats) {
-	    INC_STAT(evictCalls);
-	}
+    if (proc_MigDoStats) {
+	PROC_MIG_INC_STAT(evictCalls);
+    }
 #endif /* CLEAN */
     if (proc_MigStats.foreign == 0) {
 	return(SUCCESS);
@@ -2295,15 +2293,7 @@ Proc_EvictForeignProcs()
     }
     status = Proc_DoForEveryProc(Proc_IsMigratedProc, Proc_EvictProc, TRUE,
  				 &numEvicted);
-    if (status == SUCCESS && numEvicted > 0) {
-	WaitForEviction(TRUE);
-    } else {
-	/*
-	 * False alarm: nothing got evicted.
-	 */
-	WaitForEviction(FALSE);
-    }
-   
+    WaitForEviction();
     return(status);
 }
 
@@ -2370,8 +2360,10 @@ Proc_EvictProc(pid)
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	return (PROC_INVALID_PID);
     }
-    if (procPtr->genFlags & PROC_FOREIGN) {
+    if ((procPtr->genFlags & PROC_FOREIGN) &&
+	!(procPtr->genFlags & (PROC_DONT_MIGRATE | PROC_EVICTING))) {
 	procPtr->genFlags |= PROC_EVICTING;
+	PROC_MIG_INC_STAT(evictionsInProgress);
 	status = Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0);
     }
     Proc_Unlock(procPtr);
@@ -2401,7 +2393,7 @@ EvictionStarted()
 {
     LOCK_MONITOR;
 
-    if (evictionInProgress) {
+    if (proc_MigStats.evictionsInProgress > 0) {
 	UNLOCK_MONITOR;
 	return(TRUE);
     }
@@ -2409,8 +2401,7 @@ EvictionStarted()
     if (proc_MigDoStats) {
 	Timer_GetTimeOfDay(&timeEvictionStarted, (int *) NIL, (Boolean *) NIL);
     }
-#endif /* CLEAN */   
-    evictionInProgress = TRUE;
+#endif /* CLEAN */
     
     UNLOCK_MONITOR;
     return(FALSE);
@@ -2422,9 +2413,7 @@ EvictionStarted()
  * WaitForEviction --
  *
  *	Monitored procedure to record eviction times after eviction has
- *	completed.  If called with a FALSE argument, then the
- *	evictionInProgress flag is reset because no eviction really
- *	occurred.
+ *	completed.  
  *
  * Results:
  *	None.
@@ -2436,63 +2425,67 @@ EvictionStarted()
  */
 
 static ENTRY void
-WaitForEviction(didEviction)
-    Boolean didEviction;	/* Whether eviction took place. */
+WaitForEviction()
 {
     Time time;
 
     LOCK_MONITOR;
 
-    if (!evictionInProgress) {
-	panic("WaitForEviction: no eviction in progress.\n");
+    if (proc_MigStats.evictionsInProgress == 0) {
 	UNLOCK_MONITOR;
 	return;
     }
-    if (didEviction) {
-	while (proc_MigStats.foreign > 0) {
-	    if (Sync_Wait(&evictCondition, TRUE)) {
-		evictionInProgress = FALSE;
-		UNLOCK_MONITOR;
-		return;
-	    }
+    while (proc_MigStats.evictionsInProgress > 0) {
+	if (Sync_Wait(&evictCondition, TRUE)) {
+	    /*
+	     * Interrupted.  Just give up.
+	     */
+	    proc_MigStats.evictionsInProgress = 0;
+	    UNLOCK_MONITOR;
+	    return;
 	}
-#ifndef CLEAN
-	if (proc_MigDoStats) {
-	    Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
-	    Time_Subtract(time, timeEvictionStarted, &time);
-	    Time_Add(time, proc_MigStats.timeToEvict, &proc_MigStats.timeToEvict);
-	    proc_MigStats.evictsNeeded++;
-	}
-#endif /* CLEAN */   
     }
-    evictionInProgress = FALSE;
-    
+#ifndef CLEAN
+    if (proc_MigDoStats) {
+	Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
+	Time_Subtract(time, timeEvictionStarted, &time);
+	Time_Add(time, proc_MigStats.timeToEvict, &proc_MigStats.timeToEvict);
+	proc_MigStats.evictsNeeded++;
+    }
+#endif /* CLEAN */   
     UNLOCK_MONITOR;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * EvictionComplete --
+ * ProcMigEvictionComplete --
  *
  *	Monitored procedure to signal the process that is recording eviction
- *	statistics.  The caller 
+ *	statistics.  This is done any time an eviction completes. When
+ *	the count of evictions hits zero, we wake up the process waiting for
+ * 	eviction.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Notifies waiting process.
  *
  *----------------------------------------------------------------------
  */
-static ENTRY void
-EvictionComplete()
+ENTRY void
+ProcMigEvictionComplete()
 {
 
     LOCK_MONITOR;
 
-    Sync_Broadcast(&evictCondition);
+    if (proc_MigStats.evictionsInProgress > 0) {
+	proc_MigStats.evictionsInProgress--;
+	if (proc_MigStats.evictionsInProgress == 0) {
+	    Sync_Broadcast(&evictCondition);
+	}
+    }
 
     UNLOCK_MONITOR;
 }
