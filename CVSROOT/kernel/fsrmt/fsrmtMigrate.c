@@ -25,18 +25,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsRmtMigrate.h"
-#include "fsio.h"
-#include "fsconsist.h"
-#include "fspdev.h"
-#include "fsprefix.h"
-#include "fsNameOps.h"
-#include "byte.h"
-#include "rpc.h"
-#include "procMigrate.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fsrmtMigrate.h>
+#include <fsio.h>
+#include <fspdev.h>
+#include <fsprefix.h>
+#include <fsNameOps.h>
+#include <byte.h>
+#include <rpc.h>
+#include <procMigrate.h>
+
+#include <stdio.h>
 
 extern Boolean fsio_MigDebug;
 #define DEBUG( format ) \
@@ -64,7 +66,7 @@ extern Boolean fsio_MigDebug;
  */
 ReturnStatus
 Fsrmt_NotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
-    FsMigInfo	*migInfoPtr;	/* Encapsulated information */
+    Fsio_MigInfo	*migInfoPtr;	/* Encapsulated information */
     int		*flagsPtr;	/* New flags, may have FS_RMT_SHARED bit set */
     int		*offsetPtr;	/* New stream offset */
     int		outSize;	/* Size of returned data, outData */
@@ -75,7 +77,7 @@ Fsrmt_NotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
     FsrmtMigParam		migParam;
 
     storage.requestParamPtr = (Address) migInfoPtr;
-    storage.requestParamSize = sizeof(FsMigInfo);
+    storage.requestParamSize = sizeof(Fsio_MigInfo);
     storage.requestDataPtr = (Address)NIL;
     storage.requestDataSize = 0;
 
@@ -141,7 +143,7 @@ Fsrmt_RpcMigrateStream(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-    register FsMigInfo		*migInfoPtr;
+    register Fsio_MigInfo		*migInfoPtr;
     register Fs_HandleHeader	*hdrPtr;
     register ReturnStatus	status;
     register FsrmtMigrateReply	*migReplyPtr;
@@ -150,7 +152,7 @@ Fsrmt_RpcMigrateStream(srvToken, clientID, command, storagePtr)
     Address    			dataPtr;
     int				dataSize;
 
-    migInfoPtr = (FsMigInfo *) storagePtr->requestParamPtr;
+    migInfoPtr = (Fsio_MigInfo *) storagePtr->requestParamPtr;
 
     hdrPtr = (*fsio_StreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
 	    (&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
