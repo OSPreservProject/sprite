@@ -17,21 +17,24 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "dbg.h"
-#include "dbgInt.h"
-#include "mach.h"
-#include "proc.h"
+#include <sprite.h>
+#include <dbg.h>
+#include <dbgInt.h>
+#include <main.h>
+#include <mach.h>
+#include <proc.h>
 #ifndef FIRST_RUN
-#include "vm.h"
-#include "vmInt.h"
-#include "vmMach.h"
+#include <vm.h>
+#include <vmInt.h>
+#include <vmMach.h>
+#include <vmMachInt.h>
 #endif
-#include "machMon.h"
-#include "net.h"
-#include "netEther.h"
-#include "netInet.h"
-#include "dev.h"
+#include <machMon.h>
+#include <net.h>
+#include <netEther.h>
+#include <netInet.h>
+#include <dev.h>
+#include <devVid.h>
 #include <stdio.h>
 #include <bstring.h>
 #include <string.h>
@@ -106,6 +109,11 @@ static char *exceptionNames[] = DBG_EXECPTION_NAMES ;
 int		machineType;
 
 /*
+ * Whether syslog should remain diverted on continue or not.
+ */
+static Boolean	syslogDiverted = FALSE;
+
+/*
  * Declare global variables.
  */
 int		dbgSfcReg;
@@ -123,6 +131,17 @@ Boolean		dbg_UsingSyslog = FALSE;
 Boolean		dbgCanUseSyslog = TRUE;
 static	   int	oldContext;
 
+
+/* 
+ * Forward declarations:
+ */
+static void DbgCheckNmis _ARGS_((void));
+static char *	TranslateOpcode _ARGS_((Dbg_Opcode opcode));
+static char *	TranslateException _ARGS_((int exception));
+static Boolean	ReadRequest _ARGS_((Boolean timeout));
+static void	SendReply _ARGS_((void));
+static void	GetRequestBytes _ARGS_((int numBytes, Address dest));
+static void	PutReplyBytes _ARGS_((int numBytes, Address src));
 
 
 /*
@@ -143,6 +162,7 @@ static	   int	oldContext;
  *
  * ----------------------------------------------------------------------------
  */
+static void
 DbgCheckNmis()
 {
 #ifdef sun2
@@ -406,7 +426,7 @@ Dbg_InputPacket(packetPtr, packetLength)
  *
  * ----------------------------------------------------------------------------
  */
-Boolean
+static Boolean
 ReadRequest(timeout)
     Boolean	timeout;	/* TRUE if should timeout after waiting a 
 				 * while. */
@@ -507,8 +527,6 @@ PutReplyBytes(numBytes, src)
 static void
 SendReply()
 {
-    void	Dbg_FormatPacket();
-
     {
 	Net_EtherHdr		*etherHdrPtr;
 
@@ -532,11 +550,6 @@ SendReply()
 	}
     }
 }
-
-/*
- * Whether syslog should remain diverted on continue or not.
- */
-static Boolean	syslogDiverted = FALSE;
 
 
 /*
@@ -729,7 +742,6 @@ Dbg_Main(trapType, trapStatePtr)
 		break;
 
 	    case DBG_GET_VERSION_STRING: {
-		char	*SpriteVersion();
 		char	*version;
 
 		version = SpriteVersion();
@@ -1067,6 +1079,10 @@ Dbg_Main(trapType, trapStatePtr)
 		dbg_BeingDebugged = FALSE;
 		done = TRUE;
 		printf("Sprite is now detached from the debugger\r\n");
+		break;
+
+	    case DBG_UNKNOWN:
+		printf("debugger: unrecognized request\n");
 		break;
 	}
 

@@ -20,8 +20,6 @@
 #ifndef _DBGINT
 #define _DBGINT
 
-
-
 /*
  * The following are the registers that are saved when the debugger is
  * called.
@@ -49,9 +47,5 @@ extern	int	dbgInDebugger; 		/* How many levels deep we are in
 					   the debugger. */
 
 extern	int	dbgTraceLevel; 		/* Our trace level. */
-
-extern int Dbg_PacketHdrSize _ARGS_((void));
-
-extern Boolean Dbg_ValidatePacket();
 
 #endif /* _DBGINT */

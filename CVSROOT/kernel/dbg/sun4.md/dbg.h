@@ -20,9 +20,10 @@
 #define _DBG
 
 #ifndef _SPRITE
-#include "sprite.h"
+#include <sprite.h>
 #endif
-#include "kernel/sun4.md/mach.h"
+#include <mach.h>
+#include <user/netInet.h>
 
 /*
  * Variable to indicate that dbg wants a packet.
@@ -259,8 +260,23 @@ typedef struct {
 } StopInfo;
 
 
-extern	void	Dbg_Init();
-extern	void	Dbg_InputPacket();
-extern	Boolean	Dbg_InRange();
+extern	void	Dbg_Init _ARGS_((void));
+extern	void	Dbg_InputPacket _ARGS_((Address packetPtr, int packetLength));
+extern	Boolean	Dbg_InRange _ARGS_((unsigned int addr, int numBytes,
+				    Boolean writeable));
+extern	void	Dbg_Main _ARGS_((int trapType, Mach_RegState *trapStatePtr));
+extern int Dbg_PacketHdrSize _ARGS_((void));
+extern Boolean
+    Dbg_ValidatePacket _ARGS_((int size, Net_IPHeader *ipPtr, int *lenPtr,
+			       Address *dataPtrPtr,
+			       Net_InetAddress *destIPAddrPtr,
+			       Net_InetAddress *srcIPAddrPtr,
+			       unsigned int *srcPortPtr));
+extern void
+    Dbg_FormatPacket _ARGS_((Net_InetAddress srcIPAddress,
+			     Net_InetAddress destIPAddress,
+			     unsigned int destPort, int dataSize,
+			     Address dataPtr));
+extern int	Dbg_PacketHdrSize _ARGS_((void));
 
 #endif /* _DBG */
