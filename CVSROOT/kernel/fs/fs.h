@@ -417,6 +417,7 @@ extern	ReturnStatus	Fs_PageWrite();
 extern	ReturnStatus	Fs_PageCopy();
 extern	void		Fs_CacheBlocksUnneeded();
 extern	void		Fs_GetPageFromFS();
-extern struct Vm_Segment **Fs_RetSegPtr();
+extern	ClientData	Fs_GetFileHandle();
+extern struct Vm_Segment **Fs_GetSegPtr();
 
 #endif _FS
