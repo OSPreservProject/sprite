@@ -2507,9 +2507,33 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 #endif
 
     /*
-     * Do a hardware segments worth at a time until done.
+     * Do a hardware segment's worth at a time until done.
      */
     while (numBytes > 0 && status == SUCCESS) {
+	segOffset = (unsigned int)fromAddr & (VMMACH_SEG_SIZE - 1);
+	bytesToCopy = VMMACH_SEG_SIZE - segOffset;
+	if (bytesToCopy > numBytes) {
+	    bytesToCopy = numBytes;
+	}
+	/*
+	 * First try quick and dirty copy.  If it fails, do regular copy.
+	 */
+	if (fromProcPtr->vmPtr->machPtr->contextPtr != (VmMach_Context *)NIL) {
+	    unsigned int	fromContext;
+	    unsigned int	toContext;
+
+	    toContext = VmMachGetContextReg();
+	    fromContext = fromProcPtr->vmPtr->machPtr->contextPtr->context;
+
+	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
+		fromContext, toContext);
+	    if (status == SUCCESS) {
+		numBytes -= bytesToCopy;
+		fromAddr += bytesToCopy;
+		toAddr += bytesToCopy;
+		continue;
+	    }
+	}
 	/*
 	 * Flush segment in context of fromProcPtr.  If the context is NIL, then
 	 * we can't and don't have to flush it, since it will be flushed
@@ -2521,11 +2545,6 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 		    fromProcPtr->vmPtr->machPtr->contextPtr->context);
 	    VmMachFlushSegment(fromAddr);
 	    VmMachSetContextReg(oldContext);
-	}
-	segOffset = (unsigned int)fromAddr & (VMMACH_SEG_SIZE - 1);
-	bytesToCopy = VMMACH_SEG_SIZE - segOffset;
-	if (bytesToCopy > numBytes) {
-	    bytesToCopy = numBytes;
 	}
 	/*
 	 * Push out the hardware segment.
@@ -2603,9 +2622,33 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (toAddr) >> VMMACH_SEG_SHIFT;
     /*
-     * Do a hardware segments worth at a time until done.
+     * Do a hardware segment's worth at a time until done.
      */
     while (numBytes > 0 && status == SUCCESS) {
+	segOffset = (unsigned int)toAddr & (VMMACH_SEG_SIZE - 1);
+	bytesToCopy = VMMACH_SEG_SIZE - segOffset;
+	if (bytesToCopy > numBytes) {
+	    bytesToCopy = numBytes;
+	}
+	/*
+	 * First try quick and dirty copy.  If it fails, do regular copy.
+	 */
+	if (toProcPtr->vmPtr->machPtr->contextPtr != (VmMach_Context *)NIL) {
+	    unsigned int	fromContext;
+	    unsigned int	toContext;
+
+	    fromContext = VmMachGetContextReg();
+	    toContext = toProcPtr->vmPtr->machPtr->contextPtr->context;
+
+	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
+		    fromContext, toContext);
+	    if (status == SUCCESS) {
+		numBytes -= bytesToCopy;
+		fromAddr += bytesToCopy;
+		toAddr += bytesToCopy;
+		continue;
+	    }
+	}
 	/*
 	 * Flush segment in context of toProcPtr.  If the context is NIL, then
 	 * we can't and don't have to flush it, since it will be flushed before
@@ -2616,11 +2659,6 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 	    VmMachSetContextReg(toProcPtr->vmPtr->machPtr->contextPtr->context);
 	    VmMachFlushSegment(toAddr);
 	    VmMachSetContextReg(oldContext);
-	}
-	segOffset = (unsigned int)toAddr & (VMMACH_SEG_SIZE - 1);
-	bytesToCopy = VMMACH_SEG_SIZE - segOffset;
-	if (bytesToCopy > numBytes) {
-	    bytesToCopy = numBytes;
 	}
 	/*
 	 * Push out the hardware segment.
