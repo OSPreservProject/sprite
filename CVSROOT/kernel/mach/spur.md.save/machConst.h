@@ -59,13 +59,13 @@
  * These four trap types need to be grouped together in order and at the end
  * of the traps because they are special.
  */
-#define	MACH_USER_RET_TRAP_TRAP		17
-#define	MACH_USER_FPU_EXCEPT_TRAP	18
-#define	MACH_USER_ILLEGAL_TRAP		19
-#define	MACH_USER_FIXNUM_TRAP		20
-#define	MACH_USER_OVERFLOW_TRAP		21
+#define	MACH_USER_RET_TRAP_TRAP		20
+#define	MACH_USER_FPU_EXCEPT_TRAP	21
+#define	MACH_USER_ILLEGAL_TRAP		22
+#define	MACH_USER_FIXNUM_TRAP		23
+#define	MACH_USER_OVERFLOW_TRAP		24
 
-#define	MACH_MAX_TRAP_TYPE		21
+#define	MACH_MAX_TRAP_TYPE		24
 
 /*
  * The first and last user compare traps and how many there are.
@@ -537,5 +537,41 @@
 #define	MACH_PAGE_SLOT_MASK	0x000ff000
 #define	MACH_FIRST_PHYS_PAGE	32
 #define	MACH_NUM_PHYS_PAGES	(2048 - MACH_FIRST_PHYS_PAGE)
+
+/*
+ *---------------------------------------------------------------------------
+ * 
+ * User trap handler information.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+/*
+ * The first and last user compare traps and how many there are.
+ */
+#define	MACH_FIRST_USER_CMP_TRAP	100
+#define	MACH_LAST_USER_CMP_TRAP		400
+#define	MACH_NUM_USER_CMP_TRAPS		(MACH_LAST_USER_CMP_TRAP - MACH_FIRST_USER_CMP_TRAP + 1)
+
+/*
+ * The number of trap types in addition to compare trap.
+ */
+#define	MACH_NUM_OTHER_USER_TRAPS	4
+
+/*
+ * The different type of user trap handlers.
+ */
+#define	MACH_FPU_EXCEPT_TRAP_TYPE		0
+#define	MACH_ILLEGAL_OPCODE_TRAP_TYPE		1
+#define	MACH_TAG_TRAP_TRAP_TYPE			2
+#define	MACH_INTEGER_OVERFLOW_TRAP_TYPE		3
+#define	MACH_COMPARE_TRAP_TYPE			4
+
+/*
+ * The different type of user trap handler interfaces.
+ */
+#define	MACH_PLAIN_INTERFACE		0
+#define	MACH_INT_OPERAND_INTERFACE	1
+#define	MACH_FLOAT_OPERAND_INTERFACE	2
 
 #endif _MACHCONST
