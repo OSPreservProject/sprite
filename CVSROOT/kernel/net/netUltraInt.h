@@ -159,8 +159,8 @@ typedef struct NetUltraState {
  * Size of the XRB queues.
  */
 
-#define NET_ULTRA_NUM_TO_HOST		5	/* Number of XRBs to host. */
-#define NET_ULTRA_NUM_TO_ADAPTER	5	/* Number of XRBs to adapter. */
+#define NET_ULTRA_NUM_TO_HOST		2	/* Number of XRBs to host. */
+#define NET_ULTRA_NUM_TO_ADAPTER	2	/* Number of XRBs to adapter. */
 
 /*
  * The following are defined for the flags field of the NetUltraState
