@@ -1067,7 +1067,6 @@ VmPageAllocateInt(virtAddrPtr, flags)
     register	Vm_PTE	*ptePtr;
     Time		curTime;
     List_Links		endMarker;
-    int			pageCount;
     Boolean		referenced;
     Boolean		modified;
 
@@ -1087,8 +1086,7 @@ again:
 	endMarker.nextPtr = (List_Links *) NIL;
 	endMarker.prevPtr = (List_Links *) NIL;
 	VmListInsert(&endMarker, LIST_ATREAR(allocPageList));
-	pageCount = 0;
-    
+
 	/*
 	 * Loop examining the page on the front of the allocate list until 
 	 * a free or unreferenced, unmodified, unlocked page frame is found.
@@ -1097,7 +1095,6 @@ again:
 	 */
 	while (TRUE) {
 	    corePtr = (VmCore *) List_First(allocPageList);
-	    pageCount++;
 
 	    /*
 	     * See if have gone all of the way through the list without finding
@@ -1153,7 +1150,6 @@ again:
 		 *       touching pages while we are scanning the list.
 		 */
 		VmListMove(&endMarker, LIST_ATREAR(allocPageList));
-		pageCount = 0;
 		continue;
 	    }
 
@@ -1421,7 +1417,6 @@ DoPageIn(virtAddrPtr, protFault)
 						 * a protection violation. */
 {
     register	Vm_PTE 	*ptePtr;
-    Vm_PTE 		*tPTEPtr;
     ReturnStatus	status;
     int			lastPage;
     unsigned	int	virtFrameNum;
