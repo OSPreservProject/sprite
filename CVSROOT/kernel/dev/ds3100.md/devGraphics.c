@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "mach.h"
 #include "dev.h"
 #include "fs.h"
+#include "fsio.h"
 #include "sys.h"
 #include "sync.h"
 #include "timer.h"
@@ -774,7 +775,7 @@ DevGraphicsKbdIntr(ch)
     eventPtr->key = ch;
     scrInfo.eventQueue.eTail = i;
     Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL, (Boolean *) NIL);
-    Fs_DevNotifyReader(notifyToken);
+    Fsio_DevNotifyReader(notifyToken);
 }
 
 
@@ -950,7 +951,7 @@ MouseEvent(newRepPtr)
     eventPtr->device = DEV_MOUSE_DEVICE;
     scrInfo.eventQueue.eTail = DEV_EVROUND(scrInfo.eventQueue.eTail + 1);
     if (devGraphicsOpen) {
-	Fs_DevNotifyReader(notifyToken);
+	Fsio_DevNotifyReader(notifyToken);
     }
 }
 
@@ -1027,7 +1028,7 @@ MouseButtons(newRepPtr)
 	}
 	scrInfo.eventQueue.eTail = i;
 	if (devGraphicsOpen) {
-	    Fs_DevNotifyReader(notifyToken);
+	    Fsio_DevNotifyReader(notifyToken);
 	}
 
 	/* 
