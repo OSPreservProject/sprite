@@ -125,15 +125,9 @@ Rpc_Dispatch(packetPtr, packetLength)
     if (rpcHdrPtr->flags & RPC_SERVER) {
 	register RpcServerState *srvPtr;
 	/*
-	 * Only respond if we know who we are.
+	 * Only respond if the RPC system is "on".
 	 */
-	if (rpc_SpriteID == 0) {
-	    if (rpcHdrPtr->clientID != lastIgnoredClient) {
-/*		Sys_Panic(SYS_WARNING,
-	    "RpcDispatch: dropping request from client %d\n",
-			rpcHdrPtr->clientID); */
-		lastIgnoredClient = rpcHdrPtr->clientID;
-	    }
+	if (!rpcServiceEnabled) {
 	    return;
 	}
 	rpcSrvStat.toServer++;
