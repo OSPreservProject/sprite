@@ -29,6 +29,49 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 RpcService rpcService[RPC_LAST_COMMAND+1] = {
+#ifdef NEW_RPC_NUMBERS
+        RpcNull, "0",                  		/* 0 - nothing */
+        RpcNull, "echo intr",			/* 1 - ECHO1, interrupt level */
+        RpcEcho, "echo",			/* 2 - ECHO2, server process */
+	RpcEcho, "send",			/* 3 - SEND, server process */
+        RpcNull,  "receive",			/* 4 - RECEIVE, unimplemented */
+	Fs_RpcOpen, "open",			/* 5 - OPEN */
+        Fs_RpcRead, "read",			/* 6 - READ */
+        Fs_RpcWrite, "write",			/* 7 - WRITE */
+        Fs_RpcClose, "close",			/* 8 - CLOSE */
+        Fs_RpcRemove, "remove",			/* 9 - UNLINK */
+        Fs_Rpc2Path, "rename",			/* 10 - RENAME */
+        Fs_RpcMakeDir, "makeDir",		/* 11 - MKDIR */
+        Fs_RpcRemove, "rmDir",			/* 12 - RMDIR */
+        Fs_Rpc2Path, "hard link",		/* 13 - LINK */
+        RpcGetTime, "get time",			/* 14 - GETTIME */
+	Fs_RpcPrefix, "prefix",			/* 15 - FS_PREFIX */
+	Fs_RpcGetAttr, "get attr",		/* 16 - FS_GET_ATTR */
+	Fs_RpcSetAttr, "set attr",		/* 17 - FS_SET_ATTR */
+	Fs_RpcGetAttrPath, "stat",		/* 18 - FS_GET_ATTR_PATH */
+	Fs_RpcSetAttrPath, "setAttrPath",	/* 19 - FS_SET_ATTR_PATH */
+	Fs_RpcGetIOAttr, "getIOAttr",		/* 20 - FS_GET_IO_ATTR */
+	Fs_RpcSetIOAttr, "setIOAttr",		/* 21 - FS_SET_IO_ATTR */
+	RpcProcMigInit, "mig init",		/* 22 - PROC_MIG_INIT */
+	RpcProcMigInfo, "mig info",		/* 23 - PROC_MIG_INFO */
+	RpcProcRemoteCall, "rmt call",		/* 24 - PROC_REMOTE_CALL */
+	Fs_RpcStartMigration, "migrate",	/* 25 - FS_MIGRATE */
+	Fs_RpcConsist, "consist",		/* 26 - FS_CONSIST */
+	Fs_RpcDevOpen, "dev open",		/* 27 - FS_DEV_OPEN */
+	RpcSigMigSend, "sig mig send",		/* 28 - SIG_MIG_SEND */
+	Sync_RemoteNotifyStub, "rmt notify",	/* 29 - REMOTE_WAKEUP */
+	Proc_RpcRemoteWait, "remote wait",	/* 30 - PROC_REMOTE_WAIT */
+	Fs_RpcSelectStub, "select",		/* 31 - FS_SELECT */
+	Fs_RpcIOControl, "io control",		/* 32 - FS_RPC_IO_CONTROL */
+	Fs_RpcConsistReply, "consist done",	/* 33 - FS_RPC_CONSIST_REPLY */
+	Fs_RpcBlockCopy, "copy block",		/* 34 - FS_COPY_BLOCK */
+	Fs_RpcMakeDev, "make dev",		/* 35 - FS_MKDEV */
+	Sig_RpcSend, "send signal",		/* 36 - SIG_SEND */
+	Fs_RpcReopen, "reopen",			/* 37 - FS_REOPEN */
+	Fs_RpcDomainInfo, "domain info",	/* 38 - FS_DOMAIN_INFO */
+	Fs_RpcDevReopen, "dev reopen",		/* 39 - FS_DEV_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 40 - FS_RECOVERY */
+#else NEW_RPC_NUMBERS
         RpcNull, "0",                  		/* 0 - nothing */
         RpcNull, "echo intr",			/* 1 - ECHO, interrupt level */
         RpcEcho, "echo",			/* 2 - ECHO2, server process */
@@ -85,7 +128,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcSetAttrPath, "setAttrPath",	/* 53 - FS_GET_ATTR_PATH */
 	Fs_RpcGetIOAttr, "getIOAttr",		/* 54 - FS_GET_IO_ATTR */
 	Fs_RpcSetIOAttr, "setIOAttr",		/* 55 - FS_SET_IO_ATTR */
-
+#endif NEW_RPC_NUMBERS
 };
 
 
