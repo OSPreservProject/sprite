@@ -323,7 +323,7 @@ int	boot_argc;	/* Argc from boot sequence. */
 MachStringTable	*boot_argv;	/* Boot sequence strings. */
 {
     extern char end[], edata[];
-    int offset, i;
+    int i;
     char buf[256];
     volatile unsigned int 	*csrPtr = (unsigned int *) MACH_CSR_ADDR;
     char	*copyPtr;
@@ -503,7 +503,7 @@ Mach_SetHandler(level, handler, clientData)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static ReturnStatus
 MachStdHandler(statusReg, causeReg, pc, data)
     unsigned int	statusReg;	/* Status register. */
@@ -1887,7 +1887,9 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 	  (bufferSize < 256) ? bufferSize : 256);
     offset = (int) machMonBootParam.strings - (int) buffer;
     for(i = 0; i < argc; i++) {
-	if (machMonBootParam.argPtr[i] == (char *)NULL) break;
+	if (machMonBootParam.argPtr[i] == (char *)NULL) {
+	    break;
+	}
 	argv[i] = (char *) (machMonBootParam.argPtr[i] - (char *) offset);
     }
     return i;
@@ -1908,6 +1910,7 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 static ReturnStatus
 MachMemInterrupt(statusReg, causeReg, pc, data)
     unsigned	statusReg;		/* Status register. */
@@ -1929,10 +1932,11 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
     erradr = *erradrPtr;
     if (!(erradr & MACH_ERRADR_VALID)) {
 	printf("Received memory interrupt but ERRADR not valid.\n");
-	return;
+	return status;
     }
     address = erradr & MACH_ERRADR_ADDRESS;
-    switch(erradr & (MACH_ERRADR_CPU | MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR)){
+    switch((int) (erradr & 
+	(MACH_ERRADR_CPU | MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR))){
 	case 0: {
 	    /*
 	     * For IO space addresses the 27 bits in the ERRADR must be
@@ -2054,7 +2058,7 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static ReturnStatus
 MachIOInterrupt(statusReg, causeReg, pc, data)
     unsigned int	statusReg;	/* Status register. */
@@ -2066,7 +2070,6 @@ MachIOInterrupt(statusReg, causeReg, pc, data)
     unsigned int 		csr;
     int				slot;
     unsigned int		ioint;
-    int				i;
 
     csr = *csrPtr;
     ioint = csr & MACH_CSR_IOINT;
@@ -2194,7 +2197,9 @@ MachStringTable *table;
 	    }
 	    *ptr2 = '\0';
 	    table->num++;
-	    if (table->num>=16) break;
+	    if (table->num>=16) {
+		break;
+	    }
 	    table->argPtr[table->num] = ptr2+1;
 	} else {
 	    *ptr2 = *ptr1;
@@ -2371,7 +2376,6 @@ Mach_SigreturnStub(sigContextPtr)
 {
     struct sigcontext	sigContext;
     Mach_RegState	*regsPtr;
-    int			dummy;
     ReturnStatus	status;
     extern Mach_State   *machCurStatePtr;
 
