@@ -1049,7 +1049,16 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 		    if(ProcIsObj(filePtr,1)==SUCCESS) {
 			status = GEN_EINVAL;
 		    } else {
+			/* Check if it's not an ascii file. */
+			int i;
 			status = PROC_BAD_AOUT_FORMAT;
+			for (i=0;i<sizeRead;i++) {
+			    if (buffer[i]&0x80) {
+				status = GEN_EINVAL;
+				printf("Proc_Exec: can't run data file\n");
+				break;
+			    }
+			}
 		    }
 		goto execError;
 	    }
