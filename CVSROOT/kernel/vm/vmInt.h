@@ -475,7 +475,7 @@ extern int vmShmDebug;
 #else /* CLEAN */
 #define	VmGetPTEPtr(segPtr, page) \
     (((((page) - (segPtr)->offset) > (segPtr)->ptSize)) ? \
-	panic("Page number outside bounds of page table"), (Vm_PTE *) NIL : \
+	panic("Page number outside bounds of page table\n"), (Vm_PTE *) NIL : \
 	(&((segPtr)->ptPtr[(page) - (segPtr)->offset])))
 #endif /* CLEAN */
 
@@ -486,7 +486,7 @@ extern int vmShmDebug;
 #define	VmGetAddrPTEPtr(virtAddrPtr, page) \
     (((((page) - segOffset(virtAddrPtr)) < 0) || \
     (((page) - segOffset(virtAddrPtr)) > (virtAddrPtr)->segPtr->ptSize) ) ? \
-	panic("Page number outside bounds of page table"), (Vm_PTE *) NIL : \
+	panic("Page number outside bounds of page table\n"), (Vm_PTE *) NIL : \
 	(&((virtAddrPtr)->segPtr->ptPtr[(page) - segOffset(virtAddrPtr)])))
 #endif /* CLEAN */
 
