@@ -73,6 +73,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 extern	ReturnStatus	SysMigCall();
 extern	ReturnStatus	Sys_StatsStub();
 
+#define TMP_EXTERN
+#ifdef TMP_EXTERN
+extern	int Proc_RemoteExec();
+#endif
+
 #ifndef CLEAN
 Boolean sysTraceSysCalls = FALSE;
 #endif CLEAN
@@ -170,7 +175,7 @@ static SysCallEntry sysCalls[] = {
  */
 /* DON'T DELETE THIS LINE - CreateDummy depends on it */
     Proc_Fork,		       Proc_Fork,	   TRUE,	2,   NILPARM,
-    Proc_Exec,		       Proc_Exec,	   TRUE,	3,   NILPARM,
+    Proc_Exec,		       Proc_Exec,	   TRUE,	5,   NILPARM,
     CAST Proc_Exit,       CAST Proc_Exit,	   TRUE,	1,   NILPARM,
     Sync_WaitTime,	       Sync_WaitTime,	   TRUE,	2,   NILPARM,
     Test_PrintOut,	       Test_PrintOut,      TRUE,       10,   NILPARM,
@@ -272,6 +277,7 @@ static SysCallEntry sysCalls[] = {
     0,                          0,                      TRUE,   1,   NILPARM,
 #endif
     Prof_Profil,                Prof_Profil,            TRUE,   4,   NILPARM,
+    Proc_RemoteExec,		Proc_RemoteExec,   TRUE,	4,   NILPARM,
 };
 
 
@@ -454,6 +460,7 @@ static Sys_CallParam paramsArray[] = {
     /* local */ 			/* SYS_SCHED_START_PROCESSOR	91 */
     /* local */ 			/* SYS_MACH_NUM_PROCESSORS	92 */
     /* local */                         /* SYS_PROF_PROFIL              93 */
+    /* local */                         /* SYS_PROC_REMOTE_EXEC         94 */
     /*
      * Insert new system call information above this line.
      */
