@@ -135,6 +135,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 					 * the one that is making this call */
     Boolean		migrated = FALSE;
 
+    parentProcPtr = Proc_GetActualProc();
 
     if (parentProcPtr->genFlags & PROC_FOREIGN) {
     procPtr = ProcGetUnusedPCB();
