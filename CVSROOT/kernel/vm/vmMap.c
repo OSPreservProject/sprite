@@ -210,6 +210,11 @@ VmUnmapPage(mappedAddr)
  *	process has the page table in-use count incremented.  This is to
  *	ensure that the addresses remain valid until Vm_MakeUnaccessible
  *	is called.
+ *	(Historical note: this function was originally used to access 
+ *	pages without worrying about page faults.  This scheme proved 
+ *	too slow, so there was a switch to CopyIn/CopyOut.  Now this 
+ *	function is useful to ensure the validity of pte pointers.  
+ *	See the sychronization comments in vmInt.h)
  *
  * ----------------------------------------------------------------------------
  */
