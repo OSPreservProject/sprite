@@ -46,7 +46,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsNamedPipe.h"
 #include "fsPdev.h"
 
-
 static ReturnStatus NullProc();
 static void	    NullClientKill();
 static ReturnStatus NoProc();
@@ -167,7 +166,9 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc,			/* iocontrol, select */
 		NoProc, NoProc,			/* getIOAttr, setIOAttr */
 		NoHandle,			/* clientVerify */
-		NoProc, NoProc, NoProc,		/* migStart, migEnd, migrate */
+		NoProc, NoProc,			/* migStart, migEnd */
+		FsStreamMigrate,		/* Used to tell source of mig.
+						 * to release stream */
 		FsStreamReopen,	NoProc,		/* reopen, blockAlloc */
 		NoProc, NoProc,	NoProc,		/* blkRead, blkWrite, blkCopy */
 		FsStreamScavenge, NullClientKill,/* scavenge, kill */
@@ -181,7 +182,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
     { FS_LCL_FILE_STREAM, FsFileCltOpen, FsFileRead, FsFileWrite,
 		FsFileIOControl, FsFileSelect,
 		NullProc, NullProc,		/* Get/Set IO Attr */
-		NoHandle, FsFileMigStart, FsFileMigEnd, FsFileMigrate,
+		NoHandle, FsFileRelease, FsFileMigEnd, FsFileMigrate,
 		FsFileReopen,
 		FsFileBlockAllocate, FsFileBlockRead, FsFileBlockWrite,
 		FsFileBlockCopy, FsFileScavenge, FsFileClientKill, FsFileClose},
@@ -192,7 +193,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
     { FS_RMT_FILE_STREAM, FsRmtFileCltOpen, FsRmtFileRead, FsRmtFileWrite,
 		FsRmtFileIOControl, FsFileSelect,
 		FsRmtFileGetIOAttr, FsRmtFileSetIOAttr,
-		FsRmtFileVerify, FsRmtFileMigStart, FsRmtFileMigEnd,
+		FsRmtFileVerify, FsRmtFileRelease, FsRmtFileMigEnd,
 		FsRmtFileMigrate, FsRmtFileReopen,
 		FsRmtFileAllocate, FsRmtFileBlockRead, FsRmtFileBlockWrite,
 		FsSpriteBlockCopy, FsRmtFileScavenge,
@@ -205,7 +206,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsDeviceIOControl, FsDeviceSelect,
 		FsDeviceGetIOAttr, FsDeviceSetIOAttr,
 		NoHandle,				/* clientVerify */
-		FsDeviceMigStart, FsDeviceMigEnd, FsDeviceMigrate,
+		FsDeviceRelease, FsDeviceMigEnd, FsDeviceMigrate,
 		NullProc,				/* reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsDeviceScavenge, FsDeviceClientKill, FsDeviceClose},
@@ -215,9 +216,9 @@ FsStreamTypeOps fsStreamOpTable[] = {
     { FS_RMT_DEVICE_STREAM, FsRmtDeviceCltOpen, FsSpriteRead, FsSpriteWrite,
 		FsRemoteIOControl, FsSpriteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
-		FsRmtDeviceVerify, FsRemoteIOMigStart, FsRemoteIOMigEnd,
+		FsRmtDeviceVerify, FsRemoteIORelease, FsRemoteIOMigEnd,
 		FsRmtDeviceMigrate, FsRmtDeviceReopen,
-		NoProc, NoProc, NoProc, NoProc,
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose},
     /*
      * Local anonymous pipe stream.  
@@ -226,7 +227,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsPipeIOControl, FsPipeSelect,
 		FsPipeGetIOAttr, FsPipeSetIOAttr,
 		NoHandle,				/* clientVerify */
-		FsPipeMigStart, FsPipeMigEnd, FsPipeMigrate,
+		FsPipeRelease, FsPipeMigEnd, FsPipeMigrate,
 		FsPipeReopen,
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsPipeScavenge, FsPipeClientKill, FsPipeClose},
@@ -236,7 +237,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
     { FS_RMT_PIPE_STREAM, NoProc, FsSpriteRead, FsSpriteWrite,
 		FsRemoteIOControl, FsSpriteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
-		FsRmtPipeVerify, FsRemoteIOMigStart, FsRemoteIOMigEnd,
+		FsRmtPipeVerify, FsRemoteIORelease, FsRemoteIOMigEnd,
 		FsRmtPipeMigrate, FsRmtPipeReopen,
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose},
@@ -275,7 +276,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsPseudoStreamWrite, FsPseudoStreamIOControl,
 		FsPseudoStreamSelect,
 		NullProc, NullProc,		/* Get/Set IO Attr */
-		NoHandle, FsPseudoStreamMigStart, FsPseudoStreamMigEnd,
+		NoHandle, FsPseudoStreamRelease, FsPseudoStreamMigEnd,
 		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
@@ -287,7 +288,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRemoteIOControl, FsSpriteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtPseudoStreamVerify,
-		FsRemoteIOMigStart, FsRemoteIOMigEnd,
+		FsRemoteIORelease, FsRemoteIOMigEnd,
 		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose },
@@ -335,7 +336,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsPseudoStreamWrite, FsPseudoStreamIOControl,
 		FsPseudoStreamSelect,
 		NullProc, NullProc,			/* Get/Set IO Attr */
-		NoHandle, FsPseudoStreamMigStart, FsPseudoStreamMigEnd,
+		NoHandle, FsPseudoStreamRelease, FsPseudoStreamMigEnd,
 		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
@@ -349,7 +350,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRemoteIOControl, FsSpriteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtPseudoStreamVerify,
-		FsRemoteIOMigStart, FsRemoteIOMigEnd,
+		FsRemoteIORelease, FsRemoteIOMigEnd,
 		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose },
