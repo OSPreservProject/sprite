@@ -368,6 +368,10 @@ Vm_Cmd(command, arg)
 	    int	numPages;
 	    int curGroup;
 	    numPages = vmPagesPerGroup * vmNumPageGroups;
+	    if (arg <= 0) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
 	    SETVAR(vmNumPageGroups, arg);
 	    SETVAR(vmPagesPerGroup, numPages / vmNumPageGroups);
 	    curGroup = (vmStat.fsMap - vmStat.fsUnmap) / vmPagesPerGroup;
