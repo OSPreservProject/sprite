@@ -73,8 +73,9 @@ static ReturnStatus ContinueMigratedProc();
  *	Receive a message from a workstation requesting permission to
  *	migrate a process.
  *
- *	Should be modified to check permission, load, etc., but for now
- *	we'll be friendly and accept anything.
+ *	This could check things like the number of remote processes,
+ *	load, or whatever. For now, just check against a global flag
+ *	that says whether to refuse migrations.
  *
  * Results:
  *	SUCCESS is returned if permission is granted.
@@ -92,6 +93,9 @@ ReturnStatus
 Proc_AcceptMigration(nodeID)
     int nodeID;	      		/* node from which we will migrate */
 {
+    if (proc_RefuseMigrations) {
+	return(PROC_MIGRATION_REFUSED);
+    }
     return(SUCCESS);
 }
 
@@ -580,6 +584,13 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     for (i = 0; i < numWords; i++) {
 	disp = specsPtr[i].disposition;
 	type = specsPtr[i].type;
+	if ((disp & SYS_PARAM_OUT) &&
+	    !(disp & (SYS_PARAM_ACC | SYS_PARAM_COPY))) {
+	    Sys_Panic(SYS_FATAL,
+		      "Proc_DoRemoteCall: Illegal parameter information for call %d for output parameter %d",
+		      callNumber, i);
+	    return(GEN_INVALID_ARG);
+	}
 	switch(type) {
 	    case SYS_PARAM_INT:
 	    case SYS_PARAM_CHAR: 
@@ -732,9 +743,21 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 
     /*
      * Now that the total sizes are known, allocate space and save the
-     * arguments in the data buffer.
+     * arguments in the data buffer.  While the RPC system and network
+     * driver are confused and screw up on buffers that are too small,
+     * pad the sizes accordingly.
      */
 
+#define RPC_MIN_BUFFER_SIZE 12
+#ifdef RPC_MIN_BUFFER_SIZE
+    if (dataSize < RPC_MIN_BUFFER_SIZE) {
+	dataSize = RPC_MIN_BUFFER_SIZE;
+    }
+    if (replyDataSize < RPC_MIN_BUFFER_SIZE) {
+	replyDataSize = RPC_MIN_BUFFER_SIZE;
+    }
+#endif RPC_MIN_BUFFER_SIZE
+	
     dataBuffer = Mem_Alloc(dataSize);
     ptr = dataBuffer;
     replyDataBuffer = Mem_Alloc(replyDataSize);
