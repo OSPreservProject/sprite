@@ -81,7 +81,7 @@ MachLevel4Int:
 	.globl	MachLevel5Int
 MachLevel5Int:
 	addl	#1,_machLevel5Cnt
-	movl    sp@(2), _Prof_InterruptPC
+/*	movl    sp@(2), _Prof_InterruptPC */
 	CallTrapHandler(MACH_LEVEL5_INT)
 
 	.globl	MachLevel6Int
@@ -127,7 +127,7 @@ MachLevel6Int:
 	.globl _MachVectoredInterrupt
 
 _MachVectoredInterrupt:
-	movl    sp@(2), _Prof_InterruptPC
+/*	movl    sp@(2), _Prof_InterruptPC */
 	moveml	#0xC0C0, sp@-
 	movw	#MACH_SR_HIGHPRIO, sr 
 	movw	sp@(INTR_SR_OFFSET), d0
