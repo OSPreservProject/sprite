@@ -49,11 +49,14 @@
 static void InitiateStripeReconstruction();
 
 void
-InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, ctrlData)
+InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, doneProc,
+	clientData, ctrlData)
     Raid	*raidPtr;
     int		 col, row, version;
     int		 numSector;
     int		 uSec;
+    void       (*doneProc)();
+    ClientData   clientData;
     int		 ctrlData;
 {
     RaidReconstructionControl	*reconstructionControlPtr;
@@ -61,14 +64,13 @@ InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, ctrlData)
 
     LockSema(&raidPtr->disk[col][row]->lock);
     diskPtr = raidPtr->disk[col][row];
-    if (version == diskPtr->version && diskPtr->state == RAID_DISK_READY) {
-	UnlockSema(&diskPtr->lock);
-    } else {
+    if (version != diskPtr->version || diskPtr->state != RAID_DISK_READY) {
 	UnlockSema(&diskPtr->lock);
 	return;
     }
+    UnlockSema(&diskPtr->lock);
     reconstructionControlPtr = MakeReconstructionControl(raidPtr,
-	    col, row, diskPtr, (void(*)()) NIL, (ClientData) NIL, ctrlData);
+	    col, row, diskPtr, doneProc, clientData, ctrlData);
     InitiateStripeReconstruction(reconstructionControlPtr);
 }
 
@@ -93,8 +95,8 @@ static void
 reconstructionDoneProc(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {
-    RaidDisk	*diskPtr = reconstructionControlPtr->diskPtr;
-
+    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData,
+            reconstructionControlPtr->status);
     FreeReconstructionControl(reconstructionControlPtr);
 }
 
@@ -124,6 +126,7 @@ InitiateReconstructionFailure(reconstructionControlPtr)
     XUnlockStripe(reconstructionControlPtr->raidPtr, stripeID);
     ReportReconstructionFailure(reconstructionControlPtr->col,
     	    reconstructionControlPtr->row);
+    reconstructionControlPtr->status = FAILURE;
     reconstructionDoneProc(reconstructionControlPtr);
 }
 
@@ -167,11 +170,13 @@ InitiateStripeReconstruction(reconstructionControlPtr)
     if (diskPtr->numValidSector == raidPtr->sectorsPerDisk) {
         printf("RAID:MSG:Reconstruction completed.\n");
 	reconstructionDoneProc(reconstructionControlPtr);
+	UnlockSema(&diskPtr->lock);
 	return;
     }
     if (diskPtr->state != RAID_DISK_READY) {
         printf("RAID:MSG:Reconctruction aborted.\n");
 	reconstructionDoneProc(reconstructionControlPtr);
+	UnlockSema(&diskPtr->lock);
 	return;
     }
     MapPhysicalToStripeID(raidPtr, col,row, diskPtr->numValidSector, &stripeID);
@@ -234,6 +239,16 @@ reconstructionReadDoneProc(reconstructionControlPtr, numFailed)
 		failedReqPtr->devReq.bufferLen);
 	reqControlPtr->failedReqPtr->devReq.operation = FS_WRITE;
 	reqControlPtr->failedReqPtr->state = REQ_READY;
+	LockSema(&diskPtr->lock);
+	if (diskPtr->state != RAID_DISK_READY) {
+	    printf("RAID:MSG:Reconctruction aborted.\n");
+	    reconstructionDoneProc(reconstructionControlPtr);
+	    UnlockSema(&diskPtr->lock);
+	    return;
+	}
+	diskPtr->numValidSector =
+		NthSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
+	UnlockSema(&diskPtr->lock);
 	InitiateIORequests(reqControlPtr, reconstructionWriteDoneProc,
 		(ClientData) reconstructionControlPtr);
     }
@@ -266,6 +281,16 @@ reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
     int		        stripeID      = reconstructionControlPtr->stripeID;
 
     if (numFailed > 0) {
+	LockSema(&diskPtr->lock);
+	if (diskPtr->state != RAID_DISK_READY) {
+	    printf("RAID:MSG:Reconctruction aborted.\n");
+	    reconstructionDoneProc(reconstructionControlPtr);
+	    UnlockSema(&diskPtr->lock);
+	    return;
+	}
+	diskPtr->numValidSector =
+		FirstSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
+	UnlockSema(&diskPtr->lock);
 	InitiateReconstructionFailure(reconstructionControlPtr);
     } else {
 	LockSema(&diskPtr->lock);
@@ -273,8 +298,6 @@ reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
 	    printf("RAID:RECON:%d %d %d\n",
 		    diskPtr->device.type, diskPtr->device.unit,
 		    SectorToStripeUnitID(raidPtr, diskPtr->numValidSector));
-	    diskPtr->numValidSector =
-		    NthSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
 	    SaveDiskState(raidPtr, diskPtr->col, diskPtr->row,
 		    diskPtr->device.type, diskPtr->device.unit,
 		    diskPtr->version, diskPtr->numValidSector);
