@@ -129,13 +129,13 @@ moduloOkay:							\
     
 
 /*
- * Save trap state registers.
+ * Save global registers.
  * Store-doubles are faster and we do this from even register boundaries.
  * For now, we only save the globals here, since the locals and ins will
  * be saved on normal save-window operations.  Note that this means the
  * stack pointer and MACH_GLOBALS_OFFSET must be double-word aligned.
  */
-#define	MACH_SAVE_TRAP_STATE()					\
+#define	MACH_SAVE_GLOBAL_STATE()				\
 	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
 	std	%g0, [%VOL_TEMP1];				\
 	std	%g2, [%VOL_TEMP1 + 8];				\
@@ -143,19 +143,18 @@ moduloOkay:							\
 	std	%g6, [%VOL_TEMP1 + 24]
 
 /*
- * Restore the trap state registers.  We do load doubles here for speed
+ * Restore the global registers.  We do load doubles here for speed
  * for even-register boundaries.  For now, we only restore the globals
  * from here, since the locals and ins will be restored as part of the
  * normal restore window operations.  Note that this means the stack pointer
  * and MACH_GLOBALS_OFFSET must be double-word aligned.
  */
-#define	MACH_RESTORE_TRAP_STATE()				\
+#define	MACH_RESTORE_GLOBAL_STATE()				\
 	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
 	ldd	[%VOL_TEMP1], %g0;				\
 	ldd	[%VOL_TEMP1 + 8], %g2;				\
 	ldd	[%VOL_TEMP1 + 16], %g4;				\
 	ldd	[%VOL_TEMP1 + 24], %g6
-
 
 /*
  * Save r16 to r23 (locals) and r24 to r31 (ins) to 16 words at
@@ -266,5 +265,30 @@ moduloOkay:							\
 	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
 	mov	%VOL_TEMP1, %psr;				\
 	MACH_WAIT_FOR_STATE_REGISTER()
+
+
+/*
+ * For sticking debug info into a buffer.
+ */
+#define	MACH_DEBUG_BUF(reg1, reg2, DebugLabel, stuff)	\
+	set	_debugCounter, reg1; 		\
+	ld	[reg1], reg1;			\
+	set	500, reg2;			\
+	subcc	reg2, reg1, %g0;		\
+	bg	DebugLabel;			\
+	nop;					\
+	set	_debugCounter, reg1;		\
+	st	%g0, [reg1];			\
+	clr	reg1;				\
+DebugLabel:					\
+	sll	reg1, 2, reg1;			\
+	set	_debugSpace, reg2;		\
+	add	reg2, reg1, reg2;		\
+	st	stuff, [reg2];			\
+	set	_debugCounter, reg1;		\
+	ld	[reg1], reg2;			\
+	add	reg2, 1, reg2;			\
+	st	reg2, [reg1]
+
 
 #endif /* _MACHASMDEFS */

@@ -89,6 +89,7 @@ _MachTrap:
 	mov	%psr, %CUR_PSR_REG
 	mov	%tbr, %CUR_TBR_REG
 	mov	%y, %CUR_Y_REG
+#ifdef NOTDEF
     /* for debugging - circular buffer */
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
@@ -110,6 +111,7 @@ DebugReady:
 	add	%VOL_TEMP2, 2, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
     /* done debugging */
+#endif NOTDEF
 
 	/*
 	 * Are we in an invalid window? If so, deal with it.
@@ -138,7 +140,7 @@ WindowOkay:
 	 * and ins make it there through normal overflow and underflow.  If
 	 * that turns out nasty, then make this macro save them explicitly.
 	 */
-	MACH_SAVE_TRAP_STATE()
+	MACH_SAVE_GLOBAL_STATE()
 	/*
 	 * If we came from user mode, put a pointer to our saved stack from
 	 * into the state structure.  I don't do this yet.
@@ -262,7 +264,7 @@ _MachReturnFromTrap:
 	jmpl	%VOL_TEMP1, %SAFE_TEMP
 	nop
 UnderflowOkay:
-	MACH_RESTORE_TRAP_STATE()
+	MACH_RESTORE_GLOBAL_STATE()
 	/* restore y reg */
 	mov	%CUR_Y_REG, %y
 	/* restore tbr reg */
@@ -296,6 +298,7 @@ UnderflowOkay:
  */
 .globl	MachHandleWindowOverflowTrap
 MachHandleWindowOverflowTrap:
+#ifdef NOTDEF
     /* for debugging - circular buffer */
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
@@ -317,6 +320,7 @@ DebugReadyOverflow:
 	add	%VOL_TEMP2, 2, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
     /* done debugging */
+#endif NOTDEF
 
 	set	MachWindowOverflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %SAFE_TEMP
@@ -416,6 +420,7 @@ MachWindowOverflow:
  */
 .globl	MachHandleWindowUnderflowTrap
 MachHandleWindowUnderflowTrap:
+#ifdef NOTDEF
     /* for debugging - circular buffer */
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
@@ -437,6 +442,7 @@ DebugReadyUnderflow:
 	add	%VOL_TEMP2, 2, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
     /* done debugging */
+#endif NOTDEF
 
 	mov	%g3, %VOL_TEMP1			/* clear out globals */
 	mov	%g4, %VOL_TEMP2

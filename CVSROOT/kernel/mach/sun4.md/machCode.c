@@ -99,9 +99,23 @@ Mach_State	*machCurStatePtr = (Mach_State *)NIL;
  */
 Mach_RegState	regStateHolder;
 Mach_State	stateHolder;
+Proc_ControlBlock	dumb;
+int		machMachProcOffset = 0;		/* set to offset in pcb */
 int		debugCounter = 0;		/* for debugging */
 int		debugSpace[500];
 char		mach_DebugStack[0x2000];	/* debugger stack */
+
+/*
+ * For debugging stuff, put values into a circular buffer.
+ */
+#define	DEBUG_ADD(thing)	\
+    if (debugCounter >= 500) {	\
+	debugCounter = 0;	\
+    }				\
+    debugSpace[debugCounter++] = (int)(thing);
+
+
+    
 
 
 /*
@@ -144,22 +158,30 @@ Mach_Init()
     }
 	
 #define	CHECK_OFFSETS(s, o)		\
-    if ((int)(&(stateHolder.s)) - (int)(&stateHolder) != o) {\
+    if ((unsigned int)(&(stateHolder.s)) - (unsigned int)(&stateHolder) != o) {\
 	panic("Bad offset for registers.  Redo machConst.h!\n");\
     }
 #define	CHECK_TRAP_REG_OFFSETS(s, o)		\
-    if ((int)(&(regStateHolder.s)) - (int)(&regStateHolder) != o) {\
+    if ((unsigned int)(&(regStateHolder.s)) -	\
+	(unsigned int)(&regStateHolder) != o) {\
 	panic("Bad offset for trap registers.  Redo machConst.h!\n");\
     }
 
     CHECK_SIZE(Mach_RegState, MACH_SAVED_STATE_FRAME);
     CHECK_OFFSETS(trapRegs, MACH_TRAP_REGS_OFFSET);
+    CHECK_OFFSETS(switchRegs, MACH_SWITCH_REGS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(curPsr, MACH_LOCALS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(ins, MACH_INS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(globals, MACH_GLOBALS_OFFSET);
 
 #undef CHECK_SIZE
 #undef CHECK_OFFSETS
+    /*
+     * Get offset of machStatePtr in proc control blocks.  This one is
+     * subject to a different module, so it's easier not to use a constant.
+     */
+    machMachProcOffset = (unsigned int)(&(dumb.machStatePtr)) -
+	    (unsigned int)(&dumb);
 
     return;
 }
@@ -187,6 +209,8 @@ Mach_InitFirstProc(procPtr)
     procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
     bzero((char *)procPtr->machStatePtr, sizeof (Mach_State));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
+    procPtr->machStatePtr->trapRegs = (Mach_RegState *) NIL;
+    procPtr->machStatePtr->switchRegs = (Mach_RegState *) NIL;
 #ifdef NOTDEF
     procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
     /* also set stack end? */
@@ -227,59 +251,103 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 					 * exception stack. */
     Boolean		user;		/* TRUE if is a user process. */
 {
-#ifdef NOTDEF
-    register	KernelStack	*stackPtr;
+    register	Mach_RegState	*stackPtr;
     register	Mach_State	*statePtr;
+
+    DEBUG_ADD(0x111);
+    DEBUG_ADD(procPtr);
+    DEBUG_ADD(startFunc);
 
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
+#ifdef NOTDEF
 	procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
+#endif NOTDEF
     }
-
     statePtr = procPtr->machStatePtr;
+    statePtr->trapRegs = (Mach_RegState *)NIL;
     /* 
      * Allocate a kernel stack for this process.
      */
-    statePtr->kernStackStart = Vm_GetKernelStack(0);
+    statePtr->kernStackStart = (Address) Vm_GetKernelStack(0);
     if (statePtr->kernStackStart == (Address)NIL) {
 	return(PROC_NO_STACKS);
     }
 
-    statePtr->switchRegs[SP] = (int)(statePtr->kernStackStart + 
-			             MACH_KERN_STACK_SIZE - 
-				     sizeof(KernelStack));
+    /*
+     * Pointer to context switch register's save area is also a pointer
+     * to the top of the stack, since the regs are saved there.
+     */
+    ((Address) statePtr->switchRegs) = (statePtr->kernStackStart) +
+	    MACH_KERN_STACK_SIZE -
+	    sizeof (Mach_RegState) - MACH_SAVED_WINDOW_SIZE;
+    (unsigned int) (statePtr->switchRegs) &= ~0x7;/* should be okay already */
+    DEBUG_ADD(statePtr->switchRegs);
+    DEBUG_ADD(&(statePtr->switchRegs));
     /*
      * Initialize the stack so that it looks like it is in the middle of
      * Mach_ContextSwitch.
      */
-    stackPtr = (KernelStack *)(statePtr->switchRegs[SP]);
-    stackPtr->magicNumber = MAGIC;
-    stackPtr->userStackPtr = mach_MaxUserStackAddr;
-    stackPtr->statusReg = MACH_SR_HIGHPRIO;
-    stackPtr->startFunc =  startFunc;
-    stackPtr->fill1 = 0;
-    stackPtr->fill2 = 0;
+    stackPtr = statePtr->switchRegs;	/* stack pointer is set from this. */
+    /*
+     * Fp is set to saved window area for window we'll return to.  The area for
+     * the window of Mach_ContextSwitch is a Mach_RegState.  Below this on
+     * the stack (at higher address than) is the saved window area of the
+     * routine we'll return to from Mach_ContextSwitch.  So the fp must be
+     * set to the top of this saved window area.
+     */
+    *((Address *)(((Address)stackPtr) + MACH_FP_OFFSET)) =
+	    ((Address)stackPtr) + sizeof (Mach_RegState);
+    DEBUG_ADD(*((Address *)(((Address)stackPtr) + MACH_FP_OFFSET)));
+    /*
+     * We are to return to startFunc from Mach_ContextSwitch, but
+     * Mach_ContextSwitch will do a return to retPC + 8, so we subtract
+     * 8 from it here to get to the right place.
+     */
+    *((Address *)(((Address)stackPtr) + MACH_RETPC_OFFSET)) =
+	    ((Address)startFunc) - 8;
+    DEBUG_ADD(*((Address *)(((Address)stackPtr) + MACH_RETPC_OFFSET)));
+
+    /*
+     * Set the psr to restore to have traps enabled and interrupts off.
+     */
+    stackPtr->curPsr = MACH_HIGH_PRIO_PSR;
     /* 
      * Set up the state of the process.  User processes inherit from their
      * parent or the migrated process.  If the PC is not specified, take it
      * from the parent as well.
      */
     if (user) {
+#ifdef NOTDEF
 	statePtr->userState.userStackPtr =
 		fromStatePtr->userState.userStackPtr;
 	bcopy((Address)fromStatePtr->userState.trapRegs,
 		  (Address)statePtr->userState.trapRegs,
 		  sizeof(statePtr->userState.trapRegs));
+#else
+	panic("Tried to start a user process.  We're not ready yet!\n");
+#endif /* NOTDEF */
     }
     if (startPC == (Address)NIL) {
+#ifdef NOTDEF
 	stackPtr->startPC = (Address)fromStatePtr->userState.excStackPtr->pc;
-    } else {
-	stackPtr->startPC = startPC;
-    }
-    return(SUCCESS);
 #else
-    panic("Mach_SetUpNewState called.\n");
-#endif NOTDEF
+	panic("In Mach_SetupNewState, startPC was NIL.\n");
+#endif /* NOTDEF */
+    } else {
+	/*
+	 * The first argument to startFunc is supposed to be startPC.  But that
+	 * would be in an in register in startFunc's window which is one before
+	 * Mach_ContextSwitch's window.  So we have to put it in the in register
+	 * area of the saved window area beneath the Mach_RegState area on the
+	 * stack.
+	 */
+	*((Address *)(((Address)stackPtr) + sizeof (Mach_RegState) +
+		MACH_ARG0_OFFSET)) = startPC;
+	DEBUG_ADD(*((Address *)(((Address)stackPtr) + sizeof (Mach_RegState) + MACH_ARG0_OFFSET)));
+    }
+    DEBUG_ADD(0x222);
+    return(SUCCESS);
 }
 
 /*
@@ -303,11 +371,12 @@ Mach_SetReturnVal(procPtr, retVal)
     Proc_ControlBlock	*procPtr;	/* Process to set return value for. */
     int			retVal;		/* Value for process to return. */
 {
-#ifdef NOTDEF
-    procPtr->machStatePtr->userState.trapRegs[D0] = retVal;
-#else
-    panic("Mach_SetReturnVal called.\n");
-#endif NOTDEF
+    if (procPtr->machStatePtr->trapRegs == (Mach_RegState *) NIL ||
+	    procPtr->machStatePtr->trapRegs == (Mach_RegState *) 0) {
+	return;
+    }
+    procPtr->machStatePtr->trapRegs->ins[0] = retVal;
+    return;
 }
 
 

@@ -120,6 +120,12 @@
 #define	MACH_DISABLE_TRAP_BIT		0xFFFFFFDF	/* and with %psr */
 #define	MACH_SUPER_BIT			0x80
 
+/*
+ * psr value for interrupts disabled, traps enabled and window 0.
+ * Both supervisor and previous supervisor mode bits are set.
+ */
+#define	MACH_HIGH_PRIO_PSR		0x000000E0
+
 
 /*
  * Bits to enable interrupts in interrupt register.
@@ -196,6 +202,7 @@
  * All sizes are in bytes.
  */
 #define	MACH_TRAP_REGS_OFFSET		0
+#define	MACH_SWITCH_REGS_OFFSET		4
 #define	MACH_LOCALS_OFFSET		0
 #define	MACH_INS_OFFSET			(MACH_LOCALS_OFFSET + 8 * 4)
 #define	MACH_GLOBALS_OFFSET		(MACH_INS_OFFSET + 8 * 4)
@@ -217,6 +224,22 @@
  * The size of a single saved window (locals and ins) in bytes.
  */
 #define	MACH_SAVED_WINDOW_SIZE	(MACH_NUM_LOCALS * 4 + MACH_NUM_INS * 4)
+
+/*
+ * Constant for offset of first argument in a saved window area.
+ */
+#define	MACH_ARG0_OFFSET	(MACH_NUM_LOCALS * 4)
+
+/*
+ * Constant for offset of fp in saved window area.  Fp is %i6.
+ */
+#define	MACH_FP_OFFSET		(MACH_NUM_LOCALS * 4 + 6 * 4)
+
+/*
+ * Constant for offset of return pc in saved window area.  RetPC is %i7.
+ */
+#define	MACH_RETPC_OFFSET	(MACH_NUM_LOCALS * 4 + 7 * 4)
+
 /*
  * The size of the state frame that's saved on interrupts, etc.  This must
  * be the size of Mach_RegState, and this is checked in machCode.c.  We

@@ -125,24 +125,11 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
  */
 
 /*
- * The register state of a process.
+ * The register state of a process: locals, then ins, then globals.
+ * The psr, tbr, etc, are saved in locals.  The in registers are the in
+ * registers of the window we've trapped into.
  */
 typedef struct Mach_RegState {
-#ifdef NOTDEF
-    /*
-     * I'm handing people ptrs to this thing now, so I just have to be careful.
-     */
-    double	aligner;			/* Force the compiler to start
-					 	 * regs on a double-word
-					 	 * boundary so that std's and
-					 	 * ldd's can be used. */
-#endif NOTDEF
-						/* Registers at time of trap:
-						 * locals then ins then globals.
-						 * The psr, tbr, etc, are saved
-						 * in locals.  The in registers
-						 * are the in registers of the
-						 * window we've trapped into. */
     int		curPsr;				/* locals */
     int		pc;
     int		nextPc;
@@ -163,7 +150,7 @@ typedef	Mach_RegState	Mach_DebugState;
  */
 typedef struct Mach_State {
     Mach_RegState	*trapRegs;		/* User state at trap time. */
-    Mach_RegState	switchRegs;		/* Kernel state, switch time */
+    Mach_RegState	*switchRegs;		/* Kernel state, switch time */
     int			savedRegs[MACH_NUM_WINDOW_REGS][MACH_NUM_WINDOWS];
 						/* Where we save all the
 						 * window's registers to if the
@@ -173,16 +160,13 @@ typedef struct Mach_State {
 						 * to be tricky about recording
 						 * which is the invalid window
 						 * and which window we're in
-						 * while saving the regs...
-						 */
+						 * while saving the regs...  */
     int			savedMask;		/* Mask showing which windows
 						 * contained info that must
 						 * be restored to the stack from
 						 * the above buffer since the
 						 * stack wasn't resident. */
-    Address		kernelStack;		/* pointer to the kernel
-						 * stack for this process. */
-    Address		kernStackStart;		/* beginning of kernel stack
+    Address		kernStackStart;		/* top of kernel stack
 						 * for this process. */
 } Mach_State;
 
