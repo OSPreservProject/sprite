@@ -429,9 +429,14 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     Timer_AddTicks(procPtr->userCpuUsage.ticks, userTicks,
 		   &procPtr->userCpuUsage.ticks);
 #ifndef CLEAN
+    /*
+     * Record the remote usage for this process.  Note that the usage is
+     * also recorded in the total usage for this host under ProcExitProcess.
+     */
     Timer_AddTicks(kernelTicks, userTicks, &userTicks);
-    ProcRecordUsage(userTicks, TRUE);
+    ProcRecordUsage(userTicks, PROC_MIG_USAGE_REMOTE_CPU);
 #endif /* CLEAN */
+
     Byte_EmptyBuffer(dataPtr, int,  count);
     procPtr->numQuantumEnds += count;
     Byte_EmptyBuffer(dataPtr, int, count);

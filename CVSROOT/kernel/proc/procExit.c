@@ -336,7 +336,23 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 #ifndef CLEAN
 	Timer_AddTicks(exitProcPtr->kernelCpuUsage.ticks,
 			exitProcPtr->userCpuUsage.ticks, &ticks);
-	ProcRecordUsage(ticks, FALSE);
+	ProcRecordUsage(ticks, PROC_MIG_USAGE_TOTAL_CPU);
+	/*
+	 * Record usage for just the amount of work performed after the
+	 * first eviction.
+	 */
+	if (exitProcPtr->migFlags & PROC_WAS_EVICTED) {
+	    if (proc_MigDebugLevel > 4) {
+		printf("ExitProcessInt: process %x was evicted.  Used %d ticks before eviction, %d total.\n",
+		       exitProcPtr->processID,
+		       exitProcPtr->preEvictionUsage.ticks,
+		       ticks);
+	    }
+	    Timer_SubtractTicks(ticks, exitProcPtr->preEvictionUsage.ticks,
+				&ticks);
+	    ProcRecordUsage(ticks, PROC_MIG_USAGE_POST_EVICTION);
+	    exitProcPtr->migFlags &= ~PROC_WAS_EVICTED;
+	}
 #endif /* CLEAN */
     }
 
