@@ -701,7 +701,7 @@ MachUNIXVFork()
 	printf("MachUNIXFork: Child came alive here?\n");
 	return(SUCCESS);
     }
-    if (status != SUCCESS) {
+    if (status == SUCCESS) {
 	(void)Vm_CopyIn(sizeof(int), usp, 
 			(Address)&machCurStatePtr->userState.unixRetVal);
     } 
