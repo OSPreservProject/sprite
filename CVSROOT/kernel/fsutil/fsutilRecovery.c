@@ -621,8 +621,9 @@ RecoveryComplete(recovPtr, status)
 	case RPC_SERVICE_DISABLED:
 	    fs_Stats.recovery.timeout++;
 	    break;
-	case FS_DOMAIN_UNAVAILABLE:
-	    fs_Stats.recovery.failed++;
+	case FS_FILE_REMOVED:
+	    recovPtr->flags |= RECOVERY_FAILED|RECOVERY_COMPLETE;
+	    fs_Stats.recovery.deleted++;
 	    break;
 	default:
 	    recovPtr->flags |= RECOVERY_FAILED|RECOVERY_COMPLETE;
