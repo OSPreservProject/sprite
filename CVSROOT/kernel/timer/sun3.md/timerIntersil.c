@@ -44,7 +44,6 @@
  * All rights reserved.
  */
 
-#ifdef SUN3
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
@@ -681,4 +680,3 @@ TimeToCounters(time, counterPtr)
 }
 #endif NOT_USED
 
-#endif SUN3
