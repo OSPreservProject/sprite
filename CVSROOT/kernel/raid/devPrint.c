@@ -20,7 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sync.h"
 #include "sprite.h"
-#include "user/fs.h"
+#include "fs.h"
 #include "devBlockDevice.h"
 #include "devRaid.h"
 #include "schedule.h"
@@ -162,15 +162,21 @@ PrintRaid(raidPtr)
     printf("    stripeUnitsPerDisk %d\n", raidPtr->stripeUnitsPerDisk);
     printf("    groupsPerArray %d\n", raidPtr->groupsPerArray);
     printf("    parityConfig %c\n", raidPtr->parityConfig);
-    for ( row = 0; row < raidPtr->numRow; row++ ) {
-        for ( col = 0; col < raidPtr->numCol; col++ ) {
-	    diskPtr = raidPtr->disk[col][row];
-	    printf("Disk: %d %d %d  state: %d  numValidSector: %d\n",
-		    row, col, diskPtr->version,
-		    diskPtr->state, diskPtr->numValidSector);
-	    PrintDevice(&diskPtr->device);
+    if (raidPtr->disk != NULL) {
+	for ( row = 0; row < raidPtr->numRow; row++ ) {
+	    for ( col = 0; col < raidPtr->numCol; col++ ) {
+		diskPtr = raidPtr->disk[col][row];
+		if (diskPtr != (RaidDisk *) NIL) {
+		    printf("Disk: %d %d %d  state: %d  numValidSector: %d\n",
+			    row, col, diskPtr->version,
+			    diskPtr->state, diskPtr->numValidSector);
+		    PrintDevice(&diskPtr->device);
+		}
+	    }
 	}
     }
+    printf("LogDisk: offset=%d\n", raidPtr->logDevOffset);
+    PrintDevice(&raidPtr->logDev);
     printf("=====================================================\n");
 }
 

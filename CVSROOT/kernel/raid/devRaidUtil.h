@@ -79,19 +79,3 @@
     (AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation, 	\
 	    firstSector, buffer, ctrlData,			\
 	    0, raidPtr->bytesPerStripeUnit))
-
-extern DevBlockDeviceRequest *MakeBlockDeviceRequest();
-extern RaidIOControl *MakeIOControl();
-extern RaidRequestControl *MakeRequestControl();
-extern RaidStripeIOControl *MakeStripeIOControl();
-extern RaidReconstructionControl *MakeReconstructionControl();
-extern void FreeBlockDeviceRequest();
-extern void FreeRaidDisk();
-extern void FreeIOControl();
-extern void FreeRequestControl();
-extern void FreeStripeIOControl();
-extern void FreeReconstructionControl();
-extern void RangeRestrict();
-extern void XorRaidRangeRequests();
-extern void AddRaidParityRangeRequest();
-extern void AddRaidDataRangeRequests();

@@ -14,7 +14,6 @@
  * express or implied warranty.
  */
 
-#include <stdio.h>
 #include <string.h>
 #include "sync.h"
 #include "sprite.h"
@@ -25,10 +24,8 @@
 #include "devRaidLock.h"
 #include "stdlib.h"
 #include "devRaidUtil.h"
-#include "devRaidMap.h"
-#include "devRaidIOC.h"
-#include "debugMem.h"
 #include "schedule.h"
+#include "devRaidProto.h"
 
 
 /*
@@ -87,7 +84,7 @@ InitiateParityCheck(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlDat
  *
  *----------------------------------------------------------------------
  */
-
+static void
 parityCheckDoneProc(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {

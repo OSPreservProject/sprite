@@ -15,12 +15,6 @@
  * express or implied warranty.
  */
 
-/*
-#ifndef lint
-static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
-*/
-
 #include "sync.h"
 #include "sprite.h"
 #include "fs.h"
@@ -28,7 +22,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devDiskLabel.h"
 #include "devDiskStats.h"
 #include "devBlockDevice.h"
-#include "devDebug.h"
 #include "stdlib.h"
 #include "dbg.h"
 #include "schedule.h"
@@ -61,6 +54,8 @@ static char devDebugData[4][4][32] = {
 "O0O1O2O3O4O5O6O7o0o1o2o3o4o5o6o7",
 "P0P1P2P3P4P5P6P7p0p1p2p3p4p5p6p7",
 };
+
+static logData[30000];
 
 /*
  * Forward Declarations.
@@ -101,7 +96,11 @@ DevDebugAttach(devicePtr)
     }
     handlePtr->blockHandle.releaseProc = ReleaseProc;
     handlePtr->blockHandle.IOControlProc = IOControlProc;
-    handlePtr->blockHandle.minTransferUnit = 1;
+    if (devicePtr->unit == 99) {
+	handlePtr->blockHandle.minTransferUnit = 64;
+    } else {
+	handlePtr->blockHandle.minTransferUnit = 1;
+    }
     handlePtr->blockHandle.maxTransferSize = 1<<30;
     handlePtr->devPtr = devicePtr;
     return (DevBlockDeviceHandle *) handlePtr;
@@ -156,10 +155,6 @@ IOControlProc(blockDevHandlePtr, ioctlPtr, replyPtr)
     Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
     Fs_IOReply *replyPtr;	/* outBuffer length and returned signal */
 {
-/*
-    ReturnStatus	status;
-    DebugHandle	*debugHandlePtr = (DebugHandle *) handlePtr;
-*/
     return SUCCESS;
 }
 
@@ -207,6 +202,25 @@ BlockIOProc(handlePtr, requestPtr)
 	PrintHandle(handlePtr);
 	PrintDevice(debugHandlePtr->devPtr);
 	PrintRequest(requestPtr);
+    }
+    if (debugHandlePtr->devPtr->unit == 99) {
+	int *iBuf;
+	if (requestPtr->operation == FS_READ) {
+	    bcopy(logData+requestPtr->startAddress,
+		    requestPtr->buffer,requestPtr->bufferLen);
+	} else {
+	    bcopy(requestPtr->buffer,
+		    logData+requestPtr->startAddress,
+		    requestPtr->bufferLen);
+	}
+	printf("XFER: ");
+	iBuf = (int *) requestPtr->buffer;
+	for (i = 0; i < requestPtr->bufferLen/4; i++) {
+	    printf("%d ", iBuf[i]);
+	}
+	printf("\n");
+	requestPtr->doneProc(requestPtr, SUCCESS, requestPtr->bufferLen);
+	return SUCCESS;
     }
 
 #ifdef TESTING
@@ -282,7 +296,7 @@ typedef struct TimerCallBackData {
     int			   amountTransferred;	
 } TimerCallBackData;
 
-void
+static void
 timerCallBackProc(time, timerCallBackDataPtr)
     Timer_Ticks		time;
     TimerCallBackData  *timerCallBackDataPtr;
