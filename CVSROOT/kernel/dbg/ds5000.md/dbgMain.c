@@ -779,8 +779,6 @@ Dbg_Main()
 		    stopInfo.regs.pc = (Address) 
 					((int) Mach_ContextSwitch + 16);
 		    stopInfo.regs.regs[SP] += 8;
-		    printf("DBG_GET_STOP_INFO: pc = 0x%x, sp = 0x%x\n",
-			stopInfo.regs.pc, stopInfo.regs.regs[SP]);
 		} else {
 		    DebugToRegState(&mach_DebugState, &stopInfo.regs);
 		}
@@ -798,8 +796,6 @@ Dbg_Main()
 		    regState.pc = (Address) 
 			    ((int) Mach_ContextSwitch + 16);
 		    regState.regs[SP] += 8;
-		    printf("DBG_READ_ALL_REGS: pc = 0x%x, sp = 0x%x\n",
-			regState.pc, regState.regs[SP]);
 		} else {
 		    DebugToRegState(&mach_DebugState, &regState);
 		}
