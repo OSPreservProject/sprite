@@ -231,6 +231,8 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
     hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
 		(&paramsPtr->fileID, clientID);
     if (hdrPtr == (FsHandleHeader *) NIL) {
+	Sys_Panic(SYS_WARNING, "Fs_RpcRead, stale handle <%d,%d> client %d\n",
+		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
 	return(FS_STALE_HANDLE);
     }
     FsHandleUnlock(hdrPtr);
@@ -517,6 +519,8 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
     hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
 		(&paramsPtr->fileID, clientID);
     if (hdrPtr == (FsHandleHeader *) NIL) {
+	Sys_Panic(SYS_WARNING, "Fs_RpcWrite, stale handle <%d,%d> client %d\n",
+		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
 	return(FS_STALE_HANDLE);
     }
     FsHandleUnlock(hdrPtr);
@@ -530,6 +534,7 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
     if (streamPtr == (Fs_Stream *)NIL) {
 	status = FS_STALE_HANDLE;
     } else {
+	FS_TRACE_HANDLE(FS_TRACE_WRITE, hdrPtr);
 	if (paramsPtr->flags & FS_RMT_SHARED) {
 	    offsetPtr = &streamPtr->offset;
 	} else {
@@ -554,6 +559,7 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 		    hdrPtr->fileID.type);
 	} else {
 	    FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+	    FS_TRACE_HANDLE(FS_TRACE_4, hdrPtr);
 	    FsDeleteLastWriter(&handlePtr->consist, clientID);
 	}
     }
