@@ -50,6 +50,19 @@ Rpc_Init()
     register int frag;
     Net_EtherAddress etherAddress;
 
+    /*
+     * Initialize some time parameters.  The 'rpc' structure is used in
+     * the RpcDoCall code.  The variables are used here for initialization
+     */
+    rpc.retryMsec = rpcRetryMsec;
+    rpc.retryWait = rpcRetryMsec * timer_IntOneMillisecond;
+    rpc.maxAckMsec = rpcMaxAckMsec;
+    rpc.maxAckWait = rpcMaxAckMsec * timer_IntOneMillisecond;
+    rpc.maxTimeoutMsec = rpcMaxTimeoutMsec;
+    rpc.maxTimeoutWait = rpcMaxTimeoutMsec * timer_IntOneMillisecond;
+    rpc.maxTries = rpcMaxTries;
+    rpc.maxAcks = rpcMaxAcks;
+
     Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr), 0);
 
     rpcServiceTime[0] = (Rpc_Histogram *)NIL;
@@ -120,13 +133,6 @@ Rpc_Init()
 	chanPtr->reply.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
 	chanPtr->reply.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
     }
-    /*
-     * Initialize some time parameters, the "Factors" can be patched
-     * in adb to vary the initial and maximum wait intervals.  These are
-     * declared and commented in rpcClient.c
-     */
-    rpcRetryWait = rpcRetryFactor * timer_IntOneMillisecond;
-    rpcMaxWait = rpcMaxFactor * timer_IntOneMillisecond;
 
     /*
      * Set our preferred inter-fragment delay based on machine type.

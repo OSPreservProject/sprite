@@ -28,13 +28,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 
 /*
- * There are a set of parameters used during RPC:
- * rpcRetryWait (rpcRetryFactor):
+ * Constant parameters for the protocol.  The RpcConst structure keeps
+ * the complete set of constants.  Some (patchable) variables are defined
+ * here that define initial values, see Rpc_Init.
+ */
+RpcConst rpc;
+/*
+ * rpcRetryMsec
  *	This is the initial waiting period for the reciept of a packet.
- *	rpcRetryWait is rpcRetryFactor milliseconds long.
- * rpcMaxWait (rpcMaxFactor):
- *	This is the maximum waiting period for the reciept of a packet.
- *	rpcMaxWait is rpcMaxFactor milliseconds long.
+ * rpcMaxAckMsec:
+ *	This is the maximum waiting period for the reciept of a packet,
+ *	given that we've already gotten an acknowledgment.
+ * rpcMaxTimeoutMsec:
+ *	This is the maximum waiting period for the reciept of a packet,
+ *	given that we've been timing out.
  * rpcMaxTries:
  *	This is the number of times the client will resend without
  *	getting an acknowledgment from a server.  After this
@@ -45,29 +52,27 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *	a loop then the server machine dispatcher will continue to
  *	sending us "i'm busy" acks forever.
  */
-unsigned int	rpcRetryWait;	/* Initial wait interval in ticks */
-int	rpcRetryFactor = 100;	/* rpcRetryWait is rpcRetryFactor times
+int	rpcRetryMsec = 100;	/* rpc.retryWait is rpcRetryMsec times
 				 * 1 millisecond (see Rpc_Init).
 				 * This can be as low as 30 for echoes and
 				 * get time, but needs to be large because
 				 * reads and writes take a while */
-unsigned int	rpcMaxWait;	/* Maximum wait interval in ticks */
-int	rpcMaxFactor = 5000;	/* rpcMaxWait is rpcMaxFactor times
-				 * 1 millisecond.  The wait period doubles
-				 * each retry (when receiving acks or not),
-				 * up to this maximum.  */
+int	rpcMaxAckMsec = 5000;	/* rpc.maxAckWait = rpcMaxAckMsec msec.
+				 * The wait period doubles each retry when
+				 * receiving acks up to this maximum.  */
+
+int	rpcMaxTimeoutMsec = 1000; /* rpc.maxTimeoutWait = rpcMaxTimeoutMsec
+				 * The wait period doubles each retry when
+				 * not recieving packets up to this maximum. */
 
 int	rpcMaxTries = 8;	/* Number of times to re-send before aborting.
 				 * If the initial timeout is .1 sec, and it
-				 * doubles until 5 sec, 5 retries means a
+				 * doubles until 1 sec, 8 retries means a
 				 * total timeout period of about 6 seconds. */
-
-/*
- * Watchdog against lots of acknowledgments from a server.  This limit causes
- * a warning message to be printed every rpcMaxAcks, and if the RPC is
- * a broadcast it gets aborted.
- */
-int	rpcMaxAcks = 10;
+int	rpcMaxAcks = 10;	/* Watchdog against lots of acks from a server.
+				 * This limit causes a warning message to be
+				 * printed every rpcMaxAcks, and if the RPC
+				 * is a broadcast it gets aborted. */
 
 /*
  * For debugging servers.  We allow client's to retry forever instead
@@ -153,9 +158,9 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	    RPC_MAX_FRAG_SIZE) ||
 	(storagePtr->replyDataSize + storagePtr->replyParamSize >
 	    RPC_MAX_FRAG_SIZE)) {
-	wait = 5 * rpcRetryWait;
+	wait = 5 * rpc.retryWait;
     } else {
-	wait = rpcRetryWait;
+	wait = rpc.retryWait;
     }
 
     /*
@@ -179,16 +184,11 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	chanPtr->state |= CHAN_TIMEOUT | CHAN_WAITING;
 	Timer_ScheduleRoutine(&chanPtr->timeoutItem, TRUE);
 	do {
+	    /*
+	     * Wait ignoring signals.
+	     */
 	    Sync_MasterWait(&chanPtr->waitCondition,
 				&chanPtr->mutex, FALSE);
-	/*
-	 *	Wait ignoring signals.
-	 *
-	    if (Sig_Pending(Proc_GetCurrentProc(Sys_GetProcessorNumber()))) {
-		error = FAILURE;
-		goto exit;
-	    }
-	*/
 	} while (((chanPtr->state & CHAN_INPUT) == 0) &&
 		  (chanPtr->state & CHAN_TIMEOUT));
 
@@ -245,7 +245,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	    } else if (rpcHdrPtr->flags & RPC_ACK) {
 		numAcks++;
 		rpcCltStat.acks++;
-		if (numAcks <= rpcMaxAcks) {
+		if (numAcks <= rpc.maxAcks) {
 		    /*
 		     * An ack from the server indicating that a server
 		     * process is working on our request.  We increase
@@ -260,8 +260,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    if (serverID != RPC_BROADCAST_SERVER_ID) {
 			numTries = 0;
 			wait *= 2;
-			if (wait > rpcMaxWait) {
-			    wait = rpcMaxWait;
+			if (wait > rpc.maxAckWait) {
+			    wait = rpc.maxAckWait;
 			}
 		    }
 		} else {
@@ -289,10 +289,12 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 			Net_SpriteIDToName(serverID, &name);
 			if (name == (char *)NIL) {
 			    Sys_Panic(SYS_WARNING, 
-				"RpcDoCall: <%d> seems hung\n", serverID);
+				"RpcDoCall: <%d> seems hung, RPC %d\n",
+				serverID, command);
 			} else {
 			    Sys_Panic(SYS_WARNING, 
-				"RpcDoCall: %s seems hung\n", name);
+				"RpcDoCall: %s seems hung, RPC %d\n",
+				name, command);
 			}
 			numAcks = 0;
 		    }
@@ -318,8 +320,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	     * Back off upon timeout because we may be talking to a slow host
 	     */
 	    wait *= 2;
-	    if (wait > rpcMaxWait) {
-		wait = rpcMaxWait;
+	    if (wait > rpc.maxTimeoutWait) {
+		wait = rpc.maxTimeoutWait;
 	    }
 	    if ((chanPtr->state & CHAN_FRAGMENTING) == 0) {
 		/*
@@ -327,7 +329,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		 * the request.
 		 */
 		numTries++;
-		if (numTries <= rpcMaxTries ||
+		if (numTries <= rpc.maxTries ||
 		    (rpc_NoTimeouts && serverID != RPC_BROADCAST_SERVER_ID)) {
 		    rpcCltStat.resends++;
 		    chanPtr->requestRpcHdr.flags |= RPC_PLSACK;
@@ -352,7 +354,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		} else {
 		    numTries++;
 		}
-		if (numTries > rpcMaxTries &&
+		if (numTries > rpc.maxTries &&
 		    (!rpc_NoTimeouts||(serverID == RPC_BROADCAST_SERVER_ID))) {
 		    rpcCltStat.aborts++;
 		    error = RPC_TIMEOUT;
