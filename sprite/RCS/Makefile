@@ -112,7 +112,7 @@ ALLSRCS= Makefile version.c
 
 HDRS = sprite.h
 
-sun2: ${OBJS} Makefile .PRECIOUS
+sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rm -f $@ version.o
 	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
 	cc -c ${CFLAGS} version.c
@@ -120,32 +120,24 @@ sun2: ${OBJS} Makefile .PRECIOUS
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite ${ENVY}:/bnf2/sprite/sun2
+	update -f -s $@ /sprite/boot/$@.sprite
+	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2.new
 	nm $@ | sort > $@.nm
 
-sun3: ${OBJS} Makefile .PRECIOUS
-	-mv -f $@ $@.old
+sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	-Save $@
 	${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/kernels/$@.sprite.new
-	rcp /sprite/kernels/$@.sprite.new ${GINGER}:/sprite3/tmp/$@
+	update -f -s $@ /sprite/boot/$@.sprite.new
+	cp /sprite/boot/$@.sprite.new /vmsprite.new
+	rcp /sprite/boot/$@.sprite.new ${GINGER}:/sprite3/$@.new
+	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
+	rcp $@ rosemary:/tmp/sprite/$@.sprite
 	nm $@ | sort > $@.nm
-
-installsun3: sun3
-	-mv -f /sprite/kernels/sun3.sprite /sprite/kernels/sun3.sprite.old
-	-mv -f /sprite/kernels/sun3.sprite.new /sprite/kernels/sun3.sprite
-	update /sprite/kernels/sun3.sprite /vmsprite
-	rm -f /vmunix
-	ln /vmsprite /vmunix
-	rsh rosemary -l sprite mv -f /tmp/sprite/sun3.sprite /tmp/sprite/sun3.old
-	rcp sun3 rosemary:/tmp/sprite/sun3.sprite
-	rsh ginger -l sprite mv -f /sprite3/sun3 /sprite3/sun3.old
-	rsh ginger -l sprite mv -f /sprite3/tmp/sun3 /sprite3/sun3
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
@@ -155,8 +147,8 @@ profile2: ${PROFOBJS} Makefile .PRECIOUS
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite ${ENVY}:/bnf2/sprite/sun2
+	update -f -s $@ /sprite/boot/$@.sprite
+	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2
 	nm $@ | sort > $@.nm
 
 profile3: ${PROFOBJS} Makefile .PRECIOUS
@@ -167,8 +159,8 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite ${GINGER}:/sprite3/tmp/$@
+	update -f -s $@ /sprite/boot/$@.sprite
+	rcp /sprite/boot/$@.sprite ${GINGER}:/sprite3/tmp/$@
 	nm $@ | sort > $@.nm
 
 
