@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sysStats.h"
 #include "devDiskStats.h"
 #include "user/fs.h"
+#include "stdlib.h"
 #include "list.h"
 
 /*
@@ -203,7 +204,7 @@ DevRegisterDisk(devicePtr, deviceName, idleCheck, clientData)
     }
     MASTER_UNLOCK(&deviceListMutex);
     if (found) {
-	free(newDevice);
+	free((char *)newDevice);
     }
     return &(devPtr->diskStats);
 }
