@@ -160,13 +160,12 @@ FsHandleReopen(serverID)
     /*
      * Now go through and recover streams, once we've gotten the regular
      * I/O handles re-opened.  This ensures that the I/O handle will be
-     * around on the server when it re-creates its stream
+     * around on the server when it re-creates our streams.
      */
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = FsGetNextHandle(&hashSearch);
 	 hdrPtr != (FsHandleHeader *) NIL;
          hdrPtr = FsGetNextHandle(&hashSearch)) {
-	 invalid = FALSE;
 	 if ((hdrPtr->fileID.type == FS_STREAM) &&
 		 (hdrPtr->fileID.serverID == serverID)) {
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
@@ -177,14 +176,14 @@ FsHandleReopen(serverID)
 		    FsHandleUnlock(hdrPtr);
 		    goto reopenReturn;
 		}
+		/*
+		 * Don't remove stream handles because the user-level
+		 * close will remove them later.
+		 */
 		FsHandleInvalidate(hdrPtr);
-		FsHandleRemove(hdrPtr);
-		invalid = TRUE;
 	    }
 	}
-	if (!invalid) {
-	    FsHandleUnlock(hdrPtr);
-	}
+	FsHandleUnlock(hdrPtr);
     }
 
 reopenReturn:
