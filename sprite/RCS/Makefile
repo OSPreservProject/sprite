@@ -1,109 +1,196 @@
-# 
+#
 # $Header$ SPRITE (Berkeley)
 #
-ROOT = /sprite
-SPRITESRC = ..
-SPRITEHOME = /sprite2/users/sprite
-H =       ${SPRITESRC}/Include
-LIB =     ${SPRITESRC}/Object
-LINT =    ${SPRITESRC}/Lint
-USERLINT =${ROOT}/lib/lint
-USERINCLUDE=${ROOT}/lib/include
-INSTALLED=${SPRITESRC}/Installed/${MODULE}
-PROFDIR=  ${SPRITESRC}/Profiled
-ALL=      ${SPRITESRC}/All
-IFLAGS =  -I. -I${H} -I${USERINCLUDE}
-DBX =     -g
-PROFILE = -p -DPROFILE
-DFLAGS =
-CFLAGS =  ${DBX} ${IFLAGS} ${DFLAGS}
-PCFLAGS = ${DBX} ${IFLAGS} ${DFLAGS} ${PROFILE}
-CTFLAGS = -t
-PPFLAGS = -E ${IFLAGS} ${DFLAGS}
-CC = cc -m68010
-AS = as -m68010
-LD = ld
+# No makemake
+#
+LD = /sprite/bin/ld
 
-UPDATE = /usr/local/update
-DEPEND = ${SPRITEHOME}/bin/depend.csh
-DEPENDSCRIPT = ${SPRITEHOME}/lib/ex.depend
-MKVERSION = ${SPRITEHOME}/bin/mkversion
-LIBC = /sprite/lib/libc.a /sprite/lib/crt.a
-SPECIAL=${LIB}/bootSys.o
+#ifmake sun3 || profile3
+MACHINE = sun3
+#else
+MACHINE = sun2
+#endif
+
+CLIB = /sprite/lib/libc.a /sprite/lib/crt.a
+MODULE = sprite
+SPRITEDIR =	..
+USERH=		/sprite/lib/include
+H =		${SPRITEDIR}/Include
+INSTALLED =	{SPRITEDIR}/Installed/${MODULE}
+LIB =		${SPRITEDIR}/Object/${MACHINE}
+PROFD =	${SPRITEDIR}/Profiled/${MACHINE}
+ODIR =		Object.${MACHINE}
+IFLAGS=	-I. -I${H} -I${USERH}
+#PROFILE =	-p -DPROFILE
+PROFILE =
+CFLAGS =	-m68010 -g ${PROFILE} ${IFLAGS}
+LINTFLAGS =	-I. -I${H}
+LINTLIBS =	${LINT}/*.ln
+
+# symbol looked for by 'make nm'
+NM = mcount
+
+UPDATE = /sprite/bin/update
+DEPEND = /sprite/bin/depend.csh
+DEPENDSCRIPT = /sprite/lib/ex.depend
+MKVERSION = /sprite/bin/mkversion
+
 ENDOBJ=${LIB}/end.o
 
-OBJS= 	${LIB}/crt.o \
+ALLSPICE = allspice.Berkeley.EDU
+GINGER = ginger.Berkeley.EDU
+ENVY = envy.Berkeley.EDU
+
+#
+#  Unprofiled object files
+#
+
+DBG = ../dbg/${ODIR}
+DEV = ../dev/${ODIR}
+FS = ../fs/${ODIR}
+FSNEW = ../fs.new/${ODIR}
+HOOK= mainHook.o
+MAIN = ../main/${ODIR}
+NET = ../net/${ODIR}
+PROC = ../proc/${ODIR}
+PROF = ../prof/${ODIR}
+RECOV = ../recov/${ODIR}
+RPC = ../rpc/${ODIR}
+SCHED = ../sched/${ODIR}
+SIG = ../sig/${ODIR}
+SUN = ../sun/${ODIR}
+SYNC = ../sync/${ODIR}
+SYS = ../sys/${ODIR}
+TIMER = ../timer/${ODIR}
+UTILS = ../utils/${ODIR}
+VM = ../vm/${ODIR}
+
+OBJS = 	${LIB}/sun.o \
+	${HOOK} \
 	${LIB}/dbg.o \
 	${LIB}/dev.o \
 	${LIB}/fs.o \
 	${LIB}/main.o \
-	mainHook.o \
 	${LIB}/mem.o \
 	${LIB}/net.o \
 	${LIB}/proc.o \
 	${LIB}/prof.o \
+	${LIB}/recov.o \
 	${LIB}/rpc.o \
 	${LIB}/sched.o \
 	${LIB}/sig.o \
-	${LIB}/sun.o \
-	${LIB}/sys.o \
 	${LIB}/sync.o \
+	${LIB}/sys.o \
 	${LIB}/timer.o \
 	${LIB}/utils.o \
-	${LIB}/vm.o \
-	${LIB}/win.o
+	${LIB}/vm.o
+
+#
+# Profiled (perhaps) object files	####################################
+#
+
+PROFOBJS= ${LIB}/dbg.o	${PROFD}/fs.o	${LIB}/prof.o \
+	${PROFD}/dev.o	${PROFD}/net.o	${PROFD}/sig.o \
+	${PROFD}/main.o	${HOOK}	\
+	${PROFD}/mem.o	${PROFD}/proc.o	${PROFD}/rpc.o \
+	${PROFD}/sched.o \
+	${PROFD}/timer.o ${PROFD}/sync.o	${PROFD}/utils.o \
+	${PROFD}/vm.o \
+	${PROFD}/sun.o	${PROFD}/sys.o
+###############################################################################
 
 ALLSRCS= Makefile version.c
 
 HDRS = sprite.h
 
-sprite: ${SPECIAL} ${OBJS} ${ENDOBJ}
+sun2: ${OBJS} ${ENDOBJ} Makefile
 	rm -f $@ version.o
-	@${MKVERSION} > version.h
-	${CC} -c ${CFLAGS} version.c
-	${LD} -X -o sprite -e start -T a04000 ${SPECIAL} version.o ${OBJS} \
-	    ${LIBC} ${ENDOBJ} -lg
-	modAout sprite 4000
-	cp sprite sprite.strip
-	strip sprite.strip
-	rcp sprite.strip allspice:/pub.MC68010/sprite/sprite
-	rcp sprite.strip envy:/pub.MC68010/sprite/sprite
-	rcp sprite.strip ginger:/pub.MC68010/sprite/sprite
-	rm sprite.strip
+	@${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
+	 cc -c ${CFLAGS} version.c
+	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
+	    ${CLIB} ${ENDOBJ} -lg
+	@ls -l $@
+	@size $@
+	cpstrip $@ /sprite/kernels/$@.sprite
+	rcp /sprite/kernels/$@.fred ${ENVY}:/bnf2/sprite/sun2
+#	rcp /sprite/kernels/$@.sprite ginger:/pub.MC68010/sprite/$@
+#	rcp /sprite/kernels/$@.sprite allspice:/pub.MC68010/sprite/$@
+#	rcp /sprite/kernels/$@.sprite envy-150:/pub.MC68010/sprite/$@
+	nm $@ | sort > $@.nm
 
-install: sprite installhdrs
+sun3: ${OBJS} ${ENDOBJ} Makefile
+	rm -f $@
+	@${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
+	@cc -c ${CFLAGS} version.c
+	${LD} -X -o $@ -e start -T f004000 ${OBJS} version.o \
+	    ${CLIB} ${ENDOBJ} -lg
+	@ls -l $@
+	@size $@
+	cpstrip $@ /sprite/kernels/$@.sprite
+	rcp /sprite/kernels/$@.sprite allspice:/sprite/$@
+	nm $@ | sort > $@.nm
 
-installhdrs:
-	@${UPDATE} ${HDRS} ${H}
-	@${UPDATE} ${HDRS} ${INSTALLED}
+profile2: ${PROFOBJS} ${ENDOBJ} Makefile
+	rm -f $@
+	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile2)" > version.h
+	@cc -c ${CFLAGS} version.c
+	${LD} -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
+	    ${CLIB} ${ENDOBJ} -lg
+	@ls -l $@
+	@size $@
+	cpstrip $@ /sprite/kernels/$@.sprite
+	rcp /sprite/kernels/$@.sprite ginger:/pub.MC68010/sprite/$@
+	rcp /sprite/kernels/$@.sprite allspice:/pub.MC68010/sprite/$@
+	rcp /sprite/kernels/$@.sprite envy-150:/pub.MC68010/sprite/$@
+	nm $@ | sort > $@.nm
 
-/pub/sprite/sprite: sprite
-	rm -f /pub/sprite/sprite
-	rcp sprite envy:/pub/sprite/sprite
+profile3: ${PROFOBJS} ${ENDOBJ} Makefile
+	rm -f $@
+	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile3)" > version.h
+	@cc -c ${CFLAGS} version.c
+	${LD} -X -o $@ -e start -T f004000 ${PROFOBJS} version.o \
+	    ${CLIB} ${ENDOBJ} -lg
+	@ls -l $@
+	@size $@
+	cpstrip $@ /sprite/kernels/$@.sprite
+	rcp /sprite/kernels/$@.sprite allspice:/sprite/tmp/$@
+	nm $@ | sort > $@.nm
+
+
+nm: ${OBJS}
+	./NM ${NM} ${OBJS}
+
+clean:
+	rm *.o sun2 sun3
+
+# install: installhdrs /bnf/sprite/sprite
+
+# installhdrs:
+# 	@${UPDATE} ${HDRS} ${H}
+# 	@${UPDATE} ${HDRS} ${INSTALLED}
 
 .c.o:
 	rm -f $*.o
 	${CC} ${CFLAGS} -c $*.c
 
 All:
-	cd ../dbg; make 
-	cd ../dev; make 
-	cd ../fs; make 
-	cd ../main; make 
-	cd ../mem; make 
-	cd ../net; make 
-	cd ../proc; make 
-	cd ../prof; make 
-	cd ../rpc; make 
-	cd ../sched; make 
-	cd ../sig; make 
-	cd ../sun; make 
-	cd ../sync; make 
-	cd ../sys; make 
-	cd ../timer; make 
-	cd ../utils; make 
-	cd ../vm; make 
-	cd ../win; make 
+	cd ../dbg; make
+	cd ../dev; make
+	cd ../fs; make
+	cd ../main; make
+	cd ../mem; make
+	cd ../net; make
+	cd ../proc; make
+	cd ../prof; make
+	cd ../rpc; make
+	cd ../sched; make
+	cd ../sig; make
+	cd ../sun; make
+	cd ../sync; make
+	cd ../sys; make
+	cd ../timer; make
+	cd ../utils; make
+	cd ../vm; make
 
 All-install:
 	cd ../dbg; make install
@@ -123,29 +210,26 @@ All-install:
 	cd ../timer; make install
 	cd ../utils; make install
 	cd ../vm; make install
-	cd ../win; make install
 
-All-all-install:
-	cd ../dbg; make all-install
-	cd ../dev; make all-install
-	cd ../fs; make all-install
-	cd ../main; make all-install
-	cd ../mem; make all-install
-	cd ../net; make all-install
-	cd ../proc; make all-install
-	cd ../prof; make all-install
-	cd ../rpc; make all-install
-	cd ../sched; make all-install
-	cd ../sig; make all-install
-	cd ../sun; make all-install
-	cd ../sync; make all-install
-	cd ../sys; make all-install
-	cd ../timer; make all-install
-	cd ../utils; make all-install
-	cd ../vm; make all-install
-	cd ../win; make all-install
+All-installhdrs:
+	cd ../dbg; make installhdrs
+	cd ../dev; make installhdrs
+	cd ../fs; make installhdrs
+	cd ../main; make installhdrs
+	cd ../mem; make installhdrs
+	cd ../net; make installhdrs
+	cd ../proc; make installhdrs
+	cd ../prof; make installhdrs
+	cd ../rpc; make installhdrs
+	cd ../sched; make installhdrs
+	cd ../sig; make installhdrs
+	cd ../sun; make installhdrs
+	cd ../sync; make installhdrs
+	cd ../sys; make installhdrs
+	cd ../timer; make installhdrs
+	cd ../utils; make installhdrs
+	cd ../vm; make installhdrs
 
-#:.,.+15s,^\(	cd ../\)\([^;]*\); make install,\1\2; make ../Lint/\2.ln,
 
 All-lint:
 	cd ../dbg; make ../Lint/dbg.ln
@@ -154,20 +238,17 @@ All-lint:
 	cd ../main; make ../Lint/main.ln
 	cd ../mem; make ../Lint/mem.ln
 	cd ../net; make ../Lint/net.ln
-	cd ../proc; make ../Lint/sched.ln
-	cd ../prof; make ../Lint/sched.ln
-	cd ../rpc; make ../Lint/sched.ln
+	cd ../proc; make ../Lint/proc.ln
+	cd ../prof; make ../Lint/prof.ln
+	cd ../rpc; make ../Lint/rpc.ln
 	cd ../sched; make ../Lint/sched.ln
-	cd ../sig; make ../Lint/sched.ln
+	cd ../sig; make ../Lint/sig.ln
 	cd ../sun; make ../Lint/sun.ln
 	cd ../sync; make ../Lint/sync.ln
-	cd ../sys; make ../Lint/rpc.ln
+	cd ../sys; make ../Lint/sys.ln
 	cd ../timer; make ../Lint/timer.ln
 	cd ../utils; make ../Lint/utils.ln
 	cd ../vm; make ../Lint/vm.ln
-	cd ../win; make ../Lint/win.ln
-
-All: All-install sprite
 
 All-depend:
 	cd ../dbg; make depend
@@ -187,24 +268,25 @@ All-depend:
 	cd ../timer; make depend
 	cd ../utils; make depend
 	cd ../vm; make depend
-	cd ../win; make depend
 
-All-makemake:
-	cd ../dbg; makemake
-#	cd ../dev; makemake
-#	cd ../fs; makemake
-	cd ../main; makemake
-	cd ../mem; makemake
-	cd ../net; makemake
-	cd ../proc; makemake
-	cd ../prof; makemake
-	cd ../rpc; makemake
-	cd ../sched; makemake
-	cd ../sig; makemake
-	cd ../sun; makemake
-	cd ../sync; makemake
-	cd ../sys; makemake
-	cd ../timer; makemake
-	cd ../utils; makemake
-	cd ../vm; makemake
-	cd ../win; makemake
+rcsinfo:
+	cd ../dbg; rcsinfo
+	cd ../dev; rcsinfo
+	cd ../fs; rcsinfo
+	cd ../main; rcsinfo
+	cd ../mem; rcsinfo
+	cd ../net; rcsinfo
+	cd ../proc; rcsinfo
+	cd ../prof; rcsinfo
+	cd ../rpc; rcsinfo
+	cd ../sched; rcsinfo
+	cd ../sig; rcsinfo
+	cd ../sun; rcsinfo
+	cd ../sync; rcsinfo
+	cd ../sys; rcsinfo
+	cd ../timer; rcsinfo
+	cd ../utils; rcsinfo
+	cd ../vm; rcsinfo
+
+mainHook.o: ${H}/proc.h ${H}/fs.h ${H}/mem.h
+# DO NOT DELETE THIS LINE -- make depend depends on it.
