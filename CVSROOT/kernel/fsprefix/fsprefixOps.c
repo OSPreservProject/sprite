@@ -1145,7 +1145,9 @@ Fs_PrefixExport(prefix, clientID, delete)
  *	Clear a prefix table entry.  If the deleteFlag argument is set
  *	then the entry is removed altogether, otherwise just the
  *	handle is closed and then cleared.  This is called from Fs_Command
- *	and used during testing.
+ *	and used during testing.  This won't delete the root prefix,
+ *	although it will clear its handle so subsequent lookups will
+ *	rebroadcast.
  *
  * Results:
  *	None.
@@ -1172,7 +1174,7 @@ Fs_PrefixClear(prefix, deleteFlag)
 		PrefixHandleClear(prefixPtr);
 	    }
 	    prefixPtr->flags &= ~FS_EXPORTED_PREFIX;
-	    if (deleteFlag) {
+	    if (deleteFlag && prefixPtr->prefixLength != 1) {
 		Mem_Free((Address) prefixPtr->prefix);
 		while (! List_IsEmpty(&prefixPtr->exportList)) {
 		    register FsPrefixExport *exportPtr;
@@ -1189,9 +1191,6 @@ Fs_PrefixClear(prefix, deleteFlag)
 	    return(SUCCESS);
 	}
     }
-    /*
-     * Not found, oh well.
-     */
     UNLOCK_MONITOR;
     return(FAILURE);
 }
