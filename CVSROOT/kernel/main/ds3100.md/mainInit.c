@@ -47,6 +47,7 @@ static void Init _ARGS_((void));
 #define INIT	 	"cmds/initsprite"
 
 int main_PrintInitRoutines = FALSE;/* print out each routine as it's called? */
+int main_PanicOK = 0;	/* Set to 1 if it's OK to panic. */
 
 int main_PanicOK = 0;	/* Set to 1 if it's OK to panic. */
 
@@ -122,23 +123,6 @@ MachStringTable *argv;
 	Mach_MonPrintf("Calling Vm_BootInit().\n");
     }
     Vm_BootInit();
-
-    /*
-     * Initialize the ethernet drivers.  Do it early because we need
-     * the ethernet driver so that we can use the debugger.
-     *
-     * Dependencies: VmBoot_Init
-     */
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Net_Init\n");
-    }
-    Net_Init();
-
-/*
-    mach_DebugState.regs[SP] = 0x80030000; 
-
-    Dbg_Main();
- */
 
     /*
      * Initialize all devices.
@@ -226,6 +210,10 @@ MachStringTable *argv;
     }
     Proc_InitMainProc();
 
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_Init\n");
+    }
+    Net_Init();
     /*
      * Initialize the routes.
      */
