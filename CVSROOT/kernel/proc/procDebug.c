@@ -255,21 +255,11 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    if (numBytes > MAX_REQUEST_SIZE) {
 		status = SYS_INVALID_ARG;
 	    } else {
-		bufferPtr = (Address) Mem_Alloc(numBytes);
 		/*
-		 * Read from the debuggee to a kernel buffer.
+		 * Read from the debuggee to the debugger.
 		 */
-		if (Vm_CopyInProc(procPtr, numBytes, srcAddr, 
-				  (Address) bufferPtr) != SUCCESS) {
-		    status = SYS_ARG_NOACCESS;
-		/*
-		 * Write the buffer to the requestor.
-		 */
-		} else if (Vm_CopyOut(numBytes, (Address) bufferPtr, 
-				      destAddr) != SUCCESS) {
-		    status = SYS_ARG_NOACCESS;
-		}
-		Mem_Free(bufferPtr);
+		status = Vm_CopyInProc(numBytes, procPtr, srcAddr, 
+				       destAddr, FALSE);
 	    }
 
 	    break;
@@ -280,30 +270,19 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 		break;
 	    }
 
-	    bufferPtr = (Address) Mem_Alloc(numBytes);
 	    /*
-	     * Read from the requestor to a kernel buffer.
+	     * Make sure that the range of bytes is writable.
 	     */
-	    if (Vm_CopyIn(numBytes, srcAddr, (Address) bufferPtr) != SUCCESS) {
-		status = SYS_ARG_NOACCESS;
-	    } else {
-		/*
-		 * Make sure that the range of bytes is writable.
-		 */
-		Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_URW_PROT);
-		/*
-		 * Write the buffer to the debuggee.
-		 */
-		if (Vm_CopyOutProc(procPtr, numBytes, 
-				    (Address) bufferPtr, destAddr) != SUCCESS) {
-		    status = SYS_ARG_NOACCESS;
-		}
-		/*
-		 * Change the protection back.
-		 */
-		Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_UR_PROT);
-	    }
-	    Mem_Free(bufferPtr);
+	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_URW_PROT);
+	    /*
+	     * Write from the debugger to the debuggee.
+	     */
+	    status = Vm_CopyOutProc(numBytes, srcAddr, FALSE,
+				    procPtr, destAddr);
+	    /*
+	     * Change the protection back.
+	     */
+	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_UR_PROT);
 
 	    break;
 
