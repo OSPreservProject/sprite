@@ -46,12 +46,11 @@ static int lruHandlesChecked;
  * Hash tables for object handles.  These are kept in LRU order and
  * a soft limit on their number is enforced.  If the number of handles
  * gets beyond fsStats.handle.maxNumber then LRU replacement is done until
- * handleScavengeThreashold (1/16) are replaced.  If all handles are in
- * use the max table size is allowed to grow by handleLimitInc (1/64).
+ * handleScavengeThreashold are replaced.  If all handles are in
+ * use the max table size is allowed to grow by handleLimitInc.
  * The table never shrinks on the premise that once it has grown the
  * memory allocator establishes a high water mark and shrinking the table
- * won't really help overall kernel memory usage - we'll still LRU scavenge
- * to free what is already in the malloc arena.
+ * won't really help overall kernel memory usage.
  */
 Hash_Table	fileHashTableStruct;
 Hash_Table	*fileHashTable = &fileHashTableStruct;
@@ -100,8 +99,13 @@ void DoneLRU();
 #define FS_HANDLE_DONT_CACHE	0x40
 
 /*
- * Macro to lock a file handle.  If CLEAN is defined we don't
- * remember the process ID of the locker, nor do we count events.
+ * LOCK_HANDLE --
+ * Macro to lock a file handle.   The handle lock is used during open/close
+ * and migration to serialize fetching, releasing, installing,
+ * and removing the handle.  Additionally, some object types use the
+ * handle lock for synchronization of I/O operations.
+ * If CLEAN is defined we don't remember the process ID of the locker,
+ * nor do we count events.
  */
 
 #ifdef CLEAN
@@ -126,7 +130,9 @@ void DoneLRU();
 #endif
 
 /*
- * Macro to unlock a file handle.
+ * UNLOCK_HANDLE --
+ *	Unlock a handle so it can be fetched by another process.
+ *	This clears the lock bit and notifies the waiting condition.
  */
 
 #ifdef CLEAN
@@ -140,10 +146,12 @@ void DoneLRU();
 #define	UNLOCK_HANDLE(hdrPtr) \
 	(hdrPtr)->flags &= ~FS_HANDLE_LOCKED; \
 	(hdrPtr)->lockProcID = NIL; \
+	fsStats.handle.unlocks++; \
 	Sync_Broadcast(&((hdrPtr)->unlocked));
 
 #endif
 /*
+ * REMOVE_HANDLE --
  * Macro to remove a handle, so no details get fogotten.  Note, removal
  * from the hash table is separate, because we do that first, and then
  * clean it up completely later with this macro.
@@ -152,7 +160,7 @@ void DoneLRU();
 #define REMOVE_HANDLE(hdrPtr) \
 	if ((hdrPtr)->lruLinks.nextPtr != (List_Links *)NIL) {	\
 	    List_Remove(&(hdrPtr)->lruLinks);		 	\
-	    fsStats.object.lruEntries--;			\
+	    fsStats.handle.lruEntries--;			\
 	}							\
 	if ((hdrPtr)->name != (char *)NIL) {			\
 	    free((hdrPtr)->name);				\
@@ -160,8 +168,9 @@ void DoneLRU();
 	free((char *)(hdrPtr));
 
 /*
+ * MOVE_HANDLE --
  * Macro to move a handle to the back (most recent) end of the LRU list.
- * Note all handle types are in the LRU list.
+ * Not all handle types are in the LRU list, hence the check against NIL.
  */
 
 #define MOVE_HANDLE(hdrPtr) \
@@ -170,6 +179,7 @@ void DoneLRU();
 	    }
 
 /*
+ * HDR_FILE_NAME --
  * Macro to give name associated with a handle.
  */
 #define HDR_FILE_NAME(hdrPtr) \
@@ -294,18 +304,18 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 	     * Limit would be exceeded, recycle some handles.
 	     */
 	    numScavenged = 0;
-	    fsStats.object.lruScans++;
+	    fsStats.handle.lruScans++;
 	    for (hdrPtr = GetNextLRUHandle();
 		 hdrPtr != (FsHandleHeader *)NIL;
 		 hdrPtr = GetNextLRUHandle()) {
 		if ((*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr)) {
 		    numScavenged++;
-		    fsStats.object.scavenges++;
+		    fsStats.handle.lruHits++;
 		    if (numScavenged >= handleScavengeThreashold) {
 			break;
 		    }
 		} else {
-		    fsStats.object.lruChecks++;
+		    fsStats.handle.lruChecks++;
 		}
 	    }
 	    /*
@@ -411,7 +421,7 @@ again:
 	if (fsStreamOpTable[fileIDPtr->type].scavenge != (Boolean (*)())NIL) {
 	    List_InitElement(&hdrPtr->lruLinks);
 	    List_Insert(&hdrPtr->lruLinks, LIST_ATREAR(lruList));
-	    fsStats.object.lruEntries++;
+	    fsStats.handle.lruEntries++;
 	} else {
 	    hdrPtr->lruLinks.nextPtr = (List_Links *)NIL;
 	    hdrPtr->lruLinks.prevPtr = (List_Links *)NIL;
@@ -468,8 +478,8 @@ ENTRY FsHandleHeader *
 FsHandleFetch(fileIDPtr)
     Fs_FileID 	*fileIDPtr;	/* Identfies handle to fetch. */
 {
-    register	Hash_Entry	*hashEntryPtr;
-    register	FsHandleHeader	*hdrPtr;
+    Hash_Entry	*hashEntryPtr;
+    FsHandleHeader	*hdrPtr;
 
     LOCK_MONITOR;
 
@@ -715,7 +725,7 @@ FsHandleReleaseHdr(hdrPtr, locked)
     Boolean	      locked;	   /* TRUE if the handle is already locked. */
 {
     LOCK_MONITOR;
-    fsStats.handle.releaseCalls++;
+    fsStats.handle.release++;
 
     if (locked && ((hdrPtr->flags & FS_HANDLE_LOCKED) == 0)) {
 	UNLOCK_MONITOR;
@@ -738,7 +748,7 @@ FsHandleReleaseHdr(hdrPtr, locked)
 	/*
 	 * The handle has been removed, and we are the last reference.
 	 */
-	fsStats.object.limbo--;
+	fsStats.handle.limbo--;
 	FS_TRACE_HANDLE(FS_TRACE_RELEASE_FREE, hdrPtr);
         REMOVE_HANDLE(hdrPtr);
      } else {
@@ -800,7 +810,7 @@ FsHandleRemoveInt(hdrPtr)
 	 * be found, but someone has a reference to it.  HandleRelease
 	 * will free the handle for us later.
 	 */
-	fsStats.object.limbo++;
+	fsStats.handle.limbo++;
 	FS_TRACE_HANDLE(FS_TRACE_REMOVE_LEAVE, hdrPtr);
 	hdrPtr->flags |= FS_HANDLE_REMOVED;
     } else {
