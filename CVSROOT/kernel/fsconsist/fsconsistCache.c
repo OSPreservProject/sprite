@@ -518,6 +518,9 @@ done:
 		    mode |= FSCONSIST_INVALIDATE_BLOCKS;
 		}
 		ClientCommand(consistPtr, clientPtr, mode);
+#ifdef SOSP91
+		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr.fileID, mode);
+#endif SOSP91
 		statPtr->writeBack++;
 		if (countMigration) {
 		    migStatPtr->cacheWritableFiles++;
@@ -531,6 +534,9 @@ done:
 		 */
 		ClientCommand(consistPtr, clientPtr,
 					FSCONSIST_INVALIDATE_BLOCKS);
+#ifdef SOSP91
+		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr.fileID, FSCONSIST_INVALIDATE_BLOCKS);
+#endif SOSP91
 		statPtr->readInvalidate++;
 	    } else if (clientPtr->use.write > 0) {
 		/*
@@ -540,6 +546,9 @@ done:
 		ClientCommand(consistPtr, clientPtr,
 			      FSCONSIST_WRITE_BACK_BLOCKS |
 			      FSCONSIST_INVALIDATE_BLOCKS | writebackFlags);
+#ifdef SOSP91
+		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr.fileID, FSCONSIST_WRITE_BACK_BLOCKS | FSCONSIST_INVALIDATE_BLOCKS);
+#endif SOSP91
 		statPtr->writeInvalidate++;
 	    }
 	    if (countMigration) {
@@ -549,6 +558,10 @@ done:
 	}
     }
     if (cacheable) {
+#ifdef SOSP91
+	SOSP_ADD_CONSIST_CHANGE_TRACE(clientID, consistPtr->hdrPtr.fileID, SOSP_OPEN, openForWriting);
+#endif /* SOSP91 */
+
 	statPtr->cacheable++;
 	if (countMigration) {
 	    if (notCaching == clients) {
@@ -1052,6 +1065,9 @@ Fsconsist_MigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 		Fsutil_HandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	}
+#ifdef SOSP91
+		SOSP_ADD_CONSIST_CHANGE_TRACE(clientID, consistPtr->hdrPtr.fileID, SOSP_CLOSE, cache);
+#endif SOSP91
     }
     /*
      * The rest of this is like regular cache consistency.
@@ -1168,6 +1184,11 @@ Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
 		 * is an optimization to not make stating of binaries
 		 * abysmally slow.
 		 */
+
+#ifdef SOSP91
+		/* what do I do about attribute call-backs? */
+		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr.fileID, XXX);
+#endif SOSP91
 		ClientCommand(consistPtr, clientPtr, FSCONSIST_WRITE_BACK_ATTRS);
 	    }
 	}
@@ -1227,6 +1248,10 @@ Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
 	UNLOCK_MONITOR;
 	return(FALSE);
     }
+
+#ifdef SOSP91
+    SOSP_ADD_CONSIST_CHANGE_TRACE(clientID, consistPtr->hdrPtr.fileID, SOSP_CLOSE, *wasCachedPtr);
+#endif SOSP91
 
     if ((consistPtr->lastWriter != -1) && (flags & FS_LAST_DIRTY_BLOCK)) {
 	if (clientID != consistPtr->lastWriter) {
@@ -1440,6 +1465,9 @@ Fsconsist_ClientRemoveCallback(consistPtr, clientID)
 		 * when it is truely time to remove the file.
 		 */
 		ClientCommand(consistPtr, clientPtr, FSCONSIST_DELETE_FILE);
+#ifdef SOSP91
+		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr.fileID, FSCONSIST_DELETE_FILE);
+#endif SOSP91
 		(void)EndConsistency(consistPtr);
 	    }
 	}
@@ -1637,6 +1665,10 @@ Fsconsist_FetchDirtyBlocks(consistPtr, invalidate)
 		flags |= FSCONSIST_INVALIDATE_BLOCKS;
 	    }
 	    ClientCommand(consistPtr, clientPtr, flags);
+#ifdef SOSP91
+	    /*  This is a weird one XXX */
+	    SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr.fileID, flags);
+#endif SOSP91
 	    (void)EndConsistency(consistPtr);
 	}
     }
