@@ -30,10 +30,13 @@ extern TraceLog_Header *SOSP91TracePtr;
 
 /*
  * Letters to keep track of trace versions.
+ * Version 2: January 9
  */
 #define VERSION1	'A'
+#define VERSION2	'B'
+#define VERSION3	'C'
 
-#define VERSIONLETTER	VERSION1
+#define VERSIONLETTER	VERSION2
 
 /*
  * Definitions for the types of log records.  These are the events being
