@@ -426,6 +426,36 @@ Fscache_OkToScavenge(cacheInfoPtr)
 /*
  * ----------------------------------------------------------------------------
  *
+ * Fscache_OkToScavengeExceptDirty --
+ *
+ * 	This is called at handle reopen time to see if it is necessary to
+ *	reopen the handle.  This calls a routine in fsBlockCache.c
+ *	which gets the global cache monitor lock because the blocksInCache
+ *	attribute and FS_FILE_ON_DIRTY list flags is modified under that lock.
+ *
+ * Results:
+ *	TRUE if there are no references to or dirty blocks for the file.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY Boolean
+Fscache_OkToScavengeExceptDirty(cacheInfoPtr)
+    register Fscache_FileInfo	*cacheInfoPtr;	/* Cache state to check. */
+{
+    register Boolean ok;
+    LOCK_MONITOR;
+    ok = FscacheBlockOkToScavengeExceptDirty(cacheInfoPtr);
+    UNLOCK_MONITOR;
+    return(ok);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * Fscache_Consist --
  *
  * 	This is called from ProcessConsist to take a cache consistency

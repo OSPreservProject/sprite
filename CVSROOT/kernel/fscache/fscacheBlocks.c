@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include	<proc.h>
 #include	<sys.h>
 #include	<rpc.h>
+#include	<recov.h>
 
 
 /*
@@ -3047,6 +3048,78 @@ FscacheBlockOkToScavenge(cacheInfoPtr)
 	panic( "FsCacheFileBlocks, wrong block count\n");
 	return(FALSE);
     }
+    ok = (numBlocks == 0) &&
+	((cacheInfoPtr->flags & 
+		(FSCACHE_FILE_ON_DIRTY_LIST|FSCACHE_FILE_BEING_WRITTEN)) == 0);
+    UNLOCK_MONITOR;
+    return(ok);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FscacheBlockOkToScavengeExceptDirty --
+ *
+ *	Decide if it is safe not to reopen the file handle.  This is
+ *	called from Fscache_OkToScavengeExceptDirty which
+ *	has already grabbed the per-file cache lock.
+ *
+ * Results:
+ *	TRUE if there are no dirty blocks (dirty) in the cache for this file.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY int
+FscacheBlockOkToScavengeExceptDirty(cacheInfoPtr)
+    register Fscache_FileInfo	*cacheInfoPtr;	/* Cache state to check. */
+{
+    register int numBlocks;
+    register int numBlocksCheck = 0;
+    register Boolean ok;
+    register Fscache_Block *blockPtr;
+    List_Links		*linkPtr;
+
+    LOCK_MONITOR;
+    numBlocks = cacheInfoPtr->blocksInCache;
+    LIST_FORALL(&cacheInfoPtr->blockList, (List_Links *)linkPtr) {
+	blockPtr = FILE_LINKS_TO_BLOCK(linkPtr);
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    UNLOCK_MONITOR;
+	    panic( "FsCacheFileBlocks, bad block\n");
+	    return(FALSE);
+	}
+	numBlocksCheck++;
+    }
+    LIST_FORALL(&cacheInfoPtr->indList, (List_Links *)linkPtr) {
+	numBlocksCheck++;
+    }
+    if (numBlocksCheck != numBlocks) {
+	UNLOCK_MONITOR;
+	panic( "FsCacheFileBlocks, wrong block count\n");
+	return(FALSE);
+    }
+    /*
+     * If there are only clean blocks in the file and we're not supposed
+     * to reopen such files, invalidate the clean blocks.
+     */
+    if (recov_IgnoreCleanFiles && !(cacheInfoPtr->flags &
+	    (FSCACHE_FILE_ON_DIRTY_LIST | FSCACHE_FILE_BEING_WRITTEN))) {
+	Fscache_FileInvalidate(cacheInfoPtr, 0, FSCACHE_LAST_BLOCK);
+	numBlocks = cacheInfoPtr->blocksInCache;
+    }
+    /*
+     * If there are only clean blocks in the cache and we're supposed to
+     * skip reopening them (but not invalidate them) pretend they have
+     * zero blocks.
+     */
+    if (recov_SkipCleanFiles && !(cacheInfoPtr->flags &
+	    (FSCACHE_FILE_ON_DIRTY_LIST | FSCACHE_FILE_BEING_WRITTEN))) {
+	numBlocks = 0;
+    }
+
     ok = (numBlocks == 0) &&
 	((cacheInfoPtr->flags & 
 		(FSCACHE_FILE_ON_DIRTY_LIST|FSCACHE_FILE_BEING_WRITTEN)) == 0);

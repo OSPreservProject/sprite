@@ -497,6 +497,8 @@ extern void Fscache_UpdateCachedAttr _ARGS_((Fscache_FileInfo *cacheInfoPtr,
 
 
 extern Boolean Fscache_OkToScavenge _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+extern Boolean Fscache_OkToScavengeExceptDirty _ARGS_((Fscache_FileInfo
+	*cacheInfoPtr));
 
 
 extern int Fscache_ReserveBlocks _ARGS_((Fscache_Backend *backendPtr, 

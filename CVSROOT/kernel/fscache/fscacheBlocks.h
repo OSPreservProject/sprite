@@ -52,5 +52,7 @@ extern void FscacheBlocksUnneeded _ARGS_((Fscache_FileInfo *cacheInfoPtr,
 		int offset, int numBytes));
 extern Boolean FscacheAllBlocksInCache _ARGS_((Fscache_FileInfo *cacheInfoPtr));
 extern int FscacheBlockOkToScavenge _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+extern int FscacheBlockOkToScavengeExceptDirty _ARGS_((Fscache_FileInfo
+	*cacheInfoPtr));
 
 #endif _FSBLOCKCACHE
