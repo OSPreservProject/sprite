@@ -57,7 +57,11 @@ typedef struct FsDeviceRemoteOpenPrm {
     Fs_FileID	fileID;		/* I/O fileID from name server. */
     int		useFlags;	/* FS_READ | FS_WRITE ... */
     int		dataSize;	/* size of openData */
-    FsUnionData	openData;	/* FsFileState, FsDeviceState or PdevState */
+    FsUnionData	openData;	/* FsFileState, FsDeviceState or PdevState.
+				 * NOTE. be careful when assigning this.
+				 * bcopy() of the whole thing can cause
+				 * bus errors if really only a small object
+				 * exists and it's at the end of a page. */
 } FsDeviceRemoteOpenPrm;
 
 void ReadNotify();
@@ -410,7 +414,7 @@ FsDeviceRemoteOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
     param.useFlags = useFlags;
     param.dataSize = inSize;
     if (inSize > 0) {
-	param.openData = *((FsUnionData *) inBuffer);	/* copy data */
+	bcopy((Address)inBuffer, (Address)&param.openData, inSize);
     }
     storage.requestParamPtr = (Address) &param;
     storage.requestParamSize = sizeof(FsDeviceRemoteOpenPrm);
