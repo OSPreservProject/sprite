@@ -139,13 +139,19 @@ Fsutil_Reopen(serverID, clientData)
      */
     Recov_ClearClientState(serverID, SRV_RECOV_IN_PROGRESS);
     /*
+     * Tell VM that we have recovered in case this was the swap server.  
+     * This comes before we kick blocked processes, so that we can avoid a
+     * potential deadlock: if a process in the middle of forking hangs
+     * because the swap server is down, its child might be locked.  If this
+     * happens, the wakeup routine will hang waiting to unlock the child,
+     * which means the parent must be started first, so that the child will
+     * eventually be unlocked.  (See Sprite bug report 32338.)
+     */
+    Vm_Recovery();
+    /*
      * Kick all processes in case any are blocking on I/O
      */
     Proc_WakeupAllProcesses();
-    /*
-     * Tell VM that we have recovered in case this was the swap server.
-     */
-    Vm_Recovery();
 }
 
 /*
