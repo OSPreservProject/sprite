@@ -106,8 +106,19 @@ FsRmtFileHandleInit(fileIDPtr, fileStatePtr, openForWriting, name,
 {
     register Fsrmt_FileIOHandle *handlePtr;
     Boolean found;
+    int	    size;
 
-    found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fsrmt_FileIOHandle), name,
+    /*
+     * Since both Fsrmt_FileIOHandle and Fsio_FileIOHandle are so 
+     * popular on the root file server we try to use the same memory
+     * size for both.  We choose to allocate the large of the two.
+     */
+    size = sizeof(Fsrmt_FileIOHandle);
+    if (size < sizeof(Fsio_FileIOHandle)) {
+	size = sizeof(Fsio_FileIOHandle);
+    }
+
+    found = Fsutil_HandleInstall(fileIDPtr, size, name,
 		    FALSE, (Fs_HandleHeader **)newHandlePtrPtr);
     handlePtr = *newHandlePtrPtr;
     if (found) {
