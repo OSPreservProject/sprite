@@ -1682,6 +1682,14 @@ TLBHashInsert(pid, page, lowReg, hiReg)
 {
     TLBHashBucket	*hashBucketPtr;
 
+    if (pid == VMMACH_KERN_PID) {
+	/*
+	 * Don't insert any entries for the kernel pid.  This will only 
+	 * happen because a process with no VM is doing a CopyOutProc.
+	 */
+	return;
+    }
+
     tlbCountersPtr->numInserts++;
     hashBucketPtr = &vmMachTLBHashTable[TLB_HASH(pid, page)];
     if (hashBucketPtr->high == hiReg) {
@@ -1849,7 +1857,7 @@ VmMach_UserUnmap()
     userMapped = FALSE;
     procPtr = Proc_GetCurrentProc();
     if (procPtr != mappedProcPtr) {
-	panic("VmMach_UserUnmap: Different process is unmapping\n");
+	printf("VmMach_UserUnmap: Different process is unmapping\n");
     }
     mappedProcPtr = (Proc_ControlBlock *)NIL;
     pid = procPtr->vmPtr->machPtr->pid;
