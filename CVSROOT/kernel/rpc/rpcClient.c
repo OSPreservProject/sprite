@@ -487,7 +487,7 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 	    (void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->requestRpcHdr,
 						 &chanPtr->request,
 						 (RpcBufferSet *)NIL, 0,
-						 (int *)NIL);
+						 (Sync_Semaphore *)NIL);
 
 	    chanPtr->state &= ~CHAN_BUSY;
 	}
