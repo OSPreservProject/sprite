@@ -23,6 +23,9 @@
  * Cache consistency routines.
  */
 extern void		FsLockInit();
-extern ReturnStatus	FsFileLock();
-extern ReturnStatus	FsFileUnlock();
+extern ReturnStatus	FsIocLock();
+extern ReturnStatus	FsLock();
+extern ReturnStatus	FsUnlock();
+extern void		FsLockClose();
+extern void		FsLockClientKill();
 #endif _FSLOCK
