@@ -15,9 +15,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "swapBuffer.h"
 #include "machConst.h"
 #include "machMon.h"
+#include "machInt.h"
 #include "mach.h"
 #include "proc.h"
 #include "sys.h"
+#include "sched.h"
+#include "vm.h"
+#include "vmMachInt.h"
 
 /*
  *  Number of processors in the system.
@@ -77,18 +81,33 @@ Address	mach_LastUserAddr;
 Address	mach_MaxUserStackAddr;
 int	mach_LastUserStackPage;
 
-#define	MAXCALLS	120
-#define	MAXARGS		2
-
-ReturnStatus	(*(mach_NormalHandlers[MAXCALLS]))();
+int	machMaxSysCall;			/* Hightest defined system call. */
+int	machArgOffsets[SYS_NUM_SYSCALLS];	/* For each system call, tells how
+					 * much to add to the fp at the time
+					 * of the call to get to the highest
+					 * argument on the stack.  */
+Address	machArgDispatch[SYS_NUM_SYSCALLS];	/* For each system call, gives an
+					 * address to branch to, in the
+					 * middle of MachFetchArgs, to copy the
+					 * right # of args from user space to
+					 * the kernel's stack. */
+ReturnStatus	(*(mach_NormalHandlers[SYS_NUM_SYSCALLS]))();
 					/* For each system call, gives the
 					 * address of the routine to handle
 					 * the call for non-migrated processes.
 				         */
-ReturnStatus (*(mach_MigratedHandlers[MAXCALLS]))();
+ReturnStatus (*(mach_MigratedHandlers[SYS_NUM_SYSCALLS]))();
 					/* For each system call, gives the
 					 * address of the routine to handle
 				         * the call for migrated processes. */
+int	machKcallTableOffset;		/* Byte offset of the kcallTable field
+					 * in a Proc_ControlBlock. */
+int	machStatePtrOffset;		/* Byte offset of the machStatePtr
+					 * field in a Proc_ControlBlock. */
+int	machSpecialHandlingOffset;	/* Byte offset of the specialHandling
+					 * field in a Proc_ControlBlock. */
+char	mach_DebugStack[0x2000];	/* The debugger stack. */
+
 /*
  * Pointer to the state structure for the current process.
  */
@@ -97,13 +116,11 @@ Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 /*
  * For testing correctness of defined offsets.
  */
-Mach_RegState	regStateHolder;
-Mach_State	stateHolder;
-Proc_ControlBlock	dumb;
-int		machMachProcOffset = 0;		/* set to offset in pcb */
+Mach_RegState		testMachRegState;
+Mach_State		testMachState;
+Proc_ControlBlock	testPCB;
 int		debugCounter = 0;		/* for debugging */
 int		debugSpace[500];
-char		mach_DebugStack[0x2000];	/* debugger stack */
 Address		theAddrOfVmPtr = 0; 
 Address		theAddrOfMachPtr = 0;
 Address		oldAddrOfVmPtr = 0; 
@@ -143,9 +160,6 @@ Address		oldAddrOfMachPtr = 0;
 void
 Mach_Init()
 {
-    /* Temporary: for debugging net module and debugger: */
-    mach_NumDisableInterrupts[0] = 1;
-
     /*
      * Set exported machine dependent variables.
      */
@@ -165,18 +179,22 @@ Mach_Init()
     }
 	
 #define	CHECK_OFFSETS(s, o)		\
-    if ((unsigned int)(&(stateHolder.s)) - (unsigned int)(&stateHolder) != o) {\
+    if ((unsigned int)(&(testMachState.s)) - \
+	    (unsigned int)(&testMachState) != o) {\
 	panic("Bad offset for registers.  Redo machConst.h!\n");\
     }
 #define	CHECK_TRAP_REG_OFFSETS(s, o)		\
-    if ((unsigned int)(&(regStateHolder.s)) -	\
-	(unsigned int)(&regStateHolder) != o) {\
+    if ((unsigned int)(&(testMachRegState.s)) -	\
+	(unsigned int)(&testMachRegState) != o) {\
 	panic("Bad offset for trap registers.  Redo machConst.h!\n");\
     }
 
     CHECK_SIZE(Mach_RegState, MACH_SAVED_STATE_FRAME);
     CHECK_OFFSETS(trapRegs, MACH_TRAP_REGS_OFFSET);
     CHECK_OFFSETS(switchRegs, MACH_SWITCH_REGS_OFFSET);
+    CHECK_OFFSETS(savedRegs, MACH_SAVED_REGS_OFFSET);
+    CHECK_OFFSETS(savedMask, MACH_SAVED_MASK_OFFSET);
+    CHECK_OFFSETS(savedSps, MACH_SAVED_SPS_OFFSET);
     CHECK_OFFSETS(kernStackStart, MACH_KSP_OFFSET);
     CHECK_TRAP_REG_OFFSETS(curPsr, MACH_LOCALS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(ins, MACH_INS_OFFSET);
@@ -185,11 +203,24 @@ Mach_Init()
 #undef CHECK_SIZE
 #undef CHECK_OFFSETS
     /*
+     * Initialize some of the dispatching information.  The rest is initialized
+     * by Mach_InitSysCall, below.
+     */
+
+    /*
      * Get offset of machStatePtr in proc control blocks.  This one is
      * subject to a different module, so it's easier not to use a constant.
      */
-    machMachProcOffset = (unsigned int)(&(dumb.machStatePtr)) -
-	    (unsigned int)(&dumb);
+    machStatePtrOffset = (unsigned int)(&(testPCB.machStatePtr)) -
+	    (unsigned int)(&testPCB);
+    machKcallTableOffset = (unsigned int)(&(testPCB.kcallTable)) -
+	    (unsigned int)(&testPCB);
+    machSpecialHandlingOffset = (unsigned int)(&(testPCB.specialHandling)) -
+	    (unsigned int)(&testPCB);
+    machMaxSysCall = -1;
+
+    /* Temporary: for debugging net module and debugger: */
+    mach_NumDisableInterrupts[0] = 1;
 
     return;
 }
@@ -402,7 +433,6 @@ Mach_StartUserProc(procPtr, entryPoint)
     Address		entryPoint;	/* Where process is to start
 					 * executing. */
 {
-#ifdef NOTDEF
     register	Mach_State	*statePtr;
     register	Mach_ExcStack	*excStackPtr;
 
@@ -418,9 +448,6 @@ Mach_StartUserProc(procPtr, entryPoint)
 
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
-#else
-    panic("Mach_StartUserProc called.\n");
-#endif NOTDEF
 }
 
 
@@ -478,14 +505,10 @@ Mach_FreeState(procPtr)
     Proc_ControlBlock	*procPtr;	/* Process control block to free
 					 * machine state for. */
 {
-#ifdef NOTDEF
     if (procPtr->machStatePtr->kernStackStart != (Address)NIL) {
 	Vm_FreeKernelStack(procPtr->machStatePtr->kernStackStart);
 	procPtr->machStatePtr->kernStackStart = (Address)NIL;
     }
-#else
-    panic("Mach_FreeState called.\n");
-#endif NOTDEF
 }
 
 
@@ -679,10 +702,10 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
     if (machMaxSysCall != callNum) {
 	panic("out-of-order kernel call initialization");
     }
-    if (machMaxSysCall >= MAXCALLS) {
+    if (machMaxSysCall >= SYS_NUM_SYSCALLS) {
 	panic("too many kernel calls");
     }
-    if (numArgs > MAXARGS) {
+    if (numArgs > SYS_MAX_ARGS) {
 	panic("too many arguments to kernel call");
     }
     /*
@@ -711,10 +734,10 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
      * and the jump offset below!
      */
     if (numArgs <= 6) {
-	machArgDispatch[machMaxSysCall] =  MachFetchArgsEnd;
+	machArgDispatch[machMaxSysCall] =  (Address) MachFetchArgsEnd;
     } else {
 	machArgDispatch[machMaxSysCall] = (10 - numArgs - 6)*16 +
-		(Address)((unsigned int)MachFetchArgs);
+		((Address)MachFetchArgs);
     }
     mach_NormalHandlers[machMaxSysCall] = normalHandler;
     mach_MigratedHandlers[machMaxSysCall] = migratedHandler;
@@ -1536,15 +1559,6 @@ Mach_GetNumProcessors()
 }
 
 
-#ifdef NOTDEF
-void
-MachHandleTestCounter()
-{
-    Mach_MonPrintf("timer reached 1000\n");
-    return;
-}
-#endif NOTDEF
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1614,6 +1628,9 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     Address		pcValue;
 {
     Proc_ControlBlock	*procPtr;
+    Boolean		protError;
+    Boolean		copyInProgress = FALSE;
+    ReturnStatus	status;
 
     procPtr = Proc_GetActualProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -1640,7 +1657,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 		(pcValue < (Address) VmMachCopyEnd)) {
 	    copyInProgress = TRUE;
 	} else if ((pcValue >= (Address) MachFetchArgs) &&
-		(pcValue < = MachFetchArgsEnd)) {
+		(pcValue <= (Address) MachFetchArgsEnd)) {
 	    copyInProgress = TRUE;
 	} else if (procPtr->vmPtr->numMakeAcc == 0) {
 	    /*
@@ -1676,6 +1693,9 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	/* Kill user process */
 #ifdef NOTDEF
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
+#else
+	/* Can I do this here temporarily this way? */
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 #endif NOTDEF
     }
     return(MACH_OK);
@@ -1747,8 +1767,9 @@ MachUserAction()
 		 * pointer?  I don't think I need to, since it's stored in
 		 * kernel space and I verified it before storing it.
 		 */
-		if (Vm_CopyOut(size, (Address)&(machStatePtr->savedRegs[i]),
-			machStatePtr->savedSps[i]) != SUCCESS
+		if (Vm_CopyOut(MACH_SAVED_WINDOW_SIZE,
+			(Address)&(machStatePtr->savedRegs[i]),
+			machStatePtr->savedSps[i]) != SUCCESS) {
 		    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 		}
 	    }
@@ -1758,7 +1779,7 @@ MachUserAction()
      * Now check for signal stuff.
      */
     sigStack.contextPtr = &sigContext;
-    if (Sig_Handle(procPtr, &sigStack, &pc))a {
+    if (Sig_Handle(procPtr, &sigStack, &pc)) {
 	panic("MachUserAction: can't do signal stuff yet!\n");
     }
     return FALSE;

@@ -89,7 +89,7 @@ _MachTrap:
 	 * structure in that case...
 	 */
 	/*
-	 * The psr was saved into %CUR_PSR_REG in delay slot in trap table. */
+	 * The psr was saved into %CUR_PSR_REG in delay slot in trap table.
 	 */
 	mov	%tbr, %CUR_TBR_REG
 	mov	%y, %CUR_Y_REG
@@ -134,7 +134,8 @@ WindowOkay:
         ld      [%VOL_TEMP1], %VOL_TEMP2 		/* get machStatePtr */
         add     %VOL_TEMP2, MACH_KSP_OFFSET, %VOL_TEMP1 /* &(machPtr->ksp) */
         ld      [%VOL_TEMP1], %sp 			/* machPtr->ksp */
-        add     %sp, (MACH_KERN_STACK_SIZE - MACH_SAVED_STATE_FRAME), %sp 
+	set	(MACH_KERN_STACK_SIZE - MACH_SAVED_STATE_FRAME), %VOL_TEMP1
+        add     %sp, %VOL_TEMP1, %sp 
 	/*
 	 * Since we came from user mode, set the trapRegs field of the
 	 * current state structure to the value of our new kernel sp,
@@ -164,7 +165,7 @@ DoneWithUserStuff:
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap */
 
 	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
-	be	MachSysCallTrap
+	be	MachSyscallTrap
 	nop
 
 	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
@@ -260,11 +261,11 @@ DoneWithUserStuff:
 	 * state for us.  Now we just want to go back and deal with the
 	 * special
 	cmp	%VOL_TEMP1, MACH_WINDOW_OVERFLOW	/* weird overflow */
-	be	MachReturnFromOverflowWithSavedState
+	be	MachReturnToOverflowWithSavedState
 	nop
 
 	cmp	%VOL_TEMP1, MACH_WINDOW_UNDERFLOW	/* weird underflow */
-	be	MachReturnFromUnderflowWithSavedState
+	be	MachReturnToUnderflowWithSavedState
 	nop
 
 	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER		/* enter debugger */
@@ -332,11 +333,13 @@ _MachReturnFromTrap:
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	tst	%VOL_TEMP1
 	be	NormalReturn
+	nop
 	call	_MachUserAction
 	nop
 	/* Must we handle a signal? */
-	tst	%RET_VAL_REG
+	tst	%RETURN_VAL_REG
 	bne	NormalReturn
+	nop
 
 NormalReturn:
 	MACH_UNDERFLOW_TEST(testModuloLabel)
@@ -360,7 +363,7 @@ NormalReturn:
 	bne	KillUserProc
 	nop
 	MACH_CHECK_FOR_FAULT(%fp, %VOL_TEMP1)
-	be	CheckNext
+	be	CheckNextFault
 	nop
 	/*
 	 * Call VM Stuff with the %fp which will be stack pointer in
@@ -373,7 +376,7 @@ NormalReturn:
 	tst	%RETURN_VAL_REG
 	bne	KillUserProc
 	nop
-CheckNext:
+CheckNextFault:
 	/* Check other extreme of area we'd touch */
 	add	%fp, MACH_SAVED_WINDOW_SIZE, %o0
 	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
@@ -459,6 +462,7 @@ MachHandleWindowOverflowTrap:
         ld      [%VOL_TEMP1], %VOL_TEMP1
         tst     %VOL_TEMP1
         be      NormalOverflowReturn
+	nop
 	/*
 	 * We need to save state and put space on the stack pointer, etc.
 	 * Run through regular trap preamble to do this.  The trap preamble
@@ -475,7 +479,7 @@ MachHandleWindowOverflowTrap:
 	 * directly from MachTrap for this trap case, but this looks better
 	 * here.  Maybe?
 	 */
-MachReturnFromOverflowWithSavedState:
+MachReturnToOverflowWithSavedState:
 	call	_MachReturnFromTrap
 	nop
 
@@ -625,7 +629,8 @@ SaveToInternalBuffer:
 	sll	%g4, MACH_NUM_REG_SHIFT, %g4
 	add	%g3, %g4, %g3		/* offset to start saving at */
 	MACH_SAVE_WINDOW_TO_BUFFER(%g3)
-	jmp	ReturnFromOverflow
+	set	ReturnFromOverflow, %g3
+	jmp	%g3
 	nop
 NormalOverflow:
 	/*
@@ -706,8 +711,9 @@ ReturnFromOverflow:
 MachHandleWindowUnderflowTrap:
 	clr	%SAFE_TEMP	/* used to mark whether we saved state */
 	/* Test if we came from user mode. */
-	andcc	%CUR_SER_REG, MACH_PS_BIT, %g0
+	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
 	bne	NormalUnderflow
+	nop
 	/*
 	 * Test if stack is resident for window we need to restore.
 	 * This means move back a window and test its frame pointer since
@@ -757,7 +763,7 @@ MachReturnToUnderflowWithSavedState:
 	 */
 	restore
 	MACH_CHECK_FOR_FAULT(%fp, %o0)
-	be	CheckNext			/* this one okay, goto next */
+	be	CheckNextUnderflow		/* this one okay, goto next */
 	nop
 	mov	%fp, %o0			/* do the page in for first */
 	save					/* back to trap window */
@@ -767,7 +773,7 @@ MachReturnToUnderflowWithSavedState:
 	call	_Vm_PageIn, 2
 	nop
 	tst	%RETURN_VAL_REG
-	be,a	CheckNext			/* succeeded, try next */
+	be,a	CheckNextUnderflow		/* succeeded, try next */
 	restore		/* back to window to check in, only if branching!! */
 KillTheProc:
 	/* KILL IT - must be in trap window */
@@ -776,7 +782,7 @@ KillTheProc:
 	clr	%o2
 	call	_Proc_ExitInt, 3
 	nop
-CheckNext:
+CheckNextUnderflow:
 	add	%fp, MACH_SAVED_WINDOW_SIZE, %o1
 	MACH_CHECK_FOR_FAULT(%o1, %o0)
 	save					/* back to trap window */
@@ -805,7 +811,8 @@ NormalUnderflow:
 	mov	%VOL_TEMP1, %g3			/* restore globals */
 	mov	%VOL_TEMP2, %g4
 
-	cmp	%SAFE_TEMP, 0x11111111		/* did we have to save state? */
+	set	0x11111111, %VOL_TEMP1
+	cmp	%SAFE_TEMP, %VOL_TEMP1		/* did we have to save state? */
 	bne	NormalUnderflowReturn		/* we were okay */
 	nop
 	/*
@@ -887,7 +894,6 @@ DealWithDebugStack:
 	/* Set stack pointer of next window to regular frame pointer */
 	set	_machSavedRegisterState, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %fp
-	nop
 	
 RegularStack:
 	/*
@@ -1051,7 +1057,8 @@ MachSyscallTrap:
 	 * Is this magic number a return value?  It's in the sun3 code.
 	 */
 	set	SYS_INVALID_SYSTEM_CALL, %RETURN_VAL_REG
-	jmp	ReturnFromSyscall
+	set	ReturnFromSyscall, %VOL_TEMP1
+	jmp	%VOL_TEMP1
 	nop
 GoodSysCall:
 	/*
@@ -1155,11 +1162,12 @@ _MachFetchArgsEnd:
 	/* go do it */
 	call	%VOL_TEMP1
 	nop
+ReturnFromSyscall:
 	/* Disable interrupts.  (Is this necessary?  Sun3 does it.) */
 	mov	%psr, %VOL_TEMP1
-	or	%VOL_TEMP1, MACH_DISABLE_INTERRUPTS, %VOL_TEMP1
+	or	%VOL_TEMP1, MACH_DISABLE_INTR, %VOL_TEMP1
 	mov	%VOL_TEMP1, %psr
-	WAIT_FOR_STATE_REGISTER
+	MACH_WAIT_FOR_STATE_REGISTER()
 	/*
 	 * So that we don't re-execute the trap instruction when we
 	 * return from the system call trap via the return trap procedure,

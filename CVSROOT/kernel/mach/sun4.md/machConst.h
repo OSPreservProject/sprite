@@ -20,6 +20,20 @@
 #endif
 
 /*
+ * Return codes from some trap routines.
+ *
+ *    MACH_OK		Successfully handled.
+ *    MACH_KERN_ERROR	Debugger must be called.
+ *    MACH_USER_ERROR	User process error (bad stack, etc).  Kill user process.
+ *    MACH_SIG_RETURN	Returning from signal handler.
+ *
+ */
+#define	MACH_OK		0
+#define	MACH_KERN_ERROR	1
+#define	MACH_USER_ERROR	2
+#define	MACH_SIG_RETURN	3
+
+/*
  * Here are the different types of exceptions, represented by the contents
  * of the trap type bits in the trap base register..  These are listed in order
  * of highest priority to lowest. All the MACH_TRAP_INSTR's are of the same
@@ -43,7 +57,7 @@
 #define	MACH_TRAP_INSTR_FIRST	0x800		/* 128 */
 #define	MACH_TRAP_INSTR_1	0x810		/* 129 */
 #define	MACH_TRAP_INSTR_2	0x820		/* 130 */
-#deifne	MACH_TRAP_INSTR_3	0x830		/* 131 */
+#define	MACH_TRAP_INSTR_3	0x830		/* 131 */
 #define	MACH_TRAP_INSTR_LAST	0xff0
 
 #define	MACH_LEVEL1_INT		0x110		/* 17 */
@@ -67,7 +81,7 @@
 			/* trap instruction number is trap type - 128 */
 #define	MACH_CALL_DBG_TRAP	(MACH_TRAP_DEBUGGER - 128)
 #define	MACH_BRKPT_TRAP		(MACH_TRAP_INSTR_2 - 128)
-#deifne	MACH_SYSCALL_TRAP	(MACH_TRAP_SYSCALL - 128)
+#define	MACH_SYSCALL_TRAP	(MACH_TRAP_SYSCALL - 128)
 
 /*
  * Mask for extracting the trap type from the psr.
@@ -122,6 +136,7 @@
 #define	MACH_ENABLE_TRAP_BIT		0x20	/* or with %psr */
 #define	MACH_DISABLE_TRAP_BIT		0xFFFFFFDF	/* and with %psr */
 #define	MACH_SUPER_BIT			0x80
+#define	MACH_PS_BIT			0x40	/* and with psr - prev. state */
 
 /*
  * psr value for interrupts disabled, traps enabled and window 0.
@@ -146,15 +161,18 @@
 #define	MACH_ENABLE_TIMER_INTR_LEVEL	MACH_ENABLE_LEVEL10_INTR
 
 /*
+ * Bits to access bus error register.
+ */
+#define	MACH_SIZE_ERROR		0x02
+#define	MACH_VME_ERROR		0x10
+#define	MACH_TIMEOUT_ERROR	0x20
+#define	MACH_PROT_ERROR		0x40
+#define	MACH_INVALID_ERROR	0x80
+
+/*
  * MACH_KERN_START	The address where the kernel image is loaded at.
  * MACH_CODE_START	The address where the kernel code is loaded at.
- * MACH_STACK_START The address of the base of the stack. (1st word is
- *							unusable.)
-#ifdef NOTDEF
-	    No -- I'm allocating this as a variable now, for testing.
- * MACH_DEBUG_STACK_START The address of the base of the debugger stack.
-#endif NOTDEF
- *						(1st word is unusable.)
+ * MACH_STACK_START The address of the base of the stack.  1st word is unusable.
  * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
  *			main process that is initially run.
  * MACH_KERN_END	The address where the last kernel virtual address is
@@ -170,9 +188,6 @@
  */
 #define	MACH_KERN_START		0xff000000
 #define	MACH_STACK_START	(MACH_KERN_START + 0x4000)
-#ifdef NOTDEF
-#define	MACH_DEBUG_STACK_START	(MACH_KERN_START + 0x2000)
-#endif NOTDEF
 #define	MACH_CODE_START		(MACH_STACK_START + 0x20)
 #define	MACH_STACK_BOTTOM	MACH_KERN_START
 #define MACH_KERN_END		VMMACH_DEV_START_ADDR
@@ -199,16 +214,32 @@
 #define	MACH_MAX_USER_STACK_ADDR	(VMMACH_MAP_SEG_ADDR & VMMACH_ADDR_MASK)
 
 /*
- * Constants for getting to offsets in state structure.  To make sure these
+ * Constants for getting to offsets in structures:  To make sure these
  * constants are correct, there is code in machCode.c that will cause
  * the kernel to die upon booting if the offsets aren't what's here.
  * All sizes are in bytes.
  */
-#define	MACH_TRAP_REGS_OFFSET		0
-#define	MACH_SWITCH_REGS_OFFSET		4
-#define	MACH_LOCALS_OFFSET		0
-#define	MACH_INS_OFFSET			(MACH_LOCALS_OFFSET + 8 * 4)
-#define	MACH_GLOBALS_OFFSET		(MACH_INS_OFFSET + 8 * 4)
+/*
+ * Byte offsets from beginning of a Mach_RegState structure to the fields
+ * for the various types of registers..
+ */
+#define	MACH_LOCALS_OFFSET	0
+#define	MACH_INS_OFFSET		(MACH_LOCALS_OFFSET + MACH_NUM_LOCALS * 4)
+#define	MACH_GLOBALS_OFFSET	(MACH_INS_OFFSET + (MACH_NUM_INS * 2) * 4 + \
+				 MACH_NUM_EXTRA_ARGS * 4)
+						/* skip over calleeInputs too */
+/*
+ * Byte offset from beginning of a Mach_State structure to various register
+ * fields, the savedSps field, the savedRegs field, the savedMask field, and
+ * the kernStackStart field.
+ */
+#define	MACH_TRAP_REGS_OFFSET	0
+#define	MACH_SWITCH_REGS_OFFSET	(MACH_TRAP_REGS_OFFSET + 4)
+#define	MACH_SAVED_REGS_OFFSET	(MACH_SWITCH_REGS_OFFSET + 4)
+#define	MACH_SAVED_MASK_OFFSET	(MACH_SAVED_REGS_OFFSET + (MACH_NUM_WINDOWS *\
+				MACH_NUM_WINDOW_REGS * 4))
+#define	MACH_SAVED_SPS_OFFSET	(MACH_SAVED_MASK_OFFSET + 4)
+#define	MACH_KSP_OFFSET		(MACH_SAVED_SPS_OFFSET + (MACH_NUM_WINDOWS * 4))
 
 /*
  * Maximum number of processors configurable.
@@ -234,20 +265,37 @@
  * shouldn't succeed in booting if these constants are out of whack.  Keep
  * it this way!  Size is in bytes.
  */
-#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_NUM_GLOBALS * 4)
+#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE +\
+				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4)
 
 /*
- * The compiler store parameters to C routines in its caller's stack frame,
+ * The compiler stores parameters to C routines in its caller's stack frame,
  * so this is at %fp + some_amount.  "Some_amount has to be below (higher addr)
  * than the saved window area, so this means all routines that call C routines
  * with arguments must have a stack frame that is at least
  * MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE = 96 bytes.  If the
  * frame is also being used for trap state, then it's
- * MACH_SAVED_STATE_FRAME + MACH_INPUT_STORAGE.
+ * MACH_SAVED_STATE_FRAME + MACH_INPUT_STORAGE.  This MACH_INPUT_STORAGE is
+ * the space for calleeInputs in the Mach_Reg_State structure.
  */
 #define	MACH_INPUT_STORAGE	(MACH_NUM_INS * 4)
+
+/*
+ * Ugh, there are only 6 input register storage slots, and one "hidden param"
+ * slot for an agregate return value.  This is the space before the area
+ * where parameters past the 6th begin.
+ */
+#define	MACH_ACTUAL_HIDDEN_AND_INPUT_STORAGE	(7 * 4)
+/*
+ * Number of input registers really used as parameters.
+ */
+#define	MACH_NUM_REAL_IN_REGS	6
+
+/*
+ * This doesn't include the space for extra params, since we never use
+ * it where extra params are needed.
+ */
 #define	MACH_FULL_STACK_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE)
-#define	MACH_FULL_TRAP_FRAME	(MACH_SAVED_STATE_FRAME + MACH_INPUT_STORAGE)
 
 
 /*
@@ -266,12 +314,23 @@
 #define	MACH_RETPC_OFFSET	(MACH_NUM_LOCALS * 4 + 7 * 4)
 
 /*
+ * Number of parameters beyond the sixth that are allowed on trap entry (for
+ * system calls.
+ */
+#define	MACH_NUM_EXTRA_ARGS	(SYS_MAX_ARGS - 6)
+
+/*
  * The number of registers.
  */
 #define	MACH_NUM_GLOBALS		8
 #define	MACH_NUM_INS			8
 #define	MACH_NUM_LOCALS			8
 #define	MACH_NUM_WINDOW_REGS		(MACH_NUM_LOCALS + MACH_NUM_INS)
+/*
+ * The amount to shift left by to multiply a number by the number of registers
+ * per window.  How would I get this from the constant above?
+ */
+#define	MACH_NUM_REG_SHIFT		4
 
 /*
  * Definitions of registers.
@@ -343,5 +402,18 @@
 #define	TBR_REG			r6		/* g6 */
 #define	OUT_TEMP1		r12		/* o4 */
 #define	OUT_TEMP2		r13		/* o5 */
+
+/*
+ * GROSS STUFF: that is actually in header files elsewhere that I can't
+ * include 'cause they're for C code and not assembly headers.  I will
+ * separate them out and fix ths.
+ */
+#define	SYS_MAX_ARGS		10
+#define	SYS_NUM_SYSCALLS	94
+#define	SYS_INVALID_SYSTEM_CALL	0x00020002
+#define	SYS_INVALID_ARG		0x00020001
+#define	PROC_TERM_DESTROYED	4
+#define	PROC_BAD_STACK		1
+
 
 #endif /* _MACHCONST */

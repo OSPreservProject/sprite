@@ -64,6 +64,12 @@ MachHandleInterrupt:
 	nop
 	st	%g0, [%VOL_TEMP1]
 LeaveInterruptLevel:
+	/*
+	 * Put a good return value into the return value register so that
+	 * MachReturnFromTrap will be happy if we're returning to user mode.
+	 */
+	mov	MACH_OK, %RETURN_VAL_REG
+
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop

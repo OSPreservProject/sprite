@@ -180,6 +180,16 @@ moduloOkay:							\
 	ldd	[%sp + 48], %r28;			\
 	ldd	[%sp + 56], %r30
 
+#define	MACH_SAVE_WINDOW_TO_BUFFER(reg1)		\
+	std	%r16, [reg1];				\
+	std	%r18, [reg1 + 8];			\
+	std	%r20, [reg1 + 16];			\
+	std	%r22, [reg1 + 24];			\
+	std	%r24, [reg1 + 32];			\
+	std	%r26, [reg1 + 40];			\
+	std	%r28, [reg1 + 48];			\
+	std	%r30, [reg1 + 56]
+
 
 /*
  * Clear out the local and out registers for a new window to move into
@@ -341,5 +351,20 @@ DebugLabel:					\
 	add	reg2, reg1, reg2;		\
 	set	0x11100111, reg1;		\
 	st	reg1, [reg2]
+
+/*
+ * This is the equivalent to a call to VmmachGetPage followed by a test on
+ * the returned pte to see if it is resident and user readable and writable.
+ * This is used where a call to the vm code won't work since output registers
+ * aren't available.  This sets the condition codes so that 0 is returned
+ * if the address is resident and not protected and not zero is returned if
+ * a fault would occur.
+ */
+#define	MACH_CHECK_FOR_FAULT(checkReg, reg1)	\
+	set	VMMACH_PAGE_MAP_MASK, reg1;		\
+	and	checkReg, reg1, reg1;			\
+	lda	[reg1] VMMACH_PAGE_MAP_SPACE, reg1;	\
+	srl	reg1, VMMACH_PAGE_PROT_SHIFT, reg1;	\
+	cmp	reg1, VMMACH_PTE_OKAY_VALUE
 
 #endif /* _MACHASMDEFS */

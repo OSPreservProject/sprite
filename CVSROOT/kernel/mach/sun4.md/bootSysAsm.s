@@ -178,12 +178,6 @@ copyingTable:
 							 * to the old tbr if
 							 * interrupts are
 							 * disabled.  */
-#ifdef NOTDEF
-	mov	%psr, %g1			/* turn interrupts back on */
-	and	%g1, MACH_ENABLE_INTR, %g1
-	mov	%g1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
-#endif NOTDEF
 	call	_main
 	nop
 .align 8
@@ -226,7 +220,7 @@ machProtoVectorTable:
 	sethi	%hi(_MachTrap), %VOL_TEMP1	/* set _MachTrap, %VOL_TEMP1 */
 	or	%VOL_TEMP1, %lo(_MachTrap), %VOL_TEMP1
 	jmp	%VOL_TEMP1		/* must use non-pc-relative jump here */
-	nop
+	rd	%psr, %CUR_PSR_REG
 
 machProtoWindowOverflow:
 	sethi	%hi(MachHandleWindowOverflowTrap), %VOL_TEMP1

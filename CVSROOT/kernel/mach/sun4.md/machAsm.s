@@ -275,7 +275,7 @@ FirstTimeDontPrint:
 	 * move it to be first arg of routine we call.
 	 */
 	mov	%i1, %o0
-	call	_VmMach_SetupContext, 1	/* does the work, no? */
+	call	_VmMach_SetupContext, 1
 	nop
 	/*
 	 * Context to use was returned in %RETURN_VAL_REG.  Set the context
@@ -289,10 +289,9 @@ FirstTimeDontPrint:
 	 * in the mach state struct of the saved context switch state.  It
 	 * just so happens it's stored on the stack...
 	 */
-	set	_machMachProcOffset, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1
-	add	%i0, %VOL_TEMP1 , %VOL_TEMP1
-	/* AAAACCCK! */
+	set	_machStatePtrOffset, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* get offset */
+	add	%i0, %VOL_TEMP1 , %VOL_TEMP1		/* add to base */
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* get machStatePtr */
 	add	%VOL_TEMP1, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
 	st	%sp, [%VOL_TEMP1]
@@ -328,12 +327,16 @@ ContextRestoreSomeMore:
 	bne	ContextRestoreSomeMore
 	nop
 
-	/* restore stack pointer of new process - WE SWITCH STACKS HERE!!! */
-	set	_machMachProcOffset, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1
+	/*
+	 * Restore stack pointer of new process - WE SWITCH STACKS HERE!!!
+	 * the pointer to the new processes' state structure goes into
+	 * %SAFE_TEMP.
+	 */
+	set	_machStatePtrOffset, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* get offset */
 	add	%i1, %VOL_TEMP1, %VOL_TEMP1	/* &(procPtr->machStatePtr) */
-	ld	[%VOL_TEMP1], %VOL_TEMP1	/* procPtr->machStatePtr */
-	add	%VOL_TEMP1, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* procPtr->machStatePtr */
+	add	%SAFE_TEMP, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %sp
 
 	/* restore global registers of new process */
@@ -381,6 +384,13 @@ AgainFirstTimeDontPrint:
 
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch15, %CUR_PSR_REG)
 #endif NOTDEF
+
+	/*
+	 * Save the pointer to the current mach state structure that's in
+	 * a local register into a global variable.
+	 */
+	set	_machCurStatePtr, %VOL_TEMP1
+	st	%SAFE_TEMP, [%VOL_TEMP1]
 
 	/*
 	 * Restore status register in such a way that it doesn't make
