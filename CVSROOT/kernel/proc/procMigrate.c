@@ -1467,7 +1467,7 @@ Proc_DestroyMigratedProc(pidData)
 #endif
 
     if (procPtr->state == PROC_MIGRATED ||
-	procPtr->state == PROC_MIGRATING ||
+	(procPtr->genFlags & PROC_MIGRATING) ||
 	procPtr->state == PROC_NEW) {
 	/*
 	 * Perform an exit on behalf of the process -- it's not
