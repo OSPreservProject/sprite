@@ -248,6 +248,11 @@ DoneCheck:
 #define	VMMACH_NUM_CACHE_LINES		0x2000
 
 /*
+ * Size of cache
+ */
+#define VMMACH_CACHE_SIZE   (VMMACH_CACHE_LINE_SIZE * VMMACH_NUM_CACHE_LINES)
+
+/*
  * The highest virtual address useable by the kernel for both machine type
  * 1 and machine type 2 and 3 and 4...  This seems to be the largest
  * virtual address plus 1...

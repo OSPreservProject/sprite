@@ -129,8 +129,9 @@
 /*
  * The size of a cache block and the size of the cache.
  */
-#define	VMMACH_CACHE_BLOCK_SIZE		32
+#define	VMMACH_CACHE_LINE_SIZE		32
 #define	VMMACH_CACHE_SIZE		(128 * 1024)
+#define VMMACH_NUM_CACHE_LINES	(VMMACH_CACHE_SIZE / VMMACH_CACHE_LINE_SIZE)
 
 /*
  * The size that page tables are to be allocated in.  This grows software
