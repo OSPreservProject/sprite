@@ -180,21 +180,27 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	 * Wait until we get a poke from the timeout routine or there
 	 * is input available.  We know there is none available yet
 	 * because the MASTER_LOCK is shutting out the dispatcher.
+	 * (Well, maybe not.  Check beforehand.)
 	 */
-	chanPtr->timeoutItem.routine = Rpc_Timeout;
-	chanPtr->timeoutItem.interval = wait;
-	chanPtr->timeoutItem.clientData = (ClientData)chanPtr;
-	chanPtr->state |= CHAN_TIMEOUT | CHAN_WAITING;
-	Timer_ScheduleRoutine(&chanPtr->timeoutItem, TRUE);
-	do {
-	    /*
-	     * Wait ignoring signals.
-	     */
-	    Sync_MasterWait(&chanPtr->waitCondition,
+	if (! (chanPtr->state & CHAN_INPUT)) {
+	    chanPtr->timeoutItem.routine = Rpc_Timeout;
+	    chanPtr->timeoutItem.interval = wait;
+	    chanPtr->timeoutItem.clientData = (ClientData)chanPtr;
+	    chanPtr->state |= CHAN_TIMEOUT | CHAN_WAITING;
+	    Timer_ScheduleRoutine(&chanPtr->timeoutItem, TRUE);
+	    do {
+		/*
+		 * Wait ignoring signals.
+		 */
+		Sync_MasterWait(&chanPtr->waitCondition,
 				&chanPtr->mutex, FALSE);
-	} while (((chanPtr->state & CHAN_INPUT) == 0) &&
-		  (chanPtr->state & CHAN_TIMEOUT));
-
+	    } while (((chanPtr->state & CHAN_INPUT) == 0) &&
+		     (chanPtr->state & CHAN_TIMEOUT));
+	} else {
+#ifdef DEBUG_CHAN_MUTEX
+	    printf("RPC Channel already had input.\n");
+#endif 
+	}
 	if (chanPtr->state & CHAN_INPUT) {
 	    /*
 	     * Got some input.  The dispatch routine has copied the
