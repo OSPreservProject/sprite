@@ -553,12 +553,11 @@ DiskError(diskPtr, statusByte, senseLength, senseDataPtr)
     }
     return status;
 }
-#if defined(sun4) || defined(sun3)
-    /*
-     * This code is for the raid people to test out HBA/disks pairs 
-     * by bypassing most of Sprite.
-     * Mendel 9/12/89
-     */
+/*
+ * This code is for the raid people to test out HBA/disks pairs 
+ * by bypassing most of Sprite.
+ * Mendel 9/12/89
+ */
 
 #include <dev/hbatest.h>
 /*ARGSUSED*/
@@ -620,7 +619,6 @@ DiskHBATestDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
     *errorStatusPtr = status;
     return 0;
 }
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -685,7 +683,6 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	case	IOC_MAP:
 	    return(GEN_NOT_IMPLEMENTED);
 
-#if defined(sun4) || defined(sun3)
     /*
      * This code is for the raid people to test out HBA/disks pairs 
      * by bypassing most of Sprite.
@@ -709,10 +706,14 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    mem = malloc(sizeof(ScsiCmd)*count);
 	    if (referCount == 0) { 
 		    dmem = malloc(128*1024);
+#if defined(sun4) || defined(sun3)
 		    dmaMem = VmMach_DMAAlloc(128*1024, dmem);
 		    if (dmaMem == (Address) NIL) {
 			panic("IOControlProc: unable to allocate dma memory.");
 		    }
+#else
+		    dmaMem = dmem;
+#endif
 	    } 
 	    referCount++;
 	    scsiCmds = (ScsiCmd *) (mem);
@@ -740,7 +741,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	   }
 	   referCount--;
 	   if (referCount == 0) {
+#if defined(sun4) || defined(sun3)
 		   VmMach_DMAFree(128*1024, dmaMem);
+#endif
 		   free(dmem);
 	   }
 	   free(mem);
@@ -789,7 +792,6 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	   return errorStatus;
 
 	}
-#endif
 	default:
 	    return(GEN_INVALID_ARG);
     }

@@ -24,8 +24,15 @@
 /*
  * Definitions in this file use the List_Links data structure.
  */
-#include "list.h"
-#include "syncLock.h"
+
+#ifdef KERNEL
+#include <list.h>
+#include <syncLock.h>
+#else
+#include <list.h>
+#include <kernel/syncLock.h>
+#endif
+
 
 /*
  * DEV_QUEUE_FIFO_INSERT - InsertProc argument to Dev_QueueCreate specifing 

@@ -195,6 +195,10 @@ x: ; \
 #define STAND_FRAME_SIZE	24
 #define STAND_RA_OFFSET		20
 
+#define MACH_MON_JUMP_TABLE_ADDR	0xBFC00000
+#define MACH_MON_FUNC_ADDR(funcNum)	(MACH_MON_JUMP_TABLE_ADDR+((funcNum)*8))
+#define MACH_MON_PRINTF		MACH_MON_FUNC_ADDR(17)
+
 /*
  * Macros to panic and printf from assembly language.
  */
@@ -206,6 +210,12 @@ x: ; \
 #define	PRINTF(msg) \
 	la	a0,9f; \
 	jal	printf; \
+	MSG(msg)
+
+#define	MON_PRINTF(msg) \
+	la	a0,9f; \
+	la	t0, MACH_MON_PRINTF; \
+	jal	t0; \
 	MSG(msg)
 
 #define	MSG(msg) \
