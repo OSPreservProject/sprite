@@ -55,7 +55,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 static Proc_PID GetProcessState();
-static ReturnStatus GetFileState();
 static ReturnStatus GetStream();
 static ReturnStatus ContinueMigratedProc();
 
@@ -172,19 +171,13 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 		    /*
 		     * Get stream information and set up file pointers.
 		     */
-		    returnInfoPtr->status = GetFileState(procPtr, buffer);
-		    if (proc_MigDebugLevel > 6) {
-			Sys_Printf("GetFileState returned status %x.\n",
-				   returnInfoPtr->status);
+		    if (proc_MigDebugLevel > 7) {
+	Sys_Printf("Proc_MigReceiveInfo: calling Fs_DeencapFileState.\n");
 		    }
-		    break;
-		case PROC_MIGRATE_FS_STREAM:
-		    /*
-		     * Get information for a particular stream.
-		     */
-		    returnInfoPtr->status = GetStream(procPtr, buffer);
-		    if (proc_MigDebugLevel > 6) {
-			Sys_Printf("GetStream returned status %x.\n",
+		    returnInfoPtr->status =
+			    Fs_DeencapFileState(procPtr, buffer);
+		    if (proc_MigDebugLevel > 7) {
+			Sys_Printf("Fs_DeencapFileState returned status %x.\n",
 				   returnInfoPtr->status);
 		    }
 		    break;
@@ -248,10 +241,9 @@ GetProcessState(buffer, hostID)
     Proc_ControlBlock 	*procPtr;	/* The process being migrated */
     Proc_PID		pid;
     int			argStringLength;
-    int			trapStackSize;
     Boolean 		home = FALSE;
+    ReturnStatus	status;
 
-#ifdef notdef
     Byte_EmptyBuffer(buffer, Proc_PID, pid);
     if (pid == (Proc_PID) NIL) {
 	procPtr = ProcGetUnusedPCB();
@@ -268,71 +260,54 @@ GetProcessState(buffer, hostID)
 	}
 	Byte_EmptyBuffer(buffer, Proc_PID, peerProcessID);
 	if (peerProcessID != procPtr->peerProcessID) {
+	    Proc_Unlock(procPtr);
 	    return((Proc_PID) NIL);
 	}
     }
 
     /*
-     * Retrieve flags, IDs, scheduling information, registers, and the PC.
+     * Retrieve IDs, flags, scheduling information, and machine-dependent
+     * state.
      */
 
-    Byte_Copy(PROC_NUM_FLAGS * sizeof(int), buffer,
-	       (Address) &procPtr->genFlags);
-    buffer += PROC_NUM_FLAGS * sizeof(int);
     Byte_Copy(PROC_NUM_ID_FIELDS * sizeof(int), buffer,
 	       (Address) &procPtr->parentID);
     buffer += PROC_NUM_ID_FIELDS * sizeof(int);
-    if (procPtr->numGroupIDs) {
-	procPtr->groupIDs = (int *)
-		Mem_Alloc(procPtr->numGroupIDs * sizeof(int));
-	Byte_Copy(procPtr->numGroupIDs * sizeof(int), buffer,
-	       (Address) procPtr->groupIDs);
-	buffer += procPtr->numGroupIDs * sizeof(int);
-    } else {
-	procPtr->groupIDs = (int *)NIL;
-    }
+    Byte_Copy(PROC_NUM_FLAGS * sizeof(int), buffer,
+	       (Address) &procPtr->genFlags);
+    buffer += PROC_NUM_FLAGS * sizeof(int);
+
     procPtr->genFlags |= PROC_NO_VM;
     if (home) {
 	procPtr->genFlags &= (~PROC_FOREIGN);
-	procPtr->kcallTable = exc_NormalHandlers;
+	procPtr->kcallTable = mach_NormalHandlers;
     } else {
 	procPtr->genFlags |= PROC_FOREIGN;
-	procPtr->kcallTable = exc_MigratedHandlers;
+	procPtr->kcallTable = mach_MigratedHandlers;
     }
     procPtr->genFlags &= ~(PROC_MIG_PENDING | PROC_MIGRATING);
 
-    Byte_Copy(PROC_NUM_BILLING_FIELDS * sizeof(int), buffer,
+    Byte_Copy(PROC_NUM_SCHED_FIELDS * sizeof(int), buffer,
 	       (Address) &procPtr->billingRate);
-    buffer += PROC_NUM_BILLING_FIELDS * sizeof(int);
+    buffer += PROC_NUM_SCHED_FIELDS * sizeof(int);
 
     Byte_Copy(SIG_INFO_SIZE, buffer, (Address) &procPtr->sigHoldMask);
     buffer += SIG_INFO_SIZE;
     procPtr->sigPendingMask &=
 	    ~((1 << SIG_MIGRATE_TRAP) | (1 << SIG_MIGRATE_HOME));
-    
-    /*
-     * Since the new and old trap stacks may be of different sizes,
-     * free up any old trapStackPtr associated with this PCB and allocate
-     * a new one of the appropriate size.
-     */
-    if (procPtr->trapStackPtr != (Exc_TrapStack *) NIL) {
-	Mem_Free((Address) procPtr->trapStackPtr);
-    }
-    Byte_EmptyBuffer(buffer, int, trapStackSize);
-    procPtr->trapStackPtr = (Exc_TrapStack *) Mem_Alloc(trapStackSize);
-    Byte_Copy(trapStackSize, buffer, (Address) procPtr->trapStackPtr);
-    buffer += trapStackSize;
 
     /*
-     * Set up the kernel stack for this process.  If it's migrating back
-     * home, then free the old kernel stack first.
+     * Set up machine-dependent state.
      */
-    
-    if ((procPtr->state == PROC_MIGRATED) && (procPtr->stackStart != NIL)) {
-	Vm_FreeKernelStack(procPtr->stackStart);
+    status = Mach_DeencapState(procPtr, buffer);
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Panic(SYS_FATAL,
+		      "GetProcessState: error %x returned by Mach_DeencapState");
+	}
+	return((Proc_PID) NIL);
     }
-    procPtr->stackStart =
-	    Vm_GetKernelStack(procPtr->progCounter, ProcResumeMigProc);
+    buffer += Mach_GetEncapSize();
 
     /*
      * Set up the code segment.
@@ -347,14 +322,7 @@ GetProcessState(buffer, hostID)
     Byte_Copy(argStringLength, buffer, (Address) procPtr->argString);
     buffer += argStringLength;
 
-    /*
-     * Set up the stack and frame pointers.
-     */
-
-    procPtr->saveRegs[mach_SP] = mach_DummySPOffset + procPtr->stackStart;
-    procPtr->saveRegs[mach_FP] = mach_DummyFPOffset + procPtr->stackStart;
-
-    procPtr->state 		= PROC_READY;
+    procPtr->state 		= PROC_NEW     ;
 
     Vm_ProcInit(procPtr);
 
@@ -372,15 +340,8 @@ GetProcessState(buffer, hostID)
 	List_Init((List_Links *) procPtr->childList);
 
 
-	procPtr->cwdPtr = (Fs_Stream *)NIL;
     }
 
-    /*
-     * Initialize the file list to have no open descriptors.  
-     */
-
-    procPtr->numStreams = 0;
-    procPtr->streamList = (Fs_Stream **)NIL;
 
     pid = procPtr->processID;
     Proc_Unlock(procPtr);
@@ -390,125 +351,6 @@ GetProcessState(buffer, hostID)
     }
 
     return(pid);
-#endif
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetFileState --
- *
- *	Get the file system state of a process from another node.  The
- *	buffer contains the encapsulated cwdPtr followed by pairs of
- *	stream IDs and encapsulated stream information.
- *
- * Results:
- *	If Fs_DeencapStream returns an error, that error is returned.
- *	Otherwise, SUCCESS is returned.  
- *
- * Side effects:
- *	"Local" Fs_Streams are created and allocated to the foreign process.
- *
- *----------------------------------------------------------------------
- */
-
-static ReturnStatus
-GetFileState(procPtr, buffer)
-    Proc_ControlBlock *procPtr;
-    Address buffer;
-{
-    register Fs_ProcessState *fsPtr;
-    int fsInfoSize;
-    int i;
-    int index;
-    ReturnStatus status;
-
-    /*
-     * Get numStreams and the encapsulated cwd.
-     */
-
-    fsPtr = procPtr->fsPtr;
-    fsInfoSize = Fs_GetEncapSize();
-    Byte_EmptyBuffer(buffer, int, fsPtr->filePermissions);
-    Byte_EmptyBuffer(buffer, int, fsPtr->numStreams);
-    fsPtr->streamList = (Fs_Stream **)
-	    Mem_Alloc(fsPtr->numStreams * sizeof(Fs_Stream *));
-    status = Fs_DeencapStream(buffer, &fsPtr->cwdPtr);
-    if (status != SUCCESS) {
-	Sys_Panic(SYS_FATAL,
-		  "GetFileState: Fs_DeencapStream returned %x for cwd.\n",
-		  status);
-    }
-    buffer += fsInfoSize;
-    
-    for (i = 0; i < fsPtr->numStreams; i++) {
-	Byte_EmptyBuffer(buffer, int, index);
-	if (index != NIL) {
-	    status = Fs_DeencapStream(buffer, &fsPtr->streamList[index]);
-	    if (status != SUCCESS) {
-		if (status != FAILURE) {
-		    Sys_Panic(SYS_FATAL,
-			      "GetFileState: Fs_DeencapStream for file id %d returned %x.\n",
-			      index, status);
-		    return(status);
-		}
-		fsPtr->streamList[index] = (Fs_Stream *) NIL;
-	    }
-	} else {
-	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
-	}
-	buffer += fsInfoSize;
-    }
-    return(SUCCESS);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetStream --
- *
- *	Get the encapsulation of a single stream as the result of a migrated
- *	Fs_Open call.
- *
- * Results:
- *	If Fs_DeencapStream returns an error, that error is returned.
- *	Otherwise, SUCCESS is returned.  
- *
- * Side effects:
- *	A "Local" Fs_Stream is created and allocated to the foreign process.
- *
- *----------------------------------------------------------------------
- */
-
-static ReturnStatus
-GetStream(procPtr, buffer)
-    Proc_ControlBlock *procPtr;
-    Address buffer;
-{
-    register  Fs_ProcessState *fsPtr = procPtr->fsPtr;
-    int index;
-    ReturnStatus status;
-
-    Byte_EmptyBuffer(buffer, int, index);
-    if (index != NIL) {
-	/*
-	 * ... should really check to make sure fileList doesn't grow.
-	 */
-	status = Fs_DeencapStream(buffer, &fsPtr->streamList[index]);
-	if (status != SUCCESS) {
-	    if (status != FAILURE) {
-		Sys_Panic(SYS_WARNING,
-			  "GetStream: Fs_DeencapStream returned %x.\n");
-	    }
-	    fsPtr->streamList[index] = (Fs_Stream *) NIL;
-	}
-    } else {
-	Sys_Panic(SYS_FATAL, "GetStream: Invalid stream ID.\n");
-	return(FAILURE);
-    }
-    return(SUCCESS);
 }
 
 
@@ -574,7 +416,6 @@ static ReturnStatus
 ContinueMigratedProc(procPtr)
     Proc_ControlBlock 	*procPtr;	/* The process being migrated */
 {
-
     if (proc_MigDebugLevel > 10) {
 	Sys_Printf(">> Entering debugger before continuing process %x.\n", procPtr->processID);
 	DBG_CALL;
@@ -586,7 +427,6 @@ ContinueMigratedProc(procPtr)
 	procPtr->peerHostID = NIL;
     }
     Proc_Unlock(procPtr);
-	
     Sched_MakeReady(procPtr);
 
     return(SUCCESS);
@@ -596,15 +436,13 @@ ContinueMigratedProc(procPtr)
 /*
  *----------------------------------------------------------------------
  *
- * ProcResumeMigProc --
+ * Proc_ResumeMigProc --
  *
  *	Resume a migrated user process.  This is the first thing that is
  * 	called when a migrated process continues execution.
- *	Sched_StartProcess sets up the user context and releases the master
- * 	lock.
  *
  * Results:
- *	None.
+ *	Does not return.
  *
  * Side effects:
  *	None.
@@ -613,11 +451,11 @@ ContinueMigratedProc(procPtr)
  */
 
 void
-ProcResumeMigProc()
+Proc_ResumeMigProc(pc)
+    int pc;		/* program counter to resume execution */
 {
     register     	Proc_ControlBlock *procPtr;
 
-#ifdef notdef
 
     MASTER_UNLOCK(sched_Mutex);
 
@@ -628,34 +466,14 @@ ProcResumeMigProc()
     Proc_Unlock(procPtr);
 
     /*
-     * Start the process running.  This does not return.  The choice
-     * of which procedure to call to run the process depends on
-     * whether the process was in the middle of a system call that
-     * was interrupted.  If the system call returned GEN_ABORTED_BY_SIGNAL
-     * then restart the system call on this workstation.  (Reset the D0
-     * register so Sys_SysCall gets the type of system call from the stack.)
-     *
-     * Only disable * interrupts in preparation for returning to user
-     * mode if the system call is not being restarted.
+     * Start the process running.  This does not return.  
      */
 
-    /*
-     * Disable interrupts and then start off the process.  Note that
-     * we don't use the macro DISABLE_INTR because there is an implicit 
-     * enable interrupts when we return to user mode.  This is just like 
-     * starting a new user process, except that the stack pointer saved
-     * with the registers is the KERNEL stack pointer, not the user
-     * stack pointer.
-     */
     if (proc_MigDebugLevel > 5) {
-	Sys_Printf("Calling RunMigProc.\n");
+	Sys_Printf("Calling Mach_StartUserProc.\n");
     }
-    Mach_StartUserProc(procPtr, 
-    trapStackPtr->genRegs[mach_SP] = trapStackPtr->userStackPtr;
-    Proc_RunUserProc(trapStackPtr->genRegs, trapStackPtr->excStack.pc,
-	    Proc_Exit, procPtr->stackStart + mach_ExecStackOffset);
-    Sys_Panic(SYS_FATAL, "ProcResumeMigProc: Proc_RunUserProc returned.\n");
-#endif
+    Mach_StartUserProc(procPtr, pc);
+    Sys_Panic(SYS_FATAL, "ProcResumeMigProc: Mach_StartUserProc returned.\n");
 }
 
 
@@ -1062,7 +880,7 @@ Proc_RemoteDummy(callNumber, numWords, argsPtr, specsPtr)
     Sys_ArgArray *argsPtr;
     Sys_CallParam *specsPtr;
 {
-    Sys_Panic(SYS_FATAL, "Call %d not yet implemented.\n", callNumber);
+    Sys_Panic(SYS_WARNING, "Call %d not yet implemented.\n", callNumber);
     return(FAILURE);
 }
 
