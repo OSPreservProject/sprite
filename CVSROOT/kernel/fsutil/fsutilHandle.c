@@ -136,7 +136,7 @@ extern void DoneLRU _ARGS_((int numScavenged));
 	    (void) Sync_Wait(&((hdrPtr)->unlocked), FALSE); \
 	} \
 	fs_Stats.handle.locks++; \
-	(hdrPtr)->lockProcID = (int)Proc_GetEffectiveProc(); \
+	(hdrPtr)->lockProcPtr = Proc_GetEffectiveProc(); \
 	(hdrPtr)->flags |= FS_HANDLE_LOCKED;
 
 #endif
@@ -157,7 +157,7 @@ extern void DoneLRU _ARGS_((int numScavenged));
 
 #define	UNLOCK_HANDLE(hdrPtr) \
 	(hdrPtr)->flags &= ~FS_HANDLE_LOCKED; \
-	(hdrPtr)->lockProcID = NIL; \
+	(hdrPtr)->lockProcPtr = (Proc_ControlBlock *)NIL; \
 	fs_Stats.handle.unlocks++; \
 	Sync_Broadcast(&((hdrPtr)->unlocked));
 
