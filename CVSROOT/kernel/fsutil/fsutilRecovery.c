@@ -100,6 +100,12 @@ FsReopen(serverID, clientData)
      */
     FsPrefixAllowOpens(serverID);
     /*
+     * Clear the recovery bit before kicking processes.  Some processes
+     * may be locked down doing pseudo-device request/response, and the
+     * proc wakeup call will block on them.
+     */
+    Recov_ClearClientState(serverID, SRV_RECOV_IN_PROGRESS);
+    /*
      * Kick all processes in case any are blocking on I/O
      */
     Proc_WakeupAllProcesses();
@@ -107,8 +113,6 @@ FsReopen(serverID, clientData)
      * Tell VM that we have recovered in case this was the swap server.
      */
     Vm_Recovery();
-
-    Recov_ClearClientState(serverID, SRV_RECOV_IN_PROGRESS);
 }
 
 /*
