@@ -276,7 +276,7 @@ Sched_GatherProcessInfo()
      */
     for (cpu = 0; cpu < mach_NumProcessors; cpu++) {
 
-	curProcPtr = Proc_GetCurrentProc(cpu);
+	curProcPtr = proc_RunningProcesses[cpu];
 
 	/*
 	 * If no process is currently running on this processor, don't
