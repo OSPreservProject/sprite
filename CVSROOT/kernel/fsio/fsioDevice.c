@@ -50,6 +50,21 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStat.h"
 
 /*
+ * Parameters for RPC_FS_DEV_OPEN remote procedure call.
+ * The return value from this call is a new I/O fileID.
+ */
+typedef struct FsDeviceRemoteOpenPrm {
+    Fs_FileID	fileID;		/* I/O fileID from name server. */
+    int		useFlags;	/* FS_READ | FS_WRITE ... */
+    int		dataSize;	/* size of openData */
+    FsUnionData	openData;	/* FsFileState, FsDeviceState or PdevState.
+				 * NOTE. be careful when assigning this.
+				 * bcopy() of the whole thing can cause
+				 * bus errors if really only a small object
+				 * exists and it's at the end of a page. */
+} FsDeviceRemoteOpenPrm;
+
+/*
  * INET is defined so a file server can be used to open the
  * special device file corresponding to a kernel-based ipServer
  */
@@ -66,24 +81,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static int sockCounter = 0;
 #endif
 
-/*
- * Parameters for RPC_FS_DEV_OPEN remote procedure call.
- * The return value from this call is a new I/O fileID.
- */
-typedef struct FsDeviceRemoteOpenPrm {
-    Fs_FileID	fileID;		/* I/O fileID from name server. */
-    int		useFlags;	/* FS_READ | FS_WRITE ... */
-    int		dataSize;	/* size of openData */
-    FsUnionData	openData;	/* FsFileState, FsDeviceState or PdevState.
-				 * NOTE. be careful when assigning this.
-				 * bcopy() of the whole thing can cause
-				 * bus errors if really only a small object
-				 * exists and it's at the end of a page. */
-} FsDeviceRemoteOpenPrm;
 
-void ReadNotify();
-void WriteNotify();
-void ExceptionNotify();
+static void ReadNotify();
+static void WriteNotify();
+static void ExceptionNotify();
 
 
 /*
@@ -184,6 +185,11 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     ioFileIDPtr->serverID = descPtr->devServerID;
     if (ioFileIDPtr->serverID == FS_LOCALHOST_ID) {
 	ioFileIDPtr->serverID = clientID;
+    }
+    if (ioFileIDPtr->serverID == clientID) {
+	ioFileIDPtr->type = FS_LCL_DEVICE_STREAM;
+    } else {
+	ioFileIDPtr->type = FS_RMT_DEVICE_STREAM;
     }
     ioFileIDPtr->major = descPtr->devType;
     ioFileIDPtr->minor = descPtr->devUnit;
@@ -622,10 +628,6 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
 	panic( "FsDeviceClose <%d,%d> ref %d, write %d\n",
 	    devHandlePtr->hdr.fileID.major, devHandlePtr->hdr.fileID.minor,
 	    devHandlePtr->use.ref, devHandlePtr->use.write);
-    }
-    if (devHandlePtr->use.ref == 0) {
-	FsWaitListDelete(&devHandlePtr->readWaitList);
-	FsWaitListDelete(&devHandlePtr->writeWaitList);
     }
     /*
      * We don't bother to remove the handle here if the device isn't
@@ -1643,17 +1645,11 @@ Fs_NotifyReader(data)
     }
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
 	printf("Fs_NotifyReader, bad handle\n");
-	return;
     }
-    FsWaitListNotify(&devHandlePtr->readWaitList);
-#ifdef notdef
     devHandlePtr->notifyFlags |= FS_READABLE;
     Proc_CallFunc(ReadNotify, (ClientData) devHandlePtr, 0);
-#endif notdef
-
 }
 
-#ifdef notdef
 static void
 ReadNotify(data, callInfoPtr)
     ClientData		data;
@@ -1668,7 +1664,7 @@ ReadNotify(data, callInfoPtr)
     }
     callInfoPtr->interval = 0;
 }
-#endif notdef
+
 
 /*
  *----------------------------------------------------------------------
@@ -1703,14 +1699,10 @@ Fs_NotifyWriter(data)
 	printf("Fs_NotifyWriter, bad handle\n");
 	return;
     }
-    FsWaitListNotify(&devHandlePtr->writeWaitList);
-#ifdef notdef
     devHandlePtr->notifyFlags |= FS_WRITABLE;
     Proc_CallFunc(WriteNotify, (ClientData) devHandlePtr, 0);
-#endif notdef
 }
 
-#ifdef notdef
 static void
 WriteNotify(data, callInfoPtr)
     ClientData		data;
@@ -1725,7 +1717,6 @@ WriteNotify(data, callInfoPtr)
     }
     callInfoPtr->interval = 0;
 }
-#endif notdef
 
 
 
@@ -1758,12 +1749,9 @@ Fs_DevNotifyException(data)
     if (devHandlePtr == (FsDeviceIOHandle *)NIL) {
 	return;
     }
-    FsWaitListNotify(&devHandlePtr->exceptWaitList);
-#ifdef notdef
     Proc_CallFunc(ExceptionNotify, (ClientData) devHandlePtr, 0);
-#endif notdef
 }
-#ifdef notdef
+
 static void
 ExceptionNotify(data, callInfoPtr)
     ClientData		data;
@@ -1773,5 +1761,4 @@ ExceptionNotify(data, callInfoPtr)
     FsWaitListNotify(&devHandlePtr->exceptWaitList);
     callInfoPtr->interval = 0;
 }
-#endif notdef
 
