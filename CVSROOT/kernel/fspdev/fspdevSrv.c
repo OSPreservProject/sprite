@@ -1191,6 +1191,18 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 	    }
 	    break;
 	}
+	case IOC_PREFIX: {
+	    FsPrefix	*prefixPtr;
+	    prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
+	    if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
+	    replyPtr->length = prefixPtr->prefixLength;
+	    status = SUCCESS;
+	    break;
+	}
 	default:
 	    status = GEN_NOT_IMPLEMENTED;
 	    break;
@@ -2206,6 +2218,7 @@ FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr)
     register PdevClientIOHandle *cltHandlePtr =
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    Boolean	sendToServer;
 
     LOCK_MONITOR;
     /*
@@ -2235,6 +2248,7 @@ FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr)
     }
 
     status = SUCCESS;
+    sendToServer = TRUE;
 
     if (ioctlPtr->command == IOC_NUM_READABLE &&
 	pdevHandlePtr->readBuf.data != (Address)NIL) {
@@ -2295,8 +2309,25 @@ FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		}
 		break;
 	    }
+	    case IOC_PREFIX: {
+		/* 
+		 * We handle the prefix request since the prefix is in the
+		 * Sprite domain. 
+		 */
+		FsPrefix	*prefixPtr;
+		prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
+		if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
+		    status = GEN_INVALID_ARG;
+		    break;
+		}
+		strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
+		replyPtr->length = prefixPtr->prefixLength;
+		status = SUCCESS;
+		sendToServer = FALSE;
+		break;
+	    }
 	}
-	if (status == SUCCESS) {
+	if (status == SUCCESS && sendToServer) {
 	    request.hdr.operation	= PDEV_IOCTL;
 	    request.param.ioctl		= *ioctlPtr;
 

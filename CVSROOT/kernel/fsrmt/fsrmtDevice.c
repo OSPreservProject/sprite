@@ -44,6 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsLock.h"
 #include "fsMigrate.h"
 #include "fsNameOpsInt.h"
+#include "fsPrefix.h"
 
 #include "dev.h"
 #include "rpc.h"
@@ -1620,6 +1621,19 @@ FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr)
 			&streamPtr->hdr.fileID);
 	    FsHandleUnlock(devHandlePtr);
 	    break;
+	case IOC_PREFIX:{
+	    FsPrefix	*prefixPtr;
+	    prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
+	    if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
+	    replyPtr->length = prefixPtr->prefixLength;
+	    status = SUCCESS;
+	    break;
+	}
+
 	default:
 	    if (!(devHandlePtr->flags & FS_DEV_DONT_LOCK)) { 
 		FsHandleLock(devHandlePtr);

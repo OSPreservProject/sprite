@@ -676,6 +676,7 @@ FsPipeIOControl(streamPtr, ioctlPtr, replyPtr)
 	case IOC_GET_OWNER:
 	case IOC_SET_OWNER:
 	case IOC_MAP:
+	case IOC_PREFIX:
 	    return(GEN_NOT_IMPLEMENTED);
 	default:
 	    return(GEN_INVALID_ARG);
