@@ -176,28 +176,3 @@ LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     return status;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Lfs_RereadSummaryInfo --
- *
- *	Reread the summary sector associated with the prefix and update
- *	the domain information. This should be called if the summary
- *	sector on the disk has been changed since the domain was attached.
- *
- * Results:
- *	SUCCESS 
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Lfs_RereadSummaryInfo(domainPtr)
-    Fsdm_Domain		*domainPtr;	/* Domain to reread summary for. */
-{
-    return SUCCESS;
-}
-
