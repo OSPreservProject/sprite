@@ -258,6 +258,7 @@ ProcMigContinueProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	procPtr->peerProcessID = (Proc_PID) NIL;
 	procPtr->peerHostID = NIL;
     }
+    procPtr->genFlags |= PROC_MIGRATION_DONE;
     Proc_Unlock(procPtr);
     Sched_MakeReady(procPtr);
 
