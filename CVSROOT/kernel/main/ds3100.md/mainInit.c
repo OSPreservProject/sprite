@@ -470,7 +470,7 @@ Init()
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("In Init\n");
     }
-    initArgs[1] = "-b";
+    bzero(bootCommand, 103);
     argc = Mach_GetBootArgs(8, 100, &(initArgs[2]), argBuffer);
     if (argc > 0) {
 	argLength = (((int) initArgs[argc+1]) + strlen(initArgs[argc+1]) +
@@ -478,18 +478,22 @@ Init()
     } else {
 	argLength = 0;
     }
-    bzero(bootCommand, 103);
-    ptr = bootCommand;
-    for (i = 0; i < argLength; i++) {
-	if (argBuffer[i] == '\0') {
-	    *ptr++ = ' ';
-	} else {
-	    *ptr++ = argBuffer[i];
+    if (argLength > 0) {
+	initArgs[1] = "-b";
+	ptr = bootCommand;
+	for (i = 0; i < argLength; i++) {
+	    if (argBuffer[i] == '\0') {
+		*ptr++ = ' ';
+	    } else {
+		*ptr++ = argBuffer[i];
+	    }
 	}
+	bootCommand[argLength] = '\0';
+	initArgs[2] = bootCommand;
+	initArgs[argc + 2] = (char *) NIL;
+    } else {
+	initArgs[1] = (char *) NIL;
     }
-    bootCommand[argLength] = '\0';
-    initArgs[2] = bootCommand;
-    initArgs[argc + 2] = (char *) NIL;
     if (main_AltInit != 0) {
 	initArgs[0] = main_AltInit;
 	printf("Execing \"%s\"\n", initArgs[0]);
