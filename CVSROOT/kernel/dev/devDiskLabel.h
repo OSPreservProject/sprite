@@ -75,6 +75,95 @@ typedef struct Sun_DiskLabel {
 #define SUN_DOMAIN_SECTOR	18
 
 /*
+ * DEC_NUM_DISK_PARTS is the number of partitions that are recorded in
+ * the label information.  The size of the padding in the Dec_DiskLabel
+ * type is dependend on this number...
+ */
+#define DEC_NUM_DISK_PARTS  8
+
+/*
+ * A disk is divided into partitions and this type specifies where a
+ * partition starts and how many bytes it contains.
+ */
+typedef struct Dec_DiskMap {
+    int numBytes;	/* Bytes in partition. */
+    int offsetBytes;	/* Start of partition in bytes. */
+} Dec_DiskMap;
+
+typedef struct Dec_BootMap {
+    int numBlocks;	/* Number of blocks to read. */
+    int startBlock;	/* Starting block on disk. */
+} Dec_BootMap;
+
+/*
+ * Label information on the 31st (DEC_LABEL_SECTOR)  sector.
+ */
+typedef struct Dec_DiskLabel {
+
+    int		magic;			/* DEC_LABEL_MAGIC */
+    int		isPartitioned;		/* 1 if disk is partitioned. */
+    Dec_DiskMap map[DEC_NUM_DISK_PARTS]; /* Indicates disk partitions. */
+    /* The following stuff is a Sprite addition to the standard
+       Dec disk label. */
+    int		numCylinders;
+    int		numAltCylinders;
+    int		numHeads;
+    int		numSectors;
+    int		bootSector;
+    int		numBootSectors;
+    int		summarySector;
+    int		domainSector;
+    int		numDomainSectors;
+    int		spriteMagic;		/* FSDM_DISK_MAGIC */
+    char    pad[512-(28+DEC_NUM_DISK_PARTS*8)];	/* 512 byte sector. */
+} Dec_DiskLabel;
+
+/*
+ * Boot block information on the 0th sector.
+ * The boot program is stored in sequences of contiguous blocks.
+ * If mode is 0, there is just one sequence of blocks and one Dec_BootMap
+ * is used.  If mode is 1, there are multiple sequences of blocks
+ * and multiple Dec_BootMaps are used, the last with numBlocks = 0.
+ */
+typedef struct Dec_DiskBoot {
+    char	pad[8];
+    int		magic;			/* DEC_BOOT_MAGIC */
+    int		mode;			/* Mode for boot info. */
+    int		loadAddr;		/* Address to start loading. */
+    int		execAddr;		/* Address to start execing. */
+    Dec_BootMap	map[29];		/* Position of boot program. */
+} Dec_DiskBoot;
+ 
+#define DEC_BOOT_MAGIC	0x02757a
+#define DEC_LABEL_MAGIC	0x032957
+
+/*
+ * The dec label does not describe the location of the filesystem header
+ * information that comes after the zero'th label sector.  (The sprite label
+ * will, but is never used.)  Instead, the following constants are used.
+ * DEC_BOOT_SECTOR	The sector holding the boot information.
+ * DEC_SUMMARY_SECTOR  one sector of summary info
+ * DEC_DOMAIN_SECTOR  the first sector of the static domain header
+ * DEC_LABEL_SECTOR	The sector holding the disk label.
+ */
+#define DEC_BOOT_SECTOR		0
+#define DEC_SUMMARY_SECTOR	17
+#define DEC_DOMAIN_SECTOR	18
+#define DEC_LABEL_SECTOR	31
+
+/*
+ * Macro's to compute partition numbers from Fs_Device structures. Devices
+ * may be treated as non-partitioned.  In non-partitioned device the entire
+ * disk is treated as one partition.
+ * Disk device encode the Fs_Device unit number as follows:
+ *	bit 3	  = if 1 treat disk as a raw disk with no partition. if 0
+ *		    treat as partition disk.
+ *	bit 0 - 2 = if partitioned disk, bits 0 - 2 are the partition
+number.
+ *
+
+
+/*
  * Macro's to compute partition numbers from Fs_Device structures. Devices
  * may be treated as non-partitioned.  In non-partitioned device the entire
  * disk is treated as one partition.
