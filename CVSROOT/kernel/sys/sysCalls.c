@@ -338,8 +338,11 @@ SysErrorShutdown(trapType)
  *----------------------------------------------------------------------
  */
 
-
-static	Boolean	errorSync = FALSE;
+/*
+ * Exported so we can deny RPC requests as we die.
+ * Otherwise we can hang RPCs if we hang trying to sync our disks.
+ */
+Boolean	sys_ErrorSync = FALSE;
 
 
 void
@@ -348,19 +351,19 @@ Sys_SyncDisks(trapType)
 {
     char	*SpriteVersion();
     
-    if (errorSync) {
+    if (sys_ErrorSync) {
 	printf("Error type %d while syncing disks.\n", trapType);
 	sys_ShouldSyncDisks = FALSE;
-	errorSync = FALSE;
+	sys_ErrorSync = FALSE;
 	DBG_CALL;
 	return;
     }
     if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
         !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	printf("Syncing disks.  Version: %s\n", SpriteVersion());
-	errorSync = TRUE;
+	sys_ErrorSync = TRUE;
 	Fsutil_Sync(-1, TRUE);
-	errorSync = FALSE;
+	sys_ErrorSync = FALSE;
     }
 }
 
@@ -806,22 +809,40 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 	case SYS_FS_RECOV_INFO: {
-	    int 	length;
-	    char	results[1000];
+	    int 		length;
+	    Fsutil_FsRecovStats	stats;
+	    Address		resultPtr;
 	   
-	    length = sizeof (results);
+	    length = sizeof (stats);
 	    if (option <= 0) {
+		/* or print it instead? */
 		status = GEN_INVALID_ARG;
 		break;
 	    }
 	    if (option < length) {
 		length = option;
 	    }
-	    status = Fsutil_FsRecovInfo(length, results);
+	    resultPtr = argPtr;
+	    if (resultPtr == (Address) NIL ||
+		    resultPtr == (Address) 0 ||
+		    resultPtr == (Address) USER_NIL) {
+		/* or print it instead? */
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    status = Fsutil_FsRecovInfo(length, &stats);
 	    if (status != SUCCESS) {
 		break;
 	    }
-	    status = Vm_CopyOut(length, results, argPtr);
+	    status = Vm_CopyOut(length, &stats, argPtr);
+	    break;
+	}
+	case SYS_TEST_CMAP: {
+	    Address	addr;
+
+	    addr = (Address) option;
+	    printf("address is 0x%x, seg is 0x%x, pte is 0x%x\n",
+		    addr, VmMachGetSegMap(addr), VmMachGetPageMap(addr));
 	    break;
 	}
 	default:
