@@ -449,6 +449,8 @@ typedef struct Proc_ControlBlock {
     Proc_Time   preEvictionUsage; 	 /* CPU usage (user + kernel)
 					  * as of the start of eviction. */
     int         unixErrno;               /* Errno for unix system call. */
+    /* As a random convention, we'll set unixProgress to -1 if the program
+       is not in unix compatibility mode; otherwise unixProgres != -1. */
     int         unixProgress;            /* Progress indicator for restarting
                                             unix system calls. */
     int		extraField[10];		/* Extra fields for later use. */
