@@ -117,6 +117,13 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
     }
 #endif PRINT_PACKETS
     /*
+     * Mark our packets if we arn't up all the way.  This means that the
+     * other host won't pay attention to our packets in terms of recovery.
+     */
+    if (!rpcServiceEnabled) {
+	rpcHdrPtr->flags |= RPC_NOT_ACTIVE;
+    }
+    /*
      * Check to see if we have to fragment.   Note that we pack the first
      * fragment as full as possible so that it might contain more than
      * 1K of data.  If we fragment, however, we break things on 1K boundaries.
