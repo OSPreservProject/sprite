@@ -260,7 +260,7 @@ Sync_RegisterAnyLock(lock)
     name = FIELD(lock,name);
     typePtr = &(FIELD(lock,type)) ;
     listInfoPtr = &(FIELD(lock,listInfo));
-    if (*typePtr != 0) {
+    if (*typePtr != 0 || name == (char *) 0) {
 	goto exit;
     }
     regPtr = (Sync_RegElement *) NIL;
