@@ -16,11 +16,7 @@
 
 #include "machConst.h"
 #include "machAsmDefs.h"
-#ifndef ds3100
-#include "vm3maxConst.h"
-#else /* ds3100 */
 #include "vmPmaxConst.h"
-#endif /* ds3100 */
 #include <regdef.h>
 
 /*----------------------------------------------------------------------------
@@ -340,76 +336,6 @@ MachFetchICache:
 	nop
 	.set	reorder
 
-#ifndef ds3100
-/*----------------------------------------------------------------------------
- *
- * Mach_FlushCacheRange --
- *
- *	Mach_FlushCacheRange(addr, len)
- *
- *	Flush d cache for range ofaddr to addr + len - 1.
- *
- * Results:
- *     	None.
- *
- * Side effects:
- *	The contents of the d cache is flushed.
- *
- *----------------------------------------------------------------------------
- */
-    .globl Mach_FlushCacheRange
-Mach_FlushCacheRange:
-	lw	t1,machDataCacheSize
-	mfc0	t3,MACH_COP_0_STATUS_REG	# Save SR
-	mtc0	zero,MACH_COP_0_STATUS_REG	# Disable interrupts.
-
-	.set	noreorder
-	la	v0,1f
-	or	v0,VMMACH_PHYS_UNCACHED_START	# Run uncached.
-	j	v0
-	nop
-
-1:	li	v0,MACH_SR_ISOL_CACHES	#isolate cache
-	mtc0	v0,MACH_COP_0_STATUS_REG
-	bltu	t1,a1,1f		# cache is smaller than region
-	nop
-	move	t1,a1
-1:	addu	t1,a0			# ending address + 1
-	move	t0,a0
-	la	v0,1f			# run cached
-	j	v0
-	nop
-	.set	reorder
-
-1:	sb	zero,0(t0)
-	sb	zero,4(t0)
-	sb	zero,8(t0)
-	sb	zero,12(t0)
-	sb	zero,16(t0)
-	sb	zero,20(t0)
-	sb	zero,24(t0)
-	addu	t0,32
-	sb	zero,-4(t0)
-	bltu	t0,t1,1b
-
-	.set	noreorder
-	la	v0,1f
-	or	v0,VMMACH_PHYS_UNCACHED_START
-	j	v0			# Run uncached
-	nop
-
-1:	nop				# insure isolated stores out of pipe
-	mtc0	zero,MACH_COP_0_STATUS_REG  # unisolate, unswap
-	nop				# keep pipeline clean
-	nop				# keep pipeline clean
-	nop				# keep pipeline clean
-	mtc0	t3,MACH_COP_0_STATUS_REG # enable interrupts
-	nop
-	j	ra			# return and run cached
-	nop
-	.set	reorder
-
-#endif /* not ds3100 */
 
 
 /*----------------------------------------------------------------------------
@@ -578,23 +504,6 @@ NON_LEAF(Mach_KernGenException,KERN_EXC_FRAME_SIZE,ra)
     mfc0	a1, MACH_COP_0_CAUSE_REG	# Second arg is the cause reg.
     mfc0	a2, MACH_COP_0_BAD_VADDR	# Third arg is the fault addr.
     mfc0	a3, MACH_COP_0_EXC_PC		# Fourth arg is the pc.
-#ifndef ds3100
-
-/*
- * Don't disable interrupts from the memory system, unless there is
- * a memory system interrupt pending.
- */
-    and		t0, a0, MACH_INT_MASK_3
-    bne		zero, t0, 10f
-    nop
-    mfc0	t0, MACH_COP_0_STATUS_REG
-    and		t0, t0, ~MACH_KERN_INT_MASK
-    or		t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
-    mtc0	t0, MACH_COP_0_STATUS_REG
-    nop
-    nop
-10:
-#endif /* not ds3100 */
     jal		MachKernelExceptionHandler
     nop
     mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
@@ -938,12 +847,7 @@ LEAF(Mach_DisableIntr)
 .set noreorder
     mfc0	t0, MACH_COP_0_STATUS_REG
     nop
-#ifndef ds3100
-    and		t0, t0, ~(MACH_SR_INT_ENA_CUR | MACH_KERN_INT_MASK)
-    or		t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
-#else /* ds3100 */
     and		t0, t0, ~MACH_SR_INT_ENA_CUR
-#endif /* ds3100 */
     mtc0	t0, MACH_COP_0_STATUS_REG
     nop
     j		ra
@@ -1491,9 +1395,6 @@ FPReturn:
 	lw	ra, STAND_RA_OFFSET(sp)
 	addu	sp, sp, STAND_FRAME_SIZE
 	j	ra
-#ifndef ds3100
-	li	v0, MACH_OK
-#endif /* not ds3100 */
 END(MachFPInterrupt)
 
 /*----------------------------------------------------------------------------
@@ -2209,27 +2110,9 @@ MachFetchArgsEnd:
  *----------------------------------------------------------------------
  */
 .set noreorder
-#ifndef ds3100
-LEAF(Mach_Probe)
-	/*
-	 * If memory interrupts aren't turned on then we can't do a
-	 * probe.
-	 */
-	mfc0	t0, MACH_COP_0_STATUS_REG
-	nop
-	and	t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
-	beq	t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR, 1f
-	nop
-	j	ra
-	add	v0, zero, 1
-1:
-	add	t0, zero, 1
-	sw	t0, machInProbe
-#else /* ds3100 */
 	.globl Mach_Probe
 	.ent Mach_Probe, 0
 Mach_Probe:
-#endif /* ds3100 */
 	/* a0 is the number of bytes
 	 * a1 is the src address
 	 * a2 is the dest address
@@ -2239,13 +2122,8 @@ Mach_Probe:
 	lbu 	t0, 0(a1)
 	nop
 	sb	t0, 0(a2)
-#ifndef ds3100
-	b 	Done
-	nop
-#else /* ds3100 */
 	j	ra
 	add	v0, zero, zero
-#endif /* ds3100 */
 Read2Bytes:
 	bne 	a0, 2, Read4Bytes
 	nop
@@ -2258,13 +2136,8 @@ Read2Bytes:
 	lhu	t0, 0(a1)
 	nop
 	sh	t0, 0(a2)
-#ifndef ds3100
-	b 	Done
-	nop
-#else /* ds3100 */
 	j	ra
 	add	v0, zero, zero
-#endif /* ds3100 */
 Read4Bytes:
 	bne 	a0, 4, Read8Bytes
 	nop
@@ -2277,13 +2150,8 @@ Read4Bytes:
 	lw	t0, 0(a1)
 	nop
 	sw	t0, 0(a2)
-#ifndef ds3100
-	b 	Done
-	nop
-#else /* ds3100 */
 	j	ra
 	add	v0, zero, zero
-#endif /* ds3100 */
 Read8Bytes:
 	bne 	a0, 8, BadRead
 	nop
@@ -2299,29 +2167,13 @@ Read8Bytes:
 	lw	t0, 4(a1)
 	nop	
 	sw	t0, 4(a1)
-#ifndef ds3100
-	b 	Done
-	nop
-#else /* ds3100 */
 	j	ra
 	add	v0, zero, zero
-#endif /* ds3100 */
 BadRead:
 	j	ra
 	add	v0, zero, 1
-#ifndef ds3100
-Done:
-	sw	zero, machInProbe
-	j	ra
-	add	v0, zero, zero
-#endif /* not ds3100 */
 .set reorder
-#ifndef ds3100
-END(Mach_Probe)
-#endif /* not ds3100 */
 
-#ifdef ds3100
 	.globl	MachProbeEnd
 MachProbeEnd:
 .end
-#endif /* ds3100 */
