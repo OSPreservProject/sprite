@@ -1170,7 +1170,7 @@ Fs_PrefixClear(prefix, deleteFlag)
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
 	if (strcmp(prefixPtr->prefix, prefix) == 0) {
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
-		FsPrefixHandleClose(prefixPtr);
+		FsPrefixHandleCloseInt(prefixPtr);
 	    }
 	    prefixPtr->flags &= ~FS_EXPORTED_PREFIX;
 	    if (deleteFlag && prefixPtr->prefixLength != 1) {
@@ -1199,8 +1199,36 @@ Fs_PrefixClear(prefix, deleteFlag)
  *
  * FsPrefixHandleClose --
  *
- *	Close the handle associated with a prefix.  We do remember the
- *	serverID from the handle as this is used in recovery later.
+ *	Close the handle associated with a prefix.  This is called when
+ *	cleaning up a prefix table entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None here, see the internal routine called inside the monitor lock.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsPrefixHandleClose(prefixPtr)
+    FsPrefix *prefixPtr;
+{
+    register FsHandleHeader *hdrPtr;
+    Fs_Stream dummy;
+
+    LOCK_MONITOR;
+    FsPrefixHandleCloseInt(prefixPtr);
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPrefixHandleCloseInt --
+ *
+ *	Close the handle associated with a prefix.  The serverID from
+ *	the handle is saved for use in recovery later.
  *
  * Results:
  *	None.
@@ -1213,13 +1241,12 @@ Fs_PrefixClear(prefix, deleteFlag)
  *----------------------------------------------------------------------
  */
 void
-FsPrefixHandleClose(prefixPtr)
+FsPrefixHandleCloseInt(prefixPtr)
     FsPrefix *prefixPtr;
 {
     register FsHandleHeader *hdrPtr;
     Fs_Stream dummy;
 
-    LOCK_MONITOR;
     if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
 	hdrPtr = prefixPtr->hdrPtr;
 	prefixPtr->hdrPtr = (FsHandleHeader *)NIL;
@@ -1233,7 +1260,6 @@ FsPrefixHandleClose(prefixPtr)
 	    Sync_Broadcast(&prefixPtr->okToRecover);
 	}
     }
-    UNLOCK_MONITOR;
 }
 
 /*
