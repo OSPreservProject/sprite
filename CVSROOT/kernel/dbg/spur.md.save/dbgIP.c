@@ -23,16 +23,21 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "machparam.h"
 #include "sprite.h"
+#include "sys.h"
 #include "dbg.h"
 #include "dbgInt.h"
 #include "netInet.h"
 #include "netEther.h"
 #include "user/net.h"
 #include "net.h"
-#include "sys.h"
 
 
 int	dbgTraceLevel;
+
+/*
+ * Have we gotten a packet yet.
+ */
+Boolean initialized = FALSE;
 
 /*
  * Number for net polls before timing out. This value depends on the network,
@@ -157,6 +162,7 @@ Dbg_InputPacket(packetPtr, packetLength)
     static char	alignedBuffer[NET_ETHER_MAX_BYTES];
     int		type;
 
+    initialized = TRUE;
 
     /*
      * If we aleady have one, toss this one.
@@ -200,8 +206,9 @@ Dbg_InputPacket(packetPtr, packetLength)
     }
 
     goodPacket = Validate_Packet(packetLength - sizeof(Net_EtherHdr),
-               packetPtr, &dataLength, &dataPtr,
-              &packet.myIPaddr, &packet.debuggerIPaddr, &packet.debuggerPort);
+               (Net_IPHeader *)packetPtr, &dataLength, &dataPtr,
+              &packet.myIPaddr, &packet.debuggerIPaddr, 
+	      (unsigned *)&packet.debuggerPort);
     if (goodPacket) {
 	/*
 	 * If it is for us then save the ethernet header so we have
@@ -240,8 +247,6 @@ Dbg_IPgetpkt (buf)
      char *buf;
 {
     Boolean	gotPkt = FALSE;
-    int		seqNum;
-
 
     /*
      * Loop until we get a good packet.
@@ -263,14 +268,6 @@ Dbg_IPgetpkt (buf)
 					nextSeqNum);
 	}
 	while (!packetIsAvailable) {
-	    int	switches;
-	    /*
-	     * If switch 3 set then interrupt.
-	     */
-	    switches = read_physical_word(0x40000);
-	    if (switches & 0x4) {
-		Sys_Panic(SYS_FATAL,"Aborted by DIP switch\n");
-	    }
 	    Net_RecvPoll();
 		asm("cmp_trap always, r0, r0, $3");
 	}
@@ -356,6 +353,9 @@ Dbg_IPputpkt (buf)
     static	int	timeOut;
     int		seqNum;
 
+    if (!initialized) {
+	return;
+    }
     /*
      * Get a fresh seq number for this data packet.
      */
