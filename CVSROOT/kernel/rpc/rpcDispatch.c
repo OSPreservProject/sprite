@@ -18,7 +18,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
-#include "devTimer.h"
 #include "dbg.h"
 #include "vm.h"
 #include "byte.h"
@@ -416,19 +415,18 @@ RpcValidateClient(etherHdrPtr, rpcHdrPtr)
 	 */
 	result = TRUE;
     } else if (clientID == 0) {
+	Net_EtherAddress	source;
 	/*
 	 * Look client's transport address up in our in core host table.
 	 */
-	clientID = Net_AddrToID(0, NET_ROUTE_ETHER,
-		 (ClientData)&(NET_ETHER_HDR_SOURCE(*etherHdrPtr)));
+	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr), source);
+	clientID = Net_AddrToID(0, NET_ROUTE_ETHER, (ClientData) &source);
         Sys_Panic(SYS_WARNING, "RpcValidateClient had to set clientID %d\n",
 				clientID);
 	if (clientID < 0) {
 	    /*
 	     * Should invoke Reverse ARP to find out the Sprite ID.
 	     */
-	    Net_EtherAddress	source;
-	    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr),source);
 	    Sys_Printf("Client at unknown ethernet address %x:%x:%x:%x:%x:%x\n",
 		       NET_ETHER_ADDR_BYTE1(source) & 0xff,
 		       NET_ETHER_ADDR_BYTE2(source) & 0xff,
