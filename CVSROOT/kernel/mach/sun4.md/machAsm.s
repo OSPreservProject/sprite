@@ -512,6 +512,11 @@ _MachHandleSignal:
 	set	_machSignalStackSizeOnStack, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1	/* size MachSignalStack */
 	sub	%fp, %VOL_TEMP1, %SAFE_TEMP		/* new sp in safetemp */
+/* FOR DEBUGGING */
+	set	0x11111111, %o0
+	MACH_DEBUG_BUF(%o1, %o2, DoSignalThing0, %o0)
+	MACH_DEBUG_BUF(%o1, %o2, DoSignalThing1, %SAFE_TEMP)
+/* END FOR DEBUGGING */
 
 	/* Copy out sig stack from state structure to user stack */
 	set	_machSigStackOffsetOnStack, %VOL_TEMP1
@@ -575,6 +580,13 @@ CopiedOutSigStack:
 	set	_machSigTrapInstOffsetOnStack, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to trap instr */
 	add	%SAFE_TEMP, %VOL_TEMP2, %RETURN_ADDR_REG	/* addr */
+	/* ret from proc instr jumps to (ret addr + 8), so subtract 8 here */
+	sub	%RETURN_ADDR_REG, 0x8, %RETURN_ADDR_REG
+/* FOR DEBUGGING */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SigStuff2, %RETURN_ADDR_REG)
+	set	0x22222222, %g3
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SigStuff3, %g3)
+/* END FOR DEBUGGING */
 
 	/*
 	 * Set return from trap pc and next pc in the next window to the
@@ -692,6 +704,11 @@ _MachReturnFromSignal:
 	/* get our kernel stack pointer into global regs (which get restored
 	 * in MachReturnFromTrap) so we can keep it across windows.
 	 */
+/* FOR DEBUGGING */
+	set	0x66666666, %g3
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, ReturnedFromASig0, %g3)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, ReturnedFromASig1, %sp)
+/* END FOR DEBUGGING */
 	mov	%sp, %g3
 	restore		/* no underflow since we just came from here */
 	/*

@@ -1331,8 +1331,6 @@ MachUserAction()
     while (machStatePtr->savedMask != 0) {
 	int	i;
 
-	DEBUG_ADD(0xbbbbbbbb);
-	DEBUG_ADD(machStatePtr->savedMask);
 	for (i = 0; i < MACH_NUM_WINDOWS; i++) {
 	    if ((1 << i) & machStatePtr->savedMask) {
 		/* clear the mask for this window */

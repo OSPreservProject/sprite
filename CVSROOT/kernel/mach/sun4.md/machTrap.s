@@ -417,11 +417,6 @@ NormalReturn:
 	 * Call VM Stuff with the %fp which will be stack pointer in
 	 * the window we restore..
 	 */
-/* FOR DEBUGGING */
-	set	0x11111111, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PageOne, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheFp, %fp)
-/* END FOR DEBUGGING */
 	mov	%fp, %o0
 	set	0x1, %o1		/* also check for protection????? */
 	call	_Vm_PageIn, 2
@@ -435,11 +430,6 @@ CheckNextFault:
 	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
 	be	CallUnderflow
 	nop
-/* FOR DEBUGGING */
-	set	0x22222222, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PageTwo, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheFp2, %o0)
-/* END FOR DEBUGGING */
 	set	0x1, %o1
 	call	_Vm_PageIn, 2
 	nop
@@ -450,10 +440,6 @@ KillUserProc:
 	/*
 	 * Kill user process!  Its stack is bad.
 	 */
-/* FOR DEBUGGING */
-	set	0x33333333, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadUser, %OUT_TEMP1)
-/* END FOR DEBUGGING */
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
@@ -524,10 +510,6 @@ MachHandleWindowOverflowTrap:
         tst     %VOL_TEMP1
         be      NormalOverflowReturn
 	nop
-/* FOR DEBUGGING */
-	set	0x44444444, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverflowAction, %OUT_TEMP1)
-/* END FOR DEBUGGING */
 	/*
 	 * We need to save state and put space on the stack pointer, etc.
 	 * Run through regular trap preamble to do this.  The trap preamble
@@ -545,10 +527,6 @@ MachHandleWindowOverflowTrap:
 	 * here.  Maybe?
 	 */
 MachReturnToOverflowWithSavedState:
-/* FOR DEBUGGING */
-	set	0x55555555, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverflowReturnAction, %OUT_TEMP1)
-/* END FOR DEBUGGING */
 	call	_MachReturnFromTrap
 	nop
 
@@ -646,9 +624,6 @@ NotUserStack:
 	bgu	NormalOverflow
 	nop
 BadStack:
-/* FOR DEBUGGING */
-	MACH_DEBUG_BUF(%g3, %g4, IckyStack, %sp)
-/* END FOR DEBUGGING */
 	/*
 	 * Assume it was a user process's bad stack pointer.  We can't kill
 	 * the process here, so just take over the window and the user process
@@ -740,10 +715,6 @@ SaveToInternalBuffer:
 	sll	%g4, MACH_NUM_REG_SHIFT, %g4
 	add	%g3, %g4, %g3		/* offset to start saving at */
 	MACH_SAVE_WINDOW_TO_BUFFER(%g3)
-/* FOR DEBUGGING */
-	MACH_DEBUG_BUF(%g3, %g4, OverflowToBuf, %sp)
-	MACH_DEBUG_BUF(%g3, %g4, OverflowToBuf1, %sp)
-/* END FOR DEBUGGING */
 	set	ReturnFromOverflow, %g3
 	jmp	%g3
 	nop
@@ -856,11 +827,6 @@ MachHandleWindowUnderflowTrap:
 	nop
 
 MustSaveState:
-	
-/* FOR DEBUGGING */
-	set	0x77777777, %OUT_TEMP1
-	MACH_DEBUG_BUF(%o0, %o1, WillHaveToSaveState, %OUT_TEMP1)
-/* END FOR DEBUGGING */
 	/*
 	 * We need to save state.   We must do this in actual trap window.
 	 * This state-saving enables traps.
@@ -872,10 +838,6 @@ MachReturnToUnderflowWithSavedState:
 	 * We came back from saving state.  Mark the fact we had to so we can
 	 * restore state and then handle underflow.
 	 */
-/* FOR DEBUGGING */
-	set	0x88888888, %OUT_TEMP1
-	MACH_DEBUG_BUF(%o0, %o1, HadToSaveState, %OUT_TEMP1)
-/* END FOR DEBUGGING */
 	set	0x11111111, %SAFE_TEMP
 	/*
 	 * Call	Vm_PageIn stuff and deal with faulting starting at this window.
@@ -904,10 +866,6 @@ MachReturnToUnderflowWithSavedState:
 	restore		/* back to window to check in, only if branching!! */
 KillTheProc:
 	/* KILL IT - must be in trap window */
-/* FOR DEBUGGING */
-	set	0x99999999, %OUT_TEMP1
-	MACH_DEBUG_BUF(%o0, %o1, HaveToKillProc, %OUT_TEMP1)
-/* END FOR DEBUGGING */
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
@@ -949,10 +907,6 @@ NormalUnderflow:
 	 * We had to save state, so now we have to restore it.
 	 * This state-restoring with disable traps.
 	 */
-/* FOR DEBUGGING */
-	set	0xaaaaaaaa, %OUT_TEMP1
-	MACH_DEBUG_BUF(%o0, %o1, GoingToDoReturn, %OUT_TEMP1)
-/* END FOR DEBUGGING */
 	call	_MachReturnFromTrap
 	nop
 NormalUnderflowReturn:
@@ -1026,11 +980,6 @@ MachWindowUnderflow:
 	cmp	%VOL_TEMP1, %fp
 	bne	RegularStack
 	nop
-/* FOR DEBUGGING */
-	set	0xdddddddd, %OUT_TEMP1
-	MACH_DEBUG_BUF(%o0, %o1, DebugReturnThing, %OUT_TEMP1)
-/* END FOR DEBUGGING */
-
 
 DealWithDebugStack:
 	/* Set stack pointer of next window to regular frame pointer */
@@ -1177,11 +1126,6 @@ MachSyscallTrap:
 	 * it can be used while processing the system call.  (Who uses it??)
 	 * This means saving the frame pointer (previous user stack pointer).
 	 */
-/* FOR DEBUGGING */
-	set	0xeeeeeeee, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotASysCall, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheSysArg, %g1)
-/* END FOR DEBUGGING */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
 #ifdef NOTDEF
 	set	_machCurStatePtr, %VOL_TEMP1
@@ -1318,11 +1262,6 @@ ReturnFromSyscall:
 	or	%VOL_TEMP1, MACH_DISABLE_INTR, %VOL_TEMP1
 	mov	%VOL_TEMP1, %psr
 	MACH_WAIT_FOR_STATE_REGISTER()
-/* FOR DEBUGGING */
-	set	0xffffffff, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromASysCall, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheValue, %RETURN_VAL_REG)
-/* END FOR DEBUGGING */
 	/*
 	 * So that we don't re-execute the trap instruction when we
 	 * return from the system call trap via the return trap procedure,
@@ -1392,13 +1331,6 @@ MachHandlePageFault:
 AddressValueOkay:
 	call	_MachPageFault, 4
 	nop
-/* FOR DEBUGGING */
-	set	0x01010101, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault1, %CUR_PSR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault2, %CUR_PC_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault3, %NEXT_PC_REG)
-/* END FOR DEBUGGING */
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop
