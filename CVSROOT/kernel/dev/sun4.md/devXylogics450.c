@@ -257,6 +257,38 @@ typedef struct XylogicsIOPB {
 #define XY_HARD_SEEK_ERROR	0x80
 #define XY_DISK_FAULT		0x40
 
+/*
+ * The XY_RAW_READ and XY_RAW_WRITE commands return sector header
+ * information that looks like the following struct.  Again, this
+ * is byte-swapped in comparison with the documentation.
+ *
+ * A raw read is done during boot strap to determine the drive type.
+ * The label is read at the same time to determine the disk geometry,
+ * and this information is passed back into the controller.
+ */
+typedef struct XylogicsSectorHeader {
+    /*
+     * Byte 1
+     */
+    char sectorHigh	:2;
+    char reserved	:3;
+    char cylHigh	:3;
+    /*
+     * Byte 0
+     */
+    char cylLow		:8;
+    /*
+     * Byte 3
+     */
+    char driveType	:2;
+    char sectorLow	:6;
+    /*
+     * Byte 2
+     */
+    char head		:8;
+} XylogicsSectorHeader;
+
+
 typedef struct XylogicsDisk XylogicsDisk;
 typedef struct Request	Request;
 
@@ -871,6 +903,7 @@ ReadDiskLabel(xyPtr, diskPtr)
     Dev_DiskAddr diskAddr;
     int part;
     Request	request;
+    XylogicsSectorHeader	*headerPtr;	/* Sector header info */
     char labelBuffer[DEV_BYTES_PER_SECTOR + 8]; /* Buffer for reading the
 						 * disk label into. The
 						 * buffer has 8 extra bytes
@@ -898,20 +931,12 @@ ReadDiskLabel(xyPtr, diskPtr)
 	printf("Xylogics-%d: disk%d, couldn't read the label\n",
 			     xyPtr->number, diskPtr->slaveID);
     } else {
-	diskPtr->xyDriveType = (labelBuffer[3] & 0xC0) >> 6;
+	headerPtr = (XylogicsSectorHeader *)labelBuffer;
+	diskPtr->xyDriveType = headerPtr->driveType;
 	diskLabelPtr = (Sun_DiskLabel *)(&labelBuffer[4]);
 
-	printf("Header Bytes: ");
-	for (part=0 ; part<4 ; part++) {
-	    printf("%x ", labelBuffer[part] & 0xff);
-	} 
-	printf("\n");
 	printf("Label magic <%x>\n", diskLabelPtr->magic);
-	printf("Drive type byte (%x) => type %x\n",
-			  labelBuffer[3] & 0xff, diskPtr->xyDriveType);
-#ifdef notdef
-	MACH_DELAY(1000000);
-#endif notdef
+	printf("Drive type %x\n", diskPtr->xyDriveType);
 	if (diskLabelPtr->magic == SUN_DISK_MAGIC) {
 	    printf("Xylogics-%d disk%d: %s\n", xyPtr->number, diskPtr->slaveID,
 				    diskLabelPtr->asciiLabel);
@@ -946,6 +971,8 @@ ReadDiskLabel(xyPtr, diskPtr)
 	    request.diskPtr = diskPtr;
 	    request.diskAddress = diskAddr;
 
+    /* XXX */ printf("XY_SET_DRIVE_SIZE %d/%d/%d\n", diskAddr.cylinder, diskAddr.head, diskAddr.sector);
+
 	    error = SendCommand(diskPtr, &request, TRUE);
 	    if (error != SUCCESS) {
 		printf("Xylogics-%d: disk%d, couldn't set drive size\n",
@@ -959,6 +986,53 @@ ReadDiskLabel(xyPtr, diskPtr)
 	}
     }
     return(error);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  VerifySectorHeader
+ *	Checks the low-level sector header information against the
+ *	logical address of the sector.
+ *
+ * Results:
+ *	Returns 1 if sector header is ok.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Boolean
+VerifySectorHeader(diskAddrPtr, buffer)
+    Dev_DiskAddr *diskAddrPtr;		/* Disk disk address of
+					 * the first sector to transfer */
+    char *buffer;			/* Buffer with sector plus 8 bytes.
+					 * 4 bytes before, 4 bytes after. */
+{
+    Dev_DiskAddr checkAddr;
+    XylogicsSectorHeader *headerPtr;
+    int part;
+
+    headerPtr = (XylogicsSectorHeader *)buffer;
+    checkAddr.cylinder = (headerPtr->cylHigh << 8) | headerPtr->cylLow ;
+    checkAddr.head = headerPtr->head;
+    checkAddr.sector = (headerPtr->sectorHigh << 8) | headerPtr->sectorLow;;
+
+    if (checkAddr.cylinder != diskAddrPtr->cylinder ||
+	checkAddr.head != diskAddrPtr->head ||
+	checkAddr.sector != diskAddrPtr->sector) {
+	printf("XY: Bad Sector Header? bytes <");
+	printf("%x %x %x %x", buffer[1], buffer[0], buffer[3], buffer[2]);
+	printf(">");
+	printf(" Logical Addr [%d,%d,%d]\n",
+		 diskAddrPtr->cylinder,
+		 diskAddrPtr->head,
+		 diskAddrPtr->sector);
+	return(0);
+    } else {
+	return(1);
+    }
 }
 
 /*
