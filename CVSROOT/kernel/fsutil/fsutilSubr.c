@@ -140,6 +140,7 @@ void
 Fsutil_FileError(hdrPtr, string, status)
     Fs_HandleHeader *hdrPtr;
     char *string;
+    int status;
 {
     if (hdrPtr == (Fs_HandleHeader *)NIL) {
 	printf("(NIL handle) %s: ", string);
@@ -149,36 +150,58 @@ Fsutil_FileError(hdrPtr, string, status)
 	printf(" \"%s\" <%d,%d> %s: ", Fsutil_HandleName(hdrPtr),
 		hdrPtr->fileID.major, hdrPtr->fileID.minor, string);
     }
+    Fsutil_PrintStatus(status);
+    printf("\n");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_PrintStatus --
+ *
+ *	Print out an error status, using a mnemonic if possible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A print statement.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsutil_PrintStatus(status)
+    int status;
+{
     switch (status) {
 	case SUCCESS:
-	    printf("\n");
 	    break;
 	case FS_DOMAIN_UNAVAILABLE:
-	    printf("domain unavailable\n");
+	    printf("domain unavailable");
 	    break;
 	case FS_VERSION_MISMATCH:
-	    printf("version mismatch\n");
+	    printf("version mismatch");
 	    break;
 	case FAILURE:
-	    printf("cacheable/busy conflict\n");
+	    printf("cacheable/busy conflict");
 	    break;
 	case RPC_TIMEOUT:
-	    printf("rpc timeout\n");
+	    printf("rpc timeout");
 	    break;
 	case RPC_SERVICE_DISABLED:
-	    printf("server rebooting\n");
+	    printf("server rebooting");
 	    break;
 	case FS_STALE_HANDLE:
-	    printf("stale handle\n");
+	    printf("stale handle");
 	    break;
 	case DEV_RETRY_ERROR:
 	case DEV_HARD_ERROR:
-	    printf("DISK ERROR\n");
+	    printf("DISK ERROR");
 	    break;
 	case FS_NO_DISK_SPACE:
-	    printf("out of disk space\n");
+	    printf("out of disk space");
 	default:
-	    printf("<%x>\n", status);
+	    printf("<%x>", status);
 	    break;
     }
 }
