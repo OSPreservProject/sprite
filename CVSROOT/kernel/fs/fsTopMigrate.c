@@ -373,6 +373,13 @@ Fs_DeencapFileState(procPtr, infoPtr, buffer)
     Byte_EmptyBuffer(buffer, int, cwdLength);
     cwdName = buffer;
     buffer += Byte_AlignAddr(cwdLength + 1);
+
+    /*
+     * Unlock the process while doing remote operations using it, or else
+     * we can deadlock.
+     */
+    Proc_Unlock(procPtr);
+    
     status = Fs_Open(cwdName, FS_READ | FS_FOLLOW, FS_FILE, 0,
 		     &prefixStreamPtr);
     if (status != SUCCESS) {
@@ -421,9 +428,11 @@ Fs_DeencapFileState(procPtr, infoPtr, buffer)
 	}
 	buffer += sizeof(FsMigInfo);
     }
+    Proc_Lock(procPtr);
     return(SUCCESS);
     
 failure:
+    Proc_Lock(procPtr);
     Fs_CloseState(procPtr);
     return(status);
     
