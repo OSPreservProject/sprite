@@ -23,20 +23,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "mach.h"
-#include "scsi0.h"
-#include "dev.h"
-#include "devInt.h"
-#include "scsi.h"
-#include "scsiHBA.h"
-#include "scsiDevice.h"
-#include "devMultibus.h"
-#include "sync.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "bstring.h"
-#include "string.h"
+#include <sprite.h>
+#include <mach.h>
+#include <scsi0.h>
+#include <dev.h>
+#include <devInt.h>
+#include <sys/scsi.h>
+#include <scsiHBA.h>
+#include <scsiDevice.h>
+#include <devMultibus.h>
+#include <sync.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <bstring.h>
+#include <string.h>
 
 /*
  * The device registers for the original Sun SCSI Host Adaptor.
@@ -222,7 +222,12 @@ static void RequestDone _ARGS_ ((Device *devPtr, ScsiCmd *scsiCmdPtr,
     ReturnStatus status, unsigned int scsiStatusByte, int amountTransferred));
 static ReturnStatus Wait _ARGS_ ((Controller *ctrlPtr,
     int condition, Boolean reset));
-static int SpecialSenseProc _ARGS_ ((void));
+static int              SpecialSenseProc _ARGS_((ScsiCmd *scsiCmdPtr,
+					    ReturnStatus status,
+					    int statusByte,
+					    int byteCount,
+					    int senseLength,
+					    Address senseDataPtr));
 
 
 /*
@@ -638,9 +643,16 @@ again:
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static int
-SpecialSenseProc()
+SpecialSenseProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
+		 senseDataPtr)
+    ScsiCmd		*scsiCmdPtr;
+    ReturnStatus	status;
+    unsigned char	statusByte;
+    int			byteCount;
+    int			senseLength;
+    Address		senseDataPtr;
 {
     return 0;
 }
