@@ -242,23 +242,22 @@ Dev_TimerIOControl(devicePtr, ioctlPtr, replyPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_TimerRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
+Dev_TimerRead(devicePtr, readPtr, replyPtr)
     Fs_Device	*devicePtr;
-    int		offset;	  	/* Offset to start read */
-    int		bufSize;	/* Size of buffer. */
-    Address	bufPtr;		/* Place to store data. */
-    register int *lenPtr;  	/* Maximum number of chars to read 
-				 * before returning. */ 
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
 
-   unsigned char cntrs[10];
-   if (bufSize > 10) {
-       bufSize  = bufSize;
-   }
-   Dev_TimerReadReg( (unsigned char *) bufPtr, bufSize);
-   *lenPtr = bufSize;
+   int		bufSize;	/* Size of buffer. */
 
-  return (SUCCESS);
+   bufSize = readPtr->length;
+   if (bufSize > 10) {
+       bufSize  = 10;
+   }
+   Dev_TimerReadReg( (unsigned char *) readPtr->buffer, bufSize);
+   replyPtr->length = bufSize;
+
+   return (SUCCESS);
 }
 
 /*
@@ -317,11 +316,12 @@ Dev_TimerReadReg( cntrs, cnt)
 
 /*ARGSUSED*/
 ReturnStatus
-Dev_TimerOpen(devicePtr, useFlags, notifyToken)
+Dev_TimerOpen(devicePtr, useFlags, notifyToken, flagsPtr)
     Fs_Device *devicePtr;	/* Specifies type and unit number. */
     int useFlags;		/* Flags from the stream being opened */
     ClientData notifyToken;	/* Used for Fs call-back to notify waiting
 				 * processes that the console device is ready.*/
+    int		flagsPtr;	/* OUT: Device open flags. */
 {
     if (dev_TimerAddr == (volatile DevTimerChip *) 0) {
 	return DEV_NO_DEVICE;
