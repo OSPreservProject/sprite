@@ -157,19 +157,20 @@ Boolean
 Mach_CanMigrate(procPtr)
     Proc_ControlBlock *procPtr;		/* pointer to process to check */
 {
+    int stackFormat;
+    Boolean okay;
+
+    stackFormat = procPtr->machStatePtr->userState.excStackPtr->vor.stackFormat;
+    okay = (stackFormat != MACH_MC68010_BUS_FAULT) ? TRUE : FALSE;
     /*
-     * We can get the pc from the "short stack".
+     * We have trouble getting the pc from the 68010 bus fault stack,
+     * but it seems okay for others.
      */
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("Mach_CanMigrate called.  Returning %d.\n",
-		   (procPtr->machStatePtr->userState.excStackPtr->vor.stackFormat
-		   == MACH_SHORT) ? TRUE : FALSE);
+	Sys_Printf("Mach_CanMigrate called.  PC %x, stackFormat %x, returning %d.\n",
+		   procPtr->machStatePtr->userState.excStackPtr->pc,
+		   stackFormat, okay);
     }
-    if (procPtr->machStatePtr->userState.excStackPtr->vor.stackFormat ==
-	MACH_SHORT) {
-	return(TRUE);
-    } else {
-	return(FALSE);
-    }
+    return(okay);
 }    
     
