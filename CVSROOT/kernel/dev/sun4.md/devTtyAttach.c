@@ -132,7 +132,11 @@ DevTtyInit()
      */
 
 #ifndef sun2
+#ifdef sun4c
+    promConsoleType = *romVectorPtr->inSource;
+#else
     promConsoleType = ((struct eeprom *) EEPROM_BASE)->ee_diag.eed_console;
+#endif /* sun4c */
     switch (promConsoleType) {
 	case EED_CONS_TTYA:
 	    consoleUnit = 1;
