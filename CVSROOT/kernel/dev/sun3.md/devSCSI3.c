@@ -927,6 +927,9 @@ SendCommand(devPtr, scsiCmdPtr)
 	if ((unsigned) scsiCmdPtr->buffer < (unsigned) VMMACH_DMA_START_ADDR) {
 	    ctrlPtr->dmaBuffer = addr = 
 			VmMach_DMAAlloc(size,scsiCmdPtr->buffer);
+	    if (addr == (Address) NIL) {
+		panic("SendCommand: unable to allocate DMA memory.");
+	    }
 	} else {
 	    /*
 	     * Already mapped into DMA space.
@@ -2241,6 +2244,9 @@ DevSCSI3Init(ctrlLocPtr)
 	ctrlPtr->onBoard = TRUE;
 	ctrlPtr->udcDmaTable = (UDCDMAtable *) 
 	    VmMach_DMAAlloc(sizeof(UDCDMAtable), malloc(sizeof(UDCDMAtable)));
+	    if (ctrlPtr->udcDmaTable == (UDCDMAtable *) NIL) {
+		panic("DevSCSI3Init: unable to allocate DMA memory.\n");
+	    }
     } else {
 	ctrlPtr->onBoard = FALSE;
 	/*

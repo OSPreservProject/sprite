@@ -432,6 +432,7 @@ DevXylogics450Init(cntrlrPtr)
     char x;				/* Used when probing the controller */
     int	i;
     ReturnStatus status;
+    Address	addr;
 
 
     /*
@@ -469,10 +470,11 @@ DevXylogics450Init(cntrlrPtr)
      * Allocate the mapped DMA memory for the IOPB. This memory should not
      * be freed unless the controller is not going to be accessed again.
      */
-    xyPtr->IOPBPtr = 
-        (volatile XylogicsIOPB *)VmMach_DMAAlloc(sizeof(XylogicsIOPB),
-						malloc(sizeof(XylogicsIOPB)));
-
+    addr = VmMach_DMAAlloc(sizeof(XylogicsIOPB), malloc(sizeof(XylogicsIOPB)));
+    if (addr == (Address) NIL) {
+	panic("DevXylogics450Init: unable to allocate DMA memory.\n");
+    }
+    xyPtr->IOPBPtr = (volatile XylogicsIOPB *) addr;
     /*
      * Initialize synchronization variables and set the controllers
      * state to alive and not busy.
@@ -1209,6 +1211,9 @@ SendCommand(diskPtr, requestPtr, wait)
 	    xyPtr->dmaBufferSize = DEV_BYTES_PER_SECTOR  * numSectors;
 	}
 	xyPtr->dmaBuffer =  VmMach_DMAAlloc(xyPtr->dmaBufferSize, address);
+	if (xyPtr->dmaBuffer == (Address) NIL) {
+	    panic("SendCommand: unable to allocate DMA memory.");
+	}
     } else {
 	xyPtr->dmaBufferSize = 0;
     }
