@@ -581,4 +581,16 @@ Fixed a problem with the 101 mapped files change.
 Elevated raid module to first-class status.
 Fixed disk label handling in devSCSIDisk.c.
 Fixed uninitialized Net_Address vars in netArp.c.
+
+1.106	Thu Nov 14 17:48:27 PST 1991
+Fixed FsrmtFileClose() to set last dirty block.
+Fs_PageCopy modified to make sure streams aren't NIL.
+Assertion in vmMigrate.c that de-encapsulated stream isn't NIL changed
+    to return FAILURE.
+Removed unnecessary routines from fsioStream.c.
+Fixed a few compat bugs:
+    fork returning wrong value
+    sprite vs. unix executable (profiled ones were done wrong)
+    restarting migrated system calls
+    window flush in signal return
     New files linked in from the net library.
