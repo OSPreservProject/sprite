@@ -1548,7 +1548,7 @@ VmMach_TLBFault(virtAddr)
 	    }
 	}
 	if (!found) {
-	    return FALSE;
+	    return FAILURE;
 	}
 	lowEntry = (virtPage - infoPtr->firstPage + infoPtr->firstPhysPage) <<
 		    VMMACH_TLB_PHYS_PAGE_SHIFT;
