@@ -53,6 +53,21 @@ extern int		numNetInterfaces;
 	    net_EtherStats.bytesSent += gathPtr->length; \
 	} \
     }
+/*
+ * Macro to swap the fragOffset field.
+ */
+#define SWAP_FRAG_OFFSET_HOST_TO_NET(ptr) { \
+    short	*shortPtr; \
+    shortPtr = ((short *)&ptr->ident) + 1; \
+    *shortPtr = Net_HostToNetShort(*shortPtr); \
+} 
+
+#define SWAP_FRAG_OFFSET_NET_TO_HOST(ptr) { \
+    short	*shortPtr; \
+    shortPtr = ((short *)&ptr->ident) + 1; \
+    *shortPtr = Net_NetToHostShort(*shortPtr); \
+} 
+
 
 
 /*
@@ -301,6 +316,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		 * new total length and convert into one-complement.
 		 * See Net_InetChecksum().
 		 */
+		length = Net_HostToNetShort(length);
 		ipHeaderPtr->totalLen = length;
 
 		length = ipHeaderPtr->checksum + length;
@@ -561,7 +577,7 @@ Net_Input(packetPtr, packetLength)
 		int    headerLenInBytes;
 		int    totalLenInBytes;
 		headerLenInBytes = ipHeaderPtr->headerLen * 4;
-		totalLenInBytes = ipHeaderPtr->totalLen;
+		totalLenInBytes = Net_NetToHostShort(ipHeaderPtr->totalLen);
 		/*
 		 * Validate the packet. We toss out the following cases:
 		 * 1) Runt packets.
@@ -570,18 +586,21 @@ Net_Input(packetPtr, packetLength)
 		 * Since we sent the packets with dont fragment set we 
 		 * shouldn't get any fragments.
 		 */
-		 if ((headerLenInBytes >= sizeof(Net_IPHeader)) &&
+		if ((headerLenInBytes >= sizeof(Net_IPHeader)) &&
 		     (totalLenInBytes > headerLenInBytes) &&
 		     (totalLenInBytes <= (packetLength-sizeof(Net_EtherHdr))) &&
 		     (Net_InetChecksum(headerLenInBytes, (Address)ipHeaderPtr)
-		                        == 0)	&&
-		     !(ipHeaderPtr->flags & NET_IP_MORE_FRAGS) &&
+		                        == 0)) {
+
+		    SWAP_FRAG_OFFSET_NET_TO_HOST(ipHeaderPtr);
+		    if((!(ipHeaderPtr->flags & NET_IP_MORE_FRAGS)) &&
 		      (ipHeaderPtr->fragOffset == 0)) {
 			net_EtherStats.bytesReceived += packetLength;
 			Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
 				     ((char *) ipHeaderPtr) + headerLenInBytes, 
 				     totalLenInBytes-headerLenInBytes);
-		 }
+		     }
+		}
 
 	    } else {
 		DevNetEtherHandler(packetPtr, packetLength);

@@ -142,6 +142,15 @@ ArpInputQueue arpInputQueue[ARP_INPUT_QUEUE_LEN];
 static int nextInputIndex = 0;
 Sync_Semaphore arpInputMutex;
 
+/*
+ * Macro to swap the fragOffset field.
+ */
+#define SWAP_FRAG_OFFSET_HOST_TO_NET(ptr) { \
+    short	*shortPtr; \
+    shortPtr = ((short *)&ptr->ident) + 1; \
+    *shortPtr = Net_HostToNetShort(*shortPtr); \
+} 
+
 static void Net_ArpTimeout();
 static void NetArpOutput();
 static void NetRevArpHandler();
@@ -374,7 +383,7 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	addr = Net_RevArp(NET_ROUTE_INET,&etherAddress);
 	if (addr != (Net_InetAddress) -1) { 
 	    char	buffer[128];
-	    net_InetAddress = addr;
+	    net_InetAddress = Net_HostToNetInt(addr);
 	    Net_InetAddrToString(net_InetAddress, buffer);
 	    printf("Setting internet address to %s\n",buffer);
 	} else {
@@ -484,10 +493,11 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	      * Kernel IP doesn't handle fragmented IP packets (yet).
 	      */
 	     ipHeader->flags = NET_IP_DONT_FRAG;
+	     SWAP_FRAG_OFFSET_HOST_TO_NET(ipHeader);
 	     ipHeader->timeToLive = NET_IP_MAX_TTL;
 	     ipHeader->protocol = NET_IP_PROTOCOL_SPRITE;
-	     ipHeader->source = Net_HostToNetInt(net_InetAddress);
-	     ipHeader->dest = Net_HostToNetInt(inetRoute->inetAddr);
+	     ipHeader->source = net_InetAddress;
+	     ipHeader->dest = inetRoute->inetAddr;
 	     /*
 	      * Precompute the checksum for the ipHeader. This must be
 	      * corrected when the totalLen field is updated. Note we
@@ -1506,7 +1516,16 @@ NetArpOutput(destEtherAddress, etherType, requestPtr)
     NET_ETHER_ADDR_COPY(destEtherAddress, 
 			NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
     NET_ETHER_HDR_TYPE(*etherHdrPtr) = Net_HostToNetShort(etherType);
+#ifdef sun4
+    /*
+     * Gcc for the sun4 currently allows these structures to be on unaligned
+     * boudaries and then generates loads and stores as if they were aligned,
+     * so I have to copy them byte by byte.
+     */
+     bcopy(requestPtr, packetPtr, sizeof (NetSpriteArp));
+#else
     *packetPtr = *requestPtr;
+#endif sun4
 
     gatherPtr->bufAddr = (Address)packetPtr;
     gatherPtr->length = sizeof(NetSpriteArp);
