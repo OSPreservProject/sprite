@@ -21,6 +21,7 @@
 #define _DEVEXABYTE
 
 
-extern ReturnStatus DevExabyteAttach();
+extern ReturnStatus DevExabyteAttach _ARGS_ ((Fs_Device *devicePtr,
+    ScsiDevice *devPtr, ScsiTape *tapePtr));
 
 #endif /* _DEVSCSIEXABYTE */
