@@ -1698,17 +1698,30 @@ ClientCommand(consistPtr, clientPtr, flags)
     }
     if (status != SUCCESS) {
 	/*
-	 * Couldn't post call-back to the client.  Nuke it from the
-	 * list of clients using the file.
+	 * Couldn't post call-back to the client.
 	 */
 	int ref, write, exec;
 	int clientID = clientPtr->clientID;
-	Fsconsist_Kill(consistPtr, clientPtr->clientID, &ref, &write, &exec);
 	printf("ClientCommand, %s msg to client %d file \"%s\" <%d,%d> failed %x\n",
 	    ConsistType(flags), clientID, Fsutil_HandleName(consistPtr->hdrPtr),
 	    consistRpc.fileID.major, consistRpc.fileID.minor, status);
-	printf("\tClient state killed: %d refs %d write %d exec\n",
-		    ref, write, exec);
+	if (status == RPC_TIMEOUT) {
+	    /*
+	     * If its really down, then nuke it from the
+	     * list of clients using the file.
+	     */
+	    Fsconsist_Kill(consistPtr, clientPtr->clientID, &ref, &write, &exec);
+	    printf("\tClient state killed: %d refs %d write %d exec\n",
+			ref, write, exec);
+	} else {
+	    /*
+	     * Just nuke the message from the list so EndConsistency
+	     * terminates.  Sometimes the callback fails because the
+	     * host is still booting and hasn't enabled its RPC service yet.
+	     */
+	    List_Remove((List_Links *)msgPtr);
+	    free((Address)msgPtr);
+	}
     }
     LOCK_MONITOR;
 }
