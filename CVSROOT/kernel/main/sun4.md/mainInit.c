@@ -85,6 +85,7 @@ main()
      * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
      */
     Mach_Init();
+    Sync_Init();
 
     /*
      * Initialize the debugger.
@@ -153,10 +154,6 @@ main()
 	Mach_MonPrintf("Calling Sched_Init().\n");
     }
     Sched_Init();
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Sync_Init().\n");
-    }
-    Sync_Init();
 
     /*
      * Sys_Printfs are not allowed before this point.
