@@ -212,7 +212,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
      */
     { FS_RMT_DEVICE_STREAM, FsRmtDeviceCltOpen, FsSpriteRead, FsSpriteWrite,
 		FsRemoteIOControl, FsSpriteSelect,
-		FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtDeviceVerify, FsRemoteIOMigStart, FsRemoteIOMigEnd,
 		FsRmtDeviceMigrate, FsRmtDeviceReopen,
 		NoProc, NoProc, NoProc, NoProc,
@@ -233,7 +233,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
      */
     { FS_RMT_PIPE_STREAM, NoProc, FsSpriteRead, FsSpriteWrite,
 		FsRemoteIOControl, FsSpriteSelect,
-		FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtPipeVerify, FsRemoteIOMigStart, FsRemoteIOMigEnd,
 		FsRmtPipeMigrate, FsRmtPipeReopen,
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
@@ -281,7 +281,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
     { FS_RMT_PSEUDO_STREAM, FsRmtPseudoStreamCltOpen, FsSpriteRead,
 		FsSpriteWrite,
 		FsRemoteIOControl, FsSpriteSelect,
-		FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtPseudoStreamVerify,
 		FsRemoteIOMigStart, FsRemoteIOMigEnd,
 		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
@@ -305,7 +305,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
      */
     { FS_RMT_NAMED_PIPE_STREAM, FsRmtNamedPipeCltOpen, FsSpriteRead,
 		FsSpriteWrite, FsSpriteIOControl,
-		FsSpriteSelect, FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+		FsSpriteSelect, FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtNamedPipeVerify, FsRmtDeviceEncap, FsRmtDeviceDeencap,
 		NoProc, NoProc, NoProc, NoProc,
 		FsRmtDeviceClose, FsRmtDeviceDelete},
