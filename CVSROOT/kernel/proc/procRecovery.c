@@ -55,7 +55,7 @@ Hash_Table	*dependHashTable = &dependHashTableStruct;
 /*
  *----------------------------------------------------------------------
  *
- * Proc_RecovInit --
+ * ProcRecovInit --
  *
  *	Initialize the data structures for process migration recovery.
  *
@@ -69,7 +69,7 @@ Hash_Table	*dependHashTable = &dependHashTableStruct;
  *----------------------------------------------------------------------
  */
 void
-Proc_RecovInit()
+ProcRecovInit()
 {
     Hash_Init(dependHashTable, 0, HASH_ONE_WORD_KEYS);
     Recov_CrashRegister(MigrateCrash, (ClientData) NIL);
