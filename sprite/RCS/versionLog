@@ -245,4 +245,7 @@ blocked.
 Has statistics for Fred.  Has various fs lock fixes.  Has L1-i function.
 
 1.070	Wed Aug  1 13:12:15 PDT 1990
+Has more statistics for Fred.  Has disk mount changes for John.  Has
+improved L1-i function.  Has vm/signal changes for fault address.
+
     New files linked in from the net library.
