@@ -264,7 +264,7 @@ Sys_Shutdown(flags, rebootString)
      */
     if (flags & SYS_WRITE_BACK) {
 	Sys_Printf("Syncing disks\n");
-	Fs_Sync(-1, flags & SYS_KILL_PROCESSES, TRUE);
+	Fs_Sync(-1, flags & SYS_KILL_PROCESSES);
     }
 
     if (flags & SYS_HALT) {
@@ -353,7 +353,7 @@ Sys_SyncDisks(trapType)
         !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	Sys_Printf("Syncing disks.  Version: %s\n", SpriteVersion());
 	errorSync = TRUE;
-	Fs_Sync(-1, TRUE, TRUE);
+	Fs_Sync(-1, TRUE);
 	errorSync = FALSE;
     }
 }
