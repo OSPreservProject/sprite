@@ -332,14 +332,31 @@ DevSCSITest(devPtr)
     DevSCSIDevice *devPtr;
 {
     register ReturnStatus status;
+    register DevSCSIController *scsiPtr;
 
-    DevSCSISetupCommand(SCSI_TEST_UNIT_READY, devPtr, 0, 0);
-
-    status = (*devPtr->scsiPtr->commandProc)(devPtr->targetID, devPtr->scsiPtr,
-		    0, (Address)0, WAIT);
-    if (status == DEV_TIMEOUT) {
-	status = DEV_OFFLINE;
+    /*
+     * Synchronize with the interrupt handling routine and with other
+     * processes that are trying to initiate I/O with this controller.
+     * FIX HERE TO ENQUEUE REQUESTS - GOES WITH CONNECT/DIS-CONNECT
+     */
+    scsiPtr = devPtr->scsiPtr;
+    MASTER_LOCK(&scsiPtr->mutex);
+    while (scsiPtr->flags & SCSI_CNTRLR_BUSY) {
+	Sync_MasterWait(&scsiPtr->readyForIO, &scsiPtr->mutex, FALSE);
     }
+    scsiPtr->flags |= SCSI_CNTRLR_BUSY;
+
+	DevSCSISetupCommand(SCSI_TEST_UNIT_READY, devPtr, 0, 0);
+
+	status = (*devPtr->scsiPtr->commandProc)(devPtr->targetID,
+		devPtr->scsiPtr, 0, (Address)0, WAIT);
+	if (status == DEV_TIMEOUT) {
+	    status = DEV_OFFLINE;
+	}
+
+    scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
+    Sync_MasterBroadcast(&scsiPtr->readyForIO);
+    MASTER_UNLOCK(&scsiPtr->mutex);
     return(status);
 }
 
