@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "stdio.h"
 #include "dev.h"
 #include "scsi.h"
 #include "scsiTape.h"
@@ -180,7 +181,7 @@ DevExabyteAttach(devicePtr, devPtr, tapePtr)
     inquiryPtr = (ScsiInquiryData *) (devPtr->inquiryDataPtr);
     if ( (devPtr->inquiryLength < sizeof(ScsiInquiryData)) ||
 	 (inquiryPtr->length != 0x2f ) ||
-	 (strncmp(inquiryPtr->vendorID, "EXABYTE ",8) != 0) ) {
+	 (strncmp((char *) inquiryPtr->vendorID, "EXABYTE ", 8) != 0) ) {
 	 return DEV_NO_DEVICE;
     }
     /*

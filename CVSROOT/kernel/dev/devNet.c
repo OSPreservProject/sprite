@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "stdio.h"
 #include "net.h"
 #include "devNet.h"
 #include "user/netInet.h"
@@ -332,7 +333,8 @@ DevNetEtherHandler(packetPtr, size)
 		     * that we pass the protoPtr to the packet handler
 		     * so it can call DevNet_FsRead to get the packet.
 		     */
-		    Proc_CallFunc(protoPtr->inputProc, (ClientData)protoPtr, 0);
+		    Proc_CallFunc((void (*)()) protoPtr->inputProc,
+			(ClientData)protoPtr, 0);
 		} else {
 		    Fsio_DevNotifyReader(protoPtr->fsReadyToken);
 		}

@@ -21,14 +21,15 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include <sprite.h>
+#include "sprite.h"
+#include "stdio.h"
 #include "dev.h"
 #include "ttyAttach.h"
-#include <errno.h>
-#include <fs.h>
+#include "errno.h"
+#include "fs.h"
 #include "fsio.h"
 #include "proc.h"
-#include <status.h>
+#include "status.h"
 #include "sync.h"
 #include "tty.h"
 #include "td.h"
