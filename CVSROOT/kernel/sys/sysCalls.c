@@ -537,7 +537,7 @@ Sys_StatsStub(command, option, argPtr)
 		    register Proc_ControlBlock *procPtr;
 		    procPtr = Proc_GetEffectiveProc();
 		    if (procPtr->effectiveUserID != 0) {
-			status = GEN_INVALID_ARG;
+			status = GEN_NO_PERMISSION;
 		    } else {
 			proc_RefuseMigrations =
 				(option == SYS_PROC_MIG_REFUSE);
