@@ -261,6 +261,36 @@ typedef struct {
 } FsPrefixStats;
 
 /*
+ * Counts of various file system objects.
+ */
+typedef struct {
+    int lruScans;
+    int streams;
+    int streamClients;
+    int files;
+    int rmtFiles;
+    int pipes;
+    int devices;
+    int controls;		/* Pdev and Pfs control streams */
+    int pseudoStreams;		/* One count for both client/server handles */
+    int remote;			/* All the various remote objects but files*/
+} FsObjectStats;
+
+
+/*
+ * File system statistics.
+ */
+typedef struct {
+    FsBlockCacheStats	blockCache;
+    FsNameCacheStats	nameCache;
+    FsAllocStats	alloc;
+    FsHandleStats	handle;
+    FsGeneralStats	gen;
+    FsPrefixStats	prefix;
+    FsObjectStats	object;
+} FsStats;
+
+/*
  * Keep a histogram of file lifetimes in a three-dimensional matrix,
  * for lifetime, file size, and file type.  Buckets for size are
  * scaled logarithmically.  Buckets for lifetime are determined as
@@ -342,19 +372,7 @@ typedef struct {
 	    [FS_HIST_TIME_BUCKETS] [FS_HIST_SIZE_BUCKETS] [FS_STAT_NUM_TYPES];
 } FsTypeStats;
 
-
-/*
- * File system statistics.
- */
-typedef struct {
-    FsBlockCacheStats	blockCache;
-    FsNameCacheStats	nameCache;
-    FsAllocStats	alloc;
-    FsHandleStats	handle;
-    FsGeneralStats	gen;
-    FsPrefixStats	prefix;
-    FsTypeStats		type;
-} FsStats;
+FsTypeStats fsTypeStats;
 
 /*
  * Macro to add to a counter, watching for overflow.  We use unsigned
