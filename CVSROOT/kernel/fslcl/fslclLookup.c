@@ -1819,26 +1819,12 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	     */
 	    curHandlePtr->flags |= FS_FILE_DELETED;
 	    if (curHandlePtr->use.ref == 0) {
-		if (curDescPtr->fileType == FS_DIRECTORY) {
-		    fsStats.object.directory--;
-		} else {
-		    fsStats.object.files--;
-		}
 		/*
-		 * Tell other clients (only the last writer) that the
-		 * file has been deleted.  Call with our own hostID
-		 * order to guarantee a call-back to all clients.
+		 * Handle the deletion and clean up the handle.
+		 * We set the the clientID to us and specify client
+		 * call-backs so that any other clients will be notified.
 		 */
-		FsClientRemoveCallback(&curHandlePtr->consist, rpc_SpriteID);
-		/*
-		 * Delete the file from disk.
-		 */
-		status = FsDeleteFileDesc(curHandlePtr);
-		/*
-		 * Wipe out the handle.
-		 */
-		FsHandleRelease(curHandlePtr, TRUE);
-		FsHandleRemove(curHandlePtr);
+		(void)FsFileCloseInt(curHandlePtr, 0, 0, 0, rpc_SpriteID, TRUE);
 		*curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
 	    } else {
 		FsHandleRelease(curHandlePtr, TRUE);
