@@ -30,6 +30,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "dbg.h"
 
+#include "machMon.h"
+
 #include "netInet.h"
 
 Net_EtherStats	net_EtherStats;
@@ -87,17 +89,13 @@ Net_Init()
 	if ((*netInterface[inter].init)(netInterface[inter].name,
 					netInterface[inter].number,
 					netInterface[inter].ctrlAddr)) {
-	    printf("%s-%d net interface at 0x%x\n",
+	    Mach_MonPrintf("%s-%d net interface at 0x%x\n",
 		netInterface[inter].name,
 		netInterface[inter].number,
 		netInterface[inter].ctrlAddr);
 	} 
     }
     Sync_SemInitDynamic(&outputMutex, "Net:outputMutex");
-    /*
-     * Pre-load some addresses, including the broadcast address.
-     */
-    Net_RouteInit();
 }
 
 /*
@@ -441,6 +439,11 @@ NetOutputWakeup(mutexPtr)
     Sync_Semaphore	*mutexPtr;	/* Mutex from scatter/gather struct */
 {
     int waiting;
+
+    if (dbg_UsingNetwork) {
+	return;
+    }
+
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
     Sync_SlowBroadcast((unsigned int)mutexPtr, &waiting);
 #else 	/* Mutiprocessor implementation */
