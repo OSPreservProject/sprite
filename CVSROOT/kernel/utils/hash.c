@@ -303,8 +303,8 @@ Hash_Find(table, key)
 
     switch (table->ptrKeys) {
 	case 0:
-	    hashEntryPtr = (Hash_Entry *) malloc((unsigned)
-		    (sizeof(Hash_Entry) + strlen((Address) keyPtr) - 3));
+	    hashEntryPtr = (Hash_Entry *) malloc((sizeof(Hash_Entry) +
+						  strlen((Address) keyPtr) - 3));
 	    (void)strcpy((char *) hashEntryPtr->key.name, (char *) keyPtr);
 	    break;
 	case 1:
@@ -313,8 +313,8 @@ Hash_Find(table, key)
 	    break;
 	case 2:
 	    hashEntryPtr = 
-		(Hash_Entry *) malloc((unsigned) (sizeof(Hash_Entry)
-			+ sizeof(unsigned)));
+		(Hash_Entry *) malloc(sizeof(Hash_Entry)
+			+ sizeof(unsigned));
 	    hashKeyPtr = hashEntryPtr->key.words;
 	    *hashKeyPtr++ = *keyPtr++;
 	    *hashKeyPtr = *keyPtr;
@@ -324,7 +324,7 @@ Hash_Find(table, key)
 
 	    n = table->ptrKeys;
 	    hashEntryPtr = (Hash_Entry *) 
-		    malloc((unsigned) (sizeof(Hash_Entry)
+		    malloc((sizeof(Hash_Entry)
 			    + (n - 1) * sizeof(unsigned)));
 	    hashKeyPtr = hashEntryPtr->key.words;
 	    do { 
@@ -367,7 +367,7 @@ Hash_Delete(table, hashEntryPtr)
     register	Hash_Entry	*hashEntryPtr;
 {
     if (hashEntryPtr != (Hash_Entry *) NIL) {
-	List_Remove(hashEntryPtr);
+	List_Remove((List_Links *) hashEntryPtr);
 	hashEntryPtr->bucketPtr->version++;
 	free((char *) hashEntryPtr);
 	table->numEntries--;

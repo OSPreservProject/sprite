@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"
 #include "dbg.h"
 #include "fs.h"
+#include "fsutil.h"
 #include "rpc.h"
 #include "net.h"
 #include "sched.h"
@@ -292,7 +293,8 @@ Boolean	sys_ShouldSyncDisks = TRUE;
  * SysErrorShutdown --
  *
  *	This routine is called when the system encountered an error and
- *	needs to be shut down.
+ *	needs to be shut down.  [Actually, apparently not used, since the
+ *	system goes into the debugger instead.]
  *
  * Results:
  *	None.
@@ -310,7 +312,7 @@ SysErrorShutdown(trapType)
     if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
         !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	sys_ErrorShutdown = TRUE;
-	(void) Sys_Shutdown(SYS_KILL_PROCESSES);
+	(void) Sys_Shutdown(SYS_KILL_PROCESSES, "");
     }
     if (sys_ShouldSyncDisks && sys_ShuttingDown) {
 	printf("Error type %d while shutting down system. Exiting ...\n",
@@ -436,7 +438,7 @@ Sys_GetMachineInfo(archPtr, typePtr, clientIDPtr)
 ReturnStatus
 Sys_GetMachineInfoNew(infoSize, infoBufPtr)
     int			infoSize;	/* Size of the info structure. */
-    Address	 	*infoBufPtr;	/* Info structure to fill in */
+    Address	 	infoBufPtr;	/* Info structure to fill in */
 {
     Sys_MachineInfo	info;
     int			bytesToCopy;
@@ -758,11 +760,13 @@ Sys_StatsStub(command, option, argPtr)
 
 	    Vm_MakeAccessible(VM_OVERWRITE_ACCESS,
 			      sizeof(Sys_DiskStats) * option,
-			      (Address)argPtr, &bytesAcc, &statArrPtr);
+			      (Address)argPtr, &bytesAcc,
+			      (Address *) &statArrPtr);
 	    if (statArrPtr == (Sys_DiskStats *)NIL) {
 		status = SYS_ARG_NOACCESS;
 	    } else {
-		Dev_GetDiskStats(statArrPtr, bytesAcc / sizeof(Sys_DiskStats));
+		(void) Dev_GetDiskStats(statArrPtr,
+					bytesAcc / sizeof(Sys_DiskStats));
 		Vm_MakeUnaccessible((Address)statArrPtr, bytesAcc);
 		status = SUCCESS;
 	    }

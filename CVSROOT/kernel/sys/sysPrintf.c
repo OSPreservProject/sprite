@@ -70,8 +70,6 @@ writeProc(stream, flush)
     FILE *stream;
     Boolean flush;
 {
-    int		count;
-    int		written;
     Fs_IOParam	io;
     Fs_IOReply	reply;
 
@@ -114,7 +112,20 @@ writeProc(stream, flush)
 /* ARGSUSED */
 int vprintf(format)
     char *format;
-{}
+{
+    /*
+     * Lint complains about unused variables...  This is all #ifdef'ed lint.
+     * It's silly and can probably be cut down a bit....
+     */
+    char foo;
+    Sync_Semaphore *barPtr;
+    barPtr = &sysPrintMutex;
+    sysPrintMutex = *barPtr;
+    writeProc((FILE *) NULL, 0);
+    streamBuffer[0] = '\0';
+    foo = streamBuffer[0];
+    streamBuffer[0] = foo;
+}
 #else
 /*VARARGS1*/
 int

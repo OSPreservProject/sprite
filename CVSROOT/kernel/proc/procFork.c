@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "timer.h"
 #include "vm.h"
+#include "prof.h"
 
 static ReturnStatus    InitUserProc();
 
@@ -184,11 +185,11 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 
     /* 
      * Free up the old argument list, if any.  Note, this could be put
-	strcpy(procPtr->argString, procName);
+     * in Proc_Exit, but is put here for consistency with the other
      * reinitializations of control block fields.  
 p     */
 
-	strcpy(procPtr->argString, parentProcPtr->argString);
+    if (procPtr->argString != (Address) NIL) {
 	free((Address) procPtr->argString);
 	procPtr->argString = (Address) NIL;
     }

@@ -15,6 +15,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "dumpInt.h"
 #include "dev.h"
+#include "stdio.h"
 
 /*
  * Table of routines and their arguments to be called on dump events.
