@@ -74,6 +74,7 @@ typedef struct FsLruEntry {
  * the implementation code.
  */
 
+extern FsHashTable	fsNameTable;
 extern FsHashTable	*fsNameTablePtr;
 extern Boolean		fsNameCaching;
 

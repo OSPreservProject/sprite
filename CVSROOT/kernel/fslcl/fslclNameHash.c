@@ -25,9 +25,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "sys.h"
 
-Boolean fsNameCaching = TRUE;
-int fsNameHashSize = FS_NAME_HASH_SIZE;
-
 static	Sync_Lock nameHashLock = {0, 0};
 #define	LOCKPTR	&nameHashLock
 
