@@ -180,7 +180,7 @@ Proc_AddMigDependency(processID, hostID)
     dependPtr->hostID = hostID;
 #ifdef KERNEL_HASH
     hashEntryPtr = Hash_Find(dependHashTable, (Address) processID);
-    new = TRUE;
+    new = (hashEntryPtr->value == (Address) NIL);
 #else KERNEL_HASH
     hashEntryPtr = Hash_CreateEntry(dependHashTable, (Address) processID, &new);
 #endif /* KERNEL_HASH */
