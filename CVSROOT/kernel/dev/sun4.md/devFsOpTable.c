@@ -43,6 +43,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mouse.h"
 #include "devTMR.h"
 #include "devfb.h"
+#include "devVMElink.h"
 
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
@@ -154,6 +155,12 @@ DevFsTypeOps devFsOpTable[] = {
                    DevFBIOControl, DevFBClose, NullProc,
                    DEV_NO_ATTACH_PROC, NoDevice, DevFBMMap},
 
+    /*
+     * VME link device.
+     */
+    {DEV_VMELINK, DevVMElinkOpen, DevVMElinkRead, DevVMElinkWrite,
+	 	  DevVMElinkIOControl, NullProc, NullProc,
+	 	  DEV_NO_ATTACH_PROC, NoDevice},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
