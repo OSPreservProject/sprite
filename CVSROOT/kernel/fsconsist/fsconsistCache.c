@@ -1036,7 +1036,10 @@ FsDeleteLastWriter(consistPtr, clientID)
 ENTRY void
 FsClientRemoveCallback(consistPtr, clientID)
     FsConsistInfo *consistPtr;	/* File to check */
-    int		clientID;	/* Client who is removing the file. */
+    int		clientID;	/* Client who is removing the file.  This
+				 * host is not contacted via call-back.
+				 * Instead, the current RPC (close) should
+				 * return FS_FILE_REMOVED. */
 {
     register	FsClientInfo	*clientPtr;
 
@@ -1060,9 +1063,7 @@ FsClientRemoveCallback(consistPtr, clientID)
 		 * This should only be the last writer as we are called only
 		 * when it is truely time to remove the file.
 		 * The handle is momentarily unlocked to allow the consistency
-		 * reply to come in.  It probably doesn't matter if it gets
-		 * re-locked as the handle is bound for removal, but it leaves
-		 * things as they were upon entry into this procedure.
+		 * reply to come in.
 		 */
 		(void)ClientCommand(consistPtr, clientPtr, FS_DELETE_FILE);
 		FsHandleUnlock(consistPtr->hdrPtr);
