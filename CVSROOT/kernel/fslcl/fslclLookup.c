@@ -68,10 +68,20 @@ int fsNameHashSize = FS_NAME_HASH_SIZE;
 /*
  * Forward Declarations.
  */
-ReturnStatus	ExpandLink();
-ReturnStatus	FindComponent();
-ReturnStatus 	InsertComponent();
-Boolean		DirectoryEmpty();
+static ReturnStatus	ExpandLink();
+static ReturnStatus	FindComponent();
+static ReturnStatus 	InsertComponent();
+static Boolean		DirectoryEmpty();
+static ReturnStatus CreateFile();
+static ReturnStatus LinkFile();
+static ReturnStatus OkToMoveDirectory();
+static ReturnStatus MoveDirectory();
+static ReturnStatus GetParentNumber();
+static ReturnStatus SetParentNumber();
+static ReturnStatus DeleteFileName();
+static ReturnStatus CheckPermissions();
+static ReturnStatus CacheDirBlockWrite();
+static ReturnStatus WriteNewDirectory();
 
 
 /*
