@@ -28,6 +28,7 @@ typedef struct Net_Route {
     int		spriteID;	/* Universal Sprite ID */
     int		type;		/* values defined below */
     Address	data;		/* pointer to transport header */
+    char 	*name;		/* Human recognizable name for the host */
 } Net_Route;
 
 /*
