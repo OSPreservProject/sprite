@@ -438,7 +438,8 @@ MachUNIXIoctl(fd, request, buf)
 		Net_EtherAddress *etherAddressPtr;
 
 		interPtr = Net_GetInterface(NET_NETWORK_ETHER, 0);
-		etherAddressPtr = &interPtr->netAddress[NET_PROTO_RAW].ether;
+		etherAddressPtr = 
+		    &interPtr->netAddress[NET_PROTO_RAW].address.ether;
 
 		p = (struct ifdevea *) buf;
 		p->default_pa[0] = p->current_pa[0] = etherAddressPtr->byte1;

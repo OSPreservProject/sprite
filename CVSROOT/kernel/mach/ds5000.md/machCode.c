@@ -2275,8 +2275,7 @@ Mach_GetEtherAddress(etherAddrPtr)
 
     interPtr = Net_GetInterface(NET_NETWORK_ETHER, 0);
     if (interPtr != (Net_Interface *) NIL) {
-	NET_ETHER_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].ether,
-	    *etherAddrPtr);
+	Net_GetAddress(&interPtr->netAddress[NET_PROTO_RAW], etherAddrPtr);
     }
 }
 
