@@ -1936,7 +1936,7 @@ Ofs_ReallocBlock(data, callInfoPtr)
 	printf(
 	    "OfsBlockRealloc: Bad descriptor block.  Domain=%d block=%d\n",
 		  handlePtr->hdr.fileID.major, physBlockNum);
-	goto error;
+	goto error1;
     }
 
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
@@ -2093,6 +2093,7 @@ error:
     }
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     Fsutil_HandleUnlock((Fs_HandleHeader *)handlePtr);
+error1:
     FscacheFinishRealloc(blockPtr, newBlockNum);
     return;
 }
