@@ -62,6 +62,10 @@ LeaveVidEnable:
 	retl
 	nop
 #else
+#ifdef NOTDEF
+/*
+ * Thorsten says this is breaking X on the sparcstations.
+ */
 	/*
 	 * Address of enable bit in video status register.
 	 */
@@ -78,6 +82,7 @@ VidOff:
 	and	%OUT_TEMP2, %o0, %OUT_TEMP2
 LeaveVidEnable:
 	stb	%OUT_TEMP2, [%OUT_TEMP1]
+#endif NOTDEF
 	set	SUCCESS, %o0
 	retl
 	nop

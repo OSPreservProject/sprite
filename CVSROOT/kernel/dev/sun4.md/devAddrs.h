@@ -25,6 +25,7 @@
 #define	DEV_TIMER_ADDR			0xffd06000
 #define	DEV_INTERRUPT_REG_ADDR		0xffd0a000
 #define	DEV_EE_PROM_ADDR		0xffd04000
+#define	DEV_FRAME_BUF_ADDR		0xffd40000
 
 /*
  * Interrupt vector assignments:
