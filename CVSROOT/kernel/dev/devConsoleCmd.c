@@ -161,13 +161,9 @@ Abort()
 }
 
 static void
-Debug(rs232)
-    Boolean rs232;		/* TRUE means use rs232 line for debugging,
-				 * FALSE means use network. */
+Debug()
 {
-    if (!dbg_BeingDebugged) {
-	dbg_Rs232Debug = rs232;
-    }
+
     DBG_CALL;
 }
 
