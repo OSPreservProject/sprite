@@ -243,7 +243,7 @@ extern 	void 		Sync_PrintStat();
 #define Sync_MasterWait(conditionPtr, mutexPtr, wakeIfSignal) \
     { \
 	(conditionPtr)->waiting = TRUE; \
-	Sync_SlowMasterWait((unsigned int) conditionPtr, mutexPtr, \
+	(void) Sync_SlowMasterWait((unsigned int) conditionPtr, mutexPtr, \
 		wakeIfSignal); \
     }
 
@@ -270,7 +270,7 @@ extern 	void 		Sync_PrintStat();
 #define Sync_MasterBroadcast(conditionPtr) \
     { \
 	if ((conditionPtr)->waiting == TRUE) { \
-	    Sync_SlowBroadcast((unsigned int)conditionPtr, \
+	    (void) Sync_SlowBroadcast((unsigned int)conditionPtr, \
 				&(conditionPtr)->waiting); \
 	} \
     }
