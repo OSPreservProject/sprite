@@ -705,7 +705,6 @@ Fsrmt_RpcBulkReopen(srvToken, clientID, command, storagePtr)
 
     extern int fsutil_NumRecovering; /* XXX put in fsutil.h */
 
-    printf("Got BulkRpc on server.\n");
     if (storagePtr->requestParamSize != sizeof (Fmt_Format)) {
 	/*
 	 * Check to make sure our parameter size is correct for
