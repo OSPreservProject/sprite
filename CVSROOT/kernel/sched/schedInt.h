@@ -16,6 +16,10 @@
 
 #include "list.h"
 
+#define SCHED_MAX_DUMP_SIZE 100
+
 extern List_Links *schedReadyQueueHdrPtr;
+
+
 
 #endif /* _SCHEDINT */

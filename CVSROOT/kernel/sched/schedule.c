@@ -119,6 +119,7 @@ static Timer_QueueElement forgetUsageElement;
  */
 Sched_Instrument sched_Instrument;
 
+
 /*
  * Forward Declarations.
  */
@@ -869,15 +870,32 @@ void
 Sched_DumpReadyQueue()
 {
     List_Links *itemPtr;
+    Proc_ControlBlock *snapshot[SCHED_MAX_DUMP_SIZE];
+    int snapshotCnt;
+    int overflow;
+    int i;
 
     if (List_IsEmpty(schedReadyQueueHdrPtr)) {
 	printf("\nReady queue is empty.\n");
     } else {
+	printf("\n%8s %5s %10s %10s %8s %8s   %s\n",
+	    "ID", "wtd", "user", "kernel", "event", "state", "name");
+	overflow = FALSE;
+	snapshotCnt = 0;
 	MASTER_LOCK(sched_Mutex);
-	printf("\n");
 	LIST_FORALL(schedReadyQueueHdrPtr,itemPtr) {
-	    Proc_DumpPCB((Proc_ControlBlock *) itemPtr);
+	    if (snapshotCnt >= SCHED_MAX_DUMP_SIZE) {
+		overflow = TRUE;
+		break;
+	    }
+	    snapshot[snapshotCnt++] = (Proc_ControlBlock *) itemPtr;
 	}
 	MASTER_UNLOCK(sched_Mutex);
+	for (i = 0; i <snapshotCnt; i++) {
+	    Proc_DumpPCB(snapshot[i]);
+	}
+	if (overflow) {
+	    printf("Ready queue too large to snapshot.\n");
+	}
     }
 }
