@@ -113,3 +113,7 @@ Mach_CanMigrate()
 {
     panic("Mach_CanMigrate called.\n");
 }
+
+modf()
+{
+}

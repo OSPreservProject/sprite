@@ -290,13 +290,12 @@ main()
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Enabling interrupts\n");
     }
+    Mach_MonStartNmi();
     ENABLE_INTR();
 
-#ifdef NOTDEF
     if (main_Debug) {
 	DBG_CALL;
     }
-#endif NOTDEF
 
     /*
      * Sleep for a few seconds to calibrate the idle time ticks.
