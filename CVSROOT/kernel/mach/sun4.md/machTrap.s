@@ -1646,7 +1646,9 @@ MachHandlePageFault:
 #endif
 AddressValueOkay:
 	/* enable interrupts */
+	/*
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	*/
 	call	_MachPageFault, 4
 	nop
 	/* Disable interrupts. */

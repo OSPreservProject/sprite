@@ -1320,14 +1320,16 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 #ifdef sun4
     /*
      * On the sun4/200 with the Jaguar HBA we get VME timeout errors from 
-     * the board. This code retries the error up to 10 times before droping
+     * the board. This code retries the error up to 100000 times before droping
      * into the code below which panics. 
+     * These errors happen a lot with the RAID HPPI boards, so we disable
+     * the printout.
      */
     {
 	static timeoutRetryCount = 0;
 	extern void MachVectoredInterruptLoad();
 
-	if ((trapPsr & MACH_PS_BIT) && (busErrorReg == MACH_TIMEOUT_ERROR)) {
+	if ((trapPsr & MACH_PS_BIT) && (busErrorReg&MACH_TIMEOUT_ERROR)) {
 	    /*
 	     * If the error occurred on a the load of the interrupt
 	     * vector make the routine return.
@@ -1344,16 +1346,22 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 		     pcValue, addrErrorReg);
 		MachHandleBadQuickCopy();
 	    }
+#if 0
 	    Mach_MonPrintf(
  "MachPageFault: Bus timeout error retry %d at pc:0x%x, addr:0x%x\n",
 		    timeoutRetryCount, pcValue, addrErrorReg);
-	    if (timeoutRetryCount < 10) {
+#endif
+	    if (timeoutRetryCount < 1000000) {
 		timeoutRetryCount++;
 		return;
 	    }
 	}
 	timeoutRetryCount = 0;
     }
+    /* We used to enable interrupts before we called this routine, but we
+     * don't want them enabled if it is a VME bus timeout, so we enable them
+     * now */
+    Mach_EnableIntr();
 #endif /* sun4 */
 
     procPtr = Proc_GetActualProc();
@@ -1817,6 +1825,7 @@ MachHandleTrap(trapType, pcValue, trapPsr)
 		    "overflow trap in the kernel!");
 	    break;
 	case MACH_FP_EXCEP: {
+#ifndef NO_FLOATING_POINT
 	    /*
 	     * We got a FP execption while running in kernel mode. If this
 	     * exception occured at a known location we clear the
@@ -1844,6 +1853,10 @@ MachHandleTrap(trapType, pcValue, trapPsr)
 	    printf("%s. ",
 	"MachHandleTrap: FPU exception from kernel process.");
 	    break;
+#else /* NO_FLOATING_POINT */
+	    printf("Floating point op in kernel code: not supported in this\n");
+	    panic("kernel due to copyright reasons.");
+#endif /* NO_FLOATING_POINT */
 	}
 	case MACH_FP_DISABLED:
 	    printf("%s %s\n", "MachHandleTrap: fp unit",
@@ -2180,10 +2193,18 @@ HandleFPUException(procPtr, machStatePtr)
     curWindow = (Mach_RegWindow *)
 		(machStatePtr->trapRegs->ins[MACH_FP_REG]);
     for (i = 0; i < machStatePtr->trapRegs->numQueueEntries; i++) {
+#ifndef NO_FLOATING_POINT
 	MachFPU_Emulate(procPtr->processID, 
 		    machStatePtr->trapRegs->fqueue[i].address,
 		    machStatePtr->trapRegs,
 		    curWindow);
+#else /* NO_FLOATING_POINT */
+	printf(
+	"Cannot emulate floating point operations in this kernel version\n");
+	printf("Killing process 0x%x\n", procPtr->processID);
+	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, procPtr->processID,
+			FALSE, machStatePtr->trapRegs->pc);
+#endif /* NO_FLOATING_POINT */
     }
     MachFPULoadState(machStatePtr->trapRegs);
 }

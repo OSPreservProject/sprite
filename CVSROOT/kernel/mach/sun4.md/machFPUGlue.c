@@ -23,6 +23,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 #ifndef lint
 
+#ifndef NO_FLOATING_POINT
+
 #include "sys/types.h"
 #include "fpu_simulator.h"
 #include "vm.h"
@@ -151,5 +153,6 @@ MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr)
 	break;
     }
 }
+#endif /* NO_FLOATING_POINT */
 
 #endif /* lint */
