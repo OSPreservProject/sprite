@@ -162,8 +162,6 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
     unsigned int event;
     int *waitFlagPtr;
 {
-    int			*newWaitFlagPtr;
-    int			len;
     ReturnStatus	status;
 
     status = Vm_PinUserMem(VM_READWRITE_ACCESS, sizeof(*waitFlagPtr), 
@@ -174,7 +172,7 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
 
     MASTER_LOCK(sched_Mutex);
 
-    *newWaitFlagPtr = FALSE;
+    *waitFlagPtr = FALSE;
     SyncEventWakeupInt(event);
 
     MASTER_UNLOCK(sched_Mutex);
