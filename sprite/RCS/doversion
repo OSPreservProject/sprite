@@ -57,5 +57,7 @@ if ($log == "yes") then
     echo ""
 endif
 
+echo $version
+
 mkversion -p "SPRITE VERSION $release.$version (MACHINE)" > $outFile
 
