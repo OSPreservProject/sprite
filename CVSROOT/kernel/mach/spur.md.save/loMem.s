@@ -114,6 +114,25 @@
 	.set rt9, 25
 
 /*
+ * Defining starting KPSW for processors.
+ */
+#ifdef WITH_IBUFFER
+#ifdef WITH_PREFETCH	/* WITH_IBUFFER and WITH_PREFETCH */
+#define	DEFAULT_KPSW   (MACH_KPSW_PREFETCH_ENA | MACH_KPSW_IBUFFER_ENA | \
+			MACH_KPSW_VIRT_DFETCH_ENA|MACH_KPSW_VIRT_IFETCH_ENA |\
+			MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA |\
+			MACH_KPSW_ALL_TRAPS_ENA)
+#else	/* WITH_IBUFFER but no WITH_PREFETCH */
+#define	DEFAULT_KPSW	(MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | \				MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA |\
+			MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
+#endif
+#else	/* no WITH_IBUFFER */
+#define	DEFAULT_KPSW	(MACH_KPSW_VIRT_DFETCH_ENA|MACH_KPSW_VIRT_IFETCH_ENA|\
+			MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA |\
+			MACH_KPSW_ALL_TRAPS_ENA)
+#endif
+
+/*
  * C structures and routines that are called from here.
  */
 	.globl _proc_RunningProcesses
@@ -133,9 +152,13 @@
 	.globl _MachUserAction
 	.globl _machNonmaskableIntrMask
 	.globl _machIntrMask 
+	.globl _machDbgInterruptMask
 	.globl _machTrapTableOffset
 	.globl _machInterruptAddr
-
+	.globl _machDebugStatePtrs
+	.globl _machMapSlotIdToPnum
+	.globl _machMasterProcessor
+	.globl _machFirstProcState
 /*
  * The KPSW value to set and 
 /*
@@ -152,15 +175,15 @@
 
 	.org 0x1020
 	jump WinOvFlow		/* Window overflow */
-	Nop
+	invalidate_ib
 
 	.org 0x1030
 	jump WinUnFlow		/* Window underflow */
-	Nop
+	invalidate_ib
 
 	.org 0x1040
 	jump FaultIntr		/* Fault or interrupt */
-	Nop
+	invalidate_ib
 
 	.org 0x1050
 	jump FPUExcept		/* FPU Exception */
@@ -180,7 +203,7 @@
 
 	.org 0x1090
 	jump CmpTrap		/* Compare trap instruction */
-	Nop
+	invalidate_ib
 
 
 	.org 0x1100
@@ -217,58 +240,51 @@ _debugger_active_address:
  *
  * Other options are LD_PC_RELATIVE or LD_CONSTANT.
  */
+/*
+ * The following data structures are index by processor number.  Currently
+ * only room for 8 processors is defined.
+ *
+ * _machCurStatePtrs - Pointers to the Mach_State structure of the process
+ * running on each processor.
+ */
+_machCurStatePtrs: 		.long 0; .long 0; .long 0; .long 0
+				.long 0; .long 0; .long 0; .long 0
+/*
+ * Pointers to the state save upon entry to the debugger for each processor.
+ */
+
+_machDebugStatePtrs:		.long _machDebugState; .long 0; .long 0; .long 0
+				.long 0; .long 0; .long 0; .long 0
+/*
+ * Pointers to the debugger's save window stack. Since there's only one 
+ * debugger we need only one stack.
+ */
+debugSWStackBasePtr:	.long MACH_DEBUG_STACK_BOTTOM
+/*
+ * Pointers to the end of the debugger's spill stack.
+ */
+debugSpillStackEndPtr:	.long (MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
+/*
+ * _machMapSlotToPnum is index by slot ID and performs the mapping of 
+ * slot ids into processor numbers.
+ */
+_machMapSlotIdToPnum: 		.long 0; .long 0; .long 0; .long 0;
+				.long 0; .long 0; .long 0; .long 0;
+				.long 0; .long 0; .long 0; .long 0;
+				.long 0; .long 0; .long 0; .long 0;
 runningProcesses: 		.long _proc_RunningProcesses
-/*
- * _machCurStatePtrs is index by processor number.
- */
-_machCurStatePtrs: 		.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-/*
- * _machCurStatePtrs is index by slot ID.
- */
-_machMapSlotToPnum: 		.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
-				.long 0
+firstProcStatePtr:		.long _machFirstProcState
+numArgsPtr:			.long _machNumArgs
 _machStatePtrOffset:		.long 0
 _machSpecialHandlingOffset:	.long 0
 _machMaxSysCall	:		.long 0
 _machKcallTableOffset:		.long 0
 _machTrapTableOffset:		.long 0
+_machDbgInterruptMask:		.long 0
 _machIntrMask:			.long 0
 _machNonmaskableIntrMask:	.long 0
 _machInterruptAddr:		.long 0
-numArgsPtr:			.long _machNumArgs
-debugStatePtr:			.long _machDebugState
-debugSWStackBase:		.long MACH_DEBUG_STACK_BOTTOM
-debugSpillStackEnd:		.long (MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
-ccStatePtr:			.long _machCCState
+_machMasterProcessor:		.long 0
 feStatusReg:			.long 0
 
 /*
@@ -403,6 +419,32 @@ start:
  * First initialize the second level page tables so that they map
  * all of the kernel page tables.
  */
+
+#ifdef PATCH_IBUFFER
+	/*
+	 * Clear out r10 in all windows. 
+	 */
+	rd_special	r1, cwp
+	wr_special	cwp,r0,$0	/* Window 0,1 */
+	Nop
+	add_nt		r10,r0,$0
+	add_nt		r26,r0,$0
+	wr_special	cwp,r0,$8	/* Window 2,3 */
+	Nop
+	add_nt		r10,r0,$0
+	add_nt		r26,r0,$0
+	wr_special	cwp,r0,$16	/* Window 4,5 */
+	Nop
+	add_nt		r10,r0,$0
+	add_nt		r26,r0,$0
+	wr_special	cwp,r0,$24	/* Window 6,7 */
+	Nop
+	add_nt		r10,r0,$0
+	add_nt		r26,r0,$0
+	wr_special	cwp, r1, $0
+	Nop
+#endif
+
 	LD_CONSTANT(r1, KERN_PT2_BASE)
 	add_nt		r2, r0, $VMMACH_NUM_PT_PAGES
 	LD_CONSTANT(r3, MACH_MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
@@ -509,15 +551,7 @@ start:
  */
 	wr_kpsw		r0, $0
 	invalidate_ib
-#ifdef WITH_IBUFFER
-#ifdef WITH_PREFETCH
-	add_nt		r1, r0, $(MACH_KPSW_PREFETCH_ENA | MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
-#else
-add_nt		r1, r0, $(MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
-#endif
-#else
-add_nt		r1, r0, $(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
-#endif
+	add_nt		r1, r0, $(DEFAULT_KPSW)
 	LD_PC_RELATIVE(r2, mainAddr)
 	jump_reg	r2, $0
 	wr_kpsw		r1, $0
@@ -563,6 +597,9 @@ winOvFlow_SaveWindow:
 	add_nt		r1, r1, $MACH_SAVED_WINDOW_SIZE
 
 	st_40		r10, r1, $0
+#ifdef PATCH_IBUFFER
+	add_nt		r10,r0,$0
+#endif
 	st_40		r11, r1, $8
 	st_40		r12, r1, $16
 	st_40		r13, r1, $24
@@ -603,6 +640,14 @@ winOvFlow_SaveWindow:
 	 * Allocate more memory.
 	 */
 	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+	add_nt		CUR_PC_REG, r0, $0
+#endif
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0
 	rd_special	VOL_TEMP1, pc
 	return_trap	VOL_TEMP1, $12
@@ -611,9 +656,21 @@ winOvFlow_SaveWindow:
 	Nop
 
 winOvFlow_Return:
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	1) Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	   handling messes up.
+	 *	2) invalidate Ibuffer so we don't get hit when we return.
+	 */
+	add_nt		SAFE_TEMP1, CUR_PC_REG, $0
+	add_nt		CUR_PC_REG, r0, $0
+	invalidate_ib
+	jump_reg	SAFE_TEMP1, $0
+#else
 	jump_reg	CUR_PC_REG, $0
+#endif
 	return_trap	NEXT_PC_REG, $0
-	Nop
 
 /*
  *----------------------------------------------------------------------------
@@ -695,6 +752,14 @@ winUnFlow_RestoreWindow:
 	 * Need to get more memory for window underflow.
 	 */
 	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+	add_nt		CUR_PC_REG, r0, $0
+#endif
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0
 	rd_special	VOL_TEMP1, pc	/* Return from traps and then */
 	return_trap	VOL_TEMP1, $12	/*   take the compare trap to */
@@ -703,7 +768,20 @@ winUnFlow_RestoreWindow:
 	Nop
 
 winUnFlow_Return:
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	1) Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	   handling messes up.
+	 *	2) invalidate Ibuffer so we don't get hit when we return.
+	 */
+	add_nt		SAFE_TEMP1, CUR_PC_REG, $0
+	add_nt		CUR_PC_REG, r0, $0
+	invalidate_ib
+	jump_reg	SAFE_TEMP1, $0
+#else
 	jump_reg	CUR_PC_REG, $0
+#endif
 	return_trap	NEXT_PC_REG, $0
 	Nop
 
@@ -823,29 +901,22 @@ ErrorTrap:
  */
 faultIntr_Const1:
 	.long	MACH_KPSW_USE_CUR_PC
-faultIntr_Const2:
-	.long	MACH_KPSW_CC_REFRESH
 faultIntr_Const3:
 	.long	MACH_FAULT_TRY_AGAIN
 faultIntr_Const4:
 	.long	MACH_FAULT_ILL_CACHE_OP
 FaultIntr:
-	LD_PC_RELATIVE(SAFE_TEMP1, faultIntr_Const2)
-	rd_kpsw		VOL_TEMP1
-        and             VOL_TEMP1, VOL_TEMP1, SAFE_TEMP1
-        cmp_br_delayed  eq, VOL_TEMP1, r0, $faultIntr_NormFault
-	nop
-	READ_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
-	WRITE_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
-	return_trap	CUR_PC_REG, $16
-	nop
-
 faultIntr_NormFault:
 	/*
 	 * On this type of trap we are supposed to return to the current 
 	 * PC.
 	 */
 	rd_kpsw		KPSW_REG
+	/*
+ 	 * Disable ibuffer in kernel. 
+	 */
+	and	VOL_TEMP1,KPSW_REG,$~(MACH_KPSW_IBUFFER_ENA|MACH_KPSW_PREFETCH_ENA);
+	wr_kpsw	VOL_TEMP1,$0
 	LD_PC_RELATIVE(SAFE_TEMP1, faultIntr_Const1)
 	or		KPSW_REG, KPSW_REG, SAFE_TEMP1
 	/*
@@ -881,7 +952,18 @@ noFault:
 	and		VOL_TEMP1, SAFE_TEMP1, SAFE_TEMP2
 	cmp_br_delayed	eq, VOL_TEMP1, r0, 1f
 	nop
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+	add_nt		SAFE_TEMP1,CUR_PC_REG,$0
+	add_nt		CUR_PC_REG,r0,$0
+	jump_reg	SAFE_TEMP1, $0
+#else
 	jump_reg	CUR_PC_REG, $0
+#endif
 	return_trap	NEXT_PC_REG, $0
 
 1:
@@ -994,6 +1076,11 @@ interrupt_GoodSWP:
 	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	call		_MachInterrupt
 	Nop
+#ifdef PATCH_IBUFFER
+	add_nt		OUTPUT_REG1,KPSW_REG,$0
+	call		_MachPatchUserModeIbuffer
+	Nop
+#endif
 	/*
 	 * Restore the insert register and the kpsw, enable interrupts and 
 	 * then do a normal return from trap in case the user process needs to
@@ -1026,9 +1113,21 @@ interrupt_KernMode:
 	/*
 	 * Enable all traps and take the interrupt.
 	 */
+#ifdef PATCH_IBUFFER
+	add_nt		VOL_TEMP1, r26, $0
+#endif
 	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	call 		_MachInterrupt
 	Nop
+#ifdef PATCH_IBUFFER
+	add_nt		OUTPUT_REG1,KPSW_REG,$0
+	add_nt		OUTPUT_REG2,CUR_PC_REG,$0
+	add_nt		OUTPUT_REG3,NEXT_PC_REG,$0
+	add_nt		OUTPUT_REG4,VOL_TEMP1,$0
+	call		_MachPatchIbuffer
+	Nop
+	add_nt		CUR_PC_REG,r27,$0
+#endif
 	/*
 	 * Restore the globals and the spill sp.
 	 */
@@ -1052,7 +1151,18 @@ interrupt_KernMode:
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
 	or		KPSW_REG, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		KPSW_REG, $0
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+	add_nt		SAFE_TEMP1,CUR_PC_REG,$0
+	add_nt		CUR_PC_REG,r0,$0
+	jump_reg	SAFE_TEMP1, $0
+#else
 	jump_reg	CUR_PC_REG, $0
+#endif
 	return		NEXT_PC_REG, $0
 
 interrupt_BadSWP:
@@ -1066,7 +1176,15 @@ interrupt_BadSWP:
 	call		_MachInterrupt
 	Nop
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
-	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+	add_nt		CUR_PC_REG,r0,$0
+#endif
+        add_nt          OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
 	call		_MachUserError
 	Nop
 	/* DOESN'T RETURN */
@@ -1288,6 +1406,11 @@ CmpTrap:
 	 * of cur PC.
 	 */
 	rd_kpsw		KPSW_REG
+	/*
+ 	 * Disable ibuffer in kernel. 
+	 */
+	and	VOL_TEMP1,KPSW_REG,$~(MACH_KPSW_IBUFFER_ENA|MACH_KPSW_PREFETCH_ENA);
+	wr_kpsw	VOL_TEMP1,$0
 	LD_PC_RELATIVE(SAFE_TEMP1, cmpTrap_Const1)
 	and		KPSW_REG, KPSW_REG, SAFE_TEMP1
 
@@ -2329,11 +2452,24 @@ returnTrap_Return:
 	 */
 	cmp_br_delayed	eq, NEXT_PC_REG, $0, returnTrap_No2ndPC
 	Nop
+#ifdef PATCH_IBUFFER
+	add_nt		SAFE_TEMP1, CUR_PC_REG, $0
+	add_nt		CUR_PC_REG, r0, $0
+	invalidate_ib
+	jump_reg	SAFE_TEMP1, $0
+#else
 	jump_reg	CUR_PC_REG, $0
+#endif
 	return		NEXT_PC_REG, $0
 
 returnTrap_No2ndPC:
+#ifdef PATCH_IBUFFER
+	add_nt		SAFE_TEMP1, CUR_PC_REG, $0
+	add_nt		CUR_PC_REG, r0, $0
+	return		SAFE_TEMP1, $0
+#else
 	return		CUR_PC_REG, $0
+#endif
 	Nop
 
 /*
@@ -2346,6 +2482,9 @@ returnTrap_FailedCopy:
 	 * Enable all traps, go back to the previous window and return an
 	 * error to the caller.
 	 */
+#ifdef PATCH_IBUFFER
+	add_nt		CUR_PC_REG, r0, $0
+#endif
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	rd_special	VOL_TEMP1, pc
@@ -2377,6 +2516,9 @@ returnTrap_FailedArgFetch:
 	/*
 	 * Enable all traps and go back to the previous window.
 	 */
+#ifdef PATCH_IBUFFER
+	add_nt		CUR_PC_REG, r0, $0
+#endif
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	rd_special	VOL_TEMP1, pc
@@ -2495,7 +2637,9 @@ SaveState:
 	st_32		NEXT_PC_REG, VOL_TEMP1, $MACH_REG_STATE_NEXT_PC_OFFSET
 	rd_insert	VOL_TEMP3
 	st_32		VOL_TEMP3, VOL_TEMP1, $MACH_REG_STATE_INSERT_OFFSET
-
+#ifdef	PATCH_IBUFFER	
+	st_32		r26, VOL_TEMP1, $0
+#endif
 	/*
 	 * Clear the upsw so that kernel wont get lisp traps.
 	 */
@@ -2539,8 +2683,8 @@ SaveState:
 	 * Now we are in the previous window.  Save all of its registers
 	 * into the state structure.
 	 */
- 	st_40		r10, r1, $MACH_REG_STATE_REGS_OFFSET+80
- 	st_40		r11, r1, $MACH_REG_STATE_REGS_OFFSET+88
+	st_40		r10, r1, $MACH_REG_STATE_REGS_OFFSET+80
+	st_40		r11, r1, $MACH_REG_STATE_REGS_OFFSET+88
  	st_40		r12, r1, $MACH_REG_STATE_REGS_OFFSET+96
  	st_40		r13, r1, $MACH_REG_STATE_REGS_OFFSET+104
 	st_40		r14, r1, $MACH_REG_STATE_REGS_OFFSET+112
@@ -2647,7 +2791,32 @@ RestoreState:
 	rd_kpsw		r8
 	and		VOL_TEMP3, r8, $~MACH_KPSW_INTR_TRAP_ENA
 	wr_kpsw		VOL_TEMP3, $0
-	
+
+#ifdef PATCH_IBUFFER
+	/*
+	 * Clear r10 in all windows to insure that all fault and interrupt
+	 * locations are gone.
+	 */
+	rd_special	r1, cwp
+	wr_special	cwp,r0,$0	/* Window 0,1 */
+	Nop
+	add_nt		r10,r0,$0
+	add_nt		r26,r0,$0
+	wr_special	cwp,r0,$8	/* Window 2,3 */
+	Nop
+	add_nt		r10,r0,$0
+	add_nt		r26,r0,$0
+	wr_special	cwp,r0,$16	/* Window 4,5 */
+	Nop
+	add_nt		r10,r0,$0
+	add_nt		r26,r0,$0
+	wr_special	cwp,r0,$24	/* Window 6,7 */
+	Nop
+	add_nt		r10,r0,$0
+	add_nt		r26,r0,$0
+	wr_special	cwp, r1, $0
+	Nop
+#endif
 	/*
 	 * Restore the cwp and swp.  This is a little tricky because
 	 * the act of restoring them will switch windows so we can't rely
@@ -2744,49 +2913,10 @@ RestoreState:
  *
  *----------------------------------------------------------------------------
  */
-machRefresh_Const1:
-	.long		MACH_CC_FAULT_ADDR
-machRefresh_Const2:
-	.long		MACH_KPSW_CC_REFRESH
-machRefresh_Const3:
-	.long		0x100403e0
 
 	.globl _MachRefreshCCWells
 _MachRefreshCCWells:
-	rd_kpsw		SAFE_TEMP1
-	LD_PC_RELATIVE(SAFE_TEMP2, machRefresh_Const1)
-	LD_PC_RELATIVE(SAFE_TEMP3, machRefresh_Const2)
-	wr_kpsw		SAFE_TEMP1, SAFE_TEMP3
-	LD_PC_RELATIVE(NON_INTR_TEMP1, machRefresh_Const3)
-	st_external	r0, NON_INTR_TEMP1, $MACH_CO_FLUSH
-	ld_32_ri	VOL_TEMP1, SAFE_TEMP2, $0
-	nop
-	jump		ErrorTrap
-	nop
-	st_external	r0, NON_INTR_TEMP1, $MACH_CO_FLUSH
-	ld_32_ro	VOL_TEMP1, SAFE_TEMP2, $0
-	nop
-	jump		ErrorTrap
-	nop
-	/*
-	 * Restore the special registers that aren't restored by the
-	 * trap that we just took.
-	 */
-	rd_special	VOL_TEMP1, upsw
-	nop
-	nop
-	wr_special	upsw, VOL_TEMP1, $0
-	rd_special	VOL_TEMP1, swp
-	nop
-	nop
-	wr_special	swp, VOL_TEMP1, $0
-	rd_insert	VOL_TEMP1 
-	nop
-	nop
-	wr_insert	VOL_TEMP1
-
-	wr_kpsw		SAFE_TEMP1, $0
-
+	cmp_trap	always,r0,r0,$MACH_REFRESH_TRAP
 	return		RETURN_ADDR_REG, $8
 	nop
 
@@ -3041,27 +3171,31 @@ _Mach_TestAndSet:
 /*
  *----------------------------------------------------------------------------
  *
- * Mach_SaveCCAndHalt --
+ * Mach_SetProcessorNumber --
  *
- *	int Mach_TestAndSet(intPtr)
- *	    int *intPtr;
+ *	void Mach_SetProcessorNumber(pnum)
+ *	    int pnum;
  *
- *	Test-and-set an integer.
+ *	Set the processor number of the current processor to pnum.
  *
  * Results:
- *     	Returns 0 if *intPtr was zero and 1 if *intPtr was non-zero.  Also
- *	in all cases *intPtr is set to a non-zero value.
  *
- * Side effects:
- *	*intPtr set to a non-zero value if not there already.
+ * Side effects: kpsw is modified.
+ *	
  *
  *----------------------------------------------------------------------------
  */
-	.globl _Mach_SaveCCAndHalt
-_Mach_SaveCCAndHalt:
-	SAVE_CC_STATE_VIRT()
-	CALL_DEBUGGER(r0, MACH_BREAKPOINT)
-
+	.globl _Mach_SetProcessorNumber
+_Mach_SetProcessorNumber:
+	/*
+	 * Update number stored in high byte or kpsw.
+	 */
+	rd_kpsw		SAFE_TEMP1
+	wr_insert	$3
+	insert		SAFE_TEMP1,SAFE_TEMP1,INPUT_REG1
+	wr_kpsw		SAFE_TEMP1, $0
+	return		RETURN_ADDR_REG, $8
+	Nop
 
 /*
  * ParseInstruction --
@@ -3324,9 +3458,117 @@ parse_end:
 	add_nt		CUR_PC_REG,SAVED_CUR_PC,$0
 	jump_reg	RET_ADDR, r0			/* Go back to caller */
 	add_nt		r15, SAVED_R15, $0		/* Restore pre-parse r15 */
-
+.org	MACH_STACK_BOTTOM
+mainStack:
 /*
  * Leave room for the stacks.
  */
 .org MACH_CODE_START
 codeStart:
+/*
+ * Non Master processor jump to this location when spun up by the master
+ * processor.  Current it is assumed that the processor is executing in 
+ * physical mode.
+ */
+slaveStart:
+
+/*
+ * Initialize the PTEVA.
+ */
+	LD_CONSTANT(r1, VMMACH_KERN_PT_BASE >> VMMACH_PAGE_SHIFT)
+	ST_PT_BASE(r1)
+/*
+ * Initialize the RPTEVA.
+ */
+	ST_RPT_BASE(r1)
+/*
+ * Initialize the 0th segment register.
+ */
+	ST_GSN(r0, MACH_GSN_0)
+/*
+ * Initialize the RPTM register.
+ */
+	LD_CONSTANT(r1, KERN_PT2_BASE)
+	ST_RPTM(r1, MACH_RPTM_0)
+/*
+ * Clear out the cache.
+ */
+	LD_CONSTANT(r1, 0x03000000)
+	LD_CONSTANT(r2, (0x03000000 | VMMACH_CACHE_SIZE))
+1:
+	st_32		r0, r1, $0
+	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
+	cmp_br_delayed	lt, r1, r2, 1b
+	Nop
+
+
+/*
+ * Clear snoop tags.
+ */
+	LD_CONSTANT(r1, 0x04000000)
+	LD_CONSTANT(r2, (0x04000000 | VMMACH_CACHE_SIZE))
+1:
+	st_32		r0, r1, $0
+	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
+	cmp_br_delayed	lt, r1, r2, 1b
+	Nop
+
+/*
+ * Clear out the upsw.
+ */
+	wr_special	upsw, r0, $0
+
+/*
+ * Clear out the interrupt mask register so that no interrupts are enabled.
+ */
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, r0)
+
+/*
+ * Clear the fe status register.
+ */
+	add_nt		r1, r0, $-1
+	WRITE_STATUS_REGS(MACH_FE_STATUS_0, r1)
+
+/*
+ * Now jump to virtual mode through the following sequence:
+ *
+ *	1) Disable instruction buffer just in case it is on.
+ *	2) Invalidate the instruction buffer.
+ *	3) Make a good kpsw.
+ *	4) Jump to slaveMain while setting the kpsw to put is in
+ *	   virtual mode in the nop slot of the call.
+ */
+	wr_kpsw		r0, $0
+	invalidate_ib
+	add_nt		r1, r0, $(DEFAULT_KPSW)
+	LD_PC_RELATIVE(r2,slaveMain)
+	jump_reg	r2, $0
+	wr_kpsw		r1, $0
+
+
+slaveMain:
+/*
+ * Initialized the kpsw with the processor number.
+ */
+	GET_PNUM_FROM_BOARD(SAFE_TEMP1)
+	rd_kpsw		SAFE_TEMP2
+	wr_insert	$3
+	insert		SAFE_TEMP2,SAFE_TEMP2,SAFE_TEMP1
+	wr_kpsw		SAFE_TEMP2, $0
+/*
+ * Initialize the cwp, swp and SPILL_SP to their proper values. These values
+ * are uptained from the Mach_State of the first process for this processor.
+ */
+	ld_32		VOL_TEMP2,r0,$firstProcStatePtr
+	sll		SAFE_TEMP1,SAFE_TEMP1,$2
+	ld_32		r1,VOL_TEMP2,SAFE_TEMP1
+	Nop
+	add_nt		r1, r1, $MACH_SWITCH_REG_STATE_OFFSET
+	ld_32		r2, r1, $MACH_REG_STATE_CWP_OFFSET
+	ld_32		r3, r1, $MACH_REG_STATE_SWP_OFFSET
+	wr_special	cwp, r0, r2
+	wr_special	swp, r3, $0
+	ld_32		r4, r1, $MACH_REG_STATE_REGS_OFFSET+32
+	jump		_mainSlaveStart
+	Nop
+
