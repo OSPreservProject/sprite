@@ -66,13 +66,13 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     int				scatterGatherLength;/* Length of data portion 
 						     * gather array. */
 {
-    NetLEState		*netLEStatePtr;
-    short		*inBufPtr;
-    volatile short	*outBufPtr;
-    Address		descPtr;
-    int			length;
-    unsigned	char	*leftOverBytePtr = (unsigned char *)NIL;
-    int			totLen;
+    register NetLEState		*netLEStatePtr;
+    register short		*inBufPtr;
+    register volatile short	*outBufPtr;
+    register Address		descPtr;
+    register int		length;
+    unsigned	char		*leftOverBytePtr = (unsigned char *)NIL;
+    int				totLen;
 
     netLEStatePtr = &netLEState;
     descPtr = netLEStatePtr->xmitDescFirstPtr;
@@ -95,11 +95,15 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * First do the ethernet header.
      */
     inBufPtr = (short *)etherHdrPtr;
-    for (totLen = 0; 
-	 totLen < sizeof(Net_EtherHdr); 
-	 totLen += 2, outBufPtr += 2, inBufPtr += 1) {
-	*outBufPtr = *inBufPtr;
-    }
+    *outBufPtr = *inBufPtr;
+    *(outBufPtr + 2) = *(inBufPtr + 1);
+    *(outBufPtr + 4) = *(inBufPtr + 2);
+    *(outBufPtr + 6) = *(inBufPtr + 3);
+    *(outBufPtr + 8) = *(inBufPtr + 4);
+    *(outBufPtr + 10) = *(inBufPtr + 5);
+    *(outBufPtr + 12) = *(inBufPtr + 6);
+    outBufPtr += 14;
+    totLen = sizeof(Net_EtherHdr);
     /*
      * Now do each element of the scatter/gather array.
      */
@@ -132,7 +136,35 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	    outBufPtr += 2;
 	    length--;
 	}
+
+#define COPY_OUT(n) \
+	*(outBufPtr + n) = *(bufAddr + n) | (*(bufAddr + n + 1) << 8)
+
+#define COPY_OUT2(n) \
+	*(outBufPtr + n) = *(short *)(bufAddr + n)
+
 	if ((unsigned)bufAddr & 1) {
+	    while (length > 64) {
+		COPY_OUT(0);  COPY_OUT(2);  COPY_OUT(4);  COPY_OUT(6);
+		COPY_OUT(8);  COPY_OUT(10); COPY_OUT(12); COPY_OUT(14);
+		COPY_OUT(16); COPY_OUT(18); COPY_OUT(20); COPY_OUT(22);
+		COPY_OUT(24); COPY_OUT(26); COPY_OUT(28); COPY_OUT(30);
+		COPY_OUT(32); COPY_OUT(34); COPY_OUT(36); COPY_OUT(38);
+		COPY_OUT(40); COPY_OUT(42); COPY_OUT(44); COPY_OUT(46);
+		COPY_OUT(48); COPY_OUT(50); COPY_OUT(52); COPY_OUT(54);
+		COPY_OUT(56); COPY_OUT(58); COPY_OUT(60); COPY_OUT(62);
+		outBufPtr += 64;
+		bufAddr += 64;
+		length -= 64;
+	    }
+
+	    while (length > 16) {
+		COPY_OUT(0);  COPY_OUT(2);  COPY_OUT(4);  COPY_OUT(6);
+		COPY_OUT(8);  COPY_OUT(10); COPY_OUT(12); COPY_OUT(14);
+		outBufPtr += 16;
+		bufAddr += 16;
+		length -= 16;
+	    }
 	    while (length > 1) {
 		*outBufPtr = *bufAddr | (*(bufAddr + 1) << 8);
 		outBufPtr += 2;
@@ -140,6 +172,27 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		length -= 2;
 	    }
 	} else {
+	    while (length >= 64) {
+		COPY_OUT2(0);  COPY_OUT2(2);  COPY_OUT2(4);  COPY_OUT2(6);
+		COPY_OUT2(8);  COPY_OUT2(10); COPY_OUT2(12); COPY_OUT2(14);
+		COPY_OUT2(16); COPY_OUT2(18); COPY_OUT2(20); COPY_OUT2(22);
+		COPY_OUT2(24); COPY_OUT2(26); COPY_OUT2(28); COPY_OUT2(30);
+		COPY_OUT2(32); COPY_OUT2(34); COPY_OUT2(36); COPY_OUT2(38);
+		COPY_OUT2(40); COPY_OUT2(42); COPY_OUT2(44); COPY_OUT2(46);
+		COPY_OUT2(48); COPY_OUT2(50); COPY_OUT2(52); COPY_OUT2(54);
+		COPY_OUT2(56); COPY_OUT2(58); COPY_OUT2(60); COPY_OUT2(62);
+		outBufPtr += 64;
+		bufAddr += 64;
+		length -= 64;
+	    }
+
+	    while (length >= 16) {
+		COPY_OUT2(0);  COPY_OUT2(2);  COPY_OUT2(4);  COPY_OUT2(6);
+		COPY_OUT2(8);  COPY_OUT2(10); COPY_OUT2(12); COPY_OUT2(14);
+		outBufPtr += 16;
+		bufAddr += 16;
+		length -= 16;
+	    }
 	    while (length > 1) {
 		*outBufPtr = *(short *)bufAddr;
 		outBufPtr += 2;

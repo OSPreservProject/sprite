@@ -76,10 +76,10 @@
 /*
  * Macros for converting chip to cpu and cpu to chip addresses.
  */
-unsigned BUF_TO_CHIP_ADDR();
-#define BUF_TO_ADDR(base, offset) ((volatile short *)(((unsigned)(base) & 0x1)?\
-			    (unsigned)(base) + (offset) * 2 + (offset) % 2 : \
-			    (unsigned)(base) + (offset) * 2 - (offset) % 2))
+#define BUF_TO_CHIP_ADDR(addr) ((unsigned)NET_LE_DMA_BUFFER_ADDR + \
+			(((unsigned)addr & NET_LE_DMA_CHIP_ADDR_MASK) / 2))
+#define BUF_TO_ADDR(base, offset) \
+	((volatile short *)((unsigned)(base) + ((offset) * 2 - (offset) % 2)))
 
 #define	CHIP_TO_BUF_ADDR(addr) ((volatile unsigned short *) ((((unsigned)addr & NET_LE_DMA_CHIP_ADDR_MASK) << 1) | 0xB9000000))
 
@@ -273,8 +273,9 @@ typedef struct {
 /*
  * The state of all of the interfaces. 
  */
-
+  
 extern	NetLEState	netLEState;
+
 
 /*
  * General routines.
@@ -303,5 +304,10 @@ extern	void	NetLEXmitRestart();
 extern	void	NetLERecvInit();
 extern	ReturnStatus	NetLERecvProcess();
 
-#endif /* _NETLEINT */
+
+
+#endif _NETLEINT
+
+
+
 

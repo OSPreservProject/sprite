@@ -175,14 +175,14 @@ ReturnStatus
 NetLERecvProcess(dropPackets)
     Boolean	dropPackets;	/* Drop all packets. */
 {
-    register	Address		descPtr;
-    register	NetLEState	*netLEStatePtr;
+    register Address		descPtr;
+    register NetLEState		*netLEStatePtr;
+    register volatile short 	*inBufPtr;
+    register short		*outBufPtr;
+    register unsigned		status;
+    register int		i;
     int				size;
     Boolean			tossPacket;
-    unsigned			status;
-    volatile short 		*inBufPtr;
-    short			*outBufPtr;
-    int				i;
 
     /*
      * If not initialized then forget the interrupt.
@@ -293,14 +293,40 @@ NetLERecvProcess(dropPackets)
 	    *BUF_TO_ADDR(descPtr,NET_LE_RECV_BUF_ADDR_LOW) | 
 	    ((*BUF_TO_ADDR(descPtr,NET_LE_RECV_STATUS) & 
 			    NET_LE_RECV_BUF_ADDR_HIGH) << 16));
-	for (outBufPtr = (short *)recvBufPtr, i = size; 
-	     i > 0; 
-	     outBufPtr += 1, inBufPtr += 2, i -= 2) {
-	    *outBufPtr = *inBufPtr;
+
+#define COPY_IN(n) *(outBufPtr + n) = *(inBufPtr + (2 * n))
+
+	outBufPtr = (short *)recvBufPtr;
+	i = size;
+	while (i >= 64) {
+	    COPY_IN(0);  COPY_IN(1);  COPY_IN(2);  COPY_IN(3);
+	    COPY_IN(4);  COPY_IN(5);  COPY_IN(6);  COPY_IN(7);
+	    COPY_IN(8);  COPY_IN(9);  COPY_IN(10); COPY_IN(11);
+	    COPY_IN(12); COPY_IN(13); COPY_IN(14); COPY_IN(15);
+	    COPY_IN(16); COPY_IN(17); COPY_IN(18); COPY_IN(19);
+	    COPY_IN(20); COPY_IN(21); COPY_IN(22); COPY_IN(23);
+	    COPY_IN(24); COPY_IN(25); COPY_IN(26); COPY_IN(27);
+	    COPY_IN(28); COPY_IN(29); COPY_IN(30); COPY_IN(31);
+	    outBufPtr += 32;
+	    inBufPtr += 64;
+	    i -= 64;
 	}
-	 /*
-	  * Call higher level protocol to process the packet.
-	  */
+	while (i >= 16) {
+	    COPY_IN(0);  COPY_IN(1);  COPY_IN(2);  COPY_IN(3);
+	    COPY_IN(4);  COPY_IN(5);  COPY_IN(6);  COPY_IN(7);
+	    outBufPtr += 8;
+	    inBufPtr += 16;
+	    i -= 16;
+	}
+	while (i > 0) {
+	    *outBufPtr = *inBufPtr;
+	    outBufPtr++;
+	    inBufPtr += 2;
+	    i -= 2;
+	}
+	/*
+	* Call higher level protocol to process the packet.
+	*/
 	if (!tossPacket) {
 	    Net_Input((Address)recvBufPtr, size);
 	}

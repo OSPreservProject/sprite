@@ -333,9 +333,9 @@ NetLEIntr(polling)
     Boolean	polling;	/* TRUE if are being polled instead of
 				 * processing an interrupt. */
 {
-    register	NetLEState	*netLEStatePtr;
+    register NetLEState		*netLEStatePtr;
     ReturnStatus		statusXmit, statusRecv;
-    unsigned 	short		csr0;
+    register unsigned short	csr0;
     Boolean			reset;
 
     netLEStatePtr = &netLEState;
@@ -467,6 +467,7 @@ NetLEMemAlloc(numBytes, wordAlign)
     return(retVal);
 }
 
+#ifdef notdef
 
 /*
  *----------------------------------------------------------------------
@@ -505,3 +506,4 @@ BUF_TO_CHIP_ADDR(addr)
     }
     return(retAddr);
 }
+#endif
