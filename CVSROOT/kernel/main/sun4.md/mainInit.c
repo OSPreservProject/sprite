@@ -342,7 +342,8 @@ main()
     /*
      * Create processes  to execute functions.
      */
-    (void) Proc_ServerProcCreate(PROC_NUM_SERVER_PROCS);
+    (void) Proc_ServerProcCreate(FSCACHE_MAX_CLEANER_PROCS + 
+					VM_MAX_PAGE_OUT_PROCS);
 
     /*
      * Create a recovery process to monitor other hosts.  Can't use
