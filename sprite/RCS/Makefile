@@ -31,6 +31,10 @@ MTFLAGS = -msun4
 RTM = sun4c
 MTFLAGS = -msun4
 #endif
+#ifmake sun4c2
+RTM = sun4c2
+MTFLAGS = -msun4
+#endif
 
 #if !empty(TM)
 RTM ?= $(TM)
@@ -239,8 +243,7 @@ dist:
 #	cc -c ${CFLAGS} mainHook.c
 #	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
 #	cc -c ${CFLAGS} version.c
-#	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
-#	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+#	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o
 #	@ls -l $@
 #	@size $@
 #	update -f -s $@ /sprite/boot/$@.sprite
@@ -254,8 +257,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	cc -c ${CFLAGS} version.c
-	${LD} -X -msun3 -o $@ -e start -T e004000 ${OBJS} version.o \
-	    -L/sprite/lib/${RTM}.md
+	${LD} -X -msun3 -o $@ -e start -T e004000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
 	update -f -s sun3 /sprite/boot/sun3.md/new
@@ -272,8 +274,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
 	cc -c ${CFLAGS} -Dsun4 version.c
-	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o \
-	    -L/sprite/lib/${RTM}.md
+	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o
 	@ls -l $@
 	@size $@
 	update -f -s sun4 /sprite/boot/sun4.md/new
@@ -292,8 +293,7 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
-	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o \
-	    -L/sprite/lib/sun4.md
+	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
 	update -f -s sun4c /sprite/boot/sun4c.md/new
@@ -302,6 +302,23 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	nm -n sun4c > sun4c.nm
 	-Save sun4c
 
+
+sun4c2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
+	-Save $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} -Dsun4 -Dsun4c -Dsun4c2 mainHook.c
+	cc -c ${CFLAGS} -Dsun4 -Dsun4c -Dsun4c2 version.c
+	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o
+	@ls -l $@
+	@size $@
+	update -f -s sun4c2 /sprite/boot/sun4c2.md/new
+	#rcp sun4c2 ginger:/home/ginger/sprite/kernels/sun4c2.sprite
+	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c2.sprite)"
+	nm -n sun4c2 > sun4c2.nm
+	-Save sun4c2
+
 ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
@@ -309,8 +326,7 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
-	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
-		-L/sprite/lib/${RTM}.md
+	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
 	update -f ds3100 /sprite/boot/ds3100.md/new
@@ -330,8 +346,7 @@ ds5000: ${OBJS} .PRECIOUS .NOEXPORT
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
-	${LD} -N -o ds5000 -e start -T 80030000 ${OBJS} version.o \
-		-L/sprite/lib/${RTM}.md
+	${LD} -N -o ds5000 -e start -T 80030000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
 	update -f ds5000 /sprite/boot/ds5000.md/new
@@ -349,8 +364,7 @@ ds5000: ${OBJS} .PRECIOUS .NOEXPORT
 #	rm -f mainHook.o
 #	cc -c ${CFLAGS} mainHook.c
 #	@cc -c ${CFLAGS} version.c
-#	${LD} -msun2 -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
-#	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+#	${LD} -msun2 -X -o $@ -e start -T 804000 ${PROFOBJS} version.o
 #	@ls -l $@
 #	@size $@
 #	update -f -s $@ /sprite/boot/$@.sprite
@@ -364,8 +378,7 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
-	${LD} -msun3 -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
-	    -L/sprite/lib/${RTM}.md
+	${LD} -msun3 -X -o $@ -e start -T e004000 ${PROFOBJS} version.o
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/sun3.md/prof
