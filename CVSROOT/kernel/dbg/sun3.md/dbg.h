@@ -66,6 +66,7 @@ typedef enum {
     DBG_REBOOT,			/* Call the reboot routine. */
     DBG_BEGIN_CALL,		/* Start a call. */
     DBG_END_CALL, 		/* Clean up after a call completes. */
+    DBG_CALL_FUNCTION,		/* Call a function. */
     DBG_UNKNOWN			/* Used for error checking */
 } Dbg_Opcode;
 
@@ -79,6 +80,8 @@ typedef struct {
     int		numBytes;
     char	buffer[100];
 } Dbg_WriteMem;
+
+typedef Dbg_WriteMem Dbg_CallFunc;
 
 typedef struct {
     int		address;
@@ -104,6 +107,7 @@ typedef struct {
 	int		pid;
 	Dbg_WriteGPR	writeGPR;
 	Dbg_WriteMem	writeMem;
+	Dbg_CallFunc	callFunc;
 	Dbg_ReadMem	readMem;
 	int		pc;
 	Dbg_SyslogCmd	syslogCmd;
