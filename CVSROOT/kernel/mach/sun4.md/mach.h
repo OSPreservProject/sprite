@@ -193,11 +193,9 @@ typedef struct Mach_State {
  * Values for the fpuStatus field.
  * MACH_FPU_ACTIVE - FPU is active for this process.
  * MACH_FPU_EXCEPTION_PENDING - The process caused a FPU exception to occur.
- * MACH_FPU_TRAP_TYPE_MASK - Execption trap type read from the %fsr reg.
  */
 #define	MACH_FPU_ACTIVE			0x1
 #define	MACH_FPU_EXCEPTION_PENDING      0x2
-#define	MACH_FPU_TRAP_TYPE_MASK		0xff00
 
 
 /*
