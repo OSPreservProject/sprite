@@ -13,8 +13,8 @@
 #ifndef _DBGINT
 #define _DBGINT
 
-#include "dbgAsm.h"
-#include "vmMach.h"
+#include <dbgAsm.h>
+#include <vmMach.h>
 
 /*
  * There are sixteen registers: d0-d7 and a0-7.

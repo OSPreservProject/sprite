@@ -12,19 +12,25 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "dbg.h"
-#include "dbgInt.h"
-#include "mach.h"
-#include "proc.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "vmMach.h"
-#include "machMon.h"
-#include "net.h"
-#include "netEther.h"
-#include "netInet.h"
-#include "dev.h"
+#include <sprite.h>
+#include <dbg.h>
+#include <dbgInt.h>
+#include <main.h>
+#include <mach.h>
+#include <proc.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmMach.h>
+#include <vmMachInt.h>
+#include <machMon.h>
+#include <net.h>
+#include <netEther.h>
+#include <netInet.h>
+#include <dev.h>
+#include <devVid.h>
+#include <bstring.h>
+#include <string.h>
+#include <stdio.h>
 
 Boolean	dbg_BeingDebugged = FALSE;		/* TRUE if are under control
 						 * of kdbx.*/
@@ -161,6 +167,19 @@ static char *exceptionNames[] = {
 int		machineType;
 
 /*
+ * Whether syslog should remain diverted on continue or not.
+ */
+static Boolean	syslogDiverted = FALSE;
+
+/*
+ * This is a typedef which is used to take care of the hole that is put in
+ * the stack when we are called.
+ */
+typedef struct {
+    char	hole[DBG_STACK_HOLE];
+} StackHole;
+
+/*
  * All of the stuff that is put onto the stack when the debugger is entered.
  */
 typedef struct {
@@ -195,6 +214,20 @@ static	int		savedExcStackLength;
 static	DbgStack	savedDbgStack;
 static	Boolean		callInProgress = FALSE;
 
+/* 
+ * Forward declarations:
+ */
+static void DbgCheckNmis _ARGS_((void));
+static char *	TranslateOpcode _ARGS_((Dbg_Opcode opcode));
+static char *	TranslateException _ARGS_((int exception));
+static Boolean	ReadRequest _ARGS_((Boolean timeout));
+static void	SendReply _ARGS_((void));
+static void	GetRequestBytes _ARGS_((int numBytes, Address dest));
+static void	PutReplyBytes _ARGS_((int numBytes, Address src));
+
+extern	void	Dbg_Main _ARGS_((StackHole stackHole,
+				 DbgStack dbgStack));
+				/* called from assembly code? */
 
 /*
  * ----------------------------------------------------------------------------
@@ -214,6 +247,7 @@ static	Boolean		callInProgress = FALSE;
  *
  * ----------------------------------------------------------------------------
  */
+static void
 DbgCheckNmis()
 {
 #ifdef sun2
@@ -355,7 +389,7 @@ TranslateException(exception)
  *
  * DbgComplain --
  *
- *     Complain because we are allready in the debugger.
+ *     Complain because we are already in the debugger.
  *
  * Results:
  *     None.
@@ -370,9 +404,9 @@ DbgComplain(trapStack)
     Mach_TrapStack	trapStack;
 {
     printf("%s exception in the debugger at pc %x addr %x\n",
-			TranslateException(trapStack.trapType), 
-				trapStack.excStack.pc,
-				trapStack.excStack.tail.addrBusErr.faultAddr);
+	   TranslateException(trapStack.trapType), 
+	   trapStack.excStack.pc,
+	   trapStack.excStack.tail.addrBusErr.faultAddr);
     Mach_MonAbort();
 }
 
@@ -473,7 +507,7 @@ Dbg_InputPacket(packetPtr, packetLength)
  *
  * ----------------------------------------------------------------------------
  */
-Boolean
+static Boolean
 ReadRequest(timeout)
     Boolean	timeout;	/* TRUE if should timeout after waiting a 
 				 * while. */
@@ -574,8 +608,6 @@ PutReplyBytes(numBytes, src)
 static void
 SendReply()
 {
-    void	Dbg_FormatPacket();
-
 	Net_EtherHdr		*etherHdrPtr;
 
 	if (dbgTraceLevel >= 4) {
@@ -597,18 +629,6 @@ SendReply()
 	    printf("Sent reply\n");
 	}
 }
-
-/*
- * Whether syslog should remain diverted on continue or not.
- */
-static Boolean	syslogDiverted = FALSE;
-/*
- * This is a typedef which is used to take care of the hole that is put in
- * the stack when we are called.
- */
-typedef struct {
-    char	hole[DBG_STACK_HOLE];
-} StackHole;
 
 /*
  * 68020 and 68010 moveml instructions work differently.  68010 stores
@@ -877,7 +897,6 @@ Dbg_Main(stackHole, dbgStack)
 	    }
 	    
 	    case DBG_GET_VERSION_STRING: {
-		char	*SpriteVersion();
 		char	*version;
 
 		version = SpriteVersion();
@@ -1229,6 +1248,10 @@ Dbg_Main(stackHole, dbgStack)
 		dbg_BeingDebugged = FALSE;
 		done = TRUE;
 		printf("Sprite is now detached from the debugger\r\n");
+		break;
+
+	    case DBG_UNKNOWN:
+		printf("debugger: unrecognized request\n");
 		break;
 	}
 

@@ -12,19 +12,22 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "dbg.h"
-#include "sys.h"
-#include "user/net.h"
+#include <sprite.h>
+#include <dbg.h>
+#include <sys.h>
+#include <user/net.h>
+#include <stdio.h>
 
 extern	int	dbgTraceLevel;
 
-#ifdef DEBUG
 /*
  * Forward declarations.
  */
-static void 		TestInputProc();
-#endif
+
+#ifdef DEBUG
+static void 	TestInputProc _ARGS_((int size, Net_IPHeader *headerPtr));
+static char *	ProtNumToName _ARGS_((int num)); /* unsigned char */
+#endif /* DEBUG */
 
 
 /*
@@ -281,11 +284,9 @@ Dbg_PacketHdrSize()
  */
 
 #ifdef DEBUG
-#include "sys.h"
 
 static char srcAddr[18];
 static char destAddr[18];
-static char *ProtNumToName();
 
 static void
 TestInputProc(size, headerPtr)
@@ -295,8 +296,8 @@ TestInputProc(size, headerPtr)
     unsigned short		checksum;
 
 
-    (void) Net_InetAddrToString(&(headerPtr->source), srcAddr);
-    (void) Net_InetAddrToString(&(headerPtr->dest), destAddr);
+    (void) Net_InetAddrToString(headerPtr->source, srcAddr);
+    (void) Net_InetAddrToString(headerPtr->dest, destAddr);
 
     printf("IP Packet: size = %d\n", size);
     printf("Protocol, version:	%s, %d\n", 
