@@ -27,10 +27,15 @@
 #ifndef _FSUTIL
 #define _FSUTIL
 
-#include "stdlib.h"
+#include <stdlib.h>
 
-#include "fs.h"
-#include "fsio.h"
+#include <fs.h>
+#include <fsconsist.h>
+#include <hash.h>
+#include <proc.h>
+#include <vm.h>
+#include <rpc.h>
+#include <timer.h>
 
 /* constants */
 /*
@@ -62,7 +67,7 @@ typedef struct Fsutil_RecoveryInfo {
 					 * re-opened at the I/O server */
     int			flags;		/* defined in fsRecovery.c */
     ReturnStatus	status;		/* Recovery status */
-    Fsutil_UseCounts		use;		/* Client's copy of use state */
+    Fsio_UseCounts		use;		/* Client's copy of use state */
 } Fsutil_RecoveryInfo;
 
 /*
@@ -80,15 +85,6 @@ typedef	struct	Fsutil_FsRecovNamedStats {
 } Fsutil_FsRecovNamedStats;
 
 
-/*
- * The current time in seconds and the element used to schedule the update to
- * it.
- */
-
-extern	int			fsutil_TimeInSeconds;
-extern	Timer_QueueElement	fsutil_TimeOfDayElement;
-extern	int			fsutil_NumRecovering;
-
 extern Boolean fsconsist_Debug;
 /*
  * Whether or not to flush the cache at regular intervals.
@@ -138,77 +134,97 @@ extern Boolean fsutil_ShouldSyncDisks;
       ((((Fs_HandleHeader *)handlePtr)->name == (char *)NIL) ? "(no name)" : \
 	((Fs_HandleHeader *)handlePtr)->name) )
 
+#define	Fsutil_TimeInSeconds()	(Timer_GetUniversalTimeInSeconds())
+
 #define mnew(type)	(type *)malloc(sizeof(type))
 
-extern void		Fsutil_RecoveryInit();
-extern void		Fsutil_RecoverySyncLockCleanup();
-extern void		Fsutil_WantRecovery();
-extern void		Fsutil_AttemptRecovery();
-extern ReturnStatus	Fsutil_WaitForRecovery();
-extern void		Fsutil_Reopen();
-extern Boolean		Fsutil_RecoveryNeeded();
-extern Boolean		Fsutil_RemoteHandleScavenge();
-extern void		Fsutil_ClientCrashed();
-extern void		Fsutil_RemoveClient();
+extern void Fsutil_RecoveryInit _ARGS_((Fsutil_RecoveryInfo *recovPtr));
+extern void Fsutil_RecoverySyncLockCleanup _ARGS_((
+		Fsutil_RecoveryInfo *recovPtr));
+extern void Fsutil_WantRecovery _ARGS_((Fs_HandleHeader *hdrPtr));
+extern void Fsutil_AttemptRecovery _ARGS_((ClientData data, 
+		Proc_CallInfo *callInfoPtr));
+extern ReturnStatus Fsutil_WaitForRecovery _ARGS_((Fs_HandleHeader *hdrPtr, 
+		ReturnStatus rpcStatus));
+extern Boolean Fsutil_RecoveryNeeded _ARGS_((Fsutil_RecoveryInfo *recovPtr));
+extern void Fsutil_Reopen _ARGS_((int serverID, ClientData clientData));
+extern Boolean Fsutil_RemoteHandleScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
+extern void Fsutil_ClientCrashed _ARGS_((int spriteID, ClientData clientData));
+extern void Fsutil_ClientCrashed _ARGS_((int spriteID, ClientData clientData));
+extern void Fsutil_RemoveClient _ARGS_((int clientID));
 
 
 /*
  * Wait list routines.  Waiting lists for various conditions are kept
  * hanging of I/O handles.
  */
-extern	void		Fsutil_WaitListInsert();
-extern	void		Fsutil_WaitListNotify();
-extern	void		Fsutil_FastWaitListInsert();
-extern	void		Fsutil_FastWaitListNotify();
-extern	void		Fsutil_WaitListDelete();
-extern	void		Fsutil_WaitListRemove();
+extern void Fsutil_WaitListInsert _ARGS_((List_Links *list, 
+		Sync_RemoteWaiter *waitPtr));
+extern void Fsutil_WaitListNotify _ARGS_((List_Links *list));
+extern void Fsutil_FastWaitListInsert _ARGS_((List_Links *list, 
+		Sync_RemoteWaiter *waitPtr));
+extern void Fsutil_FastWaitListNotify _ARGS_((List_Links *list));
+extern void Fsutil_WaitListDelete _ARGS_((List_Links *list));
+extern void Fsutil_WaitListRemove _ARGS_((List_Links *list, 
+		Sync_RemoteWaiter *waitPtr));
 
 /*
  * File handle routines.
  */
-extern	void 	 	Fsutil_HandleInit();
-extern	Boolean     	Fsutil_HandleInstall();
-extern	Fs_HandleHeader 	*Fsutil_HandleFetch();
-extern	Fs_HandleHeader	*Fsutil_HandleDup();
-extern  Fs_HandleHeader	*Fsutil_GetNextHandle();
-extern	void 	 	Fsutil_HandleLockHdr();
-extern	void	 	Fsutil_HandleInvalidate();
-extern	Boolean		Fsutil_HandleValid();
-extern	void		Fsutil_HandleIncRefCount();
-extern	void		Fsutil_HandleDecRefCount();
-extern	Boolean	 	Fsutil_HandleUnlockHdr();
-extern	void 	 	Fsutil_HandleReleaseHdr();
-extern	void 	 	Fsutil_HandleRemoveHdr();
-extern	Boolean	 	Fsutil_HandleAttemptRemove();
-extern	void 	 	Fsutil_HandleRemoveInt();
+extern void Fsutil_HandleInit _ARGS_((int fileHashSize));
+extern Boolean Fsutil_HandleInstall _ARGS_((Fs_FileID *fileIDPtr, 
+	int size, char *name, Boolean cantBlock, Fs_HandleHeader **hdrPtrPtr));
+extern Fs_HandleHeader *Fsutil_HandleFetch _ARGS_((Fs_FileID *fileIDPtr));
+extern Fs_HandleHeader *Fsutil_HandleFetchNoWait _ARGS_((Fs_FileID *fileIDPtr,
+						Boolean *wouldWaitPtr));
+extern Fs_HandleHeader *Fsutil_HandleDup _ARGS_((Fs_HandleHeader *hdrPtr));
+extern Fs_HandleHeader *Fsutil_GetNextHandle _ARGS_((Hash_Search *hashSearchPtr));
+extern void Fsutil_HandleLockHdr _ARGS_((Fs_HandleHeader *hdrPtr));
+extern void Fsutil_HandleIncRefCount _ARGS_((Fs_HandleHeader *hdrPtr,
+		int amount));
+extern void Fsutil_HandleDecRefCount _ARGS_((Fs_HandleHeader *hdrPtr));
+extern void Fsutil_HandleInvalidate _ARGS_((Fs_HandleHeader *hdrPtr));
+extern Boolean Fsutil_HandleValid _ARGS_((Fs_HandleHeader *hdrPtr));
+extern Boolean Fsutil_HandleUnlockHdr _ARGS_((Fs_HandleHeader *hdrPtr));
+extern void Fsutil_HandleReleaseHdr _ARGS_(( Fs_HandleHeader *hdrPtr, 
+		Boolean locked));
+extern void Fsutil_HandleRemoveHdr _ARGS_((Fs_HandleHeader *hdrPtr));
+extern Boolean Fsutil_HandleAttemptRemove _ARGS_((Fs_HandleHeader *hdrPtr));
+extern void Fsutil_HandleRemoveInt _ARGS_((Fs_HandleHeader *hdrPtr));
 /*
  * Miscellaneous.
  */
-extern	void		Fsutil_FileError();
-extern	void		Fsutil_PrintStatus();
-extern	void		Fsutil_UpdateTimeOfDay();
-extern	void		Fs_ClearStreamID();
-extern  int	 	Fsdm_FindFileType();
-extern	char *		Fsutil_FileTypeToString();
+extern void Fsutil_FileError _ARGS_((Fs_HandleHeader *hdrPtr, char *string, 
+		int status));
+extern void Fsutil_PrintStatus _ARGS_((int status));
+extern char *Fsutil_FileTypeToString _ARGS_((int type));
 
-extern ReturnStatus	Fsutil_DomainInfo();
+extern ReturnStatus Fsutil_DomainInfo _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_DomainInfo *domainInfoPtr));
 
-extern ReturnStatus Fsutil_HandleDescWriteBack();
-extern	void	Fsutil_SyncProc();
-extern	void	Fsutil_Sync();
-extern void Fsutil_SyncStub();
-extern ReturnStatus Fsutil_WaitForHost();
-extern int Fsutil_TraceInit();
-extern ReturnStatus Fsutil_RpcRecovery();
-extern int Fsutil_PrintTraceRecord();
-extern void Fsutil_PrintTrace();
+extern int Fsutil_HandleDescWriteBack _ARGS_((Boolean shutdown, int domain));
+extern void Fsutil_SyncProc _ARGS_((ClientData data, 
+		Proc_CallInfo *callInfoPtr));
+extern void Fsutil_Sync _ARGS_((unsigned int writeBackTime, Boolean shutdown));
+extern void Fsutil_SyncStub _ARGS_((ClientData data));
+extern ReturnStatus Fsutil_WaitForHost _ARGS_((Fs_Stream *streamPtr, int flags,
+		ReturnStatus rpcStatus));
+extern int Fsutil_TraceInit _ARGS_((void));
+extern int Fsutil_PrintTraceRecord _ARGS_((ClientData clientData, int event,
+		Boolean printHeaderFlag));
+extern void Fsutil_PrintTrace _ARGS_((int numRecs));
+extern ReturnStatus Fsutil_RpcRecovery _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
 
 
-extern	void		Fsutil_HandleScavengeStub();
-extern	void		Fsutil_HandleScavenge();
+extern void Fsutil_HandleScavengeStub _ARGS_((ClientData data));
+extern void Fsutil_HandleScavenge _ARGS_((ClientData data, 
+		Proc_CallInfo *callInfoPtr));
 
-extern  char		*Fsutil_GetFileName();
+extern char *Fsutil_GetFileName _ARGS_((Fs_Stream *streamPtr));
 
-extern	ReturnStatus	Fsutil_FsRecovInfo();
+extern ReturnStatus Fsutil_FsRecovInfo _ARGS_((int length, 
+		Fsutil_FsRecovNamedStats *resultPtr, int *lengthNeededPtr));
+
 
 #endif /* _FSUTIL */
