@@ -2054,12 +2054,30 @@ VmMach_Unalloc(sharedData, addr)
  * ----------------------------------------------------------------------------
  */
 ReturnStatus
-VmMach_SharedStartAddr(procPtr,size,reqAddr)
-    Proc_ControlBlock	*procPtr;
+VmMach_SharedStartAddr(procPtr,size,reqAddr, fixed)
+    Proc_ControlBlock   *procPtr;
     int             size;           /* Length of shared segment. */
     Address         *reqAddr;        /* Requested start address. */
+    int             fixed;          /* 1 if fixed address requested. */
 {
-    return VmMach_Alloc(&procPtr->vmPtr->machPtr->sharedData, size, reqAddr);
+    int numBlocks = (size+VMMACH_SHARED_BLOCK_SIZE-1) /
+            VMMACH_SHARED_BLOCK_SIZE;
+    int firstBlock = (((int)*reqAddr)-VMMACH_SHARED_START_ADDR+
+            VMMACH_SHARED_BLOCK_SIZE-1) /
+            VMMACH_SHARED_BLOCK_SIZE;
+    int i;
+    VmMach_SharedData   *sharedData = &procPtr->vmPtr->machPtr->sharedData;
+
+    if (fixed==0) {
+        return VmMach_Alloc(sharedData, size, reqAddr);
+    } else {
+        for (i = firstBlock; i<firstBlock+numBlocks; i++) {
+            if (i>0) {
+                ALLOC(i,numBlocks);
+            }
+        }
+        return SUCCESS;
+    }
 }
 
 /*
