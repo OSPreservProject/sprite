@@ -74,7 +74,7 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
 		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect,
-		    DEV_NO_ATTACH_PROC},
+		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen},
     /*
      * SCSI Worm interface.
      */
