@@ -377,6 +377,15 @@ Fs_Command(command, bufSize, buffer)
 	case FS_REREAD_SUMMARY_INFO:
 	    status = Fsdm_RereadSummaryInfo(buffer);
 	    break;
+	case FS_SET_BLOCK_SKEW: {
+	    /*
+	     * Set the block allocation gap.
+	     */
+	    extern int fsdm_AllocGap;
+	    SWAP_TO_BUFFER(fsdm_AllocGap, buffer);
+	    break;
+	}
+
 	default:
 	    status = FS_INVALID_ARG;
     }
