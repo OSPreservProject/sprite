@@ -156,19 +156,16 @@ extern	int		Vm_GetPageSize();
 /*
  * Procedures for page tables.
  */
-
 extern	void	Vm_InitPageTable();
 
 /*
  * Procedure to allocate bytes of memory after boot time.
  */
-
 extern	Address	Vm_RawAlloc();
 
 /*
  * Procedures for process migration.
  */
-
 extern	ReturnStatus	Vm_MigrateSegment();
 extern	ReturnStatus	Vm_FreezeSegments();
 extern	void		Vm_MigSegmentDelete();
@@ -176,7 +173,6 @@ extern	void		Vm_MigSegmentDelete();
 /*
  * Procedure for the file sytem.
  */
-
 extern	int		Vm_MapBlock();
 extern	int		Vm_UnmapBlock();
 extern	void		Vm_FileChanged();
@@ -185,11 +181,16 @@ extern	void		Vm_FsCacheSize();
 /*
  * System calls.
  */
-
 extern	ReturnStatus	Vm_PageSize();
 extern	ReturnStatus	Vm_CreateVA();
 extern	ReturnStatus	Vm_DestroyVA();
 extern	ReturnStatus	Vm_Cmd();
 extern	ReturnStatus	Vm_GetSegInfo();
+
+/* 
+ * Procedures for recovery.
+ */
+extern	void		Vm_OpenSwapDirectory();
+extern	void		Vm_Recovery();
 
 #endif _VM
