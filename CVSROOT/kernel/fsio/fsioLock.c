@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsOpTable.h"
 #include "proc.h"
 #include "rpc.h"
+#include "net.h"
 
 /*
  * A  counter is incremented each time a process waits for a lock.
@@ -101,10 +102,15 @@ FsFileLock(lockPtr, argPtr)
 	/*
 	 * Put the potential waiter on the file's lockWaitList.
 	 */
-	wait.hostID = argPtr->hostID;
-	wait.pid = argPtr->pid;
-	wait.waitToken = argPtr->token;
-	FsWaitListInsert(&lockPtr->waitList, &wait);
+	if (argPtr->hostID > NET_NUM_SPRITE_HOSTS) {
+	    Sys_Panic(SYS_WARNING, "FsFileLock: bad hostID %d.\n",
+		      argPtr->hostID);
+	} else {
+	    wait.hostID = argPtr->hostID;
+	    wait.pid = argPtr->pid;
+	    wait.waitToken = argPtr->token;
+	    FsWaitListInsert(&lockPtr->waitList, &wait);
+	}
     }
     return(status);
 }
@@ -114,7 +120,7 @@ FsFileLock(lockPtr, argPtr)
  *
  * FsFileUnlock --
  *
- *	Release a lock a file in the local domain..
+ *	Release a lock a file in the local domain.
  *
  * Results:
  *	SUCCESS or FS_WOULD_BLOCK
