@@ -371,6 +371,21 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc, NoProc, NoProc,	/* cache ops */
 		(Boolean (*)())NIL,		/* scavenge */
 		(void (*)())NoProc, NoProc },	/* kill, close */
+    /*
+     * Stream used to pass streams from a pseudo-device server to
+     * a client in response to an open request.
+     */
+    { FS_PASSING_STREAM, FsPassStream,
+		NoProc, NoProc, NoProc, NoProc,	/* read, write, ioctl, select */
+		NoProc, NoProc,			/* get/set attr */
+		(FsHandleHeader *(*)())NoProc,	/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,	/* cache ops */
+		(Boolean (*)())NIL,		/* scavenge */
+		(void (*)())NoProc, NoProc },	/* kill, close */
+
+
 #ifdef INET
     /*
      * Raw IP Protocol stream.  
@@ -431,6 +446,7 @@ int fsRmtToLclType[FS_NUM_STREAM_TYPES] = {
     FS_LCL_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
     FS_LCL_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
     FS_CONTROL_STREAM,		/* FS_RMT_CONTROL_STREAM */
+    FS_PASSING_STREAM,		/* FS_PASSING_STREAM */
 #ifdef INET
     FS_RAW_IP_STREAM,		/* FS_RAW_IP_STREAM */
     FS_UDP_STREAM,		/* FS_UDP_STREAM */
@@ -456,6 +472,7 @@ int fsLclToRmtType[FS_NUM_STREAM_TYPES] = {
     FS_RMT_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
     FS_RMT_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
     FS_RMT_CONTROL_STREAM,	/* FS_RMT_CONTROL_STREAM */
+    FS_PASSING_STREAM,		/* FS_PASSING_STREAM */
 #ifdef INET
     FS_RAW_IP_STREAM,		/* FS_RAW_IP_STREAM */
     FS_UDP_STREAM,		/* FS_UDP_STREAM */
