@@ -2025,54 +2025,13 @@ NetUltraSendReq(statePtr, doneProc, data, rpc, scatterLength, scatterPtr,
 		/*
 		 * This is a standard RPC packet with 4 parts --
 		 * packet header, RPC header, RPC params, and data. 
-		 * Copy the first three into the DVMA buffer.  If the data
-		 * is below a threshold then copy it also.  Otherwise
-		 * map the data into DVMA space and remap the first three parts
-		 * so that they precede the data.
 		 */
 		size = 0;
 		lastIndex = scatterLength - 1;
 		for (i = 0; i < scatterLength; i++) {
 		    size += scatterPtr[i].length;
 		}
-		if ((scatterPtr[lastIndex].length > 0) &&
-		    (((unsigned int) scatterPtr[lastIndex].bufAddr & 
-		    VMMACH_OFFSET_MASK_INT) + 
-		    scatterPtr[lastIndex].length > netUltraMapThreshold)) {
-		    Address			adjBuffer;
-		    Net_ScatterGather	tmpScatter[2];
-		    Net_ScatterGather	newScatter[2];
-		    int			junk;
-		    int			tmpSize;
-		    RpcHdrNew		*rpcHdrPtr;
-
-		    if (netUltraDebug) {
-			printf("Mapping data into DVMA space.\n");
-		    }
-		    infoPtr->buffer = buffer;
-		    tmpSize = size - scatterPtr[lastIndex].length;
-		    adjBuffer = (Address) ((((unsigned int) (buffer + tmpSize) 
-			& ~VMMACH_OFFSET_MASK_INT) + VMMACH_PAGE_SIZE_INT)
-			- tmpSize);
-		    Net_GatherCopy(scatterPtr, lastIndex, adjBuffer);
-		    tmpScatter[0].bufAddr = adjBuffer;
-		    tmpScatter[0].length = tmpSize;
-		    tmpScatter[1] = scatterPtr[lastIndex];
-		    VmMach_DMAAllocContiguous(tmpScatter, 2, newScatter);
-		    buffer = newScatter[0].bufAddr;
-		    tmpSize = newScatter[1].bufAddr + newScatter[1].length - 
-				buffer;
-		    if (tmpSize > size + VMMACH_PAGE_SIZE_INT) {
-			panic("Contiguous DVMA mapping failed.\n");
-		    }
-		    size = tmpSize;
-		    junk = (int) newScatter[1].bufAddr & VMMACH_OFFSET_MASK_INT;
-		    rpcHdrPtr = (RpcHdrNew *) buffer;
-		    rpcHdrPtr->dataStart += junk;
-		    infoPtr->flags |= NET_ULTRA_INFO_REMAP;
-		} else {
-		    Net_GatherCopy(scatterPtr, scatterLength, buffer);
-		}
+		Net_GatherCopy(scatterPtr, scatterLength, buffer);
 	    } else {
 
 		if (netUltraDebug) {
