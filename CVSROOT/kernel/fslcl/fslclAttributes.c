@@ -35,6 +35,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsdm.h>
 #include <fsStat.h>
 #include <rpc.h>
+#ifdef SOSP91
+#include <sospRecord.h>
+#endif
 
 
 /*
@@ -63,6 +66,9 @@ FslclGetAttr(fileIDPtr, clientID, attrPtr)
 						 * for the attributes */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
 {
+#ifdef SOSP91
+    SOSP_ADD_GET_ATTR_TRACE(clientID, -1, *fileIDPtr);
+#endif
     if (fileIDPtr->type != FSIO_LCL_FILE_STREAM) {
 	panic( "FslclGetAttr, bad fileID type <%d>\n",
 	    fileIDPtr->type);
@@ -227,6 +233,9 @@ FslclSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     Fsio_FileIOHandle		*handlePtr;
     register Fsdm_FileDescriptor	*descPtr;
 
+#ifdef SOSP91
+    SOSP_ADD_GET_ATTR_TRACE(-1, -1, *fileIDPtr);
+#endif
     handlePtr = Fsutil_HandleFetchType(Fsio_FileIOHandle, fileIDPtr);
     if (handlePtr == (Fsio_FileIOHandle *)NIL) {
 	printf(

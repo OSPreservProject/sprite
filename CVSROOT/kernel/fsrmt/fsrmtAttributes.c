@@ -42,6 +42,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsStat.h>
 #include <recov.h>
 #include <rpc.h>
+#ifdef SOSP91
+#include <sospRecord.h>
+#endif
 
 #include <string.h>
 #include <stdio.h>
@@ -523,6 +526,9 @@ Fsrmt_RpcGetAttr(srvToken, clientID, command, storagePtr)
 
     fs_Stats.srvName.getAttrs++;
     attrPtr = mnew(Fs_Attributes);
+#ifdef SOSP91
+    SOSP_ADD_GET_ATTR_TRACE(clientID, -1, *fileIDPtr);
+#endif
     status = (*fs_AttrOpTable[domainType].getAttr)(fileIDPtr, clientID, attrPtr);
 #ifdef lint
     status = FslclGetAttr(fileIDPtr, clientID, attrPtr);
@@ -667,6 +673,9 @@ Fsrmt_RpcSetAttr(srvToken, clientID, command, storagePtr)
     }
     fs_Stats.srvName.setAttrs++;
     Fsutil_HandleUnlock(hdrPtr);
+#ifdef SOSP91
+    SOSP_ADD_SET_ATTR_TRACE(clientID, -1, *fileIDPtr);
+#endif
     status = (*fs_AttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
 						&paramPtr->ids,paramPtr->flags);
 #ifdef lint
