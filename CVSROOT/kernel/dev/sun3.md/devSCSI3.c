@@ -924,7 +924,15 @@ SendCommand(devPtr, scsiCmdPtr)
     status = PutByte(ctrlPtr, (char *) 0);
 #endif
     if (ctrlPtr->dmaState != DMA_INACTIVE) {
-	ctrlPtr->dmaBuffer = addr = VmMach_DMAAlloc(size,scsiCmdPtr->buffer);
+	if ((unsigned) scsiCmdPtr->buffer < (unsigned) VMMACH_DMA_START_ADDR) {
+	    ctrlPtr->dmaBuffer = addr = 
+			VmMach_DMAAlloc(size,scsiCmdPtr->buffer);
+	} else {
+	    /*
+	     * Already mapped into DMA space.
+	     */
+	    addr = scsiCmdPtr->buffer;
+	}
 	if (devSCSI3Debug > 5) {
 	    printf("SCSI3Command: selected %s setup DMA addr 0x%x size %d\n",
 		devPtr->handle.locationName, addr, size);

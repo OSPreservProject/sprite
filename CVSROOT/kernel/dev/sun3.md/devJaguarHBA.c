@@ -1031,6 +1031,8 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
     volatile JaguarMem	*memPtr = ctrlPtr->memPtr;
     volatile JaguarCQE	*cqe;
     volatile JaguarIOPB	*iopb;
+    Boolean	noDMA = FALSE;
+    unsigned int  addr;
 
     /*
      * Work queue is special because it has only one entry. To keep from
@@ -1049,6 +1051,19 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
     }
     if (cqe->controlReg & JAGUAR_CQE_GO_BUSY) {
 	panic("%s: Command Queue Full\n", ctrlPtr->name);
+    }
+    addr = (unsigned) READ_LONG(iopbPtr->bufferAddr);
+    {
+	/*
+	 * If the address has the lowest hit set then it was already
+	 * pointing into the DMA space so we set the dmaBufferLen
+	 * to zero to cause the interrupt handle not to free it.
+	 */
+	if (addr & 1) { 
+	    addr = addr & ~1;
+	    SET_LONG(iopbPtr->bufferAddr,addr);
+	    noDMA = TRUE;
+	}
     }
     /*
      * Find to IOPB we hardwired this CQE to point at.   
@@ -1076,12 +1091,19 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
 	}
 	actionPtr = &(ctrlPtr->cmdAction[ctrlPtr->nextActionBuffer]);
 	actionPtr->action = action;
-	actionPtr->dmaBuffer = (Address) (READ_LONG(iopbPtr->bufferAddr) + 
-					VMMACH_DMA_START_ADDR);
-	actionPtr->dmaBufferLen = READ_LONG(iopbPtr->maxXferLen);
+	/*
+	 * If the address has the lowest hit set then it was already
+	 * pointing into the DMA space so we set the dmaBufferLen
+	 * to zero to cause the interrupt handle not to free it.
+	 */
+	if (noDMA) { 
+	    actionPtr->dmaBufferLen = 0;
+	} else { 
+	    actionPtr->dmaBufferLen = READ_LONG(iopbPtr->maxXferLen);
+	}
+	actionPtr->dmaBuffer = (Address) (addr + VMMACH_DMA_START_ADDR);
 	actionPtr->actionArg = actionArg;
         cqe->commandTag[0] = ctrlPtr->nextActionBuffer;
-
     }
     /*
      * Inform the controller that the command is ready.
@@ -1366,8 +1388,17 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
     iopbPtr->intrLevel = devPtr->ctrlPtr->intrLevel;
     iopbPtr->addrModifier = JAGUAR_ADDRESS_MODIFIER;
     if (scsiCmdPtr->bufferLen > 0) {
-	addr = (Address) VmMach_DMAAlloc(scsiCmdPtr->bufferLen, 
+	/*
+	 * If the address is already in DMA space we do not have to
+	 * map it.  We set the lowest bit of the address to inform
+	 * the interrupt handler not to free it.
+	 */
+	if (((unsigned) scsiCmdPtr->buffer) < (unsigned)VMMACH_DMA_START_ADDR) {
+	    addr = (Address) VmMach_DMAAlloc(scsiCmdPtr->bufferLen, 
 					 scsiCmdPtr->buffer);
+	} else {
+	    addr = (Address) (((unsigned) scsiCmdPtr->buffer) | 1);
+	}
     } else {
 	addr = (Address) VMMACH_DMA_START_ADDR;
     }
