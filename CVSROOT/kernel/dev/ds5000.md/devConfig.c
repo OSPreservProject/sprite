@@ -29,39 +29,43 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Per device include files.
  */
-#include "sii.h"
+#include "scsiC90.h"
 
 /*
  * The controller configuration table.
  */
-DevConfigController devCntrlr[1];
-#if 0
-= {
-   /* Name	Address		ID	InitProc	IntrRoutine. */
+DevConfigController devCntrlr[] = {
+   /* Name	Slot	ID	InitProc. */
+    {"SCSI#0",   5, 0, DevSCSIC90Init},
+    {"SCSI#1", 0, 1, DevSCSIC90Init},
+    {"SCSI#2", 1, 2, DevSCSIC90Init},
+    {"SCSI#3", 2, 3, DevSCSIC90Init},
 };
 int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
-#endif
-int devNumConfigCntrlrs = 0;
 
 /*
  * Table of SCSI HBA types attached to this system.
  */
 
-ScsiDevice *((*devScsiAttachProcs[1])());
-#if 0
-= {
-    DevSIIAttachDevice,		/* SCSI Controller type 0. */
+ScsiDevice *((*devScsiAttachProcs[]) ()) = {
+    DevSCSIC90AttachDevice,		/* SCSI Controller type 0. */
 };
 int devScsiNumHBATypes = sizeof(devScsiAttachProcs) / 
 			 sizeof(devScsiAttachProcs[0]);
-#endif
-int devScsiNumHBATypes = 0;
 
 /*
  * A list of disk devices that is used when probing for a root partition.
- * Note that we put the default partition as partition C so as to use the
- * entire disk.
+ * SCSI Disk target ID 0 LUN 0 partition 0 on SCSIC90 HBA 0. 
  */
+#if 0
+Fs_Device devFsDefaultDiskPartitions[] = {
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 2),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 2),
+	(ClientData) NIL },
+  };
+int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
+			  sizeof(Fs_Device);
+#endif
 Fs_Device devFsDefaultDiskPartitions[1];
 int devNumDefaultDiskPartitions = 0;
 
