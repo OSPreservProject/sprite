@@ -554,22 +554,23 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
  */
 
 ReturnStatus
-Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
+Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
     register Fs_Stream *streamPtr;
     int command;			/* IOControl command */
-    int inBufSize;			/* Size of inBuffer */
-    char *inBuffer;			/* Command specific input parameters */
-    int outBufSize;			/* Size of outBuffer */
-    char *outBuffer;			/* Command specific return parameters */
+    Fs_Buffer *inBufPtr;		/* Command inputs */
+    Fs_Buffer *outBufPtr;		/* Command specific return parameters */
 {
     register ReturnStatus	status;
     register Boolean		retry;
     int				offset;
     Ioc_LockArgs		*lockArgsPtr;
+    register int		streamType;
+    Fs_Buffer			xtraInBuf;
 
     /*
      * Retry loop to handle server error recovery and blocking locks.
      */
+    streamType = streamPtr->ioHandlePtr->fileID.type;
     do {
 	retry = FALSE;
 	/*
@@ -577,7 +578,9 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	 *
 	 * IOC_NUM_READABLE.  We pass the stream offset
 	 * down using the inBuffer so that the stream-type-specific routines
-	 * can correctly compute how much data is available.
+	 * can correctly compute how much data is available.  (Still have to
+	 * do this even though we pass the streamPtr down because the offset
+	 * on the server may not be up-to-date.  Probably fixable.)
 	 *
 	 * IOC_LOCK and IOC_UNLOCK.  We have to fill in the process and hostID
 	 * entries in the buffer passed in from the user.
@@ -585,12 +588,14 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	switch(command) {
 	    case IOC_NUM_READABLE:
 		offset = streamPtr->offset;
-		inBuffer = (Address) &offset;
-		inBufSize = sizeof(int);
+		xtraInBuf.addr = (Address) &offset;
+		xtraInBuf.size = sizeof(int);
+		xtraInBuf.flags = 0;
+		inBufPtr = &xtraInBuf;
 		break;
 	    case IOC_LOCK:
 	    case IOC_UNLOCK: {
-		lockArgsPtr = (Ioc_LockArgs *)inBuffer;
+		lockArgsPtr = (Ioc_LockArgs *)inBufPtr->addr;
 		lockArgsPtr->hostID = rpc_SpriteID;
 		Sync_GetWaitToken(&lockArgsPtr->pid, &lockArgsPtr->token);
 		break;
@@ -601,26 +606,25 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	 * Call down stream to see if the IOControl is applicable.
 	 * If so, we may also have to adjust some state of our own.
 	 */
-	status = (fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].ioControl)
-	    (streamPtr, command, mach_ByteOrder, inBufSize,
-		inBuffer, outBufSize, outBuffer);
+	status = (*fsStreamOpTable[streamType].ioControl)
+	    (streamPtr, command, mach_ByteOrder, inBufPtr, outBufPtr);
 #ifdef lint
 	status = FsFileIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		    mach_ByteOrder, inBufPtr, outBufPtr);
 	status = FsRmtFileIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		    mach_ByteOrder, inBufPtr, outBufPtr);
 	status = FsDeviceIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		    mach_ByteOrder, inBufPtr, outBufPtr);
 	status = FsRemoteIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		    mach_ByteOrder, inBufPtr, outBufPtr);
 	status = FsPipeIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		    mach_ByteOrder, inBufPtr, outBufPtr);
 	status = FsControlIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		    mach_ByteOrder, inBufPtr, outBufPtr);
 	status = FsServerStreamIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		    mach_ByteOrder, inBufPtr, outBufPtr);
 	status = FsPseudoStreamIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		    mach_ByteOrder, inBufPtr, outBufPtr);
 #endif /* lint */
 	switch(status) {
 	    case SUCCESS:
@@ -669,11 +673,11 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	    register int newOffset;
 	    register Ioc_RepositionArgs	*iocArgsPtr;
 
-	    if (inBuffer == (Address)NIL) {
+	    if (inBufPtr->addr == (Address)NIL) {
 		status = GEN_INVALID_ARG;
 		break;
 	    }
-	    iocArgsPtr = (Ioc_RepositionArgs *)inBuffer;
+	    iocArgsPtr = (Ioc_RepositionArgs *)inBufPtr->addr;
 	    switch(iocArgsPtr->base) {
 		case IOC_BASE_ZERO:
 		    newOffset = iocArgsPtr->offset;
@@ -695,8 +699,8 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	    if (newOffset < 0) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		if (outBuffer != (Address)NIL) {
-		    *(int *)outBuffer = newOffset;
+		if (outBufPtr->addr != (Address)NIL) {
+		    *(int *)outBufPtr->addr = newOffset;
 		}
 		streamPtr->offset = newOffset;
 	    }
@@ -719,10 +723,10 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	    if (streamPtr->flags & FS_NON_BLOCKING) {
 		flags |= IOC_NON_BLOCKING;
 	    }
-	    if (outBuffer == (Address)NIL) {
+	    if (outBufPtr->addr == (Address)NIL) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		*(int *)outBuffer |= flags;
+		*(int *)outBufPtr->addr |= flags;
 	    }
 	    break;
 	}
@@ -736,11 +740,11 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	     * are not in the input word.
 	     */
 	    register int flags;
-	    if (inBuffer == (Address)NIL) {
+	    if (inBufPtr->addr == (Address)NIL) {
 		status = GEN_INVALID_ARG;
 		break;
 	    }
-	    flags = *(int *)inBuffer;
+	    flags = *(int *)inBufPtr->addr;
 	    if ((flags & IOC_APPEND) && (streamPtr->flags & FS_WRITE) == 0) {
 		status = FS_NO_ACCESS;
 		break;
@@ -759,11 +763,11 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	}
 	case IOC_CLEAR_BITS:{
 	    register int flags;
-	    if (inBuffer == (Address)NIL) {
+	    if (inBufPtr->addr == (Address)NIL) {
 		status = GEN_INVALID_ARG;
 		break;
 	    }
-	    flags = *(int *)inBuffer;
+	    flags = *(int *)inBufPtr->addr;
 	    if (flags & IOC_APPEND) {
 		streamPtr->flags &= ~FS_APPEND;
 	    }

@@ -145,9 +145,17 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 		     openResults.streamData, name, &streamPtr->ioHandlePtr);
 	if (status == SUCCESS) {
 	    if (streamPtr->flags & FS_TRUNC) {
+		Fs_Buffer inBuf;
+		Fs_Buffer outBuf;
 		int length = 0;
-		(void)Fs_IOControl(streamPtr, IOC_TRUNCATE, sizeof(int),
-				    (Address)&length, 0, (Address)NIL);
+
+		inBuf.addr = (Address)&length;
+		inBuf.size = sizeof(int);
+		inBuf.flags = 0;
+		outBuf.addr = (Address) NIL;
+		outBuf.size = 0;
+		outBuf.flags = 0;
+		(void)Fs_IOControl(streamPtr, IOC_TRUNCATE, &inBuf, &outBuf);
 	    }
 	    *streamPtrPtr = streamPtr;
 	    switch (useFlags & (FS_READ | FS_WRITE)) {
@@ -451,14 +459,21 @@ Fs_Trunc(pathName, length)
 {
     Fs_Stream *streamPtr;
     ReturnStatus status;
+    Fs_Buffer inBuf;
+    Fs_Buffer outBuf;
 
     streamPtr = (Fs_Stream *)NIL;
     status = Fs_Open(pathName, FS_WRITE | FS_FOLLOW, FS_FILE, 0, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
-    status = Fs_IOControl(streamPtr, IOC_TRUNCATE, sizeof(int),
-			    (Address)&length, 0, (Address)NIL);
+    inBuf.addr = (Address)&length;
+    inBuf.size = sizeof(int);
+    inBuf.flags = 0;
+    outBuf.addr = (Address) NIL;
+    outBuf.size = 0;
+    outBuf.flags = 0;
+    status = Fs_IOControl(streamPtr, IOC_TRUNCATE, &inBuf, &outBuf);
     (void)Fs_Close(streamPtr);
     return(status);
 }
@@ -481,6 +496,7 @@ Fs_Trunc(pathName, length)
  *
  *----------------------------------------------------------------------
  */
+
 ReturnStatus
 Fs_GetAttributes(pathName, fileOrLink, attrPtr)
     char *pathName;
@@ -492,7 +508,6 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
     FsGetAttrResults getAttrResults;	/* References attrPtr and ioFileID */
     FsFileID ioFileID;			/* Returned from name server, indicates
 					 * who the I/O server is. */
-
 
     openArgs.useFlags = (fileOrLink == FS_ATTRIB_LINK) ? 0 : FS_FOLLOW;
     openArgs.permissions = 0;

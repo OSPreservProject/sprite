@@ -541,15 +541,12 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
-	outBuffer)
+FsPipeIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
     Fs_Stream *streamPtr;
     int command;
     int byteOrder;
-    int inBufSize;
-    Address inBuffer;
-    int outBufSize;
-    Address outBuffer;
+    Fs_Buffer *inBufPtr;
+    Fs_Buffer *outBufPtr;
 {
     register FsPipeIOHandle *handlePtr =
 	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
@@ -568,17 +565,17 @@ FsPipeIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
 	     */
 	    int flags;
 	    int size;
-	    if (byteOrder != mach_ByteOrder) {
+	    if (inBufPtr->size >= sizeof(int) && byteOrder != mach_ByteOrder) {
 		size = sizeof(int);
-		Swap_Buffer(inBuffer, inBufSize, byteOrder, mach_ByteOrder, "w",
-			    (Address)&flags, &size);
+		Swap_Buffer(inBufPtr->addr, inBufPtr->size, byteOrder,
+			    mach_ByteOrder, "w", (Address)&flags, &size);
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
-	    } else if (inBufSize != sizeof(int)) {
+	    } else if (inBufPtr->size != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		flags = *(int *)inBuffer;
+		flags = *(int *)inBufPtr->addr;
 	    }
 	    if (status != SUCCESS) {
 		return(status);
@@ -596,17 +593,17 @@ FsPipeIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
 	case IOC_NUM_READABLE: {
 	    int bytesAvailable;
 	    bytesAvailable = handlePtr->lastByte - handlePtr->firstByte;
-	    if (byteOrder != mach_ByteOrder) {
+	    if (outBufPtr->size >= sizeof(int) && byteOrder != mach_ByteOrder) {
 		int size = sizeof(int);
 		Swap_Buffer((Address)&bytesAvailable, sizeof(int),
-		    mach_ByteOrder, byteOrder, "w", outBuffer, &size);
+		    mach_ByteOrder, byteOrder, "w", outBufPtr->addr, &size);
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
-	    } else if (outBufSize != sizeof(int)) {
+	    } else if (outBufPtr->size != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		*(int *)outBuffer = bytesAvailable;
+		*(int *)outBufPtr->addr = bytesAvailable;
 	    }
 	    return(status);
 	}

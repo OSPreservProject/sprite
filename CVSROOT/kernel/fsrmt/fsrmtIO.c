@@ -776,14 +776,12 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
+FsRemoteIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
     Fs_Stream	*streamPtr;
     int         command;
     int		byteOrder;
-    int         inBufSize;
-    Address     inBuffer;
-    int         outBufSize;
-    Address     outBuffer;
+    Fs_Buffer   *inBufPtr;		/* Command inputs */
+    Fs_Buffer   *outBufPtr;		/* Buffer for return parameters */
 {
     register FsHandleHeader	*hdrPtr = streamPtr->ioHandlePtr;
     FsSpriteIOCParams		params;
@@ -797,18 +795,18 @@ FsRemoteIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize
     params.procID = (Proc_PID) NIL;
     params.familyID = (Proc_PID) NIL;
     params.command = command;
-    params.inBufSize = inBufSize;
-    params.outBufSize = outBufSize;
+    params.inBufSize = inBufPtr->size;
+    params.outBufSize = outBufPtr->size;
     params.byteOrder = byteOrder;
 
     storage.requestParamPtr = (Address)&params;
     storage.requestParamSize = sizeof(FsSpriteIOCParams);
-    storage.requestDataPtr = (Address) inBuffer;
-    storage.requestDataSize = inBufSize;
+    storage.requestDataPtr = (Address) inBufPtr->addr;
+    storage.requestDataSize = inBufPtr->size;
     storage.replyParamPtr = (Address)NIL;
     storage.replyParamSize = 0;
-    storage.replyDataPtr = (Address)outBuffer;
-    storage.replyDataSize = outBufSize;
+    storage.replyDataPtr = (Address)outBufPtr->addr;
+    storage.replyDataSize = outBufPtr->size;
 
     status = Rpc_Call(hdrPtr->fileID.serverID, RPC_FS_IO_CONTROL, &storage);
     if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
@@ -856,6 +854,8 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
     register	Rpc_ReplyMem		*replyMemPtr;
     ReturnStatus			status;
     Address				outBufPtr;
+    Fs_Buffer				outBuf;
+    Fs_Buffer				inBuf;
 
     paramsPtr = (FsSpriteIOCParams *)storagePtr->requestParamPtr;
 
@@ -886,21 +886,25 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
     
     if (paramsPtr->outBufSize != 0) {
 	outBufPtr = Mem_Alloc(paramsPtr->outBufSize);
+    } else {
+	outBufPtr = (Address)NIL;
     }
     FsHandleUnlock(hdrPtr);
+    inBuf.addr = storagePtr->requestDataPtr;
+    inBuf.size = paramsPtr->inBufSize;
+    inBuf.flags = 0;
+    outBuf.addr = outBufPtr;
+    outBuf.size = paramsPtr->outBufSize;
+    outBuf.flags = 0;
     status = (*fsStreamOpTable[hdrPtr->fileID.type].ioControl)(streamPtr,
-	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
-	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
+	    paramsPtr->command, paramsPtr->byteOrder, &inBuf, &outBuf);
 #ifdef lint
     status = FsFileIOControl(streamPtr,
-	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
-	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
+	    paramsPtr->command, paramsPtr->byteOrder, &inBuf, &outBuf);
     status = FsPipeIOControl(streamPtr,
-	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
-	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
+	    paramsPtr->command, paramsPtr->byteOrder, &inBuf, &outBuf);
     status = FsDeviceIOControl(streamPtr,
-	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
-	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
+	    paramsPtr->command, paramsPtr->byteOrder, &inBuf, &outBuf);
 #endif /* lint */
     FsHandleRelease(hdrPtr, FALSE);
 

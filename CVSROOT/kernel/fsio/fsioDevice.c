@@ -1488,15 +1488,12 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
-		outBuffer)
+FsDeviceIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
     Fs_Stream *streamPtr;		/* Stream to a device. */
     int command;			/* Device specific I/O control */
     int byteOrder;			/* Client's byte order */
-    int inBufSize;			/* Size of inBuffer */
-    Address inBuffer;			/* Buffer of input arguments */
-    int outBufSize;			/* Size of outBuffer */
-    Address outBuffer;			/* Buffer for return parameters */
+    Fs_Buffer *inBufPtr;		/* Buffer of input arguments */
+    Fs_Buffer *outBufPtr;		/* Buffer for return parameters */
 {
     register FsDeviceIOHandle *devHandlePtr =
 	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
@@ -1509,7 +1506,7 @@ FsDeviceIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize
 	case IOC_LOCK:
 	case IOC_UNLOCK:
 	    status = FsIocLock(&devHandlePtr->lock, command, byteOrder,
-				inBuffer, inBufSize, &streamPtr->hdr.fileID);
+				inBufPtr, &streamPtr->hdr.fileID);
 	    break;
 	default:
 	    if ((byteOrder != mach_ByteOrder) && !warned) {
@@ -1519,7 +1516,8 @@ FsDeviceIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize
 		    SUCCESS);
 	    }
 	    status = (*devFsOpTable[devicePtr->type].ioControl) (devicePtr,
-		    command, inBufSize, inBuffer, outBufSize, outBuffer);
+		    command, inBufPtr->size, inBufPtr->addr,
+		    outBufPtr->size, outBufPtr->addr);
 	    break;
     }
     FsHandleUnlock(devHandlePtr);

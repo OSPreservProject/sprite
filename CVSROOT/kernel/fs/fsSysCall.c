@@ -1686,6 +1686,8 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     register ReturnStatus status = SUCCESS;
     register Address localInBuffer;
     register Address localOutBuffer;
+    Fs_Buffer	inBuf;
+    Fs_Buffer	outBuf;
 
     /*
      * Get a stream pointer.
@@ -1709,13 +1711,20 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
      */
     if ((streamPtr->ioHandlePtr->fileID.type == FS_LCL_PSEUDO_STREAM) &&
 	(command > IOC_GENERIC_LIMIT)) {
-	return(Fs_IOControl(streamPtr, command,
-			      inBufSize, inBuffer, outBufSize, outBuffer));
+	inBuf.size = inBufSize;
+	inBuf.addr = inBuffer;
+	inBuf.flags = FS_USER;
+	outBuf.size = outBufSize;  
+	outBuf.addr = outBuffer;
+	outBuf.flags = FS_USER;
+	return(Fs_IOControl(streamPtr, command, &inBuf, &outBuf));
     }
 
     if (inBufSize > IOC_MAX_BYTES || outBufSize > IOC_MAX_BYTES) {
 	return(SYS_INVALID_ARG);
     }
+    inBuf.flags = 0;
+    outBuf.flags = 0;
 
     /*
      * The input parameters are copied into kernel
@@ -1724,25 +1733,25 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
      */
     if ((outBufSize > 0) && (outBuffer != (Address)0) &&
 			    (outBuffer != (Address)NIL)){
-	localOutBuffer = (Address) Mem_Alloc(outBufSize);
+	outBuf.addr = (Address) Mem_Alloc(outBufSize);
+	outBuf.size = outBufSize;
     } else {
-	localOutBuffer = (Address)NIL;
-	outBufSize = 0;
+	outBuf.addr = (Address)NIL;
+	outBuf.size = 0;
     }
     if ((inBufSize > 0) && (inBuffer != (Address)0) &&
 			   (inBuffer != (Address)NIL)) {
-	localInBuffer  = (Address) Mem_Alloc(inBufSize);
+	inBuf.addr  = (Address) Mem_Alloc(inBufSize);
+	inBuf.size = inBufSize;
     } else {
-	localInBuffer = (Address)NIL;
-	inBufSize = 0;
+	inBuf.addr = (Address)NIL;
+	inBuf.size = 0;
     }
 
-    if (Vm_CopyIn(inBufSize, inBuffer, localInBuffer) != SUCCESS) {
+    if (inBuf.size && Vm_CopyIn(inBuf.size, inBuffer, inBuf.addr) != SUCCESS) {
 	status = SYS_ARG_NOACCESS;
     } else {
-	status = Fs_IOControl(streamPtr, command,
-			      inBufSize, localInBuffer,
-			      outBufSize, localOutBuffer);
+	status = Fs_IOControl(streamPtr, command, &inBuf, &outBuf);
 	if (status == SUCCESS) {
 	    /*
 	     * Post process the set/get flags stuff because the close-on-exec
@@ -1753,14 +1762,14 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 	    switch(command) {
 		case IOC_GET_FLAGS: {
 		    if (fsPtr->streamFlags[streamID] & FS_CLOSE_ON_EXEC) {
-			*(int *)localOutBuffer |= IOC_CLOSE_ON_EXEC;
+			*(int *)outBuf.addr |= IOC_CLOSE_ON_EXEC;
 		    }
 		    break;
 		}
 		case IOC_SET_BITS:
 		case IOC_SET_FLAGS: {
 		    int flags;
-		    flags = *(int *)localInBuffer;
+		    flags = *(int *)inBuf.addr;
 
 		    if (flags & IOC_CLOSE_ON_EXEC) {
 			fsPtr->streamFlags[streamID] |= FS_CLOSE_ON_EXEC;
@@ -1771,21 +1780,23 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 		}
 		case IOC_CLEAR_BITS:{
 		    int flags;
-		    flags = *(int *)localInBuffer;
+		    flags = *(int *)inBuf.addr;
 		    if (flags & IOC_CLOSE_ON_EXEC) {
 			fsPtr->streamFlags[streamID] &= ~FS_CLOSE_ON_EXEC;
 		    }
 		    break;
 		}
 	    }
-	    status = Vm_CopyOut(outBufSize, localOutBuffer, outBuffer);
+	    if (outBuf.size) {
+		status = Vm_CopyOut(outBuf.size, outBuf.addr, outBuffer);
+	    }
 	}
     }
-    if (localInBuffer != (Address)NIL) {
-	Mem_Free((Address) localInBuffer);
+    if (inBuf.flags == 0 && inBuf.addr != (Address)NIL) {
+	Mem_Free(inBuf.addr);
     }
-    if (localOutBuffer != (Address)NIL) {
-	Mem_Free((Address) localOutBuffer);
+    if (outBuf.flags == 0 && outBuf.addr != (Address)NIL) {
+	Mem_Free(outBuf.addr);
     }
     return(status);
 }

@@ -1330,15 +1330,12 @@ FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 
 /*ARGSUSED*/
 ReturnStatus
-FsFileIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
+FsFileIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
     Fs_Stream *streamPtr;		/* Stream to local file */
     int command;			/* File specific I/O control */
     int byteOrder;			/* Client's byte order */
-    int inBufSize;			/* Size of inBuffer */
-    Address inBuffer;			/* Buffer of input arguments */
-    int outBufSize;			/* Size of outBuffer */
-    Address outBuffer;			/* Buffer for return parameters */
-
+    Fs_Buffer *inBufPtr;		/* Command inputs */
+    Fs_Buffer *outBufPtr;		/* Buffer for return parameters */
 {
     register FsLocalFileIOHandle *handlePtr =
 	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
@@ -1349,8 +1346,9 @@ FsFileIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
 	case IOC_REPOSITION:
 	    break;
 	case IOC_GET_FLAGS:
-	    if ((outBufSize >= sizeof(int)) && (outBuffer != (Address)NIL)) {
-		*(int *)outBuffer = 0;
+	    if ((outBufPtr->size >= sizeof(int)) &&
+		(outBufPtr->addr != (Address)NIL)) {
+		*(int *)outBufPtr->addr = 0;
 	    }
 	    break;
 	case IOC_SET_FLAGS:
@@ -1360,17 +1358,17 @@ FsFileIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
 	case IOC_TRUNCATE: {
 	    int length;
 
-	    if (byteOrder != mach_ByteOrder) {
+	    if (inBufPtr->size >= sizeof(int) && byteOrder != mach_ByteOrder) {
 		int size = sizeof(int);
-		Swap_Buffer(inBuffer, sizeof(int), byteOrder, mach_ByteOrder,
-			    "w", (Address)&length, &size);
+		Swap_Buffer(inBufPtr->addr, sizeof(int), byteOrder,
+			    mach_ByteOrder, "w", (Address)&length, &size);
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
-	    } else if (inBufSize < sizeof(int)) {
+	    } else if (inBufPtr->size < sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		length = *(int *)inBuffer;
+		length = *(int *)inBufPtr->addr;
 	    }
 	    if (status == SUCCESS) {
 		status = FsFileTrunc(handlePtr, length, 0);
@@ -1379,8 +1377,8 @@ FsFileIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
 	}
 	case IOC_LOCK:
 	case IOC_UNLOCK:
-	    status = FsIocLock(&handlePtr->lock, command, byteOrder, inBuffer,
-				inBufSize, &streamPtr->hdr.fileID);
+	    status = FsIocLock(&handlePtr->lock, command, byteOrder, inBufPtr,
+				&streamPtr->hdr.fileID);
 	    break;
 	case IOC_NUM_READABLE: {
 	    /*
@@ -1391,31 +1389,32 @@ FsFileIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
 	    int streamOffset;
 	    int size;
 
-	    if (byteOrder != mach_ByteOrder) {
+	    if (inBufPtr->size == sizeof(int) && byteOrder != mach_ByteOrder) {
 		size = sizeof(int);
-		Swap_Buffer(inBuffer, inBufSize, byteOrder, mach_ByteOrder, "w",
-			    (Address)&streamOffset, &size);
+		Swap_Buffer(inBufPtr->addr, inBufPtr->size, byteOrder,
+			    mach_ByteOrder, "w", (Address)&streamOffset, &size);
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
-	    } else if (inBufSize != sizeof(int)) {
+	    } else if (inBufPtr->size != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		streamOffset = *(int *)inBuffer;
+		streamOffset = *(int *)inBufPtr->addr;
 	    }
 	    if (status == SUCCESS) {
 		bytesAvailable = handlePtr->cacheInfo.attr.lastByte + 1 -
 				streamOffset;
-		if (byteOrder != mach_ByteOrder) {
+		if (outBufPtr->size >= sizeof(int) &&
+		    byteOrder != mach_ByteOrder) {
 		    Swap_Buffer((Address)&bytesAvailable, sizeof(int),
-			mach_ByteOrder, byteOrder, "w", outBuffer, &size);
+			mach_ByteOrder, byteOrder, "w", outBufPtr->addr, &size);
 		    if (size != sizeof(int)) {
 			status = GEN_INVALID_ARG;
 		    }
-		} else if (outBufSize != sizeof(int)) {
+		} else if (outBufPtr->size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		} else {
-		    *(int *)outBuffer = bytesAvailable;
+		    *(int *)outBufPtr->addr = bytesAvailable;
 		}
 	    }
 	    break;
