@@ -248,7 +248,6 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
     rpcHdrPtr->serverID = serverID;
     rpcHdrPtr->bootID = rpcBootID;
     rpcHdrPtr->ID = rpcID++;
-    rpcHdrPtr->delay = rpcMyDelay;
     rpcHdrPtr->command = command;
 
     /*
@@ -497,15 +496,16 @@ RpcChanClose(chanPtr,rpcHdrPtr)
 	rpcCltStat.close++;
 	/*
 	 * Set up and transmit the explicit acknowledgement packet.
-	 * Unset fragment and buffer fields have been initialized in Rpc_Init.
+	 * Note that fields that never change have already been
+	 * set in RpcBufferInit.
 	 */
 	ackHdrPtr = &chanPtr->ackHdr;
 	ackHdrPtr->flags = RPC_ACK | RPC_CLOSE | RPC_SERVER;
-	ackHdrPtr->delay = rpcMyDelay;
 	ackHdrPtr->clientID = rpc_SpriteID;
 	ackHdrPtr->serverID = rpcHdrPtr->serverID;
-	ackHdrPtr->channel = rpcHdrPtr->channel;
 	ackHdrPtr->serverHint = rpcHdrPtr->serverHint;
+	ackHdrPtr->command = rpcHdrPtr->command;
+	ackHdrPtr->bootID = rpcBootID;
 	ackHdrPtr->ID = rpcHdrPtr->ID;
 	(void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->ackHdr, &chanPtr->ack,
 			     (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
