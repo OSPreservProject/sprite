@@ -1088,6 +1088,113 @@ FlushingSegment:
 /*
  * ----------------------------------------------------------------------------
  *
+ * VmMachFlushByteRange --
+ *
+ *     	Flush a range of bytes from the cache.
+ *
+ *	void VmMachFlushByteRange(virtAddr, numBytes)
+ *	Address	virtAddr;	(Address of page)
+ *	int	numBytes;	(Number of bytes to flush)
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     All data cached in the byte range is flushed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_VmMachFlushByteRange
+_VmMachFlushByteRange:
+    /* Start prologue */
+    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
+    save	%sp, %OUT_TEMP1, %sp
+    /* end prologue */
+
+    /* Address of last byte to flush */
+    add		%i0, %i1, %OUT_TEMP2
+    sub		%OUT_TEMP2, 1, %OUT_TEMP2
+
+    /* Get first line to flush */
+    set		~(VMMACH_CACHE_LINE_SIZE - 1), %OUT_TEMP1
+    and		%i0, %OUT_TEMP1, %i0
+
+    /* Get last line to flush */
+    and		%OUT_TEMP2, %OUT_TEMP1, %VOL_TEMP1
+
+    /* Get number of lines to flush */
+    sub		%VOL_TEMP1, %i0, %OUT_TEMP2
+    sll		%OUT_TEMP2, VMMACH_CACHE_SHIFT, %OUT_TEMP2
+    add		%OUT_TEMP2, 1, %i3
+
+    /* Do we have at least 16 lines to flush? */
+    subcc	%i3, 16, %g0
+    bl		FinishFlushing
+    nop
+
+    set		VMMACH_CACHE_LINE_SIZE, %l0
+    add		%l0, VMMACH_CACHE_LINE_SIZE, %l1
+    add		%l1, VMMACH_CACHE_LINE_SIZE, %l2
+    add		%l2, VMMACH_CACHE_LINE_SIZE, %l3
+    add		%l3, VMMACH_CACHE_LINE_SIZE, %l4
+    add		%l4, VMMACH_CACHE_LINE_SIZE, %l5
+    add		%l5, VMMACH_CACHE_LINE_SIZE, %l6
+    add		%l6, VMMACH_CACHE_LINE_SIZE, %l7
+    add		%l7, VMMACH_CACHE_LINE_SIZE, %o0
+    add		%o0, VMMACH_CACHE_LINE_SIZE, %o1
+    add		%o1, VMMACH_CACHE_LINE_SIZE, %o2
+    add		%o2, VMMACH_CACHE_LINE_SIZE, %o3
+    add		%o3, VMMACH_CACHE_LINE_SIZE, %o4
+    add		%o4, VMMACH_CACHE_LINE_SIZE, %o5
+    add		%o5, VMMACH_CACHE_LINE_SIZE, %i4
+
+FlushingHere:
+    /* We have at least 16 lines to flush. */
+    sub		%i3, 16, %i3
+
+    /* Try to space them out to avoid back-to-back copies. */
+
+    /*
+     * Is this far enough spaced??  How many lines on average will the routine
+     * be asked to flush?
+     */
+    sta		%g0, [%i0] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l3] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l7] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o3] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l0] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l4] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o0] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o4] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l1] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l5] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o1] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o5] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l2] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l6] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o2] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %i4] VMMACH_FLUSH_PAGE_SPACE
+
+    /* Are there another 16 lines? */
+    subcc       %i3, 16, %g0
+    bg		FlushingHere
+    add		%i0, (16 * VMMACH_CACHE_LINE_SIZE), %i0		/* delay slot */
+    be		DoneFlushing	/* We finished with the last 16 lines... */
+    nop
+FinishFlushing:
+    /* Finish the rest line by line.  Should I optimize here?  How much? */
+    sta		%g0, [%i0] VMMACH_FLUSH_PAGE_SPACE
+    subcc	%i3, 1, %i3
+    bg		FinishFlushing
+    add		%i0, VMMACH_CACHE_LINE_SIZE, %i0		/* delay slot */
+
+DoneFlushing:
+    ret
+    restore
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * VmMachFlushPage --
  *
  *     	Flush a page from the cache.
