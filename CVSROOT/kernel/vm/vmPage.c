@@ -1317,19 +1317,10 @@ VmPageFree(pfNum)
  *
  * 		Routines to handle page faults.
  *
- * Page fault handling is divided into four routines.  The first
- * routine is Vm_PageIn which is the external entry point to the page-in 
- * process.  It determines which segment the faulting address falls into and
- * calls the internal page-in routine DoPageIn.  DoPageIn is split into
- * work it does at non-monitor level and at monitor level.  It first 
- * expands the segment if necessary by calling a hardware-dependent  monitored 
- * routine.  It then calls the monitored routine PreparePage which determines
- * if the page is already present.  If the page is not present, it calls
- * VmPageAllocate to actually allocate a physical page frame.  Next
- * DoPageIn fills the page at non-monitor level.  Finally it calls the 
- * monitored routine FinishPage which validates the page and cleans up state.
+ * Page fault handling is divided into three routines.  The first
+ * routine is Vm_PageIn.  It calls two monitored routines PreparePage and
+ * FinishPage to do most of the monitor level work.
  */
-
 
 typedef enum {
     IS_COR,	/* This page is copy-on-reference. */
@@ -1338,7 +1329,6 @@ typedef enum {
     NOT_DONE,	/* The page-in is not yet done yet. */
 } PrepareResult;
 
-ReturnStatus	DoPageIn();
 PrepareResult	PreparePage();
 void		FinishPage();
 
@@ -1351,7 +1341,7 @@ void		FinishPage();
  *     This routine is called to read in the page at the given virtual address.
  *
  * Results:
- *     SUCCESS if the page in was successful and FAILURE otherwise.
+ *     SUCCESS if the page-in was successful and FAILURE otherwise.
  *
  * Side effects:
  *     None.
@@ -1363,84 +1353,30 @@ Vm_PageIn(virtAddr, protFault)
     Address 	virtAddr;	/* The virtual address of the desired page */
     Boolean	protFault;	/* TRUE if fault is because of a protection
 				 * violation. */
-
 {
-    Vm_VirtAddr	 	transVirtAddr;	
-    ReturnStatus 	status;
-    Proc_ControlBlock	*procPtr;
-				
-    vmStat.totalUserFaults++;
+    register	Vm_PTE 		*ptePtr;
+    register	Vm_Segment	*segPtr;
+    register	unsigned int	page;
+    Vm_VirtAddr	 		transVirtAddr;	
+    ReturnStatus 		status;
+    Proc_ControlBlock		*procPtr;
+    unsigned	int		virtFrameNum;
+    PrepareResult		result;
+
+    vmStat.totalFaults++;
 
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
     /*
      * Determine which segment that this virtual address falls into.
      */
     VmVirtAddrParse(procPtr, virtAddr, &transVirtAddr);
-
-    if (transVirtAddr.segPtr == (Vm_Segment *) NIL) {
+    segPtr = transVirtAddr.segPtr;
+    page = transVirtAddr.page;
+    if (segPtr == (Vm_Segment *) NIL) {
 	return(FAILURE);
     }
 
-    /*
-     * Actually page in the page.
-     */
-    status = DoPageIn(&transVirtAddr, protFault);
-
-    if (transVirtAddr.flags & VM_HEAP_PT_IN_USE) {
-	/*
-	 * The heap segment has been made not expandable by VmVirtAddrParse
-	 * so that the address parse would remain valid.  Decrement the
-	 * in use count now.
-	 */
-	VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
-    }
-
-    return(status);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * DoPageIn --
- *
- *	Actually perform the page-in for the given parsed virtual address.
- *	It is assumed that if this page fault is for a heap or stack segment
- *	that the heap segment of the process can not grow while the page
- *	fault is being handled.  This assures that the parsed virtual address
- *	stored in *transVirtAddrPtr will remain correct.
- *
- * Results:
- *	SUCCESS if the page could be paged in and FAILURE if not.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static ReturnStatus
-DoPageIn(virtAddrPtr, protFault)
-    register	Vm_VirtAddr	*virtAddrPtr;	/* The virtual address of the
-						 * page to be faulted in. */
-    Boolean			protFault;	/* TRUE if fault if because of 
-						 * a protection violation. */
-{
-    register	Vm_PTE 	*ptePtr;
-    ReturnStatus	status;
-    int			lastPage;
-    unsigned	int	virtFrameNum;
-    PrepareResult	result;
-
-    vmStat.totalFaults++;
-
-    if (virtAddrPtr->segPtr == (Vm_Segment *) NIL) {
-	/*
-	 * The address didn't fall into any segment. 
-	 */
-	return(FAILURE);
-    }
-
-    if (protFault && virtAddrPtr->segPtr->type == VM_CODE) {
+    if (protFault && segPtr->type == VM_CODE) {
 	/*
 	 * Access violation.
 	 */
@@ -1452,24 +1388,24 @@ DoPageIn(virtAddrPtr, protFault)
      * segment.  If not, then either return error if heap or code segment,
      * or automatically expand the stack if stack segment.
      */
-    if (!VmCheckBounds(virtAddrPtr)) {
-	if (virtAddrPtr->segPtr->type == VM_STACK) {
-
+    if (!VmCheckBounds(&transVirtAddr)) {
+	if (segPtr->type == VM_STACK) {
+	    int	lastPage;
 	    /*
 	     * If this is a stack segment, then automatically grow it.
 	     */
-	    lastPage = mach_LastUserStackPage - virtAddrPtr->segPtr->numPages;
-	    status = VmAddToSeg(virtAddrPtr->segPtr, virtAddrPtr->page, 
-				lastPage);
+	    lastPage = mach_LastUserStackPage - segPtr->numPages;
+	    status = VmAddToSeg(segPtr, page, lastPage);
 	    if (status != SUCCESS) {
-		return(status);
+		goto pageinDone;
 	    }
 	} else {
-	    return(FAILURE);
+	    status = FAILURE;
+	    goto pageinDone;
 	}
     }
 
-    switch (virtAddrPtr->segPtr->type) {
+    switch (segPtr->type) {
 	case VM_CODE:
 	    vmStat.codeFaults++;
 	    break;
@@ -1481,41 +1417,43 @@ DoPageIn(virtAddrPtr, protFault)
 	    break;
     }
 
-    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    ptePtr = VmGetPTEPtr(segPtr, page);
     /*
      * Fetch the next page.
      */
     if (vmPrefetch) {
-	VmPrefetch(virtAddrPtr, ptePtr + 1);
+	VmPrefetch(&transVirtAddr, ptePtr + 1);
     }
 
     while (TRUE) {
 	/*
 	 * Do the first part of the page-in.
 	 */
-	result = PreparePage(virtAddrPtr, protFault, ptePtr);
+	result = PreparePage(&transVirtAddr, protFault, ptePtr);
 	if (!vm_CanCOW && (result == IS_COR || result == IS_COW)) {
-	    Sys_Panic(SYS_FATAL, "DoPageIn: Bogus COW or COR\n");
+	    Sys_Panic(SYS_FATAL, "Vm_PageIn: Bogus COW or COR\n");
 	}
 	if (result == IS_COR) {
-	    status = VmCOR(virtAddrPtr);
+	    status = VmCOR(&transVirtAddr);
 	    if (status != SUCCESS) {
-		return(FAILURE);
+		status = FAILURE;
+		goto pageinDone;
 	    }
 	} else if (result == IS_COW) {
-	    VmCOW(virtAddrPtr);
+	    VmCOW(&transVirtAddr);
 	} else {
 	    break;
 	}
     }
     if (result == IS_DONE) {
-	return(SUCCESS);
+	status = SUCCESS;
+	goto pageinDone;
     }
 
     /*
      * Allocate a page.
      */
-    virtFrameNum = VmPageAllocate(virtAddrPtr, TRUE);
+    virtFrameNum = VmPageAllocate(&transVirtAddr, TRUE);
     *ptePtr |= virtFrameNum;
 
     /*
@@ -1528,10 +1466,10 @@ DoPageIn(virtAddrPtr, protFault)
 	status = SUCCESS;
     } else if (*ptePtr & VM_ON_SWAP_BIT) {
 	vmStat.psFilled++;
-	status = VmPageServerRead(virtAddrPtr, virtFrameNum);
+	status = VmPageServerRead(&transVirtAddr, virtFrameNum);
     } else {
 	vmStat.fsFilled++;
-	status = VmFileServerRead(virtAddrPtr, virtFrameNum);
+	status = VmFileServerRead(&transVirtAddr, virtFrameNum);
     }
 
     *ptePtr |= VM_REFERENCED_BIT;
@@ -1539,14 +1477,25 @@ DoPageIn(virtAddrPtr, protFault)
     /*
      * Finish up the page-in process.
      */
-    FinishPage(virtAddrPtr, ptePtr);
+    FinishPage(&transVirtAddr, ptePtr);
 
     /*
      * Now check to see if the read suceeded.  If not destroy all processes
      * that are sharing the code segment.
      */
     if (status != SUCCESS) {
-	VmKillSharers(virtAddrPtr->segPtr);
+	VmKillSharers(segPtr);
+    }
+
+pageinDone:
+
+    if (transVirtAddr.flags & VM_HEAP_PT_IN_USE) {
+	/*
+	 * The heap segment has been made not expandable by VmVirtAddrParse
+	 * so that the address parse would remain valid.  Decrement the
+	 * in use count now.
+	 */
+	VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
     }
 
     return(status);
