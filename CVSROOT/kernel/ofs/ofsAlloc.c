@@ -1139,6 +1139,11 @@ FsFindFrag(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
     *newFragBlockPtr = blockNum;
     *newFragOffsetPtr = fragOffset;
 
+    if (fragOffset + numFrags > FS_FRAGMENTS_PER_BLOCK) {
+	Sys_Panic(SYS_FATAL, "FsFindFrag, fragment overrun, offset %d numFrags %d\n",
+			fragOffset, numFrags);
+    }
+
     UNLOCK_MONITOR;
 }
 
@@ -1438,6 +1443,10 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	if (newFragBlock == -1) {
 	    status = FS_NO_DISK_SPACE;
 	    goto exit;
+	} else if (newFragBlock == 0 && handlePtr->hdr.fileID.minor != 2) {
+	    Sys_Panic(SYS_FATAL, "Allocating block 0\n");
+	    status = FAILURE;
+	    goto exit;
 	}
 	newFragOffset = 0;
     }
@@ -1538,6 +1547,14 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     blockAddr = *(indexInfoPtr->blockAddrPtr);
+    if (blockAddr == 0 && handlePtr->hdr.fileID.minor != 2) {
+	/*
+	 * The zero'th block belongs to the root directory which is
+	 * created by the makeFilesystem program.
+	 */
+	Sys_Panic(SYS_FATAL, "Allocating on top of block 0\n");
+	return(FAILURE);
+    }
 
     if (indexInfoPtr->blockNum >= FS_NUM_DIRECT_BLOCKS ||
 	indexInfoPtr->blockNum < curLastBlock) {
@@ -1577,6 +1594,13 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 			    TRUE, &blockNum, &bitmapPtr);
 		if (blockNum == -1) {
 		    status = FS_NO_DISK_SPACE;
+		} else if (blockNum == 0 && handlePtr->hdr.fileID.minor != 2) {
+		    /*
+		     * The zero'th block belongs to the root directory which is
+		     * created by the makeFilesystem program.
+		     */
+		    Sys_Panic(SYS_FATAL, "Allocating block 0\n");
+		    status = FAILURE;
 		} else {
 		    *(indexInfoPtr->blockAddrPtr) = 
 					    blockNum * FS_FRAGMENTS_PER_BLOCK;
