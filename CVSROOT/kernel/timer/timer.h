@@ -15,35 +15,121 @@
 #include "list.h"
 #include "time.h"
 
-
-/* DATA STRUCTURES: */
-
-#ifdef SUN2
+#include "timerTick.h"
 /*
- *  Definition of Timer_Ticks: a hardware-dependent 64-bit time value 
- *  	whose format is based on the free-running counter: 
+ * timerTick.h should define the following types/structures/routine/macros for 
+ * the desired architecture:
  *
- *  The low field corresponds to the value of the free-running counter. 
- *  If the counter has wrapped around since the last reading, the high field
- *  is incremented.  The maximum value this format can represent is about 
- *  1 million years using a counter frequency of 307200 Hz. This range 
- *  should be sufficient for the near future.
+ *   typedef	Timer_Ticks -	The typedef of the object that can 
+ *				hold the value of the machine's timers.
+ *				This is should be in a format that
+ *				can be quickly generated from the 
+ *				timer values provided by the hardware.
+ *				The idea here is to leave the timer
+ *				values in these "natural" units to
+ *				avoid expensive conversions on the
+ *				frequent timer interrupts.
+ *
+ *	Tick arithmetic and conversion routines. May be macros.
+ *----------------------------------------------------------------------
+ *
+ *  Timer_AddTicks --
+ *
+ * 	Adds two tick values together.
+ *
+ *  void
+ *  Timer_AddTicks(a, b, resultPtr)
+ *	Timer_Ticks		a;		/* Addend 1 
+ *	Timer_Ticks		b;		/* Addend 2 
+ *	Timer_Ticks		*resultPtr;	/* Sum 
+ *----------------------------------------------------------------------
+ *
+ *  Timer_SubtractTicks --
+ *
+ * 	Subtracts the second parameter from the first parameter. 
+ *	The second parameter must be less than the first, otherwise 
+ *	a zero tick value is returned.
+ *
+ *  void
+ *  Timer_SubtractTicks(a, b, resultPtr)
+ *	Timer_Ticks		a;		/* Minuhend 
+ *	Timer_Ticks		b;		/* Subtrahend 
+ *	Timer_Ticks		*resultPtr;	/* Difference 
+ *    
+ *----------------------------------------------------------------------
+ *
+ *  Timer_AddIntervalToTicks --
+ *
+ * 	Adds an interval (32-bit value) to an absolute time (64-bit value).
+ *
+ *    void
+ *    Timer_AddIntervalToTicks(absolute, interval, resultPtr)
+ *	Timer_Ticks		absolute;	/* Addend 1 
+ *	unsigned int     	interval;	/* Addend 2
+ *	Timer_Ticks		*resultPtr;	/* Sum 
+ *----------------------------------------------------------------------
+ *
+ *  Timer_GetCurrentTicks --
+ *
+ *  	Computes the number of ticks since the system was booted.
+ *
+ *    void
+ *    Timer_GetCurrentTicks(ticksPtr)
+ *	Timer_Ticks	*ticksPtr;	/* Buffer to place current time. 
+ *----------------------------------------------------------------------
+ *
+ *  Timer_TicksToTime --
+ *
+ *  	Converts a Timer_Ticks value into a Time value.
+ *    void
+ *    Timer_TicksToTime(tick, timePtr)
+ *	Timer_Ticks	tick;		/* Value to be converted. 
+ *	Time	*timePtr;	/* Buffer to hold converted value. 
+ *----------------------------------------------------------------------
+ *
+ *  Timer_TimeToTicks --
+ *
+ *  	Converts a Time value into a Timer_Ticks value.
+ *   void
+ *    Timer_TimeToTicks(time, ticksPtr)
+ *	Time	time;		/* Value to be converted. 
+ *	Timer_Ticks	*ticksPtr;	/* Buffer to hold converted value.
+ *----------------------------------------------------------------------
+ *
+ * TimerTicksInit --
+ *
+ *	Initializes the various tick and interval values.
+ *
+ * void
+ * TimerTicksInit()
+ *----------------------------------------------------------------------
+ * Tick Comparisons --
+ *
+ *	Timer_TickLT(tick1,tick2):	tick1  <   tick2
+ *	Timer_TickLE(tick1,tick2):	tick1  <=  tick2
+ *	Timer_TickEQ(tick1,tick2):	tick1  ==  tick2
+ *	Timer_TickGE(tick1,tick2):	tick1  >=  tick2
+ *	Timer_TickGT(tick1,tick2):	tick1  >   tick2
+ *
+ *----------------------------------------------------------------------
+ * Additionally, timerTick.h should provide the following frequently used
+ * tick and intervals values. These values should be initialized by the 
+ * machine dependent routine TimerTicksInit().  
+ * 
+ * extern unsigned int 	timer_IntZeroSeconds; - Zero seconds worth of ticks.
+ * extern unsigned int 	timer_IntOneMillisecond; - One milliseconds of ticks.  
+ * extern unsigned int 	timer_IntOneSecond; - One second of ticks.
+ * extern unsigned int 	timer_IntOneMinute; - One minute of ticks.
+ * extern unsigned int 	timer_IntOneHour;  - One hour of ticks.
+ * extern Timer_Ticks	timer_TicksZeroSeconds; - Zero seconds worth of ticks.
+ * extern Time 		timer_MaxIntervalTime; 
+ *      - Maximum time for a unsigned 32-bit interger worth of ticks. This
+ * is the longest possible interval value.
  */
 
-typedef struct {
-    unsigned int	low;
-    unsigned int	high;
-} Timer_Ticks;
 
-#else
+ /* DATA STRUCTURES: */
 
-/*
- * On the Sun-3, Timer_Ticks is just a Time value because the free-running
- * counter keeps track of time.
- */
-typedef Time Timer_Ticks;
-
-#endif SUN2
 
 /*
  *  TimerQueueElement defines the structure to store info about a
@@ -72,7 +158,9 @@ typedef Time Timer_Ticks;
  *
  *	   Public fields marked "readonly" must not be modified by 
  *	   the client.
+ *
  */
+
 
 typedef struct {
     List_Links	links;		/* private: */
@@ -106,102 +194,13 @@ typedef struct {
 
 extern Timer_Statistics	timer_Statistics;
 
-
-/*
- * Definitions of some frequently used tick and interval values.
- */
-
-extern unsigned int 	timer_IntZeroSeconds;
-extern unsigned int 	timer_IntOneMillisecond;
-extern unsigned int 	timer_IntOneSecond;
-extern unsigned int 	timer_IntOneMinute;
-extern unsigned int 	timer_IntOneHour;
-extern Time 		timer_MaxTimeForTicks;
-extern Timer_Ticks	timer_TicksZeroSeconds;
-
-/* PROCEDURES */
-
-extern void Timer_Init();
 extern void Timer_ServiceInterrupt();
 extern void Timer_ScheduleRoutine();
 extern void Timer_RescheduleRoutine();
 extern void Timer_DescheduleRoutine();
 
-#ifdef SUN2
-extern void Timer_AddTicks();
-extern void Timer_SubtractTicks();
-extern void Timer_TicksToTime();
-extern void Timer_TimeToTicks();
-#endif SUN2
-
-#ifdef SUN3
-#define Timer_AddTicks(a,b,c)		Time_Add(a,b,c)
-#define Timer_SubtractTicks(a,b,c)	Time_Subtract(a,b,c)
-#define Timer_TicksToTime(a,b)		*(b) = a;
-#define Timer_TimeToTicks(a,b)		*(b) = a;
-#endif SUN3
-
-extern void Timer_AddIntervalToTicks();
-extern void Timer_GetCurrentTicks();
 extern void Timer_GetTimeOfDay();
 extern void Timer_GetRealTimeOfDay();
 extern void Timer_SetTimeOfDay();
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Tick Comparisons --
- *
- *	Timer_TickLT:	tick1  <   tick2
- *	Timer_TickLE:	tick1  <=  tick2
- *	Timer_TickEQ:	tick1  ==  tick2
- *	Timer_TickGE:	tick1  >=  tick2
- *	Timer_TickGT:	tick1  >   tick2
- *
- * Results:
- *     TRUE	- the relation holds for the 2 values.
- *     FALSE	- the relation does not hold.
- *
- * Side effects:
- *     None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef SUN3
-#define Timer_TickLT(a,b)	Time_LT(a,b)
-#define Timer_TickLE(a,b)	Time_LE(a,b)
-#define Timer_TickEQ(a,b)	Time_EQ(a,b)
-#define Timer_TickGE(a,b)	Time_GE(a,b)
-#define Timer_TickGT(a,b)	Time_GT(a,b)
-#endif SUN3
-
-#ifdef SUN2
-
-#define Timer_TickLT(tick1, tick2) \
-		(((tick1).high     <  (tick2).high) ||  \
-		 (((tick1).high    == (tick2).high) &&  \
-		  ((tick1).low <  (tick2).low)))
-
-#define Timer_TickLE(tick1, tick2) \
-		(((tick1).high     <  (tick2).high) ||  \
-		 (((tick1).high    == (tick2).high) &&  \
-		  ((tick1).low <= (tick2).low)))
-
-#define Timer_TickEQ(tick1, tick2) \
-		(((tick1).high == (tick2).high) &&  \
-		 ((tick1).low == (tick2).low))
-
-#define Timer_TickGE(tick1, tick2) \
-		(((tick1).high     >  (tick2).high) ||  \
-		 (((tick1).high    == (tick2).high) &&  \
-		  ((tick1).low >= (tick2).low)))
-
-#define Timer_TickGT(tick1, tick2) \
-		(((tick1).high     >  (tick2).high) ||  \
-		 (((tick1).high    == (tick2).high) &&  \
-		 ((tick1).low >  (tick2).low)))
-#endif SUN2
 
 #endif _TIMER
