@@ -821,6 +821,43 @@ Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
     }
     return(streamPtr);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_StreamClientKill --
+ *
+ *	Called when a client is assumed down.  This cleans up the
+ *	client list for the stream or removes the stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Removes the client list entry for the client.
+ *	It removes or unlocks the handle.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsio_StreamClientKill(hdrPtr, clientID)
+    Fs_HandleHeader	*hdrPtr;	/* Stream to clean up */
+    int			clientID;	/* Host assumed down */
+{
+    Fs_Stream		*streamPtr = (Fs_Stream *) hdrPtr;
+
+    if (!Fsio_StreamClientClose(&streamPtr->clientList, clientID)) {
+	/*
+	 * There were other clients.
+	 */
+	Fsutil_HandleUnlock(streamPtr);
+    } else {
+	Fsutil_HandleRelease(streamPtr, TRUE);
+	Fsutil_HandleRemove(streamPtr);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
