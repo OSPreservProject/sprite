@@ -88,7 +88,7 @@ typedef enum {
 /*
  * The interrupt register on a sun3.
  */
-#define	Mach_InterruptReg	((unsigned char *) DEV_INTERRUPT_REG_ADDR)
+#define	Mach_InterruptReg  ((volatile unsigned char *) DEV_INTERRUPT_REG_ADDR)
 
 /*
  * Dispatch tables for kernel calls.
@@ -118,7 +118,7 @@ typedef	struct {
 					    buffer (1 = true) */
 			readModWrite: 1, /* Read-Modify-Write cycle */
     			highByte: 1,	 /* High byte transfer */
-    			byteTrans: 1,	 /* Byte transfer flag */
+			byteTrans: 1,	 /* Byte transfer flag */
     			readWrite: 1,	 /* Read/Write flag (0 = write, 
 					    1 = read) */
     			fill2: 4,	 /* Reserved */

@@ -88,5 +88,5 @@ void		Recov_ClearClientState();
 void		Recov_HostTrace();
 void		Recov_PrintTrace();
 
-#endif _RECOV
+#endif /* _RECOV */
 

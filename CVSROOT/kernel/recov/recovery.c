@@ -28,7 +28,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -165,7 +165,7 @@ Boolean recovTracing = TRUE;
 
 #define RECOV_TRACE(zspriteID, zstate, event)
 
-#endif not CLEAN
+#endif /* not CLEAN */
 /*
  * Forward declarations.
  */
@@ -176,10 +176,10 @@ extern void RecovCrashCallBacks();
 extern void RecovDelayedCrashCallBacks();
 extern char *RecovState();
 
-extern void CallBacksDone();
+static void CallBacksDone();
 static void MarkRecoveryComplete();
 static void MarkHostDead();
-extern void GetRebootList();
+static void GetRebootList();
 static void CheckHost();
 
 
@@ -1127,7 +1127,7 @@ CheckHost(data, callInfoPtr)
  *----------------------------------------------------------------------
  */
 
-ENTRY void
+ENTRY static void
 GetRebootList(notifyListHdr, spriteID)
     List_Links *notifyListHdr;
     int spriteID;
@@ -1169,7 +1169,7 @@ GetRebootList(notifyListHdr, spriteID)
  *----------------------------------------------------------------------
  */
 
-ENTRY void
+ENTRY static void
 CallBacksDone(spriteID)
     int spriteID;
 {
