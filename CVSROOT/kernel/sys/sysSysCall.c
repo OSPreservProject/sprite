@@ -130,7 +130,7 @@ int sys_ParamSizesDecl[] = {
     sizeof(Time),			/* SYS_PARAM_TIMEPTR		*/
     sizeof(Time) / 2,			/* SYS_PARAM_TIME1		*/
     sizeof(Time) / 2,			/* SYS_PARAM_TIME2		*/
-    sizeof(Vm_Command),			/* SYS_PARAM_VM_CMD		*/
+    sizeof(int),			/* SYS_PARAM_VM_CMD		*/
     PROC_MAX_ENVIRON_NAME_LENGTH,	/* SYS_PARAM_PROC_ENV_NAME  	*/
     PROC_MAX_ENVIRON_VALUE_LENGTH, 	/* SYS_PARAM_PROC_ENV_VALUE 	*/
     0, 					/* SYS_PARAM_DUMMY	 	*/
