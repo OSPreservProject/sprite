@@ -14,19 +14,21 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fsconsist.h"
-#include "fsStat.h"
-#include "fsrmt.h"
-#include "vm.h"
-#include "proc.h"
-#include "rpc.h"
-#include "fsioPipe.h"
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fsconsist.h>
+#include <fsStat.h>
+#include <fsrmt.h>
+#include <vm.h>
+#include <proc.h>
+#include <rpc.h>
+#include <fsioPipe.h>
+
+#include <stdio.h>
 
 /*
  * Monitor to synchronize access to the openInstance in GetFileID.
@@ -37,9 +39,11 @@ static	Sync_Lock	pipeLock = Sync_LockInitStatic("Fs:pipeLock");
 /*
  * Forward references.
  */
-static void GetFileID();
-Fsio_PipeIOHandle *Fsio_PipeHandleInit();
-static ReturnStatus PipeCloseInt();
+static void GetFileID _ARGS_((Fs_FileID *fileIDPtr));
+extern Fsio_PipeIOHandle *Fsio_PipeHandleInit _ARGS_((Fs_FileID *fileIDPtr, 
+		Boolean findIt));
+static ReturnStatus PipeCloseInt _ARGS_((Fsio_PipeIOHandle *handlePtr, 
+		int ref, int write, Boolean release));
 
 /*
  * Migration debugging.
@@ -218,7 +222,8 @@ Fsio_PipeHandleInit(fileIDPtr, findIt)
     register Fsio_PipeIOHandle *handlePtr;
     register Boolean found;
 
-    found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fsio_PipeIOHandle), "pipe", &hdrPtr);
+    found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fsio_PipeIOHandle), "pipe",
+		FALSE, &hdrPtr);
     handlePtr = (Fsio_PipeIOHandle *)hdrPtr;
     if (!found) {
 	if (findIt) {
@@ -897,7 +902,7 @@ Fsio_PipeMigClose(hdrPtr, flags)
 /*ARGSUSED*/
 ReturnStatus
 Fsio_PipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - new stream offset (not needed) */
@@ -973,7 +978,7 @@ Fsio_PipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 /*ARGSUSED*/
 ReturnStatus
 Fsio_PipeMigOpen(migInfoPtr, size, data, hdrPtrPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		size;		/* Zero */
     ClientData	data;		/* NIL */
     Fs_HandleHeader **hdrPtrPtr;	/* Return - handle for the file */
