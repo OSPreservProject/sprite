@@ -230,4 +230,9 @@ includes fix for migration to transfer oversized buffers (large page tables,
 right now) and to have servers tell clients that a flushback is due to
 migration.
 
+
+1.067	Thu Jun 28 15:19:38 PDT 1990
+fixes migration bugs: pipe buffer being freed if host crash callback closes 
+it; argString getting NIL'ed out and then used during migration; various
+deadlocks during migration/signals/exiting processes. 
     New files linked in from the net library.
