@@ -645,3 +645,21 @@ Fixed a few compat bugs:
         CRC and framing errors.
     Added printf's to report rpc channel delays.
     
+1.114	Thu Jun  4 15:30:39 PDT 1992
+    Commented out SHUTDOWN operation on serial port for printer.
+    Add support for system call timing.
+    Fix a couple race conditions which could happen if an RPC is forwarded
+	home before the home process has context switched.  
+    Fix the FS_ZERO_STATS command.
+    Add Timer_OkToWhine.
+    Add Fscache_ZeroStats
+    Identify the client when returning FS_NO_DISK_SPACE.
+    Add Fsutil_ZeroHandleStats
+    In Fsutil_Reopen, call Vm_Recovery before Proc_WakeupAllProcesses, to
+	avoid a deadlock when recovering with the swap server.
+    Kernel version of Net_Route is defined only if KERNEL is defined.
+    Fixed bug in Net_IDToRoute that caused routes to be lost.
+    Don't reset the network interface if an rpc shows up for a different client.
+    The wrong index parameter was passed to Net_IDToRoute by Rpc_Output.
+    FDDI implementation.
+
