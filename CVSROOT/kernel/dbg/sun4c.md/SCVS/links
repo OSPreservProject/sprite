@@ -5,5 +5,3 @@ dbg.h                    ../sun4.md/dbg.h
 dbgIP.c                  ../sun4.md/dbgIP.c
 dbgInt.h                 ../sun4.md/dbgInt.h
 dbgMain.c                ../sun4.md/dbgMain.c
-vmInt.h                  ../sun4.md/vmInt.h
-vmMachInt.h              ../../vm/sun4c.md/vmMachInt.h
