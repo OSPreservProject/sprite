@@ -90,6 +90,9 @@ DevScsiAttachDevice(devicePtr, insertProc)
 	    inquiryCmdBlock.dataToDevice = FALSE;
 	    status =  DevScsiSendCmdSync(handle, &inquiryCmdBlock, &statusByte, 
 			&(handle->inquiryLength),  (int *) NIL, (char *) NIL);
+	    if (status != SUCCESS) {
+		handle->inquiryLength = 0;
+	    }
 	    tryNumber++;
 	}
     }
