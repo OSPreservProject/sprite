@@ -68,3 +68,4 @@ unlink.c                 /sprite/src/lib/c/unixSyscall/unlink.c
 vfprintf.c               /sprite/src/lib/c/stdio/vfprintf.c
 vfscanf.c                /sprite/src/lib/c/stdio/vfscanf.c
 strdup.c                 /sprite/src/lib/c/string/strdup.c
+Net_FDDIAddrToString.c   /sprite/src/lib/net/Net_FDDIAddrToString.c
