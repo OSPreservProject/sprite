@@ -74,10 +74,6 @@ static Sync_Lock rmtCleanerLock = Sync_LockInitStatic("Fs:rmtCleanerLock");
 
 int	fsrmtBlockCleaners = 0;
 
-#ifdef SOSP91
-Fs_NewStats	fs_MoreStats;
-#endif SOSP91
-
 
 /*
  *----------------------------------------------------------------------
@@ -160,11 +156,6 @@ FsRmtFileHandleInit(fileIDPtr, fileStatePtr, openForWriting, name,
 	handlePtr->segPtr = (Vm_Segment *)NIL;
 	fs_Stats.object.rmtFiles++;
     }
-#ifdef SOSP91
-    if (fileStatePtr->newUseFlags & FS_DIR) {
-	handlePtr->cacheInfo.flags |= FSCACHE_IS_DIR;
-    }
-#endif SOSP91
     free((Address)fileStatePtr);
     return(SUCCESS);
 }
@@ -335,9 +326,6 @@ FsrmtFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	 */
 	if (numDirtyBlocks > 0) {
 	    int skipped;
-#ifdef SOSP91
-	    rmtHandlePtr->cacheInfo.flags |= FSCACHE_REOPEN;
-#endif SOSP91
 	    (void) Fscache_FileWriteBack(&rmtHandlePtr->cacheInfo, 0,
 				FSCACHE_LAST_BLOCK, 0, &skipped);
 	}
@@ -375,24 +363,14 @@ FsrmtFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  */
 
 /*ARGSUSED*/
-#ifndef SOSP91
 ReturnStatus
 FsrmtFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
-#else
-ReturnStatus
-FsrmtFileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
-    offsetPtr, rwFlagsPtr)
-#endif
     Fs_Stream		*streamPtr;	/* Stream to remote file */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* Process ID of closer */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of closeData */
     ClientData		closeData;	/* NIL on entry. */
-#ifdef SOSP91
-    int			*offsetPtr;	/* Not used. */
-    int			*rwFlagsPtr;	/* Not used. */
-#endif
 {
     register ReturnStatus status;
     register Fsrmt_FileIOHandle *handlePtr =
@@ -698,10 +676,6 @@ FsrmtFileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     register Fsrmt_FileIOHandle *handlePtr =
 	    (Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-    Boolean		isDir = FALSE;		/* It's a directory? */
-#endif SOSP91
 
     if (readPtr->flags & FS_RMT_SHARED) {
 	/*
@@ -723,45 +697,12 @@ FsrmtFileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     if (status != FS_NOT_CACHEABLE) {
 	replyPtr->length = readPtr->length;
     } else {
-#ifdef SOSP91
-	if (handlePtr->cacheInfo.flags & FSCACHE_IS_DIR) {
-	    isDir = TRUE;
-	}
-#endif /* SOSP91 */
 	status = Fsrmt_Read(streamPtr, readPtr, remoteWaitPtr, replyPtr);
 	if (status == SUCCESS) {
-#ifdef SOSP91
-		if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-		    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-			    (proc_RunningProcesses[0]->genFlags &
-			    (PROC_FOREIGN | PROC_MIGRATING))) {
-			isForeign = TRUE;
-		    }
-		}
-#endif SOSP91
 	    if (readPtr->flags & FS_RMT_SHARED) {
 		fs_Stats.rmtIO.sharedStreamBytesRead += replyPtr->length;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.rmtIO.sharedStreamBytesRead +=
-			    replyPtr->length;
-		}
-#endif SOSP91
 	    } else {
 		fs_Stats.rmtIO.uncacheableBytesRead += replyPtr->length;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.rmtIO.uncacheableBytesRead +=
-			    replyPtr->length;
-		}
-		if (isDir) {
-		    fs_MoreStats.uncacheableDirBytesRead += replyPtr->length;
-		    if (isForeign) {
-			fs_MoreStats.uncacheableDirBytesReadMig +=
-				replyPtr->length;
-		    }
-		}
-#endif SOSP91
 	    }
 	}
     }
@@ -794,9 +735,6 @@ FsrmtFileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     register Fsrmt_FileIOHandle *handlePtr =
 	    (Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     if (writePtr->flags & FS_RMT_SHARED) {
 	status = FS_NOT_CACHEABLE;
@@ -813,29 +751,10 @@ FsrmtFileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     } else {
 	status = Fsrmt_Write(streamPtr, writePtr, remoteWaitPtr, replyPtr);
 	if (status == SUCCESS) {
-#ifdef SOSP91
-	    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-		if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-			(proc_RunningProcesses[0]->genFlags &
-			(PROC_FOREIGN | PROC_MIGRATING))) {
-		    isForeign = TRUE;
-		}
-	    }
-#endif SOSP91
 	    if (writePtr->flags & FS_RMT_SHARED) {
 		fs_Stats.rmtIO.sharedStreamBytesWritten += replyPtr->length;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.rmtIO.sharedStreamBytesWritten++;
-		}
-#endif SOSP91
 	    } else {
 		fs_Stats.rmtIO.uncacheableBytesWritten += replyPtr->length;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.rmtIO.uncacheableBytesWritten++;
-		}
-#endif SOSP91
 	    }
 	}
     }
@@ -871,19 +790,7 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     int savedOffset = readPtr->offset;
     int savedLength = readPtr->length;
     Address savedBuffer = readPtr->buffer;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
     /*
      * This should check if the file is cached if:
      * a) it is not a FS_SWAP file or
@@ -925,58 +832,24 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 		    FSCACHE_DATA_BLOCK, &blockPtr, &found);
 	    if (found) {
 		fs_Stats.rmtIO.hitsOnVMBlock++;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.rmtIO.hitsOnVMBlock++;
-		}
-#endif SOSP91
 		bcopy(blockPtr->blockAddr + (readPtr->offset &
 			FS_BLOCK_OFFSET_MASK), readPtr->buffer, toRead);
 		if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
 		    fs_Stats.blockCache.readAheadHits++;
-#ifdef SOSP91
-		    if (isForeign) {
-			fs_SospMigStats.blockCache.readAheadHits++;
-		    }
-#endif SOSP91
 		}
 		/*
 		 * Let heap pages sit in the cache.
 		 */
 		if (readPtr->flags & FS_HEAP) {
 		    fs_Stats.rmtIO.hitsOnHeapBlock++;
-#ifdef SOSP91
-		    if (isForeign) {
-			fs_SospMigStats.rmtIO.hitsOnHeapBlock++;
-		    }
-#endif SOSP91
 		    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_CLEAR_READ_AHEAD);
 		} else {
-#ifdef SOSP91
-		    if (readPtr->flags & FS_SWAP) {
-			fs_MoreStats.hitsOnSwapPage++;
-			if (isForeign) {
-			    fs_MoreStats.hitsOnSwapPageM++;
-			}
-		    } else if ((readPtr->flags & (FS_HEAP | FS_SWAP)) == 0) {
-			/* It's a code page */
-			fs_MoreStats.hitsOnCodePage++;
-			if (isForeign) {
-			    fs_MoreStats.hitsOnCodePageM++;
-			}
-		    }
-#endif SOSP91
 		    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_CLEAR_READ_AHEAD | FSCACHE_BLOCK_UNNEEDED);
 		}
 	    } else {
 		fs_Stats.rmtIO.missesOnVMBlock++;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.rmtIO.missesOnVMBlock++;
-		}
-#endif SOSP91
 		/*
 		 * It's an initialized heap page.  Read it into the
 		 * cache.
@@ -986,11 +859,6 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 		    Fscache_FileInfo	*cacheInfoPtr;
 
 		    fs_Stats.rmtIO.missesOnHeapBlock++;
-#ifdef SOSP91
-		    if (isForeign) {
-			fs_SospMigStats.rmtIO.missesOnHeapBlock++;
-		    }
-#endif /* SOSP91 */
 		    cacheInfoPtr = &handlePtr->cacheInfo;
 		    status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
 			    (cacheInfoPtr->hdrPtr, blockPtr, remoteWaitPtr);
@@ -1000,12 +868,6 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 				FS_BLOCK_OFFSET_MASK), readPtr->buffer, toRead);
 			fs_Stats.rmtIO.bytesReadForVM += toRead;
 			fs_Stats.rmtIO.bytesReadForHeap += toRead;
-#ifdef SOSP91
-			if (isForeign) {
-			    fs_SospMigStats.rmtIO.bytesReadForVM += toRead;
-			    fs_SospMigStats.rmtIO.bytesReadForHeap += toRead;
-			}
-#endif SOSP91
 			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 				FSCACHE_CLEAR_READ_AHEAD);
 		    }
@@ -1016,21 +878,6 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_DELETE_BLOCK);
 		    }
-#ifdef SOSP91
-		    if (readPtr->flags & FS_SWAP) {
-			fs_MoreStats.missesOnSwapPage++;
-			if (isForeign) {
-			    fs_MoreStats.missesOnSwapPageM++;
-			}
-		    } else if ((readPtr->flags & (FS_HEAP | FS_SWAP)) == 0) {
-			/* It's a code page. */
-			fs_MoreStats.missesOnCodePage++;
-			if (isForeign) {
-			    fs_MoreStats.missesOnCodePageM++;
-			}
-		    }
-#endif SOSP91
-
 		    readPtr->length = toRead;
 		    status = Fsrmt_Read(streamPtr, readPtr, remoteWaitPtr, replyPtr);
 		    if (status != SUCCESS) {
@@ -1040,15 +887,6 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 		    if (readPtr->flags & FS_HEAP) {
 			fs_Stats.rmtIO.bytesReadForHeapUncached += toRead;
 		    }
-#ifdef SOSP91
-		    if (isForeign) {
-			fs_SospMigStats.rmtIO.bytesReadForVM += toRead;
-			if (readPtr->flags & FS_HEAP) {
-			    fs_SospMigStats.rmtIO.bytesReadForHeapUncached +=
-				    toRead;
-			}
-		    }
-#endif SOSP91
 		}
 	    }
 	    /*
@@ -1066,11 +904,6 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 	status = Fsrmt_Read(streamPtr, readPtr, remoteWaitPtr, replyPtr);
 	if (status == SUCCESS) {
 	    fs_Stats.rmtIO.bytesReadForVM += replyPtr->length;
-#ifdef SOSP91
-	    if (isForeign) {
-		fs_SospMigStats.rmtIO.bytesReadForVM += replyPtr->length;
-	    }
-#endif SOSP91
 	}
     }
     if (status != SUCCESS) {
@@ -1107,27 +940,10 @@ FsrmtFilePageWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     Fs_IOReply		*replyPtr;	/* Signal to return, if any */
 {
     ReturnStatus status;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     status = Fsrmt_Write(streamPtr, writePtr, remoteWaitPtr, replyPtr);
     if (status == SUCCESS) {
-#ifdef SOSP91
-	if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		    (proc_RunningProcesses[0]->genFlags &
-		    (PROC_FOREIGN | PROC_MIGRATING))) {
-		isForeign = TRUE;
-	    }
-	}
-#endif SOSP91
 	fs_Stats.rmtIO.bytesWrittenForVM += replyPtr->length;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_SospMigStats.rmtIO.bytesWrittenForVM += replyPtr->length;
-	}
-#endif SOSP91
     }
     return(status);
 }
@@ -1162,21 +978,9 @@ FsrmtFileBlockRead(hdrPtr, blockPtr, waitPtr)
     Fs_IOParam		io;
     Fs_IOReply		reply;
     ReturnStatus	status;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     dummyStream.hdr.fileID.type = -1;
     dummyStream.ioHandlePtr = hdrPtr;
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
 
     io.buffer = blockPtr->blockAddr;
     io.length = FS_BLOCK_SIZE;
@@ -1196,11 +1000,6 @@ FsrmtFileBlockRead(hdrPtr, blockPtr, waitPtr)
 	    FS_BLOCK_SIZE - blockPtr->blockSize);
     }
     fs_Stats.rmtIO.bytesReadForCache += blockPtr->blockSize;
-#ifdef SOSP91
-    if (isForeign) {
-	fs_SospMigStats.rmtIO.bytesReadForCache += blockPtr->blockSize;
-    }
-#endif SOSP91
     return(status);
 }
 
@@ -1233,9 +1032,6 @@ FsrmtFileBlockWrite(hdrPtr, blockPtr, flags)
     Fs_Stream		dummyStream;
     Fs_IOParam		io;
     Fs_IOReply		reply;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     /*
      *	The server recognizes the write RPC as coming from the
@@ -1251,21 +1047,7 @@ FsrmtFileBlockWrite(hdrPtr, blockPtr, flags)
 
     status = Fsrmt_Write(&dummyStream, &io, (Sync_RemoteWaiter *)NIL, &reply);
     if (status == SUCCESS) {
-#ifdef SOSP91
-	if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		    (proc_RunningProcesses[0]->genFlags &
-		    (PROC_FOREIGN | PROC_MIGRATING))) {
-		isForeign = TRUE;
-	    }
-	}
-#endif SOSP91
 	fs_Stats.rmtIO.bytesWrittenFromCache += blockPtr->blockSize;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_SospMigStats.rmtIO.bytesWrittenFromCache += blockPtr->blockSize;
-	}
-#endif SOSP91
     }
     return(status);
 }
@@ -1363,24 +1145,8 @@ FsrmtFileIOControl(streamPtr, ioctlPtr, replyPtr)
     Fsutil_HandleLock(handlePtr);
     switch(ioctlPtr->command) {
 	case IOC_REPOSITION: {
-#ifdef SOSP91
-	    Ioc_RepositionArgs *iocArgsPtr;
-	    iocArgsPtr = (Ioc_RepositionArgs *) ioctlPtr->inBuffer;
-	    /*
-	     * Only send an RPC if the stream is remote shared, or
-	     * if the lseek is to somewhere other than the current location
-	     * since we don't want to trace lseeks to the same place.
-	     */
-	    if ((streamPtr->flags & FS_RMT_SHARED) ||
-		(iocArgsPtr->base != IOC_BASE_CURRENT) ||
-		(iocArgsPtr->offset != 0)) {
-#else
 	    if (streamPtr->flags & FS_RMT_SHARED) {
-#endif
 		status = Fsrmt_IOControl(streamPtr, ioctlPtr, replyPtr);
-#ifdef SOSP91
-		status = SUCCESS;
-#endif
 	    } else {
 		status = SUCCESS;
 	    }
@@ -1464,9 +1230,6 @@ FsrmtFileIOControl(streamPtr, ioctlPtr, replyPtr)
 		} else {
 		    lastBlock = FSCACHE_LAST_BLOCK;
 		}
-#ifdef SOSP91
-		cacheInfoPtr->flags |= FSCACHE_SYNC;
-#endif SOSP91
 		status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
 			lastBlock, flags, &blocksSkipped);
 		if (status == SUCCESS) {
@@ -1660,18 +1423,12 @@ FsrmtCleanBlocks(data, callInfoPtr)
 	    /*
 	     * Write the block.
 	     */
-#ifdef SOSP91
-	    Fscache_AddBlockToStats(cacheInfoPtr, blockPtr);
-#endif SOSP91
 	    status = backendPtr->ioProcs.blockWrite
 		    (cacheInfoPtr->hdrPtr, blockPtr, lastDirtyBlock);
 	    Fscache_ReturnDirtyBlock( blockPtr, status);
 	    blockPtr = Fscache_GetDirtyBlock(cacheInfoPtr, BlockMatch,
 			(ClientData) 0, &lastDirtyBlock);
 	}
-#ifdef SOSP91
-	cacheInfoPtr->flags &= ~FSCACHE_REASON_FLAGS;
-#endif SOSP91
 	Fscache_ReturnDirtyFile(cacheInfoPtr, FALSE);
 	cacheInfoPtr = Fscache_GetDirtyFile(backendPtr, TRUE,
 			FileMatch, (ClientData) 0);
