@@ -38,6 +38,7 @@ int		vmMaxProcesses = 80;
 Address		vmBlockCacheBaseAddr;
 Address 	vmBlockCacheEndAddr;
 
+Boolean		vmDebugLargeAllocs = FALSE;
 
 /*
  * ----------------------------------------------------------------------------
@@ -197,6 +198,9 @@ Vm_RawAlloc(numBytes)
     if (numBytes > 100 * 1024) {
 	Sys_Printf("\nvmMemEnd = 0x%x - ", vmMemEnd);
 	Sys_Panic(SYS_WARNING, "VmRawAlloc asked for >100K\n");
+	if (vmDebugLargeAllocs) {
+	    Sig_SendProc(Proc_GetEffectiveProc(), SIG_DEBUG, 0);
+	}
     }
     retAddr = vmMemEnd;
 
