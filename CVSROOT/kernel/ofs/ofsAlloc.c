@@ -319,8 +319,7 @@ FsFileBlockAllocate(hdrPtr, offset, numBytes, blockAddrPtr, newBlockPtr)
     blockNum = (unsigned int) offset / FS_BLOCK_SIZE;
 
     if ((unsigned int) (newLastByte) / FS_BLOCK_SIZE != blockNum) {
-	panic( 
-	    "FsFileAllocate: Trying to allocate more than one block\n");
+	panic("FsFileAllocate: Trying to allocate more than one block\n");
     }
 
     if (descPtr->lastByte != -1) {
@@ -1049,8 +1048,7 @@ FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr,
 	if (*bitmapPtr & mask) {
 	    printf("bitmap = <%x>, checkMask = <%x>\n",
 			       *bitmapPtr & 0xff, mask & 0xff);
-	    panic(
-		    "FsFindBlockInt, allocating non-free block\n");
+	    printf("FsFindBlockInt, error in {Upper/Lower}BlockFree, failing.\n");
 	    *blockNumPtr = -1;
 	    return;
 	}
@@ -1153,7 +1151,9 @@ FsFreeBlock(domainPtr, blockNum)
     if ((*bitmapPtr & checkMask) != checkMask) {
 	printf("bitmap = <%x>, checkMask = <%x>\n",
 			   *bitmapPtr & 0xff, checkMask & 0xff);
-	panic( "FsFreeBlock almost free'd free stuff\n");
+        UNLOCK_MONITOR;
+	panic("FsFreeBlock almost free'd free stuff\n");
+	return;
     } else {
 	*bitmapPtr &= mask;
     }
@@ -1345,9 +1345,9 @@ FsFindFrag(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
      */
 
     if (*bitmapPtr & fragMask) {
-	panic( "Find frag bitmap error\n");
-	*newFragBlockPtr = -1;
 	UNLOCK_MONITOR;
+	panic("Find frag bitmap error\n");
+	*newFragBlockPtr = -1;
 	return;
     } else {
 	savedBitmap = *bitmapPtr;
@@ -1377,8 +1377,10 @@ FsFindFrag(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
     *newFragOffsetPtr = fragOffset;
 
     if (fragOffset + numFrags > FS_FRAGMENTS_PER_BLOCK) {
-	panic( "FsFindFrag, fragment overrun, offset %d numFrags %d\n",
+	UNLOCK_MONITOR;
+	panic("FsFindFrag, fragment overrun, offset %d numFrags %d\n",
 			fragOffset, numFrags);
+	return;
     }
 
     UNLOCK_MONITOR;
@@ -1451,8 +1453,8 @@ FsFreeFrag(domainPtr, numFrags, fragBlock, fragOffset)
     if ((*bitmapPtr & mask) != mask) {
 	printf("bitmap = <%x>, checkMask = <%x>\n",
 			   *bitmapPtr & 0xff, mask & 0xff);
-	panic( "FsFreeFrag, almost freed free block\n");
 	UNLOCK_MONITOR;
+	panic("FsFreeFrag, almost freed free block\n");
 	return;
     } else {
 	*bitmapPtr &= ~mask;
@@ -1555,8 +1557,8 @@ OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset)
     if ((*bitmapPtr & mask) != mask) {
 	printf("bitmap = <%x>, checkMask = <%x>\n",
 			   *bitmapPtr & 0xff, mask & 0xff);
-	panic( "OnlyFrag: Frag block corrupted.\n");
 	UNLOCK_MONITOR;
+	panic("OnlyFrag: Frag block corrupted.\n");
 	return(FALSE);
     }
     if (((*bitmapPtr & ~mask) & blockMask) != 0) {
@@ -1686,7 +1688,8 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	    status = FS_NO_DISK_SPACE;
 	    goto exit;
 	} else if (newFragBlock == 0 && handlePtr->hdr.fileID.minor != 2) {
-	    panic( "Allocating block 0\n");
+	    printf("UpgradeFragment: tried to allocate block 0 to non-root file #%d\n",
+			handlePtr->hdr.fileID.minor);
 	    status = FAILURE;
 	    goto exit;
 	}
@@ -1798,7 +1801,8 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	 * The zero'th block belongs to the root directory which is
 	 * created by the makeFilesystem program.
 	 */
-	panic( "Allocating on top of block 0\n");
+	printf("AllocateBlock: non-root file <%d,%d> with block 0\n",
+		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	return(FAILURE);
     }
 
@@ -1845,7 +1849,9 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 		     * The zero'th block belongs to the root directory which is
 		     * created by the makeFilesystem program.
 		     */
-		    panic( "Allocating block 0\n");
+		    printf("AllocateBlock: non-root file <%d,%d> wants block 0\n",
+				handlePtr->hdr.fileID.major,
+				handlePtr->hdr.fileID.minor);
 		    status = FAILURE;
 		} else {
 		    *(indexInfoPtr->blockAddrPtr) = 
@@ -1993,7 +1999,7 @@ FsNamedPipeTrunc(handlePtr, length)
 	 * allocated on disk.
 	 */
 	if (descPtr->lastByte != -1) {
-	    panic( "FsNamedPipeTrunc, first -1, last %d\n",
+	    panic("FsNamedPipeTrunc, first -1, last %d\n",
 		    descPtr->lastByte);
 	}
 	handlePtr->cacheInfo.attr.firstByte = -1;
@@ -2041,8 +2047,7 @@ FsNamedPipeTrunc(handlePtr, length)
 	    }
 	    status = FsGetNextIndex(handlePtr, &indexInfo, dirty);
 	    if (status != SUCCESS) {
-		panic( 
-			"FsNamedPipeTrunc. Couldn't get next index.\n");
+		panic("FsNamedPipeTrunc. Couldn't get next index.\n");
 		FsEndIndex(handlePtr, &indexInfo, FALSE);
 		goto exit;
 	    }
@@ -2145,7 +2150,7 @@ FsBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
     FsFileDescriptor	*descPtr;
 
     if (hdrPtr->fileID.type != FS_LCL_FILE_STREAM) {
-	panic( "FsBlockRealloc, wrong handle type <%d>\n",
+	panic("FsBlockRealloc, wrong handle type <%d>\n",
 	    hdrPtr->fileID.type);
 	return(-1);
     }
@@ -2180,7 +2185,7 @@ FsBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	}
 	setupIndex = TRUE;
 	if (*indexInfo.blockAddrPtr != physBlockNum) {
-	    panic( "FsBlockRealloc: Bad physical block num.\n");
+	    panic("FsBlockRealloc: Bad physical block num.\n");
 	}
 	bytesInBlock = descPtr->lastByte - virtBlockNum * FS_BLOCK_SIZE + 1;
 	if (bytesInBlock > FS_FRAGMENT_SIZE * (FS_FRAGMENTS_PER_BLOCK - 1) ||
@@ -2250,7 +2255,7 @@ FsBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	     */
 	    blockAddrPtr = &descPtr->indirect[1];
 	} else if (descPtr->indirect[1] == FS_NIL_INDEX) {
-	    panic( "FsBlockRealloc: Can't find indirect block\n");
+	    panic("FsBlockRealloc: Can't find indirect block\n");
 	} else {
 	    Boolean	found;
 	    /*
@@ -2280,8 +2285,7 @@ FsBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	    blockAddrPtr = (int *)blockPtr->blockAddr + (-virtBlockNum - 3);
 	}
 	if (*blockAddrPtr != physBlockNum) {
-	    panic(
-		 "FsBlockRealloc: Bad phys addr for indirect block (2)\n");
+	    panic("FsBlockRealloc: Bad phys addr for indirect block (2)\n");
 	}
 	/*
 	 * Allocate a new indirect block.
