@@ -14,7 +14,7 @@ static void wait();
 				/*Some physical addresses  */
 #define LIGHTS   0x20000  /* The status lights on the board */
 #define SWITCHES 0x40000  /* The status switches on the board */
-   
+
 void 
 led_display(seven_seg,led,wait_flag)
      int seven_seg;
@@ -26,7 +26,7 @@ led_display(seven_seg,led,wait_flag)
   machLEDValues[Mach_GetProcessorNumber()] = seven_seg;
   write_physical_word(LIGHTS,(seven_seg&0xff)|LAMP_OFF|((led<<8) & 0x0f00));
 
-  wait(5,wait_flag);
+  wait(1,wait_flag);
 
 }
 
@@ -38,13 +38,15 @@ wait (time,wait_flag)
 {
   int switches = read_physical_word(SWITCHES);
   int i,k;
-  if (wait_flag || (switches & 2))
-    {
-      if (switches & 1)
+  if (wait_flag || (switches & 0x40)) {
+      if (switches & 0) {
 	return;
-      else
-	for (i = 0; i < time; i++)
+      } else {
+	for (i = 0; i < time; i++) {
                         	  /* assumes 10 mhz and 3 instructions */
-	  for (k = 0; k < (1000000/3); k++);
+	  for (k = 0; k < (1000000/3); k++) {
+	  }
+	}	 
+      }
     }
 }

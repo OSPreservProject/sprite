@@ -24,114 +24,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machparam.h"
 #include "sprite.h"
 #include "sys.h"
-#include "dbg.h"
-#include "dbgInt.h"
 #include "netInet.h"
 #include "netEther.h"
 #include "user/net.h"
 #include "net.h"
+#include "dbg.h"
+#include "dbgInt.h"
 
 
-int	dbgTraceLevel;
+Boolean			dbgGotPacket;	
 
-/*
- * Have we gotten a packet yet.
- */
-Boolean initialized = FALSE;
+static	Boolean		dbgValidatePacket;
 
-/*
- * Number for net polls before timing out. This value depends on the network,
- * ethernet driver, and machine speed.
- */
-
-#define	TIMEOUT_VALUE	100000
-
-/*
- * The ethernet driver works on a call-back basis and can't read like a 
- * normal device.  When debugging, the ethernet driver is call thru
- * Net_RecvPoll(). If a packet has arrived then the debugger is called back 
- * thru the routine Dbg_InputPacket(). Dbg_InputPacket validates the 
- * incomming packet and stores the header info in a Dbg_Packet structure
- * and the data in the specified data buffer.
- *
- * The following variables that start with "packet*" are filled in by 
- * Dbg_InputPacket.
- */
-
-/*
- * Header info for the current packet received. The structure stores enough
- * information to allow the stub to reply to a request.
- */
-
-typedef struct Dbg_Packet {
-    Net_EtherHdr 	etherHdr;	/* Ethernet header of packet. */
-    Net_InetAddress	myIPaddr;	/* What the debugger thinks my 
-					 * IP address is.
-					 */
-    Net_InetAddress	debuggerIPaddr; /* The IP address of the debugger.*/
-    int			debuggerPort;	/* The UDP port number of debugger. */
-    int			type;		/* The debugger packet type. See 
-					 * below for possible type values. 
-					 */
-    int			initial;	/* 1 if seqNumber is start of sequence.
-					 * This allows for a debugger to exit
-					 * and be restarted without having
-					 * to remember this last seq number.
-					 */
-    unsigned int	seqNumber;	/* Sequence number of packet. */
-    int			dataLength;	/* The length of the data buffer of
-					 * the packet.
-					 */
-    Boolean		overflow;	/* TRUE if the packet's data part was
-					 * too large for the specified data 
-					 * buffer.
-					 */
-} Dbg_Packet;
-
-/*
- * Information on the packet received. This is filled in by Dbg_InputPacket.
- */
-
-static Dbg_Packet 	packet;
-
-/*
- * The location of data buffer for the next packet. packetData is set by the
- * read routine to point to a buffer and filled in by Dbg_InputPacket.
- */
-static  char	*packetData;
-
-/*
- * The length of the buffer pointed too my packetData. 
- */
-static int	packetDataLength = 0;
-
-/*
- * Flag specifying if a new debugger packet is available.
- */
-static 	Boolean	packetIsAvailable = FALSE;
-
-
-/*
- * Next available command sequence number.
- */
-static unsigned int nextSeqNum = 0;
-
-/*
- * Forward declarations.
- */
-static void Send_Packet();
-static void Ack_Packet();
-static void Format_Packet();
-static Boolean Extract_Packet();
-static Boolean Validate_Packet();
-
-
-#ifdef DEBUG
-/*
- * Forward declarations.
- */
-static void 		TestInputProc();
-#endif
 
 /*
  * ----------------------------------------------------------------------------
@@ -155,61 +59,57 @@ Dbg_InputPacket(packetPtr, packetLength)
     Address     packetPtr;	/* The packet. */
     int         packetLength;	/* Its length. */
 {
-    Address     dataPtr;
-    int         dataLength;
+    Dbg_RawRequest     	rawRequest;
+    int        		dataLength;
     Net_EtherHdr        *etherHdrPtr;
-    Boolean	goodPacket;
-    static char	alignedBuffer[NET_ETHER_MAX_BYTES];
-    int		type;
+    Boolean		goodPacket;
+    int			type;
 
-    initialized = TRUE;
-
-    /*
-     * If we aleady have one, toss this one.
-     */
-    if (packetIsAvailable) {
-        return;
-    }
-    /*
-     * Sanity check to make sure the compiler is not padding structures.
-     */
-    if (sizeof(Net_EtherHdr) != 14) {
-	panic( "Ethernet header wrong size!!\n");
-    }
     /*
      * Toss random non IP packets.
      */
+    led_display(GOT_PACKET_LED, LED_OK, FALSE);
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
-    type = Net_HostToNetShort(NET_ETHER_HDR_TYPE(*etherHdrPtr));
+    type = Net_NetToHostShort(NET_ETHER_HDR_TYPE(*etherHdrPtr));
     if (type != NET_ETHER_IP) {
         if (dbgTraceLevel >= 5) {
             printf("Non-IP (Type=0x%x) ", type);
         }
+	led_display(0, LED_FOUR, FALSE);
+        return;
+    }
+    /*
+     * If we aleady have one, toss this one.
+     */
+    if (dbgGotPacket) {
         return;
     }
     if (dbgTraceLevel >= 4) {
         printf("Validating packet\n");
     }
     /*
-     * Check to see if the packet is for us. If it is then Valiadate_Packet
-     * will fill in the pointers passed to it.  
+     * Extract the headers from the packet. We have to do it this way
+     * because structures may be padded on this machine.
      */
-
+    NET_ETHER_HDR_COPY(*etherHdrPtr, rawRequest.etherHeader);
     /*
-     * Make sure the packet starts on a 32-bit boundry so that we can 
-     * use structures for describe the data.
+     * Ethernet header is 14 bytes. 
      */
-    if ( (unsigned int) (packetPtr + sizeof(Net_EtherHdr)) & 0x3 ) {
-	  bcopy (packetPtr + sizeof(Net_EtherHdr), alignedBuffer, 
-			packetLength - sizeof(Net_EtherHdr));
-	  packetPtr = alignedBuffer;
-    }
-
-    goodPacket = Validate_Packet(packetLength - sizeof(Net_EtherHdr),
-               (Net_IPHeader *)packetPtr, &dataLength, &dataPtr,
-              &packet.myIPaddr, &packet.debuggerIPaddr, 
-	      (unsigned *)&packet.debuggerPort);
+    packetPtr += 14; 
+    rawRequest.ipHeader = * ((Net_IPHeader *) packetPtr);
+    /*
+     * Length of IP header is stored in header in units of 4 bytes.
+     */
+    packetPtr += rawRequest.ipHeader.headerLen * 4;
+    rawRequest.udpHeader = * ((Net_UDPHeader *) packetPtr);
+    /*
+     * UDP header is 8 bytes.
+     */
+    packetPtr += 8;
+    goodPacket = DbgValidatePacket(packetLength - sizeof(Net_EtherHdr),
+                                   &rawRequest, &dataLength);
     if (goodPacket) {
+	rawRequest.request = * ((Dbg_Request *) packetPtr);
 	/*
 	 * If it is for us then save the ethernet header so we have
 	 * an address to send the reply too.
@@ -217,430 +117,31 @@ Dbg_InputPacket(packetPtr, packetLength)
         if (dbgTraceLevel >= 4) {
             printf("Got a packet: length=%d\n", dataLength);
         }
-	NET_ETHER_HDR_COPY(*etherHdrPtr, packet.etherHdr);
-	/*
-	 * Extract the rest of the packet including the dbg header.
-	 */
-        packetIsAvailable =  Extract_Packet(dataPtr);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Dbg_IPgetpkt --
- *
- *	This routine reads a SPUR dbg "packet" from the ethernet driver
- *	and stores it in buf. The size of buffer is assume to be at least 
- *	as big as the data portition of the packet. 
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-Dbg_IPgetpkt (buf)
-     char *buf;
-{
-    Boolean	gotPkt = FALSE;
-
-    /*
-     * Loop until we get a good packet.
-     */
-    while (!gotPkt) { 
-	/*
-	 * Set the "packet*" pointers and poll the network until we get a 
-	 * packet. 
-	 */
-	packetDataLength = DBG_MAX_BUFFER_SIZE;
-	packetData =  buf;
-
-	packetIsAvailable = FALSE;
-	/*
-	 * Spin polling for a packet. Debugger is repondsible for timing out.
-	 */
-	if (dbgTraceLevel >= 1) {
-	    printf("getpkt: Waiting for a packet of seq number %d\n",
-					nextSeqNum);
-	}
-	while (!packetIsAvailable) {
-	    Net_RecvPoll();
-		asm("cmp_trap always, r0, r0, $3");
-	}
-	if (dbgTraceLevel >= 1) {
-	    printf("getpkt: Got a packet of seq number %d and type %d\n",
-				packet.seqNumber, packet.type);
-	}
-	/*
-	 * If it was a download packet just ACK it.
-	 */
-	if (packet.type == DBG_DOWNLOAD_PACKET) {
-	    Ack_Packet();
-	    continue;
-	}
-
-	/*
-	 * If we have already seen the packet before 
-	 * and its not an initial packet then toss it.
-	 */
-	if (packet.seqNumber <= nextSeqNum && !packet.initial) {
-	    /*
-	     * If it an old command packet assume our last ACK was lost and
-	     * reAck it.
-	     */
-	     if (packet.type == DBG_DATA_PACKET) {
-		 Ack_Packet();
-	     } else if (packet.type == DBG_ACK_PACKET) {
-		printf(
-			  "getpkt: Ack with sequence number %d ignored\n",
-			   packet.seqNumber);
-	    } else {
-		printf( 
-			"getpkt: Got packet with bogus type field (%d)\n",
-		        packet.type);
+	if (rawRequest.request.header.magic != DBG_MAGIC) {
+	    if (dbgTraceLevel >= 4) {
+		printf("Got a packet with bad magic 0x%x\n", 
+		       rawRequest.request.header.magic);
 	    }
-	    continue;
+	    led_display(BAD_PACKET_MAGIC_LED, LED_OK, TRUE);
+	    return;
 	}
-	/*
-	 * We got a packet with a seq num we like. 
-	 */
-
-	if (packet.type == DBG_DATA_PACKET) {
-	    /* 
-	    * This is what we been waiting for.
-	    */
-	    gotPkt = TRUE;
-	    nextSeqNum = packet.seqNumber;
-	    Ack_Packet();
-	} else {
-	    /*
-	     * We got a packet with a bugs type field or an ACK with too 
-	     * large of sequnce number.
-	     */
-	    printf( "getpkt: Bad packet seq = %d type = %d\n",
-			packet.seqNumber, packet.type);
+	if (dataLength != sizeof(Dbg_Request)) {
+	    if (dbgTraceLevel >= 4) {
+		printf("Got a request with wrong size (%d).\n", dataLength); 
+	    }
+	    led_display(BAD_PACKET_SIZE_LED, LED_OK, TRUE);
+	    return;
 	}
-    }
-
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Dbg_IPputpkt --
- *
- *	This routine puts a SPUR dbg "packet" to the ethernet driver
- *	with the address of the last incomming packet.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Packet is sent and seqNumbers updated.
- *
- *----------------------------------------------------------------------
- */
-void
-Dbg_IPputpkt (buf)
-     char *buf;		/* Null terminated string to send. */
-{
-    Boolean	gotAck = FALSE;
-    int		length;
-    static	int	timeOut;
-    int		seqNum;
-
-    if (!initialized) {
+	dbgGotPacket = TRUE;
+	dbgRawRequest = rawRequest;
 	return;
     }
-    /*
-     * Get a fresh seq number for this data packet.
-     */
-
-    seqNum = ++nextSeqNum;
-
-    length = strlen(buf) + 1;	/* Include null terminator. */
-
-    if (length > DBG_MAX_BUFFER_SIZE) {
-	panic( "dbg putpkt: buffer too large (%d)\n",length);
-    }
-
-    /*
-     * Loop sending until we get the ack back.
-     */
-    while (!gotAck) { 
-	if (dbgTraceLevel >= 1) {
-	    printf("putpkt: Putting packet with seq number %d\n",seqNum);
-	}
-
-	Send_Packet(buf, length, DBG_DATA_PACKET, seqNum);
-
-	packetIsAvailable = FALSE;
-	/*
-	 * Spin polling for a packet. We're responsible for timing out.
-	 */
-	timeOut = TIMEOUT_VALUE;
-	while (!packetIsAvailable && timeOut > 0) {
-		asm("cmp_trap always, r0, r0, $3");
-	    Net_RecvPoll();
-	    timeOut--;
-	}
-	if (!packetIsAvailable) {
-	    if (dbgTraceLevel >= 1) {
-		printf("putpkt: Timeout - resending packet.\n");
-	    }
-	    continue;	/* Resend the packet. */
-	}
-	/*
-	 * If we have already seen the packet - toss it.
-	 */
-	if (dbgTraceLevel >= 1) {
-	    printf("putpkt: Got a packet of seq number %d and type %d\n",
-				packet.seqNumber, packet.type);
-	}
-
-
-	if (packet.seqNumber < nextSeqNum) {
-	    /*
-	     * If it an old data packet assume our last ACK was lost and
-	     * reAck it.
-	     */
-	     if (packet.type == DBG_DATA_PACKET) {
-		 Ack_Packet();
-	     } else if (packet.type == DBG_ACK_PACKET) {
-		/*
-		 * It's safe to throw away old ack packets.
-		 */
-	    } else if (packet.type == DBG_DOWNLOAD_PACKET) {
-		panic("putpkt: Bad packet type = %d\n",
-				packet.type);
-	    } else {
-		printf("putpkt: Bad packet type = %d\n",
-				packet.type);
-	    }
-
-	    continue;
-	}
-	/*
-	 * Is this the ack we want?
-	 */
-	if (packet.seqNumber == seqNum) {
-		gotAck = (packet.type == DBG_ACK_PACKET);
-		if (!gotAck) { 
-		    /*
-		     * Sequence numbering is messed up.
-		     */
-		    panic( "putptk: Bad packet type %d seq %d\n",
-				packet.seqNumber, packet.type);
-		} 
-	}
-
-    }
-
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Extract_Packet --
- *
- *	Extract the debugger header and packet data from an incomming packet.
- *
- * Results:
- *     TRUE if the packet is good.
- *
- * Side effects:
- *	packetHeader and packetData are filled in.
- *
- * ----------------------------------------------------------------------------
- */
-static Boolean
-Extract_Packet(dataPtr)
-    Address     dataPtr;	/* Start of packet data. */
-{
-    Dbg_PacketHeader	*header;
-    static		Dbg_PacketHeader	alignedHeader;
-    Address		startAddress;
-    int			length, command;
-
-    header = (Dbg_PacketHeader *) dataPtr;
-    /*
-     * Check to see if pointer is correctly aligned. If it is not aligned we
-     * must make a copy.
-     */
-    if ((unsigned int) header & 0x3) {
-	bcopy(dataPtr, (char *) &alignedHeader, sizeof(alignedHeader));
-	header = &alignedHeader;
-    }
-
-    /*
-     * We want the packet. Extract its header info and (data if any).
-     */
-    if (Net_NetToHostInt(header->magic) != DBG_HEADER_MAGIC) {
-	printf(
-		"Extract_Packet: Got packet with bad magic number (0x%x)\n",
-		Net_NetToHostInt(header->magic));
-	return(FALSE);
-    }
-    packet.type  = Net_NetToHostInt(header->type);
-    packet.seqNumber = Net_NetToHostInt(header->sequenceNumber);
-    packet.initial = Net_NetToHostInt(header->initial);
-    startAddress = (Address) Net_NetToHostInt(header->startAddress);
-    length = Net_NetToHostInt(header->dataLength);
-    command = Net_NetToHostInt(header->command);
-    /*
-     * Process the DOWNLOAD command here.
-     */
-    if (packet.type == DBG_DOWNLOAD_PACKET) { 
-	switch (command) {
-	case DBG_DOWNLOAD_PING:
-		/*
-		 * Ping request - do nothing.
-		 */
-#ifdef		DEBUG_DOWNLOAD
-		 printf("Download command PING\n");
-#endif		DEBUG_DOWNLOAD
-		 break;
-	case DBG_DOWNLOAD_DATA_XFER:
-		/*
-		 * Data transfer request. 
-		 */
-#ifdef		DEBUG_DOWNLOAD
-		 printf("Download command DATA_XFER start 0x%x length %d\n",			startAddress,length);
-#else
-		bcopy(dataPtr + sizeof(Dbg_PacketHeader), startAddress,length);
-#endif		DEBUG_DOWNLOAD
-		break;
-	case DBG_DOWNLOAD_ZERO_MEM:
-		/*
-		 * Zero memory request.
-		 */
-#ifdef		DEBUG_DOWNLOAD
-		 printf("Download command ZERO_MEM start 0x%x length %d\n",			startAddress,length);
-#else
-		 bzero(startAddress,length);
-#endif		DEBUG_DOWNLOAD
-		 break;
-	case DBG_DOWNLOAD_JUMP:
-		/*
-		 * Start execute request.
-		 */
-		 Dbg_Start_Execution(startAddress);
-		 break;
-	default:
-		printf( "Unknown DOWNLOAD command recieved\n");
-	}
-    } else {
-	packet.overflow = FALSE;
-	if (length > packetDataLength-1) {
-	    packet.overflow = TRUE;
-	    length = packetDataLength;
-	}
-	packet.dataLength = length;
-	bcopy(dataPtr + sizeof(Dbg_PacketHeader), packetData, length);
-    }
-    return (TRUE);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Send_Packet --
- *
- *	Send a packet of the specified type with the specified data 
- *	area.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Packet is sent.
- *
- *----------------------------------------------------------------------
- */
-static void
-Send_Packet (dataPtr, dataSize, type, seqNum)
-    Address	dataPtr;	/* Start of data for packet. May be NIL */
-    int		dataSize;	/* Size of the data for the packet. */
-    int		type;		/* Packet type. */
-    unsigned int	seqNum;	/* Packet sequence number. */
-{
-    Dbg_PacketHeader	header;
-    Net_EtherHdr 	etherHdr;
-    static Net_ScatterGather   gather;
-    static char	packetBuffer[NET_ETHER_MAX_BYTES];
-    int		packetLength;
-    static char	emptyBuf;
-
-    if (dataPtr == (Address) NIL) {
-	dataPtr = (Address) &emptyBuf;
-    }
-
-    /*
-     * Fill in the dbg header.
-     */
-
-    header.magic = Net_HostToNetInt(DBG_HEADER_MAGIC);
-    header.sequenceNumber = Net_HostToNetInt(seqNum);
-    header.dataLength = Net_HostToNetInt(dataSize);
-    header.initial = Net_HostToNetInt(0);
-    header.type = Net_HostToNetInt(type);
-
-    /* 
-     * Build the packet in packetBuffer.
-     */
-    Format_Packet(packet.myIPaddr, packet.debuggerIPaddr,
-	   packet.debuggerPort, &header, dataSize, dataPtr, packetBuffer, 
-	   &packetLength);
-
-    /*
-     * Turn the ethernet source and dest around from what we got.
-     */
-    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(packet.etherHdr),
-			NET_ETHER_HDR_SOURCE(etherHdr));
-    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(packet.etherHdr),
-			NET_ETHER_HDR_DESTINATION(etherHdr));
-
-    NET_ETHER_HDR_TYPE(etherHdr) = NET_ETHER_HDR_TYPE(packet.etherHdr);
-
-    gather.bufAddr = (Address) packetBuffer;
-    gather.length = packetLength;
-    gather.mutexPtr = (Sync_Semaphore *) NIL;
-
-    Net_OutputRawEther(&etherHdr, &gather, 1);
-
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Ack_Packet --
- *
- *	Acknowledges the data packet just received.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static void
-Ack_Packet ()
-{
-	Send_Packet((Address) NIL, 0, DBG_ACK_PACKET, packet.seqNumber);
-}
-
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Validate_Packet --
+ * DbgValidatePacket --
  *
  *	This routine checks to see if an IP/UDP packet is proper. This
  *	involves checking for the the proper sizes and that the packet 
@@ -660,21 +161,13 @@ Ack_Packet ()
  */
 
 static Boolean
-Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr, 
-		destIPAddrPtr, srcIPAddrPtr, srcPortPtr)
+DbgValidatePacket(size, reqPtr, lenPtr)
 
     int				size;		/* IP packet size in bytes. */
-    register Net_IPHeader	*ipPtr;		/* Ptr to IP packet buffer. */
+    register Dbg_RawRequest	*reqPtr;	/* Ptr to raw request */
     int				*lenPtr;	/* Size of data in bytes.(out)*/
-    Address			*dataPtrPtr;	/* Address of data in the
-						 * in the packet. (out) */
-    Net_InetAddress		*destIPAddrPtr;	/* IP addr of this machine. 
-						 * (out) */
-    Net_InetAddress		*srcIPAddrPtr;	/* IP addr of sender. (out) */
-    unsigned int		*srcPortPtr;	/* UDP port from the sender
-						 * (needed to reply to the 
-						 * sender). */
 {
+    register Net_IPHeader	*ipPtr;
     register Net_UDPHeader	*udpPtr;
     register int		headerLenInBytes;
 
@@ -682,11 +175,13 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
 	if (dbgTraceLevel >= 4) {
 	    printf("Validate_Packet: Bad size %d\n", size);
 	}
+	led_display(0, LED_THREE, TRUE);
 	return(FALSE);
     }
 
+    ipPtr = &reqPtr->ipHeader;
     headerLenInBytes = ipPtr->headerLen * 4;
-    udpPtr = (Net_UDPHeader *) ((Address) ipPtr + headerLenInBytes);
+    udpPtr = &reqPtr->udpHeader;
 
     /*
      * Validate the IP/UDP packet. The packet is checked for the following:
@@ -707,40 +202,47 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
 	if (dbgTraceLevel >= 5) {
 	    printf("Failed case 1: %d\n", headerLenInBytes);
 	}
+	led_display(1, LED_THREE, TRUE);
 	return(FALSE);
     } else if (Net_NetToHostShort(ipPtr->totalLen) < ipPtr->headerLen) {
 	if (dbgTraceLevel >= 5) {
 	    printf("Failed case 2: %d, %d\n", 
 			Net_NetToHostShort(ipPtr->totalLen), ipPtr->headerLen);
 	}
+	led_display(2, LED_THREE, TRUE);
 	return(FALSE);
     } else if (Net_InetChecksum(headerLenInBytes, (Address) ipPtr) != 0) {
 	if (dbgTraceLevel >= 5) {
 	    printf("Failed case 3 (IP checksum: %x)\n", ipPtr->checksum);
 	}
+	led_display(3, LED_THREE, TRUE);
 	return(FALSE);
     } else if (ipPtr->protocol != NET_IP_PROTOCOL_UDP) {
 	if (dbgTraceLevel >= 5) {
 	    printf("Failed case 4: %d\n", ipPtr->protocol);
 	}
+	led_display(4, LED_THREE, TRUE);
 	return(FALSE);
     } else if (Net_NetToHostShort(udpPtr->len) < sizeof(Net_UDPHeader)) {
 	if (dbgTraceLevel >= 5) {
 	    printf("Failed case 5: %d, %d\n",
 		    Net_NetToHostShort(udpPtr->len), sizeof(Net_UDPHeader));
 	}
+	led_display(5, LED_THREE, TRUE);
 	return(FALSE);
     } else if (Net_NetToHostShort(udpPtr->destPort) != DBG_UDP_PORT) {
 	if (dbgTraceLevel >= 5) {
 	    printf("Failed case 6: %d, %d\n", 
 		    Net_NetToHostShort(udpPtr->destPort), DBG_UDP_PORT);
 	}
+	led_display(6, LED_THREE, FALSE);
 	return(FALSE);
     } else if ((ipPtr->flags & NET_IP_MORE_FRAGS) || (ipPtr->fragOffset != 0)) {
 	if (dbgTraceLevel >= 5) {
 	    printf("Failed case 7: %d, %d\n",
 		(ipPtr->flags & NET_IP_MORE_FRAGS), (ipPtr->fragOffset != 0));
 	}
+	led_display(7, LED_THREE, TRUE);
 	return(FALSE);
     } 
 
@@ -748,6 +250,7 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
      * If the UDP packet was sent with a checksum, the checksum will be
      * non-zero.
      */
+#if 0
     if (udpPtr->checksum != 0) {
 	Net_IPPseudoHdr		pseudoHdr;
 
@@ -770,15 +273,12 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
 		printf("Validate_Packet: Bad UDP checksum: %x\n", 
 				udpPtr->checksum);
 	    }
+	    led_display(8, LED_THREE, TRUE);
 	    return(FALSE);
 	}
     }
-
+#endif
     *lenPtr	   = Net_NetToHostShort(udpPtr->len) - sizeof(Net_UDPHeader);
-    *dataPtrPtr	   = ((Address) udpPtr) + sizeof(Net_UDPHeader);
-    *destIPAddrPtr = Net_NetToHostInt(ipPtr->dest);
-    *srcIPAddrPtr  = Net_NetToHostInt(ipPtr->source);
-    *srcPortPtr	   = Net_NetToHostShort(udpPtr->srcPort);
 
     if (dbgTraceLevel >= 4) {
 	printf("Validate_Packet: Good packet\n");
@@ -790,7 +290,7 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
 /*
  *----------------------------------------------------------------------
  *
- * Format_Packet --
+ * Dbg_FormatPacket --
  *
  *	Formats  an IP/UDP/DBG packet for sending on the network.
  *	The IP addresses and UDP port arguments are assumed to be in the
@@ -808,62 +308,52 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
  *----------------------------------------------------------------------
  */
 
-static void
-Format_Packet(srcIPAddr, destIPAddr, destPort, header, dataSize, dataPtr, 
-		 packetBufferPtr, lengthPtr)
+void
+Dbg_FormatPacket(dataSize, gatherPtr)
 
-    Net_InetAddress	srcIPAddr;	/* IP address of this machine. */
-    Net_InetAddress	destIPAddr;	/* IP address of destination. */
-    unsigned int	destPort;	/* UDP port of destination. */
-    Dbg_PacketHeader	*header;	/* DGB packet header. */
-    int			dataSize;	/* Size in bytes of data in *dataPtr. */
-    Address		dataPtr;	/* Buffer containing data. */
-    Address		packetBufferPtr; /* Location to place packet. */
-    int			*lengthPtr;	/* Packet length (OUT) */
+    int			dataSize;
+    Net_ScatterGather	*gatherPtr;
 {
-    register Net_IPHeader *ipPtr;	/* Ptr to IP header. */
-    register Net_UDPHeader *udpPtr;	/* Ptr to UDP header. */
-    Dbg_PacketHeader	*dbgPtr;	/* Ptr to DBG header. */
-    Address	dataAreaPtr;		/* Ptr to data area of packet. */
-    static	int	ident = 0;
+    Net_EtherHdr		*etherPtr;
+    Net_IPHeader 	*ipPtr;		/* Ptr to IP header. */
+    Net_UDPHeader 	*udpPtr;	/* Ptr to UDP header. */
+    static	int		ident = 0;
 
-    ipPtr  = (Net_IPHeader *) packetBufferPtr;
-    udpPtr = (Net_UDPHeader *) (packetBufferPtr + sizeof(Net_IPHeader));
-    dbgPtr = (Dbg_PacketHeader *) (packetBufferPtr + sizeof(Net_UDPHeader)
-				 + sizeof(Net_IPHeader));
-    dataAreaPtr = packetBufferPtr +  sizeof(Net_UDPHeader) +
-		 sizeof(Net_IPHeader) + sizeof(Dbg_PacketHeader);
+    etherPtr = (Net_EtherHdr *) dbgRawReply.etherHeader;
+    ipPtr  = &dbgRawReply.ipHeader;
+    udpPtr = &dbgRawReply.udpHeader;
 
+    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(dbgRawRequest.etherHeader),
+			NET_ETHER_HDR_DESTINATION(*etherPtr));
+    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(dbgRawRequest.etherHeader),
+			NET_ETHER_HDR_SOURCE(*etherPtr));
+    NET_ETHER_HDR_TYPE(*etherPtr) = 
+	NET_ETHER_HDR_TYPE(dbgRawRequest.etherHeader);
     ipPtr->version	= NET_IP_VERSION;
     ipPtr->headerLen	= sizeof(Net_IPHeader) / 4;
     ipPtr->typeOfService = 0;
-    ipPtr->totalLen	= Net_HostToNetShort(sizeof(Net_IPHeader) + 
-					sizeof(Net_UDPHeader) + 
-					sizeof(Dbg_PacketHeader) + dataSize);
+    ipPtr->totalLen	= Net_HostToNetShort(sizeof(*ipPtr) + 
+					     sizeof(*udpPtr) + dataSize);
     ipPtr->ident	= ident++;
     ipPtr->fragOffset	= 0;
     ipPtr->flags	= 0;
     ipPtr->timeToLive	= NET_IP_MAX_TTL;
     ipPtr->protocol	= NET_IP_PROTOCOL_UDP;
-    ipPtr->source	= Net_HostToNetInt(srcIPAddr);
-    ipPtr->dest		= Net_HostToNetInt(destIPAddr);
+    ipPtr->source	= dbgRawRequest.ipHeader.dest;
+    ipPtr->dest		= dbgRawRequest.ipHeader.source;
     ipPtr->checksum	= 0;
-    ipPtr->checksum	= Net_InetChecksum(sizeof(Net_IPHeader), 
-					(Address) ipPtr);
-
+    ipPtr->checksum	= Net_InetChecksum(sizeof(Net_IPHeader),
+					   (Address) ipPtr);
     udpPtr->srcPort	= Net_HostToNetShort(DBG_UDP_PORT);
-    udpPtr->destPort	= Net_HostToNetShort(destPort);
-    udpPtr->len		= Net_HostToNetShort(sizeof(Net_UDPHeader) +
-					     sizeof(Dbg_PacketHeader) + 
-					      dataSize);
+    udpPtr->destPort	= dbgRawRequest.udpHeader.srcPort;
+    udpPtr->len		= Net_HostToNetShort(sizeof(*udpPtr) + dataSize);
     udpPtr->checksum	= 0;
-
-    *dbgPtr = *header;
-
-    bcopy(dataPtr, dataAreaPtr,dataSize);
-
-    *lengthPtr = sizeof(Net_IPHeader) + sizeof(Net_UDPHeader) + 
-		    sizeof(Dbg_PacketHeader) + dataSize; 
+    gatherPtr[0].bufAddr = (Address) ipPtr;
+    gatherPtr[0].length = sizeof(*ipPtr);
+    gatherPtr[0].mutexPtr = (Sync_Semaphore *) NIL;
+    gatherPtr[1].bufAddr = (Address) udpPtr;
+    gatherPtr[1].length = sizeof(*udpPtr);
+    gatherPtr[1].mutexPtr = (Sync_Semaphore *) NIL;
 }
 
 
