@@ -57,7 +57,7 @@ _Prof_ThisPC:
 #endif	defined(VAX) || defined(vax)
 
 
-#if	defined(mc68000) || defined(SUN2)
+#if	defined(mc68000) || defined(SUN2) || defined(SUN3)
 |	.globl	_Prof_Whence
 	.globl	_Prof_NextFP
 	.globl	_Prof_ThisFP
