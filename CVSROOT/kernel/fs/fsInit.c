@@ -123,6 +123,7 @@ Fs_Init()
     FsLocalDomainInit();
 
     FsTraceInit();
+    FsPdevTraceInit();
 
     /*
      * Put the routine on the timeout queue that keeps the time in
