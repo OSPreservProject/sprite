@@ -875,11 +875,6 @@ FsSpriteGetAttr(fileIDPtr, clientID, attrPtr)
     register ReturnStatus	status;
     Rpc_Storage storage;
 
-    if (fileIDPtr->type != FS_RMT_FILE_STREAM) {
-	Sys_Panic(SYS_FATAL, "FsSpriteGetAttr, bad fileID type <%d>\n",
-	    fileIDPtr->type);
-	return(GEN_INVALID_ARG);
-    }
     storage.requestParamPtr = (Address) fileIDPtr;
     storage.requestParamSize = sizeof(Fs_FileID);
     storage.requestDataPtr = (Address) NIL;
@@ -914,7 +909,7 @@ FsSpriteGetAttr(fileIDPtr, clientID, attrPtr)
  * Fs_RpcGetAttr --
  *
  *	Service stub for the RPC_FS_GET_ATTR call.  This calls FsLocalGetAttr
- *	to get the attributes of a file from its disk descriptor.  This
+ *	(or FsPseudoGetAttr) to get the attributes of a file.  This
  *	is a name server operation used when the file is already open.
  *	Note: Attributes are not complete until the I/O server has also
  *	been contacted.  See Fs_RpcGetIOAttr.
@@ -950,10 +945,16 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
     register Fs_FileID		*fileIDPtr;
     register Fs_Attributes	*attrPtr;
     Rpc_ReplyMem		*replyMemPtr;
+    int				domainType = FS_LOCAL_DOMAIN;
 
     fileIDPtr = (Fs_FileID *) storagePtr->requestParamPtr;
     hdrPtr = VerifyIOHandle(fileIDPtr);
-    if (hdrPtr == (FsHandleHeader *)NIL) {
+    if (fileIDPtr->type == FS_LCL_PFS_STREAM) {
+	if (hdrPtr == (FsHandleHeader *)NIL) {
+	    return(FS_STALE_HANDLE);
+	}
+	domainType = FS_PSEUDO_DOMAIN;
+    } else if (hdrPtr == (FsHandleHeader *)NIL) {
 	status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL,
 			(FsLocalFileIOHandle **)&tHdrPtr);
 	if (status != SUCCESS) {
@@ -964,7 +965,11 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
     FsHandleUnlock(hdrPtr);
 
     attrPtr = Mem_New(Fs_Attributes);
-    status = FsLocalGetAttr(&hdrPtr->fileID, clientID, attrPtr);
+    status = (*fsAttrOpTable[domainType].getAttr)(fileIDPtr, clientID, attrPtr);
+#ifdef lint
+    status = FsLocalGetAttr(fileIDPtr, clientID, attrPtr);
+    status = FsPseudoGetAttr(fileIDPtr, clientID, attrPtr);
+#endif lint
     FsHandleRelease(hdrPtr, FALSE);
 
     storagePtr->replyParamPtr = (Address) attrPtr;
@@ -1018,12 +1023,6 @@ FsSpriteSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     ReturnStatus status;
     Rpc_Storage storage;
     FsSpriteSetAttrParams params;
-
-    if (fileIDPtr->type != FS_RMT_FILE_STREAM) {
-	Sys_Panic(SYS_FATAL, "FsSpriteSetAttr, bad fileID type <%d>\n",
-	    fileIDPtr->type);
-	return(GEN_INVALID_ARG);
-    }
 
     params.fileID = *fileIDPtr;
     params.ids = *idPtr;
@@ -1088,21 +1087,32 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
     register Fs_Attributes	*attrPtr;
     register ReturnStatus	status;
     FsSpriteSetAttrParams	*paramPtr;
+    int				domainType = FS_LOCAL_DOMAIN;
 
     paramPtr = (FsSpriteSetAttrParams *) storagePtr->requestParamPtr;
     attrPtr = &paramPtr->attrs;
     fileIDPtr = &paramPtr->fileID;
 
     hdrPtr = VerifyIOHandle(fileIDPtr);
-    if (hdrPtr == (FsHandleHeader *)NIL) {
+    if (fileIDPtr->type == FS_LCL_PFS_STREAM) {
+	if (hdrPtr == (FsHandleHeader *)NIL) {
+	    return(FS_STALE_HANDLE);
+	}
+	domainType = FS_PSEUDO_DOMAIN;
+    } else if (hdrPtr == (FsHandleHeader *)NIL) {
 	status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL,
-				       (FsLocalFileIOHandle **)&hdrPtr);
+			(FsLocalFileIOHandle **)&hdrPtr);
 	if (status != SUCCESS) {
 	    return(status);
 	}
     }
     FsHandleUnlock(hdrPtr);
+    status = (*fsAttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
+						&paramPtr->ids,paramPtr->flags);
+#ifdef lint
     status = FsLocalSetAttr(fileIDPtr, attrPtr, &paramPtr->ids,paramPtr->flags);
+    status = FsPseudoSetAttr(fileIDPtr,attrPtr, &paramPtr->ids,paramPtr->flags);
+#endif lint
     FsHandleRelease(hdrPtr, FALSE);
 
     Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL,
@@ -1394,27 +1404,13 @@ FsHandleHeader *
 VerifyIOHandle(fileIDPtr)
     Fs_FileID *fileIDPtr;
 {
-    switch(fileIDPtr->type) {
-	case FS_LCL_FILE_STREAM:
-	case FS_LCL_DEVICE_STREAM:
-	    break;
-	case FS_RMT_FILE_STREAM:
-	    fileIDPtr->type = FS_LCL_FILE_STREAM;
-	    break;
-	case FS_RMT_DEVICE_STREAM:
-	    fileIDPtr->type = FS_LCL_DEVICE_STREAM;
-	    break;
-        case FS_RMT_PSEUDO_STREAM:
-	    fileIDPtr->type = FS_LCL_PSEUDO_STREAM;
-	    break;
-	case FS_RMT_PIPE_STREAM:
-	    fileIDPtr->type = FS_LCL_PIPE_STREAM;
-	    break;
-	default:
-	    Sys_Panic(SYS_WARNING,
-		    "Unknown stream type (%d) in VerifyIOHandle.\n",
-		    fileIDPtr->type);
-	    return((FsHandleHeader *)NIL);
+    if (fileIDPtr->type <= 0 || fileIDPtr->type >= FS_NUM_STREAM_TYPES) {
+	Sys_Panic(SYS_WARNING,
+		"Bad stream type (%d) in VerifyIOHandle.\n",
+		fileIDPtr->type);
+	return((FsHandleHeader *)NIL);
+    } else {
+	fileIDPtr->type = fsRmtToLclType[fileIDPtr->type];
     }
     return(FsHandleFetch(fileIDPtr));
 }
