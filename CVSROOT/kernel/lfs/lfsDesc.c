@@ -223,6 +223,11 @@ Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
 	goto exit;
     }
 
+    /*
+     * Pause the write back during the truncate to sync access to
+     * file index.
+     */
+    Fscache_PreventWriteBacks(&handlePtr->cacheInfo);
     status = LfsFile_TruncIndex(lfsPtr, handlePtr, size);
     if (status == SUCCESS) {
 	if (size == 0) {
@@ -233,8 +238,16 @@ Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
 	}
 	descPtr->lastByte = newLastByte;
 	descPtr->descModifyTime = Fsutil_TimeInSeconds();
-	descPtr->flags |= FSDM_FD_SIZE_DIRTY;
+	if (delete) {
+	    /*
+	     * XXX - need sync here. 
+	     */
+	    descPtr->flags &= ~FSDM_FD_DIRTY;
+	} else {
+	    descPtr->flags |= FSDM_FD_SIZE_DIRTY;
+	}
     }
+    Fscache_AllowWriteBacks(&handlePtr->cacheInfo);
 exit:
     if (delete) { 
 	LFS_STATS_INC(lfsPtr->stats.desc.delete);
