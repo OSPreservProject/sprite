@@ -553,13 +553,19 @@ FsDomainInfo(fileIDPtr, domainInfoPtr)
 	    status = FsPseudoDomainInfo(fileIDPtr, domainInfoPtr);
 	    break;
 	default:
-	    domainInfoPtr->maxKbytes = -1;
-	    domainInfoPtr->freeKbytes = -1;
-	    domainInfoPtr->maxFileDesc = -1;
-	    domainInfoPtr->freeFileDesc = -1;
-	    domainInfoPtr->blockSize = -1;
+	    printf("FsDomainInfo: Unexpected stream type <%d>\n",
+		    fileIDPtr->type);
 	    status = FS_DOMAIN_UNAVAILABLE;
+	    break;
     }
+    if (status != SUCCESS) {
+	domainInfoPtr->maxKbytes = -1;
+	domainInfoPtr->freeKbytes = -1;
+	domainInfoPtr->maxFileDesc = -1;
+	domainInfoPtr->freeFileDesc = -1;
+	domainInfoPtr->blockSize = -1;
+    }
+
     return(status);
 }
 
