@@ -502,21 +502,21 @@ Sys_StatsStub(command, option, argPtr)
 				  &sched_Instrument.processor[cpu].idleTime);
 		}
 		/*
-		 * If no interrupts received, mostRecentInterrupt will
+		 * If no interrupts received, dev_LastConsoleInput will
 		 * be 0, so set it to the current time.  This will happen
 		 * the first time Sched_Stats is called if there were no
 		 * keyboard interrupts already.
 		 *
-		 * Note: mostRecentInterrupt can't be set during dev_Kbd
+		 * Note: dev_LastConsoleInput can't be set during
 		 * initialization because the timer has not yet been
 		 * initialized.
 		 */
-		if (dev_KbdInstrument.mostRecentInterrupt.seconds == 0) {
-		    Timer_GetTimeOfDay(&dev_KbdInstrument.mostRecentInterrupt,
+		if (dev_LastConsoleInput.seconds == 0) {
+		    Timer_GetTimeOfDay(&dev_LastConsoleInput,
 				       (int *) NIL, (Boolean *) NIL);
 		}
 		Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
-		Time_Subtract(curTime, dev_KbdInstrument.mostRecentInterrupt,
+		Time_Subtract(curTime, dev_LastConsoleInput,
 			      &sched_Instrument.noUserInput);
 		status = Vm_CopyOut(sizeof(Sched_Instrument),
 					  (Address)&sched_Instrument, argPtr);
