@@ -44,10 +44,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  */
 PdevControlIOHandle *
-FsControlHandleInit(fileIDPtr, name, foundPtr)
+FsControlHandleInit(fileIDPtr, name)
     FsFileID *fileIDPtr;
     char *name;
-    Boolean *foundPtr;
 {
     register Boolean found;
     register PdevControlIOHandle *ctrlHandlePtr;
@@ -64,7 +63,6 @@ FsControlHandleInit(fileIDPtr, name, foundPtr)
 	FsLockInit(&ctrlHandlePtr->lock);
 	FsRecoveryInit(&ctrlHandlePtr->rmt.recovery);
     }
-    *foundPtr = found;
     return(ctrlHandlePtr);
 }
 
@@ -98,10 +96,9 @@ FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 					 * I/O to a control stream, or NIL */
 {
     register PdevControlIOHandle	*ctrlHandlePtr;
-    Boolean		found;
 
-    ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, name, &found);
-    if (found && !List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
+    ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, name);
+    if (!List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
 	Sys_Panic(SYS_FATAL, "FsControlStreamCltOpen found control msgs\n");
     }
     ctrlHandlePtr->serverID = clientID;
@@ -403,16 +400,15 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	 * Called on the file server to re-establish a control handle
 	 * that corresponds to a control handle on the pdev server's host.
 	 */
-	Boolean found;
 
 	reopenParamsPtr = (PdevControlReopenParams *)inData;
 	ctrlHandlePtr = FsControlHandleInit(&reopenParamsPtr->fileID,
-					    (char *)NIL, &found);
+					    (char *)NIL);
 	if (reopenParamsPtr->serverID != NIL) {
 	    /*
 	     * The remote host thinks it is running the pdev server process.
 	     */
-	    if (!found || ctrlHandlePtr->serverID == NIL) {
+	    if (ctrlHandlePtr->serverID == NIL) {
 		ctrlHandlePtr->serverID = reopenParamsPtr->serverID;
 		ctrlHandlePtr->seed = reopenParamsPtr->seed;
 	    } else if (ctrlHandlePtr->serverID != clientID) {
