@@ -263,6 +263,7 @@ Proc_RemoveMigDependency(processID)
 #else KERNEL_HASH
     Hash_DeleteEntry(dependHashTable, hashEntryPtr);
 #endif /* KERNEL_HASH */
+    Recov_RebootUnRegister(dependPtr->hostID, MigHostIsUp, (ClientData) NIL);
     free ((Address) dependPtr);
     UNLOCK_MONITOR;
 }
