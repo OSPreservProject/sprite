@@ -2127,8 +2127,6 @@ havePermBits:
  *	Write into a cache block returned from Fscache_BlockRead.  Used only
  *	for writing directories.
  *
- *	THIS USES THE descPtr FIELDS.  CHECK cacheInfo.attr FIELDS
- *
  * Results:
  *	SUCCESS unless error when allocating disk space.
  *
@@ -2158,7 +2156,14 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
     offset =  blockNum * FS_BLOCK_SIZE;
     newLastByte = offset + length - 1;
     (void) (handlePtr->cacheInfo.ioProcsPtr->allocate)
-	((Fs_HandleHeader *)handlePtr, offset, length, &blockAddr, &newBlock);
+	((Fs_HandleHeader *)handlePtr, offset, length, 0,
+		&blockAddr, &newBlock);
+#ifdef lint
+    (void) Fsdm_BlockAllocate((Fs_HandleHeader *)handlePtr, offset, length,
+			0, &blockAddr, &newBlock);
+    (void) FsrmtBlockAllocate((Fs_HandleHeader *)handlePtr, offset, length,
+			0, &blockAddr, &newBlock);
+#endif /* lint */
     if (blockAddr == FSDM_NIL_INDEX) {
 	status = FS_NO_DISK_SPACE;
 	if (handlePtr->descPtr->lastByte + 1 < offset) {
