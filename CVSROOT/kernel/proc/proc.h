@@ -95,7 +95,7 @@ typedef enum {
     PROC_EXITING,	/* The process has terminated and is on the 
 			 * exiting list. */
     PROC_DEAD,		/* The process has been terminated is on the dead list*/
-    PROC_DEBUGABLE,	/* The process is eligible for debugging. */
+    PROC_NO_STATE,	/* Remove this field. */
     PROC_MIGRATED,	/* The process is running on a remote machine. */
     PROC_NEW,		/* The process was just created. */
     PROC_SUSPENDED	/* The process is suspended. */
@@ -469,14 +469,20 @@ typedef struct Proc_ControlBlock {
  *				  exiting processes list.
  *  PROC_WAITED_ON		- This process is detached and the parent has 
  *				  already done a Proc_Wait on it.
- *  PROC_SUSPENDED_AND_WAITED_ON - This process is suspended and it has been
- *				   waited on.  This only gets used if 
- *				   PROC_WAITED_ON isn't set.
+ *  PROC_SUSPEND_STATUS		- The process went into the suspended state
+ *				  and it hasn't been waited on yet.
+ *  PROC_RESUME_STATUS		- The process was resumed and it hasn't been 
+ *				  waited on yet.
+ *  PROC_STATUSES		- The union of the two above statuses.
  */
 
-#define PROC_DETACHED			0x01
-#define PROC_WAITED_ON			0x02
-#define	PROC_SUSPENDED_AND_WAITED_ON	0x04
+#define PROC_DETACHED		0x01
+#define PROC_WAITED_ON		0x02
+#define	PROC_SUSPEND_STATUS	0x04
+#define	PROC_RESUME_STATUS	0x08
+#define	PROC_STATUSES		(PROC_SUSPEND_STATUS | PROC_RESUME_STATUS)
+
+
 
 /*
  * The following structure is used to transfer fixed-length argument strings
