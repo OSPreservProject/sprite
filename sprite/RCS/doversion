@@ -30,11 +30,13 @@ set log = "no"
 set version = `cat version`
 switch($versionInfo) 
     case "TRUE":
+    case "true":
 	@ version++
 	echo $version > version
 	set log = "yes"
 	breaksw
     case "FALSE":
+    case "false":
 	breaksw
     default:
 	set version = $versionInfo
@@ -48,7 +50,7 @@ else if ($version < 100) then
     set version = "0"$version
 endif
 
-if ($log == "yes") then
+if ("$log" == "yes") then
     co -l versionLog
     echo "" >> versionLog
     echo "$release.$version	`date`" >> versionLog
