@@ -5,5 +5,3 @@ file.h                   /sprite/src/attcmds/file/file.h
 machType68k.c            /sprite/src/attcmds/file//machType68k.c
 machTypeMips.c           /sprite/src/attcmds/file//machTypeMips.c
 machTypeSparc.c          /sprite/src/attcmds/file//machTypeSparc.c
-machTypeSpur.c           /sprite/src/attcmds/file//machTypeSpur.c
-machTypeSymm.c           /sprite/src/attcmds/file/machTypeSymm.c
