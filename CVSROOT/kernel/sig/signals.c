@@ -17,14 +17,10 @@
  *
  * SYNCHRONIZATION
  *
- * Whenever the signal state of a process is modified a master lock on the
- * schedule mutex is grabed.  A master lock is used instead of a monitor lock
- * so that signals can be sent at interrupt time.  The schedule mutex is 
- * used because sending a signal requires looking at and modifying the 
- * proc table.
- *
- * When the signal state is looked at no locking is done.  It is assumed 
- * that there are two ways that the signal state will be looked at:
+ * Whenever the signal state of a process is modified a monitor lock is
+ * grabbed.  When the signal state is looked at no locking is done. 
+ * It is assumed that there are two ways that the signal state will be
+ * looked at:
  *
  *      1) A process in the middle of executing a system call
  *         will check to see if any signals are pending before waiting for
@@ -37,8 +33,9 @@
  *         process is put to sleep.  If there are signals pending, then
  *         the sleep call will return immediately.  Otherwise if a signal
  *         comes in after the process goes to sleep then it will be
- *         awakened by the Sig_Send.  Thus there is no way to miss a
- *         signal in this case.
+ *         awakened by the Sig_Send which calls Sync_WakeWaitingProcess which
+ *	   synchronizes correctly with the Sync_Wait calls.  Thus there
+ *	   is no way to miss a signal in this case.
  *
  *	2) A process is returning to user mode after trapping into the kernel
  *	   for some reason and it wants to see if signals are pending before
@@ -287,7 +284,6 @@ Sig_ChangeState(procPtr, actions, sigMasks, pendingMask, sigCodes, holdMask)
 	     * signals that cannot be ignored.  If not then remove the signal
 	     * from the pending mask.
 	     */
-
 	    if (sigBitMasks[i] & sigCanHoldMask) {
 		pendingMask &= ~sigBitMasks[i];
 	    } else {
@@ -298,7 +294,6 @@ Sig_ChangeState(procPtr, actions, sigMasks, pendingMask, sigCodes, holdMask)
 	     * If greater than one of the actions then must be the address
 	     * of a signal handler so store the signal mask.
 	     */
-
 	    procPtr->sigMasks[i] = sigMasks[i] & sigCanHoldMask;
 	}
     }
@@ -371,7 +366,7 @@ LocalSend(procPtr, sigNum, code)
 
     /*
      * Signals can't be sent to kernel processes unless the system is being
-     * shutdown since kernel processes never get the oppurtunity to handle
+     * shutdown since kernel processes never get the opportunity to handle
      * signals.
      */
     if ((procPtr->genFlags & PROC_KERNEL) && !sys_ShuttingDown) {
@@ -386,52 +381,56 @@ LocalSend(procPtr, sigNum, code)
      */
     if ((procPtr->sigActions[sigNum] != SIG_IGNORE_ACTION) &&
 	!((sigNum == SIG_MIGRATE_HOME) && (procPtr->peerHostID == NIL))) {
-	sigBitMask = sigBitMasks[sigNum];
-	if (sigNum != SIG_RESUME) {
-	    /*
-	     * A resume signal just resumes a process - it does not leave any
-	     * state around.  All other types of signals leave state.
+	if (sigNum == SIG_RESUME) {
+	    /* 
+	     * Resume the suspended process.
 	     */
+	    Proc_ResumeProcess(procPtr, FALSE);
+	} else if (procPtr->sigActions[sigNum] == SIG_SUSPEND_ACTION &&
+		   procPtr->state == PROC_SUSPENDED) {
+	    /*
+	     * Are sending a suspend signal to a process that is already
+	     * suspended.  In this case just notify the parent that the 
+	     * process has been suspended.  This is necessary because resume
+	     * signals are sent by processes to debugged processes which do not
+	     * really get resumed.  However, the signaling process will not
+	     * be informed that the process it sent the signal to did not get
+	     * resumed (SIG_RESUME works regardless whether it actually 
+	     * resumes anything or not).  Thus a process may believe that
+	     * a process is running even though it really isn't and it may
+	     * send a suspend signal to an already suspended process.
+	     *
+	     * There is a potential race here between a process getting
+	     * suspended and us checking here but it doesn't matter.  If
+	     * it gets suspended after we check then the parent will get 
+	     * notified anyway.
+	     */
+	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, TRUE);
+	} else {
+	    sigBitMask = sigBitMasks[sigNum];
 	    procPtr->sigPendingMask |= sigBitMask;
 	    procPtr->sigCodes[sigNum] = code;
-	}
-	if (procPtr->sigHoldMask & sigBitMask & ~sigCanHoldMask) {
+	    if (procPtr->sigHoldMask & sigBitMask & ~sigCanHoldMask) {
+		/*
+		 * We received a signal that was blocked but can't be blocked
+		 * by users.  It only can be blocked if we are in the middle of
+		 * executing a signal handler for the signal.  So we set things
+		 * up to take the default action and make the signal unblocked
+		 * so that we don't get an infinite loop of errors.
+		 */
+		procPtr->sigHoldMask &= ~sigBitMask;
+		procPtr->sigActions[sigNum] = sigDefActions[sigNum];
+	    }
+	    procPtr->specialHandling = 1;
 	    /*
-	     * We received a signal that was blocked but can't be blocked
-	     * by users.  It only can be blocked if we are in the middle of
-	     * executing a signal handler for the signal.  So we set things
-	     * up to take the default action and make the signal unblocked
-	     * so that we don't get an infinite loop of errors.
+	     * If the process is waiting then wake it up.
 	     */
-	    procPtr->sigHoldMask &= ~sigBitMask;
-	    procPtr->sigActions[sigNum] = sigDefActions[sigNum];
-	}
-	procPtr->specialHandling = 1;
-
-	/*
-	 * If the process is waiting or suspended then wake it up.
-	 */
-	Sync_WakeWaitingProcess(procPtr);
-	if (sigNum == SIG_RESUME) {
-	    Proc_Resume(procPtr);
-	}
-
-	if (sigNum == SIG_KILL) {
-	    /*
-	     * If the process is in the debug state or suspended then make it 
-	     * runnable so that it can die.
-	     *
-	     * SYNCHRONIZATION NOTE:
-	     *
-	     *     We are the only ones that can put a process into and out of
-	     *     the debuggable and suspended state since we have the
-	     *	   monitor lock down.  Therefore there are no race conditions
-	     *     on accessing the state of the destination process.
-	     */
-	    if (procPtr->state == PROC_DEBUGABLE) {
-		Proc_TakeOffDebugList(procPtr);
-	    } else if (procPtr->state == PROC_SUSPENDED) {
-		Proc_Resume(procPtr);
+	    Sync_WakeWaitingProcess(procPtr);
+	    if (sigNum == SIG_KILL) {
+		/*
+		 * Resume the process so that we can kill it.
+		 */
+		Proc_ResumeProcess(procPtr, TRUE);
 	    }
 	}
     }
@@ -461,7 +460,6 @@ LocalSend(procPtr, sigNum, code)
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 Sig_SendProc(procPtr, sigNum, code)
     register	Proc_ControlBlock *procPtr;
