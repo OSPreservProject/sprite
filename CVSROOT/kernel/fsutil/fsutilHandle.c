@@ -39,7 +39,7 @@ static Sync_Lock handleTableLock = Sync_LockInitStatic("Fs:handleTable");
 /*
  * Synchronization and termination variables for LRU replacement.
  */
-static Sync_Condition lruDone;
+Sync_Condition lruDone;
 static Boolean lruInProgress;
 static int lruHandlesChecked;
 

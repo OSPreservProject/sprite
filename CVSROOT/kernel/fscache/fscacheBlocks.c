@@ -144,14 +144,14 @@ static Sync_Lock	cacheLock = Sync_LockInitStatic("Fs:blockCacheLock");
 /*
  * Condition variables.
  */
-static	Sync_Condition	cleanBlockCondition;	/* Condition that block 
+Sync_Condition	cleanBlockCondition;	/* Condition that block 
 						 * allocator waits on when all 
 						 * blocks are dirty. */
-static	Sync_Condition	writeBackComplete; 	/* Condition to wait on when 
+Sync_Condition	writeBackComplete; 	/* Condition to wait on when 
 						 * are waiting for the write 
 						 * back of blocks in the cache 
 						 * to complete. */
-static	Sync_Condition	closeCondition;		/* Condition to wait on when
+Sync_Condition	closeCondition;		/* Condition to wait on when
 						 * are waiting for the block
 						 * cleaner to finish to write
 						 * out blocks for this file. */
