@@ -394,7 +394,7 @@ extern  void		Fs_CloseOnExec();
 extern	ReturnStatus	Fs_EncapStream();
 extern	ReturnStatus	Fs_DeencapStream();
 extern	int		Fs_GetEncapSize();
-extern	ReturnStatus	Fs_StreamCopy();
+extern	void		Fs_StreamCopy();
 extern  ReturnStatus    Fs_EncapFileState();
 extern  ReturnStatus    Fs_DeencapFileState();
 extern  void            Fs_ClearFileState();
