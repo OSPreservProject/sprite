@@ -504,8 +504,7 @@ endScan:
 			 * Try the delete, this fails on non-empty directories.
 			 */
 			status = DeleteFileName(domainPtr, parentHandlePtr,
-			      &curHandlePtr, component, compLen, FALSE,
-			      clientID, idPtr);
+			      &curHandlePtr, component, compLen, FALSE, idPtr);
 		    }
 		} else if (status == FS_FILE_NOT_FOUND) {
 		    /*
@@ -529,7 +528,7 @@ endScan:
 		    } else {
 			status = DeleteFileName(domainPtr, parentHandlePtr, 
 				&curHandlePtr, component, compLen,
-				(int) (useFlags & FS_RENAME), clientID, idPtr);
+				(int) (useFlags & FS_RENAME), idPtr);
 		    }
 		}
 		break;
@@ -1705,7 +1704,7 @@ SetParentNumber(curHandlePtr, newParentNumber)
  */
 static ReturnStatus
 DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
-	       compLen, forRename, clientID, idPtr)
+	       compLen, forRename, idPtr)
     FsDomain *domainPtr;			/* Domain of the file */
     FsLocalFileIOHandle *parentHandlePtr;	/* Handle of directory in
 						 * which to delete file*/
@@ -1715,8 +1714,6 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
     int forRename;		/* if FS_RENAME, then the file being delted
 				 * is being renamed.  This allows non-empty
 				 * directories to be deleted */
-    int clientID;		/* Host doing lookup.  Used to prevent call-
-				 * backs to this host. */
     FsUserIDs *idPtr;		/* User and group IDs */
 {
     ReturnStatus status;
@@ -1961,8 +1958,13 @@ DirectoryEmpty(handlePtr)
  *	Check permissions on a file during lookup.  This just looks
  *	at the uid, groupIDs, and the permission bits on the file.
  *	
- *	There is no high level semantic checking like preventing
- *	directories from being written by users.
+ *	Some semantic checking is done:
+ *		type indicates what kind of file to accept.
+ *		Execution of files with no execute bit is prevented for uid = 0
+ *		Execution of directories is prevented.
+ *	Some semantic checking is not done:
+ *		Doesn't check against writing to directories.  This is
+ *		done later in the FileSrvOpen routine.
  *
  * Results:
  *	FS_NO_ACCESS if the useFlags include a permission that does
@@ -1993,7 +1995,7 @@ CheckPermissions(handlePtr, useFlags, idPtr, type)
     }
     descPtr = handlePtr->descPtr;
     /*
-     * Make sure the file type matches.  FS_FILE means any time, otherwise
+     * Make sure the file type matches.  FS_FILE means any type, otherwise
      * it should match exactly.
      */
     if (type != FS_FILE && type != descPtr->fileType) {
@@ -2041,34 +2043,38 @@ CheckPermissions(handlePtr, useFlags, idPtr, type)
      */
     if (uid == 0) {
 	/*
-	 * Let uid 0 do anything, regardless of the file's permBits
+	 * For normal files, only check for execute permission.  This
+	 * prevents root from being able to execute ordinary files by
+	 * accident.  However, root has complete access to directories.
 	 */
-	status = SUCCESS;
+	if (descPtr->fileType == FS_DIRECTORY) {
+	    return(SUCCESS);
+	}
+	useFlags &= FS_EXECUTE;
+    }
+    if (uid == descPtr->uid) {
+	permBits = (descPtr->permissions >> 6) & 07;
     } else {
-	if (uid == descPtr->uid) {
-	    permBits = (descPtr->permissions >> 6) & 07;
-	} else {
-	    for (index = idPtr->numGroupIDs, groupPtr = idPtr->group;
-	         index > 0;	/* index is just a counter */
-		 index--, groupPtr++) {
-		if (*groupPtr == descPtr->gid) {
-		    permBits = (descPtr->permissions >> 3) & 07;
-		    goto havePermBits;
-		}
+	for (index = idPtr->numGroupIDs, groupPtr = idPtr->group;
+	     index > 0;
+	     index--, groupPtr++) {
+	    if (*groupPtr == descPtr->gid) {
+		permBits = (descPtr->permissions >> 3) & 07;
+		goto havePermBits;
 	    }
-	    permBits = descPtr->permissions & 07;
 	}
+	permBits = descPtr->permissions & 07;
+    }
 havePermBits:
-	if (((useFlags & FS_READ) && ((permBits & FS_WORLD_READ) == 0)) ||
-	    ((useFlags & FS_WRITE) && ((permBits & FS_WORLD_WRITE) == 0)) ||
-	    ((useFlags & FS_EXECUTE) && ((permBits & FS_WORLD_EXEC) == 0))) {
-	    /*
-	     * The file's permission don't include what is needed.
-	     */
-	    status = FS_NO_ACCESS;
-	} else {
-	    status = SUCCESS;
-	}
+    if (((useFlags & FS_READ) && ((permBits & FS_WORLD_READ) == 0)) ||
+	((useFlags & FS_WRITE) && ((permBits & FS_WORLD_WRITE) == 0)) ||
+	((useFlags & FS_EXECUTE) && ((permBits & FS_WORLD_EXEC) == 0))) {
+	/*
+	 * The file's permission don't include what is needed.
+	 */
+	status = FS_NO_ACCESS;
+    } else {
+	status = SUCCESS;
     }
     return(status);
 }

@@ -557,7 +557,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
     cltHandlePtr = (PdevClientIOHandle *)(*ioHandlePtrPtr);
     if (found) {
 	if ((cltHandlePtr->pdevHandlePtr != (PdevServerIOHandle *)NIL) &&
-	    (cltHandlePtr->pdevHandlePtr->clientPID != NIL)) {
+	    (cltHandlePtr->pdevHandlePtr->clientPID != (unsigned int)NIL)) {
 	    Sys_Panic(SYS_WARNING,
 		"FsPseudoStreamCltOpen found client handle\n");
 	    Sys_Printf("Check (and kill) client process %x\n",
@@ -1531,7 +1531,6 @@ RequestResponse(pdevHandlePtr, requestPtr, inputSize, inputBuf, replySize,
 					 * Only needed for read & write. */
 {
     register ReturnStatus	status;
-    Proc_ControlBlock		*procPtr;	/* Used to get clientPID */
     Proc_ControlBlock		*serverProcPtr;	/* For VM copy operations */
     register int		firstByte;	/* Offset into request buffer */
     register int		lastByte;	/* Offset into request buffer */
