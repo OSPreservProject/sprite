@@ -108,6 +108,9 @@ ProcMigAcceptMigration(cmdPtr, procPtr, inBufPtr, outBufPtr)
     Proc_PID *pidPtr;
     int clientID;		/* Sprite ID of client host */
 
+    if (proc_MigDebugLevel > 5) {
+	printf("ProcMigAcceptMigration called.\n");
+    }
     if (inBufPtr->size != sizeof(ProcMigInitiateCmd)) {
 	/*
 	 * Implicit version mismatch if they're not the same size.
@@ -191,6 +194,9 @@ ProcMigAcceptMigration(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	    panic("ProcMigAcceptMigration: given null control block for existing process\n");
 	    return(PROC_NO_PEER);
 	}
+    }
+    if (proc_MigDebugLevel > 5) {
+	printf("ProcMigAcceptMigration returning SUCCESS.\n");
     }
     return(SUCCESS);
 }
