@@ -6,8 +6,8 @@
  *	are responsible for the following fields in the proc table:
  *
  *	    1) Process state can go to PROC_DEBUGABLE.
- *	    2) PROC_DEBUGGED, PROC_SINGLE_STEP and PROC_DEBUG_WAIT can be set 
- *	       in the genFlags field.
+ *	    2) PROC_DEBUGGED, PROC_SINGLE_STEP_FLAG, and PROC_DEBUG_WAIT
+ *	       can be set in the genFlags field.
  *
  * Copyright 1986 Regents of the University of California
  * All rights reserved.
@@ -199,11 +199,12 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	}
 
 	case PROC_SINGLE_STEP:
-            procPtr->genFlags |= PROC_SINGLE_STEP;
+            procPtr->genFlags |= PROC_SINGLE_STEP_FLAG;
 	    /* Fall through to ... */
 	    
 	case PROC_CONTINUE:
 	    procPtr->genFlags 	&= ~PROC_DEBUGGED;
+	    List_Remove((List_Links *) procPtr);
 	    Sched_MakeReady(procPtr);
 	    break;
 
