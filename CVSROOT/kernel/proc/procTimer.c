@@ -246,12 +246,12 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 
 	/*
 	 * The user wants to cancel the timer.  Invalidate the token for
-	 * the existing expiration routine.  The routine, when called,
-	 * will match its token against this one and it will discover the
-	 * mismatch so it will do nothing.
+	 * the existing expiration routine, and cancel the timer.
 	 */
-	timerPtr->token = (ClientData) NIL;
-
+	if (timerPtr->token != (ClientData) NIL) {
+	    Proc_CancelCallFunc(timerPtr->token);
+	    timerPtr->token = (ClientData) NIL;
+	}
     } else {
 	Timer_Ticks curTime;
 
@@ -286,8 +286,12 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 
 	/*
 	 * Setting the token implicitly cancels a previous expiration
-	 * routine's callback.
+	 * routine's callback, but let's clear the old one to avoid
+	 * putting cruft in the timer queue.
 	 */
+	if (timerPtr->token != (ClientData) NIL) {
+	    Proc_CancelCallFunc(timerPtr->token);
+	}
 	timerPtr->token = Proc_CallFuncAbsTime(SendTimerSigFunc, 
 			(ClientData) procPtr->processID, timerPtr->expire);
     }
