@@ -1322,7 +1322,9 @@ FsprefixHandleCloseInt(prefixPtr, flags)
 		    prefixPtr->prefix);
 	    return;
 	}
-	printf("Fsprefix_HandleClose nuking \"%s\"\n", prefixPtr->prefix);
+	if (prefixPtr->prefix != (char *) NIL) {
+	    printf("Fsprefix_HandleClose nuking \"%s\"\n", prefixPtr->prefix);
+	}
 	hdrPtr = prefixPtr->hdrPtr;
 	prefixPtr->hdrPtr = (Fs_HandleHeader *)NIL;
 	Fsutil_HandleLock(hdrPtr);
