@@ -106,6 +106,11 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     reply.flags = 0;
     reply.signal = 0;
     reply.code = 0;
+#ifdef SOSP91
+    if (streamType == FSIO_LCL_FILE_STREAM) {
+	ioPtr->reserved = rpc_SpriteID;
+    }
+#endif SOSP91
 
     /*
      * Outer loop to attempt the read and then block if no data is ready.
