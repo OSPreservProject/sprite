@@ -165,7 +165,16 @@ Rpc_Server()
 	 */
 	command = rpcHdrPtr->command;
 	if (!rpcServiceEnabled) {
-	    error = RPC_SERVICE_DISABLED;
+	    /*
+	     * Silently ignore broadcast requests.  If we return an error
+	     * we'll cause the sender to stop pre-maturely.  Otherwise
+	     * return an indication that our service is not yet ready.
+	     */
+	    if (rpcHdrPtr->serverID == RPC_BROADCAST_SERVER_ID) {
+		error = RPC_NO_REPLY;
+	    } else {
+		error = RPC_SERVICE_DISABLED;
+	    }
 	} else if (command <= 0 || command > RPC_LAST_COMMAND) {
 	    error = RPC_INVALID_RPC;
 	} else {
