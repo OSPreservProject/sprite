@@ -149,9 +149,14 @@ MachFpNaN:
     .globl MachUnixSyscallTrap
 MachUnixSyscallTrap:
 
-	movc	usp, a1
-	movl    a1@+, d0
-	movc    a1, usp
+	|* Save the address registers we use, and the sp.
+	|* We used to not save a0, a1, but the Sun longjmp code counts
+	|* on a0 being preserved.
+	movl	a0, sp@-
+	movl	a1, sp@-
+	movl	a2, sp@-
+	movl	a3, sp@-
+	movl	sp, a3
 
 	|*
 	|* Always save the user stack pointer because it can be needed
@@ -159,6 +164,20 @@ MachUnixSyscallTrap:
 	|*
 	movl	_machCurStatePtr, a0
 	movl	a1, a0@(MACH_USER_SP_OFFSET)
+
+	|* Save d0, because the Sigreturn system call needs it.
+	|* (Boneheaded SunOS convention for that system call!)
+	movl	d0, a0@(MACH_TRAP_REGS_OFFSET + 0)
+
+	|* Pop the call number into d0
+	movc	usp, a1
+	movl    a1@+, d0
+	movc    a1, usp
+
+	|*
+	|* Store this kernel call in the last kernel call variable.
+	|*
+	movl	d0, a0@(MACH_LAST_SYS_CALL_OFFSET)
 
 	|*
 	|* If this is a fork kernel call, save the registers in the PCB.
@@ -170,17 +189,11 @@ MachUnixSyscallTrap:
 	cmpl    #2, d0
 	bnes	1f
 	moveml	#0xffff, a0@(MACH_TRAP_REGS_OFFSET)
+	lea	sp@(16), sp
 	movl	sp, a0@(MACH_EXC_STACK_PTR_OFFSET)
+	lea	sp@(-16), sp
 
 	SaveUserFpuState();
-
-	|*
-	|* Save registers used here:  two address registers and sp.
-	|*
-
-1:	movl	a2, sp@-
-	movl	a3, sp@-
-	movl	sp, a3
 
 	|*
 	|* Check number of kernel call for validity.
@@ -220,9 +233,9 @@ MachUnixSyscallTrap:
 	|*
 
 	movl	_proc_RunningProcesses, a0
-	movl	a0@, d1			| d1 now has PCB address.
-	addl	_machKcallTableOffset, d1
-	movl	d1, a2			| a2 now has address of kcallTable
+	movl	a0@, a2			| d1 now has PCB address.
+	addl	_machKcallTableOffset, a2
+					| a2 now has address of kcallTable
 					| field in PCB.
 	movw	#0x2700, sr		| Disable interrupts.
 	tstl	a2@(4)
@@ -231,6 +244,8 @@ MachUnixSyscallTrap:
 	movl    a3, sp
 	movl    sp@+, a3
 	movl    sp@+, a2
+	movl    sp@+, a1
+	movl    sp@+, a0
 	cmpl    #-1, d0
 	beqs    7f
 	rte
@@ -247,6 +262,8 @@ MachUnixSyscallTrap:
 	movl    a3, sp
 	movl    sp@+, a3
 	movl    sp@+, a2
+	movl    sp@+, a1
+	movl    sp@+, a0
 	negl    d0
 	negl    d0
 	rte
@@ -264,7 +281,9 @@ MachUnixSyscallTrap:
 	movw	#0x2000, sr
 	movl	sp@+, a3
 	movl	sp@+, a2
-	CallTrapHandler(MACH_SYSCALL_TRAP)
+	movl    sp@+, a1
+	movl    sp@+, a0
+	CallTrapHandler(MACH_UNIX_SYSCALL_TRAP)
 
 
 |*
