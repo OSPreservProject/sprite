@@ -297,6 +297,11 @@ GetProcessState(buffer, hostID, pidPtr)
 	return((Proc_PID) NIL);
     }
     buffer += Mach_GetEncapSize();
+    /*
+     * Set up profiling state.
+     */
+    Prof_DeencapState(procPtr, buffer);
+    buffer += Prof_GetEncapSize();
 
     /*
      * Set up the code segment.

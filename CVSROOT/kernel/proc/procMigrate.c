@@ -1,9 +1,13 @@
 /* 
  * procMigrate.c --
  *
- *	Routines for process migration.
+ *	Routines for process migration.  These provide the system
+ *	call interface to initiate migration and routines to transfer
+ *	data from the host on which the process is currently executing
+ *	to the host to which it is migrating.  The routines that accept
+ *	this data are in procRemote.c.  
  *
- * Copyright 1986, 1988 Regents of the University of California
+ * Copyright 1986, 1988, 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright
@@ -66,7 +70,7 @@ Boolean proc_RefuseMigrations = FALSE;
  * machines of the same architecture and version number.
  */
 #ifndef PROC_MIGRATE_VERSION
-#define PROC_MIGRATE_VERSION 2
+#define PROC_MIGRATE_VERSION 3
 #endif /* PROC_MIGRATE_VERSION */
 
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
@@ -496,7 +500,7 @@ Proc_MigrateTrap(procPtr)
  *  |	int		sigMasks[SIG_NUM_SIGNALS]
  *  |	int		sigCodes[SIG_NUM_SIGNALS]
  *  |	int		sigFlags
- *	variable: encapsulated machine state
+ *	variable: encapsulated machine state, profiling state
  *
  *	Note that if the Proc_ControlBlock structure is changed, it may
  * 	be necessary to change the logic of this procedure to copy
@@ -529,6 +533,7 @@ SendProcessState(procPtr, nodeID, foreign)
     Address ptr;
     int procBufferSize;
     int machStateSize;
+    int profStateSize;
     ReturnStatus error;
     Rpc_Storage storage;
     Proc_MigrateCommand migrateCommand;
@@ -549,12 +554,13 @@ SendProcessState(procPtr, nodeID, foreign)
     }
    
     machStateSize = Mach_GetEncapSize();
+    profStateSize = Prof_GetEncapSize();
     
     argStringLength = Byte_AlignAddr(strlen(procPtr->argString) + 1);
     procBufferSize = 2 * sizeof(Proc_PID) +
 	    (PROC_NUM_ID_FIELDS + PROC_NUM_FLAGS +
 	     PROC_NUM_SCHED_FIELDS + 1) * sizeof(int) +
-	    SIG_INFO_SIZE + machStateSize + argStringLength;
+	    SIG_INFO_SIZE + machStateSize + profStateSize + argStringLength;
     procBuffer = malloc(procBufferSize);
 
     ptr = procBuffer;
@@ -584,6 +590,9 @@ SendProcessState(procPtr, nodeID, foreign)
 
     Mach_EncapState(procPtr, ptr);
     ptr += machStateSize;
+
+    Prof_EncapState(procPtr, ptr);
+    ptr += profStateSize;
 
     Byte_FillBuffer(ptr, int, argStringLength);
     bcopy((Address) procPtr->argString, ptr, argStringLength);
