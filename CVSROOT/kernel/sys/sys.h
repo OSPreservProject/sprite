@@ -13,9 +13,11 @@
 #ifndef _SYS
 #define _SYS
 
+#ifndef _ASM
 #include "user/sys.h"
 #include "sprite.h"
 #include "status.h"
+#endif /* _ASM */
 
 /*
  * Stuff for system calls.
@@ -30,6 +32,7 @@
 #define	SYS_MAX_ARGS	10
 #define	SYS_ARG_SIZE	4
 
+#ifndef _ASM
 #ifdef KERNEL
 
 extern	Boolean	sys_ShuttingDown;
@@ -57,4 +60,5 @@ extern	ReturnStatus	Sys_Shutdown();
 extern	ReturnStatus	Sys_GetMachineInfo();
 extern	ReturnStatus	Sys_GetMachineInfoNew();
 
+#endif /* _ASM */
 #endif /* _SYS */
