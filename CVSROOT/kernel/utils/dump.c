@@ -39,7 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Define constants, which are used instead of enumerated types to allow
  * DumpListLinksStruct to be called from Kdbx with a List_Links pointer.
  *
- * DUMP_PROC indicates a Proc_ControlBlock.
+ * DUMP_PROC indicates a Proc_ControlBlock. 
  * DUMP_TIMER indicates a Timer_QueueElement.
  */
 
@@ -53,10 +53,11 @@ typedef int DumpType;
 
 void	DumpList();
 void	DumpListLinksStruct();
-void	DumpPCB();
 void	DumpTimerElement();
 void	DumpTimerStats();
 void 	PrintL1Menu();
+void	DumpPCB();
+void	Dump_ProcessTable();
 static void	PrintVersion();
 static void	PrintTOD();
 extern	void	Fs_DumpCacheStats();
@@ -205,7 +206,6 @@ Dump_ProcessTable()
     Sys_Printf("\n");
     ENABLE_INTR();
 }
-
 
 /*
  *----------------------------------------------------------------------
