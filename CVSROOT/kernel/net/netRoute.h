@@ -134,4 +134,4 @@ typedef struct NetSpriteArp {
 
 int		 NetArpInput();
 
-#endif _NETROUTE
+#endif /* _NETROUTE */
