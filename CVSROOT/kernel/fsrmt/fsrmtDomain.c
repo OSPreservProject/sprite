@@ -688,14 +688,16 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	if (hdrPtr == (FsHandleHeader *) NIL) {
 	    status = FS_STALE_HANDLE;
 	} else if (streamPtr->ioHandlePtr != hdrPtr) {
-	    printf( "Fs_RpcClose: Stream/handle mis-match\n");
+	    printf("Fs_RpcClose: Stream/handle mis-match from client %d\n",
+		clientID);
 	    if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
 		register Fs_FileID *fileIDPtr;
 		fileIDPtr = &streamPtr->ioHandlePtr->fileID;
-		printf("My stream <%d> => %s I/O <%d, %d>\n",
+		printf("My stream <%d> => %s I/O <%d, %d> \"%s\"\n",
 		    paramsPtr->streamID.minor,
 		    FsFileTypeToString(fileIDPtr->type),
-		    fileIDPtr->major, fileIDPtr->minor);
+		    fileIDPtr->major, fileIDPtr->minor,
+		    FsHandleName(streamPtr->ioHandlePtr));
 	    } else {
 		printf("My stream <%d> => NIL I/O handle\n",
 		    paramsPtr->streamID.minor);
