@@ -1642,7 +1642,14 @@ Proc_FlagMigration(procPtr, hostID, exec)
 
     procPtr->genFlags |= PROC_MIG_PENDING;
     if (exec) {
+	/*
+	 * We flag the process specially so we know to copy over exec
+	 * arguments.  We also allow a signal to be handled the first
+	 * time it's hit since we don't have to worry about page faults
+	 * when doing exec-time migration.
+	 */
 	procPtr->genFlags |= PROC_REMOTE_EXEC_PENDING;
+	Sig_AllowMigration(procPtr);
     }
     procPtr->peerHostID = hostID;
     if (procPtr->state == PROC_SUSPENDED) {
