@@ -124,6 +124,7 @@ int	vmPhysPageLimit = -1;
 static void	PageOut();
 static void	PutOnReserveList();
 static void	PutOnFreeList();
+void		Fs_GetPageFromFS();
 
 
 /*
@@ -193,6 +194,7 @@ VmCoreMapInit()
         corePtr->flags = 0;
         corePtr->virtPage.segPtr = vm_SysSegPtr;
         corePtr->virtPage.page = i + firstKernPage;
+	corePtr->virtPage.sharedPtr = (Vm_SegProcList *)NIL;
     }
     /*
      * The first NUM_RESERVED_PAGES are put onto the reserve list.
@@ -1515,6 +1517,9 @@ Vm_PageIn(virtAddr, protFault)
     } else if (*ptePtr & VM_ON_SWAP_BIT ||
 	    transVirtAddr.segPtr->type == VM_SHARED) {
 	vmStat.psFilled++;
+	if (transVirtAddr.segPtr->type == VM_SHARED) {
+	    dprintf("Paging in shared page %d\n",transVirtAddr.page);
+	}
 	status = VmPageServerRead(&transVirtAddr, virtFrameNum);
 	if (vm_Tracing) {
 	    Vm_TracePageFault	faultRec;
@@ -1555,6 +1560,7 @@ Vm_PageIn(virtAddr, protFault)
      */
     if (status != SUCCESS) {
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
+	    VmPageFree(Vm_GetPageFrame(*ptePtr));
 	    VmPageInvalidateInt(&transVirtAddr, ptePtr);
 	} else {
 	    VmKillSharers(segPtr);
@@ -2527,7 +2533,7 @@ VmFlushSegment(segPtr, firstPage, lastPage)
     }
     virtAddr.segPtr = segPtr;
     virtAddr.page = firstPage;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     for (ptePtr = VmGetPTEPtr(segPtr, firstPage);
          virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
@@ -2619,7 +2625,7 @@ Vm_MapBlock(addr)
     virtAddr.offset = 0;
     virtAddr.segPtr = vm_SysSegPtr;
     virtAddr.flags = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     /*
@@ -2683,7 +2689,7 @@ Vm_UnmapBlock(addr, retOnePage, pageNumPtr)
     virtAddr.offset = 0;
     virtAddr.segPtr = vm_SysSegPtr;
     virtAddr.flags = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     if (retOnePage) {
