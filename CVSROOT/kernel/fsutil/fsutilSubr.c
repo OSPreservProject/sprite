@@ -877,12 +877,14 @@ FsFileTypeToString(type)
 	case FS_RMT_PIPE_STREAM:
 	    fileType = "RmtPipe";
 	    break;
+#ifdef notdef
 	case FS_LCL_NAMED_PIPE_STREAM:
 	    fileType = "NamedPipe";
 	    break;
 	case FS_RMT_NAMED_PIPE_STREAM:
 	    fileType = "RmtNamedPipe";
 	    break;
+#endif
 	case FS_CONTROL_STREAM:
 	    fileType = "PdevControlStream";
 	    break;
@@ -907,13 +909,25 @@ FsFileTypeToString(type)
 	case FS_RMT_PFS_STREAM:
 	    fileType = "RmtPfs";
 	    break;
-
+#ifdef INET
+	case FS_RAW_IP_STREAM:
+	    fileType = "RawIp Socket";
+	    break;
+	case FS_UDP_STREAM:
+	    fileType = "UDP Socket";
+	    break;
+	case FS_TCP_STREAM:
+	    fileType = "TCP Socket";
+	    break;
+#endif
+#ifdef notdef
 	case FS_RMT_UNIX_STREAM:
 	    fileType = "UnixFile";
 	    break;
 	case FS_RMT_NFS_STREAM:
 	    fileType = "NFSFile";
 	    break;
+#endif
 	default:
 	    fileType = "<unknown file type>";
 	    break;
