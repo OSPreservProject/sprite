@@ -59,6 +59,28 @@ typedef enum {
     }
 
 /*
+ * Macro for enabling timer interrupts. 
+ * Use this only during bootstrap before turning on all interrupts for the
+ * first time. Also be sure to disable interrupts after enabling timer
+ * interrupts (don't do to enables in a row).
+ */
+
+#define ENABLE_TIMER_INTR() {\
+    register int pnum = Mach_GetProcessorNumber();\
+    if (!mach_AtInterruptLevel[pnum]) { \
+	mach_NumDisableIntrsPtr[pnum]--; \
+	if (mach_NumDisableIntrsPtr[pnum] < 0) { \
+	    panic("Negative interrupt count.\n"); \
+	} \
+	if (mach_NumDisableIntrsPtr[pnum] == 0) { \
+	    Mach_EnableTimerIntr(); \
+	} else { \
+	    printf("Can't enable timer interrupts, too many disables.\n");\
+	} \
+    } \
+}
+
+/*
  * Macro to get level of nesting of disabled interrupts.
  */
 #define Mach_IntrNesting(cpu) (mach_NumDisableIntrsPtr[(cpu)])
@@ -540,6 +562,7 @@ extern	int	Mach_GetMachineArch();
 extern	Address	Mach_GetStackPointer();
 extern	void	Mach_DisableIntr();
 extern	void	Mach_EnableIntr();
+extern  void	Mach_EnableTimerIntr();
 extern  ReturnStatus Mach_AllocExtIntrNumber();
 extern	void	Mach_SetNonmaskableIntr();
 extern  ReturnStatus Mach_CallProcessor();

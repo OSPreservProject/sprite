@@ -147,7 +147,7 @@ Mach_CallProcessor(processorNumber, routine, argument, wait, returnValue)
 	for(i = 0; !(*done) && ( i < TIMEOUT); i++) {
 		continue;
 	}
-	if (!machCPCData[processorNumber].done) {
+	if (machCPCData[processorNumber].done) {
 	    status = machCPCData[processorNumber].status;
 	} else { 
 	   Mach_MonPrintf("Warning: Processor %d appears hung.\n", processorNumber);

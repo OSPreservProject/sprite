@@ -304,6 +304,7 @@ _machLEDValues:			.long 0; .long 0; .long 0; .long 0;
 _machRefreshCount:		.long 0; .long 0; .long 0; .long 0;
 				.long 0; .long 0; .long 0; .long 0
 _machDebugSlave:		.long 0
+_machTimerIntrMask:		.long MACH_TIMER_T1_INTR
 
 /*
  * The instruction to execute on return from a signal handler.  Is here
@@ -3342,6 +3343,40 @@ _Mach_EnableIntr:
 	wr_kpsw		VOL_TEMP1, $0
 	ld_32		SAFE_TEMP1, r0, $_machIntrMask
 	nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	wr_kpsw		SAFE_TEMP2, $0
+#ifdef PATCH_IBUFFER
+	nop
+	nop
+#endif
+	invalidate_ib
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Mach_EnableTimerIntr --
+ *
+ *
+ *	Enable timer interrupts. 
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	Interrupts are enabled.
+ *
+ *----------------------------------------------------------------------------
+ */
+	.globl	_Mach_EnableTimerIntr
+_Mach_EnableTimerIntr:
+	rd_kpsw		SAFE_TEMP2
+	and		VOL_TEMP1, SAFE_TEMP2, $(~MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP1, $0
+	READ_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	ld_32		VOL_TEMP1, r0, $_machTimerIntrMask
+	or		SAFE_TEMP1, SAFE_TEMP1, VOL_TEMP1
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	wr_kpsw		SAFE_TEMP2, $0
 #ifdef PATCH_IBUFFER

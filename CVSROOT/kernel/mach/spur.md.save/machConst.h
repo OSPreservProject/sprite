@@ -495,7 +495,7 @@
  * Maximum number of processors configuable.
  */
 
-#define	MACH_MAX_NUM_PROCESSORS		4
+#define	MACH_MAX_NUM_PROCESSORS		8
 /*
  * Bound on the kernel's address space.
  *
