@@ -78,14 +78,14 @@ typedef struct DevConfigController {
 
 /*
  * Definitions of address space types.
- * DEV_MEMORY	- on board memory
+ * DEV_OBMEM	- on board memory
  * DEV_OBIO	- on board I/O devices.
  * DEV_MULTIBUS - the Multibus memory on the Sun2
  * DEV_MULTIBUS_IO - Multibus I/O space on the Sun2
  * DEV_VME_DxAx - The 6 sets of VME address spaces available on
  *	Sun3's.  Only D16A24 and D16A16 are available on VME based Sun2's.
  */
-#define DEV_MEMORY	0
+#define DEV_OBMEM	0
 #define DEV_OBIO	1
 #define DEV_MULTIBUS	22
 #define DEV_MULTIBUS_IO	23
