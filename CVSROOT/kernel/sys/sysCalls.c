@@ -536,6 +536,9 @@ Sys_StatsStub(command, option, argPtr)
 
 	case SYS_PROC_MIGRATION: {
 	    switch(option) {
+		/*
+		 * The first two are for backward compatibility.
+		 */
 		case SYS_PROC_MIG_ALLOW: 
 		case SYS_PROC_MIG_REFUSE: {
 		    register Proc_ControlBlock *procPtr;
@@ -547,14 +550,33 @@ Sys_StatsStub(command, option, argPtr)
 			 * This part is simplified for now.
 			 */
 			if (option == SYS_PROC_MIG_REFUSE) {
-			    proc_AllowMigrationState = PROC_MIG_IMPORT_NEVER;
+			    proc_AllowMigrationState &= ~PROC_MIG_IMPORT_ALL;
 			} else {
-			    proc_AllowMigrationState = PROC_MIG_IMPORT_ALL;
+			    proc_AllowMigrationState |= PROC_MIG_IMPORT_ALL;
 			}
 		    }
 		}
 		break;
 
+		case SYS_PROC_MIG_SET_STATE: {
+		    register Proc_ControlBlock *procPtr;
+		    int arg;
+
+		    procPtr = Proc_GetEffectiveProc();
+		    if (procPtr->effectiveUserID != 0) {
+			status = GEN_NO_PERMISSION;
+		    } else {
+			status = Vm_CopyIn(sizeof(int), argPtr, (Address)&arg);
+			if (status == SUCCESS) {
+			    proc_AllowMigrationState = arg;
+			}
+		    }
+		}
+		break;
+
+		/*
+		 * Also obsolete, here for backward compatibility for a while.
+		 */
 	        case SYS_PROC_MIG_GET_STATUS: {
 		    if (argPtr != (Address) NIL) {
 			/*
@@ -568,6 +590,16 @@ Sys_StatsStub(command, option, argPtr)
 			}
 			status = Vm_CopyOut(sizeof(Boolean),
 					    (Address)&refuse,
+					    argPtr);
+		    } else {
+			status = GEN_INVALID_ARG;
+		    }
+		}
+		break;
+	        case SYS_PROC_MIG_GET_STATE: {
+		    if (argPtr != (Address) NIL) {
+			status = Vm_CopyOut(sizeof(Boolean),
+					    (Address)&proc_AllowMigrationState,
 					    argPtr);
 		    } else {
 			status = GEN_INVALID_ARG;
