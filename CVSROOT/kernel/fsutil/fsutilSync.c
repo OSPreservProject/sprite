@@ -590,7 +590,7 @@ FsDomainInfo(fileIDPtr, domainInfoPtr)
 			    &getAttrResults, &redirectPtr);
 	    }
 	    if (status == FS_LOOKUP_REDIRECT) {
-		free(redirectPtr);
+		free((Address) redirectPtr);
 	    }
 	    break;
 	}
