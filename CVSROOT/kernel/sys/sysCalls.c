@@ -233,9 +233,8 @@ Sys_Shutdown(flags, rebootString)
 	VmMach_ReinitContext(procPtr);
 
 	/*
-	 * Disallow future migrations, and get rid of any migrated processes.
+	 * Get rid of any migrated processes.
 	 */
-	proc_AllowMigrationState &= ~PROC_MIG_IMPORT_ALL;
 	(void) Proc_EvictForeignProcs();
 	
 	waitTime.seconds = 5;
@@ -496,6 +495,15 @@ Sys_StatsStub(command, option, argPtr)
     int option;			/* Modifier for command */
     Address argPtr;		/* Argument for command */
 {
+    /*
+     * These extern decl's are temporary and should be removed when the
+     * START_STATS and END_STATS are removed.
+     */
+    extern void	Dev_StartIOStats();
+    extern void	Dev_StopIOStats();
+    extern void	Sched_StopSchedStats();
+    extern void	Sched_StartSchedStats();
+
     ReturnStatus status = SUCCESS;
     
     switch(command) {
@@ -976,6 +984,20 @@ Sys_StatsStub(command, option, argPtr)
 	    if (resultPtr != (Address) NIL) {
 		free(resultPtr);
 	    }
+	    break;
+	}
+	case SYS_START_STATS: {
+	    /* schedule the stuff */
+	    Dev_StartIOStats();
+	    Sched_StartSchedStats();
+	    status = SUCCESS;
+	    break;
+	}
+	case SYS_END_STATS: {
+	    /* deschedule the stuff */
+	    Dev_StopIOStats();
+	    Sched_StopSchedStats();
+	    status = SUCCESS;
 	    break;
 	}
 	default:
