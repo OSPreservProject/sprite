@@ -53,7 +53,7 @@ static	Sync_Lock	migrateLock = Sync_LockInitStatic("Proc:migrateLock");
 #define	LOCKPTR &migrateLock
 static  Time		timeEvictionStarted;
 
-int proc_MigDebugLevel = 0;
+int proc_MigDebugLevel = 2;
 
 Trace_Header proc_TraceHeader;
 Trace_Header *proc_TraceHdrPtr = (Trace_Header *)NIL;
@@ -109,6 +109,7 @@ static ReturnStatus DeencapProcState();
 static ReturnStatus UpdateState();
 
 static ReturnStatus ResumeExecution();
+static void 	    AbortMigration();
 
 /*
  * Procedures for statistics gathering
@@ -462,14 +463,13 @@ Proc_MigrateTrap(procPtr)
     Proc_EncapInfo *infoPtr;
     ProcMigCmd cmd;
     Proc_MigBuffer inBuf;
-    int failure;
+    int failed;
 #ifndef CLEAN
     Time startTime;
     Time endTime;
     Time timeDiff;
     Time *timePtr;
 #endif /* CLEAN */
-    int maxSize;
     int whenNeeded;
     Boolean exec;
     Proc_PID pid;
@@ -546,20 +546,14 @@ Proc_MigrateTrap(procPtr)
 		   "(can't get name)", 
 #endif /* BREAKS_KDBX */
 		   Stat_GetMsg(status));
-	    procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING);
-	    Proc_Unlock(procPtr);
-	    ProcMigWakeupWaiters();
+	    if (exec) {
+		goto failure;
+	    } else {
+		AbortMigration(procPtr);
+	    }
 	    return;
 	}
 	bufSize += infoPtr->size + sizeof(Proc_EncapInfo);
-    }
-    Rpc_MaxSizes(&maxSize, (int *) NIL);
-    if (bufSize > maxSize) {
-	if (proc_MigDebugLevel > 0) {
-	    printf("Can't migrate process: buffer size (%d) exceeds RPC capacity.\n",
-		   bufSize);
-	}
-	return;
     }
     if (proc_MigDebugLevel > 5) {
 	printf("Buffer size is %d\n", bufSize);
@@ -569,11 +563,11 @@ Proc_MigrateTrap(procPtr)
 	printf("past malloc\n", bufSize);
     }
     bufPtr = buffer;
-    failure = 0;
+    failed = 0;
 
     /*
      * This time, go through the list of callbacks to fill in the
-     * encapsulated data.  From this point on, failure indicates
+     * encapsulated data.  From this point on, failed indicates
      * that the process will be killed.
      */
     for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
@@ -605,7 +599,7 @@ Proc_MigrateTrap(procPtr)
 		   "(can't get name)", 
 #endif /* BREAKS_KDBX */
 		   Stat_GetMsg(status));
-	    failure = 1;
+	    failed = 1;
 	    break;
 	}
 	bufPtr += infoPtr->size;
@@ -616,7 +610,7 @@ Proc_MigrateTrap(procPtr)
     /*
      * Send the encapsulated data in the buffer to the other host.  
      */
-    if (!failure) {
+    if (!failed) {
 	/*
 	 * Set up for the RPC.
 	 */
@@ -639,7 +633,7 @@ Proc_MigrateTrap(procPtr)
 	if (status != SUCCESS) {
 	    printf("Warning: Proc_MigrateTrap: error encountered sending encapsulated state:\n\t%s.\n",
 		   Stat_GetMsg(status));
-	    failure = 1;
+	    failed = 1;
 	}
     }
     /*
@@ -667,20 +661,20 @@ Proc_MigrateTrap(procPtr)
 		printf("Calling postFunc %d\n", i);
 	    }
 	    status = (*encapCallbacks[i].postFunc)(procPtr, hostID, infoPtr,
-						   bufPtr, failure);
+						   bufPtr, failed);
 #ifdef lint
 	    status = Vm_FinishMigration(procPtr, hostID, infoPtr, bufPtr,
-					failure);
+					failed);
 #endif /* lint */
 	}
 	if (status != SUCCESS) {
-	    failure = 1;
+	    failed = 1;
 	}
 	bufPtr += infoPtr->size;
     }
     free(buffer);
 
-    if (failure) {
+    if (failed) {
 	goto failure;
     }
 
@@ -839,6 +833,39 @@ Proc_MigrateTrap(procPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * AbortMigration --
+ *
+ *	Undo a migration at a point when the process can still be
+ *	continued on the local host.  This is only true when migrating
+ *	a running process, not when execing a new image, since we can't
+ *	recover from that.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the process is currently local, an RPC is sent to the remote host.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+AbortMigration(procPtr)
+    Proc_ControlBlock *procPtr; /* ptr to process control block */
+{
+    if (!(procPtr->genFlags & PROC_FOREIGN)) {
+	ProcMigKillRemoteCopy(procPtr->peerProcessID);
+	procPtr->peerProcessID = NIL;
+	procPtr->peerHostID = NIL;
+    }
+    procPtr->genFlags &= ~PROC_MIGRATING;
+    procPtr->sigPendingMask &= ~(1 << SIG_MIGRATE_TRAP);
+    Proc_Unlock(procPtr);
+    ProcMigWakeupWaiters();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ProcMigReceiveProcess --
  *
  *	Receive the encapsulated state of a process from another host
@@ -874,9 +901,7 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	~PROC_MIGRATION_DONE;
 
     /*
-     * Go through the list of callbacks to generate the size of the buffer
-     * we'll need.  In unusual circumstances, a caller may return a status
-     * other than SUCCESS. In this case, the process should be continuable!
+     * Go through the buffer to deencapsulate the process module-by-module.
      */
     bufPtr = inBufPtr->ptr;
     for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
@@ -1562,7 +1587,7 @@ ProcMigGetSuspend(cmdPtr, procPtr, inBufPtr, outBufPtr)
  *	Not yet implemented.
  *
  * Results:
- *	A ReturnStatus, dependenet on the module doing the callback.
+ *	A ReturnStatus, dependent on the module doing the callback.
  *
  * Side effects:
  *	Variable.
@@ -1785,6 +1810,8 @@ ProcMigCommand(host, cmdPtr, inPtr, outPtr)
     ReturnStatus status;
     Rpc_Storage storage;
     Proc_TraceRecord record;
+    int maxSize;
+    int toSend;
 
 #ifndef CLEAN
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
@@ -1797,6 +1824,8 @@ ProcMigCommand(host, cmdPtr, inPtr, outPtr)
     }
 #endif /* CLEAN */   
 
+    Rpc_MaxSizes(&maxSize, (int *) NIL);
+
     /*
      * Set up for the RPC.
      */
@@ -1806,40 +1835,61 @@ ProcMigCommand(host, cmdPtr, inPtr, outPtr)
     if (inPtr == (Proc_MigBuffer *) NIL) {
 	storage.requestDataPtr = (Address) NIL;
 	storage.requestDataSize = 0;
+	cmdPtr->totalSize = 0;
+	toSend = 0;
     } else {
-	storage.requestDataPtr = inPtr->ptr;
-	storage.requestDataSize = inPtr->size;
+	toSend = inPtr->size;
+	cmdPtr->totalSize = toSend;
     }
+    cmdPtr->offset = 0;
 
     storage.replyParamPtr = (Address) NIL;
     storage.replyParamSize = 0;
 
-    if (outPtr == (Proc_MigBuffer *) NIL) {
-	storage.replyDataPtr = (Address) NIL;
-	storage.replyDataSize = 0;
-    } else {
-	storage.replyDataPtr = outPtr->ptr;
-	storage.replyDataSize = outPtr->size;
-    }
+    /*
+     * Send the command, breaking it into sizes of at most size maxSize.
+     * Only the last "fragment" can actually return any data.
+     */
+    do {
+	if ((toSend > maxSize) || (outPtr == (Proc_MigBuffer *) NIL)) {
+	    storage.replyDataPtr = (Address) NIL;
+	    storage.replyDataSize = 0;
+	} else {
+	    storage.replyDataPtr = outPtr->ptr;
+	    storage.replyDataSize = outPtr->size;
+	}
+	if (inPtr != (Proc_MigBuffer *) NIL) {
+	    storage.requestDataPtr = inPtr->ptr + cmdPtr->offset;
+	    storage.requestDataSize = (toSend > maxSize) ? maxSize : toSend;
+	}
 
+	if (proc_MigDebugLevel > 2) {
+	    printf("cmd %d totalSize %d offset %d thisDataSize %d\n",
+		   cmdPtr->command, cmdPtr->totalSize, cmdPtr->offset,
+		   storage.requestDataSize);
+	}
 
-    status = Rpc_Call(host, RPC_PROC_MIG_COMMAND, &storage);
+	status = Rpc_Call(host, RPC_PROC_MIG_COMMAND, &storage);
 
 #ifndef CLEAN
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.flags = 0;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_COMMAND,
-		     (ClientData) &record);
-    }
-#endif /* CLEAN */   
-
-    if (status != SUCCESS) {
-	if (proc_MigDebugLevel > 6) {
-	    printf("%s ProcMigCommand: error %x returned by Rpc_Call.\n",
-		"Warning:", status);
+	if (proc_DoTrace && proc_MigDebugLevel > 2) {
+	    record.flags = 0;
+	    Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_COMMAND,
+			 (ClientData) &record);
 	}
-    }
-    return(status);
+#endif				/* CLEAN */   
+
+	if (status != SUCCESS) {
+	    if (proc_MigDebugLevel > 6) {
+		printf("%s ProcMigCommand: error %x returned by Rpc_Call.\n",
+		       "Warning:", status);
+	    }
+	    return(status);
+	}
+	toSend -= maxSize;
+	cmdPtr->offset += maxSize;
+    } while (toSend > 0);
+    return(SUCCESS);
 }
 
 
