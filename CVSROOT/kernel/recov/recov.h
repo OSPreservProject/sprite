@@ -19,6 +19,28 @@
 #include "trace.h"
 
 /*
+ * External view of the state kept about each host.
+ */
+typedef struct Recov_State {
+    int spriteID;		/* Host ID of the peer */
+    unsigned int bootID;	/* Boot timestamp from RPC header */
+    int state;			/* Recovery state, defined below */
+    int clientState;		/* Client bits */
+    Time time;			/* Time of last message */
+} Recov_State;
+/*
+ * recov_PrintLevel defines how noisey we are about other hosts.
+ *	Values for the print level should be defined in increasing order.
+ */
+#define RECOV_PRINT_NONE	0
+#define RECOV_PRINT_REBOOT	1
+#define RECOV_PRINT_IF_UP	2
+#define RECOV_PRINT_CRASH	2
+#define RECOV_PRINT_ALL		10
+
+extern int recov_PrintLevel;
+
+/*
  * Host state used by the recov module and accessible via the
  * Recov_{G,S}etHostState calls:
  *	RECOV_STATE_UNKNOWN	Initial state.
@@ -36,7 +58,6 @@
  *	RECOV_PINGING_HOST	Set while we ping a host to see when it reboots
  *	RECOV_REBOOT_CALLBACKS	Set while reboot callbacks are pending.	
  *
- *	RECOV_WAITING		artificial state to trace Rpc_WaitForHost
  *	RECOV_CRASH		artificial state to trace RecovCrashCallBacks
  *	RECOV_REBOOT		artificial state to trace RecovRebootCallBacks
  */
@@ -45,6 +66,14 @@
 #define RECOV_HOST_DYING	0x2
 #define RECOV_HOST_DEAD		0x4
 #define RECOV_HOST_BOOTING	0x10
+#define RECOV_CRASH		0x20
+#define RECOV_REBOOT		0x40
+
+
+#define RECOV_CRASH_CALLBACKS	0x0100
+#define RECOV_WANT_RECOVERY	0x0200
+#define RECOV_PINGING_HOST	0x0400
+#define RECOV_REBOOT_CALLBACKS	0x0800
 
 /*
  * If dying_state is not defined then crash callbacks are made
@@ -52,15 +81,6 @@
  * the RECOV_HOST_DYING state for recov_CrashDelay seconds.
  */
 #define dying_state
-
-#define RECOV_CRASH_CALLBACKS	0x0100
-#define RECOV_WANT_RECOVERY	0x0200
-#define RECOV_PINGING_HOST	0x0400
-#define RECOV_REBOOT_CALLBACKS	0x0800
-
-#define RECOV_WAITING		0x10
-#define RECOV_CRASH		0x20
-#define RECOV_REBOOT		0x40
 
 /*
  * Host state flags for use by Recov clients.  These flags are set
@@ -94,8 +114,8 @@ typedef struct RecovTraceRecord {
 /*
  * Tracing events, these describe the trace record.
  *
- *	RECOV_CUZ_WAIT		Wait in Rpc_WaitForHost
- *	RECOV_CUZ_WAKEUP	Wakeup in Rpc_WaitForHost
+ *	RECOV_CUZ_WAIT		Wait in Recov_WaitForHost
+ *	RECOV_CUZ_WAKEUP	Wakeup in Recov_WaitForHost
  *	RECOV_CUZ_INIT		First time we were interested in the host
  *	RECOV_CUZ_REBOOT	We detected a reboot
  *	RECOV_CUZ_CRASH		We detected a crash
