@@ -20,8 +20,10 @@
 
 #ifdef KERNEL
 #include "machTypes.h"
+#include <user/setjmp.h>
 #else
 #include <kernel/machTypes.h>
+#include <setjmp.h>
 #endif
 
 #ifdef lint
@@ -104,6 +106,8 @@
  */
 #define Mach_EmptyWriteBuffer()
 
+#define Mach_SetErrno(err) Proc_GetActualProc()->unixErrno = (err)
+
 /*
  * Dispatch tables for kernel calls.
  */
@@ -164,7 +168,8 @@ extern	int	debugSpace[];
 
 extern void Mach_InitFirstProc _ARGS_((Proc_ControlBlock *procPtr));
 extern ReturnStatus Mach_SetupNewState _ARGS_((Proc_ControlBlock *procPtr, Mach_State *fromStatePtr, void (*startFunc)(), Address startPC, Boolean user));
-extern void Mach_SetReturnVal _ARGS_((Proc_ControlBlock *procPtr, int retVal));
+extern void Mach_SetReturnVal _ARGS_((Proc_ControlBlock *procPtr, int retVal,
+	int retVal2));
 extern void Mach_StartUserProc _ARGS_((Proc_ControlBlock *procPtr, Address entryPoint));
 extern void Mach_ExecUserProc _ARGS_((Proc_ControlBlock *procPtr, Address userStackPtr, Address entryPoint));
 extern void Mach_FreeState _ARGS_((Proc_ControlBlock *procPtr));
@@ -206,6 +211,8 @@ extern int Mach_GetMachineArch _ARGS_((void));
 extern void Mach_FlushWindowsToStack _ARGS_((void));
 extern	Address	Mach_GetStackPointer _ARGS_((void));
 extern void Mach_CheckSpecialHandling _ARGS_((int pnum));
+extern void Mach_Return2 _ARGS_((int val));
+extern int Mach_SigreturnStub _ARGS_((jmp_buf *jmpBuf));
 
 
 /*
