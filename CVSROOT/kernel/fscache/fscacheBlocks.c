@@ -2211,15 +2211,12 @@ Fscache_CleanBlocks(data, callInfoPtr)
 	     */
 	    FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_BLOCK_WRITE, blockPtr);
 	    status = (cacheInfoPtr->ioProcsPtr->blockWrite)
-		    (cacheInfoPtr->hdrPtr, blockPtr->diskBlock,
-		     blockPtr->blockSize, blockPtr->blockAddr, lastDirtyBlock);
+		    (cacheInfoPtr->hdrPtr, blockPtr, lastDirtyBlock);
 #ifdef lint
 	    status = Fsio_FileBlockWrite(cacheInfoPtr->hdrPtr,
-			blockPtr->diskBlock, blockPtr->blockSize,
-			blockPtr->blockAddr, lastDirtyBlock);
+			blockPtr, lastDirtyBlock);
 	    status = FsrmtFileBlockWrite(cacheInfoPtr->hdrPtr,
-			blockPtr->diskBlock, blockPtr->blockSize,
-			blockPtr->blockAddr, lastDirtyBlock);
+			blockPtr, lastDirtyBlock);
 #endif /* lint */
 	    ProcessCleanBlock(cacheInfoPtr, blockPtr, status,
 			      &useSameBlock, &lastDirtyBlock);
@@ -2227,12 +2224,6 @@ Fscache_CleanBlocks(data, callInfoPtr)
 		break;
 	    }
 	    if (!useSameBlock) {
-		if (cacheInfoPtr->hdrPtr->fileID.type == FSIO_RMT_FILE_STREAM) {
-		    /*
-		     * Excuse the special case check.
-		     */
-		    fs_Stats.rmtIO.bytesWrittenFromCache += blockPtr->blockSize;
-		}
 		GetDirtyBlock(cacheInfoPtr, &tBlockPtr, &lastDirtyBlock);
 		blockPtr = tBlockPtr;
 	    }
@@ -2530,7 +2521,9 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
         (blockPtr->flags & FSCACHE_BLOCK_DIRTY)) {
 	/*
 	 * We have to keep writing this block until its gets clean, so
-	 * rewrite the same block.
+	 * rewrite the same block.   (Hmmm.  Does this mean that a
+	 * continually modified block will prevent the whole file
+	 * from being written out?)
 	 */
 	blockPtr->flags &= ~FSCACHE_BLOCK_DIRTY;
 	if (cacheInfoPtr->numDirtyBlocks == 1) {
@@ -3032,7 +3025,10 @@ DeleteBlock(blockPtr)
 				     blockPtr->blockNum);
     hashEntryPtr = Hash_LookOnly(blockHashTable, (Address) &blockHashKey);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
+	UNLOCK_MONITOR;
 	panic("DeleteBlock: Block in LRU list is not in the hash table.\n");
+	LOCK_MONITOR;
+	return;
     }
     FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_DEL_BLOCK, blockPtr);
     Hash_Delete(blockHashTable, hashEntryPtr);
