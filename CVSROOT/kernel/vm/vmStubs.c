@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$";
 #include <proc.h>
 #include <timer.h>
 #include <vm.h>
+#include <vmInt.h>
 
 #ifndef Mach_SetErrno
 #define Mach_SetErrno(err)
@@ -35,6 +36,23 @@ static char rcsid[] = "$Header$";
 
 int debugVmStubs;
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_SbrkStub --
+ *
+ *	The stub for the "sbrk" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Vm_SbrkStub(addr)
     Address	addr;
@@ -76,6 +94,23 @@ Vm_SbrkStub(addr)
     return -1;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_GetpagesizeStub --
+ *
+ *	The stub for the "getpagesize" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Vm_GetpagesizeStub()
 {
@@ -86,133 +121,115 @@ Vm_GetpagesizeStub()
     return vm_PageSize;
 }
 
-int
-Vm_SemctlStub(semid, semnum, cmd, arg)
+#define _MAP_NEW 0x80000000 /* SunOS new mode mmap flag */
 
-    int semid, semnum, cmd;
-    union semun arg;
-{
-#if 0    
-    ReturnStatus	status;
-
-    status = Sync_SemctlStub(semid, semnum, cmd, arg, usp);
-    if (status == SUCCESS) {
-        (void)Vm_CopyIn(sizeof(int), usp,
-                        (Address)&machCurStatePtr->unixRetVal);
-    }
-    return(status);
-#else
-    printf("sysUnixSemctl is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-#endif    
-}
-
-int
-Vm_SemopStub(semid, sops, nsops)
-    int semid, nsops;
-    struct sembuf *sops;
-{
-#if 0    
-    ReturnStatus	status;
-
-    status = Sync_SemopStub(semid, sops, nsops, usp);
-    if (status == SUCCESS) {
-        (void)Vm_CopyIn(sizeof(int), usp,
-                        (Address)&machCurStatePtr->unixRetVal);
-    }
-    return(status);
-#else
-    printf("Vm_SemopStub is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-#endif    
-}
-
-int
-Vm_SemgetStub(key, nsems, semflg)
-    key_t key;
-    int nsems, semflg;
-{
-#if 0    
-    ReturnStatus	status;
-
-    status = Sync_SemgetStub(key, nsems, semflg, usp);
-    if (status == SUCCESS) {
-        (void)Vm_CopyIn(sizeof(int), usp,
-                        (Address)&machCurStatePtr->unixRetVal);
-    }
-    return(status);
-#else
-    printf("Vm_SemgetStub is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-#endif    
-}
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_MmapStub --
+ *
+ *	The stub for the "mmap" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Vm_MmapStub(addr, len, prot, share, fd, pos)
     caddr_t	addr;
     int	len, prot, share, fd;
     off_t	pos;
 {
-#if 0    
     ReturnStatus	status;
+    Address		mappedAddr;
 
-    status = Vm_Mmap(addr, len, prot, share, fd, pos, usp);
+    status = Vm_MmapInt(addr, len, prot, share, fd, pos, &mappedAddr);
     if (status == SUCCESS) {
-        (void)Vm_CopyIn(sizeof(int), usp,
-                        (Address)&machCurStatePtr->unixRetVal);
-    }
-    return(status);
+#if defined(ds3100) || defined(ds5000)
+        return mappedAddr;
 #else
-    printf("Vm_MmapStub is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-#endif    
+        if (share && _MAP_NEW) {
+	    return (int)mappedAddr;
+	} else {
+	    return 0;
+	}
+#endif
+    } else {
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
+    }
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_MunmapStub --
+ *
+ *	The stub for the "munmap" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Vm_MunmapStub(addr, len)
     caddr_t	addr;
     int	len;
 {
-#if 0    
     ReturnStatus	status;
 
-    status = Vm_Munmap(addr, len, usp);
+    status = Vm_Munmap(addr, len, 0);
     if (status == SUCCESS) {
-        (void)Vm_CopyIn(sizeof(int), usp,
-                        (Address)&machCurStatePtr->unixRetVal);
+	return 0;
+    } else {
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
     }
-    return(status);
-#else
-    printf("Vm_MunmapStub is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-#endif    
-
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_MincoreStub --
+ *
+ *	The stub for the "mincore" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Vm_MincoreStub(addr, len, vec)
     caddr_t	addr;
     int len;
     char vec[];
 {
-#if 0
     ReturnStatus	status;
 
-    status = Vm_Mincore(addr, len, vec, usp);
+    status = Vm_Mincore(addr, len, vec);
     if (status == SUCCESS) {
-        (void)Vm_CopyIn(sizeof(int), usp,
-                        (Address)&machCurStatePtr->unixRetVal);
+	return 0;
+    } else {
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
     }
-    return(status);
-#else
-    printf("Vm_MincoreStub is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-#endif
 }
 
