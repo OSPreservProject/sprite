@@ -107,6 +107,13 @@ static Boolean useSimpleValidation = FALSE;
 static Boolean flushOnRefBitClear = FALSE;
 static Boolean useHardRefBit = TRUE;
 
+/*
+ * Variable to control coherency bit usage in page table entries.  If
+ * TRUE all stack and heap segments have the VMMACH_COHERENCY_BIT bit set
+ * and all reads become read for ownership.
+ */
+static Boolean ownStackAndHeap = TRUE;
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1222,6 +1229,10 @@ VmMach_SetRefBit(addr)
 							VMMACH_PAGE_SHIFT;
         ptePtr = GetPageTablePtr(segDataPtr, page);
         *ptePtr |= VMMACH_REFERENCED_BIT;
+	if ((vmWriteableRefPageout || vmWriteablePageout) && 
+	    segPtr->type != VM_CODE) {
+	    *ptePtr |= VMMACH_MODIFIED_BIT;
+	}
     }
 
     UNLOCK_MONITOR;
@@ -1257,8 +1268,11 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
     segDataPtr = virtAddrPtr->segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
-    *ptePtr &= ~VMMACH_MODIFIED_BIT;
-    VmMachFlushPage(virtAddrPtr->segPtr, page);
+    if ((!vmWriteableRefPageout && !vmWriteablePageout) || 
+	!(*ptePtr & VMMACH_REFERENCED_BIT)) {
+	*ptePtr &= ~VMMACH_MODIFIED_BIT;
+	VmMachFlushPage(virtAddrPtr->segPtr, page);
+    }
 
     UNLOCK_MONITOR;
 }
@@ -1306,6 +1320,12 @@ VmMach_SetModBit(addr)
     page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> VMMACH_PAGE_SHIFT;
     ptePtr = GetPageTablePtr(segDataPtr, page);
     *ptePtr |= VMMACH_MODIFIED_BIT;
+    /*
+     * Flush the block from the cache so that David Wood can get better
+     * cache stats.
+     */
+    VmMachFlushBlock(
+		(Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
 
     UNLOCK_MONITOR;
 }
@@ -1352,7 +1372,12 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	    *ptePtr |= VMMACH_KRW_URW_PROT;
 	}
 	if (virtAddrPtr->segPtr->type != VM_CODE) {
-	    *ptePtr |= VMMACH_COHERENCY_BIT;
+	    if (ownStackAndHeap) {
+		*ptePtr |= VMMACH_COHERENCY_BIT;
+	    }
+	    if (vmWriteablePageout || vmWriteableRefPageout) {
+		*ptePtr |= VMMACH_MODIFIED_BIT;
+	    }
 	}
     }
 
@@ -2376,6 +2401,11 @@ VmMach_Cmd(command, arg)
 	    Sys_Printf("useHardRefBit val was %d, is %d\n",
 		        useHardRefBit, arg);
 	    useHardRefBit = arg;
+	    return(SUCCESS);
+	case VM_SET_COHERENCY_BIT:
+	    Sys_Printf("ownStackAndHeap val was %d, is %d\n",
+		        ownStackAndHeap, arg);
+	    ownStackAndHeap = (Boolean) arg;
 	    return(SUCCESS);
 	default:
 	    Sys_Panic(SYS_WARNING, "VmMach_Cmd: Unknown command %d\n", command);
