@@ -42,9 +42,11 @@ Boolean	vmNoBootAlloc = TRUE;
 void
 Vm_BootInit()
 {
+    extern unsigned int end;
+
     Byte_Zero(sizeof(vmStat), (Address) &vmStat);
     vmNoBootAlloc = FALSE;
-    vmMemEnd = (Address) &endBss;
+    vmMemEnd = (Address) &end;
     /*
      * Make sure that we start on a four byte boundary.
      */

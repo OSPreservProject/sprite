@@ -348,7 +348,7 @@ Vm_Cmd(command, arg)
 	    int			tracesPerSecond;
 	    void		VmTraceDaemon();
 	    Vm_TraceStart	*traceStartPtr;
-	    extern int		endText;
+	    extern int		etext;
 	    char		fileName[100];
 	    char		hostNum[CVT_INT_BUF_SIZE];
 
@@ -371,7 +371,7 @@ Vm_Cmd(command, arg)
 	    traceStartPtr->pageSize = vm_PageSize;
 	    traceStartPtr->numPages = vmStat.numPhysPages;
 	    traceStartPtr->codeStartAddr = mach_KernStart;
-	    traceStartPtr->dataStartAddr = (Address)&endText;
+	    traceStartPtr->dataStartAddr = (Address)&etext;
 	    traceStartPtr->stackStartAddr = vmStackBaseAddr;
 	    traceStartPtr->mapStartAddr = vmMapBaseAddr;
 	    traceStartPtr->cacheStartAddr = vmBlockCacheBaseAddr;
