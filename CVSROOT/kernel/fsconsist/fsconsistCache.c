@@ -48,9 +48,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include 	<fsio.h>
 #include	<fsrmt.h>
 #include	<fsdm.h>
-#ifdef SOSP91
-#include	<sospRecord.h>
-#endif /* SOSP91 */
 
 #include <stdio.h>
 
@@ -521,9 +518,6 @@ done:
 		    mode |= FSCONSIST_INVALIDATE_BLOCKS;
 		}
 		ClientCommand(consistPtr, clientPtr, mode);
-#ifdef SOSP91
-		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr->fileID, mode);
-#endif SOSP91
 		statPtr->writeBack++;
 		if (countMigration) {
 		    migStatPtr->cacheWritableFiles++;
@@ -537,9 +531,6 @@ done:
 		 */
 		ClientCommand(consistPtr, clientPtr,
 					FSCONSIST_INVALIDATE_BLOCKS);
-#ifdef SOSP91
-		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr->fileID, FSCONSIST_INVALIDATE_BLOCKS);
-#endif SOSP91
 		statPtr->readInvalidate++;
 	    } else if (clientPtr->use.write > 0) {
 		/*
@@ -549,9 +540,6 @@ done:
 		ClientCommand(consistPtr, clientPtr,
 			      FSCONSIST_WRITE_BACK_BLOCKS |
 			      FSCONSIST_INVALIDATE_BLOCKS | writebackFlags);
-#ifdef SOSP91
-		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr->fileID, FSCONSIST_WRITE_BACK_BLOCKS | FSCONSIST_INVALIDATE_BLOCKS);
-#endif SOSP91
 		statPtr->writeInvalidate++;
 	    }
 	    if (countMigration) {
@@ -1064,22 +1052,13 @@ Fsconsist_MigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 		Fsutil_HandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	}
-#ifdef SOSP91
-	SOSP_ADD_CONSIST_CHANGE_TRACE(srcClientID, consistPtr->hdrPtr->fileID, SOSP_CLOSE, cache);
-#endif SOSP91
     }
     /*
      * The rest of this is like regular cache consistency.
      */
 
-    StartConsistency(consistPtr, dstClientID, useFlags | FS_MIGRATING,
+    StartConsistency(consistPtr, dstClientID, (int) (useFlags | FS_MIGRATING),
 		     cacheablePtr);
-#ifdef SOSP91
-    if (*cacheablePtr) {
-	SOSP_ADD_CONSIST_CHANGE_TRACE(dstClientID, consistPtr->hdrPtr->fileID,
-		SOSP_OPEN, useFlags & FS_WRITE);
-    }
-#endif /* SOSP91 */
     if (useFlags & FS_NEW_STREAM) {
 	/*
 	 * The client is getting the stream to this I/O handle for
@@ -1190,10 +1169,6 @@ Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
 		 * abysmally slow.
 		 */
 
-#ifdef SOSP91
-		/* what do I do about attribute call-backs? */
-		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr->fileID, FSCONSIST_WRITE_BACK_ATTRS);
-#endif SOSP91
 		ClientCommand(consistPtr, clientPtr, FSCONSIST_WRITE_BACK_ATTRS);
 	    }
 	}
@@ -1279,31 +1254,13 @@ Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
  *
  */
 
-#ifdef SOSP91
-ENTRY int
-Fsconsist_NumClients(consistPtr, numReadPtr, numWritePtr)
-    register Fsconsist_Info *consistPtr;   /* Handle of file being closed */
-    int	*numReadPtr;		/* Number of clients reading the file. */
-    int	*numWritePtr;		/* Number of clients writing the file. */
-
-#else
-
 ENTRY int
 Fsconsist_NumClients(consistPtr)
     register Fsconsist_Info *consistPtr;    /* Handle of file being closed */
-
-#endif
-
 {
     register int numClients = 0;
     register Fsconsist_ClientInfo *clientPtr;
     register Fsconsist_ClientInfo *nextClientPtr;
-
-#ifdef SOSP91
-    int	numWrite = 0;
-    int numRead = 0;
-#endif
-
 
     LOCK_MONITOR;
 
@@ -1330,26 +1287,9 @@ Fsconsist_NumClients(consistPtr)
 	    REMOVE_CLIENT(clientPtr);
 	} else {
 	    numClients++;
-#ifdef SOSP91
-	    if (clientPtr->use.write > 0) {
-		numWrite++;
-	    } 
-	    if (clientPtr->use.ref - clientPtr->use.write > 0) {
-		numRead++;
-	    }
-#endif
-
 	}
     }
 exit:
-#ifdef SOSP91
-    if (numWritePtr != (int *) NIL) {
-	*numWritePtr = numWrite;
-    }
-    if (numReadPtr != (int *) NIL) {
-	*numReadPtr = numRead;
-    }
-#endif
     UNLOCK_MONITOR;
     return(numClients);
 }
@@ -1484,9 +1424,6 @@ Fsconsist_ClientRemoveCallback(consistPtr, clientID)
 		 * when it is truely time to remove the file.
 		 */
 		ClientCommand(consistPtr, clientPtr, FSCONSIST_DELETE_FILE);
-#ifdef SOSP91
-		SOSP_ADD_CONSIST_ACTION_TRACE(clientID, clientPtr->clientID, consistPtr->hdrPtr->fileID, FSCONSIST_DELETE_FILE);
-#endif SOSP91
 		(void)EndConsistency(consistPtr);
 	    }
 	}
@@ -1684,10 +1621,6 @@ Fsconsist_FetchDirtyBlocks(consistPtr, invalidate)
 		flags |= FSCONSIST_INVALIDATE_BLOCKS;
 	    }
 	    ClientCommand(consistPtr, clientPtr, flags);
-#ifdef SOSP91
-	    /*  This is a weird one XXX */
-	    SOSP_ADD_CONSIST_ACTION_TRACE(rpc_SpriteID, clientPtr->clientID, consistPtr->hdrPtr->fileID, flags);
-#endif SOSP91
 	    (void)EndConsistency(consistPtr);
 	}
     }
