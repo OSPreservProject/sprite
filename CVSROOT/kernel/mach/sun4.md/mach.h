@@ -19,24 +19,10 @@
 #define _MACH
 
 #ifdef KERNEL
-#include "sprite.h"
-#include "devAddrs.h"
-#include "machConst.h"
-#include "user/fmt.h"
+#include "machTypes.h"
 #else
-#include <kernel/devAddrs.h>
-#include <kernel/machConst.h>
-#include <fmt.h>
+#include <kernel/machTypes.h>
 #endif
-
-/*
- * The state of each processor: user mode or kernel mode.
- */
-typedef enum {
-    MACH_USER,
-    MACH_KERNEL
-} Mach_ProcessorStates;
-
 
 #ifdef lint
 #define	Mach_EnableIntr()
@@ -117,96 +103,6 @@ typedef enum {
  */
 extern ReturnStatus (*(mach_NormalHandlers[]))();
 extern ReturnStatus (*(mach_MigratedHandlers[]))();
-
-/*
- * Do to a circularity in include files now, the definitions of
- * Mach_SigContext and Mach_RegState had to be moved to a new header file:
- * machSig.h.  This is because sig.h includes mach.h because it needs
- * the definitions of Mach_SigContext (and thus Mach_RegState) in order
- * to define the Sig_Context structure's machContext field.  But if I
- * included all of mach.h, I'd get the Sig_Stack stuff in Mach_State as
- * undefined since sig.h wouldn't yet have defined that.  Ugh.
- *
- *	So - SEE machSig.h for definitions of Mach_RegState and Mach_SigContext.
- *
- */
-#ifdef KERNEL
-#include "machSig.h"
-#else
-#include <kernel/machSig.h>
-#endif
-
-typedef struct Mach_RegWindow {
-     int locals[MACH_NUM_LOCALS];
-     int ins[MACH_NUM_INS];
-} Mach_RegWindow;
-
-/*
- * Ugh, I have to include this here, since it needs Mach_RegState, and
- * Mach_SigContext, defined above.   But I need the include file before
- * the Sig_Stack stuff below.
- */
-#ifdef KERNEL
-#include "sig.h"
-#else
-#include <kernel/sig.h>
-#endif /* KERNEL */
-
-/*
- * The state for a process - saved on context switch, etc.
- */
-typedef struct Mach_State {
-    Mach_RegState	*trapRegs;		/* User state at trap time. */
-    Mach_RegState	*switchRegs;		/* Kernel state, switch time */
-    int			savedRegs[MACH_NUM_WINDOWS][MACH_NUM_WINDOW_REGS];
-						/* Where we save all the
-						 * window's registers to if the
-						 * user stack isn't resident.
-						 * We could get away with 2
-						 * less windows if we wanted
-						 * to be tricky about recording
-						 * which is the invalid window
-						 * and which window we're in
-						 * while saving the regs...  */
-    int			savedMask;		/* Mask showing which windows
-						 * contained info that must
-						 * be restored to the stack from
-						 * the above buffer since the
-						 * stack wasn't resident. */
-    int			savedSps[MACH_NUM_WINDOWS];
-						/* sp for each saved window
-						 * stored here to make it easy
-						 * to copy the stuff back out
-						 * to the user stack in the
-						 * correct place.  */
-    Address		kernStackStart;		/* top of kernel stack
-						 * for this process. */
-    int			fpuStatus;		/* FPU status. See below. */
-    Sig_Stack		sigStack;		/* sig stack holder for setting
-						 * up signal handling */
-    Sig_Context		sigContext;		/* sig context holder for
-						 * setting up signal handling */
-    int			lastSysCall;		/* Needed for migration. */
-} Mach_State;
-
-/*
- * Values for the fpuStatus field.
- * MACH_FPU_ACTIVE - FPU is active for this process.
- * MACH_FPU_EXCEPTION_PENDING - The process caused a FPU exception to occur.
- */
-#define	MACH_FPU_ACTIVE			0x1
-#define	MACH_FPU_EXCEPTION_PENDING      0x2
-
-
-/*
- * Structure on top of user stack when Sig_Handler is called.  This must
- * a multiple of double-words!!!!
- */
-typedef	struct {
-    Mach_RegState	extraSpace;	/* saved-window, etc, space */
-    Sig_Stack		sigStack;	/* signal stack for Sig_Handler */
-    Sig_Context		sigContext;	/* the signal context */
-} MachSignalStack;
 
 /*
  * Macro to get processor number
