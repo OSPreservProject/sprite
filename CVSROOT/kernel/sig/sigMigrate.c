@@ -186,4 +186,123 @@ DeferSignal(data)
     }
 }
     
+
+typedef struct {
+    int		sigHoldMask;
+    int		sigPendingMask;
+    int		sigActions[SIG_NUM_SIGNALS];
+    int		sigMasks[SIG_NUM_SIGNALS];
+    int		sigCodes[SIG_NUM_SIGNALS];
+    int		sigFlags;
+} EncapState;
 
+#define COPY_STATE(from, to, field) to->field = from->field
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_GetEncapSize --
+ *
+ *	Determine the size of the encapsulated signal state.
+ *
+ * Results:
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Sig_GetEncapSize(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+{
+    infoPtr->size = sizeof(EncapState);
+    return(SUCCESS);	
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_EncapState --
+ *
+ *	Encapsulate the signal state of a process from the Proc_ControlBlock
+ *	and return it in the buffer provided.
+ *
+ * Results:
+ *	SUCCESS.  The buffer is filled.
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Sig_EncapState(procPtr, hostID, infoPtr, bufPtr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address bufPtr;			   /* Pointer to allocated buffer */
+{
+    EncapState *encapPtr = (EncapState *) bufPtr;
+
+    COPY_STATE(procPtr, encapPtr, sigHoldMask);
+    COPY_STATE(procPtr, encapPtr, sigPendingMask);
+    COPY_STATE(procPtr, encapPtr, sigFlags);
+    bcopy((Address) procPtr->sigActions, (Address) encapPtr->sigActions,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    bcopy((Address) procPtr->sigMasks, (Address) encapPtr->sigMasks,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    bcopy((Address) procPtr->sigCodes, (Address) encapPtr->sigCodes,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_DeencapState --
+ *
+ *	Get signal information from a Proc_ControlBlock from another host.
+ *	The information is contained in the parameter ``buffer''.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Sig_DeencapState(procPtr, infoPtr, bufPtr)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address bufPtr;			  /* buffer containing data */
+{
+    EncapState *encapPtr = (EncapState *) bufPtr;
+
+    COPY_STATE(encapPtr, procPtr, sigHoldMask);
+    COPY_STATE(encapPtr, procPtr, sigPendingMask);
+    procPtr->sigPendingMask &=
+	    ~((1 << SIG_MIGRATE_TRAP) | (1 << SIG_MIGRATE_HOME));
+    COPY_STATE(encapPtr, procPtr, sigFlags);
+    bcopy((Address) encapPtr->sigActions, (Address) procPtr->sigActions,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    bcopy((Address) encapPtr->sigMasks, (Address) procPtr->sigMasks,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    bcopy((Address) encapPtr->sigCodes, (Address) procPtr->sigCodes,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    return(SUCCESS);
+}

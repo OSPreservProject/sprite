@@ -10,7 +10,7 @@
  * the final book-keeping on the new client, and 'migrate' is called
  * on the I/O server to shift around state associated with the client.
  *
- * Copyright (C) 1985, 1988 Regents of the University of California
+ * Copyright (C) 1985, 1988, 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright
@@ -569,6 +569,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
  *
  */
 
+/* ARGSUSED */
 ReturnStatus
 FsPassStream(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
     Fs_FileID		*ioFileIDPtr;	/* I/O fileID from the name server */
@@ -582,6 +583,87 @@ FsPassStream(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
 {
     return(FAILURE);
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fs_InitiateMigration --
+ *
+ *	Return the size of the encapsulated file system state.
+ *	(Note: for now, we'll let the encapsulation procedure do the same
+ *	work (in part); later things can be simplified to use a structure
+ *	and to keep around some info off the ClientData hook.)
+ *
+ * Results:
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Fs_InitiateMigration(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+{
+    Fs_ProcessState *fsPtr;
+    int numStreams;
+    int streamFlagsLen;
+    FsPrefix *prefixPtr;
+    int cwdLength;
+
+
+    fsPtr = procPtr->fsPtr;
+    numStreams = fsPtr->numStreams;
+    /*
+     * Get the prefix for the current working directory, and its size.
+     * We pass the name over so it can be opened to make sure the prefix
+     * is available.
+     */
+    if (fsPtr->cwdPtr->nameInfoPtr == (FsNameInfo *)NIL) {
+	panic("Fs_GetEncapSize: no name information for cwd.\n");
+	return(FAILURE);
+    }
+    prefixPtr = fsPtr->cwdPtr->nameInfoPtr->prefixPtr;
+    if (prefixPtr == (FsPrefix *)NIL) {
+	panic("Fs_GetEncapSize: no prefix for cwd.\n");
+	return(FAILURE);
+    }
+    cwdLength = Byte_AlignAddr(prefixPtr->prefixLength + 1);
+    
+    /*
+     * When sending an array of characters, it has to be even-aligned.
+     */
+    streamFlagsLen = Byte_AlignAddr(numStreams * sizeof(char));
+    
+    /*
+     * Send the groups, file permissions, number of streams, and encapsulated
+     * current working directory.  For each open file, send the
+     * streamID and encapsulated stream contents.
+     *
+     *	        data			size
+     *	 	----			----
+     * 		# groups		int
+     *	        groups			(# groups) * int
+     *		permissions		int
+     *		# files			int
+     *		per-file flags		(# files) * char
+     *		encapsulated files	(# files) * (FsMigInfo + int)
+     *		cwd			FsMigInfo + int + strlen(cwdPrefix) + 1
+     */
+    infoPtr->size = (4 + fsPtr->numGroupIDs) * sizeof(int) +
+	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
+	    sizeof(FsMigInfo) + cwdLength;
+    return(SUCCESS);	
+}
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -615,35 +697,35 @@ Fs_GetEncapSize()
  *	Encapsulate the file system state of a process for migration.  
  *
  * Results:
- *	A pointer to the encapsulated state is returned, along with
- *	the size of the buffer allocated and the number of streams
- *	that were encapsulated.  Any error during stream encapsulation
- *	is returned; otherwise, SUCCESS.
+ *	Any error during stream encapsulation
+ *	is returned; otherwise, SUCCESS.  The encapsulated state is placed
+ *	in the area referenced by ptr.
  *
  * Side effects:
- *	Memory is allocated for the buffer.  
+ *	None.  
  *
  *----------------------------------------------------------------------
  */
 
+/* ARGSUSED */
 ReturnStatus
-Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
+Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
     register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
-    Address *bufPtr;			   /* Pointer to allocated buffer */
-    int *sizePtr;			   /* Size of allocated buffer */
-    int *numEncapPtr;			   /* Number of streams encapsulated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address ptr;			   /* Pointer to allocated buffer */
 {
     Fs_ProcessState *fsPtr;
     int numStreams;
     int numGroups;
     int streamFlagsLen;
-    register Address ptr;
     Fs_Stream *streamPtr;
     int i;
-    int numEncap;
     ReturnStatus status;
     FsPrefix *prefixPtr;
     int cwdLength;
+    int size;
 
 
     fsPtr = procPtr->fsPtr;
@@ -668,7 +750,6 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
      * When sending an array of characters, it has to be even-aligned.
      */
     streamFlagsLen = Byte_AlignAddr(numStreams * sizeof(char));
-    *numEncapPtr = numEncap = 0;
     
     /*
      * Send the groups, file permissions, number of streams, and encapsulated
@@ -685,11 +766,13 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
      *		encapsulated files	(# files) * (FsMigInfo + int)
      *		cwd			FsMigInfo + int + strlen(cwdPrefix) + 1
      */
-    *sizePtr = (4 + fsPtr->numGroupIDs) * sizeof(int) +
+    size = (4 + fsPtr->numGroupIDs) * sizeof(int) +
 	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
 	    sizeof(FsMigInfo) + cwdLength;
-    *bufPtr = (Address)malloc(*sizePtr);
-    ptr = *bufPtr;
+    if (size != infoPtr->size) {
+	panic("Fs_EncapState: size of encapsulated state changed.\n");
+	return(FAILURE);
+    }
 
     /*
      * Send groups, filePermissions, numStreams, the cwd, and each file.
@@ -718,24 +801,20 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
 	printf(
 		  "Fs_EncapFileState: Error %x from Fs_EncapStream on cwd.\n",
 		  status);
-	free(*bufPtr);
 	return(status);
     }
     fsPtr->cwdPtr = (Fs_Stream *) NIL;
     ptr += sizeof(FsMigInfo);
-    numEncap += 1;
 
     for (i = 0; i < fsPtr->numStreams; i++) {
 	streamPtr = fsPtr->streamList[i];
 	if (streamPtr != (Fs_Stream *) NIL) {
-	    numEncap += 1;
 	    Byte_FillBuffer(ptr, int, i);
 	    status = Fs_EncapStream(streamPtr, ptr);
 	    if (status != SUCCESS) {
 		printf(
 			  "Fs_EncapFileState: Error %x from Fs_EncapStream.\n",
 			  status);
-		free(*bufPtr);
 		return(status);
 	    }
 	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
@@ -746,54 +825,9 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
 	ptr += sizeof(FsMigInfo);
     }
 
-
-    *numEncapPtr = numEncap;
     return(SUCCESS);
-
 }
 
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_ClearFileState --
- *
- *	Clear the file state associated with a process after it has
- *	been migrated.  FIXME: Perhaps things should be freed here instead?
- *
- *	Actually, the streams are closed as they are encapsulated, so they
- *	can be nil'ed out as they are encapsulated as well.  This routine
- *	is here only for compatibility with the installed proc and can
- *	be removed after proc is reinstalled.  FD
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The current working directory and open streams of the process
- *	are cleared.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Fs_ClearFileState(procPtr)
-    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
-{
-    int i;
-    Fs_ProcessState *fsPtr;
-
-    fsPtr = procPtr->fsPtr;
-    if (fsPtr == (Fs_ProcessState *) NIL) {
-	panic( "Fs_ClearFileState: NIL Fs_ProcessState!");
-	return;
-    }
-    for (i = 0; i < fsPtr->numStreams; i++) {
-	fsPtr->streamList[i] = (Fs_Stream *) NIL;
-    }
-    fsPtr->cwdPtr = (Fs_Stream *) NIL;
-}
 
 /*
  *----------------------------------------------------------------------
@@ -815,9 +849,10 @@ Fs_ClearFileState(procPtr)
  */
 
 ReturnStatus
-Fs_DeencapFileState(procPtr, buffer)
-    Proc_ControlBlock *procPtr;
-    Address buffer;
+Fs_DeencapFileState(procPtr, infoPtr, buffer)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address buffer;			  /* buffer containing data */
 {
     register Fs_ProcessState *fsPtr;
     int i;
