@@ -54,7 +54,7 @@ MachHandleInterrupt:
 
 	and	%CUR_PSR_REG, MACH_PS_BIT, %VOL_TEMP1
 	set	_mach_KernelMode, %VOL_TEMP2
-	st	%VOL_TEMP1, [%VOL_TEMP2]	/* 0 = user, 1 = kernel */
+	st	%VOL_TEMP1, [%VOL_TEMP2]	/* 0 = user, !0 = kernel */
 
 	/* Call into vector table using tbr */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
