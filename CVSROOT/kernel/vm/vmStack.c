@@ -136,7 +136,7 @@ Vm_GetKernelStack(invalidPage)
     virtAddr.page = ((unsigned int) stackListPtr->startAddr) >> vmPageShift;
     virtAddr.offset = 0;
     virtAddr.flags = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     for (i = 0, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 	 i < numStackPages;
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
@@ -186,7 +186,7 @@ Vm_FreeKernelStack(stackBase)
     virtAddr.segPtr = vm_SysSegPtr;
     virtAddr.page = (unsigned int) (stackBase) >> vmPageShift;
     virtAddr.offset = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     virtAddr.flags = 0;
     for (i = 0, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 	 i < numStackPages; 
