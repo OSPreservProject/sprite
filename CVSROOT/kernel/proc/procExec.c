@@ -1018,7 +1018,7 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	    codeSegPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
 	} else {
 	    if (sizeRead < sizeof(ProcExecHeader) ||
-		ProcGetObjInfo((ProcExecHeader *)buffer, &objInfo) != SUCCESS) {
+		ProcGetObjInfo(filePtr, (ProcExecHeader *)buffer, &objInfo) != SUCCESS) {
 		    if(ProcIsObj(filePtr,1)==SUCCESS) {
 			status = FS_NO_ACCESS;
 		    } else {
@@ -1216,6 +1216,11 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
      * because there is an implicit enable interrupts when we return to user 
      * mode.
      */
+#ifdef sun4
+    if (objInfo.unixCompat) {
+	userStackPointer += 32;
+    }
+#endif
     Mach_ExecUserProc(procPtr, userStackPointer, (Address) execInfoPtr->entry);
     panic("DoExec: Proc_RunUserProc returned.\n");
 
@@ -1375,7 +1380,7 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
     if (status == SUCCESS && sizeRead != sizeof(ProcExecHeader)) {
 	status = PROC_BAD_AOUT_FORMAT;
     } else {
-	status = ProcGetObjInfo(&execHeader, objInfoPtr);
+	status = ProcGetObjInfo(*filePtrPtr, &execHeader, objInfoPtr);
     }
     if (status != SUCCESS) {
 	if(ProcIsObj(*filePtrPtr,1)==SUCCESS) {
@@ -1817,7 +1822,7 @@ ProcDoRemoteExec(procPtr)
  */
 int	hostFmt = HOST_FMT;
 char * (*machType[]) _ARGS_((int bufferSize, char *buffer, int *magic, 
-	int *syms)) =  {
+	int *syms, char **other)) =  {
     machType68k,
     machTypeSparc,
     machTypeSpur,
@@ -1857,6 +1862,7 @@ ProcIsObj(streamPtr, doErr)
     int			magic;
     char		*name;
     int			syms;
+    char		*other;
 
     buffer = (char *)malloc(hdrSize);
     status = Fs_Read(streamPtr, (Address)buffer, 0, &hdrSize);
@@ -1864,7 +1870,8 @@ ProcIsObj(streamPtr, doErr)
 	return FAILURE;
     }
     for (i=0; i < sizeof(machType)/sizeof(*machType); i++) {
-	name = machType[i](hdrSize, (const char *) buffer, &magic, &syms);
+	name = machType[i](hdrSize, (const char *) buffer, &magic, &syms,
+		&other);
 	if (name != NULL) {
 	    if (doErr) {
 		printf("Proc_Exec: Can't run %s ", name);
@@ -1890,6 +1897,9 @@ ProcIsObj(streamPtr, doErr)
 		    default:
 			printf("(0%03o)", magic);
 			break;
+		}
+		if (*other != '\0') {
+		    printf(" %s", other);
 		}
 		printf(" executable file on %s.\n", mach_MachineType);
 	    }
