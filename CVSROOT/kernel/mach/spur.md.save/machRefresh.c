@@ -33,10 +33,10 @@ static int RefreshCount = 0;
 #define	MACH_REFRESH_TIMER_ADDR		MACH_T_20
 
 /*
- * Cycles between refreshes. Around 2ms at 200 Mhz.
+ * Cycles between refreshes. Around 100ms at 5.814 Mhz.
  */
 
-#define	MACH_REFRESH_TIMER_TICKS	10000	
+#define	MACH_REFRESH_TIMER_TICKS	581395	
 /*
  *----------------------------------------------------------------------
  *
