@@ -248,17 +248,16 @@ extern	void		Proc_RemoveFromLockStack _ARGS_((
 extern	void		Proc_ResumeMigProc _ARGS_((int pc));
 extern	ReturnStatus	Proc_RpcGetPCB _ARGS_((ClientData srvToken,
 				int clientID, int command,
-				struct Rpc_Storage *storagePtr));
+				Rpc_Storage *storagePtr));
 extern	ReturnStatus	Proc_RpcMigCommand _ARGS_((ClientData srvToken,
 				int hostID, int command, 
-				struct Rpc_Storage *storagePtr));
+				Rpc_Storage *storagePtr));
 extern	ReturnStatus	Proc_RpcRemoteCall _ARGS_((ClientData srvToken,
 				int clientID, int command, 
-				struct Rpc_Storage *storagePtr));
+				Rpc_Storage *storagePtr));
 extern ReturnStatus 	Proc_RpcRemoteWait _ARGS_((ClientData srvToken,
 				int clientID, int command, 
-				struct Rpc_Storage *storagePtr));
-
+				Rpc_Storage *storagePtr));
 extern void 		Proc_UnlockFamily _ARGS_((int familyID));
 extern void 		Proc_ServerInit _ARGS_((void));
 extern void 		Proc_ServerProc _ARGS_((void));
