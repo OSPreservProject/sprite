@@ -27,6 +27,11 @@
 #include <user/netEther.h>
 #include <user/netInet.h>
 #include <user/netUltra.h>
+
+#ifdef ds5000
+#include <user/netFDDI.h>
+#endif
+
 #include <netRoute.h>
 #else
 #include <sprite.h>

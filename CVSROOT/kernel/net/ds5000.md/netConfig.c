@@ -22,15 +22,20 @@
 #include <netLEInt.h>
 #include <machAddrs.h>
 
+#include <netDFInt.h>
+
 /*
  * Fields are name, unit, slot, virtual flag, vector, and init routine.
  * For the ds5000 only the slot and init routine are used.
  */
 Net_Interface netConfigInterfaces[] = {
     {"LE", 0, (Address) 0, TRUE, -1, NetLEInit},
-    {"LE", 0, (Address) 1, TRUE, -1, NetLEInit},
+    {"LE", 0, (Address) 1, TRUE, -1, NetLEInit}, 
     {"LE", 0, (Address) 2, TRUE, -1, NetLEInit},
     {"LE", 0, (Address) 6, TRUE, -1, NetLEInit},
+    {"DF", 0, (Address) 0, FALSE, -1, NetDFInit},
+    {"DF", 0, (Address) 1, FALSE, -1, NetDFInit},
+    {"DF", 0, (Address) 2, FALSE, -1, NetDFInit},
 };
 int netNumConfigInterfaces = 
 	    sizeof(netConfigInterfaces) / sizeof(Net_Interface);

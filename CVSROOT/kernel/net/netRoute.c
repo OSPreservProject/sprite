@@ -530,6 +530,22 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	    routePtr->netAddress[NET_PROTO_RAW] = netAddressPtr[NET_PROTO_RAW];
 	    break;
 	}
+	case NET_NETWORK_FDDI: {
+	    Net_FDDIHdr *fddiHdrPtr;
+
+	    (void) strcat(routePtr->desc, "fddi, ");
+	    fddiHdrPtr = (Net_FDDIHdr *) routePtr->buffer;
+	    routePtr->headerPtr[NET_PROTO_RAW] = (Address)fddiHdrPtr;
+	    bzero((char *) fddiHdrPtr, sizeof(Net_FDDIHdr));
+	    fddiHdrPtr->frameControl = NET_FDDI_SPRITE;             /***/
+	    NET_FDDI_ADDR_COPY(netAddressPtr[NET_PROTO_RAW].address.fddi,
+			       fddiHdrPtr->dest);
+	    NET_FDDI_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].address.fddi,
+			       fddiHdrPtr->source);
+	    headerPtr = (char *) fddiHdrPtr;
+	    routePtr->netAddress[NET_PROTO_RAW] = netAddressPtr[NET_PROTO_RAW];
+	    break;
+	}
 	default:
 	    printf("Net_InstallRoute: Unknown interface type %d\n", 
 		interPtr->netType);
@@ -1052,6 +1068,12 @@ Net_HdrToAddr(netType, protocol, headerPtr, netAddressPtr)
 		    (Address) &((Net_UltraHeader *) headerPtr)->remoteAddress,
 		    netAddressPtr);
 		break;
+	    }
+	    case NET_NETWORK_FDDI: {
+	        status = Net_SetAddress(NET_ADDRESS_FDDI,
+	            (Address) &((Net_FDDIHdr *) headerPtr)->source,
+	            netAddressPtr);
+	        break;
 	    }
 	    default:
 		printf("Net_HdrToAddr: unknown netType %d\n", netType);

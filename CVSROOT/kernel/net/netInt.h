@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <netTypes.h>
+
 /*
  * The following is a NIL function pointer.
  */

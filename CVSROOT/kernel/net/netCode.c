@@ -132,6 +132,7 @@ Net_Init()
     }
     net_NetworkHeaderSize[NET_NETWORK_ETHER] = sizeof(Net_EtherHdr);
     net_NetworkHeaderSize[NET_NETWORK_ULTRA] = sizeof(Net_UltraHeader);
+    net_NetworkHeaderSize[NET_NETWORK_FDDI] = sizeof(Net_FDDIHdr);
     Net_ArpInit();
     return;
 }
@@ -649,7 +650,18 @@ Net_Input(interPtr, packetPtr, packetLength)
 	    }
 	    break;
 	}
-	default : 
+	case NET_NETWORK_FDDI: {     /***/
+	    Net_FDDIHdr *fddiHdrPtr;
+
+	    fddiHdrPtr = (Net_FDDIHdr *)packetPtr;
+	    if (fddiHdrPtr->frameControl == NET_FDDI_SPRITE) {
+		packetType = NET_PACKET_SPRITE;
+	    } else {
+		packetType = NET_PACKET_UNKNOWN;
+	    }
+	    break;
+	}
+	default: 
 	    printf("Net_Input: invalid net type %d\n", interPtr->netType);
     }
     headerSize = net_NetworkHeaderSize[interPtr->netType];

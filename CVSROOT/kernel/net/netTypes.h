@@ -43,7 +43,7 @@
  * Maximum number of network interfaces a host may have.
  */
 
-#define NET_MAX_INTERFACES	2
+#define NET_MAX_INTERFACES	3
 
 /*
  * Constants defining the different types of packets.
@@ -123,6 +123,45 @@ typedef struct Net_UltraStats {
 } Net_UltraStats;
 
 /*
+ * Statistics for the FDDI interface.
+ */
+
+/*
+ * Granularity at which we keep track of the size of packets sent
+ * and received.
+ */
+#define NET_FDDI_STATS_HISTO_SHIFT      7
+#define NET_FDDI_STATS_HISTO_SIZE       128
+/*
+ * Number of buckets in the packet size histogram.
+ */
+#define NET_FDDI_STATS_HISTO_NUM  \
+          (NET_FDDI_MAX_BYTES >> NET_FDDI_STATS_HISTO_SHIFT)
+/*
+ * Greatest number of packets that could be reaped in one receive
+ * interrupt.  See netDFInt.h:NET_DF_NUM_XMIT_ELEMENTS.
+ */
+#define NET_FDDI_STATS_RCV_REAPED       32
+
+typedef struct Net_FDDIStats {
+    int		packetsSent;		/* Number of packets sent. */
+    int		bytesSent;	        /* Number of bytes sent. */
+    int         transmitHistogram[NET_FDDI_STATS_HISTO_NUM];
+                                        /* Histogram of packet sizes sent */
+    int		packetsReceived;	/* Number of packets received. */
+    int		bytesReceived;		/* Number of bytes received. */
+    int         receiveHistogram[NET_FDDI_STATS_HISTO_NUM];
+                                        /* Histogram of rcved packet sizes */
+    int         receiveReaped[NET_FDDI_STATS_RCV_REAPED];
+                                        /* Number of packets reaped per
+					 * receive interrupt */
+    int         xmtPacketsDropped;      /* Packets dropped because 
+					 * of lack of transmit buffer space. */
+    int         packetsQueued;          /* Number of packets written
+					 * to adapter transmit buffers. */
+} Net_FDDIStats;
+
+/*
  * Statistics in general.
  */
 
@@ -130,6 +169,7 @@ typedef struct Net_Stats {
     Net_EtherStats	ether;
     Net_UltraStats	ultra;
     Net_UltraStats	hppi;
+    Net_FDDIStats       fddi;
 } Net_Stats;
 
 /*
