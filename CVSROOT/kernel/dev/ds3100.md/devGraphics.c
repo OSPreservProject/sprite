@@ -57,7 +57,7 @@ static volatile	unsigned short	curReg = 0;	/* Register to keep track of
 						 * bits. */
 Boolean	devGraphicsOpen = FALSE;		/* TRUE => the mouse is open.*/
 					/* Process waiting for select.*/
-static Boolean	isMono;			/* TRUE 
+static Boolean	isMono;			/* TRUE */
 
 /*
  * These need to mapped into user space.
@@ -223,9 +223,9 @@ DevGraphicsInit()
 
     isMono = *sysCSRPtr & MACH_CSR_MONO;
     if (isMono) {
-	printf("pm0 ( monochrome display )\n");
+	Mach_MonPrintf("pm0 ( monochrome display )\n");
     } else {
-	printf("pm0 ( color display )\n");
+	Mach_MonPrintf("pm0 ( color display )\n");
     }
 
     /*
@@ -1502,6 +1502,7 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_IOReply		*replyPtr;
 {
     ReturnStatus status = SUCCESS;
+    int		isColor;
 
     MASTER_LOCK(&graphicsMutex);
 
@@ -1645,6 +1646,10 @@ mapError:
 	    /*
 	     * No graphics specific bits are set this way.
 	     */
+	    break;
+	case IOC_GRAPHICS_IS_COLOR:
+	    isColor = ! (*sysCSRPtr & MACH_CSR_MONO);
+	    bcopy((char *)&isColor, ioctlPtr->outBuffer, sizeof (int));
 	    break;
 
 	default:

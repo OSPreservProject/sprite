@@ -548,10 +548,6 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 
     dprintf("mmap( %x, %d, %d, %d, %d, %d)\n", startAddr, length,
 	    prot, share, streamID, fileAddr);
-    if (BADALIGN(startAddr) || BADALIGN(fileAddr)) {
-	printf("Vm_Mmap: Invalid start or offset\n");
-	return VM_WRONG_SEG_TYPE;
-    }
 
     procPtr = Proc_GetCurrentProc();
     status = Fs_GetStreamPtr(procPtr,streamID,&streamPtr);
@@ -570,6 +566,33 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	return status;
     }
     dprintf("file: fileNumber %d size %d\n",attr.fileNumber, attr.size);
+
+    if (!(attr.type == FS_DEVICE) &&
+            (BADALIGN(startAddr) || BADALIGN(fileAddr))) {
+        printf("Vm_Mmap: Invalid start or offset\n");
+        return VM_WRONG_SEG_TYPE;
+    }
+    /*
+     * Do a device-specific mmap.
+     */
+    if (attr.type == FS_DEVICE) {
+        extern  ReturnStatus    Fsio_DeviceMmap();
+
+        (void) Fs_Close(filePtr);               /* Don't need this filePtr. */
+        /*
+         * Should I really indirect through the file system here?  But that
+         * requires adding an mmap switch to all the file system crud.  I'll
+         * test it this way first by going straight to Fs_Device stuff.
+         */
+        status = Fsio_DeviceMmap(streamPtr, startAddr, length, fileAddr,
+                &startAddr);
+        if (status != SUCCESS) {
+            return status;
+        }
+        return(Vm_CopyOut(sizeof(Address), (Address) &startAddr,
+            (Address) mappedAddr));
+    }
+
 
     /* 
      * Check permissions.

@@ -58,6 +58,7 @@ extern ReturnStatus Dev_serialBInTrace();
  *	DeviceIOControl
  *	DeviceClose
  *	DeviceSelect
+ *	DeviceMMap
  */
 
 
@@ -67,71 +68,71 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_TERM,       DevTtyOpen, DevTtyRead, DevTtyWrite,
 		     DevTtyIOControl, DevTtyClose, DevTtySelect,
-		     DEV_NO_ATTACH_PROC, NoDevice},
+		     DEV_NO_ATTACH_PROC, NoDevice, NullProc},
     /*
      * The system error log.  If this is not open then error messages go
      * to the console.
      */
     {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
 		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect,
-		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen},
+		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen, NullProc},
     /*
      * SCSI Worm interface.
      */
     {DEV_SCSI_WORM, NoDevice, NullProc, NullProc,
 		    NullProc, NullProc, NullProc, 
-		    DEV_NO_ATTACH_PROC, NoDevice},
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
     /*
      * The following device number is unused.
      */
     {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
 		    NullProc, NullProc, NullProc, 
-		    DEV_NO_ATTACH_PROC, NoDevice},
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
     /*
      * New SCSI Disk interface.
      */
     {DEV_SCSI_DISK, DevRawBlockDevOpen, DevRawBlockDevRead,
 		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
 		    DevRawBlockDevClose, Dev_NullSelect, DevScsiDiskAttach,
-		    DevRawBlockDevReopen},
+		    DevRawBlockDevReopen, NullProc},
     /*
      * SCSI Tape interface.
      */
     {DEV_SCSI_TAPE, DevSCSITapeOpen, DevSCSITapeRead, DevSCSITapeWrite,
 		    DevSCSITapeIOControl, DevSCSITapeClose, Dev_NullSelect,
-		    DEV_NO_ATTACH_PROC, NoDevice},
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
     /*
      * /dev/null
      */
     {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
 		    Dev_NullIOControl, NullProc, Dev_NullSelect,
-		    DEV_NO_ATTACH_PROC, NullProc},
+		    DEV_NO_ATTACH_PROC, NullProc, NullProc},
     /*
      * Xylogics 450 disk controller.
      */
     {DEV_XYLOGICS, NullProc, Dev_NullRead, 
 		   Dev_NullWrite, Dev_NullIOControl, 
 		   NullProc, Dev_NullSelect, 
-		   DEV_NO_ATTACH_PROC, NullProc},
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
     /*
      * Network devices.  The unit number specifies the ethernet protocol number.
      */
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
 		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect,
-		   DEV_NO_ATTACH_PROC, DevNet_FsReopen},
+		   DEV_NO_ATTACH_PROC, DevNet_FsReopen, NullProc},
     /*
      * Raw SCSI HBA interface.
      */
     {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
                     DevSCSIDeviceIOControl, DevSCSIDeviceClose, Dev_NullSelect,
-                    DEV_NO_ATTACH_PROC, NoDevice},
+                    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
     /*
      * RAID device.
      */
     {DEV_RAID, NullProc, Dev_NullRead,
 	       Dev_NullWrite, Dev_NullIOControl,
 	       NullProc, Dev_NullSelect,
-	       DEV_NO_ATTACH_PROC, NullProc},
+	       DEV_NO_ATTACH_PROC, NullProc, NullProc},
 
     /*
      * Debug device. (useful for debugging RAID device)
@@ -139,15 +140,14 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_DEBUG, NullProc, Dev_NullRead,
 	       Dev_NullWrite, Dev_NullIOControl,
 	       NullProc, Dev_NullSelect,
-	       DEV_NO_ATTACH_PROC, NullProc},
+	       DEV_NO_ATTACH_PROC, NullProc, NullProc},
 
     /*
      * The graphics device.
      */
     {DEV_MOUSE, DevGraphicsOpen, DevGraphicsRead, DevGraphicsWrite,
 		   DevGraphicsIOControl, DevGraphicsClose, DevGraphicsSelect,
-		   DEV_NO_ATTACH_PROC, NoDevice}, 
-
+		   DEV_NO_ATTACH_PROC, NoDevice, NullProc}, 
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);

@@ -3143,7 +3143,7 @@ VmMach_GetDevicePage(virtAddr)
 /*
  * ----------------------------------------------------------------------------
  *
- * Vm_MapKernelIntoUser --
+ * VmMach_MapKernelIntoUser --
  *
  *      Map a portion of kernel memory into the user's heap segment.  
  *	It will only map objects on hardware segment boundaries.  This is 
@@ -3164,11 +3164,61 @@ VmMach_GetDevicePage(virtAddr)
 ReturnStatus
 VmMach_MapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr,
 			 realVirtAddrPtr) 
-    int	kernelVirtAddr;		/* Kernel virtual address to map in. */
-    int	numBytes;		/* Number of bytes to map. */
-    int	userVirtAddr;		/* User virtual address to attempt to start 
+    unsigned	int	kernelVirtAddr;	/* Kernel virtual address to map in. */
+    int	numBytes;			/* Number of bytes to map. */
+    unsigned int userVirtAddr;	/* User virtual address to attempt to start 
 				   mapping in at. */
-    int	realVirtAddrPtr;	/* Where we were able to start mapping at. */
+    unsigned int *realVirtAddrPtr;/* Where we were able to start mapping at. */
+{
+    Address             newUserVirtAddr;
+    ReturnStatus        status;
+
+    status = VmMach_IntMapKernelIntoUser(kernelVirtAddr, numBytes,
+            userVirtAddr, &newUserVirtAddr);
+
+    if (status != SUCCESS) {
+        return status;
+    }
+
+    return Vm_CopyOut(4, (Address) &newUserVirtAddr, (Address) realVirtAddrPtr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_IntMapKernelIntoUser --
+ *
+ *      Map a portion of kernel memory into the user's heap segment.
+ *      It will only map objects on hardware segment boundaries.  This is
+ *      intended to be used to map devices such as video memory.
+ *
+ *      This routine can be called from within the kernel since it doesn't
+ *      do a Vm_CopyOut of the new user virtual address.
+ *
+ *      NOTE: It is assumed that the user process knows what the hell it is
+ *            doing.
+ *
+ * Results:
+ *      SUCCESS or FAILURE status.
+ *      Return the virtual address that it chose to map the memory at in
+ *      an out parameter.
+ *
+ * Side effects:
+ *      The hardware segment table for the user process's segment is modified
+ *      to map in the addresses.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ReturnStatus
+VmMach_IntMapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr, newAddrPtr)
+    unsigned int        kernelVirtAddr;         /* Kernel virtual address
+                                                 * to map in. */
+    int numBytes;                               /* Number of bytes to map. */
+    unsigned int        userVirtAddr;           /* User virtual address to
+                                                 * attempt to start mapping
+                                                 * in at. */
+    Address             *newAddrPtr;            /* New user address. */
 {
     int				numSegs;
     int				firstPage;
@@ -3239,8 +3289,9 @@ VmMach_MapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr,
      * Reinitialize this process's context using the new segment table.
      */
     VmMach_ReinitContext(procPtr);
+    *newAddrPtr = userVirtAddr;
 
-    return(Vm_CopyOut(4, (Address) &userVirtAddr, (Address) realVirtAddrPtr));
+    return SUCCESS;
 }
 
 
