@@ -340,6 +340,13 @@ NoEnableLabel:
  * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
  */
 #define	QUICK_ENABLE_INTR()				\
+	mov	%psr, %VOL_TEMP1;			\
+	set	MACH_ENABLE_INTR, %VOL_TEMP2;		\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+#define	OLD_QUICK_ENABLE_INTR()				\
 	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2);	\
 	mov	%psr, %VOL_TEMP1;			\
 	set	MACH_ENABLE_INTR, %VOL_TEMP2;		\
@@ -347,7 +354,6 @@ NoEnableLabel:
 	mov	%VOL_TEMP1, %psr;			\
 	MACH_WAIT_FOR_STATE_REGISTER();			\
 	MACH_ENABLE_TRAPS(%VOL_TEMP1)
-
 /*
  * Disable interrupts and keep traps enabled.  To do this,
  * we must disable traps, change the interrupt level, and then re-enable
@@ -361,6 +367,13 @@ NoEnableLabel:
  * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
  */
 #define	QUICK_DISABLE_INTR()				\
+	mov	%psr, %VOL_TEMP1;			\
+	set	MACH_DISABLE_INTR, %VOL_TEMP2;		\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+#define	OLD_QUICK_DISABLE_INTR()				\
 	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2);	\
 	mov	%psr, %VOL_TEMP1;			\
 	set	MACH_DISABLE_INTR, %VOL_TEMP2;		\
@@ -369,8 +382,17 @@ NoEnableLabel:
 	MACH_WAIT_FOR_STATE_REGISTER();			\
 	MACH_ENABLE_TRAPS(%VOL_TEMP1)
 
-
 #define	SET_INTRS_TO(regValue, useReg1, useReg2)		\
+	mov	%psr, useReg1;					\
+	set	MACH_ENABLE_INTR, useReg2;			\
+	and	useReg1, useReg2, useReg1;			\
+	set	MACH_DISABLE_INTR, useReg2;			\
+	and	regValue, useReg2, useReg2;			\
+	or	useReg1, useReg2, useReg1;			\
+	mov	useReg1, %psr;					\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+#define	OLD_SET_INTRS_TO(regValue, useReg1, useReg2)		\
 	MACH_DISABLE_TRAPS(useReg1, useReg2);			\
 	mov	%psr, useReg1;					\
 	set	MACH_ENABLE_INTR, useReg2;			\
@@ -381,7 +403,6 @@ NoEnableLabel:
 	mov	useReg1, %psr;					\
 	MACH_WAIT_FOR_STATE_REGISTER();				\
 	MACH_ENABLE_TRAPS(useReg1)
-
 
 /*
  * Run at high priority: supervisor mode, interrupts disabled, traps enabled.
