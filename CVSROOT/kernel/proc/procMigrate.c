@@ -56,6 +56,16 @@ Boolean proc_DoCallTrace = FALSE;
 Boolean proc_RefuseMigrations = FALSE;
 
 /*
+ * Set the migration version number.  Machines can only migrate to other
+ * machines of the same architecture and version number.
+ */
+#ifndef PROC_MIGRATE_VERSION
+#define PROC_MIGRATE_VERSION 1
+#endif /* PROC_MIGRATE_VERSION */
+
+int proc_MigrationVersion = PROC_MIGRATE_VERSION;
+
+/*
  * Procedures internal to this file
  */
 
@@ -923,7 +933,8 @@ Proc_FlagMigration(procPtr, nodeID)
  * Results:
  *	SUCCESS is returned if permission is granted.
  *	PROC_MIGRATION_REFUSED is returned if the node is not accepting
- *		migrated processes.
+ *		migrated processes or it is not at the right migration
+ *		level.
  *	Other errors may be returned by the rpc module.
  *
  * Side effects:
@@ -939,9 +950,14 @@ InitiateMigration(procPtr, nodeID)
 {
     Rpc_Storage storage;
     ReturnStatus status;
+    ProcMigInitiateCmd cmd;
+    
 
-    storage.requestParamPtr = (Address) &procPtr->processID;
-    storage.requestParamSize = sizeof(Proc_PID);
+    cmd.pid = procPtr->processID;
+    cmd.version = proc_MigrationVersion;
+    
+    storage.requestParamPtr = (Address) &cmd;
+    storage.requestParamSize = sizeof(ProcMigInitiateCmd);
 
     storage.requestDataPtr = (Address) NIL;
     storage.requestDataSize = 0;
@@ -958,7 +974,7 @@ InitiateMigration(procPtr, nodeID)
 	/*
 	 * Sanity checking on storage block.
 	 */
-#define SANITY_CHECK
+#undef SANITY_CHECK
 #ifdef SANITY_CHECK
 	if ((storage.requestParamPtr != (Address) &procPtr->processID) ||
 	    (storage.requestParamSize != sizeof(Proc_PID)) ||
@@ -971,13 +987,10 @@ InitiateMigration(procPtr, nodeID)
 	    panic("InitiateMigration: Rpc_Storage corrupted.\n");
 	} else {
 #endif /* SANITY_CHECK */
-	    if (proc_MigDebugLevel > 2) {
-		panic("InitiateMigration: Error %x returned by host %d.\n",
-		    status, nodeID);
-	    } else {
+	    if (proc_MigDebugLevel > 0) {
 		printf(
-		    "%s InitiateMigration: Error %x returned by host %d.\n",
-		    "Warning:", status, nodeID);
+		    "%s InitiateMigration: Error returned by host %d:\n\t%s\n",
+		    "Warning:", nodeID, Stat_GetMsg(status));
 	    }
 #ifdef SANITY_CHECK
 	}
