@@ -18,21 +18,22 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsio.h"
-#include "fsrmt.h"
-#include "fsioFile.h"
-#include "fsioDevice.h"
-#include "fsioPipe.h"
-#include "fsNameOps.h"
-#include "fsrmtInt.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsrmt.h>
+#include <fsioFile.h>
+#include <fsioDevice.h>
+#include <fsioPipe.h>
+#include <fsNameOps.h>
+#include <fsrmtInt.h>
 
 /*
  * fs_DomainLookup for FS_REMOTE_SPRITE_DOMAIN type.
  */
 
-static ReturnStatus (*rmtDomainLookup[FS_NUM_NAME_OPS])() = {
+static Fs_DomainLookupOps rmtDomainLookup = {
      FsrmtImport, Fsio_NoProc, FsrmtOpen, FsrmtGetAttrPath,
      FsrmtSetAttrPath, FsrmtMakeDevice, FsrmtMakeDir, 
      FsrmtRemove, FsrmtRemoveDir, FsrmtRename, FsrmtHardLink
@@ -57,6 +58,7 @@ static Fsio_StreamTypeOps rmtFileStreamOps[] = {
  */
     { FSIO_RMT_FILE_STREAM, FsrmtFileIoOpen, FsrmtFileRead, FsrmtFileWrite,
 		FsrmtFilePageRead, FsrmtFilePageWrite,
+		Fsrmt_BlockCopy,
 		FsrmtFileIOControl, Fsio_FileSelect,
 		FsrmtFileGetIOAttr, FsrmtFileSetIOAttr,
 		FsrmtFileVerify, FsrmtFileMigClose, FsrmtFileMigOpen,
@@ -67,7 +69,7 @@ static Fsio_StreamTypeOps rmtFileStreamOps[] = {
  * Remote device stream.  Forward the operations to the remote I/O server.
  */
     { FSIO_RMT_DEVICE_STREAM, FsrmtDeviceIoOpen, Fsrmt_Read, Fsrmt_Write,
-		Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging routines */
 		Fsrmt_IOControl, Fsrmt_Select,
 		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
 		FsrmtDeviceVerify, Fsrmt_IOMigClose, Fsrmt_IOMigOpen,
@@ -77,7 +79,7 @@ static Fsio_StreamTypeOps rmtFileStreamOps[] = {
   * Remote anonymous pipe stream.  These arise because of migration.
   */
     { FSIO_RMT_PIPE_STREAM, Fsio_NoProc, Fsrmt_Read, Fsrmt_Write,
-		Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging routines */
 		Fsrmt_IOControl, Fsrmt_Select,
 		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
 		FsrmtPipeVerify, Fsrmt_IOMigClose, Fsrmt_IOMigOpen,
@@ -110,7 +112,7 @@ Fsrmt_InitializeOps()
 {
     int	i;
 
-    Fs_InstallDomainLookupOps(FS_REMOTE_SPRITE_DOMAIN, rmtDomainLookup, 
+    Fs_InstallDomainLookupOps(FS_REMOTE_SPRITE_DOMAIN, &rmtDomainLookup, 
 				&rmtAttrOpTable );
     for (i = 0; i < numRmtFileStreamOps; i++)  { 
 	Fsio_InstallStreamOps(rmtFileStreamOps[i].type, &(rmtFileStreamOps[i]));
