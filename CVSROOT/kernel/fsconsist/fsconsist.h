@@ -146,6 +146,8 @@ extern void Fsconsist_ClientInit _ARGS_((void));
 extern Fsconsist_ClientInfo *Fsconsist_IOClientOpen _ARGS_((
 			List_Links *clientList, int clientID, int useFlags,
 			Boolean cached));
+extern void Fsconsist_IOClientAdd _ARGS_((
+			List_Links *clientList, int clientID, Boolean cached));
 extern Boolean Fsconsist_IOClientReopen _ARGS_((List_Links *clientList, 
 			int clientID, Fsio_UseCounts *usePtr));
 extern Boolean Fsconsist_IOClientClose _ARGS_((List_Links *clientList, 
@@ -207,6 +209,8 @@ extern ReturnStatus Fsconsist_RpcConsistReply _ARGS_((ClientData srvToken,
 extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr));
 
 extern void Fsconsist_AddClient _ARGS_((int clientID));
+
+extern void Fsconsist_UpdateFileConsistencyList _ARGS_((Fsio_FileIOHandle *handlePtr, int clientID, int useFlags, Boolean cacheable));
 
 #endif
 

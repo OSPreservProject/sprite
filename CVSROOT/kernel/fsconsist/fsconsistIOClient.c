@@ -135,6 +135,45 @@ found:
 /*
  * ----------------------------------------------------------------------------
  *
+ * Fsconsist_IOClientAdd --
+ *
+ *	Add the client to the set of clients doing I/O on a file.  This
+ *	DOES NOT increment reference counts due to the client.  It is used
+ *	only for putting a client with a zero ref count onto the list during
+ *	fast recovery.  This happens if there's a client that has no open
+ *	references for the file, but still has cached blocks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds the client to the list.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+Fsconsist_IOClientAdd(clientList, clientID, cached)
+    List_Links	*clientList;	/* List of clients for the I/O handle. */
+    int		clientID;	/* The client who is opening the file. */
+    Boolean	cached;		/* Boolean property recorded for client */
+{
+    register Fsconsist_ClientInfo *clientPtr;
+
+    LIST_FORALL(clientList, (List_Links *)clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    goto found;
+	}
+    }
+    INSERT_CLIENT(clientList, clientPtr, clientID);
+found:
+    clientPtr->cached = cached;
+    return;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * 
  Fsconsist_IOClientReopen --
  *

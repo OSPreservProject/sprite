@@ -51,6 +51,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include <stdio.h>
 
+#include	<fsrecov.h>
+
 #define	LOCKPTR	(&consistPtr->lock)
 
 Boolean	fsconsist_Debug = FALSE;
@@ -1315,7 +1317,31 @@ Fsconsist_DeleteLastWriter(consistPtr, clientID)
 	    if (clientPtr->use.ref == 0 &&
 		consistPtr->lastWriter == clientID) {
 		if (!clientPtr->locked) {
+		    Fsrecov_HandleState	recovInfo;
+		    ReturnStatus	status;
+
 		    REMOVE_CLIENT(clientPtr);
+		    /*
+		     * If the handle had a 0 ref count but was still in the
+		     * recovery box due to having dirty blocks in the client's
+		     * cache, we can now get rid of it.
+		     */
+		    if (recov_Transparent &&
+			    Fsrecov_GetHandle(consistPtr->hdrPtr->fileID,
+			    clientID, &recovInfo, FALSE) == SUCCESS) {
+			if (recovInfo.use.ref <= 0) {
+			    status = Fsrecov_DeleteHandle(consistPtr->hdrPtr,
+				    clientID, FS_WRITE | FS_LAST_DIRTY_BLOCK);
+			    if (status != SUCCESS) {
+				/* Should I panic? */
+				printf("Fsconsist_ClientRemoveCallback: couldn't ");
+				printf("delete handle from recov box.\n");
+			    }
+			} else {
+			    printf("Fsconsist_ClientRemoveCallback: ref count ");
+			    panic("on object is too high.");
+			}
+		    }
 		}
 		consistPtr->lastWriter = -1;
 		break;
@@ -1388,6 +1414,8 @@ Fsconsist_ClientRemoveCallback(consistPtr, clientID)
 			consistPtr->hdrPtr->fileID.minor,
 			clientPtr->clientID, consistPtr->lastWriter);
 	    } else if (clientPtr->clientID != clientID) {
+		Fsrecov_HandleState	recovInfo;
+		ReturnStatus		status;
 		/*
 		 * Tell the client caching the file to remove it from its cache.
 		 * This should only be the last writer as we are called only
@@ -1395,6 +1423,25 @@ Fsconsist_ClientRemoveCallback(consistPtr, clientID)
 		 */
 		ClientCommand(consistPtr, clientPtr, FSCONSIST_DELETE_FILE);
 		(void)EndConsistency(consistPtr);
+		/*
+		 * If the handle had a 0 ref count but was still in the
+		 * recovery box due to having dirty blocks in the client's
+		 * cache, we can now get rid of it.
+		 */
+		if (recov_Transparent &&
+			Fsrecov_GetHandle(consistPtr->hdrPtr->fileID,
+			clientPtr->clientID, &recovInfo, FALSE) == SUCCESS) {
+		    if (recovInfo.use.ref <= 0) {
+			status = Fsrecov_DeleteHandle(consistPtr->hdrPtr,
+				clientPtr->clientID,
+				FS_WRITE | FS_LAST_DIRTY_BLOCK);
+			if (status != SUCCESS) {
+			    /* Should I panic? */
+			    printf("Fsconsist_ClientRemoveCallback: couldn't ");
+			    printf("delete handle from recov box.\n");
+			}
+		    }
+		}
 	    }
 	}
 	/*
@@ -2134,6 +2181,9 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	 */
 	LIST_FORALL(&(consistPtr->clientList), (List_Links *) clientPtr) {
 	    if (clientPtr->clientID == clientID) {
+		Fsrecov_HandleState	recovInfo;
+		ReturnStatus	status;
+
 		handlePtr = (Fsio_FileIOHandle *)consistPtr->hdrPtr;
 		if (msgPtr->flags & (FSCONSIST_WRITE_BACK_BLOCKS |
 				     FSCONSIST_WRITE_BACK_ATTRS)) {
@@ -2144,9 +2194,48 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 		}
 		if (clientPtr->use.ref == 0 &&
 		    consistPtr->lastWriter != clientID) {
+
+		    /*
+		     * If the handle had a 0 ref count but was still in the
+		     * recovery box due to having dirty blocks in the client's
+		     * cache, we can now get rid of it.  XXX I hope this is
+		     * the right place to do it.  Should it be done
+		     * above?  Leaving it here could get more clients,
+		     * but if they aren't the last writer and they have 0 refs,
+		     * they should go away.
+		     */
+		    if (recov_Transparent &&
+			    Fsrecov_GetHandle(consistPtr->hdrPtr->fileID,
+			    clientID, &recovInfo, FALSE) == SUCCESS) {
+			if (recovInfo.use.ref <= 0) {
+			    status = Fsrecov_DeleteHandle(consistPtr->hdrPtr,
+				    clientID, FS_WRITE | FS_LAST_DIRTY_BLOCK);
+			    if (status != SUCCESS) {
+				/* Should I panic? */
+				printf("ProcessConsistReply: couldn't ");
+				printf("delete handle from recov box.\n");
+			    }
+			} else {
+				printf("ProcessConsistReply: ref count ");
+				panic("on object too high.");
+			}
+		    }
 		    REMOVE_CLIENT(clientPtr);
 		} else if (msgPtr->flags & FSCONSIST_INVALIDATE_BLOCKS) {
 		    clientPtr->cached = FALSE;
+		    /* Change cacheability info in recov box. */
+		    if (recov_Transparent &&
+			    Fsrecov_GetHandle(consistPtr->hdrPtr->fileID,
+			    clientID, &recovInfo, FALSE) == SUCCESS) {
+			if (recovInfo.clientData != FALSE) {
+			    recovInfo.clientData = FALSE;
+			    if (Fsrecov_UpdateHandle(consistPtr->hdrPtr->fileID,
+				    clientID, &recovInfo) != SUCCESS) {
+				printf(" ProcessConsistReply: ");
+				printf("Couldn't update recov box.\n");
+			    }
+			}
+		    }
 		}
 		break;
 	    }
@@ -2201,4 +2290,39 @@ ConsistType(flags)
 	break;
     }
     return result;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fsconsist_UpdateFileConsistencyList --
+ *
+ *	This updates the data structures to include this file in the
+ *	client consistency lists.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Lists updated, lastWriter field set, etc.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+Fsconsist_UpdateFileConsistencyList(handlePtr, clientID, useFlags, cacheable)
+    Fsio_FileIOHandle *handlePtr;	/* File to check consistency of. */
+    int 		clientID;	/* ID of the host doing the open */
+    register int 	useFlags;	/* useFlags from the open call */
+    Boolean		cacheable;	/* TRUE if file is cacheable. */
+{
+    register Fsconsist_Info *consistPtr = &handlePtr->consist;
+    LOCK_MONITOR;
+
+    /*
+     * Add ourselves to the list of clients using the file.
+     */
+    UpdateList(consistPtr, clientID, useFlags, cacheable, (int *) NIL);
+    UNLOCK_MONITOR;
+    return;
 }
