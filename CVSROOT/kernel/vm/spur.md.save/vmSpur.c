@@ -15,6 +15,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMachInt.h"
 #include "vm.h"
 #include "vmInt.h"
+#include "user/vm.h"
+#include "user/spur.md/vmMach.h"
 #include "mach.h"
 #include "list.h"
 #include "mem.h"
@@ -98,6 +100,12 @@ static Boolean useSimpleValidation = FALSE;
 #define volatile
 #endif
 #endif
+
+/*
+ * Variable to control reference bit usage.
+ */
+static Boolean flushOnRefBitClear = FALSE;
+static Boolean useHardRefBit = TRUE;
 
 
 /*
@@ -1117,7 +1125,11 @@ VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     segDataPtr = virtAddrPtr->segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
-    *refPtr = *ptePtr & VMMACH_REFERENCED_BIT;
+    if (useHardRefBit) {
+	*refPtr = *ptePtr & VMMACH_REFERENCED_BIT;
+    } else {
+	*refPtr = FALSE;
+    }
     *modPtr = *ptePtr & VMMACH_MODIFIED_BIT;
 
     UNLOCK_MONITOR;
@@ -1151,10 +1163,15 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 
     LOCK_MONITOR;
 
-    segDataPtr = virtAddrPtr->segPtr->machPtr;
-    page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
-    ptePtr = GetPageTablePtr(segDataPtr, page);
-    *ptePtr &= ~VMMACH_REFERENCED_BIT;
+    if (useHardRefBit) {
+	segDataPtr = virtAddrPtr->segPtr->machPtr;
+	page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
+	ptePtr = GetPageTablePtr(segDataPtr, page);
+	*ptePtr &= ~VMMACH_REFERENCED_BIT;
+	if (flushOnRefBitClear) {
+	    VmMachFlushPage(virtAddrPtr->segPtr, page);
+	}	
+    }
 
     UNLOCK_MONITOR;
 }
@@ -1187,6 +1204,8 @@ VmMach_SetRefBit(addr)
     register	VmMach_ProcData	*procDataPtr;
 
     LOCK_MONITOR;
+
+    vmStat.machDepStat.refBitFaults++;
 
     procPtr = Proc_GetCurrentProc();
     procDataPtr = procPtr->vmPtr->machPtr;
@@ -1270,6 +1289,7 @@ VmMach_SetModBit(addr)
 
     LOCK_MONITOR;
 
+    vmStat.machDepStat.dirtyBitFaults++;
     procPtr = Proc_GetCurrentProc();
     procDataPtr = procPtr->vmPtr->machPtr;
     if (procDataPtr->segRegMask != (unsigned)-1 &&
@@ -2317,6 +2337,44 @@ Vm_ValidateRange(addr, numBytes)
 void
 VmMach_Trace()
 {
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMach_Cmd --
+ *
+ *	Machine dependent vm command handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+VmMach_Cmd(command, arg)
+    int	command;
+    int	arg;
+{
+    switch (command) {
+	case VM_SET_FLUSH_ON_REF_BIT_CLEAR:
+	    Sys_Printf("flushOnRefBitClear val was %d, is %d\n",
+		        flushOnRefBitClear, arg);
+	    flushOnRefBitClear = arg;
+	    return(SUCCESS);
+	case VM_SET_USE_HARD_REF_BIT:
+	    Sys_Printf("useHardRefBit val was %d, is %d\n",
+		        useHardRefBit, arg);
+	    useHardRefBit = arg;
+	    return(SUCCESS);
+	default:
+	    Sys_Panic(SYS_WARNING, "VmMach_Cmd: Unknown command %d\n", command);
+	    return(GEN_INVALID_ARG);
+    }
 }
 
 /*
