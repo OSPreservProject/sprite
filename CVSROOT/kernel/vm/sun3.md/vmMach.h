@@ -190,5 +190,7 @@ extern  void            VmMach_SharedProcFinish();
 extern	void		VmMach_LockCachePage();
 extern	void		VmMach_UnlockCachePage();
 
+extern Address          VmMach_32BitDMAAlloc();
+extern void             VmMach_32BitDMAFree();
 
 #endif /* _VMMACH */
