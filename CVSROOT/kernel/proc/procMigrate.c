@@ -152,9 +152,6 @@ Proc_Migrate(pid, nodeID)
 	    panic("Proc_Migrate: procPtr == NIL\n");
 	}
 	Proc_Lock(procPtr);
-#ifdef notdef
-	return(PROC_INVALID_PID);
-#endif /* notdef */
     } else {
 	procPtr = Proc_LockPID(pid);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -405,11 +402,7 @@ Proc_MigrateTrap(procPtr)
     if (status != SUCCESS) {
 	printf("Warning: Error returned by ResumeExecution: %s.\n",
 	       Stat_GetMsg(status));
-#ifdef KILL_IT
 	goto failure;
-#else
-	printf("Warning: not killing migrating process.\n");
-#endif				/* */
     }
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIGRATING) |
 	PROC_MIGRATION_DONE;
