@@ -868,9 +868,15 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 			    procPtr->processID, FALSE);
 	    break;
 	case MACH_EXC_BUS_ERR_IFETCH:
-	    panic("MachExceptionHandler: User bus error on ifetch");
+	    printf("MachExceptionHandler: User bus error on ifetch");
+	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
+			    procPtr->processID, FALSE);
+	    break;
 	case MACH_EXC_BUS_ERR_LD_ST:
-	    panic("MachExceptionHandler: User bus error on ld or st");
+	    printf("MachExceptionHandler: User bus error on ld or st");
+	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
+			    procPtr->processID, FALSE);
+	    break;
 	case MACH_EXC_SYSCALL:
 	    if (!MachUNIXSyscall()) {
 		printf("MachExceptionHandler: Bad syscall magic for proc %x\n",
@@ -1103,12 +1109,10 @@ Interrupt(statusReg, causeReg)
 #ifdef DEBUG_INTR
     if (mach_AtInterruptLevel) {
 	printf("Received interrupt while at interrupt level.\n");
-	return(MACH_KERN_ERROR);
     }
     if (mach_NumDisableIntrsPtr[0] > 0) {
 	printf("Received interrupt with mach_NumDisableIntrsPtr[0] = %d.\n",
 	       mach_NumDisableIntrsPtr[0]);
-	return(MACH_KERN_ERROR);
     }
 #endif /* DEBUG_INTR */
     
