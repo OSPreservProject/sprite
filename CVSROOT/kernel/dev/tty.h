@@ -86,7 +86,7 @@ typedef struct DevTty {
 					 * the device driver;  passed to
 					 * rawProc by Td library. */
     void (*inputProc)();		/* For most terminal-like devices
-					 * this is NULL.  If non-NULL, it
+					 * this is NIL.  If non-NIL, it
 					 * is a procedure to invoke to process
 					 * each input character (e.g. to map
 					 * keystroke identifiers to ASCII
@@ -120,10 +120,13 @@ typedef struct DevTty {
  * DEV_TTY_GOT_BREAK:	For consoles that are just serial lines, this bit
  *			means a break was just received on input, so the
  *			next character is a console command.
+ * DEV_TTY_OVERFLOWED:	The input buffer overflowed and a message has been
+ *			printed.  
  */
 
 #define DEV_TTY_IS_CONSOLE	1
 #define DEV_TTY_GOT_BREAK	2
+#define DEV_TTY_OVERFLOWED	4
 
 /*
  * Special values for "characters" placed in the buffer of a DevTty:
