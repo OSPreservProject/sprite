@@ -139,6 +139,7 @@ extern 	void 		Sync_PrintStat();
  *----------------------------------------------------------------------------
  */
 
+#ifndef lint
 #define MASTER_LOCK(semaphore) \
     { \
         sync_Instrument.numLocks++; \
@@ -151,6 +152,21 @@ extern 	void 		Sync_PrintStat();
 			(int)&(semaphore)); \
 	} \
     }
+#else /* lint */
+#define MASTER_LOCK(semaphore) \
+    { \
+        sync_Instrument.numLocks++; \
+	if (!mach_AtInterruptLevel) { \
+	    Mach_DisableIntr(); \
+	    mach_NumDisableIntrsPtr[0]++; \
+	} \
+	(semaphore)++; \
+	if ((semaphore) == 1) { \
+	    Sys_Panic(SYS_FATAL, "Deadlock!!! (semaphore @ 0x%x)\n", \
+			(int)&(semaphore)); \
+	} \
+    }
+#endif /* lint */
 
 /*
  *----------------------------------------------------------------------------
@@ -172,6 +188,7 @@ extern 	void 		Sync_PrintStat();
  *----------------------------------------------------------------------------
  */
 
+#ifndef lint 
 #define MASTER_UNLOCK(semaphore) \
     { \
         sync_Instrument.numUnlocks++; \
@@ -182,6 +199,19 @@ extern 	void 		Sync_PrintStat();
 	    } \
 	} \
     }
+#else /* lint */
+#define MASTER_UNLOCK(semaphore) \
+    { \
+        sync_Instrument.numUnlocks++; \
+	(semaphore) = 0; \
+	if (!mach_AtInterruptLevel) { \
+	    mach_NumDisableIntrsPtr[0]--; \
+	    if (mach_NumDisableIntrsPtr[0] == 0) { \
+		Mach_EnableIntr(); \
+	    } \
+	} \
+    }
+#endif /* lint */
 
 /* 
  * Condition variables can be used in critical sections guarded by
