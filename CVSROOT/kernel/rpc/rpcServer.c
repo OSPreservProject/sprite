@@ -35,7 +35,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 RpcServerState **rpcServerPtrPtr = (RpcServerState **)NIL;
 int              rpcMaxServers = 50;
-static int       numFreeServers = 0;
 int              rpcNumServers = 0;
 
 /*

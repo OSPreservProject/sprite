@@ -202,7 +202,6 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
 						 * packet to the network driver
 						 */
     register RpcHdr *rpcHdrPtr;			/* The RPC header */
-    register ReturnStatus error;
 
     /*
      * Initialize the RPC header for the request message.  A couple fields

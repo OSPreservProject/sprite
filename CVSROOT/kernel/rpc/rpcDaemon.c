@@ -71,8 +71,8 @@ void RpcResetNoServers();
  *	reclaimed by tidying up their connection with their old client
  *	and making them available to handle RPC requests from other clients.
  *	The other chore of the daemon is to create more RPC server processes
- *	if the demand for them is high.  Initially a few server process
- *	is created and the rest are created via this daemon.
+ *	if the demand for them is high.  Initially a few server processes
+ *	are created and the rest are created via this daemon.
  *
  * Results:
  *	This never returns.
@@ -89,7 +89,7 @@ Rpc_Daemon()
     int pid;
 
     queueEntry.routine = RpcDaemonWakeup;
-    queueEntry.interval = 5 * timer_IntOneSecond;
+    queueEntry.interval = 2 * timer_IntOneSecond;
     queueEntry.clientData = (ClientData)NIL;
 
     Sys_Printf("Rpc_Daemon alive\n");
@@ -102,7 +102,7 @@ Rpc_Daemon()
 	     * because there were no available server processes.
 	     */
 	     Rpc_CreateServer(&pid);
-	     Sys_Printf("Created RPC server %x\n", pid);
+	     Sys_Printf("RPC srvr\n");
 	     RpcResetNoServers(0);
 	}
 	RpcReclaimServers();

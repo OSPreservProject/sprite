@@ -41,6 +41,7 @@ Rpc_CltStat rpcTotalCltStat;
 Rpc_CltStat rpcCltStat;
 static int numStats = sizeof(Rpc_CltStat) / sizeof(int);
 
+#ifdef notdef
 /*
  * This is the monitored data whichs keeps track of how many processes
  * are using the RPC system.
@@ -52,6 +53,7 @@ static int numRpcProcesses;
  */
 static Sync_Lock rpcTraceLock;
 #define LOCKPTR (&rpcTraceLock)
+#endif notdef
 
 /*
  *----------------------------------------------------------------------

@@ -110,7 +110,6 @@ RpcDoCall(serverID, chanPtr, storagePtr, command)
 				 * getting no reply. */
     register unsigned int lastFragMask = 0;	/* Previous state of our
 						 * fragment reassembly */
-    int	loopCount;
 
     /*
      * This code is locked with MASTER_LOCK in order to synchronize
@@ -314,7 +313,6 @@ RpcDoCall(serverID, chanPtr, storagePtr, command)
 	    }
 	}
     } while (error == SUCCESS);
-exit:
     chanPtr->state &= ~CHAN_WAITING;
     MASTER_UNLOCK(chanPtr->mutex);
     return(error);

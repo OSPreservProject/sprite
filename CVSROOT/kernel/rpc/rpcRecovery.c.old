@@ -114,7 +114,6 @@ Rpc_WaitForHost(spriteID, conditionPtr)
     int spriteID;			/* Host to monitor */
     Sync_Condition *conditionPtr;	/* Event on which to block */
 {
-    Boolean created = FALSE;
     Hash_Entry *hashPtr;
     RecovHostState *hostPtr;
     RecovWait *waitPtr;
@@ -258,7 +257,6 @@ RpcHostDead(spriteID)
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
-    register RecovWait *waitPtr;
 
     LOCK_MONITOR;
 
