@@ -230,7 +230,7 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
      * Fetch the handle for the file and verify the client.
      */
     hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
-		(&paramsPtr->fileID, clientID);
+		(&paramsPtr->fileID, clientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *) NIL) {
 	Sys_Panic(SYS_WARNING, "Fs_RpcRead, stale handle <%d,%d> client %d\n",
 		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
@@ -529,7 +529,7 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
     paramsPtr = (FsSpriteWriteParams *) storagePtr->requestParamPtr;
 
     hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
-		(&paramsPtr->fileID, clientID);
+		(&paramsPtr->fileID, clientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *) NIL) {
 	Sys_Panic(SYS_WARNING, "Fs_RpcWrite, stale handle <%d,%d> client %d\n",
 		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
@@ -732,7 +732,7 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
     paramsPtr = (FsSpriteSelectParams *)storagePtr->requestParamPtr;
 
     hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
-	(&paramsPtr->fileID, clientID);
+	(&paramsPtr->fileID, clientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     } 
@@ -869,7 +869,7 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
     FsHandleRelease(streamPtr, TRUE);
 
     hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
-		(&paramsPtr->fileID, clientID);
+		(&paramsPtr->fileID, clientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     } else if (streamPtr->ioHandlePtr != hdrPtr) {
@@ -1033,14 +1033,14 @@ Fs_RpcBlockCopy(srvToken, clientID, command, storagePtr)
      * while we are using them because of the way swap files are handled.
      */
     dstHdrPtr = (*fsStreamOpTable[paramsPtr->destFileID.type].clientVerify)
-		(&paramsPtr->destFileID, clientID);
+		(&paramsPtr->destFileID, clientID, (int *)NIL);
     if (dstHdrPtr == (FsHandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }
     FsHandleRelease(dstHdrPtr, TRUE);
 
     srcHdrPtr = (*fsStreamOpTable[paramsPtr->srcFileID.type].clientVerify)
-		(&paramsPtr->srcFileID, clientID);
+		(&paramsPtr->srcFileID, clientID, (int *)NIL);
     if (srcHdrPtr == (FsHandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }

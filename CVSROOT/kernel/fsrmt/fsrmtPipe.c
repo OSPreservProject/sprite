@@ -1008,9 +1008,10 @@ FsPipeMigEnd(migInfoPtr, size, data, hdrPtrPtr)
  */
 
 FsHandleHeader *
-FsRmtPipeVerify(fileIDPtr, clientID)
+FsRmtPipeVerify(fileIDPtr, clientID, domainTypePtr)
     FsFileID	*fileIDPtr;	/* Client's I/O file ID */
     int		clientID;	/* Host ID of the client */
+    int		*domainTypePtr;	/* Return - FS_LOCAL_DOMAIN */
 {
     register FsPipeIOHandle	*handlePtr;
     register FsClientInfo	*clientPtr;
@@ -1034,6 +1035,9 @@ FsRmtPipeVerify(fileIDPtr, clientID)
 	Sys_Panic(SYS_WARNING,
 	    "FsRmtPipeVerify, client %d not known for pipe <%d,%d>\n",
 	    clientID, fileIDPtr->major, fileIDPtr->minor);
+    }
+    if (domainTypePtr != (int *)NIL) {
+	*domainTypePtr = FS_LOCAL_DOMAIN;
     }
     return((FsHandleHeader *)handlePtr);
 }

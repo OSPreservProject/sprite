@@ -623,6 +623,7 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
     FsRedirectInfo		*newNameInfoPtr;/* For prefix re-directs,
 						 * unallocated since proc call
 						 * allocates space for it. */
+    int				domainType;
 
     openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
 
@@ -633,7 +634,7 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
 	return(GEN_INVALID_ARG);
     }
     prefixHandle = (*fsStreamOpTable[openArgsPtr->prefixID.type].clientVerify)
-	    (&openArgsPtr->prefixID, clientID);
+	    (&openArgsPtr->prefixID, clientID, &domainType);
     if (prefixHandle == (FsHandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }
@@ -645,7 +646,7 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
     getAttrResults.attrPtr = &(getAttrResultsParamPtr->attrResults.attrs);
     getAttrResults.fileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
 
-    status = FsLocalGetAttrPath(prefixHandle,
+    status = (*fsDomainLookup[domainType][FS_DOMAIN_GET_ATTR])(prefixHandle,
 		(char *) storagePtr->requestDataPtr, (Address)openArgsPtr,
 		(Address)(&getAttrResults), &newNameInfoPtr);
 
@@ -790,12 +791,13 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
     FsRedirectInfo		*newNameInfoPtr;/* For prefix re-directs */
     FsGetAttrResultsParam	*getAttrResultsParamPtr;	/* rpc param
 								 * bundle */
+    int				domainType;
 
     setAttrArgsPtr = (FsSetAttrArgs *) storagePtr->requestParamPtr;
 
     prefixHandle =
 	(*fsStreamOpTable[setAttrArgsPtr->openArgs.prefixID.type].clientVerify)
-	    (&setAttrArgsPtr->openArgs.prefixID, clientID);
+	    (&setAttrArgsPtr->openArgs.prefixID, clientID, &domainType);
     if (prefixHandle == (FsHandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }
@@ -804,7 +806,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     getAttrResultsParamPtr = Mem_New(FsGetAttrResultsParam);
     ioFileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
-    status = FsLocalSetAttrPath(prefixHandle,
+    status = (*fsDomainLookup[domainType][FS_DOMAIN_SET_ATTR])(prefixHandle,
 		(char *) storagePtr->requestDataPtr,
 		(Address) storagePtr->requestParamPtr,
 		(Address) ioFileIDPtr, &newNameInfoPtr);

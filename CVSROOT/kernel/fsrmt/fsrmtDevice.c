@@ -1224,9 +1224,10 @@ FsRemoteIOMigEnd(migInfoPtr, size, data, hdrPtrPtr)
  */
 
 FsHandleHeader *
-FsRmtDeviceVerify(fileIDPtr, clientID)
+FsRmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
     FsFileID	*fileIDPtr;	/* Client's I/O file ID */
     int		clientID;	/* Host ID of the client */
+    int		*domainTypePtr;	/* Return - FS_LOCAL_DOMAIN */
 {
     register FsDeviceIOHandle	*devHandlePtr;
     register FsClientInfo	*clientPtr;
@@ -1250,6 +1251,9 @@ FsRmtDeviceVerify(fileIDPtr, clientID)
 	Sys_Panic(SYS_WARNING,
 	    "FsRmtDeviceVerify, client %d not known for device <%d,%d>\n",
 	    clientID, fileIDPtr->major, fileIDPtr->minor);
+    }
+    if (domainTypePtr != (int *)NIL) {
+	*domainTypePtr = FS_LOCAL_DOMAIN;
     }
     return((FsHandleHeader *)devHandlePtr);
 }

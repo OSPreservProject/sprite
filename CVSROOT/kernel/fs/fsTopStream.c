@@ -402,7 +402,7 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	reopenParamsPtr = (StreamReopenParams *)inData;
 	fileIDPtr = &reopenParamsPtr->ioFileID;
 	ioHandlePtr = (*fsStreamOpTable[fileIDPtr->type].clientVerify)
-			(fileIDPtr, clientID);
+			(fileIDPtr, clientID, (int *)NIL);
 	if (ioHandlePtr != (FsHandleHeader *)NIL) {
 	    Boolean found;
 

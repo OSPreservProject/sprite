@@ -223,12 +223,14 @@ typedef struct FsStreamTypeOps {
      *  There are two parts to this task.  The first is to map from the
      *  client's fileID.type (i.e. FS_RMT_DEVICE_STREAM) to the server's
      *  (i.e. FS_LCL_DEVICE_STREAM).  The second step is to check that the
-     *  client is recorded in the clientList of the I/O handle.
+     *  client is recorded in the clientList of the I/O handle.  The domain
+     *	type is returned for use in naming operations.
      *
      *	FsHandleHeader *
-     *	FooClientVerify(fileIDPtr, clientID)
+     *	FooClientVerify(fileIDPtr, clientID, domainTypePtr)
      *		FsFileID	*fileIDPtr;		(Client's handle)
      *		int		clientID;		(The client hostID)
+     *		int		*domainTypePtr;		(may be NIL)
      */
     FsHandleHeader *(*clientVerify)();
     /*
