@@ -74,7 +74,9 @@ typedef struct {
  */
 typedef struct {
     short		recType;	/* Always equals VM_TRACE_SEG_REC. */
-    unsigned	short	hardSegNum;	/* 128Kbyte segment number. */
+    unsigned	short	hardSegNum;	/* Which hardware segment.  Hardware
+					 * segments are a multiple of 32K on
+					 * Sun-2s and 128K on Sun3's. */
     unsigned	short	softSegNum;	/* Which of the 256 software segments.*/
     unsigned	char	segType;	/* One of VM_SYSTEM, VM_CODE, VM_HEAP,
 					 * VM_STACK. */
@@ -84,8 +86,8 @@ typedef struct {
 
 /*
  * Page reference, modified trace record.  The lower 4 bits contain which
- * page within the hardware segment that this page lies and the bytes contains
- * info as to whether the page was referenced of modified.
+ * page within the hardware segment that this page is and the high order byte
+ * contains info as to whether the page was referenced or modified.
  */
 #define	VM_TRACE_REFERENCED	0x100
 #define	VM_TRACE_MODIFIED	0x200
@@ -101,7 +103,7 @@ typedef struct {
     int		pageSize;		/* The page size. */
     int		numPages;		/* The number of physical pages. */
     Address	codeStartAddr;		/* The starting address of the kernel's
-					 * code (runs up to dataStartAddr). * /
+					 * code (runs up to dataStartAddr). */
     Address	dataStartAddr;		/* The starting address of the kernel's
 					 * data (runs up to stackStartAddr). */
     Address	stackStartAddr;		/* The start of the range of virtual
