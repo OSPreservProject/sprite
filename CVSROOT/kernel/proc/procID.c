@@ -149,7 +149,7 @@ Proc_SetIDs(userID, effUserID)
     procPtr->effectiveUserID = effUserID;
 
     if (procPtr->state == PROC_MIGRATED) {
-	return(Proc_MigSendUserInfo(procPtr));
+	return(Proc_MigUpdateInfo(procPtr));
     }
     return(SUCCESS);
 }

@@ -420,7 +420,7 @@ Proc_SetFamilyID(pid, familyID)
     }
 
     if (procPtr->state == PROC_MIGRATED) {
-	status = Proc_MigSendUserInfo(procPtr);
+	status = Proc_MigUpdateInfo(procPtr);
     }
 
     Proc_Unlock(procPtr);
