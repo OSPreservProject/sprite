@@ -1,5 +1,5 @@
 /* 
- * fsPdev.c --  
+ * fspdevSrv.c --  
  *
  *	This file contains routines directly related to the request-response
  *	protocol between the client and server processes.  Routines that
@@ -36,25 +36,26 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fsconsist.h"
-#include "fsioLock.h"
-#include "fsdm.h"
-#include "fsStat.h"
-#include "fspdev.h"
-#include "proc.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fsioLock.h>
+#include <fsdm.h>
+#include <fsStat.h>
+#include <fspdev.h>
+#include <proc.h>
+#include <rpc.h>
+#include <string.h>
 
 /*
  * Prevent tracing by defining CLEAN here before this next include
  */
 #undef CLEAN
-#include "fspdevInt.h"
-#include "dev/pfs.h"
+#include <fspdevInt.h>
+#include <dev/pfs.h>
 
 /*
  * Access to FspdevServerIOHandle is monitored to serialize access to
@@ -111,10 +112,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Forward declarations.
  */
 
-static	ReturnStatus		RequestResponse();
-static	void			PdevClientWakeup();
-static	void			PdevClientNotify();
-void				FsRmtPseudoStreamClose();
+static ReturnStatus RequestResponse _ARGS_((
+	FspdevServerIOHandle *pdevHandlePtr,
+	int hdrSize, register Pdev_RequestHdr *requestHdrPtr, int inputSize,
+	Address inputBuf, int replySize, Address replyBuf, 
+	Fs_IOReply *ioReplyPtr, Sync_RemoteWaiter *waitPtr));
+static void PdevClientWakeup _ARGS_((FspdevServerIOHandle *pdevHandlePtr));
+static void PdevClientNotify _ARGS_((FspdevServerIOHandle *pdevHandlePtr));
 
 /*
  *----------------------------------------------------------------------
@@ -418,7 +422,7 @@ FspdevServerStreamCreate(ioFileIDPtr, name, naming)
 
     ioFileIDPtr->type = FSIO_SERVER_STREAM;
     found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(FspdevServerIOHandle), name,
-			    &hdrPtr);
+			    FALSE, &hdrPtr);
     pdevHandlePtr = (FspdevServerIOHandle *)hdrPtr;
     if (found) {
 	printf("ServerStreamCreate, found handle <%x,%x,%x>\n",
@@ -1289,6 +1293,7 @@ FspdevSignalOwner(ctrlHandlePtr, ioctlPtr)
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
+ReturnStatus
 FspdevServerStreamClose(streamPtr, clientID, procID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Service stream to close */
     int			clientID;	/* HostID of client closing */
@@ -2021,7 +2026,7 @@ FspdevPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	status = FS_WOULD_BLOCK;
     }
     if (status == SUCCESS) {
-	pdevHandlePtr->ctrlHandlePtr->accessTime = fsutil_TimeInSeconds;
+	pdevHandlePtr->ctrlHandlePtr->accessTime = Fsutil_TimeInSeconds();
     }
 exit:
     if (status == DEV_OFFLINE) {
@@ -2185,7 +2190,7 @@ FspdevPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
     }
     replyPtr->length = amountWritten;
     if (amountWritten > 0) {
-	pdevHandlePtr->ctrlHandlePtr->modifyTime = fsutil_TimeInSeconds;
+	pdevHandlePtr->ctrlHandlePtr->modifyTime = Fsutil_TimeInSeconds();
     }
 exit:
     if (status == DEV_OFFLINE) {
