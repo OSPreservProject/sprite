@@ -31,10 +31,46 @@
 #ifndef _SCSIDEVICE
 #define _SCSIDEVICE
 
-#include "list.h"
-#include "devQueue.h"
-#include "user/fs.h"
-#include "fs.h"
+#include <list.h>
+#include <devQueue.h>
+#include <user/fs.h>
+#include <fs.h>
+#include <sys/scsi.h>
+
+/*
+ * The ScsiCmd data structure contains the information that a SCSI device 
+ * to execute a SCSI command. It is the object enqueue on a SCSI device's 
+ * request queue. Note that the bytes of the SCSI command block over 16 
+ * bytes directly follow this data structure.
+ */
+struct ScsiCmd {
+    List_Links	queuePtr;	/* List for queueing in HBA. Because we
+				 * use the DevQueue routines this element
+				 * MUST be the first in the structure.	 */
+    Boolean	dataToDevice;	/* TRUE -> data is transferred to the device.
+				 * FALSE -> data is transferred from the device.
+				 * Meaningless if bufferLen is 0. */
+    int		bufferLen;	/* The length of the data buffer in bytes. */
+    Address	buffer;		/* The data buffer for this command. */
+				/* Routine to called when command completes. */
+    int		(*doneProc) _ARGS_((struct ScsiCmd *scsiCmdPtr, 
+				ReturnStatus status, int statusByte, 
+				int byteCount, int senseLength, 
+				Address senseDataPtr));
+    ClientData clientData;	/* A word of data available to the caller. 
+				 * This item is not changed by the Device. */
+    int	       commandBlockLen;	/* Length of the SCSI command block. The
+				 * data of the SCSI command block immediately
+				 * follows this data structure and continues
+				 * for commandBlockLen bytes. */
+    char	commandBlock[16]; /* The first 16 bytes of the SCSI command
+				   * block.  The rest of the command directly
+				   * follows the first 16 bytes. */
+    int		senseLen;	/* Length of sense data. */
+    char	senseBuffer[SCSI_MAX_SENSE_LEN]; /* Sense buffer. */
+    int		statusByte;	/* Sense byte from scsi command. */
+};
+typedef struct ScsiCmd ScsiCmd;
 
 /*
  * A device attached to a SCSI Bus is described by the following stucture. 
@@ -63,9 +99,9 @@ typedef struct ScsiDevice {
 				       * SCSI command formatter needs to 
 				       * know the LUN to build command
 				       * blocks. */
-    ReturnStatus (*releaseProc)();   /* Routine to release the system 
-				      * resources used by the device. Calling
-				      * sequence defined below. */
+				     /* Routine to release the system 
+				      * resources used by the device. */
+    ReturnStatus (*releaseProc) _ARGS_((struct ScsiDevice *scsiDevicePtr));   
     int	 maxTransferSize;	     /* Maximum size of data transfer to 
 				      * this device supported by the HBA. */
     int		 inquiryLength;	     /* Length in bytes of the inquiryData 
@@ -74,36 +110,14 @@ typedef struct ScsiDevice {
 				      * sent to the device. */
     int		referenceCount;	     /* Count of number of references to this
 				      * device handle. */
+				     /* Routine to call if the statusByte
+				      * returned by a command is non-zero. */
+    ReturnStatus (*errorProc) _ARGS_((struct ScsiDevice *devPtr, 
+				    ScsiCmd *scsiCmdPtr));     
+    ClientData	clientData;	     /* Whatever you want it to be. */
+
 } ScsiDevice;
 
-/*
- * The ScsiCmd data structure contains the information that a SCSI device 
- * to execute a SCSI command. It is the object enqueue on a SCSI device's 
- * request queue. Note that the bytes of the SCSI command block over 16 
- * bytes directly follow this data structure.
- */
-struct ScsiCmd {
-    List_Links	queuePtr;	/* List for queueing in HBA. Because we
-				 * use the DevQueue routines this element
-				 * MUST be the first in the structure.	 */
-    Boolean	dataToDevice;	/* TRUE -> data is transferred to the device.
-				 * FALSE -> data is transferred from the device.
-				 * Meaningless if bufferLen is 0. */
-    int		bufferLen;	/* The length of the data buffer in bytes. */
-    Address	buffer;		/* The data buffer for this command. */
-    int		(*doneProc)();  /* Routine to called when command completes.
-			         * See below for its calling sequence.  */
-    ClientData clientData;	/* A word of data available to the caller. 
-				 * This item is not changed by the Device. */
-    int	       commandBlockLen;	/* Length of the SCSI command block. The
-				 * data of the SCSI command block immediately
-				 * follows this data structure and continues
-				 * for commandBlockLen bytes. */
-    char	commandBlock[16]; /* The first 16 bytes of the SCSI command
-				   * block.  The rest of the command directly
-				   * follows the first 16 bytes. */
-};
-typedef struct ScsiCmd ScsiCmd;
 
 /*
  * Upon command completion the routine specified by doneProc in the
@@ -144,19 +158,33 @@ typedef struct ScsiCmd ScsiCmd;
 extern void		  DevScsiSendCmd();
 #endif
 
+#define	MAX_SCSI_ERROR_STRING	128
+extern int devScsiNumErrors[];
+extern char **devScsiErrors[];
+
 extern ScsiDevice *DevScsiAttachDevice _ARGS_((Fs_Device *devicePtr,
     void (*insertProc)()));
 extern ReturnStatus DevScsiSendCmdSync _ARGS_((ScsiDevice *scsiDevicePtr,
-    ScsiCmd *scsiCmdPtr, unsigned char *statusBytePtr,
-    int *amountTransferredPtr, int *senseBufferLenPtr, Address senseBufferPtr));
+    ScsiCmd *scsiCmdPtr, int *amountTransferredPtr));
 extern ReturnStatus DevScsiReleaseDevice _ARGS_((ScsiDevice *scsiDevicePtr));
 extern ReturnStatus DevScsiTestReady _ARGS_((ScsiDevice *scsiDevicePtr));
+extern ReturnStatus DevScsiReadBlockLimits _ARGS_((ScsiDevice *scsiDevicePtr,
+    int *minPtr, int *maxPtr));
 extern ReturnStatus DevScsiStartStopUnit _ARGS_((ScsiDevice *scsiDevicePtr,
     Boolean start));
+extern ReturnStatus DevScsiModeSense _ARGS_((ScsiDevice *scsiDevicePtr,
+    int disableBlockDesc, int pageControl, int pageCode, int vendor, 
+    int *sizePtr, char *bufferPtr));
+extern ReturnStatus DevScsiRequestSense _ARGS_((ScsiDevice *scsiDevicePtr,
+    int clearCount, int vendor, int *sizePtr, char *bufferPtr));
+extern ReturnStatus DevScsiReadPosition _ARGS_((ScsiDevice *scsiDevicePtr,
+    int blockType, ScsiReadPositionResult *positionPtr));
 extern ReturnStatus DevScsiIOControl _ARGS_((ScsiDevice *devPtr,
     Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
 extern ScsiDevice *DevNoHBAAttachDevice _ARGS_((Fs_Device *devicePtr,
     void (*insertProc)()));
+extern Boolean DevScsiMapClass7Sense _ARGS_((int senseLength, char *senseDataPtr, ReturnStatus *statusPtr, char *errorString));
+extern ReturnStatus DevScsiGroup0Cmd _ARGS_((ScsiDevice *devPtr, int cmd, unsigned int blockNumber, unsigned int countNumber, register ScsiCmd *scsiCmdPtr));
 
 #endif /* _SCSIDEVICE */
 
