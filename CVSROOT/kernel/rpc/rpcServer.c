@@ -440,6 +440,24 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	 */
 	RpcScatter(rpcHdrPtr, &srvPtr->request);
 	/*
+	 * Sanity checks.
+	 */
+	if (rpcHdrPtr->bootID != srvPtr->requestRpcHdr.bootID) {
+	    printf("RpcScatter goof? srvPtr->request.rpcHdrBuffer.bufAddr %x &srvPtr->requestRpcHdr %x index %d\n",
+		    srvPtr->request.rpcHdrBuffer.bufAddr,
+		    &srvPtr->requestRpcHdr, srvPtr->index);
+	    srvPtr->ID = 0;
+	    goto unlock;
+	} else if (srvPtr->request.rpcHdrBuffer.bufAddr !=
+			    &srvPtr->requestRpcHdr) {
+		printf("RpcScatter overrun? srvPtr->request.rpcHdrBuffer.bufAddr %x &srvPtr->requestRpcHdr %x index %d\n",
+		    srvPtr->request.rpcHdrBuffer.bufAddr,
+		    &srvPtr->requestRpcHdr, srvPtr->index);
+	    srvPtr->ID = 0;
+	    goto unlock;
+	}
+
+	/*
 	 * Note the actual size of the input information.
 	 */
 	size = rpcHdrPtr->paramSize + rpcHdrPtr->paramOffset;
