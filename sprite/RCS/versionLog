@@ -558,4 +558,7 @@ Made some fixes to Unix compatibility.
 There is a fix in the dev module for a SCSI problem.
 
 1.099	Fri Aug 23 14:57:27 PDT 1991
+
+1.100	Tue Sep 24 23:59:45 PDT 1991
+Removed a lot of tracing and debugging code.
     New files linked in from the net library.
