@@ -419,13 +419,13 @@ CookedProc(ttyPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
 	case TD_COOKED_READS_OK:
 	    if (!(ttyPtr->selectState & FS_READABLE)) {
 		ttyPtr->selectState |= FS_READABLE;
-		Fs_DevNotifyReader(ttyPtr->notifyToken);
+		Fsio_DevNotifyReader(ttyPtr->notifyToken);
 	    }
 	    break;
 	case TD_COOKED_WRITES_OK:
 	    if (!(ttyPtr->selectState & FS_WRITABLE)) {
 		ttyPtr->selectState |= FS_WRITABLE;
-		Fs_DevNotifyWriter(ttyPtr->notifyToken);
+		Fsio_DevNotifyWriter(ttyPtr->notifyToken);
 	    }
 	    break;
     }
@@ -518,7 +518,10 @@ DevTtyInputChar(ttyPtr, value)
 	next = 0;
     }
     if (next == ttyPtr->extractInput) {
-	printf("Buffer overflow in DevTtyInputChar\n");
+	if (!(ttyPtr->consoleFlags & DEV_TTY_OVERFLOWED)) {
+	    ttyPtr->consoleFlags |= DEV_TTY_OVERFLOWED;
+	    printf("Buffer overflow in DevTtyInputChar\n");
+	} 
 	return;
     }
     ttyPtr->inBuffer[old] = value;
@@ -598,6 +601,7 @@ TransferInProc(ttyPtr, callInfoPtr)
 		    (Boolean *) NIL);
 	}
     }
+    ttyPtr->consoleFlags &= ~DEV_TTY_OVERFLOWED;
 
     UNLOCK_MONITOR;
 }
