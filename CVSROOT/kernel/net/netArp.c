@@ -158,6 +158,7 @@ Net_Arp(spriteID, mutexPtr)
 	if (status == SUCCESS) {
 	    Net_Address netAddress;
 
+	    bzero((char *) &netAddress, sizeof(Net_Address));
 	    NET_ETHER_ADDR_COPY(* ARP_SRC_ETHER_ADDR(&reply),
 		netAddress.ether);
 	    (void) Net_InstallRoute(spriteID, interPtr, &netAddress,
@@ -519,6 +520,8 @@ NetArpInput(interPtr, packetPtr, packetLength)
 	     */
 	    int 	spriteID;
 	    Net_Address netAddress;
+
+	    bzero((char *) &netAddress, sizeof(Net_Address));
 	    if (type == NET_ETHER_SPRITE) { 
 		NET_ETHER_ADDR_COPY(* (Net_EtherAddress *) 
 		    ARP_TARGET_ETHER_ADDR(arpDataPtr),
@@ -627,6 +630,7 @@ NetArpHandler(data, callInfoPtr)
     if (opcode == NET_ARP_REQUEST) {
 	Net_Address	netAddress;
 
+	bzero((char *) &netAddress, sizeof(Net_Address));
 	NET_ETHER_ADDR_COPY(
 	    * (Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr), 
 	    netAddress.ether);
@@ -642,6 +646,8 @@ NetArpHandler(data, callInfoPtr)
 	} else {
 	    Net_Address		inetAddress;
 	    Net_InetAddress inetAddr;
+
+	    bzero((char *) &inetAddress, sizeof(Net_Address));
 	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), (char *)&inetAddress.inet, 
 			sizeof(inetAddr));
 
@@ -656,6 +662,8 @@ NetArpHandler(data, callInfoPtr)
     } else if (opcode == NET_RARP_REQUEST) {
 	Net_Address netAddress;
 	int	spriteID;
+
+	bzero((char *) &netAddress, sizeof(Net_Address));
 	NET_ETHER_ADDR_COPY(
 		*(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(arpDataPtr),
 		netAddress.ether);
