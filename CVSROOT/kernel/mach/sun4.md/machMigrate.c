@@ -27,6 +27,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 #include "procMigrate.h"
 
+#include <stdio.h>
+#include <bstring.h>
+
 /*
  * The information that is transferred between two machines.
  */

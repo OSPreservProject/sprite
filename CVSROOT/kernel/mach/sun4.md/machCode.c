@@ -24,6 +24,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmMach.h"
 
+#include <stdio.h>
+#include <bstring.h>
 /*
  *  Number of processors in the system.
  */

@@ -19,6 +19,7 @@
 #ifndef _MACHINT
 #define _MACHINT
 
+#include "mach.h"
 /*
  * The bounds of the code that copies arguments from the user stack to
  * the kernel stack.
@@ -27,5 +28,25 @@ extern int MachFetchArgs();
 extern int MachFetchArgsEnd();
 extern Address Mach_ProbeStart;
 extern Address Mach_ProbeEnd;
+
+/*
+ * Asm routines.
+ */
+extern void MachRunUserProc _ARGS_((void));
+extern void MachHandleBadQuickCopy _ARGS_((void));
+extern void MachHandleBadProbe _ARGS_((void));
+extern void MachHandleBadArgs _ARGS_((void));
+extern void MachHandleBadArgs _ARGS_((void));
+/*
+ * FPU routines.
+ */
+extern void MachFPU_Emulate _ARGS_((int processID, Address instAddr, 
+		Mach_RegState *userRegsPtr, Mach_RegWindow *curWinPtr));
+extern void MachFPUDumpState _ARGS_((Mach_RegState *regStatePtr));
+extern void MachFPULoadState _ARGS_((Mach_RegState *regStatePtr));
+
+extern	void		Mach_FreeState();
+extern	ReturnStatus	Mach_SetupNewState();
+extern void Mach_MonTrap();
 
 #endif /* _MACHINT */
