@@ -107,7 +107,9 @@ typedef struct Sync_Instrument {
     int spinCount[SYNC_MAX_LOCK_TYPES+1]; /* spin count per lock type */
     int sched_MutexMiss;	/* number of times we missed sched_Mutex
 				 * in the idle loop. */
+#if VMMACH_CACHE_LINE_SIZE != 0
     char pad[VMMACH_CACHE_LINE_SIZE];
+#endif
 } Sync_Instrument;
 
 /*
