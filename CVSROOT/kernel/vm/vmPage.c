@@ -885,11 +885,12 @@ Vm_GetRefTime()
     }
 
     if (vmAlwaysRefuse) {
-	refTime = 0x7fffffff;
+	refTime = INT_MAX;
     } else if (vmAlwaysSayYes) {
 	refTime = 0;
+    } else {
+	refTime += vmCurPenalty;
     }
-    refTime += vmCurPenalty;
 
     UNLOCK_MONITOR;
 
@@ -1678,7 +1679,22 @@ again:
 	    }
 	    *curPTEPtr &= ~(VM_COR_CHECK_BIT | VM_READ_ONLY_PROT);
 	} else {
+	    /* 
+	     * Remove "quick" faults from the per-segment counts, so 
+	     * that the per-segment counts are more meaningful.
+	     */
 	    vmStat.quickFaults++;
+	    switch (virtAddrPtr->segPtr->type) {
+	    case VM_CODE:
+		vmStat.codeFaults--;
+		break;
+	    case VM_HEAP:
+		vmStat.heapFaults--;
+		break;
+	    case VM_STACK:
+		vmStat.stackFaults--;
+		break;
+	    }
 	}
 	if (*curPTEPtr & VM_PREFETCH_BIT) {
 	    switch (virtAddrPtr->segPtr->type) {
