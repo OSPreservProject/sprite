@@ -140,7 +140,12 @@ SetupCommand(devPtr, command, code, len, scsiCmdPtr)
     unsigned int len;		/* Length of the data in bytes or blocks. */
     ScsiCmd	*scsiCmdPtr;	/* Command block to fill in. */
 {
-   DevScsiGroup0Cmd(devPtr, command, ((code&0xf) << 16) | (len>>8),
+    /*
+     * Length field is only 3 bytes long in scsi command block. Mask off
+     * the upper bits (they will be set if the number is negative).
+     */
+    len &= 0x00ffffff;
+    DevScsiGroup0Cmd(devPtr, command, ((code&0xf) << 16) | (len>>8),
 		    (len & 0xff), scsiCmdPtr);
 }
 
