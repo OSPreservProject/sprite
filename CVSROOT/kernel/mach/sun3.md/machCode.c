@@ -173,11 +173,9 @@ Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 
 MachMonBootParam	machMonBootParam;
 
-void	SetupSigHandler();
-void	ReturnFromSigHandler();
-void	MachUserReturn();
-void MachProbeStart();
-void MachProbeEnd();
+static void SetupSigHandler _ARGS_((register Proc_ControlBlock *procPtr, register SignalStack *sigStackPtr, Address pc));
+static void ReturnFromSigHandler _ARGS_((register Proc_ControlBlock *procPtr));
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1287,7 +1285,7 @@ MachUserReturn(procPtr)
  *
  * ----------------------------------------------------------------------------
  */
-void
+static void
 SetupSigHandler(procPtr, sigStackPtr, pc)
     register	Proc_ControlBlock	*procPtr;
     register	SignalStack		*sigStackPtr;
@@ -1366,7 +1364,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
  *
  * ----------------------------------------------------------------------------
  */
-void
+static void
 ReturnFromSigHandler(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {

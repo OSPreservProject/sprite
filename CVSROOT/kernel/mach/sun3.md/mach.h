@@ -170,51 +170,56 @@ extern	Fmt_Format	mach_Format;
  * Routine to initialize mach module.  Must be called first as part of boot 
  * sequence.
  */
-extern void	Mach_Init();
+extern void Mach_Init _ARGS_((void));
+
+
 
 /*
  * Routines to munge machine state struct.
  */
-extern	void		Mach_InitFirstProc();
-extern	ReturnStatus	Mach_SetupNewState();
-extern	void		Mach_SetReturnVal();
-extern	void		Mach_StartUserProc();
-extern	void		Mach_ExecUserProc();
-extern	void		Mach_FreeState();
-extern	void		Mach_CopyState();
-extern	void		Mach_GetDebugState();
-extern	void		Mach_SetDebugState();
-extern	Address		Mach_GetUserStackPtr();
+extern void Mach_InitFirstProc _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus Mach_SetupNewState _ARGS_((Proc_ControlBlock *procPtr, Mach_State *fromStatePtr, void (*startFunc)(), Address startPC, Boolean user));
+extern void Mach_SetReturnVal _ARGS_((Proc_ControlBlock *procPtr, int retVal));
+extern void Mach_StartUserProc _ARGS_((Proc_ControlBlock *procPtr, Address entryPoint));
+extern void Mach_ExecUserProc _ARGS_((Proc_ControlBlock *procPtr, Address userStackPtr, Address entryPoint));
+extern void Mach_FreeState _ARGS_((Proc_ControlBlock *procPtr));
+extern void Mach_CopyState _ARGS_((Mach_State *statePtr, Proc_ControlBlock *destProcPtr));
+extern void Mach_GetDebugState _ARGS_((Proc_ControlBlock *procPtr, Proc_DebugState *debugStatePtr));
+extern void Mach_SetDebugState _ARGS_((Proc_ControlBlock *procPtr, Proc_DebugState *debugStatePtr));
+extern Address Mach_GetUserStackPtr _ARGS_((Proc_ControlBlock *procPtr));
 
 /*
  * Migration routines.
  */
-extern ReturnStatus		Mach_EncapState();
-extern ReturnStatus		Mach_DeencapState();
-extern ReturnStatus		Mach_GetEncapSize();
-extern Boolean			Mach_CanMigrate();
+extern ReturnStatus Mach_EncapState _ARGS_((register Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr, Address buffer));
+extern ReturnStatus Mach_DeencapState _ARGS_((register Proc_ControlBlock *procPtr, Proc_EncapInfo *infoPtr, Address buffer));
+extern ReturnStatus Mach_GetEncapSize _ARGS_((Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr));
+extern Boolean Mach_CanMigrate _ARGS_((Proc_ControlBlock *procPtr));
+extern int Mach_GetLastSyscall _ARGS_((void));
 
 /*
  * Other routines.
  */
-extern void			Mach_InitSyscall();
-extern void			Mach_SetHandler();
-extern int			Mach_GetExcStackSize();
-extern Mach_ProcessorStates	Mach_ProcessorState();
-extern ReturnStatus		Mach_Probe();
-extern int			Mach_GetNumProcessors();
+extern void Mach_InitSyscall _ARGS_((int callNum, int numArgs, ReturnStatus (*normalHandler)(), ReturnStatus (*migratedHandler)()));
+extern void Mach_SetHandler _ARGS_((int vectorNumber, int (*handler)(), ClientData clientData));
+extern int Mach_GetExcStackSize _ARGS_((Mach_ExcStack *excStackPtr));
+extern Mach_ProcessorStates Mach_ProcessorState _ARGS_((int processor));
+extern int Mach_GetNumProcessors _ARGS_((void));
+
+extern ReturnStatus	Mach_Probe _ARGS_((int byteCount, Address readAddress, Address writeAddress));
 
 /*
  * Machine dependent routines.
  */
-extern	void	Mach_GetEtherAddress();
-extern	void	Mach_ContextSwitch();
-extern	int	Mach_TestAndSet();
-extern	int	Mach_GetMachineType();
-extern	int	Mach_GetMachineArch();
-extern	Address	Mach_GetStackPointer();
-extern 	void	Mach_CheckSpecialHandling();
-extern 	int	Mach_GetBootArgs();	
+extern  Net_EtherAddress        *Mach_GetEtherAddress _ARGS_((Net_EtherAddress *etherAddress));
+extern  void    Mach_ContextSwitch _ARGS_((Proc_ControlBlock *fromProcPtr, Proc_ControlBlock *toProcPtr));
+extern  int     Mach_TestAndSet _ARGS_((int *intPtr));
+extern  int     Mach_GetMachineType _ARGS_((void));
+extern int Mach_GetMachineArch _ARGS_((void));
+extern void Mach_CheckSpecialHandling _ARGS_((int pnum));
+extern int Mach_GetBootArgs _ARGS_((int argc, int bufferSize, char **argv, char *buffer));
+extern	Address	Mach_GetStackPointer _ARGS_((void));
+
 
 /*
  * spriteStart is defined in bootSys.s with an underscore.

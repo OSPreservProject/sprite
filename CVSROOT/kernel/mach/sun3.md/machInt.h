@@ -20,13 +20,20 @@
 #define _MACHINT
 
 #include "machMon.h"
+#include "machTypes.h"
+#include "proc.h"
 
 /*
  * The bounds of the code that copies arguments from the user stack to
  * the kernel stack.
  */
-extern int MachFetchArgs();
-extern int MachFetchArgsEnd();
+extern Address MachFetchArgs;
+extern Address MachFetchArgsEnd;
+extern Address MachProbeStart;
+extern Address MachProbeEnd;
+
+extern int MachTrap _ARGS_((Mach_TrapStack trapStack));
+
 
 /*
  * The number of different exceptions.
@@ -80,6 +87,7 @@ extern 	MachMonBootParam	machMonBootParam;
 /*
  * Internal functions.
  */
-extern	void	MachUserReturn();
+extern void MachUserReturn _ARGS_((register Proc_ControlBlock *procPtr));
+
 
 #endif /* _MACHINT */

@@ -1,5 +1,5 @@
 /* 
- * mon.c --
+ * machMon.c --
  *
  *     Routines to access the sun prom monitor.
  *
@@ -119,7 +119,7 @@ Mach_MonAbort()
     DISABLE_INTR();
     oldContext = VmMachGetKernelContext();
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
-    Mach_MonTrap(romVectorPtr->abortEntry);
+    Mach_MonTrap((Address) (romVectorPtr->abortEntry));
     VmMachSetKernelContext(oldContext);
     ENABLE_INTR();
 }
