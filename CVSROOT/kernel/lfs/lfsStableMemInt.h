@@ -88,6 +88,8 @@ extern ReturnStatus LfsStableMemFetch _ARGS_((LfsStableMem *smemPtr,
 extern void LfsStableMemRelease _ARGS_((LfsStableMem *smemPtr, 
 		LfsStableMemEntry *entryPtr, Boolean modified));
 
+extern ReturnStatus LfsStableMemDestory _ARGS_((struct Lfs *lfsPtr, 
+						LfsStableMem *smemPtr));
 
 #endif /* _LFSSTABLEMEMINT */
 

@@ -124,6 +124,36 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr, smemPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * LfsStableMemLoad --
+ *
+ * 	Allocate and load a LFS stable memory resident data structure.
+ *
+ * Results:
+ *	SUCCESS if load succeed ok.
+ *
+ * Side effects:
+ *	Many
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsStableMemDestory(lfsPtr, smemPtr)
+    Lfs *lfsPtr;	   /* File system of metadata. */
+    LfsStableMem	*smemPtr; /* In memeory index data structures. */
+{
+    Fscache_FileInvalidate(&smemPtr->dataHandle.cacheInfo, 0, 
+			FSCACHE_LAST_BLOCK);
+
+    free((char *) smemPtr->blockIndexPtr);
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * LfsStableMemClean --
  *
  *	Routine to handle cleaning pieces containing data for this module.
@@ -343,15 +373,6 @@ LfsStableMemWriteDone(segPtr, flags, clientDataPtr, smemPtr)
 	Fscache_ReturnDirtyFile((Fscache_FileInfo *)(*clientDataPtr), FALSE);
     }
     LfsSegSetBufferPtr(segPtr, bufferPtr);
-    /*
-     * Free up space if we are detaching.
-     */
-    if (LFS_CHECKPOINT_DETACH & flags) {
-	free((char *)smemPtr->blockIndexPtr);
-	smemPtr->blockIndexPtr = (LfsDiskAddr *) NIL;
-	Fscache_FileInvalidate(&smemPtr->dataHandle.cacheInfo, 0, 
-	    smemPtr->params.maxNumBlocks);
-    }
 }
 /*
  *----------------------------------------------------------------------
