@@ -53,6 +53,9 @@ static	List_Links	freeListHdr;
 
 static	int	numStackPages;
 
+static	StackList	*GetFreeStack();
+static	void		FreeStack();
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -106,7 +109,7 @@ VmStackInit()
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY Address
+Address
 Vm_GetKernelStack(invalidPage)
     int	invalidPage;	/*Which of the stack pages to make invalid. */
 {
@@ -115,17 +118,10 @@ Vm_GetKernelStack(invalidPage)
     register	int		i;
     Vm_VirtAddr			virtAddr;
 
-    LOCK_MONITOR;
-
-    /*
-     * Get the first free stack.
-     */
-    if (List_IsEmpty(freeList)) {
-	UNLOCK_MONITOR;
+    stackListPtr = GetFreeStack();
+    if (stackListPtr == (StackList *) NIL) {
 	return((Address)NIL);
     }
-    stackListPtr = (StackList *) List_First(freeList);
-    List_Move((List_Links *) stackListPtr, LIST_ATREAR(activeList));
 
     /*
      * Need to allocate stack pages and initialize the page table entry.
@@ -146,9 +142,6 @@ Vm_GetKernelStack(invalidPage)
 	    VmPageValidate(&virtAddr);
 	}
     }
-
-    UNLOCK_MONITOR;
-
     return(stackListPtr->startAddr);
 }
 
@@ -168,7 +161,7 @@ Vm_GetKernelStack(invalidPage)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+void
 Vm_FreeKernelStack(stackBase)
     Address	stackBase;	/* Virtual address of the stack that is being
 				 * freed. */
@@ -176,9 +169,6 @@ Vm_FreeKernelStack(stackBase)
     Vm_VirtAddr			virtAddr;
     register	int		i;
     register	Vm_PTE		*ptePtr;
-    register	StackList	*stackListPtr;
-
-    LOCK_MONITOR;
 
     /*
      * Unmap the stack and free its pages.
@@ -197,10 +187,77 @@ Vm_FreeKernelStack(stackBase)
 	    VmPageInvalidate(&virtAddr);
 	}
     }
+    FreeStack(stackBase);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetFreeStack --
+ *
+ *	Move a stack from the free list to the active list and return
+ *	a pointer to it.
+ *
+ * Results:
+ *	Pointer to free stack, NIL if there aren't any.
+ *
+ * Side effects:
+ *	Lists of free and active kernel stacks are modified..
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static StackList *
+GetFreeStack()
+{
+    register	StackList	*stackListPtr;
+
+    LOCK_MONITOR;
+
+
+    /*
+     * Get the first free stack.
+     */
+    if (List_IsEmpty(freeList)) {
+	stackListPtr = (StackList *) NIL;
+    } else {
+	stackListPtr = (StackList *) List_First(freeList);
+	List_Move((List_Links *) stackListPtr, LIST_ATREAR(activeList));
+    }
+    UNLOCK_MONITOR;
+    return(stackListPtr);
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeStack --
+ *
+ *	Move the stack from the active list to the free list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Lists of free and active kernel stacks are modified..
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+FreeStack(stackBase)
+    Address	stackBase;	/* Virtual address of the stack that is being
+				 * freed. */
+{
+    register	StackList	*stackListPtr;
+
+    LOCK_MONITOR;
+
 
     /*
      * Put the stack back onto the free list.
-     */ if (List_IsEmpty(activeList)) {
+     */ 
+    if (List_IsEmpty(activeList)) {
 	panic("Vm_FreeKernelStack: active list empty\n");
     }
     stackListPtr = (StackList *) List_First(activeList);
@@ -209,3 +266,4 @@ Vm_FreeKernelStack(stackBase)
 
     UNLOCK_MONITOR;
 }
+
