@@ -1758,18 +1758,16 @@ Proc_FlagMigration(procPtr, hostID, exec)
     if (exec) {
 	/*
 	 * We flag the process specially so we know to copy over exec
-	 * arguments.  We also allow a signal to be handled the first
-	 * time it's hit since we don't have to worry about page faults
-	 * when doing exec-time migration.
+	 * arguments.  
 	 */
 	procPtr->genFlags |= PROC_REMOTE_EXEC_PENDING;
-	Sig_AllowMigration(procPtr);
     }
     procPtr->peerHostID = hostID;
     if (procPtr->state == PROC_SUSPENDED) {
 	Sig_SendProc(procPtr, SIG_RESUME, 0);
     }
     Sig_SendProc(procPtr, SIG_MIGRATE_TRAP, 0);
+    Sig_AllowMigration(procPtr);
 
 }
 
