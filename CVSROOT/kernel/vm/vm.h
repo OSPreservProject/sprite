@@ -116,6 +116,12 @@ extern	int	vm_PageSize;
 extern	Address	vmMemEnd;
 
 /*
+ * The end of allocated kernel+data after the boot. On the DecStations
+ * vmMemEnd gets boosted to the start of virtual memory, leaving a hole.
+ */
+extern	Address vmBootEnd;
+
+/*
  * The type of accessibility desired when making a piece of data user
  * accessible.  VM_READONLY_ACCESS means that the data will only be read and
  * will not be written.  VM_OVERWRITE_ACCESS means that the entire block of

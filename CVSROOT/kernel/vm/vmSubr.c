@@ -132,6 +132,7 @@ Vm_Init()
      * Can no longer use Vm_BootAlloc
      */
     vmNoBootAlloc = TRUE;
+    vmBootEnd = vmMemEnd;
     /* 
      * Determine how many physical pages that we have used.
      */

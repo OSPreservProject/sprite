@@ -18,6 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <bstring.h>
 
 Address	vmMemEnd;
+Address vmBootEnd;
 Boolean	vmNoBootAlloc = TRUE;
 
 
