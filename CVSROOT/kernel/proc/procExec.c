@@ -909,7 +909,7 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     Vm_ExecInfo				execInfo;
     Vm_Segment				*codeSegPtr = (Vm_Segment *) NIL;
     char				*argString = (char *) NIL;
-    char				*argStringSave = (char *) NIL;
+    char				*argStringSave;
     Address				argBuffer = (Address) NIL;
     Fs_Stream				*filePtr;
     ReturnStatus			status;
@@ -950,6 +950,12 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     if (procPtr->Prof_Scale != 0) {
 	Prof_Disable(procPtr);
     }
+
+    /*
+     * Save the argString away, because if we hit an error we always
+     * set procPtr->argString back to this value.
+     */
+    argStringSave = procPtr->argString;
 
     /*
      * Open the file that is to be exec'd.
@@ -1081,7 +1087,6 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     /*
      * Change the argument string.
      */
-    argStringSave = procPtr->argString;
     procPtr->argString = argString;
     /*
      * Do set uid here.  This way, the uid will be set before a remote
