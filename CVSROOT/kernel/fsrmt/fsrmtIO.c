@@ -407,7 +407,7 @@ FsRemoteWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
      */
     writeParams.fileID = rmtHandlePtr->hdr.fileID;
     writeParams.streamID = streamPtr->hdr.fileID;
-    writeParams.flags = flags;
+    writeParams.flags = flags & ~FS_USER;
     if (waitPtr == (Sync_RemoteWaiter *)NIL) {
 	writeParams.waiter.hostID = -1;
 	writeParams.waiter.pid = -1;
@@ -537,6 +537,8 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 	return(FS_STALE_HANDLE);
     }
     FsHandleUnlock(hdrPtr);
+
+    paramsPtr->flags &= ~FS_USER;
 
     if (paramsPtr->flags & FS_CLIENT_CACHE_WRITE) {
 	dummyStream.ioHandlePtr = hdrPtr;
