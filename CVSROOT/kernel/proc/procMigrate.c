@@ -44,10 +44,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 #include "sync.h"
 #include "sysSysCall.h"
+#include "timer.h"
 
 static	Sync_Condition	migrateCondition;
+static	Sync_Condition	evictCondition;
 static	Sync_Lock	migrateLock = Sync_LockInitStatic("Proc:migrateLock");
 #define	LOCKPTR &migrateLock
+static  Boolean		evictionInProgress = FALSE;
+static  Time		timeEvictionStarted;
 
 int proc_MigDebugLevel = 0;
 
@@ -58,7 +62,15 @@ Boolean proc_DoCallTrace = FALSE;
 
 /*
  * Allocate variables and structures relating to statistics.
- */
+ * Updating variables is done under a monitor.  Currently, each update
+ * is typically done via a monitored procedure call, though it may be
+ * preferable to in-line the monitors (if this is permissible at some point)
+ * or combine multiple operations in a single procedure.
+ * Some of the statistics are kept even in CLEAN kernels because they affect
+ * the kernel's notion of whether eviction is necessary.  Others are purely
+ * for statistics gathering and are conditioned on CLEAN as well as
+ * proc_MigDoStats.
+ */  
 Boolean proc_MigDoStats = TRUE;
 Proc_MigStats proc_MigStats;
 
@@ -76,6 +88,18 @@ int proc_AllowMigrationState = PROC_MIG_ALLOW_DEFAULT;
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
 
 /*
+ * Define the statistics "version".  This is used to make sure we're 
+ * gathering consistent sets of statistics.  It's defined as a static variable
+ * so it can be changed with adb or the debugger if need be.  It's copied
+ * into a structure at initialization time.
+ */
+#ifndef PROC_MIG_STATS_VERSION
+#define PROC_MIG_STATS_VERSION 1
+#endif /* PROC_MIG_STATS_VERSION */
+
+static int statsVersion = PROC_MIG_STATS_VERSION;
+
+/*
  * Procedures internal to this file
  */
 
@@ -90,8 +114,15 @@ static ReturnStatus KillRemoteCopy();
 /*
  * Procedures for statistics gathering
  */
-static ENTRY void   AddMigrateTime();
-static ENTRY void   AccessStats();
+static ENTRY void    AddMigrateTime();
+static ENTRY void    AccessStats();
+static ENTRY Boolean EvictionStarted();
+static ENTRY void    WaitForEviction();
+static ENTRY void    EvictionComplete();
+
+#define INC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, 1)
+#define DEC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, -1)
+
 
 #ifdef DEBUG
 int proc_MemDebug = 0;
@@ -125,7 +156,7 @@ typedef struct {
 #define MIG_ENCAP_MIGRATE 1
 #define MIG_ENCAP_EXEC 2
 #define MIG_ENCAP_ALWAYS (MIG_ENCAP_MIGRATE | MIG_ENCAP_EXEC)
-/*
+/*	
  * Set up the functions to be called.
  */
 static EncapCallback encapCallbacks[] = {
@@ -193,18 +224,23 @@ static struct {
  */
 
 void
-#ifdef NEW_NAME
 Proc_MigInit()
-#else
-Proc_RecovInit()
-#endif
 {
     if (proc_MigDoStats) {
 	bzero((Address) &proc_MigStats, sizeof(proc_MigStats));
+	proc_MigStats.statsVersion = statsVersion;
+	
     }
     ProcRecovInit();
 }
 
+/* 
+ * STUB for backward compatibility; remove when main installed.
+ */
+Proc_RecovInit()
+{
+    Proc_MigInit();
+}
 
 
 /*
@@ -360,7 +396,9 @@ Proc_Migrate(pid, hostID)
     if (status != SUCCESS) {
 	Proc_Unlock(procPtr);
 #ifndef CLEAN
-	proc_MigStats.errors++;
+	if (proc_MigDoStats) {
+	    INC_STAT(errors);
+	}
 #endif /* CLEAN */
 	return(status);
     }
@@ -420,6 +458,7 @@ Proc_MigrateTrap(procPtr)
     ReturnStatus status;
     Proc_TraceRecord record;
     Boolean foreign = FALSE;
+    Boolean evicting = FALSE;
     Address buffer;
     Address bufPtr;
     int bufSize;
@@ -444,6 +483,10 @@ Proc_MigrateTrap(procPtr)
 
     if (procPtr->genFlags & PROC_FOREIGN) {
 	foreign = TRUE;
+	if (procPtr->genFlags & PROC_EVICTING) {
+	    evicting = TRUE;
+	    procPtr->genFlags &= ~PROC_EVICTING;
+	}
     }
     if (procPtr->genFlags & PROC_REMOTE_EXEC_PENDING) {
 	whenNeeded = MIG_ENCAP_EXEC;
@@ -587,7 +630,9 @@ Proc_MigrateTrap(procPtr)
 	inBuf.size = bufSize;
 	inBuf.ptr = buffer;
 #ifndef CLEAN
-	proc_MigStats.rpcKbytes += (bufSize + 1023) / 1024;
+	if (proc_MigDoStats) {
+	    Proc_MigAddToCounter(&proc_MigStats.rpcKbytes, (bufSize + 1023) / 1024);
+	}
 #endif /* CLEAN */
 
 	if (proc_MigDebugLevel > 5) {
@@ -693,10 +738,8 @@ Proc_MigrateTrap(procPtr)
     if (proc_MigDoStats) {
 	Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
 	Time_Subtract(endTime, startTime, &timeDiff);
-	if (foreign) {
-	    timePtr = &proc_MigStats.timeToEvict;
-	} else if (whenNeeded == MIG_ENCAP_MIGRATE) {
-	    timePtr = &proc_MigStats.timeToExport;
+	if (whenNeeded == MIG_ENCAP_MIGRATE) {
+	    timePtr = &proc_MigStats.timeToMigrate;
 	} else {
 	    timePtr = &proc_MigStats.timeToExec;
 	}
@@ -723,22 +766,35 @@ Proc_MigrateTrap(procPtr)
     Proc_Unlock(procPtr);
     
     if (foreign) {
-#ifndef CLEAN
+	DEC_STAT(foreign);
 	if (proc_MigDoStats) {
-	    proc_MigStats.foreign--;
-	    proc_MigStats.migrationsHome++;
-	}
+	    if (evicting) {
+#ifndef CLEAN
+		if (proc_MigDoStats) {
+		    INC_STAT(evictions);
+		}
 #endif /* CLEAN */
+		if (proc_MigStats.foreign == 0) {
+		    EvictionComplete();
+		}
+	    } else {
+#ifndef CLEAN
+		if (proc_MigDoStats) {
+		    INC_STAT(migrationsHome);
+		}
+#endif /* CLEAN */
+	    }
+	}
 	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
     } else {
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    proc_MigStats.remote++;
-	    proc_MigStats.exports++;
+	    INC_STAT(remote);
+	    INC_STAT(exports);
 	    if (exec) {
-		proc_MigStats.execs++;
+		INC_STAT(execs);
 	    }
-	    proc_MigStats.hostCounts[hostID]++;
+	    INC_STAT(hostCounts[hostID]);
 	}
 #endif /* CLEAN */
 	Sched_ContextSwitch(PROC_MIGRATED);
@@ -768,7 +824,9 @@ Proc_MigrateTrap(procPtr)
     }
     Sig_SendProc(procPtr, SIG_KILL, (int) status);
 #ifndef CLEAN
-    proc_MigStats.errors++;
+    if (proc_MigDoStats) {
+	INC_STAT(errors);
+    }
 #endif /* CLEAN */
     Proc_Unlock(procPtr);
 }
@@ -813,15 +871,21 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
     /*
      * Update statistics.
      */
-#ifndef CLEAN
     if (procPtr->genFlags & PROC_FOREIGN) {
-	proc_MigStats.foreign++;
-	proc_MigStats.imports++;
+	INC_STAT(foreign);
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    INC_STAT(imports);
+	}
+#endif /* CLEAN */
     } else {
-	proc_MigStats.returns++;
-	proc_MigStats.remote--;
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    INC_STAT(returns);
+	    DEC_STAT(remote);
+	}
+#endif /* CLEAN */
     }
-#endif /* CLEAN */   
     /*
      * Go through the list of callbacks to generate the size of the buffer
      * we'll need.  In unusual circumstances, a caller may return a status
@@ -1081,6 +1145,26 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
     encapPtr->argStringLength = argStringLength;
     strncpy(bufPtr, procPtr->argString, argStringLength);
 
+
+    /*
+     * If we're migrating away from home, subtract the process's current
+     * CPU usage so it can be added in again when the process returns
+     * here.  Passing negative tick values seems like a relatively easy
+     * way to subtract time, though perhaps we should pass a separate parameter
+     * to ProcRecordUsage instead and call Timer_AddTicks or
+     * Timer_SubtractTicks depending on the parameter.
+     */
+#ifndef CLEAN
+    if (infoPtr->data == 0) {
+	Timer_Ticks ticks;
+	Timer_SubtractTicks(timer_TicksZeroSeconds,
+			    procPtr->kernelCpuUsage.ticks,
+			    &ticks);
+	Timer_SubtractTicks(ticks, procPtr->userCpuUsage.ticks,
+			    &ticks);
+	ProcRecordUsage(ticks, TRUE);
+    }
+#endif /* CLEAN */
     return(SUCCESS);
 }
 
@@ -1113,7 +1197,8 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
     EncapState *encapPtr = (EncapState *) bufPtr;
     int i;
     ReturnStatus status;
-
+    Timer_Ticks ticks;
+    
     if (infoPtr->data == 0) {
 	if (proc_MigDebugLevel > 4) {
 	    printf("Deencapsulating foreign process %x.\n", procPtr->processID);
@@ -1215,6 +1300,14 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
 	 * locally now.
 	 */
 	Proc_RemoveMigDependency(procPtr->processID);
+	/*
+	 * Update remote CPU usage stats.
+	 */
+#ifndef CLEAN
+	Timer_AddTicks(procPtr->kernelCpuUsage.ticks,
+			procPtr->userCpuUsage.ticks, &ticks);
+	ProcRecordUsage(ticks, TRUE);
+#endif /* CLEAN */
     }
 
 
@@ -1812,6 +1905,73 @@ AddMigrateTime(time, totalPtr)
 
     UNLOCK_MONITOR;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_MigAddToCounter --
+ *
+ *	Monitored procedure to add a value to a global variable.
+ *	This keeps statistics from being trashed if this were
+ *	executed on a multiprocessor, since incrementing a counter
+ *	isn't necessarily atomic.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates variable pointed to by intPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Proc_MigAddToCounter(intPtr, value)
+    int *intPtr;
+    int value;
+{
+
+    LOCK_MONITOR;
+
+    *intPtr += value;
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcRecordUsage --
+ *
+ *	Specialized, monitored procedure to update global CPU usages
+ *	atomically.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds ticks.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+ProcRecordUsage(ticks, remoteCPU)
+    Timer_Ticks ticks;
+    Boolean remoteCPU;
+{
+    Timer_Ticks *ticksPtr;
+
+    LOCK_MONITOR;
+
+    if (remoteCPU) {
+	ticksPtr = &proc_MigStats.remoteCPUTime.ticks;
+    } else {
+	ticksPtr = &proc_MigStats.totalCPUTime.ticks;
+    }
+    Timer_AddTicks(ticks, *ticksPtr, ticksPtr);
+
+    UNLOCK_MONITOR;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1844,6 +2004,15 @@ AccessStats(copyPtr)
     if (copyPtr != (Proc_MigStats *) NIL) {
 	bcopy((Address) &proc_MigStats, (Address) copyPtr,
 	      sizeof(Proc_MigStats));
+	/*
+	 * Convert the usages from the internal Timer_Ticks format
+	 * into the external Time format.
+	 */
+	Timer_TicksToTime(proc_MigStats.totalCPUTime.ticks,
+			  &copyPtr->totalCPUTime.time);
+	Timer_TicksToTime(proc_MigStats.remoteCPUTime.ticks,
+			  &copyPtr->remoteCPUTime.time);
+
     } else {
 	bzero((Address) &proc_MigStats, sizeof(Proc_MigStats));
     }
@@ -2065,7 +2234,9 @@ Proc_DestroyMigratedProc(pidData)
 	 * Update statistics.
 	 */
 #ifndef CLEAN
-	proc_MigStats.remote--;
+	if (proc_MigDoStats) {
+	    DEC_STAT(remote);
+	}
 #endif /* CLEAN */   
 
     } else {
@@ -2104,12 +2275,33 @@ Proc_EvictForeignProcs()
     ReturnStatus status;
     int numEvicted;
 
-    proc_MigStats.evictCalls++;
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    INC_STAT(evictCalls);
+	}
+#endif /* CLEAN */
+    if (proc_MigStats.foreign == 0) {
+	return(SUCCESS);
+    }
+    if (EvictionStarted()) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Warning: eviction already in progress.\n");
+	}
+	/*
+	 * We really should wait for the previous one to complete and then
+	 * start over.  For now, just tell the user we couldn't do it.
+	 */
+	return(FAILURE);
+    }
     status = Proc_DoForEveryProc(Proc_IsMigratedProc, Proc_EvictProc, TRUE,
  				 &numEvicted);
     if (status == SUCCESS && numEvicted > 0) {
-	proc_MigStats.evictsNeeded++;
-	proc_MigStats.evictions += numEvicted;
+	WaitForEviction(TRUE);
+    } else {
+	/*
+	 * False alarm: nothing got evicted.
+	 */
+	WaitForEviction(FALSE);
     }
    
     return(status);
@@ -2170,12 +2362,140 @@ ReturnStatus
 Proc_EvictProc(pid)
     Proc_PID pid;
 {
-    ReturnStatus status;
+    ReturnStatus status = SUCCESS;
+    Proc_ControlBlock *procPtr;
     
-    status = Sig_Send(SIG_MIGRATE_HOME, 0, pid, FALSE);
+
+    procPtr = Proc_LockPID(pid);
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	return (PROC_INVALID_PID);
+    }
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	procPtr->genFlags |= PROC_EVICTING;
+	status = Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0);
+    }
+    Proc_Unlock(procPtr);
     return(status); 
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EvictionStarted --
+ *
+ *	Monitored procedure to initialize variables for recording
+ *	eviction times.
+ *
+ * Results:
+ *	TRUE if an eviction was already in progress, else FALSE.
+ *
+ * Side effects:
+ *	The file-global evictionStarted time variable is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ENTRY Boolean
+EvictionStarted()
+{
+    LOCK_MONITOR;
+
+    if (evictionInProgress) {
+	UNLOCK_MONITOR;
+	return(TRUE);
+    }
+#ifndef CLEAN
+    if (proc_MigDoStats) {
+	Timer_GetTimeOfDay(&timeEvictionStarted, (int *) NIL, (Boolean *) NIL);
+    }
+#endif /* CLEAN */   
+    evictionInProgress = TRUE;
+    
+    UNLOCK_MONITOR;
+    return(FALSE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitForEviction --
+ *
+ *	Monitored procedure to record eviction times after eviction has
+ *	completed.  If called with a FALSE argument, then the
+ *	evictionInProgress flag is reset because no eviction really
+ *	occurred.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The time taken for eviction is added to the statistics structure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ENTRY void
+WaitForEviction(didEviction)
+    Boolean didEviction;	/* Whether eviction took place. */
+{
+    Time time;
+
+    LOCK_MONITOR;
+
+    if (!evictionInProgress) {
+	panic("WaitForEviction: no eviction in progress.\n");
+	UNLOCK_MONITOR;
+	return;
+    }
+    if (didEviction) {
+	while (proc_MigStats.foreign > 0) {
+	    if (Sync_Wait(&evictCondition, TRUE)) {
+		evictionInProgress = FALSE;
+		UNLOCK_MONITOR;
+		return;
+	    }
+	}
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
+	    Time_Subtract(time, timeEvictionStarted, &time);
+	    Time_Add(time, proc_MigStats.timeToEvict, &proc_MigStats.timeToEvict);
+	    proc_MigStats.evictsNeeded++;
+	}
+#endif /* CLEAN */   
+    }
+    evictionInProgress = FALSE;
+    
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EvictionComplete --
+ *
+ *	Monitored procedure to signal the process that is recording eviction
+ *	statistics.  The caller 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ENTRY void
+EvictionComplete()
+{
+
+    LOCK_MONITOR;
+
+    Sync_Broadcast(&evictCondition);
+
+    UNLOCK_MONITOR;
+}
 
 /*
  *----------------------------------------------------------------------
