@@ -27,25 +27,32 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsprefix.h"
-#include "fsio.h"
-#include "fsrmt.h"
-#include "fsNameOps.h"
-#include "fsStat.h"
-#include "recov.h"
-#include "hash.h"
-#include "rpc.h"
-#include "vm.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsprefix.h>
+#include <fsio.h>
+#include <fsrmt.h>
+#include <fsNameOps.h>
+#include <fsStat.h>
+#include <recov.h>
+#include <hash.h>
+#include <rpc.h>
+#include <vm.h>
 
-static void		ReopenHandles();
-static void		RecoveryDone();
-static Boolean		RecoveryFailed();
-static void		RecoveryNotify();
-static void		RecoveryComplete();
-static Boolean		OkToScavenge();
+#include <string.h>
+#include <stdio.h>
+
+
+static void ReopenHandles _ARGS_((int serverID));
+static void RecoveryComplete _ARGS_((Fsutil_RecoveryInfo *recovPtr, 
+			ReturnStatus status));
+static void RecoveryNotify _ARGS_((Fsutil_RecoveryInfo *recovPtr));
+static Boolean RecoveryFailed _ARGS_((Fsutil_RecoveryInfo *recovPtr));
+static Boolean OkToScavenge _ARGS_((register Fsutil_RecoveryInfo *recovPtr));
+static void RecoveryDone _ARGS_((int serverID));
+extern Boolean RemoteHandle _ARGS_((Fs_HandleHeader *hdrPtr));
+extern ReturnStatus RecoveryWait _ARGS_((Fsutil_RecoveryInfo *recovPtr));
 
 /*
  * The recovery state for each file is monitored.
@@ -331,6 +338,7 @@ Fsutil_RecoveryInit(recovPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 Fsutil_RecoverySyncLockCleanup(recovPtr)
     Fsutil_RecoveryInfo	*recovPtr;	/* Recovery state */
@@ -1028,7 +1036,7 @@ Fsutil_FsRecovInfo(length, resultPtr, lengthNeededPtr)
     Fs_HandleHeader		*testHandlePtr;
 
     if (resultPtr != (Fsutil_FsRecovNamedStats *) NIL) {
-	bzero(resultPtr, length);
+	bzero((char *) resultPtr, length);
     }
     numNeeded = 0;
     numAvail = length / sizeof (Fsutil_FsRecovNamedStats);
@@ -1085,7 +1093,7 @@ Fsutil_FsRecovInfo(length, resultPtr, lengthNeededPtr)
 			testHandlePtr->fileID.type]).numDirtyBlocksFunc)
 			(testHandlePtr);
 	    }
-	    strncpy(infoPtr->name, Fsutil_HandleName(testHandlePtr), 49);
+	    (void)strncpy(infoPtr->name, Fsutil_HandleName(testHandlePtr), 49);
 	    infoPtr->name[50] = '\0';
 	}
 	infoPtr++;
@@ -1095,8 +1103,6 @@ Fsutil_FsRecovInfo(length, resultPtr, lengthNeededPtr)
 
     return SUCCESS;
 }
-
-
 
 /*
  *----------------------------------------------------------------------------
@@ -1119,14 +1125,8 @@ Fsutil_TestForHandles(serverID)
 {
     Hash_Search			hashSearch;
     register	Fs_HandleHeader	*hdrPtr;
-    register	Fs_Stream	*streamPtr;
-    register	Fsrmt_IOHandle *rmtHandlePtr;
-    ReturnStatus		status = SUCCESS;
-    Boolean			printed = FALSE;
-    int				succeeded = fs_Stats.recovery.succeeded;
-    int				failed = fs_Stats.recovery.failed;
     int				count = 0;
-
+    return 1;
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
 	 hdrPtr != (Fs_HandleHeader *) NIL;
@@ -1149,3 +1149,4 @@ Fsutil_TestForHandles(serverID)
     }
     return count;
 }
+
