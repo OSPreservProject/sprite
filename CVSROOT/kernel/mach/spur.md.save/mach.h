@@ -168,6 +168,13 @@ extern	void	Mach_DisableIntr();
 extern	void	Mach_EnableIntr();
 extern	unsigned int Mach_GetSlotId();
 extern  ReturnStatus Mach_AllocExtIntrNumber();
+
+/*
+ * Routines to read and write physical memory.
+ */
+extern unsigned int    Mach_ReadPhysicalWord();
+extern void	       Mach_WritePhysicalWord();
+
 /*
  * spriteStart is defined in bootSys.s with an underscore.
  */
