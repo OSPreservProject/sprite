@@ -108,7 +108,7 @@ FsAttachDisk(devicePtr, localName, flags)
     /*
      * Open the raw disk device so we can grub around in the header info.
      */
-    status = (*devFsOpTable[devicePtr->type].open)(devicePtr);
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].open)(devicePtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -119,7 +119,7 @@ FsAttachDisk(devicePtr, localName, flags)
      * zero'th sector of the whole disk which describes how the rest of the
      * domain's zero'th cylinder is layed out.
      */
-    status = (*devFsOpTable[devicePtr->type].read)(devicePtr,
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)(devicePtr,
 		0, DEV_BYTES_PER_SECTOR, buffer, &amountRead);
     if (status != SUCCESS) {
 	free(buffer);
@@ -151,7 +151,7 @@ FsAttachDisk(devicePtr, localName, flags)
     /*
      * Read in summary information.
      */
-    status = (*devFsOpTable[devicePtr->type].read)
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)
 		(devicePtr, summarySector * DEV_BYTES_PER_SECTOR,
 		    DEV_BYTES_PER_SECTOR,
 		    buffer, &amountRead); 
@@ -166,7 +166,7 @@ FsAttachDisk(devicePtr, localName, flags)
      * Read the domain header and save it with the domain state.
      */
     buffer = (Address)malloc(DEV_BYTES_PER_SECTOR * numHeaderSectors);
-    status = (*devFsOpTable[devicePtr->type].read)(devicePtr,
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)(devicePtr,
 		headerSector * DEV_BYTES_PER_SECTOR,
 		numHeaderSectors * DEV_BYTES_PER_SECTOR,
 		buffer, &amountRead);
@@ -225,7 +225,8 @@ FsAttachDisk(devicePtr, localName, flags)
      * FsGeometry part of the domain header.  This is used by the
      * block I/O routines.
      */
-    devicePtr->data = (ClientData)&domainPtr->headerPtr->geometry;
+    ((DevBlockDeviceHandle *) (devicePtr->data))->clientData = 
+			(ClientData)&domainPtr->headerPtr->geometry;
     /* 
      * Verify the device specification by checking the partition
      * number kept in the domain header.  We may map to a different

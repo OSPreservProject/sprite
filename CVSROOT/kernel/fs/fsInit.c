@@ -149,16 +149,13 @@ Fs_Init()
      */
     (void)FsPrefixInstall("/", (FsHandleHeader *)NIL, -1, FS_IMPORTED_PREFIX); 
 
-    for (i=0 ; i<devNumDiskTypes ; i++) {
+    for (i=0 ; i<devNumDefaultDiskPartitions; i++) {
 	/*
 	 * Second step in bootstrapping the name space.  Try and attach
 	 * a disk under the /local prefix.  Later this local partition
 	 * may be promoted to the root domain (see Fs_ProcInit).
 	 */
-	defaultDisk.serverID = -1;
-	defaultDisk.type = devFsDefaultDiskTypes[i];
-	defaultDisk.unit = 0;
-	defaultDisk.data = (ClientData)NIL;
+	defaultDisk = devFsDefaultDiskPartitions[i];
 
 	status = FsAttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
 	if (status == SUCCESS) {

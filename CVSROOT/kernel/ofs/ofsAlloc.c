@@ -900,7 +900,7 @@ FsWriteBackSummary(domainPtr)
 
     LOCK_MONITOR;
 
-    status = (*devFsOpTable[domainPtr->headerPtr->device.type].write)
+    status = (*devFsOpTable[DEV_TYPE_INDEX(domainPtr->headerPtr->device.type)].write)
 		(&domainPtr->headerPtr->device, 
 		    domainPtr->summarySector * DEV_BYTES_PER_SECTOR,
 		    DEV_BYTES_PER_SECTOR,

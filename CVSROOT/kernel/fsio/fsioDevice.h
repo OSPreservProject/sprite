@@ -26,25 +26,7 @@
 /*
  * Include the device switch declaration from dev.
  */
-#include "devFsOpTable.h"
-
-/*
- * FsDeviceBlockIO --
- *	A device specific Block I/O routine is used to read or write
- *	filesystem blocks on a disk.  Its maps from filesystem
- *	block indexes to disk addresses and does the I/O.
- */
-#define FsDeviceBlockIO(readWriteFlag, devicePtr, blockNumber, numBlocks, buf) \
-	(*devFsBlockOpTable[(devicePtr)->type].readWrite) \
-	(readWriteFlag, devicePtr, blockNumber, numBlocks, buf)
-#ifdef comment
-    int readWriteFlag;		/* FS_READ or FS_WRITE */
-    Fs_Device *devicePtr;	/* Specifies device type to do I/O with */
-    int blockNumber;		/* CAREFUL, fragment index, not block index.
-				 * This is relative to start of device. */
-    int numBlocks;		/* CAREFUL, number of fragments, not blocks */
-    Address buf;		/* I/O buffer */
-#endif comment
+#include "../dev.new/devFsOpTable.h"
 
 
 
@@ -119,5 +101,7 @@ extern ReturnStatus FsRemoteIOMigEnd();
 extern ReturnStatus FsRmtDeviceMigrate();
 extern ReturnStatus FsRmtDeviceReopen();
 extern ReturnStatus FsRemoteIOClose();
+
+extern ReturnStatus FsDeviceBlockIO();
 
 #endif _FSDEVICE

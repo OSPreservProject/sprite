@@ -300,10 +300,10 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
      * and unit number, the useFlags, and a token passed to Fs_NotifyReader
      * or Fs_NotifyWriter when the device becomes ready for I/O.
      */
-    if (devHandlePtr->device.type >= devNumDevices) {
+    if (DEV_TYPE_INDEX(devHandlePtr->device.type) >= devNumDevices) {
 	status = FS_DEVICE_OP_INVALID;
     } else {
-	status = (*devFsOpTable[devHandlePtr->device.type].open)
+	status = (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].open)
 		    (&devHandlePtr->device, flags, (ClientData)devHandlePtr);
     }
     if (status == SUCCESS) {
@@ -620,7 +620,7 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
     /*
      * Call the driver's close routine to clean up.
      */
-    status = (*devFsOpTable[devHandlePtr->device.type].close)
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].close)
 		(&devHandlePtr->device, flags, devHandlePtr->use.ref,
 			devHandlePtr->use.write);
 
@@ -689,7 +689,7 @@ FsDeviceClientKill(hdrPtr, clientID)
 	if (flags & FS_WRITE) {
 	    devHandlePtr->use.write -= writes;
 	}
-	(void)(*devFsOpTable[devHandlePtr->device.type].close)
+	(void)(*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].close)
 		(&devHandlePtr->device, flags, devHandlePtr->use.ref,
 		    devHandlePtr->use.write);
     
@@ -1311,7 +1311,7 @@ FsDeviceRead(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
      */
     FsWaitListInsert(&devHandlePtr->readWaitList, remoteWaitPtr);
     devicePtr = &devHandlePtr->device;
-    status = (*devFsOpTable[devicePtr->type].read)(devicePtr,
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)(devicePtr,
 		*offsetPtr, length, readBuffer, lenPtr);
     length = *lenPtr;
     if (flags & FS_USER) {
@@ -1387,7 +1387,7 @@ FsDeviceWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
 	 * happens from an interrupt handler.
 	 */
 	FsWaitListInsert(&devHandlePtr->writeWaitList, remoteWaitPtr);
-	status = (*devFsOpTable[devicePtr->type].write)(devicePtr,
+	status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].write)(devicePtr,
 		*offsetPtr, length, writeBuffer, lenPtr);
 	length = *lenPtr;
 	if (status != FS_WOULD_BLOCK) {
@@ -1460,7 +1460,7 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	    FsWaitListInsert(&devHandlePtr->exceptWaitList, waitPtr);
 	}
     }
-    status = (*devFsOpTable[devicePtr->type].select)(devicePtr,
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].select)(devicePtr,
 		    inFlags, &outFlags);
     if ((outFlags & FS_READABLE) == 0) {
 	*readPtr = 0;
@@ -1525,7 +1525,7 @@ FsDeviceIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		    "Device I/O control byte swapping not done",
 		    SUCCESS);
 	    }
-	    status = (*devFsOpTable[devicePtr->type].ioControl) (devicePtr,
+	    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].ioControl) (devicePtr,
 		    command, inBufPtr->size, inBufPtr->addr,
 		    outBufPtr->size, outBufPtr->addr);
 	    break;
@@ -1760,5 +1760,101 @@ ExceptionNotify(data, callInfoPtr)
     register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
     FsWaitListNotify(&devHandlePtr->exceptWaitList);
     callInfoPtr->interval = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsDeviceBlockIO --
+ *
+ *	Map a file system block address to a block device block address 
+ *	perform the requested operation.
+ *
+ * NOTE: This routine is temporary and should be replaced when the file system
+ *	 is converted to use the async block io interface.
+ *
+ * Results:
+ *	The return status of the operation.
+ *
+ * Side effects:
+ *	Blocks may be written or read.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FsDeviceBlockIO(readWriteFlag, devicePtr, fragNumber, numFrags, buffer)
+    int readWriteFlag;		/* FS_READ or FS_WRITE */
+    Fs_Device *devicePtr;	/* Specifies device type to do I/O with */
+    int fragNumber;		/* CAREFUL, fragment index, not block index.
+				 * This is relative to start of device. */
+    int numFrags;		/* CAREFUL, number of fragments, not blocks */
+    Address buffer;		/* I/O buffer */
+{
+    ReturnStatus status;	/* General return code */
+    int firstSector;		/* Starting sector of transfer */
+    DevBlockDeviceRequest	request;
+    DevBlockDeviceHandle	*handlePtr;
+    int				transferCount;
+
+    handlePtr = (DevBlockDeviceHandle *) (devicePtr->data);
+    if ((fragNumber % FS_FRAGMENTS_PER_BLOCK) != 0) {
+	/*
+	 * The I/O doesn't start on a block boundary.  Transfer the
+	 * first few extra fragments to get things going on a block boundary.
+	 */
+	register int extraFrags;
+
+	extraFrags = FS_FRAGMENTS_PER_BLOCK -
+		    (fragNumber % FS_FRAGMENTS_PER_BLOCK);
+	if (extraFrags > numFrags) {
+	    extraFrags = numFrags;
+	}
+	firstSector = Fs_BlocksToSectors(fragNumber, handlePtr->clientData);
+	request.operation = readWriteFlag;
+	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
+	request.startAddrHigh = 0;
+	request.bufferLen = extraFrags * FS_FRAGMENT_SIZE;
+	request.buffer = buffer;
+	status = Dev_BlockDeviceIOSync(handlePtr, &request, &transferCount);
+	extraFrags = transferCount / FS_FRAGMENT_SIZE;
+	fragNumber += extraFrags;
+	buffer += transferCount;
+	numFrags -= extraFrags;
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    while (numFrags >= FS_FRAGMENTS_PER_BLOCK) {
+	/*
+	 * Transfer whole blocks.
+	 */
+	firstSector = Fs_BlocksToSectors(fragNumber, handlePtr->clientData);
+	request.operation = readWriteFlag;
+	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
+	request.startAddrHigh = 0;
+	request.bufferLen = FS_BLOCK_SIZE;
+	request.buffer = buffer;
+	status = Dev_BlockDeviceIOSync(handlePtr, &request, &transferCount);
+	fragNumber += FS_FRAGMENTS_PER_BLOCK;
+	buffer += FS_BLOCK_SIZE;
+	numFrags -= FS_FRAGMENTS_PER_BLOCK;
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    if (numFrags > 0) {
+	/*
+	 * Transfer the left over fragments.
+	 */
+	firstSector = Fs_BlocksToSectors(fragNumber, handlePtr->clientData);
+	request.operation = readWriteFlag;
+	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
+	request.startAddrHigh = 0;
+	request.bufferLen = numFrags * FS_FRAGMENT_SIZE;
+	request.buffer = buffer;
+	status = Dev_BlockDeviceIOSync(handlePtr, &request, &transferCount);
+    }
+    return(status);
 }
 
