@@ -577,6 +577,7 @@ extern void			Proc_PutOnDebugList();
 extern void			Proc_SuspendProcess();
 extern void			Proc_ResumeProcess();
 extern int			Proc_ExecEnv();
+extern ReturnStatus 		Proc_GetHostIDs();
 
 
 extern ReturnStatus		Proc_EvictForeignProcs();
