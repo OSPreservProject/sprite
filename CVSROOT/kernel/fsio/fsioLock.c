@@ -234,7 +234,7 @@ Fsio_Lock(lockPtr, argPtr, streamIDPtr)
  * Fsio_Unlock --
  *
  *	Release a lock a stream.  The ownership list is checked here, but
- *	the lock is released anyway (so far).
+ *	the lock is released anyway.
  *
  * Results:
  *	SUCCESS or FS_WOULD_BLOCK
@@ -276,9 +276,10 @@ Fsio_Unlock(lockPtr, argPtr, streamIDPtr)
 		if (!List_IsEmpty(&lockPtr->ownerList)) {
 		    lockOwnerPtr =
 			(FsLockOwner *)List_First(&lockPtr->ownerList);
-		    printf(
-			"Fsio_Unlock, non-owner <%x> unlocked, owner <%x>\n",
+#ifdef notdef
+		    printf("Fsio_Unlock, non-owner <%x> unlocked, owner <%x>\n",
 			argPtr->pid, lockOwnerPtr->procID);
+#endif
 		    List_Remove((List_Links *)lockOwnerPtr);
 		    free((Address)lockOwnerPtr);
 		} else {
@@ -309,9 +310,10 @@ Fsio_Unlock(lockPtr, argPtr, streamIDPtr)
 		/*
 		 * Oops, unlocking process didn't match lock owner.
 		 */
-		printf(
-		    "Fsio_Unlock, non-owner <%x> did shared unlock\n",
+#ifdef notdef
+		printf("Fsio_Unlock, non-owner <%x> did shared unlock\n",
 		    argPtr->pid);
+#endif
 		status = SUCCESS;
 	    }
 	    if (lockPtr->numShared == 0) {
