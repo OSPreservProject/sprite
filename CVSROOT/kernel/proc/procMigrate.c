@@ -518,9 +518,9 @@ Proc_MigrateTrap(procPtr)
 		     (ClientData) &record);
     }
    
-    procPtr->genFlags = (procPtr->genFlags &
-			 ~(PROC_MIG_PENDING | PROC_MIGRATION_DONE) |
-			 PROC_MIGRATING);
+    procPtr->genFlags = (procPtr->genFlags 
+			 & ~(PROC_MIG_PENDING | PROC_MIGRATION_DONE)
+			 | PROC_MIGRATING);
     
     hostID = procPtr->peerHostID;
     bufSize = 0;
@@ -689,9 +689,9 @@ Proc_MigrateTrap(procPtr)
 
     Proc_Lock(procPtr);
 
-    procPtr->genFlags = (procPtr->genFlags &
-			 ~(PROC_REMOTE_EXEC_PENDING| PROC_MIG_ERROR)) |
-			     PROC_MIGRATION_DONE;
+    procPtr->genFlags = (procPtr->genFlags
+			 & ~(PROC_REMOTE_EXEC_PENDING| PROC_MIG_ERROR)
+			 | PROC_MIGRATION_DONE);
     Proc_Unlock(procPtr);
 
 
@@ -725,17 +725,17 @@ Proc_MigrateTrap(procPtr)
 
 
     /*
-     * It's finally safe to indicate that the process isn't in the middle
-     * of migration.  For example, anyone waiting to send a signal to the
-     * process should wait until this point so the process is executing
-     * on the other host.
+     * Anyone waiting to send a signal to the process should wait until
+     * this point so the process is executing on the other host.  On the
+     * other hand, some code wants to wait until the process has finished
+     * context switching.  So, clear the "evicting" flag, but don't yet 
+     * clear the "migrating" flag or wake up processes waiting for the
+     * migration to complete.
      */
     Proc_Lock(procPtr);
-    procPtr->genFlags &= ~PROC_MIGRATING;
     procPtr->migFlags &= ~PROC_EVICTING;
     Proc_Unlock(procPtr);
 
-    ProcMigWakeupWaiters();
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_MIGTRAP,
@@ -768,16 +768,22 @@ Proc_MigrateTrap(procPtr)
     }
 
     /*
+     * All aboard!
+     * 
      * Check for asynchronous errors coming in after we resumed on the other
-     * host.
+     * host.  If there aren't any, mark the migration as finally really 
+     * being complete and wake up any processes that might be waiting for
+     * the migration to complete.
      */
     Proc_Lock(procPtr);
     if (procPtr->genFlags & PROC_MIG_ERROR) {
 	Proc_Unlock(procPtr);
 	goto failure;
     }
-    Proc_Unlock(procPtr);
-    
+
+    procPtr->genFlags &= ~PROC_MIGRATING;
+    ProcMigWakeupWaiters();
+
     if (foreign) {
 	PROC_MIG_DEC_STAT(foreign);
 	if (evicting ||
@@ -792,6 +798,7 @@ Proc_MigrateTrap(procPtr)
 	    }
 	}
 #endif /* CLEAN */
+	Proc_Unlock(procPtr);
 	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
     } else {
 #ifndef CLEAN
@@ -804,16 +811,16 @@ Proc_MigrateTrap(procPtr)
 	    PROC_MIG_INC_STAT(hostCounts[hostID]);
 	}
 #endif /* CLEAN */
-	Sched_ContextSwitch(PROC_MIGRATED);
+	Proc_UnlockAndSwitch(procPtr, PROC_MIGRATED);
     }
     panic("Proc_MigrateTrap: returned from context switch.\n");
     return;
 
  failure:
     /*
-     * If the process hit some error, like the other host rebooting or
-     * exiting on the other host, we don't bother sending an RPC to the
-     * other host.
+     * If the process hit some error (e.g., the remote host rebooted), or
+     * the processes exited on the other host, we don't bother sending an 
+     * RPC to the other host.
      */
     Proc_Lock(procPtr);
     if (!(procPtr->genFlags & PROC_MIG_ERROR)) {
@@ -821,7 +828,7 @@ Proc_MigrateTrap(procPtr)
 		(Proc_CallInfo *) NIL);
     }
     procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING|
-			   PROC_MIG_ERROR);
+			   PROC_MIG_ERROR|PROC_MIGRATION_DONE);
     procPtr->migFlags &= ~PROC_EVICTING;
     ProcMigWakeupWaiters();
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
@@ -1738,6 +1745,7 @@ ProcMigEncapCallback(cmdPtr, procPtr, inBufPtr, outBufPtr)
  *----------------------------------------------------------------------
  */
 
+/* ARGSUSED */
 void
 ProcMigKillRemoteCopy(data, infoPtr)
     ClientData		data;		/* The ID of the remote process */
@@ -2012,9 +2020,12 @@ ProcMigCommand(host, cmdPtr, inPtr, outPtr)
  *
  *	Wait for a process to migrate.  Locks the process and
  *	then calls a monitored procedure.
+ *	Note: this routine should not be used to verify that an arbitrary 
+ *	process is migrated (RpcProcFork doesn't set PROC_MIGRATION_DONE).
  *
  * Results:
- *	None.
+ *	Returns a Sprite status code.  SUCCESS means that the process has 
+ *	context switched to PROC_MIGRATED.
  *
  * Side effects:
  *	None.
@@ -2036,8 +2047,8 @@ Proc_WaitForMigration(processID)
     /*
      * While in the middle of migration, wait on the condition
      * and then recheck the flags and the processID.
-     * This avoids the possibility of
-     * the procPtr getting recycled while we're waiting.
+     * This avoids the possibility of the procPtr getting recycled while
+     * we're waiting.
      */
     while (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
 	Proc_Unlock(procPtr);
@@ -2399,6 +2410,7 @@ Proc_MigrateStartTracing()
  *----------------------------------------------------------------------
  */
 
+/* ARGSUSED */
 void 
 Proc_DestroyMigratedProc(pidData, callInfoPtr) 
     ClientData pidData;		/* the process ID, as a ClientData */
