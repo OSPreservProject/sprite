@@ -262,6 +262,7 @@ static SysCallEntry sysCalls[] = {
     Proc_ExecEnv,		Proc_ExecEnv,	   TRUE,	4,   NILPARM,
     Fs_SetAttrStub,		Fs_SetAttrStub,	   TRUE,	4,   NILPARM,
     Fs_SetAttrIDStub,		Fs_SetAttrIDStub,   TRUE,	3,   NILPARM,
+    Proc_GetHostIDs,		Proc_GetHostIDs,   TRUE,	2,   NILPARM,
 };
 
 
@@ -443,6 +444,7 @@ static Sys_CallParam paramsArray[] = {
     /* special */			     	/* SYS_PROC_EXEC_ENV	86 */
     /* local */				/* SYS_FS_SET_ATTR_NEW		87 */
     /* local */ 			/* SYS_FS_SET_ATTR_ID_NEW	88 */
+    /* local */ 			/* SYS_PROC_GETHOSTIDS		89 */
     /*
      * Insert new system call information above this line.
      */
