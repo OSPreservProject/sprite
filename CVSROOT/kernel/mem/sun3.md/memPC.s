@@ -61,7 +61,7 @@ _Mem_CallerPC:
 #endif	defined(VAX) || defined(vax) || defined(uvax)
 
 
-#if	defined(mc68000) || defined(SUN2) || defined(SUN3)
+#if	defined(mc68000) || defined(sun2) || defined(sun3)
 /*
  * The stack layout on a MC680?? when Mem_CallerPC is called. The routine 
  * doesn't use a link instruction so it is still using Mem_Alloc/Free's 

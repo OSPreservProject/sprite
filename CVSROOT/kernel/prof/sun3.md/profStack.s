@@ -57,7 +57,7 @@ _Prof_ThisPC:
 #endif	defined(VAX) || defined(vax)
 
 
-#if	defined(mc68000) || defined(SUN2) || defined(SUN3)
+#if	defined(mc68000) || defined(sun2) || defined(sun3)
 |	.globl	_Prof_Whence
 	.globl	_Prof_NextFP
 	.globl	_Prof_ThisFP
@@ -109,4 +109,4 @@ _Prof_ThisPC:
 	movl	sp@(4),a0
 	movl	a0@(4),d0
 	rts
-#endif	defined(mc68000) || defined(SUN2)
+#endif	defined(mc68000) || defined(sun2)
