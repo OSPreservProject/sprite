@@ -1399,6 +1399,12 @@ again:
 	    status = RPC_TIMEOUT;
 	    break;
 	case FSCACHE_NO_DISK_SPACE:
+	    printf("%s couldn't write back <%d,%d> \"%s: %s\n",
+		   "Fscache_FileWriteBack",
+		   cacheInfoPtr->hdrPtr->fileID.major,
+		   cacheInfoPtr->hdrPtr->fileID.major,
+		   Fsutil_HandleName(cacheInfoPtr->hdrPtr),
+		   "cache entry is marked as no-space"); /* DEBUG */
 	    status = FS_NO_DISK_SPACE;
 	    break;
 	case FSCACHE_DOMAIN_DOWN:
@@ -2928,9 +2934,10 @@ FscacheAllBlocksInCache(cacheInfoPtr)
  *
  * ----------------------------------------------------------------------------
  */
+/* ARGSUSED */
 int
 Fscache_ReserveBlocks(backendPtr, numResBlocks, numNonResBlocks)
-    Fscache_Backend	*backendPtr;
+    Fscache_Backend	*backendPtr; /* unused */
     int			numResBlocks;
     int			numNonResBlocks;
 {
@@ -2978,9 +2985,10 @@ Fscache_ReserveBlocks(backendPtr, numResBlocks, numNonResBlocks)
  *
  * ----------------------------------------------------------------------------
  */
+/* ARGSUSED */
 void
 Fscache_ReleaseReserveBlocks(backendPtr, numBlocks)
-    Fscache_Backend	*backendPtr;
+    Fscache_Backend	*backendPtr; /* unused */
     int			numBlocks;
 {
     LOCK_MONITOR;
