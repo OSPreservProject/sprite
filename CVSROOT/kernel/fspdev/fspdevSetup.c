@@ -36,6 +36,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <fspdevInt.h>
 #include <fspdev.h>
+#include <fsrecov.h>
+#include <recov.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -79,6 +81,7 @@ FspdevNameOpen(handlePtr, openArgsPtr, openResultsPtr)
     register	Fspdev_ControlIOHandle *ctrlHandlePtr;
     register	Fs_Stream *streamPtr;
     register	Fspdev_State *pdevStatePtr;
+    Fsrecov_HandleState		recovInfo;
 
     /*
      * The control I/O handle is identified by the fileID of the pseudo-device
@@ -100,6 +103,8 @@ FspdevNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	 */
 	if (ctrlHandlePtr->serverID != NIL) {
 	    status = FS_FILE_BUSY;
+printf("FspdevNameOpen: file busy: clientID is %d, ctrlPtr->serverID is %d\n",
+openArgsPtr->clientID, ctrlHandlePtr->serverID);
 	} else {
 	    /*
 	     * Note which host is running the pseudo-device server.
@@ -120,6 +125,63 @@ FspdevNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 				    (Fs_HandleHeader *)ctrlHandlePtr,
 				    openArgsPtr->useFlags, handlePtr->hdr.name);
 	    openResultsPtr->streamID = streamPtr->hdr.fileID;
+	    /*
+	     * We're the name server for this pdev, and if we're not the
+	     * machine running the pdev server, then we update the recov box.
+	     */
+	    if (recov_Transparent && openArgsPtr->clientID != rpc_SpriteID) {
+		if (fsrecov_DebugLevel <= 2) {
+		    printf("FspdevNameOpen: Adding control handle ");
+		    printf("%d.%d.%d.%d\n\tclient %d, serverID %d\n",
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.type,
+			    ((Fs_HandleHeader *)
+			    ctrlHandlePtr)->fileID.serverID,
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.major,
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.minor,
+			    openArgsPtr->clientID,
+			    ctrlHandlePtr->serverID);
+		}
+/* MIMIC_PDEV_BUG */
+		/*
+		 * No reference counts are kept on pdev control handles,
+		 * so we can't allow them to acrue in the recov box, either.
+		 * So if it's already there, just "update" it, else add it.
+		 */
+		if (Fsrecov_GetHandle(((Fs_HandleHeader *)
+			ctrlHandlePtr)->fileID, openArgsPtr->clientID,
+			&recovInfo, FALSE) == SUCCESS) {
+		    recovInfo.info = ctrlHandlePtr->serverID;
+		    recovInfo.clientData = ctrlHandlePtr->seed;
+		    if (Fsrecov_UpdateHandle(((Fs_HandleHeader *)
+			    ctrlHandlePtr)->fileID, openArgsPtr->clientID,
+			    &recovInfo) != SUCCESS) {
+			panic("FspdevNameOpen: couldn't update open handle.");
+		    }
+		} else {
+/* END_MIMIC_PDEV_BUG */
+		    status = Fsrecov_AddHandle((Fs_HandleHeader *)
+			    ctrlHandlePtr,
+			    (Fs_FileID *) NIL, openArgsPtr->clientID, 0,
+			    ctrlHandlePtr->seed, TRUE);
+		    /* We'll have to do better than this! */
+		    if (status != SUCCESS) {
+			panic(
+			"FspdevNameOpen: couldn't add handle to recov box.");
+		    }
+		}
+		/*
+		 * Now add mapping between stream and ioHandle.  We'll need
+		 * to handle error cases better!!
+		 */
+		if (fsrecov_DebugLevel <= 2) {
+		    printf("FspdevNameOpen: Adding stream handle with ");
+		    printf("ioFileID %d.%d.%d.%d\n", ioFileID.type,
+			    ioFileID.serverID, ioFileID.major, ioFileID.minor);
+		}
+		status = Fsrecov_AddHandle((Fs_HandleHeader *) streamPtr,
+			&ioFileID, openArgsPtr->clientID, streamPtr->flags,
+			streamPtr->offset, TRUE);
+	    }
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	}
     } else {
@@ -172,6 +234,34 @@ FspdevNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 				(handlePtr->hdr.fileID.serverID << 16) |
 				 handlePtr->hdr.fileID.major;
 	    ctrlHandlePtr->seed++;
+	    /*
+	     * If we're the name server, and we're not the pdev server's
+	     * machine, then update recov box copy of seed.  For "clientID"
+	     * field of the Fsrecov_GetHandle call, we need to use the ID of the
+	     * machine that's running the pdev server, since that's the
+	     * original "client" that opened the thing.
+	     */
+	    if (recov_Transparent && ctrlHandlePtr->rmt.hdr.fileID.serverID ==
+		    rpc_SpriteID && ctrlHandlePtr->serverID != rpc_SpriteID) {
+		if (Fsrecov_GetHandle(ioFileID, ctrlHandlePtr->serverID,
+			&recovInfo, FALSE) != SUCCESS) {
+		    panic(
+		    "FspdevNameOpen: couldn't get recov info for handle.");
+		}
+		recovInfo.clientData = ctrlHandlePtr->seed;
+		if (fsrecov_DebugLevel <= 2) {
+		    printf("FspdevNameOpen: Updating seed for ioFileID ");
+		    printf(" %d.%d.%d.%d for client %d with serverID %d\n",
+			    ioFileID.type, ioFileID.serverID,
+			    ioFileID.major, ioFileID.minor,
+			    openArgsPtr->clientID, ctrlHandlePtr->serverID);
+		}
+		if (Fsrecov_UpdateHandle(ioFileID, ctrlHandlePtr->serverID,
+			&recovInfo) != SUCCESS) {
+		    panic("FspdevNameOpen: couldn't update handle.");
+		}
+	    }
+
 	    openResultsPtr->ioFileID.minor =
 				((handlePtr->descPtr->version << 24) ^
 				 (handlePtr->hdr.fileID.minor << 12)) |

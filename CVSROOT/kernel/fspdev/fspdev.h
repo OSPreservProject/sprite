@@ -200,5 +200,11 @@ extern void Fspdev_InitializeOps _ARGS_((void));
 
 extern ReturnStatus Fspdev_PrintRec _ARGS_((ClientData clientData, int event,
 			Boolean printHeaderFlag));
+extern ReturnStatus Fspdev_ControlSetupHandle _ARGS_((Fsrecov_HandleState *recovInfoPtr));
+
+/*
+ * Recovery testing operations.
+ */
+extern int Fspdev_ControlRecovTestUseCount _ARGS_((Fspdev_ControlIOHandle *handlePtr));
 
 #endif /* _FSPDEVX */

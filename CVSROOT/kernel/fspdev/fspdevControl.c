@@ -27,6 +27,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsStat.h>
 #include <proc.h>
 #include <rpc.h>
+#include <fsrecov.h>
+#include <recov.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -488,6 +490,7 @@ FspdevControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     register Fspdev_ControlIOHandle *ctrlHandlePtr;
     register FspdevControlReopenParams *reopenParamsPtr;
     register ReturnStatus status = SUCCESS;
+    Fsrecov_HandleState	recovInfo;
 
     if (hdrPtr != (Fs_HandleHeader *)NIL) {
 	/*
@@ -514,6 +517,53 @@ FspdevControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	reopenParamsPtr = (FspdevControlReopenParams *)inData;
 	ctrlHandlePtr = FspdevControlHandleInit(&reopenParamsPtr->fileID,
 					    (char *)NIL);
+
+	/*
+	 * If we're the name server and we're not the client trying to
+	 * reopen its control stream, then this is a control stream that
+	 * we should have in the recovery box.  In this case, clientID is
+	 * the ID of the machine running the pdev server.  The second case
+	 * here (after the ||) is due to network partition and we still think
+	 * we know who the pdev server machine should be.
+	 */
+	if (fsrecov_AlreadyInit && clientID != rpc_SpriteID) {
+	    Fs_FileID	fid;
+
+	    fid = reopenParamsPtr->fileID;
+	    /* Get info from recov box. */
+	    printf("FspdevControlReopen: checking control %d.%d.%d.%d\n",
+		    fid.type, fid.serverID, fid.major, fid.minor);
+	    if (Fsrecov_GetHandle(fid, clientID, &recovInfo, TRUE) != SUCCESS) {
+		panic(
+		"FspdevControlReopen: couldn't get recov info for handle.");
+	    }
+	    /* Test for sameness. */
+	    if ((recovInfo.fileID.major != fid.major) ||
+		    (recovInfo.fileID.minor != fid.minor)) {
+		panic(
+		"FspdevControlReopen: major or minor numbers disagree.");
+	    }
+	    if (recovInfo.info != reopenParamsPtr->serverID) {
+		if (reopenParamsPtr->serverID == NIL) {
+		    panic(
+		    "FspdevControlReopen: serverID disagrees - now NIL.\n");
+		    /* XXX Update handle here if I get rid of code below. */
+		} else {
+		    panic("FspdevControlReopen: serverID disagrees.");
+		}
+	    }
+	    if (recovInfo.clientData != reopenParamsPtr->seed) {
+		panic("FspdevControlReopen: seed disagrees.");
+	    }
+	    /*
+	     * If we're supposed to have recovered everything from the
+	     * recov box, then just return here.
+	     */
+	    if (fsrecov_FromBox) {
+		return SUCCESS;
+	    }
+	}
+
 	if (reopenParamsPtr->serverID != NIL) {
 	    /*
 	     * The remote host thinks it is running the pdev server process.
@@ -536,9 +586,34 @@ FspdevControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	     * to communicate.
 	     */
 	    ctrlHandlePtr->serverID = NIL;
+
+	    if (fsrecov_AlreadyInit && clientID != rpc_SpriteID) {
+		recovInfo.info = NIL;
+		if (Fsrecov_UpdateHandle(reopenParamsPtr->fileID, clientID,
+			&recovInfo) != SUCCESS) {
+		    panic("FspdevControlReopen: couldn't update handle.");
+		}
+	    }
+	}
+	if (recov_Transparent && !fsrecov_AlreadyInit &&
+		clientID != rpc_SpriteID) {
+	    Fs_FileID	fid;
+
+	    fid = reopenParamsPtr->fileID;
+	    printf(
+	    "FspdevControlReopen: installing control stream %d.%d.%d.%d\n",
+		    fid.type, fid.serverID, fid.major, fid.minor);
+	    if (Fsrecov_AddHandle((Fs_HandleHeader *) ctrlHandlePtr,
+		    (Fs_FileID *) NIL,
+		    clientID, ctrlHandlePtr->serverID == NIL ? NIL : 0,
+		    ctrlHandlePtr->seed, TRUE) != SUCCESS) {
+		/* We'll have to do better than this! */
+		panic("FspdevControlReopen: couldn't add handle to recov box.");
+	    }
+	    /* Stream is added in stream reopen procedure. */
 	}
 	Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
-     }
+    }
     return(status);
 }
 
@@ -573,6 +648,7 @@ FspdevControlClose(streamPtr, clientID, procID, flags, size, data)
 	    (Fspdev_ControlIOHandle *)streamPtr->ioHandlePtr;
     register FspdevNotify *notifyPtr;
     int extra = 0;
+    Fsrecov_HandleState	recovInfo;
 
     /*
      * Close any server streams that haven't been given to
@@ -596,6 +672,54 @@ FspdevControlClose(streamPtr, clientID, procID, flags, size, data)
     if (ctrlHandlePtr->rmt.hdr.fileID.serverID != rpc_SpriteID) {
 	(void)Fsrmt_Close(streamPtr, rpc_SpriteID, procID, 0, 0,
 		(ClientData)NIL);
+    } else {
+	/*
+	 * We're the name server and if we weren't the machine running the
+	 * pdev server process, we must update recov box.
+	 */
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+	    if (fsrecov_DebugLevel <= 2) {
+		printf("FspdevControlClose: closing ctrl handle %d.%d.%d.%d ",
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.type,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.serverID,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.major,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.minor);
+		printf("for client %d with serverID %d\n", clientID,
+			ctrlHandlePtr->serverID);
+	    }
+	    /*
+	     * XXX It seems like we should delete the ctrl handle in the
+	     * recov box, but we don't since the close doesn't delete
+	     * it from the handle table.  Is this a bug, or should I
+	     * continue to mimic it?
+	     */
+#ifdef DONT_MIMIC_PDEV_BUG
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) ctrlHandlePtr,
+		    clientID, 0) != SUCCESS) {
+		/* We'll have to do better than this! */
+		panic(
+		"FspdevControlClose: couldn't remove handle from recov box.");
+	    }
+#else
+	    /* Update serverID to be NIL so it matches what's done above. */
+	    if (Fsrecov_GetHandle(ctrlHandlePtr->rmt.hdr.fileID, clientID,
+		    &recovInfo, FALSE) != SUCCESS) {
+		panic(
+		"FspdevControlClose: couldn't get recov info for handle.");
+	    }
+	    recovInfo.info = NIL;
+	    if (Fsrecov_UpdateHandle(ctrlHandlePtr->rmt.hdr.fileID, clientID,
+		    &recovInfo) != SUCCESS) {
+		panic("FspdevControlClose: couldn't update handle.");
+	    }
+#endif DONT_MIMIC_PDEV_BUG
+	    /* Still allow the stream to close since that's done elsewhere. */
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) streamPtr, clientID,
+		    streamPtr->flags) != SUCCESS) {
+		panic(
+		"FspdevControlClose: couldn't remove stream from recov box.");
+	    }
+	}
     }
     Fsutil_WaitListDelete(&ctrlHandlePtr->readWaitList);
     Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
@@ -629,6 +753,29 @@ FspdevControlClientKill(hdrPtr, clientID)
 
     if (ctrlHandlePtr->serverID == clientID) {
 	ctrlHandlePtr->serverID = NIL;
+	if (ctrlHandlePtr->rmt.hdr.fileID.serverID == rpc_SpriteID) {
+	    /*
+	     * We're the file server and must update recov box if we
+	     * weren't the machine running the pdev server process.
+	     */
+	    if (recov_Transparent && clientID != rpc_SpriteID) {
+		if (fsrecov_DebugLevel <= 2) {
+		    printf("FspdevControlClientKill: killing ctrl handle ");
+		    printf("%d.%d.%d.%d for clientID %d\n",
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.type,
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.serverID
+			    , ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.major,
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.minor,
+			    clientID);
+		}
+		if (Fsrecov_DeleteHandle((Fs_HandleHeader *) ctrlHandlePtr,
+			clientID, 0) != SUCCESS) {
+		    /* We'll have to do better than this! */
+		    panic(
+	    "FspdevControlClientKill: couldn't remove handle from recov box.");
+		}
+	    }
+	}
 	Fsutil_RecoverySyncLockCleanup(&ctrlHandlePtr->rmt.recovery);
 	Fsutil_HandleRemove(ctrlHandlePtr);
 	fs_Stats.object.controls--;
@@ -667,4 +814,66 @@ FspdevControlScavenge(hdrPtr)
         Fsutil_HandleUnlock(ctrlHandlePtr);
 	return(FALSE);
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fspdev_ControlRecovTestUseCount --
+ *
+ *	For recovery testing, return the use count on the stream's iohandle.
+ *
+ * Results:
+ *	Use count.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fspdev_ControlRecovTestUseCount(handlePtr)
+    Fspdev_ControlIOHandle	 *handlePtr;
+{
+    return handlePtr->rmt.recovery.use.ref;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fspdev_ControlSetupHandle --
+ *
+ *	Given a pdev control stream recovery object, setup the necessary handle
+ *	state for it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A handle is created in put in the handle table.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fspdev_ControlSetupHandle(recovInfoPtr)
+    Fsrecov_HandleState	*recovInfoPtr;
+{
+    Fs_FileID			fileID;
+    int				clientID;
+    Fspdev_ControlIOHandle	*ctrlHandlePtr;
+
+    if (!recov_Transparent) {
+	panic("Fspdev_ControlSetupHandle: shouldn't have been called.");
+    }
+    clientID = recovInfoPtr->fileID.serverID;
+    fileID = recovInfoPtr->fileID;
+    fileID.serverID = rpc_SpriteID;
+    ctrlHandlePtr = FspdevControlHandleInit(&fileID, (char *) NIL);
+    ctrlHandlePtr->serverID = recovInfoPtr->info;
+    ctrlHandlePtr->seed = recovInfoPtr->clientData;
+    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+
+    return SUCCESS;
 }

@@ -38,12 +38,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fslclNameHash.h>
 #include <fscache.h>
 #include <fsStat.h>
-#include <rpc.h>
 #include <net.h>
 #include <vm.h>
 #include <string.h>
 #include <proc.h>
 #include <dbg.h>
+#include <fsrecov.h>
+#include <rpc.h>
+#include <recov.h>
 
 int fsCompacts;		/* The number of times a directory block was so
 			 * fragmented that we could have compacted it to
@@ -87,7 +89,7 @@ static ReturnStatus WriteNewDirectory _ARGS_((Fsio_FileIOHandle *curHandlePtr,
 		Fsio_FileIOHandle *parentHandlePtr));
 static ReturnStatus LinkFile _ARGS_((Fsio_FileIOHandle *parentHandlePtr,
 		char *component, int compLen, int fileNumber, int logOp, 
-		Fsio_FileIOHandle **curHandlePtrPtr));
+		Fsio_FileIOHandle **curHandlePtrPtr, int clientID));
 static ReturnStatus OkToMoveDirectory _ARGS_((
 		Fsio_FileIOHandle *newParentHandlePtr, 
 		Fsio_FileIOHandle *curHandlePtr));
@@ -99,8 +101,8 @@ static ReturnStatus GetParentNumber _ARGS_((Fsio_FileIOHandle *curHandlePtr,
 static ReturnStatus SetParentNumber _ARGS_((Fsio_FileIOHandle *curHandlePtr, 
 		int newParentNumber));
 static ReturnStatus DeleteFileName _ARGS_((Fsio_FileIOHandle *parentHandlePtr,
-		Fsio_FileIOHandle *curHandlePtr, char *component, 
-		int compLen, int forRename, Fs_UserIDs *idPtr, int logOp));
+		Fsio_FileIOHandle *curHandlePtr, char *component, int compLen,
+		int forRename, Fs_UserIDs *idPtr, int logOp, int clientID));
 static void	CloseDeletedFile _ARGS_((Fsio_FileIOHandle **parentHandlePtrPtr,
 					Fsio_FileIOHandle **curHandlePtrPtr));
 static Boolean DirectoryEmpty _ARGS_((Fsio_FileIOHandle *handlePtr));
@@ -191,6 +193,9 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 					 * directory being operated on. */
     ClientData	logClientData;		/* Client data for directory change
 					 * logging. */
+    ClientData	recovLogClientData = (ClientData) 0;
+					/* Client data for directory change
+					 * logging in the recovery system. */
     /*
      * Get a handle on the domain of the file.  This is needed for disk I/O.
      * Remember that the <major> field of the fileID is a domain number.
@@ -482,6 +487,13 @@ endScan:
 					  component, compLen,
 					  newFileNumber, type,
 					  (Fsdm_FileDescriptor *) NIL);
+			if (recov_Transparent && clientID != rpc_SpriteID) {
+			    recovLogClientData = Fsrecov_DirOpStart(logOp,
+					      parentHandlePtr, dirOffset,
+					      component, compLen,
+					      newFileNumber, type,
+					      (Fsdm_FileDescriptor *) NIL);
+			}
 			status = Fsdm_GetNewFileNumber(domainPtr, nearbyFile,
 							     &newFileNumber);
 			if (status == SUCCESS) {
@@ -500,12 +512,26 @@ endScan:
 				    component, compLen, newFileNumber, type,
 				    curHandlePtr->descPtr, logClientData, 
 				    status);
+			    if (recov_Transparent && clientID != rpc_SpriteID) {
+				Fsrecov_DirOpEnd(logOp, 
+					parentHandlePtr, dirOffset,
+					component, compLen, newFileNumber, type,
+					curHandlePtr->descPtr,
+					recovLogClientData, status);
+			    }
 			} else {
 			    Fsdm_DirOpEnd(logOp, 
 				     parentHandlePtr, dirOffset,
 				     component, compLen, newFileNumber, type,
 				     (Fsdm_FileDescriptor *) NIL, 
 				     logClientData, status);
+			    if (recov_Transparent && clientID != rpc_SpriteID) {
+				Fsrecov_DirOpEnd(logOp, 
+					 parentHandlePtr, dirOffset,
+					 component, compLen, newFileNumber,
+					 type, (Fsdm_FileDescriptor *) NIL, 
+					 recovLogClientData, status);
+			    }
 			}
 		    }
 		} else {
@@ -560,7 +586,7 @@ endScan:
 			deletedHandlePtr = curHandlePtr;
 			status = DeleteFileName(parentHandlePtr,
 			      curHandlePtr, component, compLen, FALSE, idPtr,
-			      FSDM_LOG_RENAME_DELETE);
+			      FSDM_LOG_RENAME_DELETE, clientID);
 			if (status == SUCCESS) {
 			    fileDeleted = TRUE;
 			}
@@ -581,7 +607,7 @@ endScan:
 		if (status == SUCCESS) {
 		    status = LinkFile(parentHandlePtr,
 				component, compLen, fileNumber, logOp,
-				&curHandlePtr);
+				&curHandlePtr, clientID);
 		    if (status == SUCCESS) {
 			(void)Fsdm_FileDescStore(curHandlePtr, FALSE);
 		    }
@@ -601,9 +627,10 @@ endScan:
 		    } else {
 			logOp = (useFlags&FS_RENAME) ? FSDM_LOG_RENAME_UNLINK :
 						       FSDM_LOG_UNLINK;
-			status = DeleteFileName(parentHandlePtr, 
-				curHandlePtr, component, compLen,
-				(int) (useFlags & FS_RENAME), idPtr, logOp);
+			status = DeleteFileName(parentHandlePtr, curHandlePtr,
+				component, compLen,
+				(int) (useFlags & FS_RENAME), idPtr, logOp,
+				clientID);
 			if (status == SUCCESS) {
 			    CloseDeletedFile(&parentHandlePtr,
 					&curHandlePtr);
@@ -1440,7 +1467,8 @@ WriteNewDirectory(curHandlePtr, parentHandlePtr)
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-LinkFile(parentHandlePtr, component, compLen, fileNumber, logOp,curHandlePtrPtr)
+LinkFile(parentHandlePtr, component, compLen, fileNumber, logOp,curHandlePtrPtr,
+	clientID)
     Fsio_FileIOHandle	*parentHandlePtr;/* Handle of directory in which to add 
 					 * file. */
     char	*component;		/* Name of the file */
@@ -1448,11 +1476,13 @@ LinkFile(parentHandlePtr, component, compLen, fileNumber, logOp,curHandlePtrPtr)
     int		fileNumber;		/* Domain relative file number */
     int		logOp;
     Fsio_FileIOHandle	**curHandlePtrPtr;/* Return, handle for the new file */
+    int		clientID;		/* ID of requesting client. */
 {
     ReturnStatus	status;
     Fsdm_FileDescriptor	*linkDescPtr;	/* Descriptor for the existing file */
     Time 		modTime;	/* Descriptors are modified */
     ClientData		logClientData;
+    ClientData		recovLogClientData = (ClientData) 0;
     int			dirOffset;
 
     if (fileNumber == parentHandlePtr->hdr.fileID.minor) {
@@ -1476,6 +1506,11 @@ LinkFile(parentHandlePtr, component, compLen, fileNumber, logOp,curHandlePtrPtr)
 				component, compLen, fileNumber, 
 					linkDescPtr->fileType,
 					linkDescPtr);
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+	    recovLogClientData = Fsrecov_DirOpStart(logOp, parentHandlePtr, -1,
+		    component, compLen, fileNumber, 
+		    linkDescPtr->fileType, linkDescPtr);
+	}
 	linkDescPtr->numLinks++;
 	linkDescPtr->descModifyTime = Fsutil_TimeInSeconds();
 	linkDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
@@ -1522,6 +1557,11 @@ LinkFile(parentHandlePtr, component, compLen, fileNumber, logOp,curHandlePtrPtr)
 	Fsdm_DirOpEnd(logOp, parentHandlePtr, dirOffset, 
 		  component, compLen, fileNumber, linkDescPtr->fileType,
 		  linkDescPtr, logClientData, status);
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+		Fsrecov_DirOpEnd(logOp, parentHandlePtr, dirOffset, 
+			component, compLen, fileNumber, linkDescPtr->fileType,
+			linkDescPtr, recovLogClientData, status);
+	}
     }
     return(status);
 }
@@ -1818,7 +1858,7 @@ SetParentNumber(curHandlePtr, newParentNumber)
  */
 static ReturnStatus
 DeleteFileName(parentHandlePtr, curHandlePtr, component,
-	     compLen, forRename, idPtr, logOp)
+	     compLen, forRename, idPtr, logOp, clientID)
     Fsio_FileIOHandle *parentHandlePtr;	/* Handle of directory in
 						 * which to delete file*/
     Fsio_FileIOHandle *curHandlePtr;	/* Handle of file to delete */
@@ -1829,6 +1869,7 @@ DeleteFileName(parentHandlePtr, curHandlePtr, component,
 				 * directories to be deleted */
     Fs_UserIDs *idPtr;		/* User and group IDs */
     int		logOp;		/* Directory log operation.; */
+    int		clientID;
 {
     ReturnStatus status;
     Fsdm_FileDescriptor *parentDescPtr;	/* Descriptor for parent */
@@ -1837,6 +1878,9 @@ DeleteFileName(parentHandlePtr, curHandlePtr, component,
     int	fileNumber;			/* Number of file being deleted. */
     ClientData	logClientData;		/* ClientData returned from 
 					 * DirOpStart. */
+    ClientData	recovLogClientData = (ClientData) 0;
+					/* ClientData returned from 
+					 * DirOpStart, for recovery system. */
     int dirOffset;
 
     type = curHandlePtr->descPtr->fileType;
@@ -1875,6 +1919,11 @@ DeleteFileName(parentHandlePtr, curHandlePtr, component,
     logClientData = Fsdm_DirOpStart(logOp, parentHandlePtr, dirOffset, 
 		    component, compLen, fileNumber, type,
 		    curHandlePtr->descPtr);
+    if (recov_Transparent && clientID != rpc_SpriteID) {
+	recovLogClientData = Fsrecov_DirOpStart(logOp, parentHandlePtr,
+		dirOffset, component, compLen, fileNumber, type,
+		curHandlePtr->descPtr);
+    }
     /*
      * Remove the name from the directory first.
      */
@@ -1931,6 +1980,11 @@ DeleteFileName(parentHandlePtr, curHandlePtr, component,
     Fsdm_DirOpEnd(logOp, parentHandlePtr, dirOffset,
 		        component, compLen, fileNumber, type,
 			curDescPtr, logClientData, status);
+    if (recov_Transparent && clientID != rpc_SpriteID) {
+	Fsrecov_DirOpEnd(logOp, parentHandlePtr, dirOffset,
+		component, compLen, fileNumber, type,
+		curDescPtr, recovLogClientData, status);
+    }
     return(status);
 }
 
@@ -2342,4 +2396,120 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
     Fscache_UnlockBlock(blockPtr, (time_t) Fsutil_TimeInSeconds(), blockAddr,
 			blockSize, flags);
     return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fslcl_CheckDirLog --
+ *
+ *	Check the directory op log against the contents of a dir.  If there's
+ *	a discrepancy, modify the directory to contain the correct files
+ *	and directories.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Modify the directory to contain the correct files.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fslcl_CheckDirLog(parentHandlePtr, dirLogList)
+    Fsio_FileIOHandle	*parentHandlePtr;
+    List_Links		*dirLogList;
+{
+    List_Links		*itemPtr;
+    char		*component;
+    int			compLen;
+    FslclHashEntry	*entryPtr;	/* Name cache entry */
+    Fsio_FileIOHandle	*handlePtr;
+    Boolean		found;
+    int			dirBlockNum;
+    ReturnStatus	status;
+    Fscache_Block	*cacheBlockPtr;	/* Cache block */
+    int			length;
+    int			blockOffset;
+    Fslcl_DirEntry	*dirEntryPtr;	/* Reference to directory entry */
+    char		buf[256];
+
+
+    if (!recov_Transparent) {
+	panic("Fslcl_CheckDirLog: shouldn't have been called.\n");
+    }
+    LIST_FORALL(dirLogList, itemPtr) {
+	/* Try cached lookup first. */
+
+	found = FALSE;
+	Fsrecov_GetComponent(itemPtr, &component, &compLen);
+	strncpy(buf, component, compLen);
+	buf[compLen] = '\0';
+	entryPtr =
+	    FSLCL_HASH_LOOK_ONLY(fslclNameTablePtr, component, parentHandlePtr);
+
+	if (entryPtr != (FslclHashEntry *)NIL) {
+	    if (entryPtr->hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
+		panic("Fslcl_CheckDirLog: got trashy handle from cache");
+	    }
+	    handlePtr = (Fsio_FileIOHandle *) entryPtr->hdrPtr;
+	    found = TRUE;
+	} else {
+	    dirBlockNum = 0;
+	    do {
+		status = Fscache_BlockRead(&parentHandlePtr->cacheInfo,
+			dirBlockNum, &cacheBlockPtr, &length, FSCACHE_DIR_BLOCK,
+			FALSE);
+		if (status != SUCCESS || length == 0) {
+		    break;
+		}
+		dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
+		blockOffset = 0;
+		while (blockOffset < length) {
+		    if (dirEntryPtr->recordLength <= 0) {
+			printf(" File ID <%d, %d, %d>",
+					 parentHandlePtr->hdr.fileID.serverID,
+					 parentHandlePtr->hdr.fileID.major,
+					 parentHandlePtr->hdr.fileID.minor);
+			printf(" dirBlockNum <%d>, blockOffset <%d>",
+				     dirBlockNum, blockOffset);
+			printf("\n");
+			    Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+					    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+			panic("Fslcl_CheckDirLog: Corrupted directory?");
+		    }
+
+		    if (dirEntryPtr->fileNumber != 0) {
+		    /*
+		     * A valid directory record.  If component and the directory
+		     * entry are the same length then compare them for a match.
+		     * This String Compare is in-lined for efficiency.
+		     */
+			if ((dirEntryPtr->nameLength == compLen)) {
+			    if (strncmp(component, dirEntryPtr->fileName,
+				    compLen) == 0) {
+				found = TRUE;
+				break;
+			    }
+			}
+		    } else {
+			printf("Uh oh, dirEntryPtr->fileNumber is 0\n");
+		    }
+		    blockOffset += dirEntryPtr->recordLength;
+		    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr +
+						 dirEntryPtr->recordLength);
+		}
+		dirBlockNum++;
+		Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0, -1, 0, 0);
+	    } while(!found);
+	}
+	/* It's been found or not.  Now deal with the result. */
+	if (found) {
+	    printf("Found %s\n", component);
+	} else {
+	    printf("Didn't find %s\n", component);
+	}
+    }
+    return;
 }

@@ -49,6 +49,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fspdevInt.h>
 #include <dev/pfs.h>
 #include <string.h>
+#include <fsrecov.h>
+#include <recov.h>
 
 static Fspdev_ServerIOHandle *PfsGetUserLevelIDs _ARGS_((
 	Fspdev_ServerIOHandle *pdevHandlePtr, Fs_FileID *prefixIDPtr, 
@@ -94,6 +96,7 @@ FspdevRmtLinkNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 {
     register ReturnStatus status = SUCCESS;
     register Fs_FileID *ioFileIDPtr = &openResultsPtr->ioFileID;
+    Fsrecov_HandleState	recovInfo;
 
     if ((openArgsPtr->useFlags & FS_PFS_MASTER) == 0) {
 	return(Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr));
@@ -137,6 +140,42 @@ FspdevRmtLinkNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	} else {
 	    ctrlHandlePtr->serverID = openArgsPtr->clientID;
 	    Fsio_StreamCreateID(openArgsPtr->clientID, &openResultsPtr->streamID);
+	}
+	/*
+	 * We're the name server for this remote link, and if we're not
+	 * the machine running the pseudo file system, then we update
+	 * the recov box.
+	 */
+	if (recov_Transparent && openArgsPtr->clientID != rpc_SpriteID) {
+	    if (fsrecov_DebugLevel <= 2) {
+		printf("FspdevRmtLinkNameOpen: Adding pfs control handle ");
+		printf("%d.%d.%d.%d\n\tclient %d, serverID %d\n",
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.type,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.serverID,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.major,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.minor,
+			openArgsPtr->clientID, ctrlHandlePtr->serverID);
+	    }
+/* MIMIC PDEV_BUG */
+	    if (Fsrecov_GetHandle(((Fs_HandleHeader *) ctrlHandlePtr)->fileID,
+		    openArgsPtr->clientID, &recovInfo, FALSE) == SUCCESS) {
+		recovInfo.info = ctrlHandlePtr->serverID;
+		recovInfo.clientData = ctrlHandlePtr->seed;
+		if (Fsrecov_UpdateHandle(((Fs_HandleHeader *)
+			ctrlHandlePtr)->fileID, openArgsPtr->clientID,
+			&recovInfo) != SUCCESS) {
+		    panic("FspdevRmtLinkNameOpen: couldn't update handle.");
+		}
+	    } else {
+/* END_MIMIC_PDEV_BUG */
+		status = Fsrecov_AddHandle((Fs_HandleHeader *) ctrlHandlePtr,
+			(Fs_FileID *) NIL, openArgsPtr->clientID, 0,
+			ctrlHandlePtr->seed, TRUE);
+		/* We'll have to do better than this! */
+		if (status != SUCCESS) {
+		    panic("FspdevRmtLinkNameOpen: couldn't add handle.");
+		}
+	    }
 	}
 	Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
     }

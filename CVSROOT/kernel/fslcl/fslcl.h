@@ -18,14 +18,6 @@
 #ifndef _FSLCL
 #define _FSLCL
 
-#ifdef KERNEL
-#include <fscache.h>
-#include <fsio.h>
-#include <fsconsist.h>
-#include <fsioFile.h>
-#else
-#include <fs.h>
-#endif
 
 /*
  * A directory entry:  Note that this is compatible with 4.3BSD 'struct direct'
@@ -47,6 +39,15 @@ typedef struct Fslcl_DirEntry {
 #define FSLCL_DIR_ENTRY_HEADER	(sizeof(int) + 2 * sizeof(short))
 #define FSLCL_REC_LEN_GRAIN	4
 
+#ifdef KERNEL
+#include <fscache.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fsioFile.h>
+#else
+#include <fs.h>
+#endif
+
 /*
  * Fslcl_DirRecLength --
  *	This computes the number of bytes needed for a directory entry.
@@ -65,6 +66,8 @@ extern void Fslcl_DomainInit _ARGS_((void));
 extern ReturnStatus Fslcl_DeleteFileDesc _ARGS_((Fsio_FileIOHandle *handlePtr));
 extern void Fslcl_NameInitializeOps _ARGS_((void));
 extern void Fslcl_NameHashInit _ARGS_((void));
+void Fslcl_CheckDirLog _ARGS_((Fsio_FileIOHandle *parentHandlePtr,
+	List_Links *dirLogList));
 
 #endif /* KERNEL */
 
