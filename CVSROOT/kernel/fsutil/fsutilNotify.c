@@ -27,8 +27,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "net.h"
 
+/*
+ * Access to wait lists are either synchronized by higher levels
+ * (with HandleLocks, for example) or they are synchronized with
+ * the following MASTER_LOCK.  This is used for device notifications.
+ */
+#ifdef notdef
 static Sync_Lock notifyLock = Sync_LockInitStatic("Fs:notifyLock");
 #define LOCKPTR (&notifyLock)
+#endif notdef
+
+static Sync_Semaphore notifyMutex = Sync_SemInitStatic("Fs:notifyMutex");
 
 
 /*
@@ -37,7 +46,16 @@ static Sync_Lock notifyLock = Sync_LockInitStatic("Fs:notifyLock");
  * FsWaitListInsert --
  *
  *	Add a process to a list of waiters.  This handles the case where
- *	the process is already on the list.
+ *	the process is already on the list.  This is only called from
+ *	process level code so it is ok for it to hold a MASTER lock
+ *	and call malloc, which has a monitor lock.  What would cause deadlock
+ *	is a call to free from an interrupt handler if the process holding
+ *	the free monitor lock was the one interrupted:
+ *		Hold malloc/free monitor
+ *		* INTERRUPT *
+ *		grab notify master lock
+ *		block on free monitor lock
+ *		DEADLOCK
  *
  * Results:
  *	None
@@ -55,7 +73,7 @@ FsWaitListInsert(list, waitPtr)
 {
     register Sync_RemoteWaiter *myWaitPtr;
 
-    LOCK_MONITOR;
+    MASTER_LOCK(&notifyMutex);
     Sync_LockRegister(&notifyLock);
 
     LIST_FORALL(list, (List_Links *) myWaitPtr) {
@@ -65,7 +83,7 @@ FsWaitListInsert(list, waitPtr)
 	if (myWaitPtr->pid == waitPtr->pid &&
 	    myWaitPtr->hostID == waitPtr->hostID) {
 	    myWaitPtr->waitToken = waitPtr->waitToken;
-	    UNLOCK_MONITOR;
+	    MASTER_UNLOCK(&notifyMutex);
 	    return;
 	}
     }
@@ -78,7 +96,7 @@ FsWaitListInsert(list, waitPtr)
     *myWaitPtr = *waitPtr;
     List_Insert((List_Links *)myWaitPtr, LIST_ATREAR(list));
 
-    UNLOCK_MONITOR;
+    MASTER_UNLOCK(&notifyMutex);
 }
 
 /*
@@ -111,6 +129,8 @@ FsFastWaitListInsert(list, waitPtr)
 {
     register Sync_RemoteWaiter *myWaitPtr;
 
+    MASTER_LOCK(&notifyMutex);
+
     LIST_FORALL(list, (List_Links *) myWaitPtr) {
 	/*
 	 * If already on list then update wait token.
@@ -118,6 +138,7 @@ FsFastWaitListInsert(list, waitPtr)
 	if (myWaitPtr->pid == waitPtr->pid &&
 	    myWaitPtr->hostID == waitPtr->hostID) {
 	    myWaitPtr->waitToken = waitPtr->waitToken;
+	    MASTER_UNLOCK(&notifyMutex);
 	    return;
 	}
     }
@@ -129,6 +150,8 @@ FsFastWaitListInsert(list, waitPtr)
     myWaitPtr = (Sync_RemoteWaiter *) malloc(sizeof(Sync_RemoteWaiter));
     *myWaitPtr = *waitPtr;
     List_Insert((List_Links *)myWaitPtr, LIST_ATREAR(list));
+
+    MASTER_UNLOCK(&notifyMutex);
 }
 
 /*
@@ -156,29 +179,39 @@ FsWaitListNotify(list)
 {
     register Sync_RemoteWaiter *waitPtr;
 
-    LOCK_MONITOR;
-    while ( ! List_IsEmpty(list)) {
-	waitPtr = (Sync_RemoteWaiter *)List_First(list);
+    MASTER_LOCK(&notifyMutex);
+
+    LIST_FORALL(list, (List_Links *)waitPtr) {
 	if (waitPtr->hostID != rpc_SpriteID) {
 	    /*
 	     * Contact the remote host and get it to notify the waiter.
+	     * UGLY, unlock monitor during RPC.  The monitor really
+	     * protects free/malloc calls.
 	     */
+
+	    MASTER_UNLOCK(&notifyMutex);
 	    if (waitPtr->hostID > NET_NUM_SPRITE_HOSTS) {
 		printf( "FsWaitListNotify bad hostID %d.\n",
 			  waitPtr->hostID);
 	    } else {
 		(void)Sync_RemoteNotify(waitPtr);
 	    }
+	    MASTER_LOCK(&notifyMutex);
 	} else {
 	    /*
 	     * Mark the local process as runable.
 	     */
 	    Sync_ProcWakeup(waitPtr->pid, waitPtr->waitToken);
 	}
+#ifdef notdef
+	/*
+	 * The free() call can cause deadlock.
+	 */
 	List_Remove((List_Links *)waitPtr);
 	free((Address)waitPtr);
+#endif notdef
     }
-    UNLOCK_MONITOR;
+    MASTER_UNLOCK(&notifyMutex);
 }
 
 /*
@@ -206,22 +239,28 @@ FsFastWaitListNotify(list)
 {
     register Sync_RemoteWaiter *waitPtr;
 
-    while ( ! List_IsEmpty(list)) {
-	waitPtr = (Sync_RemoteWaiter *)List_First(list);
+    MASTER_LOCK(&notifyMutex);
+
+    LIST_FORALL(list, (List_Links *)waitPtr) {
 	if (waitPtr->hostID != rpc_SpriteID) {
 	    /*
 	     * Contact the remote host and get it to notify the waiter.
 	     */
+	    MASTER_UNLOCK(&notifyMutex);
 	    (void)Sync_RemoteNotify(waitPtr);
+	    MASTER_LOCK(&notifyMutex);
 	} else {
 	    /*
 	     * Mark the local process as runable.
 	     */
 	    Sync_ProcWakeup(waitPtr->pid, waitPtr->waitToken);
 	}
+#ifdef notdef
 	List_Remove((List_Links *)waitPtr);
 	free((Address)waitPtr);
+#endif notdef
     }
+    MASTER_UNLOCK(&notifyMutex);
 }
 
 
@@ -249,7 +288,7 @@ FsWaitListRemove(list, waitPtr)
     register Sync_RemoteWaiter *myWaitPtr;
     register Sync_RemoteWaiter *nextPtr;
 
-    LOCK_MONITOR;
+    MASTER_LOCK(&notifyMutex);
 
     nextPtr = (Sync_RemoteWaiter *) List_First(list);
     while (! List_IsAtEnd(list, (List_Links *)nextPtr) ) {
@@ -261,7 +300,7 @@ FsWaitListRemove(list, waitPtr)
 	    free((Address) myWaitPtr);
 	}
     }
-    UNLOCK_MONITOR;
+    MASTER_UNLOCK(&notifyMutex);
 }
 
 /*
@@ -287,10 +326,12 @@ FsWaitListDelete(list)
 {
     register Sync_RemoteWaiter *myWaitPtr;
 
+    MASTER_LOCK(&notifyMutex);
     while (!List_IsEmpty(list)) {
 	myWaitPtr = (Sync_RemoteWaiter *)List_First(list);
 	List_Remove((List_Links *) myWaitPtr);
 	free((Address) myWaitPtr);
     }
+    MASTER_UNLOCK(&notifyMutex);
 }
 
