@@ -21,20 +21,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fscache.h"
-#include "fsutilTrace.h"
-#include "fsStat.h"
-#include "fsdm.h"
-#include "fsprefix.h"
-#include "rpc.h"
-#include "vm.h"
-#include "fsrmt.h"
-#include "fslcl.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fscache.h>
+#include <fsutilTrace.h>
+#include <fsStat.h>
+#include <fsdm.h>
+#include <fsprefix.h>
+#include <rpc.h>
+#include <vm.h>
+#include <fsrmt.h>
+#include <fslcl.h>
+#include <assert.h>
+#include <machparam.h>
 
 extern Boolean fsconsist_ClientCachingEnabled;
 
@@ -938,6 +940,7 @@ Fs_GetSegPtr(fileHandle)
     Fs_HandleHeader *hdrPtr = (Fs_HandleHeader *)fileHandle;
     Vm_Segment	**segPtrPtr;
 
+    assert(((unsigned int) fileHandle & WORD_ALIGN_MASK) == 0);
     switch (hdrPtr->fileID.type) {
 	case FSIO_LCL_FILE_STREAM:
 	    segPtrPtr = &(((Fsio_FileIOHandle *)hdrPtr)->segPtr);
