@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMach.h"
 #include "dbg.h"
 #include "sysStats.h"
+#include "string.h"
 
 /*
  * This holds the state of the simple allocate for multibus memory.
@@ -67,7 +68,8 @@ Dev_Init()
     /*
      * Initialize a simple allocator for Device DMA Space.
      */
-    VmMach_DevBufferInit(&devIOBuffer, VMMACH_DMA_START_ADDR, VMMACH_DMA_SIZE);
+    VmMach_DevBufferInit(&devIOBuffer, (Address)VMMACH_DMA_START_ADDR, 
+			 (int)VMMACH_DMA_SIZE);
 }
 
 /*
@@ -216,7 +218,7 @@ Dev_Config()
 	}
 	if (mapItIn) {
 	    cntrlrPtr->address =
-		(int)VmMach_MapInDevice(cntrlrPtr->address, memoryType);
+		(int)VmMach_MapInDevice((Address)cntrlrPtr->address,memoryType);
 	}
 	if (cntrlrPtr->address != NIL) {
 	    cntrlrPtr->exists = (*cntrlrPtr->initProc)(cntrlrPtr);
@@ -304,7 +306,7 @@ Dev_GetDiskStats(diskStatArr, numEntries)
 	 index++) {
 	cntrlrPtr = &devCntrlr[index];
 	if (cntrlrPtr->exists) {
-	    String_Copy(cntrlrPtr->name, diskStatArr->name);
+	    (void)String_Copy(cntrlrPtr->name, diskStatArr->name);
 	    diskStatArr->controllerID = cntrlrPtr->controllerID;
 	    diskStatArr->numSamples = cntrlrPtr->numSamples;
 	    diskStatArr->idleCount = cntrlrPtr->idleCount;

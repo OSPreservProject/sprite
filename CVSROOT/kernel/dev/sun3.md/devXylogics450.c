@@ -28,6 +28,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "user/byte.h"
 #include "vmMach.h"
+#include "mem.h"
+#include "sched.h"
 
 /*
  * State for each Xylogics controller.
@@ -167,11 +169,11 @@ Dev_XylogicsInitController(cntrlrPtr)
      */
     xyPtr->IOPBPtr = (DevXylogicsIOPB *)VmMach_DevBufferAlloc(&devIOBuffer,
 					       sizeof(DevXylogicsIOPB));
-    VmMach_GetDevicePage((int)xyPtr->IOPBPtr);
+    VmMach_GetDevicePage((Address)xyPtr->IOPBPtr);
 
     xyPtr->labelBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
 					     DEV_BYTES_PER_SECTOR + 8);
-    VmMach_GetDevicePage((int)xyPtr->labelBuffer);
+    VmMach_GetDevicePage((Address)xyPtr->labelBuffer);
 
     xyPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
 					  2 * FS_BLOCK_SIZE);
@@ -282,7 +284,7 @@ Dev_XylogicsInitDevice(devPtr)
      */
     error = DevXylogicsTest(xyPtr, diskPtr);
     if (error != SUCCESS) {
-	Mem_Free(diskPtr);
+	Mem_Free((Address)diskPtr);
 	return(FALSE);
     }
     /*
@@ -290,7 +292,7 @@ Dev_XylogicsInitDevice(devPtr)
      * sets the drive type with the controller.
      */
     if (DevXylogicsDoLabel(xyPtr, diskPtr) != SUCCESS) {
-	Mem_Free(diskPtr);
+	Mem_Free((Address)diskPtr);
 	return(FALSE);
     } else {
 	xyDisk[xyDiskIndex] = diskPtr;
@@ -876,7 +878,7 @@ DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr, numSectors, address,
     regsPtr = xyPtr->regsPtr;
     if (regsPtr->status & XY_GO_BUSY) {
 	Sys_Panic(SYS_WARNING, "Xylogics waiting for busy controller\n");
-	DevXylogicsWait(regsPtr, XY_GO_BUSY);
+	(void)DevXylogicsWait(regsPtr, XY_GO_BUSY);
     }
     /*
      * Set up the I/O registers for the transfer.  All addresses given to

@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "mem.h"
 #include "user/byte.h"
+#include "sched.h"
 
 /*
  * State for each SCSI controller.
@@ -227,11 +228,11 @@ Dev_SCSIInitController(cntrlrPtr)
     scsiPtr->senseBuffer =
 	    (DevSCSISense *)VmMach_DevBufferAlloc(&devIOBuffer,
 					       sizeof(DevSCSISense));
-    VmMach_GetDevicePage((int)scsiPtr->senseBuffer);
+    VmMach_GetDevicePage((Address)scsiPtr->senseBuffer);
 
     scsiPtr->labelBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
 					     DEV_BYTES_PER_SECTOR);
-    VmMach_GetDevicePage((int)scsiPtr->labelBuffer);
+    VmMach_GetDevicePage((Address)scsiPtr->labelBuffer);
 
     scsiPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
             2 * max(FS_BLOCK_SIZE,
@@ -910,7 +911,8 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
 	 */
 	if (status == SUCCESS) {
 	    while((scsiPtr->flags & SCSI_IO_COMPLETE) == 0) {
-		Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex, FALSE);
+		Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex,
+				      FALSE);
 	    }
 	    status = scsiPtr->status;
 	}
