@@ -451,7 +451,7 @@ typedef struct Fscache_ReadAheadInfo {
  * FSCACHE_MAX_CLEANER_PROCS defines the maximum number, and this
  * is used to configure the right number of Proc_ServerProcs.
  */
-#define FSCACHE_MAX_CLEANER_PROCS	3
+#define FSCACHE_MAX_CLEANER_PROCS	6
 
 extern int	fscache_MaxBlockCleaners;
 extern Boolean	fscache_RATracing;
