@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devSBCDisk.h"
 #include "devSCSIDisk.h"
 #include "devSCSITape.h"
+#include "devSCSIWorm.h"
 #include "devXylogicsDisk.h"
 #include "devNet.h"
 
@@ -67,9 +68,13 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
 		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect},
     /*
-     * The following device numbers are unused.
+     * SCSI Worm interface.
      */
-    {DEV_KEYBOARD,    NoDevice,NullProc,NullProc, NullProc, NullProc, NullProc},
+    {DEV_SCSI_WORM, Dev_SCSIWormOpen, Dev_SCSIWormRead, Dev_SCSIWormWrite,
+		     Dev_SCSIWormIOControl, Dev_SCSIWormClose, NullProc},
+    /*
+     * The following device number is unused.
+     */
     {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
 		    NullProc, NullProc, NullProc},
     /*
@@ -117,7 +122,7 @@ int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
 DevFsBlockOps devFsBlockOpTable[] = {
     { DEV_CONSOLE, 0 },
     { DEV_SYSLOG, 0 },
-    { DEV_KEYBOARD, 0 },
+    { DEV_SCSI_WORM, 0 },
     { DEV_PLACEHOLDER_2, 0 },
     { DEV_SCSI_DISK, Dev_SCSIDiskBlockIO },
     { DEV_SCSI_TAPE, 0 },
