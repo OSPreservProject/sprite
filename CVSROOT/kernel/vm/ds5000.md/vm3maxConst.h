@@ -189,4 +189,9 @@
 #define VMMACH_MOD_COUNT_OFFSET		VMMACH_STAT_BASE_OFFSET + 12
 #define VMMACH_MOD_HIT_OFFSET		VMMACH_STAT_BASE_OFFSET + 16
 
+/*
+ * Definitions for supporting the XBUS memory.
+ */
+#define VmMachIsXbusMem(addr) 0
+
 #endif /* _VMPMAXCONST */

@@ -501,6 +501,11 @@ DoneCheck:
  */
 
 /*
+ * Definitions for supporting the XBUS memory.
+ */
+#define VmMachIsXbusMem(addr) (((unsigned)(addr) & 0xf0000000) == 0xd0000000)
+
+/*
  * There is a special area of a users VAS to allow copies between two user
  * address spaces.  This area sits between the beginning of the kernel and
  * the top of the user stack.  It is one hardware segment wide.

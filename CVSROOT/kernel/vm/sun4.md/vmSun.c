@@ -4006,6 +4006,8 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
      * Get the page frame for the physical device so we can
      * compare it against existing pte's.
      */
+printf("VmMach_MapInBigDevice:devPhysAddr 0x%x, numBytes %d, type %d\n",
+devPhysAddr, numBytes, type);
     pageFrame = ((unsigned)devPhysAddr >> VMMACH_PAGE_SHIFT_INT)
 	& VMMACH_PAGE_FRAME_FIELD;
 
@@ -4014,6 +4016,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 	printf("Can only map in one segment's worth of pages right now.\n");
 	return (Address) NIL;
     }
+printf("numPages is %d\n", numPages);
     /* For only one pages, just call the old routine. */
     if (numPages <= 1) {
 	return VmMach_MapInDevice(devPhysAddr, type);
@@ -4025,11 +4028,13 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
      */
     for (virtAddr = (Address)VMMACH_DEV_START_ADDR;
          virtAddr < (Address)VMMACH_DEV_END_ADDR; ) {
+printf("Trying virtAddr 0x%x\n", virtAddr);
 	if (VmMachGetSegMap(virtAddr) == VMMACH_INV_PMEG) {
 	    /* 
 	     * If we can't find any free mappings we can use this PMEG.
 	     */
 	    if (freePMEGAddr == 0) {
+printf("Got free pmeg.\n");
 		freePMEGAddr = virtAddr;
 	    }
 	    virtAddr += VMMACH_SEG_SIZE;
@@ -4047,6 +4052,8 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 
 	    /* Are there enough pages left in the segment? */
 	    if (VMMACH_NUM_PAGES_PER_SEG_INT - page < numPages) {
+printf("Only %d pages left - go to next seg.\n", VMMACH_NUM_PAGES_PER_SEG_INT -
+numPages);
 		/* If we just continue, virtAddr will be incremented okay. */
 		continue;
 	    }
@@ -4076,6 +4083,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 		 * kernel virtual address space.
 		 */
 		freeVirtAddr = virtAddr;
+printf("Free page # %d at add 0x%x\n", page, virtAddr); 
 
 		/* See if we have enough other consecutive pages. */
 		for (i = 1; i < numPages; i++) {
@@ -4083,6 +4091,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 			    (i * VMMACH_PAGE_SIZE_INT));
 		    /* If this is already taken, give up and continue. */
 		    if (pte & VMMACH_RESIDENT_BIT) {
+printf("Oops, page # %d is taken.\n", page + i);
 			/* Maybe I should check if it's this device mapped? */
 			break;
 		    }
@@ -4090,6 +4099,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 		/* Did we find enough pages? */
 		if (i == numPages) {
 		    foundPages = TRUE;
+printf("Found enough pages.\n");
 		    break;
 		}
 		/* The address wasn't good. */
@@ -4101,6 +4111,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 	    }
 	}
 	if (foundPages) {
+printf("Yup, really found pages.\n");
 	    break;
 	}
     }
@@ -4108,6 +4119,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
     /* Did we find a set of pages? */
     if (freeVirtAddr != 0) {
 	virtAddr = freeVirtAddr;
+printf("Using pages at addr 0x%x\n", virtAddr);
 	for (i = 0; i < numPages; i++) {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | pageFrame;
 #if defined(sun3) || defined(sun4)
@@ -4132,6 +4144,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 	/*
 	 * Map in a new PMEG so we can use it for mapping.
 	 */
+printf("Found a whole pmeg at 0x%x\n", freePMEGAddr);
 	pmeg = PMEGGet(vm_SysSegPtr, 
 		       (int) ((unsigned)freePMEGAddr >> VMMACH_SEG_SHIFT),
 		       PMEG_DONT_ALLOC);
@@ -4159,6 +4172,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
     }
 
     /* Nothing was found. */
+printf("Found nothing.\n");
     return (Address) NIL;
 }
 
