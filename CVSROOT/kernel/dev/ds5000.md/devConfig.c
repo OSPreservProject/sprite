@@ -34,21 +34,28 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * The controller configuration table.
  */
-DevConfigController devCntrlr[] = {
+DevConfigController devCntrlr[1];
+#if 0
+= {
    /* Name	Address		ID	InitProc	IntrRoutine. */
-    { "SII",	0xBA000000,  	0,  	DevSIIInit, 	Dev_SIIIntr },
 };
 int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
+#endif
+int devNumConfigCntrlrs = 0;
 
 /*
  * Table of SCSI HBA types attached to this system.
  */
 
-ScsiDevice *((*devScsiAttachProcs[])()) = {
+ScsiDevice *((*devScsiAttachProcs[1])());
+#if 0
+= {
     DevSIIAttachDevice,		/* SCSI Controller type 0. */
 };
 int devScsiNumHBATypes = sizeof(devScsiAttachProcs) / 
 			 sizeof(devScsiAttachProcs[0]);
+#endif
+int devScsiNumHBATypes = 0;
 
 /*
  * A list of disk devices that is used when probing for a root partition.

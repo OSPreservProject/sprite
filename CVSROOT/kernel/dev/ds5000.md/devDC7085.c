@@ -37,7 +37,7 @@ static Sync_Semaphore dc7085Mutex = Sync_SemInitStatic("Dev:dc7085Mutex");
 /*
  * Define the six registers.
  */
-#define REG_ADDR(offset) (unsigned short *)(MACH_SERIAL_INTERFACE_ADDR + (offset))
+#define REG_ADDR(offset) (unsigned short *)(MACH_DZ_ADDR + (offset))
 static volatile unsigned short *csrPtr =  REG_ADDR(0x00);
 static volatile unsigned short *rBufPtr = REG_ADDR(0x08);
 static volatile unsigned short *lprPtr =  REG_ADDR(0x08);
@@ -318,7 +318,11 @@ static void RecvIntr(), XmitIntr();
  * ----------------------------------------------------------------------------
  */
 ENTRY void
-Dev_DC7085Interrupt()
+Dev_DC7085Interrupt(statusReg, causeReg, pc, data)
+    unsigned int statusReg;
+    unsigned int causeReg;
+    Address pc;
+    ClientData data;
 {
     MASTER_LOCK(&dc7085Mutex);
 
@@ -774,6 +778,7 @@ DevDC7085MouseInit()
     *lprPtr = LPR_RXENAB | LPR_B4800 | LPR_OPAR | LPR_PARENB |
 			   LPR_8_BIT_CHAR | MOUSE_PORT;
 
+    Mach_SetIOHandler(7, Dev_DC7085Interrupt, (ClientData) NIL);
     MASTER_UNLOCK(&dc7085Mutex);
 }
 
