@@ -157,9 +157,7 @@ Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
  * EncapsulateInfo --
  *
  *     	Copy the information from a Vm_Segment into a buffer, ready to be
- *	transferred to another node.  This includes generating the name of
- *	the swap file (since we don't migrate files yet) so it can be opened
- *	from the remote node.  We have to duplicate the stream to the
+ *	transferred to another node.  We have to duplicate the stream to the
  *	swap or code file for the segment because Fs_EncapStream effectively
  *	closes the stream.  By dup'ing the stream the proc module can
  *	safely call Vm_DeleteSegment which will close the stream (again).
