@@ -257,11 +257,11 @@ FsStreamTypeOps fsStreamOpTable[] = {
      */
     { FS_CONTROL_STREAM, FsControlCltOpen, FsControlRead, NoProc,
 		FsControlIOControl, FsControlSelect,
-		NullProc, NullProc,		/* Get/Set IO Attr */
+		NullProc, NullProc,			/* Get/Set IO Attr */
 		FsControlVerify, FsControlMigStart, FsControlMigEnd,
-		NoProc, NoProc,				/* migrate, reopen */
+		NoProc, FsControlReopen,		/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
-		FsControlScavenge, NullClientKill, FsControlClose },
+		FsControlScavenge, FsControlClientKill, FsControlClose },
     /*
      * A server stream gets set up for the server whenever a client opens
      * a pseudo device.  The server reads the stream the learn about new
