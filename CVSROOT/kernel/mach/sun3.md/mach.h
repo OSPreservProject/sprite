@@ -19,12 +19,14 @@
 #define _MACH
 
 #ifdef KERNEL
-#include "devAddrs.h"
-#include "machTypes.h"
-#include "user/fmt.h"
+#include <devAddrs.h>
+#include <machTypes.h>
+#include <procMigrate.h>
+#include <user/fmt.h>
 #else
 #include <kernel/devAddrs.h>
 #include <kernel/machTypes.h>
+#include <kernel/procMigrate.h>
 #include <fmt.h>
 #endif
 
