@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys/mman.h"
 
 extern Vm_SharedSegTable sharedSegTable;
+void		Fs_StreamCopy();
 
 int vmShmDebug = 0;	/* Shared memory debugging flag. */
 
@@ -500,13 +501,13 @@ SetVal(descript, newVal, valPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
+Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     Address	startAddr;	/* Requested starting virt-addr. */
     int		length;		/* Length of mapped segment. */
     int		prot;		/* Protection for mapped segment. */
     int		share;		/* Private/shared flag. */
     int		streamID;	/* Open file to be mapped. */
-    int		offset;		/* Offset into mapped file. */
+    int		fileAddr;	/* Offset into mapped file. */
     Address	*mappedAddr;	/* Mapped address. */
 {
     Proc_ControlBlock	*procPtr;
@@ -517,18 +518,28 @@ Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
     Vm_SharedSegTable	*segTabPtr;
     Vm_Segment		*segPtr;
     Vm_SegProcList		*sharedSeg;
-    Vm_VirtAddr		virtAddr;
-    Fs_UserIDs		ids;
     Fs_Stream 		*filePtr;
 
+    vmShmDebug = 1;
     dprintf("Vm_Mmap: Entering\n");
     if ( ((int)startAddr & (vm_PageSize-1)) ||
-	    ((int)offset & (vm_PageSize-1))) {
+	    ((int)fileAddr & (vm_PageSize-1))) {
 	printf("Vm_Mmap: Invalid start or offset\n");
 	return VM_WRONG_SEG_TYPE;
     }
-    startAddr = VmMach_SharedStart(startAddr,length);
     procPtr = Proc_GetCurrentProc();
+    if (procPtr->vmPtr->sharedSegs == (List_Links *)NIL) {
+	dprintf("Vm_Mmap: New proc list\n");
+	procPtr->vmPtr->sharedSegs = (List_Links *)
+		malloc(sizeof(Vm_SegProcList));
+	VmMach_SharedProcStart(procPtr);
+	List_Init((List_Links *)procPtr->vmPtr->sharedSegs);
+    }
+    status = VmMach_SharedStartAddr(procPtr, length, &startAddr);
+    if (status != SUCCESS) {
+	printf("Vm_Mmap: VmMach_SharedStart failure\n");
+	return status;
+    }
     status = Fs_GetStreamPtr(procPtr,streamID,&streamPtr);
     dprintf("Vm_Mmap: procPtr: %x  streamID: %d streamPtr: %x\n",
 	    procPtr,streamID,(int)streamPtr);
@@ -562,7 +573,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
     /*
      * See if a shared segment is already using the specified file.
      */
-    segPtr = (Vm_Segment *) NULL;
+    segPtr = (Vm_Segment *) NIL;
     LIST_FORALL((List_Links *)&sharedSegTable, (List_Links *)segTabPtr) {
 	if (segTabPtr->serverID == attr.serverID && segTabPtr->domain ==
 		    attr.domain && segTabPtr->fileNumber == attr.fileNumber) {
@@ -572,29 +583,19 @@ Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
     }
 
     pnum = (int)startAddr>>vmPageShift;
-    pnum = 10288;
+    pnum = 10288;	/* Random number, since shared memory shouldn't
+				be using this value */
 
-    if (segPtr == (Vm_Segment *)NULL) {
+    if (segPtr == (Vm_Segment *)NIL) {
 	dprintf("Vm_Mmap: New segment\n");
 	/*
 	 * Create a new segment and add to the shared segment list.
 	 */
 	
-	/*
-	status = Fs_Open("/sprite/users/shirriff/tmp", FS_READ |
-		FS_WRITE, FS_FILE, 0660, &filePtr);
-	segTabPtr->sharedSegment = Vm_SegmentNew(VM_SHARED,filePtr,0,
-		1,pnum,procPtr);
-	Vm_ValidatePages(sharedSegment,pnum,pnum+(length>>vmPageShift)-1,
-		FALSE,TRUE);
-	*/
 	segTabPtr = (Vm_SharedSegTable*) malloc(sizeof(Vm_SharedSegTable));
 	dprintf("Vm_Mmap: creating new segment\n");
 	segTabPtr->segPtr = Vm_SegmentNew(VM_SHARED,(Fs_Stream *)NIL,
 		0,length>>vmPageShift,pnum,procPtr);
-		/*
-		offset,length>>vmPageShift,pnum,procPtr);
-		*/
 	segTabPtr->segPtr->swapFilePtr = filePtr;
 	segTabPtr->segPtr->flags |= VM_SWAP_FILE_OPENED;
 	segTabPtr->serverID = attr.serverID;
@@ -631,7 +632,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
 	    }
 	}
 	dprintf("\n");
-	if (procPtr->vmPtr->sharedSegs == (List_Links *)NULL ||
+	if (procPtr->vmPtr->sharedSegs == (List_Links *)NIL ||
 	    !VmCheckSharedSegment(procPtr,segPtr)) {
 	    /*
 	     * Process is not using segment.
@@ -647,13 +648,6 @@ Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
     }
 
     /*
-    VmVirtAddrParse(procPtr,startAddr, &virtAddr);
-    if (virtAddr.segPtr != (Vm_Segment *)NULL) {
-	dprintf("Vm_Mmap: Page already in use\n");
-    }
-    */
-
-    /*
      * Unmap any current mapping at the address range.
      */
     status=Vm_Munmap(startAddr,length,1);
@@ -666,12 +660,6 @@ Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
      * Add the segment to the process's list of shared segments.
      */
     dprintf("Vm_Mmap: Adding segment to list\n");
-    if (procPtr->vmPtr->sharedSegs == (List_Links *)NULL) {
-	dprintf("Vm_Mmap: New proc list\n");
-	procPtr->vmPtr->sharedSegs = (List_Links *)
-		malloc(sizeof(Vm_SegProcList));
-	List_Init((List_Links *)procPtr->vmPtr->sharedSegs);
-    }
     sharedSeg = (Vm_SegProcList *)malloc(sizeof(Vm_SegProcList));
     sharedSeg->fd = streamID;
     sharedSeg->stream = filePtr;
@@ -679,6 +667,8 @@ Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
     segTabPtr->refCount++;
     sharedSeg->addr = startAddr;
     sharedSeg->mappedStart = startAddr;
+    dprintf("fileAddr: %x\n",fileAddr);
+    sharedSeg->fileAddr = fileAddr;
     sharedSeg->offset = (int)startAddr>>vmPageShift;
     sharedSeg->mappedEnd = startAddr+length-1;
     sharedSeg->prot = (prot&PROT_WRITE) ? 0 : VM_READONLY_SEG;
@@ -694,8 +684,8 @@ Vm_Mmap(startAddr, length, prot, share, streamID, offset, mappedAddr)
 	    procPtr->vmPtr->segPtrArray[VM_HEAP]->ptSize,
 	    procPtr->vmPtr->segPtrArray[VM_HEAP]->offset,
 	    procPtr->vmPtr->segPtrArray[VM_STACK]->offset);
-    *mappedAddr = startAddr;
-    return status ;
+    return(Vm_CopyOut(sizeof(Address), (Address) &startAddr,
+	    (Address) mappedAddr));
 
 }
 
@@ -741,7 +731,7 @@ Vm_Munmap(startAddr, length, noError)
 
 	dprintf("Vm_Munmap: eliminating %x to %x\n",(int)addr,(int)endAddr-1);
 	/* Find the segment corresponding to this address. */
-	if (procPtr->vmPtr->sharedSegs != (List_Links *)NULL) {
+	if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
 	    segProcPtr = VmFindSharedSegment(procPtr->vmPtr->sharedSegs,addr);
 	} else if (noError) {
 	    return SUCCESS;
@@ -756,7 +746,7 @@ Vm_Munmap(startAddr, length, noError)
 	   3. The unmap can split a mapping.
 	*/
 
-	if (segProcPtr == (Vm_SegProcList *)NULL) {
+	if (segProcPtr == (Vm_SegProcList *)NIL) {
 	    if (noError) {
 		/*
 		 * Move to next mapped segment, so we can keep unmapping.
@@ -830,3 +820,27 @@ Vm_Munmap(startAddr, length, noError)
     dprintf("Vm_Munmap: done\n");
     return status ;
 }
+
+#ifdef SEGOFFSETCODE
+segOffset(virtAddrPtr)
+Vm_VirtAddr *virtAddrPtr;
+{
+    Vm_Segment *segPr;
+    int off;
+    struct Vm_SegProcList *sharedPr;
+
+    segPr = virtAddrPtr->segPtr;
+    off = segPr->offset;
+    sharedPr = virtAddrPtr->sharedPtr;
+    if (!vmShmDebug || virtAddrPtr->sharedPtr == (Vm_SegProcList *)NIL) {
+	return off;
+    } else {
+	if (sharedPr == NULL) {
+	    panic("null sharedPtr\n");
+	} else {
+	    off = sharedPr->offset;
+	    return off;
+	}
+    }
+}
+#endif SEGOFFSETCODE
