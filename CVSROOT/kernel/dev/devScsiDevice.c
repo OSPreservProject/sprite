@@ -76,7 +76,8 @@ DevScsiAttachDevice(devicePtr, insertProc)
 	 * is either points to a routine or it is NIL.  Take care of it
 	 * here.
 	 */
-	if (handle->errorProc == (ReturnStatus (*)()) 0) {
+	if ((handle != (ScsiDevice *) NIL) &&
+	    (handle->errorProc == (ReturnStatus (*)()) 0)) {
 	    handle->errorProc = (ReturnStatus (*)()) NIL;
 	}
     }
