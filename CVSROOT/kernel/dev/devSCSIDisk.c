@@ -53,6 +53,7 @@ typedef struct ScsiDisk {
     DiskMap map[DEV_NUM_DISK_PARTS];	/* The partition map */
     int type;		/* Type of the drive, needed for error checking */
     Sys_DiskStats *diskStatsPtr;	/* Area for disk stats. */	
+    int	busy;		/* Whether disk is busy or not. */
 } ScsiDisk;
 
 typedef struct ScsiDiskCmd {
@@ -266,12 +267,9 @@ static Boolean
 ScsiDiskIdleCheck(clientData) 
     ClientData	clientData;
 {
-    ScsiDevice *devPtr = (ScsiDevice *) clientData;
-#ifdef lint
-    devPtr = devPtr;
-#endif /* lint */
-	/* need to fix this. */
-    return TRUE;
+    ScsiDisk *diskPtr = (ScsiDisk *) clientData;
+
+    return !(diskPtr->busy);
 }
 
 /*
@@ -382,6 +380,7 @@ DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
 
     requestPtr = (DevBlockDeviceRequest *) (scsiCmdPtr->clientData);
     diskPtr = ((ScsiDiskCmd *) (requestPtr->ctrlData))->diskPtr;
+    diskPtr->busy--;
     if (requestPtr->operation == FS_READ) {
 	diskPtr->diskStatsPtr->diskReads++;
     } else {
@@ -443,6 +442,7 @@ SendCmdToDevice(diskPtr, requestPtr, firstSector, lengthInSectors)
     diskCmdPtr->scsiCmd.doneProc = DiskDoneProc;
     diskCmdPtr->scsiCmd.clientData = (ClientData) requestPtr;
     diskCmdPtr->diskPtr = diskPtr;
+    diskPtr->busy++;
     DevScsiSendCmd(diskPtr->devPtr,&(diskCmdPtr->scsiCmd));
     return SUCCESS;
 }
@@ -928,7 +928,7 @@ DevScsiDiskAttach(devicePtr)
 	diskPtr->diskStatsPtr = DevRegisterDisk(&rawDevice,
 					      devPtr->locationName,
 					      ScsiDiskIdleCheck, 
-					      (ClientData) devPtr);
+					      (ClientData) diskPtr);
     }
     diskPtr->partition = DISK_IS_PARTITIONED(devicePtr) ? 
 					DISK_PARTITION(devicePtr) :
