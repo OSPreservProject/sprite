@@ -29,6 +29,16 @@ static 	int	syncTypeCount = 0;
 static 	Boolean	initialized = FALSE;
 static  Sync_RegElement		regInfo[SYNC_MAX_LOCK_TYPES];
 
+#define  MAX_BAD_TYPES	100
+struct  BadLockType {
+	Address		lockPtr;
+	Address		pc;
+	int		type;
+}  badType[MAX_BAD_TYPES];
+
+int		badTypeCount = 0;
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -96,6 +106,15 @@ SyncAddPriorLock(type, priorCountPtr, priorTypes, lockPtr, pcbPtr)
 	return;
     }
     Proc_GetCurrentLock(pcbPtr, &priorType, &priorLockPtr);
+    if (priorType > syncTypeCount) {
+	if (badTypeCount < MAX_BAD_TYPES) {
+	    DBG_CALL;
+	    badType[badTypeCount].lockPtr = priorLockPtr;
+	    badType[badTypeCount].pc = FIELD(priorLockPtr, holderPC);
+	    badType[badTypeCount].type = priorType;
+	    badTypeCount++;
+	}
+    }
     if (priorType >= 0) {
 	for (i = 0; i < *priorCountPtr; i++) {
 	    if (priorType == priorTypes[i]) {
@@ -175,6 +194,9 @@ SyncMergePriorLocks(priorCount, priorTypes, regPtr)
     int		i;
     int		j;
 
+    if (!initialized) {
+	return;
+    }
     for (i = 0; i < priorCount; i++) {
 	for (j = 0; j < regPtr->priorCount; j++ ) {
 	    if (regPtr->priorTypes[j] == priorTypes[i]) {
