@@ -29,6 +29,15 @@
 .globl	_spriteStart
 start:
 _spriteStart:
+       /* 
+        * Believe it or not, we're running in the middle of our stack. 
+	* We are placed here by the bootstrap loading which starts us
+	* running at 0x4000. We quickly jump out of the stack.
+	*/
+	ba	realStart
+	nop
+.skip	(MACH_KERN_STACK_SIZE-0x4000)
+realStart:
 	mov	%psr, %g1
 	or	%g1, MACH_DISABLE_INTR, %g1	/* lock out interrupts */
 	andn	%g1, MACH_CWP_BITS, %g1		/* set cwp to 0 */
