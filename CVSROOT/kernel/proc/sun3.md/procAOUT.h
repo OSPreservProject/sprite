@@ -25,14 +25,14 @@
 #include "vm.h"
 #else
 #include <kernel/vm.h>
-#endif /* */
+#endif
 
 #define	NEW_PAGE_SIZE		0x2000
 #ifdef sun4
 #define	NEW_SEG_SIZE		0x40000
 #else
 #define	NEW_SEG_SIZE		0x20000
-#endif sun4
+#endif
 
 /*
  * Header prepended to each a.out file.
