@@ -124,6 +124,7 @@ Sig_Init()
     sigDefActions[SIG_TIMER]		= SIG_KILL_ACTION;
     sigDefActions[SIG_TERM]		= SIG_KILL_ACTION;
     sigDefActions[SIG_TTY_SUSPEND]	= SIG_SUSPEND_ACTION;
+    sigDefActions[SIG_TTY_OUTPUT]	= SIG_SUSPEND_ACTION;
 
     sigCanHoldMask = 
 	      ~(sigBitMasks[SIG_ARITH_FAULT] | sigBitMasks[SIG_ILL_INST] |
