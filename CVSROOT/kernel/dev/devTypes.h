@@ -61,6 +61,7 @@
 #define DEV_SCSI_ROBOT		20
 #define DEV_SMEM                14
 
+
 #if (!defined(ds3100)) && (!defined(ds5000))
 #define DEV_MOUSE		12
 #define DEV_GRAPHICS		13
@@ -82,7 +83,7 @@
 #define DEV_PLACEHOLDER_3	13      /* for ds3100 unused graphics device */
 #define DEV_AUDIO		15
 #define DEV_VMELINK		16
-#define DEV_PLACEHOLDER_4	18
+#define DEV_ATC			18
 #define DEV_PLACEHOLDER_5	19
 #define	DEV_XBUS		21
 
