@@ -231,6 +231,21 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migrate)
 		(migInfoPtr, rpc_SpriteID, &streamPtr->flags,
 		 &streamPtr->offset, &size, &data);
+
+#define CHECK_FAILURE
+#ifdef CHECK_FAILURE
+    /*
+     * Try to check for a NoProc where it doesn't belong.  Unfortunately,
+     * NoProc is static, so we can only compare to a known entry that
+     * contains NoProc.
+     */
+    if (status == FAILURE &&
+	(fsStreamOpTable[migInfoPtr->ioFileID.type].migrate ==
+	 fsStreamOpTable[FS_STREAM].read)) {
+	panic("Fs_DeencapStream: trying to deencapsulate a file descriptor that can't migrate.  (Continuable, but call Fred.)");
+    }
+#endif
+
     DEBUG( (" Type %d <%d,%d> offset %d, ", migInfoPtr->ioFileID.type,
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
 		streamPtr->offset) );
