@@ -1005,6 +1005,9 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
     Boolean			others;
     unsigned int		virtFrameNum;
     Vm_PTE			pte;
+#ifdef SOSP91
+    Boolean	isForeign = FALSE;
+#endif SOSP91
 
     mastSegPtr = FindNewMasterSeg(virtAddrPtr->segPtr, virtAddrPtr->page,
 				  &others);
@@ -1052,6 +1055,19 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 	     */
 	    (void)VmCopySwapPage(virtAddrPtr->segPtr, 
 				virtAddrPtr->page, mastSegPtr);
+#ifdef SOSP91
+	    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+		if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+			(proc_RunningProcesses[0]->genFlags &
+			(PROC_FOREIGN | PROC_MIGRATING))) {
+		    isForeign = TRUE;
+		}
+	    }
+	    fs_MoreStats.COWCopySwapPage++;
+	    if (isForeign) {
+		fs_MoreStats.COWCopySwapPageM++;
+	    }
+#endif SOSP91
 	    pte = VM_VIRT_RES_BIT | VM_ON_SWAP_BIT;
 	    if (others) {
 		pte |= VM_COW_BIT;
