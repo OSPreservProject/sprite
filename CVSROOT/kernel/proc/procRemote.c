@@ -650,8 +650,6 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 		}
 		break;
  	    case SYS_PARAM_FS_NAME: 
- 	    case SYS_PARAM_PROC_ENV_NAME: 
-    	    case SYS_PARAM_PROC_ENV_VALUE:
                 /*
 		 * The argument is a string.  If copying a string in, make
 		 * it accessible and figure out its size dynamically.  If
@@ -680,7 +678,6 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 		}
 		pointerArray[i] = (Address) argsPtr[i];
 		break;				    
-	    case SYS_PARAM_STRING:
 	    default:
 		panic("Proc_DoRemoteCall: can't handle argument type.\n");
 		status = FAILURE;
@@ -842,20 +839,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	    }
 	} else if ((disp & SYS_PARAM_COPY) && (disp & SYS_PARAM_OUT)
 		   && !(disp & SYS_PARAM_NIL)) {
-	    if (specsPtr[i].type != SYS_PARAM_PROC_ENV_VALUE) {
-		size = call.info[i].size;
-	    } else {
-		/*
-		 * Compute true size of the string, up to the call info limit.
-		 */
-		register char *charPtr;
-		for (charPtr = (char *)ptr, size = 0;
-		     (size < call.info[i].size) && (*charPtr != '\0');
-		     charPtr++, size++) {
-		}
-		*charPtr = '\0';	/* null terminate */
-		size++;			/* at most call.info[i].size */
-	    }
+	    size = call.info[i].size;
 	    status = Vm_CopyOut(size, ptr, (Address) argsPtr[i]);
 	    if (status != SUCCESS) {
 		if (proc_MigDebugLevel > 6) {
