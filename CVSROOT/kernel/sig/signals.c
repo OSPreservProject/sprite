@@ -509,6 +509,22 @@ Sig_SendProc(procPtr, sigNum, code)
     int				  code;
 {
     ReturnStatus status;
+
+#ifdef NOTDEF
+#ifdef sun4c
+    if (procPtr->argString != NIL &&
+	    (strncmp(procPtr->argString, "tx", 2) == 0 ||
+	    strncmp(procPtr->argString, "/sprite/daemons/ipServer",
+	    strlen("/sprite/daemons/ipServer")) == 0)) {
+	printf("Sig_Send: sending sig %d to proc 0x%x with name %s\n",
+		sigNum, procPtr->processID, procPtr->argString);
+	if (sigNum >= SIG_DEBUG && sigNum <= SIG_ADDR_FAULT) {
+	    panic("Sig_Send: Nasty signal sent to ipServer or tx.\n");
+	}
+    }
+#endif /* sun4c */
+#endif NOTDEF
+
     /*
      * Make sure that the signal is in range.
      */
