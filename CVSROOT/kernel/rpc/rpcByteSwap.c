@@ -50,44 +50,22 @@ Boolean	rpcTestByteSwap = FALSE;
  */
 void
 RpcByteSwapBuffer(bufferPtr, numInts)
-    int	*bufferPtr;
-    int	numInts;
+    register int *bufferPtr;
+    register int numInts;
 {
-    int	i;
-    int	offendingInt;
-    int	fixedInt;
-    int	shiftInt;
-#   define	LOW_BYTE_MASK		0x000000ff
-#   define	MIDDLE_LOW_BYTE_MASK	0x0000ff00
-#   define	MIDDLE_HIGH_BYTE_MASK	0x00ff0000
-#   define	HIGH_BYTE_MASK		0xff000000
+    register unsigned int in;
 
-    for (i = 0; i < numInts; i++) {
-	/*
-	 * First move the middle high byte to the middle low byte.
-	 * Then move the middle low byte to the middle high byte.
-	 * Then move the high byte to the low, and vice versa.
-	 */
-	offendingInt = ((int *) bufferPtr)[i];
-	fixedInt = 0;
+#define	LOW_BYTE_MASK		0x000000ff
+#define	MIDDLE_LOW_BYTE_MASK	0x0000ff00
+#define	MIDDLE_HIGH_BYTE_MASK	0x00ff0000
+#define	HIGH_BYTE_MASK		0xff000000
 
-	shiftInt = offendingInt >> 8;
-	shiftInt &= MIDDLE_LOW_BYTE_MASK;
-	fixedInt |= shiftInt;
-
-	shiftInt = offendingInt << 8;
-	shiftInt &= MIDDLE_HIGH_BYTE_MASK;
-	fixedInt |= shiftInt;
-
-	shiftInt = offendingInt >> 24;
-	shiftInt &= LOW_BYTE_MASK;
-	fixedInt |= shiftInt;
-
-	shiftInt = offendingInt << 24;
-	shiftInt &= HIGH_BYTE_MASK;
-	fixedInt |= shiftInt;
-
-	((int *) bufferPtr)[i] = fixedInt;
+    while (--numInts >= 0) {
+	in = *bufferPtr;
+	*bufferPtr++ =   ((in << 8)  & MIDDLE_HIGH_BYTE_MASK)
+	               | ((in << 24) & HIGH_BYTE_MASK)
+		       | ((in >> 8)  & MIDDLE_LOW_BYTE_MASK)
+		       | ((in >> 24) & LOW_BYTE_MASK);
     }
     return;
 }
