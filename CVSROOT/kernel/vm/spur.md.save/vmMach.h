@@ -119,8 +119,8 @@ extern	void		VmMach_Trace();
 /*
  * Pinning and unpinning user memory pages.
  */
-extern	void		VmMach_PinUserPage();
-extern	void		VmMach_UnpinUserPage();
+extern	void		VmMach_PinUserPages();
+extern	void		VmMach_UnpinUserPages();
 /*
  * Cache flushing.
  */
