@@ -11,6 +11,7 @@
 # self-contained.
 #
 SNAPFLAGS	+= -l
+CFLAGS 		+= -DNEW_NET
 
 #include	<$(SYSMAKEFILE)>
 
