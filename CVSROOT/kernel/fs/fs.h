@@ -228,6 +228,9 @@ typedef struct Fs_Stream {
  *		other operations, like remove, don't pollute the trace.
  *	FS_SERVER_WRITE_THRU - Set on writes that are supposed to be written
  *			       through to the server.
+ *	FS_LAST_DIRTY_BLOCK - Set on remote writes when this is the
+ *		last dirty block of the file to be written back.
+    Now not used -- was in sosp changes and must find something else.
  *	FS_HEAP - This is a heap page for special treatment in the cache.
  *	FS_RMT_SHARED - Set on streams that are shared among clients on
  *		separate machines.  For regular files this means that the
@@ -264,7 +267,11 @@ typedef struct Fs_Stream {
 #define FSUTIL_TRACE_FLAG	0x00400000
 #define FS_USER_OUT		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
+#define	FS_LAST_DIRTY_BLOCK	0x02000000
+/*
+ * This was used in the sosp changes.  I've got to figure something else.
 #define	FS_HEAP			0x02000000
+ */ 
 #define FS_RMT_SHARED		0x04000000
 #define FS_NEW_STREAM		0x08000000
 #define	FS_WRITE_TO_DISK	0x10000000
