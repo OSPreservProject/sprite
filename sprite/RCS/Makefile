@@ -58,6 +58,8 @@ LINTFLAGS =	-I. -I${H}
 LINTLIBS =	${LINT}/*.ln
 DISTDIR     ?= /dist/sprite/src/kernel/sprite
 
+KERNELNAME	?= new
+
 # symbol looked for by 'make nm'
 NM = mcount
 
@@ -247,7 +249,7 @@ dist:
 #	@ls -l $@
 #	@size $@
 #	update -f -s $@ /sprite/boot/$@.sprite
-#	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2.new
+#	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2.${KERNELNAME}
 #	nm -n $@  > $@.nm
 
 sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
@@ -260,8 +262,8 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	${LD} -X -msun3 -o $@ -e start -T e004000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
-	update -f -s sun3 /sprite/boot/sun3.md/new
-	rcp /sprite/boot/sun3.md/new ${GINGER}:/tftpboot/sun3.md/new
+	update -f -s sun3 /sprite/boot/sun3.md/${KERNELNAME}
+	rcp /sprite/boot/sun3.md/${KERNELNAME} ${GINGER}:/tftpboot/sun3.md/${KERNELNAME}
 	#rcp sun3 ginger:/home/ginger/sprite/kernels/sun3.sprite
 	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun3.sprite)"
 	nm -n sun3 > sun3.nm
@@ -277,13 +279,13 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o
 	@ls -l $@
 	@size $@
-	update -f -s sun4 /sprite/boot/sun4.md/new
-	rcp /sprite/boot/sun4.md/new ${GINGER}:/tftpboot/sun4.md/new
+	update -f -s sun4 /sprite/boot/sun4.md/${KERNELNAME}
+	rcp /sprite/boot/sun4.md/${KERNELNAME} ${GINGER}:/tftpboot/sun4.md/${KERNELNAME}
 	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
 	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
 	nm -n sun4 > sun4.nm
-	update -f sun4 /allspiceA/new
-	strip /allspiceA/new
+	update -f sun4 /allspiceA/${KERNELNAME}
+	strip /allspiceA/${KERNELNAME}
 	-Save sun4
 
 sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
@@ -296,7 +298,7 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
-	update -f -s sun4c /sprite/boot/sun4c.md/new
+	update -f -s sun4c /sprite/boot/sun4c.md/${KERNELNAME}
 	#rcp sun4c ginger:/home/ginger/sprite/kernels/sun4c.sprite
 	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c.sprite)"
 	nm -n sun4c > sun4c.nm
@@ -313,7 +315,7 @@ sun4c2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
-	update -f -s sun4c2 /sprite/boot/sun4c2.md/new
+	update -f -s sun4c2 /sprite/boot/sun4c2.md/${KERNELNAME}
 	#rcp sun4c2 ginger:/home/ginger/sprite/kernels/sun4c2.sprite
 	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c2.sprite)"
 	nm -n sun4c2 > sun4c2.nm
@@ -329,14 +331,14 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
-	update -f ds3100 /sprite/boot/ds3100.md/new
-	strip /sprite/boot/ds3100.md/new
+	update -f ds3100 /sprite/boot/ds3100.md/${KERNELNAME}
+	strip /sprite/boot/ds3100.md/${KERNELNAME}
 	rm -f ds3100.nm
 	nm -n ds3100 > ds3100.nm
 	#rcp /sprite/src/kernel/sprite/ds3100 ginger:/home/ginger/sprite/kernels/ds3100
 	#rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds3100)"
-	update -f ds3100 /assaultA/new
-	strip /assaultA/new
+	update -f ds3100 /assaultA/${KERNELNAME}
+	strip /assaultA/${KERNELNAME}
 	-Save ds3100
 
 ds5000: ${OBJS} .PRECIOUS .NOEXPORT
@@ -349,13 +351,13 @@ ds5000: ${OBJS} .PRECIOUS .NOEXPORT
 	${LD} -N -o ds5000 -e start -T 80030000 ${OBJS} version.o
 	@ls -l $@
 	@size $@
-	update -f ds5000 /sprite/boot/ds5000.md/new
-	strip /sprite/boot/ds5000.md/new
+	update -f ds5000 /sprite/boot/ds5000.md/${KERNELNAME}
+	strip /sprite/boot/ds5000.md/${KERNELNAME}
 	rm -f ds5000.nm
 	nm -n ds5000 > ds5000.nm
 	#rcp /sprite/src/kernel/sprite/ds5000 ginger:/home/ginger/sprite/kernels/ds5000
 	#rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds5000)"
-	update -f $@ /lustA/new
+	update -f $@ /lustA/${KERNELNAME}
 	-Save $@
 
 # profile2: ${PROFOBJS} Makefile .PRECIOUS
