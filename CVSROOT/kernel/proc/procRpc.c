@@ -82,22 +82,22 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_PRINTOUT	   4 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_GETLINE	   5 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_GETCHAR	   6 */
-    { RpcFsOpenStream,			RSNIL }, /* SYS_FS_OPEN		   7 */
-    { Fs_UserRead,			RSNIL }, /* SYS_FS_READ		   8 */
-    { Fs_UserWrite,			RSNIL }, /* SYS_FS_WRITE	   9 */
-    { Fs_UserClose,			RSNIL }, /* SYS_FS_CLOSE	  10 */
-    { Fs_Remove,			RSNIL }, /* SYS_FS_REMOVE	  11 */
-    { Fs_RemoveDir,			RSNIL }, /* SYS_FS_REMOVE_DIR	  12 */
-    { Fs_MakeDir,			RSNIL }, /* SYS_FS_MAKE_DIR	  13 */
-    { Fs_ChangeDir,			RSNIL }, /* SYS_FS_CHANGE_DIR	  14 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_OPEN		   7 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_READ		   8 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_WRITE	   9 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CLOSE	  10 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_REMOVE	  11 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_REMOVE_DIR	  12 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_MAKE_DIR	  13 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CHANGE_DIR	  14 */
     { RSNIL /* Proc_Wait */,		RSNIL }, /* SYS_PROC_WAIT	  15 */
     { Proc_Detach,			RSNIL }, /* SYS_PROC_DETACH	  16 */
     { Proc_GetIDs,			RSNIL }, /* SYS_PROC_GETIDS	  17 */
     { Proc_SetIDs,			RSNIL }, /* SYS_PROC_SETIDS	  18 */
-    { Proc_GetGroupIDs,			RSNIL }, /* SYS_PROC_GETGROUPIDS  19 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETGROUPIDS  19 */
     { RSNIL /* Proc_SetGroupIDs */,	RSNIL }, /* SYS_PROC_SETGROUPIDS  20 */
     { Proc_GetFamilyID,			RSNIL }, /* SYS_PROC_GETFAMILYID  21 */
-    { RSNIL /* Proc_SetFamilyID */,	RSNIL }, /* SYS_PROC_SETFAMILYID  22 */
+    { Proc_SetFamilyID,			RSNIL }, /* SYS_PROC_SETFAMILYID  22 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_RPC	  23 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_STATS	  24 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_CREATEVA	  25 */
@@ -108,8 +108,8 @@ static CallBack callBackVector[] = {
     { RSNIL /* Sig_SetAction */,	RSNIL }, /* SYS_SIG_SETACTION     30 */
     { Prof_Start,			RSNIL }, /* SYS_PROF_START	  31 */
     { Prof_End,				RSNIL }, /* SYS_PROF_END	  32 */
-    { Prof_Dump,			RSNIL }, /* SYS_PROF_DUMP	  33 */
-    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_CMD	          34 */
+    { Prof_DumpStub,			RSNIL }, /* SYS_PROF_DUMP	  33 */
+    { Vm_Cmd,				RSNIL }, /* SYS_VM_CMD	          34 */
     { Sys_GetTimeOfDay,			RSNIL }, /* SYS_SYS_GETTIMEOFDAY  35 */
     { Sys_SetTimeOfDay,			RSNIL }, /* SYS_SYS_SETTIMEOFDAY  36 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYS_DONOTHING     37 */
@@ -117,33 +117,33 @@ static CallBack callBackVector[] = {
     { RSNIL /* Vm_GetSegInfo */,	RSNIL }, /* SYS_VM_GETSEGINFO     39 */
     { Proc_GetResUsage,			RSNIL }, /* SYS_PROC_GETRESUSAGE  40 */
     { Proc_GetPriority,			RSNIL }, /* SYS_PROC_GETPRIORITY  41 */
-    { RSNIL /* Proc_SetPriority */,	RSNIL }, /* SYS_PROC_SETPRIORITY  42 */
-    { RSNIL /* Proc_Debug */,		RSNIL }, /* SYS_PROC_DEBUG	  43 */
+    { Proc_SetPriority,			RSNIL }, /* SYS_PROC_SETPRIORITY  42 */
+    { Proc_Debug,			RSNIL }, /* SYS_PROC_DEBUG	  43 */
     { RSNIL /* Not implemented */,	RSNIL }, /* SYS_PROC_PROFILE      44 */
-    { RSNIL,				RSNIL }, /* SYS_FS_TRUNC	  45 */
-    { RSNIL,		RSNIL }, /* SYS_FS_TRUNC_ID	  46 */
-    { Fs_GetNewID,			RSNIL }, /* SYS_FS_GET_NEW_ID	  47 */
-    { Fs_GetAttributes,			RSNIL }, /* SYS_FS_GET_ATTRIBUTES 48 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_TRUNC	  45 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_TRUNC_ID	  46 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_GET_NEW_ID	  47 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_GET_ATTRIBUTES 48 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_GET_ATTR_ID	  49 */
-    { Fs_SetAttributes,			RSNIL }, /* SYS_FS_SET_ATTRIBUTES 50 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_ATTRIBUTES 50 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_ATTR_ID	  51 */
-    { Fs_SetDefPermStub,		RSNIL }, /* SYS_FS_SET_DEF_PERM	  52 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_DEF_PERM	  52 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_IO_CONTROL	  53 */
     { Dev_VidEnable,			RSNIL }, /* SYS_SYS_ENABLEDISPLAY 54 */
-    { Proc_SetEnvironStub,		RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
-    { Proc_UnsetEnvironStub,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
-    { Proc_GetEnvironVarStub,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
-    { RSNIL /* Proc_GetEnvironRangeStub */, RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
-    { RSNIL /* Proc_InstallEnvironStub */,  RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
-    { Proc_CopyEnvironStub,		RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
+    { RSNIL /* obsolete */, 		RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
+    { RSNIL /* obsolete */,  		RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWLOCK 	  61 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWWAIT     62 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWBROADCAST 63 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_PAGESIZE       64 */
-    { Fs_HardLink,			RSNIL }, /* SYS_FS_HARDLINK       65 */
-    { Fs_Rename,			RSNIL }, /* SYS_FS_RENAME         66 */
-    { Fs_SymLink,			RSNIL }, /* SYS_FS_SYMLINK        67 */
-    { Fs_ReadLinkStub,			RSNIL }, /* SYS_FS_READLINK 	  68 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_HARDLINK       65 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_RENAME         66 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SYMLINK        67 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_READLINK 	  68 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CREATEPIPE     69 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_MAPKERNELINTOUSER 70 */
     { Fs_AttachDiskStub ,		RSNIL }, /* SYS_FS_ATTACH_DISK    71 */
@@ -152,9 +152,16 @@ static CallBack callBackVector[] = {
     { Proc_Migrate,			RSNIL }, /* SYS_PROC_MIGRATE	  74 */
     { Fs_MakeDeviceStub,		RSNIL }, /* SYS_FS_MAKE_DEVICE    75 */
     { Fs_CommandStub,			RSNIL }, /* SYS_FS_COMMAND        76 */
-    { RSNIL,				RSNIL }, /* SYS_FS_LOCK		  77 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_LOCK		  77 */
     { Sys_GetMachineInfo,		RSNIL }, /* SYS_GETMACHINEINFO    78 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_INSTALL_ROUTE 79 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_READVECTOR	  80 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_WRITEVECTOR	  81 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CHECKACCESS    82 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETINTERVALTIMER  83 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_SETINTERVALTIMER  84 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_WRITEBACKID    85 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_EXEC_ENV     86 */
 
 };
 
@@ -427,10 +434,6 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     childProcPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
     childProcPtr->familyID 		= parentProcPtr->familyID;
 
-#ifdef notdef
-    childProcPtr->stackStart 		= NIL;
-#endif
-
     Vm_ProcInit(childProcPtr);
 
     if (ProcFamilyInsert(childProcPtr, childProcPtr->familyID) != SUCCESS) {
@@ -455,12 +458,6 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     childProcPtr->peerHostID = parentProcPtr->peerHostID;
     
     /*
-     * Set up the environment of the process.
-     */
-
-    ProcSetupEnviron(childProcPtr);
-    
-    /*
      * Have the new process inherit filesystem state.
      */
     Fs_InheritState(parentProcPtr, childProcPtr);
@@ -477,79 +474,6 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
 	Sys_Printf("RpcProcFork returning SUCCESS.\n");
     }
     return(SUCCESS);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * RpcFsOpenStream --
- *
- *	Perform an RPC to open a file stream on the home node of a process
- *	and transfer the stream to this node.
- *
- * Results:
- *	If the RPC returns a status other than SUCCESS, that status is
- *	returned.  Otherwise, the status from deencapsulating the stream is
- *	returned.  The new stream is returned in *newStreamPtrPtr.
- *
- * Side effects:
- *	An RPC is performed and a file is opened.
- *
- * ----------------------------------------------------------------------------
- */
-
-/* ARGSUSED */
-static ReturnStatus
-RpcFsOpenStream(procPtr, dataPtr, dataLength, replyDataPtr,
-		   replyDataLengthPtr)
-    Proc_ControlBlock *procPtr;
-    Address dataPtr;
-    int dataLength;
-    Address *replyDataPtr;
-    int *replyDataLengthPtr;
-{
-    char *name;		/* The name of the file to open */
-    int useFlags;	/* Indicates read/write etc. the valid bits to include
-			 * are defined in fs.h */
-    int type;		/* If FS_FILE then any type of file can be opened,
-			 * except if useFlags includes FS_CREATE then a regular
-			 * file will be created.  Otherwise only the
-			 * specified type can be opened (or created). */
-    int permissions;	/* A mask indicating the permission bits to turn on
-			 * if the file gets created */
-    Fs_Stream *streamPtr;/* To hold stream ptr before it is encapsulated. */
-    ReturnStatus status;
-
-    if (proc_MigDebugLevel > 3) {
-	Sys_Printf("RpcFsOpenStream called.\n");
-    }
-
-    name = dataPtr;
-    dataPtr += Byte_AlignAddr(String_Length(name) + 1);
-    
-    Byte_EmptyBuffer(dataPtr, int,  useFlags);
-    Byte_EmptyBuffer(dataPtr, int,  type);
-    Byte_EmptyBuffer(dataPtr, int,  permissions);
-
-    status = Fs_Open(name, useFlags, type, permissions, &streamPtr);
-    if (status != SUCCESS) {
-	if (proc_MigDebugLevel > 3) {
-	    Sys_Printf("RpcFsOpenStream: Fs_Open returned %x.\n", status);
-	}
-	*replyDataPtr = (Address) NIL;
-	*replyDataLengthPtr = 0;
-	return(status);
-    }
-
-
-    *replyDataLengthPtr = Fs_GetEncapSize();
-    *replyDataPtr = Mem_Alloc(*replyDataLengthPtr);
-    status = Fs_EncapStream(streamPtr, *replyDataPtr);
-    if (status == SUCCESS) {
-	status = Fs_Close(streamPtr);
-    }
-    return(status);
 }
 
 
