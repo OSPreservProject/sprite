@@ -22,6 +22,8 @@
 #define _DEVOPTABLE
 
 #include "sprite.h"
+#include "user/fs.h"
+#include "devBlockDevice.h"
 
 /*
  * Device type specific operations.
@@ -37,26 +39,23 @@ typedef struct DevFsTypeOps {
     ReturnStatus (*ioControl)();
     ReturnStatus (*close)();
     ReturnStatus (*select)();
+    DevBlockDeviceHandle *((*blockDevAttach)());
 } DevFsTypeOps;
 
 extern DevFsTypeOps devFsOpTable[];
 extern int devNumDevices;
-
-/*
- * The filesystem device block I/O operation switch.
- */
-typedef struct DevFsBlockOps {
-    int 	deviceType;		/* Redundant device type info */
-    ReturnStatus (*readWrite)();	/* Block read/write routine */
-} DevFsBlockOps;
-
-extern DevFsBlockOps devFsBlockOpTable[];
 
 /*
- * A list of disk device types that is used when probing for a disk.
- * Initialized in devFsOpTable.c.
+ * DEV_TYPE_INDEX() - Compute the index into the devFsOpTable from the
+ *		      type field from of the Fs_Device structure.
  */
-extern int devFsDefaultDiskTypes[];
-extern int devNumDiskTypes;
+
+#define	DEV_TYPE_INDEX(type)	((type)&0xff)
+/*
+ * A list of disk device Fs_Device structure that is used when probing for a
+ * disk. Initialized in devConfig.c.
+ */
+extern Fs_Device devFsDefaultDiskPartitions[];
+extern int devNumDefaultDiskPartitions;
 
 #endif _DEVOPTABLE
