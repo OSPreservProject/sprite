@@ -584,12 +584,12 @@ extern void			Proc_ExitInt();
 extern void			Proc_Exit();
 extern void			Proc_DetachInt();
 extern ReturnStatus		Proc_Detach();
-extern void			ProcInformParent();	
+extern void			Proc_InformParent();	
 extern void			Proc_Reaper();
 extern void			Proc_NotifyMigratedWaiters();
 extern void			Proc_PutOnDebugList();
-extern void			Proc_Suspend();
-extern void			Proc_Resume();
+extern void			Proc_SuspendProcess();
+extern void			Proc_ResumeProcess();
 extern int			Proc_ExecEnv();
 
 
