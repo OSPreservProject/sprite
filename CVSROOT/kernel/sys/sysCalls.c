@@ -235,16 +235,18 @@ Sys_Shutdown(flags, rebootString)
     }
 
     if (flags & SYS_KILL_PROCESSES) {
-	/*
-	 * Do a few initial syncs.
-	 * These are necessary because the cache isn't getting written
-	 * out properly with the new block cleaner.
-	 */
-	printf("Doing initial syncs\n");
-	Fsutil_Sync(-1, 0);
-	Fsutil_Sync(-1, 0);
-	Fsutil_Sync(-1, 0);
-	printf("Done initial syncs\n");
+	if (flags & SYS_WRITE_BACK) { 
+	    /*
+	     * Do a few initial syncs.
+	     * These are necessary because the cache isn't getting written
+	     * out properly with the new block cleaner.
+	     */
+	    printf("Doing initial syncs\n");
+	    Fsutil_Sync(-1, 0);
+	    Fsutil_Sync(-1, 0);
+	    Fsutil_Sync(-1, 0);
+	    printf("Done initial syncs\n");
+	}
 	/*
 	 * Turn ourselves into a kernel process since we no longer need
 	 * user process resources.
