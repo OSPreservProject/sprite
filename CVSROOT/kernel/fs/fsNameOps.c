@@ -112,7 +112,11 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
      */
     procPtr = Proc_GetEffectiveProc();
     openArgs.useFlags		= useFlags;
-    openArgs.permissions	= permissions & procPtr->fsPtr->filePermissions;
+    if (type != FS_SYMBOLIC_LINK && type != FS_REMOTE_LINK) {
+	openArgs.permissions	= permissions & procPtr->fsPtr->filePermissions;
+    } else {
+	openArgs.permissions	= permissions;
+    }
     openArgs.type		= type;
     openArgs.clientID		= rpc_SpriteID;
     FsSetIDs(procPtr, &openArgs.id);
@@ -507,6 +511,13 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
 	 */
 	status = (*fsStreamOpTable[ioFileID.type].getIOAttr)
 			(&ioFileID, rpc_SpriteID, attrPtr);
+#ifdef lint
+	status = FsRemoteGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
+	status = FsRmtFileGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
+	status = FsDeviceGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
+	status = FsPipeGetIOAttr(&ioFileID, rpc_SpriteID, attrPtr);
+#endif lint
+
     }
     return(status);
 }
@@ -534,10 +545,11 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fs_SetAttributes(pathName, fileOrLink, attrPtr)
+Fs_SetAttributes(pathName, fileOrLink, attrPtr, flags)
     char *pathName;
-    int fileOrLink;		/* FS_ATTRIB_FILE or FS_ATTRIB_LINK */
+    int fileOrLink;
     Fs_Attributes *attrPtr;
+    int flags;
 {
     register ReturnStatus status;
     FsSetAttrArgs setAttrArgs;		/* Bundled openArgs and attributes */
@@ -546,7 +558,7 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr)
 
     openArgsPtr = &setAttrArgs.openArgs;
     openArgsPtr->useFlags = FS_OWNERSHIP;
-    if (fileOrLink == FS_ATTRIB_LINK) {
+    if (fileOrLink == FS_ATTRIB_FILE) {
 	openArgsPtr->useFlags |= FS_FOLLOW;
     }
     openArgsPtr->permissions = 0;
@@ -558,6 +570,7 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr)
      * This copy is done here to avoid doing it in the client RPC stub.
      */
     setAttrArgs.attr = *attrPtr;
+    setAttrArgs.flags = flags;
 
     /*
      * Set the attributes at the name server.  We get in return a fileID
@@ -571,7 +584,14 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr)
 	 * Set the attributes at the I/O server.
 	 */
 	status = (*fsStreamOpTable[ioFileID.type].setIOAttr)
-			(&ioFileID, attrPtr);
+			(&ioFileID, attrPtr, flags);
+#ifdef lint
+	status = FsRemoteSetIOAttr(&ioFileID, attrPtr, flags);
+	status = FsRmtFileSetIOAttr(&ioFileID, attrPtr, flags);
+	status = FsDeviceSetIOAttr(&ioFileID, attrPtr, flags);
+	status = FsPipeSetIOAttr(&ioFileID, attrPtr, flags);
+#endif lint
+
     }
     if (status == SUCCESS) {
 	fsStats.gen.numSetAttrs ++;

@@ -297,7 +297,7 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      */
     FsHandleUnlock(handlePtr);
     status = FsLocalSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
-			    &openArgsPtr->id);
+			    &openArgsPtr->id, setAttrArgsPtr->flags);
     FsHandleLock(handlePtr);
     /*
      * Get the I/O handle so our client can contact the I/O server.
