@@ -552,6 +552,9 @@ exit:
 	statePtr->transmitting = FALSE;
 	NetLEReset(statePtr->interPtr);
     }
+    if (status != SUCCESS) {
+	statePtr->transmitting = FALSE;
+    }
     return (status);
 }
 
