@@ -19,12 +19,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTimer.h"
 #include "timer.h"
 #include "sync.h"
-#include "vmMach.h"
 #include "sys.h"
 #include "byte.h"
 #include "dbg.h"
-#include "sunMon.h"
-#include "machine.h"
+#include "mach.h"
 
 /*
  *  The basic philosophy is that processes that have not executed
@@ -434,8 +432,7 @@ Sched_ContextSwitchInt(state)
      * Perform the hardware context switch.  After switching, make
      * sure that there is a context for this process.
      */
-    dbgMaxStackAddr = newProcPtr->stackStart + mach_KernStackSize;
-    VmMach_ContextSwitch(curProcPtr, newProcPtr);
+    Mach_ContextSwitch(curProcPtr, newProcPtr);
 }
 
 
@@ -739,11 +736,11 @@ Sched_ContextSwitch(state)
 /*
  *----------------------------------------------------------------------
  *
- * Sched_StartProcess --
+ * Sched_StartKernProc --
  *
- *	Start a process by unlocking the master lock and returning.  The
- *	stack is arranged so that this procedure will return into the
- *	procedure that is to be invoked.
+ *	Start a process by unlocking the master lock and calling the
+ *	function whose address has been passed to us as an argument.
+ *	If the function returns then exit.
  *
  *
  * Results:
@@ -754,11 +751,13 @@ Sched_ContextSwitch(state)
  *
  *----------------------------------------------------------------------
  */
-
 void
-Sched_StartProcess()
+Sched_StartKernProc(func)
+    void	(*func)();
 {
     MASTER_UNLOCK(sched_Mutex);
+    func();
+    Proc_Exit(0);
 }
 
 
@@ -807,7 +806,9 @@ Sched_MakeReady(procPtr)
  */
 
 void
-Sched_StartUserProc()
+Sched_StartUserProc(pc)
+    Address	pc;	/* Program counter where process is to start
+			 * executing. */
 {
     register     	Proc_ControlBlock *procPtr;
 
@@ -819,20 +820,7 @@ Sched_StartUserProc()
     Proc_Unlock(procPtr);
     
     /*
-     * Disable interrupts.  Note we don't use the macro DISABLE_INTR because
-     * there is an implicit enable interrupt on return to user space.
-     */
-    Sys_DisableIntr();
-
-    /*
-     * We need the user proc to return the return code that indicates that
-     * this is the child and not the parent.
-     */
-    procPtr->genRegs[D0] = PROC_CHILD_PROC;
-
-    /*
      * Start the process running.  This does not return.
      */
-    Proc_RunUserProc(procPtr->genRegs, procPtr->progCounter, Proc_Exit,
-		     procPtr->stackStart + mach_ExecStackOffset);
+    Mach_StartUserProc(procPtr, pc);
 }
