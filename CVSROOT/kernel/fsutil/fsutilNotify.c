@@ -25,6 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"
 #include "sync.h"
 #include "rpc.h"
+#include "net.h"
 
 static Sync_Lock notifyLock;
 #define LOCKPTR (&notifyLock)
@@ -161,6 +162,10 @@ FsWaitListNotify(list)
 	    /*
 	     * Contact the remote host and get it to notify the waiter.
 	     */
+	    if (waitPtr->hostID > NET_NUM_SPRITE_HOSTS) {
+		Sys_Panic(SYS_FATAL, "FsWaitListNotify bad hostID %d (continue-able)\n",
+		waitPtr->hostID);
+	    }
 	    (void)Sync_RemoteNotify(waitPtr);
 	} else {
 	    /*
