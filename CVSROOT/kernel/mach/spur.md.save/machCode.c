@@ -388,6 +388,10 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC, user)
 				     MACH_KPSW_ERROR_TRAP_ENA |
 				     MACH_KPSW_INTR_TRAP_ENA);
     /*
+     * Clear the upsw so the kernel doesn't take random user traps.
+     */
+    statePtr->switchRegState.upsw = 0;
+    /*
      * MachContextSwitch does a "return curPC,$8" so the starting address
      * should be startFunc - 8.
      */
@@ -1117,15 +1121,21 @@ MachVMPCFault(faultType, PC, kpsw)
     int		kpsw;		/* The KPSW at the time of the fault. */
 {
     Proc_ControlBlock	*procPtr;
+    extern int	etext;
 
     if ((kpsw & MACH_KPSW_PREV_MODE) == 0) {
-	extern int	etext;
 	if (PC > (Address)&etext || PC < (Address)VMMACH_PAGE_SIZE) {
 	    return(MACH_KERN_ACCESS_VIOL);
 	} else {
 	    return(MACH_NORM_RETURN);
 	}
     } else {
+	/*
+  	 * Can't fault on kernel PC. 
+	 */
+	if (PC < (Address)&etext && PC > (Address)VMMACH_PAGE_SIZE) {
+	    return(MACH_NORM_RETURN);
+	}
 	if (faultType & MACH_VM_FAULT_REF_BIT) {
 	    VmMach_SetRefBit(PC);
 	    return(MACH_NORM_RETURN);
