@@ -150,7 +150,7 @@ Dump_Init()
     Dev_KbdQueueAttachProc('c', Fs_DumpCacheStats, (ClientData)0);
     /* 'd' is reserved for putting a machine into the debugger */
     Dev_KbdQueueAttachProc('e', DumpTimerStats,   (ClientData) 'e');
-    Dev_KbdQueueAttachProc('f', Fs_PrintTrace,   (ClientData) 50);
+    Dev_KbdQueueAttachProc('f', Fs_PrintTrace,   (ClientData) -1);
     Dev_KbdQueueAttachProc('h', Fs_NameHashStats, (ClientData)fsNameTablePtr);
     Dev_KbdQueueAttachProc('k', Dev_ConsoleReset, (ClientData) TRUE);
     Dev_KbdQueueAttachProc('l', Dev_ConsoleReset, (ClientData) FALSE);
