@@ -328,8 +328,11 @@ Fs_Command(command, bufSize, buffer)
 	    break;
 	}
 	case FS_RETURN_STATS: {
-	    if (bufSize >= sizeof(FsStats)) {
-		bcopy((Address) &fsStats, buffer, sizeof(FsStats));
+	    if (bufSize > 0) {
+		if (size > sizeof(FsStats) {
+		    size = sizeof(FsStats);
+		}
+		bcopy((Address) &fsStats, buffer, size);
 		status = SUCCESS;
 	    } else {
 		status = FS_INVALID_ARG;
