@@ -136,8 +136,6 @@ Dev_SCSIInitController(cntrlrPtr)
     DevConfigController *cntrlrPtr;	/* Config info for the controller */
 {
     DevSCSIController *scsiPtr;		/* SCSI specific state */
-    static Sync_Semaphore mutexInit	/* Used to initialize mutex field */
-	= SYNC_SEMAPHORE_INIT("scsiPtr->mutex");
 
     /*
      * Allocate space for SCSI specific state and
@@ -188,7 +186,7 @@ Dev_SCSIInitController(cntrlrPtr)
      * state to alive and not busy.
      */
     scsiPtr->flags = SCSI_CNTRLR_ALIVE;
-    scsiPtr->mutex = mutexInit;
+    SYNC_SEM_INIT_DYNAMIC(&scsiPtr->mutex,"scsiPtr->mutex");   
     scsiPtr->IOComplete.waiting = 0;
     scsiPtr->readyForIO.waiting = 0;
     scsiPtr->configPtr = cntrlrPtr;

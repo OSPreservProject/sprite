@@ -110,6 +110,7 @@ Dev_XylogicsInitController(cntrlrPtr)
     register DevXylogicsRegs *regsPtr;	/* Control registers for Xylogics */
     int x;				/* Used when probing the controller */
 
+
     /*
      * Allocate and initialize the controller state info.
      */
@@ -179,7 +180,7 @@ Dev_XylogicsInitController(cntrlrPtr)
      * Initialize synchronization variables and set the controllers
      * state to alive and not busy.
      */
-    xyPtr->mutex = 0;
+    SYNC_SEM_INIT_DYNAMIC(&xyPtr->mutex,"xyPtr->mutex");
     xyPtr->IOComplete.waiting = 0;
     xyPtr->readyForIO.waiting = 0;
     xyPtr->flags = XYLOGICS_CNTRLR_ALIVE;
@@ -661,7 +662,7 @@ DevXylogicsSectorIO(command, diskPtr, diskAddrPtr, numSectorsPtr, buffer)
      * processes that are trying to initiate I/O with this controller.
      */
     xyPtr = diskPtr->xyPtr;
-    MASTER_LOCK(xyPtr->mutex);
+    MASTER_LOCK(&xyPtr->mutex);
     if (command == XY_READ) {
 	xyPtr->configPtr->diskReads++;
     } else {
@@ -723,7 +724,7 @@ retry:
     }
     xyPtr->flags &= ~XYLOGICS_CNTRLR_BUSY;
     Sync_MasterBroadcast(&xyPtr->readyForIO);
-    MASTER_UNLOCK(xyPtr->mutex);
+    MASTER_UNLOCK(&xyPtr->mutex);
     /*
      * Voluntarily give up the CPU in case anyone else wants to use the
      * disk.

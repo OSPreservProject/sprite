@@ -265,7 +265,7 @@ typedef struct DevXylogicsController {
     int			residual;	/* Bytes left over after a transfer */
     Address		labelBuffer;	/* For copy of sector zero */
     Address		IOBuffer;	/* The buffer for reads/writes */
-    int			mutex;		/* Mutex for queue access */
+    Sync_Semaphore	mutex;		/* Mutex for queue access */
     Sync_Condition	IOComplete;	/* Synchronization stuff... */
     Sync_Condition	readyForIO;
     /*

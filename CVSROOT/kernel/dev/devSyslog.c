@@ -30,7 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Definition of mutual exclusion variable.
  */
-static int	syslogMutex = 0;
+static Sync_Semaphore	syslogMutex = SYNC_SEM_INIT_STATIC("syslogMutex");
 /*
  * Monitored circular buffer of data written out by the kernel.
  */
@@ -71,16 +71,16 @@ Dev_SyslogOpen(devicePtr, useFlags, token)
     ClientData token;		/* Used for Fs call-back to notify waiting
 				 * processes that the syslog device is ready.*/
 {
-    MASTER_LOCK(syslogMutex);
+    MASTER_LOCK(&syslogMutex);
     if (useFlags & FS_READ) {
 	if (openForReading) {
-	    MASTER_UNLOCK(syslogMutex);
+	    MASTER_UNLOCK(&syslogMutex);
 	    return(FAILURE);
 	}
 	openForReading = TRUE;
     }
     notifyToken = token;
-    MASTER_UNLOCK(syslogMutex);
+    MASTER_UNLOCK(&syslogMutex);
     return(SUCCESS);
 }
 
@@ -118,11 +118,11 @@ Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
     origSize = *lenPtr;
     bytesLeft = *lenPtr;
 
-    MASTER_LOCK(syslogMutex);
+    MASTER_LOCK(&syslogMutex);
     overflow = FALSE;
     if (firstIndex == -1) {
 	*lenPtr = 0;
-	MASTER_UNLOCK(syslogMutex);
+	MASTER_UNLOCK(&syslogMutex);
 	return(FS_WOULD_BLOCK);
     }
     if (firstIndex > lastIndex) {
@@ -151,7 +151,7 @@ Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
 	bcopy(copyAddr, bufPtr,toRead);
 	bytesLeft -= toRead;
     }
-    MASTER_UNLOCK(syslogMutex);
+    MASTER_UNLOCK(&syslogMutex);
     *lenPtr = origSize - bytesLeft;
     return(SUCCESS);
 }
@@ -196,7 +196,7 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
 	    *bytesWrittenPtr = bufSize;
 	    return(SUCCESS);
 	}
-	MASTER_LOCK(syslogMutex);
+	MASTER_LOCK(&syslogMutex);
     }
 
     origSize = bufSize;
@@ -249,7 +249,7 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
     }
     if (!dbg_UsingSyslog) {
 	Fs_NotifyReader(notifyToken);
-	MASTER_UNLOCK(syslogMutex);
+	MASTER_UNLOCK(&syslogMutex);
     }
     *bytesWrittenPtr = origSize - bufSize;
     return(SUCCESS);
@@ -308,7 +308,7 @@ Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
 {
     int	i;
 
-    MASTER_LOCK(syslogMutex);
+    MASTER_LOCK(&syslogMutex);
     if (useFlags & FS_READ) {
 	openForReading = FALSE;
 	if (firstIndex != -1) {
@@ -328,7 +328,7 @@ Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
 	    lastIndex = -1;
 	}
     }
-    MASTER_UNLOCK(syslogMutex);
+    MASTER_UNLOCK(&syslogMutex);
 }
 
 
@@ -360,7 +360,7 @@ Dev_SyslogIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 {
     ReturnStatus	status = SUCCESS;
 
-    MASTER_LOCK(syslogMutex);
+    MASTER_LOCK(&syslogMutex);
     switch (command) {
 	case	IOC_REPOSITION:
 	    /*
@@ -383,7 +383,7 @@ Dev_SyslogIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 	default:
 	    status = GEN_NOT_IMPLEMENTED;
     }
-    MASTER_UNLOCK(syslogMutex);
+    MASTER_UNLOCK(&syslogMutex);
     return(status);
 }
 
@@ -410,7 +410,7 @@ Dev_SyslogSelect(devicePtr, inFlags, outFlagsPtr)
     int			inFlags;
     int			*outFlagsPtr;
 {
-    MASTER_LOCK(syslogMutex);
+    MASTER_LOCK(&syslogMutex);
     if (inFlags & FS_READABLE) {
 	if (lastIndex != -1) {
 	    *outFlagsPtr |= FS_READABLE;
@@ -421,7 +421,7 @@ Dev_SyslogSelect(devicePtr, inFlags, outFlagsPtr)
 	    *outFlagsPtr |= FS_WRITABLE;
 	}
     }
-    MASTER_UNLOCK(syslogMutex);
+    MASTER_UNLOCK(&syslogMutex);
     return(SUCCESS);
 }
 

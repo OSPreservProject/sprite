@@ -100,7 +100,7 @@ static Boolean initList = FALSE;
 /*
  * A master lock is used to synchronize access to the list of protocols.
  */
-static int protoMutex;
+static Sync_Semaphore protoMutex = SYNC_SEM_INIT_STATIC("protoMutex");
 
 
 /*
@@ -135,7 +135,7 @@ DevNet_FsOpen(devicePtr, useFlags, data)
     register unsigned int protocol;
     ReturnStatus status = SUCCESS;
 
-    MASTER_LOCK(protoMutex);
+    MASTER_LOCK(&protoMutex);
     if (!initList) {
 	List_Init(&etherProtos);
 	initList = TRUE;
@@ -200,7 +200,7 @@ exit:
 			devicePtr->unit, status);
     }
 
-    MASTER_UNLOCK(protoMutex);
+    MASTER_UNLOCK(&protoMutex);
     return(status);
 }
 
@@ -234,7 +234,7 @@ DevNetEtherHandler(packetPtr, size)
     register ProtocolState *protoPtr;
     register Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)packetPtr;
 
-    MASTER_LOCK(protoMutex);
+    MASTER_LOCK(&protoMutex);
     if (!initList) {
 	List_Init(&etherProtos);
 	initList = TRUE;
@@ -259,7 +259,7 @@ DevNetEtherHandler(packetPtr, size)
 	    break;
 	}
     }
-    MASTER_UNLOCK(protoMutex);
+    MASTER_UNLOCK(&protoMutex);
 }
 
 /*
@@ -299,7 +299,7 @@ DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
 
     protoPtr = (ProtocolState *)devicePtr->data;
 
-    MASTER_LOCK(protoMutex);
+    MASTER_LOCK(&protoMutex);
     if (QueueEmpty(protoPtr->queue)) {
 	size = 0;
 	status = FS_WOULD_BLOCK;
@@ -326,7 +326,7 @@ DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
     }
 
     *lenPtr = size;
-    MASTER_UNLOCK(protoMutex);
+    MASTER_UNLOCK(&protoMutex);
     return(status);
 }
 
@@ -415,7 +415,7 @@ DevNet_FsClose(devicePtr, useFlags, openCount, writerCount)
 {
     ProtocolState *protoPtr;
 
-    MASTER_LOCK(protoMutex);
+    MASTER_LOCK(&protoMutex);
 
     protoPtr = (ProtocolState *)devicePtr->data;
     protoPtr->open = FALSE;
@@ -424,7 +424,7 @@ DevNet_FsClose(devicePtr, useFlags, openCount, writerCount)
      * Nuke the queue here?
      */
 
-    MASTER_UNLOCK(protoMutex);
+    MASTER_UNLOCK(&protoMutex);
     return(SUCCESS);
 }
 
@@ -457,7 +457,7 @@ DevNet_FsSelect(devicePtr, inFlags, outFlagsPtr)
 {
     register ProtocolState *protoPtr;
 
-    MASTER_LOCK(protoMutex);
+    MASTER_LOCK(&protoMutex);
     protoPtr = (ProtocolState *)devicePtr->data;
 
     *outFlagsPtr = 0;
@@ -469,7 +469,7 @@ DevNet_FsSelect(devicePtr, inFlags, outFlagsPtr)
 	    *outFlagsPtr |= FS_READABLE;
 	}
     }
-    MASTER_UNLOCK(protoMutex);
+    MASTER_UNLOCK(&protoMutex);
     return(SUCCESS);
 }
 
