@@ -54,6 +54,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 				 PROC_MAX_ENVIRON_VALUE_LENGTH)
 #endif /*  PROC_MAX_ENVIRON_LENGTH */
 
+/* 
+ * Maximum number of argument to an interpreter: script name, interpreter 
+ * flags, script name (again), and nil pointer to end the array.
+ */
+#define MAX_INTERP_ARGS		4
+
 #define UNIX_CODE 1
 
 typedef struct {
@@ -129,9 +135,9 @@ typedef struct {
 static ReturnStatus 	DoExec _ARGS_((char fileName[], 
 			    UserArgs *userArgsPtr, 
 			    ExecEncapState **encapPtrPtr, Boolean debugMe));
-static ReturnStatus 	SetupInterpret _ARGS_((register char *buffer, 
-			    int sizeRead, register Fs_Stream **filePtrPtr, 
-			    char **argPtrPtr, int *extraArgsPtr, 
+static ReturnStatus 	SetupInterpret _ARGS_((char *buffer, 
+			    int sizeRead, Fs_Stream **filePtrPtr, 
+			    char **interpNamePtr, char **interpFlagsPtr, 
 			    ProcObjInfo *objInfoPtr));
 static ReturnStatus 	SetupArgs _ARGS_((UserArgs *userArgsPtr, 
 			    char **extraArgArray, Address *argStackPtr, 
@@ -941,10 +947,10 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     Fs_Stream				*filePtr;
     ReturnStatus			status;
     char				buffer[PROC_MAX_INTERPRET_SIZE];
-    int					extraArgs = 0;
-    char				*shellArgPtr;
-    char				*extraArgsArray[2];
-    char				**extraArgsPtrPtr;
+    Boolean				interpreted = FALSE;
+    char				*interpName;
+    char				*interpFlags;
+    char				*interpArgs[MAX_INTERP_ARGS];
     int					argBytes;
     Address				userStackPointer;
     Boolean				usedFile;
@@ -1030,17 +1036,18 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	     * See if this is an interpreter file.
 	     */
 	    status = SetupInterpret(buffer, sizeRead, &filePtr, 
-				    &shellArgPtr, &extraArgs, &objInfo); 
+				    &interpName, &interpFlags, &objInfo); 
 	    if (status != SUCCESS) {
 		filePtr = (Fs_Stream *)NIL;
 		goto execError;
 	    }
+	    interpreted = TRUE;
 	    codeSegPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
 	} else {
 	    if (sizeRead < sizeof(ProcExecHeader) ||
 		ProcGetObjInfo(filePtr, (ProcExecHeader *)buffer, &objInfo) != SUCCESS) {
 		    if(ProcIsObj(filePtr,1)==SUCCESS) {
-			status = FS_NO_ACCESS;
+			status = GEN_EINVAL;
 		    } else {
 			status = PROC_BAD_AOUT_FORMAT;
 		    }
@@ -1052,35 +1059,32 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     if (!importing) {
 	/*
 	 * Set up whatever special arguments we might have due to an
-	 * interpreter file.  If the
+	 * interpreter file.
 	 */
-	if (extraArgs > 0) {
-	    int i;
-	    int index;
+	if (interpreted) {
+	    int index = 0;	/* index into array of interpreter args */
 
 	    if (userArgsPtr->argPtrArray == (char **) NIL) {
-		extraArgsArray[0] = fileName;
-		index = 1;
-	    } else {
-		index = 0;
+		interpArgs[index] = fileName;
+		++index;
 	    }
-	    for (i = index; extraArgs > 0; i++, extraArgs--) {
-		if (extraArgs == 2) {
-		    extraArgsArray[i] = shellArgPtr;
-		} else {
-		    extraArgsArray[i] = fileName;
-		}
+	    if (interpFlags != (char *)NIL) {
+		interpArgs[index] = interpFlags;
+		++index;
 	    }
-	    extraArgsArray[i] = (char *) NIL;
-	    extraArgsPtrPtr = extraArgsArray;
-	} else {
-	    extraArgsPtrPtr = (char **) NIL;
-	}
+	    interpArgs[index] = fileName;
+	    ++index;
+	    interpArgs[index] = (char *) NIL;
+	    if (index >= MAX_INTERP_ARGS) {
+		panic("DoExec: need bigger array for interpreter args.\n");
+	    }
+	} 
 	/*
 	 * Copy in the argument list and environment into a single contiguous
 	 * buffer.
 	 */
-	status = SetupArgs(userArgsPtr, extraArgsPtrPtr,
+	status = SetupArgs(userArgsPtr,
+			   (interpreted ? interpArgs : (char **)NIL),
 			   &argBuffer, &argString);
 
 	if (status != SUCCESS) {
@@ -1344,19 +1348,20 @@ execError:
  */ 
 
 static ReturnStatus
-SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr, 
-	       extraArgsPtr, objInfoPtr)
+SetupInterpret(buffer, sizeRead, filePtrPtr, interpNamePtr, 
+	       interpFlagsPtr, objInfoPtr)
     register	char	*buffer;	/* Bytes read in from file.*/
     int			sizeRead;	/* Number of bytes in buffer. */	
     register	Fs_Stream **filePtrPtr;	/* IN/OUT parameter: Exec'd file as 
 					 * input, interpreter file as output. */
-    char		**argPtrPtr;	/* Pointer to shell argument string. */
-    int			*extraArgsPtr;	/* Number of arguments that have to be
-					 * added for the intepreter. */
+    char		**interpNamePtr; /* OUT: name of interpreter file. */
+    char		**interpFlagsPtr;/* OUT: single flags string to 
+					  * pass to interpreter, possibly 
+					  * NIL */ 
     ProcObjInfo		*objInfoPtr;	/* Place to put obj file info. */
 {
     register	char	*strPtr;
-    char		*shellNamePtr;
+    char		*interpName; /* name of the interpreter */
     int			i;
     ReturnStatus	status;
     ProcExecHeader	execHeader;
@@ -1385,15 +1390,17 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
     if (*strPtr == '\0') {
 	return(PROC_BAD_FILE_NAME);
     }
-    shellNamePtr = strPtr;
+    interpName = strPtr;
+    *interpNamePtr = interpName;
     while (!isspace(*strPtr) && *strPtr != '\0') {
 	strPtr++;
     }
-    *extraArgsPtr = 1;
 
     /*
      * Get a pointer to the arguments if there are any.
      */
+
+    *interpFlagsPtr = (char *)NIL;
 
     if (*strPtr != '\0') {
 	*strPtr = '\0';
@@ -1402,8 +1409,7 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
 	    strPtr++;
 	}
 	if (*strPtr != '\0') {
-	    *argPtrPtr = strPtr;
-	    *extraArgsPtr = 2;
+	    *interpFlagsPtr = strPtr;
 	}
     }
 
@@ -1411,7 +1417,7 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
      * Open the interpreter to exec and read the a.out header.
      */
 
-    status = Fs_Open(shellNamePtr, FS_EXECUTE | FS_FOLLOW, FS_FILE, 0,
+    status = Fs_Open(interpName, FS_EXECUTE | FS_FOLLOW, FS_FILE, 0,
 		     filePtrPtr);
     if (status != SUCCESS) {
 	return(status);
@@ -1426,7 +1432,7 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
     }
     if (status != SUCCESS) {
 	if(ProcIsObj(*filePtrPtr,1)==SUCCESS) {
-	    status = FS_NO_ACCESS;
+	    status = GEN_EINVAL;
 	} else {
 	    status = PROC_BAD_AOUT_FORMAT;
 	}
