@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "sched.h"
 #include "vm.h"
+#include "vmMach.h"
 
 /*
  *  Number of processors in the system.
@@ -1347,7 +1348,7 @@ HandleItAgain:
 		 */ 
 		if (Vm_CopyOut(MACH_SAVED_WINDOW_SIZE,
 			(Address)(machStatePtr->savedRegs[i]),
-			machStatePtr->savedSps[i]) != SUCCESS) {
+			(Address)(machStatePtr->savedSps[i])) != SUCCESS) {
 		    printf("MachUserAction: pid 0x%x being killed: %s 0x%x.\n",
 			    procPtr->processID, "bad stack pointer?",
 			    machStatePtr->savedSps[i]);
