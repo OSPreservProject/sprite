@@ -23,7 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "sys.h"
 
-static	Sync_Lock nameHashLock = {0, 0};
+static	Sync_Lock nameHashLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR	&nameHashLock
 
 

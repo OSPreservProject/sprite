@@ -149,8 +149,7 @@ FsConsistInit(consistPtr, hdrPtr)
     consistPtr->lastWriter = -1;
     consistPtr->openTimeStamp = 0;
     consistPtr->hdrPtr = hdrPtr;
-    consistPtr->lock.inUse = 0;
-    consistPtr->lock.waiting = 0;
+    SYNC_LOCK_INIT_DYNAMIC(&consistPtr->lock);
     consistPtr->consistDone.waiting = 0;
     consistPtr->repliesIn.waiting = 0;
     List_Init(&consistPtr->clientList);

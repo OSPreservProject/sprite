@@ -33,7 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Monitor to synchronize access to the openInstance in GetFileID.
  */
-static	Sync_Lock	pipeLock = {0, 0};
+static	Sync_Lock	pipeLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR	&pipeLock
 
 /*

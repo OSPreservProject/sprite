@@ -64,9 +64,7 @@ FsFileDescAllocInit(domainPtr)
 {
     register ReturnStatus	status;
 
-    domainPtr->fileDescLock.inUse = 0;
-    domainPtr->fileDescLock.waiting = 0;
-
+    SYNC_LOCK_INIT_DYNAMIC(&(domainPtr->fileDescLock));
     /*
      * Allocate the bit map.
      */

@@ -93,7 +93,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Monitor lock.
  */
-static Sync_Lock	cacheLock = {0, 0};
+static Sync_Lock	cacheLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR	&cacheLock
 
 /*
@@ -271,6 +271,7 @@ FsCacheInfoInit(cacheInfoPtr, hdrPtr, version, cacheable, attrPtr)
     cacheInfoPtr->numDirtyBlocks = 0;
     cacheInfoPtr->lastTimeTried = 0;
     cacheInfoPtr->attr = *attrPtr;
+    SYNC_LOCK_INIT_DYNAMIC(&cacheInfoPtr->lock);
 }
 
 

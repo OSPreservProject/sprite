@@ -32,7 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsNamedPipe.h"
 #include "hash.h"
 
-static Sync_Lock fileHashLock = {0, 0};
+static Sync_Lock fileHashLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR	&fileHashLock
 
 /*

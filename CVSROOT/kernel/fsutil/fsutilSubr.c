@@ -47,7 +47,7 @@ Fs_RpcRequest()
 /*
  * Monitor for OkToScavenge and DoneScavenge
  */
-static Sync_Lock scavengeLock;
+static Sync_Lock scavengeLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&scavengeLock)
 
 Boolean OkToScavenge();

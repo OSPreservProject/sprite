@@ -49,7 +49,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static List_Links prefixListHeader;
 static List_Links *prefixList = &prefixListHeader;
 
-static Sync_Lock prefixLock;
+static Sync_Lock prefixLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&prefixLock)
 
 /*

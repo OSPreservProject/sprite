@@ -294,7 +294,8 @@ void
 FsRecoveryInit(recovPtr)
     register FsRecoveryInfo	*recovPtr;	/* Recovery state */
 {
-    bzero((Address) recovPtr, sizeof(FsRecoveryInfo)); 
+    bzero((Address) recovPtr, sizeof(FsRecoveryInfo));
+    SYNC_LOCK_INIT_DYNAMIC(&(recovPtr->lock));
 }
 
 /*

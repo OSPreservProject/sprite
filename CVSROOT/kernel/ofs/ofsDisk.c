@@ -52,7 +52,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 FsDomain *fsDomainTable[FS_MAX_LOCAL_DOMAINS];
 static int domainTableIndex = 0;
 
-Sync_Lock	domainTableLock;
+Sync_Lock	domainTableLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&domainTableLock)
 /*
  * Forward declarations.

@@ -44,7 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Monitor to synchronize access to the streamCount variable.
  */
-static	Sync_Lock	streamLock = {0, 0};
+static	Sync_Lock	streamLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&streamLock)
 
 static int	streamCount;	/* Used to generate fileIDs for streams*/

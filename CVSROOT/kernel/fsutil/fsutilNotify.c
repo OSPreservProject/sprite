@@ -27,7 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "net.h"
 
-static Sync_Lock notifyLock;
+static Sync_Lock notifyLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&notifyLock)
 
 

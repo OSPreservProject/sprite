@@ -61,6 +61,7 @@ FsReadAheadInit(readAheadPtr)
     register	FsReadAheadInfo *readAheadPtr;
 {
     bzero((Address) readAheadPtr, sizeof(FsReadAheadInfo));
+    SYNC_LOCK_INIT_DYNAMIC(&(readAheadPtr->lock));
 }
 
 /*

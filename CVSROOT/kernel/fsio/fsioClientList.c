@@ -50,7 +50,7 @@ typedef struct {
     int		clientID;
 } ClientItem;
 
-static Sync_Lock clientLock;
+static Sync_Lock clientLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&clientLock)
 void ClientOpenInt();
 

@@ -175,8 +175,7 @@ FsLocalBlockAllocInit(domainPtr)
     int				*fragOffsetPtr;
     ReturnStatus		status;
 
-    domainPtr->dataBlockLock.inUse = 0;
-    domainPtr->dataBlockLock.waiting = 0;
+    SYNC_LOCK_INIT_DYNAMIC(&(domainPtr->dataBlockLock));
     /*
      * Ensure some free disk space for disk block allocation.
      */
