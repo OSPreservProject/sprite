@@ -51,7 +51,6 @@ extern int recov_PrintLevel;
  * Recov_{G,S}etHostState calls:
  *	RECOV_STATE_UNKNOWN	Initial state.
  *	RECOV_HOST_ALIVE	Set when we receive a message from the host
- *	RECOV_HOST_DYING	Set when an RPC times out.
  *	RECOV_HOST_DEAD		Set when crash callbacks have been started.
  *	RECOV_HOST_BOOTING	Set in the limbo period when a host is booting
  *				and talking to the world, but isn't ready
@@ -73,7 +72,7 @@ extern int recov_PrintLevel;
  */
 #define RECOV_STATE_UNKNOWN	0x0
 #define RECOV_HOST_ALIVE	0x1
-#define RECOV_HOST_DYING	0x2
+/* Space here now. */
 #define RECOV_HOST_DEAD		0x4
 
 #define RECOV_HOST_BOOTING	0x10
@@ -85,13 +84,6 @@ extern int recov_PrintLevel;
 #define RECOV_WANT_RECOVERY	0x0200
 #define RECOV_PINGING_HOST	0x0400
 #define RECOV_REBOOT_CALLBACKS	0x0800
-
-/*
- * If dying_state is not defined then crash callbacks are made
- * immidiately after a timeout.  Otherwise the host lingers in
- * the RECOV_HOST_DYING state for recov_CrashDelay seconds.
- */
-#undef dying_state
 
 /*
  * Host state flags for use by Recov clients.  These flags are set
@@ -150,6 +142,15 @@ typedef struct RecovTraceRecord {
  *	RECOV_CUZ_PING_CHK	We are pinging the host to check it out
  *	RECOV_CUZ_PING_ASK	We are pinging the host because we were asked
  *	RECOV_CUZ_CRASH_UNDETECTED	Crash wasn't detected until reboot
+ *	RECOV_CUZ_SCHED_CALLBACK	Called Proc_CallFunc to schedule
+ *					reboot callbacks.
+ *	RECOV_CUZ_DONE_CALLBACKS	Called CallBacksDone. 
+ *	RECOV_CUZ_FAILURE	RECOV_FAILURE was detected in CallBacksDone.
+ *	RECOV_CUZ_WAS_BOOTING	Got alive packet when in booting state.
+ *	RECOV_CUZ_NOW_BOOTING	Got booting packet when in dead state.
+ *	RECOV_CUZ_WAS_DEAD	Got alive packet when in dead state.
+ *	RECOV_CUZ_DOING_CALLBACKS	In RecovRebootCallBacks. 
+ *	RECOV_CUZ_START		We're starting up, so maybe unknown state.
  */
 #define RECOV_CUZ_WAIT		0x1
 #define RECOV_CUZ_WAKEUP	0x2
@@ -160,6 +161,15 @@ typedef struct RecovTraceRecord {
 #define RECOV_CUZ_PING_CHK	0x40
 #define RECOV_CUZ_PING_ASK	0x80
 #define RECOV_CUZ_CRASH_UNDETECTED	0x100
+#define RECOV_CUZ_SCHED_CALLBACK	0x200
+#define RECOV_CUZ_DONE_CALLBACKS	0x400
+#define RECOV_CUZ_FAILURE	0x800
+/* 0x1000 taken by stale handle thing, above. */
+#define RECOV_CUZ_WAS_BOOTING	0x2000
+#define RECOV_CUZ_NOW_BOOTING	0x4000
+#define RECOV_CUZ_WAS_DEAD	0x8000
+#define RECOV_CUZ_DOING_CALLBACKS	0x10000
+#define RECOV_CUZ_START		0x20000
 
 #ifndef CLEAN
 
@@ -202,6 +212,8 @@ extern void 	Recov_RebootUnRegister _ARGS_((int spriteID, void (*rebootCallBackP
 extern void 	Recov_HostAlive _ARGS_((int spriteID, unsigned int bootID, Boolean asyncRecovery, Boolean rpcNotActive));
 extern void 	Recov_HostDead _ARGS_((int spriteID));
 extern int 	Recov_GetHostState _ARGS_((int spriteID));
+extern int 	Recov_GetHostOldState _ARGS_((int spriteID));
+extern void 	Recov_SetHostOldState _ARGS_((int spriteID, int state));
 extern Boolean 	Recov_GetHostInfo _ARGS_((int spriteID, Recov_State *recovStatePtr));
 extern ReturnStatus 	Recov_IsHostDown _ARGS_((int spriteID));
 extern void 	Recov_HostTrace _ARGS_((int spriteID, int event));

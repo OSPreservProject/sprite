@@ -186,9 +186,21 @@ Recov_Proc()
 	while (pingPtr != (RecovPing *)NIL) {
 	    check = RecovCheckHost(pingPtr->spriteID);
 	    if (check > 0) {
-		RECOV_TRACE(pingPtr->spriteID,
-		    RecovGetLastHostState(pingPtr->spriteID),
-		    RECOV_CUZ_PING_CHK);
+		int	oldState;
+		int	newState;
+		/*
+		 * Only put in ping event if the host wasn't alive last
+		 * time and it is this time, or the state otherwise changed.
+		 * Otherwise, all we see are ping events.
+		 */
+		newState = Recov_GetHostState(pingPtr->spriteID);
+		oldState = Recov_GetHostOldState(pingPtr->spriteID);
+		if (newState != oldState) {
+		    RECOV_TRACE(pingPtr->spriteID,
+			RecovGetLastHostState(pingPtr->spriteID),
+			RECOV_CUZ_PING_CHK);
+		    Recov_SetHostOldState(pingPtr->spriteID, newState);
+		}
 		recov_Stats.pings++;
 		Rpc_Ping(pingPtr->spriteID);
 	    } else if (check == 0) {
