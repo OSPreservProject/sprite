@@ -55,7 +55,6 @@ int SOSPLookupNum = 0;		/* Number of name lookups. */
 int SOSPLookupComponent = 0;	/* Number of name components. */
 int SOSPLookupPrefixComponent = 0; /* Number of prefix components. */
 int SOSPLookupAbs = 0;		/* Number of absolute lookups. */
-extern int vmShmDebug;		/* Ken's handy debug flag. */
 #endif
 
 static List_Links prefixListHeader;
@@ -1132,9 +1131,6 @@ Fsprefix_Lookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
     if (status==SUCCESS) {
 	register char *ptr;
 	register int nameComponent, restComponent;
-	if (vmShmDebug) {
-	    printf("name: %s, ret: %s\n", fileName, *lookupNamePtr);
-	}
 	SOSPLookupNum++;
 	nameComponent = 1; /* Components in incoming path. */
 	for (ptr = fileName+1;*ptr != '\0';ptr++) {
