@@ -381,4 +381,22 @@ New SOSP counters in many of the file system modules to keep track of
 cache block lifetimes, etc.
 
 A fix to the new sync'ing code in the sys module.
+
+1.088	Mon Apr  8 18:33:10 PDT 1991
+
+fsio:
+Bug fix to the fsio routine that kills client stream handles - the bug
+caused a negative reference count panic.
+
+net:
+Fixed bug with delayed reset.
+
+sys:
+Unix compatibility.
+
+proc:
+Unix compatibility.
+
+mach:
+Unix compatibility.
     New files linked in from the net library.
