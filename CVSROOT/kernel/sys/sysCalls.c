@@ -637,7 +637,7 @@ Sys_StatsStub(command, option, argPtr)
 		stats.miscTime = timeVal;
 		stats.numPrefixLookups = SOSPLookupNum;
 		stats.numComponents = SOSPLookupComponent;
-		stats.numPrefixComponents = SOSPLookupComponent;
+		stats.numPrefixComponents = SOSPLookupPrefixComponent;
 		status = Vm_CopyOut(sizeof (Sys_SospNameStats),
 			(Address) &stats, argPtr);
 	    }
