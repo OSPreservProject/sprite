@@ -1,5 +1,5 @@
 /*
- * trap.s --
+ * machTrap.s --
  *
  *	Traps for sun4.
  *
@@ -29,8 +29,11 @@
  *
  * MachWindowOverflow --
  *
- *	Window overflow trap handler.  It assumes it's called with the %psr
- *	read into %l0.
+ *	Window overflow handler.  It's set up so that it can be called as a
+ *	result of a window overflow trap or as a result of moving into an
+ *	invalid window as a result of some other trap or interrupt.
+ *	The address of the calling instruction is stored in %SAFE_TEMP.
+ *
  *	The window we've trapped into is currently invalid.  We want to
  *	make it valid.  We do this by moving one window further, saving that
  *	window to the stack, marking it as the new invalid window, and then
@@ -57,12 +60,13 @@ MachWindowOverflow:
 	 * We enter inside of an invalid window, so we can't use in registers,
 	 * out registers or global registers to begin with.
 	 * We temporarily clear out some globals since we won't be able to
-	 * use locals in window we move to before calling macros.
+	 * use locals in window we move to before saving it.  Using them would
+	 * mess them up for window's owner.
 	 */
-	mov	%g3, %l3
-	mov	%g4, %l4
+	mov	%g3, %VOL_TEMP1
+	mov	%g4, %VOL_TEMP2
 	save				/* move to the window to save */
-	MACH_ADVANCE_WIM(%g3, %g4)	/* reset %wim to one current window */
+	MACH_ADVANCE_WIM(%g3, %g4)	/* reset %wim to past current window */
 	/*
 	 * save this window to stack - save locals and ins to top 16 words
 	 * on the stack. (Since our stack grows down, the top word is %sp
@@ -70,11 +74,13 @@ MachWindowOverflow:
 	 */
 	MACH_SAVE_WINDOW_TO_STACK()
 	restore				/* move back to trap window */
-	mov	%l3, %g3		/* restore global registers */
-	mov	%l4, %g4
-	/* jump to return from trap routine */
-	set	_MachReturnFromTrap, %l3
-	jmp	%l3
+	mov	%VOL_TEMP1, %g3		/* restore global registers */
+	mov	%VOL_TEMP2, %g4
+
+	/*
+	 * jump to calling routine - this may be a trap-handler or not.
+	 */
+	jmp	%SAFE_TEMP + 8
 	nop
 
 
@@ -83,8 +89,18 @@ MachWindowOverflow:
  *
  * MachWindowUnderflow --
  *
- *	Window underflow trap handler.  It assumes it's called with the %psr
- *	read into %l0.
+ *	Window underflow trap handler.
+ *
+ *	Unlike MachWindowOverflow, this routine can only be entered as a
+ *	result of taking an underflow trap.  This is because we can check for
+ *	an overflow condition on traps and deal with it in the same way we
+ *	do when we get a real overflow trap, but the underflow situation is not
+ *	symmetrical.  On an underflow trap we enter 2 windows away from
+ *	the window that is invalid.  When returning from traps we must check
+ *	for an underflow condition, but we'll only be one window away from
+ *	the invalid window.  For that situation, we have another routine.
+ *	Maybe I should combine them and flag the difference inside the routine,
+ *	but I didn't.
  *
  *	For an underflow, we tried to retreat to an invalid window and couldn't,
  *	so we trapped.  Trapping advances the current window, so we are 2
@@ -123,7 +139,8 @@ MachWindowUnderflow:
 	 * and expect that the old locals in the dead window are still the
 	 * same!
 	 */
-	MACH_RETREAT_WIM(%l3, %l4)	/* mark new invalid window */
+	/* mark new invalid window */
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, UnderflowLabel)
 	restore				/* move to window to restore */
 	restore
 	/* restore data from stack to window */
@@ -132,11 +149,38 @@ MachWindowUnderflow:
 	save
 	save
 	/* jump to return from trap routine */
-	set	_MachReturnFromTrap, %l3
-	jmp	%l3
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
 	nop
 
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachDealWithWindowUnderflow --
+ *
+ *	Deal with a window underflow condition on returning from traps.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The window invalid mask changes.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachDealWithWindowUnderflow
+MachDealWithWindowUnderflow:
+
+	/* mark new invalid window */
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, DealUnderflowLabel)
+	restore
+	/* restore data from stack to window */
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	save
+	/* return to where we were. */
+	retl
+	nop
 
 /*
  * ----------------------------------------------------------------------
@@ -145,12 +189,15 @@ MachWindowUnderflow:
  *
  *	Jump to system trap table.
  *
- *	Use of registers:  %l3 is trap type and then the place to jump to.
- *	%l4 is the address of my trap table to reset the %tbr with.
- *	Note that this code cannot use %l1 or %l2 since that's where the pc
- *	and npc are written on a trap.
+ *	Use of registers:  %VOL_TEMP1 is trap type and then the place to jump
+ *	to.  %VOL_TEMP2 is the address of my trap table to reset the %tbr with.
  *
- *	The old system %tbr has been stored in %g6.
+ *	The old system %tbr has been stored in %TBR_REG.
+ *	
+ *	Currently this does a bunch of compares to see where to go.  When I
+ *	fill out the real trap table, that won't be necessary.  Instead, I
+ *	can jump directly to the handlers, or I can make this more of a
+ *	generic preamble.
  *
  * Results:
  *	None.
@@ -162,19 +209,23 @@ MachWindowUnderflow:
  */
 .globl	_MachTrap
 _MachTrap:
-	rd	%tbr, %l3
-	and	%l3, MACH_TRAP_TYPE_MASK, %l3		/* get trap type */
+	rd	%tbr, %VOL_TEMP1
+	and	%VOL_TEMP1, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap type */
 
-	cmp	%l3, MACH_WINDOW_OVERFLOW		/* my overflow? */
-	be	MachWindowOverflow
-	rd	%psr, %l0
-	cmp	%l3, MACH_WINDOW_UNDERFLOW		/* my underflow? */
+	cmp	%VOL_TEMP1, MACH_WINDOW_OVERFLOW	/* my overflow? */
+	be	MachHandleWindowOverflowTrap
+	rd	%psr, %CUR_PSR_REG
+	cmp	%VOL_TEMP1, MACH_WINDOW_UNDERFLOW	/* my underflow? */
 	be	MachWindowUnderflow
-	rd	%psr, %l0
-
+	rd	%psr, %CUR_PSR_REG
+#ifdef NOTDEF
+	cmp	%VOL_TEMP1, MACH_LEVEL14_INT		/* clock interrupt */
+	be	MachHandleInterrupt
+	rd	%psr, %CUR_PSR_REG
+#endif NOTDEF
 							/* no - their stuff */
-	add	%l3, %g6, %l3			/* add t.t. to real tbr */
-	jmp	%l3			/* jmp (non-pc-rel) to real tbr */
+	add	%VOL_TEMP1, %TBR_REG, %VOL_TEMP1 /* add t.t. to real tbr */
+	jmp	%VOL_TEMP1		/* jmp (non-pc-rel) to real tbr */
 	nop
 
 
@@ -185,8 +236,12 @@ _MachTrap:
  *
  * MachReturnFromTrap --
  *
- *	Restore old %psr from %l0 and re-enable traps.  Then jump to where
- *	we were when we got a trap.
+ *	Restore old %psr from %CUR_PSR_REG.   Then jump
+ *	to where we were when we got a trap, re-enabling traps.
+ *	NOTE: this restores old psr to what it was, except for its current
+ *	window pointer bits.  These we take from the current psr, in case
+ *	we're in a different window now (which can happen after context
+ *	switches).
  *
  * Results:
  *	None.
@@ -197,8 +252,48 @@ _MachTrap:
  */
 .globl	_MachReturnFromTrap
 _MachReturnFromTrap:
-	/* restore psr and re-enable traps. */
-	mov	%l0, %psr
-	jmp	%l1
-	rett	%l2
+	/* restore psr */
+	mov	%CUR_PSR_REG, %VOL_TEMP2;	/* get old psr */
+	set	(~MACH_CWP_BITS), %VOL_TEMP1;	/* clear only its cwp bits */
+	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;
+	mov	%psr, %VOL_TEMP1;		/* get current psr */
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;	/* take only its cwp */
+	or	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;	/* put cwp on old psr */
+	mov	%VOL_TEMP2, %psr
+	MACH_UNDERFLOW_TEST()
+	be	UnderflowOkay
 	nop
+	call	MachDealWithWindowUnderflow
+	nop
+UnderflowOkay:
+	jmp	%CUR_PC_REG
+	rett	%NEXT_PC_REG
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleWindowOverflowTrap --
+ *
+ *	Trap entrance to the window overflow handler.  This sets up a return
+ *	address, calls the overflow handler, and then goes to
+ *	MachReturnFromTrap.  This is set up so that we can just call the
+ *	overflow handler even if it's not from a trap, and the right thing
+ *	should happen.
+ *
+ * Results:
+ *	None.
+ * * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachHandleWindowOverflowTrap
+MachHandleWindowOverflowTrap:
+	set	MachWindowOverflow, %VOL_TEMP1
+	jmpl	%VOL_TEMP1, %SAFE_TEMP
+	nop
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+

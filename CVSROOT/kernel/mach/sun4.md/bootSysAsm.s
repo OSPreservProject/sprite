@@ -18,6 +18,8 @@
  * "Start" is used for the -e option to the loader.  "SpriteStart" is
  * used for the prof module, which prepends an underscore to the name of
  * global variables and therefore can't find "_start".
+ *
+ * I use a lot global registers here for start up.  Elsewhere I'm careful.
  */
 
 .align 8
@@ -27,19 +29,20 @@
 start:
 _spriteStart:
 	mov	%psr, %g1
-	or	%g1, MACH_SR_HIGHPRIO, %g1	/* lock out interrupts */
+	or	%g1, MACH_DISABLE_INTR, %g1	/* lock out interrupts */
 	andn	%g1, MACH_CWP_BITS, %g1		/* set cwp to 0 */
 	mov	%g1, %psr
 	mov	0x2, %wim	/* set wim to window right behind us */
-/*
- * The kernel has been loaded into the wrong location.  We copy it to the right
- * location by copying up 8 Meg worth of pmegs.  This is done in all contexts.
- * 8 Meg should be enough for the whole kernel.  We copy to the correct address,
- * MACH_KERN_START which is before MACH_CODE_START, which is where we told the
- * loader that the kernel would be loaded.
- * In this code, %g1 is segment, %g2 is context, %g3 is pmeg, and %g4 is
- * offset in control space to context register.  %g5 contains seg size.
- */
+	/*
+	 * The kernel has been loaded into the wrong location.
+	 * We copy it to the right location by copying up 8 Meg worth of pmegs.
+	 * This is done in all contexts.  8 Meg should be enough for the whole
+	 * kernel.  We copy to the correct address, MACH_KERN_START which is
+	 * before MACH_CODE_START, which is where we told the linker that the
+	 * kernel would be loaded.  In this code, %g1 is segment, %g2 is
+	 * context, %g3 is pmeg, and %g4 is offset in control space to context
+	 * register.  %g5 contains seg size.
+	 */
 	set	VMMACH_CONTEXT_OFF, %g4		/* set %g4 to context offset */
 	clr	%g2				/* start with context 0 */
 	set	VMMACH_SEG_SIZE, %g5		/* for additions */
@@ -73,7 +76,7 @@ loopStart:
 
 begin:
 	mov	%psr, %g1			/* turn interrupts back on */
-	andn	%g1, MACH_ENABLE_LEVEL15_INTR, %g1
+	and	%g1, MACH_ENABLE_INTR, %g1
 	mov	%g1, %psr
 	/*
 	 * Zero out the bss segment.
@@ -109,8 +112,8 @@ doneZeroing:
 	 * to enough room to save our in registers and local registers upon
 	 * window overflow.
 	 */
-	set	MACH_KERN_STACK_START, %fp
-	set	(MACH_KERN_STACK_START + MACH_MIN_STACK_FRAME), %sp
+	set	MACH_STACK_START, %fp
+	set	(MACH_STACK_START + MACH_SAVED_WINDOW_SIZE), %sp
 
 	/*
 	 * Now set up initial trap table by copying machProtoVectorTable
@@ -139,8 +142,8 @@ copyingTable:
 	cmp	%g3, %l2				/* how many copies */
 	bne	copyingTable
 	nop
-	mov	%tbr, %g6				/* save real tbr */
-	and	%g6, MACH_TRAP_ADDR_MASK, %g6		/* mask off trap type */
+	mov	%tbr, %TBR_REG				/* save real tbr */
+	and	%TBR_REG, MACH_TRAP_ADDR_MASK, %TBR_REG	/* mask off trap type */
 	set	reserveSpace, %g2			/* g2 to be trap base */
 	add	%g2, %l1, %g2				/* add size of table */
 	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
@@ -153,7 +156,7 @@ copyingTable:
  * PrintArg:
  *
  * Move integer argument to print into %o0.  This will print
- * desired integer in hex.  This routine uses o0, o1, l3, and l4.
+ * desired integer in hex.  This routine uses o0, o1, VOL_TEMP1, and VOL_TEMP2.
  */
 _PrintArg:
 	.seg	"data1"
@@ -163,12 +166,12 @@ argString:
 
 	mov	%o0, %o1
 	set	argString, %o0
-	mov	%o7, %l3
-	sethi   %hi(-0x17ef7c),%l4
-	ld      [%l4+%lo(-0x17ef7c)],%l4
-	call    %l4,2
+	mov	%o7, %VOL_TEMP1
+	sethi   %hi(-0x17ef7c),%VOL_TEMP2
+	ld      [%VOL_TEMP2+%lo(-0x17ef7c)],%VOL_TEMP2
+	call    %VOL_TEMP2, 2
 	nop
-	mov	%l3, %o7
+	mov	%VOL_TEMP1, %o7
 	retl
 	nop
 
@@ -184,9 +187,9 @@ argString:
  */
 .align	8
 machProtoVectorTable:
-	sethi	%hi(_MachTrap), %l3		/* "set _MachTrap, %l3" */
-	or	%l3, %lo(_MachTrap), %l3
-	jmp	%l3			/* must use non-pc-relative jump here */
+	sethi	%hi(_MachTrap), %VOL_TEMP1	/* set _MachTrap, %VOL_TEMP1 */
+	or	%VOL_TEMP1, %lo(_MachTrap), %VOL_TEMP1
+	jmp	%VOL_TEMP1		/* must use non-pc-relative jump here */
 	nop
 
 .align	8

@@ -68,61 +68,6 @@
  */
 #define MACH_TRAP_ADDR_MASK	0xFFFFF000
 
-#ifdef NOTDEF
-/*
- * The offsets for the various things on the exception stack
- */
-#define	MACH_PC_OFFSET	2
-#define	MACH_VOR_OFFSET	6
-
-/*
- * Offsets of the fields in the Mach_State structure.
- */
-#define	MACH_USER_SP_OFFSET		0
-#define MACH_TRAP_REGS_OFFSET		(MACH_USER_SP_OFFSET + 4)
-#define	MACH_EXC_STACK_PTR_OFFSET	(MACH_TRAP_REGS_OFFSET + 64)
-#define	MACH_LAST_SYS_CALL_OFFSET	(MACH_EXC_STACK_PTR_OFFSET + 4)
-#define	MACH_SWITCH_REGS_OFFSET		(MACH_LAST_SYS_CALL_OFFSET + 4)
-#define	MACH_KERN_STACK_START_OFFSET	(MACH_SWITCH_REGS_OFFSET + 64)
-#define	MACH_SET_JUMP_STATE_PTR_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
-#define	MACH_SIG_EXC_STACK_SIZE_OFFSET	(MACH_SET_JUMP_STATE_PTR_OFFSET + 4)
-#define	MACH_SIG_EXC_STACK_OFFSET	(MACH_SIG_EXC_STACK_SIZE_OFFSET + 4)
-
-/*
- * Amount of data that is pushed onto the stack after a trap occurs.
- */
-#define	MACH_TRAP_INFO_SIZE	24
-
-/*
- * Return codes from Exc_Trap.
- *
- *   MACH_OK		The trap was handled successfully.
- *   MACH_KERN_ERROR	The trap could not be handled so the debugger must be
- *			called.
- *   MACH_USER_ERROR	A cross address space copy to/from user space failed
- *			because of a bad address.
- *   MACH_SIG_RETURN	Are returning from a signal handler.
- */
-#define	MACH_OK		0
-#define	MACH_KERN_ERROR	1
-#define	MACH_USER_ERROR	2
-#define	MACH_SIG_RETURN	3
-
-/*
- *  Definition of bits in the 68010 status register (SR)
- *	
- *	MACH_SR_TRACEMODE	Trace mode mask
- *	MACH_SR_SUPSTATE	Supervisor state mask
- *	MACH_SR_INTMASK		Interrupt level mask
- *	MACH_SR_CC		Condition codes mask
- */
-
-#define	MACH_SR_TRACEMODE	0x8000
-#define	MACH_SR_SUPSTATE	0x2000
-#define	MACH_SR_INTMASK		0x0700
-#define	MACH_SR_CC		0x001F
-
-
 /*
  *  Masks for 16 interrupt priority levels:
  *   lowest = 0,   highest = 15.
@@ -143,35 +88,46 @@
 #define	MACH_SR_PRIO_13		0x0700
 #define	MACH_SR_PRIO_14		0x0700
 #define	MACH_SR_PRIO_15		0x0700
-#endif /* NOTDEF */
 
 /*
- *  HOW ARE THESE USED?  AS MASKS?  AND THEN CHECKED FOR EQUALITY?
  *  State priorities in the processor state register (psr):
  *
  *	MACH_SR_HIGHPRIO	Supervisor mode + interrupts disabled, traps on
  *	MACH_SR_LOWPRIO		Supervisor mode + interrupts enabled, traps on
  *	MACH_SR_USERPRIO	User mode, traps on
+ *
+ *	For the sun4, these are macros in machAsmDefs.h.  I can't just move
+ *	values into the psr the way the sun3 and sun2 do, since that would
+ *	change the window we're in, etc.
  */
-#define	MACH_SR_HIGHPRIO	0xFA0
-#define	MACH_SR_LOWPRIO		0x0A0
-#define	MACH_SR_USERPRIO	0x020
 
 /*
  * Constants to access bits in the psr register.
  */
 
-#define	MACH_ENABLE_ALL_INTERRUPTS	0x0020
-#define	MACH_ENABLE_LEVEL15_INTR	0x0F00
+#define	MACH_ENABLE_INTR		0xFFFFF0FF	/* and with psr */
+#define	MACH_DISABLE_INTR		(~MACH_ENABLE_INTR)	/* or w/ psr */
 #define MACH_ENABLE_FPP			0x1000
 #define	MACH_CWP_BITS			0x1f	/* cwp bits in psr */
-#define	MACH_ENABLE_TRAP_BIT		0x20
+#define	MACH_ENABLE_TRAP_BIT		0x20	/* or with %psr */
+#define	MACH_DISABLE_TRAP_BIT		0xFFFFFFDF	/* and with %psr */
+#define	MACH_SUPER_BIT			0x80
+
 
 /*
- * Window-related constants
+ * Bits to enable interrupts in interrupt register.
  */
-#define	MACH_NWINDOWS		7		/* # of implemented windows */
-#define	MACH_VALID_WIM_BITS	0x0000007f	/* is wim value in range? */
+#define	MACH_ENABLE_ALL_INTERRUPTS	0x1
+#define	MACH_ENABLE_LEVEL1_INTR		0x2
+#define	MACH_ENABLE_LEVEL4_INTR		0x4
+#define	MACH_ENABLE_LEVEL6_INTR		0x8
+#define	MACH_ENABLE_LEVEL8_INTR		0x10
+#define	MACH_ENABLE_LEVEL10_INTR	0x20
+#define	MACH_ENABLE_LEVEL14_INTR	0x80
+/*
+ * Bit to enable in interrupt register for timer.
+ */
+#define	MACH_ENABLE_TIMER_INTR_LEVEL	MACH_ENABLE_LEVEL14_INTR
 
 #ifdef NOTDEF
 /*
@@ -201,7 +157,7 @@
 /*
  * MACH_KERN_START	The address where the kernel image is loaded at.
  * MACH_CODE_START	The address where the kernel code is loaded at.
- * MACH_KERN_STACK_START The address of the base of the stack. (1st word is
+ * MACH_STACK_START The address of the base of the stack. (1st word is
  *							unusable.)
  * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
  *			main process that is initially run.
@@ -217,11 +173,11 @@
  *			doesn't get trashed.
  */
 #define	MACH_KERN_START		0xe000000
-#define	MACH_KERN_STACK_START	0xe004000
+#define	MACH_STACK_START	0xe004000
 #define	MACH_CODE_START		0xe004020
 #define	MACH_STACK_BOTTOM	0xe000000
 #define MACH_KERN_END		VMMACH_DEV_START_ADDR
-#define	MACH_KERN_STACK_SIZE	(MACH_CODE_START - MACH_STACK_BOTTOM)
+#define	MACH_KERN_STACK_SIZE	(MACH_STACK_START - MACH_STACK_BOTTOM)
 #define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
 #define	MAGIC			0xFeedBabe
 
@@ -241,6 +197,26 @@
 #define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
 #define	MACH_MAX_USER_STACK_ADDR	VMMACH_MAP_SEG_ADDR
 
+/*
+ * Constants for getting to offsets in state structure.  To make sure these
+ * constants are correct, there is code in machCode.c that will cause
+ * the kernel to die upon booting if the offsets aren't what's here.
+ * All sizes are in bytes.
+ */
+#define	MACH_TRAP_REGS_OFFSET		8
+#define	MACH_GLOBALS_OFFSET		8
+#define	MACH_OUTS_OFFSET		(MACH_GLOBALS_OFFSET + 8 * 4)
+#define	MACH_LOCALS_OFFSET		(MACH_OUTS_OFFSET + 8 * 4)
+#define	MACH_INS_OFFSET			(MACH_LOCALS_OFFSET + 8 * 4)
+#define	MACH_PSR_OFFSET			(MACH_INS_OFFSET + 8 * 4)
+#define	MACH_Y_OFFSET			(MACH_PSR_OFFSET + 4)
+#define	MACH_TBR_OFFSET			(MACH_PSR_OFFSET + 8)
+#define	MACH_WIM_OFFSET			(MACH_PSR_OFFSET + 12)
+
+#ifdef NOTDEF
+#define	MACH_PC_OFFSET			(MACH_PSR_OFFSET + 16)
+#define	MACH_NEXT_PC_OFFSET		(MACH_PSR_OFFSET + 20)
+#endif NOTDEF
 
 /*
  * Maximum number of processors configurable.
@@ -249,10 +225,28 @@
 #define	MACH_MAX_NUM_PROCESSORS		1
 
 /*
- * Minimum stack frame (in bytes) needed to save window
- * registers (locals and ins).
+ * More window-related constants
  */
-#define	MACH_MIN_STACK_FRAME	64
+#define	MACH_NUM_WINDOWS		7	/* # of implemented windows */
+#define	MACH_VALID_WIM_BITS	0x0000007f	/* is wim value in range? */
+
+
+/*
+ * The size of a single saved window (locals and ins) and all of the saved
+ * windows (in bytes).
+ */
+#define	MACH_SAVED_WINDOW_SIZE	64	/* in bytes */
+#define	MACH_SAVED_REG_SET_SIZE		\
+				(MACH_NUM_WINDOWS * MACH_SAVED_WINDOW_SIZE)
+/*
+ * The number of registers.
+ */
+#define	MACH_NUM_GLOBAL_REGS		8
+#define	MACH_NUM_REGS_PER_WINDOW	16
+#define	MACH_NUM_ACTIVE_REGS		32
+#define	MACH_TOTAL_REGS			(MACH_NUM_GLOBAL_REGS + \
+					 MACH_NUM_REGS_PER_WINDOW * \
+					 MACH_NUM_WINDOWS)
 
 /*
  * Definitions of registers.
@@ -304,17 +298,18 @@
  *				Where to return a value to our caller.
  *	
  */
-#define	RETURN_ADDR_REG		r15
-#define	RETURN_ADDR_REG_CHILD	r31
-#define	CUR_PSR_REG		r16
-#define	CUR_PC_REG		r17
-#define	NEXT_PC_REG		r18
-#define	VOL_TEMP1		r19
-#define	VOL_TEMP2		r20
-#define	SAFE_TEMP		r21
-#define	NON_INTR_TEMP1		r22
-#define	NON_INTR_TEMP2		r23
-#define	RETURN_VAL_REG		r8
-#define	RETURN_VAL_REG_CHILD	r24
+#define	RETURN_ADDR_REG		r15		/* o7 */
+#define	RETURN_ADDR_REG_CHILD	r31		/* i7 */
+#define	CUR_PSR_REG		r16		/* l0 */
+#define	CUR_PC_REG		r17		/* l1 */
+#define	NEXT_PC_REG		r18		/* l2 */
+#define	VOL_TEMP1		r19		/* l3 */
+#define	VOL_TEMP2		r20		/* l4 */
+#define	SAFE_TEMP		r21		/* l5 */
+#define	NON_INTR_TEMP1		r22		/* l6 */
+#define	NON_INTR_TEMP2		r23		/* l7 */
+#define	RETURN_VAL_REG		r8		/* o0 */
+#define	RETURN_VAL_REG_CHILD	r24		/* i0 */
+#define	TBR_REG			r6		/* g6 */
 
 #endif /* _MACHCONST */

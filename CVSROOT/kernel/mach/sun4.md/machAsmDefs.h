@@ -21,25 +21,207 @@
 #include <kernel/machConst.h>
 #endif
 
+/*
+ * Bump the invalid window forward one.  This is done by changing the
+ * invalid window mask.  We shift the invalid window bit left by 1,
+ * but modulo the number of implemented windows.
+ */
 #define	MACH_ADVANCE_WIM(REG1, REG2)			\
 	mov	%wim, REG1;				\
 	srl	REG1, 0x1, REG2;			\
-	sll	REG1, (MACH_NWINDOWS - 1), REG1;	\
+	sll	REG1, (MACH_NUM_WINDOWS - 1), REG1;	\
 	or	REG1, REG2, REG1;			\
 	set	MACH_VALID_WIM_BITS, REG2;		\
 	and	REG1, REG2, REG1;			\
 	mov	REG1, %wim
 
-#define	MACH_RETREAT_WIM(REG1, REG2)			\
+/*
+ * Move the invalid window backwards one.  This is done by changing the
+ * invalid window mask.  We shift the invalid window bit right by 1,
+ * but modulo the number of implemented windows.
+ */
+#define	MACH_RETREAT_WIM(REG1, REG2, happyWindowLabel)	\
 	mov	%wim, REG1;				\
 	sll	REG1, 0x1, REG1;			\
 	set	MACH_VALID_WIM_BITS, REG2;		\
 	andcc	REG2, REG1, REG1;			\
-	bne	happy_wim;				\
+	bne	happyWindowLabel;			\
 	nop;						\
 	mov	0x1, REG1;				\
-happy_wim:						\
+happyWindowLabel:					\
 	mov	REG1, %wim
+
+/*
+ * Test whether we're in an invalid window.  If we are in an invalid window,
+ * then the condition codes should indicate a not zero ("bne" instruction
+ * will branch).
+ */
+#define	MACH_INVALID_WINDOW_TEST()				\
+	mov	%psr, %VOL_TEMP1;				\
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+	set	0x1, %VOL_TEMP2;				\
+	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
+	mov	%wim, %VOL_TEMP2;				\
+	andcc	%VOL_TEMP1, %VOL_TEMP2, %g0
+
+/*
+ * Test whether we're about to encounter a window underflow condition.
+ * We put current cwp into temp1.  We shift a one by that many bits.
+ * Then we shift it again, to "advance" the window by one.  We and it
+ * with the valid window bits to get it modulo the number of windows - 1.
+ * Then we compare it with current wim to see if they're the same.  If
+ * so, then we would get an underflow if we did a restore operation.
+ * If we are in an underflow situation, then the condition codes should
+ * indicate a not zero ("bne" instruction will branch).
+ */
+#define	MACH_UNDERFLOW_TEST()					\
+	mov	%psr, %VOL_TEMP1;				\
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+	set	0x1, %VOL_TEMP2;				\
+	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
+	sll	%VOL_TEMP1, 0x1, %VOL_TEMP1;			\
+	set	MACH_VALID_WIM_BITS, %VOL_TEMP2;		\
+	andcc	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	bne	testWimOkay;					\
+	nop;							\
+	mov	0x1, %VOL_TEMP1;				\
+testWimOkay:							\
+	mov	%wim, %VOL_TEMP2;				\
+	andcc	%VOL_TEMP1, %VOL_TEMP2, %g0
+    
+
+/*
+ * Save trap state registers.  This saves %l3 (= %VOL_TEMP1) and
+ * %l4 (= %VOLl_TEMP2) since store-doubles are faster and we do
+ * this from even register boundaries.  Note however that these
+ * registers are not restored, since this would overwrite the registers
+ * as they are being used to restore things...
+ */
+#define	MACH_SAVE_TRAP_STATE()					\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_GLOBALS_OFFSET, %VOL_TEMP1;	\
+	std	%g0, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%g2, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%g4, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%g6, [%VOL_TEMP1];				\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_OUTS_OFFSET, %VOL_TEMP1;	\
+	std	%o0, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%o2, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%o4, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%o6, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_LOCALS_OFFSET, %VOL_TEMP1;	\
+	std	%l0, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%l2, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%l4, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%l6, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_INS_OFFSET, %VOL_TEMP1;	\
+	std	%i0, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%i2, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%i4, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%i6, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_PSR_OFFSET, %VOL_TEMP1;	\
+	mov	%psr, %VOL_TEMP2;				\
+	st	%VOL_TEMP2, [%VOL_TEMP1];			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_Y_OFFSET, %VOL_TEMP1;		\
+	mov	%y, %VOL_TEMP2;					\
+	st	%VOL_TEMP2, [%VOL_TEMP1];			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_TBR_OFFSET, %VOL_TEMP1;	\
+	mov	%tbr, %VOL_TEMP2;				\
+	st	%VOL_TEMP2, [%VOL_TEMP1];			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_WIM_OFFSET, %VOL_TEMP1;	\
+	mov	%wim, %VOL_TEMP2;				\
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+
+/*
+ * Restore the trap state registers.  Note that this does not restore
+ * %l3 or %l4, since they are the %VOL_TEMP1 and %VOL_TEMP2 registers
+ * that are in use for the macro.  NOTE that this doesn't restore the
+ * psr to exactly what it was.  It restores it to what it was, except for
+ * the current window pointer.  That part of the psr it leaves as it is
+ * right now.  This is because when returning from context switches, we
+ * may not return to the window we left from...  Also, I don't restore
+ * the window invalid mask.  That would only make it point to something wrong.
+ */
+#define	MACH_RESTORE_TRAP_STATE()				\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_GLOBALS_OFFSET, %VOL_TEMP1;	\
+	ldd	[%VOL_TEMP1], %g0;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %g2;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %g4;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %g6;				\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_OUTS_OFFSET, %VOL_TEMP1;	\
+	ldd	[%VOL_TEMP1], %o0;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %o2;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %o4;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %o6;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_LOCALS_OFFSET, %VOL_TEMP1;	\
+	ldd	[%VOL_TEMP1], %l0;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ld	[%VOL_TEMP1], %l2;				\
+	add	%VOL_TEMP1, 12, %VOL_TEMP1;			\
+	ld	[%VOL_TEMP1], %l5;				\
+	add	%VOL_TEMP1, 4, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %l6;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_INS_OFFSET, %VOL_TEMP1;	\
+	ldd	[%VOL_TEMP1], %i0;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %i2;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %i4;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %i6;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_PSR_OFFSET, %VOL_TEMP1;	\
+	ld	[%VOL_TEMP1], %VOL_TEMP2;			\
+	set	(~MACH_CWP_BITS), %VOL_TEMP1;			\
+	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;		\
+	mov	%psr, %VOL_TEMP1;				\
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+	or	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;		\
+	mov	%VOL_TEMP2, %psr;				\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_Y_OFFSET, %VOL_TEMP1;		\
+	ld	[%VOL_TEMP1], %VOL_TEMP2;			\
+	mov	%VOL_TEMP2, %y;					\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_TBR_OFFSET, %VOL_TEMP1;	\
+	ld	[%VOL_TEMP1], %VOL_TEMP2;			\
+	mov	%VOL_TEMP2, %tbr
+
 
 /*
  * Save r16 to r23 (locals) and r24 to r31 (ins) to 16 words at
@@ -89,8 +271,53 @@ happy_wim:						\
 	clr	%r22;					\
 	clr	%r23
 
+/*
+ * Enabling and disabling traps.
+ */
+#define	MACH_ENABLE_TRAPS()					\
+	mov	%psr, %VOL_TEMP1;				\
+	or	%VOL_TEMP1, MACH_ENABLE_TRAP_BIT, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr
+
+/*
+ * Should I use xor here and MACH_ENABLE_TRAP_BIT?
+ */
+#define	MACH_DISABLE_TRAPS()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP2;		\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %psr
+
+/*
+ * Run at high priority: supervisor mode, interrupts disabled, traps enabled.
+ */
+#define	MACH_SR_HIGHPRIO()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	(MACH_DISABLE_INTR | MACH_SUPER_BIT | MACH_ENABLE_TRAP_BIT), \
+			%VOL_TEMP2;				\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %psr
 
 
-
-
+/*
+ * Run at low supervisor priority: supervisor mode, interrupts enabled, traps
+ * enabled.
+ */
+#define	MACH_SR_LOWPRIO()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	(MACH_SUPER_BIT | MACH_ENABLE_TRAP_BIT), %VOL_TEMP2;	\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	set	MACH_ENABLE_INTR, %VOL_TEMP2;			\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %psr
+/*
+ * Run at user priority: user mode, traps on.
+ */
+#define	MACH_SR_USERPRIO()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	MACH_ENABLE_TRAP_BIT, %VOL_TEMP2;		\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	set	(~MACH_SUPER_BIT), %VOL_TEMP2;			\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %psr
 #endif /* _MACHASMDEFS */
