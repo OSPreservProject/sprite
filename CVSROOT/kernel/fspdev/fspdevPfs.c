@@ -48,6 +48,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "swapBuffer.h"
 #include "fsPdev.h"
+#include "dev/pfs.h"
 
 PdevControlIOHandle *PfsControlHandleInit();
 PdevServerIOHandle *PfsGetUserLevelIDs();
