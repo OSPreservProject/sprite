@@ -2125,7 +2125,8 @@ PageOut(data, callInfoPtr)
 	    break;
 	}
 	status = VmPageServerWrite(&corePtr->virtPage, 
-				   (unsigned int) (corePtr - coreMap));
+				   (unsigned int) (corePtr - coreMap),
+				   FALSE);
 	if (status != SUCCESS) {
 	    if ( ! VmSwapStreamOk() ||
 	        (status != RPC_TIMEOUT && status != FS_STALE_HANDLE &&
@@ -2933,7 +2934,7 @@ VmPageFlush(virtAddrPtr, length, toDisk, wantRes)
 	VmMach_ClearModBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr)); 
 	UNLOCK_MONITOR;
 	statusTmp = VmPageServerWrite(&corePtr->virtPage,
-		(unsigned int)(corePtr-coreMap));
+		(unsigned int)(corePtr-coreMap), toDisk);
 	dprintf("VmPageFlush: status = %x, wrote %x, %x\n", statusTmp,
 		&corePtr->virtPage, (unsigned int)(corePtr-coreMap));
 	LOCK_MONITOR;

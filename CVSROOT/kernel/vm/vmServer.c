@@ -181,9 +181,10 @@ VmPageServerRead(virtAddrPtr, pageFrame)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-VmPageServerWrite(virtAddrPtr, pageFrame)
+VmPageServerWrite(virtAddrPtr, pageFrame, toDisk)
     Vm_VirtAddr		*virtAddrPtr;
     unsigned int	pageFrame;
+    Boolean		toDisk;
 {
     register	int		mappedAddr;
     register	Vm_Segment	*segPtr;
@@ -220,7 +221,7 @@ VmPageServerWrite(virtAddrPtr, pageFrame)
     VmMach_FlushPage(virtAddrPtr, FALSE);
     mappedAddr = (int) VmMapPage(pageFrame);
     status = Fs_PageWrite(segPtr->swapFilePtr, (Address) mappedAddr,
-			  pageToWrite << vmPageShift, vm_PageSize);
+			  pageToWrite << vmPageShift, vm_PageSize, toDisk);
     VmUnmapPage((Address) mappedAddr);
 
     return(status);
