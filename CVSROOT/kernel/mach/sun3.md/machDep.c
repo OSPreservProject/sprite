@@ -28,7 +28,6 @@ typedef struct {
 					   the stack has been corrupted. */
     Address	userStackPtr;		/* The user's stack pointer. */
     short	statusReg;		/* The status register. */
-    int		framePtr;		/* The value of a6, the framePtr. */
     void	(*startFunc)();		/* Function to call when process
 					   first starts executing. */
     Address	progCounter;		/* Value of program counter where
@@ -93,7 +92,7 @@ Mach_Init()
     mach_KernStackSize = MACH_KERN_STACK_SIZE;
     mach_DummySPOffset = MACH_KERN_STACK_SIZE - sizeof(KernelStack);
     mach_DummyFPOffset = MACH_KERN_STACK_SIZE - sizeof(KernelStack) +
-		(unsigned int)&stack.framePtr - (unsigned int)&stack;
+		(unsigned int)&stack.statusReg - (unsigned int)&stack;
     mach_ExecStackOffset = MACH_EXEC_STACK_OFFSET;
     mach_FirstUserAddr = (Address)MACH_FIRST_USER_ADDR;
     mach_LastUserAddr = (Address)MACH_LAST_USER_ADDR;
@@ -135,7 +134,6 @@ Mach_InitStack(stackStart, startFunc, progCounter)
     stackPtr->magicNumber = MAGIC;
     stackPtr->userStackPtr = mach_MaxUserStackAddr;
     stackPtr->statusReg = SUN_SR_HIGHPRIO;
-    stackPtr->framePtr = stackStart + mach_KernStackSize;
     stackPtr->startFunc =  startFunc;
     stackPtr->progCounter = progCounter;
     stackPtr->exitProc = Proc_Exit;
