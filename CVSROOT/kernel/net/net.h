@@ -36,7 +36,6 @@
 #include <netEther.h>
 #include <netInet.h>
 #include <netUltra.h>
-#include <netHppi.h>
 #include <kernel/netRoute.h>
 #endif
 
