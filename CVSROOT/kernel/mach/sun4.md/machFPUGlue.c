@@ -116,30 +116,33 @@ suword(address,value)
 
 
 void
-MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr, fpuStatePtr)
+MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr)
     int		processID;
     Address	instAddr;
     Mach_RegState 	*userRegsPtr;
     Mach_RegWindow	*curWinPtr;
-    Mach_FPUState	*fpuStatePtr;
 {
     enum ftt_type result;
 
-    result = fp_emulator(instAddr, userRegsPtr, curWinPtr, fpuStatePtr);
+    result = fp_emulator(instAddr, userRegsPtr, curWinPtr, userRegsPtr);
     switch (result) {
     case ftt_none:
 	break;
     case ftt_ieee:
-	(void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, processID, FALSE);
+	(void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, processID, FALSE,
+		(Address)0);
 	break;
     case ftt_unimplemented:
-	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, processID, FALSE);
+	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, processID, FALSE,
+		(Address)0);
 	break;
     case ftt_alignment:
-	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, processID,FALSE);
+	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, processID,FALSE,
+		(Address)0);
 	break;
     case ftt_fault:
-	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, processID, FALSE);
+	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, processID, FALSE,
+		(Address)0);
     case ftt_7:
     default:
 	break;

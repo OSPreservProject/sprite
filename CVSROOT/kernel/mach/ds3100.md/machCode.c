@@ -857,7 +857,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 		printf("Protection fault in process %x: pc=%x addr=%x\n",
 			procPtr->processID, pc, badVaddr);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
-				procPtr->processID, FALSE);
+				procPtr->processID, FALSE, badVaddr);
 	    }
 	    break;
 	case MACH_EXC_TLB_LD_MISS:
@@ -866,7 +866,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 		printf("Bad user TLB fault in process %x: pc=%x addr=%x\n",
 			procPtr->processID, pc, badVaddr);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
-				procPtr->processID, FALSE);
+				procPtr->processID, FALSE, badVaddr);
 	    }
 	    break;
 	case MACH_EXC_ADDR_ERR_LD:
@@ -874,24 +874,24 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    printf("Address fault in process %x: pc=%x addr=%x\n",
 			procPtr->processID, pc, badVaddr);
 	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE, badVaddr);
 	    break;
 	case MACH_EXC_BUS_ERR_IFETCH:
 	    printf("MachExceptionHandler: User bus error on ifetch");
 	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE, badVaddr);
 	    break;
 	case MACH_EXC_BUS_ERR_LD_ST:
 	    printf("MachExceptionHandler: User bus error on ld or st");
 	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE, badVaddr);
 	    break;
 	case MACH_EXC_SYSCALL:
 	    if (!MachUNIXSyscall()) {
 		printf("MachExceptionHandler: Bad syscall magic for proc %x\n",
 							procPtr->processID);
 		(void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
-				procPtr->processID, FALSE);
+				procPtr->processID, FALSE, pc);
 	    }
 	    break;
 	case MACH_EXC_BREAK: {
@@ -913,10 +913,10 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 		    if (procPtr->genFlags & PROC_DEBUG_ON_EXEC) {
 			procPtr->genFlags &= ~PROC_DEBUG_ON_EXEC;
 			(void) Sig_SendProc(procPtr, SIG_DEBUG, 
-					    SIG_NO_CODE);
+					    SIG_NO_CODE, pc);
 		    } else {
 			(void) Sig_SendProc(procPtr, SIG_BREAKPOINT, 
-					    SIG_NO_CODE);
+					    SIG_NO_CODE, pc);
 		    }
 		    Proc_Unlock(procPtr);
 		    break;
@@ -931,7 +931,8 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 			panic("MachUserExceptionHandler: Bad sstep PC\n");
 		    }
 		    Proc_Lock(procPtr);
-		    (void) Sig_SendProc(procPtr, SIG_TRACE_TRAP, SIG_NO_CODE);
+		    (void) Sig_SendProc(procPtr, SIG_TRACE_TRAP, SIG_NO_CODE,
+			    pc);
 		    Proc_Unlock(procPtr);
 		    break;
 		}
@@ -942,7 +943,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 		default:
 		    printf("Bogus bp-trap\n");
 		    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
-				    procPtr->processID, FALSE);
+				    procPtr->processID, FALSE, pc);
 		    break;
 	    }
 	    break;
@@ -951,7 +952,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    printf("Reserved instruction in process %x at pc=%x\n",
 			procPtr->processID, pc);
 	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE, pc);
 	    break;
 	case MACH_EXC_COP_UNUSABLE:
 	    MachSwitchFPState(machFPCurStatePtr, machCurStatePtr);
@@ -961,7 +962,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    printf("Overflow exception in process %x at pc=%x\n",
 			procPtr->processID, pc);
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_OVERFLOW,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE, pc);
 	    break;
     }
     retVal = MachUserReturn(procPtr);
@@ -1033,8 +1034,6 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 		       (badVaddr >= (Address)VMMACH_PHYS_CACHED_START ||
 			procPtr == (Proc_ControlBlock *)NIL ||
 			procPtr->vmPtr->numMakeAcc == 0)) {
-		printf("Bad kernel TLB Fault at 0x%x, procPtr = 0x%x\n",
-			badVaddr, procPtr);
 		if (procPtr != (Proc_ControlBlock *)NIL) {
 		    printf("procPtr->vmPtr->numMakeAcc = %d\n", 
 			procPtr->vmPtr->numMakeAcc);
@@ -1382,6 +1381,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
     userStatePtr->regState.regs[A0] = sigStackPtr->sigStack.sigNum;
     userStatePtr->regState.regs[A1] = sigStackPtr->sigStack.sigCode;
     userStatePtr->regState.regs[A2] = usp + MACH_STAND_FRAME_SIZE;
+    userStatePtr->regState.regs[A3] = sigStackPtr->sigStack.sigAddr;
     userStatePtr->regState.pc = pc;
     userStatePtr->regState.regs[RA] = usp + MACH_STAND_FRAME_SIZE + 
 		(unsigned)&((Sig_Context *)0)->machContext.break1Inst;
@@ -1728,11 +1728,11 @@ Mach_SendSignal(sigType)
     switch ((int)sigType) {
 	case MACH_SIGFPE:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_FP_EXCEPTION,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE, (Address)0);
 	    break;
 	case MACH_SIGILL:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
-			    procPtr->processID, FALSE);
+			    procPtr->processID, FALSE, (Address)0);
 	    break;
 	default:
 	    panic("Mach_SendSignal: Bad signal type\n");
