@@ -13,6 +13,7 @@
 
     .data
     .asciz "$Header$ SPRITE (Berkeley)"
+    .text
 
 
 /*
