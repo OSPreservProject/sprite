@@ -453,7 +453,7 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     /*
      * Remove the dependency on the other host.
      */
-    Proc_RemoveMigDependency(pid);
+    ProcMigRemoveDependency(pid, TRUE);
 
     /*
      * Update statistics.
@@ -650,7 +650,7 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     /*
      * Note the dependency of the new process on the other host.
      */
-    Proc_AddMigDependency(childProcPtr->processID, childProcPtr->peerHostID);
+    ProcMigAddDependency(childProcPtr->processID, childProcPtr->peerProcessID);
 
     /*
      * Update statistics.

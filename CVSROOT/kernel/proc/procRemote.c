@@ -185,7 +185,7 @@ ProcMigAcceptMigration(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	/*
 	 * Remember the dependency on the other host.
 	 */
-	Proc_AddMigDependency(procPtr->processID, clientID);
+	ProcMigAddDependency(procPtr->processID, procPtr->peerProcessID);
     } else {
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    panic("ProcMigAcceptMigration: given null control block for existing process\n");
@@ -908,7 +908,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     /*
      * Note the dependency of the new process on the other host.
      */
-    Proc_AddMigDependency(childProcPtr->processID, childProcPtr->peerHostID);
+    ProcMigAddDependency(childProcPtr->processID, childProcPtr->peerProcessID);
 
     /*
      * Update statistics.
@@ -961,10 +961,6 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     }
 
     /*
-     * Remove the dependency on the other host.
-     */
-    Proc_RemoveMigDependency(procPtr->processID);
-    /*
      * Update statistics.
      */
     PROC_MIG_DEC_STAT(foreign);
@@ -979,9 +975,15 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
 	    printf("ProcRemoteExit: host %d is down; ignoring exit for process %x.\n",
 		       procPtr->peerHostID, procPtr->processID);
 	}
+	/*
+	 * Remove the dependency on the other host, but note that the host
+	 * is down now.
+	 */
+	ProcMigRemoveDependency(procPtr->processID, FALSE);
 	return;
     }
 
+    ProcMigRemoveDependency(procPtr->processID, TRUE);
 #ifndef CLEAN
     if (proc_DoTrace && proc_DoCallTrace) {
 	record.processID = procPtr->processID;
