@@ -35,6 +35,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "bstring.h"
 
 /*
+ * Until the hardware is fixed only allow one command at a time into
+ * the board.
+ */
+#define ONE_CMD_AT_A_TIME
+
+/*
  * WARNING -- WARNING --- WARNING --- WARNING
  * The code and data structures in this file are carefully coded to 
  * run on machines that don't do autobus sizing and unaligned memory fetches.
