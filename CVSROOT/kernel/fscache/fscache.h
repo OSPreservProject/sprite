@@ -105,8 +105,6 @@ typedef struct Fscache_FileInfo {
  *				to only a few blocks in the cache.
  *   FSCACHE_FILE_GONE		The file has been removed and any delayed
  *				writes should be discarded.
- *   FSCACHE_WB_ON_LDB		Force this file to be written back to disk
- *				on the last dirty block.
  *   FSCACHE_ALLOC_FAILED	Allocated failed due to disk full.  This
  *				is used to throttle error messages.
  *   FSCACHE_FILE_BEING_CLEANED
@@ -123,11 +121,68 @@ typedef struct Fscache_FileInfo {
 #define FSCACHE_FILE_NOT_CACHEABLE	0x0200
 #define	FSCACHE_LARGE_FILE_MODE		0x0400
 #define FSCACHE_FILE_GONE		0x0800
-#define	FSCACHE_WB_ON_LDB		0x1000
+/* There's space for a new flag in here. */
 #define FSCACHE_ALLOC_FAILED		0x2000
 #define	FSCACHE_FILE_FSYNC		0x4000
 #define	FSCACHE_FILE_DESC_DIRTY		0x8000
 #define	FSCACHE_FILE_BEING_CLEANED     0x10000
+#ifdef SOSP91
+/*
+ * The counters of why bytes leave the cache.
+ */
+#define	FSCACHE_REASON_FLAGS	    0xFFF00000	
+#define	FSCACHE_CONSIST_WB	    0x00100000
+#define	FSCACHE_CONSIST_WBINV	    0x00200000
+#define	FSCACHE_SYNC	    	    0x00400000
+#define	FSCACHE_REOPEN	    	    0x00800000
+#define	FSCACHE_DETACH	    	    0x01000000
+#define	FSCACHE_DESC	    	    0x02000000
+#define	FSCACHE_TIME	    	    0x04000000
+#define	FSCACHE_SPACE	    	    0x08000000
+#define	FSCACHE_VM		    0x10000000
+#define	FSCACHE_SHRINK		    0x20000000
+#define	FSCACHE_LRU		    0x40000000
+
+typedef struct Fscache_ExtraStats {
+    unsigned int	consistWB;
+    unsigned int	cwbDLife;
+    unsigned int	consistWBInv;
+    unsigned int	cwbiDLife;
+    unsigned int	sync;
+    unsigned int	syncDLife;
+    unsigned int	reopen;
+    unsigned int	reDLife;
+    unsigned int	detach;
+    unsigned int	detDLife;
+    unsigned int	desc;
+    unsigned int	descDLife;
+    unsigned int	time;
+    unsigned int	timeDLife;
+    unsigned int	space;
+    unsigned int	spaceDLife;
+    unsigned int	vm;
+    unsigned int	vmDLife;
+    unsigned int	shrink;
+    unsigned int	shrinkDLife;
+    unsigned int	lru;
+    unsigned int	lruDLife;
+    unsigned int	unknown;
+    unsigned int	unDLife;
+    unsigned int	cleanVm;
+    unsigned int	cVmLife;
+    unsigned int	unRcleanVm;
+    unsigned int	cleanShrink;
+    unsigned int	cShrinkLife;
+    unsigned int	unRcleanShrink;
+    unsigned int	cleanLru;
+    unsigned int	cLruLife;
+    unsigned int	unRcleanLru;
+} Fscache_ExtraStats;
+
+extern	Fscache_ExtraStats	fscache_ExtraStats;
+
+#endif SOSP91
+
 
 /*
  * Structure to represent a cache block in the fileservers cache block 
@@ -225,6 +280,12 @@ typedef struct Fscache_Block {
 #define	FSCACHE_WRITE_THRU_BLOCK		0x100000
 #define	FSCACHE_CANT_BLOCK			0x200000
 #define	FSCACHE_BLOCK_BEING_CLEANED		0x400000
+#ifdef SOSP91
+#define	FSCACHE_BLOCK_REASON	              0xFF000000
+#define	FSCACHE_BLOCK_LRU	              0x01000000
+#define	FSCACHE_BLOCK_VM	              0x02000000
+#define	FSCACHE_BLOCK_SHRINK	              0x04000000
+#endif SOSP91
 
 
 /*
@@ -395,6 +456,10 @@ extern List_Links *fscacheFullWaitList;
 /*
  * Block Cache routines. 
  */
+#ifdef SOSP91
+extern void Fscache_AddBlockToStats _ARGS_((Fscache_FileInfo *cacheInfoPtr, Fscache_Block *blockPtr));
+extern void Fscache_AddCleanStats _ARGS_((unsigned int flags, Fscache_Block *blockPtr));
+#endif SOSP91
 extern void Fscache_WriteBack _ARGS_((unsigned int writeBackTime,
 			int *blocksSkippedPtr, Boolean writeBackAll));
 extern ReturnStatus Fscache_FileWriteBack _ARGS_((

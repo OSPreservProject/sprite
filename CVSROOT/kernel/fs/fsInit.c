@@ -58,13 +58,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define LOCAL_DISK_NAME		"/"
 int fsDefaultDomainNumber = 0;
 
-Boolean	fsutil_WriteThrough = FALSE;	
-Boolean	fsutil_WriteBackOnClose  = FALSE;
-Boolean	fsutil_DelayTmpFiles = FALSE;
-int	fsutil_TmpDirNum = -1;	
-Boolean	fsutil_WriteBackASAP = FALSE;
-Boolean fsutil_WBOnLastDirtyBlock = FALSE;
-
 /*
  * We record the maximum transfer size supported by the RPC system
  * for use in chopping up remote I/O operations.

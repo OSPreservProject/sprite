@@ -651,34 +651,7 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
 	    status = SUCCESS;
 	}
     } else {
-	/*
-	 * Force the file to disk if we are told to do so by a client.
-	 */
-	if (flags & FS_WB_ON_LDB) {
-	    int blocksSkipped;
-	    status = Fscache_FileWriteBack(&handlePtr->cacheInfo, 0, 
-			FSCACHE_LAST_BLOCK,
-			FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT,
-			&blocksSkipped);
-	    if (status != SUCCESS) {
-		printf("Fsio_FileClose: write back <%d,%d> \"%s\" err <%x>\n",
-		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		    Fsutil_HandleName(handlePtr), status);
-	    }
-#ifdef notdef
-    /*
-     * Fscache_FileWriteBack now write back the descriptor.
-     */
-	    status = Fsdm_FileDescWriteBack(handlePtr, TRUE);
-	    if (status != SUCCESS) {
-		printf("Fsio_FileClose: desc write <%d,%d> \"%s\" err <%x>\n",
-		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		    Fsutil_HandleName(handlePtr), status);
-	    }
-#endif
-	} else {
-	    status = SUCCESS;
-	}
+	status = SUCCESS;
 	Fsutil_HandleRelease(handlePtr, TRUE);
     }
 
@@ -1268,13 +1241,6 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 		 Fscache_BlocksUnneeded(streamPtr, savedOffset, savedLength, 
 				FALSE);
 	    }
-	} else if (fsutil_WriteThrough || fsutil_WriteBackASAP) {
-	    /*
-	     * When in write-through or asap mode we have to force the
-	     * descriptor to disk on every write.
-	     */
-	    status = Fsdm_FileDescStore(handlePtr, FALSE);
-
 	}
     }
 
@@ -1576,7 +1542,9 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		} else {
 		    lastBlock = FSCACHE_LAST_BLOCK;
 		}
-		cacheInfoPtr->flags |= FSCACHE_WB_ON_LDB;
+#ifdef SOSP91
+		cacheInfoPtr->flags |= FSCACHE_SYNC;
+#endif SOSP91
 		/*
 		 * Release the handle lock during the FileWriteBack to 
 		 * avoid hanging up everyone who stumbles over the handle

@@ -1254,26 +1254,6 @@ Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
 	return(FALSE);
     }
 
-    if ((consistPtr->lastWriter != -1) && (flags & FS_LAST_DIRTY_BLOCK)) {
-	if (clientID != consistPtr->lastWriter) {
-	    /*
-	     * Probably a client error with the lastWriter.  We print
-	     * a warning and then nuke the lastWriter field below.
-	     */
-	    printf("Fsconsist_Close, \"%s\" <%d,%d>: client %d not last writer %d, %s\n",
-		    Fsutil_HandleName(consistPtr->hdrPtr),
-		    consistPtr->hdrPtr->fileID.major,
-		    consistPtr->hdrPtr->fileID.minor,
-		    clientID, consistPtr->lastWriter,
-		    (*wasCachedPtr) ? "was cached" : "wasn't cached");
-	}
-#ifdef CONSIST_DEBUG
-	if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-	    printf("ConsistClose: erasing %d lastwriter\n", clientID);
-	}
-#endif CONSIST_DEBUG
-	consistPtr->lastWriter = -1;
-    }
     UNLOCK_MONITOR;
     return(TRUE);
 }

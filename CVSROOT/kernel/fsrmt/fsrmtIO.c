@@ -431,13 +431,6 @@ Fsrmt_Write(streamPtr, writePtr, waitPtr, replyPtr)
     register Address	writeBufferPtr = (Address) NIL;
 
     /*
-     * If we are in write-back-on-last-dirty-block mode then mark this
-     * block specially.
-     */
-    if (fsutil_WBOnLastDirtyBlock && (writePtr->flags & FS_LAST_DIRTY_BLOCK)) {
-	writePtr->flags |= FS_WB_ON_LDB;
-    }
-    /*
      * Initialize things that won't change on each RPC.
      */
     writeParams.fileID = rmtHandlePtr->hdr.fileID;
@@ -611,46 +604,6 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	streamPtr->offset = paramsPtr->io.offset + replyPtr->length;
 	Fsutil_HandleLock(streamPtr);
 	Fsutil_HandleRelease(streamPtr, TRUE);
-    }
-    if (status == SUCCESS && (paramsPtr->io.flags & FS_LAST_DIRTY_BLOCK)) {
-	/*
-	 * This is done here because the regular file write routine doesn't
-	 * know what client is doing the write.
-	 */
-	if (hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
-	    printf("Fsrmt_RpcWrite, lastDirtyBlock flag on bad stream type (%d)\n",
-		    hdrPtr->fileID.type);
-	} else {
-	    Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
-	    FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_DEL_LAST_WR, hdrPtr);
-	    Fsconsist_DeleteLastWriter(&handlePtr->consist, clientID);
-	    if (paramsPtr->io.flags & FS_WB_ON_LDB) {
-		Boolean	blocksSkipped;
-		/*
-		 * Force out all data, indirect and descriptor blocks
-		 * for this file.
-		 */
-		status = Fscache_FileWriteBack(&handlePtr->cacheInfo, 0, 
-			    FSCACHE_LAST_BLOCK,
-			    FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT,
-			    &blocksSkipped);
-		if (status != SUCCESS) {
-		    printf("Fsrmt_RpcWrite: write back <%d,%d> \"%s\" err <%x>\n",
-			handlePtr->hdr.fileID.major,
-			handlePtr->hdr.fileID.minor,
-			Fsutil_HandleName(handlePtr), status);
-		}
-#ifdef notdef
-		status = Fsdm_FileDescWriteBack(handlePtr, TRUE);
-		if (status != SUCCESS) {
-		    printf("Fsrmt_RpcWrite: desc write <%d,%d> \"%s\" err <%x>\n",
-			handlePtr->hdr.fileID.major,
-			handlePtr->hdr.fileID.minor,
-			Fsutil_HandleName(handlePtr), status);
-		}
-#endif
-	    }
-	}
     }
 exit:
     Fsutil_HandleRelease(hdrPtr, FALSE);

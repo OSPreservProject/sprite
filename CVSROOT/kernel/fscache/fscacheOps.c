@@ -482,6 +482,9 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
     mig = (flags & FSCONSIST_MIGRATION) ? FSCACHE_WB_MIGRATION : 0;
     switch (flags & ~(FSCONSIST_DEBUG|FSCONSIST_MIGRATION)) {
 	case FSCONSIST_WRITE_BACK_BLOCKS:
+#ifdef SOSP91
+	    cacheInfoPtr->flags |= FSCACHE_CONSIST_WB;
+#endif SOSP91
 	    status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
 			FSCACHE_LAST_BLOCK, FSCACHE_FILE_WB_WAIT | mig,
 					   &numSkipped);
@@ -493,6 +496,9 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
 	    cacheInfoPtr->flags |= FSCACHE_FILE_NOT_CACHEABLE;
 	    break;
 	case FSCONSIST_INVALIDATE_BLOCKS | FSCONSIST_WRITE_BACK_BLOCKS:
+#ifdef SOSP91
+	    cacheInfoPtr->flags |= FSCACHE_CONSIST_WBINV;
+#endif SOSP91
 	    status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
 					   FSCACHE_LAST_BLOCK,
 					   FSCACHE_WRITE_BACK_AND_INVALIDATE |

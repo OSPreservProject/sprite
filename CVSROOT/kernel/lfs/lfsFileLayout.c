@@ -942,6 +942,9 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 	   *(int *) summaryPtr = blockPtr->blockNum;
 	   summaryPtr += sizeof(int);
 	   LfsSegSetSummaryPtr(segPtr,summaryPtr);
+#ifdef SOSP91
+	   Fscache_AddBlockToStats(cacheInfoPtr, blockPtr); 
+#endif SOSP91
 	   bufferPtr = LfsSegAddDataBuffer(segPtr, blocksNeeded, 
 			    blockPtr->blockAddr, (ClientData) blockPtr);
 
@@ -997,6 +1000,9 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 	    } 
 	}
     }
+#ifdef SOSP91
+    cacheInfoPtr->flags &= ~FSCACHE_REASON_FLAGS;
+#endif SOSP91
     if (full) { 
 	 return full;
     }

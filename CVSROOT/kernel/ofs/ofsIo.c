@@ -487,7 +487,6 @@ Ofs_StartWriteBack(backendPtr)
  * ----------------------------------------------------------------------------
  */
 
-#define WRITE_RETRY_INTERVAL	30
 
 /*
  * ----------------------------------------------------------------------------
@@ -532,6 +531,9 @@ Ofs_CleanBlocks(data, callInfoPtr)
 	    /*
 	     * Write the block.
 	     */
+#ifdef SOSP91
+	    Fscache_AddBlockToStats(cacheInfoPtr, blockPtr);
+#endif SOSP91
 	    status = Fsdm_FileBlockWrite
 		    (cacheInfoPtr->hdrPtr, blockPtr, lastDirtyBlock);
 	    numWrites++;
@@ -543,6 +545,9 @@ Ofs_CleanBlocks(data, callInfoPtr)
 		break;
 	    }
 	}
+#ifdef SOSP91
+	cacheInfoPtr->flags &= ~FSCACHE_REASON_FLAGS;
+#endif SOSP91
 	Fscache_ReturnDirtyFile(cacheInfoPtr, FALSE);
 	cacheInfoPtr = Fscache_GetDirtyFile(backendPtr, TRUE, FileMatch, 
 					(ClientData) NIL);

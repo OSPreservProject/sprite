@@ -273,12 +273,6 @@ typedef struct Fs_Stream {
 #define	FS_MAP			0x20000000
 #define	FS_MIGRATED_FILE	0x40000000
 #define	FS_MIGRATING		0x80000000
-/*
- * These functions were eliminated to free up their status bits.
- * The code associated with them should be removed.
- */
-#define FS_LAST_DIRTY_BLOCK	0x00000000
-#define FS_WB_ON_LDB		0x00000000
 
 
 /*
@@ -420,20 +414,6 @@ extern  Boolean fsutil_Initialized;
  */
 extern int fsMaxRpcDataSize;
 extern int fsMaxRpcParamSize;
-
-/*
- * The directory that temporary files will live in.
- */
-extern	int	fsutil_TmpDirNum;
-
-/*
- * Writing policies.
- */
-extern	Boolean	fsutil_DelayTmpFiles;
-extern	Boolean	fsutil_WriteThrough;
-extern	Boolean	fsutil_WriteBackASAP;
-extern	Boolean	fsutil_WriteBackOnClose;
-extern	Boolean	fsutil_WBOnLastDirtyBlock;
 
 /*
  * Filesystem initialization calls.

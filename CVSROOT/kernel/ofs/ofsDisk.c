@@ -448,6 +448,9 @@ Ofs_DetachDisk(domainPtr)
      */
     Fscache_WriteBack(-1, &blocksLeft, FALSE);	/* Write back the cache. */
     headerPtr = ofsPtr->headerPtr;
+#ifdef SOSP91
+    ofsPtr->physHandle.cacheInfo.flags |= FSCACHE_DETACH;
+#endif SOSP91
     Fscache_FileWriteBack(&ofsPtr->physHandle.cacheInfo,
 	    headerPtr->fileDescOffset,
 	    headerPtr->fileDescOffset + 

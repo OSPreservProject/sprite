@@ -45,6 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #ifdef SOSP91
 #include <fsStat.h>
 #include <sospRecord.h>
+#include <fscache.h>
 #endif SOSP91
 
 Boolean	sys_ErrorShutdown = FALSE;

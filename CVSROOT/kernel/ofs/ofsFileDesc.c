@@ -529,6 +529,9 @@ Ofs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr, forceOut)
 			FS_BLOCK_SIZE, 0);
     if ((status == SUCCESS) && forceOut) { 
 	int	blocksSkipped;
+#ifdef SOSP91
+	ofsPtr->physHandle.cacheInfo.flags |= FSCACHE_DESC;
+#endif SOSP91
 	status = Fscache_FileWriteBack(&ofsPtr->physHandle.cacheInfo,
 		    blockNum, blockNum, FSCACHE_FILE_WB_WAIT, &blocksSkipped);
 	if (status != SUCCESS) {
@@ -569,6 +572,9 @@ Ofs_FileDescSync(domainPtr, fileNumber)
 
     blockNum = ofsPtr->headerPtr->fileDescOffset + 
 				fileNumber / FSDM_FILE_DESC_PER_BLOCK;
+#ifdef SOSP91
+    ofsPtr->physHandle.cacheInfo.flags |= FSCACHE_DESC;
+#endif SOSP91
     status = Fscache_FileWriteBack(&ofsPtr->physHandle.cacheInfo,
 		blockNum, blockNum, FSCACHE_FILE_WB_WAIT, &blocksSkipped);
     if (status != SUCCESS) {
