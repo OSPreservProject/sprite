@@ -2336,7 +2336,19 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
     int			offset;
     int			newLastByte;
     int			blockSize;
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
 
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
     offset =  blockNum * FS_BLOCK_SIZE;
     newLastByte = offset + length - 1;
     (void) (handlePtr->cacheInfo.backendPtr->ioProcs.allocate)
@@ -2364,6 +2376,12 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
     handlePtr->descPtr->flags |= FSDM_FD_MODTIME_DIRTY;
     fs_Stats.blockCache.dirBytesWritten += FSLCL_DIR_BLOCK_SIZE;
     fs_Stats.blockCache.dirBlockWrites++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_SospMigStats.blockCache.dirBytesWritten += FSLCL_DIR_BLOCK_SIZE;
+	    fs_SospMigStats.blockCache.dirBlockWrites++;
+	}
+#endif SOSP91
     blockSize = handlePtr->descPtr->lastByte + 1 - (blockNum * FS_BLOCK_SIZE);
     if (blockSize > FS_BLOCK_SIZE) {
 	blockSize = FS_BLOCK_SIZE;
