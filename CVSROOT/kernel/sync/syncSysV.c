@@ -310,7 +310,7 @@ Sync_SemctlStub(semid, semnum, cmd, arg, retValOut)
 	    break;
     }
     if (cmd == SETVAL || cmd == SETALL || cmd == IPC_SET) {
-	Timer_GetRealTimeOfDay(&timeVal,NIL,NIL);
+	Timer_GetRealTimeOfDay(&timeVal, (int *)NIL, (Boolean *)NIL);
 	semPtr->sem_ctime = timeVal.seconds;
     }
     UNLOCK_MONITOR;
@@ -421,7 +421,7 @@ Sync_SemgetStub(key, nsems, semflg, retValOut)
 	semPtr->sem_perm.mode = semflg&0666;
 	semPtr->sem_perm.key = key;
 	semPtr->sem_base = (struct sem *)malloc(sizeof(struct sem)*nsems);
-	Timer_GetRealTimeOfDay(&timeVal,NIL,NIL);
+	Timer_GetRealTimeOfDay(&timeVal, (int *) NIL, (Boolean *) NIL);
 	semPtr->sem_nsems = nsems;
 	semPtr->sem_otime = 0;
 	semPtr->sem_ctime = timeVal.seconds;
@@ -574,7 +574,7 @@ retry:
 		semmod[sops[i].sem_num]++;
 	    }
 	}
-	Timer_GetRealTimeOfDay(&timeVal,NIL,NIL);
+	Timer_GetRealTimeOfDay(&timeVal, (int *)NIL, (Boolean *) NIL);
 	semPtr->sem_otime = timeVal.seconds;
 	for (i=0;i<semPtr->sem_nsems;i++) {
 	    if (semmod[i] != 0) {
