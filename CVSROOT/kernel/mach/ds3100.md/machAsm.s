@@ -1655,16 +1655,10 @@ UNIXSyscall:
     bne		t0, zero, 1f			# If so then continue on.
     nop
 /*
- * System call number is too big.  Return EINVAL to
- * the user.
+ * System call number is too big.  Run it through the new call code.
  */
-    mfc0	t0, MACH_COP_0_EXC_PC
-    add		gp, t7, zero
-    li		v0, 22
-    li		a3, 1
-    add		t0, t0, 4
-    j		t0
-    rfe
+    j		doNewSysCall
+    nop
 /* 
  * Now we know that we have a good system call number so go ahead and
  * save state and switch to the kernel's stack.  Note that we save 
@@ -1839,27 +1833,11 @@ newUNIXSyscall:
  */
 doNewSysCall:
     sw          v0, sysCallNum
-    sltu	t0, v0, MACH_MAX_UNIX_SYSCALL   # t0 <= Maximum sys call value.
-    bne		t0, zero, 1f			# If so then continue on.
-    nop
-/*
- * System call number is too big.  Return EINVAL to
- * the user.
- */
-    mfc0	t0, MACH_COP_0_EXC_PC
-    add		gp, t7, zero
-    li		v0, 22
-    li		a3, 1
-    add		t0, t0, 4
-    j		t0
-    rfe
 /* 
- * Now we know that we have a good system call number so go ahead and
- * save state and switch to the kernel's stack.  Note that we save 
+ * Save state and switch to the kernel's stack.  Note that we save 
  * a0 - a2 and v1 because UNIX system call stubs assume that these
  * won't get modified unless a value is returned in v1.
  */
-1:
     lw		t1, machCurStatePtr
     add		t2, sp, zero
     mfc0	t3, MACH_COP_0_EXC_PC
@@ -1891,10 +1869,20 @@ doNewSysCall:
     and		s8, s8, ~MACH_SR_COP_1_BIT
     or		t3, s8, MACH_SR_INT_ENA_CUR
     mtc0	t3, MACH_COP_0_STATUS_REG
+
+/*
+ *  Check if the call number is too big.  If so, set call to 0, since that
+ *  is an invalid call.
+ */
+    sltu	t0, v0, MACH_MAX_UNIX_SYSCALL   # t0 <= Maximum sys call value.
+    bne		t0, zero, 1f			# If so then continue on.
+    nop
+    add		v0, zero, zero
 /*
  * Now fetch the args.  The user's stack pointer is in t2 and the 
  * current state pointer in t1.
  */
+1:
     sll		t0, v0, 3	# t0 <= v0 * 8
     la		t3, sysUnixSysCallTable
     add		t0, t0, t3
@@ -1922,8 +1910,8 @@ doNewSysCall:
 /*
  * Return to the user.  We have the following saved information:
  *	s0:	machCurStatePtr
- *	s3:	syscall type.
- *	s8:	status register.
+ * We have the following registers:
+ *	v0: return value
  */
 unixNewSyscallReturn:
     lw		s2, proc_RunningProcesses	# s2 <= pointer to running
@@ -1942,8 +1930,6 @@ unixNewSyscallReturn:
  *	s0:	machCurStatePtr
  *	s1:	procPtr->specialHandling
  *	s2:	procPtr
- *	s3:	syscall type.
- *	s8:	status register
  */
 /*
  * Set up the registers correctly:
