@@ -1553,17 +1553,20 @@ FsDeviceGetIOAttr(fileIDPtr, clientID, attrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceSetIOAttr(fileIDPtr, attrPtr)
+FsDeviceSetIOAttr(fileIDPtr, attrPtr, flags)
     FsFileID			*fileIDPtr;	/* FileID of device */
     register Fs_Attributes	*attrPtr;	/* Attributes to copy */
+    int				flags;		/* What attrs to set */
 {
     register FsDeviceIOHandle *devHandlePtr;
 
-    devHandlePtr = FsHandleFetchType(FsDeviceIOHandle, fileIDPtr);
-    if (devHandlePtr != (FsDeviceIOHandle *)NIL) {
-	devHandlePtr->accessTime = attrPtr->accessTime.seconds;
-        devHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
-	FsHandleRelease(devHandlePtr, TRUE);
+    if (flags & FS_SET_TIMES) {
+	devHandlePtr = FsHandleFetchType(FsDeviceIOHandle, fileIDPtr);
+	if (devHandlePtr != (FsDeviceIOHandle *)NIL) {
+	    devHandlePtr->accessTime = attrPtr->accessTime.seconds;
+	    devHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
+	    FsHandleRelease(devHandlePtr, TRUE);
+	}
     }
     return(SUCCESS);
 }

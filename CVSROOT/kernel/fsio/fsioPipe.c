@@ -704,9 +704,10 @@ FsPipeGetIOAttr(fileIDPtr, clientID, attrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeSetIOAttr(fileIDPtr, attrPtr)
+FsPipeSetIOAttr(fileIDPtr, attrPtr, flags)
     FsFileID		*fileIDPtr;	/* FileID of pipe */
     Fs_Attributes	*attrPtr;	/* Attributes to update */
+    int			flags;		/* What attrs to set */
 {
     return(SUCCESS);
 }
