@@ -335,7 +335,6 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 {
     register Fs_Stream	*streamPtr = (Fs_Stream *)hdrPtr;
     ReturnStatus status;
-    LOCK_MONITOR;
 
     if (inData == (ClientData)NIL) {
 	/*
@@ -394,7 +393,6 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	    status = FAILURE;
 	}
     }
-    UNLOCK_MONITOR;
     return(status);
 }
 
