@@ -51,6 +51,12 @@ Boolean proc_DoTrace = FALSE;
 Boolean proc_DoCallTrace = FALSE;
 
 /*
+ * True if we should convert a SIG_DEBUG into a SIG_KILL for migrated
+ * processes.
+ */
+Boolean proc_KillMigratedDebugs = TRUE;
+
+/*
  * Set to true to refuse ALL migrations onto this machine.
  */
 Boolean proc_RefuseMigrations = FALSE;
@@ -186,6 +192,14 @@ Proc_Migrate(pid, nodeID)
     if (procPtr->genFlags & PROC_FOREIGN) {
 	if (proc_MigDebugLevel > 0) {
 	    printf("Proc_Migrate: process %x is foreign... can't migrate yet.\n",
+		       procPtr->processID);
+	}
+	Proc_Unlock(procPtr);
+	return(PROC_INVALID_PID);
+    }
+    if (procPtr->genFlags & PROC_DONT_MIGRATE) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_Migrate: process %x is not allowed to migrate.\n",
 		       procPtr->processID);
 	}
 	Proc_Unlock(procPtr);
@@ -1454,6 +1468,37 @@ Proc_EvictProc(pid)
     
     status = Sig_Send(SIG_MIGRATE_HOME, 0, pid, FALSE);
     return(status); 
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_NeverMigrate --
+ *
+ *	Flag a process so it will never be migrated.  This may be
+ * 	used to keep the master of a pseudo-device from migrating, or
+ * 	a process with kernel addresses mapped into user space from
+ *	migrating.  The process is flagged as unmigrateable for the rest of
+ * 	the lifetime of the process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process's genFlags field is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_NeverMigrate(procPtr)
+    Proc_ControlBlock *procPtr;
+{
+
+    Proc_Lock(procPtr);
+    procPtr->genFlags |= PROC_DONT_MIGRATE;
+    Proc_Unlock(procPtr);
 }
 
 
