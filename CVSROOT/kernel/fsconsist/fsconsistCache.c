@@ -145,7 +145,7 @@ FsConsistInit(consistPtr, hdrPtr)
     register FsConsistInfo *consistPtr;	/* State to initialize */
     FsHandleHeader *hdrPtr;		/* Back pointer to handle */
 {
-    SYNC_LOCK_INIT_DYNAMIC(&consistPtr->lock);
+    Sync_LockInitDynamic(&consistPtr->lock, "Fs:consistLock");
     consistPtr->flags = 0;
     consistPtr->lastWriter = -1;
     consistPtr->openTimeStamp = 0;
@@ -154,6 +154,29 @@ FsConsistInit(consistPtr, hdrPtr)
     List_Init(&consistPtr->msgList);
     consistPtr->consistDone.waiting = 0;
     consistPtr->repliesIn.waiting = 0;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsConsistSyncLockCleanup --
+ *
+ *      Clean up Sync_Lock tracing for the cache lock.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	As above.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+void
+FsConsistSyncLockCleanup(consistPtr)
+    register FsConsistInfo *consistPtr;	/* State to initialize */
+{
+    Sync_LockClear(&consistPtr->lock);
 }
 
 /*
@@ -1114,8 +1137,7 @@ FsDeleteLastWriter(consistPtr, clientID)
  *      dirty blocks cached telling them to delete them from their cache.
  *	We may have forgotten about clients with clean blocks so we can't
  *	call them back.  Instead we depend on the version number being
- *	incremented (by 1 when opened for writing, by 2 when creating)
- *	to catch old blocks left in caches.
+ *	incremented to catch old blocks left in caches.
  *
  * Results:
  *	None.
@@ -1156,8 +1178,7 @@ FsClientRemoveCallback(consistPtr, clientID)
 		    List_First((List_Links *) &consistPtr->clientList);
 	curClientID = clientPtr->clientID;
 	if (clientPtr->use.ref > 0) {
-	    panic(
-		"FsClientRemoveCallback: Client using removed file\n");
+	    panic("FsClientRemoveCallback: Client using removed file\n");
 	} else if (consistPtr->lastWriter != -1) {
 	    if (clientPtr->clientID != consistPtr->lastWriter) {
 		printf(
@@ -1518,8 +1539,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 	} else {
 	    numRefusals++;
 	    if (numRefusals > 30) {
-		printf(
-		    "Client %d dropped 30 %s requests for \"%s\" <%d,%d>\n",
+		printf("Client %d dropped 30 %s requests for \"%s\" <%d,%d>\n",
 			    clientPtr->clientID, ConsistType(flags),
 			    FsHandleName(consistPtr->hdrPtr),
 			    consistRpc.fileID.major, consistRpc.fileID.minor);
@@ -1587,8 +1607,9 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 
     consistArgPtr = (ConsistMsg *)storagePtr->requestParamPtr;
     if (consistArgPtr->fileID.type != FS_RMT_FILE_STREAM) {
-	panic( "Fs_RpcConsist, bad stream type <%d>\n",
+	printf("Fs_RpcConsist, bad stream type <%d>\n",
 		    consistArgPtr->fileID.type);
+	return(FAILURE);
     }
     /*
      * This fetch locks the handle.  In earlier versions of the kernel
@@ -1598,8 +1619,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
     if (rmtHandlePtr == (FsRmtFileIOHandle *)NIL) {
 	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
-	    printf(
-		    "Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
+	    printf("Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
@@ -1613,21 +1633,11 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	     * of getting to us.  This is the "open/consistency race".
 	     */
 	    status = FAILURE;
-#ifdef notdef
-	    printf(
-		    "Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
-		    consistArgPtr->fileID.major,
-		    consistArgPtr->fileID.minor,
-		    ConsistType(consistArgPtr->flags),
-		    consistArgPtr->fileID.serverID,
-		    "open in progress");
-#endif
 	}
     } else if (rmtHandlePtr->openTimeStamp != consistArgPtr->openTimeStamp) {
 	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
-	    printf(
-		"Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
+	    printf("Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
@@ -1636,19 +1646,10 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 		    "stale handle");
 	} else {
 	    /*
+	     * Timestamp mis-match and an open in progress.
 	     * Possible open/consistency race.
 	     */
 	    status = FAILURE;
-#ifdef notdef
-	    printf(
-		"Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
-		    consistArgPtr->fileID.major,
-		    consistArgPtr->fileID.minor,
-		    ConsistType(consistArgPtr->flags),
-		    consistArgPtr->fileID.serverID,
-		    consistArgPtr->openTimeStamp, rmtHandlePtr->openTimeStamp,
-		    "open in progress");
-#endif
 	}
     } else {
 	status = SUCCESS;
@@ -1667,8 +1668,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	consistPtr->args = *consistArgPtr;
 	Proc_CallFunc(ProcessConsist, (ClientData) consistPtr, 0);
     } else if (consistArgPtr->flags & FS_DEBUG_CONSIST) {
-	printf(
-	    "Fs_RpcConsist: <%d,%d> Lots of %s msgs dropped: %s\n",
+	printf("Fs_RpcConsist: <%d,%d> Lots of %s msgs dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
@@ -1710,11 +1710,6 @@ ProcessConsist(data, callInfoPtr)
     consistPtr = (ConsistItem *) data;
     callInfoPtr->interval = 0;
 
-    if (consistPtr->args.fileID.type != FS_RMT_FILE_STREAM) {
-	panic( "ProcessConsist, unexpected file type %d\n",
-	    consistPtr->args.fileID.type);
-	return;
-    }
     handlePtr = FsHandleFetchType(FsRmtFileIOHandle, &consistPtr->args.fileID);
     if (handlePtr == (FsRmtFileIOHandle *)NIL) {
 	printf("<%d, %d, %d, %d>:", consistPtr->args.fileID.type,
