@@ -77,6 +77,8 @@ static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
 extern	Address	vmStackEndAddr;
 
 static int GetNumPages _ARGS_((void));
+static int GetNumValidPages _ARGS_((Address virtAddr));
+static void FlushValidPages _ARGS_ ((Address virtAddr));
 #ifdef sun4c
 static int VirtToPhysPage _ARGS_((int pfNum));
 static int PhysToVirtPage _ARGS_((int pfNum));
@@ -99,7 +101,6 @@ ENTRY static Boolean PMEGLock _ARGS_ ((register VmMach_SegData *machPtr,
 INTERNAL static void SetupContext _ARGS_((register Proc_ControlBlock
 	*procPtr));
 static void InitNetMem _ARGS_((void));
-static void VmMachFlushCacheRange _ARGS_((Address startAddr, Address endAddr));
 static void FlushWholeCache _ARGS_((void));
 ENTRY static void WriteHardMapSeg _ARGS_((VmMach_ProcData *machPtr));
 static void PageInvalidate _ARGS_((register Vm_VirtAddr *virtAddrPtr,
@@ -1490,6 +1491,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     int				pmegNum;
     Address			virtAddr;
     Boolean			found = FALSE;
+    int				numValidPages;
 
     if (List_IsEmpty(pmegFreeList)) {
 	
@@ -1523,7 +1525,14 @@ PMEGGet(softSegPtr, hardSegNum, flags)
         if (segPtr->type == VM_SYSTEM) {
 	    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 		VmMachSetContextReg(i);
-		VmMachFlushSegment(virtAddr);
+		numValidPages = GetNumValidPages(virtAddr);
+		if (numValidPages >
+			(VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
+		    VmMachFlushSegment(virtAddr);
+		} else {
+		    /* flush the pages */
+		    FlushValidPages(virtAddr);
+		}
 		VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 	    }
         } else {
@@ -1534,7 +1543,14 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 		    if (contextPtr->map[pmegPtr->hardSegNum] == pmegNum) {
 			VmMachSetContextReg(i);
 			contextPtr->map[pmegPtr->hardSegNum] = VMMACH_INV_PMEG;
-			VmMachFlushSegment(virtAddr);
+			numValidPages = GetNumValidPages(virtAddr);
+			if (numValidPages >
+				(VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
+			    VmMachFlushSegment(virtAddr);
+			} else {
+			    /* flush the pages */
+			    FlushValidPages(virtAddr);
+			}
 			VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 		    }
 		    if (contextPtr->map[MAP_SEG_NUM] == pmegNum) {
@@ -1597,6 +1613,71 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     pmegPtr->flags = flags;
 
     return(pmegNum);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetNumValidPages --
+ *
+ *	Return the number of valid pages in a segment.
+ *
+ * Results:
+ *	The number of valid pages.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetNumValidPages(virtAddr)
+    Address	virtAddr;
+{
+    int		i;
+    int		numValid = 0;
+    unsigned	int	pte;
+
+    for (i = 0; i < (VMMACH_SEG_SIZE / VMMACH_PAGE_SIZE_INT); i++) {
+	pte = VmMachGetPageMap(virtAddr + (i * VMMACH_PAGE_SIZE_INT));
+	if (pte & VMMACH_RESIDENT_BIT) {
+	    numValid++;
+	}
+    }
+
+    return numValid;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FlushValidPages --
+ *
+ *	Flush the valid pages in a segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The valid pages in a segment are flushed.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FlushValidPages(virtAddr)
+    Address	virtAddr;
+{
+    int		i;
+    unsigned	int	pte;
+
+    for (i = 0; i < (VMMACH_SEG_SIZE / VMMACH_PAGE_SIZE_INT); i++) {
+	pte = VmMachGetPageMap(virtAddr + (i * VMMACH_PAGE_SIZE_INT));
+	if (pte & VMMACH_RESIDENT_BIT) {
+	    VmMachFlushPage(virtAddr + (i * VMMACH_PAGE_SIZE_INT));
+	}
+    }
 }
 
 
@@ -2457,63 +2538,6 @@ volatile char	cacheFlusherArray[VMMACH_NUM_CACHE_LINES *
 /*
  *----------------------------------------------------------------------
  *
- * VmMachFlushCacheRange --
- *
- *	Flush the cache in the given range of addresses, inclusive,
- *	no matter what context we are in.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Cache flushed in range of addresses.
- *
- *----------------------------------------------------------------------
- */
-static void
-VmMachFlushCacheRange(startAddr, endAddr)
-    Address	startAddr;		/* first address to flush */
-    Address	endAddr;		/* last address to flush */
-{
-    char	*beginFlush, *endFlush;
-    char	dummy;
-    char	*cacheFlushPtr;
-#define	 VMMACH_CACHE_MASK (VMMACH_CACHE_SIZE - 1)
-#define	 VMMACH_LINE_MASK (VMMACH_CACHE_LINE_SIZE - 1)
-
-    if ((unsigned int )endAddr -
-	    (unsigned int )startAddr >= VMMACH_CACHE_SIZE) {
-	FlushWholeCache();
-
-	return;
-    }
-    
-	
-    /* Offset into array where entry maps to 1st entry of cache. */
-    cacheFlushPtr = (char *) (((unsigned int) (cacheFlusherArray +
-	    VMMACH_CACHE_SIZE)) & ~VMMACH_CACHE_MASK);
-    /* Get bits that map address into cache location. */
-    beginFlush = (char *)((((unsigned int)startAddr) & ~VMMACH_LINE_MASK) &
-	    VMMACH_CACHE_MASK);
-    endFlush = (char *)((((unsigned int) endAddr) & ~VMMACH_LINE_MASK) &
-	    VMMACH_CACHE_MASK);
-    beginFlush = cacheFlushPtr + ((unsigned int) beginFlush);
-    endFlush = cacheFlushPtr + ((unsigned int) endFlush);
-
-    while (beginFlush <= endFlush) {
-	dummy = *beginFlush;
-	beginFlush += VMMACH_CACHE_LINE_SIZE;
-    }
-#ifdef lint
-    dummy = dummy;
-#endif
-    return;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * FlushWholeCache --
  *
  *	Flush the whole cache.  It is important that the compiler not
@@ -2611,7 +2635,7 @@ VmMachTestCacheFlush()
     VmMachFlushPage(virtAddr2 + 254);
 
     /* Now try icky range flush */
-    VmMachFlushCacheRange(virtAddr1, virtAddr1 + 254);
+    VmMach_FlushByteRange(virtAddr1, 254);
 
     /* Did it get to memory? */
     saveValue22 = *virtAddr2;
@@ -2964,6 +2988,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
     Address			tVirtAddr;
     Address			pageVirtAddr;
     int				i;
+    int				oldContext;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -2976,10 +3001,13 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 	    if (*pmegNumPtr != VMMACH_INV_PMEG) {
 		pmegPtr = &pmegArray[*pmegNumPtr];
 		if (pmegPtr->pageCount != 0) {
-		    /* flush a range, so we don't care what context we're in. */
-		    VmMachFlushCacheRange(virtAddr, (Address)
-			    (((((unsigned int) virtAddr) + VMMACH_SEG_SIZE) &
-			    ~(VMMACH_SEG_SIZE - 1)) - 1));
+		    /* Flush this segment in all contexts */
+		    oldContext =  VmMachGetContextReg();
+		    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+			VmMachSetContextReg(i);
+			VmMachFlushSegment(virtAddr);
+		    }
+		    VmMachSetContextReg(oldContext);
 		    VmMachSetSegMap(vmMachPTESegAddr, (int)*pmegNumPtr);
 		    skipSeg = FALSE;
 		} else {
@@ -3076,6 +3104,8 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 #ifdef sun4
     Address			testVirtAddr;
 #endif sun4
+    int				j;
+    int				oldContext;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -3115,10 +3145,13 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 		hardPTE &= ~VMMACH_DONT_CACHE_BIT;
 	    }
 #endif sun4
-	    /* flush a range so we don't care what context we're in. */
-	    VmMachFlushCacheRange(testVirtAddr, (Address)
-		    (((((unsigned int) testVirtAddr) + VMMACH_PAGE_SIZE &
-		    ~(VMMACH_PAGE_SIZE - 1)) - 1)));
+	    /* Flush this page in all contexts */
+	    oldContext =  VmMachGetContextReg();
+	    for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
+		VmMachSetContextReg(j);
+		VmMachFlushPage(testVirtAddr);
+	    }
+	    VmMachSetContextReg(oldContext);
 	    VmMachWritePTE(pmegNum, virtAddr, hardPTE);
 	}
     }
