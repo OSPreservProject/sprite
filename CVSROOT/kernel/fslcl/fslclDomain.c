@@ -227,7 +227,7 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      * Do call-backs to get attributes cached (for regular files) on clients,
      * then copy the attributes from the disk descriptor.
      */
-    FsGetClientAttrs(handlePtr, rpc_SpriteID, &isExeced);
+    FsGetClientAttrs(handlePtr, openArgsPtr->clientID, &isExeced);
     FsAssignAttrs(handlePtr, isExeced, attrResultsPtr->attrPtr);
     /*
      * Get the I/O fileID so our client can contact the I/O server.
