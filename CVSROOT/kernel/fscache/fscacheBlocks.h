@@ -39,6 +39,8 @@
  *				are no longer caching because of write sharing
  *   FS_LARGE_FILE_MODE		This file is large enough such that we limit it
  *				to only a few blocks in the cache.
+ *   FS_FILE_GONE		The file has been removed and any delayed
+ *				writes should be discarded.
  */
 #define	FS_CLOSE_IN_PROGRESS		0x01
 #define	FS_CACHE_SERVER_DOWN		0x02
@@ -51,6 +53,7 @@
 #define FS_FILE_IS_WRITE_THRU		0x100
 #define FS_FILE_NOT_CACHEABLE		0x200
 #define	FS_LARGE_FILE_MODE		0x400
+#define FS_FILE_GONE			0x800
 
 
 /*
@@ -71,6 +74,7 @@ typedef struct FsCacheBlock {
     Address	blockAddr;	/* Kernel virtual address where data for
 				   cache block is at. */
     FsCacheFileInfo *cacheInfoPtr;	/* Reference to file's cache info. */
+    int		fileNum;	/* For consistency checks */
     int		blockNum;	/* The number of this block in the file. */
     int		diskBlock;	/* The block number on disk for this block. 
 				   For remote blocks this equals blockNum. */
