@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 
 extern	Address	vmStackBaseAddr;
+extern	Address	vmStackEndAddr;
 /*
  * Temporary macro for circular debugging buffer.
  */
@@ -54,6 +55,21 @@ static Sync_Semaphore vmMachMutex;
 static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
 
 #endif
+
+/*
+ * For debugging stuff, put values into a circular buffer.  After each value,
+ * stamp a special mark, which gets overwritten by next value, so we
+ * always know where the end of the list is.
+ */
+extern	int	debugCounter;
+extern	int	debugSpace[];
+#define DEBUG_ADD(thing)        \
+    debugSpace[debugCounter++] = (int)(thing);  \
+    if (debugCounter >= 500) {  \
+        debugCounter = 0;       \
+    }                           \
+    debugSpace[debugCounter] = (int)(0x11100111);
+
 
 /*----------------------------------------------------------------------
  * 
@@ -327,7 +343,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     for (i = 0, virtAddr = (Address)mach_KernStart; 
 	 i < kernPages;
 	 i++, virtAddr += VMMACH_PAGE_SIZE_INT) {
-#ifdef sun4	/* while porting */
+#ifdef sun4
         VmMachSetPageMap(virtAddr, 
 	    (VmMachPTE)(VMMACH_KRW_PROT | VMMACH_RESIDENT_BIT |
 		    VMMACH_DONT_CACHE_BIT | i));
@@ -359,11 +375,13 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
      * the max.
      */
     *maxSegsPtr = -1;
+#ifdef NOTDEF
     /*
      * Turn on caching.
      */
     VmMachClearCacheTags();
     VmMachInitSystemEnableReg();
+#endif NOTDEF
 }
 
 
@@ -457,6 +475,12 @@ VmMach_Init(firstFreePage)
     Address			lastCodeAddr;
     extern	int		etext;
 
+#ifdef NOTDEF
+    /*
+     * Will this flush enough?
+     */
+    VmMachFlushCurrentContext();
+#endif NOTDEF
     /*
      * Initialize the kernel's hardware segment table.
      */
@@ -499,27 +523,28 @@ VmMach_Init(firstFreePage)
 	    virtAddr <= lastCodeAddr) {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KR_PROT | 
 			  i * VMMACH_CLUSTER_SIZE;
-#ifdef sun4
-#ifdef NOTDEF
-	    pte &= ~VMMACH_DONT_CACHE_BIT
-#endif NOTDEF
-#endif /* sun4 */
 	} else {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
 			  i * VMMACH_CLUSTER_SIZE;
-#ifdef sun4	/* while porting */
-	    if (virtAddr >= vmStackBaseAddr ||
+#ifdef sun4
+	    if (virtAddr >= vmStackEndAddr ||
 		    virtAddr < (Address) MACH_KERN_START) {
 		pte |= VMMACH_DONT_CACHE_BIT;
 	    }
 #endif /* sun4 */
         }
+#ifdef NOTDEF
+	VmMachFlushPage(virtAddr);
+#endif NOTDEF
 	SET_ALL_PAGE_MAP(virtAddr, pte);
     }
 
     /*
      * Protect the bottom of the kernel stack.
      */
+#ifdef NOTDEF
+    VmMachFlushPage((Address)mach_StackBottom);
+#endif NOTDEF
     SET_ALL_PAGE_MAP((Address)mach_StackBottom, (VmMachPTE)0);
 
     /*
@@ -527,16 +552,20 @@ VmMach_Init(firstFreePage)
      */
     for (;virtAddr < (Address) (firstFreeSegment << VMMACH_SEG_SHIFT);
 	 virtAddr += VMMACH_PAGE_SIZE) {
+#ifdef NOTDEF
+	VmMachFlushPage(virtAddr);
+#endif NOTDEF
 	SET_ALL_PAGE_MAP(virtAddr, (VmMachPTE)0);
     }
 
     /* 
      * Zero out the invalid pmeg.
      */
+    /* Need I flush something? */
     VmMachPMEGZero(VMMACH_INV_PMEG);
 
     /*
-     * Finally copy the kernels context to each of the other contexts.
+     * Finally copy the kernel's context to each of the other contexts.
      */
     for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 	if (i == VMMACH_KERN_CONTEXT) {
@@ -547,6 +576,10 @@ VmMach_Init(firstFreePage)
 		 segTablePtr = vm_SysSegPtr->machPtr->segTablePtr;
 	     virtAddr < (Address)(VMMACH_NUM_SEGS_PER_CONTEXT*VMMACH_SEG_SIZE);
 	     virtAddr += VMMACH_SEG_SIZE, segTablePtr++) {
+	    /*
+	     * No need to flush stuff since the other contexts haven't
+	     * been used yet.
+	     */
 	    VmMachSetSegMap(virtAddr, *segTablePtr);
 	}
     }
@@ -570,6 +603,12 @@ VmMach_Init(firstFreePage)
 	    Vm_ReservePage(vidPage);
 	}
     }
+    /*
+     * Turn on caching.
+     */
+    VmMachClearCacheTags();
+    VmMachInitAddrErrorControlReg();
+    VmMachInitSystemEnableReg();
 }
 
 
@@ -656,8 +695,15 @@ MMUInit(firstFreeSegment)
 	 * segments.
 	 */
 	for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
+	    Address	addr;
+
 	    VmMachSetUserContext(j);
-	    VmMachSetSegMap((Address)(i << VMMACH_SEG_SHIFT), VMMACH_INV_PMEG);
+	    addr = (Address) (i << VMMACH_SEG_SHIFT);
+	    /* Yes, do this here since user stuff would be double mapped. */
+#ifdef NOTDEF
+	    VmMachFlushSegment(addr);
+#endif NOTDEF
+	    VmMachSetSegMap(addr, VMMACH_INV_PMEG);
 	}
     }
     VmMachSetUserContext(VMMACH_KERN_CONTEXT);
@@ -681,7 +727,13 @@ MMUInit(firstFreeSegment)
      * before the specially mapped page clusters.
      */
     for (; i < VMMACH_FIRST_SPECIAL_SEG; i++, segTablePtr++) {
-	VmMachSetSegMap((Address)(i << VMMACH_SEG_SHIFT), VMMACH_INV_PMEG);
+	Address	addr;
+	/* Yes, do this here, since user stuff would be double-mapped. */
+	addr = (Address) (i << VMMACH_SEG_SHIFT);
+#ifdef NOTDEF
+	VmMachFlushSegment(addr);
+#endif NOTDEF
+	VmMachSetSegMap(addr, VMMACH_INV_PMEG);
     }
 
     /*
@@ -725,6 +777,9 @@ MMUInit(firstFreeSegment)
 			inusePMEG = TRUE;
 		    }
 		} else {
+#ifdef NOTDEF
+		    VmMachFlushPage(virtAddr);
+#endif NOTDEF
 		    VmMachSetPageMap(virtAddr, (VmMachPTE)0);
 		}
 	    }
@@ -742,6 +797,9 @@ MMUInit(firstFreeSegment)
 		for (z = 0; z < 100000; z++) {
 		}
 #endif
+#ifdef NOTDEF
+		VmMachFlushSegment(virtAddr);
+#endif NOTDEF
 		VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 		pageCluster = VMMACH_INV_PMEG;
 	    }
@@ -1003,11 +1061,35 @@ SegDelete(segPtr)
     for (i = 0, pmegPtr = (unsigned short *) machPtr->segTablePtr;
 	     i < machPtr->numSegs; i++, pmegPtr++) {
 	if (*pmegPtr != VMMACH_INV_PMEG) {
+	    /* Flushing is done in PMEGFree */
 	    PMEGFree((int) *pmegPtr);
 	}
     }
 
     MASTER_UNLOCK(vmMachMutexPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMach_GetContext --
+ *
+ *	Return the context for a process, given its pcb.
+ *
+ * Results:
+ *	Context number for process.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+VmMach_GetContext(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    return procPtr->vmPtr->machPtr->contextPtr->context;
 }
 
 
@@ -1106,6 +1188,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
         if (segPtr->type == VM_SYSTEM) {
 	    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 		VmMachSetContextReg(i);
+/* XXX */	VmMachFlushSegment(virtAddr);
 		VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 	    }
         } else {
@@ -1116,11 +1199,13 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 		    if (contextPtr->map[pmegPtr->hardSegNum] == pmegNum) {
 			VmMachSetContextReg(i);
 			contextPtr->map[pmegPtr->hardSegNum] = VMMACH_INV_PMEG;
+/* XXX */		VmMachFlushSegment(virtAddr);
 			VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 		    }
 		    if (contextPtr->map[MAP_SEG_NUM] == pmegNum) {
 			VmMachSetContextReg(i);
 			contextPtr->map[MAP_SEG_NUM] = VMMACH_INV_PMEG;
+/* XXX */		VmMachFlushSegment(VMMACH_MAP_SEG_ADDR);
 			VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR,
 					VMMACH_INV_PMEG);
 		    }
@@ -1135,6 +1220,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	    Boolean	printedStealPMEG = FALSE;
 
 	    ptePtr = pteArray;
+	    /* XXX Okay since it was flushed when freed? */
 	    VmMachReadAndZeroPMEG(pmegNum, ptePtr);
 	    for (i = 0;
 		 i < VMMACH_NUM_PAGES_PER_SEG_INT;
@@ -1209,7 +1295,33 @@ PMEGFree(pmegNum)
     if (pmegPtr->flags & PMEG_NEVER_FREE) {
 	return;
     }
+
     if (pmegPtr->pageCount > 0) {
+	int		i;
+	unsigned int	pte;
+	Address		addr;
+
+	/*
+	 * Deal with pages that are still cached in this pmeg.
+	 */
+	for (i = 0; i < VMMACH_NUM_PAGES_PER_SEG_INT; i++) {
+	    addr = vmMachPTESegAddr +
+		    ((i << VMMACH_PAGE_SHIFT) & VMMACH_PAGE_MASK);
+	    pte = VmMachReadPTE(pmegNum, addr);
+	    if ((pte & VMMACH_DONT_CACHE_BIT) == 0) {
+		int	j;
+		int	oldContext;
+
+		oldContext = VmMachGetContextReg();
+		addr = (Address) (pmegPtr->hardSegNum << VMMACH_SEG_SHIFT);
+		for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
+		    VmMachSetContextReg(j);
+		    VmMachFlushSegment(addr);
+		}
+		VmMachSetContextReg(oldContext);
+		break;
+	    }
+	}
 	VmMachPMEGZero(pmegNum);
     }
     pmegPtr->segPtr = (Vm_Segment *) NIL;
@@ -1390,6 +1502,7 @@ SetupContext(procPtr)
 	contextPtr->procPtr = procPtr;
 	vmPtr->machPtr->contextPtr = contextPtr;
 	VmMachSetContextReg(contextPtr->context);
+/* XXX */ VmMachFlushCurrentContext();
 	/*
 	 * Set the context map.
 	 */
@@ -1427,6 +1540,7 @@ SetupContext(procPtr)
 	 */
 	VmMachSegMapCopy(contextPtr->map, 0, mach_KernStart);
     } else {
+	/* XXX No need to flush anything? */
 	VmMachSetContextReg(contextPtr->context);
     }
     List_Move((List_Links *)contextPtr, LIST_ATREAR(contextList));
@@ -1454,6 +1568,7 @@ VmMach_FreeContext(procPtr)
 {
     register	VmMach_Context	*contextPtr;
     register	VmMach_ProcData	*machPtr;
+    int		oldContext;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -1464,6 +1579,14 @@ VmMach_FreeContext(procPtr)
 	MASTER_UNLOCK(vmMachMutexPtr);
 	return;
     }
+#ifdef GOO
+/* XXX */ oldContext = VmMachGetContextReg();
+    VmMachSetContextReg(contextPtr->context);
+    /* Here too??  This is called by things that don't call SetupContext... */
+    VmMachFlushCurrentContext();
+    VmMachSetContextReg(oldContext);
+#endif GOO
+
     List_Move((List_Links *)contextPtr, LIST_ATFRONT(contextList));
     contextPtr->flags = 0;
     machPtr->contextPtr = (VmMach_Context *)NIL;
@@ -1544,17 +1667,25 @@ VmMach_MapIntelPage(virtAddr)
      * See if there is a PMEG already.  If not allocate one.
      */
 
+DEBUG_ADD(0x7777777);
+DEBUG_ADD(virtAddr);
+
     pmeg = VmMachGetSegMap(virtAddr);
     if (pmeg == VMMACH_INV_PMEG) {
 	MASTER_LOCK(vmMachMutexPtr);
+	/* No flush, since PMEGGet takes care of that. */
 	allocatedPMEG = PMEGGet(vm_SysSegPtr, 
 				(unsigned)virtAddr >> VMMACH_SEG_SHIFT,
 				PMEG_DONT_ALLOC);
+DEBUG_ADD(0x71717171);
+DEBUG_ADD(allocatedPMEG);
 	MASTER_UNLOCK(vmMachMutexPtr);
 	VmMachSetSegMap(virtAddr, allocatedPMEG);
     } else {
 	allocatedPMEG = VMMACH_INV_PMEG;
 	intelSavedPTE = VmMachGetPageMap(virtAddr);
+DEBUG_ADD(0x81818181);
+DEBUG_ADD(intelSavedPTE);
     }
 
     /*
@@ -1562,9 +1693,11 @@ VmMach_MapIntelPage(virtAddr)
      */
     intelPage = Vm_KernPageAllocate();
     pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | VirtToPhysPage(intelPage);
-#ifdef sun4	/* while porting */
-	    pte |= VMMACH_DONT_CACHE_BIT;
+#ifdef sun4
+    pte |= VMMACH_DONT_CACHE_BIT;
 #endif /* sun4 */
+    /* No flush since this should never be cached. */
+DEBUG_ADD(intelPage);
     VmMachSetPageMap(virtAddr, pte);
 #endif /* sun2 or sun4 */
 }
@@ -1596,16 +1729,15 @@ VmMach_UnmapIntelPage(virtAddr)
     PMEG		*pmegPtr;
     Boolean	found = FALSE;
 
+DEBUG_ADD(0x88888888)
     if (allocatedPMEG != VMMACH_INV_PMEG) {
 	/*
 	 * Free up the PMEG.
 	 */
-#ifdef sun4
-	VmMachSetPageMap(virtAddr, (VmMachPTE)VMMACH_DONT_CACHE_BIT);
-#else
-	VmMachSetPageMap(virtAddr, (VmMachPTE)0);
-#endif sun4
+	/* No flush since this should never be cached. */
+/* XXXX */	VmMachSetPageMap(virtAddr, (VmMachPTE)0);
 	VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
+DEBUG_ADD(0x87878787)
 
 	MASTER_LOCK(vmMachMutexPtr);
 
@@ -1624,6 +1756,7 @@ VmMach_UnmapIntelPage(virtAddr)
 	    pmegPtr = &pmegArray[allocatedPMEG];
 	    List_Insert((List_Links *) pmegPtr, LIST_ATREAR(pmegInuseList));
 	}
+DEBUG_ADD(allocatedPMEG)
 	PMEGFree(allocatedPMEG);
 
 	MASTER_UNLOCK(vmMachMutexPtr);
@@ -1631,8 +1764,12 @@ VmMach_UnmapIntelPage(virtAddr)
 	/*
 	 * Restore the saved pte and free the allocated page.
 	 */
+	/* No flush since this should never be cached. */
+DEBUG_ADD(0x79797979)
+DEBUG_ADD(intelSavedPTE)
 	VmMachSetPageMap(virtAddr, intelSavedPTE);
     }
+DEBUG_ADD(intelPage)
     Vm_KernPageFree(intelPage);
 #endif
 }
@@ -1752,8 +1889,8 @@ VmMach_NetMemAlloc(numBytes)
 	virtAddr = (Address) (netLastPage << VMMACH_PAGE_SHIFT);
 	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT |
 	      VirtToPhysPage(Vm_KernPageAllocate());
-#ifdef sun4	/* while porting */
-	    pte |= VMMACH_DONT_CACHE_BIT;
+#ifdef sun4
+	pte |= VMMACH_DONT_CACHE_BIT;
 #endif /* sun4 */
 	SET_ALL_PAGE_MAP(virtAddr, pte);
     }
@@ -1867,6 +2004,57 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     return(retVal);
 }
 
+/*
+ * We use this array to flush the cache by touching entries at the correct
+ * offsets to clear the corresponding parts of the direct-mapped cache.
+ */
+char	cacheFlusherArray[VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE * 2];
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachFlushCacheRange --
+ *
+ *	Flush the cache in the given range of addresses, inclusive,
+ *	no matter what context we are in.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cache flushed in range of addresses.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmMachFlushCacheRange(startAddr, endAddr)
+    Address	startAddr;		/* first address to flush */
+    Address	endAddr;		/* last address to flush */
+{
+    char	*beginFlush, *endFlush;
+    char	readChar;
+    char	*cacheFlushPtr;
+
+    /* Offset into array where entry maps to 1st entry of cache. */
+    cacheFlushPtr = (char *) (((unsigned int) (cacheFlusherArray +
+	    (VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE))) &
+	    ~((VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE) - 1));
+    /* Get bits that map address into cache location. */
+    beginFlush = (char *)((((unsigned int)startAddr) & ~VMMACH_CACHE_LINE_SIZE)
+	    & ((VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE) - 1));
+    endFlush = (char *)(((((unsigned int) endAddr) & ~VMMACH_CACHE_LINE_SIZE)) &
+	    ((VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE) - 1));
+    beginFlush = cacheFlushPtr + ((unsigned int) beginFlush);
+    endFlush = cacheFlushPtr + ((unsigned int) beginFlush);
+
+    while (beginFlush <= endFlush) {
+	readChar = *beginFlush;
+	beginFlush += VMMACH_CACHE_LINE_SIZE;
+    }
+    return;
+}
+
 void	WriteHardMapSeg();
 
 
@@ -1875,7 +2063,7 @@ void	WriteHardMapSeg();
  *
  * VmMach_CopyInProc --
  *
- *	Copy from another processes address space into the current address
+ *	Copy from another process's address space into the current address
  *	space.   This is done by mapping the other processes segment into
  *	the current VAS and then doing the copy.  It assumed that this 
  *	routine is called with the source process locked such that its
@@ -1907,15 +2095,22 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
     Proc_ControlBlock		*toProcPtr;
     int				segOffset;
     int				bytesToCopy;
+    int				oldContext;
 
     toProcPtr = Proc_GetCurrentProc();
     machPtr = toProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (fromAddr) >> VMMACH_SEG_SHIFT;
+
     /*
      * Do a hardware segments worth at a time until done.
      */
     while (numBytes > 0 && status == SUCCESS) {
+	/* Flush segment in context of fromProcPtr. */
+	oldContext = VmMachGetContextReg();
+	VmMachSetContextReg(fromProcPtr->vmPtr->machPtr->contextPtr->context);
+/* XXX */	VmMachFlushSegment(fromAddr);
+	VmMachSetContextReg(oldContext);
 	segOffset = (unsigned int)fromAddr & (VMMACH_SEG_SIZE - 1);
 	bytesToCopy = VMMACH_SEG_SIZE - segOffset;
 	if (bytesToCopy > numBytes) {
@@ -1943,6 +2138,7 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 	/*
 	 * Zap the hardware segment.
 	 */
+/* XXX */	VmMachFlushSegment((Address) VMMACH_MAP_SEG_ADDR);
 	VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR, VMMACH_INV_PMEG); 
 	machPtr->mapHardSeg++;
     }
@@ -1988,6 +2184,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     Proc_ControlBlock		*fromProcPtr;
     int				segOffset;
     int				bytesToCopy;
+    int				oldContext;
 
 
     fromProcPtr = Proc_GetCurrentProc();
@@ -1998,6 +2195,10 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
      * Do a hardware segments worth at a time until done.
      */
     while (numBytes > 0 && status == SUCCESS) {
+	/* Flush segment in context of toProcPtr. */
+	oldContext = VmMachGetContextReg();
+	VmMachSetContextReg(toProcPtr->vmPtr->machPtr->contextPtr->context);
+	VmMachSetContextReg(oldContext);
 	segOffset = (unsigned int)toAddr & (VMMACH_SEG_SIZE - 1);
 	bytesToCopy = VMMACH_SEG_SIZE - segOffset;
 	if (bytesToCopy > numBytes) {
@@ -2024,6 +2225,9 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 	/*
 	 * Zap the hardware segment.
 	 */
+
+	/* Flush this in current context */
+/* XXX */	VmMachFlushSegment((Address) VMMACH_MAP_SEG_ADDR);
 	VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR, VMMACH_INV_PMEG); 
 
 	machPtr->mapHardSeg++;
@@ -2110,6 +2314,10 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 	    if (*pmegNumPtr != VMMACH_INV_PMEG) {
 		pmegPtr = &pmegArray[*pmegNumPtr];
 		if (pmegPtr->pageCount != 0) {
+		    /* flush a range, so we don't care what context we're in. */
+/* XXX */	    VmMachFlushCacheRange(virtAddr, (Address)
+			    (((((unsigned int) virtAddr) + VMMACH_SEG_SIZE) &
+			    ~(VMMACH_SEG_SIZE - 1)) - 1));
 		    VmMachSetSegMap(vmMachPTESegAddr, *pmegNumPtr);
 		    skipSeg = FALSE;
 		} else {
@@ -2147,13 +2355,16 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 					 (Address)&pteChange, TRUE);
 		    }
 #ifdef sun4
-		    if (virtAddr < (Address) MACH_KERN_START ||
-			    virtAddr >= vmStackBaseAddr) {
+		    if (virtAddr >= vmStackEndAddr ||
+			    virtAddr < (Address) MACH_KERN_START) {
 			pte |= VMMACH_DONT_CACHE_BIT;
 		    } else {
 			pte &= ~VMMACH_DONT_CACHE_BIT;
 		    }
 #endif sun4
+#ifdef GOO
+/* XXX */	    VmMachFlushPage(pageVirtAddr);
+#endif GOO
 		    VmMachSetPageMap(pageVirtAddr, pte);
 		}
 	    }
@@ -2239,13 +2450,17 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 				 (Address)&pteChange, TRUE);
 	    }
 #ifdef sun4
-	    if (testVirtAddr < (Address) MACH_KERN_START ||
-		    testVirtAddr >= vmStackBaseAddr) {
+	    if (testVirtAddr >= vmStackEndAddr  ||
+		    testVirtAddr < (Address) MACH_KERN_START) {
 		hardPTE |= VMMACH_DONT_CACHE_BIT;
 	    } else {
 		hardPTE &= ~VMMACH_DONT_CACHE_BIT;
 	    }
 #endif sun4
+	    /* flush a range so we don't care what context we're in. */
+/* XXX */  VmMachFlushCacheRange(testVirtAddr, (Address)
+		    (((((unsigned int) testVirtAddr) + VMMACH_PAGE_SIZE &
+		    ~(VMMACH_PAGE_SIZE - 1)) - 1)));
 	    VmMachWritePTE(pmegNum, virtAddr, hardPTE);
 	}
     }
@@ -2442,12 +2657,7 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 				 (Address)&pteChange, TRUE);
 	    }
 	    pte &= ~VMMACH_REFERENCED_BIT;
-#ifdef sun4
-#ifdef NOTDEF
-	    pte |= VMMACH_DONT_CACHE_BIT;
-#endif NOTDEF
-#endif sun4
-
+	    /* XXX Need to flush it? */
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
     }
@@ -2507,11 +2717,7 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 				(Address)&pteChange, TRUE);
 	    }
 	    pte &= ~VMMACH_MODIFIED_BIT;
-#ifdef sun4
-#ifdef NOTDEF
-	    pte |= VMMACH_DONT_CACHE_BIT;
-#endif NOTDEF
-#endif sun4
+	    /* XXXX Should I flush something here? */
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
     }
@@ -2599,12 +2805,12 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	}
     }
     hardPTE = VMMACH_RESIDENT_BIT | VirtToPhysPage(Vm_GetPageFrame(pte));
-#ifdef sun4	/* while porting */
-	    if (addr < (Address) MACH_KERN_START || addr >= vmStackBaseAddr) {
-		hardPTE |= VMMACH_DONT_CACHE_BIT;
-	    } else {
-		hardPTE &= ~VMMACH_DONT_CACHE_BIT;
-	    }
+#ifdef sun4
+    if (addr >= vmStackEndAddr || addr < (Address) MACH_KERN_START) {
+	hardPTE |= VMMACH_DONT_CACHE_BIT;
+    } else {
+	hardPTE &= ~VMMACH_DONT_CACHE_BIT;
+    }
 #endif /* sun4 */
     if (segPtr == vm_SysSegPtr) {
 	int	oldContext;
@@ -2614,6 +2820,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	oldContext = VmMachGetContextReg();
 	for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 	    VmMachSetContextReg(i);
+	    /* XXXX Necessary to flush something ? */
 	    VmMachSetSegMap(addr, *segTablePtr);
 	}
 	VmMachSetContextReg(oldContext);
@@ -2625,6 +2832,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	    addr = (Address) (VMMACH_MAP_SEG_ADDR + 
 				((unsigned int)addr & (VMMACH_SEG_SIZE - 1)));
 	}
+	/* XXX necessary to flush something? */
 	VmMachSetSegMap(addr, *segTablePtr);
 	procPtr = Proc_GetCurrentProc();
 	procPtr->vmPtr->machPtr->contextPtr->map[hardSeg] = *segTablePtr;
@@ -2662,6 +2870,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
 			(Address)&pteChange, TRUE);
     }
 
+    /* Flush something? */
     SET_ALL_PAGE_MAP(addr, hardPTE);
 
     MASTER_UNLOCK(vmMachMutexPtr);
@@ -2697,6 +2906,7 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     Address			addr;
     int				i;
     Vm_TracePTEChange		pteChange;
+    Address			testVirtAddr;
 
     refModMap[virtPage] = 0;
     if (segDeletion) {
@@ -2707,6 +2917,7 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     if (pmegNum == VMMACH_INV_PMEG) {
 	return;
     }
+    testVirtAddr = (Address) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
     addr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) &
 				VMMACH_PAGE_MASK) + vmMachPTESegAddr;
 #ifdef sun4
@@ -2729,12 +2940,9 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     /*
      * Invalidate the page table entry.
      */
+/* XXX */    VmMachFlushPage(testVirtAddr);
     for (i = 0; i < VMMACH_CLUSTER_SIZE; i++, addr += VMMACH_PAGE_SIZE_INT) {
-#ifdef sun4
-	VmMachWritePTE(pmegNum, addr, (VmMachPTE)VMMACH_DONT_CACHE_BIT);
-#else
-	VmMachWritePTE(pmegNum, addr, (VmMachPTE)0);
-#endif sun4
+/* XXX */	VmMachWritePTE(pmegNum, addr, (VmMachPTE)0);
     }
     pmegPtr = &pmegArray[pmegNum];
     if (hardPTE & VMMACH_RESIDENT_BIT) {
@@ -3432,6 +3640,15 @@ VmMach_FlushPage(virtAddrPtr, invalidate)
     Vm_VirtAddr	*virtAddrPtr;
     Boolean	invalidate;	/* Should invalidate the pte after flushing. */
 {
+    Address	virtAddr;
+
+    /* on sun4, ignore invalidate parameter? */
+    virtAddr = (Address) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
+/* XXX */    VmMachFlushPage(virtAddr);
+    if (invalidate) {
+	VmMachSetPageMap(virtAddr, (VmMachPTE)0);
+    }
+    return;
 }
 
 
@@ -3469,6 +3686,11 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
 	pte = VmMachGetPageMap(virtAddr);
 	pte &= ~VMMACH_PROTECTION_FIELD;
 	pte |= readWrite ? VMMACH_KRW_PROT : VMMACH_KR_PROT;
+#ifdef NOTDEF
+/* XXX */	VmMachFlushPage(virtAddr);
+#else
+/* XXX */	VmMachFlushCacheRange(virtAddr, virtAddr + numBytes);
+#endif NOTDEF
 	SET_ALL_PAGE_MAP(virtAddr, pte);
     }
 }

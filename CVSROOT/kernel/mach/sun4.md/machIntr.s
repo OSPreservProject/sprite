@@ -20,6 +20,7 @@
 
 #include "machConst.h"
 #include "machAsmDefs.h"
+#include "vmSunConst.h"
 
 .align	8
 .seg	"text"
@@ -67,5 +68,35 @@ LeaveInterruptLevel:
 	mov	MACH_OK, %RETURN_VAL_REG
 
 	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleLevel15Intr --
+ *
+ *	Handle a level 15 interrrupt.  This is a non-maskable memory error
+ *	interrupt, and we want to clear the condition so we report only
+ *	the first CE.  Then we'll jump to MachTrap and go into the debugger.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	We should go into the debugger.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachHandleLevel15Intr
+MachHandleLevel15Intr:
+	set	VMMACH_ADDR_CONTROL_REG, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	mov	%VOL_TEMP2, %g5
+	and	%VOL_TEMP2, ~VMMACH_ENABLE_MEM_ERROR_BIT, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+	set	VMMACH_ADDR_ERROR_REG, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %g6
+	set	_MachTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop

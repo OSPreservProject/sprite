@@ -167,6 +167,18 @@ copyingTable:
 	std	%g4, [%g2]
 	ldd	[%g1 + 8], %g4				/* copy next 2 words */
 	std	%g4, [%g2 + 8]
+	/*
+	 * Now copy the handler for non-maskable asynchronous memory error
+	 * interrupts.  We're going to die anyway on these errors, so all
+	 * we want to do is grab information and put it into registers.
+	 */
+	set	machProtoLevel15Intr, %g1		/* new src */
+	set	MACH_LEVEL15_INT, %g2			/* get trap offset */
+	add	%g6, %g2, %g2				/* offset in table */
+	ldd	[%g1], %g4				/* copy first 2 words */
+	std	%g4, [%g2]
+	ldd	[%g1 + 8], %g4				/* copy next 2 words */
+	std	%g4, [%g2 + 8]
 
 	mov	%g6, %tbr			/* switch in my trap address */
 	set	_machTBRAddr, %g2
@@ -233,6 +245,12 @@ machProtoWindowOverflow:
 machProtoWindowUnderflow:
 	sethi	%hi(MachHandleWindowUnderflowTrap), %VOL_TEMP1
 	or	%VOL_TEMP1, %lo(MachHandleWindowUnderflowTrap), %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	rd	%psr, %CUR_PSR_REG
+
+machProtoLevel15Intr:
+	sethi	%hi(MachHandleLevel15Intr), %VOL_TEMP1
+	or	%VOL_TEMP1, %lo(MachHandleLevel15Intr), %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	rd	%psr, %CUR_PSR_REG
 

@@ -1238,12 +1238,8 @@ HandleItAgain:
     if (machStatePtr->savedMask != 0) {
 	int	i;
 
-	DEBUG_ADD(0x88888888);
-	DEBUG_ADD(procPtr->processID);
 	for (i = 0; i < MACH_NUM_WINDOWS; i++) {
 	    if ((1 << i) & machStatePtr->savedMask) {
-		DEBUG_ADD(i);
-		DEBUG_ADD(machStatePtr->savedSps[i]);
 		/*
 		 * Clear the mask for this window.  We must turn off interrupts
 		 * to do this, since changing the savedMask must be an
@@ -1288,8 +1284,6 @@ HandleItAgain:
     Mach_DisableIntr();
     MachFlushWindowsToStack();
     if (procPtr->specialHandling != 0) {
-	DEBUG_ADD(0x87878787);
-	DEBUG_ADD(procPtr->processID);
 	goto HandleItAgain;
     }
     Mach_EnableIntr();

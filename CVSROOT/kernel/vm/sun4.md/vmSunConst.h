@@ -216,6 +216,12 @@ DoneCheck:
 #define	VMMACH_CACHE_TAGS_ADDR		0x80000000	/* control space */
 
 /*
+ * Bit in address error control register to enable reporting of asynchronous
+ * memory errors.
+ */
+#define	VMMACH_ENABLE_MEM_ERROR_BIT	0x40
+
+/*
  * Other cache constants:
  */
 /*

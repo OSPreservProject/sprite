@@ -640,6 +640,35 @@ _VmMachInitSystemEnableReg:
 /*
  * ----------------------------------------------------------------------------
  *
+ * VmMachInitAddrErrorControlReg --
+ *
+ *     	Set the addr error control register to enable asynchronous memory
+ *	error reporting.
+ *
+ *	void VmMachInitAddrErrorControlReg()
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Asynchronous memory errors may now be reported.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_VmMachInitAddrErrorControlReg
+_VmMachInitAddrErrorControlReg:
+    set		VMMACH_ADDR_CONTROL_REG, %OUT_TEMP1
+    ld		[%OUT_TEMP1], %OUT_TEMP2
+    or		%OUT_TEMP2, VMMACH_ENABLE_MEM_ERROR_BIT, %OUT_TEMP2
+    st		%OUT_TEMP2, [%OUT_TEMP1]
+    retl
+    nop
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * VmMachClearCacheTags --
  *
  *     	Clear all tags in the cache.
@@ -674,7 +703,7 @@ ClearTags:
  *
  *     	Flush the current context from the cache.
  *
- *	void VmMachFlushContext()
+ *	void VmMachFlushCurrentContext()
  *
  * Results:
  *     None.
@@ -751,7 +780,7 @@ FlushingSegment:
 .globl	_VmMachFlushPage
 _VmMachFlushPage:
     mov		%o0, %OUT_TEMP1				/* page addr */
-    set		VMMACH_PAGE_MASK, %OUT_TEMP2
+    set		~VMMACH_OFFSET_MASK, %OUT_TEMP2
     and		%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1	/* beginning of page */
     set		(VMMACH_PAGE_SIZE_INT / VMMACH_CACHE_LINE_SIZE), %OUT_TEMP2
 FlushingPage:
