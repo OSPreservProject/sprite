@@ -108,7 +108,7 @@ Fs_RpcReply()
  *
  *----------------------------------------------------------------------
  */
-void
+int
 Rpc_FreeMem(replyMemPtr)
     Rpc_ReplyMem	*replyMemPtr;
 {
@@ -119,6 +119,7 @@ Rpc_FreeMem(replyMemPtr)
 	Mem_Free(replyMemPtr->dataPtr);
     }
     Mem_Free((Address) replyMemPtr);
+    return(0);
 }
 
 

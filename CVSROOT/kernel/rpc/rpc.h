@@ -95,7 +95,7 @@ extern Boolean rpc_NoTimeouts;
 ReturnStatus	Rpc_Call();
 void		Rpc_Reply();
 void		Rpc_ErrorReply();
-void		Rpc_FreeMem();
+int		Rpc_FreeMem();
 
 ReturnStatus	Rpc_Echo();
 ReturnStatus	Rpc_Ping();
