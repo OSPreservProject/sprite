@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sched.h"
 #include "fs.h"
+#include "fsio.h"
 #include "stdlib.h"
 #include "sig.h"
 #include "spriteTime.h"
@@ -37,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "string.h"
 #include "byte.h"
 #include "rpc.h"
+#include "prof.h"
 #ifdef notdef
 #include "dbg.h"
 #endif
@@ -299,7 +301,7 @@ Proc_Exec(fileName, argPtrArray, envPtrArray, debugMe, host)
     }
 
     execFileName = malloc(accessLength);
-    strncpy(execFileName, fileName, accessLength);
+    (void) strncpy(execFileName, fileName, accessLength);
     Proc_MakeUnaccessible((Address) fileName, accessLength);
 
     /*
@@ -1413,7 +1415,7 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     }
 
     if (usedFile || notFound) {
-	(void) Fsio_StreamCopy(codeFilePtr, &heapFilePtr);
+	Fsio_StreamCopy(codeFilePtr, &heapFilePtr);
     } else {
 	heapFilePtr = codeFilePtr;
     }
@@ -1536,9 +1538,9 @@ ProcExecEncapState(procPtr, hostID, infoPtr, bufPtr)
 
     bcopy((Address) encapPtr, bufPtr, encapPtr->hdr.size);
     bufPtr += encapPtr->hdr.size;
-    strncpy(bufPtr, encapPtr->hdr.fileName, encapPtr->hdr.fileNameLength);
+    (void) strncpy(bufPtr, encapPtr->hdr.fileName, encapPtr->hdr.fileNameLength);
     bufPtr += encapPtr->hdr.fileNameLength;
-    strncpy(bufPtr, encapPtr->hdr.argString, encapPtr->hdr.argLength);
+    (void) strncpy(bufPtr, encapPtr->hdr.argString, encapPtr->hdr.argLength);
     return(SUCCESS);
 }
 
@@ -1577,7 +1579,7 @@ ProcExecDeencapState(procPtr, infoPtr, bufPtr)
     encapPtr->hdr.fileName = procPtr->remoteExecBuffer + encapPtr->hdr.size;
     argString = encapPtr->hdr.fileName + encapPtr->hdr.fileNameLength;
     encapPtr->hdr.argString = malloc(encapPtr->hdr.argLength);
-    strncpy(encapPtr->hdr.argString, argString, encapPtr->hdr.argLength);
+    (void) strncpy(encapPtr->hdr.argString, argString, encapPtr->hdr.argLength);
     return(SUCCESS);
 }
 

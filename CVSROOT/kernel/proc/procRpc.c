@@ -520,7 +520,7 @@ RpcProcExec(procPtr, dataPtr, dataLength, replyDataPtr,
 	free(procPtr->argString);
     }
     procPtr->argString = argString;
-    strcpy(argString, dataPtr);
+    (void) strcpy(argString, dataPtr);
 
     if (proc_MigDebugLevel > 6) {
 	printf("RpcProcExec setting argString to '%s'.\n", argString);
