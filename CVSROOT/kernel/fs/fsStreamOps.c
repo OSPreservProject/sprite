@@ -386,7 +386,8 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			blockPtr = (Fscache_Block *)NIL;
 			offset += FS_BLOCK_SIZE;
 			break;	/* do-while, go to next for loop iteration */
-		    } else if (pageType == FS_CODE_PAGE) {
+		    } else if (pageType == FS_CODE_PAGE &&
+				blockPtr != (Fscache_Block *)NIL) {
 			Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
 			blockPtr = (Fscache_Block *)NIL;
 		    }
@@ -397,8 +398,14 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 		status = (handlePtr->cacheInfo.ioProcsPtr->blockRead)
 			(streamPtr->ioHandlePtr, 0, pageAddr, &offset,
 			 &bytesRead, (Sync_RemoteWaiter *)NIL);
-		FSUTIL_TRACE_IO(FSUTIL_TRACE_READ, streamPtr->ioHandlePtr->fileID,
-			    offset, bytesRead);
+#ifdef lint
+		status = Fsio_FileBlockRead(streamPtr->ioHandlePtr, 0,
+		    pageAddr, &offset, &bytesRead, (Sync_RemoteWaiter *)NIL);
+		status = FsrmtFileBlockRead(streamPtr->ioHandlePtr, 0,
+		    pageAddr, &offset, &bytesRead, (Sync_RemoteWaiter *)NIL);
+#endif /* lint */
+		FSUTIL_TRACE_IO(FSUTIL_TRACE_READ,
+			streamPtr->ioHandlePtr->fileID, offset, bytesRead);
 		if (status != SUCCESS) {
 		    if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 			status == RPC_SERVICE_DISABLED) {
@@ -421,6 +428,15 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			    }
 			    return(status);
 			}
+		    } else if (status == FS_WOULD_BLOCK) {
+			/*
+			 * The remote server is so hosed that it can't
+			 * deliver us a block.  There is no good way
+			 * to wait.  Retry immediately?  Pound pound pound?
+			 */
+			retry = TRUE;
+			printf("Fs_PageRead: RmtRead blocked, waiting 1 min\n");
+			Sync_WaitTime(time_OneMinute);
 		    } else if (status != SUCCESS) {
 			    printf(
 				"Fs_PageRead: Read failed <%x>\n", status);
@@ -515,7 +531,13 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
 	lastBlock = (unsigned int) (offset + numBytes - 1) / FS_BLOCK_SIZE;
 	for (i = (unsigned int) offset / FS_BLOCK_SIZE; i <= lastBlock; i++) {
 	    (handlePtr->cacheInfo.ioProcsPtr->allocate)(streamPtr->ioHandlePtr,
-		    offset, FS_BLOCK_SIZE, &blockAddr, &newBlock);
+		    offset, FS_BLOCK_SIZE, 0, &blockAddr, &newBlock);
+#ifdef lint
+	    (void) Fsdm_BlockAllocate(streamPtr->ioHandlePtr,
+		    offset, FS_BLOCK_SIZE, 0, &blockAddr, &newBlock);
+	    (void) FsrmtBlockAllocate(streamPtr->ioHandlePtr,
+		    offset, FS_BLOCK_SIZE, 0, &blockAddr, &newBlock);
+#endif /* lint */
 	    if (blockAddr == FSDM_NIL_INDEX) {
 		printf( "Fs_PageWrite: Block Alloc failed\n");
 		status = FS_NO_DISK_SPACE;
@@ -524,6 +546,12 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
 	    status = (handlePtr->cacheInfo.ioProcsPtr->blockWrite)
 		    (streamPtr->ioHandlePtr, blockAddr, FS_BLOCK_SIZE,
 			    pageAddr, 0);
+#ifdef lint
+	    status = Fsio_FileBlockWrite(streamPtr->ioHandlePtr, blockAddr,
+			    FS_BLOCK_SIZE, pageAddr, 0);
+	    status = FsrmtFileBlockWrite(streamPtr->ioHandlePtr, blockAddr,
+			    FS_BLOCK_SIZE, pageAddr, 0);
+#endif /* lint */
 	    if (status != SUCCESS) {
 		printf( "Fs_PageWrite: Write failed\n");
 		break;
@@ -581,6 +609,10 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
 	do {
 	    retry = FALSE;
 	    status = (ioProcsPtr->blockCopy) (srcHdrPtr, destHdrPtr, i);
+#ifdef lint
+	    status = Fsio_FileBlockCopy(srcHdrPtr, destHdrPtr, i);
+	    status = Fsrmt_BlockCopy(srcHdrPtr, destHdrPtr, i);
+#endif /* lint */
 	    if (status != SUCCESS) {
 		if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 		    status == RPC_SERVICE_DISABLED) {
@@ -595,13 +627,11 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
 		    if (status == SUCCESS) {
 			retry = TRUE;
 		    } else {
-			printf(
-			    "Fs_PageCopy, recovery failed <%x>\n", status);
+			printf("Fs_PageCopy, recovery failed <%x>\n", status);
 			return(status);
 		    }
 		} else {
-		    printf(
-			    "Fs_PageCopy: Copy failed <%x>\n", status);
+		    printf("Fs_PageCopy: Copy failed <%x>\n", status);
 		    return(status);
 		}
 	    }
