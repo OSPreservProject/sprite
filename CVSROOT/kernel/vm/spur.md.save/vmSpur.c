@@ -1348,6 +1348,9 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	} else {
 	    *ptePtr |= VMMACH_KRW_URW_PROT;
 	}
+	if (virtAddrPtr->segPtr->type != VM_CODE) {
+	    *ptePtr |= VMMACH_COHERENCY_BIT;
+	}
     }
 
     UNLOCK_MONITOR;
