@@ -1,15 +1,6 @@
 # This file is used by scvs and contains symbolic link
 # information.  Each line is of the form "link target"
 # $Header
-compatMapCode.c          ../ds3100.md/compatMapCode.c
-compatSig.c              ../ds3100.md/compatSig.c
-compatSig.h              ../ds3100.md/compatSig.h
-cvtStat.c                ../ds3100.md/cvtStat.c
-machAsmDefs.h            ../ds3100.md/machAsmDefs.h
-machDis.c                ../ds3100.md/machDis.c
-machMigrate.c            ../ds3100.md/machMigrate.c
-machUNIXSyscall.c        ../ds3100.md/machUNIXSyscall.c
-softfp.o                 ../ds3100.md/softfp.o
-stat.h                   ../ds3100.md/stat.h
-sysinfo.h                ../ds3100.md/sysinfo.h
-ultrixSignal.h           ../ds3100.md/ultrixSignal.h
+compatMapCode.c          /sprite/src/lib/c/unixSyscall/compatMapCode.c
+compatSig.h              /sprite/src/lib/c/unixSyscall/compatSig.h
+softfp.po                softfp.o

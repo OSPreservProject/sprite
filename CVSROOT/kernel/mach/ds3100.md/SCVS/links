@@ -1,6 +1,15 @@
 # This file is used by scvs and contains symbolic link
 # information.  Each line is of the form "link target"
 # $Header
-compatMapCode.c          /sprite/src/lib/c/unixSyscall/compatMapCode.c
-compatSig.h              /sprite/src/lib/c/unixSyscall/compatSig.h
-softfp.po                softfp.o
+compatMapCode.c          ../ds5000.md/compatMapCode.c
+compatSig.c              ../ds5000.md/compatSig.c
+compatSig.h              ../ds5000.md/compatSig.h
+cvtStat.c                ../ds5000.md/cvtStat.c
+machAsmDefs.h            ../ds5000.md/machAsmDefs.h
+machDis.c                ../ds5000.md/machDis.c
+machMigrate.c            ../ds5000.md/machMigrate.c
+machUNIXSyscall.c        ../ds5000.md/machUNIXSyscall.c
+softfp.o                 ../ds5000.md/softfp.o
+stat.h                   ../ds5000.md/stat.h
+sysinfo.h                ../ds5000.md/sysinfo.h
+ultrixSignal.h           ../ds5000.md/ultrixSignal.h
