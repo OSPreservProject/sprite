@@ -32,7 +32,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sync.h>
 #include <main.h>
 
-unsigned sstepInst;				/* The instruction that was
+#ifdef KDBX
+#include <user/signal.h>
+#endif
+
+static unsigned sstepInst;			/* The instruction that was
 						 * replaced when we tried to
 						 * single step. */
 Boolean dbg_InDebugger = FALSE;			/* TRUE if are currently in
@@ -44,15 +48,15 @@ Boolean	dbg_Rs232Debug = FALSE;			/* TRUE if are using the RS232
 						 * using the network. */
 Boolean	dbg_UsingNetwork = FALSE;		/* TRUE if the debugger is
 						 * using the network interface*/
-char	requestBuffer[DBG_MAX_REQUEST_SIZE + 2];/* Buffer to receive request
+static char requestBuffer[DBG_MAX_REQUEST_SIZE];/* Buffer to receive request
 						 * into. */
-char	*requestBufPtr = requestBuffer + 2;	/* Offset the buffer by 2 so
-						 * we four byte align the 
-						 * data in the packet. */
-char	replyBuffer[DBG_MAX_REPLY_SIZE + 2];	/* Buffer to hold reply. */
-char	*replyBufPtr = replyBuffer + 2;		/* Offset the buffer by 2 so
-						 * we four byte align the 
-						 * data in the packet. */
+static int	requestOffset;			/* Offset in buffer where next
+						 * bytes should be read from.*/
+static char replyBuffer[DBG_MAX_REPLY_SIZE + 2];/* Buffer to hold reply. */
+static int	replyOffset = 0;		/* Offset in buffer where next
+						 * bytes in reply should go. */
+static unsigned int	curMsgNum;		/* The current message that
+						 * is being processed. */
 int	dbgTraceLevel = 0;			/* The debugger tracing
 						 * level. */
 
@@ -64,7 +68,7 @@ int	dbgTimeout = 15000;
 /*
  * Information about the latest packet received.
  */
-Boolean			gotPacket;	
+Boolean			dbgGotPacket;	
 int			dbgPacketLength;
 Net_InetAddress		dbgMyIPAddr;
 Net_InetAddress		dbgSrcIPAddr;
@@ -76,71 +80,24 @@ Net_Interface		*dbgInterPtr = (Net_Interface *) NIL;
 /*
  * Size of debugging packet header and data.
  */
-#define	PACKET_HDR_SIZE (sizeof(Net_EtherHdr) + Dbg_PacketHdrSize())
-#define PACKET_DATA_SIZE \
-    (DBG_MAX_REPLY_SIZE - PACKET_HDR_SIZE - sizeof(Dbg_Reply) + 4)
+#define	PACKET_HDR_SIZE (sizeof(Net_EtherHdr) + Dbg_PacketHdrSize() + 4 + 2)
+#define PACKET_DATA_SIZE (DBG_MAX_REPLY_SIZE - PACKET_HDR_SIZE)
 
-/*
- * Message buffers.
- */
-
-Dbg_Request	*requestPtr;
-Dbg_Reply	*replyPtr;
-char		*dataPtr;
 
 /*
  * Strings which describe each of the opcodes that kdbx can send us.
  */
-static char *opcodeNames[] =  {
-    "Unknown",
-    "IREAD",
-    "DREAD",
-    "UREAD",
-    "IWRITE",
-    "DWRITE",
-    "UWRITE",
-    "CONTP",
-    "PKILL",
-    "SSTEP",
-    "Unknown",
-    "Unknown",
-    "Unknown",
-    "Unknown",
-    "DBREAD",
-    "DBWRITE",
-    "DHREAD",
-    "DHWRITE",
-    "QUERY",
-    "BEGINCALL",
-    "ENDCALL",
-    "DETACH",
-    "GETMAXSTACK",
-    "GETSTATUS",
-};
+static char *opcodeNames[] = DBG_OPCODE_NAMES ;
 
 /*
  * Strings which describe the different exceptions that can occur.
 */
-static char *exceptionNames[] = {
-    "Interrupt",
-    "TLB Mod",
-    "TLB LD miss",
-    "TLB ST miss",
-    "TLB load address error",
-    "TLB store address error",
-    "TLB ifetch bus error",
-    "TLB load or store bus error",
-    "System call",
-    "Breakpoint trap",
-    "Reserved instruction",
-    "Coprocessor unusable",
-    "Overflow"
-};
+static char *exceptionNames[] = DBG_EXCEPTION_NAMES;
 
 /*
- * The type of machine that we are on.
+ * Whether syslog should remain diverted on continue or not.
  */
-int		machineType;
+static Boolean	syslogDiverted = FALSE;
 
 /*
  * Declare global variables.
@@ -149,10 +106,13 @@ int		dbgTermReason;
 int		dbgInDebugger;
 int		dbgIntPending;
 Boolean		dbgPanic;
-int		dbgMaxStackAddr;
 Boolean		dbg_UsingSyslog = FALSE;
 Boolean		dbgCanUseSyslog = TRUE;
-
+int		dbgMaxStackAddr;
+#ifdef KDBX
+int		dbgSignal;
+static Boolean	useKdbx = FALSE;
+#endif
 /*
  * Trap causes (same numbering as in ptrace.h).
  */
@@ -164,8 +124,6 @@ Boolean		dbgCanUseSyslog = TRUE;
  */
 #define SSTEP_INST	(MACH_SSTEP_VAL | 0xd)
 
-Boolean	dbg_OthersCanUseNetwork = TRUE;
-
 /* 
  * Forward declarations:
  */
@@ -174,6 +132,29 @@ static char *	TranslateOpcode _ARGS_((int opcode));
 static char *	TranslateException _ARGS_((int exception));
 static Boolean	ReadRequest _ARGS_((Boolean timeout));
 static void	SendReply _ARGS_((int dataSize));
+static void	DebugToRegState _ARGS_((Mach_DebugState *debugPtr, 
+			Mach_RegState *regPtr));
+static void	RegStateToDebug _ARGS_((Mach_RegState *regPtr, 
+		    Mach_DebugState *debugPtr)); 
+
+#ifdef KDBX
+static int	sigMap[] = {
+    /* MACH_EXC_INT 		*/		SIGILL,
+    /* MACH_EXC_TLB_MOD 	*/		SIGSEGV,
+    /* MACH_EXC_TLB_LD_MISS 	*/		SIGSEGV, 
+    /* MACH_EXC_TLB_ST_MISS 	*/		SIGSEGV, 
+    /* MACH_EXC_ADDR_ERR_LD 	*/ 		SIGBUS,
+    /* MACH_EXC_ADDR_ERR_ST 	*/		SIGBUS,
+    /* MACH_EXC_BUS_ERR_IFETCH 	*/		SIGBUS,
+    /* MACH_EXC_BUS_ERR_LD_ST 	*/		SIGBUS,
+    /* MACH_EXC_SYSCALL 	*/		SIGSYS,
+    /* MACH_EXC_BREAK 		*/		SIGTRAP,
+    /* MACH_EXC_RES_INST 	*/		SIGILL,
+    /* MACH_EXC_COP_UNUSABLE 	*/		SIGILL, 
+    /* MACH_EXC_OVFLOW 		*/		SIGILL,
+};
+
+#endif
 
 
 /*
@@ -205,7 +186,7 @@ Boolean Dbg_InRange(addr, numBytes, writeable)
     firstPage = addr >> VMMACH_PAGE_SHIFT;
     lastPage = (addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     if (firstPage != lastPage) {
-	printf("Dbg_InRange: Object spans pages\n");
+	Mach_MonPrintf("Dbg_InRange: Object spans pages\n");
 	return(FALSE);
     }
     return(VmMach_MakeDebugAccessible(addr));
@@ -288,17 +269,18 @@ TranslateException(exception)
 void
 Dbg_Init()
 {
+#ifdef KDBX
+    extern void DbgDbxInit();
+#endif
     dbgInDebugger = 0;
     dbgIntPending = 0;
     dbgPanic = FALSE;
     dbg_BeingDebugged = FALSE;
-    dbgMaxStackAddr = (int)mach_StackBottom + mach_KernStackSize;
-    replyPtr = (Dbg_Reply *)(replyBufPtr + PACKET_HDR_SIZE);
-    dataPtr = replyBufPtr + PACKET_HDR_SIZE + sizeof(Dbg_Reply) - 4;
+#ifdef KDBX
+    DbgDbxInit();
+#endif
 }
 
-char	pingBuffer[DBG_MAX_REQUEST_SIZE + 2];
-char	*pingBufPtr = pingBuffer + 2;
 
 
 /*
@@ -312,7 +294,7 @@ char	*pingBufPtr = pingBuffer + 2;
  *     None.
  *
  * Side effects:
- *     gotPacket is set to true if we got a packet that we liked.
+ *     dbgGotPacket is set to true if we got a packet that we liked.
  *
  * ----------------------------------------------------------------------------
  */
@@ -328,7 +310,7 @@ Dbg_InputPacket(interPtr, packetPtr, packetLength)
     int			dataLength;
 
     if (interPtr->netType != NET_NETWORK_ETHER) {
-	printf("Got a debugger packet on non-ethernet interface %s\n",
+	Mach_MonPrintf("Got a debugger packet on non-ethernet interface %s\n",
 	    interPtr->name);
 	return;
     }
@@ -356,68 +338,53 @@ Dbg_InputPacket(interPtr, packetPtr, packetLength)
 
     if (Net_NetToHostShort(etherHdrPtr->type) != NET_ETHER_IP) {
 	if (dbgTraceLevel >= 5) {
-	    printf("Non-IP (Type=0x%x) ",
+	    Mach_MonPrintf("Non-IP (Type=0x%x) ",
 		    Net_NetToHostShort(etherHdrPtr->type));
 	}
 	return;
     }
-    if (gotPacket) {
+    if (dbgGotPacket) {
+	if (dbgTraceLevel >= 4) {
+	    Mach_MonPrintf("Dbg_InputPacket: already have a packet\n");
+	}
 	return;
     }
     if (dbgTraceLevel >= 4) {
-	printf("Validating packet\n");
+	Mach_MonPrintf("Validating packet\n");
     }
-    if (Dbg_ValidatePacket(packetLength - sizeof(Net_EtherHdr),
-			   (Net_IPHeader *)(packetPtr + sizeof(Net_EtherHdr)),
-			   &dataLength, &dataPtr,
-			   &dbgMyIPAddr, &dbgSrcIPAddr, &dbgSrcPort)) {
-	if (dbgTraceLevel >= 4) {
-	    printf("Got a packet: length=%d\n", dataLength);
-	}
-	bcopy((Address)etherHdrPtr, (Address)&dbgEtherHdr,
-		sizeof(Net_EtherHdr));
-	gotPacket = TRUE;
-	bcopy(dataPtr, requestBuffer, dataLength);
-	/*
-	 * Set the interface we are using. 
+    { 
+	static char alignedBuffer[NET_ETHER_MAX_BYTES];
+        /*
+	 * Make sure the packet starts on a 32-bit boundry so that we can
+	 * use structures for describe the data.
 	 */
-	dbgInterPtr = interPtr;
-	return;
-    }
+	if ( (unsigned int) (packetPtr + sizeof(Net_EtherHdr)) & 0x3 ) {
+	      bcopy (packetPtr + sizeof(Net_EtherHdr), alignedBuffer,
+			    packetLength - sizeof(Net_EtherHdr));
+	      packetPtr = alignedBuffer;
+	} else {
+	      packetPtr = packetPtr + sizeof(Net_EtherHdr);
+	}
 
-    if (Net_NetToHostShort(etherHdrPtr->type) != 0x800) {
-	return;
-    }
-    /*
-     * Handle ICMP echo requests.  This is a good test of the
-     * basic networking code.
-     */
-    bcopy(packetPtr, pingBufPtr, packetLength);
-    etherHdrPtr = (Net_EtherHdr *)pingBufPtr;
-    ipPtr = (Net_IPHeader *)(pingBufPtr + sizeof(Net_EtherHdr));
-    if (ipPtr->protocol == NET_IP_PROTOCOL_ICMP) {
-	Net_InetAddress	tAddr;
-	Net_EtherAddress	tEtherAddr;
-	Net_ICMPHeader	*icmpPtr;
-
-	tEtherAddr = etherHdrPtr->source;
-	etherHdrPtr->source = etherHdrPtr->destination;
-	etherHdrPtr->destination = tEtherAddr;
-	tAddr = ipPtr->source;
-	ipPtr->source = ipPtr->dest;
-	ipPtr->dest = tAddr;
-	icmpPtr = (Net_ICMPHeader *)((Address)ipPtr + ipPtr->headerLen * 4);
-	if (icmpPtr->type == 8) {
-	    Mach_MonPrintf("ICMP Echo\n");
-	    icmpPtr->type = 0;
-	    icmpPtr->checksum = 0;
-	    icmpPtr->checksum = 
-		Net_InetChecksum(
-		(int)(Net_NetToHostShort(ipPtr->totalLen)-ipPtr->headerLen*4),
-		(Address)icmpPtr);
-	    dbgGather.length = packetLength - sizeof(Net_EtherHdr);
-	    dbgGather.bufAddr = pingBufPtr + sizeof(Net_EtherHdr);
-	    Net_RawOutput(dbgInterPtr, etherHdrPtr, &dbgGather, 1);
+	if (Dbg_ValidatePacket(packetLength - sizeof(Net_EtherHdr),
+			       (Net_IPHeader *)(packetPtr),
+			       &dataLength, &dataPtr,
+			       &dbgMyIPAddr, &dbgSrcIPAddr, &dbgSrcPort)) {
+	    if (dbgTraceLevel >= 4) {
+		Mach_MonPrintf("Got a packet: length=%d\n", dataLength);
+	    }
+	    bcopy((Address)etherHdrPtr, (Address)&dbgEtherHdr,
+		    sizeof(Net_EtherHdr));
+	    dbgGotPacket = TRUE;
+	    bcopy(dataPtr, requestBuffer, dataLength);
+#ifdef KDBX
+	    DbgDbxStoreRequest(dataLength, requestBuffer);
+#endif
+	    /*
+	     * Set the interface we are using. 
+	     */
+	    dbgInterPtr = interPtr;
+	    return;
 	}
     }
 }
@@ -447,7 +414,7 @@ ReadRequest(timeout)
     Net_Interface	*interPtr;
     int			i;
 
-    gotPacket = FALSE;
+    dbgGotPacket = FALSE;
     timeOutCounter = dbgTimeout;
     do {
 	/*
@@ -460,22 +427,84 @@ ReadRequest(timeout)
 		break;
 	    }
 	    Net_RecvPoll(interPtr);
-	    if (gotPacket) {
+	    if (dbgGotPacket) {
 		break;
 	    }
 	}
 	if (timeout) {
 	    timeOutCounter--;
 	}
-    } while(!gotPacket && timeOutCounter != 0);
-    if (gotPacket) {
-	requestPtr = (Dbg_Request *)requestBuffer;
+    } while(!dbgGotPacket && timeOutCounter != 0);
+    if (dbgGotPacket) {
+	replyOffset = PACKET_HDR_SIZE;
+	requestOffset = 4;
+	curMsgNum = *(unsigned int *)(requestBuffer);
+#ifdef KDBX
+	if (curMsgNum > 0x40000000) {
+	    useKdbx = FALSE;
+	} else {
+	    useKdbx = TRUE;
+	}
+#endif
 	if (dbgTraceLevel >= 4) {
-	    printf("MsgNum = %d\n", requestPtr->num);
+	    Mach_MonPrintf("MsgNum = %d\n", curMsgNum);
 	}
     }
 
-    return(gotPacket);
+    return(dbgGotPacket);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * GetRequestBytes --
+ *
+ *     Get the next numBytes bytes from the current request.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+GetRequestBytes(numBytes, dest)
+    int		numBytes;
+    Address	dest;
+{
+	bcopy(requestBuffer + requestOffset, dest, numBytes);
+	requestOffset += numBytes;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PutReplyBytes --
+ *
+ *     Put the given bytes into the reply buffer.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+PutReplyBytes(numBytes, src)
+    int		numBytes;
+    Address	src;
+{
+    if (replyOffset + numBytes > DBG_MAX_REPLY_SIZE) {
+	Mach_MonPrintf("PutReplyBytes: Buffer overflow\n");
+	numBytes = DBG_MAX_REPLY_SIZE - replyOffset;
+    }
+    bcopy(src, &replyBuffer[replyOffset], numBytes);
+    replyOffset += numBytes;
 }
 
 
@@ -501,31 +530,26 @@ SendReply(dataSize)
     Net_EtherHdr		*etherHdrPtr;
 
     if (dbgTraceLevel >= 4) {
-	printf("Sending reply\n");
+	Mach_MonPrintf("Sending reply\n");
     }
-    replyPtr->num = requestPtr->num;
 
-    etherHdrPtr = (Net_EtherHdr *) replyBufPtr;
+    etherHdrPtr = (Net_EtherHdr *) (replyBuffer+2);
     etherHdrPtr->source = dbgEtherHdr.destination;
     etherHdrPtr->destination = dbgEtherHdr.source;
     etherHdrPtr->type = dbgEtherHdr.type;
-    dbgGather.bufAddr = replyBufPtr + sizeof(Net_EtherHdr);
-    dbgGather.length = PACKET_HDR_SIZE + sizeof(Dbg_Reply) + dataSize - 
-		       sizeof(Net_EtherHdr);
+    dbgGather.bufAddr = replyBuffer + sizeof(Net_EtherHdr)+2;
+    dbgGather.length = replyOffset - sizeof(Net_EtherHdr)-2;
     dbgGather.mutexPtr = (Sync_Semaphore *) NIL;
+    bcopy((char *)&curMsgNum,(char *)(replyBuffer + PACKET_HDR_SIZE - 4),4);
     Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
-		     dataSize + sizeof(Dbg_Reply),
-		     replyBufPtr + sizeof(Net_EtherHdr));
+		 replyOffset - sizeof(Net_EtherHdr) - Dbg_PacketHdrSize()-2,
+		 replyBuffer + sizeof(Net_EtherHdr) + 2);
     Net_RawOutput(dbgInterPtr, etherHdrPtr, &dbgGather, 1);
     if (dbgTraceLevel >= 4) {
-	printf("Sent reply\n");
+	Mach_MonPrintf("Sent reply\n");
     }
 }
 
-/*
- * Whether syslog should remain diverted on continue or not.
- */
-static Boolean	syslogDiverted = FALSE;
 
 /*
  * Should we sync the disks on entering the debugger?
@@ -540,8 +564,7 @@ extern Mach_DebugState	mach_DebugState;
  */
 unsigned dbgTLB[VMMACH_NUM_TLB_ENTRIES][2];
 
-Mach_DebugState	tmpDebugState;
-Mach_DebugState	*debugStatePtr;
+static Mach_DebugState	*debugStatePtr;
 
 
 /*
@@ -563,14 +586,16 @@ Mach_DebugState	*debugStatePtr;
 unsigned
 Dbg_Main()
 {
-    Boolean	done;
-    Boolean	atInterruptLevel;
     unsigned	cause;
-    int		signal;
-    int		origSignal;
-    int		dataSize;
-    int		origMaxStackAddr;
-
+    Boolean	  	done;		/* Boolean to tell us whether to leave
+					 * the main debugger loop */
+    Dbg_Opcode	  	opcode;	        /* The operation that was requested */
+					/* Process table entry that we switched
+					 * stacks to. */
+    Proc_ControlBlock	*procPtr = (Proc_ControlBlock *) NIL;
+    Boolean		atInterruptLevel;/* TRUE if we were entered from an
+					  * interrupt handler. */
+    extern int Mach_SwitchPoint();
 #ifdef NOTDEF
 /*
  * This code causes machines to "pop out" of the debugger.
@@ -593,7 +618,6 @@ Dbg_Main()
 
     dbg_InDebugger = TRUE;
 
-    origMaxStackAddr = dbgMaxStackAddr;
     debugStatePtr = &mach_DebugState;
 
     if (dbgTraceLevel >= 1) {
@@ -645,272 +669,495 @@ Dbg_Main()
 		   TranslateException((int)cause),
 		   mach_DebugState.excPC);
     }
-
-    switch (cause) {
-        case MACH_EXC_INT:
-	    signal = 2;
-	    break;
-        case MACH_EXC_TLB_MOD:
-        case MACH_EXC_TLB_LD_MISS:
-        case MACH_EXC_TLB_ST_MISS:
-	    signal = 11;
-	    break;
-        case MACH_EXC_ADDR_ERR_LD:
-        case MACH_EXC_ADDR_ERR_ST:
-	    signal = 10;
-	    break;
-        case MACH_EXC_BUS_ERR_IFETCH:
-        case MACH_EXC_BUS_ERR_LD_ST:
-	    signal = 10;
-	    break;
-        case MACH_EXC_SYSCALL:
-	    signal = 12;
-	    break;
-        case MACH_EXC_BREAK: {
-	    unsigned		*pc;
-
-	    signal = 5;
-	    if (mach_DebugState.causeReg & MACH_CR_BR_DELAY) {
-		pc = (unsigned *)(mach_DebugState.excPC + 4);
-	    } else {
-		pc = (unsigned *)mach_DebugState.excPC;
-	    }
-	    if (dbgTraceLevel >= 1) {
-		printf("break inst: %x\n", *pc);
-	    }
-	    if ((*pc & MACH_BREAK_CODE_FIELD) == MACH_SSTEP_VAL) {
-		if (dbgTraceLevel >= 1) {
-		    printf("sstep\n");
-		}
-		mach_DebugState.trapCause = CAUSE_SINGLE;
-		if (dbgTraceLevel >= 1) {
-		    printf("sstep (%x) = %x\n", pc, sstepInst);
-		}
-		Mach_FlushCode((Address)pc, 4);
-		*pc = sstepInst;
-		Mach_EmptyWriteBuffer();
-	    } else {
-		mach_DebugState.trapCause = CAUSE_BREAK;
-	    }
-	    break;
-	}
-        case MACH_EXC_RES_INST:
-	    signal = 4;
-	    break;
-        case MACH_EXC_COP_UNUSABLE:
-	    signal = 4;
-	    break;
-        case MACH_EXC_OVFLOW:
-	    signal = 4;
-	    break;
-	default:
-	    printf("Bad cause\n");
-	    signal = 4;
-	    break;
+#ifdef KDBX
+    if ((cause >= 0) && (cause < MACH_EXC_MAX)) {
+	dbgSignal = sigMap[cause];
+    } else {
+	dbgSignal = SIGILL;
     }
-    origSignal = signal;
+#endif
+    if (cause == MACH_EXC_BREAK) {
+	unsigned		*pc;
+
+	if (mach_DebugState.causeReg & MACH_CR_BR_DELAY) {
+	    pc = (unsigned *)(mach_DebugState.excPC + 4);
+	} else {
+	    pc = (unsigned *)mach_DebugState.excPC;
+	}
+	if (dbgTraceLevel >= 1) {
+	    Mach_MonPrintf("break inst: %x\n", *pc);
+	}
+	if ((*pc & MACH_BREAK_CODE_FIELD) == MACH_SSTEP_VAL) {
+	    if (dbgTraceLevel >= 1) {
+		Mach_MonPrintf("sstep\n");
+	    }
+	    mach_DebugState.trapCause = CAUSE_SINGLE;
+	    if (dbgTraceLevel >= 1) {
+		Mach_MonPrintf("sstep (%x) = %x\n", pc, sstepInst);
+	    }
+	    Mach_FlushCode((Address)pc, 4);
+	    *pc = sstepInst;
+	    Mach_EmptyWriteBuffer();
+	} else {
+	    mach_DebugState.trapCause = CAUSE_BREAK;
+	}
+    }
 
     dbg_UsingNetwork = TRUE;
 
     if (dbg_BeingDebugged) {
-	SendReply(0);
-	do {
-	    if (ReadRequest(TRUE)) {
-		if (requestPtr->request == DBG_GETSTATUS) {
+        unsigned        char    ch;
+	int	timeout = 5;
+        ch = 0;
+#ifdef KDBX
+	if (useKdbx) {
+	    Dbg_DbxMain();
+	    goto there;
+	}
+#endif
+        PutReplyBytes(1, (Address)&ch);
+        SendReply();
+        do {
+            if (ReadRequest(TRUE)) {
+                GetRequestBytes(4, (Address)&opcode);
+		if (opcode != DBG_CONTINUE) {
 		    break;
+		} else {
+		    PutReplyBytes(4, (Address) &opcode);
+		    SendReply();
+		    continue;
 		}
-	    }
-	    Net_RawOutput(dbgInterPtr, (Net_EtherHdr *)replyBuffer, 
+            }
+            /*
+             * We can only timeout if we are using network debugging.
+             */
+	    Net_RawOutput(dbgInterPtr, (Address) replyBuffer, 
 		    &dbgGather, 1);
-	    printf("TI: %d ", requestPtr->request);
-	} while (TRUE);
+            if (dbgTraceLevel >= 5) {
+                Mach_MonPrintf("DBG: Timeout\n");
+            }
+            Mach_MonPrintf("TI ");
+        } while (timeout-- > 0);
     } else {
-	(void) ReadRequest(FALSE);
+        (void) ReadRequest(FALSE);
+#ifdef KDBX
+	if (useKdbx) {
+	    Dbg_DbxMain();
+	    goto there;
+	}
+#endif
+        GetRequestBytes(4, (Address)&opcode);
     }
 
     Vm_MachDumpTLB(dbgTLB);
 
     done = FALSE;
     while (!done) {
-	int	request;
-
-	dataSize = 0;
-	replyPtr->status = 1;
-	replyPtr->data = 0;
-	request = requestPtr->request;
-	if (dbgTraceLevel >= 1) {
-	    printf("Request: %d, %s at %x\n", request, 
-			TranslateOpcode(request), requestPtr->addr);
+	if (dbgTraceLevel >= 2) {
+	    Mach_MonPrintf("Request: (%d) %s\n", opcode, TranslateOpcode(opcode));
 	}
-	switch (request) {
-            case DBG_UREAD:
-		if (requestPtr->addr > sizeof(mach_DebugState) / 4) {
-		    printf("Bogus UREAD addr %x\n", requestPtr->addr);
-		    replyPtr->status = 0;
+	switch (opcode) {
+
+	    /*
+	     * The client wants to read some data from us ...
+	     */
+
+	    case DBG_GET_STOP_INFO: {
+		StopInfo	stopInfo;
+		stopInfo.codeStart = (int)mach_CodeStart;
+		if (procPtr != (Proc_ControlBlock *) NIL &&
+		    procPtr->machStatePtr != (Mach_State *)NIL) {
+		    stopInfo.regs = procPtr->machStatePtr->switchRegState;
+		    /*
+		     * The pc isn't stored in switchRegState, but we know
+		     * that we had to be in Mach_ContextSwitch.  Also,
+		     * when the context switch is done the status register
+		     * and a magic number are pushed on the stack. We
+		     * need to adjust the sp so that the debugger doesn't
+		     * get confused by them. 
+		     */
+		    stopInfo.regs.pc = (Address) 
+			    ((char *) Mach_ContextSwitch + 16);
+		    stopInfo.regs.regs[SP] += 8;
 		} else {
-		    replyPtr->data = *((int *)debugStatePtr + requestPtr->addr);
+		    DebugToRegState(&mach_DebugState, &stopInfo.regs);
 		}
+		stopInfo.trapType = cause;
+		PutReplyBytes(sizeof(stopInfo), (Address)&stopInfo);
+		SendReply();
 		break;
-            case DBG_UWRITE: {
-		extern void Mach_SwitchPoint();	/* XXX - should go elsewhere */
-
-		if (requestPtr->addr == (unsigned)-1) {
-		    Proc_ControlBlock	*procPtr;
-
-		    if (requestPtr->data == 0) {
-			debugStatePtr = &mach_DebugState;
-			signal = origSignal;
-			dbgMaxStackAddr = origMaxStackAddr;
-			break;
-		    } else {
-			procPtr = Proc_GetPCB(requestPtr->data);
-			if (procPtr == (Proc_ControlBlock *)NIL ||
-			    procPtr->machStatePtr == (Mach_State *)NIL) {
-			    printf("Bad process table index %d\n", 
-				    requestPtr->data);
-			    break;
-			}
-		    }
-		    debugStatePtr = &tmpDebugState;
-		    bcopy((char *) procPtr->machStatePtr->switchRegState.regs,
-			  (char *) tmpDebugState.regs, 32 * sizeof(int));
-		    tmpDebugState.excPC = (unsigned)(Address)Mach_SwitchPoint;
-		    dbgMaxStackAddr = (int)procPtr->machStatePtr->kernStackEnd;
-		    signal = 2;
-		} else if (requestPtr->addr == (unsigned)-2) {
-		    (void)Proc_Dump();
+	    }
+	    case DBG_READ_ALL_REGS: {
+		Mach_RegState	regState;
+		if (procPtr != (Proc_ControlBlock *) NIL &&
+		    procPtr->machStatePtr != (Mach_State *)NIL) {
+		    regState = procPtr->machStatePtr->switchRegState;
+		    regState.pc = (Address) (Mach_SwitchPoint);
+		    regState.pc = (Address) 
+			    ((char *) Mach_ContextSwitch + 16);
+		    regState.regs[SP] += 8;
 		} else {
-		    if (requestPtr->addr > sizeof(mach_DebugState) / 4) {
-			printf("Bogus UWRITE addr %x\n", requestPtr->addr);
-			replyPtr->status = 0;
-		    } else {
-			replyPtr->data =
-				*((int *)debugStatePtr + requestPtr->addr);
-			*((int *)debugStatePtr + requestPtr->addr) =
-							requestPtr->data;
+		    DebugToRegState(&mach_DebugState, &regState);
+		}
+		PutReplyBytes(sizeof(regState), (Address) &regState);
+		SendReply();
+	    }
+#if 0
+	    case DBG_GET_DUMP_BOUNDS: {
+		Dbg_DumpBounds bounds;
+		extern unsigned int end;
+		bounds.pageSize = vm_PageSize;
+		bounds.stackSize = mach_KernStackSize;
+		bounds.kernelCodeStart = (unsigned int) mach_KernStart;
+		bounds.kernelCodeSize  = 
+			(unsigned int) (((Address)(&end)) - mach_KernStart);
+		bounds.kernelDataStart	= ((unsigned int)(&end));
+		bounds.kernelDataSize	= (unsigned int) 
+				(vmMemEnd - ((Address)(&end)));
+		bounds.kernelStacksStart = (unsigned int)vmStackBaseAddr;
+		bounds.kernelStacksSize = (unsigned int) 
+				(vmStackEndAddr - vmStackBaseAddr);
+		bounds.fileCacheStart	= (unsigned int)vmBlockCacheBaseAddr;
+		bounds.fileCacheSize	= (unsigned int) (vmBlockCacheEndAddr - 
+						vmBlockCacheBaseAddr);
+
+		PutReplyBytes(sizeof(bounds), (char *)&bounds);
+		SendReply();
+		break;
+	    }
+#endif
+	    case DBG_GET_VERSION_STRING: {
+		char	*version;
+
+		version = SpriteVersion();
+		PutReplyBytes(strlen(version) + 1, version);
+		SendReply();
+		break;
+	    }
+	    case DBG_INST_READ:
+	    case DBG_DATA_READ: {
+		Dbg_ReadMem	readMem;
+		int		status;
+
+		GetRequestBytes(sizeof(readMem), (Address) &readMem); 
+		if (dbgTraceLevel >= 2) {
+		    Mach_MonPrintf("Addr=%x Numbytes=%d ",
+				readMem.address, readMem.numBytes);
+		}
+		if (Dbg_InRange(readMem.address, readMem.numBytes, FALSE)) {
+		    status = 1;
+		    PutReplyBytes(sizeof(status), (Address)&status);
+		    PutReplyBytes(readMem.numBytes, (Address)readMem.address);
+		} else {
+		    if (dbgTraceLevel >= 2) {
+			Mach_MonPrintf("FAILURE ");
+		    }
+		    status = 0;
+		    PutReplyBytes(sizeof(status), (Address)&status);
+		}
+		SendReply();
+		break;
+	    }
+	    case DBG_SET_PID: {
+		Proc_PID	pid;
+
+		GetRequestBytes(sizeof(pid), (Address) &pid);
+		 {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		if (dbgTraceLevel >= 2) {
+		    Mach_MonPrintf("pid %x ", pid);
+		}
+		if (pid == 0) {
+		    procPtr = (Proc_ControlBlock *) NIL;
+		} else {
+		    procPtr = Proc_GetPCB(pid);
+		    if (procPtr == (Proc_ControlBlock *) NIL ||
+		        procPtr == (Proc_ControlBlock *) 0 ||
+			procPtr->state == PROC_UNUSED ||
+		        procPtr->state == PROC_DEAD ||
+			procPtr->state == PROC_NEW) {
+			Mach_MonPrintf("Can't backtrace stack for process %x\n",
+					pid);
+			procPtr = (Proc_ControlBlock *) NIL;
 		    }
 		}
 		break;
 	    }
-            case DBG_IREAD:
-            case DBG_DREAD:
-		if (Dbg_InRange(requestPtr->addr, 4, FALSE)) {
-		    replyPtr->data = *(int *)requestPtr->addr;
+	    case DBG_REBOOT: {
+		int	stringLength;
+		char	rebootString[100];
+		/*
+		 * For a reboot command first read the size of the string and
+		 * then the string itself.
+		 */
+		GetRequestBytes(sizeof(int), (Address)&stringLength);
+		if (stringLength != 0) {
+		    GetRequestBytes(stringLength, (Address)rebootString);
+		}
+		rebootString[stringLength] = '\0';
+		 {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		Mach_MonReboot(rebootString);
+	    }
+	    case DBG_INST_WRITE:
+	    case DBG_DATA_WRITE: {
+		Dbg_WriteMem		writeMem;
+		unsigned	char	ch;
+		/*
+		 * For an instruction or a data write we first have to find out 
+		 * which address to write to and how many bytes to write.  Next
+		 * we have to make sure that the address is valid.  If it is
+		 * then we read the data and write it to the given address.  If
+		 * not we just report an error to kdbx.
+		 */
+		GetRequestBytes(2 * sizeof(int), (Address) &writeMem);
+		if (dbgTraceLevel >= 2) {
+		    Mach_MonPrintf("Addr=%x Numbytes=%d ",
+				writeMem.address, writeMem.numBytes);
+		}
+		if (Dbg_InRange((unsigned int) writeMem.address,
+			    writeMem.numBytes, opcode == DBG_DATA_WRITE)) {
+		    GetRequestBytes(writeMem.numBytes,
+				    (Address) writeMem.address);
+		    if (opcode == DBG_INST_WRITE) {
+			Mach_FlushCode((Address)writeMem.address, 
+			    writeMem.numBytes);
+			Mach_EmptyWriteBuffer();
+		    }
+		    ch = 1;
 		} else {
-		    replyPtr->status = 0;
+		    char	buf[100];
+
+		    if (dbgTraceLevel >= 2) {
+			Mach_MonPrintf("FAILURE ");
+		    }
+		    GetRequestBytes(writeMem.numBytes, buf);
+		    ch = 0;
+		}
+		PutReplyBytes(1, (char *) &ch);
+		SendReply();
+
+		break;
+	    }
+	    case DBG_WRITE_REG: {                
+		Mach_RegState	regState;
+		Dbg_WriteReg	writeReg;
+
+		/*
+		 * First find out which register is being written and
+		 * then read the value.
+		 */
+		GetRequestBytes(sizeof(writeReg), (Address)&writeReg);
+		 {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		if (dbgTraceLevel >= 2) {
+		    Mach_MonPrintf("register %d data %x ", writeReg.regNum, 
+				writeReg.regVal);
+		}
+		if (procPtr != (Proc_ControlBlock *) NIL &&
+		    procPtr->machStatePtr != (Mach_State *)NIL) {
+		    ((int *) 
+		    &procPtr->machStatePtr->switchRegState)[(writeReg.regNum)] 
+			= writeReg.regVal;
+		} else {
+		    DebugToRegState(&mach_DebugState, &regState);
+		    ((int *) &regState)[(writeReg.regNum)] = writeReg.regVal;
+		    RegStateToDebug(&regState, &mach_DebugState);
+		}
+	    }
+	    case DBG_DIVERT_SYSLOG: 
+		GetRequestBytes(sizeof(Boolean), (Address)&syslogDiverted);
+		 {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
 		}
 		break;
-            case DBG_IWRITE:
-		if (Dbg_InRange(requestPtr->addr, 4, TRUE)) {
-		    replyPtr->data = *(int *)requestPtr->addr;
-		    Mach_FlushCode((Address)requestPtr->addr, 4);
-		    *(int *)requestPtr->addr = requestPtr->data;
-		    Mach_EmptyWriteBuffer();
-		} else {
-		    replyPtr->status = 0;
+	    case DBG_BEGIN_CALL: {
+		/*
+		 * We are beginning a call command.  Fix up the stack
+		 * so that we will be able to continue.  We will put
+		 * it back when we are done.
+		 */
+		int	dummy;
+		if (dbgCanUseSyslog) {
+		    dbg_UsingSyslog = TRUE;
 		}
+
+		PutReplyBytes(4, (Address) &dummy);
+		SendReply();
+
 		break;
-            case DBG_DWRITE:
-		if (Dbg_InRange(requestPtr->addr, 4, TRUE)) {
-		    replyPtr->data = *(int *)requestPtr->addr;
-		    *(int *)requestPtr->addr = requestPtr->data;
+	    }
+	    case DBG_END_CALL: {
+		char	*buffer;
+		int	*firstIndexPtr;
+		int	*lastIndexPtr;
+		int	bufSize;
+		int	length;
+		/*
+		 * Dump the syslog buffer.
+		 */
+		Dev_SyslogReturnBuffer(&buffer, &firstIndexPtr,
+				       &lastIndexPtr, &bufSize);
+		if (*firstIndexPtr == -1) {
+		    length = 0;
+		    PutReplyBytes(4, (Address) &length);
+		    dbg_UsingSyslog = FALSE;
+		} else if (*firstIndexPtr <= *lastIndexPtr) {
+		    length = *lastIndexPtr - *firstIndexPtr + 1;
+		    if (length + 4 > PACKET_DATA_SIZE) {
+			length = PACKET_DATA_SIZE - 4;
+		    }
+		    PutReplyBytes(4, (Address) &length);
+		    PutReplyBytes(length,
+				  (Address)&buffer[*firstIndexPtr]);
+		    *firstIndexPtr += length;
+		    if (*firstIndexPtr > *lastIndexPtr) {
+			*firstIndexPtr = *lastIndexPtr = -1;
+		    }
 		} else {
-		    replyPtr->status = 0;
+		    length = bufSize - *firstIndexPtr;
+		    if (length + 4 > PACKET_DATA_SIZE) {
+			length = PACKET_DATA_SIZE - 4;
+		    }
+		    PutReplyBytes(4, (Address) &length);
+		    PutReplyBytes(length,
+				  (Address)buffer[*firstIndexPtr]);
+		    *firstIndexPtr += length;
+		    if (*firstIndexPtr == bufSize) {
+			*firstIndexPtr = 0;
+		    }
 		}
+		SendReply();
 		break;
-            case DBG_CONTP: 
+	    }
+	    case DBG_CALL_FUNCTION: {
+		Dbg_CallFunc		callFunc;
+		int			returnVal;
+		static int		argBuf[128];
+		GetRequestBytes(2 * sizeof(int), (Address) &callFunc);
+		if (dbgTraceLevel >= 2) {
+		    Mach_MonPrintf("Addr=%x Numbytes=%d ",
+				callFunc.address, callFunc.numBytes);
+		}
+		if ((callFunc.numBytes >= 0 && callFunc.numBytes < 128) &&
+		     Dbg_InRange((unsigned int) callFunc.address,4,FALSE)) {
+		    GetRequestBytes(callFunc.numBytes,(Address) argBuf);
+		    returnVal = (* ((int (*)()) callFunc.address))(argBuf[0],
+		    argBuf[1],argBuf[2],argBuf[3],argBuf[4],argBuf[5],argBuf[6],
+		    argBuf[7],argBuf[8],argBuf[9]);
+		} else {
+
+		    if (dbgTraceLevel >= 2) {
+			Mach_MonPrintf("FAILURE ");
+		    }
+		    GetRequestBytes(callFunc.numBytes,(Address)argBuf);
+		    returnVal = -1;
+		}
+		PutReplyBytes(4, (char *) &returnVal);
+		SendReply();
+
+		break;
+	    }
+	    case DBG_CONTINUE: {
+		/*
+		 * The client wants to continue execution.
+		 */
+		int	foo;
+		GetRequestBytes(sizeof(int), 
+			    (Address) &foo);
+		if (dbgTraceLevel >= 2) {
+		    Mach_MonPrintf("Continuing from pc %x ",debugStatePtr->excPC);
+		}
+		{
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+
 		dbg_BeingDebugged = TRUE;
 		done = TRUE;
 		break;
-            case DBG_SSTEP: {
+	    }
+	    case DBG_SINGLESTEP: {
+		/*
+		 * The client wants to single step.
+		 */
 		unsigned		*pc;
+		int			status;
+		int			dummy;
 
+		GetRequestBytes(sizeof(int),  (Address) &dummy);
 		pc = DbgGetDestPC((Address)(debugStatePtr->excPC));
 		if (dbgTraceLevel >= 1) {
-		    printf("Single-step PC=%x\n", pc);
+		    Mach_MonPrintf("Single-step PC=%x\n", pc);
 		}
 		if (!Dbg_InRange((unsigned int)pc, 4, TRUE)) {
-		    printf("Bad SSTEP PC\n");
-		    replyPtr->status = 0;
-		    break;
+		    Mach_MonPrintf("Bad SSTEP PC\n");
+		    status = 0;
+		} else {
+		    sstepInst = *pc;
+		    Mach_FlushCode((Address)pc, 4);
+		    *pc = SSTEP_INST;
+		    Mach_EmptyWriteBuffer();
+		    dbg_BeingDebugged = TRUE;
+		    done = TRUE;
+		    status = 1;
 		}
-		sstepInst = *pc;
-		Mach_FlushCode((Address)pc, 4);
-		*pc = SSTEP_INST;
-		Mach_EmptyWriteBuffer();
-		dbg_BeingDebugged = TRUE;
-		done = TRUE;
+		PutReplyBytes(sizeof(status), (Address) &status);
+		SendReply();
 		break;
 	    }
-            case DBG_PKILL:
-		break;
-            case DBG_DBREAD: 
-		if (Dbg_InRange(requestPtr->addr, 1, FALSE)) {
-		    replyPtr->data = *(char *)requestPtr->addr;
-		} else {
-		    replyPtr->status = 0;
+	    case DBG_DETACH:
+		/*
+		 * The debugger has terminated and wants to let us go about our
+		 * business.
+		 */
+		if (dbgTraceLevel >= 2) {
+		    Mach_MonPrintf("Detaching at pc %x ", debugStatePtr->excPC);
 		}
-		break;
-            case DBG_DBWRITE:
-		if (Dbg_InRange(requestPtr->addr, 1, TRUE)) {
-		    replyPtr->data = *(char *)requestPtr->addr;
-		    *(char *)requestPtr->addr = requestPtr->data;
-		} else {
-		    replyPtr->status = 0;
+	        {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
 		}
-		break;
-            case DBG_DHREAD:
-		if (Dbg_InRange(requestPtr->addr, 2, FALSE)) {
-		    replyPtr->data = *(short *)requestPtr->addr;
-		} else {
-		    replyPtr->status = 0;
-		}
-		break;
-            case DBG_DHWRITE:
-		if (Dbg_InRange(requestPtr->addr, 2, TRUE)) {
-		    replyPtr->data = *(short *)requestPtr->addr;
-		    *(short *)requestPtr->addr = requestPtr->data;
-		} else {
-		    replyPtr->status = 0;
-		}
-		break;
-            case DBG_QUERY:
-		break;
-            case DBG_BEGINCALL:
-		break;
-            case DBG_ENDCALL:
-		break;
-            case DBG_DETACH:
+
 		dbg_BeingDebugged = FALSE;
 		done = TRUE;
 		printf("Sprite is now detached from the debugger\r\n");
 		break;
-            case DBG_GETMAXSTACK:
-		replyPtr->data = dbgMaxStackAddr;
+	    case DBG_UNKNOWN:
+		Mach_MonPrintf("debugger: unrecognized request\n");
 		break;
-            case DBG_GETSTATUS:
-		replyPtr->data = 0177 | (signal << 8);
-		break;
-	    case DBG_GET_VERSION_STRING: {
-		char *version;
-		version = SpriteVersion();
-		strncpy(dataPtr, version, PACKET_DATA_SIZE);
-		dataSize = strlen(version) + 1 - 4;
-		break;
-	    }
-	    case DBG_REBOOT: {
-		char	*reboot;
-		reboot = (char *) &requestPtr->data;
-		Mach_MonReboot(reboot);
-		break;
-	    }
 	}
-	SendReply(dataSize);
+	if (dbgTraceLevel >= 2) {
+	    Mach_MonPrintf("\r\n");
+	}
 	if (!done) {
 	    (void)ReadRequest(FALSE);
+	    GetRequestBytes(4, (Address)&opcode);
 	}
     }
 
+#ifdef KDBX
+there:
+#endif
     /*
      * Don't force system log output to the console.
      */
@@ -919,14 +1166,12 @@ Dbg_Main()
     }
 
     if (dbgTraceLevel >= 1) {
-	printf("Returning to %x: %x\n", debugStatePtr->excPC, 
+	Mach_MonPrintf("Returning to %x: %x\n", debugStatePtr->excPC, 
 				*(unsigned *)debugStatePtr->excPC);
     }
 
     mach_AtInterruptLevel = atInterruptLevel;
-    if (dbg_OthersCanUseNetwork) {
-	dbg_UsingNetwork = FALSE;
-    }
+    dbg_UsingNetwork = FALSE;
     /*
      * Flush out the old TLB mapping.
      */
@@ -936,3 +1181,65 @@ Dbg_Main()
 
     return(debugStatePtr->excPC);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DebugToRegState --
+ *
+ *	Converts a Mach_DebugState to Mach_RegState.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DebugToRegState(debugPtr, regPtr)
+    Mach_DebugState	*debugPtr;
+    Mach_RegState	*regPtr;
+{
+    regPtr->pc = (Address) debugPtr->excPC;
+    bcopy((char *) debugPtr->regs, (char *) regPtr->regs, 
+	MACH_NUM_GPRS * sizeof(int));
+    bcopy((char *) debugPtr->fpRegs, (char *) regPtr->fpRegs, 
+	MACH_NUM_FPRS * sizeof(int));
+    regPtr->fpStatusReg = debugPtr->fpCSR;
+    regPtr->mfhi = debugPtr->multHi;
+    regPtr->mflo = debugPtr->multLo;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RegStateToDebug --
+ *
+ *	Converts a Mach_RegState to Mach_DebugState.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RegStateToDebug(regPtr, debugPtr)
+    Mach_RegState	*regPtr;
+    Mach_DebugState	*debugPtr;
+{
+    debugPtr->excPC = (unsigned) regPtr->pc;
+    bcopy((char *) regPtr->regs, (char *) debugPtr->regs, 
+	MACH_NUM_GPRS * sizeof(int));
+    bcopy((char *) regPtr->fpRegs, (char *) debugPtr->fpRegs, 
+	MACH_NUM_FPRS * sizeof(int));
+    debugPtr->fpCSR = regPtr->fpStatusReg;
+    debugPtr->multHi = regPtr->mfhi;
+    debugPtr->multLo = regPtr->mflo;
+}
+
