@@ -66,4 +66,4 @@ typedef struct Trace_Record {
 extern void Trace_Init();	
 extern void Trace_Insert();	
 
-#endif _TRACE
+#endif /* _TRACE */
