@@ -489,6 +489,17 @@ Fscache_UnregisterBackend(backendPtr)
 	return;
     }
     List_Remove((List_Links *)backendPtr);
+    /*
+     * Until we get a better grip on the file handle code we can't free
+     * the backendPtr because the cacheInfoPtr in the handle may still
+     * point at it.  
+     *
+     * THIS IS A MEMORY LEAK - 48 bytes per backend unregistered. 
+     * Currently this only happens when an LFS file system is 
+     * unattached.
+     */
+
+#ifdef notdef
 #ifndef CLEAN
     /*
      * NIL out these fields in hope in catching any bad code that
@@ -503,6 +514,7 @@ Fscache_UnregisterBackend(backendPtr)
 #endif /* not CLEAN */
 
     free((char *) backendPtr);
+#endif /* notdef */
 
     UNLOCK_MONITOR;
     return;
@@ -2879,7 +2891,8 @@ ReturnStatus
 Fscache_RemoveFileFromDirtyList(cacheInfoPtr)
     register	Fscache_FileInfo *cacheInfoPtr;
 {
-    int blocksInCache;
+    int			blocksInCache;
+
     LOCK_MONITOR;
     while (cacheInfoPtr->flags & FSCACHE_FILE_BEING_WRITTEN) {
 	Sync_Wait(&cacheInfoPtr->noDirtyBlocks, FALSE);
@@ -2890,7 +2903,6 @@ Fscache_RemoveFileFromDirtyList(cacheInfoPtr)
 	List_Remove((List_Links *)cacheInfoPtr);
     }
     blocksInCache = cacheInfoPtr->blocksInCache;
-
     UNLOCK_MONITOR;
 
     if (blocksInCache != 0) {
