@@ -33,7 +33,9 @@
  */
 
 typedef struct {
-    unsigned short 	machineType;	/* machine type */
+    unsigned int	dynamic:1;	/* indicated dynamically-loaded */
+    unsigned int	toolversion:7;	/* tool version */
+    unsigned char 	machineType;	/* machine type */
     unsigned short 	magic;		/* magic number */
     unsigned long	code;		/* Size of code segment */
     unsigned long	data;		/* Size of initialized data */
