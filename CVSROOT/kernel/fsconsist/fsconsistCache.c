@@ -317,6 +317,14 @@ done:
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
 	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+	if (clientPtr->clientID == clientID) {
+	    /*
+	     * Don't call back to the client doing the open.  That can
+	     * cause deadlock.  Instead, that client takes care of its
+	     * own cache via the FsCacheUpdate procedure.
+	     */
+	    continue;
+	}
 #ifdef CONSIST_DEBUG
 	if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
 	    printf("Client %d, %s, use %d write %d\n",
@@ -1483,40 +1491,20 @@ ClientCommand(consistPtr, clientPtr, flags)
 	    }
 	}
     }
-    LOCK_MONITOR;
-#ifdef CONSIST_DEBUG
-    if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	printf(
-	"ClientCommand, %s msg to client %d file \"%s\" <%d,%d> version %d status %x\n",
-	    ConsistType(flags), clientPtr->clientID,
-	    FsHandleName(consistPtr->hdrPtr),
-	    consistRpc.fileID.major, consistRpc.fileID.minor,
-	    consistRpc.version, status);
-    }
-#endif /* CONSIST_DEBUG */
-
     if (status != SUCCESS) {
 	/*
-	 * Couldn't post call-back to the client.  (Carefully) remove
-	 * the message from the list of outstanding messages
-	 * (because recovery actions by FsConsistKill may have already
-	 * done this for us).
+	 * Couldn't post call-back to the client.  Nuke it from the
+	 * list of clients using the file.
 	 */
-	register ConsistMsgInfo *existingMsgPtr;
-	printf(
-	"ClientCommand, %s msg to client %d file \"%s\" <%d,%d> failed %x\n",
-	    ConsistType(flags), clientPtr->clientID,
-	    FsHandleName(consistPtr->hdrPtr),
+	int ref, write, exec;
+	int clientID = clientPtr->clientID;
+	FsConsistKill(consistPtr, clientPtr->clientID, &ref, &write, &exec);
+	printf("ClientCommand, %s msg to client %d file \"%s\" <%d,%d> failed %x\n",
+	    ConsistType(flags), clientID, FsHandleName(consistPtr->hdrPtr),
 	    consistRpc.fileID.major, consistRpc.fileID.minor, status);
-
-	LIST_FORALL(&(consistPtr->msgList), (List_Links *) existingMsgPtr) {
-	    if (existingMsgPtr == msgPtr) {
-		List_Remove((List_Links *) msgPtr);
-		free((Address) msgPtr);
-		break;
-	    }
-	}
+	printf("\tClient had %d refs %d write %d exec\n", ref, write, exec);
     }
+    LOCK_MONITOR;
 }
 
 /*
