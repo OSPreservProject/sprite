@@ -86,6 +86,19 @@ static Sys_SetJumpState setJumpState;
 #define SECTORS_PER_WORM_BLOCK	(FS_BLOCK_SIZE / DEV_BYTES_PER_WORM_SECTOR)
 
 /*
+ * Define the maximum number of sectors that may be transferred to the
+ * RXT in one shot.  Since we allocate space from the kernel's address
+ * space statically, we don't want to make it too much even though
+ * the drive can handle 256 blocks in a shot. 
+ */
+#define MAX_WORM_SECTORS_IO 16
+
+/*
+ * This utility macro should probably be defined in some global header file.
+ */
+#define max(a,b) (((a) >= (b)) ? (a) : (b))
+
+/*
  * The error codes for class 0-6 sense data are class specific.
  * The follow arrays of strings are used to print error messages.
  */
@@ -240,7 +253,8 @@ Dev_SCSIInitController(cntrlrPtr)
     VmMach_GetDevicePage((int)scsiPtr->labelBuffer);
 
     scsiPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
-					  2 * FS_BLOCK_SIZE);
+            2 * max(FS_BLOCK_SIZE,
+		    MAX_WORM_SECTORS_IO * DEV_BYTES_PER_WORM_SECTOR));
     
     /*
      * Initialize synchronization variables and set the controllers
@@ -1513,15 +1527,19 @@ DevSCSIWormIO(command, deviceUnit, buffer, firstSector, numSectorsPtr)
     totalSectors = *numSectorsPtr;
 
     /*
-     * Chop up the IO into blocksize pieces.  For now, let's try ignoring
-     * the FS blocksize and just do a single worm block at a time.
+     * Chop up the IO into pieces of the maximum transfer size.
+     * 
      *
      * Flag the stored sense as invalid just before sending the command to
      * the drive.
      */
     totalXfer = 0;
     do {
-	numSectors = 1;
+	if (totalSectors > MAX_WORM_SECTORS_IO) {
+	    numSectors = MAX_WORM_SECTORS_IO;
+	} else {
+	    numSectors = totalSectors;
+	}
 	wormPtr->state &= ~SCSI_WORM_VALID_SENSE;
 	status = DevSCSISectorIO(command, devPtr, firstSector, &numSectors, buffer);
 	if (status == SUCCESS) {
