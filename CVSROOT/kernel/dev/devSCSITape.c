@@ -31,10 +31,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devSCSITape.h"
 #include "dev/scsi.h"
 #include "stdlib.h"
+#include "bstring.h"
 
 #include "dbg.h"
 int SCSITapeDebug = FALSE;
 
+static ReturnStatus InitTapeDevice _ARGS_((Fs_Device *devicePtr,
+    ScsiDevice *devPtr));
+static void SetupCommand _ARGS_((ScsiDevice *devPtr, int command,
+    unsigned int code, unsigned int len, ScsiCmd *scsiCmdPtr));
 
 
 /*
@@ -168,12 +173,13 @@ SetupCommand(devPtr, command, code, len, scsiCmdPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSITapeError(tapePtr, statusByte, senseLength, senseDataPtr)
+DevSCSITapeError(tapePtr, statusWord, senseLength, senseDataPtr)
     ScsiTape	 *tapePtr;	/* SCSI Tape that's complaining. */
-    unsigned char statusByte;	/* The status byte of the command. */
+    unsigned int statusWord;	/* The status byte of the command. */
     int		 senseLength;	/* Length of SCSI sense data in bytes. */
     char	 *senseDataPtr;	/* Sense data. */
 {
+    unsigned char statusByte = statusWord;
     ScsiStatus *statusPtr = (ScsiStatus *) &statusByte;
     ScsiClass0Sense *sensePtr = (ScsiClass0Sense *) senseDataPtr;
     char	*name = tapePtr->devPtr->locationName;
@@ -301,6 +307,7 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
     case IOC_TAPE_RETENSION:
 	return DEV_INVALID_ARG;
     default:
+	scsiCmd = 0;
 	panic("DevSCSITapeSpecialCmd: Unknown command %d\n", command);
     }
     SetupCommand(tapePtr->devPtr, scsiCmd, code, (unsigned)count, &scsiTapeCmd);
@@ -310,7 +317,6 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
     senseLength = SCSI_MAX_SENSE_LEN;
     status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, &statusByte,
 				&amountTransferred, &senseLength, senseBuffer);
-
     if (status == SUCCESS) {
 	status = (tapePtr->errorProc)(tapePtr,statusByte, senseLength, 
 				      senseBuffer);

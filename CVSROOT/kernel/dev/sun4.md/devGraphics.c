@@ -28,7 +28,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys/types.h"
 #include "mon/eeprom.h"
 #include "machMon.h"
-
+#include "stdlib.h"
+#include "string.h"
+#include "bstring.h"
 
 #define EEC_COLOR_TYPE_CG4      4       /* missing in mon/eeprom.h */
 #define EEC_COLOR_TYPE_CG6      6       /* missing in mon/eeprom.h */
@@ -251,6 +253,20 @@ FBType	fbarray[FBTYPE_LASTPLUSONE] = {
  * the behaviour, and I might be wrong...
  *                      Thorsten von Eicken, 2/19/90
  */
+
+/*
+ * forward declarations for internal routines
+ */
+#ifdef sun4c
+static int SearchProm _ARGS_((unsigned int node));
+#endif
+static int GetFBType _ARGS_((void));
+static ReturnStatus PutCmap _ARGS_((int whichFb, FBCMap *cmap));
+static ReturnStatus GetCmap _ARGS_((int whichFb, FBCMap *cmap));
+static ReturnStatus SVideo _ARGS_((int whichFb, int *statePtr));
+static ReturnStatus GVideo _ARGS_((int whichFb, int *statePtr));
+static ReturnStatus InitCmap _ARGS_((FBDevice *devPtr));
+
 
 
 
@@ -594,7 +610,7 @@ DevFBClose(devicePtr, useFlags, openCount, writerCount)
     /*
      * Check a ref count?
      */
-    free(devicePtr->data);
+    free((Address) devicePtr->data);
 
     return SUCCESS;
 }
@@ -617,11 +633,11 @@ char	searchBuffer[1024];
  *
  *----------------------------------------------------------------------
  */
-int
+#ifdef sun4c
+static int
 SearchProm(node)
     unsigned	int		node;
 {
-#ifdef sun4c
     unsigned	int		newNode;
     int		length = 0;
     struct	config_ops	*configPtr;
@@ -706,9 +722,8 @@ SearchProm(node)
 	node = configPtr->devr_next(node);
     }
     return -1;
-#endif /* sun4c */
 }
-
+#endif /* sun4c */
 
 
 /*
@@ -727,7 +742,7 @@ SearchProm(node)
  *
  *----------------------------------------------------------------------
  */
-int
+static int
 GetFBType()
 {
 #ifdef sun4c
@@ -743,6 +758,8 @@ GetFBType()
     node = configPtr->devr_next(0);
 
     return SearchProm(node);
+#else
+    return -1;
 #endif /* sun4c */
 }
 
@@ -822,7 +839,7 @@ DevFBMMap(devicePtr, startAddr, length, offset, newAddrPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+static ReturnStatus
 PutCmap(whichFb, cmap)
     int		whichFb;
     FBCMap	*cmap;
@@ -904,7 +921,7 @@ PutCmap(whichFb, cmap)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+static ReturnStatus
 GetCmap(whichFb, cmap)
     int		whichFb;
     FBCMap	*cmap;
@@ -974,7 +991,7 @@ GetCmap(whichFb, cmap)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+static ReturnStatus
 SVideo(whichFb, statePtr)
     int		whichFb;
     int		*statePtr;
@@ -1042,7 +1059,7 @@ SVideo(whichFb, statePtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+static ReturnStatus
 GVideo(whichFb, statePtr)
     int		whichFb;
     int		*statePtr;
@@ -1092,7 +1109,7 @@ GVideo(whichFb, statePtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+static ReturnStatus
 InitCmap(devPtr)
     FBDevice	*devPtr;
 {
