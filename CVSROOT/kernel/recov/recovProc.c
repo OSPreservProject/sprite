@@ -20,11 +20,12 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "recov.h"
-#include "sync.h"
-#include "rpc.h"
-#include "stdlib.h"
+#include <sprite.h>
+#include <recov.h>
+#include <sync.h>
+#include <rpc.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 /*
  * A host is "pinged" (to see when it reboots) at an interval determined by

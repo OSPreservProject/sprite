@@ -41,6 +41,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <trace.h>
 #include <fsutil.h>
 #include <bstring.h>
+#include <stdio.h>
 
 /*
  * Other kernel modules arrange call-backs when a host crashes or reboots.
@@ -175,10 +176,12 @@ Boolean recovTracing = TRUE;
  */
 
 static void CrashCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
-extern void DelayedCrashCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+#ifdef dying_state
+static void DelayedCrashCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void MarkHostDead _ARGS_((int spriteID));
+#endif /* dying_state */
 static void CallBacksDone _ARGS_((int spriteID));
 static void MarkRecoveryComplete _ARGS_((int spriteID));
-static void MarkHostDead _ARGS_((int spriteID));
 static void GetRebootList _ARGS_((List_Links *notifyListHdr, int spriteID));
 static char *GetState _ARGS_((int state));
 static void PrintExtraState _ARGS_((RecovHostState *hostPtr));
@@ -1285,6 +1288,7 @@ CrashCallBacks(data, callInfoPtr)
     callInfoPtr->interval = 0;	/* Don't call again */
     return;
 }
+#ifdef dying_state
 
 /*
  *----------------------------------------------------------------------
@@ -1334,6 +1338,7 @@ DelayedCrashCallBacks(data, callInfoPtr)
     callInfoPtr->interval = 0;	/* Don't call again */
     return;
 }
+#endif /* dying_state */
 
 /*
  *----------------------------------------------------------------------
@@ -1374,6 +1379,7 @@ MarkRecoveryComplete(spriteID)
     UNLOCK_MONITOR;
     return;
 }
+#ifdef dying_state
 
 /*
  *----------------------------------------------------------------------
@@ -1413,6 +1419,7 @@ MarkHostDead(spriteID)
     UNLOCK_MONITOR;
     return;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1647,7 +1654,7 @@ Recov_DumpState(size, userAddr)
     int size;
     Address userAddr;
 {
-    ReturnStatus status;
+    ReturnStatus status = SUCCESS;
     int numHosts, maxHosts;
     int *countPtr;
     int spriteID;
@@ -1659,7 +1666,7 @@ Recov_DumpState(size, userAddr)
     maxHosts = (size - sizeof(int)) / sizeof(Recov_State);
     countPtr = (int *)userAddr;
     if ((maxHosts == 0) && (size > sizeof(int))) {
-	status = Vm_CopyOut(sizeof(int), (Address)&maxHosts, countPtr);
+	status = Vm_CopyOut(sizeof(int), (Address)&maxHosts, (Address)countPtr);
 	return(status);
     }
      userAddr += sizeof(int);
