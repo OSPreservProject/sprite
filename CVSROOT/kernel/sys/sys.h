@@ -45,6 +45,7 @@ extern	void	panic();
 extern	int	vprintf();
 
 extern  ReturnStatus	Sys_OutputNumCalls();
+extern	void		Sys_HostPrint();
 
 #endif /* KERNEL */
 
