@@ -139,7 +139,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static	Sync_Lock	exitLock = {0, 0};
 #define	LOCKPTR &exitLock
 
-static INTERNAL void AddWaiter();
+static INTERNAL void WakeupMigratedParent();
+static void SendSigChild();
+ReturnStatus	FindExitingChild();
+
+
 
 /*
  * SIGNAL_PARENT
@@ -157,8 +161,6 @@ static INTERNAL void AddWaiter();
 				funcName, status); \
 	} \
     }
-
-ReturnStatus	FindExitingChild();
 
 
 /*
@@ -360,11 +362,12 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 	parentProcPtr = Proc_GetPCB(exitProcPtr->parentID);
 	if (parentProcPtr->state != PROC_MIGRATED) {
 	    Sync_Broadcast(&parentProcPtr->waitCondition);
+	    SIGNAL_PARENT(parentProcPtr, "ExitProcessInt");
 	} else {
-	    AddWaiter(parentProcPtr->processID);
+	    WakeupMigratedParent(parentProcPtr->processID);
+	    Proc_CallFunc(SendSigChild, (ClientData)exitProcPtr->parentID, 0);
 	}
 
-	SIGNAL_PARENT(parentProcPtr, "ExitProcessInt");
 
 	newState = PROC_EXITING;
     }
@@ -571,16 +574,14 @@ Proc_DetachInt(procPtr)
     parentProcPtr = Proc_GetPCB(procPtr->parentID);
     Sync_Broadcast(&parentProcPtr->waitCondition);
 
-    SIGNAL_PARENT(parentProcPtr, "Proc_DetachInt");
-
     if (parentProcPtr->state == PROC_MIGRATED) {
-	AddWaiter(parentProcPtr->processID);
+	WakeupMigratedParent(parentProcPtr->processID);
+    } else {
+	SIGNAL_PARENT(parentProcPtr, "Proc_DetachInt");
     }
 
     UNLOCK_MONITOR;
 }
-
-void SendSigChild();
 
 
 /*
@@ -627,7 +628,10 @@ Proc_InformParent(procPtr, childStatus, backGroundSig)
      * clear the suspended and waited on flag.
      *
      * For a migrated process, just send a signal no matter what, since it
-     * can go to an arbitrary node.
+     * can go to an arbitrary node.  Also, do RPC's using a callback so
+     * the monitor lock isn't held during the RPC.  (Perhaps all signals
+     * could be done with a callback and the backGroundSig flag could be
+     * removed??)
      */
 
     if (procPtr->genFlags & PROC_FOREIGN) {
@@ -637,7 +641,7 @@ Proc_InformParent(procPtr, childStatus, backGroundSig)
 	parentProcPtr = Proc_GetPCB(procPtr->parentID);
 	Sync_Broadcast(&parentProcPtr->waitCondition);
     }
-    if (backGroundSig || migrated) {
+    if (backGroundSig || migrated || parentProcPtr->state == PROC_MIGRATED) {
 	Proc_CallFunc(SendSigChild, (ClientData)procPtr->parentID, 0);
     } else {
 	SIGNAL_PARENT(parentProcPtr, "ProcInformParent");
@@ -666,7 +670,7 @@ Proc_InformParent(procPtr, childStatus, backGroundSig)
  */
 
 /* ARGSUSED */
-void
+static void
 SendSigChild(data, callInfoPtr)
     ClientData		data;
     Proc_CallInfo	*callInfoPtr;	/* passed in by callback routine */
@@ -1414,7 +1418,7 @@ Proc_NotifyMigratedWaiters(pid, callInfoPtr)
 /*
  *----------------------------------------------------------------------
  *
- * AddWaiter --
+ * WakeupMigratedParent --
  *
  *	Call the function Proc_NotifyMigratedWaiters by starting a process
  *	on it.
@@ -1429,12 +1433,12 @@ Proc_NotifyMigratedWaiters(pid, callInfoPtr)
  */
 
 static INTERNAL void
-AddWaiter(pid)
+WakeupMigratedParent(pid)
     Proc_PID pid;
 {
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("AddWaiter: inserting process %x.\n", pid);
+	Sys_Printf("WakeupMigratedParent: inserting process %x.\n", pid);
     }
     Proc_CallFunc(Proc_NotifyMigratedWaiters, (ClientData) pid, 0);
 }
