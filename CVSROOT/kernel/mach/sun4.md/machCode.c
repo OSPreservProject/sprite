@@ -1425,6 +1425,15 @@ HandleItAgain:
 	return TRUE;
     }
     /*
+     * It is possible for Sig_Handle to mask the migration signal
+     * if a process is not in a state where it can be migrated.
+     * As soon as we return to user mode, though, we will allow migration.
+     */
+    if (procPtr->sigPendingMask & SIG_MIGRATE_TRAP) {
+	Sig_AllowMigration(procPtr);
+    }
+
+    /*
      * Go back to MachReturnFromTrap.  We are expected to have interrupts
      * off there.
      */
