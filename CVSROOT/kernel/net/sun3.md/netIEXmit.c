@@ -89,9 +89,13 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 {
     register	NetIETransmitBufDesc	*xmitBufDescPtr;
     register	NetIETransmitCB   	*xmitCBPtr;
-    int					bufCount;
+    register int			bufCount;
     int					totalLength;
-    int					length;
+    register int			length;
+    register Address			bufAddr;
+#define VECTOR_LENGTH	20
+    int					borrowedBytes[VECTOR_LENGTH];
+    int					*borrowedBytesPtr;
 
     netIEState.transmitting = TRUE;
     curScatGathPtr = scatterGatherPtr;
@@ -107,23 +111,30 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     totalLength = sizeof(Net_EtherHdr);
 
     /*
+     * If vector elements are two small we borrow bytes from the next
+     * element.  The borrowedBytes array is used to remember this.  We
+     * can't side-effect the main scatter-gather vector becuase that
+     * screws up retransmissions.
+     */
+    borrowedBytesPtr = borrowedBytes;
+    *borrowedBytesPtr = 0;
+    /*
      * Put all of the pieces of the packet into the linked list of xmit
      * buffers.
      */
-
     for (bufCount = 0 ; bufCount < scatterGatherLength ;
-	 bufCount++, scatterGatherPtr++) {
+	 bufCount++, scatterGatherPtr++, borrowedBytesPtr++) {
 
 	/*
 	 * If is an empty buffer then skip it.  Length might even be negative
 	 * if we have borrowed bytes from it to pad out to NET_IE_MIN_DMA_SIZE.
 	 */
-
-	length = scatterGatherPtr->length;
+	borrowedBytesPtr[1] = 0;
+	length = scatterGatherPtr->length - *borrowedBytesPtr;
 	if (length <= 0) {
 	    continue;
 	}
-
+	bufAddr = scatterGatherPtr->bufAddr + *borrowedBytesPtr;
 	/*
 	 * If the buffer is too small then it needs to be made bigger
 	 * or the DMA hardware will overrun.  Also, check for buffers
@@ -132,9 +143,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	 * NB: There is only one temporary buffer.  Bad things will happen
 	 * if more than one message uses this temporary buffer at once.
 	 */
-
-	if ((length < NET_IE_MIN_DMA_SIZE) ||
-	    ((int)(scatterGatherPtr->bufAddr) & 0x1)) {
+	if ((length < NET_IE_MIN_DMA_SIZE) || ((int)bufAddr & 0x1)) {
 
 	    if (length > XMIT_TEMP_BUFSIZE) {
 		netIEState.transmitting = FALSE;
@@ -144,7 +153,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 			  "IE OutputPacket: Odd addressed buffer too large.");
 		return;
 	    }
-	    bcopy(scatterGatherPtr->bufAddr, xmitTempBuffer, length);
+	    bcopy(bufAddr, xmitTempBuffer, length);
 	    if (length < NET_IE_MIN_DMA_SIZE) {
 		/*
 		 * This element of the scatter/gather vector is too small;
@@ -153,16 +162,18 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		 * to pad this one out.
 		 */
 		register int numBorrowedBytes;
+		register int numAvailableBytes;
 		while (bufCount < scatterGatherLength - 1) {
 		    numBorrowedBytes = NET_IE_MIN_DMA_SIZE - length;
-		    if (numBorrowedBytes > scatterGatherPtr[1].length) {
-			numBorrowedBytes = scatterGatherPtr[1].length;
+		    numAvailableBytes = scatterGatherPtr[1].length -
+					borrowedBytesPtr[1];
+		    if (numBorrowedBytes > numAvailableBytes) {
+			numBorrowedBytes = numAvailableBytes;
 		    }
 		    if (numBorrowedBytes > 0) {
 			bcopy(scatterGatherPtr[1].bufAddr,
 			     &xmitTempBuffer[length], numBorrowedBytes);
-			scatterGatherPtr[1].length -= numBorrowedBytes;
-			scatterGatherPtr[1].bufAddr += numBorrowedBytes;
+			borrowedBytesPtr[1] = numBorrowedBytes;
 			length += numBorrowedBytes;
 		    }
 		    if (length == NET_IE_MIN_DMA_SIZE) {
@@ -170,18 +181,18 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		    } else {
 			bufCount++;
 			scatterGatherPtr++;
+			borrowedBytesPtr++;
+			borrowedBytesPtr[1] = 0;
 		    }
 		}
 		length = NET_IE_MIN_DMA_SIZE;
 	    }
 
 	    NET_IE_ADDR_FROM_68000_ADDR(
-		 (int) (xmitTempBuffer), 
-		 (int) (xmitBufDescPtr->bufAddr));
+		 (int) (xmitTempBuffer), (int) (xmitBufDescPtr->bufAddr));
 	} else {
 	    NET_IE_ADDR_FROM_68000_ADDR(
-		 (int) (scatterGatherPtr->bufAddr), 
-		 (int) (xmitBufDescPtr->bufAddr));
+		 (int) (bufAddr), (int) (xmitBufDescPtr->bufAddr));
 	}
 
 	xmitBufDescPtr->eof = 0;
