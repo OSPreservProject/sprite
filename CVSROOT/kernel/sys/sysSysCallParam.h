@@ -63,7 +63,6 @@
  * SYS_PARAM_INT	-	integer
  * SYS_PARAM_CHAR	-	character (for input, will cause problems due
  *				to the number of bytes!)
- * SYS_PARAM_STRING	- 	string 
  * SYS_PARAM_PROC_PID	- 	Proc_PID
  * SYS_PARAM_PROC_RES   -	Proc_ResUsage
  * SYS_PARAM_SYNC_LOCK	-	Sync_Lock
@@ -74,9 +73,6 @@
  * SYS_PARAM_TIME1	-	first word of a Time being passed IN
  * SYS_PARAM_TIME2	-	second word of a Time structure.
  * SYS_PARAM_VM_CMD	-	Vm_Command
- * SYS_PARAM_PROC_ENV_NAME -	First field in a Proc_EnvironVar, which 
- *				contains pointers to two strings.
- * SYS_PARAM_PROC_ENV_VALUE -	Second field in a Proc_EnvironVar.
  * SYS_PARAM_DUMMY	-	A placeholder for cases in which the
  *				number of arguments is different from the
  *				number of words.
@@ -88,24 +84,21 @@
 
 #define SYS_PARAM_INT			0
 #define SYS_PARAM_CHAR			1
-#define SYS_PARAM_STRING		2
-#define SYS_PARAM_PROC_PID		3
-#define SYS_PARAM_PROC_RES		4
-#define SYS_PARAM_SYNC_LOCK		5
-#define SYS_PARAM_FS_ATT		6
-#define SYS_PARAM_FS_NAME		7
-#define SYS_PARAM_TIMEPTR		8
-#define SYS_PARAM_TIME1			9
-#define SYS_PARAM_TIME2			10
-#define SYS_PARAM_VM_CMD		11
-#define SYS_PARAM_PROC_ENV_NAME		12
-#define SYS_PARAM_PROC_ENV_VALUE	13
-#define SYS_PARAM_DUMMY			14
-#define SYS_PARAM_RANGE1		15
-#define SYS_PARAM_RANGE2		16
-#define SYS_PARAM_PCB			17
-#define SYS_PARAM_FS_DEVICE		18
-#define SYS_PARAM_PCBARG		19
+#define SYS_PARAM_PROC_PID              2
+#define SYS_PARAM_PROC_RES              3
+#define SYS_PARAM_SYNC_LOCK             4
+#define SYS_PARAM_FS_ATT                5
+#define SYS_PARAM_FS_NAME               6
+#define SYS_PARAM_TIMEPTR               7
+#define SYS_PARAM_TIME1                 8
+#define SYS_PARAM_TIME2                 9
+#define SYS_PARAM_VM_CMD                10
+#define SYS_PARAM_DUMMY			11
+#define SYS_PARAM_RANGE1		12
+#define SYS_PARAM_RANGE2		13
+#define SYS_PARAM_PCB			14
+#define SYS_PARAM_FS_DEVICE		15
+#define SYS_PARAM_PCBARG		16
 
 typedef struct {
     int type;
