@@ -26,7 +26,8 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "debugMem.h"
+#include "sync.h"
+#include "hash.h"
 
 extern char *malloc();
 
