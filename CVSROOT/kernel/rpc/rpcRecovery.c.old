@@ -347,7 +347,14 @@ RpcHostAlive(spriteID, bootID, asyncRecovery)
     Boolean reboot = FALSE;
 
     LOCK_MONITOR;
-    if (spriteID == NET_BROADCAST_HOSTID) {
+    if (spriteID == NET_BROADCAST_HOSTID ||
+	bootID == 0) {
+	/*
+	 * Don't track the broadcast address.  Also ignore zero valued
+	 * bootIDs.  These come from hosts at early boot time, or
+	 * in certain error conditions like trying to send too much
+	 * data in a single RPC.
+	 */
 	UNLOCK_MONITOR;
 	return;
     }
