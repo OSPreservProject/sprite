@@ -104,7 +104,16 @@ typedef struct {
  *	1: 	Use the slower C interface but no trace printing.
  *	> 1: 	Use the slower C interface and trace system calls.
  */
+
+/*
+ * The code to disable migration for processes using the compatibility
+ * library is in the slower C interface...
+ */
+#ifdef CANT_MIGRATE_COMPAT
+int machUNIXSyscallTrace = 1;
+#else /* CANT_MIGRATE_COMPAT */
 int machUNIXSyscallTrace = 0;
+#endif /* CANT_MIGRATE_COMPAT */
 
 /*
  * Zillions of forward declarations.
@@ -497,6 +506,8 @@ extern Mach_State	*machCurStatePtr;
  * MachUNIXSyscall --
  *
  *	Try and handle the given UNIX system call.
+ *	Note that this routine is called only if (machUNIXSyscallTrace > 0)
+ *	or under special conditions.
  *
  * Results:
  *	TRUE if this was really a UNIX system call.
@@ -514,6 +525,9 @@ MachUNIXSyscall()
     ReturnStatus	status;
     int			type;
     int			numArgs;
+#ifdef CANT_MIGRATE_COMPAT
+    Proc_ControlBlock	*procPtr;
+#endif /* CANT_MIGRATE_COMPAT */
 
     /*
      * See if we got a UNIX system call.  Unix passes the system call type
@@ -523,6 +537,17 @@ MachUNIXSyscall()
     if (type < 0 || type >= machNumUNIXSyscalls) {
 	return(FALSE);
     }
+
+#ifdef CANT_MIGRATE_COMPAT
+    /*
+     * We don't want to migrate processes that are making unix-compatible calls.
+     */
+    procPtr = Proc_GetCurrentProc();
+    if (!(procPtr->genFlags & PROC_DONT_MIGRATE)) {
+	Proc_NeverMigrate(procPtr);
+    }
+#endif /* CANT_MIGRATE_COMPAT */
+    
     numArgs = machUNIXSysCallTable[type].numArgs;
     regs = machCurStatePtr->userState.regState.regs;
     if (numArgs > 4) {
