@@ -600,6 +600,10 @@ Sys_StatsStub(command, option, argPtr)
 	    status = Fs_PrefixDump(option, argPtr);
 	    break;
 	}
+	case SYS_FS_PREFIX_EXPORT: {
+	    status = Fs_PrefixDumpExport(option, argPtr);
+	    break;
+	}
 	case SYS_SYS_CALL_STATS: {
 	    status = Sys_OutputNumCalls(option, argPtr);
 	    break;
