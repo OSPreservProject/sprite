@@ -1086,7 +1086,16 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	    Byte_Zero(numBytes, buffer);
 	}
 	FsEndIndex(handlePtr, &indexInfo, FALSE);
-	fsStats.gen.fileBytesRead += numBytes;
+	FsStat_Add(numBytes, fsStats.gen.fileBytesRead,
+		   fsStats.gen.fileReadOverflow);
+#ifndef CLEAN
+	if (fsKeepTypeInfo) {
+	    int fileType;
+	
+	    fileType = FsFindFileType(&handlePtr->cacheInfo);
+	    fsStats.type.diskBytes[FS_STAT_READ][fileType] += numBytes;
+	}
+#endif CLEAN
     }
 
     if (status == SUCCESS) {
@@ -1152,7 +1161,16 @@ FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, lastDirtyBlock)
 	/*
 	 * The block number is relative to the start of the data blocks.
 	 */
-	fsStats.gen.fileBytesWritten += numBytes;
+	FsStat_Add(numBytes, fsStats.gen.fileBytesWritten,
+		   fsStats.gen.fileWriteOverflow);
+#ifndef CLEAN
+	if (fsKeepTypeInfo) {
+	    int fileType;
+	
+	    fileType = FsFindFileType(&handlePtr->cacheInfo);
+	    fsStats.type.diskBytes[FS_STAT_WRITE][fileType] += numBytes;
+	}
+#endif CLEAN
 	status = FsDeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
 	       blockAddr + 
 	       domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
