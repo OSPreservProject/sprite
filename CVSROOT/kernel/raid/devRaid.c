@@ -147,7 +147,6 @@ DevRaidAttach(devicePtr)
     handlePtr->devPtr = devicePtr;
     handlePtr->raidPtr = &raidArray[devicePtr->unit];
 
-    LogEntry(raidPtr, "# Raid Device Attached\n");
     return (DevBlockDeviceHandle *) handlePtr;
 }
 
