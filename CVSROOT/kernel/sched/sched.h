@@ -102,22 +102,6 @@ typedef struct Sched_Instrument {
     Time noUserInput;			/* Time since last level-6 interrupt */
 } Sched_Instrument;
 
-#ifdef SOSP91
-/*
- * Overall user and system times, not just per process.  If we like having
- * this info, we should put it into Sched_Instrument.
- */
-typedef struct  Sched_OverallTimes {
-    Timer_Ticks kernelTime;
-    Timer_Ticks userTime;
-    Timer_Ticks userTimeMigrated;
-} Sched_OverallTimes;
-
-extern	Sched_OverallTimes      sched_OverallTimesPerProcessor[];
-
-#endif SOSP91
-
-
 typedef struct {
     Proc_ControlBlock		*procPtr;
 #if 	(MACH_MAX_NUM_PROCESSORS != 1) 

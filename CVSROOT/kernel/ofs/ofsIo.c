@@ -146,16 +146,6 @@ Ofs_FileBlockRead(domainPtr, handlePtr, blockPtr)
 	OfsEndIndex(handlePtr, &indexInfo, FALSE);
 	Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead,
 		   fs_Stats.gen.fileReadOverflow);
-#ifdef SOSP91
-	if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		    (proc_RunningProcesses[0]->genFlags &
-		    (PROC_FOREIGN | PROC_MIGRATING))) {
-		Fs_StatAdd(numBytes, fs_SospMigStats.gen.fileBytesRead, 
-			    fs_SospMigStats.gen.fileReadOverflow);
-	    }
-	}
-#endif SOSP91
     }
 exit:
     /*
@@ -235,17 +225,6 @@ Ofs_FileBlockWrite(domainPtr, handlePtr, blockPtr)
 	if (status == SUCCESS) {
 	    Fs_StatAdd(blockPtr->blockSize, fs_Stats.gen.fileBytesWritten,
 		   fs_Stats.gen.fileWriteOverflow);
-#ifdef SOSP91
-	    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-		if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-			(proc_RunningProcesses[0]->genFlags &
-			(PROC_FOREIGN | PROC_MIGRATING))) {
-		    Fs_StatAdd(blockPtr->blockSize,
-			    fs_SospMigStats.gen.fileBytesWritten, 
-			    fs_SospMigStats.gen.fileWriteOverflow);
-		}
-	    }
-#endif SOSP91
 	}
     }
     return(status);
@@ -553,9 +532,6 @@ Ofs_CleanBlocks(data, callInfoPtr)
 	    /*
 	     * Write the block.
 	     */
-#ifdef SOSP91
-	    Fscache_AddBlockToStats(cacheInfoPtr, blockPtr);
-#endif SOSP91
 	    status = Fsdm_FileBlockWrite
 		    (cacheInfoPtr->hdrPtr, blockPtr, lastDirtyBlock);
 	    numWrites++;
@@ -567,9 +543,6 @@ Ofs_CleanBlocks(data, callInfoPtr)
 		break;
 	    }
 	}
-#ifdef SOSP91
-	cacheInfoPtr->flags &= ~FSCACHE_REASON_FLAGS;
-#endif SOSP91
 	Fscache_ReturnDirtyFile(cacheInfoPtr, FALSE);
 	cacheInfoPtr = Fscache_GetDirtyFile(backendPtr, TRUE, FileMatch, 
 					(ClientData) NIL);
