@@ -16,7 +16,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
-#include "byte.h"
 
 Address	vmMemEnd;
 Boolean	vmNoBootAlloc = TRUE;

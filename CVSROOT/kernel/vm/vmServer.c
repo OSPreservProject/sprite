@@ -20,10 +20,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "dbg.h"
 #include "list.h"
-#include "cvt.h"
-#include "byte.h"
 #include "string.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "proc.h"
 
 Boolean	vmUseFSReadAhead = TRUE;

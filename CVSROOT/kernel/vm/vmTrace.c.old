@@ -16,7 +16,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mach.h"
 #include "sync.h"
 #include "sys.h"
-#include "byte.h"
 
 Sync_Semaphore	traceMutex = SYNC_SEM_INIT_STATIC("traceMutex");
 

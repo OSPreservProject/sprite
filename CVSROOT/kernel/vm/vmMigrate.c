@@ -19,7 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "lock.h"
 #include "proc.h"
 #include "fs.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "byte.h"
 
 static ReturnStatus 	EncapsulateInfo();

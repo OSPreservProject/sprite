@@ -22,8 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "lock.h"
 #include "sys.h"
-#include "byte.h"
-#include "mem.h"
+#include "stdlib.h"
 
 Boolean	vmPrefetch = FALSE;
 

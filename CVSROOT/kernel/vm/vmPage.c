@@ -45,8 +45,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "lock.h"
 #include "sys.h"
-#include "byte.h"
-#include "cvt.h"
 
 Boolean	vmDebug	= FALSE;
 

@@ -20,12 +20,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machConfig.h"
 #include "mach.h"
 #include "list.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "proc.h"
 #include "sched.h"
 #include "sync.h"
 #include "sys.h"
-#include "byte.h"
 #include "dbg.h"
 /*
  * Number of page frames in system.
