@@ -673,54 +673,12 @@ Net_SpriteIDToMachType(spriteID)
  *----------------------------------------------------------------------
  */
 
-static int lastDay[13] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
-
 void
 Net_HostPrint(spriteID, string)
     int spriteID;
     char *string;
 {
-    char *hostName;
-    Time time;
-    int offset;
-    int seconds;
-    Boolean dstFlag;
-    Time_Parts timeParts;
-
-    Timer_GetTimeOfDay(&time, &offset, &dstFlag);
-    seconds = time.seconds + offset * 60;
-    Time_ToParts(seconds, FALSE, &timeParts);
-    /*
-     * Until Time_ToParts makes the month count from 1, not zero.
-     */
-    timeParts.month += 1;
-    /*
-     * Gag, my own (simplified) daylight savings correction.
-     */
-    if (dstFlag) {
-	if ((timeParts.month >= 4) &&	/* All of April */
-	    (timeParts.month <= 11)) {	/* thru November */
-	    timeParts.hours++;
-	    if (timeParts.hours >= 24) {
-		timeParts.hours = 0;
-		timeParts.dayOfMonth++;
-		if (timeParts.dayOfMonth > lastDay[timeParts.month]) {
-		    timeParts.month++;
-		    timeParts.dayOfMonth = 1;
-		}
-	    }
-	}
-    }
-    Sys_Printf("%d/%d/%d %d:%02d:%02d ", timeParts.month, timeParts.dayOfMonth,
-	    timeParts.year, timeParts.hours, timeParts.minutes,
-	    timeParts.seconds);
-
-    Net_SpriteIDToName(spriteID, &hostName);
-    if ((hostName == (char *)NIL) || (hostName == (char *)NULL)) {
-	Sys_Printf("Sprite Host <%d> %s", spriteID, string);
-    } else {
-	Sys_Printf("%s (%d) %s", hostName, spriteID, string);
-    }
+    Sys_HostPrint(spriteID, string);
 }
 
 /*
