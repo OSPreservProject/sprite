@@ -29,34 +29,42 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsDisk.h"
 #include "fsFile.h"
 #include "fsTrace.h"
-#include "fsNamedPipe.h"
+#include "fsOpTable.h"
 #include "hash.h"
 
 static Sync_Lock fileHashLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR	&fileHashLock
 
 /*
- * Macro for debug trace prints.
+ * Hash tables for object handles.  These are kept in LRU order and
+ * a soft limit on their number is enforced.  If the number of handles
+ * gets beyond fsStat.handle.maxNumber then LRU replacement is done until
+ * handleScavengeThreashold (1/16) are replaced.  If all handles are in
+ * use the max table size is allowed to grow by handleLimitInc (1/64).
+ * The table never shrinks on the premise that once it has grown the
+ * memory allocator establishes a high water mark and shrinking the table
+ * won't really help overall kernel memory usage - we'll still LRU scavenge
+ * to free what is already in the malloc arena.
  */
-int fsHandleTrace = FALSE;
-#ifndef CLEAN
-#define HANDLE_TRACE(hdrPtr, comment) \
-    if (fsHandleTrace) {						\
-	printf("<%d, %d, %d, %d> flags %x ref %d : %s\n",		\
-	(hdrPtr)->fileID.type, (hdrPtr)->fileID.serverID,		\
-	(hdrPtr)->fileID.major, (hdrPtr)->fileID.minor,		\
-	(hdrPtr)->flags, (hdrPtr)->refCount, comment);			\
-    }
-#else
-#define HANDLE_TRACE
-#endif
-
-/*
- * Hash tables for files and blocks.
- */
-
 Hash_Table	fileHashTableStruct;
 Hash_Table	*fileHashTable = &fileHashTableStruct;
+static List_Links lruListHeader;
+static List_Links *lruList = &lruListHeader;
+/*
+ * FS_HANDLE_TABLE_SIZE has to be at least 64, or the shifts for
+ *	handleLimitInc and ScavengeThreashold have to be fixed.
+ * LIMIT_INC defines the amount the table grows by.
+ * THREASHOLD defines how many handles are reclaimed before stopping.
+ */
+#define		FS_HANDLE_TABLE_SIZE	   256
+#define		LIMIT_INC(max)		   ( (max) >> 6 )
+int		handleLimitInc =	   LIMIT_INC(FS_HANDLE_TABLE_SIZE);
+#define		THREASHOLD(max)		   ( (max) >> 4 )
+int		handleScavengeThreashold = THREASHOLD(FS_HANDLE_TABLE_SIZE);
+
+FsHandleHeader *FsGetNextLRUHandle();
+void FsDoneLRU();
+int		fsLRUinProgress = FALSE;
 
 /*
  * Flags for handles referenced from the hash table.
@@ -64,13 +72,17 @@ Hash_Table	*fileHashTable = &fileHashTableStruct;
  *	FS_HANDLE_LOCKED    - the lock bit on the handle.  Handles are locked
  *		when they are fetched from the hash table.
  *	FS_HANDLE_WANTED    - set when iterating through the handle table
- *		so that the handle doens't get free'ed by FsHandleRemoveInt
+ *		so that the handle doesn't get free'ed by FsHandleRemoveInt
  *	FS_HANDLE_REMOVED   - set instead of freeing the handle if the
- *		remove procedure sees the 'wanted' bit.
+ *		remove procedure sees the 'wanted' or 'don't move' bit.
  *	FS_HANDLE_INVALID   - set when a handle becomes invalid after
  *		a recovery error.
  *	FS_HANDLE_DONT_CACHE - set if the handle should be removed after
  *		the last reference is released.
+ *	FS_HANDLE_DONT_MOVE - set during LRU iteration to lock down the
+ *		next handle in the list.
+ *	FS_HANDLE_MOVE_LATER - set if we should move this handle as soon
+ *		as the DONT_MOVE bit is cleared.
  */
 #define FS_HANDLE_INSTALLED	0x1
 #define FS_HANDLE_LOCKED	0x2
@@ -79,6 +91,8 @@ Hash_Table	*fileHashTable = &fileHashTableStruct;
 #define FS_HANDLE_FREED		0x10
 #define FS_HANDLE_INVALID	0x20
 #define FS_HANDLE_DONT_CACHE	0x40
+#define FS_HANDLE_DONT_MOVE	0x80
+#define FS_HANDLE_MOVE_LATER	0x100
 
 /*
  * Macro to lock a file handle.
@@ -100,11 +114,52 @@ Hash_Table	*fileHashTable = &fileHashTableStruct;
 	Sync_Broadcast(&((hdrPtr)->unlocked));
 
 /*
+ * Macro to remove a handle, so no details get fogotten.  Note, removal
+ * from the hash table is separate, because we do that first, and then
+ * clean it up completely later with this macro.
+ */
+
+#define REMOVE_HANDLE(hdrPtr) \
+	List_Remove(&(hdrPtr)->lruLinks); 	\
+	if ((hdrPtr)->name != (char *)NIL) {	\
+	    free((hdrPtr)->name);		\
+	}					\
+	free((char *)(hdrPtr));
+
+/*
+ * Macro to move a handle to the back (most recent) end of the LRU list.
+ * We can't move handles that are stepping stones in an LRU scan, they
+ * get moved later.
+ */
+
+#define MOVE_HANDLE(hdrPtr) \
+	if ((hdrPtr)->flags & FS_HANDLE_DONT_MOVE) {			\
+	    (hdrPtr)->flags |= FS_HANDLE_MOVE_LATER;			\
+	} else {							\
+	    hdrPtr->flags &= ~FS_HANDLE_MOVE_LATER;			\
+	    List_Move(&(hdrPtr)->lruLinks, LIST_ATREAR(lruList));	\
+	}
+/*
  * Macro to give name associated with a handle.
  */
 #define HDR_FILE_NAME(hdrPtr) \
 	(((hdrPtr)->name == (char *)NIL) ? "(no name)" : hdrPtr->name)
-void	HandleWakeup();
+
+/*
+ * Macro for debug trace prints.
+ */
+int fsHandleTrace = FALSE;
+#ifndef CLEAN
+#define HANDLE_TRACE(hdrPtr, comment) \
+    if (fsHandleTrace) {						\
+	printf("<%d, %d, %d, %d> flags %x ref %d : %s\n",		\
+	(hdrPtr)->fileID.type, (hdrPtr)->fileID.serverID,		\
+	(hdrPtr)->fileID.major, (hdrPtr)->fileID.minor,		\
+	(hdrPtr)->flags, (hdrPtr)->refCount, comment);			\
+    }
+#else
+#define HANDLE_TRACE
+#endif
 
 
 /*
@@ -128,12 +183,10 @@ FsHandleInit(fileHashSize)
     int	fileHashSize;	/* The number of hash table entries to put in the
 			 * file hash table for starters. */
 {
+    fsStat.handle.maxNumber = FS_HANDLE_TABLE_SIZE;
+    List_Init(lruList);
     Hash_Init(fileHashTable, fileHashSize, Hash_Size(sizeof(Fs_FileID)));
 }
-
-int	fsMaxNumHandles = 1024;
-int	fsMinScavengeInterval = 5;
-extern	fsLastScavengeTime;
 
 
 /*
@@ -163,6 +216,85 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 					 * but more data follows that. */
     char		*name;		/* File name for error messages */
     FsHandleHeader	**hdrPtrPtr;	/* Return pointer to handle that
+					 * is found in the hash table. */
+{
+    Boolean found;
+    register int numScavenged;
+    register FsHandleHeader *hdrPtr;
+    List_Links *listPtr;
+
+    do {
+	found = FsHandleInstallInt(fileIDPtr, size, name,
+		    fsStat.handle.maxNumber, hdrPtrPtr);
+	if (*hdrPtrPtr == (FsHandleHeader *)NIL) {
+	    /*
+	     * Limit would be exceeded, recycle some handles.
+	     */
+	    listPtr = (List_Links *)NIL;
+	    numScavenged = 0;
+	    if (fsLRUinProgress > 0) {
+		printf("Handle LRU already in progress\n");
+	    }
+	    fsLRUinProgress++;
+	    fsStats.handle.lruScans++;
+	    for (hdrPtr = FsGetNextLRUHandle(&listPtr);
+		 hdrPtr != (FsHandleHeader *)NIL;
+		 hdrPtr = FsGetNextLRUHandle(&listPtr)) {
+		if ((*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr)) {
+		    numScavenged++;
+		    fsStats.object.scavenges++;
+		    if (numScavenged > handleScavengeThreashold) {
+			break;
+		    }
+		}
+	    }
+	    FsDoneLRU(&listPtr);
+	    fsLRUinProgress--;
+	    if (numScavenged == 0) {
+		/*
+		 * All handles in use, grow the table a bit.
+		 */
+		fsStat.handle.maxNumber += handleLimitInc;
+		handleLimitInc = LIMIT_INC(fsStat.handle.maxNumber);
+		handleScavengeThreashold = THREASHOLD(fsStat.handle.maxNumber);
+	    }
+	}
+    } while (*hdrPtrPtr == (FsHandleHeader *)NIL);
+    return(found);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FsHandleInstallInt --
+ *
+ *      Install a file handle.  It is retrievable by FsHandleFetch after
+ *      this.  If the file handle is not already installed then memory
+ *	is allocated for it.  This enforces a soft limit on the number
+ *	of handles that can exist.
+ *
+ * Results:
+ *	TRUE is returned if the file handle was already in the 
+ *	hash table.  Upon return, *hdrPtrPtr references the installed handle.
+ *	If (*hdrPtrPtr) is NULL then our caller, FsHandleInstall, has
+ *	to recycle some handles.
+ *
+ * Side effects:
+ *	New handle may be allocated.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ENTRY Boolean
+FsHandleInstallInt(fileIDPtr, size, name, handleLimit, hdrPtrPtr)
+    register Fs_FileID	*fileIDPtr;	/* Identfies handle to install. */
+    int		 	size;		/* True size of the handle.  This
+					 * routine only looks at the header,
+					 * but more data follows that. */
+    char		*name;		/* File name for error messages */
+    int			handleLimit;	/* Determines how many handles can
+					 * exist before we return NULL */
+    FsHandleHeader	**hdrPtrPtr;	/* Return pointer to handle that
 					 * is found in the hash table. */    
 {
     register	Hash_Entry	*hashEntryPtr;
@@ -175,17 +307,13 @@ again:
     hashEntryPtr = Hash_Find(fileHashTable, (Address) fileIDPtr);
     if (hashEntryPtr->value == (Address) NIL) {
 	found = FALSE;
+	if (fsStats.handle.exists > handleLimit) {
+	    hdrPtr = (FsHandleHeader *)NIL;
+	    goto exit;
+	}
+
 	fsStats.handle.created++;
 	fsStats.handle.exists++;
-	/*
-	 * Use a crude mechanism to bound the number of file handles.
-	 * This should be fixed to use an LRU mechanism with a flexible
-	 * limit on the number of handles.
-	 */
-	if (fsStats.handle.exists > fsMaxNumHandles &&
-	    fsTimeInSeconds - fsLastScavengeTime > fsMinScavengeInterval) {
-	    Fs_HandleScavengeStub((ClientData)0);
-	}
 	/*
 	 * Allocate and install a new file handle.  Because there are
 	 * various things behind the handle header our caller specifies the
@@ -206,6 +334,7 @@ again:
 #else
 	hdrPtr->name = (char *)NIL;
 #endif
+	List_Insert(&hdrPtr->lruLinks, LIST_ATREAR(lruList));
 	Hash_SetValue(hashEntryPtr, hdrPtr);
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_NEW, hdrPtr);
     } else {
@@ -223,6 +352,7 @@ again:
 	}
 	fsStats.handle.installHits++;
 	hdrPtr->refCount++;
+	MOVE_HANDLE(hdrPtr);
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_HIT, hdrPtr);
 #ifndef FS_NO_HDR_NAMES
 	if ((hdrPtr->name == (char *)NIL) && (name != (char *)NIL)) {
@@ -233,6 +363,7 @@ again:
     }
     hdrPtr->flags |= FS_HANDLE_LOCKED;
     fsStats.handle.locks++;
+exit:
     *hdrPtrPtr = hdrPtr;
     UNLOCK_MONITOR;
     return(found);
@@ -289,6 +420,7 @@ again:
 	(void) Sync_Wait(&hdrPtr->unlocked, FALSE);
 	goto again;
     }
+    MOVE_HANDLE(hdrPtr);
     fsStats.handle.locks++;
     hdrPtr->flags |= FS_HANDLE_LOCKED;
     hdrPtr->refCount++;
@@ -410,7 +542,7 @@ FsHandleDup(hdrPtr)
     LOCK_MONITOR;
 
     LOCK_HANDLE(hdrPtr);
-
+    MOVE_HANDLE(hdrPtr);
     hdrPtr->refCount++;
 
     UNLOCK_MONITOR;
@@ -455,7 +587,7 @@ FsHandleValid(hdrPtr)
  *	in fsInt.h that does type casting.
  *
  * Results:
- *	None.
+ *	FALSE because this is used as a scavenging no-op.
  *
  * Side effects:
  *	The lock bit is removed from the flags filed for the handle.
@@ -463,7 +595,7 @@ FsHandleValid(hdrPtr)
  *----------------------------------------------------------------------------
  *
  */
-ENTRY void
+ENTRY Boolean
 FsHandleUnlockHdr(hdrPtr)
     register	FsHandleHeader	*hdrPtr;
 {
@@ -477,6 +609,7 @@ FsHandleUnlockHdr(hdrPtr)
     UNLOCK_HANDLE(hdrPtr);
 
     UNLOCK_MONITOR;
+    return(FALSE);
 }
 
 /*
@@ -535,13 +668,13 @@ FsHandleReleaseHdr(hdrPtr, locked)
 	return;
     } else if ((hdrPtr->refCount == 0) &&
 	       (hdrPtr->flags & FS_HANDLE_REMOVED) &&
-	       ((hdrPtr->flags & FS_HANDLE_WANTED) == 0)) {
+	       ((hdrPtr->flags & (FS_HANDLE_WANTED|FS_HANDLE_DONT_MOVE) == 0))){
 	/*
 	 * The handle has been removed, we are the last reference, and
 	 * noone in GetNextHandle is trying to grab this handle.
 	 */
 	FS_TRACE_HANDLE(FS_TRACE_RELEASE_FREE, hdrPtr);
-        free((Address)hdrPtr);
+        REMOVE_HANDLE(hdrPtr);
      } else {
 	FS_TRACE_HANDLE(FS_TRACE_RELEASE_LEAVE, hdrPtr);
 	if (locked) {
@@ -595,7 +728,7 @@ FsHandleRemoveInt(hdrPtr)
      */
     UNLOCK_HANDLE(hdrPtr);
 
-    if ((hdrPtr->flags & FS_HANDLE_WANTED) ||
+    if ((hdrPtr->flags & (FS_HANDLE_WANTED|FS_HANDLE_DONT_MOVE)) ||
 	(hdrPtr->refCount > 0)) {
 	/*
 	 * We've removed the handle from the hash table so it won't
@@ -607,10 +740,7 @@ FsHandleRemoveInt(hdrPtr)
 	hdrPtr->flags |= FS_HANDLE_REMOVED;
     } else {
 	FS_TRACE_HANDLE(FS_TRACE_REMOVE_FREE, hdrPtr);
-	if (hdrPtr->name != (char *)NIL) {
-	    free((Address) hdrPtr->name);
-	}
-	free((Address) hdrPtr);
+	REMOVE_HANDLE(hdrPtr);
     }
 }
 
@@ -694,7 +824,9 @@ FsHandleAttemptRemove(handlePtr)
  *	The next handle in the hash table.
  *
  * Side effects:
- *	None.
+ *	Locks the handle (but does not increment its reference count).
+ *	While waiting to lock a handle it will mark it as being wanted
+ *	so that it doesn't get deleted out from under us.
  *
  *----------------------------------------------------------------------------
  *
@@ -737,15 +869,15 @@ FsGetNextHandle(hashSearchPtr)
 	 */
 	hdrPtr->flags |= FS_HANDLE_WANTED;
 	LOCK_HANDLE(hdrPtr);
+	hdrPtr->flags &= ~FS_HANDLE_WANTED;
 	if (hdrPtr->flags & FS_HANDLE_REMOVED) {
-	    hdrPtr->flags &= ~FS_HANDLE_WANTED;
 	    UNLOCK_HANDLE(hdrPtr);
-	    if (hdrPtr->refCount == 0) {
-		free((Address) hdrPtr);
+	    if ((hdrPtr->refCount == 0) &&
+		(hdrPtr->flags & FS_HANDLE_DONT_MOVE) == 0) {
+		FS_TRACE_HANDLE(FS_TRACE_GET_NEXT_FREE, hdrPtr);
+		REMOVE_HANDLE(hdrPtr);
 	    }
 	    continue;
-	} else {
-	    hdrPtr->flags &= ~FS_HANDLE_WANTED;
 	}
 	UNLOCK_MONITOR;
 	return(hdrPtr);
@@ -753,6 +885,130 @@ FsGetNextHandle(hashSearchPtr)
 
     UNLOCK_MONITOR;
     return((FsHandleHeader *) NIL);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FsGetNextLRUHandle --
+ *
+ *	Get the next handle in the LRU list.  Return the handle locked.
+ *	The listPtrPtr should reference a NIL pointer on the first call.
+ *	This skips locked handles because they are obviously in use and not good
+ *	candidates for removal.  This also prevents a single locked handle
+ *	from clogging up the system.
+ *
+ * Results:
+ *	The next handle in the LRU list.
+ *
+ * Side effects:
+ *	Marks the next handle in the LRU list as "not movable" so we
+ *	won't get warped to the wrong spot in the list and we won't
+ *	get an element yanked out from under us.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ENTRY FsHandleHeader *
+FsGetNextLRUHandle(listPtrPtr)
+    List_Links **listPtrPtr;	/* Indirect pointer to current spot in list.
+				 * Modified to reference the next entry.
+				 * This should reference a NIL pointer to
+				 * begin the lru scan. */
+{
+    register 	FsHandleHeader	*hdrPtr;
+    register 	FsHandleHeader	*nextHdrPtr;
+    register	List_Links	*listPtr;
+
+    LOCK_MONITOR;
+
+    if (*listPtrPtr == (List_Links *)NIL) {
+	listPtr = List_First(lruList);
+    } else {
+	listPtr = *listPtrPtr;
+	if (List_IsAtEnd(lruList, listPtr)) {
+	    hdrPtr = (FsHandleHeader *)NIL;
+	    goto exit;
+	}
+    }
+    hdrPtr = LRU_LINKS_TO_HANDLE(listPtr);
+    hdrPtr->flags &= ~FS_HANDLE_DONT_MOVE;
+    listPtr = List_Next(&hdrPtr->lruLinks);
+    if (hdrPtr->flags & FS_HANDLE_MOVE_LATER) {
+	MOVE_HANDLE(hdrPtr);
+    }
+    /*
+     * Have the candidate handle, plus a pointer to the next one in the list.
+     * The candidate has been unmarked and moved if necessary.
+     * Now skip over locked and removed handles.
+     */
+    while (hdrPtr->flags & (FS_HANDLE_REMOVED|FS_HANDLE_LOCKED)) {
+	if ((hdrPtr->flags & FS_HANDLE_REMOVED) &&
+	    ((hdrPtr->flags & (FS_HANDLE_DONT_MOVE|FS_HANDLE_WANTED)) == 0) &&
+	    (hdrPtr->refCount == 0)) {
+	    FS_TRACE_HANDLE(FS_TRACE_LRU_FREE, hdrPtr);
+	    REMOVE_HANDLE(hdrPtr);
+	}
+	if (List_IsAtEnd(lruList, listPtr)) {
+	    hdrPtr = (FsHandleHeader *)NIL;
+	    goto exit;
+	} else {
+	    hdrPtr = LRU_LINKS_TO_HANDLE(listPtr);
+	    listPtr = List_Next(listPtr);
+	}
+    }
+    LOCK_HANDLE(hdrPtr);
+    /*
+     * Mark the next handle in the LRU list so it wont be moved around
+     * or removed.  If we are at the end of the list we can't map to
+     * a handle because we're at the list header, not in a handle.
+     */
+    if (!List_IsAtEnd(lruList, listPtr)) {
+	nextHdrPtr = LRU_LINKS_TO_HANDLE(listPtr);
+	nextHdrPtr->flags |= FS_HANDLE_DONT_MOVE;
+    }
+exit:
+    *listPtrPtr = listPtr;
+    UNLOCK_MONITOR;
+    return(hdrPtr);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FsDoneLRU --
+ *
+ *	Terminate LRU iteration.  This clears the don't move flag of what
+ *	would have been the next handle returned. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clears the don't move flag and nukes the handle if it should be.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+FsDoneLRU(listPtrPtr)
+    List_Links **listPtrPtr;	/* Reference to next spot in LRU list */
+{
+    register FsHandleHeader *hdrPtr;
+
+    if ((*listPtrPtr != (List_Links *)NIL) &&
+	(!List_IsAtEnd(lruList, *listPtrPtr))) {
+	hdrPtr = LRU_LINKS_TO_HANDLE(*listPtrPtr);
+	hdrPtr->flags &= ~FS_HANDLE_DONT_MOVE;
+	if ((hdrPtr->flags & FS_HANDLE_REMOVED) &&
+	    ((hdrPtr->flags & FS_HANDLE_WANTED) == 0) &&
+	    (hdrPtr->refCount == 0)) {
+	    FS_TRACE_HANDLE(FS_TRACE_LRU_DONE_FREE, hdrPtr);
+	    REMOVE_HANDLE(hdrPtr);
+	} else if (hdrPtr->flags & FS_HANDLE_MOVE_LATER) {
+	    MOVE_HANDLE(hdrPtr);
+	}
+    }
 }
 
 /*
@@ -853,6 +1109,7 @@ FsHandleDescWriteBack(shutdown, domain)
 		cachedAttrPtr = &handlePtr->cacheInfo.attr;
 		break;
 	    }
+#ifdef notdef
 	    case FS_LCL_NAMED_PIPE_STREAM: {
 		register FsNamedPipeIOHandle *handlePtr =
 			(FsNamedPipeIOHandle *) hdrPtr;
@@ -860,6 +1117,7 @@ FsHandleDescWriteBack(shutdown, domain)
 		cachedAttrPtr = &handlePtr->cacheInfo.attr;
 		break;
 	    }
+#endif
 	    default:
 		continue;
 	}
