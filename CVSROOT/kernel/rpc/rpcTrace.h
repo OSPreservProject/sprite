@@ -15,7 +15,7 @@
 #define _RPCTRACE
 
 #include "rpcPacket.h"
-#include "time.h"
+#include "spriteTime.h"
 #include "trace.h"
 #include "sync.h"
 

@@ -22,7 +22,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "status.h"
 #include "dbg.h"
-#include "mach.h"
 
 /*
  * A delay variable that represents our preferred inter-fragment delay.

@@ -13,7 +13,7 @@
 #ifndef _RPCHISTOGRAM
 #define _RPCHISTOGRAM
 
-#include "time.h"
+#include "spriteTime.h"
 #include "sync.h"
 
 /*
