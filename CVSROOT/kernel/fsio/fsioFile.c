@@ -664,9 +664,12 @@ FsFileScavenge(hdrPtr)
 	FsConsistClients(&handlePtr->consist) == 0) {
 	/*
 	 * Remove handles for files with no users and no blocks in cache.
-	 * This call unlocks the handle and then frees its memory if there
-	 * are no references to it lingering from the name hash table.
+	 * We tell VM not to cache the segment associated with the file.
+	 * The "attempt remove" call unlocks the handle and then frees its
+	 * memory if there are no references to it lingering from the name
+	 * hash table.
 	 */
+	Vm_FileChanged(&handlePtr->segPtr);
 	FsHandleAttemptRemove(handlePtr);
     } else {
 	FsHandleUnlock(hdrPtr);
