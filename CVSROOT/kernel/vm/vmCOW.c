@@ -92,7 +92,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "byte.h"
 #include "mem.h"
-#include "machine.h"
 
 Boolean	vm_CanCOW = TRUE;
 
