@@ -26,7 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsLocalDomain.h"
 #include "fsOpTable.h"
 #include "fsDevice.h"
-#include "time.h"
+#include "spriteTime.h"
 #include "fsStat.h"
 #include "timer.h"
 #include "rpc.h"
