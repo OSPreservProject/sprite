@@ -44,6 +44,15 @@ Fs_RpcRequest()
     panic( "Fs_RpcRequest called");
 }
 
+/*
+ * Monitor for OkToScavenge and DoneScavenge
+ */
+static Sync_Lock scavengeLock;
+#define LOCKPTR (&scavengeLock)
+
+Boolean OkToScavenge();
+void DoneScavenge();
+
 
 #define	MAX_WAIT_INTERVALS	5
 
@@ -569,22 +578,17 @@ void Fs_HandleScavengeStub(data)
 {
     /*
      * This is called when the L1-x keys are held down at the console.
+     * We set up a call to Fs_HandleScavenge, unless there is already
+     * an extra scavenger scheduled.
      */
-    Proc_CallFunc(Fs_HandleScavenge, (ClientData)FALSE, 0);
+    if (OkToScavenge()) {
+	Proc_CallFunc(Fs_HandleScavenge, (ClientData)FALSE, 0);
+    }
 }
 
+Boolean		scavengerScheduled = FALSE;
 int		fsScavengeInterval = 2;			/* 2 Minutes */
 int		fsLastScavengeTime = 0;
-static	int	numScavengers = 0;
-static	Boolean	scavengerStuck = FALSE;
-
-/*
- * Set a threshold for when to warn about the scavenger getting stuck.
- * During high loads it can appear to get stuck for 0 or 1 seconds, or
- * more.  If the time is greater than SCAVENGE_WARNING_TIME, print
- * a warning.  SCAVENGE_WARNING_TIME is in seconds.
- */
-#define SCAVENGE_WARNING_TIME 3
 
 
 /*
@@ -616,18 +620,6 @@ Fs_HandleScavenge(data, callInfoPtr)
     Hash_Search				hashSearch;
     register	FsHandleHeader		*hdrPtr;
 
-    if (numScavengers > 0) {
-	if (!scavengerStuck &&
-	    fsTimeInSeconds > fsLastScavengeTime + SCAVENGE_WARNING_TIME) {
-	   printf( "Scavenger stuck for %d seconds\n",
-	       fsTimeInSeconds - fsLastScavengeTime);
-	   scavengerStuck = TRUE;
-       }
-       callInfoPtr->interval = 0;
-       return;
-    }
-    numScavengers++;
-
     /*
      * Note that this is unsynchronized access to a global variable, which
      * works fine on a uniprocessor.  We don't want a monitor lock here
@@ -642,17 +634,77 @@ Fs_HandleScavenge(data, callInfoPtr)
 	 (*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr);
     }
     /*
-     * Set up our next call.
+     * We are called in two cases.  A regular call background call is indicated
+     * by a TRUE data value, while an extra scavenge that is done in an
+     * attempt to free space is the other case.
      */
-    if ((Boolean)data && numScavengers == 1) {
+    if ((Boolean)data) {
+	/*
+	 * Set up next background call.
+	 */
 	callInfoPtr->interval = fsScavengeInterval * timer_IntOneMinute;
+    } else {
+	/*
+	 * Indicate that the extra scavenger has completed.
+	 */
+	callInfoPtr->interval = 0;
+	DoneScavenge();
     }
-    if (scavengerStuck) {
-	printf( "Scavenger unstuck after %d seconds\n",
-	    fsTimeInSeconds - fsLastScavengeTime);
-	scavengerStuck = FALSE;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * OkToScavenge --
+ *
+ *	Checks for already active scavengers.  Returns FALSE if there
+ *	is already a scavenger.
+ *
+ * Results:
+ *	TRUE if there is no scavenging in progress.
+ *
+ * Side effects:
+ *	Sets scavengerScheduled to TRUE if it had been FALSE.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+Boolean
+OkToScavenge()
+{
+    register Boolean ok;
+    LOCK_MONITOR;
+    ok = !scavengerScheduled;
+    if (ok) {
+	scavengerScheduled = TRUE;
     }
-    numScavengers--;
+    UNLOCK_MONITOR;
+    return(ok);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * DoneScavenge --
+ *
+ *	Called when done scavenging.  This clears the flag that indicates
+ *	an extra scavenger is present.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clears scavengerScheduled.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+void
+DoneScavenge()
+{
+    LOCK_MONITOR;
+    scavengerScheduled = FALSE;
+    UNLOCK_MONITOR;
 }
 
 /*
