@@ -14,8 +14,8 @@
 #define _MACHASMDEFS
 
 /*
- * The macros in these macros are allowed to use temporary registers 1 through
- * 4.
+ * The macros in these macros are allowed to use temporary registers
+ * 6 through 9.
 #define	LREG1	r22
 #define	LREG2	r23
 #define	LREG3	r24
@@ -205,93 +205,6 @@
 	wr_special	upsw, LREG2, r0
 
 /*
- * SWITCH_TO_KERNEL_MODE() -- 
- *
- *	Switch to kernel mode and save the current mode in the prev mode
- *	bit of the kpsw.
- */
-#define	SWITCH_TO_KERNEL_MODE() \
-	rd_kpsw		LREG1; \
-	and		LREG2, LREG1, $MACH_KPSW_CUR_MODE; \
-	cmp_br_delayed	eq, LREG2, r0, 1f; \
-	Nop; \
-	or		LREG1, LREG1, $MACH_KPSW_PREV_MODE; \
-	cmp_br_delayed	always, 2f; \
-	Nop; \
-1:	and		LREG1, LREG1, $(~MACH_KPSW_PREV_MODE); \
-2:	and 		LREG1, LREG1, $(~MACH_KPSW_CUR_MODE)
-
-/*
- * VERIFY_SWP(savedBytes) -- 
- *
- *	Verify that the saved window pointer is valid.  If not kill
- *	the current process.  The swp is valid if it is greater than or
- *	equal to the minimum value stored in the current process' state
- *	structure and there is at least one page of bytes between the
- *	maximum swp value and the current value.
- *
- *	savedBytes - Number of bytes that there should be available on the
- *		     saved window stack.
- */
-#define	VERIFY_SWP(savedBytes) \
-	ld_32		LREG1, r0, $curStatePtr; \
-	rd_special	LREG2, swp; \
-	ld_32		LREG3, LREG1, $MACH_MIN_SWP_OFFSET; \
-	Nop; \
-	add_nt		LREG3, LREG3, savedBytes; \
-	cmp_br_delayed	gt, LREG3, LREG2, 1f; \
-	Nop; \
-	ld_32		LREG3, LREG1, $MACH_MAX_SWP_OFFSET; \
-	add_nt		LREG2, LREG2, $MACH_PAGE_SIZE; \
-	cmp_br_delayed	ge, LREG3, LREG2, 2f; \
-	Nop; \
-1:	USER_ERROR(MACH_USER_BAD_SWP); \
-2:
-
-/*
- * SWITCH_TO_KERNEL_SPILL_STACK() -
- *
- *	Switch to both the kernel's normal stack and the saved window stack.
- */
-#define SWITCH_TO_KERNEL_SPILL_STACK() \
-	ld_32		LREG1, r0, $curStatePtr; \
-	Nop; \
-	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
-	Nop
-
-/*
- * SWITCH_TO_KERNEL_STACKS() -
- *
- *	Switch to both the kernel's normal stack and the saved window stack.
- */
-#define SWITCH_TO_KERNEL_STACKS() \
-	ld_32		LREG1, r0, $curStatePtr; \
-	Nop; \
-	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
-	Nop; \
-	ld_32		LREG2, LREG1, $MACH_KERN_STACK_START; \
-	add_nt		LREG2, r0, $0x380; \
-	wr_special	cwp, r0; \
-	wr_special	swp, LREG2
-
-/*
- * USER_ERROR(errorType) --
- *
- *	Handle a fatal user error.  This involves switching to kernel
- *	mode, switching to the kernel's normal stack and saved window
- *	stack and calling the user error routine.
- *
- *	errorType - Type of user error.
- */
-#define USER_ERROR(userError) \
-	SWITCH_TO_KERNEL_MODE(); \
-	SWITCH_TO_KERNEL_STACKS(); \
-	SET_KPSW(MACH_KPSW_ALL_TRAPS_ENA); \
-	add_nt		r27, r0, $userError; \
-	call		_MachUserError$w; \
-	Nop
-
-/*
  * LD_SLOT_ID(rx) -- 
  *
  *	Load slotid into register rx
@@ -411,5 +324,151 @@
 	rd_kpsw		LREG2 ;\
 	or		LREG2, LREG2, LREG1 ;\
 	wr_kpsw		LREG2, r0
+
+/*
+ * VERIFY_SWP(savedBytes) -- 
+ *
+ *	Verify that the saved window pointer is valid.  If not kill
+ *	the current process.  The swp is valid if
+ *
+ *	    swp - 128 >= min_swp_offset and
+ *	    swp + page_size <= max_swp_offset
+ *
+ *	The 128 bytes of extra space is required on the bottom in order
+ *	to handle the case when	we are trying to allocate more memory after a
+ *	window underflow and we need space to save a window in case of a
+ *	window overflow fault.  The page_size worth of data at the top is
+ *	there for the same reason.  A whole page is used instead of just
+ *	one window because we may need to save lots of windows.
+ *
+ *	savedBytes - Number of bytes that there should be available on the
+ *		     saved window stack.
+ */
+#define	VERIFY_SWP(savedBytes) \
+	ld_32		LREG1, r0, $curStatePtr; \
+	Nop; \
+	ld_32		LREG1, LREG1, $0; \
+	rd_special	LREG2, swp; \
+	ld_32		LREG3, LREG1, $MACH_MIN_SWP_OFFSET; \
+	Nop; \
+	add_nt		LREG3, LREG3, $(savedBytes + 128); \
+	cmp_br_delayed	gt, LREG3, LREG2, 1f; \
+	Nop; \
+	ld_32		LREG3, LREG1, $MACH_MAX_SWP_OFFSET; \
+	add_nt		LREG2, LREG2, $MACH_PAGE_SIZE; \
+	cmp_br_delayed	ge, LREG3, LREG2, 2f; \
+	Nop; \
+1:	USER_ERROR(MACH_USER_BAD_SWP); \
+2:
+
+/*
+ * SWITCH_TO_KERNEL_SPILL_STACK() -
+ *
+ *	Switch to both the kernel's register spill stack.
+ */
+#define SWITCH_TO_KERNEL_SPILL_STACK() \
+	ld_32		LREG1, r0, $curStatePtr; \
+	Nop; \
+	ld_32		LREG1, LREG1, $0; \
+	Nop; \
+	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
+	Nop
+
+/*
+ * SWITCH_TO_KERNEL_STACKS() -
+ *
+ *	Switch to both the kernel's normal stack and the saved window stack.
+ */
+#define SWITCH_TO_KERNEL_STACKS() \
+	ld_32		LREG1, r0, $curStatePtr; \
+	Nop; \
+	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
+	Nop; \
+	ld_32		LREG2, LREG1, $MACH_KERN_STACK_START; \
+	add_nt		LREG2, r0, $0x380; \
+	wr_special	cwp, r0; \
+	wr_special	swp, LREG2
+
+/*
+ * USER_ERROR(errorType) --
+ *
+ *	Handle a user error.  This is only called from a trap handler
+ *	that happened in user mode.  The error is taken by trapping back
+ *	into the kernel.  Before trapping back in save the error type and
+ *	first and second PCs in this windows input registers.  These registers
+ *	are will not be touched by interrupt handlers so will be guaranteed
+ *	to be in good shape when we trap back in.
+ *
+ *	errorType - Type of user error.
+ */
+#define USER_ERROR(userError) \
+	add_nt		r13, r0, $userError; \
+	add_nt		r14, r10, $0; \
+	add_nt		r15, r16, $0; \
+	add_nt		r10, r0, $ExecNop; \
+	return_trap	r10, $0; \
+	cmp_trap	always, r0, r0, $MACH_USER_ERROR_TRAP; \
+	Nop
+
+/*
+ * FETCH_CUR_INSTRUCTION(destReg) --
+ *
+ *	Load the contents of the instruction at r10 into destReg.
+ *
+ *	destReg -- Register to load instruction into.
+ */
+#ifdef BARB 
+#define FETCH_CUR_INSTRUCTION(destReg) \
+        ld_constant(LREG1, 0x20000); \
+        ld_constant(LREG2, 0x40000000); \
+        cmp_br_delayed  lt, r10, LREG1, 1f; \
+        nop; \
+        cmp_br_delayed  ge, r10, LREG2, 1f; \
+        nop; \
+        sub             LREG1, r10, LREG1; \
+        add             LREG1, LREG1, LREG2; \
+        cmp_br_delayed	always, 2f; \
+        nop; \
+1: \
+        add_nt          LREG1, r10, $0; \
+2: \
+        ld_32           destReg, LREG1, $0
+#else
+#define FETCH_CUR_INSTRUCTION(destReg) \
+        ld_32           destReg, r10, $0
+#endif
+
+/*
+ * SAVE_STATE_AND_SWITCH_STACK()
+ *
+ *	Save all user state into the current state structure and switch to
+ *	the kernel stack.
+ */
+#define SAVE_STATE_AND_SWITCH_STACK() \
+	ld_32		LREG1, r0, $curStatePtr; \
+	Nop; \
+	ld_32		LREG1, LREG1, $0; \
+	st_32		r4, LREG1, $MACH_USER_STACK_PTR_OFFSET; \
+	rd_special	LREG2, cwp; \
+	st_32		LREG2, LREG1, $MACH_CWP_OFFSET; \
+	rd_special	LREG2, swp; \
+	st_32		LREG2, LREG1, $MACH_SWP_OFFSET; \
+	st_32		r10, LREG1, $MACH_FIRST_PC_OFFSET; \
+	st_32		r16, LREG1, $MACH_SECOND_PC_OFFSET; \
+	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
+	Nop
+
+
+/*
+ * RESTORE_STATE()
+ *
+ *	Restore all user state from the current state structure.
+ */
+#define RESTORE_USER_STATE() \
+	ld_32		r4, LREG1, $MACH_USER_STACK_PTR_OFFSET; \
+	ld_32		LREG2, LREG1, $MACH_SWP_OFFSET; \
+	ld_32		r10, LREG1, $MACH_FIRST_PC_OFFSET; \
+	ld_32		r16, LREG1, $MACH_SECOND_PC_OFFSET; \
+	wr_special	swp, LREG2
 
 #endif _MACHASMDEFS
