@@ -76,7 +76,7 @@ int	fsTraceConsistMinor = 2249;
  * complete.  This time has to be enough to let a client with a large
  * main-memory cache writeback a large file.
  */
-int fsconsist_TimeoutMinutes = 5;
+int fsconsist_TimeoutMinutes = 1;
 
 /*
  * Rpc to send when forcing a client to invalidate or write back a file.
@@ -1293,9 +1293,7 @@ Fsconsist_ClientRemoveCallback(consistPtr, clientID)
 		 * when it is truely time to remove the file.
 		 */
 		ClientCommand(consistPtr, clientPtr, FSCONSIST_DELETE_FILE);
-		while (!List_IsEmpty(&consistPtr->msgList)) {
-		    (void) Sync_Wait(&consistPtr->repliesIn, FALSE);
-		}
+		(void)EndConsistency(consistPtr);
 	    }
 	}
 	/*
@@ -1861,10 +1859,15 @@ ProcessConsist(data, callInfoPtr)
     storage.replyDataPtr = (Address)NIL;
     storage.replyDataSize = 0;
 
-    status = Rpc_Call(consistPtr->serverID, RPC_FS_CONSIST_REPLY, &storage);
-    if (status != SUCCESS) {
-	printf("Got error (%x) from consist reply on <%d,%d>\n", status,
-	    reply.fileID.major, reply.fileID.minor);
+    for ( ; ; ) {
+	status = Rpc_Call(consistPtr->serverID, RPC_FS_CONSIST_REPLY, &storage);
+	if (status != SUCCESS) {
+	    printf("Got error (%x) from consist reply on <%d,%d>\n", status,
+		reply.fileID.major, reply.fileID.minor);
+	}
+	if (status != RPC_TIMEOUT) {
+	    break;
+	}
     }
     free((Address)consistPtr);
 }
