@@ -73,6 +73,13 @@ loopStart:
 
 	clrl	d1
 	movsb	d1, VMMACH_CONTEXT_OFF
+
+|
+| Enable the floating point processor.
+|
+	movsb VMMACH_SYSTEM_ENABLE_REG, d0
+	orb   #VMMACH_ENABLE_FPP, d0
+	movsb d0, VMMACH_SYSTEM_ENABLE_REG
 #endif
 
 |
