@@ -474,9 +474,6 @@ SyncEventWakeupInt(event)
 	switch (procPtr->state) {
 	    case PROC_WAITING:
 	        break;
-	    case PROC_MIGRATING:
-		panic("Can't handle waking up a migrating proc.\n");
-	        break;
 	    case PROC_MIGRATED:
 		/*
 		 * Need to handle waking up migrated processes.
