@@ -322,6 +322,9 @@ Vm_Cmd(command, arg)
 	    vmStat.maxFSPages = vmStat.fsMap - vmStat.fsUnmap;
 	    vmStat.minFSPages = vmStat.fsMap - vmStat.fsUnmap;
 	    break;
+	case VM_SET_COR_READ_ONLY:
+	    vmCORReadOnly = arg;
+	    break;
         default:
             Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");
             break;

@@ -72,6 +72,9 @@ typedef unsigned int	Vm_PTE;
  *	VM_REFERENCED_BIT	The page has been referenced.
  *	VM_MODIFIED_BIT		The page has been modified.
  *      VM_READ_ONLY_PROT	The page is read-only.
+ *	VM_COR_CHECK_BIT	The page is marked read-only after a cor fault
+ *				to determine if the page will in fact get
+ *				modified.
  *	VM_PAGE_FRAME_FIELD	The virtual page frame that this page is 
  *				resident in.
  */
@@ -85,6 +88,7 @@ typedef unsigned int	Vm_PTE;
 #define VM_REFERENCED_BIT	0x01000000
 #define VM_MODIFIED_BIT		0x00800000
 #define VM_READ_ONLY_PROT	0x00400000
+#define VM_COR_CHECK_BIT	0x00200000
 #define VM_PAGE_FRAME_FIELD	0x000fffff
 
 /*

@@ -113,6 +113,7 @@ int	vmNumPageGroups = 10;
 int	vmPagesPerGroup;
 int	vmCurPenalty;
 int	vmBoundary;
+Boolean	vmCORReadOnly = FALSE;
 
 void		PageOut();
 void		PutOnReserveList();
@@ -1567,7 +1568,12 @@ again:
 	 * The page is already in memory.  Validate it in hardware and set
 	 * the reference bit since we are about to reference it.
 	 */
-	vmStat.quickFaults++;
+	if (protFault && (*curPTEPtr & VM_COR_CHECK_BIT)) {
+	    vmStat.numCORCOWFaults++;
+	    *curPTEPtr &= ~(VM_COR_CHECK_BIT | VM_READ_ONLY_PROT);
+	} else {
+	    vmStat.quickFaults++;
+	}
 	VmPageValidateInt(virtAddrPtr, curPTEPtr);
 	*curPTEPtr |= VM_REFERENCED_BIT;
         retVal = IS_DONE;

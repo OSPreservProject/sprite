@@ -222,6 +222,9 @@ extern	unsigned int	vmClockSleep;	/* Number of seconds to sleep between
 					 * iterations of the clock. */
 extern	int		vmMaxPageOutProcs; /* Maximum number of page out procs
 					    * at any given time. */
+extern	Boolean		vmCORReadOnly;	/* After a cor fault the page is marked
+					 * as read only so that it can be
+					 * determined if it gets modified. */
 
 /*
  * Variables to control negotiations between the file system and the virtual

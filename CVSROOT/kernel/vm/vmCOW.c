@@ -685,6 +685,7 @@ COR(virtAddrPtr, ptePtr)
     unsigned	int		virtFrameNum;
     unsigned	int		mastVirtPF;
     ReturnStatus		status;
+    int				corCheckBit;
 
     if (cowStop && virtAddrPtr->page == 
 	virtAddrPtr->segPtr->offset + virtAddrPtr->segPtr->numPages - 1) {
@@ -720,8 +721,14 @@ COR(virtAddrPtr, ptePtr)
     if (virtAddrPtr->segPtr->numCORPages < 0) {
 	Sys_Panic(SYS_FATAL, "COR: numCORPages < 0\n");
     }
+    if (vmCORReadOnly) {
+	corCheckBit = VM_COR_CHECK_BIT | VM_READ_ONLY_PROT;
+    } else {
+	corCheckBit = 0;
+    }
     SetPTE(virtAddrPtr, (Vm_PTE)(VM_VIRT_RES_BIT | VM_PHYS_RES_BIT | 
-			 VM_REFERENCED_BIT | VM_MODIFIED_BIT | virtFrameNum));
+			 VM_REFERENCED_BIT | VM_MODIFIED_BIT | corCheckBit |
+			 virtFrameNum));
     VmUnlockPage(virtFrameNum);
     return(SUCCESS);
 }
