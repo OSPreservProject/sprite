@@ -45,6 +45,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <string.h>
 #include <proc.h>
 #include <dbg.h>
+#ifdef SOSP91
+#include  <sospRecord.h>
+#include <timer.h>
+#endif
 
 /*
  * Debugging flags.
@@ -148,6 +152,10 @@ static ReturnStatus CacheDirBlockWrite _ARGS_((Fsio_FileIOHandle *handlePtr,
  *
  *----------------------------------------------------------------------
  */
+#ifdef SOSP91
+Timer_Ticks totalNameTime = {0};
+Fs_FileID NullFileID = {0};
+#endif
 ReturnStatus
 FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	    idPtr, permissions, fileNumber, handlePtrPtr, newNameInfoPtrPtr)
@@ -198,6 +206,18 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 					 * directory being operated on. */
     ClientData	logClientData;		/* Client data for directory change
 					 * logging. */
+#ifdef SOSP91
+#define MAX_RECORDS 10
+    char buf[SOSP_LOOKUP_OFFSET+MAX_RECORDS*sizeof(Fs_FileID)];
+    Fs_FileID *sospTracePtr = (Fs_FileID*)(buf+SOSP_LOOKUP_OFFSET);
+    Timer_Ticks startTicks, endTicks;
+    int sospTraceCount = 0;
+    Timer_GetCurrentTicks(&startTicks);
+    bcopy((Address)prefixHdrPtr, (Address)sospTracePtr,
+	    sizeof(Fs_FileID));
+    sospTracePtr++;
+    sospTraceCount++;
+#endif
 
     /*
      * Get a handle on the domain of the file.  This is needed for disk I/O.
@@ -214,6 +234,9 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	    Fsutil_HandleName(prefixHdrPtr), relativeName);
 	return(FS_DOMAIN_UNAVAILABLE);
     }
+#ifdef SOSP91
+    SOSP_IN_NAME_LOOKUP_FIELD = 1;
+#endif
     /*
      * Duplicate the prefixHandle into the handle for the current point
      * in the directory.  This locks and ups the reference count on the handle.
@@ -385,6 +408,15 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	 * lookup is completed.  On the last component, we only
 	 * expand the link if the FS_FOLLOW flag is present.
 	 */
+#ifdef SOSP91
+	if (sospTraceCount<MAX_RECORDS && curHandlePtr !=
+		(Fsio_FileIOHandle *)NIL) {
+	    bcopy((Address)curHandlePtr, (Address)sospTracePtr,
+		    sizeof(Fs_FileID));
+	    sospTracePtr++;
+	    sospTraceCount++;
+	}
+#endif
 	if ((status == SUCCESS) &&
 	    ((*curCharPtr != '\0') || (useFlags & FS_FOLLOW)) &&
 	    ((curHandlePtr->descPtr->fileType == FS_SYMBOLIC_LINK ||
@@ -656,6 +688,25 @@ endScan:
     if (status == FS_FILE_NOT_FOUND) {
 	fs_Stats.lookup.notFound++;
     }
+#ifdef SOSP91
+    if (curHandlePtr != (Fsio_FileIOHandle *)NIL) {
+	SOSP_ADD_LOOKUP(((int *)buf), clientID,
+	    (*(Fs_FileID *)(&(curHandlePtr->hdr))), status, sospTraceCount,
+	    SOSP_REMEMBERED_MIG, SOSP_REMEMBERED_OP);
+    } else {
+	SOSP_ADD_LOOKUP(((int *)buf), clientID,
+	    NullFileID, status, sospTraceCount,
+	    SOSP_REMEMBERED_MIG, SOSP_REMEMBERED_OP);
+    }
+    SOSP_REMEMBERED_CLIENT = -1;
+    SOSP_REMEMBERED_MIG = -1;
+    SOSP_REMEMBERED_OP = -1;
+    SOSP_IN_NAME_LOOKUP_FIELD = 0;
+    Timer_GetCurrentTicks(&endTicks);
+    Timer_SubtractTicks(endTicks, startTicks, &endTicks);
+    /* Should really have a lock here, but I'll trust that this works. */
+    Timer_AddTicks(totalNameTime, endTicks, &totalNameTime);
+#endif
     return(status);
 }
 
