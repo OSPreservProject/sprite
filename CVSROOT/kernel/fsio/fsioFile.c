@@ -712,7 +712,7 @@ FsFileScavenge(hdrPtr)
     }
 
     if (handlePtr->use.ref == 0 &&
-	handlePtr->cacheInfo.blocksInCache == 0 &&
+	FsCacheOkToScavenge(&handlePtr->cacheInfo) &&
 	FsConsistClients(&handlePtr->consist) == 0) {
 #ifdef CONSIST_DEBUG
 	extern int fsTraceConsistMinor;
