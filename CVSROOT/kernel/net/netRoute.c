@@ -50,7 +50,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <string.h>
 #include <vm.h>
-#include <string.h>
 
 /*
  * Wildcard address for the Ultranet.  This address matches any address.
@@ -408,28 +407,23 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	}
 	case NET_NETWORK_ULTRA: {
 	    Net_UltraHeader	*ultraHdrPtr;
-	    Net_Address		*addressPtr;
 
 	    ultraHdrPtr = (Net_UltraHeader *) routePtr->buffer;
 	    bzero((char *) ultraHdrPtr, sizeof(Net_UltraHeader));
 	    strcat(routePtr->desc, "ultranet, ");
 	    routePtr->headerPtr[NET_PROTO_RAW] = (Address) ultraHdrPtr;
 	    ultraHdrPtr->remoteAddress = wildcardAddress;
-	    ultraHdrPtr->remoteAddress.tsapSize = 2;
-	    ultraHdrPtr->remoteAddress.tsap[1] = 1;
+	    ultraHdrPtr->remoteAddress.tsapSize=2;
+	    ultraHdrPtr->remoteAddress.tsap[0]=0xff;
+	    ultraHdrPtr->remoteAddress.tsap[1]=0xff;
 	    ultraHdrPtr->remoteAddress.address = 
 		netAddressPtr[NET_PROTO_RAW].ultra;
-	    addressPtr = (Net_Address *) &ultraHdrPtr->remoteAddress.address;
-	    addressPtr->generic.data[1] = 0x49;
-	    addressPtr->generic.data[6] = 0xfe;
 	    ultraHdrPtr->localAddress = wildcardAddress;
-	    ultraHdrPtr->localAddress.tsapSize = 2;
-	    ultraHdrPtr->localAddress.tsap[1] = 1;
+	    ultraHdrPtr->localAddress.tsapSize=2;
+	    ultraHdrPtr->localAddress.tsap[0]=0xff;
+	    ultraHdrPtr->localAddress.tsap[1]=0xff;
 	    ultraHdrPtr->localAddress.address = 
 		interPtr->netAddress[NET_PROTO_RAW].ultra;
-	    addressPtr = (Net_Address *) &ultraHdrPtr->localAddress.address;
-	    addressPtr->generic.data[1] = 0x49;
-	    addressPtr->generic.data[6] = 0xfe;
 	    ultraHdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
 	    headerPtr = (char *) ultraHdrPtr;
 	    routePtr->netAddress[NET_PROTO_RAW].ultra = 
@@ -774,6 +768,7 @@ Net_HdrToID(netType, protocol, headerPtr)
     Address 		offsetPtr;
     Net_Address 	netAddress;
 
+    bzero((char *) &netAddress, sizeof(Net_Address));
     if (protocol == NET_PROTO_RAW) {
 	switch(netType) {
 	    case NET_NETWORK_ETHER: {
