@@ -488,9 +488,10 @@ FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
  */
 
 ReturnStatus
-FsFileClose(streamPtr, clientID, flags, dataSize, closeData)
+FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     Fs_Stream		*streamPtr;	/* Stream to regular file */
-    int			clientID;	/* Client closing */
+    int			clientID;	/* Host ID of closer */
+    Proc_PID		procID;		/* Process ID of closer */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of closeData */
     ClientData		closeData;	/* Ref. to FsCachedAttributes */
@@ -524,6 +525,7 @@ FsFileClose(streamPtr, clientID, flags, dataSize, closeData)
      * The main difference is that we have a low-level reference to release.
      */
 
+    FsLockClose(&handlePtr->lock, procID);
     /*
      * Update the global/summary use counts for the file.
      */
@@ -601,6 +603,8 @@ FsFileClientKill(hdrPtr, clientID)
      * that here we are removing the client from the client list, and
      * we have no low-level reference count on the handle to release.
      */
+    FsLockClientKill(&handlePtr->lock, clientID);
+
     handlePtr->use.ref -= refs;
     handlePtr->use.write -= writes;
     handlePtr->use.exec -= execs;

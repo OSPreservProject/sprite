@@ -521,9 +521,10 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceClose(streamPtr, clientID, flags, size, data)
+FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Stream to device */
     int			clientID;	/* HostID of client closing */
+    Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
@@ -544,6 +545,8 @@ FsDeviceClose(streamPtr, clientID, flags, size, data)
     /*
      * Decrement use counts.
      */
+    FsLockClose(&devHandlePtr->lock, procID);
+
     devHandlePtr->use.ref--;
     if (flags & FS_WRITE) {
 	devHandlePtr->use.write--;
@@ -603,6 +606,8 @@ FsDeviceClientKill(hdrPtr, clientID)
      */
     FsIOClientKill(&devHandlePtr->clientList, clientID, &refs, &writes, &execs);
 
+    FsLockClientKill(&devHandlePtr->lock, clientID);
+
     if (refs > 0) {
 	/*
 	 * Set up flags to emulate a close by the client.
@@ -654,9 +659,10 @@ FsDeviceClientKill(hdrPtr, clientID)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteIOClose(streamPtr, clientID, flags, dataSize, closeData)
+FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     Fs_Stream		*streamPtr;	/* Stream to remote object */
     int			clientID;	/* ID of closing host */
+    Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of *closeData, or Zero */
     ClientData		closeData;	/* Copy of cached I/O attributes. */
@@ -684,7 +690,7 @@ FsRemoteIOClose(streamPtr, clientID, flags, dataSize, closeData)
     if (!FsHandleValid(streamPtr->ioHandlePtr)) {
 	status = FS_STALE_HANDLE;
     } else {
-	status = FsSpriteClose(streamPtr, clientID, flags,
+	status = FsSpriteClose(streamPtr, clientID, procID, flags,
 			       dataSize, closeData);
     }
     /*

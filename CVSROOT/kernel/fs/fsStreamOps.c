@@ -790,6 +790,7 @@ Fs_Close(streamPtr)
     register Fs_Stream 	*streamPtr;
 {
     register ReturnStatus 	status;
+    Proc_ControlBlock		*procPtr;
 
     if (streamPtr == (Fs_Stream *)NIL) {
 	/*
@@ -811,9 +812,29 @@ Fs_Close(streamPtr)
 	 * Call the stream type close routine to clean up this reference
 	 * to the I/O handle.
 	 */
+	procPtr = Proc_GetEffectiveProc();
 	FsHandleLock(streamPtr->ioHandlePtr);
 	status = (fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
-		(streamPtr, rpc_SpriteID, streamPtr->flags, 0, (ClientData)NIL);
+		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
+		0, (ClientData)NIL);
+#ifdef lint
+	status = FsFileClose(streamPtr, rpc_SpriteID, procPtr->processID,
+		streamPtr->flags, 0, (ClientData)NIL);
+	status = FsRmtFileClose(streamPtr, rpc_SpriteID, procPtr->processID,
+		streamPtr->flags, 0, (ClientData)NIL);
+	status = FsPipeClose(streamPtr, rpc_SpriteID, procPtr->processID,
+		streamPtr->flags, 0, (ClientData)NIL);
+	status = FsDeviceClose(streamPtr, rpc_SpriteID, procPtr->processID,
+		streamPtr->flags, 0, (ClientData)NIL);
+	status = FsRemoteIOClose(streamPtr, rpc_SpriteID, procPtr->processID,
+		streamPtr->flags, 0, (ClientData)NIL);
+	status = FsControlClose(streamPtr, rpc_SpriteID, procPtr->processID,
+		streamPtr->flags, 0, (ClientData)NIL);
+	status = FsPseudoStreamClose(streamPtr, rpc_SpriteID,procPtr->processID,
+		streamPtr->flags, 0, (ClientData)NIL);
+	status = FsServerStreamClose(streamPtr, rpc_SpriteID,procPtr->processID,
+		streamPtr->flags, 0, (ClientData)NIL);
+#endif /* lint */
 	(void)FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID);
 	FsStreamDispose(streamPtr);
     }

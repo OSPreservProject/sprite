@@ -842,9 +842,10 @@ ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID, name)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPseudoStreamClose(streamPtr, clientID, flags, size, data)
+FsPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Client pseudo-stream to close */
     int			clientID;	/* HostID of client closing */
+    Proc_PID		procID;		/* ID of closing process, IGNORED */
     int			flags;		/* IGNORED */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
@@ -946,9 +947,10 @@ exit:
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-FsServerStreamClose(streamPtr, clientID, flags, size, data)
+FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Service stream to close */
     int			clientID;	/* HostID of client closing */
+    Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
@@ -1402,9 +1404,10 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsControlClose(streamPtr, clientID, flags, size, data)
+FsControlClose(streamPtr, clientID, procID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Control stream */
     int			clientID;	/* HostID of client closing */
+    Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
@@ -1434,7 +1437,8 @@ FsControlClose(streamPtr, clientID, flags, size, data)
      */
     ctrlHandlePtr->serverID = NIL;
     if (ctrlHandlePtr->rmt.hdr.fileID.serverID != rpc_SpriteID) {
-	(void)FsSpriteClose(streamPtr, rpc_SpriteID, 0, 0, (ClientData)NIL);
+	(void)FsSpriteClose(streamPtr, rpc_SpriteID, procID, 0, 0,
+		(ClientData)NIL);
     }
     FsHandleRelease(ctrlHandlePtr, TRUE);
     return(SUCCESS);

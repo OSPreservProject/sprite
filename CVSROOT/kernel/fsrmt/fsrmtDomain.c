@@ -572,6 +572,7 @@ typedef union FsCloseData {
 typedef struct FsSpriteCloseParams {
     FsFileID	fileID;		/* File to close */
     FsFileID	streamID;	/* Stream to close */
+    Proc_PID	procID;		/* Process doing the close */
     int		flags;		/* Flags from the stream */
     FsCloseData	closeData;	/* Seems to be only FsCachedAttributes... */
     int		closeDataSize;	/* actual size of info in closeData field. */
@@ -598,11 +599,12 @@ typedef struct FsSpriteCloseParams {
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteClose(streamPtr, clientID, flags, dataSize, closeData)
+FsSpriteClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     Fs_Stream		*streamPtr;	/* Stream to close.  This is needed
 					 * (instead of I/O handle) so the
 					 * server can close its shadow stream */
     int			clientID;	/* IGNORED, implicitly passed by RPC */
+    Proc_PID		procID;		/* Process ID of closer */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of *closeData, or Zero */
     ClientData		closeData;	/* Copy of cached I/O attributes.
@@ -616,6 +618,7 @@ FsSpriteClose(streamPtr, clientID, flags, dataSize, closeData)
     rmtHandlePtr = (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
     params.fileID = rmtHandlePtr->hdr.fileID;
     params.streamID = streamPtr->hdr.fileID;
+    params.procID = procID;
     params.flags = flags;
     if (closeData != (ClientData) NIL) {
 	params.closeData = *((FsCloseData *)closeData);
@@ -712,17 +715,26 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	     * and clean up.  This call unlocks and decrements the reference
 	     * count on the handle.
 	     */
+	    register ClientData clientData;
 	    FS_TRACE_HANDLE(FS_TRACE_CLOSE, hdrPtr);
 	    if (paramsPtr->closeDataSize != 0) {
-		status = (*fsStreamOpTable[hdrPtr->fileID.type].close)
-			(streamPtr, clientID, paramsPtr->flags,
-			paramsPtr->closeDataSize,
-			(ClientData)&(paramsPtr->closeData));
+		clientData = (ClientData)&paramsPtr->closeData;
 	    } else {
-		status = (*fsStreamOpTable[hdrPtr->fileID.type].close)
-			(streamPtr, clientID, paramsPtr->flags,
-			0, (ClientData)NIL);
+		clientData = (ClientData)NIL;
 	    }
+	    status = (*fsStreamOpTable[hdrPtr->fileID.type].close)
+		    (streamPtr, clientID, paramsPtr->procID,
+		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+#ifdef lint
+	    status = FsFileClose(streamPtr, clientID, paramsPtr->procID,
+		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+	    status = FsPipeClose(streamPtr, clientID, paramsPtr->procID,
+		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+	    status = FsDeviceClose(streamPtr, clientID, paramsPtr->procID,
+		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+	    status = FsPseudoStreamClose(streamPtr, clientID, paramsPtr->procID,
+		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+#endif /* lint */
 	}
 	if (streamPtr != &dummy) {
 	    /*

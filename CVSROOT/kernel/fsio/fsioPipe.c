@@ -204,9 +204,10 @@ FsPipeHandleInit(fileIDPtr, findIt)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeClose(streamPtr, clientID, flags, dataSize, closeData)
+FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     Fs_Stream		*streamPtr;	/* Stream to a pipe */
-    int			clientID;	/* Client closing */
+    int			clientID;	/* Host ID of closing process */
+    Proc_PID		procID;		/* Process closing */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Should be 0 */
     ClientData		closeData;	/* Should be NIL */
