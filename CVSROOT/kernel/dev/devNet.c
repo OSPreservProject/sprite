@@ -232,6 +232,9 @@ DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr)
 	case NET_NETWORK_ULTRA:
 	    maxSize = NET_ULTRA_MAX_BYTES;
 	    break;
+	default:
+	    printf("DevNet_FsOpen: unknown net type %d\n", netType);
+	    return DEV_NO_DEVICE;
     }
     for (i=0 ; i< PACKET_QUEUE_LEN ; i++) {
 	statePtr->queue.packet[i] = (Address) malloc (maxSize);
