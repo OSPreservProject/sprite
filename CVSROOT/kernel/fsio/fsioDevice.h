@@ -43,6 +43,7 @@ typedef struct FsDeviceIOHandle {
     FsUseCounts		use;		/* Summary reference counts. */
     Fs_Device		device;		/* Device info passed to drivers.
 					 * This includes a clientData field. */
+    int			flags;		/* Flags returned by the device open.*/
     FsLockState		lock;		/* User level lock state. */
     int			accessTime;	/* Cached version of access time */
     int			modifyTime;	/* Cached version of modify time */

@@ -124,6 +124,7 @@ FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	devHandlePtr->device.type = fileIDPtr->major;
 	devHandlePtr->device.unit = fileIDPtr->minor;
 	devHandlePtr->device.data = (ClientData)NIL;
+	devHandlePtr->flags = 0;
 	FsLockInit(&devHandlePtr->lock);
 	devHandlePtr->modifyTime = 0;
 	devHandlePtr->accessTime = 0;
@@ -295,7 +296,8 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
 	status = FS_DEVICE_OP_INVALID;
     } else {
 	status = (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].open)
-		    (&devHandlePtr->device, flags, (Fs_NotifyToken)devHandlePtr);
+		    (&devHandlePtr->device, flags, 
+			 (Fs_NotifyToken)devHandlePtr, &devHandlePtr->flags);
     }
     if (status == SUCCESS) {
 	if (!found) {
@@ -940,7 +942,8 @@ FsDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	     */
 	    status = (*devFsOpTable[devIndex].reopen)(&devHandlePtr->device,
 				    paramPtr->use.ref, paramPtr->use.write,
-				    (Fs_NotifyToken)devHandlePtr);
+				    (Fs_NotifyToken)devHandlePtr,
+				    &devHandlePtr->flags);
 	    if (status == SUCCESS) {
 		(void)FsIOClientReopen(&devHandlePtr->clientList, clientID,
 					 &paramPtr->use);
@@ -996,6 +999,7 @@ FsVanillaDevReopen(devicePtr, refs, writes, notifyToken)
 {
     int devIndex = DEV_TYPE_INDEX(devicePtr->type);
     int useFlags = 0;
+    int flags;
 
     if (refs > 0) {
 	useFlags |= FS_READ;
@@ -1003,7 +1007,8 @@ FsVanillaDevReopen(devicePtr, refs, writes, notifyToken)
     if (writes > 0) {
 	useFlags |= FS_WRITE;
     }
-    return((*devFsOpTable[devIndex].open)(devicePtr, useFlags, notifyToken));
+    return((*devFsOpTable[devIndex].open)
+				(devicePtr, useFlags, notifyToken, &flags));
 }
 
 /*
@@ -1380,16 +1385,28 @@ FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     register ReturnStatus status;
     register Address	readBuffer;
     register Fs_Device	*devicePtr;
+    int	     flags;
     Address userBuffer;
+    Boolean copy;
 
-    FsHandleLock(devHandlePtr);
+
+    flags = devHandlePtr->flags;
+    /*
+     * Don't lock if the device driver informed us upon open that 
+     * it doesn't want it.
+     */
+    if (!(flags & FS_DEV_DONT_LOCK)) { 
+	FsHandleLock(devHandlePtr);
+    }
     /*
      * Because the read could take a while and we aren't mapping in
      * buffers, we have to allocate an extra buffer here so the
      * buffer address is valid when the device's interrupt handler
-     * does its DMA.
+     * does its DMA. Don't do this malloc and copy if the device
+     * driver said it would handle it.
      */
-    if (readPtr->flags & FS_USER) {
+    copy = (readPtr->flags & FS_USER) && !(flags & FS_DEV_DONT_COPY);
+    if (copy) {
 	userBuffer = readPtr->buffer;
 	readPtr->buffer = (Address)malloc(readPtr->length);
     }
@@ -1403,7 +1420,7 @@ FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     devicePtr = &devHandlePtr->device;
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)(devicePtr,
 		readPtr, replyPtr);
-    if (readPtr->flags & FS_USER) {
+    if (copy) {
         if (Vm_CopyOut(replyPtr->length, readPtr->buffer, userBuffer) != SUCCESS) {
 	    if (status == SUCCESS) {
 		status = SYS_ARG_NOACCESS;
@@ -1417,7 +1434,9 @@ FsDeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     }
     devHandlePtr->accessTime = fsTimeInSeconds;
     fsStats.gen.deviceBytesRead += replyPtr->length;
-    FsHandleUnlock(devHandlePtr);
+    if (!(flags & FS_DEV_DONT_LOCK)) { 
+	FsHandleUnlock(devHandlePtr);
+    }
     return(status);
 }
 
@@ -1450,15 +1469,26 @@ FsDeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     register Address	writeBuffer;
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     Address		userBuffer;
+    int			flags;
+    Boolean		copy;
 
-    FsHandleLock(devHandlePtr);
+    flags = devHandlePtr->flags;
+    /*
+     * Don't lock if the device driver informed us upon open that 
+     * it doesn't want it.
+     */
+    if (!(flags & FS_DEV_DONT_LOCK)) { 
+	FsHandleLock(devHandlePtr);
+    }
     /*
      * Because the write could take a while and we aren't mapping in
      * buffers, we have to allocate an extra buffer here so the
      * buffer address is valid when the device's interrupt handler
-     * does its DMA.
+     * does its DMA. Don't do this malloc and copy if the device
+     * driver said it would handle it.
      */
-    if (writePtr->flags & FS_USER) {
+    copy = ((writePtr->flags & FS_USER) && !(flags & FS_DEV_DONT_COPY));
+    if (copy) {
 	userBuffer = writePtr->buffer;
         writePtr->buffer = (Address)malloc(writePtr->length);
 	if (Vm_CopyIn(writePtr->length, userBuffer, writePtr->buffer) != SUCCESS) {
@@ -1481,11 +1511,13 @@ FsDeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	fsStats.gen.deviceBytesWritten += replyPtr->length;
     }
 
-    if (writePtr->flags & FS_USER) {
+    if (copy) {
 	free(writePtr->buffer);
 	writePtr->buffer = userBuffer;
     }
-    FsHandleUnlock(devHandlePtr);
+    if (!(flags & FS_DEV_DONT_LOCK)) { 
+	FsHandleUnlock(devHandlePtr);
+    }
     return(status);
 }
 
@@ -1580,19 +1612,25 @@ FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr)
     register ReturnStatus status;
     static Boolean warned = FALSE;
 
-    FsHandleLock(devHandlePtr);
     switch (ioctlPtr->command) {
 	case IOC_LOCK:
 	case IOC_UNLOCK:
+	    FsHandleLock(devHandlePtr);
 	    status = FsIocLock(&devHandlePtr->lock, ioctlPtr,
 			&streamPtr->hdr.fileID);
+	    FsHandleUnlock(devHandlePtr);
 	    break;
 	default:
+	    if (!(devHandlePtr->flags & FS_DEV_DONT_LOCK)) { 
+		FsHandleLock(devHandlePtr);
+	    }
 	    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].ioctl)
 		    (devicePtr, ioctlPtr, replyPtr);
+	    if (!(devHandlePtr->flags & FS_DEV_DONT_LOCK)) { 
+		FsHandleUnlock(devHandlePtr);
+	    }
 	    break;
     }
-    FsHandleUnlock(devHandlePtr);
     return(status);
 }
 

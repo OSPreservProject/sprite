@@ -105,11 +105,15 @@ FsAttachDisk(devicePtr, localName, flags)
     int		partition;		/* Partition number from the disk. */
     Fs_IOParam	io;			/* I/O Parameter block */
     Fs_IOReply	reply;			/* Results of I/O */
+    int		devFlags;		/* Device flags. */
+    int 	useFlags;		/* Use flags. */
 
     /*
      * Open the raw disk device so we can grub around in the header info.
      */
-    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].open)(devicePtr);
+    useFlags = (flags | FS_ATTACH_READ_ONLY) ? FS_READ : (FS_READ|FS_WRITE);
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].open)
+	    (devicePtr, useFlags, (Fs_NotifyToken) NIL, &devFlags);
     if (status != SUCCESS) {
 	return(status);
     }
