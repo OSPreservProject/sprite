@@ -340,8 +340,10 @@ Timer_GetCurrentTicks(ticksPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
-Timer_TimerGetInfo()
+Timer_TimerGetInfo(data)
+    ClientData	data;	/* Not used. */
 {
 }
 
