@@ -101,6 +101,7 @@ extern	void	Net_GatherCopy();
 extern	ReturnStatus Net_InstallRouteStub();
 extern	ReturnStatus Net_InstallRoute();
 extern	void	Net_SpriteIDToName();
+extern	char *	Net_SpriteIDToMachType();
 extern	void	Net_RouteInit();
 extern	void	Net_NameToAddr();
 extern	void	Net_AddrToName();
@@ -111,5 +112,6 @@ int		 Net_AddrToID();
 extern Net_Route *Net_Arp();
 extern int	Net_RevArp();
 
+extern void	Net_HostPrint();	/* Moved to Sys_HostPrint */
 
 #endif _NET
