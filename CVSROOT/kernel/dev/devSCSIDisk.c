@@ -590,6 +590,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    mem = malloc(DEV_BYTES_PER_SECTOR * max + sizeof(ScsiCmd)*count);
 	    scsiCmds = (ScsiCmd *) (mem + DEV_BYTES_PER_SECTOR * max);
 	    dmaMem = VmMach_DMAAlloc(DEV_BYTES_PER_SECTOR * max, mem);
+	    if (dmaMem == (Address) NIL) {
+		panic("IOControlProc: unable to allocate dma memory.");
+	    }
 	    errorStatus = 0;
 	    for (i = 0; i < count; i++) {
 		DevScsiGroup0Cmd(diskPtr->devPtr, 
