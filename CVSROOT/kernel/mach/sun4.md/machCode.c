@@ -205,6 +205,8 @@ MachMonBootParam	machMonBootParam;
  * Forward declarations.
  */
 static void FlushTheWindows _ARGS_((int num));
+static void HandleFPUException _ARGS_((Proc_ControlBlock *procPtr, 
+				       Mach_State *machStatePtr));
 
 
 
@@ -1394,43 +1396,17 @@ HandleItAgain:
      * Check for floating point problems.
      */
     if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
-	int		i;
-	Mach_RegWindow	*curWindow;
-	switch (machStatePtr->fpuStatus & MACH_FSR_TRAP_TYPE_MASK) {
-	    case	MACH_FSR_IEEE_TRAP:
-	    case	MACH_FSR_UNFINISH_TRAP:
-	    case	MACH_FSR_UNIMPLEMENT_TRAP:
-		break;
-	    case	MACH_FSR_SEQ_ERRROR_TRAP: {
-		panic("Floating point sequence error, fsr = 0x%x\n",
-		     machStatePtr->trapRegs->fsr);
-		break;
-	    }
-	    case	MACH_FSR_NO_TRAP:
-	    default: {
-		panic(
-"Floating point exception with bad trap code, fsr = 0x%x\n", 
-		    machStatePtr->trapRegs->fsr);
-		break;
-	    }
-	}
-	machStatePtr->fpuStatus &= ~MACH_FPU_EXCEPTION_PENDING;
-	/*
-	 * Emulate the evil instructions, and restore the result into the FPU.
-	 */
-	curWindow = (Mach_RegWindow *)
-		    (machStatePtr->trapRegs->ins[MACH_FP_REG]);
-	for (i = 0; i < machStatePtr->trapRegs->numQueueEntries; i++) {
-	    MachFPU_Emulate(procPtr->processID, 
-			machStatePtr->trapRegs->fqueue[i].address,
-			machStatePtr->trapRegs,
-			curWindow);
-	}
-	MachFPULoadState(machStatePtr->trapRegs);
-
+	HandleFPUException(procPtr, machStatePtr);
     }
     /*
-     * Now check for signal stuff.
+     * Now check for signal stuff. We must check again for floating
+     * point exception becaue the Sig_Handle might do a context switch
+     * during which the excpetion would get posted. 
+     * 
+     * Note: This is really wrong.  We should check for and process 
+     * any floating point exceptions before  handling a signal. 
+     * The problem here is by the time Sig_Handle returns we are
+     * already committed to doing this signal.
      */
     sigStackPtr = &(machStatePtr->sigStack);
     sigStackPtr->contextPtr = &(machStatePtr->sigContext);
@@ -1438,8 +1414,14 @@ HandleItAgain:
 	machStatePtr->sigContext.machContext.pcValue = pc;
 	machStatePtr->sigContext.machContext.trapInst = MACH_SIG_TRAP_INSTR;
 	/* leave interrupts disabled */
+	if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
+	    HandleFPUException(procPtr, machStatePtr);
+	}
 	Mach_DisableIntr();
 	return TRUE;
+    }
+    if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
+	HandleFPUException(procPtr, machStatePtr);
     }
     /*
      * It is possible for Sig_Handle to mask the migration signal
@@ -1521,7 +1503,6 @@ MachHandleTrap(trapType, pcValue, trapPsr)
 		    "overflow trap in the kernel!");
 	    break;
 	case MACH_FP_EXCEP: {
-	    unsigned int fsr;
 	    /*
 	     * We got a FP execption while running in kernel mode. If this
 	     * exception occured at a known location we clear the
@@ -1540,7 +1521,8 @@ MachHandleTrap(trapType, pcValue, trapPsr)
 	    if (pcValue == (Address) &machFPUSyncInst) {
 		  MachFPUDumpState(procPtr->machStatePtr->trapRegs);
 		  procPtr->machStatePtr->fpuStatus |= 
-		      (fsr & MACH_FSR_TRAP_TYPE_MASK) |
+		      (procPtr->machStatePtr->trapRegs->fsr
+					& MACH_FSR_TRAP_TYPE_MASK) |
 			  MACH_FPU_EXCEPTION_PENDING;
 		  procPtr->specialHandling = 1;
 		  return;
@@ -1593,8 +1575,8 @@ MachHandleTrap(trapType, pcValue, trapPsr)
 		 printf(
 "FPU exception from process without MACH_FPU_ACTIVE, fsr = 0x%x\n",fsr);
 	 }
- 	 procPtr->machStatePtr->fpuStatus |= (fsr & MACH_FSR_TRAP_TYPE_MASK) |
- 					    MACH_FPU_EXCEPTION_PENDING;
+	 procPtr->machStatePtr->fpuStatus |= (fsr & MACH_FSR_TRAP_TYPE_MASK) |
+					    MACH_FPU_EXCEPTION_PENDING;
 	 procPtr->specialHandling = 1;
 	 break;
 	}
@@ -1785,4 +1767,62 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 Address
 Mach_GetStackPointer()
 {
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HandleFPUException --
+ *
+ *	Handle any FPU exception present.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	FPU instruction emulated, process may be sent signal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+HandleFPUException(procPtr, machStatePtr)
+    Proc_ControlBlock *procPtr;	/* Process control block of offending process*/
+    Mach_State 	*machStatePtr;  /* Machine state of process. */
+{    
+    int		i;
+    Mach_RegWindow	*curWindow;
+
+    switch (machStatePtr->fpuStatus & MACH_FSR_TRAP_TYPE_MASK) {
+	case	MACH_FSR_IEEE_TRAP:
+	case	MACH_FSR_UNFINISH_TRAP:
+	case	MACH_FSR_UNIMPLEMENT_TRAP:
+	    break;
+	case	MACH_FSR_SEQ_ERRROR_TRAP: {
+	    panic("Floating point sequence error, fsr = 0x%x\n",
+		 machStatePtr->trapRegs->fsr);
+	    break;
+	}
+	case	MACH_FSR_NO_TRAP:
+	default: {
+	    panic("Floating point exception with bad trap code, fsr = 0x%x\n", 
+		    machStatePtr->trapRegs->fsr);
+	    break;
+	}
+    }
+    machStatePtr->fpuStatus &= 
+		~(MACH_FPU_EXCEPTION_PENDING|MACH_FSR_TRAP_TYPE_MASK);
+    /*
+     * Emulate the evil instructions, and restore the result into the FPU.
+     */
+    curWindow = (Mach_RegWindow *)
+		(machStatePtr->trapRegs->ins[MACH_FP_REG]);
+    for (i = 0; i < machStatePtr->trapRegs->numQueueEntries; i++) {
+	MachFPU_Emulate(procPtr->processID, 
+		    machStatePtr->trapRegs->fqueue[i].address,
+		    machStatePtr->trapRegs,
+		    curWindow);
+    }
+    MachFPULoadState(machStatePtr->trapRegs);
+
 }
