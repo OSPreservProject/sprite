@@ -1400,6 +1400,7 @@ MachSysCall:
     sw		s7, MACH_TRAP_REGS_OFFSET + (S7 * 4)(t1)
     sw		s8, MACH_TRAP_REGS_OFFSET + (S8 * 4)(t1)
     sw		ra, MACH_TRAP_REGS_OFFSET + (RA * 4)(t1)
+    sw		t0, MACH_TRAP_REGS_OFFSET + (T0 * 4)(t1)
     sw		t3, MACH_USER_PC_OFFSET(t1)
 /*
  * Change to the kernel's stack, enable interrupts and turn off the
