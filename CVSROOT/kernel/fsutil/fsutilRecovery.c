@@ -168,8 +168,9 @@ ReopenHandles(serverID)
     register	Fs_Stream	*streamPtr;
     register	FsRemoteIOHandle *rmtHandlePtr;
     ReturnStatus		status = SUCCESS;
-
-    Net_HostPrint(serverID, "- recovering handles\n");
+    Boolean			printed;
+    int				succeeded = fsStats.recovery.succeeded;
+    int				failed = fsStats.recovery.failed;
 
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = FsGetNextHandle(&hashSearch);
@@ -179,6 +180,10 @@ ReopenHandles(serverID)
 		 (hdrPtr->fileID.serverID == serverID)) {
 	    if (!RemoteHandle(hdrPtr)) {
 		panic( "ReopenHandles, local I/O handle at remote server?\n");
+	    }
+	    if (!printed) {
+		Net_HostPrint(serverID, "- recovering handles\n");
+		printed = TRUE;
 	    }
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
 		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
@@ -221,12 +226,17 @@ ReopenHandles(serverID)
 	    rmtHandlePtr = (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
 
 	    if (rmtHandlePtr == (FsRemoteIOHandle *)NIL) {
-		FsFileError((FsHandleHeader *)streamPtr, "NIL I/O handle", 0);
+		FsFileError((FsHandleHeader *)streamPtr,
+			"ReopenHandles: NIL I/O handle", 0);
 	    } else if (!RemoteHandle((FsHandleHeader *)rmtHandlePtr)) {
 		panic( "ReopenHandles: local I/O handle for remote stream?\n");
 	    } else if (RecoveryFailed(&rmtHandlePtr->recovery)) {
 		FsHandleInvalidate((FsHandleHeader *)streamPtr);
 	    } else {
+		if (!printed) {
+		    Net_HostPrint(serverID, "- recovering handles\n");
+		    printed = TRUE;
+		}
 		status = FsStreamReopen((FsHandleHeader *)streamPtr,
 				rpc_SpriteID, (ClientData)NIL, (int *)NIL,
 				(ClientData *)NIL);
@@ -268,9 +278,15 @@ ReopenHandles(serverID)
     }
 reopenReturn:
     if (status != SUCCESS) {
-	printf("Recovery failed <%x>\n", status);
-    } else {
-	printf("Recovery complete\n");
+	Net_HostPrint(serverID, "Recovery failed");
+	printf(" <%x>\n", status);
+    } else if (printed) {
+	Net_HostPrint(serverID, "Recovery complete");
+	printf(" %d handles reopened", fsStats.recovery.succeeded - succeeded);
+	if (fsStats.recovery.failed - failed > 0) {
+	    printf(" %d failed reopens", fsStats.recovery.failed - failed);
+	}
+	printf("\n");
     }
 }
 
@@ -405,6 +421,7 @@ FsWantRecovery(hdrPtr)
 	 * only lock/unlock with the right kind of handle.
 	 */
 	LOCK_MONITOR;
+	fsStats.recovery.wants++;
 	recovPtr->flags |= RECOVERY_NEEDED;
 	UNLOCK_MONITOR;
     }
@@ -490,11 +507,15 @@ RecoveryWait(recovPtr)
     while (recovPtr->flags & RECOVERY_NEEDED) {
 	if (Sync_Wait(&recovPtr->reopenComplete, TRUE)) {
 	    status = GEN_ABORTED_BY_SIGNAL;
+	    fsStats.recovery.waitAbort++;
 	    break;
 	}
     }
     if (recovPtr->flags & RECOVERY_FAILED) {
 	status = recovPtr->status;
+	fsStats.recovery.waitFailed++;
+    } else if (status == SUCCESS) {
+	fsStats.recovery.waitOK++;
     }
     UNLOCK_MONITOR;
     return(status);
@@ -507,9 +528,8 @@ RecoveryWait(recovPtr)
  *
  *	Mark a remote handle as having competed recovery actions.  The waiting
  *	process is not woken up yet, however, because it may also depend
- *	on recovery of the shadow streams kept on the server.  This is called
- *	by file-type specific recovery procedures.  FsHandleReopen will
- *	call RecoveryNotify to poke waiters after all handles have been
+ *	on recovery of the shadow streams kept on the server.  FsHandleReopen
+ *	will call RecoveryNotify to poke waiters after all handles have been
  *	recovered.  Note that this procedure won't mark the handle as
  *	having completed recovery if the error status indicates a timeout.
  *
@@ -534,14 +554,15 @@ RecoveryComplete(recovPtr, status)
     switch(status) {
 	case RPC_TIMEOUT:
 	case RPC_SERVICE_DISABLED:
+	    fsStats.recovery.timeout++;
 	    break;
 	default:
-	    recovPtr->flags |= RECOVERY_FAILED;
-	    /*
-	     * FALL THROUGH and mark recovery as complete.
-	     */
+	    recovPtr->flags |= RECOVERY_FAILED|RECOVERY_COMPLETE;
+	    fsStats.recovery.failed++;
+	    break;
 	 case SUCCESS:
 	    recovPtr->flags |= RECOVERY_COMPLETE;
+	    fsStats.recovery.succeeded++;
 	    break;
     }
 
@@ -724,6 +745,7 @@ FsClientCrashed(spriteID, clientData)
     int spriteID;		/* Client that crashed */
     ClientData clientData;	/* IGNORED */
 {
+    fsStats.recovery.clientCrashed++;
     /*
      * Reset the 'recovery in progress' bit (it would be set if the
      * client crashed during recovery) so the client can open files
@@ -849,6 +871,8 @@ RecoveryDone(serverID)
     status = Rpc_Call(serverID, RPC_FS_RECOVERY, &storage);
     if (status != SUCCESS) {
 	printf( "RecoveryDone: got status %x\n", status);
+    } else {
+	fsStats.recovery.number++;
     }
 }
 
@@ -888,6 +912,7 @@ Fs_RpcRecovery(srvToken, clientID, command, storagePtr)
 	Net_HostPrint(clientID, "started recovery\n");
 	Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
     } else {
+	fsStats.recovery.clientRecovered++;
 	Net_HostPrint(clientID, "completed recovery\n");
 	Recov_ClearClientState(clientID, CLT_RECOV_IN_PROGRESS);
     }
