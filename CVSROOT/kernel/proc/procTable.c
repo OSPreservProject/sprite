@@ -159,6 +159,7 @@ InitPCB(pcbPtr, i)
     pcbPtr->remoteExecBuffer = (Address) NIL;
     pcbPtr->migCmdBuffer = (Address) NIL;
     pcbPtr->migCmdBufSize = 0;
+    pcbPtr->migFlags = 0;
     pcbPtr->argString = (char *) NIL;
 #ifdef LOCKDEP
     pcbPtr->lockStackSize = 0;
