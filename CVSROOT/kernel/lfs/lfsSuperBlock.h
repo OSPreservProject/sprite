@@ -1,0 +1,107 @@
+/*
+ * lfsSuperBlock.h --
+ *
+ *	Declarations defining the disk resident format of the LFS 
+ *	super block. The main purpose of the super blocks is to allow
+ *	the file system to be recovered and reattached upon file server
+ *	reboot. The super block is divided into two section the static
+ *	super block and the checkpoint area.  The super block
+ *	contains the nonchangable parameters that describe the LFS. 
+ *	The checkpoint area contains the parameters that change when the
+ *	file system is modified.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header$ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSSUPERBLOCK
+#define _LFSSUPERBLOCK
+
+#include "lfsDescMap.h"
+#include "lfsUsageArray.h"
+#include "lfsFileLayout.h"
+
+/*
+ * The LfsSuperBlockHdr contains static parameters describing the file system
+ * layout on disk. 
+ */
+#define	LFS_SUPER_BLOCK_HDR_SIZE	128
+typedef struct LfsSuperBlockHdr {
+    unsigned int magic;		/* Better be LFS_SUPER_BLOCK_MAGIC. */
+    unsigned int version;  	/* Version number describing the format used
+				 * for this LFS.  */
+    unsigned int blockSize;	/* The block size of this file system. Should
+				 * be set to the minumum addressable unit. */
+	/*
+	 * File system layout. 
+	 */
+    unsigned int maxCheckPointBlocks;  /* Maximum size of checkpoint region in
+				      * blocks. */
+    unsigned int checkPointOffset[2];/* The block offset into the device of the
+				      * two checkpoint areas. Two areas are
+				      * used so we never update in place. The
+				      * format the segment is defined below. */
+    unsigned int logStartOffset;     /* The block offset starting the segmented
+				      * log. */
+    char padding[LFS_SUPER_BLOCK_HDR_SIZE-28];
+
+} LfsSuperBlockHdr;
+
+#define	LFS_SUPER_BLOCK_MAGIC		0x106d15c 	/* LogDisc */
+#define	LFS_SUPER_BLOCK_VERSION		1
+#define	LFS_SUPER_BLOCK_SIZE	512
+/*
+ * The format a LFS super block. 
+ */
+typedef struct LfsSuperBlock {
+    LfsSuperBlockHdr  hdr;	/* Header describing the layout of the LFS. */
+    LfsDescMapParams  descMap;	/* Descriptor map parameters. */
+    LfsSegUsageParams usageArray; /* The segment usage map parameters. */
+    LfsFileLayoutParams fileLayout; /* Parameters describing file layout. */
+    char padding[LFS_SUPER_BLOCK_SIZE-sizeof(LfsFileLayoutParams) - 
+		 sizeof(LfsSegUsageParams)-sizeof(LfsDescMapParams) -
+		 sizeof(LfsSuperBlockHdr)];	
+} LfsSuperBlock;
+
+
+/*
+ * Format of the LFS checkpoint areas.  The checkpoint area consists of
+ * a LfsCheckPointHdr structure followed by zero or more LfsCheckPointRegion
+ * from each module.  The last LfsCheckPointRegion is ended with a 
+ * LfsCheckPointTrailer.
+ */
+
+typedef struct LfsCheckPointHdr {
+    unsigned int timestamp;	/* Timestamp of this checkpoint. */
+    unsigned int size;		/* Size of checkpoint in bytes. */
+    unsigned int version;	/* Region write version number. */
+    char domainPrefix[64];	/* Last prefix used for the domain */
+    int	 domainNumber;		/* Last domain we ran under. */
+    int	 attachSeconds;		/* Time the disk was attached */
+    int	 detachSeconds;		/* Time the disk was off-lined. */
+} LfsCheckPointHdr;
+
+typedef struct LfsCheckPointRegion {
+    unsigned int type;		/* Region type -- see log writing types in
+				 * lfsLogFormat.h. */
+    unsigned int size;		/* Size of the region in bytes. */
+
+} LfsCheckPointRegion;
+
+typedef struct LfsCheckPointTrailer {
+    unsigned int timestamp;	/* Timestamp of this checkpoint. Must match
+				 * the checkpoint on header. */
+    unsigned int checkSum;	/* A checksum of the checkpoint check used to
+				 * detect partial checkpoint writes. */
+} LfsCheckPointTrailer;
+
+#define LFS_SUPER_BLOCK_OFFSET	64
+#endif /* _LFSSUPERBLOCK */
