@@ -118,9 +118,9 @@ FsOpenOps fsOpenOpTable[] = {
      */
     { FS_LOCAL_PIPE, NoProc},
     /*
-     * Named pipes.
+     * Named pipes.  Unimplemented, treat like a regular file.
      */
-    { FS_NAMED_PIPE, NoProc },
+    { FS_NAMED_PIPE, FsFileSrvOpen },
     /*
      * Pseudo devices.
      */
