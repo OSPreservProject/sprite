@@ -218,8 +218,13 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		 */
 
 		INC_BYTES_SENT(gatherPtr, gatherLength);
+		gatherPtr->done = FALSE;
+		gatherPtr->conditionPtr = (Sync_Condition *)mutexPtr;
 		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
 					    gatherPtr, gatherLength);
+		while (!gatherPtr->done && mutexPtr != (int *)NIL) {
+		    Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+		}
 		return(SUCCESS);
 	    }
 	default:
@@ -302,7 +307,6 @@ Net_RecvPoll()
  *
  *----------------------------------------------------------------------
  */
-
 void
 Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
     Net_EtherHdr	*etherHdrPtr;	/* Pointer to ethernet header. */
@@ -312,7 +316,7 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
 {
     Sync_Condition	condition;
 
-    gatherPtr->conditionPtr = &condition;
+    gatherPtr->conditionPtr = (Sync_Condition *)&outputMutex;
     gatherPtr->done = FALSE;
 
     MASTER_LOCK(outputMutex);
@@ -320,20 +324,21 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
     INC_BYTES_SENT(gatherPtr, gatherLength);
     netEtherFuncs.output(etherHdrPtr, gatherPtr, gatherLength);
     while (!gatherPtr->done) {
-	Sync_MasterWait(&condition, &outputMutex, FALSE);
+	Sync_SlowMasterWait(&outputMutex, &outputMutex, FALSE);
     }
 
     MASTER_UNLOCK(outputMutex);
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
  * NetOutputWakeup --
  *
- *	Send a packet to a host identified by a Sprite Host ID and wait
- *	for the packet to be sent.
+ *	Called to notify a waiter that a packet has been sent.  This is
+ *	hacked up now, as the argument is really a mutexPtr which
+ *	has been used as a raw event to wait on.  We have to use
+ *	the raw SlowBroadcast procedure because of this.
  *
  * Results:
  *	None.
@@ -346,11 +351,10 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
 
 void
 NetOutputWakeup(conditionPtr)
-    Sync_Condition	*conditionPtr;
+    Sync_Condition	*conditionPtr;		/* not really! */
 {
-    MASTER_LOCK(outputMutex);
-    Sync_MasterBroadcast(conditionPtr);
-    MASTER_UNLOCK(outputMutex);
+    int waiting;
+    Sync_SlowBroadcast((unsigned int)conditionPtr, &waiting);
 }
 
 
