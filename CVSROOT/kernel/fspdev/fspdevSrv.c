@@ -121,6 +121,7 @@ typedef struct PdevControlReopenParams {
     int		serverID;	/* ServerID recorded in control handle.
 				 * This may be NIL if the server closes
 				 * while the file server is down. */
+    int		seed;		/* Used to create unique pseudo-stream fileIDs*/
 } PdevControlReopenParams;
 
 /*
@@ -545,6 +546,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
     Proc_ControlBlock		*procPtr;
     Proc_PID 			procID;
     int				uid;
+    int				seed;
 
     pdevStatePtr = (PdevState *)streamData;
     ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle,
@@ -562,6 +564,13 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 	}
 	goto exit;
     }
+
+    /*
+     * Extract the seed from the minor field (see the SrvOpen routine).
+     * This done in case of recovery later.  We'll need to reset the
+     * seed kept on the file server.
+     */
+    ctrlHandlePtr->seed = ioFileIDPtr->minor & 0xFFFF;
 
     found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle),
 			    ioHandlePtrPtr);
@@ -1303,12 +1312,15 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	 * Called on the pdev server's host to contact the remote
 	 * file server and re-establish state.
 	 */
+	PdevControlIOHandle *ctrlHandlePtr;
 	PdevControlReopenParams params;
 	int outSize = 0;
 
+	ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
 	reopenParamsPtr = &params;
 	reopenParamsPtr->fileID = hdrPtr->fileID;
-	reopenParamsPtr->serverID = ((PdevControlIOHandle *)hdrPtr)->serverID;
+	reopenParamsPtr->serverID = ctrlHandlePtr->serverID;
+	reopenParamsPtr->seed = ctrlHandlePtr->seed;
 	status = FsSpriteReopen(hdrPtr, sizeof(PdevControlReopenParams),
 		(Address)reopenParamsPtr, &outSize, (Address)NIL);
     } else {
@@ -1322,10 +1334,11 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	ctrlHandlePtr = FsControlHandleInit(&reopenParamsPtr->fileID, &found);
 	if (reopenParamsPtr->serverID != NIL) {
 	    /*
-	     * The remote host thinks it is running the pdev server.
+	     * The remote host thinks it is running the pdev server process.
 	     */
 	    if (!found || ctrlHandlePtr->serverID == NIL) {
-		ctrlHandlePtr->serverID = clientID;
+		ctrlHandlePtr->serverID = reopenParamsPtr->serverID;
+		ctrlHandlePtr->seed = reopenParamsPtr->seed;
 	    } else if (ctrlHandlePtr->serverID != clientID) {
 		Sys_Panic(SYS_WARNING,
 		    "PdevControlReopen conflict, %d lost to %d, pdev <%x,%x>\n",
@@ -2026,6 +2039,8 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	     * Pay attention to the number of bytes the server accepted.
 	     */
 	    length = numBytes;
+	} else if ((pdevHandlePtr->flags & PDEV_WRITE_BEHIND) == 0) {
+	    Sys_Panic(SYS_WARNING, "Pdev_Write, no return amtWritten\n");
 	}
 	toWrite -= length;
 	request.param.write.offset += length;
@@ -2606,7 +2621,16 @@ FsServerStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
 	    if (srvReplyPtr->replySize > 0) {
 		register Proc_ControlBlock *clientProcPtr;
 
-		if ((pdevHandlePtr->flags & FS_USER) == 0) {
+		/*
+		 * Copy the reply into the waiting buffers.  PDEV_WRITE is
+		 * handled specially because the reply buffer is just an
+		 * integer variable in the kernel, while the input buffer
+		 * is in user space, which is indicated by the FS_USER flag.
+		 *  - To be fully general we'd need a user space flag for
+		 * 	both the input buffer and the reply.
+		 */
+		if (((pdevHandlePtr->flags & FS_USER) == 0) ||
+		    (pdevHandlePtr->operation == PDEV_WRITE)) {
 		    status = Vm_CopyIn(srvReplyPtr->replySize,
 				       srvReplyPtr->replyBuf,
 				       pdevHandlePtr->replyBuf);
@@ -2636,8 +2660,6 @@ FsServerStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
 		    FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList, &w);
 		} else if (pdevHandlePtr->operation == PDEV_WRITE) {
 		    FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, &w);
-		} else {
-		    Sys_Panic(SYS_WARNING, "IOC_PDEV_REPLY, WOULD_BLOCK on non read/write operation\n");
 		}
 	    }
 	    /*
