@@ -26,45 +26,46 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 /*
  *  The basic philosophy is that processes that have not executed
- *  as much as other processes deserve to be run first. As a process runs,
- *  its priority will drop, possibly to a level where another process
- *  with a better priority will preempt it.
+ *  as much as other processes deserve to be run first.  Thus we
+ *  keep a smoothed average of recent CPU usage (the more recent the
+ *  usage, the higher the weighting).  The process with the lowest
+ *  recent usage gets highest scheduling priority.  The smoothed
+ *  average is maintained by adding CPU usage as the process accumulates
+ *  it, then periodically (once a second) reducing all the usages of
+ *  all processes by a specific factor.  Thus, if a process stops using
+ *  the CPU then its average will gradually decay to zero;  if a process
+ *  becomes CPU-intensive, its average will gradually increase, up to
+ *  a maximum value.  The controlling parameters are:
  *
- *  The priority of a process is based on how much CPU time the process has
- *  obtained recently. A smoothed average of CPU usage is determined by 
- *  1) adding the CPU time when a process completes a quantum or goes to sleep 
- *  and 2) forgetting a portion of the smoothed average once a second.
- *  The formula is:
- *
- *  remembering: new average = 
- * 		 old average + ((CPU usage * REMEMBER_FACTOR)/DENOMINATOR)
- *
- *  forgetting:  new average = (old average * FORGET_FACTOR)/DENOMINATOR
+ *  FORGET_INTERVAL -	How often to reduce everyone's usage.
+ *  FORGET_MULTIPLY -
+ *  FORGET_SHIFT -	These two factors determine how CPU usage decays:
+ *			every second, everyone's CPU usage is multiplied
+ *			by FORGET_MULTIPLY, then shifted right by
+ *			FORGET_SHIFT.  Right now, the combined effect of
+ *			these two is to "forget" 1/8th of the process's
+ *			usage.
  */
- 
-#define REMEMBER_FACTOR		3
-#define DENOMINATOR		8
-#define FORGET_FACTOR		(DENOMINATOR - REMEMBER_FACTOR)
+
+#define FORGET_MULTIPLY		14
+#define FORGET_SHIFT		4
 #define FORGET_INTERVAL		timer_IntOneSecond
 
- 
 /*  
  *  The half-life of the average in seconds can be computed using this formula:
- *        half-life  = ln 2 / (REMEMBER_FACTOR/DENOMINATOR)   or
- *        half-life ~= (.69 * DENOMINATOR) / REMEMBER_FACTOR
  *
- *  When a process commences execution, its CPU average will be 0 (i.e.
- *  the highest priority) so it will run. If the process is compute-intensive, 
- *  the average will increase until it is preempted by a higher priority
- *  process. While the process is not running, its priority will increase
- *  because part of the CPU average is forgotten at regular intervals.
- *  If the process is I/O-intensive, it will never use much of the CPU, its
- *  usage will be low and its priority will therefore remain high.
+ *        half-life  = ln(2) / ln(F)
  *
- *  The Sched_ForgetUsage routine adjusts scheduling priorities for all
- *  processes in the system once a second by forgiving part of the
- *  smoothed CPU average.  The recording of CPU usage is performed when
- *  the process experiences a quantum end or goes to sleep in Sync_Wait.
+ *  where F = (FORGET_MULTIPLY)/(2**FORGET_SHIFT).  For the current settings
+ *  the half-life is about 5.1 seconds.  This means that if a process
+ *  suddenly stops executing, its usage will decay to half its early value
+ *  in about 5 seconds.  The half-life gives an idea of how responsive the
+ *  scheduler is to changes in process behavior.  If it responds too slowly,
+ *  then a previously-idle process could become CPU-bound and monopolize the
+ *  whole CPU for a long time until its usage rises.  If the half-life is
+ *  too short, then an interactive process that does anything substantial
+ *  (e.g. dragging a selection) will instantly lose its scheduling priority
+ *  relative to other compute-bound processes.
  */
  
 /*
@@ -84,14 +85,6 @@ static unsigned int gatherInterval;
  * Pre-computed ticks to add when timer goes off.
  */
 static Timer_Ticks	gatherTicks;
-/*
- * It is possible that a process might run and not be charged for any
- * CPU usage. This happens when the process starts and stops between
- * calls to Sched_GatherProcesseInfo. To make sure a process is charged
- * for some CPU use, RememberUsage() uses the value noRecentUsageCharge 
- * when calculating weighted and unweigthed usage.
- */
-static unsigned int noRecentUsageCharge;
 
 /*
  * QuantumInterval is the interval a process is allowed to run before 
@@ -160,10 +153,9 @@ Sched_Init()
     quantumInterval = timer_IntOneSecond;
     quantumInterval = timer_IntOneHour;
 #endif TESTING
-    
+
     gatherInterval	= GATHER_INTERVAL * timer_IntOneMillisecond;
     Timer_AddIntervalToTicks(gatherTicks, gatherInterval, &gatherTicks);
-    noRecentUsageCharge	= ((gatherInterval / 2) * REMEMBER_FACTOR) /DENOMINATOR;
     quantumTicks	= quantumInterval / gatherInterval;
 
     Byte_Zero(sizeof(sched_Instrument), (Address) &sched_Instrument);
@@ -222,10 +214,10 @@ Sched_ForgetUsage(time)
 	    continue;
 	}
         procPtr->unweightedUsage = 
-		(procPtr->unweightedUsage * FORGET_FACTOR) / DENOMINATOR;
+		(procPtr->unweightedUsage * FORGET_MULTIPLY) >> FORGET_SHIFT;
 
 	procPtr->weightedUsage =
-		(procPtr->weightedUsage * FORGET_FACTOR) / DENOMINATOR;
+		(procPtr->weightedUsage * FORGET_MULTIPLY) >> FORGET_SHIFT;
     }
 
     /*
@@ -462,7 +454,6 @@ RememberUsage(curProcPtr)
     register Proc_ControlBlock *curProcPtr;	/* The process that will be 
 						 * adjusted */
 {
-    register unsigned int recentUsage;
     register int billingRate = curProcPtr->billingRate;
 
     /*
@@ -471,24 +462,9 @@ RememberUsage(curProcPtr)
      *  unweighted value and a weighted value.  The weighted usage is used
      *  for calculating scheduling priority.  The unweighted usage keeps
      *  track of the real smoothed usage.
-     *
-     *  The upper bound on the unweighted usage value is equal to the
-     *  interval between calls to Sched_ForgetUsage.
      */ 
 
-    recentUsage = (curProcPtr->recentUsage * REMEMBER_FACTOR) /DENOMINATOR;
-
-    /*
-     * Make sure the process gets charged for some CPU usage. We can't
-     * determine exactly how much CPU usage the process has accumulated, so
-     * charge it some value that's less than the full value (gatherInterval).
-     */
-
-    if (recentUsage == 0) {
-	recentUsage = noRecentUsageCharge;
-    }
-
-    curProcPtr->unweightedUsage += recentUsage;
+    curProcPtr->unweightedUsage += curProcPtr->recentUsage;
 
     /*
      *  The billing rate basically specifies a process's scheduling 
@@ -500,7 +476,7 @@ RememberUsage(curProcPtr)
      *  is greater than the normal value then only a faction of the recent
      *  usage is added to the weighted usage.  If the billing rate is less
      *  than the normal value then the recent usage is multiplied by a
-     *  multiple of 2 before it is added to the weighted  usage.
+     *  power of 2 before it is added to the weighted  usage.
      *
      *  A process with a billing rate of PROC_NO_INTR_PRIORITY does
      *  not get charged for CPU usage.
@@ -509,10 +485,10 @@ RememberUsage(curProcPtr)
 
     if (billingRate >= PROC_NORMAL_PRIORITY) {
 	if (billingRate != PROC_NO_INTR_PRIORITY) {
-	    curProcPtr->weightedUsage += recentUsage >> billingRate;
+	    curProcPtr->weightedUsage += curProcPtr->recentUsage >> billingRate;
 	}
     } else {
-	curProcPtr->weightedUsage += recentUsage << -(billingRate);
+	curProcPtr->weightedUsage += curProcPtr->recentUsage << -(billingRate);
     }
 
     /*
