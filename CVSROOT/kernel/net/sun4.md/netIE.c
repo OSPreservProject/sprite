@@ -412,8 +412,6 @@ NetIERestart()
     List_Links		*itemPtr;
     NetXmitElement	*xmitElemPtr;
 
-    Sys_Printf("NetIERestart: Reinitializing Intel chip\n");
-
     DISABLE_INTR();
 
     /*
