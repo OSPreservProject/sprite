@@ -505,10 +505,10 @@ Sync_ResetLockStats()
 	regPtr = &regInfo[i];
 	lockQueuePtr = (List_Links *) &(regPtr->activeLocks);
 	LIST_FORALL(lockQueuePtr, itemPtr) {
-	    FIELD(((Sync_ListInfo *) itemPtr)->lock, hit) = 0;
-	    FIELD(((Sync_ListInfo *) itemPtr)->lock, miss) = 0;
+	    *(&FIELD(((Sync_ListInfo *) itemPtr)->lock, hit)) = 0;
+	    *(&FIELD(((Sync_ListInfo *) itemPtr)->lock, miss)) = 0;
 #ifdef LOCKDEP
-	    FIELD(((Sync_ListInfo *) itemPtr)->lock, priorCount) = 0;
+	    *(&FIELD(((Sync_ListInfo *) itemPtr)->lock, priorCount)) = 0;
 #endif
 	}
 	regPtr->hit = 0;
