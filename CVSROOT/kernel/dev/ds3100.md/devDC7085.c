@@ -55,8 +55,8 @@ unsigned breakVal = 0;
  * values.
  */
 static struct {
-    int sgttybVal;			/* Baud value from sgtyb. */
     int regVal;				/* Value to set in lpr register. */
+    int sgttybVal;			/* Baud value from sgtyb. */
     int baud;				/* Integer baud rate. */
 } baudMap[] = {
     {0, 0, 0},
@@ -520,13 +520,14 @@ XmitIntr()
 	return;
     }
     lineNum = *csrPtr >> 8;
-    switch (lineNum) {
+    switch (lineNum & 0x3) {
 	case KBD_PORT:
 	    break;
 	case MODEM_PORT:
 	    c = (*devSerialA.outputProc)(devSerialA.outputData);
 	    if (c == -1) {
 		*tcrPtr &= ~(1 << MODEM_PORT);
+		devSerialA.flags &= ~XMIT_ENABLED;
 	    } else {
 		*tdrPtr = breakVal | c;
 	    }
@@ -535,6 +536,7 @@ XmitIntr()
 	    c = (*devSerialB.outputProc)(devSerialB.outputData);
 	    if (c == -1) {
 		*tcrPtr &= ~(1 << PRINTER_PORT);
+		devSerialB.flags &= ~XMIT_ENABLED;
 	    } else {
 		*tdrPtr = breakVal | c;
 	    }
@@ -576,7 +578,7 @@ DevDC7085Activate(dcPtr)
 	case PRINTER_PORT:
 	    if (!(dcPtr->flags & LINE_ACTIVE)) {
 		*lprPtr = LPR_RXENAB | BaudToReg(dcPtr->baud) | 
-			     LPR_8_BIT_CHAR | (1 << dcPtr->port);
+			     LPR_8_BIT_CHAR | dcPtr->port;
 		dcPtr->flags |= LINE_ACTIVE;
 	    }
 	    break;
