@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "scsiTape.h"
 #include "devSCSITape.h"
 #include "dev/scsi.h"
+#include "stdlib.h"
 
 #include "dbg.h"
 int SCSITapeDebug = FALSE;
@@ -266,7 +267,7 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
     unsigned char statusByte;
     int		senseLength;
     char	senseBuffer[SCSI_MAX_SENSE_LEN];
-    int		code;
+    unsigned int	code;
     int		scsiCmd;
 
    code = 0;
@@ -296,7 +297,7 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
     default:
 	panic("DevSCSITapeSpecialCmd: Unknown command %d\n", command);
     }
-    SetupCommand(tapePtr->devPtr, scsiCmd, code, count, &scsiTapeCmd);
+    SetupCommand(tapePtr->devPtr, scsiCmd, code, (unsigned)count, &scsiTapeCmd);
     scsiTapeCmd.buffer = (char *) 0;
     scsiTapeCmd.bufferLen = 0;
     scsiTapeCmd.dataToDevice = FALSE;
@@ -347,7 +348,8 @@ DevSCSITapeVariableIO(tapePtr,command, buffer, countPtr)
     /* 
      * Setup the command, a code value of zero means variable block.
      */
-    SetupCommand(tapePtr->devPtr, command, 0,  *countPtr, &scsiTapeCmd);
+    SetupCommand(tapePtr->devPtr, command, 0,  (unsigned)*countPtr, 
+		&scsiTapeCmd);
     scsiTapeCmd.buffer = buffer;
     scsiTapeCmd.bufferLen = *countPtr;
     scsiTapeCmd.dataToDevice = (command == SCSI_WRITE);
@@ -406,7 +408,8 @@ DevSCSITapeFixedBlockIO(tapePtr, command, buffer, countPtr)
     /*
      * Set up the command with a code value of 1 meaning fixed block.
      */
-    SetupCommand(tapePtr->devPtr, command, 1, lengthInBlocks, &scsiTapeCmd);
+    SetupCommand(tapePtr->devPtr, command, 1, (unsigned)lengthInBlocks,
+		 &scsiTapeCmd);
     scsiTapeCmd.buffer = buffer;
     scsiTapeCmd.bufferLen = *countPtr;
     scsiTapeCmd.dataToDevice = (command == SCSI_WRITE);
@@ -449,7 +452,7 @@ DevSCSITapeOpen(devicePtr, useFlags, token)
     ScsiTape *tapePtr;
 
     tapePtr = (ScsiTape *) (devicePtr->data);
-    if (devicePtr->data == (ClientData) NIL) {
+    if (tapePtr == (ScsiTape *) NIL) {
 	/*
 	 * Ask the HBA to set up the path to the device with FIFO ordering
 	 * of requests.
@@ -460,14 +463,10 @@ DevSCSITapeOpen(devicePtr, useFlags, token)
 	}
     } else { 
 	/*
-	 * If the tapePtr is already attached to the device insure that it
-	 * is not busy.
+	 * If the tapePtr is already attached to the device it must be
+	 * busy.
 	 */
-	tapePtr = (ScsiTape *) (devicePtr->data);
-	if (tapePtr->state & SCSI_TAPE_OPEN) {
-	    return(FS_FILE_BUSY);
-	}
-	devPtr = tapePtr->devPtr;
+	 return(FS_FILE_BUSY);
     }
     status = InitTapeDevice(devicePtr, devPtr);
     return(status);
@@ -520,7 +519,11 @@ DevSCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
      */
     totalTransfer = 0;
     error = SUCCESS;
+#ifdef GOOD
     maxXfer = tapePtr->devPtr->maxTransferSize;
+#else
+    maxXfer = 1024;
+#endif
     while((*lenPtr > 0) && (error == SUCCESS)) {  
 	int	byteCount;
 	transferSize = (*lenPtr > maxXfer) ? maxXfer : *lenPtr;
@@ -818,9 +821,11 @@ DevSCSITapeClose(devicePtr, useFlags, openCount, writerCount)
      * Use the unit number to indicate rewind or no-rewind.  An
      * ``even'' number (0 and 8) means rewind.
      */
-    if ((devicePtr->unit % DEV_TAPES_PER_CNTRLR) == 0) {
+    if ((devicePtr->unit % 2) == 0) {
 	status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_REWIND,1);
     }
-    tapePtr->state = SCSI_TAPE_CLOSED;
+    (void) DevScsiReleaseDevice(tapePtr->devPtr);
+    free((char *)tapePtr);
+    devicePtr->data = (ClientData) NIL;
     return(status);
 }
