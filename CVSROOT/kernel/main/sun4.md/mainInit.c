@@ -18,6 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 #include "proc.h"
 #include "prof.h"
+#include "recov.h"
 #include "rpc.h"
 #include "sched.h"
 #include "sig.h"
@@ -38,7 +39,7 @@ extern void Main_InitVars();
 extern void Dump_Init();
 extern void Timer_Init();
 extern void Fs_Bin();
-extern void Proc_RecovInit();
+extern void Proc_MigInit();
 
 /*
  *  Pathname of the Init program.
@@ -360,12 +361,21 @@ main()
     }
 
     /*
+     * Create a recovery process to monitor other hosts.  Can't use
+     * Proc_CallFunc's to do this because they can be used up waiting
+     * for page faults against down servers.  (Alternatively the VM
+     * code could be fixed up to retry page faults later instead of
+     * letting the Proc_ServerProc wait for recovery.)
+     */
+    (void) Proc_NewProc((Address) Recov_Proc, PROC_KERNEL, FALSE, &pid,
+			"Recov_Proc");
+    /*
      * Set up process migration recovery management.
      */
     if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Proc_RecovInit\n");
+	Mach_MonPrintf("Calling Proc_MigInit\n");
     }
-    Proc_RecovInit();
+    Proc_MigInit();
 
     /*
      * Call the routine to start test kernel processes.

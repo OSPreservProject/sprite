@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mach.h"
 #include "proc.h"
 #include "prof.h"
+#include "recov.h"
 #include "rpc.h"
 #include "sched.h"
 #include "sig.h"
@@ -395,6 +396,16 @@ main()
 	Proc_NewProc((Address) Proc_ServerProc, PROC_KERNEL, FALSE, 
 			&pid, "Proc_ServerProc");
     }
+
+    /*
+     * Create a recovery process to monitor other hosts.  Can't use
+     * Proc_CallFunc's to do this because they can be used up waiting
+     * for page faults against down servers.  (Alternatively the VM
+     * code could be fixed up to retry page faults later instead of
+     * letting the Proc_ServerProc wait for recovery.)
+     */
+    (void) Proc_NewProc((Address) Recov_Proc, PROC_KERNEL, FALSE, &pid,
+			"Recov_Proc");
 
     /*
      * Call the routine to start test kernel processes.
