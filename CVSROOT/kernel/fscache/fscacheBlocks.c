@@ -628,6 +628,9 @@ DestroyBlock(retOnePage, pageNumPtr)
 		PutOnFreeList(blockPtr);
 		continue;
 	    }
+	    /*
+	     * The other block is cached but not in use.  Delete it.
+	     */
 	    if (!(otherBlockPtr->flags & FS_BLOCK_FREE)) {
 		DeleteBlock(otherBlockPtr);
 	    }
@@ -696,7 +699,11 @@ FetchBlock(canWait)
 	    PutBlockOnDirtyList(blockPtr, FALSE);
 	    blockPtr->flags |= FS_MOVE_TO_FRONT;
 	} else if (blockPtr->flags & FS_BLOCK_DELETED) {
-	    printf( "FetchBlock: deleted block in LRU list\n");
+	    printf( "FetchBlock: deleted block %d of file %d in LRU list\n",
+		blockPtr->blockNum, blockPtr->fileNum);
+	} else if (blockPtr->flags & FS_BLOCK_BEING_WRITTEN) {
+	    printf( "FetchBlock: block %d of file %d caught being written out\n",
+		blockPtr->blockNum, blockPtr->fileNum);
 	} else {
 	    /*
 	     * This block is clean and unlocked.  Delete it from the
@@ -1064,7 +1071,7 @@ again:
     blockPtr->refCount = 1;
     blockPtr->flags = flags & (FS_DATA_CACHE_BLOCK | FS_IND_CACHE_BLOCK |
 			       FS_DESC_CACHE_BLOCK | FS_DIR_CACHE_BLOCK |
-    			       FS_READ_AHEAD_BLOCK);
+			       FS_READ_AHEAD_BLOCK);
     blockPtr->flags |= FS_IO_IN_PROGRESS;
     blockPtr->fileNum = cacheInfoPtr->hdrPtr->fileID.minor;
     blockPtr->blockNum = blockNum;
