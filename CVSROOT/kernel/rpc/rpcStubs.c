@@ -29,7 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 RpcService rpcService[RPC_LAST_COMMAND+1] = {
-#ifndef OLD_RPC_NUMBERS
         RpcNull, "0",                  		/* 0 - nothing */
         RpcNull, "echo intr",			/* 1 - ECHO1, interrupt level */
         RpcEcho, "echo",			/* 2 - ECHO2, server process */
@@ -70,64 +69,6 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcDomainInfo, "domain info",	/* 37 - FS_DOMAIN_INFO */
 	Fs_RpcDevReopen, "dev reopen",		/* 38 - FS_DEV_REOPEN */
 	Fs_RpcRecovery, "recover",		/* 39 - FS_RECOVERY */
-#else /* OLD_RPC_NUMBERS */
-        RpcNull, "0",                  		/* 0 - nothing */
-        RpcNull, "echo intr",			/* 1 - ECHO, interrupt level */
-        RpcEcho, "echo",			/* 2 - ECHO2, server process */
-        Fs_RpcOpen, "open",			/* 3 - FS_SPRITE_OPEN */
-        RpcNull,  "unix name",			/* 4 - NAME unix */
-        RpcNull,  "old, locate",		/* 5 - LOCATE unused */
-        Fs_RpcRead, "read",			/* 6 - READ */
-        Fs_RpcWrite, "write",			/* 7 - WRITE */
-        Fs_RpcClose, "close",			/* 8 - CLOSE */
-        RpcNull, "unix trunc",			/* 9 - TRUNC unix */
-        RpcNull, "unix append",			/* 10 - APPEND unix */
-        RpcNull, "unix stat",			/* 11 - STAT unix  */
-        Fs_RpcRemove, "remove",			/* 12 - UNLINK */
-        Fs_Rpc2Path, "rename",			/* 13 - RENAME */
-        Fs_RpcMakeDir, "makeDir",		/* 14 - MKDIR */
-        Fs_RpcRemove, "rmDir",			/* 15 - RMDIR */
-        RpcNull, "unix chmod",			/* 16 - CHMOD */
-        RpcNull, "unix chown",			/* 17 - CHOWN */
-        Fs_Rpc2Path, "hard link",		/* 18 - LINK */
-        RpcNull, "unix prefix",			/* 19 - FS_UNIX_PREFIX */
-        RpcNull, "old, pull-in",		/* 20 - PULLIN old */
-        RpcNull, "unix updat",			/* 21 - UPDAT unix */
-        RpcGetTime, "get time",			/* 22 - GETTIME */
-        RpcNull, "unix open",			/* 23 - FS_UNIX_OPEN */
-        RpcEcho, "send",			/* 24 - SEND */
-	Fs_RpcPrefix, "prefix",			/* 25 - FS_SPRITE_PREFIX */
-	Fs_RpcGetAttr, "get attr",		/* 26 - FS_GET_ATTR */
-	Fs_RpcSetAttr, "set attr",		/* 27 - FS_SET_ATTR */
-	RpcProcMigInit, "mig init",		/* 28 - PROC_MIG_INIT */
-	RpcProcMigInfo, "mig info",		/* 29 - PROC_MIG_INFO */
-	RpcProcRemoteCall, "rmt call",		/* 30 - PROC_REMOTE_CALL */
-	Fs_RpcStartMigration, "start mig",	/* 31 - FS_START_MIGRATION */
-	RpcNull, "old, wakeup",			/* 32 - FS_REMOTE_WAKEUP old */
-	Fs_RpcConsist, "consist",		/* 33 - FS_CONSIST */
-	Fs_RpcDevOpen, "dev open",		/* 34 - FS_DEV_OPEN */
-	RpcNull, "sig mig send",		/* 35 - SIG_MIG_SEND - gone */
-	Sync_RemoteNotifyStub, "rmt notify",	/* 36 - REMOTE_NOTIFY */
-	RpcNull, "old, lock",			/* 37 - FS_LOCK  old */
-	Proc_RpcRemoteWait, "remote wait",	/* 38 - PROC_REMOTE_WAIT */
-	Fs_RpcSelectStub, "select",		/* 39 - FS_SELECT */
-	RpcNull, "end mig",			/* 40 - FS_START_MIGRATION */
-	Fs_RpcIOControl, "io control",		/* 41 - FS_RPC_IO_CONTROL */
-	Fs_RpcConsistReply, "consist done",	/* 42 - FS_RPC_CONSIST_REPLY */
-	Fs_RpcBlockCopy, "copy block",		/* 43 - FS_COPY_BLOCK */
-	Fs_RpcMakeDev, "make dev",		/* 44 - FS_MKDEV */
-	Fs_RpcGetAttrPath, "stat",		/* 45 - FS_GET_ATTR_PATH */
-	Sig_RpcSend, "send signal",		/* 46 - SIG_SEND */
-	Fs_RpcReopen, "reopen",			/* 47 - FS_REOPEN */
-	Fs_RpcDomainInfo, "domain info",	/* 48 - FS_DOMAIN_INFO */
-	Fs_RpcDevReopen, "dev reopen",		/* 49 - FS_DEV_REOPEN */
-	Fs_RpcRecovery, "recover",		/* 50 - FS_RECOVERY */
-	RpcNull, "request", 			/* 51 - FS_REQUEST */
-	RpcNull, "reply", 			/* 52 - FS_REPLY */
-	Fs_RpcSetAttrPath, "setAttrPath",	/* 53 - FS_GET_ATTR_PATH */
-	Fs_RpcGetIOAttr, "getIOAttr",		/* 54 - FS_GET_IO_ATTR */
-	Fs_RpcSetIOAttr, "setIOAttr",		/* 55 - FS_SET_IO_ATTR */
-#endif /* OLD_RPC_NUMBERS */
 };
 
 
@@ -151,12 +92,12 @@ Rpc_FreeMem(replyMemPtr)
     Rpc_ReplyMem	*replyMemPtr;
 {
     if (replyMemPtr->paramPtr != (Address) NIL) {
-	Mem_Free(replyMemPtr->paramPtr);
+	free(replyMemPtr->paramPtr);
     }
     if (replyMemPtr->dataPtr != (Address) NIL) {
-	Mem_Free(replyMemPtr->dataPtr);
+	free(replyMemPtr->dataPtr);
     }
-    Mem_Free((Address) replyMemPtr);
+    free((Address) replyMemPtr);
     return(0);
 }
 
@@ -288,13 +229,13 @@ RpcGetTime(srvToken, clientID, command, storagePtr)
     } *timeReturnPtr;
     
     timeReturnPtr =
-	(struct timeReturn *)Mem_Alloc(sizeof(struct timeReturn));
+	(struct timeReturn *)malloc(sizeof(struct timeReturn));
     Timer_GetTimeOfDay(&timeReturnPtr->time, &timeReturnPtr->offset,
 					 &timeReturnPtr->DST);
     storagePtr->replyParamPtr = (Address)timeReturnPtr;
     storagePtr->replyParamSize = sizeof(struct timeReturn);
 
-    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = storagePtr->replyParamPtr;
     replyMemPtr->dataPtr = (Address) NIL;
 
@@ -376,7 +317,7 @@ RpcProcMigInfo(srvToken, clientID, command, storagePtr)
     Rpc_ReplyMem	*replyMemPtr;
     Proc_MigrateReply *returnInfoPtr;
 
-    returnInfoPtr = (Proc_MigrateReply *) Mem_Alloc(sizeof(Proc_MigrateReply));
+    returnInfoPtr = (Proc_MigrateReply *) malloc(sizeof(Proc_MigrateReply));
     status = Proc_MigReceiveInfo(clientID,
             (Proc_MigrateCommand *) storagePtr->requestParamPtr,
 	    storagePtr->requestDataSize,
@@ -386,7 +327,7 @@ RpcProcMigInfo(srvToken, clientID, command, storagePtr)
 	storagePtr->replyParamPtr = (Address) returnInfoPtr;
 	storagePtr->replyParamSize = sizeof(Proc_MigrateReply);
 	
-	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
 	replyMemPtr->paramPtr = (Address) returnInfoPtr;
 	replyMemPtr->dataPtr = (Address) NIL;
 	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
@@ -438,7 +379,7 @@ RpcProcRemoteCall(srvToken, clientID, command, storagePtr)
     storagePtr->replyDataPtr = returnData;
     storagePtr->replyDataSize = returnDataLength;
 
-    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = (Address) NIL;
     replyMemPtr->dataPtr = returnData;
     Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
