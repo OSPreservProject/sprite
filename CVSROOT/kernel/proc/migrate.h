@@ -100,6 +100,9 @@ extern ReturnStatus ProcMigDestroyCmd();
 extern ReturnStatus ProcMigCommand();
 extern ReturnStatus ProcMigContinueProcess();
 extern ReturnStatus ProcMigGetSuspend();
+extern void         ProcMigRemoveDependency();
+extern void 	    ProcMigAddDependency();
+extern void	    ProcMigKillRemoteCopy();
 extern ENTRY void   ProcMigWakeupWaiters();
 extern ENTRY void   ProcMigEvictionComplete();
 
