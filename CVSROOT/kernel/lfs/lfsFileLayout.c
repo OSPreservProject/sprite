@@ -533,11 +533,21 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 		Fsio_FileIOHandle *newHandlePtr;
 		LfsDiskAddr newDiskAddr;
 		/*
-		 * The descriptor block is terminated by an unallocated
-		 * descriptor.
+		 * The descriptor block is terminated by an inode
+		 * with a zero magic number.
 		 */
-		if (!(descPtr[slot].common.flags & FSDM_FD_ALLOC)) {
+		if (descPtr[slot].common.magic == 0) {
 		    break;
+		}
+		if (descPtr[slot].common.magic != FSDM_FD_MAGIC) {
+		    LfsError(lfsPtr, FAILURE, "Bad descriptor magic number.\n");
+		    continue;
+		}
+		if (!(descPtr[slot].common.flags & FSDM_FD_ALLOC)) {
+		    /*
+		     * Skip over any FREE inodes.
+		     */
+		    continue;
 		}
 		fileNumber = descPtr[slot].fileNumber;
 		status = LfsDescMapGetDiskAddr(lfsPtr, fileNumber, &diskAddr);
