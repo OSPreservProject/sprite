@@ -23,6 +23,9 @@
 #define _NETHPPIINT
 
 #include <dev/hppi.h>
+#include <netHppi.h>
+
+#define	NET_HPPI_STATUS_CONN_REQ	13
 
 /*
  *	These are the hardware registers for the HPPI-S board.
@@ -47,6 +50,10 @@ typedef struct NetHppiDestReg {
     volatile uint32 responseData;
 } NetHppiDestReg;
 
+typedef struct NetHppiIopReg {
+    volatile uint32 registers[10];
+} NetHppiIopReg;
+
 /*
  * Expand this later.
  */
@@ -55,14 +62,29 @@ typedef struct Net_HppiStats {
 } Net_HppiStats;
 
 
-#define NET_HPPI_MAX_ERROR_INFO	256
-#define NET_HPPI_ROM_MAX_REPLY 4096
+#define NET_HPPI_MAX_ERROR_INFO		256
+#define NET_HPPI_ROM_MAX_REPLY		4096
+#define	NET_HPPI_MAX_CONNECTIONS	16
+#define	NET_HPPI_MAX_TAGS		16	/* increase later! */
+
+typedef struct NetHppiConnState {
+    uint16		xrbRef;
+    unsigned int	flags;
+    int			numOutstandingRecv;
+    List_Links		recvHdr;	/* list of outstanding receives */
+    int			numOutstandingSend;
+    List_Links		sendHdr;	/* list of outstanding sends */
+    uint32		tag;		/* use this as tag for all cmds */
+    Net_HppiConnection*	userConnInfo;
+    struct NetHppiState* statePtr;
+} NetHppiConnState;
 
 typedef struct NetHppiState {
     int magic;				/* for debugging purposes */
     int flags;				/* see below */
-    NetHppiSrcReg *hppisReg;		/* ptr to source board registers */
-    NetHppiDestReg *hppidReg;		/* ptr to dest board registers */
+    NetHppiSrcReg	*hppisReg;	/* ptr to source board registers */
+    NetHppiDestReg	*hppidReg;	/* ptr to dest board registers */
+    NetHppiIopReg	*iopReg;	/* ptr to IOP registers */
     Address		firstToHostVME;    /* VMEaddr of toHost XRB queue */
     Address		firstToAdapterVME; /* VMEaddr of toAdapter XRB queue */
     struct NetUltraXRB	*firstToHostPtr;  /* First XRB in queue to host. */
@@ -76,6 +98,7 @@ typedef struct NetHppiState {
     int			priority;	/* Interrupt priority. */
     int			vector;		/* Interrupt vector. */
     int			requestLevel;	/* VME bus request level. */
+    unsigned char	maxBytesPower;	/* log base 2 of maximum bytes/pkt */
     int			addressSpace;	/* Address space for queues and
 					 * buffers. */
     int			maxReadPending;	/* Maximum pending datagram
@@ -84,6 +107,7 @@ typedef struct NetHppiState {
     int			readBufferSize;	/* Size of pending read buffers. */
     int			maxWritePending; /* Maximum pending datagram writes.*/
     int			numWritePending; /* Number of pending writes. */
+    char		curTsap[4];	/* current TSAP default value */
     Address		buffersDVMA;	/* DVMA buffers for pending reads
 					 * and writes. */
     Address		buffers;	/* Address of DVMA buffers in kernel
@@ -110,13 +134,19 @@ typedef struct NetHppiState {
     Net_Interface	*interPtr;	   /* Interface structure associated
 					    * with this board set. */
     int			boardFlags;	/* flags passed to boards */
+    NetHppiConnState	connection[NET_HPPI_MAX_CONNECTIONS];
     NetUltraTraceInfo	*tracePtr;
     NetUltraTraceInfo	traceBuffer[TRACE_SIZE];
     NetUltraXRBInfo	*tagToXRBInfo[32];
     int			srcErrorBuffer[NET_HPPI_MAX_ERROR_INFO];
     int			dstErrorBuffer[NET_HPPI_MAX_ERROR_INFO];
     int			traceSequence;
+    int			curSgTag;
+    char		tags[NET_HPPI_MAX_TAGS];
     Net_UltraStats	stats;
+    void		(*outputCallback)();
+    ClientData		outputClientData;
+    int			hppiNum;
 } NetHppiState;
 
 typedef struct NetHppiSGElement {
@@ -141,7 +171,14 @@ typedef struct NetHppiSGElement {
 #define NET_HPPI_STATE_NOT_SETUP	0x400	/* boards not set up */
 #define NET_HPPI_STATE_SRC_ERROR	0x1000	/* src board error occurred */
 #define NET_HPPI_STATE_DST_ERROR	0x2000	/* dest board error occurred */
+#define	NET_HPPI_STATE_IOP_OUTPUT_TEST	0x10000
 #define NET_HPPI_OWN_SRC_FIFO		0x10000	/* server owns HPPI-S FIFO */
+
+#define	NET_HPPI_CONN_STATE_INUSE	0x1
+#define	NET_HPPI_CONN_STATE_OPEN	0x2
+#define	NET_HPPI_CONN_STATE_LISTEN	0x4
+#define	NET_HPPI_CONN_STATE_CONNECTED	0x8
+
 
 #define NET_HPPI_RESET_BOARD		0x1	/* reset TMC board */
 #define NET_HPPI_RESET_CPU		0x2	/* reset TMC board CPU */
@@ -152,11 +189,13 @@ typedef struct NetHppiSGElement {
 #define NET_HPPI_PENDING_READS		NET_HPPI_NUM_TO_HOST
 #define NET_HPPI_PENDING_WRITES		NET_HPPI_NUM_TO_ADAPTER
 
-
 #define NET_HPPI_DST_CTRL_OFFSET	0xc000	/* offset from base address
 						 * of HPPI-D control regs */
 #define NET_HPPI_SRC_CTRL_OFFSET	0x8000	/* offset from base address
 						 * of HPPI-S control regs */
+#define	NET_HPPI_IOP_CTRL_OFFSET	0x6000	/* offset from base address
+						 * of IOP control regs */
+
 #define NET_HPPI_MAX_INTERFACES		2
 #define NET_HPPI_INTERRUPT_PRIORITY	3
 #define NET_HPPI_VME_REQUEST_LEVEL	3
@@ -167,8 +206,8 @@ typedef struct NetHppiSGElement {
 #define NET_HPPI_MAX_BYTES		0x8000
 #define NET_HPPI_MIN_BYTES		0x100
 
-#define NET_HPPI_RESET_DELAY		1000000
-#define NET_HPPI_DELAY			60000000 /* 20 seconds, so prints
+#define NET_HPPI_RESET_DELAY		100000
+#define NET_HPPI_DELAY			30000000 /* 10 seconds, so prints
 						  * on the board can finish */
 
 /*
@@ -176,6 +215,11 @@ typedef struct NetHppiSGElement {
  */
 #define	NET_HPPI_SRC_CMD		0x1
 #define NET_HPPI_KEEP_SRC_FIFO		0x2
+#define	NET_HPPI_DST_CMD		0x4
+#define	NET_HPPI_RESET_RESTART		0x10000
+
+#define	NET_HPPI_SEND			0x10
+#define	NET_HPPI_RECV			0x20
 
 #define NET_HPPI_SRC_STATUS_ALIVE_MASK	0x18000000
 #define NET_HPPI_SRC_STATUS_ERROR	0x08000000
