@@ -93,7 +93,6 @@ typedef enum {
     PROC_EXITING,	/* The process has terminated and is on the 
 			 * exiting list. */
     PROC_DEAD,		/* The process has been terminated is on the dead list*/
-    PROC_NO_STATE,	/* Remove this field. */
     PROC_MIGRATED,	/* The process is running on a remote machine. */
     PROC_NEW,		/* The process was just created. */
     PROC_SUSPENDED	/* The process is suspended. */
@@ -244,27 +243,9 @@ typedef struct Proc_ControlBlock {
      *	General processor registers, stack information.
      *
      *-----------------------------------------------------------------
-     */
+     */ 
+    struct	Mach_State	*machStatePtr;
 
-    int	zsaveRegs[16];			/* The general registers used by
-					   the process when it was context
-					   switched. */
-    int	zstackStart;			/* Start of the kernel stack for this
-					   process. */
-    /*
-     * The state of a user process when it traps into the kernel.  
-     *
-     * NOTE: The registers and program counter are not automatically saved
-     * 	     when a user process traps into the kernel.  These fields provide
-     *	     a place to store the information but it is up to individual trap
-     *	     handling routines to save the registers and pc.
-     */
-
-    int		zgenRegs[16];			/* All of the general purpose 
-					 	 * registers.  */
-    int		zprogCounter;			/* The program counter when the 
-					   	 * system call occured. */
-    short	zstatusReg;			/* Status register */
 
     /*
      *-----------------------------------------------------------------
@@ -356,8 +337,6 @@ typedef struct Proc_ControlBlock {
 					 * If not migrated, undefined. */
     Proc_PID		peerProcessID; 	/* If on remote note, process ID on
 					 * home node, and vice-versa. */
-    struct Mach_ExcStack *trapStackPtr;	/* Contents of trap stack on home node,
-					 * saved in PCB on remote node. */
     struct Proc_ControlBlock
 	             *rpcClientProcess;	/* procPtr for migrated process
 					 * performing system call, if
@@ -374,15 +353,7 @@ typedef struct Proc_ControlBlock {
     /*
      * Info that describes the process's environment variable table.
      */
-
     Proc_EnvironInfo	*environPtr;
-
-    /*
-     * Set-jump structure (NIL if no state saved).
-     */
-
-    struct	Mach_SetJumpState	*setJumpStatePtr;
-
 
     /*
      * Arguments for the process, taken from Proc_Exec.
@@ -407,11 +378,6 @@ typedef struct Proc_ControlBlock {
 					 * (deliver signal, switch contexts,
 					 * ect.) on return from the next kernel
 					 * call. */
-
-    /*
-     * Pointer to machine dependent state.
-     */
-    struct Mach_State	*machStatePtr;
 } Proc_ControlBlock;
 
 
