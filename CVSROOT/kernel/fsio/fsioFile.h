@@ -79,7 +79,8 @@ typedef struct Fsio_FileIOHandle {
     Fsutil_UseCounts		use;		/* Open, writer, and exec counts.
 					 * Used for consistency checks. This
 					 * is a summary of all uses of a file */
-    int			flags;		/* FSIO_FILE_DELETED */
+    int			flags;		/* FSIO_FILE_NAME_DELETED and
+					 * FSIO_FILE_DESC_DELETED */
     struct Fsdm_FileDescriptor *descPtr;	/* Reference to disk info, this
 					 * has attritutes, plus disk map. */
     Fscache_FileInfo	cacheInfo;	/* Used to access block cache. */
@@ -94,10 +95,15 @@ typedef struct Fsio_FileIOHandle {
 
 /*
  * Flags for local I/O handles.
- *	FSIO_FILE_DELETED		Set when all names of a file have been
+ *	FSIO_FILE_NAME_DELETED		Set when all names of a file have been
  *				removed.  This marks the handle for removal.
+ *	FSIO_FILE_DESC_DELETED		Set when the disk descriptor is in
+ *				the process of being removed.  This guards
+ *				against a close/remove race where two parties
+ *				try to do the disk deletion phase.
  */
-#define FSIO_FILE_DELETED		0x1
+#define FSIO_FILE_NAME_DELETED		0x1
+#define FSIO_FILE_DESC_DELETED		0x2
 
 /*
  * Open operations.
