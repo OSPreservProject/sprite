@@ -35,7 +35,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vm.h>
 #include <dbg.h>
 
-int FsrmtRpcCacheUnlockBlock();
+int FsrmtRpcCacheUnlockBlock _ARGS_((ClientData clientData));
 
 Boolean fsrmt_RpcDebug = FALSE;
 
@@ -283,7 +283,7 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	if (cacheBlockPtr != (Fscache_Block *)NIL) {
 	    storagePtr->replyDataPtr = cacheBlockPtr->blockAddr;
 	    storagePtr->replyDataSize = lengthRead;
-	    callBack = (int(*)())FsrmtRpcCacheUnlockBlock;
+	    callBack = FsrmtRpcCacheUnlockBlock;
 	    clientData = (ClientData)cacheBlockPtr;
 	} else {
 	    /*
@@ -329,7 +329,7 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
 	    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
 	    replyMemPtr->dataPtr = storagePtr->replyDataPtr;
-	    callBack = (int(*)())Rpc_FreeMem;
+	    callBack = Rpc_FreeMem;
 	    clientData = (ClientData)replyMemPtr;
 	} else {
 	    free(paramsPtr->io.buffer);
