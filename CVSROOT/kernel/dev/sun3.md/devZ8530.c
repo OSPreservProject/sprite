@@ -66,21 +66,6 @@ static struct {
 
 static int		Read();
 static void		Write();
-
-/*
- * Log for debugging:
- */
-
-#define LOG_SIZE 10000
-char zChars[LOG_SIZE];
-int zFlags[LOG_SIZE];
-int zIndex = 0;
-
-#define LOG(flags, x) \
-    zChars[zIndex] = (x); \
-    zFlags[zIndex] = (flags); \
-    zIndex = zIndex+1; \
-    if (zIndex >= LOG_SIZE) zIndex = 0;
 
 /*
  *----------------------------------------------------------------------
@@ -106,7 +91,6 @@ DevZ8530Activate(zPtr)
     int speed;
 
     MASTER_LOCK(&z8530Mutex);
-    LOG(((int) zPtr->address) | 0x10, 0);
     if (zPtr->vector != 30) {
 	Mach_SetHandler(zPtr->vector, DevZ8530Interrupt, (ClientData) zPtr);
     }
@@ -176,7 +160,6 @@ DevZ8530RawProc(zPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
     int result = 0;
 
     MASTER_LOCK(&z8530Mutex);
-    LOG(((int) zPtr->address), operation);
     switch (operation) {
 	case TD_RAW_START_BREAK:
 	    zPtr->wr5 |= WRITE5_BREAK;
@@ -211,7 +194,6 @@ DevZ8530RawProc(zPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
 		c = (*zPtr->outputProc)(zPtr->outputData);
 		if (c != -1) {
 		    Write(zPtr->address, 8, c);
-		    LOG(((int) zPtr->address) | 0x70, c);
 		}
 	    }
 	    break;
@@ -317,17 +299,14 @@ DevZ8530Interrupt(zPtr)
 	rr0 = Read(zPtr->address, 0);
 	if (rr0 & READ0_BREAK) {
 	    zPtr->flags |= Z_BREAK;
-	    LOG(((int) zPtr->address) | 0x20, 1);
 	}
 	if (!(rr0 & READ0_RX_READY)) {
 	    break;
 	}
 	c = Read(zPtr->address, 8);
 	if (first) {
-	    LOG(((int) zPtr->address) | 0x30, c);
 	    first = 0;
 	} else {
-	    LOG(((int) zPtr->address) | 0x40, c);
 	}
 	if (zPtr->flags & Z_BREAK) {
 	    zPtr->flags &= ~Z_BREAK;
@@ -344,7 +323,6 @@ DevZ8530Interrupt(zPtr)
     rr1 = Read(zPtr->address, 1);
     if (rr1 & (READ1_RX_OVERRUN|READ1_PARITY_ERROR|READ1_FRAMING_ERROR)) {
 	if (rr1 & READ1_RX_OVERRUN) {
-	    LOG(((int) zPtr->address) | 0x50, 1);
 	    printf("Warning: receiver overrun on %s\n", zPtr->name);
 	} else if (rr1 & READ1_PARITY_ERROR) {
 	    printf("Warning: receiver parity error on %s\n", zPtr->name);
@@ -364,7 +342,6 @@ DevZ8530Interrupt(zPtr)
 	    Write(zPtr->address, 0, WRITE0_RESET_TX_INT);
 	} else {
 	    Write(zPtr->address, 8, c);
-	    LOG(((int) zPtr->address) | 0x60, c);
 	}
     }
 
