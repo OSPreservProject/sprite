@@ -129,6 +129,7 @@ typedef struct Net_UltraStats {
 typedef struct Net_Stats {
     Net_EtherStats	ether;
     Net_UltraStats	ultra;
+    Net_UltraStats	hppi;
 } Net_Stats;
 
 /*

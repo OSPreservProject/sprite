@@ -211,6 +211,8 @@ typedef struct NetUltraXRBInfo {
     union NetUltraRequest *requestPtr;	/* Ptr to the original request. */
     Address		buffer;		/* Address of original buffer
 					 * if it was remapped. */
+    int			requestTag;	/* tag for request blocks referring
+					 * to this info block */
 } NetUltraXRBInfo;
 
 /*

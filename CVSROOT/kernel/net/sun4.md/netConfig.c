@@ -21,10 +21,14 @@
 #include <netInt.h>
 #include <netIEInt.h>
 #include <netUltraInt.h>
+#include <netHppiInt.h>
 
 Net_Interface netConfigInterfaces[] = {
     {"IE", 0, (Address) NET_IE_CONTROL_REG_ADDR, TRUE, 6, NetIEInit},
-    {"ULTRA", 0, (Address) NET_ULTRA_CONTROL_REG_ADDR, FALSE, 220, NetUltraInit}
+    {"ULTRA", 0, (Address) NET_ULTRA_CONTROL_REG_ADDR, FALSE, 
+	    220, NetUltraInit},
+    {"HPPI", 0, (Address) NET_HPPI_CONTROL_REG_ADDR, FALSE,
+	    NET_HPPI_INTERRUPT_VECTOR, NetHppiInit},
 };
 int netNumConfigInterfaces = 
 	    sizeof(netConfigInterfaces) / sizeof(Net_Interface);
