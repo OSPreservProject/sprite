@@ -1187,7 +1187,7 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	/*
 	 * Debugged processes get a SIG_DEBUG at start up.
 	 */
-	Sig_SendProc(procPtr, SIG_DEBUG, SIG_NO_CODE);
+	Sig_SendProc(procPtr, SIG_DEBUG, SIG_NO_CODE, (Address)0);
     }
     if (!importing && (procPtr->genFlags & PROC_FOREIGN)) {
 	ProcRemoteExec(procPtr, uid);
