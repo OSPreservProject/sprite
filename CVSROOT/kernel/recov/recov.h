@@ -17,6 +17,43 @@
 #define _RECOV
 
 /*
+ * Host state used by the recov module and accessible via the
+ * Recov_{G,S}etHostState calls:
+ *	RECOV_STATE_UNKNOWN	Initial state.
+ *	RECOV_HOST_ALIVE	Set when we receive a message from the host
+ *	RECOV_HOST_DYING	Set when an RPC times out.
+ *	RECOV_HOST_DEAD		Set when crash callbacks have been started.
+ *	RECOV_HOST_BOOTING	Set in the limbo period when a host is booting
+ *				and talking to the world, but isn't ready
+ *				for full recovery actions yet.
+ *
+ *	RECOV_CRASH_CALLBACKS	Set during the crash call-backs, this is used
+ *				to block RPC server processes until the
+ *				crash recovery actions have completed.
+ *	RECOV_WANT_RECOVERY	Set if another module wants a callback at reboot
+ *	RECOV_PINGING_HOST	Set while we ping a host to see when it reboots
+ *	RECOV_REBOOT_CALLBACKS	Set while reboot callbacks are pending.	
+ *
+ *	RECOV_WAITING		artificial state to trace Rpc_WaitForHost
+ *	RECOV_CRASH		artificial state to trace RecovCrashCallBacks
+ *	RECOV_REBOOT		artificial state to trace RecovRebootCallBacks
+ */
+#define RECOV_STATE_UNKNOWN	0x0
+#define RECOV_HOST_ALIVE	0x1
+#define RECOV_HOST_DYING	0x2
+#define RECOV_HOST_DEAD		0x4
+#define RECOV_HOST_BOOTING	0x10
+
+#define RECOV_CRASH_CALLBACKS	0x0100
+#define RECOV_WANT_RECOVERY	0x0200
+#define RECOV_PINGING_HOST	0x0400
+#define RECOV_REBOOT_CALLBACKS	0x0800
+
+#define RECOV_WAITING		0x10
+#define RECOV_CRASH		0x20
+#define RECOV_REBOOT		0x40
+
+/*
  * Host state flags for use by Recov clients.  These flags are set
  * by users of the Recov module to define/get host states beyond
  * the simple up/down state maintained by the Recov system.
@@ -41,6 +78,7 @@ void		Recov_CrashRegister();
 void		Recov_RebootRegister();
 void		Recov_HostAlive();
 void		Recov_HostDead();
+int		Recov_GetHostState();
 ReturnStatus	Recov_IsHostDown();
 void		Recov_HostTrace();
 int		Recov_SetClientState();
