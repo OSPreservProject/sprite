@@ -82,7 +82,7 @@ typedef struct FsHandleHeader {
     List_Links		lruLinks;	/* For LRU list of handles */
 } FsHandleHeader;			/* 32 BYTES */
 
-#define LRU_LINKS_TO_HANDLE (listPtr) \
+#define LRU_LINKS_TO_HANDLE(listPtr) \
 	( (FsHandleHeader *)((int)(listPtr) - sizeof(Fs_FileID) \
 		- 2 * sizeof(int) - sizeof(char *) - sizeof(Sync_Condition)) )
 
