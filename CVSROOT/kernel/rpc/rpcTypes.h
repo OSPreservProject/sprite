@@ -42,5 +42,16 @@ typedef struct RpcBufferSet {
     Net_ScatterGather   dataBuffer;
 } RpcBufferSet;
 
+/*
+ * The form in which the user expects the server tracing info.
+ */
+typedef struct  RpcServerUserStateInfo {
+    int         index;
+    int         clientID;
+    int         channel;
+    int         state;
+    int         num;
+    Time        time;
+} RpcServerUserStateInfo;
 
 #endif /* _RPC_TYPES */
