@@ -35,8 +35,8 @@
 #ifndef _FSPDEVX
 #define _FSPDEVX
 
-#include "fs.h"
-#include "proc.h"
+#include <fs.h>
+#include <proc.h>
 /*
  * Fspdev_State is returned from the SrvOpen routine to the CltOpen routine.
  * It is also sent via RPC from the remoteCltOpen routine to the localCltOpen
@@ -57,14 +57,17 @@ typedef struct Fspdev_State {
 
 extern Boolean fspdev_Debug;
 
-extern void Fspdev_Bin();
-extern ReturnStatus FspdevPfsDomainInfo();
-extern void Fspdev_InitializeOps();
+extern void Fspdev_Bin _ARGS_((void));
+extern ReturnStatus FspdevPfsDomainInfo _ARGS_((Fs_FileID *fileIDPtr, 
+			Fs_DomainInfo *domainInfoPtr));
+extern void Fspdev_InitializeOps _ARGS_((void));
 
-extern void Fspdev_PrintTrace();
-extern ReturnStatus Fspdev_PrintRec();
+extern void Fspdev_PrintTrace _ARGS_((int numRecs));
 
-extern ReturnStatus Fspdev_TraceInit();
+extern ReturnStatus Fspdev_PrintRec _ARGS_((ClientData clientData, int event,
+			Boolean printHeaderFlag));
+
+extern ReturnStatus Fspdev_TraceInit _ARGS_((void));
 
 
 #endif _FSPDEVX

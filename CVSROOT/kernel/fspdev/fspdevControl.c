@@ -15,18 +15,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fspdev.h"
-#include "fspdevInt.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fsconsist.h"
-#include "fsioLock.h"
-#include "fsStat.h"
-#include "proc.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsutil.h>
+#include <fspdev.h>
+#include <fspdevInt.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsioLock.h>
+#include <fsStat.h>
+#include <proc.h>
+#include <rpc.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ FspdevControlHandleInit(fileIDPtr, name)
     Fs_HandleHeader *hdrPtr;
 
     found = Fsutil_HandleInstall(fileIDPtr, sizeof(FspdevControlIOHandle), name,
-			    &hdrPtr);
+			    FALSE, &hdrPtr);
     ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
     if (!found) {
 	ctrlHandlePtr->serverID = NIL;
@@ -428,9 +428,10 @@ FspdevControlSetIOAttr(fileIDPtr, attrPtr, flags)
  */
 
 Fs_HandleHeader *
-FspdevControlVerify(fileIDPtr, pdevServerHostID)
+FspdevControlVerify(fileIDPtr, pdevServerHostID, domainTypePtr)
     Fs_FileID	*fileIDPtr;		/* control I/O file ID */
     int		pdevServerHostID;	/* Host ID of the client */
+    int         *domainTypePtr; 	/* Return - FS_PSEUDO_DOMAIN */
 {
     register FspdevControlIOHandle	*ctrlHandlePtr;
     int serverID = -1;
@@ -447,6 +448,9 @@ FspdevControlVerify(fileIDPtr, pdevServerHostID)
 	printf("FspdevControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
 	    pdevServerHostID, serverID, Fsutil_FileTypeToString(fileIDPtr->type),
 	    fileIDPtr->major, fileIDPtr->minor);
+    }
+    if (domainTypePtr != (int *)NIL) {
+	*domainTypePtr = FS_PSEUDO_DOMAIN;
     }
     return((Fs_HandleHeader *)ctrlHandlePtr);
 }
@@ -617,7 +621,8 @@ FspdevControlClose(streamPtr, clientID, procID, flags, size, data)
 /*ARGSUSED*/
 void
 FspdevControlClientKill(hdrPtr, clientID)
-    Fs_HandleHeader *hdrPtr;	/* File being encapsulated */
+    Fs_HandleHeader *hdrPtr;	/* File being killed */
+    int		clientID;	/* Client ID to kill. */
 {
     register FspdevControlIOHandle *ctrlHandlePtr =
 	    (FspdevControlIOHandle *)hdrPtr;

@@ -1,5 +1,5 @@
 /*
- * fspdev.h --
+ * fspdevInt.h --
  *
  *	Declarations for pseudo-devices and pseudo-filesystems.
  *
@@ -35,12 +35,15 @@
 #ifndef _FSPDEVINT
 #define _FSPDEVINT
 
-#include "trace.h"
-#include "dev/pdev.h"
-#include "fsprefix.h"
-#include "fsrmt.h"
-#include "fsioLock.h"
-#include "fspdev.h"
+#include <trace.h>
+#include <dev/pdev.h>
+#include <dev/pfs.h>
+#include <fsprefix.h>
+#include <fsrmt.h>
+#include <fsioLock.h>
+#include <fspdev.h>
+
+#include <stdio.h>
 
 /*
  * Both the pseudo-device and pseudo-filesystem implementation use a
@@ -222,7 +225,7 @@ typedef struct FspdevTraceRecord {
 	    int		selectBits;
 	    Proc_PID	procID;
 	} wait;
-	Fsutil_UseCounts	use;
+	Fsio_UseCounts	use;
     } un;
 } FspdevTraceRecord;
 
@@ -322,8 +325,11 @@ typedef struct FspdevTraceRecord {
 /*
  * Internal Pdev routines
  */
-extern ReturnStatus	FspdevSignalOwner();
-extern FspdevClientIOHandle *FspdevConnect();
+extern ReturnStatus FspdevSignalOwner _ARGS_((
+		FspdevControlIOHandle *ctrlHandlePtr, Fs_IOCParam *ioctlPtr));
+extern FspdevClientIOHandle *FspdevConnect _ARGS_((
+		FspdevControlIOHandle *ctrlHandlePtr, Fs_FileID *ioFileIDPtr,
+		int clientID, Boolean naming));
 
 /*
  * Definitions for a trace of the request-response protocol.
@@ -337,96 +343,194 @@ extern int fspdevTraceIndex;
 /*
  * File server open-time routines.
  */
-extern ReturnStatus	FspdevNameOpen();
-extern ReturnStatus	FspdevRmtLinkNameOpen();
+extern ReturnStatus FspdevNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr,
+		Fs_OpenArgs *openArgsPtr, Fs_OpenResults *openResultsPtr));
+extern ReturnStatus FspdevRmtLinkNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr,
+		Fs_OpenArgs *openArgsPtr, Fs_OpenResults *openResultsPtr));
 /*
  * Control Stream routines.
  */
-extern FspdevControlIOHandle *FspdevControlHandleInit();
-extern ReturnStatus	FspdevControlIoOpen();
-extern ReturnStatus	FspdevControlRead();
-extern ReturnStatus	FspdevControlIOControl();
-extern ReturnStatus	FspdevControlSelect();
-extern ReturnStatus	FspdevControlGetIOAttr();
-extern ReturnStatus	FspdevControlSetIOAttr();
-extern Fs_HandleHeader  *FspdevControlVerify();
-extern ReturnStatus	FspdevControlReopen();
-extern Boolean		FspdevControlScavenge();
-extern void		FspdevControlClientKill();
-extern ReturnStatus	FspdevControlClose();
+extern FspdevControlIOHandle *FspdevControlHandleInit _ARGS_((
+		Fs_FileID *fileIDPtr, char *name));
+extern ReturnStatus FspdevControlIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
+extern ReturnStatus FspdevControlSelect _ARGS_((Fs_HandleHeader *hdrPtr, 
+		Sync_RemoteWaiter *waitPtr, int *readPtr, int *writePtr, 
+		int *exceptPtr));
+extern ReturnStatus FspdevControlRead _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *waitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FspdevControlIOControl _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus FspdevControlGetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, Fs_Attributes *attrPtr));
+extern ReturnStatus FspdevControlSetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, int flags));
+extern Fs_HandleHeader *FspdevControlVerify _ARGS_((Fs_FileID *fileIDPtr, 
+		int pdevServerHostID, int *domainTypePtr));
+extern ReturnStatus FspdevControlReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
+extern ReturnStatus FspdevControlClose _ARGS_((Fs_Stream *streamPtr, 
+		int clientID, Proc_PID procID, int flags, int size,
+		ClientData data));
+extern void FspdevControlClientKill _ARGS_((Fs_HandleHeader *hdrPtr,
+		int clientID));
+extern Boolean FspdevControlScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
 /*
  * Pfs Control Stream routines.
  */
-extern ReturnStatus	FspdevPfsIoOpen();
-extern Fs_HandleHeader  *FspdevPfsControlVerify();
+extern ReturnStatus FspdevPfsIoOpen _ARGS_((Fs_FileID *ioFileIDPtr,
+		int *flagsPtr, int clientID, ClientData streamData,
+		char *name, Fs_HandleHeader **ioHandlePtrPtr));
 /*
  * Server stream routines.
  */
-extern ReturnStatus	FspdevServerStreamRead();
-extern ReturnStatus	FspdevServerStreamIOControl();
-extern ReturnStatus	FspdevServerStreamSelect();
-extern ReturnStatus	FspdevServerStreamClose();
+extern ReturnStatus FspdevServerStreamSelect _ARGS_((Fs_HandleHeader *hdrPtr,
+		Sync_RemoteWaiter *waitPtr, int *readPtr, int *writePtr, 
+		int *exceptPtr));
+extern ReturnStatus FspdevServerStreamRead _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *waitPtr,
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FspdevServerStreamIOControl _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus FspdevServerStreamClose _ARGS_((Fs_Stream *streamPtr, 
+		int clientID, Proc_PID procID, int flags, int size, 
+		ClientData data));
 /*
  * Pseudo-device (client-side) streams
  */
-extern ReturnStatus	FspdevPseudoStreamIoOpen();
-extern ReturnStatus	FspdevPseudoStreamOpen();
-extern ReturnStatus	FspdevPseudoStreamRead();
-extern ReturnStatus	FspdevPseudoStreamWrite();
-extern ReturnStatus	FspdevPseudoStreamIOControl();
-extern ReturnStatus	FspdevPseudoStreamSelect();
-extern ReturnStatus	FspdevPseudoStreamGetIOAttr();
-extern ReturnStatus	FspdevPseudoStreamSetIOAttr();
-extern ReturnStatus	FspdevPseudoStreamMigClose();
-extern ReturnStatus	FspdevPseudoStreamMigOpen();
-extern ReturnStatus	FspdevPseudoStreamMigrate();
-extern ReturnStatus	FspdevPseudoStreamClose();
-extern void		FspdevPseudoStreamCloseInt();
+extern ReturnStatus FspdevPseudoStreamIoOpen _ARGS_(( Fs_FileID *ioFileIDPtr,
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
+extern ReturnStatus FspdevPseudoStreamOpen _ARGS_((
+		FspdevServerIOHandle *pdevHandlePtr, int flags, int clientID, 
+		Proc_PID procID, int userID));
+extern ReturnStatus FspdevPseudoStreamRead _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *waitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FspdevPseudoStreamWrite _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *writePtr, Sync_RemoteWaiter *waitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FspdevPseudoStreamIOControl _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus FspdevPseudoStreamSelect _ARGS_((Fs_HandleHeader *hdrPtr,
+		Sync_RemoteWaiter *waitPtr, int *readPtr, int *writePtr,
+		int *exceptPtr));
+extern ReturnStatus FspdevPseudoStreamGetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID,   Fs_Attributes *attrPtr));
+extern ReturnStatus FspdevPseudoStreamSetIOAttr _ARGS_((Fs_FileID *fileIDPtr,
+		Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus FspdevPseudoStreamMigClose _ARGS_((Fs_HandleHeader *hdrPtr,
+		int flags));
+extern ReturnStatus FspdevPseudoStreamMigrate _ARGS_((Fsio_MigInfo *migInfoPtr,
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr,
+		Address *dataPtr));
+extern ReturnStatus FspdevPseudoStreamMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr,
+		int size, ClientData data, Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus FspdevPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
+		int clientID, Proc_PID procID, int flags, int size,
+		ClientData data));
+extern void FspdevPseudoStreamCloseInt _ARGS_((	
+		FspdevServerIOHandle *pdevHandlePtr));
 
-extern FspdevServerIOHandle *FspdevServerStreamCreate();
+extern FspdevServerIOHandle *FspdevServerStreamCreate _ARGS_((
+		Fs_FileID *ioFileIDPtr, char *name, Boolean naming));
 
 /*
  * Remote pseudo-device streams
  */
-extern ReturnStatus	FspdevRmtPseudoStreamIoOpen();
-extern Fs_HandleHeader  *FspdevRmtPseudoStreamVerify();
-extern ReturnStatus	FspdevRmtPseudoStreamMigrate();
+extern ReturnStatus FspdevRmtPseudoStreamIoOpen _ARGS_((Fs_FileID *ioFileIDPtr,
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
+extern Fs_HandleHeader *FspdevRmtPseudoStreamVerify _ARGS_((
+		Fs_FileID *fileIDPtr, int clientID, int *domainTypePtr));
+extern ReturnStatus FspdevRmtPseudoStreamMigrate _ARGS_((
+		Fsio_MigInfo *migInfoPtr, int dstClientID, int *flagsPtr,
+		int *offsetPtr, int *sizePtr, Address *dataPtr));
 /*
  * Local and remote pseudo-device streams to pseudo-file-systems
  */
-extern ReturnStatus	FspdevPfsStreamIoOpen();
-extern ReturnStatus	FspdevRmtPfsStreamIoOpen();
+extern ReturnStatus FspdevPfsStreamIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
+extern ReturnStatus FspdevRmtPfsStreamIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
 /*
  * Naming Stream routines.
  */
-extern ReturnStatus	FspdevPfsExport();
-extern ReturnStatus	FspdevPfsNamingIoOpen();
+extern ReturnStatus FspdevPfsExport _ARGS_((Fs_HandleHeader *hdrPtr,
+		int clientID, register Fs_FileID *ioFileIDPtr, 
+		int *dataSizePtr, ClientData *clientDataPtr));
+extern ReturnStatus FspdevPfsNamingIoOpen _ARGS_((Fs_FileID *ioFileIDPtr,
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
 /*
  * Pseudo-file-system naming routines.
  */
-extern ReturnStatus	FspdevPfsOpen();
-extern ReturnStatus	FspdevPfsGetAttrPath();
-extern ReturnStatus	FspdevPfsSetAttrPath();
-extern ReturnStatus	FspdevPfsMakeDir();
-extern ReturnStatus	FspdevPfsMakeDevice();
-extern ReturnStatus	FspdevPfsRemove();
-extern ReturnStatus	FspdevPfsRemoveDir();
-extern ReturnStatus	FspdevPfsRename();
-extern ReturnStatus	FspdevPfsHardLink();
-extern ReturnStatus FspdevPseudoStream2Path();
-extern ReturnStatus FspdevPseudoStreamLookup();
+extern ReturnStatus FspdevPfsOpen _ARGS_((Fs_HandleHeader *prefixHandle,
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FspdevPfsGetAttrPath _ARGS_((Fs_HandleHeader *prefixHandle,
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FspdevPfsSetAttrPath _ARGS_((Fs_HandleHeader *prefixHandle,
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FspdevPfsMakeDir _ARGS_((Fs_HandleHeader *prefixHandle,
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FspdevPfsMakeDevice _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FspdevPfsRemove _ARGS_((Fs_HandleHeader *prefixHandle,
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FspdevPfsRemoveDir _ARGS_((Fs_HandleHeader *prefixHandle,
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FspdevPfsRename _ARGS_((Fs_HandleHeader *prefixHandle1,
+		char *relativeName1, Fs_HandleHeader *prefixHandle2,
+		char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
+extern ReturnStatus FspdevPfsHardLink _ARGS_((Fs_HandleHeader *prefixHandle1,
+		char *relativeName1, Fs_HandleHeader *prefixHandle2,
+		char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
+extern ReturnStatus FspdevPfs2Path _ARGS_((Pdev_Op operation, 
+		Fs_HandleHeader *prefixHandle1, char *relativeName1, 
+		Fs_HandleHeader *prefixHandle2, char *relativeName2,
+		Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
+extern ReturnStatus FspdevPseudoStream2Path _ARGS_((
+		FspdevServerIOHandle *pdevHandlePtr, Pfs_Request *requestPtr,
+		Fs_2PathData *dataPtr, Boolean *name1ErrorPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+
+extern ReturnStatus FspdevPseudoStreamLookup _ARGS_((
+		FspdevServerIOHandle *pdevHandlePtr, Pfs_Request *requestPtr,
+		int argSize, Address argsPtr, int *resultsSizePtr, 
+		Address resultsPtr, Fs_RedirectInfo **newNameInfoPtrPtr));
 
 /*
  * Pseudo-file-system routines given an open file.
  */
-extern ReturnStatus	FspdevPseudoGetAttr();
-extern ReturnStatus	FspdevPseudoSetAttr();
+extern ReturnStatus FspdevPseudoGetAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, Fs_Attributes *attrPtr));
+extern ReturnStatus FspdevPseudoSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
 
-extern Boolean		FspdevPdevServerOK();
+extern Boolean FspdevPdevServerOK _ARGS_((FspdevServerIOHandle *pdevHandlePtr));
 
-extern ReturnStatus FspdevPassStream();
+extern ReturnStatus FspdevPassStream _ARGS_((Fs_FileID *ioFileIDPtr,
+		int *flagsPtr, int clientID, ClientData streamData, 
+		char *name, Fs_HandleHeader **ioHandlePtrPtr));
 
-extern int FspdevPfsOpenConnection();
 
+extern int FspdevPfsOpenConnection _ARGS_((
+		FspdevServerIOHandle *namingPdevHandlePtr, 
+		Fs_FileID *srvrFileIDPtr, Fs_OpenResults *openResultsPtr));
 
 #endif _FSPDEVINT
