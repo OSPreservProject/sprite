@@ -239,9 +239,12 @@ Fsconsist_IOClientClose(clientList, clientID, flags, cachePtr)
 	}
 	if ((clientPtr->use.ref < 0) || (clientPtr->use.write < 0) ||
 	    (clientPtr->use.exec < 0)) {
+	    printf("This is (probably) a continuable panic.\n");
 	    panic("Fsconsist_IOClientClose: client %d ref %d write %d exec %d\n",
 		clientPtr->clientID,
-		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
+		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec,
+		clientPtr->hdrPtr);
+	    clientPtr->use.exec = 0;
 	}
 	if ((!(*cachePtr) || !clientPtr->cached) &&
 	    (clientPtr->use.ref == 0)) {
