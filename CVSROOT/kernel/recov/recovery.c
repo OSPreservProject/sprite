@@ -174,6 +174,11 @@ int recovTraceLength = 200;
 Boolean recovTracing = TRUE;
 
 /*
+ * TRUE if we're using transparent server recovery.
+ */
+Boolean	recov_transparent = FALSE;
+
+/*
  * Forward declarations.
  */
 
