@@ -1277,4 +1277,101 @@ exit:
     ENABLE_INTR();
 #endif
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_KDump --
+ *
+ *	Prints out an (kluged) proc table with state information.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Prints stuff to screen.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+#define ISADDR(x)  (((x)&1)==0 && Dbg_InRange(x,4,FALSE))
+#define ISSTR(x)   (ISADDR(x) && Dbg_InRange(x,20,FALSE) && \
+    (strncpy(buf,(char *)(x),20),strlen(buf)<20))
+#define ISALIGN(x) (ISADDR(x) && (((x)&3)==0))
+#define ISALIGNZ(x) ((int)(x)==0 || ISALIGN(x))
+/* sun3 test-and-set sets to 0x80000000 */
+#define ISBOOL(x)  ((x)==0||(x)==1||(x)==0x80000000)
+#define ISSMALL(x) ((x)>=0&&(x)<20)
+#define ISPCB(x)   (ISADDR(x) && ISADDR(((int *)(x))[0]) &&\
+		ISADDR(((int *)(x))[1])  && ISSMALL(((int *)(x))[2]))
 
+ReturnStatus
+Proc_KDump()
+{
+#ifndef LOCKREG
+#ifndef CLEAN_LOCK
+    int i,j;
+    Proc_ControlBlock *procPtr;
+    int *event;
+    char buf[21];
+
+    buf[21] = '\0';
+
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	procPtr = proc_PCBTable[i];
+	if (procPtr->state == PROC_WAITING) {
+	    printf("%8x", procPtr->processID);
+	    if (procPtr->argString != (Address) NIL) {
+		char cmd[30];
+		char *space;
+
+		(void) strncpy(cmd, procPtr->argString, 30);
+		space = strchr(cmd, ' ');
+		if (space != (char *) NULL) {
+		    *space = '\0';
+		} else {
+		    cmd[30] = '\0';
+		}
+		printf("(%s)", cmd);
+	    }
+	    printf(": waiting on ");
+	    event = (int *)procPtr->event;
+	    if (ISALIGN((int)event)) {
+		if (ISBOOL(event[0]) && ISBOOL(event[1]) && ISSTR(event[2])
+			&& ISALIGNZ(event[3])) {
+		    /* Sync_Lock / Sync_KernelLock */
+		    printf("lock %s at %x", (char *)(event[2]), 
+			    (int)event[3]);
+		    if (ISPCB(event[4])) {
+			printf(" held by process %x",
+			    ((Proc_ControlBlock *)(event[4]))->processID);
+		    }
+		} else if (ISPCB((int)event)) {
+		    /* Proc_ControlBlock */
+		    printf("timer %x",
+			    ((Proc_ControlBlock *)event)->processID);
+		} else if (ISSMALL(event[0]) && ISSTR(event[1]) &&
+			ISALIGNZ(event[2])) {
+		    /* Sync_Semaphore */
+		    printf("semaphore %s at %x",
+			    (char *)(event[1]), (int)(event[2]));
+		    if (ISPCB(event[3])) {
+			printf(" held by process %x",
+			    ((Proc_ControlBlock *)(event[3]))->processID);
+		    }
+		} else if (ISBOOL(event[0])) {
+		    /* Sync_Condition */
+		    printf("condition %x", (int)event);
+		} else {
+		    printf("event %x", (int)event);
+		}
+	    } else {
+		printf("event? %x", (int)event);
+	    }
+	    printf("\n");
+	}
+    }
+#endif
+#endif
+    return(SUCCESS);
+}
