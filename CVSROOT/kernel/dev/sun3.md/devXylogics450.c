@@ -286,6 +286,9 @@ DevXylogicsReset(regsPtr)
 {
     char x;
     x = regsPtr->resetUpdate;
+#ifdef lint
+    regsPtr->resetUpdate = x;
+#endif
     MACH_DELAY(100);
 }
 
@@ -309,9 +312,8 @@ DevXylogicsTest(xyPtr, diskPtr)
     DevXylogicsController *xyPtr;
     DevXylogicsDisk *diskPtr;
 {
-    register ReturnStatus status;
 
-    status = DevXylogicsCommand(xyPtr, XY_READ_STATUS, diskPtr,
+    (void) DevXylogicsCommand(xyPtr, XY_READ_STATUS, diskPtr,
 		   (Dev_DiskAddr *)NIL, 0, (Address)0, WAIT);
 
 #ifdef notdef
@@ -883,7 +885,8 @@ retry:
 	     * Check for error status from the operation itself.
 	     */
 	    error = DevXylogicsStatus(xyPtr);
-	    if (error == DEV_RETRY_ERROR && retries++ < 3) {
+	    if (error == DEV_RETRY_ERROR && retries < 3) {
+		retries++;
 #ifdef notdef
 		Sys_Panic(SYS_WARNING, "Xylogics Retrying...\n");
 #endif

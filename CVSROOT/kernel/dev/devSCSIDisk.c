@@ -43,6 +43,7 @@ int SCSIdebug = FALSE;
  *
  *----------------------------------------------------------------------
  */
+/* ARGSUSED */
 ReturnStatus
 Dev_SCSIDiskOpen(devicePtr, useFlags, token)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */

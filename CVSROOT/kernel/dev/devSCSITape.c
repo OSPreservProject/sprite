@@ -43,6 +43,7 @@ int SCSITapeDebug = FALSE;
  *
  *----------------------------------------------------------------------
  */
+/* ARGSUSED */
 ReturnStatus
 Dev_SCSITapeOpen(devicePtr, useFlags, token)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
@@ -256,7 +257,6 @@ Dev_SCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
     int count = 0;
     DevSCSIDevice *devPtr;
     DevSCSITape *tapePtr;
-    Dev_TapeCommand *cmdPtr = (Dev_TapeCommand *)inBuffer;
 
    devPtr = scsiTape[devicePtr->unit / DEV_TAPES_PER_CNTRLR];
     if (devPtr == (DevSCSIDevice *)0 || devPtr == (DevSCSIDevice *)NIL) {
@@ -302,7 +302,8 @@ Dev_SCSITapeIOControl(devicePtr, command, inBufSize, inBuffer,
 	    switch (cmdPtr->command) {
 		case IOC_TAPE_WEOF: {
 		    count = 1;
-		    while (cmdPtr->count--) {
+		    while (cmdPtr->count) {
+			cmdPtr->count--;
 			status = DevSCSITapeIO(SCSI_WRITE_EOF, devPtr,
 					(char *)0, &count);
 		    }
@@ -329,7 +330,8 @@ rewind:		    /*
 		}
 		case IOC_TAPE_SKIP_BLOCKS: {
 		    count = 1;
-		    while (cmdPtr->count--) {
+		    while (cmdPtr->count) {
+			cmdPtr->count--;
 			status = DevSCSITapeIO(SCSI_SPACE_BLOCKS, devPtr,
 					(char *)0, &count);
 			if (status == DEV_END_OF_TAPE) {
@@ -339,7 +341,8 @@ rewind:		    /*
 		    break;
 		case IOC_TAPE_SKIP_FILES:
 		    count = 1;
-		    while (cmdPtr->count--) {
+		    while (cmdPtr->count) {
+			cmdPtr->count--;
 			status = DevSCSITapeIO(SCSI_SPACE_FILES, devPtr,
 					(char *)0, &count);
 			if (status == DEV_END_OF_TAPE) {
@@ -637,6 +640,9 @@ DevSCSITapeError(devPtr, sensePtr)
 	    register DevEmuluxSense *emuluxSensePtr;
 	    register DevSCSIExtendedSense *extSensePtr;
 	    emuluxSensePtr = (DevEmuluxSense *)sensePtr;
+#ifdef lint
+	    *emuluxSensePtr++;
+#endif
 	    extSensePtr = (DevSCSIExtendedSense *)sensePtr;
 /*
  * One way to do this is look at the extended sense "key", however

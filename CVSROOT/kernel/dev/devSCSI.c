@@ -182,12 +182,15 @@ Dev_SCSIInitController(cntrlrPtr)
     regsPtr = scsiPtr->regsPtr;
     if (Mach_SetJump(&setJumpState) == SUCCESS) {
 	x = regsPtr->dmaCount;
+#ifdef lint
+	regsPtr->dmaCount = x;
+#endif
 	regsPtr->dmaCount = (short)0xBABE;
 	if (regsPtr->dmaCount != (short)0xBABE) {
 #ifdef notdef
 	    Sys_Printf("SCSI-%d: dmaCount register: wrote %x read back %x\n",
 				 scsiPtr->number, 0xBABE, regsPtr->dmaCount);
-#endif notdef
+#endif 
 	    Mach_UnsetJump();
 	    Mem_Free((Address) scsiPtr);
 	    scsi[cntrlrPtr->controllerID] = (DevSCSIController *)NIL;
