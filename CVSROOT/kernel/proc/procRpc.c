@@ -266,6 +266,7 @@ RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	    Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
 			 (ClientData) &record);
 	}
+	Proc_SetEffectiveProc((Proc_ControlBlock *) NIL);
 	return(status);
     }
 
