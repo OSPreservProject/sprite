@@ -53,7 +53,7 @@ NetIEMemInit()
 {
     if (!netIEState.running) {
 	netIEState.memBase = (int) Vm_RawAlloc(NET_IE_MEM_SIZE);
-	Sys_Printf("Initializing Intel memory.\n");
+	printf("Initializing Intel memory.\n");
     }
     memAddr = (Address) netIEState.memBase;
 }

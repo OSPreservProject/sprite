@@ -127,7 +127,7 @@ NetLEInit(name, number, ctrlAddr)
      */
 
     Mach_GetEtherAddress(&netLEState.etherAddress);
-    Sys_Printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
+    printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
 	      netLEState.etherAddress.byte1 & 0xff,
 	      netLEState.etherAddress.byte2 & 0xff,
 	      netLEState.etherAddress.byte3 & 0xff,
@@ -277,7 +277,7 @@ NetLEReset()
 
 	for (i = 0; ((*csr0Ptr & NET_LE_CSR0_INIT_DONE) == 0); i++) {
 	    if (i > 50000) {
-		Sys_Panic(SYS_FATAL, "LE ethernet: Chip will not initialized.\n");
+		panic( "LE ethernet: Chip will not initialized.\n");
 	    }
 	}
 
@@ -295,7 +295,7 @@ NetLEReset()
     netLEStatePtr->regPortPtr->dataPort = 
 		    (NET_LE_CSR0_START | NET_LE_CSR0_INTR_ENABLE);
 
-    Sys_Panic(SYS_WARNING,"LE ethernet: Reinitialized chip.\n");
+    printf("LE ethernet: Reinitialized chip.\n");
 
 }
 
@@ -373,7 +373,7 @@ NetLEIntr(polling)
     if (csr0 & NET_LE_CSR0_ERROR) {
 	reset = TRUE;
 	if (csr0 & NET_LE_CSR0_MISSED_PACKET) {
-	    Sys_Panic(SYS_WARNING,"LE ethernet: Missed a packet.\n");
+	    printf("LE ethernet: Missed a packet.\n");
 	    /*
 	     * Clear interrupt bit but don't reset controller.
 	     */
@@ -387,7 +387,7 @@ NetLEIntr(polling)
 	     * we will complain about Lost of Carrier so the late
 	     * collision message is uncessary.
 	     *
-	     * Sys_Panic(SYS_WARNING,"LE ethernet: Late collision.\n");
+	     * printf("LE ethernet: Late collision.\n");
 	     */
 	    reset = FALSE;
 	}
@@ -396,10 +396,10 @@ NetLEIntr(polling)
 	 * (sending oversize ethernet packets). 
 	 */
 	if (csr0 & NET_LE_CSR0_BABBLE) {
-	    Sys_Panic(SYS_FATAL,"LE ethernet: Transmit babble.\n");
+	    panic("LE ethernet: Transmit babble.\n");
 	}
 	if (csr0 & NET_LE_CSR0_MEMORY_ERROR) {
-	    Sys_Panic(SYS_FATAL,"LE ethernet: Memory Error.\n");
+	    panic("LE ethernet: Memory Error.\n");
 	}
 	/*
 	 * Clear the error the easy way, reinitialize everything.
@@ -427,7 +427,7 @@ NetLEIntr(polling)
      * Did the chip magically initialize itself?
      */
     if (csr0 & NET_LE_CSR0_INIT_DONE) {
-	Sys_Panic(SYS_WARNING, "LE ethernet: Chip initialized itself!!\n");
+	printf( "LE ethernet: Chip initialized itself!!\n");
 	/*
 	 * Better initialize it the way we want it.
 	 */
@@ -448,7 +448,7 @@ NetLEIntr(polling)
 	 * We could be polling; that's why we were here.
 	 */
 	if (!polling) {
-	    Sys_Printf("LE ethernet: Spurious interrupt CSR0 = <%x>\n", csr0);
+	    printf("LE ethernet: Spurious interrupt CSR0 = <%x>\n", csr0);
 	} 
     } 
     return;

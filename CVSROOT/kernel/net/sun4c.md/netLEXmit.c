@@ -101,7 +101,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * Do some sanity checks.
      */
     if (descPtr->chipOwned) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "LE ethernet: Transmit buffer owned by chip.\n");
 	return (FAILURE);
     }
@@ -211,7 +211,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	     * Along as we only transmit one packet at a time, a buffer
 	     * own by the chip is a serious problem.
 	     */
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		"LE ethernet: Transmit buffer owned by chip.\n");
 	    return (FAILURE);
 	}
@@ -425,17 +425,17 @@ NetLEXmitDone()
      * wrong.
      */
     if (curScatGathPtr == (Net_ScatterGather *) NIL) {
-	Sys_Panic(SYS_WARNING, "NetLEXmitDone: No current packet\n.");
+	printf( "NetLEXmitDone: No current packet\n.");
 	return (FAILURE);
     }
 
     if (descPtr->chipOwned) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "LE ethernet: Bogus transmit interrupt. Buffer owned by chip.\n");
 	return (FAILURE);
     }
     if (!descPtr->startOfPacket) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "LE ethernet: Bogus transmit interrupt. Buffer not start of packet.\n");
 	return (FAILURE);
     }
@@ -449,11 +449,11 @@ NetLEXmitDone()
 	if (descPtr->error) {
 	    net_EtherStats.xmitPacketsDropped++;
 	    if (descPtr->lateCollision) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 			  "LE ethernet: Transmit late collision.\n");
 	    }
 	    if (descPtr->lostCarrier) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 			  "LE ethernet: Lost of carrier.\n");
 	    }
 	    /*
@@ -461,23 +461,23 @@ NetLEXmitDone()
 	     * Print only one of the messages.
 	     */
 	    if (descPtr->lateCollision && !descPtr->lostCarrier) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 			  "LE ethernet: Transmit late collision.\n");
 	    }
 	    if (descPtr->retryError) {
 		net_EtherStats.xmitCollisionDrop++;
 		net_EtherStats.collisions += 16;
-		Sys_Panic(SYS_WARNING,
+		printf(
 			  "LE ethernet: Too many collisions.\n");
 	    }
 	    if (descPtr->underflowError) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 			  "LE ethernet: Memory underflow error.\n");
 		return (FAILURE);
 	    }
 	}
 	if (descPtr->bufferError) {
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 			  "LE ethernet: Transmit buffering error.\n");
 	    return (FAILURE);
 	}
@@ -497,11 +497,11 @@ NetLEXmitDone()
 
 	descPtr = NEXT_SEND(descPtr);
 	if (descPtr == netLEStatePtr->xmitDescNextPtr) {
-	    Sys_Panic(SYS_FATAL, 
+	    panic( 
 		"LE ethernet: Transmit ring with no end of packet.\n");
 	}
 	if (descPtr->chipOwned) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 			  "LE ethernet: Transmit Buffer owned by chip.\n");
 		return (FAILURE);
 	}
@@ -587,7 +587,7 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     if (scatterGatherLength >= NET_LE_NUM_XMIT_BUFFERS) {
 	scatterGatherPtr->done = TRUE;
 
-	Sys_Printf("LE ethernet: Packet in too many pieces\n");
+	printf("LE ethernet: Packet in too many pieces\n");
 	ENABLE_INTR();
 	return;
     }
@@ -714,7 +714,7 @@ NetLEXmitRestart()
 		     xmitElementPtr->scatterGatherPtr,
 		     xmitElementPtr->scatterGatherLength);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_FATAL,"LE ethernet: Can not output first packet on restart.\n");
+	    panic("LE ethernet: Can not output first packet on restart.\n");
 	}
 	List_Move((List_Links *) xmitElementPtr, 
 		  LIST_ATREAR(netLEState.xmitFreeList));

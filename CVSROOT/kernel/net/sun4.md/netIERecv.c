@@ -62,7 +62,7 @@ NetIERecvUnitInit()
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
 	recvBufDescPtr = (NetIERecvBufDesc *) NetIEMemAlloc();
 	if (recvBufDescPtr == (NetIERecvBufDesc *) NIL) {
-	    Sys_Panic(SYS_FATAL, "No memory for a receive buffer descriptor pointer\n");
+	    "No memory for a receive buffer descriptor pointer\n");
 	}
 
 	*(short *)recvBufDescPtr = 0;	/* Clear out the status word */
@@ -108,7 +108,7 @@ NetIERecvUnitInit()
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS - 1; i++) {
 	recvFrDescPtr = (NetIERecvFrameDesc *) NetIEMemAlloc();
 	if (recvFrDescPtr == (NetIERecvFrameDesc *) NIL) {
-	    Sys_Panic(SYS_FATAL, "No memory for a receive frame descriptor pointer\n");
+	    panic("No memory for a receive frame descriptor pointer\n");
 	}
 
 	*(short *)recvFrDescPtr = 0;	/* Clear out the status word */
@@ -155,7 +155,7 @@ NetIERecvUnitInit()
      */
 
     if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_IDLE) {
-	Sys_Printf("Intel: The receive unit is not idle!!!\n");
+	printf("Intel: The receive unit is not idle!!!\n");
 
 	scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_ABORT;
 
@@ -173,7 +173,7 @@ NetIERecvUnitInit()
     NET_IE_DELAY(scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY);
 
     if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY) {
-	Sys_Printf("Intel: Receive unit never became ready.\n");
+	printf("Intel: Receive unit never became ready.\n");
     }
 }
 
@@ -324,7 +324,7 @@ NetIERecvProcess(dropPackets)
      * headers and give the reinit command to the chip.
      */
 
-Sys_Printf("Reinit recv unit\n");
+printf("Reinit recv unit\n");
 
     netIEStatePtr->recvFrDscHeadPtr->recvBufferDesc = 
 		NetIEOffsetFrom68000Addr((int) netIEStatePtr->recvBufDscHeadPtr);

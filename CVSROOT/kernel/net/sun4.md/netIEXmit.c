@@ -149,7 +149,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		netIEState.transmitting = FALSE;
 		ENABLE_INTR();
 
-		Sys_Panic(SYS_FATAL,
+		panic(
 			  "IE OutputPacket: Odd addressed buffer too large.");
 		return;
 	    }
@@ -298,7 +298,7 @@ NetIEXmitInit()
     for (i = 0; i < NET_IE_NUM_XMIT_BUFFERS; i++) {
 	newXmitBufDescPtr = (NetIETransmitBufDesc *) NetIEMemAlloc();
 	if (newXmitBufDescPtr == (NetIETransmitBufDesc *) NIL) {
-	    Sys_Panic(SYS_FATAL, "Intel: No memory for the xmit buffers.\n");
+	    panic( "Intel: No memory for the xmit buffers.\n");
 	}
 
 	if (i == 0) {
@@ -361,7 +361,7 @@ NetIEXmitDone()
      * wrong.
      */
     if (curScatGathPtr == (Net_ScatterGather *) NIL) {
-	Sys_Panic(SYS_WARNING, "NetIEXmitDone: No current packet\n.");
+	printf( "NetIEXmitDone: No current packet\n.");
 	return;
     }
 
@@ -458,7 +458,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     if (scatterGatherLength >= NET_IE_NUM_XMIT_BUFFERS) {
 	scatterGatherPtr->done = TRUE;
 
-	Sys_Printf("Intel: Packet in too many pieces\n");
+	printf("Intel: Packet in too many pieces\n");
 	ENABLE_INTR();
 	return;
     }
@@ -480,11 +480,11 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	if (scatterGatherPtr->length > sizeof(Net_EtherHdr) &&
 	    scatterGatherPtr->length - sizeof(Net_EtherHdr) < 
 							MIN_XMIT_BUFFER_SIZE) {
-	     Sys_Panic(SYS_WARNING, 
+	     printf( 
 		"NetIEXmit: Scatter/gather element too small (1)\n");
 	}
 	if ((int) (scatterGatherPtr->bufAddr) & 0x1) {
-	    Sys_Panic(SYS_WARNING, 
+	    printf( 
 		      "NetIEXmit: Ethernet Header begins on odd boundary %x\n",
 		      (int) (scatterGatherPtr->bufAddr));
 	}
@@ -492,11 +492,11 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	for (i = 1; i < scatterGatherLength; i++) {
 	    tmpPtr = &(scatterGatherPtr[i]);
 	    if (tmpPtr->length > 0 && tmpPtr->length  < MIN_XMIT_BUFFER_SIZE) {
-		Sys_Panic(SYS_WARNING, 
+		printf( 
 			"NetIEXmit: Scatter/gather element too small (2)\n");
 	    }
 	    if (tmpPtr->length > 0 && (int) (tmpPtr->bufAddr) & 0x1) {
-		Sys_Panic(SYS_WARNING, 
+		printf( 
 			  "NetIEXmit: Buffer begins on odd boundary %x\n",
 			  (int) (tmpPtr->bufAddr));
 	    }

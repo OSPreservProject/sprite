@@ -205,13 +205,13 @@ NetLERecvProcess(dropPackets)
      * First a few consistency check. 
      */
     if (descPtr->chipOwned) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "LE ethernet: Bogus receive interrupt. Buffer owned by chip.\n");
 	return (FAILURE);
     }
 
     if (!descPtr->startOfPacket) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	 "LE ethernet: Bogus receive interrupt. Buffer doesn't start packet.\n");
 	return (FAILURE);
     }
@@ -232,7 +232,7 @@ NetLERecvProcess(dropPackets)
 	 * in one buffer. Hence all buffers should have startOfPacket.
 	 */
 	if (!descPtr->startOfPacket) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 		     "LE ethernet: Receive buffer doesn't start packet.\n");
 		return (FAILURE);
 	}
@@ -244,7 +244,7 @@ NetLERecvProcess(dropPackets)
 	     * If not an endOfPacket see if it was an error packet.
 	     */
 	    if (!descPtr->error) { 
-		Sys_Panic(SYS_WARNING,
+		printf(
 		     "LE ethernet: Receive buffer doesn't end packet.\n");
 		return (FAILURE);
 	    }
@@ -255,14 +255,14 @@ NetLERecvProcess(dropPackets)
 	    tossPacket = TRUE;
 	    if (descPtr->overflowError) {
 		net_EtherStats.overrunErrors++;
-		Sys_Panic(SYS_WARNING,
+		printf(
 		       "LE ethernet: Received packet with overflow error.\n");
 	    }
 	    /*
 	     * Should probably panic on buffer errors.
 	     */
 	    if (descPtr->bufferError) {
-		Sys_Panic(SYS_FATAL,
+		panic(
 		       "LE ethernet: Received packet with buffer error.\n");
 	    }
 	} else { 
@@ -274,12 +274,12 @@ NetLERecvProcess(dropPackets)
 		tossPacket = TRUE;	/* Throw away packet on error. */
 		if (descPtr->frammingError) {
 		    net_EtherStats.frameErrors++;
-		    Sys_Printf(
+		    printf(
 		       "LE ethernet: Received packet with framming error.\n");
 		}
 		if (descPtr->crcError) {
 		    net_EtherStats.crcErrors++;
-		    Sys_Printf(
+		    printf(
 		       "LE ethernet: Received packet with CRC error.\n");
 		}
 

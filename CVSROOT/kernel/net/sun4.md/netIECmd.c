@@ -52,12 +52,12 @@ NetIECheckSCBCmdAccept(scbPtr)
 	NET_IE_DELAY((*(short *) &(scbPtr->cmdWord) == 0));
 
 	if (*(short *) &(scbPtr->cmdWord) != 0) {
-	    Sys_Panic(SYS_WARNING, "Intel: scb command not accepted\n");
+	    printf( "Intel: scb command not accepted\n");
 	} else {
 	    return;
 	}
     }
-    Sys_Panic(SYS_FATAL, "Intel: scb command not accepted\n");
+    panic( "Intel: scb command not accepted\n");
 }
 
 
@@ -108,7 +108,7 @@ NetIEExecCommand(cmdPtr)
     if (!cmdPtr->cmdDone ||
         !netIEState.scbPtr->statusWord.cmdDone ||
 	!netIEState.scbPtr->statusWord.cmdUnitNotActive) {
-	Sys_Panic(SYS_FATAL, "Intel: Could not execute a simple command: %d %d %d\n", 
+	panic( "Intel: Could not execute a simple command: %d %d %d\n", 
 			cmdPtr->cmdDone, netIEState.scbPtr->statusWord.cmdDone,
 			netIEState.scbPtr->statusWord.cmdUnitNotActive);
 	return;
