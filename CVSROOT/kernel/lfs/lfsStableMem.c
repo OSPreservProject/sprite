@@ -253,7 +253,19 @@ LfsStableMemCheckpoint(segPtr, checkPointPtr, flags, checkPointSizePtr,
 		sizeof(LfsDiskAddr) * smemPtr->checkPoint.numBlocks);
 	*checkPointSizePtr = sizeof(int) * smemPtr->checkPoint.numBlocks + 
 				sizeof(LfsStableMemCheckPoint);
-
+	LFS_STATS_INC(lfsPtr->stats.samples);
+	switch (smemPtr->params.memType) {
+	    case LFS_DESC_MAP_MOD: {
+		LFS_STATS_ADD(lfsPtr->stats.desc.residentCount,
+			smemPtr->dataHandle.cacheInfo.blocksInCache);
+		break;
+	    }
+	    case LFS_SEG_USAGE_MOD: {
+		LFS_STATS_ADD(lfsPtr->stats.segusage.residentCount,
+			smemPtr->dataHandle.cacheInfo.blocksInCache);
+		break;
+	    }
+	}
     }
     return full;
 }
@@ -429,6 +441,16 @@ LfsStableMemFetch(smemPtr, entryNumber, flags, entryPtr)
 	if (flags & LFS_STABLE_MEM_MAY_DIRTY) {
 	    cacheFlags |= FSCACHE_IO_IN_PROGRESS;
 	}
+	switch (smemPtr->params.memType) {
+	    case LFS_DESC_MAP_MOD: {
+		LFS_STATS_INC(lfsPtr->stats.desc.descMapBlockAccess);
+		break;
+	    }
+	    case LFS_SEG_USAGE_MOD: {
+		LFS_STATS_INC(lfsPtr->stats.segusage.segUsageBlockAccess);
+		break;
+	    }
+	}
 	Fscache_FetchBlock(&smemPtr->dataHandle.cacheInfo, blockNum, 
 			     cacheFlags, &blockPtr, &found);
 	dirtied = FALSE;
@@ -441,6 +463,16 @@ LfsStableMemFetch(smemPtr, entryNumber, flags, entryPtr)
 		hdrPtr->blockNum = blockNum;
 		dirtied = TRUE;
 	     } else {
+		switch (smemPtr->params.memType) {
+		    case LFS_DESC_MAP_MOD: {
+			LFS_STATS_INC(lfsPtr->stats.desc.descMapBlockMiss);
+			break;
+		    }
+		    case LFS_SEG_USAGE_MOD: {
+			LFS_STATS_INC(lfsPtr->stats.segusage.segUsageBlockMiss);
+			break;
+		    }
+		}
 		status = LfsReadBytes(smemPtr->lfsPtr, 
 				     smemPtr->blockIndexPtr[blockNum],
 				     smemPtr->params.blockSize, 

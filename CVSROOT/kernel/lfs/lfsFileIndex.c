@@ -386,6 +386,9 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
     switch (op) {
 	case GET_ADDR: {
 	    LFS_STATS_INC(lfsPtr->stats.index.getFetchBlock);
+	    if (cacheFlags & FSCACHE_CANT_BLOCK) {
+		LFS_STATS_INC(lfsPtr->stats.index.getCleaningFetchBlock);
+	    }
 	    break;
 	}
 	case SET_ADDR: {
@@ -408,6 +411,9 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 	 switch (op) {
 	     case GET_ADDR: {
 		LFS_STATS_INC(lfsPtr->stats.index.getFetchHit);
+		if (cacheFlags & FSCACHE_CANT_BLOCK) {
+		    LFS_STATS_INC(lfsPtr->stats.index.getCleaningFetchHit);
+		}
 		*diskAddressPtr = 
 		    ((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex];
 		break;

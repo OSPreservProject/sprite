@@ -75,7 +75,8 @@ typedef struct Lfs_StatsVersion1 {
 				* checkpoints. */
 	LFSCOUNT totalBlocks; /* Total blocks written to checkpoint area. */
 	LFSCOUNT totalBytes;  /* Total bytes written to checkpoint area. */
-	LFSCOUNT padding[16];
+	LFSCOUNT samples;     /* Stable mem locality samples. */
+	LFSCOUNT padding[15];
     } checkpoint;
 
 
@@ -132,7 +133,12 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT mapBlocksWritten; /* Descriptor map blocks written. */
 	LFSCOUNT mapBlockCleaned;  /* Map blocks cleaned. */
 	LFSCOUNT descMoved;	      /* Number of descriptor that move. */
-	LFSCOUNT padding[16];
+	LFSCOUNT descMapBlockAccess;  /* Accesses to desc map blocks. */
+	LFSCOUNT descMapBlockMiss;    /* Accesses that missed in cache. */
+	LFSCOUNT residentCount;	      /* Count of resident blocks at cp. */
+	LFSCOUNT cleaningFetch;	      /* Fetching during cleaning. */
+	LFSCOUNT cleaningFetchMiss;   /* Miss during cleaning. */
+	LFSCOUNT padding[11];
     } desc;
     struct LfsIndexStats {
 	LFSCOUNT    get;	/* Get file index count. */
@@ -147,7 +153,9 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT truncs; /* Truncate index count. */
 	LFSCOUNT deleteFetchBlock; /* Fetching a cache block for delete. */
 	LFSCOUNT deleteFetchBlockMiss; /* Reading a cache block for delete. */
-	LFSCOUNT padding[16];
+	LFSCOUNT getCleaningFetchBlock; /* Fetch an index block for cleaning. */
+	LFSCOUNT getCleaningFetchHit;   /* Hit on an index block for cleaning.*/
+	LFSCOUNT padding[14];
     } index;
 
     struct LfsFileLayoutStats {
@@ -187,7 +195,10 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT usageSet;
 	LFSCOUNT blocksWritten;
 	LFSCOUNT blocksCleaned;
-	LFSCOUNT padding[16];
+	LFSCOUNT segUsageBlockAccess;  /* Accesses to usage array blocks. */
+	LFSCOUNT segUsageBlockMiss;    /* Accesses that missed in cache. */
+	LFSCOUNT residentCount;	      /* Count of resident blocks at cp. */
+	LFSCOUNT padding[13];
     } segusage;
 
     struct LfsCacheBackendStats {
