@@ -1528,7 +1528,7 @@ Vm_PageIn(virtAddr, protFault)
     }
     if (result == IS_DONE) {
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
-	    printf("shared page at %x done early\n", virtAddr);
+	    dprintf("shared page at %x done early\n", virtAddr);
 	}
 	status = SUCCESS;
 	goto pageinDone;

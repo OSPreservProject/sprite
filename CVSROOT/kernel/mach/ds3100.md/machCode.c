@@ -1585,8 +1585,9 @@ MachUserReturn(procPtr)
     }
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
-	    procPtr->unixProgress != PROC_PROGRESS_UNIX) {
-	printf("UnixProgress = %d entering MachUserReturn\n", procPtr->unixProgress);
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
+	printf("UnixProgress = %d entering MachUserReturn\n",
+		procPtr->unixProgress);
     }
 
     /* 
