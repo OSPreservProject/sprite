@@ -286,13 +286,12 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
+FsPipeRead(streamPtr, readPtr, waitPtr, replyPtr)
     Fs_Stream           *streamPtr;     /* Stream to read from */
-    int			flags;		/* FS_USER | FS_CONSUME */
-    register Address    buffer;         /* Buffer to fill with file data */
-    int                 *offsetPtr;     /* In/Out byte offset */
-    int                 *lenPtr;        /* In/Out byte count */
-    Sync_RemoteWaiter   *waitPtr;	 /* Process wait info */
+    Fs_IOParam		*readPtr;	/* Read parameter block. */
+    Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
+    Fs_IOReply		*replyPtr;	/* Signal to return, if any,
+					 * plus the amount read. */
 {
     ReturnStatus 	status = SUCCESS;
     register FsPipeIOHandle *handlePtr =
@@ -310,7 +309,7 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	 * return SUCCESS so the user process thinks of it as end of file,
 	 * otherwise block waiting for input.
 	 */
-	*lenPtr = 0;
+	replyPtr->length = 0;
 	if (handlePtr->flags & PIPE_WRITER_GONE) {
 	    status = SUCCESS;
 	    goto exit;
@@ -323,8 +322,8 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
      * Compute the number of bytes that we can read from the pipe.  
      */
     toRead = handlePtr->lastByte - handlePtr->firstByte + 1;
-    if (toRead > *lenPtr) {
-	toRead = *lenPtr;
+    if (toRead > readPtr->length) {
+	toRead = readPtr->length;
     }
 
     /*
@@ -342,13 +341,13 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	/*
 	 * Can do a straight copy, no wrap around necessary.
 	 */
-	if (flags & FS_USER) {
-	    if (Vm_CopyOut(toRead, handlePtr->buffer + startOffset, buffer)
+	if (readPtr->flags & FS_USER) {
+	    if (Vm_CopyOut(toRead, handlePtr->buffer + startOffset, readPtr->buffer)
 			  != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
 	} else {
-	    bcopy(handlePtr->buffer + startOffset, buffer, toRead);
+	    bcopy(handlePtr->buffer + startOffset, readPtr->buffer, toRead);
 	}
     } else {
 	int	numBytes;
@@ -356,17 +355,17 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	 * Have to wrap around in the block so do it in two copies.
 	 */
 	numBytes = FS_BLOCK_SIZE - startOffset;
-	if (flags & FS_USER) {
-	    if (Vm_CopyOut(numBytes, handlePtr->buffer + startOffset, buffer)
+	if (readPtr->flags & FS_USER) {
+	    if (Vm_CopyOut(numBytes, handlePtr->buffer + startOffset, readPtr->buffer)
 			  != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    } else if (Vm_CopyOut(toRead - numBytes, handlePtr->buffer,
-				buffer + numBytes) != SUCCESS) {
+				readPtr->buffer + numBytes) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
 	} else {
-	    bcopy(handlePtr->buffer + startOffset, buffer, numBytes);
-	    bcopy(handlePtr->buffer, buffer + numBytes, toRead - numBytes);
+	    bcopy(handlePtr->buffer + startOffset, readPtr->buffer, numBytes);
+	    bcopy(handlePtr->buffer, readPtr->buffer + numBytes, toRead - numBytes);
 	}
     }
 
@@ -383,8 +382,7 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	handlePtr->firstByte = -1;
 	handlePtr->lastByte = -1;
     }
-    *lenPtr = toRead;
-    *offsetPtr += toRead;
+    replyPtr->length = toRead;
 exit:
     if (status == FS_WOULD_BLOCK) {
 	FsFastWaitListInsert(&handlePtr->readWaitList, waitPtr);
@@ -413,15 +411,11 @@ exit:
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
+FsPipeWrite(streamPtr, writePtr, waitPtr, replyPtr)
     Fs_Stream           *streamPtr;     /* Stream to write to */
-    int			flags;		/* FS_NON_BLOCKING checked so the
-					 * correct error code is returned, plus
-					 * FS_USER for copying data. */
-    register Address    buffer;         /* Buffer to add to the pipe */
-    int                 *offsetPtr;     /* In/Out byte offset */
-    int                 *lenPtr;        /* In/Out byte count */
-    Sync_RemoteWaiter   *waitPtr;	 /* Process waiting info */
+    Fs_IOParam		*writePtr;	/* Read parameter block */
+    Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
+    Fs_IOReply		*replyPtr;	/* Signal to return, if any */
 {
     register ReturnStatus 	status = SUCCESS;
     register FsPipeIOHandle	*handlePtr =
@@ -434,7 +428,8 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     FsHandleLock(handlePtr);
 
     if (handlePtr->flags & PIPE_READER_GONE) {
-	*lenPtr = 0;
+	replyPtr->length = 0;
+	replyPtr->signal = SIG_PIPE;
 	status = FS_BROKEN_PIPE;
 	goto exit;
     }
@@ -453,18 +448,26 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	/*
 	 * No room in the pipe.
 	 */
-	*lenPtr = 0;
+	replyPtr->length = 0;
 	status = FS_WOULD_BLOCK;
 	goto exit;
-    } else if (toWrite > *lenPtr) {
-	toWrite = *lenPtr;
-    } else if ((*lenPtr > toWrite) && ((flags & FS_NON_BLOCKING) == 0)) {
+    } else if (toWrite > writePtr->length) {
+	toWrite = writePtr->length;
+#ifdef notdef
+    } else if ((writePtr->length > toWrite) &&
+	       ((flags & FS_NON_BLOCKING) == 0)) {
 	/*
 	 * If there is more data to write we must block after writing the
 	 * data that we can.  If the stream is non-blocking, however, we
 	 * return a successful error code after writing what we can.
+	 *
+	 * Fs_Write takes care of returning the correct code.  We should
+	 * be able to return SUCCESS if we return some data, and
+	 * FS_WOULD_BLOCK if we return no data.  Fs_Write looks at the
+	 * stream flags for us and "does the right thing" with partial writes.
 	 */
 	status = FS_WOULD_BLOCK;
+#endif
     }
     /*
      * Determine where to start and stop writing.  Note that the firstByte
@@ -480,13 +483,13 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	/*
 	 * Can do a straight copy, no wrap around necessary.
 	 */
-	if (flags & FS_USER) {
-	    if (Vm_CopyIn(toWrite, buffer, handlePtr->buffer + startOffset)
+	if (writePtr->flags & FS_USER) {
+	    if (Vm_CopyIn(toWrite, writePtr->buffer, handlePtr->buffer + startOffset)
 			  != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
 	} else {
-	    bcopy(buffer, handlePtr->buffer + startOffset, toWrite);
+	    bcopy(writePtr->buffer, handlePtr->buffer + startOffset, toWrite);
 	}
     } else {
 	int	numBytes;
@@ -494,17 +497,17 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	 * Have to wrap around in the block so do it in two copies.
 	 */
 	numBytes = FS_BLOCK_SIZE - startOffset;
-	if (flags & FS_USER) {
-	    if (Vm_CopyIn(numBytes, buffer, handlePtr->buffer + startOffset)
+	if (writePtr->flags & FS_USER) {
+	    if (Vm_CopyIn(numBytes, writePtr->buffer, handlePtr->buffer + startOffset)
 			  != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
-	    } else if (Vm_CopyIn(toWrite - numBytes, buffer + numBytes, 
+	    } else if (Vm_CopyIn(toWrite - numBytes, writePtr->buffer + numBytes, 
 			    handlePtr->buffer) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
 	} else {
-	    bcopy(buffer, handlePtr->buffer + startOffset, numBytes);
-	    bcopy(buffer + numBytes, handlePtr->buffer, toWrite - numBytes);
+	    bcopy(writePtr->buffer, handlePtr->buffer + startOffset, numBytes);
+	    bcopy(writePtr->buffer + numBytes, handlePtr->buffer, toWrite - numBytes);
 	}
     }
 
@@ -520,8 +523,7 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	handlePtr->firstByte = 0;
     }
     handlePtr->lastByte = endByte;
-    *lenPtr = toWrite;
-    *offsetPtr += toWrite;
+    replyPtr->length = toWrite;
 exit:
     if (status == FS_WOULD_BLOCK) {
 	FsFastWaitListInsert(&handlePtr->writeWaitList, waitPtr);
@@ -1073,31 +1075,14 @@ FsPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     register FsPipeIOHandle	*handlePtr;
     ReturnStatus		status;
     FsPipeReopenParams		*reopenParamsPtr;
-    register FsClientInfo	*clientPtr;
-    Boolean			found;
 
     reopenParamsPtr = (FsPipeReopenParams *)inData;
     handlePtr = FsHandleFetchType(FsPipeIOHandle, &reopenParamsPtr->fileID);
     if (handlePtr == (FsPipeIOHandle *)NIL) {
 	status = FAILURE;
     } else {
-	/*
-	 * Loop through the client list to see if we know about the client.
-	 */
-	found = FALSE;
-	LIST_FORALL(&handlePtr->clientList, (List_Links *)clientPtr) {
-	    if (clientPtr->clientID == clientID) {
-		found = TRUE;
-		break;
-	    }
-	}
-	if (!found) {
-	    clientPtr = mnew(FsClientInfo);
-	    clientPtr->clientID = clientID;
-	    List_Insert((List_Links *) clientPtr,
-		    LIST_ATFRONT(&handlePtr->clientList));
-	}
-	clientPtr->use = reopenParamsPtr->use;
+	(void)FsIOClientReopen(&handlePtr->clientList, clientID,
+				 &reopenParamsPtr->use);
 	status = SUCCESS;
     }
     *outSizePtr = 0;
@@ -1166,8 +1151,8 @@ Boolean
 FsPipeScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;     /* Handle about to be deleted */
 {
-    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
 #ifdef notdef
+    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
     if (List_IsEmpty(&handlePtr->clientList) &&
 	(handlePtr->flags == (PIPE_WRITER_GONE|PIPE_READER_GONE))) {
 	/*
