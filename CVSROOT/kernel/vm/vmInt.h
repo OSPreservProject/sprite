@@ -240,13 +240,22 @@ typedef struct VmCore {
  */
 #define	VM_SWAP_DIR_NAME	"/swap/"
 
+/*
+ * Copy-on-write info struct.
+ */
+typedef struct VmCOWInfo {
+    List_Links		cowList;
+    int			numSegs;
+    Sync_Condition	condition;
+    Boolean		copyInProgress;
+} VmCOWInfo;
+
 
 /*----------------------------------------------------------------------------*/
 
 /* 
  * Initialization routines.
  */
-
 extern	void	VmSegTableAlloc();
 extern	void	VmSegTableInit();
 extern	void	VmSwapFileInit();
@@ -255,7 +264,6 @@ extern	void	VmCoreMapInit();
 /*
  * Internal virtual memory procedures.
  */
-
 extern	int		VmPageAllocate();
 extern	int		VmPageAllocateInt();
 extern	int		VmGetReservePage();
@@ -269,21 +277,33 @@ extern	ReturnStatus	VmDoPageIn();
 extern	void		VmDecExpandCount();
 extern	ReturnStatus 	VmAddToSeg();
 extern	void 		VmDeleteFromSeg();
-extern	void 		VmCleanSeg();
-extern	void 		VmMakeSwapName();
-extern	ReturnStatus	VmOpenSwapFile();
-extern	void 		VmSwapFileLock();
-extern	void 		VmSwapFileUnlock();
 extern  VmDeleteStatus 	VmSegmentDeleteInt();
+extern	void		VmSetSegProtInt();
+extern	void		VmSetPageProt();
+extern	void		VmSetPageProtInt();
+extern	void		VmPageSwitch();
+extern	Vm_Segment	*VmGetSegPtr();
+
+/*
+ * Routines for copy-on-write and copy-on-reference.
+ */
+extern	void		VmSegFork();
+extern	void		VmCOWDeleteFromSeg();
+extern	ReturnStatus	VmCOR();
+extern	void		VmCOW();
 
 /*
  * Procedures for remote page access.
  */
-
 extern	ReturnStatus	VmCopySwapSpace();
 extern	ReturnStatus	VmPageServerRead();
 extern	ReturnStatus	VmPageServerWrite();
 extern	ReturnStatus	VmFileServerRead();
+extern	void 		VmMakeSwapName();
+extern	ReturnStatus	VmOpenSwapFile();
+extern	ReturnStatus	VmCopySwapPage();
+extern	void 		VmSwapFileLock();
+extern	void 		VmSwapFileUnlock();
 
 /*
  * Procedures for process migration.

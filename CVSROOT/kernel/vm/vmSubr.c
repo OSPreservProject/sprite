@@ -58,26 +58,22 @@ Vm_Init()
     /*
      * Allocate the segment table and core map.
      */
-
     VmSegTableAlloc();
     VmCoreMapAlloc();
 
     /*
      * Call machine dependent routine to allocate tables.
      */
-
     VmMachAllocTables();
     
     /*
      * Can no longer use Vm_BootAlloc
      */
-
     vmNoBootAlloc = TRUE;
 
     /* 
      * Determine how many physical pages that we have used.
      */
-
     vmFirstFreePage = 
 		((int) vmMemEnd - MACH_KERNEL_START - 1) / VM_PAGE_SIZE + 1;
 
@@ -86,6 +82,11 @@ Vm_Init()
      */
     VmSegTableInit();
     VmCoreMapInit();
+
+    /*
+     * Initialize copy-on-write
+     */
+    VmCOWInit();
 
     /*
      * Now call the hardware dependent routine.

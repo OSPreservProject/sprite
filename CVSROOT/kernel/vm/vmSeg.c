@@ -37,8 +37,6 @@ Boolean	vm_NoStickySegments = FALSE;
  */
 
 Vm_Segment		*vmSysSegPtr;
-Sync_Condition  	vmPageTableCondition;
-Sync_Condition  	vmSegExpandCondition;
 
 /*
  * Variables local to this file.
@@ -66,6 +64,8 @@ static	List_Links      deadSegListHdr;
 static	Sync_Condition	codeSegCondition;
 
 extern	Vm_Segment	**Fs_RetSegPtr();
+
+void	VmCleanSegment();
 
 
 /*
@@ -142,6 +142,9 @@ VmSegTableInit()
 	segPtr->filePtr = (Fs_Stream *)NIL;
 	segPtr->swapFilePtr = (Fs_Stream *)NIL;
 	segPtr->segNum = i;
+	segPtr->numCORPages = 0;
+	segPtr->numCOWPages = 0;
+	segPtr->cowInfoPtr = (VmCOWInfo *)NIL;
 	segPtr->procList = (List_Links *) &(segPtr->procListHdr);
 	List_Init(segPtr->procList);
 	if (i != VM_SYSTEM_SEGMENT) {
@@ -358,6 +361,8 @@ GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
     segPtr->filePtr = filePtr;
     segPtr->fileAddr = fileAddr;
     segPtr->numPages = numPages;
+    segPtr->numCORPages = 0;
+    segPtr->numCOWPages = 0;
     segPtr->type = type;
     segPtr->offset = offset;
     segPtr->swapFileName = (char *) NIL;
@@ -769,15 +774,8 @@ VmSegmentDeleteInt(segPtr, procPtr, spacePtr, fileInfoPtr, migFlag)
 	return(VM_CLOSE_OBJ_FILE);
     } else {
 	/*
-	 * Otherwise free up the state of the segment.  It will put onto the
-	 * free list by our caller after it closes the swap file and such.
+	 * Otherwise tell our caller to delete us.
 	 */
-	if (!migFlag) {
-	    CleanSegment(segPtr, spacePtr, fileInfoPtr);
-	} else {
-	    VmMachSegClean(segPtr, spacePtr);
-	}
-
 	UNLOCK_MONITOR;
 	return(VM_DELETE_SEG);
     }
@@ -833,7 +831,6 @@ VmPutOnFreeSegList(segPtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 void
 Vm_SegmentDelete(segPtr, procPtr)
     register	Vm_Segment	*segPtr;
@@ -846,6 +843,10 @@ Vm_SegmentDelete(segPtr, procPtr)
     fileInfo.objStreamPtr = (Fs_Stream *) NIL;
     status = VmSegmentDeleteInt(segPtr, procPtr, &space, &fileInfo, FALSE);
     if (status == VM_DELETE_SEG) {
+	if (vm_CanCOW) {
+	    VmCOWDeleteFromSeg(segPtr, -1, -1);
+	}
+	VmCleanSegment(segPtr, &space, FALSE, &fileInfo);
 	VmMachFreeSpace(space);
 	if (segPtr->flags & VM_SWAP_FILE_OPENED) {
 	    VmSwapFileRemove(segPtr->swapFilePtr, segPtr->swapFileName);
@@ -865,6 +866,43 @@ Vm_SegmentDelete(segPtr, procPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * VmCleanSegment --
+ *
+ *	Do monitor level cleanup for this deleted segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+VmCleanSegment(segPtr, spacePtr, migrating, fileInfoPtr)
+    Vm_Segment	*segPtr;
+    VmSpace	*spacePtr;
+    Boolean	migrating;
+    VmFileInfo	*fileInfoPtr;
+{
+    LOCK_MONITOR;
+
+    if (!migrating) {
+	CleanSegment(segPtr, spacePtr, fileInfoPtr);
+    } else {
+	VmMachSegClean(segPtr, spacePtr);
+    }
+
+    UNLOCK_MONITOR;
+}
+
+Boolean	StartDelete();
+void	EndDelete();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * VmDeleteFromSeg --
  *
  *	Take the range of virtual page numbers for the given heap segment,
@@ -875,27 +913,55 @@ Vm_SegmentDelete(segPtr, procPtr)
  *	None.
  *
  * Side effects:
- *	The page table entries are modified.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
-
-ENTRY void
+void
 VmDeleteFromSeg(segPtr, firstPage, lastPage)
     Vm_Segment 	*segPtr;	/* The segment whose pages are being
 				   invalidated. */
     int		firstPage;	/* The first page to invalidate */
     int		lastPage;	/* The second page to invalidate. */
 {
-    register	Vm_PTE	*ptePtr;
-    VmVirtAddr	virtAddr;
-    int		pfNum;
+    if (!StartDelete(segPtr, firstPage, &lastPage)) {
+	return;
+    }
+    VmCOWDeleteFromSeg(segPtr, firstPage, lastPage);
+
+    EndDelete(segPtr, firstPage, lastPage);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartDelete --
+ *
+ *	Set things up to delete pages from a segment.  This involves making
+ *	the segment not expandable.
+ *
+ * Results:
+ *	FALSE if there is nothing to delete from this segment.
+ *
+ * Side effects:
+ *	Expand count incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY static Boolean
+StartDelete(segPtr, firstPage, lastPagePtr)
+    Vm_Segment	*segPtr;
+    int		firstPage;
+    int		*lastPagePtr;
+{
+    Boolean	retVal;
     int		lastSegPage;
 
     LOCK_MONITOR;
 
     while (segPtr->notExpandCount > 0) {
-	(void) Sync_Wait(&vmSegExpandCondition, FALSE);
+	(void) Sync_Wait(&segPtr->condition, FALSE);
     }
 
     /*
@@ -906,28 +972,58 @@ VmDeleteFromSeg(segPtr, firstPage, lastPage)
      */
 
     lastSegPage = segPtr->offset + segPtr->numPages - 1;
-    if (firstPage > lastSegPage) {
-	UNLOCK_MONITOR;
-	return;
+    if (firstPage <= lastSegPage) {
+	if (*lastPagePtr >= lastSegPage) {
+	    *lastPagePtr = lastSegPage;
+	}
+	/*
+	 * Make sure that no one expands or shrinks the segment while 
+	 * we are expanding it.
+	 */
+	segPtr->notExpandCount = 1;
+	retVal = TRUE;
+    } else {
+	retVal = FALSE;
     }
+    UNLOCK_MONITOR;
+    return(retVal);
+}
 
-    if (lastPage >= lastSegPage) {
-	lastPage = lastSegPage;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EndDelete --
+ *
+ *	Clean up after a delete has finished.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Expand count decremented and the segment size may be shrunk.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY static void
+EndDelete(segPtr, firstPage, lastPage)
+    register	Vm_Segment	*segPtr;
+    int				firstPage;
+    int				lastPage;
+{
+    register	Vm_PTE	*ptePtr;
+    VmVirtAddr		virtAddr;
+    int			pfNum;
+
+    LOCK_MONITOR;
+
+    if (lastPage == segPtr->offset + segPtr->numPages - 1) {
 	segPtr->numPages -= lastPage - firstPage + 1;
     }
 
     /*
-     * Make sure that no one expands or shrinks the segment while 
-     * we freeing up pages.  The reason that we have to worry about this
-     * is that VmPageFree can block.
-     */
-
-    segPtr->notExpandCount = 1;
-
-    /*
      * Free up any resident pages.
      */
-
     virtAddr.segPtr = segPtr;
     for (virtAddr.page = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 virtAddr.page <= lastPage;
@@ -946,10 +1042,9 @@ VmDeleteFromSeg(segPtr, firstPage, lastPage)
     /*
      * The segment can now be expanded.
      */
-
     segPtr->notExpandCount--;
     if (segPtr->notExpandCount == 0) {
-	Sync_Broadcast(&vmSegExpandCondition);
+	Sync_Broadcast(&segPtr->condition);
     }
 
     UNLOCK_MONITOR;
@@ -982,7 +1077,7 @@ VmDecExpandCount(segPtr)
 
     segPtr->notExpandCount--;
     if (segPtr->notExpandCount == 0) {
-	Sync_Broadcast(&vmSegExpandCondition);
+	Sync_Broadcast(&segPtr->condition);
     }
 
     UNLOCK_MONITOR;
@@ -1090,7 +1185,6 @@ Boolean	CopyPage();
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     register Vm_Segment *srcSegPtr;	/* Pointer to the segment to be 
@@ -1140,6 +1234,15 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	return(VM_NO_SEGMENTS);
     }
 
+    if (vm_CanCOW) {
+	VmSegFork(srcSegPtr, destSegPtr);
+	if (srcSegPtr->type == VM_HEAP) {
+	    VmDecExpandCount(srcSegPtr);
+	}
+	*destSegPtrPtr = destSegPtr;
+
+	return(SUCCESS);
+    }
     CopyInfo(srcSegPtr, destSegPtr, &tSrcPtePtr, &tDestPtePtr, &srcVirtAddr,
 	     &destVirtAddr);
     srcAddr = (Address) NIL;
@@ -1224,7 +1327,6 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
  *
  *----------------------------------------------------------------------
  */
-
 ENTRY static void
 CopyInfo(srcSegPtr, destSegPtr, srcPtePtrPtr, destPtePtrPtr, 
 	 srcVirtAddrPtr, destVirtAddrPtr)
@@ -1272,7 +1374,6 @@ CopyInfo(srcSegPtr, destSegPtr, srcPtePtrPtr, destPtePtrPtr,
  *
  *----------------------------------------------------------------------
  */
-
 ENTRY static Boolean
 CopyPage(srcPtePtr, destPtePtr)
     register	Vm_PTE		*srcPtePtr;
@@ -1326,7 +1427,6 @@ CopyPage(srcPtePtr, destPtePtr)
  *
  *----------------------------------------------------------------------
  */
-
 ENTRY void
 SegmentIncRef(segPtr, procLinkPtr) 
     register	Vm_Segment	*segPtr;
@@ -1362,7 +1462,6 @@ SegmentIncRef(segPtr, procLinkPtr)
  *
  *----------------------------------------------------------------------
  */
-
 void
 Vm_SegmentIncRef(segPtr, procPtr) 
     Vm_Segment		*segPtr;
@@ -1448,4 +1547,27 @@ Vm_GetSegInfo(procPtr, segNum, segBufPtr)
     }
 
     return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmGetSegPtr --
+ *
+ *	Return a pointer to the given segment.
+ *
+ * Results:
+ *	Pointer to given segment.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Vm_Segment *
+VmGetSegPtr(segNum)
+    int	segNum;
+{
+    return(&segmentTable[segNum]);
 }

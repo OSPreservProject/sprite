@@ -512,7 +512,7 @@ Vm_MakeUnaccessible(addr, numBytes)
             Sys_Panic(SYS_FATAL, "Vm_MakeUnaccessible: expand count < 0\n");
         }
         if (segPtr->notExpandCount == 0) {
-            Sync_Broadcast(&vmSegExpandCondition);
+            Sync_Broadcast(&segPtr->condition);
         }
     }
 

@@ -603,3 +603,59 @@ VmFileServerRead(virtAddrPtr, pageFrame)
 
     return(SUCCESS);
 }
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCopySwapPage --
+ *
+ *	Copy the swap page from the source segment's swap file to the
+ *	destination.
+ *
+ * Results:
+ *	Error if swap file could not be opened, read or written.  Otherwise
+ *	SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+VmCopySwapPage(srcSegPtr, virtPage, destSegPtr)
+    register	Vm_Segment	*srcSegPtr;
+    int				virtPage;
+    register	Vm_Segment	*destSegPtr;
+{
+    int			pageToCopy;
+    ReturnStatus	status;
+
+    /*
+     * Lock the swap file while opening it so that we don't have more than
+     * one swap file open at a time.
+     */
+    VmSwapFileLock(destSegPtr);
+    if (!(destSegPtr->flags & VM_SWAP_FILE_OPENED)) {
+	status = VmOpenSwapFile(destSegPtr);
+	if (status != SUCCESS) {
+	    VmSwapFileUnlock(destSegPtr);
+	    return(status);
+	}
+    }
+    VmSwapFileUnlock(destSegPtr);
+
+    if (destSegPtr->type == VM_STACK) {
+	pageToCopy = MACH_LAST_USER_STACK_PAGE - virtPage;
+    } else {
+	pageToCopy = virtPage - destSegPtr->offset;
+    }
+
+    status = Fs_PageCopy(srcSegPtr->swapFilePtr, 
+			 destSegPtr->swapFilePtr, 
+			 pageToCopy << VM_PAGE_SHIFT, VM_PAGE_SIZE);
+
+    return(status);
+}
+

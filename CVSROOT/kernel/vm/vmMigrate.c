@@ -557,7 +557,6 @@ PrepareFlush(segPtr, numPagesPtr)
  *
  * FreeSegment --
  *
- *
  *     This routine will delete the given migrated segment by calling a
  *     monitored routine to do most of the work.  Since the calls to the
  *     memory allocator must be done at non-monitor level, if the resources
@@ -585,6 +584,10 @@ FreeSegment(segPtr)
     status = VmSegmentDeleteInt(segPtr, (Proc_ControlBlock *) NIL, &space, 
 				&fileInfo, TRUE);
     if (status == VM_DELETE_SEG) {
+	if (vm_CanCOW) {
+	    VmCOWDeleteFromSeg(segPtr, -1, -1);
+	}
+	VmCleanSegment(segPtr, &space, TRUE, &fileInfo);
 	VmMachFreeSpace(space);
 	VmPutOnFreeSegList(segPtr);
     }

@@ -19,6 +19,7 @@
 #include "list.h"
 #include "fs.h"
 #include "procAOUT.h"
+#include "sync.h"
 
 /*
  * A pte with a zero value.
@@ -74,14 +75,20 @@ typedef struct {
 /*
  * The segment table structure.  This shouldn't be external but lint
  * complains like crazy if we try to hide it.  So to make lint happy ...
+ *
+ * NOTE: Process migration requires that the five fields offset, fileAddr,
+ *       type, numPages and ptSize be contiguous.
  */
 typedef struct Vm_Segment {
     List_Links		links;		/* Links used to put the segment
-    					   table entry in list of free segments
-					   or list of inactive segments. */
+					   table entry in list of free segments,
+					   list of inactive segments or list
+					   of copy-on-write segments. */
     int			segNum;		/* The number of this segment. */
     int 		refCount;	/* Number of processes using this 
 					   segment */
+    Sync_Condition	condition;	/* Condition to wait on for this
+					 * segment. */
     Fs_Stream		*filePtr;	/* Pointer to the file that pages are
 					   being demanded loaded from. */
 				        /* Name of object file for code 
@@ -96,9 +103,9 @@ typedef struct Vm_Segment {
 					   begins. */
     int           	type;		/* CODE, STACK, HEAP, or SYSTEM */
     int			numPages;	/* Explained above. */
+    int			ptSize;		/* Number of pages in the page table */
     int			resPages;	/* Number of pages in physical memory
 					 * for this segment. */
-    int			ptSize;		/* Number of pages in the page table */
     Vm_PTE		*ptPtr;		/* Pointer to the page table for this 
 					   segment */
     struct VmMachData	*machData;	/* Pointer to machine dependent data */
@@ -114,6 +121,12 @@ typedef struct Vm_Segment {
     ClientData		fileHandle;	/* Handle for object file. */
     Vm_ExecInfo		execInfo;	/* Information to allow reuse of 
 					 * sticky segments. */
+    struct VmCOWInfo	*cowInfoPtr;	/* Pointer to copy-on-write list 
+					 * header. */
+    int			numCOWPages;	/* Number of copy-on-write pages that
+					 * this segment references. */
+    int			numCORPages;	/* Number of copy-on-ref pages that
+					 * this segment references. */
 } Vm_Segment;
 
 /*
@@ -128,11 +141,16 @@ typedef struct {
 /*
  * Information stored by each process.
  */
-typedef struct {
+typedef struct Vm_ProcInfo {
     Vm_Segment			*segPtrArray[VM_NUM_SEGMENTS];
     int				vmFlags;
     struct VmMachProcInfo	*machPtr;
 } Vm_ProcInfo;
+
+/*
+ * Copy-on-write level.
+ */
+extern	Boolean	vm_CanCOW;
 
 /*
  * The initialization procedure.
@@ -142,18 +160,17 @@ extern	void	Vm_Init();
 /*
  * Procedure for segments
  */
-
 extern	void 	 	Vm_SegmentIncRef();
 extern	Vm_Segment	*Vm_FindCode();
 extern	void		Vm_InitCode();
 extern	Vm_Segment  	*Vm_SegmentNew();
 extern	ReturnStatus 	Vm_SegmentDup();
 extern	void		Vm_SegmentDelete();
+extern	void		Vm_ChangeCodeProt();
 
 /*
  * Procedures for pages.
  */
-
 extern	ReturnStatus	Vm_PageIn();
 extern	void		Vm_PageOut();
 extern	void		Vm_Clock();

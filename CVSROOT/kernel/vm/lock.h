@@ -23,15 +23,4 @@
 extern	Sync_Lock vmMonitorLock;
 #define LOCKPTR &vmMonitorLock
 
-/*
- * Condition variables.
- */
-
-extern	Sync_Condition	vmSegExpandCondition;	/* Used to wait when want
-						   to read or change size
-						   of a segment but cannot. */
-extern	Sync_Condition	vmPageTableCondition;	/* Used to wait for the page
-						   table for a code segment to 
-						   be initialized. */
-
 #endif _VMLOCK

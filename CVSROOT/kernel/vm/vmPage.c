@@ -35,8 +35,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "vmStat.h"
 #include "vmMachInt.h"
-#include "vmInt.h"
 #include "vm.h"
+#include "vmInt.h"
 #include "user/vm.h"
 #include "sync.h"
 #include "dbg.h"
@@ -101,11 +101,6 @@ static	Boolean		forceSwap = FALSE;
 static	Sync_Condition	cleanCondition;		/* Used to wait for a
 						 * clean page to be put
 						 * onto the allocate list. */
-static	Sync_Condition	pageinCondition;	/* Used to wait for page in
-						   to complete. */
-static	Sync_Condition	segmentCondition;	/* Used to wait for page out
-						   daemon to clean a page
-						   for a dieing segment. */
 
 /*
  * Variables to allow recovery.
@@ -628,6 +623,33 @@ VmUnlockPage(pfNum)
     coreMap[pfNum].lockCount--;
     UNLOCK_MONITOR;
 }
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmPageSwitch --
+ *
+ *     	Move the given page from the current owner to the new owner.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	The segment pointer int the core map entry for the page is modified and
+ *	the page is unlocked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL void
+VmPageSwitch(pageNum, newSegPtr)
+    unsigned	int	pageNum;
+    Vm_Segment		*newSegPtr;
+{
+    coreMap[pageNum].virtPage.segPtr = newSegPtr;
+    coreMap[pageNum].lockCount--;
+}
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1065,7 +1087,7 @@ VmPageFreeInt(pfNum)
 	    do {
 		corePtr->flags |= VM_SEG_PAGEOUT_WAIT;
 		vmStat.cleanWait++;
-		(void) Sync_Wait(&segmentCondition, FALSE);
+		(void) Sync_Wait(&corePtr->virtPage.segPtr->condition, FALSE);
 	    } while (corePtr->flags & 
 			(VM_PAGE_BEING_CLEANED | VM_DONT_FREE_UNTIL_CLEAN));
 	} else {
@@ -1142,8 +1164,10 @@ VmPageFree(pfNum)
  */
 
 ReturnStatus
-Vm_PageIn(virtAddr)
-    int virtAddr;	/* The virtual address of the desired page */
+Vm_PageIn(virtAddr, protFault)
+    int 	virtAddr;	/* The virtual address of the desired page */
+    Boolean	protFault;	/* TRUE if fault is because of a protection
+				 * violation. */
 
 {
     VmVirtAddr	 	transVirtAddr;	
@@ -1165,7 +1189,7 @@ Vm_PageIn(virtAddr)
     /*
      * Actually page in the page and don't leave the page locked down.
      */
-    status = VmDoPageIn(FALSE, &transVirtAddr);
+    status = VmDoPageIn(&transVirtAddr, protFault);
 
     if (transVirtAddr.flags & VM_HEAP_NOT_EXPANDABLE) {
 	/*
@@ -1178,6 +1202,13 @@ Vm_PageIn(virtAddr)
 
     return(status);
 }
+
+typedef enum {
+    IS_COR,	/* This page is copy-on-reference. */
+    IS_COW, 	/* This page is copy-on-write. */
+    IS_DONE, 	/* The page-in has already completed. */
+    NOT_DONE,	/* The page-in is not yet done yet. */
+} PrepareResult;
 
 
 /*
@@ -1204,24 +1235,21 @@ Vm_PageIn(virtAddr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void static
-PreparePage(lockPage, virtAddrPtr, ptePtrPtr, donePtr)
-    Boolean	lockPage;		/* Set if the page should be locked 
-					   down. */
+ENTRY static PrepareResult
+PreparePage(virtAddrPtr, protFault, ptePtrPtr)
     register VmVirtAddr *virtAddrPtr; 	/* The translated virtual address */
-    Vm_PTE	**ptePtrPtr;		/* The page table entry for the virtual 
-					   address */
-    Boolean	*donePtr;		/* A flag that is set to true if this
-					   routine has completed the page-in
-					   process */
+    Vm_PTE		**ptePtrPtr;	/* The page table entry for the virtual 
+					 * address */
+    Boolean		protFault;	/* TRUE if faulted because of a
+					 * protection fault. */
 {
     register	Vm_PTE	*curPtePtr;
+    PrepareResult	retVal;
 
     LOCK_MONITOR;
 
     curPtePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
 again:
-
     if (curPtePtr->inProgress) {
 	/*
 	 * The page is being faulted on by someone else.  In this case wait
@@ -1229,25 +1257,34 @@ again:
 	 * pte and see how things have changed.
 	 */
 	vmStat.collFaults++;
-	(void) Sync_Wait(&pageinCondition, FALSE);
+	(void) Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
 	goto again;
+    } else if (curPtePtr->protection == VM_KRW_PROT) {
+	/*
+	 * Copy-on-reference fault.
+	 */
+	retVal = IS_COR;
+    } else if (protFault && curPtePtr->protection == VM_UR_PROT && 
+	       curPtePtr->resident) {
+	/*
+	 * Copy-on-write fault.
+	 */
+	retVal = IS_COW;
     } else if (curPtePtr->pfNum != 0) {
 	/*
 	 * The page must already be in memory.
 	 */
 	vmStat.quickFaults++;
 	VmPageValidateInt(virtAddrPtr);
-	if (lockPage) {
-	    coreMap[curPtePtr->pfNum].lockCount++;
-	}
-        *donePtr = TRUE;
+        retVal = IS_DONE;
     } else {
 	curPtePtr->inProgress = 1;
-	*donePtr = FALSE;
+	retVal = NOT_DONE;
     }
     *ptePtrPtr = curPtePtr;
 
     UNLOCK_MONITOR;
+    return(retVal);
 }
 
 
@@ -1271,8 +1308,7 @@ again:
  * ----------------------------------------------------------------------------
  */
 ENTRY static void
-FinishPage(lockPage, transVirtAddrPtr, ptePtr) 
-    Boolean	lockPage;
+FinishPage(transVirtAddrPtr, ptePtr) 
     VmVirtAddr	*transVirtAddrPtr;
     Vm_PTE	*ptePtr;
 {
@@ -1289,15 +1325,13 @@ FinishPage(lockPage, transVirtAddrPtr, ptePtr)
      */
     ptePtr->zeroFill = 0;
 
-    if (!lockPage) {
-	coreMap[VmPhysToVirtPage(ptePtr->pfNum)].lockCount--;
-    }
+    coreMap[VmPhysToVirtPage(ptePtr->pfNum)].lockCount--;
 
     /*
      * Wakeup processes waiting for this pagein to complete.
      */
     ptePtr->inProgress = 0;
-    Sync_Broadcast(&pageinCondition);
+    Sync_Broadcast(&transVirtAddrPtr->segPtr->condition);
 
     UNLOCK_MONITOR;
 }
@@ -1325,26 +1359,32 @@ void	KillSharers();
  *----------------------------------------------------------------------
  */
 ReturnStatus
-VmDoPageIn(lockPage, virtAddrPtr)
-    Boolean	lockPage;	/* Set if the page should be left
-				   locked down. */
-    VmVirtAddr	*virtAddrPtr;	/* The virtual address of the page
-					   that needs to be read in. */
+VmDoPageIn(virtAddrPtr, protFault)
+    VmVirtAddr	*virtAddrPtr;	/* The virtual address of the page that needs
+				 * to be read in. */
+    Boolean	protFault;	/* TRUE if fault if because of a protection
+				 * violation. */
 {
     register	Vm_PTE 	*ptePtr;
     Vm_PTE 		*tPtePtr;
-    Boolean		done;
     ReturnStatus	status;
     int			lastPage;
     int			virtFrameNum;
-
+    PrepareResult	result;
 
     vmStat.totalFaults++;
 
-    /*
-     * If the address did not fall into a segment, then the page-in fails.
-     */
     if (virtAddrPtr->segPtr == (Vm_Segment *) NIL) {
+	/*
+	 * The address didn't fall into any segment. 
+	 */
+	return(FAILURE);
+    }
+
+    if (protFault && virtAddrPtr->segPtr->type == VM_CODE) {
+	/*
+	 * Access violation.
+	 */
 	return(FAILURE);
     }
 
@@ -1384,13 +1424,27 @@ VmDoPageIn(lockPage, virtAddrPtr)
 	    break;
     }
 
-    /*
-     * Do the first part of the page-in.  If PreparePage finished things, then
-     * return.
-     */
-    PreparePage(lockPage, virtAddrPtr, &tPtePtr, &done);
+    while (TRUE) {
+	/*
+	 * Do the first part of the page-in.
+	 */
+	result = PreparePage(virtAddrPtr, protFault, &tPtePtr);
+	if (!vm_CanCOW && (result == IS_COR || result == IS_COW)) {
+	    Sys_Panic(SYS_FATAL, "VmDoPageIn: Bogus COW or COR\n");
+	}
+	if (result == IS_COR) {
+	    status = VmCOR(virtAddrPtr);
+	    if (status != SUCCESS) {
+		return(FAILURE);
+	    }
+	} else if (result == IS_COW) {
+	    VmCOW(virtAddrPtr);
+	} else {
+	    break;
+	}
+    }
 
-    if (done) {
+    if (result == IS_DONE) {
 	return(SUCCESS);
     }
     ptePtr = tPtePtr;
@@ -1422,7 +1476,7 @@ VmDoPageIn(lockPage, virtAddrPtr)
     /*
      * Finish up the page-in process.
      */
-    FinishPage(lockPage, virtAddrPtr, ptePtr);
+    FinishPage(virtAddrPtr, ptePtr);
 
     /*
      * Now check to see if the read suceeded.  If not destroy all processes
@@ -1478,7 +1532,7 @@ PutOnFront(corePtr)
     register	VmCore	*corePtr;
 {
     if (corePtr->flags & VM_SEG_PAGEOUT_WAIT) {
-	Sync_Broadcast(&segmentCondition);
+	Sync_Broadcast(&corePtr->virtPage.segPtr->condition);
     }
     corePtr->flags &= ~(VM_DIRTY_PAGE | VM_PAGE_BEING_CLEANED | 
 		        VM_SEG_PAGEOUT_WAIT | VM_DONT_FREE_UNTIL_CLEAN);
