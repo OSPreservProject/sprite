@@ -164,9 +164,9 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     *lenPtr = reply.length;
 
     if (status == FS_BROKEN_PIPE) {
-	Sig_Send(SIG_PIPE, 0, PROC_MY_PID, FALSE);
+	Sig_Send(SIG_PIPE, 0, PROC_MY_PID, FALSE, (Address)0);
     } else if (reply.signal != 0) {
-	Sig_Send(reply.signal, reply.code, PROC_MY_PID, FALSE);
+	Sig_Send(reply.signal, reply.code, PROC_MY_PID, FALSE, (Address)0);
     }
     return(status);
 }
@@ -302,9 +302,9 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
     *lenPtr = amountWritten;
     streamPtr->offset += amountWritten;
     if (status == FS_BROKEN_PIPE) {
-	Sig_Send(SIG_PIPE, 0, PROC_MY_PID, FALSE);
+	Sig_Send(SIG_PIPE, 0, PROC_MY_PID, FALSE, (Address)0);
     } else if (reply.signal != 0) {
-	Sig_Send(reply.signal, reply.code, PROC_MY_PID, FALSE);
+	Sig_Send(reply.signal, reply.code, PROC_MY_PID, FALSE, (Address)0);
     }
 
     return(status);
@@ -582,7 +582,8 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
      * Generate signal returned from stream-specific routine.
      */
     if (replyPtr->signal != 0) {
-	Sig_Send(replyPtr->signal, replyPtr->code, PROC_MY_PID, FALSE);
+	Sig_Send(replyPtr->signal, replyPtr->code, PROC_MY_PID, FALSE,
+		(Address)0);
     }
     return(status);
 }
