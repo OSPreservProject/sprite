@@ -136,3 +136,40 @@ Mach_GetEncapSize()
     return(sizeof(MigratedState));
 }
 
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_CanMigrate --
+ *
+ *	Indicate whether a process's trapstack is in a form suitable for
+ *	starting a migration.
+ *
+ * Results:
+ *	TRUE if we can migrate using this trapstack, FALSE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Boolean
+Mach_CanMigrate(procPtr)
+    Proc_ControlBlock *procPtr;		/* pointer to process to check */
+{
+    /*
+     * We can get the pc from the "short stack".
+     */
+    if (proc_MigDebugLevel > 4) {
+	Sys_Printf("Mach_CanMigrate called.  Returning %d.\n",
+		   (procPtr->machStatePtr->userState.excStackPtr->vor.stackFormat
+		   == MACH_SHORT) ? TRUE : FALSE);
+    }
+    if (procPtr->machStatePtr->userState.excStackPtr->vor.stackFormat ==
+	MACH_SHORT) {
+	return(TRUE);
+    } else {
+	return(FALSE);
+    }
+}    
+    
