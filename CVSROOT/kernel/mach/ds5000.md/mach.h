@@ -19,9 +19,11 @@
 
 #ifdef KERNEL
 #include <machTypes.h>
+#include <machAddrs.h>
 #include <user/fmt.h>
 #else
 #include <kernel/machTypes.h>
+#include <kernel/machAddrs.h>
 #include <fmt.h>
 #endif
 
@@ -159,7 +161,8 @@ extern  ReturnStatus	Mach_Probe _ARGS_((int size, Address srcAddress,
 					Address, destAddress));
 extern  ReturnStatus	Mach_ProbeAddr _ARGS_((int numArgs));
 extern void Mach_FlushCode _ARGS_((Address addr, unsigned len));
-
+extern ReturnStatus Mach_GetSlotInfo _ARGS_((char *romAddr, 
+			Mach_SlotInfo *infoPtr));
 /*
  * Machine dependent variables.
  */
