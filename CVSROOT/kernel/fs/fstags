@@ -1,0 +1,34 @@
+#!/bin/csh -f
+# Merge together all the tags files to make a FS tags file.
+
+set dirs = (fs fscache fsconsist fsdm fsio fslcl fspdev fsprefix fsrmt \
+    fsrecov fsutil ofs lfs)
+
+rm -f tags.tmp tags
+touch tags.tmp
+
+# Pmake should have created a file tags.here for each directory.
+# Now we merge these into tags.tmp
+
+foreach i ($dirs)
+    if (-e ../$i/tags.here) then
+	cat ../$i/tags.here | \
+	    sed "s/\([^	]*\)	\([^	]*\)/\1 ..\/$i\/\2" >> tags.tmp
+    else
+	if (-e /sprite/src/kernel/$i/tags.here) then
+	    cat /sprite/src/kernel/tags.here | \
+	    sed "s/\([^	]*\)	\([^	]*\)/\1 \/sprite\/src\/kernel\/$i\/\2" >> tags.tmp
+	else
+	    echo "Tags missing for " $i
+	endif
+    endif
+end
+
+# Now we move tags.tmp to the fs module and create a link
+set dir = `pwd`
+if ($dir:h == "/sprite/src/kernel" ) then
+    mv tags.tmp /sprite/src/kernel/fs/tags.good
+    ln -s /sprite/src/kernel/fs/tags.good tags
+else
+    mv tags.tmp tags
+endif
