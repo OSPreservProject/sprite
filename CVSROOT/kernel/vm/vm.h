@@ -442,4 +442,112 @@ extern void VmMach_ReinitContext _ARGS_((register Proc_ControlBlock *procPtr));
 extern ClientData VmMach_SetupContext _ARGS_((register Proc_ControlBlock
         *procPtr));
 
+/*
+ * Initialization
+ */
+extern void VmMach_BootInit _ARGS_((int *pageSizePtr, int *pageShiftPtr,
+        int *pageTableIncPtr, int *kernMemSizePtr, int *numKernPagesPtr,
+        int *maxSegsPtr, int *maxProcessesPtr));
+extern Address VmMach_AllocKernSpace _ARGS_((Address baseAddr));
+extern void VmMach_Init _ARGS_((int firstFreePage));
+
+/*
+ * Segment creation, expansion, and destruction.
+ */
+extern void VmMach_SegInit _ARGS_((struct Vm_Segment *segPtr));
+extern void VmMach_SegExpand _ARGS_((register struct Vm_Segment *segPtr,
+        int firstPage, int lastPage));
+extern void VmMach_SegDelete _ARGS_((register struct Vm_Segment *segPtr));
+
+/*
+ * Process initialization.
+ */
+extern void VmMach_ProcInit _ARGS_((register struct Vm_ProcInfo *vmPtr));
+
+/*
+ * Manipulating protection.
+ */
+extern void VmMach_SetSegProt _ARGS_((register struct Vm_Segment *segPtr,
+        register int firstPage, int lastPage, Boolean makeWriteable));
+extern void VmMach_SetPageProt _ARGS_((register struct Vm_VirtAddr
+        *virtAddrPtr, Vm_PTE softPTE));
+
+/*
+ * Reference and modify bits.
+ */
+extern void VmMach_GetRefModBits _ARGS_((register struct Vm_VirtAddr
+        *virtAddrPtr, unsigned int virtFrameNum, register Boolean *refPtr,
+        register Boolean *modPtr));
+extern void VmMach_ClearRefBit _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum));
+extern void VmMach_ClearModBit _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum));
+extern void VmMach_AllocCheck _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum, register Boolean *refPtr,
+        register Boolean *modPtr));
+
+/*
+ * Page validation and invalidation.
+ */
+extern void VmMach_PageValidate _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, Vm_PTE pte));
+extern void VmMach_PageInvalidate _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtPage, Boolean segDeletion));
+
+/*
+ * Routine to parse a virtual address.
+ */
+extern Boolean VmMach_VirtAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+        Address virtAddr, register struct Vm_VirtAddr *transVirtAddrPtr));
+
+/*
+ * Routines to copy data to/from user space.
+ */
+extern ReturnStatus VmMach_CopyInProc _ARGS_((int numBytes,
+        Proc_ControlBlock *fromProcPtr, Address fromAddr,
+        struct Vm_VirtAddr *virtAddrPtr, Address toAddr, Boolean toKernel));
+extern ReturnStatus VmMach_CopyOutProc _ARGS_((int numBytes,
+        Address fromAddr, Boolean fromKernel, Proc_ControlBlock *toProcPtr,
+        Address toAddr, struct Vm_VirtAddr *virtAddrPtr));
+
+/*
+ * Tracing.
+ */
+extern void VmMach_Trace _ARGS_((void));
+
+/*
+ * Pinning and unpinning user memory pages.
+ */
+extern void VmMach_PinUserPages _ARGS_((int mapType, struct Vm_VirtAddr
+        *virtAddrPtr, int lastPage));
+extern void VmMach_UnpinUserPages _ARGS_((struct Vm_VirtAddr *virtAddrPtr,
+        int lastPage));
+/*
+ * Cache flushing.
+ */
+extern void VmMach_FlushPage _ARGS_((struct Vm_VirtAddr *virtAddrPtr,
+        Boolean invalidate));
+extern void VmMach_FlushCode _ARGS_((Proc_ControlBlock *procPtr,
+        struct Vm_VirtAddr *virtAddrPtr, unsigned virtPage, int numBytes));
+extern void VmMach_FlushByteRange _ARGS_((Address virtAddr, int numBytes));
+/*
+ * Migration.
+ */
+extern void VmMach_HandleSegMigration _ARGS_((struct Vm_Segment *segPtr));
+
+extern ReturnStatus VmMach_Cmd _ARGS_((int command, int arg));
+
+/*
+ * Shared memory.
+ */
+extern void VmMach_SharedSegFinish _ARGS_((Proc_ControlBlock *procPtr,
+        Address addr));
+extern void VmMach_SharedProcStart _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_SharedProcFinish _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_CopySharedMem _ARGS_((Proc_ControlBlock *parentProcPtr,
+        Proc_ControlBlock *childProcPtr));
+extern ReturnStatus VmMach_SharedStartAddr _ARGS_((Proc_ControlBlock *procPtr,
+        int size, Address *reqAddr));
+
+
 #endif /* _VM */
