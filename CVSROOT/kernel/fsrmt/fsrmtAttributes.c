@@ -430,6 +430,7 @@ FsrmtGetAttr(fileIDPtr, clientID, attrPtr, hostID, userID)
     register Fs_FileID		*fileIDPtr;	/* Identfies file */
     int				clientID;	/* IGNORED, implicitly passed
 						 * by the RPC system. */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
     int hostID, userID;
 #else
 FsrmtGetAttr(fileIDPtr, clientID, attrPtr)
@@ -545,7 +546,24 @@ Fsrmt_RpcGetAttr(srvToken, clientID, command, storagePtr)
 
     fs_Stats.srvName.getAttrs++;
     attrPtr = mnew(Fs_Attributes);
+#ifdef SOSP91
+    {
+    /*
+     * Get the host ID and user ID for tracing.
+     */
+    int hostID, userID;
+    userID = Proc_GetEffectiveProc()->userID;
+    if (Proc_GetEffectiveProc()->genFlags & PROC_FOREIGN) {
+	hostID = Proc_GetEffectiveProc()->peerHostID;
+    } else {
+	hostID = rpc_SpriteID;
+    }
+    status = (*fs_AttrOpTable[domainType].getAttr)(fileIDPtr, clientID,
+	    attrPtr, hostID, userID);
+    }
+#else
     status = (*fs_AttrOpTable[domainType].getAttr)(fileIDPtr, clientID, attrPtr);
+#endif
 #ifdef lint
     status = FslclGetAttr(fileIDPtr, clientID, attrPtr);
     status = FspdevPseudoGetAttr(fileIDPtr, clientID, attrPtr);
@@ -709,7 +727,21 @@ Fsrmt_RpcSetAttr(srvToken, clientID, command, storagePtr)
     Fsutil_HandleUnlock(hdrPtr);
 #ifdef SOSP91
     SOSP_ADD_SET_ATTR_TRACE(clientID, -1, *fileIDPtr);
-#endif
+    {
+    /*
+     * Get the host ID and user ID for tracing.
+     */
+    int hostID, userID;
+    userID = Proc_GetEffectiveProc()->userID;
+    if (Proc_GetEffectiveProc()->genFlags & PROC_FOREIGN) {
+	hostID = Proc_GetEffectiveProc()->peerHostID;
+    } else {
+	hostID = rpc_SpriteID;
+    }
+    status = (*fs_AttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
+	    &paramPtr->ids,paramPtr->flags, hostID, userID);
+    }
+#else
     status = (*fs_AttrOpTable[domainType].setAttr)(fileIDPtr, attrPtr,
 						&paramPtr->ids,paramPtr->flags);
 #ifdef lint
