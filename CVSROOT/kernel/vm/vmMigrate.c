@@ -290,7 +290,8 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
 	    procPtr->segPtrArray[type] = segPtr;
 	    return(SUCCESS);
 	case VM_HEAP:
-	    Fs_StreamCopy(procPtr->segPtrArray[VM_CODE]->filePtr, &filePtr);
+	    Fs_StreamCopy(procPtr->segPtrArray[VM_CODE]->filePtr, &filePtr,
+			    procPtr->processID);
 	    if (filePtr == (Fs_Stream *) NIL) {
 		Sys_Panic(SYS_FATAL,
 			  "Vm_ReceiveSegmentInfo: no code file pointer.\n");

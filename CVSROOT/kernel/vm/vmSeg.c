@@ -1099,7 +1099,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	 * used by anybody but the process that is calling us.
 	 */
 	VmIncExpandCount(srcSegPtr);
-	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr);
+	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr, procPtr->processID);
     } else {
 	newFilePtr = (Fs_Stream *) NIL;
     }
