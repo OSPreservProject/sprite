@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devNull.h"
 #include "devSyslog.h"
 #include "devNet.h"
+#include "devCC.h"
 
 
 static ReturnStatus NullSelectProc();
@@ -84,6 +85,11 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
 		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect},
+    /*
+     * Cache controler device.
+     */
+    {DEV_CC,   	 Dev_CCOpen, Dev_CCRead, Dev_CCWrite,
+		     Dev_CCIOControl, Dev_CCClose, Dev_CCSelect},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
