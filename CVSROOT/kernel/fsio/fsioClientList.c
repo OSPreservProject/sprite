@@ -220,6 +220,51 @@ FsIOClientClose(clientList, clientID, flags, cachePtr)
 /*
  * ----------------------------------------------------------------------------
  *
+ * FsIOClientRemoveWriter --
+ *
+ *	Decrement the writer count for the client for the given handle.
+ *	This is done when a writer of a stream (for instance, a pipe)
+ *	becomes only a reader.
+ *
+ * Results:
+ *	TRUE if there was a record that the client was using the file.
+ *	This is used to trap out invalid closes.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+Boolean
+FsIOClientRemoveWriter(clientList, clientID)
+    List_Links		*clientList;	/* List of clients for I/O handle */
+    int			clientID;	/* Host ID of client that had it open */
+{
+    register	FsClientInfo	*clientPtr;
+    register	Boolean		found = FALSE;
+
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    found = TRUE;
+	    break;
+	}
+    }
+    if (found) {
+	clientPtr->use.write--;
+	if (clientPtr->use.write < 0) {
+	    Sys_Panic(SYS_FATAL,
+		"FsClientRemoveWriter: client %d ref %d write %d exec %d\n",
+		clientPtr->clientID,
+		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
+	}
+    }
+    return(found);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * FsStreamClientOpen --
  *
  *	Add a client to the set of clients for a stream.  When a stream is
@@ -438,4 +483,65 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
     }
 
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsIOClientStatus --
+ *
+ *	This returns  information similar to that of FsIOClientKill, but it
+ *	does not remove the client from the list.  It is used for determining
+ *	reference counts for process migration.
+ *
+ * Results:
+ *	If non-NIL, *inUsePtr set to the number of times the client
+ *	has the file open, *writingPtr set to the number of times the
+ *	client has the file open for writing, and *executingPtr set to
+ *	the number of times the client has the file open for
+ *	execution.
+ *	
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+void
+FsIOClientStatus(clientList, clientID, refPtr, writePtr, execPtr)
+    List_Links *clientList;	/* List of clients to a file. */
+    int		clientID;	/* Client to check. */
+    int		*refPtr;	/* Number of times client has file open. */
+    int		*writePtr;	/* Number of times client is writing file. */
+    int		*execPtr;	/* Number of times clients is executing file.*/
+{
+    register FsClientInfo 	*clientPtr;
+
+    /*
+     * Count references for the client using the file.
+     */
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    if (refPtr != (int *) NIL) {
+		*refPtr = clientPtr->use.ref;
+	    }
+	    if (writePtr != (int *) NIL) {
+		*writePtr = clientPtr->use.write;
+	    }
+	    if (execPtr != (int *) NIL) {
+		*execPtr = clientPtr->use.exec;
+	    }
+	    return;
+	}
+    }
+    if (refPtr != (int *) NIL) {
+	*refPtr = 0;
+    }
+    if (writePtr != (int *) NIL) {
+	*writePtr = 0;
+    }
+    if (execPtr != (int *) NIL) {
+	*execPtr = 0;
+    }
+}
+
 
