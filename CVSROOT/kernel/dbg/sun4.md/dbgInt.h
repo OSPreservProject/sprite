@@ -50,5 +50,8 @@ extern	int	dbgInDebugger; 		/* How many levels deep we are in
 
 extern	int	dbgTraceLevel; 		/* Our trace level. */
 
+extern int Dbg_PacketHdrSize _ARGS_((void));
+
+extern Boolean Dbg_ValidatePacket();
 
 #endif /* _DBGINT */

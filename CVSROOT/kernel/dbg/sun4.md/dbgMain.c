@@ -32,6 +32,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netEther.h"
 #include "netInet.h"
 #include "dev.h"
+#include <stdio.h>
+#include <bstring.h>
+#include <string.h>
 
 Boolean	dbg_BeingDebugged = FALSE;		/* TRUE if are under control
 						 * of kdbx.*/
@@ -519,7 +522,7 @@ SendReply()
 	dbgGather.bufAddr = replyBuffer + sizeof(Net_EtherHdr)+2;
 	dbgGather.length = replyOffset - sizeof(Net_EtherHdr)-2;
 	dbgGather.mutexPtr = (Sync_Semaphore *) NIL;
-	bcopy(&curMsgNum,(char *)(replyBuffer + PACKET_HDR_SIZE - 4),4);
+	bcopy((char *)&curMsgNum,(char *)(replyBuffer + PACKET_HDR_SIZE - 4),4);
 	Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
 		     replyOffset - sizeof(Net_EtherHdr) - Dbg_PacketHdrSize()-2,
 		     replyBuffer + sizeof(Net_EtherHdr) + 2);

@@ -16,6 +16,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "sys.h"
 #include "user/net.h"
+#include <stdio.h>
 
 extern	int	dbgTraceLevel;
 
