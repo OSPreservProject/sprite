@@ -229,10 +229,10 @@ Dbg_InRange(addr, numBytes, writeable)
 	return(FALSE);
     }
 #ifndef FIRST_RUN
-    firstPage = ((unsigned int) addr) >> VMMACH_PAGE_SHIFT;
-    lastPage = (((unsigned int) addr) + numBytes - 1) >> VMMACH_PAGE_SHIFT;
+    firstPage = ((unsigned int) addr) >> VMMACH_PAGE_SHIFT_INT;
+    lastPage = (((unsigned int) addr) + numBytes - 1) >> VMMACH_PAGE_SHIFT_INT;
     for (i = firstPage; i <= lastPage; i++) {
-	pte = VmMachGetPageMap((Address)(i << VMMACH_PAGE_SHIFT));
+	pte = VmMachGetPageMap((Address)(i << VMMACH_PAGE_SHIFT_INT));
 	if (dbgTraceLevel >= 5) {
 	    printf("pte value was 0x%x\n", pte);
 	}
@@ -340,8 +340,8 @@ Dbg_Init()
     dbgIntPending = 0;
     dbgPanic = FALSE;
     dbg_BeingDebugged = FALSE;
-    machineType = 0;
-    Mach_MonPrintf("Machine type %d\n", machineType);
+    machineType = Mach_GetMachineType();
+    Mach_MonPrintf("Machine type %x\n", machineType);
 }
 
 
@@ -764,9 +764,9 @@ Dbg_Main(trapType, trapStatePtr)
 		    stopInfo.regs = *(procPtr->machStatePtr->switchRegs);
 		    stopInfo.regs.tbr = trapStatePtr->tbr;
 		    stopInfo.regs.y = trapStatePtr->y;
-#ifndef lint		    
+#ifndef lint
 		    stopInfo.regs.pc = ((int) Mach_ContextSwitch)+16;
-#endif		    
+#endif
 		    stopInfo.regs.nextPc = stopInfo.regs.pc+4;
 
 		} else {
