@@ -18,6 +18,9 @@
 #ifndef _DEVRAIDDISK
 #define _DEVRAIDDISK
 
+#include "devRaid.h"
+#include "devRaidLock.h"
+
 /*
  * Data structure for each disk used by raid device.
  *
@@ -31,17 +34,15 @@
  */
 typedef enum {
     RAID_DISK_INVALID, RAID_DISK_READY, RAID_DISK_FAILED, RAID_DISK_REPLACED,
-    RAID_DISK_RECONSTRUCT
 } RaidDiskState;
 
 typedef struct RaidDisk {
-    Sync_Semaphore	  mutex;
+    Sema	 	  lock;
     RaidDiskState	  state;
     unsigned		  numValidSector; /* Used during reconstruction. */
     int			  row;
     int			  col;
     int			  version;
-    int			  useCount;
     Fs_Device	          device;
     DevBlockDeviceHandle *handlePtr;
 } RaidDisk;
@@ -51,10 +52,5 @@ typedef struct RaidDisk {
  */
 #define IsValid(diskPtr, startSector, numSector) 	\
     ((startSector) + (numSector) <= (diskPtr)->numValidSector)
-
-extern RaidDisk *MakeRaidDisk();
-extern void ReportRaidDiskAttachError();
-extern void FailRaidDisk();
-extern void ReplaceRaidDisk();
 
 #endif _DEVRAIDDISK
