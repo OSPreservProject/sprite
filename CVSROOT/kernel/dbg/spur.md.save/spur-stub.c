@@ -11,7 +11,7 @@
 
 #include "sprite.h"
 #include "mach.h"
-
+#include "dbg.h"
 
 /*      Define some progress codes for the on-board status lights */
 
@@ -110,15 +110,18 @@ extern int debugger_active_address;
 
 
 
-
-
 void
 kdb (sig,state)
      int sig;
      Mach_RegState *state;
 {
   int i;
+  int switches;
 
+    switches = read_physical_word(0x40000);
+    dbg_Rs232Debug =  !(switches & 0x80) ;
+
+  dbg_UsingNetwork =  !dbg_Rs232Debug;
 
   if(sig == MACH_POWERUP)	/* Initialize some stuff */
     {
@@ -508,6 +511,7 @@ kdb (sig,state)
 	    step_addr = addr;		        /* Remember where we put it. */
 	    state->kpsw |=  MACH_KPSW_USE_CUR_PC;
 	    led_display(RUNNING,LED_OK,TRUE);
+	     dbg_UsingNetwork = 0;
 	    return;			/* Resume the executing process */
 	    
 	    
@@ -542,6 +546,7 @@ kdb (sig,state)
 	    }
 	  state->kpsw |=  MACH_KPSW_USE_CUR_PC;
 	  led_display(RUNNING,LED_OK,FALSE);
+	     dbg_UsingNetwork = 0;
 	  return;			/* Resume the executing process */
 	}	  
 	    
