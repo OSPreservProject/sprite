@@ -35,7 +35,7 @@ int vmShmDebug = 0;	/* Shared memory debugging flag. */
 /*
  * Forward declaration.
  */
-static ReturnStatus vmMunmapInt();
+static ReturnStatus VmMunmapInt();
 
 
 /*
