@@ -58,7 +58,7 @@ extern int Proc_SetgroupsStub();
 extern int Proc_GetpgrpStub();
 extern int Proc_SetpgrpStub();
 extern int Proc_SetitimerStub();
-extern int Proc_WaitStub();
+extern int Proc_Wait3Stub();
 extern int Proc_GetitimerStub();
 extern int Sys_GethostnameStub();
 extern int Sys_SethostnameStub();
@@ -120,9 +120,6 @@ extern int Fs_GetdirentriesStub();
 extern int Sys_GetdomainnameStub();
 extern int Sys_SetdomainnameStub();
 extern int Sys_GetsysinfoStub();
-extern int Vm_SemctlStub();
-extern int Vm_SemopStub();
-extern int Vm_SemgetStub();
 extern int Vm_MmapStub();
 extern int Vm_MunmapStub();
 extern int Vm_MincoreStub();
@@ -131,8 +128,14 @@ static int Sys_TestStub();
 extern int Mach_SigreturnStub();
 
 #if defined(ds3100) || defined(ds5000)
+extern int Proc_WaitpidStub();
+extern int Vm_SemctlStub();
+extern int Vm_SemopStub();
+extern int Vm_SemgetStub();
 #else
 extern int Fs_GetdentsStub();
+extern int Proc_Wait4Stub();
+extern int Vm_SemsysStub();
 #endif
 
 #define SYS_UNIX_ERROR  Sys_UnixError
@@ -159,7 +162,11 @@ struct {
     { Fs_NewWriteStub,        3  },      /* write  */
     { Fs_NewOpenStub,         3  },      /* open  */
     { Fs_NewCloseStub,        1  },      /* close  */
+#if defined(ds3100) || defined(ds5000)
     { SYS_UNIX_ERROR,         0  },      /* old wait  */
+#else
+    { Proc_Wait4Stub,         4  },      /* wait4  */
+#endif
     { Fs_CreatStub,           2  },      /* creat  */
     { Fs_LinkStub,            2  },      /* link  */	
     { Fs_UnlinkStub,          1  },      /* unlink  */
@@ -202,7 +209,7 @@ struct {
     { Proc_GetgidStub,        0  },      /* getgid  */
     { SYS_UNIX_ERROR,         2  },      /* old sig  */
     { SYS_UNIX_ERROR,         0  },      /* USG 1  */
-    { SYS_UNIX_ERROR,         0  },      /* USG 2  */
+    { SYS_UNIX_ERROR,         0  },      /* USG 2  #50 */
     { SYS_UNIX_ERROR,         1  },      /* acct  */
     { SYS_UNIX_ERROR,         0  },      /* old set phys addr  */
     { SYS_UNIX_ERROR,         0  },      /* old syslock in core  */
@@ -212,7 +219,7 @@ struct {
     { Fs_SymlinkStub,         2  },      /* symlink  */
     { Fs_ReadlinkStub,        3  },      /* readlink  */
     { Proc_ExecveStub,        3  },      /* execve  */
-    { Proc_UmaskStub,         1  },      /* umask  */
+    { Proc_UmaskStub,         1  },      /* umask  #60 */
     { SYS_UNIX_ERROR,         1  },      /* chroot  */
     { Fs_FstatStub,           2  },      /* fstat  */
     { SYS_UNIX_ERROR,         0  },      /* used internally  */
@@ -222,7 +229,7 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* old vread  */
     { SYS_UNIX_ERROR,         0  },      /* old vwrite  */
     { SYS_UNIX_ERROR,         1  },      /* new sbrk  */
-    { SYS_UNIX_ERROR,         1  },      /* sstk  */
+    { SYS_UNIX_ERROR,         1  },      /* sstk #70 */
     { Vm_MmapStub,            6  },      /* mmap  */
     { SYS_UNIX_ERROR,         1  },      /* old vadvise  */
     { Vm_MunmapStub,          2  },      /* munmap  */
@@ -232,17 +239,17 @@ struct {
     { SYS_UNIX_ERROR,         2  },      /* old vlimit  */
     { Vm_MincoreStub,         3  },      /* mincore  */
     { Proc_GetgroupsStub,     2  },      /* getgroups  */
-    { Proc_SetgroupsStub,     2  },      /* setgroups  */
+    { Proc_SetgroupsStub,     2  },      /* setgroups  #80 */
     { Proc_GetpgrpStub,       1  },      /* getpgrp  */
     { Proc_SetpgrpStub,       2  },      /* setpgrp  */
     { Proc_SetitimerStub,     3  },      /* setitimer  */
-    { Proc_WaitStub,          3  },      /* wait  */
+    { Proc_Wait3Stub,         3  },      /* wait3  */
     { SYS_UNIX_ERROR,         1  },      /* swapon  */
     { Proc_GetitimerStub,     2  },      /* getitimer  */
     { Sys_GethostnameStub,    2  },      /* gethostname  */
     { Sys_SethostnameStub,    2  },      /* sethostname  */
     { Fs_GetdtablesizeStub,   0  },      /* getdtablesize  */
-    { Fs_Dup2Stub,            2  },      /* dup2  */
+    { Fs_Dup2Stub,            2  },      /* dup2  #90 */
     { Fs_GetdoptStub,         2  },      /* getdopt  */
     { Fs_FcntlStub,           3  },      /* fcntl  */
     { Fs_NewSelectStub,       5  },      /* select  */
@@ -252,7 +259,7 @@ struct {
     { Fs_SocketStub,          3  },      /* socket  */
     { Fs_ConnectStub,         3  },      /* connect  */
     { Fs_AcceptStub,          3  },      /* accept  */
-    { Proc_GetpriorityStub,   2  },      /* getpriority  */
+    { Proc_GetpriorityStub,   2  },      /* getpriority  #100 */
     { Fs_SendStub,            4  },      /* send  */
     { Fs_RecvStub,            4  },      /* recv  */
 #if defined(ds3100) || defined(ds5000)
@@ -266,7 +273,7 @@ struct {
     { SYS_UNIX_ERROR,         2  },      /* old vtimes  */
     { Sig_SigvecStub,         4  },      /* sigvec  */
     { Sig_SigblockStub,       1  },      /* sigblock  */
-    { Sig_SigsetmaskStub,     1  },      /* sigsetmask  */
+    { Sig_SigsetmaskStub,     1  },      /* sigsetmask  #110 */
     { Sig_SigpauseStub,       1  },      /* sigpause  */
     { Sig_SigstackStub,       2  },      /* sigstack  */
     { Fs_RecvmsgStub,         3  },      /* recvmsg  */
@@ -276,7 +283,7 @@ struct {
     { Proc_GetrusageStub,     2  },      /* getrusage  */
     { Fs_GetsockoptStub,      5  },      /* getsockopt  */
     { SYS_UNIX_ERROR,         0  },      /* #119  */
-    { Fs_ReadvStub,           3  },      /* readv  */
+    { Fs_ReadvStub,           3  },      /* readv  #120 */
     { Fs_WritevStub,          3  },      /* writev  */
     { Timer_SettimeofdayStub, 2  },      /* settimeofday  */
     { Fs_FchownStub,          3  },      /* fchown  */
@@ -286,7 +293,7 @@ struct {
     { Proc_SetregidStub,      2  },      /* setregid  */
     { Fs_NewRenameStub,       2  },      /* rename  */
     { Fs_TruncateStub,        2  },      /* truncate  */
-    { Fs_FtruncateStub,       2  },      /* ftruncate  */
+    { Fs_FtruncateStub,       2  },      /* ftruncate  #130 */
     { Fs_FlockStub,           2  },      /* flock  */
     { SYS_UNIX_ERROR,         0  },      /* #132  */
     { Fs_SendtoStub,          6  },      /* sendto  */
@@ -296,11 +303,11 @@ struct {
     { Fs_RmdirStub,           1  },      /* rmdir  */
     { Fs_UtimesStub,          2  },      /* utimes  */
 #if defined(ds3100) || defined(ds5000)
-    { SYS_UNIX_ERROR,         1  },      /*   */
+    { SYS_UNIX_ERROR,         1  },      /*  #139  */
 #else
     { Mach_SigreturnStub,      1  },      /* sigreturn (from longjmp) */
 #endif
-    { Timer_AdjtimeStub,      2  },      /* adjtime  */
+    { Timer_AdjtimeStub,      2  },      /* adjtime  #140 */
     { Sys_GetpeernameStub,    3  },      /* getpeername  */
     { Sys_GethostidStub,      2  },      /* gethostid  */
     { Sys_SethostidStub,      2  },      /* sethostid  */
@@ -310,7 +317,7 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* #147  */
     { SYS_UNIX_ERROR,         0  },      /* setquota  */
     { SYS_UNIX_ERROR,         0  },      /* quota  */
-    { Fs_GetsocknameStub,     3  },      /* getsockname  */	
+    { Fs_GetsocknameStub,     3  },      /* getsockname  #150 */	
 #if defined(ds3100) || defined(ds5000)
     { SYS_UNIX_ERROR,         0  },      /* sysmips #151 */
     { SYS_UNIX_ERROR,         0  },      /* cacheflush  */
@@ -321,13 +328,13 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* #157  */
     { SYS_UNIX_ERROR,         0  },      /* nfs_svc  */
     { SYS_UNIX_ERROR,         0  },      /* getdirentries  */
-    { SYS_UNIX_ERROR,         0  },      /* statfs  */
+    { SYS_UNIX_ERROR,         0  },      /* statfs  #160 */
     { SYS_UNIX_ERROR,         0  },      /* fstatfs  */
     { SYS_UNIX_ERROR,         0  },      /* #162  */
     { SYS_UNIX_ERROR,         0  },      /* #163  */
     { SYS_UNIX_ERROR,         0  },      /* #164  */
-    { SYS_UNIX_ERROR,         0  },      /* getdomainname  */
-    { SYS_UNIX_ERROR,         0  },      /* setdomainname  */
+    { Sys_GetdomainnameStub,  2  },      /* getdomainname  */
+    { Sys_SetdomainnameStub,  2  },      /* setdomainname  */
     { SYS_UNIX_ERROR,         0  },      /* #167  */
     { SYS_UNIX_ERROR,         0  },      /* #168  */
     { SYS_UNIX_ERROR,         0  },      /* exportfs  */
@@ -341,8 +348,8 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* semget  */
     { SYS_UNIX_ERROR,         0  },      /* semop  */
     { SYS_UNIX_ERROR,         0  },      /* uname  */
-    { SYS_UNIX_ERROR,         0  },      /* shmsys  */
-    { SYS_UNIX_ERROR,         0  },      /* plock  */
+    { SYS_UNIX_ERROR,         0  },      /* shmsys  #180 */
+    { SYS_UNIX_ERROR,         0  },      /* plock */
     { SYS_UNIX_ERROR,         0  },      /* lockf  */
     { SYS_UNIX_ERROR,         0  },      /* ustat  */
     { SYS_UNIX_ERROR,         0  },      /* getmnt  */
@@ -350,7 +357,7 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* umount  */
     { SYS_UNIX_ERROR,         0  },      /* sigpending  */
     { SYS_UNIX_ERROR,         0  },      /* setsid  */
-    { SYS_UNIX_ERROR,         0  },      /* waitpid  */
+    { Proc_WaitpidStub(),     3  },      /* waitpid  */
 #else
     { SYS_UNIX_ERROR,         0  },      /* getmsg  */
     { SYS_UNIX_ERROR,         0  },      /* putmsg  */
@@ -361,17 +368,17 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* statfs  */
     { SYS_UNIX_ERROR,         0  },      /* fstatfs  */
     { SYS_UNIX_ERROR,         0  },      /* unmount  */
-    { SYS_UNIX_ERROR,         0  },      /* async_daemon  */
+    { SYS_UNIX_ERROR,         0  },      /* async_daemon #160 */
     { SYS_UNIX_ERROR,         0  },      /* getfh  */
-    { SYS_UNIX_ERROR,         0  },      /* getdomainname  */
-    { SYS_UNIX_ERROR,         0  },      /* setdomainname  */
+    { Sys_GetdomainnameStub,  2  },      /* getdomainname  */
+    { Sys_SetdomainnameStub,  2  },      /* setdomainname  */
     { SYS_UNIX_ERROR,         0  },      /* #164  */
     { SYS_UNIX_ERROR,         0  },      /* quotactl  */
     { SYS_UNIX_ERROR,         0  },      /* exportfs  */
     { SYS_UNIX_ERROR,         0  },      /* mount  */
     { SYS_UNIX_ERROR,         0  },      /* ustat  */
     { SYS_UNIX_ERROR,         0  },      /* semsys  */
-    { SYS_UNIX_ERROR,         0  },      /* msgsys  */
+    { SYS_UNIX_ERROR,         0  },      /* msgsys  #170 */
     { SYS_UNIX_ERROR,         0  },      /* shmsys  */
     { SYS_UNIX_ERROR,         0  },      /* auditsys  */
     { SYS_UNIX_ERROR,         0  },      /* rfssys  */
@@ -381,7 +388,7 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* fchroot  */
     { SYS_UNIX_ERROR,         0  },      /* vpixsys  */
     { SYS_UNIX_ERROR,         0  },      /* aioread  */
-    { SYS_UNIX_ERROR,         0  },      /* aiowrite  */
+    { SYS_UNIX_ERROR,         0  },      /* aiowrite  #180 */
     { SYS_UNIX_ERROR,         0  },      /* aiowait  */
     { SYS_UNIX_ERROR,         0  },      /* aiocancel  */
     { SYS_UNIX_ERROR,         0  },      /* sigpending  */
