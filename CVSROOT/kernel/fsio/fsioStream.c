@@ -817,26 +817,79 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	StreamReopenParams	*reopenParamsPtr;
 	register Fs_FileID	*fileIDPtr;
 	Fs_HandleHeader		*ioHandlePtr;
+	/* 
+	 * Note about shared stream recovery.  We loose the offset of
+	 * a shared stream during a crash.  We just print a message and
+	 * try to go forward.  Often the shared stream is for a process's
+	 * current working directory, so the offset doesn't matter.
+	 */
+	Boolean			patchOffset = FALSE;
 
 	reopenParamsPtr = (StreamReopenParams *)inData;
 	fileIDPtr = &reopenParamsPtr->ioFileID;
 	ioHandlePtr = (*fsio_StreamOpTable[fileIDPtr->type].clientVerify)
 			(fileIDPtr, clientID, (int *)NIL);
 	if (ioHandlePtr != (Fs_HandleHeader *)NIL) {
-	    streamPtr = Fsio_StreamAddClient(&reopenParamsPtr->streamID, clientID,
-		    ioHandlePtr, reopenParamsPtr->useFlags, ioHandlePtr->name,
-		    (Boolean *)NIL, (Boolean *)NIL);
-	    /*
-	     * BRENT Have to worry about the shared offset here.
-	     */
-	    streamPtr->offset = reopenParamsPtr->offset;
-
-	    Fsutil_HandleRelease(ioHandlePtr, TRUE);
-	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    status = SUCCESS;
+	    streamPtr = Fsutil_HandleFetchType(Fs_Stream,
+			&reopenParamsPtr->streamID);
+	    if (streamPtr != (Fs_Stream *)NIL) {
+		/*
+		 * Verify that we have the stream hooked to the same
+		 * I/O handle as the client.  It is possible that we
+		 * have reused the client's stream ID with a different
+		 * I/O handle, in which case the client loses this stream.
+		 */
+		if (streamPtr->ioHandlePtr != ioHandlePtr) {
+		    printf("Fsio_StreamReopen, I/O handle mismatch, client %d its I/O <%d,%d> my I/O <%d,%d>\n",
+			clientID,
+			ioHandlePtr->fileID.major,
+			ioHandlePtr->fileID.minor,
+			streamPtr->ioHandlePtr->fileID.major,
+			streamPtr->ioHandlePtr->fileID.minor);
+		    status = FAILURE;
+		} else if ((reopenParamsPtr->useFlags & FS_RMT_SHARED) &&
+			   (streamPtr->flags & FS_RMT_SHARED) == 0) {
+		    /*
+		     * The client thinks the stream is shared by processes
+		     * on a different client, but we lost the shadow stream.
+		     * (If we do think the stream is shared things are ok.)
+		     */
+		    printf("Fsio_StreamReopen, not a shadow stream, client %d stream <%d> client I/O <%d,%d>\n",
+			    clientID, streamPtr->hdr.fileID.minor,
+			    ioHandlePtr->fileID.major,
+			    ioHandlePtr->fileID.minor);
+		    status = FAILURE;
+		}
+		Fsutil_HandleRelease(streamPtr, TRUE);
+	    } else if (reopenParamsPtr->useFlags & FS_RMT_SHARED) {
+		/*
+		 * The client thinks the stream is shared by processes
+		 * on a different client, but we don't have a shadow stream.
+		 */
+		printf("Fsio_StreamReopen, lost shared stream offset? using offset (%d), client %d, I/O <%d,%d> \"%s\"\n",
+			reopenParamsPtr->offset, clientID,
+			ioHandlePtr->fileID.major,
+			ioHandlePtr->fileID.minor,
+			Fsutil_HandleName(ioHandlePtr));
+		patchOffset = TRUE;
+	    }
+	    if (status == SUCCESS) {
+		streamPtr = Fsio_StreamAddClient(&reopenParamsPtr->streamID,
+		    clientID, ioHandlePtr, reopenParamsPtr->useFlags,
+		    ioHandlePtr->name, (Boolean *)NIL, (Boolean *)NIL);
+		/*
+		 * There isn't proper recovery of the offset if the stream
+		 * was shared when we crashed, but here we fake it.
+		 */
+		if (patchOffset) {
+		    streamPtr->offset = reopenParamsPtr->offset;
+		}
+		Fsutil_HandleRelease(streamPtr, TRUE);
+	    }
+	    Fsutil_HandleRelease(ioHandlePtr, TRUE);
 	} else {
-	    printf(
-		"Fsio_StreamReopen, %s I/O handle <%d,%d> not found\n",
+	    printf("Fsio_StreamReopen, %s I/O handle <%d,%d> not found\n",
 		Fsutil_FileTypeToString(fileIDPtr->type),
 		fileIDPtr->major, fileIDPtr->minor);
 	    status = FAILURE;
