@@ -21,27 +21,75 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "stdio.h"
-#include "fs.h"
-#include "dev.h"
-#include "devInt.h"
-#include "scsi.h"
-#include "scsiDevice.h"
-#include "scsiTape.h"
-#include "devSCSITape.h"
-#include "dev/scsi.h"
-#include "stdlib.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <fs.h>
+#include <dev.h>
+#include <devInt.h>
+#include <sys/scsi.h>
+#include <scsiDevice.h>
+#include <scsiTape.h>
+#include <devSCSITape.h>
+#include <dev/scsi.h>
+#include <stdlib.h>
+#include <bstring.h>
+#include <dbg.h>
+#include <mach.h>
 
-#include "dbg.h"
 int SCSITapeDebug = FALSE;
+
+#define Min(a,b)  ((a) < (b) ? (a) : (b))
 
 static ReturnStatus InitTapeDevice _ARGS_((Fs_Device *devicePtr,
     ScsiDevice *devPtr));
 static void SetupCommand _ARGS_((ScsiDevice *devPtr, int command,
     unsigned int code, unsigned int len, ScsiCmd *scsiCmdPtr));
+static ReturnStatus InitError _ARGS_((ScsiDevice *devPtr, ScsiCmd *scsiCmdPtr));
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitError --
+ *
+ *	Initial error proc used by InitTapeDevice when it is initializing
+ *	things for the real error handlers.  
+ *
+ * Results:
+ *	DEV_OFFLINE if the device is offline, SUCCESS otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static ReturnStatus
+InitError(devPtr, scsiCmdPtr)
+    ScsiDevice	 *devPtr;	/* SCSI device that's complaining. */
+    ScsiCmd	*scsiCmdPtr;	/* SCSI command that had the problem. */
+{
+    ScsiStatus 		*scsiStatusPtr;
+    unsigned char	statusByte;
+    ScsiClass7Sense	*sensePtr;
+
+    statusByte = (unsigned char) scsiCmdPtr->statusByte;
+    scsiStatusPtr = (ScsiStatus *) &statusByte;
+    if (!scsiStatusPtr->check) {
+	if (scsiStatusPtr->busy) {
+	    return DEV_OFFLINE;
+	}
+	return SUCCESS;
+    }
+    sensePtr = (ScsiClass7Sense *) scsiCmdPtr->senseBuffer;
+    if (sensePtr->key == SCSI_CLASS7_NOT_READY) {
+	return DEV_OFFLINE;
+    }
+    if (sensePtr->key == SCSI_CLASS7_NO_SENSE) {
+	return SUCCESS;
+    }
+    return FAILURE;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -63,10 +111,13 @@ InitTapeDevice(devicePtr, devPtr)
     Fs_Device *devicePtr;	/* Device info, unit number etc. */
     ScsiDevice *devPtr;		/* Attached SCSI tape. */
 {
-    ScsiTape	tapeData;	
-    ScsiTape	*tapePtr;
-    ReturnStatus status;
-    int		i;
+    ScsiTape		tapeData;	
+    ScsiTape		*tapePtr;
+    ReturnStatus 	status;
+    int			i;
+    ScsiInquiryData	*inquiryPtr;
+    int			min;
+    int			max;
 
     /*
     * Determine the type of device from the inquiry return by the
@@ -79,29 +130,98 @@ InitTapeDevice(devicePtr, devPtr)
 						    SCSI_TAPE_TYPE)) {
 	return DEV_NO_DEVICE;
     } 
+    devPtr->errorProc = InitError;
     /*
-     * Do a quick ready test on the device.
+     * Do a quick ready test on the device. This is kind of tricky because
+     * the error handling procedure can't be called because things aren't
+     * initialized yet.
      */
     status = DevScsiTestReady(devPtr);
     if (status != SUCCESS) {
-	return status;
+	if (status == DEV_OFFLINE) {
+	    status = DevScsiStartStopUnit(devPtr, TRUE);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    /*
+	     * Give up if it still isn't ready.
+	     */
+	    status = DevScsiTestReady(devPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	}
     }
     if (devicePtr->data == (ClientData) NIL) {
+	/*
+	 * Verify that the attached device is a Tape. We do
+	 * that by examining the Inquiry data in the ScsiDevice handle. 
+	 */
+	inquiryPtr = (ScsiInquiryData *) (devPtr->inquiryDataPtr);
+	if ( (devPtr->inquiryLength < sizeof(ScsiInquiryData)) ||
+	    (inquiryPtr->type != 0x1)) {
+	    return DEV_NO_DEVICE;
+	}
 	tapePtr = &tapeData;
 	bzero((char *) tapePtr, sizeof(ScsiTape));
 	tapePtr->devPtr = devPtr;
 	tapePtr->state = SCSI_TAPE_CLOSED;
 	tapePtr->name = "SCSI Tape";
-	tapePtr->blockSize = SCSI_TAPE_DEFAULT_BLOCKSIZE;
-	tapePtr->tapeIOProc = DevSCSITapeFixedBlockIO;
-	tapePtr->errorProc = DevSCSITapeError;
+	if (devicePtr->unit & DEV_SCSI_TAPE_VAR_BLOCK) {
+	    status = DevScsiReadBlockLimits(devPtr, &min, &max);
+	    if (status == SUCCESS) {
+		if (min == max) {
+		    /*
+		     * Device only supports fixed size blocks.
+		     */
+		    return DEV_NO_DEVICE;
+		}
+		printf("InitTapeDevice: max = %d, min = %d\n", max, min);
+		tapePtr->maxBlockSize = max;
+		tapePtr->minBlockSize = min;
+		tapePtr->tapeIOProc = DevSCSITapeVariableIO;
+	    }
+	} else {
+	    int			modeSense[4];
+	    int			size;
+	    ScsiBlockDesc	*descPtr;
+	    int			length;
+
+	    /*
+	     * Do a mode sense to get the Block Descriptor, which will
+	     * tell us the size of a logical block.
+	     */ 
+	    size = sizeof(modeSense);
+	    status = DevScsiModeSense(devPtr, 0, 0, 0, 0, &size,
+		(char *) modeSense);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    descPtr = (ScsiBlockDesc *) &modeSense[1];
+	    length = (descPtr->len2 << 16) | (descPtr->len1 << 8) |
+			descPtr->len0;
+	    if (length != 0) {
+		printf("InitTapeDevice: fixed length = %d\n", length);
+	    } else {
+		/*
+		 * A length of 0 means that the logical block size is 
+		 * variable. In that case use the default.
+		 */
+		length = SCSI_TAPE_DEFAULT_BLOCKSIZE;
+		printf("InitTapeDevice: fixed default length %d\n", length);
+	    }
+	    tapePtr->blockSize = length;
+	    tapePtr->tapeIOProc = DevSCSITapeFixedBlockIO;
+	}
 	tapePtr->specialCmdProc =  DevSCSITapeSpecialCmd;
+	tapePtr->statusProc = (ReturnStatus (*)()) NIL;
     } else {
 	tapePtr = (ScsiTape *) (devicePtr->data);
     }
     for (i = 0; i < devNumSCSITapeTypes; i++) {
-	status = (devSCSITapeAttachProcs[i])(devicePtr,devPtr,tapePtr);
-	if (status == SUCCESS) {
+	ReturnStatus	attachStatus;
+	attachStatus = (devSCSITapeAttachProcs[i])(devicePtr,devPtr,tapePtr);
+	if (attachStatus == SUCCESS) {
 	    break;
 	}
     }
@@ -113,9 +233,11 @@ InitTapeDevice(devicePtr, devPtr)
 	tapePtr = (ScsiTape *) malloc(sizeof(ScsiTape));
 	*tapePtr = tapeData;
         devicePtr->data = (ClientData)tapePtr;
+	devPtr->clientData = (ClientData) tapePtr;
     }
     return(status);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -174,16 +296,16 @@ SetupCommand(devPtr, command, code, len, scsiCmdPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSITapeError(tapePtr, statusWord, senseLength, senseDataPtr)
-    ScsiTape	 *tapePtr;	/* SCSI Tape that's complaining. */
-    unsigned int statusWord;	/* The status byte of the command. */
-    int		 senseLength;	/* Length of SCSI sense data in bytes. */
-    char	 *senseDataPtr;	/* Sense data. */
+DevSCSITapeError(devPtr, scsiCmdPtr)
+    ScsiDevice	 *devPtr;	/* SCSI device that's complaining. */
+    ScsiCmd	*scsiCmdPtr;	/* SCSI command that had the problem. */
 {
-    unsigned char statusByte = statusWord;
+    unsigned char statusByte = scsiCmdPtr->statusByte;
     ScsiStatus *statusPtr = (ScsiStatus *) &statusByte;
-    ScsiClass0Sense *sensePtr = (ScsiClass0Sense *) senseDataPtr;
-    char	*name = tapePtr->devPtr->locationName;
+    ScsiClass0Sense *sensePtr = (ScsiClass0Sense *) scsiCmdPtr->senseBuffer;
+    int	senseLength = scsiCmdPtr->senseLen;
+    ScsiTape	*tapePtr = (ScsiTape *) devPtr->clientData;
+    char	*name = devPtr->locationName;
     char	errorString[MAX_SCSI_ERROR_STRING];
     ReturnStatus	status;
 
@@ -207,8 +329,9 @@ DevSCSITapeError(tapePtr, statusWord, senseLength, senseDataPtr)
 	 printf("Warning: %s at %s error: no sense data\n", tapePtr->name,name);
 	 return DEV_NO_SENSE;
     }
-    if (DevScsiMapClass7Sense(senseLength, senseDataPtr,&status, errorString)) {
-	ScsiClass7Sense	*s = (ScsiClass7Sense *) senseDataPtr;
+    if (DevScsiMapClass7Sense(senseLength, scsiCmdPtr->senseBuffer,
+	    &status, errorString)) {
+	ScsiClass7Sense	*s = (ScsiClass7Sense *) scsiCmdPtr->senseBuffer;
 	if (errorString[0]) {
 	     printf("Warning: %s at %s error: %s\n", tapePtr->name, name, 
 		    errorString);
@@ -219,7 +342,9 @@ DevSCSITapeError(tapePtr, statusWord, senseLength, senseDataPtr)
 		 * Hit the file mark after reading good data. Setting this 
 		 * bit causes the next read to return zero bytes.
 		 */
+#if 0
 		tapePtr->state |= SCSI_TAPE_AT_EOF;
+#endif
 	    } else if (s->endOfMedia) {
 		status = DEV_END_OF_TAPE;
 	    }
@@ -276,12 +401,10 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
 {
     ReturnStatus status;
     ScsiCmd	 scsiTapeCmd;
-    unsigned char statusByte;
-    int		senseLength;
-    char	senseBuffer[SCSI_MAX_SENSE_LEN];
     unsigned int	code;
     int			amountTransferred;
-    int		scsiCmd;
+    int		scsiCmd = 0;
+    Boolean	group0 = TRUE;
 
    code = 0;
    switch (command) {
@@ -295,6 +418,7 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
 	count = 0;
 	break;
     case IOC_TAPE_WEOF:
+	printf("Writing file mark\n");
 	scsiCmd = SCSI_WRITE_EOF;
 	break;
     case IOC_TAPE_ERASE:
@@ -307,21 +431,54 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
 	break;
     case IOC_TAPE_RETENSION:
 	return DEV_INVALID_ARG;
+    case IOC_TAPE_SKIP_EOD:
+	scsiCmd = SCSI_SPACE;
+	code = 3;
+	break;
+    case IOC_TAPE_GOTO_BLOCK: {
+	ScsiLocateCmd	*cmdPtr = (ScsiLocateCmd *) scsiTapeCmd.commandBlock;
+	scsiTapeCmd.commandBlockLen = sizeof(*cmdPtr);
+	bzero((char *) cmdPtr, sizeof(*cmdPtr));
+	group0 = FALSE;
+	cmdPtr->command = SCSI_LOCATE;
+	cmdPtr->unitNumber = tapePtr->devPtr->LUN;
+	cmdPtr->addr3 = (count & 0xff000000) >> 24;
+	cmdPtr->addr2 = (count & 0x00ff0000) >> 16;
+	cmdPtr->addr1 = (count & 0x0000ff00) >> 8;
+	cmdPtr->addr0 = (count & 0x000000ff);
+	break;
+    }
+    case IOC_TAPE_LOAD: 
+    case IOC_TAPE_UNLOAD:
+	scsiCmd = SCSI_LOAD_UNLOAD;
+	count = (command == IOC_TAPE_LOAD) ? 1 : 0;
+	break;
+    case IOC_TAPE_PREVENT_REMOVAL:
+    case IOC_TAPE_ALLOW_REMOVAL: {
+	ScsiPreventAllowCmd	*cmdPtr;
+	cmdPtr = (ScsiPreventAllowCmd *) scsiTapeCmd.commandBlock;
+	scsiTapeCmd.commandBlockLen = sizeof(*cmdPtr);
+	bzero((char *) cmdPtr, sizeof(*cmdPtr));
+	group0 = FALSE;
+	cmdPtr->command = SCSI_PREVENT_ALLOW;
+	if (command == IOC_TAPE_PREVENT_REMOVAL) {
+	    cmdPtr->prevent = 1;
+	}
+	break;
+    }
     default:
 	scsiCmd = 0;
 	panic("DevSCSITapeSpecialCmd: Unknown command %d\n", command);
     }
-    SetupCommand(tapePtr->devPtr, scsiCmd, code, (unsigned)count, &scsiTapeCmd);
+    if (group0) {
+	SetupCommand(tapePtr->devPtr, scsiCmd, code, (unsigned)count, 
+		    &scsiTapeCmd);
+    }
     scsiTapeCmd.buffer = (char *) 0;
     scsiTapeCmd.bufferLen = 0;
     scsiTapeCmd.dataToDevice = FALSE;
-    senseLength = SCSI_MAX_SENSE_LEN;
-    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, &statusByte,
-				&amountTransferred, &senseLength, senseBuffer);
-    if (status == SUCCESS) {
-	status = (tapePtr->errorProc)(tapePtr,statusByte, senseLength, 
-				      senseBuffer);
-    }
+    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd,
+				&amountTransferred);
     return(status);
 
 }
@@ -353,11 +510,11 @@ DevSCSITapeVariableIO(tapePtr,command, buffer, countPtr)
 {
     ReturnStatus status;
     ScsiCmd	 scsiTapeCmd;
-    unsigned char statusByte;
-    int		senseLength;
-    char	senseBuffer[SCSI_MAX_SENSE_LEN];
 
-
+    if (((*countPtr < tapePtr->minBlockSize) && (*countPtr != 0)) ||
+	(*countPtr > tapePtr->maxBlockSize)) {
+	return DEV_INVALID_ARG;
+    }
     /* 
      * Setup the command, a code value of zero means variable block.
      */
@@ -366,14 +523,8 @@ DevSCSITapeVariableIO(tapePtr,command, buffer, countPtr)
     scsiTapeCmd.buffer = buffer;
     scsiTapeCmd.bufferLen = *countPtr;
     scsiTapeCmd.dataToDevice = (command == SCSI_WRITE);
-    senseLength = SCSI_MAX_SENSE_LEN;
-    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, &statusByte,
-				countPtr, &senseLength, senseBuffer);
+    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, countPtr);
 
-    if (status == SUCCESS) {
-	status = (tapePtr->errorProc)(tapePtr,statusByte, senseLength, 
-				      senseBuffer);
-    }
     return(status);
 }
 
@@ -404,9 +555,6 @@ DevSCSITapeFixedBlockIO(tapePtr, command, buffer, countPtr)
 {
     ReturnStatus status;
     ScsiCmd	 scsiTapeCmd;
-    unsigned char statusByte;
-    int		senseLength;
-    char	senseBuffer[SCSI_MAX_SENSE_LEN];
     int		lengthInBlocks;
 
    /*
@@ -426,14 +574,8 @@ DevSCSITapeFixedBlockIO(tapePtr, command, buffer, countPtr)
     scsiTapeCmd.buffer = buffer;
     scsiTapeCmd.bufferLen = *countPtr;
     scsiTapeCmd.dataToDevice = (command == SCSI_WRITE);
-    senseLength = SCSI_MAX_SENSE_LEN;
-    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, &statusByte,
-				countPtr, &senseLength, senseBuffer);
+    status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, countPtr);
 
-    if (status == SUCCESS) {
-	status = (tapePtr->errorProc)(tapePtr,statusByte, senseLength, 
-				      senseBuffer);
-    }
     return(status);
 }
 
@@ -517,6 +659,7 @@ DevSCSITapeRead(devicePtr, readPtr, replyPtr)
     int	maxXfer;
 
     tapePtr = (ScsiTape *)(devicePtr->data);
+#if 0
     if (tapePtr->state & SCSI_TAPE_AT_EOF) {
 	/*
 	 * Force the use of the SKIP_FILES control to get past the end of
@@ -525,6 +668,7 @@ DevSCSITapeRead(devicePtr, readPtr, replyPtr)
 	replyPtr->length = 0;
 	return(SUCCESS);
     }
+#endif
     /*
      * Break up the IO into piece the device/HBA can handle.
      */
@@ -641,6 +785,9 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 {
     ScsiTape *tapePtr;
     ReturnStatus status = SUCCESS;
+    int		fmtStatus;
+    int		inSize;
+    int		outSize;
 
     tapePtr = (ScsiTape *)(devicePtr->data);
      if ((ioctlPtr->command & ~0xffff) == IOC_SCSI) {
@@ -651,12 +798,22 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 
     switch(ioctlPtr->command) {
 	case IOC_REPOSITION: {
-	    Ioc_RepositionArgs *repoArgsPtr;
-	    repoArgsPtr = (Ioc_RepositionArgs *)ioctlPtr->inBuffer;
-
-	    switch (repoArgsPtr->base) {
+	    Ioc_RepositionArgs repoArgs;
+	    inSize = ioctlPtr->inBufSize;
+	    outSize = sizeof(Ioc_RepositionArgs);
+	    fmtStatus = Fmt_Convert("w*", ioctlPtr->format, &inSize,
+		ioctlPtr->inBuffer, mach_Format, &outSize, (Address) &repoArgs);
+	    if (fmtStatus != 0) {
+		printf("Format of IOC_REPOSITION parameter failed, 0x%x\n",
+		    fmtStatus);
+		return DEV_INVALID_ARG;
+	    }
+	    if (outSize < sizeof(Ioc_RepositionArgs)) {
+		return DEV_INVALID_ARG;
+	    }
+	    switch (repoArgs.base) {
 		case IOC_BASE_ZERO:
-		    if (repoArgsPtr->offset != 0) {
+		    if (repoArgs.offset != 0) {
 			return(DEV_INVALID_ARG);
 		    }
 		    status = (tapePtr->specialCmdProc)(tapePtr,
@@ -666,7 +823,7 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 		    status = DEV_INVALID_ARG;
 		    break;
 		case IOC_BASE_EOF:
-		    if (repoArgsPtr->offset != 0) {
+		    if (repoArgs.offset != 0) {
 			status = DEV_INVALID_ARG;
 		    } else if ((tapePtr->state & SCSI_TAPE_WRITTEN) == 0) {
 			/*
@@ -682,15 +839,24 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 	    break;
 	}
 	case IOC_TAPE_COMMAND: {
-	    Dev_TapeCommand *cmdPtr = (Dev_TapeCommand *)ioctlPtr->inBuffer;
-	    if (ioctlPtr->inBufSize < sizeof(Dev_TapeCommand)) {
+	    Dev_TapeCommand cmd;
+	    inSize = ioctlPtr->inBufSize;
+	    outSize = sizeof(Dev_TapeCommand);
+	    fmtStatus = Fmt_Convert("w*", ioctlPtr->format, &inSize,
+		    ioctlPtr->inBuffer, mach_Format, &outSize, (Address) &cmd);
+	    if (fmtStatus != 0) {
+		printf("Format of IOC_TAPE_COMMAND parameter failed, 0x%x\n",
+		    fmtStatus);
+		return DEV_INVALID_ARG;
+	    }
+	    if (outSize < sizeof(Dev_TapeCommand)) {
 		return(DEV_INVALID_ARG);
 	    }
 	    tapePtr->state &= ~SCSI_TAPE_WRITTEN;
-	    switch (cmdPtr->command) {
+	    switch (cmd.command) {
 		case IOC_TAPE_WEOF: {
 		    status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_WEOF,
-							cmdPtr->count);
+							cmd.count);
 		    break;
 		}
 		case IOC_TAPE_RETENSION: {
@@ -706,17 +872,11 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 		}
 		case IOC_TAPE_SKIP_BLOCKS: {
 		    status = (tapePtr->specialCmdProc)(tapePtr, 
-					IOC_TAPE_SKIP_BLOCKS, cmdPtr->count);
-		    if (status == DEV_END_OF_TAPE) {
-			status = SUCCESS;
-		    }
+					IOC_TAPE_SKIP_BLOCKS, cmd.count);
 		    break;
 		case IOC_TAPE_SKIP_FILES:
 		    status = (tapePtr->specialCmdProc)(tapePtr, 
-					IOC_TAPE_SKIP_FILES,  cmdPtr->count);
-		    if (status == DEV_END_OF_TAPE) {
-			status = SUCCESS;
-		    }
+					IOC_TAPE_SKIP_FILES,  cmd.count);
 		    break;
 		}
 		case IOC_TAPE_BACKUP_BLOCKS:
@@ -733,11 +893,69 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 						      IOC_TAPE_NO_OP,1);
 		    break;
 		}
+		case IOC_TAPE_SKIP_EOD: {
+		    status = (tapePtr->specialCmdProc)(tapePtr, 
+						      IOC_TAPE_SKIP_EOD,1);
+		    break;
+		}
+		case IOC_TAPE_GOTO_BLOCK: {
+		    status = (tapePtr->specialCmdProc)(tapePtr, 
+					  IOC_TAPE_GOTO_BLOCK, cmd.count);
+		    break;
+		}
+		case IOC_TAPE_LOAD:
+		case IOC_TAPE_UNLOAD: 
+		case IOC_TAPE_PREVENT_REMOVAL:
+		case IOC_TAPE_ALLOW_REMOVAL: {
+		    status = (tapePtr->specialCmdProc)(tapePtr, 
+					  cmd.command, cmd.count);
+		    break;
+		}
+		default:
+		    status = DEV_INVALID_ARG;
 	    }
 	    break;
 	}
 	case IOC_TAPE_STATUS: {
-		return(DEV_INVALID_ARG);
+	    Dev_TapeStatus		tapeStatus;
+	    ScsiReadPositionResult	position;
+
+	    bzero((char *) &position, sizeof(position));
+	    bzero((char *) &tapeStatus, sizeof(tapeStatus));
+	    tapeStatus.type = tapePtr->type;
+	    tapeStatus.blockSize = tapePtr->blockSize;
+	    tapeStatus.position = -1;
+	    tapeStatus.remaining = -1;
+	    tapeStatus.dataError= -1;
+	    tapeStatus.readWriteRetry = -1;
+	    tapeStatus.trackingRetry = -1;
+	    tapeStatus.bufferedMode = -1;
+	    tapeStatus.speed = -1;
+	    tapeStatus.density = -1;
+	    status = DevScsiReadPosition(tapePtr->devPtr, 0, &position);
+	    if ((status == SUCCESS) && (position.bpu == 0)) {
+		tapeStatus.position = 
+			(position.firstBlock3 << 24) |
+			(position.firstBlock2 << 16) |
+			(position.firstBlock1 << 8) |
+			(position.firstBlock0);
+	    }
+	    if (tapePtr->statusProc != (ReturnStatus (*)()) NIL) {
+		status = (tapePtr->statusProc)(tapePtr, &tapeStatus);
+	    }
+	    inSize = sizeof(Dev_TapeStatus);
+	    outSize = ioctlPtr->outBufSize;
+	    fmtStatus = Fmt_Convert("w*", mach_Format, &inSize,
+		    (Address) &tapeStatus, ioctlPtr->format, &outSize, 
+		    (Address) ioctlPtr->outBuffer);
+	    if (fmtStatus != 0) {
+		if (fmtStatus != FMT_OUTPUT_TOO_SMALL) {
+		    printf("Format of IOC_TAPE_STATUS parameter failed, 0x%x\n",
+		    fmtStatus);
+		}
+		return DEV_INVALID_ARG;
+	    }
+	    return status;
 	}
 	    /*
 	     * No tape specific bits are set this way.
@@ -813,10 +1031,9 @@ DevSCSITapeClose(devicePtr, useFlags, openCount, writerCount)
 	status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_WEOF,1);
     }
     /*
-     * Use the unit number to indicate rewind or no-rewind.  An
-     * ``even'' number (0 and 8) means rewind.
+     * If the "no rewind" flag is not set then rewind the device.
      */
-    if ((devicePtr->unit % 2) == 0) {
+    if (!(devicePtr->unit & DEV_SCSI_TAPE_NO_REWIND)) {
 	status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_REWIND,1);
     }
     (void) DevScsiReleaseDevice(tapePtr->devPtr);
@@ -824,3 +1041,4 @@ DevSCSITapeClose(devicePtr, useFlags, openCount, writerCount)
     devicePtr->data = (ClientData) NIL;
     return(status);
 }
+
