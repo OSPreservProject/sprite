@@ -22,6 +22,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sys.h>
 #include <vmHack.h>
 #ifdef VM_CHECK_BSTRING_ACCESS
+#include <dbg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #endif
 
@@ -37,16 +39,18 @@ Address vmMapEndAddr;
 
 #ifdef VM_CHECK_BSTRING_ACCESS
 /* 
- * Temporary: keep a list of which processes have called 
- * Vm_MakeAccessible.  bcopy et al will check the list to verify that 
- * it's okay to access the user address space.
+ * Temporary: keep a list of which processes have called
+ * Vm_MakeAccessible and what user pages the processes should have
+ * access to.  bcopy et al will check the list to verify that it's
+ * okay to access the user address space.
  */
 
 typedef struct {
     List_Links		links;
     Proc_ControlBlock	*procPtr;
-    Address		startAddr; /* user address */
-    int			numBytes; /* as returned by Vm_MakeAccessible */
+    Address		startAddr; /* user address @ start of first page */
+    Address		endAddr; /* user address @ start of last page */
+    int			refCount;
 } VmAccessInfo;
 
 List_Links	vmAccessListHdr;
@@ -63,7 +67,9 @@ static void RemoveAccess _ARGS_ ((Proc_ControlBlock *procPtr,
 				  Address startAddr, int numBytes));
 static VmAccessInfo *
 FindAccessElement _ARGS_ ((Proc_ControlBlock *procPtr, Address startAddr,
-			   int numBytes));
+			   Address endAddr));
+
+static Address TruncateToPageStart _ARGS_ ((Address));
 
 #endif /* VM_CHECK_BSTRING_ACCESS */
 
@@ -373,7 +379,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
 
  done:
 #ifdef VM_CHECK_BSTRING_ACCESS
-    if (vmDoAccessChecks && *retBytesPtr != 0) {
+    if (vmDoAccessChecks && !dbg_BeingDebugged && *retBytesPtr != 0) {
 	RegisterAccess(procPtr, startAddr, *retBytesPtr);
     }
 #else 
@@ -441,7 +447,7 @@ Vm_MakeUnaccessible(addr, numBytes)
     UNLOCK_MONITOR;
 
 #ifdef VM_CHECK_BSTRING_ACCESS
-    if (vmDoAccessChecks && numBytes != 0) {
+    if (vmDoAccessChecks && !dbg_BeingDebugged && numBytes != 0) {
 	RemoveAccess(procPtr, addr, numBytes);
     }
 #endif
@@ -455,13 +461,15 @@ Vm_MakeUnaccessible(addr, numBytes)
  * RegisterAccess --
  *
  *	Record the fact that the given process has acquired access to 
- *	the given range of addresses.
+ *	the given range of pages.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Adds an element to the access linked list.
+ *	Adds an element to the access linked list if the range isn't 
+ *	already registered.  Bumps the reference count for the range 
+ *	if it has.
  *
  *----------------------------------------------------------------------
  */
@@ -473,20 +481,25 @@ RegisterAccess(procPtr, startAddr, numBytes)
     int			numBytes; /* as returned by Vm_MakeAccessible */
 {
     VmAccessInfo *accessPtr;
+    Address	endAddr = TruncateToPageStart(startAddr + numBytes - 1);
+
+    startAddr = TruncateToPageStart(startAddr);
 
     Sync_GetLock(&vmAccessListLock);
 
-    accessPtr = FindAccessElement(procPtr, startAddr, numBytes);
+    accessPtr = FindAccessElement(procPtr, startAddr, endAddr);
     if (accessPtr != (VmAccessInfo *)NIL) {
-	vmDoAccessChecks = FALSE;
-	panic("Vm_MakeAccessible: address range already registered");
+	accessPtr->refCount++;
+    } else {
+	accessPtr = (VmAccessInfo *)malloc(sizeof(VmAccessInfo));
+	accessPtr->procPtr = procPtr;
+	accessPtr->startAddr = startAddr;
+	accessPtr->endAddr = endAddr;
+	accessPtr->refCount = 1;
+	List_InitElement((List_Links *)accessPtr);
+	List_Insert((List_Links *)accessPtr,
+		    LIST_ATREAR(vmAccessList));
     }
-    accessPtr = (VmAccessInfo *)malloc(sizeof(VmAccessInfo));
-    accessPtr->procPtr = procPtr;
-    accessPtr->startAddr = startAddr;
-    accessPtr->numBytes = numBytes;
-    List_InitElement((List_Links *)accessPtr);
-    List_Insert((List_Links *)accessPtr, LIST_ATREAR(vmAccessList));
 
     Sync_Unlock(&vmAccessListLock);
 }
@@ -498,16 +511,16 @@ RegisterAccess(procPtr, startAddr, numBytes)
  * RemoveAccess --
  *
  *	Forget that the given process has access to the given range of 
- *	addresses.
+ *	pages.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Removes the element from the linked list that corresponds to 
- *	the given arguments.  We assume that the caller will surrender 
- *	access to the entire range that was acquired, rather than 
- *	surrendering only part of the range.
+ *	Decrements the reference count for the given range.  Removes 
+ *	the range from the list if the count goes to 0.  We assume
+ *	that the caller will surrender access to the entire range that
+ *	was acquired, rather than surrendering only part of the range.
  *
  *----------------------------------------------------------------------
  */
@@ -519,16 +532,23 @@ RemoveAccess(procPtr, startAddr, numBytes)
     int			numBytes; /* as returned by Vm_MakeAccessible */
 {
     VmAccessInfo *accessPtr;
+    Address	endAddr = TruncateToPageStart(startAddr + numBytes - 1);
+
+    startAddr = TruncateToPageStart(startAddr);
 
     Sync_GetLock(&vmAccessListLock);
 
-    accessPtr = FindAccessElement(procPtr, startAddr, numBytes);
+    accessPtr = FindAccessElement(procPtr, startAddr, endAddr);
     if (accessPtr == (VmAccessInfo *)NIL) {
 	vmDoAccessChecks = FALSE;
 	panic("Vm_MakeUnAccessible: address range not registered");
     }
-    List_Remove((List_Links *)accessPtr);
-    free((char *)accessPtr);
+
+    accessPtr->refCount--;
+    if (accessPtr->refCount <= 0) {
+	List_Remove((List_Links *)accessPtr);
+	free((char *)accessPtr);
+    }
 
     Sync_Unlock(&vmAccessListLock);
 }
@@ -553,17 +573,17 @@ RemoveAccess(procPtr, startAddr, numBytes)
  */
 
 static VmAccessInfo *
-FindAccessElement(procPtr, startAddr, numBytes)
+FindAccessElement(procPtr, startAddr, endAddr)
     Proc_ControlBlock *procPtr;
-    Address	startAddr;
-    int		numBytes;
+    Address	startAddr;	/* start addr of first page */
+    Address	endAddr;	/* start addr of last page */
 {
     VmAccessInfo *accessPtr;
 
     LIST_FORALL(vmAccessList, (List_Links *)accessPtr) {
 	if (accessPtr->procPtr == procPtr
 		&& accessPtr->startAddr == startAddr
-		&& accessPtr->numBytes == numBytes) {
+		&& accessPtr->endAddr == endAddr) {
 	    return accessPtr;
 	}
     }
@@ -598,7 +618,7 @@ Vm_CheckAccessible(startAddr, numBytes)
     Proc_ControlBlock	*procPtr = Proc_GetCurrentProc();
     Boolean okay = FALSE;
 
-    if (!vmDoAccessChecks) {
+    if (!vmDoAccessChecks || dbg_BeingDebugged) {
 	return;
     }
 
@@ -623,8 +643,8 @@ Vm_CheckAccessible(startAddr, numBytes)
 	 * the list element, go on to the next element.
 	 */
 	if (accessPtr->startAddr <= startAddr
-		&& (accessPtr->startAddr + accessPtr->numBytes >=
-		    startAddr + numBytes)) {
+		&& (accessPtr->endAddr + vm_PageSize
+		    >= startAddr + numBytes)) {
 	    okay = TRUE;
 	    break;
 	}
@@ -634,7 +654,7 @@ Vm_CheckAccessible(startAddr, numBytes)
 
     if (!okay) {
 	vmDoAccessChecks = FALSE;
-	panic("accessing user memory improperly");
+	panic("Vm_IsAccessible: accessing user memory improperly");
     }
 }
 
@@ -661,6 +681,31 @@ VmMapInit()
 {
     Sync_LockInitDynamic(&vmAccessListLock, "Vm:accessListLock");
     List_Init(vmAccessList);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TruncateToPageStart --
+ *
+ *	Truncate an address to the start of a page.
+ *
+ * Results:
+ *	Returns the first address of the page that the given address 
+ *	belongs to.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Address
+TruncateToPageStart(addr)
+    Address addr;
+{
+    return (addr - (int)addr % (int)vm_PageSize);
 }
 
 #endif /* VM_CHECK_BSTRING_ACCESS */
