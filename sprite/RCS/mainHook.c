@@ -12,6 +12,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mem.h"
 
 /*
  * Flags to modify main's behavior.   Can be changed without recompiling
@@ -25,6 +26,16 @@ int main_NumRpcServers	= 2;	 /* # of rpc servers to create */
 char *main_AltInit	= NULL;  /* If non-null then contains name of
 				  * alternate init program to use. */
 Boolean main_AllowNMI = FALSE;	 /* TRUE -> allow non-maskable intrrupts */
+
+Mem_TraceInfo mainMemTraceInfo[] = {
+    { 20, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 24, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 28, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 36, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 44, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 132, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 280, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+};
 
 
 /*
@@ -47,6 +58,8 @@ Boolean main_AllowNMI = FALSE;	 /* TRUE -> allow non-maskable intrrupts */
 void
 Main_HookRoutine()
 {
+    Mem_SetTraceSizes(sizeof(mainMemTraceInfo) / sizeof(Mem_TraceInfo),
+			mainMemTraceInfo);
 }
 
 
