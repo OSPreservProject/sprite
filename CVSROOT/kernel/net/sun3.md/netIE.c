@@ -41,7 +41,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netIEInt.h"
 #include "net.h"
 #include "netInt.h"
-#include "byte.h"
 
 /*
  * Define global variables.
@@ -213,7 +212,7 @@ NetIEDefaultConfig()
     NetIEConfigureCB	*confCBPtr;
 
     confCBPtr = (NetIEConfigureCB *) netIEState.cmdBlockPtr;
-    Byte_Zero(sizeof(NetIEConfigureCB), (Address) confCBPtr);
+    bzero((Address) confCBPtr, sizeof(NetIEConfigureCB));
     confCBPtr->cmdBlock.cmdNumber = NET_IE_CONFIG;
     confCBPtr->byteCount = 12;
     confCBPtr->fifoLimit = 12;
@@ -299,7 +298,7 @@ NetIEReset()
 	 * Initialize the system configuration pointer.
 	 */
 
-	Byte_Zero(sizeof(NetIESysConfPtr), (Address) netIEState.sysConfPtr);
+	bzero((Address) netIEState.sysConfPtr, sizeof(NetIESysConfPtr));
 	netIEState.sysConfPtr->intSysConfPtr = 
 			NetIEAddrFrom68000Addr((int) netIEState.intSysConfPtr);
 
@@ -307,7 +306,7 @@ NetIEReset()
 	 * Initialize the intermediate system configuration pointer.
 	 */
 
-	Byte_Zero(sizeof(NetIEIntSysConfPtr),(Address) netIEState.intSysConfPtr);
+	bzero((Address) netIEState.intSysConfPtr, sizeof(NetIEIntSysConfPtr));
 	netIEState.intSysConfPtr->busy = 1;
 	netIEState.intSysConfPtr->base = 
 			    NetIEAddrFrom68000Addr(netIEState.memBase);
@@ -318,7 +317,7 @@ NetIEReset()
 	 * Initialize the system control block.
 	 */
 
-	Byte_Zero(sizeof(NetIESCB), (Address) netIEState.scbPtr);
+	bzero((Address) netIEState.scbPtr, sizeof(NetIESCB));
 
 	/*
 	 * Turn off the reset bit.

@@ -33,7 +33,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netLEInt.h"
 #include "net.h"
 #include "netInt.h"
-#include "byte.h"
 
 /*
  * Define global variables.
@@ -212,7 +211,7 @@ NetLEReset()
      *  told otherwise.
      */
 
-    Byte_Zero(sizeof(NetLEInitBlock), (Address) netLEState.initBlockPtr);
+    bzero( (Address) netLEState.initBlockPtr, sizeof(NetLEInitBlock));
     initPtr = netLEState.initBlockPtr;
     /*
      * Insert the byte swapped ethernet address.

@@ -25,7 +25,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "vm.h"
 #include "list.h"
-#include "byte.h"
 
 #include "sync.h"
 
@@ -177,7 +176,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		 /*
 		  * Needs this entire length.
 		  */
-		 Byte_Copy(length, bufPtr, firstBufferPtr);
+		 bcopy(bufPtr, firstBufferPtr, length);
 		 totalLength += length;
 		 firstBufferPtr += length;
 		 /*
@@ -188,7 +187,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		/*
 		 * Needs only part of this buffer.
 		 */
-		 Byte_Copy(amountNeeded, bufPtr, firstBufferPtr);
+		 bcopy(bufPtr, firstBufferPtr, amountNeeded);
 		 totalLength += amountNeeded;
 		 /*
 		  * Update the length and address for insertion into the
@@ -613,7 +612,7 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	    etherHdrPtr->source = netLEState.etherAddress;
 
 	    bufPtr = (Address)loopBackBuffer;
-	    Byte_Copy(sizeof(Net_EtherHdr), (Address)etherHdrPtr, bufPtr);
+	    bcopy((Address)etherHdrPtr, bufPtr, sizeof(Net_EtherHdr));
 	    bufPtr += sizeof(Net_EtherHdr);
             Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
 

@@ -24,7 +24,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netInt.h"
 #include "sys.h"
 #include "list.h"
-#include "byte.h"
 
 #include "sync.h"
 
@@ -145,7 +144,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 			  "IE OutputPacket: Odd addressed buffer too large.");
 		return;
 	    }
-	    Byte_Copy(length, scatterGatherPtr->bufAddr, xmitTempBuffer);
+	    bcopy(scatterGatherPtr->bufAddr, xmitTempBuffer, length);
 	    if (length < NET_IE_MIN_DMA_SIZE) {
 		/*
 		 * This element of the scatter/gather vector is too small;
@@ -160,8 +159,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 			numBorrowedBytes = scatterGatherPtr[1].length;
 		    }
 		    if (numBorrowedBytes > 0) {
-			Byte_Copy(numBorrowedBytes, scatterGatherPtr[1].bufAddr,
-				    &xmitTempBuffer[length]);
+			bcopy(scatterGatherPtr[1].bufAddr,
+			     &xmitTempBuffer[length], numBorrowedBytes);
 			scatterGatherPtr[1].length -= numBorrowedBytes;
 			scatterGatherPtr[1].bufAddr += numBorrowedBytes;
 			length += numBorrowedBytes;
@@ -513,7 +512,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	    etherHdrPtr->source = netIEState.etherAddress;
 
 	    bufPtr = (Address)loopBackBuffer;
-	    Byte_Copy(sizeof(Net_EtherHdr), (Address)etherHdrPtr, bufPtr);
+	    bcopy((Address)etherHdrPtr, bufPtr, sizeof(Net_EtherHdr));
 	    bufPtr += sizeof(Net_EtherHdr);
             Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
 
