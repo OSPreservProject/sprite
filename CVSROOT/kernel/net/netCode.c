@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <net.h>
 #include <netInt.h>
 #include <devNet.h>
+#include <string.h>
 #include <sync.h>
 #include <dbg.h>
 #include <machMon.h>
@@ -108,21 +109,21 @@ Net_Init()
     bzero((char *) &netZeroAddress, sizeof(Net_Address));
     netNumInterfaces = 0;
     for (i = 0 ; i<netNumConfigInterfaces ; i++) {
-	netConfigInterfaces[i].flags = 0;
-	status = (netConfigInterfaces[i].init)(&(netConfigInterfaces[i]));
+	interPtr = &netConfigInterfaces[i];
+	interPtr->flags = 0;
+	(void) sprintf(buffer, "NetOutputMutex:%d", i);
+	Sync_SemInitDynamic(&interPtr->syncOutputMutex, 
+			    strdup(buffer));
+	(void) sprintf(buffer, "NetMutex:%d", i);
+	Sync_SemInitDynamic(&interPtr->mutex, strdup(buffer));
+	status = (interPtr->init)(interPtr);
 	if (status == SUCCESS) {
-	    netInterfaces[netNumInterfaces] = &netConfigInterfaces[i];
-	    interPtr = netInterfaces[netNumInterfaces];
+	    netInterfaces[netNumInterfaces] = interPtr;
 	    netNumInterfaces++;
 	    interPtr->packetProc = NILPROC;
 	    interPtr->devNetData = (ClientData) NIL;
 	    interPtr->number = counter[interPtr->netType];
 	    counter[interPtr->netType]++;
-	    (void) sprintf(buffer, "NetOutputMutex:%d", i);
-	    Sync_SemInitDynamic(&interPtr->syncOutputMutex, 
-		buffer);
-	    (void) sprintf(buffer, "NetMutex:%d", i);
-	    Sync_SemInitDynamic(&interPtr->mutex, buffer);
 	} 
     }
     net_NetworkHeaderSize[NET_NETWORK_ETHER] = sizeof(Net_EtherHdr);
