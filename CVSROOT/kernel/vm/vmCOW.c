@@ -93,7 +93,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "stdlib.h"
 
+#ifdef sun4
+/*
+ * Due to the cache flushing necessitated by all the mapping games, COW
+ * seems to be a lose on the sun4 right now.
+ */
+Boolean	vm_CanCOW = FALSE;
+#else
 Boolean	vm_CanCOW = TRUE;
+#endif /* sun4 */
 
 void		DoFork();
 void		GiveAwayPage();

@@ -683,14 +683,6 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
      */
     transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
     UNLOCK_MONITOR;
-#ifdef sun4
-    seg1Ptr = procPtr->vmPtr->segPtrArray[VM_HEAP];
-    printf("VmVirtAddrParse is failing.  virtAddr 0x%x, pid 0x%x.\n",
-	    virtAddr, procPtr->processID);
-    if (virtAddr == (Address) 0) {
-	printf("It's zero.\n");
-    }
-#endif sun4
 }
 
 
