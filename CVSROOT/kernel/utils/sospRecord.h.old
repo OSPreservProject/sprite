@@ -62,12 +62,12 @@ extern TraceLog_Header *SOSP91TracePtr;
  * streamID		Fs_FileID in the header of stream returned for this open
  * userID:		User id associated with process doing the open
  * mode			Mode flags of the open command
- * numAlreadyReading	Number of clients with file already open for reading
- * numAlreadyWriting	Number of clients with file already open for writing
+ * numNowReading	Number of clients with file open for reading after open
+ * numNowWriting	Number of clients with file open for writing
  * fileAge		The create time for the file
  * fileSize		Size in bytes of the file
  */
-#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, userID, mode, numAlreadyReading, numAlreadyWriting, fileAge, fileSize) \
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, userID, mode, numNowReading, numNowWriting, fileAge, fileSize) \
 {\
 	unsigned int	sospBuffer[68];\
 \
@@ -78,8 +78,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 	*((Fs_FileID *) &(sospBuffer[7])) = streamID;\
 	sospBuffer[11] = userID;\
 	sospBuffer[12] = mode;\
-	sospBuffer[13] = numAlreadyReading;\
-	sospBuffer[14] = numAlreadyWriting;\
+	sospBuffer[13] = numNowReading;\
+	sospBuffer[14] = numNowWriting;\
 	sospBuffer[15] = fileAge;\
 	sospBuffer[16] = fileSize;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
