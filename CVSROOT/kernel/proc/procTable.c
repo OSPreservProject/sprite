@@ -450,6 +450,41 @@ Proc_Unlock(procPtr)
 
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Proc_UnlockAndSwitch --
+ *
+ *	Unlock a PCB and perform a context switch to the given state.  
+ *	This is done atomically: no other process can lock the PCB before 
+ *	this process context switches.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_UnlockAndSwitch(procPtr, state)
+    Proc_ControlBlock *procPtr;	/* the PCB to unlock */
+    Proc_State state;		/* the state to context switch to */
+{
+    LOCK_MONITOR;
+
+    if (!(procPtr->genFlags & PROC_LOCKED)) {
+	panic("Proc_Unlock: PCB not locked.\n");
+    }
+    procPtr->genFlags &= ~PROC_LOCKED;
+    Sync_Broadcast(&procPtr->lockedCondition);
+
+    Sync_UnlockAndSwitch(LOCKPTR, state);
+}
+
+
+/*
  * ----------------------------------------------------------------------------
  *
  * ProcGetUnusedPCB --

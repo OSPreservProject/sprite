@@ -267,6 +267,9 @@ extern	ReturnStatus	Proc_RpcRemoteCall _ARGS_((ClientData srvToken,
 extern ReturnStatus 	Proc_RpcRemoteWait _ARGS_((ClientData srvToken,
 				int clientID, int command, 
 				Rpc_Storage *storagePtr));
+extern void		Proc_UnlockAndSwitch _ARGS_((
+				Proc_ControlBlock *procPtr,
+				Proc_State state));
 extern void 		Proc_UnlockFamily _ARGS_((int familyID));
 extern void 		Proc_ServerInit _ARGS_((void));
 extern void 		Proc_ServerProc _ARGS_((void));
