@@ -22,10 +22,8 @@
 #include "status.h"
 #ifdef KERNEL
 #include "devSyslog.h"
-#include "devDependent.h"
 #else
 #include <kernel/devSyslog.h>
-#include <kernel/devDependent.h>
 #endif
 
 
