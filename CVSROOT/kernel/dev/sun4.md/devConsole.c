@@ -279,8 +279,8 @@ DevConsoleConvertKeystroke(value)
  *
  * DevConsoleInputProc --
  *
- *	This procedure is invoked at background level (i.e in a kernel
- *	process) to handle input characters from the keyboard UART.
+ *	This procedure is invoked at interrupt level to handle input
+ *	characters from the keyboard UART.
  *
  * Results:
  *	None.
@@ -288,7 +288,9 @@ DevConsoleConvertKeystroke(value)
  * Side effects:
  *	The input character (which identifies a key transition) is
  *	converted to an ASCII character, which is then added to the
- *	input buffer for the console terminal device.
+ *	input buffer for the console terminal device.  Or, if this
+ *	is a console command then the console command is executed
+ *	and the keystroke is ignored.
  *
  *----------------------------------------------------------------------
  */
@@ -302,7 +304,6 @@ DevConsoleInputProc(ttyPtr, value)
 				 * or down transition. */
 {
     int asciiChar;
-    char c;
 
     /*
      * Ignore special characters such as break, then convert a keystroke
@@ -313,9 +314,18 @@ DevConsoleInputProc(ttyPtr, value)
 	return;
     }
     asciiChar = DevConsoleConvertKeystroke(value);
-    if (asciiChar < 0) {
-	return;
+
+    /*
+     * If the normal (ASCII stream) handler is in place for the console,
+     * then input the ASCII character.  Otherwise the console is being
+     * used in "mouse" mode:  input the raw keystroke.
+     */
+
+    if (asciiChar != -2) {
+	if (ttyPtr->inputProc != NIL) {
+	    DevTtyInputChar(ttyPtr, value);
+	} else if (asciiChar >= 0) {
+	    DevTtyInputChar(ttyPtr, asciiChar);
+	}
     }
-    c = asciiChar;
-    Td_PutRaw(ttyPtr->term, 1, &c);
 }

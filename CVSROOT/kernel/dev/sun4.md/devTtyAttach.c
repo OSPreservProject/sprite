@@ -55,7 +55,7 @@ static DevZ8530 keyboard = {
     1200,					/* baud */
     WRITE3_RX_8BIT,				/* wr3 */
     WRITE5_TX_8BIT,				/* wr5 */
-    DevTtyInputChar,				/* inputProc */
+    DevConsoleInputProc,			/* inputProc */
     (ClientData) &ttys[0],			/* inputData */
     NullOutputChar,				/* outputProc */
     (ClientData) &ttys[0],			/* outputData */
@@ -247,8 +247,6 @@ DevTtyAttach(unit)
 	case 0:
 	    ttyPtr->rawProc = DevConsoleRawProc;
 	    ttyPtr->rawData = (ClientData) &keyboard;
-	    ttyPtr->inputProc = DevConsoleInputProc;
-	    ttyPtr->inputData = (ClientData) ttyPtr;
 	    break;
 
 	/*
