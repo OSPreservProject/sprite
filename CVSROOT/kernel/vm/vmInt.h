@@ -14,12 +14,21 @@
 #ifndef _VMINT
 #define _VMINT
 
+#ifdef KERNEL
 #include "vmMach.h"
 #include "fs.h"
 #include "list.h"
 #include "sync.h"
 #include "proc.h"
 #include "status.h"
+#else 
+#include <kernel/vmMach.h>
+#include <kernel/fs.h>
+#include <kernel/sync.h>
+#include <kernel/proc.h>
+#include <status.h>
+#include <list.h>
+#endif
 
 /*
  * KERNEL VIRTUAL ADDRESS SPACE
