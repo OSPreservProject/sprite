@@ -30,6 +30,8 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "console.h"
 #include "dc7085.h"
 #include "graphics.h"
+#include "vm.h"
+#include "vmMach.h"
 #include "dev/graphics.h"
 
 /*
@@ -1177,7 +1179,7 @@ register char c;
 	Blitc((unsigned char)(c & 0xff));
     } else {
 	if (isascii(c)) {
-	    mach_MonFuncs.putchar(c);
+	    mach_MonFuncs.mputchar(c);
 	}
     }
 
