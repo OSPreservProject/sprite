@@ -75,6 +75,7 @@ typedef struct FsDeviceState {
  */
 extern ReturnStatus	FsDeviceSrvOpen();
 extern ReturnStatus	FsDeviceClose();
+extern ReturnStatus	FsDeviceReopen();
 extern ReturnStatus	FsDeviceDelete();
 
 /*
