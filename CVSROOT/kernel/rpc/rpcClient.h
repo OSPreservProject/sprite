@@ -23,6 +23,55 @@
 #include "rpcCltStat.h"
 #include "rpcHistogram.h"
 
+/*
+ * Tunable parameters used by Rpc_Call.  They are packaged up here so
+ * the values can be set/reported conveniently.
+ */
+typedef struct RpcConst {
+    /*
+     * The initial wait period is defined by retryWait, in ticks.  It
+     * is initialized from the millisecond valued retryMsec.  This is
+     * how long we wait after sending the first request packet.
+     */
+    int  		retryMsec;
+    unsigned int 	retryWait;
+    /*
+     * The wait period increases if we have to resend.  If we are recieving
+     * acknowledgments then we increase the timout until maxAckWait (ticks),
+     * which is initialized from maxAckMsec.  If we are not getting acks
+     * then we still back off a bit (as a heuristic in case  we are talking
+     * to a slow host) until the timout periodis maxTimeoutWait, which
+     * is initialized from maxTimeoutMsec.
+     */
+    int  		maxAckMsec;
+    unsigned int	maxAckWait;
+    int  		maxTimeoutMsec;
+    unsigned int	maxTimeoutWait;
+    /*
+     * maxTries is the maximum number of times we resend a request
+     * without getting any response (i.e. acknowledgments or the reply).
+     * maxAcks is the maximum number of acknowledgments we'll receive
+     * before complaining "so and so seems hung".  In the case of a
+     * broadcast rpc, we'll abort the RPC after maxAcks acknowledgments.
+     */
+    int 		maxTries;
+    int 		maxAcks;
+} RpcConst;
+
+extern RpcConst rpc;
+extern int rpcRetryMsec;
+extern int rpcMaxAckMsec;
+extern int rpcMaxTimeoutMsec;
+extern int rpcMaxTries;
+extern int rpcMaxAcks;
+
+/*
+ * Global used by Rpc_Call and initialized by Rpc_Start.  This is set
+ * once at boot-time to the real time clock.  The server tracks this value
+ * and detects a reboot by us when this changes.
+ */
+extern unsigned int rpcBootId;
+
 
 /*
  *      An RPC channel is described here.  It is used during an RPC to
@@ -136,23 +185,5 @@ void			 RpcChanFree();
 void			 RpcSetup();
 ReturnStatus		 RpcDoCall();
 void			 RpcClientDispatch();
-
-/*
- * Tunable parameters used by Rpc_Call.  These are documented in rpcClient.c
- * There are exported because Rpc_Init sets up some of them.
- */
-extern unsigned int 	rpcRetryWait;
-extern int  		rpcRetryFactor;
-extern unsigned int 	rpcMaxWait;
-extern int  		rpcMaxFactor;
-extern int 		rpcMaxTries;
-extern int 		rpcMaxAcks;
-
-/*
- * Global used by Rpc_Call and initialized by Rpc_Start.  This is set
- * once at boot-time to the real time clock.  The server tracks this value
- * and detects a reboot by us when this changes.
- */
-extern unsigned int rpcBootId;
 
 #endif _RPCCLIENT
