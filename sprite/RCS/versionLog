@@ -686,3 +686,22 @@ Fixed a few compat bugs:
 	big enough.
     Fsprefix_Clear didn't unlock the monitor on one error condition. This
 	caused the machines in Cory to hang during recovery.
+
+1.116	Wed Oct 28 14:17:06 PST 1992
+
+    Changes to dev module for atc boards and xbus and a server recovery-related
+    device.
+
+    Changes to file system so that file with no dirty cache blocks need not
+    be recovered by clients after a server crash.
+
+    Changes to rpc/fsrmt/fsutil modules to all bulk reopens - these are reopen
+    rpcs that reopen a set of files, and not just a single file.
+
+    New module fsrecov and changes to fsrmt, fsutil, and recov to suppost
+    fast server recovery from server memory rather than through communication
+    with clients.  This should be turned off by default, though.
+
+    Changes to rpc module to take out annoying printfs.
+
+    Changes to vm module to support raid changes in device module.
