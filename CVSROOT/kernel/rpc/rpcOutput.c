@@ -135,7 +135,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
     /* 
      * Find a route to the host. 
      */
-    routePtr = Net_IDToRoute(spriteID, 0, TRUE, mutexPtr, 
+    routePtr = Net_IDToRoute(spriteID, -1, TRUE, mutexPtr, 
 		    rpcHdrPtr->paramSize + rpcHdrPtr->dataSize);
     if (routePtr == (Net_Route *) NIL) {
 	return RPC_INTERNAL_ERROR;

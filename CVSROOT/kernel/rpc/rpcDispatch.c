@@ -206,8 +206,6 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 			    rpcHdrPtr->serverID,
 			    rpcHdrPtr->clientID);
 	    }
-	    printf("Resetting network interface %s\n", interPtr->name);
-	    Net_Reset(interPtr);
 	    return;
 	}
 
