@@ -321,9 +321,9 @@ ReturnStatus
 Dev_TimerOpen(devicePtr, useFlags, notifyToken, flagsPtr)
     Fs_Device *devicePtr;	/* Specifies type and unit number. */
     int useFlags;		/* Flags from the stream being opened */
-    ClientData notifyToken;	/* Used for Fs call-back to notify waiting
+    Fs_NotifyToken notifyToken;	/* Used for Fs call-back to notify waiting
 				 * processes that the console device is ready.*/
-    int		flagsPtr;	/* OUT: Device open flags. */
+    int *flagsPtr;              /* OUT: Device IO flags */
 {
     if (dev_TimerAddr == (volatile DevTimerChip *) 0) {
 	return DEV_NO_DEVICE;
