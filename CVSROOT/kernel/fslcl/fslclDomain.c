@@ -617,6 +617,15 @@ FslclHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	status = FS_CROSS_DOMAIN_OPERATION;
     } else {
 	/*
+	 * Make sure user isn't trying to hard-link a directory.
+	 */
+	if (handle1Ptr->descPtr->fileType == FS_DIRECTORY) {
+	    Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
+	    if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+		status = GEN_EPERM;
+	    }
+	}
+	/*
 	 * This lookup does the linking.  If our caller has set FS_RENAME in
 	 * lookupArgsPtr->useFlags then directories can be linked.  Handle1
 	 * is unlocked because the linking will end up locking it again.
