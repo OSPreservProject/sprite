@@ -7,12 +7,18 @@ LD = /sprite/cmds.${MACHINE}/ld
 
 #ifmake sun3 || profile3
 TM = sun3
-#else
+MTFLAGS = -msun3
+#endif
+#ifmake sun2 
 TM = sun2
+MTFLAGS = -msun2
+#endif
+#ifmake ds3100
+TM = ds3100
+MTFLAGS =
 #endif
 
-LIBC = -lc
-LIBOLD = -lold
+LIBC = -lnet -lc
 
 MODULE = sprite
 SPRITEDIR =	/sprite/src/kernel
@@ -25,7 +31,7 @@ ODIR =		${TM}.md
 IFLAGS=	-I. -I${H} -I${USERH} -I${USERH}/${TM}.md -I${H}/${TM}.md
 #PROFILE =	-p -DPROFILE
 PROFILE =
-CFLAGS =	-m${TM} -g -DKERNEL ${PROFILE} ${IFLAGS}
+CFLAGS =	${MTFLAGS} -g -DKERNEL ${PROFILE} ${IFLAGS}
 LINTFLAGS =	-I. -I${H}
 LINTLIBS =	${LINT}/*.ln
 
@@ -114,6 +120,8 @@ HDRS = sprite.h
 
 sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rm -f $@ version.o
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.o
 	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
@@ -126,6 +134,8 @@ sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 
 sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	-Save $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.o
 	${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
@@ -141,6 +151,8 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.o
 	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile2)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
@@ -153,6 +165,8 @@ profile2: ${PROFOBJS} Makefile .PRECIOUS
 
 profile3: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.o
 	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile3)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
@@ -163,6 +177,20 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	rcp /sprite/boot/$@.sprite ${GINGER}:/sprite3/tmp/$@
 	nm $@ | sort > $@.nm
 
+ds3100: ${OBJS} .PRECIOUS
+	rm -f $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	@${MKVERSION} -p "SPRITE VERSION 1.0 (ds3100)" > version.h
+	@cc -c ${CFLAGS} version.c
+	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
+		-L/sprite/lib/${TM}.md ${LIBC}
+	@ls -l $@
+	@size $@
+	update -f $@ /sprite/boot/$@.md/$@.new
+	strip /sprite/boot/$@.md/$@.new
+	rm -f $@.nm
+	nm -n $@ > $@.nm
 
 nm: ${OBJS}
 	./NM ${NM} ${OBJS}
