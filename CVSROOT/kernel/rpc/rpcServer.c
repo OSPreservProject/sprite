@@ -906,6 +906,17 @@ RpcResend(srvPtr)
  *
  *	Send a probe message to the client to see if it is still interested
  *	in the connection.  The Ack message header/buffer is used for this.
+ *	Synchronization note.  We are called with the srvPtr mutex locked,
+ *	but the server process is not marked BUSY so the dispatcher might
+ *	try to allocate this server.  The mutex prevents this, but it
+ *	is important to not pass the mutex to RpcOutput, which would use
+ *	it to wait for output of the packet.  In that case the mutex is
+ *	released for a while, leaving a window of vulnerability where the
+ *	server could get allocated and the mutex grabbed by the dispatcher.
+ *	By not passing the mutex the packet is sent asynchronously, so there
+ *	is a very remote chance we could try to issue another probe while
+ *	this is still in the output queue.  However, we would be sending
+ *	the same information in the packet, so there shouldn't be a problem.
  *
  * Results:
  *	None.
@@ -929,6 +940,5 @@ RpcProbe(srvPtr)
     RpcSrvInitHdr(srvPtr, ackHdrPtr, requestHdrPtr);
 
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
-					 (RpcBufferSet *)NIL, 0,
-					 &srvPtr->mutex);
+			 (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
 }
