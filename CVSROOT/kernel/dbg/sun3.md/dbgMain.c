@@ -43,6 +43,10 @@ int	replyOffset = 0;			/* Offset in buffer where next
 						 * bytes in reply should go. */
 int	curMsgNum;				/* The current message that
 						 * is being processed. */
+int	dbgMonPC;				/* Place to get the PC from
+						 * if trap via the monitor.*/
+int	dbgTraceLevel;				/* The debugger tracing
+						 * level. */
 
 /*
  * Number of times to poll before timing out and resending (about 2 seconds).
@@ -222,13 +226,14 @@ DbgCheckNmis()
  *
  * ----------------------------------------------------------------------------
  */
-static Boolean InRange(addr, numBytes) 
-    unsigned 	int addr; 
-    int		numBytes; 
+static Boolean InRange(addr, numBytes, writeable) 
+    unsigned 	int addr; 	/* Beginning address to check. */
+    int		numBytes; 	/* Number of bytes to check. */
+    Boolean	writeable;	/* TRUE => address must be writeable. */
 {
     VmMachPTE		pte;
     int			i;
-    unsigned	int	protection;
+    unsigned	int	prot;
     int			firstPage;
     int			lastPage;
     unsigned	int	maxAddr;
@@ -250,11 +255,18 @@ static Boolean InRange(addr, numBytes)
     lastPage = (((unsigned int) addr) + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     for (i = firstPage; i <= lastPage; i++) {
 	pte = VmMachGetPageMap((Address)(i << VMMACH_PAGE_SHIFT));
-	protection = pte & VMMACH_PROTECTION_FIELD;
-	if (!(pte & VMMACH_RESIDENT_BIT) || 
-	    (protection != VMMACH_KR_PROT && protection != VMMACH_KRW_PROT &&
-	     protection != VMMACH_UR_PROT && protection != VMMACH_URW_PROT)) {
+	prot = pte & VMMACH_PROTECTION_FIELD;
+	if (!(pte & VMMACH_RESIDENT_BIT)) {
 	    return(FALSE);
+	} else if (writeable) {
+	    if (prot != VMMACH_KRW_PROT && prot != VMMACH_URW_PROT) {
+		return(FALSE);
+	    }
+	} else {
+	    if (prot != VMMACH_KRW_PROT && prot != VMMACH_URW_PROT &&
+		prot != VMMACH_KR_PROT && prot != VMMACH_UR_PROT) {
+		return(FALSE);
+	    }
 	}
     }
 
@@ -974,7 +986,8 @@ Dbg_Main(stackHole, dbgStack)
 		}
 
 		VmMachSetKernelContext(oldContext);
-		if (InRange((unsigned int) readMem.address, readMem.numBytes)) {
+		if (InRange((unsigned int) readMem.address, readMem.numBytes,
+			    FALSE)) {
 		    status = 1;
 		    PutReplyBytes(sizeof(status), (Address)&status);
 		    PutReplyBytes(readMem.numBytes, (Address)readMem.address);
@@ -1059,9 +1072,17 @@ Dbg_Main(stackHole, dbgStack)
 
 		VmMachSetKernelContext(oldContext);
 		if (InRange((unsigned int) writeMem.address,
-			    writeMem.numBytes)) {
+			    writeMem.numBytes, opcode == DBG_DATA_WRITE)) {
+		    if (opcode == DBG_INST_WRITE) {
+			VmMach_SetProtForDbg(TRUE, writeMem.numBytes, 
+					     writeMem.address);
+		    }
 		    GetRequestBytes(writeMem.numBytes,
 				    (Address) writeMem.address);
+		    if (opcode == DBG_INST_WRITE) {
+			VmMach_SetProtForDbg(FALSE, writeMem.numBytes, 
+					     writeMem.address);
+		    }
 		    ch = 1;
 		} else {
 		    int		i;
