@@ -92,4 +92,14 @@ typedef struct {
  */
 #define DEFAULT_TEXT	0x00400000
 
+/*
+ * Determine the offset of the text segment in the file, given the header.
+ */
+#define TextOffset(hdr) \
+    ( ((hdr)->fileHeader.magic==PROC_ZMAGIC)? 0 : \
+	((sizeof(ProcExecHeader) + \
+	    (hdr)->fileHeader.numSections*sizeof(ProcSectionHeader) + \
+	    ((hdr)->aoutHeader.verStamp<23?7:15)) & \
+		~((long)(((hdr)->aoutHeader.verStamp<23?7:15))) ) )
+
 #endif /* _PROCMACH */
