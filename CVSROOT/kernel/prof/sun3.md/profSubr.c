@@ -17,9 +17,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "profInt.h"
 #include "dbg.h"
 #include "sys.h"
-#include "exc.h"
 #include "devTimer.h"
-#include "machine.h"
+#include "mach.h"
 #include "fs.h"
 #include "byte.h"
 #include "vm.h"
@@ -214,12 +213,12 @@ Prof_Start()
 
 void
 Prof_CollectInfo(stackPtr)
-    Exc_IntrStack	*stackPtr;
+    Mach_IntrStack	*stackPtr;
 {
     if (!profEnabled) {
 	return;
     }
-    if (stackPtr->excStack.statusReg & SUN_SR_SUPSTATE) {
+    if (stackPtr->excStack.statusReg & MACH_SR_SUPSTATE) {
 	register int pc;	/* The program counter. */
 	register int index;	/* Index into the array of counters */
 

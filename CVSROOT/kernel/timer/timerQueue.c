@@ -35,7 +35,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "byte.h"
 
 /* For profiling */
-#include "exc.h"
+#include "mach.h"
 #include "prof.h"
 
 
@@ -176,7 +176,7 @@ UpdateTimeOfDay()
 
 void
 Timer_ServiceInterrupt(stack)
-    Exc_IntrStack stack;
+    Mach_IntrStack stack;
 {
     /*
      *  Determine if the callback and profile timers have expired.
