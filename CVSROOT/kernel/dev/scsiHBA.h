@@ -61,10 +61,28 @@
  */
 
 /*
+ * SCSI status byte 
+ * The most significant 2 bits and least significant bit are reserved.
+ */
+ 
+#define	SCSI_STATUS_MASK           0x3e
+
+/* status byte definitions */
+#define SCSI_STATUS_GOOD           0x00
+#define SCSI_STATUS_CHECK          0x02
+#define SCSI_STATUS_COND_MET       0x04
+#define SCSI_STATUS_BUSY           0x08
+#define SCSI_STATUS_INTER_GOOD     0x10
+#define SCSI_STATUS_INTER_COND_MET 0x14
+#define SCSI_STATUS_RES_CONFLICT   0x18
+#define SCSI_STATUS_CMD_TERMINATED 0x22
+#define SCSI_STATUS_QUEUE_FULL     0x28
+
+/*
  * SCSI_CHECK_STATUS() - Macro that returns TRUE if a SCSI status byte
  *			 requests a REQUEST SENSE.
  */
-#define	SCSI_CHECK_STATUS(statusBytes) (((statusBytes)&0x2) != 0)
+#define	SCSI_CHECK_STATUS(statusBytes) (((statusBytes)&SCSI_STATUS_CHECK) != 0)
 #define	DEV_MAX_SENSE_BYTES	128
 #define	DEV_MAX_INQUIRY_SIZE	128
 
@@ -94,6 +112,7 @@
  *	
  */
 #define SCSI_COMMAND_COMPLETE		0x00
+#define SCSI_EXTENDED_MESSAGE		0x01
 #define SCSI_SAVE_DATA_POINTER		0x02
 #define SCSI_RESTORE_POINTERS		0x03
 #define SCSI_DISCONNECT			0x04
@@ -106,6 +125,14 @@
 #define SCSI_IDENTIFY			0x80
 #define SCSI_DIS_REC_IDENTIFY		0xc0
 
+#define SCSI_IDENT_LUN_MASK		0x03
+
+/*
+ * extended msg codes when msg type = 0x01
+ */
+#define SCSI_EXTENDED_MSG_MOD_DPTR      0x00
+#define SCSI_EXTENDED_MSG_SYNCH         0x01
+#define SCSI_EXTENDED_MSG_WIDE          0x03
 
 /*
  * devScsiAttachProcs - Table for attach procs indexed by SCSI HBA type.
