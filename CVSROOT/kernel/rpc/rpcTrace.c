@@ -32,11 +32,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * The circular buffer of trace records.
  */
-#ifndef CLEAN
-Boolean		rpc_Tracing = TRUE;	/* flag to turn on tracing */
+#ifdef CLEAN
+
+Boolean		rpc_Tracing = FLASE;	/* No tracing in clean version  */
+
 #else
-Boolean		rpc_Tracing = FALSE;	/* No tracing in clean version */
-#endif not CLEAN
+
+Boolean		rpc_Tracing = TRUE;	/* flag to turn on tracing */
 Trace_Header	rpcTraceHdr;		/* Trace header info */
 Trace_Header	*rpcTraceHdrPtr = &rpcTraceHdr;
 /*
@@ -48,6 +50,7 @@ Time rpcEmptyStampTime;		/* The time to take a trace record without
 				 * copying the packet header */
 Time rpcFullStampTime;		/* The time to take a trace record that
 				 * includes copying the packet header */
+#endif not CLEAN
 
 /*
  *----------------------------------------------------------------------
@@ -69,6 +72,7 @@ void
 Rpc_PrintTrace(numRecords)
     int numRecords;	/* The number (of most recent) records to print */
 {
+#ifndef CLEAN
     register int i;	/* Index into trace table */
     int stopIndex;	/* copy of rpcTraceIndex */
     Time baseTime, deltaTime;	/* Times for print out */
@@ -220,6 +224,7 @@ Rpc_PrintTrace(numRecords)
     Sys_Printf("Delta time = %6d.%06d\n", rpcDeltaTime.seconds,
 			  rpcDeltaTime.microseconds);
     rpcTraceHdrPtr->flags &= ~TRACE_INHIBIT;
+#endif not CLEAN
 }
 
 /*
@@ -247,6 +252,7 @@ Rpc_DumpTrace(firstRec, lastRec, fileName)
     int lastRec;	/* The index of the last record to print. */
     char *fileName;	/* Name of the file to which to write */
 {
+#ifndef CLEAN
     register int i;		/* Index into trace table */
     int stopIndex;		/* copy of rpcTraceIndex */
     int offset;			/* file offset */
@@ -308,6 +314,7 @@ Rpc_DumpTrace(firstRec, lastRec, fileName)
 exit:
     rpcTraceHdrPtr->flags &= ~TRACE_INHIBIT;
     return(status);
+#endif not CLEAN
 }
 
 /*
@@ -330,6 +337,7 @@ exit:
 void
 Rpc_StampTest()
 {
+#ifndef CLEAN
     int i;
     Timer_Ticks startTime;
     Timer_Ticks endTime;
@@ -370,4 +378,5 @@ Rpc_StampTest()
 	RpcTrace(&junkRpcHdr, RPC_SERVER_OUT, "full");
 	RpcTrace((RpcHdr *)NIL, RPC_CLIENT_OUT, "empty");
     }
+#endif not CLEAN
 }

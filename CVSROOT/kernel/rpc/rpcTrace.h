@@ -34,6 +34,7 @@
  * Macros to make the trace calls take up less room and be easier
  * to change.
  */
+#ifndef CLEAN
 #define RPC_NIL_TRACE(type, comment) \
     if (rpc_Tracing) { \
 	RpcTrace((Address)NIL, type, comment); \
@@ -42,6 +43,11 @@
     if (rpc_Tracing) { \
 	RpcTrace(rpcHdrPtr, type, comment); \
     }
+#else
+#define RPC_NIL_TRACE(type, comment)
+#define RPC_TRACE(rpcHdrPtr, type, comment)
+#endif
+
 /*
  * This is the trace record written to the trace file by Rpc_DumpTrace
  */
