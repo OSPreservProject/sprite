@@ -393,6 +393,62 @@ NetIEInit()
 /*
  *----------------------------------------------------------------------
  *
+ * NetIERestart --
+ *
+ *	Reinitialize the Intel Ethernet chip.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetIERestart()
+{
+    int 		i;
+    List_Links		*itemPtr;
+    NetXmitElement	*xmitElemPtr;
+
+    Sys_Printf("NetIERestart: Reinitializing Intel chip\n");
+
+    DISABLE_INTR();
+
+    /*
+     * Drop the current outgoing packet.
+     */    
+    if (netIECurScatGathPtr != (Net_ScatterGather *) NIL) {
+	netIECurScatGathPtr->done = TRUE;
+	if (netIECurScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	    NetOutputWakeup(netIECurScatGathPtr->conditionPtr);
+	}
+	netIECurScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+
+    /*
+     * Allocate space for the System Configuration Pointer.
+     */
+    Vm_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+
+    /*
+     * Reset the world.
+     */
+    NetIEReset();
+
+    /*
+     * Unmap the extra page.
+     */
+    Vm_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+
+    ENABLE_INTR();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NetIEIntr --
  *
  *	Process an interrupt from the Intel chip.
@@ -422,7 +478,9 @@ NetIEIntr(polling)
      * If we got a bus error then panic.
      */
     if (netIEStatePtr->controlReg->busError) {
-	Sys_Panic(SYS_FATAL, "Intel: Bus error on chip.\n");
+	Sys_Panic(SYS_WARNING, "Intel: Bus error on chip.\n");
+	NetIERestart();
+	return;
     }
 
     /*

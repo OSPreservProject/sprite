@@ -25,7 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Pointer to scatter gather element for current packet being sent.
  */
-static	Net_ScatterGather	*curScatGathPtr = (Net_ScatterGather *) NIL;
+Net_ScatterGather *netIECurScatGathPtr = (Net_ScatterGather *) NIL;
 
 /*
  * The address of the array of buffer descriptor headers.
@@ -90,7 +90,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     int					length;
 
     netIEState.transmitting = TRUE;
-    curScatGathPtr = scatterGatherPtr;
+    netIECurScatGathPtr = scatterGatherPtr;
 
     /*
      * There is already a prelinked command list.  A pointer to the list
@@ -282,7 +282,7 @@ NetIEXmitInit()
 		  LIST_ATREAR(netIEState.xmitFreeList));
     } else {
 	netIEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	netIECurScatGathPtr = (Net_ScatterGather *) NIL;
     }
 }
 
@@ -316,7 +316,7 @@ NetIEXmitDone()
      * wrong.
      */
 
-    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+    if (netIECurScatGathPtr == (Net_ScatterGather *) NIL) {
 	Sys_Panic(SYS_WARNING, "NetIEXmitDone: No current packet\n.");
 	return;
     }
@@ -327,9 +327,9 @@ NetIEXmitDone()
      * Mark the packet as done.
      */
 
-    curScatGathPtr->done = TRUE;
-    if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
-	NetOutputWakeup(curScatGathPtr->conditionPtr);
+    netIECurScatGathPtr->done = TRUE;
+    if (netIECurScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	NetOutputWakeup(netIECurScatGathPtr->conditionPtr);
     }
 
     /*
@@ -362,7 +362,7 @@ NetIEXmitDone()
 		  LIST_ATREAR(netIEState.xmitFreeList));
     } else {
 	netIEState.transmitting = FALSE;
-	curScatGathPtr = (Net_ScatterGather *) NIL;
+	netIECurScatGathPtr = (Net_ScatterGather *) NIL;
     }
 }
 

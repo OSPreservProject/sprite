@@ -548,6 +548,11 @@ extern	NetIEState	netIEState;
 extern	Address	netIERecvBuffers[];
 
 /*
+ * Pointer to scatter gather element for current packet being sent.
+ */
+extern Net_ScatterGather *netIECurScatGathPtr;
+
+/*
  * General routines.
  */
 
