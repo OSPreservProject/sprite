@@ -136,6 +136,14 @@ Prof_DeencapState(procPtr, infoPtr, ptr)
     EncapState *encapPtr;
 
     encapPtr = (EncapState *) ptr;
+    if (infoPtr->size != sizeof(EncapState)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Prof_DeencapState: warning: host %d tried to migrate onto this host with wrong structure size.  Ours is %d, theirs is %d.\n",
+		   procPtr->peerHostID, sizeof(EncapState),
+		   infoPtr->size);
+	}
+	return(PROC_MIGRATION_REFUSED);
+    }
     procPtr->Prof_Scale = 0;
     Prof_Enable(procPtr, encapPtr->Prof_Buffer, encapPtr->Prof_BufferSize,
 	encapPtr->Prof_Offset, encapPtr->Prof_Scale);
