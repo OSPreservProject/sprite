@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static void HostChanged();
 
 static Sync_Lock recovLock;
-static Sync_Condition recovCondition = {0};
+Sync_Condition recovCondition = {0};
 #define LOCKPTR &recovLock
 
 typedef struct DependInfo {
