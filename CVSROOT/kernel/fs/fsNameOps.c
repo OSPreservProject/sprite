@@ -194,15 +194,22 @@ FsSetIDs(procPtr, idPtr)
     idPtr->user = procPtr->effectiveUserID;
 
     fsPtr = procPtr->fsPtr;
-    idPtr->numGroupIDs = fsPtr->numGroupIDs;
-    for (i = 0, groupPtr = idPtr->group, procGroupIDs = fsPtr->groupIDs;
-	 i < FS_NUM_GROUPS; 
-	 i++, groupPtr++) {
+    if (fsPtr = (Fs_ProcessState *)NIL) {
+	/*
+	 * Exiting processes remove swap files after clearing fs state.
+	 */
+	idPtr->numGroupIDs = 0;
+	procGroupIDs = (int *)NIL;
+    } else {
+	idPtr->numGroupIDs = fsPtr->numGroupIDs;
+	procGroupIDs = fsPtr->groupIDs;
+    }
+    for (i = 0, groupPtr = idPtr->group; i < FS_NUM_GROUPS;  i++, groupPtr++) {
 	/*
 	 * The file system state record supports a variable length array of
 	 * group IDs but here we truncate it...
 	 */
-	if (i < fsPtr->numGroupIDs) {
+	if (i < idPtr->numGroupIDs) {
 	    *groupPtr = *procGroupIDs;
 	    procGroupIDs++;
 	} else {
