@@ -44,12 +44,6 @@ typedef struct Fsdm_DiskPartition {
  * start in sector #1. The boot program on
  * the zero'th cylinder of the disk is used automatically, although other
  * boot program locations can be specified manually.
- *
- *      NOTE: we are temporarily using Sun's format of the Disk Header,
- *      not the following typedef.  Sun's label is defined in
- *      "../sun/sunDiskLabel.h".  We assume that sector zero contains a
- *      Sun format label, and the boot program starts at sector 1. 
- *	Sun3's read 16 boot sectors and Sun4's read 64.
  */
 
 #define FSDM_MAX_BOOT_SECTORS	128
