@@ -1,5 +1,5 @@
 /*
- * fsRmtMigrate.h --
+ * fsrmtMigrate.h --
  *
  *	Declarations for RMT file migration routines.
  *
@@ -19,8 +19,8 @@
 #ifndef _FSRMTMIGRATE
 #define _FSRMTMIGRATE
 
-#include "fsNameOps.h"
-#include "fsNameOpsInt.h"
+#include <fsNameOps.h>
+#include <fsrmtNameOpsInt.h>
 extern Boolean fsio_MigDebug;	/* enable migration debugging statements? */
 
 /*
