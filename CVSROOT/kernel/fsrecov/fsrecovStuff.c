@@ -68,6 +68,8 @@ char	*LogOpString _ARGS_((int op));
 
 Boolean	logProcessDebug = TRUE;
 
+#define	CHECK		/* Check against stored objects. */
+
 
 /*
  *----------------------------------------------------------------------
@@ -660,7 +662,7 @@ Fsrecov_DeleteHandle(hdrPtr, clientID, flags)
 	    if (streamPtr->ioHandlePtr == (Fs_HandleHeader *) NIL) {
 		panic("Fsrecov_DeleteHandle: NIL ioHandlePtr.");
 	    }
-	    objectData.otherID = ((Fs_Stream *) hdrPtr)->ioHandlePtr->hdr;
+	    objectData.otherID = streamPtr->ioHandlePtr->hdr;
 
 	    /* ClientData is stream offset. */
 	    objectData.clientData = streamPtr->offset;
@@ -1997,3 +1999,4 @@ Fsrecov_TestCmd(option, argPtr)
     }
     return status;
 }
+#undef CHECK
