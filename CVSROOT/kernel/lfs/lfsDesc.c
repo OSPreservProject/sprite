@@ -392,6 +392,31 @@ LfsDescCacheInit(lfsPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * LfsDescCacheDestory --
+ *
+ *	Destory the descriptor cache for a file system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+LfsDescCacheDestory(lfsPtr)
+    Lfs		*lfsPtr;
+{
+
+    Fscache_FileInvalidate(&lfsPtr->descCache.handle.cacheInfo, 0, 
+		FSCACHE_LAST_BLOCK);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * LfsDescCacheBlockInit --
  *
  *	Initialize a block into the descriptor cache for a file system.
