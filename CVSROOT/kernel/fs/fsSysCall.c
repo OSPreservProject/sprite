@@ -1606,6 +1606,19 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 	return(FS_STALE_HANDLE);
     }
 
+    /*
+     * Fast path for non-generic I/O controls to pseudo-devices.
+     * We don't copy in/out the user's parameter blocks because the
+     * pseudo-device code does direct cross-address-space copy later.
+     * We also skip the check against large parameter blocks so arbitrary
+     * amounts of data can be fed to and from a pseudo-device.
+     */
+    if ((streamPtr->ioHandlePtr->fileID.type == FS_LCL_PSEUDO_STREAM) &&
+	(command > IOC_GENERIC_LIMIT)) {
+	return(Fs_IOControl(streamPtr, command,
+			      inBufSize, inBuffer, outBufSize, outBuffer));
+    }
+
     if (inBufSize > IOC_MAX_BYTES || outBufSize > IOC_MAX_BYTES) {
 	return(SYS_INVALID_ARG);
     }
