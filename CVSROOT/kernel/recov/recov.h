@@ -16,8 +16,13 @@
 #ifndef _RECOV
 #define _RECOV
 
+#ifdef KERNEL
 #include <trace.h>
 #include <proc.h>
+#else
+#include <kernel/trace.h>
+#include <kernel/proc.h>
+#endif
 
 /*
  * External view of the state kept about each host.
