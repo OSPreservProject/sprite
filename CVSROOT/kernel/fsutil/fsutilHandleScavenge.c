@@ -1,5 +1,5 @@
 /* 
- * fsHanldeScavenge.c --
+ * fsutilHandleScavenge.c --
  *
  *	Routines controlling the scavenging of file system handles.
  *
@@ -18,23 +18,23 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "vm.h"
-#include "rpc.h"
-#include "fsutil.h"
-#include "fsprefix.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fsutilTrace.h"
-#include "fsStat.h"
-#include "sync.h"
-#include "timer.h"
-#include "proc.h"
-#include "trace.h"
-#include "hash.h"
-#include "fsrmt.h"
+#include <fs.h>
+#include <vm.h>
+#include <rpc.h>
+#include <fsutil.h>
+#include <fsprefix.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsutilTrace.h>
+#include <fsStat.h>
+#include <sync.h>
+#include <timer.h>
+#include <proc.h>
+#include <trace.h>
+#include <hash.h>
+#include <fsrmt.h>
 
 
 /*
@@ -43,8 +43,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static Sync_Lock scavengeLock = Sync_LockInitStatic("Fs:scavengeLock");
 #define LOCKPTR (&scavengeLock)
 
-static Boolean OkToScavenge();
-void DoneScavenge();
+static Boolean OkToScavenge _ARGS_((void));
+static void DoneScavenge _ARGS_((void));
 
 
 /*
@@ -66,7 +66,8 @@ void DoneScavenge();
  *
  */
 /*ARGSUSED*/
-void Fsutil_HandleScavengeStub(data)
+void 
+Fsutil_HandleScavengeStub(data)
     ClientData	data;	/* IGNORED */
 {
     /*
@@ -118,7 +119,7 @@ Fsutil_HandleScavenge(data, callInfoPtr)
      * works fine on a uniprocessor.  We don't want a monitor lock here
      * because we don't want a locked handle to hang up all Proc_ServerProcs.
      */
-    fsLastScavengeTime = fsutil_TimeInSeconds;
+    fsLastScavengeTime = Fsutil_TimeInSeconds();
 
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
@@ -197,7 +198,7 @@ OkToScavenge()
  *----------------------------------------------------------------------------
  *
  */
-void
+static ENTRY void
 DoneScavenge()
 {
     LOCK_MONITOR;
