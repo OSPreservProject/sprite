@@ -173,7 +173,7 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 	    case PDEVT_REQUEST: {
 		Sys_Printf("Request");
 		if (recPtr != (PdevTraceRecord *)NIL) {
-		    switch(recPtr->un.request.operation) {
+		    switch(recPtr->un.requestHdr.operation) {
 			case PDEV_OPEN:
 			    Sys_Printf(" OPEN"); break;
 			case PDEV_DUP:
