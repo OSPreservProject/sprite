@@ -66,9 +66,9 @@ int	rpcMaxAcks = 20;
 
 /*
  * For debugging servers.  We allow client's to retry forever instead
- * of timing out.
+ * of timing out.  This is exported and settable via Fs_Command
  */
-Boolean rpcNoTimeouts = FALSE;
+Boolean rpc_NoTimeouts = FALSE;
 
 /*
  * A histogram is kept of the elapsed time of each different kind of RPC.
@@ -139,8 +139,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 		      chanPtr->fragsDelivered, &chanPtr->mutex);
     /*
      * Set up the initial wait interval.  The wait could depend on
-     * characteristics of the RPC.  For now we just wait longer if
-     * the packet will be fragmented.
+     * characteristics of the RPC, or of the other host.
+     * For now we just wait longer if the packet will be fragmented.
      */
     if ((storagePtr->requestDataSize + storagePtr->requestParamSize >
 	    RPC_MAX_FRAG_SIZE) ||
@@ -296,6 +296,13 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 	    chanPtr->requestRpcHdr.serverHint =
 		chanPtr->replyRpcHdr.serverHint;
 	    rpcCltStat.timeouts++;
+	    /*
+	     * Back off upon timeout because we may be talking to a slow host
+	     */
+	    wait *= 2;
+	    if (wait > rpcMaxWait) {
+		wait = rpcMaxWait;
+	    }
 	    if ((chanPtr->state & CHAN_FRAGMENTING) == 0) {
 		/*
 		 * Not receiving fragments.  Check for timeout, and resend
@@ -303,7 +310,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 		 */
 		numTries++;
 		if (numTries <= rpcMaxTries ||
-		    (rpcNoTimeouts && serverID != RPC_BROADCAST_SERVER_ID)) {
+		    (rpc_NoTimeouts && serverID != RPC_BROADCAST_SERVER_ID)) {
 		    rpcCltStat.resends++;
 		    chanPtr->requestRpcHdr.flags |= RPC_PLSACK;
 		    error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
@@ -328,7 +335,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 		    numTries++;
 		}
 		if (numTries > rpcMaxTries &&
-		    (!rpcNoTimeouts || (serverID == RPC_BROADCAST_SERVER_ID))) {
+		    (!rpc_NoTimeouts||(serverID == RPC_BROADCAST_SERVER_ID))) {
 		    rpcCltStat.aborts++;
 		    error = RPC_TIMEOUT;
 		} else {
