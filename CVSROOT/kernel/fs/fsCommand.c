@@ -336,6 +336,15 @@ Fs_Command(command, bufSize, buffer)
 	    }
 	    break;
 	}
+	case FS_RETURN_LIFE_TIMES: {
+	    if (bufSize >= sizeof(FsTypeStats)) {
+		bcopy((Address)&fsTypeStats, buffer, sizeof(FsTypeStats));
+		status = SUCCESS;
+	    } else {
+		status = FS_INVALID_ARG;
+	    }
+	    break;
+	}
 	case FS_GET_FRAG_INFO: {
 	    int	*arrPtr = (int *)buffer;
 
