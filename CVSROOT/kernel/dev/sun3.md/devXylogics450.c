@@ -346,36 +346,51 @@ DevXylogicsTest(xyPtr, diskPtr)
     DevXylogicsController *xyPtr;
     DevXylogicsDisk *diskPtr;
 {
+    register ReturnStatus status;
+    /*
+     * Synchronize with the interrupt handling routine and with other
+     * processes that are trying to initiate I/O with this controller.
+     */
+    MASTER_LOCK(&xyPtr->mutex);
+    while (xyPtr->flags & XYLOGICS_CNTRLR_BUSY) {
+	Sync_MasterWait(&xyPtr->readyForIO, &xyPtr->mutex, FALSE);
+    }
+    xyPtr->flags |= XYLOGICS_CNTRLR_BUSY;
 
-    (void) DevXylogicsCommand(xyPtr, XY_READ_STATUS, diskPtr,
-		   (Dev_DiskAddr *)NIL, 0, (Address)0, WAIT);
+	(void) DevXylogicsCommand(xyPtr, XY_READ_STATUS, diskPtr,
+		       (Dev_DiskAddr *)NIL, 0, (Address)0, WAIT);
 
 #ifdef notdef
-    printf("DevXylogicsTest:\n");
-    printf("Xylogics-%d disk %d\n", xyPtr->number, diskPtr->slaveID);
-    printf("Drive Status Byte %x\n", xyPtr->IOPBPtr->numSectLow);
-    printf("Drive Type %d: Cyls %d Heads %d Sectors %d\n",
-		     diskPtr->xyDriveType,
-		     xyPtr->IOPBPtr->cylHigh << 8 | xyPtr->IOPBPtr->cylLow,
-		     xyPtr->IOPBPtr->head, xyPtr->IOPBPtr->sector);
-    printf("Bytes Per Sector %d, Num sectors %d\n",
-		    xyPtr->IOPBPtr->dataAddrHigh << 8 |
-		    xyPtr->IOPBPtr->dataAddrLow,
-		    xyPtr->IOPBPtr->relocLow);
-    MACH_DELAY(1000000);
+	printf("DevXylogicsTest:\n");
+	printf("Xylogics-%d disk %d\n", xyPtr->number, diskPtr->slaveID);
+	printf("Drive Status Byte %x\n", xyPtr->IOPBPtr->numSectLow);
+	printf("Drive Type %d: Cyls %d Heads %d Sectors %d\n",
+			 diskPtr->xyDriveType,
+			 xyPtr->IOPBPtr->cylHigh << 8 | xyPtr->IOPBPtr->cylLow,
+			 xyPtr->IOPBPtr->head, xyPtr->IOPBPtr->sector);
+	printf("Bytes Per Sector %d, Num sectors %d\n",
+			xyPtr->IOPBPtr->dataAddrHigh << 8 |
+			xyPtr->IOPBPtr->dataAddrLow,
+			xyPtr->IOPBPtr->relocLow);
+	MACH_DELAY(1000000);
 #endif notdef
-    /*
-     * If all the status bits are low then the drive is ok.
-     */
-    if (xyPtr->IOPBPtr->numSectLow == 0) {
-	return(SUCCESS);
-    } else if (xyPtr->IOPBPtr->numSectLow == 0x20) {
-	printf("Warning: Xylogics-%d disk %d write protected\n",
-				xyPtr->number, diskPtr->slaveID);
-	return(SUCCESS);
-    } else {
-	return(DEV_OFFLINE);
-    }
+	/*
+	 * If all the status bits are low then the drive is ok.
+	 */
+	if (xyPtr->IOPBPtr->numSectLow == 0) {
+	    status = SUCCESS;
+	} else if (xyPtr->IOPBPtr->numSectLow == 0x20) {
+	    printf("Warning: Xylogics-%d disk %d write protected\n",
+				    xyPtr->number, diskPtr->slaveID);
+	    status = SUCCESS;
+	} else {
+	    status = DEV_OFFLINE;
+	}
+
+    xyPtr->flags &= ~XYLOGICS_CNTRLR_BUSY;
+    Sync_MasterBroadcast(&xyPtr->readyForIO);
+    MASTER_UNLOCK(&xyPtr->mutex);
+    return(status);
 }
 
 /*
@@ -408,6 +423,16 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
     int part;
 
     /*
+     * Synchronize with the interrupt handling routine and with other
+     * processes that are trying to initiate I/O with this controller.
+     */
+    MASTER_LOCK(&xyPtr->mutex);
+    while (xyPtr->flags & XYLOGICS_CNTRLR_BUSY) {
+	Sync_MasterWait(&xyPtr->readyForIO, &xyPtr->mutex, FALSE);
+    }
+    xyPtr->flags |= XYLOGICS_CNTRLR_BUSY;
+
+    /*
      * Do a low level read that includes sector header info and ecc codes.
      * This is done so we can learn the drive type needed in other commands.
      */
@@ -420,65 +445,66 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
     if (error != SUCCESS) {
 	printf("Xylogics-%d: disk%d, couldn't read the label\n",
 			     xyPtr->number, diskPtr->slaveID);
-	return(error);
-    }
-    diskPtr->xyDriveType = (xyPtr->labelBuffer[3] & 0xC0) >> 6;
-    diskLabelPtr = (Sun_DiskLabel *)(&xyPtr->labelBuffer[4]);
-#ifdef notdef
-    printf("Header Bytes: ");
-    for (part=0 ; part<4 ; part++) {
-	printf("%x ", xyPtr->labelBuffer[part] & 0xff);
-    } 
-    printf("\n");
-    printf("Label magic <%x>\n", diskLabelPtr->magic);
-    printf("Drive type byte (%x) => type %x\n",
-		      xyPtr->labelBuffer[3] & 0xff, diskPtr->xyDriveType);
-    MACH_DELAY(1000000);
-#endif notdef
-    if (diskLabelPtr->magic == SUN_DISK_MAGIC) {
-	printf("Xylogics-%d disk%d: %s\n", xyPtr->number, diskPtr->slaveID,
-				diskLabelPtr->asciiLabel);
-	diskPtr->numCylinders = diskLabelPtr->numCylinders;
-	diskPtr->numHeads = diskLabelPtr->numHeads;
-	diskPtr->numSectors = diskLabelPtr->numSectors;
-
-	printf(" Partitions ");
-	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
-	    diskPtr->map[part].firstCylinder =
-		    diskLabelPtr->map[part].cylinder;
-	    diskPtr->map[part].numCylinders =
-		    diskLabelPtr->map[part].numBlocks /
-		    (diskLabelPtr->numHeads * diskLabelPtr->numSectors) ;
-	    printf(" (%d,%d)", diskPtr->map[part].firstCylinder,
-				       diskPtr->map[part].numCylinders);
-	}
-	printf("\n");
-	/*
-	 * Now that we know what the disk is like, we have to make sure
-	 * that the controller does also.  The set parameters command
-	 * sets the number of heads, sectors, and cylinders for the
-	 * drive type.  The minus 1 is required because the controller
-	 * numbers from zero and these parameters are upper bounds.
-	 */
-	diskAddr.head = diskPtr->numHeads - 1;
-	diskAddr.sector = diskPtr->numSectors - 1;
-	diskAddr.cylinder = diskPtr->numCylinders - 1;
-
-	error = DevXylogicsCommand(xyPtr, XY_SET_DRIVE_SIZE, diskPtr,
-			       &diskAddr, 0, (Address)0, WAIT);
-	if (error != SUCCESS) {
-	    printf("Xylogics-%d: disk%d, couldn't set drive size\n",
-				 xyPtr->number, diskPtr->slaveID);
-	    return(error);
-	}
-
-	return(SUCCESS);
     } else {
-	printf("Xylogics-%d Disk %d, Unsupported label, magic = <%x>\n",
-			       xyPtr->number, diskPtr->slaveID,
-			       diskLabelPtr->magic);
-	return(FAILURE);
+	diskPtr->xyDriveType = (xyPtr->labelBuffer[3] & 0xC0) >> 6;
+	diskLabelPtr = (Sun_DiskLabel *)(&xyPtr->labelBuffer[4]);
+#ifdef notdef
+	printf("Header Bytes: ");
+	for (part=0 ; part<4 ; part++) {
+	    printf("%x ", xyPtr->labelBuffer[part] & 0xff);
+	} 
+	printf("\n");
+	printf("Label magic <%x>\n", diskLabelPtr->magic);
+	printf("Drive type byte (%x) => type %x\n",
+			  xyPtr->labelBuffer[3] & 0xff, diskPtr->xyDriveType);
+	MACH_DELAY(1000000);
+#endif notdef
+	if (diskLabelPtr->magic == SUN_DISK_MAGIC) {
+	    printf("Xylogics-%d disk%d: %s\n", xyPtr->number, diskPtr->slaveID,
+				    diskLabelPtr->asciiLabel);
+	    diskPtr->numCylinders = diskLabelPtr->numCylinders;
+	    diskPtr->numHeads = diskLabelPtr->numHeads;
+	    diskPtr->numSectors = diskLabelPtr->numSectors;
+    
+	    printf(" Partitions ");
+	    for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
+		diskPtr->map[part].firstCylinder =
+			diskLabelPtr->map[part].cylinder;
+		diskPtr->map[part].numCylinders =
+			diskLabelPtr->map[part].numBlocks /
+			(diskLabelPtr->numHeads * diskLabelPtr->numSectors) ;
+		printf(" (%d,%d)", diskPtr->map[part].firstCylinder,
+					   diskPtr->map[part].numCylinders);
+	    }
+	    printf("\n");
+	    /*
+	     * Now that we know what the disk is like, we have to make sure
+	     * that the controller does also.  The set parameters command
+	     * sets the number of heads, sectors, and cylinders for the
+	     * drive type.  The minus 1 is required because the controller
+	     * numbers from zero and these parameters are upper bounds.
+	     */
+	    diskAddr.head = diskPtr->numHeads - 1;
+	    diskAddr.sector = diskPtr->numSectors - 1;
+	    diskAddr.cylinder = diskPtr->numCylinders - 1;
+    
+	    error = DevXylogicsCommand(xyPtr, XY_SET_DRIVE_SIZE, diskPtr,
+				   &diskAddr, 0, (Address)0, WAIT);
+	    if (error != SUCCESS) {
+		printf("Xylogics-%d: disk%d, couldn't set drive size\n",
+				     xyPtr->number, diskPtr->slaveID);
+	    }
+	} else {
+	    printf("Xylogics-%d Disk %d, Unsupported label, magic = <%x>\n",
+				   xyPtr->number, diskPtr->slaveID,
+				   diskLabelPtr->magic);
+	    error = FAILURE;
+	}
     }
+    xyPtr->flags &= ~XYLOGICS_CNTRLR_BUSY;
+    Sync_MasterBroadcast(&xyPtr->readyForIO);
+    MASTER_UNLOCK(&xyPtr->mutex);
+    return(error);
 }
 
 /*
