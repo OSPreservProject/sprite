@@ -156,7 +156,7 @@ DbgCheckNmis()
 /*
  * ----------------------------------------------------------------------------
  *
- * InRange --
+ * Dbg_InRange --
  *
  *     Return true if the given address is a valid kernel address and false
  *     otherwise.
@@ -170,8 +170,8 @@ DbgCheckNmis()
  *
  * ----------------------------------------------------------------------------
  */
-static Boolean
-InRange(addr, numBytes, writeable) 
+Boolean
+Dbg_InRange(addr, numBytes, writeable) 
     unsigned 	int addr; 	/* Beginning address to check. */
     int		numBytes; 	/* Number of bytes to check. */
     Boolean	writeable;	/* TRUE => address must be writeable. */
@@ -194,7 +194,7 @@ InRange(addr, numBytes, writeable)
     maxAddr = VMMACH_DEV_START_ADDR;
 #endif
     if (dbgTraceLevel >= 5) {
-	printf("InRange called with addr 0x%x %d bytes, and writable = %d\n",
+	printf("Dbg_InRange called with addr 0x%x %d bytes, and writable = %d\n",
 	    addr, numBytes, (unsigned int) writeable);
     }
     if (addr > maxAddr || (addr + numBytes - 1) > maxAddr) {
@@ -748,7 +748,7 @@ Dbg_Main(trapType, trapStatePtr)
 #ifndef FIRST_RUN
 		VmMachSetKernelContext(curContext);
 #endif
-		if (InRange((unsigned int) readMem.address, readMem.numBytes,
+		if (Dbg_InRange((unsigned int) readMem.address, readMem.numBytes,
 			    FALSE)) {
 		    status = 1;
 		    PutReplyBytes(sizeof(status), (Address)&status);
@@ -847,7 +847,7 @@ Dbg_Main(trapType, trapStatePtr)
 #ifndef FIRST_RUN
 		VmMachSetKernelContext(curContext);
 #endif	
-		if (InRange((unsigned int) writeMem.address,
+		if (Dbg_InRange((unsigned int) writeMem.address,
 			    writeMem.numBytes, opcode == DBG_DATA_WRITE)) {
 #ifndef FIRST_RUN
 		    if (opcode == DBG_INST_WRITE) {
@@ -991,7 +991,7 @@ Dbg_Main(trapType, trapStatePtr)
 		}
 		VmMachSetKernelContext(curContext);
 		if ((callFunc.numBytes >= 0 && callFunc.numBytes < 128) &&
-		     InRange((unsigned int) callFunc.address,4,FALSE)) {
+		     Dbg_InRange((unsigned int) callFunc.address,4,FALSE)) {
 		    GetRequestBytes(callFunc.numBytes,(Address) argBuf);
 		    returnVal = (* ((int (*)()) callFunc.address))(argBuf[0],
 		    argBuf[1],argBuf[2],argBuf[3],argBuf[4],argBuf[5],argBuf[6],

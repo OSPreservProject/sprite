@@ -230,7 +230,7 @@ DbgCheckNmis()
 /*
  * ----------------------------------------------------------------------------
  *
- * InRange --
+ * Dbg_InRange --
  *
  *     Return true if the given address is a valid kernel address and false
  *     otherwise.
@@ -244,7 +244,7 @@ DbgCheckNmis()
  *
  * ----------------------------------------------------------------------------
  */
-static Boolean InRange(addr, numBytes, writeable) 
+Boolean Dbg_InRange(addr, numBytes, writeable) 
     unsigned 	int addr; 	/* Beginning address to check. */
     int		numBytes; 	/* Number of bytes to check. */
     Boolean	writeable;	/* TRUE => address must be writeable. */
@@ -897,7 +897,7 @@ Dbg_Main(stackHole, dbgStack)
 		}
 
 		VmMachSetKernelContext(oldContext);
-		if (InRange((unsigned int) readMem.address, readMem.numBytes,
+		if (Dbg_InRange((unsigned int) readMem.address, readMem.numBytes,
 			    FALSE)) {
 		    status = 1;
 		    PutReplyBytes(sizeof(status), (Address)&status);
@@ -984,7 +984,7 @@ Dbg_Main(stackHole, dbgStack)
 		}
 
 		VmMachSetKernelContext(oldContext);
-		if (InRange((unsigned int) writeMem.address,
+		if (Dbg_InRange((unsigned int) writeMem.address,
 			    writeMem.numBytes, opcode == DBG_DATA_WRITE)) {
 		    if (opcode == DBG_INST_WRITE) {
 			VmMach_SetProtForDbg(TRUE, writeMem.numBytes, 
@@ -1143,7 +1143,7 @@ Dbg_Main(stackHole, dbgStack)
 		}
 
 		if ((callFunc.numBytes >= 0 && callFunc.numBytes < 128) &&
-		     InRange((unsigned int) callFunc.address,4,FALSE)) {
+		     Dbg_InRange((unsigned int) callFunc.address,4,FALSE)) {
 		    GetRequestBytes(callFunc.numBytes,(Address) argBuf);
 		    returnVal = (* ((int (*)()) callFunc.address))(argBuf[0],
 		    argBuf[1],argBuf[2],argBuf[3],argBuf[4],argBuf[5],argBuf[6],
