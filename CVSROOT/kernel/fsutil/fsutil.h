@@ -236,4 +236,7 @@ extern ReturnStatus Fsutil_FsRecovInfo _ARGS_((int length,
 		Fsutil_FsRecovNamedStats *resultPtr, int *lengthNeededPtr));
 
 extern int Fsutil_TestForHandles _ARGS_((int serverID));
+
+extern void Fsutil_ZeroHandleStats _ARGS_((void));
+
 #endif /* _FSUTIL */

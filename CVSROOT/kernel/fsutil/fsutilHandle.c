@@ -1284,3 +1284,43 @@ Fsutil_HandleDescWriteBack(shutdown, domain)
     return(lockedDesc);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_ZeroHandleStats --
+ *
+ *	Zero the FS handle-related stats, while preserving state 
+ *	information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Fsutil_ZeroHandleStats()
+{
+    unsigned int maxNumber;	/* state variables to preserve */
+    unsigned int exists;
+    unsigned int lruEntries;
+    unsigned int limbo;
+
+    LOCK_MONITOR;
+    maxNumber = fs_Stats.handle.maxNumber;
+    exists = fs_Stats.handle.exists;
+    lruEntries = fs_Stats.handle.lruEntries;
+    limbo = fs_Stats.handle.limbo;
+
+    bzero(&fs_Stats.handle, sizeof(fs_Stats.handle));
+
+    fs_Stats.handle.maxNumber = maxNumber;
+    fs_Stats.handle.exists = exists;
+    fs_Stats.handle.lruEntries = lruEntries;
+    fs_Stats.handle.limbo = limbo;
+    UNLOCK_MONITOR;
+}
