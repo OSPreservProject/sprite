@@ -698,7 +698,6 @@ Sys_StatsStub(command, option, argPtr)
 	case SYS_RPC_NEG_ACKS:
 	case SYS_RPC_CHANNEL_NEG_ACKS:
 	case SYS_RPC_NUM_NACK_BUFS:
-	case SYS_RPC_EXTRA_SRV_STATS:
 	case SYS_RPC_SANITY_CHECK:
 	    status = Rpc_GetStats(command, option, argPtr);
 	    break;
