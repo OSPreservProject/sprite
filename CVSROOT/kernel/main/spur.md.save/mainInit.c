@@ -36,9 +36,7 @@ extern void Fs_HandleScavenge();
 /*
  *  Pathname of the Init program.
  */
-#define INIT	 	"/initSprite"
-#define LUST_INIT	"/usr/sprite/bin/initSprite"
-#define NEW_INIT	"/initSprite.new"
+#define INIT	 	"/tmp/spurt"
 
 /*
  * Flags defined in individual's mainHook.c to modify the startup behavior. 
@@ -341,7 +339,9 @@ main()
     /*
      * Start the clock daemon and the routine that opens up the swap directory.
      */
+/*
     Proc_CallFunc(Vm_Clock, (ClientData) NIL, 0);
+*/
     Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, 0);
 
     /*
@@ -467,8 +467,7 @@ Init()
 {
     int		status;
     static char	*initArgs[] = { INIT, (char *) NIL };
-    static char	*init2Args[] = { LUST_INIT, (char *) NIL };
-    static char	*init3Args[] = { NEW_INIT, (char *) NIL };
+    static char	*altInitArgs[] = { 0, (char *) NIL };
     static int	initLoop = 0;
     int		pid;
     int		i;
@@ -478,31 +477,30 @@ Init()
      * Indicate that we are alive.
      */
     led_display(0xc1, 0, 0);
-    for (i = 0; i <= 15; i += 3) {
+
+    for (i = 0; i <= 5; i += 3) {
 	Sync_WaitTime(time_OneSecond);
 	led_display(0xe0 | i, 0, 0);
     }
+#ifdef notdef
     /*
      * Fork a new process and then play tag with it.
      */
     Proc_NewProc((Address) t2, PROC_KERNEL, FALSE, &pid, "t2");
     t1();
+#endif
 
-#ifdef notdef
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("In Init\n");
     }
-    if (main_UseAltInit) {
-	Sys_Printf("Execing \"%s\"\n", init3Args[0]);
-	status = Proc_KernExec(init3Args[0], initArgs);
-	Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", init3Args[0]);
+    if (main_AltInit != 0) {
+	altInitArgs[0] = main_AltInit;
+	Sys_Printf("Execing \"%s\"\n", altInitArgs[0]);
+	status = Proc_KernExec(altInitArgs[0], initArgs);
+	Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", altInitArgs[0]);
     }
     status = Proc_KernExec(initArgs[0], initArgs);
     Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", initArgs[0]);
-
-    status = Proc_KernExec(init2Args[0], init2Args);
-    Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", init2Args[0]);
-#endif
 
     Proc_Exit(1);
 }
