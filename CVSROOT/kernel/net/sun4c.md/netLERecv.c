@@ -74,6 +74,9 @@ AllocateRecvMem()
 #ifdef sun3
     allocFunc = VmMach_NetMemAlloc;
 #endif
+#ifdef sun4
+    allocFunc = VmMach_NetMemAlloc;
+#endif
 
     /*
      * Allocate the ring of receive buffer descriptors.  The ring must start
@@ -90,11 +93,21 @@ AllocateRecvMem()
     netLEState.recvDescFirstPtr = (NetLERecvMsgDesc *) memBase;
 
     /*
-     * Allocate the receive buffers.
+     * Allocate the receive buffers. The buffers are
+     * allocated on an odd short word boundry so that packet data (after
+     * the ethernet header) will start on a long word boundry. This
+     * eliminates unaligned word fetches from the RPC module which would
+     * cause alignment traps on SPARC processors such as the sun4.
      */
-     for (i = 0; i < NET_LE_NUM_RECV_BUFFERS; i++) {
-	recvDataBuffer[i] = (Address) allocFunc(NET_LE_RECV_BUFFER_SIZE);
+
+#define ALIGNMENT_PADDING       (sizeof(Net_EtherHdr)&0x3)
+    for (i = 0; i < NET_LE_NUM_RECV_BUFFERS; i++) {
+        recvDataBuffer[i] = (Address)
+                allocFunc(NET_LE_RECV_BUFFER_SIZE + ALIGNMENT_PADDING) +
+                                                        ALIGNMENT_PADDING;
     }
+#undef ALIGNMENT_PADDING
+
     recvMemAllocated = TRUE;
 }
 

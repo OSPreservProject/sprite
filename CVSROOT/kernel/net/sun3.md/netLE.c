@@ -211,6 +211,18 @@ NetLEReset()
      */
     netLEStatePtr->regPortPtr->addrPort = NET_LE_CSR0_ADDR;
     netLEStatePtr->regPortPtr->dataPort = NET_LE_CSR0_STOP; 
+#ifdef sun4c
+    {
+	register volatile int *dmaReg = ((int *) 0xffd14000);
+	*dmaReg = 0x80;
+	MACH_DELAY(200);
+	*dmaReg = *dmaReg & ~(0x80);
+	MACH_DELAY(200);
+	*dmaReg = 0x10;
+	MACH_DELAY(200);
+	printf("DMA reg = 0x%x\n", *dmaReg);
+    }
+#endif
 
     /*
      * Set up the receive and transmit rings. 
@@ -288,9 +300,14 @@ NetLEReset()
 	    &(netLEStatePtr->regPortPtr->dataPort);
 
 	for (i = 0; ((*csr0Ptr & NET_LE_CSR0_INIT_DONE) == 0); i++) {
-	    if (i > 50000) {
-		panic( "LE ethernet: Chip will not initialized.\n");
+	    if (i > 5000) {
+#ifdef sun4c
+		Mach_MonAbort();
+#endif
+		panic("LE ethernet: Chip will not initialize, csr @ 0x%x = 0x%x \n",
+			(unsigned int) csr0Ptr, *csr0Ptr);
 	    }
+	    MACH_DELAY(100);
 	}
 
 	/*

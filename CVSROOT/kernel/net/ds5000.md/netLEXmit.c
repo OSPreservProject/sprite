@@ -93,7 +93,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     int					totalLength;
     int					length;
     int					amountNeeded;
-#ifdef sun3
+#if defined(sun3) || defined(sun4)
     Net_ScatterGather			newScatGathArr[NET_LE_NUM_XMIT_BUFFERS];
 #endif
 
@@ -113,7 +113,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     netLEState.transmitting = TRUE;
     curScatGathPtr = scatterGatherPtr;
-#ifdef sun3
+#if defined(sun3) || defined(sun4)
     /*
      * Remap the packet into network addressible memory.
      */
@@ -316,6 +316,9 @@ AllocateXmitMem()
     allocFunc = Vm_RawAlloc;
 #endif
 #ifdef sun3
+    allocFunc = VmMach_NetMemAlloc;
+#endif
+#ifdef sun4
     allocFunc = VmMach_NetMemAlloc;
 #endif
 
