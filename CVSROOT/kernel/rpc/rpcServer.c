@@ -62,6 +62,11 @@ int rpcMaxServerAge = 10;
 Rpc_Histogram *rpcServiceTime[RPC_LAST_COMMAND+1];
 Boolean rpcServiceTiming = FALSE;
 
+/*
+ * A raw count of the number of service calls.
+ */
+int rpcServiceCount[RPC_LAST_COMMAND+1];
+
 
 /*
  *----------------------------------------------------------------------
@@ -178,6 +183,9 @@ Rpc_Server()
 	    error = RPC_INVALID_RPC;
 	} else {
 	    Time histTime;
+
+	    rpcServiceCount[command]++;
+
 	    RPC_SERVICE_TIMING_START(command, &histTime);
 
 	    storage.requestParamPtr	= srvPtr->request.paramBuffer.bufAddr;

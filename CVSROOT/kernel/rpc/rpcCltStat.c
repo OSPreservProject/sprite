@@ -29,6 +29,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "rpcCltStat.h"
 #include "user/rpc.h"
+#include "rpcServer.h"
+#include "rpcCall.h"
+#include "rpcClient.h"
 
 /*
  * Stats are taken during RPC to help make sure all parts
@@ -228,6 +231,32 @@ Rpc_PrintCltStat()
     printf("\n");
 
     RpcSpecialStatPrint();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_PrintCallCount --
+ *
+ *	Print the RPC call counts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Do the prints.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_PrintCallCount()
+{
+    register int call;
+
+    printf("Rpc Client Calls\n");
+    for (call=0 ; call<=RPC_LAST_COMMAND ; call++) {
+	printf("%-15s %8d\n", rpcService[call].name, rpcClientCalls[call]);
+    }
 }
 
 /*

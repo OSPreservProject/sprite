@@ -303,6 +303,40 @@ Rpc_GetStats(command, option, argPtr)
 	    }
 	    break;
 	}
+	case SYS_RPC_CALL_COUNTS: {
+	    register int *callCountPtr;
+
+	    callCountPtr = (int *)argPtr;
+	    if (callCountPtr == (int *)NIL ||
+		callCountPtr == (int *)0 ||
+		callCountPtr == (int *)USER_NIL ||
+		option <= 0) {
+		
+		Rpc_PrintCallCount();
+	    } else {
+		status = Vm_CopyOut(option,
+				  (Address)&rpcClientCalls,
+				  (Address) callCountPtr);
+	    }
+	    break;
+	}
+	case SYS_RPC_SRV_COUNTS: {
+	    register int *serviceCountPtr;
+
+	    serviceCountPtr = (int *)argPtr;
+	    if (serviceCountPtr == (int *)NIL ||
+		serviceCountPtr == (int *)0 ||
+		serviceCountPtr == (int *)USER_NIL ||
+		option <= 0) {
+		
+		Rpc_PrintServiceCount();
+	    } else {
+		status = Vm_CopyOut(option,
+				  (Address)&rpcServiceCount,
+				  (Address) serviceCountPtr);
+	    }
+	    break;
+	}
 	default:
 	    status = RPC_INVALID_ARG;
 	    break;
