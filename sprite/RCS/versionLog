@@ -709,3 +709,13 @@ Fixed a few compat bugs:
     Took out unused "release" rpc functions.
 
     Fewer noisy FDDI messages.
+
+1.117	Mon Dec 14 13:20:36 PST 1992
+    Fsrmt contains fix in which files weren't getting their timestamps
+    updated with the new recovery (no recovery of clean unopen files).
+
+    Dev, fsutil, fsrmt, recov, and rpc contain new code for the device that
+    keeps track of the state of clients of the file server.
+
+    Sched contains a new check to see if we're at interrupt level when
+    entering the idle loop.
