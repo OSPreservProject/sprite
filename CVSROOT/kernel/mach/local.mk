@@ -23,3 +23,7 @@ DISTFILES   +=  $TM.md/sparcStationPromMap $TM.md/sunFiles \
 
 #include	<$(SYSMAKEFILE)>
 
+#if !empty(TM:Msun4) || !empty(TM:Msun4c)
+INSTFILES   +=  $TM.md/sun4 $TM.md/sys
+#endif
+
