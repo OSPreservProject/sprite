@@ -15,7 +15,11 @@
 #ifndef _MACHCONST
 #define _MACHCONST
 
+#ifdef KERNEL
 #include "vmSpurConst.h"
+#else
+#include <kernel/vmSpurConst.h>
+#endif
 
 /*
  * Define to make the sys module happy (sun backward compatible).

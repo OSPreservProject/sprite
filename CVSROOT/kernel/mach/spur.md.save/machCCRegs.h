@@ -16,10 +16,8 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _HEADER
-#define _HEADER
-
-#include "machConst.h"
+#ifndef _MACHCCREGS
+#define _MACHCCREGS
 
 /*
  * machCCRegs provides a C language callable interface to reading and 
@@ -75,5 +73,5 @@ extern void 	Mach_Write32bitCCReg();
 extern unsigned int 	Mach_Read8bitCCReg();
 extern void 	Mach_Write8bitCCReg();
 
-#endif _HEADER
+#endif _MACHCCREGS
 

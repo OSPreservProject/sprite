@@ -12,8 +12,13 @@
 #ifndef _MACH
 #define _MACH
 
+#ifdef KERNEL
 #include "machConst.h"
 #include "machCCRegs.h"
+#else
+#include <kernel/machConst.h>
+#include <kernel/machCCRegs.h>
+#endif
 
 /*
  * The state of each processor: user mode or kernel mode.
@@ -144,6 +149,13 @@ extern	void		Mach_FreeState();
 extern	void		Mach_CopyState();
 extern	void		Mach_GetDebugState();
 extern	void		Mach_SetDebugState();
+
+/*
+ * Migration routines.
+ */
+extern void			Mach_EncapState();
+extern ReturnStatus		Mach_DeencapState();
+extern int			Mach_GetEncapSize();
 
 /*
  * Other routines.
