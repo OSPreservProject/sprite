@@ -67,14 +67,17 @@ Fs_Command(command, bufSize, buffer)
     switch(command) {
 	case FS_PREFIX_LOAD: {
 	    /*
-	     * Load the prefix (contained in buffer) into the prefix table.
-	     * This will cause a broadcast to find the
-	     * server the first time the prefix is matched.
+	     * Load the prefix and serverID into the prefix table.
+	     * serverID is usually FS_NO_SERVER, although a known serverID
+	     * can be loaded into the table.
 	     */
-	    if (buffer[0] != '/') {
+	    Fs_PrefixLoadInfo *argPtr = (Fs_PrefixLoadInfo *) buffer;
+	    if (argPtr->prefix[0] != '/' ||(argPtr->serverID < 0 || 
+		argPtr->serverID >= NET_NUM_SPRITE_HOSTS)) {
 		status = FS_INVALID_ARG;
 	    } else {
-		Fs_PrefixLoad(buffer, FS_IMPORTED_PREFIX);
+		Fs_PrefixLoad(argPtr->prefix, argPtr->serverID,
+		    FS_IMPORTED_PREFIX);
 		status = SUCCESS;
 	    }
 	    break;
