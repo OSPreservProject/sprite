@@ -194,7 +194,7 @@ typedef struct {
 
 extern Timer_Statistics	timer_Statistics;
 
-extern void Timer_ServiceInterrupt();
+extern void Timer_CallBack();
 extern void Timer_ScheduleRoutine();
 extern void Timer_RescheduleRoutine();
 extern void Timer_DescheduleRoutine();
