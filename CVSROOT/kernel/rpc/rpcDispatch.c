@@ -114,6 +114,17 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	printf("In Rpc_Dispatch\n");
     }
     rpcHdrPtr = (RpcHdr *) rpcHdrAddr;
+    if (packetLength < sizeof(RpcHdr)) {
+	rpcCltStat.shorts++;
+	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
+				  packetLength, expectedLength);
+	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
+		    rpcHdrPtr->clientID, rpcHdrPtr->command);
+	printf("Resetting network interface %s\n",
+	    interPtr->name);
+	Net_Reset(interPtr);
+	return;
+    }
     if (rpcHdrPtr->version == rpc_SwappedVersion ||
 	rpcHdrPtr->version == rpc_SwappedVersionNew) {
 	/*
