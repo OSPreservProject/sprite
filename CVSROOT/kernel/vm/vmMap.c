@@ -24,7 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 
-static	Sync_Condition	mappingCondition;
+Sync_Condition	mappingCondition;
 
 int	vmNumMappedPages = 16;
 int	vmMapBasePage;
