@@ -62,7 +62,7 @@ Sync_Instrument sync_Instrument;
  */
 int syncProcWakeupRaces = 0;
 
-static void	ProcessWakeup();
+static INTERNAL void	ProcessWakeup();
 
 
 
@@ -725,10 +725,10 @@ Sync_ProcWakeup(pid, token)
  *----------------------------------------------------------------------------
  */
 
-static ENTRY void
+static INTERNAL void
 ProcessWakeup(procPtr, waitToken)
     register	Proc_ControlBlock 	*procPtr;	/* Process to wake up.*/
-    int					waitToken;	/* Toekn to use. */
+    int					waitToken;	/* Token to use. */
 {
 #ifdef notdef
     if (procPtr->waitToken == waitToken || waitToken == SYNC_BROADCAST_TOKEN) 
