@@ -63,13 +63,17 @@ void FslclNameHashStats();
 static EventTableType eventTable[] = {
     {'/', PrintL1Menu, (ClientData)0,"Print Dump Event Menu"},
     {'a', RESERVED_EVENT, NULL_ARG, "Abort to PROM monitor" }, 
+#ifdef 0
     {'b', RESERVED_EVENT, NULL_ARG, 
 				"Put machine into (old) serial line debugger"},
+#endif
     {'c', Fscache_DumpStats, (ClientData)0, "Dump cache stats"},
     {'d', RESERVED_EVENT, NULL_ARG, "Put machine into the kernel debugger"},
     {'e', Timer_DumpStats, (ClientData) 'e', "Dump timer stats"},
     {'f', Fsutil_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
+#ifdef 0
     {'h', FslclNameHashStats, (ClientData)NULL, "Dump name hash stats"},
+#endif
     {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
     {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
     {'p', (void (*)()) Proc_Dump, (ClientData) 0,"Dump process table"},
