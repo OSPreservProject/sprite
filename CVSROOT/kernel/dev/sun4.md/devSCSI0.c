@@ -387,7 +387,7 @@ SendCommand(devPtr, scsiCmdPtr)
 	panic("%s can't allocate DMA buffer of %d bytes\n", 
 			devPtr->handle.locationName, size);
     }
-    regsPtr->dmaAddress = (int)(addr - DEV_MULTIBUS_BASE);
+    regsPtr->dmaAddress = (int)(addr - VMMACH_DMA_START_ADDR);
     regsPtr->dmaCount = -size - 1;
     bits = SCSI_WORD_MODE | SCSI_DMA_ENABLE | SCSI_INTERRUPT_ENABLE;
     regsPtr->control = bits;
