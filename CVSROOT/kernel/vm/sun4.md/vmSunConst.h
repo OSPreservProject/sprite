@@ -364,4 +364,4 @@ DoneCheck:
  */
 #define	VMMACH_MAP_SEG_ADDR		(MACH_KERN_START - VMMACH_SEG_SIZE)
 
-#endif _VMSUN4CONST
+#endif /* _VMSUN4CONST */

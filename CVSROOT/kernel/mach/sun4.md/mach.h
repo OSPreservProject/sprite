@@ -269,7 +269,7 @@ extern	int		endText;
  */
 extern	Address	Mach_GetStackPointer();
 extern 	void	Mach_CheckSpecialHandling();
-#endif NOTDEF
+#endif /* NOTDEF */
 
 /*
  * Machine dependent variables.
@@ -284,4 +284,4 @@ extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
 
-#endif _MACH
+#endif /* _MACH */
