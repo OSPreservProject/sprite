@@ -158,8 +158,8 @@ typedef struct Dec_DiskBoot {
  * DEC_LABEL_SECTOR	The sector holding the disk label.
  */
 #define DEC_BOOT_SECTOR		0
-#define DEC_SUMMARY_SECTOR	(DEC_LABEL_SECTOR+1)
-#define DEC_DOMAIN_SECTOR	(DEC_LABEL_SECTOR+2)
+#define DEC_SUMMARY_SECTOR	17
+#define DEC_DOMAIN_SECTOR	18
 #define DEC_LABEL_SECTOR	31
 
 /*
