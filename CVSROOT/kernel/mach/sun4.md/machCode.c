@@ -70,13 +70,10 @@ int	mach_LastUserStackPage;
  */
 Mach_RegState	stateHolder;
 Mach_RegState	*temporaryTrapState = &stateHolder;
-/*
- * Temporarily, for counting clock interrupts, I'm saving a counter in
- * this integer.
- */
-int	counterHolder;
-int	*temporaryClockCounter = &counterHolder;
 
+int	saveBuffer[1000];
+int	saveCounter = 0;
+int	saveStart = 0;
 
 /*
  * ----------------------------------------------------------------------------

@@ -218,11 +218,9 @@ _MachTrap:
 	cmp	%VOL_TEMP1, MACH_WINDOW_UNDERFLOW	/* my underflow? */
 	be	MachWindowUnderflow
 	rd	%psr, %CUR_PSR_REG
-#ifdef NOTDEF
-	cmp	%VOL_TEMP1, MACH_LEVEL14_INT		/* clock interrupt */
+	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
 	be	MachHandleInterrupt
 	rd	%psr, %CUR_PSR_REG
-#endif NOTDEF
 							/* no - their stuff */
 	add	%VOL_TEMP1, %TBR_REG, %VOL_TEMP1 /* add t.t. to real tbr */
 	jmp	%VOL_TEMP1		/* jmp (non-pc-rel) to real tbr */
@@ -252,6 +250,36 @@ _MachTrap:
  */
 .globl	_MachReturnFromTrap
 _MachReturnFromTrap:
+	MACH_UNDERFLOW_TEST()
+	be	UnderflowOkay
+	nop
+	call	MachDealWithWindowUnderflow
+	nop
+UnderflowOkay:
+	set	_saveCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	mov	1000, %VOL_TEMP1
+	cmp	%VOL_TEMP1, %VOL_TEMP2
+	be	finished3
+	nop
+	sll	%VOL_TEMP2, 0x2, %VOL_TEMP2	/* get array offset */
+	set	_saveBuffer, %VOL_TEMP1
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* add to array */
+	mov	0x3, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	mov	%psr, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%l0, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	mov	%wim, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	set	_saveCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+finished3:
 	/* restore psr */
 	mov	%CUR_PSR_REG, %VOL_TEMP2;	/* get old psr */
 	set	(~MACH_CWP_BITS), %VOL_TEMP1;	/* clear only its cwp bits */
@@ -260,12 +288,6 @@ _MachReturnFromTrap:
 	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;	/* take only its cwp */
 	or	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;	/* put cwp on old psr */
 	mov	%VOL_TEMP2, %psr
-	MACH_UNDERFLOW_TEST()
-	be	UnderflowOkay
-	nop
-	call	MachDealWithWindowUnderflow
-	nop
-UnderflowOkay:
 	jmp	%CUR_PC_REG
 	rett	%NEXT_PC_REG
 	nop

@@ -127,7 +127,7 @@
 /*
  * Bit to enable in interrupt register for timer.
  */
-#define	MACH_ENABLE_TIMER_INTR_LEVEL	MACH_ENABLE_LEVEL14_INTR
+#define	MACH_ENABLE_TIMER_INTR_LEVEL	MACH_ENABLE_LEVEL10_INTR
 
 #ifdef NOTDEF
 /*

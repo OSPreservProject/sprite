@@ -113,7 +113,7 @@ doneZeroing:
 	 * window overflow.
 	 */
 	set	MACH_STACK_START, %fp
-	set	(MACH_STACK_START + MACH_SAVED_WINDOW_SIZE), %sp
+	set	(MACH_STACK_START - MACH_SAVED_WINDOW_SIZE), %sp
 
 	/*
 	 * Now set up initial trap table by copying machProtoVectorTable
