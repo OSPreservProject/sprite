@@ -531,12 +531,22 @@ typedef struct Fsdm_BlockIndexInfo {
  *     FSDM_DELETE_EVERYTHING		The file is being truncated to length
  *					0 so delete all blocks and indirect
  *					blocks.
+ *	FSCACHE_DONT_BLOCK		Don't block on a full cache.  The cache
+ *					can get so full of dirty blocks it can
+ *					prevent the fetching of needed indirect
+ *					blocks.  Our caller can deal with this
+ *					if it sets FSCACHE_DONT_BLOCK, otherwise
+ *					we'll wait for a free cache block.
+ *					(FSCACHE_DONT_BLOCK value is used as
+ *					 a convenience - it gets passed to
+ *					 Fscache_FetchBlock)
  */
 
 #define	FSDM_ALLOC_INDIRECT_BLOCKS	0x01
 #define	FSDM_DELETE_INDIRECT_BLOCKS	0x02
-#define	FSDM_DELETING_FROM_FRONT		0x04
+#define	FSDM_DELETING_FROM_FRONT	0x04
 #define	FSDM_DELETE_EVERYTHING		0x08
+/*resrv FSCACHE_DONT_BLOCK		0x40000 */
 
 /*
  * Whether or not to keep information about file I/O by user file type.
