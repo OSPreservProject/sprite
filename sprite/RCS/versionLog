@@ -571,4 +571,7 @@ Select is changed back to old style.
 1.102	Fri Oct 18 18:44:51 PDT 1991
 Another fix to select.
 Dean Long's merge of sun4c and sun4c2.
+
+1.103	Sat Oct 19 21:42:44 PDT 1991
+Fixed a problem with the 101 mapped files change.
     New files linked in from the net library.
