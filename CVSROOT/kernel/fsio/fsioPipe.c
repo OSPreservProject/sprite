@@ -344,7 +344,7 @@ PipeCloseInt(handlePtr, ref, write, release)
 	Fsutil_WaitListDelete(&handlePtr->readWaitList);
 	Fsutil_WaitListDelete(&handlePtr->writeWaitList);
 	if (release) {
-	    Fsutil_HandleRelease(handlePtr, TRUE);
+	    Fsutil_HandleRelease(handlePtr, FALSE);
 	}
 	Fsutil_HandleRemove(handlePtr);
 	fs_Stats.object.pipes--;
