@@ -100,6 +100,13 @@ Mach_DeencapState(procPtr, buffer)
     ReturnStatus status;
 
     /*
+     * Get rid of the process's old machine-dependent state if it exists.
+     */
+    if (procPtr->machStatePtr != (Mach_State *) NIL) {
+	Mach_FreeState(procPtr);
+    }
+
+    /*
      * This procedure relies on the fact that Mach_SetupNewState
      * only looks at the Mach_UserState part of the Mach_State structure
      * it is given.  Therefore, we can coerce the pointer to a Mach_State
