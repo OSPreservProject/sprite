@@ -75,7 +75,7 @@ ProcGetObjInfo(execPtr, objInfoPtr)
 	    objInfoPtr->codeFileOffset = 0;
 	    objInfoPtr->codeSize = 0;
 	    objInfoPtr->heapLoadAddr = execPtr->aoutHeader.codeStart;
-	    objInfoPtr->heapFileOffset = TextOffset(execPtr);
+	    objInfoPtr->heapFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
 	    objInfoPtr->heapSize = execPtr->aoutHeader.codeSize +
 		execPtr->aoutHeader.heapSize;
 	    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;

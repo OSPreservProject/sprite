@@ -94,12 +94,16 @@ typedef struct {
 
 /*
  * Determine the offset of the text segment in the file, given the header.
+ * (This is the same function as N_TXTOFF)
  */
-#define TextOffset(hdr) \
-    ( ((hdr)->fileHeader.magic==PROC_ZMAGIC)? 0 : \
+#define PROC_CODE_FILE_OFFSET(hdr) \
+    ( ((hdr).fileHeader.magic==PROC_ZMAGIC)? 0 : \
 	((sizeof(ProcExecHeader) + \
-	    (hdr)->fileHeader.numSections*sizeof(ProcSectionHeader) + \
-	    ((hdr)->aoutHeader.verStamp<23?7:15)) & \
-		~((long)(((hdr)->aoutHeader.verStamp<23?7:15))) ) )
+	    (hdr).fileHeader.numSections*sizeof(ProcSectionHeader) + \
+	    ((hdr).aoutHeader.verStamp<23?7:15)) & \
+		~((long)(((hdr).aoutHeader.verStamp<23?7:15))) ) )
+
+#define PROC_DATA_FILE_OFFSET(x) \
+    (PROC_CODE_FILE_OFFSET(x) + (x).aoutHeader.codeSize)
 
 #endif /* _PROCMACH */
