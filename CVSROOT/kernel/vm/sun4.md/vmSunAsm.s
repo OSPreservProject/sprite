@@ -808,12 +808,6 @@ FlushingPage:
  *	    Address sourcePtr;          Where to copy from.
  *	    Address destPtr;            Where to copy to.
  *
- *	NOTE: The trap handler assumes that this routine does not push anything
- *	      onto the stack.  It uses this fact to allow it to return to the
- *	      caller of this routine upon an address fault.  If you must push
- *	      something onto the stack then you had better go and modify 
- *	      "CallTrapHandler" in asmDefs.h appropriately.
- *
  * Results:
  *	Returns SUCCESS if the copy went OK (which is almost always).  If
  *	a bus error (other than a page fault) occurred while reading or

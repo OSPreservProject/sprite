@@ -1179,7 +1179,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
         if (segPtr->type == VM_SYSTEM) {
 	    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 		VmMachSetContextReg(i);
-/* XXX */	VmMachFlushSegment(virtAddr);
+		VmMachFlushSegment(virtAddr);
 		VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 	    }
         } else {
@@ -1190,13 +1190,13 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 		    if (contextPtr->map[pmegPtr->hardSegNum] == pmegNum) {
 			VmMachSetContextReg(i);
 			contextPtr->map[pmegPtr->hardSegNum] = VMMACH_INV_PMEG;
-/* XXX */		VmMachFlushSegment(virtAddr);
+			VmMachFlushSegment(virtAddr);
 			VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 		    }
 		    if (contextPtr->map[MAP_SEG_NUM] == pmegNum) {
 			VmMachSetContextReg(i);
 			contextPtr->map[MAP_SEG_NUM] = VMMACH_INV_PMEG;
-/* XXX */		VmMachFlushSegment(VMMACH_MAP_SEG_ADDR);
+			VmMachFlushSegment(VMMACH_MAP_SEG_ADDR);
 			VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR,
 					VMMACH_INV_PMEG);
 		    }
@@ -1491,7 +1491,7 @@ SetupContext(procPtr)
 	contextPtr->procPtr = procPtr;
 	vmPtr->machPtr->contextPtr = contextPtr;
 	VmMachSetContextReg(contextPtr->context);
-/* XXX */ VmMachFlushCurrentContext();
+	VmMachFlushCurrentContext();
 	/*
 	 * Set the context map.
 	 */
@@ -1568,13 +1568,6 @@ VmMach_FreeContext(procPtr)
 	MASTER_UNLOCK(vmMachMutexPtr);
 	return;
     }
-#ifdef GOO
-/* XXX */ oldContext = VmMachGetContextReg();
-    VmMachSetContextReg(contextPtr->context);
-    /* Here too??  This is called by things that don't call SetupContext... */
-    VmMachFlushCurrentContext();
-    VmMachSetContextReg(oldContext);
-#endif GOO
 
     List_Move((List_Links *)contextPtr, LIST_ATFRONT(contextList));
     contextPtr->flags = 0;
@@ -1655,10 +1648,6 @@ VmMach_MapIntelPage(virtAddr)
     /*
      * See if there is a PMEG already.  If not allocate one.
      */
-
-DEBUG_ADD(0x7777777);
-DEBUG_ADD(virtAddr);
-
     pmeg = VmMachGetSegMap(virtAddr);
     if (pmeg == VMMACH_INV_PMEG) {
 	MASTER_LOCK(vmMachMutexPtr);
@@ -1666,15 +1655,11 @@ DEBUG_ADD(virtAddr);
 	allocatedPMEG = PMEGGet(vm_SysSegPtr, 
 				(unsigned)virtAddr >> VMMACH_SEG_SHIFT,
 				PMEG_DONT_ALLOC);
-DEBUG_ADD(0x71717171);
-DEBUG_ADD(allocatedPMEG);
 	MASTER_UNLOCK(vmMachMutexPtr);
 	VmMachSetSegMap(virtAddr, allocatedPMEG);
     } else {
 	allocatedPMEG = VMMACH_INV_PMEG;
 	intelSavedPTE = VmMachGetPageMap(virtAddr);
-DEBUG_ADD(0x81818181);
-DEBUG_ADD(intelSavedPTE);
     }
 
     /*
@@ -1686,7 +1671,6 @@ DEBUG_ADD(intelSavedPTE);
     pte |= VMMACH_DONT_CACHE_BIT;
 #endif /* sun4 */
     /* No flush since this should never be cached. */
-DEBUG_ADD(intelPage);
     VmMachSetPageMap(virtAddr, pte);
 #endif /* sun2 or sun4 */
 }
@@ -1718,15 +1702,13 @@ VmMach_UnmapIntelPage(virtAddr)
     PMEG		*pmegPtr;
     Boolean	found = FALSE;
 
-DEBUG_ADD(0x88888888)
     if (allocatedPMEG != VMMACH_INV_PMEG) {
 	/*
 	 * Free up the PMEG.
 	 */
 	/* No flush since this should never be cached. */
-/* XXXX */	VmMachSetPageMap(virtAddr, (VmMachPTE)0);
+	VmMachSetPageMap(virtAddr, (VmMachPTE)0);
 	VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
-DEBUG_ADD(0x87878787)
 
 	MASTER_LOCK(vmMachMutexPtr);
 
@@ -1745,7 +1727,6 @@ DEBUG_ADD(0x87878787)
 	    pmegPtr = &pmegArray[allocatedPMEG];
 	    List_Insert((List_Links *) pmegPtr, LIST_ATREAR(pmegInuseList));
 	}
-DEBUG_ADD(allocatedPMEG)
 	PMEGFree(allocatedPMEG);
 
 	MASTER_UNLOCK(vmMachMutexPtr);
@@ -1754,11 +1735,8 @@ DEBUG_ADD(allocatedPMEG)
 	 * Restore the saved pte and free the allocated page.
 	 */
 	/* No flush since this should never be cached. */
-DEBUG_ADD(0x79797979)
-DEBUG_ADD(intelSavedPTE)
 	VmMachSetPageMap(virtAddr, intelSavedPTE);
     }
-DEBUG_ADD(intelPage)
     Vm_KernPageFree(intelPage);
 #endif
 }
@@ -2098,7 +2076,7 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 	/* Flush segment in context of fromProcPtr. */
 	oldContext = VmMachGetContextReg();
 	VmMachSetContextReg(fromProcPtr->vmPtr->machPtr->contextPtr->context);
-/* XXX */	VmMachFlushSegment(fromAddr);
+	VmMachFlushSegment(fromAddr);
 	VmMachSetContextReg(oldContext);
 	segOffset = (unsigned int)fromAddr & (VMMACH_SEG_SIZE - 1);
 	bytesToCopy = VMMACH_SEG_SIZE - segOffset;
@@ -2127,7 +2105,7 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 	/*
 	 * Zap the hardware segment.
 	 */
-/* XXX */	VmMachFlushSegment((Address) VMMACH_MAP_SEG_ADDR);
+	VmMachFlushSegment((Address) VMMACH_MAP_SEG_ADDR);
 	VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR, VMMACH_INV_PMEG); 
 	machPtr->mapHardSeg++;
     }
@@ -2187,6 +2165,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 	/* Flush segment in context of toProcPtr. */
 	oldContext = VmMachGetContextReg();
 	VmMachSetContextReg(toProcPtr->vmPtr->machPtr->contextPtr->context);
+	VmMachFlushSegment(toAddr);
 	VmMachSetContextReg(oldContext);
 	segOffset = (unsigned int)toAddr & (VMMACH_SEG_SIZE - 1);
 	bytesToCopy = VMMACH_SEG_SIZE - segOffset;
@@ -2216,7 +2195,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 	 */
 
 	/* Flush this in current context */
-/* XXX */	VmMachFlushSegment((Address) VMMACH_MAP_SEG_ADDR);
+	VmMachFlushSegment((Address) VMMACH_MAP_SEG_ADDR);
 	VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR, VMMACH_INV_PMEG); 
 
 	machPtr->mapHardSeg++;
@@ -2304,7 +2283,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 		pmegPtr = &pmegArray[*pmegNumPtr];
 		if (pmegPtr->pageCount != 0) {
 		    /* flush a range, so we don't care what context we're in. */
-/* XXX */	    VmMachFlushCacheRange(virtAddr, (Address)
+		    VmMachFlushCacheRange(virtAddr, (Address)
 			    (((((unsigned int) virtAddr) + VMMACH_SEG_SIZE) &
 			    ~(VMMACH_SEG_SIZE - 1)) - 1));
 		    VmMachSetSegMap(vmMachPTESegAddr, *pmegNumPtr);
@@ -2350,9 +2329,6 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 			pte &= ~VMMACH_DONT_CACHE_BIT;
 		    }
 #endif sun4
-#ifdef GOO
-/* XXX */	    VmMachFlushPage(pageVirtAddr);
-#endif GOO
 		    VmMachSetPageMap(pageVirtAddr, pte);
 		}
 	    }
@@ -2445,7 +2421,7 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 	    }
 #endif sun4
 	    /* flush a range so we don't care what context we're in. */
-/* XXX */  VmMachFlushCacheRange(testVirtAddr, (Address)
+	    VmMachFlushCacheRange(testVirtAddr, (Address)
 		    (((((unsigned int) testVirtAddr) + VMMACH_PAGE_SIZE &
 		    ~(VMMACH_PAGE_SIZE - 1)) - 1)));
 	    VmMachWritePTE(pmegNum, virtAddr, hardPTE);
@@ -2927,9 +2903,9 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     /*
      * Invalidate the page table entry.
      */
-/* XXX */    VmMachFlushPage(testVirtAddr);
+    VmMachFlushPage(testVirtAddr);
     for (i = 0; i < VMMACH_CLUSTER_SIZE; i++, addr += VMMACH_PAGE_SIZE_INT) {
-/* XXX */	VmMachWritePTE(pmegNum, addr, (VmMachPTE)0);
+	VmMachWritePTE(pmegNum, addr, (VmMachPTE)0);
     }
     pmegPtr = &pmegArray[pmegNum];
     if (hardPTE & VMMACH_RESIDENT_BIT) {
@@ -3220,27 +3196,27 @@ VmMach_MapInDevice(devPhysAddr, type)
  *----------------------------------------------------------------------
  */
 ENTRY static void
-DevBufferInit(vmDevBufPtr)
-    VmMach_DevBuffer *vmDevBufPtr;	/* Buffer struct to initialize. */
+DevBufferInit()
 {
     Address		virtAddr;
     unsigned char	pmeg;
     int			oldContext;
     int			i;
+    Address	baseAddr;
+    Address	endAddr;
 
     MASTER_LOCK(vmMachMutexPtr);
 
     /*
      * Round base up to next page boundary and end down to page boundary.
      */
-    vmDevBufPtr->baseAddr = (Address)VMMACH_DMA_START_ADDR;
-    vmDevBufPtr->endAddr = (Address)(VMMACH_DMA_START_ADDR + VMMACH_DMA_SIZE);
+    baseAddr = (Address)VMMACH_DMA_START_ADDR;
+    endAddr = (Address)(VMMACH_DMA_START_ADDR + VMMACH_DMA_SIZE);
 
     /* 
      * Set up the hardware pages tables in the range of addresses given.
      */
-    for (virtAddr = vmDevBufPtr->baseAddr;
-	 virtAddr < vmDevBufPtr->endAddr; ) {
+    for (virtAddr = baseAddr; virtAddr < endAddr; ) {
 	if (VmMachGetSegMap(virtAddr) != VMMACH_INV_PMEG) {
 	    panic("DevBufferInit: DMA space already valid\n");
 	}
@@ -3287,6 +3263,7 @@ VmMach_DevBufferAlloc(vmDevBufPtr, numBytes)
     VmMach_DevBuffer	*vmDevBufPtr;	/* Where to allocate the memory from. */
     int			numBytes;	/* Number of bytes to allocate. */
 {
+#ifdef NOTDEF
     Address		retAddr;
     static initialized = FALSE;
 
@@ -3309,6 +3286,7 @@ VmMach_DevBufferAlloc(vmDevBufPtr, numBytes)
     vmDevBufPtr->baseAddr = 
 (Address) (((int) vmDevBufPtr->baseAddr - 1 + VMMACH_PAGE_SIZE) & ~VMMACH_OFFSET_MASK);
     return(retAddr);
+#endif NOTDEF
 }
 
 
@@ -3339,6 +3317,7 @@ VmMach_DevBufferMap(numBytes, startAddr, mapAddr)
     Address	startAddr;	/* Kernel virtual address to start mapping in.*/
     Address	mapAddr;	/* Where to map bytes in. */
 {
+#ifdef NOTDEF
     Address 		virtAddr;
     VmMachPTE		pte;
     int			numPages;
@@ -3356,6 +3335,136 @@ VmMach_DevBufferMap(numBytes, startAddr, mapAddr)
     }
 
     return(mapAddr + ((int) (startAddr) & VMMACH_OFFSET_MASK));
+#endif NOTDEF
+}
+
+static	Boolean	dmaPageBitMap[VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
+
+
+/*
+ ----------------------------------------------------------------------
+ *
+ * VmMach_DMAAlloc --
+ *
+ *	Allocate a set of virtual pages to a routine for mapping purposes.
+ *	
+ * Results:
+ *	Pointer into kernel virtual address space of where to access the
+ *	memory, or NIL if the request couldn't be satisfied.
+ *
+ * Side effects:
+ *	The hardware page table is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+Address
+VmMach_DMAAlloc(numBytes, srcAddr)
+    int		numBytes;		/* Number of bytes to map in. */
+    Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
+{
+    Address	beginAddr;
+    Address	endAddr;
+    int		numPages;
+    int		i, j;
+    VmMachPTE	pte;
+    Boolean	foundIt = FALSE;
+    int		virtPage;
+    static initialized = FALSE;
+ 
+    if (!initialized) {
+	/* Where to allocate the memory from. */
+	DevBufferInit();
+    }
+
+    /* calculate number of pages needed */
+						/* beginning of first page */
+    beginAddr = (Address) (((unsigned int)(srcAddr)) & ~VMMACH_OFFSET_MASK_INT);
+						/* begging of last page */
+    endAddr = (Address) ((((unsigned int) srcAddr) + numBytes) &
+	    ~VMMACH_OFFSET_MASK_INT);
+    numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
+	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
+
+    /* see if request can be satisfied */
+    for (i = 0; i < (VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT); i++) {
+	if (dmaPageBitMap[i] == 1) {
+	    continue;
+	}
+	for (j = 1; j < numPages; j++) {
+	    if (dmaPageBitMap[i + j] == 1) {
+		break;
+	    }
+	}
+	if (j == numPages) {
+	    foundIt = TRUE;
+	    break;
+	}
+    }
+    if (!foundIt) {
+	return (Address) NIL;
+    }
+    for (j = 0; j < numPages; j++) {
+	VmMachFlushPage(srcAddr);
+	dmaPageBitMap[i + j] = 1;	/* allocate page */
+	virtPage = (unsigned int) (srcAddr) >> VMMACH_PAGE_SHIFT;
+	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT |
+	      VirtToPhysPage(Vm_GetKernPageFrame(virtPage));
+	SET_ALL_PAGE_MAP(((i + j) * VMMACH_PAGE_SIZE_INT) +
+		VMMACH_DMA_START_ADDR, pte);
+	srcAddr += VMMACH_PAGE_SIZE;
+    }
+    beginAddr = (Address) (VMMACH_DMA_START_ADDR + (i * VMMACH_PAGE_SIZE_INT) +
+	    (((unsigned int) srcAddr) & VMMACH_OFFSET_MASK));
+    return beginAddr;
+}
+
+
+/*
+ ----------------------------------------------------------------------
+ *
+ * VmMach_DMAFree --
+ *
+ *	Free a previously allocated set of virtual pages for a routine that
+ *	used them for mapping purposes.
+ *	
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The hardware page table is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmMach_DMAFree(numBytes, mapAddr)
+    int		numBytes;		/* Number of bytes to map in. */
+    Address	mapAddr;	/* Kernel virtual address to unmap.*/
+{
+    Address	beginAddr;
+    Address	endAddr;
+    int		numPages;
+    int		i, j;
+    Boolean	foundIt = FALSE;
+    int		virtPage;
+ 
+    /* calculate number of pages to free */
+						/* beginning of first page */
+    beginAddr = (Address) (((unsigned int) mapAddr) & ~VMMACH_OFFSET_MASK_INT);
+						/* beginning of last page */
+    endAddr = (Address) ((((unsigned int) mapAddr) + numBytes) &
+	    ~VMMACH_OFFSET_MASK_INT);
+    numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
+	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
+
+    i = ((unsigned int) mapAddr) >> VMMACH_PAGE_SHIFT_INT -
+	(VMMACH_DMA_START_ADDR >> VMMACH_PAGE_SHIFT_INT);
+    for (j = 0; j < numPages; j++) {
+	dmaPageBitMap[i + j] == 0;	/* free page */
+	VmMachFlushPage(mapAddr);
+	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) 0);
+	(unsigned int) mapAddr += VMMACH_PAGE_SIZE_INT;
+    }
+    return;
 }
 
 
@@ -3390,7 +3499,8 @@ VmMach_GetDevicePage(virtAddr)
     if (page == -1) {
 	panic("Vm_GetDevicePage: Couldn't get memory\n");
     }
-    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | VirtToPhysPage(page);
+    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | VirtToPhysPage(page) |
+	    VMMACH_DONT_CACHE_BIT;
     SET_ALL_PAGE_MAP(virtAddr, pte);
 }
 
@@ -3631,7 +3741,7 @@ VmMach_FlushPage(virtAddrPtr, invalidate)
 
     /* on sun4, ignore invalidate parameter? */
     virtAddr = (Address) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
-/* XXX */    VmMachFlushPage(virtAddr);
+    VmMachFlushPage(virtAddr);
     if (invalidate) {
 	VmMachSetPageMap(virtAddr, (VmMachPTE)0);
     }
@@ -3673,11 +3783,8 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
 	pte = VmMachGetPageMap(virtAddr);
 	pte &= ~VMMACH_PROTECTION_FIELD;
 	pte |= readWrite ? VMMACH_KRW_PROT : VMMACH_KR_PROT;
-#ifdef NOTDEF
-/* XXX */	VmMachFlushPage(virtAddr);
-#else
-/* XXX */	VmMachFlushCacheRange(virtAddr, virtAddr + numBytes);
-#endif NOTDEF
+	/* Could just flush in current context? XXX */
+	VmMachFlushCacheRange(virtAddr, virtAddr + numBytes);
 	SET_ALL_PAGE_MAP(virtAddr, pte);
     }
 }
