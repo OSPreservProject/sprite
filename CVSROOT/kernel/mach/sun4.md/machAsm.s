@@ -740,6 +740,8 @@ CopiedOutSigStack:
 	set	_machSigContextOffsetOnStack, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
 	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* stack addr context = arg3  */
+	set	_machSigStackOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to sig stack */
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2	/* addr of sig stack */
 	set	_machSigAddrOffsetInSig, %o3
 	ld	[%o3], %o3			/* offset to sigAddr */
