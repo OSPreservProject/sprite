@@ -43,7 +43,11 @@ extern void Proc_RecovInit();
 /*
  *  Pathname of the Init program.
  */
+#ifdef NOTDEF
 #define INIT	 	"/initsprite"
+#else
+#define	INIT		"/initsprite.mgbaker"
+#endif NOTDEF
 
 /*
  * Flags defined in individual's mainHook.c to modify the startup behavior. 
@@ -406,13 +410,6 @@ main()
     printf("Main exiting\n");
     Proc_Exit(0);
 }
-extern	void	t1();
-extern	void	t2();
-Sync_Lock	tagLock = Sync_LockInitStatic("tagLock");
-Sync_Condition	t1Cond;
-Sync_Condition	t2Cond;
-
-#define	LOCKPTR	&tagLock
 
 
 /*
@@ -433,16 +430,10 @@ Sync_Condition	t2Cond;
 static void
 Init()
 {
-#ifdef NOTDEF
     static char		*initArgs[] = { INIT, (char *) NIL };
     static char		*altInitArgs[] = { 0, (char *) NIL };
     ReturnStatus	status;
-#endif NOTDEF
-    int			pid;
 
-    Proc_NewProc((Address) t2, PROC_KERNEL, FALSE, &pid, "t2");
-    t1();
-#ifdef NOTDEF
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("In Init\n");
     }
@@ -456,38 +447,5 @@ Init()
     status = Proc_KernExec(initArgs[0], initArgs);
     printf( "Init: Could not exec %s status %x.\n",
 			initArgs[0], status);
-#endif NOTDEF
     Proc_Exit(1);
-}
-
-void t1()
-{
-    LOCK_MONITOR;
-
-    while (TRUE) {
-	Sync_WaitTime(time_OneSecond);
-	printf("t1 here\n");
-	Sync_Broadcast(&t2Cond);
-	(void)Sync_Wait(&t1Cond, TRUE);
-    }
-
-    UNLOCK_MONITOR;
-}
-
-static	unsigned int	lockVal;
-
-void t2()
-{
-    lockVal = tagLock.inUse;
-
-    LOCK_MONITOR;
-
-    while (TRUE) {
-	Sync_WaitTime(time_OneSecond);
-	printf("t2 here\n");
-	Sync_Broadcast(&t1Cond);
-	(void)Sync_Wait(&t2Cond, TRUE);
-    }
-
-    UNLOCK_MONITOR;
 }

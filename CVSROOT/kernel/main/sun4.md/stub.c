@@ -45,6 +45,10 @@ Prof_Start()
     panic("Prof_Start called.\n");
 }
 
+Prof_Enable()
+{
+}
+
 Prof_Disable()
 {
     panic("Prof_Disable called.\n");
@@ -70,9 +74,19 @@ Mach_GetStackPointer()
     panic("Mach_GetStackPointer called.\n");
 }
 
-Mach_MonTrap()
+Prof_EncapState()
 {
-    panic("Mach_MonTrap called.\n");
+    panic("Prof_EncapState called.\n");
+}
+
+Prof_DeencapState()
+{
+    panic("Prof_DeencapState called.\n");
+}
+
+Prof_GetEncapSize()
+{
+    panic("Prof_GetEncapSize called.\n");
 }
 
 Mach_EncapState()
