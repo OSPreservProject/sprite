@@ -406,7 +406,6 @@ WriteBytes(numBytes, bytePtr)
     Address	bytePtr;
 {
     int		  i;
-    char 	input;
 
     if (dbgTraceLevel >= 3) {
 	Byte_Copy(4, bytePtr, (char *) &i);
@@ -416,7 +415,7 @@ WriteBytes(numBytes, bytePtr)
     for (i = 0; i < numBytes; i++) {
 	DbgRs232WriteChar(dbgChannel, bytePtr[i]);
 	if ((i + 1) % DBG_ACK_SIZE == 0) {
-	    input = DbgRs232ReadChar(dbgChannel);
+	    (void)DbgRs232ReadChar(dbgChannel);
 	}
     }
 }
@@ -1085,7 +1084,6 @@ Dbg_Main(stackHole, dbgStack)
 		    }
 		    ch = 1;
 		} else {
-		    int		i;
 		    char	buf[100];
 
 		    if (dbgTraceLevel >= 2) {

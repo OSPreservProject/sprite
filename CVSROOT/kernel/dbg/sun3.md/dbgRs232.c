@@ -28,15 +28,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define USE_CHAN_A
 
 
-#ifdef USE_CHAN_A
 static Dev_ZilogDevice *zilogAddrA;	/* Struct to access channel A control
 					   register */
-#endif USE_CHAN_A
 
-#ifdef USE_CHAN_B
 static Dev_ZilogDevice *zilogAddrB;	/* Struct to access channel B control
 					   register */
-#endif USE_CHAN_B
 
 
 /*
