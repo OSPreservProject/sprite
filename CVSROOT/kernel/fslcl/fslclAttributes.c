@@ -177,7 +177,7 @@ FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
  *
  * FsAssignAttrs --
  *
- *	Assign the attributes in the file handle to an attribute structure.
+ *	Fill in the Fs_Attributes structure for a regular file.
  *	If the isExeced flag is TRUE then the current time is used as the
  *	access time.  This is an optimization to avoid contacting every
  *	client using the file.  Furthermore, due to segment caching by
@@ -187,7 +187,8 @@ FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
  *	None.
  *
  * Side effects:
- *	Attribute structure set to contain attributes from file handle.
+ *	Attribute structure set to contain attributes from disk descriptor
+ *	and the cache information.
  *
  *----------------------------------------------------------------------
  */
@@ -199,37 +200,54 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
 						    * the access time. */
     register	Fs_Attributes		*attrPtr;
 {
-    register FsFileDescriptor *descPtr;
+    register FsFileDescriptor *descPtr = handlePtr->descPtr;
+    register FsCacheFileInfo *cacheInfoPtr = &handlePtr->cacheInfo;
 
-    descPtr = handlePtr->descPtr;
     attrPtr->serverID			= handlePtr->hdr.fileID.serverID;
     attrPtr->domain			= handlePtr->hdr.fileID.major;
     attrPtr->fileNumber			= handlePtr->hdr.fileID.minor;
     attrPtr->type			= descPtr->fileType;
     attrPtr->permissions		= descPtr->permissions;
     attrPtr->numLinks			= descPtr->numLinks;
-    attrPtr->size			= descPtr->lastByte + 1;
-    if (descPtr->firstByte >= 0) {
-	attrPtr->size			-= descPtr->firstByte;
-    }
     attrPtr->uid			= descPtr->uid;
     attrPtr->gid			= descPtr->gid;
     attrPtr->devServerID		= descPtr->devServerID;
     attrPtr->devType			= descPtr->devType;
     attrPtr->devUnit			= descPtr->devUnit;
+    /*
+     * Take creation and descriptor modify time from disk descriptor.
+     */
     attrPtr->createTime.seconds		= descPtr->createTime;
     attrPtr->createTime.microseconds	= 0;
     attrPtr->descModifyTime.seconds	= descPtr->descModifyTime;
     attrPtr->descModifyTime.microseconds= 0;
-    attrPtr->dataModifyTime.seconds	= descPtr->dataModifyTime;
+    /*
+     * Take size, access time, and modify time from cache info because
+     * remote caching means the disk descriptor attributes can be out-of-date.
+     */
+    attrPtr->size			= cacheInfoPtr->attr.lastByte + 1;
+    if (cacheInfoPtr->attr.firstByte >= 0) {
+	attrPtr->size			-= cacheInfoPtr->attr.firstByte;
+    }
+    attrPtr->dataModifyTime.seconds	= cacheInfoPtr->attr.modifyTime;
     attrPtr->dataModifyTime.microseconds= 0;
     if (isExeced) {
 	attrPtr->accessTime.seconds	= fsTimeInSeconds;
     } else {
-	attrPtr->accessTime.seconds	= descPtr->accessTime;
+	attrPtr->accessTime.seconds	= cacheInfoPtr->attr.accessTime;
     }
     attrPtr->accessTime.microseconds	= 0;
-    attrPtr->blocks			= descPtr->numKbytes;
+    /*
+     * Again, if delayed writes mean we don't have any blocks for the
+     * file then we estimate a block count from the cache size.  This
+     * can be wrong due to granularity errors and wholes in files.
+     * Also, even if the descriptor has some blocks it may not have them all.
+     */
+    if (cacheInfoPtr->attr.lastByte > 0 && descPtr->numKbytes == 0) {
+	attrPtr->blocks			= cacheInfoPtr->attr.lastByte / 1024 +1;
+    } else {
+	attrPtr->blocks			= descPtr->numKbytes;
+    }
     attrPtr->blockSize			= FS_BLOCK_SIZE;
     attrPtr->version			= descPtr->version;
     attrPtr->userType			= descPtr->fileUsageType;
