@@ -363,6 +363,9 @@ Fs_Command(command, bufSize, buffer)
 	case FS_SET_RA_TRACING:
 	    SWAP_TO_BUFFER(fsRATracing, buffer);
 	    break;
+	case FS_REREAD_SUMMARY_INFO:
+	    status = FsRereadSummaryInfo(buffer);
+	    break;
 	default:
 	    status = FS_INVALID_ARG;
     }
