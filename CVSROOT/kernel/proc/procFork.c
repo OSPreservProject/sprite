@@ -362,6 +362,10 @@ InitUserProc(procPtr, parentProcPtr, shareHeap, vforkFlag)
 			procPtr, &(procPtr->vmPtr->segPtrArray[VM_STACK]));
 	if (status != SUCCESS) {
 	    Mach_FreeState(procPtr);
+	    return(status);
+	}
+    }
+
     if (shareHeap || vforkFlag) {
 	Vm_SegmentIncRef(parentProcPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
 	procPtr->vmPtr->segPtrArray[VM_HEAP] = 
