@@ -295,10 +295,11 @@ FsdmBlockAllocInit(domainPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fsdm_BlockAllocate(hdrPtr, offset, numBytes, blockAddrPtr, newBlockPtr)
+Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
     Fs_HandleHeader	*hdrPtr;	/* Local file handle. */
     int 		offset;		/* Offset to allocate at. */
     int 		numBytes;	/* Number of bytes to allocate. */
+    int			flags;		/* FSCACHE_DONT_BLOCK */
     int			*blockAddrPtr; 	/* Disk address of block allocated. */
     Boolean		*newBlockPtr;	/* TRUE if there was no block allocated
 					 * before. */
@@ -342,7 +343,7 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, blockAddrPtr, newBlockPtr)
 	    /*
 	     * Upgrade the fragment to a full block.
 	     */
-	    status = FragToBlock(handlePtr, curLastBlock);
+	    status = FragToBlock(handlePtr, curLastBlock, flags);
 	    if (status != SUCCESS) {
 		return(status);
 	    }
@@ -386,7 +387,7 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, blockAddrPtr, newBlockPtr)
      */
 
     status = AllocateBlock(handlePtr, descPtr, &indexInfo, newLastByte, 
-		       curLastBlock, &dirtiedIndex);
+		       curLastBlock, flags, &dirtiedIndex);
 
     if (status == SUCCESS) {
 	*blockAddrPtr = *indexInfo.blockAddrPtr;
@@ -1609,7 +1610,7 @@ OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset)
  *	fragment size.
  *
  * Results:
- *	SUCCESS.
+ *	SUCCESS, FS_NO_DISK_SPACE, or FS_WOULD_BLOCK (if cache is full).
  *
  * Side effects:
  *	*indexInfoPtr may be modified along with *indexInfoPtr->blockAddrPtr.
@@ -1619,7 +1620,7 @@ OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset)
 
 static ReturnStatus
 UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag, 
-		dontWriteThru, dirtiedIndexPtr)
+		dontWriteThru, dontBlock, dirtiedIndexPtr)
     Fsio_FileIOHandle		*handlePtr;	/* File to allocate blocks 
 						 * for. */
     register Fsdm_BlockIndexInfo *indexInfoPtr;	/* Index info structure. */
@@ -1631,6 +1632,7 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 						 * cache block that contains
 						 * upgraded block isn't forced
 						 * through to disk. */
+    int			dontBlock;		/* FSCACHE_DONT_BLOCK */
     Boolean		*dirtiedIndexPtr; 	/* TRUE if modified the block 
 						 * pointer in the file index 
 						 * structure. */
@@ -1719,8 +1721,12 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
      * the file descriptor and marking the block dirty.
      */
     Fscache_FetchBlock(&handlePtr->cacheInfo, 
-		      curLastBlock, FSCACHE_DATA_BLOCK,
+		      curLastBlock, FSCACHE_DATA_BLOCK | dontBlock,
 		      &fragCacheBlockPtr, &found);
+    if (fragCacheBlockPtr == (Fscache_Block *)NIL) {
+	status = FS_WOULD_BLOCK;
+	goto exit;
+    }
     fs_Stats.blockCache.fragAccesses++;
     if (!found) {
 	status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
@@ -1787,7 +1793,7 @@ exit:
 
 static ReturnStatus
 AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock, 
-	      dirtiedIndexPtr)
+	      dontBlock, dirtiedIndexPtr)
     Fsio_FileIOHandle		*handlePtr;	/* File to allocate block for.*/
     register Fsdm_FileDescriptor 	*descPtr;	/* Pointer to the file desc. */
     register Fsdm_BlockIndexInfo 	*indexInfoPtr; 	/* Index info structure. * /
@@ -1795,6 +1801,7 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 						 * file. */
     int				curLastBlock;	/* The last block in the file 
 						 * before started allocating. */
+    int				dontBlock;	/* FSCACHE_DONT_BLOCK */
     Boolean			*dirtiedIndexPtr;/* TRUE if a new block was 
 						  * allocated. */
 {
@@ -1885,7 +1892,7 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	 */   
 	status = UpgradeFragment(handlePtr, indexInfoPtr, 
 				 curLastBlock, newFragIndex, TRUE,
-				 dirtiedIndexPtr);
+				 dontBlock, dirtiedIndexPtr);
     }
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
@@ -1897,10 +1904,10 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
  *
  * FragToBlock --
  *
- *	Upgrade the given fragment to a blcok.
+ *	Upgrade the given fragment to a block.
  *
  * Results:
- *	None.
+ *	SUCCESS, FS_NO_DISK_SPACE, FS_WOULD_BLOCK.
  *
  * Side effects:
  *	The size in the file descriptor is updated so that it is on a block
@@ -1909,9 +1916,10 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-FragToBlock(handlePtr, blockNum)
+FragToBlock(handlePtr, blockNum, dontBlock)
     register Fsio_FileIOHandle	*handlePtr;
-    int					blockNum;
+    int				blockNum;
+    int				dontBlock;	/* FSCACHE_DONT_BLOCK */
 {
     register Fsdm_FileDescriptor	*descPtr;
     Fsdm_BlockIndexInfo		indexInfo;
@@ -1954,7 +1962,7 @@ FragToBlock(handlePtr, blockNum)
      */
 
     status = UpgradeFragment(handlePtr, &indexInfo, blockNum, LAST_FRAG,
-			     FALSE, &dirtiedIndex);
+			     FALSE, dontBlock, &dirtiedIndex);
     if (status == SUCCESS) {
 	descPtr->lastByte = blockNum * FS_BLOCK_SIZE + FS_BLOCK_SIZE - 1;
 	descPtr->descModifyTime = fsutil_TimeInSeconds;
