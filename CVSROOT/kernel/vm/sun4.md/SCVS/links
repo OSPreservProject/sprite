@@ -1,0 +1,6 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+vmMach.h                 ../sun3.md/vmMach.h
+vmMachInt.h              ../sun3.md/vmMachInt.h
+vmMachStat.h             ../sun3.md/vmMachStat.h
