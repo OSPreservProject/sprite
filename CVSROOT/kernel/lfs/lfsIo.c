@@ -96,12 +96,18 @@ LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     }
     if (numBytes < DEV_BYTES_PER_SECTOR) {
 	if (args.reply.length != DEV_BYTES_PER_SECTOR) {
-	    LfsError(lfsPtr, FAILURE, "LfsReadBytes short read");
+	    /*
+	     * Short read. 
+	     */
+	    return FAILURE;
 	}
 	bcopy(smallBuffer, bufferPtr, numBytes);
     } else {
 	if (args.reply.length != numBytes) {
-	    LfsError(lfsPtr, FAILURE, "LfsReadBytes short read");
+	    /*
+	     * Short read. 
+	     */
+	    return FAILURE;
 	}
     }
     LFS_STATS_ADD(lfsPtr->stats.blockio.totalBytesRead, numBytes);

@@ -107,6 +107,10 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
 	LfsCheckRead(lfsPtr, diskAddress, numBytes);
 
 	status = LfsReadBytes(lfsPtr, diskAddress, ioSize, blockPtr->blockAddr);
+	if (status != SUCCESS) {
+	    LfsError(lfsPtr, FAILURE, "Lfs_FileBlockRead: LfsReadBytes failed");
+	    return status;
+	}
 	LFS_STATS_ADD(lfsPtr->stats.blockio.bytesReads, ioSize);
     } else {
 	/*

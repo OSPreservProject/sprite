@@ -136,9 +136,9 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
 	if (lfsPtr->superBlock.hdr.partition != 
 	    devicePtr->unit % FSDM_NUM_DISK_PARTS) {
 
-	    printf("Lfs_AttachDisk: partition mismatch, %d != %d\n", 
-	    lfsPtr->superBlock.hdr.partition, 
-	    devicePtr->unit % FSDM_NUM_DISK_PARTS);
+	    /* 
+	     * File system was built on a different partition.
+	     */
 	    free((char *) lfsPtr);
 	    return FAILURE;
 	}
