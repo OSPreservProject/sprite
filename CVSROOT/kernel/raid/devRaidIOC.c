@@ -79,6 +79,30 @@ ReportHardInitFailure(stripeID)
 /*
  *----------------------------------------------------------------------
  *
+ * ReportParityCheckFailure --
+ *
+ *	This procedure is called when a parity check failes on a stripe.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ReportParityCheckFailure(stripeID)
+    int		stripeID;
+{
+    printf("RAID:PARITY_CHECK_ERR:stripe %d\n", stripeID);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ReportReconstructionFailure --
  *
  *	This procedure is called when a reconstruction failes.

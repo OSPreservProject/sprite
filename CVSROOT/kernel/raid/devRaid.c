@@ -37,6 +37,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devRaidUtil.h"
 #include "devRaidInitiate.h"
 #include "devRaidReconstruct.h"
+#include "devRaidHardInit.h"
+#include "devRaidParityCheck.h"
 #include "dev/raid.h"
 #include "devRaidIOC.h"
 #include "devRaidLock.h"
@@ -114,12 +116,12 @@ DevRaidAttach(devicePtr)
     RaidHandle	*handlePtr;
     Raid	*raidPtr;
 
+    raidPtr = &raidArray[devicePtr->unit];
     InitStripeLocks();
     InitDebugMem();
     if ( devicePtr->unit >= numRaid ) {
         return (DevBlockDeviceHandle *) NIL;
     }
-    raidPtr = &raidArray[devicePtr->unit];
     raidPtr->devicePtr = devicePtr;
     if ( raidPtr->state == RAID_INVALID ) {
 	if (RestoreRaidState(raidPtr) != SUCCESS) {
@@ -144,6 +146,8 @@ DevRaidAttach(devicePtr)
     handlePtr->blockHandle.maxTransferSize = RAID_MAX_XFER_SIZE;
     handlePtr->devPtr = devicePtr;
     handlePtr->raidPtr = &raidArray[devicePtr->unit];
+
+    LogEntry(raidPtr, "# Raid Device Attached\n");
     return (DevBlockDeviceHandle *) handlePtr;
 }
 
@@ -198,6 +202,11 @@ void initHardDoneProc()
     printf("RAID:MSG:Initialization completed.\n");
 }
 
+void initParityCheckDoneProc()
+{
+    printf("RAID:MSG:Paritycheck completed.\n");
+}
+
 static ReturnStatus
 IOControlProc(handlePtr, ioctlPtr, replyPtr) 
     DevBlockDeviceHandle	*handlePtr;
@@ -243,6 +252,12 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	InitiateHardInit(raidPtr,
 		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
 		initHardDoneProc, (ClientData) NIL, raidIOCParamPtr->ctrlData);
+	return SUCCESS;
+    case IOC_DEV_RAID_PARITYCHECK:
+	InitiateParityCheck(raidPtr,
+		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
+		initParityCheckDoneProc, (ClientData) NIL,
+		raidIOCParamPtr->ctrlData);
 	return SUCCESS;
     case IOC_DEV_RAID_FAIL:
 	if (row < 0 || row >= raidPtr->numRow) {

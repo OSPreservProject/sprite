@@ -18,6 +18,7 @@
 
 extern void ReportRequestError();
 extern void ReportHardInitFailure();
+extern void ReportParityCheckFailure();
 extern void ReportReconstructionFailure();
 
 #endif _DEVRAIDIOC
