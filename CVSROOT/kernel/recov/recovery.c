@@ -37,9 +37,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 #include "rpc.h"
 #include "hash.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "trace.h"
-#include "byte.h"
 
 /*
  * Other kernel modules arrange call-backs when a host crashes or reboots.

@@ -20,7 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "mach.h"
 #include "fs.h"
-#include "byte.h"
 #include "vm.h"
 
 extern	int	etext;
@@ -329,7 +328,7 @@ Prof_Dump(dumpName)
 
 	/* 
 	 * Check if rawArcPtr equals an unused value (which is 0 because 
-	 * profArcIndex is initialized with Byte_Zero in Prof_Start).
+	 * profArcIndex is initialized with bzero in Prof_Start).
 	 */
 	if (rawArcPtr == (ProfRawArc *) 0) {
 	    continue;
