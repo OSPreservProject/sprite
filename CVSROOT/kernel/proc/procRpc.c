@@ -196,6 +196,7 @@ static PRS commandCallbacks[] = {
     ProcMigEncapCallback,
     ProcMigDestroyCmd,
     ProcMigContinueProcess,
+    ProcMigGetSuspend,
 };
 
 
@@ -967,11 +968,15 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
     Proc_MigBuffer	outBuf;
     Proc_ControlBlock *procPtr;
 
+    if (proc_MigDebugLevel > 5) {
+	printf("Proc_RpcMigCommand: called from host %d with command %d.\n",
+	       hostID, command);
+    }
     if (commandPtr->remotePid != (Proc_PID) NIL) {
 	PROC_GET_VALID_PCB(commandPtr->remotePid, procPtr);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    if (proc_MigDebugLevel > 3) {
-		panic("Invalid pid: %x.\n", commandPtr->remotePid);
+		panic("Proc_RpcMigCommand: Invalid pid: %x.\n", commandPtr->remotePid);
 	    }
 	    status = PROC_NO_PEER;
 	    goto failure;
@@ -980,6 +985,15 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
 	procPtr = (Proc_ControlBlock *) NIL;
     }
 
+    if (commandPtr->command >= PROC_MIGRATE_CMD_NUM_TYPES ||
+	commandPtr->command < 0) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_RpcMigCommand: invalid command number: %d.\n",
+		   commandPtr->command);
+	}
+	status = GEN_INVALID_ARG;
+	goto failure;
+    }
     inBuf.size = storagePtr->requestDataSize;
     inBuf.ptr = storagePtr->requestDataPtr;
     outBuf.size = 0;
@@ -1001,10 +1015,16 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
 	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
 	replyMemPtr->paramPtr = (Address) NIL;
 	replyMemPtr->dataPtr = outBuf.ptr;
+	if (proc_MigDebugLevel > 5) {
+	    printf("Proc_RpcMigCommand: returning status %x.\n", status);
+	}
 	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
 		(ClientData) replyMemPtr);
     } else {
 failure:
+	if (proc_MigDebugLevel > 2) {
+	    printf("Proc_RpcMigCommand: returning status %x.\n", status);
+	}
 	Rpc_Reply(srvToken, status,
 		  storagePtr, (int(*)()) NIL, (ClientData) NIL);
     }
