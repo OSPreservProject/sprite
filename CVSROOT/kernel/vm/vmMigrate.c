@@ -273,7 +273,7 @@ Vm_DeencapState(procPtr, infoPtr, buffer)
 		break;
 	    }
 	    case VM_HEAP: {
-		(void)Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+		Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
 				    &filePtr);
 		if (filePtr == (Fs_Stream *) NIL) {
 		    panic("Vm_DeencapState: no code file pointer.\n");
@@ -380,7 +380,7 @@ Vm_FinishMigration(procPtr, hostID, infoPtr, bufferPtr, failure)
  *	be transferred to another node.  We have to duplicate the
  *	stream to the swap or code file for the segment because
  *	Fs_EncapStream effectively closes the stream.  By dup'ing the
- *	stream we can later call Vm_DeleteSegment which will close the
+ *	stream we can later call Vm_SegmentDelete which will close the
  *	stream (again).
  *
  * Results:
@@ -417,12 +417,12 @@ EncapSegment(segPtr, procPtr, bufPtrPtr)
     if (segPtr->type != VM_CODE) {
 	bcopy((Address) segPtr->ptPtr, ptr, varSize);
 	ptr += varSize;
-	(void)Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
+	Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
 	status = Fs_EncapStream(segPtr->swapFilePtr, ptr);
     } else {
 	bcopy((Address) &segPtr->execInfo, ptr, varSize);
 	ptr += varSize;
-	(void)Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
+	Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
 	status = Fs_EncapStream(segPtr->filePtr, ptr);
     }
     if (status != SUCCESS) {
