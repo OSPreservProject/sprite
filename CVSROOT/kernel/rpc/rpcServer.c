@@ -97,7 +97,7 @@ Rpc_Server()
     srvPtr = RpcServerInstall();
     if (srvPtr == (RpcServerState *)NIL) {
 	Sys_Printf("RPC server can't install itself.\n");
-	Proc_Exit(RPC_INTERNAL_ERROR);
+	Proc_Exit((int) RPC_INTERNAL_ERROR);
     }
     error = SUCCESS;
     for ( ; ; ) {
@@ -134,13 +134,13 @@ Rpc_Server()
 	 * Free up our previous reply.  The freeReplyProc is set by the
 	 * call to Rpc_Reply.
 	 */
-#ifndef LINT
+#ifndef lint
 	/* Won't lint due to cast of function ptr to address. */
 	if ((Address)srvPtr->freeReplyProc != (Address)NIL) {
 	    (void)(*srvPtr->freeReplyProc)(srvPtr->freeReplyData);
 	    srvPtr->freeReplyProc = (int (*)())NIL;
 	}
-#endif /* LINT */
+#endif /* lint */
 
 	rpcHdrPtr = &srvPtr->requestRpcHdr;
 #ifdef TIMESTAMP

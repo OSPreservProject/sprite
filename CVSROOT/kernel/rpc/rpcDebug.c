@@ -67,7 +67,8 @@ Test_RpcStub(command, argPtr)
 	     * then the in and out buffers.
 	     */
 	    Vm_MakeAccessible(VM_READONLY_ACCESS, sizeof(Rpc_EchoArgs),
-			   echoArgsPtr, &argSize, &echoArgsPtr);
+			   (Address) echoArgsPtr, &argSize,
+			   (Address *) (&echoArgsPtr));
 	    if (echoArgsPtr == (Rpc_EchoArgs *)NIL) {
 		return(RPC_INVALID_ARG);
 	    }
@@ -75,7 +76,7 @@ Test_RpcStub(command, argPtr)
 			      echoArgsPtr->size, echoArgsPtr->inDataPtr,
 			      &inSize, &echoArgsPtr->inDataPtr);
 	    if (echoArgsPtr->inDataPtr == (Address)NIL) {
-		Vm_MakeUnaccessible(echoArgsPtr, argSize);
+		Vm_MakeUnaccessible((Address) echoArgsPtr, argSize);
 		return(RPC_INVALID_ARG);
 	    }
 	    Vm_MakeAccessible(VM_OVERWRITE_ACCESS,
@@ -83,7 +84,7 @@ Test_RpcStub(command, argPtr)
 			      &outSize, &echoArgsPtr->outDataPtr);
 	    if (echoArgsPtr->outDataPtr == (Address)NIL) {
 		Vm_MakeUnaccessible(echoArgsPtr->inDataPtr, inSize);
-		Vm_MakeUnaccessible(echoArgsPtr, argSize);
+		Vm_MakeUnaccessible((Address) echoArgsPtr, argSize);
 		return(RPC_INVALID_ARG);
 	    }
 	    echoArgsPtr->size = (inSize > outSize) ? outSize : inSize ;
@@ -92,11 +93,11 @@ Test_RpcStub(command, argPtr)
 				echoArgsPtr->size, echoArgsPtr->inDataPtr,
 				echoArgsPtr->outDataPtr, &deltaTime);
 
-	    Vm_CopyOut(sizeof(Time), (Address)&deltaTime,
+	    (void) Vm_CopyOut(sizeof(Time), (Address)&deltaTime,
 				     (Address)echoArgsPtr->deltaTimePtr);
 	    Vm_MakeUnaccessible(echoArgsPtr->inDataPtr, inSize);
 	    Vm_MakeUnaccessible(echoArgsPtr->outDataPtr, outSize);
-	    Vm_MakeUnaccessible(echoArgsPtr, argSize);
+	    Vm_MakeUnaccessible((Address) echoArgsPtr, argSize);
 	    break;
 	}
 	case TEST_RPC_SEND: {
@@ -104,7 +105,8 @@ Test_RpcStub(command, argPtr)
 	    Time deltaTime;
 
 	    Vm_MakeAccessible(VM_READONLY_ACCESS, sizeof(Rpc_EchoArgs),
-			   echoArgsPtr, &argSize, &echoArgsPtr);
+			   (Address) echoArgsPtr, &argSize,
+			   (Address *) (&echoArgsPtr));
 	    if (argSize != sizeof(Rpc_EchoArgs)) {
 		return(RPC_INVALID_ARG);
 	    }
@@ -112,17 +114,17 @@ Test_RpcStub(command, argPtr)
 			      echoArgsPtr->size, echoArgsPtr->inDataPtr,
 			      &inSize, &echoArgsPtr->inDataPtr);
 	    if (echoArgsPtr->inDataPtr == (Address)NIL) {
-		Vm_MakeUnaccessible(echoArgsPtr, argSize);
+		Vm_MakeUnaccessible((Address) echoArgsPtr, argSize);
 		return(RPC_INVALID_ARG);
 	    }
 
 	    status = Rpc_SendTest(echoArgsPtr->serverID, echoArgsPtr->n,
 				inSize, echoArgsPtr->inDataPtr, &deltaTime);
 
-	    Vm_CopyOut(sizeof(Time), (Address)&deltaTime,
+	    (void) Vm_CopyOut(sizeof(Time), (Address)&deltaTime,
 				     (Address)echoArgsPtr->deltaTimePtr);
 	    Vm_MakeUnaccessible(echoArgsPtr->inDataPtr, inSize);
-	    Vm_MakeUnaccessible(echoArgsPtr, argSize);
+	    Vm_MakeUnaccessible((Address) echoArgsPtr, argSize);
 	    break;
 	}
 	default:
@@ -184,7 +186,8 @@ Rpc_GetStats(command, option, argPtr)
 	    } else {
 		RpcResetCltStat();
 		status = Vm_CopyOut(sizeof(Rpc_CltStat),
-				  (Address)&rpcTotalCltStat, cltStatPtr);
+				  (Address)&rpcTotalCltStat,
+				  (Address) cltStatPtr);
 	    }
 	    break;
 	}
@@ -200,7 +203,8 @@ Rpc_GetStats(command, option, argPtr)
 	    } else {
 		RpcResetSrvStat();
 		status = Vm_CopyOut(sizeof(Rpc_SrvStat),
-				  (Address)&rpcTotalSrvStat, srvStatPtr);
+				  (Address)&rpcTotalSrvStat,
+				  (Address) srvStatPtr);
 	    }
 	    break;
 	}

@@ -28,7 +28,7 @@
  * Converting to use general trace routines.
  */
 #define RpcTrace(rpcHdrPtr, type, comment) \
-	Trace_Insert(rpcTraceHdrPtr, type, rpcHdrPtr)
+	Trace_Insert(rpcTraceHdrPtr, type, (ClientData) rpcHdrPtr)
 
 /*
  * Macros to make the trace calls take up less room and be easier

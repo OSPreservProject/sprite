@@ -158,11 +158,18 @@ Rpc_CreateServer(pidPtr)
      */
     rpcServerPtrPtr[rpcNumServers] = RpcInitServerState(rpcNumServers);
     rpcNumServers++;
-#ifndef LINT
+#ifndef lint
     /* Won't lint due to cast of function pointer to address. */
     status = Proc_NewProc((Address)Rpc_Server, PROC_KERNEL, FALSE,
 	    (Proc_PID *) pidPtr, "Rpc_Server");
-#endif /* LINT */
+#else	/* lint */
+    /*
+     * FOR LINTING ONLY!!!!  So that lint doesn't complain about status
+     * not being set, since I had to comment out the real setting due
+     * to function pointer cast.
+     */
+    status = SUCCESS;
+#endif /* lint */
     if (status == SUCCESS) {
 	Proc_SetServerPriority(*((Proc_PID *) pidPtr));
     }

@@ -226,7 +226,6 @@ RpcEcho(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-
     if (command == RPC_ECHO_2) {
 	/*
 	 * The data is stored in buffers specified by the buffer set for
@@ -242,7 +241,7 @@ RpcEcho(srvToken, clientID, command, storagePtr)
 	 * RPC_SEND has a null reply already set up by Rpc_Server.
 	 */
     }
-    Rpc_Reply(srvToken, SUCCESS, storagePtr, NIL, NIL);
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)()) NIL, (ClientData) NIL);
 }
 
 
@@ -299,7 +298,8 @@ RpcGetTime(srvToken, clientID, command, storagePtr)
     replyMemPtr->paramPtr = storagePtr->replyParamPtr;
     replyMemPtr->dataPtr = (Address) NIL;
 
-    Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem, replyMemPtr);
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
     return(SUCCESS);
 }
 
@@ -336,7 +336,7 @@ RpcProcMigInit(srvToken, clientID, command, storagePtr)
     ReturnStatus status;
 
     status = Proc_AcceptMigration(clientID);
-    Rpc_Reply(srvToken, status, storagePtr, NIL, NIL);
+    Rpc_Reply(srvToken, status, storagePtr, (int(*)()) NIL, (ClientData) NIL);
 
     return(status);
 }
@@ -389,7 +389,8 @@ RpcProcMigInfo(srvToken, clientID, command, storagePtr)
 	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
 	replyMemPtr->paramPtr = (Address) returnInfoPtr;
 	replyMemPtr->dataPtr = (Address) NIL;
-	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem, replyMemPtr);
+	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
+		(ClientData) replyMemPtr);
     }
 
     return(status);
@@ -440,7 +441,8 @@ RpcProcRemoteCall(srvToken, clientID, command, storagePtr)
     replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = (Address) NIL;
     replyMemPtr->dataPtr = returnData;
-    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem, replyMemPtr);
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
 
     return(status);
 }

@@ -29,9 +29,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * This is told to other machines by including it in the RPC header.
  * They use it to set the delay between packets in a fragmented send.
  */
-short rpcMyDelay;
-short rpcOutputRate;
-short rpcDelay[NET_NUM_SPRITE_HOSTS];
+unsigned	short rpcMyDelay;
+unsigned	short rpcOutputRate;
+short	rpcDelay[NET_NUM_SPRITE_HOSTS];
 
 short rpcLastDelay;
 
@@ -312,15 +312,15 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		     */
 #ifdef RPC_TEST_BYTE_SWAP
 		    if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
-			Net_Output(spriteID, (Net_ScatterGather *)swapMessage,
-				3, mutexPtr);
+			(void) Net_Output(spriteID,
+				(Net_ScatterGather *)swapMessage, 3, mutexPtr);
 		    } else {
-			Net_Output(spriteID,
+			(void) Net_Output(spriteID,
 				    (Net_ScatterGather *)&fragment[frag], 3,
 				    mutexPtr);
 		    }
 #else /* RPC_TEST_BYTE_SWAP */
-		    Net_Output(spriteID,
+		    (void) Net_Output(spriteID,
 				(Net_ScatterGather *)&fragment[frag], 3,
 				mutexPtr);
 #endif /* RPC_TEST_BYTE_SWAP */
@@ -391,12 +391,14 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 #endif /* TIMESTAMP */
 #ifdef RPC_TEST_BYTE_SWAP
 	if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
-	    Net_Output(spriteID, (Net_ScatterGather *)swapMessage, 3, mutexPtr);
+	    (void) Net_Output(spriteID, (Net_ScatterGather *)swapMessage, 3,
+		    mutexPtr);
 	} else {
-	    Net_Output(spriteID, (Net_ScatterGather *)message, 3, mutexPtr);
+	    (void) Net_Output(spriteID, (Net_ScatterGather *)message, 3,
+		    mutexPtr);
 	}
 #else /* RPC_TEST_BYTE_SWAP */
-	Net_Output(spriteID, (Net_ScatterGather *)message, 3, mutexPtr);
+	(void) Net_Output(spriteID, (Net_ScatterGather *)message, 3, mutexPtr);
 #endif /* RPC_TEST_BYTE_SWAP */
 
 	RPC_TRACE(rpcHdrPtr, RPC_OUTPUT, "Output");

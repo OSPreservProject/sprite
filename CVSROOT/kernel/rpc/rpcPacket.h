@@ -179,8 +179,8 @@ extern unsigned int rpcCompleteMask[];
  * delays between transmission of fragments.
  */
 extern short rpcDelay[];		/* Other host's inter-frag delay */
-extern short rpcMyDelay;		/* This host's inter-frag delay */
-extern short rpcOutputRate;		/* This machines output rate */
+extern unsigned short rpcMyDelay;	/* This host's inter-frag delay */
+extern unsigned short rpcOutputRate;		/* This machines output rate */
 
 /*
  * Forward Declarations.

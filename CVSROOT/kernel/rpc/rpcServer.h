@@ -71,7 +71,7 @@ typedef struct RpcServerState {
      * This bitmask indicates which fragments our client has recieved.
      * It is used by RpcOutput for partial resends.
      */
-    int			fragsDelivered;
+    unsigned	int	fragsDelivered;
     /*
      * This bitmask indicates which fragments we've gotten.
      * It is maintained by ServerDispatch and returned to the
