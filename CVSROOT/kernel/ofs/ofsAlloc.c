@@ -123,7 +123,7 @@ int	fsdmPercentFree = 10;
 #define CONTIGUOUS	0
 #define SKIP_ONE	1
 
-int fsdm_AllocGap = SKIP_ONE;
+int fsdm_AllocGap = CONTIGUOUS;
 
 /*
  * Flag to determine whether to keep track of file deletions and read/writes
@@ -1131,8 +1131,11 @@ FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr,
 		bitmapPtr++;
 	    }
 	}
+	UNLOCK_MONITOR;
 	panic("FindBlockInt: no block\n");
 	*blockNumPtr = -1;
+	fsdm_AllocGap = CONTIGUOUS;
+	LOCK_MONITOR;
 	return;
 
 haveFreeBlock:
