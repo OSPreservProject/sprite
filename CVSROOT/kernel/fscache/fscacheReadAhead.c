@@ -61,7 +61,29 @@ FsReadAheadInit(readAheadPtr)
     register	FsReadAheadInfo *readAheadPtr;
 {
     bzero((Address) readAheadPtr, sizeof(FsReadAheadInfo));
-    SYNC_LOCK_INIT_DYNAMIC(&(readAheadPtr->lock));
+    Sync_LockInitDynamic(&readAheadPtr->lock, "Fs:readAheadLock");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsReadAheadSyncLockCleanup --
+ *
+ *	Clean up the Sync_Lock tracing info for the read ahead lock.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	As above.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsReadAheadSyncLockCleanup(readAheadPtr)
+    register	FsReadAheadInfo *readAheadPtr;
+{
+    Sync_LockClear(&readAheadPtr->lock);
 }
 
 /*
