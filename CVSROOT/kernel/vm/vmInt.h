@@ -490,9 +490,13 @@ typedef struct VmCOWInfo {
 /*
  * Macro to get a virtAddr's offset in the page table.
  */
+#ifdef sun4
+#define segOffset(virtAddrPtr) ( (virtAddrPtr)->segPtr->offset)
+#else
 #define segOffset(virtAddrPtr) ( ((virtAddrPtr)->sharedPtr== \
 	(Vm_SegProcList *)NULL) ? (virtAddrPtr)->segPtr->offset :\
 	(virtAddrPtr)->sharedPtr->offset)
+#endif
 
 
 /*----------------------------------------------------------------------------*/
