@@ -1377,6 +1377,8 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
 		procPtr->migFlags |= PROC_WAS_EVICTED;
 		procPtr->preEvictionUsage.ticks = ticks;
 	    }
+	} else if (!home) {
+	    procPtr->migFlags &= ~PROC_WAS_EVICTED;
 	}
 #endif /* CLEAN */
     }
