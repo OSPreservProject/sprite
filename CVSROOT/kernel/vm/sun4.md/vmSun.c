@@ -660,11 +660,7 @@ VmMach_Init(firstFreePage)
 	 virtAddr += VMMACH_PAGE_SIZE, i++) {
 	if (virtAddr >= (Address)MACH_CODE_START && 
 	    virtAddr <= lastCodeAddr) {
-#ifdef NOTDEF		/* for debugging */
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KR_PROT | 
-#else
-	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
-#endif NOTDEF
 			  VirtToPhysPage(i) * VMMACH_CLUSTER_SIZE;
 	} else {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
@@ -1354,7 +1350,6 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	/*
 	 * Delete the pmeg from all appropriate contexts.
 	 */
-	oldContext = VmMachGetContextReg();
         if (segPtr->type == VM_SYSTEM) {
 	    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 		VmMachSetContextReg(i);
@@ -4085,20 +4080,30 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
     register	VmMachPTE 	pte;
     register	int		firstPage;
     register	int		lastPage;
+    int		oldContext;
+    int		i;
 
-#ifdef NOTDEF	/* nop for debugging */
-    firstPage = (unsigned)addr >> VMMACH_PAGE_SHIFT;
-    lastPage = ((unsigned)addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
-    for (; firstPage <= lastPage; firstPage++) {
-	virtAddr = (Address) (firstPage << VMMACH_PAGE_SHIFT);
-	pte = VmMachGetPageMap(virtAddr);
-	pte &= ~VMMACH_PROTECTION_FIELD;
-	pte |= readWrite ? VMMACH_KRW_PROT : VMMACH_KR_PROT;
-	/* Could just flush in current context? XXX */
-	VmMachFlushCacheRange(virtAddr, virtAddr + numBytes - 1);
-	SET_ALL_PAGE_MAP(virtAddr, pte);
+    /*
+     * This should only be called with kernel text pages so we modify the
+     * PTE for the address in all the contexts. Note that we must flush
+     * the page from the change before changing the protections to avoid
+     * write back errors.
+     */
+    oldContext = VmMachGetContextReg();
+    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+	VmMachSetContextReg(i);
+	firstPage = (unsigned)addr >> VMMACH_PAGE_SHIFT;
+	lastPage = ((unsigned)addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
+	for (; firstPage <= lastPage; firstPage++) {
+	    virtAddr = (Address) (firstPage << VMMACH_PAGE_SHIFT);
+	    pte = VmMachGetPageMap(virtAddr);
+	    pte &= ~VMMACH_PROTECTION_FIELD;
+	    pte |= readWrite ? VMMACH_KRW_PROT : VMMACH_KR_PROT;
+	    VmMachFlushPage(virtAddr);
+	    SET_ALL_PAGE_MAP(virtAddr, pte);
+	}
     }
-#endif NOTDEF	/* nop for debugging */
+    VmMachSetContextReg(oldContext);
 }
 
 
