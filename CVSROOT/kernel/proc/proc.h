@@ -619,7 +619,7 @@ extern	void			Proc_ServerProc();
 extern	int			proc_NumServers;
 
 extern  ReturnStatus		Proc_Dump();
-extern  ReturnStatus		Proc_DumpPCB();
+extern  void			Proc_DumpPCB();
 
 extern  void			Proc_RemoveFromLockStack();
 extern  void			Proc_PushLockStack();
