@@ -25,6 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sig.h"
 #include "sunSR.h"
 #include "mem.h"
+#include "sunMon.h"
 
 /*
  * Declare global variables.
@@ -218,6 +219,10 @@ Exc_Trap(trapStack)
 		 * Mousetrap.
 		 */
 		if (procPtr == (Proc_ControlBlock *) NIL) {
+		    Mon_Printf("Exc_Trap: PC = %x, addr = %x BR Reg %x\n",
+			    trapStack.excStack.pc,
+			    trapStack.excStack.tail.addrBusErr.faultAddr,
+			    *(short *) &trapStack.busErrorReg);
 		    Sys_Panic(SYS_FATAL, "Exc_Trap: current process is nil.\n");
 		}
 
@@ -226,18 +231,23 @@ Exc_Trap(trapStack)
 		    /*
 		     * Is a page fault on a user process while executing in
 		     * the kernel.  This can happen on calls to 
-		     * Vm_Copy{In,Out} or after a pointer is made accessible
-		     * by Vm_MakeAccessible.
+		     * Vm_Copy{In,Out} (indicated by the VM_COPY_IN_PROGRESS
+		     * flag) or after a pointer is made accessible by 
+		     * Vm_MakeAccessible (indicated by numMakeAcc > 0).
 		     */
+		    if (!(procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) &&
+			procPtr->vmPtr->numMakeAcc == 0) {
+			return(EXC_KERN_ERROR);
+		    }
 		    protError = 
 #ifdef SUN3
 				!trapStack.busErrorReg.pageInvalid;
 #else
 				trapStack.busErrorReg.resident;
 #endif
-			/*
-			 * Try to fault in the page.
-			 */
+		    /*
+		     * Try to fault in the page.
+		     */
 		    status = Vm_PageIn(
 		      (Address)trapStack.excStack.tail.addrBusErr.faultAddr,
 				  protError);

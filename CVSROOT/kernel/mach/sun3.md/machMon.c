@@ -15,6 +15,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sunMon.h"
 #include "sys.h"
 #include "machine.h"
+#include "machineConst.h"
 #include "exc.h"
 #include "devTimer.h"
 #include "char.h"
@@ -50,10 +51,10 @@ Mon_PutChar(ch)
 	return;
     }
     DISABLE_INTR();
-    oldContext = Vm_GetKernelContext();
-    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    oldContext = VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
     romVectorPtr->putChar(ch);
-    Vm_SetKernelContext(oldContext);
+    VmMachSetKernelContext(oldContext);
     ENABLE_INTR();
 }
 
@@ -83,10 +84,10 @@ Mon_MayPut(ch)
     int		retValue;
 
     DISABLE_INTR();
-    oldContext = Vm_GetKernelContext();
-    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    oldContext = VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
     retValue = romVectorPtr->mayPut(ch);
-    Vm_SetKernelContext(oldContext);
+    VmMachSetKernelContext(oldContext);
     ENABLE_INTR();
     return(retValue);
 }
@@ -114,10 +115,10 @@ Mon_Abort()
     int	oldContext;
 
     DISABLE_INTR();
-    oldContext = Vm_GetKernelContext();
-    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    oldContext = VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
     Mon_Trap(romVectorPtr->abortEntry);
-    Vm_SetKernelContext(oldContext);
+    VmMachSetKernelContext(oldContext);
     ENABLE_INTR();
 }
 
@@ -141,11 +142,9 @@ void
 Mon_Reboot(rebootString)
     char	*rebootString;
 {
-    int	oldContext;
-
     DISABLE_INTR();
-    oldContext = Vm_GetKernelContext();
-    Vm_SetKernelContext(VM_KERN_CONTEXT);
+    (void)VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
     Mon_StartNmi();
     romVectorPtr->reBoot(rebootString);
     /*
