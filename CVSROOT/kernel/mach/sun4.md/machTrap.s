@@ -453,11 +453,7 @@ NormalReturn:
 	ld	[%VOL_TEMP1], %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GivePID0, %OUT_TEMP1)
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow2, %fp)
-	mov	%fp, %o0
-	call	_VmMachGetPageMap, 1
-	nop
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GetRealPTE, %o0)
-/*END  FOR_DEBUGGING */
+/* END FOR_DEBUGGING */
 	mov	%fp, %o0
 	clr	%o1		/* also check for protection????? */
 	call	_Vm_PageIn, 2
@@ -478,10 +474,7 @@ CheckNextFault:
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage3, %OUT_TEMP1)
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow3, %o0)
 	/* addr still in %o0 */
-	call	_VmMachGetPageMap, 1
-	nop
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GetRealPTE2, %o0)
-/*END  FOR_DEBUGGING */
+/* END  FOR_DEBUGGING */
 	clr	%o1
 	call	_Vm_PageIn, 2
 	nop
@@ -505,6 +498,19 @@ CallUnderflow:
 	set	MachWindowUnderflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %RETURN_ADDR_REG
 	nop
+/* FOR DEBUGGING */
+#ifdef NOTDEF
+	set	0x17171717, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, IsFpOkayStill0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, IsFpOkayStill1, %fp)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PidForOkayness, %OUT_TEMP1)
+#endif NOTDEF
+/* END FOR DEBUGGING */
 UnderflowOkay:
 	MACH_DISABLE_TRAPS()
 	MACH_RESTORE_GLOBAL_STATE()
