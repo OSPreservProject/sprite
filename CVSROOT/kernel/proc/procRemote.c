@@ -65,40 +65,6 @@ static ReturnStatus ContinueMigratedProc();
 
 #define ValidAddress(addr) (((Address) addr != (Address) NIL) && \
 			    ((Address) addr != (Address) USER_NIL))
-
-/*
- *----------------------------------------------------------------------
- *
- * Proc_AcceptMigration --
- *	
- *	Receive a message from a workstation requesting permission to
- *	migrate a process.
- *
- *	This could check things like the number of remote processes,
- *	load, or whatever. For now, just check against a global flag
- *	that says whether to refuse migrations.
- *
- * Results:
- *	SUCCESS is returned if permission is granted.
- *	PROC_MIGRATION_REFUSED is returned if the node is not accepting
- *		migrated processes.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-/*ARGSUSED*/
-ReturnStatus
-Proc_AcceptMigration(nodeID)
-    int nodeID;	      		/* node from which we will migrate */
-{
-    if (proc_RefuseMigrations) {
-	return(PROC_MIGRATION_REFUSED);
-    }
-    return(SUCCESS);
-}
 
 
 /*
