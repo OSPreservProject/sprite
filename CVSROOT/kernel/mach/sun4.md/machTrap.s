@@ -1449,7 +1449,7 @@ AddressValueOkay:
 MachFlushWindowsToStackTrap:
 	mov	%NEXT_PC_REG, %CUR_PC_REG
 	add	%NEXT_PC_REG, 4, %NEXT_PC_REG
-	call	_MachFlushWindowsToStack
+	call	_Mach_FlushWindowsToStack
 	nop
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
