@@ -74,9 +74,9 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[0] = SOSP_OPEN;\
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
-	sospBuffer[3] = userID;\
-	*((Fs_FileID *) &(sospBuffer[4])) = fileID;\
-	*((Fs_FileID *) &(sospBuffer[8])) = streamID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	*((Fs_FileID *) &(sospBuffer[7])) = streamID;\
+	sospBuffer[11] = userID;\
 	sospBuffer[12] = mode;\
 	sospBuffer[13] = numAlreadyReading;\
 	sospBuffer[14] = numAlreadyWriting;\
