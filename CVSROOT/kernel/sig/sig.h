@@ -31,11 +31,12 @@
  *
  * Sig_Pending --
  *
- *	Return TRUE if a signal is pending and FALSE if not.  This routine
- *	does not impose any synchronization.
+ *	Determine whether there are pending signals for a process.  This
+ *	routine does not impose any synchronization.
  *
  * Results:
- *	TRUE if a signal is pending and FALSE if not.
+ *	Returns a bit mask with bits enabled for pending signals.  If no 
+ *	signals are pending, returns zero.
  *
  * Side effects:
  *	None.
@@ -43,7 +44,26 @@
  *----------------------------------------------------------------------
  */
 #define Sig_Pending(procPtr) \
-    ((Boolean) (procPtr->sigPendingMask & ~procPtr->sigHoldMask))
+    ((procPtr)->sigPendingMask & ~((procPtr)->sigHoldMask))
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_NumberToMask --
+ *
+ *	Convert a Sprite signal number to a bit mask (cf Sig_Pending).
+ *
+ * Results:
+ *	Returns a bit mask with a single bit enabled corresponding to the 
+ *	given signal number.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define	Sig_NumberToMask(sig) (1 << ((sig) - 1))
 
 #ifdef KERNEL
 
