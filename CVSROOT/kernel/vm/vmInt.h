@@ -243,14 +243,14 @@ extern	Boolean		vmUseFSReadAhead;/* Should have FS do read ahead on
  * vmBoundary, vmBoundary is decremented by vmPagesPerGroup and vmCurPenalty is
  * decremented by vmFSPenalty.  
  */
-int	vmFSPenalty;		/* Number of seconds FS is penalized when it
+extern	int	vmFSPenalty;	/* Number of seconds FS is penalized when it
 				 * asks for page. */
-int	vmNumPageGroups;	/* The number of groups to divide memory up
+extern	int	vmNumPageGroups;/* The number of groups to divide memory up
 				 * into. */
-int	vmPagesPerGroup;	/* The number of pages in each group. */
-int	vmCurPenalty;		/* The number of seconds that FS is currently
+extern	int	vmPagesPerGroup;/* The number of pages in each group. */
+extern	int	vmCurPenalty;	/* The number of seconds that FS is currently
 				 * penalized by. */
-int	vmBoundary;		/* The current number of pages that must be
+extern	int	vmBoundary;	/* The current number of pages that must be
 				 * exceeded or gone under before changing the
 				 * penalty. */
 
