@@ -105,7 +105,8 @@ typedef struct Fs_HandleHeader {
     char		*name;		/* Used for error messages */
     List_Links		lruLinks;	/* For LRU list of handles */
 #ifndef CLEAN
-    int			lockProcID;	/* Process ID of locker */
+    Proc_ControlBlock	*lockProcPtr;	/* pcb of process that has the 
+					 * lock */
 #endif
 } Fs_HandleHeader;
 
