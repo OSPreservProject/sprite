@@ -108,7 +108,7 @@ FsAttachDisk(devicePtr, localName, flags)
     /*
      * Open the raw disk device so we can grub around in the header info.
      */
-    status = (*fsDeviceOpTable[devicePtr->type].open)(devicePtr);
+    status = (*devFsOpTable[devicePtr->type].open)(devicePtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -119,7 +119,7 @@ FsAttachDisk(devicePtr, localName, flags)
      * zero'th sector of the whole disk which describes how the rest of the
      * domain's zero'th cylinder is layed out.
      */
-    status = (*fsDeviceOpTable[devicePtr->type].read)(devicePtr,
+    status = (*devFsOpTable[devicePtr->type].read)(devicePtr,
 		0, DEV_BYTES_PER_SECTOR, buffer, &amountRead);
     if (status != SUCCESS) {
 	Mem_Free(buffer);
@@ -151,7 +151,7 @@ FsAttachDisk(devicePtr, localName, flags)
     /*
      * Read in summary information.
      */
-    status = (*fsDeviceOpTable[devicePtr->type].read)
+    status = (*devFsOpTable[devicePtr->type].read)
 		(devicePtr, summarySector * DEV_BYTES_PER_SECTOR,
 		    DEV_BYTES_PER_SECTOR,
 		    buffer, &amountRead); 
@@ -166,7 +166,7 @@ FsAttachDisk(devicePtr, localName, flags)
      * Read the domain header and save it with the domain state.
      */
     buffer = (Address)Mem_Alloc(DEV_BYTES_PER_SECTOR * numHeaderSectors);
-    status = (*fsDeviceOpTable[devicePtr->type].read)(devicePtr,
+    status = (*devFsOpTable[devicePtr->type].read)(devicePtr,
 		headerSector * DEV_BYTES_PER_SECTOR,
 		numHeaderSectors * DEV_BYTES_PER_SECTOR,
 		buffer, &amountRead);

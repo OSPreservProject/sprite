@@ -657,14 +657,14 @@ FsWriteBackDataBlockBitmap(domainPtr)
 ENTRY ReturnStatus
 FsWriteBackSummary(domainPtr)
     register	FsDomain	*domainPtr;	/* Domain for which to write 
-						 * back the bitmap. */
+			s			 * back the bitmap. */
 {
     ReturnStatus	status;
     int			amountRead;
 
     LOCK_MONITOR;
 
-    status = (*fsDeviceOpTable[domainPtr->headerPtr->device.type].write)
+    status = (*devFsOpTable[domainPtr->headerPtr->device.type].write)
 		(&domainPtr->headerPtr->device, 
 		    domainPtr->summarySector * DEV_BYTES_PER_SECTOR,
 		    DEV_BYTES_PER_SECTOR,

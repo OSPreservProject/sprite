@@ -7,7 +7,7 @@
  *	are used by FsLookupOperation and FsTwoNameOperation which use
  *	the prefix table to choose a server.  If a stream is to be made
  *	the the Open operations are used.  Next comes the Stream operations,
- *	and lastly come the Device operations (WHICH SHOULD MOVE TO dev.o).
+ *	and lastly come the Device operations (WHICH HAVE BEEN MOVE TO dev.o).
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -47,23 +47,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsNamedPipe.h"
 #include "fsPdev.h"
 
-/*
- * Device specific include files.
- */
-
-#include "devConsole.h"
-#include "devSBCDisk.h"
-#include "devSCSIDisk.h"
-#include "devSCSITape.h"
-#include "devXylogicsDisk.h"
-#include "net.h"
 
 static ReturnStatus NullProc();
 static void	    NullClientKill();
 static ReturnStatus NoProc();
-static ReturnStatus NoDevice();
 static FsHandleHeader *NoHandle();
-static ReturnStatus NullSelectProc();
 
 /*
  * Domain specific routine table for lookup operations:
@@ -344,114 +332,16 @@ FsStreamTypeOps fsStreamOpTable[] = {
 #endif not_done_yet
 };
 
-/*
- * Device type specific routine table:
- *	This is for the file-like operations as they apply to devices.
- *	DeviceOpen
- *	DeviceRead
- *	DeviceWrite
- *	DeviceIOControl
- *	DeviceClose
- *	DeviceSelect
- */
-
-extern ReturnStatus Dev_NullRead();
-extern ReturnStatus Dev_NullWrite();
-
-FsDeviceTypeOps fsDeviceOpTable[] = {
-    /*
-     * The console.  The workstation's display and keyboard.
-     */
-    {FS_DEV_CONSOLE, Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
-		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect},
-    /*
-     * The system error log.  If this is not open then error messages go
-     * to the console.
-     */
-    {FS_DEV_SYSLOG, Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
-		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect},
-    /*
-     * The following device numbers are unused.
-     */
-    {FS_DEV_KEYBOARD, NoDevice,NullProc,NullProc, NullProc, NullProc, NullProc},
-    {FS_DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc},
-    /*
-     * SCSI Disk interface.
-     */
-    {FS_DEV_SCSI_DISK, Dev_SCSIDiskOpen, Dev_SCSIDiskRead, Dev_SCSIDiskWrite,
-		    Dev_SCSIDiskIOControl, Dev_SCSIDiskClose, NullProc},
-    /*
-     * SCSI Tape interface.
-     */
-    {FS_DEV_SCSI_TAPE, Dev_SCSITapeOpen, Dev_SCSITapeRead, Dev_SCSITapeWrite,
-		    Dev_SCSITapeIOControl, Dev_SCSITapeClose, NullProc},
-    /*
-     * /dev/null
-     */
-    {FS_DEV_MEMORY, NullProc, Dev_NullRead, Dev_NullWrite,
-		    NullProc, NullProc, NullSelectProc},
-    /*
-     * Xylogics 450 disk controller.
-     */
-    {FS_DEV_XYLOGICS, Dev_XylogicsDiskOpen, Dev_XylogicsDiskRead,
-		    Dev_XylogicsDiskWrite, Dev_XylogicsDiskIOControl,
-		    Dev_XylogicsDiskClose, NullProc},
-    /*
-     * Network devices.  The unit number specifies the ethernet protocol number.
-     */
-    {FS_DEV_NET, Net_FsOpen, Net_FsRead, Net_FsWrite, Net_FsIOControl,
-		    Net_FsClose, Net_FsSelect},
-    /*
-     * SCSI-3 Disk interface.  Sun's newer SCSI host adaptor.
-     */
-    {FS_DEV_SBC_DISK, Dev_SBCDiskOpen, Dev_SBCDiskRead, Dev_SBCDiskWrite,
-		     Dev_SBCDiskIOControl, Dev_SBCDiskClose, NullProc},
-};
-
-int fsNumDevices = sizeof(fsDeviceOpTable) / sizeof(FsDeviceTypeOps);
-
-/*
- * Device Block I/O operation table.  This table is sparse because not
- * all devices support block I/O.
- *	FsBlockIOInit
- *	FsBlockIO
- */
-FsBlockOps fsBlockOpTable[] = {
-    { FS_DEV_CONSOLE, 0 },
-    { FS_DEV_SYSLOG, 0 },
-    { FS_DEV_KEYBOARD, 0 },
-    { FS_DEV_PLACEHOLDER_2, 0 },
-    { FS_DEV_SCSI_DISK, Dev_SCSIDiskBlockIO },
-    { FS_DEV_SCSI_TAPE, 0 },
-    { FS_DEV_MEMORY, 0 },
-    { FS_DEV_XYLOGICS, Dev_XylogicsDiskBlockIO },
-    { FS_DEV_NET, 0 },
-    { FS_DEV_SBC_DISK, Dev_SBCDiskBlockIO },
-};
 
 static ReturnStatus
 NullProc()
 {
     return(SUCCESS);
 }
-
-static void
-VoidProc()
-{
-    return;
-}
-
 static ReturnStatus
 NoProc()
 {
     return(FAILURE);
-}
-
-static ReturnStatus
-NoDevice()
-{
-    return(FS_INVALID_ARG);
 }
 
 /*ARGSUSED*/
@@ -467,16 +357,5 @@ static FsHandleHeader *
 NoHandle()
 {
     return((FsHandleHeader *)NIL);
-}
-
-/*ARGSUSED*/
-static ReturnStatus
-NullSelectProc(devicePtr, inFlags, outFlagsPtr)
-    Fs_Device	*devicePtr;	/* Ignored. */
-    int		inFlags;	/* FS_READBLE, FS_WRITABLE, FS_EXCEPTION. */
-    int		*outFlagsPtr;	/* Copy of inFlags. */
-{
-    *outFlagsPtr = inFlags;
-    return(SUCCESS);
 }
 

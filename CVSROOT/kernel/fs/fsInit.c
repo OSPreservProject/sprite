@@ -41,14 +41,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "recov.h"
 #include "timer.h"
 #include "trace.h"
-
-/*
- * A list of disk device types that is used when probing for a disk.
- */
-int fsDefaultDiskTypes[] = { FS_DEV_SCSI_DISK, FS_DEV_XYLOGICS,
-			     FS_DEV_SBC_DISK };
-static int numDiskTypes = sizeof(fsDefaultDiskTypes) / sizeof(int);
-
 /*
  * The prefix under which the local disk is attached.  The /initSprite
  * program looks for things under "/local".
@@ -158,14 +150,14 @@ Fs_Init()
      */
     (void)FsPrefixInstall("/", (FsHandleHeader *)NIL, -1, FS_IMPORTED_PREFIX); 
 
-    for (i=0 ; i<numDiskTypes ; i++) {
+    for (i=0 ; i<devNumDiskTypes ; i++) {
 	/*
 	 * Second step in bootstrapping the name space.  Try and attach
 	 * a disk under the /local prefix.  Later this local partition
 	 * may be promoted to the root domain (see Fs_ProcInit).
 	 */
 	defaultDisk.serverID = -1;
-	defaultDisk.type = fsDefaultDiskTypes[i];
+	defaultDisk.type = devFsDefaultDiskTypes[i];
 	defaultDisk.unit = 0;
 	defaultDisk.data = (ClientData)NIL;
 
