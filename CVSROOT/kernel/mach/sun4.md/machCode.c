@@ -1178,7 +1178,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	MachHandleBadProbe();
 	Mach_EnableIntr();
     }
-#ifndef sun4c
+#ifdef sun4
     /*
      * On the sun4/200 with the Jaguar HBA we get VME timeout errors from 
      * the board. This code retries the error up to 10 times before droping
