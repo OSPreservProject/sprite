@@ -38,6 +38,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #define CHECKCONSIST
 
+static void TraceLog_FlushBuffer _ARGS_((TraceLog_Header *tracePtr));
+
 static Sync_Lock traceLogLock = Sync_LockInitStatic("Utils:traceLog_Mutex");
 #define LOCKPTR &traceLogLock
 
@@ -188,34 +190,9 @@ TraceLog_Insert(tracePtr, dataPtr, origSize, flags)
     /*
      * Check if we've filled a buffer.
      */
-    if (!tracePtr->blocked && tracePtr->currentOffset+size+REC_HEADER_SIZE >
-	    tracePtr->dataSize) {
-	tracePtr->buffers[tracePtr->currentBuffer].size =
-		tracePtr->currentOffset;
-#ifdef CHECKCONSIST
-	if (tracePtr->buffers[tracePtr->currentBuffer].mode != INUSE) {
-	    printf("Warning: buffer# %d has mode %d, not INUSE\n",
-		    tracePtr->currentBuffer, tracePtr->buffers[tracePtr->
-		    currentBuffer].mode);
-	}
-	tracePtr->buffers[tracePtr->currentBuffer].mode = DONE;
-#endif
-	INC_BUFNUM(tracePtr->currentBuffer);
-	tracePtr->currentOffset = 0;
-	Sync_Broadcast(&bufferFullCondition);
-	if (tracePtr->currentBuffer == tracePtr->firstNewBuffer) {
-	    tracePtr->blocked = 1;
-	}
-#ifdef CHECKCONSIST
-        else {
-	    if (tracePtr->buffers[tracePtr->currentBuffer].mode != UNUSED) {
-		printf("Warning: buffer# %d has mode %d, not UNUSED\n",
-			tracePtr->currentBuffer, tracePtr->buffers[tracePtr->
-			currentBuffer].mode);
-	    }
-	    tracePtr->buffers[tracePtr->currentBuffer].mode = INUSE;
-	}
-#endif
+    if (!tracePtr->blocked && (tracePtr->currentOffset+size+REC_HEADER_SIZE >
+	    tracePtr->dataSize)) {
+	TraceLog_FlushBuffer(tracePtr);
     }
 
     if (vmShmDebug) {
@@ -228,7 +205,9 @@ TraceLog_Insert(tracePtr, dataPtr, origSize, flags)
      * and keep track of how many we've lost.
      */
     if (tracePtr->blocked) {
-	printf("Trace buffer overflow!\n");
+	if (vmShmDebug) {
+	    printf("Trace buffer overflow!\n");
+	}
 	tracePtr->lostRecords++;
 	tracePtr->totalLostRecords++;
 	UNLOCK_MONITOR;
@@ -257,7 +236,58 @@ TraceLog_Insert(tracePtr, dataPtr, origSize, flags)
     bcopy(dataPtr, traceDataAddr+headerSize, origSize);
     tracePtr->buffers[tracePtr->currentBuffer].numRecords++;
     tracePtr->currentOffset += size+headerSize;
+    if (tracePtr->flags & TRACELOG_NO_BUF) {
+	TraceLog_FlushBuffer(tracePtr);
+    }
     UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TraceLog_FlushBuffer --
+ *
+ *	We're done with the record, so we want to send it off.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The information is filled in for the currentBuffer.
+ *	The currentBuffer is incremented to the next buffer.
+ *	The data is made available for the consumer.
+ *----------------------------------------------------------------------
+ */
+static void
+TraceLog_FlushBuffer(tracePtr)
+    register TraceLog_Header *tracePtr;
+{
+    tracePtr->buffers[tracePtr->currentBuffer].size =
+	    tracePtr->currentOffset;
+#ifdef CHECKCONSIST
+    if (tracePtr->buffers[tracePtr->currentBuffer].mode != INUSE) {
+	printf("Warning: buffer# %d has mode %d, not INUSE\n",
+		tracePtr->currentBuffer, tracePtr->buffers[tracePtr->
+		currentBuffer].mode);
+    }
+    tracePtr->buffers[tracePtr->currentBuffer].mode = DONE;
+#endif
+    INC_BUFNUM(tracePtr->currentBuffer);
+    tracePtr->currentOffset = 0;
+    Sync_Broadcast(&bufferFullCondition);
+    if (tracePtr->currentBuffer == tracePtr->firstNewBuffer) {
+	tracePtr->blocked = 1;
+    }
+#ifdef CHECKCONSIST
+    else {
+	if (tracePtr->buffers[tracePtr->currentBuffer].mode != UNUSED) {
+	    printf("Warning: buffer# %d has mode %d, not UNUSED\n",
+		    tracePtr->currentBuffer, tracePtr->buffers[tracePtr->
+		    currentBuffer].mode);
+	}
+	tracePtr->buffers[tracePtr->currentBuffer].mode = INUSE;
+    }
+#endif
 }
 
 
@@ -296,7 +326,7 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
 	printf("TraceLog_Dump: traceLog buffer not initialized.\n");
 	tracePtr->hdr.numBytes = 0;
 	tracePtr->hdr.numRecs = 0;
-	status = Vm_CopyOut(sizeof(Sys_TracelogHeader),
+	status = Vm_CopyOut(sizeof(Sys_TracelogHeaderKern),
 		(Address) &tracePtr->hdr, (Address)hdrAddr);
 	return(status);
     }
@@ -381,8 +411,8 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
 
     INC_BUFNUM(tracePtr->firstNewBuffer);
 
-    status = Vm_CopyOut(sizeof(Sys_TracelogHeader), (Address) &tracePtr->hdr,
-	    (Address)hdrAddr);
+    status = Vm_CopyOut(sizeof(Sys_TracelogHeaderKern),
+	    (Address) &tracePtr->hdr, (Address)hdrAddr);
 
     UNLOCK_MONITOR;
     if ((status == SUCCESS) && (abortedBySignal)) {
