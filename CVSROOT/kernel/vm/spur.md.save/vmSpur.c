@@ -81,6 +81,12 @@ static void FlushAllCaches();
 static unsigned createTime = 0;
 static unsigned flushTime = 0;
 
+#ifdef lint
+#ifndef volatile
+#define volatile
+#endif
+#endif
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1741,7 +1747,6 @@ Vm_TouchPages(firstPage, numPages)
     register	int	numPages;
 {
     register Address	addr;
-    int			lastPage;
     volatile int	*intPtr;
     int			intVal;
 
