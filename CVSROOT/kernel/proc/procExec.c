@@ -17,7 +17,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "../vm/vm.h"
 #include "proc.h"
 #include "fs.h"
 #include "mem.h"
@@ -47,6 +46,13 @@ static	char execFileName[FS_MAX_PATH_NAME_LENGTH];
 #define PROC_MAX_ENVIRON_LENGTH (PROC_MAX_ENVIRON_NAME_LENGTH + \
 				 PROC_MAX_ENVIRON_VALUE_LENGTH)
 #endif  PROC_MAX_ENVIRON_LENGTH
+
+typedef struct {
+    List_Links	links;
+    Address	stringPtr;
+    int		stringLen;
+} ArgListElement;
+
 
 
 /*
@@ -274,12 +280,6 @@ Proc_KernExec(fileName, argPtrArray)
     return(status);
 }
 
-typedef struct {
-    List_Links	links;
-    Address	stringPtr;
-    int		stringLen;
-} ArgListElement;
-
 ReturnStatus	SetupInterpret();
 Boolean		CopyInArgs();
 
@@ -322,11 +322,12 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     				 * executing its first instruction. */
 {
     register	Proc_ControlBlock	*procPtr;
-    register	ArgListElement		*argListPtr;
+    register	ArgListElement	*argListPtr;
     register	Proc_AOUT		*aoutPtr;
     register	char			**argPtr;
     register	int			argNumber;
     register	char			**envPtr;
+    register	List_Links		*itemPtr;
     ArgListElement			*envListPtr;
     int					envNumber;
     int					origNumArgs;
@@ -341,6 +342,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     Vm_Segment				*codeSegPtr = (Vm_Segment *) NIL;
     char				*copyAddr;
     int					copyLength;
+    register	char			*argString;
+    int					argStringLength;
     Fs_Stream				*filePtr;
     ReturnStatus			status;
     char				buffer[PROC_MAX_INTERPRET_SIZE];
@@ -427,6 +430,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     } else {
 	numArgs += extraArgs;
     }
+    argStringLength = 0;
 
     /*
      * Copy in all of the arguments.  If we are executing a normal
@@ -481,7 +485,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	    /*
 	     * Find out the length of the argument.
 	     */
-	    realLength = String_NLength(stringLength, stringPtr);
+	    realLength = String_NLength(stringLength, stringPtr) + 1;
 	    /*
 	     * Move to the next argument.
 	     */
@@ -491,15 +495,18 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	/*
 	 * Put this string onto the argument list.
 	 */
-	argListPtr = (ArgListElement *) Mem_Alloc(sizeof(ArgListElement));
+	argListPtr = (ArgListElement *)
+		Mem_Alloc(sizeof(ArgListElement));
 	argListPtr->stringPtr = (char *) Mem_Alloc(realLength);
 	argListPtr->stringLen = realLength;
 	List_InitElement((List_Links *) argListPtr);
 	List_Insert((List_Links *) argListPtr, LIST_ATREAR(&argList));
 	/*
 	 * Make room on the stack for this string.  Make it 4 byte aligned.
+	 * Also up the amount needed to save the argument list.
 	 */
-	userStackPointer -= ((realLength + 1) + 3) & ~3;
+	userStackPointer -= ((realLength) + 3) & ~3;
+	argStringLength += realLength;
 	/*
 	 * Copy over the argument.
 	 */
@@ -553,7 +560,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	/*
 	 * Find out the length of the environment variable.
 	 */
-	realLength = String_NLength(stringLength, stringPtr);
+	realLength = String_NLength(stringLength, stringPtr) + 1;
 	/*
 	 * Move to the next environment variable.
 	 */
@@ -562,7 +569,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	/*
 	 * Put this string onto the environment variable list.
 	 */
-	envListPtr = (ArgListElement *) Mem_Alloc(sizeof(ArgListElement));
+	envListPtr = (ArgListElement *) 
+		Mem_Alloc(sizeof(ArgListElement));
 	envListPtr->stringPtr = (char *) Mem_Alloc(realLength);
 	envListPtr->stringLen = realLength;
 	List_InitElement((List_Links *) envListPtr);
@@ -570,7 +578,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	/*
 	 * Make room on the stack for this string.  Make it 4 byte aligned.
 	 */
-	userStackPointer -= ((realLength + 1) + 3) & ~3;
+	userStackPointer -= ((realLength) + 3) & ~3;
 	/*
 	 * Copy over the environment variable.
 	 */
@@ -614,26 +622,38 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     newArgPtrArray = (char **) Mem_Alloc((argNumber + 1) * sizeof(Address));
     argNumber = 0;
     usp = (int)userStackPointer;
+    argString = Mem_Alloc(argStringLength + 1);
+    if (procPtr->argString != (char *) NIL) {
+	Mem_Free(procPtr->argString);
+    }
+    procPtr->argString = argString;
+
     while (!List_IsEmpty(&argList)) {
 	argListPtr = (ArgListElement *) List_First(&argList);
 	/*
-	 * Copy over the environment variable.
+	 * Copy over the argument.
 	 */
 	Byte_Copy(argListPtr->stringLen, 
 		  (Address) argListPtr->stringPtr, 
 		  (Address) copyAddr);
-	copyAddr[argListPtr->stringLen] = '\0';
 	newArgPtrArray[argNumber] = (char *) usp;
-	copyAddr += ((argListPtr->stringLen + 1) + 3) & ~3;
-	usp += ((argListPtr->stringLen + 1) + 3) & ~3;
+	copyAddr += ((argListPtr->stringLen) + 3) & ~3;
+	usp += ((argListPtr->stringLen) + 3) & ~3;
+	Byte_Copy(argListPtr->stringLen - 1,
+		  (Address) argListPtr->stringPtr, 
+		  argString);
+	argString[argListPtr->stringLen - 1] = ' ';
+	argString += argListPtr->stringLen;
 	/*
-	 * Clean up 
+	 * Clean up
 	 */
 	List_Remove((List_Links *) argListPtr);
 	Mem_Free((Address) argListPtr->stringPtr);
 	Mem_Free((Address) argListPtr);
 	argNumber++;
     }
+    argString[0] = '\0';
+    
     newEnvPtrArray = (char **) Mem_Alloc((envNumber + 1) * sizeof(Address));
     envNumber = 0;
     while (!List_IsEmpty(&envList)) {
@@ -644,10 +664,9 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	Byte_Copy(envListPtr->stringLen, 
 		  (Address) envListPtr->stringPtr, 
 		  (Address) copyAddr);
-	copyAddr[envListPtr->stringLen] = '\0';
 	newEnvPtrArray[envNumber] = (char *) usp;
-	copyAddr += ((envListPtr->stringLen + 1) + 3) & ~3;
-	usp += ((envListPtr->stringLen + 1) + 3) & ~3;
+	copyAddr += ((envListPtr->stringLen) + 3) & ~3;
+	usp += ((envListPtr->stringLen) + 3) & ~3;
 	/*
 	 * Clean up 
 	 */
@@ -707,12 +726,6 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     if (gid != -1) {
 	ProcAddToGroupList(procPtr, gid);
     }
-
-    /*
-     * Save the name of the file, for use during process migration,
-     * and generally usefull for debugging and for the procstat program.
-     */
-    String_Copy(fileName, procPtr->codeFileName);
 
     /*
      * Take signal actions for execed process.
