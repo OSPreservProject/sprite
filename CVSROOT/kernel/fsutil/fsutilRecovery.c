@@ -73,6 +73,12 @@ FsReopen(serverID, clientData)
     ClientData clientData;	/* IGNORED */
 {
     /*
+     * Ensure only one instance of FsReopen by doing a set-and-test.
+     */
+    if (Recov_SetClientState(serverID, RECOV_IN_PROGRESS) & RECOV_IN_PROGRESS) {
+	return;
+    }
+    /*
      * Recover the prefix table.
      */
     FsPrefixReopen(serverID);
@@ -100,6 +106,8 @@ FsReopen(serverID, clientData)
      * Tell VM that we have recovered in case this was the swap server.
      */
     Vm_Recovery();
+
+    Recov_ClearClientState(serverID, RECOV_IN_PROGRESS);
 }
 
 /*
