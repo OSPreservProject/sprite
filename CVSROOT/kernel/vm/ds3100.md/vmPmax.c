@@ -63,11 +63,14 @@ static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
 #define	USING_MAPPED_SEG	0x100
 
 /*
- * The maximum amount of kernel code + data available.  The amount available
- * 1 Gig + 8 Meg.  We need 1 Gig to cover the gap between physical mapped
- * and virtually mapped memory.
+ * The maximum amount of kernel heap available.  Sprite expects the
+ * sum of this value and the kernel start to be the kernel end.
+ * Since the MIPS machines have a big hole in the address space
+ * we have to add 1 Gig to cover the whole.
+ *
+ * Right now the amount is set to 1 Gig + 16 Meg
  */
-int	vmMachKernMemSize = 0x40000000 + 0x800000;
+int	vmMachKernMemSize = 0x40000000 + 0x1000000;
 
 /*
  * Table of info about each physical page on the machine.
