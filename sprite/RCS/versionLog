@@ -599,4 +599,32 @@ Fixed a few compat bugs:
 1.108	Wed Dec 18 15:43:38 PST 1991
 
 1.109	Wed Dec 18 15:44:00 PST 1991
+
+1.110	Fri Mar 13 12:29:12 PST 1992
+
+    It's the Friday the 13th kernel!!  Featuring...
+    - First kernel using the 2.10 version of the MIPS compiler
+    - Deadlock due to reset of ethernet chip inside of output routine is fixed
+    - Proc_UnlockAndSwitch was added
+    - Race between suspending and resuming a process is fixed. 
+    - Fixed RpcProcFork to keep the PCB locked while it's being set up
+    - Sig_Pending doesn't really return a simple Boolean, and some code
+	knows that, so stop pretending that it does.  Add Sig_NumberToMask.
+    - Fixed code to detect Sprite binaries so it would detect profiled programs
+	correctly.
+    - Added compatibility "profil" call.
+    - Added default partitions to attach on boot of a ds5000.
+    - Add some debugging printf's to track down the mysterious "Error code
+	16"s we keep getting from pmake.
+    - Added temporary measurements for ASPLOS paper.
+    - Added and modified files pertaining to the Exabyte EXB-120 device
+	driver.
+    - Added some sanity checks to the lfs module and turned off 
+	optimization so we can track down a few bugs.
+    - Worked around an apparent compiler bug that bit the dbg module on
+	the DecStations.
+    - Fixed OFS to not try to read a non-existent summary sector from 
+	a DecStation partition.
+    - Modified L1-i so it hopefully won't crash the machine.
+    - Removed tracing in SCSI C90 device driver.
     New files linked in from the net library.
