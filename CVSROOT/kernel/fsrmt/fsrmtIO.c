@@ -950,7 +950,7 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 	if (ioctl.inBuffer == (Address)NIL) {
 	    status = GEN_INVALID_ARG;
 	} else {
-	    iocArgsPtr = (Ioc_RepositionArgs *)&ioctl.inBuffer;
+	    iocArgsPtr = (Ioc_RepositionArgs *)ioctl.inBuffer;
 	    switch(iocArgsPtr->base) {
 		case IOC_BASE_ZERO:
 		    newOffset = iocArgsPtr->offset;
