@@ -26,9 +26,6 @@
 #include <fscache.h>
 #else
 #include <kernel/dev.h>
-#include <kernel/fslcl.h>
-#include <kernel/fsioFile.h>
-#include <kernel/fscache.h>
 #endif
 
 /*
@@ -225,6 +222,56 @@ typedef struct Fsdm_FileDescriptor {
 #define FSDM_NIL_INDEX	-1
 
 /*
+ * Types of indexing.  Order is important here because the indirect and
+ * double indirect types can be used to index into the indirect block 
+ * pointers in the file descriptor.
+ */
+
+#define	FSDM_INDIRECT		0 
+#define	FSDM_DBL_INDIRECT		1
+#define	FSDM_DIRECT		2
+
+/*
+ * The bad block file, the root directory of a domain and the lost and found 
+ * directory have well known file numbers.
+ */
+#define FSDM_BAD_BLOCK_FILE_NUMBER	1
+#define FSDM_ROOT_FILE_NUMBER		2
+#define FSDM_LOST_FOUND_FILE_NUMBER	3
+
+/*
+ * Directry change log operations and flags.
+ *	Operations:
+ * FSDM_LOG_CREATE		Creating a new object in a directory.	
+ * FSDM_LOG_UNLINK		Unlinking an object from a directory.	
+ * FSDM_LOG_LINK		Linking to an existing object.	
+ * FSDM_LOG_RENAME_DELETE	Deleting an object as part of a rename.	
+ * FSDM_LOG_RENAME_LINK		Linking to an object as part of a rename.
+ * FSDM_LOG_RENAME_UNLINK	Unlinking an object as part of a rename.
+ * FSDM_LOG_OP_MASK		Mask out the log operation.
+ * 
+ * Flags:
+ *
+ * FSDM_LOG_START_ENTRY		Start of change entry
+ * FSDM_LOG_END_ENTRY		End of change entry
+ * FSDM_LOG_STILL_OPEN		File is still open after last unlink.
+ */
+
+#define	FSDM_LOG_CREATE		1
+#define	FSDM_LOG_UNLINK		2
+#define	FSDM_LOG_LINK		3
+#define	FSDM_LOG_RENAME_DELETE	4
+#define	FSDM_LOG_RENAME_LINK	5
+#define	FSDM_LOG_RENAME_UNLINK	6
+#define	FSDM_LOG_OP_MASK	0xff
+
+#define	FSDM_LOG_START_ENTRY	0x100
+#define	FSDM_LOG_END_ENTRY	0x200
+#define	FSDM_LOG_STILL_OPEN	0x1000
+
+
+#ifdef KERNEL
+/*
  * Structure for each domain.
  */
 
@@ -340,59 +387,13 @@ typedef struct Fsdm_DomainOps {
 #define	FSDM_DOMAIN_DOWN 		0x2
 #define FSDM_DOMAIN_ATTACH_BOOT		0x4
 
-/*
- * Types of indexing.  Order is important here because the indirect and
- * double indirect types can be used to index into the indirect block 
- * pointers in the file descriptor.
- */
-
-#define	FSDM_INDIRECT		0 
-#define	FSDM_DBL_INDIRECT		1
-#define	FSDM_DIRECT		2
-
 
 /*
  * Whether or not to keep information about file I/O by user file type.
  */
 extern Boolean fsdmKeepTypeInfo;
 
-/*
- * The bad block file, the root directory of a domain and the lost and found 
- * directory have well known file numbers.
- */
-#define FSDM_BAD_BLOCK_FILE_NUMBER	1
-#define FSDM_ROOT_FILE_NUMBER		2
-#define FSDM_LOST_FOUND_FILE_NUMBER	3
 
-/*
- * Directry change log operations and flags.
- *	Operations:
- * FSDM_LOG_CREATE		Creating a new object in a directory.	
- * FSDM_LOG_UNLINK		Unlinking an object from a directory.	
- * FSDM_LOG_LINK		Linking to an existing object.	
- * FSDM_LOG_RENAME_DELETE	Deleting an object as part of a rename.	
- * FSDM_LOG_RENAME_LINK		Linking to an object as part of a rename.
- * FSDM_LOG_RENAME_UNLINK	Unlinking an object as part of a rename.
- * FSDM_LOG_OP_MASK		Mask out the log operation.
- * 
- * Flags:
- *
- * FSDM_LOG_START_ENTRY		Start of change entry
- * FSDM_LOG_END_ENTRY		End of change entry
- * FSDM_LOG_STILL_OPEN		File is still open after last unlink.
- */
-
-#define	FSDM_LOG_CREATE		1
-#define	FSDM_LOG_UNLINK		2
-#define	FSDM_LOG_LINK		3
-#define	FSDM_LOG_RENAME_DELETE	4
-#define	FSDM_LOG_RENAME_LINK	5
-#define	FSDM_LOG_RENAME_UNLINK	6
-#define	FSDM_LOG_OP_MASK	0xff
-
-#define	FSDM_LOG_START_ENTRY	0x100
-#define	FSDM_LOG_END_ENTRY	0x200
-#define	FSDM_LOG_STILL_OPEN	0x1000
 
 
 /*
@@ -473,4 +474,7 @@ extern void Fsdm_RegisterDiskManager _ARGS_((char *typeName,
 		ReturnStatus (*attachProc)(Fs_Device *devicePtr,
 					   char *localName, int flags, 
 					   int *domainNumPtr)));
-#endif _FSDM
+
+#endif /* KERNEL */
+
+#endif /* _FSDM */
