@@ -56,8 +56,6 @@ static Sync_Lock prefixLock;
  * Debuging variables.
  */
 Boolean fsFileNameTrace = FALSE;
-Boolean fsFileNameDebug = FALSE;
-Boolean fs2FileNameDebug = FALSE;
 
 /*
  * Forward references.
@@ -115,8 +113,8 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
     FsHandleHeader 	*hdrPtr;	/* Set from the prefix table lookup */
     char 		*lookupName;	/* Returned from the prefix table 
 					 * lookup */
-    FsRedirectInfo 	*redirectInfoPtr;/* Returned from servers if their lookup
-					 * leaves their domain */
+    FsRedirectInfo 	*redirectInfoPtr;/* Returned from servers if their
+					 * lookup leaves their domain */
     FsFileID		rootID;		/* ID of domain root */
     FsRedirectInfo 	*oldInfoPtr;	/* Needed to free up the new name
 					 * buffer allocated by the domain
@@ -127,9 +125,6 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 					  * servers. This is used to catch the 
 					  * looping occurs with absolute links
 					  * that are circular. */
-    int			numBroadcasts = 0;/* Count for times we've had a timeout
-					   * and had to broadcast to find
-					   * a different server */
 
     redirectInfoPtr = (FsRedirectInfo *) NIL;
 
@@ -138,9 +133,6 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	 * Lock processes out of the filesystem during a shutdown.
 	 */
 	return(FAILURE);
-    }
-    if (fsFileNameDebug) {
-	DBG_CALL;
     }
     do {
 	status = GetPrefix(fileName, &hdrPtr, &rootID, &lookupName,
@@ -154,7 +146,8 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	    }
 	    /*
 	     * It is assumed that the first part of the bundled arguments
-	     * are the prefix fileID.
+	     * are the prefix fileID, which indicates the start of the lookup,
+	     * and the prefix rootID, which indicates the top of the domain.
 	     */
 	    if (operation != FS_DOMAIN_PREFIX) {
 		register FsLookupArgs *lookupArgsPtr = (FsLookupArgs *)argsPtr;
@@ -221,11 +214,17 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 		    }
 		    break;
 		}
+		case RPC_TIMEOUT:
+		case RPC_SERVICE_DISABLED:
 		case FS_STALE_HANDLE: {
 		    /*
 		     * Block waiting for regular recovery of the prefix handle.
 		     */
-		    fsStats.prefix.stale++;
+		    if (status == FS_STALE_HANDLE) {
+			fsStats.prefix.stale++;
+		    } else {
+			fsStats.prefix.timeouts++;
+		    }
 		    FsWantRecovery(hdrPtr);
 		    status = FsWaitForRecovery(hdrPtr, status);
 		    if (status == SUCCESS) {
@@ -235,9 +234,17 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 			 * loop again.
 			 */
 			status = FS_LOOKUP_REDIRECT;
+		    } else if (fileName[0] == '/') {
+			/*
+			 * Recovery failed, so we clear handle of the prefix
+			 * used to get to the server and try again.
+			 */
+			PrefixHandleClear(prefixPtr, status);
+			status = FS_LOOKUP_REDIRECT;
 		    }
 		    break;
 		}
+#ifdef notdef
 		case RPC_TIMEOUT: {
 		    /*
 		     * The server is down (RPC_TIMEOUT) so we clean up
@@ -275,6 +282,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 		    }
 		    break;
 		}
+#endif	/* old RPC_TIMEOUT code */
 		default:
 		    break;
 	    }
@@ -298,6 +306,20 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
  *	This is a version of FsLookupOperation that deals with two
  *	pathnames.  The operation, either Rename or HardLink, will only
  *	be attempted if the two pathnames are part of the same domain.
+ *	Two pathnames are determined to be in the same domain in part
+ *	by the domain specific lookup routine, and in part by us in
+ *	the following way.  The standard iteration over prefix table
+ *	for the first pathname (the already existing file) is done,
+ *	and the prefix info and relative name for it are passed to
+ *	the domain specific procedure along with our first guess as
+ *	to the domain and relative name of the second pathname.  The
+ *	domain specific procedure will abort with a CROSS_DOMAIN error
+ *	if it thinks the second pathname is served elsewhere.  However,
+ *	this procedure has to verify that by getting the attributes of
+ *	the parent directory of the second name.  This may cause more
+ *	iteration over the prefix table to get the final prefix info
+ *	and relative name for the second name.  At that point we can
+ *	finally determine if the pathnames are in the same domain.
  *
  * Results:
  *	The results of the two pathname operation.
@@ -308,28 +330,27 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsTwoNameOperation(operation, fileName1, fileName2, lookupArgsPtr)
+FsTwoNameOperation(operation, srcName, dstName, lookupArgsPtr)
     int			operation;   /* FS_DOMAIN_RENAME, FS_DOMAIN_HARD_LINK */
-    char		*fileName1;  /* The first file name */
-    char		*fileName2;  /* The second file name */
+    char		*srcName;	/* Name of existing file */
+    char		*dstName; 	/* New name, or link name */
     FsLookupArgs	*lookupArgsPtr; /* ID information */
 {
     ReturnStatus	status;		/* General error code */
-    int			domainType1;	/* Set from the prefix table lookup of
-					  * fileName1 */
-    FsHandleHeader	*hdr1Ptr;	/* Set from the prefix table lookup of
-					  * fileName1 */
-    char		*lookupName1;	/* Returned from the prefix table
-					 * lookup of fileName1 */
-    FsPrefix		*prefix1Ptr;	/* Returned from prefix table lookup */
-    int 		domainType2;
-    FsHandleHeader 	*hdr2Ptr;
-    char 		*lookupName2;
-    FsPrefix 		*prefix2Ptr;
-    FsFileID		rootID1, rootID2;
-    FsRedirectInfo	*redirectInfoPtr;/* Returned from the server about
-					 * fileName1 only */
-    Boolean		name1redirect;	/* TRUE if redirect info for name 1 */
+    int			srcDomain;	/* Domain type of srcName */
+    int 		dstDomain;
+    FsHandleHeader	*srcHdrPtr;	/* Prefix handle of srcName */
+    FsHandleHeader 	*dstHdrPtr;
+    char		*srcLookupName;	/* Relative version of srcName */
+    char 		*dstLookupName;
+    FsPrefix		*srcPrefixPtr;	/* Prefix entry for srcName */
+    FsPrefix 		*dstPrefixPtr;
+    FsFileID		srcRootID;	/* ID of srcName domain root */
+    FsFileID		dstRootID;
+    int			numRedirects;	/* To detect loops in directories */
+    Boolean		srcNameRedirect;/* TRUE if redirect info for srcName */
+    Boolean		srcHandleStale;	/* TRUE if src prefix handle is stale */
+    FsRedirectInfo	*redirectInfoPtr;/* Returned from the server */
 
     redirectInfoPtr = (FsRedirectInfo *) NIL;
     if (sys_ShuttingDown) {
@@ -338,58 +359,139 @@ FsTwoNameOperation(operation, fileName1, fileName2, lookupArgsPtr)
 	 */
 	return(FAILURE);
     }
-    if (operation != FS_DOMAIN_RENAME && operation != FS_DOMAIN_HARD_LINK) {
-	Sys_Panic(SYS_WARNING, "FsTwoNameOperation got bad operation\n");
-	return(FS_INVALID_ARG);
+    numRedirects = 0;
+getSrcPrefix:
+    status = GetPrefix(srcName, &srcHdrPtr, &srcRootID, &srcLookupName,
+				    &srcDomain, &srcPrefixPtr);
+    if (status != SUCCESS) {
+	goto exit;
     }
-    if (fs2FileNameDebug) {
-	DBG_CALL;
+    lookupArgsPtr->prefixID = srcHdrPtr->fileID;
+    lookupArgsPtr->rootID = srcRootID;
+getDstPrefix:
+    status = GetPrefix(dstName, &dstHdrPtr, &dstRootID, &dstLookupName,
+				    &dstDomain, &dstPrefixPtr);
+    if (status != SUCCESS) {
+	goto exit;
     }
-    do {
-	status = GetPrefix(fileName1, &hdr1Ptr, &rootID1, &lookupName1,
-					&domainType1, &prefix1Ptr);
-	if (status != SUCCESS) {
-	    continue;
-	}
-	status = GetPrefix(fileName2, &hdr2Ptr, &rootID2, &lookupName2,
-					&domainType2, &prefix2Ptr);
-	if (status != SUCCESS) {
-	    continue;
-	}
-	/* 
-	 * We are limited to only attempting the operation if the initial
-	 * guess at the domain is the same for both files.  It is difficult,
-	 * for example, to deal with a second filename that starts in some
-	 * other domain and then ends up in the correct place after a re-direct.
-	 * To do that you need to try and open/create the second file first,
-	 * then check to see where it is, then delete it again.
-	 */
-	if (hdr1Ptr->fileID.serverID != hdr2Ptr->fileID.serverID ||
-	    hdr1Ptr->fileID.major != hdr2Ptr->fileID.major) {
-	    status = FS_CROSS_DOMAIN_OPERATION;
+retry:
+    status = (*fsDomainLookup[srcDomain][operation])
+       (srcHdrPtr, srcLookupName, dstHdrPtr, dstLookupName, lookupArgsPtr,
+		    &redirectInfoPtr, &srcNameRedirect, &srcHandleStale);
+    if (fsFileNameTrace) {
+	Sys_Printf("\treturns <%x>\n", status);
+    }
+    switch(status) {
+	case RPC_SERVICE_DISABLED:
+	case RPC_TIMEOUT:
+	    srcHandleStale = TRUE;
+	    /*
+	     * FALL THROUGH to regular recovery.
+	     */
+	case FS_STALE_HANDLE: {
+	    FsHandleHeader *staleHdrPtr;
+	    staleHdrPtr = (srcHandleStale ? srcHdrPtr : dstHdrPtr);
+	    FsWantRecovery(staleHdrPtr);
+	    status = FsWaitForRecovery(staleHdrPtr, status);
+	    if (status == SUCCESS) {
+		goto retry;
+	    }
 	    break;
 	}
-	lookupArgsPtr->prefixID = hdr1Ptr->fileID;
-	lookupArgsPtr->rootID = rootID1;
-	status = (*fsDomainLookup[domainType1][operation])
-	   (hdr1Ptr, lookupName1, hdr2Ptr, lookupName2, lookupArgsPtr,
-			&redirectInfoPtr, &name1redirect);
-	if (fsFileNameTrace) {
-	    Sys_Printf("\treturns <%x>\n", status);
-	}
-	if (status == FS_LOOKUP_REDIRECT) {
+	case FS_LOOKUP_REDIRECT:
+	    fsStats.prefix.redirects++;
+	    numRedirects++;
+	    if (numRedirects > FS_MAX_LINKS) {
+		status = FS_NAME_LOOP;
+		fsStats.prefix.loops++;
+	    } else if (srcNameRedirect) {
+		status = FsLookupRedirect(redirectInfoPtr, srcPrefixPtr,
+					  &srcName);
+		if (status == FS_LOOKUP_REDIRECT) {
+		    goto getSrcPrefix;
+		}
+	    } else {
+		status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr
+					  &dstName);
+		if (status == FS_LOOKUP_REDIRECT) {
+		    goto getDstPrefix;
+		}
+	    }
+	    break;
+	case FS_CROSS_DOMAIN_OPERATION: {
 	    /*
-	     * Can fix this and the above problem some day.
+	     * Should try to get the attributes of the parent in order
+	     * to get the correct prefix handle and relative name for
+	     * the destination pathname.
 	     */
-	    status = FS_CROSS_DOMAIN_OPERATION;
+#ifdef notyet
+	    Fs_Attributes	srcAttr;	/* Attrs of source file */
+	    Fs_Attributes	dstParentAttr;	/* Attrs of parent of the
+						 * destination */
+	    char *lastSlash, *cPtr, *pPtr;	/* Used to make dstParentName */
+	    char *dstParentName;		/* The parent of dstName */
+#endif /* not yet */
+	    break;
 	}
-    } while (status == FS_LOOKUP_REDIRECT);
-
+	default:
+	    /*
+	     * SUCCESS or simple lookup failure.
+	     */
+	    break;
+    }
+    if (status == FS_LOOKUP_REDIRECT) {
+	if (srcNameRedirect) {
+	    goto getSrcPrefix;
+	} else {
+	    goto getDstPrefix;
+	}
+    }
+exit:
     if (redirectInfoPtr != (FsRedirectInfo *) NIL) {
 	Mem_Free((Address) redirectInfoPtr);
     }
     return(status);
 }
+#ifdef notdef
+FooProc()
+{
+    status = Fs_GetAttributes(srcFile, FS_ATTR_FILE, &srcAttr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    /*
+     * Massage the dstName to get the name of its parent.
+     * We copy the destination name and note the slash that
+     * delimits the last component of the name.
+     */
+    dstParentName = (char *)Mem_Alloc(FS_MAX_PATH_NAME_LENGTH);
+    pPtr = parentName;
+    lastSlash = (char *)NIL;
+    for (cPtr = dstName ; *cPtr ; cPtr++) {
+	if (*cPtr == '/') {
+	    lastSlash = cPtr;
+	}
+	*pPtr = *cPtr;
+    }
+    if (lastSlash == (char *)NIL) {
+	Mem_Free((Address)dstParentName);
+	dstParentName = ".";
+    } else {
+	*lastSlash = '\0';
+    }
+    status = Fs_GetAttributes(dstParentName, FS_ATTR_FILE, &dstParentAttr);
+    if (lastSlash != (char *)NIL) {
+	Mem_Free((Address)dstParentName);
+    }
+    if (status != SUCCESS) {
+	return(status);
+    }
+    if (srcAttr.serverID != dstParentAttr.serverID ||
+	srcAttr.domain != dstParentAttr.domain) {
+	status = FS_CROSS_DOMAIN_OPERATION;
+    }
+}
+#endif notdef
 
 /*
  *----------------------------------------------------------------------
@@ -505,7 +607,8 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 	return(FS_LOOKUP_REDIRECT);
     } else {
 	Sys_Panic(SYS_WARNING,
-	      "FsLookupOperation: Unexpected format of returned file name.\n");
+	  "FsLookupOperation: Bad format of returned file name \"%s\".\n",
+	  redirectInfoPtr->fileName);
 	return(FAILURE);
     }
 }
