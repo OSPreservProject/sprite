@@ -93,7 +93,7 @@ Rpc_PrintTrace(numRecords)
 
     Sys_Printf("\n");
 #define PRINT_HEADER() \
-    Sys_Printf("%8s %4s %9s %5s %4s %4s %10s %5s %5s %5s %8s\n", \
+    Sys_Printf("%6s %4s %6s %5s %4s %4s %10s %5s %5s %5s %8s\n", \
 	"ID", "type", "time", "flags", "srvr", "clnt", "cmd   ", \
 	"psize", "dsize", "doff", "fragInfo")
     PRINT_HEADER();
@@ -105,20 +105,20 @@ Rpc_PrintTrace(numRecords)
 	Time_Subtract(recordPtr->time, baseTime, &deltaTime);
 
 	rpcHdrPtr = (RpcHdr *)recordPtr->traceData;
-	Sys_Printf("%8x ", rpcHdrPtr->ID);
+	Sys_Printf("%6x ", rpcHdrPtr->ID);
 
 	switch(recordPtr->event) {
 	    default: 
 		Sys_Printf("{%d}", recordPtr->event);
 		break;
 	    case RPC_INPUT:
-		Sys_Printf("  <");
+		Sys_Printf("in ");
 		break;
 	    case RPC_ETHER_OUT:
-		Sys_Printf(">  ");
+		Sys_Printf("out");
 		break;
 	    case RPC_OUTPUT:
-		Sys_Printf(" > ");
+		Sys_Printf("out");
 		break;
 	    case RPC_CLIENT_a:		/* Client interrupt time stamps */
 	    case RPC_CLIENT_b:
@@ -164,9 +164,9 @@ Rpc_PrintTrace(numRecords)
 		break;
 	}
 
-	Sys_Printf(" %2d.%06d",
+	Sys_Printf(" %3d.%04d",
 			   deltaTime.seconds,
-			   deltaTime.microseconds);
+			   deltaTime.microseconds / 100);
 	baseTime = recordPtr->time;
 	switch(rpcHdrPtr->flags & RPC_TYPE) {
 	    case RPC_REQUEST:
@@ -195,14 +195,15 @@ Rpc_PrintTrace(numRecords)
 	    flagString[stringIndex++] = 'e';
 	}
 	flagString[stringIndex] = '\0';
-	Sys_Printf(" %5s", flagString);
-	Sys_Printf(" %4d %4d ",
-			   rpcHdrPtr->serverID,
-			   rpcHdrPtr->clientID);
-	if (rpcHdrPtr->command >= 0 && rpcHdrPtr->command <= RPC_LAST_COMMAND) {
-	    Sys_Printf("%10s", rpcService[rpcHdrPtr->command].name);
+	Sys_Printf(" %2s", flagString);
+	Sys_Printf(" %3d %d %3d %d ",
+			   rpcHdrPtr->serverID, rpcHdrPtr->serverHint,
+			   rpcHdrPtr->clientID, rpcHdrPtr->channel);
+	if (((rpcHdrPtr->flags & RPC_ERROR) == 0) &&
+	    rpcHdrPtr->command >= 0 && rpcHdrPtr->command <= RPC_LAST_COMMAND) {
+	    Sys_Printf("%-8s", rpcService[rpcHdrPtr->command].name);
 	} else {
-	    Sys_Printf("%10d", rpcHdrPtr->command);
+	    Sys_Printf("%8x", rpcHdrPtr->command);
 	}
 	Sys_Printf(" %5d %5d %5d %2d %2x %5d",
 			   rpcHdrPtr->paramSize,
@@ -337,7 +338,7 @@ Rpc_StampTest()
 
 #define NUMTIMES	1000
 
-    Sys_Printf("RpcTrace timing:  ");
+/*   Sys_Printf("RpcTrace timing:  "); */
     junkRpcHdr.flags = 0;
 
     Timer_GetCurrentTicks(&startTime);
@@ -349,7 +350,7 @@ Rpc_StampTest()
     Timer_SubtractTicks(endTime, startTime, &endTime);
     Timer_TicksToTime(endTime, &diff);
     Time_Divide(diff, NUMTIMES, &diff);
-    Sys_Printf("empty = %d, ", diff.microseconds);
+/*   Sys_Printf("empty = %d, ", diff.microseconds); */
     rpcEmptyStampTime = diff;
 
 
@@ -362,7 +363,7 @@ Rpc_StampTest()
     Timer_SubtractTicks(endTime, startTime, &endTime);
     Timer_TicksToTime(endTime, &diff);
     Time_Divide(diff, NUMTIMES, &diff);
-    Sys_Printf("full = %d usecs\n", diff.microseconds);
+/*    Sys_Printf("full = %d usecs\n", diff.microseconds); */
     rpcFullStampTime = diff;
 
     for (i=0 ; i<4 ; i++) {
