@@ -32,12 +32,6 @@ typedef struct Mach_SetJumpState {
 } Mach_SetJumpState;
 
 /*
- * Macro to perform a set jump.
- */
-#define	Mach_SetJump(setJumpPtr) \
-    MachSetJump((Proc_GetCurrentProc())->machStatePtr->setJumpStatePtr = setJumpPtr)
-
-/*
  * Macros to disable and enable interrupts.
  */
 #define	Mach_DisableIntr()	asm("movw #0x2700,sr")
@@ -245,13 +239,20 @@ typedef struct {
  */
 
 /*
- * The user state for a process.
+ * The register state of a user process when it traps into the kernel.
  */
 typedef struct {
     Address		userStackPtr;		/* The user stack pointer */
-    int			trapRegs[MACH_NUM_GPRS];/* General purpose registers
-						 * when trap into kernel. */
+    int			trapRegs[MACH_NUM_GPRS];/* General purpose registers.*/
+} Mach_RegState;
+
+/*
+ * The user state for a process.
+ */
+typedef struct {
+    Mach_RegState	regState;		/* Register state. */
     Mach_ExcStack	*excStackPtr;		/* The exception stack */
+    int			lastSysCall;		/* Last system call. */
 } Mach_UserState;
 
 /*
@@ -351,6 +352,7 @@ extern void			Mach_InitSyscall();
 extern void			Mach_SetHandler();
 extern int			Mach_GetExcStackSize();
 extern Mach_ProcessorStates	Mach_ProcessorState();
+extern ReturnStatus		Mach_SetJump();
 extern void			Mach_UnsetJump();
 
 /*
