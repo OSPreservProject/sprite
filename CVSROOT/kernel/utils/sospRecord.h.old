@@ -293,9 +293,10 @@ extern TraceLog_Header *SOSP91TracePtr;
  * causingHostID:	ID of host causing the consistency change
  * affectedHostID:	ID of host affected by consistency change
  * fileID		fileID of file causing the fuss
- * action		Whether the action to take on the client is flushing
- *			the cache (FSCONSIST_WRITE_BACK_BLOCKS) and/or
- * 			invalidating the cache (FSCONSIST_INVALIDATE_BLOCKS)
+ * action		Whether the action to take on the client is
+ *			FSCONSIST_WRITE_BACK_BLOCKS and/or
+ * 			FSCONSIST_INVALIDATE_BLOCKS and/or
+ *			FSCONSIST_DELETE_FILE, etc.
  *			These flags must be &'ed out since other flags may
  *			also be set.
  */ 
