@@ -186,6 +186,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
      * Loop through the pathname expanding links and checking permissions.
      * Creations and deletions are handled after this loop.
      */
+    fsStats.lookup.number++;
     while (*curCharPtr != '\0' && status == SUCCESS) {
 	status = CheckPermissions(curHandlePtr, FS_READ, idPtr, FS_DIRECTORY);
 	if (status != SUCCESS) {
@@ -212,6 +213,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		if (fsComponentTrace) {
 		    printf(" $MACHINE -> ");
 		}
+		fsStats.lookup.numSpecial++;
 		if (clientID == rpc_SpriteID) {
 		    /*
 		     * Can't count on the net stuff being setup for ourselves
@@ -248,6 +250,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		goto endScan;
 	    }
 	}
+	fsStats.lookup.numComponents++;
 	*compPtr = '\0';
 	compLen = compPtr - component;
 	if (fsComponentTrace) {
@@ -280,6 +283,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		(*newNameInfoPtrPtr)->prefixLength = 0;
 		(void)strcpy((*newNameInfoPtrPtr)->fileName, "../");
 		(void)strcat((*newNameInfoPtrPtr)->fileName, curCharPtr);
+		fsStats.lookup.parent++;
 		status = FS_LOOKUP_REDIRECT;
 	    } else {
 		/*
@@ -334,6 +338,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	    ((curHandlePtr->descPtr->fileType == FS_SYMBOLIC_LINK ||
 		curHandlePtr->descPtr->fileType == FS_REMOTE_LINK))) {
 	    numLinks++;
+	    fsStats.lookup.symlinks++;
 	    if (numLinks > FS_MAX_LINKS) {
 		status = FS_NAME_LOOP;
 	    } else {
@@ -373,9 +378,11 @@ FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		     * a remote link, zero means no prefix.
 		     */
 		    if (curHandlePtr->descPtr->fileType == FS_REMOTE_LINK) {
+			fsStats.lookup.remote++;
 			(*newNameInfoPtrPtr)->prefixLength = 
 					    curHandlePtr->descPtr->lastByte;
 		    } else {
+			fsStats.lookup.redirect++;
 			(*newNameInfoPtrPtr)->prefixLength = 0;
 		    }
 		} else if (parentHandlePtr != (FsLocalFileIOHandle *)NIL) {
@@ -418,6 +425,7 @@ endScan:
 		}
 		break;
 	    case FS_CREATE:
+		fsStats.lookup.forCreate++;
 		if (status == SUCCESS && (useFlags & FS_EXCLUSIVE)) {
 		    /*
 		     * FS_EXCLUSIVE and FS_CREATE means that the file
@@ -474,6 +482,11 @@ endScan:
 		 * a file that is being linked to.  If the file already exists
 		 * it is deleted first.  Then link is made with LinkFile.
 		 */
+		if (useFlags & FS_RENAME) {
+		    fsStats.lookup.forRename++;
+		} else {
+		    fsStats.lookup.forLink++;
+		}
 		if (status == SUCCESS) {
 		    /*
 		     * Linking to an existing file.
@@ -492,31 +505,6 @@ endScan:
 			 */
 			status = FS_FILE_EXISTS;
 		    }
-#ifdef old_code
-		    if (curHandlePtr->descPtr->fileType != type) {
-			if (curHandlePtr->descPtr->fileType == FS_DIRECTORY) {
-			    status = FS_IS_DIRECTORY;
-			} else if (type == FS_DIRECTORY) {
-			    status = FS_NOT_DIRECTORY;
-			} else {
-			    status = FS_FILE_EXISTS;
-			}
-		    } else if ((type == FS_DIRECTORY) &&
-			    (useFlags & FS_RENAME) == 0) {
-			status = FS_NO_ACCESS;
-		    } else {
-			/*
-			 * Ok to link to an existing file
-			 */
-		    }
-		    if (status == SUCCESS) {
-			/*
-			 * Try the delete, this fails on non-empty directories.
-			 */
-			status = DeleteFileName(domainPtr, parentHandlePtr,
-			      &curHandlePtr, component, compLen, FALSE, idPtr);
-		    }
-#endif old_code
 		} else if (status == FS_FILE_NOT_FOUND) {
 		    /*
 		     * The file does not already exist.  Check write permission
@@ -531,6 +519,7 @@ endScan:
 		}
 		break;
 	    case FS_DELETE:
+		fsStats.lookup.forDelete++;
 		if (status == SUCCESS) {
 		    if ((curHandlePtr->descPtr->fileType != type) &&
 			(type != FS_FILE)) {
@@ -576,6 +565,9 @@ endScan:
     }
     if (fsComponentTrace && !fsFileNameTrace) {
 	printf(" <%x>\n", status);
+    }
+    if (status == FS_FILE_NOT_FOUND) {
+	fsStats.lookup.notFound++;
     }
     return(status);
 }
