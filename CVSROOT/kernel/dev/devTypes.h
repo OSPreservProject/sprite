@@ -84,6 +84,7 @@
 #define DEV_VMELINK		16
 #define DEV_PLACEHOLDER_4	18
 #define DEV_PLACEHOLDER_5	19
+#define	DEV_XBUS		21
 
 /*
  * "Standard" frame buffer. The idea is that this device behave the same on
