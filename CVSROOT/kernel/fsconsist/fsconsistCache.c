@@ -978,11 +978,11 @@ FsDeleteLastWriter(consistPtr, clientID)
 		consistPtr->lastWriter == clientID) {
 		List_Remove((List_Links  *) clientPtr);
 		Mem_Free((Address) clientPtr);
+		consistPtr->lastWriter = -1;
 		break;
 	    }
 	}
     }
-    consistPtr->lastWriter = -1;
     UNLOCK_MONITOR;
 }
 
