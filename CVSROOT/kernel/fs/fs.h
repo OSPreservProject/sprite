@@ -378,12 +378,16 @@ extern	void		Fs_PrintTrace();
 extern  void		Fs_BlocksToDiskAddr();
 
 /*
- * Routines to encapsulate and deencapsulate streams.
+ * Routines to support process migration: encapsulate and deencapsulate
+ * streams and other file state, and clear file state after migration.
  */
 extern	ReturnStatus	Fs_EncapStream();
 extern	ReturnStatus	Fs_DeencapStream();
 extern	int		Fs_GetEncapSize();
 extern	ReturnStatus	Fs_StreamCopy();
+extern  ReturnStatus    Fs_EncapFileState();
+extern  ReturnStatus    Fs_DeencapFileState();
+extern  void            Fs_ClearFileState();
 
 /*
  * Routines to wakeup readers and writers.
