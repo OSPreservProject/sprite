@@ -396,7 +396,7 @@
  *	    2) Switch to the debuggers own spill and saved window stacks.
  *	    3) Turn off interrupts, turn on all traps, and turn off and 
  *	       invalidate the ibuffer.
- *	    4) Call routine _MachCallDebugger(errorType)
+ *	    4) Call routine _MachCallDebugger(errorType, &machDebugState)
  *	    5) Restore state from _machDebugState (note that this will 
  *	       reenable the ibuffer unless the debugger has modified the
  *	       kpsw to not have it enabled).
@@ -422,7 +422,9 @@
 	invalidate_ib; \
 	\
 	add_nt		OUTPUT_REG1, regErrorVal, $constErrorVal; \
-	call		_MachCallDebugger; \
+	ld_32		OUTPUT_REG2, r0, $debugStatePtr; \
+	Nop; \
+	call		_kdb; \
 	Nop; \
 	\
 	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
