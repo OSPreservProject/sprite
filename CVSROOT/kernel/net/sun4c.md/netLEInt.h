@@ -100,8 +100,8 @@ typedef struct NetLE_Reg {
 #ifdef sun4
         unsigned short	addrPort;	/* RAP */
 #else
-        unsigned short		: 14;	/* Reserved - must be zero */
-	unsigned short	addrPort: 2;	/* RAP */
+        unsigned int        	: 14;	/* Reserved - must be zero */
+	unsigned int	addrPort: 2;	/* RAP */
 #endif
 } NetLE_Reg;
 
@@ -181,15 +181,15 @@ typedef struct NetLE_Reg {
  */
 
 typedef struct NetLEModeReg {
-    int			promiscuous	:1;	/* Read all incoing packets. */
-    int					:8;	/* Reserved */
-    int			internalLoop	:1;	/* Internal if lookBack. */
-    int			disableRetry	:1;	/* Disable collision retry. */
-    int			forceCollision	:1;	/* Force collision.	*/
-    int			disableCRC	:1;	/* Disable transmit CRC. */
-    int			loopBack	:1;	/* Loop back mode. */
-    int			disableXmit	:1;	/* Disable the transmitter. */
-    int			disableRecv	:1;	/* Disable the receiver. */
+    unsigned int	promiscuous	:1;	/* Read all incoing packets. */
+    unsigned int			:8;	/* Reserved */
+    unsigned int        internalLoop	:1;	/* Internal if lookBack. */
+    unsigned int	disableRetry	:1;	/* Disable collision retry. */
+    unsigned int	forceCollision	:1;	/* Force collision.	*/
+    unsigned int	disableCRC	:1;	/* Disable transmit CRC. */
+    unsigned int	loopBack	:1;	/* Loop back mode. */
+    unsigned int	disableXmit	:1;	/* Disable the transmitter. */
+    unsigned int	disableRecv	:1;	/* Disable the receiver. */
 } NetLEModeReg;
 
 /*
@@ -202,7 +202,7 @@ typedef struct NetLERingPointer {
 						 */
     unsigned int	logRingLength	:3;	/* log2 of ring length. */
     unsigned int			:5;	/* Reserved */
-    unsigned char	ringAddrHigh	:8;	/* High order ring address. */
+    unsigned int	ringAddrHigh	:8;	/* High order ring address. */
 } NetLERingPointer;
 
 /*
@@ -227,16 +227,16 @@ typedef struct NetLEInitBlock {
 
 typedef struct NetLERecvMsgDesc {
     unsigned short	bufAddrLow;	/* Low order 16 addr bits of buffer. */
-    int		chipOwned	:1;	/* Buffer is owned by LANCE. */
-    int		error		:1;	/* Error summary */
-    int		frammingError	:1;	/* Framing Error occured.  */
-    int		overflowError	:1;	/* Packet overflowed. */
-    int		crcError	:1;	/* CRC error. */
-    int		bufferError	:1;	/* Buffer error. */
-    int		startOfPacket	:1;	/* First buffer of packet. */
-    int		endOfPacket	:1;	/* Last buffer of packet. */
+    unsigned int	chipOwned	:1;	/* Buffer is owned by LANCE. */
+    unsigned int	error		:1;	/* Error summary */
+    unsigned int	frammingError	:1;	/* Framing Error occured.  */
+    unsigned int	overflowError	:1;	/* Packet overflowed. */
+    unsigned int	crcError	:1;	/* CRC error. */
+    unsigned int	bufferError	:1;	/* Buffer error. */
+    unsigned int	startOfPacket	:1;	/* First buffer of packet. */
+    unsigned int	endOfPacket	:1;	/* Last buffer of packet. */
     unsigned char	bufAddrHigh;	/* High order 8 addr bits of buffer. */
-    short	bufferSize;		/* Size of buffer in bytes. This 
+    short	        bufferSize;	/* Size of buffer in bytes. This 
 					 * has to be the 2's complement of
 					 * the buffer size.
 					 */
@@ -249,29 +249,29 @@ typedef struct NetLERecvMsgDesc {
  */
 
 typedef struct NetLEXmitMsgDesc {
-    unsigned short	bufAddrLow;	/* Low order 16 addr bits of buffer.*/
-    int		chipOwned	:1;	/* Buffer owned by the LANCE */
-    int		error		:1;	/* Error summary */
-    int				:1;	/* Reserved.  */
-    int		retries		:1;	/* More than one retry was needed.  */
-    int		oneRetry	:1;	/* Exactly one retry was needed. */
-    int		deferred	:1;	/* Transmission deferred. */
-    int		startOfPacket	:1;	/* First buffer of packet. */
-    int		endOfPacket	:1;	/* Last buffer of packet. */
-    unsigned char	bufAddrHigh;	/* High order 8 addr bits of buffer. */
-    short	bufferSize;		/* Signed size of buffer in bytes. This 
+    unsigned short  bufAddrLow;	/* Low order 16 addr bits of buffer.*/
+    unsigned int    chipOwned	    :1;	/* Buffer owned by the LANCE */
+    unsigned int    error	    :1;	/* Error summary */
+    unsigned int		    :1;	/* Reserved.  */
+    unsigned int    retries	    :1;	/* More than one retry was needed.  */
+    unsigned int    oneRetry	    :1;	/* Exactly one retry was needed. */
+    unsigned int    deferred	    :1;	/* Transmission deferred. */
+    unsigned int    startOfPacket   :1;	/* First buffer of packet. */
+    unsigned int    endOfPacket	    :1;	/* Last buffer of packet. */
+    unsigned char   bufAddrHigh;	/* High order 8 addr bits of buffer. */
+    short           bufferSize;		/* Signed size of buffer in bytes. This 
 					 * has to be the 2's complement of
 					 * the buffer size.
 					 * Note that the first buffer in a
 					 * chain must have at least 100 bytes.
 					 */
-    int		bufferError	:1;	/* Buffering error. */
-    int		underflowError	:1;	/* Underflow error. */
-    int				:1;	/* Reserved. */
-    int		lateCollision	:1;	/* Late collision error. */
-    int		lostCarrier	:1;	/* Loss of carrier error. */
-    int		retryError	:1;	/* Too many collision. */
-    int		tdrCounter	:10;	/* Time Domain Reflectometry counter. */
+    unsigned int    bufferError	    :1;	/* Buffering error. */
+    unsigned int    underflowError  :1;	/* Underflow error. */
+    unsigned int		    :1;	/* Reserved. */
+    unsigned int    lateCollision   :1;	/* Late collision error. */
+    unsigned int    lostCarrier	    :1;	/* Loss of carrier error. */
+    unsigned int    retryError	    :1;	/* Too many collision. */
+    unsigned int    tdrCounter	    :10;/* Time Domain Reflectometry counter. */
 } NetLEXmitMsgDesc;
 
 
@@ -311,7 +311,7 @@ typedef struct {
 /*
  * The state of all of the interfaces. 
  */
-  
+
 extern	NetLEState	netLEState;
 
 
