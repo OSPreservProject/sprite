@@ -212,14 +212,15 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
  *      Setup a ScsiCmd block for a SCSI Group0 command.
  *
  * Results:
- *	None.
+ *	SUCCESS if the command block was filled in correctly, FAILURE
+ *	otherwise
  *
  * Side effects:
  *	Set the various fields in the control block.
  *
  *----------------------------------------------------------------------
  */
-void
+ReturnStatus
 DevScsiGroup0Cmd(devPtr, cmd, blockNumber,countNumber,scsiCmdPtr)
     ScsiDevice	*devPtr; /* SCSI device target for this command. */
     int		cmd;	 /* Group0 scsi command. */
@@ -232,6 +233,16 @@ DevScsiGroup0Cmd(devPtr, cmd, blockNumber,countNumber,scsiCmdPtr)
     if ((cmd < 0) || (cmd > 0x1f)) {
 	panic("Bad SCSI command 0x%x giving to DevScsiGroup0Cmd.\n",cmd);
     }
+    if (blockNumber > 0x1fffff) {
+	printf("DevScsiGroup0Cmd: block number too big (%d > %d)\n",
+	    blockNumber, 0x1fffff);
+	return FAILURE;
+    }
+    if (countNumber > 0xff) {
+	printf("DevScsiGroup0Cmd: count too big (%d > %d)\n",
+	    countNumber, 0xff);
+	return FAILURE;
+    }
     bzero((char *)scsiCmdPtr, sizeof(ScsiCmd));
     scsiCmdPtr->commandBlockLen = sizeof(ScsiGroup0Cmd);
     c = (ScsiGroup0Cmd *) scsiCmdPtr->commandBlock;
@@ -241,6 +252,7 @@ DevScsiGroup0Cmd(devPtr, cmd, blockNumber,countNumber,scsiCmdPtr)
     c->midAddr =  (blockNumber & 0x00ff00) >> 8;
     c->lowAddr =  (blockNumber & 0x0000ff);
     c->blockCount =  countNumber;
+    return SUCCESS;
 }
 
 /*

@@ -451,17 +451,47 @@ SendCmdToDevice(diskPtr, requestPtr, firstSector, lengthInSectors)
 {
     int		cmd;
     ScsiDiskCmd	 *diskCmdPtr = (ScsiDiskCmd *) (requestPtr->ctrlData);
+    ReturnStatus status;
 
     if (sizeof(ScsiDiskCmd) > sizeof((requestPtr->ctrlData))) {
 	panic("ScsiDISK: command block bigger than controller data\n");
 	return FAILURE;
     }
-    cmd = (requestPtr->operation == FS_READ) ? SCSI_READ : SCSI_WRITE;
-    DevScsiGroup0Cmd(diskPtr->devPtr,cmd, firstSector, lengthInSectors,
-		      &(diskCmdPtr->scsiCmd));
+    if (firstSector <= 0x1fffff) {
+	cmd = (requestPtr->operation == FS_READ) ? SCSI_READ : SCSI_WRITE;
+	status = DevScsiGroup0Cmd(diskPtr->devPtr,cmd, firstSector, 
+		    lengthInSectors, &(diskCmdPtr->scsiCmd));
+	if (status != SUCCESS) {
+	    return FAILURE;
+	}
+    } else {
+	ScsiReadExtCmd	*cmdPtr;
+	/*
+	 * The offset is too big for the standard 6-byte SCSI read and
+	 * write commands.  We have to use the extended version.  Perhaps
+	 * we should always use the extended version?
+	 */
+	if (lengthInSectors > 0xffff) {
+	    printf("SendCmdToDevice: too many sectors (%d > %d)\n",
+		lengthInSectors, 0xffff);
+	    return FAILURE;
+	}
+	bzero((char *) &(diskCmdPtr->scsiCmd), sizeof(ScsiCmd));
+	diskCmdPtr->scsiCmd.commandBlockLen = sizeof(ScsiReadExtCmd);
+	cmdPtr = (ScsiReadExtCmd *) &(diskCmdPtr->scsiCmd.commandBlock);
+	cmdPtr->command = (requestPtr->operation == FS_READ) ? 
+	    SCSI_READ_EXT : SCSI_WRITE_EXT;
+	cmdPtr->unitNumber = diskPtr->devPtr->LUN;
+	cmdPtr->highAddr = ((firstSector >> 24) & 0xff);
+	cmdPtr->highMidAddr = ((firstSector >> 16) & 0xff);
+	cmdPtr->lowMidAddr = ((firstSector >> 8) & 0xff);
+	cmdPtr->lowAddr = ((firstSector) & 0xff);
+	cmdPtr->highCount = ((lengthInSectors >> 8) & 0xff);
+	cmdPtr->lowCount = ((lengthInSectors) & 0xff);
+    }
     diskCmdPtr->scsiCmd.buffer = requestPtr->buffer;
     diskCmdPtr->scsiCmd.bufferLen = lengthInSectors * SCSI_DISK_SECTOR_SIZE;
-    diskCmdPtr->scsiCmd.dataToDevice = (cmd == SCSI_WRITE);
+    diskCmdPtr->scsiCmd.dataToDevice = (requestPtr->operation == FS_WRITE);
     diskCmdPtr->scsiCmd.doneProc = DiskDoneProc;
     diskCmdPtr->scsiCmd.clientData = (ClientData) requestPtr;
     diskCmdPtr->diskPtr = diskPtr;
