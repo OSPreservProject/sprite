@@ -7,7 +7,9 @@
 #
 
 POBJS		= $(OBJS:S/.o$/.po/g:S/procFork.po/procFork.o/g)
-CFLAGS	+= -Wall
+#if empty(TM:Mds3100) && empty(TM:Mjhh) && empty(TM:Mcleands3100)
+CFLAGS += -Wall
+#endif
 
 
 #include	<$(SYSMAKEFILE)>
