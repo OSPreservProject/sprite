@@ -1415,7 +1415,12 @@ SegmentCleanProc(clientData, callInfoPtr)
     LOCK_MONITOR;
     lfsPtr->activeFlags &= ~LFS_CLEANER_ACTIVE;
     lfsPtr->cleanerProcPtr = (Proc_ControlBlock *) NIL;
-    if (lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) {
+    /* 
+     * If someone is waiting for us to checkpoint or
+     * we didn't do anywork, do a checkpoint.
+     */
+    if ((lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) ||
+	(totalNumCleaned == 0)) {
 	UNLOCK_MONITOR;
 	status = LfsCheckPointFileSystem(lfsPtr, 0);
     } else {
@@ -1825,11 +1830,9 @@ LfsWaitForCleanSegments(lfsPtr)
 {
     LOCK_MONITOR;
     lfsPtr->numDirtyBlocks++;
-    while (!LfsSegUsageEnoughClean(lfsPtr, 
-		lfsPtr->numDirtyBlocks * FS_BLOCK_SIZE)) {
-	Sync_Wait(&lfsPtr->cleanSegmentsWait, FALSE);
-    }
-    while (lfsPtr->activeFlags & LFS_CHECKPOINT_ACTIVE) {
+    while ((lfsPtr->activeFlags & LFS_CHECKPOINT_ACTIVE) ||
+		!LfsSegUsageEnoughClean(lfsPtr, 
+			lfsPtr->numDirtyBlocks * FS_BLOCK_SIZE)) {
 	Sync_Wait(&lfsPtr->checkPointWait, FALSE);
     }
     UNLOCK_MONITOR;
