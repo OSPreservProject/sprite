@@ -84,28 +84,6 @@ typedef struct {
 extern int rpc_SpriteID;
 
 /*
- * Flags for the Rpc_RebootNotify.
- */
-#define RPC_WHEN_HOST_DOWN		0x1
-#define RPC_WHEN_HOST_REBOOTS		0x2
-
-/*
- * Host state flags for use by RPC clients.  These flags are set
- * by users of the RPC module to define/get host states beyond
- * the simple up/down state maintained by the RPC system.
- *	RPC_RECOV_REOPEN		The client is in the fs re-open phase.
- *				This is used to block open requests.
- */
-#define RPC_RECOV_REOPEN			0x1
-
-/*
- * Trace types for use with Rpc_HostTrace.  These are defined to be compatible
- *		with the values defined in rpcRecovery.c
- *	RPC_RECOV_TRACE_STALE	A stale handle was returned from a file server
- */
-#define RPC_RECOV_TRACE_STALE	0x1000
-
-/*
  * Hooks exported so they can be set via Fs_Command...
  */
 extern Boolean rpc_Tracing;
@@ -138,13 +116,5 @@ void		Rpc_Timeout();
 void		Rpc_PrintTrace();
 ReturnStatus	Rpc_DumpTrace();
 void		Rpc_StampTest();
-
-void		Rpc_HostNotify();
-int		Rpc_WaitForHost();
-ReturnStatus	Rpc_HostIsDown();
-void		Rpc_HostPrint();
-void		Rpc_HostTrace();
-void		Rpc_HostSetState();
-int		Rpc_HostGetState();
 
 #endif _RPC
