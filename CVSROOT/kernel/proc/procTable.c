@@ -285,6 +285,10 @@ Proc_InitMainProc()
     ProcInitMainEnviron(procPtr);
 
     ProcFamilyHashInit();
+
+    procPtr->peerProcessID = (Proc_PID) NIL;
+    procPtr->peerHostID = (int) NIL;
+    procPtr->remoteExecBuffer = (Address) NIL;
 }
 
 
