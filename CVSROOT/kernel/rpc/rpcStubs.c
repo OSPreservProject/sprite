@@ -3,14 +3,19 @@
  *
  *	The stub procedures for the Rpc service procedures.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
-
 
 #include "sprite.h"
 
@@ -75,6 +80,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Proc_RpcGetPCB, "get PCB",		/* 38 - PROC_GETPCB */
 	Sync_RemoteNotifyStub, "rmt notify",	/* 39 - REMOTE_WAKEUP */
 	Sig_RpcSend, "send signal",		/* 40 - SIG_SEND */
+	Fsio_RpcStreamMigCloseNew, "new release",/* 41 - FS_RELEASE_NEW */
 };
 
 

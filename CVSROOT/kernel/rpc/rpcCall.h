@@ -83,6 +83,8 @@
  *			migrated.
  *	RPC_PROC_REMOTE_CALL Perform a system call for a migrated process.
  *	RPC_FS_MIGRATE 		Start the migration of a file handle.
+ *	RPC_FS_RELEASE 		Release a stream reference during migration.
+ *	RPC_FS_RELEASE_NEW	New version of this call.
  *	RPC_FS_CONSIST	Call from the server to the client to initiate
  *				cache consistency operations.
  *	RPC_FS_CONSIST_REPLY	Reply from the client indicating that
@@ -147,7 +149,8 @@
 #define	RPC_PROC_GETPCB		38
 #define	RPC_REMOTE_WAKEUP 	39
 #define	RPC_SIG_SEND		40
-#define	RPC_LAST_COMMAND	RPC_SIG_SEND
+#define	RPC_FS_RELEASE_NEW 	41
+#define	RPC_LAST_COMMAND	RPC_FS_RELEASE_NEW
 
 /*
  * RPC_LAST_COMMAND is used to declare the rpc procedure switch
@@ -195,6 +198,8 @@ extern ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
 extern ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
 extern ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
 extern ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
+extern ReturnStatus Fsio_RpcStreamMigClose();	/*  FS_RELEASE */
+extern ReturnStatus Fsio_RpcStreamMigCloseNew();/*  FS_RELEASE_NEW */
 
 #endif /*	_RPCCALL */
 
