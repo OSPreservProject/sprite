@@ -1,5 +1,5 @@
 /* 
- * fsLocalDomain.c --
+ * fslclDomain.c --
  *
  *	Implementation of name-space operations in the local domain.
  *	The routines here are called via the prefix table.
@@ -22,21 +22,21 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsio.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsprefix.h"
-#include "fslclInt.h"
-#include "fsdm.h"
-#include "fsconsist.h"
-#include "fsutilTrace.h"
-#include "rpc.h"
-#include "vm.h"
-#include "string.h"
-#include "proc.h"
-#include "spriteTime.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fslclInt.h>
+#include <fsdm.h>
+#include <fsutilTrace.h>
+#include <rpc.h>
+#include <vm.h>
+#include <string.h>
+#include <proc.h>
+#include <spriteTime.h>
 
 char *fslclEmptyDirBlock;
 
@@ -366,7 +366,6 @@ FslclMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Fs_MakeDeviceArgs	*makeDevArgsPtr;
     Fsio_FileIOHandle *handlePtr;
-    Fsdm_Domain		*domainPtr;
     register Fsdm_FileDescriptor *descPtr;
 
     makeDevArgsPtr = (Fs_MakeDeviceArgs *)argsPtr;
@@ -381,15 +380,8 @@ FslclMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 	descPtr->devServerID = makeDevArgsPtr->device.serverID;
 	descPtr->devType = makeDevArgsPtr->device.type;
 	descPtr->devUnit = makeDevArgsPtr->device.unit;
-	domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-	if (domainPtr == (Fsdm_Domain *)NIL) {
-	    status = FS_DOMAIN_UNAVAILABLE;
-	    printf( "FslclMakeDevice: Domain unavailable\n");
-	} else {
-	    status = Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor,
-				     descPtr);
-	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-	}
+	descPtr->flags |= FSDM_FD_OTHERS_DIRTY;
+	status = Fsdm_FileDescStore(handlePtr, FALSE);
 	Fsutil_HandleRelease(handlePtr, TRUE);
     }
     return(status);
