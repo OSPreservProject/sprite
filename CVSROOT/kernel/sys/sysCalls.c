@@ -36,7 +36,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <string.h>
 #include <stdio.h>
 #include <main.h>
-#include <net.h>
 #ifdef sun4
 #include <vmMach.h>
 #endif
@@ -50,6 +49,10 @@ Boolean	sys_ShuttingDown = FALSE;
 #ifdef SOSP91
 TraceLog_Header *SOSP91TracePtr = NULL;
 extern Boolean traceLog_Disable;
+
+/* Ken's statistics. */
+extern Timer_Ticks nameTime[], totalNameTime;
+extern int SOSPLookupNum, SOSPLookupComponent, SOSPLookupPrefixComponent;
 #endif
 
 
@@ -999,7 +1002,16 @@ Sys_StatsStub(command, option, argPtr)
 		if (SOSP91TracePtr == NULL) {
 		    SOSP91TracePtr = (TraceLog_Header *)
 			    malloc(sizeof(TraceLog_Header));
-		    TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0);
+		    if (args[0]<0) {
+			/*
+			 * Negative # of buffers is the magic indicator
+			 * that we don't want to buffer data.
+			 */
+			TraceLog_Init(SOSP91TracePtr, -args[0], args[1],
+				TRACELOG_NO_BUF);
+		    } else {
+			TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0);
+		    }
 		}
 		traceLog_Disable = FALSE;
 	    } else if (option == SYS_TRACELOG_OFF) {
@@ -1013,8 +1025,33 @@ Sys_StatsStub(command, option, argPtr)
 		    TraceLog_Reset(SOSP91TracePtr);
 		}
 	    } else if (option == SYS_TRACELOG_DUMP) {
-		TraceLog_Dump(SOSP91TracePtr, argPtr+sizeof(Sys_TracelogHeader),
-			argPtr);
+		TraceLog_Dump(SOSP91TracePtr, argPtr+
+			sizeof(Sys_TracelogHeaderKern), argPtr);
+	    } else if (option == 1999) {
+		/*
+		 * I'll just sneak some random stats in here.
+		 * --Ken
+		 */
+		Time timeVal;
+		Timer_TicksToTime(totalNameTime,&timeVal);
+		printf("totalNameTime: %d,%d\n", timeVal.seconds,
+			timeVal.microseconds);
+		Timer_TicksToTime(nameTime[1],&timeVal);
+		printf("name: %d,%d\n", timeVal.seconds,
+			timeVal.microseconds);
+		Timer_TicksToTime(nameTime[2],&timeVal);
+		printf("prefix: %d,%d\n", timeVal.seconds,
+			timeVal.microseconds);
+		Timer_TicksToTime(nameTime[0],&timeVal);
+		printf("misc: %d,%d\n", timeVal.seconds,
+			timeVal.microseconds);
+		printf("Number of prefix lookups: %d\n", SOSPLookupNum);
+		printf("Total components: %d, avg: %d\n",
+			SOSPLookupComponent,
+			SOSPLookupComponent/SOSPLookupNum);
+		printf("Total prefix components: %d, avg: %d\n",
+			SOSPLookupPrefixComponent,
+			SOSPLookupPrefixComponent/SOSPLookupNum);
 	    }
 	    status = SUCCESS;
 	    break;
