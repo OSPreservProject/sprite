@@ -1,7 +1,7 @@
 /*
  * fsFile.h --
  *
- *	Declarations for regular file access.
+ *	Declarations for regular file access, local and remote.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -105,15 +105,8 @@ typedef struct FsRmtFileIOHandle {
 					 * ascend past the prefix. */
     struct Vm_Segment	*segPtr;	/* Reference to code segment needed
 					 * to flush VM cache. */
-} FsRmtFileIOHandle;			/* 188 BYTES */
+} FsRmtFileIOHandle;			/* 192 BYTES */
 
-
-/*
- * Data transferred when a regular file stream migrates.
- */
-typedef struct FsFileMigData {
-    int foo;
-} FsFileMigData;
 
 /*
  * Open operations.
