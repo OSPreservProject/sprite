@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "scsi.h"
 #include "scsiDevice.h"
 #include "devDiskLabel.h"
+#include "devDiskStats.h"
 #include "devBlockDevice.h"
 #include "stdlib.h"
 #include "dev/scsi.h"
@@ -50,6 +51,7 @@ typedef struct ScsiDisk {
     int sizeInSectors;	    /* The number of sectors on disk */
     DiskMap map[DEV_NUM_DISK_PARTS];	/* The partition map */
     int type;		/* Type of the drive, needed for error checking */
+    Sys_DiskStats *diskStatsPtr;	/* Area for disk stats. */	
 } ScsiDisk;
 
 typedef struct ScsiDiskCmd {
@@ -64,6 +66,7 @@ typedef struct ScsiDiskCmd {
 	((requestPtr)->doneProc)((requestPtr),(status),(byteCount))
 
 static ReturnStatus DiskError();
+static Boolean	ScsiDiskIdleCheck();
 
 
 /*
@@ -138,7 +141,32 @@ FillInLabel(devPtr,diskPtr)
     printf("\n");
     return(SUCCESS);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ScsiDiskIdleCheck --
+ *
+ *	Routine for the Disk Stats module to use to determine the idleness
+ *	for a disk.
+ *
+ * Results:
+ *	TRUE if the disk pointed to by clientData is idle, FALSE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static Boolean
+ScsiDiskIdleCheck(clientData) 
+    ClientData	clientData;
+{
+    ScsiDevice *devPtr = (ScsiDevice *) clientData;
+	/* need to fix this. */
+    return TRUE;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -181,6 +209,7 @@ InitDisk(devPtr,readLabel)
 	    return((ScsiDisk *) NIL);
 	}
     } 
+
     /*
      * Return a malloced copy of the structure we filled in.
      */
@@ -220,6 +249,11 @@ DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
 
     requestPtr = (DevBlockDeviceRequest *) (scsiCmdPtr->clientData);
     diskPtr = ((ScsiDiskCmd *) (requestPtr->ctrlData))->diskPtr;
+    if (requestPtr->operation == FS_READ) {
+	diskPtr->diskStatsPtr->diskReads++;
+    } else {
+	diskPtr->diskStatsPtr->diskWrites++;
+    }
     /*
      * If request suffered an HBA error or got no error we notify the
      * caller that the request is done.
@@ -253,7 +287,7 @@ DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
+static ReturnStatus
 SendCmdToDevice(diskPtr, requestPtr, firstSector, lengthInSectors)
     ScsiDisk	*diskPtr;
     DevBlockDeviceRequest *requestPtr;
@@ -525,11 +559,6 @@ BlockIOProc(handlePtr, requestPtr)
 	firstSector += diskPtr->map[diskPtr->partition].firstSector;
     }
 
-    if (lengthInSectors * DEV_BYTES_PER_SECTOR > DEV_MAX_TRANSFER_SIZE) {
-	panic("Request size too large (%d Bytes) in ScsiDisk blockIO\n",
-	       lengthInSectors * DEV_BYTES_PER_SECTOR);
-	return DEV_INVALID_ARG;
-    }
     status = SendCmdToDevice(diskPtr, requestPtr, firstSector, lengthInSectors);
     return(status);
 }
@@ -584,6 +613,19 @@ DevScsiDiskAttach(devicePtr)
     diskPtr = InitDisk(devPtr,DISK_IS_PARTITIONED(devicePtr));
     if (diskPtr == (ScsiDisk *) NIL) {
 	return (DevBlockDeviceHandle *) NIL;
+    }
+    /*
+     * Register this disk with the Disk stat routines.
+     */
+    {
+	Fs_Device rawDevice;
+
+	rawDevice = *devicePtr;
+	rawDevice.unit = rawDevice.unit & ~0xf;
+	diskPtr->diskStatsPtr = DevRegisterDisk(&rawDevice,
+					      devPtr->locationName,
+					      ScsiDiskIdleCheck, 
+					      (ClientData) devPtr);
     }
     diskPtr->partition = DISK_IS_PARTITIONED(devicePtr) ? 
 					DISK_PARTITION(devicePtr) :
