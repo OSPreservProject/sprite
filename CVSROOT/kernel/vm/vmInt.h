@@ -484,7 +484,7 @@ extern int vmShmDebug;
 	(&((segPtr)->ptPtr[(page) - (segPtr)->offset])))
 #endif /* CLEAN */
 
-#ifdef CLEAN2
+#ifdef CLEAN
 #define	VmGetAddrPTEPtr(virtAddrPtr, page) \
     (&((virtAddrPtr)->segPtr->ptPtr[(page) - segOffset(virtAddrPtr)]))
 #else /* CLEAN */
@@ -503,16 +503,9 @@ extern int vmShmDebug;
 /*
  * Macro to get a virtAddr's offset in the page table.
  */
-#ifndef SEGOFFSETCODE
-#ifdef sun4
-#define segOffset(virtAddrPtr) ( (virtAddrPtr)->segPtr->offset)
-#else
-#define segOffset(virtAddrPtr) (( !vmShmDebug || (virtAddrPtr)->sharedPtr== \
+#define segOffset(virtAddrPtr) (( (virtAddrPtr)->sharedPtr== \
 	(Vm_SegProcList *)NIL) ? (virtAddrPtr)->segPtr->offset :\
 	   (virtAddrPtr)->sharedPtr->offset)
-#endif sun4
-#endif SEGOFFSETCODE
-
 
 /*----------------------------------------------------------------------------*/
 
@@ -580,7 +573,6 @@ extern	void		VmPageValidateInt();
 extern	void		VmPageInvalidate();
 extern	void		VmPageInvalidateInt();
 extern	void		VmValidatePagesInt();
-extern	void		VmPageInvalidateRange();
 /*
  * VM list routines.  Like normal list routines but do more sanity checks.
  */
