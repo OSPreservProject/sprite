@@ -353,7 +353,7 @@ Timer_TimerServiceInterrupt()
 	    currentTODParts.dayOfYear = -1;
 	    currentTODParts.month = *monPtr-1;
 	    currentTODParts.year = *yearPtr;
-	    Time_FromParts(&currentTODParts, FALSE, &hardSeconds);
+	    (void) Time_FromParts(&currentTODParts, FALSE, &hardSeconds);
 	    softSeconds = counter.seconds;
 	    diff = hardSeconds - previousHardSeconds;
 	    eventDebug[dbgCtr] |= 0x4;

@@ -502,12 +502,10 @@ TimerDumpElement(timerPtr)
 
     Timer_TicksToTime(timerPtr->time, &time);
 
-#ifndef lint
     printf("(*0x%x)(0x%x) @ %d.%06u\n",
 	    (Address) timerPtr->routine, 
 	    (Address) timerPtr->clientData,
 	    time.seconds, time.microseconds);
-#endif
 }
 
 /*

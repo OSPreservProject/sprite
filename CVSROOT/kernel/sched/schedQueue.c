@@ -124,10 +124,8 @@ Sched_InsertInQueue(procPtr, runPtrPtr)
 	     * idle processors. We optimize things by bypassing the queue and
 	     * giving processes to the processors through the staging areas.
 	     */
-	    int		cpu;
-    
+
 	    sched_QueueEmpty++;
-	    cpu = Mach_GetProcessorNumber();
 	    /*
 	     * If we are supposed to return a runnable process and the process
 	     * we were given last ran on the current processor, then just return
@@ -291,7 +289,7 @@ Sched_InsertInQueue(procPtr, runPtrPtr)
      */
     if (insert) {
 	if (foundInsertPoint) {
-	    List_Insert((List_Links *) procPtr, itemProcPtr);
+	    List_Insert((List_Links *) procPtr, (List_Links *) itemProcPtr);
 	} else {
 	    List_Insert((List_Links *) procPtr, LIST_ATREAR(queuePtr));
 	}
