@@ -186,6 +186,10 @@ typedef struct Vm_Segment {
 					 * this segment references. */
     int			numCORPages;	/* Number of copy-on-ref pages that
 					 * this segment references. */
+    Address		minAddr;	/* Minimum address that the segment
+					 * can ever have. */
+    Address		maxAddr;	/* Maximium address that the segment
+					 * can ever have. */
 } Vm_Segment;
 
 /*
@@ -213,6 +217,12 @@ typedef struct Vm_ProcInfo {
  *                              to/from the kernel's VAS.
  */
 #define VM_COPY_IN_PROGRESS             0x01
+
+/*
+ * Maximum number of pages that a user process can wire down with the
+ * Vm_UserMap call.
+ */
+#define	VM_MAX_USER_MAP_PAGES	4
 
 /*
  * Copy-on-write level.
@@ -303,6 +313,8 @@ extern	void		Vm_Recovery();
 extern	Address		Vm_GetKernelStack();
 extern	void		Vm_FreeKernelStack();
 extern	void		Vm_ProcInit();
+extern	ReturnStatus	Vm_UserMap();
+extern	ReturnStatus	Vm_UserUnmap();
 
 /*
  * Routines to provide access to internal virtual memory stuff for the machine

@@ -109,12 +109,14 @@ Vm_Init()
      */
     VmSegTableInit();
     VmCoreMapInit();
+#ifdef notdef
     /*
      * Take away the page at the bottom of the kernel stack.
      */
     virtPage = (mach_StackBottom - mach_KernStart) >> vmPageShift;
     vm_SysSegPtr->ptPtr[virtPage] = 0;
     VmPutOnFreePageList(virtPage);
+#endif
     /*
      * Now call the hardware dependent initialization routine.
      */

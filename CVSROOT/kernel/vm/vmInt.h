@@ -402,12 +402,14 @@ typedef struct VmCore {
  * VM_PAGE_BEING_CLEANED	The page is actually being cleaned.
  * VM_DONT_FREE_UNTIL_CLEAN	This page cannot be freed until it has
  *				been written out.
+ * VM_USER_WIRED_PAGE		The user wired this page down.
  */
 #define VM_FREE_PAGE 			0x01
 #define VM_DIRTY_PAGE 			0x02
 #define VM_SEG_PAGEOUT_WAIT 		0x04
 #define VM_PAGE_BEING_CLEANED		0x08
 #define	VM_DONT_FREE_UNTIL_CLEAN	0x10
+#define	VM_USER_WIRED_PAGE		0x20
 
 /*
  * The name of the swap directory.
