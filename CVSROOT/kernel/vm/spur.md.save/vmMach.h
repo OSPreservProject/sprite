@@ -128,4 +128,11 @@ extern	void		VmMach_FlushPage();
 
 extern	ReturnStatus	VmMach_Cmd();
 
+/*
+ * Shared memory.
+ */
+extern ReturnStatus	VmMach_SharedStartAddr();
+extern void		VmMach_SharedSegFinish();
+extern void		VmMach_SharedProcStart();
+extern void		VmMach_SharedProcFinish();
 #endif _VMMACH

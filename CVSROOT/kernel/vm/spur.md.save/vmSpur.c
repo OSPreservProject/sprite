@@ -2575,3 +2575,8 @@ VmMach_FlushCode(procPtr, virtAddrPtr, virtPage, numBytes)
 }
 
 VmMach_SharedStart() {}
+
+ReturnStatus VmMach_SharedStartAddr() {}
+void VmMach_SharedSegFinish() {}
+void VmMach_SharedProcStart() {}
+void VmMach_SharedProcFinish() {}
