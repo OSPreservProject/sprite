@@ -37,8 +37,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devCC.h"
 #include "devBlockDevice.h"
 
-
-static ReturnStatus NullSelectProc();
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
 
@@ -58,7 +56,7 @@ static ReturnStatus NullProc();
  * the array.  The FILLER macro is used to fill in the gaps.
  */
 
-#define	FILLER(num)	{num,NoDevice,NullProc,NullProc,NullProc,NullProc,NullProc, DEV_NO_ATTACH_PROC, NoDevice},
+#define	FILLER(num)	{num,NoDevice,NullProc,NullProc,Dev_NullIOControl,NullProc,Dev_NullSelect, DEV_NO_ATTACH_PROC, NoDevice},
 
 DevFsTypeOps devFsOpTable[] = {
     /*
@@ -80,7 +78,8 @@ DevFsTypeOps devFsOpTable[] = {
      * /dev/null
      */
     {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
-		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC,
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC,
 		    NullProc},
     FILLER(7)
     /*
@@ -123,17 +122,4 @@ static ReturnStatus
 NoDevice()
 {
     return(FS_INVALID_ARG);
-}
-
-
-/*ARGSUSED*/
-static ReturnStatus
-NullSelectProc(devicePtr, readPtr, writePtr, exceptPtr)
-    Fs_Device	*devicePtr;	/* Ignored. */
-    int	*readPtr;		/* Read bit to clear if not readable */
-    int	*writePtr;		/* Write bit to clear if not readable */
-    int	*exceptPtr;		/* Except bit to clear if not readable */
-{
-    *exceptPtr = 0;
-    return(SUCCESS);
 }
