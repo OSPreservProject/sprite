@@ -75,16 +75,17 @@ static ReturnStatus	FindComponent();
 static ReturnStatus 	InsertComponent();
 static Boolean		DirectoryEmpty();
 static int		FindFileType();
-static ReturnStatus CreateFile();
-static ReturnStatus LinkFile();
-static ReturnStatus OkToMoveDirectory();
-static ReturnStatus MoveDirectory();
-static ReturnStatus GetParentNumber();
-static ReturnStatus SetParentNumber();
-static ReturnStatus DeleteFileName();
-static ReturnStatus CheckPermissions();
-static ReturnStatus CacheDirBlockWrite();
-static ReturnStatus WriteNewDirectory();
+static ReturnStatus 	CreateFile();
+static ReturnStatus 	LinkFile();
+static ReturnStatus 	OkToMoveDirectory();
+static ReturnStatus 	MoveDirectory();
+static ReturnStatus 	GetParentNumber();
+static ReturnStatus 	SetParentNumber();
+static ReturnStatus 	DeleteFileName();
+static void		CloseDeletedFile();
+static ReturnStatus 	CheckPermissions();
+static ReturnStatus 	CacheDirBlockWrite();
+static ReturnStatus 	WriteNewDirectory();
 
 
 /*
@@ -148,7 +149,7 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 					 * after it leaves our domain */
 {
     register char 	*curCharPtr;	/* Pointer into the path name */
-    register Fsio_FileIOHandle *parentHandlePtr; /* Handle for parent dir. */
+    Fsio_FileIOHandle *parentHandlePtr; /* Handle for parent dir. */
     register char	*compPtr;	/* Pointer into component. */
     register ReturnStatus status = SUCCESS;
     register int 	compLen;	/* The length of component */
@@ -488,7 +489,9 @@ endScan:
 						type);
 		}
 		break;
-	    case FS_LINK:
+	    case FS_LINK: {
+		Boolean 		fileDeleted = FALSE;
+		Fsio_FileIOHandle	*deletedHandlePtr;
 		/*
 		 * The presence of FS_LINK means that curHandlePtr references
 		 * a file that is being linked to.  If the file already exists
@@ -509,8 +512,12 @@ endScan:
 			/*
 			 * Try the delete, this fails on non-empty directories.
 			 */
+			deletedHandlePtr = curHandlePtr;
 			status = DeleteFileName(domainPtr, parentHandlePtr,
-			      &curHandlePtr, component, compLen, FALSE, idPtr);
+			      curHandlePtr, component, compLen, FALSE, idPtr);
+			if (status == SUCCESS) {
+			    fileDeleted = TRUE;
+			}
 		    } else {
 			/*
 			 * Not ok to link to an existing file.
@@ -529,7 +536,11 @@ endScan:
 		    status = LinkFile(domainPtr, parentHandlePtr,
 				component, compLen, fileNumber, &curHandlePtr);
 		}
+		if (fileDeleted) {
+		    CloseDeletedFile(&parentHandlePtr, &deletedHandlePtr);
+		}
 		break;
+	    }
 	    case FS_DELETE:
 		fs_Stats.lookup.forDelete++;
 		if (status == SUCCESS) {
@@ -538,24 +549,13 @@ endScan:
 			status = (type == FS_DIRECTORY) ? FS_NOT_DIRECTORY :
 							  FS_WRONG_TYPE;
 		    } else {
-			/*
-			 * Special case code to trap the bugger who is deleting
-			 * "/tmp", which is a remote link! 
-			 */
-			if (curHandlePtr->descPtr->fileType == FS_REMOTE_LINK &&
-			    parentHandlePtr->hdr.fileID.minor == 2 &&
-			    parentHandlePtr->hdr.fileID.major == 0 &&
-			    strcmp(component, "tmp") == 0) {
-			    printf("FslclLookup removal of \tmp (%s) by client %d denied\n",
-				relativeName, clientID);
-			    status = FS_NO_ACCESS;
-			    break;
-			}
-			/* End special hack.  Remove by 1990 */
-
-			status = DeleteFileName(domainPtr, parentHandlePtr, 
-				&curHandlePtr, component, compLen,
+			status = DeleteFileName(domainPtr,parentHandlePtr, 
+				curHandlePtr, component, compLen,
 				(int) (useFlags & FS_RENAME), idPtr);
+			if (status == SUCCESS) {
+			    CloseDeletedFile(&parentHandlePtr,
+					    &curHandlePtr);
+			}
 		    }
 		}
 		break;
@@ -1762,12 +1762,12 @@ SetParentNumber(curHandlePtr, newParentNumber)
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
+DeleteFileName(domainPtr, parentHandlePtr, curHandlePtr, component,
 	       compLen, forRename, idPtr)
     Fsdm_Domain *domainPtr;			/* Domain of the file */
-    Fsio_FileIOHandle *parentHandlePtr;	/* Handle of directory in
+    Fsio_FileIOHandle *parentHandlePtr;		/* Handle of directory in
 						 * which to delete file*/
-    Fsio_FileIOHandle **curHandlePtrPtr;	/* Handle of file to delete */
+    Fsio_FileIOHandle *curHandlePtr;		/* Handle of file to delete */
     char *component;				/* Name of the file to delte */
     int compLen;				/* The length of component */
     int forRename;		/* if FS_RENAME, then the file being delted
@@ -1776,12 +1776,10 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
     Fs_UserIDs *idPtr;		/* User and group IDs */
 {
     ReturnStatus status;
-    register Fsio_FileIOHandle *curHandlePtr;	/* Local copy */
     Fsdm_FileDescriptor *parentDescPtr;	/* Descriptor for parent */
     Fsdm_FileDescriptor *curDescPtr;	/* Descriptor for the file to delete */
     int type;				/* Type of the file */
 
-    curHandlePtr = *curHandlePtrPtr;
     type = curHandlePtr->descPtr->fileType;
     if (parentHandlePtr == (Fsio_FileIOHandle *)NIL) {
 	/*
@@ -1821,7 +1819,7 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	     */
 	    curDescPtr->numLinks--;
 	    if (curDescPtr->numLinks > 0) {
-	    printf("DeleteFileName: extra links on directory\n");
+	    printf(" DeleteFileName: extra links on directory\n");
 	    }
 	}
 	curDescPtr->descModifyTime = fsutil_TimeInSeconds;
@@ -1846,31 +1844,74 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 		return(status);
 	    }
 	}
-	if (curDescPtr->numLinks <= 0) {
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CloseDeletedFile --
+ *
+ *	This routine is called to close a deleted file.
+ *	If there are no links left then the
+ *	file's handle is marked as deleted.  Finally, if this routine
+ *	has the last reference on the handle then the file's data blocks
+ *	are truncated away and the file descriptor is marked as free.
+ *
+ *	This is a separate routine from DeleteFileName because the
+ *	file cannot be closed unless the parent handle is unlocked
+ *	(to prevent deadlock while doing the consistency callback),
+ *	and the code to do a rename deletes the existing file, then
+ *	does a link.  This would break if the parent handle was
+ *	released during the delete.
+ *
+ * Results:
+ *	SUCCESS or error code.
+ *
+ * Side effects:
+ *	The parent and/or current handles may be released and set to NIL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CloseDeletedFile(parentHandlePtrPtr, curHandlePtrPtr)
+    Fsio_FileIOHandle **parentHandlePtrPtr;	/* Handle of parent of
+						 * deleted file. */
+    Fsio_FileIOHandle **curHandlePtrPtr;	/* Handle of deleted file. */
+
+{
+    register Fsio_FileIOHandle *curHandlePtr;	/* Local copy */
+
+    curHandlePtr = *curHandlePtrPtr;
+    if (curHandlePtr->descPtr->numLinks <= 0) {
+	/*
+	 * At this point curHandlePtr is potentially the last reference
+	 * to the file.  If there are no users then do the delete, otherwise
+	 * mark the handle as deleted and Fsio_FileClose will take care of 
+	 * it.
+	 */
+	curHandlePtr->flags |= FSIO_FILE_NAME_DELETED;
+	if (curHandlePtr->use.ref == 0) {
 	    /*
-	     * At this point curHandlePtr is potentially the last reference
-	     * to the file.  If there are no users then do the delete, otherwise
-	     * mark the handle as deleted and Fsio_FileClose will take care of it.
+	     * Handle the deletion and clean up the handle.
+	     * We set the the clientID to us and specify client
+	     * call-backs so that any other clients will be notified.
 	     */
-	    curHandlePtr->flags |= FSIO_FILE_NAME_DELETED;
-	    if (curHandlePtr->use.ref == 0) {
-		/*
-		 * Handle the deletion and clean up the handle.
-		 * We set the the clientID to us and specify client
-		 * call-backs so that any other clients will be notified.
-		 */
-		(void)Fsio_FileCloseInt(curHandlePtr, 0, 0, 0, rpc_SpriteID, TRUE);
-		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
-	    } else {
-		Fsutil_HandleRelease(curHandlePtr, TRUE);
-		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
-	    }
+	    Fsutil_HandleRelease(*parentHandlePtrPtr, TRUE);
+	    *parentHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	    (void)Fsio_FileCloseInt(curHandlePtr, 0, 0, 0, rpc_SpriteID, 
+		    TRUE);
+	    *curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
 	} else {
 	    Fsutil_HandleRelease(curHandlePtr, TRUE);
 	    *curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
 	}
+    } else {
+	Fsutil_HandleRelease(curHandlePtr, TRUE);
+	*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
     }
-    return(status);
 }
 
 
