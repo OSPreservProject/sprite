@@ -66,12 +66,12 @@ Trace_Init(traceHdrPtr, numRecords, size, flags)
     traceHdrPtr->flags = flags & ~TRACE_INHIBIT;
     traceHdrPtr->dataSize = size;
 
-    recordPtr = (Trace_Record *) malloc((unsigned) (numRecords
+    recordPtr = (Trace_Record *) Vm_RawAlloc((unsigned) (numRecords
 	    * sizeof(Trace_Record)));
     traceHdrPtr->recordArray = recordPtr;
 
     if (size > 0) {
-	clientPtr = malloc((unsigned) (numRecords * size));
+	clientPtr = Vm_RawAlloc((unsigned) (numRecords * size));
     }
     for (i = 0; i < numRecords; i++) {
 	recordPtr[i].flags = TRACE_UNUSED;
