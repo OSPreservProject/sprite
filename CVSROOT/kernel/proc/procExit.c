@@ -35,23 +35,25 @@
  *			The PCB is attached to an event-specific list of 
  *			waiting processes.
  *	PROC_EXITING:	It has finished executing but the PCB is kept around
- *			until thte parent waits for it via Proc_Wait or dies
+ *			until the parent waits for it via Proc_Wait or dies
  *			via Proc_Exit.
  *	PROC_DEAD:	It has been waited on and the PCB is attached to 
  *			the Dead list.
- *	PROC_DEBUGGABLE	It is on the debug list, waiting for a debugger
- *			to remove it and debug it.
  *	PROC_SUSPENDED  It is suspended from executing.
  *	PROC_UNUSED:	There is no process using this PCB entry.
  *
  *	In addition, the process may have the following attributes:
+ *
  *	PROC_DETACHED:	It is detached from its parent.
  *	PROC_WAITED_ON:	It is detached from its parent and its parent
  *			knows about it. This attribute implies PROC_DETACHED
  *			has been set.
- *	PROC_SUSPENDED_AND_WAITED_ON:
- *			It is suspended and its parent waited on it after it
- *			was suspended.  In this	case it isn't detached.
+ *	PROC_SUSPEND_STATUS:
+ *			It is suspended and its parent has not waited on it
+ *			yet.  In this case it isn't detached.
+ *	PROC_RESUME_STATUS:
+ *			It has been resumed and its parent has not waited on
+ *			it yet.  In this case it isn't detached.
  *
  *	These attributes are set independently of the process states.
  *
@@ -229,7 +231,7 @@ Proc_ExitInt(reason, status, code)
 	 * list before allowing it to exit.  NOTE: Need to get at the 
 	 * machine state (registers and PC).
 	 */
-	Proc_PutOnDebugList(curProcPtr, reason, status, code, 0);
+	Proc_SuspendProcess(curProcPtr, TRUE, reason, status, code, 0);
     }
 
     if (sys_ErrorShutdown) {
@@ -563,32 +565,37 @@ Proc_DetachInt(procPtr)
     UNLOCK_MONITOR;
 }
 
+void SendSigChild();
+
 
 /*
  *----------------------------------------------------------------------
  *
- * ProcInformParent --
+ * Proc_InformParent --
  *
- *	Tell the parent of the caller that the calling process has been
- *	suspended.
+ *	Tell the parent of the given process that the process has changed
+ *	state.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Status bit set in the exit flags.
  *
  *----------------------------------------------------------------------
  */
 ENTRY void
-ProcInformParent()
+Proc_InformParent(procPtr, childStatus, backGroundSig)
+    register Proc_ControlBlock	*procPtr;	/* Process whose parent to
+						 * inform of state change. */
+    int				childStatus;	/* PROC_SUSPEND_STATUS |
+						 * PROC_RESUME_STATUS */
+    Boolean			backGroundSig;	/* Send the SIG_CHILD to
+						 * the parent in background.*/
 {
-    register	Proc_ControlBlock	*procPtr;
     Proc_ControlBlock 	*parentProcPtr;
 
     LOCK_MONITOR;
-
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
 
     /*
      * If the process is already detached, then there is no parent to tell.
@@ -605,10 +612,39 @@ ProcInformParent()
      */
     parentProcPtr = Proc_GetPCB(procPtr->parentID);
     Sync_Broadcast(&parentProcPtr->waitCondition);
-    SIGNAL_PARENT(parentProcPtr, "ProcInformParent");
-    procPtr->exitFlags &= ~PROC_SUSPENDED_AND_WAITED_ON;
+    if (backGroundSig) {
+	Proc_CallFunc(SendSigChild, (ClientData)procPtr->parentID, 0);
+    } else {
+	SIGNAL_PARENT(parentProcPtr, "ProcInformParent");
+    }
+    procPtr->exitFlags &= ~PROC_STATUSES;
+    procPtr->exitFlags |= childStatus;
 
     UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendSigChild --
+ *
+ *	Send a SIG_CHILD signal to the given process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SendSigChild(data, callInfoPtr)
+    ClientData		data;
+    Proc_CallInfo	*callInfoPtr;
+{
+    (void)Sig_Send(SIG_CHILD, SIG_NO_CODE, (Proc_PID)data, FALSE);
 }
 
 
@@ -624,7 +660,7 @@ ProcInformParent()
  *	SUCCESS			- always returned.
  *
  * Side effects:
- *	Statues set in the proc table for the process.
+ *	Statuses set in the proc table for the process.
  *
  *----------------------------------------------------------------------
  */
@@ -664,15 +700,16 @@ static ReturnStatus 	DoWait();
  *
  * Proc_Wait --
  *
- *	Returns information about a terminated/detached child process after
- *	(optionally) waiting for it to terminate or detach itself. 
- *	The returned information includes the reason why the process 
- * 	terminated and a summary of resource usage.
+ *	Returns information about a child process that has changed state to
+ *	one of terminated, detached, suspended or running.  If the 
+ *	PROC_WAIT_FOR_SUSPEND flag is not set then info is only returned about
+ *	terminated and detached processes.  If the PROC_WAIT_BLOCK flag is
+ *	set then this function will wait for a child process to change state.
  *
  *	A terminated process is a process that has ceased execution because
  *	it voluntarily called Proc_Exit or was involuntarily killed by 
  *	a signal or was destroyed by the kernel due to an invalid stack. 
- *	A detached procss is process that has called Proc_Detach to detach 
+ *	A detached process is process that has called Proc_Detach to detach 
  *	itself from its parent. It continues to execute until it terminates.
  *
  * Results:
@@ -688,7 +725,6 @@ static ReturnStatus 	DoWait();
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr, 
 	  statusPtr, subStatusPtr, usagePtr)
@@ -731,11 +767,9 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
     }
     
     /*
-     *  We are looking for terminated or detached children processes.
      *  If a list of pids to check was given, use it, otherwise
-     *  look for any child that has terminated/detached.
+     *  look for any child that has changed state.
      */
-
     if (numPids < 0) {
 	return(SYS_INVALID_ARG);
     } else if (numPids > 0) {
@@ -746,7 +780,6 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
 	     *  If pidArray is used, make it accessible. Also make sure that
 	     *  the pids are in the proper range.
 	     */
-
 	    newPidSize = numPids * sizeof(Proc_PID);
 	    newPidArray = (Proc_PID *) Mem_Alloc(newPidSize);
 	    status = Vm_CopyIn(newPidSize, (Address) pidArray,
@@ -840,9 +873,10 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
 ENTRY static ReturnStatus 
 DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
     register	Proc_ControlBlock	*curProcPtr;	/* Parent process. */
-			/* PROC_WAIT_BLOCK => wait if no children have exited,
-			 * detached or suspended.  PROC_WAIT_FOR_SUSPEND => 
-			 * return status of suspended children. */
+			/* PROC_WAIT_BLOCK => wait if no children have changed
+			 * 		      state.
+			 * PROC_WAIT_FOR_SUSPEND => return status of suspended
+			 *			    children. */
     int 				flags;	
     int					numPids;	/* Number of pids in
 							 * newPidArray. */
@@ -857,9 +891,8 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
     while (TRUE) {
 	/*
 	 * If a pid array was given, check the array to see if someone on it
-	 * has exited or detached. Otherwise, see if any child has done so.
+	 * has changed state. Otherwise, see if any child has done so.
 	 */
-
 	status = FindExitingChild(curProcPtr, flags & PROC_WAIT_FOR_SUSPEND,
 				numPids, newPidArray, childInfoPtr);
 
@@ -867,7 +900,6 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
 	 * If someone was found or there was an error, break out of the loop
 	 * because we are done. FAILURE means no one was found.
 	 */
-
 	if (status != FAILURE) {
 	    break;
 	}
@@ -876,7 +908,6 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
 	 *  If the search doesn't yields a child, we go to sleep waiting 
 	 *  for a process to wake us up if it exits or detaches itself.
 	 */
-
 	if (!(flags & PROC_WAIT_BLOCK)) {
 	    /*
 	     * Didn't find anyone to report on.
@@ -885,7 +916,6 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
 	    break;
 
 	} else {	
-
 	    /*
 	     *  Since the current process is local, it will go to sleep
 	     *  on its waitCondition.  A child will wakeup the process by
@@ -896,7 +926,6 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
 	     *  event (e.g. exiting list address) when it goes to
 	     *  sleep.  When we wake up, the search will start again.
 	     */
-
 	    if (Sync_Wait(&curProcPtr->waitCondition, TRUE)) {
 		status = GEN_ABORTED_BY_SIGNAL;
 		break;
@@ -915,8 +944,8 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
  * ProcRemoteWait --
  *
  *	Perform an RPC to do a Proc_Wait on the home node of the given
- *	process.  Transfer the information for a child that has exited or
- *	detached, if one exists, and set up the information for a remote
+ *	process.  Transfer the information for a child that has changed state,
+ *	if one exists, and set up the information for a remote
  *	wait if the process wishes to block waiting for a child.  Note
  *	that this routine is unsynchronized, since monitor locking is
  *	performed on the home machine of the process.
@@ -932,11 +961,11 @@ DoWait(curProcPtr, flags, numPids, newPidArray, childInfoPtr)
 
 ReturnStatus
 ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
-    Proc_ControlBlock *procPtr;
-    int	flags;
-    int numPids;
-    Proc_PID pidArray[];
-    ProcChildInfo *childInfoPtr;
+    Proc_ControlBlock	*procPtr;
+    int			flags;
+    int			numPids;
+    Proc_PID		pidArray[];
+    ProcChildInfo	*childInfoPtr;
 {
     ProcRemoteWaitCmd cmd;
     Rpc_Storage storage;
@@ -1023,15 +1052,14 @@ ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
  * ProcServiceRemoteWait --
  *
  *	Services the Proc_Wait command for a migrated process.  If
- *	there is an appropriate terminated/detached child, returns
- *	information about it (refer to Proc_Wait).  If not, returns
- *	PROC_NO_EXITS.  If the migrated process specified that it
- *	should block, set up a remote wakeup for when a child exits or
- *	detaches.
+ *	there is an appropriate child, returns information about it (refer
+ *	to Proc_Wait).  If not, returns	PROC_NO_EXITS.  If the migrated
+ *	process specified that it should block, set up a remote wakeup
+ *	for when a child changes state.
  *
  * Results:
  *	PROC_INVALID_PID -	a process ID in the pidArray is invalid.
- *	PROC_NO_EXITS    -	no children have exited or detached who have
+ *	PROC_NO_EXITS    -	no children have changed state which have
  *				not already been waited upon.
  *
  * Side effects:
@@ -1057,10 +1085,6 @@ ProcServiceRemoteWait(curProcPtr, flags, numPids, pidArray, waitToken,
 
     LOCK_MONITOR;
 
-    /*
-     * Find an exiting child if one exists.
-     */
-
     status = FindExitingChild(curProcPtr, flags & PROC_WAIT_FOR_SUSPEND,
 			    numPids, pidArray, childInfoPtr);
     if (proc_MigDebugLevel > 3) {
@@ -1077,7 +1101,6 @@ ProcServiceRemoteWait(curProcPtr, flags, numPids, pidArray, waitToken,
      * Otherwise, just return the childInfo as it was set by FindExitingChild
      * and get out.
      */
-
     if (status == FAILURE) {
 	if (flags & PROC_WAIT_BLOCK) {
 	    Sync_SetWaitToken(curProcPtr, waitToken);
@@ -1094,8 +1117,8 @@ ProcServiceRemoteWait(curProcPtr, flags, numPids, pidArray, waitToken,
  *
  *  FindExitingChild --
  *
- *	Find a child of the specified process who has exited or become
- *	detached, subject to possible constraints (a list of process
+ *	Find a child of the specified process who has changed state,
+ *	subject to possible constraints (a list of process
  *	IDs to check).  If a process is found, send that process to the
  *	reaper if appropriate.
  *
@@ -1119,7 +1142,8 @@ INTERNAL static ReturnStatus
 FindExitingChild(parentProcPtr, returnSuspend, numPids, pidArray, infoPtr)
     Proc_ControlBlock 		*parentProcPtr;	/* Parent's PCB */
     Boolean			returnSuspend;	/* Return information about
-						 * suspended children. */ 
+						 * suspended or resumed
+						 * children. */ 
     int 			numPids;	/* Number of Pids in pidArray */
     Proc_PID 			*pidArray;	/* Array of Pids to check */
     register ProcChildInfo	*infoPtr;	/* Place to return info */
@@ -1136,31 +1160,39 @@ FindExitingChild(parentProcPtr, returnSuspend, numPids, pidArray, infoPtr)
     }
     if (status == SUCCESS) {
 	procPtr = paramProcPtr;
-	if (procPtr->state != PROC_SUSPENDED) {
+	if (procPtr->state == PROC_EXITING ||
+	    (procPtr->exitFlags & PROC_DETACHED)) {
 	    List_Remove((List_Links *) &(procPtr->siblingElement));
-
+	    infoPtr->termReason		= procPtr->termReason;
 	    if (procPtr->state == PROC_EXITING) {
 		/*
 		 * Once an exiting process has been waited on it is moved
-		 * from the exiting list to the dead list unless it is the head
-		 * of a family that still has members in it. 
+		 * from the exiting state to the dead state.
 		 */
 		procPtr->state = PROC_DEAD;
 		Proc_CallFunc(Proc_Reaper,  (ClientData) procPtr, 0);
 	    } else {
 		/*
-		 * The child is detached.
-		 * Set a flag to make sure we don't find this process
-		 * again in a future call to Proc_Wait.
+		 * The child is detached and running.  Set a flag to make sure
+		 * we don't find this process again in a future call to
+		 * Proc_Wait.
 		 */
 		procPtr->exitFlags |= PROC_WAITED_ON;
 	    }
 	} else {
-	    procPtr->exitFlags |= PROC_SUSPENDED_AND_WAITED_ON;
+	    /*
+	     * The child was suspended or resumed.
+	     */
+	    if (procPtr->exitFlags & PROC_SUSPEND_STATUS) {
+		procPtr->exitFlags &= ~PROC_SUSPEND_STATUS;
+		infoPtr->termReason = PROC_TERM_SUSPENDED;
+	    } else if (procPtr->exitFlags & PROC_RESUME_STATUS) {
+		procPtr->exitFlags &= ~PROC_RESUME_STATUS;
+		infoPtr->termReason = PROC_TERM_RESUMED;
+	    }
 	}
 
 	infoPtr->processID		= procPtr->processID;
-	infoPtr->termReason		= procPtr->termReason;
 	infoPtr->termStatus		= procPtr->termStatus;
 	infoPtr->termCode		= procPtr->termCode;
 	infoPtr->kernelCpuUsage		= procPtr->kernelCpuUsage;
@@ -1183,10 +1215,8 @@ FindExitingChild(parentProcPtr, returnSuspend, numPids, pidArray, infoPtr)
  *  LookForAnyChild --
  *
  *	Search the process's list of children to see if any of 
- *	them have exited or become detached.  If no child is
- *	found, make sure there is a child who can wake us up.
- *
- *	This routine is assumed to be called with the master lock down.
+ *	them have exited, become detached or been suspended or resumed.
+ *	If no child is found, make sure there is a child who can wake us up.
  *
  * Results:
  *	PROC_NO_CHILDREN -	There are no children of this process left
@@ -1212,20 +1242,16 @@ LookForAnyChild(curProcPtr, returnSuspend, procPtrPtr)
 
     /*
      *  Loop through the list of children, looking for the first child
-     *  to have exited or detached. Ignore children that are detached
-     *  and waited-on.  Remember if we find a child that isn't exiting
-     *  or detached, since if we don't find any like that and we don't
-     *  find a child that has exited/detached, then there are no
-     *  children for which to wait.
+     *  to have changed state. Ignore children that are detached
+     *  and waited-on.
      */
 
     LIST_FORALL((List_Links *) curProcPtr->childList,
 		(List_Links *) procLinkPtr) {
         procPtr = procLinkPtr->procPtr;
 	if ((procPtr->state == PROC_EXITING) ||
-	    (returnSuspend && procPtr->state == PROC_SUSPENDED && 
-		!(procPtr->exitFlags & PROC_SUSPENDED_AND_WAITED_ON)) ||
-	    (procPtr->exitFlags & PROC_DETACHED))  {
+	    (procPtr->exitFlags & PROC_DETACHED) ||
+	    (returnSuspend && (procPtr->exitFlags & PROC_STATUSES))) {
 	    if (!(procPtr->exitFlags & PROC_WAITED_ON)) {
 	        *procPtrPtr = procPtr;
 		Proc_Lock(procPtr);
@@ -1249,7 +1275,7 @@ LookForAnyChild(curProcPtr, returnSuspend, procPtrPtr)
  *  CheckPidArray --
  *
  *	Search the process's array of children to see if any of them 
- *	have exited or become detached.
+ *	have exited, become detached or been suspended or resumed.
  *
  * Results:
  *	FAILURE -		didn't find any child of interest.
@@ -1267,8 +1293,8 @@ INTERNAL static ReturnStatus
 CheckPidArray(curProcPtr, returnSuspend, numPids,  pidArray, procPtrPtr)
     register	Proc_ControlBlock	*curProcPtr;	/* Parent proc. */
     Boolean				returnSuspend;	/* Return information
-							 * about suspended
-							 * children. */
+							 * about suspended or
+							 * resumed children. */
     int					numPids;	/* Number of pids in 
 							 * pidArray. */
     Proc_PID				*pidArray;	/* Array of pids to 
@@ -1283,7 +1309,6 @@ CheckPidArray(curProcPtr, returnSuspend, numPids,  pidArray, procPtrPtr)
      * If a specified process is non-existent or is not a child of the
      * calling process return an error status.
      */
-
     for (i=0; i < numPids; i++) {
 	procPtr = Proc_LockPID(pidArray[i]);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -1294,12 +1319,12 @@ CheckPidArray(curProcPtr, returnSuspend, numPids,  pidArray, procPtrPtr)
 	    return(PROC_INVALID_PID);
 	}
 	if ((procPtr->state == PROC_EXITING) ||
-	    (returnSuspend && procPtr->state == PROC_SUSPENDED &&
-		!(procPtr->exitFlags & PROC_SUSPENDED_AND_WAITED_ON)) ||
-	    ((procPtr->exitFlags & PROC_DETACHED) &&
-	    !(procPtr->exitFlags & PROC_WAITED_ON))) {
-	    *procPtrPtr = procPtr;
-	    return(SUCCESS);
+	    (procPtr->exitFlags & PROC_DETACHED) ||
+	    (returnSuspend && (procPtr->exitFlags & PROC_STATUSES))) {
+	    if (!(procPtr->exitFlags & PROC_WAITED_ON)) {
+		*procPtrPtr = procPtr;
+		return(SUCCESS);
+	    }
 	}
 	Proc_Unlock(procPtr);
     } 
