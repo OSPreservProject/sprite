@@ -558,7 +558,9 @@ IdleLoop()
 	 */
 	onReadyQueue = TRUE;
 	foundInQueue[cpu]++;
+#ifdef spur
 	Mach_InstCountOff(0);
+#endif
 	goto exit;
     }
     Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
