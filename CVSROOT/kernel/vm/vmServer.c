@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Boolean	vmUseFSReadAhead = TRUE;
 extern	Boolean	vm_NoStickySegments;
 Fs_Stream	*vmSwapStreamPtr = (Fs_Stream *)NIL;
+char		*sprintf();
 
 Boolean vmSwapFileDebug = FALSE;
 
@@ -38,7 +39,7 @@ Boolean vmSwapFileDebug = FALSE;
  */
 Sync_Condition	swapFileCondition;
 
-void	Fs_CacheBlocksUnneeded();
+void	Fscache_BlocksUnneeded();
 
 
 /*
@@ -592,7 +593,7 @@ VmFileServerRead(virtAddrPtr, pageFrame)
 	     * Tell the file system that we just read some file system blocks
 	     * into virtual memory.
 	     */
-	    Fs_CacheBlocksUnneeded(segPtr->filePtr, offset, vm_PageSize, TRUE);
+	    Fscache_BlocksUnneeded(segPtr->filePtr, offset, vm_PageSize, TRUE);
 	}
     }
     VmUnmapPage((Address) mappedAddr);
