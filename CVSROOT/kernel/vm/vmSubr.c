@@ -1114,6 +1114,7 @@ Vm_KernPageAllocate()
 {
     Vm_VirtAddr	virtAddr;
 
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
     virtAddr.segPtr = vm_SysSegPtr;
     virtAddr.page = 0;
     return(VmPageAllocate(&virtAddr, VM_CAN_BLOCK));
