@@ -630,7 +630,14 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
 	     * Find the proper position in the list for this segment.
 	     */
 	    s = (LfsSegUsageEntry *)LfsStableMemEntryAddr(&smemEntry);
-
+	    /*
+	     * Patch to fixedup bad activeBytes on anise.
+	     */
+	    if (!(s->flags & (LFS_SEG_USAGE_CLEAN|LFS_SEG_USAGE_DIRTY)) &&
+		 (s->activeBytes <= usagePtr->checkPoint.dirtyActiveBytes)) {
+		s->flags |= LFS_SEG_USAGE_DIRTY;
+		usagePtr->checkPoint.numDirty++;
+	    }
 	    if (s->flags & LFS_SEG_USAGE_DIRTY) {
 		for (i = numberSegs-1; i >= 0; i--) {
 		    if (segArrayPtr[i].activeBytes < s->activeBytes) {
