@@ -2455,7 +2455,9 @@ _Mach_EnableIntr:
  */
 	.globl	_Mach_TestAndSet
 _Mach_TestAndSet:
-	test_and_set	RETURN_VAL_REG, INPUT_REG1, $0
+	test_and_set	VOL_TEMP1, INPUT_REG1, $0
+	nop
+	add_nt		RETURN_VAL_REG_CHILD, VOL_TEMP1, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
 
