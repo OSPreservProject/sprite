@@ -182,7 +182,7 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
 	    }
 	    status = (*fs_AttrOpTable[nameInfoPtr->domainType].setAttr)
 			(&nameInfoPtr->fileID, attrPtr, idPtr, flags,
-			hostID, userID);
+			rpc_SpriteID, hostID, userID);
 #else
 	    status = (*fs_AttrOpTable[nameInfoPtr->domainType].setAttr)
 			(&nameInfoPtr->fileID, attrPtr, idPtr, flags);
