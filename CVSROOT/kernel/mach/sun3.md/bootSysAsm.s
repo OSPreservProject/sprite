@@ -97,8 +97,20 @@ loopStart:
 _Dbg_Mon:	
 	trap #15
 
+	.globl _edata, _end
 begin:
- 	movl	#start,sp		| Set the stack pointer
+|
+| Zero out the bss segment.
+|
+	movl	#_edata, a0
+	movl	#_end, a1
+1$:
+	clrl	a0@
+	addql	#4, a0
+	cmpl	a0, a1
+	bne	1$
+
+	movl	#start,sp		| Set the stack pointer
  	movl	#start,_dbgMaxStackAddr	| Store the top of the stack for the
 					|     debugger.
 	jsr	_main
