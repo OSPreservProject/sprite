@@ -372,17 +372,8 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		 * The parent handle is normally aready unlocked by
 		 * FindComponent, unless the directory is corrupted.
 		 */
-		if (status == SUCCESS && curHandlePtr->descPtr ==
-			(Fsdm_FileDescriptor *)NIL) {
-		    printf("FslclLookup, missing '..' link: ID <%d, %d, %d>\n",
-				 curHandlePtr->hdr.fileID.serverID,
-				 curHandlePtr->hdr.fileID.major,
-				 curHandlePtr->hdr.fileID.minor);
-		    status = FS_FILE_NOT_FOUND;
-		} else {
-		    Fsutil_HandleRelease(parentHandlePtr, (status != SUCCESS));
-		    parentHandlePtr = (Fsio_FileIOHandle *)NIL;
-		}
+		Fsutil_HandleRelease(parentHandlePtr, (status != SUCCESS));
+		parentHandlePtr = (Fsio_FileIOHandle *)NIL;
 	    }
 	} else if ((compLen == 1) && component[0] == '.') {
 	    /*
@@ -874,9 +865,29 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr,
 				FSLCL_HASH_INSERT(fslclNameTablePtr, component,
 					     parentHandlePtr, *curHandlePtrPtr);
 			    } else {
-				printf(
+				/*
+				 * It is possible that the file doesn't 
+				 * exist anymore.  This happens when
+				 * the parent directory of an open
+				 * directory is deleted.  The ".." entry
+				 * points to a deleted file.
+				 */
+				if (status == FS_FILE_REMOVED) {
+				    status = FS_FILE_NOT_FOUND;
+				} else {
+
+				    printf(
 		"FindComponent, no handle <0x%x> for \"%s\" fileNumber %d\n",
 				    status, component, dirEntryPtr->fileNumber);
+				}
+				if (isDotDot) {
+				    /*
+				     * If we have an error, relock the handle
+				     * because your caller will assume that it
+				     * is locked.
+				     */
+				    Fsutil_HandleLock(parentHandlePtr);
+				}
 			    }
 			    goto exit;	/* to quiet lint... */
 #ifndef lint
@@ -1117,7 +1128,7 @@ DeleteComponent(parentHandlePtr, component, compLen, dirOffsetPtr)
 		 * Delete the entry from the name cache.
 		 */
 		*dirOffsetPtr = blockOffset + FSLCL_DIR_BLOCK_SIZE*dirBlockNum;
-		FSLCL_HASH_DELETE(fslclNameTablePtr, component, parentHandlePtr);
+		FSLCL_HASH_DELETE(fslclNameTablePtr, component,parentHandlePtr);
 		dirEntryPtr->fileNumber = 0;
 		if (lastDirEntryPtr != (Fslcl_DirEntry *)NIL) {
 		    /*
@@ -1938,13 +1949,21 @@ DeleteFileName(parentHandlePtr, curHandlePtr, component,
     if (status == SUCCESS) {
 	curDescPtr->numLinks--;
 	curDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
-	if (type == FS_DIRECTORY && !forRename) {
+	if (type == FS_DIRECTORY) {
 	    /*
-	     * Directories have an extra link because they reference themselves.
+	     * The directory might have been known in the hash table as
+	     * someone's "..". Besure that this entry is gone.
 	     */
-	    curDescPtr->numLinks--;
-	    if (curDescPtr->numLinks > 0) {
-		printf("DeleteFileName: extra links on directory\n");
+	    FSLCL_HASH_DELETE(fslclNameTablePtr, "..", curHandlePtr);
+	    if (!forRename) {
+		/*
+		 * Directories have an extra link because they reference 
+		 * themselves.
+		 */
+		curDescPtr->numLinks--;
+		if (curDescPtr->numLinks > 0) {
+		    printf("DeleteFileName: extra links on directory\n");
+		}
 	    }
 	}
 	curDescPtr->descModifyTime = Fsutil_TimeInSeconds();
