@@ -398,6 +398,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 		status = (handlePtr->cacheInfo.ioProcsPtr->blockRead)
 			(streamPtr->ioHandlePtr, 0, pageAddr, &offset,
 			 &bytesRead, (Sync_RemoteWaiter *)NIL);
+		
 #ifdef lint
 		status = Fsio_FileBlockRead(streamPtr->ioHandlePtr, 0,
 		    pageAddr, &offset, &bytesRead, (Sync_RemoteWaiter *)NIL);
@@ -406,7 +407,18 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 #endif /* lint */
 		FSUTIL_TRACE_IO(FSUTIL_TRACE_READ,
 			streamPtr->ioHandlePtr->fileID, offset, bytesRead);
-		if (status != SUCCESS) {
+		if (status == SUCCESS) {
+		    if (bytesRead != FS_BLOCK_SIZE) {
+			printf("FsPageRead: Short read of length %d\n",
+			    bytesRead);
+			if (blockPtr != (Fscache_Block *)NIL) {
+			    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+					       FSCACHE_DELETE_BLOCK);
+			}
+			return(VM_SHORT_READ);
+		    }
+		    fs_Stats.rmtIO.blocksReadForVM++;
+		} else {
 		    if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 			status == RPC_SERVICE_DISABLED) {
 			/*
@@ -446,13 +458,6 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			    }
 			    return(status);
 		    }
-		} else if (bytesRead != FS_BLOCK_SIZE) {
-		    printf("FsPageRead: Short read of length %d\n", bytesRead);
-		    if (blockPtr != (Fscache_Block *)NIL) {
-			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
-					   FSCACHE_DELETE_BLOCK);
-		    }
-		    return(VM_SHORT_READ);
 		}
 		if (blockPtr != (Fscache_Block *)NIL) {
 		    if (retry) {
