@@ -47,21 +47,21 @@ typedef enum {
  * interrupts enabled.  These are assembly macros to be called from C code.
  * They use the in-line capabilities of GCC.
  */
-#define	Mach_EnableIntr()	({\
+#define	Mach_EnableIntr()	{\
 	register unsigned int	tmpPsr;	\
-	asm volatile ( "mov	%%psr, %1;	\
-			andn	%1, 0xf00, %1;	\
-			mov	%1, %%psr; nop; nop; nop\n":	\
-			"=r"(tmpPsr):"r"(tmpPsr));	\
-	})
+	asm volatile ( "mov	%%psr, %0;	\
+			andn	%0, 0xf00, %0;	\
+			mov	%0, %%psr; nop; nop; nop\n":	\
+			"=r"(tmpPsr));	\
+	}
 
-#define	Mach_DisableIntr()	({\
+#define	Mach_DisableIntr()	{\
 	register unsigned int tmpPsr;	\
-	asm volatile ( "mov	%%psr, %1;	\
-			or	%1, 0xf00, %1;	\
-			mov	%1, %%psr; nop; nop; nop\n":	\
-			"=r"(tmpPsr):"r"(tmpPsr));	\
-	})
+	asm volatile ( "mov	%%psr, %0;	\
+			or	%0, 0xf00, %0;	\
+			mov	%0, %%psr; nop; nop; nop\n":	\
+			"=r"(tmpPsr));	\
+	}
 #endif /* lint */
 
 
