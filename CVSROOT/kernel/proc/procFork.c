@@ -36,7 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "mach.h"
 
-ReturnStatus    InitUserProc();
+static ReturnStatus    InitUserProc();
 
 
 /*
@@ -236,7 +236,7 @@ p     */
 
 	/*
 	 * Change the returned process ID to be the process ID on the home
-				    Sched_StartKernProc, PC);
+	 * node.
 	 */
 	if (pidPtr != (Proc_PID *) NIL) {
 	    *pidPtr = procPtr->peerProcessID;
@@ -245,7 +245,7 @@ p     */
 	procPtr->peerHostID = NIL;
 	procPtr->peerProcessID = NIL;
     }
-	status = InitUserProc(PC, procPtr, parentProcPtr, shareHeap);
+	status = InitUserProc(procPtr, parentProcPtr, shareHeap);
     /*
      * Set up the virtual memory of the new process.
      */
@@ -307,9 +307,7 @@ p     */
 
 /*
  *----------------------------------------------------------------------
-InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
-    Address				PC;		/* Program where to 
-							 * start executing. */
+InitUserProc(procPtr, parentProcPtr, shareHeap)
  * InitUserProc --
  *
  *	Initalize the state for a user process.  This involves allocating
@@ -337,7 +335,7 @@ InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
  *
  *----------------------------------------------------------------------
  */
-				Sched_StartUserProc, (Address)NIL);
+
 static ReturnStatus
 InitUserProc(procPtr, parentProcPtr, shareHeap, vforkFlag)
     register	Proc_ControlBlock	*procPtr;	/* PCB to initialized.*/
