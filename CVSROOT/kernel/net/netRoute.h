@@ -22,6 +22,11 @@
  * by Net_InstallRoute and Net_AddrToID.  The main point of a Net_Route
  * is that it holds a pre-packaged transport header that is pre-pended
  * onto messages being sent to the Sprite Host.
+ *
+ * The second main point of this is to hold host-specific information
+ * like its name and machine type.  The name is used for error reporting.
+ * The machine type is queried by the file system when it has to expand
+ * $MACHINE during pathname lookup.
  */
 typedef struct Net_Route {
     int		flags;		/* values defined below */
@@ -29,6 +34,8 @@ typedef struct Net_Route {
     int		type;		/* values defined below */
     Address	data;		/* pointer to transport header */
     char 	*name;		/* Human recognizable name for the host */
+    char	*machType;	/* Machine type used when expanding $MACHINE
+				 * during pathname lookup */
 } Net_Route;
 
 /*
