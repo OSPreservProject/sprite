@@ -1095,3 +1095,57 @@ Fsutil_FsRecovInfo(length, resultPtr, lengthNeededPtr)
 
     return SUCCESS;
 }
+
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_TestForHandles --
+ *
+ *	Called to see if we still have handles for the given serverID.
+ *
+ * Results:
+ *	Number of file and device handles for server in question.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+int
+Fsutil_TestForHandles(serverID)
+    int		serverID;	/* Server we're interested in. */
+{
+    Hash_Search			hashSearch;
+    register	Fs_HandleHeader	*hdrPtr;
+    register	Fs_Stream	*streamPtr;
+    register	Fsrmt_IOHandle *rmtHandlePtr;
+    ReturnStatus		status = SUCCESS;
+    Boolean			printed = FALSE;
+    int				succeeded = fs_Stats.recovery.succeeded;
+    int				failed = fs_Stats.recovery.failed;
+    int				count = 0;
+
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+	 if (hdrPtr->fileID.serverID == serverID) {
+	    switch(hdrPtr->fileID.type) {
+/*
+	    case FSIO_RMT_PSEUDO_STREAM:
+	    case FSIO_STREAM:
+*/
+	    case FSIO_RMT_FILE_STREAM:
+	    case FSIO_RMT_DEVICE_STREAM:
+		count++;
+		break;
+	    default:
+		break;
+	    }
+	}
+	Fsutil_HandleUnlock(hdrPtr);
+    }
+    return count;
+}

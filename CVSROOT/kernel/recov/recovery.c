@@ -380,6 +380,34 @@ Recov_RebootUnRegister(spriteID, rebootCallBackProc, rebootData)
 	if (found) {
 	    notifyPtr->refCount--;
 	    if (notifyPtr->refCount <= 0) {
+		extern void	Fsutil_Reopen();
+		int		num;
+		/*
+		 * Mousetrap for debugging recovery reference count problem.
+		 */
+		if (notifyPtr->proc == Fsutil_Reopen) {
+		    extern int	Fsutil_TestForHandles();
+
+		    if (recov_PrintLevel >= RECOV_PRINT_CRASH) {
+			printf(
+		"Recov: deleting Fsutil_Reopen for server %d ref count %d\n",
+			    spriteID, notifyPtr->refCount);
+		    }
+		    /*
+		     * We want to panic if we still have handles for
+		     * this server.
+		     */
+		    num = Fsutil_TestForHandles(spriteID);
+		    /*
+		     * This routine is called before the handle is removed,
+		     * so we must take into account the fact that it still
+		     * exists in the handle table.
+		     */
+		    if (num > 1) {
+			printf("%d file and device handles remain\n", num);
+			panic("Shouldn't have deleted it - handles remain!\n");
+		    }
+		}
 		List_Remove((List_Links *)notifyPtr);
 		free((Address)notifyPtr);
 	    }
