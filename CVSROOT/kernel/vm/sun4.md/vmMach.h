@@ -109,7 +109,7 @@ extern	ReturnStatus	VmMach_StringNCopy();
  * Routines for the INTEL device driver.
  */
 extern	void		VmMach_MapIntelPage();
-extern	void		VmMach_MapUnmapItelPage();
+extern	void		VmMach_UnmapIntelPage();
 /*
  * Device mapping.
  */
