@@ -131,9 +131,9 @@ Sync_GetLock(lockPtr)
     if (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	status = Sync_SlowLock(lockPtr); 
     } else {
-	SyncRecordHit(lockPtr);
-	SyncStoreDbgInfo(lockPtr);
-	SyncAddPrior(lockPtr);
+	Sync_RecordHit(lockPtr);
+	Sync_StoreDbgInfo(lockPtr);
+	Sync_AddPrior(lockPtr);
     }
     return status;
 }
@@ -215,7 +215,7 @@ Sync_SlowLock(lockPtr)
 	    break;
 	}
 	(void) SyncEventWaitInt((unsigned int)lockPtr, FALSE);
-	SyncRecordMiss(lockPtr);
+	Sync_RecordMiss(lockPtr);
 #ifdef spur
 	Mach_InstCountEnd(1);
 #endif
@@ -225,9 +225,9 @@ Sync_SlowLock(lockPtr)
 	Mach_InstCountStart(0);
 #endif
     }
-    SyncRecordHit(lockPtr);
-    SyncStoreDbgInfo(lockPtr);
-    SyncAddPrior(lockPtr);
+    Sync_RecordHit(lockPtr);
+    Sync_StoreDbgInfo(lockPtr);
+    Sync_AddPrior(lockPtr);
 #ifdef spur
     Mach_InstCountOff(0);
     if (Mach_InstCountIsOn(1)) {

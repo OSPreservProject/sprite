@@ -184,7 +184,7 @@ extern 	ReturnStatus 	Sync_SlowBroadcastStub();
 extern 	void 		Sync_PrintStat();
 
 extern	void		Sync_LockStatInit();
-extern	void		SyncAddPriorInt();
+extern	void		Sync_AddPriorInt();
 extern	void		SyncDeleteCurrentInt();
 extern 	void		SyncMergePriorInt();
 extern	void		Sync_RegisterInt();
@@ -242,9 +242,9 @@ extern Sync_RegElement  *regQueuePtr;
 	} else { \
 	    (semaphore)->value++;\
 	    Sync_SemRegister(semaphore); \
-	    SyncRecordHit(semaphore); \
-	    SyncStoreDbgInfo(semaphore); \
-	    SyncAddPrior(semaphore); \
+	    Sync_RecordHit(semaphore); \
+	    Sync_StoreDbgInfo(semaphore); \
+	    Sync_AddPrior(semaphore); \
 	}\
     }
 
@@ -278,12 +278,12 @@ extern Sync_RegElement  *regQueuePtr;
 	    sync_InstrumentPtr[pnum]->spinCount[type]++;\
 	} \
 	if(missFlag == 1) { \
-	    SyncRecordMiss(semaphore); \
+	    Sync_RecordMiss(semaphore); \
 	} \
 	Sync_SemRegister(semaphore); \
-	SyncRecordHit(semaphore) ; \
-	SyncStoreDbgInfo(semaphore); \
-	SyncAddPrior(semaphore);	\
+	Sync_RecordHit(semaphore) ; \
+	Sync_StoreDbgInfo(semaphore); \
+	Sync_AddPrior(semaphore);	\
     }
 
 #else   /* LOCKREG -- These are the clean versions of the macros */
@@ -749,7 +749,7 @@ extern Sync_RegElement  *regQueuePtr;
 /*
  *----------------------------------------------------------------------
  *
- * SyncAddPrior --
+ * Sync_AddPrior --
  *
  *	When a lock is grabbed the prior lock must be added to the prior
  *	types for the lock.
@@ -766,14 +766,14 @@ extern Sync_RegElement  *regQueuePtr;
 
 #ifdef LOCKDEP
 
-#define SyncAddPrior(lockPtr) { \
-    SyncAddPriorInt((lockPtr)->type, &(lockPtr)->priorCount, \
+#define Sync_AddPrior(lockPtr) { \
+    Sync_AddPriorInt((lockPtr)->type, &(lockPtr)->priorCount, \
     (lockPtr)->priorTypes, (lockPtr), (lockPtr)->holderPCBPtr);  \
 }
 
 #else /* LOCKDEP */
 
-#define SyncAddPrior(lockPtr)
+#define Sync_AddPrior(lockPtr)
 
 #endif /* LOCKDEP */
 
@@ -877,7 +877,7 @@ extern Sync_RegElement  *regQueuePtr;
 /*
  *----------------------------------------------------------------------
  *
- * SyncRecordHit --
+ * Sync_RecordHit --
  *
  *	If LOCKREG is defined then the hit field of the lock
  *	is incremented.
@@ -893,18 +893,18 @@ extern Sync_RegElement  *regQueuePtr;
 
 #ifndef LOCKREG 
 
-#define SyncRecordHit(lock) {}
+#define Sync_RecordHit(lock) {}
 
 #else /* LOCKREG */
 
-#define SyncRecordHit(lock) {	(lock)->hit++; }
+#define Sync_RecordHit(lock) {	(lock)->hit++; }
 
 #endif /* LOCKREG */
 
 /*
  *----------------------------------------------------------------------
  *
- * SyncRecordMiss --
+ * Sync_RecordMiss --
  *
  *	If LOCKREG is defined then the miss field of the lock
  *	is incremented.
@@ -919,11 +919,11 @@ extern Sync_RegElement  *regQueuePtr;
  */
 #ifndef LOCKREG
 
-#define SyncRecordMiss(lock) {}
+#define Sync_RecordMiss(lock) {}
 
 #else /* LOCKREG */
 
-#define SyncRecordMiss(lock) { (lock)->miss++; }
+#define Sync_RecordMiss(lock) { (lock)->miss++; }
 
 #endif /* LOCKREG */
 
@@ -945,11 +945,11 @@ extern Sync_RegElement  *regQueuePtr;
  */
 #ifdef CLEAN_LOCK
 
-#define SyncStoreDbgInfo(semaphore) {}
+#define Sync_StoreDbgInfo(semaphore) {}
 
 #else /* CLEAN_LOCK */
 
-#define SyncStoreDbgInfo(semaphore) { \
+#define Sync_StoreDbgInfo(semaphore) { \
 	    (semaphore)->holderPC = Mach_GetPC(); \
 	    (semaphore)->holderPCBPtr = (Address) Proc_GetCurrentProc(); \
 }
