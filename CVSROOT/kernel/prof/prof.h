@@ -20,9 +20,10 @@
 extern void		Prof_Init();
 extern ReturnStatus	Prof_Start();
 extern ReturnStatus	Prof_End();
+extern ReturnStatus     Prof_Profil();
 extern void		Prof_CollectInfo();
 extern ReturnStatus	Prof_Dump();
 extern ReturnStatus	Prof_DumpStub();
 
-#endif _PROF
+#endif /* _PROF */
 
