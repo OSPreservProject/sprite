@@ -194,7 +194,7 @@ VmCoreMapInit()
         corePtr->flags = 0;
         corePtr->virtPage.segPtr = vm_SysSegPtr;
         corePtr->virtPage.page = i + firstKernPage;
-	corePtr->virtPage.sharedPtr = (Vm_SegProcList *)NIL;
+	corePtr->virtPage.sharedPtr = (Vm_SegProcList *) NIL;
     }
     /*
      * The first NUM_RESERVED_PAGES are put onto the reserve list.
@@ -204,6 +204,7 @@ VmCoreMapInit()
 	 i++, corePtr++) {
 	corePtr->links.nextPtr = (List_Links *) NIL;
 	corePtr->links.prevPtr = (List_Links *) NIL;
+	corePtr->virtPage.sharedPtr = (Vm_SegProcList *) NIL;
 	PutOnReserveList(corePtr);
     }
     /*
@@ -212,6 +213,7 @@ VmCoreMapInit()
     for (vmStat.numFreePages = 0; i < vmStat.numPhysPages; i++, corePtr++) {
 	corePtr->links.nextPtr = (List_Links *) NIL;
 	corePtr->links.prevPtr = (List_Links *) NIL;
+	corePtr->virtPage.sharedPtr = (Vm_SegProcList *) NIL;
 	PutOnFreeList(corePtr);
     }
 }
@@ -1421,6 +1423,10 @@ Vm_PageIn(virtAddr, protFault)
 	/*
 	 * Access violation.
 	 */
+	if (segPtr->type == VM_SHARED) {
+	    dprintf("Vm_PageIn: access violation\n");
+
+	}
 	return(FAILURE);
     }
 
@@ -1441,6 +1447,9 @@ Vm_PageIn(virtAddr, protFault)
 		goto pageinDone;
 	    }
 	} else {
+	    if (segPtr->type == VM_SHARED) {
+		dprintf("Vm_PageIn: VmCheckBounds failure\n");
+	    }
 	    status = FAILURE;
 	    goto pageinDone;
 	}
@@ -1477,6 +1486,9 @@ Vm_PageIn(virtAddr, protFault)
 	if (result == IS_COR) {
 	    status = VmCOR(&transVirtAddr);
 	    if (status != SUCCESS) {
+		if (segPtr->type == VM_SHARED) {
+		    dprintf("Vm_PageIn: VmCOR failure\n");
+		}
 		status = FAILURE;
 		goto pageinDone;
 	    }
@@ -1518,7 +1530,7 @@ Vm_PageIn(virtAddr, protFault)
 	    transVirtAddr.segPtr->type == VM_SHARED) {
 	vmStat.psFilled++;
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
-	    dprintf("Paging in shared page %d\n",transVirtAddr.page);
+	    dprintf("Vm_PageIn: paging in shared page %d\n",transVirtAddr.page);
 	}
 	status = VmPageServerRead(&transVirtAddr, virtFrameNum);
 	if (vm_Tracing) {
@@ -1560,6 +1572,7 @@ Vm_PageIn(virtAddr, protFault)
      */
     if (status != SUCCESS) {
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
+	    dprintf("Vm_PageIn: Page read failed.  Invalidating pages.\n");
 	    VmPageFree(Vm_GetPageFrame(*ptePtr));
 	    VmPageInvalidateInt(&transVirtAddr, ptePtr);
 	} else {
@@ -2509,13 +2522,13 @@ VmCountDirtyPages()
  *
  * Side effects:
  *     	All memory in the given range is forced out to swap and freed.
+ *	*virtAddrPtr is modified.
  *
  * ----------------------------------------------------------------------------
  */
 ENTRY void
-VmFlushSegment(segPtr, firstPage, lastPage)
-    Vm_Segment	*segPtr;
-    int		firstPage;
+VmFlushSegment(virtAddrPtr, lastPage)
+    Vm_VirtAddr	*virtAddrPtr;
     int		lastPage;
 {
     register	Vm_PTE		*ptePtr;
@@ -2523,20 +2536,16 @@ VmFlushSegment(segPtr, firstPage, lastPage)
     unsigned int		pfNum;
     Boolean			referenced;
     Boolean			modified;
-    Vm_VirtAddr			virtAddr;
 
     LOCK_MONITOR;
 
-    if (segPtr->ptPtr == (Vm_PTE *)NIL) {
+    if (virtAddrPtr->segPtr->ptPtr == (Vm_PTE *)NIL) {
 	UNLOCK_MONITOR;
 	return;
     }
-    virtAddr.segPtr = segPtr;
-    virtAddr.page = firstPage;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
-    for (ptePtr = VmGetPTEPtr(segPtr, firstPage);
-         virtAddr.page <= lastPage;
-	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
+    for (ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
+         virtAddrPtr->page <= lastPage;
+	 virtAddrPtr->page++, VmIncPTEPtr(ptePtr, 1)) {
 	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
 	    continue;
 	}
@@ -2548,7 +2557,7 @@ VmFlushSegment(segPtr, firstPage, lastPage)
 	if (corePtr->flags & VM_DIRTY_PAGE) {
 	    corePtr->flags |= VM_DONT_FREE_UNTIL_CLEAN;
 	} else {
-	    VmMach_GetRefModBits(&virtAddr, Vm_GetPageFrame(*ptePtr),
+	    VmMach_GetRefModBits(virtAddrPtr, Vm_GetPageFrame(*ptePtr),
 				 &referenced, &modified);
 	    if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
 		TakeOffAllocList(corePtr);
@@ -2557,7 +2566,7 @@ VmFlushSegment(segPtr, firstPage, lastPage)
 	    }
 	}
 	VmPageFreeInt(pfNum);
-	VmPageInvalidateInt(&virtAddr, ptePtr);
+	VmPageInvalidateInt(virtAddrPtr, ptePtr);
     }
 
     UNLOCK_MONITOR;
@@ -2808,43 +2817,6 @@ Vm_Recovery()
 	   numPageOutProcs < vmMaxPageOutProcs) { 
 	Proc_CallFunc(PageOut, (ClientData) numPageOutProcs, 0);
 	numPageOutProcs++;
-    }
-
-    UNLOCK_MONITOR;
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmPageInvalidateRange --
- *
- *     	Invalidate the pages in the given virtual address range.
- *
- * Results:
- *     	None.
- *
- * Side effects:
- *	None.
- * ----------------------------------------------------------------------------
- */
-void
-VmPageInvalidateRange(virtAddrPtr,length)
-    register	Vm_VirtAddr	*virtAddrPtr;
-    register	int		length;
-{
-    register	Vm_PTE		*ptePtr;
-    int				lastPage;
-
-    lastPage = virtAddrPtr->page + length>>vmPageShift - 1;
-
-
-    LOCK_MONITOR;
-
-    for (ptePtr = VmGetAddrPTEPtr(virtAddrPtr,virtAddrPtr->page);
-	    virtAddrPtr->page <= lastPage;
-	    virtAddrPtr->page++, VmIncPTEPtr(ptePtr,1)) {
-	VmPageInvalidateInt(virtAddrPtr,ptePtr);
-	
     }
 
     UNLOCK_MONITOR;
