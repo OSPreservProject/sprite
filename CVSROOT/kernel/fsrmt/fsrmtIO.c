@@ -675,7 +675,14 @@ FsRemoteSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
     selectParams.read = *readPtr;
     selectParams.write = *writePtr;
     selectParams.except = *exceptPtr;
-    selectParams.waiter = *waitPtr;
+    if (waitPtr == (Sync_RemoteWaiter *)NIL) {
+	/*
+	 * Indicate a polling select with a NIL hostID.
+	 */
+	selectParams.waiter.hostID = NIL;
+    } else {
+	selectParams.waiter = *waitPtr;
+    }
 
     storage.requestParamPtr = (Address)&selectParams;
     storage.requestParamSize = sizeof(selectParams);
@@ -740,6 +747,7 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
     register	FsRemoteSelectResults	*resultsPtr;
     register	FsHandleHeader		*hdrPtr;
     register	Rpc_ReplyMem		*replyMemPtr;
+    register	Sync_RemoteWaiter	*waitPtr;
     ReturnStatus			status;
 
     FS_RPC_DEBUG_PRINT("RPC select request\n");
@@ -752,8 +760,16 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
 	return(FS_STALE_HANDLE);
     }
     FsHandleUnlock(hdrPtr);
+    if (paramsPtr->waiter.hostID == NIL) {
+	/*
+	 * Indicate a polling select.
+	 */
+	waitPtr = (Sync_RemoteWaiter *)NIL;
+    } else {
+	waitPtr = &paramsPtr->waiter;
+    }
     status = (*fsStreamOpTable[paramsPtr->fileID.type].select)
-	(hdrPtr, &paramsPtr->waiter, &paramsPtr->read,
+	(hdrPtr, waitPtr, &paramsPtr->read,
 	 &paramsPtr->write, &paramsPtr->except);
     FsHandleRelease(hdrPtr, FALSE);
     if (status == SUCCESS) {

@@ -661,7 +661,9 @@ FsPipeSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	if ((((handlePtr->firstByte + 1) % FS_BLOCK_SIZE) ==
 	     handlePtr->lastByte) && 
 	     ((handlePtr->flags & PIPE_READER_GONE) == 0)) {
-	    FsFastWaitListInsert(&handlePtr->writeWaitList, waitPtr);
+	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+		FsFastWaitListInsert(&handlePtr->writeWaitList, waitPtr);
+	    }
 	    *writePtr = 0;
 	}
     }
@@ -674,8 +676,10 @@ FsPipeSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	 */
 	if ((handlePtr->firstByte == -1) &&
 	    ((handlePtr->flags & PIPE_WRITER_GONE) == 0)) {
-	   *readPtr = 0;
-	    FsFastWaitListInsert(&handlePtr->readWaitList, waitPtr);
+	    *readPtr = 0;
+	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+		FsFastWaitListInsert(&handlePtr->readWaitList, waitPtr);
+	    }
         }
     }
     FsHandleUnlock(hdrPtr);

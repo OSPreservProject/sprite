@@ -151,7 +151,9 @@ FsControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 
     FsHandleLock(ctrlHandlePtr);
     if (List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
-	FsFastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+	if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+	    FsFastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+	}
 	*readPtr = 0;
     }
     *writePtr = *exceptPtr = 0;
@@ -286,8 +288,10 @@ FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    break;
 	case IOC_LOCK:
 	case IOC_UNLOCK:
+	    FsHandleLock(ctrlHandlePtr);
 	    status = FsIocLock(&ctrlHandlePtr->lock, command, byteOrder,
 			       inBufPtr, &streamPtr->hdr.fileID);
+	    FsHandleUnlock(ctrlHandlePtr);
 	    break;
 	case IOC_NUM_READABLE: {
 	    register int bytesAvailable;
@@ -589,6 +593,7 @@ FsControlClose(streamPtr, clientID, procID, flags, size, data)
 	(void)FsRemoteClose(streamPtr, rpc_SpriteID, procID, 0, 0,
 		(ClientData)NIL);
     }
+    FsWaitListDelete(&ctrlHandlePtr->readWaitList);
     FsHandleRelease(ctrlHandlePtr, TRUE);
     return(SUCCESS);
 }

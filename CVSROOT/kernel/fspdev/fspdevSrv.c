@@ -419,7 +419,8 @@ FsServerStreamCreate(ioFileIDPtr, name, naming)
      * pretend the connection is busy to lock out requests.
      */
 
-    SYNC_LOCK_INIT_DYNAMIC(&pdevHandlePtr->lock);
+    Sync_LockInitDynamic(&pdevHandlePtr->lock, "Fs:pdevLock");
+    Sync_LockRegister(&pdevHandlePtr->lock);
     pdevHandlePtr->flags = PDEV_BUSY;
     if (naming) {
 	pdevHandlePtr->flags |= PDEV_NAMING;
@@ -506,7 +507,9 @@ FsServerStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	      (pdevHandlePtr->requestBuf.firstByte >=
 		  pdevHandlePtr->requestBuf.lastByte))) {
 	    *readPtr = 0;
-	    FsFastWaitListInsert(&pdevHandlePtr->srvReadWaitList, waitPtr);
+	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+		FsFastWaitListInsert(&pdevHandlePtr->srvReadWaitList, waitPtr);
+	    }
 	}
     }
     *writePtr = 0;
@@ -1188,6 +1191,7 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 	FsPrefixHandleClose(ctrlHandlePtr->prefixPtr);
 	(void)FsControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
     }
+    Sync_LockClear(&pdevHandlePtr->lock);
     FsHandleRelease(pdevHandlePtr, TRUE);
     FsHandleRemove(pdevHandlePtr);	/* No need for scavenging */
     fsStats.object.pseudoStreams--;
@@ -1230,6 +1234,10 @@ PdevClientWakeup(pdevHandlePtr)
     FsFastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
     FsFastWaitListNotify(&pdevHandlePtr->cltWriteWaitList);
     FsFastWaitListNotify(&pdevHandlePtr->cltExceptWaitList);
+    FsWaitListDelete(&pdevHandlePtr->cltReadWaitList);
+    FsWaitListDelete(&pdevHandlePtr->cltWriteWaitList);
+    FsWaitListDelete(&pdevHandlePtr->cltExceptWaitList);
+    FsWaitListDelete(&pdevHandlePtr->srvReadWaitList);
     UNLOCK_MONITOR;
 }
 
@@ -2255,16 +2263,23 @@ FsPseudoStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 		((pdevHandlePtr->readBuf.data != (Address)NIL) &&
 		 (pdevHandlePtr->flags & PDEV_READ_BUF_EMPTY))) {
 		*readPtr = 0;
-		FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList, waitPtr);
+		if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+		    FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList,
+					waitPtr);
+		}
 	    }
 	}
 	if (*writePtr && ((pdevHandlePtr->selectBits & FS_WRITABLE) == 0)) {
 	    *writePtr = 0;
-	    FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, waitPtr);
+	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+		FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, waitPtr);
+	    }
 	}    
 	if (*exceptPtr && ((pdevHandlePtr->selectBits & FS_EXCEPTION) == 0)) {
             *exceptPtr = 0;
-	    FsFastWaitListInsert(&pdevHandlePtr->cltExceptWaitList, waitPtr);
+	    if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+		FsFastWaitListInsert(&pdevHandlePtr->cltExceptWaitList,waitPtr);
+	    }
 	}
 	status = SUCCESS;
     }

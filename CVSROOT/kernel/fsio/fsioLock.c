@@ -211,7 +211,7 @@ FsLock(lockPtr, argPtr, streamIDPtr)
 	    wait.hostID = argPtr->hostID;
 	    wait.pid = argPtr->pid;
 	    wait.waitToken = argPtr->token;
-	    FsWaitListInsert(&lockPtr->waitList, &wait);
+	    FsFastWaitListInsert(&lockPtr->waitList, &wait);
 	    if (fsLockDebug) {
 		printf("Stream <%d,%d> Blocked, proc %x\n", streamIDPtr->major,
 		    streamIDPtr->minor, argPtr->pid);
@@ -326,7 +326,7 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
 	 * means that exclusive lock attempts will be retried even if the
 	 * shared lock count has not gone to zero.
 	 */
-	FsWaitListNotify(&lockPtr->waitList);
+	FsFastWaitListNotify(&lockPtr->waitList);
 	if (fsLockDebug) {
 	    printf("Stream <%d,%d> Unlocked %x, proc %x\n", streamIDPtr->major,
 		streamIDPtr->minor, operation, argPtr->pid);
@@ -372,7 +372,8 @@ FsLockClose(lockPtr, streamIDPtr)
 	    lockPtr->flags &= ~lockOwnerPtr->flags;
 	    List_Remove((List_Links *)lockOwnerPtr);
 	    free((Address)lockOwnerPtr);
-	    FsWaitListNotify(&lockPtr->waitList);
+	    FsFastWaitListNotify(&lockPtr->waitList);
+	    FsWaitListDelete(&lockPtr->waitList);
 	    break;
 	}
     }
@@ -423,7 +424,7 @@ FsLockClientKill(lockPtr, clientID)
 	}
     }
     if (breakLock) {
-	FsWaitListNotify(&lockPtr->waitList);
+	FsFastWaitListNotify(&lockPtr->waitList);
     }
 }
 

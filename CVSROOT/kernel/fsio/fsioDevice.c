@@ -577,6 +577,10 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
 	    devHandlePtr->hdr.fileID.major, devHandlePtr->hdr.fileID.minor,
 	    devHandlePtr->use.ref, devHandlePtr->use.write);
     }
+    if (devHandlePtr->use.ref == 0) {
+	FsWaitListDelete(&devHandlePtr->readWaitList);
+	FsWaitListDelete(&devHandlePtr->writeWaitList);
+    }
     /*
      * We don't bother to remove the handle here if the device isn't
      * being used.  Instead we let the handle get scavenged.
@@ -1392,31 +1396,37 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
     inFlags = 0;
     if (*readPtr) {
 	inFlags |= FS_READABLE;
-	FsWaitListInsert(&devHandlePtr->readWaitList, waitPtr);
+	if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+	    FsWaitListInsert(&devHandlePtr->readWaitList, waitPtr);
+	}
     }
     if (*writePtr) {
 	inFlags |= FS_WRITABLE;
-	FsWaitListInsert(&devHandlePtr->writeWaitList, waitPtr);
+	if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+	    FsWaitListInsert(&devHandlePtr->writeWaitList, waitPtr);
+	}
     }
     if (*exceptPtr) {
 	inFlags |= FS_EXCEPTION;
-	FsWaitListInsert(&devHandlePtr->exceptWaitList, waitPtr);
+	if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+	    FsWaitListInsert(&devHandlePtr->exceptWaitList, waitPtr);
+	}
     }
     status = (*devFsOpTable[devicePtr->type].select)(devicePtr,
 		    inFlags, &outFlags);
     if ((outFlags & FS_READABLE) == 0) {
 	*readPtr = 0;
-    } else if (*readPtr != 0) {
+    } else if (*readPtr != 0 &&	waitPtr != (Sync_RemoteWaiter *)NIL) {
 	FsWaitListRemove(&devHandlePtr->readWaitList, waitPtr);
     }
     if ((outFlags & FS_WRITABLE) == 0) {
 	*writePtr = 0;
-    } else if (*writePtr != 0) {
+    } else if (*writePtr != 0 && waitPtr != (Sync_RemoteWaiter *)NIL) {
 	FsWaitListRemove(&devHandlePtr->writeWaitList, waitPtr);
     }
     if ((outFlags & FS_EXCEPTION) == 0) {
 	*exceptPtr = 0;
-    } else if (*exceptPtr != 0) {
+    } else if (*exceptPtr != 0 && waitPtr != (Sync_RemoteWaiter *)NIL) {
 	FsWaitListRemove(&devHandlePtr->exceptWaitList, waitPtr);
     }
     FsHandleUnlock(devHandlePtr);
@@ -1587,11 +1597,17 @@ Fs_NotifyReader(data)
     }
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
 	printf("Fs_NotifyReader, bad handle\n");
+	return;
     }
+    FsWaitListNotify(&devHandlePtr->readWaitList);
+#ifdef notdef
     devHandlePtr->notifyFlags |= FS_READABLE;
     Proc_CallFunc(ReadNotify, (ClientData) devHandlePtr, 0);
+#endif notdef
+
 }
 
+#ifdef notdef
 static void
 ReadNotify(data, callInfoPtr)
     ClientData		data;
@@ -1606,7 +1622,7 @@ ReadNotify(data, callInfoPtr)
     }
     callInfoPtr->interval = 0;
 }
-
+#endif notdef
 
 /*
  *----------------------------------------------------------------------
@@ -1641,10 +1657,14 @@ Fs_NotifyWriter(data)
 	printf("Fs_NotifyWriter, bad handle\n");
 	return;
     }
+    FsWaitListNotify(&devHandlePtr->writeWaitList);
+#ifdef notdef
     devHandlePtr->notifyFlags |= FS_WRITABLE;
     Proc_CallFunc(WriteNotify, (ClientData) devHandlePtr, 0);
+#endif notdef
 }
 
+#ifdef notdef
 static void
 WriteNotify(data, callInfoPtr)
     ClientData		data;
@@ -1659,6 +1679,7 @@ WriteNotify(data, callInfoPtr)
     }
     callInfoPtr->interval = 0;
 }
+#endif notdef
 
 
 
@@ -1691,9 +1712,12 @@ Fs_DevNotifyException(data)
     if (devHandlePtr == (FsDeviceIOHandle *)NIL) {
 	return;
     }
+    FsWaitListNotify(&devHandlePtr->exceptWaitList);
+#ifdef notdef
     Proc_CallFunc(ExceptionNotify, (ClientData) devHandlePtr, 0);
+#endif notdef
 }
-
+#ifdef notdef
 static void
 ExceptionNotify(data, callInfoPtr)
     ClientData		data;
@@ -1703,5 +1727,5 @@ ExceptionNotify(data, callInfoPtr)
     FsWaitListNotify(&devHandlePtr->exceptWaitList);
     callInfoPtr->interval = 0;
 }
-
+#endif notdef
 
