@@ -868,9 +868,13 @@ Fs_FileBeingMapped(streamPtr, isMapped)
 	 * page-ins get good stuff.
 	 */
 	streamPtr->flags |= FS_SWAP;
+	/*
+	 * I think this is a bad idea.  FsrmtFilePageRead can check if
+	 * the data is in the local cache.  --Ken
 	status = Fscache_Consist(cacheInfoPtr,
 		    FSCONSIST_INVALIDATE_BLOCKS|FSCONSIST_WRITE_BACK_BLOCKS,
 		    &dummyCachedAttr);
+	*/
     }
     /*
      * Tell the file server what's going on.
