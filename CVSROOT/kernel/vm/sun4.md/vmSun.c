@@ -682,7 +682,9 @@ VmMach_Init(firstFreePage)
     int	firstFreePage;	/* Virtual page that is the first free for the 
 			 * kernel. */
 {
+#ifndef sun4c
     register 	VMMACH_SEG_NUM	*segTablePtr;
+#endif sun4c
     register 	VmMachPTE	pte;
     register	int 		i;
     int 			firstFreeSegment;
@@ -2384,8 +2386,11 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 {
     register Address	mapAddr;
     register Address	endAddr;
+#ifndef sun4c
     int			segNum;
     int			pageNum = 0;
+#endif
+
 #ifdef sun4c
     /*
      * The network driver on the sparcstation never accesses the data
@@ -4219,7 +4224,6 @@ VmMach_DMAAllocContiguous(inScatGathPtr, scatGathLength, outScatGathPtr)
     VmMachPTE	pte;
     Boolean	foundIt = FALSE;
     int		virtPage;
-    static initialized = FALSE;
     Net_ScatterGather		*inPtr;
     Net_ScatterGather		*outPtr;
     int				pageOffset;
