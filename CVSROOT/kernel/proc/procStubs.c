@@ -45,6 +45,22 @@ int debugProcStubs;
 extern Mach_State *machCurStatePtr;
 #endif
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * copyin --
+ *
+ *	Copys a string from user space.
+ *
+ * Results:
+ *	Returns string.
+ *
+ * Side effects:
+ *	Copies the string.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 static char *
 copyin(string)
     char *string;
@@ -57,6 +73,22 @@ copyin(string)
     return buf;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ExitStub --
+ *
+ *	The stub for the "exit" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_ExitStub(arg0)
     int arg0;
@@ -68,7 +100,22 @@ Proc_ExitStub(arg0)
     Proc_Exit(arg0);
     return -1;
 }
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ForkStub --
+ *
+ *	The stub for the "fork" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_ForkStub()
 {
@@ -123,6 +170,7 @@ Proc_VforkStub()
     machCurStatePtr->userState.regState.regs[V1] = 1;
     machCurStatePtr->userState.regState.regs[A3] = 0;
 #endif
+    Mach_Return2(1);
     status = Proc_NewProc(0, PROC_USER, TRUE, &newPid, (char *) NIL);
     if (status == PROC_CHILD_PROC) {
 	panic("Proc_VforkStub: Child came alive here?\n");
@@ -134,10 +182,27 @@ Proc_VforkStub()
 #ifdef ds3100
     machCurStatePtr->userState.regState.regs[V1] = 0;
 #endif
+    Mach_Return2(0);
     return (int) newPid;
 }
 
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ExecveStub --
+ *
+ *	The stub for the "execve" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_ExecveStub(name, argv, envp)
     char *name;			/* name of file to exec */
@@ -154,6 +219,23 @@ Proc_ExecveStub(name, argv, envp)
     return -1;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ExecvStub --
+ *
+ *	The stub for the "execv" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_ExecvStub(name, argv)
     char *name;			/* Name of file containing program to exec. */
@@ -169,6 +251,23 @@ Proc_ExecvStub(name, argv)
     return -1;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetpidStub --
+ *
+ *	The stub for the "getpid" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_GetpidStub()
 {
@@ -179,6 +278,23 @@ Proc_GetpidStub()
     return Proc_GetEffectiveProc()->processID;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetuidStub --
+ *
+ *	The stub for the "getuid" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_GetuidStub()
 {
@@ -198,6 +314,23 @@ Proc_GetuidStub()
 }
 
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_PtraceStub --
+ *
+ *	The stub for the "ptrace" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 /*ARGSUSED*/
 int
 Proc_PtraceStub(request, pid, addr, data)
@@ -209,6 +342,23 @@ Proc_PtraceStub(request, pid, addr, data)
     return -1;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetgidStub --
+ *
+ *	The stub for the "getgid" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_GetgidStub()
 {
@@ -228,6 +378,23 @@ Proc_GetgidStub()
 }
 
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_UmaskStub --
+ *
+ *	The stub for the "umask" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_UmaskStub(newPerm)
     unsigned int newPerm;
@@ -245,6 +412,23 @@ Proc_UmaskStub(newPerm)
 }
 
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetgroupsStub --
+ *
+ *	The stub for the "getgroups" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_GetgroupsStub(gidsetlen, gidset)
     int gidsetlen;
@@ -274,6 +458,23 @@ Proc_GetgroupsStub(gidsetlen, gidset)
     return trueGidlen;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetgroupsStub --
+ *
+ *	The stub for the "setgroups" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_SetgroupsStub(ngroups, gidset)
     int ngroups;
@@ -292,6 +493,23 @@ Proc_SetgroupsStub(ngroups, gidset)
     return 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetpgrpStub --
+ *
+ *	The stub for the "getpgrp" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_GetpgrpStub(pid)
     Proc_PID	pid;
@@ -328,6 +546,23 @@ Proc_GetpgrpStub(pid)
     return familyID;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetpgrpStub --
+ *
+ *	The stub for the "setpgrp" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_SetpgrpStub(pid, pgrp)
     int pid;
@@ -349,8 +584,26 @@ Proc_SetpgrpStub(pid, pgrp)
     return 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Wait4Stub --
+ *
+ *	The stub for the "wait4" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
-Proc_WaitStub(statusPtr, options, unixRusagePtr)
+Proc_Wait4Stub(pid, statusPtr, options, unixRusagePtr)
+    int			pid;
     union	wait	*statusPtr;
     int			options;
     struct	rusage	*unixRusagePtr;
@@ -364,10 +617,23 @@ Proc_WaitStub(statusPtr, options, unixRusagePtr)
     Proc_ResUsage 	resUsage;
     extern ReturnStatus DoWait();
     extern ReturnStatus Compat_SpriteSignalToUnix();
+    int			numPids = 0;
+    Proc_PID		*pidArray = 0;
 
     if (debugProcStubs) {
-	printf("Proc_WaitStub\n");
+	printf("Proc_Wait4Stub(%x, %x, %x, %x)\n", pid, statusPtr, options,
+		unixRusagePtr);
     }
+
+    if (pid<0) {
+	printf("Proc_Wait4Stub: wait on pgrp not implemented\n");
+	Mach_SetErrno(EINVAL);
+	return -1;
+    } else if (pid != 0) {
+	pidArray = (Proc_PID *)&pid;
+	numPids = 1;
+    }
+
     flags = 0;
     if (!(options & WNOHANG)) {
 	flags |= PROC_WAIT_BLOCK;
@@ -377,23 +643,26 @@ Proc_WaitStub(statusPtr, options, unixRusagePtr)
     }
     curProcPtr = Proc_GetCurrentProc();
     if (curProcPtr->genFlags & PROC_FOREIGN) {
-	status = ProcRemoteWait(curProcPtr, flags, 0,
-	                        (Proc_PID *) 0, &childInfo);
+	status = ProcRemoteWait(curProcPtr, flags, numPids,
+	                        pidArray, &childInfo);
     } else {
-	status = DoWait(curProcPtr, flags, 0, (int *) 0, &childInfo);
+	status = DoWait(curProcPtr, flags, numPids, pidArray, &childInfo);
     }
 
     if (debugProcStubs) {
-	printf("Proc_WaitStub: pid = %x, status = %x, code = %x\n",
-	    childInfo.processID,  childInfo.termStatus, childInfo.termCode);
+	printf("Proc_Wait4Stub: status = %x, child pid = %x, status = %x, code = %x\n",
+		status, childInfo.processID,  childInfo.termStatus,
+		childInfo.termCode);
     }
 
     if (status != SUCCESS) {
 	/* need to check for GEN_ABORTED_BY_SIGNAL */
 	if (status == PROC_NO_EXITS && (options & WNOHANG)) {
+	    printf("Proc_Wait4Stub: exiting\n");
 	    return 0;
 	}
 	Mach_SetErrno(ECHILD);
+	printf("Proc_Wait4Stub: ECHILD\n");
 	return -1;
     }
     if (statusPtr != NULL)  {
@@ -416,6 +685,7 @@ Proc_WaitStub(statusPtr, options, unixRusagePtr)
 			    (Address)statusPtr);
 	if (status != SUCCESS) {
 	    Mach_SetErrno(EFAULT);
+	    printf("Proc_Wait4Stub: EFAULT\n");
 	    return -1;
 	}
     }
@@ -453,13 +723,33 @@ Proc_WaitStub(statusPtr, options, unixRusagePtr)
 			    (Address)unixRusagePtr);
 	if (status != SUCCESS) {
 	    Mach_SetErrno(EFAULT);
+	    printf("Proc_Wait4Stub: EFAULT\n");
 	    return -1;
 	}
     }
+    printf("Proc_Wait4Stub: returning %x\n", childInfo.processID);
+    Mach_Return2(*(int *)&waitStatus);
     return childInfo.processID;
 }
 
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetpriorityStub --
+ *
+ *	The stub for the "setpriority" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 /*ARGSUSED*/
 int
 Proc_SetpriorityStub(which, who, prio)
@@ -470,6 +760,23 @@ Proc_SetpriorityStub(which, who, prio)
     return 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetpriorityStub --
+ *
+ *	The stub for the "getpriority" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 /*ARGSUSED*/
 int
 Proc_GetpriorityStub(which, who, prio)
@@ -481,6 +788,23 @@ Proc_GetpriorityStub(which, who, prio)
 }
 
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetreuidStub --
+ *
+ *	The stub for the "setreuid" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_SetreuidStub(userID, effUserID)
     int 	userID;
@@ -522,6 +846,23 @@ Proc_SetreuidStub(userID, effUserID)
 }
 
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetregidStub --
+ *
+ *	The stub for the "setregid" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_SetregidStub(rgid, egid)
     int	rgid, egid;
@@ -574,6 +915,23 @@ Proc_SetregidStub(rgid, egid)
 }
 
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetrlimitStub --
+ *
+ *	The stub for the "getrlimit" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_GetrlimitStub()
 {
@@ -582,6 +940,23 @@ Proc_GetrlimitStub()
     return 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetrlimitStub --
+ *
+ *	The stub for the "setrlimit" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_SetrlimitStub()
 {
@@ -596,6 +971,23 @@ Proc_SetrlimitStub()
 	    (TO).tv_usec = (FROM).microseconds; \
 	  }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetrusageStub --
+ *
+ *	The stub for the "getrusage" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_GetrusageStub(who, rusage)
     int who;
@@ -657,6 +1049,23 @@ Proc_GetrusageStub(who, rusage)
     return 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetitimerStub --
+ *
+ *	The stub for the "getitimer" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_GetitimerStub(which, value)
     int which;
@@ -675,6 +1084,23 @@ Proc_GetitimerStub(which, value)
     return 0;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetitimerStub --
+ *
+ *	The stub for the "setitimer" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Proc_SetitimerStub(which, value, ovalue)
 
@@ -695,4 +1121,64 @@ Proc_SetitimerStub(which, value, ovalue)
     }
     return 0;
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Wait3Stub --
+ *
+ *	The stub for the "wait3" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Proc_Wait3Stub(statusPtr, options, unixRusagePtr)
+    union	wait	*statusPtr;
+    int			options;
+    struct	rusage	*unixRusagePtr;
+{
+    if (debugProcStubs) {
+	printf("Proc_Wait4Stub(%x, %x, %x)\n", statusPtr, options,
+		unixRusagePtr);
+    }
+    return Proc_Wait4Stub(0, statusPtr, options, unixRusagePtr);
+}
+
+#if defined(ds3100) || defined(ds5000)
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_WaitpidStub --
+ *
+ *	The stub for the "waitpid" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Proc_WaitpidStub(pid, statusPtr, options)
+    int			pid;
+    union	wait	*statusPtr;
+    int			options;
+{
+    if (pid==-1) {
+	pid = 0;
+    } else if (pid==0) {
+	pid = -Proc_GetpgrpStub(pid);
+    }
+    return Proc_Wait4Stub(pid, statusPtr, options, 0);
+}
+#endif
