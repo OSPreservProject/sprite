@@ -12,8 +12,13 @@
 #ifndef _MACH
 #define _MACH
 
+#ifdef KERNEL
 #include "devAddrs.h"
 #include "machConst.h"
+#else
+#include <kernel/devAddrs.h>
+#include <kernel/machConst.h>
+#endif
 
 /*
  * The state of each processor: user mode or kernel mode.
@@ -239,18 +244,20 @@ typedef struct {
  */
 
 /*
- * The register state of a user process when it traps into the kernel.
+ * The register state of a user process which is passed to debuggers.
  */
 typedef struct {
-    Address		userStackPtr;		/* The user stack pointer */
-    int			trapRegs[MACH_NUM_GPRS];/* General purpose registers.*/
+    int			regs[MACH_NUM_GPRS];	/* General purpose registers.*/
+    int			pc;			/* The program counter. */
+    int			statusReg;		/* The status register. */
 } Mach_RegState;
 
 /*
  * The user state for a process.
  */
 typedef struct {
-    Mach_RegState	regState;		/* Register state. */
+    Address		userStackPtr;		/* The user stack pointer */
+    int			trapRegs[MACH_NUM_GPRS];/* General purpose registers.*/
     Mach_ExcStack	*excStackPtr;		/* The exception stack */
     int			lastSysCall;		/* Last system call. */
 } Mach_UserState;

@@ -13,7 +13,11 @@
 #ifndef _MACHCONST
 #define _MACHCONST
 
+#ifdef KERNEL
 #include "vmSunConst.h"
+#else
+#include <kernel/vmSunConst.h>
+#endif
 
 /*
  * Here are the different types of exceptions.
