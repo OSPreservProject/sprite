@@ -146,7 +146,8 @@ found:
 /*
  * ----------------------------------------------------------------------------
  *
- * FsIOClientReopen --
+ * 
+ FsIOClientReopen --
  *
  *	Add the client to the set of clients doing I/O on a file.  This
  *	updates reference counts due to the client's reopen attempt.
@@ -189,10 +190,15 @@ FsIOClientReopen(clientList, clientID, usePtr)
     clientPtr->openTimeStamp = 0;
     clientPtr->locked = FALSE;
     clientPtr->cached = FALSE;
+    clientPtr->use.ref = 0;
+    clientPtr->use.write = 0;
+    clientPtr->use.exec = 0;
     List_InitElement((List_Links *)clientPtr);
     List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
 doit:
-    clientPtr->use = *usePtr;
+    clientPtr->use.ref += usePtr->ref;
+    clientPtr->use.write += usePtr->write;
+    clientPtr->use.exec += usePtr->exec;
     /*
      * Make sure the client is in the master list of all clients for this host.
      */
