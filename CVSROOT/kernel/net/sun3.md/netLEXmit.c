@@ -589,6 +589,7 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
     ReturnStatus			status;
     NetLEState				*statePtr;
     Net_EtherHdr			*etherHdrPtr = (Net_EtherHdr *) hdrPtr;
+    Boolean				restart = FALSE;
 
     statePtr = (NetLEState *) interPtr->interfaceData;
     MASTER_LOCK(&interPtr->mutex);
@@ -653,7 +654,7 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
 	    OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength,
 		    statePtr);
 	if (status != SUCCESS) {
-		NetLERestart(interPtr);
+	    restart = TRUE;
 	} else if (statusPtr != (ReturnStatus *) NIL) {
 	    *statusPtr = SUCCESS;
 	}
@@ -695,6 +696,9 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
     status = SUCCESS;
 exit:
     MASTER_UNLOCK(&interPtr->mutex);
+    if (restart) {
+	NetLERestart(interPtr);
+    }
     return SUCCESS;
 }
 
@@ -727,6 +731,7 @@ NetLEXmitDrop(statePtr)
 	}
 	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     }
+    statePtr->transmitting = FALSE;
     return;
 }
 
