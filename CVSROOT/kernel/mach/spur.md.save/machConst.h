@@ -15,13 +15,18 @@
 #ifndef _MACHCONST
 #define _MACHCONST
 
+#include "vmSpurConst.h"
+
 /*
- * The compare trap types.
+ * The compare trap types.  
+ *
+ * IMPORTANT: If the value of MACH_BREAKPOINT_TRAP is changed then
+ * 	      the macro DBG_CALL in dbg.h must be changed accordingly.
  */
-#define	MACH_SYS_CALL_TRAP		0
-#define	MACH_SIG_RETURN_TRAP		1
-#define	MACH_GET_WIN_MEM_TRAP		2
-#define	MACH_BREAKPOINT_TRAP		3
+#define	MACH_BREAKPOINT_TRAP		0
+#define	MACH_SYS_CALL_TRAP		1
+#define	MACH_SIG_RETURN_TRAP		2
+#define	MACH_GET_WIN_MEM_TRAP		3
 #define	MACH_USER_FPU_EXCEPT_TRAP	4
 #define	MACH_USER_ILLEGAL_TRAP		5
 #define	MACH_USER_FIXNUM_TRAP		6

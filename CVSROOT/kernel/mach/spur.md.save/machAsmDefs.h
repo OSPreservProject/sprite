@@ -14,14 +14,16 @@
 #define _MACHASMDEFS
 
 /*
- * LD_ADDR --
+ * LD_PC_RELATIVE --
  *
- *	Load the address of the instruction specified by 'label' into
- *	register 'rd'.
+ *	Load the the value stored at label into register rd.  This load is done
+ *	PC relative so label should not be more than a 14 signed immediate
+ *	away from the current PC.
  */
-#define LD_ADDR(rd, label) \
-	rd_special	rd, Pc ;\
-0:	add_nt		rd, rd, $(((label-0b)+4)&0x3fff)
+#define LD_PC_RELATIVE(rd, label) \
+	rd_special	rd, pc ;\
+0:	ld_32		rd, rd, $((label-0b)+4); \
+	nop
 
 /*
  * LD_CONSTANT --

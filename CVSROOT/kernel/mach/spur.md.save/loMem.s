@@ -701,7 +701,7 @@ FaultIntr:
 	 */
 	extract		SAFE_TEMP1, VOL_TEMP1, $2
 	and		SAFE_TEMP1, SAFE_TEMP1, $0xf
-	cmp_br_delayed	ne, SAFE_TEMP1, 0, VMFault
+	cmp_br_delayed	ne, SAFE_TEMP1, r0, VMFault
 	Nop
 	/*
 	 * Can't handle any of these types of faults.
@@ -1407,7 +1407,7 @@ returnTrap_NormReturn:
 	 * If we are not returning to user mode then just return.
 	 */
 	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
-	cmp_br_delayed	eq, VOL_TEMP1, 0, returnTrap_Return
+	cmp_br_delayed	eq, VOL_TEMP1, r0, returnTrap_Return
 	Nop
 	/*
 	 * See if we have to take any special action for this process.
