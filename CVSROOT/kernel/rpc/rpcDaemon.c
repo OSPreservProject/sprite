@@ -111,7 +111,7 @@ Rpc_Daemon()
 	     * because there were no available server processes.
 	     */
 	     if (Rpc_CreateServer(&pid) == SUCCESS) {
-		 Sys_Printf("RPC srvr\n");
+		 Sys_Printf("RPC srvr %x\n", pid);
 		 RpcResetNoServers(0);
 	     } else {
 		 Sys_Panic(SYS_WARNING, "Rpc_Daemon: no more RPC servers\n");
