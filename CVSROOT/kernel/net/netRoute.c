@@ -552,7 +552,8 @@ Net_IDToRouteStub(spriteID, argPtr)
 			     (Address)((int)argPtr + 3 * sizeof(int)));
 	    break;
 	case NET_ROUTE_INET:
-	    status = Vm_CopyOut(sizeof(NetInetRoute), (Address)routePtr->data,
+	    status = Vm_CopyOut(sizeof(Net_EtherHdr) + sizeof(Net_IPHeader), 
+			     (Address)routePtr->data,
 			     (Address)((int)argPtr + 3 * sizeof(int)));
 	    break;
 	default:
@@ -1418,7 +1419,9 @@ NetArpHandler(data, callInfoPtr)
 	Net_EtherAddress myEtherAddr;
 
 	Mach_GetEtherAddress(&myEtherAddr);
-	etherAddress = *(Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr);
+	NET_ETHER_ADDR_COPY(
+	    *(Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr), 
+	    etherAddress);
 	if (type == NET_ETHER_SPRITE) {
 	    int	spriteID;
 	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), &spriteID, sizeof(int));
