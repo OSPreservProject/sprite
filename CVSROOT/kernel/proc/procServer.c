@@ -26,6 +26,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "list.h"
 #include "vm.h"
+#include "fs.h"
+#include "fscache.h"
 #include "sys.h"
 #include "string.h"
 #include "status.h"
@@ -102,9 +104,12 @@ ServerInfo	*serverInfoTable;
 #define	FUNC_PENDING	0x4
 
 /*
- * Number of processes
+ * Number of server processes.  There have to be enough to allow for
+ * pageouts and block cleaning at the same time. This occurs while
+ * paging heavily on a file server (or with a local disk used for paging).
  */
-int	proc_NumServers = 5;
+#define PROC_NUM_SERVER_PROCS	(FSCACHE_MAX_CLEANER_PROCS + VM_MAX_PAGE_OUT_PROCS)
+int	proc_NumServers = PROC_NUM_SERVER_PROCS;
 
 /* 
  * Mutex to synchronize accsess to the queue of pending requests and
