@@ -17,10 +17,10 @@
 world		-a .
 
 # CVSROOT.adm support
-CVSROOT		-i /local/cmds/mkmodules CVSROOT.adm
-CVSROOT.adm	-i /local/cmds/mkmodules CVSROOT.adm
-modules		-i /local/cmds/mkmodules CVSROOT.adm modules
-loginfo		-i /local/cmds/mkmodules CVSROOT.adm loginfo
+#CVSROOT		-i /local/cmds/mkmodules CVSROOT.adm
+#CVSROOT.adm	-i /local/cmds/mkmodules CVSROOT.adm
+#modules		-i /local/cmds/mkmodules CVSROOT.adm modules
+#loginfo		-i /local/cmds/mkmodules CVSROOT.adm loginfo
 
 mach		kernel/mach
 dbg		kernel/dbg
