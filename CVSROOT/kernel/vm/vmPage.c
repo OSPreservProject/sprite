@@ -1415,20 +1415,28 @@ Vm_PageIn(virtAddr, protFault)
     VmVirtAddrParse(procPtr, virtAddr, &transVirtAddr);
     segPtr = transVirtAddr.segPtr;
     page = transVirtAddr.page;
-    if ((segPtr == (Vm_Segment *) NIL) || (segPtr->flags & VM_SEG_IO_ERROR)) {
+    if (segPtr == (Vm_Segment *) NIL) {
 	return(FAILURE);
     }
-
+    if (segPtr->flags & VM_SEG_IO_ERROR) {
+	/*
+	 * Bad segment - disk full..  Go to pageinDone to clean up ptUserCount.
+	 * If a process is wildly growing its stack we'll have the heap locked
+	 * while we try to grow the stack, and we have to unlock the heap.
+	 */
+	status = FAILURE;
+	goto pageinDone;
+    }
     if ((protFault && segPtr->type == VM_CODE) ||
 	    (protFault && (transVirtAddr.flags & VM_READONLY_SEG))) {
 	/*
-	 * Access violation.
+	 * Access violation.  Go to pageinDone to clean up ptUserCount.
 	 */
 	if (segPtr->type == VM_SHARED) {
 	    dprintf("Vm_PageIn: access violation\n");
-
 	}
-	return(FAILURE);
+	status = FAILURE;
+	goto pageinDone;
     }
 
     /*
