@@ -139,25 +139,10 @@ Rpc_Init()
      * This is a microsecond value.  Our output rate starts the same
      * as the input rate, although MyDelay could increase if a machine
      * senses that it is overloaded.
-     *
-     * Mach_GetMachineType is pretty SUN-specific, it returns byte values
-     * from the ID prom...
      */
-    switch(Mach_GetMachineType()) {
-	default:
-	case SYS_SUN_2_120:
-	    rpcMyDelay = 2000;
-	    rpcOutputRate = 2000;
-	    break;
-	case SYS_SUN_2_50:	/* Same as SYS_SUN_2_160 */
-	    rpcMyDelay = 1000;
-	    rpcOutputRate = 1000;
-	    break;
-	case SYS_SUN_3_75:	/* Same as SYS_SUN_3_160 */
-	    rpcMyDelay = 500;
-	    rpcOutputRate = 500;
-	    break;
-    }
+
+    RpcGetMachineDelay(&rpcMyDelay, &rpcOutputRate);
+
     /*
      * Initialize the servers' state table.  Most slots are left
      * uninitialized.  They get filled in by Rpc_Deamon when it creates
