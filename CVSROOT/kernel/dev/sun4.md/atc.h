@@ -18,8 +18,11 @@
 #ifndef _ATC
 #define _ATC
 
-#include "devBlockDevice.h"
-
-extern DevBlockDeviceHandle	*DevATCDiskAttach();
-
+#define IOC_DEV_ATC			(18 << 16)
+#define IOC_DEV_ATC_RESET		(IOC_DEV_ATC | 3)
+#define IOC_DEV_ATC_READXBUS		(IOC_DEV_ATC | 4)
+#define IOC_DEV_ATC_WRITEXBUS		(IOC_DEV_ATC | 5)
+#define	IOC_ATC_DEBUG_ON	        (IOC_DEV_ATC | 6)
+#define	IOC_ATC_DEBUG_OFF	        (IOC_DEV_ATC | 7)
+#define IOC_DEV_ATC_IO                  (IOC_DEV_ATC | 8)
 #endif /* _ATC */

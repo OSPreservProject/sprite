@@ -45,7 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTMR.h"
 #include "devfb.h"
 #include "devVMElink.h"
-#include "atc.h"
+#include "devATC.h"
 #include "devSmem.h"
 #include "devXbus.h"
 
@@ -205,7 +205,7 @@ DevFsTypeOps devFsOpTable[] = {
     /*
      * Xbus board
      */
-    {DEV_XBUS, NullProc, NullProc, NullProc, DevXbusIOControl,
+    {DEV_XBUS, DevXbusOpen, NullProc, NullProc, DevXbusIOControl,
 	 NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
 };
 

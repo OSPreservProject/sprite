@@ -29,7 +29,7 @@
 /*
  * This is the maximum number of VME link boards in a system.
  */
-#define DEV_VMELINK_MAX_BOARDS		8
+#define DEV_VMELINK_MAX_BOARDS		16
 
 /*
  * Flags for the state word in the device driver information block.
@@ -37,6 +37,7 @@
 #define	DEV_VMELINK_STATE_DMA_IN_USE	0x1
 #define	DEV_VMELINK_STATE_PAGE_MODE	0x2
 #define	DEV_VMELINK_STATE_SAFE_COPY	0x4
+#define	DEV_VMELINK_STATE_NO_MAP	0x8
 #define	DEV_VMELINK_STATE_VME_A32	0x1000
 
 #define	DEV_VMELINK_INTVEC0		220

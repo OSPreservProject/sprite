@@ -35,13 +35,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devBlockDevice.h"  /* /sprite/src/kernel/dev */
 #include "devDiskStats.h"    /* /sprite/src/kernel/dev */
 #include "stdlib.h"
-#include "iopb.h"             /* in current directory */
-#include "atcreg.h"          /* "" */
-
+#include "iopb.h"             
+#include "atcreg.h"          
+#include "atc.h"
+#include "devATC.h"
 
 
+/*
 #define DEBUG
-
+*/
 
 static atcDebug = TRUE;
 static sentTables = 0;
@@ -101,8 +103,10 @@ static sentTables = 0;
  * Define 'AMOD', the address modifier the Array should use for its DMA
  */
 
-#define	AMOD	0x3d		/* vme32d32 */
-
+#define AMOD 0x3d
+#define	A24AMOD	0x3d		/* vmea24 single word */
+#define A32WAMOD 0x0d
+#define A32BAMOD 0x0f            /* vmea32 block mode */
 /*
  * Unless I decide to include a buf structure of my own, I need to 
  * change this and identify the special bit soemwhere else!
@@ -220,7 +224,7 @@ struct perRequestInfo {
 
 
 typedef struct ATCController {
-    ATCRegs             *regsPtr;	/* Pointer to Controller's registers */
+    volatile ATCRegs	*regsPtr;	/* Pointer to Controller's registers */
     int			number;		/* Controller number, 0, 1 ... */
     Sync_Semaphore	mutex;		/* Mutex for queue access */
     Sync_Condition	specialCmdWait; /* Condition to wait of for special
@@ -413,13 +417,13 @@ alloc_iopb(atcPtr)
 {
     struct iopbhdr	*iopb;
 
-#ifdef DEBUG
+if (atcDebug){
     
     if (atcDebug) {
       printf("Entered alloc_iopb.\n");
     }
 
-#endif DEBUG
+}
 
 
     if (atcPtr->free_iopbs == NULL) {
@@ -430,7 +434,9 @@ alloc_iopb(atcPtr)
     atcPtr->free_iopbs = atcPtr->free_iopbs->next_free;/* update head ptr */
     atcPtr->numActiveIOPBs++;
     if (atcPtr->numActiveIOPBs > atcPtr->maxActive) {
-      printf("New max IOPBs:  %d\n",atcPtr->numActiveIOPBs);
+      if (atcDebug){
+	printf("New max IOPBs:  %d\n",atcPtr->numActiveIOPBs);
+      }
     }
     return iopb;
 }
@@ -456,12 +462,6 @@ free_iopb(atcPtr, iopb)
 register ATCController	*atcPtr;
 register struct iopbhdr	*iopb;
 {
-
-#ifdef DEBUG
-    
-    printf("Entered free_iopb.\n");
-
-#endif DEBUG
 
 	if (atcPtr->free_iopbs == NULL) {	/* list was empty */
 		iopb->next_free = NULL;
@@ -500,13 +500,12 @@ put_fifo(atcPtr, data)
 register ATCController *atcPtr;
 register int	data;
 {
-#ifdef DEBUG
-  
-  printf("Entered put_fifo.  Writing 0x%x\n", data & 0xffff);
-  if (atcPtr->debug & D_DEBUG)
-    printf("put_fifo: writing 0x%x\n", data & 0xffff);
+  if (atcDebug){
+    printf("Entered put_fifo.  Writing 0x%x\n", data & 0xffff);
+    if (atcPtr->debug & D_DEBUG)
+      printf("put_fifo: writing 0x%x\n", data & 0xffff);
+  }
 
-#endif
 	atcPtr->regsPtr->write_fifo = data;
 }
 
@@ -532,14 +531,14 @@ register ATCController	*atcPtr;
 {
   int returnVal;
 
-#ifdef DEBUG
-    
+  if (atcDebug){
     printf("Entered get_fifo.\n");
-
-#endif DEBUG
+  }
 
   returnVal = (atcPtr->regsPtr->read_fifo & 0x01ff);
-  printf("Get_fifo returns %x\n",returnVal);
+  if (atcDebug){
+    printf("Get_fifo returns %x\n",returnVal);
+  }
   return(returnVal);
 }
 
@@ -566,11 +565,9 @@ register ATCController *atcPtr;
   register int	i;
   register char	*p = (char *) &atcPtr->td;
 
-#ifdef DEBUG
-    
+  if (atcDebug){
     printf("Entered send_table; about to send tables to board\n");
-
-#endif DEBUG
+  }
 
   MASTER_LOCK(&(atcPtr->mutex));
 
@@ -614,76 +611,50 @@ SendCommand(diskPtr, requestPtr, wait, index)
     int		diskAddr	= requestPtr->diskAddress;
     int		numSectors	= requestPtr->numSectors;
     Address	address		= requestPtr->buffer;
-    int		dmaBufferSize;
-    Address	dmaBuffer;
 
     /*
      * If the command is going to transfer data be relocate the address
      * into DMA space. 
      */
 
-#ifdef DEBUG
-    
-    printf("Entered Send_Command.\n");
-
-#endif DEBUG
-
-    if ((address != (Address) 0) && (numSectors > 0)) {
-      dmaBufferSize = DEV_BYTES_PER_SECTOR  * numSectors;
-      dmaBuffer =  (Address) VmMach_DMAAlloc(dmaBufferSize, address);
-      if (dmaBuffer == (Address) NIL) {
-	panic("SendCommand: unable to allocate DMA memory.");
-      }
-#ifdef DEBUG
-      printf("dmaBuffer size %d sectors mapped to dma address 0x%x\n",
-	     numSectors, dmaBuffer);
-#endif     
-    } else {
-      dmaBufferSize = 0;
-      dmaBuffer = NULL;
+    if (atcDebug){
+      printf("Entered Send_Command.\n");
     }
 
-#ifdef DEBUG
-    
-    printf("In Send_Command:  Calling SetupIOPB.\n");
-
-#endif DEBUG
-
     SetupIOPB(requestPtr, diskPtr, diskAddr, numSectors, 
-	       dmaBuffer, &(atcPtr->iopblist[index]));
+	       address, &(atcPtr->iopblist[index]));
 
-    printf("Contents of iopb about to be sent to board:\n");
-    printf("    command = 0x%x\n",atcPtr->iopblist[index].iopb.command);
-    printf("    option = 0x%x\n",atcPtr->iopblist[index].iopb.option);
-    printf("    priority = 0x%x\n",atcPtr->iopblist[index].iopb.priority);
-    printf("    reserved1 = 0x%x\n",atcPtr->iopblist[index].iopb.reserved1);
-    printf("    flags = 0x%x\n",atcPtr->iopblist[index].iopb.flags);
-    printf("    log_array = 0x%x\n",atcPtr->iopblist[index].iopb.log_array);
-    printf("    reserved2 = 0x%x\n",atcPtr->iopblist[index].iopb.reserved2);
-    printf("    id = 0x%x\n",atcPtr->iopblist[index].iopb.id);
-    printf("    logical_block = 0x%x\n",atcPtr->iopblist[index].iopb.logical_block);
-    printf("    byte_count = 0x%x\n",atcPtr->iopblist[index].iopb.byte_count);
-    printf("    buffer = 0x%x\n",atcPtr->iopblist[index].iopb.buffer);
-    printf("    buf_addr_mod = 0x%x\n",atcPtr->iopblist[index].iopb.buf_addr_mod);
-    printf("    intr_level = 0x%x\n",atcPtr->iopblist[index].iopb.intr_level);
-    printf("    intr_vector = 0x%x\n",atcPtr->iopblist[index].iopb.intr_vector);
-
-    printf("    auxbuf_mod = 0x%x\n",atcPtr->iopblist[index].iopb.auxbuf_mod);
-    printf("    sg_entries = 0x%x\n",atcPtr->iopblist[index].iopb.sg_entries);
-    printf("    auxbuf_size = 0x%x\n",atcPtr->iopblist[index].iopb.auxbuf_size);
-    printf("    aux_buffer = 0x%x\n",atcPtr->iopblist[index].iopb.aux_buffer);
-
+    if (atcDebug){
+      printf("Contents of iopb about to be sent to board:\n");
+      printf("    command = 0x%x\n",atcPtr->iopblist[index].iopb.command);
+      printf("    option = 0x%x\n",atcPtr->iopblist[index].iopb.option);
+      printf("    priority = 0x%x\n",atcPtr->iopblist[index].iopb.priority);
+      printf("    reserved1 = 0x%x\n",atcPtr->iopblist[index].iopb.reserved1);
+      printf("    flags = 0x%x\n",atcPtr->iopblist[index].iopb.flags);
+      printf("    log_array = 0x%x\n",atcPtr->iopblist[index].iopb.log_array);
+      printf("    reserved2 = 0x%x\n",atcPtr->iopblist[index].iopb.reserved2);
+      printf("    id = 0x%x\n",atcPtr->iopblist[index].iopb.id);
+      printf("    logical_block = 0x%x\n",atcPtr->iopblist[index].iopb.logical_block);
+      printf("    byte_count = 0x%x\n",atcPtr->iopblist[index].iopb.byte_count);
+      printf("    buffer = 0x%x\n",atcPtr->iopblist[index].iopb.buffer);
+      printf("    buf_addr_mod = 0x%x\n",atcPtr->iopblist[index].iopb.buf_addr_mod);
+      printf("    intr_level = 0x%x\n",atcPtr->iopblist[index].iopb.intr_level);
+      printf("    intr_vector = 0x%x\n",atcPtr->iopblist[index].iopb.intr_vector);
+      
+      printf("    auxbuf_mod = 0x%x\n",atcPtr->iopblist[index].iopb.auxbuf_mod);
+      printf("    sg_entries = 0x%x\n",atcPtr->iopblist[index].iopb.sg_entries);
+      printf("    auxbuf_size = 0x%x\n",atcPtr->iopblist[index].iopb.auxbuf_size);
+      printf("    aux_buffer = 0x%x\n",atcPtr->iopblist[index].iopb.aux_buffer);
+    }
 
     /*
      * Start up the controller by pushing index of iopb onto fifo.
      */
     put_fifo(atcPtr, index);
 
-#ifdef DEBUG
-    
-    printf("In Send_Command:  Wrote index to down_fifo.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("In Send_Command:  Wrote index to down_fifo.\n");
+    }
 
 }
 
@@ -722,14 +693,14 @@ atcEntryAvailProc(clientData, newRequestPtr)
     struct iopbhdr	*iopbhdrPtr;
     int			index;
 
-#ifdef DEBUG
-    
-    printf("Entered atcEntryAvailProc.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("Entered atcEntryAvailProc.\n");
+    }
 
     if (requestPtr->numSectors == 0) {
+	MASTER_UNLOCK(&atcPtr->mutex);
 	RequestDone(requestPtr->diskPtr, requestPtr, SUCCESS, 0);
+	MASTER_LOCK(&atcPtr->mutex);
 	return TRUE;
     }
     
@@ -745,13 +716,13 @@ atcEntryAvailProc(clientData, newRequestPtr)
 	return(FALSE);
     }
 
+    MASTER_UNLOCK(&atcPtr->mutex);
     SendCommand(diskPtr, requestPtr, FALSE, index);
+    MASTER_LOCK(&atcPtr->mutex);
 
-#ifdef DEBUG
-    
-    printf("In atcEntryAvailProc:  Returned from SendCommand.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("In atcEntryAvailProc:  Returned from SendCommand.\n");
+    }
 
     return(TRUE);
 }
@@ -784,15 +755,6 @@ DevATCInit(cntrlrPtr)
     short x;				/* Used when probing the controller */
     int	i;
     ReturnStatus status;
-    Address addr;
-    Address tempBuffer;
-    int bufferSize;
-
-#ifdef DEBUG
-    
-    printf("Entered DevATCInit;  about to probe read_fifo register.\n");
-
-#endif DEBUG
 
     /*
      * Poke at the controller's registers to see if it works
@@ -802,24 +764,16 @@ DevATCInit(cntrlrPtr)
      */
     regsPtr = (volatile ATCRegs *) cntrlrPtr->address;
 
-#ifdef DEBUG
-    
-    printf("In DevATCInit:  regsPtr = %x\n",regsPtr);
-
-#endif DEBUG
+    if (atcDebug){
+      printf("In DevATCInit:  regsPtr = %x\n",regsPtr);
+    }
     
     status = Mach_Probe(sizeof(regsPtr->read_fifo),
 			 (char *) &(regsPtr->read_fifo), (char *) &x);
     if (status != SUCCESS) {
-	return DEV_NO_CONTROLLER;
+      printf("ATC%d NOT found.\n", cntrlrPtr->controllerID);
+      return DEV_NO_CONTROLLER;
     }
-
-#ifdef DEBUG
-    
-    printf("In DevATCInit:  Probed read_fifo successfully.\n");
-
-#endif DEBUG
-
 
 #ifdef notdef
     /*
@@ -840,7 +794,7 @@ DevATCInit(cntrlrPtr)
     atcPtr = (ATCController *)malloc(sizeof(ATCController));
     bzero((char *) atcPtr, sizeof(ATCController));
     ATC[cntrlrPtr->controllerID] = (ATCController *)atcPtr;
-/*  atcPtr->busy = FALSE;   */
+
     atcPtr->regsPtr = regsPtr;
     atcPtr->number = cntrlrPtr->controllerID;
     atcPtr->ivec = cntrlrPtr->vectorNumber;            
@@ -860,79 +814,49 @@ DevATCInit(cntrlrPtr)
      * is not going to be accessed again.
      */
 
-    bufferSize = NUM_IOPBS * sizeof(struct iopbhdr);
-    tempBuffer = malloc(bufferSize);
-    addr = (Address)VmMach_DMAAlloc(bufferSize,tempBuffer);
-    if (addr == (Address) NIL) {
-	panic("DevATCInit: unable to allocate DMA memory.\n");
+{
+    static Address	linkMemAddress[4] =
+/*
+	{(Address) 0, (Address) 0, (Address) 0, (Address) 0};
+*/
+	{(Address) 0xff9e0000, (Address) 0xff9f0000, (Address) 0, (Address) 0};
+    int			bufferSize;
+    Address		hostAddr;
+    Address		deviceAddr;
+    Address		tempBuffer;
+    int			addrOffset;
+
+    bufferSize = NUM_IOPBS * (sizeof(struct iopbhdr) + sizeof(struct status) +
+	    sizeof(struct iopb_table) + sizeof(struct status_table));
+    if (linkMemAddress[cntrlrPtr->controllerID] == 0) {
+	tempBuffer = malloc(bufferSize);
+	hostAddr = (Address)VmMach_DMAAlloc(bufferSize, tempBuffer);
+	deviceAddr = hostAddr - VMMACH_DMA_START_ADDR;
+	if (hostAddr == (Address) NIL) {
+	    panic("DevATCInit: unable to allocate DMA memory.\n");
+	}
+    } else {
+	deviceAddr = linkMemAddress[cntrlrPtr->controllerID];
+	hostAddr = (Address) VmMach_MapInBigDevice(deviceAddr, 0x00010000, 
+		VMMACH_TYPE_VME32DATA);
     }
-#ifdef DEBUG
-    printf("IOPB headers (size:  %d bytes) mapped into dma address 0x%x\n",
-	   bufferSize, addr);
-#endif    
-    atcPtr->iopblist = (struct iopbhdr *) addr;
-    atcPtr->iopblistp = (struct iopbhdr *) addr;
+    printf("IOPBs (size:  %d bytes) mapped host=0x%x, device=0x%x\n",
+	    bufferSize, hostAddr, deviceAddr);
 
+    atcPtr->iopblist = (struct iopbhdr *) hostAddr;
+    atcPtr->iopblistp = (struct iopbhdr *) deviceAddr;
+    addrOffset = NUM_IOPBS * sizeof(struct iopbhdr);
 
-    bufferSize = NUM_IOPBS * sizeof(struct status);
-    tempBuffer = malloc(bufferSize);
-    addr = (Address)VmMach_DMAAlloc(bufferSize, tempBuffer);
-    if (addr == (Address) NIL) {
-	panic("DevATCInit: unable to allocate DMA memory.\n");
-    }
-#ifdef DEBUG
-    printf("Status blocks (size:  %d bytes) mapped into dma address 0x%x\n",
-	   bufferSize, addr);
-#endif    
-    atcPtr->statuslist = (struct status *)addr;
-    atcPtr->statuslistp = (struct status *)addr;
+    atcPtr->statuslist = (struct status *) (hostAddr + addrOffset);
+    atcPtr->statuslistp = (struct status *) (deviceAddr + addrOffset);
+    addrOffset += NUM_IOPBS * sizeof(struct status);
 
-      
-    atcPtr->free_iopbs = NULL;
+    atcPtr->iopb_table = (struct iopb_table *) (hostAddr + addrOffset);
+    atcPtr->td.iopb_list = (struct iopb_table *) (deviceAddr + addrOffset);
+    addrOffset += NUM_IOPBS * sizeof(struct iopb_table);
 
-    for (i=0; i < NUM_IOPBS ;i++) {
-      atcPtr->iopblist[i].index = i;
-      free_iopb(atcPtr, &atcPtr->iopblist[i]);
-    }
-    
-    atcPtr->numActiveIOPBs = 0;
-    atcPtr->maxActive = 0;
-  
-    /*
-     * The table_desc structure will be sent to the array when
-     * we open the device. This is how it finds out where the
-     * iopbs (and their status blocks) are.
-     */
-    
-    bufferSize = NUM_IOPBS * sizeof(struct iopb_table);
-    tempBuffer = malloc(bufferSize);
-    addr = (Address)VmMach_DMAAlloc(bufferSize, tempBuffer);
-    if (addr == (Address) NIL) {
-	panic("DevATCInit: unable to allocate DMA memory.\n");
-    }
-#ifdef DEBUG
-    printf("IOPB table (size:  %d bytes) mapped into dma address 0x%x\n",
-	   bufferSize, addr);
-#endif    
-    atcPtr->iopb_table = (struct iopb_table *)addr;
-    atcPtr->td.iopb_list = (struct iopb_table *) 
-			(addr - VMMACH_DMA_START_ADDR);
-
-
-    bufferSize = NUM_IOPBS * sizeof(struct status_table);
-    tempBuffer = malloc(bufferSize);
-    addr = (Address)VmMach_DMAAlloc(bufferSize, tempBuffer);
-    if (addr == (Address) NIL) {
-	panic("DevATCInit: unable to allocate DMA memory.\n");
-    }
-#ifdef DEBUG
-    printf("Status table (size:  %d bytes) mapped into dma address 0x%x\n",
-	   bufferSize, addr);
-#endif    
-    atcPtr->status_table = (struct status_table *)addr;
-    atcPtr->td.status_list = (struct status_table *) 
-			(addr - VMMACH_DMA_START_ADDR);
-
+    atcPtr->status_table = (struct status_table *) (hostAddr + addrOffset);
+    atcPtr->td.status_list = (struct status_table *) (deviceAddr + addrOffset);
 
     atcPtr->td.vme_timeout = VMETIMEOUT;
     atcPtr->td.iopb_list_mod = AMOD;
@@ -943,34 +867,40 @@ DevATCInit(cntrlrPtr)
     atcPtr->td.rdma_burst_sz = RBURSTSZ;
     atcPtr->td.wdma_burst_sz = WBURSTSZ;
 
-    for (i=0; i < NUM_IOPBS ;i++) {
-      atcPtr->iopb_table[i].iopb_ptr = (struct iopb *)
-	(((char *)&atcPtr->iopblistp[i].iopb) - VMMACH_DMA_START_ADDR);
+    for (i=0; i < NUM_IOPBS; i++) {
+      atcPtr->iopb_table[i].iopb_ptr = &atcPtr->iopblistp[i].iopb;
       atcPtr->iopb_table[i].iopb_addr_mod = AMOD;
-
-      atcPtr->status_table[i].status_ptr = (struct status *)
-	(((char *)&atcPtr->statuslistp[i]) - VMMACH_DMA_START_ADDR);
+      atcPtr->status_table[i].status_ptr = &atcPtr->statuslistp[i];
       atcPtr->status_table[i].status_addr_mod = AMOD;
     }
 
-
-#ifdef DEBUG
-    printf("table_desc.iopb_list       = 0x%x\n", atcPtr->td.iopb_list);
-    printf("table_desc.status_list     = 0x%x\n", atcPtr->td.status_list);
-    printf("table_desc.iopb_list_mod   = 0x%x\n", AMOD);
-    printf("table_desc.status_list_mod = 0x%x\n", AMOD);
-    printf("table_desc.num_iopbs       = %d\n", NUM_IOPBS);
-#endif
+    atcPtr->numActiveIOPBs = 0;
+    atcPtr->maxActive = 0;
+    atcPtr->free_iopbs = NULL;
+    for (i=0; i < NUM_IOPBS ;i++) {
+      atcPtr->iopblist[i].index = i;
+      free_iopb(atcPtr, &atcPtr->iopblist[i]);
+    }
+}
+  
+    if (atcDebug){
+      printf("table_desc.iopb_list       = 0x%x\n", atcPtr->td.iopb_list);
+      printf("table_desc.status_list     = 0x%x\n", atcPtr->td.status_list);
+      printf("table_desc.iopb_list_mod   = 0x%x\n", AMOD);
+      printf("table_desc.status_list_mod = 0x%x\n", AMOD);
+      printf("table_desc.num_iopbs       = %d\n", NUM_IOPBS);
+    }
 
     atcPtr->flags |= F_PRESENT;
 
     Sync_SemInitDynamic(&atcPtr->mutex,"Dev:ATC mutex");
     atcPtr->numSpecialWaiting = 0;
-    atcPtr->ctrlQueues = Dev_CtrlQueuesCreate(&atcPtr->mutex, atcEntryAvailProc);
+    atcPtr->ctrlQueues =Dev_CtrlQueuesCreate(&atcPtr->mutex, atcEntryAvailProc);
 
     for (i = 0 ; i < ATC_MAX_DISKS ; i++) {
 	 atcPtr->disks[i] =  (ATCDisk *) NIL;
     }
+
     return( (ClientData) atcPtr);
 }
 
@@ -995,11 +925,9 @@ ReleaseProc(handlePtr)
 
     PartitionDisk	*pdiskPtr = (PartitionDisk *) handlePtr;
 
-#ifdef DEBUG
-    
-    printf("Entered ReleaseProc.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("Entered ReleaseProc.\n");
+    }
 
     free((char *) pdiskPtr);
     return SUCCESS;
@@ -1034,29 +962,29 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
     register ATCDisk    *diskPtr	= pdiskPtr->diskPtr;
     ATCController       *atcPtr         = diskPtr->atcPtr;
 
+/*
     atcIOCParam         *atcIOCParamPtr = (atcIOCParam *)ioctlPtr->inBuffer;
-    char                 option         = atcIOCParamPtr->option;
-    char                 arg            = atcIOCParamPtr->arg;
+*/
+    DevBlockDeviceRequest *reqPtr       = (DevBlockDeviceRequest *)ioctlPtr->inBuffer;
+    int  amtTransfer;
 
-#ifdef DEBUG
-    
-    printf("Entered IOControlProc.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("Entered IOControlProc.\n");
+    }
 
 
      switch (ioctlPtr->command) {
-/*
-     case ATC_DEBUG_ON:
+
+     case IOC_ATC_DEBUG_ON:
        atcDebug = TRUE;
        return(SUCCESS);
        break;
 
-     case ATC_DEBUG_OFF:
+     case IOC_ATC_DEBUG_OFF:
        atcDebug = FALSE;
        return(SUCCESS);
        break;
-*/
+
      case CMD_READ_CONF:
        return(SUCCESS);
        break;
@@ -1075,12 +1003,36 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	* No disk specific bits are set this way.
 	*/
        
-     case ATC_SSTATS:
+/*
+     case IOC_DEV_ATC_READXBUS:
+       break;
+
+     case IOC_DEV_ATC_WRITEXBUS:
+       break;
+
+     case IOC_DEV_ATC_SSTATS:
        return(SUCCESS);
        break;
        
-     case ATC_CSTATS:
+     case IOC_DEV_ATC_CSTATS:
        return(SUCCESS);
+       break;
+*/
+
+     case IOC_DEV_ATC_IO:
+       if (atcDebug){
+	 printf("operation = %d\n",reqPtr->operation);
+	 printf("startAddress = 0x%x\n",reqPtr->startAddress);
+	 printf("startAddrHigh = 0x%x\n",reqPtr->startAddrHigh);
+	 printf("bufferLen = %d\n",reqPtr->bufferLen);
+	 printf("buffer = 0x%x\n",reqPtr->buffer);
+       }
+       Dev_BlockDeviceIOSync(handlePtr, reqPtr, &amtTransfer);
+       if (amtTransfer != reqPtr->bufferLen){
+	 return(FAILURE);
+       } else {
+	 return(SUCCESS);
+       }
        break;
 
      case ATC_RESET:
@@ -1118,11 +1070,9 @@ BlockIOProc(handlePtr, requestPtr)
     register ATCDisk    *diskPtr	= pdiskPtr->diskPtr;
     register Request	*reqPtr		= (Request *) requestPtr->ctrlData;
 
-#ifdef DEBUG
-    
-    printf("Entered BlockIOProc.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("Entered BlockIOProc.\n");
+    }
 
 
     if (requestPtr->operation == FS_READ) {
@@ -1172,14 +1122,6 @@ atcIdleCheck(clientData, diskStatsPtr)
 {
     ATCDisk *diskPtr = (ATCDisk *) clientData;
 
-/*
-#ifdef DEBUG
-    
-    printf("Entered atcIdleCheck.\n");
-
-#endif DEBUG
-*/
-
     return (!(diskPtr->atcPtr->flags & F_PRESENT));
 }
 
@@ -1212,16 +1154,18 @@ DevATCDiskAttach(devicePtr)
     int		controllerID;
     int		diskNumber;
 
-#ifdef DEBUG
-    
-    printf("Entered DevATCDiskAttach.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("Entered DevATCDiskAttach.\n");
+    }
 
     controllerID = CTRL(devicePtr->unit);   
     diskNumber = VOL(devicePtr->unit);
-    printf("AtcDiskAttach unit 0x%x ctrlr %d disk %d\n",
-	   devicePtr->unit, controllerID, diskNumber);
+    
+    if (atcDebug){
+      printf("AtcDiskAttach unit 0x%x ctrlr %d disk %d\n",
+	     devicePtr->unit, controllerID, diskNumber);
+    }
+
     atcPtr = (ATCController *)ATC[controllerID];
 
 
@@ -1234,6 +1178,7 @@ DevATCDiskAttach(devicePtr)
     if (!sentTables){
       ResetController(atcPtr);
       sentTables = 1;
+      MACH_DELAY(100000);
     }
 
     /*
@@ -1331,11 +1276,10 @@ static void
 ResetController(atcPtr)
     volatile ATCController *atcPtr;
 {
-#ifdef DEBUG
-    
-    printf("Entered ResetController.\n");
 
-#endif DEBUG
+  if (atcDebug){
+    printf("Entered ResetController.\n");
+  }
 
 
   send_table(atcPtr);
@@ -1361,11 +1305,10 @@ TestDisk(atcPtr, diskPtr)
     ATCController *atcPtr;
     ATCDisk *diskPtr;
 {
-#ifdef DEBUG
-    
-    printf("Entered TestDisk.\n");
 
-#endif DEBUG
+  if (atcDebug){
+    printf("Entered TestDisk.\n");
+  }
 
 
   if (atcPtr->flags & F_PRESENT){
@@ -1401,11 +1344,9 @@ ReadDiskLabel(atcPtr, diskPtr)
 {
   int part;
 
-#ifdef DEBUG
-    
+  if (atcDebug){
     printf("Entered ReadDiskLabel.\n");
-
-#endif DEBUG
+  }
 
   diskPtr->atcDriveType = 1;
   diskPtr->numCylinders = TOTAL_CYL;
@@ -1452,11 +1393,9 @@ FillInDiskTransfer(pdiskPtr, startAddress, length, diskAddrPtr, numSectorsPtr)
     int	part;		/* Partition number. */
     int	cylinderSize;	/* Size of a cylinder in sectors. */
 
-#ifdef DEBUG
-    
-    printf("Entered FillInDiskTransfer.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("Entered FillInDiskTransfer.\n");
+    }
 
     diskPtr = pdiskPtr->diskPtr;
     part = pdiskPtr->partition;
@@ -1522,66 +1461,85 @@ SetupIOPB(requestPtr, diskPtr, diskAddr, numSectors, address, IOPBPtr)
      ATCDisk *diskPtr;		        /* Spefifies unit, drive type, etc */
      register int diskAddr;	        /* Disk address of operation*/
      int numSectors;			/* Number of sectors to transfer */
-     register Address address;		/* Address of the DMA buffer */
+     register Address address;		/* Address of the buffer */
      struct iopbhdr *IOPBPtr;       /* I/O Parameter Block  */
 {
-  ATCController	*atcPtr		= diskPtr->atcPtr;
-  int		logicalBlock	= diskAddr;
-  int		byteCount	= numSectors * DEV_BYTES_PER_SECTOR;
-  int		index		= IOPBPtr->index;
-  char          cmd             = requestPtr->command;
+    ATCController	*atcPtr		= diskPtr->atcPtr;
+    int			logicalBlock	= diskAddr;
+    int			byteCount	= numSectors * DEV_BYTES_PER_SECTOR;
+    int			index		= IOPBPtr->index;
+    char          	cmd             = requestPtr->command;
+    int			bufSize		= DEV_BYTES_PER_SECTOR  * numSectors;
+    Address		dmaAddress;
+    int			amod;
 
-#ifdef DEBUG
+    if (atcDebug){
+      printf("Entered SetupIOPB.\n");
+    }
     
-    printf("Entered SetupIOPB.\n");
+    /*
+     * Determine DMA address and address modifier.
+     */
+    if (VmMachIsXbusMem(address)) {
+	amod = A32BAMOD;
+	dmaAddress = address;
+    } else {
+	amod = A32WAMOD;
+	if (bufSize > 0) {
+	    dmaAddress = (Address) VmMach_32BitDMAAlloc(bufSize, address);
+	} else {
+	    dmaAddress = VMMACH_DMA_START_ADDR;
+	}
+	if ((unsigned) dmaAddress > (unsigned)VMMACH_DMA_START_ADDR) {
+	    dmaAddress -= VMMACH_DMA_START_ADDR;
+	}
+    }
+    if (atcDebug){
+        printf("dmaBuffer size %d sectors mapped to dma address 0x%x\n",
+		numSectors, dmaAddress);
+    }
 
-#endif DEBUG
+    bzero((char *) &(IOPBPtr->iopb), sizeof(struct iopb));
+    IOPBPtr->bp			= NULL;		    /* we are not using this */
+    IOPBPtr->iopb.command	= requestPtr->command;
+    IOPBPtr->iopb.option	= requestPtr->option;
+    IOPBPtr->iopb.reserved1	= 0x7f;
+    IOPBPtr->iopb.flags		= requestPtr->flags;
+    IOPBPtr->iopb.log_array	= 1;                /* logical array number */
+    IOPBPtr->iopb.reserved2	= 0;
+    IOPBPtr->iopb.buffer	= dmaAddress;
+    IOPBPtr->iopb.buf_addr_mod	= amod;
+    IOPBPtr->iopb.intr_level	= atcPtr->ilev;
+    IOPBPtr->iopb.intr_vector	= atcPtr->ivec;
+    IOPBPtr->iopb.auxbuf_mod	= 0;
+    IOPBPtr->iopb.sg_entries	= 0;		    /* no scatter-gather */
+    IOPBPtr->iopb.auxbuf_size	= 0;
+    IOPBPtr->iopb.aux_buffer	= 0;
+    
+    /*  
+     *  byte_count used to be byteCount
+     */
 
-  /*
-   * Initialize all fields to their "not used" values
-   */
-  bzero((char *) &(IOPBPtr->iopb), sizeof(struct iopb));
-  IOPBPtr->bp			= NULL;		    /* we are not using this */
-  IOPBPtr->iopb.command         = requestPtr->command;
-  IOPBPtr->iopb.option		= requestPtr->option;
-  IOPBPtr->iopb.reserved1       = 0x7f;
-  IOPBPtr->iopb.flags		= requestPtr->flags;
-  IOPBPtr->iopb.log_array       = 1;                /* logical array number */
-  IOPBPtr->iopb.reserved2       = 0;
-  
-  IOPBPtr->iopb.buffer		= (char *) address - VMMACH_DMA_START_ADDR;
-  IOPBPtr->iopb.buf_addr_mod	= AMOD;
-  IOPBPtr->iopb.intr_level	= atcPtr->ilev;
-  IOPBPtr->iopb.intr_vector	= atcPtr->ivec;
-  IOPBPtr->iopb.auxbuf_mod      = 0;
-  IOPBPtr->iopb.sg_entries	= 0;		    /* no scatter-gather */
-  IOPBPtr->iopb.auxbuf_size     = 0;
-  IOPBPtr->iopb.aux_buffer      = 0;
-  
-  /*  
-   *  byte_count used to be byteCount
-   */
+    switch (cmd) {
+    case CMD_READ:
+      IOPBPtr->iopb.byte_count = byteCount;
+      IOPBPtr->iopb.id = diskPtr->slaveID;
+      IOPBPtr->iopb.logical_block = logicalBlock;
+      break;	
+    case CMD_WRITE:
+      IOPBPtr->iopb.byte_count = byteCount;
+      IOPBPtr->iopb.id = diskPtr->slaveID;
+      IOPBPtr->iopb.logical_block = logicalBlock;
+      break;
+    default:
+      printf("setup_iopb: invalid command %d\n", cmd);
+      free_iopb(atcPtr, IOPBPtr);
+    }
 
-  switch (cmd) {
-  case CMD_READ:
-    IOPBPtr->iopb.byte_count = byteCount;
-    IOPBPtr->iopb.id = diskPtr->slaveID;
-    IOPBPtr->iopb.logical_block = logicalBlock;
-    break;	
-  case CMD_WRITE:
-    IOPBPtr->iopb.byte_count = byteCount;
-    IOPBPtr->iopb.id = diskPtr->slaveID;
-    IOPBPtr->iopb.logical_block = logicalBlock;
-    break;
-  default:
-    printf("setup_iopb: invalid command %d\n", cmd);
-    free_iopb(atcPtr, IOPBPtr);
-  }
-
-  atcPtr->requestInfo[index].requestPtr = requestPtr;
-  atcPtr->requestInfo[index].dmaBuffer = address;
-  atcPtr->requestInfo[index].dmaBufferSize = byteCount;
-  atcPtr->requestInfo[index].IOPBPtr = IOPBPtr;
+    atcPtr->requestInfo[index].requestPtr = requestPtr;
+    atcPtr->requestInfo[index].dmaBuffer = dmaAddress;
+    atcPtr->requestInfo[index].dmaBufferSize = byteCount;
+    atcPtr->requestInfo[index].IOPBPtr = IOPBPtr;
 }
 
 
@@ -1607,13 +1565,10 @@ struct status	*statusPtr;
   int estatus	= GET_ESTATUS(statusPtr->status);
   int ecmd	= GET_ECMD(statusPtr->status);
   int ecode	= GET_ECODE(statusPtr->status);
-  int i;
 
-#ifdef DEBUG
-    
-  printf("Entered reportError.\n");
-  
-#endif DEBUG
+  if (atcDebug){
+    printf("Entered reportError.\n");
+  }
 
   printf("ETYPE = %d, ESTATUS = %d, ECMD = %d, ECODE = %d\n",
 	 etype, estatus, ecmd, ecode);
@@ -1665,10 +1620,6 @@ struct status	*statusPtr;
   default:
     printf("Problem!!! Unrecognized error status!\n");
   }
-
-
-    printf("Error command %d\n",ecmd);
-  
 
   switch (ecode) {
   case EC_CMD:
@@ -1762,22 +1713,24 @@ DevATCIntr(clientData)
     ReturnStatus	status;
     int                 error;
     
-#ifdef DEBUG
-    
-    printf("Entered DevATCIntr.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("Entered DevATCIntr.\n");
+    }
 
     /*  read fifo to get iopb index */
 
     returnVal = get_fifo(atcPtr);
     index = (returnVal & 0x7f);
     error = (returnVal & 0x100);
-    printf("Value from get_fifo is 0x%x; index after interrupt is 0x%x\n",
-	   returnVal, index);
+    if (atcDebug){
+      printf("Value from get_fifo is 0x%x; index after interrupt is 0x%x\n",
+	     returnVal, index);
+    }
 
     if (error == 0){
-      printf("No error occurred on iopb\n");
+      if (atcDebug){
+	printf("No error occurred on iopb\n");
+      }
     } else {
       printf("Error in iopb!!\n");
     }
@@ -1789,14 +1742,18 @@ DevATCIntr(clientData)
     /*
      * Release the DMA buffer if command mapped one. 
      */
-    if (atcPtr->requestInfo[index].dmaBufferSize > 0) {
-      VmMach_DMAFree(atcPtr->requestInfo[index].dmaBufferSize, 
-		     atcPtr->requestInfo[index].dmaBuffer);
-      atcPtr->requestInfo[index].dmaBufferSize = 0;
+    if (!VmMachIsXbusMem(atcPtr->requestInfo[index].dmaBuffer) &&
+    	    atcPtr->requestInfo[index].dmaBufferSize > 0) {
+        if (((unsigned)atcPtr->requestInfo[index].dmaBuffer) & 0x80000000) {
+	    VmMach_32BitDMAFree(atcPtr->requestInfo[index].dmaBufferSize, 
+		    atcPtr->requestInfo[index].dmaBuffer);
+        } else {
+	    VmMach_DMAFree(atcPtr->requestInfo[index].dmaBufferSize, 
+		    atcPtr->requestInfo[index].dmaBuffer);
+        }
+	atcPtr->requestInfo[index].dmaBufferSize = 0;
     }
-      
-    bzero((char *) &(atcPtr->requestInfo[index]),
-	  sizeof(perRequestInfo));
+    bzero((char *) &(atcPtr->requestInfo[index]), sizeof(perRequestInfo));
 	
     /*  
      * Need to signal error if detected 
@@ -1866,11 +1823,10 @@ RequestDone(diskPtr, requestPtr, status, numSectors)
     ReturnStatus	status;
     int			numSectors;
 {
-#ifdef DEBUG
-    
-    printf("Entered RequestDone.\n");
 
-#endif DEBUG
+  if (atcDebug){
+    printf("Entered RequestDone.\n");
+  }
 
     if (numSectors > 0) {
 	if (requestPtr->requestPtr->operation == FS_READ) {
@@ -1906,11 +1862,9 @@ StartNextRequest(atcPtr)
     Request		*requestPtr;
     int			index;
 
-#ifdef DEBUG
-    
-    printf("Entered StartNextRequest.\n");
-
-#endif DEBUG
+    if (atcDebug){
+      printf("Entered StartNextRequest.\n");
+    }
 
      /*
       * If the controller is busy, just return.

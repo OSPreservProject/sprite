@@ -19,15 +19,33 @@
  ***********************************************************************
  */
 
-#ifndef _XBUS_
-#define	_XBUS_
+#ifndef _DEV_XBUS_
+#define	_DEV_XBUS_
 
 #include <dev/xbus.h>
+
+#define	Dev_XbusAddressBase(boardId)	((boardId) << DEV_XBUS_ID_ADDR_SHIFT)
 
 extern ClientData	DevXbusInit _ARGS_((DevConfigController *ctrlPtr));
 
 extern ReturnStatus	DevXbusIOControl _ARGS_((Fs_Device *devicePtr,
 				Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus	DevXbusOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+					    Fs_NotifyToken notifyToken,
+					    int *flagsPtr));
 extern Boolean		DevXbusIntr _ARGS_((ClientData data));
 
-#endif	/* _XBUS_ */
+extern ReturnStatus	Dev_XbusXor _ARGS_((unsigned int boardId,
+					    unsigned int destBuf,
+					    unsigned int numBufs,
+					    unsigned int* bufArrayPtr,
+					    unsigned int bufLen,
+					    void (*callbackProc)(),
+					    ClientData clientData));
+extern ReturnStatus	Dev_XbusHippiBuffer _ARGS_((int boardNum,
+						    int which,
+						    unsigned int size,
+						    unsigned int addr));
+
+
+#endif	/* _DEV_XBUS_ */
