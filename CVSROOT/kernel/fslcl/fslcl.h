@@ -18,11 +18,17 @@
 #ifndef _FSLCL
 #define _FSLCL
 
+#ifdef KERNEL
 #include <fscache.h>
 #include <fsio.h>
 #include <fsconsist.h>
 #include <fsioFile.h>
-
+#else
+#include <kernel/fscache.h>
+#include <kernel/fsio.h>
+#include <kernel/fsconsist.h>
+#include <kernel/fsioFile.h>
+#endif
 
 /*
  * A directory entry:  Note that this is compatible with 4.3BSD 'struct direct'
