@@ -463,18 +463,25 @@ FsHandleUnlockHdr(hdrPtr)
  * FsHandleReleaseHdr --
  * FsHandleRelease --
  *
- *	Decrement the reference count on the file handle.  The caller specifies
- *	if the handle is already locked.  If it isn't, it must be locked
- *	first to synchronize access to the reference count.
  *	FsHandleRelease is a macro that does type casting, see fsInt.h
+ *	Decrement the reference count on the file handle.  The caller specifies
+ *	if the handle is already locked, in which case it is unlocked. If
+ *	the handle is unlocked on entry it is no longer locked before
+ *	decrementing the reference count because that causes deadlock.
+ *	Hoever, this also means that access to the refCount outside this file
+ *	has to be explicitly synchronized by ensuring that the handle
+ *	is locked before releasing it.  The refCount is only examined outside
+ *	this file (and monitor lock) by the routines that migrate top-level
+ *	stream objects.  All other kinds of handles have use counts which
+ *	are different than the hdr's refCount, and which are protected
+ *	explicitly by the handle lock bit.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The reference count is decremented.  If the reference count is zero,
- *	the file isn't being cached and we are in the Sprite domain then
- *	the handle is freed.
+ *	The reference count is decremented.  If the reference count goes
+ *	to zero	and the handle has been removed then it gets nuked here.
  *
  *----------------------------------------------------------------------------
  *
@@ -487,23 +494,13 @@ FsHandleReleaseHdr(hdrPtr, locked)
     LOCK_MONITOR;
     fsStats.handle.releaseCalls++;
 
-    if (!locked) {
-	/*
-	 * It might already be locked by someone else.  No need to panic.
-	 */
-	LOCK_HANDLE(hdrPtr);
-    } else {
-	/*
-	 * If our caller thinks its locked, it should be.
-	 */
-	if ((hdrPtr->flags & FS_HANDLE_LOCKED) == 0) {
-	    UNLOCK_MONITOR;
-	    Sys_Panic(SYS_FATAL,
-		"HandleRelease, handle <%d,%d,%d,%d> not locked\n",
-		hdrPtr->fileID.type, hdrPtr->fileID.serverID,
-		hdrPtr->fileID.major, hdrPtr->fileID.minor);
-	    return;
-	}
+    if (locked && ((hdrPtr->flags & FS_HANDLE_LOCKED) == 0)) {
+	UNLOCK_MONITOR;
+	Sys_Panic(SYS_FATAL,
+	    "HandleRelease, handle <%d,%d,%d,%d> not locked\n",
+	    hdrPtr->fileID.type, hdrPtr->fileID.serverID,
+	    hdrPtr->fileID.major, hdrPtr->fileID.minor);
+	return;
     }
     hdrPtr->refCount--;
 
@@ -524,7 +521,9 @@ FsHandleReleaseHdr(hdrPtr, locked)
         Mem_Free((Address)hdrPtr);
      } else {
 	FS_TRACE_HANDLE(FS_TRACE_RELEASE_LEAVE, hdrPtr);
-	UNLOCK_HANDLE(hdrPtr);
+	if (locked) {
+	    UNLOCK_HANDLE(hdrPtr);
+	}
     }
     UNLOCK_MONITOR;
 }

@@ -256,7 +256,8 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	FsHandleLock(streamPtr);
 	FsStreamDispose(streamPtr);
     } else {
-	FsHandleRelease(streamPtr, FALSE);
+	FsHandleLock(streamPtr);
+	FsHandleRelease(streamPtr, TRUE);
     }
 
     return(status);

@@ -858,7 +858,8 @@ FsPseudoStreamClose(hdrPtr, clientID, flags, size, data)
      * of our reference to the server's handle and nuke our own.
      */
     if (cltHandlePtr->streamPtr != (Fs_Stream *)NIL) {
-	FsHandleRelease(cltHandlePtr->streamPtr, FALSE);
+	FsHandleLock(cltHandlePtr->streamPtr);
+	FsHandleRelease(cltHandlePtr->streamPtr, TRUE);
 	FsHandleRemove(cltHandlePtr->streamPtr);
     }
     PseudoStreamCloseInt(cltHandlePtr->pdevHandlePtr);

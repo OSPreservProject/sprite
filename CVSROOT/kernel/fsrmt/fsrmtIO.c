@@ -300,7 +300,8 @@ Fs_RpcRead(srvToken, clientID, command, storagePtr)
 	    status = (fsStreamOpTable[hdrPtr->fileID.type].read)(streamPtr,
 			    paramsPtr->flags, buffer, offsetPtr,
 			    &lengthRead, &paramsPtr->waiter);
-	    FsHandleRelease(streamPtr, FALSE);
+	    FsHandleLock(streamPtr);
+	    FsHandleRelease(streamPtr, TRUE);
 	}
 
 	if (status == SUCCESS || status == FS_WOULD_BLOCK) {
@@ -545,7 +546,8 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 		    paramsPtr->flags, storagePtr->requestDataPtr,
 		    offsetPtr, &lengthWritten, &paramsPtr->waiter);
 	if (streamPtr != &dummyStream) {
-	    FsHandleRelease(streamPtr, FALSE);
+	    FsHandleLock(streamPtr);
+	    FsHandleRelease(streamPtr, TRUE);
 	}
     }
     if (status == SUCCESS && (paramsPtr->flags & FS_LAST_DIRTY_BLOCK)) {
