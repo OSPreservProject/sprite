@@ -90,12 +90,13 @@ VmMach_SegData	kernSegData;
  */
 void
 VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
-		numKernPagesPtr)
+		numKernPagesPtr, maxSegsPtr)
     int	*pageSizePtr;
     int	*pageShiftPtr;
     int	*pageTableIncPtr;
     int	*kernMemSizePtr;
     int	*numKernPagesPtr;
+    int	*maxSegsPtr;
 {
     basePTPtr = (VmMachPTE *)VMMACH_KERN_PT_BASE;
     kernPTPtr = basePTPtr;
@@ -109,6 +110,12 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     *pageTableIncPtr = VMMACH_PAGE_TABLE_INCREMENT;
     *kernMemSizePtr = vmMachKernMemSize;
     *numKernPagesPtr = GetNumPages();
+    /*
+     * The number of useable segments by our caller is the maximum minus 1
+     * because the last segment is intentionally left invalid to catch 
+     * kernel errors.
+     */
+    *maxSegsPtr = VMMACH_NUM_SEGMENTS - 1;
 }
 
 
