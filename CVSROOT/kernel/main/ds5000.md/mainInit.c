@@ -381,10 +381,7 @@ MachStringTable *argv;
     /*
      * Create processes  to execute functions.
      */
-    for (i = 0; i < proc_NumServers; i++) {
-	(void) Proc_NewProc((Address)(unsigned)(int (*)()) Proc_ServerProc,
-			    PROC_KERNEL, FALSE,	&pid, "Proc_ServerProc");
-    }
+    (void) Proc_ServerProcCreate(PROC_NUM_SERVER_PROCS);
 
     /*
      * Create a recovery process to monitor other hosts.  Can't use
