@@ -38,6 +38,7 @@
 _VmMachReadAnyways:
 	ld_32_ri	VOL_TEMP1, INPUT_REG1, $0
 	Nop
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -66,6 +67,7 @@ _VmMachFlushBlock:
 	wr_kpsw		VOL_TEMP2, $0
 	st_external	VOL_TEMP1, INPUT_REG1, $MACH_CO_FLUSH
 	wr_kpsw		SAFE_TEMP1, $0
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -95,6 +97,7 @@ _VmMachFlushCache:
 	add_nt		SAFE_TEMP1, SAFE_TEMP1, $VMMACH_CACHE_BLOCK_SIZE
 	cmp_br_delayed	lt, SAFE_TEMP1, SAFE_TEMP2, 1b
 	Nop
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -143,6 +146,7 @@ _VmMachSetSegRegisters:
 	ST_RPTM_PAGE(SAFE_TEMP2, MACH_RPTM_3)
 
 	wr_kpsw		SAFE_TEMP3, $0
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -176,6 +180,7 @@ _VmMachSetSegReg1:
 	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_1)
 	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
 	wr_kpsw		SAFE_TEMP3, $0
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -209,6 +214,7 @@ _VmMachSetSegReg2:
 	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_2)
 	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
 	wr_kpsw		SAFE_TEMP3, $0
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -242,6 +248,7 @@ _VmMachSetSegReg3:
 	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_3)
 	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
 	wr_kpsw		SAFE_TEMP3, $0
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 

@@ -157,6 +157,13 @@ static Boolean ownStackAndHeap = TRUE;
 */
 static Boolean uniprocessorFlushPage = FALSE;
 
+/*
+ * Variables to define kernel protection modes. If the ibuffer is on,
+ * then everything has to be readable by the user. 
+ */
+static vmMachKroUnaProt = VMMACH_KRO_UNA_PROT;
+static vmMachKrwUnaProt = VMMACH_KRW_UNA_PROT;
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -189,6 +196,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     int			boardNum;
     Mach_Board		board;
     int			nextVframeNum, numFrames;
+    int			switches;
     /*
      * Initailize the memory boards.
      */
@@ -232,6 +240,14 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
      * kernel errors.
      */
     *maxSegsPtr = VMMACH_NUM_SEGMENTS - 1;
+    /*
+     * If switch 2 is set then make everything user readable.
+     */
+    switches = read_physical_word(0x40000);
+    if (switches & 0x2) {
+	vmMachKroUnaProt = VMMACH_KRW_URO_PROT;
+	vmMachKrwUnaProt = VMMACH_KRW_URO_PROT;
+    }
 }
 
 
@@ -384,7 +400,7 @@ VmMach_Init(firstFreePage)
 	VmMachPTE	pte;
 	pte = *ptePtr; 
 	pte &= ~VMMACH_PROTECTION_FIELD;
-	pte |= VMMACH_KRO_UNA_PROT;
+	pte |= vmMachKroUnaProt;
 	*ptePtr = pte;
     }
          
@@ -475,7 +491,7 @@ AllocPageTable(segPtr, offset, numPages)
 	if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
 	    pfNum = Vm_KernPageAllocate();
 	    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
-	              VMMACH_KRW_UNA_PROT | VMMACH_REFERENCED_BIT |
+	              vmMachKrwUnaProt | VMMACH_REFERENCED_BIT |
 		      VMMACH_MODIFIED_BIT | SetPageFrame(VirtToPhysPage(pfNum));
 	    bzero(ptAddr, VMMACH_PAGE_SIZE);
 	}
@@ -1158,7 +1174,7 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
 	 firstPage++, ptePtr++) {
         pte = *ptePtr;
         pte &= ~VMMACH_PROTECTION_FIELD;
-        pte |= readWrite ? VMMACH_KRW_UNA_PROT : VMMACH_KRO_UNA_PROT;
+        pte |= readWrite ? vmMachKrwUnaProt : vmMachKroUnaProt;
         *ptePtr = pte;
     }
     /*
