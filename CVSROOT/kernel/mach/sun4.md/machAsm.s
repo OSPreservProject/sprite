@@ -258,20 +258,6 @@ _Mach_ContextSwitch:
 	 */
 	save 	%sp, -MACH_SAVED_STATE_FRAME, %sp
 	mov	%psr, %CUR_PSR_REG
-	/*
-	 * Switch contexts to that of toProcPtr.  It's the second arg, so
-	 * move it to be first arg of routine we call.
-	 */
-	mov	%i1, %o0
-	call	_VmMach_SetupContext, 1
-	nop
-	/*
-	 * Context to use was returned in %RETURN_VAL_REG.  Set the context
-	 * to that value.  VmMachSetContextReg is a leaf routine, so we
-	 * leave the value for its argument in %RETURN_VAL_REG.
-	 */
-	call	_VmMachSetContextReg, 1
-	nop
 
 	/*
 	 * Enable the floating point processor so we can save and
@@ -375,6 +361,21 @@ ContextRestoreSomeMore:
 	restore
 	subcc	%g1, 1, %g1
 	bne	ContextRestoreSomeMore
+	nop
+
+	/*
+	 * Switch contexts to that of toProcPtr.  It's the second arg, so
+	 * move it to be first arg of routine we call.
+	 */
+	mov	%i1, %o0
+	call	_VmMach_SetupContext, 1
+	nop
+	/*
+	 * Context to use was returned in %RETURN_VAL_REG.  Set the context
+	 * to that value.  VmMachSetContextReg is a leaf routine, so we
+	 * leave the value for its argument in %RETURN_VAL_REG.
+	 */
+	call	_VmMachSetContextReg, 1
 	nop
 
 	/*
