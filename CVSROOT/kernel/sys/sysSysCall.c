@@ -34,8 +34,14 @@
  *	   procRpc.c for the callback routine corresponding to the new
  *	   procedure (NIL if the call is not migrated).
  *
- * Copyright 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -237,7 +243,7 @@ static SysCallEntry sysCalls[] = {
     Fs_SymLinkStub,		Fs_SymLinkStub,    TRUE,	3,   NILPARM,
     Fs_ReadLinkStub,		Fs_ReadLinkStub,   TRUE,	4,   NILPARM,
     Fs_CreatePipeStub,		Fs_CreatePipeStub, TRUE,	2,   NILPARM,
-    VmMach_MapKernelIntoUser,	Proc_DoRemoteCall, FALSE,	4,   NILPARM,
+    VmMach_MapKernelIntoUser,	Proc_RemoteDummy, FALSE,	4,   NILPARM,
     Fs_AttachDiskStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
     Fs_SelectStub,		Fs_SelectStub, 	   TRUE,	6,   NILPARM,
     Sys_Shutdown,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
@@ -427,9 +433,9 @@ static Sys_CallParam paramsArray[] = {
     SYS_PARAM_INT,	      PARM_I,
     SYS_PARAM_CHAR,           PARM_ICR,
     /* local */					/* SYS_FS_LOCK		77 */
-    SYS_PARAM_INT,	      PARM_I,		/* SYS_GETMACHINEINFO	78 */
-    SYS_PARAM_INT,	      PARM_I,
-    SYS_PARAM_INT,	      PARM_I,
+    SYS_PARAM_INT,	      PARM_OC,		/* SYS_GETMACHINEINFO	78 */
+    SYS_PARAM_INT,	      PARM_OC,
+    SYS_PARAM_INT,	      PARM_OC,
     /* special */				/* SYS_NET_INSTALL_ROUTE 79 */
     /* local */					/* SYS_FS_READVECTOR	80 */
     /* local */					/* SYS_FS_WRITEVECTOR	81 */
