@@ -337,6 +337,7 @@ typedef struct Fs_RecoveryStats {
     int succeeded;		/* Re-open's that worked */
     int clientCrashed;		/* Number of clients that crashed */
     int clientRecovered;	/* Number of clients that re-opened files */
+    int	reopensAvoided;		/* Unneeded reopens skipped */
 } Fs_RecoveryStats;
 
 /*
@@ -385,6 +386,10 @@ typedef struct Fs_RemoteIOStats {
     int missesOnVMBlock;	/* Code and Heap pages not found in the cache */
     int bytesReadForVM;		/* Bytes read in RmtFilePageRead */
     int bytesWrittenForVM;	/* Bytes written in RmtFilePageWrite */
+    int	hitsOnHeapBlock;	/* Block in cache? */
+    int	missesOnHeapBlock;	/* Block not in cache? */
+    int	bytesReadForHeap;		/* Heap bytes read into cache */
+    int	bytesReadForHeapUncached;	/* Unached heap bytes read */
 } Fs_RemoteIOStats;
 
 /*
@@ -548,11 +553,28 @@ Fs_TypeStats fs_TypeStats;
 typedef	struct	Fs_SospMigStats {
     Fs_BlockCacheStats	blockCache;
     Fs_RemoteIOStats	rmtIO;
+    Fs_GeneralStats	gen;
 } Fs_SospMigStats;
     
 
 extern	Fs_SospMigStats	fs_SospMigStats;
 #endif SOSP91
+
+/*
+ * We've changed things so that heap pages are cacheable.
+ * In order to know how much of the vm bytes are found in the cache or not,
+ * we need these new counters.  bytesReadForCache now includes heap bytes
+ * as does bytesReadForVM, so we use this extra counter to know how much of
+ * that is so.
+ */
+#ifdef SOSP91
+typedef	struct Fs_NewStats {
+    int		uncacheableDirBytesRead;
+    int		uncacheableDirBytesReadMig;
+} Fs_NewStats;
+extern	Fs_NewStats	fs_MoreStats;
+#endif SOSP91
+
 extern	Fs_Stats	fs_Stats;
 
 #endif _FSSTAT

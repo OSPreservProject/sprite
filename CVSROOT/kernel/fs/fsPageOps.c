@@ -82,6 +82,8 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
      */
     if ((pageType == FS_SWAP_PAGE) || (pageType == FS_SHARED_PAGE)) {
 	ioPtr->flags |= FS_SWAP;
+    } else if (pageType == FS_HEAP_PAGE) {
+	ioPtr->flags |= FS_HEAP;
     }
     do {
 	retry = FALSE;

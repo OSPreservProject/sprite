@@ -221,16 +221,16 @@ typedef struct Fs_Stream {
  *	FS_CLIENT_CACHE_WRITE -	This write is coming from a client's cache.
  *              This means the modify time should not be updated
  *              since the client has the correct modify time.
- *	FS_CONSUME - This is a consuming read from a named pipe.  This is
- *		usually the case for named pipes, although when the ioServer
- *		is writing back blocks from its cache to the file server
- *		this flag is not set.
+#ifdef SOSP91
+ *	FS_DIR - This is a directory.
+#endif SOSP91
  *	FSUTIL_TRACE_FLAG - This is used to enable the taking of trace records
  *		by low level routines.  This means that the tracing can
  *		be confined to particular operations, like open, while
  *		other operations, like remove, don't pollute the trace.
  *	FS_SERVER_WRITE_THRU - Set on writes that are supposed to be written
  *			       through to the server.
+ *	FS_HEAP - This is a heap page for special treatment in the cache.
  *	FS_RMT_SHARED - Set on streams that are shared among clients on
  *		separate machines.  For regular files this means that the
  *		stream offset is being maintained on the server.
@@ -263,10 +263,13 @@ typedef struct Fs_Stream {
 #define FS_LINK			0x00040000
 #define FS_RENAME		0x00080000
 #define FS_CLIENT_CACHE_WRITE	0x00100000
-#define FS_CONSUME		0x00200000
+#ifdef SOSP91
+#define FS_DIR			0x00200000
+#endif SOSP91
 #define FSUTIL_TRACE_FLAG	0x00400000
 #define FS_USER_OUT		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
+#define	FS_HEAP			0x02000000
 #define FS_RMT_SHARED		0x04000000
 #define FS_NEW_STREAM		0x08000000
 #define	FS_WRITE_TO_DISK	0x10000000
