@@ -1365,7 +1365,7 @@ AddReopenHandle(hdrPtr)
     ReturnStatus	status;
 
     status = (*bulkReopenOps[hdrPtr->fileID.type].setup) (hdrPtr,
-	    &(bulkHandleSpace[nextHandleIndex].reopenParams));
+	    bulkHandleSpace[nextHandleIndex].reopenParams);
     if (status == SUCCESS) {
 	bulkHandleSpace[nextHandleIndex].type = hdrPtr->fileID.type;
 	bulkHandleSpace[nextHandleIndex].serverID = hdrPtr->fileID.serverID;
@@ -1438,7 +1438,7 @@ FinishReopenHandles()
 	}
 
 	(*bulkReopenOps[bulkHandlePtr->type].finish)
-		(bulkHandlePtr->hdrPtr, &(returnInfoPtr->state),
+		(bulkHandlePtr->hdrPtr, returnInfoPtr->state,
 		returnInfoPtr->status);
 	if (bulkHandlePtr->type != FSIO_STREAM) {
 	    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery), status);
