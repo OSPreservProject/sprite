@@ -36,6 +36,13 @@ static Sync_Lock fileHashLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR	&fileHashLock
 
 /*
+ * Synchronization and termination variables for LRU replacement.
+ */
+static Sync_Condition lruDone;
+static Boolean lruInProgress;
+static int lruHandlesChecked;
+
+/*
  * Hash tables for object handles.  These are kept in LRU order and
  * a soft limit on their number is enforced.  If the number of handles
  * gets beyond fsStats.handle.maxNumber then LRU replacement is done until
@@ -51,28 +58,27 @@ Hash_Table	*fileHashTable = &fileHashTableStruct;
 static List_Links lruListHeader;
 static List_Links *lruList = &lruListHeader;
 /*
- * FS_HANDLE_TABLE_SIZE has to be at least 64, or the shifts for
- *	handleLimitInc and ScavengeThreashold have to be fixed.
+ * FS_HANDLE_TABLE_SIZE is the initial size of the handle table.
  *	Observation reveals that it takes about 120 handles to get
  *	through multi-user bootstrap, and 135 to get through the first login.
  *	Starting the window system jumps the number of handles to about 250.
+ *	Running a large compilation pushes the table up to about 450 handles.
  *	The file servers ramp up to 2500 handles, but this is a
  *	function of the activity of their clients and the number of
  *	directories they have.
- * LIMIT_INC defines the amount the table grows by (1/64)
+ * LIMIT_INC defines the amount the table grows by (1/16)
  * THREASHOLD defines how many handles are reclaimed before stopping.  This
  *	is set very low so in the steady state we don't waste much time
  *	looking at un-reclaimable handles.
  */
-#define		FS_HANDLE_TABLE_SIZE	   256
-#define		LIMIT_INC(max)		   ( (max) >> 6 )
+#define		FS_HANDLE_TABLE_SIZE	   400
+#define		LIMIT_INC(max)		   ( 25 )
 int		handleLimitInc =	   LIMIT_INC(FS_HANDLE_TABLE_SIZE);
 #define		THREASHOLD(max)		   ( 1 )
 int		handleScavengeThreashold = THREASHOLD(FS_HANDLE_TABLE_SIZE);
 
-FsHandleHeader *FsGetNextLRUHandle();
-void FsDoneLRU();
-int		fsLRUinProgress = FALSE;
+FsHandleHeader *GetNextLRUHandle();
+void DoneLRU();
 
 /*
  * Flags for handles referenced from the hash table.
@@ -87,10 +93,6 @@ int		fsLRUinProgress = FALSE;
  *		a recovery error.
  *	FS_HANDLE_DONT_CACHE - set if the handle should be removed after
  *		the last reference is released.
- *	FS_HANDLE_DONT_MOVE - set during LRU iteration to lock down the
- *		next handle in the list.
- *	FS_HANDLE_MOVE_LATER - set if we should move this handle as soon
- *		as the DONT_MOVE bit is cleared.
  */
 #define FS_HANDLE_INSTALLED	0x1
 #define FS_HANDLE_LOCKED	0x2
@@ -99,8 +101,6 @@ int		fsLRUinProgress = FALSE;
 #define FS_HANDLE_FREED		0x10
 #define FS_HANDLE_INVALID	0x20
 #define FS_HANDLE_DONT_CACHE	0x40
-#define FS_HANDLE_DONT_MOVE	0x80
-#define FS_HANDLE_MOVE_LATER	0x100
 
 /*
  * Macro to lock a file handle.
@@ -136,17 +136,11 @@ int		fsLRUinProgress = FALSE;
 
 /*
  * Macro to move a handle to the back (most recent) end of the LRU list.
- * We can't move handles that are stepping stones in an LRU scan, they
- * get moved later.
  */
 
 #define MOVE_HANDLE(hdrPtr) \
-	if ((hdrPtr)->flags & FS_HANDLE_DONT_MOVE) {			\
-	    (hdrPtr)->flags |= FS_HANDLE_MOVE_LATER;			\
-	} else {							\
-	    hdrPtr->flags &= ~FS_HANDLE_MOVE_LATER;			\
-	    List_Move(&(hdrPtr)->lruLinks, LIST_ATREAR(lruList));	\
-	}
+	    List_Move(&(hdrPtr)->lruLinks, LIST_ATREAR(lruList));
+
 /*
  * Macro to give name associated with a handle.
  */
@@ -229,26 +223,20 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
     Boolean found;
     register int numScavenged;
     register FsHandleHeader *hdrPtr;
-    List_Links *listPtr;
 
     fsStats.handle.installCalls++;
     do {
-	found = FsHandleInstallInt(fileIDPtr, size, name,
+	found = HandleInstallInt(fileIDPtr, size, name,
 		    fsStats.handle.maxNumber, hdrPtrPtr);
 	if (*hdrPtrPtr == (FsHandleHeader *)NIL) {
 	    /*
 	     * Limit would be exceeded, recycle some handles.
 	     */
-	    listPtr = (List_Links *)NIL;
 	    numScavenged = 0;
-	    if (fsLRUinProgress > 0) {
-		printf("Handle LRU already in progress\n");
-	    }
-	    fsLRUinProgress++;
 	    fsStats.object.lruScans++;
-	    for (hdrPtr = FsGetNextLRUHandle(&listPtr);
+	    for (hdrPtr = GetNextLRUHandle();
 		 hdrPtr != (FsHandleHeader *)NIL;
-		 hdrPtr = FsGetNextLRUHandle(&listPtr)) {
+		 hdrPtr = GetNextLRUHandle()) {
 		if ((*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr)) {
 		    numScavenged++;
 		    fsStats.object.scavenges++;
@@ -259,16 +247,10 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 		    fsStats.object.lruChecks++;
 		}
 	    }
-	    FsDoneLRU(&listPtr);
-	    fsLRUinProgress--;
-	    if (numScavenged == 0) {
-		/*
-		 * All handles in use, grow the table a bit.
-		 */
-		fsStats.handle.maxNumber += handleLimitInc;
-		handleLimitInc = LIMIT_INC(fsStats.handle.maxNumber);
-		handleScavengeThreashold = THREASHOLD(fsStats.handle.maxNumber);
-	    }
+	    /*
+	     * Finish LRU and grow the table if needed.
+	     */
+	    DoneLRU(numScavenged);
 	}
     } while (*hdrPtrPtr == (FsHandleHeader *)NIL);
     return(found);
@@ -277,7 +259,7 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FsHandleInstallInt --
+ * HandleInstallInt --
  *
  *      Install a file handle.  It is retrievable by FsHandleFetch after
  *      this.  If the file handle is not already installed then memory
@@ -297,7 +279,7 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
  *
  */
 ENTRY Boolean
-FsHandleInstallInt(fileIDPtr, size, name, handleLimit, hdrPtrPtr)
+HandleInstallInt(fileIDPtr, size, name, handleLimit, hdrPtrPtr)
     register Fs_FileID	*fileIDPtr;	/* Identfies handle to install. */
     int		 	size;		/* True size of the handle.  This
 					 * routine only looks at the header,
@@ -318,8 +300,22 @@ again:
     if (hashEntryPtr->value == (Address) NIL) {
 	found = FALSE;
 	if (fsStats.handle.exists >= handleLimit) {
-	    hdrPtr = (FsHandleHeader *)NIL;
-	    goto exit;
+	    /*
+	     * Creating a handle would push us over the limit.  Return NIL
+	     * to signal LRU replacement.  If LRU is already in progress we
+	     * wait for it so there is only one scanner at a time.
+	     */
+	    if (lruInProgress) {
+		do {
+		    Sync_Wait(&lruDone, FALSE);
+		} while (lruInProgress);
+		goto again;
+	    } else {
+		lruInProgress = TRUE;
+		lruHandlesChecked = 0;
+		hdrPtr = (FsHandleHeader *)NIL;
+		goto exit;
+	    }
 	}
 
 	fsStats.handle.created++;
@@ -330,7 +326,6 @@ again:
 	 * size.
 	 */
 	hdrPtr = (FsHandleHeader *) malloc(size);
-/*	bzero((Address) hdrPtr, size); */
 	hdrPtr->fileID = *fileIDPtr;
 	hdrPtr->flags = FS_HANDLE_INSTALLED;
 	hdrPtr->unlocked.waiting = FALSE;
@@ -680,7 +675,7 @@ FsHandleReleaseHdr(hdrPtr, locked)
 	return;
     } else if ((hdrPtr->refCount == 0) &&
 	       (hdrPtr->flags & FS_HANDLE_REMOVED) &&
-	       ((hdrPtr->flags & (FS_HANDLE_WANTED|FS_HANDLE_DONT_MOVE) == 0))){
+	       ((hdrPtr->flags & FS_HANDLE_WANTED) == 0)){
 	/*
 	 * The handle has been removed, we are the last reference, and
 	 * noone in GetNextHandle is trying to grab this handle.
@@ -739,8 +734,7 @@ FsHandleRemoveInt(hdrPtr)
      */
     UNLOCK_HANDLE(hdrPtr);
 
-    if ((hdrPtr->flags & (FS_HANDLE_WANTED|FS_HANDLE_DONT_MOVE)) ||
-	(hdrPtr->refCount > 0)) {
+    if ((hdrPtr->flags & FS_HANDLE_WANTED) || (hdrPtr->refCount > 0)) {
 	/*
 	 * We've removed the handle from the hash table so it won't
 	 * be found, but either someone is trying to get it in GetNextHandle,
@@ -887,8 +881,7 @@ FsGetNextHandle(hashSearchPtr)
 	hdrPtr->flags &= ~FS_HANDLE_WANTED;
 	if (hdrPtr->flags & FS_HANDLE_REMOVED) {
 	    UNLOCK_HANDLE(hdrPtr);
-	    if ((hdrPtr->refCount == 0) &&
-		(hdrPtr->flags & FS_HANDLE_DONT_MOVE) == 0) {
+	    if (hdrPtr->refCount == 0) {
 		FS_TRACE_HANDLE(FS_TRACE_GET_NEXT_FREE, hdrPtr);
 		REMOVE_HANDLE(hdrPtr);
 	    }
@@ -905,10 +898,9 @@ FsGetNextHandle(hashSearchPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FsGetNextLRUHandle --
+ * GetNextLRUHandle --
  *
  *	Get the next handle in the LRU list.  Return the handle locked.
- *	The listPtrPtr should reference a NIL pointer on the first call.
  *	This skips locked handles because they are obviously in use and not good
  *	candidates for removal.  This also prevents a single locked handle
  *	from clogging up the system.
@@ -917,73 +909,49 @@ FsGetNextHandle(hashSearchPtr)
  *	The next handle in the LRU list.
  *
  * Side effects:
- *	Marks the next handle in the LRU list as "not movable" so we
- *	won't get warped to the wrong spot in the list and we won't
- *	get an element yanked out from under us.
+ *	Increments the number of handles checked in this LRU scan so
+ *	we know when to terminate.  This also handles pending removals
+ *	of handles.
  *
  *----------------------------------------------------------------------------
  *
  */
 ENTRY FsHandleHeader *
-FsGetNextLRUHandle(listPtrPtr)
-    List_Links **listPtrPtr;	/* Indirect pointer to current spot in list.
-				 * Modified to reference the next entry.
-				 * This should reference a NIL pointer to
-				 * begin the lru scan. */
+GetNextLRUHandle()
 {
     register 	FsHandleHeader	*hdrPtr;
     register 	FsHandleHeader	*nextHdrPtr;
     register	List_Links	*listPtr;
 
     LOCK_MONITOR;
-
-    if (*listPtrPtr == (List_Links *)NIL) {
-	listPtr = List_First(lruList);
-    } else {
-	listPtr = *listPtrPtr;
-	if (List_IsAtEnd(lruList, listPtr)) {
-	    hdrPtr = (FsHandleHeader *)NIL;
-	    goto exit;
-	}
-    }
-    hdrPtr = LRU_LINKS_TO_HANDLE(listPtr);
-    hdrPtr->flags &= ~FS_HANDLE_DONT_MOVE;
-    listPtr = List_Next(&hdrPtr->lruLinks);
-    if (hdrPtr->flags & FS_HANDLE_MOVE_LATER) {
-	MOVE_HANDLE(hdrPtr);
+    if (lruHandlesChecked >= fsStats.handle.maxNumber) {
+	hdrPtr = (FsHandleHeader *)NIL;
+	goto exit;
     }
     /*
-     * Have the candidate handle, plus a pointer to the next one in the list.
-     * The candidate has been unmarked and moved if necessary.
-     * Now skip over locked and removed handles.
+     * Get the candidate handle and move it to the young end of
+     * the list in case it is not replaced.
+     */
+    listPtr = List_First(lruList);
+    hdrPtr = LRU_LINKS_TO_HANDLE(listPtr);
+    MOVE_HANDLE(hdrPtr);
+    lruHandlesChecked++;
+    /*
+     * Now skip over locked and removed handles, moving them to the "young" end.
      */
     while (hdrPtr->flags & (FS_HANDLE_REMOVED|FS_HANDLE_LOCKED)) {
-	if ((hdrPtr->flags & FS_HANDLE_REMOVED) &&
-	    ((hdrPtr->flags & (FS_HANDLE_DONT_MOVE|FS_HANDLE_WANTED)) == 0) &&
-	    (hdrPtr->refCount == 0)) {
-	    FS_TRACE_HANDLE(FS_TRACE_LRU_FREE, hdrPtr);
-	    REMOVE_HANDLE(hdrPtr);
-	}
-	if (List_IsAtEnd(lruList, listPtr)) {
+	if (lruHandlesChecked >= fsStats.handle.maxNumber) {
 	    hdrPtr = (FsHandleHeader *)NIL;
 	    goto exit;
 	} else {
+	    listPtr = List_First(lruList);
 	    hdrPtr = LRU_LINKS_TO_HANDLE(listPtr);
-	    listPtr = List_Next(listPtr);
+	    MOVE_HANDLE(hdrPtr);
 	}
+	lruHandlesChecked++;
     }
     LOCK_HANDLE(hdrPtr);
-    /*
-     * Mark the next handle in the LRU list so it wont be moved around
-     * or removed.  If we are at the end of the list we can't map to
-     * a handle because we're at the list header, not in a handle.
-     */
-    if (!List_IsAtEnd(lruList, listPtr)) {
-	nextHdrPtr = LRU_LINKS_TO_HANDLE(listPtr);
-	nextHdrPtr->flags |= FS_HANDLE_DONT_MOVE;
-    }
 exit:
-    *listPtrPtr = listPtr;
     UNLOCK_MONITOR;
     return(hdrPtr);
 }
@@ -991,39 +959,38 @@ exit:
 /*
  *----------------------------------------------------------------------------
  *
- * FsDoneLRU --
+ * DoneLRU --
  *
- *	Terminate LRU iteration.  This clears the don't move flag of what
- *	would have been the next handle returned. 
+ *	Terminate LRU iteration.  This grows the table if needed and
+ *	then notifies anyone waiting for LRU replacement to finish.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Clears the don't move flag and nukes the handle if it should be.
+ *	Grows the table if it needs to be grown.
  *
  *----------------------------------------------------------------------------
  *
  */
 ENTRY void
-FsDoneLRU(listPtrPtr)
-    List_Links **listPtrPtr;	/* Reference to next spot in LRU list */
+DoneLRU(numScavenged)
+    int numScavenged;		/* Number of handles replaced */
 {
     register FsHandleHeader *hdrPtr;
 
-    if ((*listPtrPtr != (List_Links *)NIL) &&
-	(!List_IsAtEnd(lruList, *listPtrPtr))) {
-	hdrPtr = LRU_LINKS_TO_HANDLE(*listPtrPtr);
-	hdrPtr->flags &= ~FS_HANDLE_DONT_MOVE;
-	if ((hdrPtr->flags & FS_HANDLE_REMOVED) &&
-	    ((hdrPtr->flags & FS_HANDLE_WANTED) == 0) &&
-	    (hdrPtr->refCount == 0)) {
-	    FS_TRACE_HANDLE(FS_TRACE_LRU_DONE_FREE, hdrPtr);
-	    REMOVE_HANDLE(hdrPtr);
-	} else if (hdrPtr->flags & FS_HANDLE_MOVE_LATER) {
-	    MOVE_HANDLE(hdrPtr);
-	}
+    LOCK_MONITOR;
+    if (numScavenged == 0) {
+	/*
+	 * Grow the table a bit because no handles could be reclaimed.
+	 */
+	fsStats.handle.maxNumber += handleLimitInc;
+	handleLimitInc = LIMIT_INC(fsStats.handle.maxNumber);
+	handleScavengeThreashold = THREASHOLD(fsStats.handle.maxNumber);
     }
+    lruInProgress = FALSE;
+    Sync_Broadcast(&lruDone);
+    UNLOCK_MONITOR;
 }
 
 /*
