@@ -39,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "hash.h"
 #include "mem.h"
 #include "trace.h"
+#include "byte.h"
 
 /*
  * Other kernel modules arrange call-backs when a host crashes or reboots.
@@ -65,7 +66,7 @@ static List_Links	crashCallBackList;
  * is apparently down.  Reboots are still detected so that
  * the crash callbacks will get called to clean up.
  */
-int recov_CrashDelay;
+unsigned int recov_CrashDelay;
 
 /*
  * When a crash call back is avoided because the host didn't really go
@@ -97,7 +98,7 @@ typedef struct RecovHostState {
 
 #define RECOV_INIT_HOST(hostPtr, zspriteID, zstate, zbootID) \
     hostPtr = Mem_New(RecovHostState); \
-    Byte_Zero(sizeof(RecovHostState), (Address)hostPtr); \
+    (void)Byte_Zero(sizeof(RecovHostState), (Address)hostPtr); \
     List_Init(&(hostPtr)->rebootList); \
     (hostPtr)->spriteID = zspriteID; \
     (hostPtr)->state = zstate; \
@@ -195,7 +196,7 @@ Boolean recovTracing = TRUE;
 	RecovTraceRecord rec;\
 	rec.spriteID = zspriteID;\
 	rec.state = zstate;\
-	Trace_Insert(recovTraceHdrPtr, event, &rec);\
+	Trace_Insert(recovTraceHdrPtr, event, (ClientData)&rec);\
     }
 #else
 
@@ -239,7 +240,7 @@ Recov_Init()
     List_Init(&crashCallBackList);
     Trace_Init(recovTraceHdrPtr, recovTraceLength,
 		sizeof(RecovTraceRecord), 0);
-    recov_CrashDelay = timer_IntOneHour;
+    recov_CrashDelay = (unsigned int)(10 * timer_IntOneMinute);
 }
 
 /*
@@ -343,7 +344,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	return;
     }
 
-    hashPtr = Hash_Find(recovHashTable, spriteID);
+    hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
     if (hashPtr->value == (Address)NIL) {
 	/*
 	 * Initialize the host's state. This is the first time we've talked
@@ -352,7 +353,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_HOST_ALIVE, bootID);
 	hashPtr->value = (Address)hostPtr;
 
-	Net_HostPrint(spriteID, "is up\n");
+	Sys_HostPrint(spriteID, "is up\n");
 	RECOV_TRACE(spriteID, RECOV_HOST_ALIVE, RECOV_CUZ_INIT);
     } else {
 	hostPtr = (RecovHostState *)hashPtr->value;
@@ -368,7 +369,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
      */
     if (hostPtr->bootID != bootID) {
 	if (hostPtr->bootID != 0) {
-	    Net_HostPrint(spriteID, "rebooted\n");
+	    Sys_HostPrint(spriteID, "rebooted\n");
 	    reboot = TRUE;
 	} else {
 	    /*
@@ -389,7 +390,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    state |= RECOV_HOST_BOOTING;
 	    if ((state & RECOV_CRASH_CALLBACKS) == 0) {
 		state |= RECOV_CRASH_CALLBACKS;
-		Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+		Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
 	    }
 	}
     } else  if ( !(state & RECOV_CRASH_CALLBACKS) &&
@@ -409,7 +410,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
     if (! asyncRecovery) {
 	hostPtr->state = state;
 	while (hostPtr->state & RECOV_CRASH_CALLBACKS) {
-	    Sync_Wait(&hostPtr->recovery, FALSE);
+	    (void)Sync_Wait(&hostPtr->recovery, FALSE);
 	    if (sys_ShuttingDown) {
 		Sys_Printf("Warning, Server exiting Recov_HostAlive\n");
 		UNLOCK_MONITOR;
@@ -432,7 +433,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    /*
 	     * We have uninitialized state for the host, mark it alive.
 	     */
-	    Net_HostPrint(spriteID, "is up\n");
+	    Sys_HostPrint(spriteID, "is up\n");
 	    if (rpcNotActive) {
 		state |= RECOV_HOST_BOOTING;
 	    } else {
@@ -459,22 +460,20 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     * See if the host is newly booting or back from a net partition.
 	     */
 	    if ( !reboot ) {
-		Net_HostPrint(spriteID, "is back again\n");
+		Sys_HostPrint(spriteID, "is back again\n");
 	    }
 	    if (rpcNotActive) {
 		state |= RECOV_HOST_BOOTING;
 	    } else {
 		hostPtr->state |= RECOV_HOST_ALIVE;
-		if (reboot || (hostPtr->state & RECOV_HOST_DEAD)) {
-		    state |= RECOV_WANT_RECOVERY;
-		}
+		state |= RECOV_WANT_RECOVERY;
 	    }
 	    state &= ~(RECOV_HOST_DEAD|RECOV_HOST_DYING);
 	    break;
 	default:
 	    Sys_Panic(SYS_WARNING, "Unexpected recovery state <%x> for ",
 		    state);
-	    Net_HostPrint(spriteID, "\n");
+	    Sys_HostPrint(spriteID, "\n");
 	    break;
     }
     /*
@@ -486,7 +485,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	(state & RECOV_REBOOT_CALLBACKS) == 0) {
 	state &= ~RECOV_WANT_RECOVERY;
 	state |= RECOV_REBOOT_CALLBACKS;
-	Proc_CallFunc(RecovRebootCallBacks, spriteID, 0);
+	Proc_CallFunc(RecovRebootCallBacks, (ClientData)spriteID, 0);
     }
     hostPtr->state = state;
 exit:
@@ -532,7 +531,7 @@ Recov_HostDead(spriteID)
 	return;
     }
 
-    hashPtr = Hash_Find(recovHashTable, spriteID);
+    hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
     if (hashPtr->value == (Address)NIL) {
 	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_HOST_DEAD, 0);
 	hashPtr->value = (Address)hostPtr;
@@ -553,14 +552,14 @@ Recov_HostDead(spriteID)
 	    hostPtr->state &=
 		~(RECOV_HOST_ALIVE|RECOV_HOST_BOOTING);
 	    hostPtr->state |= RECOV_HOST_DYING;
-	    Net_HostPrint(spriteID, "is apparently down\n");
-	    Proc_CallFunc(RecovDelayedCrashCallBacks, spriteID,
+	    Sys_HostPrint(spriteID, "is apparently down\n");
+	    Proc_CallFunc(RecovDelayedCrashCallBacks, (ClientData)spriteID,
 			    recov_CrashDelay);
 #ifdef the_old_way
 	    hostPtr->state |= RECOV_HOST_DEAD|RECOV_CRASH_CALLBACKS;
-	    Net_HostPrint(spriteID, "is down\n");
+	    Sys_HostPrint(spriteID, "is down\n");
 	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH);
-	    Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+	    Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
 #endif the_old_way
 	    break;
     }
@@ -651,7 +650,7 @@ Recov_RebootRegister(spriteID, rebootCallBackProc, rebootData)
     if (spriteID <= 0 || spriteID == rpc_SpriteID) {
 	Sys_Panic(SYS_FATAL, "Recov_RebootRegister, bad hostID %d\n", spriteID);
     } else {
-	hashPtr = Hash_Find(recovHashTable, spriteID);
+	hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
 	if (hashPtr->value == (Address)NIL) {
 	    RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
 	    hashPtr->value = (Address)hostPtr;
@@ -681,7 +680,7 @@ Recov_RebootRegister(spriteID, rebootCallBackProc, rebootData)
 	 */
 	if ((hostPtr->state & RECOV_PINGING_HOST) == 0) {
 	    hostPtr->state |= RECOV_PINGING_HOST;
-	    Proc_CallFunc(CheckHost, spriteID, 0);
+	    Proc_CallFunc(CheckHost, (ClientData)spriteID, 0);
 	}
     }
     UNLOCK_MONITOR;
@@ -745,7 +744,7 @@ Recov_GetClientState(spriteID)
 
     LOCK_MONITOR;
 
-    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
@@ -785,7 +784,7 @@ Recov_SetClientState(spriteID, stateBits)
 
     LOCK_MONITOR;
 
-    hashPtr = Hash_Find(recovHashTable, spriteID);
+    hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
     hostPtr = (RecovHostState *)hashPtr->value;
     if (hostPtr == (RecovHostState *)NIL) {
 	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
@@ -822,7 +821,7 @@ Recov_ClearClientState(spriteID, stateBits)
 
     LOCK_MONITOR;
 
-    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
@@ -849,13 +848,12 @@ Recov_ClearClientState(spriteID, stateBits)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 void
 RecovRebootCallBacks(data, callInfoPtr)
     ClientData data;
     Proc_CallInfo *callInfoPtr;
 {
-    ReturnStatus status;
     List_Links notifyList;
     register NotifyElement *notifyPtr;
     register int spriteID = (int)data;
@@ -864,8 +862,8 @@ RecovRebootCallBacks(data, callInfoPtr)
     while (!List_IsEmpty(&notifyList)) {
 	notifyPtr = (NotifyElement *)List_First(&notifyList);
 	(*notifyPtr->proc)(spriteID, notifyPtr->data);
-	List_Remove(notifyPtr);
-	Mem_Free(notifyPtr);
+	List_Remove((List_Links *)notifyPtr);
+	Mem_Free((Address)notifyPtr);
     }
     CallBacksDone(spriteID);
 }
@@ -940,7 +938,7 @@ RecovDelayedCrashCallBacks(data, callInfoPtr)
 
     state = GetHostState(spriteID);
     if (state & RECOV_HOST_DYING) {
-	Net_HostPrint(spriteID, "considered dead\n");
+	Sys_HostPrint(spriteID, "considered dead\n");
 	MarkHostDead(spriteID);
 	LIST_FORALL(&crashCallBackList, (List_Links *)notifyPtr) {
 	    if (notifyPtr->proc != (void (*)())NIL) {
@@ -980,7 +978,7 @@ MarkRecoveryComplete(spriteID)
 
     LOCK_MONITOR;
 
-    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
@@ -1017,7 +1015,7 @@ MarkHostDead(spriteID)
 
     LOCK_MONITOR;
 
-    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
@@ -1063,7 +1061,7 @@ GetHostState(spriteID)
 
     LOCK_MONITOR;
 
-    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
@@ -1159,7 +1157,7 @@ GetRebootList(notifyListHdr, spriteID)
 
     LOCK_MONITOR;
 
-    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     hostPtr = (RecovHostState *)hashPtr->value;
     List_Init(notifyListHdr);
     LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
@@ -1197,7 +1195,7 @@ CallBacksDone(spriteID)
 
     LOCK_MONITOR;
 
-    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     hostPtr = (RecovHostState *)hashPtr->value;
     if ((hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0) {
 	Sys_Panic(SYS_WARNING, "RecovCallBacksDone found bad state\n");
@@ -1335,5 +1333,5 @@ Recov_PrintTrace(numRecs)
 	numRecs = recovTraceLength;
     }
     Sys_Printf("RECOVERY TRACE\n");
-    Trace_Print(recovTraceHdrPtr, numRecs, Recov_PrintTraceRecord);
+    (void)Trace_Print(recovTraceHdrPtr, numRecs, Recov_PrintTraceRecord);
 }
