@@ -11,6 +11,7 @@ static char sccsid[] = "%W% VESTA (Berkeley) %G%";
 #endif not lint
 
 #include "version.h"	/* automatically generated */
+#include "main.h"
 
 char versionString[] = VERSION ;
 char *

@@ -12,6 +12,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "main.h"
 
 /*
  * Flags to modify main's behavior.   Can be changed without recompiling
