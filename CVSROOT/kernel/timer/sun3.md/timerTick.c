@@ -40,7 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mach.h"
 #include "timerTick.h"
 #include "spriteTime.h"
-#include "timerSun3Int.h"
+#include "timerIntersilInt.h"
 #include "sys.h"
 
 
@@ -278,7 +278,30 @@ ConvertTimeToInt(time, resultPtr)
 	*resultPtr = 0xFFFFFFFF;
     }
 }
+
 
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Timer_TicksToInterval --
+ *
+ *      Converts a ticks value into a 32-bit interval value.
+ *
+ *  Results:
+ *	An interval value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Timer_TicksToInterval(ticks, resultPtr)
+    Timer_Ticks ticks;
+    unsigned int *resultPtr;
+{
+    ConvertTimeToInt(ticks, resultPtr);
+}
 
 
 /*

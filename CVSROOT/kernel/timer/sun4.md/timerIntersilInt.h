@@ -1,5 +1,5 @@
 /*
- * devTimerInt.h --
+ * timerIntersilInt.h --
  *
  *	Types and constants for the Intersil ICM7170 real-time clock chip.
  *
