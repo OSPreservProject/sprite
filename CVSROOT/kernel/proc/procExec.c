@@ -4,10 +4,6 @@
  *	file.  Access to the proc table is synchronized by locking the PCB
  *	when modifying the genFlags field.
  *
- *	NOTE: this is temporarily coexisting with the original procExec.c.
- *	This file contains a version of Proc_Exec that takes the environment
- *	as an argument.
- *
  * Copyright (C) 1985, 1988 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
@@ -42,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "string.h"
 
 static ReturnStatus	DoExec();
+extern char *malloc();
 
 #define NEWEXEC
 /*
@@ -499,7 +496,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	 */
 	argListPtr = (ArgListElement *)
 		malloc(sizeof(ArgListElement));
-	argListPtr->stringPtr = (char *) malloc(realLength);
+	argListPtr->stringPtr =  malloc(realLength);
 	argListPtr->stringLen = realLength;
 	List_InitElement((List_Links *) argListPtr);
 	List_Insert((List_Links *) argListPtr, LIST_ATREAR(&argList));
@@ -565,7 +562,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	 */
 	envListPtr = (ArgListElement *) 
 		malloc(sizeof(ArgListElement));
-	envListPtr->stringPtr = (char *) malloc(realLength);
+	envListPtr->stringPtr =  malloc(realLength);
 	envListPtr->stringLen = realLength;
 	List_InitElement((List_Links *) envListPtr);
 	List_Insert((List_Links *) envListPtr, LIST_ATREAR(&envList));
