@@ -279,6 +279,29 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
 	    if (!(domainPtr->flags & FSDM_DOMAIN_DOWN)) {
 		printf("Fsdm_AttachDisk: domain already attached?\n");
 		free(buffer);
+		/*
+		 * If the domain was attached during the boot, then this
+		 * is the second attach done by the user-level program
+		 * that checks and attachs the disk.  In that case clear
+		 * the bit indicating that the domain was just checked.
+		 * This special case handling of the "just checked" bit
+		 * will go away as soon as we trust the "domain safe"
+		 * bit. 
+		 */
+		if (domainPtr->flags & FSDM_DOMAIN_ATTACH_BOOT) {
+		    domainPtr->flags &= ~FSDM_DOMAIN_ATTACH_BOOT;
+		    domainPtr->summaryInfoPtr->flags &= 
+				    ~FSDM_DOMAIN_JUST_CHECKED;
+		    printf("Fsdm_AttachDisk: clearing just-checked bit\n");
+		    if ((flags & FS_ATTACH_READ_ONLY) == 0) {
+			printf("Fsdm_AttachDisk: disk is read-only\n");
+			status = FsdmWriteBackSummaryInfo(domainPtr);
+			if (status != SUCCESS) {
+			    panic( 
+		"Fsdm_AttachDisk: Summary write failed, status %x\n", status);
+			}
+		    }
+		}
 		return(FS_DOMAIN_UNAVAILABLE);
 	    }
 	}
@@ -411,8 +434,11 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
     }
     domainPtr->summaryInfoPtr->flags |= FSDM_DOMAIN_NOT_SAFE |
 					FSDM_DOMAIN_TIMES_VALID;
+    if (!(flags & FS_DEFAULT_DOMAIN)) {
+	domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_JUST_CHECKED;
+    }
     domainPtr->summaryInfoPtr->attachSeconds = fsutil_TimeInSeconds;
-    if (flags & FS_ATTACH_READ_ONLY == 0) {
+    if ((flags & FS_ATTACH_READ_ONLY) == 0) {
 	status = FsdmWriteBackSummaryInfo(domainPtr);
 	if (status != SUCCESS) {
 	    panic( "Fsdm_AttachDisk: Summary write failed, status %x\n", status);
@@ -420,7 +446,11 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
     } else {
 	printf("read only ");
     }
-    domainPtr->flags = 0;
+    if (flags & FS_DEFAULT_DOMAIN) {
+	domainPtr->flags = FSDM_DOMAIN_ATTACH_BOOT;
+    } else {
+	domainPtr->flags = 0;
+    }
 
     printf(" %d kbytes free\n", domainPtr->summaryInfoPtr->numFreeKbytes);
     /*
@@ -576,6 +606,7 @@ Fsdm_DetachDisk(prefixName)
      * The detach time is noted in order to track how long disks are available.
      */
     domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_NOT_SAFE;
+    domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_JUST_CHECKED;
     domainPtr->summaryInfoPtr->detachSeconds = fsutil_TimeInSeconds;
     status = FsdmWriteBackSummaryInfo(domainPtr);
     if (status != SUCCESS) {

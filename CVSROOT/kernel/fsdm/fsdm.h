@@ -462,13 +462,16 @@ typedef struct Fsdm_Domain {
 } Fsdm_Domain;
 
 /*
- * Domain flags used for two stage process of detaching a domain:
+ * Domain flags
  *
  *    FSDM_DOMAIN_GOING_DOWN	This domain is being detached.
  *    FSDM_DOMAIN_DOWN		The domain is detached.
+ *    FSDM_DOMAIN_ATTACH_BOOT   The domain was attached by the kernel
+ *				during boot.
  */
-#define	FSDM_DOMAIN_GOING_DOWN	0x1
+#define	FSDM_DOMAIN_GOING_DOWN		0x1
 #define	FSDM_DOMAIN_DOWN 		0x2
+#define FSDM_DOMAIN_ATTACH_BOOT		0x4
 
 /*
  * Types of indexing.  Order is important here because the indirect and
