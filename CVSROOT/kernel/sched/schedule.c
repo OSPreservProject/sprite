@@ -515,11 +515,19 @@ static Proc_ControlBlock *
 IdleLoop()
 {
     register Proc_ControlBlock	*procPtr;
-    register List_Links		*queuePtr;
+    register Proc_ControlBlock	*lastProcPtr;
     register int cpu;
+    register List_Links		*queuePtr;
 
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
+    /*
+     * Mark in the process control block for the current process that it's 
+     * stack is still in use. This prevents the scheduler from scheduling
+     * this process (and stack) to another processor.  
+     */
+    lastProcPtr = Proc_GetCurrentProc();
+    lastProcPtr->schedFlags |= SCHED_STACK_IN_USE;
     MASTER_UNLOCK(sched_MutexPtr);
     while (1) {
 	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
@@ -536,7 +544,19 @@ IdleLoop()
 	     * Make sure queue is not empty.
 	     */
 	    if (List_IsEmpty(queuePtr) == FALSE) {
-		break; 
+		/*
+		 * There is a ready process. Take a peek at it to insure that
+		 * we can execute it.  The only condition preventing a 
+		 * processor from executing a process is if its stack is
+		 * being used by another processor in the idle loop.
+		 */
+		procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+		if (~(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+		           (procPtr == lastProcPtr)) {
+		    lastProcPtr->schedFlags &= ~SCHED_STACK_IN_USE;
+
+		    break; 
+		}
 	    }
 	    MASTER_UNLOCK(sched_MutexPtr);
 	}
@@ -550,7 +570,6 @@ IdleLoop()
 	    sched_Instrument.idleTicksLow[cpu]++;
 	}
     }
-    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
     if (procPtr->state != PROC_READY) {
 	/*
 	 * Unlock sched_Mutex because panic tries to grab it somewhere.
