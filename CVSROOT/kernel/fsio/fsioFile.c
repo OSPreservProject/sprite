@@ -61,8 +61,9 @@ void IncVersionNumber();
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalFileHandleInit(fileIDPtr, newHandlePtrPtr)
+FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
     FsFileID	*fileIDPtr;
+    char	*name;
     FsLocalFileIOHandle	**newHandlePtrPtr;
 {
     register ReturnStatus status;
@@ -71,7 +72,7 @@ FsLocalFileHandleInit(fileIDPtr, newHandlePtrPtr)
     register FsDomain *domainPtr;
     register Boolean found;
 
-    found = FsHandleInstall(fileIDPtr, sizeof(FsLocalFileIOHandle),
+    found = FsHandleInstall(fileIDPtr, sizeof(FsLocalFileIOHandle), name,
 		    (FsHandleHeader **)newHandlePtrPtr);
     if (found) {
 	/*
@@ -272,7 +273,7 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 		register Fs_Stream *streamPtr;
 
 		streamPtr = FsStreamNew(rpc_SpriteID,
-			(FsHandleHeader *)handlePtr, useFlags);
+		    (FsHandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
 		(void)FsStreamClientOpen(&streamPtr->clientList, clientID,
 					 useFlags);
 		*streamIDPtr = streamPtr->hdr.fileID;
@@ -344,13 +345,15 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
      * Do initial setup for the reopen.  We make sure that the disk
      * for the file is still around first, mark the client
      * as doing recovery, and fetch a local handle for the file.
+     * NAME note: we have no name for the file after a re-open.
      */
     reopenParamsPtr = (FsFileReopenParams *) inData;
     domainPtr = FsDomainFetch(reopenParamsPtr->fileID.major, FALSE);
     if (domainPtr == (FsDomain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-    status = FsLocalFileHandleInit(&reopenParamsPtr->fileID, &handlePtr);
+    status = FsLocalFileHandleInit(&reopenParamsPtr->fileID, (char *)NIL,
+	&handlePtr);
     if (status != SUCCESS) {
 	goto reopenReturn;
     }
@@ -433,18 +436,19 @@ reopenReturn:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
+FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
     FsFileID		*ioFileIDPtr;	/* I/O fileID from the name server */
     int			*flagsPtr;	/* Return only.  The server returns
 					 * a modified useFlags in FsFileState */
     int			clientID;	/* IGNORED */
     ClientData		streamData;	/* FsFileState. */
+    char		*name;		/* File name for error msgs */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
 					 * I/O to a file, NIL if failure. */
 {
     register ReturnStatus	status;
 
-    status = FsLocalFileHandleInit(ioFileIDPtr,
+    status = FsLocalFileHandleInit(ioFileIDPtr, name,
 		(FsLocalFileIOHandle **)ioHandlePtrPtr);
     if (status == SUCCESS) {
 	/*
@@ -834,7 +838,8 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * i.e. there are no references left there.
 	 */
 	streamPtr = FsStreamFind(&migInfoPtr->streamID,
-		    (FsHandleHeader *)handlePtr, migInfoPtr->flags, &found);
+		    (FsHandleHeader *)handlePtr, migInfoPtr->flags,
+		    (char *)NIL, &found);
 	if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
 	    /*
 	     * We don't think the stream is being shared so we

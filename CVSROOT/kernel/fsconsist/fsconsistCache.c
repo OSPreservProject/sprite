@@ -548,7 +548,8 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 	     * are not lost.
 	     */
 	    Sys_Panic(SYS_WARNING,
-		"FsReopenHandle: file <%d,%d> client %d reading stale data\n",
+	"FsReopenHandle: file \"%s\" <%d,%d>: client %d reading stale data\n",
+		FsHandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		clientPtr->clientID);
 	}
@@ -734,8 +735,11 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 	if (!FsIOClientClose(&consistPtr->clientList, srcClientID, useFlags,
 		&cache)) {
 	    Sys_Panic(SYS_WARNING,
-		    "FsMigrateConsistency, srcClient %d unknown\n",
-		    srcClientID);
+	"FsMigrateConsistency, srcClient %d unknown for %s %s <%d,%d>\n",
+		srcClientID,
+		FsFileTypeToString(handlePtr->hdr.fileID.type),
+		FsHandleName(handlePtr),
+		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	}
     }
     /*
@@ -901,10 +905,12 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
     if ((consistPtr->lastWriter != -1) && (flags & FS_LAST_DIRTY_BLOCK)) {
 	if (clientID != consistPtr->lastWriter) {
 	    Sys_Panic(SYS_WARNING,
-	    "FsConsistClose, <%d,%d> client %d not last writer %d, cached %d\n",
+	    "FsConsistClose, \"%s\" <%d,%d>: client %d not last writer %d, %s\n",
+		    FsHandleName(consistPtr->hdrPtr),
 		    consistPtr->hdrPtr->fileID.major,
 		    consistPtr->hdrPtr->fileID.minor,
-		    clientID, consistPtr->lastWriter, *wasCachedPtr);
+		    clientID, consistPtr->lastWriter,
+		    (*wasCachedPtr) ? "was cached" : "wasn't cached");
 	} else {
 	    consistPtr->lastWriter = -1;
 	}
@@ -1054,7 +1060,10 @@ FsClientRemoveCallback(consistPtr, clientID)
 	} else if (consistPtr->lastWriter != -1) {
 	    if (clientPtr->clientID != consistPtr->lastWriter) {
 		Sys_Panic(SYS_WARNING,
-		    "FsClientRemoveCallback: client %d not last writer (%d).\n",
+    "FsClientRemoveCallback: \"%s\" <%d,%d> client %d not last writer (%d).\n",
+			FsHandleName(consistPtr->hdrPtr),
+			consistPtr->hdrPtr->fileID.major,
+			consistPtr->hdrPtr->fileID.minor,
 			clientPtr->clientID, consistPtr->lastWriter);
 	    } else if (clientPtr->clientID != clientID) {
 		/*
@@ -1385,6 +1394,8 @@ ClientCommand(consistPtr, clientPtr, flags)
     /*
      * Have to release this monitor during the call-back so that
      * an unrelated close can complete its call to FsConsistClose.
+     * Alternatives are to fix the consistency call-back RPC stubs
+     * so they don't lock the handle.
      */
     if ((consistPtr->flags & FS_CONSIST_IN_PROGRESS) == 0) {
 	Sys_Panic(SYS_FATAL, "Client CallBack - consist flag not set\n");
@@ -1422,9 +1433,11 @@ ClientCommand(consistPtr, clientPtr, flags)
 	 */
 	register ConsistMsgInfo *existingMsgPtr;
 	Sys_Panic(SYS_WARNING,
-	    "ClientCommand, %s msg to client %d file <%d,%d> failed %x\n",
+	"ClientCommand, %s msg to client %d file \"%s\" <%d,%d> failed %x\n",
 	    ConsistType(flags), clientPtr->clientID,
+	    FsHandleName(consistPtr->hdrPtr),
 	    consistRpc.fileID.major, consistRpc.fileID.minor, status);
+
 	LIST_FORALL(&(consistPtr->msgList), (List_Links *) existingMsgPtr) {
 	    if (existingMsgPtr == msgPtr) {
 		List_Remove((List_Links *) msgPtr);
@@ -1806,8 +1819,12 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	return;
     }
     if (replyPtr->status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "ProcessConsist: %s request failed <%x>\n",
-		ConsistType(msgPtr->flags), replyPtr->status);
+	Sys_Panic(SYS_WARNING,
+	    "ProcessConsist: %s request failed <%x> file \"%s\" <%d,%d>\n",
+		ConsistType(msgPtr->flags), replyPtr->status,
+		FsHandleName(consistPtr->hdrPtr),
+		consistPtr->hdrPtr->fileID.major,
+		consistPtr->hdrPtr->fileID.minor);
 	consistPtr->flags |= FS_CONSIST_ERROR;
     } else {
 	if (msgPtr->flags & FS_WRITE_BACK_BLOCKS) {
@@ -1831,7 +1848,8 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 		    Sys_Panic(SYS_WARNING,
 			"ProcessConsistReply: client %d stopped caching\n",
 			 clientID);
-		    Sys_Printf("\tFile <%d,%d>, lastByte %d (not %d)\n",
+		    Sys_Printf("\tFile \"%s\" <%d,%d>, lastByte %d (not %d)\n",
+			FsHandleName(handlePtr),
 			handlePtr->hdr.fileID.major,
 			handlePtr->hdr.fileID.minor,
 			replyPtr->cachedAttr.lastByte,

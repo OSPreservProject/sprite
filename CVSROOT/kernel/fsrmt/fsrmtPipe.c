@@ -81,7 +81,7 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
      * Allocate and initialize the read, or "in", end of the stream.
      */
     streamPtr = FsStreamNew(rpc_SpriteID, (FsHandleHeader *)handlePtr,
-			    FS_READ | FS_CONSUME | FS_USER);
+			    FS_READ | FS_CONSUME | FS_USER, "read-pipe");
     (void)FsStreamClientOpen(&streamPtr->clientList, rpc_SpriteID, FS_READ);
     FsHandleUnlock(streamPtr);
     *inStreamPtrPtr = streamPtr;
@@ -93,7 +93,7 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
     FsHandleUnlock(handlePtr);
     (void)FsHandleDup((FsHandleHeader *)handlePtr);
     streamPtr = FsStreamNew(rpc_SpriteID, (FsHandleHeader *)handlePtr,
-			FS_WRITE | FS_APPEND | FS_USER);
+			FS_WRITE | FS_APPEND | FS_USER, "write-pipe");
     (void)FsStreamClientOpen(&streamPtr->clientList, rpc_SpriteID, FS_WRITE);
     FsHandleUnlock(handlePtr);
     FsHandleUnlock(streamPtr);
@@ -162,7 +162,7 @@ FsPipeHandleInit(fileIDPtr, findIt)
     register FsPipeIOHandle *handlePtr;
     register Boolean found;
 
-    found = FsHandleInstall(fileIDPtr, sizeof(FsPipeIOHandle), &hdrPtr);
+    found = FsHandleInstall(fileIDPtr, sizeof(FsPipeIOHandle), "pipe", &hdrPtr);
     handlePtr = (FsPipeIOHandle *)hdrPtr;
     if (!found) {
 	if (findIt) {
@@ -797,7 +797,7 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      * for the stream, and check for any cross-network stream sharing.
      */
     streamPtr = FsStreamFind(&migInfoPtr->streamID,
-		(FsHandleHeader *)handlePtr, migInfoPtr->flags, &found);
+	(FsHandleHeader *)handlePtr, migInfoPtr->flags, (char *)NIL, &found);
     if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
 	streamPtr->offset = migInfoPtr->offset;
     }

@@ -216,7 +216,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
      */
 
     streamPtr = FsStreamFind(&migInfoPtr->streamID, (FsHandleHeader *)NIL,
-			     migInfoPtr->flags, &found);
+			     migInfoPtr->flags, (char *)NIL, &found);
 
     disposeOnError = !found;
 
@@ -266,7 +266,6 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 		    migInfoPtr->rootID.serverID,
 		    migInfoPtr->rootID.major, migInfoPtr->rootID.minor);
 	    }
-	    nameInfoPtr->name = (char *)NIL;
 	}
     }
     /*

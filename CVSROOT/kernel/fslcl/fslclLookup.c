@@ -747,7 +747,7 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr)
 			    fileID.serverID = rpc_SpriteID;
 			    fileID.major = parentHandlePtr->hdr.fileID.major;
 			    fileID.minor = dirEntryPtr->fileNumber;
-			    status = FsLocalFileHandleInit(&fileID,
+			    status = FsLocalFileHandleInit(&fileID, component,
 					    curHandlePtrPtr);
 
 			    FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0,
@@ -1156,9 +1156,10 @@ ExpandLink(curHandlePtr, curCharPtr, offset, nameBuffer)
  */
 
 static ReturnStatus
-GetHandle(fileNumber, curHandlePtr, newHandlePtrPtr)
+GetHandle(fileNumber, curHandlePtr, name, newHandlePtrPtr)
     int		fileNumber;		/* Number of file to get handle for */
     FsLocalFileIOHandle	*curHandlePtr;	/* Handle on file in the same domain */
+    char	*name;			/* File name for error msgs */
     FsLocalFileIOHandle	**newHandlePtrPtr;/* Return, ref. to installed handle */
 {
     register ReturnStatus status;
@@ -1168,7 +1169,7 @@ GetHandle(fileNumber, curHandlePtr, newHandlePtrPtr)
     fileID.serverID = rpc_SpriteID;
     fileID.major = curHandlePtr->hdr.fileID.major;
     fileID.minor = fileNumber;
-    status = FsLocalFileHandleInit(&fileID, newHandlePtrPtr);
+    status = FsLocalFileHandleInit(&fileID, name, newHandlePtrPtr);
     return(status);
 }
 
@@ -1227,13 +1228,14 @@ CreateFile(domainPtr, parentHandlePtr, component, compLen, fileNumber, type,
 	     * GetHandle does extra work because we already have the
 	     * file descriptor all set up...
 	     */
-	    status = GetHandle(fileNumber, parentHandlePtr, curHandlePtrPtr);
+	    status = GetHandle(fileNumber, parentHandlePtr, component,
+				curHandlePtrPtr);
 	    if (status != SUCCESS) {
 		/*
 		 * GetHandle shouldn't fail because we just wrote out
 		 * the file descriptor.
 		 */
-		Sys_Panic(SYS_FATAL, "CreateFile: GetHandle failed\n");
+		Sys_Panic(SYS_FATAL, "CreateFile: GetHandle failed (continuable)\n");
 		newDescPtr->flags = FS_FD_FREE;
 		(void)FsStoreFileDesc(domainPtr, fileNumber, newDescPtr);
 	    } else {
@@ -1373,7 +1375,7 @@ LinkFile(domainPtr, parentHandlePtr, component, compLen, fileNumber,
 	 */
 	return(GEN_INVALID_ARG);
     }
-    status = GetHandle(fileNumber, parentHandlePtr, curHandlePtrPtr);
+    status = GetHandle(fileNumber, parentHandlePtr, component, curHandlePtrPtr);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "LinkFile: can't get existing file handle\n");
 	return(FAILURE);
@@ -1495,7 +1497,7 @@ OkToMoveDirectory(newParentHandlePtr, curHandlePtr)
 		 * on the directory above that.  FIX ME
 		 */
 		if (parentNumber != newParentNumber) {
-		    status = GetHandle(parentNumber, curHandlePtr,
+		    status = GetHandle(parentNumber, curHandlePtr, (char *)NIL,
 					&parentHandlePtr);
 		} else {
 		    parentHandlePtr = newParentHandlePtr;

@@ -277,15 +277,17 @@ void				FsRmtPseudoStreamClose();
  *
  */
 PdevControlIOHandle *
-FsControlHandleInit(fileIDPtr, foundPtr)
+FsControlHandleInit(fileIDPtr, name, foundPtr)
     FsFileID *fileIDPtr;
+    char *name;
     Boolean *foundPtr;
 {
     register Boolean found;
     register PdevControlIOHandle *ctrlHandlePtr;
     FsHandleHeader *hdrPtr;
 
-    found = FsHandleInstall(fileIDPtr, sizeof(PdevControlIOHandle), &hdrPtr);
+    found = FsHandleInstall(fileIDPtr, sizeof(PdevControlIOHandle), name,
+			    &hdrPtr);
     ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
     if (!found) {
 	ctrlHandlePtr->serverID = NIL;
@@ -359,7 +361,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     ioFileID = handlePtr->hdr.fileID;
     ioFileID.type = FS_CONTROL_STREAM;
     ioFileID.minor |= (handlePtr->descPtr->version << 16);
-    ctrlHandlePtr = FsControlHandleInit(&ioFileID, &found);
+    ctrlHandlePtr = FsControlHandleInit(&ioFileID, handlePtr->hdr.name, &found);
 
     if (useFlags & (FS_MASTER|FS_NEW_MASTER)) {
 	/*
@@ -381,7 +383,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    *clientDataPtr = (ClientData)NIL;
 	    *dataSizePtr = 0;
 	    streamPtr = FsStreamNew(rpc_SpriteID,
-				    (FsHandleHeader *)ctrlHandlePtr, useFlags);
+		(FsHandleHeader *)ctrlHandlePtr, useFlags, handlePtr->hdr.name);
 	    *streamIDPtr = streamPtr->hdr.fileID;
 	    (void)FsStreamClientOpen(&streamPtr->clientList, clientID,useFlags);
 	    FsHandleRelease(streamPtr, TRUE);
@@ -435,7 +437,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * the pdev server who sets up a shadow stream.
 	     */
 	    streamPtr = FsStreamNew(ctrlHandlePtr->serverID,
-				    (FsHandleHeader *)NIL, useFlags);
+			(FsHandleHeader *)NIL, useFlags, handlePtr->hdr.name);
 	    *streamIDPtr = streamPtr->hdr.fileID;
 	    pdevStatePtr->streamID = streamPtr->hdr.fileID;
 	    FsStreamDispose(streamPtr);
@@ -465,18 +467,19 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
+FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
     register FsFileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* NIL. */
+    char		*name;		/* File name for error msgs */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a control stream, or NIL */
 {
     register PdevControlIOHandle	*ctrlHandlePtr;
     Boolean		found;
 
-    ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, &found);
+    ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, name, &found);
     if (found && !List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
 	Sys_Panic(SYS_FATAL, "FsControlStreamCltOpen found control msgs\n");
     }
@@ -514,11 +517,13 @@ FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
  */
 
 ReturnStatus
-FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
+FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+	ioHandlePtrPtr)
     register FsFileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* Ponter to FsPdevState. */
+    char		*name;		/* File name for error msgs */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a pseudo device, or NIL */
 {
@@ -555,7 +560,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
      */
     ctrlHandlePtr->seed = ioFileIDPtr->minor & 0xFFFF;
 
-    found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle),
+    found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle), name,
 			    ioHandlePtrPtr);
     cltHandlePtr = (PdevClientIOHandle *)(*ioHandlePtrPtr);
     if (found) {
@@ -573,7 +578,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 	FsHandleInvalidate((FsHandleHeader *)cltHandlePtr);
 	FsHandleRelease(cltHandlePtr, TRUE);
 
-	found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle),
+	found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle), name,
 			ioHandlePtrPtr);
 	cltHandlePtr = (PdevClientIOHandle *)(*ioHandlePtrPtr);
 	if (found) {
@@ -599,7 +604,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 	uid = pdevStatePtr->uid;
 
 	cltStreamPtr = FsStreamFind(&pdevStatePtr->streamID,
-			    (FsHandleHeader *)cltHandlePtr, *flagsPtr, &found);
+		    (FsHandleHeader *)cltHandlePtr, *flagsPtr, name, &found);
 	(void)FsStreamClientOpen(&cltStreamPtr->clientList,
 				clientID, *flagsPtr);
 	FsHandleUnlock(cltStreamPtr);
@@ -607,8 +612,8 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
     /*
      * Set up a service stream and hook the client handle to it.
      */
-    cltHandlePtr->pdevHandlePtr = ServerStreamCreate(ctrlHandlePtr,
-						     ioFileIDPtr, clientID);
+    cltHandlePtr->pdevHandlePtr = ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr,
+						     clientID, name);
     List_Init(&cltHandlePtr->clientList);
     (void)FsIOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
     FsHandleRelease(ctrlHandlePtr, TRUE);
@@ -658,11 +663,13 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
+FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+	ioHandlePtrPtr)
     register FsFileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* IGNORED (== rpc_SpriteID) */
     ClientData		streamData;	/* NIL for us. */
+    char		*name;		/* File name for error msgs */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a pseudo device, or NIL */
 {
@@ -689,7 +696,7 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePt
 	 * Install a remote I/O handle and initialize its recovery state.
 	 */
 	ioFileIDPtr->type = FS_RMT_PSEUDO_STREAM;
-	found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle),
+	found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle), name,
 		(FsHandleHeader **)&rmtHandlePtr);
 	recovPtr = &rmtHandlePtr->recovery;
 	if (!found) {
@@ -732,11 +739,12 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePt
  */
 
 static PdevServerIOHandle *
-ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID)
+ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID, name)
     PdevControlIOHandle *ctrlHandlePtr;	/* Control stream of a pseudo-device.
 					 * LOCKED on entry, please. */
     FsFileID	*ioFileIDPtr;	/* File ID used for pseudo stream handle */
     int		slaveClientID;	/* Host ID of client process */
+    char	*name;		/* File name for error messages */
 {
     FsHandleHeader *hdrPtr;
     register PdevServerIOHandle *pdevHandlePtr;
@@ -745,7 +753,8 @@ ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID)
     PdevNotify *notifyPtr;		/* Notification message */
 
     ioFileIDPtr->type = FS_SERVER_STREAM;
-    found = FsHandleInstall(ioFileIDPtr, sizeof(PdevServerIOHandle), &hdrPtr);
+    found = FsHandleInstall(ioFileIDPtr, sizeof(PdevServerIOHandle), name,
+			    &hdrPtr);
     pdevHandlePtr = (PdevServerIOHandle *)hdrPtr;
     if (found) {
 	Sys_Panic(SYS_WARNING, "ServerStreamCreate, found server handle\n");
@@ -799,7 +808,7 @@ ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID)
      */
 
     streamPtr = FsStreamNew(rpc_SpriteID, (FsHandleHeader *)pdevHandlePtr,
-			    FS_READ|FS_USER);
+			    FS_READ|FS_USER, name);
     notifyPtr = Mem_New(PdevNotify);
     notifyPtr->streamPtr = streamPtr;
     List_InitElement((List_Links *)notifyPtr);
@@ -1342,7 +1351,8 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	Boolean found;
 
 	reopenParamsPtr = (PdevControlReopenParams *)inData;
-	ctrlHandlePtr = FsControlHandleInit(&reopenParamsPtr->fileID, &found);
+	ctrlHandlePtr = FsControlHandleInit(&reopenParamsPtr->fileID,
+					    (char *)NIL, &found);
 	if (reopenParamsPtr->serverID != NIL) {
 	    /*
 	     * The remote host thinks it is running the pdev server process.

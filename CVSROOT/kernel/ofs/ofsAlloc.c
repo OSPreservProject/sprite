@@ -2339,7 +2339,8 @@ PutInBadBlockFile(handlePtr, domainPtr, blockNum)
 	 * Have to make a new handle since we don't have one for this domain
 	 * in memory.
 	 */
-	status = FsLocalFileHandleInit(&fileID, &badBlockHandlePtr);
+	status = FsLocalFileHandleInit(&fileID, "BadBlockFile",
+			&badBlockHandlePtr);
 	if (status != SUCCESS) {
 	    /* 
 	     * Leave allocated buffers around for debugging...

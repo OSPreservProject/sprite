@@ -81,14 +81,15 @@ void ExceptionNotify();
  *----------------------------------------------------------------------
  */
 Boolean
-FsDeviceHandleInit(fileIDPtr, newHandlePtrPtr)
+FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
     FsFileID		*fileIDPtr;
+    char		*name;
     FsDeviceIOHandle	**newHandlePtrPtr;
 {
     register Boolean found;
     register FsDeviceIOHandle *devHandlePtr;
 
-    found = FsHandleInstall(fileIDPtr, sizeof(FsDeviceIOHandle),
+    found = FsHandleInstall(fileIDPtr, sizeof(FsDeviceIOHandle), name,
 		    (FsHandleHeader **)newHandlePtrPtr);
     if (!found) {
 	devHandlePtr = *newHandlePtrPtr;
@@ -187,7 +188,7 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	 * the client open routine.
 	 */
 	streamPtr = FsStreamNew(ioFileIDPtr->serverID, (FsHandleHeader *)NIL,
-				useFlags);
+				useFlags, handlePtr->hdr.name);
 	*streamIDPtr = streamPtr->hdr.fileID;
 	deviceDataPtr->streamID = *streamIDPtr;
 	FsStreamDispose(streamPtr);
@@ -222,11 +223,12 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
+FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
     register FsFileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* Reference to FsDeviceState struct */
+    char		*name;		/* File name for error msgs */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a device, NIL if failure. */
 {
@@ -241,7 +243,7 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
     deviceDataPtr = (FsDeviceState *)streamData;
     *ioHandlePtrPtr = (FsHandleHeader *)NIL;
 
-    found = FsDeviceHandleInit(ioFileIDPtr, &tDevHandlePtr);
+    found = FsDeviceHandleInit(ioFileIDPtr, name, &tDevHandlePtr);
     devHandlePtr = tDevHandlePtr;
     /*
      * The device driver gets the device specification, ie. type
@@ -267,7 +269,8 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
 	(void)FsIOClientOpen(&devHandlePtr->clientList, clientID, flags, FALSE);
 
 	streamPtr = FsStreamFind(&deviceDataPtr->streamID,
-			(FsHandleHeader *)devHandlePtr, flags, (Boolean *)NIL);
+			(FsHandleHeader *)devHandlePtr, flags,
+			name, (Boolean *)NIL);
 	(void)FsStreamClientOpen(&streamPtr->clientList, clientID, flags);
 	FsHandleRelease(streamPtr, TRUE);
 
@@ -306,11 +309,12 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
+FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
     FsFileID		*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* FsDeviceState */
+    char		*name;		/* Device file name */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
 					 * I/O to a device, NIL if failure. */
 {
@@ -319,7 +323,7 @@ FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
     FsDeviceState	*deviceStatePtr;
 
     if (clientID != rpc_SpriteID) {
-	Sys_Panic(SYS_FATAL, "FsDeviceOpen, bad clientID for rmtOpen\n");
+	Sys_Panic(SYS_FATAL, "FsRmtDeviceCltOpen, bad clientID for rmtOpen\n");
     }
     *ioHandlePtrPtr = (FsHandleHeader *)NIL;
 
@@ -327,6 +331,7 @@ FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
      * Do a device open at the I/O server.  We set the ioFileID type so
      * that the local device client open procedure gets called at the I/O
      * server, as opposed to the local pipe (or whatever) open routine.
+     * NAME note: are not passing the file name to the I/O server.
      */
     deviceStatePtr = (FsDeviceState *)streamData;
     ioFileIDPtr->type = FS_LCL_DEVICE_STREAM;
@@ -341,7 +346,7 @@ FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
 	FsRemoteIOHandle *rmtHandlePtr;
 
 	ioFileIDPtr->type = FS_RMT_DEVICE_STREAM;
-	found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle),
+	found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle), name,
 		(FsHandleHeader **)&rmtHandlePtr);
 	recovPtr = &rmtHandlePtr->recovery;
 	if (!found) {
@@ -469,6 +474,7 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
      * I/O server for the device.  This is either the device, pipe, or
      * named pipe open routine.  We allocate storage and copy the stream
      * data so the CltOpen routine can free it, as it expects to do.
+     * NAME note: we don't have a name for the device here.
      */
     paramPtr = (FsDeviceRemoteOpenPrm *) storagePtr->requestParamPtr;
     dataSize = paramPtr->dataSize;
@@ -480,7 +486,7 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
     }
     status = (fsStreamOpTable[paramPtr->fileID.type].cltOpen)
 		    (&paramPtr->fileID, &paramPtr->useFlags,
-		     clientID, streamData, &hdrPtr);
+		     clientID, streamData, (char *)NIL, &hdrPtr);
     if (status == SUCCESS) {
 	/*
 	 * Return the fileID to the other host so it can
@@ -957,7 +963,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 		sizePtr, dataPtr));
     }
     migInfoPtr->ioFileID.type = FS_LCL_DEVICE_STREAM;
-    if (!FsDeviceHandleInit(&migInfoPtr->ioFileID, &devHandlePtr)) {
+    if (!FsDeviceHandleInit(&migInfoPtr->ioFileID, (char *)NIL, &devHandlePtr)){
 	Sys_Panic(SYS_WARNING,
 		"FsDeviceMigrate, I/O handle <%d,%d> not found\n",
 		 migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
@@ -968,7 +974,8 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      * for the stream, and check for any cross-network stream sharing.
      */
     streamPtr = FsStreamFind(&migInfoPtr->streamID,
-		(FsHandleHeader *)devHandlePtr, migInfoPtr->flags, &found);
+		(FsHandleHeader *)devHandlePtr, migInfoPtr->flags,
+		(char *)NIL, &found);
     if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
 	/*
 	 * We don't think the stream is being shared so we
@@ -1177,7 +1184,7 @@ FsRemoteIOMigEnd(migInfoPtr, size, data, hdrPtrPtr)
     Boolean found;
 
     found = FsHandleInstall(&migInfoPtr->ioFileID, sizeof(FsRemoteIOHandle),
-		hdrPtrPtr);
+		(char *)NIL, hdrPtrPtr);
     rmtHandlePtr = (FsRemoteIOHandle *)*hdrPtrPtr;
     recovPtr = &rmtHandlePtr->recovery;
     if (!found) {

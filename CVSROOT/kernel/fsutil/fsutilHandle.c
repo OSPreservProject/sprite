@@ -99,6 +99,11 @@ Hash_Table	*fileHashTable = &fileHashTableStruct;
 	(hdrPtr)->flags &= ~FS_HANDLE_LOCKED; \
 	Sync_Broadcast(&((hdrPtr)->unlocked));
 
+/*
+ * Macro to give name associated with a handle.
+ */
+#define HDR_FILE_NAME(hdrPtr) \
+	(((hdrPtr)->name == (char *)NIL) ? "(no name)" : hdrPtr->name)
 void	HandleWakeup();
 
 
@@ -151,11 +156,12 @@ extern	fsLastScavengeTime;
  *
  */
 ENTRY Boolean
-FsHandleInstall(fileIDPtr, size, hdrPtrPtr)
+FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
     register FsFileID	*fileIDPtr;	/* Identfies handle to install. */
     int		 	size;		/* True size of the handle.  This
 					 * routine only looks at the header,
 					 * but more data follows that. */
+    char		*name;		/* File name for error messages */
     FsHandleHeader	**hdrPtrPtr;	/* Return pointer to handle that
 					 * is found in the hash table. */    
 {
@@ -190,6 +196,16 @@ again:
 	hdrPtr->fileID = *fileIDPtr;
 	hdrPtr->refCount = 1;
 	hdrPtr->flags |= FS_HANDLE_INSTALLED;
+#ifndef FS_NO_HDR_NAMES
+	if (name != (char *)NIL) {
+	    hdrPtr->name = (char *)Mem_Alloc(String_Length(name) + 1);
+	    (void)String_Copy(name, hdrPtr->name);
+	} else {
+	    hdrPtr->name = (char *)NIL;
+	}
+#else
+	hdrPtr->name = (char *)NIL;
+#endif
 	Hash_SetValue(hashEntryPtr, hdrPtr);
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_NEW, hdrPtr);
     } else {
@@ -208,6 +224,12 @@ again:
 	fsStats.handle.installHits++;
 	hdrPtr->refCount++;
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_HIT, hdrPtr);
+#ifndef FS_NO_HDR_NAMES
+	if ((hdrPtr->name == (char *)NIL) && (name != (char *)NIL)) {
+	    hdrPtr->name = (char *)Mem_Alloc(String_Length(name) + 1);
+	    (void)String_Copy(name, hdrPtr->name);
+	}
+#endif FS_NO_HDR_NAMES
     }
     hdrPtr->flags |= FS_HANDLE_LOCKED;
     fsStats.handle.locks++;
@@ -497,18 +519,19 @@ FsHandleReleaseHdr(hdrPtr, locked)
     if (locked && ((hdrPtr->flags & FS_HANDLE_LOCKED) == 0)) {
 	UNLOCK_MONITOR;
 	Sys_Panic(SYS_FATAL,
-	    "HandleRelease, handle <%d,%d,%d,%d> not locked\n",
+	    "HandleRelease, handle <%d,%d,%d,%d> \"%s\" not locked\n",
 	    hdrPtr->fileID.type, hdrPtr->fileID.serverID,
-	    hdrPtr->fileID.major, hdrPtr->fileID.minor);
+	    hdrPtr->fileID.major, hdrPtr->fileID.minor, HDR_FILE_NAME(hdrPtr));
 	return;
     }
     hdrPtr->refCount--;
 
     if (hdrPtr->refCount < 0) {
 	UNLOCK_MONITOR;
-	Sys_Panic(SYS_FATAL, "Negative refCount on handle <%d,%d,%d,%d>\n",
-		hdrPtr->fileID.type, hdrPtr->fileID.serverID,
-		hdrPtr->fileID.major, hdrPtr->fileID.minor);
+	Sys_Panic(SYS_FATAL, "refCount %d on %s handle <%d,%d,%d> \"%s\"\n",
+		hdrPtr->refCount, FsFileTypeToString(hdrPtr->fileID.type),
+		hdrPtr->fileID.serverID, hdrPtr->fileID.major,
+		hdrPtr->fileID.minor, HDR_FILE_NAME(hdrPtr));
 	return;
     } else if ((hdrPtr->refCount == 0) &&
 	       (hdrPtr->flags & FS_HANDLE_REMOVED) &&
@@ -584,6 +607,9 @@ FsHandleRemoveInt(hdrPtr)
 	hdrPtr->flags |= FS_HANDLE_REMOVED;
     } else {
 	FS_TRACE_HANDLE(FS_TRACE_REMOVE_FREE, hdrPtr);
+	if (hdrPtr->name != (char *)NIL) {
+	    Mem_Free((Address) hdrPtr->name);
+	}
 	Mem_Free((Address) hdrPtr);
     }
 }
@@ -698,9 +724,10 @@ FsGetNextHandle(hashSearchPtr)
 	 */
 	if ((hdrPtr->flags & FS_HANDLE_WANTED) &&
 	    (hdrPtr->flags & FS_HANDLE_LOCKED)){
-	    Sys_Panic(SYS_WARNING, "GetNextHandle skipping %s handle <%d,%d>\n",
+	    Sys_Panic(SYS_WARNING, "GetNextHandle skipping %s <%d,%d> \"%s\"\n",
 		FsFileTypeToString(hdrPtr->fileID.type),
-		hdrPtr->fileID.major, hdrPtr->fileID.minor);
+		hdrPtr->fileID.major, hdrPtr->fileID.minor,
+		HDR_FILE_NAME(hdrPtr));
 	    continue;
 	}
 	/*
@@ -765,9 +792,10 @@ FsHandleInvalidate(hdrPtr)
 	if (hashEntryPtr == (Hash_Entry *) NIL) {
 	    UNLOCK_MONITOR;
 	    Sys_Panic(SYS_FATAL,
-		    "FsHandleInvalidate: Can't find <%d,%d> type %d\n",
-			hdrPtr->fileID.major, hdrPtr->fileID.minor,
-			hdrPtr->fileID.type);
+		"FsHandleInvalidate: Can't find %s handle <%d,%d,%d>\n",
+			FsFileTypeToString(hdrPtr->fileID.type),
+			hdrPtr->fileID.serverID,
+			hdrPtr->fileID.major, hdrPtr->fileID.minor);
 	    return;
 	}
 	Hash_Delete(fileHashTable, hashEntryPtr);

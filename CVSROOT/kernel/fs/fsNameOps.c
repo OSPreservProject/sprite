@@ -137,12 +137,12 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	 * to complete the setup of the stream's I/O handle
 	 */
 	streamPtr = FsStreamFind(&openResults.streamID, (FsHandleHeader *)NIL,
-				 useFlags, (Boolean *)NIL);
+				 useFlags, name, (Boolean *)NIL);
 	streamPtr->nameInfoPtr = nameInfoPtr;
 	FsHandleUnlock(streamPtr);
 	status = (*fsStreamOpTable[openResults.ioFileID.type].cltOpen)
 		    (&openResults.ioFileID, &streamPtr->flags, rpc_SpriteID,
-		     openResults.streamData, &streamPtr->ioHandlePtr);
+		     openResults.streamData, name, &streamPtr->ioHandlePtr);
 	if (status == SUCCESS) {
 	    if (streamPtr->flags & FS_TRUNC) {
 		int length = 0;

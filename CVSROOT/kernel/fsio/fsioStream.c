@@ -69,10 +69,11 @@ static ReturnStatus GrowStreamList();
  *----------------------------------------------------------------------
  */
 ENTRY Fs_Stream *
-FsStreamNew(serverID, ioHandlePtr, useFlags)
+FsStreamNew(serverID, ioHandlePtr, useFlags, name)
     int			serverID;	/* I/O server for stream */
-    FsHandleHeader	*ioHandlePtr;
-    int			useFlags;
+    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
+    int			useFlags;	/* Usage flags from Fs_Open call */
+    char		*name;		/* Name for error messages */
 {
     register Boolean found;
     register Fs_Stream *streamPtr;
@@ -92,7 +93,7 @@ FsStreamNew(serverID, ioHandlePtr, useFlags)
 
     do {
 	fileID.minor = ++streamCount;
-	found = FsHandleInstall(&fileID, sizeof(Fs_Stream),
+	found = FsHandleInstall(&fileID, sizeof(Fs_Stream), name,
 				(FsHandleHeader **)&newStreamPtr);
 	if (found) {
 	    /*
@@ -130,17 +131,18 @@ FsStreamNew(serverID, ioHandlePtr, useFlags)
  *----------------------------------------------------------------------
  */
 Fs_Stream *
-FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, foundPtr)
+FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, name, foundPtr)
     FsFileID *streamIDPtr;
     FsHandleHeader *ioHandlePtr;
     int useFlags;
+    char *name;
     Boolean *foundPtr;
 {
     register Boolean found;
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
 
-    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream),
+    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
 			    (FsHandleHeader **)&newStreamPtr);
     streamPtr = newStreamPtr;
     if (!found) {
@@ -290,9 +292,6 @@ FsStreamDispose(streamPtr)
     FsHandleRelease(streamPtr, TRUE);
     if (noClients) {
 	if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
-	    if (streamPtr->nameInfoPtr->name != (char *)NIL) {
-		Mem_Free((Address)streamPtr->nameInfoPtr->name);
-	    }
 	    Mem_Free((Address)streamPtr->nameInfoPtr);
 	}
 	FsHandleRemove(streamPtr);
@@ -408,7 +407,7 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	    Boolean found;
 
 	    streamPtr = FsStreamFind(&reopenParamsPtr->streamID, ioHandlePtr,
-				     reopenParamsPtr->useFlags, &found);
+		     reopenParamsPtr->useFlags, ioHandlePtr->name, &found);
 	    /*
 	     * BRENT Have to worry about the shared offset here.
 	     */
@@ -429,7 +428,10 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	    FsHandleRelease(streamPtr, TRUE);
 	    status = SUCCESS;
 	} else {
-	    Sys_Panic(SYS_WARNING, "FsStreamReopen, I/O handle not found\n");
+	    Sys_Panic(SYS_WARNING,
+		"FsStreamReopen, %s I/O handle <%d,%d> not found\n",
+		FsFileTypeToString(fileIDPtr->type),
+		fileIDPtr->major, fileIDPtr->minor);
 	    status = FAILURE;
 	}
     }

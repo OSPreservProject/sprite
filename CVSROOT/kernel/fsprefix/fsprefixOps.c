@@ -68,6 +68,7 @@ void PrefixUpdate();
 void PrefixInsert();
 void GetNilPrefixes();
 void DoReopen();
+char *NameOp();
 
 
 /*
@@ -195,23 +196,13 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 			 * to the server during relative lookups to trap
 			 * ascending off the root of a domain via "..".
 			 * The fileID is used by the attributes routines to get
-			 * to the name server for open streams.  Finally, the
-			 * name is kept as a convenience for error reporting.
+			 * to the name server for open streams.
 			 */
 			nameInfoPtr->fileID =
 				((FsOpenResults *)resultsPtr)->nameID;
 			nameInfoPtr->rootID = rootID;
 			nameInfoPtr->domainType = domainType;
 			nameInfoPtr->prefixPtr = prefixPtr;
-			nameInfoPtr->name = (char *)Mem_Alloc(
-				  String_Length(prefixPtr->prefix) +
-				      String_Length(lookupName) +
-				      sizeof("{} ") + 1
-				);
-			(void)String_Copy("{", nameInfoPtr->name);
-			(void)String_Cat(prefixPtr->prefix, nameInfoPtr->name);
-			(void)String_Cat("} ", nameInfoPtr->name);
-			(void)String_Cat(lookupName, nameInfoPtr->name);
 		    }
 		    break;
 		}
@@ -227,6 +218,8 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 			fsStats.prefix.timeouts++;
 		    }
 		    FsWantRecovery(hdrPtr);
+		    Sys_Printf("%s of \"%s\" waiting for recovery\n",
+				NameOp(operation), fileName);
 		    status = FsWaitForRecovery(hdrPtr, status);
 		    if (status == SUCCESS) {
 			/*
@@ -400,6 +393,8 @@ retry:
 	    FsHandleHeader *staleHdrPtr;
 	    staleHdrPtr = (srcNameError ? srcHdrPtr : dstHdrPtr);
 	    FsWantRecovery(staleHdrPtr);
+	    Sys_Printf("%s of \"%s\" and \"%s\" waiting for recovery\n",
+			    NameOp(operation), srcName, dstName);
 	    status = FsWaitForRecovery(staleHdrPtr, status);
 	    if (status == SUCCESS) {
 		goto retry;
@@ -631,6 +626,51 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 	  "FsLookupOperation: Bad format of returned file name \"%s\".\n",
 	  redirectInfoPtr->fileName);
 	return(FAILURE);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NameOp --
+ *
+ *	Return a string for a name operation.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set up the list links.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+NameOp(lookupOperation)
+    int lookupOperation;
+{
+    switch(lookupOperation) {
+	case FS_DOMAIN_PREFIX:
+	    return("prefix");
+	case FS_DOMAIN_OPEN:
+	    return("open");
+	case FS_DOMAIN_GET_ATTR:
+	    return("get attr");
+	case FS_DOMAIN_SET_ATTR:
+	    return("set attr");
+	case FS_DOMAIN_MAKE_DEVICE:
+	    return("make device");
+	case FS_DOMAIN_MAKE_DIR:
+	    return("make directory");
+	case FS_DOMAIN_REMOVE:
+	    return("remove");
+	case FS_DOMAIN_REMOVE_DIR:
+	    return("remove directory");
+	case FS_DOMAIN_RENAME:
+	    return("rename");
+	case FS_DOMAIN_HARD_LINK:
+	    return("link");
+	default:
+	    return("(unknown lookup operation)");
     }
 }
 

@@ -102,9 +102,7 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	    if (status != SUCCESS) {
 		Sys_Panic(SYS_WARNING,
 		    "Fs_GetAttrStream: can't get name attributes <%x> for %s\n",
-		    status,
-		    (nameInfoPtr->name == (char *)NIL) ? "(no name)" :
-							 nameInfoPtr->name);
+		    status, Fs_GetFileName(streamPtr));
 	    }
 	}
 	if (status == SUCCESS) {
@@ -161,7 +159,7 @@ FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
 
 	handlePtr = FsHandleFetchType(FsLocalFileIOHandle, fileIDPtr);
 	if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	    status = FsLocalFileHandleInit(fileIDPtr, &handlePtr);
+	    status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL, &handlePtr);
 	    if (status != SUCCESS) {
 		Byte_Zero(sizeof(Fs_Attributes), (Address)attrPtr);
 		return(status);
@@ -958,7 +956,7 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
     fileIDPtr = (FsFileID *) storagePtr->requestParamPtr;
     hdrPtr = VerifyIOHandle(fileIDPtr);
     if (hdrPtr == (FsHandleHeader *)NIL) {
-	status = FsLocalFileHandleInit(fileIDPtr,
+	status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL,
 			(FsLocalFileIOHandle **)&tHdrPtr);
 	if (status != SUCCESS) {
 	    return(status);
@@ -1099,7 +1097,7 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
 
     hdrPtr = VerifyIOHandle(fileIDPtr);
     if (hdrPtr == (FsHandleHeader *)NIL) {
-	status = FsLocalFileHandleInit(fileIDPtr,
+	status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL,
 				       (FsLocalFileIOHandle **)&hdrPtr);
 	if (status != SUCCESS) {
 	    return(status);

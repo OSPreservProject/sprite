@@ -118,7 +118,7 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
 	 * Use the client-open routine to set up an I/O handle for the prefix.
 	 */
 	status = (*fsStreamOpTable[fileIDPtr->type].cltOpen)(fileIDPtr, &flags,
-		    rpc_SpriteID, (ClientData)streamData, hdrPtrPtr);
+		    rpc_SpriteID, (ClientData)streamData, fileName, hdrPtrPtr);
 	if (status == SUCCESS) {
 	    /*
 	     * Register the server with the recovery module so we find out

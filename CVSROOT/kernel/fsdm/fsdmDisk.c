@@ -274,7 +274,7 @@ FsAttachDisk(devicePtr, localName, flags)
      * Now that the block I/O is set up we can read the file descriptor
      * of the root directory of the domain.
      */
-    status = FsLocalFileHandleInit(&fileID, &handlePtr);
+    status = FsLocalFileHandleInit(&fileID, localName, &handlePtr);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "FsAttachDisk: can't get root file handle %x\n",
 		status);
