@@ -557,6 +557,11 @@ Sys_SysCall(trapStackPtr)
 	return(SYS_INVALID_SYSTEM_CALL);
     }
     entryPtr = &sysCalls[sysCallType];
+#ifndef CLEAN
+    if (sysTraceSysCalls) {
+	Sys_Printf("SysCall #%d:", sysCallType);
+    }
+#endif CLEAN
 
     /*
      * Copy the arguments in.
@@ -605,7 +610,7 @@ Sys_SysCall(trapStackPtr)
     }
 #ifndef CLEAN
     if (sysTraceSysCalls) {
-	Sys_Printf("SysCall #%d returns %x\n", sysCallType,
+	Sys_Printf("#%d returns %x\n", sysCallType,
 			trapStackPtr->genRegs[D0]);
     }
 #endif CLEAN
