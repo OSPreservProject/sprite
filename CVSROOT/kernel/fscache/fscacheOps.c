@@ -608,6 +608,7 @@ FsCacheRead(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 			  &blockPtr, &found);
 	fsStats.blockCache.readAccesses++;
 	if (found) {
+	    amountRead = 0;
 	    if (blockPtr->timeDirtied != 0) {
 		fsStats.blockCache.readHitsOnDirtyBlock++;
 	    } else {
@@ -648,14 +649,14 @@ FsCacheRead(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		          blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
 			  buffer) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
-		FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+		FsCacheUnlockBlock(blockPtr, 0, -1, amountRead, FS_CLEAR_READ_AHEAD);
 		break;
 	    }
 	} else {
 	    bcopy(blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
 		      buffer, toRead);
 	}
-	FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+	FsCacheUnlockBlock(blockPtr, 0, -1, amountRead, FS_CLEAR_READ_AHEAD);
     }
     *lenPtr -= size;
     FsStat_Add(*lenPtr, fsStats.blockCache.bytesRead,
