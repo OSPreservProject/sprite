@@ -284,4 +284,90 @@ On sun4c's the dma reset is now owned by the dev module and not the net module.
 Added support for kgcorein dbgMain.c
 Added the mop protocol in devNet.c.
 lfsMem.c: removed cache memory requirements for file systems.
+
+1.080	Wed Jan  9 22:18:00 PST 1991
+-------------------------------
+traceLog.c
+Added version letter recording and bug fixes
+
+fsdmDisk.c
+#ifdef'd out some prolific error messages for until Mendel can
+take a look at them.
+
+fslclLookup.c
+Added an extra trace field to indicate a symbolic link.
+
+fslclDomain.c
+Removed an extra getattr trace.
+Fixed a trace stub in the wrong place.
+
+devConfig.c
+Now you can have a sparcstation root file server.
+
+fsrmtAttributes.c
+Fixed a bug in my last fix.
+Fixed my last change to get/set attributes.
+Added logging of userID to get/set attributes.
+
+md/RCS/machCode.c
+Fixed problem with floating/debugger combination crashing system.
+
+sysCalls.c
+Added statistucs.  Added version letter logging to trace.
+
+fsioFile.c
+More sosp changes.
+
+rpcDaemon.c
+Fixed the fix for the multiple timeout entry insert problem.
+Removed extra extern declarations of routines.
+Fixed timeout queue bug where we would reschedule an rpc daemon timeout
+even though one was already on the queue.
+
+fsAttributes.c
+Changed getAttr/setAttr to log the userID.
+
+lfsSegUsage.c
+Changed to so only clean a few segments rather than the entire disk 
+each time.
+
+lfsSeg.c
+Changed to so only clean a few segments rather than the entire disk 
+each time.
+Fixed problem dealing with devices with max transfer size too large to 
+malloc.   
+
+fsconsistCache.c
+More sosp tracing stuff.
+
+lfsMain.c
+Added a few Lfs_Commands.
+
+fsSelect.c
+Fixed a problem with Fs_Select returning SUCCESS instead of TIMEOUT.
+The problem was that the return status was getting clobbered by the
+status of a Vm_CopyOut.  This problem was introduced by the Unix
+compatibility changes.
+
+fsPageOps.c
+Fixed a bug fix.
+Fixed stale handle on swap file causing infinite recovery.
+
+devGraphics.c
+Changed BOING define to PROM_1_4 since that's the prom revision for
+sparcstations that's got the access problem.
+
+devSCSIC90.c
+Fixed off-by-1 bug for DMAs not crossing 16MB boundaries.
+
+fsrmtDomain.c
+Attempt to fix zero-length parameters poison reopen packet bug from
+server's side.
+
+fsrmtIO.c
+Fixed sosp trace.
+fixed bug doing lseek on pseudo-filesystems
+
+fsStreamOps.c
+doesn't get attributes when doing an lseek unless it has to.
     New files linked in from the net library.
