@@ -837,16 +837,36 @@ Sys_StatsStub(command, option, argPtr)
 	    status = Vm_CopyOut(length, &stats, argPtr);
 	    break;
 	}
-#ifdef sun4
-	case SYS_TEST_CMAP: {
-	    Address	addr;
+	case SYS_FS_RECOV_NAMED_INFO: {
+	    int		length;
+	    Address	resultPtr;
+	    int		lengthNeeded;
 
-	    addr = (Address) option;
-	    printf("address is 0x%x, seg is 0x%x, pte is 0x%x\n",
-		    addr, VmMachGetSegMap(addr), VmMachGetPageMap(addr));
+	    resultPtr = argPtr;
+	    /* option is actually an in/out param */
+	    status = Vm_CopyIn(sizeof (int), (Address) option,
+		    (Address) &length);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    if (length != 0 && (resultPtr == (Address) NIL || resultPtr ==
+		    (Address) 0 || resultPtr == (Address) USER_NIL)) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    resultPtr = (Address) malloc(length);
+	    status = Fsutil_FsRecovNamedInfo(length, resultPtr, &lengthNeeded);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    status = Vm_CopyOut(length, resultPtr, argPtr);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    status = Vm_CopyOut(sizeof (int), (Address) &lengthNeeded,
+		    (Address) option);
 	    break;
 	}
-#endif
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
