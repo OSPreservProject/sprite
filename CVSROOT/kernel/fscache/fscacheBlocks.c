@@ -514,7 +514,12 @@ INTERNAL static void
 PutFileOnDirtyList(cacheInfoPtr)
     register	Fscache_FileInfo	*cacheInfoPtr;	/* Cache info for a file */
 {
-    if (cacheInfoPtr->flags & FSCACHE_FILE_GONE) {
+    if ((cacheInfoPtr->flags & FSCACHE_FILE_GONE) ||
+        (cacheInfoPtr->flags & FSCACHE_FILE_BEING_WRITTEN)) {
+	/*
+	 * Don't put a file on the dirty list if it has been deleted or
+	 * it's already being written.
+	 */
 	return;
     }
     if (!(cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST)) {
@@ -2517,7 +2522,7 @@ GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
 	Sync_Broadcast(&closeCondition);
 	PutFileOnDirtyList(cacheInfoPtr);
 	return;
-    }
+    } 
 
     LIST_FORALL(&cacheInfoPtr->dirtyList, dirtyPtr) {
 	blockPtr = DIRTY_LINKS_TO_BLOCK(dirtyPtr);
@@ -2546,7 +2551,11 @@ GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
 	} else {
 	    *lastDirtyBlockPtr = 0;
 	}
-
+	/*
+	 * Increment the reference count to make the block unavailable to 
+	 * others.
+	 */
+	blockPtr->refCount++;
 	return;
     }
 
@@ -2608,7 +2617,10 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
     Sync_Broadcast(&blockPtr->ioDone);
 
     blockPtr->flags &= ~(FSCACHE_BLOCK_BEING_WRITTEN | FSCACHE_BLOCK_ON_DIRTY_LIST);
-
+    /*
+     * Decrement the reference count to make the block available to others.
+     */
+    blockPtr->refCount--;
     /*
      * Determine if someone is waiting for the block to be written back.  If
      * so and all of the blocks that are being waited for have been written
@@ -2702,8 +2714,8 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 	    Fsutil_FileError(cacheInfoPtr->hdrPtr, "Write-back failed", status);
 	}
 	cacheInfoPtr->lastTimeTried = fsutil_TimeInSeconds;
-	PutBlockOnDirtyList(blockPtr, TRUE);
 	cacheInfoPtr->flags &= ~FSCACHE_FILE_BEING_WRITTEN;
+	PutBlockOnDirtyList(blockPtr, TRUE);
 	if (cacheInfoPtr->flags & FSCACHE_CLOSE_IN_PROGRESS) {
 	    /*
 	     * Wake up anyone waiting for us to finish so that they can close
