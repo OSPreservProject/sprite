@@ -54,36 +54,39 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 ReturnStatus
-Fs_AttachDiskStub(deviceFile, localName, flags)
-    char *deviceFile;	/* Name of raw disk file to attach */
-    char *localName;	/* Local directory name where disk is attached */
-    int flags;		/* FS_ATTACH_READ_ONLY, FS_DETATCH, or
-			 * FS_ATTACH_LOCAL */
+Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
+    char *userDeviceName;/* Name of raw disk device file to attach */
+    char *userLocalName;/* Local directory name where disk is attached */
+    int flags;		/* FS_ATTACH_READ_ONLY, FS_DETATCH, FS_ATTACH_LOCAL */
 {
     ReturnStatus status;
     int useFlags;		/* Flags for the Fs_Open call */
     Fs_Stream *streamPtr;	/* Stream from the Fs_Open call */
+    char *deviceName;		/* Kernel resident pathname storage */
+    char *localName;		/* Kernel resident pathname storage */
     int	localNameLength;
     int	deviceNameLength;
 
-    if (localName != (char *)NIL && localName != (char *)0) {
-	status = Fs_MakeNameAccessible(&localName, &localNameLength);
-	if (status != SUCCESS) {
-	    return(status);
+    if (userLocalName != (char *)NIL && userLocalName != (char *)0) {
+	localName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
+	if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userLocalName, localName,
+			   &localNameLength) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
 	}
     } else {
 	localName = (char *)NIL;
     }
-    if (deviceFile != (char *)NIL && deviceFile != (char *)0) {
-	status = Fs_MakeNameAccessible(&deviceFile, &deviceNameLength);
-	if (status != SUCCESS) {
+    if (userDeviceName != (char *)NIL && userDeviceName != (char *)0) {
+	deviceName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
+	if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userDeviceName, deviceName,
+			   &deviceNameLength) != SUCCESS) {
 	    if (localName != (char *)NIL) {
-		Vm_MakeUnaccessible((Address)localName, localNameLength);
+		free(localName);
 	    }
 	    return(status);
 	}
     } else {
-	deviceFile = (char *)NIL;
+	deviceName = (char *)NIL;
     }
     if (flags & FS_DETACH) {
 	/*
@@ -95,7 +98,7 @@ Fs_AttachDiskStub(deviceFile, localName, flags)
 	/*
 	 * Attach a local domain into the prefix table.
 	 */
-	if (deviceFile == (char *)NIL ||
+	if (deviceName == (char *)NIL ||
 	    localName == (char *)NIL) {
 	    status = FS_INVALID_ARG;
 	} else {
@@ -104,7 +107,7 @@ Fs_AttachDiskStub(deviceFile, localName, flags)
 	    } else {
 		useFlags = FS_READ|FS_WRITE;
 	    }
-	    status = Fs_Open(deviceFile, useFlags, FS_DEVICE, 0, &streamPtr);
+	    status = Fs_Open(deviceName, useFlags, FS_DEVICE, 0, &streamPtr);
 	    if (status == SUCCESS) {
 		FsDeviceIOHandle *devHandlePtr =
 			(FsDeviceIOHandle *)streamPtr->ioHandlePtr;
@@ -112,11 +115,11 @@ Fs_AttachDiskStub(deviceFile, localName, flags)
 	    }
 	}
     }
-    if (deviceFile != (char *)NIL) {
-	Vm_MakeUnaccessible((Address)deviceFile, deviceNameLength);
+    if (deviceName != (char *)NIL) {
+	free(deviceName);
     }
     if (localName != (char *)NIL) {
-	Vm_MakeUnaccessible((Address)localName, localNameLength);
+	free(localName);
     }
     return(status);
 }
