@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
+#include "fsio.h"
 #include "fsutil.h"
 #include "fsNameOps.h"
 #include "fsprefix.h"
@@ -173,7 +174,7 @@ FslclOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 	 * needed later by the client to open a stream to the file.
 	 * For regular files, this is when cache consistency is done.
 	 */
-	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].nameOpen)
 		(handlePtr, openArgsPtr, openResultsPtr);
 	openResultsPtr->nameID = handlePtr->hdr.fileID;
 	if (openArgsPtr->clientID != rpc_SpriteID) {
@@ -243,12 +244,12 @@ FslclGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
      * Get the I/O fileID so our client can contact the I/O server.
      */
     openArgsPtr->useFlags = 0;
-    status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+    status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].nameOpen)
 	    (handlePtr, openArgsPtr, &openResults);
     *attrResultsPtr->fileIDPtr = openResults.ioFileID;
 
     if (status != SUCCESS) {
-	printf("FslclGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+	printf("FslclGetAttrPath, nameOpen of \"%s\" <%d,%d> failed <%x>\n",
 	    relativeName, handlePtr->hdr.fileID.minor,
 	    handlePtr->hdr.fileID.major, status);
     }
@@ -263,7 +264,7 @@ FslclGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
  * FslclSetAttrPath --
  *
  *	Set the attributes of a local file given its pathname.  First
- *	we update the disk descriptor, then call the srvOpen routine
+ *	we update the disk descriptor, then call the nameOpen routine
  *	to get an I/O handle for the file.  This is used by our caller
  *	to branch to the stream-type setIOAttr routine.
  *
@@ -316,13 +317,13 @@ FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     if (status == SUCCESS) {
 	Fsutil_HandleLock(handlePtr);
 	openArgsPtr->useFlags = 0;
-	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].nameOpen)
 		(handlePtr, openArgsPtr, &openResults);
 	*fileIDPtr = openResults.ioFileID;
 
 	if (status != SUCCESS) {
 	    printf(
-		"FslclSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+		"FslclSetAttrPath, nameOpen of \"%s\" <%d,%d> failed <%x>\n",
 		relativeName, handlePtr->hdr.fileID.minor,
 		handlePtr->hdr.fileID.major, status);
 	}
