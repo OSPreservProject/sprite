@@ -56,6 +56,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 static Proc_PID GetProcessState();
 static ReturnStatus GetStream();
+ENTRY static ReturnStatus GetUserInfo();
 static ReturnStatus ContinueMigratedProc();
 
 /*
@@ -64,13 +65,6 @@ static ReturnStatus ContinueMigratedProc();
 
 #define ValidAddress(addr) (((Address) addr != (Address) NIL) && \
 			    ((Address) addr != (Address) USER_NIL))
-/*
- * Number of times to try an RPC before giving up due to RPC_TIMEOUT, while
- * waiting for the host to come up.
- */
-
-#define MAX_RPC_RETRIES 2
-
 
 /*
  *----------------------------------------------------------------------
@@ -281,7 +275,8 @@ GetProcessState(buffer, hostID)
      * state.
      */
 
-    bcopy((Address) &procPtr->parentID, PROC_NUM_ID_FIELDS * sizeof (int));
+    bcopy(buffer, (Address) &procPtr->parentID,
+	  PROC_NUM_ID_FIELDS * sizeof (int));
     buffer += PROC_NUM_ID_FIELDS * sizeof(int);
     bcopy(buffer, (Address) &procPtr->genFlags, PROC_NUM_FLAGS * sizeof (int));
     buffer += PROC_NUM_FLAGS * sizeof(int);
@@ -822,13 +817,13 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	printf("Proc_DoRemoteCall: sending call %d home.\n", callNumber); 
     }
 
-    for (numTries = 0; numTries < MAX_RPC_RETRIES; numTries++) {
+    for (numTries = 0; numTries < PROC_MAX_RPC_RETRIES; numTries++) {
 	remoteCallStatus = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL,
 				    &storage);
 	if (remoteCallStatus != RPC_TIMEOUT) {
 	    break;
 	}
-	remoteCallStatus = Proc_WaitForHost(procPtr->peerHostID);
+	status = Proc_WaitForHost(procPtr->peerHostID);
 	if (status != SUCCESS) {
 	    break;
 	}
@@ -876,7 +871,16 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	    if (specsPtr[i].type != SYS_PARAM_PROC_ENV_VALUE) {
 		size = call.info[i].size;
 	    } else {
-		size = String_NLength(call.info[i].size, (char *) ptr) + 1;
+		/*
+		 * Compute true size of the string, up to the call info limit.
+		 */
+		register char *charPtr;
+		for (charPtr = (char *)ptr, size = 0;
+		     (size < call.info[i].size) && (*charPtr != '\0');
+		     charPtr++, size++) {
+		}
+		*charPtr = '\0';	/* null terminate */
+		size++;			/* at most call.info[i].size */
 	    }
 	    status = Vm_CopyOut(size, ptr, (Address) argsPtr[i]);
 	    if (status != SUCCESS) {
@@ -1024,7 +1028,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     storage.replyDataPtr = (Address) &childProcPtr->peerProcessID;
     storage.replyDataSize = sizeof(Proc_PID);
 
-    for (numTries = 0; numTries < MAX_RPC_RETRIES; numTries++) {
+    for (numTries = 0; numTries < PROC_MAX_RPC_RETRIES; numTries++) {
 	status = Rpc_Call(parentProcPtr->peerHostID, RPC_PROC_REMOTE_CALL,
 			   &storage);
 	if (status != RPC_TIMEOUT) {
@@ -1167,7 +1171,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     storage.replyDataSize = 0;
 
 
-    for (numTries = 0; numTries < MAX_RPC_RETRIES; numTries++) {
+    for (numTries = 0; numTries < PROC_MAX_RPC_RETRIES; numTries++) {
 	status = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL, &storage);
 	if (status != RPC_TIMEOUT) {
 	    break;
