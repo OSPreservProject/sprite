@@ -1360,6 +1360,7 @@ MachUserAction()
     Sig_Stack		*sigStackPtr;
     Address		pc;
     int			unixSignal;
+    int			restarted=0;
 
     procPtr = Proc_GetCurrentProc();
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
@@ -1473,14 +1474,13 @@ HandleItAgain:
 	 * We must also ensure that the argument registers are the
 	 * same as when we came in.
 	 */
-	machStatePtr->trapRegs->nextPc = machStatePtr->trapRegs->pc;
-	machStatePtr->trapRegs->pc = machStatePtr->trapRegs->nextPc-4;
-	/*
-	 * We need to restore %o0 which got clobbered by
-	 * the system call.
-	 */
-	machStatePtr->trapRegs->ins[0] = machStatePtr->savedArgI0;
+	restarted = 1;
+	if (debugProcStubs) {
+	    printf("Restarting system call with progress %d\n",
+		    procPtr->unixProgress);
+	}
 	procPtr->unixProgress = PROC_PROGRESS_UNIX;
+
     }
     if (Sig_Handle(procPtr, sigStackPtr, &pc)) {
 	machStatePtr->sigContext.machContext.pcValue = pc;
@@ -1501,6 +1501,19 @@ HandleItAgain:
 		printf("Signal %d invalid in SetupSigHandler\n",
 			sigStackPtr->sigNum);
 		return 0;
+	    }
+
+	    if (restarted) {
+		if (debugProcStubs) {
+		    printf("Moving PC to restart system call (doing signal\n");
+		}
+		machStatePtr->trapRegs->nextPc = machStatePtr->trapRegs->pc;
+		machStatePtr->trapRegs->pc = machStatePtr->trapRegs->nextPc-4;
+		/*
+		 * We need to restore %o0 which got clobbered by
+		 * the system call.
+		 */
+		machStatePtr->trapRegs->ins[0] = machStatePtr->savedArgI0;
 	    }
 
 	    if (debugProcStubs) {
@@ -1578,6 +1591,17 @@ HandleItAgain:
 	} else {
 	    return 1;
 	}
+    } else {
+	if (procPtr->unixProgress == PROC_PROGRESS_MIG_RESTART ||
+                    procPtr->unixProgress == PROC_PROGRESS_RESTART) {
+	    restarted = 1;
+	    if (debugProcStubs) {
+		printf("No signal action, so we restarted call\n");
+	    }
+	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
+	} else if (restarted) {
+	    printf("No signal, yet we restarted system call!\n");
+	}
     }
     if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
 	HandleFPUException(procPtr, machStatePtr);
@@ -1590,6 +1614,20 @@ HandleItAgain:
      */
     if (procPtr->sigPendingMask) {
 	Sig_AllowMigration(procPtr);
+    }
+
+    if (restarted) {
+	if (debugProcStubs) {
+	    printf("Moving PC to restart system call (no signal\n");
+	}
+	machStatePtr->trapRegs->nextPc = machStatePtr->trapRegs->pc;
+	machStatePtr->trapRegs->pc = machStatePtr->trapRegs->nextPc-4;
+	/*
+	 * We need to restore %o0 which got clobbered by
+	 * the system call.
+	 */
+	machStatePtr->trapRegs->ins[0] = machStatePtr->savedArgI0;
+	procPtr->unixProgress = PROC_PROGRESS_UNIX;
     }
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
