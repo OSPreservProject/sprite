@@ -531,6 +531,8 @@ Sys_StatsStub(command, option, argPtr)
 	case SYS_RPC_SRV_STATE:
 	case SYS_RPC_CLT_STATE:
 	case SYS_RPC_ENABLE_SERVICE:
+	case SYS_RPC_SRV_COUNTS:
+	case SYS_RPC_CALL_COUNTS:
 	    status = Rpc_GetStats(command, option, argPtr);
 	    break;
 
@@ -694,6 +696,10 @@ Sys_StatsStub(command, option, argPtr)
 	}
 	case SYS_LOCK_STATS: {
 	    status = Sync_GetLockStats(option, argPtr);
+	    break;
+	}
+	case SYS_LOCK_RESET_STATS: {
+	    status = Sync_ResetLockStats();
 	    break;
 	}
 	default:
