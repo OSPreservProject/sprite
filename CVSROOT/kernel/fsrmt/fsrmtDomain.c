@@ -110,7 +110,6 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
      * the cltOpen proc frees this space.
      */
     streamData = (ClientData)Mem_Alloc(sizeof(FsUnionData));
-						/* Free'ed by cltOpen proc */
     *((FsUnionData *) streamData) = openReplyParam.openData;
 
     if (status == SUCCESS) {
@@ -199,10 +198,9 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 		    (FsFileID *)NIL, &dataSize, &streamData);
 
 	if (status == SUCCESS) {
-	    /* copy open data */
-	    openReplyParamPtr->openData = *((FsUnionData *) streamData);
+	    Byte_Copy(dataSize, (Address)streamData,
+			(Address)openReplyParamPtr->openData);
 	    Mem_Free((Address)streamData);
-	    /* do I need to include dataSize in openReplyParamPtr? */
 	    storagePtr->replyParamPtr = (Address) (openReplyParamPtr);
 	    storagePtr->replyParamSize = sizeof(FsOpenReplyParam);
 	    storagePtr->replyDataPtr = (Address)NIL;
@@ -411,8 +409,9 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 	/* copy openData */
 	if (openResultsPtr->dataSize != 0 &&
 		((Address)openResultsPtr->streamData) != (Address)NIL) {
-	    openResultsParamPtr->openData = *((FsUnionData *)
-		    openResultsPtr->streamData);
+	    Byte_Copy(openResultsPtr->dataSize,
+		    (Address)openResultsPtr->streamData,
+		    (Address)openResultsParamPtr->openData);
 	    Mem_Free((Address)openResultsPtr->streamData);
 	    storagePtr->replyDataPtr = (Address)NIL;
 	    storagePtr->replyDataSize = 0;
