@@ -445,19 +445,22 @@ DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
      * the status up to the higher level code and let it decide what to do.
      * Of course that means you have to handle it in many different places,
      * whereas this solution only requires modification to this routine.
-     * Also note that it is possible to go into an infinite loop if the
-     * device always returns unit attention.
      * JHH 6/7/91
+     *
+     * If the command aborted then retry it as well. 
      */
-    if (status == DEV_RESET) {
-	if ((diskPtr->retries > 0) && (diskPtr->retries % 10 == 0)) {
-	    printf("WARNING: device %s always returns unit attention?\n",
+    if ((status == DEV_RESET) || (status == DEV_RETRY_ERROR)) {
+	if (diskPtr->retries < 4) {
+	    printf("WARNING: device %s, command did not complete. Retrying.\n", 
 		diskPtr->devPtr->locationName);
-	    diskPtr->retries = 0;
+	    scsiCmdPtr->senseLen = sizeof(scsiCmdPtr->senseBuffer);
+	    DevScsiSendCmd(diskPtr->devPtr, scsiCmdPtr);
+	    diskPtr->retries++;
+	} else {
+	    printf("WARNING: device %s, too many retries\n", 
+		diskPtr->devPtr->locationName);
+	    RequestDone(requestPtr,status,byteCount);
 	}
-	scsiCmdPtr->senseLen = sizeof(scsiCmdPtr->senseBuffer);
-	DevScsiSendCmd(diskPtr->devPtr, scsiCmdPtr);
-	diskPtr->retries++;
     } else {
 	RequestDone(requestPtr,status,byteCount);
     }
@@ -946,8 +949,6 @@ BlockIOProc(handlePtr, requestPtr)
 	/*
 	 * The offset is past the end of the partition.
 	 */
-	printf("ScsiDisk request: firstSector(%d) >= size (%d)\n",
-						 firstSector, sizeInSectors);
 	RequestDone(requestPtr,SUCCESS,0);
 	return SUCCESS;
     } 

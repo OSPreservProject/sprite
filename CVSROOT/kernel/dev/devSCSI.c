@@ -172,6 +172,7 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 	    /*
 	     * This is an error that occurs after the drive is reset.
 	     */
+	    (void) sprintf(errorString,"unit attention");
 	    status = DEV_RESET;
 	    break;
 	case SCSI_CLASS7_WRITE_PROTECT:
@@ -187,8 +188,11 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 		sensePtr->info4);
 	    status = DEV_HARD_ERROR;
 	    break;
-	case SCSI_CLASS7_VENDOR:
 	case SCSI_CLASS7_ABORT:
+	    (void) sprintf(errorString,"command aborted");
+	    status = DEV_RETRY_ERROR;
+	    break;
+	case SCSI_CLASS7_VENDOR:
 	case SCSI_CLASS7_EQUAL:
 	case SCSI_CLASS7_OVERFLOW:
 	    (void) sprintf(errorString,"unsupported class7 error 0x%x\n",
