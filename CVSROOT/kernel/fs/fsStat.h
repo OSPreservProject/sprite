@@ -46,8 +46,7 @@ typedef struct Fs_GeneralStats {
     unsigned int fileBytesRead;		/* Number of file bytes read from the
 					 * disk */
     unsigned int fileReadOverflow;	/* Extra */
-    unsigned int remoteBytesRead;	/* Number of bytes read from
-					 * un-cachable remote files */
+    unsigned int remoteBytesRead;	/* Bytes read in Fsrmt_Read. */
     unsigned int remoteReadOverflow;	/* Extra */
     unsigned int deviceBytesRead;	/* Number of bytes read from devices */
 
@@ -56,8 +55,7 @@ typedef struct Fs_GeneralStats {
     unsigned int fileBytesWritten;	/* Number of file bytes written to
 					 * the disk */
     unsigned int fileWriteOverflow;	/* Extra */
-    unsigned int remoteBytesWritten;	/* Number of bytes written to
-					 * un-cachable remote files */
+    unsigned int remoteBytesWritten;	/* Bytes written in Fsrmt_Write */
     unsigned int remoteWriteOverflow;	/* Extra */
     unsigned int deviceBytesWritten;	/* Number of bytes written to devices */
     unsigned int fileBytesDeleted;	/* Number of file bytes deleted
@@ -73,7 +71,8 @@ typedef struct Fs_BlockCacheStats {
      * Read statistics.
      */
     unsigned int readAccesses;		/* Read fetches on the cache. */
-    unsigned int bytesRead;		/* Total bytes read from the cache */
+    unsigned int bytesRead;		/* Total bytes read from the cache
+					 * including misses read into cache */
     unsigned int bytesReadOverflow;	/* Extra */
     unsigned int readHitsOnDirtyBlock;	/* Fetches that hit on a block that had
 				 	 * dirty data in it. */
@@ -98,9 +97,11 @@ typedef struct Fs_BlockCacheStats {
      */
     unsigned int writeAccesses;		/* Number of write fetches on the
 					 * cache. */
-    unsigned int bytesWritten;		/* Total bytes written to the cache */
+    unsigned int bytesWritten;		/* Total bytes written to the cache
+					 * including new blocks */
     unsigned int bytesWrittenOverflow;	/* Extra */
-    unsigned int appendWrites;		/* Blocks written in append mode. */
+    unsigned int appendWrites;		/* NEVER SET. Blocks written in 
+					 * append mode. */
     unsigned int overWrites;		/* Cache blocks that were
 					 * overwritten. */
     unsigned int writeZeroFills1;	/* Blocks that are zero filled because
@@ -372,10 +373,12 @@ typedef struct Fs_WriteBackStats {
  */
 typedef struct Fs_RemoteIOStats {
     int blocksReadForVM;	/* Blocks read from Fs_PageRead (old) */
-    int bytesReadForCache;	/* Bytes read into the cache */
-    int bytesWrittenFromCache;	/* Bytes written from the cache */
-    int uncacheableBytesRead;	/* Uncacheable bytes read (not counting swap) */
-    int uncacheableBytesWritten;/* Uncacheable bytes written */
+    int bytesReadForCache;	/* Bytes read into the cache for remote files */
+    int bytesWrittenFromCache;	/* Bytes written from the cache for rmt files */
+    int uncacheableBytesRead;	/* Uncacheable bytes read (not counting swap) *
+   				 * (FS_NOT_CACHEABLE flag) */
+    int uncacheableBytesWritten;/* Uncacheable bytes written *
+   				 * (FS_NOT_CACHEABLE flag) */
     int sharedStreamBytesRead;	/* Bytes read from shared uncacheable streams */
     int sharedStreamBytesWritten;/* Bytes written to shared uncached streams */
     int hitsOnVMBlock;		/* Code and Heap pages found in the cache */
