@@ -67,7 +67,7 @@ SigMigSend(procPtr, sigNum, code)
     int remoteHostID;
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("SigMigSend(%x, %d, %d) entered.\n", procPtr->processID,
+	printf("SigMigSend(%x, %d, %d) entered.\n", procPtr->processID,
 		   sigNum, code);
     }
 
@@ -84,17 +84,16 @@ SigMigSend(procPtr, sigNum, code)
 			      remoteProcessID, FALSE);
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("SigMigSend returning %x.\n", status);
+	printf("SigMigSend returning %x.\n", status);
     }
 
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Panic(SYS_WARNING,
-		      "SigMigSend:Error %x returned by Rpc_Call.\n", status);
+	    printf("Warning: SigMigSend:Error %x returned by Rpc_Call.\n", status);
 	}
 	if (status == RPC_TIMEOUT && sigNum == SIG_KILL) {
 	    if (proc_MigDebugLevel > 0) {
-		Sys_Printf("SigMigSend: killing local copy of process %x.\n",
+		printf("SigMigSend: killing local copy of process %x.\n",
 			   procPtr->processID);
 	    }
 	    Proc_CallFunc(Proc_DestroyMigratedProc,
