@@ -221,6 +221,13 @@ extern Rpc_Histogram	*rpcServiceTime[];
 extern int		rpcServiceCount[];
 
 /*
+ * For determining whether rpc being handled by this server was sent
+ * to the broadcast server ID.
+ */
+#define	RPC_IS_BROADCAST(srvrPtr)	\
+    (((RpcServer *) srvrPtr)->requestRpcHdr.serverID == RPC_BROADCAST_SERVER_ID)
+
+/*
  * For tracing calls.
  */
 extern void Rpc_OkayToTrace _ARGS_((Boolean okay));
