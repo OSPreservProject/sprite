@@ -70,7 +70,7 @@ Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr,
 
     if (size < sizeof(Net_IPHeader)) {
 	if (dbgTraceLevel >= 4) {
-	    Sys_Printf("Dbg_ValidatePacket: Bad size %d\n", size);
+	    printf("Dbg_ValidatePacket: Bad size %d\n", size);
 	}
 	return(FALSE);
     }
@@ -95,40 +95,40 @@ Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr,
      */
     if (headerLenInBytes < sizeof(Net_IPHeader)) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 1: %d\n", headerLenInBytes);
+	    printf("Failed case 1: %d\n", headerLenInBytes);
 	}
 	return(FALSE);
     } else if (Net_NetToHostShort(ipPtr->totalLen) < ipPtr->headerLen) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 2: %d, %d\n", 
+	    printf("Failed case 2: %d, %d\n", 
 			Net_NetToHostShort(ipPtr->totalLen), ipPtr->headerLen);
 	}
 	return(FALSE);
     } else if (Net_InetChecksum(headerLenInBytes, (Address) ipPtr) != 0) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 3 (IP checksum: %x)\n", ipPtr->checksum);
+	    printf("Failed case 3 (IP checksum: %x)\n", ipPtr->checksum);
 	}
 	return(FALSE);
     } else if (ipPtr->protocol != NET_IP_PROTOCOL_UDP) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 4: %d\n", ipPtr->protocol);
+	    printf("Failed case 4: %d\n", ipPtr->protocol);
 	}
 	return(FALSE);
     } else if (Net_NetToHostShort(udpPtr->len) < sizeof(Net_UDPHeader)) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 5: %d, %d\n",
+	    printf("Failed case 5: %d, %d\n",
 		    Net_NetToHostShort(udpPtr->len), sizeof(Net_UDPHeader));
 	}
 	return(FALSE);
     } else if (Net_NetToHostShort(udpPtr->destPort) < DBG_UDP_PORT) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 6: %d, %d\n", 
+	    printf("Failed case 6: %d, %d\n", 
 		    Net_NetToHostShort(udpPtr->destPort), DBG_UDP_PORT);
 	}
 	return(FALSE);
     } else if ((ipPtr->flags & NET_IP_MORE_FRAGS) || (ipPtr->fragOffset != 0)) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 7: %d, %d\n",
+	    printf("Failed case 7: %d, %d\n",
 		(ipPtr->flags & NET_IP_MORE_FRAGS), (ipPtr->fragOffset != 0));
 	}
 	return(FALSE);
@@ -157,7 +157,7 @@ Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr,
 		&pseudoHdr) != 0) {
 
 	    if (dbgTraceLevel >= 4) {
-		Sys_Printf("Dbg_ValidatePacket: Bad UDP checksum: %x\n", 
+		printf("Dbg_ValidatePacket: Bad UDP checksum: %x\n", 
 				udpPtr->checksum);
 	    }
 	    return(FALSE);
@@ -171,7 +171,7 @@ Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr,
     *srcPortPtr	   = Net_NetToHostShort(udpPtr->srcPort);
 
     if (dbgTraceLevel >= 4) {
-	Sys_Printf("Dbg_ValidatePacket: Good packet\n");
+	printf("Dbg_ValidatePacket: Good packet\n");
     }
     return(TRUE);
 }
@@ -298,23 +298,23 @@ TestInputProc(size, headerPtr)
     (void) Net_InetAddrToString(&(headerPtr->source), srcAddr);
     (void) Net_InetAddrToString(&(headerPtr->dest), destAddr);
 
-    Sys_Printf("IP Packet: size = %d\n", size);
-    Sys_Printf("Protocol, version:	%s, %d\n", 
+    printf("IP Packet: size = %d\n", size);
+    printf("Protocol, version:	%s, %d\n", 
 		    ProtNumToName(headerPtr->protocol),
 		    headerPtr->version);
-    Sys_Printf("Src, dest addrs:	%s, %s\n", srcAddr, destAddr);
-    Sys_Printf("Header, total len:	%d, %d\n", 
+    printf("Src, dest addrs:	%s, %s\n", srcAddr, destAddr);
+    printf("Header, total len:	%d, %d\n", 
 		    headerPtr->headerLen, headerPtr->totalLen);
 
     checksum = headerPtr->checksum, 
     headerPtr->checksum = 0;
-    Sys_Printf("checksum, recomp:	%x, %x\n", checksum, 
+    printf("checksum, recomp:	%x, %x\n", checksum, 
 		Net_InetChecksum((int)headerPtr->headerLen*4, 
 					(Address)headerPtr));
-    Sys_Printf("Frag flags, offset, ID:	%x, %d, %x\n", 
+    printf("Frag flags, offset, ID:	%x, %d, %x\n", 
 		    headerPtr->flags, headerPtr->fragOffset, 
 		    headerPtr->ident);
-    Sys_Printf("\n");
+    printf("\n");
 
     return;
 }

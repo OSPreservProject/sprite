@@ -436,7 +436,7 @@ static	int	syslogDebugCount = 0;
  *
  *	Start or stop redirecting output to the log buffer.  This is intended
  *	to be called by Dbg_Main when entering and leaving the debugger and
- *	Sys_Panic on a FATAL panic so that debugger output will go on the
+ *	by panic() so that debugger output will go on the
  *	console since no process can run to flush the buffer.
  *
  * Results:

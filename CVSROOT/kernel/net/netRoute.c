@@ -1118,7 +1118,7 @@ NetArpOutput(spriteID, destPtr, flags)
     packetPtr = &arpOutputQueue[nextOutputIndex].packet;
     gatherPtr = &arpOutputQueue[nextOutputIndex].gather;
     if (! gatherPtr->done) {
-	Sys_Panic(SYS_WARNING, "NetArpOutput can't queue packet");
+	printf("Warning: NetArpOutput can't queue packet");
 	UNLOCK_MONITOR;
 	return;
     }

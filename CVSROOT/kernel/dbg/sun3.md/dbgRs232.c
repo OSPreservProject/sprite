@@ -128,14 +128,14 @@ DbgRs232ReadChar(channel)
 #ifdef USE_CHAN_A
 	    reg = Dev_ZilogReadReg(zilogAddrA, 0); 
 #else
-	    Sys_Panic(SYS_WARNING, "DbgRs232ReadChar called on channel A.\n");
+	    printf("DbgRs232ReadChar called on channel A.\n");
 	    return(0);
 #endif USE_CHAN_A
 	} else {
 #ifdef USE_CHAN_B
 	    reg = Dev_ZilogReadReg(zilogAddrB, 0); 
 #else
-	    Sys_Panic(SYS_WARNING, "DbgRs232ReadChar called on channel B.\n");
+	    printf("DbgRs232ReadChar called on channel B.\n");
 	    return(0);
 #endif USE_CHAN_B
 	}
@@ -190,14 +190,14 @@ DbgRs232WriteChar(channel, value)
 #ifdef USE_CHAN_A
 	    reg = Dev_ZilogReadReg(zilogAddrA, 0);
 #else
-	    Sys_Panic(SYS_WARNING, "DbgRs232WriteChar called on channel A.\n");
+	    printf("DbgRs232WriteChar called on channel A.\n");
 	    return;
 #endif USE_CHAN_A
 	} else {
 #ifdef USE_CHAN_B
 	    reg = Dev_ZilogReadReg(zilogAddrB, 0);
 #else
-	    Sys_Panic(SYS_WARNING, "DbgRs232WriteChar called on channel B.\n");
+	    printf("DbgRs232WriteChar called on channel B.\n");
 	    return;
 #endif USE_CHAN_B
 	}
