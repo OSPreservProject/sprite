@@ -275,8 +275,11 @@ int		fsWriteBackInterval = 30;	/* How long blocks have to be
 int		fsWriteBackCheckInterval = 5;	/* How often to scan the
 						 * cache for blocks to write
 						 * back. */
-Boolean		fsShouldSyncDisks = TRUE;
-
+Boolean		fsShouldSyncDisks = TRUE;	/* TRUE means that we should
+						 * sync the disks when
+						 * Fs_SyncProc is called. */
+int		lastHandleWBTime = 0;		/* Last time that wrote back
+						 * file handles. */
 /*
  *----------------------------------------------------------------------
  *
@@ -298,9 +301,16 @@ Fs_SyncProc(data, callInfoPtr)
     ClientData		data;		/* IGNORED */
     Proc_CallInfo	*callInfoPtr;
 {
-    if (fsShouldSyncDisks) {
-	Fs_Sync((unsigned int) (fsTimeInSeconds - fsWriteBackInterval), 
-		FALSE);
+    int	blocksLeft;
+
+    if (fsTimeInSeconds - lastHandleWBTime >= fsWriteBackInterval) {
+	(void) FsHandleDescWriteBack(FALSE, -1);
+	lastHandleWBTime = fsTimeInSeconds;
+    }
+
+    if (fsShouldSyncDisks && !fsWriteThrough && !fsWriteBackASAP) {
+	Fs_CacheWriteBack((unsigned) (fsTimeInSeconds - fsWriteBackInterval), 
+			  &blocksLeft, FALSE);
     }
     if (fsWriteBackCheckInterval < fsWriteBackInterval) {
 	callInfoPtr->interval = fsWriteBackCheckInterval * timer_IntOneSecond;
@@ -334,7 +344,7 @@ Fs_Sync(writeBackTime, shutdown)
 				   this time. */
     Boolean	shutdown;	/* TRUE if the kernel is being shutdown. */
 {
-    int		blocksLeft;
+    int		blocksLeft = 0;
 
     /*
      * Force all file descriptors into the cache.
@@ -351,9 +361,9 @@ Fs_Sync(writeBackTime, shutdown)
 	FsCleanBlocks((ClientData) FALSE, (Proc_CallInfo *) NIL);
     }
     /*
-     * Finally write all domain information to disk.  If we are shutting down
-     * the system this will mark each domain to indicate that we went down
-     * gracefully and recovery is in fact possible.
+     * Finally write all domain information to disk.  This will mark each
+     * domain to indicate that we went down gracefully and recovery is in
+     * fact possible.
      */
     FsLocalDomainWriteBack(-1, shutdown, FALSE);
 }
@@ -797,5 +807,11 @@ char *
 Fs_GetFileName(streamPtr)
     Fs_Stream	*streamPtr;
 {
-    return(streamPtr->nameInfoPtr->name);
+    if (streamPtr->hdr.name != (char *)NIL) {
+	return(streamPtr->hdr.name);
+    } else if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
+	return(streamPtr->ioHandlePtr->name);
+    } else {
+	return("(noname)");
+    }
 }

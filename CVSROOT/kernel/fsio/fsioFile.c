@@ -998,6 +998,14 @@ FsFileWrite(streamPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
     FsWaitForReadAhead(&handlePtr->readAhead);
     status = FsCacheWrite(&handlePtr->cacheInfo, flags, buffer, *offsetPtr,
 			  lenPtr, remoteWaitPtr);
+    if (status == SUCCESS && (fsWriteThrough || fsWriteBackASAP)) {
+	/*
+	 * When in write-through or asap mode we have to force the descriptor
+	 * to disk on every write.
+	 */
+	FsWriteBackDesc(handlePtr, TRUE);
+    }
+
     *offsetPtr += *lenPtr;
     FsAllowReadAhead(&handlePtr->readAhead);
     FsDomainRelease(handlePtr->hdr.fileID.major);
@@ -1143,7 +1151,7 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, lastDirtyBlock)
+FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, flags)
     FsHandleHeader *hdrPtr;	/* Pointer to handle for file to write to. */
     int 	blockAddr;	/* Disk address. For regular files this
 				 * counts from the beginning of the data blocks.
@@ -1151,7 +1159,7 @@ FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, lastDirtyBlock)
 				 * of the disk partition. */
     int		numBytes;	/* Number of bytes to write. */
     register Address buffer;	/* Where to read bytes from. */
-    Boolean	lastDirtyBlock;	/* IGNORED */
+    int		flags;		/* IGNORED */
 {
     register FsLocalFileIOHandle *handlePtr =
 	    (FsLocalFileIOHandle *)hdrPtr;
@@ -1262,6 +1270,7 @@ FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 		    cacheBlockPtr->blockAddr, offset, &numBytes,
 		    (Sync_RemoteWaiter *) NIL);
     if (status == SUCCESS && numBytes != FS_BLOCK_SIZE) {
+
 	status = VM_SHORT_WRITE;
     }
 

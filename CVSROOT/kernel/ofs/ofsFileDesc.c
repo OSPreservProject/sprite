@@ -516,6 +516,18 @@ FsWriteBackDesc(handlePtr, doWriteBack)
 
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
     descPtr = handlePtr->descPtr;
+    /*
+     * If the handle times differ from the descriptor times then force
+     * them out to the descriptor.
+     */
+    if (descPtr->accessTime < handlePtr->cacheInfo.attr.accessTime) {
+	descPtr->accessTime = handlePtr->cacheInfo.attr.accessTime;
+	descPtr->flags |= FS_FD_DIRTY;
+    }
+    if (descPtr->dataModifyTime < handlePtr->cacheInfo.attr.modifyTime) {
+	descPtr->dataModifyTime = handlePtr->cacheInfo.attr.modifyTime;
+	descPtr->flags |= FS_FD_DIRTY;
+    }
     if (descPtr->flags & FS_FD_DIRTY) {
 	descPtr->flags &= ~FS_FD_DIRTY;
 	status =  FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, 

@@ -201,8 +201,8 @@ typedef struct Fs_Stream {
  *		by low level routines.  This means that the tracing can
  *		be confined to particular operations, like open, while
  *		other operations, like remove, don't pollute the trace.
- *	FS_WRITE_THRU_ASAP - Write blocks for this file to disk as soon as
- *		possible after the block is put into the cache.
+ *	FS_SERVER_WRITE_THRU - Set on writes that are supposed to be written
+ *			       through to the server.
  *	FS_LAST_DIRTY_BLOCK - Set on remote writes when this is the
  *		last dirty block of the file to be written back.
  *	FS_RMT_SHARED - Set on streams that are shared among clients on
@@ -212,6 +212,8 @@ typedef struct Fs_Stream {
  *		the destination of a migration is getting a stream for
  *		the first time.   It needs to know this in order to do
  *		I/O client book-keeping correctly.
+ *	FS_WB_ON_LDB - Write this file back to disk if this is the last dirty
+ *		       block.
  */
 #define FS_KERNEL_FLAGS		0xfffff000
 #define FS_FOLLOW		0x00001000
@@ -224,10 +226,11 @@ typedef struct Fs_Stream {
 #define FS_CLIENT_CACHE_WRITE	0x00100000
 #define FS_CONSUME		0x00200000
 #define FS_TRACE_FLAG		0x00400000
-#define	FS_WRITE_THRU_ASAP	0x01000000
+#define	FS_SERVER_WRITE_THRU	0x01000000
 #define	FS_LAST_DIRTY_BLOCK	0x02000000
 #define FS_RMT_SHARED		0x04000000
 #define FS_NEW_STREAM		0x08000000
+#define	FS_WB_ON_LDB		0x10000000
 
 /*
  * Flags to Fs_WaitForHost

@@ -262,11 +262,46 @@ Fs_Command(command, bufSize, buffer)
 	    Fs_CacheEmpty(numLockedBlocksPtr);
 	    break;
 	}
+	case FS_SET_WRITE_THROUGH: {
+	    /*
+	     * Set the file system write-through flag.
+	     */
+	    SWAP_TO_BUFFER(fsWriteThrough, buffer);
+	    break;
+	}
+	case FS_SET_WRITE_BACK_ON_CLOSE: {
+	    /*
+	     * Set the file system write-back-on-close flag.
+	     */
+	    SWAP_TO_BUFFER(fsWriteBackOnClose, buffer);
+	    break;
+	}
+	case FS_SET_DELAY_TMP_FILES: {
+	    /*
+	     * Set the flag that delays writes on temporary files.
+	     */
+	    SWAP_TO_BUFFER(fsDelayTmpFiles, buffer);
+	    break;
+	}
 	case FS_SET_TMP_DIR_NUM: {
 	    /*
 	     * Set the directory that contains /tmp.
 	     */
 	    SWAP_TO_BUFFER(fsTmpDirNum, buffer);
+	    break;
+	}
+	case FS_SET_WRITE_BACK_ASAP: {
+	    /*
+	     * Set the file system write-back as soon as possible flag.
+	     */
+	    SWAP_TO_BUFFER(fsWriteBackASAP, buffer);
+	    break;
+	}
+	case FS_SET_WB_ON_LAST_DIRTY_BLOCK: {
+	    /*
+	     * Set the file system write-back as soon as possible flag.
+	     */
+	    SWAP_TO_BUFFER(fsWBOnLastDirtyBlock, buffer);
 	    break;
 	}
 	case FS_ZERO_STATS: {

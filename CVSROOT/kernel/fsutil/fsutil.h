@@ -298,6 +298,15 @@ typedef struct FsUserIDs {
     int group[FS_NUM_GROUPS];	/* The set of groups the user is in */
 } FsUserIDs;			/* 40 BYTES */
 
+/*
+ * Writing policies.
+ */
+extern	Boolean	fsDelayTmpFiles;
+extern	Boolean	fsWriteThrough;
+extern	Boolean	fsWriteBackASAP;
+extern	Boolean	fsWriteBackOnClose;
+extern	Boolean	fsWBOnLastDirtyBlock;
+
 
 
 /*

@@ -586,7 +586,8 @@ exit:
 ReturnStatus
 FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     register FsCacheFileInfo *cacheInfoPtr;	/* Cache state for the file. */
-    int			flags;		/* FS_USER | FS_APPEND */
+    int			flags;		/* FS_USER | FS_APPEND | 
+					 * FS_SERVER_WRITE_THRU */
     register Address 	buffer;		/* Buffer to write from */
     int 		offset;		/* Byte offset */
     int 		*lenPtr;	/* In/Out byte count */
@@ -611,6 +612,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     int			streamType;	/* Type from handle header */
     int			bytesToFree; 	/* number of bytes overwritten
 					 * in file */
+    int			modTime;	/* File modify time. */
 
     /*
      * Serialize access to the cache for this file.
@@ -772,6 +774,17 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	}
 
 	/*
+	 * If the block is write-thru then check the block back in as clean.
+	 * Our caller already has written the data through to the server
+	 * for us.
+	 */
+	if (flags & FS_SERVER_WRITE_THRU) {
+	    modTime = 0;
+	} else {
+	    modTime = fsTimeInSeconds;
+	}
+
+	/*
 	 * Copy the bytes into the block.
 	 */
 	if (flags & FS_USER) {
@@ -797,7 +810,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	if (blockSize > FS_BLOCK_SIZE) {
 	    blockSize = FS_BLOCK_SIZE;
 	}
-	FsCacheUnlockBlock(blockPtr, (unsigned) fsTimeInSeconds, blockAddr,
+	FsCacheUnlockBlock(blockPtr, (unsigned) modTime, blockAddr,
 				blockSize, FS_CLEAR_READ_AHEAD);
     }
 

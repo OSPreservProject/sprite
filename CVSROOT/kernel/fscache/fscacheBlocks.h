@@ -40,19 +40,22 @@
  *				to only a few blocks in the cache.
  *   FS_FILE_GONE		The file has been removed and any delayed
  *				writes should be discarded.
+ *   FS_CACHE_WB_ON_LDB		Force this file to be written back to disk
+ *				on the last dirty block.
  */
-#define	FS_CLOSE_IN_PROGRESS		0x01
-#define	FS_CACHE_SERVER_DOWN		0x02
-#define	FS_CACHE_NO_DISK_SPACE		0x04
-#define FS_CACHE_DOMAIN_DOWN		0x08
-#define FS_CACHE_GENERIC_ERROR		0x10
-#define	FS_CACHE_SYNC_DONE		0x20
-#define FS_FILE_BEING_WRITTEN		0x40
-#define	FS_FILE_ON_DIRTY_LIST		0x80
-#define FS_FILE_IS_WRITE_THRU		0x100
-#define FS_FILE_NOT_CACHEABLE		0x200
-#define	FS_LARGE_FILE_MODE		0x400
-#define FS_FILE_GONE			0x800
+#define	FS_CLOSE_IN_PROGRESS		0x0001
+#define	FS_CACHE_SERVER_DOWN		0x0002
+#define	FS_CACHE_NO_DISK_SPACE		0x0004
+#define FS_CACHE_DOMAIN_DOWN		0x0008
+#define FS_CACHE_GENERIC_ERROR		0x0010
+#define	FS_CACHE_SYNC_DONE		0x0020
+#define FS_FILE_BEING_WRITTEN		0x0040
+#define	FS_FILE_ON_DIRTY_LIST		0x0080
+#define FS_FILE_IS_WRITE_THRU		0x0100
+#define FS_FILE_NOT_CACHEABLE		0x0200
+#define	FS_LARGE_FILE_MODE		0x0400
+#define FS_FILE_GONE			0x0800
+#define	FS_CACHE_WB_ON_LDB		0x1000
 
 
 /*

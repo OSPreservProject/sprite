@@ -374,7 +374,8 @@ ReturnStatus
 FsSpriteWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Fs_Stream	*streamPtr;		/* Open stream to a remote thing */
     int flags;				/* FS_LAST_DIRTY_BLOCK | FS_APPEND |
-					 * FS_CLIENT_CACHE_WRITE */
+					 * FS_CLIENT_CACHE_WRITE |
+					 * FS_WB_ON_LDB */
     Address  buffer;			/* Buffer to write bytes from */
     int      *offsetPtr;		/* Offset at which to write */
     int      *lenPtr;			/* In/Out byte count */
@@ -393,6 +394,13 @@ FsSpriteWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     register Boolean	userSpace = flags & FS_USER;
     register Address	writeBufferPtr;
 
+    /*
+     * If we are in write-back-on-last-dirty-block mode then mark this
+     * block specially.
+     */
+    if (fsWBOnLastDirtyBlock && (flags & FS_LAST_DIRTY_BLOCK)) {
+	flags |= FS_WB_ON_LDB;
+    }
     /*
      * Initialize things that won't change on each RPC.
      */
@@ -570,6 +578,18 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 	    FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
 	    FS_TRACE_HANDLE(FS_TRACE_DEL_LAST_WR, hdrPtr);
 	    FsDeleteLastWriter(&handlePtr->consist, clientID);
+	    if (paramsPtr->flags & FS_WB_ON_LDB) {
+		Boolean	blocksSkipped;
+		/*
+		 * Force out all data, indirect and descriptor blocks
+		 * for this file.
+		 */
+		(void)FsCacheFileWriteBack(&handlePtr->cacheInfo, 0, 
+					FS_LAST_BLOCK,
+					FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT,
+				        &blocksSkipped);
+		FsWriteBackDesc(handlePtr, TRUE);
+	    }
 	}
     }
     FsHandleRelease(hdrPtr, FALSE);

@@ -428,7 +428,7 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
 	    }
 	    status = (*fsStreamOpTable[streamType].blockWrite)
 		    (streamPtr->ioHandlePtr, blockAddr, FS_BLOCK_SIZE,
-			    pageAddr, FALSE);
+			    pageAddr, 0);
 	    if (status != SUCCESS) {
 		Sys_Panic(SYS_WARNING, "Fs_PageWrite: Write failed\n");
 		break;
