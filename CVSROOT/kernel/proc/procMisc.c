@@ -81,7 +81,7 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
     char 			argString[PROC_PCB_ARG_LENGTH];
     Proc_ControlBlock		pcbEntry;
     Boolean			remote = FALSE;
-    Proc_PID			processID;
+    Proc_PID			processID = firstPid;
     ReturnStatus		status = SUCCESS;
 
     if (firstPid != PROC_MY_PID) {
