@@ -129,7 +129,7 @@ SigMigSend(procPtr, sigNum, code)
 		   sigNum, procPtr->processID, remoteProcessID, remoteHostID,
 		   Stat_GetMsg(status));
 	}
-	if (sigNum == SIG_KILL) {
+	if (sigNum == SIG_KILL || status == PROC_INVALID_PID) {
 	    if (proc_MigDebugLevel > 0) {
 		printf("SigMigSend: killing local copy of process %x.\n",
 			   procPtr->processID);
