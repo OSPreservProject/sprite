@@ -387,6 +387,29 @@ FsPfsNamingCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     FsHandleUnlock(rmtHandlePtr);
     return(SUCCESS);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPseudoDomainInfo --
+ *
+ *	Get information about a pseudo-file-system.
+ *
+ * Results:
+ *	An error status
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FsPseudoDomainInfo(fileIDPtr, domainInfoPtr)
+    Fs_FileID *fileIDPtr;
+    Fs_DomainInfo *domainInfoPtr;
+{
+}
 
 
 /*
@@ -728,8 +751,14 @@ FsPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 		&resultSize, (Address)getAttrResultsPtr->attrPtr,
 		newNameInfoPtrPtr);
     /*
-     * The pseudo-filesystem server has given us all the attributes so
-     * we don't fill in the ioFileID.
+     * Patch the serverID in the attributes so it matches the serverID
+     * given in the prefix table.  This is needed to make getwd() work.
+     */
+    getAttrResultsPtr->attrPtr->serverID = rpc_SpriteID;
+    /*
+     * The pseudo-filesystem server has given us all the attributes.  There
+     * is no reason to do a getIOAttr so we inhibit that with a special
+     * ioFileID type.
      */
     getAttrResultsPtr->fileIDPtr->type = -1;
     return(status);
@@ -834,21 +863,21 @@ FsPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 					* its domain during the lookup. */
 {
     register PdevServerIOHandle	*pdevHandlePtr;
-    register FsLookupArgs	*lookupArgsPtr;
+    register FsOpenArgs		*openArgsPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
     int				resultSize;
 
     pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle)->pdevHandlePtr;
-    lookupArgsPtr = (FsLookupArgs *)argsPtr;
+    openArgsPtr = (FsOpenArgs *)argsPtr;
 
     request.hdr.operation = PFS_MAKE_DIR;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
-			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
+			    &openArgsPtr->prefixID, &openArgsPtr->rootID);
     if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
-    request.param.lookup = *lookupArgsPtr;
+    request.param.makeDir = *openArgsPtr;
 
     resultSize = 0;
 
@@ -950,7 +979,7 @@ FsPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
-    request.param.lookup = *lookupArgsPtr;
+    request.param.remove = *lookupArgsPtr;
 
     resultSize = 0;
 
@@ -1001,7 +1030,7 @@ FsPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
-    request.param.lookup = *lookupArgsPtr;
+    request.param.removeDir = *lookupArgsPtr;
 
     resultSize = 0;
 
