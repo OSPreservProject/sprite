@@ -605,7 +605,7 @@ Vm_CheckAccessible(startAddr, numBytes)
     int		numBytes;
 {
     VmAccessInfo *accessPtr;
-    Proc_ControlBlock	*procPtr = Proc_GetCurrentProc();
+    Proc_ControlBlock	*procPtr;
     Boolean okay = FALSE;
 
     if (!vmDoAccessChecks || dbg_BeingDebugged) {
@@ -620,6 +620,8 @@ Vm_CheckAccessible(startAddr, numBytes)
 	    || startAddr + numBytes <= mach_FirstUserAddr) {
 	return;
     }
+
+    procPtr = Proc_GetCurrentProc();
 
     Sync_GetLock(&vmAccessListLock);
 
