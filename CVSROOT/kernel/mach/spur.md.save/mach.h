@@ -167,6 +167,7 @@ extern	void	Mach_GetEtherAddress();
 extern	void	Mach_ContextSwitch();
 extern	int	Mach_TestAndSet();
 extern	int	Mach_GetMachineType();
+extern	int	Mach_GetMachineArch();
 extern	Address	Mach_GetStackPointer();
 extern	void	Mach_DisableIntr();
 extern	void	Mach_EnableIntr();
