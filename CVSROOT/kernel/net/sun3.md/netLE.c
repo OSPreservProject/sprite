@@ -9,7 +9,7 @@
  *	 it that because of bugs in the chip it can get stuck at any time for
  *	 no particular reason.
  *
- * Copyright 1988 Regents of the University of California
+ * Copyright 1988 Regents of the University of Californiaf
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright
@@ -46,11 +46,6 @@ NetLEState	netLEState;
 
 static 	List_Links	xmitListHdr;
 static 	List_Links	xmitFreeListHdr;
-
-/*
- * Setup state for probing the existence of the device
- */
-static Mach_SetJumpState setJumpState;
 
 
 /*
@@ -89,6 +84,7 @@ NetLEInit(name, number, ctrlAddr)
 
     DISABLE_INTR();
 
+    Mach_SetHandler(27, Net_Intr, (ClientData) 0);
     netLEState.running = FALSE;
 
     /*
@@ -99,21 +95,22 @@ NetLEInit(name, number, ctrlAddr)
 
     netLEState.regPortPtr = (NetLE_Reg *) ctrlAddr;
 
-    if (Mach_SetJump(&setJumpState) == SUCCESS) {
+    {
 	/*
 	 * Poke the controller by setting the RAP.
 	 */
-	netLEState.regPortPtr->addrPort = NET_LE_CSR0_ADDR;
-    } else {
-	/*
-	 * Got a bus error.
-	 */
-	Mach_UnsetJump();
-	ENABLE_INTR();
-	return(FALSE);
-    }
-    Mach_UnsetJump();
-
+	short value = NET_LE_CSR0_ADDR;
+	ReturnStatus status;
+	status = Mach_Probe(sizeof(short), (char *) &value, 
+			  ((short *)(netLEState.regPortPtr)) + 1);
+	if (status != SUCCESS) {
+	    /*
+	     * Got a bus error.
+	     */
+	    ENABLE_INTR();
+	    return(FALSE);
+	}
+    } 
     /*
      * Initialize the transmission list.  
      */

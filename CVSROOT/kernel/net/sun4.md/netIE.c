@@ -56,12 +56,6 @@ Address		netIERecvBuffers[NET_IE_NUM_RECV_BUFFERS];
 static 	List_Links	xmitListHdr;
 static 	List_Links	xmitFreeListHdr;
 
-#ifndef sun4
-/*
- * Setup state for probing the existence of the device
- */
-static Mach_SetJumpState setJumpState;
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -102,6 +96,12 @@ NetIEInit(name, number, ctrlAddr)
 
     DISABLE_INTR();
 
+#if defined(sun2) || defined(sun3)
+    Mach_SetHandler(27, Net_Intr, (ClientData) 0);
+#endif
+#ifdef sun4
+    Mach_SetHandler(6, Net_Intr, (ClientData)0);
+#endif
     netIEState.running = FALSE;
 
     /*
@@ -112,27 +112,21 @@ NetIEInit(name, number, ctrlAddr)
 
     netIEState.controlReg = (NetIEControlRegister *) ctrlAddr;
 
-#ifdef sun4
+     {
 	/*
 	 * Poke the controller by resetting it.
 	 */
-	*(char *)netIEState.controlReg = 0;
-#else
-    if (Mach_SetJump(&setJumpState) == SUCCESS) {
-	/*
-	 * Poke the controller by resetting it.
-	 */
-	*(char *)netIEState.controlReg = 0;
-    } else {
-	/*
-	 * Got a bus error.
-	 */
-	Mach_UnsetJump();
-	ENABLE_INTR();
-	return(FALSE);
+	char zero = 0;
+	ReturnStatus status;
+	status = Mach_Probe(sizeof(char), &zero,(char *)netIEState.controlReg); 
+	if (status != SUCCESS) {
+	    /*
+	     * Got a bus error.
+	     */
+	    ENABLE_INTR();
+	    return(FALSE);
+	}
     }
-    Mach_UnsetJump();
-#endif
     /*
      * Initialize the transmission list.  
      */
