@@ -573,6 +573,23 @@ Fsrmt_IOMigOpen(migInfoPtr, size, data, hdrPtrPtr)
     if (!found) {
 	Fsutil_RecoveryInit(recovPtr);
 	fs_Stats.object.remote++;
+	/*
+	 * Register a callback with the recovery module.  This ensures that
+	 * someone is paying attention to the I/O server and the filesystem
+	 * will get called back when the I/O server reboots.
+	 */
+	if (recov_PrintLevel >= RECOV_PRINT_CRASH) {
+	    /*
+	     * Printf for debugging ref count problem that affects recovery.
+	     */
+	    printf(
+	   "Fsrmt_IOMigOpen: register Fsutil_Reopen serverID %d, device %s\n",
+		   migInfoPtr->ioFileID.serverID,
+		   name == (char *) NIL ? "NIL" : name);
+	}
+
+	Recov_RebootRegister(migInfoPtr->ioFileID.serverID, Fsutil_Reopen,
+			    (ClientData)NIL);
     }
     recovPtr->use.ref++;
     if (migInfoPtr->flags & FS_WRITE) {
