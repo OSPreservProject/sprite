@@ -1145,6 +1145,9 @@ VmMach_PageValidate(virtAddrPtr, pte)
 
     procPtr = Proc_GetCurrentProc();
     machPtr = procPtr->vmPtr->machPtr;
+    if (machPtr->pid == 0) {
+	VmMach_ReinitContext(procPtr);
+    }
 
     /*
      * Set up the TLB entry and the physical page info.
