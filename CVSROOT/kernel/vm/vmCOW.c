@@ -83,7 +83,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vmStat.h>
 #include <vm.h>
 #include <vmInt.h>
-#include <vmTrace.h>
 #include <user/vm.h>
 #include <sync.h>
 #include <dbg.h>
@@ -93,9 +92,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdlib.h>
 #include <stdio.h>
 #include <bstring.h>
-#ifdef SOSP91
-#include <fsStat.h>
-#endif SOSP91
 
 #ifdef sun4
 /*
@@ -534,13 +530,6 @@ COWEnd(segPtr, cowInfoPtrPtr)
 	 */
 	*cowInfoPtrPtr = cowInfoPtr;
 	cowSegPtr = (Vm_Segment *)List_First(&cowInfoPtr->cowList);
-	if (vm_Tracing) {
-	    Vm_TraceClearCOW	clearCOW;
-
-	    clearCOW.segNum = cowSegPtr->segNum;
-	    VmStoreTraceRec(VM_TRACE_CLEAR_COW_REC, sizeof(clearCOW),
-			    (Address)&clearCOW, TRUE);
-	}
 	cowSegPtr->cowInfoPtr = (VmCOWInfo *)NIL;
 	if (cowSegPtr->type == VM_STACK) {
 	    firstPage = mach_LastUserStackPage - cowSegPtr->numPages + 1;
@@ -744,9 +733,6 @@ COR(virtAddrPtr, ptePtr)
 	CopyPage(mastVirtPF, virtFrameNum);
 	VmUnlockPage(mastVirtPF);
     } else {
-#ifdef SOSP91
-	Boolean	isForeign = FALSE;
-#endif SOSP91
 	/*
 	 * Load the page off of swap space.
 	 */
@@ -757,19 +743,6 @@ COR(virtAddrPtr, ptePtr)
 	virtAddr.flags = 0;
 	virtAddr.sharedPtr = virtAddrPtr->sharedPtr;
 	status = VmPageServerRead(&virtAddr, virtFrameNum);
-#ifdef SOSP91
-	fs_MoreStats.CORPageServerRead++;
-	if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		    (proc_RunningProcesses[0]->genFlags &
-		    (PROC_FOREIGN | PROC_MIGRATING))) {
-		isForeign = TRUE;
-	    }
-	}
-	if (isForeign) {
-	    fs_MoreStats.CORPageServerReadM++;
-	}
-#endif SOSP91
 	if (status != SUCCESS) {
 	    printf("Warning: VmCOR: Couldn't read page, status <%x>\n", status);
 	    VmPageFree(virtFrameNum);
@@ -888,18 +861,6 @@ SeeIfLastCOR(mastSegPtr, page)
      * copy-on-write.
      */
     ptePtr = VmGetPTEPtr(mastSegPtr, page);
-    if (vm_Tracing) {
-	Vm_TracePTEChange	pteChange;
-
-	pteChange.changeType = VM_TRACE_LAST_COR;
-	pteChange.softPTE = TRUE;
-	pteChange.segNum = mastSegPtr->segNum;
-	pteChange.pageNum = page;
-	pteChange.beforePTE = *ptePtr;
-	pteChange.afterPTE = *ptePtr & ~VM_COW_BIT;
-	VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC, sizeof(pteChange),
-			(Address)&pteChange, TRUE);
-    }
     *ptePtr &= ~VM_COW_BIT;
     mastSegPtr->numCOWPages--;
     if (mastSegPtr->numCOWPages == 0 && mastSegPtr->numCORPages == 0) {
@@ -1005,9 +966,6 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
     Boolean			others;
     unsigned int		virtFrameNum;
     Vm_PTE			pte;
-#ifdef SOSP91
-    Boolean	isForeign = FALSE;
-#endif SOSP91
 
     mastSegPtr = FindNewMasterSeg(virtAddrPtr->segPtr, virtAddrPtr->page,
 				  &others);
@@ -1055,19 +1013,6 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 	     */
 	    (void)VmCopySwapPage(virtAddrPtr->segPtr, 
 				virtAddrPtr->page, mastSegPtr);
-#ifdef SOSP91
-	    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-		if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-			(proc_RunningProcesses[0]->genFlags &
-			(PROC_FOREIGN | PROC_MIGRATING))) {
-		    isForeign = TRUE;
-		}
-	    }
-	    fs_MoreStats.COWCopySwapPage++;
-	    if (isForeign) {
-		fs_MoreStats.COWCopySwapPageM++;
-	    }
-#endif SOSP91
 	    pte = VM_VIRT_RES_BIT | VM_ON_SWAP_BIT;
 	    if (others) {
 		pte |= VM_COW_BIT;
@@ -1088,18 +1033,6 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
      * done by some other routine.
      */
     if (*ptePtr & VM_COW_BIT) {
-	if (vm_Tracing) {
-	    Vm_TracePTEChange	pteChange;
-
-	    pteChange.changeType = VM_TRACE_COW_TO_NORMAL;
-	    pteChange.softPTE = TRUE;
-	    pteChange.segNum = virtAddrPtr->segPtr->segNum;
-	    pteChange.pageNum = virtAddrPtr->page;
-	    pteChange.beforePTE = *ptePtr;
-	    pteChange.afterPTE = *ptePtr & ~VM_COW_BIT;
-	    VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC, sizeof(pteChange),
-			    (Address)&pteChange, TRUE);
-	}
 	ReleaseCOW(ptePtr);
     }
     virtAddrPtr->segPtr->numCOWPages--;
@@ -1154,18 +1087,6 @@ GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
     pageFrame = Vm_GetPageFrame(*srcPTEPtr);
     destPTEPtr = VmGetPTEPtr(destSegPtr, virtPage);
     *destPTEPtr = *srcPTEPtr & ~VM_COW_BIT;
-    if (vm_Tracing) {
-	Vm_TracePTEChange	pteChange;
-
-	pteChange.changeType = VM_TRACE_GIVEN_FROM_MASTER;
-	pteChange.softPTE = TRUE;
-	pteChange.segNum = srcSegPtr->segNum;
-	pteChange.pageNum = virtPage;
-	pteChange.beforePTE = *srcPTEPtr;
-	pteChange.afterPTE = 0;
-	VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC, sizeof(pteChange),
-			(Address)&pteChange, TRUE);
-    }
     *srcPTEPtr = 0;
     VmMach_GetRefModBits(&virtAddr, pageFrame, &referenced, &modified);
     if (referenced) {
@@ -1179,19 +1100,6 @@ GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
 	*destPTEPtr |= VM_COW_BIT;
     }
     VmPageSwitch(Vm_GetPageFrame(*destPTEPtr), destSegPtr);
-    if (vm_Tracing) {
-	Vm_TracePTEChange	pteChange;
-
-	pteChange.changeType = VM_TRACE_TAKEN_BY_SLAVE;
-	pteChange.softPTE = TRUE;
-	pteChange.segNum = destSegPtr->segNum;
-	pteChange.pageNum = virtPage;
-	pteChange.beforePTE = 0;
-	pteChange.afterPTE = *destPTEPtr;
-	VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC, sizeof(pteChange),
-			(Address)&pteChange, TRUE);
-    }
-
     UNLOCK_MONITOR;
 }
 
@@ -1220,18 +1128,6 @@ SetPTE(virtAddrPtr, pte)
     LOCK_MONITOR;
 
     ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
-    if (vm_Tracing) {
-	Vm_TracePTEChange	pteChange;
-
-	pteChange.changeType = VM_TRACE_COW_COR_CHANGE;
-	pteChange.softPTE = TRUE;
-	pteChange.segNum = virtAddrPtr->segPtr->segNum;
-	pteChange.pageNum = virtAddrPtr->page;
-	pteChange.beforePTE = *ptePtr;
-	pteChange.afterPTE = pte;
-	VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC, sizeof(pteChange),
-			(Address)&pteChange, TRUE);
-    }
     *ptePtr = pte;
     if (pte & VM_PHYS_RES_BIT) {
 	virtAddrPtr->segPtr->resPages++;

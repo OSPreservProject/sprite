@@ -212,13 +212,7 @@ Dbg_InRange(addr, numBytes, writeable)
     unsigned	int	prot;
     int			firstPage;
     int			lastPage;
-    unsigned	int	maxAddr;
 
-#ifdef sun2
-    maxAddr = 0x1000000;
-#else
-    maxAddr = 0x10000000;
-#endif
     if (dbgTraceLevel >= 5) {
 	printf("Dbg_InRange called with addr 0x%x %d bytes, and writable = %d\n",
 	    addr, numBytes, (unsigned int) writeable);
@@ -226,8 +220,8 @@ Dbg_InRange(addr, numBytes, writeable)
     /*
      * Don't look at anything in device space. 
      */
-    if (!(((addr + numBytes - 1) < VMMACH_DEV_START_ADDR) ||
-	 (addr >= VMMACH_DMA_START_ADDR))) {
+    if (!(((addr + numBytes - 1) < (unsigned int) VMMACH_DEV_START_ADDR) ||
+	 (addr >= (unsigned int) VMMACH_DMA_START_ADDR))) {
 	return FALSE;
     }
     if ((int) (addr) & 0x1) {
@@ -277,7 +271,7 @@ Dbg_InRange(addr, numBytes, writeable)
  *
  * ----------------------------------------------------------------------------
  */
-char *
+static char *
 TranslateOpcode(opcode)
     Dbg_Opcode opcode;		/* The opcode which is to be translated. */
 {
@@ -307,7 +301,7 @@ TranslateOpcode(opcode)
  *
  * ----------------------------------------------------------------------------
  */
-char *
+static char *
 TranslateException(exception)
     int exception;		/* The exception which is to be translated. */
 {
@@ -770,7 +764,9 @@ Dbg_Main(trapType, trapStatePtr)
 		    stopInfo.regs = *(procPtr->machStatePtr->switchRegs);
 		    stopInfo.regs.tbr = trapStatePtr->tbr;
 		    stopInfo.regs.y = trapStatePtr->y;
-		    stopInfo.regs.pc = ((int) &Mach_ContextSwitch)+16;
+#ifndef lint		    
+		    stopInfo.regs.pc = ((int) Mach_ContextSwitch)+16;
+#endif		    
 		    stopInfo.regs.nextPc = stopInfo.regs.pc+4;
 
 		} else {

@@ -18,6 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
+#include "stdio.h"
 #include "machConst.h"
 #include "machMon.h"
 #include "machEeprom.h"
@@ -147,7 +148,7 @@ Mach_EepromPrintConfig()
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 void
 Mach_EepromGetConfig(cpuPtr, memSizePtr, colorPtr, fpuPtr)
     Mach_CpuConfig *cpuPtr;		/* Not implemented */

@@ -368,7 +368,6 @@ typedef enum {
  *				the page tables.
  *   VM_DEBUGGED_SEG		This is a special code segment that is being
  *				written by the debugger.
- *   VM_SEG_CREATE_TRACED	The segment creation has been traced already.
  *   VM_SEG_CANT_COW		This segment cannot be forked copy-on-write.
  *   VM_SEG_COW_IN_PROGRESS	This segment is being actively copied at
  *				fork time.
@@ -383,7 +382,7 @@ typedef enum {
 #define	VM_SEG_DEAD			0x010
 #define	VM_PT_EXCL_ACC			0x020
 #define	VM_DEBUGGED_SEG			0x040
-#define	VM_SEG_CREATE_TRACED		0x080
+/* 0x080 is not used */
 #define	VM_SEG_CANT_COW			0x100
 #define	VM_SEG_COW_IN_PROGRESS		0x200
 #define VM_SEG_IO_ERROR		        0x400
@@ -639,10 +638,5 @@ extern ReturnStatus Vm_MmapInt _ARGS_((Address startAddr, int length, int prot,
  */
 extern void VmPrefetch _ARGS_((register Vm_VirtAddr *virtAddrPtr,
 	register Vm_PTE *ptePtr));
-/*
- * Vm tracing.
- */
-extern	void		VmTraceSegStart _ARGS_((void));
-extern void VmCheckListIntegrity _ARGS_((List_Links *listHdr));
 
-#endif _VMINT
+#endif /* _VMINT */

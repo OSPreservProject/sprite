@@ -31,14 +31,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fslcl.h>
 #include <devFsOpTable.h>
 #include <fspdev.h>
-#include <fsutilTrace.h>
 #include <fsStat.h>
 #include <fsconsist.h>
 #include <proc.h>
 #include <rpc.h>
 #include <recov.h>
 #include <timer.h>
-#include <trace.h>
 #include <fsdm.h>
 #include <fsrmt.h>
 #include <devTypes.h>
@@ -134,15 +132,10 @@ Fs_InitData()
      */
     Fscache_Init(64);
     Fsutil_HandleInit(64);
-
     Fsprefix_Init();
-
     Fsconsist_ClientInit();
-
     Fslcl_DomainInit();
-
-    Fsutil_TraceInit();
-    Fspdev_TraceInit();
+    return;
 }
 
 
@@ -322,7 +315,7 @@ Fs_ProcInit()
 	    char		buffer[128];
 	    Boolean		rootServer = FALSE;
 
-	    sprintf(buffer, "%s/ROOT", LOCAL_DISK_NAME);
+	    (void) sprintf(buffer, "%s/ROOT", LOCAL_DISK_NAME);
 	    status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
 	    if (status != SUCCESS) {
 		printf("Stat of %s returned 0x%x\n", buffer, status);
@@ -343,7 +336,7 @@ Fs_ProcInit()
 		}
 	    }
 	    if (rootServer) {
-		sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
+		(void) sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
 		status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
 		if (status != SUCCESS) {
 		    printf("/boot not found on root partition.\n");

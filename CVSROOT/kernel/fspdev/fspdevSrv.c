@@ -50,11 +50,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <proc.h>
 #include <rpc.h>
 #include <string.h>
-
-/*
- * Prevent tracing by defining CLEAN here before this next include
- */
-#undef CLEAN
 #include <fspdevInt.h>
 #include <dev/pfs.h>
 
@@ -593,14 +588,12 @@ FspdevServerStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	status = FS_WOULD_BLOCK;
 	replyPtr->length = 0;
 	Fsutil_FastWaitListInsert(&pdevHandlePtr->srvReadWaitList, waitPtr);
-	PDEV_TRACE(&pdevHandlePtr->hdr.fileID, PDEVT_SRV_READ_WAIT);
     } else {
 	/*
 	 * Copy the current pointers out to the server.  We include the
 	 * server's address of the request buffer to support changing
 	 * the request buffer after requests have started to flow.
 	 */
-	PDEV_TRACE(&pdevHandlePtr->hdr.fileID, PDEVT_SRV_READ);
 	bufPtrs.magic = PDEV_BUF_PTR_MAGIC;
 	bufPtrs.requestAddr = pdevHandlePtr->requestBuf.data;
 	if ((reqFirstByte == -1) || (reqFirstByte > reqLastByte)) {
@@ -1294,24 +1287,14 @@ FspdevSignalOwner(ctrlHandlePtr, ioctlPtr)
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-#ifdef SOSP91
-ReturnStatus
-FspdevServerStreamClose(streamPtr, clientID, procID, flags, size, data, 
-    offsetPtr, rwFlagsPtr)
-#else
 ReturnStatus
 FspdevServerStreamClose(streamPtr, clientID, procID, flags, size, data)
-#endif
     Fs_Stream		*streamPtr;	/* Service stream to close */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
-#ifdef SOSP91
-    int			*offsetPtr;
-    int			*rwFlagsPtr;
-#endif
 {
     register Fspdev_ServerIOHandle *pdevHandlePtr =
 	    (Fspdev_ServerIOHandle *)streamPtr->ioHandlePtr;
@@ -1333,12 +1316,7 @@ FspdevServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 	dummy.ioHandlePtr = (Fs_HandleHeader *)ctrlHandlePtr;
 	Fsutil_HandleLock(ctrlHandlePtr);
 	Fsprefix_HandleClose(ctrlHandlePtr->prefixPtr, FSPREFIX_ANY);
-#ifdef SOSP91
-	(void)FspdevControlClose(&dummy, clientID, procID, flags, 0, 
-	    (ClientData)NIL, (int *) NIL, (int *) NIL);
-#else
 	(void)FspdevControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
-#endif
     }
     Sync_LockClear(&pdevHandlePtr->lock);
     Fsutil_HandleRelease(pdevHandlePtr, TRUE);
@@ -1964,11 +1942,6 @@ FspdevPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	if (pdevHandlePtr->flags & PDEV_READ_BUF_EMPTY) {
 	    status = FS_WOULD_BLOCK;
 	    Fsutil_FastWaitListInsert(&pdevHandlePtr->cltReadWaitList, waitPtr);
-	    PDEV_TRACE(&pdevHandlePtr->hdr.fileID, PDEVT_READ_WAIT);
-	    DBG_PRINT( ("PDEV %x,%x Read (%d) Blocked\n", 
-		    streamPtr->ioHandlePtr->fileID.major,
-		    streamPtr->ioHandlePtr->fileID.minor,
-		    readPtr->length) );
 	    replyPtr->length = 0;
 	} else {
 	    register int dataAvail, firstByte, lastByte, toRead;

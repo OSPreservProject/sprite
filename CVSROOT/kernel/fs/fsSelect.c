@@ -60,10 +60,10 @@ static char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
         "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE"};
 
 #undef Mach_SetErrno
-#define Mach_SetErrno(err) if (debugFsStubs) \
+#define Mach_SetErrno(err) if (debugFsStubs) { \
         printf("Error %d (%s) at %d in %s\n", err,\
         err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
-        __LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
+        __LINE__, __FILE__); } Proc_GetActualProc()->unixErrno = (err)
 
 /*
  * Internal limit on the number of streams that can be checked.

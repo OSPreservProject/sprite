@@ -78,19 +78,6 @@ extern	ReturnStatus (*fs_DomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])();
  * this switch is keyed on the nameFileID.type (i.e. local or remote file).
  */
 
-#ifdef SOSP91
-typedef struct Fs_AttrOps {
-    ReturnStatus	(*getAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID,
-						Fs_Attributes *attrPtr,
-						int hostID, int userID));
-
-    ReturnStatus	(*setAttr) _ARGS_((Fs_FileID *fileIDPtr, 
-					  Fs_Attributes *attrPtr, 
-					  Fs_UserIDs *idPtr, int flags,
-					  int clientID, int hostID,
-					  int userID));
-} Fs_AttrOps;
-#else
 typedef struct Fs_AttrOps {
     ReturnStatus	(*getAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID,
 						Fs_Attributes *attrPtr));
@@ -99,7 +86,6 @@ typedef struct Fs_AttrOps {
 					  Fs_Attributes *attrPtr, 
 					  Fs_UserIDs *idPtr, int flags));
 } Fs_AttrOps;
-#endif
 
 extern Fs_AttrOps fs_AttrOpTable[];
 
@@ -141,22 +127,6 @@ typedef struct Fs_OpenArgs {
     int		migClientID;	/* Logical host ID if migrated (the home node)*/
     Fs_UserIDs	id;		/* User and group IDs */
 } Fs_OpenArgs;
-
-#ifdef SOSP91
-typedef struct Fs_OpenArgsSOSP {
-    Fs_FileID	prefixID;	/* File ID from prefix handle, MUST BE FIRST */
-    Fs_FileID	rootID;		/* File ID of root.  MUST FOLLOW prefix ID.
-				 * Used to trap ".." past the root. */
-    int		useFlags;	/* Flags defined in fs.h */
-    int		permissions;	/* Permission bits for created files.  Already
-				 * reflects per-process permission mask */
-    int		type;		/* Used to contrain open to a specific type */
-    int		clientID;	/* True Host ID of client doing the open */
-    int		migClientID;	/* Logical host ID if migrated (the home node)*/
-    Fs_UserIDs	id;		/* User and group IDs */
-    int		realID;
-} Fs_OpenArgsSOSP;
-#endif
 
 typedef struct Fs_OpenResults {
     Fs_FileID	ioFileID;	/* FileID used to get to I/O server.  This is

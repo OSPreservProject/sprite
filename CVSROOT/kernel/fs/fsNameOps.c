@@ -26,7 +26,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsio.h>
 #include <fsutil.h>
 #include <fsNameOps.h>
-#include <fsutilTrace.h>
 #include <fsStat.h>
 #include <fsprefix.h>
 #include <proc.h>
@@ -73,11 +72,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 {
     register Fs_Stream 	*streamPtr;	/* Local copy of stream pointer */
     ReturnStatus 	status;		/* Return error code from RPC */
-#ifdef SOSP91
-    Fs_OpenArgsSOSP 		openArgs;	/* Packaged up parameters */
-#else
     Fs_OpenArgs 		openArgs;	/* Packaged up parameters */
-#endif
     Fs_OpenResults 	openResults;	/* Packaged up results */
     Proc_ControlBlock	*procPtr;	/* Used to get process IDs */
     Fs_NameInfo		*nameInfoPtr;	/* Used to track name and prefix */
@@ -129,16 +124,10 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
     }
     openResults.streamData	= (ClientData) NIL;
     Fs_SetIDs(procPtr, &openArgs.id);
-#ifdef SOSP91
-    openArgs.realID = procPtr->userID;
-    openResults.dataSize = sizeof(Fs_OpenArgsSOSP);
-#endif
     nameInfoPtr = mnew(Fs_NameInfo);
 
-    FSUTIL_TRACE_NAME(FSUTIL_TRACE_OPEN_START, name);
     status = Fsprefix_LookupOperation(name, FS_DOMAIN_OPEN, useFlags & FS_FOLLOW,
 		    (Address)&openArgs, (Address)&openResults, nameInfoPtr);
-    FSUTIL_TRACE_NAME(FSUTIL_TRACE_OPEN_DONE, name);
     if (status == SUCCESS) {
 	/*
 	 * Install the stream and then call the client open procedure
@@ -156,9 +145,6 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	    if (streamPtr->flags & FS_TRUNC) {
 		(void)Fs_TruncStream(streamPtr, 0);
 	    }
-#ifdef SOSP91
-	    streamPtr->hdr.flags &= ~FSUTIL_RW_FLAGS;
-#endif
 	    *streamPtrPtr = streamPtr;
 	    switch (useFlags & (FS_READ | FS_WRITE)) {
 		case FS_READ:

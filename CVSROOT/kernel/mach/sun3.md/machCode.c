@@ -760,7 +760,7 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 
     machArgOffsets[machMaxSysCall] = 8 + numArgs*4;
     machArgDispatch[machMaxSysCall] = 
-		(16-numArgs)*2 + (Address) ((unsigned int)MachFetchArgs);
+		(16-numArgs)*2 + (Address) MachFetchArgs;
     mach_NormalHandlers[machMaxSysCall] = normalHandler;
     mach_MigratedHandlers[machMaxSysCall] = migratedHandler;
 }

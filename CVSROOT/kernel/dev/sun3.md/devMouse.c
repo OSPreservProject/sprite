@@ -443,7 +443,7 @@ DevMouseClose(devicePtr, useFlags, openCount, writerCount)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static void
 MouseDelayedClose(clientData, callInfoPtr)
     ClientData     clientData;		/* Not used. */

@@ -31,7 +31,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsNameOps.h>
 #include <fsdm.h>
 #include <fsStat.h>
-#include <fsutilTrace.h>
 #include <fslcl.h>
 #include <fscacheBlocks.h>
 #include <vm.h>
@@ -41,10 +40,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 
 #define	BLOCK_ALIGNED(offset) (((offset) & ~FS_BLOCK_OFFSET_MASK) == (offset))
-
-#ifdef SOSP91
-Fs_SospMigStats	fs_SospMigStats;
-#endif SOSP91
 
 /*
  * Cache I/O is serialized using a monitor lock on the cache state for
@@ -84,9 +79,6 @@ Fscache_UpdateFile(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
 {
     register Boolean outOfDate;
     Boolean changed = FALSE;
-#ifdef CONSIST_DEBUG
-    extern int fsTraceConsistMinor;
-#endif
     LOCK_MONITOR;
 
     /* 
@@ -100,16 +92,6 @@ Fscache_UpdateFile(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
     } else {
 	outOfDate = (cacheInfoPtr->version < version);
     }
-#ifdef CONSIST_DEBUG
-    if (fsTraceConsistMinor == cacheInfoPtr->hdrPtr->fileID.minor) {
-	printf("Fscache_UpdateFile: <%d,%d> version %d->%d, %s, %s\n",
-		    cacheInfoPtr->hdrPtr->fileID.major,
-		    cacheInfoPtr->hdrPtr->fileID.minor,
-		    cacheInfoPtr->version, version,
-		    (cacheable ? "cacheable" : "not-cacheable"),
-		    (outOfDate ? "out of date" : "not out of date"));
-    }
-#endif /* CONSIST_DEBUG */
     if (version > cacheInfoPtr->version) {
 	/*
 	 * Update the version of the handle, ie. we just opened for writing
@@ -480,11 +462,8 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
     }
     status = SUCCESS;
     mig = (flags & FSCONSIST_MIGRATION) ? FSCACHE_WB_MIGRATION : 0;
-    switch (flags & ~(FSCONSIST_DEBUG|FSCONSIST_MIGRATION)) {
+    switch (flags & ~(FSCONSIST_MIGRATION)) {
 	case FSCONSIST_WRITE_BACK_BLOCKS:
-#ifdef SOSP91
-	    cacheInfoPtr->flags |= FSCACHE_CONSIST_WB;
-#endif SOSP91
 	    status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
 			FSCACHE_LAST_BLOCK, FSCACHE_FILE_WB_WAIT | mig,
 					   &numSkipped);
@@ -496,9 +475,6 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
 	    cacheInfoPtr->flags |= FSCACHE_FILE_NOT_CACHEABLE;
 	    break;
 	case FSCONSIST_INVALIDATE_BLOCKS | FSCONSIST_WRITE_BACK_BLOCKS:
-#ifdef SOSP91
-	    cacheInfoPtr->flags |= FSCACHE_CONSIST_WBINV;
-#endif SOSP91
 	    status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
 					   FSCACHE_LAST_BLOCK,
 					   FSCACHE_WRITE_BACK_AND_INVALIDATE |
@@ -558,9 +534,6 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     Boolean		found;		/* For fetching blocks from cache */
     Fscache_Block	*blockPtr;	/* For fetching blocks from cache */
     int			dontBlock;	/* FSCACHE_DONT_BLOCK */
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     /*
      * Serialiaze access to the cache for this file.
@@ -571,15 +544,6 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	status = FS_NOT_CACHEABLE;
 	goto exit;
     }
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
     /*
      * Determine the offset at which to read.
      */
@@ -638,35 +602,14 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    break;
 	}
 	fs_Stats.blockCache.readAccesses++;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_SospMigStats.blockCache.readAccesses++;
-	}
-#endif SOSP91
-	    
 	if (found) {
 	    if (blockPtr->timeDirtied != 0) {
 		fs_Stats.blockCache.readHitsOnDirtyBlock++;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.blockCache.readHitsOnDirtyBlock++;
-		}
-#endif SOSP91
 	    } else {
 		fs_Stats.blockCache.readHitsOnCleanBlock++;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.blockCache.readHitsOnCleanBlock++;
-		}
-#endif SOSP91
 	    }
 	    if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
 		fs_Stats.blockCache.readAheadHits++;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.blockCache.readAheadHits++;
-		}
-#endif SOSP91
 	    }
 	} else {
 	    /*
@@ -710,13 +653,6 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     *lenPtr -= size;
     Fs_StatAdd(*lenPtr, fs_Stats.blockCache.bytesRead,
 	       fs_Stats.blockCache.bytesReadOverflow);
-#ifdef SOSP91
-    if (isForeign) {
-	Fs_StatAdd(*lenPtr, fs_SospMigStats.blockCache.bytesRead,
-		fs_SospMigStats.blockCache.bytesReadOverflow);
-    }
-#endif SOSP91
-
 exit:
     if ((status == SUCCESS) ||
 	(status == FS_WOULD_BLOCK && (*lenPtr > 0))) {
@@ -772,9 +708,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     int			modTime;	/* File modify time. */
     Boolean		dontBlock;	/* TRUE if lower levels shouldn't block
 					 * because we can block up higher */
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     /*
      * Serialize access to the cache for this file.
@@ -798,15 +731,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	*lenPtr = 0;
 	goto exit;
     }
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
     /*
      * Determine where to start writing.
      */
@@ -901,12 +825,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    blockPtr = (Fscache_Block *)NIL;
 	} else {
 	    fs_Stats.blockCache.writeAccesses++;
-#ifdef SOSP91
-	    if (isForeign) {
-		fs_SospMigStats.blockCache.writeAccesses++;
-	    }
-#endif SOSP91
-		
 	    Fscache_FetchBlock(cacheInfoPtr, blockNum, 
 		 (int)(FSCACHE_IO_IN_PROGRESS | FSCACHE_DATA_BLOCK | dontBlock),
 		 &blockPtr, &found);
@@ -938,11 +856,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	if (toWrite == FS_BLOCK_SIZE) {
 	    if (found) {
 		fs_Stats.blockCache.overWrites++;
-#ifdef SOSP91
-		if (isForeign) {
-		    fs_SospMigStats.blockCache.overWrites++;
-		}
-#endif SOSP91
 	    }
 	} else {
 	    /*
@@ -953,26 +866,11 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    if (blockNum <= lastFileBlock && !newBlock) {
 		if (found) {
 		    fs_Stats.blockCache.partialWriteHits++;
-#ifdef SOSP91
-		    if (isForeign) {
-			fs_SospMigStats.blockCache.partialWriteHits++;
-		    }
-#endif SOSP91
 		    if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
 			fs_Stats.blockCache.readAheadHits++;
-#ifdef SOSP91
-			if (isForeign) {
-			    fs_SospMigStats.blockCache.readAheadHits++;
-			}
-#endif SOSP91
 		    }
 		} else {
 		    fs_Stats.blockCache.partialWriteMisses++;
-#ifdef SOSP91
-		    if (isForeign) {
-			fs_SospMigStats.blockCache.partialWriteMisses++;
-		    }
-#endif SOSP91
 		    status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
 			(cacheInfoPtr->hdrPtr, blockPtr, remoteWaitPtr);
 #ifdef lint
@@ -1066,13 +964,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     *lenPtr = offset - oldOffset;
     Fs_StatAdd(offset - oldOffset, fs_Stats.blockCache.bytesWritten,
 	       fs_Stats.blockCache.bytesWrittenOverflow);
-#ifdef SOSP91
-    if (isForeign) {
-    Fs_StatAdd(offset - oldOffset, fs_SospMigStats.blockCache.bytesWritten,
-	       fs_SospMigStats.blockCache.bytesWrittenOverflow);
-	
-    }
-#endif SOSP91
 
     /*
      * Update the firstByte so that Fs_Read knows there is data.
@@ -1144,9 +1035,6 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
     ReturnStatus	status = SUCCESS;
     int			offset;
     Fscache_Block	*blockPtr;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
     LOCK_MONITOR;
 
@@ -1163,28 +1051,9 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 	status = SUCCESS;
 	goto exit;
     }
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
     fs_Stats.blockCache.readAccesses++;
-#ifdef SOSP91
-    if (isForeign) {
-	fs_SospMigStats.blockCache.readAccesses++;
-    }
-#endif SOSP91
     if (blockType & FSCACHE_DIR_BLOCK) {
         fs_Stats.blockCache.dirBlockAccesses++;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_SospMigStats.blockCache.dirBlockAccesses++;
-	}
-#endif SOSP91
     }
     Fscache_FetchBlock(cacheInfoPtr, blockNum, blockType,
 			blockPtrPtr, &found);
@@ -1238,34 +1107,14 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
     } else {
 	if (blockType & FSCACHE_DIR_BLOCK) {
 	    fs_Stats.blockCache.dirBlockHits++;
-#ifdef SOSP91
-	    if (isForeign) {
-		fs_SospMigStats.blockCache.dirBlockHits++;
-	    }
-#endif SOSP91
 	}
 	if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
 	    fs_Stats.blockCache.readAheadHits++;
-#ifdef SOSP91
-	    if (isForeign) {
-		fs_SospMigStats.blockCache.readAheadHits++;
-	    }
-#endif SOSP91
 	}
 	if (blockPtr->timeDirtied != 0) {
 	    fs_Stats.blockCache.readHitsOnDirtyBlock++;
-#ifdef SOSP91
-	    if (isForeign) {
-		fs_SospMigStats.blockCache.readHitsOnDirtyBlock++;
-	    }
-#endif SOSP91
 	} else {
 	    fs_Stats.blockCache.readHitsOnCleanBlock++;
-#ifdef SOSP91
-	    if (isForeign) {
-		fs_SospMigStats.blockCache.readHitsOnCleanBlock++;
-	    }
-#endif SOSP91
 	}
     }
     if (status == SUCCESS) {
@@ -1274,21 +1123,9 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 
     if (blockType & FSCACHE_DIR_BLOCK) {
 	fs_Stats.blockCache.dirBytesRead += blockPtr->blockSize;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_SospMigStats.blockCache.dirBytesRead += blockPtr->blockSize;
-	}
-#endif SOSP91
     } else {
 	Fs_StatAdd(blockPtr->blockSize, fs_Stats.blockCache.bytesRead,
 		   fs_Stats.blockCache.bytesReadOverflow);
-#ifdef SOSP91
-	if (isForeign) {
-	Fs_StatAdd(blockPtr->blockSize, fs_SospMigStats.blockCache.bytesRead,
-		   fs_SospMigStats.blockCache.bytesReadOverflow);
-	    
-	}
-#endif SOSP91
     }
     /*
      * Read ahead the next block.

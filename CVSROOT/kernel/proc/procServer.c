@@ -374,10 +374,6 @@ Proc_ServerProc()
 
 	MASTER_UNLOCK(&serverMutex);
 
-	if (procPtr->locksHeld != 0) {
-	    panic("Proc_ServerProc holding lock before starting function.\n");
-	}
-
 	/*
 	 * Call the function.
 	 */
@@ -385,10 +381,6 @@ Proc_ServerProc()
 	callInfo.clientData = serverInfoPtr->info.data;
 	callInfo.token = (ClientData) serverInfoPtr->info.funcInfoPtr;
 	serverInfoPtr->info.func(serverInfoPtr->info.data, &callInfo);
-
-	if (procPtr->locksHeld != 0) {
-	    panic("Proc_ServerProc holding lock after calling function.\n");
-	}
 
 	if (callInfo.interval != 0) {
 	    /* 

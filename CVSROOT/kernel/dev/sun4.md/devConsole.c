@@ -146,17 +146,18 @@ static Boolean	consoleCmdDown	= FALSE;
 /* ARGSUSED */
 int
 DevConsoleRawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
-    void *ptr;
+    Address ptr;
     int operation;		/* What to do:  TD_RAW_OUTPUT_READY etc. */
     int inBufSize;		/* Size of input buffer for operation. */
     char *inBuffer;		/* Input buffer. */
     int outBufSize;		/* Size of output buffer for operation. */
     char *outBuffer;		/* Output buffer. */
 {
-    register DevZ8530 *zPtr = ptr; /* Information about keyboard device. */
+    register DevZ8530 *zPtr;
     char buf[TTY_OUT_BUF_SIZE];
     int c, i;
 
+    zPtr = (DevZ8530 *) ptr; /* Information about keyboard device. */
     if (operation != TD_RAW_OUTPUT_READY) {
 	return 0;
     }

@@ -336,13 +336,9 @@ _VmMachTracePMEG:
     beq		2f
     cmpl	#VMMACH_RESIDENT_BIT, d0
     beq		2f
-    movl	d3, sp@-			| Push page num onto stack.
-    movl	d2, sp@-			| Push pte onto stack.
 						| Clear the ref and mod bits.
     andl	#(~(VMMACH_REFERENCED_BIT + VMMACH_MODIFIED_BIT)), d2
     movsl	d2, a2@
-    jsr		_VmMachTracePage		| VmMachTrace(pte, pageNum)
-    addql	#8, sp
 
 2:
 |* 

@@ -24,6 +24,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "string.h"
 #endif
 
+extern int VmMachGetKernelContext _ARGS_ ((void));
+extern void VmMachSetKernelContext _ARGS_((int value));
+
 #ifdef sun2
 static	int	(*savedNmiVec)() = (int (*)()) 0;
 #endif
@@ -266,7 +269,7 @@ void
 Mach_MonTraverseDevTree(node, func, clientData)
     unsigned	int	node;
     int		(*func)();
-    void	*clientData;
+    Address     clientData;
 {
     unsigned	int		newNode;
     char 	name[64];

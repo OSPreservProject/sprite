@@ -667,7 +667,7 @@ BlockIOProc(handlePtr, requestPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static Boolean
 xyIdleCheck(clientData, diskStatsPtr) 
     ClientData	clientData;
@@ -762,7 +762,7 @@ DevXylogics450DiskAttach(devicePtr)
 
 	    rawDevice =  *devicePtr;
 	    rawDevice.unit = rawDevice.unit & ~0xf;
-	    sprintf(name, "xy%d-%d", xyPtr->number, diskPtr->slaveID);
+	    (void) sprintf(name, "xy%d-%d", xyPtr->number, diskPtr->slaveID);
 	    diskPtr->diskStatsPtr = DevRegisterDisk(&rawDevice, name, 
 				   xyIdleCheck, (ClientData) diskPtr);
 	}
@@ -1183,8 +1183,8 @@ SetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address, interrupt,IOPBPtr)
     IOPBPtr->numSectHigh	= (numSectors & 0xff00) >> 8;
     IOPBPtr->numSectLow		= (numSectors & 0x00ff);
 
-    if ((unsigned)address != 0 && (unsigned)address != (unsigned) NIL) {
-	if ((unsigned)address < VMMACH_DMA_START_ADDR) {
+    if ((unsigned) address != 0 && (unsigned) address != (unsigned) NIL) {
+	if ((unsigned) address < (unsigned) VMMACH_DMA_START_ADDR) {
 	    printf("%x: ", address);
 	    panic("Xylogics data address not in DMA space\n");
 	}

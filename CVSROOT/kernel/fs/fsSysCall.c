@@ -26,7 +26,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include <fs.h>
 #include <fsutil.h>
-#include <fsutilTrace.h>
 #include <fsNameOps.h>
 #include <fsio.h>
 #include <fslcl.h>
@@ -160,8 +159,6 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
     int			pathNameLength;
     char		newName[FS_MAX_PATH_NAME_LENGTH];
 
-    FSUTIL_TRACE(FSUTIL_TRACE_OPEN);
-
     /*
      * Copy the name in from user space to the kernel stack.
      */
@@ -178,15 +175,10 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
      */
     usageFlags &= ~FS_KERNEL_FLAGS;
     usageFlags |= (FS_USER | FS_FOLLOW);
-    if (fsutil_Tracing) {
-	usageFlags |= FSUTIL_TRACE_FLAG;
-    }
 
     status = Fs_Open(newName, usageFlags, FS_FILE,
 		     permissions & 0777, &streamPtr);
     
-    FSUTIL_TRACE_NAME(FSUTIL_TRACE_OPEN_DONE_2, pathName);
-
     if (status != SUCCESS) {
 	return(status);
     }
@@ -204,7 +196,6 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
 
     if (Vm_CopyOut(sizeof(int), (Address) &streamID, 
 		   (Address) streamIDPtr) == SUCCESS) {
-	FSUTIL_TRACE(FSUTIL_TRACE_OPEN_DONE_3);
 	return(SUCCESS);
     } 
     status = SYS_ARG_NOACCESS;
@@ -1780,16 +1771,7 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     }
     if ((inBufSize > 0) && (inBuffer != (Address)0) &&
 			   (inBuffer != (Address)NIL)) {
-#ifdef SOSP91
-	/*
-	 * Allocate space after the arguments on an IOC_REPOSITION for the
-	 * current offset.
-	 */
-	ioctl.inBuffer  = localInBuffer = (Address) 
-				malloc(inBufSize + 3 * sizeof(int));
-#else
 	ioctl.inBuffer  = localInBuffer = (Address) malloc(inBufSize);
-#endif
 	ioctl.inBufSize = inBufSize;
     } else {
 	ioctl.inBuffer = (Address)NIL;

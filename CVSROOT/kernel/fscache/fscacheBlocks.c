@@ -27,7 +27,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include	<fsNameOps.h>
 #include	<fsdm.h>
 #include	<fsio.h>
-#include	<fsutilTrace.h>
 #include	<hash.h>
 #include	<vm.h>
 #include 	<vmMach.h>
@@ -224,12 +223,7 @@ static void CacheWriteBack _ARGS_((unsigned int writeBackTime,
 static Boolean CreateBlock _ARGS_((Boolean retBlock,
 			Fscache_Block **blockPtrPtr));
 static Boolean DestroyBlock _ARGS_((Boolean retOnePage, int *pageNumPtr));
-#ifdef SOSP91
-static Fscache_Block *FetchBlock _ARGS_((Boolean canWait, Boolean cantBlock,
-			unsigned int flags));
-#else
 static Fscache_Block *FetchBlock _ARGS_((Boolean canWait, Boolean cantBlock));
-#endif /* SOSP91 */
 static void StartBackendWriteback _ARGS_((Fscache_Backend *backendPtr));
 static void PutOnFreeList _ARGS_((Fscache_Block *blockPtr));
 static void PutFileOnDirtyList _ARGS_((Fscache_FileInfo *cacheInfoPtr,
@@ -680,12 +674,7 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 		    /*
 		     * We can't have anymore blocks so reuse one of our own.
 		     */
-#ifdef SOSP91
-		    blockPtr = FetchBlock(!dontBlock, cantBlock,
-			    FSCACHE_BLOCK_LRU);
-#else
 		    blockPtr = FetchBlock(!dontBlock, cantBlock);
-#endif /* SOSP91 */
 		    if ((blockPtr == (Fscache_Block *) NIL) && cantBlock) {
 			goto getBlock;
 		    }
@@ -698,12 +687,7 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 		    if (blockPtr->timeReferenced > refTime) {
 		getBlock:
 			if (!CreateBlock(TRUE, &newBlockPtr)) {
-#ifdef SOSP91
-			    blockPtr = FetchBlock(!dontBlock, cantBlock,
-				    FSCACHE_BLOCK_LRU);
-#else
 			    blockPtr = FetchBlock(!dontBlock, cantBlock);
-#endif /* SOSP91 */
 			} else {
 			    fs_Stats.blockCache.unmapped++;
 			    blockPtr = newBlockPtr;
@@ -713,12 +697,7 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 			 * We have an older block than VM's oldest page so reuse
 			 * the block.
 			 */
-#ifdef SOSP91
-			blockPtr = FetchBlock(!dontBlock, cantBlock,
-				FSCACHE_BLOCK_LRU);
-#else
 			blockPtr = FetchBlock(!dontBlock, cantBlock);
-#endif /* SOSP91 */
 		    }
 		}
 	    }
@@ -1662,10 +1641,6 @@ Fscache_Empty(numLockedBlocksPtr)
 	    PutOnFreeList(blockPtr);
 	}
     }
-#ifdef SOSP91
-    /* XXX Darn - I'll miss blocks quicked out of the cache due to sync. */
-#endif SOSP91
-
     UNLOCK_MONITOR;
 }
 
@@ -2052,18 +2027,7 @@ DestroyBlock(retOnePage, pageNumPtr)
      * Now take blocks from the LRU list until we get one that we can use.
      */
     while (TRUE) {
-#ifdef SOSP91
-	unsigned int	flags;
-
-	if (retOnePage) {
-	    flags = FSCACHE_BLOCK_VM;
-	} else {
-	    flags = FSCACHE_BLOCK_SHRINK;
-	}
-	blockPtr = FetchBlock(FALSE, FALSE, flags);
-#else
 	blockPtr = FetchBlock(FALSE, FALSE);
-#endif /* SOSP91 */
 	if (blockPtr == (Fscache_Block *) NIL) {
 	    /*
 	     * There are no clean blocks left so give up.
@@ -2075,11 +2039,6 @@ DestroyBlock(retOnePage, pageNumPtr)
 	     * We have to deal with the other block.  If it is in use, then
 	     * we can't take this page.  Otherwise delete the block from
 	     * the cache and put it onto the unmapped list.
-#ifdef SOSP91
-	     * If we end up not using the block 'cause the other's in
-	     * use, this block still counts as being LRU'd since we end up
-	     * putting it on the free list and then continuing.
-#endif SOSP91
 	     */
 	    otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
 	    if (otherBlockPtr->refCount > 0 ||
@@ -2093,10 +2052,6 @@ DestroyBlock(retOnePage, pageNumPtr)
 	     */
 	    if (!(otherBlockPtr->flags & FSCACHE_BLOCK_FREE)) {
 		DeleteBlock(otherBlockPtr);
-#ifdef SOSP91
-		/* Count this block as whatever the other one was. */
-		Fscache_AddCleanStats(flags, otherBlockPtr);
-#endif SOSP91
 	    }
 	    otherBlockPtr->flags = FSCACHE_NOT_MAPPED;
 	    List_Move(&otherBlockPtr->useLinks, LIST_ATREAR(unmappedList));
@@ -2132,20 +2087,11 @@ DestroyBlock(retOnePage, pageNumPtr)
  *
  * ----------------------------------------------------------------------------
  */
-#ifdef SOSP91
-static INTERNAL Fscache_Block *
-FetchBlock(canWait, cantBlock, flags)
-    Boolean	canWait;	/* TRUE implies can sleep if all of memory is 
-				 * dirty. */
-    Boolean	cantBlock;	/* TRUE if we can't block. */
-    unsigned	int	flags;
-#else
 static INTERNAL Fscache_Block *
 FetchBlock(canWait, cantBlock)
     Boolean	canWait;	/* TRUE implies can sleep if all of memory is 
 				 * dirty. */
     Boolean	cantBlock;	/* TRUE if we can't block. */
-#endif /* SOSP91 */
 {
     register	Fscache_Block	*blockPtr;
     register	List_Links	*listPtr;
@@ -2174,15 +2120,6 @@ FetchBlock(canWait, cantBlock)
 		blockPtr->flags |= FSCACHE_MOVE_TO_FRONT;
 		if (!(blockPtr->cacheInfoPtr->flags & 
 					FSCACHE_FILE_BEING_WRITTEN)) {
-#ifdef SOSP91
-		    if (flags & FSCACHE_BLOCK_VM) {
-			blockPtr->cacheInfoPtr->flags |= FSCACHE_VM;
-		    } else if (flags & FSCACHE_BLOCK_SHRINK) {
-			blockPtr->cacheInfoPtr->flags |= FSCACHE_SHRINK;
-		    } else {
-			blockPtr->cacheInfoPtr->flags |= FSCACHE_LRU;
-		    }
-#endif SOSP91
 		    StartFileSync(blockPtr->cacheInfoPtr);
 		}
 	    } else if (blockPtr->flags & FSCACHE_BLOCK_DELETED) {
@@ -2193,9 +2130,6 @@ FetchBlock(canWait, cantBlock)
 		 * This block is clean and unlocked.  Delete it from the
 		 * hash table and use it.
 		 */
-#ifdef SOSP91
-		Fscache_AddCleanStats(flags, blockPtr);
-#endif SOSP91
 		fs_Stats.blockCache.lru++;
 		List_Remove(&blockPtr->useLinks);
 		DeleteBlock(blockPtr);
@@ -2206,13 +2140,6 @@ FetchBlock(canWait, cantBlock)
 	 Fscache_Backend	*backendPtr;
          LIST_FORALL(backendList, (List_Links *) backendPtr) {
 	    if (!List_IsEmpty(&backendPtr->dirtyListHdr)) { 
-#ifdef SOSP91
-	    /*
-	     * XXX Darn - I can't put FSCACHE_SPACE flag into the various
-	     * file's cacheInfo structs here, but I'd like to.  This means
-	     * that "unknown" may imply "space" in the results.
-	     */
-#endif SOSP91
 		StartBackendWriteback(backendPtr);
 	    }
          }
@@ -2625,14 +2552,6 @@ Fscache_GetDirtyFile(backendPtr, fsyncOnly, fileMatchProc, clientData)
 
 	cacheInfoPtr->flags |= FSCACHE_FILE_BEING_WRITTEN;
 	cacheInfoPtr->flags &= ~FSCACHE_FILE_ON_DIRTY_LIST;
-#ifdef SOSP91
-	if (fsyncOnly) {
-	    cacheInfoPtr->flags |= FSCACHE_TIME;
-	}
-	if (numAvailBlocks <= minNumAvailBlocks) {
-	    cacheInfoPtr->flags |= FSCACHE_SPACE;
-	}
-#endif SOSP91
 	List_Remove((List_Links *)cacheInfoPtr);
 	UNLOCK_MONITOR;
 	return cacheInfoPtr;
@@ -3379,6 +3298,7 @@ DeleteBlock(blockPtr)
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/ 
 void
 Fscache_DumpStats(dummy)
     ClientData dummy;		/* unused; see dump.c:eventTable */
@@ -3555,139 +3475,3 @@ Fscache_CountBlocks(serverID, majorNumber, numBlocksPtr, numDirtyBlocksPtr)
     UNLOCK_MONITOR;
 }
 
-#ifdef SOSP91
-
-Fscache_ExtraStats	fscache_ExtraStats;
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fscache_AddBlockToStats --
- *
- *	Count another block as being written out from the cache.
- *	Record the reason why from its flags.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Stats updated.
- *
- *----------------------------------------------------------------------
- */
-void
-Fscache_AddBlockToStats(cacheInfoPtr, blockPtr)
-    Fscache_FileInfo	*cacheInfoPtr;
-    Fscache_Block	*blockPtr;
-{
-    int		now;
-    time_t	dirtyLifeTime;
-
-    now = Fsutil_TimeInSeconds();
-    dirtyLifeTime = now - blockPtr->timeDirtied;
-
-    if ((cacheInfoPtr->flags & FSCACHE_REASON_FLAGS) == 0) {
-	fscache_ExtraStats.unknown++;
-	fscache_ExtraStats.unDLife += dirtyLifeTime;
-	return;
-    }
-    if (cacheInfoPtr->flags & FSCACHE_CONSIST_WB) {
-	fscache_ExtraStats.consistWB++;
-	fscache_ExtraStats.cwbDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_CONSIST_WBINV) {
-	fscache_ExtraStats.consistWBInv++;
-	fscache_ExtraStats.cwbiDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_SYNC) {
-	fscache_ExtraStats.sync++;
-	fscache_ExtraStats.syncDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_VM) {
-	fscache_ExtraStats.vm++;
-	fscache_ExtraStats.vmDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_SHRINK) {
-	fscache_ExtraStats.shrink++;
-	fscache_ExtraStats.shrinkDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_REOPEN) {
-	fscache_ExtraStats.reopen++;
-	fscache_ExtraStats.reDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_DETACH) {
-	fscache_ExtraStats.detach++;
-	fscache_ExtraStats.detDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_TIME) {
-	fscache_ExtraStats.time++;
-	fscache_ExtraStats.timeDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_SPACE) {
-	fscache_ExtraStats.space++;
-	fscache_ExtraStats.spaceDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_DESC) {
-	fscache_ExtraStats.desc++;
-	fscache_ExtraStats.descDLife += dirtyLifeTime;
-    } else if (cacheInfoPtr->flags & FSCACHE_LRU) {
-	fscache_ExtraStats.lru++;
-	fscache_ExtraStats.lruDLife += dirtyLifeTime;
-    }
-    return;
-
-}
-
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fscache_AddCleanStats --
- *
- *	Add extra sosp stats about clean blocks pulled from the lru list.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Stats updated.
- *
- *----------------------------------------------------------------------
- */
-void
-Fscache_AddCleanStats(flags, blockPtr)
-    unsigned int	flags;
-    Fscache_Block	*blockPtr;
-{
-    time_t	now;
-    time_t	lifeTime = 0;
-    Boolean	unrefed = FALSE;
-
-    now = Fsutil_TimeInSeconds();
-    if (blockPtr->timeReferenced <= 0) {
-	unrefed = TRUE;
-    } else {
-	lifeTime = now - blockPtr->timeReferenced;
-    }
-    if (lifeTime < 0) {
-	unrefed = TRUE;
-    }
-
-    if (flags & FSCACHE_BLOCK_VM) {
-	if (unrefed) {
-	    fscache_ExtraStats.unRcleanVm++;
-	} else {
-	    fscache_ExtraStats.cleanVm++;
-	    fscache_ExtraStats.cVmLife += lifeTime;
-	}
-    } else if (flags & FSCACHE_BLOCK_SHRINK) {
-	if (unrefed) {
-	    fscache_ExtraStats.unRcleanShrink++;
-	} else {
-	    fscache_ExtraStats.cleanShrink++;
-	    fscache_ExtraStats.cShrinkLife += lifeTime;
-	}
-    } else {
-	if (unrefed) {
-	    fscache_ExtraStats.unRcleanLru++;
-	} else {
-	    fscache_ExtraStats.cleanLru++;
-	    fscache_ExtraStats.cLruLife += lifeTime;
-	}
-    }
-    return;
-}
-#endif SOSP91

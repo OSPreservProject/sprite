@@ -36,7 +36,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vmStat.h>
 #include <vm.h>
 #include <vmInt.h>
-#include <vmTrace.h>
 #include <vmSwapDir.h>
 #include <user/vm.h>
 #include <sync.h>
@@ -1552,42 +1551,15 @@ Vm_PageIn(virtAddr, protFault)
 	VmZeroPage(virtFrameNum);
 	*ptePtr |= VM_MODIFIED_BIT;
 	status = SUCCESS;
-	if (vm_Tracing) {
-	    Vm_TracePageFault	faultRec;
-
-	    faultRec.segNum = transVirtAddr.segPtr->segNum;
-	    faultRec.pageNum = transVirtAddr.page;
-	    faultRec.faultType = VM_TRACE_ZERO_FILL;
-	    VmStoreTraceRec(VM_TRACE_PAGE_FAULT_REC, sizeof(faultRec),
-			    (Address)&faultRec, TRUE);
-	}
     } else if (*ptePtr & VM_ON_SWAP_BIT) {
 	vmStat.psFilled++;
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
 	    dprintf("Vm_PageIn: paging in shared page %d\n",transVirtAddr.page);
 	}
 	status = VmPageServerRead(&transVirtAddr, virtFrameNum);
-	if (vm_Tracing) {
-	    Vm_TracePageFault	faultRec;
-
-	    faultRec.segNum = transVirtAddr.segPtr->segNum;
-	    faultRec.pageNum = transVirtAddr.page;
-	    faultRec.faultType = VM_TRACE_SWAP_FILE;
-	    VmStoreTraceRec(VM_TRACE_PAGE_FAULT_REC, sizeof(faultRec),
-			    (Address)&faultRec, TRUE);
-	}
     } else {
 	vmStat.fsFilled++;
 	status = VmFileServerRead(&transVirtAddr, virtFrameNum);
-	if (vm_Tracing && transVirtAddr.segPtr->type == VM_HEAP) {
-	    Vm_TracePageFault	faultRec;
-
-	    faultRec.segNum = transVirtAddr.segPtr->segNum;
-	    faultRec.pageNum = transVirtAddr.page;
-	    faultRec.faultType = VM_TRACE_OBJ_FILE;
-	    VmStoreTraceRec(VM_TRACE_PAGE_FAULT_REC, sizeof(faultRec),
-			    (Address)&faultRec, TRUE);
-	}
     }
 
     *ptePtr |= VM_REFERENCED_BIT;
@@ -2446,39 +2418,9 @@ Vm_Clock(data, callInfoPtr)
 
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
-    if (vmTraceNeedsInit) {
-	short	initEnd;
-
-	vmTraceTime = 0;
-	VmTraceSegStart();
-	VmMach_Trace();
-	VmStoreTraceRec(VM_TRACE_END_INIT_REC, sizeof(short),
-			(Address)&initEnd, TRUE);
-	vmTracesToGo = vmTracesPerClock;
-	vmClockSleep = timer_IntOneSecond / vmTracesPerClock;
-	vm_Tracing = TRUE;
-	vmTraceNeedsInit = FALSE;
-    } else if (vm_Tracing) {
-	vmTraceStats.numTraces++;
-	VmMach_Trace();
-
-	/*
-	 * Decrement the number of traces per iteration of the clock.  If we
-	 * are at 0 then run the clock for one iteration.
-	 */
-	vmTracesToGo--;
-	if (vmTracesToGo > 0) {
-	    callInfoPtr->interval = vmClockSleep;
-	    UNLOCK_MONITOR;
-	    return;
-	}
-	vmTracesToGo = vmTracesPerClock;
-    }
-
     /*
      * Examine vmPagesToCheck pages.
      */
-
     for (i = 0; i < vmPagesToCheck; i++) {
 	corePtr = &(coreMap[clockHand]);
 
@@ -2504,7 +2446,6 @@ Vm_Clock(data, callInfoPtr)
 	}
 
 	ptePtr = VmGetAddrPTEPtr(&corePtr->virtPage, corePtr->virtPage.page);
-
 	/*
 	 * If the page has been referenced, then put it on the end of the
 	 * allocate list.
@@ -2522,15 +2463,13 @@ Vm_Clock(data, callInfoPtr)
 	    }
 	}
     }
-
     if (!initialized) {
         vmClockSleep = timer_IntOneSecond;
 	initialized = TRUE;
     }
-
     callInfoPtr->interval = vmClockSleep;
-
     UNLOCK_MONITOR;
+    return;
 }
 
 /*

@@ -463,28 +463,6 @@ typedef struct Proc_ControlBlock {
     int         unixProgress;            /* Progress indicator for restarting
                                             unix system calls. */
 
-    /* 
-     * More lock instrumentation.  This should go with the LOCKDEP 
-     * fields above (if you're willing to do a world recompile).
-     */
-
-    int		locksHeld;	/* number of locks currently held by 
-				 * the process; not necessarily the
-				 * same as lockStackSize because of
-				 * the way the stack is popped */
-
-#ifdef SOSP91
-    /* 
-     * Fields for stashing away instrumentation information.
-     */
-    int		rememberedClient;
-    int		rememberedMig;
-    int		rememberedOp;
-    int		inNameLookup;
-#else
-    int		sospFields[4];	/* padding to keep the struct size constant */
-#endif
-
     /*
      *---------------------------------------------------------------------
      *
@@ -494,8 +472,8 @@ typedef struct Proc_ControlBlock {
      *---------------------------------------------------------------------
      */
 
-    int		extraField[5];		/* Extra fields for later use. */
-    
+    int		extraField[10];		/* Extra fields for later use. */
+
 } Proc_ControlBlock;
 
 /*

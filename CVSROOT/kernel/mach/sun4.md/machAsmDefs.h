@@ -14,8 +14,8 @@
 #define _MACHASMDEFS
 
 #ifdef KERNEL
-#include "vmSunConst.h"
-#include "machConst.h"
+#include <vmSunConst.h>
+#include <machConst.h>
 #else
 #include <kernel/vmSunConst.h>
 #include <kernel/machConst.h>
@@ -436,8 +436,8 @@ TestAgainLabel:						\
 	or	ansReg, 0x4, ansReg;			\
 LastOKLabel:						\
 	tst	ansReg
-	
-	
+
+
 
 
 /*

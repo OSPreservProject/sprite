@@ -1326,7 +1326,7 @@ exit:
 		&& Dbg_InRange(((unsigned)(x))+(range)-2,2,FALSE))
 #define ISADDR(x)	ISADDRR(x,sizeof(int))
 #define ISSTR(x)	(ISADDRR(x,20) && \
-    (strncpy(buf,(char *)(x),20),strlen(buf)<20) && isprint(buf[0]))
+    ((void) strncpy(buf,(char *)(x),20),strlen(buf)<20) && isprint(buf[0]))
 #define	ISSTRZ(x)	(INT(x)==0 || ISSTR(x))
 #define ISALIGN(x)	(ISADDR(x) && (INT(x)&3)==0)
 #define ISALIGNZ(x)	(INT(x)==0 || ISALIGN(x))
@@ -1376,9 +1376,13 @@ static int ISRPCCLIENT(x)
 RpcClientChannel *x;
 {
     int i;
-    if (!ISADDRR(x,sizeof(RpcClientChannel))) return 0;
+    if (!ISADDRR(x,sizeof(RpcClientChannel))) {
+	return 0;
+    }
     for (i=0;i<rpcNumChannels;i++) {
-	if (rpcChannelPtrPtr[i] == x) return 1;
+	if (rpcChannelPtrPtr[i] == x) {
+	    return 1;
+	}
     }
     return 0;
 }
@@ -1387,9 +1391,13 @@ static int ISRPCSERVER(x)
 RpcServerState *x;
 {
     int i;
-    if (!ISADDRR(x,sizeof(RpcServerState))) return 0;
+    if (!ISADDRR(x,sizeof(RpcServerState))) {
+	return 0;
+    }
     for (i=0;i<rpcMaxServers;i++) {
-	if (rpcServerPtrPtr[i] == x) return 1;
+	if (rpcServerPtrPtr[i] == x) {
+	    return 1;
+	}
     }
     return 0;
 }
@@ -1398,9 +1406,13 @@ static int ISSERVERPROC(x)
 ServerInfo *x;
 {
     int i;
-    if (!ISADDRR(x,sizeof(ServerInfo))) return 0;
+    if (!ISADDRR(x,sizeof(ServerInfo))) {
+	return 0;
+    }
     for (i=0;i<proc_NumServers;i++) {
-	if (serverInfoTable+i == x) return 1;
+	if (serverInfoTable+i == x) {
+	    return 1;
+	}
     }
     return 0;
 }
@@ -1569,10 +1581,18 @@ Proc_KDump(dummy)
 		    if (ISRPCCLIENT(rpcClientPtr)) {
 			printf("RPC client: \"waitCondition\", server %d ",
 				rpcClientPtr->serverID);
-			if (rpcClientPtr->state & CHAN_FREE) printf("FREE ");
-			if (rpcClientPtr->state & CHAN_BUSY) printf("BUSY ");
-			if (rpcClientPtr->state & CHAN_WAITING) printf("WAIT ");
-			if (rpcClientPtr->state & CHAN_TIMEOUT) printf("TIME ");
+			if (rpcClientPtr->state & CHAN_FREE) {
+			    printf("FREE ");
+			}
+			if (rpcClientPtr->state & CHAN_BUSY) {
+			    printf("BUSY ");
+			}
+			if (rpcClientPtr->state & CHAN_WAITING) {
+			    printf("WAIT ");
+			}
+			if (rpcClientPtr->state & CHAN_TIMEOUT) {
+			    printf("TIME ");
+			}
 			if (rpcClientPtr->state & CHAN_FRAGMENTING) {
 			    printf("FRAG ");
 			}
@@ -1586,15 +1606,27 @@ Proc_KDump(dummy)
 			if (rpcServerPtr->state & SRV_NOTREADY) {
 			    printf("NOTREADY ");
 			}
-			if (rpcServerPtr->state & SRV_FREE) printf("FREE ");
-			if (rpcServerPtr->state & SRV_BUSY) printf("BUSY ");
-			if (rpcServerPtr->state & SRV_WAITING) printf("WAIT ");
-			if (rpcServerPtr->state & SRV_AGING) printf("AGING ");
-			if (rpcServerPtr->state & SRV_FRAGMENT) printf("FRAG ");
+			if (rpcServerPtr->state & SRV_FREE) {
+			    printf("FREE ");
+			}
+			if (rpcServerPtr->state & SRV_BUSY) {
+			    printf("BUSY ");
+			}
+			if (rpcServerPtr->state & SRV_WAITING) {
+			    printf("WAIT ");
+			}
+			if (rpcServerPtr->state & SRV_AGING) {
+			    printf("AGING ");
+			}
+			if (rpcServerPtr->state & SRV_FRAGMENT) {
+			    printf("FRAG ");
+			}
 			if (rpcServerPtr->state & SRV_NO_REPLY) {
 			    printf("NO_REPLY ");
 			}
-			if (rpcServerPtr->state & SRV_STUCK) printf("STUCK ");
+			if (rpcServerPtr->state & SRV_STUCK) {
+			    printf("STUCK ");
+			}
 			match++;
 		    }
 		    handlePtr = (F_hh *)(event-OFF(Fsrmt_IOHandle,

@@ -16,7 +16,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <vm.h>
 #include <vmInt.h>
-#include <vmTrace.h>
 #include <lock.h>
 #include <sync.h>
 #include <sys.h>
@@ -141,8 +140,6 @@ VmSegTableInit()
     vm_SysSegPtr->flags = 0;
     vm_SysSegPtr->numPages = vmFirstFreePage;
     vm_SysSegPtr->resPages = vmFirstFreePage;
-    vm_SysSegPtr->traceTime = 0x7fffffff;
-
     for (i = 0, segPtr = segmentTable; i < vmNumSegments; i++, segPtr++) {
 	segPtr->filePtr = (Fs_Stream *)NIL;
 	segPtr->swapFilePtr = (Fs_Stream *)NIL;
@@ -1470,23 +1467,8 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	*destSegPtrPtr = (Vm_Segment *) NIL;
 	return(VM_NO_SEGMENTS);
     }
-    destSegPtr->flags |= VM_SEG_CREATE_TRACED;
-
     if (vm_CanCOW) {
 	if (VmSegCanCOW(srcSegPtr)) {
-	    /*
-	     * We are allowed to make this segment copy-on-write so do it.
-	     */
-	    if (vm_Tracing) {
-		Vm_TraceSegCreate	segCreate;
-
-		segCreate.segNum = destSegPtr->segNum;
-		segCreate.parSegNum = srcSegPtr->segNum;
-		segCreate.segType = destSegPtr->type;
-		segCreate.cor = TRUE;
-		VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
-				(Address)&segCreate, TRUE);
-	    }
 	    /*
 	     * We are allowing copy-on-write.  Make a copy-on-ref image of the
 	     * src segment in the dest segment.
@@ -1499,16 +1481,6 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 
 	    return(SUCCESS);
 	}
-    }
-    if (vm_Tracing) {
-	Vm_TraceSegCreate	segCreate;
-
-	segCreate.segNum = destSegPtr->segNum;
-	segCreate.parSegNum = srcSegPtr->segNum;
-	segCreate.segType = destSegPtr->type;
-	segCreate.cor = FALSE;
-	VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
-			(Address)&segCreate, TRUE);
     }
 
     /*
@@ -2053,7 +2025,7 @@ FillSegmentInfo(segPtr, infoPtr)
     infoPtr->numCORPages = segPtr->numCORPages;
     infoPtr->minAddr = segPtr->minAddr;
     infoPtr->maxAddr = segPtr->maxAddr;
-    infoPtr->traceTime = segPtr->traceTime;
+    return;
 }
 
 
@@ -2111,45 +2083,3 @@ Vm_EncapSegInfo(segNum, infoPtr)
     return(SUCCESS);
 }
 
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmTraceSegStart --
- *
- *	Reset all segment trace times and dump a creation record for
- *	each in-use segment.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	All segment trace times are set to 0.
- *     
- * ----------------------------------------------------------------------------
- */
-INTERNAL void
-VmTraceSegStart()
-{
-    int		i;
-    Vm_Segment	*segPtr;
-
-    for (i = 0, segPtr = segmentTable; i < vmNumSegments; i++, segPtr++) {
-	if (i != VM_SYSTEM_SEGMENT) {
-	    segPtr->traceTime = 0;
-	    if (segPtr->refCount > 0 ||
-	        (segPtr->flags & VM_SEG_INACTIVE)) {
-		Vm_TraceSegCreate	segCreate;
-    
-		segCreate.segNum = segPtr->segNum;
-		segCreate.parSegNum = -1;
-		segCreate.segType = segPtr->type;
-		segCreate.cor = segPtr->numCORPages > 0;
-		VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
-				(Address)&segCreate, TRUE);
-		segPtr->flags |= VM_SEG_CREATE_TRACED;
-	    }
-	}
-    }
-}

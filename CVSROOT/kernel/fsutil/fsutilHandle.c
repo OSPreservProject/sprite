@@ -29,7 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fslcl.h>
 #include <fsdm.h>
 #include <fsio.h>
-#include <fsutilTrace.h>
 #include <fsNameOps.h>
 #include <hash.h>
 
@@ -196,22 +195,6 @@ extern void DoneLRU _ARGS_((int numScavenged));
  */
 #define HDR_FILE_NAME(hdrPtr) \
 	(((hdrPtr)->name == (char *)NIL) ? "(no name)" : hdrPtr->name)
-
-/*
- * Macro for debug trace prints.
- */
-int fsHandleTrace = FALSE;
-#ifndef CLEAN
-#define HANDLE_TRACE(hdrPtr, comment) \
-    if (fsHandleTrace) {						\
-	printf("<%d, %d, %d, %d> flags %x ref %d : %s\n",		\
-	(hdrPtr)->fileID.type, (hdrPtr)->fileID.serverID,		\
-	(hdrPtr)->fileID.major, (hdrPtr)->fileID.minor,			\
-	(hdrPtr)->flags, (hdrPtr)->refCount, comment);			\
-    }
-#else
-#define HANDLE_TRACE(hdrPtr, comment)
-#endif
 
 extern Boolean HandleInstallInt _ARGS_((Fs_FileID *fileIDPtr, 
 		unsigned int handleLimit, Fs_HandleHeader **hdrPtrPtr, 
@@ -495,7 +478,6 @@ again:
 	    hdrPtr->lruLinks.nextPtr = (List_Links *)NIL;
 	    hdrPtr->lruLinks.prevPtr = (List_Links *)NIL;
 	}
-	FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_INSTALL_NEW, hdrPtr);
     } else {
 	hdrPtr = (Fs_HandleHeader *) Hash_GetValue(hashEntryPtr);
 	if (hdrPtr->flags & FS_HANDLE_LOCKED) {
@@ -511,7 +493,6 @@ again:
 	found = TRUE;
 	hdrPtr->refCount++;
 	MOVE_HANDLE(hdrPtr);
-	FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_INSTALL_HIT, hdrPtr);
 	*hdrPtrPtr = hdrPtr;
     }
     if (returnLocked) {
@@ -876,10 +857,8 @@ Fsutil_HandleReleaseHdr(hdrPtr, locked)
 	 * The handle has been removed, and we are the last reference.
 	 */
 	fs_Stats.handle.limbo--;
-	FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_RELEASE_FREE, hdrPtr);
         REMOVE_HANDLE(hdrPtr);
      } else {
-	FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_RELEASE_LEAVE, hdrPtr);
 	if (locked) {
 	    UNLOCK_HANDLE(hdrPtr);
 	}
@@ -938,10 +917,8 @@ Fsutil_HandleRemoveInt(hdrPtr)
 	 * will free the handle for us later.
 	 */
 	fs_Stats.handle.limbo++;
-	FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_REMOVE_LEAVE, hdrPtr);
 	hdrPtr->flags |= FS_HANDLE_REMOVED;
     } else {
-	FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_REMOVE_FREE, hdrPtr);
 	REMOVE_HANDLE(hdrPtr);
     }
 }

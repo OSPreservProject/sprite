@@ -355,7 +355,7 @@ Boolean Dbg_InRange(addr, numBytes, writeable)
  *
  * ----------------------------------------------------------------------------
  */
-char *
+static char *
 TranslateOpcode(opcode)
     Dbg_Opcode opcode;		/* The opcode which is to be translated. */
 {
@@ -385,7 +385,7 @@ TranslateOpcode(opcode)
  *
  * ----------------------------------------------------------------------------
  */
-char *
+static char *
 TranslateException(exception)
     int exception;		/* The exception which is to be translated. */
 {
@@ -668,7 +668,7 @@ SendReply()
 	Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
 		     replyOffset - sizeof(Net_EtherHdr) - Dbg_PacketHdrSize(),
 		     replyBuffer + sizeof(Net_EtherHdr));
-	Net_RawOutput(dbgInterPtr, (Address) etherHdrPtr, &dbgGather, 1);
+	(void) Net_RawOutput(dbgInterPtr, (Address) etherHdrPtr, &dbgGather, 1);
 	if (dbgTraceLevel >= 4) {
 	    printf("Sent reply\n");
 	}
@@ -868,7 +868,7 @@ Dbg_Main(stackHole, dbgStack)
 	    /*
 	     * We can only timeout if we are using network debugging.
 	     */
-	    Net_RawOutput(dbgInterPtr, (Address) replyBuffer, 
+	    (void) Net_RawOutput(dbgInterPtr, (Address) replyBuffer, 
 		    &dbgGather, 1);
 	    if (dbgTraceLevel >= 5) {
 		printf("DBG: Timeout\n");

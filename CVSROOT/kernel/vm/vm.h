@@ -199,9 +199,7 @@ typedef struct Vm_Segment {
 					 * can ever have. */
     Address		maxAddr;	/* Maximium address that the segment
 					 * can ever have. */
-    int			traceTime;	/* The last trace interval that this
-					 * segment was active. */
-
+    int			dummy;
 } Vm_Segment;
 
 /*
@@ -397,12 +395,6 @@ extern void Vm_KernPageFree _ARGS_((unsigned int pfNum));
 extern unsigned int Vm_GetKernPageFrame _ARGS_((int pageFrame));
 
 /*
- * Virtual memory tracing routines and variables.
- */
-extern	Boolean		vm_Tracing;
-extern void Vm_StoreTraceTime _ARGS_((Timer_Ticks timeStamp));
-
-/*
  * Shared memory routines.
  */
 extern ReturnStatus Vm_Mmap _ARGS_((Address startAddr, int length, int prot,
@@ -511,11 +503,6 @@ extern ReturnStatus VmMach_CopyInProc _ARGS_((int numBytes,
 extern ReturnStatus VmMach_CopyOutProc _ARGS_((int numBytes,
         Address fromAddr, Boolean fromKernel, Proc_ControlBlock *toProcPtr,
         Address toAddr, struct Vm_VirtAddr *virtAddrPtr));
-
-/*
- * Tracing.
- */
-extern void VmMach_Trace _ARGS_((void));
 
 /*
  * Pinning and unpinning user memory pages.

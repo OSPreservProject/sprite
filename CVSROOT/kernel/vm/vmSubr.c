@@ -13,7 +13,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <vm.h>
 #include <vmInt.h>
-#include <vmTrace.h>
 #include <lock.h>
 #include <sync.h>
 #include <sys.h>
@@ -527,18 +526,6 @@ VmValidatePagesInt(segPtr,  firstPage, lastPage, zeroFill, clobber)
     register	int	i;
     register	Vm_PTE	pte;
     register	Vm_PTE	*ptePtr;
-
-    if (vm_Tracing && !(segPtr->flags & VM_SEG_CREATE_TRACED)) {
-	Vm_TraceSegCreate	segCreate;
-
-	segCreate.segNum = segPtr->segNum;
-	segCreate.parSegNum = -1;
-	segCreate.segType = segPtr->type;
-	segCreate.cor = FALSE;
-	VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
-			(Address)&segCreate, TRUE);
-	segPtr->flags |= VM_SEG_CREATE_TRACED;
-    }
 
     pte = VM_VIRT_RES_BIT;
     if (segPtr->type == VM_CODE) {
@@ -1244,7 +1231,6 @@ VmFindSharedSegment(sharedSegs, virtAddr)
      * Check the shared segment list.
      */
     CHECK_SHM_MONITOR;
-    VmCheckListIntegrity(sharedSegs);
     LIST_FORALL(sharedSegs, (List_Links *) segLinkPtr) {
 	i++;
 	if (i>20) {
@@ -1353,8 +1339,6 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
     int			done = 0;
 
     CHECK_SHM_MONITOR;
-    VmCheckListIntegrity(procPtr->vmPtr->sharedSegs);
-
     LOCK_MONITOR;
     virtAddr.page = ((int)segProcPtr->mappedStart) >> vmPageShift;
     virtAddr.segPtr = segTabPtr->segPtr;
@@ -1369,7 +1353,6 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
 	printf("Vm_DeleteSharedSegment: freeing segProcPtr %x\n", segProcPtr);
     }
     free((Address)segProcPtr);
-    VmCheckListIntegrity((List_Links *)&sharedSegTable);
     /*
      * Check if this is the process's last reference to the segment.
      */
@@ -1430,7 +1413,6 @@ VmCheckSharedSegment(procPtr,segPtr)
      */
     CHECK_SHM_MONITOR;
     dprintf("VmCheckSharedSegment: Checking if segment attached to process\n");
-    VmCheckListIntegrity(procPtr->vmPtr->sharedSegs);
     LIST_FORALL(procPtr->vmPtr->sharedSegs,
 	    (List_Links *)sharedSeg) {
 	if (sharedSeg->segTabPtr->segPtr == segPtr) {
@@ -1445,63 +1427,6 @@ VmCheckSharedSegment(procPtr,segPtr)
     }
 
     return found;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * VmCheckListIntegrity --
- *
- *	See if a linked list is okay.
- *
- * Results:
- *	TRUE if the list is okay.
- *	FALSE otherwise.
- *
- * Side effects:
- *	Reads the shared memory data, so the SHM lock must be held.
- *
- *----------------------------------------------------------------------
- */
-void
-VmCheckListIntegrity(listHdr)
-    List_Links	*listHdr;	/* Header of linked list. */
-{
-    int i=0;
-    List_Links	*list1;
-
-
-    /*
-    CHECK_SHM_MONITOR;
-    */
-    if (List_Prev(listHdr) == (List_Links *)NULL) {
-	panic("List_Prev is NULL!\n");
-    }
-    if (List_Prev(listHdr) == (List_Links *)NIL) {
-	panic("List_Prev is NIL!\n");
-    }
-    if (List_Next(listHdr) == (List_Links *)NULL) {
-	panic("List_Next is NULL!\n");
-    }
-    if (List_Next(listHdr) == (List_Links *)NIL) {
-	panic("List_Next is NIL!\n");
-    }
-    if (List_IsEmpty(listHdr)) {
-	return;
-    }
-
-    LIST_FORALL(listHdr,list1) {
-	i++;
-	if (i>10000) {
-	    panic("VmCheckListIntegrity: too long\n");
-	}
-	if (List_Next(List_Prev(list1))!=list1) {
-	    panic("VmCheckListIntegrity: error\n");
-	}
-	if (List_Prev(List_Next(list1))!=list1) {
-	    panic("VmCheckListIntegrity: error\n");
-	}
-    }
 }
 
 /*

@@ -25,7 +25,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsutil.h>
 #include <fsNameOps.h>
 #include <fsprefix.h>
-#include <fsutilTrace.h>
 #include <fslcl.h>
 #include <fscache.h>
 #include <fspdev.h>
@@ -190,13 +189,6 @@ Fs_Command(command, bufSize, buffer)
 	 * The following cases are used to set flags and to
 	 * return their old values.
 	 */
-	case FS_SET_TRACING: {
-	    /*
-	     * Set the file system tracing flag.
-	     */
-	    SWAP_TO_BUFFER(fsutil_Tracing, buffer);
-	    break;
-	}
 	case FS_SET_CACHE_DEBUG: {
 	    /*
 	     * Set the cache debug flag.
@@ -211,14 +203,6 @@ Fs_Command(command, bufSize, buffer)
 	     */
 	    extern int fsio_MigDebug;
 	    SWAP_TO_BUFFER(fsio_MigDebug, buffer);
-	    break;
-	}
-	case FS_SET_PDEV_DEBUG: {
-	    /*
-	     * Set the pseudo-device debug flag.
-	     */
-	    extern Boolean  fspdev_Debug;
-	    SWAP_TO_BUFFER(fspdev_Debug, buffer);
 	    break;
 	}
 	case FS_SET_RPC_DEBUG: {
@@ -338,9 +322,6 @@ Fs_Command(command, bufSize, buffer)
 	    break;
 	case FS_SET_READ_AHEAD:
 	    SWAP_TO_BUFFER(fscache_NumReadAheadBlocks, buffer);
-	    break;
-	case FS_SET_RA_TRACING:
-	    SWAP_TO_BUFFER(fscache_RATracing, buffer);
 	    break;
 	case FS_REREAD_SUMMARY_INFO:
 	    status = Fsdm_RereadSummaryInfo(buffer);

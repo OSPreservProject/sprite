@@ -27,7 +27,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vmInt.h>
 #include <vmMach.h>
 #include <vmMachInt.h>
-#include <vmTrace.h>
 #include <list.h>
 #include <mach.h>
 #include <proc.h>
@@ -108,8 +107,6 @@ ENTRY static void WriteHardMapSeg _ARGS_((VmMach_ProcData *machPtr));
 static void PageInvalidate _ARGS_((register Vm_VirtAddr *virtAddrPtr,
 	unsigned int virtPage, Boolean segDeletion));
 INTERNAL static void DevBufferInit _ARGS_((void));
-static void VmMachTracePage _ARGS_((register VmMachPTE pte,
-	unsigned int pageNum));
 static void VmMachTrap _ARGS_((void));
 #ifndef sun4c
 INTERNAL static void Dev32BitDMABufferInit _ARGS_((void));
@@ -363,9 +360,6 @@ int	vmMachKernMemSize = 40 * 1024 * 1024;
 static	VmMach_SegData	*sysMachPtr;
 Address			vmMachPTESegAddr;
 Address			vmMachPMEGSegAddr;
-
-static	Boolean		printedSegTrace;
-static	PMEG		*tracePMEGPtr;
 
 #ifdef sun4c
 /*
@@ -1369,13 +1363,6 @@ void
 VmMach_SegDelete(segPtr)
     register	Vm_Segment	*segPtr;    /* Pointer to segment to free. */
 {
-    if (vm_Tracing) {
-	Vm_TraceSegDestroy	segDestroy;
-
-	segDestroy.segNum = segPtr->segNum;
-	VmStoreTraceRec(VM_TRACE_SEG_DESTROY_REC, sizeof(segDestroy),
-			(Address)&segDestroy, TRUE);
-    }
 
     SegDelete(segPtr);
     free((Address)segPtr->machPtr);
@@ -1617,23 +1604,8 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 		hardPTE = *ptePtr;
 		if ((hardPTE & VMMACH_RESIDENT_BIT) &&
 		    (hardPTE & (VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT))) {
-		    if (vm_Tracing) {
-			if (!printedStealPMEG) {
-			    short	stealPMEGRec;
-
-			    printedStealPMEG = TRUE;
-			    printedSegTrace = FALSE;
-			    tracePMEGPtr = pmegPtr;
-			    VmStoreTraceRec(VM_TRACE_STEAL_PMEG_REC,
-					    sizeof(short), 
-					    (Address)&stealPMEGRec,TRUE);
-			}
-			VmMachTracePage(hardPTE,
-			    (unsigned int) (VMMACH_NUM_PAGES_PER_SEG_INT - i));
-		    } else {
 		    refModMap[PhysToVirtPage(hardPTE & VMMACH_PAGE_FRAME_FIELD)]
 		     |= hardPTE & (VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT);
-		    }
 		}
 	    }
 	}
@@ -1861,14 +1833,6 @@ VmMach_SetupContext(procPtr)
 	contextPtr = procPtr->vmPtr->machPtr->contextPtr;
 	if (contextPtr != (VmMach_Context *)NIL) {
 	    if (contextPtr != &contextArray[VMMACH_KERN_CONTEXT]) {
-		if (vm_Tracing) {
-		    Vm_ProcInfo	*vmPtr;
-
-		    vmPtr = procPtr->vmPtr;
-		    vmPtr->segPtrArray[VM_CODE]->traceTime = vmTraceTime;
-		    vmPtr->segPtrArray[VM_HEAP]->traceTime = vmTraceTime;
-		    vmPtr->segPtrArray[VM_STACK]->traceTime = vmTraceTime;
-		}
 		List_Move((List_Links *)contextPtr, LIST_ATREAR(contextList));
 	    }
 	    MASTER_UNLOCK(vmMachMutexPtr);
@@ -3122,29 +3086,15 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 		pageVirtAddr = tVirtAddr + i * VMMACH_PAGE_SIZE_INT;
 		pte = VmMachGetPageMap(pageVirtAddr);
 		if (pte & VMMACH_RESIDENT_BIT) {
-		    Vm_TracePTEChange	pteChange;
-		    if (vm_Tracing) {
-			pteChange.changeType = VM_TRACE_SET_SEG_PROT;
-			pteChange.segNum = segPtr->segNum;
-			pteChange.pageNum = firstPage;
-			pteChange.softPTE = FALSE;
-			pteChange.beforePTE = pte;
-		    }
 		    pte &= ~VMMACH_PROTECTION_FIELD;
 		    pte |= makeWriteable ? VMMACH_URW_PROT : VMMACH_UR_PROT;
-		    if (vm_Tracing) {
-			pteChange.afterPTE = pte;
-			VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-					 sizeof(Vm_TracePTEChange),
-					 (Address)&pteChange, TRUE);
-		    }
 #ifdef sun4
 		    if (virtAddr >= vmStackEndAddr) {
 			pte |= VMMACH_DONT_CACHE_BIT;
 		    } else {
 			pte &= ~VMMACH_DONT_CACHE_BIT;
 		    }
-#endif sun4
+#endif /* sun4 */
 		    VmMachSetPageMap(pageVirtAddr, pte);
 		}
 	    }
@@ -3194,10 +3144,9 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     Address   			virtAddr;
     int				pmegNum;
     int				i;
-    Vm_TracePTEChange		pteChange;
 #ifdef sun4
     Address			testVirtAddr;
-#endif sun4
+#endif /* sun4 */
     int				j;
     int				oldContext;
 
@@ -3216,29 +3165,16 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 	     i < VMMACH_CLUSTER_SIZE; 
 	     i++, virtAddr += VMMACH_PAGE_SIZE_INT) {
 	    hardPTE = VmMachReadPTE(pmegNum, virtAddr);
-	    if (vm_Tracing) {
-		pteChange.changeType = VM_TRACE_SET_PAGE_PROT;
-		pteChange.segNum = virtAddrPtr->segPtr->segNum;
-		pteChange.pageNum = virtAddrPtr->page;
-		pteChange.softPTE = FALSE;
-		pteChange.beforePTE = hardPTE;
-	    }
 	    hardPTE &= ~VMMACH_PROTECTION_FIELD;
 	    hardPTE |= (softPTE & (VM_COW_BIT | VM_READ_ONLY_PROT)) ? 
 					VMMACH_UR_PROT : VMMACH_URW_PROT;
-	    if (vm_Tracing) {
-		pteChange.afterPTE = hardPTE;
-		VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-				 sizeof(Vm_TracePTEChange), 
-				 (Address)&pteChange, TRUE);
-	    }
 #ifdef sun4
 	    if (testVirtAddr >= vmStackEndAddr) {
 		hardPTE |= VMMACH_DONT_CACHE_BIT;
 	    } else {
 		hardPTE &= ~VMMACH_DONT_CACHE_BIT;
 	    }
-#endif sun4
+#endif /* sun4 */
 	    /* Flush this page in all contexts */
 	    oldContext =  VmMachGetContextReg();
 	    for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
@@ -3389,7 +3325,7 @@ VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     }
 
     MASTER_UNLOCK(vmMachMutexPtr);
-
+    return;
 }
 
 
@@ -3418,7 +3354,6 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
     Address			virtAddr;
     int				i;
     VmMachPTE			pte;
-    Vm_TracePTEChange		pteChange;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -3433,23 +3368,13 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 	     i < VMMACH_CLUSTER_SIZE;
 	     i++, virtAddr += VMMACH_PAGE_SIZE_INT) {
 	    pte = VmMachReadPTE(pmegNum, virtAddr);
-	    if (vm_Tracing) {
-		pteChange.changeType = VM_TRACE_CLEAR_REF_BIT;
-		pteChange.segNum = virtAddrPtr->segPtr->segNum;
-		pteChange.pageNum = virtAddrPtr->page;
-		pteChange.softPTE = FALSE;
-		pteChange.beforePTE = pte;
-		pteChange.afterPTE = pte & ~VMMACH_REFERENCED_BIT;
-		VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-				 sizeof(Vm_TracePTEChange), 
-				 (Address)&pteChange, TRUE);
-	    }
 	    pte &= ~VMMACH_REFERENCED_BIT;
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
     }
 
     MASTER_UNLOCK(vmMachMutexPtr);
+    return;
 }
 
 
@@ -3478,7 +3403,6 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
     Address			virtAddr;
     int				i;
     Vm_PTE			pte;
-    Vm_TracePTEChange		pteChange;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -3493,23 +3417,13 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 	     i < VMMACH_CLUSTER_SIZE; 
 	     i++, virtAddr += VMMACH_PAGE_SIZE_INT) {
 	    pte = VmMachReadPTE(pmegNum, virtAddr);
-	    if (vm_Tracing) {
-		pteChange.changeType = VM_TRACE_CLEAR_MOD_BIT;
-		pteChange.segNum = virtAddrPtr->segPtr->segNum;
-		pteChange.pageNum = virtAddrPtr->page;
-		pteChange.softPTE = FALSE;
-		pteChange.beforePTE = pte;
-		pteChange.afterPTE = pte & ~VMMACH_MODIFIED_BIT;
-		VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-				sizeof(Vm_TracePTEChange), 
-				(Address)&pteChange, TRUE);
-	    }
 	    pte &= ~VMMACH_MODIFIED_BIT;
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
     }
 
     MASTER_UNLOCK(vmMachMutexPtr);
+    return;
 }
 
 
@@ -3642,16 +3556,10 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	     * of someone stealing this empty pmeg.  Now we have to move
 	     * it off of the free list.
 	     */
-#ifndef CLEAN
-	    VmCheckListIntegrity((List_Links *)pmegPtr);
-#endif
 	    if (pmegPtr->flags & PMEG_DONT_ALLOC) {
 		List_Remove((List_Links *)pmegPtr);
 	    } else {
 		List_Move((List_Links *)pmegPtr, LIST_ATREAR(pmegInuseList));
-#ifndef CLEAN
-		VmCheckListIntegrity((List_Links *)pmegPtr);
-#endif
 	    }
 	}
     }
@@ -3694,9 +3602,6 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	VmMachSetSegMap(addr, (int)*segTablePtr);
 
         if (segPtr != (Vm_Segment *) NIL) {
-#ifndef CLEAN
-	    VmCheckListIntegrity((List_Links *)segPtr->procList);
-#endif
             LIST_FORALL(segPtr->procList, (List_Links *)procLinkPtr) {
 		if (procLinkPtr->procPtr->vmPtr != (Vm_ProcInfo *) NIL &&
 			procLinkPtr->procPtr->vmPtr->machPtr !=
@@ -3729,24 +3634,6 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	}
 	pmegArray[*segTablePtr].pageCount++;
     }
-    if (vm_Tracing) {
-	Vm_TracePTEChange	pteChange;
-
-	pteChange.changeType = VM_TRACE_VALIDATE_PAGE;
-	pteChange.segNum = segPtr->segNum;
-	pteChange.pageNum = virtAddrPtr->page;
-	pteChange.softPTE = FALSE;
-	if (tHardPTE & VMMACH_RESIDENT_BIT) {
-	    pteChange.beforePTE = tHardPTE;
-	} else {
-	    pteChange.beforePTE = 0;
-	}
-	pteChange.afterPTE = hardPTE;
-	VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-			sizeof(Vm_TracePTEChange), 
-			(Address)&pteChange, TRUE);
-    }
-
     /* Flush something? */
     SET_ALL_PAGE_MAP(addr, hardPTE);
     if (reLoadPMEG) {
@@ -3772,6 +3659,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     }
 
     MASTER_UNLOCK(vmMachMutexPtr);
+    return;
 }
 
 
@@ -3803,7 +3691,6 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     int				pmegNum;
     Address			addr;
     int				i;
-    Vm_TracePTEChange		pteChange;
     Address			testVirtAddr;
     VmProcLink      		*flushProcLinkPtr;
     Vm_Segment      		*flushSegPtr;
@@ -3833,16 +3720,6 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     }
 #endif sun4
     hardPTE = VmMachReadPTE(pmegNum, addr);
-    if (vm_Tracing) {
-	pteChange.changeType = VM_TRACE_INVALIDATE_PAGE;
-	pteChange.segNum = virtAddrPtr->segPtr->segNum;
-	pteChange.pageNum = virtAddrPtr->page;
-	pteChange.softPTE = FALSE;
-	pteChange.beforePTE = hardPTE;
-	pteChange.afterPTE = 0;
-	VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC, sizeof(Vm_TracePTEChange),
-			(Address)&pteChange, TRUE);
-    }
     /*
      * Invalidate the page table entry.  There's no need to flush the page if
      * the invalidation is due to segment deletion, since the whole segment
@@ -3854,9 +3731,6 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 
         flushSegPtr = virtAddrPtr->segPtr;
         if (flushSegPtr != (Vm_Segment *) NIL) {
-#ifndef CLEAN
-	    VmCheckListIntegrity((List_Links *)flushSegPtr->procList);
-#endif
             LIST_FORALL(flushSegPtr->procList, (List_Links *)flushProcLinkPtr) {
                 flushVmPtr = flushProcLinkPtr->procPtr->vmPtr;
                 if (flushVmPtr != (Vm_ProcInfo *) NIL) {
@@ -3904,11 +3778,9 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 		List_Move((List_Links *)pmegPtr, 
 			  LIST_ATREAR(pmegFreeList));
 	    }
-#ifndef CLEAN
-	    VmCheckListIntegrity((List_Links *)pmegPtr);
-#endif
 	}
     }
+    return;
 }
 
 
@@ -3940,6 +3812,7 @@ VmMach_PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     PageInvalidate(virtAddrPtr, virtPage, segDeletion);
 
     MASTER_UNLOCK(vmMachMutexPtr);
+    return;
 }
 
 
@@ -3999,6 +3872,7 @@ VmMach_PinUserPages(mapType, virtAddrPtr, lastPage)
 #ifdef lint
     dummy = dummy;
 #endif
+    return;
 }
 
 
@@ -4043,6 +3917,7 @@ VmMach_UnpinUserPages(virtAddrPtr, lastPage)
     }
 
     MASTER_UNLOCK(vmMachMutexPtr);
+    return;
 }
 
 
@@ -4218,6 +4093,7 @@ DevBufferInit()
 	VmMachSetContextReg(oldContext);
 	virtAddr += VMMACH_SEG_SIZE;
     }
+    return;
 }
 
 
@@ -4488,7 +4364,7 @@ VmMach_DMAFree(numBytes, mapAddr)
 	dmaPageBitMap[i + j] = 0;	/* free page */
 	VmMachFlushPage(mapAddr);
 	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) 0);
-	(unsigned int) mapAddr += VMMACH_PAGE_SIZE_INT;
+	mapAddr += VMMACH_PAGE_SIZE_INT;
     }
     MASTER_UNLOCK(vmMachMutexPtr);
     return;
@@ -4530,6 +4406,7 @@ VmMach_GetDevicePage(virtAddr)
     pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | VirtToPhysPage(page) |
 	    VMMACH_DONT_CACHE_BIT;
     SET_ALL_PAGE_MAP(virtAddr, pte);
+    return;
 }
 #endif
 
@@ -4565,7 +4442,7 @@ VmMach_MapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr,
 					 	 * attempt to start mapping
 						 * in at. */
     unsigned int	*realVirtAddrPtr;	/* Where we were able to start
-					 	 * mapping at. */
+						 * mapping at. */
 {
     Address             newUserVirtAddr;
     ReturnStatus        status;
@@ -4706,121 +4583,6 @@ VmMach_IntMapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr, newAddrPtr)
 
 
 /*
- * ----------------------------------------------------------------------------
- *
- * VmMach_Trace --
- *
- *      Scan through all of the PMEGs generating trace records for those pages
- *	that have been referenced or modified since the last time that we
- *	checked.
- *  
- * Results:
- *      None.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY void
-VmMach_Trace()
-{
-    register	PMEG			*pmegPtr;
-    register	Vm_Segment		*segPtr;
-    register	int			pmegNum;
-    register	int			curTraceTime;
-
-    MASTER_LOCK(vmMachMutexPtr);
-
-    /*
-     * Save the current trace time and then increment it to ensure that
-     * any segments that get used while we are scanning memory won't get 
-     * missed.
-     */
-    curTraceTime = vmTraceTime;
-    vmTraceTime++;
-
-    /*
-     * Spin through all of the pmegs.
-     */
-    for (pmegNum = 0, pmegPtr = pmegArray;
-	 pmegNum < VMMACH_NUM_PMEGS;
-	 pmegPtr++, pmegNum++) {
-	segPtr = pmegPtr->segInfo.segPtr;
-	if ((pmegPtr->flags & PMEG_NEVER_FREE) ||
-	    segPtr == (Vm_Segment *)NIL ||
-	    segPtr->traceTime < curTraceTime) {
-	    continue;
-	}
-	vmTraceStats.machStats.pmegsChecked++;
-	printedSegTrace = FALSE;
-	tracePMEGPtr = pmegPtr;
-	VmMachTracePMEG(pmegNum);
-    }
-
-    MASTER_UNLOCK(vmMachMutexPtr);
-
-    VmCheckTraceOverflow();
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmMachTracePage --
- *
- *      Generate a trace record for the given page.
- *  
- * Results:
- *      None.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-VmMachTracePage(pte, pageNum)
-    register	VmMachPTE	pte;	/* Page table entry to be traced. */
-    unsigned	int		pageNum;/* Inverse of page within PMEG. */
-{
-    Vm_TraceSeg			segTrace;
-    Vm_TracePage		pageTrace;
-    register	PMEG		*pmegPtr;
-    register	Vm_Segment	*segPtr = (Vm_Segment *)NIL;
-
-    refModMap[PhysToVirtPage(pte & VMMACH_PAGE_FRAME_FIELD)] |=
-			pte & (VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT);
-    if (!printedSegTrace) {
-	/*
-	 * Trace of the segment.
-	 */
-	printedSegTrace = TRUE;
-	pmegPtr = tracePMEGPtr;
-	segPtr = pmegPtr->segInfo.segPtr;
-	segTrace.hardSegNum = pmegPtr->segInfo.hardSegNum;
-	segTrace.softSegNum = segPtr->segNum;
-	segTrace.segType = segPtr->type;
-	segTrace.refCount = segPtr->refCount;
-	VmStoreTraceRec(VM_TRACE_SEG_REC, sizeof(Vm_TraceSeg), 
-			(Address)&segTrace, FALSE);
-    }
-
-    /*
-     * Trace the page.
-     */
-    pageTrace = VMMACH_NUM_PAGES_PER_SEG_INT - pageNum;
-    if (pte & VMMACH_REFERENCED_BIT) {
-	pageTrace |= VM_TRACE_REFERENCED;
-    } 
-    if (pte & VMMACH_MODIFIED_BIT) {
-	pageTrace |= VM_TRACE_MODIFIED;
-    }
-    VmStoreTraceRec(0, sizeof(Vm_TracePage), (Address)&pageTrace, FALSE);
-}
-
-
-/*
  *----------------------------------------------------------------------
  *
  * VmMach_FlushPage --
@@ -4905,6 +4667,7 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
 	}
     }
     VmMachSetContextReg(oldContext);
+    return;
 }
 
 
@@ -5308,7 +5071,7 @@ VmMach_32BitDMAFree(numBytes, mapAddr)
 
 
 #define CHECK(x) (((x)<0||(x)>=VMMACH_SHARED_NUM_BLOCKS)?\
-	panic("Alloc out of bounds"):0)
+	(panic("Alloc out of bounds"),0):0)
 #define ALLOC(x,s)	(CHECK(x),sharedData->allocVector[(x)]=s)
 #define FREE(x)		(CHECK(x),sharedData->allocVector[(x)]=0)
 #define SIZE(x)		(CHECK(x),sharedData->allocVector[(x)])
@@ -5601,30 +5364,7 @@ VmMach_CopySharedMem(parentProcPtr, childProcPtr)
     childSharedData->allocFirstFree = parentSharedData->allocFirstFree;
 }
 
-/*
- * ----------------------------------------------------------------------------
- *
- * VmMach_CopySharedMem --
- *
- *      Copies machine-dependent shared memory data structures to handle
- *      a fork.
- *
- * Results:
- *      None. (This routine is stubbed out for the sun4.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------------
- */
-/*ARGSUSED*/
-void
-VmMachTracePMEG(pmeg)
-int pmeg;
-{
-    panic("VmMachTracePMEG called.\n");
-}
-
+
 /*
  * ----------------------------------------------------------------------------
  *
@@ -5644,7 +5384,7 @@ void
 VmMach_LockCachePage(kernelAddress)
     Address	kernelAddress;	/* Address on page to lock. */
 {
-    register  Vm_VirtAddr	virtAddr;
+    Vm_VirtAddr	virtAddr;
     register  VMMACH_SEG_NUM	*segTablePtr, pmeg;
     register  int		hardSeg;
     Vm_PTE    *ptePtr;

@@ -292,8 +292,8 @@ Mach_Init()
     CHECK_TRAP_REG_OFFSETS(globals[0], MACH_GLOBALS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(fsr, MACH_FPU_FSR_OFFSET);
     CHECK_TRAP_REG_OFFSETS(numQueueEntries, MACH_FPU_QUEUE_COUNT);
-    CHECK_TRAP_REG_OFFSETS(fregs, MACH_FPU_REGS_OFFSET);
-    CHECK_TRAP_REG_OFFSETS(fqueue, MACH_FPU_QUEUE_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(fregs[0], MACH_FPU_REGS_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(fqueue[0], MACH_FPU_QUEUE_OFFSET);
 
 #ifdef sun4c
     if ((*(romVectorPtr->virtMemory))->address !=
@@ -529,8 +529,9 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      */
     statePtr->switchRegs = (Mach_RegState *)((statePtr->kernStackStart) +
 	    MACH_KERN_STACK_SIZE - (2 * MACH_SAVED_STATE_FRAME));
-    statePtr->switchRegs = ((unsigned int)(statePtr->switchRegs)) &
-	    ~0x7;  /* should be okay already */
+    statePtr->switchRegs = (Mach_RegState *)
+	(((unsigned int)(statePtr->switchRegs)) & ~0x7); /* should be okay already */
+
     /*
      * Initialize the stack so that it looks like it is in the middle of
      * Mach_ContextSwitch.
@@ -1186,8 +1187,8 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
      * We must check this before looking for the current process, since this
      * can happen during boot-time before we have set up processes.
      */
-    if ((pcValue >= (Address) &MachProbeStart)  &&
-	    (pcValue < (Address) &MachProbeEnd)) {
+    if ((pcValue >= (Address) MachProbeStart)  &&
+	    (pcValue < (Address) MachProbeEnd)) {
 	/*
 	 * This doesn't return to here.  It erases the fact that the
 	 * page fault happened and makes the probe routine that
@@ -1669,7 +1670,7 @@ MachHandleTrap(trapType, pcValue, trapPsr)
      * in machFPUSaveProcPtr.
      */
     procPtr = ((trapType == MACH_FP_EXCEP) && 
-	       (pcValue == (Address) &machFPUSyncInst)) ?
+	       (pcValue == (Address) machFPUSyncInst)) ?
 		   machFPUSaveProcPtr : Proc_GetCurrentProc();
     if ((procPtr == (Proc_ControlBlock *) NIL)) {
 	    printf("%s: pc = 0x%x, trapType = %d\n",
@@ -1703,7 +1704,7 @@ MachHandleTrap(trapType, pcValue, trapPsr)
 	     * exception occured at a known location we clear the
 	     * exception and mark the Mach_State.
 	     */
-	    if (pcValue == (Address) &machFPUDumpSyncInst) {
+	    if (pcValue == (Address) machFPUDumpSyncInst) {
 		/*
 		 * Already doing a MachFPUDumpState.  Whoever's doing the
 		 * dump should check the pending flag and set fpuStatus if
@@ -1713,7 +1714,7 @@ MachHandleTrap(trapType, pcValue, trapPsr)
 		    MACH_FPU_EXCEPTION_PENDING;
 		return;
 	    }
-	    if (pcValue == (Address) &machFPUSyncInst) {
+	    if (pcValue == (Address) machFPUSyncInst) {
 		  MachFPUDumpState(procPtr->machStatePtr->trapRegs);
 		  procPtr->machStatePtr->fpuStatus |= 
 		      (procPtr->machStatePtr->trapRegs->fsr
@@ -1990,7 +1991,7 @@ HandleFPUException(procPtr, machStatePtr)
     int		i;
     Mach_RegWindow	*curWindow;
 
-    switch (machStatePtr->fpuStatus & MACH_FSR_TRAP_TYPE_MASK) {
+    switch ((int) (machStatePtr->fpuStatus & MACH_FSR_TRAP_TYPE_MASK)) {
 	case	MACH_FSR_IEEE_TRAP:
 	case	MACH_FSR_UNFINISH_TRAP:
 	case	MACH_FSR_UNIMPLEMENT_TRAP:

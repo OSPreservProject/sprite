@@ -27,12 +27,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsprefix.h>
 #include <fsNameOps.h>
 #include <fsio.h>
-#include <fsutilTrace.h>
 #include <fsStat.h>
 #include <sync.h>
 #include <timer.h>
 #include <proc.h>
-#include <trace.h>
 #include <hash.h>
 #include <fsrmt.h>
 

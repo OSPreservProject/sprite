@@ -51,7 +51,6 @@ static char rcsid[] = "$Header$";
 #include <fsUnixStubs.h>
 #include <procUnixStubs.h>
 #include <fsutil.h>
-#include <fsutilTrace.h>
 #include <fsio.h>
 #include <fslcl.h>
 #include <user/inet.h>
@@ -558,7 +557,6 @@ GetTermInfo(streamPtr, ioctl, ttyb, lmode, tc, ltc)
  *
  *----------------------------------------------------------------------
  */
-extern int fsprefix_FileNameTrace;
 static ReturnStatus
 CheckIfPresent(name)
     char *name;

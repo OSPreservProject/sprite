@@ -123,10 +123,6 @@ MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr)
     Mach_RegState 	*userRegsPtr;
     Mach_RegWindow	*curWinPtr;
 {
-	union {
-		int		i;
-		fp_inst_type	inst;
-	}		kluge;
     enum ftt_type result;
 
     fptrapaddr = (char *) instAddr;	/* bad inst addr in case we trap */

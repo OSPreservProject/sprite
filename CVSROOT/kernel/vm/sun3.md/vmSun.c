@@ -20,7 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vmInt.h>
 #include <vmMach.h>
 #include <vmMachInt.h>
-#include <vmTrace.h>
 #include <list.h>
 #include <mach.h>
 #include <proc.h>
@@ -281,13 +280,11 @@ static int GetNumPages _ARGS_((void));
 static int PMEGGet _ARGS_((Vm_Segment *softSegPtr, int hardSegNum,
 	Boolean flags));
 static void PMEGFree _ARGS_((int pmegNum));
-ENTRY static Boolean PMEGLock _ARGS_((register VmMach_SegData *machPtr,
+static Boolean PMEGLock _ARGS_((register VmMach_SegData *machPtr,
 	int segNum));
 static void ByteFill _ARGS_((register unsigned int fillByte,
 	register int numBytes, Address destPtr));
-INTERNAL static void SetupContext _ARGS_((register Proc_ControlBlock *procPtr));
-INTERNAL void VmMachTracePage _ARGS_((register VmMachPTE pte,
-	unsigned int pageNum));
+static void SetupContext _ARGS_((register Proc_ControlBlock *procPtr));
 static void PageInvalidate _ARGS_((register Vm_VirtAddr *virtAddrPtr,
 	unsigned int virtPage, Boolean segDeletion));
 static void VmMach_Unalloc _ARGS_((VmMach_SharedData *sharedData,
@@ -296,9 +293,6 @@ static void VmMach_Unalloc _ARGS_((VmMach_SharedData *sharedData,
 static	VmMach_SegData	*sysMachPtr;
 Address			vmMachPTESegAddr;
 Address			vmMachPMEGSegAddr;
-
-static	Boolean		printedSegTrace;
-static	PMEG		*tracePMEGPtr;
 
 
 /*
@@ -875,7 +869,7 @@ VmMach_SegExpand(segPtr, firstPage, lastPage)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+static void
 CopySegData(segPtr, oldSegDataPtr, newSegDataPtr)
     register	Vm_Segment	*segPtr;	/* The segment to add the
 						   virtual pages to. */
@@ -934,13 +928,6 @@ void
 VmMach_SegDelete(segPtr)
     register	Vm_Segment	*segPtr;    /* Pointer to segment to free. */
 {
-    if (vm_Tracing) {
-	Vm_TraceSegDestroy	segDestroy;
-
-	segDestroy.segNum = segPtr->segNum;
-	VmStoreTraceRec(VM_TRACE_SEG_DESTROY_REC, sizeof(segDestroy),
-			(Address)&segDestroy, TRUE);
-    }
 
     SegDelete(segPtr);
     free((Address)segPtr->machPtr);
@@ -963,7 +950,7 @@ VmMach_SegDelete(segPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY static void
+static void
 SegDelete(segPtr)
     Vm_Segment	*segPtr;    /* Pointer to segment to free. */
 {
@@ -1031,7 +1018,7 @@ VmMach_ProcInit(vmPtr)
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL static int
+static int
 PMEGGet(softSegPtr, hardSegNum, flags)
     Vm_Segment 	*softSegPtr;	/* Which software segment this is. */
     int		hardSegNum;	/* Which hardware segment in the software 
@@ -1117,23 +1104,8 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 		hardPTE = *ptePtr;
 		if ((hardPTE & VMMACH_RESIDENT_BIT) &&
 		    (hardPTE & (VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT))) {
-		    if (vm_Tracing) {
-			if (!printedStealPMEG) {
-			    short	stealPMEGRec;
-
-			    printedStealPMEG = TRUE;
-			    printedSegTrace = FALSE;
-			    tracePMEGPtr = pmegPtr;
-			    VmStoreTraceRec(VM_TRACE_STEAL_PMEG_REC,
-					    sizeof(short), 
-					    (Address)&stealPMEGRec,TRUE);
-			}
-			VmMachTracePage(hardPTE,
-			    (unsigned int) (VMMACH_NUM_PAGES_PER_SEG_INT - i));
-		    } else {
 		    refModMap[PhysToVirtPage(hardPTE & VMMACH_PAGE_FRAME_FIELD)]
 		     |= hardPTE & (VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT);
-		    }
 		}
 	    }
 	 }
@@ -1170,7 +1142,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL static void
+static void
 PMEGFree(pmegNum)
     int 	pmegNum;	/* Which pmeg to free */
 {
@@ -1216,7 +1188,7 @@ PMEGFree(pmegNum)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY static Boolean
+static Boolean
 PMEGLock(machPtr, segNum)
     register VmMach_SegData	*machPtr;
     int				segNum;
@@ -1254,7 +1226,7 @@ PMEGLock(machPtr, segNum)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY ClientData
+ClientData
 VmMach_SetupContext(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
@@ -1266,14 +1238,6 @@ VmMach_SetupContext(procPtr)
 	contextPtr = procPtr->vmPtr->machPtr->contextPtr;
 	if (contextPtr != (VmMach_Context *)NIL) {
 	    if (contextPtr != &contextArray[VMMACH_KERN_CONTEXT]) {
-		if (vm_Tracing) {
-		    Vm_ProcInfo	*vmPtr;
-
-		    vmPtr = procPtr->vmPtr;
-		    vmPtr->segPtrArray[VM_CODE]->traceTime = vmTraceTime;
-		    vmPtr->segPtrArray[VM_HEAP]->traceTime = vmTraceTime;
-		    vmPtr->segPtrArray[VM_STACK]->traceTime = vmTraceTime;
-		}
 		List_Move((List_Links *)contextPtr, LIST_ATREAR(contextList));
 	    }
 	    MASTER_UNLOCK(vmMachMutexPtr);
@@ -1306,7 +1270,7 @@ VmMach_SetupContext(procPtr)
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL static void
+static void
 SetupContext(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
@@ -1410,7 +1374,7 @@ SetupContext(procPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_FreeContext(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
@@ -2010,7 +1974,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+static void
 WriteHardMapSeg(machPtr)
     VmMach_ProcData	*machPtr;
 {
@@ -2044,7 +2008,7 @@ WriteHardMapSeg(machPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
     register Vm_Segment		*segPtr;    /* Segment to change protection
 					       for. */
@@ -2096,22 +2060,8 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 		pageVirtAddr = tVirtAddr + i * VMMACH_PAGE_SIZE_INT;
 		pte = VmMachGetPageMap(pageVirtAddr);
 		if (pte & VMMACH_RESIDENT_BIT) {
-		    Vm_TracePTEChange	pteChange;
-		    if (vm_Tracing) {
-			pteChange.changeType = VM_TRACE_SET_SEG_PROT;
-			pteChange.segNum = segPtr->segNum;
-			pteChange.pageNum = firstPage;
-			pteChange.softPTE = FALSE;
-			pteChange.beforePTE = pte;
-		    }
 		    pte &= ~VMMACH_PROTECTION_FIELD;
 		    pte |= makeWriteable ? VMMACH_URW_PROT : VMMACH_UR_PROT;
-		    if (vm_Tracing) {
-			pteChange.afterPTE = pte;
-			VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-					 sizeof(Vm_TracePTEChange),
-					 (Address)&pteChange, TRUE);
-		    }
 		    VmMachSetPageMap(pageVirtAddr, pte);
 		}
 	    }
@@ -2150,7 +2100,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_SetPageProt(virtAddrPtr, softPTE)
     register	Vm_VirtAddr	*virtAddrPtr;	/* The virtual page to set the
 						 * protection for.*/
@@ -2161,7 +2111,6 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     Address   			virtAddr;
     int				pmegNum;
     int				i;
-    Vm_TracePTEChange		pteChange;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -2175,22 +2124,9 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 	     i < VMMACH_CLUSTER_SIZE; 
 	     i++, virtAddr += VMMACH_PAGE_SIZE_INT) {
 	    hardPTE = VmMachReadPTE(pmegNum, virtAddr);
-	    if (vm_Tracing) {
-		pteChange.changeType = VM_TRACE_SET_PAGE_PROT;
-		pteChange.segNum = virtAddrPtr->segPtr->segNum;
-		pteChange.pageNum = virtAddrPtr->page;
-		pteChange.softPTE = FALSE;
-		pteChange.beforePTE = hardPTE;
-	    }
 	    hardPTE &= ~VMMACH_PROTECTION_FIELD;
 	    hardPTE |= (softPTE & (VM_COW_BIT | VM_READ_ONLY_PROT)) ? 
 					VMMACH_UR_PROT : VMMACH_URW_PROT;
-	    if (vm_Tracing) {
-		pteChange.afterPTE = hardPTE;
-		VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-				 sizeof(Vm_TracePTEChange), 
-				 (Address)&pteChange, TRUE);
-	    }
 	    VmMachWritePTE(pmegNum, virtAddr, hardPTE);
 	}
     }
@@ -2217,7 +2153,7 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     register	Vm_VirtAddr	*virtAddrPtr;
     unsigned	int		virtFrameNum;
@@ -2294,7 +2230,7 @@ VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     register	Vm_VirtAddr	*virtAddrPtr;
     unsigned	int		virtFrameNum;
@@ -2353,7 +2289,7 @@ VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
     register	Vm_VirtAddr	*virtAddrPtr;
     unsigned 	int		virtFrameNum;
@@ -2363,7 +2299,6 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
     Address			virtAddr;
     int				i;
     VmMachPTE			pte;
-    Vm_TracePTEChange		pteChange;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -2378,17 +2313,6 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 	     i < VMMACH_CLUSTER_SIZE;
 	     i++, virtAddr += VMMACH_PAGE_SIZE_INT) {
 	    pte = VmMachReadPTE(pmegNum, virtAddr);
-	    if (vm_Tracing) {
-		pteChange.changeType = VM_TRACE_CLEAR_REF_BIT;
-		pteChange.segNum = virtAddrPtr->segPtr->segNum;
-		pteChange.pageNum = virtAddrPtr->page;
-		pteChange.softPTE = FALSE;
-		pteChange.beforePTE = pte;
-		pteChange.afterPTE = pte & ~VMMACH_REFERENCED_BIT;
-		VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-				 sizeof(Vm_TracePTEChange), 
-				 (Address)&pteChange, TRUE);
-	    }
 	    pte &= ~VMMACH_REFERENCED_BIT;
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
@@ -2413,7 +2337,7 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
     register	Vm_VirtAddr	*virtAddrPtr;
     unsigned	int		virtFrameNum;
@@ -2423,7 +2347,6 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
     Address			virtAddr;
     int				i;
     Vm_PTE			pte;
-    Vm_TracePTEChange		pteChange;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -2438,17 +2361,6 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 	     i < VMMACH_CLUSTER_SIZE; 
 	     i++, virtAddr += VMMACH_PAGE_SIZE_INT) {
 	    pte = VmMachReadPTE(pmegNum, virtAddr);
-	    if (vm_Tracing) {
-		pteChange.changeType = VM_TRACE_CLEAR_MOD_BIT;
-		pteChange.segNum = virtAddrPtr->segPtr->segNum;
-		pteChange.pageNum = virtAddrPtr->page;
-		pteChange.softPTE = FALSE;
-		pteChange.beforePTE = pte;
-		pteChange.afterPTE = pte & ~VMMACH_MODIFIED_BIT;
-		VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-				sizeof(Vm_TracePTEChange), 
-				(Address)&pteChange, TRUE);
-	    }
 	    pte &= ~VMMACH_MODIFIED_BIT;
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
@@ -2476,7 +2388,7 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_PageValidate(virtAddrPtr, pte) 
     register	Vm_VirtAddr	*virtAddrPtr;
     Vm_PTE			pte;
@@ -2561,7 +2473,6 @@ VmMach_PageValidate(virtAddrPtr, pte)
         }
 	VmMachSetSegMap(addr, *segTablePtr);
         if (segPtr != (Vm_Segment *) NIL) {
-            VmCheckListIntegrity((List_Links *)segPtr->procList);
             LIST_FORALL(segPtr->procList, (List_Links *)procLinkPtr) {
                 if (procLinkPtr->procPtr->vmPtr != (Vm_ProcInfo *) NIL &&
                         procLinkPtr->procPtr->vmPtr->machPtr !=
@@ -2592,26 +2503,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     } else {
 	pmegArray[*segTablePtr].pageCount++;
     }
-    if (vm_Tracing) {
-	Vm_TracePTEChange	pteChange;
-
-	pteChange.changeType = VM_TRACE_VALIDATE_PAGE;
-	pteChange.segNum = segPtr->segNum;
-	pteChange.pageNum = virtAddrPtr->page;
-	pteChange.softPTE = FALSE;
-	if (tHardPTE & VMMACH_RESIDENT_BIT) {
-	    pteChange.beforePTE = tHardPTE;
-	} else {
-	    pteChange.beforePTE = 0;
-	}
-	pteChange.afterPTE = hardPTE;
-	VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC,
-			sizeof(Vm_TracePTEChange), 
-			(Address)&pteChange, TRUE);
-    }
-
     SET_ALL_PAGE_MAP(addr, hardPTE);
-
     MASTER_UNLOCK(vmMachMutexPtr);
 }
 
@@ -2632,7 +2524,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL void
+static void
 PageInvalidate(virtAddrPtr, virtPage, segDeletion) 
     register	Vm_VirtAddr	*virtAddrPtr;
     unsigned 	int		virtPage;
@@ -2644,7 +2536,6 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     int				pmegNum;
     Address			addr;
     int				i;
-    Vm_TracePTEChange		pteChange;
 
     refModMap[virtPage] = 0;
     if (segDeletion) {
@@ -2659,16 +2550,6 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     addr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) &
 				VMMACH_PAGE_MASK) + vmMachPTESegAddr;
     hardPTE = VmMachReadPTE(pmegNum, addr);
-    if (vm_Tracing) {
-	pteChange.changeType = VM_TRACE_INVALIDATE_PAGE;
-	pteChange.segNum = virtAddrPtr->segPtr->segNum;
-	pteChange.pageNum = virtAddrPtr->page;
-	pteChange.softPTE = FALSE;
-	pteChange.beforePTE = hardPTE;
-	pteChange.afterPTE = 0;
-	VmStoreTraceRec(VM_TRACE_PTE_CHANGE_REC, sizeof(Vm_TracePTEChange),
-			(Address)&pteChange, TRUE);
-    }
     /*
      * Invalidate the page table entry.
      */
@@ -2715,7 +2596,7 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_PageInvalidate(virtAddrPtr, virtPage, segDeletion) 
     register	Vm_VirtAddr	*virtAddrPtr;
     unsigned 	int		virtPage;
@@ -2803,7 +2684,7 @@ VmMach_PinUserPages(mapType, virtAddrPtr, lastPage)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+void
 VmMach_UnpinUserPages(virtAddrPtr, lastPage)
     Vm_VirtAddr	*virtAddrPtr;
     int		lastPage;
@@ -2966,7 +2847,7 @@ VmMach_MapInDevice(devPhysAddr, type)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+static void
 DevBufferInit()
 {
     Address		virtAddr;
@@ -3457,121 +3338,6 @@ VmMach_IntMapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr, newAddrPtr)
     *newAddrPtr = (Address)userVirtAddr;
 
     return SUCCESS;
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmMach_Trace --
- *
- *      Scan through all of the PMEGs generating trace records for those pages
- *	that have been referenced or modified since the last time that we
- *	checked.
- *  
- * Results:
- *      None.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY void
-VmMach_Trace()
-{
-    register	PMEG			*pmegPtr;
-    register	Vm_Segment		*segPtr;
-    register	int			pmegNum;
-    register	int			curTraceTime;
-
-    MASTER_LOCK(vmMachMutexPtr);
-
-    /*
-     * Save the current trace time and then increment it to ensure that
-     * any segments that get used while we are scanning memory won't get 
-     * missed.
-     */
-    curTraceTime = vmTraceTime;
-    vmTraceTime++;
-
-    /*
-     * Spin through all of the pmegs.
-     */
-    for (pmegNum = 0, pmegPtr = pmegArray;
-	 pmegNum < VMMACH_NUM_PMEGS;
-	 pmegPtr++, pmegNum++) {
-	segPtr = pmegPtr->segPtr;
-	if ((pmegPtr->flags & PMEG_NEVER_FREE) ||
-	    segPtr == (Vm_Segment *)NIL ||
-	    segPtr->traceTime < curTraceTime) {
-	    continue;
-	}
-	vmTraceStats.machStats.pmegsChecked++;
-	printedSegTrace = FALSE;
-	tracePMEGPtr = pmegPtr;
-	VmMachTracePMEG(pmegNum);
-    }
-
-    MASTER_UNLOCK(vmMachMutexPtr);
-
-    VmCheckTraceOverflow();
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmMachTracePage --
- *
- *      Generate a trace record for the given page.
- *  
- * Results:
- *      None.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-INTERNAL void
-VmMachTracePage(pte, pageNum)
-    register	VmMachPTE	pte;	/* Page table entry to be traced. */
-    unsigned	int		pageNum;/* Inverse of page within PMEG. */
-{
-    Vm_TraceSeg			segTrace;
-    Vm_TracePage		pageTrace;
-    register	PMEG		*pmegPtr;
-    register	Vm_Segment	*segPtr;
-
-    refModMap[PhysToVirtPage(pte & VMMACH_PAGE_FRAME_FIELD)] |=
-			pte & (VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT);
-    if (!printedSegTrace) {
-	/*
-	 * Trace of the segment.
-	 */
-	printedSegTrace = TRUE;
-	pmegPtr = tracePMEGPtr;
-	segPtr = pmegPtr->segPtr;
-	segTrace.hardSegNum = pmegPtr->hardSegNum;
-	segTrace.softSegNum = segPtr->segNum;
-	segTrace.segType = segPtr->type;
-	segTrace.refCount = segPtr->refCount;
-	VmStoreTraceRec(VM_TRACE_SEG_REC, sizeof(Vm_TraceSeg), 
-			(Address)&segTrace, FALSE);
-    }
-
-    /*
-     * Trace the page.
-     */
-    pageTrace = VMMACH_NUM_PAGES_PER_SEG_INT - pageNum;
-    if (pte & VMMACH_REFERENCED_BIT) {
-	pageTrace |= VM_TRACE_REFERENCED;
-    } 
-    if (pte & VMMACH_MODIFIED_BIT) {
-	pageTrace |= VM_TRACE_MODIFIED;
-    }
-    VmStoreTraceRec(0, sizeof(Vm_TracePage), (Address)&pageTrace, FALSE);
 }
 
 
@@ -4093,6 +3859,7 @@ VmMach_CopySharedMem(parentProcPtr, childProcPtr)
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 VmMach_LockCachePage(kernelAddress)
     Address	kernelAddress;	/* Address on page to lock. */
@@ -4118,6 +3885,7 @@ VmMach_LockCachePage(kernelAddress)
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/ 
 void
 VmMach_UnlockCachePage(kernelAddress)
     Address	kernelAddress;	/* Address on page to unlock. */

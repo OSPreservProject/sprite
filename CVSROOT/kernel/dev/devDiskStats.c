@@ -194,7 +194,7 @@ DevRegisterDisk(devicePtr, deviceName, idleCheck, clientData)
     newDevice->unit = devicePtr->unit;
     bzero((char *) &(newDevice->devDiskStats), sizeof(DevDiskStats));
     Sync_SemInitDynamic(&(newDevice->devDiskStats.mutex), "DevDiskStats");
-    strncpy(newDevice->devDiskStats.diskStats.name, deviceName,
+    (void) strncpy(newDevice->devDiskStats.diskStats.name, deviceName,
 	    SYS_DISK_NAME_LENGTH);
     MASTER_LOCK(&deviceListMutex);
     if (!initialized) {

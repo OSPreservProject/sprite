@@ -27,8 +27,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Number of blocks to read ahead.  Zero turns off read ahead.
  */
 Boolean	fscache_NumReadAheadBlocks = 0;
-Boolean	fscache_RATracing = TRUE;
-
 
 #define	LOCKPTR	(&readAheadPtr->lock)
 typedef struct {
@@ -115,19 +113,7 @@ FscacheReadAhead(cacheInfoPtr, blockNum)
     Boolean			openForWriting;
     Fscache_Block		*blockPtr;
     Boolean			found;
-#ifdef SOSP91
-    Boolean		isForeign = FALSE;	/* Due to migration? */
-#endif SOSP91
 
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
     switch (cacheInfoPtr->hdrPtr->fileID.type) {
 	case FSIO_LCL_FILE_STREAM: {
 	    register Fsio_FileIOHandle *handlePtr =
@@ -175,11 +161,6 @@ FscacheReadAhead(cacheInfoPtr, blockNum)
 	}
 
 	fs_Stats.blockCache.readAheads++;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_SospMigStats.blockCache.readAheads++;
-	}
-#endif SOSP91
 	IncReadAheadCount(readAheadPtr);
 	callBackData = mnew(ReadAheadCallBackData);
 	callBackData->cacheInfoPtr = cacheInfoPtr;

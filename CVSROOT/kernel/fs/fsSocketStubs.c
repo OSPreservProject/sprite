@@ -62,10 +62,10 @@ static char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
         "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE"};
 
 #undef Mach_SetErrno
-#define Mach_SetErrno(err) if (debugFsStubs) \
+#define Mach_SetErrno(err) if (debugFsStubs) { \
         printf("Error %d (%s) at %d in %s\n", err,\
         err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
-        __LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
+        __LINE__, __FILE__); } Proc_GetActualProc()->unixErrno = (err)
 
 #if 1
 #define	DebugMsg(status, string) printf("%x: %s\n", status, string)
@@ -1238,9 +1238,9 @@ Fs_SocketStub(domain, type, protocol)
 	} else {
 	    gotHostName = TRUE;
 	}
-        sprintf(streamDevice, INET_STREAM_NAME_FORMAT, sysHostName);
-        sprintf(dgramDevice, INET_DGRAM_NAME_FORMAT, sysHostName);
-        sprintf(rawDevice, INET_RAW_NAME_FORMAT, sysHostName);
+        (void) sprintf(streamDevice, INET_STREAM_NAME_FORMAT, sysHostName);
+        (void) sprintf(dgramDevice, INET_DGRAM_NAME_FORMAT, sysHostName);
+        (void) sprintf(rawDevice, INET_RAW_NAME_FORMAT, sysHostName);
     }
 
     if (type == SOCK_STREAM) {

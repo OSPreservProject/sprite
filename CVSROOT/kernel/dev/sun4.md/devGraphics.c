@@ -41,13 +41,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #ifdef sun3
-#define BW2_FB	((void *)0x0fe20000)
+#define BW2_FB	((Address) 0x0fe20000)
 #elif sun4c
-#define BW2_FB	((void *)0xffd80000)
+#define BW2_FB	((Address) 0xffd80000)
 #elif sun4
-#define BW2_FB	((void *)0xffd40000)
+#define BW2_FB	((Address) 0xffd40000)
 #else
-#define	BW2_FB	((void *)NIL)
+#define	BW2_FB	((Address) NIL)
 #endif /* sun3 */
 
 
@@ -55,40 +55,40 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * For CG4 frame buffer
  */
 #ifdef sun3
-#define CG4_FB     ((void *)0x0fd00000)
-#define CG4_CM     ((void *)0x0fe0e000)
-#define CG4_OV     ((void *)0x0fe80000)
-#define CG4_EN     ((void *)0x0fea0000)
+#define CG4_FB     ((Address) 0x0fd00000)
+#define CG4_CM     ((Address) 0x0fe0e000)
+#define CG4_OV     ((Address) 0x0fe80000)
+#define CG4_EN     ((Address) 0x0fea0000)
 #elif sun4c
-#define CG4_FB    ((void *)0xffd80000)
-#define CG4_CM    ((void *)0xffd1c000)
-#define CG4_OV    ((void *)0x0)           /* ??? */
-#define CG4_EN    ((void *)0x0)           /* ??? */
+#define CG4_FB    ((Address) 0xffd80000)
+#define CG4_CM    ((Address) 0xffd1c000)
+#define CG4_OV    ((Address) 0x0)           /* ??? */
+#define CG4_EN    ((Address) 0x0)           /* ??? */
 #else
-#define CG4_FB    ((void *)NIL)
-#define CG4_CM    ((void *)NIL)
-#define CG4_OV    ((void *)NIL)
-#define CG4_EN    ((void *)NIL)
+#define CG4_FB    ((Address) NIL)
+#define CG4_CM    ((Address) NIL)
+#define CG4_OV    ((Address) NIL)
+#define CG4_EN    ((Address) NIL)
 #endif /* sun3 */
 /*
  * For CG6 frame buffer
  */
 #ifdef sun4c
-#define CG6_FB    ((void *)0xffd80000)
-#define CG6_CM    ((void *)0xffd1f000)
+#define CG6_FB    ((Address) 0xffd80000)
+#define CG6_CM    ((Address) 0xffd1f000)
 #else
-#define CG6_FB    ((void *)NIL)
-#define CG6_CM    ((void *)NIL)
+#define CG6_FB    ((Address) NIL)
+#define CG6_CM    ((Address) NIL)
 #endif /* sun4c */
 /*
  * CG3 frame buffer.
  */
 #ifdef sun4c
-#define CG3_FB    ((void *)0xffd80000)
-#define CG3_CM    ((void *)0xffd1c000)
+#define CG3_FB    ((Address) 0xffd80000)
+#define CG3_CM    ((Address) 0xffd1c000)
 #else
-#define CG3_FB    ((void *)0xffd80000)
-#define CG3_CM    ((void *)0xffd1c000)
+#define CG3_FB    ((Address) 0xffd80000)
+#define CG3_CM    ((Address) 0xffd1c000)
 #endif /* sun4c */
 
 
@@ -146,10 +146,10 @@ static union {
  * Addresses to know for the different frame buffers, overlay planes, etc.
  */
 typedef	struct FBAddr {
-    void	*fb_buffer;		/* kernel virtual address */
-    void	*fb_overlay;		/* offset? */
-    void	*fb_enable;		/* offset? */
-    void	*fb_cmap;		/* cmap */
+    Address fb_buffer;		/* kernel virtual address */
+    Address fb_overlay;		/* offset? */
+    Address fb_enable;		/* offset? */
+    Address fb_cmap;		/* cmap */
 } FBAddr;
 
 /*
@@ -158,26 +158,26 @@ typedef	struct FBAddr {
  * one machine type right now (sun4c).
  */
 FBAddr	fbaddrs[FBTYPE_LASTPLUSONE] = {
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* bw1 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cg1 */
-    {BW2_FB, (void *) NULL, (void *) NULL, (void *) NULL},	/* bw2 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cg2 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* gp2 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cg5 */
-    {CG3_FB, (void *) NULL, (void *) NULL, CG3_CM},		/* cg3 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* ? */
-    {CG4_FB, CG4_OV, CG4_EN, CG4_CM},				/* cg4 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cust. */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cust. */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cust. */
-    {CG6_FB, (void *) NULL, (void *) NULL, CG6_CM},		/* cg6 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* rop */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* video */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* res5 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* res4 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* res3 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* res2 */
-    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL}	/* res1 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* bw1 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg1 */
+    {BW2_FB, (Address) NULL, (Address) NULL, (Address) NULL},	  /* bw2 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg2 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* gp2 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg5 */
+    {CG3_FB, (Address) NULL, (Address) NULL, CG3_CM},		  /* cg3 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* ? */
+    {CG4_FB, CG4_OV, CG4_EN, CG4_CM},				  /* cg4 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
+    {CG6_FB, (Address) NULL, (Address) NULL, CG6_CM},		  /* cg6 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* rop */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* video */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res5 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res4 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res3 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res2 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}  /* res1 */
 };
 
 
@@ -707,13 +707,13 @@ SearchProm(node)
 		    } else {
 			configPtr->devr_getprop(node, "address", searchBuffer);
 			if (fbaddrs[i].fb_buffer !=
-				(void *) (*(int *) searchBuffer)) {
+				(Address) (*(int *) searchBuffer)) {
 #ifdef DEBUG
 			    printf("Updating address for %s to 0x%x.\n",
 				    fbNames[whichFb], *(int *) searchBuffer);
 #endif /* DEBUG */
 			    fbaddrs[i].fb_buffer =
-				    (void *) (*(int *) searchBuffer);
+				    (Address) (*(int *) searchBuffer);
 			}
 		    }
 		    length = configPtr->devr_getproplen(node, "height");
@@ -911,8 +911,7 @@ PutCmap(whichFb, cmap)
 	if (whichFb == FBTYPE_SUN4COLOR || whichFb == FBTYPE_SUN3COLOR) {
 	    /* update the memory copy */
 	    uPtr = &fbCmapCopy.map[index][0];
-	    c = count;
-	    while (c--) {
+	    for (c = count; c != 0; --c) {
 		*uPtr++ = *rmap++;
 		*uPtr++ = *gmap++;
 		*uPtr++ = *bmap++;
@@ -922,16 +921,14 @@ PutCmap(whichFb, cmap)
 #define D4M3(x) ((((x)>>2)<<1) + ((x)>>2))      /* (x/4)*3 */
 #define D4M4(x) ((x)&~0x3)                      /* (x/4)*4 */
 	    iPtr = &fbCmapCopy.raw[D4M3(index)];
-	    c = D4M3(index+count-1) - D4M3(index) + 3;
 	    fbCmap->addr = D4M4(index);
-	    while (c--) {
+	    for (c = D4M3(index+count-1) - D4M3(index) + 3; c != 0; --c) {
 		fbCmap->cmap = *iPtr++;
 	    }
 	} else { /* FBTYPE_SUNFAST_COLOR */
 	    /* update the chip */
 	    fbCmap->addr = index << 24;
-	    c = count;
-	    while (c--) {
+	    for (c = count; c != 0; --c) {
 		fbCmap->cmap = (unsigned int)(*rmap++) << 24;
 		fbCmap->cmap = (unsigned int)(*gmap++) << 24;
 		fbCmap->cmap = (unsigned int)(*bmap++) << 24;
@@ -1164,8 +1161,8 @@ InitCmap(devPtr)
     whichFb = devPtr->type.fb_type;
     fbCmap = fbaddrs[whichFb].fb_cmap;
 
-    if (whichFb != FBTYPE_SUN4COLOR && whichFb != FBTYPE_SUNFAST_COLOR &&
-	    whichFb != FBTYPE_SUN3COLOR) {
+    if ((whichFb != FBTYPE_SUN4COLOR) && (whichFb != FBTYPE_SUNFAST_COLOR) &&
+	    (whichFb != FBTYPE_SUN3COLOR)) {
 	printf("Wrong fb type to have a colormap.\n");
 	return FAILURE;
     }

@@ -21,8 +21,6 @@
 #include <cfuncproto.h>
 #include <sprite.h>
 
-#define VM_CHECK_BSTRING_ACCESS	1
-
 /* 
  * If this is off, don't do the checks.  This is to avoid annoying 
  * other kernel hackers and to avoid deadlock after we panic.

@@ -560,24 +560,14 @@ FspdevControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-#ifdef SOSP91
-ReturnStatus
-FspdevControlClose(streamPtr, clientID, procID, flags, size, data, offsetPtr,
-    rwFlagsPtr)
-#else
 ReturnStatus
 FspdevControlClose(streamPtr, clientID, procID, flags, size, data)
-#endif
     Fs_Stream		*streamPtr;	/* Control stream */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
-#ifdef SOSP91
-    int			*offsetPtr;	/* Not used. */
-    int			*rwFlagsPtr;	/* Not used. */
-#endif
 {
     register Fspdev_ControlIOHandle *ctrlHandlePtr =
 	    (Fspdev_ControlIOHandle *)streamPtr->ioHandlePtr;

@@ -391,10 +391,10 @@ typedef struct {
  * Exported procedures:
  */
 
-extern void		DevZ8530Activate(void *ptr);
-extern Boolean		DevZ8530Interrupt(ClientData	clientData);
-extern int		DevZ8530RawProc(void *ptr, int operation, 
+extern void		DevZ8530Activate _ARGS_ ((Address ptr));
+extern Boolean		DevZ8530Interrupt _ARGS_ ((ClientData	clientData));
+extern int		DevZ8530RawProc _ARGS_ ((Address ptr, int operation, 
 				int inBufSize, char *inBuffer, int outBufSize,
-				char *outBuffer);
+				char *outBuffer));
 
 #endif /* _DEVZ8530 */

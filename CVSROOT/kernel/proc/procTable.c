@@ -165,7 +165,6 @@ InitPCB(pcbPtr, i)
 #ifdef LOCKDEP
     pcbPtr->lockStackSize = 0;
 #endif
-    pcbPtr->locksHeld = 0;
     pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
     pcbPtr->fsPtr = (Fs_ProcessState *)NIL;
     pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;

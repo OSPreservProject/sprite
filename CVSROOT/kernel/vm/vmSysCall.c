@@ -15,7 +15,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <vm.h>
 #include <vmInt.h>
-#include <vmTrace.h>
 #include <lock.h>
 #include <user/vm.h>
 #include <sync.h>
@@ -54,7 +53,7 @@ static ReturnStatus VmMunmapInt _ARGS_((Address startAddr, int length,
 #define VmVirtAddrParseUnlock(procPtr, startAddr, virtAddrPtr) \
     {VmVirtAddrParse(procPtr,startAddr, virtAddrPtr); \
     if ((virtAddrPtr)->flags & VM_HEAP_PT_IN_USE) \
-	    VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);}
+	    { VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]); } }
 
 /*
  * Test if an address is not page aligned.
@@ -418,81 +417,6 @@ Vm_Cmd(command, arg)
 	case VM_SET_USE_FS_READ_AHEAD:
 	    SETVAR(vmUseFSReadAhead, arg);
 	    break;
-	case VM_START_TRACING: {
-	    ReturnStatus	status;
-	    void		VmTraceDaemon();
-	    Vm_TraceStart	*traceStartPtr;
-	    extern int		etext;
-	    char		fileName[100];
-	    char		hostNum[34];
-
-	    if (vmTraceFilePtr != (Fs_Stream *)NIL) {
-		printf("VmCmd: Tracing already running.\n");
-		break;
-	    }
-	    vmTracesPerClock = arg;
-	    printf("Vm_Cmd: Tracing started at %d times per second\n",
-			arg);
-
-	    if (vmTraceBuffer == (char *)NIL) {
-		vmTraceBuffer = (char *)malloc(VM_TRACE_BUFFER_SIZE);
-	    }
-	    bzero((Address)&vmTraceStats, sizeof(vmTraceStats));
-
-	    traceStartPtr = (Vm_TraceStart  *)vmTraceBuffer;
-	    traceStartPtr->recType = VM_TRACE_START_REC;
-	    traceStartPtr->hostID = Sys_GetHostId();
-	    traceStartPtr->pageSize = vm_PageSize;
-	    traceStartPtr->numPages = vmStat.numPhysPages;
-	    traceStartPtr->codeStartAddr = mach_KernStart;
-	    traceStartPtr->dataStartAddr = (Address)&etext;
-	    traceStartPtr->stackStartAddr = vmStackBaseAddr;
-	    traceStartPtr->mapStartAddr = vmMapBaseAddr;
-	    traceStartPtr->cacheStartAddr = vmBlockCacheBaseAddr;
-	    traceStartPtr->cacheEndAddr = vmBlockCacheEndAddr;
-	    bcopy((Address)&vmStat, (Address)&traceStartPtr->startStats,
-		    sizeof(Vm_Stat));
-	    traceStartPtr->tracesPerSecond = vmTracesPerClock;
-	    vmTraceFirstByte = 0;
-	    vmTraceNextByte = sizeof(Vm_TraceStart);
-
-	    (void)strcpy(fileName, VM_TRACE_FILE_NAME);
-	    (void)sprintf(hostNum, "%u", (unsigned) Sys_GetHostId());
-	    (void)strcat(fileName, hostNum);
-
-	    status = Fs_Open(fileName, FS_WRITE | FS_CREATE,
-			     FS_FILE, 0660, &vmTraceFilePtr);
-	    if (status != SUCCESS) {
-		printf("Warning: Vm_Cmd: Couldn't open trace file, reason %x\n",
-		    status);
-	    } else {
-		vmTraceNeedsInit = TRUE;
-	    }
-	    break;
-	}
-	case VM_END_TRACING: {
-	    Vm_TraceEnd		traceEnd;
-
-	    bcopy((Address)&vmStat, (Address)&traceEnd.endStats,
-		    sizeof(Vm_TraceEnd));
-	    bcopy((Address)&vmTraceStats, (Address)&traceEnd.traceStats,
-		    sizeof(Vm_TraceStats));
-	    VmStoreTraceRec(VM_TRACE_END_REC, sizeof(Vm_TraceEnd),
-			    (Address)&traceEnd, FALSE);
-
-	    vm_Tracing = FALSE;
-	    vmClockSleep = timer_IntOneSecond;
-	    if (vmTraceFilePtr != (Fs_Stream *)NIL) {
-		VmTraceDump((ClientData)0, (Proc_CallInfo *)NIL);
-		(void)Fs_Close(vmTraceFilePtr);
-		vmTraceFilePtr = (Fs_Stream *)NIL;
-	    }
-	    printf("Vm_Cmd: Tracing ended: Traces=%d Drops=%d\n",
-			vmTraceTime, vmTraceStats.traceDrops);
-	    printf("		       Dumps=%d Bytes=%d.\n",
-			vmTraceStats.traceDumps, vmTraceNextByte);
-	    break;
-	}
 	case VM_SET_WRITEABLE_PAGEOUT:
 	    SETVAR(vmWriteablePageout, arg);
 	    break;

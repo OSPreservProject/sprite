@@ -87,12 +87,13 @@ static void		Write();
 
 void
 DevZ8530Activate(ptr)
-    void *ptr;
+    Address ptr;
 {
-    register DevZ8530 *zPtr = ptr;	/* Information about the device. */
+    register DevZ8530 *zPtr;
     int speed;
 
     MASTER_LOCK(&z8530Mutex);
+    zPtr = (DevZ8530 *) ptr;	/* Information about the device. */
     if (zPtr->vector != 30) {
 	Mach_SetHandler(zPtr->vector, DevZ8530Interrupt, (ClientData) zPtr);
     }
@@ -152,7 +153,7 @@ DevZ8530Activate(ptr)
 /* ARGSUSED */
 int
 DevZ8530RawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
-    void *ptr;
+    Address ptr;
     int operation;		/* What to do:  TD_RAW_OUTPUT_READY etc. */
     int inBufSize;		/* Size of input buffer for operation. */
     char *inBuffer;		/* Input buffer. */
@@ -160,9 +161,10 @@ DevZ8530RawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
     char *outBuffer;		/* Output buffer. */
 {
     int result = 0;
-    register DevZ8530 *zPtr = ptr;	/* Our information about device. */
+    register DevZ8530 *zPtr;
 
     MASTER_LOCK(&z8530Mutex);
+    zPtr = (DevZ8530 *) ptr;	/* Our information about device. */
     switch (operation) {
 	case TD_RAW_START_BREAK:
 	    zPtr->wr5 |= WRITE5_BREAK;

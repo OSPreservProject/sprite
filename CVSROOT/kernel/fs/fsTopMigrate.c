@@ -254,7 +254,7 @@ Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
     }
     
     Byte_FillBuffer(ptr, int, prefixPtr->prefixLength);
-    strncpy(ptr, prefixPtr->prefix, prefixPtr->prefixLength);
+    (void) strncpy(ptr, prefixPtr->prefix, prefixPtr->prefixLength);
     ptr[prefixPtr->prefixLength] = '\0';
     ptr += cwdLength;
 

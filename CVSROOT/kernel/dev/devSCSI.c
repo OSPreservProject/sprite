@@ -140,7 +140,7 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 	    /*
 	     * The drive recovered from an error.
 	     */
-	     sprintf(errorString,
+	     (void) sprintf(errorString,
 		    "recoverable error - info bytes 0x%x 0x%x 0x%x 0x%x",
 		     sensePtr->info1, sensePtr->info2,
 		     sensePtr->info3,sensePtr->info4);
@@ -151,7 +151,8 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 	    break;
 	case SCSI_CLASS7_MEDIA_ERROR:
 	case SCSI_CLASS7_HARDWARE_ERROR:
-	     sprintf(errorString, "%s error - info bytes 0x%x 0x%x 0x%x 0x%x",
+	     (void) sprintf(errorString,
+		 "%s error - info bytes 0x%x 0x%x 0x%x 0x%x",
 		(sensePtr->key == SCSI_CLASS7_MEDIA_ERROR) ? "media" :
 							     "hardware",
 		sensePtr->info1 & 0xff,
@@ -164,7 +165,7 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 	    /*
 	     * Probably a programming error.
 	     */
-	    sprintf(errorString,"illegal request");
+	    (void) sprintf(errorString,"illegal request");
 	    status = DEV_INVALID_ARG;
 	    break;
 	case SCSI_CLASS7_UNIT_ATTN:
@@ -174,11 +175,12 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 	    status = DEV_RESET;
 	    break;
 	case SCSI_CLASS7_WRITE_PROTECT:
-	    sprintf(errorString,"write protected");
+	    (void) sprintf(errorString,"write protected");
 	    status = FS_NO_ACCESS;
 	    break;
 	case SCSI_CLASS7_BLANK_CHECK:
-	    sprintf(errorString,"blank check - info bytes  0x%x 0x%x 0x%x 0x%x",
+	    (void) sprintf(errorString,
+		"blank check - info bytes  0x%x 0x%x 0x%x 0x%x",
 		sensePtr->info1,
 		sensePtr->info2,
 		sensePtr->info3,
@@ -189,12 +191,13 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 	case SCSI_CLASS7_ABORT:
 	case SCSI_CLASS7_EQUAL:
 	case SCSI_CLASS7_OVERFLOW:
-	    sprintf(errorString,"unsupported class7 error 0x%x\n",
+	    (void) sprintf(errorString,"unsupported class7 error 0x%x\n",
 		    sensePtr->key);
 	    status = DEV_HARD_ERROR;
 	    break;
 	default: {
-	    sprintf(errorString,"unknown class7 error 0x%x\n", sensePtr->key);
+	    (void) sprintf(errorString,
+		"unknown class7 error 0x%x\n", sensePtr->key);
 	    status = DEV_HARD_ERROR;
 	    break;
 	}
