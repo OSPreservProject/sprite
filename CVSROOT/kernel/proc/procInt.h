@@ -84,5 +84,6 @@ extern	ReturnStatus		ProcExecEncapState();
 extern	ReturnStatus		ProcExecDeencapState();
 extern	ReturnStatus		ProcExecFinishMigration();
 extern	void			ProcDoRemoteExec();
+extern  void			ProcRecordUsage();
 	  
 #endif /* _PROCINT */

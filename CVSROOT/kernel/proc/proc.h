@@ -592,6 +592,7 @@ extern void			Proc_DestroyMigratedProc();
 extern void			Proc_NeverMigrate();
 extern ReturnStatus		Proc_MigGetStats();
 extern ReturnStatus		Proc_MigZeroStats();
+extern ENTRY void	        Proc_MigAddToCounter();
 
 extern void			ProcInitMainEnviron();
 extern void			ProcSetupEnviron();
