@@ -183,7 +183,7 @@ FsHandleInit(fileHashSize)
     int	fileHashSize;	/* The number of hash table entries to put in the
 			 * file hash table for starters. */
 {
-    fsStat.handle.maxNumber = FS_HANDLE_TABLE_SIZE;
+    fsStats.handle.maxNumber = FS_HANDLE_TABLE_SIZE;
     List_Init(lruList);
     Hash_Init(fileHashTable, fileHashSize, Hash_Size(sizeof(Fs_FileID)));
 }
@@ -236,7 +236,7 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 		printf("Handle LRU already in progress\n");
 	    }
 	    fsLRUinProgress++;
-	    fsStats.handle.lruScans++;
+	    fsStats.object.lruScans++;
 	    for (hdrPtr = FsGetNextLRUHandle(&listPtr);
 		 hdrPtr != (FsHandleHeader *)NIL;
 		 hdrPtr = FsGetNextLRUHandle(&listPtr)) {
