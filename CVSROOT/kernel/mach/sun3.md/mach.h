@@ -61,6 +61,11 @@ typedef struct Mach_SetJumpState {
     }
 
 /*
+ * Macro to get level of nesting of disabled interrupts.
+ */
+#define Mach_IntrNesting(cpu) (mach_NumDisableIntrsPtr[(cpu)])
+
+/*
  * A macro to test if the current processor is at interrupt level.
  */
 
@@ -406,6 +411,7 @@ extern	int	Mach_GetMachineType();
 extern	int	Mach_GetMachineArch();
 extern	Address	Mach_GetStackPointer();
 extern 	void	Mach_CheckSpecialHandling();
+extern 	int	Mach_GetBootArgs();	
 
 /*
  * spriteStart is defined in bootSys.s with an underscore.
