@@ -36,6 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <sigMach.h>
 #include <swapBuffer.h>
 #include <net.h>
+#include <ultrixSignal.h>
 
 
 /*
@@ -567,11 +568,13 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
  *----------------------------------------------------------------------
  */ 
 void
-Mach_SetReturnVal(procPtr, retVal)
+Mach_SetReturnVal(procPtr, retVal, retVal2)
     Proc_ControlBlock	*procPtr;	/* Process to set return value for. */
     int			retVal;		/* Value for process to return. */
+    int			retVal2;	/* Second return value. */
 {
     procPtr->machStatePtr->userState.regState.regs[V0] = (unsigned)retVal;
+    procPtr->machStatePtr->userState.regState.regs[V1] = (unsigned)retVal2;
 }
 
 
@@ -1820,4 +1823,49 @@ static void
 SoftFPReturn()
 {
     printf("SoftFPReturn\n");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SigreturnStub --
+ *
+ *	Procedure to map from Unix sigreturn system call to Sprite.
+ *	On the decstation, this is used for returning from a signal.
+ *	Note: This routine is exactly the same as MachUNIXLongJumpReturn.
+ *	Presumably the other routine will go away as soon as Unix
+ *	compatibility is working.
+ *
+ * Results:
+ *	Error code is returned upon error.  Otherwise SUCCESS is returned.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mach_SigreturnStub(sigContextPtr)
+    struct sigcontext *sigContextPtr;
+{
+    struct sigcontext	sigContext;
+    Mach_RegState	*regsPtr;
+    int			dummy;
+    ReturnStatus	status;
+    extern Mach_State   *machCurStatePtr;
+
+    status = Vm_CopyIn(sizeof(struct sigcontext), (Address)sigContextPtr,
+		       (Address)&sigContext);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    regsPtr = &machCurStatePtr->userState.regState;
+    regsPtr->pc = (Address)(sigContext.sc_pc - 4);
+    bcopy(sigContext.sc_regs, regsPtr->regs, sizeof(sigContext.sc_regs));
+    regsPtr->mflo = sigContext.sc_mdlo;
+    regsPtr->mfhi = sigContext.sc_mdhi;
+    bcopy(sigContext.sc_fpregs, regsPtr->fpRegs, sizeof(sigContext.sc_fpregs));
+    regsPtr->fpStatusReg = sigContext.sc_fpc_csr;
+    (void) sysUnixSigBlock(&dummy, sigContext.sc_mask);
+    return(SUCCESS);
 }
