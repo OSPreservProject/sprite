@@ -24,11 +24,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define CLEAN_LOCK 1
 #endif
 
-#include "sprite.h"
-#include "stdio.h"
-#include "mach.h"
-#include "sync.h"
-#include "z8530.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <mach.h>
+#include <sync.h>
+#include <z8530.h>
 #include <sgtty.h>
 
 /*
