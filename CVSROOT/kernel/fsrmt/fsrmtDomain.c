@@ -1271,7 +1271,7 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
 	replyMemPtr->paramPtr = (Address) name1RedirectPtr;
 	replyMemPtr->dataPtr = (Address) newNameInfoPtr;
-	Rpc_Reply(srvToken, SUCCESS, storagePtr, 
+	Rpc_Reply(srvToken, status, storagePtr, 
 		  (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);
     }
 
