@@ -14,6 +14,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "exc.h"
+#include "excInt.h"
 #include "sys.h"
 #include "sync.h"
 #include "machine.h"
@@ -22,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "procMigrate.h"
 #include "sched.h"
 #include "vm.h"
+#include "vmMachInt.h"
 #include "sig.h"
 #include "sunSR.h"
 #include "mem.h"
@@ -36,19 +38,53 @@ int	exc_Type;
 extern	int ExcGetVBR();
 Exc_VectorTable	*exc_VectorTablePtr;
 
+/*
+ * The variables and tables below are used by the assembler routine
+ * in excTrap.s that dispatches kernel calls.  All of this information
+ * is shared with excTrap.s;  if you change any of this, be sure to
+ * change the assembler to match.
+ */
+
+#define MAXCALLS 120
+#define MAXARGS  16
+
+int excMaxSysCall;			/* Highest defined system call. */
+int excArgOffsets[MAXCALLS];		/* For each system call, tells how much
+					 * to add to the sp at the time of the
+					 * call to get to the highest argument
+					 * on the stack. */
+Address excArgDispatch[MAXCALLS];	/* For each system call, gives an
+					 * address to branch to, in the middle
+					 * of ExcFetchArgs, to copy the right
+					 * # of args from user space to the
+					 * kernel's stack. */
+ReturnStatus (*(exc_NormalHandlers[MAXCALLS]))();
+					/* For each system call, gives the
+					 * address of the routine to handle
+					 * the call for non-migrated processes.
+					 */
+ReturnStatus (*(exc_MigratedHandlers[MAXCALLS]))();
+					/* For each system call, gives the
+					 * address of the routine to handle
+					 * the call for migrated processes. */
+int excKcallTableOffset;		/* Byte offset of the kcallTable field
+					 * in a Proc_ControlBlock. */
+int excStateOffset;			/* Byte offset of the genRegs field
+					 * in a Proc_ControlBlock. */
 
 /*
  * ----------------------------------------------------------------------------
  *
  * Exc_Init --
  *
- *     Initialize the exception vector table.
+ *	Initialize the exception vector table and some of the dispatching
+ *	tables.
  *
  * Results:
- *     None.
+ *	None.
  *
  * Side effects:
- *     The exception vector table is initialized.
+ *	The exception vector table is initialized.
  *
  * ----------------------------------------------------------------------------
  */
@@ -95,6 +131,59 @@ Exc_Init()
     exc_VectorTablePtr = (Exc_VectorTable *) mach_KernStart;
 #endif
 
+    /*
+     * Initialize some of the dispatching information.  The rest is
+     * initialized by Exc_InitSysCall below.
+     */
+
+    excMaxSysCall = -1;
+    excKcallTableOffset = (int) &((Proc_ControlBlock *) 0)->kcallTable;
+    excStateOffset = (int) ((Proc_ControlBlock *) 0)->genRegs;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Exc_InitSyscall --
+ *
+ *	During initialization, this procedure is called once for each
+ *	kernel call, in order to set up information used to dispatch
+ *	the kernel call.  This procedure must be called once for each
+ *	kernel call, in order starting at 0.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the dispatch tables for the kernel call.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Exc_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
+    int callNum;			/* Number of the system call. */
+    int numArgs;			/* Number of one-word arguments passed
+					 * into call on stack. */
+    ReturnStatus (*normalHandler)();	/* Procedure to process kernel call
+					 * when process isn't migrated. */
+    ReturnStatus (*migratedHandler)();	/* Procedure to process kernel call
+					 * for migrated processes. */
+{
+    excMaxSysCall++;
+    if (excMaxSysCall != callNum) {
+	Sys_Panic(SYS_FATAL, "out-of-order kernel call initialization");
+    }
+    if (excMaxSysCall >= MAXCALLS) {
+	Sys_Panic(SYS_FATAL, "too many kernel calls");
+    }
+    if (numArgs > MAXARGS) {
+	Sys_Panic(SYS_FATAL, "too many arguments to kernel call");
+    }
+    excArgOffsets[excMaxSysCall] = 8 + numArgs*4;
+    excArgDispatch[excMaxSysCall] = (16-numArgs)*2 + (Address) ExcFetchArgs;
+    exc_NormalHandlers[excMaxSysCall] = normalHandler;
+    exc_MigratedHandlers[excMaxSysCall] = migratedHandler;
 }
 
 /*
@@ -140,7 +229,9 @@ Exc_SetHandler(vectorNumber, handler)
  *	mode traps are a breakpoint trap to force a context switch and a
  *	bus error in the middle of a cross address space copy. All other
  *	traps go into the debugger.  However, all types of user traps are 
- *	processed here.
+ *	processed here, except for system calls, which don't pass through
+ *	this procedure unless special action (like a context switch) is
+ *	needed at the end of the call.
  *
  * Results:
  *      EXC_KERN_ERROR if the debugger should be called after this routine 
@@ -229,7 +320,6 @@ Exc_Trap(trapStack)
 		if (procPtr->genFlags & PROC_USER) {
 		    Boolean	protError;
 		    Boolean	copyInProgress = FALSE;
-		    extern	int Vm_CopyEnd();
 
 		    /*
 		     * A page fault on a user process while executing in
@@ -245,9 +335,14 @@ Exc_Trap(trapStack)
 		    if ((((unsigned) trapStack.excStack.pc)
 				>= (unsigned) Vm_CopyIn)
 			    && (((unsigned) trapStack.excStack.pc)
-				< (unsigned) Vm_CopyEnd)) {
+				< (unsigned) VmMachCopyEnd)) {
 			copyInProgress = TRUE;
 		    } else if (procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) {
+			copyInProgress = TRUE;
+		    } else if ((((unsigned) trapStack.excStack.pc)
+				>= (unsigned) ExcFetchArgs)
+			    && (((unsigned) trapStack.excStack.pc)
+				<= (unsigned) ExcFetchArgsEnd)) {
 			copyInProgress = TRUE;
 		    } else if ((procPtr->vmPtr->numMakeAcc == 0)
 			&& (procPtr->setJumpStatePtr
@@ -399,13 +494,16 @@ Exc_Trap(trapStack)
 	}
 	case EXC_SYSCALL_TRAP:
 	    /*
-	     * Perform a system call.
+	     * It used to be that all system calls passed through here, but
+	     * the code was optimized to avoid calling either this procedure
+	     * or Sys_SysCall in the normal case.  Control only passes through
+	     * here if, at the end of a system call, it's discovered that
+	     * special action must be taken.  The call has already been
+	     * executed by the time things arrive here.  This code does
+	     * nothing... the action will all be taken by the call to
+	     * ExcUserReturn below.
 	     */
-	     if (Sys_SysCall(&trapStack) != SUCCESS) {
-		Sys_Printf("Bad system call\n");
-		(void) Sig_Send(SIG_ILL_INST, SIG_BAD_SYS_CALL,
-				procPtr->processID, FALSE);
-	    }
+
 	    break;
 		
 	case EXC_BRKPT_TRAP:

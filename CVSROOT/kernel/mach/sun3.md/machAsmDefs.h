@@ -106,27 +106,6 @@
 /*
  * ----------------------------------------------------------------------------
  *
- * RestoreMigTrapRegs --
- *
- *      Restore the user stack pointer and the general purpose registers from
- *	the stack after a call to the C trap routine.  6 is added to the stack
- *      pointer first to get past the trap code and bus error register which
- *	were pushed onto the stack by CallTrapHandler.  The stack pointer
- *	is not restored here because it is from a different machine.
- *
- * ----------------------------------------------------------------------------
- */
-
-#define RestoreMigTrapRegs() \
-	addql	#6, sp ; \
-	movl	sp@+, d0 ; \
-	movc	d0, usp ; \
-	moveml 	sp@+, #0x7FFF ; \
-	addql	#4, sp
-
-/*
- * ----------------------------------------------------------------------------
- *
  * Call Interrupt Handler --
  *
  *      Call an interrupt handler.  The registers are saved first, 

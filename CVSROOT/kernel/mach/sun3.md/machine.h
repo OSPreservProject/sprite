@@ -65,6 +65,7 @@ extern	void	Mach_GetEtherAddress();
 extern	int	Mach_TestAndSet();
 extern	void	Mach_Init();
 extern	int	Mach_GetMachineType();
+extern	Address	Mach_GetStackPointer();
 
 /*
  * spriteStart is defined in bootSys.s with an underscore.

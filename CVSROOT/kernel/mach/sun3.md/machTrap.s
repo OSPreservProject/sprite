@@ -18,13 +18,14 @@
 |* ----------------------------------------------------------------------------
 |*
 |* Trap handling --
-|*     Handle exceptions.  In all cases call the C trap handler.
+|*	Handle exceptions.  In all cases except kernel calls, call
+|*	the C trap handler.  See the kernel call code below.
 |*
 |* Results:
-|*     None.
+|*	None.
 |*
 |* Side effects:
-|*     None.
+|*	None.
 |*
 |* ----------------------------------------------------------------------------
 |*
@@ -81,10 +82,6 @@ Exc_FmtError:
 Exc_UninitVect:
     	CallTrapHandler(EXC_UNINIT_VECTOR)
 
-	.globl	Exc_SyscallTrap
-Exc_SyscallTrap:
-	CallTrapHandler(EXC_SYSCALL_TRAP)
-
 	.globl	Exc_SigRetTrap
 Exc_SigRetTrap:
 	CallTrapHandler(EXC_SIG_RET_TRAP)
@@ -97,8 +94,163 @@ Exc_BadTrap:
 	.globl _Exc_BrkptTrap
 _Exc_BrkptTrap:
 Exc_BrkptTrap:
-    	CallTrapHandler(EXC_BRKPT_TRAP)
+	CallTrapHandler(EXC_BRKPT_TRAP)
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Exc_SyscallTrap --
+|*
+|*	This is the code entered on system call traps.  The code below
+|*	is tuned to get into and out of kernel calls as fast as possible.
+|*
+|* Results:
+|*	Returns a status to the caller in d0.
+|*
+|* Side effects:
+|*	Depends on the kernel call.
+|*
+|* ----------------------------------------------------------------------
+|*
 
+	.globl _excMaxSysCall, _excKcallTableOffset, _excArgOffsets
+	.globl _excArgDispatch, _excStateOffset
+	.globl _sys_NumCalls, _proc_RunningProcesses
+	.globl Exc_SyscallTrap
+Exc_SyscallTrap:
+
+	|*
+	|* If this is a fork kernel call, save the registers in the PCB.
+	|* This is a hack, and should eventually go away by adding another
+	|* parameter to fork, which gives the address of an area of
+	|* memory containing the process' saved state.
+	|*
+
+	tstl	d0
+	jne	1$
+	movl	_proc_RunningProcesses, a0
+	movl	a0@, d1
+	addl	_excStateOffset, d1
+	movl	d1, a0
+	moveml	#0x7fff, a0@
+	movc	usp, a1
+	movl	a1, a0@(60)
+	movl	sp@(2), a0@(64)
+
+	|*
+	|* Save registers used here:  two address registers and sp.
+	|*
+
+1$:	movl	a2, sp@-
+	movl	a3, sp@-
+	movl	sp, a3
+
+	|*
+	|* Check number of kernel call for validity.
+	|*
+
+	cmpl	_excMaxSysCall, d0
+	jls	2$
+	movl	#20002, d0
+	jra	return
+
+	|*
+	|* Increment a count of the number of times this kernel call
+	|* has been invoked.
+	|*
+
+2$:
+	asll	#2, d0			| Used to index into tables.
+	movl	#_sys_NumCalls, a0
+	addql	#1, a0@(0, d0:w)
+
+	|*
+	|* Copy the arguments from user space and push them onto the
+	|* stack.  Note:  this code interacts heavily with the C code
+	|* in Exc_SyscallInit().  If you change one, be sure to change
+	|* the other.
+	|*
+
+	movc	usp, d1
+	movl	#_excArgOffsets, a0
+	addl	a0@(0, d0:w), d1
+	movl	d1, a0
+	movl	#_excArgDispatch, a1
+	movl	a1@(0, d0:w), a1
+	jmp	a1@
+
+	.globl _ExcFetchArgs
+_ExcFetchArgs:
+	movl	a0@-, sp@-		| 16 argument words.
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-		| 12 argument words.
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-		| 8 argument words.
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-		| 4 argument words.
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-
+	movl	a0@-, sp@-
+
+	.globl _ExcFetchArgsEnd
+_ExcFetchArgsEnd:			| Marks last place where PC could be
+					| when a page fault occurs while
+					| fetching arguments.  Needed to
+					| distinguish a page fault during
+					| arg fetch (which is OK) from other
+					| page faults in the kernel, which are
+					| fatal errors.
+
+	|*
+	|* Find the location in the current process's control block
+	|* of the trapFlags and kcallTable fields.  Then lookup the
+	|* address of the kernel-call handling routine and invoke it.
+	|*
+
+1$:
+	movl	_proc_RunningProcesses, a0
+	movl	a0@, d1			| d1 now has PCB address.
+	addl	_excKcallTableOffset, d1
+	movl	d1, a2			| a2 now has address of kcallTable
+					| field in PCB.
+	movl	a2@, a0			| a0 points to 0th entry in table.
+	movl	a0@(0, d0:w), a1
+	jsr	a1@			| Dispatches to the top-level kernel
+					| call procedure.
+
+	|*
+	|* Disable interrupts and see if any special processing must
+	|* be done on the process.
+	|*
+
+	movl	a3, sp			| Pop kcall args off stack.
+	movw	#0x2700, sr		| Disable interrupts.
+	tstl	a2@(4)
+	jeq	return
+
+	|*
+	|* Something's up with the process (context switch, maybe, or
+	|* single-step mode?).  Restore the stack to what it was at
+	|* the beginning of the kernel call, then go through a slow
+	|* trap-processing procedure to take special action.
+	|*
+
+	clrl	a2@(4)
+	movw	#0x2000, sr
+	movl	sp@+, a3
+	movl	sp@+, a2
+	CallTrapHandler(EXC_SYSCALL_TRAP)
+
+return:
+	movl	sp@+, a3
+	movl	sp@+, a2
+	rte
 
 /*
  *-------------------------------------------------------------------------

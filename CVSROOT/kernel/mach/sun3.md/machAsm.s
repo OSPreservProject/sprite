@@ -300,4 +300,25 @@ _ExcSetVBR:
 	.globl	_ExcGetVBR
 _ExcGetVBR:
 	movc	vbr, d0			| Get vector base register.
-	rts	
+	rts
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Mach_GetStackPointer --
+|*
+|*	Return the value of the user's stack pointer.
+|*
+|* Results:
+|*	Returns the user stack pointer value.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl _Mach_GetStackPointer
+_Mach_GetStackPointer:
+	movc usp, d0
+	rts
