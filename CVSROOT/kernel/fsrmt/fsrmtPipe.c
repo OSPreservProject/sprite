@@ -177,6 +177,7 @@ FsPipeHandleInit(fileIDPtr, findIt)
 	 */
 	handlePtr->use.ref = 2;
 	handlePtr->use.write = 1;
+	handlePtr->use.exec = 0;
 	List_Init(&handlePtr->clientList);
 	handlePtr->flags = 0;
 	handlePtr->firstByte = handlePtr->lastByte = -1;
