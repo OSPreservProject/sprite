@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsInt.h"
 #include "fsMigrate.h"
 #include "fsStream.h"
+#include "fsClient.h"
 #include "fsPdev.h"
 #include "fsFile.h"
 #include "fsDevice.h"
@@ -44,28 +45,6 @@ Boolean fsMigDebug = FALSE;
 #define DEBUG( format ) \
 	if (fsMigDebug) { Sys_Printf format ; }
 
-/*
- * The following record defines what parameters the I/O server returns
- * after being told about a migration.  (Note, it will also return
- * data that is specific to the type of the I/O handle.)
- */
-typedef struct MigrateReply {
-    int flags;		/* New stream flags, the FS_RMT_SHARED bit is modified*/
-    int offset;		/* New stream offset */
-} MigrateReply;
-
-/*
- * This structure is for byte-swapping the rpc parameters correctly.
- */
-typedef struct  FsMigParam {
-    int                 dataSize;
-    FsUnionData         data;
-    MigrateReply        migReply;
-} FsMigParam;
-
-static void LocalToRemoteDomain();
-static void RemoteToLocalDomain();
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -74,23 +53,19 @@ static void RemoteToLocalDomain();
  *
  *	Package up a stream's state for migration to another host.  This
  *	copies the stream's offset, streamID, ioFileID, nameFileID, and flags.
- *	The server of the file does not perceive the migration at this
- *	time; only local book-keeping is done.  A future call to Fs_Deencap...
- *	will result in an RPC to the server to 'move' the client.
+ *	This routine is side-effect free with respect to both
+ *	the stream and the I/O handles.  The bookkeeping is done later
+ *	during Fs_DeencapStream so proper syncronization with Fs_Close
+ *	bookkeeping can be done.
  *	It is reasonable to call Fs_DeencapStream again on this host,
  *	for example, to back out an aborted migration.
  *
  * Results:
- *	FS_REMOTE_OP_INVALID if the domain of the file does not support 
- *	migration.
+ *	This always returns SUCCESS.
  *	
  *
  * Side effects:
- *	One reference to the stream is removed, and when the last one
- *	goes away the stream itself is removed.  The migStart procedure
- *	for the I/O handle will do some local book-keeping, although
- *	this is side-effect free with respect to the book-keeping on
- *	the server.
+ *	None.
  *
  * ----------------------------------------------------------------------------
  *
@@ -102,22 +77,12 @@ Fs_EncapStream(streamPtr, bufPtr)
     Address	bufPtr;		/* Buffer to hold encapsulated stream */
 {
     register	FsMigInfo	*migInfoPtr;
-    ReturnStatus		status = SUCCESS;
     register FsHandleHeader	*ioHandlePtr;
 
     /*
-     * Synchronize with stream duplication.  Then set the shared flag
-     * so the I/O handle routines know whether or not to release references;
-     * if the stream is still shared they shouldn't clean up refs.
+     * Synchronize with stream duplication and closes
      */
     FsHandleLock(streamPtr);
-    if (streamPtr->hdr.refCount <= 1) {
-	DEBUG( ("Encap stream %d, last ref", streamPtr->hdr.fileID.minor) );
-	streamPtr->flags &= ~FS_RMT_SHARED;
-    } else {
-	DEBUG( ("Encap stream %d, shared", streamPtr->hdr.fileID.minor) );
-	streamPtr->flags |= FS_RMT_SHARED;
-    }
 
     /*
      * The encapsulated stream state includes the read/write offset,
@@ -141,29 +106,8 @@ Fs_EncapStream(streamPtr, bufPtr)
     migInfoPtr->srcClientID = rpc_SpriteID;
     migInfoPtr->flags = streamPtr->flags;
 
-    /*
-     * Branch to a stream specific routine to encapsultate any extra state
-     * associated with the I/O handle, and to do local book-keeping.
-     */
-    status = (*fsStreamOpTable[ioHandlePtr->fileID.type].migStart) (ioHandlePtr,
-		    streamPtr->flags, rpc_SpriteID, &migInfoPtr->flags);
-
-    /*
-     * Clean up our reference to the stream.  We'll remove the
-     * stream from the handle table entirely if this is the last
-     * reference on a client and the stream is not a shadow for
-     * remote clients.  On error, or if the stream isn't the last
-     * reference, we just release our lock.
-     */
-    if ((status == SUCCESS)  && (streamPtr->hdr.refCount <= 1) &&
-	FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
-	FsStreamDispose(streamPtr);
-    } else {
-	FsHandleRelease(streamPtr, TRUE);
-    }
-
-    DEBUG( (" status %x\n", status) );
-    return(status);
+    FsHandleUnlock(streamPtr);
+    return(SUCCESS);
 }
 
 /*
@@ -197,21 +141,33 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     register	FsMigInfo	*migInfoPtr;
     register	FsNameInfo	*nameInfoPtr;
     ReturnStatus		status = SUCCESS;
-    Boolean			found;
+    Boolean			foundClient;
+    Boolean			foundStream;
     int				size;
     ClientData			data;
 
     migInfoPtr = (FsMigInfo *) bufPtr;
 
+    if (migInfoPtr->srcClientID == rpc_SpriteID) {
+	/*
+	 * Migrating to ourselves.  Just fetch the stream.
+	 */
+	*streamPtrPtr = FsHandleFetchType(Fs_Stream, &migInfoPtr->streamID);
+	if (*streamPtrPtr == (Fs_Stream *)NIL) {
+	    return(FS_FILE_NOT_FOUND);
+	} else {
+	    return(SUCCESS);
+	}
+    }
     /*
      * Create a top-level stream.  We bump the reference count and add
      * ourselves as a client because Fs_Close will clean up later.
      */
-
     streamPtr = FsStreamAddClient(&migInfoPtr->streamID, rpc_SpriteID,
 			     (FsHandleHeader *)NIL,
-			     migInfoPtr->flags, (char *)NIL, &found);
-    if (!found) {
+			     migInfoPtr->flags, (char *)NIL,
+			     &foundClient, &foundStream);
+    if (!foundClient) {
 	migInfoPtr->flags |= FS_NEW_STREAM;
 	streamPtr->offset = migInfoPtr->offset;
 	DEBUG( ("Deencap NEW stream %d, migOff %d, ",
@@ -278,7 +234,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
 		streamPtr->offset) );
 
-    if (status == SUCCESS && !found) {
+    if (status == SUCCESS && !foundClient) {
 	/*
 	 * Complete the setup of the stream with local book-keeping.  The
 	 * local book-keeping only needs to be done the first time the
@@ -290,13 +246,13 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 		(migInfoPtr, size, data, &streamPtr->ioHandlePtr);
 	DEBUG( ("migEnd status %x\n", status) );
     } else {
-	DEBUG( ("srvMigrate status %x\n", status) );
+	DEBUG( ("migrate status %x\n", status) );
     }
 
     if (status == SUCCESS) {
 	*streamPtrPtr = streamPtr;
     } else {
-	if (!found &&
+	if (!foundStream &&
 	    FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
 	    FsHandleLock(streamPtr);
 	    FsStreamDispose(streamPtr);
@@ -322,7 +278,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
  *	cause a new client host to have a stream after migration, so the
  *	use counts are updated in case both clients do closes.  Finally,
  *	use counts get decremented when a stream completely leaves a
- *	client.
+ *	client after being shared.
  *
  * Results:
  *	None.
@@ -418,14 +374,6 @@ FsIOClientMigrate(clientList, srcClientID, dstClientID, flags)
 	    Sys_Panic(SYS_WARNING,"FsIOClientMigrate, srcClient %d not found\n",
 		srcClientID);
 	}
-#ifdef notdef
-    } else if (flags & FS_LAST_WRITER) {
-	found = FsIOClientRemoveWriter(clientList, srcClientID);
-	if (!found) {
-	    Sys_Panic(SYS_WARNING,
-		"FsIOClientMigrate, last writer %d not found\n", srcClientID);
-	}
-#endif notdef
     }
     if (flags & FS_NEW_STREAM) {
 	/*
@@ -441,7 +389,7 @@ FsIOClientMigrate(clientList, srcClientID, dstClientID, flags)
  *
  * FsNotifyOfMigration --
  *
- *	Send an rpc to the server to inform it about a migration.
+ *	Send an rpc to the I/O server to inform it about a migration.
  *
  * Results:
  *	A return status.
@@ -476,7 +424,7 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
     status = Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_MIGRATE, &storage);
 
     if (status == SUCCESS) {
-	MigrateReply	*migReplyPtr;
+	FsMigrateReply	*migReplyPtr;
 
 	migReplyPtr = &(migParam.migReply);
 	*flagsPtr = migReplyPtr->flags;
@@ -505,7 +453,9 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
  * Fs_RpcNotifyOfMigration --
  * Fs_RpcStartMigration --
  *
- *	The service stub for FsNotifyOfMigration.
+ *	The service stub for FsNotifyOfMigration (and FsStreamMigCallback).
+ *	This invokes the Migrate routine for the I/O handle given in
+ *	the encapsulated stream state.
  *
  * Results:
  *	FS_STALE_HANDLE if handle that if client that is migrating the file
@@ -534,7 +484,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
     register FsMigInfo		*migInfoPtr;
     register FsHandleHeader	*hdrPtr;
     register ReturnStatus	status;
-    register MigrateReply	*migReplyPtr;
+    register FsMigrateReply	*migReplyPtr;
     register FsMigParam		*migParamPtr;
     register Rpc_ReplyMem	*replyMemPtr;
     Address    			dataPtr;
@@ -542,12 +492,21 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 
     migInfoPtr = (FsMigInfo *) storagePtr->requestParamPtr;
 
-    hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
+    /*
+     * This is getting hacked up.  Should we add a new RPC used only to
+     * call FsStreamMigrate?  Or add FsStreamClientVerify to fsOpTable.c
+     */
+    if (migInfoPtr->ioFileID.type == FS_STREAM) {
+	hdrPtr = (FsHandleHeader *)FsStreamClientVerify(&migInfoPtr->ioFileID,
+						    migInfoPtr->srcClientID);
+    } else {
+	hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
 		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
+    }
     if (hdrPtr == (FsHandleHeader *) NIL) {
 	Sys_Panic(fsMigDebug ? SYS_FATAL : SYS_WARNING,
-		  "Fs_RpcStartMigration, unknown I/O handle <%d,%d,%d>\n",
-	    migInfoPtr->ioFileID.type,
+		  "Fs_RpcStartMigration, unknown %s handle <%d,%d>\n",
+	    FsFileTypeToString(migInfoPtr->ioFileID.type),
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FS_STALE_HANDLE);
     }
@@ -878,74 +837,3 @@ Fs_DeencapFileState(procPtr, buffer)
     }
     return(SUCCESS);
 }
-
-
-#ifdef notdef
-/*
- * ----------------------------------------------------------------------------
- *
- * LocalToRemoteDomain --
- *
- *	Convert a file ID from a local file type to a remote file type.
- *	This is used only for naming and root information, so types
- *	are presumably FS_LCL_FILE_STREAM or FS_RMT_FILE_STREAM.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If the file ID references a local type, it is changed to remote.
- *
- * ----------------------------------------------------------------------------
- *
- */
-
-static void
-LocalToRemoteDomain(fileIDPtr)
-    Fs_FileID *fileIDPtr;
-{
-    if (fileIDPtr->type == FS_LCL_FILE_STREAM) {
-	fileIDPtr->type = FS_RMT_FILE_STREAM;
-    } else if (fileIDPtr->type != FS_RMT_FILE_STREAM) {
-	Sys_Panic(SYS_WARNING,
-		  "LocalToRemoteDomain: <%d,%d,%d> is %d, not a file stream.\n",
-		  fileIDPtr->serverID,  fileIDPtr->major,
-		  fileIDPtr->minor, fileIDPtr->type);
-    }
-}
-#endif notdef
-
-#ifdef notdef
-/*
- * ----------------------------------------------------------------------------
- *
- * RemoteToLocalDomain --
- *
- *	Convert a file ID from a local file type to a remote file type.
- *	This is used only for naming and root information, so types
- *	are presumably FS_LCL_FILE_STREAM or FS_RMT_FILE_STREAM.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If the file ID references a local type, it is changed to remote.
- *
- * ----------------------------------------------------------------------------
- *
- */
-
-static void
-RemoteToLocalDomain(fileIDPtr)
-    Fs_FileID *fileIDPtr;
-{
-    if (fileIDPtr->type == FS_RMT_FILE_STREAM) {
-	fileIDPtr->type = FS_LCL_FILE_STREAM;
-    } else if (fileIDPtr->type != FS_LCL_FILE_STREAM) {
-	Sys_Panic(SYS_WARNING,
-		  "RemoteToLocalDomain: <%d,%d,%d> is %d, not a file stream.\n",
-		  fileIDPtr->serverID,  fileIDPtr->major,
-		  fileIDPtr->minor, fileIDPtr->type);
-    }
-}
-#endif notdef
