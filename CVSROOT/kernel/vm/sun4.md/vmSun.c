@@ -2944,42 +2944,7 @@ VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
 	 * page, by invalidating it we can guarantee that the reference and
 	 * modify information that we are returning will be valid until
 	 * our caller reenables faults on this page.
-	 * On the sun4 we must flush this page from the cache, but we must do
-	 * it in the context to which it was allocated.  If it's in a shared
-	 * context, we must do this in all the contexts.
 	 */
-	VmProcLink	*procLinkPtr;
-	Vm_Segment	*segPtr;
-	Vm_ProcInfo	*vmPtr;
-	VmMach_ProcData	*machPtr;
-	VmMach_Context	*contextPtr;
-	unsigned int	context;
-	unsigned int	oldContext;
-
-	segPtr = virtAddrPtr->segPtr;
-	if (segPtr != (Vm_Segment *) NIL) {
-	    LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
-		vmPtr = procLinkPtr->procPtr->vmPtr;
-		if (vmPtr != (Vm_ProcInfo *) NIL) {
-		    machPtr = vmPtr->machPtr;
-		    if (machPtr != (VmMach_ProcData *) NIL) {
-			contextPtr = machPtr->contextPtr;
-			if (contextPtr != (VmMach_Context *) NIL) {
-			    context = contextPtr->context;
-			    /* save old context */
-			    oldContext = VmMachGetContextReg();
-			    /* move to page's context */
-			    VmMachSetContextReg(context);
-			    /* flush page in its context */
-			    VmMachFlushPage(virtAddrPtr->page <<
-				    VMMACH_PAGE_SHIFT);
-			    /* back to old context */
-			    VmMachSetContextReg(oldContext);
-			}
-		    }
-		}
-	    }
-	}
 	PageInvalidate(virtAddrPtr, virtFrameNum, FALSE);
 
 	if (origMod && !*modPtr) {
@@ -3356,6 +3321,13 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     int				i;
     Vm_TracePTEChange		pteChange;
     Address			testVirtAddr;
+    VmProcLink      		*flushProcLinkPtr;
+    Vm_Segment      		*flushSegPtr;
+    Vm_ProcInfo     		*flushVmPtr;
+    VmMach_ProcData 		*flushMachPtr;
+    VmMach_Context  		*flushContextPtr;
+    unsigned int    		flushContext;
+    unsigned int    		oldContext;
 
     refModMap[virtPage] = 0;
     if (segDeletion) {
@@ -3389,10 +3361,39 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     /*
      * Invalidate the page table entry.  There's no need to flush the page if
      * the invalidation is due to segment deletion, since the whole segment
-     * will already have been flushed.
+     * will already have been flushed.  Flush the page in the context in which
+     * it was validated.
      */
     if (!segDeletion) {
-	VmMachFlushPage(testVirtAddr);
+	int	flushedP = FALSE;
+
+        flushSegPtr = virtAddrPtr->segPtr;
+        if (flushSegPtr != (Vm_Segment *) NIL) {
+            LIST_FORALL(flushSegPtr->procList, (List_Links *)flushProcLinkPtr) {
+                flushVmPtr = flushProcLinkPtr->procPtr->vmPtr;
+                if (flushVmPtr != (Vm_ProcInfo *) NIL) {
+                    flushMachPtr = flushVmPtr->machPtr;
+                    if (flushMachPtr != (VmMach_ProcData *) NIL) {
+                        flushContextPtr = flushMachPtr->contextPtr;
+                        if (flushContextPtr != (VmMach_Context *) NIL) {
+                            flushContext = flushContextPtr->context;
+                            /* save old context */
+                            oldContext = VmMachGetContextReg();
+                            /* move to page's context */
+                            VmMachSetContextReg(flushContext);
+                            /* flush page in its context */
+                            VmMachFlushPage(testVirtAddr);
+                            /* back to old context */
+                            VmMachSetContextReg(oldContext);
+			    flushedP = TRUE;
+                        }
+                    }
+                }
+            }
+        }
+	if (!flushedP) {
+	    VmMachFlushPage(testVirtAddr);
+	}
     }
     for (i = 0; i < VMMACH_CLUSTER_SIZE; i++, addr += VMMACH_PAGE_SIZE_INT) {
 	VmMachWritePTE(pmegNum, addr, (VmMachPTE)0);
