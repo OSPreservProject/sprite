@@ -408,7 +408,7 @@ FsClientScavenge()
  * ----------------------------------------------------------------------------
  *
  */
-ENTRY void
+void
 FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
     List_Links *clientList;	/* List of clients to a file. */
     int		clientID;	/* Client to delete. */
@@ -417,8 +417,6 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
     int		*execPtr;	/* Number of times clients is executing file.*/
 {
     register FsClientInfo 	*clientPtr;
-
-    LOCK_MONITOR;
 
     *refPtr = 0;
     *writePtr = 0;
@@ -438,6 +436,5 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
 	}
     }
 
-    UNLOCK_MONITOR;
 }
 
