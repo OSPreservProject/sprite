@@ -593,7 +593,7 @@ Fsdm_FileDescTrunc(handlePtr, size)
 	    if (fragsToFree > 0) {
 		FsdmFragFree(domainPtr, fragsToFree,
 		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
-		    (indexInfo.blockAddrPtr & FRAG_OFFSET_MASK)
+		    (*indexInfo.blockAddrPtr & FRAG_OFFSET_MASK)
 		     + firstFrag + 1);
 		descPtr->numKbytes -= fragsToFree;
 	    }
