@@ -883,7 +883,7 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
      */
 
     requestPtr = (NetSpriteArp *)gatherPtr->bufAddr;
-    arp.state = ARP_WANT_REPLY | ARP_IN_TIMEOUT_QUEUE;
+    arp.state = ARP_WANT_REPLY;
     arp.mutexPtr = mutexPtr;
     arp.spriteID = requestPtr->spriteHostID;
     if (command == NET_SPRITE_ARP_REQUEST) {
@@ -911,6 +911,7 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
 	}
 	(netEtherFuncs.output)(&etherHdr, gatherPtr, 1);
 
+	arp.state |= ARP_IN_TIMEOUT_QUEUE ;
 	arp.timeout.routine = Net_ArpTimeout;
 	arp.timeout.interval = 100 * timer_IntOneMillisecond;
 	arp.timeout.clientData = (ClientData)&arp;
