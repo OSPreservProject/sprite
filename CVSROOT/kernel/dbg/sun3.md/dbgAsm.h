@@ -31,9 +31,11 @@
 /*
  * The size of the hole to leave in the debuggers stack when it is called.
  * This hole is so that kdbx can play with the stack without ruining the 
- * the debuggers stack.  The size is in bytes.
+ * the debuggers stack.  The size is in bytes. The size must be a mutiple
+ * of 4 to allow the code in dbgTrap.s to conform to the gcc C calling
+ * sequence.
  */
 
-#define	DBG_STACK_HOLE	50
+#define	DBG_STACK_HOLE	52
 
 #endif _DBGASM
