@@ -1819,6 +1819,11 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	     */
 	    curHandlePtr->flags |= FS_FILE_DELETED;
 	    if (curHandlePtr->use.ref == 0) {
+		if (curDescPtr->fileType == FS_DIRECTORY) {
+		    fsStats.object.directory--;
+		} else {
+		    fsStats.object.files--;
+		}
 		/*
 		 * Tell other clients (only the last writer) that the
 		 * file has been deleted.  Call with our own hostID
@@ -1834,7 +1839,6 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 		 */
 		FsHandleRelease(curHandlePtr, TRUE);
 		FsHandleRemove(curHandlePtr);
-		fsStats.object.files--;
 		*curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
 	    } else {
 		FsHandleRelease(curHandlePtr, TRUE);
