@@ -477,12 +477,10 @@ endScan:
 		if (status == SUCCESS) {
 		    /*
 		     * Linking to an existing file.
-		     * This can only be a directory made in preparation
-		     * for a rename.
+		     * This can only be in preparation for a rename.
 		     */
-		    if (curHandlePtr->descPtr->fileType == FS_DIRECTORY &&
-			type == FS_DIRECTORY &&
-			(useFlags & FS_RENAME)) {
+		    if ((useFlags & FS_RENAME) &&
+			(curHandlePtr->descPtr->fileType == type)) {
 			/*
 			 * Try the delete, this fails on non-empty directories.
 			 */
