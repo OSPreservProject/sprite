@@ -184,8 +184,7 @@ LfsSegSlowGrowSummary(segPtr, dataBlocksNeeded, sumBytesNeeded)
      */
     sumBytesGrow = sumBytesNeeded - sumBytesLeft;
     sumBlocks = (sumBytesGrow <= 0) ? 0 : 
-		 LfsBytesToBlocks(lfsPtr, 
-			(sumBytesGrow + (lfsPtr->superBlock.hdr.blockSize-1)));
+			LfsBytesToBlocks(lfsPtr, sumBytesGrow);
     if ((blocksLeft - sumBlocks) < dataBlocksNeeded) {
 	return (char *) NIL;
     }
@@ -359,7 +358,7 @@ CreateEmptySegment(lfsPtr, logRangePtr)
     segPtr->numDataBlocks = 0;
     segPtr->summaryLimitPtr = segPtr->summaryPtr + LfsBlocksToBytes(lfsPtr, 1);
 
-
+    segPtr->activeBytes = 0;
     segPtr->curSummaryHdrPtr = (LfsSegSummaryHdr *) NIL;
     segPtr->curElement = -1;
     segPtr->curBlockOffset = 0;
@@ -711,73 +710,84 @@ SegmentCleanProc(lfsPtr, callInfoPtr)
     ReturnStatus	status;
     ClientData		clientDataArray[LFS_MAX_NUM_MODS];
     int			numWritten, numCleaned, totalSize, cleanBlocks;
+    Boolean		error;
     Time      		startTime, endTime;
 
-
-    for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
-	clientDataArray[i] = (ClientData) NIL;
-    }
-    Timer_GetTimeOfDay(&startTime, (int *) NIL, (Boolean *) NIL);
-    numSegsToClean = LfsGetSegsToClean(lfsPtr, 
-			lfsPtr->cleanBlocks, MAX_NUM_TO_CLEAN, segNums);
-
-    printf("Cleaning started\n", numSegsToClean);
-    /*
-     * Reading in segments to clean.
-     */
-    totalSize = 0;
-    numCacheBlocksUsed = 0;
-    for (i = 0; (i < numSegsToClean) && 
-		(numCacheBlocksUsed < lfsPtr->cleanBlocks);i++) { 
-	int size;
-	segPtr = CreateSegmentToClean(lfsPtr, segNums[i]);
-	size = 0;
-	(void) DoWriteCallBacks(SEG_CLEAN_IN, segPtr, 0, (char *) NIL, &size,
-			&numCacheBlocksUsed, clientDataArray);
-	DestorySegment(segPtr);
-	totalSize += size;
-    }
-    numCleaned = i;
-    /*
-     * Write out segments cleaned.
-     */
-    numWritten = 0;
-    LfsLockDomain(lfsPtr);
-    if (totalSize > 0) { 
-	full = TRUE;
-	while (full) {
-	    status = LfsGetCleanSeg(lfsPtr, &segLogRange, TRUE);
-	    if (status != SUCCESS) {
-		LfsError(lfsPtr, status, "Can't get clean segments to write\n");
-	    }
-	    segPtr = CreateEmptySegment(lfsPtr, &segLogRange);
-	    full = DoWriteCallBacks(SEG_CLEAN_OUT, segPtr, 0, (char *) NIL,
-			    (int *) NIL, (int *) NIL, clientDataArray);
-
-	    numWritten++;
-	    status = PushSegmentToLog(segPtr);
-	    if (status != SUCCESS) {
-		LfsError(lfsPtr, status, "Can't write segment to log\n");
-	    }
-	    InitFullSegment(segPtr);
-	    (void) DoWriteCallBacks(SEG_WRITEDONE, segPtr, 0,
-				    (char *) NIL, 
-				    (int *) NIL, (int *) NIL, clientDataArray);
-
-	    DestorySegment(segPtr);
+    do { 
+	for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
+	    clientDataArray[i] = (ClientData) NIL;
 	}
-    }
-
-
-    for (i = 0; i < numCleaned; i++) { 
-	LfsSetSegUsage(lfsPtr, segNums[i], 0);
-    }
+	Timer_GetTimeOfDay(&startTime, (int *) NIL, (Boolean *) NIL);
+	numSegsToClean = LfsGetSegsToClean(lfsPtr, 
+			    lfsPtr->cleanBlocks, MAX_NUM_TO_CLEAN, segNums);
+    
+	if (numSegsToClean < 2) {
+	    break;
+	}
+	printf("Cleaning started\n", numSegsToClean);
+	/*
+	 * Reading in segments to clean.
+	 */
+	totalSize = 0;
+	numCacheBlocksUsed = 0;
+	for (i = 0; (i < numSegsToClean) && 
+		    (numCacheBlocksUsed < lfsPtr->cleanBlocks);i++) { 
+	    int size;
+	    segPtr = CreateSegmentToClean(lfsPtr, segNums[i]);
+	    size = 0;
+	    error = DoWriteCallBacks(SEG_CLEAN_IN, segPtr, 0, (char *) NIL, 
+				&size,
+			    &numCacheBlocksUsed, clientDataArray);
+	    DestorySegment(segPtr);
+	    if (error) {
+		segNums[i] = -1;
+	    }
+	    totalSize += size;
+	}
+	numCleaned = i;
+	/*
+	 * Write out segments cleaned.
+	 */
+	numWritten = 0;
+	LfsLockDomain(lfsPtr);
+	if (totalSize > 0) { 
+	    full = TRUE;
+	    while (full) {
+		status = LfsGetCleanSeg(lfsPtr, &segLogRange, TRUE);
+		if (status != SUCCESS) {
+		    LfsError(lfsPtr, status, "Can't get clean segments to write\n");
+		}
+		segPtr = CreateEmptySegment(lfsPtr, &segLogRange);
+		full = DoWriteCallBacks(SEG_CLEAN_OUT, segPtr, 0, (char *) NIL,
+				(int *) NIL, (int *) NIL, clientDataArray);
+    
+		numWritten++;
+		status = PushSegmentToLog(segPtr);
+		if (status != SUCCESS) {
+		    LfsError(lfsPtr, status, "Can't write segment to log\n");
+		}
+		InitFullSegment(segPtr);
+		(void) DoWriteCallBacks(SEG_WRITEDONE, segPtr, 0,
+					(char *) NIL, 
+					(int *) NIL, (int *) NIL, clientDataArray);
+    
+		DestorySegment(segPtr);
+	    }
+	}
+    
+    
+	for (i = 0; i < numCleaned; i++) { 
+	    if (segNums[i] != -1) { 
+		LfsSetSegUsage(lfsPtr, segNums[i], 0);
+	    }
+	}
+	LfsUnLockDomain(lfsPtr, &lfsPtr->cleanSegments);
+	Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
+	printf("Cleaned %d segments in %d segments- time (%d,%d) -  (%d,%d)\n",
+	    numCleaned, numWritten, startTime.seconds, startTime.microseconds,
+	    endTime.seconds, endTime.microseconds);
+    } while (numSegsToClean > 2);
     lfsPtr->cleanActive = FALSE;
-    LfsUnLockDomain(lfsPtr, &lfsPtr->cleanSegments);
-    Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
-    printf("Cleaned %d segments in %d segments- time (%d,%d) -  (%d,%d)\n",
-	numCleaned, numWritten, startTime.seconds, startTime.microseconds,
-	endTime.seconds, endTime.microseconds);
 }
 
 #define	SUN4HACK
@@ -838,8 +848,7 @@ PushSegmentToLog(segPtr)
     printf("LfsSeg wrote segment %d - %d data blocks %d summary blocks\n",
 		segPtr->logRange.current, offset, sumBlocks);
     }
-    LfsSetSegUsage(lfsPtr, segPtr->logRange.current, 
-		    LfsBlocksToBytes(lfsPtr, segPtr->numDataBlocks) + sumBytes);
+    LfsSetSegUsage(lfsPtr, segPtr->logRange.current, segPtr->activeBytes);
     return status;
 
 }

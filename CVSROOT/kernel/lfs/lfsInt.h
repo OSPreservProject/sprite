@@ -85,7 +85,8 @@ typedef struct Lfs {
  * LfsSegNumToDiskAddress(lfsPtr, segNum) - Convert a segment number into
  *					    a disk address.
  */
-#define	LfsBytesToBlocks(lfsPtr, bytes)	((bytes)>>(lfsPtr)->blockSizeShift)
+#define	LfsBytesToBlocks(lfsPtr, bytes)	\
+    (((bytes) + (lfsPtr)->superBlock.hdr.blockSize-1)>>(lfsPtr)->blockSizeShift)
 #define	LfsBlocksToBytes(lfsPtr, blocks) ((blocks)<<(lfsPtr)->blockSizeShift)
 
 #define LfsSegNumToDiskAddress(lfsPtr, segNum) \
@@ -93,9 +94,11 @@ typedef struct Lfs {
  (LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize) * (segNum)))
 
 #define LfsBlockToSegmentNum(lfsPtr, blockNum) \
-		(((blockNum - (lfsPtr)->superBlock.hdr.logStartOffset) + \
-	LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize)-1)/ \
+		((blockNum - (lfsPtr)->superBlock.hdr.logStartOffset) / \
 	    LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize))
+
+#define LfsValidSegmentNum(lfsPtr, segNum) (((segNum) >= 0) && \
+		((segNum) < (lfsPtr)->usageArray.params.numberSegments))
 
 #define	LfsGetCurrentTimestamp(lfsPtr)	(++((lfsPtr)->checkPoint.timestamp))
 

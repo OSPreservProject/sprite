@@ -233,8 +233,7 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     trailerPtr->timestamp = checkPointHdrPtr->timestamp;
     trailerPtr->checkSum = 0;
 
-    blocks = LfsBytesToBlocks(lfsPtr, (checkPointHdrPtr->size+
-			lfsPtr->superBlock.hdr.blockSize-1));
+    blocks = LfsBytesToBlocks(lfsPtr, checkPointHdrPtr->size);
     status = LfsWriteBytes(lfsPtr,
 	lfsPtr->superBlock.hdr.checkPointOffset[lfsPtr->checkPoint.nextArea],
 	LfsBlocksToBytes(lfsPtr, blocks), (char *) checkPointHdrPtr);

@@ -389,6 +389,7 @@ AddBlockToSegment(smemPtr, blockNum, segPtr)
     LfsSegUsageFreeBlocks(segPtr->lfsPtr, (int)(smemPtr->params.blockSize), 1, 
 		smemPtr->blockIndexPtr + blockNum);
     smemPtr->blockIndexPtr[blockNum] = LfsSegDiskAddress(segPtr, bufferPtr);
+    segPtr->activeBytes += smemPtr->params.blockSize;
     return FALSE;
 }
 

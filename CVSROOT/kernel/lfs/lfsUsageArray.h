@@ -38,7 +38,7 @@ typedef struct LfsSegUsageParams {
     unsigned int numberSegments;/* The number of segments in the system. */
     int   minNumClean;    /* The min number of clean segment we allow the
 			   * system to reach before starting clean. */
-    int   minCleanBlocks; /* The min number of clean blocks we allow the
+    int   minFreeBlocks;  /* The min number of free blocks we allow the
 			   * system to reach. */
     LfsStableMemParams	 stableMem; /* Memory for locating the array. */
     char  padding[LFS_USAGE_ARRAY_PARAM_SIZE - sizeof(LfsStableMemParams)-8];

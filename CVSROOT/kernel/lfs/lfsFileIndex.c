@@ -111,6 +111,7 @@ LfsFile_SetIndex(handlePtr, blockNum, cantBlock, diskAddress)
     Lfs		    	*lfsPtr;
     Fsdm_Domain			*domainPtr;
     ReturnStatus		status;
+    int				segNo;
 
 
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
@@ -118,6 +119,12 @@ LfsFile_SetIndex(handlePtr, blockNum, cantBlock, diskAddress)
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     lfsPtr = LfsFromDomainPtr(domainPtr);
+    if (diskAddress != FSDM_NIL_INDEX) { 
+	segNo = LfsBlockToSegmentNum(lfsPtr, diskAddress);
+	if (!LfsValidSegmentNum(lfsPtr,segNo)) {
+	    panic("LfsFile_SetIndex: bad segment number.\n");
+	}
+    }
     status = AccessBlock(SET_ADDR, lfsPtr, handlePtr, blockNum, cantBlock,
 		&diskAddress);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
@@ -397,8 +404,8 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
 	    int fragSize;
 	    fragSize = handlePtr->descPtr->lastByte - 
 				(lastByteBlock * FS_BLOCK_SIZE);
-	    fragSize = LfsBlocksToBytes(lfsPtr, 
-			fragSize + lfsPtr->superBlock.hdr.blockSize - 1);
+	    fragSize = LfsBlocksToBytes(lfsPtr, LfsBytesToBlocks(lfsPtr, 
+							fragSize));
 
 	    (void) LfsSegUsageFreeBlocks(lfsPtr, fragSize, 1,
 			blockArray + (lastByteBlock - startBlockNum));

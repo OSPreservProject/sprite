@@ -83,6 +83,7 @@ typedef struct LfsSeg {
 			       * segment. */
     int	    numDataBlocks;    /* Number of data blocks in segment. */
     char    *summaryLimitPtr; /* The last byte of the summary region + 1.*/
+    int	    activeBytes;      /* Number of active bytes in segment. */
 	/*
 	 * Some operations of segments require scanning thru the summary 
 	 * and SegElements.  The following fields keep the start require

@@ -96,7 +96,15 @@ LfsSegUsageAllocateBytes(lfsPtr, numBytes)
        Lfs	*lfsPtr;	/* File system of interest. */
        int	numBytes;       /* Number of file system bytes needed. */
 {
-    return SUCCESS;
+    LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
+    LfsSegUsageCheckPoint *cp = &(usagePtr->checkPoint);
+    int blocks;
+
+    blocks = LfsBytesToBlocks(lfsPtr, numBytes);
+    if (cp->freeBlocks - blocks > usagePtr->params.minFreeBlocks) { 
+	return SUCCESS;
+    }
+    return FS_NO_DISK_SPACE;
 }
 
 /*
@@ -120,15 +128,50 @@ LfsSegUsageFreeBytes(lfsPtr,numBytes)
        Lfs	*lfsPtr;	/* File system of interest. */
        int	numBytes;       /* Number of file system bytes to free. */
 {
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsCheckRead --
+ *
+ *	Check to see if it is ok to read the specified byte range. 
+ *
+ * Results:
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+LfsCheckRead(lfsPtr,diskAddress, numBytes)
+       Lfs	*lfsPtr;	/* File system of interest. */
+       int    diskAddress;
+       int	numBytes;       
+{
     LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
     LfsSegUsageCheckPoint *cp = &(usagePtr->checkPoint);
-    int blocks;
+    register LfsSegUsageEntry *array, *s;
+	int segNo, segNo2;
 
-    blocks = LfsBytesToBlocks(lfsPtr, 
-			(numBytes + lfsPtr->superBlock.hdr.blockSize/2));
-    return (cp->freeBlocks - blocks > usagePtr->params.minCleanBlocks);
+    segNo = LfsBlockToSegmentNum(lfsPtr, diskAddress);
+    if ((segNo < 0) || (segNo >=  usagePtr->params.numberSegments)) {
+	panic("LfsOkToRead bad segment number %d\n", segNo);
+	return;
+    }
+    array = (LfsSegUsageEntry *)(usagePtr->stableMem.dataPtr);
+    s = array + segNo;
+    if (s->flags & LFS_SEG_USAGE_CLEAN) {
+	panic("LfsOkToRead read from clean segment\n");
+    }
+    segNo2 = LfsBlockToSegmentNum(lfsPtr,( diskAddress +
+				LfsBytesToBlocks(lfsPtr, numBytes)-1));
+    if (segNo2 != segNo) {
+	panic("LfsOkToRead read over segment boundary.\n");
+    }
+
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -157,9 +200,8 @@ LfsSetSegUsage(lfsPtr, segNumber, activeBytes)
     LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
     LfsSegUsageCheckPoint *cp = &(usagePtr->checkPoint);
     register LfsSegUsageEntry *array, *s;
-    int	 change;
 
-    if ((segNumber < 0) && (segNumber >= usagePtr->params.numberSegments)) {
+    if ((segNumber < 0) || (segNumber >= usagePtr->params.numberSegments)) {
 	panic("LfsSetSegUsage bad segment number %d\n", segNumber);
 	return;
     }
@@ -168,8 +210,7 @@ LfsSetSegUsage(lfsPtr, segNumber, activeBytes)
     s = array + segNumber;
 
     if (activeBytes == 0) {
-	cp->freeBlocks += LfsBytesToBlocks(lfsPtr, 
-			s->activeBytes + lfsPtr->superBlock.hdr.blockSize/2);
+	cp->freeBlocks += LfsBytesToBlocks(lfsPtr, s->activeBytes);
 	/*
 	 * Segment is being marked clean. Remove from dirty list if necessary.
 	 */
@@ -192,14 +233,8 @@ LfsSetSegUsage(lfsPtr, segNumber, activeBytes)
     if (activeBytes <= 0) {
 	activeBytes = 1;
     }
-    change = (s->activeBytes - activeBytes);
-    if (change < 0) {
-	cp->freeBlocks -= LfsBytesToBlocks(lfsPtr, 
-			((-change)  + lfsPtr->superBlock.hdr.blockSize/2));
-    } else { 
-	cp->freeBlocks += LfsBytesToBlocks(lfsPtr, 
-			(change + lfsPtr->superBlock.hdr.blockSize/2));
-    }
+    cp->freeBlocks += LfsBytesToBlocks(lfsPtr, s->activeBytes) - 
+				LfsBytesToBlocks(lfsPtr, activeBytes);
     if (s->flags & LFS_SEG_USAGE_CLEAN) {
 	RemoveFromList(array, cp->cleanLinks, segNumber);
 	s->flags &= ~LFS_SEG_USAGE_CLEAN;
@@ -553,7 +588,7 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
 		break;
 	}
 	s = array + segNum;
-	blocks =  LfsBytesToBlocks(lfsPtr, s->activeBytes + blockSize - 1);
+	blocks =  LfsBytesToBlocks(lfsPtr, s->activeBytes);
 	if (blocks + numBlocks > maxBlocks) {
 	    break;
 	}

@@ -103,6 +103,7 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
 	 * the number of fragments, and the memory buffer.
 	 */
 	int	numFrag = (numBytes - 1) / FS_FRAGMENT_SIZE + 1;
+	LfsCheckRead(lfsPtr, diskAddress, numBytes);
 	status = LfsReadBytes(lfsPtr, diskAddress, 
 			numFrag * FS_FRAGMENT_SIZE,  blockPtr->blockAddr);
     } else {

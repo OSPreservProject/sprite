@@ -368,6 +368,7 @@ Lfs_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
     }
     lfsPtr->dirty = TRUE;
     mapPtr->checkPoint.numAllocDesc++;
+    entryPtr->blockAddress = FSDM_NIL_INDEX;
     entryPtr->flags = LFS_DESC_MAP_ALLOCED;
     *fileNumberPtr = i;
     LfsStableMemMarkDirty(&(mapPtr->stableMem),(char *)entryPtr, sizeof(*entryPtr));
