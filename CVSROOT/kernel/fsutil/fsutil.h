@@ -414,4 +414,6 @@ extern  int	 	FsFindFileType();
 extern	char *		FsFileTypeToString();
 extern  void	 	FsRecordDeletionStats();
 
+#define mnew(type)	(type *)malloc(sizeof(type))
+
 #endif _FSINT
