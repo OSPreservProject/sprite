@@ -143,7 +143,7 @@ Proc_ExecEnv(fileName, argPtrArray, envPtrArray, debugMe)
 	return(status);
     }
 
-    String_Copy(fileName, execFileName);
+    (void) String_Copy(fileName, execFileName);
     Proc_MakeUnaccessible((Address) fileName, accessLength);
 
     /*
@@ -374,7 +374,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * Open the file that is to be exec'd.
      */
     filePtr = (Fs_Stream *) NIL;
-    status =  Fs_Open(fileName, (FS_EXECUTE | FS_FOLLOW), FS_FILE, 0,
+    status =  Fs_Open(fileName, (FS_READ | FS_EXECUTE | FS_FOLLOW), FS_FILE, 0,
 		      &filePtr);
     if (status != SUCCESS) {
 	filePtr = (Fs_Stream *) NIL;
@@ -737,7 +737,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * because there is an implicit enable interrupts when we return to user 
      * mode.
      */
-    Mach_ExecUserProc(procPtr, userStackPointer, entry);
+    Mach_ExecUserProc(procPtr, userStackPointer, (Address) entry);
     Sys_Panic(SYS_FATAL, "DoExec: Proc_RunUserProc returned.\n");
 
 execError:
@@ -754,11 +754,11 @@ execError:
 		 * If usedFile is TRUE then the file has already been closed
 		 * by Vm_SegmentDelete.
 		 */
-		Fs_Close(filePtr);
+		(void) Fs_Close(filePtr);
 	    }
 	} else {
 	    Vm_InitCode(filePtr, (Vm_Segment *) NIL, (Vm_ExecInfo *) NIL);
-	    Fs_Close(filePtr);
+	    (void) Fs_Close(filePtr);
 	}
     }
     if (userProc) {
@@ -823,7 +823,7 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
     int			i;
     ReturnStatus	status;
 
-    Fs_Close(*filePtrPtr);
+    (void) Fs_Close(*filePtrPtr);
 
     /*
      * Make sure the interpreter name and arguments are terminated by a 
@@ -873,8 +873,8 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
      * Open the interpreter to exec and read the a.out header.
      */
 
-    status =  Fs_Open(shellNamePtr, (FS_EXECUTE | FS_FOLLOW), FS_FILE,
-		      0, filePtrPtr);
+    status =  Fs_Open(shellNamePtr, (FS_READ | FS_EXECUTE | FS_FOLLOW),
+		      FS_FILE, 0, filePtrPtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -885,7 +885,7 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
 	status = PROC_BAD_AOUT_FORMAT;
     }
     if (status != SUCCESS) {
-	Fs_Close(*filePtrPtr);
+	(void) Fs_Close(*filePtrPtr);
     }
     return(status);
 }
@@ -963,7 +963,7 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
 			       numPages, pageOffset, procPtr);
 	if (segPtr == (Vm_Segment *) NIL) {
 	    Vm_InitCode(codeFilePtr, (Vm_Segment *) NIL, (Vm_ExecInfo *) NIL);
-	    Fs_Close(codeFilePtr);
+	    (void) Fs_Close(codeFilePtr);
 	    return(FALSE);
 	}
 	Vm_ValidatePages(segPtr, pageOffset, pageOffset + numPages - 1,
@@ -976,7 +976,7 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     }
 
     if (usedFile || notFound) {
-	Fs_StreamCopy(codeFilePtr, &heapFilePtr, procPtr->processID);
+	(void) Fs_StreamCopy(codeFilePtr, &heapFilePtr);
     } else {
 	heapFilePtr = codeFilePtr;
     }
@@ -988,7 +988,7 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
 			       execInfoPtr->heapPageOffset, procPtr);
     if (segPtr == (Vm_Segment *) NIL) {
 	Vm_SegmentDelete(*codeSegPtrPtr, procPtr);
-	Fs_Close(heapFilePtr);
+	(void) Fs_Close(heapFilePtr);
 	return(FALSE);
     }
     Vm_ValidatePages(segPtr, execInfoPtr->heapPageOffset,
