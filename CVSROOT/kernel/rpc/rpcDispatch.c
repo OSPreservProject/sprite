@@ -129,9 +129,9 @@ Rpc_Dispatch(packetPtr, packetLength)
 	 */
 	if (rpc_SpriteID == 0) {
 	    if (rpcHdrPtr->clientID != lastIgnoredClient) {
-		Sys_Panic(SYS_WARNING,
-	    "RpcDispatch: My ID is zero, dropping request from client %d\n",
-			rpcHdrPtr->clientID);
+/*		Sys_Panic(SYS_WARNING,
+	    "RpcDispatch: dropping request from client %d\n",
+			rpcHdrPtr->clientID); */
 		lastIgnoredClient = rpcHdrPtr->clientID;
 	    }
 	    return;
