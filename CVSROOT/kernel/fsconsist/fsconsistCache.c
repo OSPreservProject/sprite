@@ -51,9 +51,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Boolean	fsCacheDebug = FALSE;
 Boolean	fsClientCaching = TRUE;
-#ifdef REOPEN_DEBUG
-int	fsTraceReopenMinor = 4779;
-#endif /* REOPEN_DEBUG */
+#ifdef CONSIST_DEBUG
+int	fsTraceConsistMinor = 2249;
+#endif /* CONSIST_DEBUG */
 
 /*
  * Flags for the FsConsistInfo struct that's defined in fsInt.h
@@ -294,14 +294,15 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
 	}
     }
 done:
-#ifdef REOPEN_DEBUG
-    if (fsTraceReopenMinor == consistPtr->hdrPtr->fileID.minor) {
-	Sys_Printf("File <%d,%d> start consist w/ use 0x%x, %s\n",
+#ifdef CONSIST_DEBUG
+    if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
+	Sys_Printf("File <%d,%d> version %d start consist w/ use 0x%x, %s\n",
 		consistPtr->hdrPtr->fileID.major,
-		consistPtr->hdrPtr->fileID.minor, useFlags,
-		(cacheable ? "cacheable" : "not cacheable"));
+		consistPtr->hdrPtr->fileID.minor,
+		((FsLocalFileIOHandle *)consistPtr->hdrPtr)->cacheInfo.version,
+		useFlags, (cacheable ? "cacheable" : "not cacheable"));
     }
-#endif /* REOPEN_DEBUG */
+#endif /* CONSIST_DEBUG */
     /*
      * Now that we know the cacheable state of the file, check the use
      * by other clients, perhaps sending them cache consistency
@@ -316,14 +317,14 @@ done:
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
 	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
-#ifdef REOPEN_DEBUG
-	if (fsTraceReopenMinor == consistPtr->hdrPtr->fileID.minor) {
+#ifdef CONSIST_DEBUG
+	if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
 	    Sys_Printf("Client %d, %s, use %d write %d\n",
 		    clientPtr->clientID,
 		    (clientPtr->cached ? "caching" : "not caching"),
 		    clientPtr->use.ref, clientPtr->use.write);
 	}
-#endif /* REOPEN_DEBUG */
+#endif /* CONSIST_DEBUG */
 	statPtr->numClients++;
 	if (!clientPtr->cached) {
 	    /*
@@ -418,13 +419,13 @@ UpdateList(consistPtr, clientID, useFlags, cacheable,
     if (cacheable && (useFlags & FS_WRITE)) {
 	consistPtr->lastWriter = clientID;
     }
-#ifdef REOPEN_DEBUG
-    if (fsTraceReopenMinor == consistPtr->hdrPtr->fileID.minor) {
+#ifdef CONSIST_DEBUG
+    if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
 	Sys_Printf("UpdateList: client %d %s, last writer %d\n",
 	    clientID, (clientPtr->cached ? "caching" : "not caching"),
 	    consistPtr->lastWriter);
     }
-#endif /* REOPEN_DEBUG */
+#endif /* CONSIST_DEBUG */
     /*
      * Return a time stamp for the open.  This timestamp is used by clients
      * to catch races between the reply message for an open, and a cache
@@ -555,13 +556,13 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 		clientPtr->clientID);
 	}
     }
-#ifdef REOPEN_DEBUG
-    if (fsTraceReopenMinor == handlePtr->hdr.fileID.minor) {
+#ifdef notdef
+    if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
 	Sys_Printf("FsReopenClient %d, use %d write %d, %s, last writer %d\n",
 		clientID, use.ref, use.write, (found ? "found" : "not found"),
 		consistPtr->lastWriter);
     }
-#endif /* REOPEN_DEBUG */
+#endif /* notdef */
 
     if (!found) {
 	clientPtr = Mem_New(FsClientInfo);
@@ -918,6 +919,12 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
     LOCK_MONITOR;
 
     *wasCachedPtr = (consistPtr->lastWriter == clientID);
+#ifdef CONSIST_DEBUG
+    if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
+	Sys_Printf("ConsistClose: closing client %d, lastwriter %d\n",
+		    clientID, consistPtr->lastWriter);
+    }
+#endif CONSIST_DEBUG
     if (!FsIOClientClose(&consistPtr->clientList, clientID, flags,
 			 wasCachedPtr)) {
 	UNLOCK_MONITOR;
@@ -934,6 +941,11 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 		    clientID, consistPtr->lastWriter,
 		    (*wasCachedPtr) ? "was cached" : "wasn't cached");
 	} else {
+#ifdef CONSIST_DEBUG
+	    if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
+		Sys_Printf("ConsistClose: erasing %d lastwriter\n", clientID);
+	    }
+#endif CONSIST_DEBUG
 	    consistPtr->lastWriter = -1;
 	}
     }
@@ -1021,6 +1033,13 @@ FsDeleteLastWriter(consistPtr, clientID)
 	if (clientPtr->clientID == clientID) {
 	    if (clientPtr->use.ref == 0 &&
 		consistPtr->lastWriter == clientID) {
+#ifdef CONSIST_DEBUG
+		if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
+		    Sys_Printf("FsDeleteLastWriter <%d,%d> host %d\n",
+			consistPtr->hdrPtr->fileID.major,
+			consistPtr->hdrPtr->fileID.minor, clientID);
+		}
+#endif CONSIST_DEBUG
 		List_Remove((List_Links  *) clientPtr);
 		Mem_Free((Address) clientPtr);
 		consistPtr->lastWriter = -1;
@@ -1396,6 +1415,8 @@ ClientCommand(consistPtr, clientPtr, flags)
      */
     consistRpc.flags = flags;
     consistRpc.openTimeStamp = clientPtr->openTimeStamp;
+    consistRpc.version =
+	((FsLocalFileIOHandle *)consistPtr->hdrPtr)->cacheInfo.version;
 
     storage.requestParamPtr = (Address) &consistRpc;
     storage.requestParamSize = sizeof(ConsistMsg);
@@ -1438,17 +1459,30 @@ ClientCommand(consistPtr, clientPtr, flags)
 	    break;
 	} else {
 	    numRefusals++;
-	    if (consistRpc.flags & FS_DEBUG_CONSIST) {
-		Sys_Panic(SYS_FATAL,
-		    "Client %d dropped too many %s requests for <%d,%d>\n",
+	    if (numRefusals > 30) {
+		Sys_Panic(SYS_WARNING,
+		    "Client %d dropped 30 %s requests for \"%s\" <%d,%d>\n",
 			    clientPtr->clientID, ConsistType(flags),
+			    FsHandleName(consistPtr->hdrPtr),
 			    consistRpc.fileID.major, consistRpc.fileID.minor);
-	    } else if (numRefusals > 30) {
-		    consistRpc.flags |= FS_DEBUG_CONSIST;
+		consistRpc.flags |= FS_DEBUG_CONSIST;
+		numRefusals = 0;
+	    } else {
+		consistRpc.flags &= ~FS_DEBUG_CONSIST;
 	    }
 	}
     }
     LOCK_MONITOR;
+#ifdef CONSIST_DEBUG
+    if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
+	Sys_Printf(
+	"ClientCommand, %s msg to client %d file \"%s\" <%d,%d> version %d status %x\n",
+	    ConsistType(flags), clientPtr->clientID,
+	    FsHandleName(consistPtr->hdrPtr),
+	    consistRpc.fileID.major, consistRpc.fileID.minor,
+	    consistRpc.version, status);
+    }
+#endif /* CONSIST_DEBUG */
 
     if (status != SUCCESS) {
 	/*
@@ -1595,8 +1629,8 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	consistPtr->args = *consistArgPtr;
 	Proc_CallFunc(ProcessConsist, (ClientData) consistPtr, 0);
     } else if (consistArgPtr->flags & FS_DEBUG_CONSIST) {
-	Sys_Panic(SYS_FATAL,
-	    "Fs_RpcConsist: <%d,%d> Too Many %s msgs dropped: %s\n",
+	Sys_Panic(SYS_WARNING,
+	    "Fs_RpcConsist: <%d,%d> Lots of %s msgs dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
@@ -1662,6 +1696,16 @@ ProcessConsist(data, callInfoPtr)
      */
     reply.status = FsCacheConsist(&handlePtr->cacheInfo, consistPtr->args.flags,
 			    &reply.cachedAttr);
+#ifdef CONSIST_DEBUG
+    if (fsTraceConsistMinor == handlePtr->rmt.hdr.fileID.minor) {
+	Sys_Printf(
+	"ProcessConsist, %s msg for file \"%s\" <%d,%d> version %d status %x\n",
+	    ConsistType(consistPtr->args.flags), 
+	    FsHandleName(handlePtr),
+	    handlePtr->rmt.hdr.fileID.major, handlePtr->rmt.hdr.fileID.minor,
+	    consistPtr->args.version, reply.status);
+    }
+#endif /* CONSIST_DEBUG */
 
     FS_CACHE_DEBUG_PRINT2("Returning: mod (%d), acc (%d),",
 		       reply.cachedAttr.modifyTime,
@@ -1798,6 +1842,17 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	UNLOCK_MONITOR;
 	return;
     }
+#ifdef CONSIST_DEBUG
+    if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
+	Sys_Printf(
+	"ConsistReply, %s msg for file \"%s\" <%d,%d> writer %d status %x\n",
+	    ConsistType(msgPtr->flags), 
+	    FsHandleName(consistPtr->hdrPtr),
+	    consistPtr->hdrPtr->fileID.major, consistPtr->hdrPtr->fileID.minor,
+	    consistPtr->lastWriter,
+	    replyPtr->status);
+    }
+#endif /* CONSIST_DEBUG */
     if (replyPtr->status != SUCCESS) {
 	Sys_Panic(SYS_WARNING,
 	    "ProcessConsist: %s request failed <%x> file \"%s\" <%d,%d>\n",
@@ -1807,7 +1862,8 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 		consistPtr->hdrPtr->fileID.minor);
 	consistPtr->flags |= FS_CONSIST_ERROR;
     } else {
-	if (msgPtr->flags & FS_WRITE_BACK_BLOCKS) {
+	if ((msgPtr->flags & FS_WRITE_BACK_BLOCKS) &&
+	    (consistPtr->lastWriter == clientID)) {
 	    /*
 	     * We just got the most recent blocks so we don't care who the
 	     * last writer is anymore.
