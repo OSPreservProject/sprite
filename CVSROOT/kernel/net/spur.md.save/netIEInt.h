@@ -28,6 +28,8 @@
 #ifndef _NETIEINT
 #define _NETIEINT
 
+#define	NET_ETHER_BAD_ALIGNMENT
+
 #include "netEther.h"
 #include "net.h"
 #include "netInt.h"
@@ -51,6 +53,7 @@
  *				If a piece of a message is smaller than this
  *				then it gets copied to other storage and
  *				made the minimum size.
+ * NET_IE_MAX_CMD_BLOCK_SIZE	Maximum size of IE command block.
  * NET_IE_NULL_RECV_BUFF_DESC 	The value that is used by the controller to 
  *				indicate that a header points to no data.
  * NET_IE_NUM_XMIT_ELEMENTS 	The number of elements to preallocate for the 
@@ -68,10 +71,11 @@
 #define	NET_IE_RECV_BUFFER_SIZE		NET_ETHER_MAX_BYTES
 #define	NET_IE_XMIT_BUFFER_SIZE		NET_ETHER_MAX_BYTES
 #define	NET_IE_MIN_DMA_SIZE		12
+#define	NET_IE_MAX_CMD_BLOCK_SIZE	64
 #define	NET_IE_NULL_RECV_BUFF_DESC	0xffff
 #define	NET_IE_NUM_XMIT_ELEMENTS	32
-#define	NET_IE_SLOT_ID			0xA
-#define	NET_IE_SLOT_SPACE_ADDR		(0xf0 | NET_IE_SLOT_ID) << 24)
+#define	NET_IE_SLOT_ID			0xe
+#define	NET_IE_SLOT_SPACE_ADDR		((0xf0 | NET_IE_SLOT_ID) << 24)
 #define	NET_IE_SLOT_SPACE_SIZE		0x1000000
 
 /*
@@ -100,7 +104,7 @@
  * NET_IE_SLOT_OFFSET		Change a slot offset in to a SPUR address.
  */
 
-#define NET_IE_CHIP_RESET  {netIEState.configReg->reset = 1;}
+#define NET_IE_CHIP_RESET  {*netIEState.configAndFlagsReg = NET_IE_CONFIG_RESET;}
 
 #define NET_IE_CHANNEL_ATTENTION \
 	{ \
@@ -116,16 +120,17 @@
 	}
 
 #define	NET_IE_CHECK_SCB_CMD_ACCEPT(scbPtr) \
-    if (*(short *) &(scbPtr->cmdWord) != 0) { \
+    if (*(((short *) scbPtr)+1) != 0) { \
 	NetIECheckSCBCmdAccept(scbPtr); \
     }
 #define	NET_IE_SLOT_OFFSET(offset)	(netIEState.deviceBase + (offset))
 /*
- * System configuration pointer.  Must be at 0xfs007ff6 in NuBus address space.
+ * System configuration pointer.  Must be at 0xfs007ff4 in NuBus address space.
  * where s is the slot number of the controller board.
  */
 
 typedef struct {
+    int	padding			:16;	/* Padding for alignment. */
     int	busWidth		:1;	/* Bus width.  0 => 16 , 1 => 8 bits. */
     int				:15;	/* not defined */
     int				:16;	/* not defined */
@@ -152,11 +157,31 @@ typedef struct {
 					 */
 } NetIEIntSysConfPtr;
 
+
 /*
- * The system control block status.
+ * Define the macros to Check and acknowledge the status of the chip.
+ *
+ * NET_IE_CHECK_STATUS	Extract the 4 status bits out of the scb.
+ * NET_IE_ACK		Set the bits in the command word of the scb that ack 
+ *			the status bits.
+ * NET_IE_TRANSMITTED	Return true if a transit command finished.
+ * NET_IE_RECEIVED	Return true if a packet was received.
+ */
+
+#define	NET_IE_CHECK_STATUS(scbPtr) ((*(short *) (scbPtr)) & 0xF000)
+#define	NET_IE_ACK(scbPtr, status) ((*(((short *) (scbPtr))+1)) |= status)
+#define	NET_IE_TRANSMITTED(status) ((status) & 0xA000)
+#define	NET_IE_RECEIVED(status) ((status) & 0x5000)
+
+/*
+ * The system control block.
  */
 
 typedef struct {
+
+    /*
+     * The system control block status.
+     */
     unsigned char 	            :4;	/* Must be zero */
     unsigned char recvUnitStatus    :3;	/* Receive unit status */
     unsigned char 		    :1;	/* Must be zero */
@@ -171,13 +196,10 @@ typedef struct {
     unsigned char cmdDone	    :1;	/* A command which has its interrupt
 					   bit set completed. */
 
-} NetIESCBStatus;
+    /* 
+     * The system control block command word.
+     */
 
-/* 
- * The system control block command word.
- */
-
-typedef struct {
     unsigned char 		     :4;  /* Unused. */
     unsigned char recvUnitCmd        :3;  /* The command for the receive unit */
     unsigned char reset		     :1;  /* Reset the chip. */
@@ -192,30 +214,6 @@ typedef struct {
 					     the status word. */
     unsigned char ackCmdDone         :1;  /* Ack the command completed bit in
 					     the status word. */
-} NetIESCBCommand;
-
-/*
- * Define the macros to Check and acknowledge the status of the chip.
- *
- * NET_IE_CHECK_STATUS	Extract the 4 status bits out of the scb status word.
- * NET_IE_ACK		Set the bits in the scb command word that acknowledge 
- *			the status bits in the scb status word.
- * NET_IE_TRANSMITTED	Return true if a transit command finished.
- * NET_IE_RECEIVED	Return true if a packet was received.
- */
-
-#define	NET_IE_CHECK_STATUS(scbStatus) ((*(short *) &(scbStatus)) & 0xF000)
-#define	NET_IE_ACK(scbCommand, status) ((*(short *) &(scbCommand)) |= status)
-#define	NET_IE_TRANSMITTED(status) status & 0xA000
-#define	NET_IE_RECEIVED(status) status & 0x5000
-
-/*
- * The system control block.
- */
-
-typedef struct {
-    NetIESCBStatus	statusWord;
-    NetIESCBCommand	cmdWord;
     unsigned short	cmdListOffset;
     unsigned short      recvFrameAreaOffset;
     unsigned short      crcErrors;		/* Count of crc errors. */
@@ -297,20 +295,25 @@ typedef struct {
 #define	NET_IE_DIAGNOSE		7
 
 /*
- * The nop command block.
- */
-
-typedef struct {
-    NetIECommandBlock	cmdBlock;
-} NetIENOPCB;
-
-/*
  * The individual address setup command block.
  */
 
 typedef	struct {
-    NetIECommandBlock	cmdBlock;	/* The command block. */
-    Net_EtherAddress	etherAddress;	/* The ethernet address. */
+    unsigned int 		:12;	/* Bits of status. */
+    unsigned char cmdAborted	:1;	/* The command aborted. */
+    unsigned char cmdOK		:1;	/* Command completed successfully. */
+    unsigned char cmdBusy	:1;	/* Command busy. */
+    unsigned char cmdDone	:1;	/* Command done. */
+    unsigned char cmdNumber	:3;	/* Command number. */
+    unsigned int		:10;	/* Unused. */
+    unsigned char interrupt	:1;	/* Interrupt when the command 
+					   completes. */
+    unsigned char suspend	:1;	/* Suspend when command completes. */
+    unsigned char endOfList	:1;	/* The end of the command list. */
+    unsigned short nextCmdBlock;	/* The offset of the next command 
+					   block. */
+    /* NetIECommandBlock	cmdBlock; */	/* The command block. */
+    Net_EtherAddress	etherAddress;	/* The ethernet address. */ 
 } NetIEIASetupCB;
 
 /*
@@ -318,7 +321,20 @@ typedef	struct {
  */
 
 typedef struct {
-    NetIECommandBlock	cmdBlock;	/* The command block. */
+    unsigned int 		:12;	/* Bits of status. */
+    unsigned char cmdAborted	:1;	/* The command aborted. */
+    unsigned char cmdOK		:1;	/* Command completed successfully. */
+    unsigned char cmdBusy	:1;	/* Command busy. */
+    unsigned char cmdDone	:1;	/* Command done. */
+    unsigned char cmdNumber	:3;	/* Command number. */
+    unsigned int		:10;	/* Unused. */
+    unsigned char interrupt	:1;	/* Interrupt when the command 
+					   completes. */
+    unsigned char suspend	:1;	/* Suspend when command completes. */
+    unsigned char endOfList	:1;	/* The end of the command list. */
+    unsigned short nextCmdBlock;	/* The offset of the next command 
+					   block. */
+    /* NetIECommandBlock	cmdBlock; */	/* The command block. */
 
     unsigned char byteCount	:4;	/* Number of configuration bytes. */
     unsigned char		:4;	/* Unused. */
@@ -395,8 +411,11 @@ typedef struct {
     unsigned short nextCmdBlock;	/* The offset of the next command 
 					   block */
     unsigned short bufDescOffset;	/* The offset of the buffer descriptor*/
-    Net_EtherAddress  destEtherAddr;	/* The ethernet address of the 
-					   destination machine. */
+    Net_EtherAddress  destEtherAddr; 	/* The ethernet address of the 
+				         * destination machine. Would
+					 * like to use this but struct
+					 * messes up alignment of 
+					 * fields. */
     unsigned short	  type;		/* Ethernet packet type field. */
 } NetIETransmitCB;
 
@@ -444,12 +463,9 @@ typedef struct NetIERecvFrameDesc {
     unsigned short nextRFD	:16;	/* Next receive frame descriptor. */
     unsigned short recvBufferDesc:16;	/* Offset of the first receive buffer
 					   descriptor. */
-
-    Net_EtherAddress destAddr;		/* Destination ethernet address. */
-    Net_EtherAddress srcAddr;		/* Source ethernet address. */
-    unsigned short 	 type;		/* Ethernet packet type. */
+    Net_EtherHdr	etherHdr;	/* Ethernet header of packet. */
     struct NetIERecvFrameDesc *realNextRFD; /* The address of the next
-					       receive frame descriptor. */
+					     *  receive frame descriptor. */
 } NetIERecvFrameDesc;
 
 /*
@@ -481,33 +497,34 @@ typedef struct NetIERecvBufDesc {
 } NetIERecvBufDesc;
 
 /*
- * The TI ethernet board configuration register.
+ * The TI ethernet board configuration and flags register.
  */
 
-typedef struct {
-    int		reset		:1;	/* Reset the board. */
-    int		intrEnable	:1;	/* Enable bus master (events). */
-    int		faultLED	:1;	/* Fault LED control -  1 = on. */
-    int				:5;	/* reserved by system. */
-    int		loopback	:1;	/* Serial interface loopback control. */
-    int				:7;	/* unused */
-} NetTIConfigRegister;
+typedef unsigned int NetTIConfigAndFlagsReg;
 
 /*
- * Flag register bits.
+ * Definition of bits of config and flag register.
  */
-typedef struct {
-    int		busError	:1;	/* NuBus error occurred while posting
-					 * event. */
-    int		holdLED 	:1;	/* Memory handshake LED on */
-    int		rtsLED		:1;	/* Request to send  LED on */
-    int		crsLED  	:1;	/* Carrier sensed LED on */
-    int		cdtLED  	:1;	/* Collision dectected LED on */
-    int		memorySize	:1;	/* Memory size. 
-					 * 0 = 8 kilobytes, 1 = 32 kilobytes */
-    int				:10;	/* spare bits */
-} NetTIFlagsRegister;
 
+/*
+ * Config bits.
+ */
+
+#define	NET_IE_CONFIG_RESET		0x1	/* Reset board. */
+#define	NET_IE_CONFIG_INTR_ENABLE	0x2	/* Enable interrupts. */
+#define	NET_IE_CONFIG_LED_ON		0x4	/* Set LED on. */
+#define	NET_LE_CONFIG_LOOPBACK		0x100	/* Set lookback mode. */
+
+/*
+ * Flag bits.
+ */
+#define	NET_IE_FLAG_BUS_ERROR		0x100 	/* NuBus error occurred while 
+						 * posting event. */
+#define	NET_IE_FLAG_HOLD_LED_ON		0x200	/* Memory handshake LED on */
+#define	NET_IE_FLAG_RTS_LED_ON		0x400	/* Request to send  LED on */
+#define	NET_IE_FLAG_CRS_LED_ON		0x800	/* Carrier sensed LED on */
+#define	NET_IE_FLAG_CDT_LED_ON		0x1000	/* Collision dectected LED on*/
+#define	NET_IE_FLAG_32K_MEMORY		0x2000	/* Memory size = 32k. */
 
 
 /*
@@ -544,9 +561,10 @@ typedef struct {
     Boolean		running;	/* Is the chip currently active. */
     Boolean		mapped;		/* Is the device mapped. */
     int			*channelAttnReg;/* Channel Attention register */
-    NetTIConfigRegister	*configReg;	/* Board's config  register.  */ 	
-    NetTIFlagsRegister	*flagsReg;	/* Board's Flag  register.  */ 	
+    NetTIConfigAndFlagsReg 
+		*configAndFlagsReg; 	/* Board's config  and flag register.*/
     Net_EtherAddress	etherAddress;	/* The ethernet address.  */
+
 } NetIEState;
 
 /*
@@ -641,14 +659,14 @@ extern Net_ScatterGather *curScatGathPtr;
 /*
  * Board's ethernet address.
  */
-#define	IEROM_ETHERNET_ADDRESS	0xfffee00
+#define	IEROM_ETHERNET_ADDRESS	0xfffee0
 
 /*
  * Offset of registers that aren't stored in the ROM.
  */
 #define	CHANNEL_ATTN_REG_OFFSET	0x8000
 #define	EVENT_ADDR_REG_OFFSET	0xA000
-#define SYS_CONF_PTR_OFFSET	0x7ff6
+#define SYS_CONF_PTR_OFFSET	0x7ff4
 
 /*
  * General routines.

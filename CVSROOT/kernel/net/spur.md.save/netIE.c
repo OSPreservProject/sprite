@@ -120,25 +120,25 @@ ReadConfigROM()
 		(ROM_GET_BYTE(IEROM_CONFIG_REG_ADDR+4) << 8) | 
 		(ROM_GET_BYTE(IEROM_CONFIG_REG_ADDR+8) << 16);
 
-    netIEState.configReg = (NetTIConfigRegister *) NET_IE_SLOT_OFFSET(offset);
-
-    offset = ROM_GET_BYTE(IEROM_FLAGS_REG_ADDR) | 
-		(ROM_GET_BYTE(IEROM_FLAGS_REG_ADDR+4) << 8) | 
-		(ROM_GET_BYTE(IEROM_FLAGS_REG_ADDR+8) << 16);
-
-
-    netIEState.flagsReg = (NetTIFlagsRegister *) NET_IE_SLOT_OFFSET(offset);
+    netIEState.configAndFlagsReg =
+		(NetTIConfigAndFlagsReg *) NET_IE_SLOT_OFFSET(offset);
 
     /*
      * Get our ethernet address from the ROM.
      */
 
-    netIEState.etherAddress.byte1 = ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS);
-    netIEState.etherAddress.byte2 = ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+4);
-    netIEState.etherAddress.byte3 = ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+8);
-    netIEState.etherAddress.byte4 = ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+12);
-    netIEState.etherAddress.byte5 = ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+16);
-    netIEState.etherAddress.byte6 = ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+20);
+    NET_ETHER_ADDR_BYTE1(netIEState.etherAddress) =
+			 ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS);
+    NET_ETHER_ADDR_BYTE2(netIEState.etherAddress) =
+			 ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+4);
+    NET_ETHER_ADDR_BYTE3(netIEState.etherAddress) =
+			ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+8);
+    NET_ETHER_ADDR_BYTE4(netIEState.etherAddress) =
+			ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+12);
+    NET_ETHER_ADDR_BYTE5(netIEState.etherAddress) =
+			ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+16);
+    NET_ETHER_ADDR_BYTE6(netIEState.etherAddress) =
+			ROM_GET_BYTE(IEROM_ETHERNET_ADDRESS+20);
 
     /*
      * Setup the fixed location registers.  
@@ -154,8 +154,8 @@ ReadConfigROM()
      * Finally, check to see that the board is configured with enought 
      * memory to support the algorithm used.
      */
-     
-    if (netIEState.flagsReg->memorySize != 1) {
+
+    if (*netIEState.configAndFlagsReg & NET_IE_FLAG_32K_MEMORY) {
 	Sys_Panic(SYS_WARNING, "Intel ethernet: Bad Memory size bit.\n");
 	return (FAILURE);
     }
@@ -235,12 +235,12 @@ NetIEInit(name, number, slotId)
      * On the TI Board, the ROM contains the ethernet address.
      */
     Sys_Printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
-	      netIEState.etherAddress.byte1 & 0xff,
-	      netIEState.etherAddress.byte2 & 0xff,
-	      netIEState.etherAddress.byte3 & 0xff,
-	      netIEState.etherAddress.byte4 & 0xff,
-	      netIEState.etherAddress.byte5 & 0xff,
-	      netIEState.etherAddress.byte6 & 0xff);
+	      NET_ETHER_ADDR_BYTE1(netIEState.etherAddress) & 0xff,
+	      NET_ETHER_ADDR_BYTE2(netIEState.etherAddress) & 0xff,
+	      NET_ETHER_ADDR_BYTE3(netIEState.etherAddress) & 0xff,
+	      NET_ETHER_ADDR_BYTE4(netIEState.etherAddress) & 0xff,
+	      NET_ETHER_ADDR_BYTE5(netIEState.etherAddress) & 0xff,
+	      NET_ETHER_ADDR_BYTE6(netIEState.etherAddress) & 0xff);
     /*
      * Reset the world.
      */
@@ -286,8 +286,8 @@ NetIEDefaultConfig()
     NetIEConfigureCB	*confCBPtr;
 
     confCBPtr = (NetIEConfigureCB *) netIEState.cmdBlockPtr;
-    Byte_Zero(sizeof(NetIEConfigureCB), (Address) confCBPtr);
-    confCBPtr->cmdBlock.cmdNumber = NET_IE_CONFIG;
+    bzero((char *) confCBPtr, sizeof(NetIEConfigureCB));
+    confCBPtr->cmdNumber = NET_IE_CONFIG;
     confCBPtr->byteCount = 12;
     confCBPtr->fifoLimit = 12;
     confCBPtr->preamble = 2;
@@ -374,7 +374,7 @@ NetIEReset()
 	 * Initialize the system configuration pointer.
 	 */
 
-	Byte_Zero(sizeof(NetIESysConfPtr), (Address) netIEState.sysConfPtr);
+	bzero((char *) netIEState.sysConfPtr,sizeof(NetIESysConfPtr));
 	netIEState.sysConfPtr->intSysConfPtr = 
 		NetIEAddrFromSPURAddr((Address) netIEState.intSysConfPtr);
 
@@ -382,7 +382,7 @@ NetIEReset()
 	 * Initialize the intermediate system configuration pointer.
 	 */
 
-	Byte_Zero(sizeof(NetIEIntSysConfPtr),(Address) netIEState.intSysConfPtr);
+	bzero((char *) netIEState.intSysConfPtr,sizeof(NetIEIntSysConfPtr));
 	netIEState.intSysConfPtr->busy = 1;
 	netIEState.intSysConfPtr->base = 
 			NetIEAddrFromSPURAddr(netIEState.memBase);
@@ -393,7 +393,7 @@ NetIEReset()
 	 * Initialize the system control block.
 	 */
 
-	Byte_Zero(sizeof(NetIESCB), (Address) netIEState.scbPtr);
+	bzero( (char *) netIEState.scbPtr, sizeof(NetIESCB));
 
 
 	/* 
@@ -406,9 +406,10 @@ NetIEReset()
 	 * Ensure that that the chip gets the intermediate initialization
 	 * stuff and that the scb is updated.
 	 */
-	
+
+
 	NET_IE_DELAY(!netIEState.intSysConfPtr->busy);
-	NET_IE_DELAY(netIEState.scbPtr->statusWord.cmdUnitNotActive);
+	NET_IE_DELAY(netIEState.scbPtr->cmdUnitNotActive);
 
 
 	/*
@@ -416,10 +417,10 @@ NetIEReset()
 	 */
 
 	if (netIEState.intSysConfPtr->busy || 
-	    !netIEState.scbPtr->statusWord.cmdUnitNotActive) {
+	    !netIEState.scbPtr->cmdUnitNotActive) {
 	    Sys_Panic(SYS_WARNING, "Could not initialize Intel chip.\n");
 	}
-	if (netIEState.scbPtr->statusWord.cmdUnitStatus == NET_IE_CUS_IDLE) {
+	if (netIEState.scbPtr->cmdUnitStatus == NET_IE_CUS_IDLE) {
 	    break;
 	}
 
@@ -432,7 +433,7 @@ NetIEReset()
      */
 
     netIEState.cmdBlockPtr = 
-		(NetIECommandBlock *) NetIEMemAlloc(sizeof(NetIECommandBlock));
+		(NetIECommandBlock *) NetIEMemAlloc(NET_IE_MAX_CMD_BLOCK_SIZE);
     if (netIEState.cmdBlockPtr == (NetIECommandBlock *) NIL) {
 	Sys_Panic(SYS_FATAL, "NetIE: No memory for the command block.\n");
     }
@@ -444,7 +445,7 @@ NetIEReset()
      */
 
     diagCmdPtr = netIEState.cmdBlockPtr;
-    Byte_Zero(sizeof(*diagCmdPtr), (Address) diagCmdPtr);
+    bzero((Address) diagCmdPtr,sizeof(*diagCmdPtr));
     diagCmdPtr->cmdNumber = NET_IE_DIAGNOSE;
     NetIEExecCommand(diagCmdPtr);
     if (!diagCmdPtr->cmdOK) {
@@ -456,9 +457,10 @@ NetIEReset()
      */
 
     addressCommandPtr = (NetIEIASetupCB *) netIEState.cmdBlockPtr;
-    Byte_Zero(sizeof(NetIEIASetupCB), (Address) addressCommandPtr);
-    addressCommandPtr->cmdBlock.cmdNumber = NET_IE_IA_SETUP;
-    addressCommandPtr->etherAddress = netIEState.etherAddress;
+    bzero( (char *) addressCommandPtr,sizeof(NetIEIASetupCB));
+    addressCommandPtr->cmdNumber = NET_IE_IA_SETUP;
+    NET_ETHER_ADDR_COPY(netIEState.etherAddress,
+			addressCommandPtr->etherAddress);
     NetIEExecCommand((NetIECommandBlock *) addressCommandPtr);
 
     /*
@@ -468,11 +470,13 @@ NetIEReset()
     NetIEDefaultConfig();
 
     /*
-     * Allocate space for all of the receive buffers.
+     * Allocate space for all of the receive buffers. The buffers are 
+     * allocated on an odd short word boundry so that packet data (after
+     * the ethernet header) will start on a long word boundry.
      */
 
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
-	netIERecvBuffers[i] = NetIEMemAlloc(NET_IE_RECV_BUFFER_SIZE);
+	netIERecvBuffers[i] = (NetIEMemAlloc(NET_IE_RECV_BUFFER_SIZE+2))+2;
     }
     /*
      * Set up the receive queues.
@@ -496,18 +500,18 @@ NetIEReset()
 	    Sys_Panic(SYS_FATAL,
 		"Intel Ethernet: Can not allocate interrupt number.\n");
 	}
-	eventRegPtr = (unsigned int *)NET_IF_SLOT_OFFSET(EVENT_ADDR_REG_OFFSET);
+	eventRegPtr = (unsigned int *)NET_IE_SLOT_OFFSET(EVENT_ADDR_REG_OFFSET);
 	*eventRegPtr = 0xf0000000 | (mySlotId << 24) | (intrNum << 2);
     }
 
     /*
      * Enable interrupts and get out of loop back mode.  Make sure that don't
      * get out of loop back mode before because the Intel is supposed to
-     * be unpredictable until we initialize things.
+     * be unpredictable until we initialize things. Turn LED off to symbolize
+     * start of board.
      */
 
-    netIEState.configReg->intrEnable = 1;
-    netIEState.configReg->loopback = 0;
+    *netIEState.configAndFlagsReg = NET_IE_CONFIG_INTR_ENABLE;
 
     /*
      * Initialize the transmit queues and start transmitting if anything ready
@@ -579,7 +583,7 @@ NetIEIntr(polling)
     scbPtr = netIEState.scbPtr;
 
 
-    status = NET_IE_CHECK_STATUS(scbPtr->statusWord);
+    status = NET_IE_CHECK_STATUS(scbPtr);
     if (status == 0) {
 	if (!polling) {
 	    Sys_Printf("Intel: Spurious interrupt (2)\n");
@@ -591,7 +595,7 @@ NetIEIntr(polling)
      * Go ahead and ack the events that got us here.
      */
     NET_IE_CHECK_SCB_CMD_ACCEPT(scbPtr);
-    NET_IE_ACK(scbPtr->cmdWord, status);
+    NET_IE_ACK(scbPtr, status);
     NET_IE_CHANNEL_ATTENTION;
 
     /*
@@ -608,3 +612,33 @@ NetIEIntr(polling)
 	NetIEXmitDone();
     }
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetEtherAddress --
+ *
+ *	Return the ethernet address of the machine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Mach_GetEtherAddress(etherAddrPtr)
+    Net_EtherAddress 	*etherAddrPtr;		/* Where to place address. */
+{
+    if (!netIEState.running) { 
+	Sys_Panic(SYS_FATAL,"Mach_GetEtherAddress called before Net_Init()\n");
+    }
+    NET_ETHER_ADDR_COPY(netIEState.etherAddress, *etherAddrPtr);
+
+}
+
+
+

@@ -156,10 +156,10 @@ NetIERecvUnitInit()
      * it is idle.  Then we start it up.
      */
 
-    if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_IDLE) {
+    if (scbPtr->recvUnitStatus != NET_IE_RUS_IDLE) {
 	Sys_Printf("Intel: The receive unit is not idle!!!\n");
 
-	scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_ABORT;
+	scbPtr->recvUnitCmd = NET_IE_RUC_ABORT;
 
 	NET_IE_CHANNEL_ATTENTION;
 	NetIECheckSCBCmdAccept(scbPtr);
@@ -167,14 +167,14 @@ NetIERecvUnitInit()
 
     scbPtr->recvFrameAreaOffset = 
 	   NetIEOffsetFromSPURAddr((Address) netIEState.recvFrDscHeadPtr);
-    scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
+    scbPtr->recvUnitCmd = NET_IE_RUC_START;
 
     NET_IE_CHANNEL_ATTENTION;
     NetIECheckSCBCmdAccept(scbPtr);
 
-    NET_IE_DELAY(scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY);
+    NET_IE_DELAY(scbPtr->recvUnitStatus != NET_IE_RUS_READY);
 
-    if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY) {
+    if (scbPtr->recvUnitStatus != NET_IE_RUS_READY) {
 	Sys_Printf("Intel: Receive unit never became ready.\n");
     }
 }
@@ -244,15 +244,13 @@ NetIERecvProcess(dropPackets)
 	     */
 
 	    etherHdrPtr = (Net_EtherHdr *) recvBufDescPtr->realBufAddr;
-	    etherHdrPtr->source = recvFrDescPtr->srcAddr;
-	    etherHdrPtr->destination = recvFrDescPtr->destAddr;
-	    etherHdrPtr->type = recvFrDescPtr->type;
+	    NET_ETHER_HDR_COPY(recvFrDescPtr->etherHdr, *etherHdrPtr); 
 
 	    /*
 	     * Call higher level protocol to process the packet.
 	     */
 	    if (!dropPackets) {
-		Net_Input((Address)etherHdrPtr, size);
+		Net_Input(recvBufDescPtr->realBufAddr, size);
 	    }
 
 	    /*
@@ -315,7 +313,7 @@ NetIERecvProcess(dropPackets)
      * See if the receive unit is ready.  If it is, then return.
      */
 
-    if (netIEStatePtr->scbPtr->statusWord.recvUnitStatus == NET_IE_RUS_READY) {
+    if (netIEStatePtr->scbPtr->recvUnitStatus == NET_IE_RUS_READY) {
 	return;
     }
 
@@ -332,6 +330,6 @@ Sys_Printf("Reinit recv unit\n");
     netIEStatePtr->scbPtr->recvFrameAreaOffset =
 	NetIEOffsetFromSPURAddr((Address) netIEStatePtr->recvFrDscHeadPtr);
     NET_IE_CHECK_SCB_CMD_ACCEPT(netIEStatePtr->scbPtr);
-    netIEStatePtr->scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
+    netIEStatePtr->scbPtr->recvUnitCmd = NET_IE_RUC_START;
     NET_IE_CHANNEL_ATTENTION;
 }

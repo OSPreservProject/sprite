@@ -47,11 +47,14 @@ NetIECheckSCBCmdAccept(scbPtr)
     NetIESCB	*scbPtr;
 {
     int	 i;
+    unsigned short *cmdWordPtr;
+
+     cmdWordPtr = ((unsigned short *) scbPtr)+1;
 
     for (i = 0; i < 5; i++) {
-	NET_IE_DELAY((*(short *) &(scbPtr->cmdWord) == 0));
+	NET_IE_DELAY((*cmdWordPtr == 0));
 
-	if (*(short *) &(scbPtr->cmdWord) != 0) {
+	if ( *cmdWordPtr != 0) {
 	    Sys_Panic(SYS_WARNING, "Intel: scb command not accepted\n");
 	} else {
 	    return;
@@ -95,7 +98,7 @@ NetIEExecCommand(cmdPtr)
      * Start the command unit.
      */
 
-    netIEState.scbPtr->cmdWord.cmdUnitCmd = NET_IE_CUC_START;
+    netIEState.scbPtr->cmdUnitCmd = NET_IE_CUC_START;
     NET_IE_CHANNEL_ATTENTION;
     NetIECheckSCBCmdAccept(netIEState.scbPtr);
 
@@ -103,14 +106,14 @@ NetIEExecCommand(cmdPtr)
      * Wait for the command to complete.
      */
 
-    NET_IE_DELAY(cmdPtr->cmdDone && netIEState.scbPtr->statusWord.cmdDone &&
-	         netIEState.scbPtr->statusWord.cmdUnitNotActive);
+    NET_IE_DELAY(cmdPtr->cmdDone && netIEState.scbPtr->cmdDone &&
+	         netIEState.scbPtr->cmdUnitNotActive);
     if (!cmdPtr->cmdDone ||
-        !netIEState.scbPtr->statusWord.cmdDone ||
-	!netIEState.scbPtr->statusWord.cmdUnitNotActive) {
+        !netIEState.scbPtr->cmdDone ||
+	!netIEState.scbPtr->cmdUnitNotActive) {
 	Sys_Panic(SYS_FATAL, "Intel: Could not execute a simple command: %d %d %d\n", 
-			cmdPtr->cmdDone, netIEState.scbPtr->statusWord.cmdDone,
-			netIEState.scbPtr->statusWord.cmdUnitNotActive);
+			cmdPtr->cmdDone, netIEState.scbPtr->cmdDone,
+			netIEState.scbPtr->cmdUnitNotActive);
 	return;
     }
 
@@ -118,8 +121,8 @@ NetIEExecCommand(cmdPtr)
      * Ack the the command completion and the command unit going not active.
      */
 
-    netIEState.scbPtr->cmdWord.ackCmdDone = 1;
-    netIEState.scbPtr->cmdWord.ackCmdUnitNotActive = 1;
+    netIEState.scbPtr->ackCmdDone = 1;
+    netIEState.scbPtr->ackCmdUnitNotActive = 1;
 
     NET_IE_CHANNEL_ATTENTION;
     NetIECheckSCBCmdAccept(netIEState.scbPtr);

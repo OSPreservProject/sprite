@@ -23,7 +23,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netInt.h"
 #include "sys.h"
 #include "list.h"
-#include "byte.h"
 
 #include "sync.h"
 
@@ -78,6 +77,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     int					length;
     int					totalLength;
 
+	static int	printLength;
+
     netIEState.transmitting = TRUE;
     curScatGathPtr = scatterGatherPtr;
 
@@ -93,7 +94,6 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     for (i = 0; i < scatterGatherLength; i++) {
             length += scatterGatherPtr[i].length;
     }
-
     totalLength = length + sizeof(Net_EtherHdr);
     /*
      * Copy all of the pieces of the packet into the xmit buffer.
@@ -109,13 +109,16 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	xmitBufDescPtr->count = NET_ETHER_MIN_BYTES;
     }
 
+	printLength =  xmitBufDescPtr->count;
     /*
      * Finish off the packet.
      */
 
     xmitBufDescPtr->eof = 1;
-    xmitCBPtr->destEtherAddr = etherHdrPtr->destination;
-    xmitCBPtr->type = etherHdrPtr->type;
+    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+				xmitCBPtr->destEtherAddr);
+    xmitCBPtr->type = NET_ETHER_HDR_TYPE(*etherHdrPtr);
+
 
     /*
      * Append the command onto the command queue.
@@ -132,7 +135,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      */
 
     NET_IE_CHECK_SCB_CMD_ACCEPT(netIEState.scbPtr);
-    netIEState.scbPtr->cmdWord.cmdUnitCmd = NET_IE_CUC_START;
+    netIEState.scbPtr->cmdUnitCmd = NET_IE_CUC_START;
     NET_IE_CHANNEL_ATTENTION;
 }
 
@@ -180,7 +183,7 @@ NetIEXmitInit()
     if (xmitBufDescPtr == (NetIETransmitBufDesc *) NIL) {
 	Sys_Panic(SYS_FATAL, "Intel: No memory for the xmit buffers.\n");
     }
-
+    xmitBufAddr = xmitBufDescPtr;
     xmitCBPtr->bufDescOffset = 
 		    NetIEOffsetFromSPURAddr((Address) xmitBufDescPtr);
 
@@ -321,7 +324,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * and call the higher level routine.
      */
 
-    if (NET_ETHER_COMPARE(netIEState.etherAddress, etherHdrPtr->destination)) {
+    if (NET_ETHER_COMPARE(netIEState.etherAddress, *etherHdrPtr)) {
 	int i, length;
 
         length = sizeof(Net_EtherHdr);
@@ -332,10 +335,11 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
         if (length <= NET_ETHER_MAX_BYTES) {
 	    register Address bufPtr;
 
-	    etherHdrPtr->source = netIEState.etherAddress;
+	    NET_ETHER_ADDR_COPY(netIEState.etherAddress,
+				NET_ETHER_HDR_SOURCE(*etherHdrPtr));
 
 	    bufPtr = (Address)loopBackBuffer;
-	    Byte_Copy(sizeof(Net_EtherHdr), (Address)etherHdrPtr, bufPtr);
+	    bcopy((char *)*etherHdrPtr, (char *) bufPtr,sizeof(Net_EtherHdr));
 	    bufPtr += sizeof(Net_EtherHdr);
             Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
 
@@ -428,7 +432,7 @@ NetIEXmitRestart()
      */
     if (!List_IsEmpty(netIEState.xmitList)) {
 	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
-	OutputPacket(xmitElementPtr->etherHdrPtr,
+	    OutputPacket(xmitElementPtr->etherHdrPtr,
 		     xmitElementPtr->scatterGatherPtr,
 		     xmitElementPtr->scatterGatherLength);
 	List_Move((List_Links *) xmitElementPtr, 

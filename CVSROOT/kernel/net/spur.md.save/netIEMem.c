@@ -26,10 +26,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 
 /*
- * First available address of buffer RAM.
+ * First and last available address of buffer RAM.
  */
 
 static	Address	memAddr;	
+static	Address	memEndAddr;	
 
 /*
  *----------------------------------------------------------------------
@@ -95,6 +96,7 @@ NetIEMemInit()
 	Sys_Printf("Initializing Intel memory.\n");
     }
     memAddr =  netIEState.memBase;
+    memEndAddr = memAddr + NET_IE_FREE_MEM_SIZE; 
 }
 
 
@@ -129,7 +131,7 @@ NetIEMemAlloc(size)
     if (size & 0x3) {
 	size = (size & ~0x3) + 4;
     }
-    if ((int) (memAddr + size) > NET_IE_FREE_MEM_SIZE) { 
+    if ((memAddr + size) > memEndAddr) { 
 	return((Address) NIL);
     }
     addr = memAddr;
