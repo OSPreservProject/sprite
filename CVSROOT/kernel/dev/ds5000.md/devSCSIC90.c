@@ -20,7 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
-#include "devAddrs.h"
 #include "scsiC90.h"
 #include "mach.h"
 #include "dev.h"
@@ -34,7 +33,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "bstring.h"
 #include "devSCSIC90.h"
 #include "vm.h"
-#include "/sprite/src/kernel/vm/vmInt.h"
 
 #include "dbg.h"
 
@@ -221,8 +219,27 @@ typedef	struct	CtrlRegs {
 #define	CR_SET_ATN	0x1A	/* Set ATN. */
 #define	CR_RESET_ATN	0x1B	/* Reset ATN. */
 
-#define	CONFIG1_REPORT	0x40	/* Disable reporting of interrupts from the
+#define C1_SLOW		0x80	/* Slow cable mode. */
+#define	C1_REPORT	0x40	/* Disable reporting of interrupts from the
 				 * scsi bus reset command. */
+#define C1_PARITY_TEST	0x20	/* Enable parity test feature. */
+#define C1_PARITY	0x10	/* Enable parity checking. */
+#define C1_TEST		0x08	/* Enable chip test mode. */
+#define C1_BUS_ID	0x03	/* Bus ID. */
+
+#define C2_RESERVE_FIFO 0x80	/* Reserve fifo byte. */
+#define C2_PHASE_LATCH	0x40	/* Enable phase latch. */
+#define C2_BYTE_CONTROL	0x20	/* Enable byte control. */
+#define C2_DREQ_HIGH	0x10	/* Set the DREQ output to high impedence. */
+#define C2_SCSI2	0x08	/* Enable SCSI2 stuff. */
+#define C2_BAD_PARITY	0x04	/* Abort if bad parity detected. */
+#define C2_REG_PARITY	0x02	/* No idea. (see the documentation). */
+#define C2_DMA_PARITY	0x01	/* Enable parity on DMA transfers. */
+
+#define C3_RESIDUAL	0x04	/* Save residual byte. */
+#define C3_ALT_DMA	0x02	/* Alternate DMA mode. */
+#define C3_THRESHOLD8	0x01	/* Don't DMA until there are 8 bytes. */
+
 /*
  * Bits in the 53C90 Status register (read only).
  * This register contains flags that indicate certain events have occurred.
@@ -301,34 +318,15 @@ typedef	struct	CtrlRegs {
 #define	IR_SLCT_ATN	0x02	/* Selected with ATN. */
 #define	IR_SLCT		0x01	/* Selected. */
 
-/* Board offsets of the dma and scsi registers accessed directly by driver */
-typedef struct DMARegs {
-    unsigned int	ctrl;	/* Control/status register. */
-    unsigned int	addr;	/* Address register. */
-    unsigned int	count;	/* Byte count register. */
-    unsigned int	diag;	/* Diagnostic register. */
-} DMARegs;
+/*
+ * The address register for DMA transfers.
+ */
+typedef int DMARegister;
 
 /*
- * This already seems to be mapped at this virtual address.  Should I remap it?
+ * If this bit is set in the DMA Register then the transfer is a write.
  */
-volatile DMARegs	*dmaRegsPtr = (volatile DMARegs *) 0xffd14000;
-
-/* Format of DMA Control/Status register */
-#define	DMA_DEV_ID_MASK		0xF0000000	/* Device ID bits. */
-#define	DMA_TERM_CNT		0x00004000	/* Byte counter has expired. */
-#define	DMA_EN_CNT		0x00002000	/* Enable byte count reg. */
-#define	DMA_BYTE_ADDR		0x00001800	/* Next byte number. */
-#define	DMA_REQ_PEND		0x00000400	/* Request pending. */
-#define	DMA_EN_DMA		0x00000200	/* Enable DMA. */
-#define	DMA_READ		0x00000100	/* 0==WRITE. */
-#define	DMA_RESET		0x00000080	/* Like hardware reset. */
-#define	DMA_DRAIN		0x00000040	/* Drain remaining pack regs. */
-#define	DMA_FLUSH		0x00000020	/* Force pack cnt, err, to 0. */
-#define	DMA_INT_EN		0x00000010	/* Enable interrupts. */
-#define	DMA_PCK_CNT		0x00000006	/* # of bytes in pack reg. */
-#define	DMA_ERR_PEND		0x00000002	/* Error pending. */
-#define	DMA_INT_PEND		0x00000001	/* Interrupt pending. */
+#define DMA_WRITE	0x80000000
 
 /*
  * The transfer size is limited to 16 bits since the scsi ctrl transfer
@@ -403,6 +401,7 @@ typedef struct Device {
 struct Controller {
     volatile CtrlRegs	*regsPtr;	/* Pointer to the registers of
 					 * this controller. */
+    volatile DMARegister *dmaRegPtr;	/* Pointer to DMA register. */
     int		dmaState;		/* DMA state for this controller,
 					 * defined below. */
     char	*name;			/* String for error message for this
@@ -425,6 +424,8 @@ struct Controller {
 					 * [targetID][LUN].  NIL if device not
 					 * attached yet. Zero if device
 					 * conflicts with HBA address. */
+    char	*buffer;		/* SCSI buffer address. */
+    int		slot;			/* Slot that this controller is in. */
 };
 
 /*
@@ -450,10 +451,9 @@ struct Controller {
 
 /*
  * MAX_SCSIC90_CTRLS - Maximum number of SCSIC90 controllers attached to the
- *		     system. Right now I set this to 1, since we'll just
- *		     use the default built-in on-board slot.
+ *		     system. 
  */
-#define	MAX_SCSIC90_CTRLS	1
+#define	MAX_SCSIC90_CTRLS	4
 
 static Controller *Controllers[MAX_SCSIC90_CTRLS];
 /*
@@ -461,6 +461,11 @@ static Controller *Controllers[MAX_SCSIC90_CTRLS];
  */
 static int numSCSIC90Controllers = 0;
 
+
+#define REG_OFFSET	0
+#define	DMA_OFFSET	0x40000
+#define BUFFER_OFFSET	0x80000
+#define ROM_OFFSET	0xc0000
 /*
  * Forward declarations.  
  */
@@ -482,70 +487,6 @@ static void             StartDMA _ARGS_ ((Controller *ctrlPtr));
  */
 unsigned char	interruptReg;
 
-
-/*
- *----------------------------------------------------------------------
- *
- * ProbeOnBoard --
- *
- *	Test for the existence for the interface.
- *
- * Results:
- *	TRUE if the host adaptor was found.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static Boolean
-ProbeOnBoard(address)
-    int address;			/* Alledged controller address */
-{
-    ReturnStatus	status;
-    volatile CtrlRegs	*regsPtr = (volatile CtrlRegs *) address;
-    int			x;
-
-    /*
-     * Touch the device's status register.  Should I read something else?
-     */
-    status = Mach_Probe(sizeof (regsPtr->scsi_ctrl.read.status),
-	    (Address) &(regsPtr->scsi_ctrl.read.status), (Address) &x);
-    if (status != SUCCESS) {
-	if (devSCSIC90Debug > 3) {
-	    printf("Onboard SCSIC90 not found at address 0x%x\n",address);
-	}
-        return (FALSE);
-    }
-    if (devSCSIC90Debug > 3) {
-	printf("Onboard SCSIC90 found\n");
-    }
-    return(TRUE);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ProbeSBus --
- *
- *	Probe memory for a host adaptor on the sbus.
- *
- * Results:
- *	TRUE if the host adaptor was found, but right now we only handle
- *	the on-board scsi controller.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static Boolean
-ProbeSBus(address)
-    int address;			/* Alledged controller address */
-{
-    /* We don't do this yet. */
-    return (FALSE);
-}
 
 
 /*
@@ -569,79 +510,24 @@ Reset(ctrlPtr)
 {
     volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
 
+    if (devSCSIC90Debug > 3) {
+	printf("Reset\n");
+    }
     /* Reset scsi controller. */
     regsPtr->scsi_ctrl.write.command = CR_RESET_CHIP;
-    MACH_DELAY(200);
     regsPtr->scsi_ctrl.write.command = CR_DMA | CR_NOP;
-    MACH_DELAY(200);
     ctrlPtr->dmaState = DMA_INACTIVE;
-    dmaControllerActive = 0;		/* Allow dma reset to happen. */
-    Dev_ScsiResetDMA();
-    MACH_DELAY(200);
-
-    regsPtr->scsi_ctrl.write.config1 |= CONFIG1_REPORT;
-    MACH_DELAY(200);
+    /*
+     * Don't interrupt when the SCSI bus is reset. Set our bus ID to 7.
+     */
+    regsPtr->scsi_ctrl.write.config1 |= C1_REPORT | 0x7;
     regsPtr->scsi_ctrl.write.command = CR_RESET_BUS;
-    MACH_DELAY(800);
-
     /*
      * We initialize configuration, clock conv, synch offset, etc, in
      * SendCommand.
      * Parity is disabled by hardware reset or software.
      * We never send ID with ATN, so reselection shouldn't ever happen?
      */
-
-    return;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Dev_ScsiResetDMA --
- *
- *	Reset the DMA controller.  The SCSI module owns the dma controller,
- *	so it gets to decide when it may be reset or not.  The network
- *	module also calls us to try to reset it.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	DMA chip reset.
- *
- *----------------------------------------------------------------------
- */
-void
-Dev_ScsiResetDMA()
-{
-    Controller *ctrlPtr;
-    static	int	whichTime = 0;
-
-    if (whichTime > 1) {
-	return;
-    }
-
-    whichTime++;
-
-    if (dmaControllerActive > 0 && devSCSIC90Debug > 4) {
-	printf("Wanted to reset dma controller, but it was active: %d\n",
-		dmaControllerActive);
-	return;
-    }
-
-    /* Reset dma controller. */
-    dmaRegsPtr->ctrl = DMA_RESET;
-    MACH_DELAY(200);
-    /* Reset the dma reset bit. */
-    dmaRegsPtr->ctrl = dmaRegsPtr->ctrl & ~(DMA_RESET);
-    /* Allow dma interrupts. */
-    dmaRegsPtr->ctrl = DMA_INT_EN;
-    MACH_DELAY(200);
-
-    if (devSCSIC90Debug > 4) {
-	printf("Returning from Reset command.\n");
-    }
 
     return;
 }
@@ -695,6 +581,7 @@ SendCommand(devPtr, scsiCmdPtr)
 		devPtr->handle.locationName, scsiCmdPtr->buffer, size,
 		(ctrlPtr->dmaState == DMA_INACTIVE) ? "not active" :
 		((ctrlPtr->dmaState == DMA_SEND) ? "send" : "receive"));
+	printf("TargetID = %d\n", devPtr->targetID);
     }
 
     /*
@@ -709,15 +596,17 @@ SendCommand(devPtr, scsiCmdPtr)
     ctrlPtr->residual = size;			/* No bytes transfered yet. */
     ctrlPtr->commandStatus = 0;			/* No status yet. */
     /* Load select/reselect bus ID register with target ID. */
+    regsPtr->scsi_ctrl.write.destID = 0x7;
     regsPtr->scsi_ctrl.write.destID = devPtr->targetID;
     /* Load select/reselect timeout period. */
     regsPtr->scsi_ctrl.write.timeout = SELECT_TIMEOUT;
     /* Zero value for asynchronous transfer. */
     regsPtr->scsi_ctrl.write.synchOffset = 0;
     /* Set the clock conversion register. */
-    regsPtr->scsi_ctrl.write.clockConv = 4;
+    regsPtr->scsi_ctrl.write.clockConv = 5;
     /* Synchronous transfer period register not used for async xfer. */
 
+    Mach_EmptyWriteBuffer();
     /*
      * Selection without attention since we don't do disconnect/reconnect yet.
      */
@@ -738,7 +627,7 @@ SendCommand(devPtr, scsiCmdPtr)
 	regsPtr->scsi_ctrl.write.FIFO = *charPtr;
 	charPtr++;
     }
-	
+    Mach_EmptyWriteBuffer();
     /* Issue selection without attention command. */
     regsPtr->scsi_ctrl.write.command = CR_SLCT_NATN;
 
@@ -792,21 +681,15 @@ StartDMA(ctrlPtr)
 	return;
     }
     regsPtr = ctrlPtr->regsPtr;
-    /*
-     * A DMA cannot cross a 16Mbyte boundary using this dma controller.
-     * We could remap pages if it does, but since the file system won't
-     * do this, we just panic for now.
-     */
-    if (((unsigned) ctrlPtr->scsiCmdPtr->buffer & 0xff000000) !=
-	    (((unsigned) ctrlPtr->scsiCmdPtr->buffer + size - 1) &
-	    0xff000000)) {
-	panic("DMA crosses 16Mbyte boundary.\n");
-    }
     if (ctrlPtr->scsiCmdPtr->buffer == (Address) NIL) {
 	panic("DMA buffer was NIL before dma.\n");
     }
-    dmaRegsPtr->addr = (unsigned int) ctrlPtr->scsiCmdPtr->buffer;
-
+    if (ctrlPtr->dmaState == DMA_RECEIVE) {
+	*ctrlPtr->dmaRegPtr = 0;
+    } else {
+	bcopy((char *) ctrlPtr->scsiCmdPtr->buffer, ctrlPtr->buffer, size);
+	*ctrlPtr->dmaRegPtr = (unsigned int) DMA_WRITE;
+    }
     /*
      * Put transfer size in counter.  If this is 16k (max size), this puts
      * a 0 in the counter, which is the correct thing to do.
@@ -817,12 +700,6 @@ StartDMA(ctrlPtr)
     regsPtr->scsi_ctrl.write.xCntLo = (unsigned char) (size & 0x00ff);
     /* Load count into counter by writing a DMA NOP command on C90 only */
     regsPtr->scsi_ctrl.write.command = CR_DMA | CR_NOP;
-    /* Enable DMA */
-    if (ctrlPtr->dmaState == DMA_RECEIVE) {
-	dmaRegsPtr->ctrl = DMA_EN_DMA | DMA_READ | DMA_INT_EN;
-    } else {
-	dmaRegsPtr->ctrl = DMA_EN_DMA | DMA_INT_EN;
-    }
     /* Start scsi command. */
     regsPtr->scsi_ctrl.write.command = CR_DMA | CR_XFER_INFO;
 
@@ -867,8 +744,6 @@ PrintRegs(regsPtr)
     printf("config2: 0x%x, config3: 0x%x\n",
 	    regsPtr->scsi_ctrl.read.config2,
 	    regsPtr->scsi_ctrl.read.config3);
-    printf("DMA controller - ctrl: 0x%x, addr: 0x%x.\n", dmaRegsPtr->ctrl,
-	    dmaRegsPtr->addr);
 
     return;
 }
@@ -1100,7 +975,6 @@ DevSCSIC90Intr(clientDataArg)
     ClientData		clientData;
     char		statusReg;
     int                 i;
-    unsigned int	dmaReg;
     int			numBytes;
     unsigned char	message = 0;
     ReturnStatus	status = SUCCESS;
@@ -1117,7 +991,6 @@ DevSCSIC90Intr(clientDataArg)
     /* Read registers */
     sequenceReg = regsPtr->scsi_ctrl.read.sequence;
     interruptReg = regsPtr->scsi_ctrl.read.interrupt;
-    dmaReg = dmaRegsPtr->ctrl;
     phase = statusReg & SR_PHASE;
     sequenceReg &= SEQ_MASK;
 
@@ -1131,7 +1004,7 @@ DevSCSIC90Intr(clientDataArg)
      */
 if ((statusReg & SR_INT) == 0 &&
     (dmaReg & (DMA_INT_PEND | DMA_ERR_PEND)) == 0) {
-	printf("Is this spurious? interruptReg 0x%x, statusReg 0x%x, dmaCtrl 0x%x.\n",
+	printf("Is this spurious? interruptReg 0x%x, statusReg 0x%x, dmaReg 0x%x.\n",
 		interruptReg, statusReg, dmaReg);
 
 }
@@ -1147,8 +1020,8 @@ if ((statusReg & SR_INT) == 0 &&
 
     if (devSCSIC90Debug > 4) {
 	printf(
-	"interruptReg 0x%x, statusReg 0x%x, sequenceReg 0x%x, dmaCtrl 0x%x.\n",
-		interruptReg, statusReg, sequenceReg, dmaReg);
+	"interruptReg 0x%x, statusReg 0x%x, sequenceReg 0x%x\n",
+		interruptReg, statusReg, sequenceReg);
     }
     if (devSCSIC90Debug > 3) {
 	printf("LastPhase was ");
@@ -1197,11 +1070,6 @@ if ((statusReg & SR_INT) == 0 &&
 	status = FAILURE;
     }
     if (interruptReg & IR_RESLCT) {
-    if (dmaReg & DMA_ERR_PEND) {
-	printf("%s: DMA error.\n",
-		devPtr->handle.locationName);
-	status = FAILURE;
-    }
     /* Where did we come from? */
     switch (devPtr->lastPhase) {
     switch (ctrlPtr->lastPhase) {
@@ -1219,16 +1087,8 @@ if ((statusReg & SR_INT) == 0 &&
 	}
     case PHASE_DATA_IN:
 #ifdef sun4c
-	/* Drain remaining bytes in pack register to memory. */
-	dmaRegsPtr->ctrl |= DMA_DRAIN;
-	/*
-	 * Fall through.
-	 */
 	status = PerformDataXfer(ctrlPtr, interruptReg, statusReg);
-	dmaControllerActive--;
-	MACH_DELAY(100);
 	ctrlPtr->residual = regsPtr->scsi_ctrl.read.xCntLo;
-	MACH_DELAY(100);
 	ctrlPtr->residual += (regsPtr->scsi_ctrl.read.xCntHi << 8);
 	/*
 	 * If the transfer was the maximum, 16K bytes, a 0 in the counter
@@ -1248,7 +1108,8 @@ if ((statusReg & SR_INT) == 0 &&
 	    int		amountXfered;
 
 	    amountXfered = ctrlPtr->scsiCmdPtr->bufferLen - ctrlPtr->residual;
-	    VmMach_FlushByteRange(ctrlPtr->scsiCmdPtr->buffer, amountXfered);
+	    bcopy((char *) ctrlPtr->buffer, ctrlPtr->scsiCmdPtr->buffer,
+		amountXfered);
 	}
 	if (! (statusReg & SR_TC)) {
 	    /* Transfer count didn't go to zero, or this bit would be set. */
@@ -1357,7 +1218,6 @@ if ((statusReg & SR_INT) == 0 &&
 	 * larger, but we don't handle that yet. XXX
 	 */
 #ifdef sun4c
-	dmaControllerActive++;	/* Resetting controller not allowed. */
 	StartDMA(ctrlPtr);
     case SR_COMMAND:
 	charPtr = devPtr->scsiCmdPtr->commandBlock;
@@ -1466,33 +1326,47 @@ ClientData
 DevSCSIC90Init(ctrlLocPtr)
     DevConfigController	*ctrlLocPtr;	/* Controller location. */
 {
-    int	ctrlNum;
-    Boolean	found;
-    Controller *ctrlPtr;
-    int	i,j;
+    int			ctrlNum;
+    Boolean		found;
+    Controller 		*ctrlPtr;
+    int			i,j;
+    Mach_SlotInfo	slotInfo;
+    char		*slotAddr;
+    static char		*vendor = "DEC";
+    static char		*module = "PMAZ-AA";
+    ReturnStatus	status;
 
-    /*
-     * See if the controller is there. 
-     */
-    ctrlNum = ctrlLocPtr->controllerID;
-    found =  (ctrlLocPtr->space == DEV_SBUS_OB) ?
-	    ProbeOnBoard(ctrlLocPtr->address) :
-	    ProbeSBus(ctrlLocPtr->address);
-    if (!found) {
+    slotAddr = (char *) MACH_IO_SLOT_ADDR(ctrlLocPtr->slot);
+
+    status = Mach_GetSlotInfo(slotAddr + ROM_OFFSET, &slotInfo);
+    if (status != SUCCESS) {
 	return DEV_NO_CONTROLLER;
     }
-
+    if (strcmp(slotInfo.vendor, vendor) || strcmp(slotInfo.module, module)) {
+	return DEV_NO_CONTROLLER;
+    }
     /*
      * It's there. Allocate and fill in the Controller structure.
      */
+    ctrlNum = ctrlLocPtr->controllerID;
+    if (ctrlNum >= MAX_SCSIC90_CTRLS) {
+	printf("DevSCSIC90Init: too many controllers\n");
+	return DEV_NO_CONTROLLER;
+    }
     if (ctrlNum+1 > numSCSIC90Controllers) {
 	numSCSIC90Controllers = ctrlNum+1;
     }
     Controllers[ctrlNum] = ctrlPtr = (Controller *) malloc(sizeof(Controller));
     bzero((char *) ctrlPtr, sizeof(Controller));
-    ctrlPtr->regsPtr = (volatile CtrlRegs *) (ctrlLocPtr->address);
+    ctrlPtr->regsPtr = (volatile CtrlRegs *) (slotAddr + REG_OFFSET);
+    ctrlPtr->dmaRegPtr = (volatile DMARegister *) (slotAddr + DMA_OFFSET);
+    ctrlPtr->buffer = slotAddr + BUFFER_OFFSET;
     ctrlPtr->name = ctrlLocPtr->name;
+    ctrlPtr->slot = ctrlLocPtr->slot;
     Sync_SemInitDynamic(&(ctrlPtr->mutex), ctrlPtr->name);
+    printf("SCSI controller \"%s\" in slot %d (%s %s %s %s)\n",
+	ctrlPtr->name, ctrlPtr->slot, slotInfo.module, slotInfo.vendor, 
+	slotInfo.revision, slotInfo.type);
     /* 
      * Initialized the name, device queue header, and the master lock.
      * The controller comes up with no devices active and no devices
@@ -1508,6 +1382,8 @@ DevSCSIC90Init(ctrlLocPtr)
     }
     ctrlPtr->scsiCmdPtr = (ScsiCmd *) NIL;
     Controllers[ctrlNum] = ctrlPtr;
+    Mach_SetIOHandler(ctrlPtr->slot, (void (*)()) DevSCSIC90Intr, 
+	(ClientData) ctrlPtr);
     Reset(ctrlPtr);
 
     return (ClientData) ctrlPtr;
@@ -1588,7 +1464,7 @@ DevSCSIC90AttachDevice(devicePtr, insertProc)
 
     ctrlPtr->devicePtr[targetID][lun] = devPtr;
     MASTER_UNLOCK(&(ctrlPtr->mutex));
-    (void) sprintf(tmpBuffer, "%s#%d Target %d LUN %d", ctrlPtr->name, ctrlNum,
+    (void) sprintf(tmpBuffer, "%s Target %d LUN %d", ctrlPtr->name, 
 			devPtr->targetID, devPtr->handle.LUN);
     length = strlen(tmpBuffer);
     devPtr->handle.locationName = (char *) strcpy(malloc(length+1),tmpBuffer);

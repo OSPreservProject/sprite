@@ -125,6 +125,15 @@ typedef struct {
     unsigned	statusReg;
 } Mach_DebugState;
 
+/*
+ *  Information from reading a TURBOchannel ROM.
+ */
 
+typedef struct {
+    char	revision[9];	/* Firmware revision. */
+    char	vendor[9];	/* Vendor name. */
+    char	module[9];	/* Module name. */
+    char	type[5];	/* Host firmware type. */
+} Mach_SlotInfo;
 
 #endif /* _MACHTYPES */

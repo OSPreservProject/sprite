@@ -87,9 +87,5 @@ Dev_Config()
     for (index = 0; index < devNumConfigCntrlrs; index++) {
 	cntrlrPtr = &devCntrlr[index];
 	callBackData = (*cntrlrPtr->initProc)(cntrlrPtr);
-	if (callBackData != DEV_NO_CONTROLLER) {
-	    printf("%s at kernel address %x\n", cntrlrPtr->name,
-			   cntrlrPtr->address);
-	}
     }
 }

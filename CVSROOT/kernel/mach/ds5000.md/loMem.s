@@ -14,6 +14,7 @@
  */
 
 #include "machConst.h"
+#include "machAddrs.h"
 #include <regdef.h>
 
 /*
@@ -25,6 +26,7 @@
     .globl	eprol
 start:
 eprol:
+    sw		zero, MACH_CSR_ADDR		# Clear csr
     mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
     li		sp, MACH_CODE_START - START_FRAME
     la		gp, _gp

@@ -22,11 +22,9 @@
  */
 typedef struct DevConfigController {
     char *name;		/* Identifying string used in print statements */
-    int address;	/* The address of the controller.  Correct
-			 * interpretation of this depends on the space */
+    int	 slot;		/* The IO slot that contains the controller. */
     int controllerID;	/* Controller number: 0, 1, 2... */
     ClientData (*initProc)();	/* Initialization procedure */
-    int (*intrProc)();	/* Interrupt handler called from autovector */
 } DevConfigController;
 
 /*
