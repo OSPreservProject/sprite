@@ -33,6 +33,8 @@ DevConfigController devCntrlr[] = {
 /*  { "SCSI", 0x84000, DEV_MULTIBUS,	1, Dev_SCSIInitController, 0, 0}, */
     { "SCSI", 0x200000, DEV_VME_D16A24, 0, Dev_SCSIInitController, 64,
 					   Dev_SCSIIntrStub},
+    { "SBC", 0x0FE12000, DEV_OBIO, 0, Dev_SBCInitController, 64,
+					   Dev_SBCIntrStub},
     { "SBC", 0x200000, DEV_VME_D16A24, 0, Dev_SBCInitController, 64,
 					   Dev_SBCIntrStub},
     { "Xylogics", 0xee40, DEV_VME_D16A16,	 0, Dev_XylogicsInitController,
