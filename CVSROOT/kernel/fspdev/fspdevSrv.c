@@ -2015,9 +2015,6 @@ exit:
 	status = SUCCESS;
 	replyPtr->length = 0;
     }
-    if (replyPtr->signal != 0) {
-	printf("PdevRead, signal %d\n", replyPtr->signal);
-    }
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
 exitNoServer:
     Sync_Broadcast(&pdevHandlePtr->access);
