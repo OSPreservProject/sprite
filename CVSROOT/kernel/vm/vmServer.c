@@ -416,7 +416,7 @@ VmPageServerWrite(virtAddrPtr, pageFrame)
     /*
      * Map the page into the kernel's address space and write it out.
      */
-    VmMach_FlushPage(virtAddrPtr);
+    VmMach_FlushPage(virtAddrPtr, FALSE);
     mappedAddr = (int) VmMapPage(pageFrame);
     status = Fs_PageWrite(segPtr->swapFilePtr, (Address) mappedAddr,
 			  pageToWrite << vmPageShift, vm_PageSize);

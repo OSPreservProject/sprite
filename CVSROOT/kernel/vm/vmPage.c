@@ -1137,14 +1137,16 @@ again:
 
 	    ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, 
 				 corePtr->virtPage.page);
-	    VmMach_GetRefModBits(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr),
-				 &referenced, &modified);
+	    referenced = *ptePtr & VM_REFERENCED_BIT;
+	    modified = *ptePtr & VM_MODIFIED_BIT;
+	    VmMach_AllocCheck(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr),
+			      &referenced, &modified);
 	    /*
 	     * Now make sure that the page has not been referenced.  It it has
 	     * then clear the reference bit and put it onto the end of the
 	     * allocate list.
 	     */
-	    if ((*ptePtr & VM_REFERENCED_BIT) || referenced) {
+	    if (referenced) {
 		vmStat.refSearched++;
 		corePtr->lastRef = curTime.seconds;
 		*ptePtr &= ~VM_REFERENCED_BIT;
@@ -1174,24 +1176,15 @@ again:
 	    }
 	    /*
 	     * The page is available and it has not been referenced.  Now
-	     * it must be determined if it is dirty.  If it is then put it onto
-	     * the dirty list.
+	     * it must be determined if it is dirty.
 	     */
-	    if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
+	    if (modified) {
+		/*
+		 * Dirty pages go onto the dirty list.
+		 */
 		vmStat.dirtySearched++;
 		TakeOffAllocList(corePtr);
 		PutOnDirtyList(corePtr);
-		if (!modified) {
-		    vmStat.notHardModPages++;
-		}
-		if (vmFreeWhenClean) {
-		    /*
-		     * Invalidate the page in hardware.  This will force
-		     * a fault to occur if the page is to be referenced.
-		     */
-		    VmMach_PageInvalidate(&corePtr->virtPage, 
-					  Vm_GetPageFrame(*ptePtr), FALSE);
-		}
 		continue;
 	    }
 
@@ -1200,8 +1193,12 @@ again:
 	    }
 	    /*
 	     * We can take this page.  Invalidate the page for the old segment.
+	     * VmMach_AllocCheck will have already invalidated the page for
+	     * us in hardware.
 	     */
-	    VmPageInvalidateInt(&(corePtr->virtPage), ptePtr);
+	    corePtr->virtPage.segPtr->resPages--;
+	    *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
+
 	    TakeOffAllocList(corePtr);
 	    VmListRemove(&endMarker);
 	    break;

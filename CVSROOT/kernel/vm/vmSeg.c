@@ -1457,11 +1457,11 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	                   VmPageAllocate(&destVirtAddr, VM_CAN_BLOCK);
 	    destSegPtr->resPages++;
 	    if (srcAddr == (Address) NIL) {
-		VmMach_FlushPage(&srcVirtAddr);
+		VmMach_FlushPage(&srcVirtAddr, FALSE);
 		srcAddr = VmMapPage(Vm_GetPageFrame(*srcPTEPtr));
 		destAddr = VmMapPage(Vm_GetPageFrame(*destPTEPtr));
 	    } else {
-		VmMach_FlushPage(&srcVirtAddr);
+		VmMach_FlushPage(&srcVirtAddr, FALSE);
 		VmRemapPage(srcAddr, Vm_GetPageFrame(*srcPTEPtr));
 		VmRemapPage(destAddr, Vm_GetPageFrame(*destPTEPtr));
 	    }

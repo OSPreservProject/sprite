@@ -125,7 +125,7 @@ VmRemapPage(addr, pfNum)
     /*
      * Clean the old page from the cache.
      */
-    VmMach_FlushPage(&virtAddr);
+    VmMach_FlushPage(&virtAddr, TRUE);
     ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
     *ptePtr &= ~VM_PAGE_FRAME_FIELD;
     *ptePtr |= pfNum;
