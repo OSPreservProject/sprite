@@ -264,9 +264,21 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	    lastByte += requestHdrPtr->messageSize;
 	}
     }
-    pdevHandlePtr->operation = requestHdrPtr->operation;
     pdevHandlePtr->requestBuf.lastByte = lastByte;
     DBG_PRINT( (" first %d last %d\n", firstByte, lastByte) );
+    pdevHandlePtr->operation = requestHdrPtr->operation;
+    if (pdevHandlePtr->operation == PFS_OPEN) {
+	/*
+	 * We have to snarf up the hostID of the client doing the open
+	 * so the new pseudo-device connection that may be set up as
+	 * a side effect of PFS_OPEN is set up right.  The useFlags are
+	 * needed to initialize the new client stream right.
+	 */
+	register Pfs_Request *pfsRequestPtr = (Pfs_Request *)requestHdrPtr;
+	pdevHandlePtr->open.clientID = pfsRequestPtr->param.open.clientID;
+	pdevHandlePtr->open.useFlags = pfsRequestPtr->param.open.useFlags;
+	pdevHandlePtr->open.name = (char *)inputBuf;
+    }
 
     /*
      * Copy the request and data out into the server's request buffer.
@@ -941,7 +953,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		status = GEN_INVALID_ARG;
 	    } else {
 		newStreamID = FsPfsOpenConnection(pdevHandlePtr,
-			    (Fs_FileID *)inBufPtr->addr, &openResults.ioFileID);
+			    (Fs_FileID *)inBufPtr->addr, &openResults);
 		if (outBufPtr->flags & FS_USER) {
 		    Vm_CopyOut(sizeof(int), (Address)&newStreamID,
 				outBufPtr->addr);
@@ -954,23 +966,20 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		    /*
 		     * Here we copy the openResults to the waiting processes
 		     * kernel stack (it's waiting in FsPfsOpen on this
-		     * same host.)  The nameID part of the open results are
-		     * used later if the client does an fstat().
+		     * same host.)
 		     */
 		    register FsOpenResults *openResultsPtr =
 			    (FsOpenResults *)pdevHandlePtr->replyBuf;
-
-		    openResults.nameID = openResults.ioFileID;
-		    FsStreamNewID(rpc_SpriteID, &openResults.streamID);
-		    openResults.dataSize = 0;
-		    openResults.streamData = (ClientData)NIL;
-
 		    *openResultsPtr = openResults;
 		}
 	    }
 	    if (status != SUCCESS) {
 		pdevHandlePtr->flags |= PDEV_REPLY_FAILED;
+		pdevHandlePtr->reply.replySize = 0;
+	    } else {
+		pdevHandlePtr->reply.replySize = sizeof(FsOpenResults);
 	    }
+	    pdevHandlePtr->reply.status = status;
 	    pdevHandlePtr->flags |= PDEV_REPLY_READY;
 	    Sync_Broadcast(&pdevHandlePtr->replyReady);
 	    PdevClientNotify(pdevHandlePtr);
@@ -1283,6 +1292,7 @@ FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
     }
+    FsHandleUnlock(cltHandlePtr);
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
     /*
@@ -1348,6 +1358,7 @@ FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
     }
+    FsHandleUnlock(cltHandlePtr);
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
 
