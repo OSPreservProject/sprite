@@ -949,6 +949,12 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 #endif
 
     /*
+     * This should be in the Vm_ExecInfo structure, so it can get reused
+     * when a program is re-run.  I'll fix this soon.  --Ken
+     */
+    objInfo.unixCompat = 0;
+
+    /*
      * Use the encapsulation buffer and arguments arrays to determine
      * whether everything is local, or we're starting a remote exec,
      * or finishing one from another host.
@@ -1219,11 +1225,10 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
      * mode.
      */
 #ifdef sun4
-#if 0
     if (objInfo.unixCompat) {
 	userStackPointer += 32;
+	printf("Moving stack pointer for Unix binary.\n");
     }
-#endif
 #endif
     Mach_ExecUserProc(procPtr, userStackPointer, (Address) execInfoPtr->entry);
     panic("DoExec: Proc_RunUserProc returned.\n");
