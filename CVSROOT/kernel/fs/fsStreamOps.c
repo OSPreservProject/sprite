@@ -105,12 +105,6 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	    if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
 		status = GEN_ABORTED_BY_SIGNAL;
 		break;
-	    } else {
-		/*
-		 * Restore the length parameter because it was set to
-		 * zero when the read blocked.
-		 */
-		*lenPtr = size = savedLength;
 	    }
 	} else if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	           status == RPC_SERVICE_DISABLED)  {
@@ -121,6 +115,11 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	} else {
 	    break;
 	}
+	/*
+	 * Restore the length parameter because it was set to
+	 * zero when the read blocked.
+	 */
+	*lenPtr = size = savedLength;
     }
     /*
      * Cache the file offset for sequential access.
