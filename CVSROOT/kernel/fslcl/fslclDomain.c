@@ -313,8 +313,6 @@ FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     fileIDPtr = (Fs_FileID *)resultsPtr;
 
 #ifdef SOSP91
-    SOSP_ADD_SET_ATTR_TRACE(openArgsPtr->clientID, openArgsPtr->migClientID, 
-	    handlePtr->hdr.fileID);
     SOSP_REMEMBERED_OP = FS_DOMAIN_SET_ATTR;
     SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
     SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;

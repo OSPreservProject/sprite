@@ -726,7 +726,6 @@ Fsrmt_RpcSetAttr(srvToken, clientID, command, storagePtr)
     fs_Stats.srvName.setAttrs++;
     Fsutil_HandleUnlock(hdrPtr);
 #ifdef SOSP91
-    SOSP_ADD_SET_ATTR_TRACE(clientID, -1, *fileIDPtr);
     {
     /*
      * Get the host ID and user ID for tracing.
