@@ -1587,6 +1587,8 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     int 	outBufSize;	/* Size of outBuffer */
     Address 	outBuffer;	/* Command specific output parameters */
 {
+    Proc_ControlBlock *procPtr;
+    Fs_ProcessState *fsPtr;
     Fs_Stream 	 *streamPtr;
     register ReturnStatus status = SUCCESS;
     register Address localInBuffer;
@@ -1595,7 +1597,8 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     /*
      * Get a stream pointer.
      */
-    status = FsGetStreamPtr(Proc_GetEffectiveProc(), streamID, &streamPtr);
+    procPtr = Proc_GetEffectiveProc();
+    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
@@ -1648,6 +1651,40 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 			      inBufSize, localInBuffer,
 			      outBufSize, localOutBuffer);
 	if (status == SUCCESS) {
+	    /*
+	     * Post process the set/get flags stuff because the close-on-exec
+	     * flag is not kept down at the stream level, but up along
+	     * with the streamID.
+	     */
+	    fsPtr = procPtr->fsPtr;
+	    switch(command) {
+		case IOC_GET_FLAGS: {
+		    if (fsPtr->streamFlags[streamID] & FS_CLOSE_ON_EXEC) {
+			*(int *)localOutBuffer |= IOC_CLOSE_ON_EXEC;
+		    }
+		    break;
+		}
+		case IOC_SET_BITS:
+		case IOC_SET_FLAGS: {
+		    int flags;
+		    flags = *(int *)localInBuffer;
+
+		    if (flags & IOC_CLOSE_ON_EXEC) {
+			fsPtr->streamFlags[streamID] |= FS_CLOSE_ON_EXEC;
+		    } else if (command == IOC_SET_FLAGS) {
+			fsPtr->streamFlags[streamID] &= ~FS_CLOSE_ON_EXEC;
+		    }
+		    break;
+		}
+		case IOC_CLEAR_BITS:{
+		    int flags;
+		    flags = *(int *)localInBuffer;
+		    if (flags & IOC_CLOSE_ON_EXEC) {
+			fsPtr->streamFlags[streamID] &= ~FS_CLOSE_ON_EXEC;
+		    }
+		    break;
+		}
+	    }
 	    status = Vm_CopyOut(outBufSize, localOutBuffer, outBuffer);
 	}
     }

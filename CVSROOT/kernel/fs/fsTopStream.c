@@ -551,23 +551,27 @@ GrowStreamList(fsPtr, newLength)
     streamList = (Fs_Stream **)Mem_Alloc(newLength * sizeof(Fs_Stream *));
     streamFlags = (char *)Mem_Alloc(newLength * sizeof(char));
 
-    Byte_Copy(sizeof(Fs_Stream *) * fsPtr->numStreams,
-	      (Address)fsPtr->streamList, (Address)streamList);
-    Byte_Copy(sizeof(char) * fsPtr->numStreams,
-	      (Address)fsPtr->streamFlags, (Address)streamFlags);
+    if (fsPtr->numStreams > 0) {
+	Byte_Copy(sizeof(Fs_Stream *) * fsPtr->numStreams,
+		  (Address)fsPtr->streamList, (Address)streamList);
+	Byte_Copy(sizeof(char) * fsPtr->numStreams,
+		  (Address)fsPtr->streamFlags, (Address)streamFlags);
 
-    Mem_Free((Address)fsPtr->streamList);
-    Mem_Free((Address)fsPtr->streamFlags);
+	Mem_Free((Address)fsPtr->streamList);
+	Mem_Free((Address)fsPtr->streamFlags);
+    
+	for (index=0 ; index < fsPtr->numStreams ; index++) {
+	    if ((int)streamList[index] != NIL &&
+		(int)streamList[index] < 1024) {
+		Sys_Panic(SYS_FATAL, "GrowStreamList copied bad streamPtr, %x\n",
+				       streamList[index]);
+	    }
+	}
+    }
 
     fsPtr->streamList = streamList;
     fsPtr->streamFlags =  streamFlags;
 
-    for (index=0 ; index < fsPtr->numStreams ; index++) {
-	if ((int)streamList[index] < 1024) {
-	    Sys_Panic(SYS_FATAL, "GrowStreamList copied bad streamPtr, %x\n",
-				   streamList[index]);
-	}
-    }
     for (index=fsPtr->numStreams ; index < newLength ; index++) {
 	fsPtr->streamList[index] = (Fs_Stream *)NIL;
 	fsPtr->streamFlags[index] = 0;

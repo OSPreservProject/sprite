@@ -630,9 +630,6 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	    if (streamPtr->flags & FS_NON_BLOCKING) {
 		flags |= IOC_NON_BLOCKING;
 	    }
-	    if (streamPtr->flags & FS_CLOSE_ON_EXEC) {
-		flags |= IOC_CLOSE_ON_EXEC;
-	    }
 	    if (outBuffer == (Address)NIL) {
 		status = GEN_INVALID_ARG;
 	    } else {
@@ -669,11 +666,6 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	    } else if (command == IOC_SET_FLAGS) {
 		streamPtr->flags &= ~FS_NON_BLOCKING;
 	    }
-	    if (flags & IOC_CLOSE_ON_EXEC) {
-		streamPtr->flags |= FS_CLOSE_ON_EXEC;
-	    } else if (command == IOC_SET_FLAGS) {
-		streamPtr->flags &= ~FS_CLOSE_ON_EXEC;
-	    }
 	    break;
 	}
 	case IOC_CLEAR_BITS:{
@@ -688,9 +680,6 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	    }
 	    if (flags & IOC_NON_BLOCKING) {
 		streamPtr->flags &= ~FS_NON_BLOCKING;
-	    }
-	    if (flags & IOC_CLOSE_ON_EXEC) {
-		streamPtr->flags &= ~FS_CLOSE_ON_EXEC;
 	    }
 	    break;
 	}
