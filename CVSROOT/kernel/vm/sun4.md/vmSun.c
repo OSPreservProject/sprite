@@ -29,16 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "net.h"
 
-extern	Address	vmStackBaseAddr;
-extern	Address	vmStackEndAddr;
-/*
- * Temporary macro for circular debugging buffer.
- */
-extern	int	debugCounter;
-extern	int	debugSpace[];
-extern	Address	theAddrOfVmPtr;
-extern	Address	theAddrOfMachPtr;
-
 #ifndef multiprocessor
 
 #undef MASTER_LOCK
@@ -69,6 +59,8 @@ extern	int	debugSpace[];
         debugCounter = 0;       \
     }                           \
     debugSpace[debugCounter] = (int)(0x11100111);
+
+extern	Address	vmStackEndAddr;
 
 
 /*----------------------------------------------------------------------
@@ -527,8 +519,7 @@ VmMach_Init(firstFreePage)
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
 			  i * VMMACH_CLUSTER_SIZE;
 #ifdef sun4
-	    if (virtAddr >= vmStackEndAddr ||
-		    virtAddr < (Address) MACH_KERN_START) {
+	    if (virtAddr >= vmStackEndAddr) {
 		pte |= VMMACH_DONT_CACHE_BIT;
 	    }
 #endif /* sun4 */
@@ -1412,8 +1403,6 @@ VmMach_SetupContext(procPtr)
 
     while (TRUE) {
 	contextPtr = procPtr->vmPtr->machPtr->contextPtr;
-	theAddrOfVmPtr = (Address)(&(procPtr->vmPtr));
-	theAddrOfMachPtr = (Address)(&(procPtr->vmPtr->machPtr));
 	if (contextPtr != (VmMach_Context *)NIL) {
 	    if (contextPtr != &contextArray[VMMACH_KERN_CONTEXT]) {
 		if (vm_Tracing) {
@@ -2355,8 +2344,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 					 (Address)&pteChange, TRUE);
 		    }
 #ifdef sun4
-		    if (virtAddr >= vmStackEndAddr ||
-			    virtAddr < (Address) MACH_KERN_START) {
+		    if (virtAddr >= vmStackEndAddr) {
 			pte |= VMMACH_DONT_CACHE_BIT;
 		    } else {
 			pte &= ~VMMACH_DONT_CACHE_BIT;
@@ -2450,8 +2438,7 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 				 (Address)&pteChange, TRUE);
 	    }
 #ifdef sun4
-	    if (testVirtAddr >= vmStackEndAddr  ||
-		    testVirtAddr < (Address) MACH_KERN_START) {
+	    if (testVirtAddr >= vmStackEndAddr) {
 		hardPTE |= VMMACH_DONT_CACHE_BIT;
 	    } else {
 		hardPTE &= ~VMMACH_DONT_CACHE_BIT;
@@ -2806,7 +2793,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     }
     hardPTE = VMMACH_RESIDENT_BIT | VirtToPhysPage(Vm_GetPageFrame(pte));
 #ifdef sun4
-    if (addr >= vmStackEndAddr || addr < (Address) MACH_KERN_START) {
+    if (addr >= vmStackEndAddr) {
 	hardPTE |= VMMACH_DONT_CACHE_BIT;
     } else {
 	hardPTE &= ~VMMACH_DONT_CACHE_BIT;
