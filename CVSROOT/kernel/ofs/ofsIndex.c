@@ -245,7 +245,8 @@ FsGetNextIndex(handlePtr, indexInfoPtr, dirty)
 		/*
 		 * Free up the indirect pointer block.
 		 */
-		FreeIndirectBlock(0, indexInfoPtr, &descPtr->indirect[0]);
+		FreeIndirectBlock(0, handlePtr, indexInfoPtr, 
+		    &descPtr->indirect[0]);
 		if (indexInfoPtr->flags & FS_DELETE_INDIRECT_BLOCKS) {
 		    indexInfoPtr->indInfo[0].deleteBlock = FS_DELETE_BLOCK;
 		    indexInfoPtr->indInfo[1].deleteBlock = FS_DELETE_BLOCK;
@@ -260,7 +261,7 @@ FsGetNextIndex(handlePtr, indexInfoPtr, dirty)
 		/*
 		 * Free up the indirect pointer block.
 		 */
-		FreeIndirectBlock(1, indexInfoPtr,
+		FreeIndirectBlock(1, handlePtr, indexInfoPtr,
 			(int *) (indexInfoPtr->indInfo[0].blockPtr->blockAddr +
 			sizeof(int) * (indexInfoPtr->indInfo[0].index - 1)));
 		if (indexInfoPtr->indInfo[0].index == FS_INDICES_PER_BLOCK) {
@@ -269,7 +270,7 @@ FsGetNextIndex(handlePtr, indexInfoPtr, dirty)
 		     * caller wants us to go off of the end.  Free up the
 		     * indirect block and return an error.
 		     */
-		    FreeIndirectBlock(0, indexInfoPtr,
+		    FreeIndirectBlock(0, handlePtr, indexInfoPtr,
 			     &(descPtr->indirect[FS_DBL_INDIRECT]));
 		    return(FS_INVALID_ARG);
 		}
@@ -339,11 +340,11 @@ FsEndIndex(handlePtr, indexInfoPtr, dirty)
      */
 
     if (indexInfoPtr->indInfo[1].blockPtr != (FsCacheBlock *) NIL) {
-	FreeIndirectBlock(1, indexInfoPtr,
+	FreeIndirectBlock(1, handlePtr, indexInfoPtr,
 			(int *) (indexInfoPtr->indInfo[0].blockPtr->blockAddr +
 			     sizeof(int) * indexInfoPtr->indInfo[0].index));
     }
-    FreeIndirectBlock(0, indexInfoPtr,
+    FreeIndirectBlock(0, handlePtr, indexInfoPtr,
 		     &(descPtr->indirect[indexInfoPtr->indexType]));
     FsDomainRelease(handlePtr->hdr.fileID.major);
 }
@@ -476,6 +477,7 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 	    }
 	    blockNum += indexInfoPtr->domainPtr->headerPtr->dataOffset;
 	    *blockAddrPtr = blockNum * FS_FRAGMENTS_PER_BLOCK;
+	    handlePtr->descPtr->numKbytes += FS_FRAGMENTS_PER_BLOCK;
 	    FsCacheFetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
 			FS_IND_CACHE_BLOCK, &(indInfoPtr->blockPtr), &found);
 	    if (found) {
@@ -535,9 +537,11 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
  *----------------------------------------------------------------------
  */
 static void
-FreeIndirectBlock(indBlockNum, indexInfoPtr, blockAddrPtr)
+FreeIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr)
     int				indBlockNum;	/* Which indirect block to 
 						 * free.*/
+    FsLocalFileIOHandle		*handlePtr;	/* File to delete indirect
+						 * block from. */
     register FsBlockIndexInfo 	*indexInfoPtr; 	/* Index structure to use. */
     int				*blockAddrPtr;	/* Pointer to block to free. */
 {
@@ -564,6 +568,7 @@ FreeIndirectBlock(indBlockNum, indexInfoPtr, blockAddrPtr)
 	    FsFreeBlock(indexInfoPtr->domainPtr,
 		    indBlock - indexInfoPtr->domainPtr->headerPtr->dataOffset);
 	    *blockAddrPtr = FS_NIL_INDEX;
+	    handlePtr->descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
 	}
 	indInfoPtr->blockPtr = (FsCacheBlock *) NIL;
     }
