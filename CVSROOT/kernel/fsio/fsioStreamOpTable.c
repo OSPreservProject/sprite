@@ -341,11 +341,12 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
     /*
-     * A pseudo stream to a remote pseudo-filesystem server.  This is just
-     * like the remote pseudo-device stream, except that it maps to a
-     * FS_LCL_PFS_STREAM type on the server.
+     * A pseudo stream to a remote pseudo-filesystem server.  This is
+     * like the remote pseudo-device stream, except for setup because the
+     * pseudo-device connection is already set up by the time the
+     * CltOpen routine is called.
      */
-    { FS_RMT_PFS_STREAM, FsRmtPseudoStreamCltOpen, FsSpriteRead,
+    { FS_RMT_PFS_STREAM, FsRmtPfsStreamCltOpen, FsSpriteRead,
 		FsSpriteWrite,
 		FsRemoteIOControl, FsSpriteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
