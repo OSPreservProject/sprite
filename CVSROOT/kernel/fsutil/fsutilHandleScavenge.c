@@ -45,10 +45,6 @@ Fs_RpcRequest()
 {
     Sys_Panic(SYS_FATAL, "Fs_RpcRequest called");
 }
-Fs_PdevPrintTrace()
-{
-    Sys_Panic(SYS_FATAL, "Fs_PdevPrintTrace called");
-}
 
 
 #define	MAX_WAIT_INTERVALS	5
