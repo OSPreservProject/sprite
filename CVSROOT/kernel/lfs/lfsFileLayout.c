@@ -878,6 +878,7 @@ LfsFileLayoutCleanVerify(segPtr)
      fsBlocks = LfsBytesToBlocks(lfsPtr, FS_BLOCK_SIZE);
      summaryPtr =  LfsSegGetSummaryPtr(segPtr);
      limitPtr = summaryPtr + LfsSegSummaryBytesLeft(segPtr);
+     address = LfsSegDiskAddress(segPtr, LfsSegGetBufferPtr(segPtr));
      blockOffset = 0;
      while ((summaryPtr < limitPtr) && !error) { 
 	switch (*(unsigned short *) summaryPtr) {
@@ -960,7 +961,6 @@ LfsFileLayoutCleanVerify(segPtr)
 	      * Liveness check.   First see if the version number is
 	      * the same and the file is still allocated.
 	      */
-	      LFS_STATS_INC(lfsPtr->stats.layout.fileCleaned);
 	     status = LfsDescMapGetVersion(lfsPtr, 
 			(int)fileSumPtr->fileNumber, &curTruncVersion);
 	     if ((status == SUCCESS) && 
@@ -969,7 +969,6 @@ LfsFileLayoutCleanVerify(segPtr)
 		int	  numBlocks;
 		Fsio_FileIOHandle *newHandlePtr;
 
-	        LFS_STATS_INC(lfsPtr->stats.layout.fileVersionOk);
 		/*
 		 * So far so good.  File is allocated and version number 
 		 * says it hasn't been deleted or truncated. Grap a 
@@ -987,7 +986,6 @@ LfsFileLayoutCleanVerify(segPtr)
 		    printf("Can't fetch handle for file %d for cleaning\n",
 				fileSumPtr->fileNumber);
 
-		    LFS_STATS_INC(lfsPtr->stats.layout.cleanLockedHandle);
 		    error = TRUE;
 		    break;
 		}
@@ -996,7 +994,6 @@ LfsFileLayoutCleanVerify(segPtr)
 			/*
 			 * Someone just deleted the file out from under us.
 			 */
-			LFS_STATS_INC(lfsPtr->stats.layout.cleanNoHandle);
 			goto noHandle;
 		    }
 		    LfsError(lfsPtr, status,
@@ -1013,8 +1010,6 @@ LfsFileLayoutCleanVerify(segPtr)
 		 */
 		numBlocks = fileSumPtr->numBlocks - 
 				(fileSumPtr->numDataBlocks-1) * fsBlocks;
-	        LFS_STATS_ADD(lfsPtr->stats.layout.blocksCleaned,
-					fileSumPtr->numBlocks);
 		for (i = 0; i < fileSumPtr->numDataBlocks; i++) {
 		    LfsDiskAddr newDiskAddr;
 		    blockOffset += numBlocks;

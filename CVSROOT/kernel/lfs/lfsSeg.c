@@ -1481,7 +1481,11 @@ SegmentCleanProc(clientData, callInfoPtr)
 #ifdef VERIFY_CLEAN
 	    { 
 		int i;
-		for (i = 0; i < numSegsToClean; i++) {
+/*
+ * This is what it was.  I think it's bogus.  -Mary.
+ *		for (i = 0; i < numSegsToClean; i++) {
+ */
+ 		for (i = 0; i < numSegsCleaned; i++) {
 		    int size, numCacheBlocksUsed;
 		    /*
 		     * If a segment couldn't be cleaned then its segment
