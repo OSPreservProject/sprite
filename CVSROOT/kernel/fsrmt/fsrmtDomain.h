@@ -59,7 +59,7 @@ typedef struct FsSpriteDevOpenParams {
     int		flags;		/* FS_MIGRATING_HANDLE. */
     int		streamType;	/* Type of stream being opened, either a
 				 * domain stream, a cacheable stream for
-				 * named pipes, or a proc-file stream to
+				 * named pipes, or a pdev stream to
 				 * open up the master's req/res pipes */
 } FsSpriteDevOpenParams;
 
@@ -67,25 +67,17 @@ typedef struct FsSpriteDevOpenResults {
     FsFileID	fileID;		/* File ID that identifies the handle on the
 				 * I/O server. */
 } FsSpriteDevOpenResults;
-/*
- * Parameters for the file lock RPC.
- */
-
-typedef struct FsSpriteLockParams {
-    FsFileID	fileID;		/* File to be re-opened */
-    int		operation;	/* Operation argument to Fs_Lock */
-    Sync_RemoteWaiter waiter;	/* Process info for remote waiting */
-    int		streamType;	/* This is used to generate an Fs_Stream
-				 * on the server. */
-} FsSpriteLockParams;
 
 /*
  * Parameters for the iocontrol RPC
  */
 
 typedef struct FsSpriteIOCParams {
-    FsFileID	fileID;		/* File for iocontrol. */
-    int		command;	/* Iocontrol to perform. */
+    FsFileID	fileID;		/* File to manipulate. */
+    FsFileID	streamID;	/* Stream to the file, needed for locking */
+    Proc_PID	procID;		/* ID of invoking process */
+    Proc_PID	familyID;	/* Family of invoking process */
+    int		command;	/* I/O Control to perform. */
     int		inBufSize;	/* Size of input params to ioc. */
     int		outBufSize;	/* Size of results from ioc. */
     int		byteOrder;	/* Defines client's byte ordering */
