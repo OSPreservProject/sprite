@@ -1306,8 +1306,8 @@ FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 
 /*ARGSUSED*/
 ReturnStatus
-FsFileIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
-    FsHandleHeader *hdrPtr;		/* File handle */
+FsFileIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
+    Fs_Stream *streamPtr;		/* Stream to local file */
     int command;			/* File specific I/O control */
     int byteOrder;			/* Client's byte order */
     int inBufSize;			/* Size of inBuffer */
@@ -1316,7 +1316,8 @@ FsFileIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, out
     Address outBuffer;			/* Buffer for return parameters */
 
 {
-    register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+    register FsLocalFileIOHandle *handlePtr =
+	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status = SUCCESS;
 
     FsHandleLock(handlePtr);
@@ -1355,7 +1356,7 @@ FsFileIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, out
 	case IOC_LOCK:
 	case IOC_UNLOCK:
 	    status = FsIocLock(&handlePtr->lock, command, byteOrder, inBuffer,
-				inBufSize, (FsFileID *)NIL);
+				inBufSize, &streamPtr->hdr.fileID);
 	    break;
 	case IOC_NUM_READABLE: {
 	    /*

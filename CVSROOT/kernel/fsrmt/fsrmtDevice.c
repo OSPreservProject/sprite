@@ -1488,9 +1488,9 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
+FsDeviceIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
 		outBuffer)
-    FsHandleHeader *hdrPtr;		/* I/O handle for device. */
+    Fs_Stream *streamPtr;		/* Stream to a device. */
     int command;			/* Device specific I/O control */
     int byteOrder;			/* Client's byte order */
     int inBufSize;			/* Size of inBuffer */
@@ -1498,20 +1498,24 @@ FsDeviceIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
     int outBufSize;			/* Size of outBuffer */
     Address outBuffer;			/* Buffer for return parameters */
 {
-    FsDeviceIOHandle	*devHandlePtr = (FsDeviceIOHandle *)hdrPtr;
+    register FsDeviceIOHandle *devHandlePtr =
+	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     register ReturnStatus status;
+    static Boolean warned = FALSE;
 
     FsHandleLock(devHandlePtr);
     switch (command) {
 	case IOC_LOCK:
 	case IOC_UNLOCK:
 	    status = FsIocLock(&devHandlePtr->lock, command, byteOrder,
-				inBuffer, inBufSize, (FsFileID *)NIL);
+				inBuffer, inBufSize, &streamPtr->hdr.fileID);
 	    break;
 	default:
-	    if (byteOrder != mach_ByteOrder) {
-		FsFileError(hdrPtr, "Device I/O control byte swapping not done",
+	    if ((byteOrder != mach_ByteOrder) && !warned) {
+		warned = TRUE;
+		FsFileError(streamPtr->ioHandlePtr,
+		    "Device I/O control byte swapping not done",
 		    SUCCESS);
 	    }
 	    status = (*devFsOpTable[devicePtr->type].ioControl) (devicePtr,

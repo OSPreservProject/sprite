@@ -602,24 +602,24 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	 * If so, we may also have to adjust some state of our own.
 	 */
 	status = (fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].ioControl)
-	    (streamPtr->ioHandlePtr, command, mach_ByteOrder, inBufSize,
+	    (streamPtr, command, mach_ByteOrder, inBufSize,
 		inBuffer, outBufSize, outBuffer);
 #ifdef lint
-	status = FsFileIOControl(streamPtr->ioHandlePtr, command,
+	status = FsFileIOControl(streamPtr, command,
 		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
-	status = FsRmtFileIOControl(streamPtr->ioHandlePtr, command,
+	status = FsRmtFileIOControl(streamPtr, command,
 		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
-	status = FsDeviceIOControl(streamPtr->ioHandlePtr, command,
+	status = FsDeviceIOControl(streamPtr, command,
 		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
-	status = FsRemoteIOControl(streamPtr->ioHandlePtr, command,
+	status = FsRemoteIOControl(streamPtr, command,
 		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
-	status = FsPipeIOControl(streamPtr->ioHandlePtr, command,
+	status = FsPipeIOControl(streamPtr, command,
 		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
-	status = FsControlIOControl(streamPtr->ioHandlePtr, command,
+	status = FsControlIOControl(streamPtr, command,
 		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
-	status = FsServerStreamIOControl(streamPtr->ioHandlePtr, command,
+	status = FsServerStreamIOControl(streamPtr, command,
 		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
-	status = FsPseudoStreamIOControl(streamPtr->ioHandlePtr, command,
+	status = FsPseudoStreamIOControl(streamPtr, command,
 		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
 #endif /* lint */
 	switch(status) {

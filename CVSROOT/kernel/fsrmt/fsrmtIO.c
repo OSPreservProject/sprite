@@ -776,8 +776,8 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
-    FsHandleHeader *hdrPtr;
+FsRemoteIOControl(streamPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
+    Fs_Stream	*streamPtr;
     int         command;
     int		byteOrder;
     int         inBufSize;
@@ -785,13 +785,17 @@ FsRemoteIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, o
     int         outBufSize;
     Address     outBuffer;
 {
-    FsSpriteIOCParams	params;
-    ReturnStatus	status;
-    Rpc_Storage		storage;
+    register FsHandleHeader	*hdrPtr = streamPtr->ioHandlePtr;
+    FsSpriteIOCParams		params;
+    ReturnStatus		status;
+    Rpc_Storage			storage;
 
     FS_RPC_DEBUG_PRINT("FsSpriteIOControl\n");
 	
     params.fileID = hdrPtr->fileID;
+    params.streamID = streamPtr->hdr.fileID;
+    params.procID = (Proc_PID) NIL;
+    params.familyID = (Proc_PID) NIL;
     params.command = command;
     params.inBufSize = inBufSize;
     params.outBufSize = outBufSize;
@@ -848,33 +852,53 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
 {
     register	FsSpriteIOCParams	*paramsPtr;
     register	FsHandleHeader		*hdrPtr;
+    register	Fs_Stream		*streamPtr;
     register	Rpc_ReplyMem		*replyMemPtr;
     ReturnStatus			status;
     Address				outBufPtr;
 
     paramsPtr = (FsSpriteIOCParams *)storagePtr->requestParamPtr;
 
+    streamPtr = FsStreamClientVerify(&paramsPtr->streamID, clientID);
+    if (streamPtr == (Fs_Stream *)NIL) {
+	Sys_Panic(SYS_WARNING, "Fs_RpcIOControl, no stream to %s <%d, %d>\n",
+		FsFileTypeToString(paramsPtr->fileID.type),
+		paramsPtr->fileID.major, paramsPtr->fileID.minor);
+	return(FS_STALE_HANDLE);
+    }
+    FsHandleRelease(streamPtr, TRUE);
+
     hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
 		(&paramsPtr->fileID, clientID);
     if (hdrPtr == (FsHandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
+    } else if (streamPtr->ioHandlePtr != hdrPtr) {
+	    Sys_Panic(SYS_WARNING, "Fs_RpcIOControl: Stream/handle mis-match\n");
+	    Sys_Printf("Stream <%d, %d, %d> => %s I/O <%d, %d, %d>\n",
+		paramsPtr->streamID.serverID, paramsPtr->streamID.major,
+		paramsPtr->streamID.minor,
+		FsFileTypeToString(paramsPtr->fileID.type),
+		paramsPtr->fileID.serverID, paramsPtr->fileID.major,
+		paramsPtr->fileID.minor);
+	    FsHandleRelease(hdrPtr, TRUE);
+	    return(FS_STALE_HANDLE);
     }
-
+    
     if (paramsPtr->outBufSize != 0) {
 	outBufPtr = Mem_Alloc(paramsPtr->outBufSize);
     }
     FsHandleUnlock(hdrPtr);
-    status = (*fsStreamOpTable[hdrPtr->fileID.type].ioControl)(hdrPtr,
+    status = (*fsStreamOpTable[hdrPtr->fileID.type].ioControl)(streamPtr,
 	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
 	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
 #ifdef lint
-    status = FsFileIOControl(hdrPtr,
+    status = FsFileIOControl(streamPtr,
 	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
 	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
-    status = FsPipeIOControl(hdrPtr,
+    status = FsPipeIOControl(streamPtr,
 	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
 	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
-    status = FsDeviceIOControl(hdrPtr,
+    status = FsDeviceIOControl(streamPtr,
 	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
 	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
 #endif /* lint */
