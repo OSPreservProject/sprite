@@ -177,7 +177,9 @@ DevConsoleRawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
 	buf[i] = c & 0x7f;
     }
     if (i > 0) {
-	(*romVectorPtr->fbWriteStr)(buf, i);
+	if (!sys_DontPrint) {
+	    (*romVectorPtr->fbWriteStr)(buf, i);
+	}
     }
     return 0;
 }

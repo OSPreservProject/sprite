@@ -243,7 +243,9 @@ Dev_SyslogWrite(devicePtr, writePtr, replyPtr)
     if (!dbg_UsingSyslog) {
 	if (!openForReading) {
 	    for (i = 0; i < writePtr->length; i++, bufPtr++) {
-		Mach_MonPutChar(*bufPtr);
+		if (!sys_DontPrint) {
+		    Mach_MonPutChar(*bufPtr);
+		}
 	    }
 	    replyPtr->length = writePtr->length;
 	    return(SUCCESS);
@@ -281,7 +283,9 @@ Dev_SyslogWrite(devicePtr, writePtr, replyPtr)
 		overflow = TRUE;
 	    }
 	    for (i = 0; i < writePtr->length; i++, bufPtr++) {
-		Mach_MonPutChar(*bufPtr);
+		if (!sys_DontPrint) {
+		    Mach_MonPutChar(*bufPtr);
+		}
 	    }
 	    /*
 	     * Make sure we return that the entire amount was written.
@@ -378,14 +382,20 @@ Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
 	if (firstIndex != -1) {
 	    if (firstIndex <= lastIndex) {
 		for (i = firstIndex; i <= lastIndex; i++) {
-		    Mach_MonPutChar(syslogBuffer[i]);
+		    if (!sys_DontPrint) {
+			Mach_MonPutChar(syslogBuffer[i]);
+		    }
 		}
 	    } else {
 		for (i = firstIndex; i < SYSLOG_BUF_SIZE; i++) {
-		    Mach_MonPutChar(syslogBuffer[i]);
+		    if (!sys_DontPrint) {
+			Mach_MonPutChar(syslogBuffer[i]);
+		    }
 		}
 		for (i = 0; i <= lastIndex; i++)  {
-		    Mach_MonPutChar(syslogBuffer[i]);
+		    if (!sys_DontPrint) {
+			Mach_MonPutChar(syslogBuffer[i]);
+		    }
 		}
 	    }
 	    firstIndex = -1;
