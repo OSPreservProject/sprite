@@ -374,8 +374,13 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC, user)
      * first arg we have to put a value in MACH_INPUT_REG1.
      */
     statePtr->switchRegState.regs[MACH_SPILL_SP][0] = (int)statePtr->kernStackEnd;
-    statePtr->switchRegState.kpsw = (MACH_KPSW_PREFETCH_ENA |
+    statePtr->switchRegState.kpsw = (
+#ifdef WITH_IBUFFER
+#ifdef WITH_PREFETCH
+				     MACH_KPSW_PREFETCH_ENA |
+#endif
 				     MACH_KPSW_IBUFFER_ENA |
+#endif
 				     MACH_KPSW_VIRT_DFETCH_ENA |
 				     MACH_KPSW_VIRT_IFETCH_ENA |
 				     MACH_KPSW_ALL_TRAPS_ENA |
@@ -546,8 +551,13 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     regStatePtr->regs[MACH_SPILL_SP][0] = (int)userStackPtr;
     regStatePtr->curPC = entryPoint;
     regStatePtr->nextPC = (Address)0;
-    regStatePtr->kpsw = (MACH_KPSW_PREFETCH_ENA | 
+    regStatePtr->kpsw = (
+#ifdef WITH_IBUFFER
+#ifdef WITH_PREFETCH
+			 MACH_KPSW_PREFETCH_ENA | 
+#endif
 			 MACH_KPSW_IBUFFER_ENA |
+#endif
 			 MACH_KPSW_VIRT_DFETCH_ENA |
 			 MACH_KPSW_VIRT_IFETCH_ENA |
 			 MACH_KPSW_INTR_TRAP_ENA |
@@ -678,8 +688,15 @@ Mach_SetDebugState(procPtr, debugStatePtr)
     register	Mach_State	*statePtr;
     int				origKpsw;
 
+/*
+ * Bits in the KPSW that the user may set or reset.
+ */
+#define	USER_KPSW_BITS (MACH_KPSW_PREFETCH_ENA|MACH_KPSW_IBUFFER_ENA\
+				|MACH_KPSW_USE_CUR_PC)
+
     statePtr = procPtr->machStatePtr;
-    origKpsw = statePtr->userState.trapRegState.kpsw;
+    origKpsw = (statePtr->userState.trapRegState.kpsw & ~USER_KPSW_BITS) | 
+			(debugStatePtr->regState.kpsw & USER_KPSW_BITS);
     Byte_Copy(sizeof(Mach_RegState), 
 	      (Address)&debugStatePtr->regState,
 	      (Address)&statePtr->userState.trapRegState);
