@@ -32,7 +32,9 @@ Proc_RpcMigInit()
 {
 }
 
-VmMachTracePMEG()
+/*ARGSUSED*/
+VmMachTracePMEG(pmeg)
+int pmeg;
 {
     panic("VmMachTracePMEG called.\n");
 }
