@@ -98,8 +98,8 @@ SigMigSend(procPtr, sigNum, code)
 		Sys_Printf("SigMigSend: killing local copy of process %x.\n",
 			   procPtr->processID);
 	    }
-	    Proc_DestroyMigratedProc(procPtr, PROC_TERM_SIGNALED, sigNum,
-				     code);
+	    Proc_CallFunc(Proc_DestroyMigratedProc,
+			  (ClientData) procPtr->processID, 0);
 	}
     }
 
