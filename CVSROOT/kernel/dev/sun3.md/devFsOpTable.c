@@ -43,6 +43,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static ReturnStatus NullSelectProc();
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
+
+#ifdef SERIALB_DEBUG
+extern ReturnStatus Dev_serialBOutTrace();
+extern ReturnStatus Dev_serialBInTrace();
+#endif
+
 
 /*
  * Device type specific routine table:
@@ -104,10 +110,17 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
 		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect},
+
+#ifdef SERIALB_DEBUG
+    {DEV_SERIALB_OUT_QUEUE, NullProc, Dev_serialBOutTrace, NullProc,
+                  NullProc, NullProc, NullProc },
+
+    {DEV_SERIALB_IN_QUEUE, NullProc, Dev_serialBInTrace, NullProc,
+                  NullProc, NullProc, NullProc },
+#endif
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
-
 
 /*
  * Device Block I/O operation table.  This table is sparse because not
@@ -125,6 +138,10 @@ DevFsBlockOps devFsBlockOpTable[] = {
     { DEV_MEMORY, 0 },
     { DEV_XYLOGICS, Dev_XylogicsDiskBlockIO },
     { DEV_NET, 0 },
+#ifdef SERIALB_DEBUG
+    { DEV_SERIALB_OUT_QUEUE, 0 },
+    { DEV_SERIALB_IN_QUEUE, 0 },
+#endif
 };
 
 /*
