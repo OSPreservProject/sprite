@@ -994,7 +994,7 @@ Net_Arp(spriteID, mutexPtr)
     Mach_GetEtherAddress(&myEtherAddress);
     NetFillInArpRequest(NET_ARP_REQUEST, NET_ROUTE_ETHER,
 			(ClientData) spriteID, (ClientData) rpc_SpriteID,
-			zeroAddress, myEtherAddress, &request);
+			&zeroAddress, &myEtherAddress, &request);
     gather.bufAddr = (Address)&request;
     gather.length = sizeof(NetSpriteArp);
     gather.done = FALSE;
@@ -1053,7 +1053,7 @@ Net_RevArp(type, etherAddrPtr)
 	return -1;
     }
     NetFillInArpRequest(NET_RARP_REQUEST, type, (ClientData) 0,
-		(ClientData) 0, *etherAddrPtr, myEtherAddress,&request);
+		(ClientData) 0, etherAddrPtr, &myEtherAddress,&request);
     gather.bufAddr = (Address)&request;
     gather.length = sizeof(NetSpriteArp);
     gather.done = FALSE;
@@ -1166,7 +1166,7 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
 
 	arp.state |= ARP_IN_TIMEOUT_QUEUE ;
 	arp.timeout.routine = Net_ArpTimeout;
-	arp.timeout.interval = 100 * timer_IntOneMillisecond;
+	arp.timeout.interval = 500 * timer_IntOneMillisecond;
 	arp.timeout.clientData = (ClientData)&arp;
 	Timer_ScheduleRoutine(&arp.timeout, TRUE);
 	do {
@@ -1437,16 +1437,16 @@ NetArpHandler(data, callInfoPtr)
 	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), &spriteID, sizeof(int));
 	    NetFillInArpRequest(NET_ARP_REPLY, NET_ROUTE_ETHER, 
 		(ClientData) spriteID, (ClientData) rpc_SpriteID, 
-		etherAddress, myEtherAddr, &request);
+		&etherAddress, &myEtherAddr, &request);
 	} else {
 	    Net_InetAddress inetAddr;
 	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), &inetAddr, sizeof(inetAddr));
 
 	    NetFillInArpRequest(NET_ARP_REPLY, NET_ROUTE_INET, 
 		(ClientData) inetAddr, (ClientData)  net_InetAddress, 
-		etherAddress, myEtherAddr, &request);
+		&etherAddress, &myEtherAddr, &request);
 	}
-        NetArpOutput(etherAddress, NET_ETHER_ARP, &request);
+        NetArpOutput(&etherAddress, NET_ETHER_ARP, &request);
     } else if (opcode == NET_RARP_REQUEST) {
 	Net_EtherAddress etherAddress;
 	int	spriteID;
@@ -1460,8 +1460,8 @@ NetArpHandler(data, callInfoPtr)
 	if (spriteID > 0) { 
 	    NetFillInArpRequest(NET_RARP_REPLY, NET_ROUTE_ETHER,
 			(ClientData) spriteID, (ClientData) rpc_SpriteID,
-			etherAddress, myEtherAddr, &request);
-	    NetArpOutput(*(Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr),
+			&etherAddress, &myEtherAddr, &request);
+	    NetArpOutput((Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr),
 			NET_ETHER_REVARP, &request);
 	}
     } else {
@@ -1491,8 +1491,8 @@ NetArpHandler(data, callInfoPtr)
  */
 /*ARGSUSED*/
 static void
-NetArpOutput(destEtherAddress, etherType, requestPtr)
-    Net_EtherAddress destEtherAddress;	/* Host to send to */
+NetArpOutput(destEtherAddrPtr, etherType, requestPtr)
+    Net_EtherAddress *destEtherAddrPtr;	/* Host to send to */
     int		etherType;		/* Type of ethernet packet to send. */
     NetSpriteArp *requestPtr;		/* Request to send. */
 {
@@ -1513,7 +1513,7 @@ NetArpOutput(destEtherAddress, etherType, requestPtr)
     }
     nextOutputIndex = (nextOutputIndex + 1) % ARP_OUTPUT_QUEUE_LEN;
 
-    NET_ETHER_ADDR_COPY(destEtherAddress, 
+    NET_ETHER_ADDR_COPY(*destEtherAddrPtr, 
 			NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
     NET_ETHER_HDR_TYPE(*etherHdrPtr) = Net_HostToNetShort(etherType);
 #ifdef sun4
@@ -1588,14 +1588,14 @@ Net_ArpTimeout(time, data)
  */
 
 static void
-NetFillInArpRequest(command, type, targetId, senderId, targetEtherAddr, 
-		    senderEtherAddr, requestPtr)
+NetFillInArpRequest(command, type, targetId, senderId, targetEtherAddrPtr, 
+		   senderEtherAddrPtr, requestPtr)
     short	command;	/* ARP opcode to perform. */
     int		type;		/* Protocol route type. */
     ClientData	targetId;	/* Target protocol address. */
     ClientData  senderId;	/* Sender's protocol ID. */
-    Net_EtherAddress	targetEtherAddr; /* Target ether address. */
-    Net_EtherAddress	senderEtherAddr; /* Sender's ether address. */
+    Net_EtherAddress	*targetEtherAddrPtr; /* Target ether address. */
+    Net_EtherAddress	*senderEtherAddrPtr; /* Sender's ether address. */
     NetSpriteArp *requestPtr;	/* Arp request packet to fill in. */
 {
    unsigned int tid;
@@ -1627,9 +1627,9 @@ NetFillInArpRequest(command, type, targetId, senderId, targetEtherAddr,
     sid = Net_HostToNetInt((unsigned int) senderId);
     bcopy((char *) &sid, ARP_SRC_PROTO_ADDR(requestPtr),sizeof(int));
     bcopy((char *) &tid, ARP_TARGET_PROTO_ADDR(requestPtr),sizeof(int));
-    NET_ETHER_ADDR_COPY(targetEtherAddr,
+    NET_ETHER_ADDR_COPY(*targetEtherAddrPtr,
 			*(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(requestPtr));
-    NET_ETHER_ADDR_COPY(senderEtherAddr,
+    NET_ETHER_ADDR_COPY(*senderEtherAddrPtr,
 			*(Net_EtherAddress *)ARP_SRC_ETHER_ADDR(requestPtr));
 }
 
