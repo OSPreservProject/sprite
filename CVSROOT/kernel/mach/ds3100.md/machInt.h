@@ -25,8 +25,8 @@
  * The bounds of the code that copies arguments from the user stack to
  * the kernel stack.
  */
-extern int MachFetchArgs();
-extern int MachFetchArgsEnd();
+extern Address MachFetchArgs;
+extern Address MachFetchArgsEnd;
 
 #ifdef notdef
 /*
@@ -44,7 +44,7 @@ extern Mach_State *machFPCurStatePtr;
 /*
  * Internal functions.
  */
-extern Boolean		MachUserReturn();
+extern Boolean MachUserReturn _ARGS_((register Proc_ControlBlock *procPtr));
 extern void		MachUTLBMiss();
 extern void		MachEndUTLBMiss();
 extern void 		MachException();
@@ -58,6 +58,14 @@ extern ReturnStatus 	MachFetch5Args();
 extern ReturnStatus 	MachFetch6Args();
 extern void		MachSysCall();
 extern void		MachProbeAddrEnd();
-extern unsigned		*MachEmulateBranch();
+extern unsigned *MachEmulateBranch _ARGS_((unsigned *regsPtr, Address instPC, unsigned fpcCSR, Boolean allowNonBranch));
+
+
+extern void Mach_SendSignal _ARGS_((int sigType));
+
+extern ReturnStatus CvtSpriteToUnixAtts _ARGS_((register Fs_Attributes *spriteAttsPtr, register struct stat *unixAttsPtr));
+extern Boolean MachUserExceptionHandler _ARGS_((unsigned statusReg, unsigned causeReg, Address badVaddr, Address pc));
+extern int MachKernelExceptionHandler _ARGS_((unsigned statusReg, unsigned causeReg, Address badVaddr, Address pc));
+
 
 #endif /* _MACHINT */
