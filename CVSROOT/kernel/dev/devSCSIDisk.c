@@ -52,8 +52,7 @@ typedef struct ScsiDisk {
     int sizeInSectors;	    /* The number of sectors on disk */
     DiskMap map[DEV_NUM_DISK_PARTS];	/* The partition map */
     int type;		/* Type of the drive, needed for error checking */
-    Sys_DiskStats *diskStatsPtr;	/* Area for disk stats. */	
-    int	busy;		/* Whether disk is busy or not. */
+    DevDiskStats *diskStatsPtr;	/* Area for disk stats. */	
 } ScsiDisk;
 
 typedef struct ScsiDiskCmd {
@@ -141,7 +140,9 @@ FillInLabel(devPtr,diskPtr)
 	diskPtr->sizeInSectors = sunLabelPtr->numSectors * 
 			    sunLabelPtr->numHeads * sunLabelPtr->numCylinders;
     
-	if (printLabel) printf(" Partitions ");
+	if (printLabel) {
+	    printf(" Partitions ");
+	}
 	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
 	    diskPtr->map[part].firstSector = sunLabelPtr->map[part].cylinder *
 					     sunLabelPtr->numHeads * 
@@ -153,7 +154,9 @@ FillInLabel(devPtr,diskPtr)
 				       diskPtr->map[part].sizeInSectors);
 	    }
 	}
-	if (printLabel)	printf("\n");
+	if (printLabel) {
+	    printf("\n");
+	}
 
 	return(SUCCESS);
     }
@@ -173,7 +176,9 @@ FillInLabel(devPtr,diskPtr)
 				 diskHdrPtr->numHeads *
 			         diskHdrPtr->numCylinders;
 
-	if (printLabel) printf(" Partitions ");
+	if (printLabel) {
+	    printf(" Partitions ");
+	}
 	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
 	    diskPtr->map[part].firstSector = 
 				diskHdrPtr->map[part].firstCylinder *
@@ -186,7 +191,9 @@ FillInLabel(devPtr,diskPtr)
 				   diskPtr->map[part].sizeInSectors);
 	    }
 	}
-	if (printLabel) printf("\n");
+	if (printLabel) {
+	    printf("\n");
+	}
 	return(SUCCESS);
     }
     /*
@@ -228,7 +235,9 @@ FillInLabel(devPtr,diskPtr)
 	diskPtr->sizeInSectors = decLabelPtr->numSectors * 
 			    decLabelPtr->numHeads * decLabelPtr->numCylinders;
     
-	if (printLabel) printf(" Partitions ");
+	if (printLabel) {
+	    printf(" Partitions ");
+	}
 	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
 	    diskPtr->map[part].firstSector =
 		    decLabelPtr->map[part].offsetBytes / DEV_BYTES_PER_SECTOR;
@@ -239,7 +248,9 @@ FillInLabel(devPtr,diskPtr)
 				       diskPtr->map[part].sizeInSectors);
 	    }
 	}
-	if (printLabel)	printf("\n");
+	if (printLabel) {
+	    printf("\n");
+	}
 
 	return(SUCCESS);
     }
@@ -262,14 +273,20 @@ FillInLabel(devPtr,diskPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static Boolean
-ScsiDiskIdleCheck(clientData) 
-    ClientData	clientData;
+ScsiDiskIdleCheck(clientData, diskStatsPtr) 
+    ClientData		clientData;		/* Unused for SCSI disks. */
+    DevDiskStats	*diskStatsPtr;
 {
-    ScsiDisk *diskPtr = (ScsiDisk *) clientData;
+    Boolean		retVal;
 
-    return !(diskPtr->busy);
+    MASTER_LOCK(&(diskStatsPtr->mutex));
+    retVal = !(diskStatsPtr->busy);
+    MASTER_UNLOCK(&(diskStatsPtr->mutex));
+
+    return retVal;
+
 }
 
 /*
@@ -380,12 +397,16 @@ DiskDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
 
     requestPtr = (DevBlockDeviceRequest *) (scsiCmdPtr->clientData);
     diskPtr = ((ScsiDiskCmd *) (requestPtr->ctrlData))->diskPtr;
-    diskPtr->busy--;
+
+    MASTER_LOCK(&(diskPtr->diskStatsPtr->mutex));
+    diskPtr->diskStatsPtr->busy--;
     if (requestPtr->operation == FS_READ) {
-	diskPtr->diskStatsPtr->diskReads++;
+	diskPtr->diskStatsPtr->diskStats.diskReads++;
     } else {
-	diskPtr->diskStatsPtr->diskWrites++;
+	diskPtr->diskStatsPtr->diskStats.diskWrites++;
     }
+    MASTER_UNLOCK(&(diskPtr->diskStatsPtr->mutex));
+
     /*
      * If request suffered an HBA error or got no error we notify the
      * caller that the request is done.
@@ -442,7 +463,11 @@ SendCmdToDevice(diskPtr, requestPtr, firstSector, lengthInSectors)
     diskCmdPtr->scsiCmd.doneProc = DiskDoneProc;
     diskCmdPtr->scsiCmd.clientData = (ClientData) requestPtr;
     diskCmdPtr->diskPtr = diskPtr;
-    diskPtr->busy++;
+
+    MASTER_LOCK(&(diskPtr->diskStatsPtr->mutex));
+    diskPtr->diskStatsPtr->busy++;
+    MASTER_UNLOCK(&(diskPtr->diskStatsPtr->mutex));
+
     DevScsiSendCmd(diskPtr->devPtr,&(diskCmdPtr->scsiCmd));
     return SUCCESS;
 }
@@ -534,7 +559,7 @@ DiskError(diskPtr, statusByte, senseLength, senseDataPtr)
      */
 
 #include <dev/hbatest.h>
-
+/*ARGSUSED*/
 static int
 DiskHBATestDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength, 
 	     senseDataPtr)
@@ -792,6 +817,7 @@ ReleaseProc(handlePtr)
     ScsiDisk	*diskPtr = (ScsiDisk *) handlePtr;
 
     status = DevScsiReleaseDevice(diskPtr->devPtr);
+    DevDiskUnregister(diskPtr->diskStatsPtr);
     free((char *) diskPtr);
 
     return status;

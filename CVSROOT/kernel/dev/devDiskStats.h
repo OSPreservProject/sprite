@@ -21,9 +21,22 @@
 
 #include "user/sysStats.h"
 
+/*
+ * This structure is used for disk stats instead of a straignt Sys_DiskStats
+ * because otherwise for some types of disks (SCSI), there is no place to
+ * keep the busy info.  This field is wasted on the xylogics.
+ */
+typedef struct  DevDiskStats {
+    Sync_Semaphore	mutex;		/* syncrhonize stat updates */
+    int         	busy;		/* For idle check. */
+    Sys_DiskStats 	diskStats;	/* Stat structure of device. */
+} DevDiskStats;
+
+
 /* procedures */
 
-extern Sys_DiskStats *DevRegisterDisk();
+extern DevDiskStats *DevRegisterDisk();
+extern	void	DevDiskUnregister();
 
 #endif /* _DISKSTATS */
 

@@ -29,14 +29,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The disk stats modules cleans a linked list of registers disk to implment
  * the Idle counts of devices. This list is composed of devices.
  */
-
 typedef struct Device {
     List_Links	links;		  /* Used by the List_Links library routines.*/
     Boolean	(*idleCheck)();	  /* Routine to check device's state. */
     ClientData clientData; 	  /* ClientData argument to  idleCheck. */
     int		type;		  /* Fs_Device type of this disk. */
     int		unit;	    	  /* Fs_Device unit of this disk. */
-    Sys_DiskStats diskStats;  	  /* Stat structure of device. */
+    DevDiskStats	devDiskStats;
+    int			refCount; /* # of times we've attached partition. */
 } Device;
 
 /*
@@ -78,10 +78,14 @@ Dev_GatherDiskStats()
 	MASTER_LOCK(&deviceListMutex);
 
 	LIST_FORALL(&deviceListHdr, (List_Links *) devicePtr) {
-	    register Sys_DiskStats *stats = &(devicePtr->diskStats);
+	    register Sys_DiskStats *stats =
+		    &(devicePtr->devDiskStats.diskStats);
     
 	    stats->numSamples++;
-	    if ((devicePtr->idleCheck)(devicePtr->clientData)) {
+	    if (devicePtr->idleCheck == (Boolean((*)())) NIL) {
+		stats->idleCount++;	/* No disk anymore. */
+	    } else if ((devicePtr->idleCheck)(devicePtr->clientData,
+		    &(devicePtr->devDiskStats))) {
 		stats->idleCount++;
 	    }
 	}
@@ -126,7 +130,7 @@ Dev_GetDiskStats(diskStatArr, numEntries)
 	    if (index >= numEntries) {
 		break;
 	    }
-	    diskStatArr[index] = devicePtr->diskStats;
+	    diskStatArr[index] = devicePtr->devDiskStats.diskStats;
 	    index += 1;
 	}
     }
@@ -145,20 +149,21 @@ Dev_GetDiskStats(diskStatArr, numEntries)
  *	structure may available to the Dev_GetDiskStats routine.
  *
  * Results:
- *	The initialized Sys_DiskStats structure for the device.
+ *	The initialized DevDiskStats structure for the device.
  *
  * Side effects:
  *	The idleCheck function will be called when periodcally and should
  *	return TRUE if the disk is idle. It is should be declared as follows:
  *
- *		Boolean idleCheck(clientData)
+ *		Boolean idleCheck(clientData, diskStatsPtr)
  *			ClientData clientData  -- The clientData argument passed
  *						  to DevRegisterDevice.
+ *			DevDiskStats	*diskStatsPtr -- Ptr to disk stats.
  *
  *----------------------------------------------------------------------
  */
 
-Sys_DiskStats *
+DevDiskStats *
 DevRegisterDisk(devicePtr, deviceName, idleCheck, clientData)
     Fs_Device	*devicePtr;	/* Fs_Device for disk. */
     char	*deviceName;	/* Printable name for this device. */
@@ -181,8 +186,10 @@ DevRegisterDisk(devicePtr, deviceName, idleCheck, clientData)
     newDevice->clientData = clientData;
     newDevice->type = devicePtr->type;
     newDevice->unit = devicePtr->unit;
-    bzero((char *) &(newDevice->diskStats), sizeof(Sys_DiskStats));
-    strncpy(newDevice->diskStats.name, deviceName, SYS_DISK_NAME_LENGTH);
+    bzero((char *) &(newDevice->devDiskStats), sizeof(DevDiskStats));
+    Sync_SemInitDynamic(&(newDevice->devDiskStats.mutex), "DevDiskStats");
+    strncpy(newDevice->devDiskStats.diskStats.name, deviceName,
+	    SYS_DISK_NAME_LENGTH);
     MASTER_LOCK(&deviceListMutex);
     if (!initialized) {
 	List_Init(&deviceListHdr);
@@ -202,10 +209,65 @@ DevRegisterDisk(devicePtr, deviceName, idleCheck, clientData)
 	List_Insert((List_Links *) newDevice, LIST_ATREAR(&deviceListHdr));
 	devPtr = newDevice;
     }
+    devPtr->refCount++;
     MASTER_UNLOCK(&deviceListMutex);
     if (found) {
 	free((char *)newDevice);
     }
-    return &(devPtr->diskStats);
+    return &(devPtr->devDiskStats);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevDiskUnregister--
+ *
+ *	Unregister a disk with the disk stat module.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The idleCheck function will cease calculating for this disk.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevDiskUnregister(diskStatsPtr)
+    DevDiskStats	*diskStatsPtr;
+{
+    Device		*devPtr;
+    Boolean		found = FALSE;
+
+
+    /*
+     * Allocated, initialized, and add to the callback list a Device structure
+     * for this device.
+     */
+    MASTER_LOCK(&deviceListMutex);
+    if (!initialized) {
+	MASTER_UNLOCK(&deviceListMutex);
+	return;
+    }
+    LIST_FORALL(&deviceListHdr, (List_Links *) devPtr) {
+	if (diskStatsPtr == &(devPtr->devDiskStats)) {
+	   found = TRUE;
+	   break;
+	}
+    }
+    if (found) {
+	/*
+	 * For stupid reasons to do with spritemon, we're not allowed to
+	 * free up this space.  Once a disk is noticed by the stat stuff, the
+	 * user interface doesn't want to see it go away.
+	 */
+	devPtr->refCount--;
+	if (devPtr->refCount == 0) {
+	    devPtr->idleCheck = (Boolean((*)())) NIL;
+	    devPtr->clientData = (ClientData) NIL;
+	}
+    }
+    MASTER_UNLOCK(&deviceListMutex);
+    return;
+}

@@ -328,7 +328,7 @@ struct XylogicsDisk {
     int				numSectors;	/* ... on each track */
     DevQueue			queue;
     DevDiskMap			map[DEV_NUM_DISK_PARTS];/* partitions */
-    Sys_DiskStats		*diskStatsPtr;
+    DevDiskStats		*diskStatsPtr;
 };
 
 #define XY_DISK_STATE_MAGIC	0xa1b2c3d4
@@ -668,8 +668,9 @@ BlockIOProc(handlePtr, requestPtr)
  */
 
 static Boolean
-xyIdleCheck(clientData) 
+xyIdleCheck(clientData, diskStatsPtr) 
     ClientData	clientData;
+    DevDiskStats	*diskStatsPtr;	/* Unused for xylogics. */
 {
     XylogicsDisk *diskPtr = (XylogicsDisk *) clientData;
     return (!diskPtr->xyPtr->busy);
@@ -1592,9 +1593,9 @@ RequestDone(diskPtr, requestPtr, status, numSectors)
 {
     if (numSectors > 0) {
 	if (requestPtr->requestPtr->operation == FS_READ) {
-	    diskPtr->diskStatsPtr->diskReads++;
+	    diskPtr->diskStatsPtr->diskStats.diskReads++;
 	} else {
-	    diskPtr->diskStatsPtr->diskWrites++;
+	    diskPtr->diskStatsPtr->diskStats.diskWrites++;
 	}
     }
     MASTER_UNLOCK(&diskPtr->xyPtr->mutex);
