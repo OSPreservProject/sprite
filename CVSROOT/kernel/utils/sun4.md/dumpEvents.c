@@ -12,22 +12,48 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "dev.h"
-#include "dumpInt.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <dev.h>
+#include <dumpInt.h>
+#include <stdio.h>
+
+static void ConsoleReset _ARGS_((ClientData data));
 
 /*
  * Table of routines and their arguments to be called on dump events.
  */
 static EventTableType sunEventTable[] = {
-    {'k', Dev_ConsoleReset, (ClientData) TRUE,"Reset console to keyboard mode"},
-    {'l', Dev_ConsoleReset, (ClientData) FALSE,
+    {'k', ConsoleReset, (ClientData) TRUE,"Reset console to keyboard mode"},
+    {'l', ConsoleReset, (ClientData) FALSE,
 					"Reset console to raw mode (for X)"},
 	/* This MUST be the last entry */
     {'\000', LAST_EVENT, NULL_ARG, (char *) 0 }
 };
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConsoleReset --
+ *
+ *	Wrapper around Dev_ConsoleReset to avoid casts and 
+ *	compiler warning messages.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	(see Dev_ConsoleReset)
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConsoleReset(data)
+    ClientData data;
+{
+    Dev_ConsoleReset((int) data);
+}
 
 /*
  *----------------------------------------------------------------------
