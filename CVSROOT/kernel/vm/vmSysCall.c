@@ -347,7 +347,7 @@ Vm_Cmd(command, arg)
 	    Vm_TraceStart	*traceStartPtr;
 	    extern int		etext;
 	    char		fileName[100];
-	    char		hostNum[CVT_INT_BUF_SIZE];
+	    char		hostNum[34];
 
 	    if (vmTraceFilePtr != (Fs_Stream *)NIL) {
 		printf("VmCmd: Tracing already running.\n");
