@@ -306,7 +306,15 @@ Vm_Cmd(command, arg)
 	    }
 	    break;
 	case VM_SET_COW:
-	    SETVAR(vm_CanCOW, arg);
+	    /*
+	     * It's okay to turn on COW when it's off, but not the other
+	     * way around.
+	     */
+	    if (arg || !vm_CanCOW) {
+		SETVAR(vm_CanCOW, arg);
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
 	    break;
 	case VM_SET_FS_PENALTY:
 	    if (arg <= 0) {
