@@ -30,10 +30,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timerTick.h"
 #include "spriteTime.h"
 #include "mach.h"
+#include "machMon.h"
 #include "prof.h"
-#include "devAddrs.h"
+#include "stdio.h"
 
 #include "timerMK48T12Int.h"
+
+#define abs(x) ((x) >= 0 ? (x) : -(x))
 
 /*
  * The sun4c contains two counters that count up to value in the limit 
@@ -64,7 +67,7 @@ typedef struct {
 #define	COUNTER_SHIFT 10
 #define	COUNTER_LIMIT_REACH 0x80000000
 
-static volatile Counters *counterPtr = (volatile Counters *) DEV_COUNTER_ADDR;
+static volatile Counters *counterPtr = (volatile Counters *)NIL;
 
 /*
  * The "free running counter"
@@ -102,13 +105,21 @@ void
 Timer_TimerInit(timer)
     unsigned short 	timer;
 { 
-     if (timer == TIMER_CALLBACK_TIMER) {
-	 Mach_SetHandler(10, Timer_TimerServiceInterrupt, (ClientData) timer); 
-     } else if (timer == TIMER_PROFILE_TIMER) {
-	 Mach_SetHandler(14, Timer_TimerServiceInterrupt, (ClientData) timer); 
-     } else {
+    if (counterPtr == (volatile Counters *)NIL) {
+	if (Mach_MonSearchProm("counter-timer", "address",
+		(char *)&counterPtr,
+		sizeof counterPtr) !=  sizeof counterPtr) {
+	    panic("The counter-timer address is missing!\n");
+	}
+	printf("PROM: Counter-timer is at %x\n", counterPtr);
+    }
+    if (timer == TIMER_CALLBACK_TIMER) {
+	Mach_SetHandler(10, Timer_TimerServiceInterrupt, (ClientData) timer); 
+    } else if (timer == TIMER_PROFILE_TIMER) {
+	Mach_SetHandler(14, Timer_TimerServiceInterrupt, (ClientData) timer); 
+    } else {
 	panic("Timer_TimerInit: unknown timer %d\n", timer);
-     }
+    }
 }
 
 
@@ -146,7 +157,7 @@ Timer_TimerStart(timer)
 	 counterPtr->callBackLimit =
 		     ((TIMER_CALLBACK_INTERVAL_APPROX) << COUNTER_SHIFT);
 	 junk = counterPtr->callBackLimit;
-	  DISABLE_INTR();
+	 DISABLE_INTR();
 	 *Mach_InterruptReg |= MACH_ENABLE_COUNTER0_INTR_LEVEL;
 	 ENABLE_INTR();
 
@@ -257,6 +268,31 @@ Timer_TimerServiceInterrupt(clientData, pc)
 	 * to keep track on time of day.
 	 */
 	 todCounter.microseconds += TIMER_CALLBACK_INTERVAL_APPROX;
+#ifdef ADJTIME
+	 if (timer_AdjustDelta.microseconds || timer_AdjustDelta.seconds) {
+	     register int adjust;
+
+	     if (timer_AdjustDelta.seconds == 0 &&
+		     abs(timer_AdjustDelta.microseconds) < timer_TickAdjust) {
+		 adjust = timer_AdjustDelta.microseconds;
+	     } else {
+		 adjust = timer_TickDelta;
+	     }
+	     todCounter.microseconds += adjust;
+	     timer_AdjustDelta.microseconds -= adjust;
+	     if (timer_TickDelta < 0) {
+		 if (timer_AdjustDelta.microseconds > 0) {
+		     ++timer_AdjustDelta.seconds;
+		     timer_AdjustDelta.microseconds -= ONE_SECOND;
+		 }
+	     } else {
+		 if (timer_AdjustDelta.microseconds < 0) {
+		     --timer_AdjustDelta.seconds;
+		     timer_AdjustDelta.microseconds += ONE_SECOND;
+		 }
+	     }
+	 }
+#endif /* ADJTIME */
 	 if (todCounter.microseconds > ONE_SECOND) {
 	     todCounter.seconds++;
 	     todCounter.microseconds -= ONE_SECOND;
@@ -399,4 +435,3 @@ TimerSetHardwareUniversalTime(timePtr, localOffset, DST)
     Boolean DST;		/* DST allowed flag. */
 {
 }
-
