@@ -285,11 +285,16 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 #ifdef SOSP91
 	Fsconsist_Info *consistPtr = &handlePtr->consist;
 	Fsconsist_ClientInfo	*clientPtr;
+	int	numReading, numWriting;
 
 	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
 	    if (clientPtr->clientID == clientID) {
 	        if (!clientPtr->cached) {
-		    SOSP_ADD_READ_TRACE(clientID, paramsPtr->streamID, TRUE, paramsPtr->io.offset, paramsPtr->io.length);
+		    (void) Fsconsist_NumClients(consistPtr, &numReading,
+			    &numWriting);
+		    SOSP_ADD_READ_TRACE(clientID, handlePtr->hdr.fileID,
+			    paramsPtr->streamID, TRUE, paramsPtr->io.offset,
+			    paramsPtr->io.length, numReading, numWriting);
 		}
 		break;
 	    }
