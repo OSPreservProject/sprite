@@ -59,9 +59,7 @@ int	x;
     if (x == 0) {
 	return 0;
     } else {
-#ifdef NOTDEF
 	Mach_MonPrintf("Hello World!\n");
-#endif NOTDEF
 	diddly(x - 1);
     }
     return 1;
