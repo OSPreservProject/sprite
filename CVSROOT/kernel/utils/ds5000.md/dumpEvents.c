@@ -14,6 +14,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "dumpInt.h"
+#include "dev.h"
+
+/*
+ * Table of routines and their arguments to be called on dump events.
+ */
+static EventTableType sunEventTable[] = {
+    {'k', Dev_ConsoleReset, (ClientData) TRUE,"Reset console to keyboard mode"},
+    {'l', Dev_ConsoleReset, (ClientData) FALSE,
+					"Reset console to raw mode (for X)"},
+	/* This MUST be the last entry */
+    {'\000', LAST_EVENT, NULL_ARG, (char *) 0 }
+};
 
 
 /*
@@ -42,7 +54,14 @@ Dump_Register_Events(eventTable)
 	if (entry->routine == RESERVED_EVENT) {
 		continue;
 	}
-	Dev_KbdQueueAttachProc(entry->key, entry->routine, entry->argument);
+	Dev_RegisterConsoleCmd(entry->key, entry->routine, entry->argument);
+    }
+
+    for (entry = sunEventTable; entry->routine != LAST_EVENT; entry++) {
+	if (entry->routine == RESERVED_EVENT) {
+		continue;
+	}
+	Dev_RegisterConsoleCmd(entry->key, entry->routine, entry->argument);
     }
 }
 
@@ -65,4 +84,9 @@ Dump_Register_Events(eventTable)
 void
 Dump_Show_Local_Menu()
 {
+    EventTableType	*entry;
+
+    for (entry = sunEventTable; entry->routine != LAST_EVENT; entry++) {
+	printf("%c - %s\n",entry->key, entry->description);
+    }
 }
