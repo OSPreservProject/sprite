@@ -152,7 +152,6 @@ typedef struct RpcServerState {
 extern RpcServerState **rpcServerPtrPtr;
 extern int		rpcMaxServers;
 extern int		rpcNumServers;
-extern int		rpcNoServers;
 
 /*
  * The service procedure switch. This is indexed by procedure number.

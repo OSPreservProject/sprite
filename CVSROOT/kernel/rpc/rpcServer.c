@@ -46,13 +46,6 @@ int              rpcMaxServers = 50;
 int              rpcNumServers = 0;
 
 /*
- * The server dispatcher signals its distress at not being able to dispatch
- * a message because there are no server processes by incrementing this
- * counter.  Rpc_Deamon notices this and creates more server processes.
- */
-int		 rpcNoServers = 0;
-
-/*
  * rpcMaxServerAge is the number of times the Rpc_Daemon will send
  * a probe message to a client (without response) before forcibly
  * reclaiming the server process for use by other clients.  A probe
