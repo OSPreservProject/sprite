@@ -619,7 +619,8 @@ FsSpriteClose(streamPtr, clientID, flags, dataSize, closeData)
     int			clientID;	/* IGNORED, implicitly passed by RPC */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of *closeData, or Zero */
-    ClientData		closeData;	/* Copy of cached I/O attributes. */
+    ClientData		closeData;	/* Copy of cached I/O attributes.
+   					 * Sometimes NIL!  */
 {
     FsRemoteIOHandle	*rmtHandlePtr;	/* Handle to close */
     Rpc_Storage 	storage;
@@ -630,8 +631,12 @@ FsSpriteClose(streamPtr, clientID, flags, dataSize, closeData)
     params.fileID = rmtHandlePtr->hdr.fileID;
     params.streamID = streamPtr->hdr.fileID;
     params.flags = flags;
-    params.closeData = *((FsCloseData *)closeData);
-    params.closeDataSize = dataSize;
+    if (closeData != (ClientData) NIL) {
+	params.closeData = *((FsCloseData *)closeData);
+	params.closeDataSize = dataSize;
+    } else {
+	params.closeDataSize = 0;
+    }
 
     storage.requestParamPtr = (Address)&params;
     storage.requestParamSize = sizeof(params);
@@ -722,9 +727,16 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	     * count on the handle.
 	     */
 	    FS_TRACE_HANDLE(FS_TRACE_CLOSE, hdrPtr);
-	    status = (*fsStreamOpTable[hdrPtr->fileID.type].close)(streamPtr,
-		    clientID, paramsPtr->flags, paramsPtr->closeDataSize,
-		    (ClientData)&(paramsPtr->closeData));
+	    if (paramsPtr->closeDataSize != 0) {
+		status = (*fsStreamOpTable[hdrPtr->fileID.type].close)
+			(streamPtr, clientID, paramsPtr->flags,
+			paramsPtr->closeDataSize,
+			(ClientData)&(paramsPtr->closeData));
+	    } else {
+		status = (*fsStreamOpTable[hdrPtr->fileID.type].close)
+			(streamPtr, clientID, paramsPtr->flags,
+			0, (ClientData)NIL);
+	    }
 	}
 	if (streamPtr != &dummy) {
 	    /*
