@@ -587,7 +587,8 @@ typedef	struct Fs_NewStats {
     int		totalFaultsM;
     int		remoteDevicishBytesRead;
     int		remoteDevicishBytesReadM;
-
+    int		COWCopySwapPage;
+    int		COWCopySwapPageM;
 } Fs_NewStats;
 extern	Fs_NewStats	fs_MoreStats;
 #endif SOSP91
