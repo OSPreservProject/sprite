@@ -152,10 +152,18 @@ extern ReturnStatus FsrmtHardLink _ARGS_((Fs_HandleHeader *prefixHandle1,
  * Sprite Domain functions called via the fsAttrOpsTable switch.
  * These are called with a fileID.
  */
+#ifdef SOSP91
+extern ReturnStatus FsrmtGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
+		Fs_Attributes *attrPtr, int hostID, int userID));
+extern ReturnStatus FsrmtSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags, int
+		clientID, int hostID, int userID));
+#else
 extern ReturnStatus FsrmtGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
 		Fs_Attributes *attrPtr));
 extern ReturnStatus FsrmtSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
 		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
+#endif
 
 extern ReturnStatus FsrmtDeviceIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
 		int *flagsPtr, int clientID, ClientData streamData,
