@@ -599,6 +599,22 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    break;
 	}
+	case SYS_FSCACHE_EXTRA_STATS: {
+	    Fscache_ExtraStats	*statsPtr;
+
+	    statsPtr = (Fscache_ExtraStats *) argPtr;
+	    if (statsPtr == (Fscache_ExtraStats *)NIL ||
+		    statsPtr == (Fscache_ExtraStats *) 0 ||
+		    statsPtr == (Fscache_ExtraStats *) USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Fscache_ExtraStats)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		status = Vm_CopyOut(sizeof (Fscache_ExtraStats),
+			(Address) &fscache_ExtraStats, argPtr);
+	    }
+	    break;
+	}
         case SYS_FS_SOSP_NAME_STATS: {
 	    Sys_SospNameStats	stats;
 
