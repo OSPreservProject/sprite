@@ -19,6 +19,7 @@
 #ifndef _FSDMINT
 #define _FSDMINT
 
+#include <stdio.h>
 /*
  * Structure to keep information about each fragment.
  */
@@ -39,20 +40,6 @@ typedef struct FsdmFragment {
  */
 #define FSDM_MAX_LOCAL_DOMAINS    20
 extern Fsdm_Domain *fsdmDomainTable[];
-
-
-extern ReturnStatus	FsdmFileDescAllocInit();
-extern ReturnStatus	FsdmWriteBackFileDescBitmap();
-extern	ReturnStatus	FsdmBlockAllocInit();
-extern	ReturnStatus	FsdmWriteBackDataBlockBitmap();
-
-extern	void		FsdmBlockFind();
-extern	void		FsdmBlockFree();
-extern	void		FsdmFragFind();
-extern	void		FsdmFragFree();
-
-extern  int		FsdmBlockRealloc();
-extern  ReturnStatus	FsdmWriteBackSummaryInfo();
 
 
 #endif /* _FSDMINT */
