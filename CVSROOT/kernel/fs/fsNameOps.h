@@ -13,10 +13,6 @@
 #ifndef _FSNAMEOPS
 #define _FSNAMEOPS
 
-#include "fsFile.h"
-#include "fsDevice.h"
-#include "fsPdevState.h"
-
 /*
  * The arguments and results of the various lookup operations have to
  * be packaged into a struct so they can be passed through FsLookupOperation()
@@ -57,22 +53,6 @@ typedef struct FsOpenResults {
     int		dataSize;	/* Size of extra streamData */
     ClientData	streamData;	/* Pointer to stream specific extra data */
 } FsOpenResults;
-
-/*
- * The stream data is a reference to the following union.  The union is used
- * to facilitate byte-swaping in the RPC stubs.
- */
-typedef	union	FsUnionData {
-    FsFileState		fileState;
-    FsDeviceState	devState;
-    FsPdevState		pdevState;
-} FsUnionData;
-
-typedef	struct	FsOpenResultsParam {
-    int			prefixLength;
-    FsOpenResults	openResults;
-    FsUnionData		openData;
-} FsOpenResultsParam;
 
 /*
  * FS_DOMAIN_LOOKUP arguments and results.
