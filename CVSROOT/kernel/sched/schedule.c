@@ -117,6 +117,9 @@ typedef struct  Sched_OverallTimes {
 } Sched_OverallTimes;
 
 Sched_OverallTimes      overallTimesPerProcessor[MACH_MAX_NUM_PROCESSORS];
+
+#include <sospRecord.h>
+Timer_Ticks nameTime[10] = {0};
 #endif /* SOSP91 */
 
 
@@ -312,6 +315,19 @@ Sched_GatherProcessInfo(interval)
             Timer_AddIntervalToTicks(overallTimesPerProcessor[cpu].kernelTime,
                     interval,
                     &(overallTimesPerProcessor[cpu].kernelTime));
+	    {
+		int n;
+		n = curProcPtr->SOSP_IN_NAME_LOOKUP;
+		if (n>=0 && n<6) {
+		    Timer_AddIntervalToTicks( nameTime[n], interval,
+			    &nameTime[n]);
+		} else {
+		    /*
+		     * We weren't initialized.
+		     */
+		    curProcPtr->SOSP_IN_NAME_LOOKUP = 0;
+		}
+	    }
 #endif SOSP91
 	} else {
 	    Timer_AddIntervalToTicks(curProcPtr->userCpuUsage.ticks, interval,
