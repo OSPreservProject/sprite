@@ -180,23 +180,24 @@ FBAddr	fbaddrs[FBTYPE_LASTPLUSONE] = {
 
 
 /*
- * Temporary way of storing frame buffer type information since we can't
- * get it from the prom yet.
+ * For convenience we store info about the frame buffer types here.  If we
+ * get the info from the prom, we overwrite the stuff here.
  * Array indexed by fb_type, found in fb.h.
- * The array is two-dimensional since there are multiple sizes for some
- * frame buffer types.
+ * An example of what would be overwritten is if we have a high resolution
+ * b&w screen, the info in the prom will give us
+ *	{high resolution bw2, 1280, 1600, 1, 2, 256*1024},	(* bw2h *)
+ * instead of the regular bw2.  Also, for cg3, we could have a second type:
+ *	{cg3b, 768, 1024, -1, -1, -1} 			(* cg3 B *)
  */
 		/* type, height, width, depth, cmsize, size */
 FBType	fbarray[FBTYPE_LASTPLUSONE] = {
 	{FBTYPE_SUN1BW, -1, -1, -1, -1, -1},			/* bw1 */
 	{FBTYPE_SUN1COLOR, -1, -1, -1, -1, -1},			/* cg1 */
 	{FBTYPE_SUN2BW, 900, 1152, 1, 2, 128*1024},		/* bw2 */
-/*	{high resolution bw2, 1280, 1600, 1, 2, 256*1024}, */	/* bw2h */
 	{FBTYPE_SUN2COLOR, 900, 1152, 8, -1, -1},		/* cg2 */
 	{FBTYPE_SUN2GP, -1, -1, -1, -1, -1},			/* gp2 */
 	{FBTYPE_SUN5COLOR, -1, -1, -1, -1, -1},			/* cg5? |bw3? */
 	{FBTYPE_SUN3COLOR, 900, 1152, 8, 256, 1024*1024},	/* cg3 A */
-/*	{cg3b, 768, 1024, -1, -1, -1} */			/* cg3 B */
 	{FBTYPE_MEMCOLOR, -1, -1, -1, -1, -1},			/* ? | bw4? */
 	{FBTYPE_SUN4COLOR, 900, 1152, 8, 256, 1024*1024},	/* cg4 */
 	{FBTYPE_NOTSUN1, -1, -1, -1, -1, -1},			/* customer */
@@ -299,19 +300,13 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
     switch (machArch) {
     case SYS_SUN4:
 	if (machType == SYS_SUN_4_C ) {
-	    /*
-	     * For now, get machine type from file.  Instead, we should get
-	     * this from the prom.
-	     */
 	    whichFb = GetFBType();
 	    if (whichFb == -1) {
-		printf("Couldn't find fbtype in file - setting to bw2.\n");
 		whichFb = FBTYPE_SUN2BW;
 	    }
 	    break;
 	}
 	/* Fall through for SYS_SUN4. */
-	printf("Falling through for sun4.\n");
     case SYS_SUN3:
 	eeprom = (struct eeprom *)EEPROM_BASE;
 	eeconf = &(eeprom->ee_diag.eed_conf[0]);
@@ -332,15 +327,12 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
 		switch (eeconf->eec_un.eec_color.eec_color_type) {
 		case EEC_COLOR_TYPE_CG4:
 		    whichFb = FBTYPE_SUN4COLOR;
-		    printf("sun4color\n");
 		    break;
 		case EEC_COLOR_TYPE_CG6:
 		    whichFb = FBTYPE_SUNFAST_COLOR;
-		    printf("sun4fastcolor\n");
 		    break;
 		default:
 		    ; /* just ignore... */
-		    printf("default\n");
 		}
 	    }
 	    /* b/w display? (note: give preference to color) */
@@ -350,16 +342,13 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
 		    fbarray[whichFb].fb_height = 1280;
 		    fbarray[whichFb].fb_width = 1600;
 		    fbarray[whichFb].fb_size = 256 * 1024;
-		    printf("High resolution fb.\n");
 		} else {
 		    whichFb = FBTYPE_SUN2BW;
-		    printf("Was -1, setting to bw2.\n");
 		}
 	    }
 	}
 	/* assume b/w as default */
 	if (whichFb == -1) {
-	    printf("Assuming bw2 as default.\n");    
 	    whichFb = FBTYPE_SUN2BW;
 	}
 	if ((whichFb == FBTYPE_SUN2BW) &&
@@ -368,7 +357,6 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
 	    fbarray[whichFb].fb_height = 1280;
 	    fbarray[whichFb].fb_width = 1600;
 	    fbarray[whichFb].fb_size = 256 * 1024;
-	    printf("Setting bw2 to high resolution.\n");
 	}
 	break;
 
@@ -642,15 +630,12 @@ SearchProm(node)
 
     configPtr = romVectorPtr->v_config_ops;
     while (node != 0) {
-	printf("node: 0x%x\n", node);
 	length = configPtr->devr_getproplen(node, "name");
-	printf("length: 0x%x\n", length);
 	if (length > 0) {
 	    if (length > sizeof (searchBuffer)) {
 		panic("SearchProm: buffer too small.\n");
 	    }
 	    configPtr->devr_getprop(node, "name", searchBuffer);
-	    printf("buffer: %s\n", searchBuffer);
 	    for (i = 0; i < FBTYPE_LASTPLUSONE; i++) {
 		if (strcmp(searchBuffer, fbNames[i]) == 0) {
 		    whichFb = i;
@@ -662,8 +647,10 @@ SearchProm(node)
 			configPtr->devr_getprop(node, "address", searchBuffer);
 			if (fbaddrs[i].fb_buffer !=
 				(void *) (*(int *) searchBuffer)) {
+#ifdef DEBUG
 			    printf("Updating address for %s to 0x%x.\n",
 				    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
 			    fbaddrs[i].fb_buffer =
 				    (void *) (*(int *) searchBuffer);
 			}
@@ -674,8 +661,10 @@ SearchProm(node)
 		    } else {
 			configPtr->devr_getprop(node, "height", searchBuffer);
 			if (fbarray[i].fb_height != *(int *) searchBuffer) {
+#ifdef DEBUG
 			    printf("Updating height for %s to 0x%x.\n",
 				    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
 			    fbarray[i].fb_height = *(int *) searchBuffer;
 			}
 		    }
@@ -685,8 +674,10 @@ SearchProm(node)
 		    } else {
 			configPtr->devr_getprop(node, "width", searchBuffer);
 			if (fbarray[i].fb_width != *(int *) searchBuffer) {
+#ifdef DEBUG
 			    printf("Updating width for %s to 0x%x.\n",
 				    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
 			    fbarray[i].fb_width = *(int *) searchBuffer;
 			}
 		    }
@@ -696,8 +687,10 @@ SearchProm(node)
 		    } else {
 			configPtr->devr_getprop(node, "depth", searchBuffer);
 			if (fbarray[i].fb_depth != *(int *) searchBuffer) {
+#ifdef DEBUG
 			    printf("Updating depth for %s to 0x%x.\n",
 				    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
 			    fbarray[i].fb_depth = *(int *) searchBuffer;
 			}
 		    }
@@ -805,7 +798,9 @@ DevFBMMap(devicePtr, startAddr, length, offset, newAddrPtr)
     if (status != SUCCESS) {
 	return status;
     }
+#ifdef DEBUG
     printf("Real VA would be 0x%x\n", *newAddrPtr);
+#endif /* DEBUG */
 
     return SUCCESS;
 }
