@@ -27,6 +27,7 @@
 
 
 extern	ReturnStatus	DevNet_FsOpen();
+extern	ReturnStatus	DevNet_FsReopen();
 extern	ReturnStatus	DevNet_FsRead();
 extern	ReturnStatus	DevNet_FsWrite();
 extern	ReturnStatus	DevNet_FsIOControl();
