@@ -1851,12 +1851,12 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     } else {
 	flags = FSCACHE_CLEAR_READ_AHEAD;
     }
+    blockAddr = newFragBlock * FS_FRAGMENTS_PER_BLOCK + newFragOffset;
     Fscache_UnlockBlock(fragCacheBlockPtr, (unsigned) fsutil_TimeInSeconds, 
-		       *indexInfoPtr->blockAddrPtr, 
+		       blockAddr, 
 		       (newLastFrag + 1) * FS_FRAGMENT_SIZE, flags);
 
-    *(indexInfoPtr->blockAddrPtr) = 
-		    newFragBlock * FS_FRAGMENTS_PER_BLOCK + newFragOffset;
+    *(indexInfoPtr->blockAddrPtr) = blockAddr;
     descPtr->numKbytes += newLastFrag - curLastFrag;
     descPtr->flags |= FSDM_FD_DIRTY;
     *dirtiedIndexPtr = TRUE;
