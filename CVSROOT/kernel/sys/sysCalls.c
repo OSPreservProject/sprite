@@ -889,20 +889,18 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 	case SYS_DISK_STATS: {
-	    int			bytesAcc;
+	    int			count;
 	    Sys_DiskStats	*statArrPtr;
 
-	    Vm_MakeAccessible(VM_OVERWRITE_ACCESS,
-			      sizeof(Sys_DiskStats) * option,
-			      (Address)argPtr, &bytesAcc,
-			      (Address *) &statArrPtr);
-	    if (statArrPtr == (Sys_DiskStats *)NIL) {
-		status = SYS_ARG_NOACCESS;
-	    } else {
-		(void) Dev_GetDiskStats(statArrPtr,
-					bytesAcc / sizeof(Sys_DiskStats));
-		Vm_MakeUnaccessible((Address)statArrPtr, bytesAcc);
-		status = SUCCESS;
+	    if ((option < 0) || (option > 10000)) {
+		status = GEN_INVALID_ARG;
+	    } else { 
+		statArrPtr = (Sys_DiskStats *)
+					malloc(sizeof(Sys_DiskStats) * option);
+		count = Dev_GetDiskStats(statArrPtr, option);
+		status = Vm_CopyOut(sizeof(Sys_DiskStats) * count, 
+				    (Address)statArrPtr, (Address)argPtr);
+		free((Address) statArrPtr);
 	    }
 	    break;
 	}
