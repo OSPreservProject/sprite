@@ -146,6 +146,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
     rpcCltStat.requests++;
     chanPtr->requestRpcHdr.serverHint =
 	chanPtr->replyRpcHdr.serverHint;
+    chanPtr->state |= CHAN_WAITING;
     error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 		      &chanPtr->request, chanPtr->fragment,
 		      (unsigned int) (chanPtr->fragsDelivered),
