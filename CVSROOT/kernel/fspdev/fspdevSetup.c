@@ -136,7 +136,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    *streamIDPtr = streamPtr->hdr.fileID;
 	    (void)FsStreamClientOpen(&streamPtr->clientList,
 				     clientID,useFlags);
-	    FsHandleRelease(streamPtr, TRUE);
+	    FsHandleUnlock(streamPtr);
 	}
     } else {
 	if (streamIDPtr == (FsFileID *)NIL) {
@@ -594,6 +594,7 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
     register Fs_Stream			*streamPtr;
     Boolean				found;
     Boolean				cache = FALSE;
+    Boolean				keepReference = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -637,6 +638,8 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
 	 */
 	(void)FsStreamClientClose(&streamPtr->clientList,
 				migInfoPtr->srcClientID);
+    } else if (migInfoPtr->flags & FS_NEW_STREAM) {
+	keepReference = TRUE;
     }
     if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
 	    migInfoPtr->flags)) {
@@ -644,9 +647,15 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
 	 * We detected network sharing so we mark the stream.
 	 */
 	streamPtr->flags |= FS_RMT_SHARED;
+#ifdef notdef
 	migInfoPtr->flags |= FS_RMT_SHARED;
+#endif notdef
     }
-    FsHandleRelease(streamPtr, TRUE);
+    if (keepReference) {
+	FsHandleUnlock(streamPtr);
+    } else {
+	FsHandleRelease(streamPtr, TRUE);
+    }
     /*
      * Move the client at the I/O handle level.  We are careful to only
      * close the srcClient if its migration state indicates it isn't
