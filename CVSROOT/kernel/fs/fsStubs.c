@@ -3141,7 +3141,7 @@ Fs_IoctlStub(streamID, request, buf)
 	   */
 
 	  * ((int *) &ifreq.ifr_addr.sa_data[2]) = 
-	      (int) interPtr->netAddress[NET_PROTO_INET].inet;
+	      (int) interPtr->netAddress[NET_PROTO_INET].address.inet;
 	  status = Vm_CopyOut(sizeof(struct ifconf), (Address)&ifc, buf);
 	  status = Vm_CopyOut(32, (Address)&ifreq,
 	      (Address)ifc.ifc_ifcu.ifcu_req);

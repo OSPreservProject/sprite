@@ -70,6 +70,7 @@ Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
 	localName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
 	if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userLocalName, localName,
 			   &localNameLength) != SUCCESS) {
+	    free(localName);
 	    return(SYS_ARG_NOACCESS);
 	}
     } else {
@@ -82,6 +83,7 @@ Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
 	    if (localName != (char *)NIL) {
 		free(localName);
 	    }
+	    free(deviceName);
 	    return(SYS_ARG_NOACCESS);
 	}
     } else {
@@ -753,6 +755,7 @@ Fs_CommandStub(command, bufSize, buffer)
 	localBuffer = (Address)malloc(bufSize);
 	status = Vm_CopyIn(bufSize, buffer, localBuffer);
 	if (status != SUCCESS) {
+	    free(localBuffer);
 	    return(status);
 	}
     } else {
