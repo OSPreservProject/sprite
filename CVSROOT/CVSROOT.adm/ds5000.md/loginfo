@@ -15,4 +15,4 @@
 # file, the "DEFAULT" line is used, if it is specified.
 #
 
-DEFAULT	/tmp/goo %s > /tmp/jhh
+DEFAULT	/sprite/cmds/scvslog %s >> /sprite/src/kernel/scvs.log
