@@ -143,7 +143,12 @@ typedef struct {
 
 /*
  * Define a structure to keep track of statistics.
+ * The unsquared times are stored in milliseconds, while the squared times
+ * are all right-shifted PROC_MIG_TIME_SHIFT places to reduce the
+ * likelihood of overflow.
  */
+
+#define PROC_MIG_TIME_SHIFT 12
 
 typedef struct {
     int			evictions;	/* Number of processes evicted
@@ -152,15 +157,15 @@ typedef struct {
 					   result of migration */
     int			rpcKbytes; 	/* Total number of Kbytes sent during
 					   migration. */
-    Time		timeToMigrate;	/* Cumulative time to migrate
+    int 		timeToMigrate;	/* Cumulative time to migrate
 					   running processes */
-    Time		timeToExec;	/* Cumulative time to do remote
+    int 		timeToExec;	/* Cumulative time to do remote
 					   exec's */
-    Time		timeToEvict;	/* Cumulative time to evict
+    int 		timeToEvict;	/* Cumulative time to evict
 					   processes */
-    Time		totalCPUTime;   /* Cumulative time used by all
+    int 		totalCPUTime;   /* Cumulative time used by all
 					   processes belonging to this host. */
-    Time		remoteCPUTime;   /* Cumulative time used by all
+    int 		remoteCPUTime;   /* Cumulative time used by all
 					   processes belonging to this host,
 					   while executing remotely. */
 } Proc_MigVarStats;
