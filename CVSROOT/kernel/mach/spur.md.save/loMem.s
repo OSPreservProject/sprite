@@ -152,41 +152,36 @@
 
 	.org 0x1020
 	jump WinOvFlow		/* Window overflow */
-	invalidate_ib
+	Nop
 
 	.org 0x1030
 	jump WinUnFlow		/* Window underflow */
-	invalidate_ib
+	Nop
 
 	.org 0x1040
 	jump FaultIntr		/* Fault or interrupt */
-	invalidate_ib
+	Nop
 
 	.org 0x1050
 	jump FPUExcept		/* FPU Exception */
-	invalidate_ib
+	Nop
 
 	.org 0x1060
 	jump Illegal		/* Illegal op, kernel mode access violation */
-	invalidate_ib
+	Nop
 
 	.org 0x1070
 	jump Fixnum		/* Fixnum, fixnum_or_char, generation */
-	invalidate_ib
+	Nop
 
 	.org 0x1080
 	jump Overflow		/* Integer overflow */
-	invalidate_ib
+	Nop
 
 	.org 0x1090
 	jump CmpTrap		/* Compare trap instruction */
-	invalidate_ib
-
-#ifdef BARB
-	.org 0x10b0
-	jump CmpTrap		/* Hack for BARB */
 	Nop
-#endif
+
 
 	.org 0x1100
 	/*
@@ -222,11 +217,6 @@ _debugger_active_address:
  *
  * Other options are LD_PC_RELATIVE or LD_CONSTANT.
  */
-#ifdef ovflow_tracing
-traceStartAddr:			.long 0x100000
-traceEndAddr:			.long 0x400000
-traceOvFlowBit:			.long 0x10000000
-#endif
 runningProcesses: 		.long _proc_RunningProcesses
 _machCurStatePtr: 		.long 0
 _machStatePtrOffset:		.long 0
@@ -236,14 +226,7 @@ _machKcallTableOffset:		.long 0
 _machTrapTableOffset:		.long 0
 _machIntrMask:			.long 0
 _machNonmaskableIntrMask:	.long 0
-#ifdef PROF
 _machInterruptAddr:		.long 0
-#endif
-#ifdef ovflow_tracing
-_machNumOvFlow:			.long 0
-interruptPC:			.long 0
-_machNumUnderFlow:		.long 0
-#endif
 numArgsPtr:			.long _machNumArgs
 debugStatePtr:			.long _machDebugState
 debugSWStackBase:		.long MACH_DEBUG_STACK_BOTTOM
@@ -345,7 +328,6 @@ SetReg:
 .org	0x2000
 	.globl start
 start:
-#ifndef BARB
 /*
  * The initial boot code.  This is where we start executing in physical mode
  * after we are down loaded.  Our job is to:
@@ -366,11 +348,7 @@ start:
  *				page tables.
  */
 
-#ifdef small_mem
-#define	KERN_PT_FIRST_PAGE	60
-#else
 #define	KERN_PT_FIRST_PAGE	1024
-#endif
 
 #define	KERN_NUM_PAGES		1024
 #define	KERN_PT_BASE	(MACH_MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE))
@@ -398,28 +376,9 @@ start:
 	add_nt		r1, r1, $4
 	add_nt		r3, r3, r4
 	sub		r2, r2, $1
-/* IMPORTANT NOTE: This should be a compare against 0 but there is a hack
- * for now to let us refresh the CC wells. */
-	cmp_br_delayed	gt, r2, $1, 1b
-	Nop
-
-#ifdef small_mem
-/*
- * Remap 16 Mbytes of the device 2nd level page tables for now.
- */
-	LD_CONSTANT(r1, KERN_PT2_BASE)
-	add_nt		r1, r1, $512 
-	add_nt		r2, r0, $4
-	LD_CONSTANT(r3, MACH_MEM_SLOT_MASK | ((KERN_PT_FIRST_PAGE - 4) << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
-	LD_CONSTANT(r4, 1 << VMMACH_PAGE_FRAME_SHIFT)
-1:
-	st_32		r3, r1, $0
-	add_nt		r1, r1, $4
-	add_nt		r3, r3, r4
-	sub		r2, r2, $1
 	cmp_br_delayed	gt, r2, $0, 1b
 	Nop
-#endif
+
 
 /*
  * Next initialize the kernel page table to point to 4 Mbytes of mapped
@@ -476,28 +435,6 @@ start:
 	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
 	cmp_br_delayed	lt, r1, r2, 1b
 	Nop
-#endif
-
-#ifdef refresh_CC_wells
-refreshWell:
-	LD_CONSTANT(r1, MACH_CC_FAULT_ADDR)
-	LD_CONSTANT(r2, MACH_KPSW_CC_REFRESH)
-	rd_kpsw		r3
-	wr_kpsw		r3, r2
-	rd_special	r7, pc
-	add_nt		r7, r7, $24
-	ld_32_ri	r2, r1, $0
-	nop
-	jump		ErrorTrap
-	nop
-	rd_special	r7, pc
-	add_nt		r7, r7, $24
-	ld_32_ro	r2, r1, $0
-	nop
-	jump		ErrorTrap
-	nop
-	wr_kpsw		r3, $0
-#endif
 
 /*
  * Initialize the cwp, swp and SPILL_SP to their proper values.
@@ -518,7 +455,6 @@ refreshWell:
  */
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, r0)
 
-#ifndef BARB
 /*
  * Clear the fe status register.
  */
@@ -589,11 +525,6 @@ winOvFlow_SaveWindow:
 	 * Actually save the window.
 	 */
 	add_nt		SAFE_TEMP2, r1, $0	/* Save r1 */
-#ifdef ovflow_tracing
-	add_nt		SAFE_TEMP3, r2, $0
-	add_nt		NON_INTR_TEMP1, r3, $0
-	LD_PC_RELATIVE(r2, winOvFlow_Const1)
-#endif
 	rd_special	VOL_TEMP1, cwp
 	wr_special	cwp, VOL_TEMP1, $4	/* Move forward one window. */
 	Nop
@@ -601,46 +532,6 @@ winOvFlow_SaveWindow:
 	and		r1, r1, $~7		/* Eight byte align swp */
 	wr_special	swp, r1, $MACH_SAVED_WINDOW_SIZE
 	add_nt		r1, r1, $MACH_SAVED_WINDOW_SIZE
-
-#ifdef ovflow_tracing
-	ld_32		r2, r0, $_machNumOvFlow
-	nop
-	add_nt		r2, r2, $1
-	st_32		r2, r0, $_machNumOvFlow
-	cmp_br_delayed	lt, r1, r2, 1f
-	nop
-	wr_special	cwp, r0, $0x0
-	st_32		r10, r0, $0x1000
-	wr_special	cwp, r0, $0x4
-	st_32		r10, r0, $0x1004
-	wr_special	cwp, r0, $0x8
-	st_32		r10, r0, $0x1008
-	wr_special	cwp, r0, $0xc
-	st_32		r10, r0, $0x100c
-	wr_special	cwp, r0, $0x10
-	st_32		r10, r0, $0x1010
-	wr_special	cwp, r0, $0x14
-	st_32		r10, r0, $0x1014
-	wr_special	cwp, r0, $0x18
-	st_32		r10, r0, $0x1018
-	wr_special	cwp, r0, $0x1c
-	st_32		r10, r0, $0x101c
-	rd_special	r10, swp
-	st_32		r10, r0, $0x1020
-	st_32		r1, r0, $0x1024
-	st_32		r0, r0, $-1
-	nop
-
-1:
-	ld_32		r2, r0, $traceStartAddr
-	ld_32		r3, r0, $traceOvFlowBit
-	nop
-	or		r3, r3, r10
-	st_32		r3, r2, $0
-	st_32		r1, r2, $4
-	add_nt		r2, r2, $8
-	st_32		r2, r0, $traceStartAddr
-#endif
 
 	st_40		r10, r1, $0
 	st_40		r11, r1, $8
@@ -663,10 +554,6 @@ winOvFlow_SaveWindow:
 	Nop
 
 	add_nt		r1, SAFE_TEMP2, $0	/* Restore r1 */
-#ifdef ovflow_tracing
-	add_nt		r2, SAFE_TEMP3, $0
-	add_nt		r3, NON_INTR_TEMP1, $0
-#endif
 
 	/* 
 	 * See if we have to allocate more memory.  We need to allocate more
@@ -733,28 +620,12 @@ WinUnFlow:
 	/* DOESN'T RETURN */
 winUnFlow_RestoreWindow:
 	add_nt		SAFE_TEMP2, r1, $0	/* Save r1 */
-#ifdef ovflow_tracing
-	add_nt		SAFE_TEMP3, r2, $0
-#endif
 	rd_special	r1, swp
 	and		r1, r1, $~7		/* Eight byte align swp */
 	rd_special	VOL_TEMP1, cwp
 	wr_special	cwp, VOL_TEMP1,  $-8	/* move back two windows */
 	Nop
 
-#ifdef ovflow_tracing
-	ld_32		r2, r0, $_machNumUnderFlow
-	nop
-	add_nt		r2, r2, $1
-	st_32		r2, r0, $_machNumUnderFlow
-
-	ld_32		r2, r0, $traceStartAddr
-	nop
-	st_32		r10, r2, $0
-	st_32		r1, r2, $4
-	add_nt		r2, r2, $8
-	st_32		r2, r0, $traceStartAddr
-#endif
 
 	ld_40		r10, r1,   $0
 	ld_40		r11, r1,   $8
@@ -777,9 +648,6 @@ winUnFlow_RestoreWindow:
 	wr_special	cwp,  r1, $8	/* move back ahead two windows */
 	Nop
 	add_nt		r1, SAFE_TEMP2, $0	/* Restore r1 */
-#ifdef ovflow_tracing
-	add_nt		r2, SAFE_TEMP3, $0	/* Restore r2 */
-#endif
 	/*
 	 * See if need more memory.  We need more if 
 	 *
@@ -958,12 +826,6 @@ faultIntr_NormFault:
 	READ_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
 	st_32		SAFE_TEMP1, r0, $feStatusReg
 	WRITE_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
-#ifdef BARB
-	/*
-	 * Simulate a virtual memory fault.
-	 */
-	LD_CONSTANT(r18, 0x10000)
-#endif
 	/*
 	 * If no bits are set then it must be an interrupt.
 	 */
@@ -974,7 +836,6 @@ faultIntr_NormFault:
 	 * four VM faults.  Store the fault type in a safe temporary and
 	 * call the VMFault handler.
 	 */
-mark:
 	extract		VOL_TEMP1, SAFE_TEMP1, $2
 	and		VOL_TEMP1, VOL_TEMP1, $0xf
 	cmp_br_delayed	ne, VOL_TEMP1, r0, VMFault
@@ -1040,7 +901,7 @@ Interrupt:
 	WRITE_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
 
 
-#ifdef
+#ifdef notdef
 	/*
 	 * Check to see if the interrupt happened on a test_and_set 
 	 * instruction.  If so panic because this isn't supposed to
@@ -1063,12 +924,10 @@ interrupt_OK:
 
 #endif
 
-#ifdef PROF
 	/* 
 	 * Save the address of the interrupt for profiling. 
 	 */
 	st_32		CUR_PC_REG, r0, $_machInterruptAddr 
-#endif
 
 	/*
 	 * The second argument is the kpsw.
