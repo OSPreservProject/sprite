@@ -571,6 +571,21 @@ NON_LEAF(Mach_KernGenException,KERN_EXC_FRAME_SIZE,ra)
     mfc0	a1, MACH_COP_0_CAUSE_REG	# Second arg is the cause reg.
     mfc0	a2, MACH_COP_0_BAD_VADDR	# Third arg is the fault addr.
     mfc0	a3, MACH_COP_0_EXC_PC		# Fourth arg is the pc.
+
+/*
+ * Don't disable interrupts from the memory system, unless there is
+ * a memory system interrupt pending.
+ */
+    and		t0, a0, MACH_INT_MASK_3
+    bne		zero, t0, 10f
+    nop
+    mfc0	t0, MACH_COP_0_STATUS_REG
+    and		t0, t0, ~MACH_KERN_INT_MASK
+    or		t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
+    mtc0	t0, MACH_COP_0_STATUS_REG
+    nop
+    nop
+10:
     jal		MachKernelExceptionHandler
     nop
     mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
@@ -914,7 +929,8 @@ LEAF(Mach_DisableIntr)
 .set noreorder
     mfc0	t0, MACH_COP_0_STATUS_REG
     nop
-    and		t0, t0, ~MACH_SR_INT_ENA_CUR
+    and		t0, t0, ~(MACH_SR_INT_ENA_CUR | MACH_KERN_INT_MASK)
+    or		t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
     mtc0	t0, MACH_COP_0_STATUS_REG
     nop
     j		ra
@@ -1325,7 +1341,7 @@ END(MachGetCurFPState)
  *	Handle a floating point interrupt.
  *
  * Results:
- *     	None.
+ *     	MACH_OK
  *
  * Side effects:
  *	None.
@@ -1462,6 +1478,7 @@ FPReturn:
 	lw	ra, STAND_RA_OFFSET(sp)
 	addu	sp, sp, STAND_FRAME_SIZE
 	j	ra
+	li	v0, MACH_OK
 END(MachFPInterrupt)
 
 /*----------------------------------------------------------------------------
@@ -1951,10 +1968,6 @@ MachFetch6Args:
     .globl MachFetchArgsEnd
 MachFetchArgsEnd:
 
-/*
- * Beginning of area where the kernel should be able to handle a bus error
- * (which includes size errors) while in kernel mode.
- */
 
 /*
  *----------------------------------------------------------------------
@@ -1964,6 +1977,19 @@ MachFetchArgsEnd:
  *	Copy a block of memory from one virtual address to another handling
  *	bus errors that may occur. This	routine is intended to be used to 
  *	probe for memory mapped devices.
+ *
+ *	The memory interrupt must be enabled for this thing to work.
+ *
+ *	The ds5000 has a few quirks that make this all more complicated
+ *	then it has to be.  First of all, accesses to unpopulated memory
+ *	addresses don't seem to cause any sort of error, so you can't
+ *	use Mach_Probe to figure out how much memory you have.  Second,
+ *	an access to an invalid IO address causes an interrupt.
+ *	Therefore you need to have the memory interrupt enabled to get
+ *	this to work.  A read of an invalid IO address causes both a bus error
+ *	and an interrupt.  The bus error handler will just ignore the bus
+ *	error if it happened in Mach_Probe.  This may not be the best solution
+ *	but it seems to work.
  *
  * NOTE: This trap handlers force this routine to return SYS_NO_ACCESS if an
  *	 bus error occurs.
@@ -1979,16 +2005,30 @@ MachFetchArgsEnd:
  *	
  *
  * Results:
- *	SUCCESS if the copy worked and  SYS_NO_ACCESS otherwise
+ *	SUCCESS if the copy worked, SYS_NO_ACCESS if there was a bus
+ *	error or IO timeout, FAILURE if the memory interrupt is
+ *	disabled
  *
  * Side effects:
  *	None.
  *----------------------------------------------------------------------
  */
 .set noreorder
-	.globl Mach_Probe
-	.ent Mach_Probe, 0
-Mach_Probe:
+LEAF(Mach_Probe)
+	/*
+	 * If memory interrupts aren't turned on then we can't do a
+	 * probe.
+	 */
+	mfc0	t0, MACH_COP_0_STATUS_REG
+	nop
+	and	t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
+	beq	t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR, 1f
+	nop
+	j	ra
+	add	v0, zero, 1
+1:
+	add	t0, zero, 1
+	sw	t0, machInProbe
 	/* a0 is the number of bytes
 	 * a1 is the src address
 	 * a2 is the dest address
@@ -1998,8 +2038,8 @@ Mach_Probe:
 	lbu 	t0, 0(a1)
 	nop
 	sb	t0, 0(a2)
-	j	ra
-	add	v0, zero, zero
+	b 	Done
+	nop
 Read2Bytes:
 	bne 	a0, 2, Read4Bytes
 	nop
@@ -2012,8 +2052,8 @@ Read2Bytes:
 	lhu	t0, 0(a1)
 	nop
 	sh	t0, 0(a2)
-	j	ra
-	add	v0, zero, zero
+	b 	Done
+	nop
 Read4Bytes:
 	bne 	a0, 4, Read8Bytes
 	nop
@@ -2026,8 +2066,8 @@ Read4Bytes:
 	lw	t0, 0(a1)
 	nop
 	sw	t0, 0(a2)
-	j	ra
-	add	v0, zero, zero
+	b 	Done
+	nop
 Read8Bytes:
 	bne 	a0, 8, BadRead
 	nop
@@ -2043,13 +2083,36 @@ Read8Bytes:
 	lw	t0, 4(a1)
 	nop	
 	sw	t0, 4(a1)
-	j	ra
-	add	v0, zero, zero
+	b 	Done
+	nop
 BadRead:
 	j	ra
 	add	v0, zero, 1
+Done:
+	sw	zero, machInProbe
+	j	ra
+	add	v0, zero, zero
 .set reorder
+END(Mach_Probe)
 
-	.globl	MachProbeEnd
-MachProbeEnd:
-.end
+/*----------------------------------------------------------------------------
+ *
+ * Mach_Return2 --
+ *
+ *	Set the second return value for Unix compat. routines that
+ *	return two values.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	v1 <- val
+ *
+ *----------------------------------------------------------------------------
+ */
+    .globl Mach_Return2
+Mach_Return2:
+
+    move	v1, a0
+    j		ra
+
