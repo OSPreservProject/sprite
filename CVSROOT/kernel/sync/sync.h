@@ -216,7 +216,7 @@ extern 	void 		Sync_PrintStat();
         sync_Instrument.numLocks++; \
 	if (!Mach_AtInterruptLevel()) { \
 	    Mach_DisableIntr(); \
-	    mach_NumDisableIntrsPtr[0]++; \
+	    mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]++; \
 	} \
 	for(;;) { \
 	    /* \
@@ -258,7 +258,7 @@ extern 	void 		Sync_PrintStat();
         sync_Instrument.numLocks++; \
 	if (!Mach_AtInterruptLevel()) { \
 	    Mach_DisableIntr(); \
-	    mach_NumDisableIntrsPtr[0]++; \
+	    mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]++; \
 	} \
 	for(;;) { \
 	    /* \
