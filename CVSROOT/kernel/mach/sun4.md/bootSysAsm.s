@@ -28,11 +28,10 @@ start:
 _spriteStart:
 
 	mov	%psr, %g1
-	and	%g1, MACH_SR_HIGHPRIO, %g1	/* lock out interrupts */
+	or	%g1, MACH_SR_HIGHPRIO, %g1	/* lock out interrupts */
 	andn	%g1, MACH_CWP_BITS, %g1		/* set cwp to 0 */
 	mov	%g1, %psr
 	mov	0x2, %wim	/* set wim to window right behind us */
-	mov	0x1, %g6
 /*
  * The kernel has been loaded into the wrong location.  We copy it to the right
  * location by copying up 8 Meg worth of pmegs.  This is done in all contexts.
@@ -45,14 +44,12 @@ _spriteStart:
 	sethi	%hi(VMMACH_CONTEXT_OFF), %g4	/* set %g4 to context offset */
 	or	%g4, %lo(VMMACH_CONTEXT_OFF), %g4
 	clr	%g2				/* start with context 0 */
-	mov	0x2, %g6
 contextLoop:
 						/* set context register */
 	stba	%g2, [%g4] VMMACH_CONTROL_SPACE
 	clr	%g3				/* start with 0th pmeg */
 	sethi	%hi(MACH_KERN_START), %g1	/* pick starting segment */
 	or	%g1, %lo(MACH_KERN_START), %g1
-	mov	0x3, %g6
 loopStart:
 					/* set segment to point to new pmeg */
 	stha	%g3, [%g1] VMMACH_SEG_MAP_SPACE
@@ -60,18 +57,15 @@ loopStart:
 	sethi	%hi(VMMACH_SEG_SIZE), %g5	/* increment which segment */
 	add	%g1, %g5, %g1
 	add	%g1, %lo(VMMACH_SEG_SIZE), %g1
-	mov	0x4, %g6
 	cmp	%g3, (0x800000 / VMMACH_SEG_SIZE)	/* last pmeg? */
 	bne	loopStart			/* if not, continue */
 	nop
 
 	add	%g2, 1, %g2			/* increment context */
-	mov	0x5, %g6
 	cmp	%g2, VMMACH_NUM_CONTEXTS	/* last context? */
 	bne	contextLoop			/* if not, continue */
 	nop
 						/* reset context register */
-	mov	0x6, %g6
 	stba	%g0, [%g4] VMMACH_CONTROL_SPACE
 
 /*
@@ -79,15 +73,13 @@ loopStart:
  */
 	sethi	%hi(begin), %g1
 	or	%g1, %lo(begin), %g1
-	jmp	%g1
+	jmp	%g1				/* jump to "begin" */
 	nop
 
 begin:
-	mov	0x7, %g6
 	mov	%psr, %g1			/* turn interrupts back on */
-	or	%g1, MACH_ENABLE_LEVEL15_INTR, %g1
+	andn	%g1, MACH_ENABLE_LEVEL15_INTR, %g1
 	mov	%g1, %psr
-	mov	0x8, %g6
 #ifdef NOTDEF
 	mov	%tbr, %g4	/* save prom tbr */
 	call	_main
@@ -111,7 +103,6 @@ printArg2:
 
 	sethi   %hi(-0x17ef7c),%g1
 	ld      [%g1+%lo(-0x17ef7c)],%g1
-	mov	0x9, %g6
 	set     printArg2,%o0
 	call    %g1,2
 	nop
