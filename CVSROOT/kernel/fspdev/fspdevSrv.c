@@ -538,7 +538,6 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
     Proc_ControlBlock		*procPtr;
     Proc_PID 			procID;
     int				uid;
-    int				seed;
 
     pdevStatePtr = (FsPdevState *)streamData;
     ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle,
@@ -559,7 +558,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 
     /*
      * Extract the seed from the minor field (see the SrvOpen routine).
-     * This done in case of recovery later.  We'll need to reset the
+     * This done in case of recovery when we'll need to reset the
      * seed kept on the file server.
      */
     ctrlHandlePtr->seed = ioFileIDPtr->minor & 0xFFFF;
@@ -616,7 +615,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
      * Set up a service stream and hook the client handle to it.
      */
     cltHandlePtr->pdevHandlePtr = ServerStreamCreate(ctrlHandlePtr,
-				    ioFileIDPtr, clientID, procID);
+						     ioFileIDPtr, clientID);
     List_Init(&cltHandlePtr->clientList);
     FsIOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
     FsHandleRelease(ctrlHandlePtr, TRUE);
@@ -664,12 +663,12 @@ exit:
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
     register FsFileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
-    int			clientID;	/* Host doing the open */
+    int			clientID;	/* IGNORED (== rpc_SpriteID) */
     ClientData		streamData;	/* NIL for us. */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a pseudo device, or NIL */
@@ -740,12 +739,11 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePt
  */
 
 static PdevServerIOHandle *
-ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID, slaveProcessID)
+ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID)
     PdevControlIOHandle *ctrlHandlePtr;	/* Control stream of a pseudo-device.
 					 * LOCKED on entry, please. */
     FsFileID	*ioFileIDPtr;	/* File ID used for pseudo stream handle */
     int		slaveClientID;	/* Host ID of client process */
-    Proc_PID	slaveProcessID;	/* Needed to clean up select'ing clients */
 {
     FsHandleHeader *hdrPtr;
     register PdevServerIOHandle *pdevHandlePtr;
@@ -838,12 +836,12 @@ ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID, slaveProcessID)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 FsPseudoStreamClose(streamPtr, clientID, flags, size, data)
     Fs_Stream		*streamPtr;	/* Client pseudo-stream to close */
     int			clientID;	/* HostID of client closing */
-    int			flags;		/* Flags from the stream being closed */
+    int			flags;		/* IGNORED */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
 {
@@ -1056,13 +1054,13 @@ FsControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 FsControlRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Fs_Stream 	*streamPtr;	/* Control stream */
     int		flags;		/* FS_USER is checked */
     Address 	buffer;		/* Where to read into. */
-    int		*offsetPtr;	/* Ignored */
+    int		*offsetPtr;	/* IGNORED */
     int 	*lenPtr;	/* In/Out length parameter */
     Sync_RemoteWaiter *waitPtr;	/* Info for waiting */
 {
@@ -1819,7 +1817,6 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Sync_RemoteWaiter *waitPtr;		/* Process info for waiting */
 {
     ReturnStatus 	status;
-    register Proc_ControlBlock *procPtr;
     register PdevClientIOHandle *cltHandlePtr =
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
@@ -1961,7 +1958,7 @@ exit:
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ENTRY ReturnStatus
 FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Fs_Stream 	*streamPtr;	/* Stream to write to. */
@@ -1969,7 +1966,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Address 	buffer;		/* Where to write to. */
     int		*offsetPtr;	/* In/Out byte offset */
     int 	*lenPtr;	/* In/Out byte count */
-    Sync_RemoteWaiter *waitPtr;	/* Process info for waiting */
+    Sync_RemoteWaiter *waitPtr;	/* IGNORED */
 {
     register Proc_ControlBlock *procPtr;
     register PdevClientIOHandle *cltHandlePtr =
@@ -2782,6 +2779,8 @@ FsServerStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	    FsFastWaitListInsert(&pdevHandlePtr->srvReadWaitList, waitPtr);
 	}
     }
+    *writePtr = 0;
+    *exceptPtr = 0;
     UNLOCK_MONITOR;
     return(SUCCESS);
 }

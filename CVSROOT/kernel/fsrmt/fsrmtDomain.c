@@ -314,7 +314,7 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
 	/* This assumes openResults.dataSize was filled in correctly. */
 	*openResultsPtr = openResultsParam.openResults;
 	if (openResultsPtr->dataSize == 0) {
-	    ((Address) openResultsPtr->streamData) = (Address)NIL;
+	    openResultsPtr->streamData = (ClientData)NIL;
 	} else {
 	    openResultsPtr->streamData =
 		    (ClientData)Mem_Alloc(openResultsPtr->dataSize);
