@@ -507,7 +507,7 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     Address			origVirtAddr;
 
     procDataPtr = procPtr->vmPtr->machPtr;
-    if (procDataPtr->segRegMask == -1) {
+    if (procDataPtr->segRegMask == (unsigned)-1) {
 	return(FALSE);
     }
     if (((unsigned)virtAddr & VMMACH_SEG_REG_MASK) == 
@@ -748,7 +748,8 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
      * Determine where to map in the source segment.
      */
     fromAddr = (Address) ((unsigned int)fromAddr & ~VMMACH_SEG_REG_MASK);
-    if (((unsigned)toAddr & VMMACH_SEG_REG_MASK) == VMMACH_STACK_SEG_START) {
+    if (((unsigned)toAddr & VMMACH_SEG_REG_MASK) == 
+	 (unsigned)VMMACH_STACK_SEG_START) {
 	fromAddr = (Address) ((unsigned int)fromAddr | VMMACH_HEAP_SEG_START);
 	machPtr->mappedSegMask = VMMACH_HEAP_SEG_START;
 	segToUse = VM_HEAP;
@@ -835,7 +836,8 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
      * Determine where to map in the source segment.
      */
     toAddr = (Address) ((unsigned)toAddr & ~VMMACH_SEG_REG_MASK);
-    if (((unsigned)fromAddr & VMMACH_SEG_REG_MASK) == VMMACH_STACK_SEG_START) {
+    if (((unsigned)fromAddr & VMMACH_SEG_REG_MASK) == 
+	(unsigned)VMMACH_STACK_SEG_START) {
         toAddr = (Address) ((unsigned)toAddr | VMMACH_HEAP_SEG_START);
 	machPtr->mappedSegMask = VMMACH_HEAP_SEG_START;
 	segToUse = VM_HEAP;
@@ -1085,7 +1087,7 @@ VmMach_SetRefBit(addr)
 
     procPtr = Proc_GetCurrentProc();
     procDataPtr = procPtr->vmPtr->machPtr;
-    if (procDataPtr->segRegMask != -1 &&
+    if (procDataPtr->segRegMask != (unsigned)-1 &&
 	((unsigned)addr & VMMACH_SEG_REG_MASK) == procDataPtr->mappedSegMask) {
 	segPtr = procDataPtr->mapSegPtr;
     } else {
@@ -1167,7 +1169,7 @@ VmMach_SetModBit(addr)
 
     procPtr = Proc_GetCurrentProc();
     procDataPtr = procPtr->vmPtr->machPtr;
-    if (procDataPtr->segRegMask != -1 &&
+    if (procDataPtr->segRegMask != (unsigned)-1 &&
 	((unsigned)addr & VMMACH_SEG_REG_MASK) == procDataPtr->mappedSegMask) {
 	segPtr = procDataPtr->mapSegPtr;
     } else {
@@ -1942,7 +1944,7 @@ FlushAllCaches()
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+ENTRY static void
 SetCreateTime(segDataPtr)
     register	VmMach_SegData	*segDataPtr;
 {
