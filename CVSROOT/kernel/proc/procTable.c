@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "rpc.h"
 
-Sync_Lock	tableLock = {0, 0};
+Sync_Lock	tableLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR &tableLock
 
 static Proc_ControlBlock  *RunningProcesses[MACH_MAX_NUM_PROCESSORS];

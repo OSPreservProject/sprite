@@ -42,7 +42,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static Sync_Condition	debugListCondition;	/* Condition to sleep on when
 						 * waiting for a process to go
 						 * onto the debug list. */
-static Sync_Lock	debugLock = {0, 0};	/* Monitor lock. */
+static Sync_Lock debugLock = SYNC_LOCK_INIT_STATIC(); /* Monitor lock. */
 #define LOCKPTR &debugLock
 
 List_Links	debugListHdr;

@@ -28,7 +28,7 @@ Address	vmStackEndAddr;
 /*
  * Monitor declarations.
  */
-Sync_Lock	stackLock = {0, 0};
+Sync_Lock	stackLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR	&stackLock
 
 /*

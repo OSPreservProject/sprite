@@ -77,7 +77,7 @@ unsigned int 	sigBitMasks[SIG_NUM_SIGNALS];
 int		sigDefActions[SIG_NUM_SIGNALS];
 int		sigCanHoldMask;
 
-Sync_Lock	sigLock = {0, 0};
+Sync_Lock	sigLock = SYNC_LOCK_INIT_STATIC();
 Sync_Condition	signalCondition;
 
 

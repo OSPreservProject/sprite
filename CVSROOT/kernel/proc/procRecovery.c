@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static void MigrateCrash();
 static void MigHostIsUp();
 
-static Sync_Lock recovLock = {0,0};
+static Sync_Lock recovLock = SYNC_LOCK_INIT_STATIC();
 static Sync_Condition recovCondition = {0};
 #define LOCKPTR &recovLock
 

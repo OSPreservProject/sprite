@@ -127,7 +127,7 @@ Sync_SlowLock(lockPtr)
     while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	lockPtr->waiting = TRUE;
 	/*
- 	 * Check the inUse semaphore again after setting the waiting. A zero 
+	 * Check the inUse semaphore again after setting the waiting. A zero 
 	 * semaphore value means the lock was released after our previous
 	 * TestAndSet and possibly before we set the waiting flag. This test
 	 * prevents us from waiting if the Sync_Lock missed our waiting flag.
@@ -136,10 +136,17 @@ Sync_SlowLock(lockPtr)
 	    break;
 	}
 	(void) SyncEventWaitInt((unsigned int)lockPtr, FALSE);
+#ifndef CLEAN
+	lockPtr->miss++;
+#endif
 	MASTER_UNLOCK(sched_MutexPtr);
 	MASTER_LOCK(sched_MutexPtr);
     }
-
+#ifndef CLEAN
+    lockPtr->holderPC = Mach_GetPC(); 
+    lockPtr->holderPCBPtr = (char *) Proc_GetCurrentProc();
+    lockPtr->hit++;
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
     return(SUCCESS);
 }

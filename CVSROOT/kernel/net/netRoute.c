@@ -116,7 +116,7 @@ typedef struct ArpOutputQueue {
 ArpOutputQueue arpOutputQueue[ARP_OUTPUT_QUEUE_LEN];
 static int nextOutputIndex = 0;
 
-Sync_Lock arpOutputQueueLock;
+Sync_Lock arpOutputQueueLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&arpOutputQueueLock)
 
 /*

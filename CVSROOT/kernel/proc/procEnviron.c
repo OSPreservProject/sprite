@@ -50,7 +50,7 @@ typedef struct ProcEnvironVar {
  * Monitor declarations.
  */
 
-static	Sync_Lock environMonitorLock = {0, 0};
+static	Sync_Lock environMonitorLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR   &environMonitorLock
 
 

@@ -19,9 +19,9 @@
 #include "list.h"
 
 #ifdef KERNEL
+#include "proc.h"
 #include "user/sync.h"
 #include "sys.h"
-#include "proc.h"
 #include "mach.h"
 #else
 #include <sync.h>

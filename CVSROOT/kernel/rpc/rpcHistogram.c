@@ -54,8 +54,7 @@ Rpc_HistInit(numBuckets, usecPerBucket)
     histPtr = (Rpc_Histogram *)malloc(sizeof(Rpc_Histogram));
     histPtr->numBuckets = numBuckets;
     histPtr->bucket = (int *)malloc(numBuckets * sizeof(int));
-    histPtr->lock.inUse = FALSE;
-    histPtr->lock.waiting = FALSE;
+    SYNC_LOCK_INIT_DYNAMIC(&histPtr->lock);
     histPtr->aveTimePerCall.seconds = 0;
     histPtr->aveTimePerCall.microseconds = 0;
     bzero((Address)&histPtr->totalTime, sizeof(Time));

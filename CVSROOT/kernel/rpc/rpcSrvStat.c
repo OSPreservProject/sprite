@@ -49,7 +49,7 @@ static int numTracedRpcServers;
 /*
  * The entering and leaving monitored.
  */
-static Sync_Lock rpcSrvTraceLock;
+static Sync_Lock rpcSrvTraceLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&rpcSrvTraceLock)
 #endif /* notdef */
 

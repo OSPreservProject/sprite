@@ -40,7 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sysSysCall.h"
 
 static	Sync_Condition	migrateCondition;
-static	Sync_Lock	migrateLock = {0, 0};
+static	Sync_Lock	migrateLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR &migrateLock
 
 int proc_MigDebugLevel = 0;

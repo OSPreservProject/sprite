@@ -44,7 +44,7 @@ int		   numFreeChannels = 8;
  * A process might have to wait for a free RPC channel.
  */
 Sync_Condition freeChannels;
-Sync_Lock rpcLock;
+Sync_Lock rpcLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&rpcLock)
 
 /*

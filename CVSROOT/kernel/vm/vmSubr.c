@@ -28,7 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Vm_Stat		vmStat;
 int             vmFirstFreePage;  
 Address		vmMemEnd;
-Sync_Lock 	vmMonitorLock = {0, 0};
+Sync_Lock 	vmMonitorLock = SYNC_LOCK_INIT_STATIC();
 int		vm_PageSize;
 int		vmPageShift;
 int		vmPageTableInc;

@@ -106,7 +106,7 @@ typedef struct RecovHostState {
 /*
  * Access to the hash table is monitored.
  */
-static Sync_Lock recovLock = {0, 0};
+static Sync_Lock recovLock = SYNC_LOCK_INIT_STATIC();
 #define LOCKPTR (&recovLock)
 
 /*
