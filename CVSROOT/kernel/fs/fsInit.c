@@ -249,7 +249,7 @@ Fs_ProcInit()
     Proc_ControlBlock	*procPtr;	/* Main process's proc table entry */
     register Fs_ProcessState	*fsPtr;	/* FS state ref'ed from proc table */
     Fs_Stream		*stream;
-    Fs_Device 		defaultDisk;
+    Fs_Device 		*defaultDiskPtr;
     int			i;
     int			argc;
     char		*argv[10];
@@ -276,6 +276,7 @@ Fs_ProcInit()
     fsPtr->groupIDs 	= (int *) malloc(1 * sizeof(int));
     fsPtr->groupIDs[0]	= 0;
 
+    defaultDiskPtr = (Fs_Device *) malloc(sizeof(Fs_Device));
     numDefaults = devNumDefaultDiskPartitions;
     stdDefaults = TRUE;
     argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
@@ -294,10 +295,10 @@ Fs_ProcInit()
 		} else {
 		    printf("Found -rootdisk option, %d.%d\n",
 			type, unit);
-		    defaultDisk.serverID = -1;
-		    defaultDisk.type = type;
-		    defaultDisk.unit = unit;
-		    defaultDisk.data = (ClientData) NIL;
+		    defaultDiskPtr->serverID = -1;
+		    defaultDiskPtr->type = type;
+		    defaultDiskPtr->unit = unit;
+		    defaultDiskPtr->data = (ClientData) NIL;
 		    numDefaults = 1;
 		    stdDefaults = FALSE;
 		}
@@ -310,10 +311,10 @@ Fs_ProcInit()
 	 * a disk. 
 	 */
 	if (stdDefaults) {
-	    defaultDisk = devFsDefaultDiskPartitions[i];
+	    *defaultDiskPtr = devFsDefaultDiskPartitions[i];
 	}
 
-	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, 
+	status = Fsdm_AttachDisk(defaultDiskPtr, LOCAL_DISK_NAME, 
 		    FS_ATTACH_LOCAL | FS_DEFAULT_DOMAIN);
 	if (status == SUCCESS) {
 	    Fs_Attributes	attr;
@@ -324,6 +325,7 @@ Fs_ProcInit()
 	    sprintf(buffer, "%s/ROOT", LOCAL_DISK_NAME);
 	    status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
 	    if (status != SUCCESS) {
+		printf("Stat of %s returned 0x%x\n", buffer, status);
 		rootServer = FALSE;
 	    } else {
 		printf("Found %s.\n", buffer);
@@ -427,7 +429,9 @@ Fs_ProcInit()
      */
     fsPtr->numStreams = 0;
     fsPtr->streamList = (Fs_Stream **)NIL;
-
+    if (!fsDiskAttached) {
+	free((char *) defaultDiskPtr);
+    }
     return;
 }
 
