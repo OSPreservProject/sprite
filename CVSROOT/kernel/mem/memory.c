@@ -360,8 +360,16 @@ Init()
 
     /*
      * Initialize the large-object free list with two dummy blocks that
-     * mark its beginning and end.
+     * mark its beginning and end. These blocks are declared to be arrays
+     * of characters. In order for malloc to work correctly they have to
+     * be aligned on word boundaries.
      */
+    if (((int) first) & 0x3) {
+	panic("Mem: 'first' is not word-aligned");
+    }
+    if (((int) last) & 0x3) {
+	panic("Mem: 'last' is not word-aligned");
+    }
     SET_ADMIN(first, MARK_DUMMY(last-first));
     SET_ADMIN(last, MARK_DUMMY(0));
     currentPtr		= first;
