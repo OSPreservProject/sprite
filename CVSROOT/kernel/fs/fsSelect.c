@@ -122,7 +122,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
     WakeupInfo		wakeupInfo;	/* Passed to timeout routine. */
     Time		timeout;	/* Copy of *userTimeoutPtr. */
     Sync_RemoteWaiter	waiter;
-    int	row;			/* Index of row of inReadMasks,
+    int			row;		/* Index of row of inReadMasks,
 					 * inWriteMasks, inExceptMasks. */
     register int	mask;		/* Selects bit within a row of
 					 * inReadMasks, inWriteMasks,
@@ -134,6 +134,8 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 					 * inWriteMasks and inExceptMasks. */
     int			bytesInMask;	/* # of bytes in inReadMasks,
 					 * outWriteMasks and outExceptMasks. */
+    register int	bit;		/* Loop counter */
+    int			bitMax;		/* Loop terminating condition */
     int			inReadMasks[MAX_NUM_ROWS];
     int			inWriteMasks[MAX_NUM_ROWS];
     int			inExceptMasks[MAX_NUM_ROWS];
@@ -149,6 +151,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 					 * is readable and/or writable and/or
 					 * has a exception pending, it is
 					 * only counted once. */
+    int			s;		/* Temp copy of numStreams */
     ReturnStatus	status = SUCCESS;
 
 
@@ -315,6 +318,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	 * 63, etc. Within a row, the low-order bit corresponds to the
 	 * smallest stream number.
 	 */
+	s = numStreams;
 	for (row = 0; row < intsInMask; row++) {
 	    int	outReadMask = 0;
 	    int	outWriteMask = 0;
@@ -330,24 +334,24 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 		inExceptMask = inExceptMasks[row];
 	    }
 	    if (inReadMask != 0 || inWriteMask != 0 || inExceptMask != 0) {
-		int	i;
-
 		/*
 		 * At least one stream in this row was selected. Go through
 		 * the masks to find the stream number and see if it's ready.
 		 */
-		for (mask = 1, i = 0; i < BITS_PER_ROW; mask <<= 1, i++) {
-		    int tmpReadBit;
-		    int tmpWriteBit;
-		    int tmpExceptBit;
-		    register int readBit = inReadMask & mask;
-		    register int writeBit = inWriteMask & mask;
-		    register int exceptBit = inExceptMask & mask;
+		bitMax = (s > BITS_PER_ROW) ? BITS_PER_ROW : s;
+		for (mask = 1, bit = 0; bit < bitMax; mask <<= 1, bit++) {
+		    /*
+		     * Set up single bit masks that will be or'ed into
+		     * the final result masks.
+		     */
+		    int readBit = inReadMask & mask;
+		    int writeBit = inWriteMask & mask;
+		    int exceptBit = inExceptMask & mask;
 
-		    if (readBit || writeBit || exceptBit) {
+		    if (readBit | writeBit | exceptBit) {
 			Fs_Stream	*streamPtr;
 
-			if (FsGetStreamPtr(procPtr, row * BITS_PER_ROW + i, 
+			if (FsGetStreamPtr(procPtr, row * BITS_PER_ROW + bit, 
 						    &streamPtr) != SUCCESS) {
 			    /*
 			     *  A stream was selected that probably 
@@ -356,38 +360,34 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 			    status = SYS_INVALID_ARG;
 			    goto deschedule;
 			} else {
-			    /*
-			     * Check to make sure that the requested test is
-			     * possible on the stream.
-			     */
 			    if (!(streamPtr->flags & FS_READ)) {
 				readBit = 0;
 			    }
 			    if (!(streamPtr->flags & FS_WRITE)) {
 				writeBit = 0;
 			    }
-			    tmpReadBit = readBit;
-			    tmpWriteBit = writeBit;
-			    tmpExceptBit = exceptBit;
+			    /*
+			     * Call the I/O handle's select routine and
+			     * combine what's left in the single bit masks
+			     * into the final result masks.
+			     */
 			    status = 
 		(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].select)
 				(streamPtr->ioHandlePtr, &waiter,
-				 &tmpReadBit, &tmpWriteBit, &tmpExceptBit);
+				 &readBit, &writeBit, &exceptBit);
 			    if (status != SUCCESS) {
 				goto deschedule;
 			    }
-			    readBit = tmpReadBit & mask;
-			    writeBit = tmpWriteBit & mask;
-			    exceptBit = tmpExceptBit & mask;
-			    if (readBit || writeBit || exceptBit) {
-				outReadMask |= readBit;
-				outWriteMask |= writeBit;
-				outExceptMask |= exceptBit;
+			    if (readBit | writeBit | exceptBit) {
+				outReadMask |= readBit & mask;
+				outWriteMask |= writeBit & mask;
+				outExceptMask |= exceptBit & mask;
 				numReady++;
 			    }
 			}
 		    }
 		}
+		s -= BITS_PER_ROW;
 	    }
 	    outReadMasks[row]   = outReadMask;
 	    outWriteMasks[row]  = outWriteMask;
