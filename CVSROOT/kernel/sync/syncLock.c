@@ -28,7 +28,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"
 #include "timer.h"
 #include "rpc.h"
-#include "vmMach.h"
 
 /*
  * A counter to record the number of busy wait loops executed

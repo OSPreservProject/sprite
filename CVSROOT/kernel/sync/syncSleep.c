@@ -20,7 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sig.h"
 #include "stdlib.h"
 #include "timer.h"
-#include "vmMach.h"
 
 static Boolean WaitTimeSubr();
 
