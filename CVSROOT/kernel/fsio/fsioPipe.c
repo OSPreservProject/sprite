@@ -276,6 +276,7 @@ FsPipeClose(streamPtr, clientID, flags, dataSize, closeData)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Fs_Stream           *streamPtr;     /* Stream to read from */
@@ -406,19 +407,20 @@ exit:
 ReturnStatus
 FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Fs_Stream           *streamPtr;     /* Stream to write to */
-    int			flags;		/* IGNORED */
+    int			flags;		/* FS_NON_BLOCKING checked so the
+					 * correct error code is returned. */
     register Address    buffer;         /* Buffer to add to the pipe */
     int                 *offsetPtr;     /* In/Out byte offset */
     int                 *lenPtr;        /* In/Out byte count */
     Sync_RemoteWaiter   *waitPtr;	 /* Process waiting info */
 {
-    ReturnStatus 	status = SUCCESS;
-    register FsPipeIOHandle *handlePtr =
+    register ReturnStatus 	status = SUCCESS;
+    register FsPipeIOHandle	*handlePtr =
 	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
-    int 		startOffset;
-    int 		toWrite;
-    int			startByte;
-    int			endByte;
+    int 			startOffset;
+    register int 		toWrite;
+    int				startByte;
+    int				endByte;
 
     FsHandleLock(handlePtr);
 
@@ -447,10 +449,11 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	goto exit;
     } else if (toWrite > *lenPtr) {
 	toWrite = *lenPtr;
-    } else if (*lenPtr > toWrite) {
+    } else if ((*lenPtr > toWrite) && ((flags & FS_NON_BLOCKING) == 0)) {
 	/*
 	 * If there is more data to write we must block after writing the
-	 * data that we can.
+	 * data that we can.  If the stream is non-blocking, however, we
+	 * return a successful error code after writing what we can.
 	 */
 	status = FS_WOULD_BLOCK;
     }
@@ -702,8 +705,8 @@ FsPipeGetIOAttr(fileIDPtr, clientID, attrPtr)
 /*ARGSUSED*/
 ReturnStatus
 FsPipeSetIOAttr(fileIDPtr, attrPtr)
-    FsFileID			*fileIDPtr;	/* FileID of pipe */
-    register Fs_Attributes	*attrPtr;	/* Attributes to update */
+    FsFileID		*fileIDPtr;	/* FileID of pipe */
+    Fs_Attributes	*attrPtr;	/* Attributes to update */
 {
     return(SUCCESS);
 }
