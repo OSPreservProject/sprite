@@ -1490,7 +1490,7 @@ HandleItAgain:
 	    HandleFPUException(procPtr, machStatePtr);
 	}
 	Mach_DisableIntr();
-	if (procPtr->unixProgress == PROC_PROGRESS_UNIX) {
+	if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX) {
 	    /*
 	     * We have to build a proper Unix signal stack.
 	     */
