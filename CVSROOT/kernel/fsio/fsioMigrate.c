@@ -320,7 +320,7 @@ FsMigrateUseCounts(flags, closeSrcClient, usePtr)
 	 * to reflect the additional client stream.
 	 */
 	usePtr->ref++;
-	if ((flags & FS_WRITE) && !(flags & FS_LAST_WRITER)) {
+	if (flags & FS_WRITE) {
 	    usePtr->write++;
 	}
 	if (flags & FS_EXECUTE) {
