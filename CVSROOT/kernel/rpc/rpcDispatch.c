@@ -304,6 +304,11 @@ RpcScatter(rpcHdrPtr, bufferPtr)
      * Copy the RPC header.
      */
     length = bufferPtr->rpcHdrBuffer.length;
+    if (length != sizeof(RpcHdr)) {
+	printf("RpcScatter: rpcHdrBuffer.length %d != sizeof(RpcHdr) %d\n",
+	    length, sizeof(RpcHdr));
+	length = sizeof(RpcHdr);
+    }
     bcopy(netBufPtr, bufferPtr->rpcHdrBuffer.bufAddr, length);
     netBufPtr += length;
 
