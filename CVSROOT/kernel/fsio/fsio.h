@@ -135,13 +135,13 @@ typedef struct FsStreamTypeOps {
      *  that was genereated by the srvOpen routine on the file server.  As
      *  a side effect it fills in the nameInfoPtr->fileID for use later
      *  when getting/setting attributes.
-     *  BRENT - why can't nameFileID be set by the server?
      *
-     *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, hdrPtrPtr)
+     *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, name, hdrPtrPtr)
      *		Fs_FileID	*fileIDPtr;	(indicates file)
      *		int		*flagsPtr;	(from the stream)
      *		int		clientID;	(who's opening it)
      *		ClientData	data;		(stream data from srvOpen)
+     *		char 		*name;		(name for error messages)
      *		FsHandleHeader	**hdrPtrPtr;	(Returned I/O handle)
      */
     ReturnStatus (*cltOpen)();
