@@ -29,11 +29,8 @@
     .text
     .globl	_MachRunUserProc
 _MachRunUserProc:
-    movl	_machCurStatePtr, a0			| a0 = ptr to user 
-							|      state struct
-    movl	a0@(MACH_USER_SP_OFFSET), a1		| Restore user stack
-    movc	a1, usp					|      pointer
-    moveml	a0@(MACH_TRAP_REGS_OFFSET), #0xffff	| Restore all regs
+    RestoreUserFpuState()
+    RestoreUserRegs()
     rte							| Return to user space
 
 |*---------------------------------------------------------------------
@@ -130,10 +127,17 @@ _Mach_ContextSwitch:
     addl	_machStatePtrOffset, a0	| a0 = pointer to mach struct
     movl	a0@, a0
 
+#ifdef sun3
                                         | Save the floating point state.
-    SAVE_FP_STATE(MACH_SWITCH_FP_STATE_OFFSET, \
-	MACH_SWITCH_FP_REGS_OFFSET, MACH_SWITCH_FP_CTRL_REGS_OFFSET)
-
+    tstw        fpu_present
+    beq         1f
+    fsave       a0@(MACH_SWITCH_FP_STATE_OFFSET)
+    tstb        a0@(MACH_SWITCH_FP_STATE_OFFSET)
+    beq         1f
+    fmovem      #0xff, a0@(MACH_SWITCH_FP_REGS_OFFSET)
+    fmovem      fpc/fps/fpi, a0@(MACH_SWITCH_FP_CTRL_REGS_OFFSET)
+1:
+#endif
 					| Save registers for process being
 					|     switched from
     moveml	#0xffff, a0@(MACH_SWITCH_REGS_OFFSET)
@@ -142,10 +146,17 @@ _Mach_ContextSwitch:
     addl	_machStatePtrOffset, a0 | a0 = pointer to mach struct
     movl	a0@, a0
 
+#ifdef sun3
                                         | Restore the floating point state.
-    RESTORE_FP_STATE(MACH_SWITCH_FP_STATE_OFFSET, \
-	MACH_SWITCH_FP_REGS_OFFSET, MACH_SWITCH_FP_CTRL_REGS_OFFSET)
-
+        tstw        fpu_present
+	beq         2f
+	frestore    a0@(MACH_SWITCH_FP_STATE_OFFSET)
+	tstb        a0@(MACH_SWITCH_FP_STATE_OFFSET)
+	beq         2f
+	fmovem      a0@(MACH_SWITCH_FP_REGS_OFFSET), #0xff
+	fmovem      a0@(MACH_SWITCH_FP_CTRL_REGS_OFFSET), fpc/fps/fpi
+2:
+#endif
 					| Restore registers for process being
 					|     switched to
     moveml	a0@(MACH_SWITCH_REGS_OFFSET), #0xffff

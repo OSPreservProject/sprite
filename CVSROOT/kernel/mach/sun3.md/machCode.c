@@ -307,6 +307,7 @@ Mach_InitFirstProc(procPtr)
     Proc_ControlBlock	*procPtr;
 {
     procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
+    bzero(procPtr->machStatePtr, sizeof(*procPtr->machStatePtr));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     machCurStatePtr = procPtr->machStatePtr;
 }
@@ -350,6 +351,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
     }
+    bzero(procPtr->machStatePtr, sizeof(*procPtr->machStatePtr));
     statePtr = procPtr->machStatePtr;
     /* 
      * Allocate a kernel stack for this process.
@@ -388,6 +390,17 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 	bcopy((Address)fromStatePtr->userState.trapRegs,
 		  (Address)statePtr->userState.trapRegs,
 		  sizeof(statePtr->userState.trapRegs));
+#ifdef sun3
+	bcopy((Address)fromStatePtr->userState.trapFpRegs,
+		  (Address)statePtr->userState.trapFpRegs,
+		  sizeof(statePtr->userState.trapFpRegs));
+	bcopy((Address)fromStatePtr->userState.trapFpCtrlRegs,
+		  (Address)statePtr->userState.trapFpCtrlRegs,
+		  sizeof(statePtr->userState.trapFpCtrlRegs));
+	bcopy((Address)fromStatePtr->userState.trapFpuState,
+		  (Address)statePtr->userState.trapFpuState,
+		  sizeof(statePtr->userState.trapFpuState));
+#endif
     }
     if (startPC == (Address)NIL) {
 	stackPtr->startPC = (Address)fromStatePtr->userState.excStackPtr->pc;
@@ -457,7 +470,6 @@ Mach_StartUserProc(procPtr, entryPoint)
     excStackPtr->pc = (int)entryPoint;
     excStackPtr->vor.stackFormat = MACH_SHORT;
     MachUserReturn(procPtr);
-
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -557,6 +569,17 @@ Mach_CopyState(statePtr, destProcPtr)
     bcopy((Address)statePtr->userState.trapRegs,
 	      (Address)destStatePtr->userState.trapRegs,
 	      sizeof(int) * (MACH_NUM_GPRS - 1));
+#ifdef sun3
+    bcopy((Address)statePtr->userState.trapFpRegs,
+	      (Address)destStatePtr->userState.trapFpRegs,
+	      sizeof(statePtr->userState.trapFpRegs));
+    bcopy((Address)statePtr->userState.trapFpCtrlRegs,
+	      (Address)destStatePtr->userState.trapFpCtrlRegs,
+	      sizeof(statePtr->userState.trapFpCtrlRegs));
+    bcopy((Address)statePtr->userState.trapFpuState,
+	      (Address)destStatePtr->userState.trapFpuState,
+	      sizeof(statePtr->userState.trapFpuState));
+#endif
     destStatePtr->userState.excStackPtr->pc = 
 				    statePtr->userState.excStackPtr->pc;
     destStatePtr->userState.excStackPtr->statusReg = 
@@ -1342,6 +1365,17 @@ ReturnFromSigHandler(procPtr)
     bcopy((Address)sigStack.sigContext.machContext.userState.trapRegs,
 	      (Address)statePtr->userState.trapRegs,
 	      sizeof(int) * (MACH_NUM_GPRS - 1));
+#ifdef sun3
+    bcopy((Address)sigStack.sigContext.machContext.userState.trapFpRegs,
+	      (Address)statePtr->userState.trapFpRegs,
+	      sizeof(statePtr->userState.trapFpRegs));
+    bcopy((Address)sigStack.sigContext.machContext.userState.trapFpCtrlRegs,
+	      (Address)statePtr->userState.trapFpCtrlRegs,
+	      sizeof(statePtr->userState.trapFpCtrlRegs));
+    bcopy((Address)sigStack.sigContext.machContext.userState.trapFpuState,
+	      (Address)statePtr->userState.trapFpuState,
+	      sizeof(statePtr->userState.trapFpuState));
+#endif
 
     /*
      * Verify that the exception stack is OK.

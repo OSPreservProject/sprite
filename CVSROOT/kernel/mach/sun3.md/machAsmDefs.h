@@ -143,31 +143,89 @@
 
 #ifdef sun3
 #define BUS_ERROR_MOVS movsb
-#define SAVE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET) \
-        tstw        fpu_present; \
-	beq         1f; \
-	fsave       a0@(FP_STATE_OFFSET); \
-	tstb        a0@(FP_STATE_OFFSET); \
-	beq         1f; \
-	fmovem      #0xff, a0@(FP_REGS_OFFSET); \
-	fmovem      fpc/fps/fpi, a0@(FP_CTRL_REGS_OFFSET); \
-1:
-
-#define RESTORE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)\
-        tstw        fpu_present; \
-	beq         2f; \
-	frestore    a0@(FP_STATE_OFFSET); \
-	tstb        a0@(FP_STATE_OFFSET); \
-	beq         2f; \
-	fmovem      a0@(FP_REGS_OFFSET), #0xff; \
-	fmovem      a0@(FP_CTRL_REGS_OFFSET), fpc/fps/fpi; \
-2:
-
 #else 
 #define BUS_ERROR_MOVS movsw
-#define SAVE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)
-#define RESTORE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)
 #endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreUserFpuState --
+ *
+ *      Restore the floating point registers from the process state.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#ifdef sun3
+#define RestoreUserFpuState() \
+        tstw        fpu_present; \
+	beq         1f; \
+	movl        _machCurStatePtr, a0; \
+	frestore    a0@(MACH_TRAP_FP_STATE_OFFSET); \
+	tstb        a0@(MACH_TRAP_FP_STATE_OFFSET); \
+	beq         1f; \
+	fmovem      a0@(MACH_TRAP_FP_REGS_OFFSET), #0xff; \
+	fmovem      a0@(MACH_TRAP_FP_CTRL_REGS_OFFSET), fpc/fps/fpi; \
+1:
+#else
+#define RestoreUserFpuState()
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreUserRegs --
+ *
+ *      Restore the user stack pointer and the general purpose registers from
+ *	the process state.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define RestoreUserRegs() \
+	movl	_machCurStatePtr, a0; \
+	movl	a0@(MACH_USER_SP_OFFSET), a1; \
+	movc	a1, usp; \
+	moveml	a0@(MACH_TRAP_REGS_OFFSET), #0xffff
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SaveUserFpuState --
+ *
+ *      Restore the floating point registers from the process state.
+ *      The address of machCurStatePtr must already be in register a0.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#ifdef sun3
+#define SaveUserFpuState() \
+        tstw        fpu_present; \
+	beq         1f; \
+	fsave       a0@(MACH_TRAP_FP_STATE_OFFSET); \
+	tstb        a0@(MACH_TRAP_FP_STATE_OFFSET); \
+	beq         1f; \
+	fmovem      #0xff, a0@(MACH_TRAP_FP_REGS_OFFSET); \
+	fmovem      fpc/fps/fpi, a0@(MACH_TRAP_FP_CTRL_REGS_OFFSET); \
+1:
+#else
+#define SaveUserFpuState()
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SaveUserRegs --
+ *
+ *      Restore the user stack pointer and the general purpose registers from
+ *	the process state.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define SaveUserRegs() \
+	movl	_machCurStatePtr, a0; \
+	movc    usp, a1; \
+	movl	a1, a0@(MACH_USER_SP_OFFSET); \
+	moveml	#0xffff, a0@(MACH_TRAP_REGS_OFFSET);
 
 #define CallTrapHandler(type) \
 	.globl	_proc_RunningProcesses, _machStatePtrOffset; \
@@ -183,7 +241,7 @@
         jsr 	_MachTrap; \
 	jra	MachReturnFromKernTrap; \
 	\
-9:   movl	sp@+, d0; \
+9:      movl	sp@+, d0; \
 	cmpl	#0xffffffff, _machCurStatePtr; \
 	bne	8f; \
 	\
@@ -196,8 +254,7 @@
 8:	movl	a0, sp@-; \
 	movl	_machCurStatePtr, a0; \
 	moveml	#0x7fff, a0@(MACH_TRAP_REGS_OFFSET); \
-	SAVE_FP_STATE(MACH_TRAP_FP_STATE_OFFSET, \
-	    MACH_TRAP_FP_REGS_OFFSET, MACH_TRAP_FP_CTRL_REGS_OFFSET) \
+	SaveUserFpuState(); \
 	movl	sp@+, a0@(MACH_TRAP_REGS_OFFSET + 32); \
 	movl	sp, a0@(MACH_TRAP_REGS_OFFSET + 60); \
 	movc	usp, a1; \

@@ -167,6 +167,7 @@ MachSyscallTrap:
 	jne	1$
 	moveml	#0xffff, a0@(MACH_TRAP_REGS_OFFSET)
 	movl	sp, a0@(MACH_EXC_STACK_PTR_OFFSET)
+	SaveUserFpuState();
 
 	|*
 	|* Save registers used here:  two address registers and sp.
@@ -289,23 +290,6 @@ return:
 	movl	sp@+, a3
 	movl	sp@+, a2
 	rte
-
-/*
- * ----------------------------------------------------------------------------
- *
- * RestoreUserRegs --
- *
- *      Restore the user stack pointer and the general purpose registers from
- *	the process state.
- *
- * ----------------------------------------------------------------------------
- */
-#define RestoreUserRegs() \
-	movl	_machCurStatePtr, a0; \
-	movl	a0@(MACH_USER_SP_OFFSET), a1; \
-	movc	a1, usp; \
-	moveml	a0@(MACH_TRAP_REGS_OFFSET), #0xffff
-
 
 /*
  *-------------------------------------------------------------------------
@@ -379,6 +363,7 @@ kernError:
 |* and bus error register are visible.
 |*
 	jsr	_Sys_SyncDisks
+	RestoreUserFpuState()
 	RestoreUserRegs()
 	subl	#MACH_TRAP_INFO_SIZE, sp
 	jra 	_Dbg_Trap
@@ -387,6 +372,7 @@ normReturn:
 |*
 |* Normal return from trap (no errors).
 |*
+	RestoreUserFpuState()
 	RestoreUserRegs()
         rte
 
