@@ -287,14 +287,13 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
      */
     ioFileIDPtr->type = FS_LCL_PSEUDO_STREAM;
     ioFileIDPtr->serverID = rpc_SpriteID;
-    cltHandlePtr = FsPdevConnect(ioFileIDPtr, rpc_SpriteID, name);
+    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, rpc_SpriteID);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
 	status = FAILURE;
 	goto cleanup;
     }
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     *ioHandlePtrPtr = (FsHandleHeader *)pdevHandlePtr;
-    pdevHandlePtr->ctrlHandlePtr = ctrlHandlePtr;
     /*
      * Distinguish the naming request-response stream from other connections
      * that may get established later.  This ID gets passed in FsLookupArgs
