@@ -377,13 +377,16 @@ _MachRunUserProc:
 	/*
 	 * Get values to restore registers to from the state structure.
 	 */
-#ifdef NOTDEF
 	set	_proc_RunningProcesses, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to table */
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
 	set	_machStatePtrOffset, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* get offset */
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* machStatePtr */
+	set	_machCurStatePtr, %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+#ifdef NOTDEF
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP2	/* machStatePtr->trapRegs */
 	/*
@@ -397,7 +400,7 @@ _MachRunUserProc:
 	add	%o0, 4, %NEXT_PC_REG
 	mov	%o1, %fp
 #endif NOTDEF
-	andcc	%fp, 0x7, %fp
+	andcc	%fp, 0x7, %g0
 	be	UserStackOkay
 	nop
 	/*
@@ -454,7 +457,6 @@ UserStackOkay:
 	MACH_SET_WIM_TO_CWP()
 	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, FirstRetreat)
 	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, SecondRetreat)
-
 	/*
 	 * Restore psr
 	 */

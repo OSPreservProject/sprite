@@ -140,6 +140,7 @@
 #define	MACH_FIRST_USER_PSR		0x080	/* traps off, interrupts on,
 						 * previous mode not supervisor,
 						 * current mode supervisor. */
+#define	MACH_NO_INTR_USER_PSER		0xF80
 
 /*
  * psr value for interrupts disabled, traps enabled and window 0.

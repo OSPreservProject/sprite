@@ -299,6 +299,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 	procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
 #endif NOTDEF
     }
+    bzero((char *) procPtr->machStatePtr, sizeof (Mach_State));
     statePtr = procPtr->machStatePtr;
     statePtr->trapRegs = (Mach_RegState *)NIL;
     /* 
@@ -449,11 +450,9 @@ Mach_StartUserProc(procPtr, entryPoint)
     MachUserReturn(procPtr);
 #endif NOTDEF
 
-Mach_MonPrintf("Mach_StartUserProc, proc_RunningP's[0] is now 0x%x\n", proc_RunningProcesses[0]);
-Mach_MonPrintf("entryPoint is 0x%x\n", entryPoint);
-Mach_MonPrintf("procPtr->machStatePtr is 0x%x\n", procPtr->machStatePtr);
-Mach_MonPrintf("trapRegs is now 0x%x\n", procPtr->machStatePtr->trapRegs);
-Mach_MonPrintf("Mach_StartUserProc calling MachRunUserProc\n");
+    Mach_MonPrintf("Mach_StartUserProc, entryPoint is 0x%x\n", entryPoint);
+    Mach_MonPrintf("fp arg is 0x%x\n", procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]);
+    Mach_MonPrintf("Mach_StartUserProc calling MachRunUserProc\n");
 #ifdef NOTDEF
     MachRunUserProc();
 #else
@@ -503,14 +502,14 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
       * We do not call DISABLE_INTR here because there's an implicit enable
       * of interrupts in MachRunUserProc().
       */
-     Mach_DisableIntr();
-     machCurStatePtr = procPtr->machStatePtr;
-Mach_MonPrintf("Mach_ExecUserProc called with userStackPtr 0x%x\n", userStackPtr);
+    Mach_DisableIntr();
+    machCurStatePtr = procPtr->machStatePtr;
+    Mach_MonPrintf("Mach_ExecUserProc called with userStackPtr 0x%x\n", userStackPtr);
     if (procPtr->machStatePtr->trapRegs != (Mach_RegState *) NIL) {
 	panic("Mach_ExecUserProc: machStatePtr->trapRegs was NOT NIL!\n");
     }
     procPtr->machStatePtr->trapRegs = &tmpTrapState;
-Mach_MonPrintf("Current sp, new trapRegs is 0x%x\n", procPtr->machStatePtr->trapRegs);
+    Mach_MonPrintf("Current sp, new trapRegs is 0x%x\n", procPtr->machStatePtr->trapRegs);
     /*
      * Since we're not returning, we can just user the space on our kernel
      * stack as trapRegs.  This is safe, since we only fill in the fp, pc, and
@@ -518,12 +517,9 @@ Mach_MonPrintf("Current sp, new trapRegs is 0x%x\n", procPtr->machStatePtr->trap
      * window section of our stack and won't mess up any of our arguments.
      */
     (Address) procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG] = userStackPtr;
-Mach_MonPrintf("fp stored at 0x%x\n", &(procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]));
-Mach_MonPrintf("procPtr is 0x%x\n", procPtr);
-Mach_MonPrintf("proc_RunningProc[0] is 0x%x\n", proc_RunningProcesses[0]);
-Mach_MonPrintf("procPtr->machStatePtr is 0x%x\n", procPtr->machStatePtr);
-Mach_MonPrintf("machCurStatePtr is 0x%x\n", machCurStatePtr);
-Mach_MonPrintf("addr of trapRegs is 0x%x\n", &(procPtr->machStatePtr->trapRegs));
+    Mach_MonPrintf("fp stored at 0x%x\n", &(procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]));
+    Mach_MonPrintf("procPtr is 0x%x\n", procPtr);
+    Mach_MonPrintf("procPtr->machStatePtr is 0x%x\n", procPtr->machStatePtr);
     Mach_StartUserProc(procPtr, entryPoint);
     /* THIS DOES NOT RETURN */
 }
@@ -828,337 +824,6 @@ Mach_SetHandler(vectorNumber, handler)
 /*
  * ----------------------------------------------------------------------------
  *
- * MachTrap --
- *
- *      The trap handler routine.  This deals with supervisor mode and 
- *	non-supervisor mode traps differently.  The only allowed supervisor
- *	mode traps are a breakpoint trap to force a context switch and a
- *	bus error in the middle of a cross address space copy. All other
- *	traps go into the debugger.  However, all types of user traps are 
- *	processed here, except for system calls, which don't pass through
- *	this procedure unless special action (like a context switch) is
- *	needed at the end of the call.
- *
- * Results:
- *      MACH_KERN_ERROR if the debugger should be called after this routine 
- *	returns, MACH_USER_ERROR if a copy to/from user space caused an 
- *	unrecoverable bus error, and MACH_OK if everything worked out ok.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------------
- */
-int
-MachTrap(trapStack)
-    Mach_TrapStack	trapStack;	/* The stack at the time of the trap.*/
-{
-    register	Proc_ControlBlock	*procPtr;
-    ReturnStatus			status;
-
-    procPtr = Proc_GetActualProc();
-    /*
-     * Process kernel traps.
-     */
-    if (trapStack.excStack.statusReg & MACH_SR_SUPSTATE) {
-	switch (trapStack.trapType) {
-	    case MACH_TRACE_TRAP:
-		/*
-		 * If the trace trap occured on a user trap instruction, then
-		 * the trace trap will be taken on the first instruction of 
-		 * the trap handler.  When this trace trap occurs,
-		 * instead of the saved status register being in user mode and 
-		 * having the trace trap bit set, the status register will 
-		 * be in kernel mode with no trace trap bit set.
-		 * In this case we just ignore the trace trap because it 
-		 * will reoccur when the user process continues.
-		 */
-		if (!(trapStack.excStack.statusReg & MACH_SR_TRACEMODE)) {
-		    return(MACH_OK);
-		}
-
-		/*
-		 * In the normal case enter the debugger with a breakpoint
-		 * trap.
-		 */
-		return(MACH_KERN_ERROR);
-
-	    case MACH_BUS_ERROR:
-
-		if (trapStack.busErrorReg.timeOut) {
-		    /*
-		     * Allow for refresh memory time just like Unix.
-		     */
-		    MACH_DELAY(2000);
-		}
-
-		/*
-		 * Check to see if is a parity error.
-		 */
-
-#ifndef sun3
-		if (trapStack.busErrorReg.parErrU || trapStack.busErrorReg.parErrL) {
-		    panic("Parity error!!!\n");
-		    return(MACH_KERN_ERROR);
-		}
-
-		if (trapStack.busErrorReg.busErr) {
-		    panic("System bus error\n");
-		    return(MACH_KERN_ERROR);
-		}
-#endif
-
-		if (procPtr == (Proc_ControlBlock *)NIL) {
-		    panic("MachTrap: Current process is NIL!! Trap PC 0x%x\n",
-			   (unsigned) trapStack.excStack.pc);
-		}
-
-		if (procPtr->genFlags & PROC_USER) {
-		    Boolean	protError;
-		    Boolean	copyInProgress = FALSE;
-
-		    /*
-		     * A page fault on a user process while executing in
-		     * the kernel.  This can happen when information is
-		     * being copied back and forth between kernel and
-		     * user state (indicated by particular values of the
-		     * program counter), after a pointer is made accessible by 
-		     * Vm_MakeAccessible (indicated by numMakeAcc > 0) or
-		     * after someone did a set jump in the kernel and tried
-		     * to access a user process.
-		     */
-
-		    if ((((unsigned) trapStack.excStack.pc) >= (unsigned) Vm_CopyIn)
-			    && (((unsigned) trapStack.excStack.pc)
-				< (unsigned) VmMachCopyEnd)) {
-			copyInProgress = TRUE;
-		    } else if ((((unsigned) trapStack.excStack.pc)
-				>= (unsigned) MachFetchArgs)
-			    && (((unsigned) trapStack.excStack.pc)
-				<= (unsigned) MachFetchArgsEnd)) {
-			copyInProgress = TRUE;
-		    } else if ((procPtr->vmPtr->numMakeAcc == 0)
-			&& (procPtr->machStatePtr->setJumpStatePtr
-			== (Mach_SetJumpState *) NIL)) {
-			return(MACH_KERN_ERROR);
-		    }
-
-		    protError = 
-#ifdef sun3
-				!trapStack.busErrorReg.pageInvalid;
-#else
-				trapStack.busErrorReg.resident;
-#endif
-		    /*
-		     * Try to fault in the page.
-		     */
-		    status = Vm_PageIn(
-		      (Address)trapStack.excStack.tail.addrBusErr.faultAddr,
-				  protError);
-		    if (status != SUCCESS) {
-			if (copyInProgress) {
-			    return(MACH_USER_ERROR);
-			} else {
-			    /*
-			     * Real kernel error.  Take a long jump if
-			     * possible.
-			     */
-			    if (procPtr->machStatePtr->setJumpStatePtr != 
-						(Mach_SetJumpState *) NIL) {
-				Mach_LongJump(
-				    procPtr->machStatePtr->setJumpStatePtr);
-			    }
-			    return(MACH_KERN_ERROR);
-			}
-		    } else {
-			return(MACH_OK);
-		    }
-		} else {
-		    /*
-		     * Happened to a kernel process.  Take a long jump if 
-		     * possible.
-		     */
-		    if (procPtr->machStatePtr->setJumpStatePtr !=
-						(Mach_SetJumpState *) NIL) {
-			Mach_LongJump(procPtr->machStatePtr->setJumpStatePtr);
-		    }
-		    return(MACH_KERN_ERROR);
-		}
-	    case MACH_SPURIOUS_INT:
-		/*
-		 * Ignore this for now because otherwise we can't debug mint
-		 */
-		if (!dbg_BeingDebugged) {
-		    printf("MachTrap: Spurious interrupt\n");
-		}
-		return(MACH_OK);
-
-	    default:
-		return(MACH_KERN_ERROR);
-	}
-    } 
-
-    /*
-     * Process user traps.  
-     */
-
-    /* 
-     * Take a context switch if one is pending for this process.
-     */
-
-    if (procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING) {
-	Sched_LockAndSwitch();
-    }
-    /*
-     * Now clear out the trace trap bit out of the status register.  This is
-     * a precaution to take care of cases such as when a bus error occurs on 
-     * the instruction that we are trying to trace such that the trace trap bit
-     * is set but we didn't get a trace trap exception.
-     */
-    trapStack.excStack.statusReg &= ~MACH_SR_TRACEMODE;
-
-    switch (trapStack.trapType) {
-	case MACH_BUS_ERROR: {
-	    Boolean	protError;
-	    if (trapStack.busErrorReg.timeOut) {
-		/*
-		 * Allow for refresh memory time just like Unix.
-		 */
-
-		MACH_DELAY(2000);
-	    }
-
-	    /*
-	     * Check for parity error.
-	     */
-
-#ifndef sun3
-	    if (trapStack.busErrorReg.parErrU || trapStack.busErrorReg.parErrL) {
-		panic("Parity error!!!\n");
-		return(MACH_KERN_ERROR);
-	    }
-#endif
-
-	    /*
-	     * Take a page fault. It is assumed that if the resident bit
-	     * is set in the bus error register then this is a protection
-	     * error.
-	     */
-	protError =
-#ifdef sun3
-		    !trapStack.busErrorReg.pageInvalid;
-#else
-		    trapStack.busErrorReg.resident;
-#endif
-	if (Vm_PageIn((Address)trapStack.excStack.tail.addrBusErr.faultAddr, 
-		      protError) != SUCCESS) {
-		printf(
-		    "MachTrap: Bus error in user proc %X, PC = %x, addr = %x BR Reg %x\n",
-			    procPtr->processID, 
-			    trapStack.excStack.pc,
-			    trapStack.excStack.tail.addrBusErr.faultAddr,
-			    *(short *)&trapStack.busErrorReg);
-		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
-				procPtr->processID, FALSE);
-	    }
-	    break;
-	}
-	case MACH_SYSCALL_TRAP:
-	    /*
-	     * It used to be that all system calls passed through here, but
-	     * the code was optimized to avoid calling either this procedure
-	     * or Sys_SysCall in the normal case.  Control only passes through
-	     * here if, at the end of a system call, it's discovered that
-	     * special action must be taken.  The call has already been
-	     * executed by the time things arrive here.  This code does
-	     * nothing... the action will all be taken by the call to
-	     * MachUserReturn below.
-	     */
-
-	    break;
-		
-	case MACH_BRKPT_TRAP:
-	    Proc_Lock(procPtr);
-	    if (procPtr->genFlags & PROC_DEBUG_ON_EXEC) {
-	    	procPtr->genFlags &= ~PROC_DEBUG_ON_EXEC;
-		(void) Sig_SendProc(procPtr, SIG_DEBUG, SIG_NO_CODE);
-	    } else {
-		(void) Sig_SendProc(procPtr, SIG_BREAKPOINT, SIG_NO_CODE);
-	    }
-	    Proc_Unlock(procPtr);
-	    break;
-
-	case MACH_SIG_RET_TRAP: {
-	    /*
-	     * We got a return from signal trap.
-	     */
-	    ReturnFromSigHandler(procPtr);
-	    return(MACH_SIG_RETURN);
-	}
-
-	case MACH_ADDRESS_ERROR:
-	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR,
-			    procPtr->processID, FALSE);
-	    break;
-	case MACH_ILLEGAL_INST:
-	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
-			    procPtr->processID, FALSE);
-	    break;
-	case MACH_ZERO_DIV:
-	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_ZERO_DIV,
-			    procPtr->processID, FALSE);
-	    break;
-	case MACH_CHK_INST:
-	    (void) Sig_Send(SIG_ILL_INST, SIG_CHK,
-			    procPtr->processID, FALSE);
-	    break;
-	case MACH_TRAPV:
-	    (void) Sig_Send(SIG_ILL_INST, SIG_TRAPV,
-			    procPtr->processID, FALSE);
-	    break;
-	case MACH_PRIV_VIOLATION:
-	    (void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST,
-			    procPtr->processID, FALSE);
-	    break;
-	case MACH_TRACE_TRAP: 
-	    /*
-	     * Involuntary context switch trace traps have already been taken
-	     * care of above.  Here the only time we pay attention to a
-	     * trace trap is if the debugger is trying to single step the 
-	     * user process.
-	     */
-	    if (procPtr->genFlags & PROC_SINGLE_STEP_FLAG) {
-		procPtr->genFlags &= ~PROC_SINGLE_STEP_FLAG;
-		(void) Sig_Send(SIG_TRACE_TRAP, SIG_NO_CODE,
-				procPtr->processID, FALSE);
-	    }
-	    break;
-
-	case MACH_EMU1010:
-	    (void) Sig_Send(SIG_ILL_INST, SIG_EMU1010,
-			    procPtr->processID, FALSE);
-	    break;
-	case MACH_EMU1111:
-	    (void) Sig_Send(SIG_ILL_INST, SIG_EMU1111,
-			    procPtr->processID, FALSE);
-	    break;
-	case MACH_BAD_TRAP:
-	    (void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
-			    procPtr->processID, FALSE);
-
-	    break;
-	default:
-	    return(MACH_KERN_ERROR);
-    } 
-
-    MachUserReturn(procPtr);
-    return(MACH_OK);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
  * MachUserReturn --
  *
  *      Take the proper action to return from a user exception.
@@ -1419,48 +1084,6 @@ ReturnFromSigHandler(procPtr)
      * old exception stack is to be restored to.
      */
     statePtr->userState.trapRegs[SP] += curSize - oldSize;
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Mach_GetExcStackSize --
- *
- *      Return the size of the trap stack.  This can vary depending on whether
- *	are on a Sun-3 or a Sun-2.
- *
- * Results:
- *      Trap stack size.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------------
- */
-int
-Mach_GetExcStackSize(excStackPtr)
-    Mach_ExcStack	*excStackPtr;
-{
-    switch (excStackPtr->vor.stackFormat) {
-	case MACH_SHORT:
-	    return(MACH_SHORT_SIZE);
-	case MACH_THROWAWAY:
-	    return(MACH_THROWAWAY_SIZE);
-	case MACH_INST_EXCEPT:
-	    return(MACH_INST_EXCEPT_SIZE);
-	case MACH_MC68010_BUS_FAULT:
-	    return(MACH_MC68010_BUS_FAULT_SIZE);
-	case MACH_COPROC_MID_INSTR:
-	    return(MACH_COPROC_MID_INSTR_SIZE);
-	case MACH_SHORT_BUS_FAULT:
-	    return(MACH_SHORT_BUS_FAULT_SIZE);
-	case MACH_LONG_BUS_FAULT:
-	    return(MACH_LONG_BUS_FAULT_SIZE);
-	default:
-	    printf("Warning: Mach_GetTrapStackSize: Bad stack format.\n");
-	    return(-1);
-    }
 }
 #endif NOTDEF
 
@@ -1750,7 +1373,11 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 #endif NOTDEF
     }
-    printf("Returning okay.\n");
+    {
+	int	pte;
+	pte = VmMachGetPageMap(addrErrorReg);
+	printf("Returning okay, pte = 0x%x.\n", pte);
+    }
     return(MACH_OK);
 }
 

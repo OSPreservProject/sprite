@@ -350,6 +350,16 @@ DebugLabel:					\
 	set	0x11100111, reg1;		\
 	st	reg1, [reg2]
 
+#define	MACH_DEBUG_ONCE(reg1, reg2, NoMoreLabel, DebugLabel, stuff, a_num)\
+	set	_debugCounter, reg1;		\
+	ld	[reg1], reg1;			\
+	cmp	reg1, a_num;			\
+	bg	NoMoreLabel;			\
+	nop;					\
+	MACH_DEBUG_BUF(reg1, reg2, DebugLabel, stuff);	\
+NoMoreLabel:					\
+	nop
+
 /*
  * This is the equivalent to a call to VmmachGetPage followed by a test on
  * the returned pte to see if it is resident and user readable and writable.

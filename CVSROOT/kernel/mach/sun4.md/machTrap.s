@@ -130,8 +130,17 @@ WindowOkay:
         andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0 		/* previous state? */
         bne,a   DoneWithUserStuff 			/* was kernel mode */
         add     %fp, -MACH_SAVED_STATE_FRAME, %sp 	/* set kernel sp */
-        set     _machCurStatePtr, %VOL_TEMP1 		/* was user mode */
+	set	_proc_RunningProcesses, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to ptr to proc */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
+	set	_machStatePtrOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset to machPtr */
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1	/* &procPtr->machPtr */
+	ld	[%VOL_TEMP1], %VOL_TEMP2		/* procPtr->machPtr */
+#ifdef NOTDEF
+        set     _machCurStatePtr, %VOL_TEMP1
         ld      [%VOL_TEMP1], %VOL_TEMP2 		/* get machStatePtr */
+#endif NOTDEF
         add     %VOL_TEMP2, MACH_KSP_OFFSET, %VOL_TEMP1 /* &(machPtr->ksp) */
         ld      [%VOL_TEMP1], %sp 			/* machPtr->ksp */
 	set	(MACH_KERN_STACK_SIZE - MACH_SAVED_STATE_FRAME), %VOL_TEMP1
@@ -326,7 +335,8 @@ _MachReturnFromTrap:
 	nop
 	/* Do we need to take a special action? Check special handling flag. */
 	set	_proc_RunningProcesses, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to PCB */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to ptr to proc */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
 	set	_machSpecialHandlingOffset, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
@@ -455,7 +465,8 @@ MachHandleWindowOverflowTrap:
         nop
         /* Do we need to take a special action? Check special handling flag. */
         set     _proc_RunningProcesses, %VOL_TEMP1
-        ld      [%VOL_TEMP1], %VOL_TEMP1                /* ptr to PCB */
+        ld      [%VOL_TEMP1], %VOL_TEMP1                /* ptr to ptr to proc */
+        ld      [%VOL_TEMP1], %VOL_TEMP1                /* procPtr */
         set     _machSpecialHandlingOffset, %VOL_TEMP2
         ld      [%VOL_TEMP2], %VOL_TEMP2
         add     %VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
@@ -545,7 +556,11 @@ MachWindowOverflow:
 	 * If it is, go ahead, but if not, then set special handling and
 	 * save to buffers.
 	 */
-	set	MACH_KERN_START, %g3		/* %sp lower than kernel? */
+#ifdef NOTDEF
+	/*
+	 * Old stack-checking code.
+	 */
+	set	MACH_MAX_USER_STACK_ADDR, %g3	/* %sp in user space? */
 	subcc	%g3, %sp, %g0
 	bgu	UserStack
 	nop
@@ -553,6 +568,34 @@ MachWindowOverflow:
 	subcc	%sp, %g3, %g0
 	bleu	NormalOverflow			/* is kernel sp */
 	nop
+	/* BAD STACK! */
+#endif NOTDEF
+	set	MACH_MAX_USER_STACK_ADDR, %g3	/* %sp in user space? */
+	subcc	%g3, %sp, %g0			/* need sp < highest addr */
+	bleu	NotUserStack
+	nop
+	set	MACH_FIRST_USER_ADDR, %g3	/* need sp >= lowest addr */
+	subcc	%sp, %g3, %g0
+	bgeu	UserStack
+	nop
+NotUserStack:
+	set	MACH_STACK_BOTTOM, %g3
+	subcc	%sp, MACH_STACK_BOTTOM, %g0	/* need sp >= lowest addr */
+	blu	BadStack
+	nop
+	set	VMMACH_DEV_START_ADDR, %g3	/* need sp < highest addr */
+	subcc	%g3, %sp, %g0
+	bgu	NormalOverflow
+	nop
+BadStack:
+	/*
+	 * Assume it was a user process's bad stack pointer.  We can't kill
+	 * the process here, so just take over the window and the user process
+	 * will die a terrible death later.  We just return to take over the
+	 * window, since we've already advanced the %wim.
+	 */
+	 ba	ReturnFromOverflow
+	 nop
 UserStack:
 	/*
 	 * If alignment is bad, what should we do?
@@ -596,7 +639,8 @@ SaveToInternalBuffer:
 	 * Get and set the special handling flag in the current process state.
 	 */
 	set	_proc_RunningProcesses, %g3
-	ld	[%g3], %g3
+	ld	[%g3], %g3			/* ptr to ptr to proc */
+	ld	[%g3], %g3			/* procPtr */
 	set	_machSpecialHandlingOffset, %g4
 	ld	[%g4], %g4
 	add	%g3, %g4, %g3
@@ -800,7 +844,6 @@ CheckNextUnderflow:
 NormalUnderflow:
 	mov	%g3, %VOL_TEMP1			/* clear out globals */
 	mov	%g4, %VOL_TEMP2
-	mov	%CUR_PSR_REG, %g4
 	restore					/* retreat a window */
 	mov	%RETURN_ADDR_REG, %g3		/* save reg in global */
 	set	MachWindowUnderflow, %g4	/* put address in global */
@@ -1150,7 +1193,8 @@ _MachFetchArgs:
 _MachFetchArgsEnd:
 	/* get address from table */
 	set	_proc_RunningProcesses, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to PCB */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to ptr to proc */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
 	set	_machKcallTableOffset, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset to kcalls */
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
@@ -1216,14 +1260,23 @@ MachHandlePageFault:
 	/* memory address causing the error as second arg */
 	set	VMMACH_ADDR_ERROR_REG, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %o1
-#ifdef NOTDEF
-	/* have to write to memory error address reg to clear the error */
-	st	%g0, [%VOL_TEMP1]
-#endif NOTDEF
+	/* Write the address register to clear it */
+	st	%o1, [%VOL_TEMP1]
 	/* trap value of the psr as third arg */
 	mov	%CUR_PSR_REG, %o2	
 	/* trap value of pc as fourth argument */
 	mov	%CUR_PC_REG, %o3
+	/*
+	 * If the trap was on a pc access rather than a data access, the
+	 * memoory address register won't have frozen the correct address.
+	 * Just move the pc into the second argument.
+	 */
+	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1
+	cmp	%VOL_TEMP1, MACH_INSTR_ACCESS
+	bne	AddressValueOkay
+	nop
+	mov	%CUR_PC_REG, %o1
+AddressValueOkay:
 	call	_MachPageFault, 4
 	nop
 	set	_MachReturnFromTrap, %VOL_TEMP1
