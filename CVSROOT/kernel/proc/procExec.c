@@ -400,9 +400,6 @@ Proc_KernExec(fileName, argPtrArray)
     UserArgs				userArgs;
 
     procPtr = Proc_GetCurrentProc();
-#ifdef sun4
-    printf("Turning proc 0x%x into a user process.\n", procPtr);
-#endif sun4
 
     /*
      * Set up dummy segments so that DoExec can work properly.
@@ -980,14 +977,6 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 		goto execError;
 	    }
 	}
-#ifdef notdef
-#ifdef sun4
-	if ((aoutPtr->machineType & 0x0f) != PROC_SPARC) {
-	    status = PROC_BAD_AOUT_FORMAT;
-	    goto execError;
-	}
-#endif sun4
-#endif
     }
 
     if (!importing) {
