@@ -649,7 +649,16 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		fs_Stats.blockCache.domainReadFails++;
 		Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
 		break;
-	    } else if (amountRead < FS_BLOCK_SIZE) {
+	    }
+	    if (cacheInfoPtr->hdrPtr->fileID.type == FSIO_RMT_FILE_STREAM) {
+		/*
+		 * Sorry for this explicit check against the stream type.
+		 * We want to know the the effectiveness of the cache
+		 * on the remote client is.
+		 */
+		fs_Stats.rmtIO.bytesReadForCache += amountRead;
+	    }
+	    if (amountRead < FS_BLOCK_SIZE) {
                 /*
                  * We always must make sure that every cache block is filled
 		 * with zeroes so reads in holes or just past eof do not
