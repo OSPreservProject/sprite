@@ -695,6 +695,7 @@ retry:
 	    Sys_Panic(SYS_WARNING, "Xylogics retry cmd %d FAILED at <%d,%d,%d>",
 				command, diskAddrPtr->cylinder,
 				diskAddrPtr->head, diskAddrPtr->sector);
+	    error = DEV_RETRY_ERROR;
 	}
     }
     *numSectorsPtr -= (xyPtr->residual / DEV_BYTES_PER_SECTOR);
