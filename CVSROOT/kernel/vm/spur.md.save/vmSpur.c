@@ -1275,7 +1275,7 @@ VmMach_PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 /*
  *----------------------------------------------------------------------
  *
- * VmMach_PinUserPage --
+ * VmMach_PinUserPages --
  *
  *	Force a user page to be resident in memory and have its reference
  *	and modify bits set.  Our caller  has already assured that
@@ -1291,26 +1291,34 @@ VmMach_PageInvalidate(virtAddrPtr, virtPage, segDeletion)
  *----------------------------------------------------------------------
  */
 void
-VmMach_PinUserPage(virtAddrPtr)
-    Vm_VirtAddr	*virtAddrPtr;
+VmMach_PinUserPages(mapType, virtAddrPtr, lastPage)
+    int		mapType;	/* VM_READONLY_ACCESS | VM_READWRITE_ACCESS */
+    Vm_VirtAddr	*virtAddrPtr;	/* Pointer to beginning virtual address to
+				 * to pin. */
+    int		lastPage;	/* Last page to unpin. */
 {
-    int	*intPtr;
-    int	i;
+    register	Address	addr;
+    register	int	i;
+    volatile	int	*intPtr;
+    int			intVal;
 
-    /*
-     * Read out the value and write it back to ensure that the reference
-     * and modify bits are set and we don't accidently change the value.
-     */
-    intPtr = (int *) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
-    i = *intPtr;
-    *intPtr = i;
+    for (i = lastPage - virtAddrPtr->page + 1, 
+		addr = (Address)(virtAddrPtr->page << VMMACH_PAGE_SHIFT);
+	 i > 0;
+	 i--, addr += VMMACH_PAGE_SIZE) {
+	intPtr = (int *)addr;
+	intVal = *intPtr;
+	if (mapType == VM_READWRITE_ACCESS) {
+	    *intPtr = intVal;
+	}
+    }
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * VmMach_UnpinUserPage --
+ * VmMach_UnpinUserPages --
  *
  *	Allow a page that was pinned to be unpinned.
  *
@@ -1322,10 +1330,11 @@ VmMach_PinUserPage(virtAddrPtr)
  *
  *----------------------------------------------------------------------
  */
-/* ARGSUSED */
+/*ARGSUSED*/
 void
-VmMach_UnpinUserPage(virtAddrPtr)
+VmMach_UnpinUserPages(virtAddrPtr, lastPage)
     Vm_VirtAddr	*virtAddrPtr;
+    int		lastPage;
 {
 }
 
@@ -1602,7 +1611,11 @@ Vm_CopyIn(numBytes, sourcePtr, destPtr)
     Address		sourcePtr;	/* Where to copy from */
     Address		destPtr;	/* Where to copy to */
 {
-    return(VmMachDoCopy(numBytes, sourcePtr, destPtr));
+    if (numBytes == 0) {
+	return(SUCCESS);
+    } else {
+	return(VmMachDoCopy(numBytes, sourcePtr, destPtr));
+    }
 }
 
 
@@ -1629,7 +1642,9 @@ Vm_CopyOut(numBytes, sourcePtr, destPtr)
     Address		sourcePtr;	/* Where to copy from */
     Address		destPtr;	/* Where to copy to */
 {
-    if (destPtr < mach_FirstUserAddr || destPtr > mach_LastUserAddr) {
+    if (numBytes == 0) {
+	return(SUCCESS);
+    } else if (destPtr < mach_FirstUserAddr || destPtr > mach_LastUserAddr) {
 	return(SYS_ARG_NOACCESS);
     } else {
 	return(VmMachDoCopy(numBytes, sourcePtr, destPtr));
@@ -1698,6 +1713,44 @@ Vm_StringNCopy(n, src, dst, bytesCopiedPtr)
 #endif
     *bytesCopiedPtr = src - origSrc;
 
+    return(SUCCESS);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_TouchPages --
+ *
+ *	Touch each of the given pages.
+ *
+ * Results:
+ *	SUCCESS if successfully touched all pages.  SYS_ARG_NOACCESS
+ *	otherwise.  SYS_ARG_NOACCESS is returned by the trap handlers if
+ *	we hit an error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Vm_TouchPages(firstPage, numPages)
+    register	int	firstPage;
+    register	int	numPages;
+{
+    register Address	addr;
+    int			lastPage;
+    volatile int	*intPtr;
+    int			intVal;
+
+    for (addr = (Address)(firstPage << VMMACH_PAGE_SHIFT);
+	 numPages > 0;
+	 numPages--, addr += VMMACH_PAGE_SIZE) {
+	intPtr = (int *)addr;
+	intVal = *intPtr;
+    }
     return(SUCCESS);
 }
 
@@ -1991,12 +2044,24 @@ Vm_ValidateRange(addr, numBytes)
     unsigned int	lastPage;
     unsigned int	firstPTPage;
     unsigned int	lastPTPage;
+    VmMach_SegData	*segDataPtr;
+    int			hardSegNum;
+    Proc_ControlBlock	*procPtr;
+    Vm_Segment		*segPtr;
 
-    if (((unsigned int)addr & VMMACH_SEG_REG_MASK) != 0 ||
-	((unsigned int)(addr + numBytes - 1) & VMMACH_SEG_REG_MASK) != 0) {
-	return(FALSE);
+    hardSegNum = (unsigned int)addr >> VMMACH_SEG_REG_SHIFT;
+    if (hardSegNum == 0) {
+	segPtr = vm_SysSegPtr;
+    } else {
+	procPtr = Proc_GetCurrentProc();
+	segPtr = procPtr->vmPtr->segPtrArray[hardSegNum];
+	if (segPtr == (Vm_Segment *)NIL) {
+	    return(FALSE);
+	}
     }
+    segDataPtr = segPtr->machPtr;
 
+    addr = (Address) ((unsigned int)addr & ~VMMACH_SEG_REG_MASK);
     firstPage = (unsigned int)addr >> VMMACH_PAGE_SHIFT;
     lastPage = (unsigned int)(addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     firstPTPage = firstPage >> VMMACH_SEG_PT2_SHIFT;
@@ -2007,7 +2072,7 @@ Vm_ValidateRange(addr, numBytes)
      * level page tables first.  If the root page tables aren't mapped then
      * we won't get this far in the first place.
      */
-    for (ptePtr = (VmMachPTE *)(VMMACH_KERN_PT2_BASE) + firstPTPage;
+    for (ptePtr = Get2ndPageTablePtr(segDataPtr, firstPTPage);
 	 firstPTPage <= lastPTPage;
 	 firstPTPage++, ptePtr++) {
 	if (!(*ptePtr & VMMACH_RESIDENT_BIT) ||
@@ -2018,7 +2083,7 @@ Vm_ValidateRange(addr, numBytes)
     /*
      * Now check the first level page table entries.
      */
-    for (ptePtr = (VmMachPTE *)(VMMACH_KERN_PT_BASE) + firstPage;
+    for (ptePtr = GetPageTablePtr(segDataPtr, firstPage);
 	 firstPage <= lastPage;
 	 firstPage++, ptePtr++) {
 	if (!(*ptePtr & VMMACH_RESIDENT_BIT) ||
