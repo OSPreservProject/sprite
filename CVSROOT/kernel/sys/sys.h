@@ -35,8 +35,9 @@
 #ifndef _ASM
 #ifdef KERNEL
 
-extern	Boolean	sys_ShuttingDown;
-extern	Boolean	sys_ErrorShutdown;
+extern	Boolean	sys_ShuttingDown;	/* Set when halting */
+extern	Boolean	sys_ErrorShutdown;	/* Set after a bad trap or error */
+extern	Boolean	sys_ErrorSync;		/* Set while syncing disks */
 extern	int	sys_NumCalls[];
 
 extern	void	Sys_Init();
