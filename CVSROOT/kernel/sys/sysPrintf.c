@@ -72,16 +72,19 @@ writeProc(stream, flush)
 {
     int		count;
     int		written;
+    Fs_IOParam	io;
+    Fs_IOReply	reply;
 
+    bzero((char *)&io, sizeof(io));
+    io.buffer = stream->buffer;
+    io.length = stream->lastAccess + 1 - stream->buffer;
+    bzero((char *)&reply, sizeof(reply));
 
-    count = stream->lastAccess + 1 - stream->buffer;
-
-    if (count > 0) { 
-	(void)Dev_SyslogWrite((Fs_Device *) NIL, 0, count, 
-				    (char *) stream->buffer, &written);
+    if (io.length > 0) { 
+	(void)Dev_SyslogWrite((Fs_Device *) NIL, &io, &reply);
 	stream->lastAccess = stream->buffer - 1;
 	stream->writeCount = stream->bufSize;
-	bytesWritten += written;
+	bytesWritten += reply.length;
     }
 }
 
