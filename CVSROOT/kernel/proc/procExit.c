@@ -443,12 +443,14 @@ done:
  * Side effects:
  *	The PCB entry for the process is modified to clean-up FS
  *	state. The specified process may be placed on the dead list.
- *  	If contextSwitch is TRUE, a context switch is performed.
+ *  	If thisProcess is TRUE, a context switch is performed.  If not,
+ *	then the exit is being performed on behalf of another process;
+ * 	the procPtr comes in locked and is unlocked as a side effect.
  *
  *----------------------------------------------------------------------
  */
 void
-ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch) 
+ProcExitProcess(exitProcPtr, reason, status, code, thisProcess) 
     register Proc_ControlBlock 	*exitProcPtr;	/* Exiting process. */
     int 			reason;		/* Why the process is dieing: 
 						 * EXITED, SIGNALED, 
@@ -456,7 +458,7 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
     int				status;		/* Exit status, signal # or 
 						 * destroy status. */
     int 			code;		/* Signal sub-status */
-    Boolean 			contextSwitch;	/* TRUE => context switch */
+    Boolean 			thisProcess;	/* TRUE => context switch */
 {
     int				i;
     register Boolean 		migrated;
@@ -472,7 +474,13 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
 	ProcDecEnvironRefCount(exitProcPtr->environPtr);
     }
 
-    Proc_Lock(exitProcPtr);
+    /*
+     * The process is already locked if it comes in on behalf of someone
+     * else.
+     */
+    if (thisProcess) {
+	Proc_Lock(exitProcPtr);
+    }
     if (exitProcPtr->genFlags & PROC_NO_VM) {
 	noVm = TRUE;
     } else {
@@ -518,7 +526,7 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
     exitProcPtr->termStatus	= status;
     exitProcPtr->termCode	= code;
 
-    exitProcPtr->state = ExitProcessInt(exitProcPtr, migrated, contextSwitch);
+    exitProcPtr->state = ExitProcessInt(exitProcPtr, migrated, thisProcess);
 
     Proc_Unlock(exitProcPtr);
 }
