@@ -791,7 +791,7 @@ Fs_HandleScavenge(data, callInfoPtr)
  *----------------------------------------------------------------------------
  *
  */
-Boolean
+static ENTRY Boolean
 OkToScavenge()
 {
     register Boolean ok;
