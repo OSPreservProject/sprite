@@ -1,11 +1,20 @@
 /* 
- * devSCSIExabyte.c --
+ * devExabyteTape.c --
  *
  *      Procedures that set up command blocks and process sense
  *	data for Exabyte tape drives.
+ * Definitions for sense data format and status information returned
+ * from Exabyte tape drives.  Reference, the "EXB-8200 8mm Tape Drive
+ * User's Guide" by Perfect Byte, Inc. 7121 Cass St. Omaha, NE 68132
  *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -15,20 +24,134 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "dev.h"
-#include "devInt.h"
-#include "devSCSI.h"
-#include "devSCSITape.h"
-#include "devSCSIExabyte.h"
+#include "scsi.h"
+#include "scsiTape.h"
+#include "scsiDevice.h"
+#include "stdlib.h"
+#include "fs.h"
+#include "exabyteTape.h"
 
-void ExabyteSetup();
-void ExabyteStatus();
-ReturnStatus ExabyteError();
+/*
+ * The Exabyte drives have 1K blocks.
+ */
+#define EXABYTE_BLOCK_SIZE	1024
+
+/*
+ * Sense data returned from the Exabyte tape controller.
+ */
+#define EXABYTE_SENSE_BYTES	26
+typedef struct {
+    ScsiClass7Sense	extSense;	/* 8 Bytes */
+    unsigned char pad8;			/* Reserved */
+    unsigned char pad;			/* Reserved */
+    unsigned char pad10;		/* Reserved */
+    unsigned char pad11;		/* Reserved */
+    /*
+     * SCSI 2 support.
+     */
+    unsigned char senseCode;		/* 0x4 if sense key is NOT_READY */
+    unsigned char senseCodeQualifier;	/* 00 - volume not mounted.
+					 * 01 - rewinding or loading */
+    unsigned char pad14;		/* Reserved */
+    unsigned char pad15;		/* Reserved */
+    unsigned char highErrorCnt;		/* High byte of error count */
+    unsigned char midErrorCnt;		/* Middle byte of error count */
+    unsigned char lowErrorCnt;		/* Low byte of error count */
+    /*
+     * Error bits that are command dependent.  0 is ok, 1 means error.
+     * These are defined on pages 37-38 of the User Manual, Rev.03
+     */
+    unsigned char PF		:1;	/* Power failure */
+    unsigned char BPE		:1;	/* SCSI Bus Parity Error */
+    unsigned char FPE		:1;	/* Formatted buffer parity error */
+    unsigned char ME		:1;	/* Media error */
+    unsigned char ECO		:1;	/* Error counter overflow */
+    unsigned char TME		:1;	/* Tape motion error */
+    unsigned char TNP		:1;	/* Tape not present */
+    unsigned char BOT		:1;	/* Set when tape is at BOT */
+
+    unsigned char XFR		:1;	/* Transfer Abort Error */
+    unsigned char TMD		:1;	/* Tape Mark Detect Error */
+    unsigned char WP		:1;	/* Write Protect */
+    unsigned char FMKE		:1;	/* File Mark Error */
+    unsigned char URE		:1;	/* Data flow underrun. Media error. */
+    unsigned char WE1		:1;	/* Max write retries attempted */
+    unsigned char SSE		:1;	/* Servo System error.  Catastrophic */
+    unsigned char FE		:1;	/* Formatter error.  Catastrophic */
+
+    unsigned char pad21		:6;	/* Reserved */
+    unsigned char WSEB		:1;	/* Write Splice Error, hit blank tape */
+    unsigned char WSEO		:1;	/* Write Splice Error, overshoot */
+
+    unsigned char pad22;		/* Reserved */
+    unsigned char highRemainingTape;	/* High byte of remaining tape len */
+    unsigned char midRemainingTape;	/* Middle byte of remaining tape len */
+    unsigned char lowRemainingTape;	/* Low byte of remaining tape len */
+
+} ExabyteSense;				/* Known to be 26 Bytes big (for
+					 * Drives made in/after 1988) */
+
+
+/*
+ * Definitions for the mode select command.  The MODE_SELECT data
+ * consists of a 4 byte header, zero or one 8 byte block descriptors,
+ * and finally from zero to 4 bytes of Vendor Unique Parameters.
+ * For simplicity we'll always send 1 block descriptor and 4 parameter bytes.
+ */
+
+typedef struct ExabyteModeSelBlock {
+    unsigned char density;		/* Density code == 0.  Only one dens. */
+    unsigned char highCount;		/* == 0 */
+    unsigned char midCount;		/* == 0 */
+    unsigned char lowCount;		/* == 0 */
+    unsigned char pad1;			/* Reserved */
+    unsigned char highLength;		/* Length of the blocks on tape */
+    unsigned char midLength;		/*	0 means variable length */
+    unsigned char lowLength;		/*	Default is 1024 bytes */
+} ExabyteModeSelBlock;		/* 8 Bytes */
+
+
+typedef struct ExabyteModeSelParams {
+    ScsiTapeModeSelectHdr	header;
+    ExabyteModeSelBlock	block;
+    unsigned char cartidgeType	:1;	/* 1 == p5 European.
+					 * 0 == P6 Domestic */
+    unsigned char		:3;	/* Reserved */
+    unsigned char noBusyEnable	:1;	/* 0 == Report Busy Status (default)
+					 * 1 == No Busy Enable, cmd queued */
+    unsigned char evenByteDscnct :1;	/* 0 == Even or Odd byte disconnect
+					 * 1 == Even Byte disconnect */
+    unsigned char parityEnable	:1;	/* 0 == Parity disabled (default) */
+    unsigned char noAutoLoad	:1;	/* 0 == Auto load enabled (default) */
+    unsigned char pad1;			/* RESERVED */
+    /*
+     * The Motion threashold must exceed the Reconnect threshold.
+     * Values represent 1K byte increments.
+     * Motion - default 0xF0, valid range 0x01 -> 0xF7
+     * Reconnect - default 0x40, valid range 0x01 to 0xF7
+     * WRITE - lower motion threshold for faster transfer.
+     * READ - raise reconnect threshold for faster transfer.
+     *	Basically these control the amount of data kept in the buffer
+     *	and hence the latency.
+     */
+    unsigned char motion;		/* Defines how many Kbytes are buffered
+					 * before writing to the tape begins,
+					 * or when reconnecting on a read */
+    unsigned char reconnect;		/* Defines how many Kbytes are left
+					 * in the buffer when the drive
+					 * begins filling it again, either
+					 * by reading the tape or reconnecting
+					 * and getting more data from the 
+					 * SCSI bus. */
+} ModeSelParams;
+
+static ReturnStatus ExabyteError();
 
 
 /*
  *----------------------------------------------------------------------
  *
- * DevExabyteInit --
+ * ExabyteInit --
  *
  *	Initialize the DevSCSITape state for a Exabyte drive.
  *
@@ -40,140 +163,33 @@ ReturnStatus ExabyteError();
  *
  *----------------------------------------------------------------------
  */
-void
-DevExabyteInit(tapePtr)
-    DevSCSITape	*tapePtr;	/* Tape drive state */
+/*ARGSUSED*/
+ReturnStatus
+DevExabyteAttach(devicePtr, devPtr, tapePtr)
+    Fs_Device	*devicePtr;	/* Fs_Device being attached. */
+    ScsiDevice	*devPtr;	/* SCSI device handle for drive. */
+    ScsiTape	*tapePtr;	/* Tape drive state to be filled in. */
 {
-    tapePtr->type = SCSI_EXABYTE;
-    tapePtr->blockSize = DEV_EXABYTE_BLOCK_SIZE;
-    tapePtr->setupProc = ExabyteSetup;
-    tapePtr->statusProc = ExabyteStatus;
-    tapePtr->errorProc = ExabyteError;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ExabyteSetup --
- *
- *	This customizes the control block and sets the count and dmaCount
- *	to be correct for Exabyte based tape drives.
- *
- * Results:
- *	Various reserved bits may be set in the control block.
- *	count is set for the count field in the command block.
- *	dmaCount is set for the dma transfer count.
- *
- * Side effects:
- *	The tapePtr->state may be modified regarding EOF and RETENSION.
- *
- *----------------------------------------------------------------------
- */
-void
-ExabyteSetup(tapePtr, commandPtr, controlBlockPtr, countPtr, dmaCountPtr)
-    DevSCSITape	*tapePtr;	/* Tape drive state */
-    int *commandPtr;		/* In/Out tape command */
-    DevSCSITapeControlBlock *controlBlockPtr;	/* CMD Block to set up */
-    int *countPtr;		/* In - Transfer count in bytes.
-				 * Out - The proper byte count for CMD block */
-    int *dmaCountPtr;		/* In - Transfer count in bytes.
-				 * Out - The proper DMA byte count for caller */
-{
-    switch (*commandPtr) {
-	case SCSI_TEST_UNIT_READY:
-	    break;
-	case SCSI_REWIND:
-	    /*
-	     * Note that it is possible to get status back immediately
-	     * by setting  code = 1, but it is probably cleaner to
-	     * rely on connect/dis-connect.
-	     */
-	    if (tapePtr->state & SCSI_TAPE_RETENSION) {
-		tapePtr->state &= ~SCSI_TAPE_RETENSION;
-		/* No notion of retentioning the Exabyte tape */
-	    }
-	    tapePtr->state &= ~SCSI_TAPE_AT_EOF;
-	    break;
-	case SCSI_REQUEST_SENSE:
-	    *dmaCountPtr = *countPtr = sizeof(DevExabyteSense);
-	    break;
-	case SCSI_READ:
-	case SCSI_WRITE:
-	    /*
-	     * The command block takes a block count.  The code value
-	     * of 1 indicates fixed size blocks.  FIX HERE to handle
-	     * transfers smaller than 1K.
-	     */
-	    controlBlockPtr->code = 1;
-	    *countPtr /= tapePtr->blockSize;
-	    break;
-	case SCSI_WRITE_EOF:
-	    /*
-	     * Note that bit vendor57 can be used to write "short" filemarks,
-	     * which take up less tape but are not eraseable.  You can
-	     * write another file after them, but not append to the
-	     * existing file.
-	     */
-	    *dmaCountPtr = 0;
-	    *countPtr = 1;
-	    break;
-	case SCSI_SPACE_EOT:
-	    printf("Exabyte does not support SCSI_SPACE_EOT, skipping to EOF instead\n");
-	    /* Fall Through */;
-	case SCSI_SPACE:
-	case SCSI_SPACE_FILES:
-	    *dmaCountPtr = 0;
-	    *commandPtr = SCSI_SPACE;
-	    controlBlockPtr->code = 1;
-	    tapePtr->state &= ~SCSI_TAPE_AT_EOF;
-	    break;
-	case SCSI_SPACE_BLOCKS:
-	    *dmaCountPtr = 0;
-	    *commandPtr = SCSI_SPACE;
-	    controlBlockPtr->code = 0;
-	    break;
-	case SCSI_ERASE_TAPE:
-	    controlBlockPtr->code = 1;
-	    break;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ExabyteStatus --
- *
- *	Support for the IOC_TAPE_STATUS I/O control.  This generates
- *	a status error word from sense data.
- *
- * Results:
- *	An error code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-ExabyteStatus(devPtr, statusPtr)
-    DevSCSIDevice *devPtr;
-    Dev_TapeStatus *statusPtr;
-{
-    unsigned char *senseBytes;
-
-    statusPtr->type = DEV_TAPE_EXABYTE;
+    ScsiInquiryData	*inquiryPtr;
     /*
-     * Return byte2 from the class 7 extended sense plus
-     * Byte19 and Byte20 of the Exabyte Sense.  Byte2 of Extended Sense
-     * has a fileMark bit, endOfMedia bit, badBlockLen bit, a reserved bit,
-     * and a 4 bit sense key.  The 19'th and 20'th bytes have 8 bits
-     * defined in devSCSIExabyte.h
+     * First we must verify that the attached device is a Exabyte. We do
+     * that by examinging the Inquiry data in the ScsiDevice handle. The
+     * lack of Inquiry data would imply its not a Exabyte. 
      */
-    senseBytes = (unsigned char *)devPtr->scsiPtr->senseBuffer;
-
-    statusPtr->errorReg = senseBytes[2] |
-			 (senseBytes[19] << 16) |
-			 (senseBytes[20] << 24);
+    inquiryPtr = (ScsiInquiryData *) (devPtr->inquiryDataPtr);
+    if ( (devPtr->inquiryLength < sizeof(ScsiInquiryData)) ||
+	 (inquiryPtr->length != 0x2f ) ||
+	 (strncmp(inquiryPtr->vendorInfo, "EXABYTE ",8) != 0) ) {
+	 return DEV_NO_DEVICE;
+    }
+    /*
+     * The exabyte has a different BLOCK and we liked to check the
+     * vendor unique bits on error.
+     */
+    tapePtr->blockSize = EXABYTE_BLOCK_SIZE;
+    tapePtr->errorProc = ExabyteError;
+    tapePtr->name = "Exabyte 8200";
+    return SUCCESS;
 }
 
 /*
@@ -191,110 +207,52 @@ ExabyteStatus(devPtr, statusPtr)
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-ExabyteError(devPtr, sensePtr)
-    DevSCSIDevice *devPtr;
-    DevSCSISense *sensePtr;
+static ReturnStatus
+ExabyteError(tapePtr, statusByte, senseLength, senseDataPtr)
+    ScsiTape	 *tapePtr;	/* SCSI Tape that's complaining. */
+    unsigned char statusByte;	/* The status byte of the command. */
+    int		 senseLength;	/* Length of SCSI sense data in bytes. */
+    char	 *senseDataPtr;	/* Sense data. */
 {
-    register ReturnStatus status;
-    DevSCSITape *tapePtr = (DevSCSITape *)devPtr->data;
-    register DevExabyteSense *exabyteSensePtr = (DevExabyteSense *)sensePtr;
+    ReturnStatus status;
+    register ExabyteSense *exabyteSensePtr = (ExabyteSense *)senseDataPtr;
 
-    status = SUCCESS;
-    if (exabyteSensePtr->extSense.endOfMedia) {
-	status = DEV_END_OF_TAPE;
+    status = DevSCSITapeError(tapePtr, statusByte, senseLength, senseDataPtr);
+    if (status == SUCCESS) {
+	return status;
     }
     if (exabyteSensePtr->extSense.badBlockLen) {
 	printf("Exabyte Block Length Mismatch\n");
 	status = DEV_HARD_ERROR;
     }
-    if (exabyteSensePtr->extSense.fileMark) {
-	/*
-	 * Hit the file mark after reading good data. Setting this bit causes
-	 * the next read to return zero bytes.
-	 */
-	tapePtr->state |= SCSI_TAPE_AT_EOF;
+    if (exabyteSensePtr->TMD) {
+	    printf("Warning: Exabyte Tape Mark Detect error\n");
+	    status = DEV_HARD_ERROR;
+    } 
+    if (exabyteSensePtr->XFR) {
+	    printf("Warning: Exabyte Transfer abort error\n");
+	    status = DEV_HARD_ERROR;
     }
-    /*
-     * The sense key indicates the most serious error.
-     */
-    switch(exabyteSensePtr->extSense.key) {
-	case SCSI_NO_SENSE:
-	    return(status);
-	case SCSI_NOT_READY_KEY:
-	    printf("Exabyte cartridge not loaded?\n");
-	    status = DEV_OFFLINE;
-	    break;
-	case SCSI_MEDIA_ERROR:
-	    printf("Exabyte media error\n");
-	    status = DEV_HARD_ERROR;
-	    break;
-	case SCSI_HARDWARE_ERROR:
-	    printf("Exabyte hardware error\n");
-	    status = DEV_HARD_ERROR;
-	    break;
-	case SCSI_ILLEGAL_REQUEST:
-	    printf("Exabyte illegal request\n");
-	    status = GEN_INVALID_ARG;
-	    break;
-	case SCSI_UNIT_ATTN_KEY:
-	    /* no big deal, usually */
-	    status = SUCCESS;
-	    break;
-	case SCSI_WRITE_PROTECT_KEY:
-	    printf("Exabyte write protected\n");
-	    status = FS_NO_ACCESS;
-	    break;
-	case SCSI_BLANK_CHECK:
-	    printf("Exabyte hit blank tape\n");
-	    status = DEV_END_OF_TAPE;
-	    break;
-	case SCSI_VENDOR:
-	    if (exabyteSensePtr->TMD) {
-		printf("Exabyte Tape Mark Detect error\n");
-		status = DEV_HARD_ERROR;
-	    } else if (exabyteSensePtr->XFR) {
-		printf("Exabyte Transfer abort error\n");
-		status = DEV_HARD_ERROR;
-	    }
-	    break;
-	case SCSI_ABORT_KEY:
-	    printf("Exabyte aborted command\n");
-	    status = DEV_HARD_ERROR;
-	    break;
-	case SCSI_OVERFLOW:
-	    printf("Exabyte overflowed physical media\n");
-	    status = DEV_END_OF_TAPE;
-	    break;
-	default:
-	    printf("Exabyte: Unsupported sense key <%x>, HARD ERROR\n",
-		exabyteSensePtr->extSense.key);
-	    status = DEV_HARD_ERROR;
-	    break;
-    }
-    /*
-     * There are 8 bits that indicate the nature of the error more precisely.
-     */
     if (exabyteSensePtr->PF) {
 	/* Media changed or after power up */
     }
     if (exabyteSensePtr->BPE) {
-	printf("Exabyte SCSI Bus Parity error\n");
+	printf("Warning: Exabyte SCSI Bus Parity error\n");
     }
     if (exabyteSensePtr->FPE) {
-	printf("Exabyte Formatter Parity error\n");
+	printf("Warning: Exabyte Formatter Parity error\n");
     }
     if (exabyteSensePtr->ME) {
 	/* Media Error already reported via sense key */
     }
     if (exabyteSensePtr->ECO) {
-	printf("Exabyte error counter overflow\n");
+	printf("Warning: Exabyte error counter overflow\n");
     }
     if (exabyteSensePtr->TME) {
-	printf("Exabyte Tape Motion error\n");
+	printf("Warning: Exabyte Tape Motion error\n");
     }
     if (exabyteSensePtr->TNP) {
-	printf("Exabyte tape not present\n");
+	printf("Warning: Exabyte tape not present\n");
     }
     if (exabyteSensePtr->BOT) {
 	/* At the beginning of tape */
@@ -303,16 +261,16 @@ ExabyteError(devPtr, sensePtr)
 	printf("Exabyte File Mark Error\n");
     }
     if (exabyteSensePtr->URE) {
-	printf("Exabyte Data Flow Underrun\n");
+	printf("Warning: Exabyte Data Flow Underrun\n");
     }
     if (exabyteSensePtr->WE1) {
-	printf("Exabyte maximum write retries attempted\n");
+	printf("Warning: Exabyte maximum write retries attempted\n");
     }
     if (exabyteSensePtr->SSE) {
-	printf("Exabyte Servo System error, catastrophic failure!\n");
+	printf("Warning: Exabyte Servo System error, catastrophic failure!\n");
     }
     if (exabyteSensePtr->FE) {
-	printf("Exabyte Formatter error, catastrophic failure!\n");
+	printf("Warning: Exabyte Formatter error, catastrophic failure!\n");
     }
     return(status);
 }

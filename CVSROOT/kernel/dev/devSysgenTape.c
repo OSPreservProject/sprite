@@ -16,209 +16,104 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "dev.h"
 #include "devInt.h"
-#include "devSCSI.h"
-#include "devSCSITape.h"
-#include "devSCSISysgen.h"
+#include "scsi.h"
+#include "scsiDevice.h"
+#include "scsiHBA.h"
+#include "scsiTape.h"
+#include "fs.h"
+#include "sysgenTape.h"
 
-void SysgenSetup();
-void SysgenStatus();
-ReturnStatus SysgenError();
+/*
+ * Sense data returned from the Sysgen tape controller.
+ * This matches the ARCHIVE Sidewinder drive specifications, and the
+ * CIPHER Quarterback drive specifications.
+ */
+#define SYSGEN_SENSE_BYTES	16
+typedef struct {
+    /*
+     * Standard 4-bytes of sense data, not class 7 extended sense.
+     */
+    unsigned char valid		:1;	/* Sense data is valid */
+    unsigned char error		:7;	/* 3 bits class and 4 bits code */
+    unsigned char highAddr;		/* High byte of block address */
+    unsigned char midAddr;		/* Middle byte of block address */
+    unsigned char lowAddr;		/* Low byte of block address */
+    /*
+     * Additional 12 bytes of sense data specific to Sysgen drives.
+     */
+    unsigned char bitSet1	:1;	/* More bits set in this byte */
+    unsigned char noCartridge	:1;	/* The tape cartridge isn't there */
+    unsigned char noDrive	:1;	/* No such drive (check subUnitID) */
+    unsigned char writeProtect	:1;	/* The drive is write protected */
+    unsigned char endOfTape	:1;	/* End of tape encountered */
+    unsigned char dataError	:1;	/* Data error on the tape, fatal */
+    unsigned char noError	:1;	/* No error in the data */
+    unsigned char fileMark	:1;	/* File mark encountered */
+
+    unsigned char bitSet2	:1;	/* More bits set in this byte */
+    unsigned char badCommand	:1;	/* A bad command was specified */
+    unsigned char noData	:1;	/* Counld't find the data */
+    unsigned char retries	:1;	/* Had to retry more than 8 times */
+    unsigned char beginOfTape	:1;	/* At beginning of tape */
+    unsigned char pad1		:2;	/* reserved */
+    unsigned char powerOnReset	:1;	/* Drive reset sinse last command */
+
+    short	numRetries;		/* Number of retries */
+    short	underruns;		/* Number of underruns */
+    /*
+     * The following comes from the sysgen controller in copy commands
+     * which we don't use.
+     */
+    char numDiskBlocks[3];		/* Num disk blocks transferred */
+    char numTapeBlocks[3];		/* Num tape blocks transferred */
+
+} DevQICIISense;			/* Known to be 16 Bytes big */
 
 
 /*
  *----------------------------------------------------------------------
  *
- * DevSysgenInit --
+ * DevSysgenAttach --
  *
- *	Initialize the DevSCSITape state for a Sysgen drive.
+ *	Verify and attach a Sysgen tape drive.
  *
  * Results:
- *	None.
+ *	SUCCESS if the device is a working Sysgen tape drive.
+ *	DEV_NO_DEVICE if the device is not a working Sysgen tape drive.
  *
  * Side effects:
  *	Sets the type and call-back procedures.
  *
  *----------------------------------------------------------------------
  */
-void
-DevSysgenInit(tapePtr)
-    DevSCSITape	*tapePtr;	/* Tape drive state */
-{
-    tapePtr->type = SCSI_SYSGEN;
-    tapePtr->blockSize = DEV_SYSGEN_BLOCK_SIZE;
-    tapePtr->setupProc = SysgenSetup;
-    tapePtr->statusProc = SysgenStatus;
-    tapePtr->errorProc = SysgenError;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SysgenSetup --
- *
- *	This customizes the control block and sets the count and dmaCount
- *	to be correct for Sysgen based tape drives.
- *
- * Results:
- *	Various reserved bits may be set in the control block.
- *	count is set for the count field in the command block.
- *	dmaCount is set for the dma transfer count.
- *
- * Side effects:
- *	The tapePtr->state may be modified regarding EOF and RETENSION.
- *
- *----------------------------------------------------------------------
- */
-void
-SysgenSetup(tapePtr, commandPtr, controlBlockPtr, countPtr, dmaCountPtr)
-    DevSCSITape	*tapePtr;	/* Tape drive state */
-    int *commandPtr;		/* In/Out tape command */
-    DevSCSITapeControlBlock *controlBlockPtr;	/* CMD Block to set up */
-    int *countPtr;		/* In - Transfer count, blocks or bytes!
-				 * Out - The proper byte count for CMD block */
-    int *dmaCountPtr;		/* In - Transfer count, blocks or bytes!
-				 * Out - The proper DMA byte count for caller */
-{
-    switch (*commandPtr) {
-	case SCSI_TEST_UNIT_READY:
-	    break;
-	case SCSI_REWIND:
-	    /*
-	     * Do a tape retension by setting vendor57 bit.
-	     */
-	    if (tapePtr->state & SCSI_TAPE_RETENSION) {
-		tapePtr->state &= ~SCSI_TAPE_RETENSION;
-		controlBlockPtr->vendor57 = 1;
-	    }
-	    tapePtr->state &= ~SCSI_TAPE_AT_EOF;
-	    break;
-	case SCSI_REQUEST_SENSE:
-	    *dmaCountPtr = *countPtr = sizeof(DevQICIISense);
-	    break;
-	case SCSI_READ:
-	case SCSI_WRITE:
-	    *countPtr /= tapePtr->blockSize;
-	    break;
-	case SCSI_WRITE_EOF:
-	    *dmaCountPtr = 0;
-	    *countPtr = 1;
-	    break;
-	case SCSI_SPACE:
-	case SCSI_SPACE_FILES:
-	    *dmaCountPtr = 0;
-	    *commandPtr = SCSI_SPACE;
-	    controlBlockPtr->code = 1;
-	    tapePtr->state &= ~SCSI_TAPE_AT_EOF;
-	    break;
-	case SCSI_SPACE_BLOCKS:
-	    *dmaCountPtr = 0;
-	    *commandPtr = SCSI_SPACE;
-	    controlBlockPtr->code = 0;
-	    break;
-	case SCSI_SPACE_EOT:
-	    *dmaCountPtr = 0;
-	    *commandPtr = SCSI_SPACE;
-	    controlBlockPtr->code = 3;
-	    tapePtr->state |= SCSI_TAPE_AT_EOF;
-	    break;
-	case SCSI_ERASE_TAPE:
-	    break;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SysgenStatus --
- *
- *	Support for the IOC_TAPE_STATUS I/O control.  This generates
- *	a status error word from sense data.
- *
- * Results:
- *	An error code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-SysgenStatus(devPtr, statusPtr)
-    DevSCSIDevice *devPtr;
-    Dev_TapeStatus *statusPtr;
-{
-    unsigned char *senseBytes;
-
-    statusPtr->type = DEV_TAPE_SYSGEN;
-    /*
-     * Return the first two sense bytes from the sysgen controller.
-     * This has the standard QIC 02 bits, see the typedef
-     * for DevQICIISense.  In the high part of the error word
-     * return the standard SCSI error byte that contains the
-     * error class and code.
-     */
-    senseBytes = devPtr->scsiPtr->senseBuffer->sense;
-    statusPtr->errorReg = ((senseBytes[1] & 0xFF) << 8) |
-			    (senseBytes[0] & 0xFF) |
-			   (devPtr->scsiPtr->senseBuffer->error << 24);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SysgenError --
- *
- *	Handle error conditions from a Sysgen based tape drive.
- *
- * Results:
- *	An error code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
+/*ARGSUSED*/
 ReturnStatus
-SysgenError(devPtr, sensePtr)
-    DevSCSIDevice *devPtr;
-    DevSCSISense *sensePtr;
+DevSysgenAttach(devicePtr, devPtr, tapePtr)
+    Fs_Device	*devicePtr;	/* Fs_Device being attached. */
+    ScsiDevice	*devPtr;	/* SCSI device handle for drive. */
+    ScsiTape	*tapePtr;	/* Tape drive state to be filled in. */
 {
-    register ReturnStatus status = SUCCESS;
-    DevSCSITape *tapePtr = (DevSCSITape *)devPtr->data;
-    register DevQICIISense *qicSensePtr = (DevQICIISense *)sensePtr;
+    unsigned char statusByte;
+    ScsiCmd	senseCmd;
+    char	senseData[SCSI_MAX_SENSE_LEN];
+    int		length;
+    ReturnStatus	status;
 
-    if (qicSensePtr->noCartridge) {
-	status = DEV_OFFLINE;
-    } else if (qicSensePtr->noDrive) {
-	status = DEV_NO_DEVICE;
-    } else if (qicSensePtr->dataError || qicSensePtr->retries) {
-	status = DEV_HARD_ERROR;
-    } else if (qicSensePtr->endOfTape) {
-	status = DEV_END_OF_TAPE;
-    } else {
-	switch (devPtr->scsiPtr->command) {
-	    case SCSI_TEST_UNIT_READY:
-	    case SCSI_OPENING:
-	    case SCSI_SPACE:
-		break;
-	    case SCSI_READ:
-		if (qicSensePtr->fileMark) {
-		    /*
-		     * Hit the file mark after reading good data.
-		     * Setting this bit causes the next read to
-		     * return zero bytes.
-		     */
-		    tapePtr->state |= SCSI_TAPE_AT_EOF;
-		}
-		break;
-	    case SCSI_WRITE:
-	    case SCSI_WRITE_EOF:
-	    case SCSI_ERASE_TAPE:
-		if (qicSensePtr->writeProtect) {
-		    status = FS_NO_ACCESS;
-		}
-		break;
-	}
+    /*
+     * Since we don't know about the inquiry data (if any) returned by 
+     * the Sysgen tape, check using the size of the SENSE data returned.
+     */
+    DevScsiSenseCmd(devPtr, SCSI_MAX_SENSE_LEN, senseData, &senseCmd);
+    status = DevScsiSendCmdSync(devPtr, &senseCmd, &statusByte, &length,
+			      (int *) NIL, (char *) NIL);
+    if ( (status != SUCCESS) || 
+         (statusByte != 0) ||
+	 (length != SYSGEN_SENSE_BYTES)) {
+	return DEV_NO_DEVICE;
     }
-    return(status);
+    /*
+     * Take all the defaults for the tapePtr.
+     */
+    tapePtr->name = "Sysgen Tape";
+    return SUCCESS;
 }
