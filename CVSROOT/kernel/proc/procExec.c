@@ -1824,8 +1824,25 @@ ProcIsObj(streamPtr, doErr)
 	name = machType[i](hdrSize, buffer, &magic, &syms);
 	if (name != NULL) {
 	    if (doErr) {
-		printf("Proc_Exec: can't run %s (0%03o) a.out file on %s\n",
-		    name, magic, mach_MachineType);
+		printf("Proc_Exec: Can't run %s ", name);
+		switch (magic) {
+		    case 0407:
+			printf("OMAGIC");
+			break;
+		    case 0410:
+			printf("NMAGIC");
+			break;
+		    case 0413:
+			printf("ZMAGIC");
+			break;
+		    case 0443:
+			printf("LIBMAGIC");
+			break;
+		    default:
+			printf("(0%03o)", magic);
+			break;
+		}
+		printf(" executable file on %s.\n", mach_MachineType);
 	    }
 	    return SUCCESS;
 	}
