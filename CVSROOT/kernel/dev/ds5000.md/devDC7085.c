@@ -652,6 +652,10 @@ DevDC7085RawProc(dcPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
 	    break;
 
 	case TD_RAW_SHUTDOWN:
+	    if (dcPtr->port==PRINTER_PORT || dcPtr->port==MODEM_PORT) {
+		/* SHUTDOWN seems to mess up the printer. */
+		break;
+	    }
 	    if (dcPtr->flags & LINE_ACTIVE) {
 		*lprPtr = dcPtr->port;
 		dcPtr->flags &= ~LINE_ACTIVE;
