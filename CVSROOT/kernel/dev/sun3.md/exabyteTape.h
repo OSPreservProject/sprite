@@ -23,8 +23,14 @@
 #define _DEVSCSIEXABYTE
 
 /*
+ * The Exabyte drives have 1K blocks.
+ */
+#define DEV_EXABYTE_BLOCK_SIZE	1024
+
+/*
  * Sense data returned from the Exabyte tape controller.
  */
+#define DEV_EXABYTE_SENSE_BYTES	26
 typedef struct {
     DevSCSIExtendedSense	extSense;	/* 8 Bytes */
     unsigned char pad8;			/* Reserved */
@@ -130,6 +136,6 @@ typedef struct DevExabyteModeSelParams {
 					 * SCSI bus. */
 } DevModeSelParams;
 
-
+void DevExabyteInit();
 
 #endif _DEVSCSIEXABYTE

@@ -22,10 +22,16 @@
 #define _DEVSCSISYSGEN
 
 /*
+ * The Sysgen controller uses 512 byte blocks.
+ */
+#define DEV_SYSGEN_BLOCK_SIZE	512
+
+/*
  * Sense data returned from the Sysgen tape controller.
  * This matches the ARCHIVE Sidewinder drive specifications, and the
  * CIPHER Quarterback drive specifications.
  */
+#define DEV_SYSGEN_SENSE_BYTES	16
 typedef struct {
     /*
      * Standard 4-bytes of sense data, not class 7 extended sense.
@@ -65,5 +71,7 @@ typedef struct {
     char numTapeBlocks[3];		/* Num tape blocks transferred */
 
 } DevQICIISense;			/* Known to be 16 Bytes big */
+
+void DevSysgenInit();
 
 #endif _DEVSCSISYSGEN

@@ -22,8 +22,14 @@
 #define _DEVSCSIEMULEX
 
 /*
+ * The Emulex controller uses 512 byte blocks.
+ */
+#define DEV_EMULEX_BLOCK_SIZE	512
+
+/*
  * Sense data returned from the Emulex tape controller in the shoeboxes.
  */
+#define DEV_EMULEX_SENSE_BYTES	11
 typedef struct {
     DevSCSIExtendedSense	extSense;	/* 8 Bytes */
     unsigned char pad1		:1;
@@ -80,6 +86,6 @@ typedef struct DevEmulexModeSelParams {
     unsigned char softErrorCount  :1;
 } DevEmulexModeSelParams;
 
-
+void DevEmulexInit();
 
 #endif _DEVSCSIEMULEX
