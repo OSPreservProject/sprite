@@ -27,7 +27,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsio.h>
 #include <fsNameOps.h>
 #include <fscache.h>
-#include <fsutilTrace.h>
 #include <fsStat.h>
 #include <fsdm.h>
 #include <fsprefix.h>
@@ -39,10 +38,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <machparam.h>
 #include <string.h>
 #include <fspdev.h>
-
-#ifdef SOSP91
-#include <sospRecord.h>
-#endif SOSP91
 
 extern Boolean fsconsist_ClientCachingEnabled;
 
@@ -86,17 +81,6 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     Fs_IOReply			reply;
     int				streamType;
     register int		toRead;
-#ifdef SOSP91
-    Boolean			isForeign = FALSE;
-
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
 
     toRead = *lenPtr;
     *lenPtr = 0;
@@ -118,11 +102,6 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     reply.flags = 0;
     reply.signal = 0;
     reply.code = 0;
-#ifdef SOSP91
-    if (streamType == FSIO_LCL_FILE_STREAM) {
-	ioPtr->reserved = rpc_SpriteID;
-    }
-#endif SOSP91
 
     /*
      * Outer loop to attempt the read and then block if no data is ready.
@@ -144,19 +123,6 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	status = FspdevPseudoStreamRead(streamPtr, ioPtr, &remoteWaiter, &reply);
 	status = Fsrmt_Read(streamPtr, ioPtr, &remoteWaiter, &reply);
 #endif
-
-#ifdef SOSP91
-	if (streamType == FSIO_RMT_DEVICE_STREAM ||
-		streamType == FSIO_RMT_PIPE_STREAM ||
-		streamType == FSIO_RMT_PSEUDO_STREAM ||
-		streamType == FSIO_RMT_PFS_STREAM ||
-		streamType == FSIO_RMT_CONTROL_STREAM) {
-	    fs_MoreStats.remoteDevicishBytesRead += reply.length;
-	    if (isForeign) {
-		fs_MoreStats.remoteDevicishBytesReadM += reply.length;
-	    }
-	}
-#endif SOSP91
 	if (status == SUCCESS) {
 	    break;
 	} else if (status == FS_WOULD_BLOCK && 
@@ -199,14 +165,6 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	 */
 	ioPtr->length = toRead;
     }
-
-
-#ifdef SOSP91
-    /*
-     * Record the fact that we read from the stream.
-     */
-    streamPtr->hdr.flags |= FSUTIL_RW_READ;
-#endif
 
     /*
      * Cache the file offset for sequential access.
@@ -289,7 +247,6 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 
     remoteWaiter.hostID = rpc_SpriteID;
 
-    FSUTIL_TRACE_IO(FSUTIL_TRACE_WRITE, streamPtr->ioHandlePtr->fileID, offset,toWrite);
     /*
      * Main write loop.  This handles partial writes, non-blocking streams,
      * and crash recovery.  This loop expects the stream write procedure to
@@ -347,12 +304,6 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	    break;			/* stream error */
 	}
     }
-#ifdef SOSP91
-    /*
-     * Record the fact that we read from the stream.
-     */
-    streamPtr->hdr.flags |= FSUTIL_RW_WRITE;
-#endif
     /*
      * Return info about the transfer.
      */
@@ -450,37 +401,12 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 		if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
 		    status = GEN_INVALID_ARG;
 		} else {
-		    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
+		    (void) strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
 		    replyPtr->length = prefixPtr->prefixLength + 1;
 		    status = SUCCESS;
 		}
 	    }
 	    return(status);	/* Do not pass down IOC_PREFIX */
-#ifdef SOSP91
-	} else if ((command == IOC_REPOSITION) &&
-	    (streamType == FSIO_RMT_FILE_STREAM)) {
-	    int		*ptr;
-	    Fs_Attributes attrs;
-	    Ioc_RepositionArgs *iocArgsPtr;
-	    iocArgsPtr = (Ioc_RepositionArgs *) ioctlPtr->inBuffer;
-
-	    ptr = (int *) (ioctlPtr->inBuffer + 
-				    sizeof(Ioc_RepositionArgs));
-	    *ptr++ = streamPtr->offset;
-	    if (iocArgsPtr->base == IOC_BASE_EOF) {
-		status = Fs_GetAttrStream(streamPtr, &attrs);
-		if (status == SUCCESS) {
-		    *ptr++ = attrs.size;
-		} else {
-		    *ptr++ = -1;
-		}
-	    } else {
-		*ptr++ = -1;
-	    }
-	    *ptr++ = ((streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8);
-	    streamPtr->hdr.flags &= ~FSUTIL_RW_FLAGS;
-	    ioctlPtr->inBufSize += sizeof(int) * 3;
-#endif
 	}
 
 	status = (*fsio_StreamOpTable[streamType].ioControl)
@@ -574,15 +500,6 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 		    *(int *)ioctlPtr->outBuffer = newOffset;
 		    replyPtr->length = sizeof(int);
 		}
-#ifdef SOSP91
-		if ((streamType == FSIO_LCL_FILE_STREAM) && 
-		    (newOffset != streamPtr->offset)) {
-		    SOSP_ADD_LSEEK_TRACE(streamPtr->hdr.fileID, 
-			streamPtr->offset, newOffset, 
-			((streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8));
-		    streamPtr->hdr.flags &= ~FSUTIL_RW_FLAGS;
-		}
-#endif
 		streamPtr->offset = newOffset;
 	    }
 	    break;
@@ -729,16 +646,9 @@ Fs_Close(streamPtr)
 	 * to the I/O handle.
 	 */
 	Fsutil_HandleLock(streamPtr->ioHandlePtr);
-
-#ifdef SOSP91
-	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
-		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
-		0, (ClientData)NIL, (int *) NIL, (int *) NIL);
-#else 
 	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
 		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
 		0, (ClientData)NIL);
-#endif
 #ifdef lint
 	status = Fsio_FileClose(streamPtr, rpc_SpriteID, procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
@@ -888,7 +798,9 @@ Fs_FileBeingMapped(streamPtr, isMapped)
     int		isMapped;	/* 1 if file is being mapped. */
 {
     ReturnStatus status = SUCCESS;
+#if 0    
     Fscache_FileInfo	*cacheInfoPtr;
+#endif    
     Fs_IOCParam	ioctl;
     Fs_IOReply	reply;
 
@@ -899,15 +811,19 @@ Fs_FileBeingMapped(streamPtr, isMapped)
 	 */
 	switch(streamPtr->ioHandlePtr->fileID.type) {
 	    case FSIO_LCL_FILE_STREAM: {
+#if 0
 		register Fsio_FileIOHandle *localHandlePtr;
 		localHandlePtr = (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
 		cacheInfoPtr = &localHandlePtr->cacheInfo;
+#endif
 		break;
 	    }
 	    case FSIO_RMT_FILE_STREAM: {
+#if 0		
 		register Fsrmt_FileIOHandle *rmtHandlePtr;
 		rmtHandlePtr = (Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
 		cacheInfoPtr = &rmtHandlePtr->cacheInfo;
+#endif		
 		break;
 	    }
 	    default:
