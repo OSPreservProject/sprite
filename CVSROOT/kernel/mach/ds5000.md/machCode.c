@@ -42,15 +42,6 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <ultrixSignal.h>
 
 /*
- * Flag to set for new Unix compatiblity code.  Once the new
- * code is working well enough, this flag should  be eliminated
- * and the old compatibility code in machAsm.s, machUNIXSyscall.c etc.
- * can be deleted.
- */
-
-int machNewUnixCompat;
-
-/*
  * Conversion of function to an unsigned value.
  */
 #define F_TO_A	(Address)(unsigned)(int (*)())
@@ -1141,7 +1132,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 			    procPtr->processID, FALSE, badVaddr);
 	    break;
 	case MACH_EXC_SYSCALL:
-	    if (!MachUNIXSyscall()) {
+	    if (!MachUNIXSyscallNew()) {
 		printf("MachExceptionHandler: Bad syscall magic for proc %x\n",
 							procPtr->processID);
 		(void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
