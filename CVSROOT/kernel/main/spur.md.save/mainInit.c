@@ -17,6 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev.h"
 #include "net.h"
 #include "mach.h"
+#include "fsutil.h"
 #include "proc.h"
 #include "prof.h"
 #include "recov.h"
@@ -301,8 +302,8 @@ main()
     }
     bootProgress =  19;
     led_display(bootProgress,0,0);
-    ENABLE_INTR();
     if (main_Debug) {
+	ENABLE_INTR();
 	DBG_CALL;
     }
     /*
@@ -310,7 +311,10 @@ main()
      */
     bootProgress =  20;
     led_display(bootProgress,0,0);
+    ENABLE_TIMER_INTR();
     Sched_TimeTicks();
+    DISABLE_INTR();
+    ENABLE_INTR();
 
     /*
      * Start profiling, if desired.
@@ -373,7 +377,7 @@ main()
      * Start the process that synchronizes the filesystem caches
      * with the data kept on disk.
      */
-    Proc_CallFunc(Fs_SyncProc, (ClientData) NIL, 0);
+    Proc_CallFunc(Fsutil_SyncProc, (ClientData) NIL, 0);
     /*
      * Create a few RPC server processes and the Rpc_Daemon process which
      * will create more server processes if needed.
@@ -548,9 +552,6 @@ mainSlaveStart()
     procPtr = Proc_GetCurrentProc();
     procPtr->schedFlags |= SCHED_STACK_IN_USE; 
     procPtr->processor = Mach_GetProcessorNumber(); 
-    /* 
-     * Enable interrupts.
-     */
     ENABLE_INTR();
     Sched_TimeTicks();
     /*
