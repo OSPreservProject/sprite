@@ -70,8 +70,10 @@ extern RpcConst rpcInetConst;
 
 /*
  * Global used by Rpc_Call and initialized by Rpc_Start.  This is set
- * once at boot-time to the real time clock.  The server tracks this value
- * and detects a reboot by us when this changes.
+ * once at boot-time to the real time clock.  The servers track this value
+ * and detects a reboot by us when this changes.  Note that if the boot
+ * ID is zero then the server doesn't attempt to detect a reboot.  Thus
+ * we can use a GET_TIME RPC in order to set this.  See Rpc_Start.
  */
 extern unsigned int rpcBootId;
 
@@ -148,6 +150,11 @@ typedef struct RpcClientChannel {
      */
     RpcHdr		replyRpcHdr;
     RpcBufferSet	reply;
+    /*
+     * The header and buffer specifications for the explicit acknowledgments.
+     */
+    RpcHdr		ackHdr;
+    RpcBufferSet	ack;
 } RpcClientChannel;
 
 /*
@@ -159,11 +166,11 @@ typedef struct RpcClientChannel {
  *  CHAN_TIMEOUT	The channel is in the timeout queue.
  *  CHAN_FRAGMENTING	The channel is awaiting fragment reassembly.
  */
-#define CHAN_FREE	0x00
-#define CHAN_BUSY	0x01
-#define CHAN_WAITING	0x02
-#define CHAN_INPUT	0x04
-#define CHAN_TIMEOUT	0x08
+#define CHAN_FREE		0x40
+#define CHAN_BUSY		0x01
+#define CHAN_WAITING		0x02
+#define CHAN_INPUT		0x04
+#define CHAN_TIMEOUT		0x08
 #define CHAN_FRAGMENTING	0x10
 
 /*
