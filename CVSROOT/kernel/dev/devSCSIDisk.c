@@ -32,7 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "dev/scsi.h"
 #include "dbg.h"
-#include "fsDisk.h"
+#include "fsdm.h"
 
 typedef struct DiskMap {
     int	 firstSector;
@@ -94,7 +94,7 @@ FillInLabel(devPtr,diskPtr)
     register ReturnStatus	status;
     ScsiCmd			labelReadCmd;
     Sun_DiskLabel		*diskLabelPtr;
-    FsDiskHeader		*diskHdrPtr;
+    Fsdm_DiskHeader		*diskHdrPtr;
     char			labelBuffer[SCSI_DISK_SECTOR_SIZE];
     unsigned char		statusByte;
     int				senseLength;
@@ -148,8 +148,8 @@ FillInLabel(devPtr,diskPtr)
     /*
      * The disk isn't in SUN format so try Sprite format.
      */
-    diskHdrPtr = (FsDiskHeader *)labelBuffer;
-    if (diskHdrPtr->magic == FS_DISK_MAGIC) {
+    diskHdrPtr = (Fsdm_DiskHeader *)labelBuffer;
+    if (diskHdrPtr->magic == FSDM_DISK_MAGIC) {
 	/*
 	 * XXX - Should really check if label is valid.
 	 */
