@@ -73,4 +73,6 @@ The famous "framming" error message has had its spelling corrected.
 1.055	Wed Jan 31 16:54:19 PST 1990
 Only the sun4 and sun4c are affected by this change:  I fixed a bug
 in the new window underflow trap handler that caused some processes to hang.
+Note: the files mach/sun4.md/{machAsmDefs.h,machTraps.s} will have the wrong
+RCSID, since I forgot to check them in before doing the install.
     New files linked in from the net library.
