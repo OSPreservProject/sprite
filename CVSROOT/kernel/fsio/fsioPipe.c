@@ -505,21 +505,12 @@ Fsio_PipeWrite(streamPtr, writePtr, waitPtr, replyPtr)
 	goto exit;
     } else if (toWrite > writePtr->length) {
 	toWrite = writePtr->length;
-#ifdef notdef
-    } else if ((writePtr->length > toWrite) &&
-	       ((flags & FS_NON_BLOCKING) == 0)) {
+    } else if (writePtr->length > toWrite) {
 	/*
 	 * If there is more data to write we must block after writing the
-	 * data that we can.  If the stream is non-blocking, however, we
-	 * return a successful error code after writing what we can.
-	 *
-	 * Fs_Write takes care of returning the correct code.  We should
-	 * be able to return SUCCESS if we return some data, and
-	 * FS_WOULD_BLOCK if we return no data.  Fs_Write looks at the
-	 * stream flags for us and "does the right thing" with partial writes.
+	 * data that we can.  
 	 */
 	status = FS_WOULD_BLOCK;
-#endif
     }
     /*
      * Determine where to start and stop writing.  Note that the firstByte
