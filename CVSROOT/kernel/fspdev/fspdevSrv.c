@@ -86,6 +86,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *	PDEV_NO_BIG_WRITES	Causes writes larger than will fit into
  *				the request buffer to fail.  This is to
  *				support UDP socket semantics, sigh.
+ *	PDEV_NAMING		Set on the naming request-response channel.
  *	FS_USER			This flag is borrowed from the stream flags
  *				and it indicates the buffers are in user space
  */
@@ -99,6 +100,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define PDEV_READ_PTRS_CHANGED	0x0080
 #define PDEV_WRITE_BEHIND	0x0100
 #define PDEV_NO_BIG_WRITES	0x0200
+#define PDEV_NAMING		0x0400
 /*resrv FS_USER			0x8000 */
 
 /*
@@ -384,9 +386,10 @@ failure:
  */
 
 PdevServerIOHandle *
-FsServerStreamCreate(ioFileIDPtr, name)
+FsServerStreamCreate(ioFileIDPtr, name, naming)
     Fs_FileID	*ioFileIDPtr;	/* File ID used for pseudo stream handle */
     char	*name;		/* File name for error messages */
+    Boolean	naming;		/* True if this is a naming stream for a pfs */
 {
     FsHandleHeader *hdrPtr;
     register PdevServerIOHandle *pdevHandlePtr;
@@ -415,6 +418,9 @@ FsServerStreamCreate(ioFileIDPtr, name)
      */
 
     pdevHandlePtr->flags = PDEV_BUSY;
+    if (naming) {
+	pdevHandlePtr->flags |= PDEV_NAMING;
+    }
     pdevHandlePtr->selectBits = 0;
 
     pdevHandlePtr->requestBuf.data = (Address)NIL;
@@ -1095,9 +1101,9 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 		pdevHandlePtr->hdr.fileID.minor) );
 
     PdevClientWakeup(pdevHandlePtr);
-    if (pdevHandlePtr->ctrlHandlePtr->prefixPtr != (FsPrefix *)NIL) {
+    if (pdevHandlePtr->flags & PDEV_NAMING) {
 	/*
-	 * This is the naming requeust-response stream of a pseudo-filesystem.
+	 * Clean up the prefix table entry associated with the pfs.
 	 */
 	register PdevControlIOHandle *ctrlHandlePtr;
 	Fs_Stream dummy;

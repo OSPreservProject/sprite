@@ -287,7 +287,7 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
      */
     ioFileIDPtr->type = FS_LCL_PSEUDO_STREAM;
     ioFileIDPtr->serverID = rpc_SpriteID;
-    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, rpc_SpriteID);
+    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, rpc_SpriteID, 1);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
 	status = FAILURE;
 	goto cleanup;
@@ -295,9 +295,9 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     *ioHandlePtrPtr = (FsHandleHeader *)pdevHandlePtr;
     /*
-     * Distinguish the naming request-response stream from other connections
-     * that may get established later.  This ID gets passed in FsLookupArgs
+     * This ID gets passed in FsLookupArgs
      * as the prefixID if the prefix is the root of the pseudo domain.
+     * It can be reset by the user with IOC_PFS_SET_ROOT.
      */
     pdevHandlePtr->userLevelID.type = 0;
     pdevHandlePtr->userLevelID.serverID = 0;
@@ -578,15 +578,15 @@ FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
     fileIDPtr->minor = (ctrlHandlePtr->rmt.hdr.fileID.minor << 12)
 			^ ctrlHandlePtr->seed;
 
-    cltHandlePtr = FsPdevConnect(fileIDPtr, namingPdevHandlePtr->open.clientID,
-				namingPdevHandlePtr->open.name);
+    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, fileIDPtr,
+		    namingPdevHandlePtr->open.clientID, 0);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
 	printf( "FsPfsOpenConnection failing\n");
 	return(-1);
     }
     /*
-     * Set the ioFileID type. (FsPdevConnect has set it to FS_SERVER_STREAM.)
-     * The clientID has been set curtesy of the PFS_OPEN RequestResponse.
+     * Set the ioFileID type. (FsPdevConnect has munged it to FS_SERVER_STREAM.)
+     * The open.clientID has been set curtesy of the PFS_OPEN RequestResponse.
      */
     if (namingPdevHandlePtr->open.clientID == rpc_SpriteID) {
 	fileIDPtr->type = FS_LCL_PFS_STREAM;

@@ -292,7 +292,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ctrlHandlePtr->seed = ioFileIDPtr->minor & 0x0FFF;
     }
 
-    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID);
+    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, 0);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
 	goto exit;
     }
@@ -375,6 +375,9 @@ exit:
  *	and from FsPfsCltOpen to set up the naming connection to a
  *	pseudo-filesystem server, and during an IOC_PFS_OPEN by a
  *	pseudo-filesystem server to set up a connection to a client.
+ *	The case of the naming stream is distinguished by the last
+ *	parameter.  The state of this needs to be marked specially
+ *	so proper clean up can be made later.
  * 
  * Results:
  *	A pointer to a PdevClientIOHandle that references a PdevServerIOHandle.
@@ -391,10 +394,12 @@ exit:
  */
 
 PdevClientIOHandle *
-FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID)
+FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID, naming)
     PdevControlIOHandle *ctrlHandlePtr;	/* Control stream handle */
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			clientID;	/* Host ID of client-side */
+    Boolean		naming;		/* TRUE if called from FsPfsCltOpen
+					 * to set up the naming stream */
 {
     Boolean			found;
     FsHandleHeader		*hdrPtr;
@@ -429,7 +434,7 @@ FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID)
      * Set up the connection state and hook the client handle to it.
      */
     cltHandlePtr->pdevHandlePtr = FsServerStreamCreate(ioFileIDPtr,
-				    ctrlHandlePtr->rmt.hdr.name);
+				    ctrlHandlePtr->rmt.hdr.name, naming);
     if (cltHandlePtr->pdevHandlePtr == (PdevServerIOHandle *)NIL) {
 	FsHandleRemove(cltHandlePtr);
 	return((PdevClientIOHandle *)NIL);
