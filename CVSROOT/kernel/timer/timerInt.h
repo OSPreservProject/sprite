@@ -24,12 +24,15 @@
 
 
 extern Sync_Semaphore 	timerMutex;
-extern Sync_Semaphore 	timerClockMutex;
-extern Time 		timerTimeOfDay;
+extern int 		timerUniversalToLocalOffset;
+extern Boolean		timerDSTAllowed;
 
 extern void		Timer_CallBack();
 extern void 		TimerTicksInit();
 extern void 		Timer_CounterInit();
 extern void		Timer_ClockInit();
+extern void		TimerSetSoftwareUniversalTime();
+extern void		TimerSetHardwareUniversalTime();
+extern void		TimerHardwareUniversalTimeInit();
 
 #endif /* _TIMERINT */
