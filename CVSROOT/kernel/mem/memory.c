@@ -292,7 +292,7 @@ static int numLargeLoops;	/* Number of iterations through the
  * Flag to make sure Init gets called once.
  */
 
-static void	Init();
+static void	Init _ARGS_((void));
 static int	initialized = FALSE;
 
 
@@ -1177,15 +1177,14 @@ Mem_SetTraceSizes(numSizes, arrayPtr)
  *----------------------------------------------------------------------
  */
 
-typedef int (*IntProc)();
-
 ENTRY void
 Mem_SetPrintProc(proc, data)
-    IntProc	proc;		/* Address of new print routine. */
+    void	(*proc)();		/* Address of new print routine. */
     ClientData	data;		/* Data to be passed to proc. */
 {
     LOCK_MONITOR;
-    if (proc != (IntProc) NIL && proc != (IntProc) NULL) {
+    if (proc != (void(*)())NIL &&
+	    proc != (void(*)()) NULL) {
 	memPrintProc = proc;
 	memPrintData = data;
     }
