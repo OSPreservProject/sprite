@@ -659,7 +659,7 @@ FsCacheRead(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	int fileType;
 
 	fileType = FsFindFileType(cacheInfoPtr);
-	fsStats.type.cacheBytes[FS_STAT_READ][fileType] += *lenPtr;
+	fsTypeStats.cacheBytes[FS_STAT_READ][fileType] += *lenPtr;
     }
 #endif CLEAN
 
@@ -952,7 +952,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	int fileType;
 
 	fileType = FsFindFileType(cacheInfoPtr);
-	fsStats.type.cacheBytes[FS_STAT_WRITE][fileType] += offset - oldOffset;
+	fsTypeStats.cacheBytes[FS_STAT_WRITE][fileType] += offset - oldOffset;
     }
     if (bytesToFree > 0) {
 	FsRecordDeletionStats(cacheInfoPtr, bytesToFree);
@@ -1108,7 +1108,7 @@ FsCacheBlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 	    int fileType;
 
 	    fileType = FsFindFileType(cacheInfoPtr);
-	    fsStats.type.cacheBytes[FS_STAT_READ][fileType] += *numBytesPtr;
+	    fsTypeStats.cacheBytes[FS_STAT_READ][fileType] += *numBytesPtr;
 	}
 #endif CLEAN
     }

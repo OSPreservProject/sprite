@@ -1114,7 +1114,7 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	    int fileType;
 	
 	    fileType = FsFindFileType(&handlePtr->cacheInfo);
-	    fsStats.type.diskBytes[FS_STAT_READ][fileType] += numBytes;
+	    fsTypeStats.diskBytes[FS_STAT_READ][fileType] += numBytes;
 	}
 #endif CLEAN
     }
@@ -1189,7 +1189,7 @@ FsFileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, flags)
 	    int fileType;
 	
 	    fileType = FsFindFileType(&handlePtr->cacheInfo);
-	    fsStats.type.diskBytes[FS_STAT_WRITE][fileType] += numBytes;
+	    fsTypeStats.diskBytes[FS_STAT_WRITE][fileType] += numBytes;
 	}
 #endif CLEAN
 	status = FsDeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,

@@ -696,7 +696,7 @@ FsRecordDeletionStats(cacheInfoPtr, bytesToFree)
 		bytesToFree = descPtr->numKbytes * FRAG_SIZE;
 	    }
 	}
-	fsStats.type.bytesDeleted[type] += bytesToFree;
+	fsTypeStats.bytesDeleted[type] += bytesToFree;
         if (cacheInfoPtr->attr.modifyTime > cacheInfoPtr->attr.createTime) {
 	    when = cacheInfoPtr->attr.modifyTime;
 	} else {
@@ -708,7 +708,7 @@ FsRecordDeletionStats(cacheInfoPtr, bytesToFree)
 	    sizeIndex ++;
 	    fragsToFree = fragsToFree >> 1;
 	}
-	fsStats.type.deleteHist[timeIndex][sizeIndex][type] ++;
+	fsTypeStats.deleteHist[timeIndex][sizeIndex][type] ++;
 	/*
 	 * Store the actual number of bytes freed in the last column.
 	 * For this, save the number of 1K blocks actually affected,
@@ -718,7 +718,7 @@ FsRecordDeletionStats(cacheInfoPtr, bytesToFree)
 	 * 400 in a shot.)
 	 */
 	fragsToFree = (bytesToFree + FRAG_SIZE - 1) / FRAG_SIZE;
-	fsStats.type.deleteHist
+	fsTypeStats.deleteHist
 		[timeIndex][FS_HIST_SIZE_BUCKETS -1][type] += fragsToFree;
     }
     FsStat_Add(bytesToFree, fsStats.gen.fileBytesDeleted,
