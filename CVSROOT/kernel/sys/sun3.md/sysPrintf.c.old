@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "dbg.h"
 #include "sunMon.h"
+#include "dev.h"
 
 #define NextArg(argList, type) ((type *)(argList += sizeof(type)))[-1]
 
@@ -500,6 +501,7 @@ Sys_Panic(level, format, args)
     if (level == SYS_WARNING) {
         Sys_UnSafePrintf("Warning: ");
     } else {
+	Dev_SyslogDebug(TRUE);
         Sys_UnSafePrintf("Fatal Error: ");
     }
 
@@ -508,6 +510,7 @@ Sys_Panic(level, format, args)
     if (level == SYS_FATAL) {
 	sysPanicing = TRUE;
         DBG_CALL;
+	Dev_SyslogDebug(FALSE);
     }
 }
 
