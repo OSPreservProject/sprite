@@ -53,8 +53,16 @@ static List_Links *lruList = &lruListHeader;
 /*
  * FS_HANDLE_TABLE_SIZE has to be at least 64, or the shifts for
  *	handleLimitInc and ScavengeThreashold have to be fixed.
- * LIMIT_INC defines the amount the table grows by.
- * THREASHOLD defines how many handles are reclaimed before stopping.
+ *	Observation reveals that it takes about 120 handles to get
+ *	through multi-user bootstrap, and 135 to get through the first login.
+ *	Starting the window system jumps the number of handles to about 250.
+ *	The file servers ramp up to 2500 handles, but this is a
+ *	function of the activity of their clients and the number of
+ *	directories they have.  Directory handles linger a long time
+ *	because they have associated cache blocks and may also be
+ *	referenced by the name cache.
+ * LIMIT_INC defines the amount the table grows by (1/64)
+ * THREASHOLD defines how many handles are reclaimed before stopping (1/16)
  */
 #define		FS_HANDLE_TABLE_SIZE	   256
 #define		LIMIT_INC(max)		   ( (max) >> 6 )
@@ -714,8 +722,7 @@ FsHandleRemoveInt(hdrPtr)
 	hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) &hdrPtr->fileID);
 	if (hashEntryPtr == (Hash_Entry *) NIL) {
 	    UNLOCK_MONITOR;
-	    panic(
-		    "FsHandleRemoveInt: Couldn't find handle in hash table.\n");
+	    panic("FsHandleRemoveInt: Couldn't find handle in hash table.\n");
 	    LOCK_MONITOR;
 	    return;
 	}
@@ -788,7 +795,7 @@ FsHandleRemoveHdr(hdrPtr)
  *	scavenging routines if they think it's probably ok to remove the handle.
  *
  * Results:
- *	None.
+ *	TRUE if it actually removed the handle.
  *
  * Side effects:
  *	Frees the memory for the handles file descriptor.
@@ -797,19 +804,23 @@ FsHandleRemoveHdr(hdrPtr)
  *
  */
 
-ENTRY void
+ENTRY Boolean
 FsHandleAttemptRemove(handlePtr)
     register FsLocalFileIOHandle *handlePtr;	/* Handle to try and remove. */
 {
+    register Boolean removed;
     LOCK_MONITOR;
     if (handlePtr->hdr.refCount == 0) {
 	free((Address)handlePtr->descPtr);
 	handlePtr->descPtr = (FsFileDescriptor *)NIL;
 	FsHandleRemoveInt((FsHandleHeader *)handlePtr);
+	removed = TRUE;
     } else {
+	removed = FALSE;
 	UNLOCK_HANDLE((FsHandleHeader *)handlePtr);
     }
     UNLOCK_MONITOR;
+    return(removed);
 }
 
 /*
