@@ -42,6 +42,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include <bstring.h>
 
+/* 
+ * The PARANOIA code contains temporary checks to verify that 
+ * Proc_StringNCopy is being used correctly. -mdk 27-May-91.
+ */
+#define PARANOIA	1
+#if PARANOIA
+#define IsUserAddr(x)	((x) >= mach_FirstUserAddr && (x) <= mach_LastUserAddr)
+Boolean procStringChecks = FALSE; /* do some paranoia checks on StringNCopy */
+#endif
+
 static ReturnStatus 	RpcProcExit _ARGS_((Proc_ControlBlock *procPtr, 
 				Address dataPtr, int dataLength, 
 				Address *replyDataPtr, 
@@ -732,7 +742,7 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
 {
     ReturnStatus status = SUCCESS;
 
-    if (Proc_IsMigratedProcess()) {
+    if (Proc_UseRpcBuffer()) {
 	bcopy(sourcePtr, destPtr, numBytes);
     } else if (copyIn) {
 	status = Vm_CopyIn(numBytes, sourcePtr, destPtr);
@@ -748,8 +758,10 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
  *
  * Proc_StringNCopy --
  *
- *	Copy a string to a buffer of limited length.  This routine is
- *	a parallel routine to Vm_StringNCopy.
+ *	Copy a string from the user's address space to a buffer of 
+ *	limited length.  If the user process is a ghost (an RPC that 
+ *	was migrated home), copy the argument directly.  cf. 
+ *	Proc_ByteCopy and Vm_StringNCopy.
  *
  * Results:
  *	SUCCESS
@@ -769,13 +781,30 @@ Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
 					 * string copied. */
 {
     register int length;
+    ReturnStatus status;
 
-    for (length = 0; (length < numBytes) && (*srcStr != '\0'); length++) {
-	*destStr++ = *srcStr++;
+#if PARANOIA
+    if (procStringChecks && !IsUserAddr(srcStr)) {
+	panic("Proc_StringNCopy: copying from kernel\n");
     }
-    *destStr = '\0';
-    *strLengthPtr = length;
-    return(SUCCESS);
+    if (procStringChecks && IsUserAddr(destStr)) {
+	panic("Proc_StringNCopy: copying to user\n");
+    }
+#endif
+
+    if (!Proc_UseRpcBuffer()) {
+	status =  Vm_StringNCopy(numBytes, srcStr, destStr,
+				 strLengthPtr);
+    } else {
+	for (length = 0; (length < numBytes) && (*srcStr != '\0'); length++) {
+	    *destStr++ = *srcStr++;
+	}
+	*destStr = '\0';
+	*strLengthPtr = length;
+	status = SUCCESS;
+    }
+
+    return status;
 }
 
 
@@ -818,7 +847,7 @@ Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr,
     Boolean madeAccessible = FALSE;
     register char *charPtr;
 
-    if (!Proc_IsMigratedProcess()) {
+    if (!Proc_UseRpcBuffer()) {
 	Vm_MakeAccessible(VM_READONLY_ACCESS,
 			  maxLength, (Address) *stringPtrPtr,
 			  &accessLength, (Address *) stringPtrPtr);
@@ -856,11 +885,11 @@ Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr,
  * Proc_MakeUnaccessible
  *
  *	If the pointer is to something that was made accessible as a
- *	result of a local system call, call Vm_MakeUnaccessible.  If
- *	the system call was migrated, do nothing since the address was
- *	never made accessible in the first place.  This routine is
- *	used by generic system call stubs that may be called either locally
- *	or on behalf of a migrated process.
+ *	result of a local system call, call Vm_MakeUnaccessible.  
+ *	Otherwise, the pointer is to a (kernel) RPC buffer and should 
+ *	be left alone.  This routine is used by generic system call
+ *	stubs that may be called either locally or on behalf of a
+ *	ghost process.
  *
  * Results:
  *	None.
@@ -876,7 +905,7 @@ Proc_MakeUnaccessible(addr, numBytes)
     int			numBytes;
 {
 
-    if (!Proc_IsMigratedProcess()) {
+    if (!Proc_UseRpcBuffer()) {
 	Vm_MakeUnaccessible(addr, numBytes);
     }
 }
