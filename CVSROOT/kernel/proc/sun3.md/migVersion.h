@@ -20,6 +20,6 @@
  * machines of the same architecture and version number.
  */
 #ifndef PROC_MIGRATE_VERSION
-#define PROC_MIGRATE_VERSION 11
+#define PROC_MIGRATE_VERSION 12
 #endif /* PROC_MIGRATE_VERSION */
 
