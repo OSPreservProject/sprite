@@ -47,6 +47,30 @@
 #define MACH_NUM_HARD_INTERRUPTS	6
 
 /*
+ * Number of IO slots in the machine.
+ */
+
+#define MACH_NUM_IO_SLOTS 8
+
+/*
+ * Interrupt levels for the hardware interrupts.
+ *
+ *	MACH_IO_INTR		IO device.		
+ *	MACH_RTC_INTR		Real time clock.
+ *	MACH_RSVD1_INTR 	Reserved.
+ *	MACH_MEM_INTR   	Memory controller.
+ *	MACH_RSVD2_INTR 	Reserved.
+ *	MACH_FPU_INTR		FPU.
+ */
+
+#define MACH_IO_INTR		0
+#define MACH_RTC_INTR		1
+#define MACH_RSVD1_INTR 	2
+#define MACH_MEM_INTR   	3
+#define MACH_RSVD2_INTR 	4
+#define MACH_FPU_INTR		5
+
+/*
  * The different exception codes.
  *
  *	MACH_EXC_INT		Interrupt pending.
@@ -131,11 +155,70 @@
 #define MACH_ALL_INT_ENABLED	0xff00
 
 /*
- * The system control status register.
+ * The system control status register.  Comments denote whether the 
+ * macros are for use during a read, write, or both.
  */
-#define MACH_CSR_MONO		0x0800
-#define MACH_CSR_MEM_ERR	0x0400
-#define	MACH_CSR_VINT		0x0200
+
+#define MACH_CSR_IOINT		0x000000ff	/* r   */
+#define MACH_CSR_LEDS		0x000000ff	/* w   */
+#define MACH_CSR_BAUD38		0x00000100	/* r/w */
+#define MACH_CSR_DIAGDN		0x00000200	/* r/w */
+#define MACH_CSR_BNK32M		0x00000400	/* r/w */
+#define MACH_CSR_TXDIS		0x00000800	/* r/w */
+#define MACH_CSR_LEDIAG		0x00001000	/* r/w */
+#define MACH_CSR_CORRECT	0x00002000	/* r/w */
+#define MACH_CSR_ECCMD		0x0000c000	/* r/w */
+#define MACH_CSR_IOINTEN	0x00ff0000	/* r/w */
+#define MACH_CSR_NRMMOD		0x01000000	/* r   */
+#define MACH_CSR_REFEVEN	0x02000000	/* r   */
+#define MACH_CSR_PRSVNVR	0x04000000	/* r   */
+#define MACH_CSR_PSWARN		0x08000000	/* r   */
+
+#define MACH_CSR_IOINTEN_SHIFT	16
+
+
+/*
+ * The Error Address Status Register (ERRADR). 
+ * See page 26 of the functional spec.
+ *
+ *	 MACH_ERRADR_ADDR	Address where error occurred.
+ *	 MACH_ERRADR_RSRVD	Reserved.
+ *	 MACH_ERRADR_ECCERR	Set if an ECC error occurred.
+ *	 MACH_ERRADR_WRITE	Set if the access was a write.
+ *	 MACH_ERRADR_CPU	Set if error was during an access by the cpu.
+ *	 MACH_ERRADR_VALID	Set if contents are valid.
+ *
+ */
+
+#define MACH_ERRADR_ADDRESS	0x07ffffff
+#define MACH_ERRADR_RSRVD	0x08000000
+#define MACH_ERRADR_ECCERR	0x10000000
+#define MACH_ERRADR_WRITE	0x20000000
+#define MACH_ERRADR_CPU		0x40000000
+#define MACH_ERRADR_VALID	0x80000000
+
+/*
+ * The ECC Check/Syndrome Status Register (CHKSYN).
+ * See page 28 of the functional spec.
+ *
+ *	MACH_CHKSYN_SYNLO	Low bank syndrome bits.
+ *	MACH_CHKSYN_SNGLO	Set if single bit error.
+ *	MACH_CHKSYN_CHKLO	Low check bits.
+ *	MACH_CHKSYN_VLDLO	Set if CHKLO is valid.
+ *	MACH_CHKSYN_SYNHI	High bank syndrome bits.
+ *	MACH_CHKSYN_SNGHI	Set if single bit error.
+ *	MACH_CHKSYN_CHKHI	High check bits.
+ *	MACH_CHKSYN_VLDHI	Set if CHKHI is valid.
+ */                
+
+#define MACH_CHKSYN_SYNLO	0x0000007f
+#define MACH_CHKSYN_SNGLO	0x00000080
+#define MACH_CHKSYN_CHKLO	0x00007f00
+#define MACH_CHKSYN_VLDLO	0x00008000
+#define MACH_CHKSYN_SYNHI	0x007f0000
+#define MACH_CHKSYN_SNGHI	0x00800000
+#define MACH_CHKSYN_CHKHI	0x7f000000
+#define MACH_CHKSYN_VLDHI	0x80000000
 
 /*
  * The bits in the context register.

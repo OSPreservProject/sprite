@@ -800,6 +800,8 @@ SlowUTLBFault:
  *
  *----------------------------------------------------------------------------
  */
+str:
+    .asciiz	"Error on stack\n"
     .globl VmMach_KernTLBException
     .ent VmMach_KernTLBException, 0
 VmMach_KernTLBException:
@@ -811,7 +813,8 @@ VmMach_KernTLBException:
     srl		k0, k0, VMMACH_PAGE_SHIFT
     bne		k0, k1, 1f
     nop
-    jal		PrintError
+    la		a0, str
+    jal		panic
     nop
 
 1:

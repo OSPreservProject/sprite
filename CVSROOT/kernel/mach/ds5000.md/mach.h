@@ -18,8 +18,8 @@
 #define _MACH
 
 #ifdef KERNEL
-#include "machTypes.h"
-#include "user/fmt.h"
+#include <machTypes.h>
+#include <user/fmt.h>
 #else
 #include <kernel/machTypes.h>
 #include <fmt.h>
@@ -66,6 +66,13 @@
  * Delay for N microseconds.
  */
 #define	MACH_DELAY(n)	{ register int N = (n)*6; while (N > 0) {N--;} }
+
+/*
+ * Convert an address in cached space to an address in uncached space.
+ */
+
+#define MACH_UNCACHED_ADDR(addr) \
+    (Address) ((int) addr - MACH_CACHED_MEMORY_ADDR + MACH_UNCACHED_MEMORY_ADDR)
 
 /*
  * Dispatch tables for kernel calls.
@@ -132,10 +139,15 @@ extern void Mach_InitSyscall _ARGS_((int callNum, int numArgs, ReturnStatus (*no
 extern int Mach_GetNumProcessors _ARGS_((void));
 extern Mach_ProcessorStates Mach_ProcessorState _ARGS_((int processor));
 extern Address			Mach_GetPC();
+extern void		Mach_SetHandler _ARGS_((int level, void (*handler)(
+				unsigned int statusReg, unsigned int causeReg,
+				Address pc, ClientData data), ClientData data));
 /*
  * Machine dependent routines.
  */
-extern void Mach_GetEtherAddress _ARGS_((Net_EtherAddress *etherAddrPtr));
+extern void		Mach_SetIOHandler _ARGS_((int level, void (*handler)(
+				 ClientData data), ClientData data));
+
 extern	void		Mach_ContextSwitch();
 extern	int		Mach_TestAndSet();
 extern int Mach_GetMachineArch _ARGS_((void));

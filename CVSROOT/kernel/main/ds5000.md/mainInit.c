@@ -220,6 +220,7 @@ MachStringTable *argv;
     }
     Net_RouteInit();
 
+
     /*
      * Enable server process manager.
      */
@@ -270,7 +271,6 @@ MachStringTable *argv;
 	Mach_MonPrintf("Enabling interrupts\n");
     }
     ENABLE_INTR();
-
     if (main_Debug) {
 	DBG_CALL;
     }
@@ -450,12 +450,9 @@ Init()
 	Mach_MonPrintf("In Init\n");
     }
     bzero(bootCommand, 103);
-    argc = Mach_GetBootArgs(8, 256, &(initArgs[2]), argBuffer);
-    if (argc>0 && !strcmp(initArgs[argc+1],"-a")) {
-	argc--;
-    }
+    argc = Mach_GetBootArgs(8, 256, &(initArgs[1]), argBuffer);
     if (argc>0) {
-	argLength = (((int) initArgs[argc+1]) + strlen(initArgs[argc+1]) +
+	argLength = (((int) initArgs[argc]) + strlen(initArgs[argc]) +
 			1 - ((int) argBuffer));
     } else {
 	argLength = 0;
@@ -472,7 +469,7 @@ Init()
 	}
 	bootCommand[argLength] = '\0';
 	initArgs[2] = bootCommand;
-	initArgs[argc + 2] = (char *) NIL;
+	initArgs[(argc-1) + 2] = (char *) NIL;
     } else {
 	initArgs[1] = (char *) NIL;
     }

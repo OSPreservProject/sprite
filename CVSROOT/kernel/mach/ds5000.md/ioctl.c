@@ -11,27 +11,28 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "user/sys/ioctl.h"
-#include "user/sys/termios.h"
-#include "user/netEther.h"
-#include "sprite.h"
-#include "compatInt.h"
-#include "user/dev/tty.h"
-#include "user/dev/net.h"
-#include "user/dev/graphics.h"
-#include "fs.h"
-#include "errno.h"
+#include <user/sys/ioctl.h>
+#include <user/sys/termios.h>
+#include <user/netEther.h>
+#include <sprite.h>
+#include <compatInt.h>
+#include <user/dev/tty.h>
+#include <user/dev/net.h>
+#include <user/dev/graphics.h>
+#include <fs.h>
+#include <errno.h>
 
-#include "user/sys/types.h"
-#include "fcntl.h"
-#include "user/sys/socket.h"
-#include "user/sys/ttychars.h"
-#include "user/sys/ttydev.h"
-#include "user/net/route.h"
-#include "user/net/if.h"
-#include "user/sys/time.h"
-#include "machInt.h"
-#include "mach.h"
+#include <user/sys/types.h>
+#include <fcntl.h>
+#include <user/sys/socket.h>
+#include <user/sys/ttychars.h>
+#include <user/sys/ttydev.h>
+#include <user/net/route.h>
+#include <user/net/if.h>
+#include <user/sys/time.h>
+#include <machInt.h>
+#include <mach.h>
+#include <net.h>
 
 #ifdef __STDC__
 static void DecodeRequest _ARGS_((int request));
@@ -432,32 +433,20 @@ MachUNIXIoctl(fd, request, buf)
 
 	case SIOCRPHYSADDR: {
 		/* Get the ethernet address. */
-
+		Net_Interface *interPtr;
 		struct ifdevea *p;
-#if 1
-		Net_EtherAddress etherAddress;
+		Net_EtherAddress *etherAddressPtr;
 
-		Mach_GetEtherAddress(&etherAddress);
+		interPtr = Net_GetInterface(NET_NETWORK_ETHER, 0);
+		etherAddressPtr = &interPtr->netAddress[NET_PROTO_RAW].ether;
+
 		p = (struct ifdevea *) buf;
-		p->default_pa[0] = p->current_pa[0] = etherAddress.byte1;
-		p->default_pa[1] = p->current_pa[1] = etherAddress.byte2;
-		p->default_pa[2] = p->current_pa[2] = etherAddress.byte3;
-		p->default_pa[3] = p->current_pa[3] = etherAddress.byte4;
-		p->default_pa[4] = p->current_pa[4] = etherAddress.byte5;
-		p->default_pa[5] = p->current_pa[5] = etherAddress.byte6;
-#else
-		/*
-		 * Stuff with forgery's ether address for testing
-		 * verilog.
-		 */
-		p = (struct ifdevea *) buf;
-		p->default_pa[0] = p->current_pa[0] = 0x08;
-		p->default_pa[1] = p->current_pa[1] = 0x00;
-		p->default_pa[2] = p->current_pa[2] = 0x2b;
-		p->default_pa[3] = p->current_pa[3] = 0x10;
-		p->default_pa[4] = p->current_pa[4] = 0x75;
-		p->default_pa[5] = p->current_pa[5] = 0x24;
-#endif
+		p->default_pa[0] = p->current_pa[0] = etherAddressPtr->byte1;
+		p->default_pa[1] = p->current_pa[1] = etherAddressPtr->byte2;
+		p->default_pa[2] = p->current_pa[2] = etherAddressPtr->byte3;
+		p->default_pa[3] = p->current_pa[3] = etherAddressPtr->byte4;
+		p->default_pa[4] = p->current_pa[4] = etherAddressPtr->byte5;
+		p->default_pa[5] = p->current_pa[5] = etherAddressPtr->byte6;
 		status = SUCCESS;
 
 	    }

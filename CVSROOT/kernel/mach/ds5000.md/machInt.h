@@ -18,8 +18,10 @@
 #ifndef _MACHINT
 #define _MACHINT
 
-#include "machMon.h"
-#include "mach.h"
+#include <machMon.h>
+#include <mach.h>
+#include <machConst.h>
+#include <machAddrs.h>
 
 /*
  * The bounds of the code that copies arguments from the user stack to

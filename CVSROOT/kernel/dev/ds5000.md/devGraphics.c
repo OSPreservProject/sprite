@@ -39,34 +39,66 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
  */
 #define TO_MS(time) ((time.seconds * 1000) + (time.microseconds / 1000))
 
-/*
- * System control status register pointer.
- */
-static unsigned short	*sysCSRPtr = (unsigned short *)MACH_CSR_ADDR;
 
-
-static volatile	unsigned short	curReg = 0;	/* Register to keep track of
-						 * the pcc command register
-						 * bits. */
 Boolean	devGraphicsOpen = FALSE;		/* TRUE => the mouse is open.*/
 					/* Process waiting for select.*/
-static Boolean	isMono;			/* TRUE */
+
+#define FRAME_BUFFER_ADDR 	(MACH_IO_SLOT_ADDR(0))
+#define RAMDAC_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x200000)
+#define ROM_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x380000)
+#define ROM2_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x3c0000)
 
 /*
  * These need to mapped into user space.
  */
-static DevScreenInfo	scrInfo;
-static DevEvent		events[DEV_MAXEVQ] = {0};	
-static DevTimeCoord	tcs[MOTION_BUFFER_SIZE] = {0};
+static DevScreenInfo	scrInfoCached;
+static DevEvent		eventsCached[DEV_MAXEVQ] = {0};	
+static DevTimeCoord	tcsCached[MOTION_BUFFER_SIZE] = {0};
+static char		*frameBuffer = (char *)FRAME_BUFFER_ADDR;
 
+static DevScreenInfo	*scrInfoPtr;
+static DevEvent		*events;
+static DevTimeCoord	*tcs;
 
 static unsigned short	cursorBits [32];
 
 Boolean			inKBDReset = FALSE;
 
+/*
+ * DEBUGGING STUFF.
+ */
+
+#define DEBUG_SIZE	256
+#define DEBUG_ADD	1
+#define DEBUG_UPDATE	2
+#define DEBUG_PTR(ptr) { 			\
+    if (debugPtr == &debugArray[DEBUG_SIZE]) {	\
+	debugPtr = debugArray;			\
+    }						\
+    ptr = debugPtr++;				\
+}
+
+Boolean			devGraphicsDebug = TRUE;
+typedef struct {
+    int		type;
+    int		x;
+    int		y;
+} DebugInfo;
+
+DebugInfo		debugArray[DEBUG_SIZE];
+DebugInfo		*debugPtr = debugArray;
+
+int foo;
+int bar;
+/*
+ * END OF DEBUGGING STUFF.
+ */
+
 MouseReport		lastRep;
 MouseReport		currentRep;
 
+static unsigned char bgRgb[3];	/* background and foreground colors 	*/
+static unsigned char fgRgb[3];  /* 	for the cursor. */
 
 /*
  * Keyboard defaults.
@@ -106,6 +138,40 @@ short kbdInitString[] = {		/* reset any random keyboard stuff */
 #define KBD_INIT_LENGTH	sizeof(kbdInitString) / sizeof(short)
 
 
+/*
+ * The default cursor.  The X server does things in terms of the ds3100,
+ * which had the notion of A and B planes.  The LoadCursor routine
+ * converts this into the correct format.
+ */
+
+unsigned short defCursor[32] = { 
+/* plane A */ 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+	      0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+/* plane B */ 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+              0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF
+
+};
+/*
+ * Font mask bits used by Blitc().
+ */
+static unsigned int fontmaskBits[16] = {
+	0x00000000,
+	0x00000001,
+	0x00000100,
+	0x00000101,
+	0x00010000,
+	0x00010001,
+	0x00010100,
+	0x00010101,
+	0x01000000,
+	0x01000001,
+	0x01000100,
+	0x01000101,
+	0x01010000,
+	0x01010001,
+	0x01010100,
+	0x01010101
+};
 
 static Boolean initialized = FALSE;
 
@@ -147,7 +213,7 @@ static void		CursorColor();
 static void		MouseInit();
 static void		KBDReset();
 static void		InitColorMap();
-static void		VDACInit();
+static void		RAMDACInit();
 static void		LoadColorMap();
 static void 		RecvIntr();
 static void		MouseEvent();
@@ -157,6 +223,20 @@ static void		XmitIntr();
 static void		Scroll();
 static void		Blitc();
 
+#define FRAME_BUFFER_ADDR 	(MACH_IO_SLOT_ADDR(0))
+#define RAMDAC_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x200000)
+#define ROM_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x380000)
+#define ROM2_ADDR 		(MACH_IO_SLOT_ADDR(0) + 0x3c0000)
+
+typedef struct ramdac {
+    unsigned char		*addrLowPtr;
+    unsigned char		*addrHighPtr;
+    volatile unsigned char	*regPtr;
+    volatile unsigned char	*colorMap;
+} Ramdac;
+
+static Ramdac ramdac;
+static int planeMask;
 
 /*
  * ----------------------------------------------------------------------------
@@ -179,14 +259,291 @@ DevGraphicsInit()
     Time	time;
 
     Sync_SemInitDynamic(&graphicsMutex, "graphicsMutex");
+
+    Mach_MonPrintf("PMAG-BA color display\n");
+
+    ramdac.addrLowPtr = (unsigned char *) RAMDAC_ADDR;
+    ramdac.addrHighPtr = (unsigned char *) RAMDAC_ADDR + 0x4;
+    ramdac.regPtr = (unsigned char *) RAMDAC_ADDR + 0x8;
+    ramdac.colorMap = (unsigned char *) RAMDAC_ADDR + 0xc;
+
+    /*
+     * Initialize screen info.
+     */
+    scrInfoPtr = (DevScreenInfo *) MACH_UNCACHED_ADDR(&scrInfoCached);
+    events = (DevEvent *) MACH_UNCACHED_ADDR(eventsCached);
+    tcs = (DevTimeCoord *)  MACH_UNCACHED_ADDR(tcsCached);
+    printf("scrInfoPtr = 0x%x\n", scrInfoPtr);
+    printf("events = 0x%x\n", events);
+    printf("tcs = 0x%x\n", tcs);
+
+    InitScreenDefaults(scrInfoPtr);
+    scrInfoPtr->eventQueue.events = events;
+    scrInfoPtr->eventQueue.tcs = tcs;
+    scrInfoPtr->bitmap = (char *)FRAME_BUFFER_ADDR;
+    scrInfoPtr->cursorBits = (short *)(cursorBits);
+    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
+    scrInfoPtr->eventQueue.timestampMS = TO_MS(time);
+    scrInfoPtr->eventQueue.eSize = DEV_MAXEVQ;
+    scrInfoPtr->eventQueue.eHead = scrInfoPtr->eventQueue.eTail = 0;
+    scrInfoPtr->eventQueue.tcSize = MOTION_BUFFER_SIZE;
+    scrInfoPtr->eventQueue.tcNext = 0;
+
+    /*
+     * Initialize the color map, the screen, and the mouse.
+     */
+    InitColorMap();
+    ScreenInit();
     MouseInit();
+    Scroll();
+
+    /*
+     * Init the "latest mouse report" structure
+     */
+    lastRep.state = 0;
+    lastRep.dx = 0;
+    lastRep.dy = 0;
+    lastRep.byteCount = 0;
+
+
+    /*
+     * Reset the keyboard.
+     */
     if(!inKBDReset) {
 	KBDReset();
     }
 
     initialized = TRUE;
+
+    bzero((char *) debugArray, sizeof(debugArray));
 }    
 
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * InitScreenDefaults --
+ *
+ *	Set up default screen parameters.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	*scrInfoPtr is filled in with default screen parameters.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+InitScreenDefaults(scrInfoPtr)
+    DevScreenInfo	*scrInfoPtr;
+{
+    bzero((char *)scrInfoPtr, sizeof(DevScreenInfo));
+    scrInfoPtr->maxRow = 56;
+    scrInfoPtr->maxCol = 80;
+    scrInfoPtr->maxX = 1024;
+    scrInfoPtr->maxY = 864;
+    scrInfoPtr->maxCurX = 1023;
+    scrInfoPtr->maxCurY = 863;
+    scrInfoPtr->version = 11;
+    scrInfoPtr->mthreshold = 4;	
+    scrInfoPtr->mscale = 2;
+    scrInfoPtr->minCurX = -15;
+    scrInfoPtr->minCurY = -15;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ScreenInit --
+ *
+ *	Initialize the screen.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The screen is initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+ScreenInit()
+{
+    int	i;
+    int addr;
+    /*
+     * Home the cursor.
+     * We want an LSI terminal emulation.  We want the graphics
+     * terminal to scroll from the bottom. So start at the bottom.
+     */
+    scrInfoPtr->row = 55;
+    scrInfoPtr->col = 0;
+
+    /*
+     * Load the cursor with the default values
+     *
+     */
+    LoadCursor(defCursor);
+
+    /*
+     * Reset keyboard to default state.
+     */
+     if(!inKBDReset) {
+	 KBDReset();
+     }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * LoadCursor --
+ *
+ *	Routine to load the cursor Sprite pattern.  The hardware cursor is
+ *	64x64x2.  Each byte loaded into the bt459 is 4 pixels (2 bits each),
+ *	and the most-significant bit is the leftmost on the screen.
+ *	The parameter to this routine is an array of bytes, in the format
+ *	used by the ds3100.  The array can be thought of as two arrays
+ *	of 16-bit words each with 16 words.  The first array is one bit
+ * 	for each pixel, and the second array is the other bit.  Also, the
+ *	least-significant bit of the byte is the leftmost on the screen, and
+ *	the cursor is 16x16.  This routine has to convert between the
+ *	two formats, hence the mess.  Any unused bits in the hardware
+ *	cursor are set to 0.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The cursor is loaded into the hardware cursor.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+LoadCursor(curPtr)
+    unsigned char *curPtr;
+{
+    register int i, j;
+    int addr;
+    unsigned char value, a, b;
+    unsigned char *aPtr, *bPtr;
+
+    aPtr = curPtr;
+    bPtr = curPtr + 32;
+    addr = 0x400;
+    *ramdac.addrHighPtr = (addr >> 8);
+    *ramdac.addrLowPtr = (addr & 0xff);
+    Mach_EmptyWriteBuffer();
+    for (i = 0; i < 16; i++) {
+	for (j = 0; j < 4; j += 2) {
+	    a = *aPtr;
+	    b = *bPtr;
+	    value = ((a << 7) & 0x80) |
+		    ((b << 6) & 0x40) |
+		    ((a << 4) & 0x20) |
+		    ((b << 3) & 0x10) |
+		    ((a << 1) & 0x08) |
+		    ((b << 0) & 0x04) |
+		    ((a >> 2) & 0x02) |
+		    ((b >> 3) & 0x01);
+	    *ramdac.regPtr = value;
+	    Mach_EmptyWriteBuffer();
+	    value = ((a << 3) & 0x80) |
+		    ((b << 2) & 0x40) |
+		    ((a << 0) & 0x20) |
+		    ((b >> 1) & 0x10) |
+		    ((a >> 3) & 0x08) |
+		    ((b >> 4) & 0x04) |
+		    ((a >> 6) & 0x02) |
+		    ((b >> 7) & 0x01);
+	    *ramdac.regPtr = value;
+	    Mach_EmptyWriteBuffer();
+	    aPtr++;
+	    bPtr++;
+	}
+	for(; j < 16; j++) {
+	    *ramdac.regPtr = 0;
+	    Mach_EmptyWriteBuffer();
+	}
+    }
+    for (; i < 64; i++) {
+	for (j = 0; j < 16; j++) {
+	    *ramdac.regPtr = 0;
+	    Mach_EmptyWriteBuffer();
+	}
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreCursorColor --
+ *
+ *	Routine to restore the color of the cursor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+RestoreCursorColor()
+{
+    register int i;
+
+
+    *ramdac.addrHighPtr = 0x1;
+    *ramdac.addrLowPtr = 0x81;
+    Mach_EmptyWriteBuffer();
+    for (i=0; i < 3; i++) {  
+	*ramdac.regPtr = bgRgb[i];
+	Mach_EmptyWriteBuffer();
+    }
+
+    *ramdac.addrHighPtr = 0x1;
+    *ramdac.addrLowPtr = 0x82;
+    Mach_EmptyWriteBuffer();
+    for (i=0; i < 3; i++) {  
+	*ramdac.regPtr = fgRgb[i];
+	Mach_EmptyWriteBuffer();
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * CursorColor --
+ *
+ *	Set the color of the cursor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+CursorColor(color)
+    unsigned int color[];
+{
+    register int i, j;
+    for (i = 0; i < 3; i++) {
+	bgRgb[i] = (unsigned char )(color[i] >> 8);
+    }
+    for (j = 0; j < 3; j++) {
+	fgRgb[i] = (unsigned char )(color[j] >> 8);
+    }
+    RestoreCursorColor();
+}
 
 
 /*
@@ -272,6 +629,153 @@ KBDReset()
     inKBDReset = FALSE;
 }
 
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * InitColorMap --
+ *
+ *	Initialize the color map.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The colormap is initialized appropriately whether it is color or 
+ *	monochrome.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+InitColorMap()
+{
+    register int i;
+
+    RAMDACInit();
+
+    *ramdac.addrHighPtr = 0;
+    *ramdac.addrLowPtr = 0;
+    Mach_EmptyWriteBuffer();
+    *ramdac.colorMap = 0;
+    Mach_EmptyWriteBuffer();
+    *ramdac.colorMap = 0;
+    Mach_EmptyWriteBuffer();
+    *ramdac.colorMap = 0;
+    Mach_EmptyWriteBuffer();
+    for(i = 1; i < 256; i++) {
+	*ramdac.colorMap = 0xff;
+	Mach_EmptyWriteBuffer();
+	*ramdac.colorMap = 0xff;
+	Mach_EmptyWriteBuffer();
+	*ramdac.colorMap = 0xff;
+	Mach_EmptyWriteBuffer();
+    }
+    for (i = 0;i < 3; i++) {
+	bgRgb[i] = 0x00;
+	fgRgb[i] = 0xff;
+    }
+
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RAMDACInit --
+ *
+ *	Initialize the RAMDAC.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+RAMDACInit()
+{
+
+#if 0
+    /*
+     * Set up command register 0.
+     */
+    *ramdac.addrHighPtr = 0x2;
+    *ramdac.addrLowPtr = 0x1;
+    Mach_EmptyWriteBuffer();
+    *ramdac.regPtr = 0x80;
+    /*
+     * See note on page 4 of PMAG-BA doc.
+     */
+    {
+	volatile char	*addr = (char *) ROM2_ADDR;
+	*addr = 1;
+    }
+    /*
+     * Set up command register 1.
+     */
+    *ramdac.addrHighPtr = 0x2;
+    *ramdac.addrLowPtr = 0x2;
+    Mach_EmptyWriteBuffer();
+    *ramdac.regPtr = 0x00;
+    /*
+     * Set up command register 2.
+     */
+    *ramdac.addrHighPtr = 0x2;
+    *ramdac.addrLowPtr = 0x3;
+    Mach_EmptyWriteBuffer();
+    *ramdac.regPtr = 0x00;
+
+#endif
+    /*
+     * Set up cursor command register. Enable both planes of the cursor
+     * and stop the damn blinking.
+     */
+    *ramdac.addrHighPtr = 0x3;
+    *ramdac.addrLowPtr = 0x0;
+    Mach_EmptyWriteBuffer();
+    *ramdac.regPtr = 0xc0;
+    Mach_EmptyWriteBuffer();
+}
+
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * LoadColorMap --
+ *
+ *	Load the color map.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The color map is loaded.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+LoadColorMap(ptr)
+    DevColorMap  *ptr;
+{
+    if(ptr->index > 256) {
+	 return;
+    }
+
+    *ramdac.addrHighPtr = 0x0;
+    *ramdac.addrLowPtr = ptr->index;
+    Mach_EmptyWriteBuffer();
+    *ramdac.colorMap = ptr->entry.red;
+    Mach_EmptyWriteBuffer();
+    *ramdac.colorMap = ptr->entry.green;
+    Mach_EmptyWriteBuffer();
+    *ramdac.colorMap = ptr->entry.blue;
+    Mach_EmptyWriteBuffer();
+}
+
 static Boolean	consoleCmdDown = FALSE;
 
 
@@ -327,23 +831,26 @@ DevGraphicsKbdIntr(ch)
     /*
      * See if there is room in the queue.
      */
-    i = DEV_EVROUND(scrInfo.eventQueue.eTail + 1);
-    if (i == scrInfo.eventQueue.eHead) {
+    i = DEV_EVROUND(scrInfoPtr->eventQueue.eTail + 1);
+    if (i == scrInfoPtr->eventQueue.eHead) {
 	return;
     }
 
     /*
      * Add the event to the queue.
      */
-    eventPtr = &events[scrInfo.eventQueue.eTail];
+    eventPtr = &events[scrInfoPtr->eventQueue.eTail];
     eventPtr->type = DEV_BUTTON_RAW_TYPE;
     eventPtr->device = DEV_KEYBOARD_DEVICE;
-    eventPtr->x = scrInfo.mouse.x;
-    eventPtr->y = scrInfo.mouse.y;
+    eventPtr->x = scrInfoPtr->mouse.x;
+    eventPtr->y = scrInfoPtr->mouse.y;
     Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     eventPtr->time = TO_MS(time);
     eventPtr->key = ch;
-    scrInfo.eventQueue.eTail = i;
+#if 0
+    printf("kbd 0x%x %d\n", eventPtr, ch);
+#endif
+    scrInfoPtr->eventQueue.eTail = i;
     dev_LastConsoleInput = time;
     Fsio_DevNotifyReader(notifyToken);
 }
@@ -425,6 +932,8 @@ MouseEvent(newRepPtr)
     unsigned	milliSec;
     int		i;
     DevEvent	*eventPtr;
+    static 	int lastAdd = 0;
+    static 	int lastUpdate = 0;
 
     Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     milliSec = TO_MS(time);
@@ -432,14 +941,14 @@ MouseEvent(newRepPtr)
     /*
      * Check to see if we have to accelerate the mouse
      */
-    if (scrInfo.mscale >=0) {
-	if (newRepPtr->dx >= scrInfo.mthreshold) {
+    if (scrInfoPtr->mscale >=0) {
+	if (newRepPtr->dx >= scrInfoPtr->mthreshold) {
 	    newRepPtr->dx +=
-		    (newRepPtr->dx - scrInfo.mthreshold) * scrInfo.mscale;
+		    (newRepPtr->dx - scrInfoPtr->mthreshold) * scrInfoPtr->mscale;
 	}
-	if (newRepPtr->dy >= scrInfo.mthreshold) {
+	if (newRepPtr->dy >= scrInfoPtr->mthreshold) {
 	    newRepPtr->dy +=
-		(newRepPtr->dy - scrInfo.mthreshold) * scrInfo.mscale;
+		(newRepPtr->dy - scrInfoPtr->mthreshold) * scrInfoPtr->mscale;
 	}
     }
     
@@ -447,72 +956,101 @@ MouseEvent(newRepPtr)
      * Update mouse position
      */
     if( newRepPtr->state & MOUSE_X_SIGN) {
-	scrInfo.mouse.x += newRepPtr->dx;
-	if (scrInfo.mouse.x > scrInfo.maxCurX) {
-	    scrInfo.mouse.x = scrInfo.maxCurX;
+	scrInfoPtr->mouse.x += newRepPtr->dx;
+	if (scrInfoPtr->mouse.x > scrInfoPtr->maxCurX) {
+	    scrInfoPtr->mouse.x = scrInfoPtr->maxCurX;
 	}
     } else {
-	scrInfo.mouse.x -= newRepPtr->dx;
-	if (scrInfo.mouse.x < scrInfo.minCurX) {
-	    scrInfo.mouse.x = scrInfo.minCurX;
+	scrInfoPtr->mouse.x -= newRepPtr->dx;
+	if (scrInfoPtr->mouse.x < scrInfoPtr->minCurX) {
+	    scrInfoPtr->mouse.x = scrInfoPtr->minCurX;
 	}
     }
     if( newRepPtr->state & MOUSE_Y_SIGN) {
-	scrInfo.mouse.y -= newRepPtr->dy;
-	if (scrInfo.mouse.y < scrInfo.minCurY) {
-	    scrInfo.mouse.y = scrInfo.minCurY;
+	scrInfoPtr->mouse.y -= newRepPtr->dy;
+	if (scrInfoPtr->mouse.y < scrInfoPtr->minCurY) {
+	    scrInfoPtr->mouse.y = scrInfoPtr->minCurY;
 	}
     } else {
-	scrInfo.mouse.y += newRepPtr->dy;
-	if (scrInfo.mouse.y > scrInfo.maxCurY) {
-	    scrInfo.mouse.y = scrInfo.maxCurY;
+	scrInfoPtr->mouse.y += newRepPtr->dy;
+	if (scrInfoPtr->mouse.y > scrInfoPtr->maxCurY) {
+	    scrInfoPtr->mouse.y = scrInfoPtr->maxCurY;
 	}
+    }
+    if (devGraphicsOpen) {
+	/*
+	 * Move the hardware cursor.
+	 */
+	PosCursor(scrInfoPtr->mouse.x, scrInfoPtr->mouse.y);
     }
     /*
      * Store the motion event in the motion buffer.
      */
-    tcs[scrInfo.eventQueue.tcNext].time = milliSec;
-    tcs[scrInfo.eventQueue.tcNext].x = scrInfo.mouse.x;
-    tcs[scrInfo.eventQueue.tcNext].y = scrInfo.mouse.y;
-    scrInfo.eventQueue.tcNext++;
-    if (scrInfo.eventQueue.tcNext >= MOTION_BUFFER_SIZE) {
-	scrInfo.eventQueue.tcNext = 0;
+    tcs[scrInfoPtr->eventQueue.tcNext].time = milliSec;
+    tcs[scrInfoPtr->eventQueue.tcNext].x = scrInfoPtr->mouse.x;
+    tcs[scrInfoPtr->eventQueue.tcNext].y = scrInfoPtr->mouse.y;
+    scrInfoPtr->eventQueue.tcNext++;
+    if (scrInfoPtr->eventQueue.tcNext >= MOTION_BUFFER_SIZE) {
+	scrInfoPtr->eventQueue.tcNext = 0;
     }
-    if (scrInfo.mouse.y < scrInfo.mbox.bottom &&
-	scrInfo.mouse.y >=  scrInfo.mbox.top &&
-	scrInfo.mouse.x < scrInfo.mbox.right &&
-	scrInfo.mouse.x >=  scrInfo.mbox.left) {
+    if (scrInfoPtr->mouse.y < scrInfoPtr->mbox.bottom &&
+	scrInfoPtr->mouse.y >=  scrInfoPtr->mbox.top &&
+	scrInfoPtr->mouse.x < scrInfoPtr->mbox.right &&
+	scrInfoPtr->mouse.x >=  scrInfoPtr->mbox.left) {
 	return;
     }
 
-    scrInfo.mbox.bottom = 0;
-    if (DEV_EVROUND(scrInfo.eventQueue.eTail + 1) == scrInfo.eventQueue.eHead) {
+    scrInfoPtr->mbox.bottom = 0;
+    if (DEV_EVROUND(scrInfoPtr->eventQueue.eTail + 1) == scrInfoPtr->eventQueue.eHead) {
 	return;
     }
 
-    i = DEV_EVROUND(scrInfo.eventQueue.eTail -1);
-    if ((scrInfo.eventQueue.eTail != scrInfo.eventQueue.eHead) && 
-        (i != scrInfo.eventQueue.eHead)) {
+    i = DEV_EVROUND(scrInfoPtr->eventQueue.eTail -1);
+    if ((scrInfoPtr->eventQueue.eTail != scrInfoPtr->eventQueue.eHead) && 
+        (i != scrInfoPtr->eventQueue.eHead)) {
 	DevEvent	*eventPtr;
 	eventPtr = &events[i];
 	if(eventPtr->type == DEV_MOTION_TYPE) {
-	    eventPtr->x = scrInfo.mouse.x;
-	    eventPtr->y = scrInfo.mouse.y;
+	    /*
+	     * On the ds5000/200 there is some kind of bug when doing partial
+	     * writes.  Sometimes the x,y fields of one event are in the first
+	     * word of a cache line, and the x,y fields of the next event are
+	     * in the last word of the same cache line.  In this case the line
+	     * is probably in the cache because the X server just read it, but
+	     * the write done by the kernel to the last word in the cache line
+	     * will not be seen by the Xserver, causing the mouse to jump.
+	     * It is almost as if the kernel is bypassing the cache and writing
+	     * directly to memory.  If we read the word before writing it the
+	     * problem goes away.  JHH 2/7/90.
+	     */
+	    eventPtr->x = scrInfoPtr->mouse.x;
+	    eventPtr->y = scrInfoPtr->mouse.y;
 	    eventPtr->time = milliSec;
 	    eventPtr->device = DEV_MOUSE_DEVICE;
+#if 0
+	    printf("Update 0x%x %d %d\n", eventPtr, scrInfoPtr->mouse.x, 
+		scrInfoPtr->mouse.y);
+#endif
 	    return;
 	}
-    }
+    } 
     /*
      * Put event into queue and wakeup any waiters.
      */
-    eventPtr = &events[scrInfo.eventQueue.eTail];
+    eventPtr = &events[scrInfoPtr->eventQueue.eTail];
+    /*
+     * See comment above.
+     */
     eventPtr->type = DEV_MOTION_TYPE;
     eventPtr->time = milliSec;
-    eventPtr->x = scrInfo.mouse.x;
-    eventPtr->y = scrInfo.mouse.y;
+    eventPtr->x = scrInfoPtr->mouse.x;
+    eventPtr->y = scrInfoPtr->mouse.y;
     eventPtr->device = DEV_MOUSE_DEVICE;
-    scrInfo.eventQueue.eTail = DEV_EVROUND(scrInfo.eventQueue.eTail + 1);
+    scrInfoPtr->eventQueue.eTail = DEV_EVROUND(scrInfoPtr->eventQueue.eTail + 1);
+#if 0
+    printf("Add 0x%x %d %d\n", eventPtr, scrInfoPtr->mouse.x, 
+	scrInfoPtr->mouse.y);
+#endif
     dev_LastConsoleInput = time;
     if (devGraphicsOpen) {
 	Fsio_DevNotifyReader(notifyToken);
@@ -544,6 +1082,9 @@ MouseButtons(newRepPtr)
     DevEvent	*eventPtr;
     Time	time;
 
+    int		type;
+    int		key;
+
     newSwitch = newRepPtr->state & 0x07;
     oldSwitch = lastRep.state & 0x07;
     
@@ -557,40 +1098,42 @@ MouseButtons(newRepPtr)
 	    /*
 	     * Check for room in the queue
 	     */
-	    i = DEV_EVROUND(scrInfo.eventQueue.eTail+1);
-	    if (i == scrInfo.eventQueue.eHead) {
+	    i = DEV_EVROUND(scrInfoPtr->eventQueue.eTail+1);
+	    if (i == scrInfoPtr->eventQueue.eHead) {
 		return;
 	    }
 
 	    /*
 	     * Put event into queue.
 	     */
-	    eventPtr = &events[scrInfo.eventQueue.eTail];
-    
+	    eventPtr = &events[scrInfoPtr->eventQueue.eTail];
 	    switch (j) {
 		case RIGHT_BUTTON:
-		    eventPtr->key = DEV_EVENT_RIGHT_BUTTON;
+		    key = eventPtr->key = DEV_EVENT_RIGHT_BUTTON;
 		    break;
 		case MIDDLE_BUTTON:
-		    eventPtr->key = DEV_EVENT_MIDDLE_BUTTON;
+		    key = eventPtr->key = DEV_EVENT_MIDDLE_BUTTON;
 		    break;
 		case LEFT_BUTTON:
-		    eventPtr->key = DEV_EVENT_LEFT_BUTTON;
+		    key = eventPtr->key = DEV_EVENT_LEFT_BUTTON;
 		    break;
 	    }
 	    if (newSwitch & j) {
-		eventPtr->type = DEV_BUTTON_DOWN_TYPE;
+		type = eventPtr->type = DEV_BUTTON_DOWN_TYPE;
 	    } else {
-		eventPtr->type = DEV_BUTTON_UP_TYPE;
+		type = eventPtr->type = DEV_BUTTON_UP_TYPE;
 	    }
 	    eventPtr->device = DEV_MOUSE_DEVICE;
 
 	    Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
 	    eventPtr->time = TO_MS(time);
-	    eventPtr->x = scrInfo.mouse.x;
-	    eventPtr->y = scrInfo.mouse.y;
+	    eventPtr->x = scrInfoPtr->mouse.x;
+	    eventPtr->y = scrInfoPtr->mouse.y;
+#if 0
+	    printf("Button: 0x%x %d %d\n", eventPtr, key, type);
+#endif
 	}
-	scrInfo.eventQueue.eTail = i;
+	scrInfoPtr->eventQueue.eTail = i;
 	if (devGraphicsOpen) {
 	    Fsio_DevNotifyReader(notifyToken);
 	}
@@ -599,8 +1142,125 @@ MouseButtons(newRepPtr)
 	 * Update the last report 
 	 */
 	lastRep = currentRep;
-	scrInfo.mswitches = newSwitch;
+	scrInfoPtr->mswitches = newSwitch;
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PosCursor --
+ *
+ *	Postion the cursor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PosCursor(x, y)
+    register int x,y;
+{
+    int		pos;
+    if( y < scrInfoPtr->minCurY || y > scrInfoPtr->maxCurY ) {
+	y = scrInfoPtr->maxCurY;
+    }
+    if(x < scrInfoPtr->minCurX || x > scrInfoPtr->maxCurX) {
+	x = scrInfoPtr->maxCurX;
+    }
+    scrInfoPtr->cursor.x = x;		/* keep track of real cursor*/
+    scrInfoPtr->cursor.y = y;		/* position, indep. of mouse*/
+
+    pos = x + 241 - 52 + 31;
+    *ramdac.addrHighPtr = 0x3;
+    *ramdac.addrLowPtr = 0x1;
+    Mach_EmptyWriteBuffer();
+    *ramdac.regPtr = (pos & 0xff);
+    *ramdac.addrHighPtr = 0x3;
+    *ramdac.addrLowPtr = 0x2;
+    Mach_EmptyWriteBuffer();
+    *ramdac.regPtr = ((pos >> 8) & 0xff);
+    Mach_EmptyWriteBuffer();
+
+    pos = y + 36 - 32 + 31;
+    *ramdac.addrHighPtr = 0x3;
+    *ramdac.addrLowPtr = 0x3;
+    Mach_EmptyWriteBuffer();
+    *ramdac.regPtr = (pos & 0xff);
+    *ramdac.addrHighPtr = 0x3;
+    *ramdac.addrLowPtr = 0x4;
+    Mach_EmptyWriteBuffer();
+    *ramdac.regPtr = ((pos >> 8) & 0xff);
+    Mach_EmptyWriteBuffer();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Scroll --
+ *
+ *	Scroll the screen.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Scroll()
+{
+    int    line;
+    register int *dest, *src;
+    register int *end;
+    register int temp0,temp1,temp2,temp3;
+    register int i, scanInc, lineCount;
+
+
+    /*
+     *  The following is an optimization to cause the scrolling 
+     *  of text to be memory limited.  Basically the writebuffer is 
+     *  4 words (32 bits ea.) long so to achieve maximum speed we 
+     *  read and write in multiples of 4 words. We also limit the 
+     *  size to be 80 characters for more speed. 
+     */
+    lineCount = 40;
+    scanInc = 96;
+    line = 1920 * 8;
+    src = (int *)(frameBuffer+line);
+    dest = (int *)(frameBuffer);
+    end = (int *)(frameBuffer+ (60 * line) - line);
+    do {
+	i = 0;
+	do {
+	    temp0 = src[0];
+	    temp1 = src[1];
+	    temp2 = src[2];
+	    temp3 = src[3];
+	    dest[0] = temp0;
+	    dest[1] = temp1;
+	    dest[2] = temp2;
+	    dest[3] = temp3;
+	    dest += 4;
+	    src += 4;
+	    i++;
+	} while(i < lineCount);
+	src += scanInc;
+	dest += scanInc;
+    } while(src < end);
+
+    /* 
+     * Now zero out the last two lines 
+     */
+    bzero(frameBuffer+(scrInfoPtr->row * line),  3 * line);
 }
 
 
@@ -625,15 +1285,144 @@ register char c;
 {
     MASTER_LOCK(&graphicsMutex);
 
+    if (initialized) {
+	Blitc((unsigned char)(c & 0xff));
+    } else {
 	if (isascii(c)) {
 	    mach_MonFuncs.mputchar(c);
 	}
+    }
 
     MASTER_UNLOCK(&graphicsMutex);
 
     return(1);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Blitc --
+ *
+ *	Write a character to the screen.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Blitc(c)
+    register unsigned char c;
+{
+    register char *bRow, *fRow;
+    register int i;
+    register int ote = 1024; /* offset to table entry */
+    int colMult = 8;
+    extern char devFont[];
+
+    c &= 0xff;
+
+    switch ( c ) {
+	case '\t':
+	    for(i = 8 - (scrInfoPtr->col & 0x7); i > 0; i--) {
+		Blitc(' ');
+	    }
+	    break;
+	case '\r':
+	    scrInfoPtr->col = 0;
+	    break;
+	case '\b':
+	    scrInfoPtr->col--;
+	    if(scrInfoPtr->col < 0) {
+		scrInfoPtr->col = 0;
+	    }
+	    break;
+	case '\n':
+	    if(scrInfoPtr->row + 1 >= scrInfoPtr->maxRow) {
+		Scroll();
+	    } else {
+		scrInfoPtr->row++;
+	    }
+	    scrInfoPtr->col = 0;
+	    break;
+	case '\007':
+	    DevDC7085KBDPutc(LK_RING_BELL);
+	    break;
+	default:
+	    /*
+	     * If the next character will wrap around then 
+	     * increment row counter or scroll screen.
+	     */
+	    if (scrInfoPtr->col >= scrInfoPtr->maxCol) {
+		scrInfoPtr->col = 0;
+		if(scrInfoPtr->row + 1 >= scrInfoPtr->maxRow) {
+		    Scroll();
+		} else {
+		    scrInfoPtr->row++;
+		}
+	    }
+	    /*
+	     * xA1 to XFD are the printable characters added with 8-bit
+	     * support.
+	     */
+	    if ((c >= ' ' && c <= '~') || (c >= 0xA1 && c <= 0xFD)) {
+		bRow = frameBuffer + (scrInfoPtr->row * 15 & 0x3ff) * ote + 
+		       scrInfoPtr->col * colMult;
+		i = c - ' ';
+		if(i < 0 || i > 221) {
+		    i = 0;
+		} else {
+		    /* These are to skip the (32) 8-bit 
+		     * control chars, as well as DEL 
+		     * and 0xA0 which aren't printable */
+		    if (c > '~') {
+			i -= 34; 
+		    }
+		    i *= 15;
+		}
+		fRow = (char *)((int)devFont + i);
+
+		/* inline expansion for speed */
+		{
+		    int j;
+		    unsigned int *pInt;
+
+		    pInt = (unsigned int *) bRow;
+		    for(j = 0; j < 15; j++) {
+			/*
+			 * fontmaskBits converts a nibble
+			 * (4 bytes) to a long word 
+			 * containing 4 pixels corresponding
+			 * to each bit in the nibble.  Thus
+			 * we write two longwords for each
+			 * byte in font.
+			 * 
+			 * Remember the font is 8 bits wide
+			 * and 15 bits high.
+			 *
+			 * We add 256 to the pointer to
+			 * point to the pixel on the 
+			 * next scan line
+			 * directly below the current
+			 * pixel.
+			 */
+			*pInt =  fontmaskBits[(*fRow)&0xf];
+			*(pInt+1)= fontmaskBits[((*fRow)>>4)&0xf];
+			fRow++; 
+			pInt += 256;
+		    }
+		}
+		scrInfoPtr->col++; /* increment column counter */
+	}
+    }
+    if (!devGraphicsOpen) {
+	PosCursor(scrInfoPtr->col * 8, scrInfoPtr->row * 15);
+    }
+}
 
 
 /*
@@ -672,21 +1461,20 @@ DevGraphicsOpen(devicePtr, useFlags, inNotifyToken, flagsPtr)
 	devGraphicsOpen = TRUE;
 	devDivertXInput = FALSE;
 	notifyToken = inNotifyToken;
+	InitColorMap();
 	/*
 	 * Set up event queue for later
 	 */
-	scrInfo.eventQueue.events = events;
-	scrInfo.eventQueue.tcs = tcs;
-#if 0
-	scrInfo.bitmap = (char *)(MACH_UNCACHED_FRAME_BUFFER_ADDR);
-#endif
-	scrInfo.cursorBits = (short *)(cursorBits);
-	scrInfo.eventQueue.eSize = DEV_MAXEVQ;
-	scrInfo.eventQueue.eHead = scrInfo.eventQueue.eTail = 0;
-	scrInfo.eventQueue.tcSize = MOTION_BUFFER_SIZE;
-	scrInfo.eventQueue.tcNext = 0;
+	scrInfoPtr->eventQueue.events = events;
+	scrInfoPtr->eventQueue.tcs = tcs;
+	scrInfoPtr->bitmap = (char *)(FRAME_BUFFER_ADDR);
+	scrInfoPtr->cursorBits = (short *)(cursorBits);
+	scrInfoPtr->eventQueue.eSize = DEV_MAXEVQ;
+	scrInfoPtr->eventQueue.eHead = scrInfoPtr->eventQueue.eTail = 0;
+	scrInfoPtr->eventQueue.tcSize = MOTION_BUFFER_SIZE;
+	scrInfoPtr->eventQueue.tcNext = 0;
 	Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
-	scrInfo.eventQueue.timestampMS = TO_MS(time);
+	scrInfoPtr->eventQueue.timestampMS = TO_MS(time);
     }
     MASTER_UNLOCK(&graphicsMutex);
     return(SUCCESS);
@@ -724,6 +1512,8 @@ DevGraphicsClose(devicePtr, useFlags, openCount, writerCount)
 	    return(FS_FILE_BUSY);
 	}
 	devGraphicsOpen = FALSE;
+	InitColorMap();
+	ScreenInit();
 	VmMach_UserUnmap();
     }
     MASTER_UNLOCK(&graphicsMutex);
@@ -808,8 +1598,151 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 
     MASTER_LOCK(&graphicsMutex);
 
+    switch (ioctlPtr->command) {
+	case IOC_GRAPHICS_GET_INFO: {
+	    Address		addr;
+
+	    /*
+	     * Map the screen info struct into the user's address space.
+	     */
+	    addr = VmMach_UserMap(sizeof(DevScreenInfo), 
+			(Address)scrInfoPtr, TRUE, FALSE);
+	    if (addr == (Address)NIL) {
+		goto mapError;
+	    }
+	    bcopy((char *)&addr, ioctlPtr->outBuffer, sizeof(addr));
+	    /*
+	     * Map the events into the user's address space.
+	     */
+	    addr = VmMach_UserMap(sizeof(events), (Address)events, FALSE, 
+			FALSE);
+	    if (addr == (Address)NIL) {
+		goto mapError;
+	    }
+	    scrInfoPtr->eventQueue.events = (DevEvent *)addr;
+	    /*
+	     * Map the tcs into the user's address space.
+	     */
+	    addr = VmMach_UserMap(sizeof(tcs), (Address)tcs, FALSE, FALSE);
+	    if (addr == (Address)NIL) {
+		goto mapError;
+	    }
+	    scrInfoPtr->eventQueue.tcs = (DevTimeCoord *)addr;
+	    /*
+	     * Map the plane mask into the user's address space.
+	     */
+	    addr = VmMach_UserMap(4, (Address)&planeMask, FALSE, FALSE);
+	    if (addr == (Address)NIL) {
+		goto mapError;
+	    }
+	    scrInfoPtr->planeMask = (char *)addr;
+	    /*
+	     * Map the bitmap into the user's address space.
+	     */
+	    addr = VmMach_UserMap(1024*1024,
+			      (Address)FRAME_BUFFER_ADDR, FALSE, FALSE);
+	    if (addr == (Address)NIL) {
+		goto mapError;
+	    }
+	    scrInfoPtr->bitmap = (char *)addr;
+	    break;
+mapError:	
+	    VmMach_UserUnmap();
+	    status = FS_BUFFER_TOO_BIG;
+	    printf("Cannot map shared data structures\n");
+	    break;
+	}
+
+	case IOC_GRAPHICS_MOUSE_POS:
+	    /*
+	     * Set mouse state.
+	     */
+	    scrInfoPtr->mouse = *((DevCursor *)ioctlPtr->inBuffer);
+	    PosCursor(scrInfoPtr->mouse.x, scrInfoPtr->mouse.y );
+	    break;
+
+	case IOC_GRAPHICS_INIT_SCREEN:	
+	    /*
+	     * Initialize the screen.
+	     */
+	    ScreenInit();
+	    break;
+
+	case IOC_GRAPHICS_KBD_CMD: {
+	    DevKpCmd		*kpCmdPtr;
+	    unsigned char	*cp;
+
+	    kpCmdPtr = (DevKpCmd *)ioctlPtr->inBuffer;
+	    if (kpCmdPtr->nbytes == 0) {
+		kpCmdPtr->cmd |= 0x80;
+	    }
+	    if (!devGraphicsOpen) {
+		kpCmdPtr->cmd |= 1;
+	    }
+	    DevDC7085KBDPutc((int)kpCmdPtr->cmd);
+	    cp = &kpCmdPtr->par[0];
+	    for (cp = &kpCmdPtr->par[0]; 
+	         kpCmdPtr->nbytes > 0;
+		 cp++, kpCmdPtr->nbytes--) {
+		if(kpCmdPtr->nbytes == 1) {
+		    *cp |= 0x80;
+		}
+		DevDC7085KBDPutc((int)*cp);
+	    }
+	    break;
+	}
+
+	case IOC_GRAPHICS_GET_INFO_ADDR:	
+	    *(DevScreenInfo **)ioctlPtr->outBuffer = scrInfoPtr;
+	    break;
+
+	case IOC_GRAPHICS_CURSOR_BIT_MAP:
+	    LoadCursor((unsigned short *)ioctlPtr->inBuffer);
+	    break;
+
+	case IOC_GRAPHICS_CURSOR_COLOR:
+	    CursorColor((unsigned int *)ioctlPtr->inBuffer);
+	    break;
+	     
+        case IOC_GRAPHICS_COLOR_MAP:
+	    LoadColorMap((DevColorMap *)ioctlPtr->inBuffer);
+	    break;
+
+	case IOC_GRAPHICS_KERN_LOOP: 
+	    printf("DevGraphicsIOControl: QIOKERNLOOP\n");
+	    break;
+
+	case IOC_GRAPHICS_KERN_UNLOOP: 
+	    printf("DevGraphicsIOControl: QIOKERNUNLOOP\n");
+	    break;
+
+	case IOC_GRAPHICS_VIDEO_ON:
+	    break;
+
+	case IOC_GRAPHICS_VIDEO_OFF:
+	    break;
+	case	IOC_GET_FLAGS:
+	case	IOC_SET_FLAGS:
+	case	IOC_SET_BITS:
+	case	IOC_CLEAR_BITS:
+	    /*
+	     * No graphics specific bits are set this way.
+	     */
+	    break;
+	case IOC_GRAPHICS_IS_COLOR:
+	    isColor = 1;
+	    bcopy((char *)&isColor, ioctlPtr->outBuffer, sizeof (int));
+	    break;
+
+	default:
+	    printf("DevGraphicsIOControl: Unknown command %d\n", 
+		   ioctlPtr->command);
+	    status = FS_INVALID_ARG;
+	    break;
+    }
+
     MASTER_UNLOCK(&graphicsMutex);
-    return(FS_INVALID_ARG);
+    return(status);
 }
 
 
@@ -841,7 +1774,7 @@ DevGraphicsSelect(devicePtr, readPtr, writePtr, exceptPtr)
 
     if (*readPtr) {
 	if (devicePtr->unit == DEV_MOUSE_UNIT) {
-	    if (scrInfo.eventQueue.eHead == scrInfo.eventQueue.eTail) {
+	    if (scrInfoPtr->eventQueue.eHead == scrInfoPtr->eventQueue.eTail) {
 		*readPtr = 0;
 	    }
 	} else {

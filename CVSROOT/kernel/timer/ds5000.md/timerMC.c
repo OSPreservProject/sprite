@@ -116,22 +116,22 @@ static int highInterval = 7813;
 /*
  * Pointers to registers. 
  */
-volatile unsigned char	*secPtr  = (unsigned char *)(MACH_CLOCK_ADDR + 0x00);
-volatile unsigned char	*minPtr  = (unsigned char *)(MACH_CLOCK_ADDR + 0x08);
-volatile unsigned char	*hourPtr = (unsigned char *)(MACH_CLOCK_ADDR + 0x10);
-volatile unsigned char	*dayPtr  = (unsigned char *)(MACH_CLOCK_ADDR + 0x1C);
-volatile unsigned char	*monPtr  = (unsigned char *)(MACH_CLOCK_ADDR + 0x20);
-volatile unsigned char	*yearPtr = (unsigned char *)(MACH_CLOCK_ADDR + 0x24);
-volatile unsigned char	*regAPtr = (unsigned char *)(MACH_CLOCK_ADDR + 0x28);
-volatile unsigned char	*regBPtr = (unsigned char *)(MACH_CLOCK_ADDR + 0x2C);
-volatile unsigned char	*regCPtr = (unsigned char *)(MACH_CLOCK_ADDR + 0x30);
-volatile unsigned char	*regDPtr = (unsigned char *)(MACH_CLOCK_ADDR + 0x34);
+volatile unsigned char	*secPtr  = (unsigned char *)(MACH_RTC_ADDR + 0x00);
+volatile unsigned char	*minPtr  = (unsigned char *)(MACH_RTC_ADDR + 0x08);
+volatile unsigned char	*hourPtr = (unsigned char *)(MACH_RTC_ADDR + 0x10);
+volatile unsigned char	*dayPtr  = (unsigned char *)(MACH_RTC_ADDR + 0x1C);
+volatile unsigned char	*monPtr  = (unsigned char *)(MACH_RTC_ADDR + 0x20);
+volatile unsigned char	*yearPtr = (unsigned char *)(MACH_RTC_ADDR + 0x24);
+volatile unsigned char	*regAPtr = (unsigned char *)(MACH_RTC_ADDR + 0x28);
+volatile unsigned char	*regBPtr = (unsigned char *)(MACH_RTC_ADDR + 0x2C);
+volatile unsigned char	*regCPtr = (unsigned char *)(MACH_RTC_ADDR + 0x30);
+volatile unsigned char	*regDPtr = (unsigned char *)(MACH_RTC_ADDR + 0x34);
 
 /*
  * We store a couple of things in the non-volatile ram.
  */
 
-#define NVR_ADDR (MACH_CLOCK_ADDR + 0x38)
+#define NVR_ADDR (MACH_RTC_ADDR + 0x38)
 
 volatile unsigned char *localOffsetNVMPtr = (unsigned char *) (NVR_ADDR + 0x00);
 volatile unsigned char *DSTAllowNVMPtr    = (unsigned char *) (NVR_ADDR + 0x04);
@@ -165,6 +165,8 @@ Boolean profileIntrsWanted = FALSE;
  */
 int 	timerCorrectedClock;
 
+void	Timer_TimerServiceInterrupt _ARGS_((unsigned int statusReg, 
+		unsigned int causeReg, Address pc, ClientData data));
 
 /*
  *----------------------------------------------------------------------
@@ -190,6 +192,8 @@ Timer_TimerInit(timer)
 {
     *regAPtr = REGA_TIME_BASE | SELECTED_RATE;
     *regBPtr = REGB_DATA_MODE | REGB_HOURS_FORMAT;
+    Mach_SetHandler(MACH_RTC_INTR, Timer_TimerServiceInterrupt, 
+	    (ClientData) NIL);
 }
 
 
@@ -297,11 +301,15 @@ Timer_TimerInactivate(timer)
  *
  *----------------------------------------------------------------------
  */
+
+Address	timer_pc;
+
 void
-Timer_TimerServiceInterrupt(statusReg, causeReg, pc)
+Timer_TimerServiceInterrupt(statusReg, causeReg, pc, data)
     unsigned int    statusReg;
     unsigned int    causeReg;
     Address         pc;
+    ClientData      data;
 { 
     static unsigned	addOne = 0;
     unsigned char 	timerStatus;
@@ -319,6 +327,7 @@ Timer_TimerServiceInterrupt(statusReg, causeReg, pc)
     static	int	dbgCtr = 0;
 #define INC(a) { (a) = ((a) + 1) % 1000; }
 
+    timer_pc = pc;
     timerStatus = *regCPtr;
     eventDebug[dbgCtr] = 0;
     if (timerStatus & REGC_PER_INT_PENDING) {

@@ -86,6 +86,9 @@ typedef struct Mach_MonFuncs {
     int		(*enable)();
     int		(*disable)();
     int		(*zero_buf)();
+#ifdef ds5000
+    int		(*halt)();
+#endif
 } Mach_MonFuncs;
 
 /*
@@ -144,6 +147,10 @@ typedef struct Mach_MonFuncs {
  *	MACH_MON_ENABLE		Performs prom enable command.
  *	MACH_MON_DISABLE	Performs prom disable command.
  *	MACH_MON_ZEROB		Zeros a system buffer.
+ *
+ * Routines specific to the ds5000.
+ *
+ *	MACH_MON_HALT		Halts the system and prints out memory.
  */
 #define MACH_MON_RESET		MACH_MON_FUNC_ADDR(0)
 #define MACH_MON_EXEC		MACH_MON_FUNC_ADDR(1)
@@ -187,6 +194,10 @@ typedef struct Mach_MonFuncs {
 #define MACH_MON_ENABLE		MACH_MON_FUNC_ADDR(49)
 #define MACH_MON_DISABLE	MACH_MON_FUNC_ADDR(50)
 #define MACH_MON_ZEROB		MACH_MON_FUNC_ADDR(51)
+
+#ifdef ds5000
+#define MACH_MON_HALT		MACH_MON_FUNC_ADDR(54)
+#endif
 
 #ifdef _MONFUNCS
 Mach_MonFuncs mach_MonFuncs = {
@@ -232,6 +243,9 @@ Mach_MonFuncs mach_MonFuncs = {
     (int (*)()) MACH_MON_ENABLE,
     (int (*)()) MACH_MON_DISABLE,
     (int (*)()) MACH_MON_ZEROB,
+#ifdef ds5000
+    (int (*)()) MACH_MON_HALT,
+#endif
 };
 #else
 extern	Mach_MonFuncs	mach_MonFuncs;
@@ -257,6 +271,11 @@ extern void Mach_MonReboot _ARGS_((char *rebootString));
 #define Mach_MonClose(fd)		(mach_MonFuncs.close)(fd)
 #define Mach_MonLseek(fd,offset,mode)	(mach_MonFuncs.lseek)(fd,offset,mode)
 #define Mach_MonGetenv(name)		(mach_MonFuncs.getenv2)(name)
+
+#ifdef ds5000
+#define Mach_MonHalt(addr, wordCnt)	(mach_MonFuncs.halt)(addr, wordCnt)
+#define Mach_MonDump(argc, argv)	(mach_MonFuncs.dump)(argc, argv)
+#endif
 
 /*
  * The nonvolatile ram has a flag to indicate it is usable.

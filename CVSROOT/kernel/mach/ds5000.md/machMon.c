@@ -43,7 +43,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 void
 Mach_MonAbort()
 {
-	mach_MonFuncs.restart();
+	mach_MonFuncs.halt();
 }
 
 /*

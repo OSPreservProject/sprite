@@ -16,7 +16,7 @@
 
 #include "machConst.h"
 #include "machAsmDefs.h"
-#include "vmPmaxConst.h"
+#include "vm3maxConst.h"
 #include <regdef.h>
 
 /*----------------------------------------------------------------------------
@@ -335,6 +335,75 @@ MachFetchICache:
 	j	ra			# return and run cached
 	nop
 	.set	reorder
+
+/*----------------------------------------------------------------------------
+ *
+ * Mach_FlushCacheRange --
+ *
+ *	Mach_FlushCacheRange(addr, len)
+ *
+ *	Flush d cache for range ofaddr to addr + len - 1.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	The contents of the d cache is flushed.
+ *
+ *----------------------------------------------------------------------------
+ */
+    .globl Mach_FlushCacheRange
+Mach_FlushCacheRange:
+	lw	t1,machDataCacheSize
+	mfc0	t3,MACH_COP_0_STATUS_REG	# Save SR
+	mtc0	zero,MACH_COP_0_STATUS_REG	# Disable interrupts.
+
+	.set	noreorder
+	la	v0,1f
+	or	v0,VMMACH_PHYS_UNCACHED_START	# Run uncached.
+	j	v0
+	nop
+
+1:	li	v0,MACH_SR_ISOL_CACHES	#isolate cache
+	mtc0	v0,MACH_COP_0_STATUS_REG
+	bltu	t1,a1,1f		# cache is smaller than region
+	nop
+	move	t1,a1
+1:	addu	t1,a0			# ending address + 1
+	move	t0,a0
+	la	v0,1f			# run cached
+	j	v0
+	nop
+	.set	reorder
+
+1:	sb	zero,0(t0)
+	sb	zero,4(t0)
+	sb	zero,8(t0)
+	sb	zero,12(t0)
+	sb	zero,16(t0)
+	sb	zero,20(t0)
+	sb	zero,24(t0)
+	addu	t0,32
+	sb	zero,-4(t0)
+	bltu	t0,t1,1b
+
+	.set	noreorder
+	la	v0,1f
+	or	v0,VMMACH_PHYS_UNCACHED_START
+	j	v0			# Run uncached
+	nop
+
+1:	nop				# insure isolated stores out of pipe
+	mtc0	zero,MACH_COP_0_STATUS_REG  # unisolate, unswap
+	nop				# keep pipeline clean
+	nop				# keep pipeline clean
+	nop				# keep pipeline clean
+	mtc0	t3,MACH_COP_0_STATUS_REG # enable interrupts
+	nop
+	j	ra			# return and run cached
+	nop
+	.set	reorder
+
 
 /*----------------------------------------------------------------------------
  *

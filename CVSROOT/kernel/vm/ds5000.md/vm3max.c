@@ -260,50 +260,27 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
 static int
 GetNumPages()
 {
-    unsigned		page;
-    unsigned		maxPage;
-    char		temp;
     int			i;
+    int			pages;
     int			bitmapLen;
     int			*bitmapAddr;
     int			count = 0;
 
-    /*
-     * First we'll use the old probe method.
-     */
-    page = (((unsigned)vmMemEnd & ~VMMACH_PHYS_CACHED_START) + 
-					VMMACH_PAGE_SIZE) / VMMACH_PAGE_SIZE;
-    maxPage = (VMMACH_PHYS_UNCACHED_START - VMMACH_PHYS_CACHED_START) /
-							   VMMACH_PAGE_SIZE;
-    for (; page < maxPage; page++) {
-	if (Mach_Probe(1, (page << VMMACH_PAGE_SHIFT) | 
-			   VMMACH_PHYS_UNCACHED_START, &temp) != SUCCESS) {
-	    break;
-	}
-	count++;
-    }
 
-    printf("%d pages of memory\n", page);
-
-    /*
-     * Now we'll use the bitmap method.  We can probably do without
-     * the probes and switch to this.
-     */
     sscanf(mach_BitmapLen+2,"%x",&bitmapLen);
     sscanf(mach_BitmapAddr+2,"%x",&bitmapAddr);
     for (i=0;i<bitmapLen;i++) {
 	if (bitmapAddr[i] != 0xffffffff) break;
     }
-    if (i != page) {
-	printf("Warning: bitmap says %d pages of memory\n", i*32);
-    }
+    pages = i * 32;
     for (;i<bitmapLen;i++) {
 	if (bitmapAddr[i] != 0x00000000) {
-	    printf("Warning: Memory fragmentation at page %x\n",i);
+	    printf("Warning: Memory fragmentation at page 0x%x\n",i * 32);
 	    break;
 	}
     }
-    return(i*32);
+    printf("%d pages of memory\n", pages);
+    return(pages); 
 }
 
 
@@ -1880,15 +1857,17 @@ VmMach_MakeNonCacheable(procPtr, addr)
  *----------------------------------------------------------------------
  */
 Address
-VmMach_UserMap(numBytes, physAddr, firstTime)
+VmMach_UserMap(numBytes, physAddr, firstTime, cache)
     int		numBytes;
     Address	physAddr;
-    Boolean	firstTime;
+    Boolean	firstTime;	/* TRUE => first time called. */
+    Boolean	cache;		/* Should the page be cacheable?. */
 {
     int		i;
     Address	retAddr;
     unsigned	firstPhysPage;
     unsigned	lastPhysPage;
+    unsigned 	tlbBits;
 
     if (firstTime) {
 	if (userMapped) {
@@ -1899,6 +1878,10 @@ VmMach_UserMap(numBytes, physAddr, firstTime)
 	userMapped = TRUE;
 	mappedProcPtr = Proc_GetCurrentProc();
     }
+    tlbBits = VMMACH_TLB_VALID_BIT | VMMACH_TLB_MOD_BIT;
+    if (!cache) {
+	tlbBits |= VMMACH_TLB_NON_CACHEABLE_BIT;
+    }
     retAddr = (Address) (VMMACH_USER_MAPPING_BASE_ADDR +
                          userMapIndex * VMMACH_PAGE_SIZE + 
 			 ((unsigned)physAddr & VMMACH_OFFSET_MASK));
@@ -1906,7 +1889,7 @@ VmMach_UserMap(numBytes, physAddr, firstTime)
     lastPhysPage = (unsigned)(physAddr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     for (i = firstPhysPage; i <= lastPhysPage; i++) {
 	userMappingTable[userMapIndex] = (i << VMMACH_TLB_PHYS_PAGE_SHIFT) |
-			     VMMACH_TLB_VALID_BIT | VMMACH_TLB_MOD_BIT;
+			     tlbBits;
 	userMapIndex++;
 	if (i <= lastPhysPage && userMapIndex == VMMACH_USER_MAPPING_PAGES) {
 	    return((Address)NIL);

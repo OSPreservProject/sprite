@@ -69,7 +69,7 @@ extern Boolean VmMach_MakeDebugAccessible _ARGS_((unsigned addr));
 extern ENTRY ReturnStatus VmMach_TLBFault _ARGS_((Address virtAddr));
 extern ReturnStatus VmMach_TLBModFault _ARGS_((Address virtAddr));
 extern Address VmMach_UserMap _ARGS_((int numBytes, Address physAddr,
-	Boolean firstTime));
+	Boolean firstTime, Boolean cache));
 extern ENTRY void VmMach_UserUnmap _ARGS_((void));
 extern int VmMachCopyEnd _ARGS_((void));
 

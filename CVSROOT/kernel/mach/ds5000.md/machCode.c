@@ -16,23 +16,23 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
-#include "sprite.h"
-#include "machConst.h"
-#include "machMon.h"
-#include "machInt.h"
-#include "mach.h"
-#include "sys.h"
-#include "sync.h"
-#include "dbg.h"
-#include "proc.h"
-#include "procMigrate.h"
-#include "sched.h"
-#include "vm.h"
-#include "vmMach.h"
-#include "sig.h"
-#include "sigMach.h"
-#include "swapBuffer.h"
-#include "net.h"
+#include <sprite.h>
+#include <machConst.h>
+#include <machMon.h>
+#include <machInt.h>
+#include <mach.h>
+#include <sys.h>
+#include <sync.h>
+#include <dbg.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <sched.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <sig.h>
+#include <sigMach.h>
+#include <swapBuffer.h>
+#include <net.h>
 
 /*
  * Conversion of function to an unsigned value.
@@ -111,6 +111,9 @@ Address	mach_LastUserAddr;
 Address	mach_MaxUserStackAddr;
 int	mach_LastUserStackPage;
 
+char	mach_BitmapAddr[16];
+char	mach_BitmapLen[8];
+
 /*
  * The variables and tables below are used to dispatch kernel calls.
  */
@@ -160,31 +163,20 @@ MachStringTable	machMonBootParam;	/* Parameters from boot line. */
 Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 Mach_State	*machFPCurStatePtr = (Mach_State *)NIL;
 
-extern Boolean Dev_SIIIntr();
-extern void Timer_TimerServiceInterrupt();
-extern void Dev_DC7085Interrupt();
-extern void MachFPInterrupt();
 
 extern void PrintError _ARGS_((void));
 static void PrintInst _ARGS_((unsigned pc, unsigned inst));
 static void SoftFPReturn _ARGS_((void));
 static void MemErrorInterrupt _ARGS_((void));
 
-/*
- * The interrupt handler table. This originally was static, hence the
- * initialization here.  It is now possible to set the entries
- * via Mach_SetHandler().
- */
-void (*machInterruptRoutines[MACH_NUM_HARD_INTERRUPTS])() = {
-    (void (*)())Dev_SIIIntr,
-    (void (*)())Net_Intr,
-    Dev_DC7085Interrupt,
-    Timer_TimerServiceInterrupt,
-    MemErrorInterrupt,
-    MachFPInterrupt,
-};
-
+void 		(*machInterruptRoutines[MACH_NUM_HARD_INTERRUPTS]) _ARGS_((
+		    unsigned int statusReg, unsigned int causeReg, 
+		    Address pc, ClientData data));
 ClientData	machInterruptArgs[MACH_NUM_HARD_INTERRUPTS];
+void		(*machIOInterruptRoutines[MACH_NUM_IO_SLOTS]) _ARGS_((
+		    unsigned int statusReg, unsigned int causeReg, 
+		    Address pc, ClientData data));
+ClientData	machIOInterruptArgs[MACH_NUM_IO_SLOTS];
 
 extern void Mach_KernGenException();
 extern void Mach_UserGenException();
@@ -243,11 +235,19 @@ unsigned	machInstCacheSize;
 Mach_DebugState	mach_DebugState;
 Mach_DebugState *machDebugStatePtr = &mach_DebugState;
 
-static void SetupSigHandler _ARGS_((register Proc_ControlBlock *procPtr, register SignalStack *sigStackPtr, Address pc));
+static void SetupSigHandler _ARGS_((register Proc_ControlBlock *procPtr, 
+			register SignalStack *sigStackPtr, Address pc));
 static void ReturnFromSigHandler _ARGS_((register Proc_ControlBlock *procPtr));
-static ReturnStatus Interrupt _ARGS_((unsigned statusReg, unsigned causeReg, Address pc));
-
-
+static ReturnStatus Interrupt _ARGS_((unsigned statusReg, unsigned causeReg, 
+			Address pc));
+static void MachStdHandler _ARGS_((unsigned int statusReg, 
+			unsigned int causeReg, Address pc, ClientData data));
+static void MachIOInterrupt _ARGS_((unsigned int statusReg, 
+			unsigned int causeReg, Address pc, ClientData data));
+static void MachMemInterrupt _ARGS_((unsigned int statusReg, 
+			unsigned int causeReg, Address pc, ClientData data));
+extern void MachFPInterrupt _ARGS_((unsigned int statusReg, 
+			unsigned int causeReg, Address pc, ClientData data));
 
 /*
  * Preallocate all machine state structs.
@@ -287,6 +287,7 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     extern char end[], edata[];
     int offset, i;
     char buf[256];
+    volatile unsigned int 	*csrPtr = (unsigned int *) MACH_CSR_ADDR;
 
     /*
      * Zero out the bss segment.
@@ -320,6 +321,20 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     }
     Mach_ArgParse(buf,&machMonBootParam);
 
+    /*
+     * Get information on the memory bitmap.  This gets clobbered later.
+     */
+    bcopy(Mach_MonGetenv("bitmaplen"),mach_BitmapLen,8);
+    bcopy(Mach_MonGetenv("bitmap"),mach_BitmapAddr,16);
+    Mach_MonPrintf("bitmap: %s at %s\n", mach_BitmapLen, mach_BitmapAddr);
+
+    /*
+     * Set up the CSR.  Turn on memory ECC. Interrupts from IO slots are
+     * turned on as handlers are registered. 
+     */
+    *csrPtr = MACH_CSR_CORRECT;
+    Mach_MonPrintf("csr = 0x%x\n", *csrPtr);
+
 
     /*
      * Initialize some of the dispatching information.  The rest is
@@ -347,11 +362,29 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     bcopy(F_TO_A MachException, (Address)MACH_GEN_EXC_VEC,
 	      F_TO_A MachEndException - F_TO_A MachException);
 
+    Mach_MonPrintf("Setting interrupt handlers.\n");
+    /*
+     * Set all interrupt handlers to a default, then install handlers for
+     * those interrupts processed by the mach module.
+     */
+    for (i = 0; i < MACH_NUM_HARD_INTERRUPTS; i++ ) {
+	Mach_SetHandler(i, MachStdHandler, (ClientData) i);
+    }
+    Mach_SetHandler(MACH_IO_INTR, MachIOInterrupt, NIL);
+    Mach_SetHandler(MACH_MEM_INTR, MachMemInterrupt, NIL);
+    Mach_SetHandler(MACH_FPU_INTR, MachFPInterrupt, NIL);
+
+    /*
+     * Clear out the IO interrupt handlers.
+     */
+    for (i = 0; i < MACH_NUM_IO_SLOTS; i++ ) {
+	Mach_SetIOHandler(i, (void (*)()) NIL, (ClientData) NIL);
+    }
     /*
      * Clear out the i and d caches.
      */
     MachConfigCache();
-    Mach_MonPrintf("data cache size =%x inst cache size=%x\n",
+    Mach_MonPrintf("data cache size = 0x%x inst cache size= 0x%x\n",
 		   machDataCacheSize, machInstCacheSize);
     MachFlushCache();
 }
@@ -361,7 +394,17 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  *
  * Mach_SetHandler --
  *
- *	Put a interrupt handling routine into the table.
+ *	Register an interrupt handler for R3000 interrupts.  Interrupt
+ *	handlers are of the form:
+ *
+ *	void
+ *	Handler(statusReg, causeReg, pc, data)
+ *		unsigned int	statusReg;	Status register.
+ *		unsigned int	causeReg;	Cause register.
+ *		Address		pc;		PC where the interrupt 
+ *						occurred.
+ *		ClientData	data		Callback data
+ *	
  *
  * Results:
  *     None.
@@ -373,22 +416,103 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  */
 
 void
-Mach_SetHandler(interruptNumber, handler, clientData)
-    int interruptNumber;	/* Interrupt number to set */
-    void (*handler)();	/* Interrupt handling procedure */
-    ClientData	clientData; /* ClientData for interrupt callback routine. */
+Mach_SetHandler(level, handler, clientData)
+    int level;			/* Interrupt level. */
+    void (*handler) _ARGS_((unsigned int statusReg, unsigned int causeReg,
+			    Address pc, ClientData data)); 
+			        /* Interrupt handler. */
+    ClientData	clientData; 	/* Data to pass handler. */
 {
     /*
-     * Check that it is valid.  Can't override FPU interrupt because it
-     * takes special parameters.
+     * Check that it is valid.  
      */
-    if ((interruptNumber < 0) || (interruptNumber >= MACH_NUM_HARD_INTERRUPTS)){
-	panic("Warning: Bad interrupt number %d\n",interruptNumber);
+    if ((level < 0) || (level >= MACH_NUM_HARD_INTERRUPTS)){
+	panic("Warning: Bad interrupt level %d\n", level);
     } else {
-	machInterruptRoutines[interruptNumber] = handler;
-	machInterruptArgs[interruptNumber] = clientData;
+	machInterruptRoutines[level] = handler;
+	machInterruptArgs[level] = clientData;
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachStdHandler --
+ *
+ *	The default handler for hard interrupts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints out an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MachStdHandler(statusReg, causeReg, pc, data)
+    unsigned int	statusReg;	/* Status register. */
+    unsigned int	causeReg;	/* Cause register. */
+    Address		pc;		/* PC. */
+    ClientData		data;		/* Interrupt level. */
+{
+    int		level;
+
+    level = (int) data;
+    printf("WARNING: no handler for level %d interrupt!\n", level);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_SetIOHandler --
+ *
+ *	Register an interrupt handler for IO device interrupts.  All IO
+ *	device interrupts are merged into the same R3000 interrupt
+ *	(level 0). Interrupt handlers are of the form:
+ *
+ *	void
+ *	Handler(data)
+ *		ClientData	data		Callback data
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The IO interrupt handling table is modified.  If the handler is not
+ *	NIL then the IO interrupt for the slot is turned on in the CSR.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mach_SetIOHandler(slot, handler, clientData)
+    int slot;			/* Interrupt number to set */
+    void (*handler) _ARGS_((ClientData data)); /* Interrupt handler. */
+    ClientData	clientData; 	/* Data to pass handler. */
+{
+    volatile unsigned int 	*csrPtr = (unsigned int *) MACH_CSR_ADDR;
+    unsigned int		mask;
+    /*
+     * Check that it is valid.  
+     */
+    if ((slot < 0) || (slot >= MACH_NUM_IO_SLOTS)){
+	panic("Warning: Bad slot number %d\n",slot);
+    } else {
+	machIOInterruptRoutines[slot] = handler;
+	machIOInterruptArgs[slot] = clientData;
+	if (handler != (void (*)()) NIL) {
+	    mask = ((1 << slot) << MACH_CSR_IOINTEN_SHIFT);
+	    if (!(mask & MACH_CSR_IOINTEN)) {
+		panic("Goof up computing interrupt enable bits in csr.\n");
+	    }
+	    *csrPtr |= mask;
+	    Mach_MonPrintf("csr = 0x%x\n", *csrPtr);
+	}
+    }
+}
+
 
 static Vm_ProcInfo	mainProcInfo;
 static Mach_State	mainMachState;
@@ -1094,6 +1218,7 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 		if (copyInProgress) {
 		    return(MACH_USER_ERROR);
 		} else {
+		    printf("badVaddr = 0x%x\n", badVaddr);
 		    return(MACH_KERN_ERROR);
 		}
 	    } else {
@@ -1114,6 +1239,7 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	case MACH_EXC_BUS_ERR_LD_ST:
 	    if (pc >= F_TO_A Mach_Probe &&
 	        pc <= F_TO_A MachProbeEnd) {
+		Mach_MonPrintf("Probe errorn\n");
 		return(MACH_USER_ERROR);
 	    }
 	    printf("MachKernelExceptionHandler:  Bus error on load or store\n");
@@ -1170,9 +1296,22 @@ Interrupt(statusReg, causeReg, pc)
     int		n;
     unsigned	mask;
 
+    static int debugLog[100];
+    static int debug = 0;
+
+#define DEBUG(n) { 	\
+    int foo;		\
+    if (debug >= 100) {	\
+	debug = 0;	\
+    }			\
+    foo = debug++;	\
+    debugLog[foo] = (n);\
+}
+
+
 #ifdef DEBUG_INTR
     if (mach_AtInterruptLevel) {
-	printf("Received interrupt while at interrupt level.\n");
+	panic("Received interrupt while at interrupt level.\n");
     }
     if (mach_NumDisableIntrsPtr[0] > 0) {
 	printf("Received interrupt with mach_NumDisableIntrsPtr[0] = %d.\n",
@@ -1185,6 +1324,10 @@ Interrupt(statusReg, causeReg, pc)
     n = 0;
     mask = (causeReg & statusReg & MACH_CR_INT_PENDING) >> 
 						MACH_CR_HARD_INT_SHIFT;
+    DEBUG(mask);
+#if 0
+    printf("Interrupt, mask = 0x%x\n", mask);
+#endif
     while (mask != 0) {
 	if (mask & 1) {
 #ifdef DEBUG_INTR
@@ -1195,26 +1338,15 @@ Interrupt(statusReg, causeReg, pc)
 	    }
 	    lastInterruptCalled = n;
 #endif /* DEBUG_INTR */
-    /*
-     * Interrupt 5, the FPU interrupt, requires the status, cause, and pc.
-     * These values may have changed in the registers, during a call to
-     * another interrupt handler, so we have to hand the routine the original
-     * values.
-     *
-     * Interrupt 3, the timer interrupt, requires this stuff too, so it
-     * can record the pc for profiling.
-     */
-	    if (n == 3 || n==5) {
-		machInterruptRoutines[n](statusReg, causeReg, pc);
-	    } else {
-		machInterruptRoutines[n](machInterruptArgs[n]);
-	    }
+	    machInterruptRoutines[n](statusReg, causeReg, pc, 
+		machInterruptArgs[n]); 
 	}
 	mask >>= 1;
 	n++;
     }
 
     mach_AtInterruptLevel = 0;
+    DEBUG(-1);
 #ifdef DEBUG_INTR
     lastInterruptCalled = -1;
 #endif /* DEBUG_INTR */
@@ -1541,7 +1673,7 @@ Mach_ProcessorState(processor)
 int
 Mach_GetMachineArch()
 {
-    return SYS_DS3100;
+    return SYS_DS5000;
 }
 
 
@@ -1652,44 +1784,13 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
     }
     return i;
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
- * Mach_GetEtherAddress --
+ * MachMemInterrupt --
  *
- *	Return the ethernet address out of the rom.
- *
- * Results:
- *	Number of elements returned in argv.
- *
- * Side effects:
- *	*etherAddrPtr gets the ethernet address.
- *
- *----------------------------------------------------------------------
- */
-void
-Mach_GetEtherAddress(etherAddrPtr)
-    Net_EtherAddress	*etherAddrPtr;
-{
-    volatile unsigned    *romPtr = (unsigned *)0xBD000000;
-
-    etherAddrPtr->byte1 = (romPtr[0] >> 8) & 0xff;
-    etherAddrPtr->byte2 = (romPtr[1] >> 8) & 0xff;
-    etherAddrPtr->byte3 = (romPtr[2] >> 8) & 0xff;
-    etherAddrPtr->byte4 = (romPtr[3] >> 8) & 0xff;
-    etherAddrPtr->byte5 = (romPtr[4] >> 8) & 0xff;
-    etherAddrPtr->byte6 = (romPtr[5] >> 8) & 0xff;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * MemErrorInterrupt --
- *
- *	Handler an interrupt for the DZ device.
+ *	Handle an interrupt from the memory controller.
  *
  * Results:
  *	None.
@@ -1700,17 +1801,168 @@ Mach_GetEtherAddress(etherAddrPtr)
  *----------------------------------------------------------------------
  */
 static void
-MemErrorInterrupt()
+MachMemInterrupt(statusReg, causeReg, pc, data)
+    unsigned	statusReg;		/* Status register. */
+    unsigned	causeReg;		/* Cause register. */
+    Address	pc;			/* PC. */
+    ClientData	data;			/* Callback data. */
+
 {
-    unsigned short *sysCSRPtr = (unsigned short *)0xbe000000;
-    unsigned short csr;
+    volatile unsigned int *erradrPtr = 
+	    (volatile unsigned int *) MACH_ERRADR_ADDR;
+    unsigned int erradr;
+    volatile unsigned int *chksynPtr = 
+	    (volatile unsigned int *) MACH_CHKSYN_ADDR;
+    unsigned int chksyn;
+    unsigned int address;
+    int		column;
 
-    csr = *sysCSRPtr;
+    erradr = *erradrPtr;
+    if (!(erradr & MACH_ERRADR_VALID)) {
+	printf("Received memory interrupt but ERRADR not valid.\n");
+	return;
+    }
+    address = erradr & MACH_ERRADR_ADDRESS;
 
-    if (csr & MACH_CSR_MEM_ERR) {
-	panic("Mem error interrupt\n");
-    } else {
-	*sysCSRPtr = MACH_CSR_VINT | csr | 0x00ff;
+    switch(erradr & (MACH_ERRADR_CPU | MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR)){
+	case 0: {
+	    panic("DMA read overrun at address 0x%x\n", address);
+	    break;
+	} 
+	case (MACH_ERRADR_ECCERR) :  {
+	    /*
+	     * Compensate for the address pipeline. 
+	     * See page 26 of the functional spec.
+	     */
+	    column = (int) (address & 0xfff); 
+	    column -= 5;
+	    address = (address & ~0xfff) | (unsigned int) column;
+	    printf("ECC read error during DMA at address 0x%x\n", address);
+	    break;
+	}
+	case (MACH_ERRADR_WRITE) : {
+	    panic("DMA write overrun at address 0x%x, pc = 0x%x\n", 
+	    address, pc);
+	    break;
+	} 
+	case (MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR) : {
+	    printf("Holy bogus hardware, Batman!\n");
+	    printf("We got an illegal value in the ERRADR status register.\n");
+	    break;
+	}
+	case (MACH_ERRADR_CPU) : {
+	    panic(
+	"Timeout during CPU read of IO address 0x%x, pc = 0x%x\n", 
+	address, pc);
+	    Mach_SendSignal(MACH_SIGILL);
+	    break;
+	}
+	case (MACH_ERRADR_CPU | MACH_ERRADR_ECCERR) : {
+	    /*
+	     * Compensate for the address pipeline. 
+	     * See page 26 of the functional spec.
+	     */
+	    column = (int) (address & 0xfff); 
+	    column -= 5;
+	    address = (address & ~0xfff) | (unsigned int) column;
+	    printf("ECC read error during CPU access of address 0x%x\n", 
+		address);
+	    break;
+	}
+	case (MACH_ERRADR_CPU | MACH_ERRADR_WRITE) : {
+	    panic(
+	"Timeout during CPU write of IO address 0x%x\n, pc = 0x%x", 
+	address, pc);
+	    break;
+	}
+	case (MACH_ERRADR_CPU | MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR) : {
+	    printf("ECC partial memory write error by CPU at address 0x%x\n",
+		address);
+	    break;
+	}
+    }
+    if (erradr & MACH_ERRADR_ECCERR) {
+	chksyn = *chksynPtr;
+	if (address & 0x1) {
+	    printf("ECC error was in the high bank.\n");
+	    printf("%s bit error\n", (chksyn & MACH_CHKSYN_SNGHI) ? 
+		"single" : "multiple");
+	    printf("Syndrome bits = 0x%x\n", chksyn & MACH_CHKSYN_SYNHI);
+	    if (chksyn & MACH_CHKSYN_VLDHI) {
+		printf("Check bits = 0x%x\n", chksyn & MACH_CHKSYN_CHKHI);
+	    } else {
+		printf("Check bits not valid.\n");
+	    }
+	} else {
+	    printf("ECC error was in the low bank.\n");
+	    printf("%s bit error\n", (chksyn & MACH_CHKSYN_SNGLO) ? 
+		"single" : "multiple");
+	    printf("Syndrome bits = 0x%x\n", chksyn & MACH_CHKSYN_SYNLO);
+	    if (chksyn & MACH_CHKSYN_VLDLO) {
+		printf("Check bits = 0x%x\n", chksyn & MACH_CHKSYN_CHKLO);
+	    } else {
+		printf("Check bits not valid.\n");
+	    }
+	}
+    }
+    /*
+     * Clear the ERRADR and CHKSYN registers.
+     */
+    *erradrPtr = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachIOInterrupt --
+ *
+ *	Handle an interrupt from one of the IO slots.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MachIOInterrupt(statusReg, causeReg, pc, data)
+    unsigned int	statusReg;	/* Status register. */
+    unsigned int	causeReg;	/* Cause register. */
+    Address		pc;		/* PC. */
+    ClientData		data;		/* Not used. */
+{
+    volatile unsigned int 	*csrPtr = (unsigned int *) MACH_CSR_ADDR;
+    unsigned int 		csr;
+    int				slot;
+    unsigned int		ioint;
+    static	Boolean		initialized = FALSE;
+    static	Boolean		warn[MACH_NUM_IO_SLOTS];
+    int				i;
+
+    if (!initialized) {
+	for(i = 0; i < MACH_NUM_IO_SLOTS; i++) {
+	    warn[i] = FALSE;
+	}
+	initialized = TRUE;
+    }
+
+    csr = *csrPtr;
+    ioint = csr & MACH_CSR_IOINT;
+    if (ioint == 0) {
+	panic("No interrupt pending on an IO slot.\n");
+    }
+    for (slot = 0; ioint != 0; slot++, ioint >>= 1) {
+	if (ioint & 1) {
+	    if (machIOInterruptRoutines[slot] != (void (*)()) NIL) {
+		machIOInterruptRoutines[slot](machIOInterruptArgs[slot]);
+	    } else if (warn[slot] == FALSE) {
+		printf("WARNING: no handler for interrupt on slot %d\n", slot);
+		warn[slot] = TRUE;
+	    }
+	}
     }
 }
 
@@ -1787,27 +2039,25 @@ Mach_SendSignal(sigType)
     }
 }
 
-void
-PrintError()
-{
-    panic("Error on stack\n");
-}
 
-static void
-PrintInst(pc, inst)
-    unsigned pc;
-    unsigned inst;
-{
-    printf("Emulating 0x%x: 0x%x\n", pc, inst);
-}
-
-static void
-SoftFPReturn()
-{
-    printf("SoftFPReturn\n");
-}
-
-Mach_ArgParse1(string,table)
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_ArgParseCode --
+ *
+ *	Parse an argument string.
+ *      Note: this replaces the DECstation argvize prom call that has
+ *	been disabled on the ds5000 for no good reason.
+ *
+ * Results:
+ *	Returns argc,argv in table.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Mach_ArgParseCode(string,table)
 char *string;
 MachStringTable *table;
 {
@@ -1817,15 +2067,51 @@ MachStringTable *table;
     ptr2 = table->strings;
     end2 = table->strings+256;
     table->argPtr[0] = ptr2;
-    for (;*ptr1 != 0 && ptr2<end2; ptr1++,ptr2++) {
+    for (;*ptr1 != 0 && ptr2<end2; ptr2++) {
 	if (*ptr1 == ' ') {
+	    while(*ptr1 == ' ') {
+		ptr1++;
+	    }
+	    if (*ptr1 == '\0') {
+		break;
+	    }
 	    *ptr2 = '\0';
 	    table->num++;
 	    if (table->num>=16) break;
 	    table->argPtr[table->num] = ptr2+1;
 	} else {
 	    *ptr2 = *ptr1;
+	    ptr1++;
 	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetEtherAddress --
+ *
+ *	Returns the ethernet address of the first ethernet interface.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	*etherAddrPtr gets the ethernet address.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Mach_GetEtherAddress(etherAddrPtr)
+    Net_EtherAddress	*etherAddrPtr;	/* Place to put ethernet address. */
+{
+    Net_Interface	*interPtr;
+
+    interPtr = Net_GetInterface(NET_NETWORK_ETHER, 0);
+    if (interPtr != (Net_Interface *) NIL) {
+	NET_ETHER_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].ether,
+	    *etherAddrPtr);
     }
 }
 

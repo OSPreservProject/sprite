@@ -24,7 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devInt.h"
 #include "scsiHBA.h"
 #include "fs.h"
-#include "devTypesInt.h"
+#include "devTypes.h"
 
 /*
  * Per device include files.
@@ -62,14 +62,6 @@ int devScsiNumHBATypes = 0;
  * Note that we put the default partition as partition C so as to use the
  * entire disk.
  */
-Fs_Device devFsDefaultDiskPartitions[] = {
-    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 0),
-          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 0),
-                (ClientData) NIL },
-    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 2),
-          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 2),
-                (ClientData) NIL },
-    };
-int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) /
-                          sizeof(Fs_Device);
+Fs_Device devFsDefaultDiskPartitions[1];
+int devNumDefaultDiskPartitions = 0;
 
