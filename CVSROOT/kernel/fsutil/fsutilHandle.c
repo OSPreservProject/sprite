@@ -1201,6 +1201,10 @@ Fsutil_HandleInvalidate(hdrPtr)
 	Hash_SetValue(hashEntryPtr, NIL);
 	Hash_Delete(fileHashTable, hashEntryPtr);
 	hdrPtr->fileID.minor = -hdrPtr->fileID.minor;
+	if (hdrPtr->name != (char *) NIL) {
+	    free(hdrPtr->name);
+	    hdrPtr->name = (char *) NIL;
+	}   
     }
 
     UNLOCK_MONITOR;
