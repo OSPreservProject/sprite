@@ -1,11 +1,16 @@
 /*
- * fsLocalDomain.h --
+ * fslcl.h --
  *
  *	Definitions of the parameters required for Local Domain operations.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
- *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  * $Header$ SPRITE (Berkeley)
  */
@@ -13,8 +18,10 @@
 #ifndef _FSLCL
 #define _FSLCL
 
-#include "fscache.h"
-#include "fsio.h"
+#include <fscache.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fsioFile.h>
 
 
 /*
@@ -50,9 +57,9 @@ typedef struct Fslcl_DirEntry {
 /*
  * Misc. routines.
  */
-extern void		Fslcl_DomainInit();
-extern ReturnStatus	Fslcl_DeleteFileDesc();
-extern void 		Fslcl_NameInitializeOps();
-extern void 		Fslcl_NameHashInit();
+extern void Fslcl_DomainInit _ARGS_((void));
+extern ReturnStatus Fslcl_DeleteFileDesc _ARGS_((Fsio_FileIOHandle *handlePtr));
+extern void Fslcl_NameInitializeOps _ARGS_((void));
+extern void Fslcl_NameHashInit _ARGS_((void));
 
 #endif /* _FSLCL */
