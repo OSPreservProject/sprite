@@ -82,7 +82,10 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 	ioPtr->flags |= FS_SWAP;
     } else if (pageType == FS_HEAP_PAGE) {
 	ioPtr->flags |= FS_HEAP;
+    } else if (pageType == FS_CODE_PAGE) {
+	ioPtr->flags &= ~(FS_SWAP | FS_HEAP);
     }
+
     do {
 	retry = FALSE;
 	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].pageRead) (streamPtr, ioPtr, (Sync_RemoteWaiter *)NIL, &reply);

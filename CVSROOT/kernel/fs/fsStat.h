@@ -571,6 +571,23 @@ extern	Fs_SospMigStats	fs_SospMigStats;
 typedef	struct Fs_NewStats {
     int		uncacheableDirBytesRead;
     int		uncacheableDirBytesReadMig;
+    int		CORPageServerRead;
+    int		CORPageServerReadM;
+    int		hitsOnCodePage;
+    int		hitsOnCodePageM;
+    int		hitsOnSwapPage;
+    int		hitsOnSwapPageM;
+    int		missesOnCodePage;
+    int		missesOnCodePageM;
+    int		missesOnSwapPage;
+    int		missesOnSwapPageM;
+    int		psFilledM;
+    int		fsFilledM;
+    int		zeroFilledM;
+    int		totalFaultsM;
+    int		remoteDevicishBytesRead;
+    int		remoteDevicishBytesReadM;
+
 } Fs_NewStats;
 extern	Fs_NewStats	fs_MoreStats;
 #endif SOSP91

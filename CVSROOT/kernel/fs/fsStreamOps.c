@@ -42,7 +42,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #ifdef SOSP91
 #include <sospRecord.h>
-#endif
+#include <fsStat.h>
+#endif SOSP91
 
 extern Boolean fsconsist_ClientCachingEnabled;
 
@@ -86,6 +87,17 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     Fs_IOReply			reply;
     int				streamType;
     register int		toRead;
+#ifdef SOSP91
+    Boolean			isForeign = FALSE;
+
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
 
     toRead = *lenPtr;
     *lenPtr = 0;
@@ -134,6 +146,18 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	status = Fsrmt_Read(streamPtr, ioPtr, &remoteWaiter, &reply);
 #endif
 
+#ifdef SOSP91
+	if (streamType == FSIO_RMT_DEVICE_STREAM ||
+		streamType == FSIO_RMT_PIPE_STREAM ||
+		streamType == FSIO_RMT_PSEUDO_STREAM ||
+		streamType == FSIO_RMT_PFS_STREAM ||
+		streamType == FSIO_RMT_CONTROL_STREAM) {
+	    fs_MoreStats.remoteDevicishBytesRead += reply.length;
+	    if (isForeign) {
+		fs_MoreStats.remoteDevicishBytesReadM += reply.length;
+	    }
+	}
+#endif SOSP91
 	if (status == SUCCESS) {
 	    break;
 	} else if (status == FS_WOULD_BLOCK && 
