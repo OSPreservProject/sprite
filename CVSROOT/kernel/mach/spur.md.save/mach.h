@@ -190,7 +190,7 @@ typedef struct Mach_SpecPage {
  * A type which sizeof() == cache block size of machine. 
  */
 
-typedef char	Mach_CacheBlockSizeType[VMMACH_CACHE_BLOCK_SIZE];
+typedef char	Mach_CacheBlockSizeType[VMMACH_CACHE_LINE_SIZE];
 
  /*
  * Per processor status info.

@@ -543,7 +543,7 @@
 	add_nt		r1, r0, $0; \
 	LD_CONSTANT(r2, VMMACH_CACHE_SIZE); \
 1:	st_external	r0, r1, $MACH_CO_FLUSH; \
-	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE; \
+	add_nt		r1, r1, $VMMACH_CACHE_LINE_SIZE; \
 	cmp_br_delayed	lt, r1, r2, 1b; \
 	Nop; \
 	add_nt		OUTPUT_REG1, regErrorVal, $constErrorVal; \
