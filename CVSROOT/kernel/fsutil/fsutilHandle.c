@@ -564,12 +564,6 @@ FsHandleRemoveInt(hdrPtr)
 	    return;
 	}
 	Hash_Delete(fileHashTable, hashEntryPtr);
-    } else {
-#ifdef dont_worry_users
-	Sys_Printf("Deleting invalid handle: type %d srvr %d file <%d,%d>\n",
-			hdrPtr->fileID.type, hdrPtr->fileID.serverID,
-			hdrPtr->fileID.major, hdrPtr->fileID.minor);
-#endif
     }
     fsStats.handle.exists--;
 
@@ -767,10 +761,6 @@ FsHandleInvalidate(hdrPtr)
      * smashed so that all subsequent operations using this handle that
      * go to the server will fail with a stale handle return code.
      */
-#ifdef file_type_dependent
-    lastBlock = handlePtr->rec.lastByte / FS_BLOCK_SIZE;
-    FsCacheFileInvalidate(handlePtr, 0, lastBlock);
-#endif
     hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) &(hdrPtr->fileID));
     if (hashEntryPtr == (Hash_Entry *) NIL) {
 	UNLOCK_MONITOR;
@@ -862,14 +852,8 @@ FsHandleDescWriteBack(shutdown, domain)
 	    continue;
 	}
 	/*
-	 * Determine if the descriptor modify time is up-to-date.
+	 * Propogate times from the cache info.
 	 */
-#ifdef looks_wrong
-	if (descPtr->descModifyTime < cachedAttrPtr->modifyTime) {
-	    descPtr->descModifyTime = cachedAttrPtr->modifyTime;
-	    descPtr->flags |= FS_FD_DIRTY;
-	}
-#endif
 	if (descPtr->accessTime < cachedAttrPtr->accessTime) {
 	    descPtr->accessTime = cachedAttrPtr->accessTime;
 	    descPtr->flags |= FS_FD_DIRTY;

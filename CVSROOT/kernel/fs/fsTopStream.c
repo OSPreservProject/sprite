@@ -358,24 +358,6 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 
 	reopenParamsPtr = (StreamReopenParams *)inData;
 	fileIDPtr = &reopenParamsPtr->ioFileID;
-#ifdef notdef
-	switch (fileIDPtr->type) {
-	    case FS_RMT_FILE_STREAM:
-		fileIDPtr->type = FS_LCL_FILE_STREAM;
-		status = FsLocalFileHandleInit(fileIDPtr,
-			    (FsLocalFileIOHandle **)ioHandlePtr);
-		break;
-	    case FS_RMT_DEVICE_STREAM:
-		fileIDPtr->type = FS_LCL_DEVICE_STREAM;
-		(void)FsDeviceHandleInit(fileIDPtr,
-			    (FsLocalFileIOHandle **)ioHandlePtr);
-		status = SUCCESS;
-		break;
-	    default:
-		Sys_Panic(SYS_FATAL, "Unsupported type in FsStreamReopen\n");
-		return(FAILURE);
-	}
-#endif
 	ioHandlePtr = (*fsStreamOpTable[fileIDPtr->type].clientVerify)
 			(fileIDPtr, clientID);
 	if (ioHandlePtr != (FsHandleHeader *)NIL) {

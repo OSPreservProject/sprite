@@ -1837,15 +1837,6 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Pdev_NewRequest	request;
 
     LOCK_MONITOR;
-#ifdef notdef
-    if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
-	Sys_Panic(SYS_WARNING,
-	    "FsPseudoStreamRead, stream not set up, flags = 0x%x\n",
-	    pdevHandlePtr->flags);
-	status = DEV_OFFLINE;
-	goto exit;
-    }
-#endif notdef
     /*
      * Wait for exclusive access to the stream.  Different clients might
      * be using the shared pseudo stream at about the same time.  Things
@@ -2005,15 +1996,6 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     int			maxRequestSize;
 
     LOCK_MONITOR;
-#ifdef notdef
-    if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
-	Sys_Panic(SYS_WARNING,
-	    "FsNewPseudoStreamWrite, stream not set up (0x%x)\n",
-	    pdevHandlePtr->flags);
-	status = DEV_OFFLINE;
-	goto exit;
-    }
-#endif notdef
     /*
      * Wait for exclusive access to the stream.
      */
@@ -2123,13 +2105,6 @@ FsPseudoStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
 
     LOCK_MONITOR;
-#ifdef notdef
-    if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
-	Sys_Panic(SYS_WARNING, "FsNewPseudoStreamIOControl, stream not set up\n");
-	status = DEV_OFFLINE;
-	goto exit;
-    }
-#endif notdef
     /*
      * Wait for exclusive access to the stream.
      */

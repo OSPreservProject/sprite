@@ -1156,17 +1156,6 @@ CreateFile(domainPtr, parentHandlePtr, component, compLen, fileNumber, type,
 			    (void)FsStoreFileDesc(domainPtr,
 				      parentHandlePtr->hdr.fileID.minor,
 					  parentDescPtr);
-			} else {
-			    /*
-			     * Nuke the data block for the directory.  Any
-			     * error returned is ignored because this is a
-			     * recovery action anyway.  (This seems like
-			     * a severe action.  What about files already
-			     * in the directory? BW 5/88)
-			     */
-#ifdef notdef
-			    (void)FsFileTrunc(*curHandlePtrPtr, 0, 0);
-#endif notdef
 			}
 		    }
 		}

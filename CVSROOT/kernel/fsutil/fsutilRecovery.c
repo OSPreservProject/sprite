@@ -557,57 +557,6 @@ FsRemoveClient(clientID)
 	(*fsStreamOpTable[hdrPtr->fileID.type].clientKill)(hdrPtr, clientID);
     }
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * FsCleanupRefs --
- *
- *	Do enough local closes on the given file to cleanup any extraneous
- *	references to the file.  Must be called with the handle locked.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The handle is unlocked upon return iff inUseCount > 0 upon entry.
- *
- *----------------------------------------------------------------------
- */
-#ifdef notdef
-void
-FsCleanupRefs(hdrPtr, clientID, inUseCount, writingCount, executingCount)
-    FsHandleHeader	*hdrPtr;
-    register int	inUseCount;
-    register int	writingCount;
-    register int	executingCount;
-{
-    int			flags;
-
-    while (inUseCount > 0) {
-	flags = 0;
-	if (writingCount > 0) {
-	    flags |= FS_WRITE;
-	    writingCount--;
-	}
-	if (executingCount > 0) {
-	    flags |= FS_EXECUTE;
-	    executingCount--;
-	}
-	/*
-	 * Do the file type close operation.  This unlocks the handle.
-	 */
-	(void) (*fsStreamOpTable[hdrPtr->fileID.type].close)
-			(hdrPtr, clientID, flags, 0, (ClientData)NIL);
-
-	inUseCount--;
-	if (inUseCount > 0) {
-	    FsHandleLock(hdrPtr);
-	}
-    }
-}
-#endif
-
 
 
 #ifdef not_used
