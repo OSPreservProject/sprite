@@ -614,6 +614,10 @@ IdleLoop()
 #endif
     MASTER_UNLOCK(sched_MutexPtr);
 
+    if (Mach_AtInterruptLevel()) {
+	Mach_EnableIntr();
+	panic("At interrupt level going into idle loop!\n");
+    }
     if (Mach_IntrNesting(cpu) != 0) {
 	int i;
 
