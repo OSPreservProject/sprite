@@ -499,6 +499,9 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
      * Free up virtual memory resources, unless they were already freed.
      */
 
+#ifdef sun4
+    VmMachFlushCurrentContext();
+#endif
     if ((exitProcPtr->genFlags & PROC_USER) && !noVm) {
 	for (i = VM_CODE; i <= VM_STACK; i++) {
 	    Vm_SegmentDelete(exitProcPtr->vmPtr->segPtrArray[i], exitProcPtr);
