@@ -74,12 +74,9 @@ static Timer_Ticks todCounter;
 int Timer_TimerServiceInterrupt();
 
 /*
- * Timer interval expressed as an integer and as a Time. This is the
- * period between callbacks, so it is actually twice the timer period
- * since we callback every other time. 
+ * Timer interval as a Time value. This is the period between callbacks.
  */
 
-static unsigned int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
 static Time time = { 0, TIMER_CALLBACK_INTERVAL_APPROX};
 
 
@@ -265,7 +262,7 @@ Timer_TimerServiceInterrupt(clientData, pc)
 	     todCounter.microseconds -= ONE_SECOND;
 	 }
 #endif
-        TIMER_CALLBACK_ROUTINE(interval, time);
+        TIMER_CALLBACK_ROUTINE(TIMER_CALLBACK_INTERVAL_APPROX, time);
     } else {
 	panic("Timer_TimerServiceInterrupt: Unknown timer %d\n", 
 		    (int) clientData);
