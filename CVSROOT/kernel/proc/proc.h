@@ -144,6 +144,10 @@ typedef struct Proc_ControlBlock {
      *-----------------------------------------------------------------
      *
      *   Various Process Identifiers.
+     *	
+     *	Note that the user and effectiveUser ID are kept here because
+     *	they are used for permission checking in various places.  There
+     *	is also a list of group IDs which is kept in the filesystem state.
      *
      *-----------------------------------------------------------------
      */
@@ -161,9 +165,6 @@ typedef struct Proc_ControlBlock {
 					 * to signal other processes. */
     int		effectiveUserID;	/* The effective user id is used
 					 * for setuid access. */
-    int		numGroupIDs;		/* The length of the groupIDs array */
-    int		*groupIDs;		/* An array of group IDs.  Group IDs
-					 * are used similarly to the User ID. */
 
     /*
      *-----------------------------------------------------------------
@@ -264,16 +265,7 @@ typedef struct Proc_ControlBlock {
      *-----------------------------------------------------------------
      */
 
-    struct Fs_Stream	  *cwdPtr;	/* The current working directory. */
-    unsigned int   filePermissions;	/* The bits in this mask correspond
-					 * to the permissions mask of a file.
-					 * If one of these bits is set it
-					 * TURNS OFF the corresponding
-					 * permission when a file is created. */
-    int		   numStreams;		/* Size of streamList array. */
-    struct Fs_Stream   **streamList;	/* Array of pointers to open files.
-					 * This list is indexed by an integer
-					 * known as a streamID. */
+    struct Fs_ProcessState	*fsPtr;
 
     /*
      *-----------------------------------------------------------------
