@@ -1251,22 +1251,16 @@ Proc_MigrateStartTracing()
  */
 
 void 
-Proc_DestroyMigratedProc(data)
-    ClientData data;
+Proc_DestroyMigratedProc(procPtr, reason, status, code) 
+    Proc_ControlBlock 		*procPtr;	/* Exiting process. */
+    int 			reason;		/* Why the process is dying: 
+						 * EXITED, SIGNALED, 
+						 * DESTROYED  */
+    int				status;		/* Exit status, signal # or 
+						 * destroy status. */
+    int 			code;		/* Signal sub-status */
 {
-    register Proc_ControlBlock *procPtr;	/* Exiting process. */
-
-    procPtr = Proc_LockPID((Proc_PID) data);
-    if (procPtr == (Proc_ControlBlock *) NIL ||
-	    (procPtr->state != PROC_MIGRATED)) {
-	if (proc_MigDebugLevel > 0) {
-	    Sys_Panic(SYS_WARNING,
-		      "Proc_DestroyMigratedProc: process %x not found.\n",
-		      (int) data);
-	}
-	return;
-    }
-    ProcExitProcess(procPtr, PROC_TERM_SIGNALED, SIG_KILL, 0, FALSE);
+    ProcExitProcess(procPtr, reason, status, code, FALSE);
 }
 
 
