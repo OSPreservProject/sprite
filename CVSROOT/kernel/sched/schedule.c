@@ -150,6 +150,7 @@ Sched_Init()
 
     List_Init(schedReadyQueueHdrPtr);
     Sync_SemInitDynamic(sched_MutexPtr, "sched_Mutex");
+    Sync_SemRegister(sched_MutexPtr);
 
     forgetUsageElement.routine		= Sched_ForgetUsage; 
     forgetUsageElement.clientData	= 0;
@@ -538,30 +539,32 @@ IdleLoop()
 
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
-    foundOne = FALSE;
-    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
-    while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
-	if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
-	     (procPtr->processor == cpu)) {
-	    foundOne = TRUE;
-	    break; 
+    if (sched_ProcessorStatus[cpu] == SCHED_PROCESSOR_ACTIVE) {
+	foundOne = FALSE;
+	procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+	while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
+	    if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+		 (procPtr->processor == cpu)) {
+		foundOne = TRUE;
+		break; 
+	    }
+	    if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+		missedStack[cpu]++;
+	    }
+	    procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
 	}
-	if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
-	    missedStack[cpu]++;
-	}
-	procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
-    }
-    if (foundOne) {
-	/*
-	 * We found a READY processor for us, break out of the
-	 * idle loop.
-	 */
-	onReadyQueue = TRUE;
-	foundInQueue[cpu]++;
+	if (foundOne) {
+	    /*
+	     * We found a READY process for us, break out of the
+	     * idle loop.
+	     */
+	    onReadyQueue = TRUE;
+	    foundInQueue[cpu]++;
 #ifdef spur
-	Mach_InstCountOff(0);
+	    Mach_InstCountOff(0);
 #endif
-	goto exit;
+	    goto exit;
+	}
     }
     Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
 #ifdef spur
@@ -584,7 +587,8 @@ IdleLoop()
 	 */
 	if (((List_IsEmpty(queuePtr) == FALSE) ||
 	     (sched_OnDeck[cpu].procPtr != (Proc_ControlBlock *) NIL)) &&
-	    ((sched_ProcessorStatus[cpu] != SCHED_PROCESSOR_IDLE) ||
+	    ((sched_ProcessorStatus[cpu] == SCHED_PROCESSOR_ACTIVE) ||
+	     (sched_ProcessorStatus[cpu] == SCHED_PROCESSOR_COUNTING_TICKS) ||
 	     (lastProcPtr->state == PROC_READY))) {
 	    /*
 	     * Looks like there might be something in the queue. We don't
@@ -595,8 +599,7 @@ IdleLoop()
 	    Mach_InstCountStart(2);
 #endif
 	    /*
-	     * Look and see if there is anything for us in the staging
-	     * area.
+	     * Look and see if there is anything for us on deck.
 	     */
 	    procPtr = sched_OnDeck[cpu].procPtr;
 	    if (procPtr != (Proc_ControlBlock *) NIL) {
@@ -613,35 +616,44 @@ IdleLoop()
 		break;
 	    }
 	    /*
-	     * Make sure queue is not empty. If there is a ready process
-	     * take a peek at it to insure that we can execute it. The
-	     * only condition preventing a processor from executing a
-	     * process is that its stack is being used by another processor.
+	     * If we are counting ticks then we are waiting for one 
+	     * specific process to wake up, and it will show up in the
+	     * staging area.  If we didn't find one there then skip to
+	     * the bottom of the loop.
 	     */
-	    foundOne = FALSE;
-	    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
-	    while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
-		if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
-		     (procPtr->processor == cpu)) {
-		    foundOne = TRUE;
-		    break; 
-		}
-		if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
-		    missedStack[cpu]++;
-		}
-	        procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
-	    }
-	    if (foundOne) {
+	    if (sched_ProcessorStatus[cpu] != SCHED_PROCESSOR_COUNTING_TICKS) {
 		/*
- 		 * We found a READY processor for us, break out of the
-		 * idle loop.
+		 * Make sure queue is not empty. If there is a ready process
+		 * take a peek at it to insure that we can execute it. The
+		 * only condition preventing a processor from executing a
+		 * process is that its stack is being used by another processor.
 		 */
-		 onReadyQueue = TRUE;
-		 foundInQueue[cpu]++;
-#ifdef spur
-		Mach_InstCountOff(2);
-#endif
-		break;
+		foundOne = FALSE;
+		procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+		while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
+		    if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+			 (procPtr->processor == cpu)) {
+			foundOne = TRUE;
+			break; 
+		    }
+		    if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+			missedStack[cpu]++;
+		    }
+		    procPtr = (Proc_ControlBlock *)
+			List_Next((List_Links *)procPtr);
+		}
+		if (foundOne) {
+		    /*
+		     * We found a READY processor for us, break out of the
+		     * idle loop.
+		     */
+		     onReadyQueue = TRUE;
+		     foundInQueue[cpu]++;
+    #ifdef spur
+		    Mach_InstCountOff(2);
+    #endif
+		    break;
+		}
 	    }
 	    sync_InstrumentPtr[cpu]->sched_MutexMiss++;
 #ifdef spur
@@ -703,6 +715,13 @@ exit:
  *
  *      This procedure is called during boot. The results are pretty much
  *	meaningless if it is not.
+ *	
+ *	For best results all interrupts except for timer interrupts should
+ *	be off.  If we are on a multiprocessor then we idle all processors
+ *	for first so they don't interfere as badly.  Interrupts will still
+ *	screw us up (they are handled by processor 1 but they still use
+ *	locks we may need),  but I don't think turning off interrupts
+ *	for 5 seconds on a live system is a good idea.
  *
  * Results:
  *	None.
@@ -719,10 +738,16 @@ Sched_TimeTicks()
     register int lowTicks;
     register int cpu;
     Time time;
+    int i;
 
     cpu = Mach_GetProcessorNumber(); 
     if (cpu != 0) {
-	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_IDLE;
+	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_COUNTING_TICKS;
+	for (i = 0; i < mach_NumProcessors; i++) {
+	     if (sched_ProcessorStatus[i] == SCHED_PROCESSOR_ACTIVE) {
+		 Sched_IdleProcessor(i);
+	     }
+	 }
     }
     Time_Multiply(time_OneSecond, 5, &time);
     printf("Idling processor %d for 5 seconds...",cpu);
@@ -732,6 +757,13 @@ Sched_TimeTicks()
     printf(" %d ticks\n", lowTicks);
     sched_Instrument.processor[cpu].idleTicksPerSecond = lowTicks / 5;
     sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_ACTIVE;
+    if (cpu != 0) {
+	for (i = 0; i < mach_NumProcessors; i++) {
+	     if (sched_ProcessorStatus[i] == SCHED_PROCESSOR_IDLE) {
+		 Sched_StartProcessor(i);
+	     }
+	 }
+     }
 }
 
 

@@ -97,6 +97,7 @@ Sched_InsertInQueue(procPtr, runPtrPtr)
     List_Links			*followingItemPtr;
     int				i;
     Proc_ControlBlock		*lowestProcPtr;
+    int				processor;
 
     sched_Insert++;
     if (procPtr->schedFlags & SCHED_CLEAR_USAGE) {
@@ -104,78 +105,88 @@ Sched_InsertInQueue(procPtr, runPtrPtr)
 	procPtr->weightedUsage = 0;
 	procPtr->unweightedUsage = 0;
     }
-
+    processor = procPtr->processor;
     queuePtr = schedReadyQueueHdrPtr;
-    /*
-     * Special case an empty queue. If the queue is empty there may be
-     * idle processors. We optimize things by bypassing the queue and
-     * giving processes to the processors through the staging areas.
-     */
-    if (mach_NumProcessors > 1 && List_IsEmpty(queuePtr)) {
-	int		processor;
-	int		cpu;
-
-	sched_QueueEmpty++;
-	processor = procPtr->processor;
-	cpu = Mach_GetProcessorNumber();
-	/*
-	 * If we are supposed to return a runnable process and the process
-	 * we were given last ran on the current processor, then just return
-	 * the process.
-	if ((runPtrPtr != (Proc_ControlBlock **) NIL) && 
-	    (processor == Mach_GetProcessorNumber()) {
-	    *runPtrPtr = procPtr;
-	    return;
-	}
-	/*
-	 * If the last processor to run the process is idle then just give
-	 * the process to that processor.
-	 */
-	if ((proc_RunningProcesses[processor] == (Proc_ControlBlock *) NIL) &&
-	    (sched_ProcessorStatus[processor] != SCHED_PROCESSOR_IDLE)) {
-	    if (sched_OnDeck[processor].procPtr == 
-		(Proc_ControlBlock *) NIL) {
-		sched_OnDeck[processor].procPtr = procPtr;
-		procPtr =  (Proc_ControlBlock *) NIL;
-	    /*
-	     * There is already a process on deck, but the one new one
-	     * can't be run by anyone else because it's stack is in
-	     * use by this processor. Switch the two processes.
-	     */
-	    } else if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
-		Proc_ControlBlock *tempPtr;
-
-		tempPtr = procPtr;
-		procPtr = sched_OnDeck[processor].procPtr;
-		sched_OnDeck[processor].procPtr = tempPtr;
+    if (mach_NumProcessors > 1) {
+	if (sched_ProcessorStatus[processor] == 
+	    SCHED_PROCESSOR_COUNTING_TICKS) {
+	    if (sched_OnDeck[processor].procPtr != (Proc_ControlBlock *) NIL) {
+		panic("Count of ticks screwed up.");
 	    }
-	}
-	if (procPtr != (Proc_ControlBlock *) NIL && 
-	    !(procPtr->schedFlags & SCHED_STACK_IN_USE)) {
-	    /*
-	     * Give the process to any idle processor. It's stack cannot
-	     * be in use (it can't be run anyway so don't bother trying).
-	     */
-	    for (i = 0; i < mach_NumProcessors; i++) {
-		if ((sched_ProcessorStatus[i] != SCHED_PROCESSOR_IDLE) &&
-		    (proc_RunningProcesses[i] ==  (Proc_ControlBlock *) NIL) &&
-		    (sched_OnDeck[i].procPtr == 
-		    (Proc_ControlBlock *) NIL)) {
-		    sched_OnDeck[i].procPtr = procPtr;
-		    procPtr =  (Proc_ControlBlock *) NIL;
-		    break;
-		}
-	    }
-	}
-	/* 
-	 * If we gave the process away then we're done.
-	 */
-	if (procPtr == (Proc_ControlBlock *) NIL) {
-	    sched_Stage++;
+	    sched_OnDeck[processor].procPtr = procPtr;
 	    if (runPtrPtr != (Proc_ControlBlock **) NIL) {
 		*runPtrPtr = (Proc_ControlBlock *) NIL;
 	    }
 	    return;
+	} else if (List_IsEmpty(queuePtr)) {
+	    /*
+	     * Special case an empty queue. If the queue is empty there may be
+	     * idle processors. We optimize things by bypassing the queue and
+	     * giving processes to the processors through the staging areas.
+	     */
+	    int		cpu;
+    
+	    sched_QueueEmpty++;
+	    cpu = Mach_GetProcessorNumber();
+	    /*
+	     * If we are supposed to return a runnable process and the process
+	     * we were given last ran on the current processor, then just return
+	     * the process.
+	    if ((runPtrPtr != (Proc_ControlBlock **) NIL) && 
+		(processor == Mach_GetProcessorNumber()) {
+		*runPtrPtr = procPtr;
+		return;
+	    }
+	    /*
+	     * If the last processor to run the process is idle then just give
+	     * the process to that processor.
+	     */
+	    if ((proc_RunningProcesses[processor] == (Proc_ControlBlock *) NIL) &&
+		(sched_ProcessorStatus[processor] == SCHED_PROCESSOR_ACTIVE)) {
+		if (sched_OnDeck[processor].procPtr == 
+		    (Proc_ControlBlock *) NIL) {
+		    sched_OnDeck[processor].procPtr = procPtr;
+		    procPtr =  (Proc_ControlBlock *) NIL;
+		/*
+		 * There is already a process on deck, but the one new one
+		 * can't be run by anyone else because it's stack is in
+		 * use by this processor. Switch the two processes.
+		 */
+		} else if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+		    Proc_ControlBlock *tempPtr;
+    
+		    tempPtr = procPtr;
+		    procPtr = sched_OnDeck[processor].procPtr;
+		    sched_OnDeck[processor].procPtr = tempPtr;
+		}
+	    }
+	    if (procPtr != (Proc_ControlBlock *) NIL && 
+		!(procPtr->schedFlags & SCHED_STACK_IN_USE)) {
+		/*
+		 * Give the process to any idle processor. It's stack cannot
+		 * be in use (it can't be run anyway so don't bother trying).
+		 */
+		for (i = 0; i < mach_NumProcessors; i++) {
+		    if ((sched_ProcessorStatus[i] == SCHED_PROCESSOR_ACTIVE) &&
+			(proc_RunningProcesses[i] ==  (Proc_ControlBlock *) NIL) &&
+			(sched_OnDeck[i].procPtr == 
+			(Proc_ControlBlock *) NIL)) {
+			sched_OnDeck[i].procPtr = procPtr;
+			procPtr =  (Proc_ControlBlock *) NIL;
+			break;
+		    }
+		}
+	    }
+	    /* 
+	     * If we gave the process away then we're done.
+	     */
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		sched_Stage++;
+		if (runPtrPtr != (Proc_ControlBlock **) NIL) {
+		    *runPtrPtr = (Proc_ControlBlock *) NIL;
+		}
+		return;
+	    }
 	}
     }
     /*
