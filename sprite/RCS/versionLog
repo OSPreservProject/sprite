@@ -399,4 +399,8 @@ Unix compatibility.
 
 mach:
 Unix compatibility.
+
+1.089	Tue Apr  9 18:52:02 PDT 1991
+Fixed a bug in vmSysCall.c, VmMmapInt, that was causing X to die when
+accessing a kernel rather than user address for the frame buffer.
     New files linked in from the net library.
