@@ -98,6 +98,9 @@
   *	Outputs:
   *		RESULT	- Function result return register.
   */
+
+#include "machConst.h"
+
 #define	VALPTR	r11
 #define	RESULT	r11
 #define	T0LOW	r12
@@ -243,6 +246,9 @@ _Dev_TimerT0Write:
 	 * Write register high order bytes first. 
 	 */
 	ld_32		HALF, VALPTR, $4
+	rd_kpsw		r16
+	and		r17,r16,$~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		r17, $0
 	extract		TEMP, HALF,$3
 	st_external	TEMP, r0, $T07|WRREG
 	extract		TEMP, HALF, $2
@@ -262,6 +268,7 @@ _Dev_TimerT0Write:
 	st_external	TEMP, r0, $T01|WRREG
 	st_external	HALF, r0, $T00|WRREG
 	add_nt		RESULT, r0, $SUCCESS
+	wr_kpsw		r16, $0
 	return		r10,$8
 	nop
 
