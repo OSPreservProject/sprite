@@ -543,16 +543,31 @@ Sys_StatsStub(command, option, argPtr)
 		    if (procPtr->effectiveUserID != 0) {
 			status = GEN_NO_PERMISSION;
 		    } else {
-			proc_RefuseMigrations =
-				(option == SYS_PROC_MIG_REFUSE);
+			/*
+			 * This part is simplified for now.
+			 */
+			if (option == SYS_PROC_MIG_REFUSE) {
+			    proc_AllowMigrationState = PROC_MIG_IMPORT_NEVER;
+			} else {
+			    proc_AllowMigrationState = PROC_MIG_IMPORT_ALL;
+			}
 		    }
 		}
 		break;
 
 	        case SYS_PROC_MIG_GET_STATUS: {
 		    if (argPtr != (Address) NIL) {
+			/*
+			 * This part is simplified for now.
+			 */
+			int refuse;
+			if (proc_AllowMigrationState & PROC_MIG_IMPORT_ALL) {
+			    refuse = 0;
+			} else {
+			    refuse = 1;
+			}
 			status = Vm_CopyOut(sizeof(Boolean),
-					    (Address)&proc_RefuseMigrations,
+					    (Address)&refuse,
 					    argPtr);
 		    } else {
 			status = GEN_INVALID_ARG;
