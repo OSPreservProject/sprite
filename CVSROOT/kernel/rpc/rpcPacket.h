@@ -188,4 +188,6 @@ extern short rpcOutputRate;		/* This machines output rate */
 ReturnStatus RpcOutput();
 void RpcTrace();
 
+void RpcGetMachineDelay();
+
 #endif not _RPCPACKET
