@@ -323,7 +323,7 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
  *
  * FsLockClose --
  *
- *	Check that that calling process owns a lock on this file,
+ *	Check that the stream owns a lock on this file,
  *	and if it does then break that lock.
  *
  * Results:
@@ -336,19 +336,17 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
  */
 
 void
-FsLockClose(lockPtr, procID, streamIDPtr)
+FsLockClose(lockPtr, streamIDPtr)
     register FsLockState *lockPtr;	/* Locking state for the file. */
-    Proc_PID procID;			/* ProcessID of closing process. */
     Fs_FileID *streamIDPtr;		/* Stream being closed */
 {
     register FsLockOwner *lockOwnerPtr;
 
     LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
-	if ((lockOwnerPtr->procID == procID) ||
-	    (streamIDPtr != (Fs_FileID *)NIL &&
-	     lockOwnerPtr->streamID.major == streamIDPtr->major &&
-	     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
-	     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)) {
+	if (streamIDPtr != (Fs_FileID *)NIL &&
+	    lockOwnerPtr->streamID.major == streamIDPtr->major &&
+	    lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+	    lockOwnerPtr->streamID.serverID == streamIDPtr->serverID) {
 	    lockPtr->flags &= ~lockOwnerPtr->flags;
 	    List_Remove((List_Links *)lockOwnerPtr);
 	    free((Address)lockOwnerPtr);
