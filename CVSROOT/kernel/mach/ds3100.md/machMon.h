@@ -247,8 +247,8 @@ extern void Mach_MonReboot _ARGS_((char *rebootString));
 #define Mach_MonMayPut Mach_MonPutChar
 
 
-#define Mach_MonGetChar			(mach_MonFuncs.getchar)
-#define Mach_MonGetNextChar		(mach_MonFuncs.getchar)
+#define Mach_MonGetChar			(mach_MonFuncs.mgetchar)
+#define Mach_MonGetNextChar		(mach_MonFuncs.mgetchar)
 #define Mach_MonGetLine			(mach_MonFuncs.gets)
 #define Mach_ArgParse(string,table)	(mach_MonFuncs.argparse)(string,table)
 #define Mach_MonPrintf			(mach_MonFuncs.printf)
