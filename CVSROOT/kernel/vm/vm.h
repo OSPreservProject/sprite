@@ -364,6 +364,12 @@ extern	void		Vm_StoreTraceTime();
 /*
  * Shared memory routines.
  */
+extern	ReturnStatus	Vm_Mmap();
+extern	ReturnStatus	Vm_Munmap();
+extern	ReturnStatus	Vm_Msync();
+extern	ReturnStatus	Vm_Mlock();
+extern	ReturnStatus	Vm_Munlock();
+extern	ReturnStatus	Vm_Mincore();
 extern	void		Vm_CleanupSharedFile();
 extern	void		Vm_CleanupSharedProc();
 extern	void		Vm_DeleteSharedSegment();
