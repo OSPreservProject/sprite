@@ -157,6 +157,7 @@
 #define	RPC_SIG_SEND		40
 #define	RPC_FS_RELEASE_NEW 	41
 #define	RPC_LAST_COMMAND	RPC_FS_RELEASE_NEW
+#define RPC_NUM_COMMANDS	(RPC_LAST_COMMAND+1)
 
 /*
  * RPC_LAST_COMMAND is used to declare the rpc procedure switch
