@@ -952,7 +952,8 @@ Mach_SwitchPoint:
     sw		t1, dbgMaxStackAddr
 
 /*
- * Wire down the current process's stack in the TLB.
+ * Wire down the current process's stack in the TLB.  This
+ * code depends implicitly upon MACH_KERN_STACK_PAGES.
  */
     mfc0	t1, VMMACH_TLB_HI
 
@@ -974,6 +975,18 @@ Mach_SwitchPoint:
     addu	t2, t2, 1 << VMMACH_TLB_VIRT_PAGE_SHIFT
     lw		t3, MACH_TLB_LOW_ENTRY_2_OFFSET(t0)
     li		t4, MACH_STACK_TLB_INDEX_2
+    mtc0	t2, VMMACH_TLB_HI
+    mtc0	t3, VMMACH_TLB_LOW
+    mtc0	t4, VMMACH_TLB_INDEX
+    nop
+    tlbwi
+
+/*
+ * Map the third entry.
+ */
+    addu	t2, t2, 1 << VMMACH_TLB_VIRT_PAGE_SHIFT
+    lw		t3, MACH_TLB_LOW_ENTRY_3_OFFSET(t0)
+    li		t4, MACH_STACK_TLB_INDEX_3
     mtc0	t2, VMMACH_TLB_HI
     mtc0	t3, VMMACH_TLB_LOW
     mtc0	t4, VMMACH_TLB_INDEX

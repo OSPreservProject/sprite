@@ -129,8 +129,10 @@ typedef struct Mach_State {
 						 * step. */
     unsigned		tlbHighEntry;		/* The TLB high entry value
 						 * for the first stack page. */
-    unsigned		tlbLowEntries[2];	/* The two TLB low entry values
-						 * for the two stack pages. */
+    unsigned		tlbLowEntries[MACH_KERN_STACK_PAGES - 1];
+    						/* The TLB low entry values
+						 * for the mapped stack
+						 * pages. */
 } Mach_State;
 
 /*

@@ -171,9 +171,14 @@
 #define MACH_KERN_STACK_END_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
 #define	MACH_SSTEP_INST_OFFSET		(MACH_KERN_STACK_END_OFFSET + 4)
 #define MACH_TLB_HIGH_ENTRY_OFFSET	(MACH_SSTEP_INST_OFFSET + 4)
+/*
+ * Constants for setting up the TLB entries.  This code depends
+ * implictly upon MACH_KERN_STACK_PAGES.
+ */
 #define MACH_TLB_LOW_ENTRY_1_OFFSET	(MACH_TLB_HIGH_ENTRY_OFFSET + 4)
 #define MACH_TLB_LOW_ENTRY_2_OFFSET	(MACH_TLB_LOW_ENTRY_1_OFFSET + 4)
-#define MACH_STATE_SIZE			(MACH_TLB_LOW_ENTRY_2_OFFSET + 4)
+#define MACH_TLB_LOW_ENTRY_3_OFFSET	(MACH_TLB_LOW_ENTRY_2_OFFSET + 4)
+#define MACH_STATE_SIZE			(MACH_TLB_LOW_ENTRY_3_OFFSET + 4)
 
 /*
  * Offsets into the debug state struct.
@@ -256,6 +261,12 @@
  *			main process that is initially run.
  * MACH_KERN_END	The address where the last kernel virtual address is
  *			at.
+ * MACH_KERN_STACK_PAGES Number of pages in a kernel stack.  This is used
+ *			to allocate TLB entries.  There are some
+ *			hard-coded dependencies on this as well, so
+ *			grep for MACH_KERN_STACK_PAGES in *.[cs].  The
+ *			last page is not mapped, so there should be
+ *			MACH_KERN_STACK_PAGES-1 tlb low entries, etc.
  * MACH_KERN_STACK_SIZE Number of bytes in a kernel stack.
  * MACH_BARE_STACK_OFFSET	Offset of where a bare kernel stack starts.
  *				It doesn't start at the very top because
@@ -267,9 +278,10 @@
  */
 #define	MACH_KERN_START		0x80000000
 #define	MACH_CODE_START		0x80030000
-#define	MACH_STACK_BOTTOM	(MACH_CODE_START - 3 * VMMACH_PAGE_SIZE)
+#define	MACH_KERN_STACK_PAGES	4
+#define	MACH_KERN_STACK_SIZE	(MACH_KERN_STACK_PAGES * VMMACH_PAGE_SIZE)
+#define	MACH_STACK_BOTTOM	(MACH_CODE_START - MACH_KERN_STACK_SIZE)
 #define MACH_KERN_END		(VMMACH_VIRT_CACHED_START + 16 * 1024 * 1024)
-#define	MACH_KERN_STACK_SIZE	(3 * VMMACH_PAGE_SIZE)
 #define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
 #define	MAGIC			0xFeedBabe
 
@@ -355,9 +367,12 @@
 
 /*
  * Indices in the TLB where we store the stack TLB entries.
+ * This is implicitly dependent on MACH_KERN_STACK_PAGES and must
+ * have MACH_KERN_STACK_PAGES-1 defines, used in machAsm.s.
  */
 #define MACH_STACK_TLB_INDEX_1	0x100
 #define MACH_STACK_TLB_INDEX_2	0x200
+#define MACH_STACK_TLB_INDEX_3	0x300
 
 /*
  * The standard amount of space that we have to leave on a stack frame when

@@ -365,9 +365,14 @@ Mach_InitFirstProc(procPtr)
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     procPtr->machStatePtr->kernStackEnd = 
 				(mach_StackBottom + mach_KernStackSize);
+    /*
+     * Set up the TLB entries.  This code depends
+     * implictly upon MACH_KERN_STACK_PAGES.
+     */
     procPtr->machStatePtr->tlbHighEntry  = 0;
     procPtr->machStatePtr->tlbLowEntries[0] = 0;
     procPtr->machStatePtr->tlbLowEntries[1] = 0;
+    procPtr->machStatePtr->tlbLowEntries[2] = 0;
     procPtr->vmPtr = &mainProcInfo;
     procPtr->vmPtr->machPtr = &mainProcData;
     VmMach_ProcInit(&mainProcInfo);
@@ -430,7 +435,8 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     }
     statePtr->kernStackEnd = statePtr->kernStackStart + MACH_KERN_STACK_SIZE;
     /*
-     * Set up the TLB entries.
+     * Set up the TLB entries.  This code depends
+     * implictly upon MACH_KERN_STACK_PAGES.
      */
     virtPage = (unsigned)(statePtr->kernStackStart + VMMACH_PAGE_SIZE) >>
 							VMMACH_PAGE_SHIFT;
@@ -439,6 +445,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     virtPage -= VMMACH_VIRT_CACHED_START_PAGE;
     statePtr->tlbLowEntries[0] = vmMach_KernelTLBMap[virtPage];
     statePtr->tlbLowEntries[1] = vmMach_KernelTLBMap[virtPage + 1];
+    statePtr->tlbLowEntries[2] = vmMach_KernelTLBMap[virtPage + 2];
 
     statePtr->switchRegState.regs[SP] =
 		    (unsigned)(statePtr->kernStackEnd - sizeof(KernelStack));
