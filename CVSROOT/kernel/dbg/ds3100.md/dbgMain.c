@@ -571,6 +571,10 @@ Dbg_Main()
     int		dataSize;
     int		origMaxStackAddr;
 
+#ifdef NOTDEF
+/*
+ * This code causes machines to "pop out" of the debugger.
+ */
     if (!dbg_BeingDebugged && dbgSyncDisks) {
 	/*
 	 * Try to sync the disks if we aren't at interrupt level.  If we
@@ -585,6 +589,7 @@ Dbg_Main()
 	    Mach_DisableIntr();
 	}
     }
+#endif NOTDEF
 
     dbg_InDebugger = TRUE;
 
