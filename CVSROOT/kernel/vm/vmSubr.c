@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "stdlib.h"
 #include "fs.h"
+#include "fsio.h"
 #ifdef sun4
 #include "machMon.h"
 #endif sun4
@@ -339,7 +340,7 @@ Vm_ChangeCodeProt(procPtr, startAddr, numBytes, makeWriteable)
 	 * This process still has a hold of the original shared code 
 	 * segment.  Make a new segment for the process.
 	 */
-	Fs_StreamCopy(segPtr->filePtr, &codeFilePtr);
+	Fsio_StreamCopy(segPtr->filePtr, &codeFilePtr);
 	newSegPtr = Vm_SegmentNew(VM_CODE, codeFilePtr, segPtr->fileAddr, 
 				  segPtr->numPages, segPtr->offset, procPtr);
 	Vm_ValidatePages(newSegPtr, newSegPtr->offset, 
@@ -1241,7 +1242,7 @@ void
 Vm_CleanupSharedProc(procPtr)
     Proc_ControlBlock	*procPtr;	/* Process that is exiting. */
 {
-    int i;
+    int i=0;
     List_Links	*sharedSegs;	/* Process's shared segments. */
 
     LOCK_SHM_MONITOR;
@@ -1268,7 +1269,8 @@ Vm_CleanupSharedProc(procPtr)
 		(List_Links *)NULL) {
 	    break;
 	}
-	VmDeleteSharedSegment(procPtr, List_First(sharedSegs));
+	Vm_DeleteSharedSegment(procPtr,
+		(Vm_SegProcList *)List_First(sharedSegs));
     }
     UNLOCK_SHM_MONITOR;
 }
@@ -1276,7 +1278,7 @@ Vm_CleanupSharedProc(procPtr)
 /*
  *----------------------------------------------------------------------
  *
- * VmDeleteSharedSegment --
+ * Vm_DeleteSharedSegment --
  *
  *	Remove a process's mapping of a shared segment.
  *
@@ -1298,14 +1300,13 @@ Vm_CleanupSharedProc(procPtr)
  *----------------------------------------------------------------------
  */
 void
-VmDeleteSharedSegment(procPtr,segProcPtr)
+Vm_DeleteSharedSegment(procPtr,segProcPtr)
     Proc_ControlBlock	*procPtr;	/* Process with mapping. */
     Vm_SegProcList		*segProcPtr;	/* Pointer to segment mapping. */
 {
     Vm_SharedSegTable	*segTabPtr = segProcPtr->segTabPtr;
     Vm_Segment		*segPtr;
     Vm_VirtAddr		virtAddr;
-    Vm_PTE	*ptePtr;
     int			done = 0;
 
     CHECK_SHM_MONITOR;
@@ -1315,7 +1316,6 @@ VmDeleteSharedSegment(procPtr,segProcPtr)
     virtAddr.page = ((int)segProcPtr->mappedStart) >> vmPageShift;
     virtAddr.segPtr = segTabPtr->segPtr;
     virtAddr.sharedPtr = segProcPtr;
-    ptePtr = VmGetAddrPTEPtr(&virtAddr,virtAddr.page);
     UNLOCK_MONITOR;
 
     VmFlushSegment(&virtAddr, ((int)segProcPtr->mappedEnd+1)>>vmPageShift);
@@ -1332,9 +1332,9 @@ VmDeleteSharedSegment(procPtr,segProcPtr)
 	done = 1;
     }
     if (!VmCheckSharedSegment(procPtr,segPtr)){
-	dprintf("VmDeleteSharedSegment: Process has no more references to segment\n");
+	dprintf("Vm_DeleteSharedSegment: Process has no more references to segment\n");
 	if (List_IsEmpty(procPtr->vmPtr->sharedSegs)) {
-	    dprintf("VmDeleteSharedSegment: Process has no more shared segments\n");
+	    dprintf("Vm_DeleteSharedSegment: Process has no more shared segments\n");
 	    VmMach_SharedProcFinish(procPtr);
 	    free((Address)procPtr->vmPtr->sharedSegs);
 	    procPtr->vmPtr->sharedSegs = (List_Links *)NIL;
@@ -1345,12 +1345,12 @@ VmDeleteSharedSegment(procPtr,segProcPtr)
 	 */
 	Vm_SegmentDelete(segPtr,procPtr);
 	if (!done) {
-	    printf("VmDeleteSharedSegment: Restoring VM_SWAP_FILE_OPENED\n");
+	    dprintf("Vm_DeleteSharedSegment: Restoring VM_SWAP_FILE_OPENED\n");
 	    segPtr->flags |= VM_SWAP_FILE_OPENED;
 	}
     }
     PrintSharedSegs(procPtr);
-    dprintf("VmDeleteSharedSegment: done\n");
+    dprintf("Vm_DeleteSharedSegment: done\n");
 
 }
 
@@ -1506,7 +1506,7 @@ PrintSharedSegs(procPtr)
  * Vm_CleanupSharedFile --
  *
  *	Delete segments associated with a file stream.
- *	This routine calls VmDeleteSharedSegment on the segments
+ *	This routine calls Vm_DeleteSharedSegment on the segments
  *	associated with the file stream.
  *
  * Results:
@@ -1536,7 +1536,7 @@ Vm_CleanupSharedFile(procPtr,streamPtr)
 	    if (segPtr->stream==streamPtr) {
 		dprintf("sharedSegment being deleted in Vm_CleanupSharedFile\n");
 		segPtr->segTabPtr->segPtr->flags &= ~VM_SWAP_FILE_OPENED;
-		VmDeleteSharedSegment(procPtr,segPtr);
+		Vm_DeleteSharedSegment(procPtr,segPtr);
 		if (sharedSegs == (List_Links *)NIL) {
 		    break;
 		}
