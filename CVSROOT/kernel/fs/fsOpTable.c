@@ -52,6 +52,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 #include "devConsole.h"
+#include "devSBCDisk.h"
 #include "devSCSIDisk.h"
 #include "devSCSITape.h"
 #include "devXylogicsDisk.h"
@@ -401,7 +402,14 @@ FsDeviceTypeOps fsDeviceOpTable[] = {
      */
     {FS_DEV_NET, Net_FsOpen, Net_FsRead, Net_FsWrite, Net_FsIOControl,
 		    Net_FsClose, Net_FsSelect},
+    /*
+     * SCSI-3 Disk interface.  Sun's newer SCSI host adaptor.
+     */
+    {FS_DEV_SBC_DISK, Dev_SBCDiskOpen, Dev_SBCDiskRead, Dev_SBCDiskWrite,
+		     Dev_SBCDiskIOControl, Dev_SBCDiskClose, NullProc},
 };
+
+int fsNumDevices = sizeof(fsDeviceOpTable) / sizeof(FsDeviceTypeOps);
 
 /*
  * Device Block I/O operation table.  This table is sparse because not
@@ -419,6 +427,7 @@ FsBlockOps fsBlockOpTable[] = {
     { FS_DEV_MEMORY, 0 },
     { FS_DEV_XYLOGICS, Dev_XylogicsDiskBlockIO },
     { FS_DEV_NET, 0 },
+    { FS_DEV_SBC_DISK, Dev_SBCDiskBlockIO },
 };
 
 static ReturnStatus
