@@ -419,6 +419,7 @@ FsDetachDisk(prefixName)
     int			domainType;
     FsPrefix		*prefixPtr;
     Fs_FileID		rootID;
+    int			serverID;
     int			domain;
     register FsDomain	*domainPtr;
     int			i;
@@ -430,8 +431,8 @@ FsDetachDisk(prefixName)
      */
     status = FsPrefixLookup(prefixName, 
 		   FS_EXACT_PREFIX | FS_EXPORTED_PREFIX | FS_LOCAL_PREFIX,
-		   rpc_SpriteID, &hdrPtr, &rootID, &lookupName, &domainType,
-		   &prefixPtr);
+		   rpc_SpriteID, &hdrPtr, &rootID, &lookupName,
+		   &serverID, &domainType, &prefixPtr);
     if (status != SUCCESS) {
 	return(status);
     } else if (hdrPtr->fileID.type != FS_LCL_FILE_STREAM) {
@@ -1002,6 +1003,7 @@ FsRereadSummaryInfo(prefixName)
     int			domainType;
     FsPrefix		*prefixPtr;
     Fs_FileID		rootID;
+    int			serverID;
     int			domain;
     register FsDomain	*domainPtr;
     ReturnStatus	status;
@@ -1014,8 +1016,8 @@ FsRereadSummaryInfo(prefixName)
      */
     status = FsPrefixLookup(prefixName, 
 		   FS_EXACT_PREFIX | FS_EXPORTED_PREFIX | FS_LOCAL_PREFIX,
-		   rpc_SpriteID, &hdrPtr, &rootID, &lookupName, &domainType,
-		   &prefixPtr);
+		   rpc_SpriteID, &hdrPtr, &rootID, &lookupName, &serverID,
+		   &domainType, &prefixPtr);
     if (status != SUCCESS) {
 	return(status);
     } else if (hdrPtr->fileID.type != FS_LCL_FILE_STREAM) {
