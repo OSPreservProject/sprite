@@ -705,11 +705,12 @@ Fsrmt_Select(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
     if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	status == RPC_SERVICE_DISABLED) {
 	/*
-	 * If the server is down the handle gets marked so that
-	 * recovery will be done on it, and part of that will be
-	 * to notify the handle's wait lists, which is were we may be.
+	 * Mask the error and leave the bits set in the request masks.
+	 * This will cause the application to try a read or write
+	 * of this stream and then it will learn something is amiss.
 	 */
 	Fsutil_WantRecovery(hdrPtr);
+	status = SUCCESS;
     } else {
 	*readPtr = selectResults.read;
 	*writePtr = selectResults.write;
