@@ -273,7 +273,7 @@ static JaguarMem DebugJaguarMem;
 #define	SELECTION_TIMEOUT	1000
 #define	RESELECTION_TIMEOUT	0
 #define	VME_TIMEOUT		0
-#define	DEV_MAX_DMA_SIZE	(32*1024)
+#define	DEV_MAX_DMA_SIZE	(128*1024)
 #define	VME_INTERRUPT_PRIORITY	2
 
 
