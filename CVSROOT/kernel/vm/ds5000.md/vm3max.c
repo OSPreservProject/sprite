@@ -1683,6 +1683,7 @@ VmMach_MakeDebugAccessible(addr)
     unsigned	addr;
 {
     unsigned virtPage, lowEntry, highEntry;
+    static int allowIOSpace = FALSE;
 
     if (addr < (unsigned)VMMACH_VIRT_CACHED_START) {
 	if (addr < (unsigned)VMMACH_PHYS_UNCACHED_START) {
@@ -1696,14 +1697,16 @@ VmMach_MakeDebugAccessible(addr)
 	    if (addr < (unsigned)VMMACH_PHYS_UNCACHED_START + 
 			vm_NumPhysPages * VMMACH_PAGE_SIZE) {
 		return TRUE;
-	    } else if ((addr < (unsigned) MACH_IO_SLOT_ADDR(7)) &&
-			(addr >= (unsigned) MACH_IO_SLOT_ADDR(5))) {
-		return TRUE;
-	    } else if ((addr < (unsigned) MACH_IO_SLOT_ADDR(3)) &&
-			(addr >= (unsigned) MACH_IO_SLOT_ADDR(0))) {
-		return TRUE;
-	    } else {
-		return FALSE;
+	    } else if (allowIOSpace) {
+		if ((addr < (unsigned) MACH_IO_SLOT_ADDR(7)) &&
+			    (addr >= (unsigned) MACH_IO_SLOT_ADDR(5))) {
+		    return TRUE;
+		} else if ((addr < (unsigned) MACH_IO_SLOT_ADDR(3)) &&
+			    (addr >= (unsigned) MACH_IO_SLOT_ADDR(0))) {
+		    return TRUE;
+		} else {
+		    return FALSE;
+		}
 	    }
 	}
     }
