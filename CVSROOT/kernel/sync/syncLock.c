@@ -3,7 +3,7 @@
  *
  *	These are internal locking routines of the Synchronization module.
  *	These routines are slower but safer versions of the routines (found
- *	in syncMonitor.c) to get and release monitor locks, and to wait on
+ *	in sync.h) to get and release monitor locks, and to wait on
  *	and notify condition variables.
  *
  *	A process is blocked by making it wait on an event.  An event is
