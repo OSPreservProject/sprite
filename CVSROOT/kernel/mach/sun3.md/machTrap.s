@@ -372,6 +372,7 @@ normReturn:
 |*
 |* Normal return from trap (no errors).
 |*
+
 	RestoreUserFpuState()
 	RestoreUserRegs()
         rte

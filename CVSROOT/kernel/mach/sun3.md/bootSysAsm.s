@@ -74,30 +74,54 @@ loopStart:
 	movsb	d1, VMMACH_CONTEXT_OFF
 
 |
-| Enable the floating point processor.
+| Enable the mc68881 floating point coprocessor.
 |
 
         .data
-	.globl fpu_present
-fpu_present:
-	.word 1
-fpu_null_state:
+
+	.globl _mach68881Present
+_mach68881Present:
+	.long   1
+
+        .globl _mach68881NullState
+_mach68881NullState:
+	.long   0
+
+        .globl _mach68881IdleState
+        .globl _mach68881Version
+_mach68881IdleState:
+_mach68881Version:
+	.long   0
+	.long   0
+	.long   0
+	.long   0
+	.long   0
+	.long   0
 	.long   0
 
 	.text
+
         movsb   VMMACH_SYSTEM_ENABLE_REG, d0    | Read the enable register.
 	orb     #MACH_ENABLE_FPP, d0            | Set the fpu enable bit.
 	movsb   d0, VMMACH_SYSTEM_ENABLE_REG    | Write the enable register.
 	movl    (MACH_EMU1111*4), d1            | Save current inrpt 11 handler.
 	movl    #fcatch, (MACH_EMU1111*4)       | Set up to catch a trap.
 	movl    sp, a0                          | Save sp, just in case.
-	frestore fpu_null_state                 | Set the fpu to the null state.
+	frestore _mach68881NullState            | Set the fpu to the null state.
+	                                        | If there is no fpu we will
+						| trap to `fcatch'.
+	fmovecrx    #0, fp1                     | Set fp register.
+	movw    #0x100, d0
+2:
+	dbra    d0, 2b                          | Wait for fpu op to complete.
+	fsave   _mach68881IdleState             | Save an idle state frame.
+	frestore _mach68881NullState            | Reset the fpu to null state.
 	bra     1f
 fcatch:                                         | Oops, there isn't any fpu.
 	movl    a0, sp                          | Restore the stack,
 	andb    #~MACH_ENABLE_FPP, d0           | Clear the fpu enable bit.
 	movsb   d0, VMMACH_SYSTEM_ENABLE_REG    | Write the enable register.
-	movw    #0, fpu_present                 | Clear the fpu_present flag.
+	clrl    _mach68881Present               | Clear the fpu present flag.
 1:
 	movl    d1, (MACH_EMU1111*4)            | Restore the inrpt 11 handler.
 #endif

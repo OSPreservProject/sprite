@@ -74,16 +74,18 @@
 #define MACH_TRAP_FP_REGS_OFFSET        (MACH_LAST_SYS_CALL_OFFSET + 4)
 #define MACH_TRAP_FP_CTRL_REGS_OFFSET   (MACH_TRAP_FP_REGS_OFFSET + 96)
 #define MACH_TRAP_FP_STATE_OFFSET       (MACH_TRAP_FP_CTRL_REGS_OFFSET + 12)
-#define	MACH_SWITCH_REGS_OFFSET		(MACH_TRAP_FP_STATE_OFFSET + 180)
+#define	MACH_SWITCH_REGS_OFFSET		(MACH_TRAP_FP_STATE_OFFSET + 184)
 #else
 #define	MACH_SWITCH_REGS_OFFSET		(MACH_LAST_SYS_CALL_OFFSET + 4)
 #endif
 #define	MACH_KERN_STACK_START_OFFSET	(MACH_SWITCH_REGS_OFFSET + 64)
 #define	MACH_SIG_EXC_STACK_SIZE_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
 #define	MACH_SIG_EXC_STACK_OFFSET	(MACH_SIG_EXC_STACK_SIZE_OFFSET + 4)
+#if 0
 #define MACH_SWITCH_FP_REGS_OFFSET      (MACH_SIG_EXC_STACK_OFFSET + 92)
 #define MACH_SWITCH_FP_CTRL_REGS_OFFSET (MACH_SWITCH_FP_REGS_OFFSET + 96)
 #define MACH_SWITCH_FP_STATE_OFFSET     (MACH_SWITCH_FP_CTRL_REGS_OFFSET + 12)
+#endif
 
 /*
  * Amount of data that is pushed onto the stack after a trap occurs.
@@ -239,10 +241,10 @@
 
 /*
  * The amount of memory needed to store the internal state of the
- * floating point coprocessor.  This is 180 for the mc68881, but
- * 212 for the mc68882.
+ * floating point coprocessor.  This is 184 for the mc68881, but
+ * 216 for the mc68882.
  */
-#define MACH_FP_STATE_SIZE  180
+#define MACH_FP_STATE_SIZE  184
 
 #endif /* sun3 */
 

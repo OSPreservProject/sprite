@@ -18,6 +18,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
+#include "assert.h"
+
 #include "machConst.h"
 #include "machMon.h"
 #include "machInt.h"
@@ -364,9 +366,6 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     statePtr->switchRegs[SP] = (int)(statePtr->kernStackStart + 
 			             MACH_KERN_STACK_SIZE - 
 				     sizeof(KernelStack));
-#ifdef sun3
-    statePtr->switchFpuState[0] = 0;      /* set fpu to null state */
-#endif
 
     /*
      * Initialize the stack so that it looks like it is in the middle of
@@ -397,8 +396,8 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 	bcopy((Address)fromStatePtr->userState.trapFpCtrlRegs,
 		  (Address)statePtr->userState.trapFpCtrlRegs,
 		  sizeof(statePtr->userState.trapFpCtrlRegs));
-	bcopy((Address)fromStatePtr->userState.trapFpuState,
-		  (Address)statePtr->userState.trapFpuState,
+	bcopy((Address) &fromStatePtr->userState.trapFpuState,
+		  (Address) &statePtr->userState.trapFpuState,
 		  sizeof(statePtr->userState.trapFpuState));
 #endif
     }
@@ -576,8 +575,8 @@ Mach_CopyState(statePtr, destProcPtr)
     bcopy((Address)statePtr->userState.trapFpCtrlRegs,
 	      (Address)destStatePtr->userState.trapFpCtrlRegs,
 	      sizeof(statePtr->userState.trapFpCtrlRegs));
-    bcopy((Address)statePtr->userState.trapFpuState,
-	      (Address)destStatePtr->userState.trapFpuState,
+    bcopy((Address) &statePtr->userState.trapFpuState,
+	      (Address) &destStatePtr->userState.trapFpuState,
 	      sizeof(statePtr->userState.trapFpuState));
 #endif
     destStatePtr->userState.excStackPtr->pc = 
@@ -1387,8 +1386,8 @@ ReturnFromSigHandler(procPtr)
     bcopy((Address)sigStack.sigContext.machContext.userState.trapFpCtrlRegs,
 	      (Address)statePtr->userState.trapFpCtrlRegs,
 	      sizeof(statePtr->userState.trapFpCtrlRegs));
-    bcopy((Address)sigStack.sigContext.machContext.userState.trapFpuState,
-	      (Address)statePtr->userState.trapFpuState,
+    bcopy((Address) &sigStack.sigContext.machContext.userState.trapFpuState,
+	      (Address) &statePtr->userState.trapFpuState,
 	      sizeof(statePtr->userState.trapFpuState));
 #endif
 

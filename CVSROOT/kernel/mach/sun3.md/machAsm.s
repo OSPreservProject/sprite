@@ -127,15 +127,16 @@ _Mach_ContextSwitch:
     addl	_machStatePtrOffset, a0	| a0 = pointer to mach struct
     movl	a0@, a0
 
-#ifdef sun3
+#if 0
                                         | Save the floating point state.
-    tstw        fpu_present
+    tstl        _mach68881Present
     beq         1f
     fsave       a0@(MACH_SWITCH_FP_STATE_OFFSET)
     tstb        a0@(MACH_SWITCH_FP_STATE_OFFSET)
     beq         1f
     fmovem      #0xff, a0@(MACH_SWITCH_FP_REGS_OFFSET)
     fmovem      fpc/fps/fpi, a0@(MACH_SWITCH_FP_CTRL_REGS_OFFSET)
+    frestore    _mach68881NullState
 1:
 #endif
 					| Save registers for process being
@@ -146,15 +147,16 @@ _Mach_ContextSwitch:
     addl	_machStatePtrOffset, a0 | a0 = pointer to mach struct
     movl	a0@, a0
 
-#ifdef sun3
+#if 0
                                         | Restore the floating point state.
-        tstw        fpu_present
+        tstl        _mach68881Present
 	beq         2f
-	frestore    a0@(MACH_SWITCH_FP_STATE_OFFSET)
 	tstb        a0@(MACH_SWITCH_FP_STATE_OFFSET)
-	beq         2f
+	beq         1f
 	fmovem      a0@(MACH_SWITCH_FP_REGS_OFFSET), #0xff
 	fmovem      a0@(MACH_SWITCH_FP_CTRL_REGS_OFFSET), fpc/fps/fpi
+1:
+	frestore    a0@(MACH_SWITCH_FP_STATE_OFFSET)
 2:
 #endif
 					| Restore registers for process being

@@ -116,7 +116,7 @@ typedef	struct {
     			fill1: 1,	 /* Reserved */
     			ifetch: 1,	 /* Instruction fetch to instruction
 					    buffer (1 = true) */
-    			dfetch: 1,	 /* Data fetch to the data input
+			dfetch: 1,	 /* Data fetch to the data input
 					    buffer (1 = true) */
 			readModWrite: 1, /* Read-Modify-Write cycle */
     			highByte: 1,	 /* High byte transfer */
@@ -270,6 +270,29 @@ typedef struct {
     int			statusReg;		/* The status register. */
 } Mach_RegState;
 
+#ifdef sun3
+/*
+ * The structure of the fpu state frames is described in
+ * section 6.4.2 of the Motorola 68881/2 User's Manual.
+ */
+struct fpuState {
+    unsigned char version;
+    unsigned char state;
+    unsigned short xxx1;
+    unsigned long  xxx2[(MACH_FP_STATE_SIZE/4) - 1];
+};
+
+#define     MACH_68881_IDLE_STATE     0x18
+#define     MACH_68882_IDLE_STATE     0x38
+#define     MACH_68881_BUSY_STATE     0xb4
+#define     MACH_68882_BUSY_STATE     0xd4
+
+extern const unsigned long      mach68881Present;
+extern const unsigned long      mach68881NullState;
+extern const unsigned char      mach68881Version;
+extern const struct fpuState    mach68881IdleState;
+#endif
+
 /*
  * The user state for a process.
  */
@@ -281,7 +304,7 @@ typedef struct {
 #ifdef sun3
     long    trapFpRegs[MACH_NUM_FPRS][3];       /* Floating point registers */
     long    trapFpCtrlRegs[3];                  /* fpu control registers */
-    long    trapFpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
+    struct fpuState trapFpuState;               /* internal state of the fpu*/
 #endif
 } Mach_UserState;
 
@@ -300,12 +323,12 @@ typedef struct Mach_State {
     Mach_ExcStack   sigExcStack;		/* Place to store sig exception 
 						 * stack on return from signal
 						 * handler.*/
-#ifdef sun3
+#ifdef 0
     long  switchFpRegs[MACH_NUM_FPRS][3];       /* Where fpu registers are
                                                  * saved and restored to/from
 						 * during context switches. */
     long  switchFpCtrlRegs[3];                  /* fpu control registers */
-    long  switchFpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
+    struct fpuState switchFpuState;             /* internal state of the fpu*/
 #endif
 } Mach_State;
 

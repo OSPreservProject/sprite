@@ -17,7 +17,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "machConst.h"
@@ -108,12 +108,48 @@ Mach_DeencapState(procPtr, infoPtr, buffer)
 
     if (infoPtr->size != sizeof(MigratedState)) {
 	if (proc_MigDebugLevel > 0) {
-	    printf("Mach_DeencapState: warning: host %d tried to migrate onto this host with wrong structure size.  Ours is %d, theirs is %d.\n",
-		   procPtr->peerHostID, sizeof(MigratedState),
-		   infoPtr->size);
+	    printf("Mach_DeencapState: warning: host %d tried to migrate",
+		procPtr->peerHostID);
+	    printf(" onto this host with wrong structure size.");
+	    printf("  Ours is %d, theirs is %d.\n",
+		sizeof(MigratedState), infoPtr->size);
 	}
 	return(PROC_MIGRATION_REFUSED);
     }
+
+#ifdef sun3
+    if (migPtr->userState.trapFpuState.version != 0) {
+	if (mach68881Present == FALSE) {
+	    /*
+	     *  This machine has no fpu, and this process needs one.
+	     *  So we can't accept it.
+	     */
+	    printf("Mach_DeencapState: warning: host %d tried to migrate",
+		procPtr->peerHostID);
+	    printf(" a process that uses the fpu.  This host has no fpu.\n");
+	    return PROC_MIGRATION_REFUSED;
+	}
+	if (migPtr->userState.trapFpuState.state != MACH_68881_IDLE_STATE) {
+	    printf("Mach_DeencapState: warning: host %d tried to migrate",
+		procPtr->peerHostID);
+	    printf(" a process with a non-idle fpu onto this host.  ");
+	    printf("The fpu was in state 0x%02x\n",
+		migPtr->userState.trapFpuState.state);
+	    return PROC_MIGRATION_REFUSED;
+	}
+	if (migPtr->userState.trapFpuState.version != mach68881Version) {
+	    /*
+	     *  The sending host has a different version of the
+	     *  mc68881 fpu.  The state frames are incompatible
+	     *  between versions.  But since it is in idle state
+	     *  we can just use a generic idle state frame, rather
+	     *  than the one we were sent.
+	     */
+	    migPtr->userState.trapFpuState = mach68881IdleState;
+	}
+    }
+#endif
+
     /*
      * Get rid of the process's old machine-dependent state if it exists.
      */
@@ -189,20 +225,42 @@ Mach_CanMigrate(procPtr)
     int stackFormat;
     Boolean okay;
 
-    stackFormat = procPtr->machStatePtr->userState.excStackPtr->vor.stackFormat;
-    okay = (stackFormat != MACH_MC68010_BUS_FAULT) ? TRUE : FALSE;
+    okay = TRUE;
+
+#ifdef sun2
     /*
      * We have trouble getting the pc from the 68010 bus fault stack,
      * but it seems okay for others.
      */
+    stackFormat = procPtr->machStatePtr->userState.excStackPtr->vor.stackFormat;
+    if (stackFormat == MACH_MC68010_BUS_FAULT) {
+	okay = FALSE;
+    }
+#endif
+
+#ifdef sun3
+    /*
+     *  If the floating point state is busy, that means that a
+     *  floating point instruction is suspended, waiting to be
+     *  restarted.  It cannot be restarted on a machine with another
+     *  version of the chip, since the microcode is incompatible between
+     *  revisions.  So we will delay the migration until the instruction
+     *  completes.
+     */
+    if (procPtr->machStatePtr->userState.trapFpuState.state >=
+        MACH_68881_BUSY_STATE) {
+	okay = FALSE;
+    }
+#endif
+
     if (proc_MigDebugLevel > 4) {
-	printf("Mach_CanMigrate called.  PC %x, stackFormat %x, returning %d.\n",
+	printf("Mach_CanMigrate called. PC %x, stackFormat %x, returning %d.\n",
 		   procPtr->machStatePtr->userState.excStackPtr->pc,
 		   stackFormat, okay);
     }
     return(okay);
 }    
-    
+
 
 /*
  *----------------------------------------------------------------------

@@ -112,34 +112,6 @@
 1:	moveml	sp@+, #0x0303; \
     	rte ;
 
-/*
- *----------------------------------------------------------------------
- *
- * Call Trap Handler --
- *
- * Go through the following steps:
- * 
- *   1) Determine if are in kernel or user mode.  If kernel mode then just
- *	put d0, d1, a0, a1, bus error reg and trap type onto stack and
- *	call trap handler.
- *
- *   Otherwise:
- *
- *   1) Grab a pointer to the current processes state structure.
- *	If the state structure does not exist then call the debugger directly.
- *      Since it requires a temporary register to get a pointer to the
- *	state structure a0 is saved on the stack.
- *   2) Save the normal registers (a0-a7,d0-d6) into the state struct.
- *   3) Copy the saved value of a0 from the stack into the state struct.
- *   4) Copy the true value of the stack pointer into the state struct.
- *   5) Make room on the stack for the registers that would have been saved
- *	(a0, a1, d0, and d1) if we had been in kernel mode.
- *   6) Save the bus error register on the stack.
- *   7) Push the trap type on the stack.
- *   8) Call the trap handler.
- *
- *----------------------------------------------------------------------
- */
 
 #ifdef sun3
 #define BUS_ERROR_MOVS movsb
@@ -158,15 +130,16 @@
  */
 #ifdef sun3
 #define RestoreUserFpuState() \
-        tstw        fpu_present; \
-	beq         1f; \
+        tstl        _mach68881Present; \
+	beq         2f; \
 	movl        _machCurStatePtr, a0; \
-	frestore    a0@(MACH_TRAP_FP_STATE_OFFSET); \
 	tstb        a0@(MACH_TRAP_FP_STATE_OFFSET); \
 	beq         1f; \
-	fmovem      a0@(MACH_TRAP_FP_REGS_OFFSET), #0xff; \
 	fmovem      a0@(MACH_TRAP_FP_CTRL_REGS_OFFSET), fpc/fps/fpi; \
-1:
+	fmovem      a0@(MACH_TRAP_FP_REGS_OFFSET), #0xff; \
+1: \
+	frestore    a0@(MACH_TRAP_FP_STATE_OFFSET); \
+2:
 #else
 #define RestoreUserFpuState()
 #endif
@@ -199,13 +172,14 @@
  */
 #ifdef sun3
 #define SaveUserFpuState() \
-        tstw        fpu_present; \
+        tstl        _mach68881Present; \
 	beq         1f; \
 	fsave       a0@(MACH_TRAP_FP_STATE_OFFSET); \
 	tstb        a0@(MACH_TRAP_FP_STATE_OFFSET); \
 	beq         1f; \
-	fmovem      #0xff, a0@(MACH_TRAP_FP_REGS_OFFSET); \
 	fmovem      fpc/fps/fpi, a0@(MACH_TRAP_FP_CTRL_REGS_OFFSET); \
+	fmovem      #0xff, a0@(MACH_TRAP_FP_REGS_OFFSET); \
+	frestore    _mach68881NullState; \
 1:
 #else
 #define SaveUserFpuState()
@@ -226,6 +200,36 @@
 	movc    usp, a1; \
 	movl	a1, a0@(MACH_USER_SP_OFFSET); \
 	moveml	#0xffff, a0@(MACH_TRAP_REGS_OFFSET);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Call Trap Handler --
+ *
+ * Go through the following steps:
+ * 
+ *   1) Determine if are in kernel or user mode.  If kernel mode then just
+ *	put d0, d1, a0, a1, bus error reg and trap type onto stack and
+ *	call trap handler.
+ *
+ *   Otherwise:
+ *
+ *   1) Grab a pointer to the current processes state structure.
+ *	If the state structure does not exist then call the debugger directly.
+ *      Since it requires a temporary register to get a pointer to the
+ *	state structure a0 is saved on the stack.
+ *   2) Save the normal registers (a0-a7,d0-d6) into the state struct.
+ *   3) Copy the saved value of a0 from the stack into the state struct.
+ *   4) Copy the true value of the stack pointer into the state struct.
+ *   5) Make room on the stack for the registers that would have been saved
+ *	(a0, a1, d0, and d1) if we had been in kernel mode.
+ *   6) Save the bus error register on the stack.
+ *   7) Push the trap type on the stack.
+ *   8) Call the trap handler.
+ *
+ *----------------------------------------------------------------------
+ */
 
 #define CallTrapHandler(type) \
 	.globl	_proc_RunningProcesses, _machStatePtrOffset; \
