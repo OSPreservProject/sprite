@@ -835,13 +835,13 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
      * Get a pointer to the name of the file to exec.
      */
 
-    for (strPtr = &(buffer[2]); Char_IsSpace(*strPtr); strPtr++) {
+    for (strPtr = &(buffer[2]); isspace(*strPtr); strPtr++) {
     }
     if (*strPtr == '\0') {
 	return(PROC_BAD_FILE_NAME);
     }
     shellNamePtr = strPtr;
-    while (!Char_IsSpace(*strPtr) && *strPtr != '\0') {
+    while (!isspace(*strPtr) && *strPtr != '\0') {
 	strPtr++;
     }
     *extraArgsPtr = 1;
@@ -853,7 +853,7 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
     if (*strPtr != '\0') {
 	*strPtr = '\0';
 	strPtr++;
-	while (Char_IsSpace(*strPtr)) {
+	while (isspace(*strPtr)) {
 	    strPtr++;
 	}
 	if (*strPtr != '\0') {
