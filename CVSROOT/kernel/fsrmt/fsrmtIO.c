@@ -34,9 +34,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <vm.h>
 #include <dbg.h>
-#ifdef SOSP91
-#include <sospRecord.h>
-#endif /* SOSP91 */
 
 int FsrmtRpcCacheUnlockBlock _ARGS_((ClientData clientData));
 
@@ -171,16 +168,6 @@ Fsrmt_Read(streamPtr, readPtr, waitPtr, replyPtr)
     replyPtr->length = amountRead;
     Fs_StatAdd(amountRead, fs_Stats.gen.remoteBytesRead,
 	       fs_Stats.gen.remoteReadOverflow);
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    Fs_StatAdd(amountRead, fs_SospMigStats.gen.remoteBytesRead, 
-			fs_SospMigStats.gen.remoteReadOverflow);
-	}
-    }
-#endif SOSP91
     if (userSpace) {
 	free(readBufferPtr);
     }
@@ -275,11 +262,6 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	 */
 	streamPtr = (Fs_Stream *)NIL;
     }
-
-#ifdef SOSP91
-    paramsPtr->io.reserved = clientID;
-#endif SOSP91
-
     if (hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM &&
 	paramsPtr->io.length == FS_BLOCK_SIZE &&
 	(paramsPtr->io.offset & FS_BLOCK_OFFSET_MASK) == 0) {
@@ -292,25 +274,6 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	Fscache_Block	*cacheBlockPtr;	/* Direct reference to cache block */
 	Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
 	int lengthRead = 0;
-#ifdef SOSP91
-	Fsconsist_Info *consistPtr = &handlePtr->consist;
-	Fsconsist_ClientInfo	*clientPtr;
-	int	numReading, numWriting;
-
-	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
-	    if (clientPtr->clientID == clientID) {
-	        if (!clientPtr->cached) {
-		    (void) Fsconsist_NumClients(consistPtr, &numReading,
-			    &numWriting);
-		    SOSP_ADD_READ_TRACE(clientID, handlePtr->hdr.fileID,
-			    paramsPtr->streamID, TRUE, paramsPtr->io.offset,
-			    paramsPtr->io.length, numReading, numWriting);
-		}
-		break;
-	    }
-	}
-#endif SOSP91
-
 	status = Fscache_BlockRead(&handlePtr->cacheInfo,
 				  paramsPtr->io.offset / FS_BLOCK_SIZE,
 				  &cacheBlockPtr, &lengthRead, 
@@ -517,16 +480,6 @@ Fsrmt_Write(streamPtr, writePtr, waitPtr, replyPtr)
     replyPtr->length = amountWritten;
     Fs_StatAdd(amountWritten, fs_Stats.gen.remoteBytesWritten,
 	       fs_Stats.gen.remoteWriteOverflow);
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    Fs_StatAdd(amountWritten, fs_SospMigStats.gen.remoteBytesWritten, 
-			fs_SospMigStats.gen.remoteWriteOverflow);
-	}
-    }
-#endif SOSP91
     if (userSpace) {
 	free(writeBufferPtr);
     }
@@ -612,9 +565,6 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	    Fsutil_HandleUnlock(streamPtr);
 	}
     }
-#ifdef SOSP91
-    paramsPtr->io.reserved = clientID;
-#endif SOSP91
     FSUTIL_TRACE_IO(FSUTIL_TRACE_SRV_WRITE_2, hdrPtr->fileID,
 		paramsPtr->io.offset, paramsPtr->io.length );
     paramsPtr->io.buffer = storagePtr->requestDataPtr;
@@ -960,9 +910,6 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 	int size;
 	int inSize;
 	int oldOffset = -1;
-#ifdef SOSP91
-	int flags = -1;
-#endif
 
 	if ((ioctl.inBuffer == (Address)NIL) || 
 	    (ioctl.inBufSize < sizeof(Ioc_RepositionArgs))) {
@@ -981,58 +928,11 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 	    if (size != sizeof(Ioc_RepositionArgs)) {
 		status = GEN_INVALID_ARG;
 	    }
-#ifdef SOSP91
-	    /*
-	     * SOSP91
-	     *
-	     *	The old offset is included in the RPC following the
-	     *	Ioc_RepositionArgs. If its not there assume the
-	     *	RPC came from a client running a standard kernel.
-	     */
-	    if (ioctl.inBufSize == sizeof(Ioc_RepositionArgs) + 12) {
-		char	*offsetPtr;
-		int	tmp[3];
-		offsetPtr = ioctl.inBuffer + inSize;
-		inSize = 3 * sizeof(int);
-		size = 3 * sizeof(int);
-		fmtStatus = Fmt_Convert("w3", ioctl.format, &inSize,
-			    offsetPtr, mach_Format, &size,
-			    (Address) tmp);
-		if (fmtStatus != 0) {
-		    printf("Format of old offset failed <0x%x>\n", 
-			fmtStatus);
-		}
-		if (size != 3 * sizeof(int)) {
-		    printf("Old offset wrong size %d\n", size);
-		}
-		oldOffset = tmp[0];
-		size = tmp[1];
-		flags = tmp[2];
-	    } else {
-#else
-	    {
-#endif
-		oldOffset = streamPtr->offset;
-	    }
+	    oldOffset = streamPtr->offset;
 	    iocArgsPtr = &iocArgs;
 	} else {
 	    iocArgsPtr = (Ioc_RepositionArgs *)ioctl.inBuffer;
-#ifdef SOSP91
-	    if (ioctl.inBufSize == sizeof(Ioc_RepositionArgs) + 12) {
-		int *ptr = (int *)(ioctl.inBuffer + sizeof(Ioc_RepositionArgs));
-		oldOffset = *ptr++;
-		size = *ptr++;
-		flags = *ptr;
-	    } else {
-		oldOffset = streamPtr->offset;
-	    }
-#endif
 	}
-#ifdef SOSP91
-	if (streamPtr->flags & FS_RMT_SHARED) {
-	    oldOffset = streamPtr->offset;
-	}
-#endif
 	if (status == SUCCESS) {
 	    switch(iocArgsPtr->base) {
 		case IOC_BASE_ZERO:
@@ -1082,12 +982,6 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 		    }
 		}
 		if (status == SUCCESS) {
-#ifdef SOSP91
-		    if (oldOffset != newOffset) {
-			SOSP_ADD_LSEEK_TRACE(streamPtr->hdr.fileID, oldOffset,
-			    newOffset, flags);
-		    }
-#endif
 		    streamPtr->offset = newOffset;
 		}
 	    }
