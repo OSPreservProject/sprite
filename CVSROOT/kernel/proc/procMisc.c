@@ -35,7 +35,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 static Boolean CheckIfUsed();
-static ReturnStatus ProcDumpPCB();
 static ReturnStatus GetRemotePCB();
 
 
@@ -637,7 +636,7 @@ Proc_Dump()
 {
     printf("%8s %5s %10s %10s %8s %8s   %s\n",
 	"ID", "wtd", "user", "kernel", "event", "state", "name");
-    Proc_DoForEveryProc(CheckIfUsed, ProcDumpPCB, TRUE);
+    Proc_DoForEveryProc(CheckIfUsed, Proc_DumpPCB, TRUE);
     return(SUCCESS);
 }
 
@@ -645,7 +644,7 @@ Proc_Dump()
 /*
  *----------------------------------------------------------------------
  *
- * ProcDumpPCB --
+ * Proc_DumpPCB --
  *
  *	Prints out the contents of a PCB for debugging purposes.
  *
@@ -658,8 +657,8 @@ Proc_Dump()
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
-ProcDumpPCB(procPtr)
+ReturnStatus
+Proc_DumpPCB(procPtr)
     Proc_ControlBlock *procPtr;
 {
 
@@ -699,7 +698,9 @@ ProcDumpPCB(procPtr)
 	    }
 	    break;
 	default:
-	    panic("DumpPCB: invalid process state: %x.\n", state);
+	    printf("Warning: Proc_DumpPCB: process %x has invalid process state: %x.\n",
+		   procPtr->processID, state);
+	    return;
     }
     /*
      * A header describing the fields has already been printed.
