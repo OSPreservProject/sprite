@@ -63,6 +63,8 @@ FsControlHandleInit(fileIDPtr, name)
 	List_Init(&ctrlHandlePtr->readWaitList);
 	FsLockInit(&ctrlHandlePtr->lock);
 	FsRecoveryInit(&ctrlHandlePtr->rmt.recovery);
+	ctrlHandlePtr->accessTime = 0;
+	ctrlHandlePtr->modifyTime = 0;
 	ctrlHandlePtr->prefixPtr = (FsPrefix *)NIL;
     }
     return(ctrlHandlePtr);
@@ -312,10 +314,97 @@ FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * FsControlGetIOAttr --
+ *
+ *	Called from Fs_GetAttrStream to get the I/O attributes of a
+ *	pseudo-device.  The access and modify times of the pseudo-device
+ *	are obtained from the internal pdev state.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsControlGetIOAttr(fileIDPtr, clientID, attrPtr)
+    register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
+    int				clientID;	/* Host ID of process asking
+						 * for the attributes */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+{
+    PdevControlIOHandle		*ctrlHandlePtr;
+
+    ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
+	printf( "FsControlGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
+	    FsFileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
+	    fileIDPtr->major, fileIDPtr->minor, clientID);
+	return(FS_FILE_NOT_FOUND);
+    }
+
+    if (ctrlHandlePtr->accessTime > 0) {
+	attrPtr->accessTime.seconds = ctrlHandlePtr->accessTime;
+    }
+    if (ctrlHandlePtr->modifyTime > 0) {
+	attrPtr->dataModifyTime.seconds = ctrlHandlePtr->modifyTime;
+    }
+
+    FsHandleRelease(ctrlHandlePtr, TRUE);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsControlSetIOAttr --
+ *
+ *	Set the IO attributes of a pseudo-device.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Updates the access and modify times kept in the pdev state.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsControlSetIOAttr(fileIDPtr, attrPtr, flags)
+    register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+    int				flags;		/* Tells which attrs to set */
+{
+    PdevControlIOHandle		*ctrlHandlePtr;
+
+    ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
+	printf( "FsControlSetIOAttr, no handle <%d,%d,%x,%x>\n",
+	    fileIDPtr->serverID, fileIDPtr->type,
+	    fileIDPtr->major, fileIDPtr->minor);
+	return(FS_FILE_NOT_FOUND);
+    }
+    if (flags & FS_SET_TIMES) {
+	ctrlHandlePtr->accessTime = attrPtr->accessTime.seconds;
+	ctrlHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
+    }
+    FsHandleRelease(ctrlHandlePtr, TRUE);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FsControlVerify --
  *
- *	Verify that the remote server is known for the pseudo-device,
- *	and return a locked pointer to the control I/O handle.
+ *	This is called during recovery.
+ *	When the server at a remote site reopens its control stream it
+ *	contacts the file server to re-establish itself as the server.
+ *	This procedure is called from FsStreamReopen to get the control
+ *	handle associated with the top-level shadow stream here at the
+ *	file server.
  *
  * Results:
  *	A pointer to the control I/O handle, or NIL if the server is bad.
@@ -344,8 +433,7 @@ FsControlVerify(fileIDPtr, pdevServerHostID)
 	}
     }
     if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
-	printf(
-	    "FsControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
+	printf("FsControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
 	    pdevServerHostID, serverID, FsFileTypeToString(fileIDPtr->type),
 	    fileIDPtr->major, fileIDPtr->minor);
     }
