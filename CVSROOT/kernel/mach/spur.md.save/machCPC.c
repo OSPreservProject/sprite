@@ -28,7 +28,7 @@
  */
 
 typedef struct  {
-    int		lock;		/* Lock protecting entry. */
+    Sync_Semaphore lock;	/* Lock protecting entry. */
     ClientData	(*routine)();	/* Routine to call. */
     ClientData	argument;	/* Argument to the routine. */
     ClientData	*returnValue;	/* Location to place return value. */
@@ -72,12 +72,15 @@ static void ExecuteCall();
 void
 Mach_CPC_Init()
 {
+    int		i;
     /*
      * Ensure that locks and boolean variables of every communication block
      * are zero.
      */
     bzero(machCPCData, sizeof(machCPCData));
-
+    for (i = 0; i  < MACH_MAX_NUM_PROCESSORS; i++) {
+	SYNC_SEM_INIT_DYNAMIC(&(machCPCData[i].lock),"CPCMutex");
+    }
     /*
      * Allocate an external interrupt for CPCs. 
      */
@@ -123,7 +126,7 @@ Mach_CallProcessor(processorNumber, routine, argument, wait, returnValue)
      * First grap execlusive access to the CPC communication area for the
      * processor we wish to talk with. 
      */
-    MASTER_LOCK(machCPCData[processorNumber].lock);
+    MASTER_LOCK(&(machCPCData[processorNumber].lock));
     /* 
      * Once we grap the lock, fill in the entry and interrupt the
      * specified procesor. 
@@ -153,7 +156,7 @@ Mach_CallProcessor(processorNumber, routine, argument, wait, returnValue)
 	   printf("Warning: Processor %d appears hung.\n", processorNumber);
 	   status = FAILURE;
 	}
-	MASTER_UNLOCK(machCPCData[processorNumber].lock);
+	MASTER_UNLOCK(&(machCPCData[processorNumber].lock));
 
     }
     return (status);
@@ -188,7 +191,7 @@ ExecuteCall(intrStatusPtr)
      * Compute a store the current processor number.
      */
     processorNumber = Mach_GetProcessorNumber();
-    if (machCPCData[processorNumber].lock == 0) {
+    if (machCPCData[processorNumber].lock.value == 0) {
 	printf("Warning: Processor %d received bogus call interrupt\n",
 			processorNumber);
 	return;
@@ -216,7 +219,7 @@ ExecuteCall(intrStatusPtr)
 	if (machCPCData[processorNumber].returnValue != (ClientData *) NIL) {
 	    (*machCPCData[processorNumber].returnValue) = (ClientData) TRUE;
 	}
-	MASTER_UNLOCK(machCPCData[processorNumber].lock);
+	MASTER_UNLOCK(&(machCPCData[processorNumber].lock));
     }
     return;
 }
