@@ -54,10 +54,16 @@ int fsCompacts;		/* The number of times a directory block was so
 			 * fragmented that we could have compacted it to
 			 * make room for a new entry in the directory */
 /*
- * The component hash table.
+ * A cache of recently seen pathname components is kept in a hash table.
+ * The hash table gets initialized in FsAttachDisk after the first disk
+ * gets attached.
+ * The name caching can be disabled by setting the fsNameCaching flag to FALSE.
  */
+
 FsHashTable fsNameTable;
-FsHashTable *fsNameTablePtr = &fsNameTable;
+FsHashTable *fsNameTablePtr = (FsHashTable *)NIL;
+Boolean fsNameCaching = TRUE;
+int fsNameHashSize = FS_NAME_HASH_SIZE;
 
 /*
  * Forward Declarations.
@@ -1707,15 +1713,15 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	    curHandlePtr->flags |= FS_FILE_DELETED;
 	    if (curHandlePtr->use.ref == 0) {
 		/*
-		 * Delete the file from disk.
-		 */
-		status = FsDeleteFileDesc(curHandlePtr);
-		/*
 		 * Tell other clients (only the last writer) that the
 		 * file has been deleted.  Call with our own hostID
 		 * order to guarantee a call-back to all clients.
 		 */
 		FsClientRemoveCallback(&curHandlePtr->consist, rpc_SpriteID);
+		/*
+		 * Delete the file from disk.
+		 */
+		status = FsDeleteFileDesc(curHandlePtr);
 		/*
 		 * Wipe out the handle.
 		 */
@@ -1739,15 +1745,17 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
  *----------------------------------------------------------------------
  *
  * FsDeleteFileDesc --
- *	Delete a file given its file handle.  It is assumed that the
+ *	Delete a file from disk given its file handle.  It is assumed that the
  *	file's name has already been deleted from the directory structure.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Delete the data blocks and free up the file descriptor.  The
- *	handle's state is not altered - it is assumed to be locked.
+ *	Delete the data blocks and mark file descriptor as free.  The
+ *	handle remains locked during this call.  The DESCRIPTOR referenced
+ *	by the handle is FREED because the file handle is going to
+ *	be removed.
  *
  *----------------------------------------------------------------------
  */
@@ -1758,7 +1766,6 @@ FsDeleteFileDesc(handlePtr)
 {
     ReturnStatus status;
     FsDomain *domainPtr;
-    FsFileDescriptor *descPtr;
 
     if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
 	/*
@@ -1777,15 +1784,16 @@ FsDeleteFileDesc(handlePtr)
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "FsDeleteFileDesc: Can't truncate file\n");
     } else {
-	descPtr = handlePtr->descPtr;
-	descPtr->flags = FS_FD_FREE;
+	handlePtr->descPtr->flags = FS_FD_FREE;
 	status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
-					    descPtr);
+					    handlePtr->descPtr);
 	if (status != SUCCESS) {
 	    Sys_Panic(SYS_WARNING, "FsDeleteFileDesc: Can't free descriptor\n");
 	} else {
 	    FsFreeFileNumber(domainPtr, handlePtr->hdr.fileID.minor);
 	}
+	Mem_Free((Address)handlePtr->descPtr);
+	handlePtr->descPtr = (FsFileDescriptor *)NIL;
     }
     FsDomainRelease(handlePtr->hdr.fileID.major);
     return(status);
