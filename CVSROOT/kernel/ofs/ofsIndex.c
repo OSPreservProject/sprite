@@ -1,14 +1,14 @@
 /* 
- * fsIndex.c --
+ * ofsIndex.c --
  *
  *	Routines to allow moving through a files block pointers.  The method
  *	of using these routines is the following:
  *
- *	    1) Call Fsdm_GetFirstIndex to get the first block.
- *	    2) Call Fsdm_GetNextIndex to get subsequent blocks.
- *	    3) Call Fsdm_EndIndex when finished.
+ *	    1) Call OfsGetFirstIndex to get the first block.
+ *	    2) Call OfsGetNextIndex to get subsequent blocks.
+ *	    3) Call OfsEndIndex when finished.
  *
- *	There are flags to Fsdm_GetFirstIndex that allow indirect blocks
+ *	There are flags to OfsGetFirstIndex that allow indirect blocks
  *	to be deleted and allocated as appropriate.
  *
  *	The data structure operated on is the disk map kept in the disk
@@ -33,27 +33,34 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fslcl.h"
-#include "fscache.h"
-#include "fsStat.h"
-#include "spriteTime.h"
-#include "fsdm.h"
-#include "fsdmInt.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fslcl.h>
+#include <fscache.h>
+#include <fsStat.h>
+#include <spriteTime.h>
+#include <fsdm.h>
+#include <ofs.h>
 
-static ReturnStatus	FetchIndirectBlock();
-static ReturnStatus	MakePtrAccessible();
-static void		FreeIndirectBlock();
+static ReturnStatus MakePtrAccessible _ARGS_((Fsio_FileIOHandle *handlePtr,
+		 OfsBlockIndexInfo *indexInfoPtr));
+static ReturnStatus FetchIndirectBlock _ARGS_((int indBlockNum,
+		Fsio_FileIOHandle *handlePtr, 
+		OfsBlockIndexInfo *indexInfoPtr, 
+		int *blockAddrPtr, int cacheBlockNum));
+static void FreeIndirectBlock _ARGS_((int indBlockNum, 
+		Fsio_FileIOHandle *handlePtr, OfsBlockIndexInfo *indexInfoPtr,
+		int *blockAddrPtr));
+
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_GetFirstIndex --
+ * OfsGetFirstIndex --
  *
  *	Initialize the index structure.  This will set up the index info
  *	structure so that it contains a pointer to the desired block pointer.
@@ -69,25 +76,23 @@ static void		FreeIndirectBlock();
  */
 
 ReturnStatus
-Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
+OfsGetFirstIndex(ofsPtr, handlePtr, blockNum, indexInfoPtr, flags)
+    Ofs_Domain		      *ofsPtr;	     /* Domain of file. */
     Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
 					      * indexing. */
     int			      blockNum;      /* Where to start indexing. */
-    register Fsdm_BlockIndexInfo *indexInfoPtr; /* Index structure to initialize.*/
-    int			      flags;	     /* FSDM_ALLOC_INDIRECT_BLOCKS,
-						FSDM_DELETE_INDIRECT_BLOCKS,
-						FSDM_DELETE_EVERYTHING,
+    register OfsBlockIndexInfo *indexInfoPtr; /* Index structure to initialize.*/
+    int			      flags;	     /* OFS_ALLOC_INDIRECT_BLOCKS,
+						OFS_DELETE_INDIRECT_BLOCKS,
+						OFS_DELETE_EVERYTHING,
 						FSCACHE_DONT_BLOCK */
 {
     register Fsdm_FileDescriptor 	*descPtr;
     int			      	indirectBlock;
     ReturnStatus		status = SUCCESS;
 
-    indexInfoPtr->domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major,
-					    FALSE);
-    if (indexInfoPtr->domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
+    indexInfoPtr->ofsPtr = ofsPtr,
+
     descPtr = handlePtr->descPtr;
     indexInfoPtr->lastDiskBlock = FSDM_NIL_INDEX;
     indexInfoPtr->indInfo[0].blockPtr = (Fscache_Block *) NIL;
@@ -101,7 +106,7 @@ Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
 	/*
 	 * This is a direct block.
 	 */
-	indexInfoPtr->indexType = FSDM_DIRECT;
+	indexInfoPtr->indexType = OFS_DIRECT;
 	indexInfoPtr->directIndex = blockNum;
 	indexInfoPtr->blockAddrPtr = &(descPtr->direct[blockNum]);
 	return(SUCCESS);
@@ -117,20 +122,20 @@ Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
 	/*
 	 * This is a singly indirect block.
 	 */
-	indexInfoPtr->indexType = FSDM_INDIRECT;
+	indexInfoPtr->indexType = OFS_INDIRECT;
 	indexInfoPtr->indInfo[0].index = blockNum;
-	if (flags & FSDM_DELETE_EVERYTHING) {
+	if (flags & OFS_DELETE_EVERYTHING) {
 	    indexInfoPtr->indInfo[0].deleteBlock = FSCACHE_DELETE_BLOCK;
 	}
     } else if (indirectBlock < FSDM_INDICES_PER_BLOCK + 1) {
 	/*
 	 * This a doubly indirect block.
 	 */
-	indexInfoPtr->indexType = FSDM_DBL_INDIRECT;
+	indexInfoPtr->indexType = OFS_DBL_INDIRECT;
 	indexInfoPtr->indInfo[0].index = indirectBlock - 1;
 	indexInfoPtr->indInfo[1].index = 
 			    blockNum - indirectBlock * FSDM_INDICES_PER_BLOCK;
-	if (flags & FSDM_DELETE_EVERYTHING) {
+	if (flags & OFS_DELETE_EVERYTHING) {
 	    indexInfoPtr->indInfo[0].deleteBlock = FSCACHE_DELETE_BLOCK;
 	    indexInfoPtr->indInfo[1].deleteBlock = FSCACHE_DELETE_BLOCK;
 	}
@@ -149,16 +154,13 @@ Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
     if (status == SUCCESS) {
 	status = MakePtrAccessible(handlePtr, indexInfoPtr);
     }
-    if (status != SUCCESS) {
-	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    }
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_GetNextIndex --
+ * OfsGetNextIndex --
  *
  *	Put the correct pointers in the index structure to access the
  *	block after the current block.
@@ -175,10 +177,10 @@ Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
  */
 
 ReturnStatus
-Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
+OfsGetNextIndex(handlePtr, indexInfoPtr, dirty)
     Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that is being
 						indexed. */
-    register Fsdm_BlockIndexInfo *indexInfoPtr; /* Index structure to set up. */
+    register OfsBlockIndexInfo *indexInfoPtr; /* Index structure to set up. */
     Boolean		      dirty;	     /* True if allocated a new block
 						so dirtied block pointer. */
 {
@@ -196,9 +198,9 @@ Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
     }
 
     if (dirty) {
-	if (indexInfoPtr->indexType == FSDM_INDIRECT) {
+	if (indexInfoPtr->indexType == OFS_INDIRECT) {
 	    indexInfoPtr->indInfo[0].blockDirty = TRUE;
-	} else if (indexInfoPtr->indexType == FSDM_DBL_INDIRECT) {
+	} else if (indexInfoPtr->indexType == OFS_DBL_INDIRECT) {
 	    indexInfoPtr->indInfo[1].blockDirty = TRUE;
 	}
     }
@@ -208,7 +210,7 @@ Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
      */
 
     switch (indexInfoPtr->indexType) {
-	case FSDM_DIRECT:
+	case OFS_DIRECT:
 	    if (indexInfoPtr->blockNum < FSDM_NUM_DIRECT_BLOCKS) {
 		/*
 		 * Still in the direct blocks.
@@ -221,14 +223,14 @@ Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
 		/*
 		 * Moved into indirect blocks.
 		 */
-		indexInfoPtr->indexType = FSDM_INDIRECT;
+		indexInfoPtr->indexType = OFS_INDIRECT;
 		indexInfoPtr->indInfo[0].index = 0;
-		if (indexInfoPtr->flags & FSDM_DELETE_INDIRECT_BLOCKS) {
+		if (indexInfoPtr->flags & OFS_DELETE_INDIRECT_BLOCKS) {
 		    indexInfoPtr->indInfo[0].deleteBlock = FSCACHE_DELETE_BLOCK;
 		}
 	    }
 	    break;
-	case FSDM_INDIRECT:
+	case OFS_INDIRECT:
 	    if (indexInfoPtr->blockNum < 
 			FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK) {
 		/*
@@ -246,19 +248,19 @@ Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
 		 */
 		indexInfoPtr->indInfo[0].index = 0;
 		indexInfoPtr->indInfo[1].index = 0;
-		indexInfoPtr->indexType = FSDM_DBL_INDIRECT;
+		indexInfoPtr->indexType = OFS_DBL_INDIRECT;
 		/*
 		 * Free up the indirect pointer block.
 		 */
 		FreeIndirectBlock(0, handlePtr, indexInfoPtr, 
 		    &descPtr->indirect[0]);
-		if (indexInfoPtr->flags & FSDM_DELETE_INDIRECT_BLOCKS) {
+		if (indexInfoPtr->flags & OFS_DELETE_INDIRECT_BLOCKS) {
 		    indexInfoPtr->indInfo[0].deleteBlock = FSCACHE_DELETE_BLOCK;
 		    indexInfoPtr->indInfo[1].deleteBlock = FSCACHE_DELETE_BLOCK;
 		}
 	    }
 	    break;
-	case FSDM_DBL_INDIRECT:
+	case OFS_DBL_INDIRECT:
 	    indexInfoPtr->indInfo[1].index++;
 	    if (indexInfoPtr->indInfo[1].index == FSDM_INDICES_PER_BLOCK) {
 		indexInfoPtr->indInfo[0].index++;
@@ -279,7 +281,7 @@ Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
 			     &(descPtr->indirect[FSDM_DBL_INDIRECT]));
 		    return(FS_INVALID_ARG);
 		}
-		if (indexInfoPtr->flags & FSDM_DELETE_INDIRECT_BLOCKS) {
+		if (indexInfoPtr->flags & OFS_DELETE_INDIRECT_BLOCKS) {
 		    indexInfoPtr->indInfo[1].deleteBlock = FSCACHE_DELETE_BLOCK;
 		}
 	    } else {
@@ -307,10 +309,10 @@ Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_EndIndex --
+ * OfsEndIndex --
  *
  *	Free up cache blocks locked for indexing.  This also frees
- *	a reference to the domain acquired with Fsdm_GetFirstIndex.
+ *	a reference to the domain acquired with OfsGetFirstIndex.
  *
  * Results:
  *	None.
@@ -322,10 +324,10 @@ Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
  */
 
 void
-Fsdm_EndIndex(handlePtr, indexInfoPtr, dirty) 
+OfsEndIndex(handlePtr, indexInfoPtr, dirty) 
     Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that is being
 						indexed. */
-    register Fsdm_BlockIndexInfo *indexInfoPtr; /* Index structure to cleanup. */
+    register OfsBlockIndexInfo *indexInfoPtr; /* Index structure to cleanup. */
     Boolean		      dirty;	     /* True if allocated a new block
 						so dirtied block pointer. */
 {
@@ -351,7 +353,6 @@ Fsdm_EndIndex(handlePtr, indexInfoPtr, dirty)
     }
     FreeIndirectBlock(0, handlePtr, indexInfoPtr,
 		     &(descPtr->indirect[indexInfoPtr->indexType]));
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
 }
 
 /*
@@ -375,7 +376,7 @@ Fsdm_EndIndex(handlePtr, indexInfoPtr, dirty)
 static ReturnStatus
 MakePtrAccessible(handlePtr, indexInfoPtr)
     register	Fsio_FileIOHandle	 *handlePtr;
-    register	Fsdm_BlockIndexInfo 	*indexInfoPtr;
+    register	OfsBlockIndexInfo 	*indexInfoPtr;
 {
     register	Fsdm_FileDescriptor 	*descPtr;
     register	int 			*blockAddrPtr;
@@ -387,7 +388,7 @@ MakePtrAccessible(handlePtr, indexInfoPtr)
     if (indexInfoPtr->indexType == FSDM_INDIRECT) {
 	blockAddrPtr = &(descPtr->indirect[0]);
 	if (*blockAddrPtr == FSDM_NIL_INDEX && 
-	    !(indexInfoPtr->flags & FSDM_ALLOC_INDIRECT_BLOCKS)) {
+	    !(indexInfoPtr->flags & OFS_ALLOC_INDIRECT_BLOCKS)) {
 	    indexInfoPtr->blockAddrPtr = (int *) NIL;
 	    return(SUCCESS);
 	}
@@ -417,7 +418,7 @@ MakePtrAccessible(handlePtr, indexInfoPtr)
      * Lock the second level block into the cache.
      */
     if (*blockAddrPtr == FSDM_NIL_INDEX &&
-	!(indexInfoPtr->flags & FSDM_ALLOC_INDIRECT_BLOCKS)) {
+	!(indexInfoPtr->flags & OFS_ALLOC_INDIRECT_BLOCKS)) {
 	indexInfoPtr->blockAddrPtr = (int *) NIL;
 	return(SUCCESS);
     }
@@ -461,7 +462,7 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 						 * block. */
     Fsio_FileIOHandle		*handlePtr;	/* File to fetch indirect
 					  	 * block for. */
-    register Fsdm_BlockIndexInfo 	*indexInfoPtr;  /* Indexing information for
+    register OfsBlockIndexInfo 	*indexInfoPtr;  /* Indexing information for
 						 * this file. */
     register int		*blockAddrPtr;	/* Disk block number. */
     int				cacheBlockNum;	/* The block number by which
@@ -471,7 +472,7 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
     int				blockNum;
     Boolean			found;
     ReturnStatus		status = SUCCESS;
-    register Fsdm_IndirectInfo	*indInfoPtr;
+    register OfsIndirectInfo	*indInfoPtr;
     register int		*intPtr;
     Boolean			dontBlock;
 
@@ -480,12 +481,12 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
     indInfoPtr = &(indexInfoPtr->indInfo[indBlockNum]);
     if (indInfoPtr->blockPtr == (Fscache_Block *) NIL) {
 	if (*blockAddrPtr == FSDM_NIL_INDEX) {
-	    FsdmBlockFind(handlePtr->hdr.fileID.minor, indexInfoPtr->domainPtr, 
+	    OfsBlockFind(handlePtr->hdr.fileID.minor, indexInfoPtr->ofsPtr, 
 			-1, TRUE, &blockNum, &bitmapPtr);
 	    if (blockNum == -1) {
 		return(FS_NO_DISK_SPACE);
 	    }
-	    blockNum += indexInfoPtr->domainPtr->headerPtr->dataOffset;
+	    blockNum += indexInfoPtr->ofsPtr->headerPtr->dataOffset;
 	    *blockAddrPtr = blockNum * FS_FRAGMENTS_PER_BLOCK;
 	    handlePtr->descPtr->numKbytes += FS_FRAGMENTS_PER_BLOCK;
 	    Fscache_FetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
@@ -516,8 +517,7 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 		return(FS_WOULD_BLOCK);
 	    }
 	    if (!found) {
-		status = Fsio_DeviceBlockIO(FS_READ,
-			&(indexInfoPtr->domainPtr->headerPtr->device), 
+		status = OfsDeviceBlockIO(indexInfoPtr->ofsPtr, FS_READ,
 		       *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK, 
 		       indInfoPtr->blockPtr->blockAddr);
 		if (status == SUCCESS) {
@@ -540,7 +540,7 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
  * FreeIndirectBlock --
  *
  *	Remove the given block from the cache and, if appropriate, from disk.
- *	This is called whenever Fsdm_GetNextIndex or Fsdm_EndIndex are 
+ *	This is called whenever OfsGetNextIndex or OfsEndIndex are 
  *	finished with an indirect block that has previously been locked
  *	into the cache by MakePtrAccessible.
  *
@@ -558,18 +558,18 @@ FreeIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr)
 						 * free.*/
     Fsio_FileIOHandle		*handlePtr;	/* File to delete indirect
 						 * block from. */
-    register Fsdm_BlockIndexInfo 	*indexInfoPtr; 	/* Index structure to use. */
+    register OfsBlockIndexInfo 	*indexInfoPtr; 	/* Index structure to use. */
     int				*blockAddrPtr;	/* Pointer to block to free. */
 {
     int				modTime;
     int				indBlock;
-    register	Fsdm_IndirectInfo	*indInfoPtr;
+    register	OfsIndirectInfo	*indInfoPtr;
 
     indInfoPtr = &indexInfoPtr->indInfo[indBlockNum];
 
     if (indInfoPtr->blockPtr != (Fscache_Block *) NIL) {
 	if (indInfoPtr->blockDirty) {
-	    modTime = fsutil_TimeInSeconds;
+	    modTime = Fsutil_TimeInSeconds();
 	    if (!indInfoPtr->deleteBlock) {
 		fs_Stats.blockCache.indBlockWrites++;
 	    }
@@ -581,8 +581,8 @@ FreeIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr)
 	   indInfoPtr->deleteBlock);
 	if (indInfoPtr->deleteBlock) {
 	    indBlock = *blockAddrPtr / FS_FRAGMENTS_PER_BLOCK;
-	    FsdmBlockFree(indexInfoPtr->domainPtr,
-		    indBlock - indexInfoPtr->domainPtr->headerPtr->dataOffset);
+	    OfsBlockFree(indexInfoPtr->ofsPtr,
+		    indBlock - indexInfoPtr->ofsPtr->headerPtr->dataOffset);
 	    *blockAddrPtr = FSDM_NIL_INDEX;
 	    handlePtr->descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
 	}
