@@ -40,7 +40,7 @@ static void StartSlaveProcessors();
 /*
  *  Pathname of the Init program.
  */
-#define INIT	 	"/initsprite.spur"
+#define INIT	 	"cmds/initsprite"
 
 /*
  * Flags defined in individual's mainHook.c to modify the startup behavior. 
@@ -50,6 +50,8 @@ extern Boolean main_Debug;	/* If TRUE then enter the debugger */
 extern Boolean main_DoProf;	/* If TRUE then start profiling */
 extern Boolean main_DoDumpInit;	/* If TRUE then initialize dump routines */
 extern Boolean main_AllowNMI;	/* If TRUE then allow non-maskable interrupts.*/
+extern char   *main_AltInit;	/* If non-null, then it gives name of
+				 * alternate init program. */
 
 extern int main_NumRpcServers;	/* # of rpc servers to spawn off */
 extern void Main_HookRoutine();	/* routine to allow custom initialization */
@@ -444,14 +446,18 @@ main()
 static void
 Init()
 {
-    int		status;
-    static char	*initArgs[] = { INIT, (char *) NIL };
-    static char	*altInitArgs[] = { 0, (char *) NIL };
-    static int	initLoop = 0;
-    int		pid;
-    int		i;
+    char		*initArgs[10];
+    ReturnStatus	status;
+    char		argBuffer[100];
+    int			argc;
+    Fs_Stream		*dummy;
+    char		bootCommand[103];
+    char		*ptr;
+    int			i;
+    int			argLength;
 
-    bootProgress = 20;
+
+     bootProgress = 20;
     /*
      * Indicate that we are alive.
      */
@@ -461,10 +467,43 @@ Init()
 	Mach_MonPrintf("In Init\n");
     }
     Rpc_GetStats(SYS_RPC_ENABLE_SERVICE,1,0);
+    initArgs[1] = "-b";
+    argc = Mach_GetBootArgs(8, 100, &(initArgs[2]), argBuffer);
+    if (argc > 0) {
+	argLength = (((int) initArgs[argc+1]) + strlen(initArgs[argc+1]) +
+			1 - ((int) argBuffer));
+    } else {
+	argLength = 0;
+    }
+    bzero(bootCommand, 103);
+    ptr = bootCommand;
+    for (i = 0; i < argLength; i++) {
+	if (argBuffer[i] == '\0') {
+	    *ptr++ = ' ';
+	} else {
+	    *ptr++ = argBuffer[i];
+	}
+    }
+    bootCommand[argLength] = '\0';
+    initArgs[2] = bootCommand;
+    initArgs[argc + 2] = (char *) NIL;
     led_display(0x50,0,0);
+    if (main_AltInit != 0) {
+	initArgs[0] = main_AltInit;
+	printf("Execing \"%s\"\n", initArgs[0]);
+	status = Proc_KernExec(initArgs[0], initArgs);
+	printf( "Init: Could not exec %s status %x.\n",
+			initArgs[0], status);
+    }
+    printf("Trying to open %s.\n",INIT);
+    status = Fs_Open(INIT,FS_EXECUTE | FS_FOLLOW, FS_FILE, 0, &dummy);
+    if (status != SUCCESS) {
+	printf("Can't open %s <0x%x>\n", INIT,status);
+    }
+    initArgs[0] = INIT;
     status = Proc_KernExec(initArgs[0], initArgs);
-    printf("Warning: Init: Could not exec %s.\n", initArgs[0]);
-
+    printf( "Init: Could not exec %s status %x.\n",
+			initArgs[0], status);
     Proc_Exit(1);
 }
 
