@@ -358,6 +358,7 @@ typedef struct Fs_WriteBackStats {
     int passes;			/* Number of times Fs_CleanBlocks called */
     int files;			/* Number of dirty files processed */
     int blocks;			/* Number of dirty blocks processed */
+    int maxBlocks;		/* Max blocks processed in one pass */
 } Fs_WriteBackStats;
 
 /*
