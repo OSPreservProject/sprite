@@ -32,6 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsInt.h"
 #include "fsNameHash.h"
 #include "net.h"
+#include "mem.h"
 
 /*
  * Define constants, which are used instead of enumerated types to allow
@@ -103,6 +104,7 @@ PrintL1Menu()
     Sys_Printf("s - Reset timer stats\n");
     Sys_Printf("t - Dump the timer queue\n");
     Sys_Printf("v - Print version string of the kernel\n");
+    Sys_Printf("w - Dump the memory trace buffer\n");
     Sys_Printf("x - Scavenge filesystem handles\n");
     Sys_Printf("y - Dump RPC recovery trace\n");
     Sys_Printf("z - Dump RPC packet trace\n");
@@ -157,6 +159,7 @@ Dump_Init()
     Dev_KbdQueueAttachProc('s', DumpTimerStats,   (ClientData) 's');
     Dev_KbdQueueAttachProc('t', Dump_TimerQueue,  (ClientData) 0);
     Dev_KbdQueueAttachProc('v', PrintVersion, (ClientData) 0);
+    Dev_KbdQueueAttachProc('w', Mem_DumpTrace, (ClientData) -1);
     Dev_KbdQueueAttachProc('x', Fs_HandleScavengeStub, (ClientData) 0);
     Dev_KbdQueueAttachProc('y', Rpc_PrintRecovTrace, (ClientData) 50);
     Dev_KbdQueueAttachProc('z', Rpc_PrintTrace, (ClientData) 50);
