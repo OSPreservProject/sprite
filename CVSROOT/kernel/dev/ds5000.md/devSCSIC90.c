@@ -64,9 +64,10 @@ static int              SpecialSenseProc _ARGS_((ScsiCmd *scsiCmdPtr,
 					    int byteCount,
 					    int senseLength,
 					    Address senseDataPtr));
-static void             PutCircBuf _ARGS_((int type, char *object));
 
 /*
+ * *** OBSOLETE ***
+ *
  * devSCSIC90Debug - debugging level
  *	2 - normal level
  *	4 - one print per command in the normal case
@@ -75,13 +76,6 @@ static void             PutCircBuf _ARGS_((int type, char *object));
 int devSCSIC90Debug = 2;
 Controller *Controllers[MAX_SCSIC90_CTRLS];
 
-char        circBuf[CIRCBUFLEN] = {""};
-int         circHead = 0;
-char numTab[16] = {
-    '0', '1', '2', '3', '4', '5', '6', '7',
-    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-    };
-     
 
 
 /*
@@ -135,18 +129,6 @@ SendCommand(devPtr, scsiCmdPtr)
 							DMA_RECEIVE;
     }
 
-    PUTCIRCBUF(CSTR, "send: targ ");
-    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
-    PUTCIRCBUF(CSTR, ";cmd ");
-    PUTCIRCBUF(CINT, (char *)scsiCmdPtr);
-    PUTCIRCBUF(CSTR,";buf ");
-    PUTCIRCBUF(CINT, (char *)scsiCmdPtr->buffer);
-    PUTCIRCBUF(CSTR, ";len ");
-    PUTCIRCBUF(CINT, (char *)size);
-    PUTCIRCBUF(CSTR,";op ");
-    PUTCIRCBUF(CBYTE, (char *)scsiCmdPtr->commandBlock[0]);
-    PUTCIRCNULL;
-
     /*
      * SCSI SELECTION.
      */
@@ -191,8 +173,6 @@ SendCommand(devPtr, scsiCmdPtr)
 	scsiCmdPtr->commandBlockLen != 10 &&
 	scsiCmdPtr->commandBlockLen != 12) {
 	printf("%s: Command is wrong length.\n");
-	PUTCIRCBUF(CSTR,"send: bad cmd len\n");
-	PUTCIRCNULL;
 	return DEV_INVALID_ARG; 	/* Is this the correct error? */
     }
 
@@ -204,7 +184,6 @@ SendCommand(devPtr, scsiCmdPtr)
 	devPtr->msgFlag |= REQEXTENDEDMSG;
 	EMPTY_BUFFER();
 	regsPtr->scsi_ctrl.write.command = CR_SLCT_ATNS;
-	PUTCIRCBUF(CSTR,"send ATNS; per ");
     } else {
 	/* Load FIFO with 6, 10, or 12 byte scsi command. */
 	charPtr = scsiCmdPtr->commandBlock;
@@ -212,16 +191,9 @@ SendCommand(devPtr, scsiCmdPtr)
 	    regsPtr->scsi_ctrl.write.FIFO = *charPtr;
 	    charPtr++;
 	}
-	PUTCIRCBUF(CSTR,"send ATN; per ");
 	EMPTY_BUFFER();
 	regsPtr->scsi_ctrl.write.command = CR_SLCT_ATN;
     }
-    PUTCIRCBUF(CBYTE,(char *)(devPtr->synchPeriod));
-    PUTCIRCBUF(CSTR,"; off ");
-    PUTCIRCBUF(CBYTE,(char *)(devPtr->synchOffset));
-    PUTCIRCBUF(CSTR,"; cmd ");
-    PUTCIRCBUF(CBYTE,(char *)(*scsiCmdPtr->commandBlock));
-    PUTCIRCNULL;
 
     return SUCCESS;
 }
@@ -258,16 +230,6 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
     Controller	        *ctrlPtr = devPtr->ctrlPtr;
 
     SET_CTRL_FREE(ctrlPtr);
-    PUTCIRCBUF(CSTR,"done: targ ");
-    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
-    PUTCIRCBUF(CSTR,";rc ");
-    PUTCIRCBUF(CBYTE, (char *)status);
-    PUTCIRCBUF(CSTR,";stat ");
-    PUTCIRCBUF(CBYTE, (char *)scsiStatusByte);
-    PUTCIRCBUF(CSTR,";cnt ");
-    PUTCIRCBUF(CBYTE, (char *)amountTransferred);
-    PUTCIRCNULL;
-
 
     /*
      * First check to see if this is the reponse of a HBA-driver generated 
@@ -277,13 +239,6 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
      */
     if (scsiCmdPtr->doneProc == SpecialSenseProc) {
         MASTER_UNLOCK(&(ctrlPtr->mutex));
-	PUTCIRCBUF(CSTR,"sense data:");
-	for (i=0; i<amountTransferred; i++) {
-	    circBuf[circHead] = ' ';
-	    circHead = (circHead + 1) % CIRCBUFLEN;
-	    PUTCIRCBUF(CBYTE, (char *)(devPtr->senseBuffer[i]));
-	}
-	PUTCIRCNULL;
 	(devPtr->frozen.scsiCmdPtr->doneProc)(devPtr->frozen.scsiCmdPtr, 
 		SUCCESS,
 		devPtr->frozen.statusByte, 
@@ -304,12 +259,9 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
 	(scsiStatusByte != SCSI_STATUS_CHECK)) { 
 	MASTER_UNLOCK(&(ctrlPtr->mutex));
 	(scsiCmdPtr->doneProc)(scsiCmdPtr, status, scsiStatusByte,
-	PUTCIRCBUF(CSTR,"done: callback before...");
 			       amountTransferred, 0, (char *) 0);
 	MASTER_LOCK(&(ctrlPtr->mutex));
 	SET_DEV_FREE(devPtr);
-	PUTCIRCBUF(CSTR,"after");
-	PUTCIRCNULL;
 	return;
     } 
     /*
@@ -320,8 +272,6 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
      */
 
     devPtr->synchPeriod = 0;
-    PUTCIRCBUF(CSTR,"done: issue sense");
-    PUTCIRCNULL;
     devPtr->synchOffset = 0;
     devPtr->frozen.scsiCmdPtr = scsiCmdPtr;
     devPtr->frozen.statusByte = scsiStatusByte;
@@ -386,28 +336,7 @@ DevEntryAvailProc(clientData, newRequestPtr)
      */
     
     if ((!IS_CTRL_FREE(ctrlPtr)) ||  (!IS_DEV_FREE(devPtr))) {
-    if ((IS_CTRL_FREE(ctrlPtr)) &&  (IS_DEV_FREE(devPtr))) {
-	PUTCIRCBUF(CSTR,"EAP: exec targ ");
-	PUTCIRCBUF(CBYTE, (char *)(devPtr->targetID));
-	PUTCIRCBUF(CSTR,"; mask ");
-	PUTCIRCBUF(CBYTE, (char *)(ctrlPtr->devQueuesMask));
-	PUTCIRCBUF(CSTR,"; cmd ptr ");
-	PUTCIRCBUF(CINT, (char *)newRequestPtr);
-	PUTCIRCNULL;
-    } else {
-	PUTCIRCBUF(CSTR,"EAP: NQ targ ");
-	PUTCIRCBUF(CBYTE, (char *)(devPtr->targetID));
-	PUTCIRCBUF(CSTR,"; mask ");
-	PUTCIRCBUF(CBYTE, (char *)(ctrlPtr->devQueuesMask));
-	PUTCIRCBUF(CSTR,"; cmd ptr ");
-	PUTCIRCBUF(CINT,(char *)newRequestPtr);
-	PUTCIRCBUF(CSTR,"; intDev ");
-	PUTCIRCBUF(CINT,(char *)(ctrlPtr->interruptDevPtr));
-	if (ctrlPtr->interruptDevPtr != (Device *)NIL) {
-	    PUTCIRCBUF(CSTR,"; intDevCmd ");
-	    PUTCIRCBUF(CINT,(char *)(ctrlPtr->interruptDevPtr->scsiCmdPtr));
-	}
-	PUTCIRCNULL;
+	return FALSE;
     }
 
 again:
@@ -420,20 +349,12 @@ again:
      */
     if (status != SUCCESS) {
 	 RequestDone(devPtr,scsiCmdPtr,status,0,0);
-	 PUTCIRCBUF(CSTR,"eap: send fail");
-	 PUTCIRCNULL;
 	 newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
 						 ctrlPtr->devQueuesMask,
 						 &clientData);
 	if (newRequestPtr != (List_Links *) NIL) { 
 	    goto again;
-	    PUTCIRCBUF(CSTR,"eap: no cmd");
-	    PUTCIRCNULL;
 	}
-	} else {
-	    PUTCIRCBUF(CSTR,"eap: cmd");
-	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
-	    PUTCIRCNULL;
     }
 
     return TRUE;
@@ -477,7 +398,6 @@ DevSCSIC90Intr(clientDataArg)
     int                 i;
     char	        *charPtr;
 
-    char	        tempChar;
     ctrlPtr = (Controller *) clientDataArg;
     regsPtr = ctrlPtr->regsPtr;
     devPtr = ctrlPtr->devPtr;
@@ -495,23 +415,6 @@ DevSCSIC90Intr(clientDataArg)
     sequenceReg &= SEQ_MASK;
 
     /* Check for errors. */
-    PUTCIRCBUF(CSTR,"intr: dev ");
-    PUTCIRCBUF(CINT,(char *)devPtr);
-    PUTCIRCBUF(CSTR,";int ");
-    PUTCIRCBUF(CBYTE, (char *)interruptReg);
-    PUTCIRCBUF(CSTR,";stat ");
-    PUTCIRCBUF(CBYTE, (char *)statusReg);
-    PUTCIRCBUF(CSTR,";seq ");
-    PUTCIRCBUF(CBYTE, (char *)sequenceReg);
-    if (devPtr != (Device *)NIL) {
-	PUTCIRCBUF(CSTR,";last ");
-	PUTCIRCBUF(CBYTE, (char *)devPtr->lastPhase);
-    }
-    PUTCIRCNULL;
-
-/*    printf("interruptReg 0x%02x, statusReg 0x%02x, sequenceReg 0x%02x\n",
-		interruptReg, statusReg, sequenceReg);
-*/
     if (statusReg & SR_GE) {
 	panic("gross error 1\n");
 	printf("%s: some gross error happened.\n",
@@ -532,8 +435,6 @@ DevSCSIC90Intr(clientDataArg)
     if (interruptReg & IR_ILL_CMD) {
 	if (ctrlPtr->interruptDevPtr != (Device *)NIL) {
 	    MASTER_UNLOCK(&(ctrlPtr->mutex));
-	    PUTCIRCBUF(CSTR,"ignoring illegal cmd interrupt");
-	    PUTCIRCNULL;
 	    return TRUE;
 	} else {
 	    printf("%s: illegal command.\n",
@@ -605,10 +506,6 @@ DevSCSIC90Intr(clientDataArg)
     case PHASE_RDY_DISCON:
 	if (interruptReg & IR_DISCNCT) {
 	    devPtr->lastPhase = PHASE_BUS_FREE;
-	    PUTCIRCBUF(CSTR,"intr: targ ");
-	    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
-	    PUTCIRCBUF(CSTR," discon.");
-	    PUTCIRCNULL;
 	    SET_CTRL_FREE(ctrlPtr);
 	    PerformCmdDone(ctrlPtr,status);
 	    MASTER_UNLOCK(&(ctrlPtr->mutex));
@@ -627,9 +524,6 @@ DevSCSIC90Intr(clientDataArg)
 
     if ((status != SUCCESS) || (interruptReg & IR_DISCNCT)) {
 	RequestDone(devPtr,
-        PUTCIRCBUF(CSTR,"intr: exit stat ");
-        PUTCIRCBUF(CBYTE,(char *)status);
-        PUTCIRCNULL;
 		    devPtr->scsiCmdPtr,
 		    status,
 		    devPtr->commandStatus,
@@ -654,24 +548,14 @@ DevSCSIC90Intr(clientDataArg)
 	dmaControllerActive++;	/* Resetting controller not allowed. */
 #endif
 	DevStartDMA(ctrlPtr);
-	PUTCIRCBUF(CSTR,"start dma ptr: ");
-	PUTCIRCBUF(CINT,(char *)devPtr->activeBufPtr);
-	PUTCIRCBUF(CSTR,"; len: ");
-	PUTCIRCBUF(CINT,(char *)devPtr->activeBufLen);
-	PUTCIRCNULL;
 	break;
     case SR_COMMAND:
 	charPtr = devPtr->scsiCmdPtr->commandBlock;
 	for (i = 0; i < devPtr->scsiCmdPtr->commandBlockLen; i++) {
-	PUTCIRCBUF(CSTR,"cmd:");
 	    regsPtr->scsi_ctrl.write.FIFO = *charPtr;
-	    circBuf[circHead] = ' ';
-	    circHead = (circHead + 1) % CIRCBUFLEN;
-	    PUTCIRCBUF(CBYTE, (char *)*charPtr);
 	    charPtr++;
 	}
 	devPtr->lastPhase = PHASE_COMMAND;
-	PUTCIRCNULL;
 	regsPtr->scsi_ctrl.write.synchPer = devPtr->synchPeriod;
 	regsPtr->scsi_ctrl.write.synchOffset = devPtr->synchOffset;
 	regsPtr->scsi_ctrl.write.command = CR_XFER_INFO;
@@ -687,26 +571,10 @@ DevSCSIC90Intr(clientDataArg)
 	break;
     case SR_MSG_OUT:
 	for (i=0; i<devPtr->messageBufLen; i++) {
-	i = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
-	if (i > 0) {
-	    PUTCIRCBUF(CSTR,"msg-out: fifo: ");
-	    while (i-- > 0) {
-		circBuf[circHead] = ' ';
-		circHead = (circHead + 1) % CIRCBUFLEN;
-		tempChar = regsPtr->scsi_ctrl.read.FIFO;
-		PUTCIRCBUF(CBYTE,(char*)(tempChar));
-	    }
-	    PUTCIRCNULL;
-	}
-	PUTCIRCBUF(CSTR,"msg-out: msg: ");
 	    regsPtr->scsi_ctrl.write.FIFO = devPtr->messageBuf[i];
-	    circBuf[circHead] = ' ';
-	    circHead = (circHead + 1) % CIRCBUFLEN;
-	    PUTCIRCBUF(CBYTE, (char *)devPtr->messageBuf[i]);
 	    devPtr->messageBuf[i] = '\0';
 	}
 	regsPtr->scsi_ctrl.write.command = CR_XFER_INFO;
-	PUTCIRCNULL;
 	devPtr->lastPhase = PHASE_MSG_OUT;
 	devPtr->messageBufLen = 0;
 	status = regsPtr->scsi_ctrl.read.status;
@@ -761,26 +629,14 @@ PerformCmdDone(ctrlPtr,status)
 						ctrlPtr->devQueuesMask,
 						&clientData);
 	} else {
-	    PUTCIRCBUF(CSTR,"cdone: cmd ");
-	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
-	    PUTCIRCNULL;
 	    clientData = (ClientData)(ctrlPtr->interruptDevPtr);
 	    newRequestPtr=(List_Links *)(ctrlPtr->interruptDevPtr->scsiCmdPtr);
 	    SET_DEV_FREE(ctrlPtr->interruptDevPtr);
 	    ctrlPtr->interruptDevPtr = (Device *)NIL;
-	    ctrlPtr->interruptDevPtr = (Device *)NIL;
-	    PUTCIRCBUF(CSTR,"cdone: resend dev ");
-	    PUTCIRCBUF(CINT, (char *)clientData);
-	    PUTCIRCBUF(CSTR," cmd ");
-	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
-	    PUTCIRCNULL;
 	}
 	if (newRequestPtr != (List_Links *) NIL) {
 	    (void) DevEntryAvailProc(clientData, newRequestPtr);
 	}
-    } else {
-	PUTCIRCBUF(CSTR,"cdone: busy ");
-	PUTCIRCNULL;
     }
 
 }
@@ -912,11 +768,6 @@ PerformDataXfer(ctrlPtr, interruptReg, statusReg)
      * may mean that nothing was transfered...  What should I do? XXX
      */
 
-    PUTCIRCBUF(CSTR,"residual: ");
-    PUTCIRCBUF(CINT,(char *)(residual));
-    PUTCIRCBUF(CSTR,"; fifoCnt ");
-    PUTCIRCBUF(CINT,(char *)(fifoCnt));
-    PUTCIRCNULL;
     regsPtr->scsi_ctrl.write.command = CR_FLSH_FIFO;
 
     /*
@@ -1020,10 +871,6 @@ Controller *ctrlPtr;
 
     message = regsPtr->scsi_ctrl.read.FIFO;
 
-    PUTCIRCBUF(CSTR,"msg in: ");
-    PUTCIRCBUF(CBYTE, (char *)message);
-    PUTCIRCNULL;
-
     if (devPtr->msgFlag & STARTEXTENDEDMSG) { 
 	status = PerformExtendedMsgIn(ctrlPtr,(unsigned int)message);
 	return status;
@@ -1042,21 +889,11 @@ Controller *ctrlPtr;
 	/* No need to save anything since we keep the current
 	 * data ptr in activeBufPtr anyway. */
 	devPtr->lastPhase = PHASE_BUS_FREE;
-	PUTCIRCBUF(CSTR,"save: ptr ");
-	PUTCIRCBUF(CINT, (char *)devPtr->activeBufPtr);
-	PUTCIRCBUF(CSTR,"; len ");
-	PUTCIRCBUF(CINT, (char *)devPtr->activeBufLen);
-	PUTCIRCNULL;
 	break;
     case SCSI_RESTORE_POINTERS:
 	/* No need to restore anything, since we keep the
 	 * current data ptr in activeBufPtr anyway. */
 	devPtr->lastPhase = PHASE_BUS_FREE;
-	PUTCIRCBUF(CSTR,"restore: ptr ");
-	PUTCIRCBUF(CINT, (char *)devPtr->activeBufPtr);
-	PUTCIRCBUF(CSTR,"; len ");
-	PUTCIRCBUF(CINT, (char *)devPtr->activeBufLen);
-	PUTCIRCNULL;
 	break;
     case SCSI_IDENTIFY:
 	devPtr->lastPhase = PHASE_BUS_FREE;
@@ -1081,9 +918,6 @@ Controller *ctrlPtr;
 	devPtr->msgFlag &= ~STARTEXTENDEDMSG;
 	break;
     default:
-	PUTCIRCBUF(CSTR,"Msg-in: unknown msg");
-	PUTCIRCNULL;
-	printf("SCSIC90: Couldn't handle msg type: 0x%02x\n",message);
 	regsPtr->scsi_ctrl.write.command = CR_SET_ATN;
 	devPtr->lastPhase = PHASE_BUS_FREE;
 	break;
@@ -1129,7 +963,6 @@ unsigned int message;
     unsigned char periodInClks;
     unsigned char period;
     unsigned char offset;
-    int i;
 
     devPtr->messageBuf[len] = message;
     devPtr->messageBufLen++;
@@ -1144,11 +977,6 @@ unsigned int message;
     case 2: /* extended msg code */
 	if ((message != SCSI_EXTENDED_MSG_SYNC) ||
 	    (devPtr->messageBuf[1] != 3)) {
-	    PUTCIRCBUF(CSTR,"Msg-in: bad xtend msg: ");
-	    PUTCIRCBUF(CBYTE,(char *)(message));
-	    PUTCIRCBUF(CSTR,"; len ");
-	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[1]));
-	    PUTCIRCNULL;
 	    panic("bad xtend msg");
 	    devPtr->messageBuf[0] = SCSI_MESSAGE_REJECT;
 	    devPtr->messageBufLen = 1;
@@ -1172,13 +1000,6 @@ unsigned int message;
 	/* if values are acceptable, install them else negotiate */
 	if ((periodInClks >= MIN_SYNCH_PERIOD) &&
 	    (offset <= MAX_SYNCH_OFFSET)) {
-	    PUTCIRCBUF(CSTR,"accept per: ");
-	    PUTCIRCBUF(CBYTE,(char *)period);
-	    PUTCIRCBUF(CSTR,"; per clk ");
-	    PUTCIRCBUF(CBYTE,(char *)periodInClks);
-	    PUTCIRCBUF(CSTR,"; off ");
-	    PUTCIRCBUF(CBYTE,(char *)offset);
-	    PUTCIRCNULL;
 	    devPtr->synchPeriod = periodInClks; 
 	    devPtr->synchOffset = offset;
 	    devPtr->lastPhase = PHASE_BUS_FREE;
@@ -1190,38 +1011,16 @@ unsigned int message;
 	    if (offset > devPtr->synchOffset) {
 		devPtr->messageBuf[4] = MAX_SYNCH_OFFSET;
 	    }
-	    PUTCIRCBUF(CSTR,"negotiate per: ");
-	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[3]));
-	    PUTCIRCBUF(CSTR,"; off ");
-	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[4]));
-	    PUTCIRCNULL;
 	    regsPtr->scsi_ctrl.write.command = CR_SET_ATN;
 	    devPtr->lastPhase = PHASE_MSG_OUT;
 	    devPtr->msgFlag &= ~STARTEXTENDEDMSG;
 	}
 	break;
     default:
-	printf("SCSIC90: xmsg case error\n");
 	devPtr->msgFlag &= ~STARTEXTENDEDMSG;
 	status = FALSE;
 	break;
     }
-    PUTCIRCBUF(CSTR,"Xmsg-in: accept msg");
-    len = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
-    PUTCIRCBUF(CSTR,"; FIFO:");
-    for(i=0;i<len;i++) {
-	circBuf[circHead] = ' ';
-	circHead = (circHead + 1) % CIRCBUFLEN;
-	offset = regsPtr->scsi_ctrl.read.FIFO;
-	PUTCIRCBUF(CBYTE, (char *)offset);
-    }
-    PUTCIRCBUF(CSTR,"; mbuf:");
-    for(i=0;i<devPtr->messageBufLen;i++) {
-	circBuf[circHead] = ' ';
-	circHead = (circHead + 1) % CIRCBUFLEN;
-	PUTCIRCBUF(CBYTE, (char *)(devPtr->messageBuf[i]));
-    }
-    PUTCIRCNULL;
     regsPtr->scsi_ctrl.write.command = CR_MSG_ACCPT;
     return status;
 } 
@@ -1251,7 +1050,7 @@ unsigned int	interruptReg;
     unsigned char     target;
     unsigned char     ourID;
     unsigned char     message;
-    int               fifoCnt,i;
+    int               fifoCnt;
 
     /* The ID of the target which is requesting reselection comes over 
      * the bus encoded, not 0-7.  The encoding is the logical OR of 
@@ -1306,21 +1105,7 @@ unsigned int	interruptReg;
     devPtr = ctrlPtr->devicePtr[target][message];
 
     fifoCnt = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
-    PUTCIRCBUF(CSTR,"resel: targ ");
-    PUTCIRCBUF(CBYTE, (char *)target);
-    PUTCIRCBUF(CSTR,"; lun ");
-    PUTCIRCBUF(CBYTE, (char *)message);
     ourID = regsPtr->scsi_ctrl.read.command;
-    PUTCIRCBUF(CSTR,"; cmdreg:");
-    PUTCIRCBUF(CBYTE,(char *)ourID);
-    PUTCIRCBUF(CSTR,"; FIFO:");
-    for(i=0;i<fifoCnt;i++) {
-	circBuf[circHead] = ' ';
-	circHead = (circHead + 1) % CIRCBUFLEN;
-	ourID = regsPtr->scsi_ctrl.read.FIFO;
-	PUTCIRCBUF(CBYTE, (char *)ourID);
-    }
-    PUTCIRCNULL;
 
     if (IS_DEV_FREE(devPtr)) {
 	panic("resel: device is free.\n");
@@ -1349,11 +1134,6 @@ unsigned int	interruptReg;
     if (!(IS_CTRL_FREE(ctrlPtr)) ||
 	(interruptReg & IR_BUS_SERV) ||
 	(fifoCnt > 0)) {
-	PUTCIRCBUF(CSTR,"resel: save dev ");
-	PUTCIRCBUF(CINT, (char *)ctrlPtr->devPtr);
-	PUTCIRCBUF(CSTR," cmd ");
-	PUTCIRCBUF(CINT, (char *)ctrlPtr->devPtr->scsiCmdPtr);
-	PUTCIRCNULL;
 	ctrlPtr->interruptDevPtr = ctrlPtr->devPtr;
 	regsPtr->scsi_ctrl.write.command = CR_FLSH_FIFO;
     }
@@ -1748,63 +1528,4 @@ Dev_ChangeScsiDebugLevel(level)
     return;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * PutCircBuf
- *
- *	Stuff data into the circular log buffer
- *
- * Results:
- *	None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static void
-PutCircBuf(type, object)
-int type;
-char *object;
-{
-    int num = (int)object;
-
-    switch(type) {
-    case CSTR:
-	while(*object) {
-	    circBuf[circHead] = *object++;
-	    circHead = (circHead + 1) % CIRCBUFLEN;
-	}
-	break;
-    case CBYTE:
-	circBuf[circHead] = CVTHEX(num,4);
-	circHead = (circHead + 1) % CIRCBUFLEN;
-	circBuf[circHead] = CVTHEX(num,0);
-	circHead = (circHead + 1) % CIRCBUFLEN;
-	break;
-    case CINT:
-	circBuf[circHead] = CVTHEX(num,28); 
-	circHead = (circHead + 1) % CIRCBUFLEN; 
-	circBuf[circHead] = CVTHEX(num,24); 
-	circHead = (circHead + 1) % CIRCBUFLEN; 
-	circBuf[circHead] = CVTHEX(num,20); 
-	circHead = (circHead + 1) % CIRCBUFLEN; 
-	circBuf[circHead] = CVTHEX(num,16); 
-	circHead = (circHead + 1) % CIRCBUFLEN; 
-	circBuf[circHead] = CVTHEX(num,12); 
-	circHead = (circHead + 1) % CIRCBUFLEN; 
-	circBuf[circHead] = CVTHEX(num,8); 
-	circHead = (circHead + 1) % CIRCBUFLEN; 
-	circBuf[circHead] = CVTHEX(num,4); 
-	circHead = (circHead + 1) % CIRCBUFLEN; 
-	circBuf[circHead] = CVTHEX(num,0); 
-	circHead = (circHead + 1) % CIRCBUFLEN;
-	break;
-    default:
-	panic("PutCircBuf: unknown type\n");
-	break;
-    }
-}
 
