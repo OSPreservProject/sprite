@@ -2863,8 +2863,26 @@ FsCacheFileBlocks(cacheInfoPtr)
     register FsCacheFileInfo	*cacheInfoPtr;	/* Cache state to check. */
 {
     register int numBlocks;
+    register int numBlocksCheck = 0;
+    register FsCacheBlock *blockPtr;
+    List_Links		*linkPtr;
+
     LOCK_MONITOR;
     numBlocks = cacheInfoPtr->blocksInCache;
+    LIST_FORALL(&cacheInfoPtr->blockList, (List_Links *)linkPtr) {
+	blockPtr = FILE_LINKS_TO_BLOCK(linkPtr);
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    UNLOCK_MONITOR;
+	    Sys_Panic(SYS_FATAL, "FsCacheFileBlocks, bad block\n");
+	    return(numBlocks);
+	}
+	numBlocksCheck++;
+    }
+    if (numBlocksCheck != numBlocks) {
+	UNLOCK_MONITOR;
+	Sys_Panic(SYS_FATAL, "FsCacheFileBlocks, wrong block count\n");
+	return(numBlocks);
+    }
     UNLOCK_MONITOR;
     return(numBlocks);
 }
