@@ -377,24 +377,8 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  *
  * Mach_SetHandler --
  *
-#ifndef ds5000
  *	Put a interrupt handling routine into the table.
-#else
- *	Register an interrupt handler for R3000 interrupts.  Interrupt
- *	handlers are of the form:
-#endif
  *
-#ifdef ds5000
- *	void
- *	Handler(statusReg, causeReg, pc, data)
- *		unsigned int	statusReg;	Status register.
- *		unsigned int	causeReg;	Cause register.
- *		Address		pc;		PC where the interrupt 
- *						occurred.
- *		ClientData	data		Callback data
- *	
- *
-#endif
  * Results:
  *     None.
  *
@@ -1384,19 +1368,7 @@ MachUserReturn(procPtr)
 		if (debugProcStubs) {
 		    printf("Restarting system call with progress %d\n",
 			    procPtr->unixProgress);
-		    printf("Our PC = %x\n",
-			    machCurStatePtr->userState.regState.pc);
 		}
-		machCurStatePtr->userState.regState.pc -= 4;
-		if (debugProcStubs) {
-		    printf("Now our PC = %x\n",
-			    machCurStatePtr->userState.regState.pc);
-		    printf("V0 was %d and our call was %d\n", 
-			    machCurStatePtr->userState.regState.regs[V0],
-			    machCurStatePtr->userState.unixRetVal);
-		}
-		machCurStatePtr->userState.regState.regs[V0] =
-		    machCurStatePtr->userState.unixRetVal;
 		procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	    }
 	    /*
@@ -1415,8 +1387,17 @@ MachUserReturn(procPtr)
 		SetupSigHandler(procPtr, &sigStack, pc);
 		Mach_DisableIntr();
 		break;
-	    } else if (restarted && debugProcStubs) {
-		printf("No signal, yet we restarted system call!!?!\n");
+	    } else {
+		if (procPtr->unixProgress == PROC_PROGRESS_MIG_RESTART ||
+			procPtr->unixProgress == PROC_PROGRESS_RESTART) {
+		    restarted = 1;
+		    if (debugProcStubs) {
+			printf("No signal action, so we restarted call\n");
+		    }
+		    procPtr->unixProgress = PROC_PROGRESS_UNIX;
+		} else if (restarted) {
+		    printf("No signal, yet we restarted system call!\n");
+		}
 	    }
 	}
     }
@@ -1428,9 +1409,42 @@ MachUserReturn(procPtr)
      */
     Sig_AllowMigration(procPtr);
 
+    if (restarted) {
+	if (debugProcStubs) {
+	    printf("Moving the PC to restart the system call\n");
+	    printf("Our PC = %x\n",
+		    machCurStatePtr->userState.regState.pc);
+	}
+	machCurStatePtr->userState.regState.pc -= 4;
+	if (debugProcStubs) {
+	    printf("Now our PC = %x\n",
+		    machCurStatePtr->userState.regState.pc);
+	    printf("V0 was %d and our call was %d\n", 
+		    machCurStatePtr->userState.regState.regs[V0],
+		    machCurStatePtr->userState.unixRetVal);
+	    printf("Our incoming a0-a3 were %x %x %x %x\n", 
+		    machCurStatePtr->userState.regState.regs[A0],
+		    machCurStatePtr->userState.regState.regs[A1],
+		    machCurStatePtr->userState.regState.regs[A2],
+		    machCurStatePtr->userState.regState.regs[A3]);
+	}
+	/*
+	 * Our V0 and A3 will have been clobbered by the system call, so
+	 * we have to restore them.
+	 */
+	machCurStatePtr->userState.regState.regs[V0] =
+	    machCurStatePtr->userState.savedV0;
+	machCurStatePtr->userState.regState.regs[A3] =
+	    machCurStatePtr->userState.savedA3;
+    }
+
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
-	    procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
-	printf("UnixProgress = %d leaving MachUserReturn\n", procPtr->unixProgress);
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+	procPtr->unixProgress = PROC_PROGRESS_UNIX;
+	if (debugProcStubs) {
+	    printf("UnixProgress = %d leaving MachUserReturn!\n",
+		    procPtr->unixProgress);
+	}
     }
 
     return(machFPCurStatePtr == machCurStatePtr);
@@ -1768,31 +1782,15 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 /*
  *----------------------------------------------------------------------
  *
-#ifndef ds5000
  * Mach_GetEtherAddress --
-#else
- * MachMemInterrupt --
-#endif
  *
-#ifndef ds5000
  *	Return the ethernet address out of the rom.
-#else
- *	Handle an interrupt from the memory controller.
-#endif
  *
  * Results:
-#ifndef ds5000
  *	Number of elements returned in argv.
-#else
- *	None.
-#endif
  *
  * Side effects:
-#ifndef ds5000
  *	*etherAddrPtr gets the ethernet address.
-#else
- *	None.
-#endif
  *
  *----------------------------------------------------------------------
  */
@@ -1814,17 +1812,9 @@ Mach_GetEtherAddress(etherAddrPtr)
 /*
  *----------------------------------------------------------------------
  *
-#ifndef ds5000
  * MemErrorInterrupt --
-#else
- * MachIOInterrupt --
-#endif
  *
-#ifndef ds5000
  *	Handler an interrupt for the DZ device.
-#else
- *	Handle an interrupt from one of the IO slots.
-#endif
  *
  * Results:
  *	None.
