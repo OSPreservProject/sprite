@@ -113,13 +113,6 @@ doneZeroing:
 	set	MACH_STACK_START, %fp
 	set	(MACH_STACK_START - MACH_SAVED_WINDOW_SIZE), %sp
 	andn	%sp, 0x7, %sp			/* double-word aligned */
-/* for debugging */
-	set	_debugSpace, %VOL_TEMP1
-	st	%g0, [%VOL_TEMP1]
-	st	%sp, [%VOL_TEMP1 + 4]
-	set	_debugCounter, %VOL_TEMP1
-	set	0x2, %VOL_TEMP2
-	st	%VOL_TEMP2, [%VOL_TEMP1]
 
 	/*
 	 * Now set up initial trap table by copying machProtoVectorTable

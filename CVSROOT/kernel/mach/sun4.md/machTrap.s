@@ -89,25 +89,28 @@ _MachTrap:
 	mov	%psr, %CUR_PSR_REG
 	mov	%tbr, %CUR_TBR_REG
 	mov	%y, %CUR_Y_REG
-    /* for debugging */
+    /* for debugging - circular buffer */
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	set	500, %VOL_TEMP2
 	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
-	ble	FinishedDebugging
+	bg	DebugReady
 	nop
+	set	_debugCounter, %VOL_TEMP1	/* set counter back to 0 */
+	st	%g0, [%VOL_TEMP1]
+	clr	%VOL_TEMP1
+DebugReady:
 	sll	%VOL_TEMP1, 2, %VOL_TEMP1
 	set	_debugSpace, %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
-	st	%g0, [%VOL_TEMP2]
-	st	%CUR_TBR_REG, [%VOL_TEMP2 + 4]
-	st	%CUR_PC_REG, [%VOL_TEMP2 + 8]
-	st	%fp, [%VOL_TEMP2 + 12]
+	st	%CUR_TBR_REG, [%VOL_TEMP2]
+	st	%CUR_PSR_REG, [%VOL_TEMP2 + 4]
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP2
-	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	add	%VOL_TEMP2, 2, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
-FinishedDebugging:
+    /* done debugging */
+
 	/*
 	 * Are we in an invalid window? If so, deal with it.
 	 */
@@ -230,23 +233,28 @@ UnderflowOkay:
  */
 .globl	MachHandleWindowOverflowTrap
 MachHandleWindowOverflowTrap:
-    /* for debugging */
+    /* for debugging - circular buffer */
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	set	500, %VOL_TEMP2
 	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
-	ble	FinishedDebugging1
+	bg	DebugReadyOverflow
 	nop
+	set	_debugCounter, %VOL_TEMP1	/* set counter back to 0 */
+	st	%g0, [%VOL_TEMP1]
+	clr	%VOL_TEMP1
+DebugReadyOverflow:
 	sll	%VOL_TEMP1, 2, %VOL_TEMP1
 	set	_debugSpace, %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
-	st	%CUR_PC_REG, [%VOL_TEMP2]
-	st	%fp, [%VOL_TEMP2 + 4]
+	st	%g0, [%VOL_TEMP2]
+	st	%CUR_PSR_REG, [%VOL_TEMP2 + 4]
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP2
 	add	%VOL_TEMP2, 2, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
-FinishedDebugging1:
+    /* done debugging */
+
 	set	MachWindowOverflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %SAFE_TEMP
 	nop
@@ -345,23 +353,28 @@ MachWindowOverflow:
  */
 .globl	MachHandleWindowUnderflowTrap
 MachHandleWindowUnderflowTrap:
-    /* for debugging */
+    /* for debugging - circular buffer */
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	set	500, %VOL_TEMP2
 	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
-	ble	FinishedDebugging2
+	bg	DebugReadyUnderflow
 	nop
+	set	_debugCounter, %VOL_TEMP1	/* set counter back to 0 */
+	st	%g0, [%VOL_TEMP1]
+	clr	%VOL_TEMP1
+DebugReadyUnderflow:
 	sll	%VOL_TEMP1, 2, %VOL_TEMP1
 	set	_debugSpace, %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
-	st	%CUR_PC_REG, [%VOL_TEMP2]
-	st	%fp, [%VOL_TEMP2 + 4]
+	st	%CUR_PSR_REG, [%VOL_TEMP2]
+	st	%CUR_PSR_REG, [%VOL_TEMP2 + 4]
 	set	_debugCounter, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP2
 	add	%VOL_TEMP2, 2, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
-FinishedDebugging2:
+    /* done debugging */
+
 	mov	%g3, %VOL_TEMP1			/* clear out globals */
 	mov	%g4, %VOL_TEMP2
 	restore					/* retreat a window */
@@ -445,23 +458,6 @@ DealWithDebugStack:
 	nop
 	
 RegularStack:
-    /* for debugging */
-	set	_debugCounter, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1
-	set	500, %VOL_TEMP2
-	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
-	ble	FinishedDebugging4
-	nop
-	sll	%VOL_TEMP1, 2, %VOL_TEMP1
-	set	_debugSpace, %VOL_TEMP2
-	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
-	st	%g0, [%VOL_TEMP2]
-	st	%fp, [%VOL_TEMP2 + 4]
-	set	_debugCounter, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP2
-	add	%VOL_TEMP2, 2, %VOL_TEMP2
-	st	%VOL_TEMP2, [%VOL_TEMP1]
-FinishedDebugging4:
 	/*
 	 * It should be ok to use locals here - it's a dead window.
 	 * Note that this means one cannot do a restore and then a save

@@ -138,6 +138,7 @@ Mach_Init()
     return;
 }
 
+#ifdef NOTDEF
 int
 panic(s)
 char	*s;
@@ -147,6 +148,7 @@ char	*s;
 	;
     }
 }
+#endif NOTDEF
 
 void
 MachHandleTestCounter()

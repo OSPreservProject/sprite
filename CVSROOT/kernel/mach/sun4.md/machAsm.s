@@ -16,11 +16,11 @@
  *
  * __MachGetPc --
  *
- *	Jump back to caller without writing pc that was put into %o0 as
- *	a side effect of the jmp to this routine.
+ *	Jump back to caller without over-writing pc that was put into
+ *	%RETURN_VAL_REG as a side effect of the jmp to this routine.
  *
  * Results:
- *	Old pc is returned in %o0.
+ *	Old pc is returned in %RETURN_VAL_REG.
  *
  * Side effects:
  *	None.
@@ -29,7 +29,7 @@
  */
 .globl	__MachGetPc
 __MachGetPc:
-	jmpl	%o0, %g0
+	jmpl	%RETURN_VAL_REG, %g0
 	nop
 
 /*
@@ -38,12 +38,8 @@ __MachGetPc:
  * Mach_DisableIntr --
  *
  *	Disable interrupts.  This leaves nonmaskable interrupts enabled.
- *	Note that this uses out registers o3 and o4.  Since it's a leaf
+ *	Note that this uses out registers.  Since it's a leaf
  *	routine, callable from C, it cannot use %VOL_TEMP1 and %VOL_TEMP2.
- *	It should be okay for it to use the out registers, however.
- *	That just means that if it's called from assembly code, I shouldn't
- *	use those out registers in the calling routine, but I never do that
- *	anyway.
  *
  * Results:
  *	None.
@@ -55,10 +51,10 @@ __MachGetPc:
  */
 .globl	_Mach_DisableIntr
 _Mach_DisableIntr:
-	mov %psr, %o3
-	set MACH_DISABLE_INTR, %o4
-	or %o3, %o4, %o3
-	mov %o3, %psr
+	mov %psr, %OUT_TEMP1
+	set MACH_DISABLE_INTR, %OUT_TEMP2
+	or %OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov %OUT_TEMP1, %psr
 	nop					/* time for valid state reg */
 	retl
 	nop
@@ -69,12 +65,9 @@ _Mach_DisableIntr:
  * Mach_EnableIntr --
  *
  *      Enable interrupts.
- *	Note that this uses out registers o3 and o4.  Since it's a leaf
+ *	Note that this uses out registers.  Since it's a leaf
  *	routine, callable from C, it cannot use %VOL_TEMP1 and %VOL_TEMP2.
- *	It should be okay for it to use the out registers, however.
- *	That just means that if it's called from assembly code, I shouldn't
- *	use those out registers in the calling routine, but I never do that
- *	anyway.  This enables all interrupts, so if before disabling them
+ *	This enables all interrupts, so if before disabling them
  *	we had only certain priority interrupts enabled, this will lose
  *	that information.
  *
@@ -88,10 +81,10 @@ _Mach_DisableIntr:
  */
 .globl	_Mach_EnableIntr
 _Mach_EnableIntr:
-	mov %psr, %o3
-	set MACH_ENABLE_INTR, %o4
-	and %o3, %o4, %o3
-	mov %o3, %psr
+	mov %psr, %OUT_TEMP1
+	set MACH_ENABLE_INTR, %OUT_TEMP2
+	and %OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov %OUT_TEMP1, %psr
 	nop					/* time for valid state reg */
 	retl
 	nop
@@ -131,6 +124,7 @@ _Mach_GetPC:
  */
 .globl	_Mach_TestAndSet
 _Mach_TestAndSet:
+#ifdef NOTDEF
 	/*
 	 * We're a leaf routine, so our return value goes in the save register
 	 * that our operand does.  Move the operand before overwriting.
@@ -147,10 +141,23 @@ _Mach_TestAndSet:
 ReturnZero:
 	retl
 	nop
+#else
+	clr	%RETURN_VAL_REG
+	retl
+	nop
+#endif NOTDEF
 
 
 
 
+.globl	_Mach_GetMachineType
+_Mach_GetMachineType:
+	set	VMMACH_MACH_TYPE_ADDR, %o0
+	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+#ifdef NOTDEF
 /*
  * VmMach_MapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR)) is call.
  */
@@ -159,4 +166,17 @@ _VmMach_MapIntelPage:
 	set	((0x800000 / VMMACH_SEG_SIZE) - 1), %VOL_TEMP1	/* pmeg */
 	stha	%VOL_TEMP1, [%o0] VMMACH_SEG_MAP_SPACE		/* segment */
 	retl
+	nop
+#endif NOTDEF
+
+.globl	_panic
+_panic:
+	mov	%o7, %VOL_TEMP1
+	sethi   %hi(-0x17ef7c),%VOL_TEMP2
+	ld      [%VOL_TEMP2+%lo(-0x17ef7c)],%VOL_TEMP2
+	call    %VOL_TEMP2
+	nop
+	mov	%VOL_TEMP1, %o7
+loopForever:
+	ba	loopForever
 	nop

@@ -14,9 +14,9 @@
 #define _MACHCONST
 
 #ifdef KERNEL
-#include "vmSun4Const.h"
+#include "vmSunConst.h"
 #else
-#include <kernel/vmSun4Const.h>
+#include <kernel/vmSunConst.h>
 #endif
 
 /*
@@ -155,14 +155,13 @@
  *			doesn't get trashed.
  */
 #define	MACH_KERN_START		0xff000000
-#define	MACH_STACK_START	0xff004000
-#define	MACH_DEBUG_STACK_START	0xff002000
-#define	MACH_CODE_START		0xff004020
-#define	MACH_STACK_BOTTOM	0xff000000
+#define	MACH_STACK_START	(MACH_KERN_START + 0x4000)
+#define	MACH_DEBUG_STACK_START	(MACH_KERN_START + 0x2000)
+#define	MACH_CODE_START		(MACH_STACK_START + 0x20)
+#define	MACH_STACK_BOTTOM	MACH_KERN_START
 #define MACH_KERN_END		VMMACH_DEV_START_ADDR
 #define	MACH_KERN_STACK_SIZE	(MACH_STACK_START - MACH_STACK_BOTTOM)
 #define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
-#define	MAGIC			0xFeedBabe
 
 /*
  * Constants for the user's address space.
@@ -173,12 +172,15 @@
  * MACH_MAX_USER_STACK_ADDR	The highest value that the user stack pointer
  *				can have.  Note that the stack pointer must be 
  *				decremented before anything can be stored on 
- *				the stack.
+ *				the stack.  Also note that on the sun4 we must
+ *				strip off the high couple of bits, since 0's
+ *				and 1's in them point to the same entry in the
+ *				segment table.
  */
 #define	MACH_FIRST_USER_ADDR		VMMACH_PAGE_SIZE
 #define	MACH_LAST_USER_ADDR		(MACH_MAX_USER_STACK_ADDR - 1)
 #define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
-#define	MACH_MAX_USER_STACK_ADDR	VMMACH_MAP_SEG_ADDR
+#define	MACH_MAX_USER_STACK_ADDR	(VMMACH_MAP_SEG_ADDR & VMMACH_ADDR_MASK)
 
 /*
  * Constants for getting to offsets in state structure.  To make sure these
@@ -292,5 +294,7 @@
 #define	RETURN_VAL_REG		r8		/* o0 */
 #define	RETURN_VAL_REG_CHILD	r24		/* i0 */
 #define	TBR_REG			r6		/* g6 */
+#define	OUT_TEMP1		r12		/* o4 */
+#define	OUT_TEMP2		r13		/* o5 */
 
 #endif /* _MACHCONST */

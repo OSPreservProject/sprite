@@ -14,10 +14,10 @@
 #define _MACHASMDEFS
 
 #ifdef KERNEL
-#include "vmSun4Const.h"
+#include "vmSunConst.h"
 #include "machConst.h"
 #else
-#include <kernel/vmSun4Const.h>
+#include <kernel/vmSunConst.h>
 #include <kernel/machConst.h>
 #endif
 
