@@ -48,6 +48,11 @@ typedef struct VmMach_ProcData {
 					 * virtual page - set the modify bit
 					 * in the TLB entry if we try to
 					 * validate this VA. */
+    Address		sharedPtr;	/* Shared memory pointer, in case
+					 * shared memory is mapped.
+					 * This is really Vm_SegProcList*, 
+					 * but made address because of
+					 * header file problems.*/
     VmMach_SharedData	sharedData;	/* Data for shared memory. */
 } VmMach_ProcData;
 

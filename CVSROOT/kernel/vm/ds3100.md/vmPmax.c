@@ -622,6 +622,7 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	transVirtAddrPtr->page = machPtr->mappedPage;
 	transVirtAddrPtr->offset = (unsigned)virtAddr & VMMACH_OFFSET_MASK;
 	transVirtAddrPtr->flags = USING_MAPPED_SEG;
+	transVirtAddrPtr->sharedPtr = (Vm_SegProcList *) machPtr->sharedPtr;
 	return(TRUE);
     } else {
 	return(FALSE);
@@ -674,6 +675,7 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
     toProcPtr = Proc_GetCurrentProc();
     machPtr = toProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
+    machPtr->sharedPtr = (Address) virtAddrPtr->sharedPtr;
     machPtr->mappedPage = (unsigned int) (fromAddr) >> VMMACH_PAGE_SHIFT;
     /*
      * Do a page worths at a time.
@@ -759,6 +761,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     machPtr = fromProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mappedPage = (unsigned int) (toAddr) >> VMMACH_PAGE_SHIFT;
+    machPtr->sharedPtr = (Address) virtAddrPtr->sharedPtr;
     /*
      * Do a hardware segments worth at a time until done.
      */
