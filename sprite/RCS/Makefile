@@ -192,7 +192,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	update -f -s $@ /sprite/boot/$@.md/new
 	rcp /sprite/boot/$@.md/new ${GINGER}:/sprite3/$@.new
 	cp $@ /rosemary/tmp/sprite/$@.sprite
-	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
+	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun3.sprite)"
 	nm -n $@ > $@.nm
 	-Save $@
 
@@ -209,7 +209,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
 	cp $@ /rosemary/tmp/sprite/$@.sprite
-	rsh rosemary "(cd /tmp/sprite ; ./Save sun4.sprite)"
+	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun4.sprite)"
 	nm -n $@ > $@.nm
 	-Save $@
 
@@ -226,11 +226,11 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
 	cp $@ /rosemary/tmp/sprite/$@.sprite
-	rsh rosemary "(cd /tmp/sprite ; ./Save sun4c.sprite)"
+	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun4c.sprite)"
 	nm -n $@ > $@.nm
 	-Save $@
 
-ds3100: ${OBJS} .PRECIOUS
+ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
 	-Save $@
@@ -245,8 +245,8 @@ ds3100: ${OBJS} .PRECIOUS
 	strip /sprite/boot/$@.md/new
 	rm -f $@.nm
 	nm -n $@ > $@.nm
-	rsh thyme "rcp /sprite/src/kernel/sprite/$@ dill:/sprite/src/kernel/nelson/$@"
-	rsh dill "(cd /sprite/src/kernel/nelson ; Save $@)"
+	rsh thyme -n "rcp /sprite/src/kernel/sprite/$@ dill:/sprite/src/kernel/nelson/$@"
+	rsh dill -n "(cd /sprite/src/kernel/nelson ; Save $@)"
 	-Save $@
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
