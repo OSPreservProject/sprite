@@ -646,15 +646,19 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     /*
      * Now that the request response stream is set up we do
      * our first transaction with the server process to see if it
-     * will accept the open.
+     * will accept the open.  We unlock the handle and rely on the
+     * per-connection monitor lock instead.  This is important because a
+     * buggy pseudo-device server could be ignoring this connection
+     * request indefinitely, and leaving handles locked for long periods
+     * clogs up handle scavenging, and potentially crash callbacks too.
      */
+    FsHandleUnlock(cltHandlePtr);
     status = PseudoStreamOpen(cltHandlePtr->pdevHandlePtr, *flagsPtr, clientID,
 				procID, uid);
     if (status == SUCCESS) {
 	*ioHandlePtrPtr = (FsHandleHeader *)cltHandlePtr;
-	FsHandleUnlock(cltHandlePtr);
     } else {
-	FsHandleRelease(cltHandlePtr, TRUE);
+	FsHandleRelease(cltHandlePtr, FALSE);
     }
 exit:
     Mem_Free((Address)streamData);
