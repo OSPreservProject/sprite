@@ -83,7 +83,6 @@ void	VmCleanSegment();
  *     
  * ----------------------------------------------------------------------------
  */
-
 void
 VmSegTableAlloc()
 {
@@ -107,11 +106,10 @@ VmSegTableAlloc()
  *     None.
  *
  * Side effects:
- *     None.
+ *     Segment table initialized plus all segment lists.
  *     
  * ----------------------------------------------------------------------------
  */
-
 void
 VmSegTableInit()
 {
@@ -173,7 +171,6 @@ VmSegTableInit()
  *     
  * ----------------------------------------------------------------------------
  */
-
 INTERNAL static void
 CleanSegment(segPtr, spacePtr, fileInfoPtr)
     register Vm_Segment *segPtr;	/* Pointer to the segment to be 
@@ -183,18 +180,17 @@ CleanSegment(segPtr, spacePtr, fileInfoPtr)
     register VmFileInfo	*fileInfoPtr;	/* Pointer where to store stream to 
 					 * close. */
 {
-    Vm_PTE  	pte;
-    VmVirtAddr	virtAddr;
-    int    	i;
-    Vm_Segment	**segPtrPtr;
+    register	Vm_PTE	*ptePtr;
+    register	int    	i;
+    Vm_Segment		**segPtrPtr;
 
-    virtAddr.segPtr = segPtr;
     segPtr->flags |= VM_SEG_DEAD;
 
     if (segPtr->type == VM_STACK) {
-	virtAddr.page = MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1;
+	ptePtr = VmGetPTEPtr(segPtr, 
+			     MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1);
     } else {
-	virtAddr.page = segPtr->offset;
+	ptePtr = segPtr->ptPtr;
     }
 
     if (segPtr->filePtr != (Fs_Stream *) NIL) {
@@ -206,7 +202,6 @@ CleanSegment(segPtr, spacePtr, fileInfoPtr)
 	if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
 	    Sys_Panic(SYS_FATAL, "CleanSegment: Non-nil file pointer\n");
 	}
-	    
 	fileInfoPtr->objStreamPtr = segPtr->filePtr;
 	segPtr->filePtr = (Fs_Stream *) NIL;
     }
@@ -223,24 +218,10 @@ CleanSegment(segPtr, spacePtr, fileInfoPtr)
     /*
      * Free all pages that this segment has in real memory.
      */
-
-    for (i = 0; i < segPtr->numPages; i++, virtAddr.page++) {
-        /*
-	 * Get the page table entry for this page.
-	 */
-	pte = VmGetPTE(&virtAddr);
-	
-	/*
-	 * If the page is not resident in memory then go to the next page.
-	 */
-	if (!pte.resident) {
-	    continue;
+    for (i = segPtr->numPages; i > 0; i--, VmIncPTEPtr(ptePtr, 1)) {
+	if (ptePtr->resident) {
+	    VmPageFreeInt((int) VmPhysToVirtPage(ptePtr->pfNum));
 	}
-
-	/*
-	 * The page is resident so free it.
-	 */
-	VmPageFreeInt((int) VmPhysToVirtPage(pte.pfNum));
     }
 
     segPtr->resPages = 0 ;
@@ -249,7 +230,6 @@ CleanSegment(segPtr, spacePtr, fileInfoPtr)
      * Do any monitor level machine dependent cleanup.  This routine will
      * fill in *spacePtr with space to be deallocated.
      */
-
     VmMachSegClean(segPtr, spacePtr);
 }
 
@@ -277,7 +257,6 @@ CleanSegment(segPtr, spacePtr, fileInfoPtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 ENTRY Vm_Segment *
 GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
 	      spacePtr, fileInfoPtr)
@@ -409,7 +388,6 @@ GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
  *
  * ----------------------------------------------------------------------------
  */
-
 ENTRY Vm_Segment *
 FindCode(filePtr, procLinkPtr, usedFilePtr)
     Fs_Stream		*filePtr;	/* The unique identifier for this file
@@ -486,7 +464,6 @@ again:
  *
  * ----------------------------------------------------------------------------
  */
-
 ENTRY Vm_Segment *
 Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
     Fs_Stream		*filePtr;	/* The unique identifier for this file
@@ -532,7 +509,6 @@ Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 ENTRY void
 Vm_InitCode(filePtr, segPtr, execInfoPtr)
     Fs_Stream		*filePtr;	/* File for code segment. */
@@ -598,7 +574,6 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
  *
  *----------------------------------------------------------------------
  */
-
 ENTRY void
 Vm_FileChanged(segPtrPtr)
     Vm_Segment		**segPtrPtr;
@@ -639,7 +614,6 @@ Vm_FileChanged(segPtrPtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 Vm_Segment *
 Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
     int			type;		/* The type of segment that this is */
@@ -709,7 +683,6 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
  *      free or inactive lists are modified and the list of processes
  *	sharing this segment is modified.
  */
-
 ENTRY VmDeleteStatus
 VmSegmentDeleteInt(segPtr, procPtr, spacePtr, fileInfoPtr, migFlag)
     register Vm_Segment 	*segPtr;	/* Pointer to segment to 
@@ -751,10 +724,10 @@ VmSegmentDeleteInt(segPtr, procPtr, spacePtr, fileInfoPtr, migFlag)
 
 	spacePtr->procLinkPtr = procLinkPtr;
     }
+
     /*
      * If the segment is still being used then there is nothing to do.
      */
-
     if (segPtr->refCount > 0) {
 	UNLOCK_MONITOR;
 	return(VM_DELETE_NOTHING);
@@ -764,7 +737,6 @@ VmSegmentDeleteInt(segPtr, procPtr, spacePtr, fileInfoPtr, migFlag)
      * If a code segment put onto the inactive list if we are using
      * sticky segments.
      */
-
     if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
 	segPtr->flags |= VM_SEG_INACTIVE;
 	fileInfoPtr->objStreamPtr = segPtr->filePtr;
@@ -797,7 +769,6 @@ VmSegmentDeleteInt(segPtr, procPtr, spacePtr, fileInfoPtr, migFlag)
  *
  * ----------------------------------------------------------------------------
  */
-
 ENTRY void
 VmPutOnFreeSegList(segPtr)
     register	Vm_Segment	*segPtr;
@@ -908,7 +879,7 @@ void	EndDelete();
  *	Take the range of virtual page numbers for the given heap segment,
  *	invalidate them, make them unaccessible and make the segment
  *	smaller if necessary.
- *
+ *	
  * Results:
  *	None.
  *
@@ -924,9 +895,27 @@ VmDeleteFromSeg(segPtr, firstPage, lastPage)
     int		firstPage;	/* The first page to invalidate */
     int		lastPage;	/* The second page to invalidate. */
 {
+    /*
+     * The deletion of virtual pages from the segment is done in two
+     * phases.  First the copy-on-write dependencies are cleaned up and
+     * then the rest of the pages are cleaned up.  This requires some ugly
+     * synchronization.  The problem is that during and after cleaning up
+     * the copy-on-write dependencies, page faults and copy-on-write forks
+     * in the segment must be prevented since cleanup is done at non-monitor
+     * level.  This is done by using the VM_DELETING_VA flag.  When this flag 
+     * is set page faults and forks are blocked.  This flag is set by
+     * StartDelete and cleared by EndDelete.  The flag is looked at by
+     * VmVirtAddrParse (the routine that is called before any page fault
+     * can occur on the segment) and by IncExpandCount (the routine that is
+     * called when a segment is duplicated for a fork).
+     */
     if (!StartDelete(segPtr, firstPage, &lastPage)) {
 	return;
     }
+    /*
+     * The segment is now not expandable.  Now rid the segment of all 
+     * copy-on-write dependencies.
+     */
     VmCOWDeleteFromSeg(segPtr, firstPage, lastPage);
 
     EndDelete(segPtr, firstPage, lastPage);
@@ -970,7 +959,6 @@ StartDelete(segPtr, firstPage, lastPagePtr)
      * falls past the end of the heap segment then it must be rounded
      * down and the segment made smaller.
      */
-
     lastSegPage = segPtr->offset + segPtr->numPages - 1;
     if (firstPage <= lastSegPage) {
 	if (*lastPagePtr >= lastSegPage) {
@@ -981,6 +969,7 @@ StartDelete(segPtr, firstPage, lastPagePtr)
 	 * we are expanding it.
 	 */
 	segPtr->notExpandCount = 1;
+	segPtr->flags |= VM_DELETING_VA;
 	retVal = TRUE;
     } else {
 	retVal = FALSE;
@@ -1042,10 +1031,9 @@ EndDelete(segPtr, firstPage, lastPage)
     /*
      * The segment can now be expanded.
      */
-    segPtr->notExpandCount--;
-    if (segPtr->notExpandCount == 0) {
-	Sync_Broadcast(&segPtr->condition);
-    }
+    segPtr->notExpandCount = 0;
+    segPtr->flags &= ~VM_DELETING_VA;
+    Sync_Broadcast(&segPtr->condition);
 
     UNLOCK_MONITOR;
 }
@@ -1068,7 +1056,6 @@ EndDelete(segPtr, firstPage, lastPage)
  *     
  * ----------------------------------------------------------------------------
  */
-
 ENTRY void
 VmDecExpandCount(segPtr)
     register	Vm_Segment		*segPtr;
@@ -1079,35 +1066,6 @@ VmDecExpandCount(segPtr)
     if (segPtr->notExpandCount == 0) {
 	Sync_Broadcast(&segPtr->condition);
     }
-
-    UNLOCK_MONITOR;
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmIncExpandCount --
- *
- *     	Increment the number of times that the heap segment was prevented from
- *	expanding.
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     Count of times prevented from expanding is increment.
- *     
- * ----------------------------------------------------------------------------
- */
-
-ENTRY void
-VmIncExpandCount(segPtr)
-    register	Vm_Segment	*segPtr;
-{
-    LOCK_MONITOR;
-
-    segPtr->notExpandCount++;
 
     UNLOCK_MONITOR;
 }
@@ -1130,7 +1088,6 @@ VmIncExpandCount(segPtr)
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 VmAddToSeg(segPtr, firstPage, lastPage)
     register Vm_Segment *segPtr;	/* The segment whose VAS is to be
@@ -1160,6 +1117,7 @@ VmAddToSeg(segPtr, firstPage, lastPage)
     return(retValue);
 }
 
+void	IncExpandCount();
 void	CopyInfo();
 Boolean	CopyPage();
 
@@ -1210,10 +1168,10 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     if (srcSegPtr->type == VM_HEAP) {
 	/*
 	 * Prevent the source segment from being expanded if it is a heap 
-	 * segment.  Stack segments can't be expanded because they can't by
+	 * segment.  Stack segments can't be expanded because they can't be
 	 * used by anybody but the process that is calling us.
 	 */
-	VmIncExpandCount(srcSegPtr);
+	IncExpandCount(srcSegPtr);
 	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr, procPtr->processID);
     } else {
 	newFilePtr = (Fs_Stream *) NIL;
@@ -1235,6 +1193,10 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     }
 
     if (vm_CanCOW) {
+	/*
+	 * We are allowing copy-on-write.  Make a copy-on-ref image of the
+	 * src segment in the dest segment.
+	 */
 	VmSegFork(srcSegPtr, destSegPtr);
 	if (srcSegPtr->type == VM_HEAP) {
 	    VmDecExpandCount(srcSegPtr);
@@ -1243,6 +1205,11 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 
 	return(SUCCESS);
     }
+
+    /*
+     * No copy-on-write.  Do a full fledged copy of the source segment to
+     * the dest segment.
+     */
     CopyInfo(srcSegPtr, destSegPtr, &tSrcPtePtr, &tDestPtePtr, &srcVirtAddr,
 	     &destVirtAddr);
     srcAddr = (Address) NIL;
@@ -1288,7 +1255,6 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     /*
      * Copy over swap space resources.
      */
-
     status = VmCopySwapSpace(srcSegPtr, destSegPtr);
 
     if (srcSegPtr->type == VM_HEAP) {
@@ -1298,7 +1264,6 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     /*
      * If couldn't copy the swap space over then return an error.
      */
-
     if (status != SUCCESS) {
 	Vm_SegmentDelete(destSegPtr, procPtr);
 	return(VM_SWAP_ERROR);
@@ -1307,6 +1272,37 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     *destSegPtrPtr = destSegPtr;
 
     return(SUCCESS);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * IncExpandCount --
+ *
+ *     	Increment the number of times that the heap segment was prevented from
+ *	expanding.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Count of times prevented from expanding is increment.
+ *     
+ * ----------------------------------------------------------------------------
+ */
+ENTRY static void
+IncExpandCount(segPtr)
+    register	Vm_Segment	*segPtr;
+{
+    LOCK_MONITOR;
+
+    while (segPtr->flags & VM_DELETING_VA) {
+	(void)Sync_Wait(&segPtr->condition, FALSE);
+    }
+    segPtr->notExpandCount++;
+
+    UNLOCK_MONITOR;
 }
 
 

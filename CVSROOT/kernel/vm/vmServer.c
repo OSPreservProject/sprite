@@ -512,6 +512,7 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
 	     * The page is on the swap file and not in memory.  Need to copy
 	     * the page in the file.
 	     */
+	    vmStat.swapPagesCopied++;
 	    status = Fs_PageCopy(srcSegPtr->swapFilePtr, 
 				destSegPtr->swapFilePtr, 
 				page << VM_PAGE_SHIFT, VM_PAGE_SIZE);
@@ -646,6 +647,7 @@ VmCopySwapPage(srcSegPtr, virtPage, destSegPtr)
     }
     VmSwapFileUnlock(destSegPtr);
 
+    vmStat.swapPagesCopied++;
     if (destSegPtr->type == VM_STACK) {
 	pageToCopy = MACH_LAST_USER_STACK_PAGE - virtPage;
     } else {

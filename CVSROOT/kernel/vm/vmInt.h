@@ -175,6 +175,8 @@ extern 	Vm_Segment	*vmSysSegPtr;
  *				opened or written to.
  *   VM_SEG_DEAD		This segment is in the process of being
  *				deleted.
+ *   VM_DELETING_VA		A range of virtual addresses are being deleted
+ *				from this segment.
  */
 
 #define	VM_SEG_FREE			0x01
@@ -184,6 +186,7 @@ extern 	Vm_Segment	*vmSysSegPtr;
 #define	VM_SWAP_FILE_OPENED		0x10
 #define	VM_SWAP_FILE_LOCKED		0x20
 #define	VM_SEG_DEAD			0x40
+#define	VM_DELETING_VA			0x80
 
 
 /*---------------------------------------------------------------------------*/

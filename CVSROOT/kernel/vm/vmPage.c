@@ -66,8 +66,8 @@ static	VmCore          *coreMap;	/* Pointer to core map that is
  * Variables to define the number of page procs working at a time and the
  * maximum possible number that can be working at a time.
  */
-static	int		numPageOutProcs = 0;
-static	int		maxPageOutProcs = 3;
+static	int	numPageOutProcs = 0;
+int		vmMaxPageOutProcs = 3;
 
 /*
  * Page lists.  There are four different lists and a page can be on at most
@@ -91,9 +91,8 @@ static	List_Links	reservePageListHdr;
 /*
  * Variables used to instrument virtual memory.
  */
-static	Boolean		forceRef = FALSE;
-static	Boolean		ignoreDirt = FALSE;
-static	Boolean		forceSwap = FALSE;
+Boolean		vmForceRef = FALSE;
+Boolean		vmForceSwap = FALSE;
 
 /*
  * Conditions to wait on.
@@ -502,7 +501,7 @@ PutOnDirtyList(corePtr)
     VmListInsert((List_Links *) corePtr, LIST_ATREAR(dirtyPageList));
     corePtr->flags |= VM_DIRTY_PAGE;
     if (vmStat.numDirtyPages - numPageOutProcs > 0 &&
-	numPageOutProcs < maxPageOutProcs) { 
+	numPageOutProcs < vmMaxPageOutProcs) { 
 	Proc_CallFunc(PageOut, (ClientData) numPageOutProcs, 0);
 	numPageOutProcs++;
     }
@@ -621,6 +620,9 @@ VmUnlockPage(pfNum)
 {
     LOCK_MONITOR;
     coreMap[pfNum].lockCount--;
+    if (coreMap[pfNum].lockCount < 0) {
+	Sys_Panic(SYS_FATAL, "VmUnlockPage: Coremap lock count < 0\n");
+    }
     UNLOCK_MONITOR;
 }
 
@@ -979,7 +981,7 @@ again:
 		vmStat.refSearched++;
 		pte.referenced = 0;
 		corePtr->lastRef = curTime.seconds;
-		VmSetPTE(&corePtr->virtPage, pte);
+		VmSetPTE(&corePtr->virtPage, pte, FALSE);
 		VmListMove((List_Links *) corePtr, LIST_ATREAR(allocPageList));
 		/*
 		 * Set the last page marker so that we will try to examine this
@@ -1000,7 +1002,7 @@ again:
 	     * it must be determined if it is dirty.  If it is then put it onto
 	     * the dirty list.
 	     */
-	    if (pte.modified || (forceSwap && !pte.onSwap)) {
+	    if (pte.modified || (vmForceSwap && !pte.onSwap)) {
 		vmStat.dirtySearched++;
 		TakeOffAllocList(corePtr);
 		PutOnDirtyList(corePtr);
@@ -1497,8 +1499,8 @@ VmDoPageIn(virtAddrPtr, protFault)
  * PageOut is called by using the Proc_CallFunc routine which invokes
  * a process on PageOut.  When a page is put onto the dirty list a new
  * incantation of PageOut will be created unless there are already
- * more than maxPageOutProcs already writing out the dirty list.  Thus the
- * dirty list will be cleaned by at most maxPageOutProcs working in parallel.
+ * more than vmMaxPageOutProcs already writing out the dirty list.  Thus the
+ * dirty list will be cleaned by at most vmMaxPageOutProcs working in parallel.
  *
  * The work done by PageOut is split into work done at non-monitor level and
  * monitor level.  It calls the monitored routine PageOutPutAndGet to get the 
@@ -1660,7 +1662,7 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 	pte = VmGetPTE(&corePtr->virtPage);
 	pte.onSwap = 1;
 	pte.modified = 0;
-	VmSetPTE(&corePtr->virtPage, pte);
+	VmSetPTE(&corePtr->virtPage, pte, FALSE);
 	corePtr->flags |= VM_PAGE_BEING_CLEANED;
     } else {
 	/*
@@ -1771,13 +1773,13 @@ PageOut(data, callInfoPtr)
 
 
 /*
- * Variables for the clock daemon.  pagesToCheck is the number of page 
- * frames to examine each time that the clock daemon wakes up.  clockSleep
+ * Variables for the clock daemon.  vmPagesToCheck is the number of page 
+ * frames to examine each time that the clock daemon wakes up.  vmClockSleep
  * is the amount of time for the clock daemon before it runs again.
  */
-static	unsigned int	clockSleep;		
-static	int		pagesToCheck = 100;
-static	int		clockHand = 0;/* The hand of the clock */
+unsigned int	vmClockSleep;		
+int		vmPagesToCheck = 100;
+static	int	clockHand = 0;
 
 /*
  * ----------------------------------------------------------------------------
@@ -1818,10 +1820,10 @@ Vm_Clock(data, callInfoPtr)
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
     /*
-     * Examine pagesToCheck pages.
+     * Examine vmPagesToCheck pages.
      */
 
-    for (i = 0; i < pagesToCheck; i++) {
+    for (i = 0; i < vmPagesToCheck; i++) {
 	corePtr = &(coreMap[clockHand]);
 
 	/*
@@ -1853,108 +1855,24 @@ Vm_Clock(data, callInfoPtr)
 	 * If the page has been referenced, then put it on the end of the
 	 * allocate list.
 	 *
-	 * NOTE: forceRef is for instrumenting the virtual memory system.
+	 * NOTE: vmForceRef is for instrumenting the virtual memory system.
 	 */
-	if (forceRef || pte.referenced) {
+	if (vmForceRef || pte.referenced) {
 	    VmListMove((List_Links *) corePtr, LIST_ATREAR(allocPageList));
 	    pte.referenced = 0;
 	    corePtr->lastRef = curTime.seconds;
-	    VmSetPTE(&virtAddr, pte);
+	    VmSetPTE(&virtAddr, pte, FALSE);
 	}
     }
 
     if (!initialized) {
-        clockSleep = timer_IntOneSecond;
+        vmClockSleep = timer_IntOneSecond;
 	initialized = TRUE;
     }
 
-    callInfoPtr->interval = clockSleep;
+    callInfoPtr->interval = vmClockSleep;
 
     UNLOCK_MONITOR;
-}
-
-static int	copySize = 4096;
-static char	buffer[8192];
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Vm_Cmd --
- *
- *      This routine allows a user level program to give commands to
- *      the virtual memory system.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Some parameter of the virtual memory system will be modified.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-Vm_Cmd(command, arg)
-    Vm_Command  command;
-    int         arg;
-{
-    int			numBytes;
-    ReturnStatus	status = SUCCESS;
- 
-    switch (command) {
-	case VM_SET_PAGEOUT_PROCS:
-	    maxPageOutProcs = arg;
-	    break;
-        case VM_SET_CLOCK_PAGES:
-            pagesToCheck = arg;
-            break;
-        case VM_SET_CLOCK_INTERVAL:
-	    clockSleep = arg * timer_IntOneSecond;
-            break;
-        case VM_FORCE_REF:
-            forceRef = arg;
-            break;
-	case VM_FORCE_SWAP:
-	    forceSwap = arg;
-	    break;
-        case VM_IGNORE_DIRT:
-            ignoreDirt = arg;
-            break;
-	case VM_SET_COPY_SIZE:
-	    copySize = arg;
-	    break;
-	case VM_DO_COPY_IN:
-	    Vm_CopyIn(copySize, (Address) arg, buffer);
-	    break;
-	case VM_DO_COPY_OUT:
-	    Vm_CopyOut(copySize, buffer, (Address) arg);
-	    break;
-	case VM_DO_MAKE_ACCESS_IN:
-	    Vm_MakeAccessible(0, copySize, (Address) arg, &numBytes,
-			      (Address *) &arg);
-	    Byte_Copy(copySize, (Address) arg, buffer);
-	    Vm_MakeUnaccessible((Address) arg, numBytes);
-	    break;
-	case VM_DO_MAKE_ACCESS_OUT:
-	    Vm_MakeAccessible(0, copySize, (Address) arg, &numBytes,
-			      (Address *) &arg);
-	    Byte_Copy(copySize, buffer, (Address) arg);
-	    Vm_MakeUnaccessible((Address) arg, numBytes);
-	    break;
-	case VM_GET_STATS:
-	    vmStat.kernMemPages = 
-	    		((int) vmMemEnd - MACH_KERNEL_START) / VM_PAGE_SIZE;
-	    if (Vm_CopyOut(sizeof(Vm_Stat), (Address) &vmStat, 
-			   (Address) arg) != SUCCESS) {
-		status = SYS_ARG_NOACCESS;
-	    }
-	    break;
-        default:
-            Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");
-            break;
-    }
- 
-    return(status);
 }
 
 
@@ -2169,7 +2087,7 @@ Vm_Recovery()
     swapDown = FALSE;
     Sync_Broadcast(&swapDownCondition);
     while (vmStat.numDirtyPages - numPageOutProcs > 0 &&
-	   numPageOutProcs < maxPageOutProcs) { 
+	   numPageOutProcs < vmMaxPageOutProcs) { 
 	Proc_CallFunc(PageOut, (ClientData) numPageOutProcs, 0);
 	numPageOutProcs++;
     }
