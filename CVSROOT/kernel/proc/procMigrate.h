@@ -276,8 +276,6 @@ extern Proc_MigStats proc_MigStats;	/* migration statistics */
 extern void Proc_ResumeMigProc();
 extern void Proc_DestroyMigratedProc();
 
-extern void Proc_RemoveMigDependency();
-extern void Proc_AddMigDependency();
 extern ReturnStatus Proc_WaitForHost();
 extern ReturnStatus Proc_WaitForMigration();
 
