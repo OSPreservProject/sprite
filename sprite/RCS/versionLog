@@ -64,7 +64,9 @@ was fixed to mask RPC_TIMEOUT errors.  Net_InetHdrChecksum was backed
 out to a previous version to fix ftp/rcp problems.  The MachWindowUnderflow
 problem on the sun4 was fixed. 
 Sun - LE net driver was optimized to avoid mapping very small packets.
+Sun4c - the vm module has new byte-range cache flushing.
 Sun - SCSI3 target select bug was fixed and timeout value reduced. 
 Bug is raw scsi device access patched.  Scsi INQUIRE command fixed to 
 handle UNIT_ATTENTION errors.
+The famous "framming" error message has had its spelling corrected.
     New files linked in from the net library.
