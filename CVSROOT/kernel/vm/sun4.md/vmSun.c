@@ -1397,8 +1397,8 @@ VmMach_ProcInit(vmPtr)
 
 #ifdef sun4c
 typedef	struct lilac {
-    Address	fromSegPtr;
-    Address	toSegPtr;
+    Vm_Segment	*fromSegPtr;
+    Vm_Segment	*toSegPtr;
     int		fromHardSegNum;
     int		toHardSegNum;
     int		pmegNum;
@@ -1843,7 +1843,6 @@ SetupContext(procPtr)
 	 */
 	VmMachCopyUserSegMap(contextPtr->map);
     } else {
-	/* XXX No need to flush anything? */
 	VmMachSetContextReg((int)contextPtr->context);
     }
     List_Move((List_Links *)contextPtr, LIST_ATREAR(contextList));
@@ -2691,12 +2690,17 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 	    toContext = VmMachGetContextReg();
 	    fromContext = fromProcPtr->vmPtr->machPtr->contextPtr->context;
 
+#ifdef NOTDEF
 #ifndef sun4c
 	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
 		fromContext, toContext);
 #else
 	    status = FAILURE;
 #endif /* sun4c */
+#else
+	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
+		fromContext, toContext);
+#endif /* NOTDEF */
 	    VmMachSetContextReg((int)toContext);
 
 	    if (status == SUCCESS) {
@@ -2823,12 +2827,17 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 	    fromContext = VmMachGetContextReg();
 	    toContext = toProcPtr->vmPtr->machPtr->contextPtr->context;
 
+#ifdef NOTDEF
 #ifndef sun4c
 	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
 		    fromContext, toContext);
 #else
 	    status = FAILURE;
 #endif /* sun4c */
+#else
+	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
+		    fromContext, toContext);
+#endif /* NOTDEF */
 	    VmMachSetContextReg((int)fromContext);
 
 	    if (status == SUCCESS) {
@@ -2905,6 +2914,11 @@ WriteHardMapSeg(machPtr)
 {
     MASTER_LOCK(vmMachMutexPtr);
 
+    if (machPtr->contextPtr != (VmMach_Context *) NIL) {
+	machPtr->contextPtr->map[MAP_SEG_NUM] = 
+	    (int)*GetHardSegPtr(machPtr->mapSegPtr->machPtr,
+	    machPtr->mapHardSeg);
+    }
     VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR, 
 	 (int)*GetHardSegPtr(machPtr->mapSegPtr->machPtr, machPtr->mapHardSeg));
 
@@ -3303,7 +3317,6 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 				 (Address)&pteChange, TRUE);
 	    }
 	    pte &= ~VMMACH_REFERENCED_BIT;
-	    /* XXX Need to flush it? */
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
     }
@@ -3364,7 +3377,6 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 				(Address)&pteChange, TRUE);
 	    }
 	    pte &= ~VMMACH_MODIFIED_BIT;
-	    /* XXXX Should I flush something here? */
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
     }
@@ -3420,7 +3432,11 @@ VmMach_PageValidate(virtAddrPtr, pte)
 
     /*
      * Find out the hardware segment that has to be mapped.
+     * If this is a mapping segment, this gives us the seg num
+     * for the segment in the other process and the segPtr is the mapSegPtr
+     * which is set to the segPtr of the other process.
      */
+
     hardSeg = PageToOffSeg(virtAddrPtr->page, virtAddrPtr);
     segTablePtr = (VMMACH_SEG_NUM *) GetHardSegPtr(segPtr->machPtr, hardSeg);
 
@@ -3470,45 +3486,53 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	oldContext = VmMachGetContextReg();
 	for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 	    VmMachSetContextReg(i);
-	    /* XXXX Necessary to flush something ? */
 	    VmMachSetSegMap(addr, (int)*segTablePtr);
 	}
 	VmMachSetContextReg(oldContext);
 	hardPTE |= VMMACH_KRW_PROT;
     } else {
 	Proc_ControlBlock	*procPtr;
+	VmProcLink		*procLinkPtr;
+	VmMach_Context  	*contextPtr;
 
+	procPtr = Proc_GetCurrentProc();
 	if (virtAddrPtr->flags & USING_MAPPED_SEG) {
 	    addr = (Address) (VMMACH_MAP_SEG_ADDR + 
 				((unsigned int)addr & (VMMACH_SEG_SIZE - 1)));
+	    /* PUT IT IN SOFTWARE OF MAP AREA FOR PROCESS */
+	    procPtr->vmPtr->machPtr->contextPtr->map[MAP_SEG_NUM] =
+		    *segTablePtr;
+	} else{
+	    /* update it for regular seg num */
+	    procPtr->vmPtr->machPtr->contextPtr->map[hardSeg] = *segTablePtr;
 	}
-	/* XXX necessary to flush something? */
 	VmMachSetSegMap(addr, (int)*segTablePtr);
+
+#ifdef NOTDEF
 	procPtr = Proc_GetCurrentProc();
 	procPtr->vmPtr->machPtr->contextPtr->map[hardSeg] = *segTablePtr;
+#endif NOTDEF
+
+        if (segPtr != (Vm_Segment *) NIL) {
+	    VmCheckListIntegrity((List_Links *)segPtr->procList);
+            LIST_FORALL(segPtr->procList, (List_Links *)procLinkPtr) {
+		if (procLinkPtr->procPtr->vmPtr != (Vm_ProcInfo *) NIL &&
+			procLinkPtr->procPtr->vmPtr->machPtr !=
+			(VmMach_ProcData *) NIL &&
+			(contextPtr =
+			procLinkPtr->procPtr->vmPtr->machPtr->contextPtr) !=
+			(VmMach_Context *) NIL) {
+		    contextPtr->map[hardSeg] = *segTablePtr;
+		}
+	    }
+	}
+
 	if ((pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) ||
 		(virtAddrPtr->flags & VM_READONLY_SEG)) {
 	    hardPTE |= VMMACH_UR_PROT;
 	} else {
 	    hardPTE |= VMMACH_URW_PROT;
 	}
-#ifdef NOTDEF
-#ifdef sun4c
-	{
-	    int	contextNum;
-	    int	segNum;
-	    Address	virtAddr;
-
-	    virtAddr = (Address) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
-	    contextNum = VmMachGetContextReg();
-	    segNum = VmMachGetSegMap(virtAddr);
-	    if ((contextArray[contextNum].map[((unsigned int) virtAddr)
-		    >> VMMACH_SEG_SHIFT]) != segNum) {
-		panic("VmMach_PageValidate: hard/soft segNums different.\n");
-	    }
-	}
-#endif /* sun4c */
-#endif /* NOTDEF */
     }
     tHardPTE = VmMachGetPageMap(addr);
     if (tHardPTE & VMMACH_RESIDENT_BIT) {
