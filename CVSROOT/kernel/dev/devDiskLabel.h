@@ -74,4 +74,42 @@ typedef struct Sun_DiskLabel {
 #define SUN_SUMMARY_SECTOR	17
 #define SUN_DOMAIN_SECTOR	18
 
+/*
+ * Macro's to compute partition numbers from Fs_Device structures. Devices
+ * may be treated as non-partitioned.  In non-partitioned device the entire
+ * disk is treated as one partition. 
+ * Disk device encode the Fs_Device unit number as follows:
+ *	bit 3	  = if 1 treat disk as a raw disk with no partition. if 0
+ *		    treat as partition disk.
+ *	bit 0 - 2 = if partitioned disk, bits 0 - 2 are the partition number.
+ * 
+ * DISK_PARTITION() - Compute the partition number from the Fs_Device 
+ *		      structure.
+ * DISK_IS_PARTITIONED() - Return TRUE if a Fs_Device structure specifies a
+ *			   non partitioned disk.
+ * WHOLE_DISK_PARTITION - The partition number specifing an entire disk.
+ */
+
+#define	DISK_IS_PARTITIONED(fsDevice)	(!((fsDevice)->unit&0x8))
+#define	DISK_PARTITION(fsDevice)  	((fsDevice)->unit&0x7)
+#define	WHOLE_DISK_PARTITION (-1)
+
+/*
+ * Disks contain a map that defines the way the disk is partitioned.
+ * Each partition corresponds to a different device unit.  Partitions
+ * are made up of complete cylinders because the disk layout and
+ * allocation strategies are cylinder oriented.
+ */
+typedef struct DevDiskMap {
+    int firstCylinder;		/* The first cylinder in the partition */
+    int numCylinders;		/* The number of cylinders in the partition */
+} DevDiskMap;
+
+/*
+ * There are generally 8 disk partitions defined for a disk.
+ */
+#define DEV_NUM_DISK_PARTS	8
+
+
+
 #endif _DEVDISKLABEL
