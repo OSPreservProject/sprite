@@ -212,6 +212,7 @@ DevScsiSendCmdSync(scsiDevicePtr, scsiCmdPtr, statusBytePtr,
     }
     MASTER_UNLOCK((&syncCmdData.mutex));
     status = syncCmdData.status;
+    Sync_SemClear(&syncCmdData.mutex);
     return status;
 }
 
