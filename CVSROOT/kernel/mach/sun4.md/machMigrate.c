@@ -34,14 +34,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The information that is transferred between two machines.
  */
 typedef struct MigratedState {
-    Mach_State 		state;		/* The contiguous machine-dependent
-					 * state. */
     Mach_RegState	trapRegs;	/* The pointer to trapRegs in state
 					 * should be set to point to this in the
 					 * deencap routine.  It usually
 					 * points to the kernel stack, but
 					 * this won't exist yet on a
 					 * migrated process. */
+    int			fpuStatus;	/* See Mach_State. */
+    int			lastSysCall;	/* Used in sys module. */
+    int			savedArgI0;	/* Arg 0 saved for sys call. */
 } MigratedState;
 
 
@@ -89,7 +90,7 @@ Mach_EncapState(procPtr, hostID, infoPtr, buffer)
 	if ((machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) == 0) {
 	    MachFPUDumpState(machStatePtr->trapRegs);
 	    if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
-		procPtr->machStatePtr->fpuStatus |= 
+		machStatePtr->fpuStatus |= 
 		    (machStatePtr->trapRegs->fsr & MACH_FSR_TRAP_TYPE_MASK);
 	    }
 	}
@@ -98,16 +99,19 @@ Mach_EncapState(procPtr, hostID, infoPtr, buffer)
 		   procPtr->machStatePtr->fpuStatus);
 	}
     }
-    bcopy((Address) machStatePtr, (Address) &migPtr->state,
-	    sizeof (Mach_State));
+    /*
+     * There must not be any saved window state for migration.  This shouldn't
+     * ever happen the way things are set up.
+     */
+    if (machStatePtr->savedMask != 0) {
+	panic("Mach_EncapState: saved window state of proc isn't empty.\n");
+    }
     bcopy((Address) machStatePtr->trapRegs, (Address) &migPtr->trapRegs,
 	    sizeof (Mach_RegState));
-    /*
-     * The trapRegs ptr will be set to point to the trapRegs area of the
-     * migrated state on the other machine.  For now, make sure any reference
-     * to it will panic.
-     */
-    migPtr->state.trapRegs = (Mach_RegState *) NIL;
+    /* Copy necessary fields from state structure. */
+    migPtr->fpuStatus = machStatePtr->fpuStatus;
+    migPtr->lastSysCall = machStatePtr->lastSysCall;
+    migPtr->savedArgI0 = machStatePtr->savedArgI0;
 
     return(SUCCESS);
 }    
@@ -142,6 +146,7 @@ Mach_DeencapState(procPtr, infoPtr, buffer)
     Address buffer;			  /* buffer containing data */
 {
     MigratedState *migPtr = (MigratedState *) buffer;
+    Mach_State	state;
     ReturnStatus status;
 
     if (infoPtr->size != sizeof(MigratedState)) {
@@ -163,28 +168,19 @@ Mach_DeencapState(procPtr, infoPtr, buffer)
 	Mach_FreeState(procPtr);
     }
 
-#ifdef WRONG
-    /*
-     * This procedure relies on the fact that Mach_SetupNewState
-     * only looks at the Mach_UserState part of the Mach_State structure
-     * it is given.  Therefore, we can coerce the pointer to a Mach_State
-     * pointer and give it to Mach_UserState to get registers & such.
-     */
-#endif
-
-    if (migPtr->state.savedMask != 0) {
-	panic("Mach_DeencapState: saved window state of proc isn't empty.\n");
-    }
+    bzero((char *) &state, sizeof (Mach_State));
+    state.switchRegs = (Mach_RegState *) NIL;
     /*
      * Set trapRegs to the trapRegs area of the migrated state.
      */
-    migPtr->state.trapRegs = &migPtr->trapRegs;
+    state.trapRegs = &migPtr->trapRegs;
+    /* Get other necessary fields for Mach_State structure. */
+    state.fpuStatus = migPtr->fpuStatus;
+    state.lastSysCall = migPtr->lastSysCall;
+    state.savedArgI0 = migPtr->savedArgI0;
 
-/*
- * Note - I could pass the pc explicitly, but I don't think I have to since
- * Mach_SetupNewState will get it from trap regs.
- */
-    status = Mach_SetupNewState(procPtr, (Mach_State *) &migPtr->state,
+    /* Don't pass the pc explicitly -- it will be gotten from trapRegs. */
+    status = Mach_SetupNewState(procPtr, &state,
 	    Proc_ResumeMigProc, (Address)NIL, TRUE);
 
     /*
@@ -194,10 +190,10 @@ Mach_DeencapState(procPtr, infoPtr, buffer)
      */
     if (proc_MigDebugLevel > 2) {
 	printf("Mach_DeencapState: FPU status register was %x.\n",
-	       migPtr->state.fpuStatus);
+	       migPtr->fpuStatus);
     }
-    if (migPtr->state.fpuStatus) {
-	procPtr->machStatePtr->fpuStatus = migPtr->state.fpuStatus;
+    if (migPtr->fpuStatus) {
+	procPtr->machStatePtr->fpuStatus = migPtr->fpuStatus;
 	procPtr->specialHandling = 1;
     }
 	
