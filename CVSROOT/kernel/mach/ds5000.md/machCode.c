@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <sprite.h>
 #include <stddef.h>
 #include <assert.h>
+#include <string.h>
 
 #include <machConst.h>
 #include <machMon.h>
@@ -37,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <sigMach.h>
 #include <swapBuffer.h>
 #include <net.h>
+#include <timer.h>
 #include <ultrixSignal.h>
 
 /*
@@ -419,9 +421,9 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     for (i = 0; i < MACH_NUM_HARD_INTERRUPTS; i++ ) {
 	Mach_SetHandler(i, MachStdHandler, (ClientData) i);
     }
-    Mach_SetHandler(MACH_IO_INTR, MachIOInterrupt, NIL);
-    Mach_SetHandler(MACH_MEM_INTR, MachMemInterrupt, NIL);
-    Mach_SetHandler(MACH_FPU_INTR, MachFPInterrupt, NIL);
+    Mach_SetHandler(MACH_IO_INTR, MachIOInterrupt, (ClientData)NIL);
+    Mach_SetHandler(MACH_MEM_INTR, MachMemInterrupt, (ClientData)NIL);
+    Mach_SetHandler(MACH_FPU_INTR, MachFPInterrupt, (ClientData)NIL);
 
     /*
      * Clear out the IO interrupt handlers.
@@ -1287,8 +1289,9 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 			procPtr == (Proc_ControlBlock *)NIL ||
 			procPtr->vmPtr->numMakeAcc == 0)) {
 		if (procPtr != (Proc_ControlBlock *)NIL) {
-		    printf("procPtr->vmPtr->numMakeAcc = %d\n", 
-			procPtr->vmPtr->numMakeAcc);
+		    printf("%s: note: procPtr->vmPtr->numMakeAcc = %d\n", 
+			   "MachKernelExceptionHandler",
+			   procPtr->vmPtr->numMakeAcc);
 		}
 		return(MACH_KERN_ERROR);
 	    }
