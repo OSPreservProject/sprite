@@ -29,10 +29,12 @@
 #include "sys.h"
 #include "sync.h"
 #include "user/fs.h"
+#include "fsIO.h"
 #else
 #include <kernel/sys.h>
 #include <kernel/sync.h>
 #include <fs.h>
+#include <kernel/fsIO.h>
 #endif
 
 
@@ -168,9 +170,9 @@ typedef struct Fs_Stream {
  *		process executes a different program.
  *
  *	(These I/O related bit values are defined in user/fs.h)
- *	FS_READ - Open for reading
- *	FS_WRITE - Open for writing
- *	FS_EXECUTE - Open for execution
+ *	FS_READ - Open for reading	(also FS_READABLE)
+ *	FS_WRITE - Open for writing	(also FS_WRITABLE)
+ *	FS_EXECUTE - Open for execution	(also FS_EXCEPTION)
  *	FS_APPEND - Open for append mode
  *	FS_NON_BLOCKING - Open a stream with non-blocking I/O operations. If
  *		the operation would normally block, FS_WOULD_BLOCK is returned.
@@ -206,6 +208,9 @@ typedef struct Fs_Stream {
  *		by low level routines.  This means that the tracing can
  *		be confined to particular operations, like open, while
  *		other operations, like remove, don't pollute the trace.
+ *	FS_SIGNAL_REPLY - Valid in Fs_IOReply flags, which shares its
+ *		definitions with stream flags.  This flag indicates the
+ *		I/O operation is generating a signal.
  *	FS_SERVER_WRITE_THRU - Set on writes that are supposed to be written
  *			       through to the server.
  *	FS_LAST_DIRTY_BLOCK - Set on remote writes when this is the
@@ -219,9 +224,6 @@ typedef struct Fs_Stream {
  *		I/O client book-keeping correctly.
  *	FS_WB_ON_LDB - Write this file back to disk if this is the last dirty
  *		       block.
- *	FS_LAST_WRITER - Migration related.  This tells the I/O server to
- *		decrement its write count even if the stream is still
- *		referenced on the host from which it is migrating.
  */
 #define FS_KERNEL_FLAGS		0xfffff000
 #define FS_FOLLOW		0x00001000
@@ -235,12 +237,12 @@ typedef struct Fs_Stream {
 #define FS_CLIENT_CACHE_WRITE	0x00100000
 #define FS_CONSUME		0x00200000
 #define FS_TRACE_FLAG		0x00400000
+#define FS_SIGNAL_REPLY		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
 #define	FS_LAST_DIRTY_BLOCK	0x02000000
 #define FS_RMT_SHARED		0x04000000
 #define FS_NEW_STREAM		0x08000000
 #define	FS_WB_ON_LDB		0x10000000
-#define	FS_LAST_WRITER		0x20000000
 
 
 /*
@@ -278,6 +280,13 @@ typedef struct Fs_Buffer {
     int size;
     int flags;		/* 0 or FS_USER */
 } Fs_Buffer;
+
+/*
+ * Device drivers use Fs_NotifyReader and Fs_NotifyWriter to indicate
+ * that a device is ready.  They pass a Fs_NotifyToken as an argument
+ * that represents to the file system the object that is ready.
+ */
+typedef Address Fs_NotifyToken;
 
 /*
  * Filesystem initialization calls.
