@@ -13,7 +13,7 @@
  * express or implied warranty.
  *
  *
- * $ProcMigrate: proto.h,v 1.4 86/03/20 14:00:21 andrew Exp $ SPRITE (Berkeley)
+ * $Header$ SPRITE (Berkeley)
  */
 
 #ifndef _PROCMIGRATE
