@@ -378,6 +378,7 @@ extern	void		FsUpdateTimeOfDay();
 extern	void		FsClearStreamID();
 extern	void		FsAssignAttrs();
 extern  int	 	FsFindFileType();
+extern	char *		FsFileTypeToString();
 extern  void	 	FsRecordDeletionStats();
 
 #endif _FSINT
