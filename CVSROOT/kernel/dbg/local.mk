@@ -7,4 +7,12 @@
 
 NOOPTIMIZATION	= no -O please
 
+#
+# Define this flag until kdbx is no longer needed.
+#
+
+#if !empty(TM:Mds5000) || !empty(TM:Mds3100)
+CFLAGS += -DKDBX
+#endif
+
 #include	<$(SYSMAKEFILE)>
