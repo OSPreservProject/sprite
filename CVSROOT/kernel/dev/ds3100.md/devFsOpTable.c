@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "devSyslog.h"
 #include "devNull.h"
+#include "devSmem.h"
 #include "devSCSIDisk.h"
 #include "devSCSITape.h"
 #include "devNet.h"
@@ -152,6 +153,12 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_PLACEHOLDER_3, NoDevice, NullProc, NullProc,
 		    NullProc, NullProc, NullProc, 
 		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * /dev/smem
+     */
+    {DEV_SMEM,    NullProc, Dev_SmemRead, Dev_SmemWrite,
+		    Dev_SmemIOControl, NullProc, Dev_SmemSelect,
+		    DEV_NO_ATTACH_PROC, NullProc, NullProc},
 };
 
 static ReturnStatus
