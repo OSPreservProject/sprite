@@ -496,7 +496,9 @@ LocalSend(procPtr, sigNum, code, addr)
  * Sig_SendProc --
  *
  *	Store the signal in the pending mask and store the code for the given
- *	process.
+ *	process.  The code and addr are passed to the user interrupt
+ *	handler.  The code indicates the cause of the signal.  The addr
+ *	indicates the address of the fault.
  *
  *	NOTE: Assumes that we are called without the master lock down and
  *	with the process locked.
