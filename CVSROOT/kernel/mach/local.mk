@@ -12,18 +12,18 @@ DISTFILES   +=  ds3100.md/softfp.o
 #endif
 
 #if !empty(TM:Msun4) || !empty(TM:Msun4c)
-DISTFILES   +=  $TM.md/sun4 $TM.md/sun4/reg.h $TM.md/sun4/fpu \
-                $TM.md/sys $TM.md/sys/ieeefp.h
+DISTFILES   +=  $(TM).md/sun4 $(TM).md/sun4/reg.h $(TM).md/sun4/fpu \
+                $(TM).md/sys $(TM).md/sys/ieeefp.h
 #endif
 
 #if !empty(TM:Msun4c)
-DISTFILES   +=  $TM.md/sparcStationPromMap $TM.md/sunFiles \
-                $TM.md/sunFiles/openprom.h
+DISTFILES   +=  $(TM).md/sparcStationPromMap $(TM).md/sunFiles \
+                $(TM).md/sunFiles/openprom.h
 #endif
 
 #include	<$(SYSMAKEFILE)>
 
 #if !empty(TM:Msun4) || !empty(TM:Msun4c)
-INSTFILES   +=  $TM.md/sun4 $TM.md/sys
+INSTFILES   +=  $(TM).md/sun4 $(TM).md/sys
 #endif
 
