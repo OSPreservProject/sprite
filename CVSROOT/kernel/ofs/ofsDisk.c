@@ -39,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsDevice.h"
 #include "fsPrefix.h"
 #include "fsConsist.h"
+#include "fsNameHash.h"
 #include "devDiskLabel.h"
 #include "dev.h"
 #include "sync.h"
@@ -306,6 +307,14 @@ FsAttachDisk(devicePtr, localName, flags)
 		    status);
     }
     domainPtr->flags = 0;
+
+    /*
+     * Make sure a name hash table exists now that we have a disk attached.
+     */
+    if (fsNameTablePtr == (FsHashTable *)NIL) {
+	fsNameTablePtr = &fsNameTable;
+	FsNameHashInit(fsNameTablePtr, fsNameHashSize);
+    }
     return(SUCCESS);
 }
 
