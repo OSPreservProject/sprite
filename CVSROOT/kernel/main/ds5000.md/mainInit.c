@@ -373,7 +373,7 @@ MachStringTable *argv;
 	}
     }
     (void) Proc_NewProc((Address)(unsigned)(int (*)())Rpc_Daemon, 
-			PROC_KERNEL, FALSE, &pid, "Rpc_Daemon");
+			PROC_KERNEL, FALSE, &pid, "Rpc_Daemon", FALSE);
     if (main_PrintInitRoutines) {
 	printf("Creating Proc server procs\n");
     }
@@ -392,7 +392,7 @@ MachStringTable *argv;
      * letting the Proc_ServerProc wait for recovery.)
      */
     (void) Proc_NewProc((Address) Recov_Proc, PROC_KERNEL, FALSE, &pid,
-			"Recov_Proc");
+			"Recov_Proc", FALSE);
 
     /*
      * Set up process migration recovery management.
@@ -424,7 +424,7 @@ MachStringTable *argv;
 	printf("Creating Init\n");
     }
     (void) Proc_NewProc((Address)(unsigned)(int (*)())Init, PROC_KERNEL,
-			FALSE, &pid, "Init");
+			FALSE, &pid, "Init", FALSE);
 
     (void) Sync_WaitTime(time_OneYear);
     printf("Main exiting\n");
