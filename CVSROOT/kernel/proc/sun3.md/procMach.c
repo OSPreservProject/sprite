@@ -16,6 +16,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif /* not lint */
 
 #include <sprite.h>
+#include <stdio.h>
 #include <procMach.h>
 #include <proc.h>
 #include <procInt.h>
@@ -90,6 +91,29 @@ ProcGetObjInfo(execPtr, objInfoPtr)
 	objInfoPtr->bssLoadAddr = (Address)PROC_BSS_LOAD_ADDR(*execPtr);
 	objInfoPtr->bssSize = execPtr->bss;
 	objInfoPtr->entry = (Address)execPtr->entry;
+	break;
+
+    case UNIX_ZMAGIC:
+	printf("ProcGetObjInfo: UNIX_ZMAGIC\n");
+	objInfoPtr->codeLoadAddr =
+	    (Address) (execPtr->entry < 0x2000 ? 0 : 0x2000);
+
+	objInfoPtr->codeFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
+	objInfoPtr->codeSize = execPtr->code;
+	objInfoPtr->heapLoadAddr = (Address) 0x20000
+	    + (((int) objInfoPtr->codeLoadAddr +
+	        execPtr->code - 1) & ~(0x20000 - 1));
+
+	objInfoPtr->heapFileOffset = PROC_DATA_FILE_OFFSET(*execPtr);
+	objInfoPtr->heapSize = execPtr->data;
+	objInfoPtr->bssLoadAddr = objInfoPtr->heapLoadAddr + execPtr->data;
+	objInfoPtr->bssSize = execPtr->bss;
+	objInfoPtr->entry = (Address)execPtr->entry;
+
+printf("codeLoadAddr = %x, codeFileOffset = %x, codeSize = %x, entry = %x\n",
+    objInfoPtr->codeLoadAddr, objInfoPtr->codeFileOffset,
+    objInfoPtr->codeSize, objInfoPtr->entry);
+
 	break;
 
     default:

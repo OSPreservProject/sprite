@@ -47,6 +47,8 @@ typedef struct {
 #define	PROC_OMAGIC	0407		/* Old impure format */
 #define	PROC_NMAGIC	0410		/* Read-only text */
 #define	PROC_ZMAGIC	0413		/* Demand load format */
+#define	SPRITE_ZMAGIC	0414		/* Demand load format */
+#define	UNIX_ZMAGIC	0415		/* Demand load format */
 #define PROC_MC68010	1		/* runs on '10 or '20 */
 #define PROC_MC68020	2		/* runs on '20 only */
 #define	PROC_SPARC	3		/* runs on SPARC only */
@@ -56,10 +58,12 @@ typedef struct {
  * the file has a reasonable magic number or offsets to text|symbols|strings.
  */
 #define	PROC_BAD_MAGIC_NUMBER(x) \
-    (((x).magic)!=PROC_ZMAGIC)
+    ((x).magic!=PROC_ZMAGIC || (x).magic!=UNIX_ZMAGIC)
 
 #define	PROC_CODE_FILE_OFFSET(x) \
-	((x).magic==PROC_ZMAGIC ? 0 : sizeof (ProcExecHeader))
+	(((x).magic==PROC_ZMAGIC || (x).magic==UNIX_ZMAGIC) \
+	    ? 0 : sizeof (ProcExecHeader))
+
 #define	PROC_DATA_FILE_OFFSET(x) \
 	(PROC_CODE_FILE_OFFSET(x) + (x).code)
 
