@@ -59,7 +59,7 @@ extern ReturnStatus FsPipeIOControl();
 extern ReturnStatus FsPipeSelect();
 extern ReturnStatus FsPipeGetIOAttr();
 extern ReturnStatus FsPipeSetIOAttr();
-extern ReturnStatus FsPipeMigStart();
+extern ReturnStatus FsPipeRelease();
 extern ReturnStatus FsPipeMigEnd();
 extern ReturnStatus FsPipeMigrate();
 extern ReturnStatus FsPipeReopen();
