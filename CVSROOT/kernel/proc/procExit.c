@@ -345,6 +345,17 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
     }
 
     /*
+     * If the process is still waiting on an event, this is an error.
+     * [For now, flag this error only for foreign processes in case this
+     * isn't really an error after all.]
+     */
+    if (migrated && (exitProcPtr->event != NIL)) {
+	Sys_Panic((proc_MigDebugLevel > 0) ? SYS_FATAL : SYS_WARNING,
+		  "ExitProcessInt: exiting process still waiting on event %x.\n",
+		  exitProcPtr->event);
+    }
+
+    /*
      * If the current process is detached and waited on (i.e. an orphan) then
      * one of two things happen.  If the process is a family head and its list
      * of family members is not empty then the process is put onto the exiting
@@ -362,11 +373,17 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 	parentProcPtr = Proc_GetPCB(exitProcPtr->parentID);
 	if (parentProcPtr->state != PROC_MIGRATED) {
 	    Sync_Broadcast(&parentProcPtr->waitCondition);
+#ifdef notdef
 	    SIGNAL_PARENT(parentProcPtr, "ExitProcessInt");
+#endif
 	} else {
 	    WakeupMigratedParent(parentProcPtr->processID);
-	    Proc_CallFunc(SendSigChild, (ClientData)exitProcPtr->parentID, 0);
 	}
+	/*
+	 * Signal the parent later on, when not holding the exit monitor
+	 * lock.
+	 */
+	Proc_CallFunc(SendSigChild, (ClientData)exitProcPtr->parentID, 0);
 
 
 	newState = PROC_EXITING;
@@ -572,13 +589,20 @@ Proc_DetachInt(procPtr)
      */
 
     parentProcPtr = Proc_GetPCB(procPtr->parentID);
-    Sync_Broadcast(&parentProcPtr->waitCondition);
 
     if (parentProcPtr->state == PROC_MIGRATED) {
 	WakeupMigratedParent(parentProcPtr->processID);
     } else {
+	Sync_Broadcast(&parentProcPtr->waitCondition);
+#ifdef notdef
 	SIGNAL_PARENT(parentProcPtr, "Proc_DetachInt");
+#endif
     }
+    /*
+     * Signal the parent later on, when not holding the exit monitor
+     * lock.
+     */
+    Proc_CallFunc(SendSigChild, (ClientData)parentProcPtr->processID, 0);
 
     UNLOCK_MONITOR;
 }
@@ -641,11 +665,15 @@ Proc_InformParent(procPtr, childStatus, backGroundSig)
 	parentProcPtr = Proc_GetPCB(procPtr->parentID);
 	Sync_Broadcast(&parentProcPtr->waitCondition);
     }
+#ifdef notdef
     if (backGroundSig || migrated || parentProcPtr->state == PROC_MIGRATED) {
+#endif
 	Proc_CallFunc(SendSigChild, (ClientData)procPtr->parentID, 0);
+#ifdef notdef
     } else {
 	SIGNAL_PARENT(parentProcPtr, "ProcInformParent");
     }
+#endif
     procPtr->exitFlags &= ~PROC_STATUSES;
     procPtr->exitFlags |= childStatus;
 
