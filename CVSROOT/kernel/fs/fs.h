@@ -222,9 +222,6 @@ typedef struct Fs_Stream {
  *	FS_CLIENT_CACHE_WRITE -	This write is coming from a client's cache.
  *              This means the modify time should not be updated
  *              since the client has the correct modify time.
-#ifdef SOSP91
- *	FS_DIR - This is a directory.
-#endif SOSP91
  *	FSUTIL_TRACE_FLAG - This is used to enable the taking of trace records
  *		by low level routines.  This means that the tracing can
  *		be confined to particular operations, like open, while
@@ -264,9 +261,6 @@ typedef struct Fs_Stream {
 #define FS_LINK			0x00040000
 #define FS_RENAME		0x00080000
 #define FS_CLIENT_CACHE_WRITE	0x00100000
-#ifdef SOSP91
-#define FS_DIR			0x00200000
-#endif SOSP91
 #define FSUTIL_TRACE_FLAG	0x00400000
 #define FS_USER_OUT		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
