@@ -9,7 +9,7 @@
 |*
 
 #include "machConst.h"
-#include "asmDefs.h"
+#include "machAsmDefs.h"
 
 |*----------------------------------------------------------------------------
 |*
