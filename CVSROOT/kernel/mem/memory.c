@@ -298,7 +298,7 @@ static int	initialized = FALSE;
  * Mem_SetTraceSizes(). PrintTrace calls a default printing routine; it can
  * be changed with Mem_SetPrintProc().
  */
-#define MAX_NUM_TRACE_SIZES	14
+#define MAX_NUM_TRACE_SIZES	20
 #define	MAX_CALLERS_TO_TRACE	20
 static	struct TraceElement {
     Mem_TraceInfo	traceInfo;
