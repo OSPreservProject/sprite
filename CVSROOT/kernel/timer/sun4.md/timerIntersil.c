@@ -722,4 +722,54 @@ TimeToCounters(time, counterPtr)
 		(time.microseconds % TENTH_SECOND) / HUNDREDTH_SECOND;
 }
 #endif NOT_USED
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerHardwareUniversalTimeInit --
+ *
+ * 	Not implemented yet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+TimerHardwareUniversalTimeInit(timePtr, localOffsetPtr, DSTPtr)
+    Time *timePtr;		/* Buffer to hold universal time. */
+    int  *localOffsetPtr;	/* Buffer to hold local offset. */
+    Boolean *DSTPtr;		/* Buffer to hold DST allowed flag. */
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSetHardwareUniversalTime --
+ *
+ *	Not implemented yet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+TimerSetHardwareUniversalTime(timePtr, localOffset, DST)
+    Time *timePtr;		/* universal time. */
+    int  localOffset;		/* local offset. */
+    Boolean DST;		/* DST allowed flag. */
+{
+}
 

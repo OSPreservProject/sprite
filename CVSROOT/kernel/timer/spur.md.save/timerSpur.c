@@ -633,4 +633,54 @@ Timer_TimerGetInfo(data)
 		((imaskRegister & CALLBACK_TIMER_MASK_BIT) != 0),
 		((imaskRegister & PROFILE_TIMER_MASK_BIT) != 0));
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerHardwareUniversalTimeInit --
+ *
+ * 	Not implemented.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+TimerHardwareUniversalTimeInit(timePtr, localOffsetPtr, DSTPtr)
+    Time *timePtr;		/* Buffer to hold universal time. */
+    int  *localOffsetPtr;	/* Buffer to hold local offset. */
+    Boolean *DSTPtr;		/* Buffer to hold DST allowed flag. */
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSetHardwareUniversalTime --
+ *
+ *	Not implemented.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+TimerSetHardwareUniversalTime(timePtr, localOffset, DST)
+    Time *timePtr;		/* universal time. */
+    int  localOffset;		/* local offset. */
+    Boolean DST;		/* DST allowed flag. */
+{
+}
 
