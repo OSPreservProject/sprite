@@ -89,7 +89,9 @@ SigMigSend(procPtr, sigNum, code)
 
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 0) {
-	    printf("Warning: SigMigSend:Error %x returned by Rpc_Call.\n", status);
+	    printf("Warning: SigMigSend:Error trying to signal %x to process %x (%x on host %x):\n\t%s\n",
+		   sigNum, procPtr->processID, remoteProcessID, remoteHostID,
+		   Stat_GetMsg(status));
 	}
 	if (status == RPC_TIMEOUT && sigNum == SIG_KILL) {
 	    if (proc_MigDebugLevel > 0) {
