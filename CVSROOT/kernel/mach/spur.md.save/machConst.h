@@ -263,10 +263,13 @@
  *				floating well.
  *	MACH_KPSW_USE_CUR_PC	Use the current PC when returning from a trap
  *				not the next PC.
+ *	MACH_KPSW_PROCESSOR_NUM Bits of the kpsw used to store the processor
+ *				number;
  */
 #define	MACH_KPSW_CC_REFRESH		0x10000
 #define	MACH_KPSW_USE_CUR_PC		0x20000
-
+#define	MACH_KPSW_PROCESSOR_NUM		0xff000000
+#define	MACH_KPSW_PNUM_SHIFT		24
 /*
  * Bits in UPSW (see SPUR-ISA page 36).
  */
