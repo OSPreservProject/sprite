@@ -162,7 +162,7 @@ typedef struct Mach_TrapHandler {
  */
 typedef struct Mach_SavedState {
     Mach_RegState	regState;
-    Address		swpBaseAddr;
+    Address		specPageAddr;
     Address		swpMaxAddr;
 } Mach_SavedState;
 
@@ -180,6 +180,12 @@ typedef struct Mach_SpecPage {
 } Mach_SpecPage;
 
 /*
+ * A type which sizeof() == cache block size of machine. 
+ */
+
+typedef char	Mach_CacheBlockSizeType[VMMACH_CACHE_BLOCK_SIZE];
+
+ /*
  * Per processor status info.
  */
 typedef	int	Mach_ProcessorStatus;
@@ -223,7 +229,7 @@ extern Mach_ProcessorStatus mach_ProcessorStatus[];
 	register unsigned int	__pnum; \
 	asm volatile ("rd_kpsw	 %1\n\textract %1,%1,$3\n ":" =r" (__pnum) \
 				: "r" (__pnum)); \
-	(__pnum = 0); })
+	(__pnum); })
 
 /*
  * A macro to test if the current processor is at interrupt level.
@@ -315,6 +321,7 @@ extern	void	Mach_EnableIntr();
 extern  ReturnStatus Mach_AllocExtIntrNumber();
 extern	void	Mach_SetNonmaskableIntr();
 extern  ReturnStatus Mach_CallProcessor();
+extern int	Mach_GetNumProcessors();
 /*
  * Routines to read and write physical memory.
  */
