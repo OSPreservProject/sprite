@@ -220,9 +220,10 @@ DevFsTypeOps devFsOpTable[] = {
     /*
      * /dev/clients
      */
-    {DEV_CLIENT_STATE,  DevClientStateOpen, DevClientStateRead, nullWriteProc,
+    {DEV_CLIENT_STATE,  DevClientStateOpen, DevClientStateRead,
+		   DevClientStateWrite,
 		   DevClientStateIOControl, DevClientStateClose,
-		   DevClientStateSelect, DEV_NO_ATTACH_PROC,
+		   nullSelectProc, DEV_NO_ATTACH_PROC,
 		   noReopenProc, noMmapProc},
 };
 
