@@ -30,6 +30,15 @@
 #define MACH_IO_SLOT_SIZE		0x400000
 #define MACH_IO_SLOT_ADDR(slot)	        (MACH_IO_SLOT_BASE + \
 					(MACH_IO_SLOT_SIZE * (slot)))
+/*
+ * The standard TURBOchannel option information is located at these offsets
+ * from the start of the option rom.  See page 13  of the TURBOchannel
+ * Hardware Specification.  These offsets must be added to the option rom
+ * address, as specified in the documentation for the option.
+ */
+
+#define MACH_IO_ROM_OFFSET		0x3e0
+#define MACH_IO_ROM_INFO_OFFSET		0x400
 
 /*
  * Addresses within the system interface (slot 7).
