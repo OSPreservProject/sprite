@@ -206,6 +206,8 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMOP 104 */
     { RSNIL /* Not migrated */,		RSNIL},  /* VM_MPROTECT 105 */
     { RpcProcFork,			RSNIL }, /* SYS_PROC_VFORK 106 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_GET_ROUTES 107 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_DELETE_ROUTE 108 */
 };
 
 

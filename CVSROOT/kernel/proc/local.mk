@@ -8,5 +8,6 @@
 
 POBJS		= $(OBJS:S/.o$/.po/g:S/procFork.po/procFork.o/g)
 
+CFLAGS		+= -DNEW_NET
 
 #include	<$(SYSMAKEFILE)>
