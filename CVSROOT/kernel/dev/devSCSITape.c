@@ -29,7 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devSCSISysgen.h"
 #include "devSCSIEmulex.h"
 #include "devSCSIExabyte.h"
-#include "byte.h"
 
 #include "dbg.h"
 int SCSITapeDebug = FALSE;
@@ -108,7 +107,7 @@ DevSCSITapeInit(devPtr)
  *
  *----------------------------------------------------------------------
  */
-int
+void
 DevSCSITapeType(senseSize, tapePtr)
     int senseSize;			/* Amount of sense data in bytes */
     DevSCSITape *tapePtr;
@@ -116,27 +115,21 @@ DevSCSITapeType(senseSize, tapePtr)
 
     printf("SCSITape, %d sense bytes => ", senseSize);
     switch(senseSize) {
-	case sizeof(DevQICIISense):
+	case DEV_SYSGEN_SENSE_BYTES:
 	    DevSysgenInit(tapePtr);
 	    printf("Sysgen\n");
 	    break;
-	case sizeof(DevEmulexTapeSense):
-	case sizeof(DevEmulexTapeSense)-1: /* The sense size of the Emulex 
-					    * drive is 11 bytes but the
-					    * C compiler rounds all structures
-					    * to even byte size.
-					    */
+	case DEV_EMULEX_SENSE_BYTES:
 	    DevEmulexInit(tapePtr);
 	    printf("Emulex\n");
 	    break;
-	case sizeof(DevExabyteSense):
+	case DEV_EXABYTE_SENSE_BYTES:
 	    DevExabyteInit(tapePtr);
 	    printf("Exabyte\n");
 	    break;
 	default:
 	    printf("Unknown sense size\n");
     }
-    return(tapePtr->type);
 }
 
 /*
@@ -166,10 +159,8 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
     int command;			/* SCSI_READ, SCSI_WRITE, etc. */
     register DevSCSIDevice *devPtr; 	/* State info for the tape */
     char *buffer;			/* Target buffer */
-    int *countPtr;			/* Upon entry, the number of sectors to
-					 * transfer, or general count for
-					 * skipping blocks, etc. Upon return,
-					 * the number of sectors transferred. */
+    int *countPtr;			/* In/Out Byte count, or generalized
+					 * count for SKIP, etc. */
 {
     ReturnStatus status;
     register DevSCSIController *scsiPtr; /* Controller for the drive */
@@ -197,11 +188,9 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
     if (command == SCSI_READ || command == SCSI_WRITE) {
 	/*
 	 * Map the buffer into the special area of multibus memory that
-	 * the device can DMA into.  Probably have to worry about
-	 * the buffer size.
+	 * the device can DMA into.
 	 */
-	buffer = VmMach_DevBufferMap(*countPtr * DEV_BYTES_PER_SECTOR,
-				 buffer, scsiPtr->IOBuffer);
+	buffer = VmMach_DevBufferMap(*countPtr, buffer, scsiPtr->IOBuffer);
     }
     DevSCSITapeSetupCommand(command, devPtr, countPtr);
     status = (*scsiPtr->commandProc)(devPtr->targetID, scsiPtr, *countPtr,
@@ -221,9 +210,6 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
 			    command);
     }
     *countPtr -= scsiPtr->residual;
-    if (command == SCSI_READ || command == SCSI_WRITE) {
-	*countPtr /= DEV_BYTES_PER_SECTOR;
-    }
     scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
     Sync_MasterBroadcast(&scsiPtr->readyForIO);
     MASTER_UNLOCK(&scsiPtr->mutex);
@@ -240,7 +226,8 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
  *	tape position, so there is only a block count, no offset.  There
  *	is a special code that modifies the command in the tape control
  *	block.  The value of the code is a function of the command and the
- *	type of the tape drive (ugh.)  The correct code is determined here.
+ *	type of the tape drive (ugh.)  The correct code is determined by
+ *	a tape-specific setup procedure.
  *
  * Results:
  *	None.
@@ -251,16 +238,15 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
  *----------------------------------------------------------------------
  */
 void
-DevSCSITapeSetupCommand(command, devPtr, countPtr)
+DevSCSITapeSetupCommand(command, devPtr, dmaCountPtr)
     int command;		/* One of SCSI_* commands */
     DevSCSIDevice *devPtr;	/* Device state */
-    int *countPtr;		/* In - Transfer count, blocks or bytes!
+    int *dmaCountPtr;		/* In - Transfer count
 				 * Out - The proper dma byte count for caller */
 {
     register DevSCSITapeControlBlock	*tapeControlBlockPtr;
     register DevSCSITape		*tapePtr;
-    int dmaCount = *countPtr;		/* DMA count needed by host interface */
-    int count = *countPtr;		/* Count put in the control block */
+    int count = *dmaCountPtr;		/* Count put in the control block */
 
     devPtr->scsiPtr->devPtr = devPtr;
     tapeControlBlockPtr =
@@ -275,14 +261,13 @@ DevSCSITapeSetupCommand(command, devPtr, countPtr)
 	 * as we do a REQUEST_SENSE first to detect the drive type.
 	 */
 	(*tapePtr->setupProc)(tapePtr, &command, tapeControlBlockPtr,
-		&count, &dmaCount);
+		&count, dmaCountPtr);
     }
     tapeControlBlockPtr->command = command & 0xff;
     tapeControlBlockPtr->unitNumber = devPtr->LUN;
     tapeControlBlockPtr->highCount = (count & 0x1f0000) >> 16;
     tapeControlBlockPtr->midCount =  (count & 0x00ff00) >> 8;
     tapeControlBlockPtr->lowCount =  (count & 0x0000ff);
-    *countPtr = dmaCount;
 }
 
 /*
@@ -388,13 +373,12 @@ ReturnStatus
 Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
     Fs_Device *devicePtr;	/* Handle for raw SCSI tape device */
     int offset;			/* IGNORED for tape. */
-    int bufSize;		/* Number of bytes to read,  rounded down
-				 * do a multiple of the sector size */
+    int bufSize;		/* Number of bytes to read,  this gets rounded
+				 * down to a multiple of the sector size */
     char *buffer;		/* Buffer for the read */
     int *lenPtr;		/* How many bytes actually read */
 {
     ReturnStatus error;	/* Error code */
-    int numSectors;	/* The number of sectors to read */
     DevSCSIDevice *devPtr;
     DevSCSITape *tapePtr;
 
@@ -412,15 +396,13 @@ Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
 	return(SUCCESS);
     }
     /*
-     * For simplicity the offset is rouned down to the start of the sector
-     * and the amount to read is also rounded down to a whole number of
-     * sectors.  This should break misaligned reads up so the first and
+     * For simplicity the amount to read is also rounded down to a whole number
+     * of tape sectors.  This should break misaligned reads up so the first and
      * last sectors are read into an extra buffer and copied into the
      * user's buffer.
      */
-    bufSize &= ~(DEV_BYTES_PER_SECTOR-1);
-    numSectors = bufSize / DEV_BYTES_PER_SECTOR;
-    error = DevSCSITapeIO(SCSI_READ, devPtr, buffer, &numSectors);
+    *lenPtr = bufSize & ~(tapePtr->blockSize - 1);
+    error = DevSCSITapeIO(SCSI_READ, devPtr, buffer, lenPtr);
     /*
      * Special check against funky end-of-file situations.  The Emulex tape
      * doesn't compute a correct residual when it hits the file mark
@@ -429,8 +411,6 @@ Dev_SCSITapeRead(devicePtr, offset, bufSize, buffer, lenPtr)
     if (error == DEV_END_OF_TAPE) {
 	*lenPtr = 0;
 	error = SUCCESS;
-    } else {
-	*lenPtr = numSectors * DEV_BYTES_PER_SECTOR;
     }
     return(error);
 }
@@ -462,14 +442,12 @@ Dev_SCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
     int *lenPtr;		/* How much was actually written */
 {
     ReturnStatus error;
-    int numSectors;
     DevSCSIDevice *devPtr;
     DevSCSITape *tapePtr;
 
     /*
-     * For simplicity the offset is rouned down to the start of the sector
-     * and the amount to write is also rounded down to a whole number of
-     * sectors.  For misaligned writes we need to first read in the sector
+     * For simplicity the amount to write is also rounded down to a whole number
+     * of blocks.  For misaligned writes we need to first read in the sector
      * and then overwrite part of it.
      */
 
@@ -478,12 +456,11 @@ Dev_SCSITapeWrite(devicePtr, offset, bufSize, buffer, lenPtr)
 	return(DEV_NO_DEVICE);
     }
     tapePtr = (DevSCSITape *)devPtr->data;
-    bufSize &= ~(DEV_BYTES_PER_SECTOR-1);
-    numSectors = bufSize / DEV_BYTES_PER_SECTOR;
-    error = DevSCSITapeIO(SCSI_WRITE, devPtr, buffer, &numSectors);
-    *lenPtr = numSectors * DEV_BYTES_PER_SECTOR;
-    tapePtr->state |= SCSI_TAPE_WRITTEN;
-
+    *lenPtr = bufSize & ~(tapePtr->blockSize - 1);
+    error = DevSCSITapeIO(SCSI_WRITE, devPtr, buffer, lenPtr);
+    if (error == SUCCESS) {
+	tapePtr->state |= SCSI_TAPE_WRITTEN;
+    }
     return(error);
 }
 
@@ -731,8 +708,7 @@ Dev_SCSITapeClose(devicePtr, useFlags, openCount, writerCount)
     /*
      * For now, always rewind the tape upon close.
      */
-    status = DevSCSITapeIO(SCSI_REWIND, devPtr, (char *)0,
-			    &count);
+    status = DevSCSITapeIO(SCSI_REWIND, devPtr, (char *)0, &count);
     tapePtr->state = SCSI_TAPE_CLOSED;
     return(status);
 }
