@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "byte.h"
 #include "sync.h"
+#include "rpc.h"
 
 /*
  * Monitor to synchronize access to the streamCount variable.
@@ -77,16 +78,17 @@ FsStreamNew(serverID, ioHandlePtr, useFlags)
 
     fileID.type = FS_STREAM;
     fileID.serverID = serverID;
-    fileID.major = 0;
-
+    /*
+     * The streamID is made unique by using our hostID for the major
+     * number (we are the chooser), and installing under a new minor
+     * number until we don't hit an existing stream.
+     */
+    fileID.major = rpc_SpriteID;
     do {
 	fileID.minor = ++streamCount;
 	found = FsHandleInstall(&fileID, sizeof(Fs_Stream),
 				(FsHandleHeader **)&newStreamPtr);
 	if (found) {
-	    /*
-	     * Don't want to conflict with existing streams.
-	     */
 	    FsHandleRelease(newStreamPtr, TRUE);
 	}
     } while (found);
@@ -246,9 +248,25 @@ ENTRY void
 FsStreamDispose(streamPtr)
     Fs_Stream *streamPtr;
 {
-    if (!List_IsEmpty(&streamPtr->clientList)) {
-	Sys_Panic(SYS_FATAL, "FsStreamDispose, client list not empty\n");
+    while (!List_IsEmpty(&streamPtr->clientList)) {
+	FsStreamClientInfo *clientPtr;
+	char *FsFileTypeToString();
+
+	clientPtr = (FsStreamClientInfo *)List_First(&streamPtr->clientList);
+	Sys_Panic(SYS_WARNING, 
+	    "FsStreamDispose, client %d still in list for stream <%d,%d>\n",
+	    clientPtr->clientID, streamPtr->hdr.fileID.major,
+	    streamPtr->hdr.fileID.minor);
+	if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
+	    Sys_Printf("\tI/O handle: %s <%d,%d>\n",
+		FsFileTypeToString(streamPtr->ioHandlePtr->fileID.type),
+		streamPtr->ioHandlePtr->fileID.major,
+		streamPtr->ioHandlePtr->fileID.minor);
+	}
+	List_Remove((List_Links *)clientPtr);
+	Mem_Free((Address)clientPtr);
     }
+
     FsHandleRelease(streamPtr, TRUE);
     if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
 	if (streamPtr->nameInfoPtr->name != (char *)NIL) {
