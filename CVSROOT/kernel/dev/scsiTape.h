@@ -74,9 +74,14 @@ extern ReturnStatus ((*devSCSITapeAttachProcs[])());
 /*
  * Forward Declarations.
  */
-ReturnStatus DevSCSITapeError();
-ReturnStatus DevSCSITapeSpecialCmd();
-ReturnStatus DevSCSITapeVariableIO();
-ReturnStatus DevSCSITapeFixedBlockIO();
+
+extern ReturnStatus DevSCSITapeError _ARGS_((ScsiTape *tapePtr,
+    unsigned int statusByte, int senseLength, char *senseDataPtr));
+extern ReturnStatus DevSCSITapeSpecialCmd _ARGS_((ScsiTape *tapePtr,
+    int command, int count));
+extern ReturnStatus DevSCSITapeVariableIO _ARGS_((register ScsiTape *tapePtr,
+    int command, char *buffer, int *countPtr));
+extern ReturnStatus DevSCSITapeFixedBlockIO _ARGS_((register ScsiTape *tapePtr,
+    int command, char *buffer, int *countPtr));
 
 #endif /* _SCSITAPE */

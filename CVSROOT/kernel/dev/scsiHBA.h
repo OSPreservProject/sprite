@@ -155,7 +155,9 @@ extern int	  devScsiNumHBATypes;
 /*
  * Routines.
  */
-extern void DevScsiSenseCmd();
+
+extern void DevScsiSenseCmd _ARGS_((ScsiDevice *scsiDevicePtr, int bufferSize,
+    char *buffer, ScsiCmd *scsiCmdPtr));
 
 #endif /* _SCSIHBA */
 

@@ -26,10 +26,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "ttyAttach.h"
 #include <errno.h>
 #include <fs.h>
+#include "fsio.h"
 #include "proc.h"
 #include <status.h>
 #include "sync.h"
 #include "tty.h"
+#include "td.h"
 
 /*
  * Monitor lock used for synchronizing access to DevTty and Td_Terminal
@@ -81,7 +83,7 @@ static void	TransferOutProc();
 
 /* ARGSUSED */
 ENTRY ReturnStatus
-DevTtyOpen(devicePtr, useFlags, notifyToken)
+DevTtyOpen(devicePtr, useFlags, notifyToken, flagsPtr)
     Fs_Device *devicePtr;	/* Information about device (e.g. type
 				 * and unit number). */
     int useFlags;		/* Flags for the stream being opened:
@@ -89,6 +91,7 @@ DevTtyOpen(devicePtr, useFlags, notifyToken)
 				 * FS_WRITE. */
     Fs_NotifyToken notifyToken;	/* Used for Fs call-back to notify waiting
 				 * processes that the terminal is ready. */
+    int *flagsPtr;	        /* OUT: Device IO flags */			 
 {
     register DevTty *ttyPtr;
     int result;
@@ -748,7 +751,7 @@ Transfer(ttyPtr)
 	    break;
 	}
 	tmp = Td_GetRaw(ttyPtr->term, count,
-		&ttyPtr->outBuffer[ttyPtr->insertOutput]);
+		(char *) &ttyPtr->outBuffer[ttyPtr->insertOutput]);
 	next = ttyPtr->insertOutput + tmp;
 	if (next >= TTY_OUT_BUF_SIZE) {
 	    next = 0;

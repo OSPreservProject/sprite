@@ -18,12 +18,16 @@
 #ifndef _DEVSCSITAPE
 #define _DEVSCSITAPE
 
-ReturnStatus DevSCSITapeOpen();
-ReturnStatus DevSCSITapeRead();
-ReturnStatus DevSCSITapeWrite();
-ReturnStatus DevSCSITapeIOControl();
-ReturnStatus DevSCSITapeClose();
-
+extern ReturnStatus DevSCSITapeOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+    Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevSCSITapeRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevSCSITapeWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevSCSITapeIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevSCSITapeClose _ARGS_((Fs_Device *devicePtr,
+    int useFlags, int openCount, int writerCount));
 
 #endif /* _DEVSCSITAPE */
 

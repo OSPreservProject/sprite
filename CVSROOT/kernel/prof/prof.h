@@ -20,51 +20,31 @@
 
 /* procedures */
 
-#ifdef __STDC__
-extern ReturnStatus     Prof_Profil(short *buffer, int bufSize,
-                            int offset, int scale);
-extern void             Prof_Tick(Timer_Ticks time, 
-                            ClientData clientData);
-extern void             Prof_Disable(Proc_ControlBlock *procPtr);
-extern void             Prof_Enable(Proc_ControlBlock *procPtr, short *buffer,
-                            int bufSize, int offset, int scale);
-extern void             Prof_RecordPC(Proc_ControlBlock *procPtr);
-extern void		Prof_Init(void);
-extern ReturnStatus	Prof_Start(void);
-extern ReturnStatus	Prof_End(void);
-extern void		Prof_CollectInfo();
-extern ReturnStatus	Prof_Dump(char *dumpName);
-extern ReturnStatus	Prof_DumpStub(char *pathName);
-#else
-extern ReturnStatus     Prof_Profil();
-extern void             Prof_Tick();
-extern void             Prof_Disable();
-extern void             Prof_Enable();
-extern void             Prof_RecordPC();
-extern void		Prof_Init();
-extern ReturnStatus	Prof_Start();
-extern ReturnStatus	Prof_End();
-extern ReturnStatus     Prof_Profil();
-extern void		Prof_CollectInfo();
-extern ReturnStatus	Prof_Dump();
-extern ReturnStatus	Prof_DumpStub();
+extern void Prof_Init _ARGS_((void));
+extern ReturnStatus Prof_Start _ARGS_((void));
 
+#ifdef sun3
+extern void Prof_CollectInfo _ARGS_((Mach_IntrStack *stackPtr));
+#else
+extern void Prof_CollectInfo _ARGS_((unsigned int pc));
 #endif
+
+extern ReturnStatus Prof_End _ARGS_((void));
+extern ReturnStatus Prof_Dump _ARGS_((char *dumpName));
+extern ReturnStatus Prof_DumpStub _ARGS_((char *pathName));
+extern ReturnStatus Prof_Profil _ARGS_((short *buffer, int bufSize, int offset, int scale));
+extern void Prof_Enable _ARGS_((Proc_ControlBlock *procPtr, short *buffer, int bufSize, int offset, int scale));
+extern void Prof_Tick _ARGS_((Timer_Ticks time, ClientData clientData));
+extern void Prof_RecordPC _ARGS_((Proc_ControlBlock *procPtr));
+extern void Prof_Disable _ARGS_((Proc_ControlBlock *procPtr));
 
 /*
  * Procedures to support process migration.
  */
-#ifdef __STDC__
-extern ReturnStatus	Prof_GetEncapSize(Proc_ControlBlock *procPtr,
-                            int hostID, Proc_EncapInfo *infoPtr);
-extern ReturnStatus	Prof_EncapState(Proc_ControlBlock *procPtr, int hostID,
-                            Proc_EncapInfo *infoPtr, Address ptr);
-extern ReturnStatus	Prof_DeencapState(Proc_ControlBlock *procPtr,
-                            Proc_EncapInfo *infoPtr, Address ptr);
-#else
-extern ReturnStatus	Prof_GetEncapSize();
-extern ReturnStatus	Prof_EncapState();
-extern ReturnStatus	Prof_DeencapState();
-#endif
+
+extern ReturnStatus Prof_GetEncapSize _ARGS_((Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr));
+extern ReturnStatus Prof_EncapState _ARGS_((register Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr, Address ptr));
+extern ReturnStatus Prof_DeencapState _ARGS_((register Proc_ControlBlock *procPtr, Proc_EncapInfo *infoPtr, Address ptr));
+
 #endif /* _PROF */
 

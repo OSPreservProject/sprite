@@ -22,8 +22,10 @@
 #include "status.h"
 #ifdef KERNEL
 #include "devSyslog.h"
+#include "user/sysStats.h"
 #else
 #include <kernel/devSyslog.h>
+#include <sysStats.h>
 #endif
 #ifndef _SPRITETIME
 #include <spriteTime.h>
@@ -46,12 +48,16 @@ typedef struct Dev_DiskAddr {
 
 extern Time	dev_LastConsoleInput;
 
-extern void	Dev_ConsoleReset();
-extern void	Dev_Init();
-extern void	Dev_Config();
-extern void	Dev_GatherDiskStats();
-extern int	Dev_GetDiskStats();
-extern void	Dev_InvokeConsoleCmd();
-extern void	Dev_RegisterConsoleCmd();
+extern void Dev_ConsoleReset _ARGS_ ((int toConsole));
+extern void Dev_Init _ARGS_((void));
+extern void Dev_Config _ARGS_((void));
+
+extern void Dev_GatherDiskStats _ARGS_((void));
+extern int Dev_GetDiskStats _ARGS_((Sys_DiskStats *diskStatArr,int numEntries));
+extern void Dev_RegisterConsoleCmd _ARGS_((char commandChar, void (*proc)(void),
+    ClientData clientData));
+extern void Dev_InvokeConsoleCmd _ARGS_((int commandChar));
+extern int Dev_KbdQueueAttachProc _ARGS_((char character, void (*proc)(void),
+    ClientData clientData));
 
 #endif /* _DEV */

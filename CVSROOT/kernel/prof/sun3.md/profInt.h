@@ -13,6 +13,15 @@
 #ifndef _PROFINT
 #define _PROFINT
 
+/*
+ * Forward declarations
+ */
+
+extern void mcount _ARGS_((void)); 
+extern unsigned int Prof_ThisFP _ARGS_ ((void));
+extern unsigned int Prof_CallerFP _ARGS_ ((void));
+extern unsigned int Prof_NextFP _ARGS_ ((void));
+extern unsigned int Prof_ThisPC _ARGS_ ((unsigned int fp));
 
 /*
  * A histogram of PC samples is kept for use by gprof.

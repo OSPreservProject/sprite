@@ -35,6 +35,7 @@
  *	DEV_RAID		Raw interface to disk array
  *	DEV_DEBUG		For debugging disk arrays?
  *	DEV_MOUSE		Mouse and keystroke info for window systems
+ *	DEV_AUDIO		Audio device
  *
  *
  * NOTE: These numbers correspond to the major numbers for the devices
@@ -57,6 +58,7 @@
 #define	DEV_DEBUG		11
 #define DEV_MOUSE		12
 #define DEV_GRAPHICS		13
+#define DEV_AUDIO		15
 
 /*
  * Following device(s) exist only on Sequent Symmetry

@@ -20,6 +20,7 @@
 #define _DISKSTATS
 
 #include "user/sysStats.h"
+#include "user/fs.h"
 
 /*
  * This structure is used for disk stats instead of a straignt Sys_DiskStats
@@ -35,8 +36,15 @@ typedef struct  DevDiskStats {
 
 /* procedures */
 
-extern DevDiskStats *DevRegisterDisk();
-extern	void	DevDiskUnregister();
+extern DevDiskStats *DevRegisterDisk _ARGS_((Fs_Device *devicePtr,
+    char *deviceName,
+    Boolean (*idleCheck) _ARGS_ ((ClientData clientData,
+                                DevDiskStats *diskStatsPtr)),
+    ClientData clientData));
+extern void DevDiskUnregister _ARGS_((DevDiskStats *diskStatsPtr));
+extern void DevPrintIOStats _ARGS_((Timer_Ticks time, ClientData clientData));
+extern void Dev_StartIOStats _ARGS_((void));
+extern void Dev_StopIOStats _ARGS_((void));
 
 #endif /* _DISKSTATS */
 

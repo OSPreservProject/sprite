@@ -22,11 +22,17 @@
 /*
  * Forward Declarations.
  */
-extern ReturnStatus Dev_NullOpen();
-extern ReturnStatus Dev_NullRead();
-extern ReturnStatus Dev_NullWrite();
-extern ReturnStatus Dev_NullIOControl();
-extern ReturnStatus Dev_NullClose();
-extern ReturnStatus Dev_NullSelect();
+
+/*  extern ReturnStatus Dev_NullOpen(); */
+/*  extern ReturnStatus Dev_NullClose(); */
+
+extern ReturnStatus Dev_NullRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_NullWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_NullIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_NullSelect _ARGS_((Fs_Device *devicePtr, int *readPtr,
+    int *writePtr, int *exceptPtr));
 
 #endif /* _DEVNULL */

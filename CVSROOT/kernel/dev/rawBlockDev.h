@@ -20,13 +20,21 @@
 #ifndef _RAWBLOCKDEV
 #define _RAWBLOCKDEV
 
-extern ReturnStatus DevRawBlockDevOpen();
-extern ReturnStatus DevRawBlockDevReopen();
-extern ReturnStatus DevRawBlockDevRead();
-extern ReturnStatus DevRawBlockDevWrite();
-extern ReturnStatus DevRawBlockDevClose();
-extern ReturnStatus DevRawBlockDevIOControl();
+#include "user/fs.h"
+#include "fs.h"
 
+extern ReturnStatus DevRawBlockDevOpen _ARGS_((Fs_Device *devicePtr,
+    int useFlags, Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevRawBlockDevReopen _ARGS_((Fs_Device *devicePtr,
+    int refs, int writers, Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevRawBlockDevRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevRawBlockDevWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevRawBlockDevClose _ARGS_((Fs_Device *devicePtr,
+    int useFlags, int openCount, int writerCount));
+extern ReturnStatus DevRawBlockDevIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
 
 #endif /* _RAWBLOCKDEV */
 

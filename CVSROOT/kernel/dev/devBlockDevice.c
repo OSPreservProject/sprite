@@ -24,6 +24,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devFsOpTable.h"
 #include "sync.h"
 
+static void syncDoneProc _ARGS_((DevBlockDeviceRequest *requestPtr,
+    ReturnStatus status, int amountTransferred));
+
 
 /*
  *----------------------------------------------------------------------

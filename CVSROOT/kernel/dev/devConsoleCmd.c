@@ -37,8 +37,9 @@ static struct {
  * Forward declarations for procedures defined later in this file:
  */
 
-static void	Abort();
-static void	Debug();
+static void Abort _ARGS_((void));
+static void Debug _ARGS_((void));
+
 
 /*
  *----------------------------------------------------------------------
@@ -192,4 +193,5 @@ Dev_KbdQueueAttachProc(character, proc, clientData)
     ClientData clientData;
 {
     Dev_RegisterConsoleCmd(character, proc, clientData);
+    return 0;
 }

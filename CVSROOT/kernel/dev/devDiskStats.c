@@ -24,6 +24,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "user/fs.h"
 #include "stdlib.h"
 #include "list.h"
+#include "bstring.h"
+#include "string.h"
 
 /*
  * The disk stats modules cleans a linked list of registers disk to implment
@@ -31,7 +33,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 typedef struct Device {
     List_Links	links;		  /* Used by the List_Links library routines.*/
-    Boolean	(*idleCheck)();	  /* Routine to check device's state. */
+    Boolean (*idleCheck) _ARGS_ ((ClientData, DevDiskStats *));
+                                  /* Routine to check device's state. */
     ClientData clientData; 	  /* ClientData argument to  idleCheck. */
     int		type;		  /* Fs_Device type of this disk. */
     int		unit;	    	  /* Fs_Device unit of this disk. */
@@ -82,7 +85,8 @@ Dev_GatherDiskStats()
 		    &(devicePtr->devDiskStats.diskStats);
     
 	    stats->numSamples++;
-	    if (devicePtr->idleCheck == (Boolean((*)())) NIL) {
+	    if (devicePtr->idleCheck == (Boolean((*) _ARGS_ ((ClientData,
+		DevDiskStats *)))) NIL) {
 		stats->idleCount++;	/* No disk anymore. */
 	    } else if ((devicePtr->idleCheck)(devicePtr->clientData,
 		    &(devicePtr->devDiskStats))) {
@@ -167,7 +171,8 @@ DevDiskStats *
 DevRegisterDisk(devicePtr, deviceName, idleCheck, clientData)
     Fs_Device	*devicePtr;	/* Fs_Device for disk. */
     char	*deviceName;	/* Printable name for this device. */
-    Boolean	(*idleCheck)();	/* Function returning TRUE if the device
+    Boolean	(*idleCheck) _ARGS_ ((ClientData, DevDiskStats *));
+                                /* Function returning TRUE if the device
 				 * is idle. */
     ClientData	clientData;	/* ClientData argument passed to idleCheck
 				 * to indicate which device. */
@@ -264,7 +269,8 @@ DevDiskUnregister(diskStatsPtr)
 	 */
 	devPtr->refCount--;
 	if (devPtr->refCount == 0) {
-	    devPtr->idleCheck = (Boolean((*)())) NIL;
+	    devPtr->idleCheck = (Boolean((*) _ARGS_ ((ClientData,
+		DevDiskStats *)))) NIL;
 	    devPtr->clientData = (ClientData) NIL;
 	}
     }

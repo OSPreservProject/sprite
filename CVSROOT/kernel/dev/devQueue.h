@@ -25,7 +25,7 @@
  * Definitions in this file use the List_Links data structure.
  */
 #include "list.h"
-
+#include "syncLock.h"
 
 /*
  * DEV_QUEUE_FIFO_INSERT - InsertProc argument to Dev_QueueCreate specifing 
@@ -50,12 +50,14 @@ typedef struct DevQueue	     *DevQueue;
 
 /* procedures */
 
-extern DevCtrlQueues	Dev_CtrlQueuesCreate();
-extern DevQueue		Dev_QueueCreate();
-extern Boolean		Dev_QueueDestory();
-extern void		Dev_QueueInsert();
-extern List_Links	*Dev_QueueGetNext();
-extern List_Links	*Dev_QueueGetNextFromSet();
-
+extern DevCtrlQueues Dev_CtrlQueuesCreate _ARGS_((Sync_Semaphore *mutexPtr,
+    Boolean (*entryAvailProc)()));
+extern DevQueue Dev_QueueCreate _ARGS_((DevCtrlQueues ctrlQueue,
+    unsigned int queueBit, void (*insertProc)(), ClientData clientData));
+extern Boolean Dev_QueueDestroy _ARGS_((DevQueue devQueue));
+extern void Dev_QueueInsert _ARGS_((DevQueue devQueue, List_Links *elementPtr));
+extern List_Links *Dev_QueueGetNext _ARGS_((DevQueue devQueue));
+extern List_Links *Dev_QueueGetNextFromSet _ARGS_((DevCtrlQueues ctrl,
+    unsigned int queueMask, ClientData *clientDataPtr));
 
 #endif /* _DEVQUEUE */

@@ -19,11 +19,11 @@
 #ifndef _SCSI_HBA_DEVICE
 #define _SCSI_HBA_DEVICE
 
-
-
-extern ReturnStatus DevSCSIDeviceOpen();
-extern ReturnStatus DevSCSIDeviceIOControl();
-extern ReturnStatus DevSCSIDeviceClose();
-
+extern ReturnStatus DevSCSIDeviceOpen _ARGS_((Fs_Device *devicePtr,
+    int useFlags, Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevSCSIDeviceIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevSCSIDeviceClose _ARGS_((Fs_Device *devicePtr,
+    int useFlags, int openCount, int writerCount));
 
 #endif /* _SCSIHBADEVICE */

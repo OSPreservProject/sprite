@@ -76,16 +76,20 @@ typedef struct DevTty {
      * in by the machine-specific initialization procedure DevTtyAttach.
      */
 
-    int (*rawProc)();			/* Used as "rawProc" for the
+    int (*rawProc) _ARGS_ ((void *clientDataPtr, int operation, int inBufSize,
+	char *inBuffer, int outBufSize, char *outBuffer));
+                                        /* Used as "rawProc" for the
 					 * terminal by Td library. */
-    void (*activateProc)();		/* Called to activate terminal
+    void (*activateProc) _ARGS_((void *clientDataPtr));
+                                        /* Called to activate terminal
 					 * (initialize, enable interrupts,
 					 * etc.) after initialization is
 					 * complete. */
     ClientData rawData;			/* Arbitrary value associated with
 					 * the device driver;  passed to
 					 * rawProc by Td library. */
-    void (*inputProc)();		/* For most terminal-like devices
+    void (*inputProc) _ARGS_ ((ClientData data, int value));
+                                        /* For most terminal-like devices
 					 * this is NIL.  If non-NIL, it
 					 * is a procedure to invoke to process
 					 * each input character (e.g. to map
@@ -150,13 +154,19 @@ extern Sync_Lock	devTtyLock;
  * Procedures exported by devTty.c:
  */
 
-extern ReturnStatus	DevTtyClose();
-extern void		DevTtyInputChar();
-extern int		DevTtyOutputChar();
-extern ReturnStatus	DevTtyIOControl();
-extern ReturnStatus	DevTtyOpen();
-extern ReturnStatus	DevTtyRead();
-extern ReturnStatus	DevTtySelect();
-extern ReturnStatus	DevTtyWrite();
+extern ReturnStatus DevTtyClose _ARGS_((Fs_Device *devicePtr, int useFlags,
+    int openCount, int writerCount));
+extern void DevTtyInputChar _ARGS_((DevTty *ttyPtr, int value));
+extern int DevTtyOutputChar _ARGS_((DevTty *ttyPtr));
+extern ReturnStatus DevTtyIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *iocPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevTtyOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+    Fs_NotifyToken notifyToken, int *flagsPtr));
+extern ReturnStatus DevTtyRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevTtyWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevTtySelect _ARGS_((Fs_Device *devicePtr, int *readPtr,
+    int *writePtr, int *exceptPtr));
 
 #endif /* _DEVTTY */

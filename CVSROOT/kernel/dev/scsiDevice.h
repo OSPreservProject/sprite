@@ -33,7 +33,8 @@
 
 #include "list.h"
 #include "devQueue.h"
-
+#include "user/fs.h"
+#include "fs.h"
 
 /*
  * A device attached to a SCSI Bus is described by the following stucture. 
@@ -142,11 +143,20 @@ typedef struct ScsiCmd ScsiCmd;
 #else
 extern void		  DevScsiSendCmd();
 #endif
-extern ReturnStatus	  DevScsiReleaseDevice();
-extern ScsiDevice	   *DevScsiAttachDevice();
-extern ScsiDevice	   *DevNoHBAAttachDevice();
-extern ReturnStatus	  DevScsiSendCmdSync();
-extern ReturnStatus	  DevScsiIOControl();
+
+extern ScsiDevice *DevScsiAttachDevice _ARGS_((Fs_Device *devicePtr,
+    void (*insertProc)()));
+extern ReturnStatus DevScsiSendCmdSync _ARGS_((ScsiDevice *scsiDevicePtr,
+    ScsiCmd *scsiCmdPtr, unsigned char *statusBytePtr,
+    int *amountTransferredPtr, int *senseBufferLenPtr, Address senseBufferPtr));
+extern ReturnStatus DevScsiReleaseDevice _ARGS_((ScsiDevice *scsiDevicePtr));
+extern ReturnStatus DevScsiTestReady _ARGS_((ScsiDevice *scsiDevicePtr));
+extern ReturnStatus DevScsiStartStopUnit _ARGS_((ScsiDevice *scsiDevicePtr,
+    Boolean start));
+extern ReturnStatus DevScsiIOControl _ARGS_((ScsiDevice *devPtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ScsiDevice *DevNoHBAAttachDevice _ARGS_((Fs_Device *devicePtr,
+    void (*insertProc)()));
 
 #endif /* _SCSIDEVICE */
 

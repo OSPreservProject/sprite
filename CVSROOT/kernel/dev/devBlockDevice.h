@@ -37,6 +37,8 @@
 #ifndef _DEVBLOCKDEVICE
 #define _DEVBLOCKDEVICE
 
+#include "user/fs.h" 
+
 /*
  * MAX_BLOCK_DEV_CTRL_WORDS - Number of sizeof(int) words reserved for 
  * 			      controller use in a block device request.
@@ -61,7 +63,11 @@ typedef struct DevBlockDeviceRequest {
     int			bufferLen;	/* Length of the data buffer for 
 					 * request in bytes. */
     Address		buffer;		/* The data buffer. */
-    void		(*doneProc)();	/* Procedure to call upon completion.*/
+    void		(*doneProc) _ARGS_ ((struct DevBlockDeviceRequest
+                                                 *requestPtr,
+	                                     ReturnStatus returnStatus,
+					     int amountTransferred));
+                                        /* Procedure to call upon completion.*/
     ClientData		clientData;	/* Word of client data available to the 
 					 * caller.  */
 				/*
@@ -82,13 +88,22 @@ typedef struct DevBlockDeviceRequest {
  */
 
 typedef struct DevBlockDeviceHandle {
-    ReturnStatus  (*blockIOProc)();	/* Start a block read or write
+    ReturnStatus (*blockIOProc) _ARGS_ ((struct DevBlockDeviceHandle
+                                              *blockDevHandlePtr,
+	                                 DevBlockDeviceRequest *requestPtr));
+                                        /* Start a block read or write
 					 * operation. 
 					 * See below for calling sequence. */
-    ReturnStatus  (*IOControlProc)();	/* Perform an IO Control operation on
+    ReturnStatus (*IOControlProc) _ARGS_ ((struct DevBlockDeviceHandle
+                                              *blockDevHandlePtr,
+				           Fs_IOCParam *ioctlPtr, 
+					   Fs_IOReply *replyPtr));
+				        /* Perform an IO Control operation on
 					 * the device. 
 					 * See below for calling sequence. */
-    ReturnStatus  (*releaseProc)();	/* Release the device and free any 
+    ReturnStatus (*releaseProc) _ARGS_ ((struct DevBlockDeviceHandle
+                                            *blockDevHandlePtr));
+                                        /* Release the device and free any
 					 * resources held. 
 					 * See below for calling sequence. */
     int	 	minTransferUnit;	/* Smallest unit of transfer to or
@@ -173,19 +188,22 @@ typedef struct DevBlockDeviceHandle {
  *			 devFsOpTable array  specifying no attach proc 
  *			 available.
  */
-#define	DEV_NO_ATTACH_PROC	((DevBlockDeviceHandle *(*)())0)
+#define	DEV_NO_ATTACH_PROC	((DevBlockDeviceHandle *(*)(Fs_Device *))0)
 
 /* procedures */
 
-extern DevBlockDeviceHandle	*Dev_BlockDeviceAttach();
-extern ReturnStatus Dev_BlockDeviceRelease();
-extern ReturnStatus Dev_BlockDeviceIOSync();
+extern DevBlockDeviceHandle *Dev_BlockDeviceAttach _ARGS_((Fs_Device *devicePtr));
+extern ReturnStatus Dev_BlockDeviceRelease _ARGS_((DevBlockDeviceHandle *blockDevHandlePtr));
+extern ReturnStatus Dev_BlockDeviceIOSync _ARGS_((DevBlockDeviceHandle *blockDevHandlePtr, DevBlockDeviceRequest *requestPtr, int *amountTransferredPtr));
+
 #ifdef lint
-extern ReturnStatus Dev_BlockDeviceIO();
-extern ReturnStatus Dev_BlockDeviceIOControl();
+extern ReturnStatus Dev_BlockDeviceIO _ARGS_ ((DevBlockDeviceHandle *
+    blockDevHandlePtr, DevBlockDeviceRequest *requestPtr));
+extern ReturnStatus Dev_BlockDeviceIOControl _ARGS_ ((DevBlockDeviceHandle
+    *blockDevHandlePtr, Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
 #else
 /*
- * For speed, we code Dev_BlockDeviceIO and Dev_BlockDeviceIOControl() as 
+ * For speed, we code Dev_BlockDeviceIO and Dev_BlockDeviceIOControl as 
  * macros. See the routines in devBlockDevice.c for documentation. If 
  * lint is being run we keep around the routines for type checking.
  */
@@ -197,4 +215,4 @@ extern ReturnStatus Dev_BlockDeviceIOControl();
 
 
 #endif /* lint */
-#endif
+#endif /* _DEVBLOCKDEVICE */

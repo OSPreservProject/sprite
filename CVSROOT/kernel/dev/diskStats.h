@@ -22,9 +22,9 @@
 
 /* procedures */
 
-extern Sys_DiskStats *DevRegisterDisk();
-extern void Dev_GatherDiskStats();
-extern int Dev_GetDiskStats();
+extern DevDiskStats *DevRegisterDisk _ARGS_((Fs_Device *devicePtr, char *deviceName, Boolean (*idleCheck)(), ClientData clientData));
+extern void Dev_GatherDiskStats _ARGS_((void));
+extern int Dev_GetDiskStats _ARGS_((Sys_DiskStats *diskStatArr, int numEntries));
 
 #endif /* _DISKSTATS */
 

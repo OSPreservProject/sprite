@@ -47,8 +47,10 @@ typedef struct DevFsTypeOps {
      *		int flags;			(FS_READ, FS_WRITE, FS_APPEND)
      *		Fs_NotifyToken notifyToken;	(Handle on device used with
      *						(Fs_NotifyWriter/Reader calls)
+     *	        int *flagsPtr;                	(OUT: Device IO flags)
      */
-    ReturnStatus (*open)();
+    ReturnStatus (*open) _ARGS_ ((Fs_Device *devicePtr, int flags,
+	                          Fs_NotifyToken notifyToken, int *flagsPtr));
     /*
      * Device Read - called to get data from a device.
      * Device Write - called to pass data to a device.
@@ -72,8 +74,10 @@ typedef struct DevFsTypeOps {
      *		Fs_IOParam *writePtr;		(See above comments)
      *		Fs_IOReply *replyPtr;		(See above comments)
      */
-    ReturnStatus (*read)();
-    ReturnStatus (*write)();
+    ReturnStatus (*read) _ARGS_ ((Fs_Device *devicePtr, Fs_IOParam *readPtr,
+	                          Fs_IOReply *replyPtr));
+    ReturnStatus (*write) _ARGS_ ((Fs_Device *devicePtr, Fs_IOParam *writePtr,
+	                           Fs_IOReply *replyPtr));
     /*
      * Device I/O Control - perform a device-specific operation
      * This takes an Fs_IOCParam record that specifies the inBuffer,
@@ -91,7 +95,8 @@ typedef struct DevFsTypeOps {
      *		Fs_IOCParam *ioctlPtr;		(See above comments)
      *		Fs_IOReply *replyPtr;		(See above comments)
      */
-    ReturnStatus (*ioctl)();
+    ReturnStatus (*ioctl) _ARGS_ ((Fs_Device *devicePtr, Fs_IOCParam *ioctlPtr,
+	                           Fs_IOReply *replyPtr));
     /*
      * Device Close - close a stream to a device.
      *	(*closeProc)(devicePtr, flags, numUsers, numWriters)
@@ -100,7 +105,8 @@ typedef struct DevFsTypeOps {
      *		int numUsers;			(Number of active streams left)
      *		int numWriters;			(Number of writers left)
      */
-    ReturnStatus (*close)();
+    ReturnStatus (*close) _ARGS_ ((Fs_Device *devicePtr, int flags,
+	                           int numUsers, int numWriters));
     /*
      * Device Select - poll a device for readiness
      *	(*selectProc)(devicePtr, readPtr, writePtr, exceptPtr)
@@ -109,23 +115,28 @@ typedef struct DevFsTypeOps {
      *		int *writePtr;			(Writability bit)
      *		int *exceptPtr;			(Exception bit)
      */
-    ReturnStatus (*select)();
+    ReturnStatus (*select) _ARGS_ ((Fs_Device *devicePtr, int *readPtr,
+	                            int *writePtr, int *exceptPtr));
     /*
      * Block Device Attach - attach a block device at boot-time.
      *	(*attachProc)(devicePtr)
      *		Fs_Device *devicePtr;		(Identifies device)
      */
-    DevBlockDeviceHandle *((*blockDevAttach)());
+    DevBlockDeviceHandle *((*blockDevAttach) _ARGS_ ((Fs_Device *devicePtr)));
     /*
      * Reopen Device -  called during recovery to reestablish a stream
      *	(*reopenProc)(devicePtr, numUsers, numWriters, notifyToken)
      *		Fs_Device *devicePtr;		(Identifies device)
      *		int numUsers;			(Number of active streams)
      *		int numWriters;			(Number of writers)
-     *		Fs_NotifyToken *notifyToken	(Handle on device used with
+     *		Fs_NotifyToken notifyToken	(Handle on device used with
      *						(Fs_NotifyWriter/Reader calls)
+     *	        int *flagsPtr;                	(OUT: Device IO flags)
      */
-    ReturnStatus (*reopen)();
+    ReturnStatus (*reopen) _ARGS_ ((Fs_Device *devicePtr, int numUsers,
+	                            int numWriters,
+				    Fs_NotifyToken notifyToken,
+				    int *flagsPtr));
     /*
      * MMap Device -  called to map device memory into user space.
      *	(*mmapProc)(devicePtr, startAddr, length, offset, newAddrPtr)
@@ -135,7 +146,8 @@ typedef struct DevFsTypeOps {
      *		int offset;			(Offset into mapped file)
      *		Address *newAddrPtr;		(User address really mapped at)
      */
-    ReturnStatus (*mmap)();
+    ReturnStatus (*mmap) _ARGS_ ((Fs_Device *devicePtr, Address startAddr,
+	                          int length, int offset, Address *newAddrPtr));
 } DevFsTypeOps;
 
 extern DevFsTypeOps devFsOpTable[];

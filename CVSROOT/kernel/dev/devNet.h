@@ -20,21 +20,29 @@
 #define _DEVNET
 
 #include "sprite.h"
+#include "user/fs.h"
+#include "fs.h"
 
 /*
  * Forward routines.
  */
 
+extern ReturnStatus DevNet_FsOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+    Fs_NotifyToken data, int *flagsPtr));
+extern ReturnStatus DevNet_FsReopen _ARGS_((Fs_Device *devicePtr, int refs,
+    int writers, Fs_NotifyToken data, int *flagsPtr));
+extern ReturnStatus DevNet_FsRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevNet_FsWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevNet_FsClose _ARGS_((Fs_Device *devicePtr, int useFlags,
+    int openCount, int writerCount));
+extern ReturnStatus DevNet_FsSelect _ARGS_((Fs_Device *devicePtr, int *readPtr,
+    int *writePtr, int *exceptPtr));
+extern ReturnStatus DevNet_FsIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
 
-extern	ReturnStatus	DevNet_FsOpen();
-extern	ReturnStatus	DevNet_FsReopen();
-extern	ReturnStatus	DevNet_FsRead();
-extern	ReturnStatus	DevNet_FsWrite();
-extern	ReturnStatus	DevNet_FsIOControl();
-extern	ReturnStatus	DevNet_FsClose();
-extern	ReturnStatus	DevNet_FsSelect();
-
-extern	void	DevNetEtherHandler();
+extern void DevNetEtherHandler _ARGS_((Address packetPtr, int size));
 
 #endif /* _DEVNET */
 
