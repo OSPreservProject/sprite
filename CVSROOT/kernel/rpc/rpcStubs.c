@@ -73,7 +73,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fsconsist_RpcConsistReply, "consist done",/* 28 - FS_CONSIST_REPLY */
 	Fsrmt_RpcBlockCopy, "copy block",	/* 29 - FS_COPY_BLOCK */
 	Fsrmt_RpcMigrateStream, "migrate",	/* 30 - FS_MIGRATE */
-	Fsio_RpcStreamMigClose, "release",	/* 31 - FS_RELEASE */
+	RpcNull, "release",			/* 31 - FS_RELEASE */
 	Fsrmt_RpcReopen, "reopen",		/* 32 - FS_REOPEN */
 	Fsutil_RpcRecovery, "recover",		/* 33 - FS_RECOVERY */
 	Fsrmt_RpcDomainInfo, "domain info",	/* 34 - FS_DOMAIN_INFO */

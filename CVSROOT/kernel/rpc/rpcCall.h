@@ -213,7 +213,6 @@ ReturnStatus Fs_RpcReopen();		/*  FS_REOPEN */
 ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
 ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
 ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
-ReturnStatus Fsio_RpcStreamMigClose();	/*  FS_RELEASE */
 ReturnStatus Fsio_RpcStreamMigCloseNew();/*  FS_RELEASE_NEW */
 ReturnStatus Fs_RpcBulkReopen();	/*  FS_BULK_REOPEN */
 #endif /* JUST_LISTING */
