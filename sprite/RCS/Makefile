@@ -198,7 +198,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	cc -c ${CFLAGS} version.c
-	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
+	${LD} -X -msun3 -o $@ -e start -T e004000 ${OBJS} version.o \
 	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
 	@ls -l $@
 	@size $@
@@ -262,20 +262,20 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	rsh dill -n "(cd /sprite/src/kernel/nelson ; Save $@)"
 	-Save $@
 
-profile2: ${PROFOBJS} Makefile .PRECIOUS
-	sed 's/MACHINE/$@/g' version.h.template > version.h
-	cat version.h >> $@.versionLog
-	rm -f $@
-	rm -f mainHook.o
-	cc -c ${CFLAGS} mainHook.c
-	@cc -c ${CFLAGS} version.c
-	${LD} -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
-	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
-	@ls -l $@
-	@size $@
-	update -f -s $@ /sprite/boot/$@.sprite
-	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2
-	nm -n $@ > $@.nm
+# profile2: ${PROFOBJS} Makefile .PRECIOUS
+#	sed 's/MACHINE/$@/g' version.h.template > version.h
+#	cat version.h >> $@.versionLog
+#	rm -f $@
+#	rm -f mainHook.o
+#	cc -c ${CFLAGS} mainHook.c
+#	@cc -c ${CFLAGS} version.c
+#	${LD} -msun2 -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
+#	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+#	@ls -l $@
+#	@size $@
+#	update -f -s $@ /sprite/boot/$@.sprite
+#	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2
+#	nm -n $@ > $@.nm
 
 profile3: ${PROFOBJS} Makefile .PRECIOUS
 	sed 's/MACHINE/$@/g' version.h.template > version.h
@@ -284,7 +284,7 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
-	${LD} -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
+	${LD} -msun3 -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
 	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
 	@ls -l $@
 	@size $@
