@@ -2227,6 +2227,12 @@ Fscache_CleanBlocks(data, callInfoPtr)
 		break;
 	    }
 	    if (!useSameBlock) {
+		if (cacheInfoPtr->hdrPtr->fileID.type == FSIO_RMT_FILE_STREAM) {
+		    /*
+		     * Excuse the special case check.
+		     */
+		    fs_Stats.rmtIO.bytesWrittenFromCache += blockPtr->blockSize;
+		}
 		GetDirtyBlock(cacheInfoPtr, &tBlockPtr, &lastDirtyBlock);
 		blockPtr = tBlockPtr;
 	    }
@@ -2666,7 +2672,7 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 	Fsutil_WaitListNotify(fscacheFullWaitList);
     }
     /* 
-     * Now see if we are supposed to take any spaecial action with this
+     * Now see if we are supposed to take any special action with this
      * block once we are done.
      */
     if (blockPtr->flags & FSCACHE_BLOCK_DELETED) {
