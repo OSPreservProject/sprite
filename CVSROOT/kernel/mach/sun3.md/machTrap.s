@@ -172,12 +172,12 @@ sigReturn:
 userError:
 |*
 |* Got an error on a copy in from user space.  Blow away the
-|* exception stack and return to the function doing the copy.
+|* exception stack and return SYS_ARG_NOACCESS to the function doing the copy.
 |* The size of the exception stack has been put into the saved D0.
 |*
 	RestoreTrapRegs()
 	addl	d0, sp
-	movl	#1, d0
+	movl	#0x20000, d0
 	rts
 
 kernError:
