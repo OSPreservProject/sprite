@@ -134,6 +134,10 @@ typedef struct RpcServerState {
  *			prevents the dispatcher from sending acknowledments
  *			and prevents the top level server process from
  *			sending a default error reply to the client.
+ * SRV_STUCK		This server is apparently stuck during an RPC for
+ *			a dead or rebooted client.  The server will not
+ *			be picked by the dispatcher until its current
+ *			RPC completes and this flag is reset.
  */
 #define SRV_NOTREADY	0x00
 #define SRV_FREE	0x01
@@ -142,6 +146,7 @@ typedef struct RpcServerState {
 #define SRV_AGING	0x08
 #define SRV_FRAGMENT	0x10
 #define SRV_NO_REPLY	0x20
+#define SRV_STUCK	0x40
 
 /*
  * The server's state table has a maximum number of entries, but not all
