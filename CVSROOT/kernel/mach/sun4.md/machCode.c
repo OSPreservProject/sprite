@@ -244,7 +244,7 @@ Mach_Init()
     CHECK_SIZE(Mach_RegState, MACH_SAVED_STATE_FRAME);
     CHECK_OFFSETS(trapRegs, MACH_TRAP_REGS_OFFSET);
     CHECK_OFFSETS(switchRegs, MACH_SWITCH_REGS_OFFSET);
-    CHECK_OFFSETS(savedRegs[0], MACH_SAVED_REGS_OFFSET);
+    CHECK_OFFSETS(savedRegs[0][0], MACH_SAVED_REGS_OFFSET);
     CHECK_OFFSETS(savedMask, MACH_SAVED_MASK_OFFSET);
     CHECK_OFFSETS(savedSps[0], MACH_SAVED_SPS_OFFSET);
     CHECK_OFFSETS(kernStackStart, MACH_KSP_OFFSET);
@@ -253,9 +253,11 @@ Mach_Init()
     CHECK_TRAP_REG_OFFSETS(globals[0], MACH_GLOBALS_OFFSET);
 
 #ifdef sun4c
-    if ((*(romVectorPtr->virtMemory))->address != VMMACH_DEV_START_ADDR ||
-	    (VMMACH_DEV_START_ADDR + (*(romVectorPtr->virtMemory))->size - 1)
-	    != VMMACH_DEV_END_ADDR) {
+    if ((*(romVectorPtr->virtMemory))->address !=
+	    (unsigned) VMMACH_DEV_START_ADDR ||
+	    ((unsigned) VMMACH_DEV_START_ADDR +
+	    (*(romVectorPtr->virtMemory))->size - 1)
+	    != (unsigned) VMMACH_DEV_END_ADDR) {
 	panic("VMMACH_DEV_START_ADDR and VMMACH_DEV_END_ADDR are wrong.\n");
     }
 #endif /* sun4c */
@@ -357,7 +359,7 @@ Mach_Init()
      * Clear out the line input buffer to the prom so we don't get extra
      * characters at the end of shorter reboot strings.
      */
-    bzero(romVectorPtr->lineBuf, *romVectorPtr->lineSize);
+    bzero((char *)(romVectorPtr->lineBuf), *romVectorPtr->lineSize);
 #endif
 
 #ifdef sun4c
@@ -392,7 +394,7 @@ Mach_InitFirstProc(procPtr)
     Proc_ControlBlock	*procPtr;
 {
     procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
-    bzero((char *)procPtr->machStatePtr, sizeof (Mach_State));
+    bzero((char *)(procPtr->machStatePtr), sizeof (Mach_State));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     procPtr->machStatePtr->trapRegs = (Mach_RegState *) NIL;
     procPtr->machStatePtr->switchRegs = (Mach_RegState *) NIL;
@@ -472,8 +474,8 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * process, we have trap regs.  And these trapRegs get stored under
      * the context switch regs on the kernel stack.
      */
-    ((Address) statePtr->switchRegs) = (statePtr->kernStackStart) +
-	    MACH_KERN_STACK_SIZE - (2 * MACH_SAVED_STATE_FRAME);
+    statePtr->switchRegs = (Mach_RegState *)((statePtr->kernStackStart) +
+	    MACH_KERN_STACK_SIZE - (2 * MACH_SAVED_STATE_FRAME));
     (unsigned int) (statePtr->switchRegs) &= ~0x7;/* should be okay already */
     /*
      * Initialize the stack so that it looks like it is in the middle of
@@ -512,8 +514,8 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 	/*
 	 * Trap state regs are the same for child process.
 	 */
-	(Address) (statePtr->trapRegs) =
-		((Address) stackPtr) + MACH_SAVED_STATE_FRAME;
+	statePtr->trapRegs = (Mach_RegState *)
+		(((Address) stackPtr) + MACH_SAVED_STATE_FRAME);
 	bcopy((Address)fromStatePtr->trapRegs, (Address)statePtr->trapRegs,
 		sizeof (Mach_RegState));
 	/*
@@ -623,8 +625,8 @@ Mach_StartUserProc(procPtr, entryPoint)
     /*
      * Return from trap pc.
      */
-    (Address) statePtr->trapRegs->pc = (Address)entryPoint;
-    (Address) statePtr->trapRegs->nextPc = (Address)entryPoint + 4;
+    statePtr->trapRegs->pc = (unsigned int) entryPoint;
+    statePtr->trapRegs->nextPc = (unsigned int) (entryPoint + 4);
 
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
@@ -687,16 +689,16 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      * arguments in its caller's stack frame.  (So we create a fake caller's
      * stack frame this way.)
      */
-    (Address) procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG] =
-	    userStackPtr - MACH_FULL_STACK_FRAME;
+    procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG] = (unsigned int)
+	    (userStackPtr - MACH_FULL_STACK_FRAME);
     procPtr->machStatePtr->trapRegs->curPsr = MACH_FIRST_USER_PSR;
-    (Address) procPtr->machStatePtr->trapRegs->pc = entryPoint;
-    (Address) procPtr->machStatePtr->trapRegs->tbr = machTBRAddr;
+    procPtr->machStatePtr->trapRegs->pc = (unsigned int) entryPoint;
+    procPtr->machStatePtr->trapRegs->tbr = (unsigned int) machTBRAddr;
     /*
      * Return value is cleared for exec'ing user process.  This shouldn't
      * matter since a good exec won't return.
      */
-    (Address) procPtr->machStatePtr->trapRegs->ins[0] = 0;
+    procPtr->machStatePtr->trapRegs->ins[0] = 0;
     Mach_StartUserProc(procPtr, entryPoint);
     /* THIS DOES NOT RETURN */
 }
@@ -1140,8 +1142,8 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
      * Are we in quick cross-context copy routine?  If so, we can't page fault
      * in it.
      */
-    if ((pcValue >= (Address) &VmMachQuickNDirtyCopy) &&
-	    (pcValue < (Address) &VmMachEndQuickCopy)) {
+    if ((pcValue >= (Address) VmMachQuickNDirtyCopy) &&
+	    (pcValue < (Address) VmMachEndQuickCopy)) {
 	/*
 	 * This doesn't return to here.  It erases the fact that the
 	 * page fault happened and makes the copy routine that
@@ -1324,7 +1326,7 @@ HandleItAgain:
 		 * Push the window to the stack.
 		 */
 		if (Vm_CopyOut(MACH_SAVED_WINDOW_SIZE,
-			(Address)&(machStatePtr->savedRegs[i]),
+			(Address)(machStatePtr->savedRegs[i]),
 			machStatePtr->savedSps[i]) != SUCCESS) {
 		    printf("MachUserAction: pid 0x%x being killed: %s 0x%x.\n",
 			    procPtr->processID, "bad stack pointer?",
@@ -1519,7 +1521,24 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
     return;
 }
 
+
 #ifdef sun4c
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_PrintInterruptReg --
+ *
+ *	For debugging - print the contents of the interrupt register
+ *	on the sun4c.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 Mach_PrintInterruptReg()
 {
@@ -1530,6 +1549,23 @@ Mach_PrintInterruptReg()
     return;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_PrintBusErrorRegs --
+ *
+ *	For debugging - print the contents of the bus error registers
+ *	on the sun4c.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 Mach_PrintBusErrorRegs()
 {
@@ -1546,6 +1582,23 @@ Mach_PrintBusErrorRegs()
     return;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_PrintSystemEnableReg --
+ *
+ *	For debugging - print the contents of the system enable register
+ *	on the sun4c.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 Mach_PrintSystemEnableReg()
 {
@@ -1555,24 +1608,29 @@ Mach_PrintSystemEnableReg()
     Mach_MonPrintf("System enable register: 0x%x\n", systemEnableReg);
     return;
 }
-#endif
+#endif /* sun4c */
 
-void
-MachTestContexts()
-{
-    int	i;
-    int	j;
-
-    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
-	VmMachSetUserContext(i);
-	j = i;
-    }
-    return;
-}
-
-void
+ 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FlushTheWindows --
+ *
+ *	A recursive C routine that will force window overflows and thereby
+ *	flush the register windows to the stack.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The register windows are flushed.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
 FlushTheWindows(num)
-int	num; 
+    int	num; 
 {
     num--;
     if (num > 0) {
@@ -1581,18 +1639,53 @@ int	num;
     return;
 }
 
+
 /*
- * We want to do NWINDOWS - 1 saves and then restores to make sure all our
- * register windows have been saved to the stack.  Calling here does one save,
- * so we want to do NWINDOWS - 2 more calls and returns.
+ *----------------------------------------------------------------------
+ *
+ * MachFlushWindowsToStack --
+ *
+ *	Calls a routine to flush the register windows to the stack.
+ *	This routine can be caled from traps, or wherever.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The register windows are flushed.
+ *
+ *----------------------------------------------------------------------
  */
 void
 MachFlushWindowsToStack()
 {
+    /*
+     * We want to do NWINDOWS - 1 saves and then restores to make sure all our
+     * register windows have been saved to the stack.  Calling here does one
+     * save, so we want to do NWINDOWS - 2 more calls and returns.
+     */
     FlushTheWindows(MACH_NUM_WINDOWS - 2);
     return;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachUserDebug --
+ *
+ *	This will cause the current process to go into the debugger.  It can
+ *	be called from trap handlers, etc.  It first checks to see if the
+ *	current process is NIL.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process gets a breakpoint signal.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 MachUserDebug()
 {
@@ -1603,9 +1696,9 @@ MachUserDebug()
 	panic("MachUserDebug: current process was NIL!\n");
     }
     Sig_Send(SIG_BREAKPOINT, SIG_NO_CODE, procPtr->processID, FALSE);
-
     return;
 }
+
 
 /*
  *----------------------------------------------------------------------

@@ -72,20 +72,22 @@
  * params, but I'll fix this up later.
  */
 typedef struct Mach_RegState {
-    int		curPsr;				/* locals */
-    int		pc;
-    int		nextPc;
-    int		tbr;
-    int		y;
-    int		safeTemp;
-    int		volTemp1;
-    int		volTemp2;
-    int		ins[MACH_NUM_INS];		/* ins */
-    int		calleeInputs[MACH_NUM_INS];	/* callee saves inputs here */
-    int		extraParams[MACH_NUM_EXTRA_ARGS];	/* args beyond 6 */
-    int		globals[MACH_NUM_GLOBALS];	/* globals */
-#ifdef FP_ENABLED
-    int		floatPoints[MACH_NUM_FPS];
+    unsigned int	curPsr;				/* locals */
+    unsigned int	pc;
+    unsigned int	nextPc;
+    unsigned int	tbr;
+    unsigned int	y;
+    unsigned int	safeTemp;
+    unsigned int	volTemp1;
+    unsigned int	volTemp2;
+    unsigned int	ins[MACH_NUM_INS];		/* ins */
+						/* callee saves inputs here */
+    unsigned int	calleeInputs[MACH_NUM_INS];
+							/* args beyond 6 */
+    unsigned int	extraParams[MACH_NUM_EXTRA_ARGS];
+    unsigned int	globals[MACH_NUM_GLOBALS];	/* globals */
+#ifdef FP_ENABLE
+    unsigned int	floatPoints[MACH_NUM_FPS];
 #endif /* FP_ENABLED */
 } Mach_RegState;
 
