@@ -127,7 +127,7 @@ Sys_HostPrint(spriteID, string)
      */
     if (dstFlag) {
 	if ((timeParts.month >= 4) &&	/* All of April */
-	    (timeParts.month <= 11)) {	/* thru November */
+	    (timeParts.month <= 10)) {	/* thru October */
 	    timeParts.hours++;
 	    if (timeParts.hours >= 24) {
 		timeParts.hours = 0;
