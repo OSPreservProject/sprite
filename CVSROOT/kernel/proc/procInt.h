@@ -77,6 +77,7 @@ extern	ReturnStatus		ProcChangeTimer();
 extern	void			ProcDeleteTimers();
 
 extern	int			ProcTableMatch();
+extern  void			ProcInitTable();
 extern	void			ProcAddToGroupList();
 
 extern	ReturnStatus		ProcExecGetEncapSize();
@@ -84,6 +85,7 @@ extern	ReturnStatus		ProcExecEncapState();
 extern	ReturnStatus		ProcExecDeencapState();
 extern	ReturnStatus		ProcExecFinishMigration();
 extern	void			ProcDoRemoteExec();
+extern	void			ProcRemoteExec();
 extern  void			ProcRecordUsage();
 	  
 #endif /* _PROCINT */
