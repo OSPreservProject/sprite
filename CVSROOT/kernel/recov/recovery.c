@@ -75,32 +75,19 @@ Recov_Stats recov_Stats;
 
 /*
  * For per-client statistics about recovery on the server.
- * This amounts to a per-host list, in array form, where the first element in
- * each list is the RecovPerHostFirstInfo, and all the following items are
- * time-stamps, but they are defined as a union since both types of elements
- * must be the same size when copied out to the user.  Each host has a
- * RecovPerHostFirstInfo, followed by (numTries - 1) time-stamps.
+ * This amounts to a per-host list, in array form.
+ * Each host has numTries elements in the array.  The spriteID and numTries
+ * fields are only initialized in the first element.
  */
-typedef	struct	RecovPerHostFirstInfo {
+typedef	struct	RecovPerHostInfo {
     int		spriteID;	/* Sprite ID of client. */
-    Time	firstTry;	/* First recovery attempt. */
-    Time	finished;	/* Last recovery attempt finished. */
+    Time	start;		/* First recovery attempt. */
+    Time	finished;	/* First recovery attempt finished. */
     int		numTries;	/* Number of recovery attempts. */
     int		numHandles;	/* Number of reopens requested. */
     int		numSuccessful;	/* Handles successfully recovered. */
-} RecovPerHostFirstInfo;
-
-typedef	struct	RecovStamp {
-    Time	timeStamp;			/* Time of a recov attempt. */
-    int		numHandles;			/* Handles since last time. */
-    int		numSuccessful;			/* Successful last time. */
-} RecovStamp;
-
-
-typedef	union	RecovPerHostInfo {
-    RecovPerHostFirstInfo	info;		/* Above structure. */
-    RecovStamp			stamp;		/* Above structure. */
 } RecovPerHostInfo;
+
 
 
 /*
@@ -115,7 +102,8 @@ static Hash_Table	*recovHashTable = &recovHashTableStruct;
 
 typedef	struct	RecovStampList {
     List_Links	timeStampList;
-    Timer_Ticks	timeStamp;
+    Timer_Ticks	start;
+    Timer_Ticks	finished;
     int		numHandles;		/* Handles since last time. */
     int		numSuccessful;		/* Successful last time. */
 } RecovStampList;
@@ -130,11 +118,13 @@ typedef struct RecovHostState {
     Sync_Condition	recovery;	/* Notified when recovery is complete */
     List_Links		rebootList;	/* List of callbacks for when this
 					 * host reboots. */
-    Timer_Ticks		firstTry;	/* Time that recovery is started. */
-    Timer_Ticks		finished;	/* Time last try finishes. */
+    Timer_Ticks		start;		/* Time that recovery is started. */
+    Timer_Ticks		finished;	/* Time recovery attempt  finishes. */
     int			numTries;	/* Number of times recov attempted. */
-    int			numHandles;	/* Handles since last time. */
-    int			numSuccessful;	/* Successful last time. */
+    int			numHandles;	/* Handles requested. */
+    int			numSuccessful;	/* Successful handles. */
+    int			currentHandles;	/* Temporary info. */
+    int			currentSuccessful;
     List_Links		timeStampList;	/* List of time stamps for recovery. */
 } RecovHostState;
 
@@ -859,24 +849,19 @@ Recov_SetClientState(spriteID, stateBits)
 	    if ((hostPtr->clientState & CLT_RECOV_IN_PROGRESS) != 0) {
 		printf("No recovery attempt yet, but marked as in progress.");
 	    }
-	    Timer_GetCurrentTicks(&hostPtr->firstTry);
+	    Timer_GetCurrentTicks(&hostPtr->start);
 	} else {
 	    /* Add a time-stamp to the recovery list. */
 	    stampPtr = (RecovStampList *) malloc(sizeof (RecovStampList));
-	    Timer_GetCurrentTicks(&stampPtr->timeStamp);
-	    /*
-	     * Handles recovered since last recovery attempt initiated.
-	     */
-	    stampPtr->numHandles = hostPtr->numHandles;
-	    stampPtr->numSuccessful = hostPtr->numSuccessful;
+	    Timer_GetCurrentTicks(&stampPtr->start);
 	    List_InitElement((List_Links *) stampPtr);
 	    List_Insert((List_Links *) stampPtr,
 		    LIST_ATREAR(&hostPtr->timeStampList));
 	    /*
 	     * Clear handle count for this round.
 	     */
-	    hostPtr->numHandles = 0;
-	    hostPtr->numSuccessful = 0;
+	    hostPtr->currentHandles = 0;
+	    hostPtr->currentSuccessful = 0;
 	}
 	hostPtr->numTries++;
     }
@@ -909,8 +894,9 @@ Recov_ClearClientState(spriteID, stateBits)
     int spriteID;
     int stateBits;
 {
-    register Hash_Entry *hashPtr;
-    register RecovHostState *hostPtr = (RecovHostState *) NIL;
+    register Hash_Entry		*hashPtr;
+    register RecovHostState	*hostPtr = (RecovHostState *) NIL;
+    RecovStampList		*stampPtr;
 
     LOCK_MONITOR;
 
@@ -921,11 +907,27 @@ Recov_ClearClientState(spriteID, stateBits)
 	    hostPtr->clientState &= ~stateBits;
 	}
     }
+    /* End of recovery? */
     if ((hostPtr != (RecovHostState *) NIL) &&
 	    (stateBits & CLT_RECOV_IN_PROGRESS) != 0) {
-	/* End of recovery */
-	Timer_GetCurrentTicks(&hostPtr->finished);
-	/* Final count of handles recovered is in hostPtr. */
+	/* End of 1st recovery try? */
+	if (hostPtr->numTries <= 1) {
+	    Timer_GetCurrentTicks(&hostPtr->finished);
+	    /* Final count of handles recovered is in hostPtr. */
+	    hostPtr->numHandles = hostPtr->currentHandles;
+	    hostPtr->numSuccessful = hostPtr->currentSuccessful;
+	} else {
+	    if (List_IsEmpty(&hostPtr->timeStampList)) {
+		printf("Recov_ClearClientState: timeStampList is empty!\n");
+		hostPtr->numSuccessful = 0;	/* signal the error */
+	    } else {
+		stampPtr = (RecovStampList *)
+			List_Last((List_Links *) &hostPtr->timeStampList);
+		Timer_GetCurrentTicks(&stampPtr->finished);
+		stampPtr->numHandles = hostPtr->currentHandles;
+		stampPtr->numSuccessful = hostPtr->currentSuccessful;
+	    }
+	}
     }
     UNLOCK_MONITOR;
     return;
@@ -962,9 +964,9 @@ Recov_AddHandleCountToClientState(type, clientID, status)
     if (hashPtr != (Hash_Entry *)NIL) {
 	hostPtr = (RecovHostState *)hashPtr->value;
 	if (hostPtr != (RecovHostState *)NIL) {
-	    hostPtr->numHandles++;
+	    hostPtr->currentHandles++;
 	    if (status == SUCCESS) {
-		hostPtr->numSuccessful++;
+		hostPtr->currentSuccessful++;
 	    }
 	}
     }
@@ -1043,20 +1045,22 @@ Recov_DumpClientRecovInfo(length, resultPtr, lengthNeededPtr)
 	    RecovStampList	*stampPtr;
 
 	    /* Copy info into buffer */
-	    infoPtr->info.spriteID = hostPtr->spriteID;
-	    infoPtr->info.numTries = hostPtr->numTries;
-	    Timer_GetRealTimeFromTicks(hostPtr->firstTry,
-		    &(infoPtr->info.firstTry), NIL, NIL);
+	    infoPtr->spriteID = hostPtr->spriteID;
+	    infoPtr->numTries = hostPtr->numTries;
+	    Timer_GetRealTimeFromTicks(hostPtr->start,
+		    &(infoPtr->start), NIL, NIL);
 	    Timer_GetRealTimeFromTicks(hostPtr->finished,
-		    &(infoPtr->info.finished), NIL, NIL);
-	    infoPtr->info.numHandles = hostPtr->numHandles;
-	    infoPtr->info.numSuccessful = hostPtr->numSuccessful;
+		    &(infoPtr->finished), NIL, NIL);
+	    infoPtr->numHandles = hostPtr->numHandles;
+	    infoPtr->numSuccessful = hostPtr->numSuccessful;
 	    LIST_FORALL(&hostPtr->timeStampList, (List_Links *) stampPtr) {
 		infoPtr++;
-		Timer_GetRealTimeFromTicks(stampPtr->timeStamp,
-			&infoPtr->stamp.timeStamp, NIL, NIL);
-		infoPtr->stamp.numHandles = stampPtr->numHandles;
-		infoPtr->stamp.numSuccessful = stampPtr->numSuccessful;
+		Timer_GetRealTimeFromTicks(stampPtr->start,
+			&infoPtr->start, NIL, NIL);
+		Timer_GetRealTimeFromTicks(stampPtr->finished,
+			&infoPtr->finished, NIL, NIL);
+		infoPtr->numHandles = stampPtr->numHandles;
+		infoPtr->numSuccessful = stampPtr->numSuccessful;
 	    }
 	}
 	infoPtr++;
