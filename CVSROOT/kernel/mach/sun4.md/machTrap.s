@@ -423,21 +423,31 @@ KillUserProc:
 	set	_MachReturnFromTrapDeathString, %o0
 	call	_printf, 1
 	nop
-#ifdef NOTDEF
-	set	PROC_TERM_DESTROYED, %o0
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+        set     _machGenFlagsOffset, %o1 
+        ld      [%o1], %o1
+        add     %o0, %o1, %o1
+        ld      [%o1], %o1
+        set     _machForeignFlag, %o2
+        ld      [%o2], %o2
+        andcc   %o1, %o2, %o1                   /* Is this a migrated proc? */
+        be      DebugIt
+        nop
+	set	PROC_TERM_DESTROYED, %o0	/* If so, kill it. */
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
 	call	_Proc_ExitInt, 3
 	nop
-#else
-	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+DebugIt:					/* Else, make it debuggable. */
 	set	TRUE, %o1			/* debug TRUE */
 	set	PROC_TERM_DESTROYED, %o2
 	set	PROC_BAD_STACK, %o3
 	clr	%o4
+KeepSuspended:
 	call	_Proc_SuspendProcess, 5
 	nop
-#endif /* NOTDEF */
+	ba	KeepSuspended
+	nop
 
 CallUnderflow:
 	set	MachWindowUnderflow, %VOL_TEMP1
@@ -866,21 +876,32 @@ KillTheProc:
 	set	_MachHandleWindowUnderflowDeathString, %o0
 	call	_printf, 1
 	nop
-#ifdef NOTDEF
-	set	PROC_TERM_DESTROYED, %o0
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	set	_machGenFlagsOffset, %o1
+	ld	[%o1], %o1
+	add	%o0, %o1, %o1
+	ld	[%o1], %o1
+	set	_machForeignFlag, %o2
+	ld	[%o2], %o2
+	andcc	%o1, %o2, %o1			/* Is this a migrated proc? */
+	be	SuspendIt
+	nop
+	set	PROC_TERM_DESTROYED, %o0	/* If so, kill it. */
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
 	call	_Proc_ExitInt, 3
 	nop
-#else
-	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+SuspendIt:					/* Else, make it debuggable. */
 	set	TRUE, %o1			/* debug TRUE */
 	set	PROC_TERM_DESTROYED, %o2
 	set	PROC_BAD_STACK, %o3
 	clr	%o4
+KeepFromContinuing:
 	call	_Proc_SuspendProcess, 5
 	nop
-#endif /* NOTDEF */
+	ba	KeepFromContinuing
+	nop
+
 CheckNextUnderflow:
 	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o1
 	MACH_CHECK_FOR_FAULT(%o1, %o0)
