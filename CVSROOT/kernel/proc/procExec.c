@@ -1512,6 +1512,12 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
      * if necessary, and zero the rest.
      */
     if (notFound && ((unsigned)heapEnd & (vm_PageSize-1)) != 0) {
+	if (realCode) {
+	    printf("SetupVM: Warning: heap is unaligned for ZMAGIC file\n");
+	    printf("Program should be relinked.\n");
+	    printf("heapEnd = %x, bssFirstPage = %x, page size =%x\n",
+		    heapEnd, execInfoPtr->bssFirstPage, vm_PageSize);
+	}
 	status = Vm_PageIn((execInfoPtr->bssFirstPage-1)*vm_PageSize, FALSE);
 	if (status != SUCCESS) {
 	    printf("SetupVM: heap prefetch failure\n");
