@@ -44,7 +44,7 @@ static void Init _ARGS_((void));
  */
 #define INIT	 	"cmds/initsprite"
 
-static int main_PrintInitRoutines = FALSE;	/* print out each routine as
+int main_PrintInitRoutines = FALSE;	/* print out each routine as
 						 * it's called? */
 
 int main_PanicOK = 0;	/* Set to 1 if it's OK to panic. */
