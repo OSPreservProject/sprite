@@ -722,7 +722,7 @@ CopiedOutSigStack:
 	 * do a save into the next window so our out's will be the handler's
 	 * in regs.
 	 *
-	 *	Handler(sigNum, sigCode, contextPtr)
+	 *	Handler(sigNum, sigCode, contextPtr, sigAddr)
 	 */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
 	set	_machSigStackOffsetInMach, %VOL_TEMP2
@@ -740,6 +740,11 @@ CopiedOutSigStack:
 	set	_machSigContextOffsetOnStack, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
 	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* stack addr context = arg3  */
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2	/* addr of sig stack */
+	set	_machSigAddrOffsetInSig, %o3
+	ld	[%o3], %o3			/* offset to sigAddr */
+	add	%o3, %VOL_TEMP2, %o3		/* addr of sig addr */
+	ld	[%o3], %o3			/* sig addr == arg 4 */
 
 	/*
 	 * NOTE: the sigStack.sigContextPtr field has not been filled in.
