@@ -345,6 +345,10 @@ typedef struct Fs_ConsistStats {
     int writeBack;		/* # of lastWriters forced to write-back */
     int readInvalidate;		/* # of readers forced to stop caching */
     int writeInvalidate;	/* # of writers forced to stop caching */
+    int nonFiles;		/* # of directories, links, etc. */
+    int swap;			/* # of uncached swap files. */
+    int cacheable;		/* # of files that were cacheable */
+    int uncachable;		/* # of files that were not cacheable */
 } Fs_ConsistStats;
 
 /*
