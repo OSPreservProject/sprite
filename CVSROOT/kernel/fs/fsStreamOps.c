@@ -37,6 +37,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fslcl.h>
 #include <assert.h>
 #include <machparam.h>
+#include <string.h>
 
 extern Boolean fsconsist_ClientCachingEnabled;
 
@@ -343,6 +344,7 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
     Ioc_LockArgs		*lockArgsPtr;
     register int		streamType;
 
+    lockArgsPtr = (Ioc_LockArgs *) NIL;
     /*
      * Retry loop to handle server error recovery and blocking locks.
      */
@@ -467,6 +469,7 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 		break;
 	    }
 	    iocArgsPtr = (Ioc_RepositionArgs *)ioctlPtr->inBuffer;
+	    newOffset = -1;
 	    switch(iocArgsPtr->base) {
 		case IOC_BASE_ZERO:
 		    newOffset = iocArgsPtr->offset;
@@ -753,55 +756,6 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
 
     return( Fs_IOControlStub(streamID, IOC_WRITE_BACK, sizeof(args),
 				    (Address)&args, 0, (Address)0) );
-#ifdef old_way
-    ReturnStatus	status;
-    Fs_Stream		*streamPtr;
-    Fscache_FileInfo	*cacheInfoPtr;
-    register int	firstBlock;
-    register int	lastBlock;
-    register int	flags;
-    int			blocksSkipped;
-
-    status = Fs_GetStreamPtr(Proc_GetEffectiveProc(), 
-			    streamID, &streamPtr);
-    if (status != SUCCESS) {
-	return(status);
-    }
-    switch(streamPtr->ioHandlePtr->fileID.type) {
-	case FSIO_LCL_FILE_STREAM: {
-	    register Fsio_FileIOHandle *localHandlePtr;
-	    localHandlePtr = (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
-	    cacheInfoPtr = &localHandlePtr->cacheInfo;
-	    break;
-	}
-	case FSIO_RMT_FILE_STREAM: {
-	    register Fsrmt_FileIOHandle *rmtHandlePtr;
-	    rmtHandlePtr = (Fsrmt_FileIOHandle *)streamPtr->ioHandlePtr;
-	    cacheInfoPtr = &rmtHandlePtr->cacheInfo;
-	    break;
-	}
-	default:
-	    return(FS_WRONG_TYPE);
-    }
-    flags = 0;
-    if (shouldBlock) {
-	flags |= FSCACHE_FILE_WB_WAIT;
-    }
-    if (firstByte > 0) {
-	firstBlock = firstByte / FS_BLOCK_SIZE;
-    } else {
-	firstBlock = 0;
-    }
-    if (lastByte > 0) {
-	lastBlock = lastByte / FS_BLOCK_SIZE;
-    } else {
-	lastBlock = FSCACHE_LAST_BLOCK;
-    }
-    cacheInfoPtr->flags |= FSCACHE_WB_ON_LDB;
-    status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock, lastBlock,
-		    flags, &blocksSkipped);
-    return(status);
-#endif
 }
 
 /*
@@ -831,7 +785,6 @@ Fs_FileBeingMapped(streamPtr, isMapped)
 {
     ReturnStatus status = SUCCESS;
     Fscache_FileInfo	*cacheInfoPtr;
-    Fscache_Attributes dummyCachedAttr;
     Fs_IOCParam	ioctl;
     Fs_IOReply	reply;
 
@@ -862,13 +815,6 @@ Fs_FileBeingMapped(streamPtr, isMapped)
 	 * page-ins get good stuff.
 	 */
 	streamPtr->flags |= FS_SWAP;
-	/*
-	 * I think this is a bad idea.  FsrmtFilePageRead can check if
-	 * the data is in the local cache.  --Ken
-	status = Fscache_Consist(cacheInfoPtr,
-		    FSCONSIST_INVALIDATE_BLOCKS|FSCONSIST_WRITE_BACK_BLOCKS,
-		    &dummyCachedAttr);
-	*/
     }
     /*
      * Tell the file server what's going on.
@@ -949,6 +895,7 @@ Fs_GetSegPtr(fileHandle)
 	    segPtrPtr = &(((Fsrmt_FileIOHandle *)hdrPtr)->segPtr);
 	    break;
 	default:
+	    segPtrPtr = (Vm_Segment **) NIL;
 	    panic( "Fs_RetSegPtr, bad stream type %d\n",
 		    hdrPtr->fileID.type);
     }
