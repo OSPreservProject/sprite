@@ -447,6 +447,11 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     childProcPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
     childProcPtr->familyID 		= parentProcPtr->familyID;
 
+    if (childProcPtr->argString != (char *) NIL) {
+	Mem_Free(childProcPtr->argString);
+	childProcPtr->argString	= (char *) NIL;
+    }
+
     Vm_ProcInit(childProcPtr);
 
     if (ProcFamilyInsert(childProcPtr, childProcPtr->familyID) != SUCCESS) {
