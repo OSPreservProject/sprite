@@ -630,6 +630,13 @@ Dbg_Main(trapType, trapStatePtr)
     curContext = oldContext = VmMachGetKernelContext();
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 #endif
+#ifdef NOTDEF
+/*
+ * This is the code the other machine types execute to sync the disks
+ * when going into the debugger.  But it seems to cause us to hang since
+ * it context switches to the backend write process and never comes back.
+ * Why does it work (does it?) on the other machines?
+ */
     if (!dbg_BeingDebugged) {
 	/*
 	 * Try to sync the disks if we aren't at interrupt level.  If we
@@ -644,6 +651,7 @@ Dbg_Main(trapType, trapStatePtr)
 	    Mach_DisableIntr();
 	}
     }
+#endif NOTDEF
 
     dbg_InDebugger = TRUE;
     /*
