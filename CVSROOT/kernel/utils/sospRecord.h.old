@@ -250,17 +250,19 @@ extern TraceLog_Header *SOSP91TracePtr;
  * Trace a truncate operation.  The fields are
  * 
  * streamID		Fs_FileID in the header of stream for this operation
+ * oldLength		Old length of the file
  * newLength		New length of the file
  */ 
-#define	SOSP_ADD_TRUNCATE_TRACE(streamID, newLength) \
+#define	SOSP_ADD_TRUNCATE_TRACE(streamID, oldLength, newLength) \
 {\
-	unsigned int	sospBuffer[8];\
+	unsigned int	sospBuffer[7];\
 \
 	sospBuffer[0] = SOSP_TRUNCATE;\
 	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
-	sospBuffer[5] = newLength;\
+	sospBuffer[5] = oldLength;\
+	sospBuffer[6] = newLength;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(8 * sizeof (int)),SOSP_TRUNCATE);\
+		(7 * sizeof (int)),SOSP_TRUNCATE);\
 }
 
 /*
@@ -317,19 +319,19 @@ extern TraceLog_Header *SOSP91TracePtr;
  * Trace a read operation on a write-shared file.  The fields are
  * 
  * hostID:		ID of host causing the consistency change
- * fileID		File ID of file causing the fuss
+ * streamID		Stream ID of file causing the fuss
  * readIt		Whether the request is to read the file (TRUE) or
  *			to write the file (FALSE)
  * offset		Offset in the file at which to start operation
  * numBytes		Number of bytes to read or write
  */ 
-#define	SOSP_ADD_READ_TRACE(hostID, fileID, readIt, offset, numBytes)\
+#define	SOSP_ADD_READ_TRACE(hostID, streamID, readIt, offset, numBytes)\
 {\
 	unsigned int	sospBuffer[9];\
 \
 	sospBuffer[0] = SOSP_READ;\
 	sospBuffer[1] = hostID;\
-	*((Fs_FileID *) &(sospBuffer[2])) = fileID;\
+	*((Fs_FileID *) &(sospBuffer[2])) = streamID;\
 	sospBuffer[6] = readIt;\
 	sospBuffer[7] = offset;\
 	sospBuffer[8] = numBytes;\
