@@ -11,7 +11,7 @@ MACHINE = sun3
 MACHINE = sun2
 #endif
 
-CLIB = /sprite/lib/libc.a /sprite/lib/crt.a
+CLIB = /sprite/lib/libc.a
 MODULE = sprite
 SPRITEDIR =	..
 USERH=		/sprite/lib/include
