@@ -1468,10 +1468,10 @@ Wait(socketID, readSelect, timeOutPtr)
 	    return(status);
 	}
 	if (readSelect) {
-	    status = Fs_SelectStub(socketID, userTimeOutPtr, userMaskPtr,
+	    status = Fs_SelectStub(socketID+1, userTimeOutPtr, userMaskPtr,
 				(int *) NULL, (int *) NULL, numReadyPtr);
 	} else {
-	    status = Fs_SelectStub(socketID, userTimeOutPtr, (int *) NULL, 
+	    status = Fs_SelectStub(socketID+1, userTimeOutPtr, (int *) NULL, 
 				userMaskPtr, (int *) NULL, numReadyPtr);
 	}
     } else {
@@ -1489,10 +1489,10 @@ Wait(socketID, readSelect, timeOutPtr)
 	}
 
 	if (readSelect) {
-	    status = Fs_SelectStub(socketID, userTimeOutPtr, userMaskPtr, 
+	    status = Fs_SelectStub(socketID+1, userTimeOutPtr, userMaskPtr, 
 				(int *) NULL, (int *) NULL, numReadyPtr);
 	} else {
-	    status = Fs_SelectStub(socketID, userTimeOutPtr, (int *) NULL,
+	    status = Fs_SelectStub(socketID+1, userTimeOutPtr, (int *) NULL,
 				userMaskPtr, (int *) NULL, numReadyPtr);
 	}
 	free((char *) maskPtr);
