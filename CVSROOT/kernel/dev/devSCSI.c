@@ -1469,6 +1469,10 @@ Dev_SCSIIntr()
     register DevSCSIController *scsiPtr;
     register DevSCSIRegs *regsPtr;
 
+     if (!devSCSIFound) {
+        extern Boolean Dev_SBCIntr();
+	return (Dev_SBCIntr());
+    }
     for (index = 0; index < SCSI_MAX_CONTROLLERS ; index++) {
 	scsiPtr = scsi[index];
 	if (scsiPtr == (DevSCSIController *)NIL) {
