@@ -198,8 +198,7 @@ Vm_FreeKernelStack(stackBase)
 
     /*
      * Put the stack back onto the free list.
-     */
-    if (List_IsEmpty(activeList)) {
+     */ if (List_IsEmpty(activeList)) {
 	panic("Vm_FreeKernelStack: active list empty\n");
     }
     stackListPtr = (StackList *) List_First(activeList);
