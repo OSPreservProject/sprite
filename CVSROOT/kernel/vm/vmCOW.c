@@ -720,7 +720,6 @@ COR(virtAddrPtr, ptePtr)
     if (virtAddrPtr->segPtr->numCORPages < 0) {
 	Sys_Panic(SYS_FATAL, "COR: numCORPages < 0\n");
     }
-    virtAddrPtr->segPtr->resPages++;
     SetPTE(virtAddrPtr, (Vm_PTE)(VM_VIRT_RES_BIT | VM_PHYS_RES_BIT | 
 			 VM_REFERENCED_BIT | VM_MODIFIED_BIT | virtFrameNum));
     VmUnlockPage(virtFrameNum);
@@ -890,7 +889,6 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 		if (others) {
 		    pte |= VM_COW_BIT;
 		}
-		mastSegPtr->resPages++;
 		SetPTE(&virtAddr, pte);
 		VmUnlockPage(virtFrameNum);
 		VmUnlockPage(Vm_GetPageFrame(*ptePtr));
@@ -965,6 +963,8 @@ GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
 
     LOCK_MONITOR;
 
+    srcSegPtr->resPages--;
+    destSegPtr->resPages++;
     virtAddr.segPtr = srcSegPtr;
     virtAddr.page = virtPage;
     virtAddr.flags = 0;
@@ -1014,6 +1014,9 @@ SetPTE(virtAddrPtr, pte)
 
     ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
     *ptePtr = pte;
+    if (pte & VM_PHYS_RES_BIT) {
+	virtAddrPtr->segPtr->resPages++;
+    }
 
     UNLOCK_MONITOR;
 }
