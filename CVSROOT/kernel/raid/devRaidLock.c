@@ -139,7 +139,7 @@ XLockStripe(raidPtr, stripe)
 /*
  *----------------------------------------------------------------------
  *
- * UnlockStripe --
+ * SUnlockStripe --
  *
  * Results:
  *	None.
@@ -151,7 +151,8 @@ XLockStripe(raidPtr, stripe)
  */
 
 void
-UnlockStripe(stripe)
+SUnlockStripe(raidPtr, stripe)
+    Raid *raidPtr;
     int stripe;
 {
     Hash_Entry		*hashEntryPtr;
@@ -173,6 +174,32 @@ UnlockStripe(stripe)
     Free((char *) condPtr);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * XUnlockStripe --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Unlocks requested stripe.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+XUnlockStripe(raidPtr, stripe)
+    Raid *raidPtr;
+    int stripe;
+{
+    char buf[120];
+
+    sprintf(buf, "U %d\n", stripe);
+    LogEntry(raidPtr, buf);
+    SUnlockStripe(raidPtr, stripe);
+}
 
 /*
  *----------------------------------------------------------------------
