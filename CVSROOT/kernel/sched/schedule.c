@@ -217,7 +217,7 @@ Sched_ForgetUsage(time)
     /*
      *  Schedule this procedure to be called again later.
      */
-    Timer_RescheduleRoutine(&forgetUsageElement, TRUE);
+    Timer_ScheduleRoutine(&forgetUsageElement, TRUE);
 
     MASTER_UNLOCK(sched_MutexPtr);
 }
