@@ -1,7 +1,7 @@
 #
 # $Header$ SPRITE (Berkeley)
 #
-# No makemake
+# No mkmf
 #
 LD = /sprite/cmds.${MACHINE}/ld
 
@@ -25,7 +25,7 @@ ODIR =		${TM}.md
 IFLAGS=	-I. -I${H} -I${USERH} -I${USERH}/${TM}.md -I${H}/${TM}.md
 #PROFILE =	-p -DPROFILE
 PROFILE =
-CFLAGS =	-m68010 -g -DKERNEL ${PROFILE} ${IFLAGS}
+CFLAGS =	-m${TM} -g -DKERNEL ${PROFILE} ${IFLAGS}
 LINTFLAGS =	-I. -I${H}
 LINTLIBS =	${LINT}/*.ln
 
@@ -125,17 +125,27 @@ sun2: ${OBJS} Makefile .PRECIOUS
 	nm $@ | sort > $@.nm
 
 sun3: ${OBJS} Makefile .PRECIOUS
-	rm -f $@
+	-mv -f $@ $@.old
 	${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite ${GINGER}:/sprite3/tmp/$@
-	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	update -f -s $@ /sprite/kernels/$@.sprite.new
+	rcp /sprite/kernels/$@.sprite.new ${GINGER}:/sprite3/tmp/$@
 	nm $@ | sort > $@.nm
+
+installsun3: sun3
+	-mv -f /sprite/kernels/sun3.sprite /sprite/kernels/sun3.sprite.old
+	-mv -f /sprite/kernels/sun3.sprite.new /sprite/kernels/sun3.sprite
+	update /sprite/kernels/sun3.sprite /vmsprite
+	rm -f /vmunix
+	ln /vmsprite /vmunix
+	rsh rosemary -l sprite mv -f /tmp/sprite/sun3.sprite /tmp/sprite/sun3.old
+	rcp sun3 rosemary:/tmp/sprite/sun3.sprite
+	rsh ginger -l sprite mv -f /sprite3/sun3 /sprite3/sun3.old
+	rsh ginger -l sprite mv -f /sprite3/tmp/sun3 /sprite3/sun3
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
