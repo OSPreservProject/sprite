@@ -140,7 +140,7 @@ Proc_Migrate(pid, nodeID)
      * verify that migration is permissible.
      */
     
-    if ((nodeID == PROC_MIG_ANY) || (nodeID == Rpc_GetClientId())) {
+    if ((nodeID == PROC_MIG_ANY) || (nodeID == rpc_SpriteID)) {
 	return(PROC_INVALID_NODE_ID);
     }
 
