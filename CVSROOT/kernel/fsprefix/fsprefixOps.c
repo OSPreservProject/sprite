@@ -505,7 +505,7 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 	return(FS_LOOKUP_REDIRECT);
     } else {
 	Sys_Panic(SYS_WARNING,
-	      "FsLookupOperation: Unexpected format of returned file name");
+	      "FsLookupOperation: Unexpected format of returned file name.\n");
 	return(FAILURE);
     }
 }
@@ -1586,4 +1586,18 @@ Fs_PrefixDump(index, argPtr)
     } else {
 	return(FS_INVALID_ARG);
     }
+}
+
+int
+FsTurnOnFileNameTracing()
+{
+    fsFileNameTrace = TRUE;
+    return 0;
+}
+
+int
+FsTurnOffFileNameTracing()
+{
+    fsFileNameTrace = FALSE;
+    return 0;
 }

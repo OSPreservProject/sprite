@@ -776,14 +776,17 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
-    int			prefixLength;
+    int			prefixLength[3];	/* padded so that network
+						 * interface won't pad it
+						 * without our being aware
+						 * of it. */
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsLookupArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) &prefixLength;
-    storage.replyParamSize = sizeof (int);
+    storage.replyParamPtr = (Address) prefixLength;
+    storage.replyParamSize = 3 * sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -792,7 +795,7 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
@@ -828,14 +831,17 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
-    int			prefixLength;
+    int			prefixLength[3];	/* padded so that network
+						 * interface won't pad it
+						 * without our being aware
+						 * of it. */
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsLookupArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) &prefixLength;
-    storage.replyParamSize = sizeof (int);
+    storage.replyParamPtr = (Address) prefixLength;
+    storage.replyParamSize = 3 * sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -844,7 +850,7 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
@@ -918,8 +924,9 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	storagePtr->replyParamPtr = (Address) Mem_Alloc(sizeof (int));
-	storagePtr->replyParamSize = sizeof (int);
+	/* 3 * an int for padding to save us from netword interface */
+	storagePtr->replyParamPtr = (Address) Mem_Alloc(3 * sizeof (int));
+	storagePtr->replyParamSize = 3 * sizeof (int);
 	/*
 	 * prefixLength must be returned in parameter area for byte-swapping.
 	 */
@@ -968,14 +975,17 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
-    int			prefixLength;
+    int			prefixLength[3];	/* padded so that network
+						 * interface won't pad it
+						 * without our being aware
+						 * of it. */
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsOpenArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) &prefixLength;
-    storage.replyParamSize = sizeof (int);
+    storage.replyParamPtr = (Address) prefixLength;
+    storage.replyParamSize = 3 * sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -984,7 +994,7 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
@@ -1049,12 +1059,12 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	storagePtr->replyParamPtr = (Address) Mem_Alloc(sizeof (int));
-	storagePtr->replyParamSize = sizeof (int);
+	storagePtr->replyParamPtr = (Address) Mem_Alloc(3 * sizeof (int));
+	storagePtr->replyParamSize = 3 * sizeof (int);
 	/*
 	 * prefixLength must be returned in param area for byte-swapping.
 	 */
-	*(storagePtr->replyParamPtr) = newNameInfoPtr->prefixLength;
+	*((int *)(storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
         replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
@@ -1096,17 +1106,20 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     FsRedirectInfo **newNameInfoPtrPtr;/* We return this if the server leaves 
 					* its domain during the lookup. */
 {
-    ReturnStatus		status;
-    Rpc_Storage			storage;
-    FsRedirectInfo		redirectInfo;
-    int				prefixLength;
+    ReturnStatus	status;
+    Rpc_Storage		storage;
+    FsRedirectInfo	redirectInfo;
+    int			prefixLength[3];	/* padded so that network
+						 * interface won't pad it
+						 * without our being aware
+						 * of it. */
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsMakeDeviceArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) &prefixLength;
-    storage.replyParamSize = sizeof (int);
+    storage.replyParamPtr = (Address) prefixLength;
+    storage.replyParamSize = 3 * sizeof (int);
     storage.replyDataPtr = (Address)Mem_Alloc(sizeof(FsRedirectInfo));
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -1115,7 +1128,7 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
@@ -1177,8 +1190,8 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	storagePtr->replyParamPtr = (Address) Mem_Alloc(sizeof (int));
-	storagePtr->replyParamSize = sizeof (int);
+	storagePtr->replyParamPtr = (Address) Mem_Alloc(3 * sizeof (int));
+	storagePtr->replyParamSize = 3 * sizeof (int);
 	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
         replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
@@ -1223,46 +1236,6 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
     Boolean 		*name1RedirectPtr;	/* TRUE if redirect info is for
 						 * first path */
 {
-
-#ifdef NOTDEF
-    FsSprite2PathParams	params;
-    FsSprite2PathData	requestData;
-    FsSprite2PathReplyParams	replyParams;
-    int			nameLength;
-    Rpc_Storage		storage;
-    ReturnStatus	status;
-    FsRedirectInfo	redirectInfo;
-
-    params.lookupArgs = *lookupArgsPtr;
-    params.lookupArgs.prefixID = prefixHandle1->fileID;
-    params.prefixID2 = prefixHandle2->fileID;
-    nameLength = String_Length(relativeName1);
-    Byte_Copy(nameLength, (Address) relativeName1, (Address) requestData.path1);
-    requestData.path1[nameLength] = '\0';
-    nameLength = String_Length(relativeName2);
-    Byte_Copy(nameLength, (Address) relativeName2, (Address) requestData.path2);
-
-    storage.requestParamPtr = (Address) &params;
-    storage.requestParamSize = sizeof (FsSprite2PathParams);
-    storage.requestDataPtr = (Address) &requestData;
-    storage.requestDataSize = sizeof (FsSprite2PathData);
-
-    storage.replyParamPtr = (Address) &replyParams;
-    storage.replyParamSize = sizeof (FsSprite2PathReplyParams);
-    storage.replyDataPtr = (Address)&redirectInfo;
-    storage.replyDataSize = sizeof(FsRedirectInfo);
-
-    status = Rpc_Call(prefixHandle1->fileID.serverID, command, &storage);
-    if (status == FS_LOOKUP_REDIRECT) {
-	register int redirectSize;
-	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
-    /* Is the following field only of value if LOOKUP returned? */
-	*name1RedirectPtr = replyParams.name1RedirectP;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = replyParams.prefixLength;
-	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
-    }
-#else
     FsSprite2PathParams	params;
     FsSprite2PathData	*requestDataPtr;	/* too big for stack */
     FsSprite2PathReplyParams	replyParams;
@@ -1305,7 +1278,6 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     Mem_Free(requestDataPtr);
-#endif NOTDEF
 
     return(status);
 }

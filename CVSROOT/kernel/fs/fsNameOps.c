@@ -262,6 +262,8 @@ Fs_Remove(name)
 {
     ReturnStatus status;
     FsLookupArgs lookupArgs;
+    extern	int	FsTurnOnFileNameTracing();
+    extern	int	FsTurnOffFileNameTracing();
 
     lookupArgs.useFlags = FS_DELETE;
     FsSetIDs((Proc_ControlBlock *)NIL, &lookupArgs.id);
