@@ -1095,7 +1095,7 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 		pdevHandlePtr->hdr.fileID.minor) );
 
     PdevClientWakeup(pdevHandlePtr);
-    if (pdevHandlePtr->ctrlHandlePtr != (PdevControlIOHandle *)NIL) {
+    if (pdevHandlePtr->ctrlHandlePtr->prefixPtr != (FsPrefix *)NIL) {
 	/*
 	 * This is the naming requeust-response stream of a pseudo-filesystem.
 	 */
@@ -1586,8 +1586,8 @@ FsPseudoStreamGetIOAttr(fileIDPtr, clientID, attrPtr)
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
 
-    attrPtr->accessTime.seconds = pdevHandlePtr->accessTime;
-    attrPtr->dataModifyTime.seconds = pdevHandlePtr->modifyTime;
+    attrPtr->accessTime.seconds = pdevHandlePtr->ctrlHandlePtr->accessTime;
+    attrPtr->dataModifyTime.seconds = pdevHandlePtr->ctrlHandlePtr->modifyTime;
 
     UNLOCK_MONITOR;
     return(SUCCESS);
@@ -1628,8 +1628,8 @@ FsPseudoStreamSetIOAttr(fileIDPtr, attrPtr, flags)
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
     if (flags & FS_SET_TIMES) {
-	pdevHandlePtr->accessTime = attrPtr->accessTime.seconds;
-	pdevHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
+	pdevHandlePtr->ctrlHandlePtr->accessTime = attrPtr->accessTime.seconds;
+	pdevHandlePtr->ctrlHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
     }
     UNLOCK_MONITOR;
     return(SUCCESS);
@@ -1776,7 +1776,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	status = FS_WOULD_BLOCK;
     }
     *offsetPtr += *lenPtr;
-    pdevHandlePtr->accessTime = fsTimeInSeconds;
+    pdevHandlePtr->ctrlHandlePtr->accessTime = fsTimeInSeconds;
 exit:
     if (status == DEV_OFFLINE) {
 	/*
@@ -1922,7 +1922,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     }
     *lenPtr = amountWritten;
     *offsetPtr += amountWritten;
-    pdevHandlePtr->modifyTime = fsTimeInSeconds;
+    pdevHandlePtr->ctrlHandlePtr->modifyTime = fsTimeInSeconds;
 exit:
     if (status == DEV_OFFLINE) {
 	/*
