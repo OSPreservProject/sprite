@@ -13,25 +13,25 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "vmSunConst.h"
-#include "machMon.h"
-#include "vm.h"
-#include "vmInt.h"
-#include "vmMach.h"
-#include "vmMachInt.h"
-#include "vmTrace.h"
-#include "list.h"
-#include "mach.h"
-#include "proc.h"
-#include "sched.h"
-#include "stdlib.h"
-#include "sync.h"
-#include "sys.h"
-#include "dbg.h"
-#include "net.h"
-#include "stdio.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <vmSunConst.h>
+#include <machMon.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmMach.h>
+#include <vmMachInt.h>
+#include <vmTrace.h>
+#include <list.h>
+#include <mach.h>
+#include <proc.h>
+#include <sched.h>
+#include <stdlib.h>
+#include <sync.h>
+#include <sys.h>
+#include <dbg.h>
+#include <net.h>
+#include <stdio.h>
+#include <bstring.h>
 
 #ifndef multiprocessor
 
@@ -2993,6 +2993,7 @@ VmMach_32BitDMAFree(numBytes, mapAddr)
 
 static	Boolean	dmaPageBitMap[VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
 
+static Boolean dmaInitialized = FALSE;
 
 /*
  ----------------------------------------------------------------------
@@ -3022,10 +3023,9 @@ VmMach_DMAAlloc(numBytes, srcAddr)
     VmMachPTE	pte;
     Boolean	foundIt = FALSE;
     int		virtPage;
-    static initialized = FALSE;
 
-    if (!initialized) {
-	initialized = TRUE;
+    if (!dmaInitialized) {
+	dmaInitialized = TRUE;
 	DevBufferInit();
     }
     /* calculate number of pages needed */
@@ -3067,6 +3067,118 @@ VmMach_DMAAlloc(numBytes, srcAddr)
     beginAddr = (Address) (VMMACH_DMA_START_ADDR + (i * VMMACH_PAGE_SIZE_INT) +
 	    (((unsigned int) srcAddr) & VMMACH_OFFSET_MASK));
     return beginAddr;
+}
+
+/*
+ ----------------------------------------------------------------------
+ *
+ * VmMach_DMAAllocContiguous --
+ *
+ *	Allocate a set of virtual pages to a routine for mapping purposes.
+ *	
+ * Results:
+ *	Pointer into kernel virtual address space of where to access the
+ *	memory, or NIL if the request couldn't be satisfied.
+ *
+ * Side effects:
+ *	The hardware page table is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+VmMach_DMAAllocContiguous(inScatGathPtr, scatGathLength, outScatGathPtr)
+    register Net_ScatterGather	*inScatGathPtr;
+    register int		scatGathLength;
+    register Net_ScatterGather	*outScatGathPtr;
+{
+    Address	beginAddr;
+    Address	endAddr;
+    int		numPages;
+    int		i, j;
+    VmMachPTE	pte;
+    Boolean	foundIt = FALSE;
+    int		virtPage;
+    Net_ScatterGather		*inPtr;
+    Net_ScatterGather		*outPtr;
+    int				pageOffset;
+    Address			srcAddr;
+
+    if (!dmaInitialized) {
+	dmaInitialized = TRUE;
+	DevBufferInit();
+    }
+    /* calculate number of pages needed */
+    inPtr = inScatGathPtr;
+    outPtr = outScatGathPtr;
+    numPages = 0;
+    for (i = 0; i < scatGathLength; i++) {
+	if (inPtr->length > 0) {
+	    /* beginning of first page */
+	    beginAddr = (Address) (((unsigned int)(inPtr->bufAddr)) & 
+		    ~VMMACH_OFFSET_MASK_INT);
+	    /* beginning of last page */
+	    endAddr = (Address) ((((unsigned int) inPtr->bufAddr) + 
+		inPtr->length - 1) & ~VMMACH_OFFSET_MASK_INT);
+	    /* 
+	     * Temporarily store the number of pages in the out scatter/gather
+	     * array.
+	     */
+	    outPtr->length =
+		    (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
+		    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
+	} else {
+	    outPtr->length = 0;
+	}
+	if ((i == 0) && (outPtr->length != 1)) {
+	    panic("Help! Help! I'm being repressed!\n");
+	}
+	numPages += outPtr->length;
+	inPtr++;
+	outPtr++;
+    }
+
+    /* see if request can be satisfied */
+    for (i = 0; i < (VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT); i++) {
+	if (dmaPageBitMap[i] == 1) {
+	    continue;
+	}
+	for (j = 1; j < numPages; j++) {
+	    if (dmaPageBitMap[i + j] == 1) {
+		break;
+	    }
+	}
+	if (j == numPages) {
+	    foundIt = TRUE;
+	    break;
+	}
+    }
+    if (!foundIt) {
+	return FAILURE;
+    }
+    pageOffset = i;
+    inPtr = inScatGathPtr;
+    outPtr = outScatGathPtr;
+    for (i = 0; i < scatGathLength; i++) {
+	srcAddr = inPtr->bufAddr;
+	numPages = outPtr->length;
+	for (j = 0; j < numPages; j++) {
+	    dmaPageBitMap[pageOffset + j] = 1;	/* allocate page */
+	    virtPage = ((unsigned int) srcAddr) >> VMMACH_PAGE_SHIFT;
+	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT |
+		  VirtToPhysPage(Vm_GetKernPageFrame(virtPage));
+	    SET_ALL_PAGE_MAP(((pageOffset + j) * VMMACH_PAGE_SIZE_INT) +
+		    VMMACH_DMA_START_ADDR, pte);
+	    srcAddr += VMMACH_PAGE_SIZE;
+	}
+	outPtr->bufAddr = (Address) (VMMACH_DMA_START_ADDR + 
+		(pageOffset * VMMACH_PAGE_SIZE_INT) + 
+		(((unsigned int) srcAddr) & VMMACH_OFFSET_MASK));
+	pageOffset += numPages;
+	outPtr->length = inPtr->length;
+	inPtr++;
+	outPtr++;
+    }
+    return SUCCESS;
 }
 
 
@@ -3950,5 +4062,3 @@ VmMach_UnlockCachePage(kernelAddress)
      */
     return;
 }
-
-
