@@ -319,7 +319,6 @@ VmSwapFileRemove(swapStreamPtr, swapFileName)
 void
 VmReopenSwapDirectory()
 {
-    Fs_Stream streamPtr;
     LOCK_MONITOR;
     if (!reopenInProgress) {
 	reopenInProgress = TRUE;
