@@ -43,7 +43,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStream.h"
 #include "fsLock.h"
 #include "fsMigrate.h"
-#include "fsOpTable.h"
 #include "fsNameOps.h"
 
 #include "dev.h"
@@ -902,25 +901,29 @@ FsDeviceMigStart(hdrPtr, flags, clientID, data)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsRemoteIOMigStart(hdrPtr, flags, clientID, data)
+FsRemoteIOMigStart(hdrPtr, flags, clientID, migFlagsPtr)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
     int clientID;		/* Host doing the encapsulation */
-    ClientData data;		/* Buffer we fill in */
+    int *migFlagsPtr;		/* Migration flags we may modify */
 {
     register FsRemoteIOHandle *rmtHandlePtr = (FsRemoteIOHandle *)hdrPtr;
 
+    FsHandleLock(rmtHandlePtr);
     if ((flags & FS_RMT_SHARED) == 0) {
-	FsHandleLock(rmtHandlePtr);
 	rmtHandlePtr->recovery.use.ref--;
 	if (flags & FS_WRITE) {
 	    rmtHandlePtr->recovery.use.write--;
+	    if (rmtHandlePtr->recovery.use.write == 0) {
+		*migFlagsPtr |= FS_LAST_WRITER;
+	    }
 	}
 	if (flags & FS_EXECUTE) {
 	    rmtHandlePtr->recovery.use.exec--;
 	}
 	FsHandleRelease(rmtHandlePtr, TRUE);
     }
+
     return(SUCCESS);
 }
 
@@ -961,6 +964,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     register Fs_Stream			*streamPtr;
     Boolean				found;
     Boolean				cache = FALSE;
+    Boolean				keepReference = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -998,6 +1002,8 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 */
 	(void)FsStreamClientClose(&streamPtr->clientList,
 				migInfoPtr->srcClientID);
+    } else if (migInfoPtr->flags & FS_NEW_STREAM) {
+	keepReference = TRUE;
     }
     if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
 	    migInfoPtr->flags)) {
@@ -1005,9 +1011,15 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * We detected network sharing so we mark the stream.
 	 */
 	streamPtr->flags |= FS_RMT_SHARED;
+#ifdef notdef
 	migInfoPtr->flags |= FS_RMT_SHARED;
+#endif notdef
     }
-    FsHandleRelease(streamPtr, TRUE);
+    if (keepReference) {
+	FsHandleUnlock(streamPtr);
+    } else {
+	FsHandleRelease(streamPtr, TRUE);
+    }
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
@@ -1019,31 +1031,47 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
        * to reflect the additional client stream.
        */
       devHandlePtr->use.ref++;
-      if (migInfoPtr->flags & FS_WRITE) {
+      if ((migInfoPtr->flags & FS_WRITE) &&
+	  !(migInfoPtr->flags & FS_LAST_WRITER)) {
 	  devHandlePtr->use.write++;
       }
     } else if ((migInfoPtr->flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
-      /*
-       * The stream is no longer shared, and it is not new on the
-       * target client, so we have to decrement the use counts
-       * to reflect the fact that the original client's stream is not
-       * referencing the I/O handle.
-       */
-      devHandlePtr->use.ref--;
-      if (migInfoPtr->flags & FS_WRITE) {
-	  devHandlePtr->use.write--;
-      }
+	/*
+	 * The stream is no longer shared, and it is not new on the
+	 * target client, so we have to decrement the use counts
+	 * to reflect the fact that the original client's stream is not
+	 * referencing the I/O handle.
+	 */
+	devHandlePtr->use.ref--;
+	if (migInfoPtr->flags & FS_WRITE) {
+	    devHandlePtr->use.write--;
+	}
+    } else if (migInfoPtr->flags & FS_LAST_WRITER) {
+	/*
+	 * The stream is still open for reading but no longer for writing
+	 * on the source client.
+	 */
+	devHandlePtr->use.write--;
     }
 
     /*
      * Move the client at the I/O handle level.  We are careful to only
      * close the srcClient if its migration state indicates it isn't
      * shared.  We are careful to only open the dstClient if it getting
-     * the stream for the first time.
+     * the stream for the first time.  Also, if the srcClient is switching
+     * from a writer to a reader, we remove its write reference.
      */
     if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
 	found = FsIOClientClose(&devHandlePtr->clientList,
 		    migInfoPtr->srcClientID, migInfoPtr->flags, &cache);
+	if (!found) {
+	    Sys_Panic(SYS_WARNING,
+		"FsDeviceMigrate, IO Client %d not found\n",
+		migInfoPtr->srcClientID);
+	}
+    } else if (migInfoPtr->flags & FS_LAST_WRITER) {
+	found = FsIOClientRemoveWriter(&devHandlePtr->clientList,
+		    migInfoPtr->srcClientID);
 	if (!found) {
 	    Sys_Panic(SYS_WARNING,
 		"FsDeviceMigrate, IO Client %d not found\n",
