@@ -364,8 +364,11 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     */
 	    RECOV_TRACE(spriteID, RECOV_CRASH, RECOV_CUZ_REBOOT);
 	    hostPtr->state &= ~RECOV_HOST_ALIVE;
-	    hostPtr->state |= (RECOV_HOST_BOOTING | RECOV_CRASH_CALLBACKS);
-	    Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+	    hostPtr->state |= RECOV_HOST_BOOTING;
+	    if ((hostPtr->state & RECOV_CRASH_CALLBACKS) == 0) {
+		hostPtr->state |= RECOV_CRASH_CALLBACKS;
+		Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+	    }
 	}
     }
     /*
