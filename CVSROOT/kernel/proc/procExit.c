@@ -118,24 +118,24 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "mach.h"
-#include "status.h"
-#include "proc.h"
-#include "procInt.h"
-#include "procMigrate.h"
-#include "migrate.h"
-#include "sync.h"
-#include "sched.h"
-#include "list.h"
-#include "sys.h"
-#include "vm.h"
-#include "prof.h"
-#include "dbg.h"
-#include "stdlib.h"
-#include "rpc.h"
-#include "sig.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <mach.h>
+#include <status.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMigrate.h>
+#include <migrate.h>
+#include <sync.h>
+#include <sched.h>
+#include <list.h>
+#include <sys.h>
+#include <vm.h>
+#include <prof.h>
+#include <dbg.h>
+#include <stdlib.h>
+#include <rpc.h>
+#include <sig.h>
+#include <stdio.h>
 
 static	Sync_Lock	exitLock = Sync_LockInitStatic("Proc:exitLock"); 
 #define	LOCKPTR &exitLock

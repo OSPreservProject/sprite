@@ -21,14 +21,14 @@
 #define _PROCTYPES
 
 #ifdef KERNEL
-#include "user/proc.h"
-#include "user/sync.h"
-#include "syncLock.h"
-#include "list.h"
-#include "timer.h"
-#include "sigTypes.h"
-#include "machTypes.h"
-#include "sysSysCallParam.h"
+#include <user/proc.h>
+#include <user/sync.h>
+#include <syncLock.h>
+#include <list.h>
+#include <timer.h>
+#include <sigTypes.h>
+#include <machTypes.h>
+#include <sysSysCallParam.h>
 #else
 #include <proc.h>
 #include <sync.h>

@@ -18,18 +18,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "mach.h"
-#include "proc.h"
-#include "procInt.h"
-#include "sync.h"
-#include "sched.h"
-#include "timer.h"
-#include "list.h"
-#include "vm.h"
-#include "sys.h"
-#include "stdlib.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <mach.h>
+#include <proc.h>
+#include <procInt.h>
+#include <sync.h>
+#include <sched.h>
+#include <timer.h>
+#include <list.h>
+#include <vm.h>
+#include <sys.h>
+#include <stdlib.h>
+#include <rpc.h>
 
 Sync_Lock	tableLock;
 #define	LOCKPTR &tableLock

@@ -17,28 +17,28 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "proc.h"
-#include "status.h"
-#include "sync.h"
-#include "sched.h"
-#include "sig.h"
-#include "stdlib.h"
-#include "list.h"
-#include "string.h"
-#include "procInt.h"
-#include "rpc.h"
-#include "dbg.h"
-#include "vm.h"
-#include "ctype.h"
-#include "fscache.h"
-#include "fsutil.h"
-#include "rpcClient.h"
-#include "rpcServer.h"
-#include "procServer.h"
-#include "fsrmt.h"
-#include "bstring.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <proc.h>
+#include <status.h>
+#include <sync.h>
+#include <sched.h>
+#include <sig.h>
+#include <stdlib.h>
+#include <list.h>
+#include <string.h>
+#include <procInt.h>
+#include <rpc.h>
+#include <dbg.h>
+#include <vm.h>
+#include <ctype.h>
+#include <fscache.h>
+#include <fsutil.h>
+#include <rpcClient.h>
+#include <rpcServer.h>
+#include <procServer.h>
+#include <fsrmt.h>
+#include <bstring.h>
+#include <stdio.h>
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 /*

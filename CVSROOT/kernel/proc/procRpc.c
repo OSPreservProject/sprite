@@ -18,29 +18,29 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "stdlib.h"
-#include "proc.h"
-#include "procInt.h"
-#include "procMigrate.h"
-#include "mach.h"
-#include "fs.h"
-#include "migrate.h"
-#include "byte.h"
-#include "sig.h"
-#include "vm.h"
-#include "sys.h"
-#include "rpc.h"
-#include "timer.h"
-#include "sched.h"
-#include "sync.h"
-#include "sysSysCall.h"
-#include "sysSysCallParam.h"
-#include "devVid.h"
-#include "prof.h"
-#include "string.h"
-#include "stdio.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <stdlib.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMigrate.h>
+#include <mach.h>
+#include <fs.h>
+#include <migrate.h>
+#include <byte.h>
+#include <sig.h>
+#include <vm.h>
+#include <sys.h>
+#include <rpc.h>
+#include <timer.h>
+#include <sched.h>
+#include <sync.h>
+#include <sysSysCall.h>
+#include <sysSysCallParam.h>
+#include <devVid.h>
+#include <prof.h>
+#include <string.h>
+#include <stdio.h>
+#include <bstring.h>
 
 static ReturnStatus 	RpcProcExit _ARGS_((Proc_ControlBlock *procPtr, 
 				Address dataPtr, int dataLength, 

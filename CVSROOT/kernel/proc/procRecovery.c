@@ -18,17 +18,17 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "proc.h"
-#include "procInt.h"
-#include "procMigrate.h"
-#include "migrate.h"
-#include "recov.h"
-#include "sync.h"
-#include "rpc.h"
-#include "hash.h"
-#include "stdlib.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMigrate.h>
+#include <migrate.h>
+#include <recov.h>
+#include <sync.h>
+#include <rpc.h>
+#include <hash.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 static void HostChanged _ARGS_((int hostID, ClientData clientData));
 

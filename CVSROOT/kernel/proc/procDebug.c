@@ -28,17 +28,17 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "proc.h"
-#include "procInt.h"
-#include "procMigrate.h"
-#include "status.h"
-#include "sync.h"
-#include "sched.h"
-#include "sys.h"
-#include "list.h"
-#include "stdlib.h"
-#include "vm.h"
+#include <sprite.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMigrate.h>
+#include <status.h>
+#include <sync.h>
+#include <sched.h>
+#include <sys.h>
+#include <list.h>
+#include <stdlib.h>
+#include <vm.h>
 
 Sync_Condition	debugListCondition;	/* Condition to sleep on when
 						 * waiting for a process to go

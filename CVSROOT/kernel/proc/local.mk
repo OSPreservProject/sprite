@@ -7,6 +7,7 @@
 #
 
 POBJS		= $(OBJS:S/.o$/.po/g:S/procFork.po/procFork.o/g)
+CFLAGS	+= -Wall
 
 
 #include	<$(SYSMAKEFILE)>

@@ -23,13 +23,13 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "proc.h"
-#include "stdlib.h"
-#include "status.h"
-#include "sync.h"
-#include "sched.h"
-#include "hash.h"
+#include <sprite.h>
+#include <proc.h>
+#include <stdlib.h>
+#include <status.h>
+#include <sync.h>
+#include <sched.h>
+#include <hash.h>
 
 static	Sync_Lock	familyLock;
 #define	LOCKPTR &familyLock

@@ -20,20 +20,20 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "mach.h"
-#include "list.h"
-#include "proc.h"
-#include "procInt.h"
-#include "sched.h"
-#include "status.h"
+#include <sprite.h>
+#include <mach.h>
+#include <list.h>
+#include <proc.h>
+#include <procInt.h>
+#include <sched.h>
+#include <status.h>
 #include <stdlib.h>
-#include "string.h"
-#include "sync.h"
-#include "sys.h"
-#include "timer.h"
-#include "vm.h"
-#include "prof.h"
+#include <string.h>
+#include <sync.h>
+#include <sys.h>
+#include <timer.h>
+#include <vm.h>
+#include <prof.h>
 
 static ReturnStatus    InitUserProc _ARGS_((Proc_ControlBlock *procPtr,
 			    Proc_ControlBlock *parentProcPtr,

@@ -27,29 +27,29 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "mach.h"
-#include "proc.h"
-#include "sync.h"
-#include "sched.h"
-#include "procMigrate.h"
-#include "procInt.h"
-#include "migrate.h"
-#include "fs.h"
-#include "stdlib.h"
-#include "string.h"
-#include "sig.h"
-#include "spriteTime.h"
-#include "list.h"
-#include "byte.h"
-#include "vm.h"
-#include "sys.h"
-#include "rpc.h"
-#include "sysSysCall.h"
-#include "sysSysCallParam.h"
-#include "dbg.h"
-#include "stdio.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <mach.h>
+#include <proc.h>
+#include <sync.h>
+#include <sched.h>
+#include <procMigrate.h>
+#include <procInt.h>
+#include <migrate.h>
+#include <fs.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sig.h>
+#include <spriteTime.h>
+#include <list.h>
+#include <byte.h>
+#include <vm.h>
+#include <sys.h>
+#include <rpc.h>
+#include <sysSysCall.h>
+#include <sysSysCallParam.h>
+#include <dbg.h>
+#include <stdio.h>
+#include <bstring.h>
 
 
 /*

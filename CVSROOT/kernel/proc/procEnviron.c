@@ -18,18 +18,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "proc.h"
-#include "procInt.h"
-#include "sync.h"
-#include "sched.h"
-#include "sys.h"
-#include "stdlib.h"
-#include "status.h"
-#include "vm.h"
-#include "bstring.h"
-#include "string.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <proc.h>
+#include <procInt.h>
+#include <sync.h>
+#include <sched.h>
+#include <sys.h>
+#include <stdlib.h>
+#include <status.h>
+#include <vm.h>
+#include <bstring.h>
+#include <string.h>
+#include <stdio.h>
 
 /*
  * The minimum size of the environment that is allocated.  This size

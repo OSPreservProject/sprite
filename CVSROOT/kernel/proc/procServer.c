@@ -17,23 +17,23 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "mach.h"
-#include "proc.h"
-#include "procInt.h"
-#include "sync.h"
-#include "sched.h"
-#include "timer.h"
-#include "list.h"
-#include "vm.h"
-#include "fs.h"
-#include "fscache.h"
-#include "sys.h"
-#include "string.h"
-#include "status.h"
-#include "stdlib.h"
-#include "procServer.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <mach.h>
+#include <proc.h>
+#include <procInt.h>
+#include <sync.h>
+#include <sched.h>
+#include <timer.h>
+#include <list.h>
+#include <vm.h>
+#include <fs.h>
+#include <fscache.h>
+#include <sys.h>
+#include <string.h>
+#include <status.h>
+#include <stdlib.h>
+#include <procServer.h>
+#include <stdio.h>
 
 /*
  * Circular queue of pending function calls.

@@ -18,15 +18,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "proc.h"
-#include "procInt.h"
-#include "timer.h"
-#include "sys.h"
-#include "sig.h"
-#include "stdlib.h"
-#include "sync.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <proc.h>
+#include <procInt.h>
+#include <timer.h>
+#include <sys.h>
+#include <sig.h>
+#include <stdlib.h>
+#include <sync.h>
+#include <bstring.h>
 
 /*
  * Information about the state of an interval timer for a process.

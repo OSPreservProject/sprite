@@ -21,15 +21,15 @@
 #define _PROC
 
 #ifdef KERNEL
-#include "procTypes.h"
-#include "user/sync.h"
-#include "syncLock.h"
-#include "list.h"
-#include "timer.h"
-#include "sig.h"
-#include "mach.h"
-#include "sysSysCallParam.h"
-#include "rpc.h"
+#include <procTypes.h>
+#include <user/sync.h>
+#include <syncLock.h>
+#include <list.h>
+#include <timer.h>
+#include <sig.h>
+#include <mach.h>
+#include <sysSysCallParam.h>
+#include <rpc.h>
 #else
 #include <kernel/procTypes.h>
 #include <sync.h>

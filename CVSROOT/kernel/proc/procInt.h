@@ -18,11 +18,11 @@
 
 #ifndef _PROCINT
 #define _PROCINT
-#include "procMigrate.h"
-#include "migrate.h"
-#include "proc.h"
-#include "fs.h"
-#include "procMach.h"
+#include <procMigrate.h>
+#include <migrate.h>
+#include <proc.h>
+#include <fs.h>
+#include <procMach.h>
 /*
  * Information used by the Proc_Wait command for child termination information.
  */

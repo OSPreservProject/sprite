@@ -18,32 +18,32 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "procMach.h"
-#include "mach.h"
-#include "proc.h"
-#include "procInt.h"
-#include "sync.h"
-#include "sched.h"
-#include "fs.h"
-#include "fsio.h"
-#include "stdlib.h"
-#include "sig.h"
-#include "spriteTime.h"
-#include "list.h"
-#include "vm.h"
-#include "sys.h"
-#include "procMigrate.h"
-#include "status.h"
-#include "string.h"
-#include "byte.h"
-#include "rpc.h"
-#include "prof.h"
-#include "file.h"
-#include "fsutil.h"
-#include "ctype.h"
-#include "stdio.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <procMach.h>
+#include <mach.h>
+#include <proc.h>
+#include <procInt.h>
+#include <sync.h>
+#include <sched.h>
+#include <fs.h>
+#include <fsio.h>
+#include <stdlib.h>
+#include <sig.h>
+#include <spriteTime.h>
+#include <list.h>
+#include <vm.h>
+#include <sys.h>
+#include <procMigrate.h>
+#include <status.h>
+#include <string.h>
+#include <byte.h>
+#include <rpc.h>
+#include <prof.h>
+#include <file.h>
+#include <fsutil.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <bstring.h>
 /*
  * This will go away when libc is changed.
  */
