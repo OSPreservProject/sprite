@@ -187,6 +187,9 @@ FsServerStreamCreate(ioFileIDPtr, name)
     List_Init(&pdevHandlePtr->cltWriteWaitList);
     List_Init(&pdevHandlePtr->cltExceptWaitList);
 
+    pdevHandlePtr->ctrlHandlePtr = (PdevControlIOHandle *)NIL;
+    pdevHandlePtr->userLevelID = *ioFileIDPtr;
+
     return(pdevHandlePtr);
 }
 
@@ -230,6 +233,20 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 		pdevHandlePtr->hdr.fileID.minor) );
 
     PdevClientWakeup(pdevHandlePtr);
+    if (pdevHandlePtr->ctrlHandlePtr != (PdevControlIOHandle *)NIL) {
+	/*
+	 * This is the naming requeust-response stream of a pseudo-filesystem.
+	 */
+	register PdevControlIOHandle *ctrlHandlePtr;
+	Fs_Stream dummy;
+
+	ctrlHandlePtr = pdevHandlePtr->ctrlHandlePtr;
+	dummy.hdr.fileID.type = -1;
+	dummy.ioHandlePtr = (FsHandleHeader *)ctrlHandlePtr;
+	FsHandleLock(ctrlHandlePtr);
+	FsPrefixHandleClose(ctrlHandlePtr->prefixPtr);
+	FsControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
+    }
     FsHandleRelease(pdevHandlePtr, TRUE);
     FsHandleRemove(pdevHandlePtr);	/* No need for scavenging */
     return(SUCCESS);
@@ -268,6 +285,37 @@ PdevClientWakeup(pdevHandlePtr)
     FsFastWaitListNotify(&pdevHandlePtr->cltWriteWaitList);
     FsFastWaitListNotify(&pdevHandlePtr->cltExceptWaitList);
     UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPdevServerOK --
+ *
+ *	Called from FsPfsExport to see if the server of a prefix still exists.
+ *
+ * Results:
+ *	TRUE if the server process is still around.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY Boolean
+FsPdevServerOK(pdevHandlePtr)
+    PdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
+{
+    register Boolean answer;
+    LOCK_MONITOR;
+    if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
+	answer = FALSE;
+    } else {
+	answer = TRUE;
+    }
+    UNLOCK_MONITOR;
+    return(answer);
 }
 
 /*
@@ -1007,6 +1055,21 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    PdevClientNotify(pdevHandlePtr);
 	    break;
 	}
+	case IOC_PFS_SET_ID: {
+	    /*
+	     * A pseudo-filesystem server is setting its own notion of the
+	     * fileID associated with a request-response stream.
+	     */
+	    register Fs_FileID *fileIDPtr;
+
+	    if (inBufPtr->size < sizeof(Fs_FileID)) {
+		status = FS_INVALID_ARG;
+	    } else {
+		fileIDPtr = (Fs_FileID *)inBufPtr->addr;
+		pdevHandlePtr->userLevelID = *fileIDPtr;
+	    }
+	    break;
+	}
 	case IOC_PFS_PASS_STREAM:
 	    /*
 	     * A pseudo-filesystem server is replying to an open request by
@@ -1228,6 +1291,11 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 	}
     }
     pdevHandlePtr->flags |= PDEV_BUSY;
+
+    /*
+     * Map the rootID in the arguments to the user-level version.
+     */
+    ((FsLookupArgs *)argsPtr)->rootID = pdevHandlePtr->userLevelID;
 
     pdevHandlePtr->flags &= ~FS_USER;
     status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
@@ -1916,5 +1984,33 @@ FsPseudoStreamCloseInt(pdevHandlePtr)
 exit:
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
     Sync_Broadcast(&pdevHandlePtr->access);
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPdevGetUserLevelID --
+ *
+ *	Return the user-level file ID associated with a pdev connection.
+ *	This is called from FsPfsOpen to get the user-level ID for the
+ *	pdev-connections involved in a naming operation.
+ *
+ * Results:
+ *	Sets its fileID argument to contain the user-level ID.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+FsPdevGetUserLevelID(pdevHandlePtr, fileIDPtr)
+    PdevServerIOHandle *pdevHandlePtr;
+    Fs_FileID *fileIDPtr;
+{
+    LOCK_MONITOR;
+    *fileIDPtr = pdevHandlePtr->userLevelID;
     UNLOCK_MONITOR;
 }
