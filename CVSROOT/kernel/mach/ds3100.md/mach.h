@@ -161,4 +161,9 @@ extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
 
+/*
+ * Set the errno for Unix compatible system calls.
+ */
+#define Mach_SetErrno(err) Proc_GetActualProc()->unixErrno = (err)
+
 #endif /* _MACH */

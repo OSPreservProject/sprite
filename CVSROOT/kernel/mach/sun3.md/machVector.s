@@ -50,7 +50,7 @@ _machProtoVectorTable:
 	.long	MachLevel5Int		| 29	Level 5 interrupt
 	.long	MachLevel6Int		| 30	Level 6 interrupt
 	.long	0			| 31	Level 7 interrupt (REFRESH)
-	.long	MachBadTrap		| 32	Trap instruction 0
+	.long	MachUnixSyscallTrap	| 32	Trap instruction 0
 	.long	MachSyscallTrap		| 33	Trap instruction 1 (System Call)
 	.long	MachSigRetTrap		| 34	Trap instruction 2
 	.long	MachBadTrap		| 35	Trap instruction 3

@@ -153,6 +153,8 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
     })
 #endif
 
+#define Mach_SetErrno(err) Proc_GetActualProc()->unixErrno = (err)
+
 extern	Boolean	mach_KernelMode;
 extern	int	mach_NumProcessors;
 extern	Boolean	mach_AtInterruptLevel;

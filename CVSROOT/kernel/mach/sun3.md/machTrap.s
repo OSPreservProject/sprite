@@ -124,7 +124,149 @@ MachFpOverflow:
 MachFpNaN:
     CallTrapHandler(MACH_FP_NAN)
 
+
 
+|*
+|* ----------------------------------------------------------------------
+|*
+|* MachUnixSyscallTrap --
+|*
+|*	This is the code entered on Unix compatible system call traps.
+|*	The code below is tuned to get into and out of kernel calls as
+|*      fast as possible.
+|*
+|* Results:
+|*	If the carry flag is clear, d0 contains the result of the system call.
+|*      If the carry flag is set, the system call failed, and d0 contains
+|*      the errno.
+|*
+|* Side effects:
+|*	Depends on the kernel call.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+    .globl MachUnixSyscallTrap
+MachUnixSyscallTrap:
+
+	movc	usp, a1
+	movl    a1@+, d0
+	movc    a1, usp
+
+	|*
+	|* Always save the user stack pointer because it can be needed
+	|* while processing the system call.
+	|*
+	movl	_machCurStatePtr, a0
+	movl	a1, a0@(MACH_USER_SP_OFFSET)
+
+	|*
+	|* If this is a fork kernel call, save the registers in the PCB.
+	|* This is a hack, and should eventually go away by adding another
+	|* parameter to fork, which gives the address of an area of
+	|* memory containing the process' saved state.
+	|*
+
+	cmpl    #2, d0
+	bnes	1f
+	moveml	#0xffff, a0@(MACH_TRAP_REGS_OFFSET)
+	movl	sp, a0@(MACH_EXC_STACK_PTR_OFFSET)
+
+	SaveUserFpuState();
+
+	|*
+	|* Save registers used here:  two address registers and sp.
+	|*
+
+1:	movl	a2, sp@-
+	movl	a3, sp@-
+	movl	sp, a3
+
+	|*
+	|* Check number of kernel call for validity.
+	|*
+
+	cmpl	_sysUnixNumSyscalls, d0
+	bges     2f
+
+	|*
+	|* Copy the arguments from user space and push them onto the stack.
+	|*
+
+	lsll    #3, d0
+	addl	#_sysUnixSysCallTable, d0
+	movl    d0, a2
+	movl    a2@(4), d1
+	movl    d1, sp@-
+	beqs    4f
+	subql   #1, d1
+	addl    #8, a1
+	lsll    #2, d1
+	addl    d1, a1
+	lsrl    #2, d1
+3:	
+	movl	a1@-, sp@-
+	dbra    d1, 3b
+4:
+	movl    a2@, a1
+	jsr     a1@
+
+	|*
+	|* Disable interrupts and see if any special processing must
+	|* be done on the process.  Note:  this is checking the
+	|* specialHandling field of the process control block, and depends
+	|* on the fact that specialHandling follows immediately after the
+	|* kcallTable field.
+	|*
+
+	movl	_proc_RunningProcesses, a0
+	movl	a0@, d1			| d1 now has PCB address.
+	addl	_machKcallTableOffset, d1
+	movl	d1, a2			| a2 now has address of kcallTable
+					| field in PCB.
+	movw	#0x2700, sr		| Disable interrupts.
+	tstl	a2@(4)
+	bnes    6f
+5:
+	movl    a3, sp
+	movl    sp@+, a3
+	movl    sp@+, a2
+	cmpl    #-1, d0
+	beqs    7f
+	rte
+7:
+	movel _proc_RunningProcesses,a0
+	movel a0@,a0
+	movel a0@(MACH_UNIX_ERRNO_OFFSET),d0
+	negl    d0
+	negl    d0
+	rte
+
+2:
+	movel   #22, d0
+	movl    a3, sp
+	movl    sp@+, a3
+	movl    sp@+, a2
+	negl    d0
+	negl    d0
+	rte
+
+6:
+	|*
+	|* Something's up with the process (context switch, maybe, or
+	|* single-step mode?).  Restore the stack to what it was at
+	|* the beginning of the kernel call, then go through a slow
+	|* trap-processing procedure to take special action.
+	|*
+
+	movl	a3, sp			| Pop kcall args off stack.
+	clrl	a2@(4)
+	movw	#0x2000, sr
+	movl	sp@+, a3
+	movl	sp@+, a2
+	CallTrapHandler(MACH_SYSCALL_TRAP)
+
+
 |*
 |* ----------------------------------------------------------------------
 |*

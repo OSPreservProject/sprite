@@ -213,6 +213,10 @@
 #define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
 #define	MACH_MAX_USER_STACK_ADDR	(VMMACH_MAP_SEG_ADDR - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
 
+/*
+ * Offset of unixErrno in process control block
+ */
+#define MACH_UNIX_ERRNO_OFFSET      696
 
 /*
  * Maximum number of processors configuable.

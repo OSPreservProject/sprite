@@ -171,6 +171,9 @@
 #define MACH_KERN_STACK_END_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
 #define	MACH_SSTEP_INST_OFFSET		(MACH_KERN_STACK_END_OFFSET + 4)
 #define MACH_TLB_HIGH_ENTRY_OFFSET	(MACH_SSTEP_INST_OFFSET + 4)
+
+#define MACH_TRAP_UNIX_ERRNO_OFFSET	0
+
 /*
  * Constants for setting up the TLB entries.  This code depends
  * implictly upon MACH_KERN_STACK_PAGES.
@@ -407,5 +410,12 @@
  */
 #define MACH_UNIX_SIG_RETURN		103
 #define MACH_UNIX_LONG_JUMP_RETURN	139
+#define MACH_MAX_UNIX_SYSCALL           171
+
+/*
+ * offset of unix errno in proc control block
+ */
+
+#define MACH_UNIX_ERRNO_OFFSET 696 
 
 #endif /* _MACHCONST */

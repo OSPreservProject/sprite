@@ -16,23 +16,36 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
-#include "sprite.h"
-#include "machConst.h"
-#include "machMon.h"
-#include "machInt.h"
-#include "mach.h"
-#include "sys.h"
-#include "sync.h"
-#include "dbg.h"
-#include "proc.h"
-#include "procMigrate.h"
-#include "sched.h"
-#include "vm.h"
-#include "vmMach.h"
-#include "sig.h"
-#include "sigMach.h"
-#include "swapBuffer.h"
-#include "net.h"
+#include <sprite.h>
+#include <stddef.h>
+#include <assert.h>
+
+#include <machConst.h>
+#include <machMon.h>
+#include <machInt.h>
+#include <mach.h>
+#include <sys.h>
+#include <sync.h>
+#include <dbg.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <sched.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <sig.h>
+#include <sigMach.h>
+#include <swapBuffer.h>
+#include <net.h>
+
+
+/*
+ * Flag to set for new Unix compatiblity code.  Once the new
+ * code is working well enough, this flag should  be eliminated
+ * and the old compatiblitty code in machAsm.s, machUNIXSyscall.c etc.
+ * can be deleted.
+ */
+
+int machNewUnixCompat;
 
 /*
  * Conversion of function to an unsigned value.
@@ -43,7 +56,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
  */
 #ifndef NUM_PROCESSORS
 #define NUM_PROCESSORS 1
-#endif NUM_PROCESSORS
+#endif
 
 int mach_NumProcessors = NUM_PROCESSORS;
 
@@ -413,6 +426,8 @@ void
 Mach_InitFirstProc(procPtr)
     Proc_ControlBlock	*procPtr;
 {
+
+    assert(offsetof(Proc_ControlBlock, unixErrno) == MACH_UNIX_ERRNO_OFFSET);
     procPtr->machStatePtr = &mainMachState;
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     procPtr->machStatePtr->kernStackEnd = 
@@ -931,7 +946,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 			    procPtr->processID, FALSE, badVaddr);
 	    break;
 	case MACH_EXC_SYSCALL:
-	    if (!MachUNIXSyscall()) {
+	    if (machNewUnixCompat || !MachUNIXSyscall()) {
 		printf("MachExceptionHandler: Bad syscall magic for proc %x\n",
 							procPtr->processID);
 		(void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,

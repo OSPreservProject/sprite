@@ -17,25 +17,26 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "assert.h"
+#include <sprite.h>
+#include <assert.h>
+#include <stddef.h>
 
-#include "machConst.h"
-#include "machMon.h"
-#include "machInt.h"
-#include "mach.h"
-#include "sys.h"
-#include "sync.h"
-#include "dbg.h"
-#include "proc.h"
-#include "procMigrate.h"
-#include "prof.h"
-#include "sched.h"
-#include "vm.h"
-#include "vmMach.h"
-#include "sig.h"
-#include "swapBuffer.h"
-#include "user/sigMach.h"
+#include <machConst.h>
+#include <machMon.h>
+#include <machInt.h>
+#include <mach.h>
+#include <sys.h>
+#include <sync.h>
+#include <dbg.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <prof.h>
+#include <sched.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <sig.h>
+#include <swapBuffer.h>
+#include <user/sigMach.h>
 
 int	machLastSP, machPOP;
 
@@ -306,6 +307,8 @@ void
 Mach_InitFirstProc(procPtr)
     Proc_ControlBlock	*procPtr;
 {
+
+    assert(offsetof(Proc_ControlBlock, unixErrno) == MACH_UNIX_ERRNO_OFFSET);
     procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
     bzero((Address) procPtr->machStatePtr, sizeof(*procPtr->machStatePtr));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
@@ -1217,7 +1220,7 @@ MachUserReturn(procPtr)
 	    break;
 	}
     }
-    
+
     if ((procPtr->genFlags & PROC_SINGLE_STEP_FLAG) ||
 	(procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING)) {
 	/*
