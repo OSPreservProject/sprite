@@ -1,5 +1,5 @@
 /*
- * fsBlockCache.h --
+ * fscacheBlocks.h --
  *
  *	Declarations for the file systems block cache.
  *
@@ -17,10 +17,13 @@
 #ifndef _FSBLOCKCACHE
 #define _FSBLOCKCACHE
 
-#include "fscache.h"
-#include "fsio.h"
-#include "fslcl.h"
-#include "fsrmt.h"
+#include <fscache.h>
+#include <fsio.h>
+#include <fslcl.h>
+#include <fsrmt.h>
+
+#include <stdio.h>
+#include <bstring.h>
 
 /*
  * Minimum number of cache blocks required.  The theoretical limit
@@ -31,9 +34,12 @@
 #define FSCACHE_MIN_BLOCKS	32
 
 /*
- * Macros to get from the dirtyLinks of a cache block to the cache block itself.
+ * Macros to get from the links of a cache block to the cache block itself.
  */
-#define DIRTY_LINKS_TO_BLOCK(ptr) \
+
+#define DIRTY_LINKS_TO_BLOCK(ptr) ((Fscache_Block *) ((ptr)))
+
+#define USE_LINKS_TO_BLOCK(ptr) \
 		((Fscache_Block *) ((int) (ptr) - sizeof(List_Links)))
 
 #define FILE_LINKS_TO_BLOCK(ptr) \
@@ -42,7 +48,9 @@
 /*
  * routines.
  */
-extern	void		FscacheBlocksUnneeded();
-extern  void            Fs_BlockCleaner();
+extern void FscacheBlocksUnneeded _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+		int offset, int numBytes));
+extern Boolean FscacheAllBlocksInCache _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+extern int FscacheBlockOkToScavenge _ARGS_((Fscache_FileInfo *cacheInfoPtr));
 
 #endif _FSBLOCKCACHE

@@ -1,5 +1,5 @@
 /* 
- * fsBlockCache.c --
+ * fscacheBlocks.c --
  *
  *	Routines to manage the <file-id, block #> cache.
  *
@@ -18,21 +18,23 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include	"sprite.h"
-#include	"fs.h"
-#include	"fsutil.h"
-#include	"fscache.h"
-#include	"fsBlockCache.h"
-#include	"fsStat.h"
-#include	"fsNameOps.h"
-#include	"fsdm.h"
-#include	"fsio.h"
-#include	"fsutilTrace.h"
-#include	"hash.h"
-#include	"vm.h"
-#include	"proc.h"
-#include	"sys.h"
-#include	"rpc.h"
+#include	<sprite.h>
+#include	<fs.h>
+#include	<fsutil.h>
+#include	<fscache.h>
+#include	<fscacheBlocks.h>
+#include	<fsStat.h>
+#include	<fsNameOps.h>
+#include	<fsdm.h>
+#include	<fsio.h>
+#include	<fsutilTrace.h>
+#include	<hash.h>
+#include	<vm.h>
+#include 	<vmMach.h>
+#include	<proc.h>
+#include	<sys.h>
+#include	<rpc.h>
+
 
 /*
  * There are numerous points of synchronization in this module.  The CacheInfo
@@ -59,10 +61,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *     3) Waiting for blocks from a file to be written back.  This is done by
  *	  waiting for the dirty list for the file to go empty.
  *
- *     4) Waiting for blocks from the whole cache to be written back.  This
- *	  is done just like (3) except that a global count of the number
- *	  of blocks being written back is kept and the FSCACHE_WRITE_BACK_WAIT
- *	  flag is set in the block instead.
+ *     4) Waiting for blocks from the whole cache to be written back.  We
+ *	  keep track of the number of cache backends starts and wake the
+ *	  waiting process when this number goes to zero.
  *
  *     5) Synchronizing informing the server when there are no longer any
  *	  dirty blocks in the cache for a file.  When the last dirty block
@@ -92,50 +93,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 /*
- * Special trace for indirect block bug
- */
-#undef FSUTIL_TRACE_BLOCK
-#define FSUTIL_TRACE_BLOCK(event, blockPtr) \
-    if (((blockPtr)->flags & FSCACHE_IND_BLOCK) && \
-	(event != BLOCK_FETCH_HIT)) { \
-	Fsutil_TraceBlockRec blockRec;					\
-	blockRec.fileID = (blockPtr)->cacheInfoPtr->hdrPtr->fileID;	\
-	blockRec.blockNum = (blockPtr)->blockNum;			\
-	blockRec.flags	= (blockPtr)->flags;				\
-	Trace_Insert(fsutil_TraceHdrPtr, event, (ClientData)&blockRec);\
-    }
-
-/*
- * FETCH_INIT	Block newly initialized by Fscache_FetchBlock
- * FETCH_HIT	Block found by Fscache_FetchBlock or GetUnlockedBlock
- * DELETE	Block being removed, usually from FetchBlock
- * FETCH_WAIT	Fscache_FetchBlock had to wait for the block
- * INVALIDATE	CacheFileInvalidate removed the block
- * WRITE_INVALIDATE CacheFileWriteBack removed the block
- * WRITE	Block cleaner wrote the block
- * ITER_WAIT	GetUnlockedBlock had to wait for the block
- * ITER_WAIT_HIT	GetUnlockedBlock got the block after waiting for it.
- * DIRTY	Block becomming dirty for the first time
- * DELETE_UNLOCK	UnlockBlock discarding the block via CacheFileInvalidate
- * DELETE_TO_FRONT	UnlockBlock moving block to front of LRU list
- * DELETE_TO_REAR	UnlockBlock moving block to rear of LRU list
- */
-#define BLOCK_FETCH_INIT	1
-#define BLOCK_FETCH_HIT		2
-#define BLOCK_DELETE		3
-#define BLOCK_FETCH_WAIT	4
-#define BLOCK_INVALIDATE	5
-#define BLOCK_WRITE_INVALIDATE	6
-#define BLOCK_WRITE		7
-#define BLOCK_ITER_WAIT		8
-#define BLOCK_ITER_WAIT_HIT	9
-#define BLOCK_DIRTY		10
-#define BLOCK_DELETE_UNLOCK	11
-#define BLOCK_TO_FRONT		12
-#define BLOCK_TO_REAR		13
-#define BLOCK_TO_DIRTY_LIST	14
-
-/*
  * Monitor lock.
  */
 static Sync_Lock	cacheLock = Sync_LockInitStatic("Fs:blockCacheLock");
@@ -155,7 +112,14 @@ Sync_Condition	closeCondition;		/* Condition to wait on when
 						 * are waiting for the block
 						 * cleaner to finish to write
 						 * out blocks for this file. */
-
+static unsigned int filewriteBackTime;		/* Write back all blocks in
+						 * the cache file 
+						 * descriptors that were
+						 * dirtied before this 
+						 * time. */
+static int	numBackendsActive;		/* Number of backend write back
+					         * processes currently active.
+				                 */
 /*
  * Pointer to LRU list that is used for block allocation.
  */
@@ -180,10 +144,12 @@ static	List_Links	unmappedListHdr;
 #define	unmappedList	(&unmappedListHdr)
 
 /*
- * Pointer to list of files that have dirty blocks being written to disk.
+ * List of Fscache_Backend's that could have file in the cache.
+ * This list is kept so CacheWriteBack has a list of all the
+ * backends that could have files in the cache. 
  */
-static	List_Links	dirtyListHdr;
-static	List_Links	*dirtyList = &dirtyListHdr;
+static	List_Links	backendListHdr;
+#define	backendList 	(&backendListHdr)
 
 /*
  * Writes and reads can block on a full cache.  This list records the
@@ -220,14 +186,12 @@ static	Address	blockCacheStart;	/* The address of the beginning of the
 static	Address	blockCacheEnd;		/* The maximum virtual address for the 
 					 * cache.*/
 static	int	pageSize;		/* The size of a physical page. */
-static	int	numWriteBackBlocks = 0;	/* The number of blocks that are being 
-					 * forced back to disk by 
-					 * Fscache_WriteBack. */
 static	int	blocksPerPage;		/* Number of blocks in a page. */
 
-static	int	numBlockCleaners;	/* Number of block cleaner processes
-					 * currently in action. */
-int	fscache_MaxBlockCleaners = FSCACHE_MAX_CLEANER_PROCS;
+static  int	numAvailBlocks;		/* Number of cache block available for 
+					 * use without waiting. */
+static  int	minNumAvailBlocks;	/* Minimum number of cache blocks to
+					 * keep available. */
 
 /*
  * Macros for large page sizes.
@@ -243,114 +207,35 @@ int	fscache_MaxBlockCleaners = FSCACHE_MAX_CLEANER_PROCS;
 #define	PAGE_IS_8K	(pageSize == 8192)
 
 /*
- * Debugging stuff.
+ * External symbols.
  */
-#ifndef CLEAN
-/*
- * This macro has to be called with a double set of parenthesis.
- * This lets you pass a variable number of arguments through to printf:
- *	DEBUG_PRINT( ("foo %d\n", 17) );
- */
-#define DEBUG_PRINT( format ) \
-    if (cacheDebug) {\
-	printf format ; \
-    }
-#else
-#define	DEBUG_PRINT(format)
-#endif not CLEAN
 
-static	Boolean	traceDirtyBlocks = FALSE;
-static	Boolean	cacheDebug = FALSE;
+int	fscache_MaxBlockCleaners = FSCACHE_MAX_CLEANER_PROCS;
 
 /*
  * Internal functions.
  */
-static void		PutOnFreeList();
-static void		PutFileOnDirtyList();
-static void		PutBlockOnDirtyList();
-static Boolean		CreateBlock();
-static Boolean		DestroyBlock();
-static Fscache_Block	*FetchBlock();
-static void		CacheWriteBack();
-static void		StartBlockCleaner();
-static void		ProcessCleanBlock();
-static void		CacheFileInvalidate();
-static void		GetDirtyFile();
-static void		GetDirtyBlock();
-static void		GetDirtyBlockInt();
-static void		ReallocBlock();
-static void		FinishRealloc();
-static Hash_Entry	*GetUnlockedBlock();
-static void		DeleteBlock();
+static void CacheFileInvalidate _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+			int firstBlock, int lastBlock));
+static void DeleteBlockFromDirtyList _ARGS_((Fscache_Block *blockPtr));
+static void StartFileSync _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+static void CacheWriteBack _ARGS_((unsigned int writeBackTime, 
+			int *blocksSkippedPtr, Boolean writeTmpFiles));
+static Boolean CreateBlock _ARGS_((Boolean retBlock,
+			Fscache_Block **blockPtrPtr));
+static Boolean DestroyBlock _ARGS_((Boolean retOnePage, int *pageNumPtr));
+static Fscache_Block *FetchBlock _ARGS_((Boolean canWait, Boolean cantBlock));
+static void StartBackendWriteback _ARGS_((Fscache_Backend *backendPtr));
+static void PutOnFreeList _ARGS_((Fscache_Block *blockPtr));
+static void PutFileOnDirtyList _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+			int oldestDirtyBlockTime));
+static void PutBlockOnDirtyList _ARGS_((Fscache_Block *blockPtr, 
+			Boolean onFront));
+static Hash_Entry *GetUnlockedBlock _ARGS_((BlockHashKey *blockHashKeyPtr, 
+			int blockNum));
+static void DeleteBlock _ARGS_((Fscache_Block *blockPtr));
 
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Fscache_InfoInit --
- *
- * 	Initialize the cache information for a file.  Called when setting
- *	up a handle for a file that uses the block cache.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Set up the fields of the Fscache_FileInfo struct.
- *
- * ----------------------------------------------------------------------------
- */
-void
-Fscache_InfoInit(cacheInfoPtr, hdrPtr, version, cacheable, attrPtr, ioProcsPtr)
-    register Fscache_FileInfo *cacheInfoPtr;	/* Information to initialize. */
-    Fs_HandleHeader	     *hdrPtr;		/* Back pointer to handle */
-    int			     version;		/* Used to check consistency */
-    Boolean		     cacheable;		/* TRUE if server says we can
-						 * cache */
-    Fscache_Attributes	     *attrPtr;		/* File attributes */
-    Fscache_IOProcs	     *ioProcsPtr;	/* IO routines. */
-{
-    List_InitElement(&cacheInfoPtr->links);
-    List_Init(&cacheInfoPtr->dirtyList);
-    List_Init(&cacheInfoPtr->blockList);
-    List_Init(&cacheInfoPtr->indList);
-    cacheInfoPtr->flags = (cacheable ? 0 : FSCACHE_FILE_NOT_CACHEABLE);
-    cacheInfoPtr->version = version;
-    cacheInfoPtr->hdrPtr = hdrPtr;
-    cacheInfoPtr->blocksWritten = 0;
-    cacheInfoPtr->noDirtyBlocks.waiting = 0;
-    cacheInfoPtr->blocksInCache = 0;
-    cacheInfoPtr->numDirtyBlocks = 0;
-    cacheInfoPtr->lastTimeTried = 0;
-    cacheInfoPtr->attr = *attrPtr;
-    cacheInfoPtr->ioProcsPtr = ioProcsPtr;
-    Sync_LockInitDynamic(&cacheInfoPtr->lock, "Fs:perFileCacheLock");
-}
 
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Fscache_InfoSyncLockCleanup --
- *
- * 	Clean up Sync_Lock tracing for the cache lock.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Set up the fields of the Fscache_FileInfo struct.
- *
- * ----------------------------------------------------------------------------
- */
-void
-Fscache_InfoSyncLockCleanup(cacheInfoPtr)
-    Fscache_FileInfo *cacheInfoPtr;
-{
-    Sync_LockClear(&cacheInfoPtr->lock);
-}
-
-
 /*
  * ----------------------------------------------------------------------------
  *
@@ -379,6 +264,15 @@ Fscache_Init(blockHashSize)
     Vm_FsCacheSize(&blockCacheStart, &blockCacheEnd);
     pageSize = Vm_GetPageSize();
     blocksPerPage = pageSize / FS_BLOCK_SIZE;
+    /*
+     * Currently the cache code only handles the case for 
+     * (pageSize != FS_BLOCK_SIZE) when the block size is 4K and 
+     * the page size 8K.
+     */
+    if (!((pageSize == FS_BLOCK_SIZE) ||
+	  ((FS_BLOCK_SIZE == 4096) && PAGE_IS_8K))) {
+	panic("Bad pagesize (%d) for file cache code\n", pageSize);
+    }
     fs_Stats.blockCache.maxNumBlocks = 
 			(blockCacheEnd - blockCacheStart + 1) / FS_BLOCK_SIZE;
 
@@ -403,19 +297,29 @@ Fscache_Init(blockHashSize)
     List_Init(lruList);
     List_Init(totFreeList);
     List_Init(partFreeList);
-    List_Init(dirtyList);
+    List_Init(backendList);
     List_Init(unmappedList);
     List_Init(fscacheFullWaitList);
 
-    for (i = 0,blockAddr = blockCacheStart,blockPtr = (Fscache_Block *)listStart;
+    for (i = 0, blockAddr = blockCacheStart, 
+		blockPtr = (Fscache_Block *)listStart;
 	 i < fs_Stats.blockCache.maxNumBlocks; 
 	 i++, blockPtr++, blockAddr += FS_BLOCK_SIZE) {
 	blockPtr->flags = FSCACHE_NOT_MAPPED;
 	blockPtr->blockAddr = blockAddr;
 	blockPtr->refCount = 0;
-	List_Insert((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
+	List_Insert(&blockPtr->useLinks, LIST_ATREAR(unmappedList));
     }
-
+#ifdef sun4
+    {
+	/*
+	 * Hack that allows VM to be backward compat with old block cache
+	 * code.  This should have been removed by the time you see it.
+	 */
+	extern Boolean vmMachCanStealFileCachePmegs;
+	vmMachCanStealFileCachePmegs = TRUE;
+    }
+#endif
     /*
      * Give enough blocks memory so that the minimum cache size requirement
      * is met.
@@ -424,11 +328,12 @@ Fscache_Init(blockHashSize)
     while (fs_Stats.blockCache.numCacheBlocks < 
 					fs_Stats.blockCache.minCacheBlocks) {
 	if (!CreateBlock(FALSE, (Fscache_Block **) NIL)) {
-	    printf("Fscache_Init: Couldn't create block\n");
+	    printf("Fscacahe_Init: Couldn't create block\n");
 	    fs_Stats.blockCache.minCacheBlocks = 
 					fs_Stats.blockCache.numCacheBlocks;
 	}
     }
+    minNumAvailBlocks = fs_Stats.blockCache.minCacheBlocks/2;
     printf("FS Cache has %d %d-Kbyte blocks (%d max)\n",
 	    fs_Stats.blockCache.minCacheBlocks, FS_BLOCK_SIZE / 1024,
 	    fs_Stats.blockCache.maxNumBlocks);
@@ -438,552 +343,166 @@ Fscache_Init(blockHashSize)
 
 /*
  * ----------------------------------------------------------------------------
- * 
- *	List Functions
  *
- * Functions to put objects onto the free and dirty lists.
+ * Fscache_FileInfoInit --
  *
- * ----------------------------------------------------------------------------
- */
-
-/*
- * ----------------------------------------------------------------------------
- *
- * PutOnFreeList --
- *
- * 	Put the given block onto one of the two free lists.
+ * 	Initialize the cache information for a file.  Called when setting
+ *	up a handle for a file that uses the block cache.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Block either added to the partially free list or the totally free list.
- *	The list of processes waiting on the full cache is notified if
- *	is non-empty.
- *
+ *	Set up the fields of the Fscache_FileInfo struct. First file may
+ *	cause the backend to be initialized.
+ *	
  * ----------------------------------------------------------------------------
  */
-INTERNAL static void
-PutOnFreeList(blockPtr)
-    register	Fscache_Block	*blockPtr;
+void
+Fscache_FileInfoInit(cacheInfoPtr, hdrPtr, version, cacheable, attrPtr, 
+		backendPtr)
+    register Fscache_FileInfo *cacheInfoPtr;	/* Information to initialize. */
+    Fs_HandleHeader	     *hdrPtr;		/* Back pointer to handle */
+    int			     version;		/* Used to check consistency */
+    Boolean		     cacheable;		/* TRUE if server says we can
+						 * cache */
+    Fscache_Attributes	     *attrPtr;		/* File attributes */
+    Fscache_Backend	     *backendPtr;	/* Cache backend for
+						 * this file. */
 {
-    register	Fscache_Block	*otherBlockPtr;
-
-    blockPtr->flags = FSCACHE_BLOCK_FREE;
-    fs_Stats.blockCache.numFreeBlocks++;
-    if (PAGE_IS_8K) {
-	/*
-	 * If all blocks in the page are free then put this block onto the
-	 * totally free list.  Otherwise it goes onto the partially free list.
-	 */
-	otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
-	if (otherBlockPtr->flags & FSCACHE_BLOCK_FREE) {
-	    List_Insert((List_Links *) blockPtr, LIST_ATFRONT(totFreeList));
-	    List_Move((List_Links *) otherBlockPtr, LIST_ATFRONT(totFreeList));
-	} else {
-	    List_Insert((List_Links *) blockPtr, LIST_ATFRONT(partFreeList));
-	}
-    } else {
-	List_Insert((List_Links *) blockPtr, LIST_ATFRONT(totFreeList));
-    }
-    if (! List_IsEmpty(fscacheFullWaitList)) {
-	Fsutil_WaitListNotify(fscacheFullWaitList);
-    }
-}	
-
+    List_InitElement(&cacheInfoPtr->links);
+    List_Init(&cacheInfoPtr->dirtyList);
+    List_Init(&cacheInfoPtr->blockList);
+    List_Init(&cacheInfoPtr->indList);
+    cacheInfoPtr->flags = (cacheable ? 0 : FSCACHE_FILE_NOT_CACHEABLE);
+    cacheInfoPtr->version = version;
+    cacheInfoPtr->hdrPtr = hdrPtr;
+    cacheInfoPtr->blocksWritten = 0;
+    cacheInfoPtr->noDirtyBlocks.waiting = 0;
+    cacheInfoPtr->blocksInCache = 0;
+    cacheInfoPtr->numDirtyBlocks = 0;
+    cacheInfoPtr->lastTimeTried = 0;
+    cacheInfoPtr->oldestDirtyBlockTime = Fsutil_TimeInSeconds();
+    cacheInfoPtr->attr = *attrPtr;
+    cacheInfoPtr->backendPtr = backendPtr;
+    Sync_LockInitDynamic(&cacheInfoPtr->lock, "Fs:perFileCacheLock");
+}
 
 /*
  * ----------------------------------------------------------------------------
  *
- * PutFileOnDirtyList --
+ * Fscache_InfoSyncLockCleanup --
  *
- * 	Put the given file onto the global dirty list.  This is suppressed
- *	if the file is being deleted.  In this case a concurrent delete
- *	and write-back can end up with a deleted file back on the
- *	dirty list if we are not careful.
+ * 	Clean up Sync_Lock tracing for the cache lock.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Set up the fields of the Fscache_FileInfo struct.
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL static void
-PutFileOnDirtyList(cacheInfoPtr)
-    register	Fscache_FileInfo	*cacheInfoPtr;	/* Cache info for a file */
+/*ARGSUSED*/
+void
+Fscache_InfoSyncLockCleanup(cacheInfoPtr)
+    Fscache_FileInfo *cacheInfoPtr;
 {
-    if ((cacheInfoPtr->flags & FSCACHE_FILE_GONE) ||
-        (cacheInfoPtr->flags & FSCACHE_FILE_BEING_WRITTEN)) {
-	/*
-	 * Don't put a file on the dirty list if it has been deleted or
-	 * it's already being written.
-	 */
-	return;
-    }
-    if (!(cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST)) {
-	List_Insert((List_Links *)cacheInfoPtr, LIST_ATREAR(dirtyList));
-	cacheInfoPtr->flags |= FSCACHE_FILE_ON_DIRTY_LIST;
-    }
+    Sync_LockClear(&cacheInfoPtr->lock);
 }
 
-
-/*
- * ----------------------------------------------------------------------------
- *
- * PutBlockOnDirtyList --
- *
- * 	Put the given block onto the dirty list for the file, and make
- *	sure that the file is on the list of dirty files.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The block goes onto the dirty list of the file and the
- *	block cleaner is kicked.
- *
- * ----------------------------------------------------------------------------
- */
-INTERNAL static void
-PutBlockOnDirtyList(blockPtr, shutdown)
-    register	Fscache_Block	*blockPtr;	/* Block to put on list. */
-    Boolean			shutdown;	/* TRUE => are shutting
-						   down the system so the
-						   calling process is going
-						   to synchronously sync
-						   the cache. */
-{
-    register Fscache_FileInfo *cacheInfoPtr = blockPtr->cacheInfoPtr;
-
-    blockPtr->flags |= FSCACHE_BLOCK_ON_DIRTY_LIST;
-    List_Insert(&blockPtr->dirtyLinks, 
-		LIST_ATREAR(&cacheInfoPtr->dirtyList));
-    PutFileOnDirtyList(cacheInfoPtr);
-    if (!shutdown) {
-	StartBlockCleaner(cacheInfoPtr);
-    }
-}
 
 
 /*
- * ----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
- *	Functions to create, destroy and allocate cache blocks.  These 
- *	functions are used to provide the variable sized cache and the LRU
- *	algorithm for managing cache blocks.
+ * Fscache_RegisterBackend --
  *
- * ----------------------------------------------------------------------------
- */
-
-/*
- * ----------------------------------------------------------------------------
- *
- * CreateBlock --
- *
- * 	Add a new block to the list of free blocks.
+ *	Allocate and initialize the Fscache_Backend data structure for a 
+ *	cache backend.
  *
  * Results:
- *	None.
+ *	The malloc'ed cache backend.
  *
  * Side effects:
- *	Block removed from the unmapped list and put onto the free list.
+ *	The backend is added to the backendList.
  *
- * ----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
-INTERNAL static Boolean
-CreateBlock(retBlock, blockPtrPtr)
-    Boolean		retBlock;	/* TRUE => return a pointer to one of 
-					 * the newly created blocks in 
-					 * *blockPtrPtr. */
-    Fscache_Block	**blockPtrPtr;	/* Where to return pointer to block.
-					 * NIL if caller isn't interested. */
+
+Fscache_Backend *
+Fscache_RegisterBackend(ioProcsPtr, clientData, flags)
+    Fscache_BackendRoutines   *ioProcsPtr;
+    ClientData	clientData;
+    int	     flags;	/* Backend flags. */
 {
-    register	Fscache_Block	*blockPtr;
-    int				newCachePages;
+    Fscache_Backend	*backendPtr;
 
-    if (List_IsEmpty(unmappedList)) {
-	printf( "CreateBlock: No unmapped blocks\n");
-	return(FALSE);
-    }
-    blockPtr = (Fscache_Block *) List_First(unmappedList);
-    /*
-     * Put memory behind the first available unmapped cache block.
-     */
-    newCachePages = Vm_MapBlock(blockPtr->blockAddr);
-    if (newCachePages == 0) {
-	return(FALSE);
-    }
-    fs_Stats.blockCache.numCacheBlocks += newCachePages * blocksPerPage;
-    /*
-     * If we are told to return a block then take it off of the list of
-     * unmapped blocks and let the caller put it onto the appropriate list.
-     * Otherwise put it onto the free list.
-     */
-    if (retBlock) {
-	List_Remove((List_Links *) blockPtr);
-	*blockPtrPtr = blockPtr;
-    } else {
-	fs_Stats.blockCache.numFreeBlocks++;
-	blockPtr->flags = FSCACHE_BLOCK_FREE;
-	List_Move((List_Links *) blockPtr, LIST_ATREAR(totFreeList));
-    }
-    if (PAGE_IS_8K) {
-	/*
-	 * Put the other block in the page onto the appropriate free list.
-	 */
-	blockPtr = GET_OTHER_BLOCK(blockPtr);
-	blockPtr->flags = FSCACHE_BLOCK_FREE;
-	fs_Stats.blockCache.numFreeBlocks++;
-	if (retBlock) {
-	    List_Move((List_Links *) blockPtr, LIST_ATREAR(partFreeList));
-	} else {
-	    List_Move((List_Links *) blockPtr, LIST_ATREAR(totFreeList));
-	}
-    }
-    if (! List_IsEmpty(fscacheFullWaitList)) {
-	Fsutil_WaitListNotify(fscacheFullWaitList);
-    }
-
-    return(TRUE);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * DestroyBlock --
- *
- * 	Destroy one physical page worth of blocks.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Cache blocks have memory removed from behind them and are moved to
- *	the unmapped list. 
- *
- * ----------------------------------------------------------------------------
- */
-INTERNAL static Boolean
-DestroyBlock(retOnePage, pageNumPtr)
-    Boolean	retOnePage;
-    int		*pageNumPtr;
-{
-    register	Fscache_Block	*blockPtr;
-    register	Fscache_Block	*otherBlockPtr;
-
-    /*
-     * First try the list of totally free pages.
-     */
-    if (!List_IsEmpty(totFreeList)) {
-	DEBUG_PRINT( ("DestroyBlock: Using tot free block to lower size\n") );
-	blockPtr = (Fscache_Block *) List_First(totFreeList);
-	fs_Stats.blockCache.numCacheBlocks -= 
-		    Vm_UnmapBlock(blockPtr->blockAddr, retOnePage,
-				  (unsigned int *)pageNumPtr) * blocksPerPage;
-	blockPtr->flags = FSCACHE_NOT_MAPPED;
-	List_Move((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
-	fs_Stats.blockCache.numFreeBlocks--;
-	if (PAGE_IS_8K) {
-	    /*
-	     * Unmap the other block.  The block address can point to either
-	     * of the two blocks.
-	     */
-	    blockPtr = GET_OTHER_BLOCK(blockPtr);
-	    blockPtr->flags = FSCACHE_NOT_MAPPED;
-	    List_Move((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
-	    fs_Stats.blockCache.numFreeBlocks--;
-	}
-	return(TRUE);
-    }
-
-    /*
-     * Now take blocks from the LRU list until we get one that we can use.
-     */
-    while (TRUE) {
-	blockPtr = FetchBlock(FALSE);
-	if (blockPtr == (Fscache_Block *) NIL) {
-	    /*
-	     * There are no clean blocks left so give up.
-	     */
-	    DEBUG_PRINT( ("DestroyBlock: No clean blocks left (1)\n") );
-	    return(FALSE);
-	}
-	if (PAGE_IS_8K) {
-	    /*
-	     * We have to deal with the other block.  If it is in use, then
-	     * we can't take this page.  Otherwise delete the block from
-	     * the cache and put it onto the unmapped list.
-	     */
-	    otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
-	    if (otherBlockPtr->refCount > 0 ||
-		(otherBlockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) ||
-		(otherBlockPtr->flags & FSCACHE_BLOCK_DIRTY)) {
-		DEBUG_PRINT( ("DestroyBlock: Other block in use.\n") );
-		PutOnFreeList(blockPtr);
-		continue;
-	    }
-	    /*
-	     * The other block is cached but not in use.  Delete it.
-	     */
-	    if (!(otherBlockPtr->flags & FSCACHE_BLOCK_FREE)) {
-		DeleteBlock(otherBlockPtr);
-	    }
-	    otherBlockPtr->flags = FSCACHE_NOT_MAPPED;
-	    List_Move((List_Links *) otherBlockPtr, LIST_ATREAR(unmappedList));
-	}
-	DEBUG_PRINT( ("DestroyBlock: Using in-use block to lower size\n") );
-	blockPtr->flags = FSCACHE_NOT_MAPPED;
-	List_Insert((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
-	fs_Stats.blockCache.numCacheBlocks -= 
-		    Vm_UnmapBlock(blockPtr->blockAddr, 
-				retOnePage, (unsigned int *)pageNumPtr)
-		    * blocksPerPage;
-	return(TRUE);
-    }
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * FetchBlock --
- *
- *	Return a pointer to the oldest available block on the lru list.
- *	If had to sleep because all of memory is dirty then return NIL.
- *	In this cause our caller has to retry various free lists.
- *
- * Results:
- *	Pointer to oldest available block, NIL if had to wait.  
- *
- * Side effects:
- *	Block deleted.
- *
- * ----------------------------------------------------------------------------
- */
-static INTERNAL Fscache_Block *
-FetchBlock(canWait)
-    Boolean	canWait;	/* TRUE implies can sleep if all of memory is 
-				 * dirty. */
-{
-    register	Fscache_Block	*blockPtr;
-
-    if (List_IsEmpty(lruList)) {
-	printf("FetchBlock: LRU list is empty\n");
-	return((Fscache_Block *) NIL);
-    }
-
-    /* 
-     * Scan list for unlocked, clean block.
-     */
-    LIST_FORALL(lruList, (List_Links *) blockPtr) {
-	if (blockPtr->refCount > 0) {
-	    /*
-	     * Block is locked.
-	     */
-	} else if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
-	    /*
-	     * Block is being cleaned.  Mark it so that it will be freed
-	     * after it has been cleaned.
-	     */
-	    blockPtr->flags |= FSCACHE_MOVE_TO_FRONT;
-	} else if (blockPtr->flags & FSCACHE_BLOCK_DIRTY) {
-	    /*
-	     * Put a pointer to the block in the dirty list.  
-	     * After it is cleaned it will be freed.
-	     */
-	    FSUTIL_TRACE_BLOCK(BLOCK_TO_DIRTY_LIST, blockPtr);
-	    PutBlockOnDirtyList(blockPtr, FALSE);
-	    blockPtr->flags |= FSCACHE_MOVE_TO_FRONT;
-	} else if (blockPtr->flags & FSCACHE_BLOCK_DELETED) {
-	    printf( "FetchBlock: deleted block %d of file %d in LRU list\n",
-		blockPtr->blockNum, blockPtr->fileNum);
-	} else if (blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN) {
-	    printf( "FetchBlock: block %d of file %d caught being written\n",
-		blockPtr->blockNum, blockPtr->fileNum);
-	} else {
-	    /*
-	     * This block is clean and unlocked.  Delete it from the
-	     * hash table and use it.
-	     */
-	    fs_Stats.blockCache.lru++;
-	    List_Remove((List_Links *) blockPtr);
-	    DeleteBlock(blockPtr);
-	    return(blockPtr);
-	}
-    }
-
-    /*
-     * We have looked at every block but we couldn't use any.
-     * If possible wait until the block cleaner cleans a block for us.
-     */
-    DEBUG_PRINT( ("All blocks dirty\n") );
-    if (canWait) {
-	DEBUG_PRINT( ("Waiting for clean block\n") );
-	(void) Sync_Wait(&cleanBlockCondition, FALSE);
-    }
-    return((Fscache_Block *) NIL);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Fscache_SetMinSize --
- *
- * 	Set the minimum size of the block cache.  This will entail mapping
- *	enough blocks so that the number of physical pages in use is greater
- *	than or equal to the minimum number.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	More blocks get memory put behind them.
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY void
-Fscache_SetMinSize(minBlocks)
-    int	minBlocks;	/* The minimum number of blocks in the cache. */
-{
     LOCK_MONITOR;
 
+    backendPtr = (Fscache_Backend *) malloc(sizeof(Fscache_Backend));
+    bzero((char *) backendPtr, sizeof(Fscache_Backend));
 
-    DEBUG_PRINT( ("Setting minimum size to %d with current size of %d\n",
-		       minBlocks, fs_Stats.blockCache.minCacheBlocks) );
+    List_Init((List_Links *)backendPtr);
+    backendPtr->clientData = clientData;
+    backendPtr->flags = flags;
+    List_Init((List_Links *)&(backendPtr->dirtyListHdr));
+    backendPtr->ioProcs = *ioProcsPtr;
 
-    if (minBlocks > fs_Stats.blockCache.maxNumBlocks) {
-	minBlocks = fs_Stats.blockCache.maxNumBlocks;
-	printf( "Fscache_SetMinSize: Only raising min cache size to %d blocks\n", 
-				minBlocks);
-    }
-    fs_Stats.blockCache.minCacheBlocks = minBlocks;
-    if (fs_Stats.blockCache.minCacheBlocks <= 
-				    fs_Stats.blockCache.numCacheBlocks) {
-	UNLOCK_MONITOR;
-	return;
-    }
-
-    /*
-     * Give enough blocks memory so that the minimum cache size requirement
-     * is met.
-     */
-    while (fs_Stats.blockCache.numCacheBlocks < 
-					fs_Stats.blockCache.minCacheBlocks) {
-	if (!CreateBlock(FALSE, (Fscache_Block **) NIL)) {
-	    printf("Fscache_SetMinSize: lowered min cache size to %d blocks\n",
-		       fs_Stats.blockCache.numCacheBlocks);
-	    fs_Stats.blockCache.minCacheBlocks = 
-				    fs_Stats.blockCache.numCacheBlocks;
-	}
-    }
-
+    List_Insert((List_Links *)backendPtr, LIST_ATREAR(backendList));
     UNLOCK_MONITOR;
+    return backendPtr;
 }
-
 
 /*
- * ----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
- * Fscache_SetMaxSize --
+ * Fscache_UnregisterBackend --
  *
- * 	Set the maximum size of the block cache.  This entails freeing
- *	enough main memory pages so that the number of cache pages is
- *	less than the maximum allowed.
+ *	Deallocate a Fscache_Backend data structure allocated with
+ *	Fscache_RegisterBackend.
  *
  * Results:
- *	None.
  *
  * Side effects:
- *	Cache blocks have memory removed from behind them and are moved to
- *	the unmapped list. 
+ *	Backend is removed from the list of active backends and its memory
+ *	is freed.
  *
- * ----------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
-ENTRY void
-Fscache_SetMaxSize(maxBlocks)
-    int	maxBlocks;	/* The minimum number of pages in the cache. */
+
+void
+Fscache_UnregisterBackend(backendPtr)
+    Fscache_Backend	*backendPtr; /* Backend to deallocate. */
 {
-    Boolean			giveUp;
-    int				pageNum;
 
     LOCK_MONITOR;
 
-    if (maxBlocks > fs_Stats.blockCache.maxNumBlocks) {
-	maxBlocks = fs_Stats.blockCache.maxNumBlocks;
-	printf("Fscache_SetMaxSize: Only raising max cache size to %d blocks\n",
-		maxBlocks);
-    }
-
-    fs_Stats.blockCache.maxCacheBlocks = maxBlocks;
-    if (fs_Stats.blockCache.maxCacheBlocks >= 
-				    fs_Stats.blockCache.numCacheBlocks) {
+    if (!List_IsEmpty(&(backendPtr->dirtyListHdr))) {
 	UNLOCK_MONITOR;
+	panic("Fscache_UnregisterBackend: Backend has dirty files.\n");
 	return;
     }
-    
-    /*
-     * Free enough pages to get down to maximum size.
-     */
-    giveUp = FALSE;
-    while (fs_Stats.blockCache.numCacheBlocks > 
-				fs_Stats.blockCache.maxCacheBlocks && !giveUp) {
-	giveUp = !DestroyBlock(FALSE, &pageNum);
-    }
-
+    List_Remove((List_Links *)backendPtr);
 #ifndef CLEAN
-    if (cacheDebug && giveUp) {
-	printf("Fscache_SetMaxSize: Could only lower cache to %d\n", 
-					fs_Stats.blockCache.numCacheBlocks);
-    }
-#endif not CLEAN
-    
-    UNLOCK_MONITOR;
-}
+    /*
+     * NIL out these fields in hope in catching any bad code that
+     * trys to use them.
+     */
+    backendPtr->clientData = (ClientData) NIL;
+    backendPtr->ioProcs.allocate = (ReturnStatus (*)()) NIL;
+    backendPtr->ioProcs.blockRead = (ReturnStatus (*)()) NIL;
+    backendPtr->ioProcs.blockWrite = (ReturnStatus (*)()) NIL;
+    backendPtr->ioProcs.reallocBlock = (void (*)()) NIL;
+    backendPtr->ioProcs.startWriteBack = (ReturnStatus (*)()) NIL;
+#endif /* not CLEAN */
 
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Fscache_GetPageFromFS --
- *
- * 	Compare LRU time of the caller to time of block in LRU list and
- *	if caller has newer pages unmap a block and return a page.
- *
- * Results:
- *	Physical page number if unmap a block.
- *
- * Side effects:
- *	Blocks may be unmapped.
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY void
-Fscache_GetPageFromFS(timeLastAccessed, pageNumPtr)
-    int	timeLastAccessed;
-    int	*pageNumPtr;
-{
-    register	Fscache_Block	*blockPtr;
-
-    LOCK_MONITOR;
-
-    fs_Stats.blockCache.vmRequests++;
-    *pageNumPtr = -1;
-    if (fs_Stats.blockCache.numCacheBlocks > 
-		fs_Stats.blockCache.minCacheBlocks && !List_IsEmpty(lruList)) {
-	fs_Stats.blockCache.triedToGiveToVM++;
-	blockPtr = (Fscache_Block *) List_First(lruList);
-	if (blockPtr->timeReferenced < timeLastAccessed) {
-	    fs_Stats.blockCache.vmGotPage++;
-	    (void) DestroyBlock(TRUE, pageNumPtr);
-	}
-    }
+    free((char *) backendPtr);
 
     UNLOCK_MONITOR;
+    return;
 }
+
 
 
 /*
@@ -1030,6 +549,7 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 				   * for the file. */
     int		 blockNum;	/* Virtual block number in the file. */
     int		 flags;		/* FSCACHE_DONT_BLOCK |
+				 * FSCACHE_CANT_BLOCK |
 				 * FSCACHE_READ_AHEAD_BLOCK |
 				 * FSCACHE_IO_IN_PROGRESS
 				 * plus the type of block */
@@ -1046,7 +566,8 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
     Fscache_Block		*otherBlockPtr;
     Fscache_Block		*newBlockPtr;
     int				refTime;
-    register Boolean		dontBlock = (flags & FSCACHE_DONT_BLOCK);
+    Boolean		cantBlock = (flags & FSCACHE_CANT_BLOCK);
+    Boolean		dontBlock = (flags & FSCACHE_DONT_BLOCK);
 
     LOCK_MONITOR;
 
@@ -1062,25 +583,41 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 	hashEntryPtr = Hash_Find(blockHashTable, (Address) &blockHashKey);
 	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
 	if (blockPtr != (Fscache_Block *) NIL) {
+	    Boolean	blockBusy;
 	    *foundPtr = TRUE;
-	    if (((flags & FSCACHE_IO_IN_PROGRESS) && 
-		 blockPtr->refCount > 0) ||
-		(blockPtr->flags & FSCACHE_IO_IN_PROGRESS)) {
-		if (! dontBlock) {
+	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+		UNLOCK_MONITOR;
+		panic("Fscache_FetchBlock hashing error\n");
+		*foundPtr = FALSE;
+		return;
+	    }
+	    blockBusy = ((blockPtr->refCount > 0) || 
+		    (blockPtr->flags & (FSCACHE_IO_IN_PROGRESS|
+					FSCACHE_BLOCK_BEING_WRITTEN)));
+	    if ( ((flags & FSCACHE_IO_IN_PROGRESS) && blockBusy) ||
+		  (blockPtr->flags & FSCACHE_IO_IN_PROGRESS)) {
+		if (!dontBlock) {
 		    /*
 		     * Wait until it becomes unlocked, or return
 		     * found = TRUE and block = NIL if caller can't block.
 		     */
-		    FSUTIL_TRACE_BLOCK(BLOCK_FETCH_WAIT, blockPtr);
 		    (void)Sync_Wait(&blockPtr->ioDone, FALSE);
 		}
 		blockPtr = (Fscache_Block *)NIL;
 	    } else {
 		blockPtr->refCount++;
+		if (blockPtr->refCount == 1) {
+		    VmMach_LockCachePage(blockPtr->blockAddr);
+		    if (!(blockPtr->flags & FSCACHE_BLOCK_DIRTY)) {
+			numAvailBlocks--;
+			if (numAvailBlocks < 0) {
+			    panic("Fscache_FetchBlock numAvailBlocks < 0\n");
+			}
+		    }
+		}
 		if (flags & FSCACHE_IO_IN_PROGRESS) {
 		    blockPtr->flags |= FSCACHE_IO_IN_PROGRESS;
 		}
-		FSUTIL_TRACE_BLOCK(BLOCK_FETCH_HIT, blockPtr);
 	    }
 	} else {
 	    /*
@@ -1088,52 +625,58 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 	     * take a block off of the lru list, or make a new one.
 	     */
 	    *foundPtr = FALSE;
-	    if (!List_IsEmpty(partFreeList)) {
+	    if ((numAvailBlocks > minNumAvailBlocks) || cantBlock) {
 		/*
-		 * Use partially free blocks first.
+		 * If we have enought blocks available take a free one.
 		 */
-		fs_Stats.blockCache.numFreeBlocks--;
-		fs_Stats.blockCache.partFree++;
-		blockPtr = (Fscache_Block *) List_First(partFreeList);
-		List_Remove((List_Links *) blockPtr);
-	    } else if (!List_IsEmpty(totFreeList)) {
-		/*
-		 * Can't find a partially free block so use a totally free
-		 * block.
-		 */
-		fs_Stats.blockCache.numFreeBlocks--;
-		fs_Stats.blockCache.totFree++;
-		blockPtr = (Fscache_Block *) List_First(totFreeList);
-		List_Remove((List_Links *) blockPtr);
-		if (PAGE_IS_8K) {
-		    otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
-		    List_Move((List_Links *) otherBlockPtr,
-				  LIST_ATREAR(partFreeList));
+		if (!List_IsEmpty(partFreeList)) {
+		    /*
+		     * Use partially free blocks first.
+		     */
+		    fs_Stats.blockCache.numFreeBlocks--;
+		    fs_Stats.blockCache.partFree++;
+		    blockPtr = USE_LINKS_TO_BLOCK(List_First(partFreeList));
+		    List_Remove(&blockPtr->useLinks);
+		} else if (!List_IsEmpty(totFreeList)) {
+		    /*
+		     * Can't find a partially free block so use a totally free
+		     * block.
+		     */
+		    fs_Stats.blockCache.numFreeBlocks--;
+		    fs_Stats.blockCache.totFree++;
+		    blockPtr = USE_LINKS_TO_BLOCK(List_First(totFreeList));
+		    List_Remove(&blockPtr->useLinks);
+		    if (PAGE_IS_8K) {
+			otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
+			List_Move(&otherBlockPtr->useLinks,
+				      LIST_ATREAR(partFreeList));
+		    }
 		}
-	    } else {
+	    }
+	    if (blockPtr == (Fscache_Block *) NIL) {
 		/*
 		 * Can't find any free blocks so have to use one of our blocks
 		 * or create new ones.
 		 */
 		if (fs_Stats.blockCache.numCacheBlocks >= 
-					    fs_Stats.blockCache.maxCacheBlocks) {
+				    fs_Stats.blockCache.maxCacheBlocks) {
 		    /*
 		     * We can't have anymore blocks so reuse one of our own.
 		     */
-		    blockPtr = FetchBlock(!dontBlock);
+		    blockPtr = FetchBlock(!dontBlock, cantBlock);
+		    if ((blockPtr == (Fscache_Block *) NIL) && cantBlock) {
+			goto getBlock;
+		    }
 		} else {
 		    /*
 		     * Grow the cache if VM has an older page than we have.
 		     */
 		    refTime = Vm_GetRefTime();
-		    blockPtr = (Fscache_Block *) List_First(lruList);
-		    DEBUG_PRINT( ("FsCacheBlockFetch: fs=%d vm=%d\n", 
-				       blockPtr->timeReferenced, refTime) );
+		    blockPtr = USE_LINKS_TO_BLOCK(List_First(lruList));
 		    if (blockPtr->timeReferenced > refTime) {
-			DEBUG_PRINT( ("FsCacheBlockFetch:Creating new block\n" ));
+		getBlock:
 			if (!CreateBlock(TRUE, &newBlockPtr)) {
-			    DEBUG_PRINT( ("FsCacheBlockFetch: Couldn't create block\n" ));
-			    blockPtr = FetchBlock(!dontBlock);
+			    blockPtr = FetchBlock(!dontBlock, cantBlock);
 			} else {
 			    fs_Stats.blockCache.unmapped++;
 			    blockPtr = newBlockPtr;
@@ -1143,20 +686,14 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 			 * We have an older block than VM's oldest page so reuse
 			 * the block.
 			 */
-			DEBUG_PRINT( ("FsCacheBlockFetch: Recycling block\n") );
-			blockPtr = FetchBlock(!dontBlock);
+			blockPtr = FetchBlock(!dontBlock, cantBlock);
 		    }
 		}
 	    }
 	    /*
 	     * If blockPtr is NIL we waited for room in the cache or
 	     * for a busy cache block.  Now we'll retry all the various
-	     * ploys to get a free block. There used to be a bug
-	     * where the first hash didn't find the block, FetchBlock
-	     * waited for room in the cache, and the block reappeared
-	     * in the cache but FetchBlock was called to get a new block
-	     * anyway - the hash was not redone so a block could have
-	     * been put into the hash table twice.
+	     * ploys to get a free block.
 	     */
 	}
     } while ((blockPtr == (Fscache_Block *)NIL) && !dontBlock);
@@ -1165,6 +702,7 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 	cacheInfoPtr->blocksInCache++;
 	blockPtr->cacheInfoPtr = cacheInfoPtr;
 	blockPtr->refCount = 1;
+	VmMach_LockCachePage(blockPtr->blockAddr);
 	blockPtr->flags = flags & (FSCACHE_DATA_BLOCK | FSCACHE_IND_BLOCK |
 				   FSCACHE_DESC_BLOCK | FSCACHE_DIR_BLOCK |
 				   FSCACHE_READ_AHEAD_BLOCK);
@@ -1173,9 +711,8 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 	blockPtr->blockNum = blockNum;
 	blockPtr->blockSize = -1;
 	blockPtr->timeDirtied = 0;
-	blockPtr->timeReferenced = fsutil_TimeInSeconds;
+	blockPtr->timeReferenced = Fsutil_TimeInSeconds();
 	*blockPtrPtr = blockPtr;
-	FSUTIL_TRACE_BLOCK(BLOCK_FETCH_INIT, blockPtr);
 	if (Hash_GetValue(hashEntryPtr) != (char *)NIL) {
 	    lostBlockPtr = (Fscache_Block *)Hash_GetValue(hashEntryPtr);
 	    UNLOCK_MONITOR;
@@ -1183,12 +720,16 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 	    LOCK_MONITOR;
 	}
 	Hash_SetValue(hashEntryPtr, blockPtr);
-	List_Insert((List_Links *) blockPtr, LIST_ATREAR(lruList));
+	List_Insert(&(blockPtr->useLinks), LIST_ATREAR(lruList));
 	List_InitElement(&blockPtr->fileLinks);
 	if (flags & FSCACHE_IND_BLOCK) {
 	    List_Insert(&blockPtr->fileLinks, LIST_ATREAR(&cacheInfoPtr->indList));
 	} else {
 	    List_Insert(&blockPtr->fileLinks,LIST_ATREAR(&cacheInfoPtr->blockList));
+	}
+	numAvailBlocks--;
+	if (numAvailBlocks < 0) {
+	    panic("Fscache_FetchBlock numAvailBlocks < 0.\n");
 	}
     }
     *blockPtrPtr = blockPtr;
@@ -1228,54 +769,6 @@ Fscache_IODone(blockPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * Fscache_MoveBlock --
- *
- *	Change the disk location of a block.  This has to synchronize
- *	with delayed writes.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The diskBlock field of the cache block is modified.  The block is
- *	not marked dirty, however.  That will be done by UnlockBlock.
- *
- * ----------------------------------------------------------------------------
- *
- */
-ENTRY void
-Fscache_MoveBlock(blockPtr, diskBlock, blockSize)
-    Fscache_Block *blockPtr;	/* Pointer to block information for block.*/
-    int diskBlock;		/* New location for the block */
-    int blockSize;		/* New size for the block */
-{
-    LOCK_MONITOR;
-
-    if (diskBlock != -1) {
-	if (blockPtr->diskBlock != diskBlock ||
-	    blockPtr->blockSize != blockSize) {
-	    while (blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN) {
-		(void)Sync_Wait(&blockPtr->ioDone, FALSE);
-	    }
-	    blockPtr->diskBlock = diskBlock;
-	    blockPtr->blockSize = blockSize;
-	}
-    } else if (blockPtr->blockSize == -1 && blockSize > 0) {
-	/*
-	 * Patch up the block size so our internal fragmentation
-	 * calculation is correct.  The size of a read-only block
-	 * is not used for anything else.
-	 */
-	blockPtr->blockSize = blockSize;
-    }
-
-    UNLOCK_MONITOR;
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
  * Fscache_UnlockBlock --
  *
  *	Release the lock on the cache block pointed to by blockPtr.
@@ -1301,7 +794,7 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
     int		 blockSize;	/* The number of valid bytes in this block. */
     int		 flags;		/* FSCACHE_DELETE_BLOCK | FSCACHE_CLEAR_READ_AHEAD |
 				 * FSCACHE_BLOCK_UNNEEDED | FSCACHE_DONT_WRITE_THRU
-				 * FSCACHE_WRITE_TO_DISK */
+				 * FSCACHE_WRITE_TO_DISK | FSCACHE_BLOCK_BEING_CLEANED*/
 {
     LOCK_MONITOR;
 
@@ -1320,7 +813,17 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	 * lock count and then invalidate the block.
 	 */
 	blockPtr->refCount--;
-	FSUTIL_TRACE_BLOCK(BLOCK_DELETE_UNLOCK, blockPtr);
+	if (blockPtr->refCount == 0) { 
+	    VmMach_UnlockCachePage(blockPtr->blockAddr);
+	    if (!(blockPtr->flags & 
+			(FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN))) {
+		numAvailBlocks++;
+		if (! List_IsEmpty(fscacheFullWaitList)) {
+		    Fsutil_WaitListNotify(fscacheFullWaitList);
+		}
+		Sync_Broadcast(&cleanBlockCondition);
+	    }
+	}
 	CacheFileInvalidate(blockPtr->cacheInfoPtr, blockPtr->blockNum, 
 			    blockPtr->blockNum);
 	UNLOCK_MONITOR;
@@ -1330,52 +833,28 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
     if (flags & FSCACHE_CLEAR_READ_AHEAD) {
 	blockPtr->flags &= ~FSCACHE_READ_AHEAD_BLOCK;
     }
-
     if (timeDirtied != 0) {
+	if (flags & FSCACHE_BLOCK_BEING_CLEANED) {
+	    blockPtr->cacheInfoPtr->flags |= FSCACHE_FILE_BEING_CLEANED;
+	    blockPtr->flags |= FSCACHE_BLOCK_BEING_CLEANED;
+	}
 	if (!(blockPtr->flags & FSCACHE_BLOCK_DIRTY)) {
 	    /*
 	     * Increment the count of dirty blocks if the block isn't marked
 	     * as dirty.  The block cleaner will decrement the count 
 	     * after it cleans a block.
 	     */
-	    blockPtr->cacheInfoPtr->numDirtyBlocks++;
-	    if (traceDirtyBlocks) {
-		printf("UNL FD=%d Num=%d\n",
-			   blockPtr->cacheInfoPtr->hdrPtr->fileID.minor,
-			   blockPtr->cacheInfoPtr->numDirtyBlocks);
-	    }
 	    blockPtr->flags |= FSCACHE_BLOCK_DIRTY;
 	    blockPtr->timeDirtied = timeDirtied;
-	    FSUTIL_TRACE_BLOCK(BLOCK_DIRTY, blockPtr);
+	    if (!(blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN)) { 
+		blockPtr->cacheInfoPtr->numDirtyBlocks++;
+		PutBlockOnDirtyList(blockPtr, FALSE);
+	    }
 	}
     }
-
     if (diskBlock != -1) {
-	if (blockPtr->diskBlock != diskBlock ||
-	    blockPtr->blockSize != blockSize) {
-	    /*
-	     * The caller is changing where this block lives on disk.  If
-	     * so we have to wait until the block has finished being written
-	     * before we can allow this to happen.
-	     */
-	    while (blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN) {
-		(void)Sync_Wait(&blockPtr->ioDone, FALSE);
-		if (timeDirtied != 0 &&
-		    (blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN) == 0) {
-		    /*
-		     * I assert that the cache block is no longer marked
-		     * dirty and may never be written out to its proper
-		     * location.
-		     */
-		    if ((blockPtr->flags & FSCACHE_BLOCK_DIRTY) == 0) {
-			printf("Fscache_UnlockBlock: file <%d,%d> block %d disk block %d => %d no longer dirty\n",
-			    blockPtr->cacheInfoPtr->hdrPtr->fileID.major,
-			    blockPtr->cacheInfoPtr->hdrPtr->fileID.minor,
-			   blockPtr->blockNum, blockPtr->diskBlock, diskBlock);
-		    }
-		}
-	    }
-	    blockPtr->diskBlock = diskBlock;
+	blockPtr->diskBlock = diskBlock;
+	if (blockPtr->blockSize != blockSize) {
 	    blockPtr->blockSize = blockSize;
 	}
     } else if (blockPtr->blockSize == -1 && blockSize > 0) {
@@ -1393,8 +872,17 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	 * Wake up anybody waiting for the block to become unlocked.
 	 */
 	Sync_Broadcast(&blockPtr->ioDone);
+	VmMach_UnlockCachePage(blockPtr->blockAddr);
+	if (!(blockPtr->flags & 
+		(FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN))) {
+	    numAvailBlocks++;
+	    if (! List_IsEmpty(fscacheFullWaitList)) {
+		Fsutil_WaitListNotify(fscacheFullWaitList);
+	    }
+	    Sync_Broadcast(&cleanBlockCondition);
+	}
 	if (blockPtr->flags & FSCACHE_BLOCK_CLEANER_WAITING) {
-	    StartBlockCleaner(blockPtr->cacheInfoPtr);
+	    StartBackendWriteback(blockPtr->cacheInfoPtr->backendPtr);
 	    blockPtr->flags &= ~FSCACHE_BLOCK_CLEANER_WAITING;
 	}
 	if (flags & FSCACHE_BLOCK_UNNEEDED) {
@@ -1403,11 +891,10 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	     * and set its time referenced to zero so that it will be taken
 	     * at the next convenience.
 	     */
-	    if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
+	    if (blockPtr->flags & FSCACHE_BLOCK_DIRTY) {
 		blockPtr->flags |= FSCACHE_MOVE_TO_FRONT;
 	    } else {
-		FSUTIL_TRACE_BLOCK(BLOCK_TO_FRONT, blockPtr);
-		List_Move((List_Links *) blockPtr, LIST_ATFRONT(lruList));
+		List_Move(&blockPtr->useLinks, LIST_ATFRONT(lruList));
 	    }
 	    fs_Stats.blockCache.blocksPitched++;
 	    blockPtr->timeReferenced = 0;
@@ -1415,19 +902,20 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	    /*
 	     * Move it to the end of the lru list, mark it as being referenced. 
 	     */
-	    blockPtr->timeReferenced = fsutil_TimeInSeconds;
+	    blockPtr->timeReferenced = Fsutil_TimeInSeconds();
 	    blockPtr->flags &= ~FSCACHE_MOVE_TO_FRONT;
-	    List_Move((List_Links *) blockPtr, LIST_ATREAR(lruList));
+	    List_Move( &blockPtr->useLinks, LIST_ATREAR(lruList));
 	}
 	/*
 	 * Force the block out if in write-thru or asap mode.
 	 */
-	if (((blockPtr->flags & (FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN)) &&
+	if (((blockPtr->flags & 
+		(FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN)) &&
 	    ((fsutil_WriteThrough || fsutil_WriteBackASAP) &&
 	     !(flags & FSCACHE_DONT_WRITE_THRU)) &&
 	    (!fsutil_DelayTmpFiles ||
 	     Fsdm_FindFileType(blockPtr->cacheInfoPtr) != FSUTIL_FILE_TYPE_TMP))
-		 || (flags & FSCACHE_WRITE_TO_DISK)) {
+		|| (flags & FSCACHE_WRITE_TO_DISK)) {
 	    /*
 	     * Set the write-thru flag for the block so that the block will
 	     * keep getting written until it is clean.  This is in case
@@ -1440,27 +928,24 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 		 */
 		if (blockPtr->blockSize == FS_BLOCK_SIZE ||
 		    !(blockPtr->flags & FSCACHE_DATA_BLOCK)) {
-		    if (!(blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST)) {
-			PutBlockOnDirtyList(blockPtr, FALSE);
-		    }
+		    StartFileSync(blockPtr->cacheInfoPtr);
 		}
 	    } else {
 		/* 
 		 * Force the block out and then wait for it.
 		 */
-		if (!(blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST)) {
-		    PutBlockOnDirtyList(blockPtr, FALSE);
-		}
+		StartFileSync(blockPtr->cacheInfoPtr);
 		do {
 		    (void) Sync_Wait(&blockPtr->ioDone, FALSE);
 		    if (sys_ShuttingDown) {
 			break;
 		    }
 		} while (blockPtr->flags & 
-			(FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN));
+			    (FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN));
 	    }
 	}
     }
+
     UNLOCK_MONITOR;
 }
 
@@ -1499,7 +984,12 @@ Fscache_BlockTrunc(cacheInfoPtr, blockNum, newBlockSize)
     hashEntryPtr = GetUnlockedBlock(&blockHashKey, blockNum);
     if (hashEntryPtr != (Hash_Entry *) NIL) {
 	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
-	blockPtr->blockSize = newBlockSize;
+
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    panic( "CacheBlockTrunc, hashing error\n");
+	} else {
+	    blockPtr->blockSize = newBlockSize;
+	}
     }
 
     UNLOCK_MONITOR;
@@ -1554,7 +1044,6 @@ Fscache_FileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
     UNLOCK_MONITOR;
 }
 
-static void	DeleteBlockFromDirtyList();
 
 
 /*
@@ -1586,7 +1075,6 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
     BlockHashKey	     blockHashKey;
     int			     i;
 
-    FSUTIL_TRACE_IO(FSUTIL_TRACE_SRV_WRITE_1, cacheInfoPtr->hdrPtr->fileID, firstBlock, lastBlock);
 
     if (cacheInfoPtr->blocksInCache > 0) {
 	SET_BLOCK_HASH_KEY(blockHashKey, cacheInfoPtr, 0);
@@ -1597,6 +1085,10 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 		continue;
 	    }
 	    blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
+	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+		panic( "CacheFileInvalidate, hashing error\n");
+		continue;
+	    }
 
 	    /*
 	     * Remove it from the hash table.
@@ -1604,28 +1096,20 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 	    cacheInfoPtr->blocksInCache--;
 	    List_Remove(&blockPtr->fileLinks);
 	    Hash_Delete(blockHashTable, hashEntryPtr);
-	    FSUTIL_TRACE_BLOCK(BLOCK_INVALIDATE, blockPtr);
-    
+
 	    /*
 	     * Invalidate the block, including removing it from dirty list
 	     * if necessary.
 	     */
-	    if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
-		DeleteBlockFromDirtyList(blockPtr);
-	    }
 	    if (blockPtr->flags & FSCACHE_BLOCK_DIRTY) {
 		cacheInfoPtr->numDirtyBlocks--;
-		if (traceDirtyBlocks) {
-		    printf("Inv FD=%d Num=%d\n", 
-			    cacheInfoPtr->hdrPtr->fileID.minor,
-			    cacheInfoPtr->numDirtyBlocks);
-		}
+		DeleteBlockFromDirtyList(blockPtr);
+		numAvailBlocks++;
 	    }
-	    List_Remove((List_Links *) blockPtr);
+	    List_Remove(&blockPtr->useLinks);
 	    PutOnFreeList(blockPtr);
 	}
     }
-
     if (cacheInfoPtr->blocksInCache == 0) {
 	cacheInfoPtr->flags &=
 			~(FSCACHE_SERVER_DOWN | FSCACHE_NO_DISK_SPACE |
@@ -1661,25 +1145,69 @@ DeleteBlockFromDirtyList(blockPtr)
     cacheInfoPtr = blockPtr->cacheInfoPtr;
     List_Remove(&blockPtr->dirtyLinks);
     if ((cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST) &&
-        List_IsEmpty(&cacheInfoPtr->dirtyList)) {
+        (cacheInfoPtr->numDirtyBlocks == 0) &&
+	!(cacheInfoPtr->flags & FSCACHE_FILE_DESC_DIRTY)) {
 	/*
 	 * No more dirty blocks for this file.  Remove the file from the dirty
 	 * list and wakeup anyone waiting for the file's list to become
 	 * empty.
 	 */
 	List_Remove((List_Links *)cacheInfoPtr);
-	cacheInfoPtr->flags &= ~FSCACHE_FILE_ON_DIRTY_LIST;
+	cacheInfoPtr->flags &= ~(FSCACHE_FILE_ON_DIRTY_LIST|FSCACHE_FILE_FSYNC|FSCACHE_FILE_BEING_CLEANED);
 	Sync_Broadcast(&cacheInfoPtr->noDirtyBlocks);
     }
 
-    if (blockPtr->flags & FSCACHE_WRITE_BACK_WAIT) {
-	numWriteBackBlocks--;
-	blockPtr->flags &= ~FSCACHE_WRITE_BACK_WAIT;
-	if (numWriteBackBlocks == 0) {
-	    Sync_Broadcast(&writeBackComplete);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartFileSync --
+ *
+ *	Start the process of syncing from the cache to the backend.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Backend may be started. File may be moved up the dirty list.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+StartFileSync(cacheInfoPtr)
+    Fscache_FileInfo	*cacheInfoPtr;
+{
+    register List_Links	*linkPtr;
+    List_Links	*dirtyList, *place;
+
+    dirtyList = &cacheInfoPtr->backendPtr->dirtyListHdr;
+
+    /*
+     * If the file has not already been synced, move the file up the
+     * dirty list to the front or right behide the last synced file.
+     */
+    if (!(cacheInfoPtr->flags & FSCACHE_FILE_FSYNC)) {
+	/*
+	 * Move down the list until we reach the file or the first non
+	 * synced file. 
+	 */
+	place = (List_Links *) cacheInfoPtr;
+	LIST_FORALL(dirtyList, linkPtr) {
+	    if ((linkPtr == (List_Links *) cacheInfoPtr) ||
+		!(((Fscache_FileInfo *) linkPtr)->flags & FSCACHE_FILE_FSYNC)) {
+		place = linkPtr;
+		break;
+	    }
+	}
+	cacheInfoPtr->flags |= FSCACHE_FILE_FSYNC;
+	if (place != (List_Links *) cacheInfoPtr) {
+	    List_Move((List_Links *)cacheInfoPtr, LIST_BEFORE(place));
 	}
     }
+    StartBackendWriteback(cacheInfoPtr->backendPtr);
 }
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1706,7 +1234,7 @@ Fscache_FileWriteBack(cacheInfoPtr, firstBlock, lastBlock, flags,
     int		firstBlock;	/* First block to write back. */
     int		lastBlock;	/* Last block to write back. */
     int		flags;		/* FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT |
-				 * FSCACHE_WRITE_BACK_AND_INVALIDATE |
+				 * FSCACHE_WRITE_BACK_AND_INVALIDATE. 
 				 * FSCACHE_WB_MIGRATION. */
     int		*blocksSkippedPtr; /* The number of blocks skipped
 				      because they were locked. */
@@ -1716,10 +1244,27 @@ Fscache_FileWriteBack(cacheInfoPtr, firstBlock, lastBlock, flags,
     BlockHashKey	     blockHashKey;
     int			     i;
     ReturnStatus	     status;
+    Boolean		     fsyncFile;
+    enum  {ENTIRE_FILE, SINGLE_BLOCK, MULTI_BLOCK_RANGE} rangeType;
 
     LOCK_MONITOR;
 
     *blocksSkippedPtr = 0;
+
+    fsyncFile = FALSE;
+    /* 
+     * First classify the type of writeback being requests as either involving
+     * a single file block, the entire file, or a multiple-block range.
+     */
+    if ((firstBlock == lastBlock) && (firstBlock >= 0)) {
+	rangeType = SINGLE_BLOCK;
+    } else if ((firstBlock == 0) && 
+	        ((lastBlock == FSCACHE_LAST_BLOCK) || 
+	        (lastBlock == cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE))) {
+	rangeType = ENTIRE_FILE;
+    } else {
+	rangeType = MULTI_BLOCK_RANGE;
+    }
 
     /*
      * Clear out the host down and no disk space flags so we can retry
@@ -1729,7 +1274,22 @@ Fscache_FileWriteBack(cacheInfoPtr, firstBlock, lastBlock, flags,
 		    ~(FSCACHE_SERVER_DOWN | FSCACHE_NO_DISK_SPACE | 
 		      FSCACHE_DOMAIN_DOWN | FSCACHE_GENERIC_ERROR);
 
-    if (cacheInfoPtr->blocksInCache == 0) {
+    if ((cacheInfoPtr->blocksInCache == 0) ||
+	(flags & FSCACHE_WRITE_BACK_DESC_ONLY)) {
+	/*
+	 * If file is on dirty list and has no blocks then it 
+	 * descriptor is dirty.  Force the descriptor out 
+	 * waiting if the user specified to.
+	 */
+	if ((cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST) &&
+	    (flags & FSCACHE_WRITE_BACK_DESC_ONLY)) {
+	    StartFileSync(cacheInfoPtr);
+	    if (flags & FSCACHE_FILE_WB_WAIT) {
+		while (cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST) {
+			(void) Sync_Wait(&cacheInfoPtr->noDirtyBlocks, FALSE);
+		}
+	    }
+	}
 	UNLOCK_MONITOR;
 	return(SUCCESS);
     }
@@ -1743,6 +1303,7 @@ Fscache_FileWriteBack(cacheInfoPtr, firstBlock, lastBlock, flags,
 	    lastBlock = 0;
 	}
     }
+    blockPtr = (Fscache_Block *) NIL;
     for (i = firstBlock; i <= lastBlock; i++) {
 	/*
 	 * See if block is in the hash table.
@@ -1756,6 +1317,12 @@ again:
 	}
 
 	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
+
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    panic( "Fscache_FileWriteBack, hashing error\n");
+	    UNLOCK_MONITOR;
+	    return(FAILURE);
+	}
 
 	if (flags & (FSCACHE_WRITE_BACK_AND_INVALIDATE | FSCACHE_FILE_WB_WAIT)) {
 	    /*
@@ -1771,14 +1338,6 @@ again:
 		}
 		goto again;
 	    }
-	    if (flags & FSCACHE_WRITE_BACK_AND_INVALIDATE) {
-		cacheInfoPtr->blocksInCache--;
-		List_Remove(&blockPtr->fileLinks);
-		Hash_Delete(blockHashTable, hashEntryPtr);
-		List_Remove((List_Links *) blockPtr);
-		blockPtr->flags |= FSCACHE_BLOCK_DELETED;
-		FSUTIL_TRACE_BLOCK(BLOCK_WRITE_INVALIDATE, blockPtr);
-	    }
 	} else if (blockPtr->refCount > 0) {
 	    /* 
 	     * If the block is locked and we are not invalidating it, 
@@ -1788,65 +1347,61 @@ again:
 	    continue;
 	}
 
-	/*
-	 * Write back the block.  If the block is already being waited on then
-	 * don't have to do anything special.
-	 */
-	if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
-	    /*
-	     * Blocks already on the dirty list, no need to do anything.
-	     */
-	} else if (blockPtr->flags & FSCACHE_BLOCK_DIRTY) {
-	    PutBlockOnDirtyList(blockPtr, FALSE);
-	    if (flags & FSCACHE_FILE_WB_WAIT) {
+	if (blockPtr->flags & (FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN)) {
+	    fsyncFile = TRUE;
+	}
+	if (flags & FSCACHE_WRITE_BACK_AND_INVALIDATE) {
+	    if (blockPtr->flags & 
+			(FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN)) {
 		/*
-		 * Synchronous invalidation... record statistics.
+		 * Mark the block to be release by the block cleaner. We
+		 * delete it from the hash table and remove it from the LRU
+		 * list for the block cleaner. 
 		 */
-		fs_Stats.blockCache.blocksFlushed++;
-		if (flags & FSCACHE_WB_MIGRATION) {
-		    fs_Stats.blockCache.migBlocksFlushed++;
+		if (!(blockPtr->flags & FSCACHE_BLOCK_DELETED)) { 
+		    blockPtr->flags |= FSCACHE_BLOCK_DELETED;
+		    Hash_Delete(blockHashTable, hashEntryPtr);
+		    List_Remove( &blockPtr->useLinks);
 		}
-	    }
-	} else if (flags & FSCACHE_WRITE_BACK_AND_INVALIDATE) {
-	    /*
-	     * This block is clean.  We need to free it if it is to be
-	     * invalidated.
-	     */
-	    PutOnFreeList(blockPtr);
-	}
-    }
-
-    /*
-     * If required write-back indirect blocks as well.
-     */
-    if (flags & FSCACHE_WRITE_BACK_INDIRECT) {
-	register List_Links	*linkPtr;
-	LIST_FORALL(&cacheInfoPtr->indList, linkPtr) {
-	    blockPtr = FILE_LINKS_TO_BLOCK(linkPtr);
-	    if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
+	    } else {
 		/*
-		 * Blocks already on the dirty list, no need to do anything.
+		 * The block is clean and not being written, We remove it
+		 * from cache.
 		 */
-	    } else if (blockPtr->flags & FSCACHE_BLOCK_DIRTY) {
-		PutBlockOnDirtyList(blockPtr, TRUE);
+		cacheInfoPtr->blocksInCache--;
+		List_Remove(&blockPtr->fileLinks);
+		Hash_Delete(blockHashTable, hashEntryPtr);
+		List_Remove(&blockPtr->useLinks);
+		PutOnFreeList(blockPtr);
 	    }
-	}
+	} 
     }
-
-    if (!List_IsEmpty(&cacheInfoPtr->dirtyList)) {
-	StartBlockCleaner(cacheInfoPtr);
+    if ((cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST) && fsyncFile) {
+	StartFileSync(cacheInfoPtr);
     }
 
     /*
      * Wait until all blocks are written back.
      */
     if (flags & FSCACHE_FILE_WB_WAIT) {
-	while (!List_IsEmpty(&cacheInfoPtr->dirtyList) && 
-	       !(cacheInfoPtr->flags & 
-		    (FSCACHE_SERVER_DOWN | FSCACHE_NO_DISK_SPACE |
-		     FSCACHE_DOMAIN_DOWN | FSCACHE_GENERIC_ERROR)) &&
-	       !sys_ShuttingDown) {
-	    (void) Sync_Wait(&cacheInfoPtr->noDirtyBlocks, FALSE);
+	 if ((rangeType == SINGLE_BLOCK) && fsyncFile) {
+	    while ((blockPtr->flags & 
+		(FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN)) && 
+		   !(cacheInfoPtr->flags & 
+			(FSCACHE_SERVER_DOWN | FSCACHE_NO_DISK_SPACE |
+			 FSCACHE_DOMAIN_DOWN | FSCACHE_GENERIC_ERROR)) &&
+		   !sys_ShuttingDown) {
+		(void) Sync_Wait(&blockPtr->ioDone, FALSE);
+	    }
+	 } else { 
+	    while ((cacheInfoPtr->flags & 
+		    (FSCACHE_FILE_ON_DIRTY_LIST|FSCACHE_FILE_BEING_WRITTEN)) && 
+		   !(cacheInfoPtr->flags & 
+			(FSCACHE_SERVER_DOWN | FSCACHE_NO_DISK_SPACE |
+			 FSCACHE_DOMAIN_DOWN | FSCACHE_GENERIC_ERROR)) &&
+		   !sys_ShuttingDown) {
+		(void) Sync_Wait(&cacheInfoPtr->noDirtyBlocks, FALSE);
+	    }
 	}
     }
 
@@ -1990,6 +1545,11 @@ FscacheBlocksUnneeded(cacheInfoPtr, offset, numBytes)
 
 	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
 
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    panic( "CacheBlocksUnneeded, hashing error\n");
+	    continue;
+	}
+
 	if (blockPtr->refCount > 0) {
 	    /*
 	     * The block is locked.  This means someone is doing something with
@@ -1997,7 +1557,8 @@ FscacheBlocksUnneeded(cacheInfoPtr, offset, numBytes)
 	     */
 	    continue;
 	}
-	if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
+	if (blockPtr->flags & 
+			(FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN)) {
 	    /*
 	     * Block is being cleaned.  Set the flag so that it will be 
 	     * moved to the front after it has been cleaned.
@@ -2007,7 +1568,7 @@ FscacheBlocksUnneeded(cacheInfoPtr, offset, numBytes)
 	    /*
 	     * Move the block to the front of the LRU list.
 	     */
-	    List_Move((List_Links *) blockPtr, LIST_ATFRONT(lruList));
+	    List_Move(&blockPtr->useLinks, LIST_ATFRONT(lruList));
 	}
 	fs_Stats.blockCache.blocksPitched++;
 	/*
@@ -2035,8 +1596,7 @@ FscacheBlocksUnneeded(cacheInfoPtr, offset, numBytes)
  * Fscache_WriteBack --
  *
  *	Force all dirty blocks in the cache that were dirtied before
- *	writeBackTime to disk (or the server).  If writeBackTime equals 
- *	-1 then all blocks are written back.
+ *	writeBackTime to disk (or the server).  
  *
  * Results:
  *	None.
@@ -2048,16 +1608,15 @@ FscacheBlocksUnneeded(cacheInfoPtr, offset, numBytes)
  *
  */
 ENTRY void
-Fscache_WriteBack(writeBackTime, blocksSkippedPtr, shutdown)
+Fscache_WriteBack(writeBackTime, blocksSkippedPtr, writeBackAll)
     unsigned int writeBackTime;	   /* Write back all blocks that were 
 				      dirtied before this time. */
     int		*blocksSkippedPtr; /* The number of blocks skipped
 				      because they were locked. */
-    Boolean	shutdown;	   /* TRUE if the system is being shut down. */
+    Boolean	writeBackAll;	   /* Write back all files. */
 {
     LOCK_MONITOR;
-
-    CacheWriteBack(writeBackTime, blocksSkippedPtr, shutdown, shutdown);
+    CacheWriteBack(writeBackTime, blocksSkippedPtr, writeBackAll);
 
     UNLOCK_MONITOR;
 }
@@ -2090,20 +1649,21 @@ Fscache_Empty(numLockedBlocksPtr)
     LOCK_MONITOR;
 
     *numLockedBlocksPtr = 0;
-    CacheWriteBack(-1, &blocksSkipped, FALSE, TRUE);
+    CacheWriteBack(-1, &blocksSkipped, TRUE);
     listPtr = lruList;
     nextPtr = List_First(listPtr);
     while (!List_IsAtEnd(listPtr, nextPtr)) {
-	blockPtr = (Fscache_Block *)nextPtr;
+	blockPtr = USE_LINKS_TO_BLOCK(nextPtr);
 	nextPtr = List_Next(nextPtr);
 	if (blockPtr->refCount > 0 || 
-	    (blockPtr->flags & (FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_ON_DIRTY_LIST))) {
+	    (blockPtr->flags & 
+		(FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN))) {
 	    /* 
 	     * Skip locked or dirty blocks.
 	     */
 	    (*numLockedBlocksPtr)++;
 	} else {
-	    List_Remove((List_Links *) blockPtr);
+	    List_Remove(&blockPtr->useLinks);
 	    DeleteBlock(blockPtr);
 	    PutOnFreeList(blockPtr);
 	}
@@ -2132,84 +1692,73 @@ Fscache_Empty(numLockedBlocksPtr)
  *
  */
 static INTERNAL void
-CacheWriteBack(writeBackTime, blocksSkippedPtr, shutdown, writeTmpFiles)
+CacheWriteBack(writeBackTime, blocksSkippedPtr, writeTmpFiles)
     unsigned int writeBackTime;	   /* Write back all blocks that were 
 				      dirtied before this time. */
     int		*blocksSkippedPtr; /* The number of blocks skipped
 				      because they were locked. */
-    Boolean	shutdown;	   /* TRUE if the system is being shut down. */
     Boolean	writeTmpFiles;	   /* TRUE => write-back tmp files even though
 				    *         they are marked as not being
 				    *         written back. */
 {
     register Fscache_FileInfo	*cacheInfoPtr;
-    register Fscache_Block 	*blockPtr;
-    register List_Links	  	*listPtr;
     int				currentTime;
+    Fscache_Backend		*backendPtr;
 
-    currentTime = fsutil_TimeInSeconds;
+    currentTime = Fsutil_TimeInSeconds();
 
     *blocksSkippedPtr = 0;
-
-    listPtr = lruList;
-    LIST_FORALL(listPtr, (List_Links *) blockPtr) {
-	cacheInfoPtr = blockPtr->cacheInfoPtr;
-	if (fsutil_DelayTmpFiles && !writeTmpFiles &&
-	    Fsdm_FindFileType(cacheInfoPtr) == FSUTIL_FILE_TYPE_TMP) {
-	    continue;
-	}
-	if (cacheInfoPtr->flags & FSCACHE_SERVER_DOWN) {
+    /*
+     * Look thru all the cache backend`s dirty list for files to 
+     * writeback.
+     */
+    filewriteBackTime = writeBackTime;
+    LIST_FORALL(backendList, (List_Links *) backendPtr) {
+	LIST_FORALL(&backendPtr->dirtyListHdr, (List_Links *) cacheInfoPtr) { 
 	    /*
-	     * Don't bother to write-back files for which the server is
-	     * down.  These will be written back during recovery.
+	     * Check to see if we should start a block cleaner for this
+	     * backend.
 	     */
-	    continue;
-	}
-	if (cacheInfoPtr->flags &
-		(FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
-		 FSCACHE_GENERIC_ERROR)) {
-	    /*
-	     * Retry for these types of errors.
-	     */
-	    if (cacheInfoPtr->lastTimeTried < currentTime) {
-		cacheInfoPtr->flags &=
-			    ~(FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
-			      FSCACHE_GENERIC_ERROR);
-		StartBlockCleaner(cacheInfoPtr);
-	    } else {
+	    if (cacheInfoPtr->flags & (FSCACHE_SERVER_DOWN|FSCACHE_FILE_GONE)) {
+		/*
+		 * Don't bother to write-back files for which the server is
+		 * down.  These will be written back during recovery.
+		 */
 		continue;
 	    }
-	}
-	if (blockPtr->refCount > 0) {
-	    /* 
-	     * Skip locked blocks because they might be in the process of
-	     * being modified.
-	     */
-	    (*blocksSkippedPtr)++;
-	    continue;
-	}
-	if (blockPtr->flags & FSCACHE_WRITE_BACK_WAIT) {
-	    /*
-	     * Someone is already waiting on this block.  This means that
-	     * numWriteBackBlocks has been incremented once already for this
-	     * block so no need to increment it again.
-	     */
-	    continue;
-	}
-	if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
-	    blockPtr->flags |= FSCACHE_WRITE_BACK_WAIT;
-	    numWriteBackBlocks++;
-	} else if ((blockPtr->flags & FSCACHE_BLOCK_DIRTY) &&
-		   (blockPtr->timeDirtied < writeBackTime || shutdown)) {
-	    PutBlockOnDirtyList(blockPtr, shutdown);
-	    blockPtr->flags |= FSCACHE_WRITE_BACK_WAIT;
-	    numWriteBackBlocks++;
+	    if (fsutil_DelayTmpFiles && !writeTmpFiles &&
+		Fsdm_FindFileType(cacheInfoPtr) == FSUTIL_FILE_TYPE_TMP) {
+		continue;
+	    }
+	    if (cacheInfoPtr->flags &
+		    (FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
+		     FSCACHE_GENERIC_ERROR)) {
+		/*
+		 * Retry for these types of errors.
+		 */
+		if (cacheInfoPtr->lastTimeTried < currentTime) {
+		    cacheInfoPtr->flags &=
+			~(FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
+				  FSCACHE_GENERIC_ERROR);
+		    StartBackendWriteback(cacheInfoPtr->backendPtr);
+		    break;
+		} else {
+		    continue;
+		}
+	    }
+	    if ((numAvailBlocks < minNumAvailBlocks + FSCACHE_MIN_BLOCKS) ||
+		(cacheInfoPtr->oldestDirtyBlockTime < writeBackTime) ||
+		(cacheInfoPtr->flags & FSCACHE_FILE_FSYNC)) {
+		StartBackendWriteback(cacheInfoPtr->backendPtr);
+		break;
+	    }
 	}
     }
-    if (!shutdown && numWriteBackBlocks > 0) {
-	while (numWriteBackBlocks > 0 && !sys_ShuttingDown) {
-	    (void) Sync_Wait(&writeBackComplete, FALSE);
-	}
+    /*
+     * Wait for all block cleaners to go idea before returning.
+     */
+    while ((numBackendsActive > 0) && !sys_ShuttingDown) {
+	(void) Sync_Wait(&writeBackComplete, FALSE);
     }
 }
 
@@ -2217,234 +1766,64 @@ CacheWriteBack(writeBackTime, blocksSkippedPtr, shutdown, writeTmpFiles)
 /*
  * ----------------------------------------------------------------------------
  *
- *	Functions to clean dirty blocks.
+ *	Functions to create, destroy and allocate cache blocks.  These 
+ *	functions are used to provide the variable sized cache and the LRU
+ *	algorithm for managing cache blocks.
  *
  * ----------------------------------------------------------------------------
  */
-
-#define WRITE_RETRY_INTERVAL	30
-
+
 /*
  * ----------------------------------------------------------------------------
  *
- * Fscache_CleanBlocks
+ * Fscache_SetMinSize --
  *
- *	Write all blocks on the dirty list to disk.  Called either from
- *	a block cleaner process or synchronously during system shutdown.
- *
- * Results:
- *     	None.
- *
- * Side effects:
- *     	The dirty list is emptied.
- *
- * ----------------------------------------------------------------------------
- */
-/*ARGSUSED*/
-void
-Fscache_CleanBlocks(data, callInfoPtr)
-    ClientData		data;		/* Background flag.  If TRUE it means
-					 * we are called from a block cleaner
-					 * process.  Otherwise we being called
-					 * synchrounously during a shutdown */
-    Proc_CallInfo	*callInfoPtr;	/* Not Used. */
-{
-    Boolean			backGround;
-    register	Fscache_Block	*blockPtr;
-    Fscache_Block		*tBlockPtr;
-    ReturnStatus		status;
-    int				lastDirtyBlock;
-    Fscache_FileInfo		*cacheInfoPtr;
-    Boolean			useSameBlock;
-    int				numDirtyFiles = 0;
-    int				numDirtyBlocks = 0;
-
-    backGround = (Boolean) data;
-    GetDirtyFile(backGround, &cacheInfoPtr, &tBlockPtr, &lastDirtyBlock);
-    blockPtr = tBlockPtr;
-    while (cacheInfoPtr != (Fscache_FileInfo *)NIL) {
-	numDirtyFiles++;
-	while (blockPtr != (Fscache_Block *)NIL) {
-	    if (blockPtr->blockSize < 0) {
-		panic( "Fscache_CleanBlocks, uninitialized block size\n");
-		status = FAILURE;
-		break;
-	    }
-	    /*
-	     * Gather statistics.
-	     */
-	    numDirtyBlocks++;
-	    fs_Stats.blockCache.blocksWrittenThru++;
-	    switch (blockPtr->flags &
-		    (FSCACHE_DATA_BLOCK | FSCACHE_IND_BLOCK |
-		     FSCACHE_DESC_BLOCK | FSCACHE_DIR_BLOCK)) {
-		case FSCACHE_DATA_BLOCK:
-		    fs_Stats.blockCache.dataBlocksWrittenThru++;
-		    break;
-		case FSCACHE_IND_BLOCK:
-		    fs_Stats.blockCache.indBlocksWrittenThru++;
-		    break;
-		case FSCACHE_DESC_BLOCK:
-		    fs_Stats.blockCache.descBlocksWrittenThru++;
-		    break;
-		case FSCACHE_DIR_BLOCK:
-		    fs_Stats.blockCache.dirBlocksWrittenThru++;
-		    break;
-		default:
-		    printf( "Fscache_CleanBlocks: Unknown block type\n");
-	    }
-
-	    /*
-	     * Write the block.
-	     */
-	    FSUTIL_TRACE_BLOCK(BLOCK_WRITE, blockPtr);
-	    status = (cacheInfoPtr->ioProcsPtr->blockWrite)
-		    (cacheInfoPtr->hdrPtr, blockPtr, lastDirtyBlock);
-#ifdef lint
-	    status = Fsio_FileBlockWrite(cacheInfoPtr->hdrPtr,
-			blockPtr, lastDirtyBlock);
-	    status = FsrmtFileBlockWrite(cacheInfoPtr->hdrPtr,
-			blockPtr, lastDirtyBlock);
-#endif /* lint */
-	    ProcessCleanBlock(cacheInfoPtr, blockPtr, status,
-			      &useSameBlock, &lastDirtyBlock);
-	    if (status != SUCCESS) {
-		break;
-	    }
-	    if (!useSameBlock) {
-		GetDirtyBlock(cacheInfoPtr, &tBlockPtr, &lastDirtyBlock);
-		blockPtr = tBlockPtr;
-	    }
-	}
-	GetDirtyFile(backGround, &cacheInfoPtr, &tBlockPtr, &lastDirtyBlock);
-	blockPtr = tBlockPtr;
-    }
-    fs_Stats.writeBack.passes++;
-    fs_Stats.writeBack.files += numDirtyFiles;
-    fs_Stats.writeBack.blocks += numDirtyBlocks;
-    if (numDirtyBlocks > fs_Stats.writeBack.maxBlocks) {
-	fs_Stats.writeBack.maxBlocks = numDirtyBlocks;
-    }
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * StartBlockCleaner --
- *
- * 	Start a block cleaner process to write out a newly added page to
- *	the given file's dirty list.
+ * 	Set the minimum size of the block cache.  This will entail mapping
+ *	enough blocks so that the number of physical pages in use is greater
+ *	than or equal to the minimum number.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Number of block cleaner processes may be incremented.
+ *	More blocks get memory put behind them.
  *
  * ----------------------------------------------------------------------------
  */
-static INTERNAL void
-StartBlockCleaner(cacheInfoPtr)
-    Fscache_FileInfo *cacheInfoPtr;	/* Cache info for the file. */
+ENTRY void
+Fscache_SetMinSize(minBlocks)
+    int	minBlocks;	/* The minimum number of blocks in the cache. */
 {
-    if (!(cacheInfoPtr->flags & FSCACHE_FILE_BEING_WRITTEN) &&
-	numBlockCleaners < fscache_MaxBlockCleaners) {
-	Proc_CallFunc(Fscache_CleanBlocks, (ClientData) TRUE, 0);
-	numBlockCleaners++;
-    }
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- *  GetDirtyFile --
- *
- *     	Take the first dirty file off of the dirty file list and
- *	return a pointer to the cache state for that file.  This
- *	is used by the block cleaner to walk through the dirty list.
- *
- * Results:
- *	A pointer to the cache state for the first file on the dirty list.
- *	If there are no files then a NIL pointer is returned.  Also a
- *	pointer to the first block on the dirty list for the file is returned.
- *
- * Side effects:
- *      An element is removed from the dirty file list.  The fact that
- *	the dirty list links are at the beginning of the cacheInfo struct
- *	is well known and relied on to map from the dirty list to cacheInfoPtr.
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY static void
-GetDirtyFile(backGround, cacheInfoPtrPtr, blockPtrPtr, lastDirtyBlockPtr)
-    Boolean		backGround;
-    Fscache_FileInfo	**cacheInfoPtrPtr;
-    Fscache_Block	**blockPtrPtr;
-    int			*lastDirtyBlockPtr;
-{
-    register Fscache_FileInfo *cacheInfoPtr;
-
     LOCK_MONITOR;
 
-    *cacheInfoPtrPtr = (Fscache_FileInfo *)NIL;
 
-    if (List_IsEmpty(dirtyList)) {
-	if (backGround) {
-	    numBlockCleaners--;
-	}
+
+    if (minBlocks > fs_Stats.blockCache.maxNumBlocks) {
+	minBlocks = fs_Stats.blockCache.maxNumBlocks;
+	printf( "Fscache_SetMinSize: Only raising min cache size to %d blocks\n", 
+				minBlocks);
+    }
+    fs_Stats.blockCache.minCacheBlocks = minBlocks;
+    if (fs_Stats.blockCache.minCacheBlocks <= 
+				    fs_Stats.blockCache.numCacheBlocks) {
 	UNLOCK_MONITOR;
 	return;
     }
 
-    LIST_FORALL(dirtyList, (List_Links *)cacheInfoPtr) {
-	if (cacheInfoPtr->flags & FSCACHE_SERVER_DOWN) {
-	    /*
-	     * The host is down for this file.
-	     */
-	    continue;
-	} else if (cacheInfoPtr->flags & FSCACHE_CLOSE_IN_PROGRESS) {
-	    /*
-	     * Close in progress on the file the block lives in so we aren't
-	     * allowed to write any more blocks.
-	     */
-	    continue;
-	} else if (cacheInfoPtr->flags & FSCACHE_FILE_GONE) {
-	    /*
-	     * The file is being deleted.
-	     */
-	    printf("FsGetDirtyFile skipping deleted file <%d,%d> \"%s\"\n",
-		cacheInfoPtr->hdrPtr->fileID.major,
-		cacheInfoPtr->hdrPtr->fileID.minor,
-		Fsutil_HandleName(cacheInfoPtr->hdrPtr));
-	    continue;
-	} else if (cacheInfoPtr->flags & 
-		       (FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
-		        FSCACHE_GENERIC_ERROR)) {
-	    if (fsutil_TimeInSeconds - cacheInfoPtr->lastTimeTried <
-			WRITE_RETRY_INTERVAL) {
-		continue;
-	    }
-	    cacheInfoPtr->flags &= 
-			    ~(FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
-			      FSCACHE_GENERIC_ERROR);
-	}
-	List_Remove((List_Links *)cacheInfoPtr);
-	cacheInfoPtr->flags |= FSCACHE_FILE_BEING_WRITTEN;
-	cacheInfoPtr->flags &= ~FSCACHE_FILE_ON_DIRTY_LIST;
-	GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr);
-	if (*blockPtrPtr != (Fscache_Block *)NIL) {
-	    *cacheInfoPtrPtr = cacheInfoPtr;
-	
-	    UNLOCK_MONITOR;
-	    return;
+    /*
+     * Give enough blocks memory so that the minimum cache size requirement
+     * is met.
+     */
+    while (fs_Stats.blockCache.numCacheBlocks < 
+					fs_Stats.blockCache.minCacheBlocks) {
+	if (!CreateBlock(FALSE, (Fscache_Block **) NIL)) {
+	    printf("Fscache_SetMinSize: lowered min cache size to %d blocks\n",
+		       fs_Stats.blockCache.numCacheBlocks);
+	    fs_Stats.blockCache.minCacheBlocks = 
+				    fs_Stats.blockCache.numCacheBlocks;
 	}
     }
 
-    FSCACHE_DEBUG_PRINT("GetDirtyFile: All files unusable\n");
-    if (backGround) {
-	numBlockCleaners--;
-    }
     UNLOCK_MONITOR;
 }
 
@@ -2452,29 +1831,52 @@ GetDirtyFile(backGround, cacheInfoPtrPtr, blockPtrPtr, lastDirtyBlockPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- *  GetDirtyBlock --
+ * Fscache_SetMaxSize --
  *
- *     	Take the first block off of the dirty list for a file and
- *	return a pointer to it.  This calls GetDirtyBlockInt to do the work.
+ * 	Set the maximum size of the block cache.  This entails freeing
+ *	enough main memory pages so that the number of cache pages is
+ *	less than the maximum allowed.
  *
  * Results:
- *	A pointer to the first block on the file's dirty list,
- *	or NIL if list is empty.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	Cache blocks have memory removed from behind them and are moved to
+ *	the unmapped list. 
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY static void
-GetDirtyBlock(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
-    Fscache_FileInfo	*cacheInfoPtr;
-    Fscache_Block	**blockPtrPtr;
-    int			*lastDirtyBlockPtr;
+ENTRY void
+Fscache_SetMaxSize(maxBlocks)
+    int	maxBlocks;	/* The minimum number of pages in the cache. */
 {
+    Boolean			giveUp;
+    int				pageNum;
+
     LOCK_MONITOR;
 
-    GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr);
+    if (maxBlocks > fs_Stats.blockCache.maxNumBlocks) {
+	maxBlocks = fs_Stats.blockCache.maxNumBlocks;
+	printf("Fscache_SetMaxSize: Only raising max cache size to %d blocks\n",
+		maxBlocks);
+    }
+
+    fs_Stats.blockCache.maxCacheBlocks = maxBlocks;
+    if (fs_Stats.blockCache.maxCacheBlocks >= 
+				    fs_Stats.blockCache.numCacheBlocks) {
+	UNLOCK_MONITOR;
+	return;
+    }
+    
+    /*
+     * Free enough pages to get down to maximum size.
+     */
+    giveUp = FALSE;
+    while (fs_Stats.blockCache.numCacheBlocks > 
+				fs_Stats.blockCache.maxCacheBlocks && !giveUp) {
+	giveUp = !DestroyBlock(FALSE, &pageNum);
+    }
+
 
     UNLOCK_MONITOR;
 }
@@ -2483,9 +1885,345 @@ GetDirtyBlock(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- *  GetDirtyBlockInt --
+ * Fscache_GetPageFromFS --
  *
- *     	Take the first page off of a file's dirty list and return a pointer
+ * 	Compare LRU time of the caller to time of block in LRU list and
+ *	if caller has newer pages unmap a block and return a page.
+ *
+ * Results:
+ *	Physical page number if unmap a block.
+ *
+ * Side effects:
+ *	Blocks may be unmapped.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+Fscache_GetPageFromFS(timeLastAccessed, pageNumPtr)
+    int	timeLastAccessed;
+    int	*pageNumPtr;
+{
+    register	Fscache_Block	*blockPtr;
+
+    LOCK_MONITOR;
+
+    fs_Stats.blockCache.vmRequests++;
+    *pageNumPtr = -1;
+    if (fs_Stats.blockCache.numCacheBlocks > 
+		fs_Stats.blockCache.minCacheBlocks && !List_IsEmpty(lruList)) {
+	fs_Stats.blockCache.triedToGiveToVM++;
+	blockPtr = (Fscache_Block *) USE_LINKS_TO_BLOCK(List_First(lruList));
+	if (blockPtr->timeReferenced < timeLastAccessed) {
+	    fs_Stats.blockCache.vmGotPage++;
+	    (void) DestroyBlock(TRUE, pageNumPtr);
+	}
+    }
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * CreateBlock --
+ *
+ * 	Add a new block to the list of free blocks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Block removed from the unmapped list and put onto the free list.
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL static Boolean
+CreateBlock(retBlock, blockPtrPtr)
+    Boolean		retBlock;	/* TRUE => return a pointer to one of 
+					 * the newly created blocks in 
+					 * *blockPtrPtr. */
+    Fscache_Block	**blockPtrPtr;	/* Where to return pointer to block.
+					 * NIL if caller isn't interested. */
+{
+    register	Fscache_Block	*blockPtr;
+    int				newCachePages;
+
+    if (List_IsEmpty(unmappedList)) {
+	printf( "CreateBlock: No unmapped blocks\n");
+	return(FALSE);
+    }
+    blockPtr = USE_LINKS_TO_BLOCK(List_First(unmappedList));
+    /*
+     * Put memory behind the first available unmapped cache block.
+     */
+    newCachePages = Vm_MapBlock(blockPtr->blockAddr);
+    if (newCachePages == 0) {
+	return(FALSE);
+    }
+    numAvailBlocks += newCachePages * blocksPerPage;
+    fs_Stats.blockCache.numCacheBlocks += newCachePages * blocksPerPage;
+    /*
+     * If we are told to return a block then take it off of the list of
+     * unmapped blocks and let the caller put it onto the appropriate list.
+     * Otherwise put it onto the free list.
+     */
+    if (retBlock) {
+	List_Remove(&blockPtr->useLinks);
+	*blockPtrPtr = blockPtr;
+    } else {
+	fs_Stats.blockCache.numFreeBlocks++;
+	blockPtr->flags = FSCACHE_BLOCK_FREE;
+	List_Move(&blockPtr->useLinks, LIST_ATREAR(totFreeList));
+    }
+    if (PAGE_IS_8K) {
+	/*
+	 * Put the other block in the page onto the appropriate free list.
+	 */
+	blockPtr = GET_OTHER_BLOCK(blockPtr);
+	blockPtr->flags = FSCACHE_BLOCK_FREE;
+	fs_Stats.blockCache.numFreeBlocks++;
+	if (retBlock) {
+	    List_Move(&blockPtr->useLinks, LIST_ATREAR(partFreeList));
+	} else {
+	    List_Move(&blockPtr->useLinks, LIST_ATREAR(totFreeList));
+	}
+    }
+    if (! List_IsEmpty(fscacheFullWaitList)) {
+	Fsutil_WaitListNotify(fscacheFullWaitList);
+    }
+    Sync_Broadcast(&cleanBlockCondition);
+
+    return(TRUE);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * DestroyBlock --
+ *
+ * 	Destroy one physical page worth of blocks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cache blocks have memory removed from behind them and are moved to
+ *	the unmapped list. 
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL static Boolean
+DestroyBlock(retOnePage, pageNumPtr)
+    Boolean	retOnePage;
+    int		*pageNumPtr;
+{
+    register	Fscache_Block	*blockPtr;
+    register	Fscache_Block	*otherBlockPtr;
+    int		pages;
+
+    if ((numAvailBlocks-blocksPerPage <  minNumAvailBlocks) ||
+        (fs_Stats.blockCache.numCacheBlocks - FSCACHE_MIN_BLOCKS - 
+			blocksPerPage < minNumAvailBlocks) ) {
+	return FALSE;
+    }
+    /*
+     * First try the list of totally free pages.
+     */
+    if (!List_IsEmpty(totFreeList)) {
+	blockPtr = USE_LINKS_TO_BLOCK(List_First(totFreeList));
+	pages = Vm_UnmapBlock(blockPtr->blockAddr, retOnePage,
+				  (unsigned int *)pageNumPtr);
+	fs_Stats.blockCache.numCacheBlocks -= pages * blocksPerPage;
+	blockPtr->flags = FSCACHE_NOT_MAPPED;
+	List_Move(&blockPtr->useLinks, LIST_ATREAR(unmappedList));
+	fs_Stats.blockCache.numFreeBlocks--;
+	if (PAGE_IS_8K) {
+	    /*
+	     * Unmap the other block.  The block address can point to either
+	     * of the two blocks.
+	     */
+	    blockPtr = GET_OTHER_BLOCK(blockPtr);
+	    blockPtr->flags = FSCACHE_NOT_MAPPED;
+	    List_Move(&blockPtr->useLinks, LIST_ATREAR(unmappedList));
+	    fs_Stats.blockCache.numFreeBlocks--;
+	}
+	numAvailBlocks -= pages * blocksPerPage;
+	if (numAvailBlocks < 0) {
+	    panic("DestroyBlock numAvailBlocks < 0.\n");
+	}
+	return(TRUE);
+    }
+
+    /*
+     * Now take blocks from the LRU list until we get one that we can use.
+     */
+    while (TRUE) {
+	blockPtr = FetchBlock(FALSE, FALSE);
+	if (blockPtr == (Fscache_Block *) NIL) {
+	    /*
+	     * There are no clean blocks left so give up.
+	     */
+	    return(FALSE);
+	}
+	if (PAGE_IS_8K) {
+	    /*
+	     * We have to deal with the other block.  If it is in use, then
+	     * we can't take this page.  Otherwise delete the block from
+	     * the cache and put it onto the unmapped list.
+	     */
+	    otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
+	    if (otherBlockPtr->refCount > 0 ||
+		(otherBlockPtr->flags & 
+		     (FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN))) {
+		PutOnFreeList(blockPtr);
+		continue;
+	    }
+	    /*
+	     * The other block is cached but not in use.  Delete it.
+	     */
+	    if (!(otherBlockPtr->flags & FSCACHE_BLOCK_FREE)) {
+		DeleteBlock(otherBlockPtr);
+	    }
+	    otherBlockPtr->flags = FSCACHE_NOT_MAPPED;
+	    List_Move(&otherBlockPtr->useLinks, LIST_ATREAR(unmappedList));
+	}
+	blockPtr->flags = FSCACHE_NOT_MAPPED;
+	List_Insert(&blockPtr->useLinks, LIST_ATREAR(unmappedList));
+	pages = Vm_UnmapBlock(blockPtr->blockAddr, 
+				retOnePage, (unsigned int *)pageNumPtr);
+	fs_Stats.blockCache.numCacheBlocks -= pages * blocksPerPage;
+	numAvailBlocks -= pages * blocksPerPage;
+	if (numAvailBlocks < 0) {
+	    panic("DestroyBlock numAvailBlocks < 0.\n");
+	}
+	return(TRUE);
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FetchBlock --
+ *
+ *	Return a pointer to the oldest available block on the lru list.
+ *	If had to sleep because all of memory is dirty then return NIL.
+ *	In this cause our caller has to retry various free lists.
+ *
+ * Results:
+ *	Pointer to oldest available block, NIL if had to wait.  
+ *
+ * Side effects:
+ *	Block deleted.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static INTERNAL Fscache_Block *
+FetchBlock(canWait, cantBlock)
+    Boolean	canWait;	/* TRUE implies can sleep if all of memory is 
+				 * dirty. */
+    Boolean	cantBlock;	/* TRUE if we can't block. */
+{
+    register	Fscache_Block	*blockPtr;
+    register	List_Links	*listPtr;
+
+    if (List_IsEmpty(lruList)) {
+	printf("FetchBlock: LRU list is empty\n");
+	return((Fscache_Block *) NIL);
+    }
+
+    if ((numAvailBlocks > minNumAvailBlocks) || cantBlock)  {
+	/*
+	 * Scan list for unlocked, clean block.
+	 */
+	LIST_FORALL(lruList, listPtr) {
+	    blockPtr = USE_LINKS_TO_BLOCK(listPtr);
+	    if (blockPtr->refCount > 0) {
+		/*
+		 * Block is locked.
+		 */
+	    } else if (blockPtr->flags & 
+			    (FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN)) {
+		/*
+		 * Block is dirty or being cleaned.  Mark it so that it will be
+		 * freed after it has been cleaned.
+		 */
+		blockPtr->flags |= FSCACHE_MOVE_TO_FRONT;
+		if (!(blockPtr->cacheInfoPtr->flags & 
+					FSCACHE_FILE_BEING_WRITTEN)) {
+		    StartFileSync(blockPtr->cacheInfoPtr);
+		}
+	    } else if (blockPtr->flags & FSCACHE_BLOCK_DELETED) {
+		printf( "FetchBlock: deleted block %d of file %d in LRU list\n",
+		    blockPtr->blockNum, blockPtr->fileNum);
+	    } else  {
+		/*
+		 * This block is clean and unlocked.  Delete it from the
+		 * hash table and use it.
+		 */
+		fs_Stats.blockCache.lru++;
+		List_Remove(&blockPtr->useLinks);
+		DeleteBlock(blockPtr);
+		return(blockPtr);
+	    }
+	}
+    } else if (numAvailBlocks <= minNumAvailBlocks) {
+	 Fscache_Backend	*backendPtr;
+         LIST_FORALL(backendList, (List_Links *) backendPtr) {
+	    if (!List_IsEmpty(&backendPtr->dirtyListHdr)) { 
+		StartBackendWriteback(backendPtr);
+	    }
+         }
+  }
+    /*
+     * We have looked at every block but we couldn't use any.
+     * If possible wait until the block cleaner cleans a block for us.
+     */
+    if (canWait && !cantBlock) {
+	(void) Sync_Wait(&cleanBlockCondition, FALSE);
+    }
+    return((Fscache_Block *) NIL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartBackendWriteback --
+ *
+ *	Start a backend writeback process for the specified backend.
+ *	This routine keeps track the number of backend writebacks 
+ *	active.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+StartBackendWriteback(backendPtr)
+    Fscache_Backend *backendPtr;
+{
+    Boolean	started;
+
+    started = backendPtr->ioProcs.startWriteBack(backendPtr);
+    if (started) {
+	numBackendsActive++;
+    }
+    return;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  Fscache_GetDirtyBlock --
+ *
+ *     	Take the blocks off of a file's dirty list and return a pointer
  *	to it.  The synchronization between closing a file and writing
  *	back its blocks is done here.  If there are no more dirty blocks
  *	and the file is being closed we poke the closing process.  If
@@ -2493,51 +2231,51 @@ GetDirtyBlock(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
  *	we put the file back onto the file dirty list and don't return a block.
  *
  * Results:
- *     A pointer to the first block on the dirty list (NIL if list is empty).
+ *	The block returned. NIL if no blocks are ready.
  *
  * Side effects:
- *     The block's state is changed from ``dirty'' to ``being written''.
- *	If the block's file is being closed this puts the file
- *	back onto the file dirty list and doens't return a block.
+ *	None.
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL static void
-GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
-    register	Fscache_FileInfo	*cacheInfoPtr;
-    Fscache_Block		**blockPtrPtr;
-    int				*lastDirtyBlockPtr;
+ENTRY Fscache_Block *
+Fscache_GetDirtyBlock(cacheInfoPtr, blockMatchProc, clientData,
+			lastDirtyBlockPtr)
+    Fscache_FileInfo	*cacheInfoPtr;
+    Boolean		(*blockMatchProc)();
+    ClientData		clientData;
+    int			*lastDirtyBlockPtr;
 {
     register	List_Links	*dirtyPtr;
     register	Fscache_Block	*blockPtr;
 
-    *blockPtrPtr = (Fscache_Block *) NIL;
+    LOCK_MONITOR;
 
-    if (List_IsEmpty(&cacheInfoPtr->dirtyList)) {
-	cacheInfoPtr->flags &= ~FSCACHE_FILE_BEING_WRITTEN;
-	if (cacheInfoPtr->flags & FSCACHE_CLOSE_IN_PROGRESS) {
-	    /*
-	     * Wake up anyone waiting for us to finish so that they can close
-	     * their file.
-	     */
-	    Sync_Broadcast(&closeCondition);
-	}
-	Sync_Broadcast(&cacheInfoPtr->noDirtyBlocks);
-	return;
-    } else if (cacheInfoPtr->flags & FSCACHE_CLOSE_IN_PROGRESS) {
+    *lastDirtyBlockPtr = 0;
+
+    if (cacheInfoPtr->flags & FSCACHE_CLOSE_IN_PROGRESS) {
 	/*
 	 * We can't do any write-backs until the file is closed.
-	 * We put the file back onto the file dirty list so the
-	 * block cleaner will find it again.
+	 * Return zero blocks in hope that the backend will return
+	 * the file to the cache.
 	 */
-	cacheInfoPtr->flags &= ~FSCACHE_FILE_BEING_WRITTEN;
-	Sync_Broadcast(&closeCondition);
-	PutFileOnDirtyList(cacheInfoPtr);
-	return;
-    } 
+	UNLOCK_MONITOR;
+	return (Fscache_Block *) NIL;
+    }
+    if (cacheInfoPtr->flags & (FSCACHE_SERVER_DOWN | FSCACHE_NO_DISK_SPACE | 
+			      FSCACHE_GENERIC_ERROR|FSCACHE_FILE_GONE)) {
+	UNLOCK_MONITOR;
+	return (Fscache_Block *) NIL;
+    }
 
     LIST_FORALL(&cacheInfoPtr->dirtyList, dirtyPtr) {
 	blockPtr = DIRTY_LINKS_TO_BLOCK(dirtyPtr);
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    UNLOCK_MONITOR;
+	    panic( "GetDirtyBlock, bad block\n");
+	    LOCK_MONITOR;
+	    continue;
+	}
 	if (blockPtr->refCount > 0) {
 	    /*
 	     * Being actively used.  Wait until it is not in use anymore in
@@ -2546,42 +2284,61 @@ GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
 	    blockPtr->flags |= FSCACHE_BLOCK_CLEANER_WAITING;
 	    continue;
 	}
-	List_Remove(dirtyPtr);
+	if (!blockMatchProc(blockPtr, clientData)) {
+		continue;
+	}
 	/*
 	 * Mark the block as being written out and clear the dirty flag in case
 	 * someone modifies it while we are writing it out.
 	 */
-	blockPtr->flags &= ~FSCACHE_BLOCK_DIRTY;
+	List_Remove(dirtyPtr);
+	blockPtr->flags &= ~(FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_CLEANED);
 	blockPtr->flags |= FSCACHE_BLOCK_BEING_WRITTEN;
-	*blockPtrPtr = blockPtr;
-	if (cacheInfoPtr->numDirtyBlocks == 1) {
-	    *lastDirtyBlockPtr = FS_LAST_DIRTY_BLOCK;
-	    if (cacheInfoPtr->flags & FSCACHE_WB_ON_LDB) {
-		*lastDirtyBlockPtr |= FS_WB_ON_LDB;
-		cacheInfoPtr->flags &= ~FSCACHE_WB_ON_LDB;
-	    }
-	} else {
-	    *lastDirtyBlockPtr = 0;
+	blockPtr->refCount++;
+	if (blockPtr->refCount == 1) { 
+	    VmMach_LockCachePage(blockPtr->blockAddr);
 	}
 	/*
-	 * Increment the reference count to make the block unavailable to 
-	 * others.
+	 * Gather statistics.
 	 */
-	blockPtr->refCount++;
-	return;
+	fs_Stats.blockCache.blocksWrittenThru++;
+	switch (blockPtr->flags &
+		(FSCACHE_DATA_BLOCK | FSCACHE_IND_BLOCK |
+		 FSCACHE_DESC_BLOCK | FSCACHE_DIR_BLOCK)) {
+	    case FSCACHE_DATA_BLOCK:
+		fs_Stats.blockCache.dataBlocksWrittenThru++;
+		break;
+	    case FSCACHE_IND_BLOCK:
+		fs_Stats.blockCache.indBlocksWrittenThru++;
+		break;
+	    case FSCACHE_DESC_BLOCK:
+		fs_Stats.blockCache.descBlocksWrittenThru++;
+		break;
+	    case FSCACHE_DIR_BLOCK:
+		fs_Stats.blockCache.dirBlocksWrittenThru++;
+		break;
+	    default:
+		printf( "Ofs_CleanBlocks: Unknown block type\n");
+	}
+	if (blockPtr->blockSize < 0) {
+	    panic( "Fscache_GetDirtyBlock: uninitialized block size\n");
+	}
+	*lastDirtyBlockPtr = List_IsEmpty(&cacheInfoPtr->dirtyList);
+	UNLOCK_MONITOR;
+	return blockPtr;
     }
-
-    FSCACHE_DEBUG_PRINT("GetDirtyBlockInt: All blocks unusable\n");
-    cacheInfoPtr->flags &= ~FSCACHE_FILE_BEING_WRITTEN;
-    PutFileOnDirtyList(cacheInfoPtr);
+    *lastDirtyBlockPtr = List_IsEmpty(&cacheInfoPtr->dirtyList);
+    UNLOCK_MONITOR;
+    return (Fscache_Block *) NIL;
 }
+
 
 /*
  * ----------------------------------------------------------------------------
  *
- * ProcessCleanBlock --
+ * Fscache_ReturnDirtyBlock --
  *
- *     	This routine will process the newly cleaned block.
+ *     	This routine will process the newly cleaned blocks.
  *
  * Results:
  *     	None.
@@ -2591,84 +2348,30 @@ GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
  *
  * ----------------------------------------------------------------------------
  */
-static ENTRY void
-ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
-		  lastDirtyBlockPtr) 
-    register	Fscache_FileInfo	*cacheInfoPtr;
-    register	Fscache_Block	*blockPtr;
+ENTRY void
+Fscache_ReturnDirtyBlock(blockPtr, status)
+    register  Fscache_Block	*blockPtr; /*  blocks to  return. */
     ReturnStatus		status;
-    Boolean			*useSameBlockPtr;
-    int				*lastDirtyBlockPtr;
 {
+    register	Fscache_FileInfo	*cacheInfoPtr;
+
     LOCK_MONITOR;
 
-    if (status == SUCCESS && 
-        (blockPtr->flags & FSCACHE_WRITE_THRU_BLOCK) &&
-        (blockPtr->flags & FSCACHE_BLOCK_DIRTY)) {
-	/*
-	 * We have to keep writing this block until its gets clean, so
-	 * rewrite the same block.   (Hmmm.  Does this mean that a
-	 * continually modified block will prevent the rest of the file
-	 * from being written out?)
-	 */
-	blockPtr->flags &= ~FSCACHE_BLOCK_DIRTY;
-	if (cacheInfoPtr->numDirtyBlocks == 1) {
-	    *lastDirtyBlockPtr = FS_LAST_DIRTY_BLOCK;
-	    if (cacheInfoPtr->flags & FSCACHE_WB_ON_LDB) {
-		*lastDirtyBlockPtr |= FS_WB_ON_LDB;
-		cacheInfoPtr->flags &= ~FSCACHE_WB_ON_LDB;
-	    }
-	} else {
-	    *lastDirtyBlockPtr = 0;
-	}
-	*useSameBlockPtr = TRUE;
-	UNLOCK_MONITOR;
-	return;
-    }
-    *useSameBlockPtr = FALSE;
-    Sync_Broadcast(&blockPtr->ioDone);
+    cacheInfoPtr = blockPtr->cacheInfoPtr;
 
-    blockPtr->flags &= ~(FSCACHE_BLOCK_BEING_WRITTEN | FSCACHE_BLOCK_ON_DIRTY_LIST);
-    /*
-     * Decrement the reference count to make the block available to others.
-     */
+    blockPtr->flags &= ~FSCACHE_BLOCK_BEING_WRITTEN;
     blockPtr->refCount--;
-    /*
-     * Determine if someone is waiting for the block to be written back.  If
-     * so and all of the blocks that are being waited for have been written
-     * back (or we at least tried but had a timeout or no disk space)
-     * wake them up.
-     */
-    if (blockPtr->flags & FSCACHE_WRITE_BACK_WAIT) {
-	numWriteBackBlocks--;
-	blockPtr->flags &= ~FSCACHE_WRITE_BACK_WAIT;
-	if (numWriteBackBlocks == 0) {
-	    Sync_Broadcast(&writeBackComplete);
-	}
+    if (blockPtr->refCount == 0) {
+	VmMach_UnlockCachePage(blockPtr->blockAddr);
     }
-
-    if (status != SUCCESS) {
+    Sync_Broadcast(&blockPtr->ioDone);
+    if (status == GEN_EINTR) {
+	blockPtr->flags |= FSCACHE_BLOCK_DIRTY;
+    } else if (status != SUCCESS) {
 	/*
-	 * This file could not be written out.
+	 * This block could not be written out.
 	 */
-	register	List_Links	*dirtyPtr;
-	register	Fscache_Block	*newBlockPtr;
 	Boolean		printErrorMsg;
-	/*
-	 * Go down the list of blocks for the file and wake up anyone waiting 
-	 * for the blocks to be written out because we aren't going be writing
-	 * them anytime soon.
-	 */
-	LIST_FORALL(&cacheInfoPtr->dirtyList, dirtyPtr) {
-	    newBlockPtr = DIRTY_LINKS_TO_BLOCK(dirtyPtr);
-	    if (newBlockPtr->flags & FSCACHE_WRITE_BACK_WAIT) {
-		numWriteBackBlocks--;
-		newBlockPtr->flags &= ~FSCACHE_WRITE_BACK_WAIT;
-		if (numWriteBackBlocks == 0) {
-		    Sync_Broadcast(&writeBackComplete);
-		}
-	    }
-	}
 
 	printErrorMsg = FALSE;
 	switch (status) {
@@ -2687,7 +2390,7 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 		if (status == FS_STALE_HANDLE) {
 		    Proc_CallFunc(Fsutil_AttemptRecovery,
 			      (ClientData)cacheInfoPtr->hdrPtr, 0);
-	        }
+		}
 		break;
 	    case FS_NO_DISK_SPACE:
 		if (!(cacheInfoPtr->flags & FSCACHE_NO_DISK_SPACE)) {
@@ -2710,8 +2413,13 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 		 * noone will attempt to change where the block is on disk.
 		 */
 		blockPtr->refCount++;
+		if (blockPtr->refCount == 1) { 
+		    VmMach_LockCachePage(blockPtr->blockAddr);
+		}
 		blockPtr->flags |= FSCACHE_BLOCK_BEING_WRITTEN;
-		Proc_CallFunc(ReallocBlock, (ClientData)blockPtr, 0);
+		Proc_CallFunc(
+		    cacheInfoPtr->backendPtr->ioProcs.reallocBlock, 
+				    (ClientData)blockPtr, 0);
 		printErrorMsg = TRUE;
 		printf("File blk %d phys blk %d: ",
 			    blockPtr->blockNum, blockPtr->diskBlock);
@@ -2723,23 +2431,11 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 		break;
 	}
 	if (printErrorMsg) {
-	    Fsutil_FileError(cacheInfoPtr->hdrPtr, "Write-back failed", status);
+	    Fsutil_FileError(cacheInfoPtr->hdrPtr, 
+		    "Write-back failed", status);
 	}
-	cacheInfoPtr->lastTimeTried = fsutil_TimeInSeconds;
-	cacheInfoPtr->flags &= ~FSCACHE_FILE_BEING_WRITTEN;
+	cacheInfoPtr->lastTimeTried = Fsutil_TimeInSeconds();
 	PutBlockOnDirtyList(blockPtr, TRUE);
-	if (cacheInfoPtr->flags & FSCACHE_CLOSE_IN_PROGRESS) {
-	    /*
-	     * Wake up anyone waiting for us to finish so that they can close
-	     * their file.
-	     */
-	    Sync_Broadcast(&closeCondition);
-	}
-	/*
-	 * Wakeup up anyone waiting for this file to be written out.
-	 */
-	Sync_Broadcast(&cacheInfoPtr->noDirtyBlocks);
-
 	UNLOCK_MONITOR;
 	return;
     }
@@ -2749,67 +2445,217 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
     cacheInfoPtr->flags &= 
 			~(FSCACHE_SERVER_DOWN | FSCACHE_NO_DISK_SPACE | 
 			  FSCACHE_GENERIC_ERROR);
-    if (! List_IsEmpty(fscacheFullWaitList)) {
-	Fsutil_WaitListNotify(fscacheFullWaitList);
-    }
-    /* 
-     * Now see if we are supposed to take any special action with this
-     * block once we are done.
-     */
-    if (blockPtr->flags & FSCACHE_BLOCK_DELETED) {
-	PutOnFreeList(blockPtr);
-    } else if (blockPtr->flags & FSCACHE_MOVE_TO_FRONT) {
-	List_Move((List_Links *) blockPtr, LIST_ATFRONT(lruList));
-	blockPtr->flags &= ~FSCACHE_MOVE_TO_FRONT;
-    }
+    if (blockPtr->flags & FSCACHE_BLOCK_DIRTY) { 
+	PutBlockOnDirtyList(blockPtr, TRUE);
+    } else { 
+	if (blockPtr->refCount == 0) {
+	    numAvailBlocks++; 
+	}
+	/* 
+	 * Now see if we are supposed to take any special action with this
+	 * block once we are done.
+	 */
+	if (blockPtr->flags & FSCACHE_BLOCK_DELETED) {
+	    cacheInfoPtr->blocksInCache--;
+	    List_Remove(&blockPtr->fileLinks);
+	    PutOnFreeList(blockPtr);
+	} else if (blockPtr->flags & FSCACHE_MOVE_TO_FRONT) {
+	    List_Move(&blockPtr->useLinks, LIST_ATFRONT(lruList));
+	    blockPtr->flags &= ~FSCACHE_MOVE_TO_FRONT;
+	}
 
-    cacheInfoPtr->numDirtyBlocks--;
-    /*
-     * Wakeup the block allocator which may be waiting for us to clean a block
-     */
-    Sync_Broadcast(&cleanBlockCondition);
-    blockPtr->flags &= ~FSCACHE_WRITE_THRU_BLOCK;
-
+	cacheInfoPtr->numDirtyBlocks--;
+	/*
+	 * Wakeup the block allocator which may be waiting for us to clean
+	 * a block
+	 */
+	if (! List_IsEmpty(fscacheFullWaitList)) {
+	    Fsutil_WaitListNotify(fscacheFullWaitList);
+	}
+	Sync_Broadcast(&cleanBlockCondition);
+    }
     UNLOCK_MONITOR;
 }
+#define	WRITE_RETRY_INTERVAL	30
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  Fscache_GetDirtyFile --
+ *
+ *     	Take a dirty file off of the dirty file list for the
+ *	specified backend. Return a pointer to the cache state for 
+ *	the file return. This routine is used by the backend to
+ *	walk through the dirty list.
+ *
+ * Results:
+ *	A pointer to the cache state for the first file on the dirty list.
+ *	If there are no files then a NIL pointer is returned.  
+ *
+ * Side effects:
+ *      An element is removed from the dirty file list.  The fact that
+ *	the dirty list links are at the beginning of the cacheInfo struct
+ *	is well known and relied on to map from the dirty list to cacheInfoPtr.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY Fscache_FileInfo *
+Fscache_GetDirtyFile(backendPtr, fsyncOnly, fileMatchProc, clientData)
+    Fscache_Backend	*backendPtr;	/* Cache backend to take dirty files
+					 * from. */
+    Boolean		fsyncOnly;	/* TRUE if we should return only 
+					 * fsynced files. */
+    Boolean		(*fileMatchProc)();	/* File match procedure. */
+    ClientData		clientData;	/* ClientData for match procedure. */
+{
+    register Fscache_FileInfo *cacheInfoPtr;
 
+    LOCK_MONITOR;
+
+    /*
+     * If the dirty list is empty return NIL.
+     */
+    if (List_IsEmpty(&backendPtr->dirtyListHdr)) {
+	UNLOCK_MONITOR;
+	return (Fscache_FileInfo *) NIL;
+    }
+
+    /*
+     * Otherwise, search the the dirtyList picking off the file to return.
+     */
+    LIST_FORALL(&(backendPtr->dirtyListHdr), (List_Links *)cacheInfoPtr) {
+	 if (cacheInfoPtr->flags & 
+			(FSCACHE_CLOSE_IN_PROGRESS|FSCACHE_SERVER_DOWN)) {
+	    /*
+	     * Close in progress on the file the block lives in so we aren't
+	     * allowed to write any more blocks.
+	     */
+	    continue;
+	} else if (cacheInfoPtr->flags & FSCACHE_FILE_GONE) {
+	    /*
+	     * The file is being deleted.
+	     */
+	    printf("FscacheGetDirtyFile skipping deleted file <%d,%d> \"%s\"\n",
+		cacheInfoPtr->hdrPtr->fileID.major,
+		cacheInfoPtr->hdrPtr->fileID.minor,
+		Fsutil_HandleName(cacheInfoPtr->hdrPtr));
+	    continue;
+	} else if (cacheInfoPtr->flags & 
+		       (FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
+		        FSCACHE_GENERIC_ERROR)) {
+	    if (Fsutil_TimeInSeconds() - cacheInfoPtr->lastTimeTried <
+			WRITE_RETRY_INTERVAL) {
+		continue;
+	    }
+	    cacheInfoPtr->flags &= 
+			    ~(FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
+			      FSCACHE_GENERIC_ERROR);
+	} 
+
+	if (!fileMatchProc(cacheInfoPtr, clientData)) {
+		continue;
+	}
+	if ((numAvailBlocks > minNumAvailBlocks) && fsyncOnly && 
+		!( (cacheInfoPtr->flags & FSCACHE_FILE_FSYNC) ||
+		    (cacheInfoPtr->oldestDirtyBlockTime < filewriteBackTime))) {
+	    break;
+	}
+
+	cacheInfoPtr->flags |= FSCACHE_FILE_BEING_WRITTEN;
+	cacheInfoPtr->flags &= ~FSCACHE_FILE_ON_DIRTY_LIST;
+	List_Remove((List_Links *)cacheInfoPtr);
+	UNLOCK_MONITOR;
+	return cacheInfoPtr;
+    }
+    UNLOCK_MONITOR;
+    return (Fscache_FileInfo *) NIL;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  Fscache_ReturnDirtyFile --
+ *
+ *     	Return a file checked-out using get dirty file. 
+ *
+ * Results:
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+Fscache_ReturnDirtyFile(cacheInfoPtr, onFront)
+    Fscache_FileInfo	*cacheInfoPtr;	/* File to return. */
+    Boolean 		onFront;	/* Put it on the front the of list. */
+{
+    register Fscache_FileInfo  *nextCacheInfoPtr;
+
+    LOCK_MONITOR;
+
+    /*
+     * Move the from file being written state (and list) to the
+     * dirty list or no list at all.
+     */
+    cacheInfoPtr->flags &= ~FSCACHE_FILE_BEING_WRITTEN;
+
+    if ((cacheInfoPtr->numDirtyBlocks == 0) &&
+	!(cacheInfoPtr->flags & FSCACHE_FILE_DESC_DIRTY)) {
+
+	cacheInfoPtr->flags &= ~(FSCACHE_FILE_FSYNC |
+				    FSCACHE_FILE_BEING_CLEANED);
+	Sync_Broadcast(&cacheInfoPtr->noDirtyBlocks);
+
+    } else {
+	PutFileOnDirtyList(cacheInfoPtr, 
+			    cacheInfoPtr->oldestDirtyBlockTime);
+    }
+    if (cacheInfoPtr->flags & FSCACHE_CLOSE_IN_PROGRESS) {
+	/*
+	 * Wake up anyone waiting for us to finish so that they can 
+	 * close their file. 
+	 */
+	Sync_Broadcast(&closeCondition);
+    }
+    cacheInfoPtr = nextCacheInfoPtr;
+
+    UNLOCK_MONITOR;
+    return;
+}
 
 /*
  *----------------------------------------------------------------------
  *
- * ReallocBlock --
+ * FscacheBackendIdle --
  *
- *	Allocate new space for the given cache block.  Called asynchronously
- *	when a write to disk failed because of a disk error.
+ *	Inform the cache that a backend write-back has finished..
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
  *
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-static void
-ReallocBlock(data, callInfoPtr)
-    ClientData		data;			/* Block to move */
-    Proc_CallInfo	*callInfoPtr;		/* Not used. */
+void
+FscacheBackendIdle(backendPtr)
+    Fscache_Backend *backendPtr;
 {
-    Fscache_Block	*blockPtr;
-    int			newDiskBlock;
-
-    blockPtr = (Fscache_Block *)data;
-    newDiskBlock = FsdmBlockRealloc(blockPtr->cacheInfoPtr->hdrPtr,
-				  blockPtr->blockNum, blockPtr->diskBlock);
-    FinishRealloc(blockPtr, newDiskBlock);
+    LOCK_MONITOR;
+    numBackendsActive--;
+    if (numBackendsActive == 0) {
+	Sync_Broadcast(&writeBackComplete);
+    }
+    UNLOCK_MONITOR;
+    return;
 }
+
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FinishRealloc --
+ * FscacheFinishRealloc --
  *
  *	After reallocating new space for a block, finish things up.
  *
@@ -2821,14 +2667,17 @@ ReallocBlock(data, callInfoPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY static void
-FinishRealloc(blockPtr, diskBlock)
+ENTRY void
+FscacheFinishRealloc(blockPtr, diskBlock)
     Fscache_Block	*blockPtr;
     int			diskBlock;
 {
     LOCK_MONITOR;
 
     blockPtr->refCount--;
+    if (blockPtr->refCount == 0) { 
+	VmMach_UnlockCachePage(blockPtr->blockAddr);
+    }
     blockPtr->flags &= ~FSCACHE_BLOCK_BEING_WRITTEN;
     Sync_Broadcast(&blockPtr->ioDone);
     if (diskBlock != -1) {
@@ -2836,8 +2685,9 @@ FinishRealloc(blockPtr, diskBlock)
 	blockPtr->cacheInfoPtr->flags &= 
 			    ~(FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
 			      FSCACHE_GENERIC_ERROR);
-	PutFileOnDirtyList(blockPtr->cacheInfoPtr);
-	StartBlockCleaner(blockPtr->cacheInfoPtr);
+	PutFileOnDirtyList(blockPtr->cacheInfoPtr, 
+			blockPtr->cacheInfoPtr->oldestDirtyBlockTime);
+	StartBackendWriteback(blockPtr->cacheInfoPtr->backendPtr);
     }
 
     UNLOCK_MONITOR;
@@ -2914,12 +2764,86 @@ Fscache_AllowWriteBacks(cacheInfoPtr)
     LOCK_MONITOR;
 
     cacheInfoPtr->flags &= ~FSCACHE_CLOSE_IN_PROGRESS;
-    if (!List_IsEmpty(&cacheInfoPtr->dirtyList)) {
-	StartBlockCleaner(cacheInfoPtr);
+    if ((cacheInfoPtr->numDirtyBlocks > 0) || 
+        (cacheInfoPtr->flags & FSCACHE_FILE_DESC_DIRTY)) { 
+	PutFileOnDirtyList(cacheInfoPtr, cacheInfoPtr->oldestDirtyBlockTime);
+	if (cacheInfoPtr->flags & FSCACHE_FILE_FSYNC) {
+	    StartBackendWriteback(cacheInfoPtr->backendPtr);
+	}
     }
 
     UNLOCK_MONITOR;
 }
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fscache_PutFileOnDirtyList --
+ *
+ *	Put the specified file on the dirty list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+Fscache_PutFileOnDirtyList(cacheInfoPtr, flags)
+    register	Fscache_FileInfo *cacheInfoPtr;
+    int		flags;
+{
+    LOCK_MONITOR;
+    cacheInfoPtr->flags |= flags;
+
+    PutFileOnDirtyList(cacheInfoPtr, Fsutil_TimeInSeconds());
+
+    UNLOCK_MONITOR;
+    return (SUCCESS);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fscache_RemoveFileFromDirtyList --
+ *
+ *	Remove the specified file on the dirty list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+Fscache_RemoveFileFromDirtyList(cacheInfoPtr)
+    register	Fscache_FileInfo *cacheInfoPtr;
+{
+    int blocksInCache;
+    LOCK_MONITOR;
+    while (cacheInfoPtr->flags & FSCACHE_FILE_BEING_WRITTEN) {
+	Sync_Wait(&cacheInfoPtr->noDirtyBlocks, FALSE);
+    }
+    if (cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST) {
+	cacheInfoPtr->flags &= ~(FSCACHE_FILE_ON_DIRTY_LIST|FSCACHE_FILE_FSYNC|
+			FSCACHE_FILE_BEING_CLEANED);
+	List_Remove((List_Links *)cacheInfoPtr);
+    }
+    blocksInCache = cacheInfoPtr->blocksInCache;
+
+    UNLOCK_MONITOR;
+
+    if (blocksInCache != 0) {
+	panic("Fscache_RemoveFileFromDirtyList blocks in cache\n");
+    }
+    return SUCCESS;
+}
+
 
 
 /*
@@ -2974,6 +2898,86 @@ FscacheAllBlocksInCache(cacheInfoPtr)
 
     return(result);
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fscache_ReserveBlocks --
+ *
+ *   Insure that at least the specified number of cache blocks will be 
+ *   available to Fetch_Block() calls the the FSCACHE_CANT_BLOCK flag.
+ *
+ * Results:
+ *	The number of blocks made available.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+Fscache_ReserveBlocks(backendPtr, numResBlocks, numNonResBlocks)
+    Fscache_Backend	*backendPtr;
+    int			numResBlocks;
+    int			numNonResBlocks;
+{
+    int	numBlocks = numResBlocks + numNonResBlocks;
+
+    LOCK_MONITOR;
+    if (numBlocks > fs_Stats.blockCache.maxNumBlocks) {
+	numBlocks = fs_Stats.blockCache.maxNumBlocks - minNumAvailBlocks;
+    }
+
+    while (fs_Stats.blockCache.numCacheBlocks < minNumAvailBlocks + numBlocks) { 
+	if (!CreateBlock(FALSE, (Fscache_Block **) NIL)) {
+		break;
+	} 
+    }
+    if (minNumAvailBlocks + numResBlocks > 
+		fs_Stats.blockCache.numCacheBlocks - numNonResBlocks) {
+	numResBlocks = fs_Stats.blockCache.numCacheBlocks - numNonResBlocks -
+			minNumAvailBlocks;
+	if (numResBlocks< 0) {
+	    numResBlocks = 0;
+	}
+    }
+    minNumAvailBlocks += numResBlocks;
+    while (minNumAvailBlocks > numAvailBlocks) {
+	(void) Sync_Wait(&cleanBlockCondition, FALSE);
+    }
+    UNLOCK_MONITOR;
+    return numResBlocks;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fscache_ReleaseReserveBlocks
+ *
+ *   Release blocks that were Reserved.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Fscache_ReleaseReserveBlocks(backendPtr, numBlocks)
+    Fscache_Backend	*backendPtr;
+    int			numBlocks;
+{
+    LOCK_MONITOR;
+
+    minNumAvailBlocks  -= numBlocks;
+    Sync_Broadcast(&cleanBlockCondition);
+
+    UNLOCK_MONITOR;
+    return;
+}
 
 
 /*
@@ -2984,10 +2988,6 @@ FscacheAllBlocksInCache(cacheInfoPtr)
  *	Decide if it is safe to scavenge the file handle.  This is
  *	called from Fscache_OkToScavenge which
  *	has already grabbed the per-file cache lock.
- *
- *	Note:  this has some extra code to check against various bugs.
- *	ideally it should only have to check against blocks in the
- *	cache and being on the dirty list.
  *
  * Results:
  *	TRUE if there are no blocks (clean or dirty) in the cache for this file.
@@ -3011,12 +3011,7 @@ FscacheBlockOkToScavenge(cacheInfoPtr)
     numBlocks = cacheInfoPtr->blocksInCache;
     LIST_FORALL(&cacheInfoPtr->blockList, (List_Links *)linkPtr) {
 	blockPtr = FILE_LINKS_TO_BLOCK(linkPtr);
-	/*
-	 * Verify that the block is attached to the right file.  Note that
-	 * if the file has been invalidated its minor field is negated.
-	 */
-	if ((blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) &&
-	    (blockPtr->fileNum != - cacheInfoPtr->hdrPtr->fileID.minor)) {
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 	    UNLOCK_MONITOR;
 	    panic( "FsCacheFileBlocks, bad block\n");
 	    return(FALSE);
@@ -3031,41 +3026,179 @@ FscacheBlockOkToScavenge(cacheInfoPtr)
 	panic( "FsCacheFileBlocks, wrong block count\n");
 	return(FALSE);
     }
-    if (numBlocks == 0 && (cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST)) {
-	printf("FscacheBlockOkToScavenge dirty file with no regular blocks\n");
-    }
     ok = (numBlocks == 0) &&
-	((cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST) == 0);
-    if (ok) {
-	if (cacheInfoPtr->flags & FSCACHE_FILE_BEING_WRITTEN) {
-	    UNLOCK_MONITOR;
-	    panic("Fscache_OkToScavenge: FSCACHE_FILE_BEING_WRITTEN (continuable)\n");
-	    LOCK_MONITOR;
-	    ok = FALSE;
-	}
-	/*
-	 * Verify that this really isn't on the dirty list.
-	 */
-	linkPtr = dirtyList->nextPtr;
-	while (linkPtr != (List_Links *)NIL && linkPtr != dirtyList) {
-	    if (linkPtr == (List_Links *)cacheInfoPtr) {
-		UNLOCK_MONITOR;
-		panic("Fscache_OkToScavenge: file on dirty list (continuable)\n");
-		LOCK_MONITOR;
-		ok = FALSE;
-	    }
-	    linkPtr = linkPtr->nextPtr;
-	    if (linkPtr == (List_Links *)NIL) {
-		UNLOCK_MONITOR;
-		panic("Fscache_OkToScavenge: NIL on dirty list (continuable)\n");
-		LOCK_MONITOR;
-		ok = FALSE;
-	    }
-	}
-    }
+	((cacheInfoPtr->flags & 
+		(FSCACHE_FILE_ON_DIRTY_LIST|FSCACHE_FILE_BEING_WRITTEN)) == 0);
     UNLOCK_MONITOR;
     return(ok);
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fscache_FileInfoSyncLockCleanup --
+ *
+ * 	Clean up Sync_Lock tracing for the cache lock.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set up the fields of the Fscache_FileInfo struct.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Fscache_FileInfoSyncLockCleanup(cacheInfoPtr)
+    Fscache_FileInfo *cacheInfoPtr;
+{
+    Sync_LockClear(&cacheInfoPtr->lock);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ * 
+ *	List Functions
+ *
+ * Functions to put objects onto the free and dirty lists.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PutOnFreeList --
+ *
+ * 	Put the given block onto one of the two free lists.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Block either added to the partially free list or the totally free list.
+ *	The list of processes waiting on the full cache is notified if
+ *	is non-empty.
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL static void
+PutOnFreeList(blockPtr)
+    register	Fscache_Block	*blockPtr;
+{
+    register	Fscache_Block	*otherBlockPtr;
+
+    blockPtr->flags = FSCACHE_BLOCK_FREE;
+    fs_Stats.blockCache.numFreeBlocks++;
+    if (PAGE_IS_8K) {
+	/*
+	 * If all blocks in the page are free then put this block onto the
+	 * totally free list.  Otherwise it goes onto the partially free list.
+	 */
+	otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
+	if (otherBlockPtr->flags & FSCACHE_BLOCK_FREE) {
+	    List_Insert(&blockPtr->useLinks, LIST_ATFRONT(totFreeList));
+	    List_Move(&otherBlockPtr->useLinks, LIST_ATFRONT(totFreeList));
+	} else {
+	    List_Insert(&blockPtr->useLinks, LIST_ATFRONT(partFreeList));
+	}
+    } else {
+	List_Insert(&blockPtr->useLinks, LIST_ATFRONT(totFreeList));
+    }
+    if (! List_IsEmpty(fscacheFullWaitList)) {
+	Fsutil_WaitListNotify(fscacheFullWaitList);
+    }
+    Sync_Broadcast(&cleanBlockCondition);
+}	
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PutFileOnDirtyList --
+ *
+ * 	Put the given file onto it's backend's dirty list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	File's backend's dirty list is modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL static void
+PutFileOnDirtyList(cacheInfoPtr, oldestDirtyBlockTime)
+    register Fscache_FileInfo	*cacheInfoPtr;	/* Cache info for a file */
+    int		oldestDirtyBlockTime;
+{
+    register List_Links	*linkPtr;
+    List_Links	*dirtyList, *place;
+
+    dirtyList = &cacheInfoPtr->backendPtr->dirtyListHdr;
+    if (!(cacheInfoPtr->flags & 
+	(FSCACHE_FILE_ON_DIRTY_LIST|FSCACHE_FILE_BEING_WRITTEN))) {
+        List_Insert((List_Links *)cacheInfoPtr, LIST_ATREAR(dirtyList));
+	if (cacheInfoPtr->flags & FSCACHE_FILE_FSYNC) {
+	    /*
+	     * Move down the list until we reach the file or the first non
+	     * synced file. 
+	     */
+	    place = (List_Links *) cacheInfoPtr;
+	    LIST_FORALL(dirtyList, linkPtr) {
+		if ((linkPtr == (List_Links *) cacheInfoPtr) ||
+		    !(((Fscache_FileInfo *) linkPtr)->flags & 
+					FSCACHE_FILE_FSYNC)) {
+		    place = linkPtr;
+		    break;
+		}
+	    }
+	    if (place != (List_Links *) cacheInfoPtr) {
+		List_Move((List_Links *)cacheInfoPtr, LIST_BEFORE(place));
+	    }
+	}
+	cacheInfoPtr->oldestDirtyBlockTime = oldestDirtyBlockTime;
+	cacheInfoPtr->flags |= FSCACHE_FILE_ON_DIRTY_LIST;
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PutBlockOnDirtyList --
+ *
+ * 	Put the given block onto the dirty list for the file, and make
+ *	sure that the file is on the list of dirty files.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The block goes onto the dirty list of the file.
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL static void
+PutBlockOnDirtyList(blockPtr, onFront)
+    register	Fscache_Block	*blockPtr;	/* Block to put on list. */
+    Boolean	onFront;			/* Put block on front not
+						 * rear of list. */
+{
+    register Fscache_FileInfo *cacheInfoPtr = blockPtr->cacheInfoPtr;
+
+    blockPtr->flags |= FSCACHE_BLOCK_DIRTY;
+    List_Insert(&blockPtr->dirtyLinks, 
+		onFront ? LIST_ATFRONT(&cacheInfoPtr->dirtyList) :
+			  LIST_ATREAR(&cacheInfoPtr->dirtyList));
+
+    PutFileOnDirtyList(cacheInfoPtr, (int)(blockPtr->timeDirtied));
+}
+
+
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -3083,6 +3216,7 @@ FscacheBlockOkToScavenge(cacheInfoPtr)
  *
  * ----------------------------------------------------------------------------
  */
+
 INTERNAL static Hash_Entry *
 GetUnlockedBlock(blockHashKeyPtr, blockNum)
     register	BlockHashKey	*blockHashKeyPtr;
@@ -3090,17 +3224,14 @@ GetUnlockedBlock(blockHashKeyPtr, blockNum)
 {
     register	Fscache_Block	*blockPtr;
     register	Hash_Entry	*hashEntryPtr;
-    int event;
 
     /*
      * See if block is in the hash table.
      */
     blockHashKeyPtr->blockNumber = blockNum;
-    event = BLOCK_FETCH_HIT;
 again:
     hashEntryPtr = Hash_LookOnly(blockHashTable, (Address)blockHashKeyPtr);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
-	FSUTIL_TRACE(FSUTIL_TRACE_NO_BLOCK);
 	return((Hash_Entry *) NIL);
     }
 
@@ -3111,15 +3242,12 @@ again:
      */
     if (blockPtr->refCount > 0 || 
 	(blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN)) {
-	FSUTIL_TRACE_BLOCK(BLOCK_ITER_WAIT, blockPtr);
 	(void) Sync_Wait(&blockPtr->ioDone, FALSE);
 	if (sys_ShuttingDown) {
 	    return((Hash_Entry *) NIL);
 	}
-	event = BLOCK_ITER_WAIT_HIT;
 	goto again;
     }
-    FSUTIL_TRACE_BLOCK(event, blockPtr);
     return(hashEntryPtr);
 }
 
@@ -3160,7 +3288,6 @@ DeleteBlock(blockPtr)
 	LOCK_MONITOR;
 	return;
     }
-    FSUTIL_TRACE_BLOCK(BLOCK_DELETE, blockPtr);
     Hash_Delete(blockHashTable, hashEntryPtr);
     blockPtr->cacheInfoPtr->blocksInCache--;
     List_Remove(&blockPtr->fileLinks);
@@ -3273,7 +3400,7 @@ Fscache_CheckFragmentation(numBlocksPtr, totalBytesWastedPtr, fragBytesWastedPtr
 				 * is caches 1024 byte fragments. */
 {
     register Fscache_Block 	*blockPtr;
-    register List_Links	  	*listPtr;
+    register List_Links	  	*listPtr, *lPtr;
     register int		numBlocks = 0;
     register int		totalBytesWasted = 0;
     register int		fragBytesWasted = 0;
@@ -3283,7 +3410,8 @@ Fscache_CheckFragmentation(numBlocksPtr, totalBytesWastedPtr, fragBytesWastedPtr
     LOCK_MONITOR;
 
     listPtr = lruList;
-    LIST_FORALL(listPtr, (List_Links *) blockPtr) {
+    LIST_FORALL(listPtr, lPtr) {
+	blockPtr = USE_LINKS_TO_BLOCK(lPtr);
 	if ((blockPtr->refCount > 0) || (blockPtr->blockSize < 0)) {
 	    /* 
 	     * Skip locked blocks because they might be in the process of
@@ -3308,3 +3436,51 @@ Fscache_CheckFragmentation(numBlocksPtr, totalBytesWastedPtr, fragBytesWastedPtr
 
     UNLOCK_MONITOR;
 }
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fscache_CountBlocks --
+ *
+ *	Count the number of clean and dirty blocks under the specified 
+ *	domain.
+ *
+ * Results:
+ *	
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+Fscache_CountBlocks(serverID, majorNumber, numBlocksPtr, numDirtyBlocksPtr)
+    int		serverID; /* ServerID of file. */
+    int		majorNumber;  /* Major number of domain */
+    int		*numBlocksPtr; /* OUT: Number of blocks in the cache. */
+    int		*numDirtyBlocksPtr;  /* OUT: Number of dirty blocks in cache.*/
+
+{
+    register	Fscache_Block	*blockPtr;
+    register	List_Links	*listPtr;
+
+    LOCK_MONITOR;
+
+    *numBlocksPtr = *numDirtyBlocksPtr = 0;
+    LIST_FORALL(lruList, listPtr) {
+	blockPtr = USE_LINKS_TO_BLOCK(listPtr);
+	if ((blockPtr->cacheInfoPtr->hdrPtr->fileID.major != majorNumber) ||
+	    (blockPtr->cacheInfoPtr->hdrPtr->fileID.serverID != serverID)) {
+	    continue;
+	}
+	(*numBlocksPtr)++;
+	if (blockPtr->flags & 
+			(FSCACHE_BLOCK_DIRTY|FSCACHE_BLOCK_BEING_WRITTEN)) {
+	    (*numDirtyBlocksPtr)++;
+	} 
+    }
+
+    UNLOCK_MONITOR;
+}
+

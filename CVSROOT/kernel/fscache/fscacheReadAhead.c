@@ -12,15 +12,16 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsStat.h"
-#include "fscache.h"
-#include "fsNameOps.h"
-#include "fsdm.h"
-#include "fsrmt.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsStat.h>
+#include <fscache.h>
+#include <fsNameOps.h>
+#include <fsdm.h>
+#include <fsrmt.h>
+#include <fscacheBlocks.h>
 
 /* 
  * Number of blocks to read ahead.  Zero turns off read ahead.
@@ -37,9 +38,9 @@ typedef struct {
     int			blockNum;
 } ReadAheadCallBackData;
 
-static void	IncReadAheadCount();
-static void	DecReadAheadCount();
-static void	DoReadAhead();
+static void DoReadAhead _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void IncReadAheadCount _ARGS_((Fscache_ReadAheadInfo *readAheadPtr));
+static void DecReadAheadCount _ARGS_((Fscache_ReadAheadInfo *readAheadPtr));
 
 
 /*
@@ -80,6 +81,7 @@ Fscache_ReadAheadInit(readAheadPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 Fscache_ReadAheadSyncLockCleanup(readAheadPtr)
     Fscache_ReadAheadInfo *readAheadPtr;
@@ -201,7 +203,7 @@ DoReadAhead(data, callInfoPtr)
     cacheInfoPtr = callBackData->cacheInfoPtr;
     blockPtr = callBackData->blockPtr;
 
-    status = (cacheInfoPtr->ioProcsPtr->blockRead)
+    status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
 		(cacheInfoPtr->hdrPtr, blockPtr, (Sync_RemoteWaiter *)NIL);
     if (status != SUCCESS) {
 	fs_Stats.blockCache.domainReadFails++;

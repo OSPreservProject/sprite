@@ -18,9 +18,9 @@
 #ifndef _FSCACHE
 #define _FSCACHE
 
-#include "sync.h"
-#include "list.h"
-#include "fs.h" /* For Handle declarations. */
+#include <sync.h>
+#include <list.h>
+#include <fs.h>
 
 /* data structures */	
 
@@ -46,40 +46,7 @@ typedef struct Fscache_Attributes {
     int		uid;		/* User ID of owner */
     int		gid;		/* Group Owner ID */
 } Fscache_Attributes;
-
-/*
- * Block cache IO operation routines. 
- */
-typedef struct Fscache_IOProcs {
-    /*
-     *	FooAllocate(hdrPtr, offset, bytes, flags, blockAddrPtr, newBlockPtr)
-     *		Fs_HandleHeader *hdrPtr;			(File handle)
-     *		int		offset;			(Byte offset)
-     *		int		bytes;			(Bytes to allocate)
-     *		int		flags;			(FSCACHE_DONT_BLOCK)
-     *		int		*blockAddrPtr;		(Returned block number)
-     *		Boolean		*newBlockPtr;		(TRUE if new block)
-     *	FooBlockRead(hdrPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
-     *		Fs_HandleHeader *hdrPtr;			(File handle)
-     *		int		flags;		(For compatibility with .read)
-     *		Address		buffer;			(Target of read)
-     *		int		*offsetPtr;		(Byte offset)
-     *		int		*lenPtr;		(Byte count)
-     *		Sync_RemoteWaiter *waitPtr;		(For remote waiting)
-     *	FooBlockWrite(hdrPtr, blockPtr, lastDirtyBlock)
-     *		Fs_HandleHeader	*hdrPtr;		(File handle)
-     *		Fscache_Block	*blockPtr;		(Cache block to write)
-     *		Boolean		lastDirtyBlock;		(Indicates last block)
-     *	FooBlockCopy(srcHdrPtr, dstHdrPtr, blockNumber)
-     *		Fs_HandleHeader	*srcHdrPtr;		(Source file handle)
-     *		Fs_HandleHeader	*dstHdrPtr;		(Destination handle)
-     *		int		blockNumber;		(Block to copy)
-     */
-    ReturnStatus (*allocate)();
-    ReturnStatus (*blockRead)();
-    ReturnStatus (*blockWrite)();
-    ReturnStatus (*blockCopy)();
-} Fscache_IOProcs;
+
 
 
 
@@ -109,8 +76,10 @@ typedef struct Fscache_FileInfo {
     Sync_Condition noDirtyBlocks;  /* Notified when all write backs done. */
     int		   lastTimeTried;  /* Time that last tried to see if disk was
 				    * available for this block. */
+    int		   oldestDirtyBlockTime;
     Fscache_Attributes attr;	   /* Local version of descriptor attributes. */
-    Fscache_IOProcs   *ioProcsPtr;  /* Routines for read/write/allocate/copy. */
+    struct Fscache_Backend   *backendPtr;  
+			/* Routines for read/write/allocate/copy. */
 } Fscache_FileInfo;
 
 /*
@@ -140,6 +109,7 @@ typedef struct Fscache_FileInfo {
  *				on the last dirty block.
  *   FSCACHE_ALLOC_FAILED	Allocated failed due to disk full.  This
  *				is used to throttle error messages.
+ *   FSCACHE_FILE_BEING_CLEANED
  */
 #define	FSCACHE_CLOSE_IN_PROGRESS	0x0001
 #define	FSCACHE_SERVER_DOWN		0x0002
@@ -155,17 +125,23 @@ typedef struct Fscache_FileInfo {
 #define FSCACHE_FILE_GONE		0x0800
 #define	FSCACHE_WB_ON_LDB		0x1000
 #define FSCACHE_ALLOC_FAILED		0x2000
+#define	FSCACHE_FILE_FSYNC		0x4000
+#define	FSCACHE_FILE_DESC_DIRTY		0x8000
+#define	FSCACHE_FILE_BEING_CLEANED     0x10000
 
 /*
  * Structure to represent a cache block in the fileservers cache block 
  * list and the core map list.
  */
 typedef struct Fscache_Block {
-    List_Links	cacheLinks;	/* Links to put block into list of unused 
-				   cache blocks or LRU list of cache blocks.
-				   THIS MUST BE FIRST in the struct. */
     List_Links	dirtyLinks;	/* Links to put block into list of dirty
-				 * blocks for the file.  THIS MUST BE 2ND */
+				 * blocks for the file.  THIS MUST BE FIRST 
+				 * in the struct. It may be used by the
+				 * cache backend's after a Fetch_DirtyBlock
+				 * call.  */
+    List_Links	useLinks;	/* Links to put block into list of unused 
+				   cache blocks or LRU list of cache blocks.
+				   THIS MUST BE SECOND in the struct. */
     List_Links	fileLinks;	/* Links to put block into list of blocks
 				 * for the file.  There are two lists, either
 				 * regular or for indirect blocks. */
@@ -217,6 +193,7 @@ typedef struct Fscache_Block {
  *   FSCACHE_DATA_BLOCK			This is a data block.
  *   FSCACHE_READ_AHEAD_BLOCK		This block was read ahead.
  *   FSCACHE_IO_IN_PROGRESS		IO is in progress on this block.
+ *   FSCACHE_CANT_BLOCK
  *   FSCACHE_DONT_BLOCK			Don't block if the cache block is
  *					already locked.	
  *   FSCACHE_PIPE_BLOCK			This is a block that is permanently
@@ -224,6 +201,7 @@ typedef struct Fscache_Block {
  *					data area for a pipe. (NOT USED)
  *   FSCACHE_WRITE_THRU_BLOCK		This block is being written through by
  *					the caller to Fscache_UnlockBlock.
+ *   FSCACHE_BLOCK_BEING_CLEANED        The block is being cleaned.
  */
 #define	FSCACHE_BLOCK_FREE			0x000001
 #define	FSCACHE_BLOCK_ON_DIRTY_LIST		0x000002
@@ -245,6 +223,9 @@ typedef struct Fscache_Block {
 #define FSCACHE_DONT_BLOCK			0x040000
 #define FSCACHE_PIPE_BLOCK			0x080000
 #define	FSCACHE_WRITE_THRU_BLOCK		0x100000
+#define	FSCACHE_CANT_BLOCK			0x200000
+#define	FSCACHE_BLOCK_BEING_CLEANED		0x400000
+
 
 /*
  * Macro to get the block address field of the Fscache_Block struct.
@@ -266,11 +247,13 @@ typedef struct Fscache_Block {
  *    FSCACHE_WRITE_BACK_AND_INVALIDATE	Invalidate after writing back.
  *    FSCACHE_WB_MIGRATION		Invalidation due to migration (for
  *					statistics purposes only).
+ *    FSCACHE_WRITE_BACK_DESC_ONLY 	Only writeback the descriptor.
  */
 #define FSCACHE_FILE_WB_WAIT		0x1
 #define	FSCACHE_WRITE_BACK_INDIRECT	0x2
 #define	FSCACHE_WRITE_BACK_AND_INVALIDATE	0x4
 #define	FSCACHE_WB_MIGRATION	0x8
+#define	FSCACHE_WRITE_BACK_DESC_ONLY	0x10
 
 /*
  * Constants to pass as flags to FsUnlockCacheBlock.
@@ -290,13 +273,68 @@ typedef struct Fscache_Block {
 
 /*
  * Flags for Fscache_Trunc
- *	FSCACHE_TRUNC_CONSUME	Truncate a la named pipes, consuming from front
- *	FSCACHE_TRUNC_DELETE		Truncate because the file is deleted.  This
+ *	FSCACHE_TRUNC_DELETE	Truncate because the file is deleted.  This
  *				is used to prevent delayed writes during the
  *				truncation of the file.
  */
-#define FSCACHE_TRUNC_CONSUME	0x1
-#define FSCACHE_TRUNC_DELETE		0x2
+#define FSCACHE_TRUNC_DELETE		0x1
+
+typedef struct Fscache_BackendRoutines {
+    /*
+     *	FooAllocate(hdrPtr, offset, bytes, flags, blockAddrPtr, newBlockPtr)
+     *		Fs_HandleHeader *hdrPtr;			(File handle)
+     *		int		offset;			(Byte offset)
+     *		int		bytes;			(Bytes to allocate)
+     *		int		flags;			(FSCACHE_DONT_BLOCK)
+     *		int		*blockAddrPtr;		(Returned block number)
+     *		Boolean		*newBlockPtr;		(TRUE if new block)
+     *	FooTruncate(hdrPtr, size, delete)
+     *		Fs_HandleHeader	*hdrPtr;		(File handle)
+     *		int		size;			(New size)
+     *		Boolean		delete;			(TRUE if file being 
+     *							 removed)
+     *	FooBlockRead(hdrPtr, blockPtr,remoteWaitPtr)
+     *		Fs_HandleHeader	*hdrPtr;		(File handle)
+     *		Fscache_Block	*blockPtr;		(Cache block to read)
+     *		Sync_RemoteWaiter *remoteWaitPtr;	(For remote waiting)
+     *	FooBlockWrite(hdrPtr, blockPtr, lastDirtyBlock)
+     *		Boolean		lastDirtyBlock;		(Indicates last block)
+     *	FooReallocBlock(data, callInfoPtr)
+     *		ClientData	data = 	blockPtr;  (Cache block to realloc)
+     *		Proc_CallInfo	*callInfoPtr;	
+     *	FooStartWriteBack(backendPtr)
+     *        Fscache_Backend *backendPtr;	(Backend to start writeback.)
+     */ 
+    ReturnStatus (*allocate) _ARGS_((Fs_HandleHeader *hdrPtr, int offset,
+				    int numBytes, int flags, int *blockAddrPtr,
+				    Boolean *newBlockPtr));
+    ReturnStatus (*truncate) _ARGS_((Fs_HandleHeader *hdrPtr, int size, 
+				     Boolean delete));
+    ReturnStatus (*blockRead) _ARGS_((Fs_HandleHeader *hdrPtr, 
+				      Fscache_Block *blockPtr, 
+				      Sync_RemoteWaiter *remoteWaitPtr));
+    ReturnStatus (*blockWrite) _ARGS_((Fs_HandleHeader *hdrPtr, 
+				       Fscache_Block *blockPtr, int flags));
+    void	 (*reallocBlock) _ARGS_((ClientData data, 
+					 Proc_CallInfo *callInfoPtr));
+
+    ReturnStatus (*startWriteBack) _ARGS_((struct Fscache_Backend *backendPtr));
+} Fscache_BackendRoutines;
+
+
+/*
+ * Routines and data structures defining a backend to the cache. 
+ */
+typedef struct Fscache_Backend {
+    List_Links	cacheLinks;	/* Used by fscacheBlocks.c to link backends
+				 * onto a list. Must be first in structure! */
+    int		flags;		/* See below. */
+    ClientData	clientData;	/* ClientData for the backend. */
+    List_Links	dirtyListHdr;   /* List of dirty files for this backend. */
+
+    Fscache_BackendRoutines ioProcs; /* Routines for backend. */
+} Fscache_Backend;
+
 
 /*
  * Read-ahead is used for both local and remote files that are cached.
@@ -313,6 +351,7 @@ typedef struct Fscache_ReadAheadInfo {
 					 * conflicts with read ahead. */
 } Fscache_ReadAheadInfo;			/* 24 BYTES */
 
+#define	FSCACHE_NUM_DOMAIN_TYPES	2
 
 #ifndef CLEAN
 #define FSCACHE_DEBUG_PRINT(string) \
@@ -344,8 +383,8 @@ typedef struct Fscache_ReadAheadInfo {
  * is used to configure the right number of Proc_ServerProcs.
  */
 #define FSCACHE_MAX_CLEANER_PROCS	3
-extern int	fscache_MaxBlockCleaners;
 
+extern int	fscache_MaxBlockCleaners;
 extern Boolean	fscache_RATracing;
 extern int	fscache_NumReadAheadBlocks;
 
@@ -356,61 +395,137 @@ extern List_Links *fscacheFullWaitList;
 /*
  * Block Cache routines. 
  */
-extern  void            Fscache_WriteBack();
-extern  ReturnStatus    Fscache_FileWriteBack();
-extern  void            Fscache_FileInvalidate();
-extern  void            Fscache_Empty();
-extern  void            Fscache_CheckFragmentation();
+extern void Fscache_WriteBack _ARGS_((unsigned int writeBackTime,
+			int *blocksSkippedPtr, Boolean writeBackAll));
+extern ReturnStatus Fscache_FileWriteBack _ARGS_((
+			Fscache_FileInfo *cacheInfoPtr, int firstBlock, 
+			int lastBlock, int flags, int *blocksSkippedPtr));
+extern void Fscache_FileInvalidate _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+			int firstBlock, int lastBlock));
+extern void Fscache_Empty _ARGS_((int *numLockedBlocksPtr));
+extern void Fscache_CheckFragmentation _ARGS_((int *numBlocksPtr, 
+			int *totalBytesWastedPtr, int *fragBytesWastedPtr));
 
-extern  ReturnStatus	Fscache_CheckVersion();
-extern  ReturnStatus    Fscache_Consist();
+extern ReturnStatus Fscache_CheckVersion _ARGS_((
+			Fscache_FileInfo *cacheInfoPtr, int version, 
+			int clientID));
+extern ReturnStatus Fscache_Consist _ARGS_((
+			Fscache_FileInfo *cacheInfoPtr, int flags, 
+			Fscache_Attributes *cachedAttrPtr));
 
-extern	void		Fscache_SetMaxSize();
-extern	void		Fscache_SetMinSize();
-extern	void		Fscache_BlocksUnneeded();
-extern	void		Fscache_DumpStats();
-extern  void		Fscache_GetPageFromFS();
+extern void Fscache_SetMinSize _ARGS_((int minBlocks));
+extern void Fscache_SetMaxSize _ARGS_((int maxBlocks));
+extern void Fscache_BlocksUnneeded _ARGS_((Fs_Stream *streamPtr,
+				int offset, int numBytes, Boolean objectFile));
+extern void Fscache_DumpStats _ARGS_((void));
+extern void Fscache_GetPageFromFS _ARGS_((int timeLastAccessed, 
+				int *pageNumPtr));
 
-extern  void            Fscache_InfoInit();
-extern  void            Fscache_InfoSyncLockCleanup();
-extern  void            Fscache_FetchBlock();
-extern  void            Fscache_UnlockBlock();
-extern  void            Fscache_BlockTrunc();
-extern  void            Fscache_IODone();
-extern  void            Fscache_CleanBlocks();
-extern  void            Fscache_Init();
-extern  int             Fscache_PreventWriteBacks();
-extern  void            Fscache_AllowWriteBacks();
+extern void Fscache_FileInfoInit _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+		Fs_HandleHeader *hdrPtr, int version, Boolean cacheable,
+		Fscache_Attributes *attrPtr, Fscache_Backend *backendPtr));
+extern void Fscache_InfoSyncLockCleanup _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+extern Fscache_Backend *Fscache_RegisterBackend _ARGS_((
+		Fscache_BackendRoutines *ioProcsPtr, ClientData clientData, 
+		int flags));
+extern void Fscache_UnregisterBackend _ARGS_((Fscache_Backend *backendPtr));
+
+extern void Fscache_FetchBlock _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+		int blockNum, int flags, Fscache_Block **blockPtrPtr, 
+		Boolean *foundPtr));
+extern void Fscache_IODone _ARGS_((Fscache_Block *blockPtr));
+extern void Fscache_UnlockBlock _ARGS_((Fscache_Block *blockPtr, 
+		unsigned int timeDirtied, int diskBlock, int blockSize, 
+		int flags));
+extern void Fscache_BlockTrunc _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+		int blockNum, int newBlockSize));
+
+extern void Fscache_Init _ARGS_((int blockHashSize));
+extern int Fscache_PreventWriteBacks _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+extern void Fscache_AllowWriteBacks _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+extern Fscache_FileInfo *Fscache_GetDirtyFile _ARGS_((
+			Fscache_Backend *backendPtr, Boolean fsyncOnly, 
+			Boolean (*fileMatchProc)(), ClientData clientData));
+extern void Fscache_ReturnDirtyFile _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+		Boolean onFront));
+extern Fscache_Block *Fscache_GetDirtyBlock _ARGS_((
+		Fscache_FileInfo *cacheInfoPtr, 
+		Boolean (*blockMatchProc)(Fscache_Block *blockPtr, 
+					  ClientData clientData), 
+		ClientData clientData, int *lastDirtyBlockPtr));
+extern void Fscache_ReturnDirtyBlock _ARGS_((Fscache_Block *blockPtr,
+			ReturnStatus status));
+extern ReturnStatus Fscache_PutFileOnDirtyList _ARGS_((
+			Fscache_FileInfo *cacheInfoPtr, int flags));
+extern ReturnStatus Fscache_RemoveFileFromDirtyList _ARGS_((
+			Fscache_FileInfo *cacheInfoPtr));
 
 /*
  * Cache operations.  There are I/O operations, plus routines to deal
  * with the cached I/O attributes like access time, modify time, and size.
  */
 
-extern void             Fscache_Trunc();
-extern ReturnStatus     Fscache_Read();
-extern ReturnStatus     Fscache_Write();
-extern ReturnStatus     Fscache_BlockRead();
+extern ReturnStatus Fscache_Read _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+		int flags, register Address buffer, int offset, int *lenPtr,
+		Sync_RemoteWaiter *remoteWaitPtr));
+extern ReturnStatus Fscache_Write _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+		int flags,  Address buffer, int offset, int *lenPtr, 
+		Sync_RemoteWaiter *remoteWaitPtr));
+extern ReturnStatus Fscache_BlockRead _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+		int blockNum, Fscache_Block **blockPtrPtr, int *numBytesPtr, 
+		int blockType, Boolean allocate));
+extern ReturnStatus Fscache_Trunc _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+					int length, int flags));
 
-extern Boolean          Fscache_UpdateFile();
-extern void             Fscache_UpdateAttrFromClient();
-extern void             Fscache_UpdateAttrFromCache();
-extern void             Fscache_UpdateCachedAttr();
-extern void             Fscache_UpdateDirSize();
-extern void             Fscache_GetCachedAttr();
 
-extern Boolean		Fscache_AllBlocksInCache();
-extern Boolean		Fscache_OkToScavenge();
+extern Boolean Fscache_UpdateFile _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+		Boolean openForWriting, int version, Boolean cacheable, 
+		Fscache_Attributes *attrPtr));
+extern void Fscache_UpdateAttrFromClient _ARGS_((int clientID, 
+		Fscache_FileInfo *cacheInfoPtr,  Fscache_Attributes *attrPtr));
+extern void Fscache_UpdateDirSize _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+		int newLastByte));
+extern void Fscache_UpdateAttrFromCache _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+		Fs_Attributes *attrPtr));
+extern void Fscache_GetCachedAttr _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+		int *versionPtr, Fscache_Attributes *attrPtr));
+extern void Fscache_UpdateCachedAttr _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+		Fs_Attributes *attrPtr, int flags));
+
+
+extern Boolean Fscache_OkToScavenge _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+
+
+extern int Fscache_ReserveBlocks _ARGS_((Fscache_Backend *backendPtr, 
+			int numResBlocks, int numNonResBlocks));
+
+extern void Fscache_ReleaseReserveBlocks _ARGS_((Fscache_Backend *backendPtr,
+			int numBlocks));
 
 /*
  * Read ahead routines.
  */
-extern void		Fscache_ReadAheadInit();
-extern void		Fscache_ReadAheadSyncLockCleanup();
-extern void		Fscache_WaitForReadAhead();
-extern void		Fscache_AllowReadAhead();
 
-extern void		FscacheReadAhead();
+extern void Fscache_ReadAheadInit _ARGS_((Fscache_ReadAheadInfo *readAheadPtr));
+extern void Fscache_ReadAheadSyncLockCleanup _ARGS_((
+			Fscache_ReadAheadInfo *readAheadPtr));
+extern void FscacheReadAhead _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
+				int blockNum));
+
+extern void Fscache_WaitForReadAhead _ARGS_((
+			Fscache_ReadAheadInfo *readAheadPtr));
+extern void Fscache_AllowReadAhead _ARGS_((Fscache_ReadAheadInfo *readAheadPtr));
+
+extern void FscacheReadAhead _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+			int blockNum));
+
+
+extern void FscacheBackendIdle _ARGS_((Fscache_Backend *backendPtr));
+extern void FscacheFinishRealloc _ARGS_((Fscache_Block *blockPtr, 
+			int diskBlock));
+
+extern void Fscache_CountBlocks _ARGS_((int serverID, int majorNumber,
+			int *numBlocksPtr, int *numDirtyBlocksPtr));
 
 #endif /* _FSCACHE */
 

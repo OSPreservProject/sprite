@@ -23,22 +23,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fscache.h"
-#include "fsconsist.h"
-#include "fsNameOps.h"
-#include "fsdm.h"
-#include "fsStat.h"
-#include "fsutilTrace.h"
-#include "fslcl.h"
-#include "fsBlockCache.h"
-#include "vm.h"
-#include "spriteTime.h"
-#include "timer.h"
-#include "sys.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fscache.h>
+#include <fsconsist.h>
+#include <fsNameOps.h>
+#include <fsdm.h>
+#include <fsStat.h>
+#include <fsutilTrace.h>
+#include <fslcl.h>
+#include <fscacheBlocks.h>
+#include <vm.h>
+#include <spriteTime.h>
+#include <timer.h>
+#include <sys.h>
+#include <rpc.h>
 
 #define	BLOCK_ALIGNED(offset) (((offset) & ~FS_BLOCK_OFFSET_MASK) == (offset))
 
@@ -213,6 +213,9 @@ Fscache_UpdateAttrFromClient(clientID, cacheInfoPtr, attrPtr)
 	cacheInfoPtr->attr.lastByte = attrPtr->lastByte;
     }
     cacheInfoPtr->attr.firstByte = attrPtr->firstByte;
+
+    (void)Fsdm_UpdateDescAttr((Fsio_FileIOHandle *)cacheInfoPtr->hdrPtr, 
+		&cacheInfoPtr->attr, -1);
     UNLOCK_MONITOR;
 }
 
@@ -481,7 +484,7 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
 	    break;
 	case FSCONSIST_CANT_CACHE_NAMED_PIPE:
 	case FSCONSIST_INVALIDATE_BLOCKS:
-	    Fscache_FileInvalidate(cacheInfoPtr, firstBlock,
+	    Fscache_FileInvalidate(cacheInfoPtr, firstBlock, 
 				   FSCACHE_LAST_BLOCK);
 	    cacheInfoPtr->flags |= FSCACHE_FILE_NOT_CACHEABLE;
 	    break;
@@ -638,7 +641,7 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	     * Fscache_FetchBlock has set the blockNum and blockAddr (buffer).
 	     * blockSize gets set as a side-effect of the block read routine.
 	     */
-	    status = (cacheInfoPtr->ioProcsPtr->blockRead)
+	    status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
 			(cacheInfoPtr->hdrPtr, blockPtr, remoteWaitPtr);
 #ifdef lint
 	    status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr,
@@ -674,30 +677,25 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     *lenPtr -= size;
     Fs_StatAdd(*lenPtr, fs_Stats.blockCache.bytesRead,
 	       fs_Stats.blockCache.bytesReadOverflow);
-#ifndef CLEAN
-    if (fsdmKeepTypeInfo) {
-	int fileType;
-
-	fileType = Fsdm_FindFileType(cacheInfoPtr);
-	fs_TypeStats.cacheBytes[FS_STAT_READ][fileType] += *lenPtr;
-    }
-#endif CLEAN
 
     /*
      * Consume data if the flags indicate a consuming stream.
      * This doesn't update the modify time of the file.
      */
     if (flags & FS_CONSUME) {
+#ifdef old
 	int length;
 	length = cacheInfoPtr->attr.lastByte - (int) offset + 1;
 	(void)(*fsio_StreamOpTable[cacheInfoPtr->hdrPtr->fileID.type].ioControl)
 		(cacheInfoPtr->hdrPtr, IOC_TRUNCATE, mach_Format,
 			sizeof(length), (Address) &length, 0, (Address) NIL); 
+#endif
+	panic("Broken code called in Fscache_Read\n");
     }
 exit:
     if ((status == SUCCESS) ||
 	(status == FS_WOULD_BLOCK && (*lenPtr > 0))) {
-	cacheInfoPtr->attr.accessTime = fsutil_TimeInSeconds;
+	cacheInfoPtr->attr.accessTime = Fsutil_TimeInSeconds();
     }
     UNLOCK_MONITOR;
     return(status);
@@ -746,8 +744,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     int			lastFileBlock;	/* Last block in the file */
     int			blockAddr;	/* For allocating blocks */
     Boolean		newBlock;	/* A brand new block was allocated. */
-    int			bytesToFree; 	/* number of bytes overwritten
-					 * in file */
     int			modTime;	/* File modify time. */
     Boolean		dontBlock;	/* TRUE if lower levels shouldn't block
 					 * because we can block up higher */
@@ -783,7 +779,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     oldOffset = offset;
     size = *lenPtr;
     *lenPtr = 0;
-    bytesToFree = 0;
 
     /*
      * Determine the range of blocks to write and where the current last block
@@ -853,7 +848,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	/*
 	 * Allocate space behind the cache block.
 	 */
-	status = (cacheInfoPtr->ioProcsPtr->allocate)(cacheInfoPtr->hdrPtr,
+	status = (cacheInfoPtr->backendPtr->ioProcs.allocate)(cacheInfoPtr->hdrPtr,
 		    offset, toAlloc, dontBlock, &blockAddr, &newBlock);
 #ifdef lint
 	status = Fsdm_BlockAllocate(cacheInfoPtr->hdrPtr,
@@ -900,7 +895,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	if (toWrite == FS_BLOCK_SIZE) {
 	    if (found) {
 		fs_Stats.blockCache.overWrites++;
-		bytesToFree += FS_BLOCK_SIZE;
 	    }
 	} else {
 	    /*
@@ -916,7 +910,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		    }
 		} else {
 		    fs_Stats.blockCache.partialWriteMisses++;
-		    status = (cacheInfoPtr->ioProcsPtr->blockRead)
+		    status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
 			(cacheInfoPtr->hdrPtr, blockPtr, remoteWaitPtr);
 #ifdef lint
 		    status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr, 
@@ -931,7 +925,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 			break;
 		    }
 		}
-		bytesToFree += toWrite;
 	    } else {
 		/*
 		 * We are writing to the end of the file or the block
@@ -986,7 +979,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    }
 	    modTime = 0;
 	} else {
-	    modTime = fsutil_TimeInSeconds;
+	    modTime = Fsutil_TimeInSeconds();
 	}
 
 	/*
@@ -1010,17 +1003,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     *lenPtr = offset - oldOffset;
     Fs_StatAdd(offset - oldOffset, fs_Stats.blockCache.bytesWritten,
 	       fs_Stats.blockCache.bytesWrittenOverflow);
-#ifndef CLEAN
-    if (fsdmKeepTypeInfo) {
-	int fileType;
-
-	fileType = Fsdm_FindFileType(cacheInfoPtr);
-	fs_TypeStats.cacheBytes[FS_STAT_WRITE][fileType] += offset - oldOffset;
-    }
-    if (bytesToFree > 0) {
-	Fsdm_RecordDeletionStats(cacheInfoPtr, bytesToFree);
-    }
-#endif CLEAN
 
     /*
      * Update the firstByte so that Fs_Read knows there is data.
@@ -1035,7 +1017,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	 * user cache in which case we already get the correct mod time
 	 * for the file when the client closes.
 	 */
-	cacheInfoPtr->attr.modifyTime = fsutil_TimeInSeconds;
+	cacheInfoPtr->attr.modifyTime = Fsutil_TimeInSeconds();
     }
 exit:
     if (status == FS_WOULD_BLOCK) {
@@ -1126,7 +1108,7 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 	 * then blockSize is set and the rest of the cache block has
 	 * been zero filled.
 	 */
-	status = (cacheInfoPtr->ioProcsPtr->blockRead)
+	status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
 		    (cacheInfoPtr->hdrPtr, blockPtr, (Sync_RemoteWaiter *) NIL);
 #ifdef lint
 	status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr,
@@ -1180,14 +1162,6 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
     } else {
 	Fs_StatAdd(blockPtr->blockSize, fs_Stats.blockCache.bytesRead,
 		   fs_Stats.blockCache.bytesReadOverflow);
-#ifndef CLEAN
-	if (fsdmKeepTypeInfo) {
-	    int fileType;
-
-	    fileType = Fsdm_FindFileType(cacheInfoPtr);
-	    fs_TypeStats.cacheBytes[FS_STAT_READ][fileType] += blockPtr->blockSize;
-	}
-#endif CLEAN
     }
     /*
      * Read ahead the next block.
@@ -1204,16 +1178,10 @@ exit:
  * Fscache_Trunc --
  *
  *	Truncate data out of the cache.  This knows how to truncate
- *	Consuming streams.  This is called as part of file deletion
- *	before the disk-resident descriptor and index blocks are
- *	modified.  It is possible for blocks to remain in the cache
- *	after this call for various reasons like they are locked
- *	due to I/O.  The Fscache_DeleteFile procedure can be called
- *	after the descriptor is re-written in order to really clean
- *	up the cache state associated with this file.
+ *	Consuming streams.
  *
  * Results:
- *	None.
+ *	The return status of backend truncate.
  *
  * Side effects:
  *	Data blocks are removed from the cache.  The file's first and
@@ -1222,15 +1190,15 @@ exit:
  *
  *----------------------------------------------------------------------
  */
-void
+ReturnStatus
 Fscache_Trunc(cacheInfoPtr, length, flags)
     Fscache_FileInfo *cacheInfoPtr;
     int length;
-    Boolean flags;	/* FSCACHE_TRUNC_CONSUME | FSCACHE_TRUNC_DELETE */
+    int flags;	/*  FSCACHE_TRUNC_DELETE */
 {
     int firstBlock;
     int lastBlock;
-    int firstByte, lastByte;	/* For debugging */
+    ReturnStatus status;
 
     LOCK_MONITOR;
 
@@ -1238,33 +1206,7 @@ Fscache_Trunc(cacheInfoPtr, length, flags)
 	cacheInfoPtr->flags |= FSCACHE_FILE_GONE;
     }
     if ((cacheInfoPtr->flags & FS_NOT_CACHEABLE) == 0) {
-	if (flags & FSCACHE_TRUNC_CONSUME) {
-	    /*
-	     * Truncation on consuming streams is defined to be truncation
-	     * from the front of the file, ie. the most recently written
-	     * bytes (length of them) will be left in the stream
-	     */
-	    if (cacheInfoPtr->attr.lastByte >= 0 &&
-		cacheInfoPtr->attr.firstByte < 0) {
-		panic( "Fscache_Trunc, bad firstByte %d\n",
-			cacheInfoPtr->attr.firstByte);
-		cacheInfoPtr->attr.firstByte = 0;
-	    }
-	    if (cacheInfoPtr->attr.firstByte >= 0) {
-		int newFirstByte = cacheInfoPtr->attr.lastByte - length + 1;
-		lastBlock = newFirstByte / FS_BLOCK_SIZE;
-		firstBlock = cacheInfoPtr->attr.firstByte / FS_BLOCK_SIZE;
-		if (length == 0) {
-		    Fscache_FileInvalidate(cacheInfoPtr, firstBlock, lastBlock);
-		    newFirstByte = -1;
-		    cacheInfoPtr->attr.lastByte = -1;
-		} else if (lastBlock > firstBlock) {
-		    Fscache_FileInvalidate(cacheInfoPtr, firstBlock,
-					    lastBlock-1);
-		}
-		cacheInfoPtr->attr.firstByte = newFirstByte;
-	    }
-	} else if (length - 1 < cacheInfoPtr->attr.lastByte) {
+	if (length - 1 < cacheInfoPtr->attr.lastByte) {
 	    /*
 	     * Do file like truncation, leave length bytes at the
 	     * beginning of the file.
@@ -1275,8 +1217,6 @@ Fscache_Trunc(cacheInfoPtr, length, flags)
 		firstBlock = (length - 1) / FS_BLOCK_SIZE + 1;
 	    }
 	    lastBlock = cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE;
-	    firstByte = cacheInfoPtr->attr.firstByte;
-	    lastByte = cacheInfoPtr->attr.lastByte;
             if (length - 1 < cacheInfoPtr->attr.firstByte) {
                 cacheInfoPtr->attr.lastByte = -1;
 	        cacheInfoPtr->attr.firstByte = -1;
@@ -1289,95 +1229,10 @@ Fscache_Trunc(cacheInfoPtr, length, flags)
 				  length - (firstBlock - 1) * FS_BLOCK_SIZE);
 	    }
         }
-	cacheInfoPtr->attr.modifyTime = fsutil_TimeInSeconds;
+	cacheInfoPtr->attr.modifyTime = Fsutil_TimeInSeconds();
     }
+    status = (cacheInfoPtr->backendPtr->ioProcs.truncate)(cacheInfoPtr->hdrPtr,
+			length, (flags & FSCACHE_TRUNC_DELETE) != 0);
     UNLOCK_MONITOR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fscache_DeleteFile --
- *
- *	Nuke the cache state associated with this file.  This is called
- *	from Fsio_FileTrunc after the file has been deleted from disk.
- *	The file handle will be deleted shortly, and it is crucial that
- *	this procedure be called in order to fully clean up.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Data blocks are removed from the cache.
- *
- *----------------------------------------------------------------------
- */
-void
-Fscache_DeleteFile(cacheInfoPtr)
-    Fscache_FileInfo *cacheInfoPtr;
-{
-    int firstBlock;
-    int lastBlock;
-    int firstByte, lastByte;	/* For debugging */
-
-    LOCK_MONITOR;
-
-    if (cacheInfoPtr->blocksInCache > 0) {
-	printf("Fscache_DeleteFile \"%s\" <%d,%d>: %d cache blocks left\n",
-			Fsutil_HandleName(cacheInfoPtr->hdrPtr),
-			cacheInfoPtr->hdrPtr->fileID.major,
-			cacheInfoPtr->hdrPtr->fileID.minor,
-			cacheInfoPtr->blocksInCache);
-	/*
-	 * Use this loop to recover.  Disk full
-	 * conditions can cause file truncations to fail.
-	 */
-	while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
-	    register Fscache_Block *blockPtr;
-	    register List_Links *listItem;
-	    listItem = List_First(&cacheInfoPtr->blockList);
-	    blockPtr = FILE_LINKS_TO_BLOCK(listItem);
-	    printf("%d ", blockPtr->blockNum);
-	    if (blockPtr->refCount > 0) {
-		printf("ref %d! ", blockPtr->refCount);
-	    }
-	    Fscache_FileInvalidate(cacheInfoPtr, blockPtr->blockNum,
-		    blockPtr->blockNum);
-	}
-	printf("\n");
-    }
-    if (!List_IsEmpty(&cacheInfoPtr->dirtyList)) {
-	register Fscache_Block *blockPtr;
-	register List_Links *listItem;
-	printf("Fscache_DeleteFile \"%s\" <%d,%d>: dirty blocks left in cache\n",
-	    Fsutil_HandleName(cacheInfoPtr->hdrPtr),
-	    cacheInfoPtr->hdrPtr->fileID.major,
-	    cacheInfoPtr->hdrPtr->fileID.minor);
-	listItem = List_First(&cacheInfoPtr->dirtyList);
-	while (!List_IsAtEnd(&cacheInfoPtr->dirtyList, listItem)) {
-	    blockPtr = DIRTY_LINKS_TO_BLOCK(listItem);
-	    printf("%d ", blockPtr->blockNum);
-	    if (blockPtr->refCount > 0) {
-		printf("ref %d! ", blockPtr->refCount);
-	    }
-	    listItem = listItem->nextPtr;
-	    Fscache_FileInvalidate(cacheInfoPtr, blockPtr->blockNum,
-		    blockPtr->blockNum);
-	}
-	printf("\n");
-    }
-    /*
-     * At this point the file should have no cache blocks associated
-     * with it, clean or dirty, and the file itself should not be
-     * on the dirty list or being written out.
-     */
-    if ((cacheInfoPtr->blocksInCache > 0) ||
-	(cacheInfoPtr->flags & (FSCACHE_FILE_ON_DIRTY_LIST|
-				FSCACHE_FILE_BEING_WRITTEN))) {
-	panic("Fscache_DeleteFile failed \"%s\" blocks %d flags %x\n",
-		Fsutil_HandleName(cacheInfoPtr->hdrPtr),
-		cacheInfoPtr->blocksInCache,
-		cacheInfoPtr->flags);
-    }
-    UNLOCK_MONITOR;
+    return status;
 }
