@@ -169,16 +169,18 @@ Boolean recovTracing = TRUE;
 /*
  * Forward declarations.
  */
-void Recov_PrintState();
-void RecovRebootCallBacks();
-void RecovCrashCallBacks();
-void RecovDelayedCrashCallBacks();
-void CallBacksDone();
-void MarkRecoveryComplete();
-void MarkHostDead();
-void GetRebootList();
-void CheckHost();
-char *RecovState();
+
+extern void Recov_PrintState();
+extern void RecovRebootCallBacks();
+extern void RecovCrashCallBacks();
+extern void RecovDelayedCrashCallBacks();
+extern char *RecovState();
+
+extern void CallBacksDone();
+static void MarkRecoveryComplete();
+static void MarkHostDead();
+extern void GetRebootList();
+static void CheckHost();
 
 
 /*
@@ -206,6 +208,7 @@ Recov_Init()
     Trace_Init(recovTraceHdrPtr, recovTraceLength,
 		sizeof(RecovTraceRecord), 0);
     recov_CrashDelay = (unsigned int)(10 * timer_IntOneMinute);
+    return;
 }
 
 /*
@@ -241,6 +244,7 @@ Recov_CrashRegister(crashCallBackProc, crashData)
     notifyPtr->data = crashData;
     List_InitElement((List_Links *) notifyPtr);
     List_Insert((List_Links *) notifyPtr, LIST_ATREAR(&crashCallBackList));
+    return;
 }
 
 /*
@@ -449,6 +453,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
     hostPtr->state = state;
 exit:
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -527,6 +532,7 @@ Recov_HostDead(spriteID)
 	    break;
     }
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -647,6 +653,7 @@ Recov_RebootRegister(spriteID, rebootCallBackProc, rebootData)
 	}
     }
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -796,6 +803,7 @@ Recov_ClearClientState(spriteID, stateBits)
 	}
     }
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -834,6 +842,7 @@ RecovRebootCallBacks(data, callInfoPtr)
 	free((Address)notifyPtr);
     }
     CallBacksDone(spriteID);
+    return;
 }
 
 /*
@@ -872,6 +881,7 @@ RecovCrashCallBacks(data, callInfoPtr)
     MarkRecoveryComplete(spriteID);
     RECOV_TRACE(spriteID, RECOV_CRASH, RECOV_CUZ_DONE);
     callInfoPtr->interval = 0;	/* Don't call again */
+    return;
 }
 
 /*
@@ -917,6 +927,7 @@ RecovDelayedCrashCallBacks(data, callInfoPtr)
 	recovNumNonCrashes++;
     }
     callInfoPtr->interval = 0;	/* Don't call again */
+    return;
 }
 
 /*
@@ -955,6 +966,7 @@ MarkRecoveryComplete(spriteID)
 	}
     }
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -992,6 +1004,7 @@ MarkHostDead(spriteID)
 	}
     }
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -1092,6 +1105,7 @@ CheckHost(data, callInfoPtr)
 	    break;
     }
     callInfoPtr->interval = recovPingSeconds * timer_IntOneSecond;
+    return;
 }
 
 /*
@@ -1136,6 +1150,7 @@ GetRebootList(notifyListHdr, spriteID)
 	List_Insert((List_Links *)newNotifyPtr, LIST_ATREAR(notifyListHdr));
     }
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -1170,6 +1185,7 @@ CallBacksDone(spriteID)
     }
     hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -1187,7 +1203,7 @@ CallBacksDone(spriteID)
  *
  *----------------------------------------------------------------------
  */
-int
+void
 Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
     ClientData clientData;	/* Client data in the trace record */
     int event;			/* Type, or event, from the trace record */
@@ -1251,6 +1267,7 @@ Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
 	}
 	/* Our caller prints a newline */
     }
+    return;
 }
 
 /*
@@ -1280,6 +1297,7 @@ Recov_PrintTrace(numRecs)
     printf("RECOVERY TRACE\n");
     (void)Trace_Print(recovTraceHdrPtr, numRecs, Recov_PrintTraceRecord);
     Recov_PrintState();
+    return;
 }
 
 /*
@@ -1318,6 +1336,7 @@ Recov_PrintState()
 	    printf(" clt bits 0x%x\n", hostPtr->clientState);
 	}
     }
+    return;
 }
 
 /*
