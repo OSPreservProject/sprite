@@ -235,6 +235,9 @@ DoneCheck:
  *
  * VMMACH_CONTEXT_OFF	 	Offset to context register in control space.
  * VMMACH_DIAGNOSTIC_REG	The address of the diagnostic register.
+ * VMMACH_USER_DVMA_ENABLE_REG  Bits to enable user DVMA for different VME 
+ *				context.
+ * VMMACH_USER_DVMA_MAP		Map of VME context to sun user contexts.
  * VMMACH_BUS_ERROR_REG		The address of the bus error register.
  * VMMACH_ADDR_ERROR_REG	Addr of register storing addr of mem error.
  * VMMACH_ADDR_CONTROL_REG	Addr of control register for memory errors.
@@ -272,10 +275,12 @@ DoneCheck:
 #define VMMACH_IDPROM_INC		0x01
 #define VMMACH_MACH_TYPE_ADDR		0x01
 #define VMMACH_ETHER_ADDR		0x02
+#define	VMMACH_USER_DVMA_ENABLE_REG	0x50000000      /* control space */
 #define VMMACH_BUS_ERROR_REG		0x60000000	/* control space */
 #define VMMACH_ADDR_ERROR_REG		0xffd08004	/* device space */
 #define VMMACH_ADDR_CONTROL_REG		0xffd08000	/* device space */
 #define VMMACH_DIAGNOSTIC_REG		0x70000000	/* control space */
+#define	VMMACH_USER_DVMA_MAP		0xD0000000	/* control space */
 /*
  * Bit in address error control register to enable reporting of asynchronous
  * memory errors.

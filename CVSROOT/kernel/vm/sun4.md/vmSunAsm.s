@@ -1166,8 +1166,59 @@ FlushingPage:
     sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0	/* delay slot */
     ret
     restore
+#ifndef sun4c
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMachSetupUserDVMA --
+ *
+ *      Return the user DVMA to access the lower 256 megabytes of context 0.
+ *	We use this space to map pages for DMA.
+ *
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
 
+.globl  _VmMachSetupUserDVMA
+_VmMachSetupUserDVMA:
+    /*
+     * First we initialized the map for VME context 0 to map into the
+     * lower 256 megabytes of the context 0. The DVMA map takes the form
+     * of an eight element array index by bits 30 to 28 from the VME bus. 
+     *  each entry looking like:
+     *   struct UserDVMAMap {
+     *	    unsigned char  :4;
+     *	    unsigned char  topNibble:4;   Top four bits of DMA address. 
+     *	    unsigned char  context:8;     Context to access. 
+     * }
+     *	    
+     * We initialized the following mapping:
+     * VME 32 addresses 0x80000000 - 0x8fffffff to 0 - 0x0fffffff of context 0.
+     */
+    set         VMMACH_USER_DVMA_MAP, %OUT_TEMP1
+    stba        %g0, [%OUT_TEMP1] VMMACH_CONTROL_SPACE
+    add		%OUT_TEMP1,1,%OUT_TEMP1
+    stba        %g0, [%OUT_TEMP1] VMMACH_CONTROL_SPACE
 
+    /*
+     * Enable user DVMA from VME context 0 (ie 0x80000000 - 0x8fffffff)
+     * The User DVMA enable register takes the form of a bitmap will one
+     * bit per VME context.
+     */
+    set         VMMACH_USER_DVMA_ENABLE_REG, %OUT_TEMP1
+    mov		1, %OUT_TEMP2
+    stba        %OUT_TEMP2, [%OUT_TEMP1] VMMACH_CONTROL_SPACE
+
+    retl                /* Return from leaf routine */
+    nop
+
+#endif
 /*
  * ----------------------------------------------------------------------
  *
