@@ -90,13 +90,13 @@ static	List_Links	reservePageListHdr;
 /*
  * Condition to wait for a clean page to be put onto the allocate list.
  */
-static	Sync_Condition	cleanCondition;	
+Sync_Condition	cleanCondition;	
 
 /*
  * Variables to allow recovery.
  */
 static	Boolean		swapDown = FALSE;
-static	Sync_Condition	swapDownCondition;
+Sync_Condition	swapDownCondition;
 
 /*
  * Maximum amount of pages that can be on the dirty list before waiting for
@@ -1430,8 +1430,8 @@ Vm_PageIn(virtAddr, protFault)
 	status = FAILURE;
 	goto pageinDone;
     }
-    if ((protFault && segPtr->type == VM_CODE) ||
-	    (protFault && (transVirtAddr.flags & VM_READONLY_SEG))) {
+    if ((protFault && ( segPtr->type == VM_CODE) ||
+	    transVirtAddr.flags & VM_READONLY_SEG)) {
 	/*
 	 * Access violation.  Go to pageinDone to clean up ptUserCount.
 	 */
@@ -1480,6 +1480,13 @@ Vm_PageIn(virtAddr, protFault)
     }
 
     ptePtr = VmGetAddrPTEPtr(&transVirtAddr, page);
+
+    if (protFault && (*ptePtr & VM_READ_ONLY_PROT) &&
+	    !(*ptePtr & VM_COR_CHECK_BIT)) {
+	status = FAILURE;
+	goto pageinDone;
+    }
+
     /*
      * Fetch the next page.
      */
@@ -1768,7 +1775,8 @@ static void
 KillCallback(data)
     ClientData data;
 {
-    (void) Sig_Send(SIG_KILL, PROC_VM_READ_ERROR, (Proc_PID) data, FALSE);
+    (void) Sig_Send(SIG_KILL, PROC_VM_READ_ERROR, (Proc_PID) data, FALSE,
+	    (Address)0);
 }
 
 /*
