@@ -39,6 +39,10 @@ typedef struct RpcServerState {
      */
     int			state;
     /*
+     * The current RPC sequence number.
+     */
+    unsigned int	ID;
+    /*
      * The index is a self reference to this server's state.
      * It is kept here because it will be part of the packet header.
      */
