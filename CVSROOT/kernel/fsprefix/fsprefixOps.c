@@ -1279,9 +1279,6 @@ Fsprefix_HandleClose(prefixPtr, flags)
     Fsprefix *prefixPtr;
     int flags;			/* FSPREFIX_ANY, FSPREFIX_EXPORTED */
 {
-    register Fs_HandleHeader *hdrPtr;
-    Fs_Stream dummy;
-
     LOCK_MONITOR;
     FsprefixHandleCloseInt(prefixPtr, flags);
     UNLOCK_MONITOR;
@@ -1334,22 +1331,22 @@ FsprefixHandleCloseInt(prefixPtr, flags)
 	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
 		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL);
 #ifdef lint
-	status = Fsio_FileClose(&dummy, rpc_SpriteID, 0,
-		0, 0, (ClientData)NIL);
-	status = FsrmtFileClose(&dummy, rpc_SpriteID, 0,
-		0, 0, (ClientData)NIL);
-	status = Fsio_PipeClose(&dummy, rpc_SpriteID, 0,
-		0, 0, (ClientData)NIL);
-	status = Fsio_DeviceClose(&dummy, rpc_SpriteID, 0,
-		0, 0, (ClientData)NIL);
-	status = Fsrmt_IOClose(&dummy, rpc_SpriteID, 0,
-		0, 0, (ClientData)NIL);
-	status = FspdevControlClose(&dummy, rpc_SpriteID, 0,
-		0, 0, (ClientData)NIL);
-	status = FspdevPseudoStreamClose(&dummy, rpc_SpriteID, 0,
-		0, 0, (ClientData)NIL);
-	status = FspdevServerStreamClose(&dummy, rpc_SpriteID, 0,
-		0, 0, (ClientData)NIL);
+	(void) Fsio_FileClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) FsrmtFileClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) Fsio_PipeClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) Fsio_DeviceClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) Fsrmt_IOClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) FspdevControlClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) FspdevPseudoStreamClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) FspdevServerStreamClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
 #endif /* lint */
 
 	if (prefixPtr->activeOpens > 0) {
