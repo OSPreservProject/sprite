@@ -136,7 +136,14 @@ DevNet_FsOpen(devicePtr, useFlags, data)
     register int i;
     register unsigned int protocol;
     ReturnStatus status = SUCCESS;
+    ProtocolState *newProtoPtr;	
 
+    /*
+     * Allocate a new protocol state structure before we grap a master lock.
+     * This is only needed if this protocol is being opened for this 
+     * first time. 
+     */
+    newProtoPtr = (ProtocolState *)malloc(sizeof(ProtocolState));
     MASTER_LOCK(&protoMutex);
     if (!initList) {
 	List_Init(&etherProtos);
@@ -165,7 +172,8 @@ DevNet_FsOpen(devicePtr, useFlags, data)
      * would be possible to sort the list...
      */
 
-    protoPtr = (ProtocolState *)malloc(sizeof(ProtocolState));
+    protoPtr = newProtoPtr;
+    newProtoPtr = (ProtocolState *) NIL;
     List_InitElement((List_Links*) protoPtr);
     List_Insert((List_Links *)protoPtr, LIST_ATREAR(&etherProtos));
 
@@ -214,6 +222,12 @@ exit:
     }
 
     MASTER_UNLOCK(&protoMutex);
+    /*
+     * Free the potocol state pointer if we didn't need it.
+     */
+    if (newProtoPtr != (ProtocolState *) NIL) {
+	free((char *) newProtoPtr);
+    }
     return(status);
 }
 
