@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <proc.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fsCmd.h>
 
 
 typedef struct CheckPointData {
@@ -36,6 +37,9 @@ typedef struct CheckPointData {
 
 static void CheckpointCallBack _ARGS_((ClientData clientData, 
 		Proc_CallInfo *callInfoPtr));
+static ReturnStatus GetDomainFromCmdArgs _ARGS_((int *bufSizePtr, 
+			char **bufferPtr, Fsdm_Domain **domainPtrPtr));
+
 
 /*
  *----------------------------------------------------------------------
@@ -98,6 +102,7 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
     lfsPtr->devicePtr = devicePtr;
     lfsPtr->name = localName;
     lfsPtr->name = malloc(strlen(localName)+1);
+    lfsPtr->controlFlags = 0;
     (void) strcpy(lfsPtr->name, localName);
     lfsPtr->attachFlags = flags;
 
@@ -208,7 +213,54 @@ Lfs_DomainWriteBack(domainPtr, shutdown)
     return LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_WRITEBACK);
 
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetDomainFromCmdArgs --
+ *
+ *	Return the Fsdm_Domain specified in the Lfs_Command arguments.
+ *	This routine updates the bufSize and bufferPtr to remove the
+ *	domain specifier argument.
+ *
+ * Results:
+ *	SUCCESS if domain fetched.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+
+static ReturnStatus
+GetDomainFromCmdArgs(bufSizePtr, bufferPtr, domainPtrPtr)
+    int	*bufSizePtr;	/* Size of Lfs_Command argument buffer. */
+    char **bufferPtr;	/* Argument buffer. */
+    Fsdm_Domain	**domainPtrPtr; /* OUT: Lfs Domain specified by arguments. */
+{
+    int		bufSize = (*bufSizePtr);
+    char	*buffer = (*bufferPtr);
+    int		domainNumber;
+    Fsdm_Domain	*domainPtr;
+
+    if (bufSize < sizeof(int)) {
+	return GEN_INVALID_ARG;
+    }
+    bcopy(buffer, (char *) &domainNumber, sizeof(int));
+    domainPtr = Fsdm_DomainFetch(domainNumber, FALSE);
+    if (domainPtr == (Fsdm_Domain *) NIL) {
+	return GEN_INVALID_ARG;
+    }
+    if (domainPtr->domainOpsPtr->attachDisk != Lfs_AttachDisk) {
+	Fsdm_DomainRelease(domainNumber);
+	return GEN_INVALID_ARG;
+    }
+    (*domainPtrPtr) = domainPtr;
+    (*bufSizePtr) -= sizeof(int);
+    (*bufferPtr) += sizeof(int);
+    return SUCCESS;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -233,7 +285,56 @@ Lfs_Command(command, bufSize, buffer)
     int bufSize;	/* Size of the user's input/output buffer. */
     Address buffer;	/* The user's input or output buffer. */
 {
-    return SUCCESS;
+    Lfs	*lfsPtr;
+    ReturnStatus status;
+    Fsdm_Domain	*domainPtr;
+    char	*outBufferPtr = buffer;
+
+    switch (command) {
+	case	FS_CLEAN_LFS_COMMAND: {
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    LfsSegCleanStart(lfsPtr);
+	    Fsdm_DomainRelease(domainPtr->domainNumber);
+	    break;
+	}
+	case FS_SET_CONTROL_FLAGS_LFS_COMMAND: {
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    if (bufSize >= sizeof(int)) {
+		bcopy(buffer, (char *) &(lfsPtr->controlFlags), sizeof(int));
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
+	    Fsdm_DomainRelease(domainPtr->domainNumber);
+	    break;
+	}
+	case FS_GET_CONTROL_FLAGS_LFS_COMMAND: {
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    if (bufSize >= sizeof(int)) {
+		bcopy((char *) &(lfsPtr->controlFlags), outBufferPtr, 
+				sizeof(int));
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
+	    Fsdm_DomainRelease(domainPtr->domainNumber);
+	    break;
+	}
+	default: {
+	    status = GEN_INVALID_ARG;
+	}
+    }
+    return status;
 }
 
 /*
