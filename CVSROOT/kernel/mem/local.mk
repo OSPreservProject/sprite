@@ -6,8 +6,7 @@
 # By defining MEM_TRACE we turn on extra caller-PC tracing.
 #
 
-#if empty(TM:Msun4)
 XCFLAGS += -DMEM_TRACE
-#endif
+
 
 #include	<$(SYSMAKEFILE)>
