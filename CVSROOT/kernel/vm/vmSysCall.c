@@ -302,7 +302,7 @@ Vm_Cmd(command, arg)
 	    SETVAR(vm_CanCOW, arg);
 	    break;
 	case VM_SET_FS_PENALTY:
-	    if (arg < 0) {
+	    if (arg <= 0) {
 		/*
 		 * Caller is setting an absolute penalty.
 		 */
