@@ -26,7 +26,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "machine.h"
 #include "sys.h"
 #include "list.h"
 #include "vm.h"
@@ -187,7 +186,7 @@ NetIEReset()
 	 */
 
 	netIEState.controlReg->noReset = 1;
-	DELAY(200);
+	MACH_DELAY(200);
 
 	/* 
 	 * Get the attention of the chip so that it will initialize itself.
