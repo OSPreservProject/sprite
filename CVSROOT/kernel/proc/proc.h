@@ -573,10 +573,10 @@ extern void			ProcInitMainEnviron();
 extern void			ProcSetupEnviron();
 extern void			ProcDecEnvironRefCount();
 
-extern void			Proc_WakeupIfSignal();
 extern void			Proc_SetServerPriority();
 
 extern	int			Proc_KillAllProcesses();
+extern	void			Proc_WakeupAllProcesses();
 
 extern	void			Proc_Unlock();
 extern	void			Proc_Lock();
