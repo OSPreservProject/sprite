@@ -441,6 +441,7 @@ Proc_MigrateTrap(procPtr)
     int maxSize;
     int whenNeeded;
     Boolean exec;
+    Proc_PID pid;
 
     Proc_Lock(procPtr);
 
@@ -458,8 +459,9 @@ Proc_MigrateTrap(procPtr)
     if (proc_MigDoStats) {
 	Timer_GetTimeOfDay(&startTime, (int *) NIL, (Boolean *) NIL);
     }
+    pid = procPtr->processID;
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
-	record.processID = procPtr->processID;
+	record.processID = pid;
 	record.flags = PROC_MIGTRACE_START;
 	if (!foreign) {
 	    record.flags |= PROC_MIGTRACE_HOME;
@@ -648,8 +650,9 @@ Proc_MigrateTrap(procPtr)
     Proc_Lock(procPtr);
 
     procPtr->genFlags = (procPtr->genFlags &
-			 ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING)) |
-			     PROC_MIGRATION_DONE;
+			 ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING|
+			   PROC_MIG_ERROR)) |
+			       PROC_MIGRATION_DONE;
     Proc_Unlock(procPtr);
 
 
@@ -673,10 +676,14 @@ Proc_MigrateTrap(procPtr)
 
     /*
      * If not migrating back home, note the dependency on the other host.
+     * Otherwise, forget the dependency after eviction.
      */
     if (!foreign) {
 	Proc_AddMigDependency(procPtr->processID, hostID);
+    } else {
+	Proc_RemoveMigDependency(procPtr->processID);
     }
+
     
     WakeupCallers();
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
@@ -699,14 +706,25 @@ Proc_MigrateTrap(procPtr)
 	AddMigrateTime(timeDiff, timePtr);
     }
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
-	record.processID = procPtr->processID;
+	record.processID = pid;
 	record.flags = PROC_MIGTRACE_HOME;
 	record.info.filler = NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
 		     (ClientData) &record);
     }
 #endif /* CLEAN */   
-   
+
+    /*
+     * Check for asynchronous errors coming in after we resumed on the other
+     * host.
+     */
+    Proc_Lock(procPtr);
+    if (procPtr->genFlags & PROC_MIG_ERROR) {
+	Proc_Unlock(procPtr);
+	goto failure;
+    }
+    Proc_Unlock(procPtr);
+    
     if (foreign) {
 #ifndef CLEAN
 	if (proc_MigDoStats) {
@@ -732,11 +750,20 @@ Proc_MigrateTrap(procPtr)
     return;
 
  failure:
-    procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING);
-    KillRemoteCopy(procPtr, hostID);
+    /*
+     * If the process hit some error, like the other host rebooting or
+     * exiting on the other host, we don't bother sending an RPC to the
+     * other host.
+     */
+    Proc_Lock(procPtr);
+    if (!(procPtr->genFlags & PROC_MIG_ERROR)) {
+	KillRemoteCopy(procPtr, hostID);
+    }
+    procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING|
+			   PROC_MIG_ERROR);
     WakeupCallers();
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
-	record.processID = procPtr->processID;
+	record.processID = pid;
 	record.flags = PROC_MIGTRACE_HOME;
 	record.info.filler = NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
@@ -746,6 +773,7 @@ Proc_MigrateTrap(procPtr)
 #ifndef CLEAN
     proc_MigStats.errors++;
 #endif /* CLEAN */
+    Proc_Unlock(procPtr);
 }
 
 /*
@@ -1767,9 +1795,21 @@ Proc_DestroyMigratedProc(pidData)
     }
     if ((procPtr->state != PROC_MIGRATED) &&
 	!(procPtr->genFlags & PROC_FOREIGN)) {
-	if (proc_MigDebugLevel > 0) {
-	    printf("%s Proc_DestroyMigratedProc: process %x not migrated.\n",
-		      "Warning:", (int) pid);
+	if (procPtr->genFlags & PROC_MIGRATION_DONE) {
+	    /*
+	     * Just about to complete the migration.
+	     */
+	    procPtr->genFlags |= PROC_MIG_ERROR;
+	    if (proc_MigDebugLevel > 1) {
+		printf("%s Proc_DestroyMigratedProc: process %x not done migrating.\n",
+			  "Warning:", (int) pid);
+	    }
+
+	} else {
+	    if (proc_MigDebugLevel > 0) {
+		printf("%s Proc_DestroyMigratedProc: process %x not migrated.\n",
+			  "Warning:", (int) pid);
+	    }
 	}
 	Proc_Unlock(procPtr);
 	/*
