@@ -46,8 +46,9 @@ typedef struct ProcIntTimerInfo {
 
 /*
  * Monitor lock to serialize access to timer callback queue elements.
- * This could be changed to a per-process monitor lock if contention
- * is a problem.
+ * This could be changed to a per-process monitor lock if contention is a
+ * problem.  To avoid deadlock, routines that lock a PCB should lock the
+ * PCB before acquiring the monitor lock.
  */
 static Sync_Lock	procTimerLock = Sync_LockInitStatic("procTimerLock");
 #define	LOCKPTR &procTimerLock
@@ -91,16 +92,12 @@ Proc_GetIntervalTimer(timerType, userTimerPtr)
     ReturnStatus status;
     Proc_ControlBlock	*procPtr;
 
-    LOCK_MONITOR;
-    
     if (timerType < 0 || timerType > PROC_MAX_TIMER) {
-	status = GEN_INVALID_ARG;
-	goto done;
+	return(GEN_INVALID_ARG);
     }
 
     if (userTimerPtr == USER_NIL) {
-	status = SYS_ARG_NOACCESS;
-	goto done;
+	return(SYS_ARG_NOACCESS);
     }
 
     procPtr = Proc_GetEffectiveProc();
@@ -109,16 +106,15 @@ Proc_GetIntervalTimer(timerType, userTimerPtr)
 	/*
 	 * Just in case someone tries to continue.
 	 */
-	status = FAILURE;
-	goto done;
+	return(FAILURE);
     }
+
     Proc_Lock(procPtr);
-
+    LOCK_MONITOR;
     status = GetCurrentTimer(procPtr, timerType, userTimerPtr, TRUE);
-
-    Proc_Unlock(procPtr);
-done:
     UNLOCK_MONITOR;
+    Proc_Unlock(procPtr);
+
     return(status);
 }
 
@@ -272,20 +268,18 @@ ProcChangeTimer(timerType, newTimerPtr, oldTimerPtr, userMode)
     register Proc_ControlBlock	*procPtr;
     Proc_TimerInterval	newTimer;
 
-    LOCK_MONITOR;
-
     if (timerType < 0 || timerType > PROC_MAX_TIMER) {
-	UNLOCK_MONITOR;
 	return(GEN_INVALID_ARG);
     }
 
     procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
-	UNLOCK_MONITOR;
 	panic("Proc_SetIntervalTime: procPtr == NIL\n");
 	return(FAILURE);
     }
+
     Proc_Lock(procPtr);
+    LOCK_MONITOR;
 
     if (procPtr->timerArray == (ProcIntTimerInfo  *) NIL) {
 	int j;
@@ -422,64 +416,66 @@ SendTimerSigFunc(data, infoPtr)
 {
     Proc_ControlBlock	*procPtr;
     register ProcIntTimerInfo	*timerPtr;
+    int i;
+
+    /*
+     * If the process has died, the procPtr will be NIL.
+     */
+    procPtr = Proc_LockPID((Proc_PID) data);
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	return;
+    }
 
     LOCK_MONITOR;
+
     /*
-     * If the process has died, the procPtr will be NIL. 
+     * Scan all the timer state info to see which timer expired.
+     * If our token matches the one in the timer table entry, then
+     * send the signal (the subcode is the timer type). If there's no 
+     * match after scanning all the timers, then the user cancelled the
+     * a timer so there's nothing to do.
      */
-
-    procPtr = Proc_LockPID((Proc_PID) data);
-    if (procPtr != (Proc_ControlBlock *) NIL) {
-	int i;
-
-	/*
-	 * Scan all the timer state info to see which timer expired.
-	 * If our token matches the one in the timer table entry, then
-	 * send the signal (the subcode is the timer type). If there's no 
-	 * match after scanning all the timers, then the user cancelled the
-	 * a timer so there's nothing to do.
-	 */
-	for (i = 0; i <= PROC_MAX_TIMER; i++) {
-
-	    if (procPtr->timerArray == (ProcIntTimerInfo  *) NIL) {
-		/*
-		 * This should not happen: why did we get scheduled if
-		 * there aren't any timers?
-		 */
-		panic("SendTimerSigFunc: null timer table!\n");
-		break;
-	    }
-
-	    timerPtr = &procPtr->timerArray[i];
-	    if (timerPtr->token == infoPtr->token) {
-		(void) Sig_SendProc(procPtr, SIG_TIMER, i, (Address)0);
-
-		/*
-		 * See if the signal is supposed to be repeated in the future.
-		 */
-		if (Timer_TickEQ(timerPtr->interval, timer_TicksZeroSeconds)){
-		    /*
-		     * Nope -- all done.
-		     */
-		    timerPtr->token = (ClientData) NIL;
-		} else {
-		    /*
-		     * A signal is wanted in "interval" seconds from now.
-		     * Add the interval to the expiration time instead of
-		     * the current time to prevent drift.
-		     */
-
-		    Timer_AddTicks(timerPtr->interval, timerPtr->expire, 
-				    &timerPtr->expire);
-		    timerPtr->token = Proc_CallFuncAbsTime(SendTimerSigFunc,
-					data, timerPtr->expire);
-		}
-		break;
-	    }
+    for (i = 0; i <= PROC_MAX_TIMER; i++) {
+	
+	if (procPtr->timerArray == (ProcIntTimerInfo  *) NIL) {
+	    /*
+	     * This should not happen: why did we get scheduled if
+	     * there aren't any timers?
+	     */
+	    panic("SendTimerSigFunc: null timer table!\n");
+	    break;
 	}
-	Proc_Unlock(procPtr);
+	
+	timerPtr = &procPtr->timerArray[i];
+	if (timerPtr->token == infoPtr->token) {
+	    (void) Sig_SendProc(procPtr, SIG_TIMER, i, (Address)0);
+	    
+	    /*
+	     * See if the signal is supposed to be repeated in the future.
+	     */
+	    if (Timer_TickEQ(timerPtr->interval, timer_TicksZeroSeconds)){
+		/*
+		 * Nope -- all done.
+		 */
+		timerPtr->token = (ClientData) NIL;
+	    } else {
+		/*
+		 * A signal is wanted in "interval" seconds from now.
+		 * Add the interval to the expiration time instead of
+		 * the current time to prevent drift.
+		 */
+		
+		Timer_AddTicks(timerPtr->interval, timerPtr->expire, 
+			       &timerPtr->expire);
+		timerPtr->token = Proc_CallFuncAbsTime(SendTimerSigFunc,
+						       data, timerPtr->expire);
+	    }
+	    break;
+	}
     }
+
     UNLOCK_MONITOR;
+    Proc_Unlock(procPtr);
 }
 
 
@@ -520,7 +516,8 @@ ProcDeleteTimers(procPtr)
 	    timerPtr->token = (ClientData) NIL;
 	}
     }
-    done:
+
+ done:
     UNLOCK_MONITOR;
 }
 
