@@ -40,7 +40,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "status.h"
 #include "byte.h"
 #include "string.h"
-#include "mach.h"
 
 static ReturnStatus	DoExec();
 

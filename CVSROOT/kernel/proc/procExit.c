@@ -135,7 +135,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "rpc.h"
 #include "sig.h"
-#include "mach.h"
 
 static	Sync_Lock	exitLock = {0, 0};
 #define	LOCKPTR &exitLock

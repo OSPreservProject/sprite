@@ -34,7 +34,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "timer.h"
 #include "vm.h"
-#include "mach.h"
 
 static ReturnStatus    InitUserProc();
 
