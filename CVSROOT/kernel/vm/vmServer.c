@@ -246,9 +246,11 @@ Vm_OpenSwapDirectory(data, callInfoPtr)
     String_Cat(number, fileName);
     status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0, &vmSwapStreamPtr);
     if (status != SUCCESS) {
+/*
 	Sys_Panic(SYS_WARNING,
 		  "VmOpenSwapDirectory: Open of swap dir %s failed status %x\n",
 		  fileName, status);
+*/
 	/*
 	 * It didn't work, retry in 10 seconds.
 	 */
