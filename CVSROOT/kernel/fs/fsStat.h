@@ -279,6 +279,7 @@ typedef struct FsObjectStats {
     int lruChecks;		/* Number of handles checked for reclaimation */
     int lruEntries;		/* Number of handles in LRU list */
     int fileClients;		/* Number of consist.clientList entries */
+    int limbo;			/* Number of handles marked for removal */
 } FsObjectStats;
 
 /*
