@@ -31,7 +31,6 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "vmMachInt.h"
 #include "sig.h"
 #include "sigMach.h"
-#include "machMon.h"
 #include "swapBuffer.h"
 #include "net.h"
 
