@@ -325,7 +325,7 @@ Proc_GetFamilyID(pid, familyIDPtr)
     } 
 
     if (pid == PROC_MY_PID) {
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	Proc_Lock(procPtr);
     } else {
 	/*
@@ -392,7 +392,7 @@ Proc_SetFamilyID(pid, familyID)
     Proc_Unlock(famProcPtr);
 
     if (pid == PROC_MY_PID) {
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	Proc_Lock(procPtr);
     } else {
 	/*

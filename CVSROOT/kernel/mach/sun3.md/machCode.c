@@ -25,7 +25,35 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMachInt.h"
 #include "sig.h"
 #include "mem.h"
-#include "sunMon.h"
+#include "machMon.h"
+
+/*
+ *  Number of processors in the system.
+ */
+#ifndef NUM_PROCESSORS
+#define NUM_PROCESSORS 1
+#endif NUM_PROCESSORS
+
+/*
+ * TRUE if cpu was in kernel mode before the interrupt, FALSE if was in 
+ * user mode.
+ */
+Boolean	mach_KernelMode;
+
+int mach_NumProcessors = NUM_PROCESSORS;
+
+/*
+ *  Flag used by routines to determine if they are running at
+ *  interrupt level.
+ */
+Boolean mach_AtInterruptLevel = FALSE;
+
+/*
+ *  Count of number of ``calls'' to enable interrupts minus number of calls
+ *  to disable interrupts.  Kept on a per-processor basis.
+ */
+int mach_NumDisableInterrupts[NUM_PROCESSORS];
+int *mach_NumDisableIntrsPtr = mach_NumDisableInterrupts;
 
 /*
  * The format that the kernel stack has to be in to start a process off.
@@ -195,6 +223,11 @@ Mach_Init()
     machMaxSysCall = -1;
     machKcallTableOffset = (int) &((Proc_ControlBlock *) 0)->kcallTable;
     machStatePtrOffset = (int) &((Proc_ControlBlock *) 0)->machStatePtr;
+
+    /*
+     * We start off with interrupts disabled.
+     */
+    mach_NumDisableInterrupts[0] = 1;
 }
 
 
@@ -220,6 +253,7 @@ Mach_InitFirstProc(procPtr)
 {
     procPtr->machStatePtr = (struct Mach_State *)Mem_Alloc(sizeof(Mach_State));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
+    procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
     machCurStatePtr = procPtr->machStatePtr;
 }
 
@@ -260,6 +294,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
 
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Mem_Alloc(sizeof(Mach_State));
+	procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
     }
 
     statePtr = procPtr->machStatePtr;
@@ -643,7 +678,7 @@ MachTrap(trapStack)
     register	Proc_ControlBlock	*procPtr;
     ReturnStatus			status;
 
-    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetActualProc(0);
     /*
      * Process kernel traps.
      */
@@ -725,8 +760,8 @@ MachTrap(trapStack)
 				<= (unsigned) MachFetchArgsEnd)) {
 			copyInProgress = TRUE;
 		    } else if ((procPtr->vmPtr->numMakeAcc == 0)
-			&& (procPtr->setJumpStatePtr
-			== (Sys_SetJumpState *) NIL)) {
+			&& (procPtr->machStatePtr->setJumpStatePtr
+			== (Mach_SetJumpState *) NIL)) {
 			return(MACH_KERN_ERROR);
 		    }
 
@@ -750,9 +785,10 @@ MachTrap(trapStack)
 			     * Real kernel error.  Take a long jump if
 			     * possible.
 			     */
-			    if (procPtr->setJumpStatePtr != 
-						(Sys_SetJumpState *) NIL) {
-				Sys_LongJump(procPtr->setJumpStatePtr);
+			    if (procPtr->machStatePtr->setJumpStatePtr != 
+						(Mach_SetJumpState *) NIL) {
+				Mach_LongJump(
+				    procPtr->machStatePtr->setJumpStatePtr);
 			    }
 			    return(MACH_KERN_ERROR);
 			}
@@ -764,8 +800,9 @@ MachTrap(trapStack)
 		     * Happened to a kernel process.  Take a long jump if 
 		     * possible.
 		     */
-		    if (procPtr->setJumpStatePtr != (Sys_SetJumpState *) NIL) {
-			Sys_LongJump(procPtr->setJumpStatePtr);
+		    if (procPtr->machStatePtr->setJumpStatePtr !=
+						(Mach_SetJumpState *) NIL) {
+			Mach_LongJump(procPtr->machStatePtr->setJumpStatePtr);
 		    }
 		    return(MACH_KERN_ERROR);
 		}
@@ -1228,4 +1265,59 @@ Mach_GetExcStackSize(excStackPtr)
 	    return(-1);
     }
 }
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_ProcessorState --
+ *
+ *	Determines what state the processor is in.
+ *
+ * Results:
+ *	MACH_USER	if was at user level
+ *	MACH_KERNEL	if was at kernel level
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+Mach_ProcessorStates 
+Mach_ProcessorState(processor)
+    int processor;	/* processor number for which info is requested */
+{
+    if (mach_KernelMode) {
+	return(MACH_KERNEL);
+    } else {
+	return(MACH_USER);
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_UnsetJump --
+ *
+ *	Clear out the pointer to the saved state from a set jump.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	setJumpStatePtr field of proc table for current process is nil'd out.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Mach_UnsetJump()
+{
+    Proc_ControlBlock	*procPtr;
+
+    procPtr = Proc_GetCurrentProc();
+    procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *) NIL;
+}
+
 

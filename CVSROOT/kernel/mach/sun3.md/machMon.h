@@ -1,5 +1,5 @@
 /*
- * sunMon.h --
+ * machMon.h --
  *
  *     Structures, constants and defines for access to the sun monitor.
  *     These are translated from the sun monitor header file "sunromvec.h".
@@ -15,14 +15,14 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _SUNMON
-#define _SUNMON
+#ifndef _MACHMON
+#define _MACHMON
 
 #include "devZilog.h"
 
 /*
  * The table entry that describes a device.  It exists in the PROM; a
- * pointer to it is passed in Mon_BootParam.  It can be used to locate
+ * pointer to it is passed in MachMonBootParam.  It can be used to locate
  * PROM subroutines for opening, reading, and writing the device.
  *
  * When using this interface, only one device can be open at once.
@@ -41,7 +41,7 @@ typedef struct {
 	int	(*close)();		/* close(iobp) --> -1 or 0 */
 	int	(*strategy)();		/* strategy(iobp,rw) --> -1 or 0 */
 	char	*desc;			/* Printable string describing dev */
-} Mon_BootTable;
+} MachMonBootTable;
 
 /*
  * Structure set up by the boot command to pass arguments to the program that
@@ -56,8 +56,8 @@ typedef struct {
 	int		unitNum;	/* Unit number */
 	int		partNum;	/* Partition/file number */
 	char		*fileName;	/* File name, points into strings */
-	Mon_BootTable   *bootTable;	/* Points to table entry for device */
-} Mon_BootParam;
+	MachMonBootTable   *bootTable;	/* Points to table entry for device */
+} MachMonBootParam;
 
 /*
  * Here is the structure of the vector table which is at the front of the boot
@@ -79,7 +79,7 @@ typedef struct {
 	 * Monitor and hardware revision and identification
 	 */
 
-	Mon_BootParam	**bootParam;		/* Info for bootstrapped pgm */
+	MachMonBootParam **bootParam;		/* Info for bootstrapped pgm */
  	unsigned	*memorySize;		/* Usable memory in bytes */
 
 	/* 
@@ -192,7 +192,7 @@ typedef struct {
 	int		dummy2z;
 	int		dummy3z;
 	int		dummy4z;
-} Mon_RomVector;
+} MachMonRomVector;
 
 /*
  * Functions defined in the vector:
@@ -275,30 +275,30 @@ typedef struct {
  * 0xef0000.  This is ok because only the low order 24-bits will be looked at.
  */
 
-#define	romVectorPtr	((Mon_RomVector *)0xFEF0000)
+#define	romVectorPtr	((MachMonRomVector *)0xFEF0000)
 
 /*
  * Functions and defines to access the monitor.
  */
 
-#define Mon_Printf (romVectorPtr->printf)
-extern	void 	Mon_PutChar ();
-extern	int  	Mon_MayPut();
-extern	void	Mon_Abort();
-extern	void	Mon_Reboot();
+#define Mach_MonPrintf (romVectorPtr->printf)
+extern	void 	Mach_MonPutChar ();
+extern	int  	Mach_MonMayPut();
+extern	void	Mach_MonAbort();
+extern	void	Mach_MonReboot();
 
 /*
  * These routines no longer work correctly with new virtual memory.
  */
 
-#define Mon_GetChar (romVectorPtr->getChar)
-#define Mon_GetLine (romVectorPtr->getLine)
-#define Mon_GetNextChar (romVectorPtr->getNextChar)
-#define Mon_PeekNextChar (romVectorPtr->peekNextChar)
+#define Mach_MonGetChar (romVectorPtr->getChar)
+#define Mach_MonGetLine (romVectorPtr->getLine)
+#define Mach_MonGetNextChar (romVectorPtr->getNextChar)
+#define Mach_MonPeekNextChar (romVectorPtr->peekNextChar)
 
 
-extern	void	Mon_Trap();
-extern	void	Mon_StopNmi();
-extern	void	Mon_StartNmi();
+extern	void	Mach_MonTrap();
+extern	void	Mach_MonStopNmi();
+extern	void	Mach_MonStartNmi();
 
-#endif _SUNMON
+#endif _MACHMON

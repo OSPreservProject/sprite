@@ -13,13 +13,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "mach.h"
 #include "sys.h"
 #include "sysStats.h"
 #include "time.h"
 #include "timer.h"
 #include "vm.h"
 #include "vmSunConst.h"
-#include "sunMon.h"
+#include "machMon.h"
 #include "proc.h"
 #include "dbg.h"
 #include "fs.h"
@@ -268,9 +269,9 @@ Sys_Shutdown(flags, rebootString)
     }
 
     if (flags & SYS_HALT) {
-	Mon_Abort();
+	Mach_MonAbort();
     } else if (flags & SYS_REBOOT) {
-	Mon_Reboot(string);
+	Mach_MonReboot(string);
     } else if (flags & SYS_DEBUG) {
 	sys_ShuttingDown = FALSE;
 	sys_ErrorShutdown = FALSE;
@@ -303,7 +304,7 @@ void
 SysErrorShutdown(trapType)
     int		trapType;
 {
-    if (sys_ShouldSyncDisks && !sys_AtInterruptLevel && !sys_ShuttingDown &&
+    if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
         !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	sys_ErrorShutdown = TRUE;
 	Sys_Shutdown(SYS_KILL_PROCESSES);
@@ -349,7 +350,7 @@ Sys_SyncDisks(trapType)
 	DBG_CALL;
 	return;
     }
-    if (sys_ShouldSyncDisks && !sys_AtInterruptLevel && !sys_ShuttingDown &&
+    if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
         !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	Sys_Printf("Syncing disks.  Version: %s\n", SpriteVersion());
 	errorSync = TRUE;

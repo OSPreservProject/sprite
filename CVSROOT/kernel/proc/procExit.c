@@ -119,6 +119,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "status.h"
 #include "proc.h"
 #include "procInt.h"
@@ -217,7 +218,7 @@ Proc_ExitInt(reason, status, code)
 {
     register Proc_ControlBlock 	*curProcPtr;
 
-    curProcPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    curProcPtr = Proc_GetActualProc();
     if (curProcPtr == (Proc_ControlBlock *) NIL) {
 	Sys_Panic(SYS_FATAL, "Proc_ExitInt: bad procPtr.\n");
     }
@@ -668,7 +669,7 @@ Proc_Detach(status)
 {
     register	Proc_ControlBlock 	*procPtr;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	Sys_Panic(SYS_FATAL, "Proc_Detach: procPtr == NIL\n");
     }
@@ -754,7 +755,7 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
     Proc_ResUsage 		resUsage;
     Boolean			migrated = FALSE;
 
-    curProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    curProcPtr = Proc_GetCurrentProc();
     if (curProcPtr == (Proc_ControlBlock *) NIL) {
 	Sys_Panic(SYS_FATAL, "Proc_Wait: curProcPtr == NIL.\n");
     }

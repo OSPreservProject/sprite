@@ -86,7 +86,7 @@ Proc_GetIntervalTimer(timerType, userTimerPtr)
 	return(SYS_ARG_NOACCESS);
     }
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	Sys_Panic(SYS_FATAL, "Proc_GetIntervalTime: procPtr == NIL\n");
     }
@@ -199,7 +199,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 	return(GEN_INVALID_ARG);
     }
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	Sys_Panic(SYS_FATAL, "Proc_SetIntervalTime: procPtr == NIL\n");
     }

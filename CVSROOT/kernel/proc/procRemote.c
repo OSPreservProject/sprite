@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "mach.h"
 #include "proc.h"
 #include "procMigrate.h"
 #include "procInt.h"
@@ -365,9 +366,6 @@ GetProcessState(buffer, hostID)
      */
     if (!home) {
 	procPtr->event			= NIL;
-
-	procPtr->setJumpStatePtr 	= (Sys_SetJumpState *) NIL;
-
 	/*
 	 *  Initialize our child list to remove any old links.
 	 */
@@ -620,7 +618,7 @@ ProcResumeMigProc()
 
     MASTER_UNLOCK(sched_Mutex);
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     Proc_Lock(procPtr);
     procPtr->genFlags &= ~PROC_NO_VM;
     VmMach_ReinitContext(procPtr);
@@ -735,7 +733,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
      * (type and disposition) is copied below.
      */
     
-    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetActualProc();
     call.processID = procPtr->peerProcessID;
     call.callNumber = callNumber;
     call.numArgs = numWords;

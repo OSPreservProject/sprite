@@ -274,7 +274,7 @@ Sched_GatherProcessInfo()
      *  Get a pointer to the current process from the array that keeps
      *  track of running processes on each processor.
      */
-    for (cpu = 0; cpu < sys_NumProcessors; cpu++) {
+    for (cpu = 0; cpu < mach_NumProcessors; cpu++) {
 
 	curProcPtr = Proc_GetCurrentProc(cpu);
 
@@ -293,7 +293,7 @@ Sched_GatherProcessInfo()
 	 *  kernel and user states.  The processor state is determined by
 	 *  calling a machine-dependent routine.
 	 */
-	if (Sys_ProcessorState(cpu) == SYS_KERNEL) {
+	if (Mach_ProcessorState(cpu) == MACH_KERNEL) {
 	    Time_Add(curProcPtr->kernelCpuUsage, gatherTicks,
 		     &(curProcPtr->kernelCpuUsage));
 	} else {
@@ -362,7 +362,7 @@ Sched_ContextSwitchInt(state)
 
     sched_Instrument.numContextSwitches++;
 
-    curProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    curProcPtr = Proc_GetCurrentProc();
     /*
      * If we have a context switch pending get rid of it.
      */
@@ -399,7 +399,7 @@ Sched_ContextSwitchInt(state)
 	 * Drop into the idle loop and come out with a runnable process.
 	 * This procedure exists to try and capture idle time when profiling.
 	 */
-	newProcPtr = IdleLoop(Sys_GetProcessorNumber());
+	newProcPtr = IdleLoop();
     }
 
 
@@ -407,7 +407,7 @@ Sched_ContextSwitchInt(state)
      * Set the state of the new process.  
      */
     newProcPtr->state = PROC_RUNNING;
-    Proc_SetCurrentProc(Sys_GetProcessorNumber(), newProcPtr);
+    Proc_SetCurrentProc(newProcPtr);
 
     /*
      * Set up the quantum as the number of clocks ticks that this process 
@@ -541,8 +541,7 @@ RememberUsage(curProcPtr)
  */
 
 static Proc_ControlBlock *
-IdleLoop(myProcessor)
-    int myProcessor;
+IdleLoop()
 {
     register Proc_ControlBlock	*procPtr;
     register List_Links		*queuePtr;
@@ -553,7 +552,7 @@ IdleLoop(myProcessor)
 	 * Wait for a process to become runnable.  Turn on interrupts, then
 	 * turn off interrupts again and see if someone became runnable.
 	 */
-	Proc_SetCurrentProc(myProcessor, (Proc_ControlBlock *) NIL);
+	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
 	/*
 	 * Count Idle ticks.  This is uni-processor code.
 	 */
@@ -641,7 +640,7 @@ QuantumEnd(procPtr)
 {
     procPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
     procPtr->specialHandling = 1;
-    if (!sys_KernelMode) {
+    if (!mach_KernelMode) {
 	sched_DoContextSwitch = TRUE;
     }
 }
@@ -813,7 +812,7 @@ Sched_StartUserProc(pc)
     register     	Proc_ControlBlock *procPtr;
 
     MASTER_UNLOCK(sched_Mutex);
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
 
     Proc_Lock(procPtr);
     procPtr->genFlags |= PROC_DONT_MIGRATE;

@@ -236,7 +236,7 @@ _Mach_GetMachineType:
 |*
 |* ----------------------------------------------------------------------
 |*
-|* MonNmiNop --
+|* MachMonNmiNop --
 |*
 |*       The code which is executed when we redirect non-maskable
 |*       interrupts on the Sun-2.  When the AMD chip timer #1 interrupts,
@@ -257,8 +257,8 @@ _Mach_GetMachineType:
 
 #define	AMD9513_CSR	0xee0002
 
-    .globl _MonNmiNop
-_MonNmiNop:
+    .globl _MachMonNmiNop
+_MachMonNmiNop:
         moveml  #0xC0C0,sp@-            | Save d0,d1,a0,a1
 
 #ifdef SUN2
@@ -280,7 +280,7 @@ _MonNmiNop:
 |*
 |* ----------------------------------------------------------------------
 |*
-|* Mon_Trap --
+|* Mach_MonTrap --
 |*
 |*	Trap to the monitor.  This involves dummying up a trap stack for the
 |*	monitor, allowing non-maskable interrupts and then jumping to the
@@ -296,15 +296,15 @@ _MonNmiNop:
 |* ----------------------------------------------------------------------
 |*
 
-	.globl	_Mon_Trap
-_Mon_Trap:
-	jsr	_Mon_StartNmi		| Restart non-maskable interrupts.
+	.globl	_Mach_MonTrap
+_Mach_MonTrap:
+	jsr	_Mach_MonStartNmi	| Restart non-maskable interrupts.
 	movl	sp@(4), a0		| Address to trap to.
 	clrw	sp@-			| Put on a dummy vector offset register.
 	movl	#1$, sp@-		| Put the return address onto the stack.
 	movw	sr, sp@-		| Push the current status register.
 	jra	a0@			| Trap
-1$:	jsr	_Mon_StopNmi		| Stop non-maskable interrupts.
+1$:	jsr	_Mach_MonStopNmi	| Stop non-maskable interrupts.
 	rts
 
 |*
@@ -375,3 +375,65 @@ _MachGetVBR:
 _Mach_GetStackPointer:
 	movc usp, d0
 	rts
+
+
+#define	SAVED_REGS 	0xFCFC
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* MachSetJump --
+|*
+|*	Prepare for a non-local goto (i.e. Mach_LongJump).  This saves the
+|*	program counter and all local registers in the given Sys_SetJumpState
+|*	struct.
+|*	
+|*	MachSetJump(setJumpStatePtr)
+|*	    Mach_SetJumpState	*setJumpStatePtr;
+|*
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_MachSetJump
+_MachSetJump:
+	movl	sp@(4),a0		| Get the address of where to store the 
+					|     registers in a register.
+	moveml	#SAVED_REGS,a0@(4)	| Save registers.
+	movl	sp@,a0@			| Save program counter of caller.
+	clrl	d0			| Return zero
+	rts
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Mach_LongJump --
+|*
+|*	Prepare for a non-local goto (i.e. Sys_LongJump).  This saves the
+|*	program counter and all local registers in the given Sys_SetJumpState
+|*	struct.
+|*	
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_Mach_LongJump
+_Mach_LongJump:
+	movl	sp@(4),a0		| Get address of saved state.
+	moveml	a0@(4),#SAVED_REGS	| Restore registers (this causes the 
+					|     stack to be changed).
+	movl	a0@,sp@			| Push the program counter onto the 
+					|     stack.
+	movl	#1,d0			| Return FAILURE.
+	rts	
+

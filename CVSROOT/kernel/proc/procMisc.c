@@ -76,7 +76,7 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 	 *  Return PCB for the current process.
 	 */
 
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
 		(Address) procPtr, (Address) bufferPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
@@ -169,7 +169,7 @@ Proc_GetResUsage(pid, bufferPtr)
     ReturnStatus		status = SUCCESS;
 
     if (pid == PROC_MY_PID) {
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    Sys_Panic(SYS_FATAL, "Proc_GetIDs: procPtr == NIL\n");
 	} 
@@ -236,7 +236,7 @@ Proc_GetPriority(pid, priorityPtr)
     ReturnStatus		status = SUCCESS;
 
     if (pid == PROC_MY_PID) {
-	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetEffectiveProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    Sys_Panic(SYS_FATAL, "Proc_GetIDs: procPtr == NIL\n");
 	} 
@@ -327,7 +327,7 @@ Proc_SetPriority(pid, priority, useFamily)
 	 * Set the individual process's priority.
 	 */
 	if (pid == PROC_MY_PID) {
-	    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	    procPtr = Proc_GetEffectiveProc();
 	    Proc_Lock(procPtr);
 	} else {
 	    procPtr = Proc_LockPID(pid);
@@ -475,7 +475,7 @@ Proc_KillAllProcesses(userProcsOnly)
     Proc_ControlBlock		*curProcPtr;
     int				alive = 0;
 
-    curProcPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    curProcPtr = Proc_GetActualProc();
 
     for (i = 0; i < proc_MaxNumProcesses; i++) {
 	pcbPtr = proc_PCBTable[i];
@@ -520,7 +520,7 @@ Proc_WakeupAllProcesses()
     register Proc_ControlBlock	*pcbPtr;
     Proc_ControlBlock		*curProcPtr;
 
-    curProcPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    curProcPtr = Proc_GetActualProc();
 
     for (i = 0; i < proc_MaxNumProcesses; i++) {
 	pcbPtr = proc_PCBTable[i];
@@ -560,7 +560,7 @@ Proc_HasPermission(userID)
 {
     Proc_ControlBlock   *procPtr;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     return(procPtr->effectiveUserID == userID ||
            procPtr->effectiveUserID == PROC_SUPER_USER_ID);
 }

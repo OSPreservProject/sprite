@@ -12,24 +12,24 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "sunMon.h"
-#include "sys.h"
+#include "machMon.h"
 #include "machConst.h"
 #include "machInt.h"
 #include "devTimer.h"
 #include "char.h"
 #include "vmMachInt.h"
 #include "mach.h"
+#include "sys.h"
 
 static	int	(*savedNmiVec)() = (int (*)()) 0;
-extern	int	MonNmiNop();
+extern	int	MachMonNmiNop();
 static	Boolean	stoppedNMI = FALSE;
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * Mon_PutChar --
+ * Mach_MonPutChar --
  *
  *     Call the monitor put character routine
  *
@@ -43,7 +43,7 @@ static	Boolean	stoppedNMI = FALSE;
  */
 
 void
-Mon_PutChar(ch)
+Mach_MonPutChar(ch)
     int		ch;
 {
     int		oldContext;
@@ -63,7 +63,7 @@ Mon_PutChar(ch)
 /*
  * ----------------------------------------------------------------------------
  *
- * Mon_MayPut --
+ * Mach_MonMayPut --
  *
  *     	Call the monitor put may put character routine.  This will return
  *	-1 if it couldn't put out the character.
@@ -78,7 +78,7 @@ Mon_PutChar(ch)
  */
 
 int
-Mon_MayPut(ch)
+Mach_MonMayPut(ch)
     int		ch;
 {
     int		oldContext;
@@ -97,7 +97,7 @@ Mon_MayPut(ch)
 /*
  * ----------------------------------------------------------------------------
  *
- * Mon_Abort --
+ * Mach_MonAbort --
  *
  *     	Abort to the monitor.
  *
@@ -111,14 +111,14 @@ Mon_MayPut(ch)
  */
 
 void
-Mon_Abort()
+Mach_MonAbort()
 {
     int	oldContext;
 
     DISABLE_INTR();
     oldContext = VmMachGetKernelContext();
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
-    Mon_Trap(romVectorPtr->abortEntry);
+    Mach_MonTrap(romVectorPtr->abortEntry);
     VmMachSetKernelContext(oldContext);
     ENABLE_INTR();
 }
@@ -126,7 +126,7 @@ Mon_Abort()
 /*
  * ----------------------------------------------------------------------------
  *
- * Mon_Reboot --
+ * Mach_MonReboot --
  *
  *     	Reboot the system.
  *
@@ -140,25 +140,25 @@ Mon_Abort()
  */
 
 void
-Mon_Reboot(rebootString)
+Mach_MonReboot(rebootString)
     char	*rebootString;
 {
     DISABLE_INTR();
     (void)VmMachGetKernelContext();
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
-    Mon_StartNmi();
+    Mach_MonStartNmi();
     romVectorPtr->reBoot(rebootString);
     /*
      * If we reach this far something went wrong.
      */
-    Sys_Panic(SYS_FATAL, "Mon_Reboot: Reboot failed (I'm still alive aren't I?)\n");
+    Sys_Panic(SYS_FATAL, "Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
 }
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * Mon_StartNmi --
+ * Mach_MonStartNmi --
  *
  *	Allow the non-maskable (level 7) interrupts from the clock chip
  *	so the monitor can read the keyboard.
@@ -174,7 +174,7 @@ Mon_Reboot(rebootString)
  */
 
 void
-Mon_StartNmi()
+Mach_MonStartNmi()
 {
     if (stoppedNMI) {
 #ifdef SUN2
@@ -193,7 +193,7 @@ Mon_StartNmi()
 /*
  * ----------------------------------------------------------------------------
  *
- * Mon_StopNmi --
+ * Mach_MonStopNmi --
  *
  * 	Disallow the non-maskable (level 7) interrupts.  
  *	On the Sun-2, this entails redirecting the interrupt. 
@@ -211,7 +211,7 @@ Mon_StartNmi()
  */
 
 void
-Mon_StopNmi()
+Mach_MonStopNmi()
 {
     extern Boolean main_AllowNMI;
 
@@ -227,7 +227,7 @@ Mon_StopNmi()
 	stoppedNMI = TRUE;
 #ifdef SUN2
 	savedNmiVec = machVectorTablePtr->autoVec[6];
-	machVectorTablePtr->autoVec[6] = MonNmiNop;
+	machVectorTablePtr->autoVec[6] = MachMonNmiNop;
 #endif SUN2
 #ifdef SUN3
 	*Mach_InterruptReg &= ~MACH_ENABLE_LEVEL7_INTR;

@@ -74,7 +74,7 @@ Proc_InitTable()
     register	int 		  i;
     register	Proc_ControlBlock *pcbPtr;
 
-    proc_MaxRunningProcesses = sys_NumProcessors;
+    proc_MaxRunningProcesses = mach_NumProcessors;
     proc_MaxNumProcesses     = PROC_PCB_NUM_ALLOC;
     realMaxProcesses         = PROC_MAX_PROCESSES;
 
@@ -263,7 +263,6 @@ Proc_InitMainProc()
     procPtr->numQuantumEnds 	= 0;
     procPtr->numWaitEvents 	= 0;
     procPtr->cwdPtr		= (Fs_Stream *) NIL;
-    procPtr->setJumpStatePtr	= (Sys_SetJumpState *) NIL;
 
     Mach_InitFirstProc(procPtr);
 
@@ -280,7 +279,7 @@ Proc_InitMainProc()
     Vm_ProcInit(procPtr);
     Sig_ProcInit(procPtr);
 
-    Proc_SetCurrentProc(Sys_GetProcessorNumber(), procPtr);
+    Proc_SetCurrentProc(procPtr);
 
     ProcInitMainEnviron(procPtr);
 

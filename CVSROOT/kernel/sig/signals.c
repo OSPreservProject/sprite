@@ -543,7 +543,7 @@ Sig_Send(sigNum, code, id, familyID)
      */
     if (!familyID) {
 	if (Proc_ComparePIDs(id, PROC_MY_PID)) {
-	    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+	    procPtr = Proc_GetEffectiveProc();
 	    if (procPtr == (Proc_ControlBlock *) NIL) {
 		Sys_Panic(SYS_FATAL, "Sig_Send: procPtr == NIL\n");
 	    }
@@ -629,7 +629,7 @@ SendRemoteSignal(hostID, sigNum, code, id, familyID)
     sigParms.code = code;
     sigParms.id = id;
     sigParms.familyID = familyID;
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     sigParms.effUid = procPtr->effectiveUserID;
 
     storage.requestParamPtr = (Address)&sigParms;
@@ -681,7 +681,7 @@ Sig_RpcSend(srvToken, clientID, command, storagePtr)
     int			effUid;
 
     sigParmsPtr = (SigParms *) storagePtr->requestParamPtr;
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     effUid = procPtr->effectiveUserID;
     procPtr->effectiveUserID = sigParmsPtr->effUid;
     status = Sig_Send(sigParmsPtr->sigNum, sigParmsPtr->code, sigParmsPtr->id,
@@ -722,7 +722,7 @@ Sig_SetHoldMask(newMask, oldMaskPtr)
      * Get out the old mask value and store the new one.
      */
 
-    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetActualProc();
 
     if (oldMaskPtr != USER_NIL) {
 	if (Vm_CopyOut(sizeof(procPtr->sigHoldMask), 
@@ -775,7 +775,7 @@ Sig_SetAction(sigNum, newActionPtr, oldActionPtr)
 	return(SIG_INVALID_SIGNAL);
     }
 
-    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetActualProc();
 
     /* 
      * Copy out the current action.  There are two cases:
@@ -887,7 +887,7 @@ Sig_Pause(sigHoldMask)
 
     LOCK_MONITOR;
 
-    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetActualProc();
 
     /*
      * The signal mask cannot be restored until the signal handler has

@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "byte.h"
 #include "list.h"
 #include "mem.h"
@@ -120,7 +121,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName)
  * ----------------------------------------------------------------------------
  */
 
-    parentProcPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+ReturnStatus
 Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     Address 	PC;		/* The program counter where to start. */
     int		procType;	/* One of PROC_KERNEL or PROC_USER. */
@@ -186,8 +187,6 @@ p     */
 	    Sys_Panic(SYS_FATAL, "Proc_NewProc: ProcFamilyInsert failed\n");
      * Create the argument list for the child.  If no name specified, take
      * the list from the parent.  If one is specified, just make a one-element
-
-    procPtr->setJumpStatePtr = (Sys_SetJumpState *) NIL;
      * list containing that name.
      */
     if (procName != (char *)NIL) {

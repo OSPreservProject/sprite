@@ -7,7 +7,7 @@
 |*
 
 #include "machConst.h"
-#include "asmDefs.h"
+#include "machAsmDefs.h"
 
 .data
 .asciz "$Header$ SPRITE (Berkeley)"

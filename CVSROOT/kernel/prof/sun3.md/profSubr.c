@@ -410,7 +410,7 @@ Prof_DumpStub(pathName)
     /*
      * Copy the name in from user space to the kernel stack.
      */
-    if ((Proc_IsMigratedProcess(Sys_GetProcessorNumber()) ?
+    if ((Proc_IsMigratedProcess() ?
 	    Proc_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) :
 	    Vm_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,

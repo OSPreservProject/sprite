@@ -432,7 +432,7 @@ Proc_SetEnvironStub(environVar)
 
     LOCK_MONITOR;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     /*
      * Make variable name accessible.
@@ -523,7 +523,7 @@ Proc_UnsetEnvironStub(environVar)
 
     LOCK_MONITOR;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     /*
      * Make variable name accessible.
@@ -598,7 +598,7 @@ Proc_GetEnvironVarStub(environVar)
 
     LOCK_MONITOR;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     /*
      * Make name accessible.
@@ -685,7 +685,7 @@ Proc_GetEnvironRangeStub(first, last, envArray, numActualVarsPtr)
 	return(SYS_INVALID_ARG);
     }
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     if (first >= procPtr->environPtr->size) {
 	numVars = 0;
@@ -786,7 +786,7 @@ Proc_CopyEnvironStub()
 
     LOCK_MONITOR;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     if (procPtr->environPtr->refCount == 1) {
 	UNLOCK_MONITOR;
@@ -950,7 +950,7 @@ Proc_InstallEnvironStub(environ, numVars)
      * Make this new environment the environment of the current process.
      */
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     DecEnvironRefCount(procPtr->environPtr);
     procPtr->environPtr = newEnvironPtr;
 

@@ -18,8 +18,8 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-
 #include "sprite.h"
+#include "mach.h"
 #include "fs.h"
 #include "proc.h"
 #include "procInt.h"
@@ -230,7 +230,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
      * Set the effective process for this processor.
      */
 
-    Proc_SetEffectiveProc(Sys_GetProcessorNumber(), procPtr);
+    Proc_SetEffectiveProc(procPtr);
 
     if (proc_DoTrace && proc_DoCallTrace) {
 	record.processID = callPtr->processID;
@@ -295,7 +295,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
  	Sys_Printf("Proc_RpcRemoteCall: parsed call %d returned %x.\n",
 		   callPtr->callNumber, status);
     }
-    Proc_SetEffectiveProc(Sys_GetProcessorNumber(), (Proc_ControlBlock *) NIL);
+    Proc_SetEffectiveProc((Proc_ControlBlock *) NIL);
 
     if (proc_DoTrace && proc_DoCallTrace) {
 	record.info.call.status = status;
@@ -436,8 +436,6 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     if (ProcFamilyInsert(childProcPtr, childProcPtr->familyID) != SUCCESS) {
 	Sys_Panic(SYS_FATAL, "RpcProcFork: ProcFamilyInsert failed\n");
     }
-
-    childProcPtr->setJumpStatePtr 		= (Sys_SetJumpState *) NIL;
 
     /*
      *  Initialize our child list to remove any old links.
@@ -583,7 +581,7 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
 {
     ReturnStatus status = SUCCESS;
     
-    if (Proc_IsMigratedProcess(Sys_GetProcessorNumber())) {
+    if (Proc_IsMigratedProcess()) {
 	Byte_Copy(numBytes, sourcePtr, destPtr);
     } else if (copyIn) {
 	status = Vm_CopyIn(numBytes, sourcePtr, destPtr);
@@ -666,7 +664,7 @@ Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr,
     int realLength;
     Boolean madeAccessible = FALSE;
 
-    if (!Proc_IsMigratedProcess(Sys_GetProcessorNumber())) {
+    if (!Proc_IsMigratedProcess()) {
 	Vm_MakeAccessible(VM_READONLY_ACCESS, 
 			  maxLength, (Address) *stringPtrPtr,
 			  &accessLength, (Address *) stringPtrPtr);
@@ -721,7 +719,7 @@ Proc_MakeUnaccessible(addr, numBytes)
     int			numBytes;
 {
 
-    if (!Proc_IsMigratedProcess(Sys_GetProcessorNumber())) {
+    if (!Proc_IsMigratedProcess()) {
 	Vm_MakeUnaccessible(addr, numBytes);
     }
 }

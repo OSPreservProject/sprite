@@ -16,7 +16,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "dbg.h"
 #include "vm.h"
-#include "sunMon.h"
+#include "machMon.h"
 
 int 
 Test_PrintOut(args)
@@ -95,12 +95,12 @@ Test_GetLine(string, length)
     Vm_MakeAccessible(VM_OVERWRITE_ACCESS, length, (Address) string,
 		      &numBytes, (Address *) &realString);
 
-    Mon_GetLine(1);
+    Mach_MonGetLine(1);
     i = 0;
-    realString[i] = Mon_GetNextChar();
+    realString[i] = Mach_MonGetNextChar();
     while (i < length - 1 && realString[i] != '\0') {
 	i++;
-	realString[i] = Mon_GetNextChar();
+	realString[i] = Mach_MonGetNextChar();
     }
     realString[i] = '\0';
 
@@ -123,7 +123,7 @@ Test_GetChar(charPtr)
     if (numBytes == 0) {
 	return(SYS_ARG_NOACCESS);
     }
-    *realCharPtr = Mon_GetNextChar();
+    *realCharPtr = Mach_MonGetNextChar();
 
     Sys_Printf("%c", *realCharPtr);
 

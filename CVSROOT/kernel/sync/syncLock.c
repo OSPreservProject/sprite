@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "list.h"
 #include "sync.h"
 #include "syncInt.h"
@@ -365,7 +366,7 @@ SyncEventWakeupInt(event)
 		break;
 	    default:
 		Sys_Panic(SYS_FATAL, "%s %s",  
-			  "Sys_EventWakeupInt:",
+			  "Sync_EventWakeupInt:",
 			  "Tried to wakeup a non-waiting proc.\n");
 	    break;
 
@@ -479,7 +480,7 @@ SyncEventWaitInt(event, wakeIfSignal)
     Proc_ControlBlock *procPtr;
     List_Links *chainHeader;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
 
     if (wakeIfSignal && Sig_Pending(procPtr)) {
 	return(TRUE);
@@ -551,7 +552,7 @@ Sync_GetWaitToken(pidPtr, tokenPtr)
 {
     register	Proc_ControlBlock	*procPtr;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
 
     MASTER_LOCK(sched_Mutex);
 
@@ -630,7 +631,7 @@ Sync_ProcWait(lockPtr, wakeIfSignal)
     Boolean				sigPending = FALSE;
 
     MASTER_LOCK(sched_Mutex);
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     if (!(procPtr->syncFlags & SYNC_WAIT_COMPLETE)) {
 	if (wakeIfSignal && Sig_Pending(procPtr)) {
 	    /*

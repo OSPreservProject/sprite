@@ -16,9 +16,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "sys.h"
 #include "dbg.h"
-#include "sunMon.h"
 #include "dev.h"
 
 #define NextArg(argList, type) ((type *)(argList += sizeof(type)))[-1]

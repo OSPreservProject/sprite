@@ -17,6 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "sync.h"
 #include "syncInt.h"
 #include "sched.h"
@@ -51,11 +52,11 @@ ReturnStatus
 Sync_SlowLockStub(lockPtr)
     Sync_Lock *lockPtr;
 {
-    Sys_SetJumpState	setJumpState;
+    Mach_SetJumpState	setJumpState;
     ReturnStatus	status = SUCCESS;
     Proc_ControlBlock	*procPtr;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
 
     /*
      * We have to use set-jump instead of MakeAccessible because we would have 
@@ -63,7 +64,7 @@ Sync_SlowLockStub(lockPtr)
      * accessible which is not a good idea.  Note that we assume that a user
      * pointer is directly accessible from the kernel.
      */
-    if (Sys_SetJump(&setJumpState) == SUCCESS) {
+    if (Mach_SetJump(&setJumpState) == SUCCESS) {
 	MASTER_LOCK(sched_Mutex);
 
 	while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
@@ -80,7 +81,7 @@ Sync_SlowLockStub(lockPtr)
 	status = SYS_ARG_NOACCESS;
     }
     MASTER_UNLOCK(sched_Mutex);
-    Sys_UnsetJump();
+    Mach_UnsetJump();
     return(status);
 }
 
@@ -116,7 +117,7 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     Boolean		wakeIfSignal;
 {
     ReturnStatus	status;
-    Sys_SetJumpState	setJumpState;
+    Mach_SetJumpState	setJumpState;
 
     /*
      * We have to use set-jump instead of MakeAccessible because we would have 
@@ -124,7 +125,7 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
      * accessible which is not a good idea.  Note that we assume that a user
      * pointer is directly accessible from the kernel.
      */
-    if (Sys_SetJump(&setJumpState) == SUCCESS) {
+    if (Mach_SetJump(&setJumpState) == SUCCESS) {
 	MASTER_LOCK(sched_Mutex);
 	/*
 	 * release the monitor lock and wait on the condition
@@ -142,7 +143,7 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
 	status = SYS_ARG_NOACCESS;
     }
     MASTER_UNLOCK(sched_Mutex);
-    Sys_UnsetJump();
+    Mach_UnsetJump();
     return(status);
 }
 

@@ -21,6 +21,7 @@
 
 #include "proc.h"
 #include "trace.h"
+#include "sys.h"
 
 extern int proc_MigDebugLevel;
 extern Boolean proc_DoTrace;

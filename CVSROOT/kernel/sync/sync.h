@@ -19,6 +19,7 @@
 #include "syncMonitor.h"
 #include "sys.h"
 #include "proc.h"
+#include "mach.h"
 
 /*
  * Flags for syncFlags field in the proc table:
@@ -132,9 +133,9 @@ extern 	void 		Sync_PrintStat();
 #define MASTER_LOCK(semaphore) \
     { \
         sync_Instrument.numLocks++; \
-	if (!sys_AtInterruptLevel) { \
-	    asm("movw #0x2700,sr"); \
-	    sys_NumDisableIntrsPtr[0]++; \
+	if (!mach_AtInterruptLevel) { \
+	    Mach_DisableIntr(); \
+	    mach_NumDisableIntrsPtr[0]++; \
 	} \
 	if ((semaphore)++ == 1) { \
 	    Sys_Panic(SYS_FATAL, "Deadlock!!! (semaphore @ 0x%x)\n", \
@@ -166,9 +167,9 @@ extern 	void 		Sync_PrintStat();
     { \
         sync_Instrument.numUnlocks++; \
 	(semaphore) = 0; \
-	if (!sys_AtInterruptLevel) { \
-	    if (--(sys_NumDisableIntrsPtr[0]) == 0) { \
-		asm("movw #0x2000,sr"); \
+	if (!mach_AtInterruptLevel) { \
+	    if (--(mach_NumDisableIntrsPtr[0]) == 0) { \
+		Mach_EnableIntr(); \
 	    } \
 	} \
     }

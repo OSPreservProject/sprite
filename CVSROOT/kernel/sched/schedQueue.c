@@ -14,6 +14,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "mach.h"
 #include "proc.h"
 #include "list.h"
 #include "sync.h"
@@ -45,7 +46,7 @@ Sched_SetClearUsageFlag()
 {
     Proc_ControlBlock	*procPtr;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     MASTER_LOCK(sched_Mutex);
     procPtr->schedFlags |= SCHED_CLEAR_USAGE;
     MASTER_UNLOCK(sched_Mutex);
@@ -105,10 +106,10 @@ Sched_MoveInQueue(procPtr)
      *      current process switches the next time it comes into the
      *      trap handler.
      */
-    curProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    curProcPtr = Proc_GetCurrentProc();
     if ((curProcPtr != (Proc_ControlBlock *) NIL) &&
 	    (procPtr->weightedUsage < curProcPtr->weightedUsage)) {
-	if (sys_AtInterruptLevel && !sys_KernelMode) {
+	if (mach_AtInterruptLevel && !mach_KernelMode) {
 	    sched_DoContextSwitch = TRUE;
 	} 
 	curProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
@@ -238,10 +239,10 @@ Sched_InsertInQueue(procPtr, returnProc)
      *      current process switches the next time it comes into the
      *      trap handler.
      */
-    itemProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    itemProcPtr = Proc_GetCurrentProc();
     if ((itemProcPtr != (Proc_ControlBlock *) NIL) &&
 	    (procPtr->weightedUsage < itemProcPtr->weightedUsage)) {
-	if (sys_AtInterruptLevel && !sys_KernelMode) {
+	if (mach_AtInterruptLevel && !mach_KernelMode) {
 	    sched_DoContextSwitch = TRUE;
 	} 
 	itemProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;

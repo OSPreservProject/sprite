@@ -1,5 +1,5 @@
 /*
- * asmDefs.h --
+ * machAsmDefs.h --
  *
  *	Macros used when writing assembler programs.
  *
@@ -10,8 +10,8 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _ASMDEFS
-#define _ASMDEFS
+#ifndef _MACHASMDEFS
+#define _MACHASMDEFS
 
 #include "machConst.h"
 
@@ -84,12 +84,12 @@
 	movw	#MACH_SR_HIGHPRIO, sr ; \
 	movw	sp@(INTR_SR_OFFSET), d0; \
 	andl	#MACH_SR_SUPSTATE, d0; \
-	movl	d0, _sys_KernelMode; \
-	movl	#1, _sys_AtInterruptLevel ; \
+	movl	d0, _mach_KernelMode; \
+	movl	#1, _mach_AtInterruptLevel ; \
 	\
 	jsr	routine; \
 	\
-	clrl	_sys_AtInterruptLevel ; \
+	clrl	_mach_AtInterruptLevel ; \
 	tstl	_sched_DoContextSwitch; \
 	beq 	1$; \
 	\
@@ -175,4 +175,4 @@
         jsr 	_MachTrap; \
 	jra	MachReturnFromUserTrap;
 
-#endif _ASMDEFS
+#endif _MACHASMDEFS

@@ -66,7 +66,7 @@ Proc_GetIDs(procIDPtr, parentIDPtr, userIDPtr, effUserIDPtr)
 {
     register Proc_ControlBlock 	*procPtr;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     /*
      *  Copy the information to the out parameters.
@@ -130,7 +130,7 @@ Proc_SetIDs(userID, effUserID)
 {
     register	Proc_ControlBlock 	*procPtr;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     if (userID == PROC_NO_ID) {
 	userID = procPtr->userID;;
@@ -188,7 +188,7 @@ Proc_GetGroupIDs(numGIDs, gidArrayPtr, trueNumGIDsPtr)
     register	Proc_ControlBlock 	*procPtr;
     int 				trueNumGIDs;
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     if (numGIDs < 0) {
 	return(SYS_INVALID_ARG);
@@ -249,7 +249,7 @@ Proc_SetGroupIDs(numGIDs, gidArrayPtr)
 	return(SYS_INVALID_ARG);
     }
 
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
 
     Vm_MakeAccessible(VM_READONLY_ACCESS,
 		    numGIDs * sizeof(int), (Address) gidArrayPtr,

@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "mach.h"
 #include "proc.h"
 #include "procInt.h"
 #include "procMigrate.h"
@@ -108,7 +109,7 @@ Proc_Migrate(pid, nodeID)
     
     if (Proc_ComparePIDs(pid, PROC_MY_PID)) {
 #ifdef DOESNT_WORK_YET	
-	procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetActualProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    Sys_Panic(SYS_FATAL, "Proc_Migrate: procPtr == NIL\n");
 	}
@@ -952,7 +953,7 @@ InitiateMigration(procPtr, nodeID)
  * Proc_GetEffectiveProc --
  *
  *	Get a pointer to the Proc_ControlBlock for the process that is
- *	*effectively* running on the specified processor.  Thus, for an
+ *	*effectively* running on the current processor.  Thus, for an
  *	RPC server performing a system call on behalf of a migrated process,
  *	the "effective" process will be the process that invoked the system
  *	call.  In all other cases, the "effective" process will be the
@@ -967,14 +968,12 @@ InitiateMigration(procPtr, nodeID)
  *
  *----------------------------------------------------------------------
  */
-
 Proc_ControlBlock *
-Proc_GetEffectiveProc(processor)
-    int processor;
+Proc_GetEffectiveProc()
 {
     Proc_ControlBlock *procPtr;
 
-    procPtr = proc_RunningProcesses[processor];
+    procPtr = proc_RunningProcesses[Mach_GetProcessorNumber()];
     if (procPtr == (Proc_ControlBlock *) NIL ||
 	    procPtr->rpcClientProcess ==  (Proc_ControlBlock *) NIL) {
 	return(procPtr);
@@ -988,7 +987,7 @@ Proc_GetEffectiveProc(processor)
  *
  * Proc_SetEffectiveProc --
  *
- *	Set the "effective" process on the specified processor.  If the
+ *	Set the "effective" process on the current processor.  If the
  *	process is (Proc_ControlBlock) NIL, the effective process is
  *	the same as the real process.
  *
@@ -1001,15 +1000,13 @@ Proc_GetEffectiveProc(processor)
  *
  *----------------------------------------------------------------------
  */
-
 void
-Proc_SetEffectiveProc(processor, procPtr)
-    int processor;
+Proc_SetEffectiveProc(procPtr)
     Proc_ControlBlock *procPtr;
 {
     Proc_ControlBlock *actualProcPtr;
 
-    actualProcPtr = Proc_GetActualProc(processor);
+    actualProcPtr = Proc_GetActualProc();
     if (actualProcPtr == (Proc_ControlBlock *) NIL) {
 	Sys_Panic(SYS_FATAL,
 		  "Proc_SetEffectiveProcess: current process is NIL.\n");

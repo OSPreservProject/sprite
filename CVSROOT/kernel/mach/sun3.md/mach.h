@@ -16,12 +16,60 @@
 #include "machConst.h"
 
 /*
- * Macros to disable and enable interrupts.  These macros do not handle
- * nested calls.  The macros DISABLE_INTR and ENABLE_INTR are the more general
- * purpose macros which handle nesting.
+ * The state of each processor: user mode or kernel mode.
+ */
+typedef enum {
+    MACH_USER,
+    MACH_KERNEL
+} Mach_ProcessorStates;
+
+/*
+ * Structure for a Mach_SetJump and Mach_LongJump.
+ */
+typedef struct Mach_SetJumpState {
+    int		pc;
+    int		regs[12];
+} Mach_SetJumpState;
+
+/*
+ * Macro to perform a set jump.
+ */
+#define	Mach_SetJump(setJumpPtr) \
+    MachSetJump((Proc_GetCurrentProc(0))->machStatePtr->setJumpStatePtr = setJumpPtr)
+
+/*
+ * Macros to disable and enable interrupts.
  */
 #define	Mach_DisableIntr()	asm("movw #0x2700,sr")
 #define	Mach_EnableIntr()	asm("movw #0x2000,sr")
+#define DISABLE_INTR() \
+    if (!mach_AtInterruptLevel) { \
+	Mach_DisableIntr(); \
+	if (mach_NumDisableIntrsPtr[0] < 0) { \
+	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+	} \
+	mach_NumDisableIntrsPtr[0]++; \
+    }
+#define ENABLE_INTR() \
+    if (!mach_AtInterruptLevel) { \
+	mach_NumDisableIntrsPtr[0]--; \
+	if (mach_NumDisableIntrsPtr[0] < 0) { \
+	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+	} \
+	if (mach_NumDisableIntrsPtr[0] == 0) { \
+	    Mach_EnableIntr(); \
+	} \
+    }
+
+/*
+ * Macro to get processor number
+ */
+#define	Mach_GetProcessorNumber() 	0
+
+extern	Boolean	mach_KernelMode;
+extern	int	mach_NumProcessors;
+extern	Boolean	mach_AtInterruptLevel;
+extern	int	*mach_NumDisableIntrsPtr;
 
 /*
  * Delay for N microseconds.
@@ -226,6 +274,7 @@ typedef struct Mach_State {
 						 * context switches. */
     Address		kernStackStart;		/* Address of the beginning of
 						 * the kernel stack. */
+    Mach_SetJumpState	*setJumpStatePtr;	/* Pointer to set jump state.*/
     int			sigExcStackSize;	/* Amount of valid data in the
 						 * signal exception stack. */
     Mach_ExcStack	sigExcStack;		/* Place to store sig exception 
@@ -256,6 +305,15 @@ typedef struct {
 } Mach_IntrStack;
 
 /*
+ * Macro to get processor number
+ */
+#define	Mach_GetProcessorNumber() 	0
+
+extern	Boolean	mach_KernelMode;
+extern	int	mach_NumProcessors;
+extern	Boolean	mach_AtInterruptLevel;
+extern	int	*mach_NumDisableIntrsPtr;
+/*
  * Routine to initialize mach module.  Must be called first as part of boot 
  * sequence.
  */
@@ -277,9 +335,11 @@ extern	void		Mach_SetDebugState();
 /*
  * Other routines.
  */
-extern void	Mach_InitSyscall();
-extern void	Mach_SetHandler();
-extern int	Mach_GetExcStackSize();
+extern void			Mach_InitSyscall();
+extern void			Mach_SetHandler();
+extern int			Mach_GetExcStackSize();
+extern Mach_ProcessorStates	Mach_ProcessorState();
+extern void			Mach_UnsetJump();
 
 /*
  * Machine dependent routines.

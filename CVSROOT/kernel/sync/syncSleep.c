@@ -156,7 +156,7 @@ WaitTimeSubr(wakeupTime)
     Boolean		sigPending;
 
     
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     wakeupElement.routine    = Sync_WakeupProcess; 
     wakeupElement.clientData = (ClientData) procPtr;
     wakeupElement.time       = wakeupTime;

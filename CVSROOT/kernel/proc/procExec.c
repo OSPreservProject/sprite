@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "proc.h"
 #include "procInt.h"
 #include "fs.h"
@@ -224,7 +225,7 @@ Proc_KernExec(fileName, argPtrArray)
     register	Proc_ControlBlock	*procPtr;
     ReturnStatus			status;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
 
     /*
      * Set up dummy segments so that DoExec can work properly.
@@ -370,7 +371,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     origNumArgs = numArgs;
     origNumEnvs = numEnvs;
 
-    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetActualProc();
     List_Init(&argList);
     List_Init(&envList);
 
@@ -738,7 +739,6 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * because there is an implicit enable interrupts when we return to user 
      * mode.
      */
-    Sys_DisableIntr();
     Mach_ExecUserProc(procPtr, userStackPointer, entry);
     Sys_Panic(SYS_FATAL, "DoExec: Proc_RunUserProc returned.\n");
 

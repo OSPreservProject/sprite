@@ -18,6 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "proc.h"
 #include "procInt.h"
 #include "sync.h"
@@ -506,7 +507,7 @@ CallFunc(funcInfoPtr)
 	 */
 	if (QUEUE_FULL) {
 	    extern Boolean sys_ShouldSyncDisks;
-	    Sys_EnableIntr();
+	    Mach_EnableIntr();
 	    sys_ShouldSyncDisks = FALSE;
 	    Sys_Panic(SYS_FATAL, "CallFunc: Process queue full.\n");
 	}
