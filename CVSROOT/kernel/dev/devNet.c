@@ -123,6 +123,7 @@ static int protoMutex;
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 DevNet_FsOpen(devicePtr, useFlags, data)
     Fs_Device   *devicePtr;	/* Device info, unit number == protocol */
@@ -405,6 +406,7 @@ DevNet_FsWrite(devicePtr, offset, bufSize, buffer, lenPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 DevNet_FsClose(devicePtr, useFlags, openCount, writerCount)
     Fs_Device	*devicePtr;	/* Device info. */
