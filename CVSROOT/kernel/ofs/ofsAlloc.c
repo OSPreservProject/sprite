@@ -2266,6 +2266,8 @@ FsBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 			status);
 		    FsCacheUnlockBlock(blockPtr, 0, 0, 0, FS_DELETE_BLOCK);
 		    goto error;
+		} else {
+		    fsStats.gen.physBytesRead += FS_BLOCK_SIZE;
 		}
 	    } else {
 		fsStats.blockCache.indBlockHits++;

@@ -498,6 +498,9 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 			&(indexInfoPtr->domainPtr->headerPtr->device), 
 		       *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK, 
 		       indInfoPtr->blockPtr->blockAddr);
+		if (status == SUCCESS) {
+		    fsStats.gen.physBytesRead += FS_BLOCK_SIZE;
+		}
 		FsCacheIODone(indInfoPtr->blockPtr);
 	    } else {
 		fsStats.blockCache.indBlockHits++;

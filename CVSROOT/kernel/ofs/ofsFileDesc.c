@@ -85,6 +85,8 @@ FsFileDescAllocInit(domainPtr)
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "Could not read in file descriptor bit map.\n");
 	return(status);
+    } else {
+	fsStats.gen.physBytesRead += FS_BLOCK_SIZE;
     }
 
     return(SUCCESS);
@@ -121,6 +123,8 @@ FsWriteBackFileDescBitmap(domainPtr)
 		    (Address) domainPtr->fileDescBitmap);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "Could not write out file desc bit map.\n");
+    } else {
+	fsStats.gen.physBytesWritten += FS_BLOCK_SIZE;
     }
 
     UNLOCK_MONITOR;
@@ -399,6 +403,8 @@ FsFetchFileDesc(domainPtr, fileNumber, fileDescPtr)
 	    Sys_Panic(SYS_WARNING, "Could not read in file descriptor\n");
 	    FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
 	    return(status);
+	} else {
+	    fsStats.gen.physBytesRead += FS_BLOCK_SIZE;
 	}
     } else {
 	fsStats.blockCache.fileDescReadHits++;
@@ -473,6 +479,8 @@ FsStoreFileDesc(domainPtr, fileNumber, fileDescPtr)
 	    FsCacheUnlockBlock(blockPtr, 0, blockNum * FS_FRAGMENTS_PER_BLOCK,
 				FS_BLOCK_SIZE, FS_DELETE_BLOCK);
 	    return(status);
+	} else {
+	    fsStats.gen.physBytesWritten += FS_BLOCK_SIZE;
 	}
     } else {
 	fsStats.blockCache.fileDescWriteHits++;
