@@ -38,6 +38,7 @@
 extern	Boolean	sys_ShuttingDown;	/* Set when halting */
 extern	Boolean	sys_ErrorShutdown;	/* Set after a bad trap or error */
 extern	Boolean	sys_ErrorSync;		/* Set while syncing disks */
+extern	int	sysPanicOK;		/* Set by main when ok to panic */
 extern	int	sys_NumCalls[];
 
 extern	void	Sys_Init();
