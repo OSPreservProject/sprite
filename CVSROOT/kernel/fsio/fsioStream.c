@@ -54,6 +54,7 @@ static int	streamCount;	/* Used to generate fileIDs for streams*/
 /*
  * Forward declarations. 
  */
+static ReturnStatus StreamMigCallback();
 static ReturnStatus GrowStreamList();
 
 
@@ -151,13 +152,18 @@ FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
  *----------------------------------------------------------------------
  */
 ENTRY Fs_Stream *
-FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name, foundPtr)
+FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
+	    foundClientPtr, foundStreamPtr)
     Fs_FileID		*streamIDPtr;	/* File ID for stream */
     int			clientID;	/* Client of the stream */
     FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
     int			useFlags;	/* Usage flags from Fs_Open call */
     char		*name;		/* Name for error messages */
-    Boolean		*foundPtr;	/* True if client already existed */
+    /*
+     * These two boolean pointers may be NIL if their info is not needed.
+     */
+    Boolean		*foundClientPtr;/* True if Client already existed */
+    Boolean		*foundStreamPtr;/* True if stream already existed */
 {
     register Boolean found;
     register Fs_Stream *streamPtr;
@@ -175,10 +181,11 @@ FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name, foundPtr)
     } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
 	streamPtr->ioHandlePtr = ioHandlePtr;
     }
-
     (void)FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags,
-	    foundPtr);
-
+	    foundClientPtr);
+    if (foundStreamPtr != (Boolean *)NIL) {
+	*foundStreamPtr = found;
+    }
     UNLOCK_MONITOR;
     return(streamPtr);
 }
@@ -186,43 +193,54 @@ FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name, foundPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsStreamAddClient --
+ * FsStreamMigClient --
  *
- *	Find a stream and move a client from one host to another.  The
- *	FS_RMT_SHARED stream flag is used to detect if the stream is
- *	being shared by more than one client.  This may be already set by
- *	the source client, or we may set it if we detect sharing here.
+ *	This is called on the I/O server for to move client streams refs.
+ *	This makes a callback to the source client to release the reference
+ *	to the stream which has (now) moved away.
+ *	Note:  this operation locks the stream in order to serialize
+ *	with a close comming in from a remote client who has dup'ed the
+ *	stream, migrated one refernece, and closed the other reference.
+ *	Also, on the client the callback and the regular close will both
+ *	try to lock the stream in order to release a reference.  Deadlock
+ *	cannot occur because if the close happens first there will be two
+ *	references at the client.  The close at the client will release
+ *	one reference and not try to contact us.  If the callback occurs
+ *	first then the close will come through to us, but it will have
+ *	to wait until we are done with this migration.
  *
  * Results:
  *	TRUE if the stream is shared across the network after migration.
  *
  * Side effects:
  *	Shifts the client list entry from one host to another.  This does
- *	not add/subtract any references to the stream itself.
+ *	not add/subtract any references to the stream here on this host.
+ *	However, the call-back releases a reference at the source client.
  *
  *----------------------------------------------------------------------
  */
 ENTRY void
-FsStreamMigClient(streamIDPtr, srcClientID, dstClientID, ioHandlePtr,
-	    offsetPtr, flagsPtr)
-    Fs_FileID		*streamIDPtr;	/* File ID for stream */
-    int			srcClientID;	/* Original client of the stream */
+FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr)
+    FsMigInfo		*migInfoPtr;	/* Encapsulated stream */
     int			dstClientID;	/* New client of the stream */
     FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
-    int			*offsetPtr;	/* Offset from migration info */
-    int			*flagsPtr;	/* Stream use flags */
 {
     register Boolean found;
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
-    int newClientStream = *flagsPtr & FS_NEW_STREAM;
+    int newClientStream = migInfoPtr->flags & FS_NEW_STREAM;
+    ReturnStatus status;
+    Boolean shared;
 
-    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), (char *)NIL,
-			    (FsHandleHeader **)&newStreamPtr);
+    /*
+     * Get the stream and synchronize with closes from the client.
+     */
+    found = FsHandleInstall(&migInfoPtr->streamID, sizeof(Fs_Stream),
+			    (char *)NIL, (FsHandleHeader **)&newStreamPtr);
     streamPtr = newStreamPtr;
     if (!found) {
-	streamPtr->offset = *offsetPtr;
-	streamPtr->flags = *flagsPtr;
+	streamPtr->offset = migInfoPtr->offset;
+	streamPtr->flags = migInfoPtr->flags;
 	streamPtr->ioHandlePtr = ioHandlePtr;
 	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
 	List_Init(&streamPtr->clientList);
@@ -234,25 +252,180 @@ FsStreamMigClient(streamIDPtr, srcClientID, dstClientID, ioHandlePtr,
 	 * We don't think the stream is being shared so we
 	 * grab the offset from the client.
 	 */
-	streamPtr->offset = *offsetPtr;
+	streamPtr->offset = migInfoPtr->offset;
     }
-    if ((*flagsPtr & FS_RMT_SHARED) == 0) {
+    if (migInfoPtr->srcClientID != rpc_SpriteID) {
+	/*
+	 * Call back to the client to tell it to release its reference
+	 * on the stream.
+	 */
+	status = StreamMigCallback(migInfoPtr, &shared);
+    } else {
+	/*
+	 * The stream has been migrated away from us, the I/O server.
+	 * Decrement the stream ref count.  The I/O handle references
+	 * are left alone here on the I/O server.
+	 */
+	FsHandleDecRefCount((FsHandleHeader *)streamPtr);
+	shared = (streamPtr->hdr.refCount > 1);
+	status = SUCCESS;
+    }
+
+    if (status != SUCCESS || !shared) {
 	/*
 	 * The client doesn't perceive sharing of the stream so
 	 * it must be its last reference so we do an I/O close.
 	 */
-	(void)FsStreamClientClose(&streamPtr->clientList, srcClientID);
+	(void)FsStreamClientClose(&streamPtr->clientList,
+				  migInfoPtr->srcClientID);
     }
-    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID, *flagsPtr,
-			    (Boolean *)NIL)) {
+    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
+			    migInfoPtr->flags, (Boolean *)NIL)) {
 	/*
 	 * We detected network sharing so we mark the stream.
 	 */
 	streamPtr->flags |= FS_RMT_SHARED;
     }
-    *flagsPtr = streamPtr->flags | newClientStream;
-    *offsetPtr = streamPtr->offset;
+    migInfoPtr->flags = streamPtr->flags | newClientStream;
+    migInfoPtr->offset = streamPtr->offset;
     FsHandleRelease(streamPtr, TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StreamMigCallback --
+ *
+ *	Call back to the source client of a migration and tell it to
+ *	release its stream.  This invokes FsStreamMigrate on the
+ *	remote client
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *      None.
+ *	
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+StreamMigCallback(migInfoPtr, sharedPtr)
+    FsMigInfo	*migInfoPtr;	/* Encapsulated information */
+    Boolean	*sharedPtr;	/* TRUE if stream still used on client */
+{
+    register ReturnStatus	status;
+    Rpc_Storage 	storage;
+    FsMigInfo		migInfo;
+    FsMigParam		migParam;
+
+    /*
+     * We want to call FsStreamMigrate, so we change the ioFileID to
+     * the streamID before passing it.
+     */
+    migInfo = *migInfoPtr;
+    migInfo.ioFileID = migInfoPtr->streamID;
+    storage.requestParamPtr = (Address) &migInfo;
+    storage.requestParamSize = sizeof(FsMigInfo);
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+
+    storage.replyParamPtr = (Address)&migParam;
+    storage.replyParamSize = sizeof(FsMigParam);
+    storage.replyDataPtr = (Address) NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(migInfoPtr->srcClientID, RPC_FS_MIGRATE, &storage);
+
+    if (status == SUCCESS) {
+	FsMigrateReply	*migReplyPtr;
+
+	migReplyPtr = &(migParam.migReply);
+	*sharedPtr = migReplyPtr->flags & FS_RMT_SHARED;
+    } else if (fsMigDebug) {
+	Sys_Panic(SYS_WARNING,
+	  "StreamMigCallback: status %x from remote migrate routine.\n",
+		  status);
+    }
+    return(status);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsStreamMigrate --
+ *
+ *	This is used to tell the source of a migration that it is ok to
+ *	release its reference on the stream that migrated.  This has to
+ *	done from the I/O server during the I/O migrate call in order
+ *	to properly synchronize with closes to the stream.  For example,
+ *	a stream often gets duped, then one refernce migrates and the olther
+ *	reference gets closed.
+ *
+ *	Note.  This is wedged into the mold of an I/O handle migrate routine
+ *	because the RPC system is in flux and it isn't convenient to add
+ *	a new RPC.
+ *
+ * Results:
+ *	SUCCESS unless the stream isn't even found.  This sets the FS_RMT_SHARED
+ *	flag in the *flagsPtr field if the stream is still in use here,
+ *	otherwise it clears this flag.
+ *
+ * Side effects:
+ *	Does an RPC to the source client and logs a message if that fails.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+/*ARGSUSED*/
+ReturnStatus
+FsStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
+    FsMigInfo	*migInfoPtr;	/* Migration state */
+    int		dstClientID;	/* ID of target client */
+    int		*flagsPtr;	/* In/Out Stream usage flags */
+    int		*offsetPtr;	/* Return - new stream offset (not needed) */
+    int		*sizePtr;	/* Return - 0 */
+    Address	*dataPtr;	/* Return - NIL */
+{
+    register Fs_Stream *streamPtr;
+
+    *sizePtr = 0;
+    *dataPtr = (Address)NIL;
+    /*
+     * Fetch the stream but don't increment the refernece count while
+     * keeping it locked.
+     */
+    streamPtr = FsHandleFetchType(Fs_Stream, &migInfoPtr->streamID);
+    if (streamPtr == (Fs_Stream *)NIL) {
+	Sys_Panic(SYS_WARNING,
+		"FsStreamMigrate, no stream <%d> for %s handle <%d,%d>\n",
+		migInfoPtr->streamID.minor,
+		FsFileTypeToString(migInfoPtr->ioFileID.type),
+		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
+	return(FS_FILE_NOT_FOUND);
+    }
+    FsHandleDecRefCount((FsHandleHeader *)streamPtr);
+
+    *flagsPtr = streamPtr->flags;
+    *offsetPtr = streamPtr->offset;
+    /*
+     * If this is the last refernece then call down to the I/O handle
+     * so it can decrement use counts that come from the stream.
+     */
+    if (streamPtr->hdr.refCount <= 1) {
+	(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
+		(streamPtr->ioHandlePtr, streamPtr->flags);
+	if (FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	    /*
+	     * No references, no other clients, nuke it.
+	     */
+	    *flagsPtr &= ~FS_RMT_SHARED;
+	    FsStreamDispose(streamPtr);
+	    return(SUCCESS);
+	}
+    }
+    *flagsPtr |= FS_RMT_SHARED;
+    FsHandleRelease(streamPtr, TRUE);
+    return(SUCCESS);
 }
 
 /*
@@ -310,54 +483,6 @@ FsStreamNewID(serverID, streamIDPtr)
     FsHandleRemove(newStreamPtr);
     UNLOCK_MONITOR;
 }
-
-#ifdef notdef
-/*
- *----------------------------------------------------------------------
- *
- * FsStreamFind --
- *
- *	Find a stream given its fileID.  If it isn't found then a local
- *	instance is installed.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Install the new stream into the handle table.
- *
- *----------------------------------------------------------------------
- */
-Fs_Stream *
-FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, name, foundPtr)
-    Fs_FileID *streamIDPtr;
-    FsHandleHeader *ioHandlePtr;
-    int useFlags;
-    char *name;
-    Boolean *foundPtr;
-{
-    register Boolean found;
-    register Fs_Stream *streamPtr;
-    Fs_Stream *newStreamPtr;
-
-    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
-			    (FsHandleHeader **)&newStreamPtr);
-    streamPtr = newStreamPtr;
-    if (!found) {
-	streamPtr->offset = 0;
-	streamPtr->flags = useFlags;
-	streamPtr->ioHandlePtr = ioHandlePtr;
-	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
-	List_Init(&streamPtr->clientList);
-    } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
-	streamPtr->ioHandlePtr = ioHandlePtr;
-    }
-    if (foundPtr != (Boolean *)NIL) {
-	*foundPtr = found;
-    }
-    return(streamPtr);
-}
-#endif notdef
 
 /*
  *----------------------------------------------------------------------
@@ -606,7 +731,7 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	if (ioHandlePtr != (FsHandleHeader *)NIL) {
 	    streamPtr = FsStreamAddClient(&reopenParamsPtr->streamID, clientID,
 		    ioHandlePtr, reopenParamsPtr->useFlags, ioHandlePtr->name,
-		    (Boolean *)NIL);
+		    (Boolean *)NIL, (Boolean *)NIL);
 	    /*
 	     * BRENT Have to worry about the shared offset here.
 	     */
