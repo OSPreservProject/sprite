@@ -20,14 +20,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "mach.h"
 #include "dump.h"
+#include "dumpInt.h"
 #include "timer.h"
 #include "proc.h"
 #include "sys.h"
 #include "list.h"
 #include "byte.h"
-#include "devKeyboard.h"
 #include "devTimer.h"
-#include "devConsole.h"
 #include "rpc.h"
 #include "fs.h"
 #include "fsInt.h"
@@ -58,12 +57,53 @@ void	DumpListLinksStruct();
 void	DumpPCB();
 void	DumpTimerElement();
 void	DumpTimerStats();
+void 	PrintL1Menu();
 static void	PrintVersion();
 static void	PrintTOD();
 extern	void	Fs_DumpCacheStats();
 extern	void	Fs_PdevPrintTrace();
 extern	void	Fs_HandleScavengeStub();
 extern	void	Mem_DumpStats();
+/*
+ * Table of routines and their arguments to be called on dump events.
+ * Only machine independent dump events should be added to this table.
+ * Machine dependent event should be added to the Local event table.
+ */
+static EventTableType eventTable[] = {
+    {'/', PrintL1Menu, (ClientData)0,"Print Dump Event Menu"},
+    {'a', RESERVED_EVENT, NULL_ARG, "Abort to PROM monitor" }, 
+    {'b', RESERVED_EVENT, NULL_ARG, 
+				"Put machine into (old) serial line debugger"},
+    {'c', Fs_DumpCacheStats, (ClientData)0, "Dump cache stats"},
+    {'d', RESERVED_EVENT, NULL_ARG, "Put machine into the kernel debugger"},
+    {'e', DumpTimerStats, (ClientData) 'e', "Dump timer stats"},
+    {'f', Fs_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
+#ifdef brent
+    {'h', Fs_NameHashStats, (ClientData)fsNameTablePtr,"Dump name hash stats"},
+#endif
+    {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
+    {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
+    {'p', Dump_ProcessTable, (ClientData) 0,"Dump process table"},
+    {'r', Dump_ReadyQueue,  (ClientData) 0,"Dump ready queue"},
+    {'q', Fs_PdevPrintTrace,  (ClientData) 200,"Dump pseudo-device trace"},
+    {'s', DumpTimerStats,   (ClientData) 's',"Reset timer stats"},
+    {'t', Dump_TimerQueue,  (ClientData) 0,"Dump the timer queue"},
+    {'v', PrintVersion, (ClientData) 0,"Print version string of the kernel"},
+    {'w', Mem_DumpTrace, (ClientData) -1,"Dump the memory trace buffer"},
+    {'x', Fs_HandleScavengeStub, (ClientData) 0,"Scavenge filesystem handles"},
+    {'y', Recov_PrintTrace, (ClientData) 50,"Dump RPC recovery trace"},
+    {'z', Rpc_PrintTrace, (ClientData) 50,"Dump RPC packet trace"},
+
+    {'1', Dev_TimerGetInfo, (ClientData) 1,"Dump info for timer counter 1"},
+    {'2', Dev_TimerGetInfo, (ClientData) 2,"Dump info for timer counter 2"},
+    {'3', Dev_TimerGetInfo, (ClientData) 3,"Dump info for timer counter 3"},
+    {'4', Dev_TimerGetInfo, (ClientData) 4,"Dump info for timer counter 4"},
+    {'5', Dev_TimerGetInfo, (ClientData) 5,"Dump info for timer counter 5"},
+    {'6', PrintTOD, (ClientData) 0,"Print time of day counters"},
+	/* This MUST be the last entry */
+    {'\000', LAST_EVENT, NULL_ARG, (char *) 0 }, 
+};
+
 
 
 /*
@@ -85,39 +125,18 @@ extern	void	Mem_DumpStats();
 void
 PrintL1Menu()
 {
-    Sys_Printf("Pressing the L1 key and a letter causes the following...\n");
-    Sys_Printf("\ or ? - Print this menu\n");
-    /*
-     * MAKE SURE THIS AGREES WITH Dump_Init() !!
-     */
-    Sys_Printf("a - Abort to PROM monitor\n");
-    Sys_Printf("b - Put machine into (old) serial line debugger\n");
-    Sys_Printf("c - Dump cache stats\n");
-    Sys_Printf("d - Put machine into the kernel debugger\n");
-    Sys_Printf("e - Dump timer stats\n");
-    Sys_Printf("f - Dump filesystem trace\n");
-    Sys_Printf("h - Dump name hash statistics\n");
-    Sys_Printf("k - Reset console to keyboard mode\n");
-    Sys_Printf("l - Reset console to raw mode (for X)\n");
-    Sys_Printf("m - Dump memory stats\n");
-    Sys_Printf("n - Reset the network interface\n");
-    Sys_Printf("p - Dump process table\n");
-    Sys_Printf("r - Dump ready queue\n");
-    Sys_Printf("q - Dump pseudo-device trace\n");
-    Sys_Printf("s - Reset timer stats\n");
-    Sys_Printf("t - Dump the timer queue\n");
-    Sys_Printf("v - Print version string of the kernel\n");
-    Sys_Printf("w - Dump the memory trace buffer\n");
-    Sys_Printf("x - Scavenge filesystem handles\n");
-    Sys_Printf("y - Dump RPC recovery trace\n");
-    Sys_Printf("z - Dump RPC packet trace\n");
+    EventTableType	*entry;
 
-    Sys_Printf("1 - Dump info for timer counter 1\n");
-    Sys_Printf("2 - Dump info for timer counter 2\n");
-    Sys_Printf("3 - Dump info for timer counter 3\n");
-    Sys_Printf("4 - Dump info for timer counter 4\n");
-    Sys_Printf("5 - Dump info for timer counter 5\n");
-    Sys_Printf("6 - Print time of day counters\n");
+    Sys_Printf("Pressing the L1 key and a letter causes the following...\n");
+    Sys_Printf("/ or ? - Print this menu\n");
+    for (entry = eventTable; entry->routine != LAST_EVENT; entry++) {
+	Sys_Printf("%c - %s\n",entry->key, entry->description);
+    }
+    /*
+     * Show the machine dependent bindings.
+     */
+    Sys_Printf("Machine dependent entries....\n");
+    Dump_Show_Local_Menu();
 }
 
 
@@ -126,14 +145,13 @@ PrintL1Menu()
  *
  * Dump_Init --
  *
- *	Establish default procedural attachments for keyboard invocation
- *	of Dump routines.
+ *	Establish default procedural attachments for Dump events.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Keyboard procedural attachments are modified.
+ *	None. 
  *
  *----------------------------------------------------------------------
  */
@@ -141,38 +159,8 @@ PrintL1Menu()
 void
 Dump_Init()
 {
-    Dev_KbdQueueAttachProc('/', PrintL1Menu, (ClientData)0);
-    /*
-     * BE SURE TO UPDATE PrintL1Menu() !!
-     */
-    /* 'a' is reserved for aborting a machine to the monitor */
-    /* 'b' is reserved for putting a machine into serial line debugger */
-    Dev_KbdQueueAttachProc('c', Fs_DumpCacheStats, (ClientData)0);
-    /* 'd' is reserved for putting a machine into the debugger */
-    Dev_KbdQueueAttachProc('e', DumpTimerStats,   (ClientData) 'e');
-    Dev_KbdQueueAttachProc('f', Fs_PrintTrace,   (ClientData) -1);
-    Dev_KbdQueueAttachProc('h', Fs_NameHashStats, (ClientData)fsNameTablePtr);
-    Dev_KbdQueueAttachProc('k', Dev_ConsoleReset, (ClientData) TRUE);
-    Dev_KbdQueueAttachProc('l', Dev_ConsoleReset, (ClientData) FALSE);
-    Dev_KbdQueueAttachProc('m', Mem_DumpStats, (ClientData) FALSE);
-    Dev_KbdQueueAttachProc('n', Net_Reset, (ClientData)0);
-    Dev_KbdQueueAttachProc('p', Dump_ProcessTable, (ClientData) 0);
-    Dev_KbdQueueAttachProc('r', Dump_ReadyQueue,  (ClientData) 0);
-    Dev_KbdQueueAttachProc('q', Fs_PdevPrintTrace,  (ClientData) 200);
-    Dev_KbdQueueAttachProc('s', DumpTimerStats,   (ClientData) 's');
-    Dev_KbdQueueAttachProc('t', Dump_TimerQueue,  (ClientData) 0);
-    Dev_KbdQueueAttachProc('v', PrintVersion, (ClientData) 0);
-    Dev_KbdQueueAttachProc('w', Mem_DumpTrace, (ClientData) -1);
-    Dev_KbdQueueAttachProc('x', Fs_HandleScavengeStub, (ClientData) 0);
-    Dev_KbdQueueAttachProc('y', Recov_PrintTrace, (ClientData) 50);
-    Dev_KbdQueueAttachProc('z', Rpc_PrintTrace, (ClientData) 50);
+    Dump_Register_Events(eventTable);
 
-    Dev_KbdQueueAttachProc('1', Dev_TimerGetInfo, (ClientData) 1);
-    Dev_KbdQueueAttachProc('2', Dev_TimerGetInfo, (ClientData) 2);
-    Dev_KbdQueueAttachProc('3', Dev_TimerGetInfo, (ClientData) 3);
-    Dev_KbdQueueAttachProc('4', Dev_TimerGetInfo, (ClientData) 4);
-    Dev_KbdQueueAttachProc('5', Dev_TimerGetInfo, (ClientData) 5);
-    Dev_KbdQueueAttachProc('6', PrintTOD, (ClientData) 0);
 }
 
 
@@ -371,7 +359,8 @@ void
 DumpPCB(procPtr)
     Proc_ControlBlock *procPtr;
 {
-   
+    Time	kernelTime, userTime;
+
     static char *states[] = {
 	"unused",
 	"running",
@@ -404,23 +393,17 @@ DumpPCB(procPtr)
     /*
      * A header describing the fields has already been printed.
      */
+    Timer_TicksToTime(procPtr->userCpuUsage, &userTime);
+    Timer_TicksToTime(procPtr->kernelCpuUsage, &kernelTime);
     Sys_Printf(
 	       " %6x %6x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
 	       procPtr, 
 	       procPtr->processID, 
 	       procPtr->weightedUsage, 
-#ifdef SUN2
-	       procPtr->userCpuUsage.high,
-	       procPtr->userCpuUsage.low,
-	       procPtr->kernelCpuUsage.high, 
-	       procPtr->kernelCpuUsage.low,
-#endif
-#ifdef SUN3
-	       procPtr->userCpuUsage.seconds,
-	       procPtr->userCpuUsage.microseconds,
-	       procPtr->kernelCpuUsage.seconds, 
-	       procPtr->kernelCpuUsage.microseconds,
-#endif
+	       userTime.seconds,
+	       userTime.microseconds,
+	       kernelTime.seconds, 
+	       kernelTime.microseconds,
 	       procPtr->event,
 	       states[(int) state]);
     if (procPtr->argString != (Address) NIL) {
