@@ -154,12 +154,13 @@ DevConsoleRawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
     char *outBuffer;		/* Output buffer. */
 {
     register DevZ8530 *zPtr = ptr; /* Information about keyboard device. */
-    int c;
+    char buf[TTY_OUT_BUF_SIZE];
+    int c, i;
 
     if (operation != TD_RAW_OUTPUT_READY) {
 	return 0;
     }
-    while (TRUE) {
+    for (i = 0; i < sizeof buf; ++i) {
 
 	/*
 	 * Note:  must call DevTtyOutputChar directly, rather than calling
@@ -172,9 +173,10 @@ DevConsoleRawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
 	if (c == -1) {
 	    break;
 	}
-	while (Mach_MonMayPut(c & 0x7f) == -1) {
-	    /* Empty loop;  just try again. */
-	}
+	buf[i] = c & 0x7f;
+    }
+    if (i > 0) {
+	(*romVectorPtr->fbWriteStr)(buf, i);
     }
     return 0;
 }
