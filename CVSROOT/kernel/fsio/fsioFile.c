@@ -278,7 +278,7 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 		(void)FsStreamClientOpen(&streamPtr->clientList, clientID,
 					 useFlags);
 		*streamIDPtr = streamPtr->hdr.fileID;
-		FsHandleRelease(streamPtr, TRUE);
+		FsHandleUnlock(streamPtr);
 	    }
 	    return(SUCCESS);
 	} else {
@@ -743,14 +743,30 @@ FsFileScavenge(hdrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileMigStart(hdrPtr, flags, clientID, data)
+FsFileMigStart(hdrPtr, flags, clientID, migFlagsPtr)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
     int clientID;		/* Host doing the encapsulation */
-    ClientData data;		/* migration data, NOT_USED */
+    int *migFlagsPtr;		/* Migration flags we may modify */
 {
+    register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+    int writes;
+
     if ((flags & FS_RMT_SHARED) == 0) {
-	FsHandleRelease(hdrPtr, FALSE);
+	if (flags & FS_WRITE) {
+	    /*
+	     * Figure out if this client is migrating away the last writer.
+	     */
+	    FsHandleLock(handlePtr);
+	    FsIOClientStatus(&handlePtr->consist.clientList, clientID,
+			     (int *) NIL, &writes, (int *) NIL);
+	    if (writes == 1) {
+		*migFlagsPtr |= FS_LAST_WRITER;
+	    }
+	    FsHandleRelease(hdrPtr, TRUE);
+	} else {
+	    FsHandleRelease(hdrPtr, FALSE);
+	}
     }
     return(SUCCESS);
 }
@@ -845,6 +861,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     register ReturnStatus		status;
     register Fs_Stream			*streamPtr;
     Boolean				found;
+    Boolean				keepReference = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -883,16 +900,25 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	     */
 	    (void)FsStreamClientClose(&streamPtr->clientList,
 				    migInfoPtr->srcClientID);
+	} else if (migInfoPtr->flags & FS_NEW_STREAM) {
+	    keepReference = TRUE;
 	}
 	if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
 		migInfoPtr->flags)) {
 	    /*
-	     * We detected network sharing so we mark the stream.
+	     * We detected network sharing so we mark the stream and
+	     * keep and extra reference so closing works ok.
 	     */
 	    streamPtr->flags |= FS_RMT_SHARED;
+#ifdef notdef
 	    migInfoPtr->flags |= FS_RMT_SHARED;
+#endif notdef
 	}
-	FsHandleRelease(streamPtr, TRUE);
+	if (keepReference) {
+	    FsHandleUnlock(streamPtr);
+	} else {
+	    FsHandleRelease(streamPtr, TRUE);
+	}
 	/*
 	 * Adjust use counts on the I/O handle to reflect any new sharing.
 	 */
@@ -904,7 +930,8 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	     * to reflect the additional client stream.
 	     */
 	    handlePtr->use.ref++;
-	    if (migInfoPtr->flags & FS_WRITE) {
+	    if ((migInfoPtr->flags & FS_WRITE) &&
+		!(migInfoPtr->flags & FS_LAST_WRITER)) {
 		handlePtr->use.write++;
 	    }
 	    if (migInfoPtr->flags & FS_EXECUTE) {
@@ -924,7 +951,14 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	    if (migInfoPtr->flags & FS_EXECUTE) {
 		handlePtr->use.exec--;
 	    }
+	} else if (migInfoPtr->flags & FS_LAST_WRITER) {
+	    /*
+	     * The stream is still open for reading but no longer for
+	     * writing on the source client.  [should this point be reached??]
+	     */
+	    handlePtr->use.write--;
 	}
+
 	/*
 	 * Update the client list, and take any required cache consistency
 	 * actions. The handle returns unlocked from the consistency routine.
