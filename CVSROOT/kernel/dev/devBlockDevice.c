@@ -153,8 +153,8 @@ Dev_BlockDeviceIO(blockDevHandlePtr, requestPtr)
  */
 #ifndef	Dev_BlockDeviceIOControl
 ReturnStatus 
-Dev_BlockDeviceIOControl(blockDevHandlePtr, command, inBufSize, inBuffer,
-			 outBufSize, outBuffer) 
+Dev_BlockDeviceIOControl(blockDevHandlePtr, command, byteOrder, inBufSize,
+			inBuffer, outBufSize, outBuffer) 
     DevBlockDeviceHandle
 		*blockDevHandlePtr;  /* Handle of the device to operate on. */
 		/*
@@ -163,14 +163,15 @@ Dev_BlockDeviceIOControl(blockDevHandlePtr, command, inBufSize, inBuffer,
 		 * the fsDevice switch table.
 		 */
     int	command; 	/* IOControl command to perform. */
+    int byteOrder;	/* Caller's byte ordering */
     int	inBufSize;	/* Size of inBuffer. */
     char *inBuffer;	/* Input data to the IOControl. */
     int	outBufSize;	/* Size of outBuffer. */
     char *outBuffer;	/* Return data from the IOControl. */
 {
 
-    return (blockDevHandlePtr->IOControlProc)(blockDevHandlePtr, 	    
-			 command, inBufSize, inBuffer, outBufSize, outBuffer);
+    return (blockDevHandlePtr->IOControlProc)(blockDevHandlePtr, command,    
+			 byteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
 
 
 }
