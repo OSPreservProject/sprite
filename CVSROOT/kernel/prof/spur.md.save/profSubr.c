@@ -97,7 +97,7 @@ Prof_Init()
      */
 
     numInstructions = ((unsigned)&etext) >> PROF_INSTR_SIZE_SHIFT;
-    Sys_Printf("Prof_Init: # instructions in kernel = %d\n", numInstructions);
+    printf("Prof_Init: # instructions in kernel = %d\n", numInstructions);
 
     /*
      * The size of the sample array reflects a compression down
@@ -160,7 +160,7 @@ Prof_Start()
 	Prof_Init();
     }
 
-    Sys_Printf("Starting Profiling.\n");
+    printf("Starting Profiling.\n");
 
     /*
      * Reset the PC sample counters.
@@ -300,17 +300,17 @@ Prof_Dump(dumpName)
     writeLen = sizeof(sampleHdr);
     status = Fs_Write(streamPtr, (Address) &sampleHdr, fileOffset, &writeLen);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		    "Prof_Dump: Fs_Write(1) failed, status = %x\n",status);
 	goto dumpError;
     }
-    Sys_Printf("Prof_Dump: pc sample size = %d\n", pcSampleSize);
+    printf("Prof_Dump: pc sample size = %d\n", pcSampleSize);
 
     fileOffset += writeLen;
     writeLen = pcSampleSize * sizeof(short);
     status = Fs_Write(streamPtr, (Address) pcSamples, fileOffset, &writeLen);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		    "Prof_Dump: Fs_Write(2) failed, status = %x\n",status);
 	goto dumpError;
     }
@@ -347,7 +347,7 @@ Prof_Dump(dumpName)
 	    writeLen = sizeof(ProfArc);
 	    status = Fs_Write(streamPtr, (Address)&arc, fileOffset, &writeLen);
 	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 		    "Prof_Dump: Fs_Write(3) failed, status = %x, index = %d\n",
 		    status, index);
 		goto dumpError;
@@ -364,7 +364,7 @@ Prof_Dump(dumpName)
 #endif
     status = Fs_Close(streamPtr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		"Prof_Dump: Fs_Close failed, status = %x\n", status);
     }
     return(status);
