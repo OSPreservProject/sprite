@@ -109,6 +109,20 @@
  */
 extern int fsLclToRmtType[];
 extern int fsRmtToLclType[];
+/*
+ * FsMapLclToRmtType(type) - Maps from a local to a remote stream type.
+ *	This returns -1 if the input type is out-of-range.
+ */
+#define FsMapLclToRmtType(localType) \
+    ( ((localType) < 0 || (localType) >= FS_NUM_STREAM_TYPES) ? -1 : \
+	fsLclToRmtType[localType] )
+/*
+ * FsMapRmtToLclType(type) - Maps from a remote to a local stream type.
+ *	This returns -1 if the input type is out-of-range.
+ */
+#define FsMapRmtToLclType(remoteType) \
+    ( ((remoteType) < 0 || (remoteType) >= FS_NUM_STREAM_TYPES) ? -1 : \
+	fsRmtToLclType[remoteType] )
 
 /*
  * The following structures are subfields of the various I/O handles.
@@ -348,7 +362,7 @@ extern	void		FsWaitListDelete();
 extern	void		FsWaitListRemove();
 
 /*
- * Name lookup routines.
+ * Name lookup routines that handle iteration over the prefix table.
  */
 extern	ReturnStatus	FsLookupOperation();
 extern	ReturnStatus	FsTwoNameOperation();
