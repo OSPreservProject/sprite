@@ -258,6 +258,7 @@ extern void Timer_GetRealTimeOfDay _ARGS_((Time *timePtr,
 extern void Timer_GetRealTimeFromTicks _ARGS_((Timer_Ticks ticks, 
 			Time *timePtr, int *timerLocalOffsetPtr, 
 			Boolean *DSTPtr));
+extern Boolean Timer_OkToWhine _ARGS_((char *msg));
 extern void Timer_SetTimeOfDay _ARGS_((Time newUniversal, int newLocalOffset, 
 			Boolean newDSTAllowed));
 #ifdef ADJTIME
