@@ -33,7 +33,10 @@
  *	SYS_PARAM_ARRAY		- Indicates that the argument is a pointer
  *				  to an array of the specified type.  The
  *				  size of the array must be specified as the
- *				  preceding argument.
+ *				  preceding argument.  If multiple arrays
+ *				  are specified as successive args, then they
+ *				  each are assumed to have the same number
+ *				  of arguments.
  */
 
 #define SYS_PARAM_IN		0x0001
@@ -102,6 +105,7 @@
 #define SYS_PARAM_RANGE2		16
 #define SYS_PARAM_PCB			17
 #define SYS_PARAM_FS_DEVICE		18
+#define SYS_PARAM_PCBARG		19
 
 typedef struct {
     int type;
