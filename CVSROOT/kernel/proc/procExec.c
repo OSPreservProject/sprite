@@ -762,7 +762,7 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     }
 
     if (usedFile || notFound) {
-	Fs_StreamCopy(codeFilePtr, &heapFilePtr);
+	Fs_StreamCopy(codeFilePtr, &heapFilePtr, procPtr->processID);
     } else {
 	heapFilePtr = codeFilePtr;
     }
