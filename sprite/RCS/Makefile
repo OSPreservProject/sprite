@@ -81,16 +81,24 @@ MACH = ${TOP}/mach/${ODIR}
 DBG = ${TOP}/dbg/${ODIR}
 DEV = ${TOP}/dev/${ODIR}
 FS = ${TOP}/fs/${ODIR}
-FSNEW = ${TOP}/fs.new/${ODIR}
-HOOK= mainHook.o
+FSCACHE = ${TOP}/fscache/${ODIR}
+FSCONSIST = ${TOP}/fsconsist/${ODIR}
+FSDM = ${TOP}/fsdm/${ODIR}
+FSIO = ${TOP}/fsio/${ODIR}
+FSLCL = ${TOP}/fslcl/${ODIR}
+FSPDEV = ${TOP}/fspdev/${ODIR}
+FSPREFIX = ${TOP}/fsprefix/${ODIR}
+FSRMT = ${TOP}/fsrmt/${ODIR}
+FSUTIL = ${TOP}/fsutil/${ODIR}
+HOOK = mainHook.o
+LIBC = ${TOP}/libc/${ODIR}
 MAIN = ${TOP}/main/${ODIR}
 NET = ${TOP}/net/${ODIR}
 PROC = ${TOP}/proc/${ODIR}
 PROF = ${TOP}/prof/${ODIR}
-RAID = ${TOP}/raid.null/${ODIR}
-RAIDNULL = ${TOP}/raid/${ODIR}
+RAID = ${TOP}/raid/${ODIR}
+RAIDNULL = ${TOP}/raid.null/${ODIR}
 RECOV = ${TOP}/recov/${ODIR}
-RPC_O = ${TOP}/rpc/${ODIR}/rpc.o
 RPC = ${TOP}/rpc/${ODIR}
 SCHED = ${TOP}/sched/${ODIR}
 SIG = ${TOP}/sig/${ODIR}
@@ -104,7 +112,8 @@ LIBC = ${TOP}/libc/${ODIR}
 
 # This is the list of objects excluding raid.
 
-OBJS1 =	${LIB}/mach.o \
+INSTALLED_OBJS = \
+        ${LIB}/mach.o \
 	${HOOK} \
 	${LIB}/dbg.o \
 	${LIB}/dev.o \
@@ -134,13 +143,50 @@ OBJS1 =	${LIB}/mach.o \
 	${LIB}/utils.o \
 	${LIB}/vm.o
 
+UNINSTALLED_OBJS =	\
+        ${MACH}/mach.o \
+	${HOOK} \
+	${DBG}/dbg.o \
+	${DEV}/dev.o \
+	${FS}/fs.o \
+        ${FSDM}/fsdm.o  \
+        ${FSCACHE}/fscache.o  \
+        ${FSCONSIST}/fsconsist.o \
+        ${FSIO}/fsio.o \
+        ${FSLCL}/fslcl.o \
+        ${FSPDEV}/fspdev.o \
+        ${FSPREFIX}/fsprefix.o \
+        ${FSRMT}/fsrmt.o \
+        ${FSUTIL}/fsutil.o \
+	${LIBC}/libc.o \
+	${MAIN}/main.o \
+	${MEM}/mem.o \
+	${NET}/net.o \
+	${PROC}/proc.o \
+	${PROF}/prof.o \
+	${RECOV}/recov.o \
+	${RPC}/rpc.o \
+	${SCHED}/sched.o \
+	${SIG}/sig.o \
+	${SYNC}/sync.o \
+	${SYS}/sys.o \
+	${TIMER}/timer.o \
+	${UTILS}/utils.o \
+	${VM}/vm.o
+
 # sun4 should use the raid module.  Others should use raid.null.
 
-OBJS =	${OBJS1} \
+OBJS =	${INSTALLED_OBJS} \
 	${LIB}/raid.null.o
 
-OBJS_SUN4 =	${OBJS1} \
+#OBJS =	${UNINSTALLED_OBJS} \
+#	${RAIDNULL}/raid.null.o
+
+OBJS_SUN4 =	${INSTALLED_OBJS} \
 	${LIB}/raid.o
+
+#OBJS_SUN4 =	${UNINSTALLED_OBJS} \
+#	${RAID}/raid.o
 
 #
 # Profiled (perhaps) object files	####################################
@@ -161,7 +207,10 @@ ALLSRCS= Makefile version.c
 
 HDRS = sprite.h
 
-DISTFILES ?= Save doversion mainHook.c porting_comments version.h.template
+DISTFILES ?= Save SnapshotSources doversion mainHook.c \
+             porting_comments version.h.template
+
+default: ${MACHINE}
 
 dist:
 #if defined(DISTDIR) && !empty(DISTDIR)
@@ -189,8 +238,6 @@ dist:
 #	update -f -s $@ /sprite/boot/$@.sprite
 #	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2.new
 #	nm -n $@  > $@.nm
-
-default: ${MACHINE}
 
 sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
