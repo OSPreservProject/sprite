@@ -51,7 +51,7 @@ typedef struct FsGeneralStats {
 /*
  * Cache statistics.
  */
-typedef struct {
+typedef struct FsBlockCacheStats {
     /*
      * Read statistics.
      */
@@ -182,7 +182,7 @@ typedef struct {
 /*
  * Block allocation statistics.
  */
-typedef struct {
+typedef struct FsAllocStats {
     unsigned int blocksAllocated;	/* Full blocks allocated. */
     unsigned int blocksFreed;		/* Full blocks freed. */
     unsigned int cylsSearched;		/* Cylinders searched to find a good
@@ -208,7 +208,7 @@ typedef struct {
 /*
  * Name cache statistics.
  */
-typedef struct {
+typedef struct FsNameCacheStats {
     unsigned int accesses;		/* Number of times something was
 					 * looked for */
     unsigned int hits;			/* Number of times it was found */
@@ -219,7 +219,7 @@ typedef struct {
 /*
  * Handle statistics.
  */
-typedef struct {
+typedef struct FsHandleStats {
     unsigned int exists;	/* Handles currently in existence. */
     unsigned int created;	/* Handles that have been created. */
     unsigned int updateCalls;	/* Number of calls to HandleUpdate */
@@ -246,7 +246,7 @@ typedef struct {
 /*
  * Prefix table statistics
  */
-typedef struct {
+typedef struct FsPrefixStats {
     unsigned int relative;	/* Number of relative names encountered */
     unsigned int absolute;	/* Number of absolute names subject to prefix
 				 * lookup */
@@ -262,25 +262,42 @@ typedef struct {
 /*
  * Counts of various file system objects.
  */
-typedef struct {
+typedef struct FsObjectStats {
     int lruScans;		/* Number of LRU replacement scans */
     int scavenges;		/* Number of handles reclaimed */
     int streams;
-    int streamClients;
-    int files;
+    int streamClients;		/* Equal to streams, except during migration */
+    int files;			/* Local files, not including directories */
     int rmtFiles;
     int pipes;
     int devices;
     int controls;		/* Pdev and Pfs control streams */
     int pseudoStreams;		/* One count for both client/server handles */
     int remote;			/* All the various remote objects but files*/
+    int directory;
+    int dirFlushed;		/* Directories that were flushed */
 } FsObjectStats;
 
+/*
+ * File system recovery statistics.
+ */
+typedef struct FsRecoveryStats {
+    int number;			/* Number of reopens by this client */
+    int wants;			/* Calls to FsWantRecovery */
+    int waitOK;			/* Successful RecoveryWaits */
+    int waitFailed;		/* Unnsuccessful RecoveryWaits */
+    int waitAbort;		/* Interrupted RecoveryWaits */
+    int timeout;		/* Re-open's that timed out */
+    int failed;			/* Re-open's that failed */
+    int succeeded;		/* Re-open's that worked */
+    int clientCrashed;		/* Number of clients that crashed */
+    int clientRecovered;	/* Number of clients that re-opened files */
+} FsRecoveryStats;
 
 /*
  * File system statistics.
  */
-typedef struct {
+typedef struct FsStats {
     FsBlockCacheStats	blockCache;
     FsNameCacheStats	nameCache;
     FsAllocStats	alloc;
@@ -288,6 +305,7 @@ typedef struct {
     FsGeneralStats	gen;
     FsPrefixStats	prefix;
     FsObjectStats	object;
+    FsRecoveryStats	recovery;
 } FsStats;
 
 /*
@@ -315,7 +333,7 @@ typedef struct {
  */
 #define FS_HIST_SIZE_BUCKETS 	33
 
-typedef struct {
+typedef struct FsHistGroupInfo {
     unsigned int secondsPerBucket;
     unsigned int bucketsPerGroup;
 } FsHistGroupInfo;
@@ -358,7 +376,7 @@ typedef struct {
 #define FS_STAT_READ 0
 #define FS_STAT_WRITE 1
 
-typedef struct {
+typedef struct FsTypeStats {
     unsigned int diskBytes[2][FS_STAT_NUM_TYPES];
     				/* Number of bytes read/written from/to
 				 * different types of files on disk */
