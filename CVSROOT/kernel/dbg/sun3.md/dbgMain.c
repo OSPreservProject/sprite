@@ -739,6 +739,10 @@ Dbg_Main(stackHole, dbgStack)
     oldContext = VmMachGetKernelContext();
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 
+#ifdef NOTDEF
+/*
+ * This code causes machines to seem to pop out of the debugger.
+ */
     if (!dbg_BeingDebugged) {
         /*
          * Try to sync the disks if we aren't at interrupt level.  If we
@@ -753,6 +757,7 @@ Dbg_Main(stackHole, dbgStack)
             Mach_DisableIntr();
         }
     }
+#endif NOTDEF
 
     /*
      * Put us at interrupt level so that printf won't accidently enable
