@@ -2138,6 +2138,14 @@ jmp_buf *jmpBuf;
 		context.sc_sp, context.sc_psr&MACH_DISABLE_TRAP_BIT &
 		~MACH_PS_BIT);
     }
+
+    /*
+     * Flush register windows to stack and maybe our problems will go away.
+     */
+    Mach_DisableIntr();
+    Mach_FlushWindowsToStack();
+    Mach_EnableIntr();
+
     machStatePtr->trapRegs->pc = context.sc_pc;
     machStatePtr->trapRegs->nextPc = context.sc_npc;
 
