@@ -135,9 +135,7 @@ FsRmtFileHandleInit(fileIDPtr, fileStatePtr, openForWriting, name,
 	 * between near-simultanous opens on a client and related cache
 	 * consistency messasge.
 	 */
-	if (fileStatePtr->openTimeStamp > handlePtr->openTimeStamp) {
-	    handlePtr->openTimeStamp = fileStatePtr->openTimeStamp;
-	}
+	handlePtr->openTimeStamp = fileStatePtr->openTimeStamp;
     } else {
 	if (cacheBackendPtr == (Fscache_Backend *) NIL) {
 	    cacheBackendPtr = 

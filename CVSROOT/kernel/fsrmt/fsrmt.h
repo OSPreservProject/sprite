@@ -120,6 +120,7 @@ extern ReturnStatus FsrmtReopen _ARGS_((Fs_HandleHeader *hdrPtr, int inSize,
 		Address inData, int *outSizePtr, Address outData));
 extern ReturnStatus FsrmtBulkReopen _ARGS_((int serverID, int inSize,
 		Address inData, int *outSizePtr, Address outData));
+extern ReturnStatus Fsrmt_ServerReopen _ARGS_((int clientID));
 extern ReturnStatus FsrmtFileMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
 		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
 		Address *dataPtr));

@@ -812,6 +812,86 @@ Fsrmt_RpcBulkReopen(srvToken, clientID, command, storagePtr)
 
     return SUCCESS;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsrmt_ServerReopen --
+ *
+ *	Tell client to begin recovery with server.
+ *
+ * Results:
+ *	The return from the RPC.
+ *
+ * Side effects:
+ *	May determine that client is running an old kernel.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsrmt_ServerReopen(clientID)
+    int			clientID;	/* Client to start reopens. */
+{
+    ReturnStatus	status;
+    Rpc_Storage		storage;	/* Specifies RPC parameters/results */
+
+    storage.requestParamPtr = (Address) NIL;
+    storage.requestParamSize = 0;
+    storage.requestDataPtr = (Address) NIL;
+    storage.requestDataSize = 0;
+    storage.replyParamPtr = (Address) NIL;
+    storage.replyParamSize = 0;
+    storage.replyDataPtr = (Address) NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(clientID, RPC_FS_SERVER_REOPEN, &storage);
+
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsrmt_RpcServerReopen --
+ *
+ *	This is the service stub for RPC_FS_SERVER_REOPEN.  This
+ *	is executed by clients to begin their recovery with the server.
+ *
+ * Results:
+ *	Status for RPC (success always, I think?).
+ *
+ * Side effects:
+ *	Start recovery stuff.
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fsrmt_RpcServerReopen(srvToken, serverID, command, storagePtr)
+    ClientData 		 srvToken;	/* Handle on server process passed to
+				 	 * Rpc_Reply */
+    int 		 serverID;	/* Sprite ID of server calling us */
+    int 		 command;	/* IGNORED */
+    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
+					 * request buffers and also indicate 
+					 * the exact amount of data in the 
+					 * request buffers.  The reply fields 
+					 * are initialized to NIL for the
+				 	 * pointers and 0 for the lengths.  
+					 * This can be passed to Rpc_Reply */
+{
+    /*
+     * Start recovery things in motion on client.
+     */
+    if (recov_ClientIgnoreServerDriven) {
+	return RPC_INVALID_RPC;
+    }
+    Recov_StartServerDrivenRecovery(serverID);
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, (int (*)())NIL, (ClientData)NIL);
+
+    return SUCCESS;
+}
 
 /*
  * Union of things passed as close data.  Right now, it only seems to
