@@ -209,6 +209,7 @@ void
 Prof_RecordPC(procPtr)
     Proc_ControlBlock *procPtr;
 {
+    long pos;
     short *ptr;
     union {
 	short shrt;
@@ -216,8 +217,15 @@ Prof_RecordPC(procPtr)
     } u;
 
     assert(procPtr->Prof_Scale);
-    ptr = &procPtr->Prof_Buffer[(((procPtr->Prof_PC -
-        procPtr->Prof_Offset) * procPtr->Prof_Scale) >> 16) / sizeof(*ptr)];
+    /*
+     * We have to make sure our multiply doesn't overflow
+     */
+    pos = ((((unsigned long)procPtr->Prof_PC - procPtr->Prof_Offset)>>16) *
+	    procPtr->Prof_Scale) |
+	    ((((procPtr->Prof_PC - procPtr->Prof_Offset)&0xFFFF) *
+	    procPtr->Prof_Scale) >> 16);
+
+    ptr = &procPtr->Prof_Buffer[pos/sizeof(*ptr)];
     /*
      * Make sure the pointer is in the proper range.
      */
