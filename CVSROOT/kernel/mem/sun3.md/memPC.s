@@ -95,3 +95,12 @@ _Mem_CallerPC:
 	rts
 
 #endif	defined(mc68000) || defined(SUN2) || defined(SUN3)
+
+#ifdef sun4
+#include "machConst.h"
+_Mem_CallerPC:
+	/* the pc of the caller of the routine that called us is in i7. */
+	mov	%RETURN_ADDR_REG_CHILD, %RETURN_VAL_REG
+	retl	/* return from leaf routine */
+	nop
+#endif /* sun4 */
