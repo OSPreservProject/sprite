@@ -82,6 +82,7 @@ typedef struct FsSetAttrArgs {
  */
 typedef struct FsMakeDeviceArgs {
     FsFileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
+    FsFileID rootID;	/* FileID of the root, MUST BE SECOND */
     Fs_Device device;
     int permissions;	/* Permissions already reflect per-process mask */
     FsUserIDs id;
