@@ -1358,11 +1358,17 @@ FsCacheBlockTrunc(cacheInfoPtr, blockNum, newBlockSize)
 ENTRY void
 FsCacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
     FsCacheFileInfo *cacheInfoPtr;	/* Cache state of file to invalidate. */
-    int		firstBlock;	/* First block to invalidate. */
-    int		lastBlock;	/* Last block to invalidate. */
+    int		firstBlock;	/* First block to invalidate. Starts at zero. */
+    int		lastBlock;	/* Last block to invalidate.  FS_LAST_BLOCK
+				 * can be used if the caller doesn't know
+				 * the exact last block of the file. */
 {
     LOCK_MONITOR;
 
+    if ((lastBlock == FS_LAST_BLOCK) &&
+	(cacheInfoPtr->attr.lastByte > 0)) {
+	lastBlock = cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE;
+    }
     CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock);
 
     UNLOCK_MONITOR;
@@ -1404,10 +1410,6 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 
     if (cacheInfoPtr->blocksInCache > 0) {
 	SET_BLOCK_HASH_KEY(blockHashKey, cacheInfoPtr, 0);
-	if ((lastBlock == FS_LAST_BLOCK) &&
-	    (cacheInfoPtr->attr.lastByte > 0)) {
-	    lastBlock = cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE;
-	}
 
 	for (i = firstBlock; i <= lastBlock; i++) {
 	    hashEntryPtr = GetUnlockedBlock(&blockHashKey, i);
@@ -2293,6 +2295,15 @@ GetDirtyFile(backGround, cacheInfoPtrPtr, blockPtrPtr, lastDirtyBlockPtr)
 	     * Close in progress on the file the block lives in so we aren't
 	     * allowed to write any more blocks.
 	     */
+	    continue;
+	} else if (cacheInfoPtr->flags & FS_FILE_GONE) {
+	    /*
+	     * The file is being deleted.
+	     */
+	    printf("FsGetDirtyFile skipping deleted file <%d,%d> \"%s\"\n",
+		cacheInfoPtr->hdrPtr->fileID.major,
+		cacheInfoPtr->hdrPtr->fileID.minor,
+		FsHandleName(cacheInfoPtr->hdrPtr));
 	    continue;
 	} else if (cacheInfoPtr->flags & 
 		       (FS_CACHE_NO_DISK_SPACE | FS_CACHE_DOMAIN_DOWN |
