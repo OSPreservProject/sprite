@@ -46,6 +46,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include <fsrecov.h>
 #include <recov.h>
+#include <fsioStreamInt.h>
 
 /*
  * Monitor to synchronize access to the streamCount variable.

@@ -186,15 +186,15 @@ extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID,
 
 extern ReturnStatus FsrmtSetupFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 	Address paramsPtr));
-extern ReturnStatus FsrmtFinishFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+extern void FsrmtFinishFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 	Address statePtr, ReturnStatus status));
 extern ReturnStatus FsrmtSetupDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 	Address paramsPtr));
-extern ReturnStatus FsrmtFinishDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+extern void FsrmtFinishDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 	Address statePtr, ReturnStatus status));
 extern ReturnStatus FsrmtSetupPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 	Address paramsPtr));
-extern ReturnStatus FsrmtFinishPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+extern void FsrmtFinishPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 	Address statePtr, ReturnStatus status));
 
 extern Boolean FsrmtFileScavenge _ARGS_((Fs_HandleHeader *hdrPtr));

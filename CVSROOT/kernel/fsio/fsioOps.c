@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsioPipe.h>
 #include <fsrmt.h>
 #include <fsdm.h>
+#include <fsioStreamInt.h>
 
 /*
  * The OpenOps are called to do preliminary open-time processing.  They
@@ -130,15 +131,6 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
 static int numIoStreamOps = sizeof(ioStreamOps)/
 				 sizeof(ioStreamOps[0]);
 
-
-/*
- * These next two externs should be in a stream header file, but there isn't
- * one, except for fsio.h, but that would export these.
- */
-extern ReturnStatus FsioSetupStreamReopen _ARGS_((Fs_HandleHeader *hdrPtr,
-	Address paramsPtr));
-extern void FsioFinishStreamReopen _ARGS_((Fs_HandleHeader *hdrPtr,
-	ReturnStatus status));
 
 /*
  *----------------------------------------------------------------------
