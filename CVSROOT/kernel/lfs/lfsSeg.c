@@ -116,8 +116,18 @@ LfsSegmentWriteProc(clientData, callInfoPtr)
     ReturnStatus	status;
     Boolean		moreWork;
 
+
     lfsPtr = (Lfs *) clientData;
+    /*
+     * All the stuff with these FSYNC flags is for the ASPLOS measurements
+     * only.  It can all be removed after that's all over.  Mary  2/14/92.
+     */
+    lfsPtr->controlFlags &= ~LFS_FSYNC_IN_PROGRESS;
     moreWork = TRUE;
+    if (lfsPtr->controlFlags & LFS_FILE_FSYNCED) {
+	lfsPtr->controlFlags &= ~LFS_FILE_FSYNCED;
+	lfsPtr->controlFlags |= LFS_FSYNC_IN_PROGRESS;
+    }
     while (moreWork) { 
 	full = TRUE;
 	for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
@@ -141,6 +151,12 @@ LfsSegmentWriteProc(clientData, callInfoPtr)
 	    DestorySegStruct(segPtr);
 	}
 	moreWork = LfsMoreToWriteBack(lfsPtr);
+	if (lfsPtr->controlFlags & LFS_FILE_FSYNCED) {
+	    lfsPtr->controlFlags &= ~LFS_FILE_FSYNCED;
+	    lfsPtr->controlFlags |= LFS_FSYNC_IN_PROGRESS;
+	} else {
+	    lfsPtr->controlFlags &= ~LFS_FSYNC_IN_PROGRESS;
+	}
     }
     return;
 }
@@ -606,6 +622,13 @@ WriteSegmentStart(segPtr)
 	lfsPtr->segCache.valid = FALSE;
     }
     LFS_STATS_INC(lfsPtr->stats.log.segWrites);
+    /*
+     * This flag is for the ASPLOS paper.  Remove when that's all over.
+     * 			Mary 2/15/92.
+     */
+    if ((lfsPtr->controlFlags & LFS_FSYNC_IN_PROGRESS) && Lfs_DoASPLOSStats) {
+	LFS_STATS_INC(lfsPtr->stats.log.fsyncWrites);
+    }
 
     LFS_STATS_ADD(lfsPtr->stats.log.wasteBlocks,
 			    segPtr->curDataBlockLimit - segPtr->curBlockOffset);
@@ -673,6 +696,13 @@ WriteSegmentStart(segPtr)
 
     LFS_STATS_ADD(lfsPtr->stats.log.blocksWritten, segPtr->numBlocks);
     LFS_STATS_ADD(lfsPtr->stats.log.bytesWritten, segPtr->activeBytes);
+    /*
+     * This flag is for the ASPLOS paper.  Remove when that's all over.
+     * 			Mary 2/15/92.
+     */
+    if ((lfsPtr->controlFlags & LFS_FSYNC_IN_PROGRESS) && Lfs_DoASPLOSStats) {
+	LFS_STATS_ADD(lfsPtr->stats.log.fsyncBytes, segPtr->activeBytes);
+    }
     return status;
 }
 
@@ -1059,8 +1089,16 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
     char	*summaryPtr, *endSummaryPtr;
     int		newStartBlockOffset;
     LfsCheckPointRegion	*segUsageCheckpointRegionPtr;
+    unsigned int         firstActiveBytesLow;               /* For ASPLOS. */
+    unsigned int         firstActiveBytesHigh;              /* For ASPLOS. */
+
 
     full = FALSE;
+
+    /* Next stats for ASPLOS only.  Remove when done.  -Mary 2/15/92. */
+    firstActiveBytesLow = segPtr->lfsPtr->stats.log.fileBytesWritten.low;
+    firstActiveBytesHigh = segPtr->lfsPtr->stats.log.fileBytesWritten.high;
+
     segUsageCheckpointRegionPtr = (LfsCheckPointRegion *) NIL;
     for(moduleType = 0; moduleType < LFS_MAX_NUM_MODS; ) {
 	LfsSegIoInterface *intPtr = lfsSegIoInterfacePtrs[moduleType];
@@ -1167,6 +1205,40 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
 	    AddNewSummaryBlock(segPtr);
 	    newStartBlockOffset = segPtr->curBlockOffset-1;
 	    LFS_STATS_INC(segPtr->lfsPtr->stats.log.partialWrites);
+	    /*
+	     * These stats are for the ASPLOS paper.  Remove when that's all
+	     * over.   			Mary 2/15/92.
+	     */
+	    if ((segPtr->lfsPtr->controlFlags & LFS_FSYNC_IN_PROGRESS) &&
+		    Lfs_DoASPLOSStats) {
+		LFS_STATS_INC(segPtr->lfsPtr->stats.log.fsyncPartialWrites);
+		LFS_STATS_ADD(segPtr->lfsPtr->stats.log.fsyncPartialBytes,
+			segPtr->activeBytes);
+	    }
+	    if (Lfs_DoASPLOSStats) {
+		LFS_STATS_ADD(segPtr->lfsPtr->stats.log.partialWriteBytes,
+			segPtr->activeBytes);
+		if (type == SEG_CLEAN_OUT) {
+		    LFS_STATS_ADD(
+			    segPtr->lfsPtr->stats.log.cleanPartialWriteBytes,
+			    segPtr->activeBytes);
+		}
+		if (segPtr->lfsPtr->stats.log.fileBytesWritten.low -
+			firstActiveBytesLow < firstActiveBytesLow) {
+		    int	addit;
+
+		    addit = segPtr->lfsPtr->stats.log.fileBytesWritten.low -
+			    firstActiveBytesLow;
+		    /* This is bogus.  Fix it. */
+		    addit = ((unsigned int) ~0) - addit;
+		    LFS_STATS_ADD(segPtr->lfsPtr->stats.log.partialFileBytes,
+			    addit);
+		} else {
+		    LFS_STATS_ADD(segPtr->lfsPtr->stats.log.partialFileBytes,
+			    segPtr->lfsPtr->stats.log.fileBytesWritten.low -
+			    firstActiveBytesLow);
+		}
+	    }
 	}
    }
 

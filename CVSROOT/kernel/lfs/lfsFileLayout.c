@@ -70,8 +70,11 @@ static void DirLogInit _ARGS_((Lfs *lfsPtr));
 static void DirLogDestory _ARGS_((Lfs *lfsPtr));
 static void NewDirLogBlock _ARGS_((Lfs *lfsPtr));
 static LfsDirOpLogEntry *FindLogEntry _ARGS_((Lfs *lfsPtr, int logSeqNum));
+/*
+ * Last param is for ASPLOS.  Remove when done.  Mary 2/15/92.
+ */
 static Boolean AddDirLogBlocks _ARGS_((Lfs *lfsPtr, LfsSeg *segPtr, 
-			FileSegLayout *segLayoutDataPtr));
+			FileSegLayout *segLayoutDataPtr, int currentOp));
 static void FreeDirLogBlocks _ARGS_((Lfs *lfsPtr, LfsSeg *segPtr,
 			FileSegLayout *segLayoutDataPtr));
 
@@ -97,6 +100,13 @@ static LfsSegIoInterface layoutIoInterface =
 #define	WRITEBACK_TOKEN		0
 #define	CLEANING_TOKEN		1
 #define	CHECKPOINT_TOKEN	2
+
+/*
+ * For ASPLOS stats collecting only.  Get rid of this when that's over.
+ * -Mary 2/16/92.
+ */
+Boolean	Lfs_DoASPLOSStats = TRUE;
+
 
 /*
  *----------------------------------------------------------------------
@@ -283,7 +293,10 @@ LfsFileLayoutProc(segPtr, flags, clientDataPtr)
       * segment ended with a partially layed out file, start with that file.
       */
      if (segLayoutDataPtr->activeFilePtr == (Fscache_FileInfo *) NIL) { 
-	  full = AddDirLogBlocks(lfsPtr, segPtr, segLayoutDataPtr);
+	  /*
+	   * Last param is for ASPLOS.  Remove when done.  Mary 2/15/92.
+	   */
+	  full = AddDirLogBlocks(lfsPtr, segPtr, segLayoutDataPtr, token);
 	  if (!full) { 
 	      cacheInfoPtr = Fscache_GetDirtyFile(lfsPtr->domainPtr->backendPtr, 
 			fsyncOnly, LfsFileMatch, (ClientData) token);
@@ -302,7 +315,10 @@ LfsFileLayoutProc(segPtr, flags, clientDataPtr)
 	   }
 	   List_Insert((List_Links *) cacheInfoPtr, 
 				LIST_ATREAR(&segLayoutDataPtr->fileList));
-	   full = AddDirLogBlocks(lfsPtr, segPtr, segLayoutDataPtr);
+	  /*
+	   * Last param is for ASPLOS.  Remove when done.  Mary 2/15/92.
+	   */
+	   full = AddDirLogBlocks(lfsPtr, segPtr, segLayoutDataPtr, token);
 	   if (!full) { 
 	       cacheInfoPtr = Fscache_GetDirtyFile(
 			lfsPtr->domainPtr->backendPtr, 
@@ -387,29 +403,29 @@ LfsFileLayoutWriteDone(segPtr, flags, clientDataPtr)
     FileSegLayout  *segLayoutDataPtr;
 
     limitPtr = summaryPtr + LfsSegSummaryBytesLeft(segPtr); 
-     while (summaryPtr < limitPtr) { 
+    while (summaryPtr < limitPtr) { 
 	switch (*(unsigned short *) summaryPtr) {
 	case LFS_FILE_LAYOUT_DESC: {
 #ifdef notdef
-	    LfsFileDescriptor	*descPtr;
-	    int		i;
-	    /*
-	     * A block of descriptors.  For each descriptor we now can 
-	     * update the descriptor map to point the descriptor at it.
-	     */
-	     descPtr = (LfsFileDescriptor *) bufferPtr->address;
-	     for (i = 0; (i < layoutPtr->params.descPerBlock) && 
+	   LfsFileDescriptor	*descPtr;
+	   int		i;
+	   /*
+	    * A block of descriptors.  For each descriptor we now can 
+	    * update the descriptor map to point the descriptor at it.
+	    */
+	    descPtr = (LfsFileDescriptor *) bufferPtr->address;
+	    for (i = 0; (i < layoutPtr->params.descPerBlock) && 
 			 (descPtr->common.flags != 0); i++) {
 		 UpdateIndex(lfsPtr, descPtr->fileNumber, 
 					LfsSegDiskAddress(segPtr,bufferPtr));
-	     }
+	    }
 #endif
-	     LFS_STATS_INC(lfsPtr->stats.layout.descBlockWritten);
-	     LfsDescCacheBlockRelease(segPtr->lfsPtr, bufferPtr->clientData, 
+	    LFS_STATS_INC(lfsPtr->stats.layout.descBlockWritten);
+	    LfsDescCacheBlockRelease(segPtr->lfsPtr, bufferPtr->clientData, 
 				FALSE);
-	     bufferPtr++;
-	     summaryPtr += sizeof(LfsFileLayoutDesc);
-	     break;
+	    bufferPtr++;
+	    summaryPtr += sizeof(LfsFileLayoutDesc);
+	    break;
 	}
 	case LFS_FILE_LAYOUT_DATA:  {
 	    LfsFileLayoutSummary *fileSumPtr;
@@ -1040,6 +1056,17 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 	   }
 	   segPtr->activeBytes += bytesUsed;
 	   /*
+	    * For ASPLOS measurements.  Remove when done.  -Mary 2/15/92.
+	    */
+	   if (Lfs_DoASPLOSStats) {
+	       LFS_STATS_ADD(lfsPtr->stats.log.fileBytesWritten, bytesUsed);
+	       if (token == CLEANING_TOKEN) {
+		   LFS_STATS_ADD(lfsPtr->stats.log.cleanFileBytesWritten,
+			   bytesUsed);
+		}
+	   }
+		
+	   /*
 	    * Update the modtime time of the segment to reflect this block
 	    * if it is under than the rest.
 	    */
@@ -1161,6 +1188,14 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 	  }
 	  segLayoutDataPtr->descBlockPtr++;
 	  segLayoutDataPtr->numDescSlotsLeft--;
+	  /*
+	   * This stat is for ASPLOS.  Remove it when that's all over.
+	   * Mary  2/15/92.
+	   */
+	  if (Lfs_DoASPLOSStats) {
+	      LFS_STATS_ADD(lfsPtr->stats.layout.descLayoutBytes,
+		      sizeof(LfsFileDescriptor));
+	  }
 	  segPtr->activeBytes += sizeof(LfsFileDescriptor);
      } else {
 	 full = TRUE;
@@ -1527,10 +1562,13 @@ FindLogEntry(lfsPtr, logSeqNum)
  *----------------------------------------------------------------------
  */
 static Boolean
-AddDirLogBlocks(lfsPtr, segPtr, segLayoutDataPtr)
+AddDirLogBlocks(lfsPtr, segPtr, segLayoutDataPtr, currentOp)
     Lfs		*lfsPtr;	/* File system. */
     LfsSeg	*segPtr;	/* Segment to place data. */
     FileSegLayout  *segLayoutDataPtr; /* Layout data of segment. */
+    int		currentOp;	/* ASPLOS only - remove when done.
+				 * Mary 2/15/92.
+				 * Current operation (cleaning, etc.). */
 {
     LfsDirLog *dirLogPtr = &lfsPtr->dirLog;
     Fscache_Block *blockPtr;
@@ -1573,6 +1611,13 @@ AddDirLogBlocks(lfsPtr, segPtr, segLayoutDataPtr)
 	   LFS_STATS_ADD(lfsPtr->stats.dirlog.blockWritten, blocks);
 	   LFS_STATS_ADD(lfsPtr->stats.dirlog.bytesWritten, 
 			curBlockHdrPtr->size);
+	   /*
+	    * ASPLOS measurements - remove when done.  -Mary 2/15/92.
+	    */
+	   if (currentOp == CLEANING_TOKEN && Lfs_DoASPLOSStats) {
+	        LFS_STATS_ADD(lfsPtr->stats.dirlog.cleaningBytesWritten,
+			curBlockHdrPtr->size);
+	    }
 
 	   List_Move((List_Links *) blockPtr, &segLayoutDataPtr->dirLogListHdr);
 	   if  (curBlockHdrPtr == dirLogPtr->curBlockHdrPtr) {

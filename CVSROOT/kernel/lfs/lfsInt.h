@@ -191,6 +191,11 @@ typedef struct Lfs {
 
 extern int lfsMinNumberToClean;
 
+/*
+ * This is for ASPLOS stats only.  Remove when that's done.  -Mary 2/16/92.
+ */
+extern Boolean Lfs_DoASPLOSStats;
+
 /* Useful macros for LFS.
  *
  * LfsFromDomainPtr(domainPtr) - Return the Lfs data stucture for a Fsdm_domain.
@@ -266,7 +271,11 @@ extern void LfsWaitForCleanSegments _ARGS_((Lfs *lfsPtr));
 
 extern void Lfs_ReallocBlock _ARGS_((ClientData data, 
 				Proc_CallInfo *callInfoPtr));
-extern Boolean Lfs_StartWriteBack _ARGS_((Fscache_Backend *backendPtr));
+/*
+ * Second parameter below is for ASPLOS measurements and can be removed
+ * after that's all over.  Mary 2/14/92.
+ */
+extern Boolean Lfs_StartWriteBack _ARGS_((Fscache_Backend *backendPtr, Boolean fileFsynced));
 extern void LfsStopWriteBack _ARGS_((Lfs *lfsPtr));
 extern Boolean LfsMoreToWriteBack _ARGS_((Lfs *lfsPtr));
 extern Fscache_Backend *LfsCacheBackendInit _ARGS_((Lfs *lfsPtr));

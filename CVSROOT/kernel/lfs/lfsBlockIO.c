@@ -112,15 +112,11 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
 	/*
 	 * Zero fill the block.  We're in a 'hole' in the file.
 	 */
-#ifdef STATS
 	fs_Stats.blockCache.readZeroFills++;
-#endif
 	bzero(blockPtr->blockAddr, numBytes);
     }
-#ifdef STATS
     Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead, 
 		fs_Stats.gen.fileReadOverflow);
-#endif
 exit:
     /*
      * Define the block size and error fill leftover space.
@@ -129,9 +125,7 @@ exit:
 	blockPtr->blockSize = numBytes;
     }
     if (blockPtr->blockSize < FS_BLOCK_SIZE) {
-#ifdef STATS
 	fs_Stats.blockCache.readZeroFills++;
-#endif
 	bzero(blockPtr->blockAddr + blockPtr->blockSize,
 		FS_BLOCK_SIZE - blockPtr->blockSize);
     }

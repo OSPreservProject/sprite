@@ -82,14 +82,26 @@ LfsCacheBackendInit(lfsPtr)
  */
 
 Boolean
-Lfs_StartWriteBack(backendPtr)
+Lfs_StartWriteBack(backendPtr, fileFsynced)
     Fscache_Backend	*backendPtr; /* LFS file system backend. */
+    Boolean		fileFsynced;
+		    /*
+		     * Second parameter is for ASPLOS measurements and can be
+		     * removed after all that's over.  Mary 2/14/92
+		     */
 {
     Lfs	 *lfsPtr;	/* File system with data to write. */
 
     lfsPtr = (Lfs *) (backendPtr->clientData);
 
     LOCK_MONITOR;
+    /*
+     * This flag is only for ASPLOS measurements and can be removed after
+     * that's all over.  Mary 2/14/92.
+     */
+    if (fileFsynced) {
+	lfsPtr->controlFlags |= LFS_FILE_FSYNCED;
+    }
     LFS_STATS_INC(lfsPtr->stats.backend.startRequests);
     if (lfsPtr->writeBackActive) {
 	LFS_STATS_INC(lfsPtr->stats.backend.alreadyActive);

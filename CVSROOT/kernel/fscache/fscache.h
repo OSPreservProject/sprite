@@ -319,7 +319,9 @@ typedef struct Fscache_BackendRoutines {
     void	 (*reallocBlock) _ARGS_((ClientData data, 
 					 Proc_CallInfo *callInfoPtr));
 
-    ReturnStatus (*startWriteBack) _ARGS_((struct Fscache_Backend *backendPtr));
+				/* Second parameter is for ASPLOS only.
+				 * Remove when that's over. -Mary 2/15/92. */
+    ReturnStatus (*startWriteBack) _ARGS_((struct Fscache_Backend *backendPtr, Boolean fileFsynced));
 } Fscache_BackendRoutines;
 
 

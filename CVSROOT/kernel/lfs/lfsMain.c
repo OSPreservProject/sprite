@@ -440,6 +440,55 @@ Lfs_Command(command, bufSize, buffer)
 
 	    return status;
 	}
+	case FS_ZERO_ASPLOS_STATS_LFS_COMMAND: {/* For ASPLOS only.  Remove when
+					        * that's done. -Mary 2/15/92. */
+	    /*
+	     * Zero the stats used for asplos measurements.  We've gotta
+	     * run this once per file system  before removing the stats so that
+	     * the checkpoint copies of the padding bytes will be zeroed again.
+	     */
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    bzero((char *) &(lfsPtr->stats.log.fsyncWrites),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.fsyncPartialWrites),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.fsyncBytes),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.fsyncPartialBytes),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.partialWriteBytes),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.cleanPartialWriteBytes),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.fileBytesWritten),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.cleanFileBytesWritten),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.partialFileBytes),
+		    sizeof(LfsStatsCounter));
+
+	    bzero((char *) &(lfsPtr->stats.layout.descLayoutBytes),
+		    sizeof(LfsStatsCounter));
+	    
+	    bzero((char *) &(lfsPtr->stats.dirlog.cleaningBytesWritten),
+		    sizeof(LfsStatsCounter));
+
+	    break;
+	}
+	case FS_TOGGLE_ASPLOS_STATS_LFS_COMMAND: {/* Just for ASPLOS. */
+	    /*
+	     * Toggle on or off the taking of Lfs ASPLOS stats. The last time
+	     * these stats are taken, they must be turned off and then
+	     * zeroed with the above command.
+	     */
+	    Lfs_DoASPLOSStats = 1 - Lfs_DoASPLOSStats;
+	    status = SUCCESS;
+	    break;
+	}
 	default: {
 	    status = GEN_INVALID_ARG;
 	}

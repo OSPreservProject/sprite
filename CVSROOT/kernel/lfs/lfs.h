@@ -28,6 +28,18 @@
  */
 #define	LFS_CONTROL_CLEANALL	0x1
 
+/*
+ * These flags are just for the ASPLOS measurements, to tag write operations
+ * if they are a result of an fsync.  They shouldn't be flags in controlFlags,
+ * but it won't interfere with anything there, and this way I don't have
+ * to change the size of the Lfs structure.
+ *
+ * Can be removed after ASPLOS measurements.
+ * 			Mary	2/14/92
+ */
+#define	LFS_FILE_FSYNCED	0x2
+#define	LFS_FSYNC_IN_PROGRESS	0x4
+
 /* Descriptor management routines. */
 
 extern ReturnStatus Lfs_GetNewFileNumber _ARGS_((Fsdm_Domain *domainPtr, 

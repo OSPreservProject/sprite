@@ -224,7 +224,11 @@ static Boolean CreateBlock _ARGS_((Boolean retBlock,
 			Fscache_Block **blockPtrPtr));
 static Boolean DestroyBlock _ARGS_((Boolean retOnePage, int *pageNumPtr));
 static Fscache_Block *FetchBlock _ARGS_((Boolean canWait, Boolean cantBlock));
-static void StartBackendWriteback _ARGS_((Fscache_Backend *backendPtr));
+	    /*
+	     * Second parameter below is for ASPLOS measurements and can be
+	     * removed after all that's over.  Mary 2/14/92
+	     */
+static void StartBackendWriteback _ARGS_((Fscache_Backend *backendPtr, Boolean fileFsynced));
 static void PutOnFreeList _ARGS_((Fscache_Block *blockPtr));
 static void PutFileOnDirtyList _ARGS_((Fscache_FileInfo *cacheInfoPtr,
 			time_t oldestDirtyBlockTime));
@@ -893,7 +897,11 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	    Sync_Broadcast(&cleanBlockCondition);
 	}
 	if (blockPtr->flags & FSCACHE_BLOCK_CLEANER_WAITING) {
-	    StartBackendWriteback(blockPtr->cacheInfoPtr->backendPtr);
+	    /*
+	     * Second parameter is for ASPLOS measurements and can be
+	     * removed after all that's over.  Mary 2/14/92
+	     */
+	    StartBackendWriteback(blockPtr->cacheInfoPtr->backendPtr, FALSE);
 	    blockPtr->flags &= ~FSCACHE_BLOCK_CLEANER_WAITING;
 	}
 	if (flags & FSCACHE_BLOCK_UNNEEDED) {
@@ -1178,7 +1186,14 @@ StartFileSync(cacheInfoPtr)
 	    List_Move((List_Links *)cacheInfoPtr, LIST_BEFORE(place));
 	}
     }
-    StartBackendWriteback(cacheInfoPtr->backendPtr);
+    /*
+     * The second parameter here is just for ASPLOS measurements and can
+     * be removed after the ASPLOS conference (or after the paper is
+     * rejected?).
+     *
+     * Mary 2/14/92
+     */
+    StartBackendWriteback(cacheInfoPtr->backendPtr, TRUE);
 }
 
 
@@ -1708,7 +1723,7 @@ CacheWriteBack(writeBackTime, blocksSkippedPtr, writeTmpFiles)
 		    cacheInfoPtr->flags &=
 			~(FSCACHE_NO_DISK_SPACE | FSCACHE_DOMAIN_DOWN |
 				  FSCACHE_GENERIC_ERROR);
-		    StartBackendWriteback(cacheInfoPtr->backendPtr);
+		    StartBackendWriteback(cacheInfoPtr->backendPtr, FALSE);
 		    break;
 		} else {
 		    continue;
@@ -1717,7 +1732,7 @@ CacheWriteBack(writeBackTime, blocksSkippedPtr, writeTmpFiles)
 	    if ((numAvailBlocks < minNumAvailBlocks + FSCACHE_MIN_BLOCKS) ||
 		(cacheInfoPtr->oldestDirtyBlockTime < writeBackTime) ||
 		(cacheInfoPtr->flags & FSCACHE_FILE_FSYNC)) {
-		StartBackendWriteback(cacheInfoPtr->backendPtr);
+		StartBackendWriteback(cacheInfoPtr->backendPtr, FALSE);
 		break;
 	    }
 	}
@@ -2140,7 +2155,7 @@ FetchBlock(canWait, cantBlock)
 	 Fscache_Backend	*backendPtr;
          LIST_FORALL(backendList, (List_Links *) backendPtr) {
 	    if (!List_IsEmpty(&backendPtr->dirtyListHdr)) { 
-		StartBackendWriteback(backendPtr);
+		StartBackendWriteback(backendPtr, FALSE);
 	    }
          }
   }
@@ -2173,12 +2188,21 @@ FetchBlock(canWait, cantBlock)
  */
 
 static void
-StartBackendWriteback(backendPtr)
+StartBackendWriteback(backendPtr, fileFsynced)
     Fscache_Backend *backendPtr;
+    Boolean	fileFsynced;
+		    /*
+		     * Second parameter is for ASPLOS measurements and can be
+		     * removed after all that's over.  Mary 2/14/92
+		     */
 {
     Boolean	started;
 
-    started = backendPtr->ioProcs.startWriteBack(backendPtr);
+    /*
+     * Second parameter is for ASPLOS measurements and can be
+     * removed after all that's over.  Mary 2/14/92
+     */
+    started = backendPtr->ioProcs.startWriteBack(backendPtr, fileFsynced);
     if (started) {
 	numBackendsActive++;
     }
@@ -2676,7 +2700,7 @@ FscacheFinishRealloc(blockPtr, diskBlock)
 			      FSCACHE_GENERIC_ERROR);
 	PutFileOnDirtyList(blockPtr->cacheInfoPtr, 
 			blockPtr->cacheInfoPtr->oldestDirtyBlockTime);
-	StartBackendWriteback(blockPtr->cacheInfoPtr->backendPtr);
+	StartBackendWriteback(blockPtr->cacheInfoPtr->backendPtr, FALSE);
     }
 
     UNLOCK_MONITOR;
@@ -2757,7 +2781,7 @@ Fscache_AllowWriteBacks(cacheInfoPtr)
         (cacheInfoPtr->flags & FSCACHE_FILE_DESC_DIRTY)) { 
 	PutFileOnDirtyList(cacheInfoPtr, cacheInfoPtr->oldestDirtyBlockTime);
 	if (cacheInfoPtr->flags & FSCACHE_FILE_FSYNC) {
-	    StartBackendWriteback(cacheInfoPtr->backendPtr);
+	    StartBackendWriteback(cacheInfoPtr->backendPtr, FALSE);
 	}
     }
 

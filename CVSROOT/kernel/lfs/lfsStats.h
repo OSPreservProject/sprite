@@ -62,7 +62,23 @@ typedef struct Lfs_StatsVersion1 {
 			            * segment. */
 	LFSCOUNT locks;	      /* Number of log was locked. */
 	LFSCOUNT lockWaits;   /* Number time we waited to lock log. */
-	LFSCOUNT padding[16];
+
+	/*
+	 * The following are for ASPLOS measurements only, and can be removed
+	 * after that's all over.  Remember to put back the padding entries and
+	 * zero stuff.  Mary  2/14/92
+	 */
+	LFSCOUNT fsyncWrites;		/* Seg. writes due to fsync. */
+	LFSCOUNT fsyncPartialWrites;	/* Partial seg. writes due to fsync. */
+	LFSCOUNT fsyncBytes;		/* Bytes fsynced. */
+	LFSCOUNT fsyncPartialBytes;	/* Bytes fsynced to partial segs. */
+	LFSCOUNT partialWriteBytes;	/* Bytes to disk in partial segs. */
+	LFSCOUNT cleanPartialWriteBytes;/* Partial bytes written in cleaning. */
+	LFSCOUNT fileBytesWritten;	/* File bytes written to disk. */
+	LFSCOUNT cleanFileBytesWritten;	/* File bytes written in cleaning. */
+	LFSCOUNT partialFileBytes;	/* File bytes written to partial seg. */
+
+	LFSCOUNT padding[7];
     } log;
 	/*
 	 * Checkpoint related counters
@@ -185,8 +201,13 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT cleanNoHandle;	/* Files deleted while being cleaned. */
 	LFSCOUNT cleanLockedHandle; /* File cleaning failed due to locked 
 				     * handle. */
+	/*
+	 * These next stats are for ASPLOS paper and can be removed and
+	 * zeroed after that's done.   Mary 2/15/92.
+	 */
+	LFSCOUNT descLayoutBytes;	/* Descriptor bytes in layout proc. */
 
-	LFSCOUNT padding[14];
+	LFSCOUNT padding[13];
     } layout;
 
     struct LfsSegUsageStats {
@@ -222,7 +243,10 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT dataBlockWritten;
 	LFSCOUNT blockWritten;
 	LFSCOUNT bytesWritten;
-	LFSCOUNT padding[2];
+				    /* This next is for ASPLOS only.
+				     * Remove when done.  -Mary 2/15/92.  */
+	LFSCOUNT cleaningBytesWritten;	/* Bytes written during cleaning. */
+	LFSCOUNT padding[1];
     } dirlog;
     unsigned int cleaningDist[LFS_STATS_CDIST_BUCKETS];
 } Lfs_StatsVersion1;
