@@ -436,15 +436,6 @@ extern	Boolean	fsutil_WriteBackOnClose;
 extern	Boolean	fsutil_WBOnLastDirtyBlock;
 
 /*
- * Talk to jhh about this. 
- */
-#ifdef KERNEL
-#include <procMigrate.h>
-#else
-#include <kernel/procMigrate.h>
-#endif
-
-/*
  * Filesystem initialization calls.
  */
 extern void Fs_Init _ARGS_((void));
@@ -463,6 +454,7 @@ extern void Fs_CloseState _ARGS_((Proc_ControlBlock *procPtr));
 extern ReturnStatus Fs_AttachDiskStub _ARGS_((char *userDeviceName, 
 			char *userLocalName, int flags));
 extern ReturnStatus Fs_ChangeDirStub _ARGS_((char *pathName));
+extern ReturnStatus Fs_RemoveStub _ARGS_((char *pathName));
 extern ReturnStatus Fs_CommandStub _ARGS_((int command, int bufSize, 
 			Address buffer));
 extern ReturnStatus Fs_CreatePipeStub _ARGS_((int *inStreamIDPtr, 
