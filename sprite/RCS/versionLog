@@ -214,4 +214,8 @@ Device module additions:  changes to allow idle/busy statistics for scsi disks.
 Recovery module additions: mouse trap for bad unregister of reboot callback.
 Fs* module additions: part of above mouse trap for unregister of reboot funcs.
 Sys module additions: removed recursive panic.
+Fs_Stat structure augmented for migration and writeback statistics.  Fixed
+problem with stream attributes not being invalidated when cached writable
+files migrate.  Added rpc to stage new migration callback for obtaining
+offset after deencapsulation.
     New files linked in from the net library.
