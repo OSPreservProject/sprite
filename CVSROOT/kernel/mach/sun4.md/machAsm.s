@@ -117,10 +117,23 @@ _Mach_EnableIntr:
 	nop
 
 /*
- * Jmpl writes current pc into RETURN_VAL_REG_CHILD here, which is where values
- * are returned from calls.  The return from __MachGetPc must not overwrite 
- * this.  Since this uses a non-pc-relative jump, we CANNOT use this routine 
- * while executing before we've copied the kernel to where it was linked for. 
+ * ----------------------------------------------------------------------
+ *
+ * Mach_GetPC --
+ *
+ *	Jmpl writes current pc into RETURN_VAL_REG_CHILD here,
+ *	which is where values are returned from calls.  The return
+ *	from __MachGetPc must not overwrite this.  Since this uses a
+ *	non-pc-relative jump, we CANNOT use this routine while executing before
+ *	we've copied the kernel to where it was linked for. 
+ *
+ * Results:
+ *	PC whence we came.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------
  */
 .globl	_Mach_GetPC
 _Mach_GetPC:
@@ -159,16 +172,16 @@ _Mach_TestAndSet:
 	 * put the address into the addressed location to set it.  That means
 	 * we can't use address 0, but we shouldn't be doing that anyway.
 	 */
-#ifdef	NO_SUN4_CACHING
+#ifdef SWAP_INSTR_WORKS
+	swap	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* set addr with addr */
+#else
 	DISABLE_INTR_ASM(%OUT_TEMP1, %OUT_TEMP2, TestAndSetDisableIntrs)
 	set	0x1, %OUT_TEMP1
 	ld	[%RETURN_VAL_REG], %OUT_TEMP2
 	st	%OUT_TEMP1, [%RETURN_VAL_REG]
 	mov	%OUT_TEMP2, %RETURN_VAL_REG
 	ENABLE_INTR_ASM(%OUT_TEMP1, %OUT_TEMP2, TestAndSetEnableIntrs)
-#else
-	swap	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* set addr with addr */
-#endif /* NO_SUN4_CACHING */
+#endif /* SWAP_INSTR_WORKS */
 	tst	%RETURN_VAL_REG				/* was it set? */
 	be,a	ReturnZero				/* if not, return 0 */
 	clr	%RETURN_VAL_REG				/* silly, delay slot */
@@ -944,9 +957,19 @@ RestoreTheWindow:
 
 
 /*
- * _Mach_ReadPsr:
+ *---------------------------------------------------------------------
  *
- * Capture psr for c routines.
+ * Mach_ReadPsr -
+ *
+ *	Capture %psr for C routines.
+ *
+ * Results:
+ *	%psr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
  */
 .globl	_Mach_ReadPsr
 _Mach_ReadPsr:
@@ -956,10 +979,23 @@ _Mach_ReadPsr:
 
 
 /*
- * A page fault occured in a copy-in or copy-out from a user-mode process, and
- * the page couldn't be paged in.  So we want to return SYS_ARG_NOACCESS to
- * the process from its system call.  This means we must return this value
- * from the routine doing the copying.
+ *---------------------------------------------------------------------
+ *
+ * MachHandleBadArgs -
+ *
+ *	A page fault occured in a copy-in or copy-out from a user-mode process,
+ *	and the page couldn't be paged in.  So we want to return
+ *	SYS_ARG_NOACCESS to the process from its system call.
+ *	This means we must return this value from the routine doing the copying.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS returned to process as if returned from its system
+ *	call.
+ *
+ * Side effects:
+ *	We cause the routine that was copying args to return SYS_ARG_NO_ACCESS.
+ *
+ *---------------------------------------------------------------------
  */
 .globl	_MachHandleBadArgs
 _MachHandleBadArgs:
@@ -1077,10 +1113,22 @@ BadRead:
 _Mach_ProbeEnd:
 
 /*
- * A page fault occured during a probe operation, which means
- * the page couldn't be paged in or there was a size error.  So we want to
- * return FAILURE to the caller of the probe operation.  This means we must
- * return this value from the routine doing the probe.
+ *---------------------------------------------------------------------
+ *
+ * MachHandleBadProbe -
+ *
+ *	A page fault occured during a probe operation, which means
+ *	the page couldn't be paged in or there was a size error.  So we want to
+ *	return FAILURE to the caller of the probe operation.  This means we must
+ *	return this value from the routine doing the probe.
+ *
+ * Results:
+ *	FAILURE returned to caller of probe operation.
+ *
+ * Side effects:
+ *	We cause the routine that was doing the probe to return FAILURE.
+ *
+ *---------------------------------------------------------------------
  */
 .globl	_MachHandleBadProbe
 _MachHandleBadProbe:
@@ -1093,3 +1141,5 @@ _MachHandleBadProbe:
 	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
 	retl		/* return from leaf routine */
 	nop
+
+

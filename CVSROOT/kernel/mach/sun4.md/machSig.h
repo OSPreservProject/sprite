@@ -84,6 +84,9 @@ typedef struct Mach_RegState {
     int		calleeInputs[MACH_NUM_INS];	/* callee saves inputs here */
     int		extraParams[MACH_NUM_EXTRA_ARGS];	/* args beyond 6 */
     int		globals[MACH_NUM_GLOBALS];	/* globals */
+#ifdef FP_ENABLED
+    int		floatPoints[MACH_NUM_FPS];
+#endif FP_ENABLED
 } Mach_RegState;
 
 typedef	Mach_RegState	Mach_DebugState;

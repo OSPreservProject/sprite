@@ -32,6 +32,10 @@ _spriteStart:
 	mov	%psr, %g1
 	or	%g1, MACH_DISABLE_INTR, %g1	/* lock out interrupts */
 	andn	%g1, MACH_CWP_BITS, %g1		/* set cwp to 0 */
+#ifdef FP_ENABLED
+	set	MACH_ENABLE_FPP, %g2
+	or	%g1, %g2, %g1			/* enable fp unit */
+#endif FP_ENABLED
 	mov	%g1, %psr
 	mov	0x2, %wim	/* set wim to window right behind us */
 	/*

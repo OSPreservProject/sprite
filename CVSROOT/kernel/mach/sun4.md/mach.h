@@ -229,7 +229,6 @@ extern void			Mach_SetHandler();
 extern void			Mach_InitSyscall();
 extern ReturnStatus		Mach_Probe();
 
-#ifdef NOTDEF
 /*
  * Other routines.
  */
@@ -244,8 +243,6 @@ extern	void	Mach_ContextSwitch();
 extern	int	Mach_TestAndSet();
 extern	int	Mach_GetMachineType();
 extern	int	Mach_GetMachineArch();
-extern	Address	Mach_GetStackPointer();
-extern 	void	Mach_CheckSpecialHandling();
 
 /*
  * spriteStart is defined in bootSys.s with an underscore.
@@ -253,6 +250,13 @@ extern 	void	Mach_CheckSpecialHandling();
 extern	int		spriteStart;
 extern	int		endBss;
 extern	int		endText;
+
+#ifdef NOTDEF
+/*
+ * These routine are not needed so far in the sun4 port.
+ */
+extern	Address	Mach_GetStackPointer();
+extern 	void	Mach_CheckSpecialHandling();
 #endif NOTDEF
 
 /*

@@ -247,7 +247,19 @@ NotAnInterrupt:
 	be	_MachHandleWeirdoInstruction		/* C routine */
 	nop
 
-	cmp	%VOL_TEMP1, MACH_FP_EXCEP		/* fp unit off */
+	cmp	%VOL_TEMP1, MACH_FP_EXCEP		/* fp unit badness */
+#ifdef FP_ENABLED
+	set	_machSavedFsr, %o0			/* save fp state reg */
+	st	%fsr, [%o0]
+#endif FP_ENABLED
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleWeirdoInstruction		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_FP_DISABLED		/* fp unit disabled */
 	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
 	mov	%VOL_TEMP1, %o0
 	mov	%CUR_PC_REG, %o1

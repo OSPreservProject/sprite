@@ -144,6 +144,10 @@ int	machSigCodeOffsetInSig;		/* offset of sigCode field in
 int	machSigPCOffsetOnStack;		/* offset of pcValue field in
 					 * MachSignalStack on user stack. */
 
+#ifdef FP_ENABLED
+unsigned int	machSavedFsr;		/* saved %fsr on fp exception trap */
+#endif FP_ENABLED
+
 /*
  * Pointer to the state structure for the current process.
  */
@@ -1335,7 +1339,7 @@ HandleItAgain:
  * MachHandleWeirdoInstruction --
  *
  *	Handle an instruction trap, such as an illegal instruction trap,
- *	an unaligned address on an instruction 
+ *	an unaligned address, or a floating point problem.
  *
  * Results:
  *	None.
@@ -1380,6 +1384,13 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 		    "overflow trap in the kernel!");
 	    break;
 	case MACH_FP_EXCEP:
+	    printf("%s %s\n", "MachHandleWeirdoInstruction: fp",
+		    "exception trap in the kernel!");
+#ifdef FP_ENABLED
+	    printf("%fsr is 0x%x\n", machSavedFsr);
+#endif FP_ENABLED
+	    break;
+	case MACH_FP_DISABLED:
 	    printf("%s %s\n", "MachHandleWeirdoInstruction: fp unit",
 		    "disabled trap in the kernel!");
 	    break;
@@ -1410,6 +1421,13 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 		FALSE);
 	break;
     case MACH_FP_EXCEP:
+#ifdef FP_ENABLED
+	printf("%s.  %fsr was 0x%x\n",
+		"MachHandleWeirdoInstruction: fp exception from user process.",
+		machSavedFsr);
+#endif FP_ENABLED
+	/* fall through */
+    case MACH_FP_DISABLED:
 	(void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, procPtr->processID,
 		FALSE);
 	break;

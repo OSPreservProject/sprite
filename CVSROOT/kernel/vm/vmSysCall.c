@@ -180,7 +180,16 @@ static char	buffer[8192];
 
 void	SetVal();
 
+/*
+ * The # construct to turn a variable into a string is not handled correctly
+ * on the current sun4 compiler/preprocessor set up.  This will change when
+ * it's handled correctly.
+ */
+#ifndef sun4
 #define SETVAR(var, val) SetVal(#var, val, (int *)&(var))
+#else
+#define	SETVAR(var, val) SetVal("var val", val, (int *)&(var))
+#endif /* sun4 */
 
 
 /*

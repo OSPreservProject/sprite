@@ -20,6 +20,12 @@
 #endif
 
 /*
+ * Turn on code for floating point compilation.
+ *
+    #define	FP_ENABLED	1
+ */
+
+/*
  * Return codes from some trap routines.
  *
  *    MACH_OK		Successfully handled.
@@ -146,7 +152,6 @@
 /*
  * Constants to access bits in the psr register.
  */
-
 #define	MACH_ENABLE_INTR		0xFFFFF0FF	/* and with psr */
 #define	MACH_DISABLE_INTR		(~MACH_ENABLE_INTR)	/* or w/ psr */
 #define MACH_ENABLE_FPP			0x1000
@@ -155,16 +160,27 @@
 #define	MACH_DISABLE_TRAP_BIT		0xFFFFFFDF	/* and with %psr */
 #define	MACH_SUPER_BIT			0x80
 #define	MACH_PS_BIT			0x40	/* and with psr - prev. state */
+#ifdef FP_ENABLED
+#define	MACH_FIRST_USER_PSR		0x1080	/* traps off, interrupts on,
+						 * previous mode not supervisor,
+						 * current mode supervisor. */
+#define	MACH_NO_INTR_USER_PSR		0x1F80
+/*
+ * psr value for interrupts disabled, traps enabled and window 0.
+ * Both supervisor and previous supervisor mode bits are set.
+ */
+#define	MACH_HIGH_PRIO_PSR		0x00001FE0
+#else
 #define	MACH_FIRST_USER_PSR		0x080	/* traps off, interrupts on,
 						 * previous mode not supervisor,
 						 * current mode supervisor. */
 #define	MACH_NO_INTR_USER_PSR		0xF80
-
 /*
  * psr value for interrupts disabled, traps enabled and window 0.
  * Both supervisor and previous supervisor mode bits are set.
  */
 #define	MACH_HIGH_PRIO_PSR		0x00000FE0
+#endif FP_ENABLED
 
 
 /*
@@ -268,7 +284,7 @@
  */
 /*
  * Byte offsets from beginning of a Mach_RegState structure to the fields
- * for the various types of registers..
+ * for the various types of registers.
  */
 #define	MACH_LOCALS_OFFSET	0
 #define	MACH_INS_OFFSET		(MACH_LOCALS_OFFSET + MACH_NUM_LOCALS * 4)
@@ -312,8 +328,14 @@
  * shouldn't succeed in booting if these constants are out of whack.  Keep
  * it this way!  Size is in bytes.
  */
+#ifdef FP_ENABLED
+#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE +\
+				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4 \
+				+ MACH_NUM_FPS * 4)
+#else
 #define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE +\
 				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4)
+#endif FP_ENABLED
 
 /*
  * The compiler stores parameters to C routines in its caller's stack frame,
@@ -386,6 +408,9 @@
 #define	MACH_NUM_INS			8
 #define	MACH_NUM_LOCALS			8
 #define	MACH_NUM_WINDOW_REGS		(MACH_NUM_LOCALS + MACH_NUM_INS)
+#ifdef FP_ENABLED
+#define	MACH_NUM_FPS			32
+#endif FP_ENABLED
 /*
  * The amount to shift left by to multiply a number by the number of registers
  * per window.  How would I get this from the constant above?
@@ -402,6 +427,7 @@
  *	r8 to r15	outs		o0 to o7
  *	r16 to r23	locals		l0 to l7
  *	r24 to r31	ins		i0 to i7
+ *	f0 to f31	floating points	
  *
  *		Special Registers:
  *	current sp		= o6 = r14
