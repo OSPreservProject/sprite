@@ -397,6 +397,7 @@ FsDetachDisk(prefixName)
     char		*lookupName;
     int			domainType;
     FsPrefix		*prefixPtr;
+    FsFileID		rootID;
     int			domain;
     register FsDomain	*domainPtr;
     int			i;
@@ -408,7 +409,7 @@ FsDetachDisk(prefixName)
      */
     status = FsPrefixLookup(prefixName, 
 		   FS_EXACT_PREFIX | FS_EXPORTED_PREFIX | FS_LOCAL_PREFIX,
-		   rpc_SpriteID, &hdrPtr, &lookupName, &domainType,
+		   rpc_SpriteID, &hdrPtr, &rootID, &lookupName, &domainType,
 		   &prefixPtr);
     if (status != SUCCESS) {
 	return(status);
