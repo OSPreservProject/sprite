@@ -45,11 +45,13 @@
  *				passed to exec.  Also used to bound any
  *				individual argument.
  * PROC_MAX_EXEC_ARGS		The maximum number of arguments that can be
- *				passed to an exec'd process.
+ *				passed to an exec'd process.  By making it
+ *				the same, each argument could conceivably be
+ *				a single byte.
  */
 
-#define	PROC_MAX_EXEC_ARG_LENGTH	4096
-#define	PROC_MAX_EXEC_ARGS		1024
+#define	PROC_MAX_EXEC_ARG_LENGTH	20480
+#define	PROC_MAX_EXEC_ARGS		20480
 
 /*
  * Masks to extract the proc table index and the generation number from
