@@ -22,9 +22,11 @@
 #include "sprite.h"
 #include "devAddrs.h"
 #include "machConst.h"
+#include "user/fmt.h"
 #else
 #include <kernel/devAddrs.h>
 #include <kernel/machConst.h>
+#include <fmt.h>
 #endif
 
 /*
@@ -36,6 +38,10 @@ typedef enum {
 } Mach_ProcessorStates;
 
 
+#ifdef lint
+#define	Mach_EnableIntr()
+#define	Mach_DisableIntr()
+#else
 /*
  * Routines to enable and disable interrupts.  These leave unmaskable
  * interrupts enabled.  These are assembly macros to be called from C code.
@@ -56,6 +62,7 @@ typedef enum {
 			mov	%1, %%psr; nop; nop; nop\n":	\
 			"=r"(tmpPsr):"r"(tmpPsr));	\
 	})
+#endif /* lint */
 
 
 #define DISABLE_INTR() \
@@ -212,11 +219,11 @@ extern	int	*mach_NumDisableIntrsPtr;
  */
 extern	char	*mach_MachineType;
 /*
- * mach_ByteOrder defines a byte ordering/structure alignment type
+ * mach_Format defines a byte ordering/structure alignment type
  * used when servicing IOControls.  The input and output buffers for
  * IOControls have to be made right by the server.
  */
-extern	int	mach_ByteOrder;
+extern	Fmt_Format	mach_Format;
 
 /*
  * Routine to initialize mach module.  Must be called first as part of boot

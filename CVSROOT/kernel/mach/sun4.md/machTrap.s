@@ -421,6 +421,7 @@ KillUserProc:
 	/*
 	 * Kill user process!  Its stack is bad.
 	 */
+	MACH_SR_HIGHPRIO()	/* traps back on for overflow from printf */
 	set	_MachReturnFromTrapDeathString, %o0
 	call	_printf, 1
 	nop
@@ -852,6 +853,7 @@ MachReturnToUnderflowWithSavedState:
 	restore		/* back to window to check in, only if branching!! */
 KillTheProc:
 	/* KILL IT - must be in trap window */
+	MACH_SR_HIGHPRIO()	/* traps back on for overflow from printf */
 	set	_MachHandleWindowUnderflowDeathString, %o0
 	call	_printf, 1
 	nop

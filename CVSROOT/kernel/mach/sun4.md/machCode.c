@@ -355,7 +355,6 @@ Mach_Init()
     /* Temporary: for debugging net module and debugger: */
     mach_NumDisableInterrupts[0] = 1;
 
-#ifdef NOTDEF
     /*
      * Copy the boot parameter structure. The original location will get
      * unmapped during vm initialization so we need to get our own copy.
@@ -369,6 +368,7 @@ Mach_Init()
 	    machMonBootParam.argPtr[i] -= offset;
 	}
     }
+#ifndef sun4c
     /*
      * Clear out the line input buffer to the prom so we don't get extra
      * characters at the end of shorter reboot strings.
@@ -628,7 +628,6 @@ Mach_StartUserProc(procPtr, entryPoint)
 					 * executing. */
 {
     register	Mach_State	*statePtr;
-    int		status;
 
     statePtr = procPtr->machStatePtr;
     /*

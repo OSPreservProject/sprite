@@ -180,7 +180,7 @@
  * Both supervisor and previous supervisor mode bits are set.
  */
 #define	MACH_HIGH_PRIO_PSR		0x00000FE0
-#endif FP_ENABLED
+#endif /* FP_ENABLED */
 
 
 /*
@@ -234,7 +234,7 @@
  *				the debugger requires a couple of integers
  *				of padding on the top.
  * MAGIC		A magic number which is pushed onto the stack before
- *			a context switch.  Used to verify that the stack 
+ *			a context switch.  Used to verify that the stack
  *			doesn't get trashed.
  */
 #define	MACH_KERN_START		0xf6000000
@@ -247,13 +247,13 @@
 
 /*
  * Constants for the user's address space.
- * 
+ *
  * MACH_FIRST_USER_ADDR		The lowest possible address in the user's VAS.
  * MACH_LAST_USER_ADDR		The highest possible address in the user's VAS.
  * MACH_LAST_USER_STACK_PAGE	The highest page in the user stack segment.
  * MACH_MAX_USER_STACK_ADDR	The highest value that the user stack pointer
- *				can have.  Note that the stack pointer must be 
- *				decremented before anything can be stored on 
+ *				can have.  Note that the stack pointer must be
+ *				decremented before anything can be stored on
  *				the stack.  Also note that on the sun4 we must
  *				strip off the high couple of bits, since 0's
  *				and 1's in them point to the same entry in the
@@ -268,7 +268,7 @@
  *				the hole, but for now, I just shrink everything
  *				so the user process stack must start at the
  *				top address beneath the hole.  Yuckola.
- *				
+ *
  */
 #define	MACH_FIRST_USER_ADDR		VMMACH_PAGE_SIZE
 #define	MACH_LAST_USER_ADDR		(MACH_MAX_USER_STACK_ADDR - 1)
@@ -348,7 +348,7 @@
 #else
 #define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE +\
 				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4)
-#endif FP_ENABLED
+#endif /* FP_ENABLED */
 
 /*
  * The compiler stores parameters to C routines in its caller's stack frame,
@@ -423,7 +423,7 @@
 #define	MACH_NUM_WINDOW_REGS		(MACH_NUM_LOCALS + MACH_NUM_INS)
 #ifdef FP_ENABLED
 #define	MACH_NUM_FPS			32
-#endif FP_ENABLED
+#endif /* FP_ENABLED */
 /*
  * The amount to shift left by to multiply a number by the number of registers
  * per window.  How would I get this from the constant above?
@@ -440,7 +440,7 @@
  *	r8 to r15	outs		o0 to o7
  *	r16 to r23	locals		l0 to l7
  *	r24 to r31	ins		i0 to i7
- *	f0 to f31	floating points	
+ *	f0 to f31	floating points
  *
  *		Special Registers:
  *	current sp		= o6 = r14
@@ -478,13 +478,13 @@
  *	SAFE_TEMP	(r21) 	Register that cannot be modified by macros or
  *				subroutines within the same window.
  *	VOL_TEMP[1-2]	(r22-r23)
- *				Volatile temporary registers.  Means that 
- *				macros in machAsmDefs.h can modify these 
+ *				Volatile temporary registers.  Means that
+ *				macros in machAsmDefs.h can modify these
  *				registers.
  *	RETURN_VAL_REG	(r8)	Where a value is returned from a C routine.
  *	RETURN_VAL_REG_CHILD (r24)
  *				Where to return a value to our caller.
- *	
+ *
  */
 #define	RETURN_ADDR_REG		r15		/* o7 */
 #define	RETURN_ADDR_REG_CHILD	r31		/* i7 */
