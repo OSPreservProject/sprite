@@ -119,7 +119,7 @@ typedef	int	FsBlockIndexType;
  * blocks used in indexing.
  */
 
-typedef struct {
+typedef struct FsIndirectInfo {
     	FsCacheBlock 	*blockPtr;	/* Pointer to indirect block. */
     	int		index;		/* An index into the indirect block. */
     	Boolean	 	blockDirty;	/* TRUE if the block has been
