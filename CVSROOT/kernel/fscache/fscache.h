@@ -220,6 +220,7 @@ extern	void		Fs_CheckFragmentation();
 extern	void		Fs_BlockCleaner();
 
 extern	void		FsCacheInfoInit();
+extern	void		FsCacheInfoSyncLockCleanup();
 extern	void		FsCacheFetchBlock();
 extern	void		FsCacheUnlockBlock();
 extern	void		FsCacheBlockTrunc();
