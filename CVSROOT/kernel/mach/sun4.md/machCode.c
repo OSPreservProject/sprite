@@ -528,7 +528,8 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      */
     statePtr->switchRegs = (Mach_RegState *)((statePtr->kernStackStart) +
 	    MACH_KERN_STACK_SIZE - (2 * MACH_SAVED_STATE_FRAME));
-    (unsigned int) (statePtr->switchRegs) &= ~0x7;/* should be okay already */
+    statePtr->switchRegs = ((unsigned int)(statePtr->switchRegs)) &
+	    ~0x7;  /* should be okay already */
     /*
      * Initialize the stack so that it looks like it is in the middle of
      * Mach_ContextSwitch.
@@ -1501,7 +1502,7 @@ HandleItAgain:
 		return 0;
 	    }
 
-	    if (procDebugStubs) {
+	    if (debugProcStubs) {
 		printf("Unix signal %d(%d) to %x\n", sigStackPtr->sigNum,
 			unixSignal, procPtr->processID);
 	    }
@@ -1512,12 +1513,12 @@ HandleItAgain:
 	    /*
 	     * pc and npc are where to continue the interrupted routine.
 	     */
-	    if (procDebugStubs) {
+	    if (debugProcStubs) {
 		printf("PSR = %x\n", machStatePtr->trapRegs->curPsr);
 	    }
 	    unixContext.sc_pc = machStatePtr->trapRegs->pc;
 	    unixContext.sc_npc = machStatePtr->trapRegs->nextPc;
-	    if (procDebugStubs) {
+	    if (debugProcStubs) {
 		printf("trapRegs->pc=%x, trapRegs->npc=%x, context.pcValue=%x\n",
 			machStatePtr->trapRegs->pc, machStatePtr->trapRegs->nextPc,
 			machStatePtr->sigContext.machContext.pcValue);
@@ -1532,14 +1533,14 @@ HandleItAgain:
 		    machStatePtr->sigContext.  machContext.pcValue;
 	    machStatePtr->trapRegs->nextPc = (unsigned int)
 		    machStatePtr->sigContext.machContext.pcValue+4;
-	    if (procDebugStubs) {
+	    if (debugProcStubs) {
 		printf("new pc = %x\n", machStatePtr->trapRegs->nextPc);
 	    }
 	    /*
 	     * Copy the window to the signal stack.
 	     */
 	    Vm_CopyIn(16*sizeof(int), (Address)unixContext.sc_sp, (Address)n);
-	    if (procDebugStubs) {
+	    if (debugProcStubs) {
 		printf("Regs: %x %x %x, %x %x %x\n", n[0], n[1], n[2], n[8],
 			n[9], n[10]);
 	    }
@@ -1554,7 +1555,7 @@ HandleItAgain:
 			    SUCCESS) {
 		return 0;
 	    }
-	    if (procDebugStubs) {
+	    if (debugProcStubs) {
 		printf("Copied window to %x\n",
 			(Address)unixContext.sc_sp - sizeof(struct sigcontext)
 				- 4*sizeof(int) - MACH_SAVED_WINDOW_SIZE);
@@ -1591,7 +1592,7 @@ HandleItAgain:
     }
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
-            procPtr->unixProgress != PROC_PROGRESS_UNIX && procDebugStubs) {
+            procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
         printf("UnixProgress = %d leaving MachUserReturn\n",
 		procPtr->unixProgress);
     }
