@@ -96,7 +96,8 @@ typedef struct FsHandleHeader {
     int			flags;		/* Defined in fsHandle.c. */
     Sync_Condition	unlocked;	/* Notified when handle is unlocked. */
     int			refCount;	/* Used for garbage collection. */
-} FsHandleHeader;			/* 28 BYTES */
+    char		*name;		/* Used for error messages */
+} FsHandleHeader;			/* 32 BYTES */
 
 /*
  * The following name-related information is referenced by each stream.
@@ -115,8 +116,7 @@ typedef struct FsNameInfo {
     struct FsPrefix	*prefixPtr;	/* Back pointer to prefix table entry.
 					 * This is kept for efficient handling
 					 * of lookup redirects. */
-    char		*name;		/* For console error messages. */
-} FsNameInfo;
+} FsNameInfo;				/* 40 BYTES */
 
 /*
  * Fs_Stream - A clients handle on an open file is defined by the Fs_Stream
@@ -145,7 +145,7 @@ typedef struct Fs_Stream {
     FsNameInfo	 	*nameInfoPtr;	/* Used to contact the name server */
     List_Links		clientList;	/* Needed for recovery and sharing
 					 * detection */
-} Fs_Stream;				/* 52 BYTES */
+} Fs_Stream;				/* 56 BYTES */
 
 /*
  * Flags in Fs_Stream that are only set/used by the kernel.

@@ -166,7 +166,7 @@ typedef struct FsCacheFileInfo {
     int		   lastTimeTried;  /* Time that last tried to see if disk was
 				    * available for this block. */
     FsCachedAttributes attr;	   /* Local version of descriptor attributes. */
-} FsCacheFileInfo;		   /* 84 BYTES */
+} FsCacheFileInfo;		   /* 108 BYTES */
 
 /*
  * The client use state needed to allow remote client access and to
@@ -201,7 +201,7 @@ typedef struct FsConsistInfo {
 				 * all the clients told to take
 				 * consistency actions have replied. */
     List_Links migList;		/* List header for clients migrating the file */
-} FsConsistInfo;		/* 48 BYTES */
+} FsConsistInfo;		/* 56 BYTES */
 
 /* 
  * The I/O descriptor for remote streams.  This is all that is needed for
@@ -218,7 +218,7 @@ typedef struct FsRemoteIOHandle {
 					 * ID field in the hdr is used to
 					 * forward the I/O operation. */
     FsRecoveryInfo	recovery;	/* For I/O server recovery */
-} FsRemoteIOHandle;			/* 56 BYTES */
+} FsRemoteIOHandle;			/* 60 BYTES */
 
 
 /*
@@ -296,7 +296,7 @@ typedef struct FsUserIDs {
     int user;			/* Indicates effective user ID */
     int numGroupIDs;		/* Number of valid entries in groupIDs */
     int group[FS_NUM_GROUPS];	/* The set of groups the user is in */
-} FsUserIDs;
+} FsUserIDs;			/* 40 BYTES */
 
 
 
