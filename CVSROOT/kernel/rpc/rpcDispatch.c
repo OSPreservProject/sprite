@@ -420,7 +420,7 @@ RpcValidateClient(etherHdrPtr, rpcHdrPtr)
 	 * Look client's transport address up in our in core host table.
 	 */
 	clientID = Net_AddrToID(0, NET_ROUTE_ETHER,
-		 (ClientData)(NET_ETHER_HDR_SOURCE(*etherHdrPtr)));
+		 (ClientData)&(NET_ETHER_HDR_SOURCE(*etherHdrPtr)));
         Sys_Panic(SYS_WARNING, "RpcValidateClient had to set clientID %d\n",
 				clientID);
 	if (clientID < 0) {
