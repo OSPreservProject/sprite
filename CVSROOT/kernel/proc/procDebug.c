@@ -225,6 +225,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	     * Change the protection back.
 	     */
 	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, FALSE);
+	    Vm_FlushCode(procPtr, destAddr, numBytes);
 
 	    break;
 

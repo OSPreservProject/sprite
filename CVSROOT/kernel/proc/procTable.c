@@ -268,6 +268,8 @@ Proc_InitMainProc()
     procPtr->Prof_PC            = 0;
 
     Mach_InitFirstProc(procPtr);
+    Vm_ProcInit(procPtr);
+    VmMach_SetupContext(procPtr);
 
     procPtr->familyID 		= PROC_NO_FAMILY;	/* not in a family */
     
@@ -276,7 +278,6 @@ Proc_InitMainProc()
     procPtr->userID		= 0;
     procPtr->effectiveUserID	= 0;
 
-    Vm_ProcInit(procPtr);
     Sig_ProcInit(procPtr);
 
     procPtr->processor = Mach_GetProcessorNumber();

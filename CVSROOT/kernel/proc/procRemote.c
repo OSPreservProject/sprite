@@ -35,7 +35,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "procMigrate.h"
 #include "procInt.h"
 #include "migrate.h"
-#include "procAOUT.h"
 #include "fs.h"
 #include "stdlib.h"
 #include "sig.h"

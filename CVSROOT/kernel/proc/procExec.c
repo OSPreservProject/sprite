@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
+#include "procMach.h"
 #include "mach.h"
 #include "proc.h"
 #include "procInt.h"
@@ -31,7 +32,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "sys.h"
-#include "procAOUT.h"
 #include "procMigrate.h"
 #include "status.h"
 #include "string.h"
@@ -883,9 +883,8 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     				 * executing its first instruction. */
 {
     register	Proc_ControlBlock	*procPtr;
-    register	Proc_AOUT		*aoutPtr;
     Vm_ExecInfo				*execInfoPtr;
-    Proc_AOUT				aout;
+    Vm_ExecInfo				execInfo;
     Vm_Segment				*codeSegPtr = (Vm_Segment *) NIL;
     char				*argString = (char *) NIL;
     Address				argBuffer = (Address) NIL;
@@ -898,13 +897,13 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     char				**extraArgsPtrPtr;
     int					argBytes;
     Address				userStackPointer;
-    int					entry;
     Boolean				usedFile;
     int					uid = -1;
     int					gid = -1;
     ExecEncapState			*encapPtr;
     int					importing = 0;
     int					exporting = 0;
+    ProcObjInfo				objInfo;
 
 #ifdef notdef
     DBG_CALL;
@@ -947,6 +946,7 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     /*
      * See if this file is already cached by the virtual memory system.
      */
+    execInfoPtr = (Vm_ExecInfo *)NIL;
     codeSegPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
     if (codeSegPtr == (Vm_Segment *) NIL) {
 	int	sizeRead;
@@ -954,7 +954,9 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	/*
 	 * Read the file header.
 	 */
-	sizeRead = PROC_MAX_INTERPRET_SIZE;
+	sizeRead = PROC_MAX_INTERPRET_SIZE > sizeof(ProcExecHeader) ?
+						PROC_MAX_INTERPRET_SIZE :
+						sizeof(ProcExecHeader);
 	status = Fs_Read(filePtr, buffer, 0, &sizeRead);
 	if (status != SUCCESS) {
 	    goto execError;
@@ -965,28 +967,27 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	     * See if this is an interpreter file.
 	     */
 	    status = SetupInterpret(buffer, sizeRead, &filePtr, 
-				    &shellArgPtr, &extraArgs, &aout); 
+				    &shellArgPtr, &extraArgs, &objInfo); 
 	    if (status != SUCCESS) {
 		filePtr = (Fs_Stream *)NIL;
 		goto execError;
 	    }
-	    sizeRead = sizeof(Proc_AOUT);
-	    aoutPtr = &aout;
 	    codeSegPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
 	} else {
-	    aoutPtr = (Proc_AOUT *) buffer;
+	    if (sizeRead < sizeof(ProcExecHeader) ||
+		ProcGetObjInfo((ProcExecHeader *)buffer, &objInfo) != SUCCESS) {
+		status = PROC_BAD_AOUT_FORMAT;
+		goto execError;
+	    }
 	}
-	if (codeSegPtr == (Vm_Segment *) NIL && 
-	    (sizeRead < sizeof(Proc_AOUT) || PROC_BAD_MAGIC_NUMBER(*aoutPtr))) {
-	    status = PROC_BAD_AOUT_FORMAT;
-	    goto execError;
-	}
+#ifdef notdef
 #ifdef sun4
 	if ((aoutPtr->machineType & 0x0f) != PROC_SPARC) {
 	    status = PROC_BAD_AOUT_FORMAT;
 	    goto execError;
 	}
 #endif sun4
+#endif
     }
 
     if (!importing) {
@@ -1115,8 +1116,11 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     /*
      * Set up virtual memory for the new image.
      */
-    if (!SetupVM(procPtr, aoutPtr, filePtr, usedFile, &codeSegPtr, 
-		 execInfoPtr, &entry)) {
+    if (execInfoPtr == (Vm_ExecInfo *)NIL) {
+	execInfoPtr = &execInfo;
+    }
+    if (!SetupVM(procPtr, &objInfo, filePtr, usedFile, &codeSegPtr, 
+		 execInfoPtr)) {
 	/*
 	 * Setup VM will make sure that the file is closed and that
 	 * all new segments are freed up.
@@ -1168,7 +1172,7 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
      * because there is an implicit enable interrupts when we return to user 
      * mode.
      */
-    Mach_ExecUserProc(procPtr, userStackPointer, (Address) entry);
+    Mach_ExecUserProc(procPtr, userStackPointer, (Address) execInfoPtr->entry);
     panic("DoExec: Proc_RunUserProc returned.\n");
 
 execError:
@@ -1241,7 +1245,7 @@ execError:
 
 static ReturnStatus
 SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr, 
-	       extraArgsPtr, aoutPtr)
+	       extraArgsPtr, objInfoPtr)
     register	char	*buffer;	/* Bytes read in from file.*/
     int			sizeRead;	/* Number of bytes in buffer. */	
     register	Fs_Stream **filePtrPtr;	/* IN/OUT parameter: Exec'd file as 
@@ -1249,12 +1253,13 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
     char		**argPtrPtr;	/* Pointer to shell argument string. */
     int			*extraArgsPtr;	/* Number of arguments that have to be
 					 * added for the intepreter. */
-    Proc_AOUT		*aoutPtr;	/* Place to read a.out header into. */
+    ProcObjInfo		*objInfoPtr;	/* Place to put obj file info. */
 {
     register	char	*strPtr;
     char		*shellNamePtr;
     int			i;
     ReturnStatus	status;
+    ProcExecHeader	execHeader;
 
     (void) Fs_Close(*filePtrPtr);
 
@@ -1312,10 +1317,12 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
 	return(status);
     }
 
-    sizeRead = sizeof(Proc_AOUT);
-    status = Fs_Read(*filePtrPtr, (Address) aoutPtr, 0, &sizeRead);
-    if (status == SUCCESS && sizeRead != sizeof(Proc_AOUT)) {
+    sizeRead = sizeof(ProcExecHeader);
+    status = Fs_Read(*filePtrPtr, (Address)&execHeader, 0, &sizeRead);
+    if (status == SUCCESS && sizeRead != sizeof(ProcExecHeader)) {
 	status = PROC_BAD_AOUT_FORMAT;
+    } else {
+	status = ProcGetObjInfo(&execHeader, objInfoPtr);
     }
     if (status != SUCCESS) {
 	(void) Fs_Close(*filePtrPtr);
@@ -1323,7 +1330,6 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
     return(status);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1344,15 +1350,13 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
  *----------------------------------------------------------------------
  */ 
 static Boolean
-SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr, 
-	entryPtr)
+SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     register	Proc_ControlBlock	*procPtr;
-    register	Proc_AOUT		*aoutPtr;
+    register	ProcObjInfo		*objInfoPtr;
     Fs_Stream				*codeFilePtr;
     Boolean				usedFile;
     Vm_Segment				**codeSegPtrPtr;
     register	Vm_ExecInfo		*execInfoPtr;
-    int					*entryPtr;
 {
     register	Vm_Segment	*segPtr;
     int				numPages;
@@ -1360,38 +1364,37 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     int				pageOffset;
     Boolean			notFound;
     Vm_Segment			*heapSegPtr;
-    Vm_ExecInfo			execInfo;
     Fs_Stream			*heapFilePtr;
 
     if (*codeSegPtrPtr == (Vm_Segment *) NIL) {
-	execInfoPtr = &execInfo;
-	execInfoPtr->entry = aoutPtr->entry;
-	if (aoutPtr->data != 0) {
-	    execInfoPtr->heapPages = (aoutPtr->data - 1) / vm_PageSize + 1;
+	execInfoPtr->entry = (int)objInfoPtr->entry;
+	if (objInfoPtr->heapSize != 0) {
+	    execInfoPtr->heapPages = 
+			(objInfoPtr->heapSize - 1) / vm_PageSize + 1;
 	} else { 
 	    execInfoPtr->heapPages = 0;
 	}
-	if (aoutPtr->bss != 0) {
-	    execInfoPtr->heapPages += (aoutPtr->bss - 1) / vm_PageSize + 1;
+	if (objInfoPtr->bssSize != 0) {
+	    execInfoPtr->heapPages += 
+			(objInfoPtr->bssSize - 1) / vm_PageSize + 1;
 	}
 	execInfoPtr->heapPageOffset = 
-			PROC_DATA_LOAD_ADDR(*aoutPtr) / vm_PageSize;
-	execInfoPtr->heapFileOffset = 
-			(int) PROC_DATA_FILE_OFFSET(*aoutPtr);
+			(unsigned)objInfoPtr->heapLoadAddr / vm_PageSize;
+	execInfoPtr->heapFileOffset = objInfoPtr->heapFileOffset;
 	execInfoPtr->bssFirstPage = 
-			PROC_BSS_LOAD_ADDR(*aoutPtr) / vm_PageSize;
-	if (aoutPtr->bss > 0) {
+			(unsigned)objInfoPtr->bssLoadAddr / vm_PageSize;
+	if (objInfoPtr->bssSize > 0) {
 	    execInfoPtr->bssLastPage = (int) (execInfoPtr->bssFirstPage + 
-				       (aoutPtr->bss - 1) / vm_PageSize);
+				   (objInfoPtr->bssSize - 1) / vm_PageSize);
 	} else {
 	    execInfoPtr->bssLastPage = 0;
 	}
 	/* 
 	 * Set up the code image.
 	 */
-	numPages = (aoutPtr->code - 1) / vm_PageSize + 1;
-	fileOffset = PROC_CODE_FILE_OFFSET(*aoutPtr);
-	pageOffset = PROC_CODE_LOAD_ADDR(*aoutPtr) / vm_PageSize;
+	numPages = (objInfoPtr->codeSize - 1) / vm_PageSize + 1;
+	fileOffset = objInfoPtr->codeFileOffset;
+	pageOffset = (unsigned)objInfoPtr->codeLoadAddr / vm_PageSize;
 	segPtr = Vm_SegmentNew(VM_CODE, codeFilePtr, fileOffset,
 			       numPages, pageOffset, procPtr);
 	if (segPtr == (Vm_Segment *) NIL) {
@@ -1454,8 +1457,6 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     procPtr->vmPtr->segPtrArray[VM_STACK] = segPtr;
     procPtr->genFlags &= ~PROC_NO_VM;
     VmMach_ReinitContext(procPtr);
-
-    *entryPtr = execInfoPtr->entry;
 
     return(TRUE);
 }

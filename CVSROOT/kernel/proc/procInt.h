@@ -36,6 +36,21 @@ typedef struct {
     Timer_Ticks			childUserCpuUsage;
 } ProcChildInfo;
 
+/*
+ * Machine independent object file information.
+ */
+typedef struct {
+    Address	codeLoadAddr;	/* Address in user memory to load code. */
+    unsigned	codeFileOffset;	/* Offset in obj file to load code from.*/
+    unsigned	codeSize;	/* Size of code segment. */
+    Address	heapLoadAddr;	/* Address in user memory to load heap. */
+    unsigned	heapFileOffset;	/* Offset in obj file to load initialized heap
+				 * from . */
+    unsigned	heapSize;	/* Size of heap segment. */
+    Address	bssLoadAddr;	/* Address in user memory to load bss. */
+    unsigned	bssSize;	/* Size of bss segment. */
+    Address	entry;		/* Entry point to start execution. */
+} ProcObjInfo;
 
 /*
  * Procedures internal to the proc module.
