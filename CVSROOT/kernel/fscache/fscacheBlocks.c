@@ -219,14 +219,24 @@ static void		PutFileOnDirtyList();
 static void		PutBlockOnDirtyList();
 static Boolean		CreateBlock();
 static Boolean		DestroyBlock();
+#ifndef sun4
 static FsCacheBlock	*FetchBlock();
-static void		CacheFileInvalidate();
 static void		CacheWriteBack();
 static void		StartBlockCleaner();
+static void		ProcessCleanBlock();
+#else
+/*
+ * The sun4 compiler doesn't seem to allow this sort of redeclaration.
+ */
+extern FsCacheBlock	*FetchBlock();
+extern void		CacheWriteBack();
+extern void		StartBlockCleaner();
+extern void		ProcessCleanBlock();
+#endif sun4
+static void		CacheFileInvalidate();
 static void		GetDirtyFile();
 static void		GetDirtyBlock();
 static void		GetDirtyBlockInt();
-static void		ProcessCleanBlock();
 static void		ReallocBlock();
 static void		FinishRealloc();
 static Hash_Entry	*GetUnlockedBlock();
