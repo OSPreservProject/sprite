@@ -1,4 +1,3 @@
-Hello.
 /* vmStack.c -
  *
  *     	This file contains routines to allocate and free kernel stacks.  It
