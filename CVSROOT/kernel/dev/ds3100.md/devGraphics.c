@@ -747,10 +747,10 @@ DevGraphicsKbdIntr(ch)
     } else if (ch == KEY_COMMAND) {
 	consoleCmdDown = TRUE;
     } else if (consoleCmdDown) {
-	char asciiChar;
+	int asciiChar;
 
 	consoleCmdDown = FALSE;
-	asciiChar = DevDC7085TranslateKey(ch, FALSE, FALSE);
+	asciiChar = (int) DevDC7085TranslateKey(ch, FALSE, FALSE);
 	if (asciiChar != -1) {
 	    Dev_InvokeConsoleCmd(asciiChar);
 	    return;
