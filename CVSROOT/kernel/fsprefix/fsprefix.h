@@ -100,7 +100,7 @@ typedef struct FsPrefixExport {
  * Major prefix table entry points.
  */
 extern	void		FsPrefixInit();
-extern	void		FsPrefixInstall();
+extern	FsPrefix *	FsPrefixInstall();
 extern	ReturnStatus	FsPrefixLookup();
 
 /*
