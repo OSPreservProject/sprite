@@ -36,6 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStream.h"
 #include "fsOpTable.h"
 #include "fsClient.h"
+#include "fsMigrate.h"
 #include "proc.h"
 #include "mem.h"
 #include "byte.h"
@@ -420,15 +421,16 @@ FsStreamClientVerify(streamIDPtr, clientID)
 	}
 	if (!found) {
 	    register FsHandleHeader *tHdrPtr = streamPtr->ioHandlePtr;
-	    Sys_Panic(SYS_WARNING,
+	    Sys_Panic((fsMigDebug > 0) ? SYS_FATAL : SYS_WARNING,
 		"FsStreamClientVerify, client %d not known for stream <%d>\n",
 		clientID, tHdrPtr->fileID.minor);
 	    FsHandleRelease(streamPtr, TRUE);
 	    streamPtr = (Fs_Stream *)NIL;
 	}
     } else {
-	Sys_Panic(SYS_WARNING, "No stream <%d> for client %d\n",
-	    streamIDPtr->minor, clientID);
+	Sys_Panic((fsMigDebug > 0) ? SYS_FATAL : SYS_WARNING,
+		  "No stream <%d> for client %d\n",
+		  streamIDPtr->minor, clientID);
     }
     return(streamPtr);
 }
