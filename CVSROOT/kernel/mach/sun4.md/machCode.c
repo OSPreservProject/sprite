@@ -169,6 +169,14 @@ int		machFPUDumpSyncInst(); /* PC of stfsr instruction in
  */
 Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 
+char	MachUnixAddr[] =
+				"Unix addr %x\n"; 
+char	MachUnixString[] =
+				"Unix syscall %d\n"; 
+char	MachUnixYesString[] =
+				"syscall success\n"; 
+char	MachUnixNoString[] =
+				"syscall failure\n"; 
 char	MachRunUserDeathString[] =
 				"MachRunUserProc: killing process!\n"; 
 char	MachHandleSignalDeathString[] =
@@ -599,15 +607,17 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
  *----------------------------------------------------------------------
  */ 
 void
-Mach_SetReturnVal(procPtr, retVal)
+Mach_SetReturnVal(procPtr, retVal, retVal2)
     Proc_ControlBlock	*procPtr;	/* Process to set return value for. */
     int			retVal;		/* Value for process to return. */
+    int			retVal2;	/* 2nd Value for process to return. */
 {
     if (procPtr->machStatePtr->trapRegs == (Mach_RegState *) NIL ||
 	    procPtr->machStatePtr->trapRegs == (Mach_RegState *) 0) {
 	return;
     }
     procPtr->machStatePtr->trapRegs->ins[0] = retVal;
+    procPtr->machStatePtr->trapRegs->ins[1] = retVal2;
     return;
 }
 
@@ -1825,4 +1835,29 @@ HandleFPUException(procPtr, machStatePtr)
     }
     MachFPULoadState(machStatePtr->trapRegs);
 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SigreturnStub --
+ *
+ *	Procedure to map from Unix sigreturn system call to Sprite.
+ *	On the suns, this is used for returning from a longjmp.
+ *
+ * Results:
+ *	Error code is returned upon error.  Otherwise SUCCESS is returned.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mach_SigreturnStub(jmpBuf)
+    jmp_buf *jmpBuf;
+{
+
+    printf("Mach_Sigreturn not implemented\n");
+    return -1;
 }
