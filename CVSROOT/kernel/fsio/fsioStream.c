@@ -1,5 +1,5 @@
 /* 
- * fsStream.c --
+ * fsioStream.c --
  *
  *	There are two sets of procedures here.  The first manage the stream
  *	as it relates to the handle table; streams are installed in this
@@ -30,17 +30,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fsconsist.h"
-#include "fsStat.h"
-#include "proc.h"
-#include "procMigrate.h"
-#include "sync.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fsconsist.h>
+#include <fsStat.h>
+#include <fsrmt.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <sync.h>
+#include <rpc.h>
+
+#include <stdio.h>
 
 /*
  * Monitor to synchronize access to the streamCount variable.
@@ -53,8 +56,8 @@ static int	streamCount;	/* Used to generate fileIDs for streams*/
 /*
  * Forward declarations. 
  */
-static ReturnStatus StreamMigCallback();
-static ReturnStatus GrowStreamList();
+static ReturnStatus StreamMigCallback _ARGS_((Fsio_MigInfo *migInfoPtr, 
+			Boolean *sharedPtr, int *offsetPtr));
 
 
 /*
@@ -106,7 +109,7 @@ Fsio_StreamCreate(serverID, clientID, ioHandlePtr, useFlags, name)
     do {
 	fileID.minor = ++streamCount;
 	found = Fsutil_HandleInstall(&fileID, sizeof(Fs_Stream), name,
-				(Fs_HandleHeader **)&newStreamPtr);
+				FALSE, (Fs_HandleHeader **)&newStreamPtr);
 	if (found) {
 	    /*
 	     * Don't want to conflict with existing streams.
@@ -166,7 +169,7 @@ Fsio_StreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
     Fs_Stream *newStreamPtr;
 
     found = Fsutil_HandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
-			    (Fs_HandleHeader **)&newStreamPtr);
+			    FALSE, (Fs_HandleHeader **)&newStreamPtr);
     streamPtr = newStreamPtr;
     if (!found) {
 	streamPtr->offset = 0;
@@ -218,7 +221,7 @@ Fsio_StreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
  */
 ENTRY void
 Fsio_StreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
-    FsMigInfo		*migInfoPtr;	/* Encapsulated stream */
+    Fsio_MigInfo		*migInfoPtr;	/* Encapsulated stream */
     int			dstClientID;	/* New client of the stream */
     Fs_HandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
     Boolean		*closeSrcClientPtr;	/* Return - TRUE if the src
@@ -239,7 +242,7 @@ Fsio_StreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
      */
     Fsutil_HandleUnlock(ioHandlePtr);
     found = Fsutil_HandleInstall(&migInfoPtr->streamID, sizeof(Fs_Stream),
-			    (char *)NIL, (Fs_HandleHeader **)&newStreamPtr);
+			 (char *)NIL, FALSE, (Fs_HandleHeader **)&newStreamPtr);
     streamPtr = newStreamPtr;
     if (!found) {
 	streamPtr->offset = migInfoPtr->offset;
@@ -351,7 +354,7 @@ typedef struct {
  */
 static ReturnStatus
 StreamMigCallback(migInfoPtr, sharedPtr, offsetPtr)
-    FsMigInfo	*migInfoPtr;	/* Encapsulated information */
+    Fsio_MigInfo	*migInfoPtr;	/* Encapsulated information */
     Boolean	*sharedPtr;	/* TRUE if stream still used on client */
     int 	*offsetPtr;	/* Offset of stream on client */
 {
@@ -700,7 +703,7 @@ Fsio_StreamCreateID(serverID, streamIDPtr)
     do {
 	fileID.minor = ++streamCount;
 	found = Fsutil_HandleInstall(&fileID, sizeof(Fs_Stream), (char *)NIL,
-				(Fs_HandleHeader **)&newStreamPtr);
+				FALSE, (Fs_HandleHeader **)&newStreamPtr);
 	if (found) {
 	    /*
 	     * Don't want to conflict with existing streams.
