@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <sigMach.h>
 #include <swapBuffer.h>
 #include <net.h>
+#include <ultrixSignal.h>
 
 /*
  * Conversion of function to an unsigned value.
@@ -169,7 +170,7 @@ static void PrintInst _ARGS_((unsigned pc, unsigned inst));
 static void SoftFPReturn _ARGS_((void));
 static void MemErrorInterrupt _ARGS_((void));
 
-void 		(*machInterruptRoutines[MACH_NUM_HARD_INTERRUPTS]) _ARGS_((
+ReturnStatus	(*machInterruptRoutines[MACH_NUM_HARD_INTERRUPTS]) _ARGS_((
 		    unsigned int statusReg, unsigned int causeReg, 
 		    Address pc, ClientData data));
 ClientData	machInterruptArgs[MACH_NUM_HARD_INTERRUPTS];
@@ -240,13 +241,13 @@ static void SetupSigHandler _ARGS_((register Proc_ControlBlock *procPtr,
 static void ReturnFromSigHandler _ARGS_((register Proc_ControlBlock *procPtr));
 static ReturnStatus Interrupt _ARGS_((unsigned statusReg, unsigned causeReg, 
 			Address pc));
-static void MachStdHandler _ARGS_((unsigned int statusReg, 
+static ReturnStatus MachStdHandler _ARGS_((unsigned int statusReg, 
 			unsigned int causeReg, Address pc, ClientData data));
-static void MachIOInterrupt _ARGS_((unsigned int statusReg, 
+static ReturnStatus MachIOInterrupt _ARGS_((unsigned int statusReg, 
 			unsigned int causeReg, Address pc, ClientData data));
-static void MachMemInterrupt _ARGS_((unsigned int statusReg, 
+static ReturnStatus MachMemInterrupt _ARGS_((unsigned int statusReg, 
 			unsigned int causeReg, Address pc, ClientData data));
-extern void MachFPInterrupt _ARGS_((unsigned int statusReg, 
+extern ReturnStatus MachFPInterrupt _ARGS_((unsigned int statusReg, 
 			unsigned int causeReg, Address pc, ClientData data));
 
 /*
@@ -262,6 +263,28 @@ int		nextStateIndex = 0;
 
 Address		machBadVaddr = (Address) NIL;
 
+/*
+ * Set to TRUE if we are inside of Mach_Probe.
+ */
+
+Boolean		machInProbe = FALSE;
+
+/*
+ * Read address of Mach_Probe.
+ */
+
+Address		machProbeReadAddr = (Address) NIL;
+typedef struct trace {
+    char	*srcPtr;
+    char	*destPtr;
+    int		dest1;
+    int		dest2;
+    int		src;
+} Trace;
+
+extern Trace *ncopyBuffer;
+extern int ncopyCount;
+extern int ncopyPath;
 
 /*
  * ----------------------------------------------------------------------------
@@ -288,6 +311,7 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     int offset, i;
     char buf[256];
     volatile unsigned int 	*csrPtr = (unsigned int *) MACH_CSR_ADDR;
+    char	*copyPtr;
 
     /*
      * Zero out the bss segment.
@@ -321,19 +345,30 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     }
     Mach_ArgParse(buf,&machMonBootParam);
 
+    Mach_MonPrintf("Happy Birthday!!\n");
     /*
      * Get information on the memory bitmap.  This gets clobbered later.
      */
-    bcopy(Mach_MonGetenv("bitmaplen"),mach_BitmapLen,8);
-    bcopy(Mach_MonGetenv("bitmap"),mach_BitmapAddr,16);
-    Mach_MonPrintf("bitmap: %s at %s\n", mach_BitmapLen, mach_BitmapAddr);
+    /*
+     * IMPORTANT NOTE:  Don't use bcopy to do this, at least while
+     * bcopy contains the calls to Vm_CheckAccessible.  Those calls add a
+     * frame to the stack, causing it to overwrite the very information
+     * we're trying to copy.  JHH 4/18/91
+     */
+    copyPtr = Mach_MonGetenv("bitmaplen");
+    for(i = 0; i < sizeof(mach_BitmapLen); i++) {
+	mach_BitmapLen[i] = *copyPtr++;
+    }
+    copyPtr = Mach_MonGetenv("bitmap");
+    for(i = 0; i < sizeof(mach_BitmapAddr); i++) {
+	mach_BitmapAddr[i] = *copyPtr++;
+    }
 
     /*
      * Set up the CSR.  Turn on memory ECC. Interrupts from IO slots are
      * turned on as handlers are registered. 
      */
     *csrPtr = MACH_CSR_CORRECT;
-    Mach_MonPrintf("csr = 0x%x\n", *csrPtr);
 
 
     /*
@@ -362,7 +397,6 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     bcopy(F_TO_A MachException, (Address)MACH_GEN_EXC_VEC,
 	      F_TO_A MachEndException - F_TO_A MachException);
 
-    Mach_MonPrintf("Setting interrupt handlers.\n");
     /*
      * Set all interrupt handlers to a default, then install handlers for
      * those interrupts processed by the mach module.
@@ -381,11 +415,15 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
 	Mach_SetIOHandler(i, (void (*)()) NIL, (ClientData) NIL);
     }
     /*
+     * Enable the memory interrupt, because we need it for Mach_Probe to
+     * work.  Disabling interrupts has the side-effect of enabling the
+     * memory interrupt.
+     */
+    Mach_DisableIntr();
+    /*
      * Clear out the i and d caches.
      */
     MachConfigCache();
-    Mach_MonPrintf("data cache size = 0x%x inst cache size= 0x%x\n",
-		   machDataCacheSize, machInstCacheSize);
     MachFlushCache();
 }
 
@@ -418,7 +456,8 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
 void
 Mach_SetHandler(level, handler, clientData)
     int level;			/* Interrupt level. */
-    void (*handler) _ARGS_((unsigned int statusReg, unsigned int causeReg,
+    ReturnStatus (*handler) _ARGS_((unsigned int statusReg, 
+			    unsigned int causeReg,
 			    Address pc, ClientData data)); 
 			        /* Interrupt handler. */
     ClientData	clientData; 	/* Data to pass handler. */
@@ -450,7 +489,7 @@ Mach_SetHandler(level, handler, clientData)
  *----------------------------------------------------------------------
  */
 
-static void
+static ReturnStatus
 MachStdHandler(statusReg, causeReg, pc, data)
     unsigned int	statusReg;	/* Status register. */
     unsigned int	causeReg;	/* Cause register. */
@@ -461,6 +500,7 @@ MachStdHandler(statusReg, causeReg, pc, data)
 
     level = (int) data;
     printf("WARNING: no handler for level %d interrupt!\n", level);
+    return MACH_OK;
 }
 
 /*
@@ -500,6 +540,11 @@ Mach_SetIOHandler(slot, handler, clientData)
     if ((slot < 0) || (slot >= MACH_NUM_IO_SLOTS)){
 	panic("Warning: Bad slot number %d\n",slot);
     } else {
+	if ((machIOInterruptRoutines[slot] != (void (*)()) NIL) &&
+	    (handler != (void (*)()) NIL)) {
+	    Mach_MonPrintf("WARNING: replacing existing handler for slot %d.\n",
+		slot);
+	}
 	machIOInterruptRoutines[slot] = handler;
 	machIOInterruptArgs[slot] = clientData;
 	if (handler != (void (*)()) NIL) {
@@ -508,7 +553,6 @@ Mach_SetIOHandler(slot, handler, clientData)
 		panic("Goof up computing interrupt enable bits in csr.\n");
 	    }
 	    *csrPtr |= mask;
-	    Mach_MonPrintf("csr = 0x%x\n", *csrPtr);
 	}
     }
 }
@@ -1237,10 +1281,8 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    printf("MachKernelExceptionHandler:  Bus error on ifetch\n");
 	    return(MACH_KERN_ERROR);
 	case MACH_EXC_BUS_ERR_LD_ST:
-	    if (pc >= F_TO_A Mach_Probe &&
-	        pc <= F_TO_A MachProbeEnd) {
-		Mach_MonPrintf("Probe errorn\n");
-		return(MACH_USER_ERROR);
+	    if (machInProbe) {
+		return(MACH_OK);
 	    }
 	    printf("MachKernelExceptionHandler:  Bus error on load or store\n");
 	    return(MACH_KERN_ERROR);
@@ -1281,12 +1323,6 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
  *
  * ----------------------------------------------------------------------------
  */
-#define DEBUG_INTR
-#ifdef DEBUG_INTR
-static int lastInterruptCalled = -1;
-#endif  /* DEBUG_INTR */
-
-
 static ReturnStatus
 Interrupt(statusReg, causeReg, pc)
     unsigned	statusReg;
@@ -1295,62 +1331,40 @@ Interrupt(statusReg, causeReg, pc)
 {
     int		n;
     unsigned	mask;
+    ReturnStatus status = MACH_OK;
 
-    static int debugLog[100];
-    static int debug = 0;
-
-#define DEBUG(n) { 	\
-    int foo;		\
-    if (debug >= 100) {	\
-	debug = 0;	\
-    }			\
-    foo = debug++;	\
-    debugLog[foo] = (n);\
-}
-
-
-#ifdef DEBUG_INTR
-    if (mach_AtInterruptLevel) {
-	panic("Received interrupt while at interrupt level.\n");
-    }
-    if (mach_NumDisableIntrsPtr[0] > 0) {
-	printf("Received interrupt with mach_NumDisableIntrsPtr[0] = %d.\n",
-	       mach_NumDisableIntrsPtr[0]);
-    }
-#endif /* DEBUG_INTR */
-    
-    mach_KernelMode = !(statusReg & MACH_SR_KU_PREV);
-    mach_AtInterruptLevel = 1;
-    n = 0;
     mask = (causeReg & statusReg & MACH_CR_INT_PENDING) >> 
 						MACH_CR_HARD_INT_SHIFT;
-    DEBUG(mask);
-#if 0
-    printf("Interrupt, mask = 0x%x\n", mask);
-#endif
+    mach_KernelMode = !(statusReg & MACH_SR_KU_PREV);
+    mach_AtInterruptLevel = 1;
+
+    /*
+     * If there is a memory interrupt pending, and we have all other
+     * interrupts off, then only handle that interrupt.
+     */
+
+    if (mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()] > 0) {
+	if (mask & (MACH_INT_MASK_3 >> MACH_CR_HARD_INT_SHIFT)) {
+	    status = machInterruptRoutines[3](statusReg, causeReg, pc, 
+		    machInterruptArgs[3]); 
+	    goto exit;
+	} else {
+	    panic("Interrupt while at interrupt level, (0x%x) pc 0x%x.\n", 
+		mask, pc);
+	}
+    }
+    n = 0;
     while (mask != 0) {
 	if (mask & 1) {
-#ifdef DEBUG_INTR
-	    if (n >= MACH_NUM_HARD_INTERRUPTS) {
-		printf("Bogus index (%d) for interrupt handler\n", n);
-		mach_AtInterruptLevel = 0;
-		return(MACH_KERN_ERROR);
-	    }
-	    lastInterruptCalled = n;
-#endif /* DEBUG_INTR */
-	    machInterruptRoutines[n](statusReg, causeReg, pc, 
+	    (void) machInterruptRoutines[n](statusReg, causeReg, pc, 
 		machInterruptArgs[n]); 
 	}
 	mask >>= 1;
 	n++;
     }
-
+exit:
     mach_AtInterruptLevel = 0;
-    DEBUG(-1);
-#ifdef DEBUG_INTR
-    lastInterruptCalled = -1;
-#endif /* DEBUG_INTR */
-    return(MACH_OK);
+    return(status);
 }
 
 
@@ -1800,7 +1814,7 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
  *
  *----------------------------------------------------------------------
  */
-static void
+static ReturnStatus
 MachMemInterrupt(statusReg, causeReg, pc, data)
     unsigned	statusReg;		/* Status register. */
     unsigned	causeReg;		/* Cause register. */
@@ -1816,6 +1830,7 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
     unsigned int chksyn;
     unsigned int address;
     int		column;
+    ReturnStatus	status = MACH_OK;
 
     erradr = *erradrPtr;
     if (!(erradr & MACH_ERRADR_VALID)) {
@@ -1823,9 +1838,14 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
 	return;
     }
     address = erradr & MACH_ERRADR_ADDRESS;
-
     switch(erradr & (MACH_ERRADR_CPU | MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR)){
 	case 0: {
+	    /*
+	     * For IO space addresses the 27 bits in the ERRADR must be
+	     * shifted by 2, then the top bits set.  This isn't documented
+	     * anywhere.
+	     */
+	    address = MACH_IO_SLOT_BASE | (address << 2);
 	    panic("DMA read overrun at address 0x%x\n", address);
 	    break;
 	} 
@@ -1841,6 +1861,7 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
 	    break;
 	}
 	case (MACH_ERRADR_WRITE) : {
+	    address = MACH_IO_SLOT_BASE | (address << 2);
 	    panic("DMA write overrun at address 0x%x, pc = 0x%x\n", 
 	    address, pc);
 	    break;
@@ -1851,6 +1872,12 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
 	    break;
 	}
 	case (MACH_ERRADR_CPU) : {
+	    address = MACH_IO_SLOT_BASE | (address << 2);
+	    if (machInProbe) {
+		status = MACH_USER_ERROR;
+		machInProbe = FALSE;
+		break;
+	    }
 	    panic(
 	"Timeout during CPU read of IO address 0x%x, pc = 0x%x\n", 
 	address, pc);
@@ -1870,8 +1897,14 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
 	    break;
 	}
 	case (MACH_ERRADR_CPU | MACH_ERRADR_WRITE) : {
+	    address = MACH_IO_SLOT_BASE | (address << 2);
+	    if (machInProbe) {
+		status = MACH_USER_ERROR;
+		machInProbe = FALSE;
+		break;
+	    }
 	    panic(
-	"Timeout during CPU write of IO address 0x%x\n, pc = 0x%x", 
+	"Timeout during CPU write of IO address 0x%x\n, pc = 0x%x\n", 
 	address, pc);
 	    break;
 	}
@@ -1909,6 +1942,7 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
      * Clear the ERRADR and CHKSYN registers.
      */
     *erradrPtr = 0;
+    return status;
 }
 
 /*
@@ -1927,7 +1961,7 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
  *----------------------------------------------------------------------
  */
 
-static void
+static ReturnStatus
 MachIOInterrupt(statusReg, causeReg, pc, data)
     unsigned int	statusReg;	/* Status register. */
     unsigned int	causeReg;	/* Cause register. */
@@ -1938,16 +1972,7 @@ MachIOInterrupt(statusReg, causeReg, pc, data)
     unsigned int 		csr;
     int				slot;
     unsigned int		ioint;
-    static	Boolean		initialized = FALSE;
-    static	Boolean		warn[MACH_NUM_IO_SLOTS];
     int				i;
-
-    if (!initialized) {
-	for(i = 0; i < MACH_NUM_IO_SLOTS; i++) {
-	    warn[i] = FALSE;
-	}
-	initialized = TRUE;
-    }
 
     csr = *csrPtr;
     ioint = csr & MACH_CSR_IOINT;
@@ -1958,12 +1983,10 @@ MachIOInterrupt(statusReg, causeReg, pc, data)
 	if (ioint & 1) {
 	    if (machIOInterruptRoutines[slot] != (void (*)()) NIL) {
 		machIOInterruptRoutines[slot](machIOInterruptArgs[slot]);
-	    } else if (warn[slot] == FALSE) {
-		printf("WARNING: no handler for interrupt on slot %d\n", slot);
-		warn[slot] = TRUE;
 	    }
 	}
     }
+    return MACH_OK;
 }
 
 
@@ -2113,5 +2136,166 @@ Mach_GetEtherAddress(etherAddrPtr)
 	NET_ETHER_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].ether,
 	    *etherAddrPtr);
     }
+}
+
+#define READ_ROM(from, to, count) { 			\
+    int	_i;						\
+    for(_i = 0; _i < (count); _i++) {			\
+	status = Mach_Probe(1, (from), &((to)[_i]));	\
+	if (status != SUCCESS) {			\
+	    return status;				\
+	}						\
+	(from) += 4;					\
+    }							\
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetSlotInfo --
+ *
+ *	Read the standard information from the ROM in a TURBOchannel
+ * 	slot.  Any trailing spaces are converted to null characters.
+ *	See page 13 of the TURBOchannel Hardware Specification for
+ * 	details on the format of the ROM.
+ *
+ * Results:
+ *	SUCCESS if the ROM was read ok, FAILURE otherwise
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Mach_GetSlotInfo(romAddr, infoPtr)
+    char		*romAddr;	/* ROM address. */
+    Mach_SlotInfo	*infoPtr;	/* Slot information. */
+{
+    ReturnStatus	status = SUCCESS;
+    unsigned char	value;
+    int			i;
+
+
+    /*
+     * Move to the start of the standard TURBOchannel rom info. 
+     */
+    romAddr += MACH_IO_ROM_OFFSET + 0x10;
+    /*
+     * Check the test pattern.
+     */
+    READ_ROM(romAddr, &value, 1);
+    if (value != 0x55) {
+	return FAILURE;
+    }
+    READ_ROM(romAddr, &value, 1);
+    if (value != 0x00) {
+	return FAILURE;
+    }
+    READ_ROM(romAddr, &value, 1);
+    if (value != 0xaa) {
+	return FAILURE;
+    }
+    READ_ROM(romAddr, &value, 1);
+    if (value != 0xff) {
+	return FAILURE;
+    }
+    /*
+     * Everything looks cool so read out the info.
+     */
+    READ_ROM(romAddr, infoPtr->revision, 8);
+    READ_ROM(romAddr, infoPtr->vendor, 8);
+    READ_ROM(romAddr, infoPtr->module, 8);
+    READ_ROM(romAddr, infoPtr->type, 4);
+    /*
+     * Get rid of trailing spaces
+     */
+    for (i = 7; i >= 0; i--) {
+	if (infoPtr->revision[i] == ' ') {
+	    infoPtr->revision[i] = '\0';
+	}
+	if (infoPtr->revision[i] != '\0') {
+	    break;
+	} 
+    }
+    for (i = 7; i >= 0; i--) {
+	if (infoPtr->vendor[i] == ' ') {
+	    infoPtr->vendor[i] = '\0';
+	}
+	if (infoPtr->vendor[i] != '\0') {
+	    break;
+	} 
+    }
+    for (i = 7; i >= 0; i--) {
+	if (infoPtr->module[i] == ' ') {
+	    infoPtr->module[i] = '\0';
+	}
+	if (infoPtr->module[i] != '\0') {
+	    break;
+	} 
+    }
+    for (i = 3; i >= 0; i--) {
+	if (infoPtr->type[i] == ' ') {
+	    infoPtr->type[i] = '\0';
+	}
+	if (infoPtr->type[i] != '\0') {
+	    break;
+	} 
+    }
+    /*
+     * Make sure all the strings are null terminated.
+     */
+    infoPtr->revision[8] = '\0';
+    infoPtr->vendor[8] = '\0';
+    infoPtr->module[8] = '\0';
+    infoPtr->type[4] = '\0';
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SigreturnStub --
+ *
+ *	Procedure to map from Unix sigreturn system call to Sprite.
+ *	On the decstation, this is used for returning from a signal.
+ *	Note: This routine is exactly the same as MachUNIXLongJumpReturn.
+ *	Presumably the other routine will go away as soon as Unix
+ *	compatibility is working.
+ *
+ * Results:
+ *	Error code is returned upon error.  Otherwise SUCCESS is returned.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mach_SigreturnStub(sigContextPtr)
+    struct sigcontext *sigContextPtr;
+{
+    struct sigcontext	sigContext;
+    Mach_RegState	*regsPtr;
+    int			dummy;
+    ReturnStatus	status;
+    extern Mach_State   *machCurStatePtr;
+
+    status = Vm_CopyIn(sizeof(struct sigcontext), (Address)sigContextPtr,
+		       (Address)&sigContext);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    regsPtr = &machCurStatePtr->userState.regState;
+    regsPtr->pc = (Address)(sigContext.sc_pc - 4);
+    bcopy(sigContext.sc_regs, regsPtr->regs, sizeof(sigContext.sc_regs));
+    regsPtr->mflo = sigContext.sc_mdlo;
+    regsPtr->mfhi = sigContext.sc_mdhi;
+    bcopy(sigContext.sc_fpregs, regsPtr->fpRegs, sizeof(sigContext.sc_fpregs));
+    regsPtr->fpStatusReg = sigContext.sc_fpc_csr;
+#if 0
+    (void) sysUnixSigBlock(&dummy, sigContext.sc_mask);
+#endif
+    return(SUCCESS);
 }
 
