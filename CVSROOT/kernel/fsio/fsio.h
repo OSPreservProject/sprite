@@ -51,7 +51,7 @@
  *				a pseudo-device whose server is remote.
  *	FSIO_PASSING_STREAM	Used to pass streams from a pseudo-device
  *				server to its client in response to an open.
- *		Internet Protocols
+ *		Internet Protocols (Not implemented in the kernel (yet?))
  *	FSIO_RAW_IP_STREAM	Raw Internet Protocol stream.
  *	FSIO_UDP_STREAM		UDP protocol stream.
  *	FSIO_TCP_STREAM		TCP protocol stream.
@@ -112,10 +112,10 @@ extern int fsio_RmtToLclType[];
 
 /*
  * OPEN SWITCH
- * The srvOpen procedure is used on the server when opening streams or
+ * The nameOpen procedure is used on the file server when opening streams or
  * setting up an I/O fileID for a file or device.  It is keyed on
  * disk file descriptor types( i.e. FS_FILE, FS_DIRECTORY, FS_DEVICE,
- * FS_PSEUDO_DEVICE).  The server open procedure returns an ioFileID
+ * FS_PSEUDO_DEVICE).  The nameOpen procedure returns an ioFileID
  * used for I/O on the file, plus other data needed for the client's
  * stream.  The streamIDPtr is NIL during set/get attributes, which
  * indicates that the extra stream information isn't needed.
@@ -124,8 +124,8 @@ extern int fsio_RmtToLclType[];
 typedef struct Fsio_OpenOps {
     int		type;			/* One of the file descriptor types */
     /*
-     * The calling sequence for the server-open routine is:
-     *	FooSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
+     * The calling sequence for the nameOpen routine is:
+     *	FooNameOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
      *			sizePtr, dataPtr)
      *		Fsio_FileIOHandle	*handlePtr;
      *		int			clientID;
@@ -137,7 +137,7 @@ typedef struct Fsio_OpenOps {
      *		int			*sizePtr;	(Return size of data)
      *		ClientData		*dataPtr;	(Extra return data)
      */
-    ReturnStatus (*srvOpen)();
+    ReturnStatus (*nameOpen)();
 } Fsio_OpenOps;
 
 extern Fsio_OpenOps fsio_OpenOpTable[];
@@ -155,40 +155,52 @@ typedef struct Fsio_StreamTypeOps {
     /*
      **************** Setup operation for clients. *************************
      *	This routine sets up an I/O handle for a stream.  It uses streamData
-     *  that was genereated by the srvOpen routine on the file server.  As
+     *  that was genereated by the nameOpen routine on the file server.  As
      *  a side effect it fills in the nameInfoPtr->fileID for use later
      *  when getting/setting attributes.
      *
-     *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, name, hdrPtrPtr)
-     *		Fs_FileID	*fileIDPtr;	(indicates file)
+     *	FooIoOpen(ioFileIDPtr, flagsPtr, clientID, data, name, hdrPtrPtr)
+     *		Fs_FileID	*ioFileIDPtr;	(indicates object)
      *		int		*flagsPtr;	(from the stream)
      *		int		clientID;	(who's opening it)
-     *		ClientData	data;		(stream data from srvOpen)
+     *		ClientData	data;		(stream data from nameOpen)
      *		char 		*name;		(name for error messages)
      *		Fs_HandleHeader	**hdrPtrPtr;	(Returned I/O handle)
      */
-    ReturnStatus (*cltOpen)();
+    ReturnStatus (*ioOpen)();
     /*
      **************** Regular I/O operations. ******************************
      *  These are the standard read/write routines.  Note:  they are passed
      *  a stream pointer to support streams shared accross the network.
-     *  A shared stream is indicated by FS_RMT_SHARED in the flags.  In this
-     *  case the streamID should be passed to the I/O server who will use
-     *  its own copy of the stream read/write offset.
-     *  If not shared, the read/write routines are only guaranteed that the
-     *  ioHandlePtr field of the stream is defined.  (The stream is partially
-     *  defined this way on the server when a client is reading/writing its
-     *  cache and there is no stream.)
+     *  A shared stream is indicated by FS_RMT_SHARED in the ioPtr->flags.
+     *	Note that only the fileID and the ioHandlePtr of the streamPtr
+     *	is guaranteed to be valid.  The stream-specific routine should ignore
+     *	the flags and offset kept (or not kept) in the stream structure.
      *
      *	FooRead(streamPtr, ioPtr, waitPtr, replyPtr)
      *	FooWrite(streamPtr, ioPtr, waitPtr, replyPtr)
-     *		Fs_Stream	*streamPtr;	( !Only use ioHandlePtr field! )
+     *		Fs_Stream	*streamPtr;	(See above about valid fields )
      *		Fs_IOParam	*ioPtr;		(Standard parameter block)
      *		Sync_RemoteWaiter *waitPtr;	(For remote waiting)
      *		Fs_IOReply	*reply;		(For return length and signal)
      */
     ReturnStatus (*read)();
     ReturnStatus (*write)();
+    /*
+     **************** VM I/O operations. ******************************
+     *  These are the read/write routines used by VM during paging.
+     *	The interface is the same as the regular read and write routines,
+     *	so those routines can be re-used, if appropriate.
+     *
+     *	FooPageRead(streamPtr, ioPtr, waitPtr, replyPtr)
+     *	FoPageoWrite(streamPtr, ioPtr, waitPtr, replyPtr)
+     *		Fs_Stream	*streamPtr;	(See above about valid fields)
+     *		Fs_IOParam	*ioPtr;		(Standard parameter block)
+     *		Sync_RemoteWaiter *waitPtr;	(For remote waiting)
+     *		Fs_IOReply	*reply;		(For return length and signal)
+     */
+    ReturnStatus (*pageRead)();
+    ReturnStatus (*pageWrite)();
     /*
      ***************** I/O Control. ****************************************
      *  Stream-specific I/O controls.  The main procedure Fs_IOControl
