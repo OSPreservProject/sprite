@@ -70,7 +70,12 @@ typedef struct Fs_ProcessState {
 /*
  * All kinds of things are referenced from the object hash table.  The generic
  * term for each structure is "handle".  The following structure defines a 
- * common structure needed in the beginning of each handle.
+ * common structure needed in the beginning of each handle.  Note, most of
+ * these fields are private to the FsHandle* routines that do generic
+ * operations on handles.  One exception is that the refCount on FS_STREAM
+ * handles is manipulated by the stream routines.  The handle must be
+ * locked when examining the refCount, and it should only be changed
+ * under the handle monitor lock by the FsHandle* routines.
  */
 
 typedef struct FsHandleHeader {
@@ -80,7 +85,10 @@ typedef struct FsHandleHeader {
     int			refCount;	/* Used for garbage collection. */
     char		*name;		/* Used for error messages */
     List_Links		lruLinks;	/* For LRU list of handles */
-} FsHandleHeader;			/* 40 BYTES */
+#ifndef CLEAN
+    int			lockProcID;	/* Process ID of locker */
+#endif
+} FsHandleHeader;
 
 #define LRU_LINKS_TO_HANDLE(listPtr) \
 	( (FsHandleHeader *)((int)(listPtr) - sizeof(Fs_FileID) \
@@ -103,7 +111,7 @@ typedef struct FsNameInfo {
     struct FsPrefix	*prefixPtr;	/* Back pointer to prefix table entry.
 					 * This is kept for efficient handling
 					 * of lookup redirects. */
-} FsNameInfo;				/* 40 BYTES */
+} FsNameInfo;
 
 /*
  * Fs_Stream - A clients handle on an open file is defined by the Fs_Stream
@@ -141,7 +149,7 @@ typedef struct Fs_Stream {
     FsNameInfo	 	*nameInfoPtr;	/* Used to contact the name server */
     List_Links		clientList;	/* Needed for recovery and sharing
 					 * detection */
-} Fs_Stream;				/* 64 BYTES */
+} Fs_Stream;
 
 /*
  * Flags in Fs_Stream that are only set/used by the kernel.
