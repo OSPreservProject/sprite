@@ -5,6 +5,6 @@
 # that must be included to set up various compilation stuff.
 #
 
-PUBHDRS		+= bf.h byte.h hash.h trace.h dump.h
+PUBHDRS		+= bf.h byte.h hash.h trace.h dump.h sospRecord.h traceLog.h
 
 #include	<$(SYSMAKEFILE)>
