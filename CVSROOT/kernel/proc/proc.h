@@ -38,6 +38,7 @@
 #include <kernel/timer.h>
 #include <kernel/sig.h>
 #include <kernel/mach.h>
+#include <kernel/sysSysCallParam.h>
 #include <kernel/rpc.h>
 #endif /* */
 
