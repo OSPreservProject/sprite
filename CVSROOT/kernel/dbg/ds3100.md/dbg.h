@@ -80,5 +80,6 @@ extern	void Dbg_Call();
 
 extern	void	Dbg_Init();
 extern	void	Dbg_InputPacket();
+extern	Boolean	Dbg_InRange();
 
 #endif /* _DBG */
