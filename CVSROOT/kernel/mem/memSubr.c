@@ -1,8 +1,8 @@
-/* 
+/*
  * memSubr.c --
  *
  *	This file contains user/kernel-dependent routines used by the
- *	dynamic memory allocation system. It provides procedures 
+ *	dynamic memory allocation system. It provides procedures
  *	to allocate storage, and a panic routine to halt execution.
  *
  *	Every routine in this file assumes that the monitor lock is held.
@@ -13,15 +13,16 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "sys.h"
 #include "vm.h"
+#include "mem.h"
 
 /*
  * MemPrintProc is the routine called by the routines in memory.c
- * when they have something to print. It is set to PrintProc in 
+ * when they have something to print. It is set to PrintProc in
  * MemProcInit().
  */
 
@@ -44,7 +45,7 @@ Boolean memAllowFreeingFree = FALSE;
  * MemPanic --
  *
  *	MemPanic is a procedure that's called by the memory allocator
- *	when it has uncovered a fatal error.  MemPanic prints the 
+ *	when it has uncovered a fatal error.  MemPanic prints the
  *	message and aborts.  It does NOT return.
  *
  * Results:
@@ -71,9 +72,9 @@ MemPanic(message)
  *
  *	Mem_Alloc will call MemChunkAlloc to get another region of storage
  *	from the system (i.e. whenever the storage it's gotten so far
- *	is insufficient to meet a request).  The actual size returned 
- *	may be greater than size but not less.  This region now becomes 
- *	the permanent property of Mem_Alloc, and will never be returned.  
+ *	is insufficient to meet a request).  The actual size returned
+ *	may be greater than size but not less.  This region now becomes
+ *	the permanent property of Mem_Alloc, and will never be returned.
  *
  * Results:
  *	The actual size of the block allocated in bytes.
@@ -116,7 +117,8 @@ static	int	largeMaxSize = 10000;
 void
 Mem_DumpStats()
 {
-    Mem_PrintStatsSubrInt(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
+    Mem_PrintStatsSubrInt(PrintProc, (ClientData) 0, smallMinNum, largeMinNum,
+	    largeMaxSize);
 }
 
 
@@ -135,14 +137,14 @@ Mem_DumpStats()
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static void
 PrintProc(clientData, format, args)
     ClientData	clientData;
     char	*format;
     int		args;
 {
-    Sys_DoPrintf(format, (char *) &args);
+    (void) Sys_DoPrintf(format, (char *) &args);
 }
 
 
