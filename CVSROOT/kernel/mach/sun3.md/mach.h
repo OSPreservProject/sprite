@@ -332,6 +332,16 @@ typedef struct {
  */
 #define	Mach_GetProcessorNumber() 	0
 
+#ifdef lint
+#define Mach_GetPC() 	0
+#else
+#define Mach_GetPC() (Address) \
+    ({\
+	register unsigned int __pc; \
+	asm volatile ("1$:\n\tlea\t1$,a0\n\tmovl\ta0,d0\n":"=r" (__pc):"r"(__pc));\
+	(__pc);\
+    })
+#endif
 
 extern	Boolean	mach_KernelMode;
 extern	int	mach_NumProcessors;
