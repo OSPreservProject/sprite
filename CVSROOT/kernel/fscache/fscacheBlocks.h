@@ -184,14 +184,16 @@ typedef struct FsCacheBlock {
  *
  *    FS_DELETE_BLOCK	    The block should be deleted when it is unlocked.
  *    FS_CLEAR_READ_AHEAD   Clear the read ahead flag from the block.
- *    FS_BLOCK_UNNEEDED    This block is not needed anymore.  Throw it away
+ *    FS_BLOCK_UNNEEDED     This block is not needed anymore.  Throw it away
  *			    as soon as possible.
+ *    FS_DONT_WRITE_THRU    Don't write this block through to disk.
  *
  * Also can pass one of the 4 block types defined above (0x1000 - 0x8000).
  */
 #define	FS_DELETE_BLOCK			0x0001
 #define	FS_CLEAR_READ_AHEAD		0x0002
 #define FS_BLOCK_UNNEEDED		0x0004
+#define	FS_DONT_WRITE_THRU		0x0008
 
 /*
  * Global cache variables.
