@@ -44,6 +44,7 @@ ofs		kernel/ofs
 proc		kernel/proc
 prof		kernel/prof
 raid		kernel/raid
+raid.null	kernel/raid.null
 recov		kernel/recov
 rpc		kernel/rpc
 sched		kernel/sched
