@@ -170,7 +170,8 @@ DbgCheckNmis()
  *
  * ----------------------------------------------------------------------------
  */
-static Boolean InRange(addr, numBytes, writeable) 
+static Boolean
+InRange(addr, numBytes, writeable) 
     unsigned 	int addr; 	/* Beginning address to check. */
     int		numBytes; 	/* Number of bytes to check. */
     Boolean	writeable;	/* TRUE => address must be writeable. */
@@ -190,8 +191,12 @@ static Boolean InRange(addr, numBytes, writeable)
     maxAddr = 0x10000000;
 #endif
 #ifdef sun4
-    maxAddr = 0xffffffff;
+    maxAddr = VMMACH_DEV_START_ADDR;
 #endif
+    if (dbgTraceLevel >= 5) {
+	printf("InRange called with addr 0x%x %d bytes, and writable = %d\n",
+	    addr, numBytes, (unsigned int) writeable);
+    }
     if (addr > maxAddr || (addr + numBytes - 1) > maxAddr) {
 	return(FALSE);
     }
@@ -204,6 +209,9 @@ static Boolean InRange(addr, numBytes, writeable)
     lastPage = (((unsigned int) addr) + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     for (i = firstPage; i <= lastPage; i++) {
 	pte = VmMachGetPageMap((Address)(i << VMMACH_PAGE_SHIFT));
+	if (dbgTraceLevel >= 5) {
+	    printf("pte value was 0x%x\n", pte);
+	}
 	prot = pte & VMMACH_PROTECTION_FIELD;
 	if (!(pte & VMMACH_RESIDENT_BIT)) {
 	    return(FALSE);
@@ -303,7 +311,7 @@ void
 Dbg_Init()
 {
     dbgMonPC = 0;
-    dbgTraceLevel = 2;
+    dbgTraceLevel = 0;
     dbgInDebugger = 0;
     dbgIntPending = 0;
     dbgPanic = FALSE;
@@ -560,6 +568,7 @@ Dbg_Main(trapType, trapStatePtr)
     Proc_ControlBlock	*procPtr = (Proc_ControlBlock *) NIL;
     Boolean		atInterruptLevel;/* TRUE if we were entered from an
 					  * interrupt handler. */
+    static int 		curContext;
 
 #ifdef sun3
     /*
@@ -571,7 +580,7 @@ Dbg_Main(trapType, trapStatePtr)
     /*
      * Switch to kernel context so that we can access the monitor.
      */
-    oldContext = VmMachGetKernelContext();
+    curContext = oldContext = VmMachGetKernelContext();
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 #endif
     /*
@@ -728,7 +737,7 @@ Dbg_Main(trapType, trapStatePtr)
 				readMem.address, readMem.numBytes);
 		}
 #ifndef FIRST_RUN
-		VmMachSetKernelContext(oldContext);
+		VmMachSetKernelContext(curContext);
 #endif
 		if (InRange((unsigned int) readMem.address, readMem.numBytes,
 			    FALSE)) {
@@ -767,6 +776,7 @@ Dbg_Main(trapType, trapStatePtr)
 		}
 		if (pid == 0) {
 		    procPtr = (Proc_ControlBlock *) NIL;
+		    curContext = oldContext;
 		} else {
 		    procPtr = Proc_GetPCB(pid);
 		    if (procPtr == (Proc_ControlBlock *) NIL ||
@@ -777,6 +787,8 @@ Dbg_Main(trapType, trapStatePtr)
 			printf("Can't backtrace stack for process %x\n",
 					pid);
 			procPtr = (Proc_ControlBlock *) NIL;
+		    } else {
+			curContext = VmMach_GetContext(procPtr);
 		    }
 		}
 		break;
@@ -819,7 +831,7 @@ Dbg_Main(trapType, trapStatePtr)
 		}
 
 #ifndef FIRST_RUN
-		VmMachSetKernelContext(oldContext);
+		VmMachSetKernelContext(curContext);
 #endif	
 		if (InRange((unsigned int) writeMem.address,
 			    writeMem.numBytes, opcode == DBG_DATA_WRITE)) {
@@ -963,7 +975,7 @@ Dbg_Main(trapType, trapStatePtr)
 		    printf("Addr=%x Numbytes=%d ",
 				callFunc.address, callFunc.numBytes);
 		}
-
+		VmMachSetKernelContext(curContext);
 		if ((callFunc.numBytes >= 0 && callFunc.numBytes < 128) &&
 		     InRange((unsigned int) callFunc.address,4,FALSE)) {
 		    GetRequestBytes(callFunc.numBytes,(Address) argBuf);
@@ -978,6 +990,7 @@ Dbg_Main(trapType, trapStatePtr)
 		    GetRequestBytes(callFunc.numBytes,argBuf);
 		    returnVal = -1;
 		}
+		VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 		PutReplyBytes(4, (char *) &returnVal);
 		SendReply();
 
