@@ -29,12 +29,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sig.h"
 #include "spriteTime.h"
 #include "list.h"
-#include "char.h"
 #include "vm.h"
 #include "sys.h"
 #include "procAOUT.h"
 #include "status.h"
-#include "byte.h"
 #include "string.h"
 
 static ReturnStatus	DoExec();

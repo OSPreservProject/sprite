@@ -38,7 +38,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "mem.h"
 #include "vm.h"
-#include "byte.h"
 
 static Sync_Condition	debugListCondition;	/* Condition to sleep on when
 						 * waiting for a process to go

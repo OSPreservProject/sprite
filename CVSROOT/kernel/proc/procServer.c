@@ -27,10 +27,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "sys.h"
-#include "byte.h"
 #include "string.h"
 #include "status.h"
-#include "mem.h"
+#include "stdlib.h"
 
 /*
  * Information kept for each function that is scheduled to be called in the
