@@ -906,7 +906,14 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
  *
  * Mach_SetHandler --
  *
- *	Put a device driver interrupt handling routine into the autovector.
+ *	This is used both for autovectored devices and for regular interrupt
+ *	routines for device interrupt levels.  For autovectored devices,
+ *	the routine MachVectoredInterrupt will already have been installed
+ *	for the auto-vectored interrupt levels.  Then this routine should be
+ *	be called with the interrrupt vector for the device and its
+ *	real interrupt handler.  For non-autovectored interrupt handlers, the
+ *	handler should just be installed with a vector that is the
+ *	device's interrupt level.
  *
  * Results:
  *     None.
