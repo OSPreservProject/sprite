@@ -152,7 +152,7 @@ Lfs_DirOpEnd(domainPtr, clientData, status, opFlags, name, nameLen,
     if (!found) { 
 	FILL_IN_ENTRY(entryPtr, opFlags);
     } else {
-	entryPtr->hdr.opFlags = opFlags;
+	entryPtr->hdr.opFlags |= opFlags;
 	entryPtr->hdr.dirOffset = dirOffset;
 	if (fileDescPtr != (Fsdm_FileDescriptor *) NIL) {
 	    entryPtr->hdr.linkCount = fileDescPtr->numLinks;
