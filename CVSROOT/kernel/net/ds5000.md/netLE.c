@@ -109,7 +109,7 @@ NetLEInit(name, number, ctrlAddr)
 	short value = NET_LE_CSR0_ADDR;
 	ReturnStatus status;
 	status = Mach_Probe(sizeof(short), (char *) &value, 
-			  ((short *)(netLEState.regPortPtr)) + 1);
+			  (char *) (((short *)(netLEState.regPortPtr)) + 1));
 	if (status != SUCCESS) {
 	    /*
 	     * Got a bus error.
@@ -430,6 +430,9 @@ NetLEIntr(polling)
 	    panic("LE ethernet: Transmit babble.\n");
 	}
 	if (csr0 & NET_LE_CSR0_MEMORY_ERROR) {
+#ifdef sun4c
+	    printf("netLEStatePtr: 0x%x, regPortPtr = 0x%x, dataPort = 0x%x, csr0: 0x%x\n", netLEStatePtr, netLEStatePtr->regPortPtr, netLEStatePtr->regPortPtr->dataPort, csr0);
+#endif sun4c
 	    panic("LE ethernet: Memory Error.\n");
 	}
 	/*
