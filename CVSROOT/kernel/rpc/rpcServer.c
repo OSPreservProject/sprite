@@ -529,9 +529,11 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		     * Reset srvPtr->replyRpcHdr.ID so that we can accept
 		     * new requests from the client.
 		     */
+#ifdef notdef
 	    printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x> clientID %d\n",
 			    srvPtr->index, srvPtr->state, rpcHdrPtr->ID,
 			    rpcHdrPtr->flags, rpcHdrPtr->clientID);
+#endif
 		    rpcSrvStat.badState++;
 		    srvPtr->replyRpcHdr.ID = 0;
 		    srvPtr->state = SRV_FREE;
