@@ -18,16 +18,17 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "fs.h"
-#include "fspdev.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fsioDevice.h"
-#include "fsioFile.h"
-#include "fsioPipe.h"
-#include "fsrmt.h"
-#include "fsdm.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fspdev.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fsioDevice.h>
+#include <fsioFile.h>
+#include <fsioPipe.h>
+#include <fsrmt.h>
+#include <fsdm.h>
 
 /*
  * The OpenOps are called to do preliminary open-time processing.  They
@@ -76,7 +77,7 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
      * entry points in this table are used.
      */
     { FSIO_STREAM, Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,/* open, read, write */
-		Fsio_NoProc, Fsio_NoProc,	/* pageRead, pageWrite */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, /* pageRead, pageWrite */
 		Fsio_NoProc, Fsio_NoProc,	/* iocontrol, select */
 		Fsio_NoProc, Fsio_NoProc,	/* getIOAttr, setIOAttr */
 		Fsio_NoHandle,			/* clientVerify */
@@ -93,7 +94,8 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
      * is already done by FslclGetAttr(FslclSetAttr).
      */
     { FSIO_LCL_FILE_STREAM, Fsio_FileIoOpen, Fsio_FileRead, Fsio_FileWrite,
-		Fsio_FileRead, Fsio_FileWrite,		/* Paging routines */
+		Fsio_FileRead, Fsio_FileWrite, Fsio_FileBlockCopy,
+				/* Paging routines */
 		Fsio_FileIOControl, Fsio_FileSelect,
 		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
 		Fsio_NoHandle, Fsio_FileMigClose, Fsio_FileMigOpen, Fsio_FileMigrate,
@@ -104,7 +106,7 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
      * for the particular device type.
      */
     { FSIO_LCL_DEVICE_STREAM, Fsio_DeviceIoOpen, Fsio_DeviceRead, Fsio_DeviceWrite,
-		Fsio_NoProc, Fsio_NoProc,		/* Paging routines */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
 		Fsio_DeviceIOControl, Fsio_DeviceSelect,
 		Fsio_DeviceGetIOAttr, Fsio_DeviceSetIOAttr,
 		Fsio_NoHandle,				/* clientVerify */
@@ -115,7 +117,7 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
      * Local anonymous pipe stream.  
      */
     { FSIO_LCL_PIPE_STREAM, Fsio_NoProc, Fsio_PipeRead, Fsio_PipeWrite,
-		Fsio_NoProc, Fsio_NoProc,		/* Paging routines */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
 		Fsio_PipeIOControl, Fsio_PipeSelect,
 		Fsio_PipeGetIOAttr, Fsio_PipeSetIOAttr,
 		Fsio_NoHandle,				/* clientVerify */
