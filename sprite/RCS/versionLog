@@ -24,4 +24,7 @@ bad stack pointers in the underflow and overflow handlers should now be put on
 the debug list rather than just being killed.
 
 1.046	Thu Dec 14 14:38:13 PST 1989
+This has a fix for sun4c migration at exec time, and for the uninitialized
+event field in the PCB.  It also will clean up processes in the PROC_NEW state
+if the other host dies at the start of migration.  - FD
     New files linked in from the net library.
