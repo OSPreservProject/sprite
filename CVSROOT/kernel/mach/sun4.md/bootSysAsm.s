@@ -28,7 +28,23 @@ _spriteStart:
 	andn	%g1, 0x1f, %g1			/* set cwp to 0 */
 	mov	%g1, %psr
 	mov	0x2, %wim	/* set wim to window right behind us */
+	mov	%tbr, %o1
+	call	printArg
+	nop
 
+printArg:
+	.seg	"data1"
+printArg2:
+	.ascii  "Hello World! tbr is %x\012\0"
+	.seg    "text"
 
-	call	_main
+	sethi   %hi(-0x17ef7c),%g1
+	ld      [%g1+%lo(-0x17ef7c)],%g1
+	set     printArg2,%o0
+	call    %g1,2
+	nop
+endloop:
+	b	printArg
+	nop
+	ret
 	nop
