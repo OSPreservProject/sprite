@@ -106,6 +106,21 @@ static Timer_QueueElement forgetUsageElement;
  */
 Sched_Instrument sched_Instrument;
 
+#ifdef SOSP91
+/*
+ * Get overall user and system time too, rather than just per-process.
+ */
+typedef struct  Sched_OverallTimes {
+    Timer_Ticks kernelTime;
+    Timer_Ticks userTime;
+    Timer_Ticks userTimeMigrated;
+} Sched_OverallTimes;
+
+Sched_OverallTimes      overallTimesPerProcessor[MACH_MAX_NUM_PROCESSORS];
+#endif /* SOSP91 */
+
+
+
 /*
  * Status of each processor.
  */
@@ -293,9 +308,25 @@ Sched_GatherProcessInfo(interval)
 	if (Mach_ProcessorState(cpu) == MACH_KERNEL) {
 	    Timer_AddIntervalToTicks(curProcPtr->kernelCpuUsage.ticks, interval,
 		           &(curProcPtr->kernelCpuUsage.ticks));
+#ifdef SOSP91
+            Timer_AddIntervalToTicks(overallTimesPerProcessor[cpu].kernelTime,
+                    interval,
+                    &(overallTimesPerProcessor[cpu].kernelTime));
+#endif SOSP91
 	} else {
 	    Timer_AddIntervalToTicks(curProcPtr->userCpuUsage.ticks, interval,
 		           &(curProcPtr->userCpuUsage.ticks));
+#ifdef SOSP91
+            Timer_AddIntervalToTicks(overallTimesPerProcessor[cpu].userTime,
+                    interval,
+                    &(overallTimesPerProcessor[cpu].userTime));
+	    if (curProcPtr->genFlags & PROC_FOREIGN) {
+		Timer_AddIntervalToTicks(
+			overallTimesPerProcessor[cpu].userTimeMigrated,
+			interval,
+			&(overallTimesPerProcessor[cpu].userTimeMigrated));
+	    }
+#endif SOSP91
 	}
 
 	/*
