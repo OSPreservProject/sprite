@@ -1101,7 +1101,10 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
     ReturnStatus status;
 
     handlePtr = (Fsio_FileIOHandle *) hdrPtr;
-
+    if (offset / FS_BLOCK_SIZE != (offset + numBytes - 1) / FS_BLOCK_SIZE) {
+	panic("Fsdm_BlockAllocate - ALlocation spans block boundries\n");
+	return FAILURE;
+    }
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
     if (domainPtr == (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
