@@ -965,7 +965,7 @@ Proc_GetHostIDs(virtualHostPtr, physicalHostPtr)
     if (physicalHostPtr != (int *) USER_NIL) {
 
 	if (Vm_CopyOut(sizeof(int), (Address) &rpc_SpriteID, 
-				(Address) virtualHostPtr) != SUCCESS) {
+				(Address) physicalHostPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
     }
@@ -980,7 +980,7 @@ Proc_GetHostIDs(virtualHostPtr, physicalHostPtr)
 	    host = rpc_SpriteID;
 	}
 	if (Vm_CopyOut(sizeof(int), (Address) &host, 
-				(Address) physicalHostPtr) != SUCCESS) {
+				(Address) virtualHostPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
     }
