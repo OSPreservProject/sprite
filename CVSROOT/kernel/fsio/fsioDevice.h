@@ -23,6 +23,7 @@
 
 #include <fsio.h>
 #include <fsioLock.h>
+#include <fsNameOps.h>
 
 /*
  * The I/O descriptor for a local device: FSIO_LCL_DEVICE_STREAM
@@ -77,9 +78,6 @@ extern ReturnStatus Fsio_VanillaDevReopen _ARGS_((Fs_Device *devicePtr,
 /*
  * Open operations.
  */
-extern ReturnStatus Fsio_DeviceNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr, 
-				Fs_OpenArgs *openArgsPtr, 
-				Fs_OpenResults *openResultsPtr));
 extern ReturnStatus Fsio_DeviceClose _ARGS_((Fs_Stream *streamPtr, 
 				int clientID, Proc_PID procID, int flags, 
 				int size, ClientData data));
