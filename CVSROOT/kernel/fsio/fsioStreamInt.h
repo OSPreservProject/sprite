@@ -26,6 +26,7 @@
 extern ReturnStatus FsioSetupStreamReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 	Address paramsPtr));
 extern void FsioFinishStreamReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address statePtr,
 	ReturnStatus status));
 
 #endif /* _FSIOSTREAMINT */
