@@ -116,7 +116,7 @@ typedef	struct {
 					    buffer (1 = true) */
     			dfetch: 1,	 /* Data fetch to the data input
 					    buffer (1 = true) */
-    			readModWrite: 1, /* Read-Modify-Write cycle */
+			readModWrite: 1, /* Read-Modify-Write cycle */
     			highByte: 1,	 /* High byte transfer */
     			byteTrans: 1,	 /* Byte transfer flag */
     			readWrite: 1,	 /* Read/Write flag (0 = write, 
@@ -282,22 +282,24 @@ typedef struct {
  * The kernel and user state for a process.
  */
 typedef struct Mach_State {
-    Mach_UserState	userState;		/* User state for a process. */
-    int			switchRegs[MACH_NUM_GPRS];/* Where registers are saved
+    Mach_UserState  userState;		        /* User state for a process. */
+    long	 switchRegs[MACH_NUM_GPRS];     /* Where registers are saved
 						 * and restored to/from during
 						 * context switches. */
-    Address		kernStackStart;		/* Address of the beginning of
+    Address      kernStackStart;		/* Address of the beginning of
 						 * the kernel stack. */
-    int			padding;		/* This used to be a pointer 
-						 * to the set jump state and
-						 * can go away when the tricky
-						 * constants in machConst.h
-						 * are updated. */
-    int			sigExcStackSize;	/* Amount of valid data in the
+    int	         sigExcStackSize;	        /* Amount of valid data in the
 						 * signal exception stack. */
-    Mach_ExcStack	sigExcStack;		/* Place to store sig exception 
+    Mach_ExcStack   sigExcStack;		/* Place to store sig exception 
 						 * stack on return from signal
 						 * handler.*/
+#ifdef sun3
+    long        switchFpRegs[MACH_NUM_FPRS][3]; /* Where fpu registers are
+                                                 * saved and restored to/from
+						 * during context switches. */
+    long        switchFpCtrlRegs[3];            /* fpu control registers */
+    long        fpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
+#endif
 } Mach_State;
 
 /*

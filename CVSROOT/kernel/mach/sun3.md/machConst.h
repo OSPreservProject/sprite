@@ -23,31 +23,41 @@
  * Here are the different types of exceptions.
  */
 #define	MACH_RESET		0
-#define	MACH_BUS_ERROR		1
-#define	MACH_ADDRESS_ERROR	2
-#define	MACH_ILLEGAL_INST	3
-#define	MACH_ZERO_DIV		4
-#define	MACH_CHK_INST		5
-#define	MACH_TRAPV		6
-#define	MACH_PRIV_VIOLATION	7
-#define	MACH_TRACE_TRAP		8
-#define	MACH_EMU1010		9
-#define	MACH_EMU1111		10
-#define	MACH_STACK_FMT_ERROR	11
-#define	MACH_UNINIT_VECTOR	12
-#define	MACH_SPURIOUS_INT	13
-#define	MACH_LEVEL1_INT		14
-#define	MACH_LEVEL2_INT		15
-#define	MACH_LEVEL3_INT		16
-#define	MACH_LEVEL4_INT		17
-#define	MACH_LEVEL5_INT		18
-#define	MACH_LEVEL6_INT		19
-#define	MACH_LEVEL7_INT		20
-#define	MACH_SYSCALL_TRAP	21
-#define	MACH_SIG_RET_TRAP	22
-#define	MACH_BAD_TRAP		23
-#define	MACH_BRKPT_TRAP		24
-#define	MACH_UNKNOWN_EXC	25
+#define	MACH_BUS_ERROR		2
+#define	MACH_ADDRESS_ERROR	3
+#define	MACH_ILLEGAL_INST	4
+#define	MACH_ZERO_DIV		5
+#define	MACH_CHK_INST		6
+#define	MACH_TRAPV		7
+#define	MACH_PRIV_VIOLATION	8
+#define	MACH_TRACE_TRAP		9
+#define	MACH_EMU1010		10
+#define	MACH_EMU1111		11
+#define	MACH_STACK_FMT_ERROR	14
+#define	MACH_UNINIT_VECTOR	15
+#define	MACH_SPURIOUS_INT	24
+#define	MACH_LEVEL1_INT		25
+#define	MACH_LEVEL2_INT		26
+#define	MACH_LEVEL3_INT		27
+#define	MACH_LEVEL4_INT		28
+#define	MACH_LEVEL5_INT		29
+#define	MACH_LEVEL6_INT		30
+#define	MACH_LEVEL7_INT		31
+#define	MACH_SYSCALL_TRAP	32
+#define	MACH_SIG_RET_TRAP	33
+#define	MACH_BAD_TRAP		34
+#define	MACH_BRKPT_TRAP		35
+#define	MACH_UNKNOWN_EXC	36
+
+#ifdef sun3
+#define MACH_FP_UNORDERED_COND  48
+#define MACH_FP_INEXACT_RESULT  49
+#define MACH_FP_ZERO_DIV        50
+#define MACH_FP_UNDERFLOW       51
+#define MACH_FP_OPERAND_ERROR   52
+#define MACH_FP_OVERFLOW        53
+#define MACH_FP_NAN             54
+#endif
 
 /*
  * The offsets for the various things on the exception stack
@@ -64,9 +74,11 @@
 #define	MACH_LAST_SYS_CALL_OFFSET	(MACH_EXC_STACK_PTR_OFFSET + 4)
 #define	MACH_SWITCH_REGS_OFFSET		(MACH_LAST_SYS_CALL_OFFSET + 4)
 #define	MACH_KERN_STACK_START_OFFSET	(MACH_SWITCH_REGS_OFFSET + 64)
-#define	MACH_SET_JUMP_STATE_PTR_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
-#define	MACH_SIG_EXC_STACK_SIZE_OFFSET	(MACH_SET_JUMP_STATE_PTR_OFFSET + 4)
+#define	MACH_SIG_EXC_STACK_SIZE_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
 #define	MACH_SIG_EXC_STACK_OFFSET	(MACH_SIG_EXC_STACK_SIZE_OFFSET + 4)
+#define MACH_SWITCH_FP_REGS_OFFSET      (MACH_SIG_EXC_STACK_OFFSET + 92)
+#define MACH_SWITCH_FP_CTRL_REGS_OFFSET (MACH_SWITCH_FP_REGS_OFFSET + 96)
+#define MACH_FP_STATE_OFFSET            (MACH_SWITCH_FP_CTRL_REGS_OFFSET + 12)
 
 /*
  * Amount of data that is pushed onto the stack after a trap occurs.
@@ -214,6 +226,18 @@
  * Constants to access bits in the system enable register.
  */
 #define MACH_ENABLE_FPP			0x40
+
+/*
+ * Then number of floating point registers in the mc68881/2
+ */
+#define MACH_NUM_FPRS       8
+
+/*
+ * The amount of memory needed to store the internal state of the
+ * floating point coprocessor.  This is 180 for the mc68881, but
+ * 212 for the mc68882.
+ */
+#define MACH_FP_STATE_SIZE  180
 
 #endif /* sun3 */
 

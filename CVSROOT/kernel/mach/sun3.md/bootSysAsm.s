@@ -73,14 +73,33 @@ loopStart:
 	clrl	d1
 	movsb	d1, VMMACH_CONTEXT_OFF
 
-#ifdef notdef
 |
 | Enable the floating point processor.
 |
-	movsb VMMACH_SYSTEM_ENABLE_REG, d0
-	orb   #MACH_ENABLE_FPP, d0
-	movsb d0, VMMACH_SYSTEM_ENABLE_REG
-#endif
+
+        .data
+	.globl fpu_present
+fpu_present:
+	.word 1
+fpu_null_state:
+	.long   0
+
+	.text
+        movsb   VMMACH_SYSTEM_ENABLE_REG, d0    | Read the enable register.
+	orb     #MACH_ENABLE_FPP, d0            | Set the fpu enable bit.
+	movsb   d0, VMMACH_SYSTEM_ENABLE_REG    | Write the enable register.
+	movl    (MACH_EMU1111*4), d1            | Save current inrpt 11 handler.
+	movl    #fcatch, (MACH_EMU1111*4)       | Set up to catch a trap.
+	movl    sp, a0                          | Save sp, just in case.
+	frestore fpu_null_state                 | Set the fpu to the null state.
+	bra     1f
+fcatch:                                         | Oops, there isn't any fpu.
+	movl    a0, sp                          | Restore the stack,
+	andb    #~MACH_ENABLE_FPP, d0           | Clear the fpu enable bit.
+	movsb   d0, VMMACH_SYSTEM_ENABLE_REG    | Write the enable register.
+	movw    #0, fpu_present                 | Clear the fpu_present flag.
+1:
+	movl    d1, (MACH_EMU1111*4)            | Restore the inrpt 11 handler.
 #endif
 
 |
@@ -104,11 +123,11 @@ begin:
 |
 	movl	#_edata, a0
 	movl	#_end, a1
-1$:
+1:
 	clrl	a0@
 	addql	#4, a0
 	cmpl	a0, a1
-	bne	1$
+	bne	1b
 
 	movl	#start,sp		| Set the stack pointer
  	movl	#start,_dbgMaxStackAddr	| Store the top of the stack for the

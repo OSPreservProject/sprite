@@ -67,13 +67,23 @@ _machProtoVectorTable:
 	.long	MachBadTrap		| 46	Trap instruction 14
 	.long	MachBrkptTrap		| 47	Trap instruction 15 (debug 
 					|	breakpoint)
-	.long	0			| 48	Reserved
+#ifdef sun3
+	.long	MachFpUnorderedCond     | 48	Reserved
+	.long	MachFpInexactResult	| 49	Reserved
+	.long	MachFpZeroDiv   	| 50	Reserved
+	.long	MachFpUnderflow		| 51	Reserved
+	.long	MachFpOperandError	| 52	Reserved
+	.long	MachFpOverflow		| 53	Reserved
+	.long	MachFpNaN		| 54	Reserved
+#else
+	.long	0                       | 48	Reserved
 	.long	0			| 49	Reserved
 	.long	0			| 50	Reserved
 	.long	0			| 51	Reserved
 	.long	0			| 52	Reserved
 	.long	0			| 53	Reserved
 	.long	0			| 54	Reserved
+#endif	
 	.long	0			| 55	Reserved
 	.long	0			| 56	Reserved
 	.long	0			| 57	Reserved

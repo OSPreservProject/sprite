@@ -15,7 +15,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "machConst.h"
@@ -42,7 +42,7 @@ int	machLastSP, machPOP;
  */
 #ifndef NUM_PROCESSORS
 #define NUM_PROCESSORS 1
-#endif NUM_PROCESSORS
+#endif /* NUM_PROCESSORS */
 
 int mach_NumProcessors = NUM_PROCESSORS;
 
@@ -350,7 +350,6 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
     }
-
     statePtr = procPtr->machStatePtr;
     /* 
      * Allocate a kernel stack for this process.
@@ -363,6 +362,10 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     statePtr->switchRegs[SP] = (int)(statePtr->kernStackStart + 
 			             MACH_KERN_STACK_SIZE - 
 				     sizeof(KernelStack));
+#ifdef sun3
+    statePtr->fpuState[0] = 0;      /* set fpu to null state */
+#endif
+
     /*
      * Initialize the stack so that it looks like it is in the middle of
      * Mach_ContextSwitch.
@@ -1067,8 +1070,30 @@ MachTrap(trapStack)
 	case MACH_BAD_TRAP:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
 			    procPtr->processID, FALSE);
-
 	    break;
+#ifdef sun3
+	case MACH_FP_UNORDERED_COND:
+	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_UNORDERED_COND,
+			    procPtr->processID, FALSE);
+	case MACH_FP_INEXACT_RESULT:
+	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_INEXACT_RESULT,
+			    procPtr->processID, FALSE);
+	case MACH_FP_ZERO_DIV:
+	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_ZERO_DIV,
+			    procPtr->processID, FALSE);
+	case MACH_FP_UNDERFLOW:
+	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_UNDERFLOW,
+			    procPtr->processID, FALSE);
+	case MACH_FP_OPERAND_ERROR:
+	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_OPERAND_ERROR,
+			    procPtr->processID, FALSE);
+	case MACH_FP_OVERFLOW:
+	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_OVERFLOW,
+			    procPtr->processID, FALSE);
+	case MACH_FP_NAN:
+	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_FP_NAN,
+		            procPtr->processID, FALSE);
+#endif
 	default:
 	    return(MACH_KERN_ERROR);
     } 

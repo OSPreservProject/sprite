@@ -95,6 +95,35 @@ MachBadTrap:
 _MachBrkptTrap:
 MachBrkptTrap:
 	CallTrapHandler(MACH_BRKPT_TRAP)
+
+.globl MachFpUnorderedCond
+MachFpUnorderedCond:
+    CallTrapHandler(MACH_FP_UNORDERED_COND)
+
+.globl MachFpInexactResult
+MachFpInexactResult:
+    CallTrapHandler(MACH_FP_INEXACT_RESULT)
+
+.globl MachFpZeroDiv
+MachFpZeroDiv:
+    CallTrapHandler(MACH_FP_ZERO_DIV)
+
+.globl MachFpUnderflow
+MachFpUnderflow:
+    CallTrapHandler(MACH_FP_UNDERFLOW)
+
+.globl MachFpOperandError
+MachFpOperandError:
+    CallTrapHandler(MACH_FP_OPERAND_ERROR)
+
+.globl MachFpOverflow
+MachFpOverflow:
+    CallTrapHandler(MACH_FP_OVERFLOW)
+
+.globl MachFpNaN
+MachFpNaN:
+    CallTrapHandler(MACH_FP_NAN)
+
 
 |*
 |* ----------------------------------------------------------------------
