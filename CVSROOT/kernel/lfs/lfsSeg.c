@@ -1285,7 +1285,12 @@ SegmentCleanProc(clientData, callInfoPtr)
 		if (size == 0) {
 		    LFS_STATS_INC(lfsPtr->stats.cleaning.readEmpty);
 		} else {
-		    lfsPtr->stats.cleaningDist[size/LFS_STATS_CDIST_BUCKETS]++;
+		    int bucket = (size*LFS_STATS_CDIST_BUCKETS)
+					/ LfsSegSize(lfsPtr);
+		    if (bucket >= LFS_STATS_CDIST_BUCKETS) {
+			bucket = (LFS_STATS_CDIST_BUCKETS - 1);
+		    }
+		    lfsPtr->stats.cleaningDist[bucket]++;
 		}
 		numCleaned++;
 	    }
