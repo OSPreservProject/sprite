@@ -99,9 +99,13 @@ writeProc(stream, flush)
 /*
  * ----------------------------------------------------------------------------
  *
- * doVprintf --
+ * vprintf --
  *
- *      Perform a C style vprintf to the monitor. 
+ *	Printing routine that is called from varargs procedures.  The
+ *	caller should use to varargs macros to extract the format
+ *	string and the va_list structure.  This also checks for
+ *	recursion that can result from a panic and initializes
+ *	the stream data structure needed by the standard vfprintf.
  *
  * Results:
  *      Number of characters printed.
@@ -112,15 +116,15 @@ writeProc(stream, flush)
  * ----------------------------------------------------------------------------
  */
 
-static int
-doVprintf(format, args)
+int
+vprintf(format, args)
     char	*format;
-    va_list	*args;
+    va_list	args;
 {
     static Boolean	initialized = FALSE;
     static FILE		stream;
     static int	recursiveCallP = 0;	/* prevent recursive calls
-					 * that could occur if doVprintf
+					 * that could occur if vprintf
 					 * fails, etc.  */
 
     if (recursiveCallP != 0) {
@@ -135,7 +139,7 @@ doVprintf(format, args)
     }
 
     bytesWritten = 0;
-    vfprintf(&stream, format, *args);
+    vfprintf(&stream, format, args);
     fflush(&stream);
     MASTER_UNLOCK(&sysPrintMutex);
     recursiveCallP = 0;
@@ -177,7 +181,8 @@ panic(va_alist)
     Dev_VidEnable(TRUE);	/* unblank the screen */
     Dev_SyslogDebug(TRUE);	/* divert /dev/syslog output to the screen */
     printf("Fatal Error: ");
-    (void) doVprintf(format,&args);
+    (void) vprintf(format, args);
+    va_end(args);
     MASTER_LOCK(&sysPrintMutex);
     sysPanicing = TRUE;
     MASTER_UNLOCK(&sysPrintMutex);
@@ -186,62 +191,6 @@ panic(va_alist)
 }
 
 
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Sys_Panic --
- *
- *	This should go away as soon as everyone converts their WARNING-level
- *	calls to printf and their FATAL-level calls to panic.
- *
- *      Print a formatted string to the monitor and then either abort to the
- *      debugger or continue depending on the panic level.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------------
- */
-#ifdef notdef
-/*VARARGS0*/
-void
-Sys_Panic(va_alist)
-    va_dcl
-{
-    Sys_PanicLevel 	level;
-    char 		*format;
-    va_list 		args;
-
-    va_start(args);
-
-    level = va_arg(args, Sys_PanicLevel);
-    format = va_arg(args, char *);
-
-    if (level == SYS_WARNING) {
-        printf("Warning: ");
-    } else {
-	Dev_SyslogDebug(TRUE);
-        printf("Fatal Error: ");
-    }
-
-    (void) doVprintf(format,&args);
-
-    if (level != SYS_FATAL) {
-	return;
-    }
-
-    MASTER_LOCK(&sysPrintMutex);
-    sysPanicing = TRUE;
-    MASTER_UNLOCK(&sysPrintMutex);
-    DBG_CALL;
-    Dev_SyslogDebug(FALSE);
-    return;
-}
-#endif
 
 /*
  * ----------------------------------------------------------------------------
@@ -270,27 +219,7 @@ printf(va_alist)
     va_start(args);
     format = va_arg(args, char *);
 
-    (void) doVprintf(format, &args);
+    (void) vprintf(format, args);
     va_end(args);
 }
 
-/*
- * The following will go away after everyone has converted their calls
- * to Sys_Printf to calls to printf.
- */
-#ifdef notdef
-/*VARARGS0*/
-void
-Sys_Printf(va_alist)
-    va_dcl
-{
-    char *format;
-    va_list	args;
-
-    va_start(args);
-    format = va_arg(args, char *);
-
-    (void) doVprintf(format, &args);
-    va_end(args);
-}
-#endif notdef
