@@ -111,9 +111,9 @@ extern int machNewUnixCompat;
  * library is in the slower C interface...
  */
 #ifdef CANT_MIGRATE_COMPAT
-int machUNIXSyscallTrace = 1;
+int machUNIXSyscallTrace = 0;
 #else /* CANT_MIGRATE_COMPAT */
-int machUNIXSyscallTrace = 1;
+int machUNIXSyscallTrace = 0;
 #endif /* CANT_MIGRATE_COMPAT */
 
 /*
@@ -955,7 +955,9 @@ MachUNIXSyscallNew()
      * in v0.
      */
     type = machCurStatePtr->userState.regState.regs[V0];
-    machCurStatePtr->userState.unixRetVal = type;
+    machCurStatePtr->userState.savedV0 = type;
+    machCurStatePtr->userState.savedA3 =
+	    machCurStatePtr->userState.regState.regs[A3];
     if (type < 0 || type >= MACH_MAX_UNIX_SYSCALL) {
 	printf("MachUNIXSyscallNew failed with type %d\n", type);
 	return(FALSE);
@@ -983,14 +985,14 @@ MachUNIXSyscallNew()
     switch (numArgs) {
 	case 0:
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s() => ", 
+		printf("MachUNIXSyscallNew: %s() => ", 
 			machUNIXSysCallTable[type].name);
 	    }
 	    status = sysUnixSysCallTable[type].func();
 	    break;
 	case 1:
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s(%x) => ", 
+		printf("MachUNIXSyscallNew: %s(%x) => ", 
 			machUNIXSysCallTable[type].name,
 			regs[A0]);
 	    }
@@ -998,7 +1000,7 @@ MachUNIXSyscallNew()
 	    break;
 	case 2:
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s(%x, %x) => ", 
+		printf("MachUNIXSyscallNew: %s(%x, %x) => ", 
 			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1]);
 	    }
@@ -1006,7 +1008,7 @@ MachUNIXSyscallNew()
 	    break;
 	case 3:
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s(%x, %x, %x) => ", 
+		printf("MachUNIXSyscallNew: %s(%x, %x, %x) => ", 
 			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2]);
 	    }
@@ -1015,7 +1017,7 @@ MachUNIXSyscallNew()
 	    break;
 	case 4:
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s(%x, %x, %x, %x) => ", 
+		printf("MachUNIXSyscallNew: %s(%x, %x, %x, %x) => ", 
 			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3]);
 	    }
@@ -1024,7 +1026,7 @@ MachUNIXSyscallNew()
 	    break;
 	case 5: 
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x) => ", 
+		printf("MachUNIXSyscallNew: %s(%x, %x, %x, %x, %x) => ", 
 			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3], args[0]);
 	    }
@@ -1033,7 +1035,7 @@ MachUNIXSyscallNew()
 	    break; 
 	case 6:
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x) => ", 
+		printf("MachUNIXSyscallNew: %s(%x, %x, %x, %x, %x, %x) => ", 
 			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
 			args[1]);
@@ -1044,7 +1046,7 @@ MachUNIXSyscallNew()
 	    break; 
 	case 7:
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x, %x) => ", 
+		printf("MachUNIXSyscallNew: %s(%x, %x, %x, %x, %x, %x, %x) => ", 
 			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
 			args[1], args[2]);
@@ -1055,7 +1057,7 @@ MachUNIXSyscallNew()
 	    break;
 	case 8:
 	    if (machUNIXSyscallTrace > 1) {
-		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x, %x, %x) => ", 
+		printf("MachUNIXSyscallNew: %s(%x, %x, %x, %x, %x, %x, %x, %x) => ", 
 			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
 			args[1], args[2], args[3]);

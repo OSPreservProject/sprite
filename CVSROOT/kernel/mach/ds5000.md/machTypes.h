@@ -63,6 +63,7 @@ typedef struct {
 						 * a trap. */
     int			unixRetVal;		/* Return value from a
 						 * UNIX system call. */
+    int                 savedV0, savedA3;       /* For restarting calls. */
 } Mach_UserState;
 
 /*

@@ -1801,6 +1801,21 @@ unixSyscallReturn:
     j		sysCallReturn
     nop
 
+/*----------------------------------------------------------------------------
+ *
+ * newUNIXSyscall --
+ *
+ *      Handle a new (compatibility) UNIX system call.
+ *      This code is part of UNIXSyscall, not a separate subroutine.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------------
+ */
 
 newUNIXSyscall:
     sw          v0, sysCallNum
@@ -1845,7 +1860,8 @@ newUNIXSyscall:
     lw		t1, machCurStatePtr
     add		t2, sp, zero
     mfc0	t3, MACH_COP_0_EXC_PC
-    sw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET(t1)
+    sw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET+4(t1)
+    sw		a3, MACH_TRAP_UNIX_RET_VAL_OFFSET+8(t1)
     sw		sp, MACH_TRAP_REGS_OFFSET + (SP * 4)(t1)
     sw		t7, MACH_TRAP_REGS_OFFSET + (GP * 4)(t1)
     sw		s0, MACH_TRAP_REGS_OFFSET + (S0 * 4)(t1)
