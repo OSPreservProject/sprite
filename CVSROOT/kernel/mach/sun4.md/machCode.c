@@ -82,7 +82,7 @@ Address	mach_MaxUserStackAddr;
 int	mach_LastUserStackPage;
 
 int	machMaxSysCall;			/* Hightest defined system call. */
-int	machArgOffsets[SYS_NUM_SYSCALLS];	/* For each system call, tells how
+int	machArgOffsets[SYS_NUM_SYSCALLS];/* For each system call, tells how
 					 * much to add to the fp at the time
 					 * of the call to get to the highest
 					 * argument on the stack.  */
@@ -106,6 +106,7 @@ int	machStatePtrOffset;		/* Byte offset of the machStatePtr
 					 * field in a Proc_ControlBlock. */
 int	machSpecialHandlingOffset;	/* Byte offset of the specialHandling
 					 * field in a Proc_ControlBlock. */
+int	MachPIDOffset;			/* Byte offset of pid in PCB */
 char	mach_DebugStack[0x2000];	/* The debugger stack. */
 unsigned int	machDebugStackStart;	/* Contains address of base of debugger
 					 * stack. */
@@ -140,6 +141,17 @@ int	machSigPCOffsetOnStack;		/* offset of pcValue field in
  */
 Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 
+char	MachRunUserDeathString[] =
+				"MachRunUserProc: killing process!\n"; 
+char	MachHandleSignalDeathString[] =
+				"MachHandleSignal: killing process!\n"; 
+char	MachReturnFromSignalDeathString[] =
+				"MachReturnFromSignal: killing process!\n"; 
+char	MachReturnFromTrapDeathString[] =
+				"MachReturnFromTrap: killing process!\n"; 
+char	MachHandleWindowUnderflowDeathString[] =
+				"MachHandleWindowUnderflow: killing process!\n";
+
 /*
  * For testing correctness of defined offsets.
  */
@@ -168,7 +180,7 @@ Address			oldAddrOfMachPtr = 0;
     }				\
     debugSpace[debugCounter] = (int)(0x11100111);
 
-
+extern	void	MachFlushWindowsToStack();
     
 
 
@@ -248,6 +260,8 @@ Mach_Init()
     machSpecialHandlingOffset = (unsigned int)(&(testPCB.specialHandling)) -
 	    (unsigned int)(&testPCB);
     machMaxSysCall = -1;
+    MachPIDOffset = (unsigned int)(&(testPCB.processID)) -
+	    (unsigned int)(&testPCB);
 
     /*
      * Initialize all the horrid offsets for dealing with getting stuff from
@@ -374,7 +388,9 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * are copied to the new process, it will get the real stuff.
      */
     if (user) {
+	Mach_DisableIntr();
 	MachFlushWindowsToStack();
+	Mach_EnableIntr();
     }
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
@@ -553,6 +569,7 @@ Mach_StartUserProc(procPtr, entryPoint)
      * MachRunUserProc will put the values from our trap regs into the actual
      * registers so that we'll be in shape to rett back to user mode.
      */
+    Mach_DisableIntr();
 
     /*
      * Return from trap pc.
@@ -1202,6 +1219,9 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     Boolean		protError;
     Boolean		copyInProgress = FALSE;
     ReturnStatus	status;
+/* FOR DEBUGGING */
+    extern	Boolean	dbgPanic;
+/* END FOR DEBUGGING */
 
     procPtr = Proc_GetActualProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -1240,19 +1260,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	protError = (busErrorReg & MACH_PROT_ERROR);
 	/*
 	 * Try to fault in the page.
-	 */
-	if (addrErrorReg == (Address) NIL) {
-	    if (copyInProgress) {
-		/* sun3 just returns MACH_USER_ERROR here */
-#ifndef NOTDEF
-		Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-#endif NOTDEF
-
-	    } else {
-		panic("MachPageFault: kernel tried to fault NIL address at pc 0x%x.\n", pcValue);
-	    }
-	}
-	/*
+	 *
 	 * Since this is called from trap handlers only, we know interrupts
 	 * are off here.  The Vm system needs them on?
 	 */
@@ -1261,10 +1269,12 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	Mach_DisableIntr();
 	if (status != SUCCESS) {
 	    if (copyInProgress) {
-		/* sun3 just returns MACH_USER_ERROR here */
-#ifndef NOTDEF
-		Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-#endif NOTDEF
+		/*
+		 * This doesn't return to here.  It erases the fact that the
+		 * page fault happened and makes the copy routine that
+		 * got the page fault return SYS_ARG_NO_ACCESS to its caller.
+		 */
+		MachHandleBadArgs();
 	    } else {
 		/* kernel error */
 		panic(
@@ -1274,15 +1284,29 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	}
 	return;
     }
+/* FOR DEBUGGING */
+    DEBUG_ADD(0x77777777);
+    DEBUG_ADD(addrErrorReg);
+    DEBUG_ADD(pcValue);
+    DEBUG_ADD(busErrorReg);
+/* END FOR DEBUGGING */
     /* user page fault */
     protError = busErrorReg & MACH_PROT_ERROR;
     Mach_EnableIntr();
     if (Vm_PageIn(addrErrorReg, protError) != SUCCESS) {
-	printf(
-    "MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
+/* FOR DEBUGGING */
+	DEBUG_ADD(0x77777777);
+	DEBUG_ADD(addrErrorReg);
+	DEBUG_ADD(pcValue);
+	DEBUG_ADD(busErrorReg);
+/* END FOR DEBUGGING */
+	printf("MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
 		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
+/* FOR_DEBUGGING */
+	dbgPanic = TRUE;
+	asm("ta 1");
+/* END FOR_DEBUGGING */
 	/* Kill user process */
-	DEBUG_ADD(0xcccccccc);
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
 	Mach_DisableIntr();
 	return;
@@ -1324,6 +1348,7 @@ MachUserAction()
     Address		pc;
 
     procPtr = Proc_GetCurrentProc();
+HandleItAgain:
     procPtr->specialHandling = 0;
     /*
      * Take a context switch if one is pending for this process.
@@ -1348,8 +1373,12 @@ MachUserAction()
     while (machStatePtr->savedMask != 0) {
 	int	i;
 
+	DEBUG_ADD(0x88888888);
+	DEBUG_ADD(procPtr->processID);
 	for (i = 0; i < MACH_NUM_WINDOWS; i++) {
 	    if ((1 << i) & machStatePtr->savedMask) {
+		DEBUG_ADD(i);
+		DEBUG_ADD(machStatePtr->savedSps[i]);
 		/* clear the mask for this window */
 		machStatePtr->savedMask &= ~(1 << i);
 		/*
@@ -1360,11 +1389,22 @@ MachUserAction()
 		if (Vm_CopyOut(MACH_SAVED_WINDOW_SIZE,
 			(Address)&(machStatePtr->savedRegs[i]),
 			machStatePtr->savedSps[i]) != SUCCESS) {
+		    printf("MachUserAction: pid 0x%x being killed: %s 0x%x.\n",
+			    procPtr->processID, "bad stack pointer?",
+			    machStatePtr->savedSps[i]);
 		    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 		}
 	    }
 	}
     }
+    Mach_DisableIntr();
+    MachFlushWindowsToStack();
+    if (procPtr->specialHandling != 0) {
+	DEBUG_ADD(0x87878787);
+	DEBUG_ADD(procPtr->processID);
+	goto HandleItAgain;
+    }
+    Mach_EnableIntr();
     /*
      * Now check for signal stuff.  We disable interrupts because we don't
      * want the signal stuff in our process state to be overwritten by another
@@ -1384,6 +1424,7 @@ MachUserAction()
 	return TRUE;
     }
     Mach_DisableIntr();
+	
     return FALSE;
 }
 
@@ -1438,11 +1479,14 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 	    printf("%s %s\n", "MachHandleWeirdoInstruction: tag",
 		    "overflow trap in the kernel!");
 	    break;
+	case MACH_FP_EXCEP:
+	    printf("%s %s\n", "MachHandleWeirdoInstruction: fp unit",
+		    "disabled trap in the kernel!");
+	    break;
 	default:
 	    printf("%s %s\n", "MachHandleWeirdoInstruction: hit default",
 		    "in case statement - bad trap instruction called us!");
 	    break;
-
 	}
 	panic("%s %s %s %x %s %x\n",
 		"MachHandleWeirdoInstruction: the error occured in a",
@@ -1455,17 +1499,18 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
      */
     switch (trapType) {
     case MACH_ILLEGAL_INSTR:
-	DEBUG_ADD(0xeeeeeeee);
 	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, procPtr->processID,
 		FALSE);
 	break;
     case MACH_PRIV_INSTR:
-	DEBUG_ADD(0xeeeeeeee);
 	(void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST, procPtr->processID, FALSE);
 	break;
     case MACH_MEM_ADDR_ALIGN:
-	DEBUG_ADD(0xdddddddd);
 	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, procPtr->processID,
+		FALSE);
+	break;
+    case MACH_FP_EXCEP:
+	(void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, procPtr->processID,
 		FALSE);
 	break;
     case MACH_TAG_OVERFLOW:
@@ -1478,5 +1523,41 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 	break;
 
     }
+    return;
+}
+
+void
+MachTestContexts()
+{
+    int	i;
+    int	j;
+
+    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+	VmMachSetUserContext(i);
+	j = i;
+    }
+    return;
+}
+
+void
+FlushTheWindows(num)
+int	num; 
+{
+    num--;
+    if (num > 0) {
+	FlushTheWindows(num);
+    }
+    return;
+}
+
+/*
+ * We want to do NWINDOWS - 1 saves and then restores to make sure all our
+ * register windows have been saved to the stack.  Calling here does one save,
+ * so we want to do NWINDOWS - 2 more calls and returns.
+ */
+void
+MachFlushWindowsToStack()
+{
+    FlushTheWindows(MACH_NUM_WINDOWS - 2);
     return;
 }

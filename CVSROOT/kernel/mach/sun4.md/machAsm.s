@@ -404,6 +404,12 @@ _MachRunUserProc:
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser0, %o0)
 	mov	%psr, %o0
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser1, %o0)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %o0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUserPid, %o0)
 /* END FOR DEBUGGING */
 	/*
 	 * Get values to restore registers to from the state structure.
@@ -427,6 +433,9 @@ _MachRunUserProc:
 	/*
 	 * User stack wasn't aligned.  It should have been when it got here!
 	 */
+	set	_MachRunUserDeathString, %o0
+	call	_printf, 1
+	nop
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
@@ -478,7 +487,23 @@ UserStackOkay:
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser2, %OUT_TEMP1)
 	mov	%psr, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser3, %OUT_TEMP1)
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser4, %OUT_TEMP1)
 /* END FOR DEBUGGING */
+	/*
+	 * We must make sure that the window we will return to from the trap
+	 * is invalid when we get into MachReturnFromTrap so that it will
+	 * be restored from the user stack.  Otherwise the in registers (such
+	 * as frame pointer) in that window we return to will be bad and
+	 * won't be restored correctly.
+	 */
+	MACH_SET_WIM_TO_CWP();
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, SetWimForChild);
+/* FOR DEBUGGING */
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser5, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop
@@ -561,6 +586,9 @@ CopyOutForSigFailed:
 	 * Copying to user stack failed.  We have no choice but to kill the
 	 * thing.  This causes us to exit this routine and process.
 	 */
+	set	_MachHandleSignalDeathString, %o0
+	call	_printf, 1
+	nop
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
@@ -764,6 +792,9 @@ _MachReturnFromSignal:
 	nop
 CopyInForSigFailed:
  	/* Copy failed from user space - kill the process */ 
+	set	_MachReturnFromSignalDeathString, %o0
+	call	_printf, 1
+	nop
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
@@ -834,6 +865,7 @@ CopiedInSigStack:
 	nop
 
 
+#ifdef NOTDEF
 /*
  *---------------------------------------------------------------------
  *
@@ -872,6 +904,7 @@ RestoreTheWindow:
 
 	retl
 	nop
+#endif NOTDEF
 
 
 /*
@@ -882,5 +915,21 @@ RestoreTheWindow:
 .globl	_Mach_ReadPsr
 _Mach_ReadPsr:
 	mov	%psr, %o0
+	retl
+	nop
+
+
+/*
+ * A page fault occured in a copy-in or copy-out from a user-mode process, and
+ * the page couldn't be paged in.  So we want to return SYS_ARG_NOACCESS to
+ * the process from its system call.  This means we must return this value
+ * from the routine doing the copying.
+ */
+.globl	_MachHandleBadArgs
+_MachHandleBadArgs:
+	restore
+	restore
+	set	SYS_ARG_NOACCESS, %o0
+	QUICK_ENABLE_INTR()
 	retl
 	nop

@@ -158,15 +158,11 @@ DoneWithUserStuff:
 
 	/* traps on, maskable interrupts off */
 	MACH_SR_HIGHPRIO()
-/* FOR_DEBUGGING */
-	set	0x66666666, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap1, %CUR_TBR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap2, %CUR_PSR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap3, %CUR_PC_REG)
-	set	0x77777777, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap4, %OUT_TEMP1)
-/* END FOR_DEBUGGING */
+/* FOR DEBUGGING */
+	call	_MachFlushWindowsToStack
+	nop
+	MACH_RESTORE_GLOBAL_STATE()
+/* END FOR DEBUGGING */
 
 	/*
 	 * It is tedious to do all these serial comparisons against the
@@ -308,6 +304,14 @@ DoneWithUserStuff:
 	be	_MachHandleWeirdoInstruction		/* C routine */
 	nop
 
+	cmp	%VOL_TEMP1, MACH_FP_EXCEP		/* fp unit off */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleWeirdoInstruction		/* C routine */
+	nop
+
 	/*
 	 * We never get here directly from the window overflow trap.
 	 * Instead, what this means is that after handling a window
@@ -315,7 +319,8 @@ DoneWithUserStuff:
 	 * user action.  Because we don't save state, etc, on a regular
 	 * window overflow, we've executed the above code to save the
 	 * state for us.  Now we just want to go back and deal with the
-	 * special
+	 * special overflow.
+	 */
 	cmp	%VOL_TEMP1, MACH_WINDOW_OVERFLOW	/* weird overflow */
 	be	MachReturnToOverflowWithSavedState
 	nop
@@ -328,7 +333,7 @@ DoneWithUserStuff:
 	be	MachHandleDebugTrap
 	nop
 
-	be	MachHandleDebugTrap		/* all  others to debugger */
+	b	MachHandleDebugTrap		/* all  others to debugger */
 	nop
 
 
@@ -375,21 +380,6 @@ _MachReturnFromTrap:
 	/* Look at context switches */
 	/* Look at signal stuff */
 	/* Look at window overflow stuff */
-/* FOR_DEBUGGING */
-	set	0x88888888, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet0, %OUT_TEMP1)
-	mov	%tbr, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet1, %OUT_TEMP1)
-	mov	%psr, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet2, %OUT_TEMP1)
-	mov	%wim, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet3, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet4, %CUR_TBR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet5, %CUR_PSR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet6, %CUR_PC_REG)
-	set	0x999999999, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet7, %OUT_TEMP1)
-/*END  FOR_DEBUGGING */
 
 	/* Are we a user or kernel process? */
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
@@ -431,6 +421,13 @@ NormalReturn:
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
 	bne	CallUnderflow
 	nop
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	set	0x30303030, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow1, %fp)
+#endif NOTDEF
+/*END  FOR_DEBUGGING */
 	/*
 	 * It's a user process, so check residence and protection fields of pte.
 	 * Before anything we check stack alignment.
@@ -449,6 +446,17 @@ NormalReturn:
 /* FOR_DEBUGGING */
 	set	0x34343434, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage2, %OUT_TEMP1)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GivePID0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow2, %fp)
+	mov	%fp, %o0
+	call	_VmMachGetPageMap, 1
+	nop
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GetRealPTE, %o0)
 /*END  FOR_DEBUGGING */
 	mov	%fp, %o0
 	clr	%o1		/* also check for protection????? */
@@ -460,7 +468,7 @@ NormalReturn:
 	nop
 CheckNextFault:
 	/* Check other extreme of area we'd touch */
-	add	%fp, MACH_SAVED_WINDOW_SIZE, %o0
+	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o0
 	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
 	be	CallUnderflow
 	nop
@@ -468,6 +476,11 @@ CheckNextFault:
 /* FOR_DEBUGGING */
 	set	0x43434343, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage3, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow3, %o0)
+	/* addr still in %o0 */
+	call	_VmMachGetPageMap, 1
+	nop
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GetRealPTE2, %o0)
 /*END  FOR_DEBUGGING */
 	clr	%o1
 	call	_Vm_PageIn, 2
@@ -480,6 +493,9 @@ KillUserProc:
 	/*
 	 * Kill user process!  Its stack is bad.
 	 */
+	set	_MachReturnFromTrapDeathString, %o0
+	call	_printf, 1
+	nop
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
@@ -494,22 +510,6 @@ UnderflowOkay:
 	MACH_RESTORE_GLOBAL_STATE()
 	/* restore y reg */
 	mov	%CUR_Y_REG, %y
-
-/* FOR_DEBUGGING */
-	set	0x81818181, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn0, %OUT_TEMP1)
-	mov	%tbr, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn1, %OUT_TEMP1)
-	mov	%psr, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn2, %OUT_TEMP1)
-	mov	%wim, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn3, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn4, %CUR_TBR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn5, %CUR_PSR_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn6, %CUR_PC_REG)
-	set	0x91919191, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn7, %OUT_TEMP1)
-/*END  FOR_DEBUGGING */
 
 	/* restore tbr reg */
 	mov	%CUR_TBR_REG, %tbr
@@ -593,8 +593,18 @@ MachReturnToOverflowWithSavedState:
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved2, %OUT_TEMP1)
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved3, %CUR_PSR_REG)
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved4, %CUR_PC_REG)
-	set	0x55555555, %OUT_TEMP1
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved5, %OUT_TEMP1)
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* machStatePtr %1 */
+	add	%VOL_TEMP1, MACH_SAVED_MASK_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved6, %OUT_TEMP1)
+	set	0x55555555, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved7, %OUT_TEMP1)
 /*END  FOR_DEBUGGING */
 	call	_MachReturnFromTrap
 	nop
@@ -661,20 +671,6 @@ MachWindowOverflow:
 	 * If it is, go ahead, but if not, then set special handling and
 	 * save to buffers.
 	 */
-#ifdef NOTDEF
-	/*
-	 * Old stack-checking code.
-	 */
-	set	MACH_MAX_USER_STACK_ADDR, %g3	/* %sp in user space? */
-	subcc	%g3, %sp, %g0
-	bgu	UserStack
-	nop
-	set	MACH_KERN_END, %g3		/* %sp <= top kernel addr? */
-	subcc	%sp, %g3, %g0
-	bleu	NormalOverflow			/* is kernel sp */
-	nop
-	/* BAD STACK! */
-#endif NOTDEF
 	set	MACH_MAX_USER_STACK_ADDR, %g3	/* %sp in user space? */
 	subcc	%g3, %sp, %g0			/* need sp < highest addr */
 	bleu	NotUserStack
@@ -699,6 +695,9 @@ BadStack:
 	 * will die a terrible death later.  We just return to take over the
 	 * window, since we've already advanced the %wim.
 	 */
+	set	0x99999999, %i0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack0, %i0)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack1, %sp)
 	ba	ReturnFromOverflow
 	nop
 UserStack:
@@ -708,6 +707,13 @@ UserStack:
 	 * user process will die a horrible death later on.
 	 */
 	andcc	%sp, 0x7, %g0
+	be	blick
+	nop
+	set	0x97979797, %i0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack2, %i0)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack3, %sp)
+blick:
+	andcc	%sp, 0x7, %g0
 	bne	ReturnFromOverflow
 	nop
 
@@ -716,7 +722,7 @@ UserStack:
 	nop
 
 	/* check other address extreme */
-	add	%sp, MACH_SAVED_WINDOW_SIZE, %g4
+	add	%sp, (MACH_SAVED_WINDOW_SIZE - 4), %g4
 	MACH_CHECK_FOR_FAULT(%g4, %g3)
 	be	NormalOverflow
 	nop
@@ -747,6 +753,20 @@ SaveToInternalBuffer:
 	ld	[%g3], %g3
 	add	%g3, MACH_SAVED_MASK_OFFSET, %g3
 	st	%g4, [%g3]
+/* FOR DEBUGGING */
+	/* This just uses g6 without even saving it! */
+	MACH_DEBUG_BUF(%g3, %g6, SavedMask0, %g4)
+	mov	%wim, %g4
+	MACH_DEBUG_BUF(%g3, %g6, SavedMask1, %g4)
+	MACH_GET_CUR_PROC_PTR(%g3)
+	set	_MachPIDOffset, %g4
+	ld	[%g4], %g4
+	add	%g3, %g4, %g3
+	ld	[%g3], %g4
+	MACH_DEBUG_BUF(%g3, %g6, SavedMask2, %g4)
+	set	0x90909090, %g4
+	MACH_DEBUG_BUF(%g3, %g6, SavedMask3, %g4)
+/* END FOR DEBUGGING */
 
 	/*
 	 * Get and set the special handling flag in the current process state.
@@ -798,6 +818,11 @@ ReturnFromOverflow:
 	restore				/* move back to trap window */
 	mov	%VOL_TEMP1, %g3		/* restore global registers */
 	mov	%VOL_TEMP2, %g4
+/* FOR DEBUGGING */
+#ifdef NOTDEF
+	mov	%l3, %g5
+#endif NOTDEF
+/* END FOR DEBUGGING */
 
 	/*
 	 * jump to calling routine - this may be a trap-handler or not.
@@ -889,7 +914,7 @@ MachHandleWindowUnderflowTrap:
 	save			/* back to trap window - only if branching!! */
 
 	/* Check other extreme of addresses we'd touch */
-	add	%fp, MACH_SAVED_WINDOW_SIZE, %o1
+	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o1
 	MACH_CHECK_FOR_FAULT(%o1, %o0)
 	save					/* back to trap window */
 	be	NormalUnderflow
@@ -929,6 +954,13 @@ MachReturnToUnderflowWithSavedState:
 /* FOR_DEBUGGING */
 	set	0x23232323, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage0, %OUT_TEMP1)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GivePID1, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage0a, %i0)
 /*END  FOR_DEBUGGING */
 		/* Address that would fault is in %i0 now. */
 	mov	%i0, %o0
@@ -941,13 +973,16 @@ MachReturnToUnderflowWithSavedState:
 	restore		/* back to window to check in, only if branching!! */
 KillTheProc:
 	/* KILL IT - must be in trap window */
+	set	_MachHandleWindowUnderflowDeathString, %o0
+	call	_printf, 1
+	nop
 	set	PROC_TERM_DESTROYED, %o0
 	set	PROC_BAD_STACK, %o1
 	clr	%o2
 	call	_Proc_ExitInt, 3
 	nop
 CheckNextUnderflow:
-	add	%fp, MACH_SAVED_WINDOW_SIZE, %o1
+	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o1
 	MACH_CHECK_FOR_FAULT(%o1, %o0)
 	save					/* back to trap window */
 	be	NormalUnderflow			/* we were okay here */
@@ -956,6 +991,7 @@ CheckNextUnderflow:
 /* FOR_DEBUGGING */
 	set	0x32323232, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage1, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage1a, %i1)
 /*END  FOR_DEBUGGING */
 		/* Address that would fault is in %i1 now. */
 	mov	%i1, %o0
@@ -1227,13 +1263,6 @@ MachSyscallTrap:
 	 */
 	mov	%NEXT_PC_REG, %CUR_PC_REG
 	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
-/* FOR DEBUGGING */
-	set	0x11111111, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff0, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff1, %CUR_PC_REG)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff2, %g1)
-/* END FOR DEBUGGING */
-
 	/*
 	 * Make sure user stack pointer is written into state structure so that
 	 * it can be used while processing the system call.  (Who uses it??)
@@ -1258,7 +1287,7 @@ MachSyscallTrap:
 	set	_machMaxSysCall, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	cmp	%VOL_TEMP1, %g1
-	bge	GoodSysCall
+	bgeu	GoodSysCall
 	nop
 	/*
 	 * If bad, (take user error? - on spur) then do normal return from trap.
