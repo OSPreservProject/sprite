@@ -34,9 +34,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 
 /*
- * Forward references to void procedures internal to this file.
+ * Forward references that should be in other header files.
  */
 
+void	Mem_DumpStats();
+void	Timer_TimerGetInfo();
+void 	Sched_DumpReadyQueue();
+void	Fs_SyncStub();
+
+/*
+ * Forward references to void procedures internal to this file.
+ */
 void	DumpList();
 void	DumpListLinksStruct();
 void	DumpTimerElement();
@@ -44,9 +52,6 @@ void	DumpTimerStats();
 void 	PrintL1Menu();
 static void	PrintVersion();
 static void	PrintTOD();
-extern	void	Mem_DumpStats();
-extern	void	Timer_TimerGetInfo();
-extern void 	Sched_DumpReadyQueue();
 /*
  * Table of routines and their arguments to be called on dump events.
  * Only machine independent dump events should be added to this table.
@@ -70,7 +75,7 @@ static EventTableType eventTable[] = {
     {'s', Timer_DumpStats,   (ClientData) 's',"Reset timer stats"},
     {'t', Timer_DumpQueue,  (ClientData) 0,"Dump the timer queue"},
     {'v', PrintVersion, (ClientData) 0,"Print version string of the kernel"},
-    {'w', Mem_DumpTrace, (ClientData) -1,"Dump the memory trace buffer"},
+    {'w', Fs_SyncStub, (ClientData) FALSE, "WRITE BACK CACHE"},
     {'x', Fs_HandleScavengeStub, (ClientData) 0,"Scavenge filesystem handles"},
     {'y', Recov_PrintTrace, (ClientData) 50,"Dump RPC recovery trace"},
     {'z', Rpc_PrintTrace, (ClientData) 50,"Dump RPC packet trace"},
