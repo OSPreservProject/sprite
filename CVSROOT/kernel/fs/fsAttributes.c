@@ -1220,24 +1220,25 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
     attrPtr = &(getAttrResultsParamPtr->attrResults.attrs);
 
     hdrPtr = VerifyIOHandle(fileIDPtr);
-    if (hdrPtr == (FsHandleHeader *) NIL) {
+    if (hdrPtr != (FsHandleHeader *) NIL) {
 	/*
-	 * Noone has the I/O device open so we don't have a handle.
-	 * Return SUCCESS but no reply data.
+	 * If someone has the I/O device open we'll have a handle and
+	 * should go get the access and modify times.
 	 */
-	return(SUCCESS);
-    } 
-    FsHandleUnlock(hdrPtr);
-
-    status = (*fsStreamOpTable[hdrPtr->fileID.type].getIOAttr)
-	    (&hdrPtr->fileID, clientID, attrPtr);
+	FsHandleUnlock(hdrPtr);
+	status = (*fsStreamOpTable[hdrPtr->fileID.type].getIOAttr)
+		(&hdrPtr->fileID, clientID, attrPtr);
 #ifdef lint
-    status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-    status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+	status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
+	status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
 #endif lint
-
-    FsHandleRelease(hdrPtr, FALSE);
-
+	FsHandleRelease(hdrPtr, FALSE);
+    } else {
+	/*
+	 * No information to add. We just return what was passed to us.
+	 */
+	status = SUCCESS;
+    }
     if (status == SUCCESS) {
 	storagePtr->replyParamPtr = (Address) attrPtr;
 	storagePtr->replyParamSize = sizeof(Fs_Attributes);
