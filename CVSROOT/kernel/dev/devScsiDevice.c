@@ -421,4 +421,28 @@ DevScsiIOControl(devPtr,command, inBufSize, inBuffer, outBufSize, outBuffer)
     }
 
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNoHBAAttachDevice --
+ *
+ *	A SCSI HBA attach procedure that always returns no device. This
+ *	routine should be inserted into attach procedure for HBA types
+ *	that aren't support on the machine.
+ *
+ * Results:
+ *	NIL 
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ScsiDevice *
+DevNoHBAAttachDevice(devicePtr, insertProc)
+    Fs_Device	*devicePtr;	/* Device to attach. */
+    void 	(*insertProc)(); /* Insert procedure to use. */
+{
+    return (ScsiDevice *) NIL;
+}

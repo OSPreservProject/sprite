@@ -144,6 +144,7 @@ extern void		  DevScsiSendCmd();
 #endif
 extern ReturnStatus	  DevScsiReleaseDevice();
 extern ScsiDevice	   *DevScsiAttachDevice();
+extern ScsiDevice	   *DevNoHBAAttachDevice();
 extern ReturnStatus	  DevScsiSendCmdSync();
 extern ReturnStatus	  DevScsiIOControl();
 
