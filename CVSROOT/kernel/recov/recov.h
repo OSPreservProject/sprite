@@ -108,7 +108,7 @@ extern void		Recov_HostTrace();
 extern int		Recov_SetClientState();
 extern int		Recov_GetClientState();
 extern void		Recov_ClearClientState();
-extern void		Recov_GetStats();
+extern ReturnStatus	Recov_GetStats();
 
 extern void		Recov_HostTrace();
 extern void		Recov_PrintTrace();
