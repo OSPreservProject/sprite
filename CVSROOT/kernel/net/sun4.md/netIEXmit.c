@@ -491,46 +491,6 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	return;
     }
 
-    /*
-     * Now make sure that each element in the scatter/gather is big enough.
-     * There is a problem with the Intel chip that if the buffers are too 
-     * small it will overrun memory.  The first buffer is a special case
-     * because it contains the ethernet header which is removed before 
-     * sending.  Also make sure that none of the buffers begin on odd 
-     * boundaries.
-     */
-
-#ifdef not_used
-    {
-	register	Net_ScatterGather	*tmpPtr;
-	register	int			i;
-
-	if (scatterGatherPtr->length > sizeof(Net_EtherHdr) &&
-	    scatterGatherPtr->length - sizeof(Net_EtherHdr) < 
-							MIN_XMIT_BUFFER_SIZE) {
-	     printf( 
-		"NetIEXmit: Scatter/gather element too small (1)\n");
-	}
-	if ((int) (scatterGatherPtr->bufAddr) & 0x1) {
-	    printf( 
-		      "NetIEXmit: Ethernet Header begins on odd boundary %x\n",
-		      (int) (scatterGatherPtr->bufAddr));
-	}
-
-	for (i = 1; i < scatterGatherLength; i++) {
-	    tmpPtr = &(scatterGatherPtr[i]);
-	    if (tmpPtr->length > 0 && tmpPtr->length  < MIN_XMIT_BUFFER_SIZE) {
-		printf( 
-			"NetIEXmit: Scatter/gather element too small (2)\n");
-	    }
-	    if (tmpPtr->length > 0 && (int) (tmpPtr->bufAddr) & 0x1) {
-		printf( 
-			  "NetIEXmit: Buffer begins on odd boundary %x\n",
-			  (int) (tmpPtr->bufAddr));
-	    }
-	}
-    }
-#endif not_used
 
     /*
      * See if the packet is for us.  In this case just copy in the packet
@@ -606,6 +566,37 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     ENABLE_INTR();
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEXmitDrop --
+ *
+ *	This drops the current output packet by marking its scatter/gather
+ *	vector as DONE and notifying the process waiting for its
+ *	output to complete.  This is called in the beginning of the
+ *	Restart sequence.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Resets curScatGathPtr and notifies any process waiting on output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIEXmitDrop()
+{
+    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+	return;
+    }
+    curScatGathPtr->done = TRUE;
+    if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(curScatGathPtr->mutexPtr);
+    }
+}
 
 
 /*
@@ -613,7 +604,10 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
  *
  * NetIEXmitRestart --
  *
- *	Restart transmission of packets after a chip reset.
+ *	Restart transmission of packets.  This is called at the
+ *	end of the restart sequence, after the chip has been
+ *	reinitialized.  THIS IS NOT NEEDED.  NetIEReset will
+ *	restart the output queue by calling NetIEXmitInit
  *
  * Results:
  *	None.
@@ -624,20 +618,11 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
  *
  *----------------------------------------------------------------------
  */
+#ifdef not_needed
 void
 NetIEXmitRestart()
 {
     volatile NetXmitElement     *xmitElementPtr;
-
-    /*
-     * Drop the current outgoing packet.
-     */    
-    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
-	curScatGathPtr->done = TRUE;
-	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	    NetOutputWakeup(curScatGathPtr->mutexPtr);
-	}
-    }
 
     /*
      * Start output if there are any packets queued up.
@@ -654,3 +639,4 @@ NetIEXmitRestart()
 	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
 }
+#endif

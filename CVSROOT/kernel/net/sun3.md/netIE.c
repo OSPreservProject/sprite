@@ -472,6 +472,11 @@ NetIERestart()
     DISABLE_INTR();
 
     /*
+     * Drop the current packet so the transmitting process doesn't hang.
+     */
+    NetIEXmitDrop();
+
+    /*
      * Allocate space for the System Configuration Pointer.
      */
     VmMach_MapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR));
@@ -486,10 +491,12 @@ NetIERestart()
      */
     VmMach_UnmapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR));
 
+#ifdef not_needed
     /*
-     * Restart transmission of packets.
+     * Restart transmission of packets.  Already done by NetIEReset.
      */
     NetIEXmitRestart();
+#endif
 
     ENABLE_INTR();
 }
