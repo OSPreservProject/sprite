@@ -103,9 +103,18 @@ static	Boolean		swapDown = FALSE;
 static	Sync_Condition	swapDownCondition;
 
 /*
- * Maximum amount of pages to scan before waiting for a page to be cleaned.
+ * Maximum amount of pages that can be on the dirty list before waiting for
+ * a page to be cleaned.  It is a function of the amount of free memory at
+ * boot time.
  */
-int	vmMaxDirtyPages = 50;
+#define	MAX_DIRTY_PAGE_FRACTION	4
+int	vmMaxDirtyPages;
+
+/*
+ * Variable that indicates whether pages should be freed after they have
+ * been cleaned or just put back onto the front of the allocate list.
+ */
+Boolean	vmFreeWhenClean = TRUE;
 
 void		PageOut();
 void		PutOnReserveList();
@@ -1028,7 +1037,6 @@ VmPageAllocateInt(virtAddrPtr, canBlock)
     int			pageCount;
     Boolean		referenced;
     Boolean		modified;
-    int			dirtyCount = 0;
 
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
@@ -1062,7 +1070,7 @@ again:
 	     * See if have gone all of the way through the list without finding
 	     * anything.
 	     */
-	    if ((canBlock && dirtyCount > vmMaxDirtyPages) ||
+	    if ((canBlock && vmStat.numDirtyPages > vmMaxDirtyPages) ||
 	        corePtr == (VmCore *) &endMarker) {	
 		VmListRemove((List_Links *) &endMarker);
 		if (!canBlock) {
@@ -1074,7 +1082,6 @@ again:
 		     * page to appear on the allocate list.
 		     */
 		    (void)Sync_Wait(&cleanCondition, FALSE);
-		    dirtyCount = 0;
 		    goto again;
 		}
 	    }
@@ -1124,9 +1131,16 @@ again:
 	     */
 	    if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
 		vmStat.dirtySearched++;
-		dirtyCount++;
 		TakeOffAllocList(corePtr);
 		PutOnDirtyList(corePtr);
+		if (vmFreeWhenClean) {
+		    /*
+		     * Invalidate the page in hardware.  This will force
+		     * a fault to occur if the page is to be referenced.
+		     */
+		    VmMach_PageInvalidate(&corePtr->virtPage, 
+					  Vm_GetPageFrame(*ptePtr), FALSE);
+		}
 		continue;
 	    }
     
@@ -1545,10 +1559,12 @@ again:
 	retVal = IS_COW;
     } else if (*curPTEPtr & VM_PHYS_RES_BIT) {
 	/*
-	 * The page is already be in memory.
+	 * The page is already in memory.  Validate it in hardware and set
+	 * the reference bit since we are about to reference it.
 	 */
 	vmStat.quickFaults++;
 	VmPageValidateInt(virtAddrPtr, curPTEPtr);
+	*curPTEPtr |= VM_REFERENCED_BIT;
         retVal = IS_DONE;
     } else {
 	*curPTEPtr |= VM_IN_PROGRESS_BIT;
@@ -1873,6 +1889,8 @@ INTERNAL static void
 PutOnFront(corePtr)
     register	VmCore	*corePtr;
 {
+    register	Vm_PTE	*ptePtr;
+
     if (corePtr->flags & VM_SEG_PAGEOUT_WAIT) {
 	Sync_Broadcast(&corePtr->virtPage.segPtr->condition);
     }
@@ -1881,7 +1899,32 @@ PutOnFront(corePtr)
     if (corePtr->flags & VM_FREE_PAGE) {
 	PutOnFreeList(corePtr);
     } else {
-	PutOnAllocListFront(corePtr);
+	if (vmFreeWhenClean && corePtr->lockCount == 0) {
+	    /*
+	     * We are supposed to free pages after we clean them.  Before
+	     * we put this page onto the dirty list, we already invalidated
+	     * it in hardware, thus forcing it to be faulted on before being
+	     * referenced.  If it was faulted on then PreparePage would have
+	     * set the reference bit in the PTE.  Thus if the reference bit
+	     * isn't set then the page isn't valid and thus it couldn't
+	     * possibly have been modified or referenced.  So we free this
+	     * page.
+	     */
+	    ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr,
+				 corePtr->virtPage.page);
+	    if (!(*ptePtr & VM_REFERENCED_BIT)) {
+		if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+		    Sys_Panic(SYS_FATAL, "PutOnFront: Resident bit not set\n");
+		}
+		corePtr->virtPage.segPtr->resPages--;
+		*ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
+		PutOnFreeList(corePtr);
+	    } else {
+		PutOnAllocListFront(corePtr);
+	    }
+	} else {
+	    PutOnAllocListFront(corePtr);
+	}
     }
     vmStat.numDirtyPages--; 
     Sync_Broadcast(&cleanCondition);
@@ -2188,6 +2231,7 @@ Vm_FsCacheSize(startAddrPtr, endAddrPtr)
      * for user processes.
      */
     vmStat.minVMPages = vmStat.numFreePages / MIN_VM_PAGE_FRACTION;
+    vmMaxDirtyPages = vmStat.numFreePages / MAX_DIRTY_PAGE_FRACTION;
 
     *startAddrPtr = vmBlockCacheBaseAddr;
     /*
