@@ -1088,7 +1088,7 @@ FlushingSegment:
 /*
  * ----------------------------------------------------------------------------
  *
- * VmMachFlushByteRange --
+ * VmMach_FlushByteRange --
  *
  *     	Flush a range of bytes from the cache.
  *
@@ -1104,11 +1104,10 @@ FlushingSegment:
  *
  * ----------------------------------------------------------------------------
  */
-.globl	_VmMachFlushByteRange
-_VmMachFlushByteRange:
+.globl	_VmMach_FlushByteRange
+_VmMach_FlushByteRange:
     /* Start prologue */
-    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
-    save	%sp, %OUT_TEMP1, %sp
+    save	%sp, (-MACH_SAVED_WINDOW_SIZE), %sp
     /* end prologue */
 
     /* Address of last byte to flush */
@@ -1124,7 +1123,7 @@ _VmMachFlushByteRange:
 
     /* Get number of lines to flush */
     sub		%VOL_TEMP1, %i0, %OUT_TEMP2
-    sll		%OUT_TEMP2, VMMACH_CACHE_SHIFT, %OUT_TEMP2
+    srl		%OUT_TEMP2, VMMACH_CACHE_SHIFT, %OUT_TEMP2
     add		%OUT_TEMP2, 1, %i3
 
     /* Do we have at least 16 lines to flush? */
@@ -1177,8 +1176,9 @@ FlushingHere:
 
     /* Are there another 16 lines? */
     subcc       %i3, 16, %g0
-    bg		FlushingHere
+    bge		FlushingHere
     add		%i0, (16 * VMMACH_CACHE_LINE_SIZE), %i0		/* delay slot */
+    tst		%i3
     be		DoneFlushing	/* We finished with the last 16 lines... */
     nop
 FinishFlushing:
