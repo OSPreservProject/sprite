@@ -371,7 +371,7 @@ extern	void		FsHandleDecRefCount();
 extern	Boolean	 	FsHandleUnlockHdr();
 extern	void 	 	FsHandleReleaseHdr();
 extern	void 	 	FsHandleRemoveHdr();
-extern	void 	 	FsHandleAttemptRemove();
+extern	Boolean	 	FsHandleAttemptRemove();
 extern	void 	 	FsHandleRemoveInt();
 
 /*
