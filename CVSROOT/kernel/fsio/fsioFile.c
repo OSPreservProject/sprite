@@ -1416,12 +1416,14 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 #ifdef SOSP91
 			{
 			    int oldSize;
+			    int modifyTime = 
+				handlePtr->cacheInfo.attr.modifyTime;
 			    oldSize = handlePtr->cacheInfo.attr.lastByte;
 			    status = Fsio_FileTrunc(handlePtr, arg, 0);
 			    SOSP_ADD_TRUNCATE_TRACE(streamPtr->hdr.fileID,
 				oldSize + 1, 
 				handlePtr->cacheInfo.attr.lastByte + 1,
-				handlePtr->cacheInfo.attr.modifyTime,
+				modifyTime,
 				handlePtr->cacheInfo.attr.createTime);
 			}
 #else
