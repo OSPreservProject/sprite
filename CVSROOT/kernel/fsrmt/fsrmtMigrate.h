@@ -36,6 +36,24 @@ typedef struct FsMigInfo {
 extern Boolean fsMigDebug;	/* enable migration debugging statements? */
 
 /*
+ * The following record defines what parameters the I/O server returns
+ * after being told about a migration.
+ */
+typedef struct FsMigrateReply {
+    int flags;		/* New stream flags, the FS_RMT_SHARED bit is modified*/
+    int offset;		/* New stream offset */
+} FsMigrateReply;
+
+/*
+ * This structure is for byte-swapping the rpc parameters correctly.
+ */
+typedef struct  FsMigParam {
+    int			dataSize;
+    FsUnionData		data;
+    FsMigrateReply	migReply;
+} FsMigParam;
+
+/*
  * File migration utilities.
  */
 extern ReturnStatus	FsMigrateUseCounts();
