@@ -329,10 +329,10 @@ Fs_Command(command, bufSize, buffer)
 	}
 	case FS_RETURN_STATS: {
 	    if (bufSize > 0) {
-		if (size > sizeof(FsStats) {
-		    size = sizeof(FsStats);
+		if (bufSize > sizeof(FsStats)) {
+		    bufSize = sizeof(FsStats);
 		}
-		bcopy((Address) &fsStats, buffer, size);
+		bcopy((Address) &fsStats, buffer, bufSize);
 		status = SUCCESS;
 	    } else {
 		status = FS_INVALID_ARG;
