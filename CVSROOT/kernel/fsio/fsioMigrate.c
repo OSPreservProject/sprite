@@ -226,7 +226,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	    }
 	    nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
 	    if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
-		printf( "No prefix entry for <%d,%d,%d>\n",
+		printf("Fs_DeencapStream: No prefix entry for <%d,%d,%d>\n",
 		    migInfoPtr->rootID.serverID,
 		    migInfoPtr->rootID.major, migInfoPtr->rootID.minor);
 	    }
@@ -515,7 +515,7 @@ Fs_RpcMigrateStream(srvToken, clientID, command, storagePtr)
     hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
 	    (&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *) NIL) {
-	panic("Fs_RpcMigrateStream, unknown %s handle <%d,%d>\n",
+	printf("Fs_RpcMigrateStream, unknown %s handle <%d,%d>\n",
 	    FsFileTypeToString(migInfoPtr->ioFileID.type),
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FS_STALE_HANDLE);
