@@ -359,32 +359,27 @@ NormalReturn:
 	andcc	%fp, 0x7, %g0
 	bne	KillUserProc
 	nop
-	mov	%fp, %o0
-	call	_VmMachGetPageMap
+	MACH_CHECK_FOR_FAULT(%fp, %VOL_TEMP1)
+	be	CheckNext
 	nop
-	srl	%o0, VMMACH_PAGE_PROT_SHIFT, %o0
-	cmp	%o0, VMMACH_PTE_OKAY_VALUE
-	bne	CallPageIn
-	nop
-	/*
-	 * Check the other extreme of the area we'd be touching on the stack.
-	 */
-	mov	%fp, %o0
-	add	%o0, MACH_SAVED_WINDOW_SIZE, %o0
-	call	_VmMachGetPageMap
-	nop
-	srl	%o0, VMMACH_PAGE_PROT_SHIFT, %o0
-	cmp	%o0, VMMACH_PTE_OKAY_VALUE
-	be	CallUnderflow			/* both addrs okay */
-	nop
-	
-CallPageIn:
 	/*
 	 * Call VM Stuff with the %fp which will be stack pointer in
 	 * the window we restore..
 	 */
 	mov	%fp, %o0
 	set	0x1, %o1		/* also check for protection????? */
+	call	_Vm_PageIn, 2
+	nop
+	tst	%RETURN_VAL_REG
+	bne	KillUserProc
+	nop
+CheckNext:
+	/* Check other extreme of area we'd touch */
+	add	%fp, MACH_SAVED_WINDOW_SIZE, %o0
+	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
+	be	CallUnderflow
+	nop
+	set	0x1, %o1
 	call	_Vm_PageIn, 2
 	nop
 	tst	%RETURN_VAL_REG
@@ -555,22 +550,15 @@ UserStack:
 	 * If alignment is bad, what should we do?
 	 * I just clear the last bits if it's a user stack pointer!
 	 */
-	cmp	%sp, 0x7, %g0
-	be	ContinueTesting
-	nop
 	and	%sp, ~(0x7), %sp
 
-	/*
-	 * I can't just call the Vm routine to test residence as I do
-	 * in the underflow stuff, 'cause it would user output registers
-	 * that aren't available here, so I have to do the same work in-line.
-	 * GROSS.
-	 */
-	set	VMMACH_PAGE_MAP_MASK, %g3
-	and	%sp, %g3, %g3
-	lda	[%g3] VMMACH_PAGE_MAP_SPACE, %g3
-	srl	%g3, VMMACH_PAGE_PROT_SHIFT, %g3
-	cmp	%g3, VMMACH_PTE_OKAY_VALUE
+	MACH_CHECK_FOR_FAULT(%sp, %g3)
+	bne	SaveToInternalBuffer
+	nop
+
+	/* check other address extreme */
+	add	%sp, MACH_SAVED_WINDOW_SIZE, %g4
+	MACH_CHECK_FOR_FAULT(%g4, %g3)
 	be	NormalOverflow
 	nop
 SaveToInternalBuffer:
@@ -620,6 +608,34 @@ ReturnFromOverflow:
  *	routine expects its return address in %RETURN_ADDR_REG, so this is the
  *	register we must save and restore in the inbetween window.
  *
+ *	In the case where the window we're restoring is for a user process,
+ *	we must also check for whether the stack is resident and writable.
+ *	If it isn't, we must page it in.  To do this is gross.  Since the
+ *	trap window we've entered into is 2 windows away from the window to
+ *	restore, we must move back one window and check the %fp there.  (This
+ *	will be the %sp in the actual window to restore.)  If it isn't
+ *	resident, then we must move forward again to the trap window and call
+ *	MachTrap to save state for us. Then we can call the Vm_PageIn code
+ *	from the trap window to page in the nasty stuff.  If it fails, we
+ *	must kill the user process.  All of this is complicated a bit further
+ *	by the fact that we have 2 addresses to test: the %fp and the
+ *	%fp + the size of the saved window stuff. So we check both for
+ *	residence.  If both are okay, we just do normal underflow.  If one or
+ *	the other fails, we save state.  We then test the first address,
+ *	if it fails, we page it in.  Then if the second one fails, we also
+ *	page it in.  It most likely will have been paged in by the first one,
+ *	though.  Then, after all this, we call the normal underflow which
+ *	should then be protected from page faults.  It has to be, since
+ *	it operates in one window back from the trap window where we saved
+ *	state, and we can't have any calls to Vm code there overwriting our
+ *	saved state.  Then we return.  If we marked that we had to save
+ *	state, then we must restore state by calling MachReturnFromTrap and
+ *	leaving as if this had all been a slow trap instead.  Unfortunately,
+ *	we must test some stuff twice, since there are no registers to save
+ *	anything into (%VOL_TEMP registers are blasted by the MachTrap code,
+ *	and the SAFE_TEMP register is already used to mark whether we saved
+ *	state).
+ *
  * Results:
  *	None.
  *
@@ -641,12 +657,25 @@ MachHandleWindowUnderflowTrap:
 	 * in question.
 	 */
 	restore
-	MACH_NEED_TO_PAGE_IN_USER_STACK()
-	be	NormalUnderflow
-	/* back again - in delay slot of branch */
-	save
 	/*
-	 * We need to save state.  
+	 * If alignment is bad, what should we do?
+	 * I just clear the last bits if it's a user stack pointer!
+	 */
+	and	%fp, ~(0x7), %fp
+	MACH_CHECK_FOR_FAULT(%fp, %o0)
+	bne,a	MustSaveState
+	save			/* back to trap window - only if branching!! */
+
+	/* Check other extreme of addresses we'd touch */
+	add	%fp, MACH_SAVED_WINDOW_SIZE, %o1
+	MACH_CHECK_FOR_FAULT(%o1, %o0)
+	save					/* back to trap window */
+	be	NormalUnderflow
+	nop
+
+MustSaveState:
+	/*
+	 * We need to save state.   We must do this in actual trap window.
 	 */
 	call	_MachTrap
 	nop
@@ -661,10 +690,45 @@ MachReturnToUnderflowWithSavedState:
 	 * We can't do it from actual underflow routine, since that's in the
 	 * wrong window and calls to the vm stuff would overwrite this window
 	 * where we had to save stuff so that MachReturnFromTrap could restore
-	 * stuff correctly and return from the correct window.
+	 * stuff correctly and return from the correct window.  So we move
+	 * back a window, check if first address faulted.  If so, get its
+	 * value and move here again and page it it.  Then move back again and
+	 * check second address.  If it is still bad, we move here again and
+	 * page it in.  Otherwise, we just move here again.
 	 */
-	/* Call vm stuff */
-	XXX Call vm stuff XXX
+	restore
+	MACH_CHECK_FOR_FAULT(%fp, %o0)
+	be	CheckNext			/* this one okay, goto next */
+	nop
+	mov	%fp, %o0			/* do the page in for first */
+	save					/* back to trap window */
+		/* Address that would fault is in %i0 now. */
+	mov	%i0, %o0
+	set	0x1, %o1			/* also check protection???? */
+	call	_Vm_PageIn, 2
+	nop
+	tst	%RETURN_VAL_REG
+	be,a	CheckNext			/* succeeded, try next */
+	restore		/* back to window to check in, only if branching!! */
+KillTheProc:
+	/* KILL IT - must be in trap window */
+	How???
+	XXX
+
+CheckNext:
+	add	%fp, MACH_SAVED_WINDOW_SIZE, %o1
+	MACH_CHECK_FOR_FAULT(%o1, %o0)
+	save					/* back to trap window */
+	be	NormalUnderflow			/* we were okay here */
+	nop
+		/* Address that would fault is in %i1 now. */
+	mov	%i1, %o0
+	set	0x1, %o1			/* also check protection???? */
+	call	_Vm_PageIn, 2
+	nop
+	tst	%RETURN_VAL_REG
+	bne	KillTheProc
+	nop
 
 NormalUnderflow:
 	mov	%g3, %VOL_TEMP1			/* clear out globals */
