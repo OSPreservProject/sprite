@@ -242,11 +242,6 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
 		(migInfoPtr, rpc_SpriteID, &streamPtr->flags,
 		 &streamPtr->offset, &size, &data);
     streamPtr->flags &= ~FS_NEW_STREAM;
-    if (streamPtr->offset != savedOffset) {
-	printf("Fsio_DeencapStream \"%s\" srcClientOffset %d ioSrvrOffset %d\n",
-	    Fsutil_HandleName(streamPtr->ioHandlePtr),
-	    savedOffset, streamPtr->offset);
-    }
 
     DEBUG( (" Type %d <%d,%d> offset %d, ", migInfoPtr->ioFileID.type,
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
@@ -264,6 +259,11 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
 	DEBUG( ("migEnd status %x\n", status) );
     } else {
 	DEBUG( ("migrate status %x\n", status) );
+    }
+    if (streamPtr->offset != savedOffset) {
+	printf("Fsio_DeencapStream \"%s\" srcClientOffset %d ioSrvrOffset %d\n",
+	    Fsutil_HandleName(streamPtr->ioHandlePtr),
+	    savedOffset, streamPtr->offset);
     }
 
     if (status == SUCCESS) {
