@@ -1072,7 +1072,7 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 	status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
 		    (cacheInfoPtr->hdrPtr, blockPtr, (Sync_RemoteWaiter *) NIL);
 #ifdef lint
-	status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr,
+	status = Fsdm_FileBlockRead(cacheInfoPtr->hdrPtr,
 		blockPtr, (Sync_RemoteWaiter *) NIL);
 	status = FsrmtFileBlockRead(cacheInfoPtr->hdrPtr,
 		blockPtr, (Sync_RemoteWaiter *) NIL);
