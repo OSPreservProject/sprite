@@ -119,7 +119,7 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 						used.*/
 {
     register Proc_ControlBlock 	*procPtr;
-    int				i, j;
+    int				i, j, len;
     char 			buf[PROC_PCB_ARG_LENGTH];
 
     if ((firstPid != PROC_MY_PID) && (firstPid > lastPid)) {
@@ -142,7 +142,7 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 	if (argsPtr != (Proc_PCBArgString *) NIL) {
 	    if (procPtr->argString != (Address) NIL) {
 		Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1, procPtr->argString,
-				 buf);
+				 buf, &len);
 		buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
 	    } else {
 		buf[0] = '\0';
@@ -173,7 +173,7 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
 	    if (argsPtr != (Proc_PCBArgString *) NIL) {
 		if (procPtr->argString != (Address) NIL) {
 		    Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
-				     procPtr->argString, buf);
+				     procPtr->argString, buf, &len);
 		    buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
 		} else {
 		    buf[0] = '\0';
