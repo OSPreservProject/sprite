@@ -89,19 +89,13 @@ loopStart:
 
 	jmp	begin:l
 
-| Trap to the debugger.  The two nops make space so that the pc can be stored
-| there.  The trap never returns to here, instead returning to the PC given in
-| Dbg_MonPC.
+|
+| Trap to the debugger.  Used when need to trap via the monitor.
+|
 
-	.globl _Dbg_Mon, _dbgMonPC, _dbgTraceLevel
+	.globl _Dbg_Mon
 _Dbg_Mon:	
 	trap #15
-_dbgMonPC:
-	nop
-	nop
-_dbgTraceLevel:
-	nop
-	nop
 
 begin:
  	movl	#start,sp		| Set the stack pointer
