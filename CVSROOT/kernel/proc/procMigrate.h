@@ -171,65 +171,65 @@ typedef struct {
       ((time).seconds * 10 + ((time).microseconds + 50000) / 100000)
 
 typedef struct {
-    int			evictions;	/* Number of processes evicted
+    unsigned int	evictions;	/* Number of processes evicted
 				     	   from this host */
-    int			pagesWritten;	/* Number of pages flushed as a
+    unsigned int	pagesWritten;	/* Number of pages flushed as a
 					   result of migration */
-    int			rpcKbytes; 	/* Total number of Kbytes sent during
+    unsigned int	rpcKbytes; 	/* Total number of Kbytes sent during
 					   migration. */
-    int 		timeToMigrate;	/* Cumulative time to export
+    unsigned int 	timeToMigrate;	/* Cumulative time to export
 					   running processes */
-    int 		timeToExec;	/* Cumulative time to do remote
+    unsigned int 	timeToExec;	/* Cumulative time to do remote
 					   exec's */
-    int 		timeToEvict;	/* Cumulative time to evict
+    unsigned int 	timeToEvict;	/* Cumulative time to evict
 					   processes, individually. */
-    int 		totalEvictTime;	/* Cumulative time to evict
+    unsigned int 	totalEvictTime;	/* Cumulative time to evict
 					   processes, from start of eviction
 					   request to completion of last
 					   eviction. */
-    int 		totalCPUTime;   /* Cumulative time used by all
+    unsigned int 	totalCPUTime;   /* Cumulative time used by all
 					   processes belonging to this host. */
-    int 		remoteCPUTime;  /* Cumulative time used by all
+    unsigned int 	remoteCPUTime;  /* Cumulative time used by all
 					   processes belonging to this host,
 					   while executing remotely. */
-    int 		evictionCPUTime;/* Cumulative time used by all
+    unsigned int 	evictionCPUTime;/* Cumulative time used by all
 					   processes subsequent to first
 					   eviction. */
 } Proc_MigVarStats;
 
 typedef struct {
-    int			statsVersion;   /* Used to distinguish old structures.
+    unsigned int 	statsVersion;   /* Used to distinguish old structures.
 					   */
-    int			foreign; 	/* Number of foreign processes on
+    unsigned int 	foreign; 	/* Number of foreign processes on
 				     	   this machine */
-    int			remote;		/* Number of processes belonging
+    unsigned int 	remote;		/* Number of processes belonging
 			     	   	   to this host, running elsewhere */
-    int			exports;	/* Number of times we have exported
+    unsigned int 	exports;	/* Number of times we have exported
 			     		   processes */
-    int			execs;		/* Number of times these were remote
+    unsigned int 	execs;		/* Number of times these were remote
 			     	   	   execs */
-    int			imports;	/* Number of times we have imported
+    unsigned int 	imports;	/* Number of times we have imported
 			     	   	   processes */
-    int			errors;		/* Number of times migration has
+    unsigned int 	errors;		/* Number of times migration has
 					   failed */
-    int			returns;	/* Number of times we have had our own
+    unsigned int 	returns;	/* Number of times we have had our own
 					   process migrate back to us,
 					   including evictions */
-    int			evictionsToUs;	/* Number of times we have had our own
+    unsigned int 	evictionsToUs;	/* Number of times we have had our own
 					   process evicted. */
-    int			hostCounts[NET_NUM_SPRITE_HOSTS];
+    unsigned int 	hostCounts[NET_NUM_SPRITE_HOSTS];
     					/* Array of counts of
 					   migration to each host */
-    int			migrationsHome; /* Number of times processes migrate
+    unsigned int 	migrationsHome; /* Number of times processes migrate
 					   home, excluding evictions. */
-    int			evictCalls; 	/* Number of times user-level daemon
+    unsigned int 	evictCalls; 	/* Number of times user-level daemon
 					   requested evictions. */
-    int			evictsNeeded; 	/* Number of times requests resulted
+    unsigned int 	evictsNeeded; 	/* Number of times requests resulted
 					   in >= 1 evictions. */
-    int			evictionsInProgress;
+    unsigned int 	evictionsInProgress;
     					/* Number of processes currently
 					   being evicted. */
-    int			processes;	/* Number of exited processes
+    unsigned int 	processes;	/* Number of exited processes
 					   belonging to this host (used
 					   for averaging CPU times). */
     Proc_MigVarStats	varStats; 	/* Other stats (see above) counted
@@ -244,9 +244,9 @@ typedef struct {
  * Macros to manipulate this structure using a monitor.
  */
 #define PROC_MIG_INC_STAT(stat) \
-	Proc_MigAddToCounter(1, &proc_MigStats.stat, (int *) NIL)
+	Proc_MigAddToCounter(1, &proc_MigStats.stat, (unsigned int *) NIL)
 #define PROC_MIG_DEC_STAT(stat) \
-	Proc_MigAddToCounter(-1, &proc_MigStats.stat, (int *) NIL)
+	Proc_MigAddToCounter(-1, &proc_MigStats.stat, (unsigned  int *) NIL)
 
 
 

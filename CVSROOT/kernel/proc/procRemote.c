@@ -974,7 +974,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     }
     if ((procPtr->migFlags & PROC_EVICTING) ||
 	(proc_MigStats.foreign == 0 &&
-	 proc_MigStats.evictionsInProgress > 0)) {
+	 proc_MigStats.evictionsInProgress != 0)) {
 	ProcMigEvictionComplete();
     }
 

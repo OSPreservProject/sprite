@@ -482,8 +482,8 @@ Proc_MigrateTrap(procPtr)
     Time startTime;
     Time endTime;
     Time timeDiff;
-    int *timePtr;
-    int *squaredTimePtr;
+    unsigned int *timePtr;
+    unsigned int *squaredTimePtr;
 #endif /* CLEAN */
     int whenNeeded;
     Boolean exec;
@@ -789,7 +789,7 @@ Proc_MigrateTrap(procPtr)
 	PROC_MIG_DEC_STAT(foreign);
 	if (evicting ||
 	    (proc_MigStats.foreign == 0 &&
-	     proc_MigStats.evictionsInProgress > 0)) {
+	     proc_MigStats.evictionsInProgress != 0)) {
 	    ProcMigEvictionComplete();
 	}
 #ifndef CLEAN
@@ -1581,7 +1581,6 @@ SuspendCallback(data, callInfoPtr)
     ProcMigCmd cmd;
     Proc_MigBuffer inBuf;
     int host;
-    Proc_PID pid;
 
     callPtr = (SuspendCallbackInfo *) data;
     if (proc_MigDebugLevel > 4) {
@@ -2141,8 +2140,8 @@ AddMigrateTime(time, totalPtr, squaredTotalPtr)
 ENTRY void
 Proc_MigAddToCounter(value, intPtr, squaredPtr)
     int value;
-    int *intPtr;
-    int *squaredPtr;
+    unsigned int *intPtr;
+    unsigned int *squaredPtr;
 {
 
     LOCK_MONITOR;
@@ -2178,8 +2177,8 @@ ProcRecordUsage(ticks, type)
     Timer_Ticks ticks;
     ProcRecordUsageType type;
 {
-    int *timePtr;
-    int *squaredTimePtr;
+    unsigned int *timePtr;
+    unsigned int *squaredTimePtr;
     Time time;
 
 #ifndef CLEAN
@@ -2633,7 +2632,7 @@ EvictionStarted()
 {
     LOCK_MONITOR;
 
-    if (proc_MigStats.evictionsInProgress > 0) {
+    if (proc_MigStats.evictionsInProgress != 0) {
 	UNLOCK_MONITOR;
 	return(TRUE);
     }
@@ -2675,7 +2674,7 @@ WaitForEviction()
 	UNLOCK_MONITOR;
 	return;
     }
-    while (proc_MigStats.evictionsInProgress > 0) {
+    while (proc_MigStats.evictionsInProgress != 0) {
 	if (Sync_Wait(&evictCondition, TRUE)) {
 	    /*
 	     * Interrupted.  Just give up.
@@ -2732,7 +2731,7 @@ ProcMigEvictionComplete()
 
     if (proc_MigStats.foreign == 0) {
 	proc_MigStats.evictionsInProgress = 0;
-    } else if (proc_MigStats.evictionsInProgress > 0) {
+    } else if (proc_MigStats.evictionsInProgress != 0) {
 	proc_MigStats.evictionsInProgress--;
     }
     if (proc_MigStats.evictionsInProgress == 0) {
