@@ -243,10 +243,10 @@ ReopenHandles(serverID)
 				SUCCESS);
 		    if ((status == RPC_TIMEOUT) ||
 			(status == RPC_SERVICE_DISABLED)) {
-			FsHandleUnlock(hdrPtr);
+			FsHandleUnlock(streamPtr);
 			goto reopenReturn;
 		    }
-		    FsHandleInvalidate(hdrPtr);
+		    FsHandleInvalidate((FsHandleHeader *)streamPtr);
 		}
 	    }
 	}
@@ -266,10 +266,8 @@ ReopenHandles(serverID)
 	     RecoveryNotify(&((FsRemoteIOHandle *)hdrPtr)->recovery);
 	     if (RecoveryFailed(&((FsRemoteIOHandle *)hdrPtr)->recovery)) {
 		 FsHandleInvalidate(hdrPtr);
-		 FsHandleRemove(hdrPtr);
-	     } else {
-		 FsHandleUnlock(hdrPtr);
 	     }
+	     FsHandleUnlock(hdrPtr);
 	 }
     }
 reopenReturn:
