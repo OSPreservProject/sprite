@@ -68,9 +68,8 @@ typedef struct FsDeviceIOHandle {
     List_Links		writeWaitList;	/* List of waiting writer processes. */
     List_Links		exceptWaitList;	/* List of process waiting for
 					 * exceptions (is this needed?). */
-    Boolean	readNotifyScheduled;	/* Used to optimize out notifies; */
-    Boolean	writeNotifyScheduled;	/*  important for serial lines, etc. */
-} FsDeviceIOHandle;			/* 88 BYTES */
+    int			notifyFlags;	/* Bits set to optimize out notifies */
+} FsDeviceIOHandle;			/* 136 BYTES */
 
 /*
  * Data transferred when a local device stream migrates.
