@@ -5,7 +5,7 @@
  *      this file because they synchronize with each other using a master
  *      lock.  RpcDoCall is the send-receive-timeout loop and
  *      RpcClientDispatch is the interrupt time routine that gets packets
- *      and handes them up to RpcDoCall.
+ *      and hands them up to RpcDoCall.
  *
  * Copyright 1986 Regents of the University of California
  * All rights reserved.
@@ -55,11 +55,12 @@ unsigned int	rpcMaxWait;	/* Maximum wait interval in ticks */
 int	rpcMaxFactor = 5000;	/* rpcMaxWait is rpcMaxFactor times
 				 * 1 millisecond */
 
-int	rpcMaxTries = 5;	/* Number of times to re-send before aborting */
+int	rpcMaxTries = 6;	/* Number of times to re-send before aborting */
 
 /*
- * Temporary guard.  Only accept a maximum number of Acknowledgments from
- * the server.  This prevents us from hanging if the server loops.
+ * Watchdog against lots of acknowledgments from a server.  Now we hang
+ * in order to figure out what's wrong on the server.  This counter causes
+ * a warning message to be printed every rpcMaxAcks.
  */
 int	rpcMaxAcks = 20;
 
@@ -93,12 +94,14 @@ Boolean rpcCallTiming = TRUE;
  *----------------------------------------------------------------------
  */
 ReturnStatus
-RpcDoCall(serverID, chanPtr, storagePtr, command)
+RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
     int serverID;		/* The Sprite host that will execute the
 				 * service procedure */
     register RpcClientChannel *chanPtr;	/* The channel for the RPC */
     Rpc_Storage *storagePtr;	/* Pointers to caller's buffers */
     int command;		/* Only used to filter trace records */
+    int *srvBootIDPtr;		/* Return, boot time stamp of server.  Used
+				 * to trigger recovery actions by our caller */
 {
     register RpcHdr *rpcHdrPtr;	/* Pointer to received message header */
     register ReturnStatus error;/* General error return status */
@@ -127,6 +130,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command)
      * hint received from the server.
      */
 
+    *srvBootIDPtr = 0;
     rpcCltStat.requests++;
     chanPtr->requestRpcHdr.serverHint =
 	chanPtr->replyRpcHdr.serverHint;
@@ -171,6 +175,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command)
 	    Sync_MasterWait(&chanPtr->waitCondition,
 				&chanPtr->mutex, FALSE);
 	/*
+	 *	Wait ignoring signals.
+	 *
 	    if (Sig_Pending(Proc_GetCurrentProc(Sys_GetProcessorNumber()))) {
 		error = FAILURE;
 		goto exit;
@@ -205,6 +211,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command)
 		 * receive loop.  The command field is overloaded with the
 		 * return error code.
 		 */
+		*srvBootIDPtr = rpcHdrPtr->bootID;
 		if (rpcHdrPtr->flags & RPC_ERROR) {
 		    error = (ReturnStatus)rpcHdrPtr->command;
 		    if (error == 0) {
@@ -226,6 +233,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command)
 	    } else if (rpcHdrPtr->flags & RPC_ACK) {
 		numAcks++;
 		rpcCltStat.acks++;
+		*srvBootIDPtr = rpcHdrPtr->bootID;
 		if (numAcks <= rpcMaxAcks) {
 		    /*
 		     * An ack from the server indicating that a server
@@ -239,13 +247,21 @@ RpcDoCall(serverID, chanPtr, storagePtr, command)
 			wait = rpcMaxWait;
 		    }
 		} else {
+		    char *name;
 		    /*
 		     * Too many acks.  This is a check against a looping
 		     * server process.  In that case the dispatcher on
 		     * the server machine will send us acks forever.
 		     */
 		    rpcCltStat.tooManyAcks++;
-		    Sys_Panic(SYS_WARNING, "RpcDoCall: lots of acks\n");
+		    Net_SpriteIDToName(serverID, &name);
+		    if (name == (char *)NIL) {
+			Sys_Panic(SYS_WARNING, 
+			    "RpcDoCall: <%d> seems hung\n", spriteID);
+		    } else {
+			Sys_Panic(SYS_WARNING, 
+			    "RpcDoCall: %s seems hung\n", name);
+		    }
 		    numAcks = 0;
 		}
 	    } else {
@@ -486,6 +502,7 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 	}
     } else {
 	/*
+	 * Unfragmented message.
 	 * Copy the complete message out of the network's buffers.
 	 */
 	RpcScatter(rpcHdrPtr, &chanPtr->reply);
