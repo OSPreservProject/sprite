@@ -353,7 +353,7 @@ Fsio_MigrateUseCounts(flags, closeSrcClient, usePtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * Fsio_IOClientMigrate --
+ * Fsio_MigrateClient --
  *
  *	Move a client of an I/O handle from one host to another.  Flags
  *	indicate if the migration results in a newly shared stream, or
@@ -374,7 +374,7 @@ Fsio_MigrateUseCounts(flags, closeSrcClient, usePtr)
  */
 
 ENTRY void
-Fsio_IOClientMigrate(clientList, srcClientID, dstClientID, flags, closeSrcClient)
+Fsio_MigrateClient(clientList, srcClientID, dstClientID, flags, closeSrcClient)
     List_Links	*clientList;	/* List of clients for the I/O handle. */
     int		srcClientID;	/* The original client. */
     int		dstClientID;	/* The destination client. */
@@ -394,7 +394,7 @@ Fsio_IOClientMigrate(clientList, srcClientID, dstClientID, flags, closeSrcClient
 	 */
 	found = Fsconsist_IOClientClose(clientList, srcClientID, flags, &cache);
 	if (!found) {
-	    printf("Fsio_IOClientMigrate, srcClient %d not found\n", srcClientID);
+	    printf("Fsio_MigrateClient, srcClient %d not found\n", srcClientID);
 	}
     }
     if (flags & FS_NEW_STREAM) {

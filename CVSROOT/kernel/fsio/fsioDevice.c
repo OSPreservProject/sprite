@@ -638,7 +638,7 @@ Fsio_DeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPt
     /*
      * Move the client at the I/O handle level.
      */
-    Fsio_IOClientMigrate(&devHandlePtr->clientList, migInfoPtr->srcClientID,
+    Fsio_MigrateClient(&devHandlePtr->clientList, migInfoPtr->srcClientID,
 			dstClientID, migInfoPtr->flags, closeSrcClient);
 
     *sizePtr = 0;

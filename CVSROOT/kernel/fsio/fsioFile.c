@@ -1076,7 +1076,7 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	    (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-    FscacheWaitForReadAhead(&handlePtr->readAhead);
+    Fscache_WaitForReadAhead(&handlePtr->readAhead);
     status = Fscache_Write(&handlePtr->cacheInfo, writePtr->flags,
 			  writePtr->buffer, writePtr->offset,
 			  &writePtr->length, remoteWaitPtr);
@@ -1089,7 +1089,7 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	status = Fsdm_FileDescWriteBack(handlePtr, FALSE);
     }
 
-    FscacheAllowReadAhead(&handlePtr->readAhead);
+    Fscache_AllowReadAhead(&handlePtr->readAhead);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }

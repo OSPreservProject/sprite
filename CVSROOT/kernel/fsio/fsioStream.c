@@ -599,7 +599,7 @@ Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
 					 * is attached to the stream */
     int		clientID;		/* Host ID of the client */
 {
-    register FsStreamClientInfo *clientPtr;
+    register FsioStreamClient *clientPtr;
     register Fs_Stream *streamPtr;
     Boolean found = FALSE;
 
@@ -674,7 +674,7 @@ Fsio_StreamDestroy(streamPtr)
     if (!List_IsEmpty(&streamPtr->clientList)) {
 	noClients = FALSE;
 	if (fsio_StreamDisposeDebug) {
-	    register FsStreamClientInfo *clientPtr;
+	    register FsioStreamClient *clientPtr;
 
 	    LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
 

@@ -907,7 +907,7 @@ Fsio_PipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     /*
      * Move the client at the I/O handle level.
      */
-    Fsio_IOClientMigrate(&handlePtr->clientList, migInfoPtr->srcClientID,
+    Fsio_MigrateClient(&handlePtr->clientList, migInfoPtr->srcClientID,
 			dstClientID, migInfoPtr->flags, closeSrcClient);
 
     *sizePtr = 0;

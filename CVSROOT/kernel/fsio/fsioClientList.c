@@ -1,8 +1,9 @@
 /* 
- * fsClient.c --
+ * fsClientList.c --
  *
  *	Routines to handle the client lists maintained at the stream level.
- *	The stream-level client list is needed for migration.
+ *	The stream-level client list is needed for migration.  It is not to
+ *	be confused with the client list that hangs off the I/O handles.
  *
  *
  * Copyright 1987 Regents of the University of California
@@ -60,7 +61,7 @@ Fsio_StreamClientOpen(clientList, clientID, useFlags, foundPtr)
     int			useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
     Boolean		*foundPtr;	/* Return - TRUE if client existed */
 {
-    register FsStreamClientInfo *clientPtr;
+    register FsioStreamClient *clientPtr;
     register Boolean found = FALSE;
     register Boolean shared = FALSE;
 
@@ -75,9 +76,8 @@ Fsio_StreamClientOpen(clientList, clientID, useFlags, foundPtr)
 	}
     }
     if (!found) {
-	clientPtr = mnew(FsStreamClientInfo);
+	clientPtr = mnew(FsioStreamClient);
 	clientPtr->clientID = clientID;
-	clientPtr->useFlags = useFlags;
 	List_InitElement((List_Links *)clientPtr);
 	List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
 	fs_Stats.object.streamClients++;
@@ -114,7 +114,7 @@ Fsio_StreamClientClose(clientList, clientID)
     List_Links		*clientList;	/* List of clients who have it open */
     int			clientID;	/* Host ID of client that had it open */
 {
-    register	FsStreamClientInfo	*clientPtr;
+    register	FsioStreamClient	*clientPtr;
 
     LIST_FORALL(clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == clientID) {
@@ -148,7 +148,7 @@ Fsio_StreamClientFind(clientList, clientID)
     List_Links          *clientList;    /* List of clients who have it open */
     int                 clientID;       /* Host ID of client to find */
 {
-    register    FsStreamClientInfo      *clientPtr;
+    register    FsioStreamClient      *clientPtr;
 
     LIST_FORALL(clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == clientID) {
