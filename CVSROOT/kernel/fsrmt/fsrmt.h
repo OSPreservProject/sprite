@@ -88,6 +88,8 @@ typedef struct FsSpriteIOCParams {
     int		command;	/* Iocontrol to perform. */
     int		inBufSize;	/* Size of input params to ioc. */
     int		outBufSize;	/* Size of results from ioc. */
+    int		byteOrder;	/* Defines client's byte ordering */
+    int		reserved;	/* Extra */
 } FsSpriteIOCParams;
 
 /*
