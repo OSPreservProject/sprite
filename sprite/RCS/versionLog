@@ -627,4 +627,11 @@ Fixed a few compat bugs:
 	a DecStation partition.
     - Modified L1-i so it hopefully won't crash the machine.
     - Removed tracing in SCSI C90 device driver.
+
+1.111 	Fri Mar 20 17:58:03 PST 1992
+    Fixed a bug in LFS that was introduced by the 1.110 kernel.
+    Lfs no longer panics on short reads during attach.
+    Got rid of some warning messages about partition mismatches and
+	short reads that weren't really necessary.
+    RAID device is now enabled properly. 1.110 got it wrong.
     New files linked in from the net library.
