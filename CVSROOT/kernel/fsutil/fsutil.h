@@ -27,6 +27,7 @@
 #ifndef _FSUTIL
 #define _FSUTIL
 
+#include "stdlib.h"
 
 #include "fs.h"
 #include "fsio.h"
