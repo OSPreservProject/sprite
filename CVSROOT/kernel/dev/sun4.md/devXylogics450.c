@@ -25,9 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "proc.h"	/* for Mach_SetJump */
 #include "fs.h"
-#include "mem.h"
 #include "vmMach.h"
-#include "mem.h"
 #include "sched.h"
 
 /*
