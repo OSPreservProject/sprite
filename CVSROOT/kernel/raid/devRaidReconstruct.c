@@ -298,7 +298,7 @@ reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
 	if (diskPtr->state == RAID_DISK_READY) {
 	    printf("RAID:RECON:%d %d %d\n",
 		    diskPtr->device.type, diskPtr->device.unit,
-		    SectorToStripeUnitID(raidPtr, diskPtr->numValidSector));
+		    SectorToStripeUnitID(raidPtr, diskPtr->numValidSector-1));
 	    SaveDiskState(raidPtr, diskPtr->col, diskPtr->row,
 		    diskPtr->device.type, diskPtr->device.unit,
 		    diskPtr->version, diskPtr->numValidSector);
