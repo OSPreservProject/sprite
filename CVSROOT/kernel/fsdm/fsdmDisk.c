@@ -341,24 +341,15 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
 			(ClientData)&domainPtr->headerPtr->geometry;
     /* 
      * Verify the device specification by checking the partition
-     * number kept in the domain header.  We may map to a different
-     * partition here, allowing us to attach at boot time other than
-     * the zero'th ('a') partition.  The 'c' partition, for example,
-     * also starts at the zero'th sector, but traditionally takes
-     * up the whole disk.
+     * number kept in the domain header.  
      */
     partition = domainPtr->headerPtr->device.unit;
     if (partition >= 0 && partition < FSDM_NUM_DISK_PARTS) {
 	if ((devicePtr->unit % FSDM_NUM_DISK_PARTS) != partition) {
-	    if (devicePtr->unit % FSDM_NUM_DISK_PARTS) {
-		/*
-		 * Only allow automatic corrections with partition 'a' -> 'c'.
-		 */
-		printf("Fsdm_AttachDisk: partition mis-match, arg %d disk %d\n",
-			  devicePtr->unit, partition);
-	    } else {
-		devicePtr->unit += partition;
-	    }
+	    printf("Fsdm_AttachDisk: partition mis-match, arg %d disk %d\n",
+		  devicePtr->unit, partition);
+	    domainPtr->flags |= FSDM_DOMAIN_DOWN;
+	    return(FAILURE);
 	}
     }
     /*
@@ -556,6 +547,8 @@ Fsdm_DetachDisk(prefixName)
     int			i;
     ReturnStatus	status;
     int			blocksLeft;
+    Fsdm_DomainHeader	*headerPtr;
+    int			blocksSkipped;
 
     /*
      * Find the domain to detach.
@@ -604,6 +597,12 @@ Fsdm_DetachDisk(prefixName)
      * domain down.
      */
     Fscache_WriteBack(-1, &blocksLeft, FALSE);	/* Write back the cache. */
+    headerPtr = domainPtr->headerPtr;
+    Fscache_FileWriteBack(&domainPtr->physHandle.cacheInfo,
+	    headerPtr->fileDescOffset,
+	    headerPtr->fileDescOffset + 
+		(headerPtr->numFileDesc / FSDM_FILE_DESC_PER_BLOCK) + 1,
+	    FSCACHE_WRITE_BACK_AND_INVALIDATE, &blocksSkipped);
     Fsdm_DomainWriteBack(domain, FALSE, TRUE);/* Write back domain info. */
     MarkDomainDown(domainPtr);
     /*
