@@ -170,7 +170,8 @@ ReturnStatus
 FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	dataSizePtr, clientDataPtr)
      register FsLocalFileIOHandle *handlePtr;	/* A handle from FsLocalLookup.
-					 * Should be LOCKED upon entry. */
+					 * Should be LOCKED upon entry,
+					 * Returned UNLOCKED. */
      int		clientID;	/* Host ID of client doing the open */
      register int	useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
      FsFileID		*ioFileIDPtr;	/* Return - same as handle file ID */
@@ -186,7 +187,8 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 
     if ((useFlags & FS_WRITE) &&
 	(handlePtr->descPtr->fileType == FS_DIRECTORY)) {
-	return(FS_IS_DIRECTORY);
+	status = FS_IS_DIRECTORY;
+	goto exit;
     }
     if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
 	/*
@@ -201,7 +203,15 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
      */
     if (((useFlags & FS_EXECUTE) && (handlePtr->use.write > 0)) ||
 	((useFlags & (FS_WRITE|FS_CREATE)) && (handlePtr->use.exec > 0))) {
-	return(FS_FILE_BUSY);
+	status = FS_FILE_BUSY;
+	goto exit;
+    }
+    /*
+     * Add in read permission when executing a file so Fs_Read doesn't
+     * foil page-ins later.
+     */
+    if ((useFlags & FS_EXECUTE) && (handlePtr->descPtr->fileType == FS_FILE)) {
+	useFlags |= FS_READ;
     }
     /*
      * Set up the ioFileIDPtr so our caller can set/get attributes.
@@ -210,29 +220,33 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     if (clientID != rpc_SpriteID) {
 	ioFileIDPtr->type = FS_RMT_FILE_STREAM;
     }
-    if (clientDataPtr != (ClientData *)NIL) { 
+    if (clientDataPtr == (ClientData *)NIL) { 
 	/*
-	 * Called during an open.
-	 * Check use by other clients and take any actions needed to
-	 * keep caches consistent.  The call unlocks the handle.
+	 * Only being called from the get/set attributes code.
+	 * Setting up the ioFileID is all that is needed.
 	 */
+	status = SUCCESS;
+    } else {
+	/*
+	 * Called during an open.  Update the summary use counts while
+	 * we still have the handle locked.  Then unlock the handle and
+	 * do consistency call-backs.  The handle is unlocked to allow
+	 * servicing of RPCs which are side effects
+	 * of the consistency requests (i.e. write-backs).
+	 */
+	handlePtr->use.ref++;
+	if (useFlags & FS_WRITE) {
+	    handlePtr->use.write++;
+	    IncVersionNumber(handlePtr);
+	}
+	if (useFlags & FS_EXECUTE) {
+	    handlePtr->use.exec++;
+	}
+	FsHandleUnlock(handlePtr);
 	fileStatePtr = Mem_New(FsFileState);
 	status = FsFileConsistency(handlePtr, clientID, useFlags,
 		    &fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
-	FsHandleLock(handlePtr);
 	if (status == SUCCESS) {
-	    /*
-	     * Update summary use counts kept in the handle.  Note that
-	     * these counts reflect use by all clients, including ourselves.
-	     */
-	    handlePtr->use.ref++;
-	    if (useFlags & FS_WRITE) {
-		handlePtr->use.write++;
-		IncVersionNumber(handlePtr);
-	    }
-	    if (useFlags & FS_EXECUTE) {
-		handlePtr->use.exec++;
-	    }
 	    /*
 	     * Copy cached attributes into the returned file state.
 	     */
@@ -263,16 +277,27 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 		*streamIDPtr = streamPtr->hdr.fileID;
 		FsHandleRelease(streamPtr, TRUE);
 	    }
+	    return(SUCCESS);
 	} else {
+	    /*
+	     * Consistency call-backs failed because the last writer
+	     * could not write back its copy of the file. We garbage
+	     * collect the client to retreat to a known bookkeeping point.
+	     */
+	    int ref, write, exec;
+	    Sys_Panic(SYS_WARNING, "Consistency failed %x on <%d,%d>\n",
+		status,
+		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
+	    FsHandleLock(handlePtr);
+	    FsConsistKill(&handlePtr->consist, clientID, &ref, &write, &exec);
+	    handlePtr->use.ref   -= ref;
+	    handlePtr->use.write -= write;
+	    handlePtr->use.exec  -= exec;
 	    Mem_Free((Address)fileStatePtr);
 	}
-    } else {
-	/*
-	 * Only being called from the get/set attributes code.
-	 * Setting up the ioFileID is all that is needed.
-	 */
-	status = SUCCESS;
     }
+exit:
+    FsHandleUnlock(handlePtr);
     return(status);
 }
 
@@ -332,7 +357,7 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     /*
      * See if the client can still cache its dirty blocks.
      */
-    if (reopenParamsPtr->mustBeCacheable) {
+    if (reopenParamsPtr->haveDirtyBlocks) {
 	status = FsCacheCheckVersion(&handlePtr->cacheInfo,
 				     reopenParamsPtr->version, clientID);
 	if (status != SUCCESS) {
@@ -341,50 +366,36 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	}
     }
     /*
-     * Update the client state and the global state of the file,
-     * taking cache consistency actions if need be.
+     * Update global use counts and version number.
+     */
+    FsReopenClient(handlePtr, clientID, reopenParamsPtr->use,
+			    reopenParamsPtr->haveDirtyBlocks);
+    if (reopenParamsPtr->use.write > 0) {
+	IncVersionNumber(handlePtr);
+    }
+    /*
+     * Now unlock the handle and do cache consistency call-backs.
      */
     fileStatePtr = Mem_New(FsFileState);
-    fileStatePtr->cacheable = reopenParamsPtr->mustBeCacheable;
+    fileStatePtr->cacheable = reopenParamsPtr->haveDirtyBlocks;
+    FsHandleUnlock(handlePtr);
     status = FsReopenConsistency(handlePtr, clientID, reopenParamsPtr->use,
-		&fileStatePtr->cacheable, &useChange,
-		&fileStatePtr->openTimeStamp);
+		&fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
     if (status != SUCCESS) {
-	Mem_Free((Address)fileStatePtr);
-	FsHandleRelease(handlePtr, FALSE);
-    } else {
 	/*
-	 * Update global/summary use counts.
+	 * Consistency call-backs failed, probably due to disk-full.
+	 * We kill the client here as it will invalidate its handle
+	 * after this re-open fails.
 	 */
+	int ref, write, exec;
 	FsHandleLock(handlePtr);
-	handlePtr->use.ref += useChange.ref;
-	handlePtr->use.write += useChange.write;
-	handlePtr->use.exec += useChange.exec;
-	if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
-	    handlePtr->use.exec < 0) {
-	    Sys_Panic(SYS_FATAL, "Fs_RpcReopen, negative use counts\n");
-	}
-	/*
-	 * Update the version number on the file when re-opening for writing.
-	 * This ensures that someone who slipped in and got a version of
-	 * the file will not use it again now that there is a writer.  For
-	 * example, if a client is writing when we reboot, we'll both have
-	 * the save version number, but it applies to what is in the client's
-	 * cache.  It is possible that a different client could open the
-	 * file before the writing client re-opens for writing.  The other
-	 * client would then see the previous version, and we increment
-	 * the version number here so it eventually invalidates it.  If
-	 * the other client is actively reading when the write does the
-	 * reopen then the cache consistency stuff will stop client caching
-	 * on the file and tell the writer to write-back his dirty blocks.
-	 * It appears there is a small window for an inconsistent view 
-	 * between the time the other client opens for reading and when
-	 * the writer does its reopen.
-	 */
-	if (useChange.write > 0) {
-	    IncVersionNumber(handlePtr);
-	}
-	FsHandleRelease(handlePtr, TRUE);
+	FsConsistKill(&handlePtr->consist, clientID, &ref, &write, &exec);
+	handlePtr->use.ref   -= ref;
+	handlePtr->use.write -= write;
+	handlePtr->use.exec  -= exec;
+	FsHandleUnlock(handlePtr);
+	Mem_Free((Address)fileStatePtr);
+    } else {
 	/*
 	 * Successful re-open here on the server. Copy cached attributes
 	 * into the returned file state.
@@ -395,10 +406,9 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	*outDataPtr = (ClientData) fileStatePtr;
 	*outSizePtr = sizeof(FsFileState);
     }
+    FsHandleRelease(handlePtr, FALSE);
 reopenReturn:
-    if (domainPtr != (FsDomain *)NIL) {
-	FsDomainRelease(reopenParamsPtr->fileID.major);
-    }
+    FsDomainRelease(reopenParamsPtr->fileID.major);
     return(status);
 }
 
@@ -886,6 +896,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * actions. The handle returns unlocked from the consistency routine.
 	 */
 	fileStatePtr = Mem_New(FsFileState);
+	FsHandleUnlock(handlePtr);
 	status = FsMigrateConsistency(handlePtr, migInfoPtr->srcClientID,
 		dstClientID, migInfoPtr->flags,
 		&fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
