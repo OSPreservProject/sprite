@@ -42,6 +42,10 @@ typedef struct DiskMap {
 } DiskMap;
 
 /*
+ * Maximum size of the disk in sectors. 
+ */
+#define	MAX_DISK_SIZE	0x7fffffff
+/*
  * State info for an SCSI Disk.  This gets allocated and filled in by
  * the attach procedure. 
  */
@@ -51,9 +55,9 @@ typedef struct ScsiDisk {
     int	        partition;  /* What partition we want. A partition number
 			     * of -1 means the whole disk.
 			     */
-    int sizeInSectors;	    /* The number of sectors on disk */
+    int sizeInSectors;	    /* The number of sectors on disk. This number is
+			     * MAX_DISK_SIZE if partition == -1. */
     DiskMap map[DEV_NUM_DISK_PARTS];	/* The partition map */
-    int type;		/* Type of the drive, needed for error checking */
     DevDiskStats *diskStatsPtr;	/* Area for disk stats. */	
     int retries;		/* Number of times current command has been
 				 * retried. */
@@ -355,7 +359,9 @@ InitDisk(devPtr,readLabel)
 	if (status != SUCCESS) {
 	    return((ScsiDisk *) NIL);
 	}
-    } 
+    } else {
+	disk.sizeInSectors = MAX_DISK_SIZE;
+    }
 
     /*
      * Return a malloced copy of the structure we filled in.
