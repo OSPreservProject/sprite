@@ -218,11 +218,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    debugState.termReason	= procPtr->termReason;
 	    debugState.termStatus	= procPtr->termStatus;
 	    debugState.termCode		= procPtr->termCode;
-	    for (i = 0; i < PROC_NUM_GENERAL_REGS; i++) {
-		debugState.genRegs[i]	= procPtr->genRegs[i];
-	    }
-	    debugState.progCounter	= procPtr->progCounter;
-	    debugState.statusReg	= procPtr->statusReg;
+	    Mach_GetDebugState(procPtr, &debugState);
 	    debugState.sigHoldMask	= procPtr->sigHoldMask;
 	    debugState.sigPendingMask	= procPtr->sigPendingMask;
 	    for (i = 0; i < SIG_NUM_SIGNALS; i++) {
@@ -243,10 +239,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 				(Address) &debugState)) {
 		status = SYS_ARG_NOACCESS;
 	    } else {
-		procPtr->progCounter = debugState.progCounter;
-		for (i = 0; i < PROC_NUM_GENERAL_REGS; i++) {
-		    procPtr->genRegs[i]	= debugState.genRegs[i];
-		}
+		Mach_SetDebugState(procPtr, &debugState);
 		Sig_ChangeState(procPtr, debugState.sigActions,
 				debugState.sigMasks, debugState.sigPendingMask,
 				debugState.sigCodes, debugState.sigHoldMask);
@@ -336,8 +329,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
  *----------------------------------------------------------------------
  */
 void
-Proc_SuspendProcess(procPtr, debug, termReason, termStatus,
-		    termCode, statusReg)
+Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
     register	Proc_ControlBlock	*procPtr;	/* Process to put on the
 							 * debug list. */
     Boolean				debug;		/* TRUE => this process
@@ -348,12 +340,9 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus,
 							 * went to this state.*/
     int					termStatus;	/* Termination status.*/
     int					termCode;	/* Termination code. */
-    short				statusReg;	/* Status register of
-							 * the process. */
 {
     LOCK_MONITOR;
 
-    procPtr->statusReg	= statusReg;
     procPtr->termReason	= termReason;
     procPtr->termStatus	= termStatus;
     procPtr->termCode	= termCode;

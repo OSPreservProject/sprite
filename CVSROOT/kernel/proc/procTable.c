@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "proc.h"
 #include "procInt.h"
 #include "sync.h"
@@ -27,16 +28,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "sys.h"
-#include "machine.h"
 #include "mem.h"
 #include "rpc.h"
-#include "exc.h"
 
 Sync_Lock	tableLock = {0, 0};
 #define	LOCKPTR &tableLock
 
 Proc_ControlBlock **proc_PCBTable;
-Proc_ControlBlock  **proc_RunningProcesses;
+Proc_ControlBlock  **proc_RunningProcesses = (Proc_ControlBlock **)NIL;
 #define PROC_MAX_PROCESSES 256
 #define PROC_PCB_NUM_ALLOC 16
 int proc_MaxNumProcesses;
@@ -162,14 +161,14 @@ InitPCB(pcbPtr, i)
     pcbPtr->peerProcessID = (Proc_PID) NIL;
     pcbPtr->argString = (char *) NIL;
     pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
-    pcbPtr->trapStackPtr = (Exc_TrapStack *) NIL;
     pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
 
     pcbPtr->waitToken = 0;
     pcbPtr->timerArray = (struct ProcIntTimerInfo *) NIL;
 
-    pcbPtr->kcallTable = exc_NormalHandlers;
+    pcbPtr->kcallTable = mach_NormalHandlers;
     pcbPtr->specialHandling = 0;
+    pcbPtr->machStatePtr = (struct Mach_State *)NIL;
 }
 
 
@@ -266,7 +265,7 @@ Proc_InitMainProc()
     procPtr->cwdPtr		= (Fs_Stream *) NIL;
     procPtr->setJumpStatePtr	= (Sys_SetJumpState *) NIL;
 
-    procPtr->stackStart 	= (int)mach_StackBottom;
+    Mach_InitFirstProc(procPtr);
 
     procPtr->familyID 		= PROC_NO_FAMILY;	/* not in a family */
     

@@ -131,10 +131,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "sys.h"
 #include "dbg.h"
-#include "machine.h"
 #include "mem.h"
 #include "rpc.h"
 #include "sig.h"
+#include "mach.h"
 
 static	Sync_Lock	exitLock = {0, 0};
 #define	LOCKPTR &exitLock
@@ -228,10 +228,9 @@ Proc_ExitInt(reason, status, code)
     if (curProcPtr->genFlags & PROC_DEBUGGED) {
 	/*
 	 * If a process is being debugged then force it onto the debug
-	 * list before allowing it to exit.  NOTE: Need to get at the 
-	 * machine state (registers and PC).
+	 * list before allowing it to exit.
 	 */
-	Proc_SuspendProcess(curProcPtr, TRUE, reason, status, code, 0);
+	Proc_SuspendProcess(curProcPtr, TRUE, reason, status, code);
     }
 
     if (sys_ErrorShutdown) {
@@ -500,9 +499,7 @@ Proc_Reaper(procPtr, callInfoPtr)
 		"Proc_Reaper: non-DEAD proc on dead list.\n");
     }
 
-    if (procPtr->stackStart != NIL) {
-	Vm_FreeKernelStack(procPtr->stackStart);
-    }
+    Mach_FreeState(procPtr);
     VmMach_FreeContext(procPtr);
 
     ProcFreePCB(procPtr);

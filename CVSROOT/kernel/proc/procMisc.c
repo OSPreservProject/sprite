@@ -398,7 +398,7 @@ Proc_Dump()
     register int i;
     register Proc_ControlBlock *pcbPtr;
 
-    Sys_Printf("%8s: %11s %8s %8s %s\n", "PID:", "state ", "event ", "pc ",
+    Sys_Printf("%8s: %11s %8s %s\n", "PID:", "state ", "event ",
 		     "program");
     for (i = 0; i < proc_MaxNumProcesses; i++) {
 	pcbPtr = proc_PCBTable[i];
@@ -431,7 +431,6 @@ Proc_Dump()
 		break;
 	}
 	Sys_Printf(" %8x", pcbPtr->event);
-	Sys_Printf(" %8x", pcbPtr->progCounter);
 	if (pcbPtr->argString != (Address) NIL) {
 	    char cmd[30];
 	    char *space;

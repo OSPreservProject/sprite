@@ -23,7 +23,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "byte.h"
 #include "list.h"
-#include "machine.h"
 #include "mem.h"
 #include "proc.h"
 #include "procInt.h"
@@ -34,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "timer.h"
 #include "vm.h"
+#include "mach.h"
 
 ReturnStatus    InitUserProc();
 
@@ -155,7 +155,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 	procPtr->parentID 	= parentProcPtr->peerProcessID;
     }
     procPtr->familyID 		= parentProcPtr->familyID;
-    procPtr->kcallTable		= exc_NormalHandlers;
+    procPtr->userID 		= parentProcPtr->userID;
 
     procPtr->billingRate 	= parentProcPtr->billingRate;
     procPtr->recentUsage 	= 0;
@@ -177,7 +177,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     /* 
 	procPtr->argString = String_Copy(procName, (char *) NULL);
      * reinitializations of control block fields.  
-	    procPtr->argString =
+p     */
 		    String_Copy(parentProcPtr->argString, (char *) NULL);
 	free((Address) procPtr->argString);
 	procPtr->argString = (Address) NIL;
@@ -236,13 +236,14 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 	}
 
 	/*
-	procPtr->stackStart = Vm_GetKernelStack((int) PC, Sched_StartProcess);
-	if (procPtr->stackStart == -1) {
+	 * Change the returned process ID to be the process ID on the home
+				    Sched_StartKernProc, PC);
+	 */
 	if (pidPtr != (Proc_PID *) NIL) {
 	    *pidPtr = procPtr->peerProcessID;
 	}
     } else {
-	    return(PROC_NO_STACKS);
+	procPtr->peerHostID = NIL;
 	procPtr->peerProcessID = NIL;
     }
 	status = InitUserProc(PC, procPtr, parentProcPtr, shareHeap);
@@ -276,12 +277,10 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 	Proc_Lock(parentProcPtr);
 	parentProcPtr->genFlags |= PROC_VFORKPARENT;
 	Proc_Unlock(parentProcPtr);
-     * Set up the stack and frame pointers.
+    }
 
+    Mach_SetReturnVal(procPtr, PROC_CHILD_PROC);
      * Set up the environment of the process.
-   procPtr->saveRegs[mach_SP] = mach_DummySPOffset + procPtr->stackStart;
-   procPtr->saveRegs[mach_FP] = mach_DummyFPOffset + procPtr->stackStart;
-
      */
 
     if (!migrated) {
@@ -338,9 +337,10 @@ InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
  *	None.
  *
  *----------------------------------------------------------------------
-    procPtr->stackStart = Vm_GetKernelStack((int) PC, Sched_StartUserProc);
-    if (procPtr->stackStart == -1) {
-	return(PROC_NO_STACKS);
+ */
+				Sched_StartUserProc, (Address)NIL);
+static ReturnStatus
+InitUserProc(procPtr, parentProcPtr, shareHeap, vforkFlag)
     register	Proc_ControlBlock	*procPtr;	/* PCB to initialized.*/
     register	Proc_ControlBlock	*parentProcPtr;	/* Parent's PCB. */
     Boolean				shareHeap;	/* TRUE => share heap
@@ -355,7 +355,7 @@ InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
     status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_STACK],
     /*
     if (status != SUCCESS) {
-	Vm_FreeKernelStack(procPtr->stackStart);
+	Mach_FreeState(procPtr);
 	return(status);
      * or the same as the parent depending on the share heap flag.
      */
@@ -368,7 +368,7 @@ InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
 				parentProcPtr->vmPtr->segPtrArray[VM_STACK];
     } else {
 	status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_STACK],
-	    Vm_FreeKernelStack(procPtr->stackStart);
+			procPtr, &(procPtr->vmPtr->segPtrArray[VM_STACK]));
 	if (status != SUCCESS) {
 	    Mach_FreeState(procPtr);
     if (shareHeap || vforkFlag) {
@@ -377,16 +377,6 @@ InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
 				parentProcPtr->vmPtr->segPtrArray[VM_HEAP];
     } else {
 	status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_HEAP],
-    /*
-     * Now copy over all of the internal state of the user process so that
-     * the forked process can resume properly.
-     */
-
-    procPtr->progCounter = parentProcPtr->progCounter;
-    Byte_Copy(sizeof(procPtr->genRegs), 
-	      (Address) parentProcPtr->genRegs, 
-	      (Address) procPtr->genRegs);
-    
 			   procPtr, &(procPtr->vmPtr->segPtrArray[VM_HEAP]));
 	if (status != SUCCESS) {
 	    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_STACK], procPtr);
