@@ -76,32 +76,32 @@ _Dbg_Trap:
 | and return.
 
 	tstl	_dbgInDebugger			| This flag should not be set.
-	beqs	2$				| If it isn't then go ahead
+	beqs	2f				| If it isn't then go ahead
 
 	jsr	_DbgComplain			| If it is set then complain.
 
 | If _dbgMonPC is non-zero then it contains the real PC
 
 	tstl	_dbgMonPC			| Check if monitor PC is set.
-	beqs	1$				| If zero don't do anything
+	beqs	1f				| If zero don't do anything
 						| Move the PC onto the stack
 	movl	_dbgMonPC, sp@(MACH_PC_OFFSET + MACH_TRAP_INFO_SIZE)
 	clrl	_dbgMonPC			| Clear out the PC for next time
-1$:
+1:
 	movl	#1, _dbgIntPending		| We leave an interrupt pending
 						| marker.
 	addl	#MACH_TRAP_INFO_SIZE, sp	| Blow off trap type and bus
 						|    error register
 	rte					| Return to where called from.
 
-2$:
+2:
 	movl	#1, _dbgInDebugger		| Set the flag to indicate
 						| that we are in the debugger.
 
 | If _dbgMonPC is non-zero then it contains the real PC
 
 	tstl	_dbgMonPC
-	beqs	3$				| If zero don't do anything
+	beqs	3f				| If zero don't do anything
 
 						| Move the PC onto the stack
 	movl	_dbgMonPC, sp@(MACH_PC_OFFSET + MACH_TRAP_INFO_SIZE) 
@@ -110,15 +110,15 @@ _Dbg_Trap:
 						| Also in this case this was
 						| an interrupt, not a trap
 	movl	#DBG_INTERRUPT_SIG, _dbgTermReason	
-	bras	4$
-3$:
+	bras	4f
+3:
 
 | Otherwise, the reason is some sort of trap.  We will determine the reason in
 | the main debugger routine.
 
 	movl	#DBG_NO_REASON_SIG, _dbgTermReason
 
-4$:
+4:
 	moveml	#0xffff, sp@-		| Save all of the gprs
 
 | Save the function code registers.
@@ -153,16 +153,16 @@ callDbg:
 | Otherwise give our reason as interrupted and go back in.
 
 	tstl	_dbgIntPending
-	beqs	5$
+	beqs	5f
 	clrl	_dbgIntPending
 	cmpl	#MACH_BUS_ERROR, sp@
-	beqs	5$
+	beqs	5f
 	cmpl	#MACH_ADDRESS_ERROR, sp@
-	beqs	5$
+	beqs	5f
 	movl	#DBG_INTERRUPT_SIG, _dbgTermReason
 	bras	callDbg
 
-5$:
+5:
 	moveml	sp@+, #0xffff		| Restore all registers.
 	addl	#MACH_TRAP_INFO_SIZE, sp | Blow off bus error reg and
 					 |   and trap type.
