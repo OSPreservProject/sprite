@@ -201,31 +201,6 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
 {
     register FsFileDescriptor *descPtr;
 
-#ifdef file_specific_junk
-    if (handlePtr->rec.fileType == FS_LOCAL_PIPE) {
-	Byte_Zero(sizeof(Fs_Attributes), (Address) attrPtr);
-	attrPtr->type				= FS_LOCAL_PIPE;
-	attrPtr->devType			= -1;
-	attrPtr->devUnit			= -1;
-    } else if ((handlePtr->rec.fileType == FS_XTRA_FILE) &&
-	       (handlePtr->rec.fileID.openInstance > 0)) {
-	/*
-	 * Cloned handles from pseudo devices don't have good attributes yet.
-	 * We might try fetching the parent, but I'd rather wait for a new
-	 * data structure organization that does this part right.
-	 */
-	Byte_Zero(sizeof(Fs_Attributes), (Address) attrPtr);
-	attrPtr->type				= FS_PSEUDO_DEV;
-    } else if (handlePtr->nameToken == (ClientData) NIL) {
-        /*
-	 * Devices for now go to the wrong place so just zero out the structure
-	 * and return.
-	 */
-	Sys_Panic(SYS_WARNING, "FsAssignAttr: NIL name token\n");
-	Byte_Zero(sizeof(Fs_Attributes), (Address) attrPtr);
-    } else {
-#endif file_specific_junk
-
     descPtr = handlePtr->descPtr;
     attrPtr->serverID			= handlePtr->hdr.fileID.serverID;
     attrPtr->domain			= handlePtr->hdr.fileID.major;
@@ -340,6 +315,7 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
     FsLocalFileIOHandle		*handlePtr;
     register FsFileDescriptor	*descPtr;
     FsDomain			*domainPtr;
+    int				g;
 
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle, fileIDPtr);
     if (handlePtr == (FsLocalFileIOHandle *)NIL) {
@@ -358,8 +334,28 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
 	status = FS_NOT_OWNER;
 	goto exit;
     }
-    descPtr->uid = attrPtr->uid;
-    descPtr->gid = attrPtr->gid;
+    if (attrPtr->uid >= 0 && descPtr->uid != attrPtr->uid) {
+	if (idPtr->user != 0) {
+	    /*
+	     * Don't let people give away ownership.
+	     */
+	    status = FS_NO_ACCESS;
+	    goto exit;
+	}
+	descPtr->uid = attrPtr->uid;
+    }
+    if (attrPtr->gid >= 0 && descPtr->gid != attrPtr->gid) {
+	for (g=0 ; g < idPtr->numGroupIDs; g++) {
+	    if (attrPtr->gid == idPtr->group[g] || idPtr->user == 0) {
+		descPtr->gid = attrPtr->gid;
+		break;
+	    }
+	}
+	if (g >= idPtr->numGroupIDs) {
+	    status = FS_NO_ACCESS;
+	    goto exit;
+	}
+    }
     descPtr->permissions = attrPtr->permissions;
 
     if (descPtr->fileType == FS_DEVICE ||
