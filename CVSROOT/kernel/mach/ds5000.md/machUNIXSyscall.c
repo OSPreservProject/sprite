@@ -1462,6 +1462,28 @@ MachUNIXSelect(width, readfds, writefds, exceptfds, timeout)
     if (status == SUCCESS) {
 	(void)Vm_CopyIn(sizeof(int), usp, 
 			(Address)&machCurStatePtr->userState.unixRetVal);
+    } else if (status == FS_TIMEOUT) {
+	int bytesInMask;
+	int *zeroPtr;
+
+	bytesInMask = ((width + 31) / 32) * sizeof(int);
+	zeroPtr = (int *)malloc(bytesInMask);
+	bzero((Address)zeroPtr, bytesInMask);
+
+	if (readfds != NULL) {
+	    (void)Vm_CopyOut(bytesInMask, (Address)zeroPtr, 
+			     (Address)readfds);
+	}
+	if (writefds != NULL) {
+	    (void)Vm_CopyOut(bytesInMask, (Address)zeroPtr, 
+			     (Address)writefds);
+	}
+	if (exceptfds != NULL) {
+	    (void)Vm_CopyOut(bytesInMask, (Address)zeroPtr, 
+			     (Address)exceptfds);
+	}
+	free((Address)zeroPtr);
+        status = SUCCESS;
     }
     return(status);
 }
