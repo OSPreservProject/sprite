@@ -123,7 +123,6 @@ Sync_GetLock(lockPtr)
    Sync_Lock *lockPtr;
 {
     ReturnStatus	status = SUCCESS;
-    Proc_ControlBlock	*procPtr;
 
     Sync_LockRegister(lockPtr);
     if (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
