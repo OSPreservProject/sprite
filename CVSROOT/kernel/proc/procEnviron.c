@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "status.h"
 #include "byte.h"
+#include "vm.h"
 
 /*
  * The minimum size of the environment that is allocated.  This size
