@@ -73,6 +73,8 @@ typedef struct VmMach_ProcData {
     VmMach_SharedData   sharedData;     /* Data for shared memory. */
 } VmMach_ProcData;
 
+typedef unsigned int	VmMachPTE;
+
 /*
  * Machine dependent functions.
  */
@@ -129,6 +131,7 @@ extern	ReturnStatus	VmMach_CopyOut();
 extern	ReturnStatus	VmMach_CopyInProc();
 extern	ReturnStatus	VmMach_CopyOutProc();
 extern	ReturnStatus	VmMach_StringNCopy();
+extern	int		VmMachCopyEnd();
 /*
  * Routines for the INTEL device driver.
  */

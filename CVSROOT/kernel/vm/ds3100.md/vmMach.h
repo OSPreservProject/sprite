@@ -118,6 +118,7 @@ extern	ReturnStatus	VmMach_CopyInProc();
 extern	ReturnStatus	VmMach_CopyOutProc();
 extern	ReturnStatus	VmMach_StringNCopy();
 extern	ReturnStatus	VmMach_MapKernelIntoUser();
+extern	int		VmMachCopyEnd();
 /*
  * Pinning and unpinning user memory pages.
  */
