@@ -22,6 +22,9 @@
 #ifndef _NETROUTE
 #define _NETROUTE
 
+#ifdef INET
+#include "user/netInet.h"
+#endif
 /*
  * A Route: A mapping between a physical address and a Sprite Host ID.
  * The supported address type is just ethernet. Net_Routes are manipulated
@@ -76,6 +79,7 @@ typedef struct Net_Route {
  */
 extern Net_Route *netRouteArray[];
 
+#ifdef INET
 /*
  * The routing information for an Internet route is the Internet
  * address and a pre-formatted ethernet header.
@@ -84,7 +88,13 @@ typedef struct NetInetRoute {
     Net_InetAddress inetAddr;
     Net_EtherHdr etherHdr;
 } NetInetRoute;
-
+/*
+ * NET_GATEWAY - route.c in the ipServer code defines NET_GATEWAY.
+ */
+#ifndef NET_GATEWAY
+#define NET_GATEWAY	0x2
+#endif
+#endif /* INET */
 /*
  * Sprite Address Resolution Protocol packet format.  These are used to
  * find out Sprite IDs for physical addresses and vice versa.  The ARP

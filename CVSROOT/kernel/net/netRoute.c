@@ -242,6 +242,18 @@ Net_InstallRouteStub(spriteID, flags, type, clientData, name, machType)
 	    }
 	    break;
 	}
+#ifdef INET
+	case NET_ROUTE_INET: {
+	    localData = (ClientData)malloc(sizeof(Net_InetAddress));
+	    status = Vm_CopyIn(sizeof(Net_InetAddress), (Address)clientData,
+				      (Address)localData);
+	    if (status != SUCCESS) {
+		free((Address)localData);
+		return(status);
+	    }
+	    break;
+	}
+#endif
 	default:
 	    printf("Warning: Net_InstallRoute: bad route type %d\n", type);
 	    return(GEN_INVALID_ARG);
@@ -293,33 +305,38 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
     MASTER_LOCK(&netRouteMutex);
 
     if (spriteID < 0 || spriteID >= NET_NUM_SPRITE_HOSTS) {
-	MASTER_UNLOCK(&netRouteMutex);
-	return(SYS_INVALID_ARG);
-    }
-    routePtr = netRouteArray[spriteID];
-    if (routePtr != (Net_Route *)NIL) {
-	oldData = routePtr->data;
+	/*
+	 * This doesn't correspond to a local host, but may be used
+	 * by the Internet Protocols.
+	 */
+	routePtr = (Net_Route *)NIL;
     } else {
-	oldData = (Address)NIL;
-	routePtr = (Net_Route *)malloc(sizeof(Net_Route));
-	netRouteArray[spriteID] = routePtr;
+	routePtr = netRouteArray[spriteID];
+	if (routePtr != (Net_Route *)NIL) {
+	    oldData = routePtr->data;
+	} else {
+	    oldData = (Address)NIL;
+	    routePtr = (Net_Route *)malloc(sizeof(Net_Route));
+	    netRouteArray[spriteID] = routePtr;
+	}
+	/*
+	 * Silently discard old name and machine types.  We'll holler below
+	 * if the ethernet address changes.  Names and types may be set
+	 * to "noname" and "unknown" during bootstrap routing.
+	 */
+	routePtr->name = (char *)malloc(strlen(hostname) + 1);
+	(void) strcpy(routePtr->name, hostname);
+	routePtr->machType = (char *)malloc(strlen(machType) + 1);
+	(void) strcpy(routePtr->machType, machType);
+
+	routePtr->flags = flags;
+	routePtr->spriteID = spriteID;
+	routePtr->type = type;
     }
-    /*
-     * Silently discard old name and machine types.  We'll holler below
-     * if the ethernet address changes.  Names and types may be set
-     * to "noname" and "unknown" during bootstrap routing.
-     */
-    routePtr->name = (char *)malloc(strlen(hostname) + 1);
-    (void) strcpy(routePtr->name, hostname);
-    routePtr->machType = (char *)malloc(strlen(machType) + 1);
-    (void) strcpy(routePtr->machType, machType);
     /*
      * Prepare the Route.  This includes the transport header that
      * will be used in messages sent to the Sprite Host.
      */
-    routePtr->flags = flags;
-    routePtr->spriteID = spriteID;
-    routePtr->type = type;
     switch(type) {
 	case NET_ROUTE_ETHER: {
 	    Net_EtherHdr *etherHdrPtr;
@@ -349,6 +366,38 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	    }
 	    break;
 	}
+#ifdef INET
+	case NET_ROUTE_INET: {
+	    Net_InetAddress inetAddr;
+	    Net_EtherAddress etherAddr;
+	    Net_EtherAddress *etherAddrPtr = (Net_EtherAddress *)NIL;
+	    int rteFlags;
+	    /*
+	     * Now do the real work and stuff the inet address, and flags,
+	     * into the routing tables kept by the kernel-resident ipServer.
+	     * If the host is a Sprite neighbor we have the ethernet address
+	     * in the regular Net_Route table, and we grab that.  This stuff
+	     * is mainly needed in order to get a gateway address.  This is
+	     * all a bit hokey, but once you have the gateway address you
+	     * can use ICMP redirects to build up Internet routing information.
+	     */
+	    inetAddr = *(Net_InetAddress *)clientData;
+	    rteFlags = 0;
+	    if (flags & NET_ROUTE_GATEWAY) {
+		rteFlags |= NET_GATEWAY;
+	    }
+	    if (routePtr != (Net_Route *)NIL) {
+		Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+		if (etherHdrPtr != (Net_EtherHdr *)NIL) {
+		    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+					etherAddr);
+		    etherAddrPtr = &etherAddr;
+		}
+	    }
+	    (void)RteInsertAddress(inetAddr, etherAddrPtr, rteFlags, NIL);
+	    break;
+	}
+#endif
 	default: {
 	    routePtr->data = (Address)NIL;
 	    printf("Warning: Unsupported route type in Net_InstallRoute\n");
