@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "mach.h"
 #include "dev.h"
+#include "uartConst.h"
 #include "sys.h"
 
 
@@ -44,31 +45,30 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 void
-Dev_UartInit(uartPtr, channel, baudRate)
-    register Dev_UartDevice *uartPtr;   /* pointer to the interface
-					   registers */
+Dev_UartInit(uartAddr, channel, baudRate)
+    Address uartAddr;			/* address of uart registers (phys.) */
     register Dev_UartChannel channel;   /* which channel (A,B) to initialize */
     int baudRate;			/* speed to which to initialize
 					   channel */
 {
+    Address uartChanAddr;
     int speed;
-    Dev_UartWriteChannel *chanPtr;	/* pointer to channel-dependent
-					   part of structure */
+
     if (channel == DEV_UART_CHANNEL_A) {
-	chanPtr = &uartPtr->channelA.write;
+	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET);
     } else if (channel == DEV_UART_CHANNEL_B) {
-	chanPtr = &uartPtr->channelB.write;
+	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET);
     } else {
 	Sys_Panic(SYS_FATAL, "Dev_UartInit: illegal UART Channel");
 	return;
     }
     /*
-     * Reset both channels.
+     * Reset channel.
      */
-    chanPtr->command = TX_OFF|RX_OFF|RESET_MR1;
-    chanPtr->command = TX_OFF|RX_OFF|RESET_RX;
-    chanPtr->command = TX_OFF|RX_OFF|RESET_TX;
-    chanPtr->command = TX_OFF|RX_OFF|EXIT_TX_BREAK;
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|RESET_MR1);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|RESET_RX);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|RESET_TX);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|EXIT_TX_BREAK);
     
     /*
      * Set up default values, to ignore counter and to have 1 stop
@@ -78,9 +78,9 @@ Dev_UartInit(uartPtr, channel, baudRate)
      * subsequent writes go to MODE2.  For the baud rate, we map from
      * integers into the particular constants the uart expects.
      */
-    uartPtr->misc.write.auxCtl = AUX_CMD_VAL;
-    chanPtr->mode = MODE1_VAL;
-    chanPtr->mode = MODE2_VAL;
+    Dev_UartWriteReg(uartAddr, AUX_CTL, AUX_CMD_VAL);
+    Dev_UartWriteReg(uartChanAddr, MODE, MODE1_VAL);
+    Dev_UartWriteReg(uartChanAddr, MODE, MODE2_VAL);
     switch (baudRate) {
 	case 9600: {
 	    speed = BAUD_9600;
@@ -108,14 +108,14 @@ Dev_UartInit(uartPtr, channel, baudRate)
 	}
     }
 
-    chanPtr->baudRate = speed;
+    Dev_UartWriteReg(uartChanAddr, BAUD, speed);
 
     /*
      * Disable all interrupts and clear status bits.
      */
-    uartPtr->misc.write.intrMask = 0;
-    chanPtr->command = TX_OFF|RX_OFF|CLR_ERR_STATUS;
-    chanPtr->command = TX_OFF|RX_OFF|CLR_BRK_STATUS;
+    Dev_UartWriteReg(uartAddr, INTR_MASK, 0);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|CLR_ERR_STATUS);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|CLR_BRK_STATUS);
 
     /*
      * Reset the uart's bit in the CC's Istatus register. 
@@ -152,17 +152,26 @@ Dev_UartStartTx(uartPtr, ch)
     char ch;
 {
     Dev_UartInfo *infoPtr;
-    Dev_UartDevice *uartAddr;
-    Dev_UartWriteChannel *writePtr;
-    Dev_UartReadChannel *readPtr;
+    Address uartAddr;
+    Address uartChanAddr;
+    Dev_UartChannel channel;
+    int status;
 
     infoPtr = (Dev_UartInfo *) uartPtr;
     uartAddr = infoPtr->uartAddress;
-    
-    readPtr = &uartAddr->channelA.read;
-    if (readPtr->status & TX_NOT_FULL) {
-	writePtr = (Dev_UartWriteChannel *) readPtr;
-	writePtr->command = RX_ON | TX_ON;
-	writePtr->transmit = ch;
+    channel = infoPtr->channel;
+
+    if (channel == DEV_UART_CHANNEL_A) {
+	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET);
+    } else if (channel == DEV_UART_CHANNEL_B) {
+	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET);
+    } else {
+	Sys_Panic(SYS_FATAL, "Dev_UartStartTx: illegal UART Channel");
+	return;
+    }
+    status = Dev_UartReadReg(uartChanAddr, XFER_STATUS);
+    if (status & TX_NOT_FULL) {
+	Dev_UartWriteReg(uartChanAddr, COMMAND, RX_ON | TX_ON);
+	Dev_UartWriteReg(uartChanAddr, XFER_REG, ch);
     }
 }
