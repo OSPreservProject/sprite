@@ -29,9 +29,6 @@
 #include <kernel/sync.h>
 #endif
 
-/* This should be in /usr/include/vm.h */
-#define VM_SHARED	4
-
 /*
  * Structure to represent a translated virtual address
  */
