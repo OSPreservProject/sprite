@@ -14,7 +14,11 @@
 #ifndef _SYSSYSCALLPARAM
 #define _SYSSYSCALLPARAM
 
+#ifdef KERNEL
 #include <sys.h>
+#else
+#include <kernel/sys.h>
+#endif
 
 /*
  * For each parameter to a system call, there are several possible
