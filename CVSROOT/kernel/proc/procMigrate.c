@@ -94,7 +94,7 @@ int proc_MigrationVersion = PROC_MIGRATE_VERSION;
  * into a structure at initialization time.
  */
 #ifndef PROC_MIG_STATS_VERSION
-#define PROC_MIG_STATS_VERSION 1
+#define PROC_MIG_STATS_VERSION 1001
 #endif /* PROC_MIG_STATS_VERSION */
 
 static int statsVersion = PROC_MIG_STATS_VERSION;
@@ -200,6 +200,23 @@ static struct {
     { "Sig_InitiateMigration", "Sig_EncapState", "Sig_DeencapState", NULL}
 };
 #endif
+
+/*
+ * Define a macro for squaring a time without automatically overflowing
+ * due to the large number of microseconds being multiplied.
+ * The square of (X + Y/1000000) is X^2 + 2XY/1000000 + Y^2/10^12.
+ * XXX not used -- switched to single integers as milliseconds.  
+ */
+#define SQUARE_TIME(time, squaredTime) \
+    squaredTime.seconds = time.seconds * time.seconds; \
+    squaredTime.microseconds = 2 * time.seconds * time.microseconds + \
+                             time.microseconds * time.microseconds / 1000000; \
+    while (squaredTime.microseconds > 1000000) { \
+	squaredTime.seconds++; \
+	squaredTime.microseconds -= 1000000; \
+    } \
+
+
 
 
 /*
@@ -481,7 +498,8 @@ Proc_MigrateTrap(procPtr)
     Time startTime;
     Time endTime;
     Time timeDiff;
-    Time *timePtr;
+    int *timePtr;
+    int *squaredTimePtr;
 #endif /* CLEAN */
     int whenNeeded;
     Boolean exec;
@@ -633,7 +651,7 @@ Proc_MigrateTrap(procPtr)
 	inBuf.ptr = buffer;
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    Proc_MigAddToCounter(&proc_MigStats.rpcKbytes, (bufSize + 1023) / 1024);
+	    Proc_MigAddToCounter((bufSize + 1023) / 1024, &proc_MigStats.varStats.rpcKbytes, &proc_MigStats.squared.rpcKbytes);
 	}
 #endif /* CLEAN */
 
@@ -750,11 +768,13 @@ Proc_MigrateTrap(procPtr)
 	Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
 	Time_Subtract(endTime, startTime, &timeDiff);
 	if (whenNeeded == MIG_ENCAP_MIGRATE) {
-	    timePtr = &proc_MigStats.timeToMigrate;
+	    timePtr = &proc_MigStats.varStats.timeToMigrate;
+	    squaredTimePtr = &proc_MigStats.squared.timeToMigrate;
 	} else {
-	    timePtr = &proc_MigStats.timeToExec;
+	    timePtr = &proc_MigStats.varStats.timeToExec;
+	    squaredTimePtr = &proc_MigStats.squared.timeToExec;
 	}
-	AddMigrateTime(timeDiff, timePtr);
+	AddMigrateTime(timeDiff, timePtr, squaredTimePtr);
     }
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
 	record.processID = pid;
@@ -785,9 +805,7 @@ Proc_MigrateTrap(procPtr)
 	}
 #ifndef CLEAN
 	if (proc_MigDoStats) {
-	    if (evicting) {
-		PROC_MIG_INC_STAT(evictions);
-	    } else {
+	    if (!evicting) {
 		PROC_MIG_INC_STAT(migrationsHome);
 	    }
 	}
@@ -2071,16 +2089,24 @@ WaitForMigration()
  *----------------------------------------------------------------------
  */
 static ENTRY void
-AddMigrateTime(time, totalPtr)
+AddMigrateTime(time, totalPtr, squaredTotalPtr)
     Time time;
-    Time *totalPtr;
+    int *totalPtr;
+    int *squaredTotalPtr;
 {
+    int intTime;
+    int squaredTime;
 
+#ifndef CLEAN
     LOCK_MONITOR;
 
-    Time_Add(time, *totalPtr, totalPtr);
+    intTime = time.seconds * 1000 + time.microseconds / 1000;
+    *totalPtr += intTime;
+    squaredTime = (intTime * intTime) >> PROC_MIG_TIME_SHIFT;
+    *squaredTotalPtr += squaredTime;
 
     UNLOCK_MONITOR;
+#endif /* CLEAN */
 }
 
 
@@ -2092,25 +2118,30 @@ AddMigrateTime(time, totalPtr)
  *	Monitored procedure to add a value to a global variable.
  *	This keeps statistics from being trashed if this were
  *	executed on a multiprocessor, since incrementing a counter
- *	isn't necessarily atomic.
+ *	isn't necessarily atomic.  If squaredPtr is non-NIL, it
+ *	adds the square of the value to that variable.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Updates variable pointed to by intPtr.
+ *	Updates variable pointed to by intPtr & squaredPtr.
  *
  *----------------------------------------------------------------------
  */
 ENTRY void
-Proc_MigAddToCounter(intPtr, value)
-    int *intPtr;
+Proc_MigAddToCounter(value, intPtr, squaredPtr)
     int value;
+    int *intPtr;
+    int *squaredPtr;
 {
 
     LOCK_MONITOR;
 
     *intPtr += value;
+    if (squaredPtr != (int *) NIL) {
+	*squaredPtr += value * value;
+    }
 
     UNLOCK_MONITOR;
 }
@@ -2120,34 +2151,42 @@ Proc_MigAddToCounter(intPtr, value)
  *
  * ProcRecordUsage --
  *
- *	Specialized, monitored procedure to update global CPU usages
- *	atomically.
+ *	Specialized procedure to update global CPU usages
+ *	atomically.    Because we do some funny arithmetic to store
+ * 	the square of a time, we convert timer ticks into times and
+ * 	use the function defined above.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Adds ticks.
+ *	Adds values.
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+void
 ProcRecordUsage(ticks, remoteCPU)
     Timer_Ticks ticks;
     Boolean remoteCPU;
 {
-    Timer_Ticks *ticksPtr;
+    int *timePtr;
+    int *squaredTimePtr;
+    Time time;
 
-    LOCK_MONITOR;
+#ifndef CLEAN
 
     if (remoteCPU) {
-	ticksPtr = &proc_MigStats.remoteCPUTime.ticks;
+	timePtr = &proc_MigStats.varStats.remoteCPUTime;
+	squaredTimePtr = &proc_MigStats.squared.remoteCPUTime;
     } else {
-	ticksPtr = &proc_MigStats.totalCPUTime.ticks;
+	timePtr = &proc_MigStats.varStats.totalCPUTime;
+	squaredTimePtr = &proc_MigStats.squared.totalCPUTime;
     }
-    Timer_AddTicks(ticks, *ticksPtr, ticksPtr);
+    Timer_TicksToTime(ticks, &time);
 
-    UNLOCK_MONITOR;
+    AddMigrateTime(time, timePtr, squaredTimePtr);
+
+#endif /* CLEAN */
 }
 
 /*
@@ -2181,15 +2220,6 @@ AccessStats(copyPtr)
     if (copyPtr != (Proc_MigStats *) NIL) {
 	bcopy((Address) &proc_MigStats, (Address) copyPtr,
 	      sizeof(Proc_MigStats));
-	/*
-	 * Convert the usages from the internal Timer_Ticks format
-	 * into the external Time format.
-	 */
-	Timer_TicksToTime(proc_MigStats.totalCPUTime.ticks,
-			  &copyPtr->totalCPUTime.time);
-	Timer_TicksToTime(proc_MigStats.remoteCPUTime.ticks,
-			  &copyPtr->remoteCPUTime.time);
-
     } else {
 	bzero((Address) &proc_MigStats, sizeof(Proc_MigStats));
     }
@@ -2477,6 +2507,8 @@ Proc_EvictForeignProcs()
     }
     status = Proc_DoForEveryProc(Proc_IsMigratedProc, Proc_EvictProc, TRUE,
  				 &numEvicted);
+    Proc_MigAddToCounter(numEvicted, &proc_MigStats.varStats.evictions,
+			 &proc_MigStats.squared.evictions);
     WaitForEviction();
     return(status);
 }
@@ -2640,9 +2672,16 @@ WaitForEviction()
     }
 #ifndef CLEAN
     if (proc_MigDoStats) {
+	int intTime;
+	int squaredTime;
+
 	Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
 	Time_Subtract(time, timeEvictionStarted, &time);
-	Time_Add(time, proc_MigStats.timeToEvict, &proc_MigStats.timeToEvict);
+	intTime = time.seconds * 1000 + time.microseconds / 1000;
+	squaredTime = (intTime * intTime) >> PROC_MIG_TIME_SHIFT;
+	proc_MigStats.varStats.timeToEvict += intTime;
+	proc_MigStats.squared.timeToEvict += squaredTime;
+
 	proc_MigStats.evictsNeeded++;
     }
 #endif /* CLEAN */   
