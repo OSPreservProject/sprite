@@ -41,6 +41,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsio.h>
 #include <fsutil.h>
 #include <compatInt.h>
+#include <sys.h>
 
 extern Mach_State	*machCurStatePtr;
 
@@ -78,8 +79,6 @@ static char streamDevice[276]; /* Max host name + extra format */
 static char dgramDevice[276];
 static char rawDevice[276];
 static Boolean gotHostName = FALSE;
-
-extern char sysHostName[];
 
 extern int debugFsStubs;
 
@@ -1238,14 +1237,14 @@ Fs_SocketStub(domain, type, protocol)
     }
 
     if (!gotHostName) {
-	if (*sysHostName == '\0') {
+	if (!strcmp(sys_HostName, "unknown")) {
 	    printf("*** host name uninitialized\n");
 	} else {
 	    gotHostName = TRUE;
 	}
-        (void) sprintf(streamDevice, INET_STREAM_NAME_FORMAT, sysHostName);
-        (void) sprintf(dgramDevice, INET_DGRAM_NAME_FORMAT, sysHostName);
-        (void) sprintf(rawDevice, INET_RAW_NAME_FORMAT, sysHostName);
+        (void) sprintf(streamDevice, INET_STREAM_NAME_FORMAT, sys_HostName);
+        (void) sprintf(dgramDevice, INET_DGRAM_NAME_FORMAT, sys_HostName);
+        (void) sprintf(rawDevice, INET_RAW_NAME_FORMAT, sys_HostName);
     }
 
     if (type == SOCK_STREAM) {
