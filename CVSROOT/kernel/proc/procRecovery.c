@@ -235,6 +235,12 @@ Proc_RemoveMigDependency(processID)
     hashEntryPtr = Hash_FindEntry(dependHashTable, (Address) processID);
     if (hashEntryPtr == (Hash_Entry *) NULL) {
 #endif /* KERNEL_HASH */
+#ifdef notdef
+	/*
+	 * (We're not going to care if it's already been removed because we
+	 * are called to get rid of processIDs that may already have been
+	 * removed, and we're just making doubly sure.)
+	 */
 	if (proc_MigDebugLevel > 0) {
 	    if (proc_MigDebugLevel > 4) {
 		panic("Proc_RemoveMigDependency: process %x not registered.\n",
@@ -245,6 +251,7 @@ Proc_RemoveMigDependency(processID)
 		    "Warning:", processID);
 	    }
 	}
+#endif /* notdef */
 	UNLOCK_MONITOR;
 	return;
     }
