@@ -40,15 +40,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "sys.h"
 #include "list.h"
 #include "vm.h"
 #include "vmMach.h"
 #include "mach.h"
+#include "machConfig.h"
 #include "netIEInt.h"
 #include "net.h"
 #include "netInt.h"
-#include "byte.h"
+#include "sync.h"
 
 /*
  * Define global variables.
@@ -63,6 +63,12 @@ Address		netIERecvBuffers[NET_IE_NUM_RECV_BUFFERS];
 
 static 	List_Links	xmitListHdr;
 static 	List_Links	xmitFreeListHdr;
+
+/*
+ * Semaphore protecting the chip and driver's data structures.
+ */
+
+int netIEMutex	= 0;
 
 /*
  * Macro to fetch a byte from the board's ROM at a 
@@ -98,7 +104,7 @@ ReadConfigROM()
      * Make sure that the ROM is mapped into our address space.
      */
     if (!netIEState.mapped) {
-	Sys_Panic(SYS_WARNING, "Intel ethernet: Can not read unmapped ROM.\n");
+	printf("Warning: Intel ethernet: Can not read unmapped ROM.\n");
 	return(FAILURE);
     }
     /*
@@ -107,7 +113,7 @@ ReadConfigROM()
      */
     layoutNum = ROM_GET_BYTE(IEROM_LAYOUT);
     if (layoutNum != IEROM_LAYOUT_NUMBER) {
-	Sys_Panic(SYS_WARNING, "Intel ethernet: Bad ROM layout number (%d)\n",
+	printf("Warning: Intel ethernet: Bad ROM layout number (%d)\n",
 			layoutNum);
     }
 
@@ -156,7 +162,7 @@ ReadConfigROM()
      */
 
     if (*netIEState.configAndFlagsReg & NET_IE_FLAG_32K_MEMORY) {
-	Sys_Panic(SYS_WARNING, "Intel ethernet: Bad Memory size bit.\n");
+	printf("Warning: Intel ethernet: Bad Memory size bit.\n");
 	return (FAILURE);
     }
 
@@ -187,7 +193,7 @@ Boolean
 NetIEInit(name, number, slotId)
     char *name;			/* Device name.	 */
     int number;			/* Device number, not used. */
-    unsigned int slotId;	/* slot ID of controller board. */
+    unsigned int slotId;	/* Default slot ID of controller board. */
 {
     int 	i;
     List_Links	*itemPtr;
@@ -195,6 +201,21 @@ NetIEInit(name, number, slotId)
 
     netIEState.running = FALSE;
     netIEState.mapped = FALSE;
+
+    /*
+     * Lookup the ethernet boards location from the machine configuration.
+     */
+    {
+	Mach_Board	board;
+	if (Mach_FindBoardDescription(MACH_CONFIG_ETHER_BOARD, 0, FALSE,
+			&board) == SUCCESS) {
+	    /*
+	     * Override the default slot Id if board is specified in the
+	     * machine configuration.
+	     */
+	    slotId = board.slotId;
+	}
+    }
 
     /*
      * Map the device into our address space.
@@ -211,8 +232,7 @@ NetIEInit(name, number, slotId)
 	return (FALSE);
     }
 
-    DISABLE_INTR();
-
+    MASTER_LOCK(netIEMutex);
     /*
      * Initialize the transmission list.  
      */
@@ -234,7 +254,7 @@ NetIEInit(name, number, slotId)
      * Mach_GetEtherAddress(&netIEState.etherAddress);
      * On the TI Board, the ROM contains the ethernet address.
      */
-    Sys_Printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
+    printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
 	      NET_ETHER_ADDR_BYTE1(netIEState.etherAddress) & 0xff,
 	      NET_ETHER_ADDR_BYTE2(netIEState.etherAddress) & 0xff,
 	      NET_ETHER_ADDR_BYTE3(netIEState.etherAddress) & 0xff,
@@ -257,7 +277,7 @@ NetIEInit(name, number, slotId)
     netEtherFuncs.intr   = NetIEIntr;
     netEtherFuncs.reset  = NetIERestart;
 
-    ENABLE_INTR();
+    MASTER_UNLOCK(netIEMutex);
     return (TRUE);
 }
 
@@ -360,12 +380,12 @@ NetIEReset()
     netIEState.intSysConfPtr = 
 	    (NetIEIntSysConfPtr *) NetIEMemAlloc(sizeof(NetIEIntSysConfPtr));
     if (netIEState.intSysConfPtr == (NetIEIntSysConfPtr *) NIL) {
-	Sys_Panic(SYS_FATAL, "Intel: No memory for the scp.\n");
+	panic("Intel Ethernet: No memory for the scp.\n");
     }
 
     netIEState.scbPtr = (NetIESCB *) NetIEMemAlloc(sizeof(NetIESCB));
     if (netIEState.scbPtr == (NetIESCB *) NIL) {
-	Sys_Panic(SYS_FATAL, "Intel: No memory for the scb.\n");
+	panic("Intel Ethernet: No memory for the scb.\n");
     }
 
 
@@ -418,13 +438,13 @@ NetIEReset()
 
 	if (netIEState.intSysConfPtr->busy || 
 	    !netIEState.scbPtr->cmdUnitNotActive) {
-	    Sys_Panic(SYS_WARNING, "Could not initialize Intel chip.\n");
+	    printf("Warning: Could not initialize Intel Ethernet chip.\n");
 	}
 	if (netIEState.scbPtr->cmdUnitStatus == NET_IE_CUS_IDLE) {
 	    break;
 	}
 
-	Sys_Panic(SYS_WARNING, "Intel cus not idle after reset\n");
+	printf("Warning: Intel cus not idle after reset\n");
 	NET_IE_CHIP_RESET;
     }
 
@@ -435,7 +455,7 @@ NetIEReset()
     netIEState.cmdBlockPtr = 
 		(NetIECommandBlock *) NetIEMemAlloc(NET_IE_MAX_CMD_BLOCK_SIZE);
     if (netIEState.cmdBlockPtr == (NetIECommandBlock *) NIL) {
-	Sys_Panic(SYS_FATAL, "NetIE: No memory for the command block.\n");
+	panic("NetIE: No memory for the command block.\n");
     }
     netIEState.scbPtr->cmdListOffset =
 		NetIEOffsetFromSPURAddr((Address) netIEState.cmdBlockPtr);
@@ -449,7 +469,7 @@ NetIEReset()
     diagCmdPtr->cmdNumber = NET_IE_DIAGNOSE;
     NetIEExecCommand(diagCmdPtr);
     if (!diagCmdPtr->cmdOK) {
-	Sys_Panic(SYS_FATAL, "Intel failed diagnostics.\n");
+	panic("Intel Ethernet failed diagnostics.\n");
     }
 
     /*
@@ -497,8 +517,7 @@ NetIEReset()
 	mySlotId = Mach_GetSlotId();
 	intrNum = MACH_EXT_INTERRUPT_ANY;
 	if (Mach_AllocExtIntrNumber(Net_Intr,&intrNum) != SUCCESS) {
-	    Sys_Panic(SYS_FATAL,
-		"Intel Ethernet: Can not allocate interrupt number.\n");
+	    panic("Intel Ethernet: Can not allocate interrupt number.\n");
 	}
 	eventRegPtr = (unsigned int *)NET_IE_SLOT_OFFSET(EVENT_ADDR_REG_OFFSET);
 	*eventRegPtr = 0xf0000000 | (mySlotId << 24) | (intrNum << 2);
@@ -541,7 +560,7 @@ void
 NetIERestart()
 {
 
-    DISABLE_INTR();
+    MASTER_LOCK(netIEMutex);
 
     /*
      * Reset the world.
@@ -553,7 +572,7 @@ NetIERestart()
      */
     NetIEXmitRestart();
 
-    ENABLE_INTR();
+    MASTER_UNLOCK(netIEMutex);
 }
 
 
@@ -583,11 +602,10 @@ NetIEIntr(polling)
     scbPtr = netIEState.scbPtr;
 
 
+    MASTER_LOCK(netIEMutex);
     status = NET_IE_CHECK_STATUS(scbPtr);
     if (status == 0) {
-	if (!polling) {
-	    Sys_Printf("Intel: Spurious interrupt (2)\n");
-	}
+	MASTER_UNLOCK(netIEMutex);
 	return;
     }
 
@@ -597,6 +615,8 @@ NetIEIntr(polling)
     NET_IE_CHECK_SCB_CMD_ACCEPT(scbPtr);
     NET_IE_ACK(scbPtr, status);
     NET_IE_CHANNEL_ATTENTION;
+
+    MASTER_UNLOCK(netIEMutex);
 
     /*
      * If we got a packet, then process it.
@@ -634,8 +654,12 @@ Mach_GetEtherAddress(etherAddrPtr)
     Net_EtherAddress 	*etherAddrPtr;		/* Where to place address. */
 {
     if (!netIEState.running) { 
-	Sys_Panic(SYS_FATAL,"Mach_GetEtherAddress called before Net_Init()\n");
+	panic("Mach_GetEtherAddress called before Net_Init()\n");
     }
+    /*
+     * netIEState.etherAddress is never modified after system boot so
+     * no lock is needed here.
+     */
     NET_ETHER_ADDR_COPY(netIEState.etherAddress, *etherAddrPtr);
 
 }

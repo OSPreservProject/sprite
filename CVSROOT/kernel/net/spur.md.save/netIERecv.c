@@ -21,7 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netIEInt.h"
 #include "net.h"
 #include "netInt.h"
-#include "sys.h"
+#include "sync.h"
 #include "list.h"
 
 
@@ -64,7 +64,7 @@ NetIERecvUnitInit()
 	recvBufDescPtr = 
 		(NetIERecvBufDesc *) NetIEMemAlloc(sizeof(NetIERecvBufDesc));
 	if (recvBufDescPtr == (NetIERecvBufDesc *) NIL) {
-	    Sys_Panic(SYS_FATAL, "No memory for a receive buffer descriptor pointer\n");
+	    panic("No memory for a receive buffer descriptor pointer\n");
 	}
 
 	*(short *)recvBufDescPtr = 0;	/* Clear out the status word */
@@ -110,7 +110,7 @@ NetIERecvUnitInit()
 	recvFrDescPtr = 
 	    (NetIERecvFrameDesc *) NetIEMemAlloc(sizeof(NetIERecvFrameDesc));
 	if (recvFrDescPtr == (NetIERecvFrameDesc *) NIL) {
-	    Sys_Panic(SYS_FATAL, "No memory for a receive frame descriptor pointer\n");
+	    panic("No memory for a receive frame descriptor pointer\n");
 	}
 
 	*(short *)recvFrDescPtr = 0;	/* Clear out the status word */
@@ -157,7 +157,7 @@ NetIERecvUnitInit()
      */
 
     if (scbPtr->recvUnitStatus != NET_IE_RUS_IDLE) {
-	Sys_Printf("Intel: The receive unit is not idle!!!\n");
+	printf("Intel: The receive unit is not idle!!!\n");
 
 	scbPtr->recvUnitCmd = NET_IE_RUC_ABORT;
 
@@ -175,7 +175,7 @@ NetIERecvUnitInit()
     NET_IE_DELAY(scbPtr->recvUnitStatus != NET_IE_RUS_READY);
 
     if (scbPtr->recvUnitStatus != NET_IE_RUS_READY) {
-	Sys_Printf("Intel: Receive unit never became ready.\n");
+	printf("Intel: Receive unit never became ready.\n");
     }
 }
 
@@ -323,8 +323,8 @@ NetIERecvProcess(dropPackets)
      * headers and give the reinit command to the chip.
      */
 
-Sys_Printf("Reinit recv unit\n");
-
+    printf("Reinit recv unit\n");
+    MASTER_LOCK(netIEMutex);
     netIEStatePtr->recvFrDscHeadPtr->recvBufferDesc = 
 	NetIEOffsetFromSPURAddr((Address) netIEStatePtr->recvBufDscHeadPtr);
     netIEStatePtr->scbPtr->recvFrameAreaOffset =
@@ -332,4 +332,5 @@ Sys_Printf("Reinit recv unit\n");
     NET_IE_CHECK_SCB_CMD_ACCEPT(netIEStatePtr->scbPtr);
     netIEStatePtr->scbPtr->recvUnitCmd = NET_IE_RUC_START;
     NET_IE_CHANNEL_ATTENTION;
+    MASTER_UNLOCK(netIEMutex);
 }

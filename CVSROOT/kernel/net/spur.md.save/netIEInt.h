@@ -58,8 +58,7 @@
  *				indicate that a header points to no data.
  * NET_IE_NUM_XMIT_ELEMENTS 	The number of elements to preallocate for the 
  *			   	retransmission queue.
- * NET_IE_SLOT_ID		Nubus slot of controller.
- * NET_IE_SLOT_SPACE_ADDR	Address of start of controllers slot space.
+ * NET_IE_SLOT_ID		Default Nubus slot of controller.
  * NET_IE_SLOT_SPACE_SIZE	The size of the slot space for this device.
  */
 
@@ -75,7 +74,6 @@
 #define	NET_IE_NULL_RECV_BUFF_DESC	0xffff
 #define	NET_IE_NUM_XMIT_ELEMENTS	32
 #define	NET_IE_SLOT_ID			0xe
-#define	NET_IE_SLOT_SPACE_ADDR		((0xf0 | NET_IE_SLOT_ID) << 24)
 #define	NET_IE_SLOT_SPACE_SIZE		0x1000000
 
 /*
@@ -583,6 +581,11 @@ extern	Address	netIERecvBuffers[];
  * Pointer to scatter gather element for current packet being sent.
  */
 extern Net_ScatterGather *curScatGathPtr;
+
+/*
+ * Semaphore protecting chip and driver.
+ */
+extern int	netIEMutex;
 
 /*
  * NuBus ethernet controller board configuration ROM. All location are

@@ -20,7 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "sys.h"
 #include "list.h"
 #include "netIEInt.h"
 #include "net.h"
@@ -50,8 +49,7 @@ NetIEAddrFromSPURAddr(addr)
 
     if (addr < netIEState.deviceBase || 
        (addr > (netIEState.deviceBase + NET_IE_MEM_SIZE))) {
-	Sys_Panic(SYS_FATAL,
-		"NetIEAddrFromSPURAddr: Address out of buffer memory\n");
+	panic("NetIEAddrFromSPURAddr: Address out of buffer memory\n");
     }
 
     return((unsigned short) (addr - netIEState.deviceBase));

@@ -21,7 +21,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netIEInt.h"
 #include "net.h"
 #include "netInt.h"
-#include "sys.h"
 #include "list.h"
 
 #include "sync.h"
@@ -181,7 +180,7 @@ NetIEXmitInit()
     xmitBufDescPtr = 
 	(NetIETransmitBufDesc *) NetIEMemAlloc(sizeof(NetIETransmitBufDesc));
     if (xmitBufDescPtr == (NetIETransmitBufDesc *) NIL) {
-	Sys_Panic(SYS_FATAL, "Intel: No memory for the xmit buffers.\n");
+	panic( "Intel: No memory for the xmit buffers.\n");
     }
     xmitBufAddr = xmitBufDescPtr;
     xmitCBPtr->bufDescOffset = 
@@ -237,11 +236,15 @@ NetIEXmitDone()
     register	NetIETransmitCB	*cmdPtr;
 
     /*
+     * It is assumed that the called has a MASTER_LOCK on netIEMutex.
+     */
+
+    /*
      * If there is nothing that is currently being sent then something is
      * wrong.
      */
     if (curScatGathPtr == (Net_ScatterGather *) NIL) {
-	Sys_Panic(SYS_WARNING, "NetIEXmitDone: No current packet\n.");
+	printf("Warning: NetIEXmitDone: No current packet\n.");
 	return;
     }
 
@@ -313,11 +316,10 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 {
     register	NetXmitElement		*xmitPtr;
 
-    DISABLE_INTR();
+
+    MASTER_LOCK(netIEMutex);
 
     net_EtherStats.packetsOutput++;
-
-
 
     /*
      * See if the packet is for us.  In this case just copy in the packet
@@ -348,7 +350,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
         scatterGatherPtr->done = TRUE;
 
-	ENABLE_INTR();
+	MASTER_UNLOCK(netIEMutex);
 	return;
     }
 
@@ -358,7 +360,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     if (!netIEState.transmitting) {
 	OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength);
-	ENABLE_INTR();
+	MASTER_UNLOCK(netIEMutex);
 	return;
     }
 
@@ -370,7 +372,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     if (List_IsEmpty(netIEState.xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
-	ENABLE_INTR();
+	MASTER_UNLOCK(netIEMutex);
 	return;
     }
 
@@ -392,7 +394,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
     List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netIEState.xmitList)); 
 
-    ENABLE_INTR();
+    MASTER_UNLOCK(netIEMutex);
 }
 
 
@@ -416,6 +418,10 @@ void
 NetIEXmitRestart()
 {
     NetXmitElement	*xmitElementPtr;
+
+    /*
+     * Assume that MASTER_LOCK on netIEMutex is held by caller.
+     */
 
     /*
      * Drop the current outgoing packet.
