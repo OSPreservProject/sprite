@@ -32,6 +32,7 @@ extern TraceLog_Header *SOSP91TracePtr;
  * Definitions for the types of log records.  These are the events being
  * traced.
  */
+#define SOSP_INVALID		0
 #define	SOSP_OPEN		1
 #define	SOSP_DELETE		2
 #define	SOSP_CREATE		3
@@ -48,6 +49,9 @@ extern TraceLog_Header *SOSP91TracePtr;
 #define	SOSP_CONSIST_ACTION	14
 #define SOSP_PREFIX		15
 #define SOSP_LOOKUP_OP		16
+#define SOSP_DELETE_DESC	17
+
+#define SOSP_NUM_EVENTS		18
 
 #ifdef KERNEL
 /*
@@ -436,6 +440,28 @@ extern TraceLog_Header *SOSP91TracePtr;
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
 		SOSP_LOOKUP_OP_OFFSET + len, SOSP_LOOKUP_OP);\
 }
+
+/*
+ * Trace a the deletion of a file descriptor. 
+ * 
+ * fileID		file ID of file being deleted.
+ * modify		Modify time for the file.
+ * create		Create time for the file.
+ * size			Size of the file.
+ */ 
+#define	SOSP_ADD_DELETE_DESC_TRACE(fileID, modify, create, size) \
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_DELETE_DESC;\
+	*((Fs_FileID *) &(sospBuffer[1])) = fileID;\
+	sospBuffer[5] = modify;\
+	sospBuffer[6] = create;\
+	sospBuffer[7] = size;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(8 * sizeof (int)),SOSP_DELETE_DESC);\
+}
+
 
 #endif /* KERNEL */
 #endif /* _SOSP_RECORD */
