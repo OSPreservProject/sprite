@@ -17,20 +17,23 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fspdev.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsutil.h>
+#include <fspdev.h>
+#include <trace.h>
+
 /*
  * Prevent tracing by defining CLEAN here before this next include
  */
 #undef CLEAN
-#include "fspdevInt.h"
+#include <fspdevInt.h>
 Boolean fspdev_Debug = FALSE;		/* Turns on print statements */
 Trace_Header fspdevTraceHdr;
 Trace_Header *fspdevTraceHdrPtr = &fspdevTraceHdr;
 int fspdevTraceLength = 50;
-Boolean fspdevTracing = FALSE;		/* Turns on circular trace */
+Boolean fspdevTracing = TRUE;		/* Turns on circular trace */
 int fspdevMaxTraceDataSize;
 int fspdevTraceIndex = 0;
 
@@ -57,6 +60,7 @@ Fspdev_TraceInit()
 {
     Trace_Init(fspdevTraceHdrPtr, fspdevTraceLength, sizeof(FspdevTraceRecord),
 		TRACE_NO_TIMES);
+    return SUCCESS;
 }
 
 /*
@@ -215,6 +219,7 @@ Fspdev_PrintRec(clientData, event, printHeaderFlag)
 
 	}
     }
+    return SUCCESS;
 }
 
 /*
