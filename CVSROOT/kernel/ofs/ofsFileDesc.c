@@ -312,9 +312,14 @@ FsInitFileDesc(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr)
     fileDescPtr->numLinks = 1;
     fileDescPtr->numKbytes = 0;
     /*
-     * Give this new file a new version number.
+     * Give this new file a new version number.  The increment is by 2 to
+     * ensure that a client invalidates any cache blocks associated with
+     * the previous incarnation of the file.  Remember that when a client
+     * opens for writing a version number 1 greater means that its old
+     * cache blocks are still ok, and also remember that clients with
+     * clean blocks are not told when a file is deleted.
      */
-    fileDescPtr->version++;
+    fileDescPtr->version += 2;
 
     /*
      * Clear out device info.  It is set up properly by the make-device routine.
