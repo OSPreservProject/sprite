@@ -32,6 +32,7 @@ typedef struct DevSCSITape {
      int state;			/* State bits used to determine if it's open,
 				 * it it really exists, etc. */
     int type;			/* Type of the drive */
+    int blockSize;		/* Native block size of the drive. */
     void (*setupProc)();	/* Procedure to customize command block */
     void (*statusProc)();	/* Procedure to fill in Dev_TapeStatus */
     ReturnStatus (*errorProc)();/* Procedure to handle sense data */
@@ -124,7 +125,7 @@ ReturnStatus Dev_SCSITapeBlockIOInit();
 ReturnStatus Dev_SCSITapeBlockIO();
 
 ReturnStatus	DevSCSITapeInit();
-int		DevSCSITapeType();
+void		DevSCSITapeType();
 ReturnStatus	DevSCSITapeIO();
 void		DevSCSITapeSetupCommand();
 ReturnStatus	DevSCSITapeError();
