@@ -16,7 +16,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 #include "sprite.h"
 #include "netLEInt.h"
@@ -85,8 +85,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     int			scatterGatherLength;	/* Length of data portion 
 						 * gather array. */
 {
-    register	NetLEXmitMsgDesc	*descPtr;
-    NetLEState				*netLEStatePtr;
+    register volatile NetLEXmitMsgDesc	*descPtr;
+    volatile NetLEState			*netLEStatePtr;
     register	char			*firstBufferPtr; 
     Address				bufPtr;
     int					bufCount;
@@ -308,23 +308,12 @@ static void
 AllocateXmitMem()
 {
     unsigned int	memBase;		
-    Address		(*allocFunc)();
-
-#ifdef sun2
-    allocFunc = Vm_RawAlloc;
-#endif
-#ifdef sun3
-    allocFunc = VmMach_NetMemAlloc;
-#endif
-#ifdef sun4
-    allocFunc = VmMach_NetMemAlloc;
-#endif
 
     /*
      * Allocate the ring of transmission buffer descriptors.  
      * The ring must start on 8-byte boundary.  
      */
-    memBase = (unsigned int) allocFunc(
+    memBase = (unsigned int) VmMach_NetMemAlloc(
 		(NET_LE_NUM_XMIT_BUFFERS * sizeof(NetLEXmitMsgDesc)) + 8);
     /*
      * Insure ring starts on 8-byte boundary.
@@ -337,9 +326,10 @@ AllocateXmitMem()
     /*
      * Allocate the first buffer for a packet.
      */
-    firstDataBuffer = allocFunc(NET_LE_MIN_FIRST_BUFFER_SIZE);
+    firstDataBuffer = VmMach_NetMemAlloc(NET_LE_MIN_FIRST_BUFFER_SIZE);
 
     xmitMemAllocated = TRUE;
+    return;
 }
 
 /*
@@ -363,7 +353,7 @@ void
 NetLEXmitInit()
 {
     int 		bufNum;
-    NetLEXmitMsgDesc	*descPtr;
+    volatile NetLEXmitMsgDesc	*descPtr;
 
 
     if (!xmitMemAllocated) {
@@ -405,7 +395,7 @@ NetLEXmitInit()
 
     netLEState.transmitting = FALSE;
     curScatGathPtr = (Net_ScatterGather *) NIL;
-
+    return;
 }
 
 
@@ -429,9 +419,9 @@ NetLEXmitInit()
 ReturnStatus
 NetLEXmitDone()
 {
-    register	NetXmitElement	*xmitElementPtr;
-    register	NetLEXmitMsgDesc	*descPtr;
-    register	NetLEState		*netLEStatePtr;
+    register	volatile NetXmitElement     	*xmitElementPtr;
+    register	volatile NetLEXmitMsgDesc	*descPtr;
+    register	volatile NetLEState		*netLEStatePtr;
     ReturnStatus			status;
 
     netLEStatePtr = &netLEState;
@@ -685,6 +675,7 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netLEState.xmitList)); 
 
     ENABLE_INTR();
+    return;
 }
 
 
@@ -715,6 +706,7 @@ NetLEXmitDrop()
 	}
 	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
+    return;
 }
 
 /*
@@ -756,4 +748,5 @@ NetLEXmitRestart()
 	netLEState.transmitting = FALSE;
 	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
+    return;
 }

@@ -35,8 +35,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
-
+#endif
 
 #include "sprite.h"
 #include "net.h"
@@ -125,10 +124,10 @@ typedef struct ArpOutputQueue {
 } ArpOutputQueue;
 
 #define ARP_OUTPUT_QUEUE_LEN		3
-ArpOutputQueue arpOutputQueue[ARP_OUTPUT_QUEUE_LEN];
+static ArpOutputQueue arpOutputQueue[ARP_OUTPUT_QUEUE_LEN];
 static int nextOutputIndex = 0;
 
-Sync_Lock arpOutputQueueLock; ;
+static Sync_Lock arpOutputQueueLock; ;
 #define LOCKPTR (&arpOutputQueueLock)
 
 /*
@@ -139,9 +138,9 @@ Sync_Lock arpOutputQueueLock; ;
 typedef NetSpriteArp  ArpInputQueue;
 
 #define ARP_INPUT_QUEUE_LEN		5
-ArpInputQueue arpInputQueue[ARP_INPUT_QUEUE_LEN];
+static ArpInputQueue arpInputQueue[ARP_INPUT_QUEUE_LEN];
 static int nextInputIndex = 0;
-Sync_Semaphore arpInputMutex;
+static Sync_Semaphore arpInputMutex;
 
 /*
  * Macro to swap the fragOffset field.
@@ -207,6 +206,7 @@ Net_RouteInit()
 			    NET_ROUTE_ETHER,
 			   (ClientData) &netBroadcastAddr, "broadcast",
 			   "unknown");
+    return;
 }
 
 /*
@@ -597,6 +597,7 @@ Net_IDToRoute(spriteID)
     int spriteID;
 {
     register Net_Route *routePtr;
+
     MASTER_LOCK(&netRouteMutex);
     if (spriteID < 0 || spriteID >= netNumRoutes) {
 	routePtr = (Net_Route *)NIL;
@@ -895,6 +896,7 @@ Net_SpriteIDToName(spriteID, namePtrPtr)
 	}
     }
     MASTER_UNLOCK(&netRouteMutex);
+    return;
 }
 
 /*
@@ -956,6 +958,7 @@ Net_HostPrint(spriteID, string)
     char *string;
 {
     Sys_HostPrint(spriteID, string);
+    return;
 }
 
 /*
@@ -1000,7 +1003,7 @@ Net_Arp(spriteID, mutexPtr)
     gather.length = sizeof(NetSpriteArp);
     gather.done = FALSE;
     gather.mutexPtr = (Sync_Semaphore *) NIL;
-    
+
     status = NetDoArp(mutexPtr, NET_ARP_REQUEST, &gather, &reply);
     if (status == SUCCESS) {
 	(void) Net_InstallRoute(spriteID, 0, NET_ROUTE_ETHER, 
@@ -1210,7 +1213,7 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
  */
 
 /*ARGSUSED*/
-int
+void
 NetArpInput(packetPtr, packetLength)
     Address packetPtr;		/* Pointer to the packet in the hardware
 				 * recieve buffers */
@@ -1382,7 +1385,7 @@ NetArpInput(packetPtr, packetLength)
 	    break;
 	}
     }
-
+    return;
 }
 
 /*
@@ -1475,6 +1478,7 @@ NetArpHandler(data, callInfoPtr)
     MASTER_UNLOCK(&arpInputMutex);
 
     callInfoPtr->interval = 0;
+    return;
 }
 
 /*
@@ -1540,6 +1544,7 @@ NetArpOutput(destEtherAddrPtr, etherType, requestPtr)
     (netEtherFuncs.output)(etherHdrPtr, gatherPtr, 1);
 
     UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -1573,6 +1578,7 @@ Net_ArpTimeout(time, data)
     arpPtr->state &= ~ARP_IN_TIMEOUT_QUEUE;
     Sync_MasterBroadcast(&arpPtr->condition);
     MASTER_UNLOCK(arpPtr->mutexPtr);
+    return;
 }
 
 /*
@@ -1635,6 +1641,7 @@ NetFillInArpRequest(command, type, targetId, senderId, targetEtherAddrPtr,
 			*(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(requestPtr));
     NET_ETHER_ADDR_COPY(*senderEtherAddrPtr,
 			*(Net_EtherAddress *)ARP_SRC_ETHER_ADDR(requestPtr));
+    return;
 }
 
 /*
@@ -1695,6 +1702,5 @@ Net_RouteMTU(spriteID)
 	return (NET_ETHER_MAX_BYTES - sizeof(Net_EtherHdr));
     } 
     return (NET_ETHER_MAX_BYTES - sizeof(Net_EtherHdr) - sizeof(Net_IPHeader));
-
 }
 

@@ -286,15 +286,21 @@ typedef struct {
     /*
      * Pointers for ring of receive buffers. 
      */
-    NetLERecvMsgDesc	*recvDescFirstPtr;/* Ring of receive desc start.*/
-    NetLERecvMsgDesc	*recvDescNextPtr; /* Next receive desc to be filled. */
-    NetLERecvMsgDesc	*recvDescLastPtr; /* Ring of receive descriptors end. */
+    volatile NetLERecvMsgDesc	*recvDescFirstPtr;
+                                            /* Ring of receive desc start.*/
+    volatile NetLERecvMsgDesc	*recvDescNextPtr;
+                                            /* Next recv desc to be filled. */
+    volatile NetLERecvMsgDesc	*recvDescLastPtr;
+                                            /* Ring of recv descriptors end. */
     /*
      * Pointers for ring of transmit buffers. 
      */
-    NetLEXmitMsgDesc	*xmitDescFirstPtr;/* Ring of xmit descriptors start.*/
-    NetLEXmitMsgDesc	*xmitDescNextPtr; /* Next xmit desc to be filled. */
-    NetLEXmitMsgDesc	*xmitDescLastPtr; /* Ring of xmit descriptors end. */
+    volatile NetLEXmitMsgDesc	*xmitDescFirstPtr;
+                                            /* Ring of xmit descriptors start.*/
+    volatile NetLEXmitMsgDesc	*xmitDescNextPtr;
+                                            /* Next xmit desc to be filled. */
+    volatile NetLEXmitMsgDesc	*xmitDescLastPtr;
+                                            /* Ring of xmit descriptors end. */
 
     List_Links		*xmitList;	/* Pointer to the front of the list of
 					   packets to be transmited. */

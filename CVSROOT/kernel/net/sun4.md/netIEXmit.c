@@ -16,7 +16,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 #include "sprite.h"
 #include "netIEInt.h"
@@ -223,8 +223,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	xmitBufDescPtr->countHigh = length >> 8;
 
 	totalLength += length;
-	xmitBufDescPtr = 
-	 (NetIETransmitBufDesc *) ((int) xmitBufDescPtr + NET_IE_CHUNK_SIZE);
+	xmitBufDescPtr = (volatile NetIETransmitBufDesc *)
+	    ((int) xmitBufDescPtr + NET_IE_CHUNK_SIZE);
     }
 
     /*
@@ -242,8 +242,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	xmitBufDescPtr->countLow = length & 0xFF;
 	xmitBufDescPtr->countHigh = length >> 8;
     } else {
-	xmitBufDescPtr = 
-	 (NetIETransmitBufDesc *) ((int) xmitBufDescPtr - NET_IE_CHUNK_SIZE);
+	xmitBufDescPtr = (volatile NetIETransmitBufDesc *)
+	    ((int) xmitBufDescPtr - NET_IE_CHUNK_SIZE);
     }
 
     /*
@@ -315,12 +315,12 @@ NetIEXmitInit()
      */
 
 #ifdef	lint
-    xmitBufDescPtr = (NetIETransmitBufDesc *) NIL;
+    xmitBufDescPtr = (volatile NetIETransmitBufDesc *) NIL;
 #endif
 
     for (i = 0; i < NET_IE_NUM_XMIT_BUFFERS; i++) {
-	newXmitBufDescPtr = (NetIETransmitBufDesc *) NetIEMemAlloc();
-	if (newXmitBufDescPtr == (NetIETransmitBufDesc *) NIL) {
+	newXmitBufDescPtr = (volatile NetIETransmitBufDesc *) NetIEMemAlloc();
+	if (newXmitBufDescPtr == (volatile NetIETransmitBufDesc *) NIL) {
 	    panic( "Intel: No memory for the xmit buffers.\n");
 	}
 
@@ -352,6 +352,7 @@ NetIEXmitInit()
 	netIEState.transmitting = FALSE;
 	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
+    return;
 }
 
 
@@ -433,6 +434,7 @@ NetIEXmitDone()
 	netIEState.transmitting = FALSE;
 	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
+    return;
 }
 
 
@@ -546,7 +548,8 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	return;
     }
 
-    xmitPtr = (NetXmitElement *) List_First((List_Links *) netIEState.xmitFreeList);
+    xmitPtr = (volatile NetXmitElement *)
+	List_First((List_Links *) netIEState.xmitFreeList);
 
     List_Remove((List_Links *) xmitPtr);
 
@@ -565,6 +568,7 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netIEState.xmitList)); 
 
     ENABLE_INTR();
+    return;
 }
 
 /*
@@ -596,6 +600,7 @@ NetIEXmitDrop()
 	}
 	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
+    return;
 }
 
 
@@ -638,5 +643,6 @@ NetIEXmitRestart()
 	netIEState.transmitting = FALSE;
 	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
+    return;
 }
 #endif

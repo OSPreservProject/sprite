@@ -106,12 +106,11 @@ extern	void	Net_RouteInit();
 extern	void	Net_NameToAddr();
 extern	void	Net_AddrToName();
 
-Net_Route	*Net_IDToRoute();
-int		 Net_AddrToID();
+extern Net_Route *Net_IDToRoute();
+extern int	 Net_AddrToID();
 
 extern int Net_RouteMTU();
 extern int Net_MaxProtoHdrSize();
-
 
 extern Net_Route *Net_Arp();
 extern int	Net_RevArp();

@@ -132,6 +132,6 @@ typedef struct NetSpriteArp {
  * Forward declarations.
  */
 
-int		 NetArpInput();
+extern void	 NetArpInput();
 
 #endif /* _NETROUTE */

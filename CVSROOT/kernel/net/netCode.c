@@ -19,7 +19,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 #include "sprite.h"
 
@@ -111,6 +111,7 @@ Net_Init()
 	} 
     }
     Sync_SemInitDynamic(&outputMutex, "Net:outputMutex");
+    return;
 }
 
 /*
@@ -133,6 +134,7 @@ void
 Net_Bin()
 {
     Mem_Bin(NET_ETHER_MAX_BYTES);
+    return;
 }
 
 /*
@@ -171,6 +173,7 @@ Net_GatherCopy(scatterGatherPtr, scatterGatherLength, destAddr)
 	     scatterGatherPtr->length);
 	soFar += scatterGatherPtr->length;
     }
+    return;
 }
 
 
@@ -194,6 +197,7 @@ void
 Net_Reset()
 {
     netEtherFuncs.reset();
+    return;
 }
 
 
@@ -390,6 +394,7 @@ void
 Net_RecvPoll()
 {
     netEtherFuncs.intr(TRUE);
+    return;
 }
 
 
@@ -430,6 +435,7 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
     }
 
     MASTER_UNLOCK(&outputMutex);
+    return;
 }
 
 /*
@@ -474,6 +480,7 @@ NetOutputWakeup(mutexPtr)
     (void) Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
     MASTER_UNLOCK(mutexPtr);
 #endif
+    return;
 }
 
 
@@ -613,6 +620,7 @@ Net_Input(packetPtr, packetLength)
 	    DevNetEtherHandler(packetPtr, packetLength);
 	    break;
     }
+    return;
 }
 
 
@@ -669,4 +677,5 @@ EnterDebugger(packetPtr, packetLength)
     }
 
     DBG_CALL;
+    return;
 }

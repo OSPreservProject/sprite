@@ -30,7 +30,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 #include "sprite.h"
 #include "sys.h"
@@ -82,25 +82,14 @@ NetIEInit(name, number, ctrlAddr)
 {
     int 	i;
     List_Links	*itemPtr;
-    Address	(*allocFunc)();
-
-#ifdef sun2
-    allocFunc = Vm_RawAlloc;
-#endif
-#ifdef sun3
-    allocFunc = VmMach_NetMemAlloc;
-#endif
-#ifdef sun4
-    allocFunc = VmMach_NetMemAlloc;
-#endif
 
     DISABLE_INTR();
 
-#if defined(sun2) || defined(sun3)
+#ifdef sun3
     Mach_SetHandler(27, Net_Intr, (ClientData) 0);
 #endif
 #ifdef sun4
-    Mach_SetHandler(6, Net_Intr, (ClientData)0);
+    Mach_SetHandler(6, Net_Intr, (ClientData) 0);
 #endif
     netIEState.running = FALSE;
 
@@ -118,6 +107,7 @@ NetIEInit(name, number, ctrlAddr)
 	 */
 	char zero = 0;
 	ReturnStatus status;
+
 	status = Mach_Probe(sizeof(char), &zero,
 	    (char *)netIEState.controlReg);
 	if (status != SUCCESS) {
@@ -138,11 +128,11 @@ NetIEInit(name, number, ctrlAddr)
     netIEState.xmitFreeList = &xmitFreeListHdr;
     List_Init(netIEState.xmitFreeList);
 
-    netIEXmitFiller = (char *)allocFunc(NET_ETHER_MIN_BYTES);
-    netIEXmitTempBuffer = (char *)allocFunc(NET_ETHER_MAX_BYTES + 2);
+    netIEXmitFiller = (char *)VmMach_NetMemAlloc(NET_ETHER_MIN_BYTES);
+    netIEXmitTempBuffer = (char *)VmMach_NetMemAlloc(NET_ETHER_MAX_BYTES + 2);
 
     for (i = 0; i < NET_IE_NUM_XMIT_ELEMENTS; i++) {
-	itemPtr = (List_Links *) allocFunc(sizeof(NetXmitElement)), 
+	itemPtr = (List_Links *) VmMach_NetMemAlloc(sizeof(NetXmitElement)), 
 	List_InitElement(itemPtr);
 	List_Insert(itemPtr, LIST_ATREAR(netIEState.xmitFreeList));
     }
@@ -180,8 +170,8 @@ NetIEInit(name, number, ctrlAddr)
 #define	ALIGNMENT_PADDING	(sizeof(Net_EtherHdr)&0x3)
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
 	netIERecvBuffers[i] = 
-		allocFunc(NET_IE_RECV_BUFFER_SIZE + ALIGNMENT_PADDING) +
-							ALIGNMENT_PADDING;
+		VmMach_NetMemAlloc(NET_IE_RECV_BUFFER_SIZE + ALIGNMENT_PADDING)
+		    + ALIGNMENT_PADDING;
     }
 #undef ALIGNMENT_PADDING
 
@@ -253,6 +243,7 @@ NetIEDefaultConfig()
 */
 
     NetIEExecCommand((NetIECommandBlock *) confCBPtr);
+    return;
 }
 
 
@@ -447,6 +438,7 @@ NetIEReset()
      */
 
     NetIEXmitInit();
+    return;
 }
 
 
@@ -499,6 +491,7 @@ NetIERestart()
 #endif
 
     ENABLE_INTR();
+    return;
 }
 
 
@@ -578,4 +571,5 @@ NetIEIntr(polling)
     if (NET_IE_TRANSMITTED(status)) {
 	NetIEXmitDone();
     }
+    return;
 }

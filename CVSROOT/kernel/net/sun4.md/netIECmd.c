@@ -14,7 +14,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 #include "sprite.h"
 #include "sys.h"
@@ -123,4 +123,5 @@ NetIEExecCommand(cmdPtr)
 
     NET_IE_CHANNEL_ATTENTION;
     NetIECheckSCBCmdAccept(netIEState.scbPtr);
+    return;
 }

@@ -73,17 +73,6 @@ NetLEInit(name, number, ctrlAddr)
 {
     int 	i;
     List_Links	*itemPtr;
-    Address	(*allocFunc)();
-
-#ifdef sun2
-    allocFunc = Vm_RawAlloc;
-#endif
-#ifdef sun3
-    allocFunc = VmMach_NetMemAlloc;
-#endif
-#ifdef sun4
-    allocFunc = VmMach_NetMemAlloc;
-#endif
 
     DISABLE_INTR();
 
@@ -129,7 +118,7 @@ NetLEInit(name, number, ctrlAddr)
     List_Init(netLEState.xmitFreeList);
 
     for (i = 0; i < NET_LE_NUM_XMIT_ELEMENTS; i++) {
-	itemPtr = (List_Links *) allocFunc(sizeof(NetXmitElement)), 
+	itemPtr = (List_Links *) VmMach_NetMemAlloc(sizeof(NetXmitElement)), 
 	List_InitElement(itemPtr);
 	List_Insert(itemPtr, LIST_ATREAR(netLEState.xmitFreeList));
     }
@@ -161,13 +150,12 @@ NetLEInit(name, number, ctrlAddr)
      * Allocate the initialization block.
      */
     netLEState.initBlockPtr = 
-		    (NetLEInitBlock *)allocFunc(sizeof(NetLEInitBlock));
+		    (NetLEInitBlock *)VmMach_NetMemAlloc(sizeof(NetLEInitBlock));
     /*
      * Reset the world.
      */
 
     NetLEReset();
-
 
     /*
      * Now we are running.
@@ -328,6 +316,7 @@ NetLEReset()
 		    (NET_LE_CSR0_START | NET_LE_CSR0_INTR_ENABLE);
 
     printf("LE ethernet: Reinitialized chip.\n");
+    return;
 }
 
 
@@ -368,6 +357,7 @@ NetLERestart()
     NetLEXmitRestart();
 
     ENABLE_INTR();
+    return;
 }
 
 
@@ -391,11 +381,10 @@ NetLEIntr(polling)
     Boolean	polling;	/* TRUE if are being polled instead of
 				 * processing an interrupt. */
 {
-    register	NetLEState	*netLEStatePtr;
+    volatile register	NetLEState	*netLEStatePtr;
     ReturnStatus		statusXmit, statusRecv;
     unsigned 	short		csr0;
     Boolean			reset;
-
 
     netLEStatePtr = &netLEState;
 
@@ -437,7 +426,7 @@ NetLEIntr(polling)
 	if (csr0 & NET_LE_CSR0_MEMORY_ERROR) {
 #ifdef sun4c
 	    printf("netLEStatePtr: 0x%x, regPortPtr = 0x%x, dataPort = 0x%x, csr0: 0x%x\n", netLEStatePtr, netLEStatePtr->regPortPtr, netLEStatePtr->regPortPtr->dataPort, csr0);
-#endif sun4c
+#endif
 	    panic("LE ethernet: Memory Error.\n");
 	}
 	/*

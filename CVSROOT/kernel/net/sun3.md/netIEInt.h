@@ -527,9 +527,11 @@ typedef struct {
 
 typedef struct {
     unsigned int	memBase;	/* Address of control block memory. */
-    NetIESysConfPtr	*sysConfPtr;	/* Where the system configuration 
+    volatile NetIESysConfPtr *sysConfPtr;
+                                        /* Where the system configuration
 					   pointer is at. */
-    NetIEIntSysConfPtr	*intSysConfPtr;	/* Where the intermediate system 
+    volatile NetIEIntSysConfPtr	*intSysConfPtr;
+                                        /* Where the intermediate system
 					   configuration pointer is at. */
     volatile NetIESCB	*scbPtr;	/* Pointer to system control block. */
     volatile NetIECommandBlock *cmdBlockPtr;/* Head of command block list */

@@ -66,23 +66,12 @@ AllocateRecvMem()
 {
     unsigned int	memBase;
     int			i;
-    Address	(*allocFunc)();
-
-#ifdef sun2
-    allocFunc = Vm_RawAlloc;
-#endif
-#ifdef sun3
-    allocFunc = VmMach_NetMemAlloc;
-#endif
-#ifdef sun4
-    allocFunc = VmMach_NetMemAlloc;
-#endif
 
     /*
      * Allocate the ring of receive buffer descriptors.  The ring must start
      * on 8-byte boundary.  
      */
-    memBase = (unsigned int) allocFunc(
+    memBase = (unsigned int) VmMach_NetMemAlloc(
 		(NET_LE_NUM_RECV_BUFFERS * sizeof(NetLERecvMsgDesc)) + 8);
     /*
      * Insure ring starts on 8-byte boundary.
@@ -90,7 +79,7 @@ AllocateRecvMem()
     if (memBase & 0x7) {
 	memBase = (memBase + 8) & ~0x7;
     }
-    netLEState.recvDescFirstPtr = (NetLERecvMsgDesc *) memBase;
+    netLEState.recvDescFirstPtr = (volatile NetLERecvMsgDesc *) memBase;
 
     /*
      * Allocate the receive buffers. The buffers are
@@ -103,8 +92,8 @@ AllocateRecvMem()
 #define ALIGNMENT_PADDING       (sizeof(Net_EtherHdr)&0x3)
     for (i = 0; i < NET_LE_NUM_RECV_BUFFERS; i++) {
         recvDataBuffer[i] = (Address)
-                allocFunc(NET_LE_RECV_BUFFER_SIZE + ALIGNMENT_PADDING) +
-                                                        ALIGNMENT_PADDING;
+                VmMach_NetMemAlloc(NET_LE_RECV_BUFFER_SIZE + ALIGNMENT_PADDING)
+		    + ALIGNMENT_PADDING;
     }
 #undef ALIGNMENT_PADDING
 
@@ -134,7 +123,7 @@ void
 NetLERecvInit()
 {
     int 	bufNum;
-    NetLERecvMsgDesc	*descPtr;
+    volatile NetLERecvMsgDesc	*descPtr;
 
     if (!recvMemAllocated) {
 	AllocateRecvMem();
@@ -205,7 +194,7 @@ ReturnStatus
 NetLERecvProcess(dropPackets)
     Boolean	dropPackets;	/* Drop all packets. */
 {
-    register	NetLERecvMsgDesc	*descPtr;
+    register	volatile NetLERecvMsgDesc	*descPtr;
     register	NetLEState		*netLEStatePtr;
     register	Net_EtherHdr		*etherHdrPtr;
     int					size;

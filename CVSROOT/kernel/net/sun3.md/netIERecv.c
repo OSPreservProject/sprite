@@ -14,7 +14,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 #include "sprite.h"
 #include "netIEInt.h"
@@ -60,8 +60,8 @@ NetIERecvUnitInit()
      */
 
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
-	recvBufDescPtr = (NetIERecvBufDesc *) NetIEMemAlloc();
-	if (recvBufDescPtr == (NetIERecvBufDesc *) NIL) {
+	recvBufDescPtr = (volatile NetIERecvBufDesc *) NetIEMemAlloc();
+	if (recvBufDescPtr == (volatile NetIERecvBufDesc *) NIL) {
 	    panic("No memory for a receive buffer descriptor pointer\n");
 	}
 
@@ -106,8 +106,8 @@ NetIERecvUnitInit()
      */
 
     for (i = 0; i < NET_IE_NUM_RECV_BUFFERS - 1; i++) {
-	recvFrDescPtr = (NetIERecvFrameDesc *) NetIEMemAlloc();
-	if (recvFrDescPtr == (NetIERecvFrameDesc *) NIL) {
+	recvFrDescPtr = (volatile NetIERecvFrameDesc *) NetIEMemAlloc();
+	if (recvFrDescPtr == (volatile NetIERecvFrameDesc *) NIL) {
 	    panic("No memory for a receive frame descriptor pointer\n");
 	}
 
@@ -175,6 +175,7 @@ NetIERecvUnitInit()
     if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY) {
 	printf("Intel: Receive unit never became ready.\n");
     }
+    return;
 }
 
 
@@ -333,4 +334,5 @@ printf("Reinit recv unit\n");
     NET_IE_CHECK_SCB_CMD_ACCEPT(netIEStatePtr->scbPtr);
     netIEStatePtr->scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
     NET_IE_CHANNEL_ATTENTION;
+    return;
 }
