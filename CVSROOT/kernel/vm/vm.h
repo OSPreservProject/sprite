@@ -203,6 +203,8 @@ typedef struct Vm_ProcInfo {
 						 * data. */
     int				vmFlags;	/* Flags defined below. */
     List_Links			*sharedSegs;	/* Process's shared segs. */
+    Address			sharedStart;	/* Start of shared region.  */
+    Address			sharedEnd;	/* End of shared region.  */
 } Vm_ProcInfo;
 
 /*
@@ -357,5 +359,12 @@ extern	unsigned int	Vm_GetKernPageFrame();
  */
 extern	Boolean		vm_Tracing;
 extern	void		Vm_StoreTraceTime();
+
+/*
+ * Shared memory routines.
+ */
+extern	void		Vm_CleanupSharedFile();
+extern	void		Vm_CleanupSharedProc();
+extern	void		VmDeleteSharedSegment();
 
 #endif /* _VM */
