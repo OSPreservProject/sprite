@@ -125,13 +125,4 @@ typedef	struct	Mach_DebugState {
 } Mach_DebugState;
 #endif /* NOTDEF */
 
-/*
- * The machine-dependent signal structure.
- */
-typedef struct Mach_SigContext {
-    unsigned	int	trapInst;	/* the sig ret trap instruction */
-    Address	pcValue;		/* pc to go to for signal */
-    Mach_RegState	userState;	/* user trap state before signal */
-} Mach_SigContext;
-
 #endif /* _MACHSIG */
