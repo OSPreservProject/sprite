@@ -43,6 +43,7 @@ void	ReopenHandles();
 void	RecoveryDone();
 Boolean	RecoveryFailed();
 void	RecoveryNotify();
+void	RecoveryComplete();
 Boolean	OkToScavenge();
 
 /*
@@ -174,8 +175,13 @@ ReopenHandles(serverID)
          hdrPtr = FsGetNextHandle(&hashSearch)) {
 	 if ((hdrPtr->fileID.type != FS_STREAM) &&
 		 (hdrPtr->fileID.serverID == serverID)) {
+	    if (!RemoteHandle(hdrPtr)) {
+		Sys_Panic(SYS_FATAL, "ReopenHandles, local handle?\n");
+	    }
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
 		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
+	    RecoveryComplete(&(((FsRemoteIOHandle *)hdrPtr)->recovery),
+				status);
 	    FsHandleUnlock(hdrPtr);
 	    switch (status) {
 		case SUCCESS:
@@ -313,6 +319,8 @@ RemoteHandle(hdrPtr)
 	case FS_RMT_PIPE_STREAM:
 	case FS_RMT_NAMED_PIPE_STREAM:
 	case FS_RMT_PSEUDO_STREAM:
+	case FS_PFS_NAMING_STREAM:
+	case FS_RMT_PFS_STREAM:
 	case FS_CONTROL_STREAM:
 	    return(TRUE);
 	default:
@@ -475,7 +483,7 @@ RecoveryWait(recovPtr)
 /*
  *----------------------------------------------------------------------------
  *
- * FsRecoveryComplete --
+ * RecoveryComplete --
  *
  *	Mark a remote handle as having competed recovery actions.  The waiting
  *	process is not woken up yet, however, because it may also depend
@@ -495,8 +503,8 @@ RecoveryWait(recovPtr)
  *----------------------------------------------------------------------------
  *
  */
-ENTRY void
-FsRecoveryComplete(recovPtr, status)
+ENTRY static void
+RecoveryComplete(recovPtr, status)
     FsRecoveryInfo *recovPtr;
     ReturnStatus status;
 {
