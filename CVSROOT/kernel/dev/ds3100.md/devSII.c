@@ -16,17 +16,17 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif not lint
 
-#include "sprite.h"
-#include "sii.h"
-#include "mach.h"
-#include "dev.h"
-#include "devInt.h"
-#include "scsiHBA.h"
-#include "scsiDevice.h"
-#include "scsi.h"
-#include "sync.h"
-#include "stdlib.h"
-#include "user/fs.h"
+#include <sprite.h>
+#include <sii.h>
+#include <mach.h>
+#include <dev.h>
+#include <devInt.h>
+#include <scsiHBA.h>
+#include <scsiDevice.h>
+#include <sys/scsi.h>
+#include <sync.h>
+#include <stdlib.h>
+#include <user/fs.h>
 
 #define RESET TRUE
 
