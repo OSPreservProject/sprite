@@ -20,8 +20,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsrmt.h"
 #include "fsio.h"
+#include "fsrmt.h"
 #include "fsioFile.h"
 #include "fsioDevice.h"
 #include "fsioPipe.h"
@@ -56,6 +56,7 @@ static Fsio_StreamTypeOps rmtFileStreamOps[] = {
  * be cached in the block cache.
  */
     { FSIO_RMT_FILE_STREAM, FsrmtFileIoOpen, FsrmtFileRead, FsrmtFileWrite,
+		FsrmtFilePageRead, FsrmtFilePageWrite,
 		FsrmtFileIOControl, Fsio_FileSelect,
 		FsrmtFileGetIOAttr, FsrmtFileSetIOAttr,
 		FsrmtFileVerify, FsrmtFileMigClose, FsrmtFileMigOpen,
@@ -66,6 +67,7 @@ static Fsio_StreamTypeOps rmtFileStreamOps[] = {
  * Remote device stream.  Forward the operations to the remote I/O server.
  */
     { FSIO_RMT_DEVICE_STREAM, FsrmtDeviceIoOpen, Fsrmt_Read, Fsrmt_Write,
+		Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
 		Fsrmt_IOControl, Fsrmt_Select,
 		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
 		FsrmtDeviceVerify, Fsrmt_IOMigClose, Fsrmt_IOMigOpen,
@@ -75,6 +77,7 @@ static Fsio_StreamTypeOps rmtFileStreamOps[] = {
   * Remote anonymous pipe stream.  These arise because of migration.
   */
     { FSIO_RMT_PIPE_STREAM, Fsio_NoProc, Fsrmt_Read, Fsrmt_Write,
+		Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
 		Fsrmt_IOControl, Fsrmt_Select,
 		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
 		FsrmtPipeVerify, Fsrmt_IOMigClose, Fsrmt_IOMigOpen,

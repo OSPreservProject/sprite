@@ -146,6 +146,8 @@ extern ReturnStatus	FsrmtFileIoOpen();
 extern Fs_HandleHeader	*FsrmtFileVerify();
 extern ReturnStatus	FsrmtFileRead();
 extern ReturnStatus	FsrmtFileWrite();
+extern ReturnStatus	FsrmtFilePageRead();
+extern ReturnStatus	FsrmtFilePageWrite();
 extern ReturnStatus	FsrmtFileIOControl();
 extern ReturnStatus	FsrmtFileSelect();
 extern ReturnStatus	FsrmtFileGetIOAttr();
