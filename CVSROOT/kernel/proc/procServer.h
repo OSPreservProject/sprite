@@ -79,13 +79,6 @@ typedef struct {
 #define	SERVER_BUSY	0x2
 #define	FUNC_PENDING	0x4
 
-/*
- * Number of server processes.  There have to be enough to allow for
- * pageouts and block cleaning at the same time. This occurs while
- * paging heavily on a file server (or with a local disk used for paging).
- */
-#define PROC_NUM_SERVER_PROCS	(FSCACHE_MAX_CLEANER_PROCS + VM_MAX_PAGE_OUT_PROCS)
-
 extern ServerInfo	*serverInfoTable;
 
 #endif /* _PROCSERVER */
