@@ -256,7 +256,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 	Timer_Ticks curTime;
 
 	/*
-	 * Make sure the times are valid and withing the clock's resolution.
+	 * Make sure the times are valid and within the clock's resolution.
 	 */
 	if ((newTimer.curValue.seconds < 0) || 
 	    (newTimer.curValue.microseconds < 0) ||
@@ -273,6 +273,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 	    newTimer.curValue.microseconds = TIMER_CALLBACK_INTERVAL;
 	}
 	if ((newTimer.interval.seconds == 0) && 
+	    (newTimer.interval.microseconds > 0) &&
 	    (newTimer.interval.microseconds < TIMER_CALLBACK_INTERVAL)) {
 	    newTimer.interval.microseconds = TIMER_CALLBACK_INTERVAL;
 	}
