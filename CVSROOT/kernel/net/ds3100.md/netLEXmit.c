@@ -198,15 +198,6 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     if (totLen < NET_ETHER_MIN_BYTES) {
 	totLen = NET_ETHER_MIN_BYTES;
     }
-    if ((rpc_SanityCheck) && (etherHdrPtr->type == NET_ETHER_SPRITE)) {
-	ReturnStatus	status;
-	status = Rpc_SanityCheck(scatterGatherLength, scatterGatherPtr, totLen);
-	if (status != SUCCESS) {
-	    netLEDebugState = *statePtr;
-	    NetLEReset(statePtr->interPtr);
-	    panic("Sanity check failed.\n");
-	}
-    }
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_BUF_SIZE) = -totLen;
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_BUF_ADDR_LOW) = 
 			BUF_TO_CHIP_ADDR(statePtr->xmitBufPtr) & 0xFFFF;
