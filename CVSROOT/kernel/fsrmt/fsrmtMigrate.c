@@ -244,7 +244,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	 fsStreamOpTable[FS_STREAM].read)) {
 	panic("Fs_DeencapStream: trying to deencapsulate a file descriptor that can't migrate.  (Continuable, but call Fred.)");
     }
-#endif
+#endif /* CHECK_FAILURE */
 
     DEBUG( (" Type %d <%d,%d> offset %d, ", migInfoPtr->ioFileID.type,
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
@@ -268,12 +268,12 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     if (status == SUCCESS) {
 	*streamPtrPtr = streamPtr;
     } else {
+	FsHandleLock(streamPtr);
 	if (!foundStream &&
 	    FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
-	    FsHandleLock(streamPtr);
 	    FsStreamDispose(streamPtr);
 	} else {
-	    FsHandleRelease(streamPtr, FALSE);
+	    FsHandleRelease(streamPtr, TRUE);
 	}
     }
 
@@ -461,8 +461,7 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
 	    }
 	}
     } else if (fsMigDebug) {
-	printf(
-		  "FsNotifyOfMigration: status %x returned by remote migrate routine.\n",
+	printf("FsNotifyOfMigration: status %x from remote migrate routine.\n",
 		  status);
     }
     return(status);
@@ -547,8 +546,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 	    bcopy(dataPtr, (Address) &migParamPtr->data, dataSize);
 	    free(dataPtr);
 	} else {
-	    panic(
-		      "Fs_RpcStartMigration: migrate routine returned oversized data buffer.\n");
+	    panic("Fs_RpcStartMigration: migrate returned oversized buffer.\n");
 	    return(FAILURE);
 	}
     } 
