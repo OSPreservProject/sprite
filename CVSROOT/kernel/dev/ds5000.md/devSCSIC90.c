@@ -825,6 +825,7 @@ unsigned int	sequenceReg;
     case SEQ_NO_SEL:
 	if (interruptReg & IR_DISCNCT) {
 	    msgNum = 1;
+	    status = DEV_NO_DEVICE;
 	} else if (!(devPtr->msgFlag & REQEXTENDEDMSG)) {
 	    msgNum = 2;
 	} else {
@@ -851,10 +852,9 @@ unsigned int	sequenceReg;
     
     if (msgNum) {
 	ctrlPtr->regsPtr->scsi_ctrl.write.command = CR_FLSH_FIFO;
-	status = FAILURE;
-	printf("%s: selection failed: %s\n",
-	       ctrlPtr->devPtr->handle.locationName,
-	       errMsg[msgNum]);
+	if (status == SUCCESS) {
+	    status = FAILURE;
+	}
     }
 	
     return status;
