@@ -257,7 +257,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 		    Net_SpriteIDToName(serverID, &name);
 		    if (name == (char *)NIL) {
 			Sys_Panic(SYS_WARNING, 
-			    "RpcDoCall: <%d> seems hung\n", spriteID);
+			    "RpcDoCall: <%d> seems hung\n", serverID);
 		    } else {
 			Sys_Panic(SYS_WARNING, 
 			    "RpcDoCall: %s seems hung\n", name);
