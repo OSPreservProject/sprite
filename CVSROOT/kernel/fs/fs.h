@@ -420,4 +420,4 @@ extern	void		Fs_GetPageFromFS();
 extern	ClientData	Fs_GetFileHandle();
 extern struct Vm_Segment **Fs_GetSegPtr();
 
-#endif _FS
+#endif /* _FS */
