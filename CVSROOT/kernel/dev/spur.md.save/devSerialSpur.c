@@ -72,5 +72,11 @@ Dev_SerialInitAddr(unit, devAddr)
 		      unit);
 	    break;
     }
+
+    /*
+     * The following statement was commented out by JO (7/15/89) as part
+     * of new tty driver installation:  the current SPUR tty code needs
+     * revision to work with new driver.
     DevSerialInitQueue(unit, (ClientData) infoPtr);
+    */
 }

@@ -123,8 +123,10 @@ Dev_UartInit(uartAddr, channel, baudRate)
     Mach_Write32bitCCReg(MACH_INTR_STATUS_0, MACH_UART_INTR);
     /*
      * Register the routine to call on this interrupt.
+     * Temporarily remove:  interrupt routine must be rewritten for
+     * new tty driver (JO, 7/15/89).
      */
-    Mach_SetHandler(MACH_UART_INTR, Dev_KbdServiceInterrupt);
+/*    Mach_SetHandler(MACH_UART_INTR, Dev_KbdServiceInterrupt); */
 }
 
 

@@ -25,13 +25,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "rawBlockDev.h"
 #include "devFsOpTable.h"
-#include "devTypesInt.h"
+#include "devTypes.h"
 
 /*
  * Device specific include files.
  */
 
-#include "devConsole.h"
 #include "devNull.h"
 #include "devSyslog.h"
 #include "devNet.h"
@@ -55,21 +54,17 @@ static ReturnStatus NullProc();
  *	BlockDeviceAttach
  *	DeviceReopen
  *
- *
  * Since the table is indexed into the type must be at the right position in 
  * the array.  The FILLER macro is used to fill in the gaps.
  */
 
 #define	FILLER(num)	{num,NoDevice,NullProc,NullProc,NullProc,NullProc,NullProc, DEV_NO_ATTACH_PROC, NoDevice},
 
-
 DevFsTypeOps devFsOpTable[] = {
     /*
-     * The console.  The workstation's display and keyboard.
+     * Serial lines:  not currently supported for SPUR.
      */
-    {DEV_CONSOLE,    Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
-		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect,
-		     DEV_NO_ATTACH_PROC, Dev_ConsoleReopen},
+    FILLER(DEV_TERM)
     /*
      * The system error log.  If this is not open then error messages go
      * to the console.
@@ -142,4 +137,3 @@ NullSelectProc(devicePtr, readPtr, writePtr, exceptPtr)
     *exceptPtr = 0;
     return(SUCCESS);
 }
-
