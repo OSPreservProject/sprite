@@ -14,7 +14,7 @@
     .even
     .text
 
-#include "vmSun3Const.h"
+#include "vmSunConst.h"
 
 |*----------------------------------------------------------------------
 |*
