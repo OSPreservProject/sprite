@@ -87,7 +87,8 @@ typedef struct Fs_AttrOps {
     ReturnStatus	(*setAttr) _ARGS_((Fs_FileID *fileIDPtr, 
 					  Fs_Attributes *attrPtr, 
 					  Fs_UserIDs *idPtr, int flags,
-					  int hostID, int userID));
+					  int clientID, int hostID,
+					  int userID));
 } Fs_AttrOps;
 #else
 typedef struct Fs_AttrOps {
