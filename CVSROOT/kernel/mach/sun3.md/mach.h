@@ -434,4 +434,4 @@ extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
 
-#endif _MACH
+#endif /* _MACH */

@@ -80,9 +80,9 @@
  *
  *  void
  *  Timer_AddTicks(a, b, resultPtr)
- *	Timer_Ticks		a;		/* Addend 1 
- *	Timer_Ticks		b;		/* Addend 2 
- *	Timer_Ticks		*resultPtr;	/* Sum 
+ *	Timer_Ticks		a;		Addend 1 
+ *	Timer_Ticks		b;		Addend 2 
+ *	Timer_Ticks		*resultPtr;	Sum 
  *----------------------------------------------------------------------
  *
  *  Timer_SubtractTicks --
@@ -93,9 +93,9 @@
  *
  *  void
  *  Timer_SubtractTicks(a, b, resultPtr)
- *	Timer_Ticks		a;		/* Minuhend 
- *	Timer_Ticks		b;		/* Subtrahend 
- *	Timer_Ticks		*resultPtr;	/* Difference 
+ *	Timer_Ticks		a;		Minuhend 
+ *	Timer_Ticks		b;		Subtrahend 
+ *	Timer_Ticks		*resultPtr;	Difference 
  *    
  *----------------------------------------------------------------------
  *
@@ -105,9 +105,9 @@
  *
  *    void
  *    Timer_AddIntervalToTicks(absolute, interval, resultPtr)
- *	Timer_Ticks		absolute;	/* Addend 1 
- *	unsigned int     	interval;	/* Addend 2
- *	Timer_Ticks		*resultPtr;	/* Sum 
+ *	Timer_Ticks		absolute;	Addend 1 
+ *	unsigned int     	interval;	Addend 2
+ *	Timer_Ticks		*resultPtr;	Sum 
  *----------------------------------------------------------------------
  *
  *  Timer_GetCurrentTicks --
@@ -116,7 +116,7 @@
  *
  *    void
  *    Timer_GetCurrentTicks(ticksPtr)
- *	Timer_Ticks	*ticksPtr;	/* Buffer to place current time. 
+ *	Timer_Ticks	*ticksPtr;	Buffer to place current time. 
  *----------------------------------------------------------------------
  *
  *  Timer_TicksToTime --
@@ -124,8 +124,8 @@
  *  	Converts a Timer_Ticks value into a Time value.
  *    void
  *    Timer_TicksToTime(tick, timePtr)
- *	Timer_Ticks	tick;		/* Value to be converted. 
- *	Time	*timePtr;	/* Buffer to hold converted value. 
+ *	Timer_Ticks	tick;	Value to be converted. 
+ *	Time	*timePtr;	Buffer to hold converted value. 
  *----------------------------------------------------------------------
  *
  *  Timer_TimeToTicks --
@@ -133,8 +133,8 @@
  *  	Converts a Time value into a Timer_Ticks value.
  *   void
  *    Timer_TimeToTicks(time, ticksPtr)
- *	Time	time;		/* Value to be converted. 
- *	Timer_Ticks	*ticksPtr;	/* Buffer to hold converted value.
+ *	Time	time;		        Value to be converted. 
+ *	Timer_Ticks	*ticksPtr;	Buffer to hold converted value.
  *----------------------------------------------------------------------
  *
  * TimerTicksInit --
@@ -267,4 +267,4 @@ extern void 	Timer_TimerGetInfo();
 extern void	Timer_DumpQueue();
 extern void	Timer_DumpStats();
 
-#endif _TIMER
+#endif /* _TIMER */

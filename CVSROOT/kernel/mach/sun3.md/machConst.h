@@ -245,4 +245,4 @@
 #define	A7	15
 #define	SP	15
 
-#endif _MACHCONST
+#endif /* _MACHCONST */

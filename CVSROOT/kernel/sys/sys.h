@@ -43,7 +43,7 @@ extern	int	vprintf();
 
 extern  ReturnStatus	Sys_OutputNumCalls();
 
-#endif KERNEL
+#endif /* KERNEL */
 
 /*
  *  Declarations of system call stubs, which happen to have the
