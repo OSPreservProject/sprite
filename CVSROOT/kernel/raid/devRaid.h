@@ -24,6 +24,7 @@
 #include "devBlockDevice.h"
 #include "devRaidDisk.h"
 #include "devRaidLog.h"
+#include "bitvec.h"
 
 #ifndef MIN
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
@@ -38,7 +39,7 @@
 #ifdef TESTING
 #define RAID_ROOT_CONFIG_FILE_NAME	"RAID"
 #else
-#define RAID_ROOT_CONFIG_FILE_NAME	"/sprite/admin/raid/RAID"
+#define RAID_ROOT_CONFIG_FILE_NAME	"/ra/raid/RAID"
 #endif TESTING
 
 /*
@@ -55,10 +56,12 @@ typedef struct Raid {
     Sync_Condition	 waitExclusive;
     Sync_Condition	 waitNonExclusive;
     int			 numReqInSys; /* -1 => exclusive access */
+    int			 numStripeLocked;
     Fs_Device		*devicePtr; /* Device corresponding to this raid. */
     int			 numRow;
     int			 numCol;
     RaidDisk	      ***disk;	    /* 2D array of disks (column major) */
+    BitVec		 lockedVec;
     RaidLog		 log;
 
     unsigned		 numSector;
