@@ -124,6 +124,25 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
 	free((char *) lfsPtr);
 	return FAILURE;
     }
+    /*
+     * Check to make sure that the partition that the file system was
+     * built in matches the partition it is to be loaded from. To be
+     * backwards compatible we check the domainUID. If it's zero then
+     * the partition number isn't valid either. This check should go away
+     * once all lfs systems are upgraded to the new version of the 
+     * superblock.
+     */
+    if (lfsPtr->superBlock.hdr.domainUID != 0) {
+	if (lfsPtr->superBlock.hdr.partition != 
+	    devicePtr->unit % FSDM_NUM_DISK_PARTS) {
+
+	    printf("Lfs_AttachDisk: partition mismatch, %d != %d\n", 
+	    lfsPtr->superBlock.hdr.partition, 
+	    devicePtr->unit % FSDM_NUM_DISK_PARTS);
+	    free((char *) lfsPtr);
+	    return FAILURE;
+	}
+    }
     lfsPtr->blockSizeShift = LfsLogBase2((unsigned)LfsBlockSize(lfsPtr));
     lfsPtr->checkpointIntervalPtr = (int *) NIL;
     Sync_LockInitDynamic(&(lfsPtr->lock), "LfsLock");

@@ -56,7 +56,9 @@ typedef struct LfsSuperBlockHdr {
     int logStartOffset;     /* The block offset starting the segmented log. */
     int	 checkpointInterval;	/* Frequency of checkpoint in seconds. */
     int  maxNumCacheBlocks;     /* Maximum number of blocks to clean at time.*/
-    char reserved[LFS_SUPER_BLOCK_HDR_SIZE-9*sizeof(int)];
+    int	 domainUID;		/* Unique ID for file system. */
+    int	 partition;		/* Partition number file system was built in. */
+    char reserved[LFS_SUPER_BLOCK_HDR_SIZE-11*sizeof(int)];
 			    /* Reserved, must be set to zero. */
 
 } LfsSuperBlockHdr;

@@ -186,10 +186,6 @@ again:
     checkPointHdrPtr->timestamp = lfsPtr->checkPoint.timestamp;
     checkPointHdrPtr->size = 0;
     checkPointHdrPtr->version = 1;
-    bzero(checkPointHdrPtr->domainPrefix,
-		sizeof(checkPointHdrPtr->domainPrefix));
-    (void)strncpy(checkPointHdrPtr->domainPrefix, lfsPtr->name, 
-			sizeof(checkPointHdrPtr->domainPrefix)-1);
     checkPointHdrPtr->domainNumber = lfsPtr->domainPtr->domainNumber;
     checkPointHdrPtr->attachSeconds = Fsutil_TimeInSeconds();
     checkPointHdrPtr->detachSeconds = checkPointHdrPtr->attachSeconds;
