@@ -31,7 +31,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Device specific include files.
  */
 
-#include "devConsole.h"
 #include "devSyslog.h"
 #include "devNull.h"
 #include "devSCSIDisk.h"
@@ -41,16 +40,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTMR.h"
 #include "devBlockDevice.h"
 #include "scsiHBADevice.h"
+#include "raidExt.h"
+#include "tty.h"
+#include "mouse.h"
 
 
 static ReturnStatus NullSelectProc();
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
-
-#ifdef SERIALB_DEBUG
-extern ReturnStatus Dev_serialBOutTrace();
-extern ReturnStatus Dev_serialBInTrace();
-#endif
 
 
 /*
@@ -69,11 +66,11 @@ extern ReturnStatus Dev_serialBInTrace();
 
 DevFsTypeOps devFsOpTable[] = {
     /*
-     * The console.  The workstation's display and keyboard.
+     * Serial lines used to implement terminals.
      */
-    {DEV_CONSOLE,    Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
-		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect,
-		     DEV_NO_ATTACH_PROC, Dev_ConsoleReopen},
+    {DEV_TERM,       DevTtyOpen, DevTtyRead, DevTtyWrite,
+		     DevTtyIOControl, DevTtyClose, DevTtySelect,
+		     DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * The system error log.  If this is not open then error messages go
      * to the console.
@@ -87,16 +84,12 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_SCSI_WORM, Dev_TimerOpen, Dev_TimerRead, NullProc,
 		    Dev_TimerIOControl, NullProc, NullProc,
 		    DEV_NO_ATTACH_PROC, NoDevice},
-
     /*
      * The following device number is unused.
      */
     {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
 		    NullProc, NullProc, NullSelectProc,
 		    DEV_NO_ATTACH_PROC, NoDevice},
-    /*
-     * SCSI Disk interface.
-     */
     /*
      * New SCSI Disk interface.
      */
@@ -129,27 +122,47 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
 		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect, 
 		   DEV_NO_ATTACH_PROC, DevNet_FsReopen},
-
     /*
-     * SCSI Tape interface.
+     * Raw SCSI HBA interface.
      */
     {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
 		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
 		    DEV_NO_ATTACH_PROC, NoDevice},
-#ifdef SERIALB_DEBUG
-    {DEV_SERIALB_OUT_QUEUE, NullProc, Dev_serialBOutTrace, NullProc,
-                  NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC,
-		  NoDevice},
 
-    {DEV_SERIALB_IN_QUEUE, NullProc, Dev_serialBInTrace, NullProc,
-                  NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC,
-		  NoDevice},
-#endif
+#ifdef USE_RAID
+    /*
+     * RAID device.
+     */ 
+    {DEV_RAID, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, NullProc, DevRaidAttach,
+                    DevRawBlockDevReopen},
+    /*
+     * Debug device. (useful for debugging RAID device)
+     */ 
+    {DEV_DEBUG, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, NullProc, DevDebugAttach,
+                    DevRawBlockDevReopen},
+#else
+    {DEV_RAID, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullSelectProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
+    {DEV_DEBUG, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullSelectProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
+#endif /* USE_RAID */
+
+    /*
+     * Event devices for window systems.
+     */
+    {DEV_MOUSE,    DevMouseOpen, DevMouseRead, DevMouseWrite,
+		   DevMouseIOControl, DevMouseClose, DevMouseSelect,
+		   DEV_NO_ATTACH_PROC, NoDevice},
 
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
-
 
 static ReturnStatus
 NullProc()

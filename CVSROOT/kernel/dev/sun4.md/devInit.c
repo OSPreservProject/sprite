@@ -11,8 +11,14 @@
  *	"Writing Device Drivers for the Sun Workstation"
  *
  *
- * Copyright 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1985, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -21,13 +27,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "devInt.h"
-#include "devKeyboard.h"
 #include "devMultibus.h"
 #include "vm.h"
 #include "vmMach.h"
 #include "dbg.h"
 #include "string.h"
-
+#include "ttyAttach.h"
 
 int devConfigDebug = FALSE;
 
@@ -36,15 +41,13 @@ int devConfigDebug = FALSE;
  *
  * Dev_Init --
  *
- *	Initialize the timer and the keyboard, and set up the allocator
- *	for the device spaces.  Device initialization routines are called
- *	later by Dev_Config.
+ *	Device initialization.
  *
  * Results:
- *     none
+ *	None
  *
  * Side effects:
- *     Some devices are initialized, and the IO buffer allocater is set up.
+ *	Set up interrupt routine for built-in UART interrupts.
  *
  * ----------------------------------------------------------------------------
  */
@@ -52,7 +55,7 @@ int devConfigDebug = FALSE;
 void
 Dev_Init()
 {
-    Dev_KbdInit();
+    DevTtyInit();
 }
 
 
@@ -218,4 +221,3 @@ Dev_Config()
 	}
     }
 }
-
