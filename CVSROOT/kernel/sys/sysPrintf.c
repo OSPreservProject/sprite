@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "dbg.h"
 #include "dev.h"
+#include "machMon.h"
 
 /*
  * Calls to panic and printf are protected.
