@@ -222,6 +222,11 @@ NetLEReset(interPtr)
 	*BUF_TO_ADDR(statePtr->initBlockPtr, 
 		      NET_LE_INIT_MULTI_MASK + (sizeof(short) * i)) = 0;
     }
+    /*
+     * We want to get boot multicasts.
+     * These are addr ab-00-00-01-00-00 = hash bit 31?
+     */
+    *BUF_TO_ADDR(statePtr->initBlockPtr, NET_LE_INIT_MULTI_MASK) = 0x8000;
 
     /*
      * Set up the receive ring pointer.
