@@ -18,10 +18,6 @@
  *	Furthermore, the Test_Stats system call will return a route
  *	to a user program with the NET_GET_ROUTE command.
  *
- *	No synchronization is done here yet.  Routes don't generally
- *	change much, so the only race that exists is between an
- *	initialization in InstallRoute and a lookup in AddrToID.
- *
  * Copyright 1988 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
@@ -70,13 +66,6 @@ Sync_Semaphore	netRouteMutex = Sync_SemInitStatic("netRouteMutex");
 Sync_Semaphore	netFreeRouteMutex = Sync_SemInitStatic("netFreeRouteMutex");
 
 /*
- * Minimum and maximum number of free routes on free list.
- */
-
-int	netMinFreeRoutes = NET_MIN_FREE_ROUTES;
-int	netMaxFreeRoutes = NET_MAX_FREE_ROUTES;
-
-/*
  * Macro to swap the fragOffset field.
  */
 #define SWAP_FRAG_OFFSET_HOST_TO_NET(ptr) { \
@@ -84,9 +73,6 @@ int	netMaxFreeRoutes = NET_MAX_FREE_ROUTES;
     shortPtr = ((unsigned short *)&ptr->ident) + 1; \
     *shortPtr = Net_HostToNetShort(*shortPtr); \
 } 
-
-static List_Links	freeRouteList;
-static int		netNumFreeRoutes;
 
 static	void		FillRouteInfo _ARGS_((Net_Route *routePtr,
 					Net_RouteInfo *infoPtr));
@@ -123,8 +109,6 @@ Net_RouteInit()
     for (spriteID=0 ; spriteID<netNumHosts ; spriteID++) {
 	List_Init(&netRouteArray[spriteID]);
     }
-    List_Init(&freeRouteList);
-    NetAddToFreeRouteList((ClientData) NIL, (Proc_CallInfo *) NIL);
     /*
      * Install the broadcast route(s) so we can do our first broadcast rpcs.
      */
@@ -241,6 +225,11 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
     ReturnStatus status = SUCCESS;
     char	*headerPtr;
 
+    if (Mach_AtInterruptLevel()) {
+	printf("Can't install route when at interrupt level (%d)\n",
+	    spriteID);
+	return FAILURE;
+    }
     if (spriteID < 0) {
 	printf("Invalid sprite id %d\n", spriteID);
 	return (GEN_INVALID_ARG);
@@ -284,12 +273,7 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	}
 	return status;
     }
-    routePtr = NetAllocRoute();
-    if (routePtr == (Net_Route *) NIL) {
-	printf("Net_InstallRoute: Out of free routes!!\n");
-	printf("Net_InstallRoute: Route to %d not installed\n", spriteID);
-	return FAILURE;
-    }
+    routePtr = (Net_Route *) malloc(sizeof(Net_Route));
     MASTER_LOCK(&netRouteMutex);
 
     /*
@@ -347,7 +331,7 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	}
 	List_InitElement((List_Links *) routePtr);
 	List_Insert((List_Links *) routePtr, 
-	    LIST_ATFRONT((List_Links *) &netRouteArray[spriteID]));
+	    LIST_ATREAR((List_Links *) &netRouteArray[spriteID]));
 	(void) strncpy(netHostInfo[spriteID].name, hostname, 20);
 	(void) strncpy(netHostInfo[spriteID].machType, machType, 12);
 
@@ -522,15 +506,24 @@ void
 Net_ReleaseRoute(routePtr)
     Net_Route 	*routePtr;
 {
+    Boolean 	freeIt = FALSE;
     MASTER_LOCK(&netRouteMutex);
     routePtr->refCount--;
-    if ((!(routePtr->flags & NET_RFLAGS_VALID)) && (routePtr->refCount <= 0)) {
-	List_Remove((List_Links *) routePtr);
-	MASTER_UNLOCK(&netRouteMutex);
-	NetFreeRoute(routePtr);
-	return;
+    if (Mach_AtInterruptLevel()) {
+	goto exit;
     }
+    if ((!(routePtr->flags & NET_RFLAGS_VALID)) && 
+	(routePtr->refCount <= 0) &&
+	(!(routePtr->flags & NET_RFLAGS_DELETING))) {
+	routePtr->flags |= NET_RFLAGS_DELETING;
+	freeIt = TRUE;
+    }
+exit:
     MASTER_UNLOCK(&netRouteMutex);
+    if (freeIt) {
+	List_Remove((List_Links *) routePtr);
+	free((char *) routePtr);
+    }
 }
 
 /*
@@ -554,15 +547,23 @@ void
 Net_DeleteRoute(routePtr)
     Net_Route	*routePtr;
 {
+    Boolean 	freeIt = FALSE;
     MASTER_LOCK(&netRouteMutex);
     routePtr->flags &= ~NET_RFLAGS_VALID;
-    if (routePtr->refCount <= 0) {
-	List_Remove((List_Links *) routePtr);
-	MASTER_UNLOCK(&netRouteMutex);
-	NetFreeRoute(routePtr);
-	return;
+    if (Mach_AtInterruptLevel()) {
+	goto exit;
     }
+    if ((routePtr->refCount <= 0) && 
+	(!(routePtr->flags & NET_RFLAGS_DELETING))) {
+	routePtr->flags |= NET_RFLAGS_DELETING;
+	freeIt = TRUE;
+    }
+exit:
     MASTER_UNLOCK(&netRouteMutex);
+    if (freeIt) {
+	List_Remove((List_Links *) routePtr);
+	free((char *) routePtr);
+    }
 }
 
 /*
@@ -963,121 +964,6 @@ Net_HostPrint(spriteID, string)
 {
     Sys_HostPrint(spriteID, string);
     return;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NetAllocRoute --
- *
- *	This routine allocates a route from the list of free routes.
- *	If the number of free routes falls below netMinFreeRoutes
- *	then we schedule a callback to add routes to the
- *	free list. The reason we can't allocate routes using
- *	malloc() is that this routine is called with a master lock
- *	held, and malloc() uses a monitor lock.
- *
- * Results:
- *	A pointer to an unused route if we have one, NIL otherwise
- *
- * Side effects:
- *	A callback is scheduled.
- *
- *----------------------------------------------------------------------
- */
-
-Net_Route *
-NetAllocRoute()
-{
-    Net_Route	*routePtr = (Net_Route *) NIL;
-    static	int routeCounter = 1;
-
-    MASTER_LOCK(&netFreeRouteMutex);
-    if (netNumFreeRoutes <= 0) {
-	printf("Net_GetFreeRoute: no more routes.\n");
-    } else {
-	routePtr = (Net_Route *) List_Next(&freeRouteList);
-	List_Remove((List_Links *) routePtr);
-	routePtr->routeID = routeCounter;
-	routeCounter++;
-	netNumFreeRoutes--;
-	if (netNumFreeRoutes < netMinFreeRoutes) {
-	    Proc_CallFunc(NetAddToFreeRouteList, (ClientData) 0, 0);
-	}
-    }
-    MASTER_UNLOCK(&netFreeRouteMutex);
-    return routePtr;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NetAddToFreeRouteList --
- *
- *	This routine is used to allocate free routes using malloc()
- *	and put them on the free route list.  It is called via a
- *	callback that is scheduled in NetAllocRoute.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The free list is modified. Malloc is called.
- *
- *----------------------------------------------------------------------
- */
-
-/*ARGSUSED*/
-void
-NetAddToFreeRouteList(data, infoPtr)
-    ClientData		data;		/* Not used. */
-    Proc_CallInfo	*infoPtr;	/* Not used. */
-{
-    Net_Route	*routePtr;
-
-    MASTER_LOCK(&netFreeRouteMutex);
-    while (netNumFreeRoutes < netMaxFreeRoutes) {
-	/*
-	 * We have to unlock the master lock in order to do a malloc().
-	 * Somebody may slip in and free a route, but then we just
-	 * end up with too many free routes.
-	 */
-	MASTER_UNLOCK(&netFreeRouteMutex);
-	routePtr = (Net_Route *) malloc(sizeof(Net_Route));
-	bzero((char *) routePtr, sizeof(Net_Route));
-	List_InitElement((List_Links *) routePtr);
-	MASTER_LOCK(&netFreeRouteMutex);
-	List_Insert((List_Links *) routePtr, LIST_ATREAR(&freeRouteList));
-	netNumFreeRoutes++;
-    }
-    MASTER_UNLOCK(&netFreeRouteMutex);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NetFreeRoute --
- *
- *	Put the route on the free list.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The free list is modified.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NetFreeRoute(routePtr)
-    Net_Route		*routePtr;	/* The route being freed. */
-{
-    MASTER_LOCK(&netFreeRouteMutex);
-    List_Insert((List_Links *) routePtr, LIST_ATREAR(&freeRouteList));
-    netNumFreeRoutes++;
-    MASTER_UNLOCK(&netFreeRouteMutex);
 }
 
 /*

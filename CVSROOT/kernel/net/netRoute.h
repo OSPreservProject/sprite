@@ -76,6 +76,7 @@ typedef struct Net_Route {
  */
 
 #define NET_RFLAGS_VALID	0x1	/* The route is valid. */
+#define NET_RFLAGS_DELETING	0x2	/* Route is being deleted. */
 
 /*
  * The following two constants define the minimum and maximum
