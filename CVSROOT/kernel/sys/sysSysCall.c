@@ -262,6 +262,9 @@ static SysCallEntry sysCalls[] = {
     Fs_SetAttrStub,		Fs_SetAttrStub,	   TRUE,	4,   NILPARM,
     Fs_SetAttrIDStub,		Fs_SetAttrIDStub,   TRUE,	3,   NILPARM,
     Proc_GetHostIDs,		Proc_GetHostIDs,   TRUE,	2,   NILPARM,
+    Sched_IdleProcessor,	Sched_IdleProcessor,  TRUE,	1,   NILPARM,
+    Sched_StartProcessor,	Sched_StartProcessor,   TRUE,	1,   NILPARM,
+    Mach_GetNumProcessors,	Mach_GetNumProcessors,   TRUE,	1,   NILPARM,
 };
 
 
@@ -347,7 +350,7 @@ static Sys_CallParam paramsArray[] = {
     /* local */				     	/* SYS_PROC_GETGROUPIDS 19 */
     /* local */				     	/* SYS_PROC_SETGROUPIDS 20 */
     SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETFAMILYID 21 */
-    SYS_PARAM_PROC_PID,	      PARM_OC,		
+    SYS_PARAM_PROC_PID,	      PARM_OC,
     SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_SETFAMILYID 22 */
     SYS_PARAM_INT,	      PARM_I,
     /* test */					/* SYS_TEST_RPC		23 */
@@ -420,7 +423,7 @@ static Sys_CallParam paramsArray[] = {
     SYS_PARAM_INT,	      PARM_I,
     /* local */			     		/* SYS_FS_SELECT	72 */
     SYS_PARAM_INT,	      PARM_I,		/* SYS_SYS_SHUTDOWN	73 */
-    SYS_PARAM_STRING,	      PARM_IC,	
+    SYS_PARAM_STRING,	      PARM_IC,
     SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_MIGRATE	74 */
     SYS_PARAM_INT,	      PARM_I,
     SYS_PARAM_FS_NAME, 	      PARM_IA,		/* SYS_FS_MAKE_DEVICE	75 */
@@ -444,6 +447,9 @@ static Sys_CallParam paramsArray[] = {
     /* local */				/* SYS_FS_SET_ATTR_NEW		87 */
     /* local */ 			/* SYS_FS_SET_ATTR_ID_NEW	88 */
     /* local */ 			/* SYS_PROC_GETHOSTIDS		89 */
+    /* local */ 			/* SYS_SCHED_IDLE_PROCESSOR	90 */
+    /* local */ 			/* SYS_SCHED_START_PROCESSOR	91 */
+    /* local */ 			/* SYS_MACH_NUM_PROCESSORS	92 */
     /*
      * Insert new system call information above this line.
      */
