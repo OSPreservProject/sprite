@@ -189,7 +189,7 @@ ReopenHandles(serverID)
 	 if ((hdrPtr->fileID.type != FS_STREAM) &&
 		 (hdrPtr->fileID.serverID == serverID)) {
 	    if (!RemoteHandle(hdrPtr)) {
-		panic( "ReopenHandles, local I/O handle at remote server?\n");
+		panic("ReopenHandles, local I/O handle at remote server?\n");
 	    }
 	    if (!printed) {
 		Net_HostPrint(serverID, "- recovering handles\n");
