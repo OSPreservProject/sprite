@@ -15,7 +15,8 @@
 
 #ifdef KERNEL
 #include "sprite.h"
-#include "vmSunConst.h"
+/* ***TEMP*** */
+#include "/sprite/src/kernel/vm.ken/sun4.md/vmSunConst.h"
 #include "sysSysCall.h"
 #include "sys.h"
 #include "status.h"
@@ -283,7 +284,7 @@
 #ifdef NOTDEF
 #define	MACH_MAX_USER_STACK_ADDR	(VMMACH_MAP_SEG_ADDR & VMMACH_ADDR_MASK)
 #else
-#define	MACH_MAX_USER_STACK_ADDR	0x20000000
+#define	MACH_MAX_USER_STACK_ADDR	(0x20000000 - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
 #endif /* NOTDEF */
 
 /*
