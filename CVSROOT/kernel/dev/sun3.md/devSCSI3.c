@@ -2396,7 +2396,7 @@ DevSCSI3AttachDevice(devicePtr, insertProc)
 
     ctrlPtr->devicePtr[targetID][lun] = devPtr;
     MASTER_UNLOCK(&(ctrlPtr->mutex));
-    (void) sprintf(tmpBuffer, "%s#%d Target %d LUN %d", ctrlPtr->name, ctrlNum,
+    (void) sprintf(tmpBuffer, "%s Target %d LUN %d", ctrlPtr->name,
 			devPtr->targetID, devPtr->handle.LUN);
     length = strlen(tmpBuffer);
     devPtr->handle.locationName = (char *) strcpy(malloc(length+1),tmpBuffer);
