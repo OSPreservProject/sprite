@@ -94,5 +94,9 @@ extern void Net_HdrDestString _ARGS_((Net_NetworkType netType, int protocol,
 			Address headerPtr, int bufferLen, char *buffer));
 extern int  Net_HdrToID _ARGS_((Net_NetworkType netType, int protocol,
 			Address headerPtr));
+extern ReturnStatus	Net_IDToRouteStub _ARGS_((int spriteID, int size,
+			    Address argPtr));
+extern ReturnStatus	Net_GetStats _ARGS_((Net_NetworkType netType,
+			    Net_Stats *statPtr));
 
 #endif /* _NET */
