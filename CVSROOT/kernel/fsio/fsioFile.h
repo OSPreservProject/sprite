@@ -138,6 +138,7 @@ extern ReturnStatus	FsFileBlockCopy();
 extern Boolean		FsFileScavenge();
 extern void		FsFileClientKill();
 extern ReturnStatus	FsFileClose();
+extern ReturnStatus	FsFileCloseInt();
 
 extern ReturnStatus	FsRmtFileCltOpen();
 extern FsHandleHeader	*FsRmtFileVerify();
@@ -158,4 +159,5 @@ extern ReturnStatus	FsRmtFileBlockCopy();
 extern Boolean		FsRmtFileScavenge();
 extern ReturnStatus	FsRmtFileClose();
 
+extern void		FsFileSyncLockCleanup();
 #endif _FSFILE
