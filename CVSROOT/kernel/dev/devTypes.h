@@ -30,6 +30,7 @@
  *	DEV_KEYBOARD		Keyboard
  *	DEV_SCSI_DISK		Disk on the SCSI bus
  *	DEV_SCSI_TAPE		Tape drive on the SCSI bus
+ *	DEV_SCSI_ROBOT		Tape robot on the SCSI bus.
  *	DEV_XYLOGICS		Xylogics 450 controller
  *	DEV_SCSI_HBA		Raw SCSI HBA device driver
  *	DEV_RAID		Raw interface to disk array
@@ -56,6 +57,7 @@
 #define	DEV_SCSI_HBA		9
 #define	DEV_RAID		10
 #define	DEV_DEBUG		11
+#define DEV_SCSI_ROBOT		20
 
 #if (!defined(ds3100)) && (!defined(ds5000))
 #define DEV_MOUSE		12
@@ -78,6 +80,8 @@
 #define DEV_PLACEHOLDER_3	13      /* for ds3100 unused graphics device */
 #define DEV_AUDIO		15
 #define DEV_VMELINK		16
+#define DEV_PLACEHOLDER_4	18
+#define DEV_PLACEHOLDER_5	19
 
 /*
  * "Standard" frame buffer. The idea is that this device behave the same on
