@@ -940,7 +940,7 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
 	    }
 	}
 	if (longestPrefixPtr != (FsPrefix *)NIL) {
-	    if ((flags & FS_EXPORTED_PREFIX) &&
+	    if ((flags & FS_EXPORTED_PREFIX) && (clientID >= 0) &&
 		(! List_IsEmpty(&longestPrefixPtr->exportList))) {
 		/*
 		 * Check the export list to see if the remote client has
@@ -1758,7 +1758,7 @@ Fs_PrefixDumpExport(size, buffer)
     } else if (length == FS_MAX_NAME_LENGTH) {
 	return(FS_INVALID_ARG);
     }
-    status = FsPrefixLookup(prefix, FS_EXACT_PREFIX, rpc_SpriteID,
+    status = FsPrefixLookup(prefix, FS_EXACT_PREFIX|FS_EXPORTED_PREFIX, -1,
 	    &hdrPtr, &rootID, &name, &domain, &prefixPtr);
     if (status == SUCCESS) {
 	status = DumpExportList(prefixPtr, size, buffer);
