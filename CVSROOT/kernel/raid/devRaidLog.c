@@ -731,10 +731,57 @@ Raid_MasterFlushLog(raidPtr)
  *----------------------------------------------------------------------
  */
 void
+Raid_CheckPoint(raidPtr)
+    Raid	*raidPtr;
+{
+    MASTER_LOCK(&raidPtr->log.mutex);
+    if (!raidPtr->log.enabled) {
+	MASTER_UNLOCK(&raidPtr->log.mutex);
+	return;
+    }
+    MASTER_UNLOCK(&raidPtr->log.mutex);
+    printf("RAID:MSG:Checkpointing RAID\n");
+    Raid_Lock(raidPtr);
+#ifndef TESTING
+    ClearBitVec(raidPtr->log.diskLockVec, raidPtr->log.diskLockVecNum);
+#endif TESTING
+    Raid_SaveLog(raidPtr);
+    Raid_Unlock(raidPtr);
+    printf("RAID:MSG:Checkpoint Complete\n");
+}
+
+#ifdef TESTING
+#define NUM_LOG_STRIPE 2
+#else
+#define NUM_LOG_STRIPE 100
+#endif
+
+void
 Raid_LogStripe(raidPtr, stripeID)
     Raid *raidPtr;
     int	  stripeID;
 {
+    if (IsSet(raidPtr->log.diskLockVec, stripeID)) {
+	return;
+    }
+
+    /*
+     * Occasionally checkpoint log.
+     */
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numStripeLocked++;
+    if (raidPtr->numStripeLocked % NUM_LOG_STRIPE == 0) {
+	MASTER_UNLOCK(&raidPtr->mutex);
+	Proc_CallFunc((void (*)
+		_ARGS_((ClientData clientData, Proc_CallInfo *callInfoPtr)))
+		Raid_CheckPoint, (ClientData) raidPtr, 0);
+    } else {
+	MASTER_UNLOCK(&raidPtr->mutex);
+    }
+
+    /*
+     * Write log.
+     */
     MASTER_LOCK(&raidPtr->log.mutex);
     if (!raidPtr->log.enabled) {
 	MASTER_UNLOCK(&raidPtr->log.mutex);
