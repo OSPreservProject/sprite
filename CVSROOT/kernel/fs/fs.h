@@ -35,6 +35,7 @@
 #include <procTypes.h>
 #include <user/fs.h>
 #include <fmt.h>
+#include <bstring.h>
 #else
 #include <kernel/sys.h>
 #include <kernel/syncTypes.h>
@@ -434,129 +435,181 @@ extern	Boolean	fsutil_WriteBackASAP;
 extern	Boolean	fsutil_WriteBackOnClose;
 extern	Boolean	fsutil_WBOnLastDirtyBlock;
 
-
+/*
+ * Talk to jhh about this. 
+ */
+#ifdef KERNEL
+#include <procMigrate.h>
+#else
+#include <kernel/procMigrate.h>
+#endif
 
 /*
  * Filesystem initialization calls.
  */
-extern	void	Fs_InitData();
-extern	void	Fs_InitNameSpace();
-extern	void	Fs_ProcInit();
-extern	void	Fs_InheritState();
-extern	void	Fs_CloseState();
+extern void Fs_Init _ARGS_((void));
+extern void Fs_InitData _ARGS_((void));
+extern void Fs_InitNameSpace _ARGS_((void));
+extern void Fs_Bin _ARGS_((void));
+extern void Fs_ProcInit _ARGS_((void));
+extern void Fs_InheritState _ARGS_((Proc_ControlBlock *parentProcPtr,
+				Proc_ControlBlock *newProcPtr));
+extern void Fs_CloseState _ARGS_((Proc_ControlBlock *procPtr));
 
 
 /*
  * Filesystem system calls.
  */
-extern	ReturnStatus	Fs_AttachDiskStub();
-extern	ReturnStatus	Fs_ChangeDirStub();
-extern	ReturnStatus	Fs_CommandStub();
-extern	ReturnStatus	Fs_CreatePipeStub();
-extern	ReturnStatus	Fs_GetAttributesIDStub();
-extern	ReturnStatus	Fs_GetAttributesStub();
-extern	ReturnStatus	Fs_GetNewIDStub();
-extern	ReturnStatus	Fs_HardLinkStub();
-extern	ReturnStatus	Fs_IOControlStub();
-extern	ReturnStatus	Fs_LockStub();
-extern	ReturnStatus	Fs_MakeDeviceStub();
-extern	ReturnStatus	Fs_MakeDirStub();
-extern	ReturnStatus	Fs_OpenStub();
-extern	ReturnStatus	Fs_ReadLinkStub();
-extern	ReturnStatus	Fs_ReadStub();
-extern	ReturnStatus	Fs_ReadVectorStub();
-extern	ReturnStatus	Fs_RemoveDirStub();
-extern	ReturnStatus	Fs_RemoveStub();
-extern	ReturnStatus	Fs_RenameStub();
-extern	ReturnStatus	Fs_SelectStub();
-extern	ReturnStatus	Fs_SetAttributesIDStub();
-extern	ReturnStatus	Fs_SetAttributesStub();
-extern	ReturnStatus	Fs_SetAttrIDStub();
-extern	ReturnStatus	Fs_SetAttrStub();
-extern	ReturnStatus	Fs_SetDefPermStub();
-extern	ReturnStatus	Fs_SymLinkStub();
-extern	ReturnStatus	Fs_TruncateIDStub();
-extern	ReturnStatus	Fs_TruncateStub();
-extern	ReturnStatus	Fs_WriteStub();
-extern	ReturnStatus	Fs_WriteVectorStub();
-extern	ReturnStatus	Fs_FileWriteBackStub();
+extern ReturnStatus Fs_AttachDiskStub _ARGS_((char *userDeviceName, 
+			char *userLocalName, int flags));
+extern ReturnStatus Fs_ChangeDirStub _ARGS_((char *pathName));
+extern ReturnStatus Fs_CommandStub _ARGS_((int command, int bufSize, 
+			Address buffer));
+extern ReturnStatus Fs_CreatePipeStub _ARGS_((int *inStreamIDPtr, 
+			int *outStreamIDPtr));
+extern ReturnStatus Fs_GetAttributesIDStub _ARGS_((int streamID, 
+			Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_GetAttributesStub _ARGS_((char *pathName, 
+			int fileOrLink, Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_GetNewIDStub _ARGS_((int streamID, int *newStreamIDPtr));
+extern ReturnStatus Fs_HardLinkStub _ARGS_((char *fileName, char *linkName));
+extern ReturnStatus Fs_IOControlStub _ARGS_((int streamID, int command, 
+			int inBufSize, Address inBuffer, int outBufSize, 
+			Address outBuffer));
+extern ReturnStatus Fs_MakeDeviceStub _ARGS_((char *pathName, 
+			Fs_Device *devicePtr, int permissions));
+extern ReturnStatus Fs_MakeDirStub _ARGS_((char *pathName, int permissions));
+extern ReturnStatus Fs_OpenStub _ARGS_((char *pathName, int usageFlags, 
+			int permissions, int *streamIDPtr));
+extern ReturnStatus Fs_ReadLinkStub _ARGS_((char *linkName, int bufSize, 
+			char *buffer, int *linkSizePtr));
+extern ReturnStatus Fs_ReadStub _ARGS_((int streamID, int amountRead, 
+			Address buffer, int *amountReadPtr));
+extern ReturnStatus Fs_ReadVectorStub _ARGS_((int streamID, int numVectors, 
+			Fs_IOVector userVectorArray[], int *amountReadPtr));
+extern ReturnStatus Fs_RemoveDirStub _ARGS_((char *pathName));
+extern ReturnStatus Fs_RemoveDirStub _ARGS_((char *pathName));
+extern ReturnStatus Fs_RenameStub _ARGS_((char *pathName, char *newName));
+extern ReturnStatus Fs_SelectStub _ARGS_((int numStreams, Time *userTimeoutPtr,
+			int *userReadMaskPtr, int *userWriteMaskPtr, 
+			int *userExceptMaskPtr, int *numReadyPtr));
+extern ReturnStatus Fs_SetAttributesIDStub _ARGS_((int streamID, 
+			Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_SetAttributesStub _ARGS_((char *pathName, 
+			int fileOrLink, Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_SetAttrIDStub _ARGS_((int streamID, 
+			Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fs_SetAttrStub _ARGS_((char *pathName, int fileOrLink, 
+			Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fs_SetDefPermStub _ARGS_((int permissions, int *oldPermPtr));
+extern ReturnStatus Fs_SymLinkStub _ARGS_((char *targetName, 
+			char *linkName, Boolean remoteFlag));
+extern ReturnStatus Fs_WriteStub _ARGS_((int streamID, int writeLength, 
+			Address buffer, int *writeLengthPtr));
+extern ReturnStatus Fs_WriteVectorStub _ARGS_((int streamID, int numVectors,
+			Fs_IOVector userVectorArray[], int *amountWrittenPtr));
+extern ReturnStatus Fs_FileWriteBackStub _ARGS_((int streamID, int firstByte, 
+			int lastByte, Boolean shouldBlock));
 
 /*
  * Filesystem system calls given accessible arguments.
  */
-extern	ReturnStatus	Fs_UserClose();
-extern	ReturnStatus	Fs_UserRead();
-extern	ReturnStatus	Fs_UserReadVector();
-extern	ReturnStatus	Fs_UserWrite();
-extern	ReturnStatus	Fs_UserWriteVector();
+extern ReturnStatus Fs_UserClose _ARGS_((int streamID));
+extern ReturnStatus Fs_UserRead _ARGS_((int streamID, int amountRead,
+			Address buffer, int *amountReadPtr));
+extern ReturnStatus Fs_UserReadVector _ARGS_((int streamID, int numVectors, 
+			Fs_IOVector *vectorPtr, int *amountReadPtr));
+extern ReturnStatus Fs_UserWrite _ARGS_((int streamID, int writeLength, 
+			Address buffer, int *writeLengthPtr));
+extern ReturnStatus Fs_WriteVectorStub _ARGS_((int streamID, int numVectors, 
+			Fs_IOVector userVectorArray[], int *amountWrittenPtr));
+extern ReturnStatus Fs_UserWriteVector _ARGS_((int streamID, int numVectors, 
+			Fs_IOVector *vectorPtr, int *amountWrittenPtr));
 
 /*
  * Kernel equivalents of the filesystem system calls.
  */
-extern	ReturnStatus	Fs_ChangeDir();
-extern	ReturnStatus	Fs_Close();
-extern	ReturnStatus	Fs_Command();
-extern	ReturnStatus	Fs_CheckAccess();
-extern	ReturnStatus	Fs_GetAttributes();
-extern	ReturnStatus	Fs_GetAttributesID();
-extern	ReturnStatus	Fs_GetNewID();
-extern	ReturnStatus	Fs_HardLink();
-extern	ReturnStatus	Fs_IOControl();
-extern	ReturnStatus	Fs_MakeDevice();
-extern	ReturnStatus	Fs_MakeDir();
-extern	ReturnStatus	Fs_Open();
-extern	ReturnStatus	Fs_Read();
-extern	ReturnStatus	Fs_Remove();
-extern	ReturnStatus	Fs_RemoveDir();
-extern	ReturnStatus	Fs_Rename();
-extern	ReturnStatus	Fs_SetAttributes();
-extern	ReturnStatus	Fs_SetAttributesID();
-extern	ReturnStatus	Fs_SetDefPerm();
-extern	ReturnStatus	Fs_SymLink();
-extern	ReturnStatus	Fs_Trunc();
-extern	ReturnStatus	Fs_TruncStream();
-extern	ReturnStatus	Fs_Write();
+extern ReturnStatus Fs_ChangeDir _ARGS_((char *pathName));
+extern ReturnStatus Fs_Close _ARGS_((register Fs_Stream *streamPtr));
+extern ReturnStatus Fs_Command _ARGS_((int command, int bufSize, 
+			Address buffer));
+extern ReturnStatus Fs_CheckAccess _ARGS_((char *pathName, int perm, 
+			Boolean useRealID));
+extern ReturnStatus Fs_GetAttributes _ARGS_((char *pathName, int fileOrLink,
+			Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_GetNewID _ARGS_((int streamID, int *newStreamIDPtr));
+extern ReturnStatus Fs_HardLink _ARGS_((char *pathName, char *linkName));
+extern ReturnStatus Fs_IOControl _ARGS_((Fs_Stream *streamPtr,
+			Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fs_MakeDevice _ARGS_((char *name, Fs_Device *devicePtr,
+			int permissions));
+extern ReturnStatus Fs_MakeDir _ARGS_((char *name, int permissions));
+extern ReturnStatus Fs_Open _ARGS_((char *name, register int useFlags, 
+			int type, int permissions, Fs_Stream **streamPtrPtr));
+extern ReturnStatus Fs_Read _ARGS_((Fs_Stream *streamPtr, Address buffer, 
+			int offset, int *lenPtr));
+extern ReturnStatus Fs_Remove _ARGS_((char *name));
+extern ReturnStatus Fs_RemoveDir _ARGS_((char *name));
+extern ReturnStatus Fs_Rename _ARGS_((char *pathName, char *newName));
+extern ReturnStatus Fs_SetAttributes _ARGS_((char *pathName, int fileOrLink, 
+			Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fs_SymLink _ARGS_((char *targetName, char *linkName, 
+			Boolean remoteFlag));
+extern ReturnStatus Fs_Trunc _ARGS_((char *pathName, int length));
+extern ReturnStatus Fs_TruncStream _ARGS_((Fs_Stream *streamPtr, int length));
+extern ReturnStatus Fs_Write _ARGS_((Fs_Stream *streamPtr, Address buffer, 
+			int offset, int *lenPtr));
 
 /*
  * Filesystem utility routines.
  */
-extern	int		Fs_Cat();
-extern	int		Fs_Copy();
-extern  void		Fs_CheckSetID();
-extern  void		Fs_CloseOnExec();
+extern void Fs_CheckSetID _ARGS_((Fs_Stream *streamPtr, int *uidPtr, 
+				int *gidPtr));
+extern void Fs_CloseOnExec _ARGS_((Proc_ControlBlock *procPtr));
 
 
 /*
  * Routines to support process migration: encapsulate and deencapsulate
  * streams and other file state, and clear file state after migration.
  */
-extern	int		Fs_GetEncapSize();
-extern	ReturnStatus	Fs_InitiateMigration();
-extern  ReturnStatus    Fs_EncapFileState();
-extern  ReturnStatus    Fs_DeencapFileState();
-
+extern ReturnStatus Fs_InitiateMigration _ARGS_((Proc_ControlBlock *procPtr, 
+			int hostID, Proc_EncapInfo *infoPtr));
+extern int Fs_GetEncapSize _ARGS_((void));
+extern ReturnStatus Fs_EncapFileState _ARGS_((Proc_ControlBlock *procPtr, 
+			int hostID, Proc_EncapInfo *infoPtr, 
+			Address ptr));
+extern ReturnStatus Fs_DeencapFileState _ARGS_((Proc_ControlBlock *procPtr, 
+			 Proc_EncapInfo *infoPtr, Address buffer));
 
 /*
  * Routines for virtual memory.
  */
-extern	ReturnStatus	Fs_PageRead();
-extern	ReturnStatus	Fs_PageWrite();
-extern	ReturnStatus	Fs_PageCopy();
-extern	ReturnStatus	Fs_FileBeingMapped();
+extern ReturnStatus Fs_PageRead _ARGS_((Fs_Stream *streamPtr, Address pageAddr,
+			int offset, int numBytes, Fs_PageType pageType));
+extern ReturnStatus Fs_PageWrite _ARGS_((Fs_Stream *streamPtr,Address pageAddr,
+			int offset, int numBytes, Boolean toDisk));
+extern ReturnStatus Fs_PageCopy _ARGS_((Fs_Stream *srcStreamPtr, 
+			Fs_Stream *destStreamPtr, int offset, int numBytes));
+extern ReturnStatus Fs_FileBeingMapped _ARGS_((Fs_Stream *streamPtr, 
+			int isMapped));
 
 /*
  * Routines that map to/from user-level streamIDs.
  */
-extern ReturnStatus	Fs_GetStreamID();
-extern void		Fs_ClearStreamID();
-extern ReturnStatus	Fs_GetStreamPtr();
+extern ReturnStatus Fs_GetStreamID _ARGS_((Fs_Stream *streamPtr, 
+			int *streamIDPtr));
+extern void Fs_ClearStreamID _ARGS_((int streamID, Proc_ControlBlock *procPtr));
+extern ReturnStatus Fs_GetStreamPtr _ARGS_((Proc_ControlBlock *procPtr, 
+			int streamID, Fs_Stream **streamPtrPtr));
 
-extern  void		Fs_Bin();
-extern ReturnStatus	Fs_GetAttrStream();
-extern  void 		Fs_InstallDomainLookupOps();
-extern  void		Fs_CheckSetID();
+extern ReturnStatus Fs_GetAttrStream _ARGS_((Fs_Stream *streamPtr, 
+			Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_SetAttrStream _ARGS_((Fs_Stream *streamPtr,
+			Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
+extern void Fs_CheckSetID _ARGS_((Fs_Stream *streamPtr, int *uidPtr, 
+			int *gidPtr));
 
-extern  ClientData      Fs_GetFileHandle();
-extern struct Vm_Segment **Fs_GetSegPtr();
+extern ClientData Fs_GetFileHandle _ARGS_((Fs_Stream *streamPtr));
+extern struct Vm_Segment **Fs_GetSegPtr _ARGS_((ClientData fileHandle));
 
 #endif /* _FS */
