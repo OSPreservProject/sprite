@@ -376,6 +376,60 @@ Fs_Sync(writeBackTime, shutdown)
 /*
  *----------------------------------------------------------------------
  *
+ * Fs_SyncStub --
+ *
+ *	Procedure bound to the L1-w keystoke.  This is called at
+ *	keyboard interrupt time and so it makes a Proc_CallFunc
+ *	to invoke the Fs_Sync procedure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Attempts to sync the disks.
+ *
+ *----------------------------------------------------------------------
+ */
+void SyncCallBack();
+
+void
+Fs_SyncStub(data)
+    ClientData		data;
+{
+    printf("Queueing call to Fs_Sync() ... ");
+    Proc_CallFunc(SyncCallBack, data, 0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SyncCallBack --
+ *
+ *	Procedure called via Proc_CallFunc to sync the disks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Syncs the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SyncCallBack(data, callInfoPtr)
+    ClientData		data;
+    Proc_CallInfo	*callInfoPtr;
+{
+    printf("Syncing disks\n");
+    Fs_Sync(-1, (Boolean)data);
+    callInfoPtr->interval = 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FsUpdateTimeOfDay --
  *
  *	Update the time of day in seconds.
