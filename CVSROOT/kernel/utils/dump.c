@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "fsInt.h"
 #include "fsNameHash.h"
+#include "net.h"
 
 /*
  * Define constants, which are used instead of enumerated types to allow
@@ -88,6 +89,7 @@ Dump_Init()
     Dev_KbdQueueAttachProc('k', Dev_ConsoleReset, (ClientData) TRUE);
     Dev_KbdQueueAttachProc('l', Dev_ConsoleReset, (ClientData) FALSE);
     Dev_KbdQueueAttachProc('m', Mem_DumpStats, (ClientData) FALSE);
+    Dev_KbdQueueAttachProc('n', Net_Reset, (ClientData)0);
     Dev_KbdQueueAttachProc('p', Dump_ProcessTable, (ClientData) 0);
     Dev_KbdQueueAttachProc('r', Dump_ReadyQueue,  (ClientData) 0);
     Dev_KbdQueueAttachProc('q', Fs_PdevPrintTrace,  (ClientData) 200);
