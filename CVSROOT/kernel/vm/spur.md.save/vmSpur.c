@@ -1625,6 +1625,7 @@ Vm_StringNCopy(n, src, dst, bytesCopiedPtr)
     char		*origSrc = src;
 
     if (n == 0) {
+	*bytesCopiedPtr = 0;
 	return(SUCCESS);
     }
 #ifndef lint
