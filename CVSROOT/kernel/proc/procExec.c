@@ -1384,7 +1384,7 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
 	execInfoPtr->heapFileOffset = objInfoPtr->heapFileOffset;
 	execInfoPtr->bssFirstPage = 
 			(unsigned)objInfoPtr->bssLoadAddr / vm_PageSize;
-	if (objInfoPtr->bssSize > 0) {
+	if (objInfoPtr->bssSize != 0) {
 	    execInfoPtr->bssLastPage = (int) (execInfoPtr->bssFirstPage + 
 				   (objInfoPtr->bssSize - 1) / vm_PageSize);
 	} else {
