@@ -529,16 +529,22 @@ endScan:
 		    status = CheckPermissions(parentHandlePtr, FS_WRITE, idPtr,
 						    FS_DIRECTORY);
 		    if (status == SUCCESS) {
+			int logOp;
 			dirFileNumber = parentHandlePtr->hdr.fileID.minor;
 			newFileNumber = -1;
 			dirOffset = -1;
-			logClientData = Fsdm_DirOpStart(FSDM_LOG_CREATE,
+			if (type == FS_DIRECTORY) {
+			    logOp = FSDM_LOG_CREATE|FSDM_LOG_IS_DIRECTORY;
+			    nearbyFile = -1;
+			} else {
+			    logOp = FSDM_LOG_CREATE;
+			    nearbyFile = dirFileNumber;
+			}
+			logClientData = Fsdm_DirOpStart(logOp,
 					  parentHandlePtr, dirOffset,
 					  component, compLen,
 					  newFileNumber, type,
 					  (Fsdm_FileDescriptor *) NIL);
-			nearbyFile = (type == FS_DIRECTORY) ? -1 : 
-								dirFileNumber;
 			status = Fsdm_GetNewFileNumber(domainPtr, nearbyFile,
 							     &newFileNumber);
 			if (status == SUCCESS) {
@@ -552,13 +558,13 @@ endScan:
 			    } 
 			}
 			if (status == SUCCESS) { 
-			    Fsdm_DirOpEnd(FSDM_LOG_CREATE, 
+			    Fsdm_DirOpEnd(logOp, 
 				    parentHandlePtr, dirOffset,
 				    component, compLen, newFileNumber, type,
 				    curHandlePtr->descPtr, logClientData, 
 				    status);
 			} else {
-			    Fsdm_DirOpEnd(FSDM_LOG_CREATE, 
+			    Fsdm_DirOpEnd(logOp, 
 				     parentHandlePtr, dirOffset,
 				     component, compLen, newFileNumber, type,
 				     (Fsdm_FileDescriptor *) NIL, 
@@ -647,7 +653,6 @@ endScan:
 		    } else {
 			logOp = (useFlags&FS_RENAME) ? FSDM_LOG_RENAME_UNLINK :
 						       FSDM_LOG_UNLINK;
-
 			status = DeleteFileName(parentHandlePtr, 
 				curHandlePtr, component, compLen,
 				(int) (useFlags & FS_RENAME), idPtr, logOp);
@@ -1542,12 +1547,13 @@ LinkFile(parentHandlePtr, component, compLen, fileNumber, logOp,curHandlePtrPtr)
 	printf( "LinkFile: can't get existing file handle\n");
 	return(FAILURE);
     } else if ((*curHandlePtrPtr)->descPtr->fileType == FS_DIRECTORY) {
+	logOp |= FSDM_LOG_IS_DIRECTORY;
 	status = OkToMoveDirectory(parentHandlePtr, *curHandlePtrPtr);
     }
     if (status == SUCCESS) {
 	linkDescPtr = (*curHandlePtrPtr)->descPtr;
 	logClientData = Fsdm_DirOpStart(logOp, parentHandlePtr, -1,
-					component, compLen, fileNumber, 
+				component, compLen, fileNumber, 
 					linkDescPtr->fileType,
 					linkDescPtr);
 	linkDescPtr->numLinks++;
@@ -1940,6 +1946,9 @@ DeleteFileName(parentHandlePtr, curHandlePtr, component,
     fileNumber = curHandlePtr->hdr.fileID.minor;
     dirOffset = -1;
 
+    if (type == FS_DIRECTORY) {
+	logOp |= FSDM_LOG_IS_DIRECTORY;
+    }
     logClientData = Fsdm_DirOpStart(logOp, parentHandlePtr, dirOffset, 
 		    component, compLen, fileNumber, type,
 		    curHandlePtr->descPtr);
