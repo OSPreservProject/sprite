@@ -87,6 +87,32 @@ MemChunkAlloc(size, addressPtr)
     return(size);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mem_DumpStats --
+ *
+ *	Call back routine used to print memory stats with
+ *	a magic 'L1-m' keystroke on the console.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static	int	smallMinNum = 50;
+static	int	largeMinNum = 10;
+static	int	largeMaxSize = 10000;
+
+void
+Mem_DumpStats()
+{
+    Mem_PrintStats(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
+}
+
 
 /*
  *----------------------------------------------------------------------
