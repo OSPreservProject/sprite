@@ -179,7 +179,7 @@ extern void RecovCrashCallBacks();
 extern void RecovDelayedCrashCallBacks();
 extern char *RecovState();
 
-static ReturnStatus CallBacksDone();
+static void CallBacksDone();
 static void MarkRecoveryComplete();
 static void MarkHostDead();
 static void GetRebootList();
@@ -502,12 +502,12 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 		Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
 	    }
 	}
-    } else  if ( !(state & RECOV_CRASH_CALLBACKS) &&
+    } else  if ( ! (state & (RECOV_CRASH_CALLBACKS|RECOV_WANT_RECOVERY)) &&
 		(state & RECOV_HOST_ALIVE)) {
 	/*
 	 * Fast path.  We already think the other host is up, it didn't
-	 * reboot, and there are no pending crash call-backs to 
-	 * synchronize with.
+	 * reboot, we don't want recovery, and there are no pending
+	 * crash call-backs to synchronize with.
 	 */
 	goto exit;
     }
@@ -550,7 +550,8 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    break;
 	case RECOV_HOST_ALIVE:
 	    /*
-	     * Host already alive.
+	     * Host already alive.  We may still want recovery at this
+	     * point.  See CallBacksDone.
 	     */
 	    break;
 	case RECOV_HOST_BOOTING:
@@ -584,6 +585,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
      * initiate reboot recovery if needed.
      */
     if ((state & RECOV_WANT_RECOVERY) &&
+	(state & RECOV_HOST_ALIVE) &&
 	(state & RECOV_REBOOT_CALLBACKS) == 0) {
 	state &= ~RECOV_WANT_RECOVERY;
 	state |= RECOV_REBOOT_CALLBACKS;
@@ -1104,7 +1106,6 @@ RecovRebootCallBacks(data, callInfoPtr)
     register NotifyElement *notifyPtr;
     register int spriteID = (int)data;
 
-retry:
     GetRebootList(&notifyList, spriteID);
     recov_Stats.reboots++;
     while (!List_IsEmpty(&notifyList)) {
@@ -1113,12 +1114,8 @@ retry:
 	List_Remove((List_Links *)notifyPtr);
 	free((Address)notifyPtr);
     }
-    if (CallBacksDone(spriteID) == SUCCESS) {
-	return;
-    } else {
-	printf("RecovRebootCallBacks: failure during recovery, retrying\n");
-	goto retry;
-    }
+    CallBacksDone(spriteID);
+    return;
 }
 
 /*
@@ -1172,52 +1169,44 @@ GetRebootList(notifyListHdr, spriteID)
  * CallBacksDone --
  *
  *	Clear the internal state bit that says callbacks are in progress.
+ *	This checks to see if there was a communication failure during
+ *	the reboot callbacks.  If so, the WANT_RECOVERY bit is set
+ *	to ensure that another set of reboot callbacks are made.
  *
  * Results:
- *	Returns TRUE if the recovery callbacks seem to have completed ok.
- *	Otherwise, if there has been a communication failure during the
- *	recovery callbacks, we return FAILURE as an indication that our
- *	caller should retry the recovery callbacks.
+ *	None.
  *
  * Side effects:
- *	Clears RECOV_REBOOT_CALLBACKS.
+ *	Clears RECOV_REBOOT_CALLBACKS and RECOV_FAILURE.  May set
+ *	RECOV_WANT_RECOVERY if RECOV_FAILURE was set.
  *
  *----------------------------------------------------------------------
  */
 
-ENTRY static ReturnStatus
+ENTRY static void
 CallBacksDone(spriteID)
     int spriteID;
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
-    ReturnStatus status;
 
     LOCK_MONITOR;
 
     hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
     if (hostPtr->state & (RECOV_FAILURE)) {
 	/*
 	 * There has been a communication failure during the reboot callbacks.
 	 */
 	hostPtr->numFailures++;
 	hostPtr->state &= ~RECOV_FAILURE;
-	if (hostPtr->numFailures > 10) {
-	    printf("CallBacksDone: too many failures ( > 10 ) of recovery\n");
-	    status = SUCCESS;	/* to prevent a retry */
-	} else {
-	    status = FAILURE;	/* to force a retry */
-	}
+	hostPtr->state |= RECOV_WANT_RECOVERY;
     } else {
-	status = SUCCESS;
-    }
-    if (status == SUCCESS) {
 	hostPtr->numFailures = 0;
-	hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
     }
     UNLOCK_MONITOR;
-    return(status);
+    return;
 }
 
 /*
