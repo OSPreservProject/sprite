@@ -42,7 +42,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #ifdef SOSP91
 #include <sospRecord.h>
-#include <fsStat.h>
 #endif SOSP91
 
 extern Boolean fsconsist_ClientCachingEnabled;
