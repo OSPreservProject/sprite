@@ -333,14 +333,27 @@ Vm_Cmd(command, arg)
 	    Vm_MakeUnaccessible((Address) arg, numBytes);
 	    break;
 #endif CLEAN
-	case VM_GET_STATS:
+	case VM_GET_STATS: {
+#if defined(ds3100) || defined(ds5000)
+	    extern unsigned int end;
+	    /*
+	     * The decstations have a big hole between the initialized data
+	     * and the heap, so we can't just subtract the kernel beginning
+	     * from the end.
+	     */
+	    vmStat.kernMemPages = (unsigned int) 
+		(vmMemEnd - VMMACH_VIRT_CACHED_START + (unsigned int) &end
+		 - mach_KernStart) / vm_PageSize;
+#else
 	    vmStat.kernMemPages = 
 		    (unsigned int)(vmMemEnd - mach_KernStart) / vm_PageSize;
+#endif
 	    if (Vm_CopyOut(sizeof(Vm_Stat), (Address) &vmStat, 
 			   (Address) arg) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
 	    break;
+	}
 	case VM_SET_COW:
 	    /*
 	     * It's okay to turn on COW when it's off, but not the other
