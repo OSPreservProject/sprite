@@ -744,8 +744,7 @@ Dbg_Main(stackHole, dbgStack)
      * tell kdbx that the reason was an DBG_INTERRUPT_SIG and we set the trap
      * code appropriately for the given exception.
      */
-    trapCode = dbgStack.trapStack.trapType + 1;	/* MACH trap codes are one less
-						 * than DBG trap codes. */
+    trapCode = dbgStack.trapStack.trapType;
     if (dbgTermReason == DBG_INTERRUPT_SIG) {
 	trapCode = DBG_INTERRUPT;
     } else if (dbgPanic) {
