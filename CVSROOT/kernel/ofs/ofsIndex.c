@@ -81,7 +81,7 @@ Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
 {
     register Fsdm_FileDescriptor 	*descPtr;
     int			      	indirectBlock;
-    ReturnStatus		status;
+    ReturnStatus		status = SUCCESS;
 
     indexInfoPtr->domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major,
 					    FALSE);
@@ -138,7 +138,7 @@ Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
 	/*
 	 * Past the largest file size that we support.
 	 */
-	return(FS_INVALID_ARG);
+	status = FS_INVALID_ARG;
     }
 
     /*
@@ -146,7 +146,9 @@ Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
      * reading indirect blocks into the cache.
      */
 
-    status = MakePtrAccessible(handlePtr, indexInfoPtr);
+    if (status == SUCCESS) {
+	status = MakePtrAccessible(handlePtr, indexInfoPtr);
+    }
     if (status != SUCCESS) {
 	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     }
@@ -428,6 +430,8 @@ MakePtrAccessible(handlePtr, indexInfoPtr)
 	indexInfoPtr->blockAddrPtr = 
     		(int *) (indexInfoPtr->indInfo[1].blockPtr->blockAddr + 
 			 sizeof(int) * indexInfoPtr->indInfo[1].index);
+    } else {
+	FreeIndirectBlock(0, handlePtr, indexInfoPtr, &(descPtr->indirect[1]));
     }
     return(status);
 }
