@@ -84,6 +84,7 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
      */
     descPtr = handlePtr->descPtr;
     if (offset > descPtr->lastByte) {
+	numBytes = 0;
 	goto exit;
     } else if (offset + numBytes - 1 > descPtr->lastByte) {
 	numBytes = descPtr->lastByte - offset + 1;
