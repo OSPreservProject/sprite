@@ -171,6 +171,22 @@ extern 	void 		Sync_PrintStat();
 #define _hack(x) #x
 #define _hack2(x) _hack(x)
 
+#ifdef lint
+#define MASTER_LOCK(semaphore) \
+    { \
+        sync_Instrument.numLocks++; \
+	if (!Mach_AtInterruptLevel()) { \
+	    Mach_DisableIntr(); \
+	    mach_NumDisableIntrsPtr[0]++; \
+	} \
+	if ((semaphore)->value == 1) { \
+	    panic("Deadlock!!! (semaphore @ 0x%x)\n", (int)(semaphore)); \
+	} \
+	(semaphore)->value == 1; \
+    }
+
+#else /* lint */
+
 #ifndef CLEAN
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
 #define MASTER_LOCK(semaphore) \
@@ -196,18 +212,27 @@ extern 	void 		Sync_PrintStat();
 #else  			/* multiprocessor implementation */
 #define MASTER_LOCK(semaphore) \
     { \
+	int missFlag = 0;\
         sync_Instrument.numLocks++; \
 	if (!Mach_AtInterruptLevel()) { \
 	    Mach_DisableIntr(); \
 	    mach_NumDisableIntrsPtr[0]++; \
 	} \
-	if(Mach_TestAndSet(&((semaphore)->value)) != 0){ \
-	    (semaphore)->miss++;\
-	} \
-	while(Mach_TestAndSet(&((semaphore)->value)) != 0){ \
+	for(;;) { \
+	    /* \
+	     * wait until semaphore looks free -- avoid bouncing between \
+	     * processor caches. \
+	     */ \
+	    while((semaphore)->value) != 0) { \
+	    } \
+	    if(Mach_TestAndSet(&((semaphore)->value)) == 0) { \
+		break; \
+	    } else { \
+		(semaphore)->miss++; \
+	    } \
 	} \
 	(semaphore)->pc = Mach_GetPC(); \
-	(semaphore)->lineInfo = "line " tmpMKString2(__LINE__) \
+	(semaphore)->lineInfo = "line " _hack2(__LINE__) \
 		", file " __FILE__ ; \
     }
 #endif  /* multiprocessor implementation */
@@ -234,15 +259,23 @@ extern 	void 		Sync_PrintStat();
 	    Mach_DisableIntr(); \
 	    mach_NumDisableIntrsPtr[0]++; \
 	} \
-	while(Mach_TestAndSet(&((semaphore)->value)) != 0){ \
+	for(;;) { \
+	    /* \
+	     * wait until semaphore looks free -- avoid bouncing between \
+	     * processor caches. \
+	     */ \
+	    while((semaphore)->value) != 0) { \
+	    } \
+	    if(Mach_TestAndSet(&((semaphore)->value)) == 0) { \
+		break; \
+	    } \
 	} \
     }
 
 #endif /*multiprocessor implementation */
 #endif /* CLEAN */
+#endif /* lint */
 
-#undef tmpMkString
-#undef tmpLineString
 
 
 /*
