@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsMigrate.h"
 #include "fsRecovery.h"
 #include "fsClient.h"
+#include "fsStat.h"
 
 #include "vm.h"
 #include "proc.h"
@@ -183,6 +184,7 @@ FsPipeHandleInit(fileIDPtr, findIt)
 	handlePtr->bufSize = FS_BLOCK_SIZE;
 	List_Init(&handlePtr->readWaitList);
 	List_Init(&handlePtr->writeWaitList);
+	fsStats.object.pipes++;
     }
     return(handlePtr);
 }
@@ -256,6 +258,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    FsWaitListDelete(&handlePtr->readWaitList);
 	    FsWaitListDelete(&handlePtr->writeWaitList);
 	    FsHandleRemove(handlePtr);
+	    fsStats.object.pipes--;
 	}
     }
     return(SUCCESS);

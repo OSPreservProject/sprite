@@ -37,6 +37,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsOpTable.h"
 #include "fsClient.h"
 #include "fsMigrate.h"
+#include "fsStat.h"
 #include "proc.h"
 #include "sync.h"
 #include "rpc.h"
@@ -121,12 +122,10 @@ FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
     streamPtr->ioHandlePtr = ioHandlePtr;
     streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
     List_Init(&streamPtr->clientList);
+    fsStats.object.streams++;
 
-    clientPtr = mnew(FsStreamClientInfo);
-    clientPtr->clientID = clientID;
-    clientPtr->useFlags = useFlags;
-    List_InitElement((List_Links *)clientPtr);
-    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(&streamPtr->clientList));
+    (void)FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags,
+	    (Boolean *)NIL);
 
     UNLOCK_MONITOR;
     return(streamPtr);
@@ -166,6 +165,7 @@ FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
     register Boolean found;
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
+    Boolean foundClient;
 
     found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
 			    (FsHandleHeader **)&newStreamPtr);
@@ -176,6 +176,7 @@ FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
 	streamPtr->ioHandlePtr = ioHandlePtr;
 	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
 	List_Init(&streamPtr->clientList);
+	fsStats.object.streams++;
     } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
 	streamPtr->ioHandlePtr = ioHandlePtr;
     }
@@ -244,6 +245,7 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 	streamPtr->ioHandlePtr = ioHandlePtr;
 	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
 	List_Init(&streamPtr->clientList);
+	fsStats.object.streams++;
     } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
 	streamPtr->ioHandlePtr = ioHandlePtr;
     }
@@ -629,6 +631,7 @@ FsStreamDispose(streamPtr)
 	    free((Address)streamPtr->nameInfoPtr);
 	}
 	FsHandleRemove(streamPtr);
+	fsStats.object.streams--;
     }
 }
 
@@ -662,6 +665,7 @@ FsStreamScavenge(hdrPtr)
 		streamPtr->hdr.fileID.serverID,
 		streamPtr->hdr.fileID.minor);
 	FsHandleRemove((FsHandleHeader *)streamPtr);
+	fsStats.object.streams--;
 	return(TRUE);
     } else {
 	FsHandleUnlock((FsHandleHeader *)streamPtr);

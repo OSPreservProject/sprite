@@ -44,6 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsLock.h"
 #include "fsPrefix.h"
 #include "fsNameOps.h"
+#include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
 #include "swapBuffer.h"
@@ -187,6 +188,7 @@ PfsControlHandleInit(fileIDPtr, name)
 	ctrlHandlePtr->seed = 0;
 	FsLockInit(&ctrlHandlePtr->lock);
 	FsRecoveryInit(&ctrlHandlePtr->rmt.recovery);
+	fsStats.object.controls++;
 	/*
 	 * These next two lists aren't used.
 	 */
@@ -421,6 +423,7 @@ FsPfsNamingCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	    (FsHandleHeader **)&rmtHandlePtr);
     if (!found) {
 	FsRecoveryInit(&rmtHandlePtr->recovery);
+	fsStats.object.remote++;
     }
     rmtHandlePtr->recovery.use.ref++;
     *ioHandlePtrPtr = (FsHandleHeader *)rmtHandlePtr;
@@ -610,6 +613,7 @@ FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
 	FsStreamDispose(srvStreamPtr);
 	FsHandleRemove(cltHandlePtr->pdevHandlePtr);
 	FsHandleRemove(cltHandlePtr);
+	fsStats.object.pseudoStreams--;
 	newStreamID = -1;
     } else {
 	/*

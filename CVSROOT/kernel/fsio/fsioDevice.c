@@ -114,6 +114,7 @@ FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	List_Init(&devHandlePtr->exceptWaitList);
 	devHandlePtr->readNotifyScheduled = FALSE;
 	devHandlePtr->writeNotifyScheduled = FALSE;
+	fsStats.object.devices++;
     }
     return(found);
 }
@@ -368,6 +369,7 @@ FsRemoteIOHandleInit(ioFileIDPtr, useFlags, name, newHandlePtrPtr)
     recovPtr = &((FsRemoteIOHandle *)*newHandlePtrPtr)->recovery;
     if (!found) {
 	FsRecoveryInit(recovPtr);
+	fsStats.object.remote++;
     }
     recovPtr->use.ref++;
     if (useFlags & FS_WRITE) {
@@ -715,6 +717,7 @@ FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     if (status == SUCCESS && rmtHandlePtr->recovery.use.ref == 0) {
 	FsHandleRelease(rmtHandlePtr, TRUE);
 	FsHandleRemove(rmtHandlePtr);
+	fsStats.object.remote--;
     } else {
 	FsHandleRelease(rmtHandlePtr, TRUE);
     }
@@ -753,6 +756,7 @@ FsDeviceScavenge(hdrPtr)
 	FsWaitListDelete(&handlePtr->writeWaitList);
 	FsWaitListDelete(&handlePtr->exceptWaitList);
 	FsHandleRemove(handlePtr);
+	fsStats.object.devices--;
 	return(TRUE);
     } else {
         FsHandleUnlock(handlePtr);
@@ -1138,6 +1142,7 @@ FsRemoteIOMigEnd(migInfoPtr, size, data, hdrPtrPtr)
     recovPtr = &rmtHandlePtr->recovery;
     if (!found) {
 	FsRecoveryInit(recovPtr);
+	fsStats.object.remote++;
     }
     recovPtr->use.ref++;
     if (migInfoPtr->flags & FS_WRITE) {

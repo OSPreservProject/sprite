@@ -46,6 +46,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsMigrate.h"
 #include "fsLock.h"
 #include "fsDisk.h"
+#include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
 #include "swapBuffer.h"
@@ -406,6 +407,7 @@ FsServerStreamCreate(ioFileIDPtr, name, naming)
 	FsHandleRelease(pdevHandlePtr, TRUE);
 	return((PdevServerIOHandle *)NIL);
     }
+    fsStats.object.pseudoStreams++;
 
     DBG_PRINT( ("ServerStreamOpen <%d,%x,%x>\n",
 	    ioFileIDPtr->serverID, ioFileIDPtr->major, ioFileIDPtr->minor) );
@@ -1174,6 +1176,7 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
     }
     FsHandleRelease(pdevHandlePtr, TRUE);
     FsHandleRemove(pdevHandlePtr);	/* No need for scavenging */
+    fsStats.object.pseudoStreams--;
     return(SUCCESS);
 }
 

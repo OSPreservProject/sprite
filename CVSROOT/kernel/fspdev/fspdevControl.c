@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsClient.h"
 #include "fsLock.h"
 #include "fsRecovery.h"
+#include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
 
@@ -68,6 +69,7 @@ FsControlHandleInit(fileIDPtr, name)
 	ctrlHandlePtr->owner.id = (Proc_PID)NIL;
 	ctrlHandlePtr->owner.procOrFamily = 0;
 	ctrlHandlePtr->prefixPtr = (FsPrefix *)NIL;
+	fsStats.object.controls++;
     }
     return(ctrlHandlePtr);
 }
@@ -618,6 +620,7 @@ FsControlClientKill(hdrPtr, clientID)
     if (ctrlHandlePtr->serverID == clientID) {
 	ctrlHandlePtr->serverID = NIL;
 	FsHandleRemove(ctrlHandlePtr);
+	fsStats.object.controls--;
     } else {
         FsHandleUnlock(ctrlHandlePtr);
     }
@@ -646,7 +649,10 @@ FsControlScavenge(hdrPtr)
 
     if (ctrlHandlePtr->serverID == NIL) {
 	FsHandleRemove(ctrlHandlePtr);
+	fsStats.object.controls--;
+	return(TRUE);
     } else {
         FsHandleUnlock(ctrlHandlePtr);
+	return(FALSE);
     }
 }

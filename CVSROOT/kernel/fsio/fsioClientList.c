@@ -36,6 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsClient.h"
 #include "fsStream.h"
 #include "fsRecovery.h"
+#include "fsStat.h"
 #include "rpc.h"
 
 /*
@@ -303,6 +304,7 @@ FsStreamClientOpen(clientList, clientID, useFlags, foundPtr)
 	clientPtr->useFlags = useFlags;
 	List_InitElement((List_Links *)clientPtr);
 	List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+	fsStats.object.streamClients++;
     }
 
     /*
@@ -342,6 +344,7 @@ FsStreamClientClose(clientList, clientID)
 	if (clientPtr->clientID == clientID) {
 	    List_Remove((List_Links *) clientPtr);
 	    free((Address) clientPtr);
+	    fsStats.object.streamClients--;
 	    break;
 	}
     }
