@@ -105,7 +105,9 @@ Sync_SlowLockStub(lockPtr)
  *      event and make this process runnable again.
  *
  *      This can only be called while a lock is held.  This forces our
- *      client to safely check global state while in a monitor.
+ *      client to safely check global state while in a monitor.  The 
+ *      caller of this system call (i.e., the Sync_SlowWait library
+ *      routine) must reacquire the lock before returning.
  *
  * Results:
  *	None.
