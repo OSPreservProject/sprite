@@ -23,7 +23,7 @@
 #include <kernel/vmSunConst.h>
 #include <kernel/sysSysCall.h>
 #include <kernel/sys.h>
-#include "status.h"
+#include <status.h>
 #endif
 
 
@@ -244,11 +244,11 @@
  * MACH_UNIX_ERRNO_OFFSET	Errno offset in Proc_ControlBlock
  */
 #define	MACH_KERN_START		0xf6000000
-#define	MACH_STACK_START	(MACH_KERN_START + 0x6000)
+#define	MACH_STACK_START	(MACH_KERN_START + MACH_KERN_STACK_SIZE)
 #define	MACH_CODE_START		(MACH_STACK_START + 0x20)
 #define	MACH_STACK_BOTTOM	MACH_KERN_START
 #define MACH_KERN_END		VMMACH_NET_MAP_START
-#define	MACH_KERN_STACK_SIZE	(MACH_STACK_START - MACH_STACK_BOTTOM)
+#define	MACH_KERN_STACK_SIZE	0x6000
 #define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
 #define	MACH_UNIX_ERRNO_OFFSET	696	/* Offset checked in Mach_Init. */
 
@@ -280,7 +280,7 @@
 #define	MACH_FIRST_USER_ADDR		VMMACH_PAGE_SIZE
 #define	MACH_LAST_USER_ADDR		(VMMACH_BOTTOM_OF_HOLE - 1)
 #define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
-#define	MACH_MAX_USER_STACK_ADDR	(VMMACH_BOTTOM_OF_HOLE - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
+#define	MACH_MAX_USER_STACK_ADDR	VMMACH_SHARED_START_ADDR
 
 /*
  * The control space offset of the VME interrupt vector.
@@ -321,10 +321,11 @@
 #define	MACH_TRAP_REGS_OFFSET	0
 #define	MACH_SWITCH_REGS_OFFSET	(MACH_TRAP_REGS_OFFSET + 4)
 #define	MACH_SAVED_REGS_OFFSET	(MACH_SWITCH_REGS_OFFSET + 4)
-#define	MACH_SAVED_MASK_OFFSET	(MACH_SAVED_REGS_OFFSET + (MACH_NUM_WINDOWS *\
+
+#define	MACH_SAVED_MASK_OFFSET	(MACH_SAVED_REGS_OFFSET + (MACH_MAX_WINDOWS *\
 				MACH_NUM_WINDOW_REGS * 4))
 #define	MACH_SAVED_SPS_OFFSET	(MACH_SAVED_MASK_OFFSET + 4)
-#define	MACH_KSP_OFFSET		(MACH_SAVED_SPS_OFFSET + (MACH_NUM_WINDOWS * 4))
+#define	MACH_KSP_OFFSET		(MACH_SAVED_SPS_OFFSET + (MACH_MAX_WINDOWS * 4))
 #define	MACH_FPU_STATUS_OFFSET  (MACH_KSP_OFFSET + 4)
 
 /*
@@ -336,8 +337,29 @@
 /*
  * More window-related constants
  */
-#define	MACH_NUM_WINDOWS		7	/* # of implemented windows */
+#ifdef sun4c
+
+#ifdef _ASM			/* force error */
+
+#define	MACH_NUM_WINDOWS	%%
+#define	MACH_VALID_WIM_BITS	%%
+
+#else /* _ASM */
+
+#define	MACH_NUM_WINDOWS	machNumWindows	/* # of implemented windows */
+						/* is wim value in range? */
+#define	MACH_VALID_WIM_BITS	((1 << machNumWindows) - 1)
+
+#endif /* _ASM */
+
+#else /* sun4c */
+
+#define	MACH_NUM_WINDOWS	7		/* # of implemented windows */
 #define	MACH_VALID_WIM_BITS	0x0000007f	/* is wim value in range? */
+
+#endif /* sun4c */
+
+#define	MACH_MAX_WINDOWS	8		/* for allocating array space */
 
 /*
  * The size of the floating point state size in Mach_RegState.

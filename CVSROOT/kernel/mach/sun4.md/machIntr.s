@@ -21,7 +21,9 @@
 #include "machConst.h"
 #include "machAsmDefs.h"
 #include "vmSunConst.h"
+#ifndef sun4c
 #include "devAddrs.h"
+#endif
 
 .align	8
 .seg	"text"
@@ -47,41 +49,43 @@
 .globl	MachHandleInterrupt
 MachHandleInterrupt:
 	/* set us at interrupt level - do this in trap handler?? */
-	set	_mach_AtInterruptLevel, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %SAFE_TEMP
-	set	1, %VOL_TEMP2
-	st	%VOL_TEMP2, [%VOL_TEMP1]
+	sethi	%hi(_mach_AtInterruptLevel), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_mach_AtInterruptLevel)], %SAFE_TEMP
+	mov	1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1 + %lo(_mach_AtInterruptLevel)]
 
 	and	%CUR_PSR_REG, MACH_PS_BIT, %VOL_TEMP1
-	set	_mach_KernelMode, %VOL_TEMP2
-	st	%VOL_TEMP1, [%VOL_TEMP2]	/* 0 = user, !0 = kernel */
+	sethi	%hi(_mach_KernelMode), %VOL_TEMP2
+						/* 0 = user, !0 = kernel */
+	st	%VOL_TEMP1, [%VOL_TEMP2 + %lo(_mach_KernelMode)]
 
 	/* Call into vector table using tbr */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
 	sub	%o0, MACH_LEVEL0_INT, %o0	/* get interrupt level */
 	srl	%o0, 2, %VOL_TEMP1		/* convert to index */
-	set	_machInterruptArgs, %VOL_TEMP2
+	sethi	%hi(_machInterruptArgs), %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %o0		/* arg, if any */
+						/* arg, if any */
+	ld	[%VOL_TEMP2 + %lo(_machInterruptArgs)], %o0
 	/*
 	 * For now, this is the only way to get the interrupt pc to the
 	 * profiler via the Timer_TimerService callback.  It's an implicit
 	 * parameter.
 	 */
 	mov	%CUR_PC_REG, %o1	/* pc as next arg. */
-	set	_machVectorTable, %VOL_TEMP2
+	sethi	%hi(_machVectorTable), %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machVectorTable)], %VOL_TEMP1
 	call	%VOL_TEMP1
 	nop
 
-	set	_mach_AtInterruptLevel, %VOL_TEMP1
+	sethi	%hi(_mach_AtInterruptLevel), %VOL_TEMP1
 #ifdef NOTDEF
 	tst	%SAFE_TEMP
 	bne	LeaveInterruptLevel
 #endif NOTDEF
 	nop
-	st	%g0, [%VOL_TEMP1]
+	st	%g0, [%VOL_TEMP1 + %lo(_mach_AtInterruptLevel)]
 LeaveInterruptLevel:
 	/*
 	 * Put a good return value into the return value register so that
@@ -120,12 +124,13 @@ _MachVectoredInterrupt:
 _MachVectoredInterruptLoad:
 	lduba	[%i0] VMMACH_CONTROL_SPACE, %VOL_TEMP1	/* got vector */
 	sll	%VOL_TEMP1, 2, %VOL_TEMP1		/* convert to index */
-	set	_machInterruptArgs, %VOL_TEMP2
+	sethi	%hi(_machInterruptArgs), %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %o0			/* clientData arg */
-	set	_machVectorTable, %VOL_TEMP2
+							/* clientData arg */
+	ld	[%VOL_TEMP2 + %lo(_machInterruptArgs)], %o0
+	sethi	%hi(_machVectorTable), %VOL_TEMP2
 	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machVectorTable)], %VOL_TEMP2
 	call	%VOL_TEMP2				/* %o0 is arg */
 	nop
 	ret
@@ -176,12 +181,13 @@ MachHandleLevel15Intr:
 	 * To clear the interrupt condition, first write a 0 to the enable
 	 * all interrupts bit, and then write a one again.
 	 */
-	set	DEV_INTERRUPT_REG_ADDR, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP2
+	sethi	%hi(_machInterruptReg), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machInterruptReg)], %VOL_TEMP1
+	ldub	[%VOL_TEMP1], %VOL_TEMP2
 	andn	%VOL_TEMP2, MACH_ENABLE_ALL_INTERRUPTS, %VOL_TEMP2
-	st	%VOL_TEMP2, [%VOL_TEMP1]
+	stb	%VOL_TEMP2, [%VOL_TEMP1]
 	or	%VOL_TEMP2, MACH_ENABLE_ALL_INTERRUPTS, %VOL_TEMP2
-	st	%VOL_TEMP2, [%VOL_TEMP1]
+	stb	%VOL_TEMP2, [%VOL_TEMP1]
 #else
 	set	VMMACH_ADDR_CONTROL_REG, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %g5

@@ -36,14 +36,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The controller configuration table.
  */
 DevConfigController devCntrlr[] = {
-   /* Name     Address,  Addr space, ID, InitProc   IntrVector  IntrRoutine. */
-#ifdef NOTDEF
-/* This seems already to be mapped at a virtual address. */
-   { "DMA_UNIT", DEV_DMA_ADDR, DEV_SBUS_OB, 0, (ClientData (*)()) NIL, 3,
-	   DevSCSIC90Intr},
-#endif
-   { "SCSIC90", DEV_SCSI_ADDR, DEV_SBUS_OB, 0, DevSCSIC90Init, 3,
-	   DevSCSIC90Intr},
+   /* Name   Dev_Name Address ID InitProc   IntrVector  IntrRoutine. */
+   { "SCSIC90",  "esp", NIL, 0, DevSCSIC90Init, 3, DevSCSIC90Intr},
 };
 /*
  * We want to treat the dma controller and scsi device as the same device,

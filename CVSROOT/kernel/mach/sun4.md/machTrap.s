@@ -349,8 +349,8 @@ _MachReturnFromTrap:
 	nop
 	/* Do we need to take a special action? Check special handling flag. */
 	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-	set	_machSpecialHandlingOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
+	sethi	%hi(_machSpecialHandlingOffset), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSpecialHandlingOffset)], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	tst	%VOL_TEMP1
@@ -378,7 +378,7 @@ DoUnixSignal:
 	sub	%fp, 0x8f0, %fp
 	nop
 NormalReturn:
-	MACH_UNDERFLOW_TEST(testModuloLabel)
+	MACH_UNDERFLOW_TEST()
 	be	UnderflowOkay
 	nop
 	/*
@@ -437,13 +437,13 @@ KillUserProc:
 	call	_printf, 1
 	nop
 	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
-        set     _machGenFlagsOffset, %o1 
-        ld      [%o1], %o1
-        add     %o0, %o1, %o1
-        ld      [%o1], %o1
-        set     _machForeignFlag, %o2
-        ld      [%o2], %o2
-        andcc   %o1, %o2, %o1                   /* Is this a migrated proc? */
+        sethi	%hi(_machGenFlagsOffset), %o1 
+        ld	[%o1 + %lo(_machGenFlagsOffset)], %o1
+        add	%o0, %o1, %o1
+        ld	[%o1], %o1
+        sethi	%hi(_machForeignFlag), %o2
+        ld      [%o2 + %lo(_machForeignFlag)], %o2
+        andcc   %o1, %o2, %o1			/* Is this a migrated proc? */
         be      DebugIt
         nop
 	set	PROC_TERM_DESTROYED, %o0	/* If so, kill it. */
@@ -540,8 +540,8 @@ MachHandleWindowOverflowTrap:
         nop
         /* Do we need to take a special action? Check special handling flag. */
 	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
-        set     _machSpecialHandlingOffset, %VOL_TEMP2
-        ld      [%VOL_TEMP2], %VOL_TEMP2
+        sethi	%hi(_machSpecialHandlingOffset), %VOL_TEMP2
+        ld      [%VOL_TEMP2 + %lo(_machSpecialHandlingOffset)], %VOL_TEMP2
         add     %VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
         ld      [%VOL_TEMP1], %VOL_TEMP1
         tst     %VOL_TEMP1
@@ -684,14 +684,15 @@ SaveToInternalBuffer:
 	 * this window we must save.
 	 */
 	MACH_GET_CUR_STATE_PTR(%g3, %g4)	/* puts machStatePtr in %g3 */
-	set	_machCurStatePtr, %g4
-	st	%g3, [%g4]			/* update it */
+	sethi	%hi(_machCurStatePtr), %g4
+						/* update it */
+	st	%g3, [%g4 + %lo(_machCurStatePtr)]
 	add	%g3, MACH_SAVED_MASK_OFFSET, %g3
 	ld	[%g3], %g3
 	mov	%wim, %g4
 	or	%g3, %g4, %g4
-	set	_machCurStatePtr, %g3
-	ld	[%g3], %g3
+	sethi	%hi(_machCurStatePtr), %g3
+	ld	[%g3 + %lo(_machCurStatePtr)], %g3
 	add	%g3, MACH_SAVED_MASK_OFFSET, %g3
 	st	%g4, [%g3]
 
@@ -699,17 +700,17 @@ SaveToInternalBuffer:
 	 * Get and set the special handling flag in the current process state.
 	 */
 	MACH_GET_CUR_PROC_PTR(%g3)
-	set	_machSpecialHandlingOffset, %g4
-	ld	[%g4], %g4
+	sethi	%hi(_machSpecialHandlingOffset), %g4
+	ld	[%g4 + %lo(_machSpecialHandlingOffset)], %g4
 	add	%g3, %g4, %g3
-	set	0x1, %g4
+	mov	0x1, %g4
 	st	%g4, [%g3]
 
 	/*
 	 * Save the current user stack pointer for this window.
 	 */
-	set	_machCurStatePtr, %g3
-	ld	[%g3], %g3
+	sethi	%hi(_machCurStatePtr), %g3
+	ld	[%g3 + %lo(_machCurStatePtr)], %g3
 	add	%g3, MACH_SAVED_SPS_OFFSET, %g3
 	mov	%psr, %g4
 	and	%g4, MACH_CWP_BITS, %g4
@@ -721,8 +722,8 @@ SaveToInternalBuffer:
 	/*
 	 * Now save to internal buffer.
 	 */
-	set	_machCurStatePtr, %g3
-	ld	[%g3], %g3
+	sethi	%hi(_machCurStatePtr), %g3
+	ld	[%g3 + %lo(_machCurStatePtr)], %g3
 	add	%g3, MACH_SAVED_REGS_OFFSET, %g3
 	/*
 	 * Current window * 4 bytes per reg is still in %g4.  Now we just
@@ -855,7 +856,7 @@ MachHandleWindowUnderflowTrap:
 	andcc	%fp, 0x7, %g0
 	be,a	CheckForFaults
 	clr	%g3			/* g3 clear for no problem yet */
-	set	0x1, %g3		/* Mark why we will save state */
+	mov	0x1, %g3		/* Mark why we will save state */
 	bne,a	MustSaveState
 	save		/* back to trap window, in annulled delay slot */
 
@@ -913,12 +914,12 @@ KillTheProc:
 	call	_printf, 1
 	nop
 	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
-	set	_machGenFlagsOffset, %o1
-	ld	[%o1], %o1
+	sethi	%hi(_machGenFlagsOffset), %o1
+	ld	[%o1 + %lo(_machGenFlagsOffset)], %o1
 	add	%o0, %o1, %o1
 	ld	[%o1], %o1
-	set	_machForeignFlag, %o2
-	ld	[%o2], %o2
+	sethi	%hi(_machForeignFlag), %o2
+	ld	[%o2 + %lo(_machForeignFlag)], %o2
 	andcc	%o1, %o2, %o1			/* Is this a migrated proc? */
 	be	SuspendIt
 	nop
@@ -1057,8 +1058,9 @@ MachWindowUnderflow:
 	 * NOTE: The test below must agree with the amount we bump up the stack
 	 * by in MachTrap.
 	 */
-	set	_machDebugStackStart, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* base of stack */
+	sethi	%hi(_machDebugStackStart), %VOL_TEMP1
+							/* base of stack */
+	ld	[%VOL_TEMP1 + %lo(_machDebugStackStart)], %VOL_TEMP1
 	set	MACH_FULL_STACK_FRAME, %VOL_TEMP2
 	sub	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1	/* offset from base */
 	cmp	%VOL_TEMP1, %fp
@@ -1067,8 +1069,8 @@ MachWindowUnderflow:
 
 DealWithDebugStack:
 	/* Set stack pointer of next window to regular frame pointer */
-	set	_machSavedRegisterState, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %fp
+	sethi	%hi(_machSavedRegisterState), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machSavedRegisterState)], %fp
 	
 RegularStack:
 	/*
@@ -1082,7 +1084,7 @@ RegularStack:
 	 * same.  That would be a really dumb thing to think anyway.
 	 */
 	/* mark new invalid window */
-	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, underflowLabel)
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2)
 
 	/* move to window to restore */
 	restore
@@ -1138,8 +1140,8 @@ KernelDebug:
 	 * also use this to restore our stack pointer upon returning from the
 	 * debugger.
 	 */
-	set	_machSavedRegisterState, %VOL_TEMP1
-	st	%sp, [%VOL_TEMP1]
+	sethi	%hi(_machSavedRegisterState), %VOL_TEMP1
+	st	%sp, [%VOL_TEMP1 + %lo(_machSavedRegisterState)]
 	/*
 	 * Now make sure all windows are flushed to the stack.  We do this
 	 * with MACH_NUM_WINDOWS - 1 saves and restores.  The window overflow
@@ -1147,29 +1149,34 @@ KernelDebug:
 	 * in a global, since they have all been saved already and are free
 	 * for our use and we need the value across windows.
 	 */
-	set	(MACH_NUM_WINDOWS - 1), %g1
+
+	sethi	%hi(_machNumWindows), %g2
+	ld	[%g2 + %lo(_machNumWindows)], %g2
+	sub	%g2, 1, %g1
 SaveSomeMore:
 	save
 	subcc	%g1, 1, %g1
 	bne	SaveSomeMore
 	nop
-	set	(MACH_NUM_WINDOWS - 1), %g1
+	sub	%g2, 1, %g1
 RestoreSomeMore:
 	restore
 	subcc	%g1, 1, %g1
 	bne	RestoreSomeMore
 	nop
+
 	/* Set stack base for debugger */
-	set	_machDebugStackStart, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* stack base */
+	sethi	%hi(_machDebugStackStart), %VOL_TEMP1
+							/* stack base */
+	ld	[%VOL_TEMP1 + %lo(_machDebugStackStart)], %VOL_TEMP1
 	set	MACH_FULL_STACK_FRAME, %VOL_TEMP2
 	sub	%VOL_TEMP1, %VOL_TEMP2, %sp		/* offset from base */
 	/* get trap type into o0 from local saved value */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
 	srl	%o0, 4, %o0
 	/* put saved reg ptr into o1 */
-	set	_machSavedRegisterState, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %o1
+	sethi	%hi(_machSavedRegisterState), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machSavedRegisterState)], %o1
 	/*
 	 * Set wim to this window, so that when we return from debugger,
 	 * we'll restore the registers for this window from the stack state
@@ -1189,8 +1196,8 @@ RestoreSomeMore:
 	nop
 
 	/* put saved stack pointer into %sp. */
-	set	_machSavedRegisterState, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %sp
+	sethi	%hi(_machSavedRegisterState), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machSavedRegisterState)], %sp
 
 	/* finish as for regular trap */
 	set	_MachReturnFromTrap, %VOL_TEMP1

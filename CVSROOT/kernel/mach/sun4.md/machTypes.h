@@ -20,11 +20,15 @@
 
 #ifdef KERNEL
 #include <sprite.h>
+#ifndef sun4c
 #include <devAddrs.h>
+#endif
 #include <machConst.h>
 #include <user/fmt.h>
 #else
+#ifndef sun4c
 #include <kernel/devAddrs.h>
+#endif
 #include <kernel/machConst.h>
 #include <fmt.h>
 #endif
@@ -165,7 +169,7 @@ typedef struct Mach_RegWindow {
 typedef struct Mach_State {
     Mach_RegState	*trapRegs;		/* User state at trap time. */
     Mach_RegState	*switchRegs;		/* Kernel state, switch time */
-    int			savedRegs[MACH_NUM_WINDOWS][MACH_NUM_WINDOW_REGS];
+    int			savedRegs[MACH_MAX_WINDOWS][MACH_NUM_WINDOW_REGS];
 						/* Where we save all the
 						 * window's registers to if the
 						 * user stack isn't resident.
@@ -180,7 +184,7 @@ typedef struct Mach_State {
 						 * be restored to the stack from
 						 * the above buffer since the
 						 * stack wasn't resident. */
-    int			savedSps[MACH_NUM_WINDOWS];
+    int			savedSps[MACH_MAX_WINDOWS];
 						/* sp for each saved window
 						 * stored here to make it easy
 						 * to copy the stuff back out

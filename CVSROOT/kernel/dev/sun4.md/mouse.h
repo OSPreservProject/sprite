@@ -19,9 +19,20 @@
 #ifndef _DEVMOUSE
 #define _DEVMOUSE
 
+#ifdef sun4c
+#    ifndef _DEVZ8530
+#        include <z8530.h>
+#    endif
+#endif
+
 extern ReturnStatus	DevMouseClose _ARGS_((Fs_Device *devicePtr,
     int useFlags, int openCount, int writerCount));
+#ifdef sun4c
+extern void		DevMouseInit _ARGS_((DevZ8530Device *virtAddr,
+    int vector));
+#else
 extern void		DevMouseInit _ARGS_((void));
+#endif
 extern void		DevMouseInterrupt _ARGS_((void));
 extern ReturnStatus	DevMouseIOControl _ARGS_((Fs_Device *devicePtr,
     Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));

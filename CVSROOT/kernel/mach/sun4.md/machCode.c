@@ -31,6 +31,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include <bstring.h>
 #include <compatInt.h>
+#include <ctype.h>
+
 /*
  *  Number of processors in the system.
  */
@@ -216,8 +218,15 @@ Address			theAddrOfMachPtr = 0;
 Address			oldAddrOfVmPtr = 0; 
 Address			oldAddrOfMachPtr = 0;
 
-Address			machRomVectorPtr;
+MachMonRomVector	*machRomVectorPtr;
 MachMonBootParam	machMonBootParam;
+#ifdef sun4c
+unsigned char		*machInterruptReg;
+unsigned int		machClockRate;
+struct idprom		machIdProm = {0};
+#endif
+unsigned int		machNumWindows;
+unsigned int		machWimShift;		/* # windows - 1 */
 
 /*
  * Forward declarations.
@@ -262,7 +271,7 @@ Mach_Init()
     mach_FirstUserAddr = (Address)MACH_FIRST_USER_ADDR;
     mach_LastUserAddr = (Address)MACH_LAST_USER_ADDR;
     mach_MaxUserStackAddr = (Address)MACH_MAX_USER_STACK_ADDR;
-    mach_LastUserStackPage = (MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE;
+    mach_LastUserStackPage = MACH_LAST_USER_STACK_PAGE;
 
 #define	CHECK_SIZE(c, d)		\
     if (sizeof (c) != d) {		\
@@ -296,12 +305,14 @@ Mach_Init()
     CHECK_TRAP_REG_OFFSETS(fqueue[0], MACH_FPU_QUEUE_OFFSET);
 
 #ifdef sun4c
-    if ((*(romVectorPtr->virtMemory))->address !=
-	    (unsigned) VMMACH_DEV_START_ADDR ||
-	    ((unsigned) VMMACH_DEV_START_ADDR +
-	    (*(romVectorPtr->virtMemory))->size - 1)
-	    != (unsigned) VMMACH_DEV_END_ADDR) {
-	panic("VMMACH_DEV_START_ADDR and VMMACH_DEV_END_ADDR are wrong.\n");
+    if (romVectorPtr->v_romvec_version < 2) {
+	if ((*(romVectorPtr->virtMemory))->address !=
+		(unsigned) VMMACH_DEV_START_ADDR ||
+		((unsigned) VMMACH_DEV_START_ADDR +
+		(*(romVectorPtr->virtMemory))->size - 1)
+		!= (unsigned) VMMACH_DEV_END_ADDR) {
+	    panic("VMMACH_DEV_START_ADDR and VMMACH_DEV_END_ADDR are wrong.\n");
+	}
     }
 #endif /* sun4c */
 #undef CHECK_SIZE
@@ -394,19 +405,25 @@ Mach_Init()
     /* Temporary: for debugging net module and debugger: */
     mach_NumDisableInterrupts[0] = 1;
 
-    /*
-     * Copy the boot parameter structure. The original location will get
-     * unmapped during vm initialization so we need to get our own copy.
-     */
-    machMonBootParam = **(romVectorPtr->bootParam);
-    offset = (unsigned int) *(romVectorPtr->bootParam) - 
-	     (unsigned int) &(machMonBootParam);
-    for (i = 0; i < 8; i++) {
-	if (machMonBootParam.argPtr[i] != (char *) 0 &&
-	 machMonBootParam.argPtr[i] != (char *) NIL) {
-	    machMonBootParam.argPtr[i] -= offset;
+#ifdef sun4c
+    if (romVectorPtr->v_romvec_version < 2) {
+#endif
+	/*
+	 * Copy the boot parameter structure. The original location will get
+	 * unmapped during vm initialization so we need to get our own copy.
+	 */
+	machMonBootParam = **(romVectorPtr->bootParam);
+	offset = (unsigned int) *(romVectorPtr->bootParam) - 
+		 (unsigned int) &(machMonBootParam);
+	for (i = 0; i < 8; i++) {
+	    if (machMonBootParam.argPtr[i] != (char *) 0 &&
+	     machMonBootParam.argPtr[i] != (char *) NIL) {
+		machMonBootParam.argPtr[i] -= offset;
+	    }
 	}
-    }
+#ifdef sun4c
+    } 
+#endif
 #ifndef sun4c
     /*
      * Clear out the line input buffer to the prom so we don't get extra
@@ -416,6 +433,25 @@ Mach_Init()
 #endif
 
 #ifdef sun4c
+    if (Mach_MonSearchProm("*", "clock-frequency",
+	    (char *)&machClockRate,
+	    sizeof machClockRate) != sizeof machClockRate) {
+	panic("Clock rate not found.\n");
+    }
+    /*
+     * Keep clock rate precision to 1 decimal place.
+     */
+    machClockRate /= 100000;
+    printf("PROM: Clock rate is %d.%dMHz\n",
+	machClockRate / 10, machClockRate % 10);
+
+    if (Mach_MonSearchProm("interrupt-enable", "address",
+	    (char *)&machInterruptReg,
+	    sizeof machInterruptReg) != sizeof machInterruptReg) {
+	panic("Interrupt register not found.\n");
+    }
+    printf("PROM: Interrupt register is at %x\n", machInterruptReg);
+
     /*
      * This gets turned on by the profiler init when it is called.
      */
@@ -530,8 +566,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     statePtr->switchRegs = (Mach_RegState *)((statePtr->kernStackStart) +
 	    MACH_KERN_STACK_SIZE - (2 * MACH_SAVED_STATE_FRAME));
     statePtr->switchRegs = (Mach_RegState *)
-	(((unsigned int)(statePtr->switchRegs)) & ~0x7); /* should be okay already */
-
+	(((unsigned int)(statePtr->switchRegs)) & ~0x7);  /* should be okay already */
     /*
      * Initialize the stack so that it looks like it is in the middle of
      * Mach_ContextSwitch.
@@ -1472,7 +1507,6 @@ HandleItAgain:
 		    procPtr->unixProgress);
 	}
 	procPtr->unixProgress = PROC_PROGRESS_UNIX;
-
     }
     if (Sig_Handle(procPtr, sigStackPtr, &pc)) {
 	machStatePtr->sigContext.machContext.pcValue = pc;
@@ -1596,6 +1630,7 @@ HandleItAgain:
 	    printf("No signal, yet we restarted system call!\n");
 	}
     }
+
     if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
 	HandleFPUException(procPtr, machStatePtr);
     }
@@ -1927,20 +1962,66 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 	char	**argv;			/* Ptr to array of arg pointers */
 	char	*buffer;		/* Storage for arguments */
 {
-    int		i;
-    int		offset;
-
-    bcopy(machMonBootParam.strings, buffer, 
-	  (bufferSize < 100) ? bufferSize : 100);
-    offset = (unsigned int) machMonBootParam.strings - (unsigned int) buffer;
-    for(i = 0; i < argc; i++) {
-	if (machMonBootParam.argPtr[i] == (char *) 0 ||
-	    machMonBootParam.argPtr[i] == (char *) NIL) {
-	    break;
+#ifdef sun4c
+    if (romVectorPtr->v_romvec_version < 2) {
+#endif
+	int		i;
+	int		offset;
+	bcopy(machMonBootParam.strings, buffer, 
+	      (bufferSize < 100) ? bufferSize : 100);
+	offset = (unsigned int) machMonBootParam.strings -(unsigned int) buffer;
+	for(i = 0; i < argc; i++) {
+	    if (machMonBootParam.argPtr[i] == (char *) 0 ||
+		machMonBootParam.argPtr[i] == (char *) NIL) {
+		break;
+	    }
+	    argv[i] = (char *) (machMonBootParam.argPtr[i] - (char *) offset);
 	}
-	argv[i] = (char *) (machMonBootParam.argPtr[i] - (char *) offset);
+	return i;
+#ifdef sun4c
+    } else {
+	char	*bufEndPtr = buffer + bufferSize - 1;
+	char	*bufferPtr = buffer;
+	int	argcsLeft = argc;
+	char	*p;
+
+	/*
+	 * On version 2 and greater the bootstring is stored in 
+	 * two null terminated strings.  We copy these strings
+	 * into the argc,argv format needed by Mach_GetBootArgs.
+	 */
+	if (argc == 0) {
+	    return 0;
+	}
+	p = *(romVectorPtr->bootpath);
+	while (*p && isspace(*p)) { /* Skip any spaces. */
+		p++;
+	}
+	*argv = bufferPtr;
+	argv++; argcsLeft--;
+	while (*p && (bufferPtr < bufEndPtr)) {
+	    *bufferPtr++ = *p++;
+	}
+	*bufferPtr++ = 0;
+
+	p = *(romVectorPtr->bootargs);
+	while (*p && isspace(*p)) {  /* Skip any spaces. */
+	    p++;
+	}
+	while ((bufferPtr < bufEndPtr) && (argcsLeft > 0) && *p) {
+	    *argv = bufferPtr;
+	    argv++; argcsLeft--;
+	    while (*p && !isspace(*p) && (bufferPtr < bufEndPtr)) {
+		*bufferPtr++ = *p++;
+	    }
+	    *bufferPtr++ = 0;
+	    while (*p && isspace(*p)) {  /* Skip any spaces. */
+		p++;
+	    }
+        }
+	return argc - argcsLeft;
     }
-    return i;
+#endif /* sun4c */
 }
 
 
@@ -2069,3 +2150,64 @@ jmp_buf *jmpBuf;
     Sig_Return(procPtr, &machStatePtr->sigStack);
     return 0; /* Dummy */
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetMachineType --
+ *
+ *	Get the machine type from the idprom.
+ *
+ * Results:
+ *	The machine type.
+ *
+ * Side effects:
+ *	Reads from PROM the first time.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef sun4c
+int
+Mach_GetMachineType()
+{
+    if (machIdProm.id_format != IDFORM_1) {
+	if (Mach_MonSearchProm("*", "idprom", (char *)&machIdProm,
+		sizeof machIdProm) != sizeof machIdProm) {
+	    panic("Where is the idprom?");
+	}
+    }
+    return machIdProm.id_machine;
+}
+#endif /* sun4c */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetEtherAddress --
+ *
+ *	Get the ethernet address.
+ *
+ * Results:
+ *	A pointer to the ethernet address.
+ *
+ * Side effects:
+ *	Reads from PROM the first time.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef sun4c
+Net_EtherAddress *
+Mach_GetEtherAddress(etherAddressPtr)
+    Net_EtherAddress *etherAddressPtr;
+{
+    if (machIdProm.id_format != IDFORM_1) {
+	if (Mach_MonSearchProm("*", "idprom", (char *)&machIdProm,
+		sizeof machIdProm) != sizeof machIdProm) {
+	    panic("Where is the idprom?");
+	}
+    }
+    bcopy((char *)machIdProm.id_ether, (char *)etherAddressPtr,
+	sizeof(Net_EtherAddress));
+    return etherAddressPtr;	/* which copy should I return? */
+}
+#endif /* sun4c */

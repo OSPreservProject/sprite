@@ -94,16 +94,15 @@ DevZ8530Activate(ptr)
 
     MASTER_LOCK(&z8530Mutex);
     zPtr = (DevZ8530 *) ptr;	/* Information about the device. */
-    if (zPtr->vector != 30) {
-	Mach_SetHandler(zPtr->vector, DevZ8530Interrupt, (ClientData) zPtr);
-    }
     if (zPtr->flags & Z_CHANNEL_B) {
 	Write(zPtr->address, 9, WRITE9_RESET_CHAN_B);
     } else {
 	Write(zPtr->address, 9, WRITE9_RESET_CHAN_A);
     }
     MACH_DELAY(10);
+#ifndef sun4c
     Write(zPtr->address, 2, zPtr->vector);
+#endif
     Write(zPtr->address, 4, WRITE4_PARITY_EVEN + WRITE4_1_STOP + 
 				WRITE4_X16_CLK);
     zPtr->wr3 &= ~WRITE3_RX_ENABLE;

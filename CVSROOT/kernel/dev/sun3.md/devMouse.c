@@ -70,9 +70,17 @@ static int listCount;		/* Number of elements in list. */
 static DevTty mouseTty;			/* Information used by devTty.c. */
 static DevZ8530 mouse = {		/* Information used by device driver. */
     "mouse",				/* name */
+#ifdef sun4c
+    (DevZ8530Device *) NIL,		/* address */
+#else
     (DevZ8530Device *) DEV_MOUSE_ADDR,	/* address */
+#endif
     &mouseTty,				/* ttyPtr */
+#ifdef sun4c
+    0,					/* vector */
+#else
     DEV_UART_VECTOR,			/* vector */
+#endif
     1200,				/* baud */
     WRITE3_RX_8BIT,			/* wr3 */
     WRITE5_TX_8BIT,			/* wr5 */
@@ -124,9 +132,19 @@ static int MouseOutputProc _ARGS_((void));
  */
 
 void
+#ifdef sun4c
+DevMouseInit(virtAddr, vector)
+    DevZ8530Device *virtAddr;
+    int vector;
+#else
 DevMouseInit()
+#endif
 {
-    DevZ8530RawProc(&mouse, TD_RAW_SHUTDOWN, 0, (char *) NULL,
+#ifdef sun4c
+    mouse.address = virtAddr;
+    mouse.vector = vector;
+#endif
+    DevZ8530RawProc((Address)&mouse, TD_RAW_SHUTDOWN, 0, (char *) NULL,
 	    0, (char *) NULL);
 }
 

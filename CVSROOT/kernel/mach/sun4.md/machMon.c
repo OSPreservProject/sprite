@@ -20,8 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMach.h"
 #include "sys.h"
 #ifdef sun4c
-#include "stdio.h"
-#include "string.h"
+#include <string.h>
 #endif
 
 extern int VmMachGetKernelContext _ARGS_ ((void));
@@ -312,7 +311,7 @@ PrintNode(node, name, clientData)
     while (1) {
 	prop = (char *)configPtr->devr_nextprop(node, prop);
 	if (prop && *prop) {
-	    printf("%s: %s\n", name, prop);
+	    Mach_MonPrintf("%s: %s\n", name, prop);
 	} else {
 	    break;
 	}
@@ -365,7 +364,7 @@ CheckNode(node, name, clientData)
 	if (length <= 0) {
 	    return 0;
 	} else if (length > clientData->buflen) {
-	    printf("Data size (%d) is greater than buffer size (%d)\n",
+	    Mach_MonPrintf("Data size (%d) is greater than buffer size (%d)\n",
 		length, clientData->buflen);
 	} else {
 	    configPtr->devr_getprop(node, clientData->attr, clientData->buf);
@@ -400,12 +399,12 @@ Mach_MonSearchProm(name, attr, buf, buflen)
 {
     struct ConfigBuf data;
 
-    data.length = 0;
+    data.length = -1;
     data.name = name;
     data.attr = attr;
     data.buf = buf;
     data.buflen = buflen;
-    Mach_MonTraverseDevTree(0, CheckNode, &data);
+    Mach_MonTraverseDevTree(0, CheckNode, (Address)&data);
     return data.length;
 }
 #endif /* sun4c */

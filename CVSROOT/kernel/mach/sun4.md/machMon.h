@@ -195,7 +195,7 @@ typedef struct {
 						/* Really struct pgmapent *  */
 	void		(*exitToMon)();		/* Exit from user program */
 	unsigned char	**memorybitmap;		/* V1: &{0 or &bits} */
-	void		(*setcxsegmap)();	/* Set seg in any context */
+	void		(*SetSegInContext)();	/* Set seg in any context */
 	void		(**vector_cmd)();	/* V2: Handler for 'v' cmd */
 	unsigned long	*expectedTrapSig;	/* V3: Location of the expected
 						 * trap signal.  Was trap

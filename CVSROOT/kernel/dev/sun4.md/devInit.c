@@ -120,6 +120,28 @@ Dev_Config()
 	 * the correct physical address is gen'ed up we need to map it
 	 * into a kernel virtual address that the device driver can use.
 	 */
+#ifdef sun4c
+	if (Mach_MonSearchProm(cntrlrPtr->dev_name, "address",
+		(char *)cntrlrPtr->address,
+		sizeof cntrlrPtr->address) == sizeof cntrlrPtr->address) {
+	    mapItIn = FALSE;
+	} else {
+	    MachDevReg reg;
+	    if (Mach_MonSearchProm(cntrlrPtr->dev_name, "reg",
+		    (char *)&reg, sizeof reg) == sizeof reg) {
+		mapItIn = TRUE;
+		memoryType = 1;
+		if (romVectorPtr->v_romvec_version < 2
+			&& reg.addr >= (Address)SBUS_BASE
+			&& reg.bustype == 1) {		/* old style */
+		    cntrlrPtr->address = (int)reg.addr;
+		} else {				/* new style */
+		    cntrlrPtr->address = (int)reg.addr + SBUS_BASE +
+			   reg.bustype * SBUS_SIZE;
+		}
+	    }
+	}
+#else
 	if (Mach_GetMachineType() == SYS_SUN_2_120 &&
 	    cntrlrPtr->space != DEV_MULTIBUS &&
 	    cntrlrPtr->space != DEV_MULTIBUS_IO) {
@@ -175,15 +197,6 @@ Dev_Config()
 	    case DEV_OBIO:
 		mapItIn = FALSE;
 		break;
-	    case DEV_SBUS_OB:
-		if (devConfigDebug) {
-		    printf("Dev config looking at DEV_SBUS_OB.\n");
-		}
-		mapItIn = TRUE;
-		break;
-	    case DEV_SBUS:
-		printf("Regular SBUS devices not handled yet.\n");
-		continue;
 	}
 	/*
 	 * Each different Sun architecture arranges pieces of memory into
@@ -215,16 +228,8 @@ Dev_Config()
 	    case DEV_OBIO:
 		memoryType = 1;
 		break;
-	    case DEV_SBUS_OB:
-		if (devConfigDebug) {
-		    printf("Dev config setting mem type for DEV_SBUS_OB.\n");
-		}
-		memoryType = 1;
-		break;
-	    case DEV_SBUS:
-		/* Regular SBUS devices not handled yet. */
-		continue;
 	}
+#endif
 	if (mapItIn) {
 	    if (devConfigDebug) {
 		printf("Dev config mapping %s at 0x%x, memType %d.\n",

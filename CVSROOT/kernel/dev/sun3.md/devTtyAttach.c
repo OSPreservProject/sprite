@@ -41,6 +41,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static int	NullOutputChar();
 static int	TtyInterrupt();
 
+#ifdef sun4c
+
+/*
+ * Virtual addresses for serial device registers, extracted
+ * from PROM.
+ */
+
+static DevZ8530Device *zsAddr[2] = {
+    (DevZ8530Device *)NIL, (DevZ8530Device *)NIL
+};
+static MachDevIntr zsIntr[2] = {{12, 0}, {12, 0}};
+
+#endif
+
 /*
  * Pre-initialized data structures for three of the four channels in
  * the two Z8530 SCC chips (see devMouse.c for the fourth).
@@ -50,9 +64,17 @@ static DevTty ttys[3];
 
 static DevZ8530 keyboard = {
     "keyboard",					/* name */
+#ifdef sun4c
+    (DevZ8530Device *) NIL,			/* address */
+#else
     (DevZ8530Device *) DEV_KBD_ADDR,		/* address */
+#endif
     &ttys[0],					/* ttyPtr */
+#ifdef sun4c
+    0,						/* vector */
+#else
     DEV_UART_VECTOR,				/* vector */
+#endif
     1200,					/* baud */
     WRITE3_RX_8BIT,				/* wr3 */
     WRITE5_TX_8BIT,				/* wr5 */
@@ -66,9 +88,17 @@ static DevZ8530 keyboard = {
 
 static DevZ8530 serialA = {
     "serialA",					/* name */
+#ifdef sun4c
+    (DevZ8530Device *) NIL,			/* address */
+#else
     (DevZ8530Device *) DEV_SERIALA_ADDR,	/* address */
+#endif
     &ttys[1],					/* ttyPtr */
+#ifdef sun4c
+    0,						/* vector */
+#else
     DEV_UART_VECTOR,				/* vector */
+#endif
     9600,					/* baud */
     WRITE3_RX_8BIT,				/* wr3 */
     WRITE5_TX_8BIT,				/* wr5 */
@@ -82,9 +112,17 @@ static DevZ8530 serialA = {
 
 static DevZ8530 serialB = {
     "serialB",					/* name */
+#ifdef sun4c
+    (DevZ8530Device *) NIL,			/* address */
+#else
     (DevZ8530Device *) DEV_SERIALB_ADDR,	/* address */
+#endif
     &ttys[2],					/* ttyPtr */
+#ifdef sun4c
+    0,						/* vector */
+#else
     DEV_UART_VECTOR,				/* vector */
+#endif
     9600,					/* baud */
     WRITE3_RX_8BIT,				/* wr3 */
     WRITE5_TX_8BIT,				/* wr5 */
@@ -103,6 +141,37 @@ static DevZ8530 serialB = {
  */
 
 static int consoleUnit = 0;
+
+#ifdef sun4c
+#    include <string.h>
+
+static int
+GetZSAddr(node, name, clientData)
+    unsigned    int             node;
+    char                        *name;
+    struct      ConfigBuf       *clientData;
+{
+    int         which;
+    struct      config_ops      *configPtr;
+
+    if (strcmp(name,"zs") == 0) {
+	configPtr = romVectorPtr->v_config_ops;
+	if (configPtr->devr_getproplen(node, "keyboard") != -1) {
+	    which = 1;
+	} else {
+	    which = 0;
+	}
+	configPtr->devr_getprop(node, "address", &zsAddr[which]);
+	configPtr->devr_getprop(node, "intr", &zsIntr[which]);
+	Mach_MonPrintf("PROM: address zs %d %x intr %d\n",
+	    which, zsAddr[which], zsIntr[which].pri);
+	return zsAddr[0] != (DevZ8530Device *)NIL &&
+	       zsAddr[1] != (DevZ8530Device *)NIL;
+    } else {
+	return 0;
+    }
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -138,15 +207,27 @@ DevTtyInit()
     promConsoleType = ((struct eeprom *) EEPROM_BASE)->ee_diag.eed_console;
 #endif /* sun4c */
     switch (promConsoleType) {
+#ifdef sun4c
+	case INUARTA:
+#else
 	case EED_CONS_TTYA:
+#endif
 	    consoleUnit = 1;
 	    break;
+#ifdef sun4c
+	case INUARTB:
+#else
 	case EED_CONS_TTYB:
+#endif
 	    consoleUnit = 2;
 	    break;
+#ifdef sun4c
+	case INKEYB:
+#else
 	case EED_CONS_BW:
 	case EED_CONS_COLOR:
 	case EED_CONS_P4:
+#endif
 	    consoleUnit = 0;
 	    break;
 	default:
@@ -161,19 +242,36 @@ DevTtyInit()
      * Reset the devices.
      */
 
-    DevZ8530RawProc(&keyboard, TD_RAW_SHUTDOWN, 0, (char *) NULL,
+#ifdef sun4c
+    Mach_MonTraverseDevTree(0, GetZSAddr, (void *)NIL);
+    keyboard.address = (DevZ8530Device *) &zsAddr[1][1];
+    serialA.address = (DevZ8530Device *) &zsAddr[0][1];
+    serialB.address = (DevZ8530Device *) &zsAddr[0][0];
+    keyboard.vector = zsIntr[1].pri;
+    serialA.vector = serialB.vector = zsIntr[0].pri;
+#endif
+    DevZ8530RawProc((Address)&keyboard, TD_RAW_SHUTDOWN, 0, (char *) NULL,
 	    0, (char *) NULL);
-    DevZ8530RawProc(&serialA, TD_RAW_SHUTDOWN, 0, (char *) NULL,
+    DevZ8530RawProc((Address)&serialA, TD_RAW_SHUTDOWN, 0, (char *) NULL,
 	    0, (char *) NULL);
-    DevZ8530RawProc(&serialB, TD_RAW_SHUTDOWN, 0, (char *) NULL,
+    DevZ8530RawProc((Address)&serialB, TD_RAW_SHUTDOWN, 0, (char *) NULL,
 	    0, (char *) NULL);
+#ifdef sun4c
+    DevMouseInit((DevZ8530Device *)&zsAddr[1][0], zsIntr[1].pri);
+#else
     DevMouseInit();
+#endif
 
 #ifdef sun4
+#ifdef sun4c
+    Mach_SetHandler(zsIntr[0].pri, TtyInterrupt, (ClientData) 0);
+    Mach_SetHandler(zsIntr[1].pri, TtyInterrupt, (ClientData) 0);
+#else /* sun4c */
     Mach_SetHandler(12, TtyInterrupt, (ClientData) 0);
-#else
+#endif /* sun4c */
+#else /* sun4 */
     Mach_SetHandler(DEV_UART_VECTOR, TtyInterrupt, (ClientData) 0);
-#endif
+#endif /* sun4 */
     Mach_MonStopNmi();
 }
 

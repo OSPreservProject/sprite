@@ -17,8 +17,9 @@
 /*
  * The memory addresses for the PROM, and the EEPROM.
  */
-#define EEPROM_BASE     0xffd04000
-#define PROM_BASE       0xffe80010
+#define SBUS_BASE	0xf8000000	/* physical */
+#define SBUS_SIZE	0x02000000
+#define OBIO_BASE	0xf0000000	/* physical */
 
 /*
  * The table entry that describes a device.  It exists in the PROM; a
@@ -69,6 +70,9 @@ typedef	struct	Mach_MemList {
     unsigned int	size;
 } Mach_MemList;
 
+typedef unsigned int MachMonIhandle;
+typedef unsigned int MachMonPhandle;
+
 struct	config_ops {
         int (*devr_next)(/* int nodeid */);
         int (*devr_child)(/* int nodeid */);
@@ -79,46 +83,49 @@ struct	config_ops {
         int (*devr_nextprop)(/* int nodeid; caddr_t previous; */);
 };
 
+#define MACHMON_MAGIC	0x10010407
 /*
  * Here is the structure of the vector table which is at the front of the boot
- * rom.  The functions defined in here are explained below.
+ * rom.  The functions defined in here are explained below.  Fields marked
+ * with 01 are only valid with prom v_romvec_version less than 2.
  */
 
 typedef struct {
-    unsigned int	v_magic;	  /* magic mushroom */
+    unsigned int	v_magic;	  /* magic mushroom.  Should be
+					   * MACHMON_MAGIC. */
     unsigned int      	v_romvec_version; /* Version number of "romvec" */
     unsigned int	v_plugin_version; /* Plugin Architecture version */
     unsigned int	monId;		  /* version # of monitor firmware */
-    Mach_MemList	**physMemory;	  /* total physical memory list */
-    Mach_MemList	**virtMemory;	  /* taken virtual memory list */
-    Mach_MemList	**availMemory;    /* available physical memory */
+    Mach_MemList	**physMemory;	  /* 01 total physical memory list */
+    Mach_MemList	**virtMemory;	  /* 01 taken virtual memory list */
+    Mach_MemList	**availMemory;    /* 01 available physical memory */
     struct config_ops	*v_config_ops;	  /* dev_info configuration access */
     /*
      * storage device access facilities
      */
-    char		**v_bootcommand;  /* expanded with PROM defaults */
-    unsigned int	(*v_open)(/* char *name */);
-    unsigned int	(*v_close)(/* unsigned int fileid */); 
+    char		**v_bootcommand;  /* 01 expanded with PROM defaults */
+    unsigned int	(*v_open)(/* 01 char *name */);
+    unsigned int	(*v_close)(/* 01 unsigned int fileid */);
     /*
      * block-oriented device access
      */
-    unsigned int	(*v_read_blocks)();
-    unsigned int	(*v_write_blocks)();
+    unsigned int	(*v_read_blocks)();	/* 01 */
+    unsigned int	(*v_write_blocks)();	/* 01 */
     /*
      * network device access
      */
-    unsigned int	(*v_xmit_packet)();
-    unsigned int	(*v_poll_packet)();
+    unsigned int	(*v_xmit_packet)();	/* 01 */
+    unsigned int	(*v_poll_packet)();	/* 01 */
     /*
      * byte-oriented device access
      */
-    unsigned int	(*v_read_bytes)();
-    unsigned int	(*v_write_bytes)();
+    unsigned int	(*v_read_bytes)();	/* 01 */
+    unsigned int	(*v_write_bytes)();	/* 01 */
 
     /*
      * 'File' access - i.e.,  Tapes for byte devices.  TFTP for network devices
      */
-    unsigned int 	(*v_seek)();
+    unsigned int 	(*v_seek)();		/* 01 */
     /*
      * single character I/O
      */
@@ -142,20 +149,41 @@ typedef struct {
     void		(*exitToMon)();/* Exit from user program. */
     void		(**v_vector_cmd)();/* Handler for the vector */
     void		(*v_interpret)();  /* interpret forth string */
-
-/*
- *  This may actually be old boot params, depending on this #define:
- *  #ifdef SAIO_COMPAT
- *  MachMonBootParam	**bootParam;
- * 			boot parameters and `old' style device access
- *  Otherwise, it's just an int-size padding.
- *  int			pad;
- */
-    MachMonBootParam	**bootParam;
+    MachMonBootParam	**bootParam;	   /* 01 boot parameters. */
 
     unsigned int	(*v_mac_address)(/* int fd; caddr_t buf */);
-					    /* Copyout ether address */
-    int			*v_reserved[31];
+					/* Copyout ether address */
+    char	**bootpath;		/* V2: Full path name of boot device */
+    char	**bootargs;		/* V2: Boot cmd line after dev spec */
+
+    MachMonIhandle *op_stdin;		/* V2: Console input device */
+    MachMonIhandle *op_stdout;		/* V2: Console output device */
+
+    MachMonPhandle (*op_phandle)(/* MachMonIhandle ihandle */);
+					/* V2: Convert ihandle to phandle */
+
+    char *	(*op_alloc)(/* caddr_t virthint, u_int size */);
+					/* V2: Allocate physical memory */
+
+    void	(*op_free)(/* caddr_t virt, u_int size */);
+					/* V2: Deallocate physical memory */
+
+    char *	(*op_map)(/* caddr_t virthint, u_int space, u_int phys,
+		u_int size */);		/* V2: Create device mapping */
+
+    void	(*op_unmap)(/* caddr_t virt, u_int size */);
+					/* V2: Destroy device mapping */
+
+    MachMonIhandle (*op_open)(/* V2: char *name */);
+    int (*op_close)(/* V2: MachMonIhandle fileid */);
+    int (*op_read)(/* V2: MachMonIhandle fileid, caddr_t buf, u_int len */);
+    int (*op_write)(/* V2: MachMonIhandle fileid, caddr_t buf, u_int len */);
+    int (*op_seek)(/* V2: MachMonIhandle fileid, u_int offsh, u_int offsl */);
+    void	(*op_chain)(/* V2: caddr_t virt, u_int size, caddr_t entry,
+		caddr_t argaddr, u_int arglen */);
+    void	(*op_release)(/* V2: caddr_t virt, u_int size */);
+    int			*v_reserved[15];
+
     /*
      * Beginning of machine-dependent portion.
      */
@@ -210,7 +238,24 @@ typedef struct {
 /*
  * For accessing the romVector.
  */
-#define	romVectorPtr	((MachMonRomVector *) PROM_BASE)
+
+extern MachMonRomVector	*machRomVectorPtr;
+
+#define	romVectorPtr	machRomVectorPtr
+
+/*
+ * Structures returned by PROM.
+ */
+
+typedef struct {
+    int bustype;	/* 0 for mainmem, 1 for I/O, slot# for SBus devices */
+    char *addr;
+    unsigned int size;
+} MachDevReg;
+
+typedef struct {
+    int pri, vec;
+} MachDevIntr;
 
 /*
  * Functions and defines to access the monitor.
@@ -237,6 +282,23 @@ typedef struct {
 #define OUTUARTC  3 /* Input or output to Uart C.    */
 #define OUTUARTD  4 /* Input or output to Uart D.    */
 /* end of /usr/include/mon/sunromvec.h */
+
+/* from SunOS /usr/include/mon/idprom.h 1.18 */
+
+struct idprom {
+	unsigned char   id_format;      /* format identifier */
+	/* The following fields are valid only in format IDFORM_1. */
+	unsigned char   id_machine;     /* machine type */
+	unsigned char   id_ether[6];    /* ethernet address */
+	long            id_date;        /* date of manufacture */
+	unsigned        id_serial:24;   /* serial number */
+	unsigned char   id_xsum;        /* xor checksum */
+	unsigned char   id_undef[16];   /* undefined */
+};
+
+#define IDFORM_1	1	/* Format number for first ID proms */
+
+/* end of /usr/include/mon/idprom.h */
 
 
 extern	void 	Mach_MonPutChar _ARGS_((int ch));

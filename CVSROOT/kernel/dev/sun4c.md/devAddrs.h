@@ -18,29 +18,22 @@
 #ifndef _DEVADDRS
 #define _DEVADDRS
 
-#define	DEV_KBD_ADDR			0xffd00004
-#define	DEV_MOUSE_ADDR			0xffd00000
-#define	DEV_SERIALA_ADDR		0xffd02004
-#define	DEV_SERIALB_ADDR		0xffd02000
-#define	DEV_TIMER_ADDR			0xffd04000
-#define	DEV_COUNTER_ADDR		0xffd06000
-#define	DEV_INTERRUPT_REG_ADDR		0xffd0a000
-#define	DEV_FRAME_BUF_ADDR		0xffd80000
-#define	DEV_DMA_ADDR			0xffd14000
-/*
- * Interrupt vector assignments:
- */
-#define DEV_UART_VECTOR			30
+#ifdef _ASM				/* force error if these are used */
 
+#define	DEV_MOUSE_ADDR			%%
+#define	DEV_KBD_ADDR			%%
+#define	DEV_SERIALA_ADDR		%%
+#define	DEV_SERIALB_ADDR		%%
+#define	DEV_TIMER_ADDR			%%
+#define	DEV_COUNTER_ADDR		%%
+#define	DEV_INTERRUPT_REG_ADDR		%%
+#define	DEV_FRAME_BUF_ADDR		%%
+#define DEV_UART_VECTOR			%%
 
-/*
- * Physical addresses for unmapped devices.
- */
-#define	DEV_SCSI_ADDR			0xf8800000
-#ifdef NOTDEF
-/* This seems already to be mapped at a virtual address. */
-#define	DEV_DMA_ADDR			0xf8400000
-#endif NOTDEF
+#else /* _ASM */
 
+/* everything is grabbed from the PROM now! */
+
+#endif /* _ASM */
 
 #endif /* _DEVADDRS */

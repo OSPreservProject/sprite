@@ -34,13 +34,30 @@
  * invalid window mask.  We shift the invalid window bit left by 1,
  * but modulo the number of implemented windows.
  */
+
 #define	MACH_ADVANCE_WIM(REG1, REG2)			\
 	mov	%wim, REG1;				\
-	srl	REG1, 0x1, REG2;			\
-	sll	REG1, (MACH_NUM_WINDOWS - 1), REG1;	\
+	sethi	%hi(_machWimShift), REG2;		\
+	ld	[REG2 + %lo(_machWimShift)], REG2;	\
+	sll	REG1, REG2, REG2;			\
+	srl	REG1, 0x1, REG1;			\
 	or	REG1, REG2, REG1;			\
-	set	MACH_VALID_WIM_BITS, REG2;		\
-	and	REG1, REG2, REG1;			\
+	mov	REG1, %wim;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Move the invalid window backwards one.  This is done by changing the
+ * invalid window mask.  We shift the invalid window bit right by 1,
+ * but modulo the number of implemented windows.
+ */
+
+#define	MACH_RETREAT_WIM(REG1, REG2)			\
+	mov	%wim, REG1;				\
+	sethi	%hi(_machWimShift), REG2;		\
+	ld	[REG2 + %lo(_machWimShift)], REG2;	\
+	srl	REG1, REG2, REG2;			\
+	sll	REG1, 0x1, REG1;			\
+	or	REG1, REG2, REG1;			\
 	mov	REG1, %wim;				\
 	MACH_WAIT_FOR_STATE_REGISTER()
 
@@ -49,27 +66,9 @@
  */
 #define	MACH_SET_WIM_TO_CWP()					\
 	mov	%psr, %VOL_TEMP1;				\
-	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
 	set	0x1, %VOL_TEMP2;				\
 	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
 	mov	%VOL_TEMP1, %wim;				\
-	MACH_WAIT_FOR_STATE_REGISTER()
-
-/*
- * Move the invalid window backwards one.  This is done by changing the
- * invalid window mask.  We shift the invalid window bit right by 1,
- * but modulo the number of implemented windows.
- */
-#define	MACH_RETREAT_WIM(REG1, REG2, happyWindow)	\
-	mov	%wim, REG1;				\
-	sll	REG1, 0x1, REG1;			\
-	set	MACH_VALID_WIM_BITS, REG2;		\
-	andcc	REG2, REG1, REG1;			\
-	bne	happyWindow;				\
-	nop;						\
-	mov	0x1, REG1;				\
-happyWindow:						\
-	mov	REG1, %wim;				\
 	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
@@ -79,7 +78,6 @@ happyWindow:						\
  */
 #define	MACH_INVALID_WINDOW_TEST()				\
 	mov	%psr, %VOL_TEMP1;				\
-	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
 	set	0x1, %VOL_TEMP2;				\
 	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
 	mov	%wim, %VOL_TEMP2;				\
@@ -95,18 +93,16 @@ happyWindow:						\
  * If we are in an underflow situation, then the condition codes should
  * indicate a not zero ("bne" instruction will branch).
  */
-#define	MACH_UNDERFLOW_TEST(moduloOkay)				\
+
+#define	MACH_UNDERFLOW_TEST()					\
 	mov	%psr, %VOL_TEMP1;				\
-	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
 	set	0x1, %VOL_TEMP2;				\
 	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
+	sethi	%hi(_machWimShift), %VOL_TEMP2;			\
+	ld	[%VOL_TEMP2 + %lo(_machWimShift)], %VOL_TEMP2;	\
+	srl	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2;		\
 	sll	%VOL_TEMP1, 0x1, %VOL_TEMP1;			\
-	set	MACH_VALID_WIM_BITS, %VOL_TEMP2;		\
-	andcc	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
-	bne	moduloOkay;					\
-	nop;							\
-	mov	0x1, %VOL_TEMP1;				\
-moduloOkay:							\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
 	mov	%wim, %VOL_TEMP2;				\
 	andcc	%VOL_TEMP1, %VOL_TEMP2, %g0
 
@@ -436,8 +432,8 @@ TestAgainLabel:						\
 	or	ansReg, 0x4, ansReg;			\
 LastOKLabel:						\
 	tst	ansReg
-
-
+	
+	
 
 
 /*

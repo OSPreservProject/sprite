@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devAddrs.h"
 #include "scsiC90.h"
 #include "mach.h"
+#include "machMon.h"
 #include "dev.h"
 #include "devInt.h"
 #include "scsiHBA.h"
@@ -38,20 +39,18 @@ extern Boolean DevEntryAvailProc();
  * Forward declarations.  
  */
 
-static Boolean          ProbeOnBoard _ARGS_ ((int address));
-static Boolean          ProbeSBus _ARGS_ ((int address));
+static Boolean          ProbeSCSI _ARGS_ ((int address));
 
-/*
- * This already seems to be mapped at this virtual address.  Should I remap it?
- */
-volatile DMARegs	*dmaRegsPtr = (volatile DMARegs *) 0xffd14000;
+volatile DMARegs	*dmaRegsPtr = (volatile DMARegs *) NIL;
 int	dmaControllerActive = 0;
+
+static int scsiInitiatorID = 7;
 
 
 /*
  *----------------------------------------------------------------------
  *
- * ProbeOnBoard --
+ * ProbeSCSI --
  *
  *	Test for the existence for the interface.
  *
@@ -64,7 +63,7 @@ int	dmaControllerActive = 0;
  *----------------------------------------------------------------------
  */
 static Boolean
-ProbeOnBoard(address)
+ProbeSCSI(address)
     int address;			/* Alledged controller address */
 {
     ReturnStatus	status;
@@ -78,40 +77,15 @@ ProbeOnBoard(address)
 	    (Address) &(regsPtr->scsi_ctrl.read.status), (Address) &x);
     if (status != SUCCESS) {
 	if (devSCSIC90Debug > 3) {
-	    printf("Onboard SCSIC90 not found at address 0x%x\n",address);
+	    printf("SCSIC90 not found at address 0x%x\n",address);
 	}
         return (FALSE);
     }
     if (devSCSIC90Debug > 3) {
-	printf("Onboard SCSIC90 found\n");
+	printf("SCSIC90 found\n");
     }
     return(TRUE);
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * ProbeSBus --
- *
- *	Probe memory for a host adaptor on the sbus.
- *
- * Results:
- *	TRUE if the host adaptor was found, but right now we only handle
- *	the on-board scsi controller.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static Boolean
-ProbeSBus(address)
-    int address;			/* Alledged controller address */
-{
-    /* We don't do this yet. */
-    return (FALSE);
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -145,7 +119,7 @@ DevReset(ctrlPtr)
     Dev_ScsiResetDMA();
     MACH_DELAY(200);
 
-    regsPtr->scsi_ctrl.write.config1 |= C1_REPORT | 0x7;
+    regsPtr->scsi_ctrl.write.config1 |= C1_REPORT | scsiInitiatorID;
     MACH_DELAY(200);
     regsPtr->scsi_ctrl.write.command = CR_RESET_BUS;
     MACH_DELAY(800);
@@ -200,6 +174,24 @@ Dev_ScsiResetDMA()
 	printf("Wanted to reset dma controller, but it was active: %d\n",
 		dmaControllerActive);
 	return;
+    }
+    if (dmaRegsPtr == (DMARegs *) NIL) { 
+	if (Mach_MonSearchProm("dma", "address", (char *)&dmaRegsPtr,
+		sizeof dmaRegsPtr) != sizeof dmaRegsPtr) {
+            MachDevReg reg;
+	    Address phys;
+
+	    Mach_MonSearchProm("dma", "reg", (char *)&reg, sizeof reg);
+	    if (romVectorPtr->v_romvec_version < 2
+		    && reg.addr >= (Address)SBUS_BASE
+		    && reg.bustype == 1) {          /* old style */
+		phys = reg.addr;
+	    } else {                                /* new style */
+		phys = reg.addr + SBUS_BASE +
+		       reg.bustype * SBUS_SIZE;
+	    }
+	    dmaRegsPtr = (DMARegs *) VmMach_MapInDevice(phys, 1);
+	}
     }
 
     /* Reset dma controller. */
@@ -328,12 +320,15 @@ DevSCSIC90Init(ctrlLocPtr)
      * See if the controller is there. 
      */
     ctrlNum = ctrlLocPtr->controllerID;
-    found =  (ctrlLocPtr->space == DEV_SBUS_OB) ?
-	    ProbeOnBoard(ctrlLocPtr->address) :
-	    ProbeSBus(ctrlLocPtr->address);
+    found =  ProbeSCSI(ctrlLocPtr->address);
     if (!found) {
 	return DEV_NO_CONTROLLER;
     }
+    if (Mach_MonSearchProm("options", "scsi-initiator-id",
+	(char *)&scsiInitiatorID, sizeof(int)) != sizeof(int)) {
+	scsiInitiatorID = 7;
+    }
+
 
     /*
      * It's there. Allocate and fill in the Controller structure.

@@ -116,16 +116,14 @@ ReturnZero:
  *
  *---------------------------------------------------------------------
  */
+#ifndef sun4c
 .globl	_Mach_GetMachineType
 _Mach_GetMachineType:
 	set	VMMACH_MACH_TYPE_ADDR, %o0
-#ifdef sun4c
-	ldub	[%o0], %o0
-#else
 	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
-#endif
 	retl
 	nop
+#endif /* sun4c */
 
 
 /*
@@ -146,70 +144,48 @@ _Mach_GetMachineType:
  *
  *---------------------------------------------------------------------
  */
+#ifndef sun4c
 .globl	_Mach_GetEtherAddress
 _Mach_GetEtherAddress:
 	set	VMMACH_ETHER_ADDR, %OUT_TEMP1
 	/* first byte */
-#ifdef sun4c
-	ldub	[%OUT_TEMP1], %OUT_TEMP2
-#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
-#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* second byte */
-#ifdef sun4c
-	ldub	[%OUT_TEMP1], %OUT_TEMP2
-#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
-#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* third byte */
-#ifdef sun4c
-	ldub	[%OUT_TEMP1], %OUT_TEMP2
-#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
-#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* fourth byte */
-#ifdef sun4c
-	ldub	[%OUT_TEMP1], %OUT_TEMP2
-#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
-#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* fifth byte */
-#ifdef sun4c
-	ldub	[%OUT_TEMP1], %OUT_TEMP2
-#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
-#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* sixth byte */
-#ifdef sun4c
-	ldub	[%OUT_TEMP1], %OUT_TEMP2
-#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
-#endif
 	stb	%OUT_TEMP2, [%o0]
 	sub	%o0, 5, %o0		/* restore pointer parameter */
 
 	retl
 	nop
+#endif /* sun4c */
 
 /*
  *---------------------------------------------------------------------
@@ -295,8 +271,9 @@ _Mach_ContextSwitch:
 	 * in the mach state struct of the saved context switch state.  It
 	 * just so happens it's stored on the stack...
 	 */
-	set	_machStatePtrOffset, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* get offset */
+	sethi	%hi(_machStatePtrOffset), %VOL_TEMP1
+							/* get offset */
+	ld	[%VOL_TEMP1 + %lo(_machStatePtrOffset)], %VOL_TEMP1
 		/* FPU is now active. */
 	add	%i0, %VOL_TEMP1 , %VOL_TEMP1		/* add to base */
 	ld	[%VOL_TEMP1], %SAFE_TEMP		/* get machStatePtr */
@@ -312,22 +289,22 @@ _Mach_ContextSwitch:
 	/*
 	 *  Note: Part of following set instruction executed in "bz" delay
 	 *  slot.  This trashes %VOL_TEMP1 when the branch is taken.
-	 *  
+	 *
 	 *  We are saving the user's FPU state into the trap regs during
 	 *  the context switch because we don't want the latency of saving
 	 *  all the floating point state on every trap.  This works because
-	 *  the kernel doesn't user floating point instructions.  
+	 *  the kernel doesn't user floating point instructions.
 	 *
 	 *  Tricky code - We save the fromProcPtr in _machFPUSaveProcPtr and
 	 *  execute a "st %fsr". The "st fsr" will pause until all FPU ops
 	 *  are compete.  If any FPU execptions are pending we will get a
-	 *  FP_EXCEPTION trap on the instruction marked by the label 
+	 *  FP_EXCEPTION trap on the instruction marked by the label
 	 *  _machFPUSyncInst. The routine MachHandleTrap in
 	 *  machCode.c will catch this fault and note it in the processes
-	 *  PCB.  
+	 *  PCB.
 	 */
-	set	_machFPUSaveProcPtr, %VOL_TEMP1
-	st	%i0, [%VOL_TEMP1];
+	sethi	%hi(_machFPUSaveProcPtr), %VOL_TEMP1
+	st	%i0, [%VOL_TEMP1 + %lo(_machFPUSaveProcPtr)];
 	/*
 	 * Set %SAFE_TEMP to be trapRegsPtr.
 	 */
@@ -335,7 +312,7 @@ _Mach_ContextSwitch:
 .global _machFPUSyncInst
 _machFPUSyncInst: st	%fsr, [%SAFE_TEMP + MACH_FPU_FSR_OFFSET]
         /*
-	 * The following symbol is include to make the following code 
+	 * The following symbol is include to make the following code
 	 * be attributed to the routine Mach_ContextSwitch2 and not
 	 * _machFPUSyncInst.
 	 */
@@ -371,13 +348,16 @@ noFPUactive:
 	 * in a global, since they have all been saved already and are free
 	 * for our use and we need the value across windows.
 	 */
-	set	(MACH_NUM_WINDOWS - 1), %g1
+
+	sethi	%hi(_machNumWindows), %g2
+	ld	[%g2 + %lo(_machNumWindows)], %g2
+	sub	%g2, 1, %g1
 ContextSaveSomeMore:
 	save
 	subcc	%g1, 1, %g1
 	bne	ContextSaveSomeMore
 	nop
-	set	(MACH_NUM_WINDOWS - 1), %g1
+	sub	%g2, 1, %g1
 ContextRestoreSomeMore:
 	restore
 	subcc	%g1, 1, %g1
@@ -404,16 +384,17 @@ ContextRestoreSomeMore:
 	 * the pointer to the new processes' state structure goes into
 	 * %SAFE_TEMP.
 	 */
-	set	_machStatePtrOffset, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1	/* get offset */
+	sethi	%hi(_machStatePtrOffset), %VOL_TEMP1
+						/* get offset */
+	ld	[%VOL_TEMP1 + %lo(_machStatePtrOffset)], %VOL_TEMP1
 	add	%i1, %VOL_TEMP1, %VOL_TEMP1	/* &(procPtr->machStatePtr) */
 	ld	[%VOL_TEMP1], %SAFE_TEMP	/* procPtr->machStatePtr */
 	add	%SAFE_TEMP, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %sp
 
 	/* Update machCurStatePtr */
-	set	_machCurStatePtr, %VOL_TEMP1
-	st	%SAFE_TEMP, [%VOL_TEMP1]
+	sethi	%hi(_machCurStatePtr), %VOL_TEMP1
+	st	%SAFE_TEMP, [%VOL_TEMP1 + %lo(_machCurStatePtr)]
 	/*
 	 * If FPU is active for this process, restore the FPU state.
 	 */
@@ -427,18 +408,18 @@ ContextRestoreSomeMore:
 	ld  [%SAFE_TEMP + MACH_TRAP_REGS_OFFSET], %SAFE_TEMP
 	ld  [%SAFE_TEMP + MACH_FPU_FSR_OFFSET], %fsr
 	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*0],%f0
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*2],%f2 
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*4],%f4 
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*6],%f6 
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*8],%f8 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*2],%f2
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*4],%f4
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*6],%f6
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*8],%f8
 	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*10],%f10
 	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*12],%f12
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*14],%f14 
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*16],%f16 
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*18],%f18 
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*20],%f20 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*14],%f14
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*16],%f16
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*18],%f18
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*20],%f20
 	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*22],%f22
-	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*24],%f24 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*24],%f24
 	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*26],%f26
 	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*28],%f28
 	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*30],%f30
@@ -499,8 +480,8 @@ _MachRunUserProc:
 	 * from there.
 	 */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-	set	_machCurStatePtr, %VOL_TEMP2
-	st	%VOL_TEMP1, [%VOL_TEMP2]
+	sethi	%hi(_machCurStatePtr), %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2 + %lo(_machCurStatePtr)]
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP2	/* machStatePtr->trapRegs */
 	mov	%VOL_TEMP2, %sp			/* set sp to trapRegs */
@@ -573,7 +554,7 @@ UserStackOkay:
 	 * won't be restored correctly.
 	 */
 	MACH_SET_WIM_TO_CWP();
-	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, SetWimForChild);
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2);
 
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
@@ -632,19 +613,21 @@ _MachHandleSignal:
 	MACH_SAVE_WINDOW_TO_STACK()
 
 	/* Get new user stack pointer value into %SAFE_TEMP */
-	set	_machSignalStackSizeOnStack, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1	/* size MachSignalStack */
+	sethi	%hi(_machSignalStackSizeOnStack), %VOL_TEMP1
+						    /* size MachSignalStack */
+	ld	[%VOL_TEMP1 + %lo(_machSignalStackSizeOnStack)], %VOL_TEMP1
 	sub	%fp, %VOL_TEMP1, %SAFE_TEMP		/* new sp in safetemp */
 
 	/* Copy out sig stack from state structure to user stack */
-	set	_machSigStackOffsetOnStack, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* offset Sig_Stack */
+	sethi	%hi(_machSigStackOffsetOnStack), %VOL_TEMP1
+							/* offset Sig_Stack */
+	ld	[%VOL_TEMP1 + %lo(_machSigStackOffsetOnStack)], %VOL_TEMP1
 	add	%SAFE_TEMP, %VOL_TEMP1, %o2	/* dest addr of Sig_Stack */
-	set	_machSigStackSize, %o0
-	ld	[%o0], %o0				/* size of Sig_Stack */
+	sethi	%hi(_machSigStackSize), %o0
+	ld	[%o0 + %lo(_machSigStackSize)], %o0	/* size of Sig_Stack */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-	set	_machSigStackOffsetInMach, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
+	sethi	%hi(_machSigStackOffsetInMach), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSigStackOffsetInMach)], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig stack */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyOut, 3				/* copy Sig_Stack */
@@ -670,13 +653,16 @@ CopiedOutSigStack:
 	/* Copy out sig context from state structure to user stack */
 	/* put addr of mach state structure in %VOL_TEMP1 again */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-	set	_machSigContextOffsetOnStack, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+	sethi	%hi(_machSigContextOffsetOnStack), %VOL_TEMP2
+							/* offset Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetOnStack)], %VOL_TEMP2
 	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* dest addr of Sig_Context */
-	set	_machSigContextSize, %o0
-	ld	[%o0], %o0			/* size of Sig_Context */
-	set	_machSigContextOffsetInMach, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+	sethi	%hi(_machSigContextSize), %o0
+						/* size of Sig_Context */
+	ld	[%o0 + %lo(_machSigContextSize)], %o0
+	sethi	%hi(_machSigContextOffsetInMach), %VOL_TEMP2
+						/* offset Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetInMach)], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig context */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyOut, 3				/* copy Sig_Context */
@@ -688,8 +674,8 @@ CopiedOutSigStack:
 	/* Copy out user trap state from state structure to user stack */
 	/* put addr of mach state structure in %VOL_TEMP1 again */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-	set	_machSigUserStateOffsetOnStack, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
+	sethi	%hi(_machSigUserStateOffsetOnStack), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSigUserStateOffsetOnStack)], %VOL_TEMP2
 	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* dest addr of user state */
 	set	MACH_SAVED_STATE_FRAME, %o0	/* size of copy */
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
@@ -706,8 +692,9 @@ CopiedOutSigStack:
 	 * and put it in ret addr of next window so when we return from handler
 	 * in next window, we'll return to the trap instruction.
 	 */
-	set	_machSigTrapInstOffsetOnStack, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to trap instr */
+	sethi	%hi(_machSigTrapInstOffsetOnStack), %VOL_TEMP2
+						/* offset to trap instr */
+	ld	[%VOL_TEMP2 + %lo(_machSigTrapInstOffsetOnStack)], %VOL_TEMP2
 	add	%SAFE_TEMP, %VOL_TEMP2, %RETURN_ADDR_REG	/* addr */
 	/* ret from proc instr jumps to (ret addr + 8), so subtract 8 here */
 	sub	%RETURN_ADDR_REG, 0x8, %RETURN_ADDR_REG
@@ -722,11 +709,12 @@ CopiedOutSigStack:
 	 * so that there's no overwriting our confusion with the registers
 	 * in the next window.
 	 */
-	set	_machSigPCOffsetOnStack, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* offset to pc field */
+	sethi	%hi(_machSigPCOffsetOnStack), %VOL_TEMP1
+							/* offset to pc field */
+	ld	[%VOL_TEMP1 + %lo(_machSigPCOffsetOnStack)], %VOL_TEMP1
 	add	%SAFE_TEMP, %VOL_TEMP1, %VOL_TEMP1	/* addr of sig pc */
 	ld	[%VOL_TEMP1], %g3
-	
+
 	save
 	mov	%g3, %CUR_PC_REG		/* trap pc addr into rett pc */
 	add	%g3, 0x4, %NEXT_PC_REG
@@ -747,26 +735,32 @@ CopiedOutSigStack:
 	 *	Handler(sigNum, sigCode, contextPtr, sigAddr)
 	 */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-	set	_machSigStackOffsetInMach, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to sig stack */
+	sethi	%hi(_machSigStackOffsetInMach), %VOL_TEMP2
+						/* offset to sig stack */
+	ld	[%VOL_TEMP2 + %lo(_machSigStackOffsetInMach)], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2	/* addr of sig stack */
-	set	_machSigNumOffsetInSig, %o0
-	ld	[%o0], %o0			/* offset to sigNum */
+	sethi	%hi(_machSigNumOffsetInSig), %o0
+						/* offset to sigNum */
+	ld	[%o0 + %lo(_machSigNumOffsetInSig)], %o0
 	add	%o0, %VOL_TEMP2, %o0		/* addr of sig num */
 	ld	[%o0], %o0			/* sig num == arg 1 */
-	set	_machSigCodeOffsetInSig, %o1
-	ld	[%o1], %o1			/* offset to sigCode */
+	sethi	%hi(_machSigCodeOffsetInSig), %o1
+						/* offset to sigCode */
+	ld	[%o1 + %lo(_machSigCodeOffsetInSig)], %o1
 	add	%o1, %VOL_TEMP2, %o1		/* addr of sig code */
 	ld	[%o1], %o1			/* sig code == arg2 */
 	/* Stack address of Sig_Context is third arg */
-	set	_machSigContextOffsetOnStack, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+	sethi	%hi(_machSigContextOffsetOnStack), %VOL_TEMP2
+							/* offset Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetOnStack)], %VOL_TEMP2
 	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* stack addr context = arg3  */
-	set	_machSigStackOffsetInMach, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to sig stack */
+	sethi	%hi(_machSigStackOffsetInMach), %VOL_TEMP2
+						/* offset to sig stack */
+	ld	[%VOL_TEMP2 + %lo(_machSigStackOffsetInMach)], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2	/* addr of sig stack */
-	set	_machSigAddrOffsetInSig, %o3
-	ld	[%o3], %o3			/* offset to sigAddr */
+	sethi	%hi(_machSigAddrOffsetInSig), %o3
+						/* offset to sigAddr */
+	ld	[%o3 + %lo(_machSigAddrOffsetInSig)], %o3
 	add	%o3, %VOL_TEMP2, %o3		/* addr of sig addr */
 	ld	[%o3], %o3			/* sig addr == arg 4 */
 
@@ -842,8 +836,9 @@ _MachReturnFromSignal:
 	 * was user sp we set up before calling signal handler, but I
 	 * check this for now.
 	 */
-	set	_machSignalStackSizeOnStack, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1	/* size MachSignalStack */
+	sethi	%hi(_machSignalStackSizeOnStack), %VOL_TEMP1
+						/* size MachSignalStack */
+	ld	[%VOL_TEMP1 + %lo(_machSignalStackSizeOnStack)], %VOL_TEMP1
 	sub	%fp, %VOL_TEMP1, %SAFE_TEMP	/* sig user sp in safetemp */
 	cmp	%SAFE_TEMP, %sp
 	bne	CopyInForSigFailed
@@ -852,14 +847,16 @@ _MachReturnFromSignal:
 	mov	%g3, %sp			/* kernel sp now here too */
 
 	/* Copy in sig stack from user stack to mach state structure */
-	set	_machSigStackOffsetOnStack, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1	/* offset of Sig_Stack */
+	sethi	%hi(_machSigStackOffsetOnStack), %VOL_TEMP1
+						/* offset of Sig_Stack */
+	ld	[%VOL_TEMP1 + %lo(_machSigStackOffsetOnStack)], %VOL_TEMP1
 	add	%SAFE_TEMP, %VOL_TEMP1, %o1	/* src addr of Sig_Stack */
-	set	_machSigStackSize, %o0
-	ld	[%o0], %o0			/* size of Sig_Stack */
+	sethi	%hi(_machSigStackSize), %o0
+						/* size of Sig_Stack */
+	ld	[%o0 + %lo(_machSigStackSize)], %o0
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-	set	_machSigStackOffsetInMach, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
+	sethi	%hi(_machSigStackOffsetInMach), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSigStackOffsetInMach)], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig stack */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyIn, 3			/* copy Sig_Stack */
@@ -868,7 +865,7 @@ _MachReturnFromSignal:
 	be	CopiedInSigStack
 	nop
 CopyInForSigFailed:
- 	/* Copy failed from user space - kill the process */ 
+ 	/* Copy failed from user space - kill the process */
 	set	_MachReturnFromSignalDeathString, %o0
 	call	_printf, 1
 	nop
@@ -882,13 +879,16 @@ CopiedInSigStack:
 	/* Copy in sig context from user stack to state structure */
 	/* put addr of mach state structure in %VOL_TEMP1 again */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-	set	_machSigContextOffsetOnStack, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+	sethi	%hi(_machSigContextOffsetOnStack), %VOL_TEMP2
+						/* offset Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetOnStack)], %VOL_TEMP2
 	add	%SAFE_TEMP, %VOL_TEMP2, %o1	/* src addr of Sig_Context */
-	set	_machSigContextSize, %o0
-	ld	[%o0], %o0			/* size of Sig_Context */
-	set	_machSigContextOffsetInMach, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset of Sig_Context */
+	sethi	%hi(_machSigContextSize), %o0
+						/* size of Sig_Context */
+	ld	[%o0 + %lo(_machSigContextSize)], %o0
+	sethi	%hi(_machSigContextOffsetInMach), %VOL_TEMP2
+						/* offset of Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetInMach)], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig context */
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyIn, 3			/* copy Sig_Context */
@@ -906,8 +906,8 @@ CopiedInSigStack:
 	nop
 
 	/* Copy in user trap state from user stack to kernel trap regs */
-	set	_machSigUserStateOffsetOnStack, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2
+	sethi	%hi(_machSigUserStateOffsetOnStack), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSigUserStateOffsetOnStack)], %VOL_TEMP2
 	add	%SAFE_TEMP, %VOL_TEMP2, %o1		/* src addr of copy */
 	set	MACH_SAVED_STATE_FRAME, %o0		/* size of copy */
 	/* destination of copy is trapRegs, but our sp points to that already */
@@ -940,48 +940,6 @@ CopiedInSigStack:
 	 */
 	call	_MachReturnFromTrap
 	nop
-
-
-#ifdef NOTDEF
-/*
- *---------------------------------------------------------------------
- *
- * MachFlushWindowsToStack -
- *
- *	void MachFlushWindowsToStack()
- *
- *	Flush all the register windows to the stack.
- * 	Interrupts must be off when we're called.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------
- */
-.globl	_MachFlushWindowsToStack
-_MachFlushWindowsToStack:
-	mov	%g3, %o0
-	set	(MACH_NUM_WINDOWS - 1), %g3
-SaveTheWindow:
-	save
-	subcc	%g3, 1, %g3
-	bne	SaveTheWindow
-	nop
-	set	(MACH_NUM_WINDOWS - 1), %g3
-RestoreTheWindow:
-	restore
-	subcc	%g3, 1, %g3
-	bne	RestoreTheWindow
-	nop
-
-	mov	%o0, %g3
-
-	retl
-	nop
-#endif NOTDEF
 
 
 /*
@@ -1259,18 +1217,18 @@ _MachFPULoadState:
 	nop
 	ld	[%o0 + MACH_FPU_FSR_OFFSET], %fsr
 	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*0],%f0
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*2],%f2 
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*4],%f4 
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*6],%f6 
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*8],%f8 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*2],%f2
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*4],%f4
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*6],%f6
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*8],%f8
 	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*10],%f10
 	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*12],%f12
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*14],%f14 
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*16],%f16 
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*18],%f18 
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*20],%f20 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*14],%f14
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*16],%f16
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*18],%f18
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*20],%f20
 	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*22],%f22
-	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*24],%f24 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*24],%f24
 	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*26],%f26
 	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*28],%f28
 	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*30],%f30
@@ -1304,7 +1262,7 @@ _MachFPUDumpState:
 	or	%o2,%o1,%o2
 	mov	%o2,%psr
 	/*
-	 * Next three instructions should not be FPU instructions. 
+	 * Next three instructions should not be FPU instructions.
 	 */
 	set     MACH_FSR_QUEUE_NOT_EMPTY, %o3
 	add	%o0, MACH_FPU_QUEUE_OFFSET, %o4
@@ -1322,10 +1280,10 @@ _MachFPUDumpState:
 	 * read -- traps on subsequent reads of fsr would be an error.
 	 */
 .global _machFPUDumpSyncInst
-_machFPUDumpSyncInst: 
+_machFPUDumpSyncInst:
 	st	%fsr, [%o0 + MACH_FPU_FSR_OFFSET]
         /*
-	 * The following symbol is include to make the following code 
+	 * The following symbol is include to make the following code
 	 * be attributed to the routine MachFPUDumpState2 and not
 	 * _machFPUDumpSyncInst.
 	 */

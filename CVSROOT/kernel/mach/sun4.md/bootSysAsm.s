@@ -38,50 +38,52 @@ _spriteStart:
 	nop
 .skip	(MACH_KERN_STACK_SIZE-0x4000)
 realStart:
+#ifdef sun4c
+	mov	%o0, %g7			/* save romvec pointer */
+#endif
 	mov	%psr, %g1
 	or	%g1, MACH_DISABLE_INTR, %g1	/* lock out interrupts */
 	andn	%g1, MACH_CWP_BITS, %g1		/* set cwp to 0 */
-#ifdef FP_ENABLED
 	set	MACH_ENABLE_FPP, %g2
-	or	%g1, %g2, %g1			/* enable fp unit */
-#endif FP_ENABLED
+	andn	%g1, %g2, %g1			/* disable fp unit */
 	mov	%g1, %psr
 	mov	0x2, %wim	/* set wim to window right behind us */
 
 	/*
 	 * The kernel has been loaded into the wrong location.
 	 * We copy it to the right location by copying up 8 Meg worth of pmegs.
-	 * This is done in all contexts.  8 Meg should be enough for the whole
+	 * NOT done in all contexts!  8 Meg should be enough for the whole
 	 * kernel.  We copy to the correct address, MACH_KERN_START which is
 	 * before MACH_CODE_START, which is where we told the linker that the
-	 * kernel would be loaded.  In this code, %g1 is segment, %g2 is
-	 * context, %g3 is pmeg, and %g4 is offset in control space to context
-	 * register.  %g5 contains seg size.
+	 * kernel would be loaded.  In this code, %g1 is the destination
+	 * segment, %g2 is the last source segment, %g3 is the source segment,
+	 * and %g5 contains seg size.  %g6 is used to hold the pmeg pointer.
 	 */
-	set	VMMACH_CONTEXT_OFF, %g4		/* set %g4 to context offset */
-	clr	%g2				/* start with context 0 */
 	set	VMMACH_SEG_SIZE, %g5		/* for additions */
-contextLoop:
-#ifndef sun4c
-	stba	%g2, [%g4] VMMACH_CONTROL_SPACE
+#ifdef sun4c
+	set	0x400000, %g2			/* last source addr */
+#else
+	set	0x800000, %g2			/* last source addr */
 #endif
-	clr	%g3				/* start with 0th pmeg */
+	clr	%g3				/* start with 0th segment */
 	set	MACH_KERN_START, %g1		/* pick starting segment */
 loopStart:
+#ifdef sun4c
+	lduba	[%g3] VMMACH_SEG_MAP_SPACE, %g6
+#else
+	lduha	[%g3] VMMACH_SEG_MAP_SPACE, %g6
+#endif
 					/* set segment to point to new pmeg */
-	stha	%g3, [%g1] VMMACH_SEG_MAP_SPACE
-	add	%g3, 1, %g3			/* increment which pmeg */
-	add	%g1, %g5, %g1			/* increment which segment */
-	cmp	%g3, (0x800000 / VMMACH_SEG_SIZE)	/* last pmeg? */
+#ifdef sun4c
+	stba	%g6, [%g1] VMMACH_SEG_MAP_SPACE
+#else
+	stha	%g6, [%g1] VMMACH_SEG_MAP_SPACE
+#endif
+	add	%g3, %g5, %g3			/* increment source segment */
+	add	%g1, %g5, %g1			/* increment dest segment */
+	cmp	%g3, %g2			/* last segment? */
 	bne	loopStart			/* if not, continue */
 	nop
-
-	add	%g2, 1, %g2			/* increment context */
-	cmp	%g2, VMMACH_NUM_CONTEXTS	/* last context? */
-	bne	contextLoop			/* if not, continue */
-	nop
-						/* reset context register */
-	stba	%g0, [%g4] VMMACH_CONTROL_SPACE
 
 /*
  * Force a non-PC-relative jump to the real start of the kernel.
@@ -109,6 +111,20 @@ zeroing:
 	bne	zeroing
 	nop
 doneZeroing:
+	/*
+	 * Find out how many register windows we have.
+	 */
+	mov	%g0, %wim
+	save
+	mov	%psr, %g1
+	restore
+	mov	0x2, %wim	/* set wim to window right behind us */
+	and	%g1, MACH_CWP_BITS, %g1
+	sethi	%hi(_machWimShift), %g2
+	st	%g1, [%g2 + %lo(_machWimShift)]
+	add	%g1, 1, %g1
+	sethi	%hi(_machNumWindows), %g2
+	st	%g1, [%g2 + %lo(_machNumWindows)]
 	/*
 	 * Now set the stack pointer to my own stack for the first kernel
 	 * process.  The stack grows towards low memory.  I start it at
@@ -195,8 +211,8 @@ copyingTable:
 	std	%g4, [%g2 + 8]
 
 	mov	%g6, %tbr			/* switch in my trap address */
-	set	_machTBRAddr, %g2
-	st	%g6, [%g2]			/* save tbr addr in C var */
+	sethi	%hi(_machTBRAddr), %g2
+	st	%g6, [%g2 + %lo(_machTBRAddr)]	/* save tbr addr in C var */
 	MACH_WAIT_FOR_STATE_REGISTER()			/* let it settle for
 							 * the necessary
 							 * amount of time.  Note
@@ -206,41 +222,14 @@ copyingTable:
 							 * to the old tbr if
 							 * interrupts are
 							 * disabled.  */
+#ifdef sun4c
+	sethi	%hi(_machRomVectorPtr), %g6
+	st	%g7, [%g6 + %lo(_machRomVectorPtr)] /* save romvec pointer */
+#endif
 	call	_main
 	nop
 
 	
-.align 8
-.global	_PrintArg
-/*
- * PrintArg:
- *
- * Move integer argument to print into %o0.  This will print
- * desired integer in hex.  This routine uses o0, o1, VOL_TEMP1, and VOL_TEMP2.
- * For the sun4c, it also uses o3.
- */
-_PrintArg:
-	.seg	"data1"
-argString:
-	.ascii	"PrintArg: %x\012\0"
-	.seg	"text"
-
-	mov	%o0, %o1
-	set	argString, %o0
-	mov	%o7, %VOL_TEMP1
-#ifdef sun4c
-	sethi   %hi(0xffe80078),%VOL_TEMP2
-	ld      [%VOL_TEMP2+%lo(0xffe80078)],%VOL_TEMP2
-#else
-	sethi   %hi(-0x17ef7c),%VOL_TEMP2
-	ld      [%VOL_TEMP2+%lo(-0x17ef7c)],%VOL_TEMP2
-#endif
-	call    %VOL_TEMP2, 2
-	nop
-	mov	%VOL_TEMP1, %o7
-	retl
-	nop
-
 .globl	_MachTrap
 /*
  * Reserve twice the amount of space we need for the trap table.

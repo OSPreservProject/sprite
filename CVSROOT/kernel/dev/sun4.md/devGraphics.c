@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "string.h"
 #include "bstring.h"
+#include "alloca.h"
 
 #define EEC_COLOR_TYPE_CG4      4       /* missing in mon/eeprom.h */
 #define EEC_COLOR_TYPE_CG6      6       /* missing in mon/eeprom.h */
@@ -43,7 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #ifdef sun3
 #define BW2_FB	((Address) 0x0fe20000)
 #elif sun4c
-#define BW2_FB	((Address) 0xffd80000)
+#define BW2_FB	((Address) NIL)
 #elif sun4
 #define BW2_FB	((Address) 0xffd40000)
 #else
@@ -59,11 +60,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define CG4_CM     ((Address) 0x0fe0e000)
 #define CG4_OV     ((Address) 0x0fe80000)
 #define CG4_EN     ((Address) 0x0fea0000)
-#elif sun4c
-#define CG4_FB    ((Address) 0xffd80000)
-#define CG4_CM    ((Address) 0xffd1c000)
-#define CG4_OV    ((Address) 0x0)           /* ??? */
-#define CG4_EN    ((Address) 0x0)           /* ??? */
 #else
 #define CG4_FB    ((Address) NIL)
 #define CG4_CM    ((Address) NIL)
@@ -73,23 +69,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * For CG6 frame buffer
  */
-#ifdef sun4c
-#define CG6_FB    ((Address) 0xffd80000)
-#define CG6_CM    ((Address) 0xffd1f000)
-#else
 #define CG6_FB    ((Address) NIL)
 #define CG6_CM    ((Address) NIL)
-#endif /* sun4c */
 /*
  * CG3 frame buffer.
  */
-#ifdef sun4c
-#define CG3_FB    ((Address) 0xffd80000)
-#define CG3_CM    ((Address) 0xffd1c000)
-#else
-#define CG3_FB    ((Address) 0xffd80000)
-#define CG3_CM    ((Address) 0xffd1c000)
-#endif /* sun4c */
+#define CG3_FB    ((Address) NIL)
+#define CG3_CM    ((Address) NIL)
 
 
 typedef	struct	FBDevice {
@@ -146,10 +132,10 @@ static union {
  * Addresses to know for the different frame buffers, overlay planes, etc.
  */
 typedef	struct FBAddr {
-    Address fb_buffer;		/* kernel virtual address */
-    Address fb_overlay;		/* offset? */
-    Address fb_enable;		/* offset? */
-    Address fb_cmap;		/* cmap */
+    Address	fb_buffer;		/* kernel virtual address */
+    Address	fb_overlay;		/* offset? */
+    Address	fb_enable;		/* offset? */
+    Address	fb_cmap;		/* cmap */
 } FBAddr;
 
 /*
@@ -160,17 +146,17 @@ typedef	struct FBAddr {
 FBAddr	fbaddrs[FBTYPE_LASTPLUSONE] = {
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* bw1 */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg1 */
-    {BW2_FB, (Address) NULL, (Address) NULL, (Address) NULL},	  /* bw2 */
+    {BW2_FB, (Address) NIL, (Address) NIL, (Address) NIL},	  /* bw2 */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg2 */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* gp2 */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg5 */
-    {CG3_FB, (Address) NULL, (Address) NULL, CG3_CM},		  /* cg3 */
+    {CG3_FB, (Address) NIL, (Address) NIL, CG3_CM},		  /* cg3 */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* ? */
     {CG4_FB, CG4_OV, CG4_EN, CG4_CM},				  /* cg4 */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
-    {CG6_FB, (Address) NULL, (Address) NULL, CG6_CM},		  /* cg6 */
+    {CG6_FB, (Address) NIL, (Address) NIL, CG6_CM},		  /* cg6 */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* rop */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* video */
     {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res5 */
@@ -258,9 +244,9 @@ FBType	fbarray[FBTYPE_LASTPLUSONE] = {
  * forward declarations for internal routines
  */
 #ifdef sun4c
-static int SearchProm _ARGS_((unsigned int node));
-#endif
+static int CheckFBNode _ARGS_((unsigned int node, char *name));
 static int GetFBType _ARGS_((void));
+#endif
 static ReturnStatus PutCmap _ARGS_((int whichFb, FBCMap *cmap));
 static ReturnStatus GetCmap _ARGS_((int whichFb, FBCMap *cmap));
 static ReturnStatus SVideo _ARGS_((int whichFb, int *statePtr));
@@ -295,14 +281,18 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
     int		*flagsPtr;	/* OUT: Device open flags. */
 {
     FBDevice		*devPtr;
+#ifdef sun4c
     extern	int	GetFBType();
+#endif
     FBType	*typePtr;
     int		machArch;
     int		machType;
     int		whichFb = -1;
+#ifndef sun4c
     struct	eeprom	*eeprom;
     struct	eed_conf	*eeconf;
     int		i;
+#endif
 
 
     devPtr = (FBDevice *) malloc(sizeof (FBDevice));
@@ -313,23 +303,14 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
 
     devPtr->type.fb_type = -1;
 
+#ifdef sun4c
+    whichFb = GetFBType();
+    if (whichFb == -1) {
+	whichFb = FBTYPE_SUN2BW;
+    }
+#else
     switch (machArch) {
     case SYS_SUN4:
-	if ((machType & SYS_SUN_ARCH_MASK) == SYS_SUN_4_C ) {
-#ifndef PROM_1_4
-	    whichFb = GetFBType();
-#else /* PROM_1_4 */
-	    /*
-	     * Boing can't handle getting this out of the prom.
-	     */
-	    whichFb = FBTYPE_SUN2BW;
-#endif /* PROM_1_4 */
-	    if (whichFb == -1) {
-		whichFb = FBTYPE_SUN2BW;
-	    }
-	    break;
-	}
-	/* Fall through for SYS_SUN4. */
     case SYS_SUN3:
 	eeprom = (struct eeprom *)EEPROM_BASE;
 	eeconf = &(eeprom->ee_diag.eed_conf[0]);
@@ -390,6 +371,7 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
 	printf("FB stuff won't handle this machine type yet.\n");
 	return FAILURE;
     }
+#endif /* sun4c */
 
     if (whichFb < 0 || whichFb >= FBTYPE_LASTPLUSONE) {
 	printf("FB type is out of range.\n");
@@ -666,9 +648,9 @@ char	searchBuffer[1024];
 /*
  *----------------------------------------------------------------------
  *
- * SearchProm --
+ * CheckFBNode --
  *
- *	Search through the prom devices to find which frame buffer we have.
+ *	Check the frame buffer node for the information we need.
  *
  * Results:
  *	The frame buffer type.
@@ -680,91 +662,136 @@ char	searchBuffer[1024];
  */
 #ifdef sun4c
 static int
-SearchProm(node)
+CheckFBNode(node, name)
     unsigned	int		node;
+    char			*name;
 {
-    unsigned	int		newNode;
     int		length = 0;
     struct	config_ops	*configPtr;
     int		i;
     int		whichFb;
 
     configPtr = romVectorPtr->v_config_ops;
-    while (node != 0) {
-	length = configPtr->devr_getproplen(node, "name");
-	if (length > 0) {
-	    if (length > sizeof (searchBuffer)) {
-		panic("SearchProm: buffer too small.\n");
-	    }
-	    configPtr->devr_getprop(node, "name", searchBuffer);
-	    for (i = 0; i < FBTYPE_LASTPLUSONE; i++) {
-		if (strcmp(searchBuffer, fbNames[i]) == 0) {
-		    whichFb = i;
-		    /* fill it in */
-		    length = configPtr->devr_getproplen(node, "address");
-		    if (length <= 0) {
-			printf("No address found for frame buffer in prom.\n");
-		    } else {
-			configPtr->devr_getprop(node, "address", searchBuffer);
-			if (fbaddrs[i].fb_buffer !=
-				(Address) (*(int *) searchBuffer)) {
+#ifndef CLEAN
+    length = configPtr->devr_getproplen(node, "device_type");
+    if (length <= 0) {
 #ifdef DEBUG
-			    printf("Updating address for %s to 0x%x.\n",
-				    fbNames[whichFb], *(int *) searchBuffer);
+	printf("No device_type attribute found for %s.\n", name);
 #endif /* DEBUG */
-			    fbaddrs[i].fb_buffer =
-				    (Address) (*(int *) searchBuffer);
-			}
-		    }
-		    length = configPtr->devr_getproplen(node, "height");
-		    if (length <= 0) {
-			printf("No height found for frame buffer in prom.\n");
-		    } else {
-			configPtr->devr_getprop(node, "height", searchBuffer);
-			if (fbarray[i].fb_height != *(int *) searchBuffer) {
+    } else {
+	configPtr->devr_getprop(node, "device_type", searchBuffer);
+	if (strcmp(searchBuffer, "display") != 0) {
 #ifdef DEBUG
-			    printf("Updating height for %s to 0x%x.\n",
-				    fbNames[whichFb], *(int *) searchBuffer);
+	    printf("device_type for %s was not \"display\".\n", name);
 #endif /* DEBUG */
-			    fbarray[i].fb_height = *(int *) searchBuffer;
-			}
-		    }
-		    length = configPtr->devr_getproplen(node, "width");
-		    if (length <= 0) {
-			printf("No width found for frame buffer in prom.\n");
-		    } else {
-			configPtr->devr_getprop(node, "width", searchBuffer);
-			if (fbarray[i].fb_width != *(int *) searchBuffer) {
+	    return 0;
+	}
+    }
+#endif
+    for (i = 0; i < FBTYPE_LASTPLUSONE; i++) {
+	if (strcmp(name, fbNames[i]) == 0) {
+	    whichFb = i;
+	    /* fill it in */
+	    length = configPtr->devr_getproplen(node, "height");
+	    if (length <= 0) {
+		printf("No height found for frame buffer in prom.\n");
+	    } else {
+		configPtr->devr_getprop(node, "height", searchBuffer);
+		if (fbarray[i].fb_height != *(int *) searchBuffer) {
 #ifdef DEBUG
-			    printf("Updating width for %s to 0x%x.\n",
-				    fbNames[whichFb], *(int *) searchBuffer);
+		    printf("Updating height for %s to 0x%x.\n",
+			    fbNames[whichFb], *(int *) searchBuffer);
 #endif /* DEBUG */
-			    fbarray[i].fb_width = *(int *) searchBuffer;
-			}
-		    }
-		    length = configPtr->devr_getproplen(node, "depth");
-		    if (length <= 0) {
-			printf("No depth found for frame buffer in prom.\n");
-		    } else {
-			configPtr->devr_getprop(node, "depth", searchBuffer);
-			if (fbarray[i].fb_depth != *(int *) searchBuffer) {
-#ifdef DEBUG
-			    printf("Updating depth for %s to 0x%x.\n",
-				    fbNames[whichFb], *(int *) searchBuffer);
-#endif /* DEBUG */
-			    fbarray[i].fb_depth = *(int *) searchBuffer;
-			}
-		    }
-		    return whichFb;
+		    fbarray[i].fb_height = *(int *) searchBuffer;
 		}
 	    }
-	}
-	newNode = configPtr->devr_child(node);
-	whichFb = SearchProm(newNode);
-	if (whichFb >= 0) {
+	    length = configPtr->devr_getproplen(node, "width");
+	    if (length <= 0) {
+		printf("No width found for frame buffer in prom.\n");
+	    } else {
+		configPtr->devr_getprop(node, "width", searchBuffer);
+		if (fbarray[i].fb_width != *(int *) searchBuffer) {
+#ifdef DEBUG
+		    printf("Updating width for %s to 0x%x.\n",
+			    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+		    fbarray[i].fb_width = *(int *) searchBuffer;
+		}
+	    }
+	    length = configPtr->devr_getproplen(node, "depth");
+	    if (length <= 0) {
+		printf("No depth found for frame buffer in prom.\n");
+	    } else {
+		configPtr->devr_getprop(node, "depth", searchBuffer);
+		if (fbarray[i].fb_depth != *(int *) searchBuffer) {
+#ifdef DEBUG
+		    printf("Updating depth for %s to 0x%x.\n",
+			    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+		    fbarray[i].fb_depth = *(int *) searchBuffer;
+		}
+	    }
+	    length = configPtr->devr_getproplen(node, "address");
+	    if (length <= 0) {
+		printf("No address found for frame buffer in prom.\n");
+	    } else {
+		configPtr->devr_getprop(node, "address", searchBuffer);
+		if (fbaddrs[i].fb_buffer !=
+			(Address) (*(int *) searchBuffer)) {
+#ifdef DEBUG
+		    printf("Updating address for %s to 0x%x.\n",
+			    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+		    fbaddrs[i].fb_buffer =
+			    (Address) (*(int *) searchBuffer);
+		}
+	    }
+	    length = configPtr->devr_getproplen(node, "reg");
+	    if (length <= 0) {
+		printf("No registers found for frame buffer in prom.\n");
+	    } else {
+		MachDevReg *regs;
+		char *phys, *virt;
+		int nregs, reg_offset;
+
+		regs = (MachDevReg *)alloca(length);
+		nregs = length / sizeof(MachDevReg);
+		configPtr->devr_getprop(node, "reg", regs);
+		
+		switch (whichFb) {
+		case FBTYPE_SUNFAST_COLOR:
+		    reg_offset = 0x200000;
+		    break;
+		case FBTYPE_SUN2BW:
+		case FBTYPE_SUN3COLOR:
+		default:
+		    reg_offset = 0x400000;
+		}
+
+		if (romVectorPtr->v_romvec_version < 2
+			&& regs[0].addr >= (Address)SBUS_BASE
+			&& regs[0].bustype == 1) {	/* old style */
+		    phys = regs[0].addr + reg_offset;
+		} else {				/* new style */
+		    phys = regs[0].addr + SBUS_BASE +
+			   regs[0].bustype * SBUS_SIZE +
+			   reg_offset;
+		}
+		virt = VmMach_MapInDevice(phys, 1);
+#if 0
+		if (fbarray[i].fb_depth > 1 && fbaddrs[i].fb_cmap != virt) {
+#else
+		if (fbaddrs[i].fb_cmap != virt) {
+#endif
+#ifdef DEBUG
+		    printf("Updating colormap address for %s to 0x%x.\n",
+			    fbNames[whichFb], virt);
+#endif /* DEBUG */
+		    fbaddrs[i].fb_cmap = virt;
+		}
+	    }
 	    return whichFb;
 	}
-	node = configPtr->devr_next(node);
     }
     return -1;
 }
@@ -776,8 +803,7 @@ SearchProm(node)
  *
  * GetFBType --
  *
- *	Temporary routine to find frame buffer type from a file rather than
- *	from the prom.
+ *	Routine the find the frame buffer attributes from the PROM.
  *
  * Results:
  *	Integer representing frame buffer type.
@@ -787,26 +813,31 @@ SearchProm(node)
  *
  *----------------------------------------------------------------------
  */
+#ifdef sun4c
 static int
 GetFBType()
 {
-#ifdef sun4c
     struct	config_ops	*configPtr;
-    unsigned	int		node;
+    unsigned	int		root, fb_node;
+    int				size;
+    char			*fb_type;
 
     configPtr = romVectorPtr->v_config_ops;
     /*
      * Find a frame buffer type:  First get the root node id of the tree of
-     * devices in the prom.  Then traverse it depth-first to find some frame
-     * buffer.
+     * devices in the prom.  Then retrieve a pointer to the active frame
+     * buffer node.  Call CheckFBNode to pull all the required info from
+     * the PROM.
      */
-    node = configPtr->devr_next(0);
+    root = configPtr->devr_next(0);
+    configPtr->devr_getprop(root, "fb", &fb_node);
+    size = configPtr->devr_getproplen(fb_node, "name");
+    fb_type = (char *)alloca(size);
+    configPtr->devr_getprop(fb_node, "name", fb_type);
 
-    return SearchProm(node);
-#else
-    return -1;
-#endif /* sun4c */
+    return CheckFBNode(fb_node, fb_type);
 }
+#endif /* sun4c */
 
 
 
@@ -860,6 +891,7 @@ DevFBMMap(devicePtr, startAddr, length, offset, newAddrPtr)
     if (status != SUCCESS) {
 	return status;
     }
+    *newAddrPtr += (((unsigned int)kernelAddr) % VMMACH_SEG_SIZE);
 #ifdef DEBUG
     printf("Real VA would be 0x%x\n", *newAddrPtr);
 #endif /* DEBUG */
@@ -1043,11 +1075,18 @@ SVideo(whichFb, statePtr)
     onOff = *statePtr;
     switch (whichFb) {
     case FBTYPE_SUN2BW:
-/******* dunno how to do that */
+    case FBTYPE_SUN3COLOR:
+	/* this works for some color frame buffers too. -dl */
+	if (fbaddrs[whichFb].fb_cmap != (void *)NIL) {
+	    if (onOff) {
+		*(unsigned char *)(fbaddrs[whichFb].fb_cmap + 0x10) |= 0x40;
+	    } else {
+		*(unsigned char *)(fbaddrs[whichFb].fb_cmap + 0x10) &= ~0x40;
+	    }
+	}
 	return SUCCESS;
     case FBTYPE_SUN4COLOR:
     case FBTYPE_SUNFAST_COLOR:
-    case FBTYPE_SUN3COLOR:
 	/* get colormap access */
 	if(fbCmap == (struct colormap *) NIL) {
 	    printf("Colormap not yet set.\n");
@@ -1110,11 +1149,14 @@ GVideo(whichFb, statePtr)
 
     switch (whichFb) {
     case FBTYPE_SUN2BW:
-	/* Don't know how to do this one. */
+    case FBTYPE_SUN3COLOR:
+	if (fbaddrs[whichFb].fb_cmap != (void *)NIL) {
+	    rmask = *(unsigned char *)(fbaddrs[whichFb].fb_cmap + 0x10);
+	    *statePtr = (rmask & 0x40) ? 1 : 0;
+	}
 	return SUCCESS;
     case FBTYPE_SUN4COLOR:
     case FBTYPE_SUNFAST_COLOR:
-    case FBTYPE_SUN3COLOR:
 	/* get colormap access */
 	if(fbCmap == (struct colormap *) NIL) {
 	    printf("Colormap not yet set.\n");

@@ -82,7 +82,7 @@
  * A macro to test if the current processor is in kernel mode.
  */
 
-#define	Mach_KernelMode() (mach_KernelMode)
+#define	Mach_KernelMode()	(mach_KernelMode)
 
 /*
  * A macro to return the current interrupt nesting level.
@@ -93,12 +93,25 @@
 /*
  * Delay for N microseconds.
  */
+#ifdef sun4c
+extern unsigned int		machClockRate;
+#define	MACH_DELAY(n)	{ \
+	register int N = (n) * machClockRate / 30 - 22; \
+	while (N > 0) { N--; } \
+    }
+#else
 #define	MACH_DELAY(n)	{ register int N = (n)<<3; N--; while (N > 0) {N--;} }
+#endif
 
 /*
  * The interrupt register on a sun4.
  */
+#ifdef sun4c
+extern unsigned char		*machInterruptReg;
+#define	Mach_InterruptReg	machInterruptReg
+#else
 #define	Mach_InterruptReg	((unsigned char *) DEV_INTERRUPT_REG_ADDR)
+#endif
 
 /*
  * Suns don't have a write buffer, but this macro makes it easier to
@@ -166,7 +179,7 @@ extern	int	debugSpace[];
  * Routines to munge machine state struct.
  */
 #ifdef KERNEL
-#include "procMigrate.h"
+#include <procMigrate.h>
 #else
 #include <kernel/procMigrate.h>
 #endif

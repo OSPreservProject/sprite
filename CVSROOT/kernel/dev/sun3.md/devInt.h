@@ -26,14 +26,19 @@
  */
 typedef struct DevConfigController {
     char *name;		/* Identifying string used in print statements */
+#ifdef sun4c
+    char *dev_name;	/* String to match in PROM dev tree */
+#endif
     int address;	/* The address of the controller.  Correct
 			 * interpretation of this depends on the space */
+#ifndef sun4c
     int space;		/* DEV_MULTIBUS, DEV_VME_16D16, ...
 			 * This is used to convert what the hardware thinks
 			 * is its address to what the MMU of the system
 			 * uses for those kinds of addresses.  For example,
 			 * Sun2's have Multibus memory mapped into a
 			 * particular range of kernel virtual addresses. */
+#endif
     int controllerID;	/* Controller number: 0, 1, 2... */
     ClientData (*initProc) _ARGS_((struct DevConfigController *ctrlLocPtr));
 			/* Initialization procedure */
@@ -50,8 +55,6 @@ typedef struct DevConfigController {
  * DEV_MULTIBUS_IO - Multibus I/O space on the Sun2
  * DEV_VME_DxAx - The 6 sets of VME address spaces available on
  *	Sun3's.  Only D16A24 and D16A16 are available on VME based Sun2's.
- * DEV_SBUS_OB - Sbus device in logical slot 0 (on-board device).
- * DEV_SBUS - Sbus device in some physical slot (not an on-board device).
  */
 #define DEV_OBMEM	0
 #define DEV_OBIO	1
@@ -63,8 +66,6 @@ typedef struct DevConfigController {
 #define DEV_VME_D32A32	34
 #define DEV_VME_D32A24	35
 #define DEV_VME_D32A16	36
-#define DEV_SBUS_OB	37
-#define DEV_SBUS	38
 
 /*
  * Special valued returned from Controller init procedures indicating 
