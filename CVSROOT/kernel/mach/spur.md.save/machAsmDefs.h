@@ -149,6 +149,25 @@
 	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x60 
 
 /*
+ * ST_RPTM_PAGE(rx, rptm) --
+ *
+ *	Store to RPTM register in CC
+ *
+ *	rx -- 	register containing the 20 bit page number of the root page
+ *	      	table physical map
+ *	rptm --	address of byte 0 of specific RPTM register (e.g., RPTM0)
+ *
+ * rptm<19:0> <= rx<19:0>
+ */
+#define ST_RPTM_PAGE(rx,rptm) \
+        sll		VOL_TEMP1,rx,$3 ;\
+        sll		VOL_TEMP1,VOL_TEMP1,$1 ;\
+	st_external	VOL_TEMP1, r0, $rptm|MACH_CO_WR_REG|0x20  ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $1 ;\
+	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x40  ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $2 ;\
+	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x60 
+/*
  *
  * ST_GSN(rx,gsn) --
  *
