@@ -27,13 +27,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMach.h"
 #include "dev/xbus.h"
 #include "devXbusInt.h"
-
+#include "devXbus.h"
 #include "dbg.h"
 
-static int	devXbusDebug = FALSE;
-static int	devXbusModuleInitted = FALSE;
-static XbusInfo *xbusInfo[DEV_XBUS_MAX_BOARDS];
-static int	devXbusNumBoards = 0;
+static int		devXbusDebug = TRUE;
+static int		devXbusModuleInitted = FALSE;
+static DevXbusInfo	*xbusInfo[DEV_XBUS_MAX_BOARDS];
+static int		devXbusNumBoards = 0;
 
 /*----------------------------------------------------------------------
  *
@@ -46,7 +46,7 @@ static int	devXbusNumBoards = 0;
  */
 ReturnStatus
 DevXbusResetBoard (infoPtr)
-XbusInfo *infoPtr;
+DevXbusInfo*	infoPtr;
 {
     ReturnStatus status = SUCCESS;
     DevXbusCtrlRegs *regPtr = infoPtr->regs;
@@ -83,9 +83,9 @@ ClientData
 DevXbusInit (ctrlPtr)
 DevConfigController *ctrlPtr;
 {
-    ReturnStatus status;
-    DevXbusCtrlRegs *regPtr = (DevXbusCtrlRegs *)ctrlPtr->address;
-    XbusInfo	*infoPtr;
+    ReturnStatus	status = SUCCESS;
+    DevXbusCtrlRegs*	regPtr = (DevXbusCtrlRegs *)ctrlPtr->address;
+    DevXbusInfo*	infoPtr = NULL;
     char semName[40];
 
     if (!devXbusModuleInitted) {
@@ -97,10 +97,11 @@ DevConfigController *ctrlPtr;
     }
 
     if (devXbusNumBoards >= DEV_XBUS_MAX_BOARDS) {
-	return (DEV_NO_DEVICE);
+	status = DEV_NO_DEVICE;
+	goto initExit;
     }
 
-    if ((infoPtr = (XbusInfo *) malloc (sizeof (XbusInfo))) == NULL) {
+    if ((infoPtr = (DevXbusInfo *) malloc (sizeof (DevXbusInfo))) == NULL) {
 	printf ("DevXbusInit: Couldn't allocate space for board info.\n");
 	status = FAILURE;
 	goto initExit;
@@ -109,6 +110,8 @@ DevConfigController *ctrlPtr;
     xbusInfo[devXbusNumBoards++] = infoPtr;
     infoPtr->regs = regPtr;
     infoPtr->state = 0;
+    infoPtr->name = ctrlPtr->name;
+#if 0
     if ((infoPtr->hippisCtrlFifo = (vuint *)VmMach_MapInDevice
 	 ((Address)(DEV_XBUS_REGISTER_BASE + DEV_XBUS_REG_HIPPIS_CTRL_FIFO),
 	  DEV_XBUS_ADDR_SPACE)) == NULL) {
@@ -127,7 +130,6 @@ DevConfigController *ctrlPtr;
 	status = FAILURE;
 	goto initExit;
     }
-
     sprintf (semName, "XbusMutex 0x%x", devXbusNumBoards-1);
     Sync_SemInitDynamic (&infoPtr->mutex, semName);
     status = DevXbusResetBoard (infoPtr);
@@ -136,16 +138,17 @@ DevConfigController *ctrlPtr;
     } else {
 	status = DEV_NO_DEVICE;
     }
+#endif
 
   initExit:
     if (status != SUCCESS) {
 	printf ("Didn't find xbus device at 0x%x\n", DEV_XBUS_REGISTER_BASE);
     } else {
-	printf ("Found xbus 0x%d at 0x%x\n", devXbusNumBoards-1,
-		DEV_XBUS_REGISTER_BASE);
+	printf ("Found %s (xbus%d) at 0x%x\n", ctrlPtr->name,
+		devXbusNumBoards-1, DEV_XBUS_REGISTER_BASE);
     }
 
-    return (devXbusNumBoards-1);
+    return ((status == SUCCESS) ? (ClientData)infoPtr : DEV_NO_CONTROLLER);
 }
 
 /*----------------------------------------------------------------------
@@ -162,13 +165,13 @@ DevConfigController *ctrlPtr;
 static
 ReturnStatus
 accessXbusRegister (infoPtr, regNum, value, accessType)
-XbusInfo *infoPtr;
-int regNum;
-unsigned int *value;
-int accessType;
+DevXbusInfo	*infoPtr;
+int		regNum;
+unsigned int*	value;
+int		accessType;
 {
-    ReturnStatus status = SUCCESS;
-    Address regAddr;
+    ReturnStatus	status = SUCCESS;
+    Address		regAddr;
 
     switch (regNum) {
       case DEV_XBUS_REG_HIPPID_CTRL_FIFO:
@@ -229,9 +232,9 @@ DevXbusIOControl (devicePtr, ioctlPtr, replyPtr)
 					 * etc.). */
     register Fs_IOReply *replyPtr;	/* Place to store result information.*/
 {
-    DevXbusCtrlRegs *regPtr;
-    XbusInfo *infoPtr;
-    int inSize, outSize;
+    DevXbusCtrlRegs	*regPtr;
+    DevXbusInfo		*infoPtr;
+    int			inSize, outSize;
     ReturnStatus status = SUCCESS;
     ReturnStatus fmtStatus;
 
@@ -289,4 +292,26 @@ DevXbusIOControl (devicePtr, ioctlPtr, replyPtr)
 
   ioctlExit:
     return (status);
+}
+
+/***********************************************************************
+ *
+ * DevXbusIntr --
+ *
+ *	The interrupt handler for the xbus board driver.  Currently,
+ *	this just prints a message saying that an interrupt was
+ *	received.
+ *
+ ***********************************************************************
+ */
+Boolean
+DevXbusIntr (data)
+ClientData	data;
+{
+    DevXbusInfo*	infoPtr = (DevXbusInfo*)data;
+
+    if (devXbusDebug) {
+	printf ("DevXbusIntr: got interrupt from %s.\n", infoPtr->name);
+    }
+    return (TRUE);
 }

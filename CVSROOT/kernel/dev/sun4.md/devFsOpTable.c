@@ -46,6 +46,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devfb.h"
 #include "devVMElink.h"
 #include "devSmem.h"
+#include "devXbus.h"
 
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
@@ -174,7 +175,7 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_VMELINK, DevVMElinkOpen, DevVMElinkRead, DevVMElinkWrite,
 	 	  DevVMElinkIOControl, NullProc, NullProc,
-	 	  DEV_NO_ATTACH_PROC, NoDevice},
+	 	  DEV_NO_ATTACH_PROC, NoDevice, NullProc},
     /*
      * No such device on the sun4.
      */
@@ -198,6 +199,11 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_SCSI_ROBOT, DevSCSIExbRobotOpen, NullProc, NullProc,
 	            DevSCSIExbRobotIOControl, DevSCSIExbRobotClose,
 	            NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * Xbus board
+     */
+    {DEV_XBUS, NullProc, NullProc, NullProc, DevXbusIOControl,
+	 NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);

@@ -17,14 +17,15 @@
 
 typedef volatile unsigned int vuint;
 
-typedef struct XbusInfo {
+typedef struct DevXbusInfo {
     unsigned int state;
     DevXbusCtrlRegs *regs;
+    char*	name;			/* name of device from devConfig.c */
     vuint	*hippidCtrlFifo;
     vuint	*hippisCtrlFifo;
     vuint	*xorCtrlFifo;
     Sync_Semaphore mutex;
-} XbusInfo;
+} DevXbusInfo;
 
 #define	DEV_XBUS_STATE_OK		0x1
 

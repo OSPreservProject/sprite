@@ -76,22 +76,19 @@ typedef struct VMELinkInfo {
     Address smallMap;		/* 64K window for use with window register */
     int minDmaSize;		/* minimum size to DMA instead of bcopy */
     unsigned int position;	/* current position for read/write */
-    Sync_Semaphore queueMutex;
-    DevCtrlQueues ctrlQueues;
-    DevQueue reqQueue;
+    List_Links		reqHdr;	/* queue of requests to this link board */
     DevVMElinkHandle handle;	/* handle to return to attach() */
     int numAttached;		/* # of attach calls (w/o releasing) */
     struct DevVMElinkReq *curReq;
 } VMELinkInfo;
 
 typedef struct DevVMElinkReq {
-    List_Links		links;		/* for DevQueue management */
+    List_Links		links;
     VMELinkInfo		*linkInfo;	/* -> link info for this request */
     int			operation;	/* FS_READ or FS_WRITE */
     unsigned int	startAddress;	/* start addr in remote memory */
     int			length;		/* length of xfer */
     Address		buffer;		/* addr of local buffer */
-    void		(*doneProc)();	/* callback procedure */
     Address		dmaSpace;	/* addr of DMA space (NIL if no DMA) */
     int			dmaSize;	/* # of bytes DMAed */
     DevBlockDeviceRequest *origReq;	/* -> original request block */
@@ -105,7 +102,6 @@ extern ReturnStatus DevVMElinkRead ();
 extern ReturnStatus DevVMElinkWrite ();
 extern ReturnStatus DevVMElinkIOControl ();
 extern Boolean DevVMElinkIntr ();
-extern Boolean DevVMElinkXferData ();
 extern DevBlockDeviceHandle *DevVMElinkAttach ();
 extern ReturnStatus DevVMElinkRelease ();
 extern ReturnStatus DevVMElinkBlockIO ();
