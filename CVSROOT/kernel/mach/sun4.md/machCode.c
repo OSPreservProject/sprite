@@ -1307,6 +1307,9 @@ MachUserAction()
 
     procPtr = Proc_GetCurrentProc();
 HandleItAgain:
+    if (procPtr->Prof_Scale != 0 && procPtr->Prof_PC != 0) {
+	Prof_RecordPC(procPtr);
+    }
     procPtr->specialHandling = 0;
     /*
      * Take a context switch if one is pending for this process.
