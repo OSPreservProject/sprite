@@ -427,6 +427,8 @@ Sched_ContextSwitchInt(state)
      * Perform the hardware context switch.  After switching, make
      * sure that there is a context for this process.
      */
+    newProcPtr->schedFlags |= SCHED_STACK_IN_USE;
+    curProcPtr->schedFlags &= ~SCHED_STACK_IN_USE;
     Mach_ContextSwitch(curProcPtr, newProcPtr);
 }
 
@@ -561,7 +563,6 @@ IdleLoop()
 		procPtr = (Proc_ControlBlock *) List_First(queuePtr);
 		if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
 		           (procPtr == lastProcPtr)) {
-		    lastProcPtr->schedFlags &= ~SCHED_STACK_IN_USE;
 		    break; 
 		}
 	    }
@@ -762,9 +763,11 @@ void
 Sched_ContextSwitch(state)
     Proc_State	state;
 {
+
     MASTER_LOCK(sched_MutexPtr);
     Sched_ContextSwitchInt(state);
     MASTER_UNLOCK(sched_MutexPtr);
+
 }
 
 

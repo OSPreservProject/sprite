@@ -34,10 +34,9 @@
  *					process when scheduling it.  Intended
  *					to be used by kernel worker processes.
  *	SCHED_STACK_IN_USE		The stack of this process is being
- *					used as a IdleLoop/interrupt stack
- *					of a processor.  The processor field
- *					of the Proc_ControlBlock specifies
- *					what processor is using it. 
+ *					used by a processor.  The processor 
+ *					field of the Proc_ControlBlock 
+ *					specifies what processor is using it. 
  */
 
 #define SCHED_CONTEXT_SWITCH_PENDING	0x1
