@@ -49,7 +49,7 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
     ProcObjInfo		*objInfoPtr;
 {
 
-    int data[4];
+    int data[14];
     int sizeRead;
     ReturnStatus status;
 #ifndef sun3
@@ -85,7 +85,7 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
      * the startup code to see if it was a Sprite-compiled file, or
      * a Unix-compiled file.
      */
-    sizeRead = 4*sizeof(int);
+    sizeRead = 14*sizeof(int);
     status = Fs_Read(filePtr, (char *)data,
 	execPtr->entry-PROC_CODE_LOAD_ADDR(*execPtr), &sizeRead);
     if (status != SUCCESS) {
@@ -101,8 +101,8 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
     if ((data[0]==0xac10000e && data[1]==0xac05a060 &&
 	    data[2]==0xd0058000 && data[3]==0x9205a004) ||
     /* Profiled sun4 startup code */
-	    (data[0]==0xbc100000 && data[1]==0x11000008 &&
-		data[2]==0x13000028)) {
+	(data[10]==0xac10000e && data[11]==0xac05a060 &&
+	    data[12]==0xd0058000 && data[13]==0x9205a004)) {
 
 #endif
 	type = TYPE_SPRITE;
