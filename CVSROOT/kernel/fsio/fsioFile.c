@@ -80,7 +80,7 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	 * All set.
 	 */
 	if ((*newHandlePtrPtr)->descPtr == (FsFileDescriptor *)NIL) {
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		"FsLocalFileHandleInit, found handle with no descPtr\n");
 	}
 	return(SUCCESS);
@@ -95,12 +95,12 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	FsHandleRemove(handlePtr);
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-    descPtr = (FsFileDescriptor *)Mem_Alloc(sizeof(FsFileDescriptor));
+    descPtr = (FsFileDescriptor *)malloc(sizeof(FsFileDescriptor));
     status = FsFetchFileDesc(domainPtr, fileIDPtr->minor, descPtr);
     FsDomainRelease(fileIDPtr->major);
 
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "FsLocalFileHandleInit: FsFetchFileDesc failed");
+	printf( "FsLocalFileHandleInit: FsFetchFileDesc failed");
     } else if (!(descPtr->flags & FS_FD_ALLOC)) {
 	status = FS_FILE_REMOVED;
     } else {
@@ -140,7 +140,7 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
     if (status != SUCCESS) {
 	FsHandleRelease(handlePtr, TRUE);
 	FsHandleRemove(handlePtr);
-	Mem_Free((Address)descPtr);
+	free((Address)descPtr);
 	*newHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
     } else {
 	*newHandlePtrPtr = handlePtr;
@@ -249,7 +249,7 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    handlePtr->use.exec++;
 	}
 	FsHandleUnlock(handlePtr);
-	fileStatePtr = Mem_New(FsFileState);
+	fileStatePtr = mnew(FsFileState);
 	status = FsFileConsistency(handlePtr, clientID, useFlags,
 		    &fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
 	if (status == SUCCESS) {
@@ -290,7 +290,7 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * collect the client to retreat to a known bookkeeping point.
 	     */
 	    int ref, write, exec;
-	    Sys_Panic(SYS_WARNING, "Consistency failed %x on <%d,%d>\n",
+	    printf( "Consistency failed %x on <%d,%d>\n",
 		status,
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	    FsHandleLock(handlePtr);
@@ -298,7 +298,7 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    handlePtr->use.ref   -= ref;
 	    handlePtr->use.write -= write;
 	    handlePtr->use.exec  -= exec;
-	    Mem_Free((Address)fileStatePtr);
+	    free((Address)fileStatePtr);
 	}
     }
 exit:
@@ -382,7 +382,7 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     /*
      * Now unlock the handle and do cache consistency call-backs.
      */
-    fileStatePtr = Mem_New(FsFileState);
+    fileStatePtr = mnew(FsFileState);
     fileStatePtr->cacheable = reopenParamsPtr->flags & FS_HAVE_BLOCKS;
     FsHandleUnlock(handlePtr);
     status = FsReopenConsistency(handlePtr, clientID, reopenParamsPtr->use,
@@ -401,7 +401,7 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	handlePtr->use.write -= write;
 	handlePtr->use.exec  -= exec;
 	FsHandleUnlock(handlePtr);
-	Mem_Free((Address)fileStatePtr);
+	free((Address)fileStatePtr);
     } else {
 	/*
 	 * Successful re-open here on the server. Copy cached attributes
@@ -462,7 +462,7 @@ FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
 	*flagsPtr = ( (FsFileState *)streamData )->newUseFlags;
 	FsHandleUnlock(*ioHandlePtrPtr);
     }
-    Mem_Free((Address)streamData);
+    free((Address)streamData);
     return(status);
 }
 
@@ -509,7 +509,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
      * Update the client state to reflect the close by the client.
      */
     if (!FsConsistClose(&handlePtr->consist, clientID, flags, &wasCached)) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		  "FsFileClose, client %d unknown for file <%d,%d>\n",
 		  clientID, handlePtr->hdr.fileID.major,
 		  handlePtr->hdr.fileID.minor);
@@ -542,7 +542,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     }
     if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
 	handlePtr->use.exec < 0) {
-	Sys_Panic(SYS_FATAL, "FsFileClose <%d,%d> use %d, write %d, exec %d\n",
+	panic( "FsFileClose <%d,%d> use %d, write %d, exec %d\n",
 	    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
     }
@@ -629,7 +629,7 @@ FsFileClientKill(hdrPtr, clientID)
     handlePtr->use.exec -= execs;
     if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
 	handlePtr->use.exec < 0) {
-	Sys_Panic(SYS_FATAL, "FsFileClientKill <%d,%d> use %d, write %d, exec %d\n",
+	panic( "FsFileClientKill <%d,%d> use %d, write %d, exec %d\n",
 	    hdrPtr->fileID.major, hdrPtr->fileID.minor,
 	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
     }
@@ -682,14 +682,14 @@ FsFileScavenge(hdrPtr)
 	descPtr->flags &= ~FS_FD_DIRTY;
 	domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
 	if (domainPtr == (FsDomain *)NIL ){
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		"FsFileScavenge: Dirty descriptor in detached domain.\n");
 	} else {
 	    status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, 
 				      descPtr);
 	    FsDomainRelease(handlePtr->hdr.fileID.major);
 	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 		"FsFileScavenge: Could not store file desc <%x>\n",
 			status);
 	    }
@@ -702,7 +702,7 @@ FsFileScavenge(hdrPtr)
 #ifdef CONSIST_DEBUG
 	extern int fsTraceConsistMinor;
 	if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
-	    Sys_Printf("FsFileScavenge <%d,%d> nuked, lastwriter %d\n",
+	    printf("FsFileScavenge <%d,%d> nuked, lastwriter %d\n",
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		handlePtr->consist.lastWriter);
 	}
@@ -749,7 +749,7 @@ FsFileRelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
 {
-    Sys_Panic(SYS_FATAL, "FsFileRelease called\n");
+    panic( "FsFileRelease called\n");
     FsHandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
@@ -789,7 +789,7 @@ FsFileMigEnd(migInfoPtr, size, data, hdrPtrPtr)
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle,
 		&migInfoPtr->ioFileID);
     if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING, 
+	printf( 
 	    "FsFileMigEnd, file <%d,%d> from client %d not found\n",
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
 	    migInfoPtr->srcClientID);
@@ -799,7 +799,7 @@ FsFileMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 	*hdrPtrPtr = (FsHandleHeader *)handlePtr;
 	status = SUCCESS;
     }
-    Mem_Free((Address)data);
+    free((Address)data);
     return(status);
 }
 
@@ -856,7 +856,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     migInfoPtr->ioFileID.type = FS_LCL_FILE_STREAM;
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle, &migInfoPtr->ioFileID);
     if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	Sys_Panic(SYS_FATAL, "FsFileMigrate, no I/O handle");
+	panic( "FsFileMigrate, no I/O handle");
 	status = FS_STALE_HANDLE;
     } else {
 
@@ -877,7 +877,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * Update the client list, and take any required cache consistency
 	 * actions. The handle returns unlocked from the consistency routine.
 	 */
-	fileStatePtr = Mem_New(FsFileState);
+	fileStatePtr = mnew(FsFileState);
 	FsHandleUnlock(handlePtr);
 	status = FsMigrateConsistency(handlePtr, migInfoPtr->srcClientID,
 		dstClientID, migInfoPtr->flags,
@@ -890,7 +890,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	    *flagsPtr = fileStatePtr->newUseFlags = migInfoPtr->flags;
 	    *offsetPtr = migInfoPtr->offset;
 	} else {
-	    Mem_Free((Address)fileStatePtr);
+	    free((Address)fileStatePtr);
 	}
 	/*
 	 * We don't need this reference on the I/O handle, there is no change.
@@ -1017,7 +1017,7 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
     int 		*offsetPtr;	/* Byte offset at which to read.  Return
 					 * value isn't used, but by-reference
 					 * passing is done to be compatible
-					 * with FsSpriteRead */
+					 * with FsRemoteRead */
     int			*lenPtr;	/* Return,  bytes read. */
     Sync_RemoteWaiter	*remoteWaitPtr;	/* IGNORED */
 {
@@ -1032,10 +1032,10 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 
     numBytes = *lenPtr;
     if ((offset & FS_BLOCK_OFFSET_MASK) != 0) {
-	Sys_Panic(SYS_FATAL, "FsFileBlockRead: Non-block aligned offset\n");
+	panic( "FsFileBlockRead: Non-block aligned offset\n");
     }
     if (numBytes > FS_BLOCK_SIZE) {
-	Sys_Panic(SYS_FATAL, "FsFileBlockRead: Reading more than block\n");
+	panic( "FsFileBlockRead: Reading more than block\n");
     }
 
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
@@ -1069,7 +1069,7 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	status = FsGetFirstIndex(handlePtr, offset / FS_BLOCK_SIZE, 
 				 &indexInfo, 0);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "FsFileRead: Could not setup indexing\n");
+	    printf( "FsFileRead: Could not setup indexing\n");
 	    FsDomainRelease(handlePtr->hdr.fileID.major);
 	    return(status);
 	}
@@ -1087,7 +1087,7 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	    /*
 	     * Zero fill the block.  We're in a 'hole' in the file.
 	     */
-	    Byte_Zero(numBytes, buffer);
+	    bzero(buffer, numBytes);
 	}
 	FsEndIndex(handlePtr, &indexInfo, FALSE);
 	FsStat_Add(numBytes, fsStats.gen.fileBytesRead,
@@ -1408,7 +1408,7 @@ FsFileTrunc(handlePtr, size, flags)
     FsCacheTrunc(&handlePtr->cacheInfo, size, flags);
     status = FsDescTrunc(handlePtr, size);
     if ((flags & FS_TRUNC_DELETE) && handlePtr->cacheInfo.blocksInCache > 0) {
-	Sys_Panic(SYS_FATAL, "FsFileTrunc (delete) %d blocks left over\n",
+	panic("FsFileTrunc (delete) %d blocks left over\n",
 		    handlePtr->cacheInfo.blocksInCache);
     }
     return(status);
@@ -1472,7 +1472,7 @@ IncVersionNumber(handlePtr)
     handlePtr->cacheInfo.version = descPtr->version;
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (FsDomain *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsIncVersionNumber: Domain gone.\n");
+	printf( "FsIncVersionNumber: Domain gone.\n");
     } else {
 	(void)FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
 			descPtr);

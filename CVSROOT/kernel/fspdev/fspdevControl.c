@@ -101,7 +101,7 @@ FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 
     ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, name);
     if (!List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
-	Sys_Panic(SYS_FATAL, "FsControlStreamCltOpen found control msgs\n");
+	panic( "FsControlStreamCltOpen found control msgs\n");
     }
     ctrlHandlePtr->serverID = clientID;
     *ioHandlePtrPtr = (FsHandleHeader *)ctrlHandlePtr;
@@ -209,11 +209,11 @@ FsControlRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 		 * closed automatically when the server exits.
 		 */
 	    } else {
-		Byte_Copy(sizeof(notify), (Address)&notify, buffer);
+		bcopy((Address)&notify, buffer, sizeof(notify));
 	    }
 	    *lenPtr = sizeof(notify);
 	}
-	Mem_Free((Address)notifyPtr);
+	free((Address)notifyPtr);
     }
     FsHandleUnlock(ctrlHandlePtr);
     return(status);
@@ -249,7 +249,7 @@ FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
     register ReturnStatus status;
 
     if (byteOrder != mach_ByteOrder) {
-	Sys_Panic(SYS_FATAL, "FsControlIOControl: wrong byte order\n");
+	panic( "FsControlIOControl: wrong byte order\n");
     }
     switch(command) {
 	case IOC_REPOSITION:
@@ -339,7 +339,7 @@ FsControlVerify(fileIDPtr, pdevServerHostID)
 	}
     }
     if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "FsControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
 	    pdevServerHostID, serverID, FsFileTypeToString(fileIDPtr->type),
 	    fileIDPtr->major, fileIDPtr->minor);
@@ -414,7 +414,7 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 		ctrlHandlePtr->serverID = reopenParamsPtr->serverID;
 		ctrlHandlePtr->seed = reopenParamsPtr->seed;
 	    } else if (ctrlHandlePtr->serverID != clientID) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 		    "PdevControlReopen conflict, %d lost to %d, %s <%x,%x>\n",
 		    clientID, ctrlHandlePtr->serverID,
 		    FsFileTypeToString(ctrlHandlePtr->rmt.hdr.fileID.type),
@@ -475,10 +475,10 @@ FsControlClose(streamPtr, clientID, procID, flags, size, data)
 	List_Remove((List_Links *)notifyPtr);
 	extra++;
 	(void)Fs_Close(notifyPtr->streamPtr);
-	Mem_Free((Address)notifyPtr);
+	free((Address)notifyPtr);
     }
     if (extra) {
-	Sys_Panic(SYS_WARNING, "FsControlClose found %d left over messages\n",
+	printf( "FsControlClose found %d left over messages\n",
 			extra);
     }
     /*
@@ -486,7 +486,7 @@ FsControlClose(streamPtr, clientID, procID, flags, size, data)
      */
     ctrlHandlePtr->serverID = NIL;
     if (ctrlHandlePtr->rmt.hdr.fileID.serverID != rpc_SpriteID) {
-	(void)FsSpriteClose(streamPtr, rpc_SpriteID, procID, 0, 0,
+	(void)FsRemoteClose(streamPtr, rpc_SpriteID, procID, 0, 0,
 		(ClientData)NIL);
     }
     FsHandleRelease(ctrlHandlePtr, TRUE);

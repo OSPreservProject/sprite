@@ -168,7 +168,7 @@ FsPipeHandleInit(fileIDPtr, findIt)
     handlePtr = (FsPipeIOHandle *)hdrPtr;
     if (!found) {
 	if (findIt) {
-	    Sys_Panic(SYS_FATAL, "FsPipeHandleInit, didn't find handle\n");
+	    panic( "FsPipeHandleInit, didn't find handle\n");
 	}
 	/*
 	 * When a pipe is created, it has one read and one write
@@ -179,7 +179,7 @@ FsPipeHandleInit(fileIDPtr, findIt)
 	List_Init(&handlePtr->clientList);
 	handlePtr->flags = 0;
 	handlePtr->firstByte = handlePtr->lastByte = -1;
-	handlePtr->buffer = Mem_Alloc(FS_BLOCK_SIZE);
+	handlePtr->buffer = (Address)malloc(FS_BLOCK_SIZE);
 	handlePtr->bufSize = FS_BLOCK_SIZE;
 	List_Init(&handlePtr->readWaitList);
 	List_Init(&handlePtr->writeWaitList);
@@ -219,7 +219,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     Boolean cache = FALSE;
 
     if (!FsIOClientClose(&handlePtr->clientList, clientID, flags, &cache)) {
-	Sys_Panic(SYS_WARNING, "FsPipeClose, unknown client %d\n", clientID);
+	printf( "FsPipeClose, unknown client %d\n", clientID);
 	FsHandleUnlock(handlePtr);
     } else {
 	/*
@@ -230,7 +230,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	    handlePtr->use.write--;
 	}
 	if (handlePtr->use.ref < 0 || handlePtr->use.write < 0) {
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		      "FsPipeClose <%d,%d> use %d, write %d\n",
 		      handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		      handlePtr->use.ref, handlePtr->use.write);
@@ -252,7 +252,7 @@ FsPipeClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	}
 	FsHandleRelease(handlePtr, TRUE);
 	if (handlePtr->flags == (PIPE_WRITER_GONE|PIPE_READER_GONE)) {
-	    Mem_Free(handlePtr->buffer);
+	    free(handlePtr->buffer);
 	    FsWaitListDelete(&handlePtr->readWaitList);
 	    FsWaitListDelete(&handlePtr->writeWaitList);
 	    FsHandleRemove(handlePtr);
@@ -344,7 +344,7 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 		status = SYS_ARG_NOACCESS;
 	    }
 	} else {
-	    Byte_Copy(toRead, handlePtr->buffer + startOffset, buffer);
+	    bcopy(handlePtr->buffer + startOffset, buffer, toRead);
 	}
     } else {
 	int	numBytes;
@@ -361,8 +361,8 @@ FsPipeRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 		status = SYS_ARG_NOACCESS;
 	    }
 	} else {
-	    Byte_Copy(numBytes, handlePtr->buffer + startOffset, buffer);
-	    Byte_Copy(toRead - numBytes, handlePtr->buffer, buffer + numBytes);
+	    bcopy(handlePtr->buffer + startOffset, buffer, numBytes);
+	    bcopy(handlePtr->buffer, buffer + numBytes, toRead - numBytes);
 	}
     }
 
@@ -482,7 +482,7 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 		status = SYS_ARG_NOACCESS;
 	    }
 	} else {
-	    Byte_Copy(toWrite, buffer, handlePtr->buffer + startOffset);
+	    bcopy(buffer, handlePtr->buffer + startOffset, toWrite);
 	}
     } else {
 	int	numBytes;
@@ -499,8 +499,8 @@ FsPipeWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 		status = SYS_ARG_NOACCESS;
 	    }
 	} else {
-	    Byte_Copy(numBytes, buffer, handlePtr->buffer + startOffset);
-	    Byte_Copy(toWrite - numBytes, buffer + numBytes, handlePtr->buffer);
+	    bcopy(buffer, handlePtr->buffer + startOffset, numBytes);
+	    bcopy(buffer + numBytes, handlePtr->buffer, toWrite - numBytes);
 	}
     }
 
@@ -760,7 +760,7 @@ FsPipeRelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being released */
     int flags;			/* Use flags from the stream */
 {
-    Sys_Panic(SYS_FATAL, "FsPipeRelease called\n");
+    panic( "FsPipeRelease called\n");
     FsHandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
@@ -885,7 +885,7 @@ FsRmtPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     status = FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr,
 				 0, (Address)NIL);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "FsRmtPipeMigrate, server error <%x>\n",
+	printf( "FsRmtPipeMigrate, server error <%x>\n",
 	    status);
     } else {
 	*dataPtr = (Address)NIL;
@@ -926,7 +926,7 @@ FsPipeMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 
     handlePtr = FsHandleFetchType(FsPipeIOHandle, &migInfoPtr->ioFileID);
     if (handlePtr == (FsPipeIOHandle *)NIL) {
-	Sys_Panic(SYS_FATAL, "FsPipeMigEnd, no handle\n");
+	panic( "FsPipeMigEnd, no handle\n");
 	return(FAILURE);
     } else {
 	FsHandleUnlock(handlePtr);
@@ -979,7 +979,7 @@ FsRmtPipeVerify(fileIDPtr, clientID, domainTypePtr)
 	}
     }
     if (!found) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "FsRmtPipeVerify, client %d not known for pipe <%d,%d>\n",
 	    clientID, fileIDPtr->major, fileIDPtr->minor);
     }
@@ -1082,7 +1082,7 @@ FsPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	    }
 	}
 	if (!found) {
-	    clientPtr = Mem_New(FsClientInfo);
+	    clientPtr = mnew(FsClientInfo);
 	    clientPtr->clientID = clientID;
 	    List_Insert((List_Links *) clientPtr,
 		    LIST_ATFRONT(&handlePtr->clientList));

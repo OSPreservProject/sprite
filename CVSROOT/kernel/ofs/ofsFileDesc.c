@@ -72,7 +72,7 @@ FsFileDescAllocInit(domainPtr)
      */
 
     domainPtr->fileDescBitmap = (unsigned char *) 
-	Mem_Alloc(domainPtr->headerPtr->fdBitmapBlocks * FS_BLOCK_SIZE);
+	malloc(domainPtr->headerPtr->fdBitmapBlocks * FS_BLOCK_SIZE);
 
     /* 
      * Read in the bit map.
@@ -83,7 +83,7 @@ FsFileDescAllocInit(domainPtr)
 		    domainPtr->headerPtr->fdBitmapBlocks * 4,
 		    (Address) domainPtr->fileDescBitmap);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Could not read in file descriptor bit map.\n");
+	printf( "Could not read in file descriptor bit map.\n");
 	return(status);
     } else {
 	fsStats.gen.physBytesRead += FS_BLOCK_SIZE;
@@ -122,7 +122,7 @@ FsWriteBackFileDescBitmap(domainPtr)
 		    domainPtr->headerPtr->fdBitmapBlocks * 4,
 		    (Address) domainPtr->fileDescBitmap);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Could not write out file desc bit map.\n");
+	printf( "Could not write out file desc bit map.\n");
     } else {
 	fsStats.gen.physBytesWritten += FS_BLOCK_SIZE;
     }
@@ -207,7 +207,7 @@ FsGetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
     } while (i != startByte);
 
     if (!found) {
-	Sys_Panic(SYS_WARNING, "Out of file descriptors.\n");
+	printf( "Out of file descriptors.\n");
 	UNLOCK_MONITOR;
 	return(FAILURE);
     }
@@ -301,7 +301,7 @@ FsInitFileDesc(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr)
 	return(status);
     }
     if (fileDescPtr->flags != FS_FD_FREE) {
-	Sys_Panic(SYS_WARNING, "FsInitFileDesc fetched non-free file desc\n");
+	printf( "FsInitFileDesc fetched non-free file desc\n");
 	return(FS_FILE_EXISTS);
     }
     fileDescPtr->magic = FS_FD_MAGIC;
@@ -384,7 +384,7 @@ FsFetchFileDesc(domainPtr, fileNumber, fileDescPtr)
     Boolean		    found;
 
     if (fileNumber == 0) {
-	Sys_Panic(SYS_FATAL, "FsFetchFileDesc: file #0\n");
+	panic( "FsFetchFileDesc: file #0\n");
 	return(FAILURE);
     }
     headerPtr = domainPtr->headerPtr;
@@ -400,7 +400,7 @@ FsFetchFileDesc(domainPtr, fileNumber, fileDescPtr)
 			   blockNum * FS_FRAGMENTS_PER_BLOCK,
 			   FS_FRAGMENTS_PER_BLOCK, blockPtr->blockAddr);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "Could not read in file descriptor\n");
+	    printf( "Could not read in file descriptor\n");
 	    FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
 	    return(status);
 	} else {
@@ -409,13 +409,13 @@ FsFetchFileDesc(domainPtr, fileNumber, fileDescPtr)
     } else {
 	fsStats.blockCache.fileDescReadHits++;
     }
-    Byte_Copy(sizeof(FsFileDescriptor), blockPtr->blockAddr + offset, 
-	      (Address) fileDescPtr);
+    bcopy(blockPtr->blockAddr + offset, (Address) fileDescPtr,
+	sizeof(FsFileDescriptor));
     FsCacheUnlockBlock(blockPtr, 0, blockNum * FS_FRAGMENTS_PER_BLOCK, 
    			 FS_BLOCK_SIZE, 0);
 
     if (fileDescPtr->magic != FS_FD_MAGIC) {
-	Sys_Panic(SYS_WARNING, "FsFetchFileDesc found junky file desc\n");
+	printf( "FsFetchFileDesc found junky file desc\n");
 	return(FAILURE);
     } else {
 	return(SUCCESS);
@@ -458,7 +458,7 @@ FsStoreFileDesc(domainPtr, fileNumber, fileDescPtr)
     Boolean		    found;
 
     if (fileNumber == 0) {
-	Sys_Panic(SYS_FATAL, "FsStoreFileDesc: file #0\n");
+	panic( "FsStoreFileDesc: file #0\n");
 	return(FAILURE);
     }
     headerPtr = domainPtr->headerPtr;
@@ -475,7 +475,7 @@ FsStoreFileDesc(domainPtr, fileNumber, fileDescPtr)
 			   blockNum * FS_FRAGMENTS_PER_BLOCK,
 			   FS_FRAGMENTS_PER_BLOCK, blockPtr->blockAddr);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "Could not read in file descriptor\n");
+	    printf( "Could not read in file descriptor\n");
 	    FsCacheUnlockBlock(blockPtr, 0, blockNum * FS_FRAGMENTS_PER_BLOCK,
 				FS_BLOCK_SIZE, FS_DELETE_BLOCK);
 	    return(status);
@@ -485,8 +485,7 @@ FsStoreFileDesc(domainPtr, fileNumber, fileDescPtr)
     } else {
 	fsStats.blockCache.fileDescWriteHits++;
     }
-    Byte_Copy(sizeof(FsFileDescriptor), (Address) fileDescPtr,
-	      blockPtr->blockAddr + offset);
+    bcopy((Address) fileDescPtr, blockPtr->blockAddr + offset, sizeof(FsFileDescriptor));
     /*
      * Put the block back into the cache setting the modify time to 1 which
      * will guarantee that the next time the cache is written back this block
@@ -546,7 +545,7 @@ FsWriteBackDesc(handlePtr, doWriteBack)
 	status =  FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, 
 				  descPtr);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "FsWriteBackDesc: Could not store desc\n");
+	    printf( "FsWriteBackDesc: Could not store desc\n");
 	}
     }
     if (doWriteBack) {
@@ -556,7 +555,7 @@ FsWriteBackDesc(handlePtr, doWriteBack)
 	status = FsCacheFileWriteBack(&domainPtr->physHandle.cacheInfo,
 		    blockNum, blockNum, FS_FILE_WB_WAIT, &blocksSkipped);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, 
+	    printf( 
 		    "FsWritebackDesc: Couldn't write back desc.\n");
 	}
     }

@@ -38,12 +38,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsOpTable.h"
 #include "fsDebug.h"
 #include "fsNameOpsInt.h"
-#include "mem.h"
 #include "rpc.h"
 
 Boolean fsMigDebug = FALSE;
 #define DEBUG( format ) \
-	if (fsMigDebug) { Sys_Printf format ; }
+	if (fsMigDebug) { printf format ; }
 
 
 /*
@@ -196,7 +195,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	     * Convert from remote to local file types, and vice-versa,
 	     * as needed.
 	     */
-	    streamPtr->nameInfoPtr = nameInfoPtr = Mem_New(FsNameInfo);
+	    streamPtr->nameInfoPtr = nameInfoPtr = mnew(FsNameInfo);
 	    nameInfoPtr->fileID = migInfoPtr->nameID;
 	    nameInfoPtr->rootID = migInfoPtr->rootID;
 	    if (nameInfoPtr->fileID.serverID != rpc_SpriteID) {
@@ -214,7 +213,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	    }
 	    nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
 	    if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
-		Sys_Panic(SYS_WARNING, "No prefix entry for <%d,%d,%d>\n",
+		printf( "No prefix entry for <%d,%d,%d>\n",
 		    migInfoPtr->rootID.serverID,
 		    migInfoPtr->rootID.major, migInfoPtr->rootID.minor);
 	    }
@@ -371,7 +370,7 @@ FsIOClientMigrate(clientList, srcClientID, dstClientID, flags)
 	 */
 	found = FsIOClientClose(clientList, srcClientID, flags, &cache);
 	if (!found) {
-	    Sys_Panic(SYS_WARNING,"FsIOClientMigrate, srcClient %d not found\n",
+	    printf("FsIOClientMigrate, srcClient %d not found\n",
 		srcClientID);
 	}
     }
@@ -431,16 +430,15 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
 	*offsetPtr = migReplyPtr->offset;
 	if (migParam.dataSize > 0) {
 	    if (outSize < migParam.dataSize) {
-		Sys_Panic(fsMigDebug ? SYS_FATAL : SYS_WARNING,
-			  "FsNotifyOfMigration: too much data returned %d not %d\n",
+		panic("FsNotifyOfMigration: too much data returned %d not %d\n",
 			  migParam.dataSize, outSize);
 		status = FAILURE;
 	    } else {
-		Byte_Copy(migParam.dataSize, (Address)&migParam.data, outData);
+		bcopy((Address)&migParam.data, outData, migParam.dataSize);
 	    }
 	}
     } else if (fsMigDebug) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		  "FsNotifyOfMigration: status %x returned by remote migrate routine.\n",
 		  status);
     }
@@ -504,14 +502,13 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
     }
     if (hdrPtr == (FsHandleHeader *) NIL) {
-	Sys_Panic(fsMigDebug ? SYS_FATAL : SYS_WARNING,
-		  "Fs_RpcStartMigration, unknown %s handle <%d,%d>\n",
+	panic("Fs_RpcStartMigration, unknown %s handle <%d,%d>\n",
 	    FsFileTypeToString(migInfoPtr->ioFileID.type),
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FS_STALE_HANDLE);
     }
     FsHandleUnlock(hdrPtr);
-    migParamPtr = Mem_New(FsMigParam);
+    migParamPtr = mnew(FsMigParam);
     migReplyPtr = &(migParamPtr->migReply);
     migReplyPtr->flags = migInfoPtr->flags;
     storagePtr->replyParamPtr = (Address)migParamPtr;
@@ -524,10 +521,10 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
     migParamPtr->dataSize = dataSize;
     if ((status == SUCCESS) && (dataSize > 0)) {
 	if (dataSize <= sizeof(migParamPtr->data)) {
-	    Byte_Copy(dataSize, dataPtr, (Address) &migParamPtr->data);
-	    Mem_Free(dataPtr);
+	    bcopy(dataPtr, (Address) &migParamPtr->data, dataSize);
+	    free(dataPtr);
 	} else {
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		      "Fs_RpcStartMigration: migrate routine returned oversized data buffer.\n");
 	    return(FAILURE);
 	}
@@ -535,7 +532,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 	
     FsHandleRelease(hdrPtr, FALSE);
 
-    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = storagePtr->replyParamPtr;
     replyMemPtr->dataPtr = (Address) NIL;
     Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
@@ -631,7 +628,7 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
     *sizePtr = (3 + fsPtr->numGroupIDs) * sizeof(int) +
 	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
 	    sizeof(FsMigInfo);
-    *bufPtr = Mem_Alloc(*sizePtr);
+    *bufPtr = (Address)malloc(*sizePtr);
     ptr = *bufPtr;
 
     /*
@@ -641,23 +638,22 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
     numGroups = fsPtr->numGroupIDs;
     Byte_FillBuffer(ptr, unsigned int, numGroups);
     if (numGroups > 0) {
-	Byte_Copy(numGroups * sizeof(int), (Address) fsPtr->groupIDs, ptr);
+	bcopy((Address) fsPtr->groupIDs, ptr, numGroups * sizeof(int));
 	ptr += numGroups * sizeof(int);
     }
     Byte_FillBuffer(ptr, unsigned int, fsPtr->filePermissions);
     Byte_FillBuffer(ptr, int, numStreams);
     if (numStreams > 0) {
-	Byte_Copy(numStreams * sizeof(char), (Address) fsPtr->streamFlags,
-		  ptr);
+	bcopy((Address) fsPtr->streamFlags, ptr, numStreams * sizeof(char));
 	ptr += streamFlagsLen;
     }
     
     status = Fs_EncapStream(fsPtr->cwdPtr, ptr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		  "Fs_EncapFileState: Error %x from Fs_EncapStream on cwd.\n",
 		  status);
-	Mem_Free(*bufPtr);
+	free(*bufPtr);
 	return(status);
     }
     fsPtr->cwdPtr = (Fs_Stream *) NIL;
@@ -671,16 +667,16 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
 	    Byte_FillBuffer(ptr, int, i);
 	    status = Fs_EncapStream(streamPtr, ptr);
 	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 			  "Fs_EncapFileState: Error %x from Fs_EncapStream.\n",
 			  status);
-		Mem_Free(*bufPtr);
+		free(*bufPtr);
 		return(status);
 	    }
 	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
 	} else {
 	    Byte_FillBuffer(ptr, int, NIL);
-	    Byte_Zero(sizeof(FsMigInfo), ptr);
+	    bzero(ptr, sizeof(FsMigInfo));
 	}	
 	ptr += sizeof(FsMigInfo);
     }
@@ -725,7 +721,7 @@ Fs_ClearFileState(procPtr)
 
     fsPtr = procPtr->fsPtr;
     if (fsPtr == (Fs_ProcessState *) NIL) {
-	Sys_Panic(SYS_FATAL, "Fs_ClearFileState: NIL Fs_ProcessState!");
+	panic( "Fs_ClearFileState: NIL Fs_ProcessState!");
 	return;
     }
     for (i = 0; i < fsPtr->numStreams; i++) {
@@ -765,7 +761,7 @@ Fs_DeencapFileState(procPtr, buffer)
     int numStreams;
     ReturnStatus status;
 
-    procPtr->fsPtr = fsPtr = Mem_New(Fs_ProcessState);
+    procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
     
 
     /*
@@ -774,8 +770,8 @@ Fs_DeencapFileState(procPtr, buffer)
     Byte_EmptyBuffer(buffer, unsigned int, numGroups);
     fsPtr->numGroupIDs = numGroups;
     if (numGroups > 0) {
-	fsPtr->groupIDs = (int *)Mem_Alloc(numGroups * sizeof(int));
-	Byte_Copy(numGroups * sizeof(int), buffer, (Address) fsPtr->groupIDs);
+	fsPtr->groupIDs = (int *)malloc(numGroups * sizeof(int));
+	bcopy(buffer, (Address) fsPtr->groupIDs, numGroups * sizeof(int));
 	buffer += numGroups * sizeof(int);
     } else {
 	fsPtr->groupIDs = (int *)NIL;
@@ -793,10 +789,9 @@ Fs_DeencapFileState(procPtr, buffer)
     fsPtr->numStreams = numStreams;
     if (numStreams > 0) {
 	fsPtr->streamList = (Fs_Stream **)
-		Mem_Alloc(numStreams * sizeof(Fs_Stream *));
-	fsPtr->streamFlags = (char *)Mem_Alloc(numStreams * sizeof(char));
-	Byte_Copy(numStreams * sizeof(char), buffer,
-		  (Address) fsPtr->streamFlags);
+		malloc(numStreams * sizeof(Fs_Stream *));
+	fsPtr->streamFlags = (char *)malloc(numStreams * sizeof(char));
+	bcopy(buffer, (Address) fsPtr->streamFlags, numStreams * sizeof(char));
 	buffer += Byte_AlignAddr(numStreams * sizeof(char));
     } else {
 	fsPtr->streamList = (Fs_Stream **)NIL;
@@ -804,7 +799,7 @@ Fs_DeencapFileState(procPtr, buffer)
     }
     status = Fs_DeencapStream(buffer, &fsPtr->cwdPtr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_FATAL,
+	panic(
 		  "GetFileState: Fs_DeencapStream returned %x for cwd.\n",
 		  status);
     }
@@ -821,7 +816,7 @@ Fs_DeencapFileState(procPtr, buffer)
 #ifdef notdef
 		if (status != FAILURE) {
 #endif
-		    Sys_Panic(SYS_WARNING,
+		    printf(
       "Fs_DeencapFileState: Fs_DeencapStream for file id %d returned %x.\n",
 			      index, status);
 		    return(status);

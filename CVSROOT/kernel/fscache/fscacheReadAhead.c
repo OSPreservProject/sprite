@@ -60,7 +60,7 @@ void
 FsReadAheadInit(readAheadPtr)
     register	FsReadAheadInfo *readAheadPtr;
 {
-    Byte_Zero(sizeof(FsReadAheadInfo), (Address) readAheadPtr);
+    bzero((Address) readAheadPtr, sizeof(FsReadAheadInfo));
 }
 
 /*
@@ -106,7 +106,7 @@ FsReadAhead(cacheInfoPtr, blockNum)
 	    break;
 	}
 	default:
-	    Sys_Panic(SYS_FATAL, "FsReadAhead, bad stream type <%d>\n",
+	    panic("FsReadAhead, bad stream type <%d>\n",
 		cacheInfoPtr->hdrPtr->fileID.type);
 	    return;
     }
@@ -138,7 +138,7 @@ FsReadAhead(cacheInfoPtr, blockNum)
 
 	fsStats.blockCache.readAheads++;
 	FsIncReadAheadCount(readAheadPtr);
-	callBackData = Mem_New(ReadAheadCallBackData);
+	callBackData = mnew(ReadAheadCallBackData);
 	callBackData->cacheInfoPtr = cacheInfoPtr;
 	callBackData->readAheadPtr = readAheadPtr;
 	callBackData->blockNum = i;
@@ -197,13 +197,12 @@ DoReadAhead(data, callInfoPtr)
 	     * the rest.
 	     */
 	    fsStats.blockCache.readZeroFills++;
-	    Byte_Zero(FS_BLOCK_SIZE - amountRead,
-		      blockPtr->blockAddr + amountRead);
+	    bzero(blockPtr->blockAddr + amountRead, FS_BLOCK_SIZE - amountRead);
 	}
 	FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
     }
     FsDecReadAheadCount(callBackData->readAheadPtr);
-    Mem_Free((Address) callBackData);
+    free((Address) callBackData);
     callInfoPtr->interval = 0;	/* don't call us again */
 }
 

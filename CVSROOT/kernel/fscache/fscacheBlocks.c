@@ -197,12 +197,12 @@ static	int	blocksPerPage;		/* Number of blocks in a page. */
 #ifndef CLEAN
 /*
  * This macro has to be called with a double set of parenthesis.
- * This lets you pass a variable number of arguments through to Sys_Printf:
+ * This lets you pass a variable number of arguments through to printf:
  *	DEBUG_PRINT( ("foo %d\n", 17) );
  */
 #define DEBUG_PRINT( format ) \
     if (cacheDebug) {\
-	Sys_Printf format ; \
+	printf format ; \
     }
 #else
 #define	DEBUG_PRINT(format)
@@ -346,12 +346,12 @@ FsBlockCacheInit(blockHashSize)
     while (fsStats.blockCache.numCacheBlocks < 
 					fsStats.blockCache.minCacheBlocks) {
 	if (!CreateBlock(FALSE, (FsCacheBlock **) NIL)) {
-	    Sys_Printf("FsBlockCacheInit: Couldn't create block\n");
+	    printf("FsBlockCacheInit: Couldn't create block\n");
 	    fsStats.blockCache.minCacheBlocks = 
 					fsStats.blockCache.numCacheBlocks;
 	}
     }
-    Sys_Printf("FS Cache has %d %d-Kbyte blocks (%d max)\n",
+    printf("FS Cache has %d %d-Kbyte blocks (%d max)\n",
 	    fsStats.blockCache.minCacheBlocks, FS_BLOCK_SIZE / 1024,
 	    fsStats.blockCache.maxNumBlocks);
 
@@ -510,7 +510,7 @@ CreateBlock(retBlock, blockPtrPtr)
     int				newCachePages;
 
     if (List_IsEmpty(unmappedList)) {
-	Sys_Panic(SYS_WARNING, "CreateBlock: No unmapped blocks\n");
+	printf( "CreateBlock: No unmapped blocks\n");
 	return(FALSE);
     }
     blockPtr = (FsCacheBlock *) List_First(unmappedList);
@@ -670,7 +670,7 @@ FetchBlock(canWait)
     register	FsCacheBlock	*blockPtr;
 
     if (List_IsEmpty(lruList)) {
-	Sys_Panic(SYS_WARNING, "FetchBlock: LRU list empty\n");
+	printf("FetchBlock: LRU list is empty\n");
 	return((FsCacheBlock *) NIL);
     }
 
@@ -696,7 +696,7 @@ FetchBlock(canWait)
 	    PutBlockOnDirtyList(blockPtr, FALSE);
 	    blockPtr->flags |= FS_MOVE_TO_FRONT;
 	} else if (blockPtr->flags & FS_BLOCK_DELETED) {
-	    Sys_Panic(SYS_WARNING, "FetchBlock: deleted block in LRU list\n");
+	    printf( "FetchBlock: deleted block in LRU list\n");
 	} else {
 	    /*
 	     * This block is clean and unlocked.  Delete it from the
@@ -749,7 +749,7 @@ FsSetMinSize(minBlocks)
 
     if (minBlocks > fsStats.blockCache.maxNumBlocks) {
 	minBlocks = fsStats.blockCache.maxNumBlocks;
-	Sys_Printf( "FsSetMinSize: Only raising min cache size to %d blocks\n", 
+	printf( "FsSetMinSize: Only raising min cache size to %d blocks\n", 
 				minBlocks);
     }
     fsStats.blockCache.minCacheBlocks = minBlocks;
@@ -766,7 +766,7 @@ FsSetMinSize(minBlocks)
     while (fsStats.blockCache.numCacheBlocks < 
 					fsStats.blockCache.minCacheBlocks) {
 	if (!CreateBlock(FALSE, (FsCacheBlock **) NIL)) {
-	    Sys_Printf("FsSetMinSize: lowered min cache size to %d blocks\n",
+	    printf("FsSetMinSize: lowered min cache size to %d blocks\n",
 		       fsStats.blockCache.numCacheBlocks);
 	    fsStats.blockCache.minCacheBlocks = 
 				    fsStats.blockCache.numCacheBlocks;
@@ -806,7 +806,7 @@ FsSetMaxSize(maxBlocks)
 
     if (maxBlocks > fsStats.blockCache.maxNumBlocks) {
 	maxBlocks = fsStats.blockCache.maxNumBlocks;
-	Sys_Printf("FsSetMaxSize: Only raising max cache size to %d blocks\n",
+	printf("FsSetMaxSize: Only raising max cache size to %d blocks\n",
 		maxBlocks);
     }
 
@@ -828,7 +828,7 @@ FsSetMaxSize(maxBlocks)
 
 #ifndef CLEAN
     if (cacheDebug && giveUp) {
-	Sys_Printf("FsSetMaxSize: Could only lower cache to %d\n", 
+	printf("FsSetMaxSize: Could only lower cache to %d\n", 
 					fsStats.blockCache.numCacheBlocks);
     }
 #endif not CLEAN
@@ -950,7 +950,7 @@ again:
     if (blockPtr != (FsCacheBlock *) NIL) {
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 	    UNLOCK_MONITOR;
-	    Sys_Panic(SYS_FATAL, "CacheFetchBlock hashing error\n");
+	    panic( "CacheFetchBlock hashing error\n");
 	    *foundPtr = FALSE;
 	    *blockPtrPtr = (FsCacheBlock *) NIL;
 	    return;
@@ -1148,7 +1148,7 @@ FsCacheUnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
     LOCK_MONITOR;
 
     if (blockPtr->flags & FS_BLOCK_FREE) {
-	Sys_Panic(SYS_FATAL, "Checking free block\n");
+	panic( "Checking free block\n");
     }
 
     if (blockPtr->flags & FS_IO_IN_PROGRESS) {
@@ -1181,7 +1181,7 @@ FsCacheUnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	     */
 	    blockPtr->cacheInfoPtr->numDirtyBlocks++;
 	    if (traceDirtyBlocks) {
-		Sys_Printf("UNL FD=%d Num=%d\n",
+		printf("UNL FD=%d Num=%d\n",
 			   blockPtr->cacheInfoPtr->hdrPtr->fileID.minor,
 			   blockPtr->cacheInfoPtr->numDirtyBlocks);
 	    }
@@ -1319,7 +1319,7 @@ FsCacheBlockTrunc(cacheInfoPtr, blockNum, newBlockSize)
 	blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
 
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    Sys_Panic(SYS_FATAL, "CacheBlockTrunc, hashing error\n");
+	    panic( "CacheBlockTrunc, hashing error\n");
 	} else {
 	    blockPtr->blockSize = newBlockSize;
 	}
@@ -1416,7 +1416,7 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 	    }
 	    blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
 	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-		Sys_Panic(SYS_FATAL, "CacheFileInvalidate, hashing error\n");
+		panic( "CacheFileInvalidate, hashing error\n");
 		continue;
 	    }
 
@@ -1438,7 +1438,7 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 	    if (blockPtr->flags & FS_BLOCK_DIRTY) {
 		cacheInfoPtr->numDirtyBlocks--;
 		if (traceDirtyBlocks) {
-		    Sys_Printf("Inv FD=%d Num=%d\n", 
+		    printf("Inv FD=%d Num=%d\n", 
 			    cacheInfoPtr->hdrPtr->fileID.minor,
 			    cacheInfoPtr->numDirtyBlocks);
 		}
@@ -1652,7 +1652,7 @@ again:
 	blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
 
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    Sys_Panic(SYS_FATAL, "CacheWriteBack, hashing error\n");
+	    panic( "CacheWriteBack, hashing error\n");
 	    UNLOCK_MONITOR;
 	    return(FAILURE);
 	}
@@ -1819,7 +1819,7 @@ Fs_CacheBlocksUnneeded(streamPtr, offset, numBytes, objectFile)
 	    break;
 	}
 	default:
-	    Sys_Panic(SYS_FATAL, "Fs_CacheBlocksUnneeded, bad stream type %d\n",
+	    panic( "Fs_CacheBlocksUnneeded, bad stream type %d\n",
 		streamPtr->ioHandlePtr->fileID.type);
 	    return;
     }
@@ -1882,7 +1882,7 @@ FsCacheBlocksUnneeded(cacheInfoPtr, offset, numBytes)
 	blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
 
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    Sys_Panic(SYS_FATAL, "CacheBlocksUnneeded, hashing error\n");
+	    panic( "CacheBlocksUnneeded, hashing error\n");
 	    continue;
 	}
 
@@ -2159,7 +2159,7 @@ FsCleanBlocks(data, callInfoPtr)
     while (cacheInfoPtr != (FsCacheFileInfo *)NIL) {
 	while (blockPtr != (FsCacheBlock *)NIL) {
 	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-		Sys_Panic(SYS_FATAL, "FsCleanBlocks, bad block\n");
+		panic( "FsCleanBlocks, bad block\n");
 		continue;
 	    }
 	    /*
@@ -2182,14 +2182,14 @@ FsCleanBlocks(data, callInfoPtr)
 		    fsStats.blockCache.dirBlocksWrittenThru++;
 		    break;
 		default:
-		    Sys_Panic(SYS_WARNING, "FsCleanBlocks: Unknown block type\n");
+		    printf( "FsCleanBlocks: Unknown block type\n");
 	    }
 
 	    /*
 	     * Write the block.
 	     */
 	    if (blockPtr->blockSize < 0) {
-		Sys_Panic(SYS_FATAL, "FsCleanBlocks, uninitialized block size\n");
+		panic( "FsCleanBlocks, uninitialized block size\n");
 		status = FAILURE;
 		break;
 	    }
@@ -2416,7 +2416,7 @@ GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
 	blockPtr = DIRTY_LINKS_TO_BLOCK(dirtyPtr);
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 	    UNLOCK_MONITOR;
-	    Sys_Panic(SYS_FATAL, "GetDirtyBlock, bad block\n");
+	    panic( "GetDirtyBlock, bad block\n");
 	    LOCK_MONITOR;
 	    continue;
 	}
@@ -2582,7 +2582,7 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 		blockPtr->flags |= FS_BLOCK_BEING_WRITTEN;
 		Proc_CallFunc(ReallocBlock, (ClientData)blockPtr, 0);
 		printErrorMsg = TRUE;
-		Sys_Printf("File blk %d phys blk %d: ",
+		printf("File blk %d phys blk %d: ",
 			    blockPtr->blockNum, blockPtr->diskBlock);
 		cacheInfoPtr->flags |= FS_CACHE_GENERIC_ERROR;
 		break;
@@ -2874,14 +2874,14 @@ FsCacheFileBlocks(cacheInfoPtr)
 	blockPtr = FILE_LINKS_TO_BLOCK(linkPtr);
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 	    UNLOCK_MONITOR;
-	    Sys_Panic(SYS_FATAL, "FsCacheFileBlocks, bad block\n");
+	    panic( "FsCacheFileBlocks, bad block\n");
 	    return(numBlocks);
 	}
 	numBlocksCheck++;
     }
     if (numBlocksCheck != numBlocks) {
 	UNLOCK_MONITOR;
-	Sys_Panic(SYS_FATAL, "FsCacheFileBlocks, wrong block count\n");
+	panic( "FsCacheFileBlocks, wrong block count\n");
 	return(numBlocks);
     }
     UNLOCK_MONITOR;
@@ -2970,8 +2970,7 @@ DeleteBlock(blockPtr)
 				     blockPtr->blockNum);
     hashEntryPtr = Hash_LookOnly(blockHashTable, (Address) &blockHashKey);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
-	Sys_Panic(SYS_FATAL,
-	    "DeleteBlock: Block in LRU list is not in the hash table.\n");
+	panic("DeleteBlock: Block in LRU list is not in the hash table.\n");
     }
     FS_TRACE_BLOCK(FS_TRACE_DEL_BLOCK, blockPtr);
     Hash_Delete(blockHashTable, hashEntryPtr);
@@ -3002,13 +3001,13 @@ Fs_DumpCacheStats()
 
     block = &fsStats.blockCache;
 
-    Sys_Printf("\n");
-    Sys_Printf("READ  %d dirty hits %d clean hits %d zero fill %d\n",
+    printf("\n");
+    printf("READ  %d dirty hits %d clean hits %d zero fill %d\n",
 		block->readAccesses,
 		block->readHitsOnDirtyBlock,
 		block->readHitsOnCleanBlock,
 		block->readZeroFills);
-    Sys_Printf("WRITE %d p-hits %d p-misses %d thru %d zero %d/%d app %d over %d\n",
+    printf("WRITE %d p-hits %d p-misses %d thru %d zero %d/%d app %d over %d\n",
 		block->writeAccesses,
 		block->partialWriteHits,
 		block->partialWriteMisses,
@@ -3016,22 +3015,22 @@ Fs_DumpCacheStats()
 		block->writeZeroFills1, block->writeZeroFills2,
 		block->appendWrites,
 		block->overWrites);
-    Sys_Printf("FRAG upgrades %d hits %d zero fills\n",
+    printf("FRAG upgrades %d hits %d zero fills\n",
 		block->fragAccesses,
 		block->fragHits,
 		block->fragZeroFills);
-    Sys_Printf("FILE DESC reads %d hits %d writes %d hits %d\n", 
+    printf("FILE DESC reads %d hits %d writes %d hits %d\n", 
 		block->fileDescReads, block->fileDescReadHits,
 		block->fileDescWrites, block->fileDescWriteHits);
-    Sys_Printf("INDIRECT BLOCKS Accesses %d hits %d\n", 
+    printf("INDIRECT BLOCKS Accesses %d hits %d\n", 
 		block->indBlockAccesses, block->indBlockHits);
-    Sys_Printf("VM requests %d/%d/%d, gave up %d\n",
+    printf("VM requests %d/%d/%d, gave up %d\n",
 		block->vmRequests, block->triedToGiveToVM, block->vmGotPage,
 		block->gavePageToVM);
-    Sys_Printf("BLOCK free %d new %d lru %d part free %d\n",
+    printf("BLOCK free %d new %d lru %d part free %d\n",
 		block->totFree, block->unmapped,
 		block->lru, block->partFree);
-    Sys_Printf("SIZES Blocks min %d num %d max %d, Blocks max %d free %d pitched %d\n",
+    printf("SIZES Blocks min %d num %d max %d, Blocks max %d free %d pitched %d\n",
 		block->minCacheBlocks, block->numCacheBlocks,
 		block->maxCacheBlocks, block->maxNumBlocks,
 		block->numFreeBlocks, block->blocksPitched);

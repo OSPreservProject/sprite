@@ -42,7 +42,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsRecovery.h"
 #include "fsDisk.h"
 #include "fsStat.h"
-#include "mem.h"
 #include "rpc.h"
 
 FsHandleHeader *VerifyIOHandle();
@@ -86,7 +85,7 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	    /*
 	     * Anonymous pipes have no name info.
 	     */
-	    Byte_Zero(sizeof(Fs_Attributes), (Address)attrPtr);
+	    bzero((Address)attrPtr, sizeof(Fs_Attributes));
 	    status = SUCCESS;
 	} else {
 	    /*
@@ -97,11 +96,11 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 			(&nameInfoPtr->fileID, rpc_SpriteID, attrPtr);
 #ifdef lint
 	    status = FsLocalGetAttr(&nameInfoPtr->fileID, rpc_SpriteID,attrPtr);
-	    status = FsSpriteGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
+	    status = FsRemoteGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
 	    status = FsPseudoGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
 #endif lint
 	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 		    "Fs_GetAttrStream: can't get name attributes <%x> for %s\n",
 		    status, Fs_GetFileName(streamPtr));
 	    }
@@ -150,7 +149,7 @@ FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
 {
     if (fileIDPtr->type != FS_LCL_FILE_STREAM) {
-	Sys_Panic(SYS_FATAL, "FsLocalGetAttr, bad fileID type <%d>\n",
+	panic( "FsLocalGetAttr, bad fileID type <%d>\n",
 	    fileIDPtr->type);
 	return(GEN_INVALID_ARG);
     } else {
@@ -162,7 +161,7 @@ FsLocalGetAttr(fileIDPtr, clientID, attrPtr)
 	if (handlePtr == (FsLocalFileIOHandle *)NIL) {
 	    status = FsLocalFileHandleInit(fileIDPtr, (char *)NIL, &handlePtr);
 	    if (status != SUCCESS) {
-		Byte_Zero(sizeof(Fs_Attributes), (Address)attrPtr);
+		bzero((Address)attrPtr, sizeof(Fs_Attributes));
 		return(status);
 	    }
 	}
@@ -307,7 +306,7 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
 			(&nameInfoPtr->fileID, attrPtr, idPtr, flags);
 #ifdef lint
 	    status = FsLocalSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
-	    status = FsSpriteSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
+	    status = FsRemoteSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
 	    status = FsPseudoSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
 #endif lint
 	} else {
@@ -378,7 +377,7 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle, fileIDPtr);
     if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		"FsLocalSetAttr, no handle for %s <%d,%d,%d>\n",
 		FsFileTypeToString(fileIDPtr->type),
 		fileIDPtr->serverID, fileIDPtr->major, fileIDPtr->minor);
@@ -386,7 +385,7 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     }
     descPtr = handlePtr->descPtr;
     if (descPtr == (FsFileDescriptor *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsLocalSetAttr, NIL descPtr\n");
+	printf( "FsLocalSetAttr, NIL descPtr\n");
 	status = FAILURE;
 	goto exit;
     }
@@ -498,16 +497,16 @@ exit:
  * Return parameters from RPC_FS_GET_ATTR_PATH.  The file ID is used to
  * get to the I/O server.
  */
-typedef struct FsSpriteGetAttrResults {
+typedef struct FsRemoteGetAttrResults {
     Fs_Attributes	attributes;
     Fs_FileID		fileID;
-} FsSpriteGetAttrResults;
+} FsRemoteGetAttrResults;
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteGetAttrPath --
+ * FsRemoteGetAttrPath --
  *
  *	Get the attributes of a remote Sprite file given its name.  This
  *	is called from Fs_GetAttributes for files named by remote servers.
@@ -524,7 +523,7 @@ typedef struct FsSpriteGetAttrResults {
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsSpriteGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
+FsRemoteGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
          	    newNameInfoPtrPtr)
     FsHandleHeader *prefixHandle;	/* Handle from the prefix table */
     char           *relativeName;	/* The name of the file. */
@@ -548,7 +547,7 @@ FsSpriteGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     storage.requestParamPtr = (Address) openArgsPtr;
     storage.requestParamSize = sizeof(FsOpenArgs);
     storage.requestDataPtr = (Address) relativeName;
-    storage.requestDataSize = String_Length(relativeName) + 1;
+    storage.requestDataSize = strlen(relativeName) + 1;
     storage.replyParamPtr = (Address) &(getAttrResultsParam);
     storage.replyParamSize = sizeof(FsGetAttrResultsParam);
     storage.replyDataPtr = (Address) replyName;
@@ -570,9 +569,9 @@ FsSpriteGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 	/*
 	 * Copy the info from our stack to a buffer for our caller
 	 */
-	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = getAttrResultsParam.prefixLength;
-	(void)String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
+	(void)strcpy((*newNameInfoPtrPtr)->fileName, replyName);
 	return(FS_LOOKUP_REDIRECT);
     }
 
@@ -643,7 +642,7 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
     FsHandleRelease(prefixHandle, TRUE);
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
-    getAttrResultsParamPtr = Mem_New(FsGetAttrResultsParam);
+    getAttrResultsParamPtr = mnew(FsGetAttrResultsParam);
 
     getAttrResults.attrPtr = &(getAttrResultsParamPtr->attrResults.attrs);
     getAttrResults.fileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
@@ -664,24 +663,23 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
 	getAttrResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
 	storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
 	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
-	storagePtr->replyDataSize = String_Length(newNameInfoPtr->fileName) + 1;
+	storagePtr->replyDataSize = strlen(newNameInfoPtr->fileName) + 1;
 	storagePtr->replyDataPtr =
-		(Address) Mem_Alloc(storagePtr->replyDataSize);
-	(void)String_Copy(newNameInfoPtr->fileName,
-			  (char *) storagePtr->replyDataPtr);
-	Mem_Free((Address)newNameInfoPtr);
+		(Address) malloc(storagePtr->replyDataSize);
+	(void)strcpy((char *) storagePtr->replyDataPtr, newNameInfoPtr->fileName);
+	free((Address)newNameInfoPtr);
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
 
-        replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+        replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
         Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
 		    (ClientData)replyMemPtr);
         return(SUCCESS);
     } else {
-	Mem_Free((Address) getAttrResultsParamPtr);
+	free((Address) getAttrResultsParamPtr);
         return(status);
     }
 }
@@ -690,7 +688,7 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteSetAttrPath --
+ * FsRemoteSetAttrPath --
  *
  *	Set the attributes of a remote Sprite file given its path name.
  *	This is called from Fs_SetAttributes.  This used the
@@ -707,7 +705,7 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
  */
 
 ReturnStatus
-FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
+FsRemoteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
          	    newNameInfoPtrPtr)
     FsHandleHeader *prefixHandle;   /* Token from the prefix table */
     char           *relativeName;   /* The name of the file. */
@@ -725,7 +723,7 @@ FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsSetAttrArgs);
     storage.requestDataPtr = (Address) relativeName;
-    storage.requestDataSize = String_Length(relativeName) + 1;
+    storage.requestDataSize = strlen(relativeName) + 1;
     storage.replyParamPtr = (Address) &(getAttrResultsParam);
     storage.replyParamSize = sizeof(FsGetAttrResultsParam);
     storage.replyDataPtr = (Address) replyName;
@@ -744,9 +742,9 @@ FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 	/*
 	 * Copy the info from our stack to a buffer for our caller.
 	 */
-	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = getAttrResultsParam.prefixLength;
-	(void)String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
+	(void)strcpy((*newNameInfoPtrPtr)->fileName, replyName);
     }
 
     return(status);
@@ -806,7 +804,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
     FsHandleRelease(prefixHandle, TRUE);
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
-    getAttrResultsParamPtr = Mem_New(FsGetAttrResultsParam);
+    getAttrResultsParamPtr = mnew(FsGetAttrResultsParam);
     ioFileIDPtr = &(getAttrResultsParamPtr->attrResults.fileID);
     status = (*fsDomainLookup[domainType][FS_DOMAIN_SET_ATTR])(prefixHandle,
 		(char *) storagePtr->requestDataPtr,
@@ -825,24 +823,23 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 	getAttrResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
 	storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
 	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
-	storagePtr->replyDataSize = String_Length(newNameInfoPtr->fileName) + 1;
+	storagePtr->replyDataSize = strlen(newNameInfoPtr->fileName) + 1;
 	storagePtr->replyDataPtr =
-		(Address) Mem_Alloc(storagePtr->replyDataSize);
-	(void)String_Copy(newNameInfoPtr->fileName,
-		(char *) storagePtr->replyDataPtr);
-	Mem_Free((Address)newNameInfoPtr);
+		(Address) malloc(storagePtr->replyDataSize);
+	(void)strcpy((char *) storagePtr->replyDataPtr, newNameInfoPtr->fileName);
+	free((Address)newNameInfoPtr);
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
 
-        replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+        replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
         Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
 		(ClientData)replyMemPtr);
         return(SUCCESS);
     } else {
-	Mem_Free((Address)getAttrResultsParamPtr);
+	free((Address)getAttrResultsParamPtr);
         return(status);
     }
 }
@@ -850,7 +847,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteGetAttr --
+ * FsRemoteGetAttr --
  *
  *	Get the attributes of a remote file given its fileID.  This is called
  *	from Fs_GetAttrStream.  This does an RPC to the name server which
@@ -866,7 +863,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteGetAttr(fileIDPtr, clientID, attrPtr)
+FsRemoteGetAttr(fileIDPtr, clientID, attrPtr)
     register Fs_FileID		*fileIDPtr;	/* Identfies file */
     int				clientID;	/* IGNORED, implicitly passed
 						 * by the RPC system. */
@@ -964,7 +961,7 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
     }
     FsHandleUnlock(hdrPtr);
 
-    attrPtr = Mem_New(Fs_Attributes);
+    attrPtr = mnew(Fs_Attributes);
     status = (*fsAttrOpTable[domainType].getAttr)(fileIDPtr, clientID, attrPtr);
 #ifdef lint
     status = FsLocalGetAttr(fileIDPtr, clientID, attrPtr);
@@ -974,7 +971,7 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
 
     storagePtr->replyParamPtr = (Address) attrPtr;
     storagePtr->replyParamSize = sizeof(Fs_Attributes);
-    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = storagePtr->replyParamPtr;
     replyMemPtr->dataPtr = (Address) NIL;
 
@@ -988,17 +985,17 @@ Fs_RpcGetAttr(srvToken, clientID, command, storagePtr)
  * (which has extra stuff required to handle path name lookup).
  */
 
-typedef struct FsSpriteSetAttrParams {
+typedef struct FsRemoteSetAttrParams {
     Fs_FileID		fileID;
     Fs_UserIDs		ids;
     Fs_Attributes	attrs;
     int			flags;
-} FsSpriteSetAttrParams;
+} FsRemoteSetAttrParams;
 
 /*
  *----------------------------------------------------------------------
  *
- * FsSpriteSetAttr
+ * FsRemoteSetAttr
  *
  *	Set selected attributes of a remote file given its fileID.  This
  *	is called from Fs_SetAttrStream.  This does the RPC_FS_SET_ATTR
@@ -1014,7 +1011,7 @@ typedef struct FsSpriteSetAttrParams {
  */
 
 ReturnStatus
-FsSpriteSetAttr(fileIDPtr, attrPtr, idPtr, flags)
+FsRemoteSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     Fs_FileID		*fileIDPtr;
     Fs_Attributes	*attrPtr;
     Fs_UserIDs		 *idPtr;
@@ -1022,14 +1019,14 @@ FsSpriteSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 {
     ReturnStatus status;
     Rpc_Storage storage;
-    FsSpriteSetAttrParams params;
+    FsRemoteSetAttrParams params;
 
     params.fileID = *fileIDPtr;
     params.ids = *idPtr;
     params.attrs = *attrPtr;
     params.flags = flags;
     storage.requestParamPtr = (Address)&params;
-    storage.requestParamSize = sizeof(FsSpriteSetAttrParams);
+    storage.requestParamSize = sizeof(FsRemoteSetAttrParams);
     storage.requestDataPtr = (Address)NIL;;
     storage.requestDataSize = 0;
     storage.replyParamPtr = (Address)NIL;
@@ -1086,10 +1083,10 @@ Fs_RpcSetAttr(srvToken, clientID, command, storagePtr)
     register Fs_FileID		*fileIDPtr;
     register Fs_Attributes	*attrPtr;
     register ReturnStatus	status;
-    FsSpriteSetAttrParams	*paramPtr;
+    FsRemoteSetAttrParams	*paramPtr;
     int				domainType = FS_LOCAL_DOMAIN;
 
-    paramPtr = (FsSpriteSetAttrParams *) storagePtr->requestParamPtr;
+    paramPtr = (FsRemoteSetAttrParams *) storagePtr->requestParamPtr;
     attrPtr = &paramPtr->attrs;
     fileIDPtr = &paramPtr->fileID;
 
@@ -1169,7 +1166,7 @@ FsRemoteGetIOAttr(fileIDPtr, clientID, attrPtr)
      * We punt on I/O server recovery, and mask errors so a stat() works.
      */
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "FsRemoteGetIOAttr failed <%x>: device <%d,%d> at server %d\n",
 	    status, fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
 	status = SUCCESS;
@@ -1279,13 +1276,13 @@ FsRemoteSetIOAttr(fileIDPtr, attrPtr, flags)
 {
     register ReturnStatus	status;
     Rpc_Storage			storage;
-    FsSpriteSetAttrParams	setAttrParam;
+    FsRemoteSetAttrParams	setAttrParam;
 
     setAttrParam.fileID = *fileIDPtr;
     setAttrParam.attrs = *attrPtr;
     setAttrParam.flags = flags;
     storage.requestParamPtr = (Address) &setAttrParam;
-    storage.requestParamSize = sizeof(FsSpriteSetAttrParams);
+    storage.requestParamSize = sizeof(FsRemoteSetAttrParams);
     storage.requestDataPtr = (Address) NIL;
     storage.requestDataSize = 0;
 
@@ -1299,7 +1296,7 @@ FsRemoteSetIOAttr(fileIDPtr, attrPtr, flags)
      * We punt on I/O server recovery, and mask errors so a chmod() works.
      */
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "FsRemoteSetIOAttr failed <%x>: device <%d,%d> at server %d\n",
 	    status, fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
 	status = SUCCESS;
@@ -1344,10 +1341,10 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
     register FsHandleHeader	*hdrPtr;
     register Fs_FileID		*fileIDPtr;
     Fs_Attributes		*attrPtr;
-    FsSpriteSetAttrParams	*setAttrParamPtr;
+    FsRemoteSetAttrParams	*setAttrParamPtr;
 
     setAttrParamPtr =
-	    (FsSpriteSetAttrParams *) storagePtr->requestParamPtr;
+	    (FsRemoteSetAttrParams *) storagePtr->requestParamPtr;
     fileIDPtr = &(setAttrParamPtr->fileID);
     attrPtr = &(setAttrParamPtr->attrs);
 
@@ -1405,7 +1402,7 @@ VerifyIOHandle(fileIDPtr)
     Fs_FileID *fileIDPtr;
 {
     if (fileIDPtr->type <= 0 || fileIDPtr->type >= FS_NUM_STREAM_TYPES) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		"Bad stream type (%d) in VerifyIOHandle.\n",
 		fileIDPtr->type);
 	return((FsHandleHeader *)NIL);

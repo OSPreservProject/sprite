@@ -181,7 +181,7 @@ FsLock(lockPtr, argPtr, streamIDPtr)
 	/*
 	 * Put the calling process on the lock ownership list.
 	 */
-	lockOwnerPtr = Mem_New(FsLockOwner);
+	lockOwnerPtr = mnew(FsLockOwner);
 	List_InitElement((List_Links *)lockOwnerPtr);
 	lockOwnerPtr->hostID = argPtr->hostID;
 	lockOwnerPtr->procID = argPtr->pid;
@@ -199,7 +199,7 @@ FsLock(lockPtr, argPtr, streamIDPtr)
 	 * Put the potential waiter on the file's lockWaitList.
 	 */
 	if (argPtr->hostID > NET_NUM_SPRITE_HOSTS) {
-	    Sys_Panic(SYS_WARNING, "FsLock: bad hostID %d.\n",
+	    printf( "FsLock: bad hostID %d.\n",
 		      argPtr->hostID);
 	} else {
 	    wait.hostID = argPtr->hostID;
@@ -248,7 +248,7 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
 		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
 		    lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
 		    List_Remove((List_Links *)lockOwnerPtr);
-		    Mem_Free((Address)lockOwnerPtr);
+		    free((Address)lockOwnerPtr);
 		    break;
 		}
 	    }
@@ -259,13 +259,13 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
 		if (!List_IsEmpty(&lockPtr->ownerList)) {
 		    lockOwnerPtr =
 			(FsLockOwner *)List_First(&lockPtr->ownerList);
-		    Sys_Panic(SYS_WARNING,
+		    printf(
 			"FsUnlock, non-owner <%x> unlocked, owner <%x>\n",
 			argPtr->pid, lockOwnerPtr->procID);
 		    List_Remove((List_Links *)lockOwnerPtr);
-		    Mem_Free((Address)lockOwnerPtr);
+		    free((Address)lockOwnerPtr);
 		} else {
-		    Sys_Panic(SYS_WARNING, "FsUnlock, no lock owner\n");
+		    printf( "FsUnlock, no lock owner\n");
 		}
 		lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
 	    }
@@ -284,7 +284,7 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
 		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
 		    status = SUCCESS;
 		    List_Remove((List_Links *)lockOwnerPtr);
-		    Mem_Free((Address)lockOwnerPtr);
+		    free((Address)lockOwnerPtr);
 		    break;
 		}
 	    }
@@ -292,7 +292,7 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
 		/*
 		 * Oops, unlocking process didn't match lock owner.
 		 */
-		Sys_Panic(SYS_WARNING,
+		printf(
 		    "FsUnlock, non-owner <%x> did shared unlock\n",
 		    argPtr->pid);
 		status = SUCCESS;
@@ -351,7 +351,7 @@ FsLockClose(lockPtr, procID, streamIDPtr)
 	     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)) {
 	    lockPtr->flags &= ~lockOwnerPtr->flags;
 	    List_Remove((List_Links *)lockOwnerPtr);
-	    Mem_Free((Address)lockOwnerPtr);
+	    free((Address)lockOwnerPtr);
 	    FsWaitListNotify(&lockPtr->waitList);
 	    break;
 	}
@@ -394,7 +394,7 @@ FsLockClientKill(lockPtr, clientID)
 	    breakLock = TRUE;
 	    lockPtr->flags &= ~lockOwnerPtr->flags;
 	    List_Remove((List_Links *)lockOwnerPtr);
-	    Mem_Free((Address)lockOwnerPtr);
+	    free((Address)lockOwnerPtr);
 	}
     }
     if (breakLock) {

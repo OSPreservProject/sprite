@@ -42,7 +42,7 @@ int fsHandleTrace = FALSE;
 #ifndef CLEAN
 #define HANDLE_TRACE(hdrPtr, comment) \
     if (fsHandleTrace) {						\
-	Sys_Printf("<%d, %d, %d, %d> flags %x ref %d : %s\n",		\
+	printf("<%d, %d, %d, %d> flags %x ref %d : %s\n",		\
 	(hdrPtr)->fileID.type, (hdrPtr)->fileID.serverID,		\
 	(hdrPtr)->fileID.major, (hdrPtr)->fileID.minor,		\
 	(hdrPtr)->flags, (hdrPtr)->refCount, comment);			\
@@ -191,15 +191,15 @@ again:
 	 * various things behind the handle header our caller specifies the
 	 * size.
 	 */
-	hdrPtr = (FsHandleHeader *) Mem_Alloc(size);
-	Byte_Zero(size, (Address) hdrPtr);
+	hdrPtr = (FsHandleHeader *) malloc(size);
+	bzero((Address) hdrPtr, size);
 	hdrPtr->fileID = *fileIDPtr;
 	hdrPtr->refCount = 1;
 	hdrPtr->flags |= FS_HANDLE_INSTALLED;
 #ifndef FS_NO_HDR_NAMES
 	if (name != (char *)NIL) {
-	    hdrPtr->name = (char *)Mem_Alloc(String_Length(name) + 1);
-	    (void)String_Copy(name, hdrPtr->name);
+	    hdrPtr->name = (char *)malloc(strlen(name) + 1);
+	    (void)strcpy(hdrPtr->name, name);
 	} else {
 	    hdrPtr->name = (char *)NIL;
 	}
@@ -226,8 +226,8 @@ again:
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_HIT, hdrPtr);
 #ifndef FS_NO_HDR_NAMES
 	if ((hdrPtr->name == (char *)NIL) && (name != (char *)NIL)) {
-	    hdrPtr->name = (char *)Mem_Alloc(String_Length(name) + 1);
-	    (void)String_Copy(name, hdrPtr->name);
+	    hdrPtr->name = (char *)malloc(strlen(name) + 1);
+	    (void)strcpy(hdrPtr->name, name);
 	}
 #endif FS_NO_HDR_NAMES
     }
@@ -471,7 +471,7 @@ FsHandleUnlockHdr(hdrPtr)
 
     if ((hdrPtr->flags & FS_HANDLE_LOCKED) == 0) {
 	UNLOCK_MONITOR;
-	Sys_Panic(SYS_FATAL, "HandleUnlock, un-locked handle\n");
+	panic( "HandleUnlock, un-locked handle\n");
 	return;
     }
     UNLOCK_HANDLE(hdrPtr);
@@ -518,7 +518,7 @@ FsHandleReleaseHdr(hdrPtr, locked)
 
     if (locked && ((hdrPtr->flags & FS_HANDLE_LOCKED) == 0)) {
 	UNLOCK_MONITOR;
-	Sys_Panic(SYS_FATAL,
+	panic(
 	    "HandleRelease, handle <%d,%d,%d,%d> \"%s\" not locked\n",
 	    hdrPtr->fileID.type, hdrPtr->fileID.serverID,
 	    hdrPtr->fileID.major, hdrPtr->fileID.minor, HDR_FILE_NAME(hdrPtr));
@@ -528,7 +528,7 @@ FsHandleReleaseHdr(hdrPtr, locked)
 
     if (hdrPtr->refCount < 0) {
 	UNLOCK_MONITOR;
-	Sys_Panic(SYS_FATAL, "refCount %d on %s handle <%d,%d,%d> \"%s\"\n",
+	panic( "refCount %d on %s handle <%d,%d,%d> \"%s\"\n",
 		hdrPtr->refCount, FsFileTypeToString(hdrPtr->fileID.type),
 		hdrPtr->fileID.serverID, hdrPtr->fileID.major,
 		hdrPtr->fileID.minor, HDR_FILE_NAME(hdrPtr));
@@ -541,7 +541,7 @@ FsHandleReleaseHdr(hdrPtr, locked)
 	 * noone in GetNextHandle is trying to grab this handle.
 	 */
 	FS_TRACE_HANDLE(FS_TRACE_RELEASE_FREE, hdrPtr);
-        Mem_Free((Address)hdrPtr);
+        free((Address)hdrPtr);
      } else {
 	FS_TRACE_HANDLE(FS_TRACE_RELEASE_LEAVE, hdrPtr);
 	if (locked) {
@@ -581,7 +581,7 @@ FsHandleRemoveInt(hdrPtr)
 	hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) &hdrPtr->fileID);
 	if (hashEntryPtr == (Hash_Entry *) NIL) {
 	    UNLOCK_MONITOR;
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		    "FsHandleRemoveInt: Couldn't find handle in hash table.\n");
 	    LOCK_MONITOR;
 	    return;
@@ -608,9 +608,9 @@ FsHandleRemoveInt(hdrPtr)
     } else {
 	FS_TRACE_HANDLE(FS_TRACE_REMOVE_FREE, hdrPtr);
 	if (hdrPtr->name != (char *)NIL) {
-	    Mem_Free((Address) hdrPtr->name);
+	    free((Address) hdrPtr->name);
 	}
-	Mem_Free((Address) hdrPtr);
+	free((Address) hdrPtr);
     }
 }
 
@@ -673,7 +673,7 @@ FsHandleAttemptRemove(handlePtr)
 {
     LOCK_MONITOR;
     if (handlePtr->hdr.refCount == 0) {
-	Mem_Free((Address)handlePtr->descPtr);
+	free((Address)handlePtr->descPtr);
 	handlePtr->descPtr = (FsFileDescriptor *)NIL;
 	FsHandleRemoveInt((FsHandleHeader *)handlePtr);
     } else {
@@ -724,7 +724,7 @@ FsGetNextHandle(hashSearchPtr)
 	 */
 	if ((hdrPtr->flags & FS_HANDLE_WANTED) &&
 	    (hdrPtr->flags & FS_HANDLE_LOCKED)){
-	    Sys_Panic(SYS_WARNING, "GetNextHandle skipping %s <%d,%d> \"%s\"\n",
+	    printf( "GetNextHandle skipping %s <%d,%d> \"%s\"\n",
 		FsFileTypeToString(hdrPtr->fileID.type),
 		hdrPtr->fileID.major, hdrPtr->fileID.minor,
 		HDR_FILE_NAME(hdrPtr));
@@ -741,7 +741,7 @@ FsGetNextHandle(hashSearchPtr)
 	    hdrPtr->flags &= ~FS_HANDLE_WANTED;
 	    UNLOCK_HANDLE(hdrPtr);
 	    if (hdrPtr->refCount == 0) {
-		Mem_Free((Address) hdrPtr);
+		free((Address) hdrPtr);
 	    }
 	    continue;
 	} else {
@@ -791,7 +791,7 @@ FsHandleInvalidate(hdrPtr)
 	hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) &hdrPtr->fileID);
 	if (hashEntryPtr == (Hash_Entry *) NIL) {
 	    UNLOCK_MONITOR;
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		"FsHandleInvalidate: Can't find %s handle <%d,%d,%d>\n",
 			FsFileTypeToString(hdrPtr->fileID.type),
 			hdrPtr->fileID.serverID,
@@ -898,7 +898,7 @@ FsHandleDescWriteBack(shutdown, domain)
 	    descPtr->flags &= ~FS_FD_DIRTY;
 	    status =  FsStoreFileDesc(domainPtr, hdrPtr->fileID.minor, descPtr);
 	    if (status != SUCCESS) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 		    "FsHandleDescWriteBack: Couldn't store file desc <%x>\n",
 		    status);
 	    }
@@ -907,7 +907,7 @@ FsHandleDescWriteBack(shutdown, domain)
     }
 
     if (shutdown & lockedDesc) {
-	Sys_Printf("FsHandleDescWriteBack: %d descriptors still locked\n",
+	printf("FsHandleDescWriteBack: %d descriptors still locked\n",
 		    lockedDesc);
     }
 

@@ -35,8 +35,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStat.h"
 #include "fsClient.h"
 #include "proc.h"
-#include "mem.h"
-#include "byte.h"
 #include "rpc.h"
 #include "recov.h"
 #include "timer.h"
@@ -106,7 +104,7 @@ Fs_Init()
     int	i;
     Fs_Device defaultDisk;
 
-    Byte_Zero(sizeof(FsStats), (Address) &fsStats);
+    bzero((Address) &fsStats, sizeof(FsStats));
     /*
      * The handle cache and the block cache start out with a hash table of
      * a given size (8).  The hash routines, however, automatically grow their
@@ -163,7 +161,7 @@ Fs_Init()
 
 	status = FsAttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
 	if (status == SUCCESS) {
-	    Sys_Printf("Attached disk type %d unit %d to \"%s\"\n",
+	    printf("Attached disk type %d unit %d to \"%s\"\n",
 		     defaultDisk.type, defaultDisk.unit, LOCAL_DISK_NAME);
 	    break;
 	}
@@ -225,7 +223,7 @@ Fs_ProcInit()
     register Fs_ProcessState	*fsPtr;	/* FS state ref'ed from proc table */
 
     procPtr = Proc_GetCurrentProc();
-    procPtr->fsPtr = fsPtr = Mem_New(Fs_ProcessState);
+    procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
     /*
      * General filesystem initialization.
      * Find out how much we can transfer with the RPC system.
@@ -238,7 +236,7 @@ Fs_ProcInit()
     }
 
     fsPtr->numGroupIDs	= 1;
-    fsPtr->groupIDs 	= (int *) Mem_Alloc(1 * sizeof(int));
+    fsPtr->groupIDs 	= (int *) malloc(1 * sizeof(int));
     fsPtr->groupIDs[0]	= 0;
 
     /*
@@ -263,12 +261,12 @@ Fs_ProcInit()
 				FS_LOCALHOST_ID, &hdrPtr, &rootID, &lookupName,
 				&domainType, &prefixPtr);
 	    if (status2 == SUCCESS) {
-		Sys_Printf("Exporting \"%s\" as root\n", LOCAL_DISK_NAME);
+		printf("Exporting \"%s\" as root\n", LOCAL_DISK_NAME);
 		(void)FsPrefixInstall("/", hdrPtr, domainType,
 				     FS_EXPORTED_PREFIX | FS_IMPORTED_PREFIX);
 		status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
 		if (status != SUCCESS) {
-		    Sys_Panic(SYS_FATAL,
+		    panic(
 			      "Fs_ProcInit: Can't open local root <0x%x>\n",
 			      status);
 		    (void)Fs_PrefixClear("/", FALSE);
@@ -277,7 +275,7 @@ Fs_ProcInit()
 		/*
 		 * No local disk.  Wait a bit and retry the open of "/".
 		 */
-		Sys_Panic(SYS_WARNING,
+		printf(
 			"Can't find server for \"/\", waiting 1 min.\n");
 		(void)Sync_WaitTime(time_OneMinute);
 	    }
@@ -343,7 +341,7 @@ Fs_InheritState(parentProcPtr, newProcPtr)
      * This could be shared after forking to implement file descriptor sharing.
      */
     parFsPtr = parentProcPtr->fsPtr;
-    newProcPtr->fsPtr = newFsPtr = Mem_New(Fs_ProcessState);
+    newProcPtr->fsPtr = newFsPtr = mnew(Fs_ProcessState);
 
     /*
      * Current working directory.
@@ -360,8 +358,8 @@ Fs_InheritState(parentProcPtr, newProcPtr)
     len = newFsPtr->numStreams = parFsPtr->numStreams;
     if (len > 0) {
 	newFsPtr->streamList =
-		(Fs_Stream **)Mem_Alloc(len * sizeof(Fs_Stream *));
-	newFsPtr->streamFlags = (char *)Mem_Alloc(len * sizeof(char));
+		(Fs_Stream **)malloc(len * sizeof(Fs_Stream *));
+	newFsPtr->streamFlags = (char *)malloc(len * sizeof(char));
 	for (i = 0, parStreamPtrPtr = parFsPtr->streamList,
 		    newStreamPtrPtr = newFsPtr->streamList;
 	     i < len;
@@ -387,7 +385,7 @@ Fs_InheritState(parentProcPtr, newProcPtr)
 
     len = newFsPtr->numGroupIDs = parFsPtr->numGroupIDs;
     if (len) {
-	newFsPtr->groupIDs = (int *)Mem_Alloc(len * sizeof(int));
+	newFsPtr->groupIDs = (int *)malloc(len * sizeof(int));
 	for (i=0 ; i<len; i++) {
 	    newFsPtr->groupIDs[i] = parFsPtr->groupIDs[i];
 	}
@@ -469,16 +467,16 @@ Fs_CloseState(procPtr)
 		(void)Fs_Close(streamPtr);
 	    }
 	}
-	Mem_Free((Address) fsPtr->streamList);
-	Mem_Free((Address) fsPtr->streamFlags);
+	free((Address) fsPtr->streamList);
+	free((Address) fsPtr->streamFlags);
 	fsPtr->streamList = (Fs_Stream **)NIL;
     }
 
     if (fsPtr->groupIDs != (int *) NIL) {
-	Mem_Free((Address) fsPtr->groupIDs);
+	free((Address) fsPtr->groupIDs);
 	fsPtr->groupIDs = (int *) NIL;
 	fsPtr->numGroupIDs = 0;
     }
-    Mem_Free((Address)fsPtr);
+    free((Address)fsPtr);
     procPtr->fsPtr = (Fs_ProcessState *)NIL;
 }

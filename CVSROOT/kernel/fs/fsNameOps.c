@@ -86,7 +86,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
      * Override the type if user flags indicate special files.
      */
     if (useFlags & FS_NAMED_PIPE_OPEN) {
-	Sys_Panic(SYS_WARNING, "Named pipes (%s) not implemented\n", name);
+	printf( "Named pipes (%s) not implemented\n", name);
 	return(FS_INVALID_ARG);
     } else if (useFlags & FS_PDEV_MASTER) {
 	type = FS_PSEUDO_DEV;
@@ -119,7 +119,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
     openResults.streamData	= (ClientData) NIL;
     FsSetIDs(procPtr, &openArgs.id);
 
-    nameInfoPtr = Mem_New(FsNameInfo);
+    nameInfoPtr = mnew(FsNameInfo);
 
     FS_TRACE_NAME(FS_TRACE_OPEN_START, name);
     status = FsLookupOperation(name, FS_DOMAIN_OPEN, useFlags & FS_FOLLOW,
@@ -171,7 +171,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	    FsStreamDispose(streamPtr);
 	}
     } else {
-	Mem_Free((Address)nameInfoPtr);
+	free((Address)nameInfoPtr);
     }
     return(status);
 }
@@ -719,7 +719,7 @@ Fs_SymLink(targetName, linkName, remoteFlag)
 		        (remoteFlag ? FS_REMOTE_LINK : FS_SYMBOLIC_LINK),
 		        0777, &streamPtr);
     if (status == SUCCESS) {
-	length = String_Length(targetName) + 1;
+	length = strlen(targetName) + 1;	/* FIX */
 	status = Fs_Write(streamPtr, targetName, 0, &length);
 	(void)Fs_Close(streamPtr);
     }

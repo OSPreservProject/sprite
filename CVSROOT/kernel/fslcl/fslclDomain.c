@@ -65,17 +65,17 @@ FsLocalDomainInit()
     for (index = 0; index < FS_MAX_LOCAL_DOMAINS; index++) {
         fsDomainTable[index] = (FsDomain *) NIL;
     }
-    fsEmptyDirBlock = (char *)Mem_Alloc(FS_DIR_BLOCK_SIZE);
+    fsEmptyDirBlock = (char *)malloc(FS_DIR_BLOCK_SIZE);
     dirEntryPtr = (FsDirEntry *)fsEmptyDirBlock;
     dirEntryPtr->fileNumber = FS_ROOT_FILE_NUMBER;
-    dirEntryPtr->nameLength = String_Length(".");
+    dirEntryPtr->nameLength = strlen(".");
     dirEntryPtr->recordLength = FsDirRecLength(dirEntryPtr->nameLength);
-    (void)String_Copy(".", dirEntryPtr->fileName);
+    (void)strcpy(dirEntryPtr->fileName, ".");
     dirEntryPtr = (FsDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
     dirEntryPtr->fileNumber = FS_ROOT_FILE_NUMBER;
-    dirEntryPtr->nameLength = String_Length("..");
+    dirEntryPtr->nameLength = strlen("..");
     dirEntryPtr->recordLength = FS_DIR_BLOCK_SIZE - FsDirRecLength(1);
-    (void)String_Copy("..", dirEntryPtr->fileName);
+    (void)strcpy(dirEntryPtr->fileName, "..");
 }
 
 /*
@@ -240,7 +240,7 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 	    (handlePtr, openArgsPtr->clientID, 0, attrResultsPtr->fileIDPtr,
 	     (Fs_FileID *)NIL, (int *)NIL, (ClientData *)NIL);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "FsLocalGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
 	    relativeName, handlePtr->hdr.fileID.minor,
 	    handlePtr->hdr.fileID.major, status);
@@ -311,7 +311,7 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 		(handlePtr, openArgsPtr->clientID, 0, fileIDPtr,
 		 (Fs_FileID *)NIL, (int *)NIL, (ClientData *)NIL);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		"FsLocalSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
 		relativeName, handlePtr->hdr.fileID.minor,
 		handlePtr->hdr.fileID.major, status);
@@ -372,7 +372,7 @@ FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 	domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
 	if (domainPtr == (FsDomain *)NIL) {
 	    status = FS_DOMAIN_UNAVAILABLE;
-	    Sys_Panic(SYS_WARNING, "FsLocalMakeDevice: Domain unavailable\n");
+	    printf( "FsLocalMakeDevice: Domain unavailable\n");
 	} else {
 	    status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
 				     descPtr);

@@ -165,6 +165,8 @@ ReopenHandles(serverID)
 {
     Hash_Search			hashSearch;
     register	FsHandleHeader	*hdrPtr;
+    register	Fs_Stream	*streamPtr;
+    register	FsRemoteIOHandle *rmtHandlePtr;
     ReturnStatus		status = SUCCESS;
 
     Net_HostPrint(serverID, "- recovering handles\n");
@@ -176,7 +178,7 @@ ReopenHandles(serverID)
 	 if ((hdrPtr->fileID.type != FS_STREAM) &&
 		 (hdrPtr->fileID.serverID == serverID)) {
 	    if (!RemoteHandle(hdrPtr)) {
-		Sys_Panic(SYS_FATAL, "ReopenHandles, local handle?\n");
+		panic( "ReopenHandles, local I/O handle at remote server?\n");
 	    }
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
 		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
@@ -189,6 +191,11 @@ ReopenHandles(serverID)
 		case RPC_SERVICE_DISABLED:
 		case RPC_TIMEOUT:
 		    goto reopenReturn;
+		case FS_FILE_REMOVED:
+		    /*
+		     * No noisy message, this is a common case.
+		     */
+		    break;
 		default:
 		    FsFileError(hdrPtr, "Reopen failed ", status);
 		    break;
@@ -210,16 +217,14 @@ ReopenHandles(serverID)
          hdrPtr = FsGetNextHandle(&hashSearch)) {
 	if ((hdrPtr->fileID.type == FS_STREAM) &&
 		 (hdrPtr->fileID.serverID == serverID)) {
-	    register Fs_Stream *streamPtr = (Fs_Stream *)hdrPtr;
-	    register FsRemoteIOHandle *handlePtr =
-		    (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
+	    streamPtr = (Fs_Stream *)hdrPtr;
+	    rmtHandlePtr = (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
 
-	    if (!RemoteHandle(streamPtr->ioHandlePtr)) {
-		Sys_Panic(SYS_FATAL, "ReopenHandles: local I/O handle?\n");
-	    }
-	    if (RecoveryFailed(&handlePtr->recovery)) {
-		FsFileError((FsHandleHeader *)streamPtr,
-		    "Invalid I/O handle", SUCCESS);
+	    if (rmtHandlePtr == (FsRemoteIOHandle *)NIL) {
+		FsFileError((FsHandleHeader *)streamPtr, "NIL I/O handle", 0);
+	    } else if (!RemoteHandle((FsHandleHeader *)rmtHandlePtr)) {
+		panic( "ReopenHandles: local I/O handle for remote stream?\n");
+	    } else if (RecoveryFailed(&rmtHandlePtr->recovery)) {
 		FsHandleInvalidate((FsHandleHeader *)streamPtr);
 	    } else {
 		status = FsStreamReopen((FsHandleHeader *)streamPtr,
@@ -263,9 +268,9 @@ ReopenHandles(serverID)
     }
 reopenReturn:
     if (status != SUCCESS) {
-	Sys_Printf("Recovery failed <%x>\n", status);
+	printf("Recovery failed <%x>\n", status);
     } else {
-	Sys_Printf("Recovery complete\n");
+	printf("Recovery complete\n");
     }
 }
 
@@ -289,7 +294,7 @@ void
 FsRecoveryInit(recovPtr)
     register FsRecoveryInfo	*recovPtr;	/* Recovery state */
 {
-    Byte_Zero(sizeof(FsRecoveryInfo), (Address) recovPtr); 
+    bzero((Address) recovPtr, sizeof(FsRecoveryInfo)); 
 }
 
 /*
@@ -391,7 +396,7 @@ FsWantRecovery(hdrPtr)
 {
     register FsRecoveryInfo *recovPtr = &((FsRemoteIOHandle *)hdrPtr)->recovery;
     if (!RemoteHandle(hdrPtr)) {
-	Sys_Panic(SYS_WARNING, "FsWantRecovery: no recovery for %s handles\n",
+	printf( "FsWantRecovery: no recovery for %s handles\n",
 		FsFileTypeToString(hdrPtr->fileID.type));
     } else {
 	/*
@@ -435,7 +440,7 @@ FsWaitForRecovery(hdrPtr, rpcStatus)
 	 * pseudo-filesystem server crashes.  There is no recovery possible
 	 * so we just return an error and the naming operation fails.
 	 */
-	Sys_Panic(SYS_WARNING, "FsWaitForRecovery, no recovery for type: %s\n",
+	printf( "FsWaitForRecovery, no recovery for type: %s\n",
 		FsFileTypeToString(hdrPtr->fileID.type));
 	return(FAILURE);
     } else if (!FsHandleValid(hdrPtr)) {
@@ -800,7 +805,7 @@ FsRecoveryStarting(serverID)
 
     status = Rpc_Call(serverID, RPC_FS_RECOVERY, &storage);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "FsRecoveryDone: got status %x\n", status);
+	printf( "FsRecoveryDone: got status %x\n", status);
     }
 }
 #endif not_used
@@ -840,7 +845,7 @@ RecoveryDone(serverID)
 
     status = Rpc_Call(serverID, RPC_FS_RECOVERY, &storage);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "RecoveryDone: got status %x\n", status);
+	printf( "RecoveryDone: got status %x\n", status);
     }
 }
 

@@ -114,7 +114,7 @@ FsIOClientOpen(clientList, clientID, useFlags, cached)
 	    goto found;
 	}
     }
-    clientPtr = Mem_New(FsClientInfo);
+    clientPtr = mnew(FsClientInfo);
     clientPtr->clientID = clientID;
     clientPtr->use.ref = 0;
     clientPtr->use.write = 0;
@@ -188,15 +188,14 @@ FsIOClientClose(clientList, clientID, flags, cachePtr)
 	}
 	if ((clientPtr->use.ref < 0) || (clientPtr->use.write < 0) ||
 	    (clientPtr->use.exec < 0)) {
-	    Sys_Panic(SYS_FATAL,
-		"FsClientClose: client %d ref %d write %d exec %d\n",
+	    panic("FsClientClose: client %d ref %d write %d exec %d\n",
 		clientPtr->clientID,
 		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
 	}
 	if ((!(*cachePtr) || !clientPtr->cached) &&
 	    (clientPtr->use.ref == 0)) {
 	    List_Remove((List_Links *) clientPtr);
-	    Mem_Free((Address) clientPtr);
+	    free((Address) clientPtr);
 	    *cachePtr = FALSE;
 	} else {
 	    *cachePtr = clientPtr->cached;
@@ -241,8 +240,7 @@ FsIOClientRemoveWriter(clientList, clientID)
     if (found) {
 	clientPtr->use.write--;
 	if (clientPtr->use.write < 0) {
-	    Sys_Panic(SYS_FATAL,
-		"FsClientRemoveWriter: client %d ref %d write %d exec %d\n",
+	    panic("FsClientRemoveWriter: client %d ref %d write %d exec %d\n",
 		clientPtr->clientID,
 		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
 	}
@@ -294,7 +292,7 @@ FsStreamClientOpen(clientList, clientID, useFlags, foundPtr)
 	}
     }
     if (!found) {
-	clientPtr = Mem_New(FsStreamClientInfo);
+	clientPtr = mnew(FsStreamClientInfo);
 	clientPtr->clientID = clientID;
 	clientPtr->useFlags = useFlags;
 	List_InitElement((List_Links *)clientPtr);
@@ -337,7 +335,7 @@ FsStreamClientClose(clientList, clientID)
     LIST_FORALL(clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == clientID) {
 	    List_Remove((List_Links *) clientPtr);
-	    Mem_Free((Address) clientPtr);
+	    free((Address) clientPtr);
 	    break;
 	}
     }
@@ -405,7 +403,7 @@ ClientOpenInt(clientID)
 	    goto exit;
 	}
     }
-    listPtr = Mem_New(ClientItem);
+    listPtr = mnew(ClientItem);
     listPtr->clientID = clientID;
     List_InitElement((List_Links *)listPtr);
     List_Insert((List_Links *)listPtr, LIST_ATFRONT(masterClientList));
@@ -493,7 +491,7 @@ FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
 	    *writePtr += clientPtr->use.write;
 	    *execPtr += clientPtr->use.exec;
 	    List_Remove((List_Links *) clientPtr);
-	    Mem_Free((Address) clientPtr);
+	    free((Address) clientPtr);
 	    break;
 	}
     }

@@ -27,8 +27,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devDiskLabel.h"
 #include "dev.h"
 #include "sync.h"
-#include "mem.h"
-#include "byte.h"
 #include "timer.h"
 #include "proc.h"
 #include "trace.h"
@@ -39,11 +37,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 Fs_RpcReply()
 {
-    Sys_Panic(SYS_FATAL, "Fs_RpcReply called");
+    panic( "Fs_RpcReply called");
 }
 Fs_RpcRequest()
 {
-    Sys_Panic(SYS_FATAL, "Fs_RpcRequest called");
+    panic( "Fs_RpcRequest called");
 }
 
 
@@ -131,7 +129,7 @@ FsTraceInit()
     Trace_Init(fsTraceHdrPtr, fsTraceLength, sizeof(FsTraceRecord), 0);
     /*
      * Take 10 trace records with a NIL data field.  This causes a
-     * Byte_Zero inside Trace_Insert, which is sort of a base case for
+     * bzero inside Trace_Insert, which is sort of a base case for
      * taking a trace.  The time difference between the first and last
      * record is used to determine the cost of taking the trace records.
      */
@@ -163,7 +161,7 @@ FsTraceInit()
  *	None.
  *
  * Side effects:
- *	Sys_Printf to the display.
+ *	printfs to the display.
  *
  *----------------------------------------------------------------------
  */
@@ -177,32 +175,32 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 	/*
 	 * Print column headers and a newline.
 	 */
-	Sys_Printf("%10s %17s %8s\n", "Delta  ", "<File ID>  ", "Event ");
-	Sys_Printf("Cost of taking an fs trace record is %d.%06d\n",
+	printf("%10s %17s %8s\n", "Delta  ", "<File ID>  ", "Event ");
+	printf("Cost of taking an fs trace record is %d.%06d\n",
 		     fsTraceTime.seconds, fsTraceTime.microseconds);
     }
     if (clientData != (ClientData)NIL) {
 	if (event >= 0 && event < numTraceTypes) {
-	    Sys_Printf("%20s ", fsTracePrintTable[event].string);
+	    printf("%20s ", fsTracePrintTable[event].string);
 	    switch(fsTracePrintTable[event].type) {
 		case FST_IO: {
 		    FsTraceIORec *ioRecPtr = (FsTraceIORec *)clientData;
-		    Sys_Printf("<%2d, %2d, %1d, %4d> ",
+		    printf("<%2d, %2d, %1d, %4d> ",
 			ioRecPtr->fileID.type, ioRecPtr->fileID.serverID,
 			ioRecPtr->fileID.major, ioRecPtr->fileID.minor);
-		    Sys_Printf(" off %d len %d ", ioRecPtr->offset,
+		    printf(" off %d len %d ", ioRecPtr->offset,
 						  ioRecPtr->numBytes);
 		    break;
 		}
 		case FST_NAME: {
 		    char *name = (char *)clientData;
 		    name[39] = '\0';
-		    Sys_Printf("\"%s\"", name);
+		    printf("\"%s\"", name);
 		    break;
 		}
 		case FST_HANDLE: {
 		    FsTraceHdrRec *recPtr = (FsTraceHdrRec *)clientData;
-		    Sys_Printf("<%2d, %2d, %1d, %4d> ref %d blocks %d ",
+		    printf("<%2d, %2d, %1d, %4d> ref %d blocks %d ",
 		      recPtr->fileID.type, 
 		      recPtr->fileID.serverID,
 		      recPtr->fileID.major, 
@@ -213,7 +211,7 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 		}
 		case FST_BLOCK: {
 		    FsTraceBlockRec *blockPtr = (FsTraceBlockRec *)clientData;
-		    Sys_Printf("<%2d, %2d, %1d, %4d> block %d flags %x ",
+		    printf("<%2d, %2d, %1d, %4d> block %d flags %x ",
 		      blockPtr->fileID.type, 
 		      blockPtr->fileID.serverID,
 		      blockPtr->fileID.major, 
@@ -226,7 +224,7 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 		    int	*blockNumPtr;
 
 		    blockNumPtr = (int *) clientData;
-		    Sys_Printf("<Block=%d> ", *blockNumPtr);
+		    printf("<Block=%d> ", *blockNumPtr);
 		    break;
 		}
 		case FST_NIL:
@@ -234,7 +232,7 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 		    break;
 	    }
 	} else {
-	    Sys_Printf("(%d)", event);
+	    printf("(%d)", event);
 	}
     }
 }
@@ -262,7 +260,7 @@ Fs_PrintTrace(numRecs)
     if (numRecs < 0) {
 	numRecs = fsTraceLength;
     }
-    Sys_Printf("FS TRACE\n");
+    printf("FS TRACE\n");
     (void)Trace_Print(fsTraceHdrPtr, numRecs, Fs_PrintTraceRecord);
 }
 
@@ -354,7 +352,7 @@ Fs_Sync(writeBackTime, shutdown)
     Fs_CacheWriteBack(writeBackTime, &blocksLeft, shutdown);
     if (shutdown) {
 	if (blocksLeft) {
-	    Sys_Printf("Fs_Sync: %d blocks still locked\n", blocksLeft);
+	    printf("Fs_Sync: %d blocks still locked\n", blocksLeft);
 	}
 	FsCleanBlocks((ClientData) FALSE, (Proc_CallInfo *) NIL);
     }
@@ -427,7 +425,7 @@ Fs_CheckSetID(streamPtr, uidPtr, gidPtr)
 	       &((FsRmtFileIOHandle *)streamPtr->ioHandlePtr)->cacheInfo.attr;
 	    break;
 	default:
-	    Sys_Panic(SYS_FATAL, "Fs_CheckSetID, wrong stream type\n",
+	    panic( "Fs_CheckSetID, wrong stream type\n",
 		streamPtr->ioHandlePtr->fileID.type);
 	    return;
     }
@@ -471,7 +469,7 @@ FsDomainInfo(hdrPtr, domainInfoPtr)
 					domainInfoPtr);
 	    break;
 	case FS_RMT_FILE_STREAM:
-	    status = FsSpriteDomainInfo(&hdrPtr->fileID, domainInfoPtr);
+	    status = FsRemoteDomainInfo(&hdrPtr->fileID, domainInfoPtr);
 	    break;
 	default:
 	    status = FS_DOMAIN_UNAVAILABLE;
@@ -537,7 +535,7 @@ Fs_GetSegPtr(fileHandle)
 	    segPtrPtr = &(((FsRmtFileIOHandle *)hdrPtr)->segPtr);
 	    break;
 	default:
-	    Sys_Panic(SYS_FATAL, "Fs_RetSegPtr, bad stream type %d\n",
+	    panic( "Fs_RetSegPtr, bad stream type %d\n",
 		    hdrPtr->fileID.type);
     }
     fsStats.handle.segmentFetches++;
@@ -621,7 +619,7 @@ Fs_HandleScavenge(data, callInfoPtr)
     if (numScavengers > 0) {
 	if (!scavengerStuck &&
 	    fsTimeInSeconds > fsLastScavengeTime + SCAVENGE_WARNING_TIME) {
-	   Sys_Panic(SYS_WARNING, "Scavenger stuck for %d seconds\n",
+	   printf( "Scavenger stuck for %d seconds\n",
 	       fsTimeInSeconds - fsLastScavengeTime);
 	   scavengerStuck = TRUE;
        }
@@ -650,7 +648,7 @@ Fs_HandleScavenge(data, callInfoPtr)
 	callInfoPtr->interval = fsScavengeInterval * timer_IntOneMinute;
     }
     if (scavengerStuck) {
-	Sys_Panic(SYS_WARNING, "Scavenger unstuck after %d seconds\n",
+	printf( "Scavenger unstuck after %d seconds\n",
 	    fsTimeInSeconds - fsLastScavengeTime);
 	scavengerStuck = FALSE;
     }
@@ -678,43 +676,43 @@ FsFileError(hdrPtr, string, status)
     char *string;
 {
     if (hdrPtr == (FsHandleHeader *)NIL) {
-	Sys_Printf("(NIL handle) %s: ", string);
+	printf("(NIL handle) %s: ", string);
     } else {
 	Net_HostPrint(hdrPtr->fileID.serverID,
 		      FsFileTypeToString(hdrPtr->fileID.type));
-	Sys_Printf(" \"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
+	printf(" \"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
 		hdrPtr->fileID.major, hdrPtr->fileID.minor, string);
     }
     switch (status) {
 	case SUCCESS:
-	    Sys_Printf("\n");
+	    printf("\n");
 	    break;
 	case FS_DOMAIN_UNAVAILABLE:
-	    Sys_Printf("domain unavailable\n");
+	    printf("domain unavailable\n");
 	    break;
 	case FS_VERSION_MISMATCH:
-	    Sys_Printf("version mismatch\n");
+	    printf("version mismatch\n");
 	    break;
 	case FAILURE:
-	    Sys_Printf("cacheable/busy conflict\n");
+	    printf("cacheable/busy conflict\n");
 	    break;
 	case RPC_TIMEOUT:
-	    Sys_Printf("rpc timeout\n");
+	    printf("rpc timeout\n");
 	    break;
 	case RPC_SERVICE_DISABLED:
-	    Sys_Printf("server rebooting\n");
+	    printf("server rebooting\n");
 	    break;
 	case FS_STALE_HANDLE:
-	    Sys_Printf("stale handle\n");
+	    printf("stale handle\n");
 	    break;
 	case DEV_RETRY_ERROR:
 	case DEV_HARD_ERROR:
-	    Sys_Printf("DISK ERROR\n");
+	    printf("DISK ERROR\n");
 	    break;
 	case FS_NO_DISK_SPACE:
-	    Sys_Printf("out of disk space\n");
+	    printf("out of disk space\n");
 	default:
-	    Sys_Printf("<%x>\n", status);
+	    printf("<%x>\n", status);
 	    break;
     }
 }

@@ -169,7 +169,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
 	    status = (*fsDomainLookup[domainType][operation])
 	       (hdrPtr, lookupName, argsPtr, resultsPtr, &redirectInfoPtr);
 	    if (fsFileNameTrace) {
-		Sys_Printf("\treturns <%x>\n", status);
+		printf("\treturns <%x>\n", status);
 	    }
 	    switch (status) {
 	        case FS_LOOKUP_REDIRECT: {
@@ -190,7 +190,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
 			status = FsLookupRedirect(redirectInfoPtr, prefixPtr,
 								  &fileName);
 			if (oldInfoPtr != (FsRedirectInfo *)NIL) {
-			    Mem_Free((Address)oldInfoPtr);
+			    free((Address)oldInfoPtr);
 			}
 			oldInfoPtr = redirectInfoPtr;
 			redirectInfoPtr = (FsRedirectInfo *)NIL;
@@ -228,7 +228,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
 			fsStats.prefix.timeouts++;
 		    }
 		    FsWantRecovery(hdrPtr);
-		    Sys_Printf("%s of \"%s\" waiting for recovery\n",
+		    printf("%s of \"%s\" waiting for recovery\n",
 				NameOp(operation), fileName);
 		    status = FsWaitForRecovery(hdrPtr, status);
 		    if (status == SUCCESS) {
@@ -255,7 +255,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
 	}
     } while (status == FS_LOOKUP_REDIRECT);
     if (oldInfoPtr != (FsRedirectInfo *)NIL) {
-	Mem_Free((Address) oldInfoPtr);
+	free((Address) oldInfoPtr);
     }
 
     return(status);
@@ -352,7 +352,7 @@ retry:
        (srcHdrPtr, srcLookupName, dstHdrPtr, dstLookupName, lookupArgsPtr,
 		    &redirectInfoPtr, &srcNameError);
     if (fsFileNameTrace) {
-	Sys_Printf("\treturns <%x>\n", status);
+	printf("\treturns <%x>\n", status);
     }
     switch(status) {
 	case RPC_SERVICE_DISABLED:
@@ -365,7 +365,7 @@ retry:
 	    FsHandleHeader *staleHdrPtr;
 	    staleHdrPtr = (srcNameError ? srcHdrPtr : dstHdrPtr);
 	    FsWantRecovery(staleHdrPtr);
-	    Sys_Printf("%s of \"%s\" and \"%s\" waiting for recovery\n",
+	    printf("%s of \"%s\" and \"%s\" waiting for recovery\n",
 			    NameOp(operation), srcName, dstName);
 	    status = FsWaitForRecovery(staleHdrPtr, status);
 	    if (status == SUCCESS) {
@@ -401,7 +401,7 @@ retry:
 		status = FsLookupRedirect(redirectInfoPtr, srcPrefixPtr,
 					  &srcName);
 		if (srcRedirectPtr != (FsRedirectInfo *)NIL) {
-		    Mem_Free((Address)srcRedirectPtr);
+		    free((Address)srcRedirectPtr);
 		}
 		srcRedirectPtr = redirectInfoPtr;
 		redirectInfoPtr = (FsRedirectInfo *)NIL;
@@ -409,7 +409,7 @@ retry:
 		status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr,
 					  &dstName);
 		if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
-		    Mem_Free((Address)dstRedirectPtr);
+		    free((Address)dstRedirectPtr);
 		}
 		dstRedirectPtr = redirectInfoPtr;
 		redirectInfoPtr = (FsRedirectInfo *)NIL;
@@ -464,7 +464,7 @@ getAttr:
 			status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr,
 						  &dstName);
 			if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
-			    Mem_Free((Address)dstRedirectPtr);
+			    free((Address)dstRedirectPtr);
 			}
 			dstRedirectPtr = redirectInfoPtr;
 			redirectInfoPtr = (FsRedirectInfo *)NIL;
@@ -479,7 +479,7 @@ getAttr:
 		case RPC_TIMEOUT:
 		case FS_STALE_HANDLE: {
 		    FsWantRecovery(dstHdrPtr);
-		    Sys_Printf("Get Attr of \"%s\" waiting for recovery\n",
+		    printf("Get Attr of \"%s\" waiting for recovery\n",
 				     dstName);
 		    status2 = FsWaitForRecovery(dstHdrPtr, status2);
 		    if (status2 == SUCCESS) {
@@ -509,10 +509,10 @@ getAttr:
     }
 exit:
     if (srcRedirectPtr != (FsRedirectInfo *)NIL) {
-	Mem_Free((Address)srcRedirectPtr);
+	free((Address)srcRedirectPtr);
     }
     if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
-	Mem_Free((Address)dstRedirectPtr);
+	free((Address)dstRedirectPtr);
     }
     return(status);
 }
@@ -528,7 +528,7 @@ FooProc()
      * We copy the destination name and note the slash that
      * delimits the last component of the name.
      */
-    dstParentName = (char *)Mem_Alloc(FS_MAX_PATH_NAME_LENGTH);
+    dstParentName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
     pPtr = parentName;
     lastSlash = (char *)NIL;
     for (cPtr = dstName ; *cPtr ; cPtr++) {
@@ -538,14 +538,14 @@ FooProc()
 	*pPtr = *cPtr;
     }
     if (lastSlash == (char *)NIL) {
-	Mem_Free((Address)dstParentName);
+	free((Address)dstParentName);
 	dstParentName = ".";
     } else {
 	*lastSlash = '\0';
     }
     status = Fs_GetAttributes(dstParentName, FS_ATTR_FILE, &dstParentAttr);
     if (lastSlash != (char *)NIL) {
-	Mem_Free((Address)dstParentName);
+	free((Address)dstParentName);
     }
     if (status != SUCCESS) {
 	return(status);
@@ -592,7 +592,7 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
     register char *prefix;
 
     if (fsFileNameTrace) {
-	Sys_Printf("FsRedirect: \"%s\" (%d)\n", redirectInfoPtr->fileName,
+	printf("FsRedirect: \"%s\" (%d)\n", redirectInfoPtr->fileName,
 				redirectInfoPtr->prefixLength);
     }
     if (redirectInfoPtr->prefixLength > 0) {
@@ -601,14 +601,15 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 	 * hit a remote link.  The prefix is embedded in the
 	 * beginning of the returned complete pathname.
 	 */
-	prefix = (char *)Mem_Alloc(redirectInfoPtr->prefixLength + 1);
-	(void)String_NCopy(redirectInfoPtr->prefixLength,
-		     redirectInfoPtr->fileName, prefix);
+	prefix = (char *)malloc(redirectInfoPtr->prefixLength + 1);
+	(void)strncpy(prefix, redirectInfoPtr->fileName,
+			redirectInfoPtr->prefixLength);
 	prefix[redirectInfoPtr->prefixLength] = '\0';
 	Fs_PrefixLoad(prefix, FS_IMPORTED_PREFIX);
-	Mem_Free((Address) prefix);
+	free((Address) prefix);
     }
-    if (String_NCompare(2, "..", redirectInfoPtr->fileName) == 0) {
+    if (redirectInfoPtr->fileName[0] == '.' &&
+	redirectInfoPtr->fileName[1] == '.') {
 	register int i;
 	register int preLen;
 	register char *fileName;
@@ -625,7 +626,7 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 	 */
 	prefix = prefixPtr->prefix;
 	fileName = redirectInfoPtr->fileName;
-	preLen = String_Length(prefix);
+	preLen = strlen(prefix);
 	/*
 	 * Scan the prefix from the right end for the first '/'
 	 */
@@ -651,7 +652,7 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 	     * prefix can be inserted before it.  The magic 2 refers to the
 	     * length of ".."
 	     */
-	    for (i = String_Length(fileName); i >= 2; i--) {
+	    for (i = strlen(fileName); i >= 2; i--) {
 		fileName[i + preLen - 2] = fileName[i];
 	    }
 	}
@@ -670,7 +671,7 @@ FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
 	*fileNamePtr = redirectInfoPtr->fileName;
 	return(FS_LOOKUP_REDIRECT);
     } else {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	  "FsLookupOperation: Bad format of returned file name \"%s\".\n",
 	  redirectInfoPtr->fileName);
 	return(FAILURE);
@@ -775,7 +776,7 @@ FsPrefixInstall(prefix, hdrPtr, domainType, flags)
     LOCK_MONITOR;
 
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
-	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
+	if (strcmp(prefixPtr->prefix, prefix) == 0) {
 	    /*
 	     * Update information in the table.
 	     */
@@ -818,7 +819,7 @@ Fs_PrefixLoad(prefix, flags)
     LOCK_MONITOR;
 
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
-	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
+	if (strcmp(prefixPtr->prefix, prefix) == 0) {
 	    if (flags & FS_OVERRIDE_PREFIX) {
 		prefixPtr->flags = flags & ~FS_OVERRIDE_PREFIX;
 	    }
@@ -861,15 +862,15 @@ PrefixInsert(prefix, hdrPtr, domainType, flags)
     register FsPrefix *prefixPtr;
     register char *prefixCopy;
 
-    prefixPtr = (FsPrefix *)Mem_Alloc(sizeof(FsPrefix));
+    prefixPtr = (FsPrefix *)malloc(sizeof(FsPrefix));
     if (hdrPtr != (FsHandleHeader *)NIL) {
 	prefixPtr->serverID	= hdrPtr->fileID.serverID;
     } else {
 	prefixPtr->serverID	= -1;
     }
-    prefixPtr->prefixLength	= String_Length(prefix);
-    prefixCopy			= (char *)Mem_Alloc(prefixPtr->prefixLength+1);
-    (void)String_Copy(prefix, prefixCopy);
+    prefixPtr->prefixLength	= strlen(prefix);
+    prefixCopy			= (char *)malloc(prefixPtr->prefixLength+1);
+    (void)strcpy(prefixCopy, prefix);
     prefixPtr->prefix		= prefixCopy;
     prefixPtr->hdrPtr		= hdrPtr;
     prefixPtr->domainType	= domainType;
@@ -993,8 +994,8 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
     } else {
 	fsStats.prefix.absolute++;
 	LIST_FORALL(prefixList, (List_Links *) prefixPtr) {
-	    if (String_NCompare(prefixPtr->prefixLength, prefixPtr->prefix,
-							fileName) == 0) {
+	    if (strncmp(prefixPtr->prefix, fileName, prefixPtr->prefixLength)
+					== 0) {
 		char	lastChar;
 
 		if (!(flags & prefixPtr->flags)) {
@@ -1114,19 +1115,19 @@ Fs_PrefixExport(prefix, clientID, delete)
     LOCK_MONITOR;
 
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
-	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
+	if (strcmp(prefixPtr->prefix, prefix) == 0) {
 	    LIST_FORALL(&prefixPtr->exportList, (List_Links *)exportPtr) {
 		if (exportPtr->spriteID == clientID) {
 		    if (delete) {
 			List_Remove((List_Links *)exportPtr);
-			Mem_Free((Address)exportPtr);
+			free((Address)exportPtr);
 		    }
 		    found = TRUE;
 		    break;
 		}
 	    }
 	    if (!found && !delete) {
-		exportPtr = Mem_New(FsPrefixExport);
+		exportPtr = mnew(FsPrefixExport);
 		List_InitElement((List_Links *)exportPtr);
 		exportPtr->spriteID = clientID;
 		List_Insert((List_Links *)exportPtr,
@@ -1170,23 +1171,23 @@ Fs_PrefixClear(prefix, deleteFlag)
     LOCK_MONITOR;
 
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
-	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
+	if (strcmp(prefixPtr->prefix, prefix) == 0) {
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
 		FsPrefixHandleClose(prefixPtr);
 	    }
 	    prefixPtr->flags &= ~FS_EXPORTED_PREFIX;
 	    if (deleteFlag && prefixPtr->prefixLength != 1) {
-		Mem_Free((Address) prefixPtr->prefix);
+		free((Address) prefixPtr->prefix);
 		while (! List_IsEmpty(&prefixPtr->exportList)) {
 		    register FsPrefixExport *exportPtr;
 		    exportPtr =
 			(FsPrefixExport *)List_First(&prefixPtr->exportList);
 		    List_Remove((List_Links *)exportPtr);
-		    Mem_Free((Address)exportPtr);
+		    free((Address)exportPtr);
 		}
 
 		List_Remove((List_Links *)prefixPtr);
-		Mem_Free((Address) prefixPtr);
+		free((Address) prefixPtr);
 	    }
 	    UNLOCK_MONITOR;
 	    return(SUCCESS);
@@ -1216,18 +1217,20 @@ void
 FsPrefixHandleClose(prefixPtr)
     FsPrefix *prefixPtr;
 {
-    register FsHandleHeader *hdrPtr = prefixPtr->hdrPtr;
+    register FsHandleHeader *hdrPtr;
     Fs_Stream dummy;
 
-    if (hdrPtr == (FsHandleHeader *)NIL) {
-	return;
+    LOCK_MONITOR;
+    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+	hdrPtr = prefixPtr->hdrPtr;
+	prefixPtr->hdrPtr = (FsHandleHeader *)NIL;
+	FsHandleLock(hdrPtr);
+	dummy.ioHandlePtr = hdrPtr;
+	dummy.hdr.fileID.type = -1;
+	(void)(*fsStreamOpTable[hdrPtr->fileID.type].close)(&dummy,
+		    rpc_SpriteID, 0, 0, (ClientData)NIL);
     }
-    FsHandleLock(hdrPtr);
-    dummy.ioHandlePtr = hdrPtr;
-    dummy.hdr.fileID.type = -1;
-    (void)(*fsStreamOpTable[hdrPtr->fileID.type].close)(&dummy, rpc_SpriteID,
-		    0, 0, (ClientData)NIL);
-    prefixPtr->hdrPtr = (FsHandleHeader *)NIL;
+    UNLOCK_MONITOR;
 }
 
 /*
@@ -1308,7 +1311,7 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
     }
     do {
 	if (fsFileNameTrace) {
-	    Sys_Printf("Lookup: %s,", fileName);
+	    printf("Lookup: %s,", fileName);
 	}
 	status = FsPrefixLookup(fileName, flags, FS_LOCALHOST_ID, hdrPtrPtr,
 			rootIDPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr);
@@ -1317,7 +1320,7 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
 	     * The prefix exists but there is not a valid file handle for it.
 	     * FsPrefixLookup has returned us the prefix in lookupName.
 	     */
-	    Sys_Printf("Broadcasting for server of \"%s\"\n", *lookupNamePtr);
+	    printf("Broadcasting for server of \"%s\"\n", *lookupNamePtr);
 	    status = LocatePrefix(*lookupNamePtr, domainTypePtr,
 						    hdrPtrPtr);
 	    if (status == FS_NEW_PREFIX) {
@@ -1378,8 +1381,8 @@ FsPrefixReopen(serverID)
 	    }
 	}
 	List_Remove((List_Links *)prefixPtr);
-	Mem_Free(prefixPtr->prefix);
-	Mem_Free((Address)prefixPtr);
+	free(prefixPtr->prefix);
+	free((Address)prefixPtr);
     }
 }
 
@@ -1394,7 +1397,7 @@ FsPrefixReopen(serverID)
  *	None.
  *
  * Side effects:
- *	Mem_Allocs, our caller should free each element in the list.
+ *	mallocs, our caller should free each element in the list.
  *
  *----------------------------------------------------------------------
  */
@@ -1411,10 +1414,10 @@ GetNilPrefixes(listPtr)
 	if (prefixPtr->hdrPtr == (FsHandleHeader *)NIL) {
 	    register FsPrefix *newPrefixPtr;
 
-	    newPrefixPtr = Mem_New(FsPrefix);
+	    newPrefixPtr = mnew(FsPrefix);
 	    *newPrefixPtr = *prefixPtr;
-	    newPrefixPtr->prefix = Mem_Alloc(newPrefixPtr->prefixLength + 1);
-	    (void)String_Copy(prefixPtr->prefix, newPrefixPtr->prefix);
+	    newPrefixPtr->prefix = (Address)malloc(newPrefixPtr->prefixLength + 1);
+	    (void)strcpy(newPrefixPtr->prefix, prefixPtr->prefix);
 	    List_Insert((List_Links *)newPrefixPtr, LIST_ATREAR(listPtr));
 	}
     }
@@ -1454,18 +1457,18 @@ FsPrefixOpenCheck(prefixHdrPtr)
 	    (prefixPtr->hdrPtr->fileID.serverID ==
 		prefixHdrPtr->fileID.serverID)) {
 	    if (prefixPtr->delayOpens) {
-		Sys_Panic(SYS_WARNING, 
+		printf( 
 		    "FsPrefixOpenCheck waiting for recovery\n");
 		if (Sync_Wait(&prefixPtr->okToOpen, TRUE)) {
 		    /*
 		     * Wait was interrupted by a signal.
 		     */
 		    status = FS_DOMAIN_UNAVAILABLE;
-		    Sys_Printf("FsPrefixOpenCheck aborted\n");
+		    printf("FsPrefixOpenCheck aborted\n");
 		} else {
 		    prefixPtr->activeOpens++;
 		    status = SUCCESS;
-		    Sys_Printf("FsPrefixOpenCheck ok\n");
+		    printf("FsPrefixOpenCheck ok\n");
 		}
 	    } else {
 		prefixPtr->activeOpens++;
@@ -1478,7 +1481,7 @@ FsPrefixOpenCheck(prefixHdrPtr)
     /*
      * No match with the prefix handle.
      */
-    Sys_Panic(SYS_WARNING, "PrefixOpenCheck: didn't find prefix");
+    printf( "PrefixOpenCheck: didn't find prefix");
     UNLOCK_MONITOR;
     return(FS_DOMAIN_UNAVAILABLE);
 }
@@ -1513,7 +1516,7 @@ FsPrefixOpenDone(prefixHdrPtr)
 		prefixHdrPtr->fileID.serverID)) {
 	    prefixPtr->activeOpens--;
 	    if (prefixPtr->activeOpens < 0) {
-		Sys_Panic(SYS_WARNING, "FsPrefixOpenDone, neg open cnt\n");
+		printf( "FsPrefixOpenDone, neg open cnt\n");
 		prefixPtr->activeOpens = 0;
 	    }
 	    if (prefixPtr->activeOpens == 0) {
@@ -1526,7 +1529,7 @@ FsPrefixOpenDone(prefixHdrPtr)
     /*
      * No match with the prefix handle.
      */
-    Sys_Panic(SYS_WARNING, "PrefixOpenDone: no handle match\n");
+    printf( "PrefixOpenDone: no handle match\n");
     UNLOCK_MONITOR;
     return;
 }
@@ -1731,26 +1734,26 @@ Fs_PrefixDump(index, argPtr)
 	    /*
 	     * Dump the prefix entry to the console.
 	     */
-	    Sys_Printf("%-20s ", prefixPtr->prefix);
+	    printf("%-20s ", prefixPtr->prefix);
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
-		Sys_Printf("(%d,%d,%d,%x) ",
+		printf("(%d,%d,%d,%x) ",
 			      prefixPtr->hdrPtr->fileID.serverID,
 			      prefixPtr->hdrPtr->fileID.type,
 			      prefixPtr->hdrPtr->fileID.major,
 			      prefixPtr->hdrPtr->fileID.minor);
 	    } else {
-		Sys_Printf(" (no handle) ");
+		printf(" (no handle) ");
 	    }
 	    if (prefixPtr->flags & FS_LOCAL_PREFIX) {
-		Sys_Printf(" import ");
+		printf(" import ");
 	    }
 	    if (prefixPtr->flags & FS_IMPORTED_PREFIX) {
-		Sys_Printf(" import ");
+		printf(" import ");
 	    }
 	    if (prefixPtr->flags & FS_EXPORTED_PREFIX) {
-		Sys_Printf(" export ");
+		printf(" export ");
 	    }
-	    Sys_Printf("\n");
+	    printf("\n");
 	} else if (i == index) {
 	    Fs_Prefix userPrefix;
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
@@ -1779,11 +1782,10 @@ Fs_PrefixDump(index, argPtr)
 	    }
 	    userPrefix.flags = prefixPtr->flags;
 	    if (prefixPtr->prefixLength >= FS_USER_PREFIX_LENGTH) {
-		Byte_Copy(FS_USER_PREFIX_LENGTH, (Address)prefixPtr->prefix,
-				(Address)userPrefix.prefix);
+		bcopy((Address)prefixPtr->prefix, (Address)userPrefix.prefix, FS_USER_PREFIX_LENGTH);
 		userPrefix.prefix[FS_USER_PREFIX_LENGTH-1] = '\0';
 	    } else {
-		(void)String_Copy(prefixPtr->prefix, userPrefix.prefix);
+		(void)strcpy(userPrefix.prefix, prefixPtr->prefix);
 	    }
 	    Vm_CopyOut(sizeof(Fs_Prefix), (Address)&userPrefix, argPtr);
 	    foundPrefix = TRUE;
@@ -1877,8 +1879,8 @@ DumpExportList(prefixPtr, size, buffer)
     if (size > 1000 * sizeof(int)) {
 	status = FS_INVALID_ARG;
     } else {
-	exportList = (int *)Mem_Alloc(size);
-	Byte_Zero(size, (Address)exportList);
+	exportList = (int *)malloc(size);
+	bzero((Address)exportList, size);
 	iPtr = exportList;
 	LIST_FORALL(&prefixPtr->exportList, (List_Links *)exportPtr) {
 	    *iPtr = exportPtr->spriteID;

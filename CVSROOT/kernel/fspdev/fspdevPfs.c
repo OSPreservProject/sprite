@@ -253,7 +253,7 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
      * Then verify that the prefix is not already handled by someone.
      */
     if (name[0] != '/') {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "Need absolute name (not \"%s\") for pseudo-filesystem\n", name);
 	return(FS_INVALID_ARG);
     }
@@ -261,7 +261,7 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 		FS_IMPORTED_PREFIX|FS_EXPORTED_PREFIX|FS_EXACT_PREFIX, -1,
 		&prefixHdrPtr, &rootID, &ignoredName, &domain, &prefixPtr);
     if (status == SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Prefix \"%s\" already serviced\n", name);
+	printf( "Prefix \"%s\" already serviced\n", name);
 	return(FS_FILE_BUSY);
     } else {
 	status = SUCCESS;
@@ -482,7 +482,7 @@ FsPfsOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
      * handler, so just we return.
      */
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName) + 1, (Address)relativeName,
+		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
@@ -577,7 +577,7 @@ FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
     cltHandlePtr = FsPdevConnect(fileIDPtr, namingPdevHandlePtr->open.clientID,
 				namingPdevHandlePtr->open.name);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsPfsOpenConnection failing\n");
+	printf( "FsPfsOpenConnection failing\n");
 	return(-1);
     }
     /*
@@ -662,15 +662,15 @@ FsPfsStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 
     cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, ioFileIDPtr);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsPfsStreamCltOpen, no handle\n");
+	printf( "FsPfsStreamCltOpen, no handle\n");
 	*ioHandlePtrPtr = (FsHandleHeader *)NIL;
 	return(FS_FILE_NOT_FOUND);
     } else {
 	if (cltHandlePtr->hdr.name != (char *)NIL) {
-	    Mem_Free((Address)cltHandlePtr->hdr.name);
+	    free((Address)cltHandlePtr->hdr.name);
 	}
-	cltHandlePtr->hdr.name = (char *)Mem_Alloc(String_Length(name) + 1);
-	(void)String_Copy(name, cltHandlePtr->hdr.name);
+	cltHandlePtr->hdr.name = (char *)malloc(strlen(name) + 1);
+	(void)strcpy(cltHandlePtr->hdr.name, name);
 	*ioHandlePtrPtr = (FsHandleHeader *)cltHandlePtr;
 	FsHandleUnlock(cltHandlePtr);
 	return(SUCCESS);
@@ -758,7 +758,7 @@ FsPfsGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = sizeof(Fs_Attributes);
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName) + 1, (Address)relativeName,
+		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, (Address)getAttrResultsPtr->attrPtr,
 		newNameInfoPtrPtr);
     /*
@@ -820,19 +820,19 @@ FsPfsSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
      * The dataLength includes 4 bytes of name inside the Pfs_SetAttrData
      * so there is room for the trailing null byte.
      */
-    nameLength = String_Length(relativeName);
+    nameLength = strlen(relativeName);
     dataLength = sizeof(Pfs_SetAttrData) + nameLength;
 
-    setAttrDataPtr = (Pfs_SetAttrData *)Mem_Alloc(dataLength);
+    setAttrDataPtr = (Pfs_SetAttrData *)malloc(dataLength);
     setAttrDataPtr->attr = setAttrArgsPtr->attr;
     setAttrDataPtr->flags = setAttrArgsPtr->flags;
     setAttrDataPtr->nameLength = nameLength;
-    (void)String_Copy(relativeName, setAttrDataPtr->name);
+    (void)strcpy(setAttrDataPtr->name, relativeName);
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
 	    dataLength, (Address)setAttrDataPtr,
 	    &zero, (Address)NIL, newNameInfoPtrPtr);
-    Mem_Free((Address)setAttrDataPtr);
+    free((Address)setAttrDataPtr);
     /*
      * The pseudo-filesystem server has dealt with all the attributes so
      * we don't fill in the ioFileID.
@@ -887,7 +887,7 @@ FsPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = 0;
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName) + 1, (Address)relativeName,
+		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
@@ -938,7 +938,7 @@ FsPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = 0;
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName) + 1, (Address)relativeName,
+		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
@@ -989,7 +989,7 @@ FsPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = 0;
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName) + 1, (Address)relativeName,
+		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
@@ -1040,7 +1040,7 @@ FsPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = 0;
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName) + 1, (Address)relativeName,
+		strlen(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
@@ -1145,11 +1145,9 @@ FsPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 {
     register PdevServerIOHandle	*pdevHandlePtr;
     register PdevServerIOHandle	*pdevHandle2Ptr;
-    Fs2PathParams		params;
     Fs2PathData			*dataPtr;
     Pfs_Request			request;
     register ReturnStatus	status;
-    int				resultSize;
 
     pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle1)->pdevHandlePtr;
 
@@ -1172,13 +1170,12 @@ FsPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	pdevHandle2Ptr = ((PdevClientIOHandle *)prefixHandle2)->pdevHandlePtr;
 	request.param.rename.prefixID2 = pdevHandle2Ptr->userLevelID;
     }
-    dataPtr = (Fs2PathData *)Mem_Alloc(sizeof(Fs2PathData));
-    (void)String_Copy(relativeName1, dataPtr->path1);
-    (void)String_Copy(relativeName2, dataPtr->path2);
+    dataPtr = (Fs2PathData *)malloc(sizeof(Fs2PathData));
+    (void)strcpy(dataPtr->path1, relativeName1);
+    (void)strcpy(dataPtr->path2, relativeName2);
 
-    resultSize = sizeof(Fs2PathReply);
     status = FsPseudoStream2Path(pdevHandlePtr, &request, dataPtr,
 		name1ErrorPtr, newNameInfoPtrPtr);
-    Mem_Free((Address)dataPtr);
+    free((Address)dataPtr);
     return(status);
 }

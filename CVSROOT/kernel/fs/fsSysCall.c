@@ -30,7 +30,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsOpTable.h"
 #include "fsDevice.h"
 #include "fsNameOps.h"
-#include "mem.h"
 
 #include "vm.h"
 #include "proc.h"
@@ -406,17 +405,17 @@ Fs_ReadVectorStub(streamID, numVectors, userVectorArray, amountReadPtr)
      * Copy the I/O vector into kernel space. The buffer addresses in each
      * vector will be made accessible by the Fs_Read routine.
      */
-    vectorPtr = (Fs_IOVector *) Mem_Alloc(numVectors * sizeof(Fs_IOVector));
+    vectorPtr = (Fs_IOVector *) malloc(numVectors * sizeof(Fs_IOVector));
     if (Vm_CopyIn(numVectors * sizeof(Fs_IOVector), 
 		   (Address) userVectorArray,
 		   (Address) vectorPtr) != SUCCESS) {
-	Mem_Free((Address) vectorPtr);
+	free((Address) vectorPtr);
 	return(SYS_ARG_NOACCESS);
     }
 
     status = Fs_UserReadVector(streamID, numVectors, vectorPtr, &amountRead);
 
-    Mem_Free((Address) vectorPtr);
+    free((Address) vectorPtr);
     if (Vm_CopyOut(sizeof(int), (Address) &amountRead, 
 		   (Address) amountReadPtr) != SUCCESS) {
 	status = SYS_ARG_NOACCESS;
@@ -631,18 +630,18 @@ Fs_WriteVectorStub(streamID, numVectors, userVectorArray, amountWrittenPtr)
      * Copy the I/O vector into kernel space. The buffer addresses in each
      * vector will be made accessible by the Fs_Write routine.
      */
-    vectorPtr = (Fs_IOVector *) Mem_Alloc(numVectors * sizeof(Fs_IOVector));
+    vectorPtr = (Fs_IOVector *) malloc(numVectors * sizeof(Fs_IOVector));
     if (Vm_CopyIn(numVectors * sizeof(Fs_IOVector), 
 		   (Address) userVectorArray,
 		   (Address) vectorPtr) != SUCCESS) {
-	Mem_Free((Address) vectorPtr);
+	free((Address) vectorPtr);
 	return(SYS_ARG_NOACCESS);
     }
 
     status = Fs_UserWriteVector(streamID, numVectors, vectorPtr, 
 			&amountWritten);
 
-    Mem_Free((Address) vectorPtr);
+    free((Address) vectorPtr);
     if (Vm_CopyOut(sizeof(int), (Address) &amountWritten, 
 		   (Address) amountWrittenPtr) != SUCCESS) {
 	status = SYS_ARG_NOACCESS;
@@ -745,7 +744,7 @@ Fs_CommandStub(command, bufSize, buffer)
     Address localBuffer;
 
     if (bufSize > 0) {
-	localBuffer = (Address)Mem_Alloc(bufSize);
+	localBuffer = (Address)malloc(bufSize);
 	status = Vm_CopyIn(bufSize, buffer, localBuffer);
 	if (status != SUCCESS) {
 	    return(status);
@@ -760,7 +759,7 @@ Fs_CommandStub(command, bufSize, buffer)
 	if (status == SUCCESS) {
 	    status = Vm_CopyOut(bufSize, localBuffer, buffer);
 	}
-	Mem_Free(localBuffer);
+	free(localBuffer);
     }
     return(status);
 }
@@ -1456,7 +1455,7 @@ Fs_HardLinkStub(fileName, linkName)
      * allocing it here because I'm not sure if the stack is big enough.
      * Should just make the stack bigger I suppose ...
      */
-    newLinkName = (char  *) Mem_Alloc(FS_MAX_PATH_NAME_LENGTH);
+    newLinkName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
     if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
 		       &linkNameLength) == SUCCESS) {
 	if (linkNameLength == FS_MAX_PATH_NAME_LENGTH) {
@@ -1468,7 +1467,7 @@ Fs_HardLinkStub(fileName, linkName)
 	status = SYS_ARG_NOACCESS;
     }
 
-    Mem_Free((Address) newLinkName);
+    free((Address) newLinkName);
 
     return(status);
 }
@@ -1516,7 +1515,7 @@ Fs_RenameStub(pathName, newName)
      * allocing it here because I'm not sure if the stack is big enough.
      * Should just make the stack bigger I suppose ...
      */
-    newNewName = (char  *) Mem_Alloc(FS_MAX_PATH_NAME_LENGTH);
+    newNewName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
     if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, newName, newNewName,
 		       &newNameLength) == SUCCESS) {
 	if (newNameLength == FS_MAX_PATH_NAME_LENGTH) {
@@ -1528,7 +1527,7 @@ Fs_RenameStub(pathName, newName)
 	status = SYS_ARG_NOACCESS;
     }
 
-    Mem_Free((Address) newNewName);
+    free((Address) newNewName);
 
     return(status);
 }
@@ -1577,7 +1576,7 @@ Fs_SymLinkStub(targetName, linkName, remoteFlag)
      * allocing it here because I'm not sure if the stack is big enough.
      * Should just make the stack bigger I suppose ...
      */
-    newLinkName = (char  *) Mem_Alloc(FS_MAX_PATH_NAME_LENGTH);
+    newLinkName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
     if (Fs_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
 		       &linkNameLength) == SUCCESS) {
 	if (linkNameLength == FS_MAX_PATH_NAME_LENGTH) {
@@ -1588,7 +1587,7 @@ Fs_SymLinkStub(targetName, linkName, remoteFlag)
     } else {
 	status = SYS_ARG_NOACCESS;
     }
-    Mem_Free((Address) newLinkName);
+    free((Address) newLinkName);
 
     return(status);
 }
@@ -1731,7 +1730,7 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
      */
     if ((outBufSize > 0) && (outBuffer != (Address)0) &&
 			    (outBuffer != (Address)NIL)){
-	outBuf.addr = (Address) Mem_Alloc(outBufSize);
+	outBuf.addr = (Address) malloc(outBufSize);
 	outBuf.size = outBufSize;
     } else {
 	outBuf.addr = (Address)NIL;
@@ -1739,7 +1738,7 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     }
     if ((inBufSize > 0) && (inBuffer != (Address)0) &&
 			   (inBuffer != (Address)NIL)) {
-	inBuf.addr  = (Address) Mem_Alloc(inBufSize);
+	inBuf.addr  = (Address) malloc(inBufSize);
 	inBuf.size = inBufSize;
     } else {
 	inBuf.addr = (Address)NIL;
@@ -1791,10 +1790,10 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 	}
     }
     if (inBuf.flags == 0 && inBuf.addr != (Address)NIL) {
-	Mem_Free(inBuf.addr);
+	free(inBuf.addr);
     }
     if (outBuf.flags == 0 && outBuf.addr != (Address)NIL) {
-	Mem_Free(outBuf.addr);
+	free(outBuf.addr);
     }
     return(status);
 }

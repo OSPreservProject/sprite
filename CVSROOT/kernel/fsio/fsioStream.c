@@ -38,8 +38,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsClient.h"
 #include "fsMigrate.h"
 #include "proc.h"
-#include "mem.h"
-#include "byte.h"
 #include "sync.h"
 #include "rpc.h"
 
@@ -124,7 +122,7 @@ FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
     streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
     List_Init(&streamPtr->clientList);
 
-    clientPtr = Mem_New(FsStreamClientInfo);
+    clientPtr = mnew(FsStreamClientInfo);
     clientPtr->clientID = clientID;
     clientPtr->useFlags = useFlags;
     List_InitElement((List_Links *)clientPtr);
@@ -346,7 +344,7 @@ StreamMigCallback(migInfoPtr, sharedPtr)
 	migReplyPtr = &(migParam.migReply);
 	*sharedPtr = migReplyPtr->flags & FS_RMT_SHARED;
     } else if (fsMigDebug) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	  "StreamMigCallback: status %x from remote migrate routine.\n",
 		  status);
     }
@@ -401,7 +399,7 @@ FsStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      */
     streamPtr = FsHandleFetchType(Fs_Stream, &migInfoPtr->streamID);
     if (streamPtr == (Fs_Stream *)NIL) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		"FsStreamMigrate, no stream <%d> for %s handle <%d,%d>\n",
 		migInfoPtr->streamID.minor,
 		FsFileTypeToString(migInfoPtr->ioFileID.type),
@@ -552,16 +550,13 @@ FsStreamClientVerify(streamIDPtr, clientID)
 	}
 	if (!found) {
 	    register FsHandleHeader *tHdrPtr = streamPtr->ioHandlePtr;
-	    Sys_Panic((fsMigDebug > 0) ? SYS_FATAL : SYS_WARNING,
-		"FsStreamClientVerify, client %d not known for stream <%d>\n",
+	    panic("FsStreamClientVerify, client %d not known for stream <%d>\n",
 		clientID, tHdrPtr->fileID.minor);
 	    FsHandleRelease(streamPtr, TRUE);
 	    streamPtr = (Fs_Stream *)NIL;
 	}
     } else {
-	Sys_Panic((fsMigDebug > 0) ? SYS_FATAL : SYS_WARNING,
-		  "No stream <%d> for client %d\n",
-		  streamIDPtr->minor, clientID);
+	panic("No stream <%d> for client %d\n", streamIDPtr->minor, clientID);
     }
     return(streamPtr);
 }
@@ -603,12 +598,12 @@ FsStreamDispose(streamPtr)
 
 	    LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
 
-		Sys_Panic(SYS_WARNING, 
+		printf( 
 			  "FsStreamDispose, client %d still in list for stream <%d,%d>, refCount %d\n",
 			  clientPtr->clientID, streamPtr->hdr.fileID.major,
 			  streamPtr->hdr.fileID.minor, streamPtr->hdr.refCount);
 		if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
-		    Sys_Printf("\tI/O handle: %s <%d,%d>, refCount %d\n",
+		    printf("\tI/O handle: %s <%d,%d>, refCount %d\n",
 			       FsFileTypeToString(streamPtr->ioHandlePtr->fileID.type),
 			       streamPtr->ioHandlePtr->fileID.major,
 			       streamPtr->ioHandlePtr->fileID.minor,
@@ -621,7 +616,7 @@ FsStreamDispose(streamPtr)
     FsHandleRelease(streamPtr, TRUE);
     if (noClients) {
 	if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
-	    Mem_Free((Address)streamPtr->nameInfoPtr);
+	    free((Address)streamPtr->nameInfoPtr);
 	}
 	FsHandleRemove(streamPtr);
     }
@@ -653,7 +648,7 @@ FsStreamScavenge(hdrPtr)
 
     if (streamPtr->hdr.refCount == 0 &&
 	List_IsEmpty(&streamPtr->clientList)) {
-	Sys_Panic(SYS_WARNING, "FsStreamScavenge, removing stream <%d,%d>\n",
+	printf( "FsStreamScavenge, removing stream <%d,%d>\n",
 		streamPtr->hdr.fileID.serverID,
 		streamPtr->hdr.fileID.minor);
 	FsHandleRemove((FsHandleHeader *)streamPtr);
@@ -745,7 +740,7 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	    FsHandleRelease(streamPtr, TRUE);
 	    status = SUCCESS;
 	} else {
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		"FsStreamReopen, %s I/O handle <%d,%d> not found\n",
 		FsFileTypeToString(fileIDPtr->type),
 		fileIDPtr->major, fileIDPtr->minor);
@@ -794,7 +789,7 @@ FsGetStreamID(streamPtr, streamIDPtr)
     fsPtr = (Proc_GetEffectiveProc())->fsPtr;
 
     if (streamPtr == (Fs_Stream *)0) {
-	Sys_Panic(SYS_FATAL, "Zero valued streamPtr");
+	panic( "Zero valued streamPtr");
     }
     if (fsPtr->streamList == (Fs_Stream **)NIL) {
 	/*
@@ -892,22 +887,20 @@ GrowStreamList(fsPtr, newLength)
     register Fs_Stream **streamList;
     register char *streamFlags;
 
-    streamList = (Fs_Stream **)Mem_Alloc(newLength * sizeof(Fs_Stream *));
-    streamFlags = (char *)Mem_Alloc(newLength * sizeof(char));
+    streamList = (Fs_Stream **)malloc(newLength * sizeof(Fs_Stream *));
+    streamFlags = (char *)malloc(newLength * sizeof(char));
 
     if (fsPtr->numStreams > 0) {
-	Byte_Copy(sizeof(Fs_Stream *) * fsPtr->numStreams,
-		  (Address)fsPtr->streamList, (Address)streamList);
-	Byte_Copy(sizeof(char) * fsPtr->numStreams,
-		  (Address)fsPtr->streamFlags, (Address)streamFlags);
+	bcopy((Address)fsPtr->streamList, (Address)streamList, sizeof(Fs_Stream *) * fsPtr->numStreams);
+	bcopy((Address)fsPtr->streamFlags, (Address)streamFlags, sizeof(char) * fsPtr->numStreams);
 
-	Mem_Free((Address)fsPtr->streamList);
-	Mem_Free((Address)fsPtr->streamFlags);
+	free((Address)fsPtr->streamList);
+	free((Address)fsPtr->streamFlags);
     
 	for (index=0 ; index < fsPtr->numStreams ; index++) {
 	    if ((int)streamList[index] != NIL &&
 		(int)streamList[index] < 1024) {
-		Sys_Panic(SYS_FATAL, "GrowStreamList copied bad streamPtr, %x\n",
+		panic( "GrowStreamList copied bad streamPtr, %x\n",
 				       streamList[index]);
 	    }
 	}
@@ -969,7 +962,7 @@ FsGetStreamPtr(procPtr, streamID, streamPtrPtr)
 	     * small integers being kept in the stream list instead of
 	     * valid stream pointers.  Not sure if that still happens.
 	     */
-	    Sys_Panic(SYS_FATAL, "Stream Ptr # %d was an int %d!\n",
+	    panic( "Stream Ptr # %d was an int %d!\n",
 				streamID, streamPtr);
 	    return(FS_INVALID_ARG);
 	} else {

@@ -464,6 +464,7 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
     Boolean			found;
     ReturnStatus		status = SUCCESS;
     register FsIndirectInfo	*indInfoPtr;
+    register int		*intPtr;
 
     indInfoPtr = &(indexInfoPtr->indInfo[indBlockNum]);
     if (indInfoPtr->blockPtr == (FsCacheBlock *) NIL) {
@@ -482,10 +483,13 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 		 * The block should not be in the cache since we are just
 		 * allocating it now.
 		 */
-		Sys_Panic(SYS_FATAL, "Physical block already in cache.\n");
+		panic("Physical block already in cache.\n");
 	    }
-	    Byte_Fill(FS_NIL_INDEX, FS_BLOCK_SIZE, 
-		      indInfoPtr->blockPtr->blockAddr);
+	    for (intPtr = (int *)indInfoPtr->blockPtr->blockAddr;
+		 (int)intPtr < (int)indInfoPtr->blockPtr->blockAddr + FS_BLOCK_SIZE;
+		 intPtr++) {
+		*intPtr = FS_NIL_INDEX;
+	    }
 	    indexInfoPtr->indInfo[0].blockDirty = TRUE;
 	    indexInfoPtr->indInfo[1].blockDirty = TRUE;
 	    FsCacheIODone(indInfoPtr->blockPtr);

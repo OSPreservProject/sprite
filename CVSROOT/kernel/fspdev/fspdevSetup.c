@@ -171,7 +171,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * corresponding server stream.  The procID and uid fields are
 	     * extra here, but will be used later if the client is remote.
 	     */
-	    pdevStatePtr = Mem_New(FsPdevState);
+	    pdevStatePtr = mnew(FsPdevState);
 	    pdevStatePtr->ctrlFileID = ctrlHandlePtr->rmt.hdr.fileID;
 	    pdevStatePtr->procID = (Proc_PID)NIL;
 	    pdevStatePtr->uid = NIL;
@@ -286,7 +286,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     srvStreamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
 			    (FsHandleHeader *)cltHandlePtr->pdevHandlePtr,
 			    FS_READ|FS_USER, name);
-    notifyPtr = Mem_New(PdevNotify);
+    notifyPtr = mnew(PdevNotify);
     notifyPtr->streamPtr = srvStreamPtr;
     List_InitElement((List_Links *)notifyPtr);
     List_Insert((List_Links *)notifyPtr,
@@ -332,7 +332,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	}
     }
 exit:
-    Mem_Free((Address)streamData);
+    free((Address)streamData);
     return(status);
 }
 
@@ -377,9 +377,9 @@ FsPdevConnect(ioFileIDPtr, clientID, name)
     if (found) {
 	if ((cltHandlePtr->pdevHandlePtr != (PdevServerIOHandle *)NIL) &&
 	    (cltHandlePtr->pdevHandlePtr->clientPID != (unsigned int)NIL)) {
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		"FsPdevConnect found client handle\n");
-	    Sys_Printf("Check (and kill) client process %x\n",
+	    printf("Check (and kill) client process %x\n",
 		cltHandlePtr->pdevHandlePtr->clientPID);
 	}
 	/*
@@ -393,7 +393,7 @@ FsPdevConnect(ioFileIDPtr, clientID, name)
 			&hdrPtr);
 	cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
 	if (found) {
-	    Sys_Panic(SYS_FATAL, "FsPdevConnect handle still there\n");
+	    panic( "FsPdevConnect handle still there\n");
 	}
     }
     /*
@@ -470,7 +470,7 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ioFileIDPtr->type = FS_RMT_PSEUDO_STREAM;
 	FsRemoteIOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
     }
-    Mem_Free((Address)pdevStatePtr);
+    free((Address)pdevStatePtr);
     return(status);
 }
 
@@ -515,7 +515,7 @@ FsPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
 	/*
 	 * Invalid client trying to close.
 	 */
-	Sys_Panic(SYS_WARNING, "FsPseudoStreamClose: client %d not found\n",
+	printf( "FsPseudoStreamClose: client %d not found\n",
 	    clientID);
 	FsHandleUnlock(cltHandlePtr);
 	return(GEN_INVALID_ARG);
@@ -560,7 +560,7 @@ FsPseudoStreamRelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
 {
-    Sys_Panic(SYS_FATAL, "FsPseudoStreamRelease called\n");
+    panic( "FsPseudoStreamRelease called\n");
 
     return(SUCCESS);
 }
@@ -616,7 +616,7 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
     migInfoPtr->ioFileID.type = FS_LCL_PSEUDO_STREAM;
     cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, &migInfoPtr->ioFileID);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	Sys_Panic(SYS_FATAL, "FsPseudoStreamMigrate, no client handle <%d,%x,%x>\n",
+	panic( "FsPseudoStreamMigrate, no client handle <%d,%x,%x>\n",
 		migInfoPtr->ioFileID.serverID,
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FAILURE);
@@ -698,7 +698,7 @@ FsRmtPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
 		migInfoPtr->ioFileID.major,
 		migInfoPtr->ioFileID.minor) );
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "FsRmtDeviceMigrate, server error <%x>\n",
+	printf( "FsRmtDeviceMigrate, server error <%x>\n",
 	    status);
     } else {
 	*dataPtr = (Address)NIL;
@@ -744,7 +744,7 @@ FsPseudoStreamMigEnd(migInfoPtr, size, data, hdrPtrPtr)
     cltHandlePtr = FsHandleFetchType(PdevClientIOHandle,
 				     &migInfoPtr->ioFileID);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	Sys_Panic(SYS_FATAL, "FsPseudoStreamMigEnd, no handle.\n");
+	panic( "FsPseudoStreamMigEnd, no handle.\n");
 	return(FAILURE);
     } else {
 	/*
@@ -792,7 +792,7 @@ FsRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
     }
     if (fileIDPtr->type != FS_LCL_PSEUDO_STREAM &&
 	fileIDPtr->type != FS_LCL_PFS_STREAM) {
-	Sys_Panic(SYS_WARNING, "FsRmtPseudoStreamVerify, bad type <%d>\n",
+	printf( "FsRmtPseudoStreamVerify, bad type <%d>\n",
 	    fileIDPtr->type);
 	return((FsHandleHeader *)NIL);
     }
@@ -810,7 +810,7 @@ FsRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
 	}
     }
     if (!found) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "FsRmtPseudoDeviceVerify, client %d not known for %s <%x,%x>\n",
 	    clientID, FsFileTypeToString(fileIDPtr->type),
 	    fileIDPtr->major, fileIDPtr->minor);

@@ -19,9 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsInt.h"
 #include "fsNameHash.h"
 #include "fsStat.h"
-#include "mem.h"
 #include "string.h"
-#include "byte.h"
 #include "list.h"
 #include "sys.h"
 
@@ -77,7 +75,7 @@ FsNameHashInit(table, numBuckets)
 
     List_Init(&(table->lruList));
     table->table =
-	(FsHashBucket *) Mem_Alloc(sizeof(FsHashBucket) * table->size);
+	(FsHashBucket *) malloc(sizeof(FsHashBucket) * table->size);
     for (i=0, tablePtr = table->table; i < table->size; i++, tablePtr++) {
 	List_Init(&(tablePtr->list));
     }
@@ -147,7 +145,7 @@ ChainSearch(table, string, keyHdrPtr, hashList)
     register FsHashEntry *hashEntryPtr;
 
     LIST_FORALL(hashList, (List_Links *) hashEntryPtr) {
-	if ((String_Compare(hashEntryPtr->keyName, string) == 0) &&
+	if ((strcmp(hashEntryPtr->keyName, string) == 0) &&
 		(hashEntryPtr->keyHdrPtr == keyHdrPtr)) {
 	    /*
 	     * Move the entry to the front of the LRU list.
@@ -256,7 +254,7 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
 	FsHandleDecRefCount(hashEntryPtr->keyHdrPtr);
 	List_Remove((List_Links *)hashEntryPtr);
 	List_Remove(&(hashEntryPtr->lru.links));
-	Mem_Free((Address)hashEntryPtr);
+	free((Address)hashEntryPtr);
     } else {
 	table->numEntries += 1;
     }
@@ -266,9 +264,9 @@ FsHashInsert(table, string, keyHdrPtr, hdrPtr)
      * bytes, then we have to allocate extra space in the entry.
      */
 
-    hashEntryPtr = (FsHashEntry *) Mem_Alloc(sizeof(FsHashEntry) + 
-			String_Length(string) - 3);
-    (void)String_Copy(string, hashEntryPtr->keyName);
+    hashEntryPtr = (FsHashEntry *) malloc(sizeof(FsHashEntry) + 
+			strlen(string) - 3);
+    (void)strcpy(hashEntryPtr->keyName, string);
     hashEntryPtr->keyHdrPtr = keyHdrPtr;
     hashEntryPtr->hdrPtr = hdrPtr;
     hashEntryPtr->bucketPtr = bucketPtr;
@@ -326,7 +324,7 @@ FsHashDelete(table, string, keyHdrPtr)
 	FsHandleDecRefCount(hashEntryPtr->keyHdrPtr);
 	List_Remove((List_Links *)hashEntryPtr);
 	List_Remove(&(hashEntryPtr->lru.links));
-	Mem_Free((Address)hashEntryPtr);
+	free((Address)hashEntryPtr);
 	table->numEntries--;
     }
 
@@ -392,7 +390,7 @@ FsRebuildTable(table)
 	}
     }
 
-    Mem_Free((Address) saveTable);
+    free((Address) saveTable);
 
     UNLOCK_MONITOR;
 }
@@ -439,10 +437,10 @@ Fs_NameHashStats()
 	}
     }
 
-    Sys_Printf("FS Name Hash Table, %d entries in %d buckets\n", 
+    printf("FS Name Hash Table, %d entries in %d buckets\n", 
 		table->numEntries, table->size);
     for (i = 0;  i < 10; i++) {
-	Sys_Printf("%d buckets with %d entries\n", count[i], i);
+	printf("%d buckets with %d entries\n", count[i], i);
     }
-    Sys_Printf("%d buckets with > 9 entries\n", overflow);
+    printf("%d buckets with > 9 entries\n", overflow);
 }

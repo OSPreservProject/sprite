@@ -43,7 +43,7 @@ static Sync_Lock notifyLock;
  *	None
  *
  * Side effects:
- *	Calls Mem_Alloc and adds to the list.
+ *	Calls malloc and adds to the list.
  *
  *----------------------------------------------------------------------
  */
@@ -73,7 +73,7 @@ FsWaitListInsert(list, waitPtr)
      * Not on the list so put it there.
      */
 
-    myWaitPtr = (Sync_RemoteWaiter *) Mem_Alloc(sizeof(Sync_RemoteWaiter));
+    myWaitPtr = (Sync_RemoteWaiter *) malloc(sizeof(Sync_RemoteWaiter));
     *myWaitPtr = *waitPtr;
     List_Insert((List_Links *)myWaitPtr, LIST_ATREAR(list));
 
@@ -87,7 +87,7 @@ FsWaitListInsert(list, waitPtr)
  *
  *	An un-monitored version of FsWaitListInsert that depends
  *	on handle locking, or something, by higher levels for
- *	synchronization.  Note: the Mem_Alloc is needed because
+ *	synchronization.  Note: the malloc is needed because
  *	of select.  Regular read and write use a Sync_RemoteWaiter
  *	struct declared in Fs_Read or Fs_Write, and it won't go
  *	away while the pipe reader or writer waits.  However, with
@@ -98,7 +98,7 @@ FsWaitListInsert(list, waitPtr)
  *	None
  *
  * Side effects:
- *	Calls Mem_Alloc and adds to the list.
+ *	Calls malloc and adds to the list.
  *
  *----------------------------------------------------------------------
  */
@@ -125,7 +125,7 @@ FsFastWaitListInsert(list, waitPtr)
      * Not on the list so put it there.
      */
 
-    myWaitPtr = (Sync_RemoteWaiter *) Mem_Alloc(sizeof(Sync_RemoteWaiter));
+    myWaitPtr = (Sync_RemoteWaiter *) malloc(sizeof(Sync_RemoteWaiter));
     *myWaitPtr = *waitPtr;
     List_Insert((List_Links *)myWaitPtr, LIST_ATREAR(list));
 }
@@ -144,7 +144,7 @@ FsFastWaitListInsert(list, waitPtr)
  * Side effects:
  *      This results in a call to Sync_ProcWakeup on the host of the
  *      waiting process.  The list is emptied with each item being freed
- *      with Mem_Free.
+ *      with free.
  *
  *----------------------------------------------------------------------
  */
@@ -163,7 +163,7 @@ FsWaitListNotify(list)
 	     * Contact the remote host and get it to notify the waiter.
 	     */
 	    if (waitPtr->hostID > NET_NUM_SPRITE_HOSTS) {
-		Sys_Panic(SYS_WARNING, "FsWaitListNotify bad hostID %d.\n",
+		printf( "FsWaitListNotify bad hostID %d.\n",
 			  waitPtr->hostID);
 	    } else {
 		(void)Sync_RemoteNotify(waitPtr);
@@ -175,7 +175,7 @@ FsWaitListNotify(list)
 	    Sync_ProcWakeup(waitPtr->pid, waitPtr->waitToken);
 	}
 	List_Remove((List_Links *)waitPtr);
-	Mem_Free((Address)waitPtr);
+	free((Address)waitPtr);
     }
     UNLOCK_MONITOR;
 }
@@ -194,7 +194,7 @@ FsWaitListNotify(list)
  * Side effects:
  *      This results in a call to Sync_ProcWakeup on the host of the
  *      waiting process.  The list is emptied with each item being freed
- *      with Mem_Free.
+ *      with free.
  *
  *----------------------------------------------------------------------
  */
@@ -219,7 +219,7 @@ FsFastWaitListNotify(list)
 	    Sync_ProcWakeup(waitPtr->pid, waitPtr->waitToken);
 	}
 	List_Remove((List_Links *)waitPtr);
-	Mem_Free((Address)waitPtr);
+	free((Address)waitPtr);
     }
 }
 
@@ -235,7 +235,7 @@ FsFastWaitListNotify(list)
  *	None
  *
  * Side effects:
- *	Calls Mem_Free and deletes from the list.
+ *	Calls free and deletes from the list.
  *
  *----------------------------------------------------------------------
  */
@@ -252,7 +252,7 @@ FsWaitListRemove(list, waitPtr)
 	if (myWaitPtr->pid == waitPtr->pid &&
 	    myWaitPtr->hostID == waitPtr->hostID) {
 	    List_Remove((List_Links *) myWaitPtr);
-	    Mem_Free((Address) myWaitPtr);
+	    free((Address) myWaitPtr);
 	}
     }
     UNLOCK_MONITOR;
@@ -270,7 +270,7 @@ FsWaitListRemove(list, waitPtr)
  *	None
  *
  * Side effects:
- *	Calls Mem_Free and deletes from the list.
+ *	Calls free and deletes from the list.
  *
  *----------------------------------------------------------------------
  */
@@ -283,7 +283,7 @@ FsWaitListDelete(list)
 
     LIST_FORALL(list, (List_Links *) myWaitPtr) {
 	List_Remove((List_Links *) myWaitPtr);
-	Mem_Free((Address) myWaitPtr);
+	free((Address) myWaitPtr);
     }
 }
 

@@ -78,8 +78,8 @@ ReturnStatus (*fsDomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])() = {
      FsLocalSetAttrPath, FsLocalMakeDevice, FsLocalMakeDir,
      FsLocalRemove, FsLocalRemoveDir, FsLocalRename, FsLocalHardLink},
 /* FS_REMOTE_SPRITE_DOMAIN */
-    {FsSpriteImport, NoProc, FsSpriteOpen, FsSpriteGetAttrPath,
-     FsSpriteSetAttrPath, FsSpriteMakeDevice, FsSpriteMakeDir, 
+    {FsSpriteImport, NoProc, FsSpriteOpen, FsRemoteGetAttrPath,
+     FsRemoteSetAttrPath, FsSpriteMakeDevice, FsSpriteMakeDir, 
      FsSpriteRemove, FsSpriteRemoveDir, FsSpriteRename, FsSpriteHardLink},
 /* FS_PSEUDO_DOMAIN */
     {NoProc, FsPfsExport, FsPfsOpen, FsPfsGetAttrPath, FsPfsSetAttrPath,
@@ -140,7 +140,7 @@ FsAttrOps fsAttrOpTable[FS_NUM_DOMAINS] = {
 /* FS_LOCAL_DOMAIN */
     { FsLocalGetAttr, FsLocalSetAttr },
 /* FS_REMOTE_SPRITE_DOMAIN */
-    { FsSpriteGetAttr, FsSpriteSetAttr },
+    { FsRemoteGetAttr, FsRemoteSetAttr },
 /* FS_PSEUDO_DOMAIN */
     { FsPseudoGetAttr, FsPseudoSetAttr },
 /* FS_NFS_DOMAIN */
@@ -196,7 +196,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRmtFileVerify, FsRmtFileRelease, FsRmtFileMigEnd,
 		FsRmtFileMigrate, FsRmtFileReopen,
 		FsRmtFileAllocate, FsRmtFileBlockRead, FsRmtFileBlockWrite,
-		FsSpriteBlockCopy, FsRmtFileScavenge,
+		FsRemoteBlockCopy, FsRmtFileScavenge,
 		NullClientKill, FsRmtFileClose},
     /*
      * Local device stream.  These routines branch to the device driver
@@ -213,8 +213,8 @@ FsStreamTypeOps fsStreamOpTable[] = {
     /*
      * Remote device stream.  Forward the operations to the remote I/O server.
      */
-    { FS_RMT_DEVICE_STREAM, FsRmtDeviceCltOpen, FsSpriteRead, FsSpriteWrite,
-		FsRemoteIOControl, FsSpriteSelect,
+    { FS_RMT_DEVICE_STREAM, FsRmtDeviceCltOpen, FsRemoteRead, FsRemoteWrite,
+		FsRemoteIOControl, FsRemoteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtDeviceVerify, FsRemoteIORelease, FsRemoteIOMigEnd,
 		FsRmtDeviceMigrate, FsRmtDeviceReopen,
@@ -234,8 +234,8 @@ FsStreamTypeOps fsStreamOpTable[] = {
     /*
      * Remote anonymous pipe stream.  These arise because of migration.
      */
-    { FS_RMT_PIPE_STREAM, NoProc, FsSpriteRead, FsSpriteWrite,
-		FsRemoteIOControl, FsSpriteSelect,
+    { FS_RMT_PIPE_STREAM, NoProc, FsRemoteRead, FsRemoteWrite,
+		FsRemoteIOControl, FsRemoteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtPipeVerify, FsRemoteIORelease, FsRemoteIOMigEnd,
 		FsRmtPipeMigrate, FsRmtPipeReopen,
@@ -283,9 +283,9 @@ FsStreamTypeOps fsStreamOpTable[] = {
     /*
      * A pseudo stream with a remote server.  
      */
-    { FS_RMT_PSEUDO_STREAM, FsRmtPseudoStreamCltOpen, FsSpriteRead,
-		FsSpriteWrite,
-		FsRemoteIOControl, FsSpriteSelect,
+    { FS_RMT_PSEUDO_STREAM, FsRmtPseudoStreamCltOpen, FsRemoteRead,
+		FsRemoteWrite,
+		FsRemoteIOControl, FsRemoteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtPseudoStreamVerify,
 		FsRemoteIORelease, FsRemoteIOMigEnd,
@@ -346,9 +346,9 @@ FsStreamTypeOps fsStreamOpTable[] = {
      * pseudo-device connection is already set up by the time the
      * CltOpen routine is called.
      */
-    { FS_RMT_PFS_STREAM, FsRmtPfsStreamCltOpen, FsSpriteRead,
-		FsSpriteWrite,
-		FsRemoteIOControl, FsSpriteSelect,
+    { FS_RMT_PFS_STREAM, FsRmtPfsStreamCltOpen, FsRemoteRead,
+		FsRemoteWrite,
+		FsRemoteIOControl, FsRemoteSelect,
 		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtPseudoStreamVerify,
 		FsRemoteIORelease, FsRemoteIOMigEnd,
@@ -371,9 +371,9 @@ FsStreamTypeOps fsStreamOpTable[] = {
      * machine so we use the remote device routines to forward operations
      * to the I/O server.
      */
-    { FS_RMT_NAMED_PIPE_STREAM, FsRmtNamedPipeCltOpen, FsSpriteRead,
-		FsSpriteWrite, FsSpriteIOControl,
-		FsSpriteSelect, FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+    { FS_RMT_NAMED_PIPE_STREAM, FsRmtNamedPipeCltOpen, FsRemoteRead,
+		FsRemoteWrite, FsRemoteIOControl,
+		FsRemoteSelect, FsRemoteGetIOAttr, FsRemoteSetIOAttr,
 		FsRmtNamedPipeVerify, FsRmtDeviceEncap, FsRmtDeviceDeencap,
 		NoProc, NoProc, NoProc, NoProc,
 		FsRmtDeviceClose, FsRmtDeviceDelete},

@@ -112,7 +112,7 @@ FsAttachDisk(devicePtr, localName, flags)
     if (status != SUCCESS) {
 	return(status);
     }
-    buffer = (Address)Mem_Alloc(DEV_BYTES_PER_SECTOR);
+    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR);
 
     /*
      * Read the zero'th sector of the partition.  It has a copy of the
@@ -122,7 +122,7 @@ FsAttachDisk(devicePtr, localName, flags)
     status = (*devFsOpTable[devicePtr->type].read)(devicePtr,
 		0, DEV_BYTES_PER_SECTOR, buffer, &amountRead);
     if (status != SUCCESS) {
-	Mem_Free(buffer);
+	free(buffer);
 	return(status);
     }
     /*
@@ -144,8 +144,8 @@ FsAttachDisk(devicePtr, localName, flags)
 	numHeaderSectors = diskHeaderPtr->numDomainSectors;
 	summarySector = diskHeaderPtr->summarySector;
     } else {
-	Sys_Printf("No disk header\n");
-	Mem_Free(buffer);
+	printf("No disk header\n");
+	free(buffer);
 	return(FAILURE);
     }
     /*
@@ -156,27 +156,27 @@ FsAttachDisk(devicePtr, localName, flags)
 		    DEV_BYTES_PER_SECTOR,
 		    buffer, &amountRead); 
     if (status != SUCCESS) {
-	Mem_Free(buffer);
+	free(buffer);
 	return(status);
     }
     summaryInfoPtr = (FsSummaryInfo *) buffer;
-    (void)String_Copy(localName, summaryInfoPtr->domainPrefix);
+    (void)strcpy(summaryInfoPtr->domainPrefix, localName);
 
     /*
      * Read the domain header and save it with the domain state.
      */
-    buffer = (Address)Mem_Alloc(DEV_BYTES_PER_SECTOR * numHeaderSectors);
+    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR * numHeaderSectors);
     status = (*devFsOpTable[devicePtr->type].read)(devicePtr,
 		headerSector * DEV_BYTES_PER_SECTOR,
 		numHeaderSectors * DEV_BYTES_PER_SECTOR,
 		buffer, &amountRead);
     if (status != SUCCESS) {
-	Mem_Free(buffer);
+	free(buffer);
 	return(status);
     } else if (((FsDomainHeader *)buffer)->magic != FS_DOMAIN_MAGIC) {
-	Sys_Printf("FsDiskAttach: Bad magic # on partition header <%x>\n",
+	printf("FsDiskAttach: Bad magic # on partition header <%x>\n",
 				  ((FsDomainHeader *)buffer)->magic);
-	Mem_Free(buffer);
+	free(buffer);
 	return(FAILURE);
     }
 
@@ -189,7 +189,7 @@ FsAttachDisk(devicePtr, localName, flags)
 	domainPtr = fsDomainTable[summaryInfoPtr->domainNumber];
 	if (domainPtr != (FsDomain *)NIL) {
 	    if (!(domainPtr->flags & FS_DOMAIN_DOWN)) {
-		Mem_Free(buffer);
+		free(buffer);
 		return(FS_DOMAIN_UNAVAILABLE);
 	    }
 	}
@@ -197,7 +197,7 @@ FsAttachDisk(devicePtr, localName, flags)
 	domainPtr = (FsDomain *)NIL;
     }
     if (domainPtr == (FsDomain *)NIL) {
-	domainPtr = (FsDomain *)Mem_Alloc(sizeof(FsDomain));
+	domainPtr = (FsDomain *)malloc(sizeof(FsDomain));
 	domainPtr->flags = 0;
 	domainPtr->refCount = 0;
     }
@@ -213,10 +213,10 @@ FsAttachDisk(devicePtr, localName, flags)
 	 * no other Sprite hosts running on the network , however,
 	 * then this code will execute.
 	 */
-	Sys_Printf("Setting rpc_SpriteID to 0x%x from disk header\n",
+	printf("Setting rpc_SpriteID to 0x%x from disk header\n",
 		    domainPtr->headerPtr->device.serverID);
 	if (domainPtr->headerPtr->device.serverID <= 0) {
-	    Sys_Panic(SYS_FATAL, "Bad sprite ID\n");
+	    panic( "Bad sprite ID\n");
 	}
 	rpc_SpriteID = domainPtr->headerPtr->device.serverID;
     }
@@ -241,7 +241,7 @@ FsAttachDisk(devicePtr, localName, flags)
 		/*
 		 * Only allow automatic corrections with partition 'a'.
 		 */
-		Sys_Panic(SYS_WARNING,
+		printf(
 		    "FsAttachDisk: partition mis-match, arg %d disk %d\n",
 			  devicePtr->unit, partition);
 	    } else {
@@ -264,7 +264,7 @@ FsAttachDisk(devicePtr, localName, flags)
 
     status = FsLocalIOInit(domainPtr, fileID.major);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "FsAttachDisk: can't initialize block I/O %x\n",
+	printf( "FsAttachDisk: can't initialize block I/O %x\n",
 		status);
 	domainPtr->flags |= FS_DOMAIN_DOWN;
 	return(status);
@@ -276,7 +276,7 @@ FsAttachDisk(devicePtr, localName, flags)
      */
     status = FsLocalFileHandleInit(&fileID, localName, &handlePtr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "FsAttachDisk: can't get root file handle %x\n",
+	printf( "FsAttachDisk: can't get root file handle %x\n",
 		status);
 	domainPtr->flags |= FS_DOMAIN_DOWN;
 	return(status);
@@ -303,7 +303,7 @@ FsAttachDisk(devicePtr, localName, flags)
     domainPtr->summaryInfoPtr->flags |= FS_DOMAIN_NOT_SAFE;
     status = FsWriteBackSummary(domainPtr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_FATAL, "FsAttachDisk: Summary write failed, status %x\n",
+	panic( "FsAttachDisk: Summary write failed, status %x\n",
 		    status);
     }
     domainPtr->flags = 0;
@@ -348,13 +348,13 @@ FsLocalIOInit(domainPtr, domainNumber)
      * the bitmaps, and indirect blocks.
      */
 
-    Byte_Zero(sizeof(domainPtr->physHandle), (Address)&domainPtr->physHandle);
+    bzero((Address)&domainPtr->physHandle, sizeof(domainPtr->physHandle));
     domainPtr->physHandle.hdr.fileID.major = domainNumber;
     domainPtr->physHandle.hdr.fileID.minor = 0;
     domainPtr->physHandle.hdr.fileID.type = FS_LCL_FILE_STREAM;
     domainPtr->physHandle.descPtr = (FsFileDescriptor *)NIL;
 
-    Byte_Zero(sizeof(attr), (Address)&attr);
+    bzero((Address)&attr, sizeof(attr));
     attr.lastByte = 0x7fffffff;
     FsCacheInfoInit(&domainPtr->physHandle.cacheInfo,
 		    (FsHandleHeader *) &domainPtr->physHandle,
@@ -362,14 +362,14 @@ FsLocalIOInit(domainPtr, domainNumber)
 
     status = FsLocalBlockAllocInit(domainPtr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Block Alloc init failed for domain %d\n",
+	printf( "Block Alloc init failed for domain %d\n",
 		domainNumber);
 	return(status);
     }
 
     status = FsFileDescAllocInit(domainPtr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "File Desc alloc init failed for domain %d\n",
+	printf( "File Desc alloc init failed for domain %d\n",
 		domainNumber);
 	return(status);
     }
@@ -434,7 +434,7 @@ FsDetachDisk(prefixName)
     FsGetAllDirtyBlocks(domain, TRUE);	
     status = FsHandleDescWriteBack(FALSE, -1);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "FsDetachDisk: handle write-back failed <%x>.\n",
+	printf( "FsDetachDisk: handle write-back failed <%x>.\n",
 	    status);
     }
     /*
@@ -455,17 +455,17 @@ FsDetachDisk(prefixName)
     domainPtr->summaryInfoPtr->flags &= ~FS_DOMAIN_NOT_SAFE;
     status = FsWriteBackSummary(domainPtr);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_FATAL, "FsDetachDisk: Summary write failed, status %x\n",
+	panic( "FsDetachDisk: Summary write failed, status %x\n",
 		    status);
     }
 
     /*
      * Free up resources for the domain.
      */
-    Mem_Free((Address)domainPtr->headerPtr);
-    Mem_Free((Address)domainPtr->summaryInfoPtr);
-    Mem_Free((Address)domainPtr->dataBlockBitmap);
-    Mem_Free((Address)domainPtr->cylinders);
+    free((Address)domainPtr->headerPtr);
+    free((Address)domainPtr->summaryInfoPtr);
+    free((Address)domainPtr->dataBlockBitmap);
+    free((Address)domainPtr->cylinders);
     for (i = 0; i < FS_NUM_FRAG_SIZES; i++) {
 	List_Links	*fragList;
 	FsFragment	*fragPtr;
@@ -473,11 +473,11 @@ FsDetachDisk(prefixName)
 	while (!List_IsEmpty(fragList)) {
 	    fragPtr = (FsFragment *)List_First(fragList);
 	    List_Remove((List_Links *)fragPtr);
-	    Mem_Free((Address)fragPtr);
+	    free((Address)fragPtr);
 	}
-	Mem_Free((Address)fragList);
+	free((Address)fragList);
     }
-    Mem_Free((Address)domainPtr->fileDescBitmap);
+    free((Address)domainPtr->fileDescBitmap);
 
     return(SUCCESS);
 }
@@ -619,7 +619,7 @@ AddDomainFlags(domainPtr, flags)
     }
     if (flags & FS_DOMAIN_DOWN) {
 	if (domainPtr->refCount > 1) {
-	    Sys_Panic(SYS_WARNING, "AddDomainFlags: Refcount > 1\n");
+	    printf( "AddDomainFlags: Refcount > 1\n");
 	}
     }
 
@@ -653,7 +653,7 @@ FsDomainFetch(domain, dontStop)
     LOCK_MONITOR;
 
     if (domain < 0 || domain >= FS_MAX_LOCAL_DOMAINS) {
-	Sys_Panic(SYS_WARNING, "FsDomainFetch, bad domain number <%d>\n",
+	printf( "FsDomainFetch, bad domain number <%d>\n",
 	    domain);
 	domainPtr = (FsDomain *)NIL;
     } else {
@@ -699,12 +699,12 @@ FsDomainRelease(domainNum)
 
     domainPtr = fsDomainTable[domainNum];
     if (domainPtr == (FsDomain *)NIL) {
-	Sys_Panic(SYS_FATAL, "FsDomainRelease: NIL domain pointer\n");
+	panic( "FsDomainRelease: NIL domain pointer\n");
     }
 
     domainPtr->refCount--;
     if (domainPtr->refCount < 0) {
-	Sys_Panic(SYS_FATAL, "FsDomainRelease: Negative ref count on domain\n");
+	panic( "FsDomainRelease: Negative ref count on domain\n");
     }
     if (domainPtr->refCount == 0) {
 	Sync_Broadcast(&domainPtr->condition);
@@ -784,7 +784,7 @@ IsSpriteLabel(buffer)
 	if (checkSum == FS_DISK_MAGIC) {
 	    return(TRUE);
 	} else {
-	    Sys_Printf("IsSpriteLabel: checksum mismatch <%x>\n", checkSum);
+	    printf("IsSpriteLabel: checksum mismatch <%x>\n", checkSum);
 	}
     }
     return(FALSE);

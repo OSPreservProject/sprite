@@ -69,7 +69,7 @@ FsPdevTraceInit()
  *	None.
  *
  * Side effects:
- *	Sys_Printf's
+ *	printf's
  *
  *----------------------------------------------------------------------------
  *
@@ -86,66 +86,66 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 	/*
 	 * Print column headers and a newline.
 	 */
-	Sys_Printf("%6s %17s %8s\n", "REC", "  <File ID>  ", " Event ");
+	printf("%6s %17s %8s\n", "REC", "  <File ID>  ", " Event ");
     }
     if (recPtr != (PdevTraceRecord *)NIL) {
 	/*
 	 * Print out the fileID that's part of each record.
 	 */
-	Sys_Printf("%5d| ", recPtr->index);
-	Sys_Printf("<%8x,%8x> ",
+	printf("%5d| ", recPtr->index);
+	printf("<%8x,%8x> ",
 	  recPtr->fileID.major, recPtr->fileID.minor);
 
 	switch(pdevEvent) {
 	    case PDEVT_SRV_OPEN:
-		Sys_Printf("Srv Open");
-		Sys_Printf(" refs %d writes %d",
+		printf("Srv Open");
+		printf(" refs %d writes %d",
 			    recPtr->un.use.ref,
 			    recPtr->un.use.write);
 		break;
 	    case PDEVT_CLT_OPEN:
-		Sys_Printf("Clt Open");
-		Sys_Printf(" refs %d writes %d",
+		printf("Clt Open");
+		printf(" refs %d writes %d",
 			    recPtr->un.use.ref,
 			    recPtr->un.use.write);
 		 break;
 	    case PDEVT_SRV_CLOSE:
-		Sys_Printf("Srv Close");
-		Sys_Printf(" refs %d writes %d",
+		printf("Srv Close");
+		printf(" refs %d writes %d",
 			    recPtr->un.use.ref,
 			    recPtr->un.use.write);
 		 break;
 	    case PDEVT_CLT_CLOSE:
-		Sys_Printf("Clt Close");
-		Sys_Printf(" refs %d writes %d",
+		printf("Clt Close");
+		printf(" refs %d writes %d",
 			    recPtr->un.use.ref,
 			    recPtr->un.use.write);
 		 break;
 	    case PDEVT_SRV_READ:
-		Sys_Printf("Srv Read"); break;
+		printf("Srv Read"); break;
 	    case PDEVT_SRV_READ_WAIT:
-		Sys_Printf("Srv Read Blocked"); break;
+		printf("Srv Read Blocked"); break;
 	    case PDEVT_SRV_SELECT:
-		Sys_Printf("Srv Select Wait"); break;
+		printf("Srv Select Wait"); break;
 	    case PDEVT_SRV_WRITE:
-		Sys_Printf("Srv Write"); break;
+		printf("Srv Write"); break;
 	    case PDEVT_CNTL_READ:
-		Sys_Printf("Control Read"); break;
+		printf("Control Read"); break;
 	    case PDEVT_READ_WAIT:
-		Sys_Printf("Wait for Read"); break;
+		printf("Wait for Read"); break;
 	    case PDEVT_WAIT_LIST:
-		Sys_Printf("Wait List Notify"); break;
+		printf("Wait List Notify"); break;
 	    case PDEVT_SELECT: {
-		Sys_Printf("Select "); 
+		printf("Select "); 
 		if (recPtr != (PdevTraceRecord *)NIL ) {
 		    if (recPtr->un.selectBits & FS_READABLE) {
-			Sys_Printf("R");
+			printf("R");
 		    }
 		    if (recPtr->un.selectBits & FS_WRITABLE) {
-			Sys_Printf("W");
+			printf("W");
 		    }
 		    if (recPtr->un.selectBits & FS_EXCEPTION) {
-			Sys_Printf("E");
+			printf("E");
 		    }
 		}
 		break;
@@ -155,58 +155,58 @@ Fs_PdevPrintRec(clientData, event, printHeaderFlag)
 		 * Print the process ID from the wait info,
 		 * and the select bits stashed in the wait info token.
 		 */
-		Sys_Printf("Wakeup");
+		printf("Wakeup");
 		if (recPtr != (PdevTraceRecord *)NIL ) {
-		    Sys_Printf(" %x ", recPtr->un.wait.procID);
+		    printf(" %x ", recPtr->un.wait.procID);
 		    if (recPtr->un.wait.selectBits & FS_READABLE) {
-			Sys_Printf("R");
+			printf("R");
 		    }
 		    if (recPtr->un.wait.selectBits & FS_WRITABLE) {
-			Sys_Printf("W");
+			printf("W");
 		    }
 		    if (recPtr->un.wait.selectBits & FS_EXCEPTION) {
-			Sys_Printf("E");
+			printf("E");
 		    }
 		}
 		break;
 	    }
 	    case PDEVT_REQUEST: {
-		Sys_Printf("Request");
+		printf("Request");
 		if (recPtr != (PdevTraceRecord *)NIL) {
 		    switch(recPtr->un.requestHdr.operation) {
 			case PDEV_OPEN:
-			    Sys_Printf(" OPEN"); break;
+			    printf(" OPEN"); break;
 			case PDEV_DUP:
-			    Sys_Printf(" DUP"); break;
+			    printf(" DUP"); break;
 			case PDEV_CLOSE:
-			    Sys_Printf(" CLOSE"); break;
+			    printf(" CLOSE"); break;
 			case PDEV_READ:
-			    Sys_Printf(" READ"); break;
+			    printf(" READ"); break;
 			case PDEV_WRITE:
-			    Sys_Printf(" WRITE"); break;
+			    printf(" WRITE"); break;
 			case PDEV_IOCTL:
-			    Sys_Printf(" IOCTL"); break;
+			    printf(" IOCTL"); break;
 			default:
-			    Sys_Printf(" ??"); break;
+			    printf(" ??"); break;
 		    }
 		}
 		break;
 	    }
 	    case PDEVT_REPLY: {
-		Sys_Printf("Reply");
+		printf("Reply");
 		if (recPtr != (PdevTraceRecord *)NIL) {
-		    Sys_Printf(" <%x> ", recPtr->un.reply.status);
+		    printf(" <%x> ", recPtr->un.reply.status);
 		    if (recPtr->un.reply.selectBits & FS_READABLE) {
-			Sys_Printf("R");
+			printf("R");
 		    }
 		    if (recPtr->un.reply.selectBits & FS_WRITABLE) {
-			Sys_Printf("W");
+			printf("W");
 		    }
 		}
 		break;
 	    }
 	    default:
-		Sys_Printf("<%d>", event); break;
+		printf("<%d>", event); break;
 
 	}
     }
@@ -235,6 +235,6 @@ Fs_PdevPrintTrace(numRecs)
     if (numRecs < 0) {
 	numRecs = pdevTraceLength;
     }
-    Sys_Printf("PDEV TRACE\n");
+    printf("PDEV TRACE\n");
     (void)Trace_Print(pdevTraceHdrPtr, numRecs, Fs_PdevPrintRec);
 }

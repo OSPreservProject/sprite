@@ -173,7 +173,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	(pdevHandlePtr->flags & PDEV_SERVER_GONE)) {
 	return(DEV_OFFLINE);
     } else if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
-	Sys_Panic(SYS_FATAL, "RequestResponse: connection not set up\n");
+	panic( "RequestResponse: connection not set up\n");
     }
     /*
      * See if we have to switch to a new request buffer.  This is needed
@@ -186,7 +186,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     lastByte = pdevHandlePtr->requestBuf.lastByte;
     if ((pdevHandlePtr->nextRequestBuffer != (Address)NIL) &&
 	((firstByte > lastByte) || (firstByte == -1))) {
-	Sys_Panic(SYS_WARNING, "Switching to request buffer at 0x%x\n",
+	printf( "Switching to request buffer at 0x%x\n",
 			       pdevHandlePtr->nextRequestBuffer);
 	pdevHandlePtr->requestBuf.data = pdevHandlePtr->nextRequestBuffer;
 	pdevHandlePtr->requestBuf.size = pdevHandlePtr->nextRequestBufSize;
@@ -202,14 +202,14 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     } else if (hdrSize == sizeof(Pfs_Request)) {
 	requestHdrPtr->magic = PFS_REQUEST_MAGIC;
     } else {
-	Sys_Panic(SYS_FATAL, "RequestResponse: bad hdr size\n");
+	panic( "RequestResponse: bad hdr size\n");
     }
     requestHdrPtr->requestSize = inputSize;
     requestHdrPtr->replySize = replySize;
     requestHdrPtr->messageSize = hdrSize +
 		((inputSize + sizeof(int) - 1) / sizeof(int)) * sizeof(int);
     if (pdevHandlePtr->requestBuf.size < requestHdrPtr->messageSize) {
-	Sys_Panic(SYS_WARNING, "RequestResponse request too large\n");
+	printf( "RequestResponse request too large\n");
 	return(GEN_INVALID_ARG);
     }
 
@@ -397,7 +397,7 @@ FsServerStreamCreate(ioFileIDPtr, name)
 			    &hdrPtr);
     pdevHandlePtr = (PdevServerIOHandle *)hdrPtr;
     if (found) {
-	Sys_Panic(SYS_WARNING, "ServerStreamCreate, found handle <%x,%x,%x>\n",
+	printf( "ServerStreamCreate, found handle <%x,%x,%x>\n",
 		  hdrPtr->fileID.serverID, hdrPtr->fileID.major,
 		  hdrPtr->fileID.minor);
 	FsHandleRelease(pdevHandlePtr, TRUE);
@@ -536,7 +536,7 @@ FsServerStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     reqLastByte = pdevHandlePtr->requestBuf.lastByte;
     if (reqFirstByte > pdevHandlePtr->requestBuf.size ||
 	reqLastByte > pdevHandlePtr->requestBuf.size) {
-	Sys_Panic(SYS_FATAL, "PdevServerRead, pointers inconsistent\n");
+	panic( "PdevServerRead, pointers inconsistent\n");
 	UNLOCK_MONITOR;
 	return(GEN_INVALID_ARG);
     }
@@ -639,7 +639,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
     LOCK_MONITOR;
 
     if (byteOrder != mach_ByteOrder) {
-	Sys_Panic(SYS_FATAL, "FsServerStreamIOControl: wrong byte order\n");
+	panic( "FsServerStreamIOControl: wrong byte order\n");
     }
     switch (command) {
 	case IOC_PDEV_SET_BUF: {
@@ -784,7 +784,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		    break;
 		}
 		if (argPtr->readLastByte > pdevHandlePtr->readBuf.size) {
-		    Sys_Panic(SYS_WARNING,
+		    printf(
 			"FsServerStreamIOControl: set bad readPtr\n");
 		    status = GEN_INVALID_ARG;
 		    break;
@@ -1049,7 +1049,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    break;
     }
     if (status != SUCCESS) {
-	Sys_Printf("PdevServer IOControl #%x returning %x\n", command, status);
+	printf("PdevServer IOControl #%x returning %x\n", command, status);
     }
     UNLOCK_MONITOR;
     return(status);
@@ -1308,13 +1308,13 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 		(Address)&redirectInfo, resultsSizePtr,
 		(Sync_RemoteWaiter *)NIL);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
-	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     } else {
 	*newNameInfoPtrPtr = (FsRedirectInfo *)NIL;
 	if (*resultsSizePtr > 0) {
-	    Byte_Copy(*resultsSizePtr, (Address)&redirectInfo, resultsPtr);
+	    bcopy((Address)&redirectInfo, resultsPtr, *resultsSizePtr);
 	}
     }
 
@@ -1388,9 +1388,9 @@ FsPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
 		sizeof(Fs2PathRedirectInfo), (Address)&redirectInfo,
 		&resultSize, (Sync_RemoteWaiter *)NIL);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
+	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
-	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
     if (status != SUCCESS) {
 	*name1ErrorPtr = redirectInfo.name1ErrorP;
@@ -1445,7 +1445,7 @@ FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
 
     cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsPseudoGetAttr, no %s handle <%d,%x,%x>\n",
+	printf( "FsPseudoGetAttr, no %s handle <%d,%x,%x>\n",
 	    FsFileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
@@ -1509,7 +1509,7 @@ FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 
     cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsPseudoSetAttr, no handle <%d,%d,%x,%x>\n",
+	printf( "FsPseudoSetAttr, no handle <%d,%d,%x,%x>\n",
 	    fileIDPtr->serverID, fileIDPtr->type,
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
@@ -1616,7 +1616,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	    lastByte = pdevHandlePtr->readBuf.lastByte;
 	    dataAvail = lastByte - firstByte + 1;
 	    if (dataAvail <= 0) {
-		Sys_Panic(SYS_FATAL, 
+		panic( 
 		    "FsPseudoStreamRead, dataAvail in read buf <= 0 bytes\n");
 		status = DEV_OFFLINE;
 		goto exit;
@@ -1768,6 +1768,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     if ((pdevHandlePtr->selectBits & FS_WRITABLE) == 0) {
 	*lenPtr = 0;
 	FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList, waitPtr);
+	status = FS_WOULD_BLOCK;
 	goto exit;
     }
     /*
@@ -1785,7 +1786,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     maxRequestSize = pdevHandlePtr->requestBuf.size - sizeof(Pdev_Request);
     if (toWrite > maxRequestSize &&
 	(pdevHandlePtr->flags & PDEV_NO_BIG_WRITES)) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "Too large a write (%d bytes) attempted on pseudo-device (UDP?)\n",
 	    toWrite);
 	status = GEN_INVALID_ARG;
@@ -1816,7 +1817,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	     */
 	    numBytes = length;
 	} else if (replySize != sizeof(int)) {
-	    Sys_Panic(SYS_WARNING, "Pdev_Write, no return amtWritten\n");
+	    printf( "Pdev_Write, no return amtWritten\n");
 	    numBytes = 0;
 	}
 	amountWritten += numBytes;

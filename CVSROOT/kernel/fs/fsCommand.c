@@ -25,8 +25,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsPdev.h"
 #include "fsDebug.h"
 #include "fsStat.h"
-#include "mem.h"
-#include "byte.h"
 #include "timer.h"
 #include "user/fsCmd.h"
 #include "rpc.h"
@@ -89,8 +87,8 @@ Fs_Command(command, bufSize, buffer)
 	    char *localPath, *prefix;
 	    Fs_Stream *streamPtr;
 
-	    localPath = (char *)Mem_Alloc(argPtr->pathLen1);
-	    prefix = (char *)Mem_Alloc(argPtr->pathLen2);
+	    localPath = (char *)malloc(argPtr->pathLen1);
+	    prefix = (char *)malloc(argPtr->pathLen2);
 	    status = Vm_CopyIn(argPtr->pathLen1, argPtr->path1, localPath);
 	    if (status == SUCCESS) {
 		status = Vm_CopyIn(argPtr->pathLen2, argPtr->path2, prefix);
@@ -100,7 +98,7 @@ Fs_Command(command, bufSize, buffer)
 		    if (status == SUCCESS) {
 			if (streamPtr->ioHandlePtr->fileID.type !=
 				FS_LCL_FILE_STREAM) {
-			    Sys_Panic(SYS_WARNING,
+			    printf(
 		    "Tried to export non-local file \"%s\" as prefix \"%s\"\n",
 				localPath, prefix);
 			    (void)Fs_Close(streamPtr);
@@ -113,8 +111,8 @@ Fs_Command(command, bufSize, buffer)
 		    }
 		}
 	    }
-	    Mem_Free(prefix);
-	    Mem_Free(localPath);
+	    free(prefix);
+	    free(localPath);
 	    break;
 	}
 	case FS_PREFIX_CLEAR: {
@@ -267,7 +265,7 @@ Fs_Command(command, bufSize, buffer)
 	    Timer_SubtractTicks(endTicks, startTicks, &diffTicks);
 	    Timer_TicksToTime(diffTicks, &time);
 	    us = (time.seconds * 1000000) + time.microseconds;
-	    Sys_Printf("microseconds = %d per CS = %d\n", us,
+	    printf("microseconds = %d per CS = %d\n", us,
 		       us / *(int *)buffer);
 	    break;
 	}
@@ -325,13 +323,13 @@ Fs_Command(command, bufSize, buffer)
 	     * some values in the structure can't be zeroed out, so this
 	     * must be changed to zero out only some portions.
 	     */
-	    Byte_Zero(sizeof(FsStats), (Address) &fsStats);
+	    bzero((Address) &fsStats, sizeof(FsStats));
 	    status = SUCCESS;
 	    break;
 	}
 	case FS_RETURN_STATS: {
 	    if (bufSize >= sizeof(FsStats)) {
-		Byte_Copy(sizeof(FsStats), (Address) &fsStats, buffer);
+		bcopy((Address) &fsStats, buffer, sizeof(FsStats));
 		status = SUCCESS;
 	    } else {
 		status = FS_INVALID_ARG;
@@ -394,12 +392,12 @@ Fs_Cat(fileName)
 
 #define CAT_BUFSIZE	80
 
-    buffer = Mem_Alloc(CAT_BUFSIZE);
+    buffer = malloc(CAT_BUFSIZE);
     offset = 0;
     while (1) {
 	int savedLen, len;
 
-	Byte_Zero(CAT_BUFSIZE, buffer);
+	bzero(buffer, CAT_BUFSIZE);
 
 	savedLen = len = CAT_BUFSIZE;
 	error = Fs_Read(streamPtr, buffer, offset, &len);
@@ -408,10 +406,10 @@ Fs_Cat(fileName)
 	} else {
 	    offset += len;
 	}
-	Sys_Printf("%s", buffer);
+	printf("%s", buffer);
     }
     (void)Fs_Close(streamPtr);
-    Mem_Free(buffer);
+    free(buffer);
     return(error);
 }
 #endif /* notdef */
@@ -460,7 +458,7 @@ Fs_Copy(srcFileName, dstFileName)
 
 #define CP_BUFSIZE	2048
 
-    buffer = Mem_Alloc(CP_BUFSIZE);
+    buffer = malloc(CP_BUFSIZE);
     offset = 0;
     while (1) {
 	int len;
@@ -484,7 +482,7 @@ Fs_Copy(srcFileName, dstFileName)
 
     (void)Fs_Close(srcStreamPtr);
     (void)Fs_Close(dstStreamPtr);
-    Mem_Free(buffer);
+    free(buffer);
     return(error);
 }
 #endif /* notdef */

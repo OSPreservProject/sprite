@@ -38,7 +38,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "spriteTime.h"
 #include "timer.h"
-#include "byte.h"
 #include "sys.h"
 #include "rpc.h"
 
@@ -100,7 +99,7 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
     }
 #ifdef CONSIST_DEBUG
     if (fsTraceConsistMinor == cacheInfoPtr->hdrPtr->fileID.minor) {
-	Sys_Printf("FsCacheUpdate: <%d,%d> version %d->%d, %s, %s\n",
+	printf("FsCacheUpdate: <%d,%d> version %d->%d, %s, %s\n",
 		    cacheInfoPtr->hdrPtr->fileID.major,
 		    cacheInfoPtr->hdrPtr->fileID.minor,
 		    cacheInfoPtr->version, version,
@@ -118,7 +117,7 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
     }
     if (cacheInfoPtr->flags & FS_FILE_GONE) {
 	if (!outOfDate) {
-	    Sys_Panic(SYS_FATAL, "Removed file not out-of-date\n");
+	    panic( "Removed file not out-of-date\n");
 	}
 	cacheInfoPtr->flags &= ~FS_FILE_GONE;
     }
@@ -199,7 +198,7 @@ FsUpdateAttrFromClient(clientID, cacheInfoPtr, attrPtr)
 	cacheInfoPtr->attr.accessTime = attrPtr->accessTime;
     }
     if (cacheInfoPtr->attr.lastByte > attrPtr->lastByte) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	"FsUpdateAttrFromClient %d: \"%s\" <%d,%d> short size %d not %d\n",
 		clientID,
 		FsHandleName(cacheInfoPtr->hdrPtr),
@@ -390,7 +389,7 @@ FsCacheCheckVersion(cacheInfoPtr, version, clientID)
     ReturnStatus status = SUCCESS;
     LOCK_MONITOR;
     if (version != cacheInfoPtr->version) {
-	Sys_Panic(SYS_WARNING,
+	printf(
     "Version mismatch: clt %d, srv %d, file \"%s\" <%d,%d>, from client %d\n",
 	    version, cacheInfoPtr->version, FsHandleName(cacheInfoPtr->hdrPtr),
 	    cacheInfoPtr->hdrPtr->fileID.major,
@@ -493,7 +492,7 @@ FsCacheConsist(cacheInfoPtr, flags, cachedAttrPtr)
 	case FS_WRITE_BACK_ATTRS:
 	    break;
 	default:
-	    Sys_Panic(SYS_WARNING, 
+	    printf( 
 		      "FsCacheConsist: Bad consistency action %x\n", flags);
 	    status = FS_INVALID_ARG;
 	    break;
@@ -633,8 +632,7 @@ FsCacheRead(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		 * return garbage.
                  */
 		fsStats.blockCache.readZeroFills++;
-                Byte_Zero(FS_BLOCK_SIZE - amountRead,
-                          blockPtr->blockAddr + amountRead);
+                bzero(blockPtr->blockAddr + amountRead, FS_BLOCK_SIZE - amountRead);
             }
         }
 
@@ -650,9 +648,8 @@ FsCacheRead(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		break;
 	    }
 	} else {
-	    Byte_Copy(toRead, 
-		      blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
-		      buffer);
+	    bcopy(blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
+		      buffer, toRead);
 	}
 	FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
     }
@@ -752,7 +749,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	/*
 	 * A delayed write is arriving as the file is being deleted.
 	 */
-	Sys_Panic(SYS_WARNING, "Write to deleted file #%d\n",
+	printf( "Write to deleted file #%d\n",
 		    cacheInfoPtr->hdrPtr->fileID.minor);
 	status = FS_FILE_REMOVED;
 	*lenPtr = 0;
@@ -831,7 +828,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	status = (*fsStreamOpTable[streamType].allocate)(cacheInfoPtr->hdrPtr,
 			offset, toAlloc, &blockAddr, &newBlock);
 	if (blockAddr == FS_NIL_INDEX) {
-	    Sys_Printf("Fs_Write: Domain Alloc failed\n");
+	    printf("Fs_Write: Domain Alloc failed\n");
 	    if (status == SUCCESS) {
 		status = FS_NO_DISK_SPACE;
 	    }
@@ -877,8 +874,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 			 * We always want cache blocks to be zero filled.
 			 */
 			fsStats.blockCache.writeZeroFills1++;
-			Byte_Zero(FS_BLOCK_SIZE - numBytes,
-				  blockPtr->blockAddr + numBytes);
+			bzero(blockPtr->blockAddr + numBytes, FS_BLOCK_SIZE - numBytes);
 		    }
 		    bytesToFree += numBytes;
 		}
@@ -890,7 +886,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		 */
 		if (!found) {
 		    fsStats.blockCache.writeZeroFills2++;
-		    Byte_Zero(FS_BLOCK_SIZE, blockPtr->blockAddr);
+		    bzero(blockPtr->blockAddr, FS_BLOCK_SIZE);
 		}
 	    }
 	}
@@ -906,8 +902,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		break;
 	    }
 	} else {
-	    Byte_Copy(toWrite, buffer,
-		      blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK));
+	    bcopy(buffer, blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK), toWrite);
 	}
 
 	/*
@@ -922,7 +917,7 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    tLen = toWrite;
 	    tOffset = offset;
 	    dummyStream.ioHandlePtr = cacheInfoPtr->hdrPtr;
-	    status = FsSpriteWrite(&dummyStream, 
+	    status = FsRemoteWrite(&dummyStream, 
 			(int)((flags | FS_CLIENT_CACHE_WRITE) & 
 					~(FS_USER | FS_SERVER_WRITE_THRU)),
 			blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
@@ -1033,7 +1028,7 @@ FsCacheBlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 
     *blockPtrPtr = (FsCacheBlock *)NIL;
     if (cacheInfoPtr->flags & FS_FILE_NOT_CACHEABLE) {
-	Sys_Panic(SYS_FATAL, "FsCacheBlockRead, file not cacheable!\n");
+	panic( "FsCacheBlockRead, file not cacheable!\n");
 	status = FS_NOT_CACHEABLE;
 	goto exit;
     }
@@ -1064,7 +1059,7 @@ FsCacheBlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 	     * and the file block read routine thinks we've read past eof.
 	     * Actually were in a hole in the file and should return zeros.
 	     */
-	    Byte_Zero(FS_BLOCK_SIZE, (*blockPtrPtr)->blockAddr);
+	    bzero((*blockPtrPtr)->blockAddr, FS_BLOCK_SIZE);
 	    *numBytesPtr = FS_BLOCK_SIZE;
 	}
 	if (status != SUCCESS || (*numBytesPtr == 0 && !allocate)) {
@@ -1084,8 +1079,7 @@ FsCacheBlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 	     * because we can't have any partial data blocks in the cache.
 	     */
 	    fsStats.blockCache.readZeroFills++;
-	    Byte_Zero(FS_BLOCK_SIZE - *numBytesPtr,
-		      (*blockPtrPtr)->blockAddr + *numBytesPtr);
+	    bzero((*blockPtrPtr)->blockAddr + *numBytesPtr, FS_BLOCK_SIZE - *numBytesPtr);
 	}
     } else {
 	if (blockType == FS_DIR_CACHE_BLOCK) {
@@ -1171,7 +1165,7 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 	     */
 	    if (cacheInfoPtr->attr.lastByte >= 0 &&
 		cacheInfoPtr->attr.firstByte < 0) {
-		Sys_Panic(SYS_FATAL, "FsCacheTrunc, bad firstByte %d\n",
+		panic( "FsCacheTrunc, bad firstByte %d\n",
 			cacheInfoPtr->attr.firstByte);
 		cacheInfoPtr->attr.firstByte = 0;
 	    }
@@ -1213,32 +1207,60 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 		FsCacheBlockTrunc(cacheInfoPtr, firstBlock - 1,
 				  length - (firstBlock - 1) * FS_BLOCK_SIZE);
 	    }
-	    if ((flags & FS_TRUNC_DELETE) && 
-		!List_IsEmpty(&cacheInfoPtr->blockList)) {
-		register FsCacheBlock *blockPtr;
-		register List_Links *listItem;
-		Sys_Panic(SYS_WARNING, 
-    "File \"%s\" <%d,%d>: %d cache blocks left after delete blocks %d->%d\n",
-		    FsHandleName(cacheInfoPtr->hdrPtr),
-		    cacheInfoPtr->hdrPtr->fileID.major,
-		    cacheInfoPtr->hdrPtr->fileID.minor,
-		    cacheInfoPtr->blocksInCache, firstBlock, lastBlock);
-		Sys_Printf("FirstByte %d LastByte %d Blocks left: ",
-		    firstByte, lastByte);
-		while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
-		    listItem = List_First(&cacheInfoPtr->blockList);
-		    blockPtr = FILE_LINKS_TO_BLOCK(listItem);
-		    Sys_Printf("%d ", blockPtr->blockNum);
-		    if (blockPtr->refCount > 0) {
-			Sys_Printf("ref %d! ", blockPtr->refCount);
+	    if (flags & FS_TRUNC_DELETE) {
+		if (!List_IsEmpty(&cacheInfoPtr->blockList)) {
+		    printf("FirstByte %d LastByte %d\n", firstByte, lastByte);
+		    panic("File \"%s\" <%d,%d>: %d cache blocks left after delete blocks %d->%d\n",
+			FsHandleName(cacheInfoPtr->hdrPtr),
+			cacheInfoPtr->hdrPtr->fileID.major,
+			cacheInfoPtr->hdrPtr->fileID.minor,
+			cacheInfoPtr->blocksInCache, firstBlock, lastBlock);
+#ifdef notdef
+		    while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
+			register FsCacheBlock *blockPtr;
+			register List_Links *listItem;
+			listItem = List_First(&cacheInfoPtr->blockList);
+			blockPtr = FILE_LINKS_TO_BLOCK(listItem);
+			printf("%d ", blockPtr->blockNum);
+			if (blockPtr->refCount > 0) {
+			    printf("ref %d! ", blockPtr->refCount);
+			}
+			if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+			    panic("Mistake in block list code\n");
+			}
+			FsCacheFileInvalidate(cacheInfoPtr, blockPtr->blockNum,
+				blockPtr->blockNum);
 		    }
-		    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-			Sys_Panic(SYS_FATAL, "Mistake in block list code\n");
-		    }
-		    FsCacheFileInvalidate(cacheInfoPtr, blockPtr->blockNum,
-			    blockPtr->blockNum);
+		    printf("\n");
+#endif notdef
 		}
-		Sys_Printf("\n");
+		if (!List_IsEmpty(&cacheInfoPtr->dirtyList)) {
+		    register FsCacheBlock *blockPtr;
+		    register List_Links *listItem;
+		    printf("File \"%s\" <%d,%d>: dirty blocks left in cache\n",
+			FsHandleName(cacheInfoPtr->hdrPtr),
+			cacheInfoPtr->hdrPtr->fileID.major,
+			cacheInfoPtr->hdrPtr->fileID.minor);
+		    printf("FirstByte %d LastByte %d Blocks:",
+			firstByte, lastByte);
+		    listItem = List_First(&cacheInfoPtr->dirtyList);
+		    while (!List_IsAtEnd(&cacheInfoPtr->dirtyList, listItem)) {
+			blockPtr = DIRTY_LINKS_TO_BLOCK(listItem);
+			printf("%d ", blockPtr->blockNum);
+			if (blockPtr->refCount > 0) {
+			    printf("ref %d! ", blockPtr->refCount);
+			}
+			if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+			    panic("Mistake in block list code\n");
+			}
+			listItem = listItem->nextPtr;
+#ifdef notdef
+			FsCacheFileInvalidate(cacheInfoPtr, blockPtr->blockNum,
+				blockPtr->blockNum);
+#endif notdef
+		    }
+		    printf("\n");
+		}
 	    }
         }
 	cacheInfoPtr->attr.modifyTime = fsTimeInSeconds;

@@ -296,7 +296,7 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
 done:
 #ifdef CONSIST_DEBUG
     if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	Sys_Printf("File <%d,%d> version %d start consist w/ use 0x%x, %s\n",
+	printf("File <%d,%d> version %d start consist w/ use 0x%x, %s\n",
 		consistPtr->hdrPtr->fileID.major,
 		consistPtr->hdrPtr->fileID.minor,
 		((FsLocalFileIOHandle *)consistPtr->hdrPtr)->cacheInfo.version,
@@ -319,7 +319,7 @@ done:
 	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
 #ifdef CONSIST_DEBUG
 	if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	    Sys_Printf("Client %d, %s, use %d write %d\n",
+	    printf("Client %d, %s, use %d write %d\n",
 		    clientPtr->clientID,
 		    (clientPtr->cached ? "caching" : "not caching"),
 		    clientPtr->use.ref, clientPtr->use.write);
@@ -421,7 +421,7 @@ UpdateList(consistPtr, clientID, useFlags, cacheable,
     }
 #ifdef CONSIST_DEBUG
     if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	Sys_Printf("UpdateList: client %d %s, last writer %d\n",
+	printf("UpdateList: client %d %s, last writer %d\n",
 	    clientID, (clientPtr->cached ? "caching" : "not caching"),
 	    consistPtr->lastWriter);
     }
@@ -549,7 +549,7 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 	     * for inconsistent reads, but the outstanding dirty blocks
 	     * are not lost.
 	     */
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 	"FsReopenHandle: file \"%s\" <%d,%d>: client %d reading stale data\n",
 		FsHandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
@@ -558,14 +558,14 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
     }
 #ifdef notdef
     if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
-	Sys_Printf("FsReopenClient %d, use %d write %d, %s, last writer %d\n",
+	printf("FsReopenClient %d, use %d write %d, %s, last writer %d\n",
 		clientID, use.ref, use.write, (found ? "found" : "not found"),
 		consistPtr->lastWriter);
     }
 #endif /* notdef */
 
     if (!found) {
-	clientPtr = Mem_New(FsClientInfo);
+	clientPtr = mnew(FsClientInfo);
 	clientPtr->clientID = clientID;
 	clientPtr->use = use;
 	clientPtr->cached = haveDirtyBlocks;
@@ -584,7 +584,7 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 	    /*
 	     * Version number checking should have prevented this.
 	     */
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		    "Client %d with dirty blocks not last writer %d\n",
 		    clientID, consistPtr->lastWriter);
 	} else {
@@ -657,7 +657,7 @@ FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampP
 	LIST_FORALL(&(consistPtr->clientList), (List_Links *)clientPtr) {
 	    if (clientPtr->clientID == clientID) {
 		List_Remove((List_Links *)clientPtr);
-		Mem_Free((Address)clientPtr);
+		free((Address)clientPtr);
 		break;
 	    }
 	}
@@ -675,7 +675,7 @@ FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampP
 	    }
 	}
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_FATAL, "FsReopenConsistency, no client entry\n");
+	    panic( "FsReopenConsistency, no client entry\n");
 	}
 	/*
 	 * Get a new openTimeStamp so the client can detect races between
@@ -758,7 +758,7 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 	 */
 	if (!FsIOClientClose(&consistPtr->clientList, srcClientID, useFlags,
 		&cache)) {
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 	"FsMigrateConsistency, srcClient %d unknown for %s %s <%d,%d>\n",
 		srcClientID,
 		FsFileTypeToString(handlePtr->hdr.fileID.type),
@@ -770,7 +770,7 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 	
 	found = FsIOClientRemoveWriter(&consistPtr->clientList, srcClientID);
 	if (!found) {
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		"FsMigrateConsistency, IO Client %d not found\n",
 		srcClientID);
 	}
@@ -932,7 +932,7 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
     *wasCachedPtr = (consistPtr->lastWriter == clientID);
 #ifdef CONSIST_DEBUG
     if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-	Sys_Printf("ConsistClose: closing client %d, lastwriter %d\n",
+	printf("ConsistClose: closing client %d, lastwriter %d\n",
 		    clientID, consistPtr->lastWriter);
     }
 #endif CONSIST_DEBUG
@@ -944,7 +944,7 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 
     if ((consistPtr->lastWriter != -1) && (flags & FS_LAST_DIRTY_BLOCK)) {
 	if (clientID != consistPtr->lastWriter) {
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 	    "FsConsistClose, \"%s\" <%d,%d>: client %d not last writer %d, %s\n",
 		    FsHandleName(consistPtr->hdrPtr),
 		    consistPtr->hdrPtr->fileID.major,
@@ -954,7 +954,7 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 	} else {
 #ifdef CONSIST_DEBUG
 	    if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-		Sys_Printf("ConsistClose: erasing %d lastwriter\n", clientID);
+		printf("ConsistClose: erasing %d lastwriter\n", clientID);
 	    }
 #endif CONSIST_DEBUG
 	    consistPtr->lastWriter = -1;
@@ -1002,7 +1002,7 @@ FsConsistClients(consistPtr)
 	if (clientPtr->use.ref == 0 &&
 	    clientPtr->clientID != consistPtr->lastWriter) {
 	    List_Remove((List_Links *) clientPtr);
-	    Mem_Free((Address) clientPtr);
+	    free((Address) clientPtr);
 	} else {
 	    numClients++;
 	}
@@ -1046,13 +1046,13 @@ FsDeleteLastWriter(consistPtr, clientID)
 		consistPtr->lastWriter == clientID) {
 #ifdef CONSIST_DEBUG
 		if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-		    Sys_Printf("FsDeleteLastWriter <%d,%d> host %d\n",
+		    printf("FsDeleteLastWriter <%d,%d> host %d\n",
 			consistPtr->hdrPtr->fileID.major,
 			consistPtr->hdrPtr->fileID.minor, clientID);
 		}
 #endif CONSIST_DEBUG
 		List_Remove((List_Links  *) clientPtr);
-		Mem_Free((Address) clientPtr);
+		free((Address) clientPtr);
 		consistPtr->lastWriter = -1;
 		break;
 	    }
@@ -1111,11 +1111,11 @@ FsClientRemoveCallback(consistPtr, clientID)
 		    List_First((List_Links *) &consistPtr->clientList);
 	curClientID = clientPtr->clientID;
 	if (clientPtr->use.ref > 0) {
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		"FsClientRemoveCallback: Client using removed file\n");
 	} else if (consistPtr->lastWriter != -1) {
 	    if (clientPtr->clientID != consistPtr->lastWriter) {
-		Sys_Panic(SYS_WARNING,
+		printf(
     "FsClientRemoveCallback: \"%s\" <%d,%d> client %d not last writer (%d).\n",
 			FsHandleName(consistPtr->hdrPtr),
 			consistPtr->hdrPtr->fileID.major,
@@ -1141,7 +1141,7 @@ FsClientRemoveCallback(consistPtr, clientID)
 		    (List_Links *)clientPtr) {
 	    if (clientPtr->clientID == curClientID) {
 		List_Remove((List_Links *) clientPtr);
-		Mem_Free((Address) clientPtr);
+		free((Address) clientPtr);
 		break;
 	    }
 	}
@@ -1200,7 +1200,7 @@ FsConsistKill(consistPtr, clientID, refPtr, writePtr, execPtr)
     LIST_FORALL(&(consistPtr->msgList), (List_Links *) msgPtr) {
 	if (msgPtr->clientID == clientID) {
 	    List_Remove((List_Links *) msgPtr);
-	    Mem_Free((Address) msgPtr);
+	    free((Address) msgPtr);
 	    Sync_Broadcast(&consistPtr->consistDone);
 	    break;
 	}
@@ -1310,7 +1310,7 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
 	    FsHandleLock(consistPtr->hdrPtr);
 	    consistPtr->flags = 0;
 	    UNLOCK_MONITOR;
-	    Sys_Panic(SYS_FATAL,
+	    panic(
 		    "FsFetchDirtyBlocks: Non last writer in list.\n");
 	    return;
 	} else if (clientPtr->use.write > 0) {
@@ -1406,7 +1406,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 	    FS_CACHE_DEBUG_PRINT1("ClientCommand: Removing %d ",
 					clientPtr->clientID);
 	    List_Remove((List_Links *) clientPtr);
-	    Mem_Free((Address) clientPtr);
+	    free((Address) clientPtr);
 	}
 	return;
     }
@@ -1415,7 +1415,7 @@ ClientCommand(consistPtr, clientPtr, flags)
      */
     consistRpc.fileID = consistPtr->hdrPtr->fileID;
     if (consistRpc.fileID.type != FS_LCL_FILE_STREAM) {
-	    Sys_Panic(SYS_FATAL, "ClientCommand, bad stream type <%d>\n",
+	    panic( "ClientCommand, bad stream type <%d>\n",
 		consistRpc.fileID.type);
     } else {
 	consistRpc.fileID.type = FS_RMT_FILE_STREAM;
@@ -1444,7 +1444,7 @@ ClientCommand(consistPtr, clientPtr, flags)
      * messages.
      */
 
-    msgPtr = (ConsistMsgInfo *) Mem_Alloc(sizeof(ConsistMsgInfo));
+    msgPtr = (ConsistMsgInfo *) malloc(sizeof(ConsistMsgInfo));
     msgPtr->clientID = clientPtr->clientID;
     msgPtr->flags = consistRpc.flags;
     List_Insert((List_Links *) msgPtr, LIST_ATREAR(&consistPtr->msgList));
@@ -1456,7 +1456,7 @@ ClientCommand(consistPtr, clientPtr, flags)
      * so they don't lock the handle.
      */
     if ((consistPtr->flags & FS_CONSIST_IN_PROGRESS) == 0) {
-	Sys_Panic(SYS_FATAL, "Client CallBack - consist flag not set\n");
+	panic( "Client CallBack - consist flag not set\n");
     }
     UNLOCK_MONITOR;
     numRefusals = 0;
@@ -1471,7 +1471,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 	} else {
 	    numRefusals++;
 	    if (numRefusals > 30) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 		    "Client %d dropped 30 %s requests for \"%s\" <%d,%d>\n",
 			    clientPtr->clientID, ConsistType(flags),
 			    FsHandleName(consistPtr->hdrPtr),
@@ -1486,7 +1486,7 @@ ClientCommand(consistPtr, clientPtr, flags)
     LOCK_MONITOR;
 #ifdef CONSIST_DEBUG
     if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	Sys_Printf(
+	printf(
 	"ClientCommand, %s msg to client %d file \"%s\" <%d,%d> version %d status %x\n",
 	    ConsistType(flags), clientPtr->clientID,
 	    FsHandleName(consistPtr->hdrPtr),
@@ -1503,7 +1503,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 	 * done this for us).
 	 */
 	register ConsistMsgInfo *existingMsgPtr;
-	Sys_Panic(SYS_WARNING,
+	printf(
 	"ClientCommand, %s msg to client %d file \"%s\" <%d,%d> failed %x\n",
 	    ConsistType(flags), clientPtr->clientID,
 	    FsHandleName(consistPtr->hdrPtr),
@@ -1512,7 +1512,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 	LIST_FORALL(&(consistPtr->msgList), (List_Links *) existingMsgPtr) {
 	    if (existingMsgPtr == msgPtr) {
 		List_Remove((List_Links *) msgPtr);
-		Mem_Free((Address) msgPtr);
+		free((Address) msgPtr);
 		break;
 	    }
 	}
@@ -1560,7 +1560,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 
     consistArgPtr = (ConsistMsg *)storagePtr->requestParamPtr;
     if (consistArgPtr->fileID.type != FS_RMT_FILE_STREAM) {
-	Sys_Panic(SYS_FATAL, "Fs_RpcConsist, bad stream type <%d>\n",
+	panic( "Fs_RpcConsist, bad stream type <%d>\n",
 		    consistArgPtr->fileID.type);
     }
     /*
@@ -1571,7 +1571,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
     if (rmtHandlePtr == (FsRmtFileIOHandle *)NIL) {
 	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		    "Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
@@ -1587,7 +1587,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	     */
 	    status = FAILURE;
 #ifdef notdef
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		    "Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
@@ -1599,7 +1599,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
     } else if (rmtHandlePtr->openTimeStamp != consistArgPtr->openTimeStamp) {
 	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		"Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
@@ -1613,7 +1613,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	     */
 	    status = FAILURE;
 #ifdef notdef
-	    Sys_Panic(SYS_WARNING,
+	    printf(
 		"Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
@@ -1635,12 +1635,12 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	 * This is a message corresponding to our current notion of the
 	 * file.  Pass the message to a consistency handler process.
 	 */
-	consistPtr = (ConsistItem *) Mem_Alloc(sizeof(ConsistItem));
+	consistPtr = (ConsistItem *) malloc(sizeof(ConsistItem));
 	consistPtr->serverID = clientID;
 	consistPtr->args = *consistArgPtr;
 	Proc_CallFunc(ProcessConsist, (ClientData) consistPtr, 0);
     } else if (consistArgPtr->flags & FS_DEBUG_CONSIST) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "Fs_RpcConsist: <%d,%d> Lots of %s msgs dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
@@ -1684,17 +1684,17 @@ ProcessConsist(data, callInfoPtr)
     callInfoPtr->interval = 0;
 
     if (consistPtr->args.fileID.type != FS_RMT_FILE_STREAM) {
-	Sys_Panic(SYS_FATAL, "ProcessConsist, unexpected file type %d\n",
+	panic( "ProcessConsist, unexpected file type %d\n",
 	    consistPtr->args.fileID.type);
 	return;
     }
     handlePtr = FsHandleFetchType(FsRmtFileIOHandle, &consistPtr->args.fileID);
     if (handlePtr == (FsRmtFileIOHandle *)NIL) {
-	Sys_Printf("<%d, %d, %d, %d>:", consistPtr->args.fileID.type,
+	printf("<%d, %d, %d, %d>:", consistPtr->args.fileID.type,
 		     consistPtr->args.fileID.serverID,
 		     consistPtr->args.fileID.major,
 		     consistPtr->args.fileID.minor);
-	Sys_Panic(SYS_WARNING, "ProcessConsist: lost the handle\n");
+	printf( "ProcessConsist: lost the handle\n");
 	return;
     }
     FsHandleUnlock(handlePtr);
@@ -1709,7 +1709,7 @@ ProcessConsist(data, callInfoPtr)
 			    &reply.cachedAttr);
 #ifdef CONSIST_DEBUG
     if (fsTraceConsistMinor == handlePtr->rmt.hdr.fileID.minor) {
-	Sys_Printf(
+	printf(
 	"ProcessConsist, %s msg for file \"%s\" <%d,%d> version %d status %x\n",
 	    ConsistType(consistPtr->args.flags), 
 	    FsHandleName(handlePtr),
@@ -1740,9 +1740,9 @@ ProcessConsist(data, callInfoPtr)
 
     status = Rpc_Call(consistPtr->serverID, RPC_FS_CONSIST_REPLY, &storage);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Got error (%x) from consist reply\n", status);
+	printf( "Got error (%x) from consist reply\n", status);
     }
-    Mem_Free((Address)consistPtr);
+    free((Address)consistPtr);
 }
 
 
@@ -1781,12 +1781,12 @@ Fs_RpcConsistReply(srvToken, clientID, command, storagePtr)
 
     replyPtr = (ConsistReply *) storagePtr->requestParamPtr;
     if (replyPtr->fileID.type != FS_LCL_FILE_STREAM) {
-	Sys_Panic(SYS_FATAL, "Fs_RpcConsistReply bad stream type <%d>\n",
+	panic( "Fs_RpcConsistReply bad stream type <%d>\n",
 	    replyPtr->fileID.type);
     }
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle, &(replyPtr->fileID));
     if (handlePtr == (FsLocalFileIOHandle *) NIL) {
-	Sys_Panic(SYS_FATAL, "Fs_RpcConsistReply: no handle\n");
+	panic( "Fs_RpcConsistReply: no handle\n");
     }
     ProcessConsistReply(&handlePtr->consist, clientID, replyPtr);
     FsHandleRelease(handlePtr, TRUE);
@@ -1848,14 +1848,14 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	 * Old message from the client, probably queued in the network
 	 * interface or from a gateway.
 	 */
-	Sys_Panic(SYS_WARNING, "ProcessConsistReply: Client %d not found\n",
+	printf( "ProcessConsistReply: Client %d not found\n",
 			clientID);
 	UNLOCK_MONITOR;
 	return;
     }
 #ifdef CONSIST_DEBUG
     if (fsTraceConsistMinor == consistPtr->hdrPtr->fileID.minor) {
-	Sys_Printf(
+	printf(
 	"ConsistReply, %s msg for file \"%s\" <%d,%d> writer %d status %x\n",
 	    ConsistType(msgPtr->flags), 
 	    FsHandleName(consistPtr->hdrPtr),
@@ -1865,7 +1865,7 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
     }
 #endif /* CONSIST_DEBUG */
     if (replyPtr->status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "ProcessConsist: %s request failed <%x> file \"%s\" <%d,%d>\n",
 		ConsistType(msgPtr->flags), replyPtr->status,
 		FsHandleName(consistPtr->hdrPtr),
@@ -1901,7 +1901,7 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 		if (clientPtr->use.ref == 0 &&
 		    consistPtr->lastWriter != clientID) {
 		    List_Remove((List_Links *) clientPtr);
-		    Mem_Free((Address) clientPtr);
+		    free((Address) clientPtr);
 		} else if (msgPtr->flags & FS_INVALIDATE_BLOCKS) {
 		    clientPtr->cached = FALSE;
 		}
@@ -1909,7 +1909,7 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	    }
 	}
     }
-    Mem_Free((Address) msgPtr);
+    free((Address) msgPtr);
 
     UNLOCK_MONITOR;
 }

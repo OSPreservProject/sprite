@@ -178,7 +178,7 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	 * and access times for the I/O server's cache.  Return the
 	 * fileID from the device file for client get/set attribute calls.
 	 */
-	deviceDataPtr = Mem_New(FsDeviceState);
+	deviceDataPtr = mnew(FsDeviceState);
 	deviceDataPtr->modifyTime = descPtr->dataModifyTime;
 	deviceDataPtr->accessTime = descPtr->accessTime;
 	/*
@@ -276,7 +276,7 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
     } else {
 	FsHandleRelease(devHandlePtr, TRUE);
     }
-    Mem_Free((Address) deviceDataPtr);
+    free((Address) deviceDataPtr);
     return(status);
 }
 
@@ -328,7 +328,7 @@ FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePt
     } else {
 	*ioHandlePtrPtr = (FsHandleHeader *)NIL;
     }
-    Mem_Free((Address)streamData);
+    free((Address)streamData);
     return(status);
 }
 
@@ -488,8 +488,8 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
     paramPtr = (FsDeviceRemoteOpenPrm *) storagePtr->requestParamPtr;
     dataSize = paramPtr->dataSize;
     if (dataSize > 0) {
-	streamData = (ClientData)Mem_Alloc(dataSize);
-	Byte_Copy(dataSize, (Address)&paramPtr->openData, (Address)streamData);
+	streamData = (ClientData)malloc(dataSize);
+	bcopy((Address)&paramPtr->openData, (Address)streamData, dataSize);
     } else {
 	streamData = (ClientData)NIL;
     }
@@ -544,7 +544,7 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
     Boolean			cache = FALSE;
 
     if (!FsIOClientClose(&devHandlePtr->clientList, clientID, flags, &cache)) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		  "FsDeviceClose, client %d unknown for device <%d,%d>\n",
 		  clientID, devHandlePtr->hdr.fileID.major,
 		  devHandlePtr->hdr.fileID.minor);
@@ -568,7 +568,7 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
 			devHandlePtr->use.write);
 
     if (devHandlePtr->use.ref < 0 || devHandlePtr->use.write < 0) {
-	Sys_Panic(SYS_FATAL, "FsDeviceClose <%d,%d> ref %d, write %d\n",
+	panic( "FsDeviceClose <%d,%d> ref %d, write %d\n",
 	    devHandlePtr->hdr.fileID.major, devHandlePtr->hdr.fileID.minor,
 	    devHandlePtr->use.ref, devHandlePtr->use.write);
     }
@@ -637,7 +637,7 @@ FsDeviceClientKill(hdrPtr, clientID)
 		    devHandlePtr->use.write);
     
 	if (devHandlePtr->use.ref < 0 || devHandlePtr->use.write < 0) {
-	    Sys_Panic(SYS_FATAL, "FsDeviceClose <%d,%d> ref %d, write %d\n",
+	    panic( "FsDeviceClose <%d,%d> ref %d, write %d\n",
 		hdrPtr->fileID.major, hdrPtr->fileID.minor,
 		devHandlePtr->use.ref, devHandlePtr->use.write);
 	}
@@ -690,7 +690,7 @@ FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 
     if (rmtHandlePtr->recovery.use.ref < 0 ||
 	rmtHandlePtr->recovery.use.write < 0) {
-	Sys_Panic(SYS_FATAL, "FsRemoteIOClose: <%d,%d> ref %d write %d\n",
+	panic( "FsRemoteIOClose: <%d,%d> ref %d write %d\n",
 	    rmtHandlePtr->hdr.fileID.major, rmtHandlePtr->hdr.fileID.minor,
 	    rmtHandlePtr->recovery.use.ref,
 	    rmtHandlePtr->recovery.use.write);
@@ -699,7 +699,7 @@ FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     if (!FsHandleValid(streamPtr->ioHandlePtr)) {
 	status = FS_STALE_HANDLE;
     } else {
-	status = FsSpriteClose(streamPtr, clientID, procID, flags,
+	status = FsRemoteClose(streamPtr, clientID, procID, flags,
 			       dataSize, closeData);
     }
     /*
@@ -877,7 +877,7 @@ FsDeviceRelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
 {
-    Sys_Panic(SYS_FATAL, "FsDeviceRelease called\n");
+    panic( "FsDeviceRelease called\n");
     FsHandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
@@ -965,7 +965,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     }
     migInfoPtr->ioFileID.type = FS_LCL_DEVICE_STREAM;
     if (!FsDeviceHandleInit(&migInfoPtr->ioFileID, (char *)NIL, &devHandlePtr)){
-	Sys_Panic(SYS_WARNING,
+	printf(
 		"FsDeviceMigrate, I/O handle <%d,%d> not found\n",
 		 migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FS_FILE_NOT_FOUND);
@@ -1044,7 +1044,7 @@ FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPt
     status = FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr,
 				0, (Address)NIL);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "FsRmtDeviceMigrate, server error <%x>\n",
+	printf( "FsRmtDeviceMigrate, server error <%x>\n",
 	    status);
     } else {
 	*dataPtr = (Address)NIL;
@@ -1085,7 +1085,7 @@ FsDeviceMigEnd(migInfoPtr, size, data, hdrPtrPtr)
 
     devHandlePtr = FsHandleFetchType(FsDeviceIOHandle, &migInfoPtr->ioFileID);
     if (devHandlePtr == (FsDeviceIOHandle *)NIL) {
-	Sys_Panic(SYS_FATAL, "FsDeviceMigEnd, no handlel\n");
+	panic( "FsDeviceMigEnd, no handlel\n");
 	return(FAILURE);
     } else {
 	FsHandleUnlock(devHandlePtr);
@@ -1183,7 +1183,7 @@ FsRmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
 	}
     }
     if (!found) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 	    "FsRmtDeviceVerify, client %d not known for device <%d,%d>\n",
 	    clientID, fileIDPtr->major, fileIDPtr->minor);
     }
@@ -1234,7 +1234,7 @@ FsDeviceRead(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
      * does its DMA.
      */
     if (flags & FS_USER) {
-        readBuffer = Mem_Alloc(length);
+        readBuffer = (Address)malloc(length);
     } else {
         readBuffer = buffer;
     }
@@ -1255,7 +1255,7 @@ FsDeviceRead(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
 		status = SYS_ARG_NOACCESS;
 	    }
 	}
-	Mem_Free(readBuffer);
+	free(readBuffer);
     }
     if (status != FS_WOULD_BLOCK) {
 	FsWaitListRemove(&devHandlePtr->readWaitList, remoteWaitPtr);
@@ -1307,7 +1307,7 @@ FsDeviceWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
      * does its DMA.
      */
     if (flags & FS_USER) {
-        writeBuffer = Mem_Alloc(length);
+        writeBuffer = (Address)malloc(length);
 	if (Vm_CopyIn(length, buffer, writeBuffer) != SUCCESS) {
 	    status = SYS_ARG_NOACCESS;
 	}
@@ -1334,7 +1334,7 @@ FsDeviceWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
     }
 
     if (flags & FS_USER) {
-	Mem_Free(writeBuffer);
+	free(writeBuffer);
     }
     FsHandleUnlock(devHandlePtr);
     return(status);
@@ -1569,7 +1569,7 @@ Fs_NotifyReader(data)
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	Sys_Panic(SYS_FATAL, "Fs_NotifyReader, bad data\n");
+	panic( "Fs_NotifyReader, bad data\n");
     }
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
 	(devHandlePtr->readNotifyScheduled)) {
@@ -1586,7 +1586,7 @@ ReadNotify(data, callInfoPtr)
 {
     register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	Sys_Panic(SYS_WARNING, "ReadNotify, lost device handle\n");
+	printf( "ReadNotify, lost device handle\n");
     } else {
 	devHandlePtr->readNotifyScheduled = FALSE;
 	FsWaitListNotify(&devHandlePtr->readWaitList);
@@ -1621,7 +1621,7 @@ Fs_NotifyWriter(data)
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	Sys_Panic(SYS_FATAL, "Fs_NotifyWriter, bad data\n");
+	panic( "Fs_NotifyWriter, bad data\n");
     }
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
 	(devHandlePtr->writeNotifyScheduled)) {
@@ -1638,7 +1638,7 @@ WriteNotify(data, callInfoPtr)
 {
     register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	Sys_Panic(SYS_WARNING, "WriteNotify, lost device handle\n");
+	printf( "WriteNotify, lost device handle\n");
     } else {
 	devHandlePtr->writeNotifyScheduled = FALSE;
 	FsWaitListNotify(&devHandlePtr->writeWaitList);
