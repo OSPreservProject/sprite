@@ -546,6 +546,12 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	    if (streamPtr->flags & FS_NON_BLOCKING) {
 		flags |= IOC_NON_BLOCKING;
 	    }
+	    if (streamPtr->flags & FS_READ) {
+		flags |= IOC_READ;
+	    }
+	    if (streamPtr->flags & FS_WRITE) {
+		flags |= IOC_WRITE;
+	    }
 	    if (ioctlPtr->outBufSize != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else {
