@@ -552,7 +552,7 @@ Sys_StatsStub(command, option, argPtr)
 		status = GEN_INVALID_ARG;
 	    } else {
 		status = Vm_CopyOut(sizeof(Sched_OverallTimes),
-			(Address)&sched_OverallTimes, argPtr);
+			(Address)&sched_OverallTimesPerProcessor[0], argPtr);
 	    }
 	    break;
 	}
