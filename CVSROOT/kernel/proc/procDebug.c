@@ -134,10 +134,10 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    while (TRUE) {
 		procPtr = Proc_LockPID(pid);
 		if (procPtr == (Proc_ControlBlock *) NIL ||
-		    (procPtr->genFlags & PROC_DIEING)) {
+		    (procPtr->genFlags & (PROC_DIEING | PROC_DEBUGGED))) {
 		    /*
-		     * The pid they gave us either doesn't exist or is 
-		     * exiting.
+		     * The pid they gave us either doesn't exist, is exiting,
+		     * or is already being debugged.
 		     */
 		    if (procPtr != (Proc_ControlBlock *) NIL) {
 			Proc_Unlock(procPtr);
