@@ -282,8 +282,8 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 		newHdrPtr->name = (char *)NIL;
 	    }
 	}
-	tableFull = HandleInstallInt(fileIDPtr, name,
-		    fsStats.handle.maxNumber, newHdrPtr, &found);
+	tableFull = HandleInstallInt(fileIDPtr, fsStats.handle.maxNumber,
+				     newHdrPtr, &found);
 	if (!tableFull) {
 	    /*
 	     * Got the handle.  'found' indicates if the handle is new or not.
@@ -359,9 +359,8 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
  *
  */
 ENTRY Boolean
-HandleInstallInt(fileIDPtr, name, handleLimit, hdrPtr, foundPtr)
+HandleInstallInt(fileIDPtr, handleLimit, hdrPtr, foundPtr)
     register Fs_FileID	*fileIDPtr;	/* Identfies handle to install. */
-    char		*name;		/* File name for error messages */
     int			handleLimit;	/* Determines how many handles can
 					 * exist before we return NULL */
     FsHandleHeader	*hdrPtr;	/* Handle to install into table. */    
