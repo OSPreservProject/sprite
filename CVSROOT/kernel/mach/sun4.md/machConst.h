@@ -14,9 +14,16 @@
 #define _MACHCONST
 
 #ifdef KERNEL
+#include "sprite.h"
 #include "vmSunConst.h"
+#include "sysSysCall.h"
+#include "sys.h"
+#include "status.h"
 #else
 #include <kernel/vmSunConst.h>
+#include <kernel/sysSysCall.h>
+#include <kernel/sys.h>
+#include "status.h"
 #endif
 
 /*
@@ -501,18 +508,5 @@
 #define	TBR_REG			r6		/* g6 */
 #define	OUT_TEMP1		r12		/* o4 */
 #define	OUT_TEMP2		r13		/* o5 */
-
-/*
- * GROSS STUFF: that is actually in header files elsewhere that I can't
- * include 'cause they're for C code and not assembly headers.  I will
- * separate them out and fix ths.
- */
-#define	SYS_MAX_ARGS		10
-#define	SYS_NUM_SYSCALLS	96
-#define	SYS_ARG_NOACCESS	0x00020000
-#define	SYS_INVALID_ARG		0x00020001
-#define	SYS_INVALID_SYSTEM_CALL	0x00020002
-#define	PROC_TERM_DESTROYED	4
-#define	PROC_BAD_STACK		1
 
 #endif /* _MACHCONST */

@@ -8,6 +8,7 @@
  * rcs = $Header$ SPRITE (Berkeley)
  */
 
+#include "user/proc.h"
 #include "machConst.h"
 #include "machAsmDefs.h"
 .seg	"text"
@@ -956,8 +957,6 @@ _MachHandleBadArgs:
 	retl			/* return from leaf routine */
 	nop
 
-#define	SUCCESS	0
-#define	FAILURE	1
 /*
  * Beginning of area where the kernel should be able to handle a bus error
  * (which includes size errors) while in kernel mode.

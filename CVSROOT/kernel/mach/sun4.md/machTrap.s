@@ -18,6 +18,7 @@
 .align	8
 .seg	"text"
 
+#include "user/proc.h"
 #include "machConst.h"
 #include "machAsmDefs.h"
 
