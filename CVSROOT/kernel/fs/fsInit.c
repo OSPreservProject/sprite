@@ -41,17 +41,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "trace.h"
 #include "fsdm.h"
 #include "fsrmt.h"
-#include "devTypes.h"
-
-#define	SCSI_MAKE_DEVICE_TYPE(type, hbaType, ctrlNum, targetID, LUN, dBits) \
-		(((hbaType)<<8)|(type))
-#define	SCSI_MAKE_DEVICE_UNIT(type, hbaType, ctrlNum, targetID, LUN, dBits)  \
-		(((ctrlNum)<<10)|((LUN)<<7)|((targetID)<<4)|(dBits))
 
 /*
  * The prefix under which the local disk is attached.  
  */
-#define LOCAL_DISK_NAME		"/"
+#define LOCAL_DISK_NAME		"/bootTmp"
 int fsDefaultDomainNumber = 0;
 
 Boolean	fsutil_WriteThrough = FALSE;	
@@ -179,6 +173,8 @@ Fs_InitNameSpace()
 {
     ReturnStatus status;
     Time time;
+    int	i;
+    Fs_Device defaultDisk;
 
     /*
      * Put the routine on the timeout queue that keeps the time in
@@ -206,6 +202,20 @@ Fs_InitNameSpace()
      */
     (void)Fsprefix_Install("/", (Fs_HandleHeader *)NIL, -1, FSPREFIX_IMPORTED); 
 
+    for (i=0 ; i<devNumDefaultDiskPartitions; i++) {
+	/*
+	 * Second step in bootstrapping the name space.  Try and attach
+	 * a disk under the /bootTmp prefix.  Later this local partition
+	 * may be promoted to the root domain (see Fs_ProcInit).
+	 */
+	defaultDisk = devFsDefaultDiskPartitions[i];
+
+	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
+	if (status == SUCCESS) {
+	    fsDiskAttached = TRUE;
+	    break;
+	}
+    }
     fsutil_Initialized = TRUE;
 }
 
@@ -268,13 +278,6 @@ Fs_ProcInit()
     char		buffer[128];
     Boolean		standalone;
     Fs_Stream		*stream;
-    Fs_Device 		defaultDisk;
-    int			i;
-    int			argc;
-    char		*argv[10];
-    char		argBuffer[256];
-    int			numDefaults;
-    Boolean		stdDefaults;
 
     procPtr = Proc_GetCurrentProc();
     procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
@@ -293,110 +296,49 @@ Fs_ProcInit()
     fsPtr->groupIDs 	= (int *) malloc(1 * sizeof(int));
     fsPtr->groupIDs[0]	= 0;
 
-    numDefaults = devNumDefaultDiskPartitions;
-    stdDefaults = TRUE;
-    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
-    for (i = 0; i < argc; i++) {
-	if (!strcasecmp(argv[i], "-rootdisk")) {
-	    if (argc == i + 1) {
-		printf("-rootdisk option requires an argument\n");
-	    } else {
-		int	type;
-		int	unit;
-		int	n;
-		n = sscanf(argv[i+1], " %d.%d ", &type, &unit);
-		if (n != 2) {
-		    printf("-rootdisk has the following syntax:\n");
-		    printf("\t-rootdisk <type>.<unit>\n");
-		} else {
-		    printf("Found -rootdisk option, %d.%d\n",
-			type, unit);
-		    defaultDisk.serverID = -1;
-		    defaultDisk.type = type;
-		    defaultDisk.unit = unit;
-		    defaultDisk.data = (ClientData) NIL;
-		    numDefaults = 1;
-		    stdDefaults = FALSE;
-		}
+    /*
+     * If there is an attached disk and we are booting standalone (no -c
+     * option and there is a boot directory on the attached disk) then
+     * install a "/" prefix.
+     */
+    standalone = FALSE;
+    if (fsDiskAttached) {
+	Fs_Attributes	attr;
+	int		argc;
+	char		*argv[10];
+	char		argBuffer[256];
+	int		i;
+
+	standalone = TRUE;
+	sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
+	status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
+	if (status != SUCCESS) {
+	    standalone = FALSE;
+/* XXX */	printf ("no /boot, status %x\n", status);
+	} else if ((attr.type != FS_DIRECTORY)) {
+		printf("%s/boot is not a directory!\n", LOCAL_DISK_NAME);
+		standalone = FALSE;
+	}
+	argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+	for (i = 0; i < argc; i++) {
+	    if (!strcmp(argv[i], "-c")) {
+		standalone = FALSE;
+		break;
 	    }
 	}
-    }
-    for (i=0 ; i< numDefaults ; i++) {
-	/*
-	 * Second step in bootstrapping the name space.  Try and attach
-	 * a disk. 
-	 */
-	if (stdDefaults) {
-	    defaultDisk = devFsDefaultDiskPartitions[i];
-	}
+	if (standalone) {
+	    Fs_Stream		*streamPtr;
+	    static char		rootPrefix[] = "/";
 
-	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, 
-		    FS_ATTACH_LOCAL | FS_DEFAULT_DOMAIN);
-	if (status == SUCCESS) {
-	    Fs_Attributes	attr;
-	    int			i;
-	    char		buffer[128];
-	    Boolean		rootServer = FALSE;
-
-	    sprintf(buffer, "%s/ROOT", LOCAL_DISK_NAME);
-	    status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
+	    status = Fs_Open(LOCAL_DISK_NAME, FS_READ|FS_FOLLOW,
+			    FS_DIRECTORY, 0, &streamPtr);
 	    if (status != SUCCESS) {
-		rootServer = FALSE;
+		printf("Fs_ProcInit: Unable to open local disk prefix!");
+		standalone = FALSE;
 	    } else {
-		printf("Found %s.\n", buffer);
-		rootServer = TRUE;
-	    }
-	    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
-	    for (i = 0; i < argc; i++) {
-		if (!strcasecmp(argv[i], "-backup")) {
-		    printf("Found %s option.\n", argv[i]);
-		    rootServer = FALSE;
-		}
-		if (!strcasecmp(argv[i], "-root")) {
-		    printf("Found %s option.\n", argv[i]);
-		    rootServer = TRUE;
-		}
-	    }
-	    if (rootServer) {
-		sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
-		status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
-		if (status != SUCCESS) {
-		    printf("/boot not found on root partition.\n");
-		    rootServer = FALSE;
-		} else {
-		    printf("Found /boot.\n");
-		    if ((attr.type != FS_DIRECTORY)) {
-			printf("/boot is not a directory!\n");
-			rootServer = FALSE;
-		    } else {
-			printf("/boot is a directory.\n");
-		    }
-		}
-	    }
-	    if (rootServer) {
-		Fs_Stream		*streamPtr;
-		static char		rootPrefix[] = "/";
-    
-		status = Fs_Open(LOCAL_DISK_NAME, FS_READ|FS_FOLLOW,
-				FS_DIRECTORY, 0, &streamPtr);
-		if (status != SUCCESS) {
-		    printf("Fs_ProcInit: Unable to open local disk prefix!");
-		} else {
-		    printf("Installing the local disk as %s.\n", rootPrefix);
-		    (void)Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
-			    FS_LOCAL_DOMAIN, 
-			    FSPREFIX_LOCAL|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
-		    if (strcmp(LOCAL_DISK_NAME, rootPrefix)) {
-			printf("Clearing local disk prefix %s.\n", 
-			    LOCAL_DISK_NAME);
-			Fsprefix_Clear(LOCAL_DISK_NAME, TRUE);
-		    }
-		    fsDiskAttached = TRUE;
-		    break;
-		}
-	    } else {
-		printf("Detaching the local disk.\n");
-		Fsdm_DetachDisk(LOCAL_DISK_NAME);
+		(void)Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
+			FS_LOCAL_DOMAIN, 
+			FSPREFIX_LOCAL|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
 	    }
 	}
     }
@@ -407,9 +349,9 @@ Fs_ProcInit()
     do {
 	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &stream);
 	if (status != SUCCESS) {
-	    if (fsDiskAttached) {
+	    if (standalone) {
 		panic(
-		"Fs_ProcInit: I'm the root server and I can't open \"/\".\n");
+		"Fs_ProcInit: Booting standalone and can't open \"/\".\n");
 	    }
 	    /*
 	     *  Wait a bit and retry the open of "/".
