@@ -42,6 +42,7 @@
 #define	MACH_TAG_OVERFLOW	0x0a0
 #define	MACH_TRAP_INSTR_FIRST	0x800		/* 128 */
 #define	MACH_TRAP_INSTR_1	0x810		/* 129 */
+#define	MACH_TRAP_INSTR_2	0x820		/* 130 */
 #define	MACH_TRAP_INSTR_LAST	0xff0
 
 #define	MACH_LEVEL1_INT		0x110		/* 17 */
@@ -61,8 +62,9 @@
 #define	MACH_LEVEL15_INT	0x1f0
 
 #define	MACH_TRAP_DEBUGGER	MACH_TRAP_INSTR_1
-						    /* trap type gets 128 + 1 */
+			/* trap instruction number is trap type - 128 */
 #define	MACH_CALL_DBG		(MACH_TRAP_DEBUGGER - 128)
+#define	MACH_BRKPT_TRAP		(MACH_TRAP_INSTR_2 - 128)
 
 /*
  * Mask for extracting the trap type from the psr.
