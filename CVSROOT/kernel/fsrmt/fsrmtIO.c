@@ -920,7 +920,6 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 	Ioc_RepositionArgs	iocArgs;
 	int size;
 	int inSize;
-	int oldOffset = -1;
 
 	if ((ioctl.inBuffer == (Address)NIL) || 
 	    (ioctl.inBufSize < sizeof(Ioc_RepositionArgs))) {
@@ -939,7 +938,6 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 	    if (size != sizeof(Ioc_RepositionArgs)) {
 		status = GEN_INVALID_ARG;
 	    }
-	    oldOffset = streamPtr->offset;
 	    iocArgsPtr = &iocArgs;
 	} else {
 	    iocArgsPtr = (Ioc_RepositionArgs *)ioctl.inBuffer;
@@ -950,7 +948,7 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 		    newOffset = iocArgsPtr->offset;
 		    break;
 		case IOC_BASE_CURRENT:
-		    newOffset = oldOffset + iocArgsPtr->offset;
+		    newOffset = streamPtr->offset + iocArgsPtr->offset;
 		    break;
 		case IOC_BASE_EOF: {
 		    Fs_Attributes attrs;
