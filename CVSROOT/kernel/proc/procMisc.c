@@ -590,33 +590,6 @@ Proc_Profile(shiftSize, lowPC, highPC, interval, counterArray)
 /*
  *----------------------------------------------------------------------
  *
- * CheckIfUsed --
- *
- *	Returns TRUE if process is in use. (this function is used for 
- *	dumping out the process table).
- *
- * Results:
- *	FALSE if process state is NOT_USED, TRUE otherwise
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static Boolean
-CheckIfUsed(procPtr)
-    register Proc_ControlBlock *procPtr;
-{
-	if (procPtr->state == PROC_UNUSED) {
-	    return FALSE;
-	}
-	return TRUE;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Proc_Dump --
  *
  *	Prints out an abbreviated proc table for debugging purposes.
@@ -634,9 +607,18 @@ CheckIfUsed(procPtr)
 ReturnStatus
 Proc_Dump()
 {
-    printf("%8s %5s %10s %10s %8s %8s   %s\n",
+    int i;
+    Proc_ControlBlock *pcbPtr;
+
+    printf("\n%8s %5s %10s %10s %8s %8s   %s\n",
 	"ID", "wtd", "user", "kernel", "event", "state", "name");
-    Proc_DoForEveryProc(CheckIfUsed, Proc_DumpPCB, TRUE);
+    
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	pcbPtr = proc_PCBTable[i];
+	if (pcbPtr->state != PROC_UNUSED) {
+	    Proc_DumpPCB(pcbPtr);
+	}
+    }
     return(SUCCESS);
 }
 
@@ -649,7 +631,7 @@ Proc_Dump()
  *	Prints out the contents of a PCB for debugging purposes.
  *
  * Results:
- *	SUCCESS
+ *	SUCCESS/FAILURE
  *
  * Side effects:
  *	Prints stuff to the screen.
@@ -700,7 +682,7 @@ Proc_DumpPCB(procPtr)
 	default:
 	    printf("Warning: Proc_DumpPCB: process %x has invalid process state: %x.\n",
 		   procPtr->processID, state);
-	    return;
+	    return (FAILURE);
     }
     /*
      * A header describing the fields has already been printed.
