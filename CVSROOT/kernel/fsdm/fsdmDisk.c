@@ -58,7 +58,8 @@ Sync_Lock	domainTableLock = Sync_LockInitStatic("Fs:domainTableLock");
  * Forward declarations.
  */
 static int	InstallLocalDomain();
-void		AddDomainFlags();
+static void	MarkDomainDown();
+static Boolean	OkToDetach();
 static Boolean	IsSunLabel();
 static Boolean	IsSpriteLabel();
 
@@ -475,6 +476,7 @@ FsDetachDisk(prefixName)
     if (domainPtr == (FsDomain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
+
     /*
      * Recall dirty blocks from remote clients, and copy dirty file descriptors
      * into their cache blocks.  Once done, don't allow any more dirty
@@ -488,16 +490,24 @@ FsDetachDisk(prefixName)
     }
     /*
      * Mark the domain and wait for other users of the domain to leave.
+     * The user can interrupt this wait, at which point we bail out.
      */
-    AddDomainFlags(domainPtr, FS_DOMAIN_GOING_DOWN);
+    if (!OkToDetach(domainPtr)) {
+	FsDomainRelease(domain);
+	return(FS_FILE_BUSY);
+    }
+    /*
+     * Nuke the prefix table entry.  Actually, this closes the handle
+     * and leaves the prefix entry with no handle.
+     */
+    FsPrefixHandleClose(prefixPtr, FS_EXPORTED_PREFIX);
     /*
      * Write all dirty blocks, bitmaps, etc. to disk and take the
      * domain down.
      */
     Fs_CacheWriteBack(-1, &blocksLeft, FALSE);	/* Write back the cache. */
     FsLocalDomainWriteBack(domain, FALSE, TRUE);/* Write back domain info. */
-    AddDomainFlags(domainPtr, FS_DOMAIN_DOWN);
-    domainPtr->refCount--;
+    MarkDomainDown(domainPtr);
     /*
      * We successfully brought down the disk, so mark it as OK.
      * The detach time is noted in order to track how long disks are available.
@@ -645,41 +655,73 @@ InstallLocalDomain(domainPtr)
 /*
  *----------------------------------------------------------------------
  *
- * AddDomainFlags --
+ * OkToDetach --
  *
- *	Add the given flags to the flags in the given domain.
+ *	Wait for activity in a domain to end and then mark the
+ *	domain as being down.  This prints a warning message and
+ *	waits in an interruptable state if the domain is in use.
+ *	Our caller should back out if we return FALSE.
+ *
+ * Results:
+ *	TRUE if it is ok to detach the domain.
+ *
+ * Side effects:
+ *	The FS_DOMAIN_GOING_DOWN flag is set in the domain.
+ *
+ *----------------------------------------------------------------------
+ */
+static ENTRY Boolean
+OkToDetach(domainPtr)
+    FsDomain	*domainPtr;
+{
+    LOCK_MONITOR;
+
+    domainPtr->flags |= FS_DOMAIN_GOING_DOWN;
+    /*
+     * Wait until we are the only user of the domain because 
+     * noone else but the cache block cleaner or us should be using this
+     * domain once we set this flag.
+     */
+    while (domainPtr->refCount > 1) {
+	printf("Waiting for busy domain \"%s\"\n",
+	    domainPtr->summaryInfoPtr->domainPrefix);
+	if (Sync_Wait(&domainPtr->condition, TRUE)) {
+	    domainPtr->flags &= ~FS_DOMAIN_GOING_DOWN;
+	    UNLOCK_MONITOR;
+	    return(FALSE);	/* Interrupted while waiting, domain busy */
+	}
+    }
+
+    UNLOCK_MONITOR;
+    return(TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MarkDomainDown --
+ *
+ *	Mark the domain as being down.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The flags in the domain are set.
+ *	The FS_DOMAIN_DOWN flag is set.
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
-AddDomainFlags(domainPtr, flags)
+static ENTRY void
+MarkDomainDown(domainPtr)
     FsDomain	*domainPtr;
-    int		flags;
 {
     LOCK_MONITOR;
 
-    domainPtr->flags |= flags;
-    if (flags & FS_DOMAIN_GOING_DOWN) {
-	/*
-	 * Wait until we are the only user of the domain because 
-	 * noone else but the cache block cleaner or us should be using this
-	 * domain once we set this flag.
-	 */
-	while (domainPtr->refCount > 1) {
-	    (void)Sync_Wait(&domainPtr->condition, FALSE);
-	}
+    domainPtr->flags |= FS_DOMAIN_DOWN;
+    if (domainPtr->refCount > 1) {
+	printf("DomainDown: Refcount > 1\n");
     }
-    if (flags & FS_DOMAIN_DOWN) {
-	if (domainPtr->refCount > 1) {
-	    printf( "AddDomainFlags: Refcount > 1\n");
-	}
-    }
+    domainPtr->refCount = 0;
 
     UNLOCK_MONITOR;
 }
