@@ -22,7 +22,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 #include "devSCSI.h"
 #include "devXylogics.h"
-#include "devSBC.h"
 
 /*
  * The controller configuration table.
@@ -35,12 +34,9 @@ DevConfigController devCntrlr[] = {
     { "SCSI", 0x200000, DEV_VME_D16A24, 0, Dev_SCSIInitController, 64,
 				    Dev_SCSIIntrStub, 
 				    FALSE, Dev_SCSIIdleCheck, 0, 0},
-    { "SBC", 0x0FE12000, DEV_OBIO, 0, Dev_SBCInitController, 64,
-				    Dev_SBCIntrStub, 
-				    FALSE, Dev_SBCIdleCheck, 0, 0},
-    { "SBC", 0x200000, DEV_VME_D16A24, 0, Dev_SBCInitController, 64,
-				    Dev_SBCIntrStub, 
-				    FALSE, Dev_SBCIdleCheck, 0, 0},
+    { "SCSI", 0x0FE12000, DEV_OBIO,	0, Dev_SCSIInitController, 64,
+				    Dev_SCSIIntrStub, 
+				    FALSE, Dev_SCSIIdleCheck, 0, 0},
     { "Xylogics", 0xee40, DEV_VME_D16A16,	 0, Dev_XylogicsInitController,
 				    72, Dev_XylogicsIntrStub,
 				    FALSE, Dev_XylogicsIdleCheck, 0, 0},
@@ -55,33 +51,30 @@ int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
  * don't cost any time at startup.  Non-existent devices on existing
  * controllers can cost an I/O bus timeout period at start up.
  *
- * NB: There is an implicit correspondence between filesystem unit numbers
- * and particular disks.  Several entries for the same kind of device
- * result in a correspondence between those devices and ranges of unit
- * numbers. For disks, there are FS_NUM_DISK_PARTS different unit numbers
- * associated with each disk, and successive disks have consequative
- * ranges of unit numbers.
+ * NB: There is an implicit correspondence between filesystem device
+ * unit numbers ("minor" type) and disk entries in the table below.
+ * This dependence is based (up to) 8 disk partitions per disk.
+ * Several entries for the same kind of device result in a correspondence 
+ * between those devices and ranges of unit numbers.
+ *
+ * SCSI: The cntrlrID corresponds to the Host Bus Adaptor.
+ *	The slaveId corresponds to the SCSI target ID.
+ *	The flags field embeds a type and the LUN (Logical Unit) of the
+ *		device within the SCSI target. 
  */
 DevConfigDevice devDevice[] = {
-/* cntrlrID, slaveID, flags, initproc */
-    { 0, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 0-7 */
-/*  { 0, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice}, */
-    { 0, 3, DEV_SCSI_WORM, Dev_SCSIInitDevice},
-    { 0, 4, DEV_SCSI_TAPE, Dev_SCSIInitDevice},
-    { 0, 5, DEV_SCSI_WORM, Dev_SCSIInitDevice},
+/* cntrlrID, slaveID, flags, initproc */		/* Device unit # */
+    { 0, 0, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 0-7 */
+    { 0, 0, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 8-15 */
+    { 0, 1, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 16-23 */
+    { 0, 1, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 24-31 */
+    { 0, 3, 0 | SCSI_WORM, Dev_SCSIInitDevice},	/* scsiWorm 0-7 */
+    { 0, 4, 0 | SCSI_TAPE, Dev_SCSIInitDevice},	/* tape0 (shoebox) */
+    { 0, 5, 0 | SCSI_TAPE, Dev_SCSIInitDevice},	/* tape1 (exabyte) */
 
-/*
- * Trying these in reverse order to see how that affects initialization.
- */
-    { 0, 1, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 8-13 */
-    { 0, 0, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 0-7 */
-
-/*  { 1, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 8-15 */
-/*  { 1, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 16-23 */
-/*  { 1, 4, DEV_SCSI_TAPE, Dev_SCSIInitDevice},				*/
-    { 0, 0, 0, Dev_XylogicsInitDevice},			/* Units 0-7 */
-    { 0, 1, 0, Dev_XylogicsInitDevice},			/* Units 8-15 */
-    { 1, 0, 0, Dev_XylogicsInitDevice},			/* Units 16-23 */
-    { 1, 1, 0, Dev_XylogicsInitDevice},			/* Units 24-31 */
+    { 0, 0, 0, Dev_XylogicsInitDevice},			/* rxy units 0-7 */
+    { 0, 1, 0, Dev_XylogicsInitDevice},			/* rxy units 8-15 */
+    { 1, 0, 0, Dev_XylogicsInitDevice},			/* rxy units 16-23 */
+    { 1, 1, 0, Dev_XylogicsInitDevice},			/* rxy units 24-31 */
 };
 int devNumConfigDevices = sizeof(devDevice) / sizeof(DevConfigDevice);
