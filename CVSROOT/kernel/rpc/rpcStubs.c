@@ -79,8 +79,23 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcReopen, "reopen",			/* 47 - FS_RPC_REOPEN */
 	Fs_RpcDomainInfo, "domain info",	/* 48 - FS_RPC_DOMAIN_INFO */
 	Fs_RpcDevReopen, "dev reopen",		/* 49 - FS_RPC_DEV_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 50 - FS_RPC_RECOVERY */
+	Fs_RpcRequest, "request", 		/* 51 - FS_RPC_REQUEST */
+	Fs_RpcReply, "reply", 			/* 52 - FS_RPC_REPLY */
 };
 
+Fs_RpcRecovery()
+{
+    return(RPC_INVALID_ARG);
+}
+Fs_RpcRequest()
+{
+    return(RPC_INVALID_ARG);
+}
+Fs_RpcReply()
+{
+    return(RPC_INVALID_ARG);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -110,27 +125,6 @@ Rpc_FreeMem(replyMemPtr)
     Mem_Free((Address) replyMemPtr);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Rpc_GetClientId --
- *
- *	Return the Sprite ID of the host.  This should go away.
- *
- * Results:
- *	The Sprite ID.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-int
-Rpc_GetClientId()
-{
-    return(rpc_SpriteID);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -170,10 +164,12 @@ RpcNull(srvToken, clientID, command, storagePtr)
  * RpcEcho --
  *
  *	Service an echo request.  The input data is simply turned around
- *	to the client.  This type of RPC is used for testing only.
+ *	to the client.  This type of RPC is used for benchmarks, and
+ *	by hosts to query the status of other hosts (pinging).
  *
  * Results:
- *	An error code.
+ *	SUCCESS usually, except if rpcServiceEnabled is off, when
+ *	RPC_SERVICE_DISABLED is returned.
  *
  * Side effects:
  *	The echo.
@@ -209,7 +205,6 @@ RpcEcho(srvToken, clientID, command, storagePtr)
 	 * RPC_SEND has a null reply already set up by Rpc_Server.
 	 */
     }
-
     Rpc_Reply(srvToken, SUCCESS, storagePtr, NIL, NIL);
 }
 
