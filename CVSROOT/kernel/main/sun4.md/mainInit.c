@@ -37,17 +37,18 @@ main()
 {
     extern	void	Timer_TimerInit();
     extern	void	Timer_TimerStart();
+    extern	int	saveStart;
    /*
     * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
     */
     Mach_Init();
-
     diddly(20);
-#ifdef NOTDEF
     Timer_TimerInit();
     Timer_TimerStart();
+#ifdef NOTDEF
     Mach_EnableIntr();		/* Should be ENABLE_INTR when I'm ready. */
 #endif NOTDEF
+    saveStart = 1;
     for ( ; ; ) {
 	;
     }
