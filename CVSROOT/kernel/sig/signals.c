@@ -176,7 +176,7 @@ Sig_ProcInit(procPtr)
  *
  * Side effects:
  *	Signal state copied from parent to child and pending mask cleared in
- *	child.
+ *	child.  Migration is held until the first return into user mode.
  *
  *----------------------------------------------------------------------
  */
@@ -185,7 +185,13 @@ Sig_Fork(parProcPtr, childProcPtr)
     register	Proc_ControlBlock	*parProcPtr;
     register	Proc_ControlBlock	*childProcPtr;
 {
-    childProcPtr->sigHoldMask = parProcPtr->sigHoldMask;
+    /*
+     * Copy the parent's signal state to the child.  Set up migration
+     * to be held initially.  On the first return to user mode, after
+     * signals are processed, migration will be reenabled.
+     */
+    childProcPtr->sigHoldMask = parProcPtr->sigHoldMask |
+	    SigGetBitMask(SIG_MIGRATE_TRAP);
     childProcPtr->sigPendingMask = 0;
     Byte_Copy(sizeof(childProcPtr->sigActions), 
 	      (Address)parProcPtr->sigActions, 
@@ -1056,6 +1062,19 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 	    return(FALSE);
 
 	case SIG_MIGRATE_ACTION:
+#ifdef notdef
+	    /*
+	     * If the process was just created, don't migrate it yet.
+	     * Just reissue the signal.
+	     * .. FIXME -- this shouldn't be necessary.
+	     */
+	    if (procPtr->genFlags & PROC_DONT_MIGRATE) {
+		procPtr->genFlags &= ~PROC_DONT_MIGRATE;
+		LocalSend(procPtr, sigNum, procPtr->sigCodes[sigNum]);
+		return(FALSE);
+	    }
+#endif notdef
+		
 	    if (procPtr->peerHostID != NIL) {
 		if (proc_MigDebugLevel > 6) {
 		    Sys_Printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
@@ -1126,5 +1145,33 @@ Sig_Return(procPtr, sigStackPtr)
 {
     procPtr->sigHoldMask = sigStackPtr->contextPtr->oldHoldMask;
     procPtr->specialHandling = 1;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_AllowMigration --
+ *
+ *	Set up a process to allow migration.  This is a special call
+ *	because normally the SIG_MIGRATE_TRAP signal is not holdable in
+ *	the first place.
+ *
+ *	This could be a macro and be called directly from
+ *	Mach_StartUserProc, once things are stable....
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process's hold mask is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+void		
+Sig_AllowMigration(procPtr)
+    register Proc_ControlBlock	*procPtr;	/* process to modify */
+{
+    procPtr->sigHoldMask &= ~SigGetBitMask(SIG_MIGRATE_TRAP);
 }
 
