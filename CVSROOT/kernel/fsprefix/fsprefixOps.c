@@ -224,59 +224,21 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 		    if (status == SUCCESS) {
 			/*
 			 * Successfully waited for the server to reboot.
-			 * Set the status to redirect so can go around the
+			 * Set the status to redirect so we go around the
 			 * loop again.
 			 */
 			status = FS_LOOKUP_REDIRECT;
-		    } else if (fileName[0] == '/') {
+		    } else if ((status == FS_STALE_HANDLE) &&
+				(fileName[0] == '/')) {
 			/*
 			 * Recovery failed, so we clear handle of the prefix
 			 * used to get to the server and try again.
 			 */
-			PrefixHandleClear(prefixPtr, status);
+			PrefixHandleClear(prefixPtr);
 			status = FS_LOOKUP_REDIRECT;
 		    }
 		    break;
 		}
-#ifdef notdef
-		case RPC_TIMEOUT: {
-		    /*
-		     * The server is down (RPC_TIMEOUT) so we clean up
-		     * the prefix table entry so the next try might find
-		     * a hot standby.
-		     */
-		    fsStats.prefix.timeouts++;
-		    if (fileName[0] == '/') {
-			/*
-			 * The handle we sent the server came from the prefix
-			 * table so we clear that handle to cause a broadcast
-			 * the next time the prefix matches.
-			 */
-			PrefixHandleClear(prefixPtr, status);
-			/*
-			 * Simulate a re-direct so we look again into the
-			 * prefix table which makes us broadcast to look for
-			 * alternate servers.
-			 */
-			numBroadcasts++;
-			if (numBroadcasts < 2) {
-			    status = FS_LOOKUP_REDIRECT;
-			}
-		    } else {
-			/*
-			 * We had a relative name and sent the handle from
-			 * the current working directory.  Initiate recovery
-			 * and wait for the server to come back.
-			 */
-			FsWantRecovery(hdrPtr);
-			status = FsWaitForRecovery(hdrPtr, status);
-			if (status == SUCCESS) {
-			    status = FS_LOOKUP_REDIRECT;
-			}
-		    }
-		    break;
-		}
-#endif	/* old RPC_TIMEOUT code */
 		default:
 		    break;
 	    }
@@ -398,6 +360,18 @@ retry:
 	    status = FsWaitForRecovery(staleHdrPtr, status);
 	    if (status == SUCCESS) {
 		goto retry;
+	    } else if (status == FS_STALE_HANDLE) {
+		/*
+		 * Recovery failed.  On absolute paths clear handle of the
+		 * prefix used to get to the server and try again.
+		 */
+		if ((srcNameError) && (srcName[0] == '/')) {
+		    PrefixHandleClear(srcPrefixPtr);
+		    status = FS_LOOKUP_REDIRECT;
+		} else if ((!srcNameError) && (dstName[0] == '/')) {
+		    PrefixHandleClear(dstPrefixPtr);
+		    status = FS_LOOKUP_REDIRECT;
+		}
 	    }
 	    break;
 	}
@@ -1101,7 +1075,7 @@ Fs_PrefixClear(prefix, deleteFlag)
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
 	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
-		PrefixHandleClear(prefixPtr, SUCCESS);
+		PrefixHandleClear(prefixPtr);
 	    }
 	    prefixPtr->flags &= ~FS_EXPORTED_PREFIX;
 	    if (deleteFlag) {
@@ -1145,23 +1119,14 @@ Fs_PrefixClear(prefix, deleteFlag)
  *----------------------------------------------------------------------
  */
 void
-PrefixHandleClear(prefixPtr, status)
+PrefixHandleClear(prefixPtr)
     FsPrefix *prefixPtr;
-    ReturnStatus status;
 {
     register FsHandleHeader *hdrPtr = prefixPtr->hdrPtr;
     Fs_Stream dummy;
 
     if (hdrPtr == (FsHandleHeader *)NIL) {
 	return;
-    }
-    if (status != SUCCESS) {
-	/*
-	 * The handle is invalid because of a server timeout or
-	 * because a server reboot made it go stale.  This call
-	 * ensures that we pay attention to the server reboot.
-	 */
-	FsWantRecovery(hdrPtr);
     }
     FsHandleLock(hdrPtr);
     dummy.ioHandlePtr = hdrPtr;
@@ -1227,9 +1192,10 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
     }
     if (status == SUCCESS) {
 	*domainTypePtr = domainType;
-	status = FS_NEW_PREFIX;
+	return(FS_NEW_PREFIX);
+    } else {
+	return(FS_FILE_NOT_FOUND);
     }
-    return(status);
 }
 
 
@@ -1752,17 +1718,95 @@ Fs_PrefixDump(index, argPtr)
 	return(FS_INVALID_ARG);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_PrefixDumpExport --
+ *
+ *	Return the export list of a prefix to user space.  The input
+ *	buffer contains a prefix upon entry, and we then overwrite
+ *	that with an array of SpriteIDs that corresponds to the export list.
+ *	The end of the list is indicated by a spriteID of zero.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Copies stuff out to user space.
+ *
+ *----------------------------------------------------------------------
+ */
 
-int
-FsTurnOnFileNameTracing()
+ReturnStatus
+Fs_PrefixDumpExport(size, buffer)
+    int size;		/* Size of buffer in bytes */
+    Address buffer;	/* Buffer space for prefix then export list */
 {
-    fsFileNameTrace = TRUE;
-    return 0;
+    FsPrefix *prefixPtr;	/* Pointer to table entry */
+    char     prefix[FS_MAX_NAME_LENGTH];
+    FsHandleHeader *hdrPtr;
+    FsFileID rootID;
+    char *name;
+    int domain;
+    int length;
+    ReturnStatus status;
+
+    if (Fs_StringNCopy(FS_MAX_NAME_LENGTH, buffer, prefix, &length) !=
+	    SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    } else if (length == FS_MAX_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+    status = FsPrefixLookup(prefix, FS_EXACT_PREFIX, rpc_SpriteID,
+	    &hdrPtr, &rootID, &name, &domain, &prefixPtr);
+    if (status == SUCCESS) {
+	status = DumpExportList(prefixPtr, size, buffer);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpExportList --
+ *
+ *	A monitored routine to copy out the export list to user space.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Copies stuff out to user space.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+DumpExportList(prefixPtr, size, buffer)
+    FsPrefix *prefixPtr;
+    int size;
+    char *buffer;
+{
+    int *exportList;
+    int *iPtr;
+    ReturnStatus status;
+    FsPrefixExport *exportPtr;
+
+    LOCK_MONITOR;
+    if (size > 1000 * sizeof(int)) {
+	status = FS_INVALID_ARG;
+    } else {
+	exportList = (int *)Mem_Alloc(size);
+	Byte_Zero(size, (Address)exportList);
+	iPtr = exportList;
+	LIST_FORALL(&prefixPtr->exportList, (List_Links *)exportPtr) {
+	    *iPtr = exportPtr->spriteID;
+	    iPtr++;
+	}
+	status = Vm_CopyOut(size, (Address)exportList, (Address)buffer);
+    }
+    UNLOCK_MONITOR;
+    return(status);
 }
 
-int
-FsTurnOffFileNameTracing()
-{
-    fsFileNameTrace = FALSE;
-    return 0;
-}
