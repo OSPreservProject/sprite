@@ -14,8 +14,9 @@
  * express or implied warranty.
  */
 
-#include <string.h>
 #include "sync.h"
+#include <string.h>
+#include "stdio.h"
 #include "sprite.h"
 #include "fs.h"
 #include "dev.h"
@@ -162,9 +163,6 @@ InitiateStripeParityCheck(reconstructionControlPtr)
     reqControlPtr->numReq = reqControlPtr->numFailed = 0;
     AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
 	    firstSector, nthSector, readBuf, ctrlData);
-#ifndef NODATA
-    bzero(parityBuf, raidPtr->bytesPerStripeUnit);
-#endif
     AddRaidParityRequest(reqControlPtr, raidPtr, FS_READ,
 	    (unsigned) StripeIDToSector(raidPtr, stripeID),
 	    parityBuf, ctrlData);
@@ -202,21 +200,21 @@ parityCheckReadDoneProc(reconstructionControlPtr, numFailed)
     int			 	 numFailed;
 {
     Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
-    char	       *readBuf       = reconstructionControlPtr->readBuf;
     char	       *parityBuf     = reconstructionControlPtr->parityBuf;
-    int	       		ctrlData      = reconstructionControlPtr->ctrlData;
     RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
     int		        stripeID      = reconstructionControlPtr->stripeID;
+    char	       *xorBuf = malloc((unsigned)raidPtr->bytesPerStripeUnit);
 
     if (numFailed > 0) {
 	ReportParityCheckFailure(reconstructionControlPtr->stripeID);
 	reconstructionControlPtr->status = FAILURE;
     } else {
-	XorRaidRequests(reqControlPtr, raidPtr, parityBuf);
+	bzero(xorBuf, raidPtr->bytesPerStripeUnit);
+	XorRaidRequests(reqControlPtr, raidPtr, xorBuf);
 #ifndef NODATA
-	bzero(readBuf, raidPtr->bytesPerStripeUnit);
-	if (bcmp(parityBuf, readBuf, raidPtr->bytesPerStripeUnit) != 0) {
-	    ReportParityCheckFailure(reconstructionControlPtr->stripeID);
+	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
+	if (bcmp(parityBuf, xorBuf, raidPtr->bytesPerStripeUnit) != 0) {
+	    ReportParityCheckFailure(stripeID);
 	    reconstructionControlPtr->status = FAILURE;
 	}
 #endif
