@@ -326,8 +326,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     /*
      * Set up the connection state and hook the client handle to it.
      */
-    cltHandlePtr->pdevHandlePtr = FsServerStreamCreate(ioFileIDPtr, clientID,
-							name);
+    cltHandlePtr->pdevHandlePtr = FsServerStreamCreate(ioFileIDPtr, name);
     if (cltHandlePtr->pdevHandlePtr == (PdevServerIOHandle *)NIL) {
 	status = FAILURE;
     } else {
@@ -335,15 +334,15 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	 * Set up a stream for the server process.  This will be picked
 	 * up by FsControlRead and converted to a user-level streamID.
 	 */
-	streamPtr = FsStreamNew(rpc_SpriteID,
+	srvStreamPtr = FsStreamNew(rpc_SpriteID,
 				(FsHandleHeader *)cltHandlePtr->pdevHandlePtr,
 				FS_READ|FS_USER, name);
 	notifyPtr = Mem_New(PdevNotify);
-	notifyPtr->streamPtr = streamPtr;
+	notifyPtr->streamPtr = srvStreamPtr;
 	List_InitElement((List_Links *)notifyPtr);
 	List_Insert((List_Links *)notifyPtr,
 		    LIST_ATREAR(&ctrlHandlePtr->queueHdr));
-	FsHandleUnlock(streamPtr);
+	FsHandleUnlock(srvStreamPtr);
 	FsFastWaitListNotify(&ctrlHandlePtr->readWaitList);
 	FsHandleUnlock(cltHandlePtr->pdevHandlePtr);
 	/*
@@ -517,7 +516,7 @@ FsPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
 	 * Notify the server that a client has gone away.  Then we get rid
 	 * of our reference to the server's handle and nuke our own.
 	 */
-	PseudoStreamCloseInt(cltHandlePtr->pdevHandlePtr);
+	FsPseudoStreamCloseInt(cltHandlePtr->pdevHandlePtr);
 	FsHandleRelease(cltHandlePtr->pdevHandlePtr, FALSE);
 	FsHandleRelease(cltHandlePtr, TRUE);
 	FsHandleRemove(cltHandlePtr);
@@ -803,9 +802,10 @@ FsPseudoStreamMigEnd(migInfoPtr, size, data, hdrPtrPtr)
  */
 
 FsHandleHeader *
-FsRmtPseudoStreamVerify(fileIDPtr, clientID)
+FsRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
     FsFileID	*fileIDPtr;	/* Client's I/O file ID */
     int		clientID;	/* Host ID of the client */
+    int		*domainTypePtr;	/* Return - FS_PSEUDO_DOMAIN */
 {
     register PdevClientIOHandle	*cltHandlePtr;
     register FsClientInfo	*clientPtr;
@@ -829,6 +829,9 @@ FsRmtPseudoStreamVerify(fileIDPtr, clientID)
 	Sys_Panic(SYS_WARNING,
 	    "FsRmtPseudoDeviceVerify, client %d not known for pdev <%x,%x>\n",
 	    clientID, fileIDPtr->major, fileIDPtr->minor);
+    }
+    if (domainTypePtr != (int *)NIL) {
+	*domainTypePtr = FS_PSEUDO_DOMAIN;
     }
     return((FsHandleHeader *)cltHandlePtr);
 }
