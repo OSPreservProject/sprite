@@ -162,8 +162,10 @@ typedef struct Device {
     int	targetID;	/* TargetID of device. */
     int	unitAddress;	/* Jaguar address of this device.  */
     int	workQueue;	/* Jaguar workqueue allocated for this device. */
+#ifndef ONE_CMD_AT_A_TIME
     int	numActiveCmds;	/* Number of commands enqueued on the HBA for this
 			 * command. */
+#endif /* not ONE_CMD_AT_A_TIME */
     Controller  *ctrlPtr; /* Controller to which device is attached. */
 		   /*
 		    * The following part of this structure is 
@@ -221,6 +223,10 @@ struct Controller {
                                     of this controller. */
     volatile JaguarCQE *nextCQE; /* Next available CQE. */
     Boolean workQueue0Busy; /* Work Queue 0 is being used. */
+#ifdef ONE_CMD_AT_A_TIME
+#define	MAX_CMDS_IN_CONTROLLER	1
+    int numActiveCmds; /* Number of active commands in controller. */
+#endif /* ONE_CMD_AT_A_TIME */
     char    *name;	/* String for error message for this controller.  */
     Sync_Semaphore mutex; /* Lock protecting controller's data structures. */
     DevCtrlQueues devQueues;    /* Device queues for devices attached to this
@@ -995,7 +1001,11 @@ DevJaguarIntr(clientData)
 			ErrorString(returnStatus));
 	    }
 	}  
+#ifdef ONE_CMD_AT_A_TIME
+	ctrlPtr->numActiveCmds--;
+#else
 	devPtr->numActiveCmds--;
+#endif /* ONE_CMD_AT_A_TIME */
 	RequestDone(devPtr, scsiCmdPtr, spriteStatus,
 			(returnStatus >> 8) & 0xff, transferCount);
 	StartNextRequest(devPtr);
@@ -1602,16 +1612,27 @@ entryAvailProc(clientData, newRequestPtr)
     Boolean	good;
 
 
+#ifdef ONE_CMD_AT_A_TIME
+    if (ctrlPtr->numActiveCmds >= MAX_CMDS_IN_CONTROLLER) {
+	return FALSE;
+    }
+    ctrlPtr->numActiveCmds++;
+#else
     if (devPtr->numActiveCmds >= MAX_CMDS_QUEUED) { 
 	return FALSE;
     }
     devPtr->numActiveCmds++;
+#endif /* ONE_CMD_AT_A_TIME */
     good = SendScsiCommand(devPtr, scsiCmdPtr);
     /*	
      * If the command couldn't be started do the callback function.
      */
     if (!good) {
+#ifdef ONE_CMD_AT_A_TIME
+	ctrlPtr->numActiveCmds--;
+#else
 	 devPtr->numActiveCmds--;
+#endif /* ONE_CMD_AT_A_TIME */
 	 MASTER_UNLOCK(&(ctrlPtr->mutex));
 	 RequestDone(devPtr,scsiCmdPtr,(ReturnStatus)DEV_HARD_ERROR,0,0);
 	 MASTER_LOCK(&(ctrlPtr->mutex));
@@ -1642,6 +1663,17 @@ StartNextRequest(devPtr)
 {
     List_Links	*newRequest;
 
+#ifdef ONE_CMD_AT_A_TIME
+    while (devPtr->ctrlPtr->numActiveCmds < MAX_CMDS_IN_CONTROLLER) { 
+	ClientData	clientData;
+	newRequest = Dev_QueueGetNextFromSet(devPtr->ctrlPtr->devQueues,
+				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+	if (newRequest == (List_Links *) NIL) {
+	    break;
+	}
+	(void) entryAvailProc((ClientData) clientData, newRequest);
+    }
+#else
     while (devPtr->numActiveCmds < MAX_CMDS_QUEUED) { 
 	newRequest = Dev_QueueGetNext(devPtr->handle.devQueue);
 	if (newRequest == (List_Links *) NIL) {
@@ -1649,6 +1681,7 @@ StartNextRequest(devPtr)
 	}
 	(void) entryAvailProc((ClientData) devPtr, newRequest);
     }
+#endif /* ONE_CMD_AT_A_TIME */
 }
 
 /*
@@ -1720,6 +1753,10 @@ DevJaguarInit(ctrlLocPtr)
     ctrlPtr->memPtr = (JaguarMem *) address;
     ctrlPtr->nextCQE = ctrlPtr->memPtr->cmdQueue;
     ctrlPtr->workQueue0Busy = FALSE;
+#ifdef ONE_CMD_AT_A_TIME
+    ctrlPtr->numActiveCmds = 0;
+#endif /* ONE_CMD_AT_A_TIME */
+
     ctrlPtr->name = ctrlLocPtr->name;
     Sync_SemInitDynamic(&(ctrlPtr->mutex),ctrlPtr->name);
     /* 
@@ -1838,8 +1875,13 @@ DevJaguarAttachDevice(devicePtr, insertProc)
     ctrlPtr->devices[workQueue-1] = devPtr =
 					(Device *) malloc(sizeof(Device));
     bzero((char *) devPtr, sizeof(Device));
+#ifdef ONE_CMD_AT_A_TIME
+    devPtr->handle.devQueue = Dev_QueueCreate(ctrlPtr->devQueues,
+				1, insertProc, (ClientData) devPtr);
+#else
     devPtr->handle.devQueue = Dev_QueueCreate(ctrlPtr->devQueues,
 				0, insertProc, (ClientData) devPtr);
+#endif
     (void) sprintf(tmpBuffer, "%s#%d Bus %d Target %d LUN %d", ctrlPtr->name, 
 			ctrlNum, bus, targetID, lun);
     devPtr->handle.locationName = 
