@@ -157,6 +157,7 @@ Proc_Migrate(pid, nodeID)
 	    panic("Proc_Migrate: procPtr == NIL\n");
 	}
 	Proc_Lock(procPtr);
+	pid = procPtr->processID;
     } else {
 	procPtr = Proc_LockPID(pid);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -176,7 +177,7 @@ Proc_Migrate(pid, nodeID)
     if (procPtr->state == PROC_DEAD || procPtr->state == PROC_EXITING) {
 	if (proc_MigDebugLevel > 3) {
 	    printf("Proc_Migrate: process %x has exited.\n",
-		       procPtr->processID);
+		       pid);
 	}
 	Proc_Unlock(procPtr);
 	return(PROC_INVALID_PID);
@@ -184,7 +185,7 @@ Proc_Migrate(pid, nodeID)
     if (procPtr->state == PROC_MIGRATED) {
 	if (proc_MigDebugLevel > 1) {
 	    printf("Proc_Migrate: process %x has already migrated.\n",
-		       procPtr->processID);
+		       pid);
 	}
 	Proc_Unlock(procPtr);
 	return(PROC_INVALID_PID);
@@ -201,7 +202,7 @@ Proc_Migrate(pid, nodeID)
     if (procPtr->genFlags & PROC_DONT_MIGRATE) {
 	if (proc_MigDebugLevel > 0) {
 	    printf("Proc_Migrate: process %x is not allowed to migrate.\n",
-		       procPtr->processID);
+		       pid);
 	}
 	Proc_Unlock(procPtr);
 	return(PROC_INVALID_PID);
@@ -236,7 +237,7 @@ Proc_Migrate(pid, nodeID)
      * If migrating another process, wait for it to migrate.
      */
     if (!migrateSelf) {
-	status = Proc_WaitForMigration(procPtr);
+	status = Proc_WaitForMigration(pid);
     } else {
 	status = SUCCESS;
     }
@@ -1319,27 +1320,36 @@ Proc_MigSendUserInfo(procPtr)
  */
 
 ENTRY ReturnStatus
-Proc_WaitForMigration(procPtr)
-    Proc_ControlBlock *procPtr;
+Proc_WaitForMigration(processID)
+    Proc_PID processID;
 {
+    Proc_ControlBlock *procPtr;
     ReturnStatus status;
 
     LOCK_MONITOR;
 
     Sync_LockRegister(LOCKPTR);
 
+    procPtr = Proc_LockPID(processID);
+    if (procPtr == NULL) {
+	return(PROC_INVALID_PID);
+    }
     while (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
+	Proc_Unlock(procPtr);
 	if (Sync_Wait(&migrateCondition, TRUE)) {
 	    UNLOCK_MONITOR;
 	    return(GEN_ABORTED_BY_SIGNAL);
 	}
+	Proc_Lock(procPtr);
     }
-
-    if (procPtr->genFlags & PROC_MIGRATION_DONE) {
+    if (procPtr->processID != processID) {
+	status = PROC_INVALID_PID;
+    } else if (procPtr->genFlags & PROC_MIGRATION_DONE) {
 	status = SUCCESS;
     } else {
 	status = FAILURE;
     }
+    Proc_Unlock(procPtr);
     
     UNLOCK_MONITOR;
     return(status);
