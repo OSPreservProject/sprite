@@ -143,7 +143,11 @@ static INTERNAL ReturnStatus FindExitingChild();
 static INTERNAL void WakeupMigratedParent();
 static void SendSigChild();
 
-
+/*
+ * Shared memory.
+ */
+extern int vmShmDebug;
+#define dprintf if (vmShmDebug) printf
 
 /*
  * SIGNAL_PARENT
@@ -503,11 +507,43 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
     VmMachFlushCurrentContext();
 #endif
     if ((exitProcPtr->genFlags & PROC_USER) && !noVm) {
+	int i=0;
+	while (0 && exitProcPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+
+	    if (exitProcPtr->vmPtr->sharedSegs == (List_Links *)NULL) {
+		dprintf("ProcExitProcess: warning: sharedSegs == NULL\n");
+		break;
+	    }
+  	    i++;
+  	    if (i>20) {
+  		dprintf("ProcExitProcess: procExit: segment loop!\n");
+  		break;
+  	    }
+  	    if (exitProcPtr->vmPtr->sharedSegs==(List_Links *)NULL) {
+  		printf("ProcExitProcess: Danger: null sharedSegs list\n");
+  		break;
+  	    }
+  	    if (List_IsEmpty(exitProcPtr->vmPtr->sharedSegs)) {
+  		printf("ProcExitProcess: Danger: empty sharedSegs list\n");
+  		break;
+  	    }
+  	    if (List_First(exitProcPtr->vmPtr->sharedSegs)==
+  		    (List_Links *)NULL) {
+  		break;
+  	    }
+  	    VmDeleteSharedSegment(exitProcPtr,
+  		    List_First(exitProcPtr->vmPtr->sharedSegs));
+  	}
+	if (i>0) {
+	    dprintf("ProcExitProcess: deleted shared segments\n");
+	    PrintSharedSegs(exitProcPtr);
+	}
 	for (i = VM_CODE; i <= VM_STACK; i++) {
 	    Vm_SegmentDelete(exitProcPtr->vmPtr->segPtrArray[i], exitProcPtr);
 	    exitProcPtr->vmPtr->segPtrArray[i] = (Vm_Segment *)NIL;
 	}
     }
+
     /*
      * Clean up the filesystem state of the exiting process.
      * Do this after deleting VM segments so we can remove swap files.
