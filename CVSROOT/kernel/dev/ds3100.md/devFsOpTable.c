@@ -156,9 +156,6 @@ DevFsTypeOps devFsOpTable[] = {
 		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
 };
 
-int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
-
-
 static ReturnStatus
 NullProc()
 {
