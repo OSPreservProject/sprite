@@ -1100,7 +1100,6 @@ Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
     register Fsconsist_ClientInfo	*clientPtr;
     register Fsconsist_ClientInfo	*nextClientPtr;
 
-    LOCK_MONITOR;
 
     /*
      * Unlock the handle so other operations on the file can proceed while
@@ -1114,6 +1113,7 @@ Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
      * it is blocked here on the locked handle.
      */
     Fsutil_HandleUnlock(handlePtr);
+    LOCK_MONITOR;
 
     /*
      * Make sure that noone else is in the middle of performing cache
@@ -1164,9 +1164,9 @@ Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
      */
     (void)EndConsistency(consistPtr);
 
-    Fsutil_HandleLock(handlePtr);
     *isExecedPtr = isExeced;
     UNLOCK_MONITOR;
+    Fsutil_HandleLock(handlePtr);
 }
 
 /*
