@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$";
 #include <vmUnixStubs.h>
 #include <fsUnixStubs.h>
 #include <proc.h>
+#include <prof.h>
 #include <procUnixStubs.h>
 #include <vm.h>
 #include <sig.h>
@@ -91,14 +92,14 @@ unixSyscallEntry sysUnixSysCallTable[258] = {
     { SYS_UNIX_ERROR,         1  },      /* old nice  */
     { SYS_UNIX_ERROR,         1  },      /* old ftime  */
     { Fs_SyncStub,            0  },      /* sync  */
-    { Sig_KillStub,          2  },      /* kill  */
+    { Sig_KillStub,           2  },      /* kill  */
     { Fs_StatStub,            2  },      /* stat  */
     { SYS_UNIX_ERROR,         2  },      /* old setpgrp  */
     { Fs_LstatStub,           2  },      /* lstat  */
     { Fs_DupStub,             1  },      /* dup  */
     { Fs_PipeStub,            1  },      /* pipe  */
     { SYS_UNIX_ERROR,         1  },      /* old times  */
-    { SYS_UNIX_ERROR,         4  },      /* profil  */
+    { Prof_Profil,            4  },      /* profil  */
     { SYS_UNIX_ERROR,         0  },      /* nosys  */
     { SYS_UNIX_ERROR,         1  },      /* old setgid  */
     { Proc_GetgidStub,        0  },      /* getgid  */
