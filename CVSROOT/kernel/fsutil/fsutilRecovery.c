@@ -332,9 +332,9 @@ FsWaitForRecovery(hdrPtr, rpcStatus)
      */
     if (rpcStatus == FS_STALE_HANDLE) {
 	FsFileError(hdrPtr, "", rpcStatus);
-    }
-    if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
-	FsReopen(hdrPtr->fileID.serverID, (ClientData)NIL);
+	if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
+	    FsReopen(hdrPtr->fileID.serverID, (ClientData)NIL);
+	}
     }
     status = RecoveryWait(&((FsRemoteIOHandle *)hdrPtr)->recovery);
     return(status);
