@@ -1439,6 +1439,7 @@ CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
     LfsSegLogRange	logRange;
     LfsSegSummary	*segSumPtr;
     LfsDiskAddr		diskAddress;
+    int			blocksPerSeg;
 
     logRange.prevSeg = -1;
     logRange.current = segNumber;
@@ -1454,7 +1455,7 @@ CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
      * Read in the segment in memory.
      */
     segSize = LfsSegSize(lfsPtr);
-
+    blocksPerSeg = LfsBytesToBlocks(lfsPtr,segSize);
     LfsSegNumToDiskAddress(lfsPtr, segNumber, &diskAddress);
     status = LfsReadBytes(lfsPtr, diskAddress, segSize, cleaningMemPtr);
     if (status != SUCCESS) {
@@ -1472,6 +1473,10 @@ CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
     segSumPtr = (LfsSegSummary *)
 		(cleaningMemPtr + segSize - LfsBlockSize(lfsPtr));
     while (1) { 
+	if (segSumPtr->magic != LFS_SEG_SUMMARY_MAGIC) {
+	    printf("Bad segment summary magic in segment %d\n", segNumber);
+	    LfsError(lfsPtr, FAILURE, "Corrupted segment summary block\n");
+	}
 	segPtr->segElementPtr[segPtr->numElements].lengthInBlocks = 0;
 	segPtr->segElementPtr[segPtr->numElements].address = (char *) segSumPtr;
 	segPtr->segElementPtr[segPtr->numElements].clientData = 
@@ -1481,6 +1486,15 @@ CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
 	LFS_STATS_INC(lfsPtr->stats.cleaning.summaryBlocksRead);
 	if (segSumPtr->nextSummaryBlock == -1) {
 		break;
+	}
+	if (segPtr->numElements > blocksPerSeg) {
+	    printf("Lfs: Bad segment %d\n", segNumber);
+	    LfsError(lfsPtr, FAILURE, "Corrupted segment\n");
+	}
+	if ((segSumPtr->nextSummaryBlock < 0) || 
+	    (segSumPtr->nextSummaryBlock > blocksPerSeg)) {
+	    printf("Bad segment summary magic in segment %d\n", segNumber);
+	    LfsError(lfsPtr, FAILURE, "Corrupted segment summary block\n");
 	}
 	segSumPtr = (LfsSegSummary *) 
 			LfsSegFetchBytes(segPtr, segSumPtr->nextSummaryBlock,
@@ -1727,7 +1741,7 @@ LfsSegCheckPointDone(lfsPtr, flags)
 {
     LOCK_MONITOR;
     lfsPtr->numDirtyBlocks = 0;
-#ifdef ERROR_CHECK
+#ifdef notdef
     { 
 	int numBlocks, numDirty;
 	Fscache_CountBlocks(rpc_SpriteID, lfsPtr->domainPtr->domainNumber,
