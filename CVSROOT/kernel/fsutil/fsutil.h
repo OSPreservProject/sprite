@@ -222,7 +222,7 @@ extern ReturnStatus Fsutil_WaitForHost _ARGS_((Fs_Stream *streamPtr, int flags,
 extern int Fsutil_TraceInit _ARGS_((void));
 extern int Fsutil_PrintTraceRecord _ARGS_((ClientData clientData, int event,
 		Boolean printHeaderFlag));
-extern void Fsutil_PrintTrace _ARGS_((int numRecs));
+extern void Fsutil_PrintTrace _ARGS_((ClientData clientData));
 extern ReturnStatus Fsutil_RpcRecovery _ARGS_((ClientData srvToken, 
 		int clientID, int command, Rpc_Storage *storagePtr));
 

@@ -242,9 +242,11 @@ Fsutil_PrintTraceRecord(clientData, event, printHeaderFlag)
  */
 
 void
-Fsutil_PrintTrace(numRecs)
-    int numRecs;
+Fsutil_PrintTrace(clientData)
+    ClientData clientData;
 {
+    int numRecs = (int) clientData;
+
     if (numRecs < 0) {
 	numRecs = fsutil_TraceLength;
     }
