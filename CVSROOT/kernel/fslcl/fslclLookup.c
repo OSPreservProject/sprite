@@ -852,7 +852,7 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr,
 				Fsutil_HandleUnlock(parentHandlePtr);
 			    }
 			    *dirOffsetPtr = blockOffset + 
-					dirBlockNum * FSLCL_DIR_BLOCK_SIZE;
+					dirBlockNum * FS_BLOCK_SIZE;
 			    /*
 			     * Inlined call to GetHandle().
 			     */
@@ -1077,7 +1077,7 @@ haveASlot:
     (void)strcpy(dirEntryPtr->fileName, component);
 
     blockOffset = (((char *)dirEntryPtr) - (char *)(cacheBlockPtr->blockAddr));
-    *dirOffsetPtr = dirBlockNum * FSLCL_DIR_BLOCK_SIZE + blockOffset;
+    *dirOffsetPtr = dirBlockNum * FS_BLOCK_SIZE + blockOffset;
     status = CacheDirBlockWrite(curHandlePtr,cacheBlockPtr,dirBlockNum,length);
     return(status);
 }
@@ -1133,7 +1133,7 @@ DeleteComponent(parentHandlePtr, component, compLen, dirOffsetPtr)
 		/*
 		 * Delete the entry from the name cache.
 		 */
-		*dirOffsetPtr = blockOffset + FSLCL_DIR_BLOCK_SIZE*dirBlockNum;
+		*dirOffsetPtr = blockOffset + FS_BLOCK_SIZE*dirBlockNum;
 		FSLCL_HASH_DELETE(fslclNameTablePtr, component,parentHandlePtr);
 		dirEntryPtr->fileNumber = 0;
 		if (lastDirEntryPtr != (Fslcl_DirEntry *)NIL) {
