@@ -161,7 +161,7 @@ Dev_InvokeConsoleCmd(commandChar)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static void
 Abort(clientData)
     ClientData clientData;
@@ -178,6 +178,7 @@ Abort(clientData)
     }
 }
 
+/*ARGSUSED*/
 static void
 Debug(clientData)
     ClientData clientData;
