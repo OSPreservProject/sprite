@@ -46,6 +46,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dbg.h>
 #include <string.h>
 
+#ifdef SOSP91
+#include <sospRecord.h>
+#endif
+
 static List_Links prefixListHeader;
 static List_Links *prefixList = &prefixListHeader;
 
@@ -187,7 +191,7 @@ Fsprefix_LookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameI
 		     * the prefix table lookup.  We are careful to save a
 		     * pointer to the redirect info because it contains the
 		     * current pathname.  We also free any redirect info
-		     * from previous iteTrations to prevent a core leak.
+		     * from previous iterations to prevent a core leak.
 		     */
 		    fs_Stats.prefix.redirects++; numRedirects++;
 		    if (numRedirects > FS_MAX_LINKS) {
@@ -1476,6 +1480,9 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
     ReturnStatus status;
     register int flags = FSPREFIX_IMPORTED;
     int		 serverID;
+#ifdef SOSP91
+    SOSP_IN_NAME_LOOKUP_FIELD = 2;
+#endif
 
     if (!follow) {
 	flags |= FSPREFIX_LINK_NOT_PREFIX;
@@ -1499,6 +1506,9 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
 	     * it now.
 	     */
 	    if (serverID == rpc_SpriteID) {
+#ifdef SOSP91
+		SOSP_IN_NAME_LOOKUP_FIELD = 0;
+#endif
 		return FAILURE;
 	    }
 	    if (serverID == RPC_BROADCAST_SERVER_ID) {
@@ -1528,6 +1538,9 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
 	    }
 	}
     } while (status == FS_NEW_PREFIX);
+#ifdef SOSP91
+		SOSP_IN_NAME_LOOKUP_FIELD = 0;
+#endif
     return(status);
 }
 
