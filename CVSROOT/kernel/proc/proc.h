@@ -24,10 +24,8 @@
 #include "syncMonitor.h"
 #include "list.h"
 #include "timer.h"
-#include "machine.h"
 #include "sig.h"
 #include "sys.h"
-#include "exc.h"
 
 /*
  * Constants for Proc_Exec().  
@@ -232,7 +230,7 @@ typedef struct Proc_ControlBlock {
 				 	 * context switched due to a quantum 
 					 * end. */
     int		numWaitEvents;		/* number of times the process was
-				 	 * context switched due to its waiting 
+					 * context switched due to its waiting 
 					 * for an event. */
     unsigned int schedQuantumTicks;	/* Number of clock ticks until this 
 					 * process is due to be switched out. */
@@ -248,10 +246,10 @@ typedef struct Proc_ControlBlock {
      *-----------------------------------------------------------------
      */
 
-    int	saveRegs[MACH_NUM_GENERAL_REGS];/* The general registers used by
+    int	zsaveRegs[16];			/* The general registers used by
 					   the process when it was context
 					   switched. */
-    int	stackStart;			/* Start of the kernel stack for this
+    int	zstackStart;			/* Start of the kernel stack for this
 					   process. */
     /*
      * The state of a user process when it traps into the kernel.  
@@ -262,11 +260,11 @@ typedef struct Proc_ControlBlock {
      *	     handling routines to save the registers and pc.
      */
 
-    int		genRegs[MACH_NUM_GENERAL_REGS];	/* All of the general purpose 
+    int		zgenRegs[16];			/* All of the general purpose 
 					 	 * registers.  */
-    int		progCounter;			/* The program counter when the 
+    int		zprogCounter;			/* The program counter when the 
 					   	 * system call occured. */
-    short	statusReg;			/* Status register */
+    short	zstatusReg;			/* Status register */
 
     /*
      *-----------------------------------------------------------------
@@ -358,7 +356,7 @@ typedef struct Proc_ControlBlock {
 					 * If not migrated, undefined. */
     Proc_PID		peerProcessID; 	/* If on remote note, process ID on
 					 * home node, and vice-versa. */
-    Exc_TrapStack	*trapStackPtr;	/* Contents of trap stack on home node,
+    struct Mach_ExcStack *trapStackPtr;	/* Contents of trap stack on home node,
 					 * saved in PCB on remote node. */
     struct Proc_ControlBlock
 	             *rpcClientProcess;	/* procPtr for migrated process
@@ -409,6 +407,11 @@ typedef struct Proc_ControlBlock {
 					 * (deliver signal, switch contexts,
 					 * ect.) on return from the next kernel
 					 * call. */
+
+    /*
+     * Pointer to machine dependent state.
+     */
+    struct Mach_State	*machStatePtr;
 } Proc_ControlBlock;
 
 
