@@ -34,11 +34,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void
 Sync_PrintStat()
 {
-    Sys_Printf("Sync Statistics\n");
-    Sys_Printf("numWakeups = %d ", sync_Instrument.numWakeups);
-    Sys_Printf("numWakeupCalls = %d ", sync_Instrument.numWakeupCalls);
-    Sys_Printf("numSpuriousWakeups = %d ", sync_Instrument.numSpuriousWakeups);
-    Sys_Printf("numLocks = %d ", sync_Instrument.numLocks);
-    Sys_Printf("numUnlocks = %d ", sync_Instrument.numUnlocks);
-    Sys_Printf("\n");
+    printf("Sync Statistics\n");
+    printf("numWakeups = %d ", sync_Instrument.numWakeups);
+    printf("numWakeupCalls = %d ", sync_Instrument.numWakeupCalls);
+    printf("numSpuriousWakeups = %d ", sync_Instrument.numSpuriousWakeups);
+    printf("numLocks = %d ", sync_Instrument.numLocks);
+    printf("numUnlocks = %d ", sync_Instrument.numUnlocks);
+    printf("\n");
 }
