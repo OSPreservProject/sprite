@@ -25,6 +25,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "byte.h"
 
 /*
+ * So we can print out rpc names we include the rpcServer definitions.
+ */
+#include "rpcServer.h"
+
+/*
  * The client channel table is kept as an array of pointers to channels.
  * rpcClient.h describes the contents of a ClientChannel.  The number
  * of channels limits the parallelism available on the client.  During
@@ -178,6 +183,8 @@ Rpc_Call(serverID, command, storagePtr)
     RPC_CALL_TIMING_END(command, &histTime);
 #ifndef NO_RECOVERY
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
+	Sys_Printf("<%s> ", rpcService[command].name);
+	Net_HostPrint(serverID, "RPC timed-out");
 	Recov_HostDead(serverID);
     } else {
 	Recov_HostAlive(serverID, srvBootID, TRUE, notActive);
