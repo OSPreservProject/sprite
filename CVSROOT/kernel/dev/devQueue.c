@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "bit.h"
 #include "devQueue.h"
 #include "sync.h"
+#include "stdlib.h"
 
 /*
  *	Design rationale
@@ -193,9 +194,6 @@ Dev_CtrlQueuesCreate(mutexPtr, entryAvailProc)
  *	The queue will come up empty. The queueBit is used to group the 
  *	newly created queue with the other queues using the same queueBit bit.
  *
- *	NOTE: This routine assumes that the caller as the ctrlPtr->mutexPtr
- *	held.
- *
  * Results:
  *	The allocated DevQueue structure.
  *
@@ -254,9 +252,6 @@ Dev_QueueCreate(ctrlQueue, queueBit, insertProc, clientData)
  * Dev_QueueDestroy --
  *
  *	Release the resources held by a queue.
- *
- *	NOTE: This routine assumes that the caller as the ctrlPtr->mutexPtr
- *	held.
  *
  * Results:
  *	TRUE if the queue is was destroyed. FALSE if the queue could not
