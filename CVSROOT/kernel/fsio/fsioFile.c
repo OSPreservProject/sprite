@@ -343,7 +343,7 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 			fileStatePtr->attr.createTime,
 			fileStatePtr->attr.lastByte + 1,
 			fileStatePtr->attr.modifyTime,
-			handlePtr->descPtr->fileType);
+			handlePtr->descPtr->fileType, fileStatePtr->cacheable);
 	    }
 #endif
 
@@ -593,11 +593,20 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
 	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     ReturnStatus		status;
     Boolean			wasCached = TRUE;
+#ifdef SOSP91
+    Boolean			didCloseConsist;
+#endif /* SOSP91 */
 
     /*
      * Update the client state to reflect the close by the client.
      */
+#ifdef SOSP91
+    didCloseConsist = Fsconsist_Close(&handlePtr->consist, clientID, flags,
+	    &wasCached);
+    if (!didCloseConsist) {
+#else /* SOSP91 */
     if (!Fsconsist_Close(&handlePtr->consist, clientID, flags, &wasCached)) {
+#endif /* SOSP91 */
 	printf("Fsio_FileClose, client %d pid %x unknown for file <%d,%d>\n",
 		  clientID, procID, handlePtr->hdr.fileID.major,
 		  handlePtr->hdr.fileID.minor);
@@ -634,7 +643,7 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
 	}
 	SOSP_ADD_CLOSE_TRACE(streamPtr->hdr.fileID, offset, 
 	    handlePtr->cacheInfo.attr.lastByte + 1, streamPtr->flags,
-	    rwFlags, handlePtr->use.ref);
+	    rwFlags, handlePtr->use.ref, didCloseConsist);
     }
 #endif
     if (status == FS_FILE_REMOVED) {
@@ -1112,33 +1121,32 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 #ifdef SOSP91
     Fsconsist_Info *consistPtr = &handlePtr->consist;
     Fsconsist_ClientInfo	*clientPtr;
-    Fsio_UseCounts		use;
     Boolean			maybeShared = FALSE;
 
-    LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
-	if (clientPtr->clientID == readPtr->reserved) {
-	    if ((!clientPtr->cached) || clientPtr->clientID == rpc_SpriteID) {
-		use = clientPtr->use;
+    if ((handlePtr->descPtr != (Fsdm_FileDescriptor *) NIL) &&
+	    (handlePtr->descPtr->fileType == FS_FILE)) {
+	/*
+	 * If this file is marked uncacheable or if we are the server doing
+	 * a read and it's marked uncacheable on another client, then record
+	 * this read.
+	 */
+	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
+	    if ((clientPtr->clientID == readPtr->reserved) &&
+		    (!clientPtr->cached)) {
 		maybeShared = TRUE;
+		break;
+	    } else if ((readPtr->reserved == rpc_SpriteID) &&
+		    (!clientPtr->cached)) {
+		maybeShared = TRUE;
+		break;
 	    }
-	    break;
 	}
     }
     if (maybeShared) {
-	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
-	    if (clientPtr->clientID != readPtr->reserved) {
-		if ((!clientPtr->cached) &&
-			((use.write > 0 && clientPtr->use.ref > 0) ||
-			clientPtr->use.write > 0)) {
-		    SOSP_ADD_READ_TRACE(readPtr->reserved, 
-			    streamPtr->hdr.fileID, TRUE, readPtr->offset, 
-			    readPtr->length);
-		    break;
-		}
-	    }
-	}
+	SOSP_ADD_READ_TRACE(readPtr->reserved, 
+		streamPtr->hdr.fileID, TRUE, readPtr->offset, 
+		readPtr->length);
     }
-
 #endif SOSP91
 
     status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags,
@@ -1199,26 +1207,31 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     Fsconsist_ClientInfo	*clientPtr;
     Boolean			maybeShared = FALSE;
 
-    LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
-	if (clientPtr->clientID == writePtr->reserved) {
-	    if ((!clientPtr->cached) || clientPtr->clientID == rpc_SpriteID) {
+    if ((handlePtr->descPtr != (Fsdm_FileDescriptor *) NIL) &&
+	    (handlePtr->descPtr->fileType == FS_FILE)) {
+	/*
+	 * If this file is marked uncacheable or if we are the server doing
+	 * a read and it's marked uncacheable on another client, then record
+	 * this read.
+	 */
+	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
+	    if ((clientPtr->clientID == writePtr->reserved) &&
+		    (!clientPtr->cached)) {
 		maybeShared = TRUE;
+		break;
+	    } else if ((writePtr->reserved == rpc_SpriteID) &&
+		    (!clientPtr->cached)) {
+		maybeShared = TRUE;
+		break;
 	    }
-	    break;
 	}
     }
     if (maybeShared) {
-	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
-	    if (clientPtr->clientID != writePtr->reserved) {
-		if ((!clientPtr->cached) && clientPtr->use.ref > 0) {
-		    SOSP_ADD_READ_TRACE(writePtr->reserved, 
-			    streamPtr->hdr.fileID, FALSE, writePtr->offset, 
-			    writePtr->length);
-		    break;
-		}
-	    }
-	}
+	SOSP_ADD_READ_TRACE(writePtr->reserved, 
+		streamPtr->hdr.fileID, FALSE, writePtr->offset, 
+		writePtr->length);
     }
+
 #endif SOSP91
 
     /*
