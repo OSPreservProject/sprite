@@ -156,6 +156,10 @@ extern	void		VmMach_UnpinUserPages();
  */
 extern	void		VmMach_FlushPage();
 extern	void		VmMach_FlushCode();
+/*
+ * Migration.
+ */
+extern	void		VmMach_HandleSegMigration();
 
 extern	ReturnStatus	VmMach_Cmd();
 

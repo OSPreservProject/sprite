@@ -124,6 +124,10 @@ extern	void		VmMach_UnpinUserPages();
 extern	void		VmMach_FlushPage();
 extern	void		VmMach_FlushCode();
 /*
+ * Migration.
+ */
+extern	void		VmMach_HandleSegMigration();
+/*
  * Routines to map and unmap kernel data into/out-of the user's address space.
  */
 extern	Address		VmMach_UserMap();
