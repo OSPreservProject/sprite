@@ -64,8 +64,10 @@ typedef struct {
  */
 
 typedef struct {
-    Proc_PID			remotePid;
-    int			  	command;
+    Proc_PID		remotePid; /* Process ID on other host. */
+    int			command;   /* What to do. */
+    int			totalSize; /* Total size of command buffer. */
+    int			offset;	   /* Offset into total buffer. */
 } ProcMigCmd;
     
 
