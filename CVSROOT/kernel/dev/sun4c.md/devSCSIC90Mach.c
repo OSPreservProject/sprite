@@ -145,7 +145,7 @@ DevReset(ctrlPtr)
     Dev_ScsiResetDMA();
     MACH_DELAY(200);
 
-    regsPtr->scsi_ctrl.write.config1 |= C1_REPORT;
+    regsPtr->scsi_ctrl.write.config1 |= C1_REPORT | 0x7;
     MACH_DELAY(200);
     regsPtr->scsi_ctrl.write.command = CR_RESET_BUS;
     MACH_DELAY(800);
