@@ -569,12 +569,12 @@ Sig_Send(sigNum, code, id, familyID)
 	status = Sig_SendProc(procPtr, sigNum, code);
 	Proc_Unlock(procPtr);
     } else {
-	status = Proc_LockFamily(id, &familyList, &userID);
+	status = Proc_LockFamily((int)id, &familyList, &userID);
 	if (status != SUCCESS) {
 	    return(status);
 	}
 	if (!Proc_HasPermission(userID)) {
-            Proc_UnlockFamily(id);
+            Proc_UnlockFamily((int)id);
             return(PROC_UID_MISMATCH);
         }
 
@@ -591,7 +591,7 @@ Sig_Send(sigNum, code, id, familyID)
 		break;
 	    }
 	}
-	Proc_UnlockFamily(id);
+	Proc_UnlockFamily((int)id);
     }
 
     return(status);
