@@ -82,9 +82,11 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
     Fs_IOReply			reply;
     int				streamType;
     register int		toRead;
+    int				amtRead;
 
     toRead = *lenPtr;
     *lenPtr = 0;
+    amtRead = 0;
     if (sys_ShuttingDown) {
 	return(FAILURE);
     } else if ((streamPtr->flags & FS_READ) == 0) {
@@ -140,17 +142,29 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	     * cache block, but stuff has already been returned.  We want
 	     * to wait instead of returning.
 	     */
-	    if (reply.length > 0 && (streamType != FSIO_LCL_FILE_STREAM) &&
-		(streamType != FSIO_RMT_FILE_STREAM)) {
+	    if ((reply.length > 0) && (streamType != FSIO_LCL_FILE_STREAM) &&
+		    (streamType != FSIO_RMT_FILE_STREAM)) {
 		/*
 		 * Stream routine ought not do return FS_WOULD_BLOCK
 		 * in this case, but we cover for it here.
 		 */
 		status = SUCCESS;
 		break;
-	    } else if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
-		status = GEN_ABORTED_BY_SIGNAL;
-		break;
+	    } else { 
+		if (reply.length > 0) {
+		    /*
+		     * A cache block is unavailable, but data has already
+		     * been returned. Update the read request to start
+		     * with the unavailable block.
+		     */
+		    toRead -= reply.length;
+		    FsSetIOParam(ioPtr, io.buffer + reply.length, 
+			toRead, io.offset + reply.length, streamPtr->flags);
+		}
+		if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
+		    status = GEN_ABORTED_BY_SIGNAL;
+		    break;
+		}
 	    }
 	} else if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 	           status == RPC_SERVICE_DISABLED)  {
@@ -172,13 +186,15 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	 * zero when the read blocked.
 	 */
 	ioPtr->length = toRead;
+	amtRead += reply.length;
     }
 
+    amtRead += reply.length;
     /*
      * Cache the file offset for sequential access.
      */
-    streamPtr->offset += reply.length;
-    *lenPtr = reply.length;
+    streamPtr->offset += amtRead;
+    *lenPtr = amtRead;
 
     if (status == FS_BROKEN_PIPE) {
 	Sig_Send(SIG_PIPE, 0, PROC_MY_PID, FALSE, (Address)0);
