@@ -258,9 +258,16 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
     if (migInfoPtr->srcClientID != rpc_SpriteID) {
 	/*
 	 * Call back to the client to tell it to release its reference
-	 * on the stream.
+	 * on the stream.  We can't hold the I/O handle locked because
+	 * an unrelated close from the source client might have the
+	 * I/O handle locked over there.  By unlocking this I/O handle
+	 * we allow unrelated closes to complete, while the stream
+	 * lock prevents closes of other references to this stream
+	 * from comming in and changing the state.
 	 */
+	FsHandleUnlock(ioHandlePtr);
 	status = StreamMigCallback(migInfoPtr, &shared);
+	FsHandleLock(ioHandlePtr);
     } else {
 	/*
 	 * The stream has been migrated away from us, the I/O server.
@@ -275,7 +282,7 @@ FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
     if (status != SUCCESS || !shared) {
 	/*
 	 * The client doesn't perceive sharing of the stream so
-	 * it must be its last reference so we do an I/O close.
+	 * it must be its last reference so we indicate an I/O close is needed.
 	 */
 	*closeSrcClientPtr = TRUE;
 	(void)FsStreamClientClose(&streamPtr->clientList,
