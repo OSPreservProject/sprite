@@ -1420,4 +1420,27 @@ Mach_GetMachineArch()
 	return SYS_SUN3;
 #       endif SUN3
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  Mach_CheckSpecialHandling--
+ *
+ *	Forces a processor to check the special handling flag of a process.
+ *	This should only be called on a multiprocessor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Mach_CheckSpecialHandling(pnum)
+    int		pnum;		/* Processor number. */
+{
+    panic("Mach_CheckSpecialHandling called for processor %d\n",pnum);
+}
 
