@@ -95,9 +95,10 @@ Rpc_PrintTrace(clientData)
 
     printf("\n");
 #define PRINT_HEADER() \
-    printf("%6s %4s %6s %5s %4s %4s %10s %5s %5s %5s %8s\n", \
-	"ID", "type", "time", "flags", "srvr", "clnt", "cmd   ", \
-	"psize", "dsize", "doff", "fragInfo")
+    printf("%s%s\n%s%s\n","    ID type  time       srvr   clnt     cmd",\
+	"    psize dsize doff #frags delay", \
+	"                   flags    hint   chan",\
+	"                            fragmask")
 
     baseTime.seconds = 0;
     baseTime.microseconds = 0;
