@@ -125,7 +125,7 @@ FsHandleReopen(serverID)
     ReturnStatus		status = SUCCESS;
     Boolean			invalid;
 
-    Net_HostPrint(serverID, "- recovering handles");
+    Net_HostPrint(serverID, "- recovering handles\n");
 
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = FsGetNextHandle(&hashSearch);
@@ -671,10 +671,10 @@ Fs_RpcRecovery(srvToken, clientID, command, storagePtr)
 {
     int *flagsPtr = (int *)storagePtr->requestParamPtr;
     if (*flagsPtr & RECOV_IN_PROGRESS) {
-	Net_HostPrint(clientID, "started recovery");
+	Net_HostPrint(clientID, "started recovery\n");
 	Recov_SetClientState(clientID, RECOV_IN_PROGRESS);
     } else {
-	Net_HostPrint(clientID, "completed recovery");
+	Net_HostPrint(clientID, "completed recovery\n");
 	Recov_ClearClientState(clientID, RECOV_IN_PROGRESS);
     }
     Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)())NIL, (ClientData)NIL);

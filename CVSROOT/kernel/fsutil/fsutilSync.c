@@ -563,6 +563,14 @@ int		fsLastScavengeTime = 0;
 static	int	numScavengers = 0;
 static	Boolean	scavengerStuck = FALSE;
 
+/*
+ * Set a threshold for when to warn about the scavenger getting stuck.
+ * During high loads it can appear to get stuck for 0 or 1 seconds, or
+ * more.  If the time is greater than SCAVENGE_WARNING_TIME, print
+ * a warning.  SCAVENGE_WARNING_TIME is in seconds.
+ */
+#define SCAVENGE_WARNING_TIME 3
+
 
 /*
  *----------------------------------------------------------------------------
@@ -594,7 +602,8 @@ Fs_HandleScavenge(data, callInfoPtr)
     register	FsHandleHeader		*hdrPtr;
 
     if (numScavengers > 0) {
-	if (!scavengerStuck) {
+	if (!scavengerStuck &&
+	    fsTimeInSeconds > fsLastScavengeTime + SCAVENGE_WARNING_TIME) {
 	   Sys_Panic(SYS_WARNING, "Scavenger stuck for %d seconds\n",
 	       fsTimeInSeconds - fsLastScavengeTime);
 	   scavengerStuck = TRUE;

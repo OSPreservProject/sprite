@@ -532,7 +532,7 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
 
     if ((Recov_GetClientState(clientID) & RECOV_IN_PROGRESS) == 0) {
 	Recov_SetClientState(clientID, RECOV_IN_PROGRESS);
-	Net_HostPrint(clientID, "starting recovery");
+	Net_HostPrint(clientID, "starting recovery\n");
     }
 
     fileIDPtr = (FsFileID *)storagePtr->requestParamPtr;

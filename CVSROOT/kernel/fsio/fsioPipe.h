@@ -29,6 +29,7 @@ typedef struct FsPipeIOHandle {
 					 * number. 'minor' field is unused. */
     List_Links		clientList;	/* Client use info needed to allow
 					 * remote access after migration. */
+    FsUseCounts		use;		/* Summary reference counts. */
     int			flags;		/* PIPE_READER_GONE, PIPE_WRITER_GONE */
     int			firstByte;	/* Indexes into buffer. */
     int			lastByte;

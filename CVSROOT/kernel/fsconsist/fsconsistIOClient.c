@@ -305,7 +305,7 @@ exit:
  */
 Boolean
 FsStreamClientClose(clientList, clientID)
-    List_Links		*clientList;	/* List of clients for I/O handle */
+    List_Links		*clientList;	/* List of clients who have it open */
     int			clientID;	/* Host ID of client that had it open */
 {
     register	FsStreamClientInfo	*clientPtr;
@@ -318,6 +318,37 @@ FsStreamClientClose(clientList, clientID)
 	}
     }
     return(List_IsEmpty(clientList));
+}
+^L
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsStreamClientFind --
+ *
+ *      See if a client appears in a client list.
+ *
+ * Results:
+ *      TRUE if the client is in the list.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+Boolean
+FsStreamClientFind(clientList, clientID)
+    List_Links          *clientList;    /* List of clients who have it open */
+    int                 clientID;       /* Host ID of client to find */
+{
+    register    FsStreamClientInfo      *clientPtr;
+
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    return(TRUE);
+	}
+    }
+    return(FALSE);
 }
 
 /*

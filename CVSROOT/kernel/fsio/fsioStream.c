@@ -44,6 +44,10 @@ static	Sync_Lock	streamLock = {0, 0};
 
 static int	streamCount;	/* Used to generate fileIDs for streams*/
 
+/*
+ * Forward routines. 
+ */
+static ReturnStatus GrowStreamList();
 
 
 /*
@@ -51,8 +55,9 @@ static int	streamCount;	/* Used to generate fileIDs for streams*/
  *
  * FsStreamNew --
  *
- *	Create a new stream.  This chooses a fileID for the stream (because
- *	the stream gets put into the handle table) and initializes fields.
+ *	Create a new stream.  This chooses a unique minor number for the
+ *	fileID of the stream, installs it in the handle table,
+ *	and initializes fields.
  *
  * Results:
  *	None.
@@ -65,9 +70,9 @@ static int	streamCount;	/* Used to generate fileIDs for streams*/
  */
 ENTRY Fs_Stream *
 FsStreamNew(serverID, ioHandlePtr, useFlags)
-    int serverID;
-    FsHandleHeader *ioHandlePtr;
-    int useFlags;
+    int			serverID;	/* I/O server for stream */
+    FsHandleHeader	*ioHandlePtr;
+    int			useFlags;
 {
     register Boolean found;
     register Fs_Stream *streamPtr;
@@ -76,19 +81,23 @@ FsStreamNew(serverID, ioHandlePtr, useFlags)
 
     LOCK_MONITOR;
 
+    /*
+     * The streamID is uniquified by using our own host ID for the major
+     * field (for network uniqueness), and then choosing minor
+     * numbers until we don't have a local conflict.
+     */
     fileID.type = FS_STREAM;
     fileID.serverID = serverID;
-    /*
-     * The streamID is made unique by using our hostID for the major
-     * number (we are the chooser), and installing under a new minor
-     * number until we don't hit an existing stream.
-     */
     fileID.major = rpc_SpriteID;
+
     do {
 	fileID.minor = ++streamCount;
 	found = FsHandleInstall(&fileID, sizeof(Fs_Stream),
 				(FsHandleHeader **)&newStreamPtr);
 	if (found) {
+	    /*
+	     * Don't want to conflict with existing streams.
+	     */
 	    FsHandleRelease(newStreamPtr, TRUE);
 	}
     } while (found);
@@ -130,7 +139,6 @@ FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, foundPtr)
     register Boolean found;
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
-    FsFileID;
 
     found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream),
 			    (FsHandleHeader **)&newStreamPtr);
@@ -236,6 +244,10 @@ FsStreamClientVerify(streamIDPtr, clientID)
  *	table and frees associated storage.  The I/O handle pointer part
  *	should have already been cleaned up by its handler.
  *
+ *	If the stream still has associated clients, release the reference
+ *	to the stream but don't get rid of the stream, since it is a shadow
+ *	stream.
+ *
  * Results:
  *	None.
  *
@@ -244,37 +256,48 @@ FsStreamClientVerify(streamIDPtr, clientID)
  *
  *----------------------------------------------------------------------
  */
+
+Boolean fsStreamDisposeDebug = TRUE;
+
 ENTRY void
 FsStreamDispose(streamPtr)
     Fs_Stream *streamPtr;
 {
-    while (!List_IsEmpty(&streamPtr->clientList)) {
-	FsStreamClientInfo *clientPtr;
-	char *FsFileTypeToString();
+    Boolean noClients = TRUE;
+    
+    if (!List_IsEmpty(&streamPtr->clientList)) {
+	noClients = FALSE;
+	if (fsStreamDisposeDebug) {
+	    FsStreamClientInfo *clientPtr;
+	    char *FsFileTypeToString();
 
-	clientPtr = (FsStreamClientInfo *)List_First(&streamPtr->clientList);
-	Sys_Panic(SYS_WARNING, 
-	    "FsStreamDispose, client %d still in list for stream <%d,%d>\n",
-	    clientPtr->clientID, streamPtr->hdr.fileID.major,
-	    streamPtr->hdr.fileID.minor);
-	if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
-	    Sys_Printf("\tI/O handle: %s <%d,%d>\n",
-		FsFileTypeToString(streamPtr->ioHandlePtr->fileID.type),
-		streamPtr->ioHandlePtr->fileID.major,
-		streamPtr->ioHandlePtr->fileID.minor);
+	    LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
+
+		Sys_Panic(SYS_WARNING, 
+			  "FsStreamDispose, client %d still in list for stream <%d,%d>, refCount %d\n",
+			  clientPtr->clientID, streamPtr->hdr.fileID.major,
+			  streamPtr->hdr.fileID.minor, streamPtr->hdr.refCount);
+		if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
+		    Sys_Printf("\tI/O handle: %s <%d,%d>, refCount %d\n",
+			       FsFileTypeToString(streamPtr->ioHandlePtr->fileID.type),
+			       streamPtr->ioHandlePtr->fileID.major,
+			       streamPtr->ioHandlePtr->fileID.minor,
+			       streamPtr->ioHandlePtr->refCount);
+		}
+	    }
 	}
-	List_Remove((List_Links *)clientPtr);
-	Mem_Free((Address)clientPtr);
-    }
+    } 
 
     FsHandleRelease(streamPtr, TRUE);
-    if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
-	if (streamPtr->nameInfoPtr->name != (char *)NIL) {
-	    Mem_Free((Address)streamPtr->nameInfoPtr->name);
+    if (noClients) {
+	if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
+	    if (streamPtr->nameInfoPtr->name != (char *)NIL) {
+		Mem_Free((Address)streamPtr->nameInfoPtr->name);
+	    }
+	    Mem_Free((Address)streamPtr->nameInfoPtr);
 	}
-	Mem_Free((Address)streamPtr->nameInfoPtr);
+	FsHandleRemove(streamPtr);
     }
-    FsHandleRemove(streamPtr);
 }
 
 /*

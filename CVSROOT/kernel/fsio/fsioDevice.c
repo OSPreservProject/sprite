@@ -981,15 +981,48 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	streamPtr->offset = migInfoPtr->offset;
     }
     if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
+	/*
+	 * The client doesn't perceive sharing of the stream so
+	 * it must be its last reference so we do an I/O close.
+	 */
 	(void)FsStreamClientClose(&streamPtr->clientList,
 				migInfoPtr->srcClientID);
     }
     if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
 	    migInfoPtr->flags)) {
+	/*
+	 * We detected network sharing so we mark the stream.
+	 */
 	streamPtr->flags |= FS_RMT_SHARED;
 	migInfoPtr->flags |= FS_RMT_SHARED;
     }
     FsHandleRelease(streamPtr, TRUE);
+    /*
+     * Adjust use counts on the I/O handle to reflect any new sharing.
+     */
+     if ((migInfoPtr->flags & FS_NEW_STREAM) &&
+       (migInfoPtr->flags & FS_RMT_SHARED)) {
+      /*
+       * The stream is becoming shared across the network so
+       * we need to increment the use counts on the I/O handle
+       * to reflect the additional client stream.
+       */
+      devHandlePtr->use.ref++;
+      if (migInfoPtr->flags & FS_WRITE) {
+	  devHandlePtr->use.write++;
+      }
+    } else if ((migInfoPtr->flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
+      /*
+       * The stream is no longer shared, and it is not new on the
+       * target client, so we have to decrement the use counts
+       * to reflect the fact that the original client's stream is not
+       * referencing the I/O handle.
+       */
+      devHandlePtr->use.ref--;
+      if (migInfoPtr->flags & FS_WRITE) {
+	  devHandlePtr->use.write--;
+      }
+    }
 
     /*
      * Move the client at the I/O handle level.  We are careful to only

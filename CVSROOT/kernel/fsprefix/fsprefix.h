@@ -21,7 +21,6 @@
 
 #include "list.h"
 #include "fs.h"
-#include "fsInt.h"
 
 /*
  * FsPrefix defines an entry in the prefix table.  Now it is just a linked

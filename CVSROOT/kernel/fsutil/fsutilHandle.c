@@ -560,6 +560,7 @@ FsHandleRemoveInt(hdrPtr)
 	    UNLOCK_MONITOR;
 	    Sys_Panic(SYS_FATAL,
 		    "FsHandleRemoveInt: Couldn't find handle in hash table.\n");
+	    LOCK_MONITOR;
 	    return;
 	}
 	Hash_Delete(fileHashTable, hashEntryPtr);

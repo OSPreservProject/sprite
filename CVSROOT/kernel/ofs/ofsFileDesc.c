@@ -26,8 +26,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsDevice.h"
 #include "fsStat.h"
 
-FsFetchFileDesc();
-FsStoreFileDesc();
+ReturnStatus	FsFetchFileDesc();
+ReturnStatus	FsStoreFileDesc();
 
 #define LOCKPTR (&domainPtr->fileDescLock)
 

@@ -34,7 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsFile.h"
 #include "fsDevice.h"
 #include "fsSpriteDomain.h"
-#include "fsRpcInt.h"
+#include "fsSpriteDomain.h"
 #include "fsPrefix.h"
 #include "fsOpTable.h"
 #include "fsDebug.h"
@@ -60,11 +60,12 @@ typedef struct MigrateReply {
 /*
  * This structure is for byte-swapping the rpc parameters correctly.
  */
-typedef	struct	FsMigParam {
-    int			dataSize;
-    FsUnionData		data;
-    MigrateReply	migReply;
+typedef struct  FsMigParam {
+    int                 dataSize;
+    FsUnionData         data;
+    MigrateReply        migReply;
 } FsMigParam;
+
 
 
 /*
@@ -128,8 +129,15 @@ Fs_EncapStream(streamPtr, bufPtr)
     ioHandlePtr = streamPtr->ioHandlePtr;
     migInfoPtr->streamID = streamPtr->hdr.fileID;
     migInfoPtr->ioFileID = ioHandlePtr->fileID;
-    migInfoPtr->nameID = streamPtr->nameInfoPtr->fileID;
-    migInfoPtr->rootID = streamPtr->nameInfoPtr->rootID;
+    if (streamPtr->nameInfoPtr == (FsNameInfo *)NIL) {
+	/*
+	 * Anonymous pipes have no name information.
+	 */
+	migInfoPtr->nameID.type = -1;
+    } else {
+	migInfoPtr->nameID = streamPtr->nameInfoPtr->fileID;
+	migInfoPtr->rootID = streamPtr->nameInfoPtr->rootID;
+    }
     migInfoPtr->offset = streamPtr->offset;
     migInfoPtr->srcClientID = rpc_SpriteID;
     migInfoPtr->flags = streamPtr->flags;
@@ -141,22 +149,20 @@ Fs_EncapStream(streamPtr, bufPtr)
     status = (*fsStreamOpTable[ioHandlePtr->fileID.type].migStart) (ioHandlePtr,
 		    streamPtr->flags, rpc_SpriteID, migInfoPtr->data);
 
-#ifdef notdef
     if (status == SUCCESS) {
 	/*
-	 * Clean up our reference to the stream.  We'll remove the stream from
-	 * the handle table entirely if this is the last reference.  Otherwise
-	 * we mark the stream as potentially being shared across the network.
+	 * Clean up our reference to the stream.  We'll remove the
+	 * stream from the handle table entirely if this is the last
+	 * reference on a client.  If we're the server, we still need
+	 * the stream around as a "shadow".
 	 */
-	if (streamPtr->hdr.refCount <= 1) {
+	if ((ioHandlePtr->fileID.serverID != rpc_SpriteID) &&
+	    (streamPtr->hdr.refCount <= 1)) {
 	    FsStreamDispose(streamPtr);
 	} else {
 	    FsHandleRelease(streamPtr, TRUE);
 	}
     }
-#else notdef
-    FsHandleUnlock(streamPtr);
-#endif notdef
     DEBUG( (" status %x\n", status) );
     return(status);
 }
@@ -193,6 +199,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     register	FsNameInfo	*nameInfoPtr;
     ReturnStatus		status = SUCCESS;
     Boolean			found;
+    Boolean			disposeOnError;
     int				size;
     ClientData			data;
 
@@ -201,12 +208,24 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     /*
      * Allocate and set up the stream.  We note if this is the first
      * occurence of the stream on this host so the server can
-     * do the right thing.
+     * do the right thing.  If we're the server, we have to distinguish
+     * between a stream that's in use on this host and a "shadow stream"
+     * that has no reference counts associated with it.  DisposeOnError
+     * is used to keep track of the original value of "found", since
+     * we want to dispose if we hit an error if & only if FsStreamFind
+     * created a new stream (found == FALSE).
      */
 
     streamPtr = FsStreamFind(&migInfoPtr->streamID, (FsHandleHeader *)NIL,
 			     migInfoPtr->flags, &found);
 
+    disposeOnError = !found;
+
+    if (found && (migInfoPtr->ioFileID.serverID == rpc_SpriteID)) {
+	if (!FsStreamClientFind(&streamPtr->clientList, rpc_SpriteID)) {
+	    found = FALSE;
+	}
+    }
     if (!found) {
 	migInfoPtr->flags |= FS_NEW_STREAM;
 	streamPtr->offset = migInfoPtr->offset;
@@ -219,29 +238,37 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 		migInfoPtr->offset, streamPtr->offset) );
     }
     if (streamPtr->nameInfoPtr == (FsNameInfo *)NIL) {
-	/*
-	 * Set up the nameInfo.  We sacrifice the name as it is only
-	 * used in error messages.  The fileID is used with get/set attr.
-	 * If this file is the current directory then rootID is passed
-	 * to the server to trap "..", domainType is used to index the
-	 * name lookup operation switch, and prefixPtr is used for
-	 * efficient handling of lookup redirections.
-	 */
-	streamPtr->nameInfoPtr = nameInfoPtr = Mem_New(FsNameInfo);
-	nameInfoPtr->fileID = migInfoPtr->nameID;
-	nameInfoPtr->rootID = migInfoPtr->rootID;
-	if (nameInfoPtr->fileID.serverID != rpc_SpriteID) {
-	    nameInfoPtr->domainType = FS_REMOTE_SPRITE_DOMAIN;
+	if (migInfoPtr->nameID.type == -1) {
+	    /*
+	     * No name info to re-create.  This happens when anonymous
+	     * pipes get migrated.
+	     */
+	    streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
 	} else {
-	    nameInfoPtr->domainType = FS_LOCAL_DOMAIN;
+	    /*
+	     * Set up the nameInfo.  We sacrifice the name as it is only
+	     * used in error messages.  The fileID is used with get/set attr.
+	     * If this file is the current directory then rootID is passed
+	     * to the server to trap "..", domainType is used to index the
+	     * name lookup operation switch, and prefixPtr is used for
+	     * efficient handling of lookup redirections.
+	     */
+	    streamPtr->nameInfoPtr = nameInfoPtr = Mem_New(FsNameInfo);
+	    nameInfoPtr->fileID = migInfoPtr->nameID;
+	    nameInfoPtr->rootID = migInfoPtr->rootID;
+	    if (nameInfoPtr->fileID.serverID != rpc_SpriteID) {
+		nameInfoPtr->domainType = FS_REMOTE_SPRITE_DOMAIN;
+	    } else {
+		nameInfoPtr->domainType = FS_LOCAL_DOMAIN;
+	    }
+	    nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
+	    if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
+		Sys_Panic(SYS_WARNING, "No prefix entry for <%d,%d,%d>\n",
+		    migInfoPtr->rootID.serverID,
+		    migInfoPtr->rootID.major, migInfoPtr->rootID.minor);
+	    }
+	    nameInfoPtr->name = (char *)NIL;
 	}
-	nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
-	if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
-	    Sys_Panic(SYS_WARNING, "Didn't find prefix entry for <%d,%d,%d>\n",
-		migInfoPtr->rootID.serverID,
-		migInfoPtr->rootID.major, migInfoPtr->rootID.minor);
-	}
-	nameInfoPtr->name = (char *)NIL;
     }
     /*
      * Contact the I/O server to tell it that the client moved.  The I/O
@@ -279,7 +306,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 
     if (status == SUCCESS) {
 	*streamPtrPtr = streamPtr;
-    } else if (!found) {
+    } else if (disposeOnError) {
 	FsHandleLock(streamPtr);
 	FsStreamDispose(streamPtr);
     } else {
@@ -331,6 +358,7 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
 		&storage);
     if (status == SUCCESS) {
 	MigrateReply	*migReplyPtr;
+
 	migReplyPtr = &(migParam.migReply);
 	*flagsPtr = migReplyPtr->flags;
 	*offsetPtr = migReplyPtr->offset;
@@ -338,7 +366,6 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
     if (migParam.dataSize > 0) {
 	Byte_Copy(migParam.dataSize, &(migParam.data), outData);
     }
-	
     return(status);
 }
 

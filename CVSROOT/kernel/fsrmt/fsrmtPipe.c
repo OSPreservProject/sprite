@@ -168,6 +168,12 @@ FsPipeHandleInit(fileIDPtr, findIt)
 	if (findIt) {
 	    Sys_Panic(SYS_FATAL, "FsPipeHandleInit, didn't find handle\n");
 	}
+	/*
+	 * When a pipe is created, it has one read and one write
+	 * reference on the handle.
+	 */
+	handlePtr->use.ref = 2;
+	handlePtr->use.write = 1;
 	List_Init(&handlePtr->clientList);
 	handlePtr->flags = 0;
 	handlePtr->firstByte = handlePtr->lastByte = -1;
@@ -213,13 +219,26 @@ FsPipeClose(streamPtr, clientID, flags, dataSize, closeData)
 	Sys_Panic(SYS_WARNING, "FsPipeClose, unknown client %d\n", clientID);
 	FsHandleUnlock(handlePtr);
     } else {
+	/*
+	 * Update the global/summary use counts for the file.
+	 */
+	handlePtr->use.ref--;
 	if (flags & FS_WRITE) {
+	    handlePtr->use.write--;
+	}
+	if (handlePtr->use.ref < 0 || handlePtr->use.write < 0) {
+	    Sys_Panic(SYS_FATAL,
+		      "FsPipeClose <%d,%d> use %d, write %d\n",
+		      handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		      handlePtr->use.ref, handlePtr->use.write);
+	}
+	if (flags & FS_WRITE && handlePtr->use.write == 0) {
 	    /*
 	     * Notify reader that the writer has closed.
 	     */
 	    handlePtr->flags |= PIPE_WRITER_GONE;
 	    FsFastWaitListNotify(&handlePtr->readWaitList);
-	} else {
+	} else if (handlePtr->use.ref == 0) {
 	    /*
 	     * Update state and notify any blocked writers.  Their write
 	     * will fail with no remaining readers.
@@ -788,6 +807,32 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     }
     FsHandleRelease(streamPtr, TRUE);
 
+    /*
+     * Adjust use counts on the I/O handle to reflect any new sharing.
+     */
+     if ((migInfoPtr->flags & FS_NEW_STREAM) &&
+	 (migInfoPtr->flags & FS_RMT_SHARED)) {
+	/*
+	 * The stream is becoming shared across the network so
+	 * we need to increment the use counts on the I/O handle
+	 * to reflect the additional client stream.
+	 */
+	handlePtr->use.ref++;
+	if (migInfoPtr->flags & FS_WRITE) {
+	    handlePtr->use.write++;
+	}
+    } else if ((migInfoPtr->flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
+	/*
+	 * The stream is no longer shared, and it is not new on the
+	 * target client, so we have to decrement the use counts
+	 * to reflect the fact that the original client's stream is not
+	 * referencing the I/O handle.
+	 */
+	handlePtr->use.ref--;
+	if (migInfoPtr->flags & FS_WRITE) {
+	    handlePtr->use.write--;
+	}
+    }
     /*
      * Move the client at the I/O handle level.  We are careful to only
      * close the srcClient if its migration state indicates it isn't
