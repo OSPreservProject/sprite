@@ -272,7 +272,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
 	cc -c ${CFLAGS} -Dsun4 version.c
-	${LD} -X -msun4 -o $@ -e start -T f5804020 ${OBJS_SUN4} version.o \
+	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o \
 	    -L/sprite/lib/${RTM}.md
 	@ls -l $@
 	@size $@
@@ -292,7 +292,7 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
-	${LD} -X -msun4 -o $@ -e start -T f5804000 ${OBJS} version.o \
+	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o \
 	    -L/sprite/lib/sun4.md
 	@ls -l $@
 	@size $@
