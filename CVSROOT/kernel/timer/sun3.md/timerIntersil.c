@@ -78,6 +78,7 @@ static Boolean callbackIntrsWanted = FALSE;
  */
 
 static int timerIntrState = INTR_DISABLE;
+static int timerActive = FALSE;
 
 /*
  * Frequency of the timer's interrupts.
@@ -240,18 +241,20 @@ Timer_TimerStart(timer)
     } else {
 	panic("Timer_TimerStart: unknown timer %d\n", timer);
     }
-
-    /*
-     * Tell the chip to start counting and allow it to cause interrupts.
-     */
-    timerIntrState = INTR_ENABLE;
-    timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_ENABLE);
-
-    /*
-     * Enable timer interrupts in the system's interrupt register.
-     */
-
-    *Mach_InterruptReg |= MACH_ENABLE_LEVEL5_INTR;
+    if (!timerActive) {
+	timerActive = TRUE;
+	/*
+	 * Tell the chip to start counting and allow it to cause interrupts.
+	 */
+	timerIntrState = INTR_ENABLE;
+	timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_ENABLE);
+    
+	/*
+	 * Enable timer interrupts in the system's interrupt register.
+	 */
+    
+	*Mach_InterruptReg |= MACH_ENABLE_LEVEL5_INTR;
+    }
 }
 
 
@@ -289,6 +292,7 @@ Timer_TimerInactivate(timer)
      */
 
     if (!callbackIntrsWanted && !profileIntrsWanted) {
+	timerActive = FALSE;
 	*Mach_InterruptReg &= ~MACH_ENABLE_LEVEL5_INTR;
 	timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_DISABLE);
     }
@@ -435,39 +439,47 @@ Timer_TimerServiceInterrupt(stack)
      *  queue might cause a delay in collecting profiling information.
      */
 
-    int profiled = FALSE;
-    unsigned short timerStatus =  Timer_TimerGetStatus();
-    Boolean spurious;
+    unsigned short timerStatus;
+    register unsigned char intrReg;
+    static Boolean callbackTimerToggle = FALSE;
 
-    if (Timer_TimerExamineStatus(timerStatus, TIMER_PROFILE_TIMER, &spurious)) {
+    /*
+     * Begin in-lined Timer_TimerGetStatus().  This is done mostly
+     * to clear the interrupt as the status returned is always zero.
+     */
+    intrReg = *Mach_InterruptReg & MACH_ENABLE_LEVEL7_INTR;
+
+    *Mach_InterruptReg &= ~(MACH_ENABLE_LEVEL5_INTR | 
+				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
+
+    timerStatus = timerRegsPtr->interruptReg;
+
+    *Mach_InterruptReg |= (MACH_ENABLE_LEVEL5_INTR | 
+				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
+
+    /*
+     * Read the chip again in case an obscure race condition occurs.
+     * (This is how Sun handles it.)
+     */
+    timerStatus = timerRegsPtr->interruptReg;
+#ifdef lint
+    timerRegsPtr->interruptReg = timerStatus;
+#endif lint
+    /*
+     * End in-lined Timer_TimerGetStatus
+     */
+    /*
+     * Check for kernel profiling.  We'll sample the PC here.
+     */
+    if (profileIntrsWanted) {
 	TIMER_PROFILE_ROUTINE(&stack);
-	profiled = TRUE;
-#	ifdef GATHER_STAT
-	timer_Statistics.profile++;
-#	endif
     } 
-
-    if (Timer_TimerExamineStatus(timerStatus, TIMER_CALLBACK_TIMER, &spurious)) {
+    /*
+     * Cut the call-back frequency in half.
+     */
+    callbackTimerToggle = !callbackTimerToggle;
+    if (callbackTimerToggle) {
 	TIMER_CALLBACK_ROUTINE();
-    } else {
-	if (!profiled) {
-
-	    /*
-	     * An unwanted timer interrupt was received but it wasn't
-	     * spurious (this is o.k. -- see devTimerSun3.c).
-	     */
-	    if (!spurious) {
-		return;
-	    } 
-
-	    /* Spurious interrupt!!! */
-#ifdef GATHER_STAT
-	     timer_Statistics.spurious++;
-#endif
-
-	    printf("%c", 7);	/* ring the bell */
-
-	}
     }
 }
 
