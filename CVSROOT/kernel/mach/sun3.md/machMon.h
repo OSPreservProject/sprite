@@ -18,8 +18,6 @@
 #ifndef _MACHMON
 #define _MACHMON
 
-#include "devZilog.h"
-
 /*
  * The memory addresses for the PROM, and the EEPROM.
  * On the sun2 these addresses are actually 0x00EF??00
@@ -186,7 +184,7 @@ typedef struct {
 
 	unsigned	romvecVersion;		/* Version # of Romvec */ 
 	struct globram  *globRam;		/* monitor global variables */
-	Dev_ZilogDevice *kbdZscc;		/* Addr of keyboard in use */
+	Address		kbdZscc;		/* Addr of keyboard in use */
 
 	int		*keyrInit;		/* ms before kbd repeat */
 	unsigned char	*keyrTick; 		/* ms between repetitions */
