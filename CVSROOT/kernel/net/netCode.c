@@ -282,18 +282,6 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		    length += gathPtr->length; 
 		}
 
-		/* 
-		 * IP packets must be a multiple of 4 bytes in length. We
-		 * grow the last gather element to accomblish this. Thie could
-		 * cause a bus error if adding 1 to 3 bytes causes the
-		 * packet to grow into an invalid page. This restriction
-		 * should probably be passed up to the RPC system.
-		 */
-		if (length & 0x3) { 
-		    int	grow = 0x4 - (length & 0x3);
-		    gatherPtr[gatherLength-1].length += grow;
-		    length += grow;
-		}
 
 		net_EtherStats.bytesSent += length + sizeof(Net_EtherHdr);
 		/*
@@ -315,7 +303,6 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		 * new total length and convert into one-complement.
 		 * See Net_InetChecksum().
 		 */
-		length = length/4;
 		ipHeaderPtr->totalLen = length;
 
 		length = ipHeaderPtr->checksum + length;
@@ -571,7 +558,7 @@ Net_Input(packetPtr, packetLength)
 		int    headerLenInBytes;
 		int    totalLenInBytes;
 		headerLenInBytes = ipHeaderPtr->headerLen * 4;
-		totalLenInBytes = ipHeaderPtr->totalLen*4;
+		totalLenInBytes = ipHeaderPtr->totalLen;
 		/*
 		 * Validate the packet. We toss out the following cases:
 		 * 1) Runt packets.
@@ -581,7 +568,7 @@ Net_Input(packetPtr, packetLength)
 		 * shouldn't get any fragments.
 		 */
 		 if ((headerLenInBytes >= sizeof(Net_IPHeader)) &&
-		     (totalLenInBytes > ipHeaderPtr->headerLen) &&
+		     (totalLenInBytes > headerLenInBytes) &&
 		     (totalLenInBytes <= (packetLength-sizeof(Net_EtherHdr))) &&
 		     (Net_InetChecksum(headerLenInBytes, (Address)ipHeaderPtr)
 		                        == 0)	&&
