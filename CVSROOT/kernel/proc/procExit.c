@@ -314,13 +314,19 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 			   &(parentProcPtr->childUserCpuUsage.ticks));
 	}
     }
+
+    
     /*
+     * Make sure there are no lingering interval timer callbacks associated
+     * with this process.
+     *
      *  Go through the list of children of the current process to 
      *  make them orphans. When the children exit, this will typically
      *  cause them to go on the dead list directly.
      */
 
     if (!migrated) {
+	ProcDeleteTimers(exitProcPtr);
 	while (!List_IsEmpty(exitProcPtr->childList)) {
 	    procLinkPtr = (Proc_PCBLink *) List_First(exitProcPtr->childList);
 	    procPtr = procLinkPtr->procPtr;
