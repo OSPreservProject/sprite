@@ -79,7 +79,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
      * didn't just generate the data.
      */
     if ((pageType == FS_SWAP_PAGE) || (pageType == FS_SHARED_PAGE)) {
-	reply.flags |= FS_SWAP;
+	ioPtr->flags |= FS_SWAP;
     }
     do {
 	retry = FALSE;
@@ -155,9 +155,9 @@ Fs_PageWrite(streamPtr, pageAddr, offset, numBytes)
     register Fs_IOParam		*ioPtr = &io;
     Fs_IOReply			reply;	/* Return length, signal */
 
-    FsSetIOParam(ioPtr, pageAddr, numBytes, offset, 0);
+    FsSetIOParam(ioPtr, pageAddr, numBytes, offset, FS_SWAP);
     reply.length = 0;
-    reply.flags = FS_SWAP;
+    reply.flags = 0;
     reply.signal = 0;
     reply.code = 0;
 
