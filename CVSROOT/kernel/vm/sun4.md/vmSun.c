@@ -263,7 +263,7 @@ static	VmMachPTE		*refModMap;
 #ifdef sun2
 int	vmMachKernMemSize = 2048 * 1024;
 #else 
-int	vmMachKernMemSize = 4096 * 1024;
+int	vmMachKernMemSize = 8192 * 1024;
 #endif
 
 /*
@@ -1655,7 +1655,7 @@ VmMach_MapIntelPage(virtAddr)
     Address	virtAddr; /* Virtual address where a page has to be validated
 			     at. */
 {
-#if defined(sun2) || defined(sun4)
+#if defined(sun2)
     VmMachPTE		pte;
     int			pmeg;
 
@@ -1686,7 +1686,42 @@ VmMach_MapIntelPage(virtAddr)
 #endif /* sun4 */
     /* No flush since this should never be cached. */
     VmMachSetPageMap(virtAddr, pte);
-#endif /* sun2 or sun4 */
+#endif /* sun2  */
+#ifdef sun4
+    VmMachPTE		pte;
+    int			pmeg;
+    int			oldContext;
+    int			i;
+
+    /*
+     * See if there is a PMEG already.  If not allocate one.
+     */
+    pmeg = VmMachGetSegMap(virtAddr);
+    if (pmeg == VMMACH_INV_PMEG) {
+	MASTER_LOCK(vmMachMutexPtr);
+	/* No flush, since PMEGGet takes care of that. */
+	pmeg = PMEGGet(vm_SysSegPtr, 
+				((unsigned)virtAddr) >> VMMACH_SEG_SHIFT,
+				PMEG_DONT_ALLOC);
+	MASTER_UNLOCK(vmMachMutexPtr);
+	VmMachSetSegMap(virtAddr, pmeg);
+    } 
+    oldContext = VmMachGetContextReg();
+    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+	VmMachSetContextReg(i);
+	VmMachSetSegMap(virtAddr, pmeg);
+    }
+    VmMachSetContextReg(oldContext);
+    /*
+     * Set up the page table entry.
+     */
+    pte = VmMachGetPageMap(virtAddr);
+    if (pte == 0) {
+	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | VMMACH_DONT_CACHE_BIT |
+	      VirtToPhysPage(Vm_KernPageAllocate());
+	SET_ALL_PAGE_MAP(virtAddr, pte);
+    } 
+#endif
 }
 
 
@@ -1712,7 +1747,7 @@ void
 VmMach_UnmapIntelPage(virtAddr) 
     Address	virtAddr;
 {
-#if defined(sun2) || defined(sun4)
+#if defined(sun2)
     PMEG		*pmegPtr;
     Boolean	found = FALSE;
 
@@ -1755,7 +1790,6 @@ VmMach_UnmapIntelPage(virtAddr)
 #endif
 }
 
-#ifdef sun3
 
 static Address		netMemAddr;
 static unsigned int	netLastPage;
@@ -1779,41 +1813,80 @@ static unsigned int	netLastPage;
 static void
 InitNetMem()
 {
-    unsigned char		pmeg;
+    unsigned short		pmeg;
     register unsigned short	*segTablePtr;
     int				i;
+    int				j;
+    int				lastSegNum;
     int				segNum;
     Address			virtAddr;
 
     /*
-     * Allocate two pmegs, one for memory and one for mapping.
+     * Allocate pmegs  for net mapping.
      */
-    segNum = VMMACH_NET_MAP_START >> VMMACH_SEG_SHIFT;
+    segNum = ((unsigned)VMMACH_NET_MAP_START) >> VMMACH_SEG_SHIFT;
+    lastSegNum = ((unsigned)(VMMACH_NET_MAP_START+VMMACH_NET_MAP_SIZE-1)) /
+			  VMMACH_SEG_SIZE;
+
     for (i = 0, virtAddr = (Address)VMMACH_NET_MAP_START,
 	    segTablePtr = GetHardSegPtr(vm_SysSegPtr->machPtr, segNum);
-	 i < 2;
+	 segNum <= lastSegNum;
          i++, virtAddr += VMMACH_SEG_SIZE, segNum++) {
 	pmeg = VmMachGetSegMap(virtAddr);
 	if (pmeg == VMMACH_INV_PMEG) {
 	    *(segTablePtr + i) = PMEGGet(vm_SysSegPtr, segNum, PMEG_DONT_ALLOC);
 	    VmMachSetSegMap(virtAddr, *(segTablePtr + i));
+	} else {
+	    *(segTablePtr + i) = pmeg;
 	}
+	printf("InitNetMem: 0x%x pmeg %d\n",virtAddr, *(segTablePtr + i));
+	/*
+	 * Propagate the new pmeg mapping to all contexts.
+	 */
+	for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
+	    if (j == VMMACH_KERN_CONTEXT) {
+		continue;
+	    }
+	    VmMachSetContextReg(j);
+	    VmMachSetSegMap(virtAddr, *(segTablePtr + i));
+	}
+	VmMachSetContextReg(VMMACH_KERN_CONTEXT);
     }
     /*
-     * Propagate the new pmeg mappings to all contexts.
+     * Repeat for the network memory range. 
      */
-    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
-	if (i == VMMACH_KERN_CONTEXT) {
-	    continue;
+    segNum = ((unsigned)VMMACH_NET_MEM_START) >> VMMACH_SEG_SHIFT;
+    lastSegNum = ((unsigned)(VMMACH_NET_MEM_START+VMMACH_NET_MEM_SIZE-1)) /
+			 VMMACH_SEG_SIZE;
+
+    for (i = 0, virtAddr = (Address)VMMACH_NET_MEM_START,
+	    segTablePtr = GetHardSegPtr(vm_SysSegPtr->machPtr, segNum);
+	 segNum <= lastSegNum;
+         i++, virtAddr += VMMACH_SEG_SIZE, segNum++) {
+	pmeg = VmMachGetSegMap(virtAddr);
+	if (pmeg == VMMACH_INV_PMEG) {
+	    *(segTablePtr + i) = PMEGGet(vm_SysSegPtr, segNum, PMEG_DONT_ALLOC);
+	    VmMachSetSegMap(virtAddr, *(segTablePtr + i));
+	} else {
+	    *(segTablePtr + i) = pmeg;
 	}
-	VmMachSetContextReg(i);
-	VmMachSetSegMap((Address)VMMACH_NET_MAP_START, *segTablePtr);
-	VmMachSetSegMap((Address)(VMMACH_NET_MAP_START + VMMACH_SEG_SIZE),
-			*(segTablePtr + 1));
+	/*
+	 * Propagate the new pmeg mapping to all contexts.
+	 */
+	printf("InitNetMem: 0x%x pmeg %d\n",virtAddr, *(segTablePtr + i));
+	for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
+	    if (j == VMMACH_KERN_CONTEXT) {
+		continue;
+	    }
+	    VmMachSetContextReg(j);
+	    VmMachSetSegMap(virtAddr, *(segTablePtr + i));
+	}
+	VmMachSetContextReg(VMMACH_KERN_CONTEXT);
     }
-    VmMachSetContextReg(VMMACH_KERN_CONTEXT);
+
     netMemAddr = (Address)VMMACH_NET_MEM_START;
-    netLastPage = ((unsigned)(VMMACH_NET_MEM_START) >> VMMACH_PAGE_SHIFT) - 1;
+    netLastPage = (((unsigned)VMMACH_NET_MEM_START) >> VMMACH_PAGE_SHIFT) - 1;
+    printf("InitNetMem: netMemAddr 0x%x netLastPage 0x%x\n", netMemAddr,netLastPage);
 }
 
 /*
@@ -1849,12 +1922,9 @@ VmMach_NetMemAlloc(numBytes)
     retAddr = netMemAddr;
     netMemAddr += (numBytes + 7) & ~7;	/* is this necessary for sun4? */
     /*
-     * Panic if we are out of memory.  We are out of memory if we have filled
-     * up a whole PMEG minus one page.  We have to leave one page at the
-     * end because this is used to initialize the INTEL chip.
+     * Panic if we are out of memory.  
      */
-    if (netMemAddr > (Address) (VMMACH_NET_MEM_START + VMMACH_SEG_SIZE - 
-				VMMACH_PAGE_SIZE)) {
+    if (netMemAddr > (Address) (VMMACH_NET_MEM_START + VMMACH_NET_MEM_SIZE)) {
 	panic("VmMach_NetMemAlloc: Out of network memory\n");
     }
 
@@ -1870,9 +1940,7 @@ VmMach_NetMemAlloc(numBytes)
 	virtAddr = (Address) (netLastPage << VMMACH_PAGE_SHIFT);
 	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT |
 	      VirtToPhysPage(Vm_KernPageAllocate());
-#ifdef sun4
-	pte |= VMMACH_DONT_CACHE_BIT;
-#endif /* sun4 */
+    printf("VmMach_NetMemAlloc: Alloc 0x%x pte 0x%x\n", virtAddr,pte);
 	SET_ALL_PAGE_MAP(virtAddr, pte);
     }
 
@@ -1917,6 +1985,8 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 	 * piece is no longer than 1536 bytes so we know that we will need
 	 * at most two page table entries to map a piece in.
 	 */
+	VmMachFlushPage(inScatGathPtr->bufAddr);
+	VmMachFlushPage(mapAddr);
 	VmMachSetPageMap(mapAddr, VmMachGetPageMap(inScatGathPtr->bufAddr));
 	outScatGathPtr->bufAddr = 
 	    mapAddr + ((unsigned)inScatGathPtr->bufAddr & VMMACH_OFFSET_MASK);
@@ -1924,13 +1994,14 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 	endAddr = inScatGathPtr->bufAddr + inScatGathPtr->length - 1;
 	if (((unsigned)inScatGathPtr->bufAddr & ~VMMACH_OFFSET_MASK_INT) !=
 	    ((unsigned)endAddr & ~VMMACH_OFFSET_MASK_INT)) {
+	    VmMachFlushPage(endAddr);
+	    VmMachFlushPage(mapAddr);
 	    VmMachSetPageMap(mapAddr, VmMachGetPageMap(endAddr));
 	    mapAddr += VMMACH_PAGE_SIZE_INT;
 	}
     }
 }
 
-#endif
 
 
 /*
@@ -2141,7 +2212,7 @@ VmMachTestCacheFlush()
     return SUCCESS;
 }
 
-    
+
 
 void	WriteHardMapSeg();
 
