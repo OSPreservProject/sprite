@@ -73,9 +73,6 @@ typedef struct FsLocalFileIOHandle {
 					 * 'major' field of the fileID
 					 * is the domain number.  The
 					 * 'minor' field is the file num. */
-    List_Links		streamList;	/* List of streams to the file.  Used
-					 * to verify clients, and check cache
-					 * consistency and stream sharing */
     FsUseCounts		use;		/* Open, writer, and exec counts.
 					 * Used for consistency checks. This
 					 * is a summary of all uses of a file */
@@ -90,7 +87,7 @@ typedef struct FsLocalFileIOHandle {
 					 * with other I/O and closes/deletes. */
     struct Vm_Segment	*segPtr;	/* Reference to code segment needed
 					 * to flush VM cache. */
-} FsLocalFileIOHandle;			/* 240 BYTES */
+} FsLocalFileIOHandle;			/* 268 BYTES (316 with traced locks) */
 
 /*
  * Flags for local I/O handles.
@@ -117,7 +114,7 @@ typedef struct FsRmtFileIOHandle {
 					 * ascend past the prefix. */
     struct Vm_Segment	*segPtr;	/* Reference to code segment needed
 					 * to flush VM cache. */
-} FsRmtFileIOHandle;			/* 196 BYTES */
+} FsRmtFileIOHandle;			/* 232 BYTES  (280 with traced locks)*/
 
 
 /*
