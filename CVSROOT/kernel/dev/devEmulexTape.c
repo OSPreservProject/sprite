@@ -52,6 +52,7 @@ DevEmulexInit(tapePtr)
     DevSCSITape	*tapePtr;	/* Tape drive state */
 {
     tapePtr->type = SCSI_EMULEX;
+    tapePtr->blockSize = DEV_EMULEX_BLOCK_SIZE;
     tapePtr->setupProc = EmulexSetup;
     tapePtr->statusProc = EmulexStatus;
     tapePtr->errorProc = EmulexError;
@@ -109,7 +110,7 @@ EmulexSetup(tapePtr, commandPtr, controlBlockPtr, countPtr, dmaCountPtr)
 	case SCSI_READ:
 	case SCSI_WRITE:
 	    controlBlockPtr->code = 1;
-	    *dmaCountPtr = *countPtr * DEV_BYTES_PER_SECTOR;
+	    *countPtr /= tapePtr->blockSize;
 	    break;
 	case SCSI_WRITE_EOF:
 	    *countPtr = 1;
