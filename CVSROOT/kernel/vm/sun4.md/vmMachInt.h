@@ -22,6 +22,7 @@ extern	Address		vmMachPMEGSegAddr;
 /*
  * Assembly language routines in vmSunAsm.s.
  */
+extern	int		VmMachCopyEnd();
 extern	VmMachPTE	VmMachGetPageMap();
 extern	void		VmMachSetPageMap();
 extern	int		VmMachGetSegMap();
