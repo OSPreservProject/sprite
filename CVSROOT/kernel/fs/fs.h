@@ -234,23 +234,6 @@ typedef struct Fs_Stream {
 #define FS_IO_SERVER		0x2
 
 /*
- * An Fs_Device contains the information passed to device specific
- * routines so they can operate on their particular device.
- */
-typedef struct Fs_Device {
-    int		serverID;	/* The host ID of the server that controls
-				 * the device. */
-    int		type;		/* The type of device.  This field is used to
-				 * index into an operation switch */
-    int		unit;		/* Type dependent unit specification. The
-				 * interpretation is up to the device driver */
-    ClientData	data;		/* Device type dependent data. This can be set
-				 * during the device open routine and should
-				 * be cleaned up in the device close routine. */
-} Fs_Device;
-
-
-/*
  * Fragment stuff that is dependent on the filesystem block size
  * defined in user/fs.h.  Actually, the fragmenting code is specific
  * to a 4K block size and a 1K fragment size.
