@@ -356,6 +356,46 @@ DevScsiTestReady(scsiDevicePtr)
     }
     return status;
 }
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiStartStopUnit --
+ *
+ * 	Test to see if a SCSI device is ready.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A TEST_UNIT_READY command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiStartStopUnit(scsiDevicePtr, start)
+    ScsiDevice *scsiDevicePtr;  /* Handle for device to be released. */
+    Boolean start;
+{
+    ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
+    ScsiStartStopCmd 	*cmdPtr;
+    ReturnStatus 	status;
+    unsigned char	statusByte;
+    int			len;
+
+    bzero((char *) &scsiCmd, sizeof(ScsiCmd));
+    scsiCmd.commandBlockLen = sizeof(ScsiStartStopCmd);
+    scsiCmd.bufferLen = 0;
+    cmdPtr = (ScsiStartStopCmd *) scsiCmd.commandBlock;
+    cmdPtr->command = SCSI_START_STOP;
+    cmdPtr->unitNumber = scsiDevicePtr->LUN;
+    cmdPtr->immed = 0;
+    cmdPtr->loadEject = 0;
+    cmdPtr->start = (start == TRUE) ? 1 : 0;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &statusByte,
+				&len, NIL, NIL);
+    return status;
+}
 
 
 /*
