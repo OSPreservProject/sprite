@@ -319,6 +319,10 @@ ContextRestoreSomeMore:
 	add	%SAFE_TEMP, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %sp
 
+	/* Update machCurStatePtr */
+	set	_machCurStatePtr, %VOL_TEMP1
+	st	%SAFE_TEMP, [%VOL_TEMP1]
+
 	/* restore global registers of new process */
 	MACH_RESTORE_GLOBAL_STATE()
 
@@ -336,13 +340,6 @@ ContextRestoreSomeMore:
 	save
 	restore
 	/* restore user stack pointer if a user process? */
-
-	/*
-	 * Save the pointer to the current mach state structure that's in
-	 * a local register into a global variable.
-	 */
-	set	_machCurStatePtr, %VOL_TEMP1
-	st	%SAFE_TEMP, [%VOL_TEMP1]
 
 	/*
 	 * Restore status register in such a way that it doesn't make
@@ -377,13 +374,7 @@ _MachRunUserProc:
 	/*
 	 * Get values to restore registers to from the state structure.
 	 */
-	set	_proc_RunningProcesses, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to table */
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
-	set	_machStatePtrOffset, %VOL_TEMP2
-	ld	[%VOL_TEMP2], %VOL_TEMP2		/* get offset */
-	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1		/* machStatePtr */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
 	set	_machCurStatePtr, %VOL_TEMP2
 	st	%VOL_TEMP1, [%VOL_TEMP2]
 #ifdef NOTDEF

@@ -375,4 +375,23 @@ NoMoreLabel:					\
 	srl	reg1, VMMACH_PAGE_PROT_SHIFT, reg1;	\
 	cmp	reg1, VMMACH_PTE_OKAY_VALUE
 
+/*
+ * Get a ptr to the pcb structure of the current process.
+ * Return this in reg1
+ */
+#define	MACH_GET_CUR_PROC_PTR(reg1)			\
+	set	_proc_RunningProcesses, reg1;		\
+	ld	[reg1], reg1;				\
+	ld	[reg1], reg1
+
+/*
+ * Get a ptr to the Mach_State struct of the current process.  Put it in reg1.
+ */
+#define	MACH_GET_CUR_STATE_PTR(reg1, reg2)		\
+	MACH_GET_CUR_PROC_PTR(reg1);			\
+        set     _machStatePtrOffset, reg2;		\
+        ld      [reg2], reg2;				\
+        add     reg1, reg2, reg1;			\
+        ld      [reg1], reg1
+
 #endif /* _MACHASMDEFS */

@@ -78,10 +78,20 @@
 
 #define	MACH_TRAP_DEBUGGER	MACH_TRAP_INSTR_1
 #define	MACH_TRAP_SYSCALL	MACH_TRAP_INSTR_3
-			/* trap instruction number is trap type - 128 */
-#define	MACH_CALL_DBG_TRAP	(MACH_TRAP_DEBUGGER - 128)
-#define	MACH_BRKPT_TRAP		(MACH_TRAP_INSTR_2 - 128)
-#define	MACH_SYSCALL_TRAP	(MACH_TRAP_SYSCALL - 128)
+/*
+ * Our trap type is the 2 second to the last hex digits of the tbr register.
+ * So "trap type 3" shows up in the last 3 digits of the tbr as 0x030, and
+ * trap type 15 shows up as 0x1f0.  The trap types for the software trap
+ * instructions start at trap type 128 (0x800 in the tbr).  To get the arguments
+ * to a software trap instruction, we take the trap type, subtract off 0x800,
+ * and then shift it right by 4 bits to chop off the lowest hex digit.
+ * Thus the trap instruction "ta 0" has a trap type of 128 == 0x80 (== 0x800 in
+ * the tbr), and ta 1 has a trap type of 129 showing up as 0x810 in the tbr.
+ */
+/* trap instruction number is trap type - trap type 128 = 0x80 (== -0x800) */
+#define	MACH_CALL_DBG_TRAP	(MACH_TRAP_DEBUGGER - 0x800)
+#define	MACH_BRKPT_TRAP		(MACH_TRAP_INSTR_2 - 0x800)
+#define	MACH_SYSCALL_TRAP	((MACH_TRAP_SYSCALL - 0x800) >> 4)
 
 /*
  * Mask for extracting the trap type from the psr.

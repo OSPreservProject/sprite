@@ -1360,6 +1360,18 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     /* user page fault */
     printf("Page fault in user process, pc 0x%x, addr 0x%x, busError 0x%x\n",
 	    pcValue, addrErrorReg, (short) busErrorReg);
+    {
+	unsigned	int	pte;
+	unsigned	int	context;
+	unsigned	int	the_seg;
+
+	pte = VmMachGetPageMap(addrErrorReg);
+	printf("pte is at first 0x%x\n", pte);
+	context = VmMachGetContextReg();
+	printf("context is at first 0x%x\n", context);
+	the_seg = VmMachGetSegMap(addrErrorReg);
+	printf("the_seg is at first 0x%x\n", the_seg);
+    }
     protError = busErrorReg & MACH_PROT_ERROR;
     if (Vm_PageIn(addrErrorReg, protError) != SUCCESS) {
 	printf(
@@ -1374,9 +1386,16 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 #endif NOTDEF
     }
     {
-	int	pte;
+	unsigned	int	pte;
+	unsigned	int	context;
+	unsigned	int	the_seg;
+
 	pte = VmMachGetPageMap(addrErrorReg);
 	printf("Returning okay, pte = 0x%x.\n", pte);
+	context = VmMachGetContextReg();
+	printf("context is now 0x%x\n", context);
+	the_seg = VmMachGetSegMap(addrErrorReg);
+	printf("the_seg is now 0x%x\n", the_seg);
     }
     return(MACH_OK);
 }
@@ -1438,6 +1457,8 @@ MachUserAction()
     while (machStatePtr->savedMask != 0) {
 	int	i;
 
+	DEBUG_ADD(0xbbbbbbbb);
+	DEBUG_ADD(machStatePtr->savedMask);
 	for (i = 0; i < MACH_NUM_WINDOWS; i++) {
 	    if ((1 << i) & machStatePtr->savedMask) {
 		/* clear the mask for this window */
