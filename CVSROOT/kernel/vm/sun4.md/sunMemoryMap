@@ -79,9 +79,9 @@ New sun4 mapping:
 	   -	  Kernel Stacks (128 processes).   3072 Kbytes.
 	0xF8000000
 	   - 	  Kernel Code and Data.  40 Meg (Was 32 Meg).
-	0xF5800000 (was 0xF6000000)
+	0xF6000000
 	   -	  Area for mapping between user's segment. 256 KBytes
-	0xF57C0000 (was 0xF5FC0000)
+	0xF5FC0000
 	   -	  Not currently in use. 352000 Kbytes (343.75 Meg)
 	0xE0000000
 	   -	  The Hole!! (3072 Meg)
