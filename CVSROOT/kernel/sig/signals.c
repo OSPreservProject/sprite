@@ -59,6 +59,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "stdlib.h"
 #include "sig.h"
 #include "sync.h"
 #include "dbg.h"
@@ -368,7 +369,6 @@ LocalSend(procPtr, sigNum, code)
     int					code;
 {
     int	sigBitMask;
-    Proc_PID pid;
 
     LOCK_MONITOR;
 
@@ -429,7 +429,7 @@ LocalSend(procPtr, sigNum, code)
 	     * it gets suspended after we check then the parent will get 
 	     * notified anyway.
 	     */
-	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, TRUE);
+	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS);
 	} else if (sigNum != SIG_RESUME ||
 		procPtr->sigActions[sigNum] != SIG_KILL_ACTION) {
 	    sigBitMask = sigBitMasks[sigNum];
