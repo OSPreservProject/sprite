@@ -49,6 +49,7 @@ else if ($version < 100) then
 endif
 
 if ($log == "yes") then
+    co -l versionLog
     echo "" >> versionLog
     echo "$release.$version	`date`" >> versionLog
     echo ""
