@@ -420,9 +420,11 @@ MakePtrAccessible(handlePtr, indexInfoPtr)
 	    -(3 + indexInfoPtr->indInfo[0].index);
     status = FetchIndirectBlock(1, handlePtr, indexInfoPtr, blockAddrPtr,
 				cacheBlockNum);
-    indexInfoPtr->blockAddrPtr = 
+    if (status == SUCCESS) {
+	indexInfoPtr->blockAddrPtr = 
     		(int *) (indexInfoPtr->indInfo[1].blockPtr->blockAddr + 
 			 sizeof(int) * indexInfoPtr->indInfo[1].index);
+    }
     return(status);
 }
 
