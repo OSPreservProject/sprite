@@ -666,7 +666,7 @@ MouseOutputProc()
     if (result != -1) {
 	outputBuffer = -1;
 	if (mouseOpenCount > 0) {
-	    Fs_DevNotifyWriter(token);
+	    Fsio_DevNotifyWriter(token);
 	} else {
 	    Proc_CallFunc(MouseDelayedClose, (ClientData) NIL, 0);
 	}
