@@ -18,26 +18,26 @@
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #endif /* !lint */
 
-#include "sprite.h"
-#include "dbg.h"
-#include "dev.h"
-#include "net.h"
-#include "proc.h"
-#include "prof.h"
-#include "fsutil.h"
-#include "recov.h"
-#include "rpc.h"
-#include "sched.h"
-#include "sig.h"
-#include "sync.h"
-#include "sys.h"
-#include "timer.h"
-#include "vm.h"
-#include "machMon.h"
-#include "mach.h"
-#include "fs.h"
-#include "main.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <dbg.h>
+#include <dev.h>
+#include <net.h>
+#include <proc.h>
+#include <prof.h>
+#include <fsutil.h>
+#include <recov.h>
+#include <rpc.h>
+#include <sched.h>
+#include <sig.h>
+#include <sync.h>
+#include <sys.h>
+#include <timer.h>
+#include <vm.h>
+#include <machMon.h>
+#include <mach.h>
+#include <fs.h>
+#include <main.h>
+#include <stdio.h>
 
 static void Init _ARGS_((void));
 

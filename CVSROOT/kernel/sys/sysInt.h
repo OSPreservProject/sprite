@@ -13,7 +13,7 @@
 #ifndef _SYSINT
 #define _SYSINT
 
-#include "sprite.h"
+#include <sprite.h>
 
 extern Boolean sysPanicing;
 

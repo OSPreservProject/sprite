@@ -13,7 +13,7 @@
 #ifndef _MEM
 #define _MEM
 
-#include "sprite.h"
+#include <sprite.h>
 
 extern void Mem_DumpStats _ARGS_((void));
 extern void Mem_Bin _ARGS_((int numBytes));

@@ -13,7 +13,7 @@
 #ifndef _MEMINT
 #define _MEMINT
 
-#include "sprite.h"
+#include <sprite.h>
 
 extern void Mem_DumpTrace _ARGS_((int blockSize));
 extern void MemPanic _ARGS_((char *message));

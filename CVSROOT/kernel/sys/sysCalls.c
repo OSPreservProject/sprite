@@ -12,28 +12,28 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "mach.h"
-#include "sys.h"
-#include "sysInt.h"
-#include "sysStats.h"
-#include "time.h"
-#include "timer.h"
-#include "vm.h"
-#include "machMon.h"
-#include "proc.h"
-#include "dbg.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "rpc.h"
-#include "net.h"
-#include "sched.h"
-#include "dev.h"
-#include "recov.h"
-#include "procMigrate.h"
-#include "string.h"
-#include "stdio.h"
-#include "main.h"
+#include <sprite.h>
+#include <mach.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <sysStats.h>
+#include <time.h>
+#include <timer.h>
+#include <vm.h>
+#include <machMon.h>
+#include <proc.h>
+#include <dbg.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <rpc.h>
+#include <net.h>
+#include <sched.h>
+#include <dev.h>
+#include <recov.h>
+#include <procMigrate.h>
+#include <string.h>
+#include <stdio.h>
+#include <main.h>
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;

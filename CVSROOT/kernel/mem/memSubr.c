@@ -15,12 +15,12 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "vm.h"
-#include "stdlib.h"
-#include "varargs.h"
-#include "mem.h"
-#include "memInt.h"
+#include <sprite.h>
+#include <vm.h>
+#include <stdlib.h>
+#include <varargs.h>
+#include <mem.h>
+#include <memInt.h>
 
 /*
  * memPrintProc is the routine called by the routines in memory.c

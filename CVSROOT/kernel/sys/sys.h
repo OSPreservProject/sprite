@@ -14,10 +14,10 @@
 #define _SYS
 
 #ifndef _ASM
-#include "user/sys.h"
-#include "sprite.h"
-#include "status.h"
-#include "timer.h"
+#include <user/sys.h>
+#include <sprite.h>
+#include <status.h>
+#include <timer.h>
 #endif /* _ASM */
 
 /*

@@ -18,18 +18,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "machMon.h"
-#include "sync.h"
-#include "mach.h"
-#include "main.h"
-#include "fs.h"
-#include "varargs.h"
-#include "stdio.h"
-#include "sys.h"
-#include "sysInt.h"
-#include "dbg.h"
-#include "dev.h"
+#include <sprite.h>
+#include <machMon.h>
+#include <sync.h>
+#include <mach.h>
+#include <main.h>
+#include <fs.h>
+#include <varargs.h>
+#include <stdio.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <dbg.h>
+#include <dev.h>
 
 /*
  * Calls to panic and printf are protected.

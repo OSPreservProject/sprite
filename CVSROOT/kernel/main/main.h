@@ -13,7 +13,7 @@
 #ifndef _MAIN
 #define _MAIN
 
-#include "sprite.h"
+#include <sprite.h>
 
 extern void Main _ARGS_(());
 extern void Main_InitVars _ARGS_((void));

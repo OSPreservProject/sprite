@@ -48,25 +48,25 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "sys.h"
-#include "sysInt.h"
-#include "dbg.h"
-#include "proc.h"
-#include "sync.h"
-#include "sched.h"
-#include "vm.h"
-#include "user/vm.h"
-#include "rpc.h"
-#include "prof.h"
-#include "devVid.h"
-#include "net.h"
-#include "sysSysCall.h"
-#include "sysSysCallParam.h"
-#include "sysTestCall.h"
-#include "status.h"
-#include "stdio.h"
+#include <sprite.h>
+#include <fs.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <dbg.h>
+#include <proc.h>
+#include <sync.h>
+#include <sched.h>
+#include <vm.h>
+#include <user/vm.h>
+#include <rpc.h>
+#include <prof.h>
+#include <devVid.h>
+#include <net.h>
+#include <sysSysCall.h>
+#include <sysSysCallParam.h>
+#include <sysTestCall.h>
+#include <status.h>
+#include <stdio.h>
 
 /*
  * Forward declarations to procedures defined in this file:
