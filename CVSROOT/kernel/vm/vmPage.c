@@ -1718,7 +1718,7 @@ FinishPage(transVirtAddrPtr, ptePtr)
  *
  *	Go down the list of processes sharing this segment and send a
  *	kill signal to each one.  This is called when a page from a segment
- *	couldn't be written to swap space
+ *	couldn't be written to or read from swap space.
  *
  * Results:
  *     None.
@@ -1738,8 +1738,10 @@ VmKillSharers(segPtr)
     LOCK_MONITOR;
 
     LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
-	Sig_SendProc(procLinkPtr->procPtr, SIG_KILL, PROC_VM_READ_ERROR); 
+	(void) Sig_Send(SIG_KILL, PROC_VM_READ_ERROR,
+			procLinkPtr->procPtr->processID, FALSE); 
     }
+    segPtr->flags |= VM_SEG_IO_ERROR;
 
     UNLOCK_MONITOR;
 }
