@@ -53,7 +53,7 @@ Rpc_Init()
     List_Init(&rpcNotifyList);
     RpcInitRecovery();
 
-    Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr));
+    Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr), 0);
 
     rpcServiceTime[0] = (Rpc_Histogram *)NIL;
     rpcCallTime[0] = (Rpc_Histogram *)NIL;
