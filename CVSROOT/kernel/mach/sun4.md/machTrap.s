@@ -140,10 +140,6 @@ WindowOkay:
         bne,a   DoneWithUserStuff 			/* was kernel mode */
         add     %fp, -MACH_SAVED_STATE_FRAME, %sp 	/* set kernel sp */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP2, %VOL_TEMP1)	/* into %VOL_TEMP2 */
-#ifdef NOTDEF
-        set     _machCurStatePtr, %VOL_TEMP1
-        ld      [%VOL_TEMP1], %VOL_TEMP2 		/* get machStatePtr */
-#endif NOTDEF
         add     %VOL_TEMP2, MACH_KSP_OFFSET, %VOL_TEMP1 /* &(machPtr->ksp) */
         ld      [%VOL_TEMP1], %sp 			/* machPtr->ksp */
 	set	(MACH_KERN_STACK_SIZE - MACH_SAVED_STATE_FRAME), %VOL_TEMP1
@@ -687,10 +683,6 @@ SaveToInternalBuffer:
 	 * the current window invalid mask, since it's been set to point to
 	 * this window we must save.
 	 */
-#ifdef NOTDEF
-	set	_machCurStatePtr, %g3
-	ld	[%g3], %g3
-#endif NOTDEF
 	MACH_GET_CUR_STATE_PTR(%g3, %g4)	/* puts machStatePtr in %g3 */
 	set	_machCurStatePtr, %g4
 	st	%g3, [%g4]			/* update it */
@@ -833,34 +825,22 @@ MachHandleWindowUnderflowTrap:
 	 * the only thing that might whack it, in case MachTrap gets an
 	 * overflow.  But we won't get one since this is an underflow trap.
 	 * %o5 also appears to be safe here since it is not overwritten
-	 * by parameters to Vm_PageIn, etc.
-	 * It turns out we also need 2 more globals for checking whether
-	 * the stack will cause a fault.  There's no other place to save them
-	 * except in some per-process space, so I save g2 and g5 into
-	 * a per-process place.
+	 * by parameters to Vm_PageIn, etc.  We also need 2 more globals for
+	 * checking whether the stack will cause a fault.  We use a few more
+	 * out registers that we hope Vm_PageIn won't trash. NOTE:  WE ARE
+	 * MAKING AN ASSUMPTION that Vm_PageIn isn't compiled to mess with its
+	 * in registers.  If we switch compilers, this may break!!!
 	 */
 	mov	%g3, %SAFE_TEMP
 	mov	%g4, %o5
-
-	MACH_GET_CUR_PROC_PTR(%g3)
-	cmp	%g3, -1
-	be	Dontsave1			/* If no proc, don't save.  */
-	nop
-	st	%g2, [%g3+MACH_PROC_REGS_OFFSET]
-	st	%g5, [%g3+MACH_PROC_REGS_OFFSET+4]
-	b	Save1
-
-Dontsave1:
-	set	_machTmpRegsStore, %g3
-	st	%g2, [%g3]			/* save %g2 */
-	st	%g5, [%g3+4]			/* save %g5 */
-        
-Save1:
+	mov	%g2, %o3
+	mov	%g5, %o4
 
 	/* Test if we came from user mode. */
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
 	bne	NormalUnderflow
 	nop
+
 	/*
 	 * Test if stack is resident for window we need to restore.
 	 * This means move back a window and test its frame pointer since
@@ -921,22 +901,11 @@ MachReturnToUnderflowWithSavedState:
 	/* Otherwise, bad return, fall through to kill process. */
 KillTheProc:
 	/* Need I restore all the global registers here since it's dying? */
-	MACH_GET_CUR_PROC_PTR(%g3)
-	cmp	%g3, -1
-	be	Dontsave2			/* If no proc, don't save.  */
-	nop
-	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
-	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
-	b	Save2
-Dontsave2:
-	set	_machTmpRegsStore, %g3
-	ld	[%g3], %g2
-	ld	[%g3+4], %g5
-        
-Save2:
 
 	mov	%SAFE_TEMP, %g3			/* restore g3 */
 	mov	%o5, %g4			/* restore g4 */
+	mov	%o3, %g2			/* etc */
+	mov	%o4, %g5
 
 	/* KILL IT - must be in trap window */
 	MACH_SR_HIGHPRIO()	/* traps back on for overflow from printf */
@@ -995,21 +964,10 @@ BackAgain:
 	 */
 
 	/* Restore globals */
-	MACH_GET_CUR_PROC_PTR(%g3)
-	cmp	%g3, -1
-	be	Dontsave3			/* If no proc, don't save.  */
-	nop
-	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
-	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
-	b	Save3
-Dontsave3:
-	set	_machTmpRegsStore, %g3
-	ld	[%g3], %g2
-	ld	[%g3+4], %g5
-Save3:
-        
 	mov	%SAFE_TEMP, %g3			/* restore g3 and g4 */
 	mov	%o5, %g4
+	mov	%o3, %g2
+	mov	%o4, %g5
 
 	call	_MachReturnFromTrap
 	nop
@@ -1031,20 +989,10 @@ NormalUnderflow:
 	save					/* back to trap window */
 
 	/* Restore globals */
-	MACH_GET_CUR_PROC_PTR(%g3)
-	cmp	%g3, -1
-	be	Dontsave4			/* If no proc, don't save.  */
-	nop
-	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
-	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
-Dontsave4:
-	set	_machTmpRegsStore, %g3
-	ld	[%g3], %g2
-	ld	[%g3+4], %g5
-Save4:
-
-	mov	%SAFE_TEMP, %g3			/* restore g3 and g4 */
+	mov	%SAFE_TEMP, %g3			/* restore g3, g4, g2 & g5 */
 	mov	%o5, %g4
+	mov	%o3, %g2
+	mov	%o4, %g5
 
 	MACH_RESTORE_PSR()			/* restore psr */
 	jmp	%CUR_PC_REG			/* return from trap */
@@ -1281,10 +1229,6 @@ MachSyscallTrap:
 	 * This means saving the frame pointer (previous user stack pointer).
 	 */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-#ifdef NOTDEF
-	set	_machCurStatePtr, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1
-#endif NOTDEF
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	add	%VOL_TEMP1, MACH_FP_OFFSET, %VOL_TEMP1
@@ -1498,10 +1442,6 @@ MachUnixSyscallTrap:
 	 * This means saving the frame pointer (previous user stack pointer).
 	 */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
-#ifdef NOTDEF
-	set	_machCurStatePtr, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1
-#endif NOTDEF
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	add	%VOL_TEMP1, MACH_FP_OFFSET, %VOL_TEMP1
