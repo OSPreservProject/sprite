@@ -98,6 +98,13 @@ SigMigSend(procPtr, sigNum, code)
 	if (status != SUCCESS) {
 	    return(status);
 	}
+	if (status == SUCCESS && procPtr->state != PROC_MIGRATED) {
+	    /*
+	     * Process was migrating back home.  Return PROC_INVALID_PID,
+	     * which will make Sig_SendProc do a local send.
+	     */
+	    return(PROC_INVALID_PID);
+	}
     }
     remoteProcessID = procPtr->peerProcessID;
     remoteHostID = procPtr->peerHostID;
