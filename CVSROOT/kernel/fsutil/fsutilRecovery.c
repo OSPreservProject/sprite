@@ -8,7 +8,8 @@
  *	routines are used by other parts of the filesystem to wait for
  *	recovery to happen, and are typically invoked after a remote
  *	operation fails due to a communication failure.  These are
- *	Fsutil_WantRecovery, and Fsutil_WaitForRecovery.  The routine Fsutil_WaitForHost
+ *	Fsutil_WantRecovery, and Fsutil_WaitForRecovery.
+ *	The routine Fsutil_WaitForHost
  *	is combines these two calls and is used by routines outside
  *	the filesystem, i.e. when vm waits on swap files.
  *
@@ -39,6 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <hash.h>
 #include <rpc.h>
 #include <vm.h>
+#include <rpcPacket.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -53,6 +55,13 @@ static Boolean OkToScavenge _ARGS_((register Fsutil_RecoveryInfo *recovPtr));
 static void RecoveryDone _ARGS_((int serverID));
 extern Boolean RemoteHandle _ARGS_((Fs_HandleHeader *hdrPtr));
 extern ReturnStatus RecoveryWait _ARGS_((Fsutil_RecoveryInfo *recovPtr));
+
+static ReturnStatus DoBulkReopen _ARGS_((int serverID));
+static void FinishReopenHandles _ARGS_((void));
+static ReturnStatus AddReopenHandle _ARGS_((Fs_HandleHeader *hdrPtr));
+static void InitReopenHandles _ARGS_((void));
+void Fsutil_InitBulkReopenOps _ARGS_((int type,
+	Fsutil_BulkReopenOps *reopenOpsPtr));
 
 /*
  * The recovery state for each file is monitored.
@@ -197,7 +206,22 @@ ReopenHandles(serverID)
     Boolean			printed = FALSE;
     int				succeeded = fs_Stats.recovery.succeeded;
     int				failed = fs_Stats.recovery.failed;
+					/* This boolean is only to retry
+					 * stuff with single rpc's if the
+					 * server doesn't recognize a
+					 * bulk rpc.   GET RID OF IT WHEN
+					 * ALL KERNELS HAVE BULK RPC'S. */
+    Boolean			doBulkRpc = TRUE;
+    ReturnStatus		checkStatus = FAILURE;
 
+doSingleRpcsInstead:
+    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+	InitReopenHandles();
+    }
+    if (!doBulkRpc) {
+	printf("Server %d couldn't do bulk reopen - starting again.\n",
+		serverID);
+    }
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
 	 hdrPtr != (Fs_HandleHeader *) NIL;
@@ -221,37 +245,56 @@ ReopenHandles(serverID)
 		printf("Attempting to reopen invalid handle!!!\n");
 	    }
 #endif NOTDEF
-	    status = (*fsio_StreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
-		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
-	    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
-				status);
-	    /*
-	     * If we removed the handle because it was no longer needed,
-	     * we can't try unlocking it.
-	     */
-	    if (status != FS_NO_HANDLE) {
-		Fsutil_HandleUnlock(hdrPtr);
-	    }
-	    switch (status) {
-		case SUCCESS:
-		    break;
-		case FS_NO_HANDLE:
-		    /* We didn't need to recover this. */
-		    break;
-		case RPC_SERVICE_DISABLED:
-		case RPC_TIMEOUT:
-		    goto reopenReturn;
-		case FS_FILE_REMOVED:
-		    /*
-		     * No noisy message, this is a common case.
-		     */
-		    break;
-		default:
-		    Fsutil_FileError(hdrPtr, "Reopen failed ", status);
-		    break;
+	    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+		status = AddReopenHandle(hdrPtr);
+		if (status != SUCCESS && status != FS_NO_HANDLE) {
+		    Fsutil_HandleUnlock(hdrPtr);
+		}
+	    } else {
+		status = (*fsio_StreamOpTable[hdrPtr->fileID.type].reopen)
+			(hdrPtr, rpc_SpriteID, (ClientData)NIL, (int *)NIL,
+			(ClientData *)NIL);
+		RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
+				    status);
+		/*
+		 * If we removed the handle because it was no longer needed,
+		 * we can't try unlocking it.
+		 */
+		if (status != FS_NO_HANDLE) {
+		    Fsutil_HandleUnlock(hdrPtr);
+		}
+		switch (status) {
+		    case SUCCESS:
+			break;
+		    case FS_NO_HANDLE:
+			/* We didn't need to recover this. */
+			break;
+		    case RPC_SERVICE_DISABLED:
+		    case RPC_TIMEOUT:
+			goto reopenReturn;
+		    case FS_FILE_REMOVED:
+			/*
+			 * No noisy message, this is a common case.
+			 */
+			break;
+		    default:
+			Fsutil_FileError(hdrPtr, "Reopen failed ", status);
+			break;
+		}
 	    }
 	} else {
 	    Fsutil_HandleUnlock(hdrPtr);
+	}
+    }
+    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+	status = DoBulkReopen(serverID);
+	FinishReopenHandles();
+	if (status == RPC_INVALID_RPC) {
+	    doBulkRpc = FALSE;
+	    goto doSingleRpcsInstead;
+	}
+	if (status != SUCCESS) {
+	    goto reopenReturn;
 	}
     }
     /*
@@ -261,10 +304,14 @@ ReopenHandles(serverID)
      * fails on a stream we invalidate its handle, but don't remove it
      * because that happens in the top-level close routine.
      */
+    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+	InitReopenHandles();
+    }
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
 	 hdrPtr != (Fs_HandleHeader *) NIL;
          hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+	checkStatus = FAILURE;
 	if ((hdrPtr->fileID.type == FSIO_STREAM) &&
 		 (hdrPtr->fileID.serverID == serverID)) {
 	    streamPtr = (Fs_Stream *)hdrPtr;
@@ -278,24 +325,49 @@ ReopenHandles(serverID)
 	    } else if (RecoveryFailed(&rmtHandlePtr->recovery)) {
 		Fsutil_HandleInvalidate((Fs_HandleHeader *)streamPtr);
 	    } else {
-		status = Fsio_StreamReopen((Fs_HandleHeader *)streamPtr,
-				rpc_SpriteID, (ClientData)NIL, (int *)NIL,
-				(ClientData *)NIL);
-		if (status != SUCCESS) {
-		    Fsutil_FileError((Fs_HandleHeader *)streamPtr,
-			"Reopen failed", status);
-		    Fsutil_FileError(streamPtr->ioHandlePtr,"I/O handle",
-				SUCCESS);
-		    if ((status == RPC_TIMEOUT) ||
-			(status == RPC_SERVICE_DISABLED)) {
-			Fsutil_HandleUnlock(streamPtr);
-			goto reopenReturn;
+		if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+		    checkStatus =
+			    AddReopenHandle((Fs_HandleHeader *) streamPtr);
+		} else {
+		    status = Fsio_StreamReopen((Fs_HandleHeader *)streamPtr,
+				    rpc_SpriteID, (ClientData)NIL, (int *)NIL,
+				    (ClientData *)NIL);
+		    if (status != SUCCESS) {
+			Fsutil_FileError((Fs_HandleHeader *)streamPtr,
+			    "Reopen failed", status);
+			Fsutil_FileError(streamPtr->ioHandlePtr,"I/O handle",
+				    SUCCESS);
+			if ((status == RPC_TIMEOUT) ||
+			    (status == RPC_SERVICE_DISABLED)) {
+			    Fsutil_HandleUnlock(streamPtr);
+			    goto reopenReturn;
+			}
+			Fsutil_HandleInvalidate((Fs_HandleHeader *)streamPtr);
 		    }
-		    Fsutil_HandleInvalidate((Fs_HandleHeader *)streamPtr);
 		}
 	    }
 	}
-	Fsutil_HandleUnlock(hdrPtr);
+	/*
+	 * The only time we don't unlock the handle in this loop is if
+	 * it was a stream handle we've put into the array for a bulk
+	 * reopen.  That's only the case if the AddReopenHandle called
+	 * returned with success.
+	 */
+	if (!(doBulkRpc && recov_BulkHandles && serverID == 53 &&
+		checkStatus == SUCCESS)) {	
+	    Fsutil_HandleUnlock(hdrPtr);
+	}
+    }
+
+    if (doBulkRpc && recov_BulkHandles && serverID == 53) {
+	status = DoBulkReopen(serverID);
+	FinishReopenHandles();
+	if (status != SUCCESS) {
+	    if (status != RPC_TIMEOUT && status != RPC_SERVICE_DISABLED) {
+		panic("Bad status from DoBulkReopen should be rpc-related.");
+	    }
+	    goto reopenReturn;
+	}
     }
     /*
      * Now we notify processes waiting on I/O handles, and invalidate
@@ -1181,3 +1253,286 @@ Fsutil_TestForHandles(serverID)
     return count;
 }
 
+/* Number of handles to be put together. */
+int			numBulkHandles = 0;
+/* Current handle we're filling in. */
+int			nextHandleIndex = 0;
+/* Array of handle reopen information, etc. */
+static Fsutil_BulkHandle	*bulkHandleSpace = (Fsutil_BulkHandle *) NIL;
+/* Array of info returned from server for bulk reopen. */
+static Fsutil_BulkReturn	*bulkReturnSpace = (Fsutil_BulkReturn *) NIL;
+static Fsutil_BulkReopenOps	bulkReopenOps[FSIO_NUM_STREAM_TYPES];
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * InitReopenHandles --
+ *
+ *	Initialize memory for storing future reopen rpc info.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory allocated.
+ *
+ *----------------------------------------------------------------------------
+ */
+static void
+InitReopenHandles()
+{
+    int 	i;
+
+    if (numBulkHandles < fs_Stats.handle.maxNumber) {
+	if (numBulkHandles > 0) {
+	    free((Address) bulkHandleSpace);
+	}
+	numBulkHandles = fs_Stats.handle.maxNumber;
+	bulkHandleSpace = (Fsutil_BulkHandle *)
+		malloc(numBulkHandles * sizeof (Fsutil_BulkHandle));
+	bulkReturnSpace = (Fsutil_BulkReturn *)
+		malloc(numBulkHandles * sizeof (Fsutil_BulkReturn));
+    }
+    /*
+     * Initialize all to be "empty."
+     */
+    for (i = 0; i < numBulkHandles; i++) {
+	bulkHandleSpace[i].type = -1;
+    }
+    nextHandleIndex = 0;
+    return;
+}
+
+int	reopensSkipped;
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_InitBulkReopenOps --
+ *
+ *	Copy a handle type's reopen ops to the array.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+void
+Fsutil_InitBulkReopenOps(type, reopenOpsPtr)
+    int				type;
+    Fsutil_BulkReopenOps	*reopenOpsPtr;
+{
+    if (type >= FSIO_NUM_STREAM_TYPES) {
+	panic("Fsutil_InitBulkReopenOps: bad handle type.");
+    }
+    bulkReopenOps[type].setup = reopenOpsPtr->setup;
+    bulkReopenOps[type].finish = reopenOpsPtr->finish;
+    reopensSkipped = 0;
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * AddReopenHandle --
+ *
+ *	Add a handle to the future reopen rpc info.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+static ReturnStatus
+AddReopenHandle(hdrPtr)
+    Fs_HandleHeader	*hdrPtr;
+{
+    ReturnStatus	status;
+
+    status = (*bulkReopenOps[hdrPtr->fileID.type].setup) (hdrPtr,
+	    &(bulkHandleSpace[nextHandleIndex].reopenParams));
+    if (status == SUCCESS) {
+	bulkHandleSpace[nextHandleIndex].type = hdrPtr->fileID.type;
+	bulkHandleSpace[nextHandleIndex].serverID = hdrPtr->fileID.serverID;
+	bulkHandleSpace[nextHandleIndex].hdrPtr = hdrPtr;
+	nextHandleIndex++;
+	return SUCCESS;
+    }
+
+    if (hdrPtr->fileID.type != FSIO_STREAM) {
+	/*
+	 * NO_REFERENCE means that there is no current use of the handle,
+	 * so it shouldn't be reopened, but there was no failure either, so
+	 * don't mark it as a failed reopen.  FS_RECOV_SKIP means it
+	 * was a handle with no references but with some clean blocks in
+	 * the cache and we're currently skipping reopens on those handles.
+	 */
+	if (status == FS_RECOV_SKIP) {
+	    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery), SUCCESS);
+	    reopensSkipped++;
+	    return status;
+	}
+	if (status == FS_NO_REFERENCE) {
+	    status = SUCCESS;
+	}
+	RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery), status);
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FinishReopenHandles --
+ *
+ *	Clean up, mark done with recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+static void
+FinishReopenHandles()
+{
+    int		i;
+    Fsutil_BulkHandle	*bulkHandlePtr;
+    Fsutil_BulkReturn	*returnInfoPtr;
+    Fs_HandleHeader	*hdrPtr;
+    ReturnStatus	status;
+
+    for (i = 0; i < nextHandleIndex; i++) {
+	bulkHandlePtr = &(bulkHandleSpace[i]);
+	returnInfoPtr = &(bulkReturnSpace[i]);
+	status = returnInfoPtr->status;
+	/*
+	 * If there was a bad return status, it's only safe to get header
+	 * info, etc., from the handle space and not the return info, because
+	 * the return info may not have been filled in on the server if
+	 * there was an error.
+	 */
+	hdrPtr = bulkHandlePtr->hdrPtr;
+
+	/* Does server recognize bulk rpc? */
+	if (status == RPC_INVALID_RPC) {
+	    Fsutil_HandleUnlock(hdrPtr);
+	    continue;
+	}
+
+	(*bulkReopenOps[bulkHandlePtr->type].finish)
+		(bulkHandlePtr->hdrPtr, &(returnInfoPtr->state),
+		returnInfoPtr->status);
+	if (bulkHandlePtr->type != FSIO_STREAM) {
+	    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery), status);
+	}
+
+	if (bulkHandlePtr->type == FSIO_STREAM && status != SUCCESS) {
+	    if (status != RPC_TIMEOUT && status != RPC_SERVICE_DISABLED) {
+		Fsutil_HandleInvalidate(hdrPtr);
+	    }
+	}
+		
+	/*
+	 * If we removed the handle because it was no longer needed,
+	 * we can't try unlocking it.  Otherwise, unlock all I/O handles.
+	 */
+	if (status != FS_NO_HANDLE) {
+	    Fsutil_HandleUnlock(hdrPtr);
+	}
+    }
+    printf("Reopens skipped: %d\n", reopensSkipped);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * DoBulkReopen --
+ *
+ *	Do an RPC to send the collected reopen handles.
+ *
+ * Results:
+ *	Status is SUCCESS unless there's an rpc/network-type failure.
+ *
+ * Side effects:
+ *	RPC.  Status for each handle gets filled in.
+ *
+ *----------------------------------------------------------------------------
+ */
+static ReturnStatus
+DoBulkReopen(serverID)
+    int			serverID;
+{
+    int			inSize;
+    int			outSize;
+    int			i;
+    Fs_HandleHeader	*hdrPtr;
+    ReturnStatus	status;
+    int			numSent;
+    int			numSending;
+    int			maxSendHandles;
+
+    /*
+     * Unlock all the handles first.  Relock them afterwards.  (In case
+     * the server asks us to do an invalidate or write-back.
+     */
+    if (nextHandleIndex <= 0) {
+	return SUCCESS;
+    }
+    for (i = 0; i < nextHandleIndex; i++) {
+	hdrPtr = bulkHandleSpace[i].hdrPtr;
+	Fsutil_HandleUnlock(hdrPtr);
+    }
+
+    /*
+     * How many handles can we send in one RPC?  We only want to do our
+     * own fragmentation when sending, so if the return information is
+     * larger, adjust for that on this end.
+     */
+    if (sizeof (Fsutil_BulkHandle) < sizeof (Fsutil_BulkReturn)) {
+	maxSendHandles = RPC_MAX_DATASIZE / sizeof (Fsutil_BulkReturn);
+    } else {
+	maxSendHandles = RPC_MAX_DATASIZE / sizeof (Fsutil_BulkHandle);
+    }
+    numSent = 0;
+    do {
+	numSending = nextHandleIndex - numSent;
+	if (numSending > maxSendHandles) {
+	    numSending = maxSendHandles;
+	} 
+	inSize = numSending *  sizeof (Fsutil_BulkHandle);
+	outSize = numSending * sizeof (Fsutil_BulkReturn);
+	status = FsrmtBulkReopen(serverID, inSize,
+		(Address) &(bulkHandleSpace[numSent]), &outSize,
+		(Address) &(bulkReturnSpace[numSent]));
+	if (status != SUCCESS) {
+	    break;
+	}
+	numSent += numSending;
+    } while (numSent < nextHandleIndex);
+
+    for (i = 0; i < nextHandleIndex; i++) {
+	hdrPtr = bulkHandleSpace[i].hdrPtr;
+	Fsutil_HandleLock(hdrPtr);
+	if (status != SUCCESS) {
+	    bulkReturnSpace[i].status = status;
+	}
+    }
+    /*
+     * A bad status will only be something like timeout or other rpc-type
+     * failure.
+     */
+    return status;
+}

@@ -84,6 +84,7 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Sync_RemoteNotifyStub, "rmt notify",	/* 39 - REMOTE_WAKEUP */
 	Sig_RpcSend, "send signal",		/* 40 - SIG_SEND */
 	Fsio_RpcStreamMigCloseNew, "new release",/* 41 - FS_RELEASE_NEW */
+	Fsrmt_RpcBulkReopen, "bulkReopen",	/* 42 - FS_BULK_REOPEN */
 };
 
 

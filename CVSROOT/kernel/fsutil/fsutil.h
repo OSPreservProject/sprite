@@ -98,6 +98,50 @@ typedef	struct	Fsutil_FsRecovNamedStats {
     char		name[50];		/* Name of object. */
 } Fsutil_FsRecovNamedStats;
 
+
+/*
+ * For bulk reopen rpc's -- reopening more than one handle at a time
+ * per rpc -- this is the information sent to the server per handle.
+ *
+ * The reopenParams field is rather bogusly set to a size larger than
+ * Fsio_FileReopenParams,
+ * just because that's the reopenParam that requires the most space.  The
+ * field is really a generic reopenParams for all the stream types.  Yeah,
+ * this isn't safe, but mentioning the type names here gives a circular
+ * loop in the header files.
+ */
+typedef struct Fsutil_BulkHandle {
+    int				type;		/* Type of handle. */
+    int				serverID;	/* For checking on other end. */
+    Fs_HandleHeader		*hdrPtr;	/* Ptr to hdr for handle. */
+						/* Valid only on client. */
+    char			reopenParams[14 * 4];
+						/* Reopen info for server. */
+} Fsutil_BulkHandle;
+
+/*
+ * For bulk reopen rpc's, this is the information returned to the client
+ * from the server for each handle.
+ *
+ * Here too the state field is rather bogusly set to a size larger than that
+ * for Fsio_FileState, since the other handle types don't need as much space.
+ */
+typedef struct Fsutil_BulkReturn {
+    ReturnStatus	status;		/* Handle reopen status from server. */
+    char		state[18 * 4];	/* Info returned from server. */
+} Fsutil_BulkReturn;
+
+/*
+ * Operations per stream type to be called for setting up and finishing
+ * off handles to be reopened.
+ */
+typedef struct Fsutil_BulkReopenOps {
+	    /* Takes hdrPtr and reopenParamsPtr */
+    ReturnStatus	(*setup)(/* Fs_HandleHeader *, Address */);
+	    /* Takes hdrPtr, fileStatePtr, and status. */	
+    ReturnStatus	(*finish)(/* Fs_HandleHeader *, Address, ReturnStatus */);
+} Fsutil_BulkReopenOps;
+
 
 extern Boolean fsconsist_Debug;
 /*
@@ -238,5 +282,7 @@ extern ReturnStatus Fsutil_FsRecovInfo _ARGS_((int length,
 extern int Fsutil_TestForHandles _ARGS_((int serverID));
 
 extern void Fsutil_ZeroHandleStats _ARGS_((void));
+extern void Fsutil_InitBulkReopenOps _ARGS_((int type,
+	Fsutil_BulkReopenOps *reopenOpsPtr));
 
 #endif /* _FSUTIL */

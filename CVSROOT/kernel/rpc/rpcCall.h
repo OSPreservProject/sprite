@@ -108,6 +108,7 @@
  *				its open file handles, and when they are done.
  *	RPC_PROC_GETPCB		Retrieve a process control block from another
  *				host.
+ *	RPC_FS_BULK_REOPEN	Reopen a set of handles instead of just one.
  *
  * These procedure numbers and the service switch should be generated
  * from another file...
@@ -155,7 +156,8 @@
 #define	RPC_REMOTE_WAKEUP 	39
 #define	RPC_SIG_SEND		40
 #define	RPC_FS_RELEASE_NEW 	41
-#define	RPC_LAST_COMMAND	RPC_FS_RELEASE_NEW
+#define	RPC_FS_BULK_REOPEN 	42
+#define	RPC_LAST_COMMAND	RPC_FS_BULK_REOPEN
 #define RPC_NUM_COMMANDS	(RPC_LAST_COMMAND+1)
 
 /*
@@ -213,6 +215,7 @@ ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
 ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
 ReturnStatus Fsio_RpcStreamMigClose();	/*  FS_RELEASE */
 ReturnStatus Fsio_RpcStreamMigCloseNew();/*  FS_RELEASE_NEW */
+ReturnStatus Fs_RpcBulkReopen();	/*  FS_BULK_REOPEN */
 #endif /* JUST_LISTING */
 
 #endif /*	_RPCCALL */
