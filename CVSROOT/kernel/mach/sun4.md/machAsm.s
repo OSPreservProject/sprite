@@ -482,6 +482,7 @@ _MachRunUserProc:
 	st	%VOL_TEMP1, [%VOL_TEMP2]
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP2	/* machStatePtr->trapRegs */
+	mov	%VOL_TEMP2, %sp			/* set sp to trapRegs */
 	/*
 	 * Restore %fp.  This will be the user's %sp when we return from
 	 * the trap window.
