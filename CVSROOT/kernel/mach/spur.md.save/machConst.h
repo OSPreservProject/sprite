@@ -16,6 +16,15 @@
 #define _MACHCONST
 
 /*
+ * The compare trap types.
+ */
+#define	MACH_SYS_CALL_TRAP	0
+#define	MACH_USER_ERROR_TRAP	1
+#define	MACH_SIG_RETURN_TRAP	2
+#define	MACH_GET_WIN_MEM_TRAP	3
+#define	MACH_MAX_TRAP_TYPE	3
+
+/*
  * The return codes from the C trap handler routines:
  *
  *	MACH_NORM_RETURN	No special action is required before continuing
