@@ -278,6 +278,7 @@ static SysCallEntry sysCalls[] = {
 #endif
     Prof_Profil,                Prof_Profil,            TRUE,   4,   NILPARM,
     Proc_RemoteExec,		Proc_RemoteExec,   TRUE,	4,   NILPARM,
+    Sys_GetMachineInfoNew,	Sys_GetMachineInfoNew,   TRUE,	2,   NILPARM,
 };
 
 
@@ -461,6 +462,7 @@ static Sys_CallParam paramsArray[] = {
     /* local */ 			/* SYS_MACH_NUM_PROCESSORS	92 */
     /* local */                         /* SYS_PROF_PROFIL              93 */
     /* local */                         /* SYS_PROC_REMOTE_EXEC         94 */
+    /* local */                         /* SYS_SYS_GETMACHINEINFO_NEW   95 */
     /*
      * Insert new system call information above this line.
      */

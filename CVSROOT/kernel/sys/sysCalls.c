@@ -411,6 +411,44 @@ Sys_GetMachineInfo(archPtr, typePtr, clientIDPtr)
 
     return(SUCCESS);
 }
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_GetMachineInfoNew --
+ *
+ *	Returns the machine information..
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_GetMachineInfoNew(infoSize, infoBufPtr)
+    int			infoSize;	/* Size of the info structure. */
+    Address	 	*infoBufPtr;	/* Info structure to fill in */
+{
+    Sys_MachineInfo	info;
+    int			bytesToCopy;
+
+    if (infoSize < sizeof(Sys_MachineInfo)) {
+	bytesToCopy = infoSize;
+    } else {
+	bytesToCopy = sizeof(Sys_MachineInfo);
+    }
+    info.architecture = Mach_GetMachineArch();
+    info.type = Mach_GetMachineType();
+    info.processors = Mach_GetNumProcessors();
+    if (Vm_CopyOut(bytesToCopy, (Address) &info, infoBufPtr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    return(SUCCESS);
+}
 
 
 /*
@@ -467,9 +505,15 @@ Sys_StatsStub(command, option, argPtr)
 		syncStatPtr == (Sync_Instrument *)USER_NIL) {
 		
 		Sync_PrintStat();
+	    } else if (option <= 0) {
+		status = GEN_INVALID_ARG;
+		break;
 	    } else {
-		status = Vm_CopyOut(sizeof(Sync_Instrument),
-				  (Address)&sync_Instrument,
+		if (option > sizeof(sync_Instrument)) {
+		    option = sizeof(sync_Instrument);
+		}
+		status = Vm_CopyOut(option,
+				  (Address) sync_Instrument,
 				  (Address) syncStatPtr);
 	    }
 	    break;
@@ -725,6 +769,27 @@ Sys_StatsStub(command, option, argPtr)
 	}
 	case SYS_LOCK_RESET_STATS: {
 	    status = Sync_ResetLockStats();
+	    break;
+	}
+	case SYS_INST_COUNTS: {
+#ifdef spur
+	    Mach_InstCountInfo	info[MACH_MAX_INST_COUNT];
+	    Mach_GetInstCountInfo(info);
+	    Vm_CopyOut(sizeof(info), (Address) info, 
+		argPtr);
+	    status = SUCCESS;
+#else
+	    status = GEN_NOT_IMPLEMENTED;
+#endif
+	    break;
+	}
+	case SYS_RESET_INST_COUNTS: {
+#ifdef spur
+	    bzero(mach_InstCount, sizeof(mach_InstCount));
+	    status = SUCCESS;
+#else
+	    status = GEN_NOT_IMPLEMENTED;
+#endif
 	    break;
 	}
 	default:

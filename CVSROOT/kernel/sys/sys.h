@@ -55,5 +55,6 @@ extern	ReturnStatus	Sys_SetTimeOfDay();
 extern	ReturnStatus	Sys_DoNothing();
 extern	ReturnStatus	Sys_Shutdown();
 extern	ReturnStatus	Sys_GetMachineInfo();
+extern	ReturnStatus	Sys_GetMachineInfoNew();
 
 #endif /* _SYS */
