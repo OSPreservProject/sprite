@@ -923,7 +923,7 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
 	/*
 	 * prefixLength must be returned in parameter area for byte-swapping.
 	 */
-	*(storagePtr->replyParamPtr) = newNameInfoPtr->prefixLength;
+	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
         replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
