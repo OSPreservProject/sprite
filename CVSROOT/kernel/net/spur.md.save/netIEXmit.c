@@ -235,9 +235,7 @@ NetIEXmitDone()
     register	NetXmitElement	*xmitElementPtr;
     register	NetIETransmitCB	*cmdPtr;
 
-    /*
-     * It is assumed that the called has a MASTER_LOCK on &netIEMutex.
-     */
+    MASTER_LOCK(&netIEMutex);
 
     /*
      * If there is nothing that is currently being sent then something is
@@ -245,6 +243,7 @@ NetIEXmitDone()
      */
     if (curScatGathPtr == (Net_ScatterGather *) NIL) {
 	printf("Warning: NetIEXmitDone: No current packet\n.");
+	MASTER_UNLOCK(&netIEMutex);
 	return;
     }
 
@@ -288,6 +287,7 @@ NetIEXmitDone()
 	netIEState.transmitting = FALSE;
 	curScatGathPtr = (Net_ScatterGather *) NIL;
     }
+    MASTER_UNLOCK(&netIEMutex);
 }
 
 
