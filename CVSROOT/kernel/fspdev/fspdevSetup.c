@@ -517,24 +517,14 @@ FspdevRmtPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-#ifndef SOSP91
 ReturnStatus
 FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
-#else
-ReturnStatus
-FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
-    offsetPtr, rwFlagsPtr)
-#endif
     Fs_Stream		*streamPtr;	/* Client pseudo-stream to close */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process, IGNORED */
     int			flags;		/* IGNORED */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
-#ifdef SOSP91
-    int			*offsetPtr;
-    int			*rwFlagsPtr;
-#endif
 {
     register Fspdev_ClientIOHandle *cltHandlePtr =
 	    (Fspdev_ClientIOHandle *)streamPtr->ioHandlePtr;
@@ -600,24 +590,14 @@ FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-#ifndef SOSP91
 ReturnStatus
 FspdevRmtPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
-#else
-ReturnStatus
-FspdevRmtPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
-    offsetPtr, rwFlagsPtr)
-#endif
     Fs_Stream		*streamPtr;	/* Client pseudo-stream to close */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process, IGNORED */
     int			flags;		/* IGNORED */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
-#ifdef SOSP91
-    int			*offsetPtr;
-    int			*rwFlagsPtr;
-#endif
 {
     register Fspdev_ClientIOHandle *cltHandlePtr =
 	    (Fspdev_ClientIOHandle *)streamPtr->ioHandlePtr;
@@ -632,11 +612,7 @@ FspdevRmtPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
 	(segPtr->type == VM_CODE)) {
 	Vm_FileChanged(&segPtr);
     }
-#ifndef SOSP91
     Fsrmt_IOClose(streamPtr, clientID, procID, flags, size, data);
-#else
-    Fsrmt_IOClose(streamPtr, clientID, procID, flags, size, data, offsetPtr, rwflagsPtr);
-#endif
     
     return(SUCCESS);
 }
