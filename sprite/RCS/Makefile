@@ -5,25 +5,33 @@
 #
 LD = /sprite/cmds.${MACHINE}/ld
 
-#ifmake sun3 || profile3
-TM = sun3
+# don't use TM, because that is set explicitly by the environment in some cases
+# and then we can't override it.  But set it by default to the current machine
+# type.
+
+TM ?= $(MACHINE)
+
+#if make(sun3) || make(profile3)
+RTM = sun3
 MTFLAGS = -msun3
 #endif
-#ifmake sun2 
-TM = sun2
-MTFLAGS = -msun2
-#endif
 #ifmake ds3100
-TM = ds3100
+RTM = ds3100
 MTFLAGS =
 #endif
 #ifmake sun4
-TM = sun4
+RTM = sun4
 MTFLAGS = -msun4
 #endif
 #ifmake sun4c
-TM = sun4c
+RTM = sun4c
 MTFLAGS = -msun4
+#endif
+
+#if !empty(TM)
+RTM ?= $(TM)
+#else
+RTM ?= $(MACHINE)
 #endif
 
 LIBNET = -lnet
@@ -33,10 +41,10 @@ SPRITEDIR =	/sprite/src/kernel
 USERH=		/sprite/lib/include
 H =		${SPRITEDIR}/Include
 INSTALLED =	{SPRITEDIR}/Installed/${MODULE}
-LIB =		${SPRITEDIR}/${TM}.md
-PROFD =	${SPRITEDIR}/Profiled/${TM}.md
-ODIR =		${TM}.md
-IFLAGS=	-I. -I${H} -I${USERH} -I${USERH}/${TM}.md -I${H}/${TM}.md
+LIB =		${SPRITEDIR}/${RTM}.md
+PROFD =	${SPRITEDIR}/Profiled/${RTM}.md
+ODIR =		${RTM}.md
+IFLAGS=	-I. -I${H} -I${USERH} -I${USERH}/${RTM}.md -I${H}/${RTM}.md
 #PROFILE =	-p -DPROFILE
 PROFILE =
 CFLAGS =	${MTFLAGS} -g -DKERNEL ${PROFILE} ${IFLAGS}
@@ -161,12 +169,14 @@ HDRS = sprite.h
 #	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
 #	cc -c ${CFLAGS} version.c
 #	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
-#	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
+#	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
 #	@ls -l $@
 #	@size $@
 #	update -f -s $@ /sprite/boot/$@.sprite
 #	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2.new
 #	nm -n $@  > $@.nm
+
+default: ${MACHINE}
 
 sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
@@ -176,7 +186,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} mainHook.c
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
+	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
@@ -195,7 +205,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
 	cc -c ${CFLAGS} -Dsun4 version.c
 	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBNET}
+	    -L/sprite/lib/${RTM}.md ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
@@ -229,7 +239,7 @@ ds3100: ${OBJS} .PRECIOUS
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
 	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
-		-L/sprite/lib/${TM}.md ${LIBNET}
+		-L/sprite/lib/${RTM}.md ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f $@ /sprite/boot/$@.md/new
@@ -248,7 +258,7 @@ profile2: ${PROFOBJS} Makefile .PRECIOUS
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
+	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.sprite
@@ -263,7 +273,7 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
+	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/sun3.md/prof
