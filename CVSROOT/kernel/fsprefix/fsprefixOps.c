@@ -5,10 +5,15 @@
  *	to determine the server for a file depending on the
  *	first part of the file's name.  Operations on pathnames get
  *	passed through FsLookupOperation (and FsTwoNameOperation) that
- *	handles the iteration over the prefix table.  There may be redirections
+ *	handles the iteration over the prefix table that is due to redirections
  *	from servers as a pathname wanders from domain to domain.  There
  *	is also set of low-level procedures for direct operations on the prefix
  *	table itself; add, delete, initialize, etc.
+ *
+ *	TODO: Extract the recovery related junk.  The prefix table is used
+ *	as a convenient place to record recovery state and synchronize
+ *	opens with re-opens, but the recov module's user-state flags should be
+ *	used instead.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -731,7 +736,7 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
     int		*domainTypePtr;	/* Return, the domain of the prefix */
     FsPrefix	**prefixPtrPtr;	/* Return, prefix used to find the file */
 {
-    register Proc_ControlBlock	*procPtr;	    /* For this process, to
+    register Fs_ProcessState	*fsPtr;	   	    /* For this process, to
 						     * return working dir.*/
     register FsPrefix 		*longestPrefixPtr;  /* Longest match */
     register FsPrefix		*prefixPtr;	    /* Pointer to table entry */
@@ -752,10 +757,10 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
 	 * working directory.
 	 */
 	fsStats.prefix.relative++;
-	procPtr = Proc_GetEffectiveProc();
-	if (procPtr->cwdPtr != (Fs_Stream *)NIL) {
-	    *hdrPtrPtr = procPtr->cwdPtr->ioHandlePtr;
-	    nameInfoPtr = procPtr->cwdPtr->nameInfoPtr;
+	fsPtr = (Proc_GetEffectiveProc())->fsPtr;
+	if (fsPtr->cwdPtr != (Fs_Stream *)NIL) {
+	    *hdrPtrPtr = fsPtr->cwdPtr->ioHandlePtr;
+	    nameInfoPtr = fsPtr->cwdPtr->nameInfoPtr;
 	    *rootIDPtr = nameInfoPtr->rootID;
 	    *lookupNamePtr = fileName;
 	    *domainTypePtr = nameInfoPtr->domainType;

@@ -219,7 +219,6 @@ Fs_Bin()
  *
  * Side effects:
  *	The current directory is opened for the main process.
- *	(The current domain will also be intialized.)
  *	The permissions mask is initialized.
  *	The table of open file Id's is cleared to zero size.
  *
@@ -230,9 +229,10 @@ Fs_ProcInit()
 {
     ReturnStatus	status;		/* General status code return */
     Proc_ControlBlock	*procPtr;	/* Main process's proc table entry */
-    Fs_Stream		*cwdPtr;	/* File for the current directory */
+    register Fs_ProcessState	*fsPtr;	/* FS state ref'ed from proc table */
 
     procPtr = Proc_GetCurrentProc();
+    procPtr->fsPtr = fsPtr = Mem_New(Fs_ProcessState);
     /*
      * General filesystem initialization.
      * Find out how much we can transfer with the RPC system.
@@ -244,13 +244,16 @@ Fs_ProcInit()
 	Rpc_MaxSizes(&fsMaxRpcDataSize, &fsMaxRpcParamSize);
     }
 
+    fsPtr->numGroupIDs	= 1;
+    fsPtr->groupIDs 	= (int *) Mem_Alloc(1 * sizeof(int));
+    fsPtr->groupIDs[0]	= 0;
+
     /*
      * Open the root as the current directory.
      */
-    procPtr->cwdPtr = (Fs_Stream *)NIL;
-    cwdPtr = (Fs_Stream *)NIL;
+    fsPtr->cwdPtr = (Fs_Stream *)NIL;
     do {
-	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &cwdPtr);
+	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
 	if (status != SUCCESS) {
 	    /*
 	     * No server for "/" around so try using the local disk as "/"
@@ -270,7 +273,7 @@ Fs_ProcInit()
 		Sys_Printf("Exporting \"%s\" as root\n", LOCAL_DISK_NAME);
 		FsPrefixInstall("/", hdrPtr, domainType,
 				     FS_EXPORTED_PREFIX | FS_IMPORTED_PREFIX);
-		status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &cwdPtr);
+		status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
 		if (status != SUCCESS) {
 		    Sys_Panic(SYS_FATAL,
 			      "Fs_ProcInit: Can't open local root <0x%x>\n",
@@ -287,20 +290,20 @@ Fs_ProcInit()
 	    }
 	} 
     } while (status != SUCCESS);
-    procPtr->cwdPtr = cwdPtr;
     /*
      * Set the default permissions mask; it indicates the maximal set of
      * permissions that a newly created file can have.
      */
-    procPtr->filePermissions = FS_OWNER_READ|FS_OWNER_WRITE|FS_OWNER_EXEC |
-			       FS_GROUP_READ | FS_WORLD_READ |
-			       FS_GROUP_EXEC | FS_WORLD_EXEC;
+    fsPtr->filePermissions = FS_OWNER_WRITE |
+			FS_OWNER_READ | FS_OWNER_EXEC |
+			FS_GROUP_READ | FS_GROUP_EXEC |
+			FS_WORLD_READ | FS_WORLD_EXEC;
     /*
      * The open file list is only needed by user processes.
      * Fs_GetNewID will create and grow this list.
      */
-    procPtr->numStreams = 0;
-    procPtr->streamList = (Fs_Stream **)NIL;
+    fsPtr->numStreams = 0;
+    fsPtr->streamList = (Fs_Stream **)NIL;
 
     return;
 }
@@ -329,52 +332,74 @@ Fs_InheritState(parentProcPtr, newProcPtr)
     Proc_ControlBlock *parentProcPtr;	/* Process to inherit from */
     Proc_ControlBlock *newProcPtr;	/* Process that inherits */
 {
+    register 	Fs_ProcessState	*parFsPtr;
+    register 	Fs_ProcessState	*newFsPtr;
     register	Fs_Stream	**parStreamPtrPtr;
     register	Fs_Stream	**newStreamPtrPtr;
     register 	int 		i;
     int 			len;
 
     /*
-     * Current working directory and open files.
+     * User Ids.  This is kept separate from the file system state
+     * so other modules can use the user ID for permission checking.
      */
-    newProcPtr->cwdPtr = parentProcPtr->cwdPtr;
-    if (parentProcPtr->cwdPtr != (Fs_Stream *)NIL) {
-	Fs_StreamCopy(parentProcPtr->cwdPtr, &newProcPtr->cwdPtr);
+    newProcPtr->userID = parentProcPtr->userID;
+
+    /*
+     * The rest of the filesystem state hangs off the Fs_ProcessState record.
+     * This could be shared after forking to implement file descriptor sharing.
+     */
+    parFsPtr = parentProcPtr->fsPtr;
+    newProcPtr->fsPtr = newFsPtr = Mem_New(Fs_ProcessState);
+
+    /*
+     * Current working directory.
+     */
+    if (parFsPtr->cwdPtr != (Fs_Stream *)NIL) {
+	Fs_StreamCopy(parFsPtr->cwdPtr, &newFsPtr->cwdPtr);
+    } else {
+	newFsPtr->cwdPtr = (Fs_Stream *)NIL;
     }
 
-    len = newProcPtr->numStreams = parentProcPtr->numStreams;
+    /*
+     * Open stream list.
+     */
+    len = newFsPtr->numStreams = parFsPtr->numStreams;
     if (len > 0) {
-	newProcPtr->streamList =
+	newFsPtr->streamList =
 		(Fs_Stream **)Mem_Alloc(len * sizeof(Fs_Stream *));
-	for (i = 0, parStreamPtrPtr = parentProcPtr->streamList,
-		    newStreamPtrPtr = newProcPtr->streamList;
+	newFsPtr->streamFlags = (char *)Mem_Alloc(len * sizeof(char));
+	for (i = 0, parStreamPtrPtr = parFsPtr->streamList,
+		    newStreamPtrPtr = newFsPtr->streamList;
 	     i < len;
 	     i++, parStreamPtrPtr++, newStreamPtrPtr++) {
 	    if (*parStreamPtrPtr != (Fs_Stream *) NIL) {
 		Fs_StreamCopy(*parStreamPtrPtr, newStreamPtrPtr);
+		newFsPtr->streamFlags[i] = parFsPtr->streamFlags[i];
 	    } else {
 		*newStreamPtrPtr = (Fs_Stream *) NIL;
+		newFsPtr->streamFlags[i] = 0;
 	    }
 	}
     } else {
-	newProcPtr->streamList = (Fs_Stream **)NIL;
+	newFsPtr->streamList = (Fs_Stream **)NIL;
+	newFsPtr->streamFlags = (char *)NIL;
     }
 
-    newProcPtr->filePermissions = parentProcPtr->filePermissions;
+    newFsPtr->filePermissions = parFsPtr->filePermissions;
 
     /*
-     * User and Group Ids.
+     * Group ID list.
      */
-    newProcPtr->userID = parentProcPtr->userID;
 
-    len = newProcPtr->numGroupIDs = parentProcPtr->numGroupIDs;
+    len = newFsPtr->numGroupIDs = parFsPtr->numGroupIDs;
     if (len) {
-	newProcPtr->groupIDs = (int *)Mem_Alloc(len * sizeof(int));
+	newFsPtr->groupIDs = (int *)Mem_Alloc(len * sizeof(int));
 	for (i=0 ; i<len; i++) {
-	    newProcPtr->groupIDs[i] = parentProcPtr->groupIDs[i];
+	    newFsPtr->groupIDs[i] = parFsPtr->groupIDs[i];
 	}
     } else {
-	newProcPtr->groupIDs = (int *)NIL;
+	newFsPtr->groupIDs = (int *)NIL;
     }
 }
 
@@ -400,14 +425,17 @@ Fs_CloseOnExec(procPtr)
     Proc_ControlBlock *procPtr;		/* Process to operate on */
 {
     register int i;
-    register Fs_Stream *streamPtr;
+    register Fs_Stream **streamPtrPtr;	/* Pointer into streamList */
+    char *flagPtr;			/* Pointer into flagList */
 
-    for (i=0 ; i<procPtr->numStreams ; i++) {
-	streamPtr = procPtr->streamList[i];
-	if ((streamPtr != (Fs_Stream *)NIL) &&
-	    (streamPtr->flags & FS_CLOSE_ON_EXEC)) {
-	    (void)Fs_Close(streamPtr);
-	    FsClearStreamID(i, procPtr);
+    for (i=0, streamPtrPtr = procPtr->fsPtr->streamList,
+	      flagPtr = procPtr->fsPtr->streamFlags ;
+	 i < procPtr->fsPtr->numStreams ;
+	 i++, streamPtrPtr++, flagPtr++) {
+	if ((*streamPtrPtr != (Fs_Stream *)NIL) &&
+	    (*flagPtr & FS_CLOSE_ON_EXEC)) {
+	    (void)Fs_Close(*streamPtrPtr);
+	    *streamPtrPtr = (Fs_Stream *)NIL;
 	}
     }
 }
@@ -433,27 +461,28 @@ Fs_CloseState(procPtr)
     Proc_ControlBlock *procPtr;		/* An exiting process to clean up */
 {
     register int i;
+    register Fs_ProcessState *fsPtr = procPtr->fsPtr;
 
-    if (procPtr->cwdPtr != (Fs_Stream *) NIL) {
-	(void)Fs_Close(procPtr->cwdPtr);
+    if (fsPtr->cwdPtr != (Fs_Stream *) NIL) {
+	(void)Fs_Close(fsPtr->cwdPtr);
     }
 
-    if (procPtr->streamList != (Fs_Stream **)NIL) {
-	for (i=0 ; i<procPtr->numStreams ; i++) {
+    if (fsPtr->streamList != (Fs_Stream **)NIL) {
+	for (i=0 ; i < fsPtr->numStreams ; i++) {
 	    register Fs_Stream *streamPtr;
 
-	    streamPtr = procPtr->streamList[i];
+	    streamPtr = fsPtr->streamList[i];
 	    if (streamPtr != (Fs_Stream *)NIL) {
 		(void)Fs_Close(streamPtr);
 	    }
 	}
-	Mem_Free((Address) procPtr->streamList);
-	procPtr->streamList = (Fs_Stream **)NIL;
+	Mem_Free((Address) fsPtr->streamList);
+	fsPtr->streamList = (Fs_Stream **)NIL;
     }
 
-    if (procPtr->groupIDs != (int *) NIL) {
-	Mem_Free((Address) procPtr->groupIDs);
-	procPtr->groupIDs = (int *) NIL;
-	procPtr->numGroupIDs = 0;
+    if (fsPtr->groupIDs != (int *) NIL) {
+	Mem_Free((Address) fsPtr->groupIDs);
+	fsPtr->groupIDs = (int *) NIL;
+	fsPtr->numGroupIDs = 0;
     }
 }

@@ -1136,8 +1136,8 @@ Fs_CheckAccess(pathName, perm, useRealID)
 	bits <<= 6;
     } else {
 	int	i;
-	for (i = 0; i < procPtr->numGroupIDs; i++) {
-	    if (attributes.gid == procPtr->groupIDs[i]) {
+	for (i = 0; i < procPtr->fsPtr->numGroupIDs; i++) {
+	    if (attributes.gid == procPtr->fsPtr->groupIDs[i]) {
 		bits <<= 3;
 		break;
 	    }
@@ -1311,8 +1311,8 @@ Fs_SetDefPermStub(permissions, oldPermPtr)
     int 				oldPerm;
 
     procPtr = Proc_GetEffectiveProc();
-    oldPerm = procPtr->filePermissions;
-    procPtr->filePermissions = (unsigned int)(permissions & 0777);
+    oldPerm = procPtr->fsPtr->filePermissions;
+    procPtr->fsPtr->filePermissions = (unsigned int)(permissions & 0777);
     if (Proc_ByteCopy(FALSE, sizeof(int), (Address)&oldPerm, 
 		(Address)oldPermPtr) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);

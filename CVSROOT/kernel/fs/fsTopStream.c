@@ -438,7 +438,7 @@ FsGetStreamID(streamPtr, streamIDPtr)
     int		*streamIDPtr;	/* Return value, the index of the file pointer
 				 * in the process's list of open files */
 {
-    register Proc_ControlBlock	*procPtr;	/* This process's proc table 
+    register Fs_ProcessState	*fsPtr;		/* From process's proc table 
 						 * entry */
     register Fs_Stream		**streamPtrPtr;	/* Process's list of open 
 						 * streams. */
@@ -447,35 +447,28 @@ FsGetStreamID(streamPtr, streamIDPtr)
     ReturnStatus		status;		/* Error from growing file 
 						 * list. */
 
-    procPtr = Proc_GetEffectiveProc();
+    fsPtr = (Proc_GetEffectiveProc())->fsPtr;
 
     if (streamPtr == (Fs_Stream *)0) {
 	Sys_Panic(SYS_FATAL, "Zero valued streamPtr");
     }
-    if (procPtr->streamList == (Fs_Stream **)NIL) {
+    if (fsPtr->streamList == (Fs_Stream **)NIL) {
 	/*
 	 * Allocate the initial array of file pointers.
 	 */
-#define LENGTH	8
-	streamPtrPtr = 
-		(Fs_Stream **)Mem_Alloc(LENGTH * sizeof(Fs_Stream *));
-	procPtr->streamList = streamPtrPtr;
-	procPtr->numStreams = LENGTH;
-	for (index = 0; index < LENGTH; index++, streamPtrPtr++) {
-	    *streamPtrPtr = (Fs_Stream *)NIL;
-	}
-#undef LENGTH
+	(void)GrowStreamList(fsPtr, 8);
     }
 
     /*
      * Take the first free streamID, or add a new one to the end.
      */
-    for (index = 0, streamPtrPtr = procPtr->streamList; 
-	 index < procPtr->numStreams; 
+    for (index = 0, streamPtrPtr = fsPtr->streamList; 
+	 index < fsPtr->numStreams; 
 	 index++, streamPtrPtr++) {
 	if (*streamPtrPtr == (Fs_Stream *)NIL) {
 	    *streamPtrPtr = streamPtr;
 	    *streamIDPtr = index;
+	    fsPtr->streamFlags[index] = 0;
 	    return(SUCCESS);
 	}
     }
@@ -484,12 +477,12 @@ FsGetStreamID(streamPtr, streamIDPtr)
      * array, copy the contents of the original into the beginning,
      * then pick the first empty slot.
      */
-    status = GrowStreamList(&procPtr->streamList, procPtr->numStreams,
-			procPtr->numStreams * 2);
+    index = fsPtr->numStreams;
+    status = GrowStreamList(fsPtr, fsPtr->numStreams * 2);
     if (status == SUCCESS) {
-	*streamIDPtr = procPtr->numStreams;
-	procPtr->streamList[*streamIDPtr] = streamPtr;
-	procPtr->numStreams *= 2;
+	*streamIDPtr = index;
+	fsPtr->streamList[index] = streamPtr;
+	fsPtr->streamFlags[index] = 0;
     }
     return(status);
 }
@@ -520,7 +513,7 @@ FsClearStreamID(streamID, procPtr)
     if (procPtr == (Proc_ControlBlock *)NIL) {
 	procPtr = Proc_GetEffectiveProc();
     }
-    procPtr->streamList[streamID] = (Fs_Stream *)NIL;
+    procPtr->fsPtr->streamList[streamID] = (Fs_Stream *)NIL;
 }
 
 
@@ -529,8 +522,7 @@ FsClearStreamID(streamID, procPtr)
  *
  * GrowStreamList --
  *
- *	Grow a stream ID list.  The caller passes in a pointer
- *	to an array of file pointers => ***Fs_Stream.  This routine
+ *	Grow a stream ID list.  This routine
  *	allocates another array of file pointers and copies the
  *	values from the original array into the new one.  It also
  *	initializes the new array elements to NIL.  The original
@@ -542,41 +534,45 @@ FsClearStreamID(streamID, procPtr)
  *	(One could limit the number of streams here, but we don't.)
  *
  * Side effects:
- *	The original array refered to by *streamListPtr is free'd.
- *	A new array of (Fs_Stream *) is allocated and *streamListPtr
- *	is reset to point to it.
+ *	Grows the stream list and the associated array of flag bytes.
+ *	The number of streams in the file system state is updated.
  *
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-GrowStreamList(streamListPtr, oldLength, newLength)
-    Fs_Stream ***streamListPtr;	/* Pointer to an array of (Fs_Stream *) */
-    int oldLength;		/* The length of the orignal array */
+GrowStreamList(fsPtr, newLength)
+    Fs_ProcessState *fsPtr;	/* The file system state */
     int newLength;		/* The length of the new array */
 {
     register int index;
-    Fs_Stream **streamList;
+    register Fs_Stream **streamList;
+    register char *streamFlags;
 
-    if (newLength <= oldLength) {
-	Sys_Panic(SYS_FATAL, "GrowStreamList, stupid call\n");
-    }
     streamList = (Fs_Stream **)Mem_Alloc(newLength * sizeof(Fs_Stream *));
+    streamFlags = (char *)Mem_Alloc(newLength * sizeof(char));
 
-    Byte_Copy(sizeof(Fs_Stream *) * oldLength,
-	      (Address)*streamListPtr, (Address)streamList);
+    Byte_Copy(sizeof(Fs_Stream *) * fsPtr->numStreams,
+	      (Address)fsPtr->streamList, (Address)streamList);
+    Byte_Copy(sizeof(char) * fsPtr->numStreams,
+	      (Address)fsPtr->streamFlags, (Address)streamFlags);
 
-    Mem_Free((Address)*streamListPtr);
+    Mem_Free((Address)fsPtr->streamList);
+    Mem_Free((Address)fsPtr->streamFlags);
 
-    for (index=0 ; index<oldLength ; index++) {
-	if (streamList[index] == (Fs_Stream *)0) {
-	    Sys_Panic(SYS_FATAL, "FsGrowList copied zero streamPtr, #%d\n",
-				   index);
+    fsPtr->streamList = streamList;
+    fsPtr->streamFlags =  streamFlags;
+
+    for (index=0 ; index < fsPtr->numStreams ; index++) {
+	if ((int)streamList[index] < 1024) {
+	    Sys_Panic(SYS_FATAL, "GrowStreamList copied bad streamPtr, %x\n",
+				   streamList[index]);
 	}
     }
-    for (index=oldLength ; index<newLength ; index++) {
-	streamList[index] = (Fs_Stream *)NIL;
+    for (index=fsPtr->numStreams ; index < newLength ; index++) {
+	fsPtr->streamList[index] = (Fs_Stream *)NIL;
+	fsPtr->streamFlags[index] = 0;
     }
-    *streamListPtr = streamList;
+    fsPtr->numStreams = newLength;
     return(SUCCESS);
 }
 
@@ -609,16 +605,24 @@ FsGetStreamPtr(procPtr, streamID, streamPtrPtr)
     int			streamID;	/* A possible index into the list */
     Fs_Stream		**streamPtrPtr;	/* The pointer from the list*/
 {
-    if (streamID < 0 || streamID >= procPtr->numStreams) {
+    if (streamID < 0 || streamID >= procPtr->fsPtr->numStreams) {
 	return(FS_INVALID_ARG);
     } else {
 	register Fs_Stream *streamPtr;
 
-	streamPtr = procPtr->streamList[streamID];
+	streamPtr = procPtr->fsPtr->streamList[streamID];
 	if (streamPtr == (Fs_Stream *)NIL) {
 	    return(FS_INVALID_ARG);
-	} else if (streamPtr == (Fs_Stream *)0) {
-	    Sys_Panic(SYS_WARNING, "Stream Ptr # %d was zero\n", streamID);
+	} else if ((int)streamPtr < 1024) {
+	    /*
+	     * There was a time when control stream pointers were not
+	     * being passed right, or being passed a second time after
+	     * already being converted to a streamID, which resulted in
+	     * small integers being kept in the stream list instead of
+	     * valid stream pointers.  Not sure if that still happens.
+	     */
+	    Sys_Panic(SYS_FATAL, "Stream Ptr # %d was an int %d!\n",
+				streamID, streamPtr);
 	    return(FS_INVALID_ARG);
 	} else {
 	    *streamPtrPtr = streamPtr;
@@ -660,9 +664,10 @@ Fs_GetNewID(streamID, newStreamIDPtr)
     int streamID;
     int *newStreamIDPtr;
 {
-    ReturnStatus 	status;
-    Fs_Stream 		*streamPtr;
-    Proc_ControlBlock	*procPtr;
+    register ReturnStatus 	status;
+    Fs_Stream 			*streamPtr;
+    Proc_ControlBlock		*procPtr;
+    register Fs_ProcessState	*fsPtr;
 
     if (newStreamIDPtr == (int *)NIL) {
 	return(FS_INVALID_ARG);
@@ -672,6 +677,7 @@ Fs_GetNewID(streamID, newStreamIDPtr)
     if (status != SUCCESS) {
 	return(status);
     }
+    fsPtr = procPtr->fsPtr;
     if (*newStreamIDPtr == FS_ANYID) {
 	Fs_Stream		*newStreamPtr;
 
@@ -700,25 +706,21 @@ Fs_GetNewID(streamID, newStreamIDPtr)
 	    if (newStreamID < 0) {
 		return(FS_INVALID_ARG);
 	    }
-	    if (newStreamID >= procPtr->numStreams) {
+	    if (newStreamID >= fsPtr->numStreams) {
 		register int maxID;
 		/*
 		 * Need to grow the file list to accomodate this stream ID.
 		 * We do a sanity check on the value of stream ID so
 		 * we don't nuke ourselves with a huge array.
 		 */
-		maxID = 2 * procPtr->numStreams;
+		maxID = 2 * fsPtr->numStreams;
 		maxID = (maxID<128 ? 128 : maxID);
 		if (newStreamID > maxID) {
 		    return(FS_NEW_ID_TOO_BIG);
 		}
-		status = GrowStreamList(&procPtr->streamList,
-				   procPtr->numStreams,
-				   newStreamID + 1 );
+		status = GrowStreamList(fsPtr, newStreamID + 1 );
 		if (status != SUCCESS) {
 		    return(status);
-		} else {
-		    procPtr->numStreams = newStreamID + 1;
 		}
 	    } else {
 		/*
@@ -727,13 +729,13 @@ Fs_GetNewID(streamID, newStreamIDPtr)
 		 */
 		register Fs_Stream *oldFilePtr;
 
-		oldFilePtr = procPtr->streamList[newStreamID];
+		oldFilePtr = fsPtr->streamList[newStreamID];
 		if (oldFilePtr != (Fs_Stream *)NIL) {
 		    (void)Fs_Close(oldFilePtr);
 		}
 	    }
 	    status =
-		Fs_StreamCopy(streamPtr, &procPtr->streamList[newStreamID]);
+		Fs_StreamCopy(streamPtr, &fsPtr->streamList[newStreamID]);
 	    return(status);
 	}
     }

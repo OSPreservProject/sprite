@@ -111,7 +111,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
      */
     procPtr = Proc_GetEffectiveProc();
     openArgs.useFlags		= useFlags;
-    openArgs.permissions	= permissions & procPtr->filePermissions;
+    openArgs.permissions	= permissions & procPtr->fsPtr->filePermissions;
     openArgs.type		= type;
     openArgs.clientID		= rpc_SpriteID;
     FsSetIDs(procPtr, &openArgs.id);
@@ -164,6 +164,12 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
  *	struct includes storage for the list of groups.  Alternatively,
  *	it could contain a pointer to the groups in the proc table.
  *
+ *	TODO: Byte the bullet and figure out a nice way to pass a
+ *	variable length list of groups around.  Then this procedure
+ *	would not be needed, and the Fs_ProcessState could be
+ *	referenced directly.  The ugliest place to do all this is
+ *	in the RPC stubs.
+ *
  * Results:
  *	None.
  *
@@ -174,9 +180,10 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
  */
 void
 FsSetIDs(procPtr, idPtr)
-    register	Proc_ControlBlock 	*procPtr;
-    FsUserIDs				*idPtr;
+    Proc_ControlBlock 		*procPtr;
+    FsUserIDs			*idPtr;
 {
+    register	Fs_ProcessState *fsPtr;
     register	int	*procGroupIDs;
     register	int	*groupPtr;
     register 	int 	i;
@@ -185,15 +192,17 @@ FsSetIDs(procPtr, idPtr)
 	procPtr = Proc_GetEffectiveProc();
     }
     idPtr->user = procPtr->effectiveUserID;
-    idPtr->numGroupIDs = procPtr->numGroupIDs;
-    for (i = 0, groupPtr = idPtr->group, procGroupIDs = procPtr->groupIDs;
+
+    fsPtr = procPtr->fsPtr;
+    idPtr->numGroupIDs = fsPtr->numGroupIDs;
+    for (i = 0, groupPtr = idPtr->group, procGroupIDs = fsPtr->groupIDs;
 	 i < FS_NUM_GROUPS; 
 	 i++, groupPtr++) {
 	/*
-	 * The proc table supports a variable length array of
+	 * The file system state record supports a variable length array of
 	 * group IDs but here we truncate it...
 	 */
-	if (i < procPtr->numGroupIDs) {
+	if (i < fsPtr->numGroupIDs) {
 	    *groupPtr = *procGroupIDs;
 	    procGroupIDs++;
 	} else {
@@ -296,7 +305,7 @@ Fs_MakeDevice(name, devicePtr, permissions)
 
     procPtr = Proc_GetEffectiveProc();
     makeDevArgs.device 		= *devicePtr;
-    makeDevArgs.permissions	= permissions & procPtr->filePermissions;
+    makeDevArgs.permissions	= permissions & procPtr->fsPtr->filePermissions;
     FsSetIDs(procPtr, &makeDevArgs.id);
     makeDevArgs.clientID	= rpc_SpriteID;
 
@@ -332,7 +341,7 @@ Fs_MakeDir(name, permissions)
 
     procPtr = Proc_GetEffectiveProc();
     openArgs.useFlags = FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW ;
-    openArgs.permissions = permissions & procPtr->filePermissions;
+    openArgs.permissions = permissions & procPtr->fsPtr->filePermissions;
     openArgs.type = FS_DIRECTORY;
     FsSetIDs(procPtr, &openArgs.id);
     openArgs.clientID = rpc_SpriteID;
@@ -363,13 +372,13 @@ ReturnStatus
 Fs_ChangeDir(pathName)
     char *pathName;
 {
-    Proc_ControlBlock	*procPtr;
+    register	Fs_ProcessState *fsPtr;
     Fs_Stream		*newCwdPtr;	/* A stream is used because it has
 					 * a reference count and can be
 					 * closed with existing routines. */
     ReturnStatus	status;
 
-    procPtr = Proc_GetEffectiveProc();
+    fsPtr = (Proc_GetEffectiveProc())->fsPtr;
 
     /*
      * FS_EXECUTE permission needed to change to a directory.
@@ -380,8 +389,8 @@ Fs_ChangeDir(pathName)
     if (status) {
 	return(status);
     }
-    (void)Fs_Close(procPtr->cwdPtr);
-    procPtr->cwdPtr = newCwdPtr;
+    (void)Fs_Close(fsPtr->cwdPtr);
+    fsPtr->cwdPtr = newCwdPtr;
     return(SUCCESS);
 }
 
