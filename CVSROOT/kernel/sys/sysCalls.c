@@ -496,8 +496,11 @@ Sys_StatsStub(command, option, argPtr)
 		
 		Sched_PrintStat();
 	    } else {
-		Timer_TicksToTime(sched_Instrument.noProcessRunning,
-				  &sched_Instrument.idleTime);
+		/*
+		 * UNIPROCESSOR code.
+		 */
+		Timer_TicksToTime(sched_Instrument.noProcessRunning[0],
+				  &sched_Instrument.idleTime[0]);
 		/*
 		 * If no interrupts received, mostRecentInterrupt will
 		 * be 0, so set it to the current time.  This will happen
