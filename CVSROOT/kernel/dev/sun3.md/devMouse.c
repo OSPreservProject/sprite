@@ -233,7 +233,7 @@ DevMouseRead(devicePtr, readPtr, replyPtr)
 	UNLOCK_MONITOR;
 	return Compat_MapToSprite(EWOULDBLOCK);
     }
-    while ((stillToDo > sizeof(Mouse_Event)) && !List_IsEmpty(&eventList)) {
+    while ((stillToDo >= sizeof(Mouse_Event)) && !List_IsEmpty(&eventList)) {
 	register Event *eventPtr;
 
 	eventPtr = (Event *) List_First(&eventList);
