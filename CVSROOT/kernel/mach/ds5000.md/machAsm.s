@@ -1857,6 +1857,7 @@ doNewSysCall:
     addu	t0, t0, t3
     lw		t3, 4(t0)	# t3 <= number of arguments.
     addu	s3, v0, zero	# Save syscall type in s3.
+    addu	s1, t0, zero	# Save syscall index in s1
     sll		t3, t3, 2
     la		t4, machArgDispatchTable
     addu	t3, t3, t4
@@ -1871,7 +1872,7 @@ doNewSysCall:
 /* 
  * We got the args now call the routine.
  */
-    lw		t3, 0(t0)	# t3 <= routine to call.
+    lw		t3, 0(s1)	# t3 <= routine to call.
     nop
     jal		t3		# Call the routine.
     nop
