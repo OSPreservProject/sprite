@@ -7,6 +7,20 @@
  *	is being cached, and if the file is open for writing on a client.
  *	The client list is updated when files are opened, closed, and removed.
  *
+ *	SYNCHRONIZATION:  There are two classes of procedures here: those
+ *	that make call-backs to clients, and those that just examine the
+ *	client list.  All access to a client list is synchronized using
+ *	a monitor lock embedded in the consist structure.  Furthermore,
+ *	consistency actions are serialized by setting a flag during
+ *	call-backs (CONSIST_IN_PROGRESS).  There is a possible deadlock
+ *	if the monitor lock is held during a call-back because this
+ *	prevents a close operation from completing. (At close time the
+ *	client list is adjusted but no call-backs are made.  Also, the client
+ *	has its handle locked which blocks our call-back.)  Accordingly,
+ *	both the handle lock and the monitor lock are released during
+ *	a call-back.  The CONSIST_IN_PROGRESS flag is left on to prevent
+ *	other consistency actions during the call-back.
+ *
  * Copyright 1986 Regents of the University of California.
  * All rights reserved.
  */
@@ -247,7 +261,8 @@ FsFileConsistency(handlePtr, clientID, useFlags, cacheablePtr,
  *	and it is already open for writing or vice versa.
  *
  * Side effects:
- *	None.
+ *	Sets the FS_CONSIST_IN_PROGRESS flag and makes call-backs to
+ *	clients.  The flag is cleared if the call-backs can't be made.
  *
  * ----------------------------------------------------------------------------
  *
@@ -365,6 +380,7 @@ done:
 	    Sys_Panic(SYS_WARNING,
 		"StartConsistency, error 0x%x client %d\n",
 		status, clientPtr->clientID);
+	    consistPtr->flags = 0;
 	}
     }
     *cacheablePtr = cacheable;
@@ -448,7 +464,7 @@ UpdateList(consistPtr, clientID, useFlags, cacheable,
  *
  * Side effects:
  *	Notifies the consistDone condition to allow someone else to
- *	open the file.
+ *	open the file.  Clears the FS_CONSIST_IN_PROGRES flag.
  *
  * ----------------------------------------------------------------------------
  *
@@ -776,14 +792,27 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
     LOCK_MONITOR;
 
     /*
+     * Unlock the handle so other operations on the file can proceed while
+     * we probe around the network for the most up-to-date attributes.
+     * Otherwise the following deadlock is possible:
+     * Client 1 does a get attributes about the same time client 2 does
+     * a close.  Client 2 has its handle locked during the close, but we
+     * will be calling back to it to get its attributes.  Our callback can't
+     * start until client 2 unlocks its handle, but it can't unlock it's
+     * handle until the close finishes.  The close can't finish because
+     * it is blocked here on the locked handle.
+     */
+    FsHandleUnlock(handlePtr);
+
+    /*
      * Make sure that noone else is in the middle of performing cache
      * consistency on this handle.  If so wait until they are done.
      */
     while (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
-	FsHandleUnlock((FsHandleHeader *)handlePtr);
 	(void) Sync_Wait(&consistPtr->consistDone, FALSE);
-	FsHandleLock((FsHandleHeader *)handlePtr);
     }
+    consistPtr->flags = FS_CONSIST_IN_PROGRESS;
+
     /*
      * Go through the set of clients using the file and see if they
      * are caching attributes.
@@ -809,79 +838,14 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
     }
     /*
      * Now that we are all set up, and have told all the other clients using
-     * the file what they have to do, we wait for them to finish.  The handle
-     * has to be unlocked so we can fetch the handle when we process the
-     * client's reply.  Set the in progress flag to block any further opens.
+     * the file what they have to do, we wait for them to finish.
      */
-    FsHandleUnlock(handlePtr);
-    consistPtr->flags = FS_CONSIST_IN_PROGRESS;
     (void)EndConsistency(consistPtr);
+
     FsHandleLock(handlePtr);
     *isExecedPtr = isExeced;
     UNLOCK_MONITOR;
 }
-
-/*
- * ----------------------------------------------------------------------------
- *
- * FsClientGetChanges --
- *
- *	Return the changes in reference counts (of all kinds) due
- *	to a re-open attempt by a client.  This is called to determine
- *	what open or closes to make to make the server's client state
- *	consistent with what the client has.  Assuming the opens
- *	or closes succeed, FsClientOpen should be called to
- *	actually update the client list information.
- *
- *	NOTE: Synchronization must be done by our caller, i.e. by
- *	locking the I/O handle.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------------
- */
-#ifdef notdef
-INTERNAL void
-FsClientGetChanges(clientList, clientID, refCount, writerCount,
-		refChangePtr, writerChangePtr)
-    List_Links	*clientList;	/* List of clients for the file/device */
-    int		clientID;	/* The client who is opening the file. */
-    int		refCount;	/* Number of references to add to this file.*/
-    int		writerCount;	/* Number of writers to add to this file. */
-    int		*refChangePtr;	/* Number of new references to add to this file.
-				 * If < 0 is the number of closes to perform. */
-    int		*writerChangePtr; /* Number of new writers to add to this file.
-				   * If < 0 is the number of closes to 
-				   * perform. */
-{
-    register FsClientInfo	*clientPtr;
-    Boolean			found = FALSE;
-
-    /*
-     * Find the current client in the list.
-     */
-    LIST_FORALL(clientList, (List_Links *)clientPtr) {
-	if (clientPtr->clientID == clientID) {
-	    found = TRUE;
-	    goto done;
-	}
-    }
-done:
-    if (found) {
-	*refChangePtr = refCount - clientPtr->use.ref;
-	*writerChangePtr = writerCount - clientPtr->use.write;
-    } else {
-	*refChangePtr = refCount;
-	*writerChangePtr = writerCount;
-    }
-
-    UNLOCK_MONITOR;
-}
-#endif notdef
 
 /*
  * ----------------------------------------------------------------------------
@@ -1044,6 +1008,14 @@ FsClientRemoveCallback(consistPtr, clientID)
     register	FsClientInfo	*clientPtr;
 
     LOCK_MONITOR;
+
+    FsHandleUnlock(consistPtr->hdrPtr);
+
+    while (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
+	(void) Sync_Wait(&consistPtr->consistDone, FALSE);
+    }
+    consistPtr->flags = FS_CONSIST_IN_PROGRESS;
+
     /*
      * Loop through the list notifying clients and deleting client elements.
      */
@@ -1062,21 +1034,19 @@ FsClientRemoveCallback(consistPtr, clientID)
 		 * Tell the client caching the file to remove it from its cache.
 		 * This should only be the last writer as we are called only
 		 * when it is truely time to remove the file.
-		 * The handle is momentarily unlocked to allow the consistency
-		 * reply to come in.
 		 */
 		(void)ClientCommand(consistPtr, clientPtr, FS_DELETE_FILE);
-		FsHandleUnlock(consistPtr->hdrPtr);
 		while (!List_IsEmpty(&consistPtr->msgList)) {
 		    (void) Sync_Wait(&consistPtr->repliesIn, FALSE);
 		}
-		FsHandleLock(consistPtr->hdrPtr);
 	    }
 	}
 	List_Remove((List_Links *) clientPtr);
 	Mem_Free((Address) clientPtr);
     }
+    consistPtr->flags = 0;
     consistPtr->lastWriter = -1;
+    FsHandleLock(consistPtr->hdrPtr);
     UNLOCK_MONITOR;
 }
 
@@ -1203,24 +1173,25 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
     register	FsClientInfo	*clientPtr;
 
     LOCK_MONITOR;
+    FsHandleUnlock(consistPtr->hdrPtr);
 
     /*
      * Make sure that noone else is in the middle of performing cache
      * consistency on this handle.  If so wait until they are done.
      */
     while (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
-	FsHandleUnlock(consistPtr->hdrPtr);
 	(void) Sync_Wait(&consistPtr->consistDone, FALSE);
-	FsHandleLock(consistPtr->hdrPtr);
     }
     /*
      * See if there are any dirty blocks to fetch.
      */
     if (consistPtr->lastWriter == -1 ||
 	consistPtr->lastWriter == rpc_SpriteID) {
+	FsHandleLock(consistPtr->hdrPtr);
         UNLOCK_MONITOR;
 	return;
     }
+    consistPtr->flags = FS_CONSIST_IN_PROGRESS;
 
     /*
      * There is a last writer.  In this case the only thing on the list is
@@ -1229,6 +1200,8 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
      */
     LIST_FORALL(&consistPtr->clientList, (List_Links *)clientPtr) {
 	if (clientPtr->clientID != consistPtr->lastWriter) {
+	    FsHandleLock(consistPtr->hdrPtr);
+	    consistPtr->flags = 0;
 	    UNLOCK_MONITOR;
 	    Sys_Panic(SYS_FATAL,
 		    "FsFetchDirtyBlocks: Non last writer in list.\n");
@@ -1246,14 +1219,12 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
 	    }
 	    status = ClientCommand(consistPtr, clientPtr, flags);
 	    if (status == SUCCESS) {
-		FsHandleUnlock(consistPtr->hdrPtr);
-		consistPtr->flags = FS_CONSIST_IN_PROGRESS;
 		(void)EndConsistency(consistPtr);
-		FsHandleLock(consistPtr->hdrPtr);
 	    }
 	}
     }
-
+    consistPtr->flags = 0;
+    FsHandleLock(consistPtr->hdrPtr);
     UNLOCK_MONITOR;
     return;
 }
@@ -1302,8 +1273,9 @@ ClientCommand(consistPtr, clientPtr, flags)
     int			flags;		/* Command for the other client */
 {
     Rpc_Storage		storage;
-    ConsistMsg	consistRpc;
+    ConsistMsg		consistRpc;
     ReturnStatus	status;
+    ConsistMsgInfo	*msgPtr;
 
     if (clientPtr->clientID == rpc_SpriteID) {
 	/*
@@ -1361,6 +1333,24 @@ ClientCommand(consistPtr, clientPtr, flags)
     storage.replyDataPtr = (Address) NIL;
     storage.replyDataSize = 0;
 
+    /*
+     * Put the client onto the list of outstanding cache consistency
+     * messages.
+     */
+
+    msgPtr = (ConsistMsgInfo *) Mem_Alloc(sizeof(ConsistMsgInfo));
+    msgPtr->clientID = clientPtr->clientID;
+    msgPtr->flags = consistRpc.flags;
+    List_Insert((List_Links *) msgPtr, LIST_ATREAR(&consistPtr->msgList));
+
+    /*
+     * Have to release this monitor during the call-back so that
+     * an unrelated close can complete its call to FsConsistClose.
+     */
+    if ((consistPtr->flags & FS_CONSIST_IN_PROGRESS) == 0) {
+	Sys_Panic(SYS_FATAL, "Client CallBack - consist flag not set\n");
+    }
+    UNLOCK_MONITOR;
     while ( TRUE ) {
 	/*
 	 * Send the rpc to the client.  The client will return FAILURE if the
@@ -1370,22 +1360,18 @@ ClientCommand(consistPtr, clientPtr, flags)
 	if (status != FAILURE) {
 	    break;
 	} else {
-	    Sys_Panic(SYS_WARNING, "Client %d dropping consist request\n",
-		clientPtr->clientID);
+	    Sys_Panic(SYS_WARNING, "Client %d dropping consist request %x\n",
+		clientPtr->clientID, flags);
 	}
     }
+    LOCK_MONITOR;
 
-    if (status == SUCCESS) {
+    if (status != SUCCESS) {
 	/*
-	 * Put the client onto the list of outstanding cache consistency
-	 * messages.
+	 * Couldn't post call-back to the client.
 	 */
-	ConsistMsgInfo	*msgPtr;
-
-	msgPtr = (ConsistMsgInfo *) Mem_Alloc(sizeof(ConsistMsgInfo));
-	msgPtr->clientID = clientPtr->clientID;
-	msgPtr->flags = consistRpc.flags;
-	List_Insert((List_Links *) msgPtr, LIST_ATREAR(&consistPtr->msgList));
+	List_Remove((List_Links *)msgPtr);
+	Mem_Free((Address)msgPtr);
     }
     return(status);
 }
@@ -1464,10 +1450,11 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	consistPtr->args = *consistArgPtr;
 	Proc_CallFunc(ProcessConsist, (ClientData) consistPtr, 0);
     } else {
-	Sys_Panic(SYS_WARNING, "Fs_RpcConsist: %s, timeStamp %d\n",
+	Sys_Panic(SYS_WARNING, "Fs_RpcConsist: %s, timeStamp %d, flags %x\n",
 		    (status == FS_STALE_HANDLE) ? "stale handle" :
 						  "open/consist race",
-		    consistArgPtr->openTimeStamp);
+		    consistArgPtr->openTimeStamp,
+		    consistArgPtr->flags);
     }
     Rpc_Reply(srvToken, status, storagePtr, (int(*)())NIL, (ClientData)NIL);
     return(SUCCESS);
@@ -1695,17 +1682,18 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	    break;
 	}
     }
+    if (List_IsEmpty(&(consistPtr->msgList))) {
+	Sync_Broadcast(&consistPtr->repliesIn);
+    }
     if (!found) {
 	/*
 	 * Old message from the client, probably queued in the network
 	 * interface or from a gateway.
 	 */
-	Sys_Panic(SYS_WARNING, "ProcessConsistReply: Client not in rpc list\n");
+	Sys_Panic(SYS_WARNING, "ProcessConsistReply: Client %d not found\n",
+			clientID);
 	UNLOCK_MONITOR;
 	return;
-    }
-    if (List_IsEmpty(&(consistPtr->msgList))) {
-	Sync_Broadcast(&consistPtr->repliesIn);
     }
     if (replyPtr->status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "ProcessConsist: consistency failed <%x>\n",
@@ -1722,6 +1710,9 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	/*
 	 * Look for client list entry that match the client, and update
 	 * its state to reflect the consistency action by the client.
+	 * Because we've release the monitor lock during the previous
+	 * call-back, an unrelated action may have removed the client
+	 * from the list - no big deal.
 	 */
 	found = FALSE;
 	LIST_FORALL(&(consistPtr->clientList), (List_Links *) clientPtr) {
