@@ -51,15 +51,6 @@ typedef struct VmMach_ProcData {
 } VmMach_ProcData;
 
 /*
- * Device buffer structure.
- */
-typedef struct {
-    Address	baseAddr;	/* Base virtual address to start 
-				   allocating at. */
-    Address	endAddr;	/* Last possible virtual address plus one. */
-} VmMach_DevBuffer;
-
-/*
  * Machine dependent functions.
  */
 /*
@@ -123,11 +114,10 @@ extern	void		VmMach_UnmapIntelPage();
  * Device mapping.
  */
 extern	Address		VmMach_MapInDevice();
-extern	void		VmMach_DevBufferInit();
-extern	Address		VmMach_DevBufferAlloc();
-extern	Address		VmMach_DevBufferMap();
 extern	void		VmMach_GetDevicePage();
 extern	ReturnStatus	VmMach_MapKernelIntoUser();
+extern	Address		VmMach_DMAAlloc();
+extern	void		VmMach_DMAFree();
 /*
  * Tracing.
  */
@@ -144,7 +134,7 @@ extern	void		VmMach_FlushPage();
 
 extern	ReturnStatus	VmMach_Cmd();
 
-#ifdef sun3
+#if defined(sun3) || defined(sun4)
 /*
  * Network mapping routines for the Sun 3.
  */
