@@ -81,21 +81,6 @@ typedef struct Fsconsist_Info {
 } Fsconsist_Info;
 
 /*
- * Cache conistency statistics.
- */
-typedef struct Fsconsist_Stats {
-    int numConsistChecks;	/* The number of times consistency was checked*/
-    int numClients;		/* The number of clients considered */
-    int notCaching;		/* # of other clients that weren't caching */
-    int readCaching;		/* # of other clients that were read caching */
-    int writeCaching;		/* # of lastWriters that re-opened  */
-    int writeBack;		/* # of lastWriters forced to write-back */
-    int readInvalidate;		/* # of readers forced to stop caching */
-    int writeInvalidate;	/* # of writers forced to stop caching */
-} Fsconsist_Stats;
-
-extern Fsconsist_Stats fsconsist_Stats;
-/*
  * Structure to contain information for each client that is using a file.
  */
 
