@@ -128,6 +128,7 @@ extern Boolean fsutil_ShouldSyncDisks;
 extern void		Fsutil_RecoveryInit();
 extern void		Fsutil_RecoverySyncLockCleanup();
 extern void		Fsutil_WantRecovery();
+extern void		Fsutil_AttemptRecovery();
 extern ReturnStatus	Fsutil_WaitForRecovery();
 extern void		Fsutil_Reopen();
 extern Boolean		Fsutil_RecoveryNeeded();
