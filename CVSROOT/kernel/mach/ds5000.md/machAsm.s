@@ -706,8 +706,8 @@ NON_LEAF(Mach_KernGenException,KERN_EXC_FRAME_SIZE,ra)
     lw		k0, machDebugStatePtr
     nop
 
-    lw		t0, MACH_TRAP_MULT_LO_OFFSET(k0)
-    lw		t1, MACH_TRAP_MULT_HI_OFFSET(k0)
+    lw		t0, MACH_DEBUG_MULT_LO_OFFSET(k0)
+    lw		t1, MACH_DEBUG_MULT_HI_OFFSET(k0)
     mtlo	t0
     mthi	t1
     RESTORE_REGS(k0, MACH_DEBUG_REGS_OFFSET)
