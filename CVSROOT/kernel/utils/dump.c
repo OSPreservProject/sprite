@@ -18,6 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "mach.h"
 #include "dump.h"
 #include "timer.h"
 #include "proc.h"
@@ -393,7 +394,6 @@ DumpPCB(procPtr)
 	case PROC_WAITING:
 	case PROC_EXITING:
 	case PROC_DEAD:
-	case PROC_DEBUGABLE:
 	case PROC_MIGRATED:
 	case PROC_NEW:
 	case PROC_SUSPENDED:

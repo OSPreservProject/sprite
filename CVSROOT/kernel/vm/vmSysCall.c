@@ -90,7 +90,7 @@ Vm_CreateVA(address, size)
     int			firstPage, lastPage;
     Proc_ControlBlock	*procPtr;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     firstPage = (unsigned) (address) >> vmPageShift;
     lastPage = (unsigned) ((int) address + size - 1) >> vmPageShift;
 
@@ -148,7 +148,7 @@ Vm_DestroyVA(address, size)
     int			firstPage, lastPage;
     Proc_ControlBlock	*procPtr;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     firstPage = (unsigned) (address) >> vmPageShift;
     lastPage = (unsigned) ((int) address + size - 1) >> vmPageShift;
 

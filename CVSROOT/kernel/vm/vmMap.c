@@ -211,7 +211,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
     int				lastPage;
     Proc_ControlBlock		*procPtr;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
 
     /*
      * Parse the virtual address to determine which segment that this page
@@ -327,7 +327,7 @@ Vm_MakeUnaccessible(addr, numBytes)
 
     LOCK_MONITOR;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
     procPtr->vmPtr->numMakeAcc--;
 

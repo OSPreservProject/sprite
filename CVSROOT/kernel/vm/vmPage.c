@@ -1364,7 +1364,7 @@ Vm_PageIn(virtAddr, protFault)
 
     vmStat.totalFaults++;
 
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetCurrentProc();
     /*
      * Determine which segment that this virtual address falls into.
      */

@@ -68,7 +68,7 @@ VmSwapFileRemove(swapStreamPtr, swapFileName)
     ReturnStatus	status;
 
     Fs_Close(swapStreamPtr);
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     if (procPtr->genFlags & PROC_FOREIGN) {
 	return;
     }
@@ -292,7 +292,7 @@ VmOpenSwapFile(segPtr)
 #ifdef DEBUG
     Sys_Printf("Opening swap file %s.\n", segPtr->swapFileName);
 #endif DEBUG
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr = Proc_GetEffectiveProc();
     if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
 	origID = procPtr->effectiveUserID;
 	procPtr->effectiveUserID = PROC_SUPER_USER_ID;

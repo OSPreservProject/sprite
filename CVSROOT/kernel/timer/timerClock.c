@@ -40,6 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "mach.h"
 #include "timer.h"
 #include "timerInt.h"
 #include "time.h"
