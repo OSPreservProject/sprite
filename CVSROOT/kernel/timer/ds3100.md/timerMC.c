@@ -25,21 +25,17 @@
  * second which we use to increment the seconds counter and clear the
  * microseconds counter.  The interval timer is used to increment the
  * microseconds counter.  We have a problem when interrupts are turned off
- * since the counter doesn't get incremented.  What we'd like to do is
- * to check the RTC each second and make sure it has only been one second
- * since the last RTC interrupt. There are two reasons why we can't do
- * that. First, the RTC interrupts when the update-in-progress flag is
- * set. The RTC goes invalid 244 microseconds after that.  If the
- * RTC interrupt was the highest priority everything would be fine, but
- * since we don't have priorities in Sprite we're hosed. Secondly, the
- * RTC is kept a stupid year/month/day/hour/minute/second format which
- * makes it expensive to figure out differences in times. The solution is
- * to check the RTC during interval interrupts.  Every 5 seconds or so
- * we look at the RTC, convert it to something we can use, and see if the
- * time elapsed since the last check corresponds to what our software 
- * counter says.  If not we update the software counter. The actual interval
- * between checking the RTC may vary since interrupts may be delayed and
- * since an update of the RTC may be in progress.
+ * since the counter doesn't get incremented.  This is fixed by comparing
+ * the difference in the hardware clock since the last interrupt against
+ * the difference in the software clock.  The hardware clock is supposed
+ * to go invalid 244 microseconds after the interrupt.  It isn't clear
+ * when the update-in-progress flag is set. My reading of the
+ * manual leads me to believe that it is set at the same time as the
+ * interrupt.  In this were true we could never read the hardware clock
+ * in the interrupt handler.  Either this isn't true, or we are usually
+ * delayed enough getting to the handler so that the clock is valid 
+ * again because the update-in-progress bit is never set (I ran a few
+ * tests).  
  */
 
 #ifndef lint
@@ -142,11 +138,6 @@ volatile unsigned char *DSTAllowNVMPtr    = (unsigned char *) (NVR_ADDR + 0x04);
 #define ONE_MILLION	1000000
 
 /*
- * We check the hardware RTC clock about once every 5 seconds to see if we've
- * missed some interrupts. If we have we must update the free-running counter.
- */
-#define SANITY_CHECK_INTERVAL	5 * 1000000 / 7812
-/*
  * The "free running counter"
  */
 Timer_Ticks counter;
@@ -227,7 +218,9 @@ Timer_TimerStart(timer)
     unsigned char	dummy;
 
     *regBPtr |= REGB_PER_INT_ENA;
+#ifndef lint
     dummy = *regCPtr;
+#endif
 
     Mach_MonPrintf("Starting timer interrupts.\n");
     if (timer == TIMER_CALLBACK_TIMER) {
@@ -313,8 +306,6 @@ Timer_TimerServiceInterrupt()
     static int		previousHardSeconds;
     int			softSeconds;
     int			hardSeconds;
-    static int		callCount = 0;
-    int			seconds;
     int			diff;
     static Boolean	initialized = FALSE;
 
@@ -352,48 +343,39 @@ Timer_TimerServiceInterrupt()
 	counter.seconds++;
 	counter.microseconds = 0;
 	eventDebug[dbgCtr] |= 0x1;
-    } else if (timerStatus & REGC_PER_INT_PENDING) {
-	/*
-	 * Interval timer interrupt.
-	 */
-	eventDebug[dbgCtr] |= 0x2;
-	callCount++;
-	if (callCount >= SANITY_CHECK_INTERVAL) {
-	    if ((*regAPtr & REGA_UIP) == 0) {
-		currentTODParts.seconds = *secPtr;
-		currentTODParts.minutes = *minPtr;
-		currentTODParts.hours = *hourPtr;
-		currentTODParts.dayOfMonth = *dayPtr;
-		currentTODParts.dayOfYear = -1;
-		currentTODParts.month = *monPtr-1;
-		currentTODParts.year = *yearPtr;
-		Time_FromParts(&currentTODParts, FALSE, &hardSeconds);
-		softSeconds = counter.seconds;
-		diff = hardSeconds - previousHardSeconds;
-		eventDebug[dbgCtr] |= 0x4;
-		if (softSeconds - previousSoftSeconds != diff && initialized) {
-		    /*
-		     * Note that the software counter cannot be ahead of
-		     * the hardware counter. We are only looking at the
-		     * seconds, and the seconds are only incremented 
-		     * during an interrupt. We only get one interrupt
-		     * a second so we may be behind but not ahead.
-		     */
-		    if (softSeconds - previousSoftSeconds > diff) {
-			panic("Software time is ahead of hardware!\n");
-		    }
-		    counter.seconds = previousSoftSeconds + diff;
-		    softSeconds = counter.seconds;
-		    timerCorrectedClock++;
-		    eventDebug[dbgCtr] |= 0x8;
+	if ((*regAPtr & REGA_UIP) == 0) {
+	    currentTODParts.seconds = *secPtr;
+	    currentTODParts.minutes = *minPtr;
+	    currentTODParts.hours = *hourPtr;
+	    currentTODParts.dayOfMonth = *dayPtr;
+	    currentTODParts.dayOfYear = -1;
+	    currentTODParts.month = *monPtr-1;
+	    currentTODParts.year = *yearPtr;
+	    Time_FromParts(&currentTODParts, FALSE, &hardSeconds);
+	    softSeconds = counter.seconds;
+	    diff = hardSeconds - previousHardSeconds;
+	    eventDebug[dbgCtr] |= 0x4;
+	    if (softSeconds - previousSoftSeconds != diff && initialized) {
+		/*
+		 * Note that the software counter cannot be ahead of
+		 * the hardware counter. We are only looking at the
+		 * seconds, and the seconds are only incremented 
+		 * during an interrupt. We only get one interrupt
+		 * a second so we may be behind but not ahead.
+		 */
+		if (softSeconds - previousSoftSeconds > diff) {
+		    panic("Software time is ahead of hardware!\n");
 		}
-		previousHardSeconds = hardSeconds;
-		previousSoftSeconds = softSeconds;
-		callCount = 0;
-		initialized = TRUE;
+		counter.seconds = previousSoftSeconds + diff;
+		softSeconds = counter.seconds;
+		timerCorrectedClock++;
+		eventDebug[dbgCtr] |= 0x8;
 	    }
+	    previousHardSeconds = hardSeconds;
+	    previousSoftSeconds = softSeconds;
+	    initialized = TRUE;
 	}
-    }
+    }    
     if (timerStatus & REGC_PER_INT_PENDING) {
 	/*
 	 * Check for kernel profiling.  We'll sample the PC here.
@@ -526,7 +508,7 @@ TimerHardwareUniversalTimeInit(timePtr, localOffsetPtr, DSTPtr)
 	    "Warning: battery backed up TOD clock is invalid.\n");
 	return;
     }
-    bzero(timePtr, sizeof(Time));
+    bzero((Address) timePtr, sizeof(Time));
     timePtr->seconds = seconds;
     BYTECOPY(localOffsetNVMPtr, localOffsetPtr, 4);
     BYTECOPY(DSTAllowNVMPtr, DSTPtr, 4);
