@@ -157,6 +157,8 @@ InitPCB(pcbPtr, i)
     pcbPtr->peerHostID = NIL;
     pcbPtr->peerProcessID = (Proc_PID) NIL;
     pcbPtr->remoteExecBuffer = (Address) NIL;
+    pcbPtr->migCmdBuffer = (Address) NIL;
+    pcbPtr->migCmdBufSize = 0;
     pcbPtr->argString = (char *) NIL;
 #ifdef LOCKDEP
     pcbPtr->lockStackSize = 0;
