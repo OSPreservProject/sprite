@@ -33,7 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static int bytesWritten;
 
 /*
- * _doprnt buffer.
+ * vprintf buffer.
  */
 #define	STREAM_BUFFER_SIZE	512
 static char streamBuffer[STREAM_BUFFER_SIZE];
@@ -53,7 +53,7 @@ static char streamBuffer[STREAM_BUFFER_SIZE];
  *
  * ----------------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static void
 writeProc(stream, flush)
     FILE *stream;
@@ -111,7 +111,7 @@ doVprintf(format, args)
     }
 
     bytesWritten = 0;
-    _doprnt(format, args, &stream);
+    vfprintf(&stream, format, *args);
     fflush(&stream);
     return (bytesWritten);
 
@@ -135,7 +135,7 @@ doVprintf(format, args)
  *
  * ----------------------------------------------------------------------------
  */
-
+/*VARARGS*/
 int
 Sys_DoPrintf(va_alist)
     va_dcl
@@ -172,7 +172,7 @@ Boolean	sysPanicing = FALSE;
  * ----------------------------------------------------------------------------
  */
 
-/*VARARGS2*/
+/*VARARGS*/
 void
 Sys_Panic(va_alist)
     va_dcl
@@ -183,7 +183,7 @@ Sys_Panic(va_alist)
 
     va_start(args);
 
-    level = va_arg(args, int);
+    level = va_arg(args, Sys_PanicLevel);
     format = va_arg(args, char *);
 
     if (level == SYS_WARNING) {
@@ -219,7 +219,7 @@ Sys_Panic(va_alist)
  * ----------------------------------------------------------------------------
  */
 
-/*VARARGS1*/
+/*VARARGS*/
 void
 Sys_UnSafePrintf(va_alist)
     va_dcl
@@ -249,7 +249,7 @@ Sys_UnSafePrintf(va_alist)
  * ----------------------------------------------------------------------------
  */
 
-/*VARARGS1*/
+/*VARARGS*/
 void
 Sys_Printf(va_alist)
     va_dcl
@@ -283,7 +283,7 @@ Sys_Printf(va_alist)
  * ----------------------------------------------------------------------------
  */
 
-/*VARARGS1*/
+/*VARARGS*/
 void
 Sys_SafePrintf(va_alist)
     va_dcl
@@ -299,3 +299,44 @@ Sys_SafePrintf(va_alist)
     ENABLE_INTR();
     va_end(args);
 }
+
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * panic --
+ *
+ *	Print an error message and enter the debugger. This entry is 
+ *	provided for libc.a routines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The kernel dies, entering the debugger if possible.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* VARARGS0 */
+void
+panic(va_alist)
+    va_dcl			/* char *format, then any number of additional
+				 * values to be printed under the control of
+				 * format.  This is all just the same as you'd
+				 * pass to printf. */
+{
+    char *format;
+    va_list args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+
+    Sys_Printf("Fatal Error: ");
+    (void) doVprintf(format,&args);
+    sysPanicing = TRUE;
+    DBG_CALL;
+
+    Dev_SyslogDebug(FALSE);
+}
+
