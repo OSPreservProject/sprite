@@ -218,4 +218,8 @@ Fs_Stat structure augmented for migration and writeback statistics.  Fixed
 problem with stream attributes not being invalidated when cached writable
 files migrate.  Added rpc to stage new migration callback for obtaining
 offset after deencapsulation.
+devSCSITape fixed so that a filemark is written on close only if last
+access was a write.
+Fs_UserClose now returns error codes consistent with the close() man page.
+
     New files linked in from the net library.
