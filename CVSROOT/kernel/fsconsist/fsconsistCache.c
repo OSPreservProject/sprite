@@ -131,10 +131,10 @@ FsCacheConsistStats fsConsistStats;
 /*
  * Forward declarations.
  */
-ReturnStatus	StartConsistency();
+void		StartConsistency();
 void 		UpdateList();
 ReturnStatus	EndConsistency();
-ReturnStatus 	ClientCommand();
+void	 	ClientCommand();
 void		ProcessConsist();
 void		ProcessConsistReply();
 
@@ -226,19 +226,17 @@ FsFileConsistency(handlePtr, clientID, useFlags, cacheablePtr,
      * Go through the list of other clients using the file checking
      * for conflicts and issuing cache consistency messages.
      */
-    status = StartConsistency(consistPtr, clientID, useFlags, cacheablePtr);
-    if (status == SUCCESS) {
-	/*
-	 * Add ourselves to the list of clients using the file.
-	 */
-	UpdateList(consistPtr, clientID, useFlags, *cacheablePtr,
-		    openTimeStampPtr);
-	/*
-	 * Now that we are all set up, and have told all the other clients
-	 * using the file what they have to do, we wait for them to finish.
-	 */
-	status = EndConsistency(consistPtr);
-    }
+    StartConsistency(consistPtr, clientID, useFlags, cacheablePtr);
+    /*
+     * Add ourselves to the list of clients using the file.
+     */
+    UpdateList(consistPtr, clientID, useFlags, *cacheablePtr,
+		openTimeStampPtr);
+    /*
+     * Now that we are all set up, and have told all the other clients
+     * using the file what they have to do, we wait for them to finish.
+     */
+    status = EndConsistency(consistPtr);
     UNLOCK_MONITOR;
     return(status);
 }
@@ -268,7 +266,7 @@ FsFileConsistency(handlePtr, clientID, useFlags, cacheablePtr,
  *
  */
 
-INTERNAL ReturnStatus
+INTERNAL void
 StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
     FsConsistInfo	*consistPtr;	/* File's consistency state. */
     int			clientID;	/* ID of host opening the file */
@@ -279,7 +277,6 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
     register FsClientInfo *nextClientPtr;
     register FsCacheConsistStats *statPtr = &fsConsistStats;
     register int openForWriting = useFlags & FS_WRITE;
-    register ReturnStatus status;
     register Boolean cacheable;
 
     /*
@@ -332,7 +329,6 @@ done:
      * so we can't use a simple LIST_FOR_ALL here.
      */
     statPtr->numConsistChecks++;
-    status = SUCCESS;
     nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
@@ -361,7 +357,7 @@ done:
 		 * Case 4, the last writer needs to give us back the
 		 * dirty blocks so the opening client will get good data.
 		 */
-		status = ClientCommand(consistPtr, clientPtr,
+		ClientCommand(consistPtr, clientPtr,
 					FS_WRITE_BACK_BLOCKS);
 		statPtr->writeBack++;
 	    }
@@ -370,7 +366,7 @@ done:
 		/*
 		 * Case 5, another reader needs to stop caching.
 		 */
-		status = ClientCommand(consistPtr, clientPtr,
+		ClientCommand(consistPtr, clientPtr,
 					FS_INVALIDATE_BLOCKS);
 		statPtr->readInvalidate++;
 	    } else {
@@ -378,20 +374,13 @@ done:
 		 * Case 6, the writer needs to stop caching and give
 		 * us back its dirty blocks.
 		 */
-		status = ClientCommand(consistPtr, clientPtr,
+		ClientCommand(consistPtr, clientPtr,
 			    FS_WRITE_BACK_BLOCKS | FS_INVALIDATE_BLOCKS);
 		statPtr->writeInvalidate++;
 	    }
 	}
-	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING,
-		"StartConsistency, error 0x%x client %d\n",
-		status, clientPtr->clientID);
-	    consistPtr->flags = 0;
-	}
     }
     *cacheablePtr = cacheable;
-    return(status);
 }
 
 /*
@@ -590,9 +579,8 @@ FsReopenConsistency(handlePtr, clientID, use, cacheablePtr,
 	     * If we don't know about this client yet then perform full
 	     * cache consistency on this file.
 	     */
-	    status = StartConsistency(consistPtr, clientID, useFlags,
-				    &cacheable);
-	    if (status == SUCCESS && (!cacheable && *cacheablePtr)) {
+	    StartConsistency(consistPtr, clientID, useFlags, &cacheable);
+	    if (!cacheable && *cacheablePtr) {
 		/*
 		 * Can't give the cacheability needed by the client.  This
 		 * is because it had dirty blocks but we let someone else
@@ -602,11 +590,8 @@ FsReopenConsistency(handlePtr, clientID, use, cacheablePtr,
 		    "FsReopenConsistency: cacheable conflict file <%d,%d>\n",
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 		status = FS_VERSION_MISMATCH;
-		(void)EndConsistency(consistPtr);
-	    }
-	    if (status != SUCCESS) {
 		goto exit;
-	    } 
+	    }
 	} else {
 	    /*
 	     * We already know about this client.
@@ -667,8 +652,8 @@ FsReopenConsistency(handlePtr, clientID, use, cacheablePtr,
     /*
      * Wait for cache consistency call-backs to complete.
      */
-    status = EndConsistency(consistPtr);
 exit:
+    status = EndConsistency(consistPtr);
     *cacheablePtr = cacheable;
     UNLOCK_MONITOR;
     return(status);
@@ -739,20 +724,18 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
      * The rest of this is like regular cache consistency.
      */
 
-    status = StartConsistency(consistPtr, dstClientID, useFlags, cacheablePtr);
-    if (status == SUCCESS) {
-	if (useFlags & FS_NEW_STREAM) {
-	    /*
-	     * The client is getting the stream to this I/O handle for
-	     * the first time so we should add it as a client.  We are
-	     * careful about this because there is only one reference to
-	     * the I/O handle per client per stream. 
-	     */
-	    UpdateList(consistPtr, dstClientID, useFlags, *cacheablePtr,
-			openTimeStampPtr);
-	}
-	status = EndConsistency(consistPtr);
+    StartConsistency(consistPtr, dstClientID, useFlags, cacheablePtr);
+    if (useFlags & FS_NEW_STREAM) {
+	/*
+	 * The client is getting the stream to this I/O handle for
+	 * the first time so we should add it as a client.  We are
+	 * careful about this because there is only one reference to
+	 * the I/O handle per client per stream. 
+	 */
+	UpdateList(consistPtr, dstClientID, useFlags, *cacheablePtr,
+		    openTimeStampPtr);
     }
+    status = EndConsistency(consistPtr);
 
     UNLOCK_MONITOR;
     return(status);
@@ -899,8 +882,11 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 
     if ((consistPtr->lastWriter != -1) && (flags & FS_LAST_DIRTY_BLOCK)) {
 	if (clientID != consistPtr->lastWriter) {
-	    Sys_Panic(SYS_FATAL, "FsConsistClose, bad last writer, %d not %d\n",
-		    consistPtr->lastWriter, clientID);
+	    Sys_Panic(SYS_WARNING,
+	    "FsConsistClose, <%d,%d> client %d not last writer %d, cached %d\n",
+		    consistPtr->hdrPtr->fileID.major,
+		    consistPtr->hdrPtr->fileID.minor,
+		    clientID, consistPtr->lastWriter, *wasCachedPtr);
 	} else {
 	    consistPtr->lastWriter = -1;
 	}
@@ -1026,6 +1012,7 @@ FsClientRemoveCallback(consistPtr, clientID)
 				 * return FS_FILE_REMOVED. */
 {
     register	FsClientInfo	*clientPtr;
+    int				curClientID;
 
     LOCK_MONITOR;
 
@@ -1042,27 +1029,39 @@ FsClientRemoveCallback(consistPtr, clientID)
     while (!List_IsEmpty((List_Links *)&consistPtr->clientList)) {
 	clientPtr = (FsClientInfo *)
 		    List_First((List_Links *) &consistPtr->clientList);
+	curClientID = clientPtr->clientID;
 	if (clientPtr->use.ref > 0) {
 	    Sys_Panic(SYS_FATAL,
 		"FsClientRemoveCallback: Client using removed file\n");
 	} else if (consistPtr->lastWriter != -1) {
 	    if (clientPtr->clientID != consistPtr->lastWriter) {
-		Sys_Panic(SYS_FATAL,
-		    "FsClientRemoveCallback: Non last writer in list.\n");
+		Sys_Panic(SYS_WARNING,
+		    "FsClientRemoveCallback: client %d not last writer (%d).\n",
+			clientPtr->clientID, consistPtr->lastWriter);
 	    } else if (clientPtr->clientID != clientID) {
 		/*
 		 * Tell the client caching the file to remove it from its cache.
 		 * This should only be the last writer as we are called only
 		 * when it is truely time to remove the file.
 		 */
-		(void)ClientCommand(consistPtr, clientPtr, FS_DELETE_FILE);
+		ClientCommand(consistPtr, clientPtr, FS_DELETE_FILE);
 		while (!List_IsEmpty(&consistPtr->msgList)) {
 		    (void) Sync_Wait(&consistPtr->repliesIn, FALSE);
 		}
 	    }
 	}
-	List_Remove((List_Links *) clientPtr);
-	Mem_Free((Address) clientPtr);
+	/*
+	 * We have to check carefully that the client element is still
+	 * here because it may already be removed.
+	 */
+	LIST_FORALL((List_Links *)&consistPtr->clientList,
+		    (List_Links *)clientPtr) {
+	    if (clientPtr->clientID == curClientID) {
+		List_Remove((List_Links *) clientPtr);
+		Mem_Free((Address) clientPtr);
+		break;
+	    }
+	}
     }
     consistPtr->flags = 0;
     consistPtr->lastWriter = -1;
@@ -1242,10 +1241,8 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
 	    if (invalidate) {
 		flags |= FS_INVALIDATE_BLOCKS;
 	    }
-	    status = ClientCommand(consistPtr, clientPtr, flags);
-	    if (status == SUCCESS) {
-		(void)EndConsistency(consistPtr);
-	    }
+	    ClientCommand(consistPtr, clientPtr, flags);
+	    (void)EndConsistency(consistPtr);
 	}
     }
     consistPtr->flags = 0;
@@ -1291,7 +1288,7 @@ typedef struct ConsistItem {
  *
  */
 
-INTERNAL ReturnStatus
+INTERNAL void
 ClientCommand(consistPtr, clientPtr, flags)
     register FsConsistInfo *consistPtr;	/* Consistency state of file */
     FsClientInfo	*clientPtr;	/* State of other client's cache */
@@ -1328,7 +1325,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 	    List_Remove((List_Links *) clientPtr);
 	    Mem_Free((Address) clientPtr);
 	}
-	return(SUCCESS);
+	return;
     }
     /*
      * Map to the client's view of the file (i.e. remote).  The openTimeStamp
@@ -1395,10 +1392,11 @@ ClientCommand(consistPtr, clientPtr, flags)
 	/*
 	 * Couldn't post call-back to the client.
 	 */
+	Sys_Panic(SYS_WARNING, "ClientCommand, msg %x to client %d failed %x\n",
+	    flags, clientPtr->clientID, status);
 	List_Remove((List_Links *)msgPtr);
 	Mem_Free((Address)msgPtr);
     }
-    return(status);
 }
 
 /*
@@ -1759,6 +1757,14 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	}
 	if (found) {
 	    handlePtr = (FsLocalFileIOHandle *)consistPtr->hdrPtr;
+	    if (!clientPtr->cached) {
+		Sys_Panic(SYS_WARNING,
+		    "ProcessConsistReply: shouldn't accecpt these attrs:\n");
+		Sys_Printf("\t\tFile <%d,%d>, client %d, lastByte %d\n",
+		    handlePtr->hdr.fileID.major,
+		    handlePtr->hdr.fileID.minor,
+		    clientID, replyPtr->cachedAttr.lastByte);
+	    }
 	    FsUpdateAttrFromClient(&handlePtr->cacheInfo,
 		&replyPtr->cachedAttr);
 	}
