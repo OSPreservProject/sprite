@@ -19,9 +19,9 @@
 #ifndef _NETINT
 #define _NETINT
 
-#include "sprite.h"
-#include "list.h"
-#include "net.h"
+#include <sprite.h>
+#include <list.h>
+#include <net.h>
 
 typedef struct NetInterface {
     char	*name;

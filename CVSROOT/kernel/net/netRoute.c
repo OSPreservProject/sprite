@@ -37,18 +37,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
-#include "net.h"
-#include "netRoute.h"
-#include "netInt.h"
-#include "sys.h"
-#include "stdlib.h"
-#include "timer.h"
-#include "sync.h"
-#include "proc.h"
-#include "rpc.h"
-#include "netInet.h"
-#include "string.h"
+#include <sprite.h>
+#include <net.h>
+#include <netRoute.h>
+#include <netInt.h>
+#include <sys.h>
+#include <stdlib.h>
+#include <timer.h>
+#include <sync.h>
+#include <proc.h>
+#include <rpc.h>
+#include <netInet.h>
+#include <string.h>
 
 /*
  * A broadcast address that will be put into a broadcast route.

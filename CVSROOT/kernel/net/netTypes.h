@@ -19,10 +19,10 @@
 #ifndef _NETTYPES
 #define _NETTYPES
 
-#include "netEther.h"
-#include "netRoute.h"
-#include "user/net.h"
-#include "syncTypes.h"
+#include <netEther.h>
+#include <netRoute.h>
+#include <user/net.h>
+#include <syncTypes.h>
 
 /*
  * This define is used by the net module in maintaining routing

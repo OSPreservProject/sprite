@@ -21,18 +21,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "list.h"
-#include "net.h"
-#include "netInt.h"
-#include "devNet.h"
-#include "sync.h"
-#include "dbg.h"
+#include <list.h>
+#include <net.h>
+#include <netInt.h>
+#include <devNet.h>
+#include <sync.h>
+#include <dbg.h>
 
-#include "machMon.h"
+#include <machMon.h>
 
-#include "netInet.h"
+#include <netInet.h>
 
 Net_EtherStats	net_EtherStats;
 NetEtherFuncs	netEtherFuncs;

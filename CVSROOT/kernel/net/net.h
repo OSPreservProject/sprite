@@ -19,10 +19,10 @@
 #ifndef _NET
 #define _NET
 
-#include "sprite.h"
-#include "user/net.h"
-#include "syncTypes.h"
-#include "netTypes.h"
+#include <sprite.h>
+#include <user/net.h>
+#include <syncTypes.h>
+#include <netTypes.h>
 
 /*
  * Forward Declarations.

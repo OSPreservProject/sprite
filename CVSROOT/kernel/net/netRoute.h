@@ -22,7 +22,7 @@
 #ifndef _NETROUTE
 #define _NETROUTE
 
-#include "netInet.h"
+#include <netInet.h>
 /*
  * A Route: A mapping between a physical address and a Sprite Host ID.
  * The supported address type is just ethernet. Net_Routes are manipulated
