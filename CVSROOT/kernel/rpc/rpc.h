@@ -93,10 +93,10 @@ extern int rpc_SpriteID;
  * Host state flags for use by RPC clients.  These flags are set
  * by users of the RPC module to define/get host states beyond
  * the simple up/down state maintained by the RPC system.
- *	RPC_FS_REOPEN		The client is in the fs re-open phase.
+ *	RPC_RECOV_REOPEN		The client is in the fs re-open phase.
  *				This is used to block open requests.
  */
-#define RPC_FS_REOPEN			0x1
+#define RPC_RECOV_REOPEN			0x1
 
 /*
  * Forward declarations
