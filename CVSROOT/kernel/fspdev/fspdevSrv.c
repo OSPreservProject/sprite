@@ -1499,6 +1499,8 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 
     LOCK_MONITOR;
 
+    *newNameInfoPtrPtr = (FsRedirectInfo *)NIL;
+
     while (pdevHandlePtr->flags & PDEV_BUSY) {
 	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
 	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
@@ -1523,7 +1525,6 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 	/*
 	 * Grab the result parameters.
 	 */
-	*newNameInfoPtrPtr = (FsRedirectInfo *)NIL;
 	*resultsSizePtr = ioReply.length;
 	if (ioReply.length > 0) {
 	    bcopy((Address)&redirectInfo, resultsPtr, ioReply.length);
