@@ -93,9 +93,11 @@ FSPREFIX = ${TOP}/fsprefix/${ODIR}
 FSRMT = ${TOP}/fsrmt/${ODIR}
 FSUTIL = ${TOP}/fsutil/${ODIR}
 HOOK = mainHook.o
+LFS = ${TOP}/lfs/${ODIR}
 LIBC = ${TOP}/libc/${ODIR}
 MAIN = ${TOP}/main/${ODIR}
 NET = ${TOP}/net/${ODIR}
+OFS = ${TOP}/ofs/${ODIR}
 PROC = ${TOP}/proc/${ODIR}
 PROF = ${TOP}/prof/${ODIR}
 RAID = ${TOP}/raid/${ODIR}
@@ -129,10 +131,12 @@ INSTALLED_OBJS = \
         ${LIB}/fsprefix.o \
         ${LIB}/fsrmt.o \
         ${LIB}/fsutil.o \
+	${LIB}/lfs.o \
 	${LIB}/libc.o \
 	${LIB}/main.o \
 	${LIB}/mem.o \
 	${LIB}/net.o \
+	${LIB}/ofs.o \
 	${LIB}/proc.o \
 	${LIB}/prof.o \
 	${LIB}/recov.o \
@@ -160,10 +164,12 @@ UNINSTALLED_OBJS =	\
         ${FSPREFIX}/fsprefix.o \
         ${FSRMT}/fsrmt.o \
         ${FSUTIL}/fsutil.o \
+	${LFS}/lfs.o \
 	${LIBC}/libc.o \
 	${MAIN}/main.o \
 	${MEM}/mem.o \
 	${NET}/net.o \
+	${OFS}/ofs.o \
 	${PROC}/proc.o \
 	${PROF}/prof.o \
 	${RECOV}/recov.o \
@@ -275,8 +281,8 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
 	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
 	nm -n sun4 > sun4.nm
-	update -f sun4 /allspiceA/vmsprite
-	strip /allspiceA/vmsprite
+	update -f sun4 /allspiceA/new
+	strip /allspiceA/new
 	-Save sun4
 
 sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
