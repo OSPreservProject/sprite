@@ -234,6 +234,22 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
     }
     Fsutil_HandleUnlock(hdrPtr);
 
+    /*
+     * Fetch the shadow stream in case we need to use our offset.
+     */
+    if (paramsPtr->streamID.type == FSIO_STREAM &&
+	paramsPtr->streamID.serverID == rpc_SpriteID) {
+	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
+    } else {
+	streamPtr = (Fs_Stream *)NIL;
+    }
+
+    if (streamPtr != (Fs_Stream *)NIL) {
+	if (paramsPtr->io.flags & FS_RMT_SHARED) {
+	    paramsPtr->io.offset = streamPtr->offset;
+	}
+	Fsutil_HandleUnlock(streamPtr);
+    }
     if (hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM &&
 	paramsPtr->io.length == FS_BLOCK_SIZE &&
 	(paramsPtr->io.offset & FS_BLOCK_OFFSET_MASK) == 0) {
@@ -264,6 +280,11 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	    callBack = (int(*)())NIL;
 	    clientData = (ClientData)NIL;
 	}
+	if (streamPtr != (Fs_Stream *)NIL) {
+	    streamPtr->offset = paramsPtr->io.offset + lengthRead;
+	    Fsutil_HandleLock(streamPtr);
+	    Fsutil_HandleRelease(streamPtr, TRUE);
+	}
     } else {
 	/*
 	 * Regular read to a file, device, pipe, pseudo-device.
@@ -275,32 +296,9 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	replyPtr->flags = 0;
 	paramsPtr->io.buffer = (Address) malloc(paramsPtr->io.length);
 
-#ifdef notdef
-	/*
-	 * Set our familyID and pid to the ids in the parameters in case we are
-	 * reading from a device that requires us to have the proper family ID.
-	 * (Shouldn't have to do this anymore cause of Fs_IOParam)
-	 */
-	procPtr = Proc_GetCurrentProc();
-	origFamilyID = procPtr->familyID;
-	origPID = procPtr->processID;
-	procPtr->familyID = paramsPtr->io.familyID;
-	procPtr->processID = paramsPtr->io.procID;
-#endif
-
-	/*
-	 * Latch ahold of the local stream in case it is shared and
-	 * we need to use the offset in it, and then call the stream
-	 * type read routine.
-	 */
-	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
 	if (streamPtr == (Fs_Stream *)NIL) {
 	    status = FS_STALE_HANDLE;
 	} else {
-	    Fsutil_HandleUnlock(streamPtr);
-	    if (paramsPtr->io.flags & FS_RMT_SHARED) {
-		paramsPtr->io.offset = streamPtr->offset;
-	    }
 	    status = (fsio_StreamOpTable[hdrPtr->fileID.type].read)(streamPtr,
 			    &paramsPtr->io, &paramsPtr->waiter, replyPtr);
 	    streamPtr->offset = paramsPtr->io.offset + replyPtr->length;
@@ -322,10 +320,6 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	    free(paramsPtr->io.buffer);
 	    free((Address)replyPtr);
 	}
-#ifdef notdef
-	procPtr->familyID = origFamilyID;
-	procPtr->processID = origPID;
-#endif
     }
     Fsutil_HandleRelease(hdrPtr, FALSE);
     FSRMT_RPC_DEBUG_PRINT1("Fsrmt_RpcRead: Returning %x\n", status);
@@ -563,6 +557,7 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	status = (fsio_StreamOpTable[hdrPtr->fileID.type].write)(streamPtr,
 		    &paramsPtr->io, &paramsPtr->waiter, replyPtr);
 	if (streamPtr != &dummyStream) {
+	    streamPtr->offset = paramsPtr->io.offset + replyPtr->length;
 	    Fsutil_HandleLock(streamPtr);
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	}
@@ -880,7 +875,7 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
     register	Fs_HandleHeader		*hdrPtr;
     register	Fs_Stream		*streamPtr;
     register	Rpc_ReplyMem		*replyMemPtr;
-    ReturnStatus			status;
+    ReturnStatus			status = SUCCESS;
     Address				outBufPtr;
     Fs_IOCParam				ioctl;
     Fs_IOReply				*replyPtr;
@@ -889,16 +884,16 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 
     streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
     if (streamPtr == (Fs_Stream *)NIL) {
-	printf( "Fsrmt_RpcIOControl, no stream to %s <%d, %d>\n",
+	printf( "Fsrmt_RpcIOControl, no stream to %s <%d, %d> for client %d\n",
 		Fsutil_FileTypeToString(paramsPtr->fileID.type),
-		paramsPtr->fileID.major, paramsPtr->fileID.minor);
+		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
 	return(FS_STALE_HANDLE);
     }
-    Fsutil_HandleRelease(streamPtr, TRUE);
 
     hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
 		(&paramsPtr->fileID, clientID, (int *)NIL);
     if (hdrPtr == (Fs_HandleHeader *)NIL) {
+	Fsutil_HandleRelease(streamPtr, TRUE);
 	return(FS_STALE_HANDLE);
     } else if (streamPtr->ioHandlePtr != hdrPtr) {
 	    printf( "Fsrmt_RpcIOControl: Stream/handle mis-match\n");
@@ -908,6 +903,7 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 		Fsutil_FileTypeToString(paramsPtr->fileID.type),
 		paramsPtr->fileID.serverID, paramsPtr->fileID.major,
 		paramsPtr->fileID.minor);
+	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    Fsutil_HandleRelease(hdrPtr, TRUE);
 	    return(FS_STALE_HANDLE);
     }
@@ -935,14 +931,57 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
     replyPtr->signal = 0;
     replyPtr->code = 0;
 
-    status = (*fsio_StreamOpTable[hdrPtr->fileID.type].ioControl)(streamPtr,
-		&ioctl, replyPtr);
+    /*
+     * Update server's shadow stream offset for IOC_REPOSITION
+     */
+    if (ioctl.command == IOC_REPOSITION) {
+	register int newOffset;
+	register Ioc_RepositionArgs	*iocArgsPtr;
+
+	if (ioctl.inBuffer == (Address)NIL) {
+	    status = GEN_INVALID_ARG;
+	} else {
+	    iocArgsPtr = (Ioc_RepositionArgs *)&ioctl.inBuffer;
+	    switch(iocArgsPtr->base) {
+		case IOC_BASE_ZERO:
+		    newOffset = iocArgsPtr->offset;
+		    break;
+		case IOC_BASE_CURRENT:
+		    newOffset = streamPtr->offset + iocArgsPtr->offset;
+		    break;
+		case IOC_BASE_EOF: {
+		    Fs_Attributes attrs;
+    
+		    status = Fs_GetAttrStream(streamPtr, &attrs);
+		    if (status != SUCCESS) {
+			break;
+		    }
+		    newOffset = attrs.size + iocArgsPtr->offset;
+		    break;
+		}
+	    }
+	    if (newOffset < 0) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		if (ioctl.outBuffer != (Address)NIL) {
+		    *(int *)ioctl.outBuffer = newOffset;
+		    replyPtr->length = sizeof(int);
+		}
+		streamPtr->offset = newOffset;
+	    }
+	}
+    }
+    Fsutil_HandleRelease(streamPtr, TRUE);
+    if (status == SUCCESS) {
+	status = (*fsio_StreamOpTable[hdrPtr->fileID.type].ioControl)(streamPtr,
+		    &ioctl, replyPtr);
 #ifdef lint
-    status = Fsio_FileIOControl(streamPtr, &ioctl, replyPtr);
-    status = Fsio_PipeIOControl(streamPtr, &ioctl, replyPtr);
-    status = Fsio_DeviceIOControl(streamPtr, &ioctl, replyPtr);
-    status = FspdevPseudoStreamIOControl(streamPtr, &ioctl, replyPtr);
+	status = Fsio_FileIOControl(streamPtr, &ioctl, replyPtr);
+	status = Fsio_PipeIOControl(streamPtr, &ioctl, replyPtr);
+	status = Fsio_DeviceIOControl(streamPtr, &ioctl, replyPtr);
+	status = FspdevPseudoStreamIOControl(streamPtr, &ioctl, replyPtr);
 #endif /* lint */
+    }
     Fsutil_HandleRelease(hdrPtr, FALSE);
 
     FSRMT_RPC_DEBUG_PRINT1("Fsrmt_RpcIOControl returns <%x>\n", status);
