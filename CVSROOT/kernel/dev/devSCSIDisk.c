@@ -283,24 +283,99 @@ DevSCSIDiskError(devPtr, sensePtr)
     DevSCSIDevice *devPtr;
     DevSCSISense *sensePtr;
 {
-    if (sensePtr->error != SCSI_NO_SENSE_DATA) {	    
-	register int class = (sensePtr->error & 0x70) >> 4;
-	register int code = sensePtr->error & 0xF;
-	register int addr;
-	addr = (sensePtr->highAddr << 16) |
-		(sensePtr->midAddr << 8) |
-		sensePtr->lowAddr;
-	Sys_Printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
-			 devPtr->scsiPtr->number, class, code, addr);
-	if (scsiNumErrors[class] > code) {
-	    Sys_Printf("%s", scsiErrors[class][code]);
-	}
-	Sys_Printf("\n");
+    register ReturnStatus status = SUCCESS;
+    DevSCSIDisk *diskPtr = (DevSCSIDisk *)devPtr->data;
+    int command = devPtr->scsiPtr->command;
 
-	return (DEV_INVALID_ARG);
-    } else {
-	return(SUCCESS);
+    switch (diskPtr->type) {
+	/*
+	 * The shoebox apparently just returns the unextended sense
+	 * format.
+	 */
+	case SCSI_SHOEBOX_DISK: {
+	    if (sensePtr->error != SCSI_NO_SENSE_DATA) {	    
+		register int class = (sensePtr->error & 0x70) >> 4;
+		register int code = sensePtr->error & 0xF;
+		register int addr;
+		addr = (sensePtr->highAddr << 16) |
+			(sensePtr->midAddr << 8) |
+			sensePtr->lowAddr;
+		Sys_Printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
+				 devPtr->scsiPtr->number, class, code, addr);
+		if (scsiNumErrors[class] > code) {
+		    Sys_Printf("%s", scsiErrors[class][code]);
+		}
+		Sys_Printf("\n");
+		status = DEV_INVALID_ARG;
+	    }
+	    break;
+	}
+	/*
+	 * The SCSIBOX Emulex drives will transfer in extended sense format.
+	 * Note: "gs/emulux/emulex/" will follow.
+	 *
+	 * Unit attention, at least in one case, is potentially ignorable.
+	 * Also, the Emulex SCSIBOX drive doesn't set an extra error code,
+	 * it just sets the key to SCSI_UNIT_ATTN_KEY.
+	 */
+	case SCSI_EMULEX_DISK: {
+	    register DevEmuluxSense *emuluxSensePtr;
+	    register DevSCSIExtendedSense *extSensePtr;
+	    emuluxSensePtr = (DevEmuluxSense *)sensePtr;
+	    extSensePtr = (DevSCSIExtendedSense *)sensePtr;
+	    if (emuluxSensePtr->extSense.key != SCSI_UNIT_ATTN_KEY) {
+		switch (emuluxSensePtr->error) {
+		    case SCSI_NOT_READY:
+			status = DEV_OFFLINE;
+			break;
+		    case SCSI_INSUF_CAPACITY:
+			Sys_Panic(SYS_WARNING,
+				    "Emulex: Insufficient disk capacity");
+			/* fall thru */
+		    case SCSI_END_OF_MEDIA:
+			status = DEV_END_OF_TAPE;  /* ??? */
+			break;
+		    case SCSI_HARD_DATA_ERROR:
+			status = DEV_HARD_ERROR;
+			break;
+		    case SCSI_WRITE_PROTECT:
+			if (command == SCSI_WRITE) {
+			    status = FS_NO_ACCESS;
+			}
+			break;
+		    case SCSI_CORRECTABLE_ERROR:
+			Sys_Panic(SYS_WARNING,
+				"SCSI-%d drive %d, correctable error",
+				devPtr->scsiPtr->number, devPtr->slaveID);
+			break;
+		    case SCSI_INVALID_COMMAND:
+			Sys_Panic(SYS_WARNING,
+				"SCSI-%d drive %d, invalid command 0x%x",
+				devPtr->scsiPtr->number, devPtr->slaveID,
+				command);
+			break;
+
+		    default:
+			Sys_Panic(SYS_FATAL,
+				"SCSI-%d drive %d, unknown error %x\n",
+				  devPtr->scsiPtr->number, devPtr->slaveID,
+				  emuluxSensePtr->error);
+			status = DEV_NO_MEDIA;
+			break;
+		}
+	    } else {
+	      /*
+	       * The drive has been reset sinse the last command.
+	       * Looks like we get this at startup.
+	       */
+		Sys_Panic(SYS_WARNING,
+			"SCSI-%d drive %d, unit attention\n",
+			devPtr->scsiPtr->number, devPtr->slaveID);
+	    }
+	    break;
+	}
     }
+    return(status);
 }
 
 /*
