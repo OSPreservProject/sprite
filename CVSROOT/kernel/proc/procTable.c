@@ -471,7 +471,7 @@ Proc_Unlock(procPtr)
  *	Pointer to PCB.
  *
  * Side effects:
- *	Proc table entry marked as PROC_NEW.
+ *	Proc table entry is locked and marked as PROC_NEW.
  *
  * ----------------------------------------------------------------------------
  */
