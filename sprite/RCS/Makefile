@@ -249,7 +249,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s sun3 /sprite/boot/sun3.md/new
-	rcp /sprite/boot/sun3.md/new ${GINGER}:/sprite3/sun3.new
+	rcp /sprite/boot/sun3.md/new ${GINGER}:/tftpboot/sun3.md/new
 	rcp sun3 ginger:/home/ginger/sprite/kernels/sun3.sprite
 	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun3.sprite)"
 	nm -n sun3 > sun3.nm
@@ -267,6 +267,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s sun4 /sprite/boot/sun4.md/new
+	rcp /sprite/boot/sun3.md/new ${GINGER}:/tftpboot/sun4.md/new
 	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
 	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
 	nm -n sun4 > sun4.nm
@@ -339,7 +340,7 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/sun3.md/prof
-	rcp /sprite/boot/sun3.md/prof ${GINGER}:/sprite3/tmp/$@
+	rcp /sprite/boot/sun3.md/prof ${GINGER}:/tftpboot/tmp/$@
 	nm -n $@ > $@.nm
 
 nm: ${OBJS}
