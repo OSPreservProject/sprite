@@ -176,4 +176,13 @@ extern	int	mach_LastUserStackPage;
  */
 #define Mach_SetErrno(err) Proc_GetActualProc()->unixErrno = (err)
 
+/*
+ * Fast recovery definitions.
+ */
+extern  int     storedDataSize;
+extern  char    storedData[];
+extern  char    *mach_RestartTablePtr;
+extern  ReturnStatus    Mach_FastBoot _ARGS_((void));
+extern  int     Mach_GetRestartTableSize _ARGS_((void));
+
 #endif /* _MACH */

@@ -38,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <swapBuffer.h>
 #include <net.h>
 #include <ultrixSignal.h>
+#include <recov.h>
 
 /*
  * Conversion of function to an unsigned value.
@@ -176,6 +177,7 @@ extern void PrintError _ARGS_((void));
 static void PrintInst _ARGS_((unsigned pc, unsigned inst));
 static void SoftFPReturn _ARGS_((void));
 static void MemErrorInterrupt _ARGS_((void));
+static void CheckFastRestart _ARGS_((void));
 
 /*
  * The interrupt handler table. This originally was static, hence the
@@ -269,6 +271,17 @@ int		nextStateIndex = 0;
 
 Address		machBadVaddr = (Address) NIL;
 
+/*
+ * Declarations of recovery-related items.  For the decstations, most
+ * of these are no-ops.
+ *
+ * The following two variables should be in the initialized ata space, but
+ * marked as not initialized.  Then , when they are updated as part of booting,
+ * their new values get preserved over a fast restart.
+ */
+int     storedDataSize = -1;            /* Not initialized. */
+char    *mach_RestartTablePtr = (char *) NIL;
+char    storedData[1];                  /* A no-op for now. */
 
 /*
  * ----------------------------------------------------------------------------
@@ -353,6 +366,9 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     bcopy(F_TO_A MachException, (Address)MACH_GEN_EXC_VEC,
 	      F_TO_A MachEndException - F_TO_A MachException);
 
+    if (recov_Transparent) {
+	CheckFastRestart();
+    }
     /*
      * Clear out the i and d caches.
      */
@@ -1981,4 +1997,74 @@ Mach_SigreturnStub(sigContextPtr)
     regsPtr->fpStatusReg = sigContext.sc_fpc_csr;
     Proc_GetCurrentProc()->sigHoldMask = sigContext.sc_mask;
     return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckFastRestart --
+ *
+ *	Check if enough space was allocated for the fast restart.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+CheckFastRestart()
+{
+    /* No-op on decstations for now. */
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetRestartTableSize --
+ *
+ *	Return the size allocated for the fast restart table area.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mach_GetRestartTableSize()
+{
+    /* No-op on decstations for now. */
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_FastBoot --
+ *
+ *	Do a fast reboot (using copied initialized data heap, etc.)
+ *
+ * Results:
+ *	FAILURE if we're not set up to do a fast boot.  Otherwise we don't
+ *	return, but boot instead.
+ *
+ * Side effects:
+ *	Will probably cause fast reboot.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mach_FastBoot()
+{
+    /* No-op on decstations for now. */
+    Mach_MonPrintf("Can't do decstation fast boot yet.\n");
+    return FAILURE;
 }
