@@ -45,6 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include	"sys.h"
 #include	"rpc.h"
 #include	"recov.h"
+#include	"timer.h"
 #include	"dbg.h"
 
 #define	LOCKPTR	(&consistPtr->lock)
@@ -62,9 +63,20 @@ int	fsTraceConsistMinor = 2249;
  *				file.
  *	FS_CONSIST_ERROR	There was an error during the cache 
  *				consistency.
+ *	FS_CONSIST_TIMEOUT	There is a timeout setup for the consistency
+ *				actions.
  */
 #define	FS_CONSIST_IN_PROGRESS	0x1
 #define	FS_CONSIST_ERROR	0x2
+#define FS_CONSIST_TIMEOUT	0x4
+
+/*
+ * Clients have an (arbitrary) number of minutes to complete call-back
+ * actions before the server blows them off and lets an open operation
+ * complete.  This time has to be enough to let a client with a large
+ * main-memory cache writeback a large file.
+ */
+int fsConsistTimeoutMinutes = 5;
 
 /*
  * Rpc to send when forcing a client to invalidate or write back a file.
@@ -120,6 +132,8 @@ ReturnStatus	EndConsistency();
 void	 	ClientCommand();
 void		ProcessConsist();
 void		ProcessConsistReply();
+void		ConsistTimeoutIntr();
+void		ConsistTimeout();
 char *		ConsistType();
 
 
@@ -507,9 +521,26 @@ EndConsistency(consistPtr)
     FsConsistInfo	*consistPtr;
 {
     register ReturnStatus status;
+    Timer_QueueElement timeout;
+
+    /*
+     * Set up a timeout in case a flakey client can't complete
+     * its consistency actions.  We pick an arbitrary "long" interval
+     * and just abort after that.  A more complex solution would be
+     * to re-iterate what ever high level operation we are doing.
+     */
+    timeout.routine = ConsistTimeoutIntr;
+    timeout.interval = timer_IntOneMinute * fsConsistTimeoutMinutes;
+    timeout.clientData = (ClientData)consistPtr;
+    consistPtr->flags |= FS_CONSIST_TIMEOUT;
+    Timer_ScheduleRoutine(&timeout, TRUE);
 
     while (!List_IsEmpty(&consistPtr->msgList)) {
 	(void) Sync_Wait(&consistPtr->repliesIn, FALSE);
+    }
+    if (consistPtr->flags & FS_CONSIST_TIMEOUT) {
+	Timer_DescheduleRoutine(&timeout);
+	consistPtr->flags &= ~FS_CONSIST_TIMEOUT;
     }
     if (consistPtr->flags & FS_CONSIST_ERROR) {
 	/*
@@ -525,6 +556,70 @@ EndConsistency(consistPtr)
     Sync_Broadcast(&consistPtr->consistDone);
     return(status);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConsistTimeoutIntr --
+ *
+ *	Routine called at timer-interrupt time if a client has not
+ *	completed consistency actions.  This turns around and does
+ *	a Proc_CallFunc to invoke ConsistTimeout at process level.
+ *	ConsistTimeout prints a warning and removes the information
+ *	about the now aborted consistency request so that the higher-level
+ *	operation can complete.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Triggers a call to ConsistTimeout, which in turn erases the
+ *	consistPtr->msgList and notifies the consistPtr->repliesIn condition.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ConsistTimeoutIntr(time, data)
+    Timer_Ticks time;	/* The time we timed out at. */
+    ClientData data;	/* A pointer to a FsConsistInfo */
+{
+    FsConsistInfo *consistPtr = (FsConsistInfo *)data;
+
+    consistPtr->flags &= ~FS_CONSIST_TIMEOUT;
+    Proc_CallFunc(ConsistTimeout, (ClientData)consistPtr, 0);
+}
+
+void
+ConsistTimeout(data, callInfoPtr)
+    ClientData		data;	/* A pointer to a FsConsistInfo */
+    Proc_CallInfo	*callInfoPtr;
+{
+    FsConsistInfo *consistPtr = (FsConsistInfo *)data;
+    ConsistMsgInfo *msgPtr;
+
+    LOCK_MONITOR;
+    while (!List_IsEmpty(&consistPtr->msgList)) {
+	msgPtr = (ConsistMsgInfo *)List_First(&consistPtr->msgList);
+
+	printf("ConsistTimeout (%d minutes) client %d %s file <%d,%d> \"%s\"\n",
+		fsConsistTimeoutMinutes,
+		msgPtr->clientID, ConsistType(msgPtr->flags),
+		consistPtr->hdrPtr->fileID.major,
+		consistPtr->hdrPtr->fileID.minor,
+		FsHandleName(consistPtr->hdrPtr));
+
+	if (msgPtr->clientID == consistPtr->lastWriter) {
+	    consistPtr->lastWriter = -1;
+	}
+	List_Remove((List_Links *)msgPtr);
+	free((Address)msgPtr);
+    }
+    Sync_Broadcast(&consistPtr->repliesIn);
+    callInfoPtr->interval = 0;	/* No more invocations, please */
+    UNLOCK_MONITOR;
+}
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -983,6 +1078,10 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 
     if ((consistPtr->lastWriter != -1) && (flags & FS_LAST_DIRTY_BLOCK)) {
 	if (clientID != consistPtr->lastWriter) {
+	    /*
+	     * Probably a client error with the lastWriter.  We print
+	     * a warning and then nuke the lastWriter field below.
+	     */
 	    printf(
 	    "FsConsistClose, \"%s\" <%d,%d>: client %d not last writer %d, %s\n",
 		    FsHandleName(consistPtr->hdrPtr),
@@ -990,14 +1089,13 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 		    consistPtr->hdrPtr->fileID.minor,
 		    clientID, consistPtr->lastWriter,
 		    (*wasCachedPtr) ? "was cached" : "wasn't cached");
-	} else {
-#ifdef CONSIST_DEBUG
-	    if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
-		printf("ConsistClose: erasing %d lastwriter\n", clientID);
-	    }
-#endif CONSIST_DEBUG
-	    consistPtr->lastWriter = -1;
 	}
+#ifdef CONSIST_DEBUG
+	if (consistPtr->hdrPtr->fileID.minor == fsTraceConsistMinor) {
+	    printf("ConsistClose: erasing %d lastwriter\n", clientID);
+	}
+#endif CONSIST_DEBUG
+	consistPtr->lastWriter = -1;
     }
     UNLOCK_MONITOR;
     return(TRUE);
@@ -1322,6 +1420,8 @@ FsGetAllDirtyBlocks(domain, invalidate)
  * FsFetchDirtyBlocks --
  *
  *      Fetch dirty blocks back from the last writer of the file.
+ *	This is called when a domain is being detached (dis-mounted)
+ *	and we want all dirty data to be written back first.
  *
  * Results:
  *	None.
