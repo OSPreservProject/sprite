@@ -76,8 +76,12 @@ Fs_Command(command, bufSize, buffer)
 		argPtr->serverID >= NET_NUM_SPRITE_HOSTS)) {
 		status = FS_INVALID_ARG;
 	    } else {
-		Fs_PrefixLoad(argPtr->prefix, argPtr->serverID,
-		    FS_IMPORTED_PREFIX);
+		int prefixFlags = FS_IMPORTED_PREFIX;
+
+		if (argPtr->serverID != RPC_BROADCAST_SERVER_ID) {
+		    prefixFlags |= FS_REMOTE_PREFIX;
+		}
+		Fs_PrefixLoad(argPtr->prefix, argPtr->serverID, prefixFlags);
 		status = SUCCESS;
 	    }
 	    break;
