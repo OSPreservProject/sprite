@@ -575,8 +575,10 @@ Dev_SyslogReturnBuffer(bufPtrPtr, firstIndexPtrPtr, lastIndexPtrPtr, bufSizePtr)
  *
  *----------------------------------------------------------------------
  */
+/* ARGSUSED */
 void
-Dev_SyslogDisable()
+Dev_SyslogDisable(dummy)
+    ClientData dummy;
 {
     if (syslogEnable) {
 	MASTER_LOCK(&syslogMutex);

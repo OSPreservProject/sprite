@@ -38,6 +38,6 @@ extern ReturnStatus Dev_SyslogSelect _ARGS_((Fs_Device *devicePtr,
 extern void Dev_SyslogDebug _ARGS_((Boolean stopLog));
 extern void Dev_SyslogReturnBuffer _ARGS_((char **bufPtrPtr,
     int **firstIndexPtrPtr, int **lastIndexPtrPtr, int *bufSizePtr));
-extern void Dev_SyslogDisable _ARGS_ ((void));
+extern void Dev_SyslogDisable _ARGS_ ((ClientData dummy));
 
 #endif /* _DEVSYSLOG */
