@@ -93,6 +93,7 @@ _DevCCReadBytesFromRegs:
 	Nop
 2:
 	wr_kpsw		r17, $0
+	invalidate_ib
         return		r10,$8
 	nop
 /*----------------------------------------------------------------------
@@ -151,6 +152,7 @@ _DevCCWriteBytesFromRegs:
 	Nop
 1:
         wr_kpsw         r17, $0
+	invalidate_ib
         return		r10,$8
 	nop
 
