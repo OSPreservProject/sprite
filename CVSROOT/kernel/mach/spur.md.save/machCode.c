@@ -1162,7 +1162,7 @@ MachVMDataFault(faultType, PC, destAddr, kpsw)
 		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
 			       procPtr->processID, FALSE);
 		printf("Process 0x%x fault %d at 0x%x fault address 0x%x\n",
-			faultType,procPtr->processID, (unsigned)PC, destAddr);
+			procPtr->processID, faultType,(unsigned)PC, destAddr);
 	    } else {
 		if (PC >= (Address)((unsigned int)((int (*)())MachFetchArgStart)) &&
 	            PC < (Address)((unsigned int)((int (*)())MachFetchArgEnd))) {
