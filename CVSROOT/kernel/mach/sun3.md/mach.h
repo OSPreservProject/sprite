@@ -378,7 +378,7 @@ typedef struct {
 #define Mach_GetPC() \
     ({\
 	register Address __pc; \
-	asm volatile ("1$:\n\tlea\t1$,%1\n":"=a" (__pc):"a"(__pc));\
+	asm volatile ("1:\n\tlea\t1b,%1\n":"=a" (__pc):"a"(__pc));\
 	(__pc);\
     })
 #endif
