@@ -108,6 +108,7 @@ main()
     bootProgress = 2;
     led_display(bootProgress,0,0);
     Mach_Init();
+    Sync_Init();
 
     bootProgress = 3;
     led_display(bootProgress,0,0);
@@ -179,12 +180,8 @@ main()
     led_display(bootProgress,0,0);
     Sched_Init();
 
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Sync_Init().\n");
-    }
     bootProgress = 11;
     led_display(bootProgress,0,0);
-    Sync_Init();
 
     /*
      * printfs are not allowed before this point.
