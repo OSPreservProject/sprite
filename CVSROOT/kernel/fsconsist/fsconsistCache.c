@@ -333,8 +333,16 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
     register Fsconsist_ClientInfo *clientPtr;
     register Fsconsist_ClientInfo *nextClientPtr;
     register Fs_ConsistStats *statPtr = &fs_Stats.consist;
+    register Fs_MigStats *migStatPtr = &fs_Stats.mig;
     register int openForWriting = useFlags & FS_WRITE;
     register Boolean cacheable;
+    Boolean countMigration;	/* Set if we're supposed to increment a
+				   counter for the type of consistency
+				   performed, and cleared once the increment
+				   is done. */
+    int clients = 0;
+    int notCaching = 0;
+    int writebackFlags;
 
     /*
      * Make sure that noone else is in the middle of performing cache
@@ -357,6 +365,21 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
      *	   and writers on multiple hosts.
      */
     cacheable = fsconsist_ClientCachingEnabled;
+    if (useFlags & FS_MIGRATING) {
+	countMigration = 1;
+#ifdef 0
+	/*
+	 * We can't give this flag to other machines until they can handle
+	 * it.
+	 */
+	writebackFlags = FSCONSIST_MIGRATION;
+#else
+	writebackFlags = 0;
+#endif
+    } else {
+	countMigration = 0;
+	writebackFlags = 0;
+    }
     if ((useFlags & FS_SWAP) && (clientID != rpc_SpriteID)) {
 	cacheable = FALSE;
 	statPtr->swap++;
@@ -381,6 +404,8 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
 		}
 	    }
 	}
+    } else {
+	countMigration = FALSE;
     }
 done:
 #ifdef CONSIST_DEBUG
@@ -400,8 +425,14 @@ done:
      * adds an entry to the consistInfo's message list.  Note also that
      * the current client list entry can get removed as side effects of
      * a call-back so we can't use a simple LIST_FOR_ALL here.
+     *
+     * Record statistics for both regular opens and migrations.  Migrations
+     * are really a subset of regular opens since only some cases can occur.
      */
     statPtr->files++;
+    if (countMigration) {
+	migStatPtr->consistActions++;
+    }
     nextClientPtr = (Fsconsist_ClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
@@ -423,7 +454,7 @@ done:
 	     */
 	    if (clientPtr->clientID == consistPtr->lastWriter) {
 		statPtr->writeCaching++;
-	    } else if (clientPtr->use.ref > 0) {
+	    } else if (clientPtr->use.ref > 0 && clientPtr->cached) {
 		statPtr->readCachingMyself++;
 	    }
 	    continue;
@@ -436,18 +467,26 @@ done:
 		    clientPtr->use.ref, clientPtr->use.write);
 	}
 #endif /* CONSIST_DEBUG */
-	statPtr->clients++;
+	clients++;
 	if (!clientPtr->cached) {
 	    /*
 	     * Case 1, the other client isn't caching the file. Do nothing.
 	     */
-	    statPtr->notCaching++;
+	    notCaching++;
 	} else if (cacheable) {
 	    if (consistPtr->lastWriter != clientPtr->clientID) {
 		/*
 		 * Case 2, the other client is caching and it's ok.
 		 */
 		statPtr->readCachingOther++;
+		if (countMigration) {
+		    /*
+		     * Already caching for reading -- this migration can't
+		     * change that.
+		     */
+		    migStatPtr->readOnlyFiles++;
+		    countMigration = 0;
+		}
 	    } else if (consistPtr->lastWriter == clientID) {
 		/*
 		 * Case 3, the last writer is now opening for reading.
@@ -455,13 +494,28 @@ done:
 		 */
 		statPtr->writeCaching++;
 	    } else {
+		int mode;
 		/*
 		 * Case 4, the last writer needs to give us back the
 		 * dirty blocks so the opening client will get good data.
+		 * In the case of migration, it is possible for a writable
+		 * file to be migrated to another host while still being
+		 * cacheable.  In that case the old client doesn't have
+		 * any more references to the file and can't use its cached
+		 * blocks for it anyway.  Since the version number doesn't
+		 * get incremented due to migration we have to invalidate
+		 * at migration time.
 		 */
-		ClientCommand(consistPtr, clientPtr,
-					FSCONSIST_WRITE_BACK_BLOCKS);
+		mode = FSCONSIST_WRITE_BACK_BLOCKS | writebackFlags;
+		if (openForWriting) {
+		    mode |= FSCONSIST_INVALIDATE_BLOCKS;
+		}
+		ClientCommand(consistPtr, clientPtr, mode);
 		statPtr->writeBack++;
+		if (countMigration) {
+		    migStatPtr->cacheWritableFiles++;
+		    countMigration = 0;
+		}
 	    }
 	} else {
 	    if ((clientPtr->use.write == 0) && (clientPtr->use.ref > 0)) {
@@ -477,16 +531,33 @@ done:
 		 * us back its dirty blocks.
 		 */
 		ClientCommand(consistPtr, clientPtr,
-		    FSCONSIST_WRITE_BACK_BLOCKS | FSCONSIST_INVALIDATE_BLOCKS);
+			      FSCONSIST_WRITE_BACK_BLOCKS |
+			      FSCONSIST_INVALIDATE_BLOCKS | writebackFlags);
 		statPtr->writeInvalidate++;
+	    }
+	    if (countMigration) {
+		migStatPtr->cacheToUncacheFiles++;
+		countMigration = 0;
 	    }
 	}
     }
     if (cacheable) {
 	statPtr->cacheable++;
+	if (countMigration) {
+	    if (notCaching == clients) {
+		migStatPtr->uncacheToCacheFiles++;
+	    } else {
+		migStatPtr->readOnlyFiles++;
+	    }
+	}
     } else {
 	statPtr->uncacheable++;
+	if (countMigration) {
+	    migStatPtr->uncacheableFiles++;
+	}
     }
+    statPtr->clients += clients;
+    statPtr->notCaching += notCaching;
     *cacheablePtr = cacheable;
 }
 
@@ -933,7 +1004,10 @@ Fsconsist_MigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
     int			useFlags;	/* FS_READ|FS_WRITE|FS_EXECUTE
 					 * FS_RMT_SHARED if shared now.
 					 * FS_NEW_STREAM if dstClientID is
-					 * getting stream for first time. */
+					 * getting stream for first time.
+					 * FS_MIGRATED_FILE is set to tell
+					 * the low-level consistency routines
+					 * to record statistics. */
     Boolean		closeSrc;	/* TRUE if should close source client.
 					 * Set by Fsio_StreamMigClient */
     Boolean		*cacheablePtr;	/* Return - Cachability of file */
@@ -948,12 +1022,13 @@ Fsconsist_MigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
     LOCK_MONITOR;
 
     cache = (srcClientID == consistPtr->lastWriter);
+
     if (closeSrc) {
 	/*
 	 * Remove references due to the original client so it doesn't confuse
-	 * the regular cache consistency algorithm.  Note that this call doesn't
-	 * disturb the last writer state so any dirty blocks on the old client
-	 * will get handled properly.
+	 * the regular cache consistency algorithm.  Note that this call
+	 * doesn't disturb the last writer state so any dirty blocks on
+	 * the old client will get handled properly.
 	 */
 	if (!Fsconsist_IOClientClose(&consistPtr->clientList, srcClientID,
 				     useFlags, &cache)) {
@@ -968,7 +1043,8 @@ Fsconsist_MigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
      * The rest of this is like regular cache consistency.
      */
 
-    StartConsistency(consistPtr, dstClientID, useFlags, cacheablePtr);
+    StartConsistency(consistPtr, dstClientID, useFlags | FS_MIGRATING,
+		     cacheablePtr);
     if (useFlags & FS_NEW_STREAM) {
 	/*
 	 * The client is getting the stream to this I/O handle for
