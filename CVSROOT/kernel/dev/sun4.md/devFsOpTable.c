@@ -197,7 +197,6 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_SCSI_ROBOT, DevSCSIExbRobotOpen, NullProc, NullProc,
 	            DevSCSIExbRobotIOControl, DevSCSIExbRobotClose,
 	            NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
->>>>>>> 9.4
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
