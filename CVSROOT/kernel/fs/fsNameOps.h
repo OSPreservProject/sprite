@@ -15,8 +15,7 @@
 
 #include "fsFile.h"
 #include "fsDevice.h"
-#include "fsPdev.h"
-#include "fsRpcInt.h"
+#include "fsPdevState.h"
 
 /*
  * The arguments and results of the various lookup operations have to
@@ -26,10 +25,14 @@
  */
 
 /*
- * FS_DOMAIN_OPEN arguments.  The results of a lookup is a stream-type
- * specific chunk of data used to set up the I/O handle.
- * FS_DOMAIN_PREFIX also gets FsOpenArgs, although it installs a complete
- * handle and returns a pointer to that.
+ * FS_DOMAIN_OPEN
+ *	The arguments for open specify the starting point of the lookup,
+ *	then the root file of the lookup domain, then other parameters
+ *	identifying the client and its intended use of the file.
+ *
+ *	The results of the open fileIDs for the I/O server, the name server,
+ *	and the top-level stream to the file.  There is also some data that
+ *	is specific to the file type
  */
 
 typedef struct FsOpenArgs {
@@ -56,8 +59,15 @@ typedef struct FsOpenResults {
 } FsOpenResults;
 
 /*
- * Rpc storage reply parameter for both redirected and unredirected calls.
+ * The stream data is a reference to the following union.  The union is used
+ * to facilitate byte-swaping in the RPC stubs.
  */
+typedef	union	FsUnionData {
+    FsFileState		fileState;
+    FsDeviceState	devState;
+    FsPdevState		pdevState;
+} FsUnionData;
+
 typedef	struct	FsOpenResultsParam {
     int			prefixLength;
     FsOpenResults	openResults;
