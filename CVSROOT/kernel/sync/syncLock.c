@@ -104,8 +104,6 @@ Sync_Init()
  *	This is the kernel version of the Sync_GetLock routine. The user
  * 	version is written in assembler, but in the kernel we want to
  *	record locking statistics so we have our own version.
- *	If LOCKREG is not defined then don't compile any of this, so that 
- *	the faster user version  is used.
  *
  * Results:
  *	None.
@@ -117,8 +115,7 @@ Sync_Init()
  *----------------------------------------------------------------------
  */
 
-#ifdef LOCKREG
-
+#ifndef spur
 ReturnStatus
 Sync_GetLock(lockPtr)
    Sync_Lock *lockPtr;
@@ -126,16 +123,18 @@ Sync_GetLock(lockPtr)
     if (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	Sync_SlowLock(lockPtr); 
     } else {
+#ifndef CLEAN_LOCK
 	lockPtr->holderPC = Mach_GetPC(); 
 	lockPtr->holderPCBPtr = Proc_GetCurrentProc();
 	lockPtr->hit++;
 	SyncAddPrior(lockPtr->type, &(lockPtr->priorCount), 
 		     lockPtr->priorTypes,(Address) lockPtr, 
 		     lockPtr->holderPCBPtr);
+#endif
     }
 }
+#endif
 
-#endif /* LOCKREG */
 
 /*
  *----------------------------------------------------------------------
@@ -144,8 +143,6 @@ Sync_GetLock(lockPtr)
  *
  *	The kernel version of the unlock routine. We have a different
  *	version from the user so we can do locking statistics.
- *	If LOCKREG is not defined then don't compile any of this, so that 
- *	the faster user version  is used.
  *
  * Results:
  *	None.
@@ -156,20 +153,18 @@ Sync_GetLock(lockPtr)
  *----------------------------------------------------------------------
  */
 
-#ifdef LOCKREG
 
 ReturnStatus
 Sync_Unlock(lockPtr)
     Sync_Lock *lockPtr;
 {
     lockPtr->inUse = 0;
-    SyncDeleteCurrentLock((Address) lockPtr,lockPtr->holderPCBPtr);
+    SyncDeleteCurrent((Address) lockPtr,lockPtr->holderPCBPtr);
     if (lockPtr->waiting) {
 	Sync_SlowBroadcast((int)lockPtr, &lockPtr->waiting);
     }
 }
 
-#endif /* LOCKREG */
 
 /*
  *----------------------------------------------------------------------------
