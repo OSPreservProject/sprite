@@ -43,9 +43,9 @@ typedef struct  {
 static MachCpcEntry machCPCData[MACH_MAX_NUM_PROCESSORS];
 
 /*
- * Interrupt mask for cross processor signal. 
+ * Interrupt number for cross processor signal. 
  */
-static unsigned int	mach_CpcInterruptMask;
+static unsigned int	mach_CpcInterruptNumber;
 
 /*
  * Forward routine declarations.
@@ -81,8 +81,8 @@ Mach_CPC_Init()
     /*
      * Allocate an external interrupt for CPCs. 
      */
-    mach_CpcInterruptMask = MACH_EXT_INTERRUPT_ANY;
-    Mach_AllocExtIntrNumber(ExecuteCall,&mach_CpcInterruptMask);
+    mach_CpcInterruptNumber = MACH_EXT_INTERRUPT_ANY;
+    Mach_AllocExtIntrNumber(ExecuteCall,&mach_CpcInterruptNumber);
 }
 
 
@@ -133,7 +133,7 @@ Mach_CallProcessor(processorNumber, routine, argument, wait, returnValue)
     machCPCData[processorNumber].returnValue = returnValue;
     machCPCData[processorNumber].sync = wait;
     machCPCData[processorNumber].done = FALSE;
-    Mach_SignalProcessor(processorNumber,mach_CpcInterruptMask);
+    Mach_SignalProcessor(processorNumber,mach_CpcInterruptNumber);
     /*
      * If the call is synchronous we spin waiting for it to complete. 
      * Completion is signaled when the calling processor sets the done
@@ -191,6 +191,7 @@ ExecuteCall(intrStatusPtr)
     if (machCPCData[processorNumber].lock == 0) {
 	printf("Warning: Processor %d received bogus call interrupt\n",
 			processorNumber);
+	return;
     }
 
     /*
@@ -238,26 +239,13 @@ ExecuteCall(intrStatusPtr)
  */
 
 ReturnStatus
-Mach_SignalProcessor(processorNumber, interruptMask)
+Mach_SignalProcessor(processorNumber, interruptNum)
     int			processorNumber; 
-    unsigned int	interruptMask; /* External interrupt to generate. */ 
+    unsigned int	interruptNum; /* External interrupt to generate. */ 
 {
     unsigned int	interruptAddress;
-    register int	interruptNum;
 
-    /*
-     * Compute the external interrupt number from the specified mask.
-     */
-    interruptNum = 0;
-    for(interruptNum = 0;!(interruptMask & 0x1) && 
-			(interruptNum <= MACH_MAX_EXT_INTERRUPT);
-			interruptNum++) {
-	interruptMask >>= 1;
-    }
-    /*
-     * If zero or more than one bit set fail.
-     */
-    if ((interruptNum > MACH_MAX_EXT_INTERRUPT) || (interruptMask >> 1) ) {
+    if (interruptNum > MACH_MAX_EXT_INTERRUPT) {
 	return (FAILURE);
     }
     interruptAddress = 0xf0000000 | 

@@ -243,6 +243,11 @@
 #define	MACH_EXT_INTERRUPT_ANY		(MACH_NUM_INTR_TYPES+1)
 
 /*
+ * Interrupt used to spin up at boot time a sleeping slave processor.
+ */
+
+#define	MACH_SPINUP_INTERRUPT MACH_EXT_INTR_0
+/*
  * Bits in the KPSW (see SPUR-ISA page 36).
  */
 #define	MACH_KPSW_PREFETCH_ENA		0x00004
@@ -259,14 +264,13 @@
 /*
  * Sprite defined bits in the kpsw.
  *
- *	MACH_KPSW_CC_REFRESH	Taking a fault to refresh the cache controller
- *				floating well.
+ *	MACH_KPSW_USE_IBUFFER	Enable the ibuffer upon return from this trap.
  *	MACH_KPSW_USE_CUR_PC	Use the current PC when returning from a trap
  *				not the next PC.
  *	MACH_KPSW_PROCESSOR_NUM Bits of the kpsw used to store the processor
  *				number;
  */
-#define	MACH_KPSW_CC_REFRESH		0x10000
+#define	MACH_KPSW_USE_IBUFFER		0x10000
 #define	MACH_KPSW_USE_CUR_PC		0x20000
 #define	MACH_KPSW_PROCESSOR_NUM		0xff000000
 #define	MACH_KPSW_PNUM_SHIFT		24
@@ -486,6 +490,11 @@
 #define	MACH_INPUT_REG1		11
 
 /*
+ * Maximum number of processors configuable.
+ */
+
+#define	MACH_MAX_NUM_PROCESSORS		1
+/*
  * Bound on the kernel's address space.
  *
  *	MACH_KERN_START		The lowest valid kernel address.
@@ -499,7 +508,8 @@
 #define	MACH_KERN_END		(16 * 1024 * 1024)
 #define	MACH_DEBUG_STACK_BOTTOM	0x6000
 #define	MACH_STACK_BOTTOM	(MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
-#define	MACH_CODE_START		(MACH_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
+#define	MACH_STACK_TOP		(MACH_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
+#define	MACH_CODE_START		(MACH_STACK_TOP)
 #define	MACH_KERN_STACK_SIZE	0x4000
 
 /*
@@ -539,26 +549,24 @@
  */
 #define	MACH_UART_PHYS_ADDR	0x10000
 
-/*
- * The virtual address that is always guaranteed to cause a fault so that
- * we can refresh the CC wells.
- */
-#define	MACH_CC_FAULT_ADDR	0x3ffffffc
 
 /*
- * Physical memory constants:
+ * Physical memory constants: These constants only pertain to the initial
+ *	(first memory board) of the system.
  *
  *	MACH_MEM_SLOT_MASK	The bits to put into the high order bits
  *				of any physical memory address.
  *	MACH_PAGE_SLOT_MASK	The bits to put into the high order bits of
  *				a physical page.
  *	MACH_FIRST_PHYS_PAGE	The first physical page that is usable.
- *	MACH_NUM_PHYS_PAGES	The number of useable physical memory pages.
+ *	MACH_NUM_RESERVED_PAGES	The number of physical memory pages reserved
+ *				for PROM uses in the  
  */
 #define	MACH_MEM_SLOT_MASK	0xff000000
 #define	MACH_PAGE_SLOT_MASK	0x000ff000
-#define	MACH_FIRST_PHYS_PAGE	32
-#define	MACH_NUM_PHYS_PAGES	(2048 - MACH_FIRST_PHYS_PAGE)
+#define	MACH_NUM_RESERVED_PAGES	32
+#define	MACH_FIRST_PHYS_PAGE	MACH_NUM_RESERVED_PAGES
+#define	MACH_NUM_PHYS_PAGES	(2048 - MACH_NUM_RESERVED_PAGES)
 
 /*
  *---------------------------------------------------------------------------
@@ -596,4 +604,8 @@
 #define	MACH_INT_OPERAND_INTERFACE	1
 #define	MACH_FLOAT_OPERAND_INTERFACE	2
 
+/*
+ * Define PATCH_IBUFFER if ibuffer is to be enabled.
+ */
+#define	PATCH_IBUFFER 
 #endif _MACHCONST

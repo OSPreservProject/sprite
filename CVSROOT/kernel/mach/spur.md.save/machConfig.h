@@ -57,24 +57,10 @@ typedef struct {
 #define	MACH_CONFIG_INITIALIZED_FLAG	0x100	/* Memory board has been
 						 * initialized. 
 						 */
-
-/*
- * Mach_MemoryBoardSize(boardType)	
- *	Return the size in bytes of a memory board. 
- */
-
-#define	Mach_MemoryBoardSize(boardType) ({\
-	int		halfMegs;	\
-	switch (boardType) { \
-	case MACH_CONFIG_HALF_MEG_BOARD: halfMegs = 1; break; \
-	case MACH_CONFIG_2_MEG_BOARD: halfMegs = 4; break; \
-	case MACH_CONFIG_8_MEG_BOARD: halfMegs = 16; break; \
-	case MACH_CONFIG_16_MEG_BOARD: halfMegs = 32; break; \
-	case MACH_CONFIG_32_MEG_BOARD: halfMegs = 64; break; \
-	default: panic("Unknown memory board type (%d)\n",boardType); \
-	}; \
-	(halfMegs * (512 * 1024)); })
-
+#define	MACH_CONFIG_KERNEL_MEM_FLAG	0x200	/* Board containing kernel. */
+extern ReturnStatus Mach_FindBoardDescription();
+extern int	    Mach_ConfigMemSize();
+extern unsigned int Mach_ConfigInitMem();
 
 #endif
 

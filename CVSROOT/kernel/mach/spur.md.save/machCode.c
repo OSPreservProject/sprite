@@ -16,7 +16,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machConst.h"
 #include "machInt.h"
 #include "mach.h"
-#include "sys.h"
 #include "sync.h"
 #include "dbg.h"
 #include "proc.h"
@@ -27,21 +26,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sigMach.h"
 #include "mem.h"
 #include "swapBuffer.h"
+#include "dev/ccdev.h"
+#include "machConfig.h"
 
-/*
- *  Number of processors in the system.
- */
-#ifndef NUM_PROCESSORS
-#define NUM_PROCESSORS		1
-#endif NUM_PROCESSORS
 
-int mach_NumProcessors = NUM_PROCESSORS;
+int mach_NumProcessors = 1;
 
 /*
  * Master control processor.
  */
 
-int mach_MasterProcessor = 0;
+extern int machMasterProcessor;
 
 /*
  * Start per processor data. 
@@ -51,20 +46,20 @@ int mach_MasterProcessor = 0;
  * TRUE if cpu was in kernel mode before the interrupt, FALSE if was in 
  * user mode.
  */
-Boolean	mach_KernelMode[NUM_PROCESSORS];
+Boolean	mach_KernelMode[MACH_MAX_NUM_PROCESSORS];
 
 
 /*
  *  Flag used by routines to determine if they are running at
  *  interrupt level.
  */
-Boolean mach_AtInterruptLevel[NUM_PROCESSORS];
+Boolean mach_AtInterruptLevel[MACH_MAX_NUM_PROCESSORS];
 
 /*
  *  Count of number of ``calls'' to enable interrupts minus number of calls
  *  to disable interrupts.  Kept on a per-processor basis.
  */
-int mach_NumDisableInterrupts[NUM_PROCESSORS];
+int mach_NumDisableInterrupts[MACH_MAX_NUM_PROCESSORS];
 int *mach_NumDisableIntrsPtr = mach_NumDisableInterrupts;
 
 /*
@@ -89,18 +84,20 @@ extern Mach_State	*machCurStatePtrs[];
 /*
  * Debugger state.
  */
-Mach_RegState	machDebugState[NUM_PROCESSORS];
+Mach_RegState	machDebugState[MACH_MAX_NUM_PROCESSORS];
+extern Mach_RegState *machDebugStatePtrs[];
+int machDebugSignal[MACH_MAX_NUM_PROCESSORS];
 
 /*
  * Cache controller state.
  */
-int	machCCState[64][NUM_PROCESSORS];
+CCdev	machCCState[MACH_MAX_NUM_PROCESSORS];
 
 /*
- * Map NuBus slot ID to a processor number.
+ * State of each processor in the system.
  */
 
-int	mach_SlotIdMap[16];
+Mach_ProcessorStatus	mach_ProcessorStatus[MACH_MAX_NUM_PROCESSORS];
 
 /*
  * Machine dependent variables.
@@ -117,6 +114,7 @@ int	mach_LastUserStackPage;
 
 unsigned int	mach_CycleTime = MACH_CYCLE_TIME;
 
+static int machDbgInterruptNumber;
 /*
  * The variables and tables below are used by the assembler routine
  * in loMem.s that dispatches kernel calls.  All of this information
@@ -157,6 +155,14 @@ void	InterruptError();
 void	MachFetchArgStart();
 void	MachFetchArgEnd();
 
+/*
+ * Foward routine declaration.
+ */
+static void EnterDebugger();
+
+#ifdef	PATCH_IBUFFER
+#endif
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -177,7 +183,6 @@ void
 Mach_Init()
 {
     int	i;
-
     /*
      * Set exported machine dependent variables.
      */
@@ -204,9 +209,13 @@ Mach_Init()
     machStatePtrOffset = (int) &((Proc_ControlBlock *) 0)->machStatePtr;
     machSpecialHandlingOffset = (int) &((Proc_ControlBlock *) 0)->specialHandling;
     /*
+     * Initialize the machine configuation.
+     */
+    Mach_ConfigInit();
+    /*
      * For each processor
      */
-    for (i = 0; i < NUM_PROCESSORS; i++) { 
+    for (i = 0; i < MACH_MAX_NUM_PROCESSORS; i++) { 
 	/*
 	 * We start off with interrupts disabled.
 	 */
@@ -215,13 +224,17 @@ Mach_Init()
 	 * But not at interrupt level.
 	 */
 	mach_AtInterruptLevel[i] = 0;
+	/*
+	 * Initialized the debugStatePtrs. 
+	 */
+	machDebugStatePtrs[i] = &(machDebugState[i]);
 
     }
 
     /*
      * The processor that executes this code is the master processor.
      */
-    mach_MasterProcessor = Mach_GetProcessorNumber();
+    machMasterProcessor = Mach_GetProcessorNumber();
 
     /*
      * Initialize the interrupt handler table.
@@ -244,6 +257,17 @@ Mach_Init()
      */
     Mach_RefreshStart();
 
+    /*
+     * Set up the debugger interrupt.
+     */
+    machDbgInterruptNumber = MACH_EXT_INTERRUPT_ANY;
+    Mach_AllocExtIntrNumber(EnterDebugger,&machDbgInterruptNumber);
+    machDbgInterruptMask = (1 << machDbgInterruptNumber);
+    Mach_SetNonmaskableIntr(machDbgInterruptMask);
+    /*
+     * Initialize the cross processor communication.
+     */
+    Mach_CPC_Init();
 #define	CHECK_OFFSETS
 #ifdef CHECK_OFFSETS
     /* 
@@ -251,7 +275,7 @@ Mach_Init()
      * loMem.s to index into C structures.
      */
 #define	C(s,o)	if ((int)&(((Mach_State*)0x0)->userState.trapRegState.s)!= o){\
-			Sys_Panic(SYS_FATAL, "Bad offset %d != %d\n", \
+			panic( "Bad offset %d != %d\n", \
 			(int)&(((Mach_State*)0x0)->userState.trapRegState.s)\
 			,o); \
 		}
@@ -263,7 +287,7 @@ Mach_Init()
 
 #undef C
 #define	C2(s,o)	if ((int)&(((Mach_State*)0x0)->userState.s)!= o){\
-			Sys_Panic(SYS_FATAL, "Bad offset %d != %d\n", \
+			panic( "Bad offset %d != %d\n", \
 			(int)&(((Mach_State*)0x0)->userState.s),o); \
 		}
     C2(specPageAddr, MACH_SPEC_PAGE_ADDR_OFFSET); 
@@ -276,14 +300,14 @@ Mach_Init()
     C2(faultAddr,MACH_FAULT_ADDR_OFFSET);
 #undef C2
 #define	C3(s,o)	if ((int)&(((Mach_State*)0x0)->s)!= o){\
-			Sys_Panic(SYS_FATAL, "Bad offset %d != %d\n", \
+			panic( "Bad offset %d != %d\n", \
 			(int)&(((Mach_State*)0x0)->s),o); \
 			}
     C3(kernStackStart, MACH_KERN_STACK_START_OFFSET);
     C3(kernStackEnd, MACH_KERN_STACK_END_OFFSET);
 #undef C3
 #define	C4(s,o)	if ((int)&(((Mach_State*)0x0)->switchRegState.s)!= o){\
-			Sys_Panic(SYS_FATAL, "Bad offset %d != %d\n", \
+			panic( "Bad offset %d != %d\n", \
 			(int)&(((Mach_State*)0x0)->switchRegState.s),o); \
 		}
     C4(regs,MACH_SWITCH_REGS_OFFSET); C4(kpsw,MACH_SWITCH_KPSW_OFFSET);
@@ -316,7 +340,7 @@ void
 InterruptError(statusRegPtr)
     unsigned 	int	*statusRegPtr;
 {
-    Sys_Panic(SYS_FATAL, "InterruptError: Bogus interrupt, ISR=0x%x\n",
+    panic( "InterruptError: Bogus interrupt, ISR=0x%x\n",
 			 *statusRegPtr);
 }
 
@@ -340,7 +364,8 @@ void
 Mach_InitFirstProc(procPtr)
     Proc_ControlBlock	*procPtr;
 {
-    procPtr->machStatePtr = (struct Mach_State *)Mem_Alloc(sizeof(Mach_State));
+    procPtr->machStatePtr = (struct Mach_State *)malloc(sizeof(Mach_State));
+    bzero((char *)procPtr->machStatePtr, sizeof(Mach_State));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     procPtr->machStatePtr->kernStackEnd = mach_StackBottom + mach_KernStackSize;
     machCurStatePtrs[Mach_GetProcessorNumber()] = procPtr->machStatePtr;
@@ -383,10 +408,11 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC, user)
     register	Mach_State	*statePtr;
 
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
-	procPtr->machStatePtr = (Mach_State *)Mem_Alloc(sizeof(Mach_State));
+	procPtr->machStatePtr = (Mach_State *)malloc(sizeof(Mach_State));
     }
 
-    statePtr = procPtr->machStatePtr;
+   statePtr = procPtr->machStatePtr;
+   bzero((char *)statePtr, sizeof(Mach_State));
     /*
      * Allocate a kernel stack for this process.
      */
@@ -527,7 +553,7 @@ Mach_StartUserProc(procPtr, entryPoint)
     if (Vm_PinUserMem(VM_READWRITE_ACCESS, 
 			statePtr->userState.maxSWP - statePtr->userState.minSWP,
 	                statePtr->userState.minSWP) != SUCCESS) {
-	Sys_Panic(SYS_FATAL, "Mach_StartUserProc: Couldn't pin pages.\n");
+	panic( "Mach_StartUserProc: Couldn't pin pages.\n");
     }
 
     MachRunUserProc();
@@ -584,13 +610,14 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
 							    VMMACH_PAGE_SIZE;
     if (Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
 	                statePtr->userState.minSWP) != SUCCESS) {
-	Sys_Panic(SYS_FATAL, "Mach_ExecUserProc: Couldn't pin stack.\n");
+	panic( "Mach_ExecUserProc: Couldn't pin stack.\n");
     }
 
     regStatePtr = &statePtr->userState.trapRegState;
     regStatePtr->regs[MACH_SPILL_SP][0] = (int)userStackPtr;
     regStatePtr->curPC = entryPoint;
     regStatePtr->nextPC = (Address)0;
+    regStatePtr->upsw = 0;
     regStatePtr->kpsw = (
 #ifdef WITH_IBUFFER
 #ifdef WITH_PREFETCH
@@ -796,13 +823,13 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 {
     machMaxSysCall++;
     if (machMaxSysCall != callNum) {
-	Sys_Panic(SYS_FATAL, "out-of-order kernel call initialization");
+	panic( "out-of-order kernel call initialization");
     }
     if (machMaxSysCall >= MAXCALLS) {
-	Sys_Panic(SYS_FATAL, "too many kernel calls");
+	panic( "too many kernel calls");
     }
     if (numArgs > MAXARGS) {
-	Sys_Panic(SYS_FATAL, "too many arguments to kernel call");
+	panic( "too many arguments to kernel call");
     }
     machNumArgs[machMaxSysCall] = numArgs;
     mach_NormalHandlers[machMaxSysCall] = normalHandler;
@@ -960,6 +987,9 @@ MachInterrupt(intrStatusReg, kpsw)
      * Do any nonmaskable interrupts first.
      */ 
     if (intrStatusReg & machNonmaskableIntrMask) { 
+	if (intrStatusReg & machDbgInterruptMask) {
+	    EnterDebugger(&intrStatusReg);
+	}
 	Mach_RefreshInterrupt();
 	intrStatusReg &= ~machNonmaskableIntrMask;
     }
@@ -968,7 +998,7 @@ MachInterrupt(intrStatusReg, kpsw)
     }	
     if (Mach_AtInterruptLevel() || 
 	mach_NumDisableInterrupts[Mach_GetProcessorNumber()] > 0) {
-	Sys_Panic(SYS_FATAL, "Non-maskable interrupt while interrupts disabled\n");
+	panic( "Non-maskable interrupt while interrupts disabled\n");
     }
     mach_AtInterruptLevel[Mach_GetProcessorNumber()] = TRUE;
     intrType = 0;
@@ -1053,7 +1083,7 @@ MachUserError(errorType)
 	    Sig_Send(SIG_TRACE_TRAP, SIG_NO_CODE, procPtr->processID, FALSE);
 	    break;
 	default:
-	    Sys_Panic(SYS_FATAL, "MachUserError: Unknown user error %d\n",
+	    panic( "MachUserError: Unknown user error %d\n",
 				 errorType);
     }
     return(MACH_NORM_RETURN);
@@ -1310,7 +1340,7 @@ MachGetWinMem()
 	statePtr->userState.minSWP -= VMMACH_PAGE_SIZE;
 	if (Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE, 
 				statePtr->userState.minSWP) != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "MachGetWinMem: Low pin failed\n");
+	    printf("Warning: MachGetWinMem: Low pin failed\n");
 	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 	}
     } else if (swp > statePtr->userState.maxSWP - 2 * MACH_SAVED_REG_SET_SIZE){
@@ -1318,7 +1348,7 @@ MachGetWinMem()
 	 * Need to allocate more at the high end.
 	 */
 	if (swp > statePtr->userState.maxSWP - MACH_SAVED_REG_SET_SIZE) {
-	    Sys_Panic(SYS_FATAL, "MachGetWinMem: SWP too big.\n");
+	    panic( "MachGetWinMem: SWP too big.\n");
 	}
 	if (statePtr->userState.maxSWP - statePtr->userState.minSWP >
 							VMMACH_PAGE_SIZE) {
@@ -1340,7 +1370,7 @@ MachGetWinMem()
 
 	if (Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE, 
 				statePtr->userState.maxSWP) != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "MachGetWinMem: High pin failed\n");
+	    printf("Warning: MachGetWinMem: High pin failed\n");
 	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 	}
 	statePtr->userState.maxSWP += VMMACH_PAGE_SIZE;
@@ -1654,7 +1684,7 @@ MachSaveUserState()
     if (Vm_CopyOut(sizeof(Mach_RegState),
 		        (Address)&statePtr->userState.trapRegState,
 		    (Address)&specPagePtr->savedState.regState) != SUCCESS) {
-	Sys_Panic(SYS_FATAL, "MachSaveUserState: Save failed\n");
+	panic( "MachSaveUserState: Save failed\n");
     }
     /*
      * Put out the current bounds of the saved window stack.  We don't have
@@ -1706,7 +1736,7 @@ MachRestoreUserState()
     if (Vm_CopyIn(sizeof(Mach_RegState),
 		  (Address)&specPagePtr->savedState.regState,
 		  (Address)&statePtr->userState.trapRegState) != SUCCESS) {
-	Sys_Panic(SYS_FATAL, "MachRestoreUserState: Restore failed\n");
+	panic( "MachRestoreUserState: Restore failed\n");
     }
     statePtr->userState.specPageAddr =
 		    (Address)((unsigned)specPagePtr->savedState.swpBaseAddr & 
@@ -1767,3 +1797,633 @@ MachUserTestAndSet(tasAddr)
     statePtr->userState.trapRegState.regs[28][0] = status;
     Vm_UnpinUserMem(4, tasAddr);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachEnterKernelDebugger --
+ *
+ *	Enter the kernel debugger. This routine is called when a processor
+ * 	hits a break_point trap or single step trap or is signaled into the
+ *	debugger by another processor.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void 
+MachEnterKernelDebugger(signal, statePtr)
+    int			signal;		/* Signal causing the trap. */
+    Mach_RegState	*statePtr;	/* State of the processor. */
+{
+    static	int	debuggerSemaphore = 0;	
+    Boolean	firstInDebugger;	/* Is this the first processor to
+					 * enter debugger. */
+    int		pnum;
+
+    /*
+     * If we are already in  debugger then ignore the interrupt.
+     */
+    if (mach_ProcessorStatus[Mach_GetProcessorNumber()] == MACH_IN_DEBUGGER_STATUS) {
+	return;
+    }
+    /*
+     * See if this is the first processor to enter the debugger.
+     */
+    firstInDebugger = (Boolean) (Mach_TestAndSet(&debuggerSemaphore) == 0);
+
+    /*
+     * Update our register state.
+     */
+    machDebugSignal[Mach_GetProcessorNumber()] = signal;
+    DevCCReadBytesFromRegs(0,DEV_CC_MAX_OFFSET, 
+			&(machCCState[Mach_GetProcessorNumber()]));
+    /*
+     * Mark our state as in the debugger.
+     */
+    mach_ProcessorStatus[Mach_GetProcessorNumber()] = MACH_IN_DEBUGGER_STATUS;
+
+    /*
+     * If we are the first processor, signal the rest of the processors.
+     */
+    if (firstInDebugger) {
+	for (pnum = 0; pnum < mach_NumProcessors; pnum++) {
+	    if (mach_ProcessorStatus[pnum] == MACH_ACTIVE_STATUS) {
+		Mach_SignalProcessor(pnum, machDbgInterruptNumber);
+	    }
+	}
+    }
+    /*
+     * If we are the master processor, wait a little while for the rest of
+     * the procesors to enter the debugger and then wait kdbx.
+     */
+    if (Mach_GetProcessorNumber() == machMasterProcessor) {
+	Boolean	allInDebugger = FALSE;
+	int	count = 0;
+	for (count = 0; !allInDebugger && (count < 10); count++) {
+	    MACH_DELAY(100);
+	    allInDebugger = TRUE;
+	    for (pnum = 0; pnum < mach_NumProcessors; pnum++) {
+		if (mach_ProcessorStatus[pnum] == MACH_ACTIVE_STATUS) {
+		    allInDebugger = FALSE;
+		}
+	    }
+	    REFRESH_CPU();
+	}
+	/*
+	 * Mark processor that wont enter debugger as hung.
+	 */
+	if (!allInDebugger) {
+	   for (pnum = 0; pnum < mach_NumProcessors; pnum++) {
+		if (mach_ProcessorStatus[pnum] == MACH_ACTIVE_STATUS) {
+		    printf("Warning: Processor %d wont enter debugger.\n",
+				pnum);
+		    mach_ProcessorStatus[pnum] = MACH_HUNG_STATUS;
+		}
+	    }
+	}
+	kdb(signal,statePtr);
+	/*
+	 * Clear the debugger semaphore.
+	 */
+	debuggerSemaphore = 0;
+    } else {
+	/*
+	 * If we are not the master processor, spin waiting for the
+	 * master to change our state. We must continue to refresh the
+	 * dynamic registers during the wait.
+	 */
+	register Mach_ProcessorStatus	* volatile spinWaitPtr;
+	register int	count;
+
+	spinWaitPtr = &(mach_ProcessorStatus[Mach_GetProcessorNumber()]);
+	count = 0;
+	while (*spinWaitPtr == MACH_IN_DEBUGGER_STATUS) {
+		count++;
+		if (count > 10000) {
+		    count = 0;
+		    REFRESH_CPU();
+		}
+	}
+    }
+   mach_ProcessorStatus[Mach_GetProcessorNumber()] = MACH_ACTIVE_STATUS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachContinueProcessors --
+ *
+ *	Continue all processors in the debugger.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void 
+MachContinueProcessors()
+{
+    int		pnum;
+
+    /*
+     * If not master process, then do nothing.
+     */
+    if (Mach_GetProcessorNumber() != machMasterProcessor) {
+	return;
+    }
+    /*
+     * Slave processors in the debugger spin waiting for there state to
+     * change.
+     */
+    for (pnum = 0; pnum < mach_NumProcessors; pnum++) {
+	if (mach_ProcessorStatus[pnum] == MACH_IN_DEBUGGER_STATUS) {
+		mach_ProcessorStatus[pnum] = MACH_CONTINUING_STATUS;
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EnterDebugger --
+ *
+ *	Called when a processor receives a enter debugger signal.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void 
+EnterDebugger(statusRegPtr)
+    unsigned int	*statusRegPtr;
+{
+    DBG_CALL;
+}
+
+/*
+ * Start of First process for each processor.
+ */
+Mach_State *machFirstProcState[MACH_MAX_NUM_PROCESSORS];
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SpinUpProcessor(pnum) --
+ *
+ *	Start up processor pnum
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Mach_SpinUpProcessor(pnum,procPtr)
+    int			pnum;		/* Processor number. */
+    Proc_ControlBlock	*procPtr;	/* Initial processor for processor. */
+{
+    ReturnStatus	status;
+    Mach_Board		board;
+    int			i;
+    /*
+     * Verify that the specified processor is in the system.
+     */
+    status = Mach_FindBoardDescription(MACH_CONFIG_CPU_BOARD,pnum,FALSE,
+					&board);
+    if (status != SUCCESS) {
+	printf("Warning: Trying to spin up nonexistant processor (%d)\n",
+		pnum);
+	return(status);
+    }
+
+    if (mach_ProcessorStatus[pnum] != MACH_UNINITIALIZED_STATUS) {
+	printf("Warning: Trying to spin up running processor (%d)\n",pnum);
+	return (FAILURE);
+    }
+
+    /* 
+     * Set up the first process for processor and assign processor number.
+     */
+    machFirstProcState[pnum] = procPtr->machStatePtr;
+    /*
+     * Wake up the processor. 
+     */
+    status = Mach_SignalProcessor(pnum, MACH_SPINUP_INTERRUPT);
+    if (status != SUCCESS) {
+	printf("Warning: Can't signal to wake up processor %d\n",pnum);
+	return (status);
+    }
+    return (SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_InitSlaveProcessor() --
+ *
+ *	Initialized the machine state of a slave (non-master) processor.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void 
+Mach_InitSlaveProcessor()
+{
+    /*
+     * Turn off all timers.
+     */
+    Mach_Write8bitCCReg(MACH_MODE_REG,0);
+    /*
+     * Clear the interrupt mask register and any pending interrupts.
+     */
+    Mach_Write32bitCCReg((unsigned int)MACH_INTR_MASK_0,(unsigned int)0);
+    Mach_Write32bitCCReg((unsigned int)MACH_INTR_STATUS_0,(unsigned int)-1);
+    /*
+     * Start refersh interrupt.
+     */
+    Mach_RefreshStart();
+    /*
+     * Set status to active.
+     */
+    mach_ProcessorStatus[Mach_GetProcessorNumber()] = MACH_ACTIVE_STATUS;
+
+}
+
+Mach_CheckSpecialHandling() { }
+
+#ifdef PATCH_IBUFFER
+
+#define	IBUF_TRACE
+#ifdef IBUF_TRACE
+
+#define	TRACE_BUF_SIZE 128
+static int	trace_end = 0;
+static struct ibuf_trace {
+    int	   r10;	
+    int	   r16;
+    int	   r26;
+    int	   choice;	
+} ibuf_trace[TRACE_BUF_SIZE];
+#endif
+/*
+ * Some ipatch stats.
+ */
+struct ipatch_stats {
+    int		numCalls;	/* Number calls to PatchIbuffer */
+    int		numUserCalls;	/* Number calls to patch user Ibuffer. */
+    int		numCallsWithIbuffer;	/* Number calls with ibuffer enabled. */
+    int		numUserCallsWithIbuffer;/* Number calls with ibuffer enabled.*/
+    int		numR10zero;		/* Number r10 == zero. */
+    int		numR26zero;		/* Number r26 == zero. */
+    int		numR10fault;		/* Number r10 not valid. */
+    int		numR26fault;		/* Number r26 not valid. */
+    int		numGoodInst;		/* Number of harmless inst. */
+    int		numR10notCall;		/* Number of r10 not call inst. */
+    int		numR26notCall;		/* Number of r26 not call inst. */
+} ipatch_stats;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachPatchIbuffer() --
+ *
+ *	Return the correct current PC after an interrupt.  When the
+ *	ibuffer is enabled, the current PC of an interrupt is written in
+ *	one of two places.  This routine returns the correct curPC.
+ *
+ * Results: 
+ *	The correct current PC of a trap.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+int 
+MachPatchIbuffer(kpsw,r10,r16,r26)
+    int	kpsw;		/* The kpsw at trap time. */
+    int	r10;		/* R10 of the trap window. */
+    int	r16;		/* R16 of the trap window. */
+    int	r26;		/* R26 of the trap window. */
+{
+    register unsigned int	nextInst, nextOPCode;
+    register unsigned int	curInst, curOPCode;
+    int		r10notvalid = 0;
+    ipatch_stats.numCalls++;
+    /*
+     * If the ibuffer is not enabled then the current PC is always in
+     * R10.
+     */
+    if (!(kpsw & MACH_KPSW_IBUFFER_ENA)) {
+	return r10;
+    }
+    ipatch_stats.numCallsWithIbuffer++;
+
+    /*
+     * If the ibuffer is enabled then the current PC is either in R10 or
+     * R16.  If r10 is 0 then current PC must be in R26.  If R26 is also
+     * zero something is very wrong.
+     */
+    if (r10 == 0) {
+	if (r26 == 0) {
+	    panic("No current pc in MachPatchIbuffer.");
+	} else {
+	    ipatch_stats.numR10zero++;
+	    return r26;
+	}
+    }
+    /*
+     * If R10 is not zero but R26 is zero then R10 be the correct current PC.
+     */
+    if (r26 == 0) {
+	ipatch_stats.numR26zero++;
+	return r10;
+    }
+    /*
+     * If R10 doesn't point to a validate address, it can't be the correct
+     * current PC. (This doesn't work for multiprocessors!!!)
+     * THIS is also not true for uniprocessors.
+     */
+
+    if (!Vm_ValidateRange(r10,4)) {
+	ipatch_stats.numR10fault++;
+	r10notvalid = 1;
+    }
+
+	/*
+ 	 * If r16 is not valid we must assume that the pc was put in the 
+	 * correct place.
+	 */
+    if (!Vm_ValidateRange(r16,4)) {
+	return r10;
+    }
+    /*
+     * If current PC is only messed up when the next pc instruction is one
+     * of the follow:
+     *	1) a call
+     *	2) a return
+     *  3) a return_trap
+     *	4) a wr_special	of cwp
+     * If it is not one of this instructions then r10 is the current PC.
+     */
+    nextInst = (* (unsigned int *) r16);
+    nextOPCode = nextInst >> 25;
+    if (!(((nextOPCode >= 0x70) && (nextOPCode <= 0x77)) || 	/* A call */
+	(nextOPCode == 0x58)		       ||	/* A return */
+	(nextOPCode == 0x59)				/* A return_trap */
+		)) {		/* Should also check wr_special cwp. */
+	ipatch_stats.numGoodInst++;
+	return r10;
+    }
+    /*
+     * If the r26 is not accessible then r10 must be the current PC.
+     */
+    if (!Vm_ValidateRange(r26,4)) {
+	ipatch_stats.numR26fault++;
+	return r10;
+    }
+    if ((r10&~3)+4 == (r16&~3)) {
+	return r10;
+    }
+    /*
+     * Check the instruction pointed to by r10. If this instruction is
+     * call instruction we assume that the trap wrote the current PC into
+     * r26. This follows because the instruction before a call or return
+     * is never a call.
+     */
+    if (!r10notvalid) {
+	    curInst = (* (unsigned int *) r10);
+	    curOPCode = curInst >> 25;
+	    if (!((curOPCode >= 0x70) && (curOPCode <= 0x77))) { 
+		/* Not a call inst. */
+		ipatch_stats.numR10notCall++;
+		return r10;
+	    }
+     }
+    curInst = (* (unsigned int *) r26);
+    curOPCode = curInst >> 25;
+    if (((curOPCode >= 0x70) && (curOPCode <= 0x77))) { /* Is a call inst. */
+	panic("Both current PCs are calls in  MachPatchIbuffer.");
+    }
+    ipatch_stats.numR26notCall++;
+    return r26;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachPatchUserModeIbuffer() --
+ *
+ *	Patch the current PC in the Mach_State structure of the currently
+ *	executing process.
+ *
+ * Results: 
+ *	None.
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int 
+MachPatchUserModeIbuffer(kpsw)
+    unsigned int	kpsw;		/* Trap KPSW */
+{
+    Mach_State	*statePtr;
+    int errorCurPC;
+#ifdef IBUF_TRACE
+    int		index;
+#endif
+
+    ipatch_stats.numUserCalls++;
+    /*
+     * If the ibuffer is not enabled then no patch is necessary.
+     */
+    statePtr = machCurStatePtrs[Mach_GetProcessorNumber()];
+    if ((kpsw & MACH_KPSW_IBUFFER_ENA)) {
+	ipatch_stats.numUserCallsWithIbuffer++;
+	/*
+	 * The trapping R26 was stuffed into trapRegState.aligner by 
+	 * SaveState.
+	 */
+	errorCurPC =  * (int *) &(statePtr->userState.trapRegState.aligner);
+#ifdef IBUF_TRACE
+	index = trace_end++;
+	trace_end = trace_end % TRACE_BUF_SIZE;
+	ibuf_trace[index].r10 = (int) statePtr->userState.trapRegState.curPC;
+	ibuf_trace[index].r16 = (int) statePtr->userState.trapRegState.nextPC;
+	ibuf_trace[index].r26 = errorCurPC;
+	ibuf_trace[index].choice = (int)
+#endif
+	statePtr->userState.trapRegState.curPC = (Address)
+	    MachPatchIbuffer(kpsw, statePtr->userState.trapRegState.curPC,
+				    statePtr->userState.trapRegState.nextPC,
+				    errorCurPC);
+    }
+    return (int) statePtr->userState.trapRegState.curPC;
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachPatchIbufferOnFault() --
+ *
+ *	Return the correct current PC after an fault.  When the
+ *	ibuffer is enabled, the current PC of an fault is written in
+ *	one of two places.  This routine returns the correct curPC.
+ *
+ * Results: 
+ *	The correct current PC of a trap.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+int 
+MachPatchIbufferOnFault(kpsw,r10,r16,r26)
+    int	kpsw;		/* The kpsw at trap time. */
+    int	r10;		/* R10 of the trap window. */
+    int	r16;		/* R16 of the trap window. */
+    int	r26;		/* R26 of the trap window. */
+{
+    register unsigned int	nextInst, nextOPCode;
+    register unsigned int	curInst, curOPCode;
+    ipatch_stats.numCalls++;
+    /*
+     * If the ibuffer is not enabled then the current PC is always in
+     * R10.
+     */
+    if (!(kpsw & MACH_KPSW_IBUFFER_ENA)) {
+	return r10;
+    }
+    ipatch_stats.numCallsWithIbuffer++;
+
+    /*
+     * If the ibuffer is enabled then the current PC is either in R10 or
+     * R16.  If r10 is 0 then current PC probably is in R26.  If R26 is also
+     * zero something is  wrong.
+     */
+    if (r10 == 0) {
+	if (r26 == 0) {
+	    return r10;
+	} else {
+	    return r26;
+	}
+    }
+    /*
+     * If R10 is not zero but R26 is zero then R10 be the correct current PC.
+     */
+    if (r26 == 0) {
+	return r10;
+    }
+    /*
+     * If the next PC is not accessable, then assume trap put PC in correct
+     * registers. 
+
+    if (!Vm_ValidateRange(r16,4)) {
+	return r10;
+    }
+    /*
+     * If current PC is only messed up when the next pc instruction is one
+     * of the follow:
+     *	1) a call
+     *	2) a return
+     *  3) a 
+     *	4) a wr_special	of cwp
+     * If it is not one of this instructions then r10 is the current PC.
+     */
+    nextInst = (* (unsigned int *) r16);
+    nextOPCode = nextInst >> 25;
+    if (!(((nextOPCode >= 0x70) && (nextOPCode <= 0x77)) || 	/* A call */
+	(nextOPCode == 0x58)		       ||	/* A return */
+	(nextOPCode == 0x59)				/* A return_trap */
+		)) {		/* Should also check wr_special cwp. */
+	ipatch_stats.numGoodInst++;
+	return r10;
+    }
+    if ((r16&~3) == ((r10&~3) + 4)) {
+	return r10;
+    } 
+    if ((r16&~3) == ((r26&~3) + 4)) {
+	return r26;
+    }
+    return r10;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachPatchUserModeIbufferOnFault() --
+ *
+ *	Patch the current PC in the Mach_State structure of the currently
+ *	executing process.
+ *
+ * Results: 
+ *	None.
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int 
+MachPatchUserModeIbufferOnFault(kpsw)
+    unsigned int	kpsw;		/* Trap KPSW */
+{
+    Mach_State	*statePtr;
+    int errorCurPC;
+#ifdef IBUF_TRACE
+    int		index;
+#endif
+
+    ipatch_stats.numUserCalls++;
+    /*
+     * If the ibuffer is not enabled then no patch is necessary.
+     */
+    statePtr = machCurStatePtrs[Mach_GetProcessorNumber()];
+    if ((kpsw & MACH_KPSW_IBUFFER_ENA)) {
+	ipatch_stats.numUserCallsWithIbuffer++;
+	/*
+	 * The trapping R26 was stuffed into trapRegState.aligner by 
+	 * SaveState.
+	 */
+	errorCurPC =  * (int *) &(statePtr->userState.trapRegState.aligner);
+#ifdef IBUF_TRACE
+	index = trace_end++;
+	trace_end = trace_end % TRACE_BUF_SIZE;
+	ibuf_trace[index].r10 = (int) statePtr->userState.trapRegState.curPC;
+	ibuf_trace[index].r16 = (int) statePtr->userState.trapRegState.nextPC;
+	ibuf_trace[index].r26 = errorCurPC;
+	ibuf_trace[index].choice = (int)
+#endif
+	statePtr->userState.trapRegState.curPC = (Address)
+	    MachPatchIbuffer(kpsw, statePtr->userState.trapRegState.curPC,
+				    statePtr->userState.trapRegState.nextPC,
+				    errorCurPC);
+    }
+    return (int) statePtr->userState.trapRegState.curPC;
+
+}
+#endif
+

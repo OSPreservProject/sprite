@@ -17,7 +17,6 @@
  */
 
 #include "sprite.h"
-#include "sys.h"
 #include "mach.h"
 #include "prof.h"
 
@@ -156,7 +155,7 @@ Mach_RefreshInterrupt()
      */
     switches = read_physical_word(0x40000);
     if (switches & 0x4) {
-	Sys_Panic(SYS_FATAL,"Aborted by DIP switch\n");
+	panic("Aborted by DIP switch\n");
     }
     if (profEnabled) {
 	counterTicks = -MACH_PROFILE_TIMER_TICKS;

@@ -36,7 +36,7 @@ typedef enum {
     if (!mach_AtInterruptLevel[pnum]) { \
 	Mach_DisableIntr(); \
 	if (mach_NumDisableIntrsPtr[pnum] < 0) { \
-	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+	    panic("Negative interrupt count.\n"); \
 	} \
 	mach_NumDisableIntrsPtr[pnum]++; \
     } \
@@ -46,7 +46,7 @@ typedef enum {
     if (!mach_AtInterruptLevel[pnum]) { \
 	mach_NumDisableIntrsPtr[pnum]--; \
 	if (mach_NumDisableIntrsPtr[pnum] < 0) { \
-	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+	    panic("Negative interrupt count.\n"); \
 	} \
 	if (mach_NumDisableIntrsPtr[pnum] == 0) { \
 	    Mach_EnableIntr(); \
@@ -180,6 +180,25 @@ typedef struct Mach_SpecPage {
 } Mach_SpecPage;
 
 /*
+ * Per processor status info.
+ */
+typedef	int	Mach_ProcessorStatus;
+
+#define	MACH_UNKNOWN_STATUS		0	/* Status unknown. */
+#define	MACH_UNINITIALIZED_STATUS	1	/* Processor uninitialized. */
+#define	MACH_ACTIVE_STATUS		2	/* Processor running. */
+#define	MACH_IN_DEBUGGER_STATUS		3	/* Processor in debugger. */
+#define	MACH_CONTINUING_STATUS		4	/* Processor continuing from
+						 * debugger. */
+#define	MACH_HUNG_STATUS		5	/* Processor hung. */
+#define	MACH_DEAD_STATUS		6	/* Processor broken. */
+
+/*
+ * Status of each processor.
+ */
+extern Mach_ProcessorStatus mach_ProcessorStatus[];
+
+/*
  * ----------------------------------------------------------------------------
  *
  * Mach_GetSlotId --
@@ -267,7 +286,6 @@ extern void			Mach_InitSyscall();
 extern void			Mach_SetHandler();
 extern int			Mach_GetExcStackSize();
 extern Mach_ProcessorStates	Mach_ProcessorState();
-extern void			Mach_UnsetJump();
 
 /*
  * Machine dependent routines.
@@ -281,10 +299,8 @@ extern	Address	Mach_GetStackPointer();
 extern	void	Mach_DisableIntr();
 extern	void	Mach_EnableIntr();
 extern  ReturnStatus Mach_AllocExtIntrNumber();
-extern	void	Mach_RefreshStart();
-extern	void	Mach_RefreshInterrupt();
 extern	void	Mach_SetNonmaskableIntr();
-
+extern  ReturnStatus Mach_CallProcessor();
 /*
  * Routines to read and write physical memory.
  */

@@ -56,7 +56,8 @@ Mach_Board  machConfig[MACH_NUM_BUS_SLOTS] = {
 { 0xD, MACH_CONFIG_HALF_MEG_BOARD,	0,	MACH_CONFIG_INITIALIZED_FLAG |
 						MACH_CONFIG_NO_ACCESS_FLAG },
 { 0xE, MACH_CONFIG_ETHER_BOARD,		0,	0 },
-{ 0xF, MACH_CONFIG_8_MEG_BOARD,		0,	MACH_CONFIG_INITIALIZED_FLAG}
+{ 0xF, MACH_CONFIG_8_MEG_BOARD,		0,	MACH_CONFIG_INITIALIZED_FLAG |
+						MACH_CONFIG_KERNEL_MEM_FLAG}
 };
 
 /*
@@ -101,7 +102,8 @@ Mach_FindBoardDescription(boardType, number, wildcard, machBoardPtr)
 	 */
 	if ((machConfig[slotId].boardType == boardType) ||
 	    (wildcard && (machConfig[slotId].boardType & boardType))) {
-	    if (machConfig[slotId].number == number) {
+	    if (machConfig[slotId].number == number &&
+		!(machConfig[slotId].flags & MACH_CONFIG_NO_ACCESS_FLAG)) {
 		*machBoardPtr = machConfig[slotId];
 		return (SUCCESS);
 	    }
@@ -148,3 +150,98 @@ Mach_ConfigInit()
 	} 
     }
 }
+
+
+/*
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_ConfigMemSize --
+ *
+ *	Return the size in bytes of a memory board.
+ *
+ * Results: None
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+int
+Mach_ConfigMemSize(board)
+    Mach_Board	board;
+{
+	int		halfMegs, size;
+
+	switch (board.boardType) {
+
+	case MACH_CONFIG_HALF_MEG_BOARD: {
+		halfMegs = 1; 
+		break; 
+	}
+	case MACH_CONFIG_2_MEG_BOARD: {
+		halfMegs = 4; 
+		break; 
+	}
+	case MACH_CONFIG_8_MEG_BOARD: {
+		halfMegs = 16; 
+		break;
+	}
+	case MACH_CONFIG_16_MEG_BOARD: {
+		halfMegs = 32; 
+		break;
+	}
+	case MACH_CONFIG_32_MEG_BOARD: {
+		halfMegs = 64; 
+		break; 
+	}
+	default: {
+		panic("Unknown memory board type (%d)\n",board.boardType); 
+	}
+	}; 
+	size = (halfMegs * (512 * 1024));
+	if (board.flags & MACH_CONFIG_KERNEL_MEM_FLAG) {
+	    size -= MACH_NUM_RESERVED_PAGES * VMMACH_PAGE_SIZE;
+	}
+
+	return (size);
+}
+
+
+/*
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_ConfigInitMem --
+ *
+ *	Initialized and return the starting location of a memory board.
+ *
+ * Results: None
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned int
+Mach_ConfigInitMem(board)
+    Mach_Board	board;
+{
+    unsigned int	startAddress;
+    if (!(board.boardType & MACH_CONFIG_MEMORY_MASK)) {
+	panic("Not a memory board in Mach_ConfigInitMem");
+    }
+    if (!(board.flags & MACH_CONFIG_INITIALIZED_FLAG) ) {
+	/* Mach_Initialized board. */
+    }
+    /*
+     * Assume that we address board in slot space.
+     */
+    startAddress = ((0xf0 | board.slotId) << 24);
+    if (board.flags & MACH_CONFIG_KERNEL_MEM_FLAG) {
+	startAddress += (MACH_NUM_RESERVED_PAGES * VMMACH_PAGE_SIZE);
+    }
+    return (startAddress);
+}
+

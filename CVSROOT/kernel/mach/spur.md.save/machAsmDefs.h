@@ -399,6 +399,23 @@
  *
  *	errorType - Type of user error.
  */
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+#define USER_ERROR(userError) \
+	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0; \
+	add_nt		CUR_PC_REG, r0, $0; \
+	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0; \
+	rd_special	VOL_TEMP1, pc; \
+	return_trap	VOL_TEMP1, $12; \
+	Nop; \
+	invalidate_ib; \
+	cmp_trap	always, r0, r0, $userError; \
+	Nop
+#else
 #define USER_ERROR(userError) \
 	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0; \
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0; \
@@ -407,13 +424,30 @@
 	Nop; \
 	cmp_trap	always, r0, r0, $userError; \
 	Nop
-
+#endif
 /*
  * USER_SWP_ERROR() ==
  *
  *	Handle a user swp error.  This is called from a trap handler
  *	that happened in kernel mode.
  */
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+#define	USER_SWP_ERROR() \
+	SWITCH_TO_KERNEL_STACKS(); \
+	rd_kpsw		VOL_TEMP1; \
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA; \
+	and		VOL_TEMP1, VOL_TEMP1, $~(MACH_KPSW_IBUFFER_ENA); \
+	wr_kpsw		VOL_TEMP1, $0; \
+	add_nt		CUR_PC_REG, r0,$0; \
+	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP; \
+	call		_MachUserError; \
+	Nop
+#else
 #define	USER_SWP_ERROR() \
 	SWITCH_TO_KERNEL_STACKS(); \
 	rd_kpsw		VOL_TEMP1; \
@@ -422,7 +456,7 @@
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP; \
 	call		_MachUserError; \
 	Nop
-
+#endif
 
 /*
  * SWITCH_TO_DEBUGGER_STACKS()
@@ -440,10 +474,17 @@
  *		3) VOL_TEMP2 <<= 5 to shift cwp<4:2> to swp<9:7>
  *		4) VOL_TEMP2 += StackBase
  *		5) swp <= VOL_TEMP2
+ *
+ * 	If were not the processor to run the debugger (the master processor)
+ *	then use our current stack.
  */
 #define	SWITCH_TO_DEBUGGER_STACKS() \
-	ld_32		SPILL_SP, r0, $debugSpillStackEnd; \
-	ld_32		VOL_TEMP1, r0, $debugSWStackBase; \
+	ld_32		VOL_TEMP2, r0, $_machMasterProcessor; \
+	GET_PNUM_FROM_BOARD(VOL_TEMP1); \
+	cmp_br_delayed	ne, VOL_TEMP1, VOL_TEMP2, 1f; \
+	sll		VOL_TEMP1, VOL_TEMP1,$2; \
+	ld_32		SPILL_SP,VOL_TEMP1, $debugSpillStackEndPtr; \
+	ld_32		VOL_TEMP1, VOL_TEMP1, $debugSWStackBasePtr; \
 	nop; \
 	rd_special	VOL_TEMP2, cwp; \
 	sub		VOL_TEMP2, VOL_TEMP2, $8; \
@@ -452,7 +493,7 @@
 	sll		VOL_TEMP2, VOL_TEMP2, $2; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, VOL_TEMP1; \
 	wr_special	swp, VOL_TEMP2, $0
-
+1:
 /*
  * CALL_DEBUGGER(regErrorVal, constErrorVal)
  *
@@ -469,20 +510,18 @@
  *	    6) Restore state from _machDebugState (note that this will 
  *	       reenable the ibuffer unless the debugger has modified the
  *	       kpsw to not have it enabled).
- *	    7) Do a normal return from trap.
+ *	    7) Clear any pending debugger signals.
+ *	    8) Continue the other processors.
+ *	    9) Do a normal return from trap.
  *
  *	regErrorVal -	Register that holds an error value.
  *	constErrorVal -	Constant error value.
  */
-#ifdef notdef
-	rd_kpsw		VOL_TEMP1; \
-	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_ALL_TRAPS_ENA; \
-	wr_kpsw		VOL_TEMP1, $0; \
-	st_32		r0, r0, $-1
-#endif
 
 #define	CALL_DEBUGGER(regErrorVal, constErrorVal) \
-	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
+	GET_PNUM_FROM_BOARD(VOL_TEMP1); \
+	sll		VOL_TEMP1, VOL_TEMP1,$2; \
+	ld_32		VOL_TEMP1, VOL_TEMP1, $_machDebugStatePtrs; \
 	rd_special	VOL_TEMP2, pc; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
 	jump		SaveState; \
@@ -503,16 +542,20 @@
 	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE; \
 	cmp_br_delayed	lt, r1, r2, 1b; \
 	Nop; \
-	\
-	SAVE_CC_STATE_VIRT(); \
-	\
 	add_nt		OUTPUT_REG1, regErrorVal, $constErrorVal; \
-	ld_32		OUTPUT_REG2, r0, $debugStatePtr; \
+	GET_PNUM_FROM_BOARD(OUTPUT_REG2); \
+	sll		OUTPUT_REG2, OUTPUT_REG2,$2; \
+	ld_32		OUTPUT_REG2, OUTPUT_REG2, $_machDebugStatePtrs; \
 	Nop; \
-	call		_kdb; \
+	call		_MachEnterKernelDebugger; \
 	Nop; \
-	\
-	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
+	ld_32		OUTPUT_REG2, r0, $_machDbgInterruptMask;\
+        WRITE_STATUS_REGS(MACH_FE_STATUS_0, OUTPUT_REG2); \
+	call		_MachContinueProcessors; \
+	Nop; \
+	GET_PNUM_FROM_BOARD(VOL_TEMP1); \
+	sll		VOL_TEMP1, VOL_TEMP1,$2; \
+	ld_32		VOL_TEMP1, VOL_TEMP1, $_machDebugStatePtrs; \
 	rd_special	VOL_TEMP2, pc; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
 	jump		RestoreState; \
@@ -627,7 +670,8 @@
 #define	GET_PNUM_FROM_BOARD(pnumReg) \
 	LD_SLOT_ID(pnumReg); \
 	sll		pnumReg,pnumReg,$2; \
-	ld_32	pnumReg, pnumReg, $_machMapSlotToPnum
+	ld_32	pnumReg, pnumReg, $_machMapSlotIdToPnum ; \
+	Nop
 
 
 #endif _MACHASMDEFS
