@@ -13,6 +13,7 @@
 #define _MACH
 
 #include "machConst.h"
+#include "machCCRegs.h"
 
 /*
  * The state of each processor: user mode or kernel mode.
@@ -169,7 +170,8 @@ extern	int	Mach_GetMachineType();
 extern	Address	Mach_GetStackPointer();
 extern	void	Mach_DisableIntr();
 extern	void	Mach_EnableIntr();
-
+extern	unsigned int Mach_GetSlotId();
+extern  ReturnStatus Mach_AllocExtIntrNumber();
 /*
  * spriteStart is defined in bootSys.s with an underscore.
  */
