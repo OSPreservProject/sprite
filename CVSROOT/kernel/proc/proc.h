@@ -23,6 +23,37 @@
 #include "fs.h"
 #include "exc.h"
 
+/*
+ * Constants for Proc_Exec().  
+ *
+ * PROC_MAX_EXEC_ARG_LENGTH	The maximum length of any argument that is
+ *				passed to exec.
+ * PROC_MAX_EXEC_ARGS		The maximum number of arguments that can be
+ *				passed to an exec'd process.
+ */
+
+#define	PROC_MAX_EXEC_ARG_LENGTH	1024
+#define	PROC_MAX_EXEC_ARGS		512
+
+/*
+ * Masks to extract the proc table index and the generation number from
+ * a process id.  Process IDs need to be unique across reuses of the same
+ * procTable slot, and they need to be unique from host to host.
+ */
+
+#define	PROC_INDEX_MASK		0x000000FF
+#define	PROC_ID_NUM_MASK	0x0000FF00
+#define PROC_ID_NUM_SHIFT	8
+#define	PROC_GEN_NUM_MASK	0x000F0000
+#define PROC_GEN_NUM_SHIFT	16
+
+/* 
+ * Size of the buffer containing arguments, to be passed back to users.  
+ */
+
+#define PROC_PCB_ARG_LENGTH 256
+
+
 /* DATA STRUCTURES */
 
 /*
@@ -349,9 +380,9 @@ typedef struct Proc_ControlBlock {
 
 
     /*
-     * Name of the exec'd file. At end because is so big.
+     * Arguments for the process, taken from Proc_Exec.
      */
-    char		codeFileName[FS_MAX_NAME_LENGTH];
+    char	*argString;
 } Proc_ControlBlock;
 
 
@@ -419,6 +450,18 @@ typedef struct Proc_ControlBlock {
 #define PROC_WAITED_ON			0x02
 #define	PROC_SUSPENDED_AND_WAITED_ON	0x04
 
+/*
+ * The following structure is used to transfer fixed-length argument strings
+ * from the kernel back to user space.  A typedef simplifies later
+ * declarations (and may be the only way to do it?), since 
+ *	char *argPtr[PROC_PCB_ARG_LENGTH]
+ * would be an array of pointers to strings rather than an array of strings.
+ */
+
+typedef struct {
+    char argString[PROC_PCB_ARG_LENGTH];
+} Proc_PCBArgString;
+
 
 
 /*
@@ -445,30 +488,6 @@ extern Proc_ControlBlock **proc_PCBTable;
  */
 
 extern int proc_MaxNumProcesses;
-
-/*
- * Constants for Proc_Exec().
- *
- * PROC_MAX_EXEC_ARG_LENGTH	The maximum length of any argument that is
- *				passed to exec.
- * PROC_MAX_EXEC_ARGS		The maximum number of arguments that can be
- *				passed to an exec'd process.
- */
-
-#define	PROC_MAX_EXEC_ARG_LENGTH	1024
-#define	PROC_MAX_EXEC_ARGS		512
-
-/*
- * Masks to extract the proc table index and the generation number from
- * a process id.  Process IDs need to be unique across reuses of the same
- * procTable slot, and they need to be unique from host to host.
- */
-
-#define	PROC_INDEX_MASK		0x000000FF
-#define	PROC_ID_NUM_MASK	0x0000FF00
-#define PROC_ID_NUM_SHIFT	8
-#define	PROC_GEN_NUM_MASK	0x000F0000
-#define PROC_GEN_NUM_SHIFT	16
 
 /*
  *  Macros to manipulate process IDs.
@@ -537,6 +556,7 @@ extern void			Proc_NotifyMigratedWaiters();
 extern void			Proc_PutOnDebugList();
 extern void			Proc_Suspend();
 extern void			Proc_Resume();
+extern int			Proc_ExecEnv();
 
 
 extern ReturnStatus		Proc_EvictForeignProcs();
@@ -578,5 +598,19 @@ extern	void			Proc_CallFunc();
 extern	ClientData		Proc_CallFuncAbsTime();
 extern	void			Proc_ServerProc();
 extern	int			proc_NumServers;
+
+/*
+ * The following are kernel stubs corresponding to system calls.  They
+ * used to be known by the same name as the system call, but the C library
+ * has replaced them at user level in order to use the stack environments.
+ * The "Stub" suffix therefore avoids naming conflicts with the library.
+ */
+
+extern ReturnStatus		Proc_SetEnvironStub();
+extern ReturnStatus		Proc_UnsetEnvironStub();
+extern ReturnStatus		Proc_GetEnvironVarStub();
+extern ReturnStatus		Proc_GetEnvironRangeStub();
+extern ReturnStatus		Proc_InstallEnvironStub();
+extern ReturnStatus		Proc_CopyEnvironStub();
 
 #endif _PROC
