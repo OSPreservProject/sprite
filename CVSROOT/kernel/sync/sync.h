@@ -314,6 +314,9 @@ extern Sync_RegElement  *regQueuePtr;
 	     * processor caches. \
 	     */ \
 	    while((semaphore)->value != 0) { \
+		if (missFlag == 0) { \
+		    missFlag = 1; \
+		} \
 	    } \
 	    if(Mach_TestAndSet(&((semaphore)->value)) == 0) { \
 		break; \
