@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsLocalDomain.h"
 #include "fsNameHash.h"
 #include "fsRecovery.h"
+#include "fsPdev.h"
 #include "fsTrace.h"
 #include "fsStat.h"
 #include "fsClient.h"
@@ -107,11 +108,11 @@ Fs_Init()
     bzero((Address) &fsStats, sizeof(FsStats));
     /*
      * The handle cache and the block cache start out with a hash table of
-     * a given size (8).  The hash routines, however, automatically grow their
-     * hash tables if they gets too filled.  Thus the mysterious 8.
+     * a given size which grows on demand.  Thus the numbers passed to
+     * the next two routines are not crucial.
      */
-    FsHandleInit(8);
-    FsBlockCacheInit(8);
+    FsHandleInit(64);
+    FsBlockCacheInit(64);
 
     FsPrefixInit();
 
@@ -191,6 +192,8 @@ Fs_Bin()
     Mem_Bin(sizeof(FsLocalFileIOHandle));
     Mem_Bin(sizeof(FsRmtFileIOHandle));
     Mem_Bin(sizeof(FsFileDescriptor));
+    Mem_Bin(sizeof(PdevServerIOHandle));
+    Mem_Bin(sizeof(PdevControlIOHandle));
 }
 
 
