@@ -262,19 +262,15 @@ typedef struct FsUserIDs {
 
 
 /*
- * Remote waiting.
+ * Wait list routines.  Waiting lists for various conditions are kept
+ * hanging of I/O handles.
  */
-extern	void		FsWaitListRemove();
 extern	void		FsWaitListInsert();
 extern	void		FsWaitListNotify();
 extern	void		FsFastWaitListInsert();
 extern	void		FsFastWaitListNotify();
-extern	void		FsRemoteWaitInit();
-extern	void		FsClientRemoteWakeup();
-extern	ReturnStatus	FsClientRemoteWait();
-extern	void		FsServerSchedRemoteWait();
-extern	void		FsServerRemoteWakeup();
-extern	void		FsWakeupListRemove();
+extern	void		FsWaitListDelete();
+extern	void		FsWaitListRemove();
 
 /*
  * Name lookup routines.
@@ -304,7 +300,7 @@ extern	void		FsHandleDecRefCount();
 extern	void 	 	FsHandleUnlockHdr();
 extern	void 	 	FsHandleReleaseHdr();
 extern	void 	 	FsHandleRemoveHdr();
-extern	void 	 	FsHandleAttemptRemoveHdr();
+extern	void 	 	FsHandleAttemptRemove();
 extern	void 	 	FsHandleRemoveInt();
 
 /*
@@ -328,16 +324,12 @@ extern	void 	 	FsHandleRemoveInt();
 #define FsHandleRemove(handlePtr) \
     FsHandleRemoveHdr((FsHandleHeader *)handlePtr)
 
-#define FsHandleAttemptRemove(handlePtr) \
-    FsHandleAttemptRemoveHdr((FsHandleHeader *)handlePtr)
-
 /*
- * Crappy handle routines...
+ * Routines for use by the name component hash table.  They increment the
+ * low-level reference count on a handle when it is in the cache.
  */
-extern	ReturnStatus 	FsHandleSameOpen();
 extern	void	 	FsHandleIncRefCount();
-extern	void	 	FsHandleServerReopen();
-
+extern	void	 	FsHandleDecRefCount();
 
 /*
  * Miscellaneous.
