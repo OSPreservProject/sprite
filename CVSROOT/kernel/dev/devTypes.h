@@ -58,6 +58,7 @@
 #define	DEV_DEBUG		11
 #define DEV_MOUSE		12
 #define DEV_GRAPHICS		13
+#define DEV_PLACEHOLDER_3	13	/* for ds3100 unused graphics device */
 #define DEV_AUDIO		15
 
 /*
