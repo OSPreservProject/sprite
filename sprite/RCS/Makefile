@@ -17,6 +17,14 @@ MTFLAGS = -msun2
 TM = ds3100
 MTFLAGS =
 #endif
+#ifmake sun4
+TM = sun4
+MTFLAGS = -msun4
+#endif
+#ifmake sun4c
+TM = sun4c
+MTFLAGS = -msun4
+#endif
 
 LIBC = -lnet -lc
 
@@ -149,6 +157,38 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rcp /sprite/boot/$@.sprite.new ${GINGER}:/sprite3/$@.new
 	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
 	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	nm $@ | sort > $@.nm
+
+sun4: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	-Save $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} -Dsun4 mainHook.c
+	${MKVERSION} -p "SPRITE VERSION 1.0 (sun4)" > version.h
+	cc -c ${CFLAGS} -Dsun4 version.c
+	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS} version.o \
+	    -L/sprite/lib/${TM}.md ${LIBC}
+	@ls -l $@
+	@size $@
+	update -f -s $@ /sprite/boot/$@.new
+#	rcp /sprite/boot/$@.new ${GINGER}:/sprite3/$@.new
+#	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
+#	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	nm $@ | sort > $@.nm
+
+sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	-Save $@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
+	${MKVERSION} -p "SPRITE VERSION 1.0 (sun4c)" > version.h
+	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
+	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o \
+	    -L/sprite/lib/${TM}.md ${LIBC}
+	@ls -l $@
+	@size $@
+	update -f -s $@ /sprite/boot/$@.new
+#	rcp /sprite/boot/$@.new ${GINGER}:/sprite3/$@.new
+#	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
+#	rcp $@ rosemary:/tmp/sprite/$@.sprite
 	nm $@ | sort > $@.nm
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
