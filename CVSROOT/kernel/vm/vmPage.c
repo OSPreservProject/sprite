@@ -107,6 +107,8 @@ int	vmMaxDirtyPages;
 Boolean	vmFreeWhenClean = TRUE;	
 Boolean	vmAlwaysRefuse = FALSE;	
 Boolean	vmAlwaysSayYes = FALSE;	
+Boolean	vmWriteablePageout = FALSE;
+Boolean vmWriteableRefPageout = FALSE;
 
 int	vmFSPenalty = 0;
 int	vmNumPageGroups = 10;
@@ -1147,8 +1149,14 @@ again:
 	    if ((*ptePtr & VM_REFERENCED_BIT) || referenced) {
 		vmStat.refSearched++;
 		corePtr->lastRef = curTime.seconds;
-		VmMach_ClearRefBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr));
 		*ptePtr &= ~VM_REFERENCED_BIT;
+		VmMach_ClearRefBit(&corePtr->virtPage,
+				   Vm_GetPageFrame(*ptePtr));
+		if (vmWriteableRefPageout &&
+		    corePtr->virtPage.segPtr->type != VM_CODE) {
+		    *ptePtr |= VM_MODIFIED_BIT;
+		}
+
 		VmListMove((List_Links *) corePtr, LIST_ATREAR(allocPageList));
 		/*
 		 * Set the last page marker so that we will try to examine this
@@ -1537,6 +1545,9 @@ Vm_PageIn(virtAddr, protFault)
     }
 
     *ptePtr |= VM_REFERENCED_BIT;
+    if (vmWriteablePageout && transVirtAddr.segPtr->type != VM_CODE) {
+	*ptePtr |= VM_MODIFIED_BIT;
+    }
 
     /*
      * Finish up the page-in process.
@@ -2361,6 +2372,10 @@ Vm_Clock(data, callInfoPtr)
 	    corePtr->lastRef = curTime.seconds;
 	    *ptePtr &= ~VM_REFERENCED_BIT;
 	    VmMach_ClearRefBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr));
+	    if (vmWriteableRefPageout &&
+		corePtr->virtPage.segPtr->type != VM_CODE) {
+		*ptePtr |= VM_MODIFIED_BIT;
+	    }
 	}
     }
 

@@ -203,7 +203,7 @@ void	SetVal();
  */
 ReturnStatus
 Vm_Cmd(command, arg)
-    Vm_Command  command;
+    int		command;
     int         arg;
 {
     int			numBytes;
@@ -421,10 +421,15 @@ Vm_Cmd(command, arg)
 			vmTraceStats.machStats.pmegsChecked);
 	    break;
 	}
+	case VM_SET_WRITEABLE_PAGEOUT:
+	    SETVAR(vmWriteablePageout, arg);
+	    break;
+	case VM_SET_WRITEABLE_REF_PAGEOUT:
+	    SETVAR(vmWriteableRefPageout, arg);
+	    break;
 
         default:
-            Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");
-	    status = GEN_INVALID_ARG;
+	    status = VmMach_Cmd(command, arg);
             break;
     }
  
