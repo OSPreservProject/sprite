@@ -197,11 +197,18 @@
 
 /*
  * Sun3's don't have a cache.
+ * Zero values here confuse lint.
  */
 
+#ifdef lint
+#define VMMACH_CACHE_LINE_SIZE	1
+#define VMMACH_NUM_CACHE_LINES	1
+#define VMMACH_CACHE_SIZE 	1
+#else
 #define VMMACH_CACHE_LINE_SIZE	0
 #define VMMACH_NUM_CACHE_LINES	0
 #define VMMACH_CACHE_SIZE 	0
+#endif
 
 /*
  * The size that page tables are to be allocated in.  This grows software
