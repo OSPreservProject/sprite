@@ -47,6 +47,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "sync.h"
 
+#ifdef sun4	/* temporary gross hack */
+#define malloc	Vm_RawAlloc
+#endif /* sun4 */
+
 /*
  * A broadcast address that will be put into a broadcast route.
  */
