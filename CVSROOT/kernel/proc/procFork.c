@@ -227,8 +227,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 	parentProcPtr->Prof_Scale);
 
     procPtr->processor		= parentProcPtr->processor;
-    procPtr->state 		= PROC_READY;
-    procPtr->genFlags 		= procType;
+    procPtr->genFlags 		|= procType;
     if (vforkFlag) {
 	procPtr->genFlags |= PROC_VFORKCHILD;
     }
@@ -317,6 +316,7 @@ p     */
 	     * process that we were in the process of allocating.
 	     */
 
+	    Proc_Unlock(procPtr);
 	    ProcFreePCB(procPtr);
 
 	    return(status);
@@ -345,6 +345,7 @@ p     */
 	    /*
 	     * We are out of kernel stacks.
 	     */
+	    Proc_Unlock(procPtr);
 	    ProcFreePCB(procPtr);
 	    return(status);
 	}
@@ -360,6 +361,7 @@ p     */
 		ProcFamilyRemove(procPtr);
 		List_Remove((List_Links *) &(procPtr->siblingElement));
 	    }
+	    Proc_Unlock(procPtr);
 	    ProcFreePCB(procPtr);
 
 	    return(status);
@@ -396,6 +398,13 @@ p     */
     } else {
 	Mach_SetReturnVal(procPtr, 0, 1);
     }
+
+    /* 
+     * Now that we're done messing with the PCB, unlock it.  Maybe this 
+     * could get moved up to happen earlier in the function, but there's 
+     * probably no harm to delaying until now.
+     */
+    Proc_Unlock(procPtr);
 
     /*
      * Put the process on the ready queue.
