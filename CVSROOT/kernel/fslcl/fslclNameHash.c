@@ -415,9 +415,9 @@ FsRebuildTable(table)
  */
 
 void
-Fs_NameHashStats(table)
-    FsHashTable *table;
+Fs_NameHashStats()
 {
+    FsHashTable *table = fsNameTablePtr;
     int count[10], overflow, i, j;
     FsHashEntry 	*hashEntryPtr;
     List_Links	*hashList;
@@ -439,10 +439,10 @@ Fs_NameHashStats(table)
 	}
     }
 
-    Sys_Printf("Entries in table %d number of buckets %d\n", 
+    Sys_Printf("FS Name Hash Table, %d entries in %d buckets\n", 
 		table->numEntries, table->size);
     for (i = 0;  i < 10; i++) {
-	Sys_Printf("Number of buckets with %d entries: %d.\n", i, count[i]);
+	Sys_Printf("%d buckets with %d entries\n", count[i], i);
     }
-    Sys_Printf("Number of buckets with > 9 entries: %d.\n", overflow);
+    Sys_Printf("%d buckets with > 9 entries\n", overflow);
 }
