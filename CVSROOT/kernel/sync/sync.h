@@ -304,8 +304,8 @@ extern 	void 		Sync_PrintStat();
         sync_Instrument.numUnlocks++; \
 	(semaphore)->value = 0; \
 	if (!Mach_AtInterruptLevel()) { \
-	    --mach_NumDisableIntrsPtr[0]; \
-	    if (mach_NumDisableIntrsPtr[0] == 0) { \
+	    --mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]; \
+	    if (mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()] == 0) { \
 		Mach_EnableIntr(); \
 	    } \
 	} \
