@@ -183,7 +183,8 @@ Net_RouteInit()
     /*
      * Install the broadcast route so we can do our first broadcast rpcs.
      */
-    Net_InstallRoute(NET_BROADCAST_HOSTID, NET_ROUTE_BROAD, NET_ROUTE_ETHER,
+    (void) Net_InstallRoute(NET_BROADCAST_HOSTID, NET_ROUTE_BROAD, 
+			    NET_ROUTE_ETHER,
 			   (ClientData) &netBroadcastAddr, "broadcast",
 			   "unknown");
 }
@@ -244,7 +245,7 @@ Net_InstallRouteStub(spriteID, flags, type, clientData, name, machType)
     }
     if (Vm_StringNCopy(128, machType, machineType, &length) != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "Net_InstallRoute: bad machType arg\n");
-	String_Copy("sun3", machineType);
+	(void) String_Copy("sun3", machineType);
     }
     machineType[127] = '\0';
     status = Net_InstallRoute(spriteID, flags, type, localData,
@@ -304,9 +305,9 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
     routePtr = (Net_Route *)Mem_Alloc(sizeof(Net_Route));
     netRouteArray[spriteID] = routePtr;
     routePtr->name = (char *)Mem_Alloc(String_Length(hostname) + 1);
-    String_Copy(hostname, routePtr->name);
+    (void) String_Copy(hostname, routePtr->name);
     routePtr->machType = (char *)Mem_Alloc(String_Length(machType) + 1);
-    String_Copy(machType, routePtr->machType);
+    (void) String_Copy(machType, routePtr->machType);
     /*
      * Prepare the Route.  This includes the transport header that
      * will be used in messages sent to the Sprite Host.
@@ -704,7 +705,7 @@ Net_Arp(spriteID, mutexPtr)
     
     status = NetDoArp(mutexPtr, NET_SPRITE_ARP_REQUEST, &gather, &reply);
     if (status == SUCCESS) {
-	Net_InstallRoute(spriteID, 0, NET_ROUTE_ETHER, 
+	(void) Net_InstallRoute(spriteID, 0, NET_ROUTE_ETHER, 
 				(ClientData) &reply.etherAddr,
 				"noname", "unknown");
 	return(netRouteArray[spriteID]);

@@ -151,7 +151,7 @@ NetIEInit(name, number, ctrlAddr)
      * Allocate space for the System Configuration Pointer.
      */
 
-    VmMach_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    VmMach_MapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR));
     netIEState.sysConfPtr = (NetIESysConfPtr *) NET_IE_SYS_CONF_PTR_ADDR;
 
     /*
@@ -172,7 +172,7 @@ NetIEInit(name, number, ctrlAddr)
      * Unmap the extra page.
      */
 
-    VmMach_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    VmMach_UnmapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR));
 
     /*
      * Now we are running.
@@ -451,7 +451,7 @@ NetIERestart()
     /*
      * Allocate space for the System Configuration Pointer.
      */
-    VmMach_MapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    VmMach_MapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR));
 
     /*
      * Reset the world.
@@ -461,7 +461,7 @@ NetIERestart()
     /*
      * Unmap the extra page.
      */
-    VmMach_UnmapIntelPage((int) (NET_IE_SYS_CONF_PTR_ADDR));
+    VmMach_UnmapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR));
 
     /*
      * Restart transmission of packets.
